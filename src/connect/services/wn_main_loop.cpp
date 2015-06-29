@@ -635,9 +635,7 @@ bool CMainLoopThread::x_PerformTimelineAction(
         return false;
     }
 
-    if (x_EnterSuspendedState() ||
-            // Skip servers that disappeared from LBSM.
-            m_Timeline.IsOutdatedAction(timeline_entry))
+    if (x_EnterSuspendedState())
         return false;
 
     CNetServer server(m_Timeline.GetServer(m_WorkerNode->m_NetScheduleAPI,

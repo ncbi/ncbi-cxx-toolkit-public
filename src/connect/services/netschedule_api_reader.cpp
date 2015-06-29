@@ -159,10 +159,6 @@ bool SNetScheduleJobReaderImpl::x_PerformTimelineAction(
         return false;
     }
 
-    // Skip servers that disappeared from LBSM.
-    if (m_Timeline.IsOutdatedAction(timeline_entry))
-        return false;
-
     CNetServer server(m_Timeline.GetServer(m_API, timeline_entry));
 
     try {

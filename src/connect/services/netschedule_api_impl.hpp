@@ -428,15 +428,12 @@ class CNetScheduleTimeline
     {
         const SServerAddress server_address;
         CDeadline deadline;
-        unsigned discovery_iteration;
         bool more_jobs;
 
-        // If iteration is zero, then it's either discovery action or search pattern
-        SEntry(const SServerAddress& a, unsigned i = 0) :
+        SEntry(const SServerAddress& a, bool j = true) :
             server_address(a),
             deadline(0, 0),
-            discovery_iteration(i),
-            more_jobs(i) // It's set to false for special entries (see above)
+            more_jobs(j)
         {
         }
 
@@ -446,14 +443,14 @@ class CNetScheduleTimeline
         }
     };
 
+    typedef list<SServerAddress> TServers;
+
 public:
     typedef CRef<SEntry> TEntryRef;
-    typedef map<SServerAddress, TEntryRef> TServers;
     typedef deque<TEntryRef> TTimeline;
 
     CNetScheduleTimeline() :
-        m_DiscoveryIteration(1),
-        m_DiscoveryAction(new SEntry(SServerAddress(0, 0)))
+        m_DiscoveryAction(new SEntry(SServerAddress(0, 0), false))
     {
         m_ImmediateActions.push_back(m_DiscoveryAction);
     }
@@ -486,24 +483,17 @@ public:
 
     bool IsDiscoveryAction(TEntryRef entry) const
     {
-        return !entry->discovery_iteration;
-    }
-
-    bool IsOutdatedAction(TEntryRef entry) const
-    {
-        return entry->discovery_iteration != m_DiscoveryIteration;
+        return entry.GetPointer() == m_DiscoveryAction.GetPointer();
     }
 
     void MoveToImmediateActions(SNetServerImpl* server_impl)
     {
         const SServerAddress address(server_impl->m_ServerInPool->m_Address);
-        TEntryRef entry(new SEntry(address, m_DiscoveryIteration));
 
         // If it's new server or is postponed or is not found in queues
-        if (m_Servers.insert(make_pair(address, entry)).second ||
-                Erase(m_ScheduledActions, entry) ||
-                !Find(m_ImmediateActions, entry)) {
-            m_ImmediateActions.push_back(entry);
+        if (Erase(m_ScheduledActions, address) ||
+                !Find(m_ImmediateActions, address)) {
+            m_ImmediateActions.push_back(TEntryRef(new SEntry(address)));
         }
     }
 
@@ -525,25 +515,22 @@ public:
 
     void NextDiscoveryIteration(CNetScheduleAPI api)
     {
-        ++m_DiscoveryIteration;
+        TServers servers;
 
         for (CNetServiceIterator it =
                 api.GetService().Iterate(
                     CNetService::eIncludePenalized); it; ++it) {
-            const SServerAddress address((*it)->m_ServerInPool->m_Address);
-            TEntryRef srv_entry(new SEntry(address, m_DiscoveryIteration));
+            servers.push_back((*it)->m_ServerInPool->m_Address);
+        }
 
-            // If it's new server
-            if (m_Servers.insert(make_pair(address, srv_entry)).second) {
-                m_ImmediateActions.push_back(srv_entry);
-            } else {
-                srv_entry->discovery_iteration = m_DiscoveryIteration;
+        // Keep up to date servers
+        Filter(m_ImmediateActions, servers);
+        Filter(m_ScheduledActions, servers);
 
-                if (!Find(m_ScheduledActions, srv_entry) &&
-                        !Find(m_ImmediateActions, srv_entry)) {
-                    m_ImmediateActions.push_back(srv_entry);
-                }
-            }
+        // Add newly discovered servers
+        for (TServers::const_iterator i = servers.begin();
+                i != servers.end(); ++i) {
+            m_ImmediateActions.push_back(TEntryRef(new SEntry(*i)));
         }
     }
 
@@ -551,7 +538,7 @@ public:
     {
         for (TTimeline::const_iterator i = m_ScheduledActions.begin();
                 i != m_ScheduledActions.end(); ++i) {
-            if ((*i)->more_jobs && !IsOutdatedAction(*i)) {
+            if ((*i)->more_jobs) {
                 return true;
             }
         }
@@ -569,10 +556,23 @@ public:
     void Resume()
     {
         m_ImmediateActions.push_back(m_DiscoveryAction);
-        Erase(m_ScheduledActions, m_DiscoveryAction);
+        Erase(m_ScheduledActions, m_DiscoveryAction->server_address);
     }
 
 private:
+    struct SEntryByAddress
+    {
+        const SServerAddress server_address;
+
+        SEntryByAddress(const SServerAddress& a) : server_address(a) {}
+
+        bool operator()(const TEntryRef& e)
+        {
+            _ASSERT(e);
+            return e->server_address == server_address;
+        }
+    };
+
     static TEntryRef Pop(TTimeline& timeline)
     {
         TEntryRef entry;
@@ -581,14 +581,14 @@ private:
         return entry;
     }
 
-    static bool Find(const TTimeline& timeline, TEntryRef entry)
+    static bool Find(const TTimeline& timeline, const SEntryByAddress& cmp)
     {
-        return find(timeline.begin(), timeline.end(), entry) != timeline.end();
+        return find_if(timeline.begin(), timeline.end(), cmp) != timeline.end();
     }
 
-    static bool Erase(TTimeline& timeline, TEntryRef entry)
+    static bool Erase(TTimeline& timeline, const SEntryByAddress& cmp)
     {
-        TTimeline::iterator i = find(timeline.begin(), timeline.end(), entry);
+        TTimeline::iterator i = find_if(timeline.begin(), timeline.end(), cmp);
 
         if (i == timeline.end()) {
             return false;
@@ -598,10 +598,26 @@ private:
         return true;
     }
 
-    TServers m_Servers;
+    static void Filter(TTimeline& timeline, TServers& servers)
+    {
+        TTimeline new_timeline;
+
+        for (TTimeline::const_iterator i = timeline.begin();
+                i != timeline.end(); ++i) {
+            const SServerAddress& address((*i)->server_address);
+            TServers::iterator j = find(servers.begin(), servers.end(), address);
+
+            if (j != servers.end()) {
+                new_timeline.push_back(*i);
+                servers.erase(j);
+            }
+        }
+
+        timeline.swap(new_timeline);
+    }
+
     TTimeline m_ImmediateActions, m_ScheduledActions;
 
-    unsigned m_DiscoveryIteration;
     TEntryRef m_DiscoveryAction;
 };
 
