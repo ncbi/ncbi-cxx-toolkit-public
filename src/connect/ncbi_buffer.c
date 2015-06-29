@@ -36,6 +36,10 @@
 #include <string.h>
 
 
+#define _BUF_ALIGN(a, b)  (((a) + ((b) - 1)) & ~((b) - 1))
+#define  BUF_ALIGN(s)     _BUF_ALIGN((s), sizeof(double))
+
+
 /* Buffer chunk
  */
 typedef struct SBufChunkTag {
@@ -60,6 +64,9 @@ struct SNcbiBuf {
 
 extern size_t BUF_SetChunkSize(BUF* buf, size_t chunk_size)
 {
+    assert(!(sizeof(double) & (sizeof(double) - 1)));
+    assert(!(BUF_ALIGN(BUF_DEF_CHUNK_SIZE) ^ BUF_DEF_CHUNK_SIZE));
+
     /* create buffer internals, if not created yet */
     if (!*buf) {
         if (!(*buf = (struct SNcbiBuf*) malloc(sizeof(**buf))))
@@ -69,7 +76,7 @@ extern size_t BUF_SetChunkSize(BUF* buf, size_t chunk_size)
     }
 
     /* and set the min. mem. chunk unit size */
-    (*buf)->unit = chunk_size ? chunk_size : BUF_DEF_CHUNK_SIZE;
+    (*buf)->unit = chunk_size ? BUF_ALIGN(chunk_size) : BUF_DEF_CHUNK_SIZE;
     return (*buf)->unit;
 }
 
