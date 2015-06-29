@@ -424,9 +424,12 @@ public:
 
 class CNetScheduleTimeline
 {
-    struct SEntry : public CObject
+    typedef list<SServerAddress> TServers;
+
+public:
+    struct SEntry
     {
-        const SServerAddress server_address;
+        SServerAddress server_address;
         CDeadline deadline;
         bool more_jobs;
 
@@ -443,14 +446,10 @@ class CNetScheduleTimeline
         }
     };
 
-    typedef list<SServerAddress> TServers;
-
-public:
-    typedef CRef<SEntry> TEntryRef;
-    typedef deque<TEntryRef> TTimeline;
+    typedef deque<SEntry> TTimeline;
 
     CNetScheduleTimeline() :
-        m_DiscoveryAction(new SEntry(SServerAddress(0, 0), false))
+        m_DiscoveryAction(SServerAddress(0, 0), false)
     {
         m_ImmediateActions.push_back(m_DiscoveryAction);
     }
@@ -461,29 +460,29 @@ public:
     void CheckScheduledActions()
     {
         while (!m_ScheduledActions.empty() &&
-                m_ScheduledActions.front()->deadline.GetRemainingTime().IsZero()) {
+                m_ScheduledActions.front().deadline.GetRemainingTime().IsZero()) {
             m_ImmediateActions.push_back(Pop(m_ScheduledActions));
         }
     }
 
     const CDeadline GetNextTimeout() const
     {
-        return m_ScheduledActions.front()->deadline;
+        return m_ScheduledActions.front().deadline;
     }
 
-    TEntryRef PullImmediateAction()
+    SEntry PullImmediateAction()
     {
         return Pop(m_ImmediateActions);
     }
 
-    TEntryRef PullScheduledAction()
+    SEntry PullScheduledAction()
     {
         return Pop(m_ScheduledActions);
     }
 
-    bool IsDiscoveryAction(TEntryRef entry) const
+    bool IsDiscoveryAction(const SEntry& entry) const
     {
-        return entry.GetPointer() == m_DiscoveryAction.GetPointer();
+        return entry.server_address == m_DiscoveryAction.server_address;
     }
 
     void MoveToImmediateActions(SNetServerImpl* server_impl)
@@ -493,24 +492,24 @@ public:
         // If it's new server or is postponed or is not found in queues
         if (Erase(m_ScheduledActions, address) ||
                 !Find(m_ImmediateActions, address)) {
-            m_ImmediateActions.push_back(TEntryRef(new SEntry(address)));
+            m_ImmediateActions.push_back(address);
         }
     }
 
-    void PushImmediateAction(TEntryRef entry)
+    void PushImmediateAction(const SEntry& entry)
     {
         m_ImmediateActions.push_back(entry);
     }
 
-    void PushScheduledAction(TEntryRef entry, unsigned seconds)
+    void PushScheduledAction(SEntry entry, unsigned seconds)
     {
-        entry->ResetTimeout(seconds);
+        entry.ResetTimeout(seconds);
         m_ScheduledActions.push_back(entry);
     }
 
-    CNetServer GetServer(CNetScheduleAPI api, TEntryRef entry)
+    CNetServer GetServer(CNetScheduleAPI api, const SEntry& entry)
     {
-        return api.GetService().GetServer(entry->server_address);
+        return api.GetService().GetServer(entry.server_address);
     }
 
     void NextDiscoveryIteration(CNetScheduleAPI api)
@@ -530,7 +529,7 @@ public:
         // Add newly discovered servers
         for (TServers::const_iterator i = servers.begin();
                 i != servers.end(); ++i) {
-            m_ImmediateActions.push_back(TEntryRef(new SEntry(*i)));
+            m_ImmediateActions.push_back(*i);
         }
     }
 
@@ -538,7 +537,7 @@ public:
     {
         for (TTimeline::const_iterator i = m_ScheduledActions.begin();
                 i != m_ScheduledActions.end(); ++i) {
-            if ((*i)->more_jobs) {
+            if (i->more_jobs) {
                 return true;
             }
         }
@@ -556,7 +555,7 @@ public:
     void Resume()
     {
         m_ImmediateActions.push_back(m_DiscoveryAction);
-        Erase(m_ScheduledActions, m_DiscoveryAction->server_address);
+        Erase(m_ScheduledActions, m_DiscoveryAction.server_address);
     }
 
 private:
@@ -566,17 +565,15 @@ private:
 
         SEntryByAddress(const SServerAddress& a) : server_address(a) {}
 
-        bool operator()(const TEntryRef& e)
+        bool operator()(const SEntry& e)
         {
-            _ASSERT(e);
-            return e->server_address == server_address;
+            return e.server_address == server_address;
         }
     };
 
-    static TEntryRef Pop(TTimeline& timeline)
+    static SEntry Pop(TTimeline& timeline)
     {
-        TEntryRef entry;
-        timeline.front().Swap(entry);
+        SEntry entry = timeline.front();
         timeline.pop_front();
         return entry;
     }
@@ -604,7 +601,7 @@ private:
 
         for (TTimeline::const_iterator i = timeline.begin();
                 i != timeline.end(); ++i) {
-            const SServerAddress& address((*i)->server_address);
+            const SServerAddress& address(i->server_address);
             TServers::iterator j = find(servers.begin(), servers.end(), address);
 
             if (j != servers.end()) {
@@ -618,7 +615,7 @@ private:
 
     TTimeline m_ImmediateActions, m_ScheduledActions;
 
-    TEntryRef m_DiscoveryAction;
+    SEntry m_DiscoveryAction;
 };
 
 struct SNetScheduleJobReaderImpl : public CObject
@@ -648,7 +645,7 @@ struct SNetScheduleJobReaderImpl : public CObject
             CNetScheduleJob& job,
             CNetScheduleAPI::EJobStatus* job_status,
             bool* no_more_jobs);
-    bool x_PerformTimelineAction(CNetScheduleTimeline::TEntryRef timeline_entry,
+    bool x_PerformTimelineAction(CNetScheduleTimeline::SEntry timeline_entry,
             CNetScheduleJob& job,
             CNetScheduleAPI::EJobStatus* job_status,
             bool* no_more_jobs);

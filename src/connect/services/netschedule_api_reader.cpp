@@ -145,7 +145,7 @@ bool SNetScheduleJobReaderImpl::x_ReadJob(SNetServerImpl* server,
 }
 
 bool SNetScheduleJobReaderImpl::x_PerformTimelineAction(
-        CNetScheduleTimeline::TEntryRef timeline_entry,
+        CNetScheduleTimeline::SEntry timeline_entry,
         CNetScheduleJob& job,
         CNetScheduleAPI::EJobStatus* job_status,
         bool* no_more_jobs)
@@ -173,7 +173,7 @@ bool SNetScheduleJobReaderImpl::x_PerformTimelineAction(
             // Cache the result for the server,
             // so we don't need to ask the server again about matching jobs
             // while waiting for its notifications
-            timeline_entry->more_jobs = !*no_more_jobs;
+            timeline_entry.more_jobs = !*no_more_jobs;
 
             // No job has been returned by this server;
             // query the server later.
