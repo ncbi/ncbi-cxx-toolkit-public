@@ -2526,7 +2526,7 @@
         <key>shellPath</key>
         <string>/bin/sh</string>
         <key>shellScript</key>
-        <string>export BUILD_TREE_ROOT=../..&#xa;export BUILD_TREE_BIN=bin/${CONFIGURATION}&#xa;&quot;$BUILD_TREE_ROOT/copybin.sh&quot;</string>
+        <string>export BUILD_TREE_ROOT=../..&#xa;export BUILD_TREE_BIN=bin/${CONFIGURATION}&#xa;&quot;$BUILD_TREE_ROOT/copybin.sh&quot;&#xa;&quot;$BUILD_TREE_ROOT/copyutl.sh&quot;</string>
         <key>showEnvVarsInLog</key>
         <string>0</string>
       </dict>
@@ -4441,7 +4441,7 @@
         <key>shellPath</key>
         <string>/bin/sh</string>
         <key>shellScript</key>
-        <string>export BUILD_TREE_ROOT=../..&#xa;export BUILD_TREE_BIN=bin/${CONFIGURATION}&#xa;&quot;$BUILD_TREE_ROOT/copybin.sh&quot;</string>
+        <string>export BUILD_TREE_ROOT=../..&#xa;export BUILD_TREE_BIN=bin/${CONFIGURATION}&#xa;&quot;$BUILD_TREE_ROOT/copybin.sh&quot;&#xa;&quot;$BUILD_TREE_ROOT/copyutl.sh&quot;</string>
         <key>showEnvVarsInLog</key>
         <string>0</string>
       </dict>
@@ -9327,7 +9327,7 @@
         <key>shellPath</key>
         <string>/bin/sh</string>
         <key>shellScript</key>
-        <string>export BUILD_TREE_ROOT=../..&#xa;export BUILD_TREE_BIN=bin/${CONFIGURATION}&#xa;&quot;$BUILD_TREE_ROOT/copybin.sh&quot;</string>
+        <string>export BUILD_TREE_ROOT=../..&#xa;export BUILD_TREE_BIN=bin/${CONFIGURATION}&#xa;&quot;$BUILD_TREE_ROOT/copybin.sh&quot;&#xa;&quot;$BUILD_TREE_ROOT/copyutl.sh&quot;</string>
         <key>showEnvVarsInLog</key>
         <string>0</string>
       </dict>
