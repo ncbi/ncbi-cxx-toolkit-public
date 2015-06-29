@@ -171,7 +171,7 @@ protected:
     bool xValueNeedsQuoting(const string&);
     string xDequotedValue(const string&);
     string xGetColStub(const string&);
-    
+    string xGetOriginalId(const CBioseq_Handle&) const; 
 
 
 public:
