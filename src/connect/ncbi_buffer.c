@@ -103,17 +103,23 @@ extern size_t BUF_Size(BUF buf)
 }
 
 
-/* Create a new chunk.
- * Allocate at least "chunk_size" bytes, but no less than "data_size" bytes.
+/* Create a new buffer chunk.
+ * Allocate at least "unit_size" bytes, but no less than "data_size" bytes.
  * Special case: "data_size" == 0 results in no data storage allocation.
  */
-static SBufChunk* s_AllocChunk(size_t data_size, size_t chunk_size)
+static SBufChunk* s_AllocChunk(size_t data_size, size_t unit_size)
 {
-    size_t alloc_size = ((data_size + chunk_size - 1)
-                         / chunk_size) * chunk_size;
-    SBufChunk* chunk = (SBufChunk*) malloc(sizeof(*chunk) + alloc_size);
+    size_t chunk_size, alloc_size;
+    SBufChunk* chunk;
+    if (!data_size) {
+        chunk_size = sizeof(*chunk);
+        alloc_size = 0;
+    } else {
+        chunk_size = BUF_ALIGN(sizeof(*chunk));
+        alloc_size = ((data_size + unit_size - 1) / unit_size) * unit_size;
+    }
     assert(!data_size == !alloc_size);
-    if (!chunk)
+    if (!(chunk = (SBufChunk*) malloc(chunk_size + alloc_size)))
         return 0;
 
     /* NB: leave chunk->next uninited! */
@@ -121,7 +127,7 @@ static SBufChunk* s_AllocChunk(size_t data_size, size_t chunk_size)
     chunk->skip   = 0;
     chunk->size   = 0;
     chunk->base   = 0;
-    chunk->data   = alloc_size ? (char*) chunk + sizeof(*chunk) : 0;
+    chunk->data   = alloc_size ? (char*) chunk + chunk_size : 0;
     return chunk;
 }
 
