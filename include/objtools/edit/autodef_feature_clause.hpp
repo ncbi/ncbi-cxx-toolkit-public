@@ -202,6 +202,8 @@ class NCBI_XOBJEDIT_EXPORT CAutoDefParsedIntergenicSpacerClause : public CAutoDe
 public:
     CAutoDefParsedIntergenicSpacerClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc, string description, bool is_first, bool is_last);
     ~CAutoDefParsedIntergenicSpacerClause();
+
+    void MakeRegion() { if (!NStr::EndsWith(m_Typeword, "region")) m_Typeword += " region"; }
 };
 
 

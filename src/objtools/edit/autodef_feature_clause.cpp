@@ -703,14 +703,18 @@ vector<CAutoDefFeatureClause *> GetIntergenicSpacerClauseList (string comment, C
         if (pos != string::npos) {
             string spacer_description = parts[j].substr(0, pos);
             NStr::TruncateSpacesInPlace(spacer_description);
-            CAutoDefFeatureClause *spacer = 
+            CAutoDefParsedIntergenicSpacerClause *spacer =
                   new CAutoDefParsedIntergenicSpacerClause(bh, 
                                                            cf,
                                                            mapped_loc,
                                                            spacer_description, 
                                                            j == 0, 
                                                            j == parts.size() - 1);
-            clause_list.push_back (spacer);
+            if (NStr::EndsWith(parts[j], "region")) {
+                // change interval to region
+                spacer->MakeRegion();
+            }
+            clause_list.push_back((CAutoDefFeatureClause*)spacer);
         } else {
             CAutoDefFeatureClause *gene = s_tRNAClauseFromNote(bh, cf, mapped_loc, parts[j], j == 0, j == parts.size() - 1);
             clause_list.push_back(gene);

@@ -1242,6 +1242,17 @@ BOOST_AUTO_TEST_CASE(Test_GB_4078)
 
 }
 
+BOOST_AUTO_TEST_CASE(Test_SQD_2370)
+{
+    CRef<CSeq_entry> seq = unit_test_util::BuildGoodSeq();
+    CRef<objects::CSeq_feat> misc1 = unit_test_util::AddMiscFeature(seq);
+    misc1->SetComment("atpB-rbcL intergenic spacer region");
+
+    AddTitle(seq, "Sebaea microphylla atpB-rbcL intergenic spacer region, complete sequence.");
+
+    CheckDeflineMatches(seq);
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
