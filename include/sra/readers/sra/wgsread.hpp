@@ -33,6 +33,7 @@
  */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbimtx.hpp>
 #include <util/range.hpp>
 #include <util/rangemap.hpp>
 #include <sra/readers/sra/vdbread.hpp>
@@ -260,7 +261,7 @@ protected:
 
     // SSeqTableCursor is helper accessor structure for SEQUENCE table
     struct SSeqTableCursor : public CObject {
-        SSeqTableCursor(const CVDB& db);
+        explicit SSeqTableCursor(const CVDBTable& table);
 
         CVDBTable m_Table;
         CVDBCursor m_Cursor;
@@ -290,7 +291,7 @@ protected:
 
     // SSeqTableCursor is helper accessor structure for SCAFFOLD table
     struct SScfTableCursor : public CObject {
-        SScfTableCursor(const CVDB& db);
+        SScfTableCursor(const CVDBTable& table);
 
         CVDBTable m_Table;
         CVDBCursor m_Cursor;
@@ -307,7 +308,7 @@ protected:
 
     // SSeqTableCursor is helper accessor structure for SEQUENCE table
     struct SIdxTableCursor : public CObject {
-        SIdxTableCursor(const CVDB& db);
+        explicit SIdxTableCursor(const CVDBTable& table);
 
         CVDBTable m_Table;
         CVDBCursor m_Cursor;
@@ -318,25 +319,28 @@ protected:
 
     // SProtTableCursor is helper accessor structure for optional PROTEIN table
     struct SProtTableCursor : public CObject {
-        SProtTableCursor(const CVDB& db);
+        explicit SProtTableCursor(const CVDBTable& table);
 
         CVDBTable m_Table;
         CVDBCursor m_Cursor;
 
         DECLARE_VDB_COLUMN_AS_STRING(ACCESSION);
-        DECLARE_VDB_COLUMN_AS(uint32_t, ACC_VERSION);
         DECLARE_VDB_COLUMN_AS_STRING(GB_ACCESSION);
+        DECLARE_VDB_COLUMN_AS(uint32_t, ACC_VERSION);
+        DECLARE_VDB_COLUMN_AS_STRING(TITLE);
         DECLARE_VDB_COLUMN_AS_STRING(DESCR);
         DECLARE_VDB_COLUMN_AS_STRING(ANNOT);
         DECLARE_VDB_COLUMN_AS(NCBI_gb_state, GB_STATE);
         DECLARE_VDB_COLUMN_AS(INSDC_coord_len, PROTEIN_LEN);
         DECLARE_VDB_COLUMN_AS_STRING(PROTEIN_NAME);
-        DECLARE_VDB_COLUMN_AS_STRING(TITLE);
-        DECLARE_VDB_COLUMN_AS_STRING(SEQ_ID);
-        DECLARE_VDB_COLUMN_AS_STRING(SEQ_ID_GNL);
-        DECLARE_VDB_COLUMN_AS(NCBI_gi, REF_GI);
         DECLARE_VDB_COLUMN_AS_STRING(REF_ACC);
     };
+
+    // open tables
+    const CVDBTable& SeqTable(void) const;
+    const CVDBTable& ScfTable(void) const;
+    const CVDBTable& ProtTable(void) const;
+    const CVDBTable& GiIdxTable(void) const;
 
     // get table accessor object for exclusive access
     CRef<SSeqTableCursor> Seq(void);
@@ -351,7 +355,7 @@ protected:
         m_Scf.Put(curs);
     }
     void Put(CRef<SIdxTableCursor>& curs) {
-        m_Idx.Put(curs);
+        m_GiIdx.Put(curs);
     }
     void Put(CRef<SProtTableCursor>& curs) {
         m_Prot.Put(curs);
@@ -370,10 +374,31 @@ private:
     int m_IdVersion;
     SIZE_TYPE m_IdRowDigits;
 
+    CMutex m_TableMutex;
+    CVDBTable m_SeqTable;
+    volatile bool m_ScfTableIsOpened;
+    volatile bool m_ProtTableIsOpened;
+    volatile bool m_GiIdxTableIsOpened;
+    volatile bool m_ProtAccIndexIsOpened;
+    CVDBTable m_ScfTable;
+    CVDBTable m_ProtTable;
+    CVDBTable m_GiIdxTable;
+
+    const CVDBTable& x_InitTable(CVDBTable& table,
+                                 const char* table_name);
+    const CVDBTable& x_InitTable(CVDBTable& table,
+                                 const char* table_name,
+                                 volatile bool& table_is_opened);
+
+    const CVDBTable& SeqTable(void);
+    const CVDBTable& ScfTable(void);
+    const CVDBTable& ProtTable(void);
+    const CVDBTable& GiIdxTable(void);
+
     CVDBObjectCache<SSeqTableCursor> m_Seq;
     CVDBObjectCache<SScfTableCursor> m_Scf;
-    CVDBObjectCache<SIdxTableCursor> m_Idx;
     CVDBObjectCache<SProtTableCursor> m_Prot;
+    CVDBObjectCache<SIdxTableCursor> m_GiIdx;
     CVDBTableIndex m_ProtAccIndex;
 
     bool m_IsSetMasterDescr;
@@ -637,6 +662,7 @@ public:
     }
 
     CTempString GetAccession(void) const;
+    int GetAccVersion(void) const;
     CRef<CSeq_id> GetAccSeq_id(void) const;
     CRef<CSeq_id> GetGeneralSeq_id(void) const;
 
@@ -760,14 +786,14 @@ public:
 
     CTempString GetAccession(void) const;
     int GetAccVersion(void) const;
+    CTempString GetAccName(void) const;
+
     CRef<CSeq_id> GetAccSeq_id(void) const;
     CRef<CSeq_id> GetGeneralSeq_id(void) const;
 
     CTempString GetProteinName(void) const;
 
     void GetIds(CBioseq::TId& ids) const;
-    bool HasRefGi(void) const;
-    CSeq_id::TGi GetRefGi(void) const;
     bool HasRefAcc(void) const;
     CTempString GetRefAcc(void) const;
 
@@ -775,6 +801,9 @@ public:
 
     bool HasSeq_descr(void) const;
     CRef<CSeq_descr> GetSeq_descr(void) const;
+
+    bool HasTitle(void) const;
+    CTempString GetTitle(void) const;
 
     bool HasAnnotSet(void) const;
     typedef CBioseq::TAnnot TAnnotSet;

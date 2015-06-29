@@ -313,13 +313,12 @@ CTempString CWGSProtAccResolver::Find(const string& acc) const
 /////////////////////////////////////////////////////////////////////////////
 
 
-CWGSDb_Impl::SSeqTableCursor::SSeqTableCursor(const CVDB& db)
-    : m_Table(db, "SEQUENCE"),
-      m_Cursor(m_Table),
+CWGSDb_Impl::SSeqTableCursor::SSeqTableCursor(const CVDBTable& table)
+    : m_Table(table),
+      m_Cursor(table),
       INIT_OPTIONAL_VDB_COLUMN(GI),
       INIT_VDB_COLUMN(ACCESSION),
       INIT_VDB_COLUMN(ACC_VERSION),
-      //INIT_VDB_COLUMN(SEQ_ID_GNL),
       INIT_VDB_COLUMN(CONTIG_NAME),
       INIT_VDB_COLUMN(NAME),
       INIT_VDB_COLUMN(TITLE),
@@ -342,9 +341,9 @@ CWGSDb_Impl::SSeqTableCursor::SSeqTableCursor(const CVDB& db)
 }
 
 
-CWGSDb_Impl::SScfTableCursor::SScfTableCursor(const CVDB& db)
-    : m_Table(db, "SCAFFOLD"),
-      m_Cursor(m_Table),
+CWGSDb_Impl::SScfTableCursor::SScfTableCursor(const CVDBTable& table)
+    : m_Table(table),
+      m_Cursor(table),
       INIT_VDB_COLUMN(SCAFFOLD_NAME),
       INIT_OPTIONAL_VDB_COLUMN(ACCESSION),
       INIT_VDB_COLUMN(COMPONENT_ID),
@@ -357,30 +356,27 @@ CWGSDb_Impl::SScfTableCursor::SScfTableCursor(const CVDB& db)
 }
 
 
-CWGSDb_Impl::SIdxTableCursor::SIdxTableCursor(const CVDB& db)
-    : m_Table(db, "GI_IDX"),
-      m_Cursor(m_Table),
+CWGSDb_Impl::SIdxTableCursor::SIdxTableCursor(const CVDBTable& table)
+    : m_Table(table),
+      m_Cursor(table),
       INIT_OPTIONAL_VDB_COLUMN(NUC_ROW_ID),
       INIT_OPTIONAL_VDB_COLUMN(PROT_ROW_ID)
 {
 }
 
 
-CWGSDb_Impl::SProtTableCursor::SProtTableCursor(const CVDB& db)
-    : m_Table(db, "PROTEIN"),
-      m_Cursor(m_Table),
+CWGSDb_Impl::SProtTableCursor::SProtTableCursor(const CVDBTable& table)
+    : m_Table(table),
+      m_Cursor(table),
       INIT_VDB_COLUMN(ACCESSION),
-      INIT_VDB_COLUMN(ACC_VERSION),
       INIT_OPTIONAL_VDB_COLUMN(GB_ACCESSION),
+      INIT_VDB_COLUMN(ACC_VERSION),
+      INIT_OPTIONAL_VDB_COLUMN(TITLE),
       INIT_OPTIONAL_VDB_COLUMN(DESCR),
       INIT_OPTIONAL_VDB_COLUMN(ANNOT),
       INIT_VDB_COLUMN(GB_STATE),
       INIT_VDB_COLUMN(PROTEIN_LEN),
       INIT_VDB_COLUMN(PROTEIN_NAME),
-      INIT_VDB_COLUMN(TITLE),
-      INIT_OPTIONAL_VDB_COLUMN(SEQ_ID),
-      INIT_OPTIONAL_VDB_COLUMN(SEQ_ID_GNL),
-      INIT_OPTIONAL_VDB_COLUMN(REF_GI),
       INIT_OPTIONAL_VDB_COLUMN(REF_ACC)
 {
 }
@@ -393,6 +389,10 @@ CWGSDb_Impl::CWGSDb_Impl(CVDBMgr& mgr,
       m_WGSPath(NormalizePathOrAccession(path_or_acc, vol_path)),
       m_Db(mgr, m_WGSPath),
       m_IdVersion(0),
+      m_ScfTableIsOpened(false),
+      m_ProtTableIsOpened(false),
+      m_GiIdxTableIsOpened(false),
+      m_ProtAccIndexIsOpened(false),
       m_IsSetMasterDescr(false)
 {
     x_InitIdParams();
@@ -418,9 +418,6 @@ void CWGSDb_Impl::x_InitIdParams(void)
     }
     m_IdPrefixWithVersion = acc.substr(0, prefix_len+2);
     m_IdPrefix = acc.substr(0, prefix_len);
-    if ( NStr::StartsWith(acc, "XXXX") ) {
-        m_IdPrefix[0] = m_IdPrefixWithVersion[0] = 'A';
-    }
     m_IdVersion = NStr::StringToNumeric<int>(acc.substr(prefix_len, 2));
     Put(seq);
 }
@@ -461,11 +458,76 @@ string CWGSDb_Impl::NormalizePathOrAccession(CTempString path_or_acc,
 }
 
 
+inline
+const CVDBTable& CWGSDb_Impl::x_InitTable(CVDBTable& table,
+                                          const char* table_name)
+{
+    if ( !table ) {
+        CMutexGuard guard(m_TableMutex);
+        if ( !table ) {
+            table = CVDBTable(m_Db, table_name);
+        }
+    }
+    return table;
+}
+
+
+inline
+const CVDBTable& CWGSDb_Impl::x_InitTable(CVDBTable& table,
+                                          const char* table_name,
+                                          volatile bool& table_is_opened)
+{
+    if ( !table_is_opened ) {
+        CMutexGuard guard(m_TableMutex);
+        if ( !table_is_opened ) {
+            try {
+                table = CVDBTable(m_Db, table_name);
+            }
+            catch ( CSraException& exc ) {
+                if ( exc.GetErrCode() != CSraException::eNotFoundTable ) {
+                    throw;
+                }
+            }
+            table_is_opened = true;
+        }
+    }
+    return table;
+}
+
+
+inline
+const CVDBTable& CWGSDb_Impl::SeqTable(void)
+{
+    return x_InitTable(m_SeqTable, "SEQUENCE");
+}
+
+
+inline
+const CVDBTable& CWGSDb_Impl::ScfTable(void)
+{
+    return x_InitTable(m_ScfTable, "SCAFFOLD", m_ScfTableIsOpened);
+}
+
+
+inline
+const CVDBTable& CWGSDb_Impl::ProtTable(void)
+{
+    return x_InitTable(m_ProtTable, "PROTEIN", m_ProtTableIsOpened);
+}
+
+
+inline
+const CVDBTable& CWGSDb_Impl::GiIdxTable(void)
+{
+    return x_InitTable(m_GiIdxTable, "GI_IDX", m_GiIdxTableIsOpened);
+}
+
+
 CRef<CWGSDb_Impl::SSeqTableCursor> CWGSDb_Impl::Seq(void)
 {
     CRef<SSeqTableCursor> curs = m_Seq.Get();
     if ( !curs ) {
-        curs = new SSeqTableCursor(m_Db);
+        curs = new SSeqTableCursor(SeqTable());
     }
     return curs;
 }
@@ -475,30 +537,8 @@ CRef<CWGSDb_Impl::SScfTableCursor> CWGSDb_Impl::Scf(void)
 {
     CRef<SScfTableCursor> curs = m_Scf.Get();
     if ( !curs ) {
-        try {
-            curs = new SScfTableCursor(m_Db);
-        }
-        catch ( CSraException& exc ) {
-            if ( exc.GetErrCode() != CSraException::eNotFoundTable ) {
-                throw;
-            }
-        }
-    }
-    return curs;
-}
-
-
-CRef<CWGSDb_Impl::SIdxTableCursor> CWGSDb_Impl::Idx(void)
-{
-    CRef<SIdxTableCursor> curs = m_Idx.Get();
-    if ( !curs ) {
-        try {
-            curs = new SIdxTableCursor(m_Db);
-        }
-        catch ( CSraException& exc ) {
-            if ( exc.GetErrCode() != CSraException::eNotFoundTable ) {
-                throw;
-            }
+        if ( const CVDBTable& table = ScfTable() ) {
+            curs = new SScfTableCursor(table);
         }
     }
     return curs;
@@ -509,13 +549,20 @@ CRef<CWGSDb_Impl::SProtTableCursor> CWGSDb_Impl::Prot(void)
 {
     CRef<SProtTableCursor> curs = m_Prot.Get();
     if ( !curs ) {
-        try {
-            curs = new SProtTableCursor(m_Db);
+        if ( const CVDBTable& table = ProtTable() ) {
+            curs = new SProtTableCursor(table);
         }
-        catch ( CSraException& exc ) {
-            if ( exc.GetErrCode() != CSraException::eNotFoundTable ) {
-                throw;
-            }
+    }
+    return curs;
+}
+
+
+CRef<CWGSDb_Impl::SIdxTableCursor> CWGSDb_Impl::Idx(void)
+{
+    CRef<SIdxTableCursor> curs = m_GiIdx.Get();
+    if ( !curs ) {
+        if ( const CVDBTable& table = GiIdxTable() ) {
+            curs = new SIdxTableCursor(table);
         }
     }
     return curs;
@@ -642,17 +689,10 @@ CRef<CSeq_id> CWGSDb_Impl::GetGeneralSeq_id(CTempString tag) const
 CRef<CSeq_id> CWGSDb_Impl::GetAccSeq_id(CTempString acc, int version) const
 {
     CRef<CSeq_id> id;
-    if ( acc.empty() ) {
-        return id;
+    if ( !acc.empty() ) {
+        id = new CSeq_id(acc);
+        sx_SetVersion(*id, version);
     }
-    string t;
-    if ( NStr::StartsWith(acc, "XXXX") && m_IdPrefix[0] != 'X' ) {
-        t = acc;
-        t[0] = m_IdPrefix[0];
-        acc = t;
-    }
-    id = new CSeq_id(acc);
-    sx_SetVersion(*id, version);
     return id;
 }
 
@@ -940,20 +980,24 @@ uint64_t CWGSDb_Impl::GetProtGiRowId(TGi gi)
 
 uint64_t CWGSDb_Impl::GetProtAccRowId(const string& acc)
 {
-    if ( !m_ProtAccIndex ) {
-        CRef<SProtTableCursor> prot = Prot();
-        try {
-            m_ProtAccIndex = CVDBTableIndex(prot->m_Table, "gb_accession");
-        }
-        catch ( CSraException& exc ) {
-            if ( exc.GetErrCode() != CSraException::eNotFoundIndex ) {
-                throw;
+    if ( !m_ProtAccIndexIsOpened ) {
+        CMutexGuard guard(m_TableMutex);
+        if ( !m_ProtAccIndexIsOpened ) {
+            if ( const CVDBTable& table = ProtTable() ) {
+                try {
+                    m_ProtAccIndex = CVDBTableIndex(table, "gb_accession");
+                }
+                catch ( CSraException& exc ) {
+                    if ( exc.GetErrCode() != CSraException::eNotFoundIndex ) {
+                        throw;
+                    }
+                }
             }
+            m_ProtAccIndexIsOpened = true;
         }
-        Put(prot);
-        if ( !m_ProtAccIndex ) {
-            return 0;
-        }
+    }
+    if ( !m_ProtAccIndex ) {
+        return 0;
     }
     pair<int64_t, uint64_t> range = m_ProtAccIndex.Find(acc);
     return range.second? range.first: 0;
@@ -2284,12 +2328,19 @@ CTempString CWGSScaffoldIterator::GetAccession(void) const
 }
 
 
+int CWGSScaffoldIterator::GetAccVersion(void) const
+{
+    // scaffolds always have version 1
+    return 1;
+}
+
+
 CRef<CSeq_id> CWGSScaffoldIterator::GetAccSeq_id(void) const
 {
     CRef<CSeq_id> id;
     CTempString acc = GetAccession();
     if ( !acc.empty() ) {
-        id = GetDb().GetAccSeq_id(acc, 1);
+        id = GetDb().GetAccSeq_id(acc, GetAccVersion());
     }
     else {
         id = GetDb().GetScaffoldSeq_id(m_CurrId);
@@ -2647,7 +2698,7 @@ void CWGSProteinIterator::x_ReportInvalid(const char* method) const
 CTempString CWGSProteinIterator::GetAccession(void) const
 {
     x_CheckValid("CWGSProteinIterator::GetAccession");
-    return *CVDBStringValue(m_Prot->ACCESSION(m_CurrId));
+    return *CVDBStringValue(m_Prot->GB_ACCESSION(m_CurrId));
 }
 
 
@@ -2661,26 +2712,16 @@ int CWGSProteinIterator::GetAccVersion(void) const
 CRef<CSeq_id> CWGSProteinIterator::GetAccSeq_id(void) const
 {
     CRef<CSeq_id> id;
-    if ( m_Prot->m_SEQ_ID ) {
-        CTempString id_str = *CVDBStringValue(m_Prot->SEQ_ID(m_CurrId));
-        if ( !id_str.empty() ) {
-            id = new CSeq_id(id_str);
-        }
+    CTempString acc = GetAccession();
+    if ( !acc.empty() ) {
+        id = GetDb().GetAccSeq_id(acc, GetAccVersion());
     }
-    if ( !id ) {
-        CTempString acc = GetAccession();
-        if ( !acc.empty() ) {
-            id = GetDb().GetAccSeq_id(acc, GetAccVersion());
-        }
-        else {
-            id = GetDb().GetProteinSeq_id(m_CurrId);
-        }
-        if ( id && m_Prot->m_GB_ACCESSION ) {
-            CTempString name = m_Prot->GB_ACCESSION(m_CurrId);
-            if ( !name.empty() ) {
-                sx_SetName(*id, name);
-            }
-        }
+    else {
+        id = GetDb().GetProteinSeq_id(m_CurrId);
+    }
+    CTempString name = m_Prot->ACCESSION(m_CurrId);
+    if ( !name.empty() ) {
+        sx_SetName(*id, name);
     }
     return id;
 }
@@ -2689,12 +2730,6 @@ CRef<CSeq_id> CWGSProteinIterator::GetAccSeq_id(void) const
 CRef<CSeq_id> CWGSProteinIterator::GetGeneralSeq_id(void) const
 {
     CRef<CSeq_id> id;
-    if ( m_Prot->m_SEQ_ID_GNL ) {
-        CTempString id_str = *CVDBStringValue(m_Prot->SEQ_ID_GNL(m_CurrId));
-        if ( !id_str.empty() ) {
-            id = new CSeq_id(id_str);
-        }
-    }
     if ( !id ) {
         id = GetDb().GetGeneralSeq_id(GetProteinName());
     }
@@ -2729,20 +2764,6 @@ TSeqPos CWGSProteinIterator::GetSeqLength(void) const
 }
 
 
-bool CWGSProteinIterator::HasRefGi(void) const
-{
-    x_CheckValid("CWGSProteinIterator::HasRefGi");
-    return m_Prot->m_REF_GI;
-}
-
-
-CSeq_id::TGi CWGSProteinIterator::GetRefGi(void) const
-{
-    x_CheckValid("CWGSProteinIterator::GetRefGi");
-    return s_ToGi(*m_Prot->REF_GI(m_CurrId), "CWGSProteinIterator::GetRefGi()");
-}
-
-
 bool CWGSProteinIterator::HasRefAcc(void) const
 {
     x_CheckValid("CWGSProteinIterator::HasRefAcc");
@@ -2754,6 +2775,25 @@ CTempString CWGSProteinIterator::GetRefAcc(void) const
 {
     x_CheckValid("CWGSProteinIterator::GetRefAcc");
     return *CVDBStringValue(m_Prot->REF_ACC(m_CurrId));
+}
+
+
+bool CWGSProteinIterator::HasTitle(void) const
+{
+    x_CheckValid("CWGSProteinIterator::HasTitle");
+
+    return m_Prot->m_TITLE && m_Prot->TITLE(m_CurrId).size();
+}
+
+
+CTempString CWGSProteinIterator::GetTitle(void) const
+{
+    x_CheckValid("CWGSProteinIterator::GetTitle");
+
+    if ( !m_Prot->m_TITLE ) {
+        return CTempString();
+    }
+    return *CVDBStringValue(m_Prot->TITLE(m_CurrId));
 }
 
 
@@ -2843,13 +2883,7 @@ CRef<CSeq_inst> CWGSProteinIterator::GetSeq_inst(void) const
     interval.SetFrom(0);
     interval.SetTo(length-1);
     interval.SetStrand(eNa_strand_plus);
-    CSeq_id& ref_id = interval.SetId();
-    if ( HasRefGi() ) {
-        ref_id.SetGi(GetRefGi());
-    }
-    else {
-        ref_id.Set(GetRefAcc());
-    }
+    interval.SetId().Set(GetRefAcc());
     inst->SetExt().SetDelta().Set().push_back(seg);
     inst->SetLength(length);
     return inst;
@@ -2864,6 +2898,14 @@ CRef<CBioseq> CWGSProteinIterator::GetBioseq(void) const
     GetIds(ret->SetId());
     if ( HasSeq_descr() ) {
         ret->SetDescr(*GetSeq_descr());
+    }
+    else {
+        CTempString title = GetTitle();
+        if ( !title.empty() ) {
+            CRef<CSeqdesc> desc(new CSeqdesc);
+            desc->SetTitle(title);
+            ret->SetDescr().Set().push_back(desc);
+        }
     }
     if ( HasAnnotSet() ) {
         GetAnnotSet(ret->SetAnnot());
