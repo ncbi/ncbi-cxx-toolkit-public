@@ -1,0 +1,810 @@
+Seq-entry ::= set {
+  class genbank,
+  descr {
+    user {
+      type str "NcbiCleanup",
+      data {
+        {
+          label str "method",
+          data str "ExtendedSeqEntryCleanup"
+        },
+        {
+          label str "version",
+          data int 1
+        },
+        {
+          label str "month",
+          data int 12
+        },
+        {
+          label str "day",
+          data int 31
+        },
+        {
+          label str "year",
+          data int 2014
+        }
+      }
+    }
+  },
+  seq-set {
+    set {
+      class genbank,
+      descr {
+        user {
+          class "SMART_V1.0",
+          type id 1,
+          data {
+            {
+              label id 1,
+              num 1,
+              data int 217963
+            }
+          }
+        }
+      },
+      seq-set {
+        set {
+          class nuc-prot,
+          descr {
+            source {
+              genome genomic,
+              org {
+                taxname "Apis andreniformis",
+                db {
+                  {
+                    db "taxon",
+                    tag id 7464
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Apis",
+                    species "andreniformis"
+                  },
+                  lineage "Eukaryota; Metazoa; Ecdysozoa; Arthropoda;
+ Hexapoda; Insecta; Pterygota; Neoptera; Endopterygota; Hymenoptera; Apocrita;
+ Aculeata; Apoidea; Apidae; Apis",
+                  gcode 1,
+                  mgcode 5,
+                  div "INV"
+                }
+              },
+              subtype {
+                {
+                  subtype tissue-type,
+                  name "Thorax"
+                },
+                {
+                  subtype lab-host,
+                  name "Bee Protection Laboratory"
+                },
+                {
+                  subtype country,
+                  name "Thailand"
+                },
+                {
+                  subtype isolation-source,
+                  name "Worker bee"
+                },
+                {
+                  subtype collection-date,
+                  name "21-Dec-2012"
+                },
+                {
+                  subtype collected-by,
+                  name "Ninat Buawangpong"
+                },
+                {
+                  subtype identified-by,
+                  name "Jakkrawut Maitip"
+                }
+              }
+            },
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Maitip",
+                          first "Jakkrawut",
+                          initials "J."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Chantawannakul",
+                          first "Panuwan",
+                          initials "P."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Trueman",
+                          first "Holly",
+                          initials "H.E."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Sutherland",
+                          first "Tara",
+                          initials "T.D."
+                        }
+                      }
+                    }
+                  },
+                  title "Comparative evolution of coiled coil silks amongst
+ the honey bees."
+                }
+              }
+            },
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Maitip",
+                          first "Jakkrawut",
+                          initials "J."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Chantawannakul",
+                          first "Panuwan",
+                          initials "P."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Trueman",
+                          first "Holly",
+                          initials "H.E."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Sutherland",
+                          first "Tara",
+                          initials "T.D."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Chiang Mai University",
+                      div "Department of Biology",
+                      city "Chiang Mai",
+                      sub "Muang District",
+                      country "Thailand",
+                      street "Huay Kaew Road",
+                      postal-code "50200"
+                    }
+                  },
+                  medium email,
+                  date std {
+                    year 2014,
+                    month 12,
+                    day 31
+                  }
+                }
+              }
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "SmartComment",
+                  data str "ALT EMAIL:m_jakkrawut@hotmail.com"
+                },
+                {
+                  label str "AdditionalComment",
+                  data str "BankIt1782274"
+                }
+              }
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "SmartComment",
+                  data str "TOTAL # OF SEQS:1"
+                }
+              }
+            },
+            user {
+              type str "NcbiCleanup",
+              data {
+                {
+                  label str "method",
+                  data str "SeriousSeqEntryCleanup"
+                },
+                {
+                  label str "version",
+                  data int 7
+                },
+                {
+                  label str "month",
+                  data int 12
+                },
+                {
+                  label str "day",
+                  data int 31
+                },
+                {
+                  label str "year",
+                  data int 2014
+                }
+              }
+            },
+            update-date std {
+              year 2014,
+              month 12,
+              day 10,
+              hour 23,
+              minute 43,
+              second 50
+            }
+          },
+          seq-set {
+            seq {
+              id {
+                local str "Seq1",
+                general {
+                  db "BankIt",
+                  tag str "1782274/Seq1"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 8602431
+                }
+              },
+              descr {
+                title "[Apis andreniformis] silk fibroin 1 gene, partial cds.",
+                molinfo {
+                  biomol genomic,
+                  completeness partial
+                },
+                user {
+                  type str "StructuredComment",
+                  data {
+                    {
+                      label str "StructuredCommentPrefix",
+                      data str "##Assembly-Data-START##"
+                    },
+                    {
+                      label str "Sequencing Technology",
+                      data str "Sanger dideoxy sequencing"
+                    },
+                    {
+                      label str "StructuredCommentSuffix",
+                      data str "##Assembly-Data-END##"
+                    }
+                  }
+                },
+                user {
+                  type str "Submission",
+                  data {
+                    {
+                      label str "AdditionalComment",
+                      data str "LocalID:Seq1"
+                    }
+                  }
+                },
+                user {
+                  type str "OrginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "Seq1"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 880,
+                strand ds,
+                seq-data ncbi2na '0ACB9369459B61E7B859C8D287C89684AC9FC9F64828
+E5B1D4278279E4D659B48A46679E58DE1A701F2508369B4B90D929E5940A428068A2926BEB4272
+27A5D8B6B35365936947DE7940824D05965007924D64F371251AC42600C9E22249429E09EF9748
+A0942B4298F964941FA69E694B9259A092574296202E9608253642269779029E790A9E79A59DC9
+75D8282494694B9880659A0D6294A060B27B3E36588F8C008B2A03619251F67C399B967942909D
+4A06C80698436A9C1361DF6010B6CD0F52E80C080F5689681ED04D3A2208E08AF180A000A28CC0
+DC0E9F'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data gene {
+                        locus "AandF1"
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 877,
+                        strand plus,
+                        id local str "Seq1",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                local str "Seq1_prot_1",
+                general {
+                  db "TMSMART",
+                  tag id 8602432
+                }
+              },
+              descr {
+                title "Silk Fibroin1, partial [Apis andreniformis]",
+                molinfo {
+                  biomol peptide,
+                  completeness no-ends
+                },
+                user {
+                  type str "OrginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "Seq1_prot_1"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol aa,
+                length 292,
+                seq-data ncbieaa "GSASATASTAVTARSGLRAGQVALASQKDAVLQAEAAASAASEA
+RAAADLTAKLSQESASVQSQAAAKGKETEEAAVGQARAGLESVSIAASATSAAKEASTAAKTAASALSTATVQAKIAE
+RAAKAEAVASEEAKVKAIAAANLAAAASAAAEAALKAEKVAEEAIARAASAKAAARAAAAALASSKEAATASARNAAE
+SEARNEVAVLIAEIDKKSREIDAATSLNARAAAKASSRNVETATIGANIDSSKQVVSIPVEIKKFPEPELSTSWREDE
+EVTKGKKEDINLNG"
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data prot {
+                        name {
+                          "Silk Fibroin1"
+                        }
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 291,
+                        id local str "Seq1_prot_1",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data cdregion {
+                    frame three,
+                    code {
+                      id 1
+                    }
+                  },
+                  partial TRUE,
+                  product whole local str "Seq1_prot_1",
+                  location int {
+                    from 0,
+                    to 877,
+                    strand plus,
+                    id local str "Seq1",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        set {
+          class nuc-prot,
+          descr {
+            source {
+              genome genomic,
+              org {
+                taxname "Apis florea",
+                common "little honeybee",
+                db {
+                  {
+                    db "taxon",
+                    tag id 7463
+                  }
+                },
+                syn {
+                  "Apis mellifera florea",
+                  "dwarf honeybee"
+                },
+                orgname {
+                  name binomial {
+                    genus "Apis",
+                    species "florea"
+                  },
+                  lineage "Eukaryota; Metazoa; Ecdysozoa; Arthropoda;
+ Hexapoda; Insecta; Pterygota; Neoptera; Endopterygota; Hymenoptera; Apocrita;
+ Aculeata; Apoidea; Apidae; Apis",
+                  gcode 1,
+                  mgcode 5,
+                  div "INV"
+                }
+              },
+              subtype {
+                {
+                  subtype tissue-type,
+                  name "Thorax"
+                },
+                {
+                  subtype lab-host,
+                  name "Bee Protection Laboratory"
+                },
+                {
+                  subtype country,
+                  name "Thailand"
+                },
+                {
+                  subtype isolation-source,
+                  name "Worker bee"
+                },
+                {
+                  subtype collection-date,
+                  name "13-Dec-2012"
+                },
+                {
+                  subtype collected-by,
+                  name "Ninat Buawangpong"
+                },
+                {
+                  subtype identified-by,
+                  name "Jakkrawut Maitip"
+                }
+              }
+            },
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Maitip",
+                          first "Jakkrawut",
+                          initials "J."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Phokasem",
+                          first "Panuwan",
+                          initials "P."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Trueman",
+                          first "Holly",
+                          initials "H."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Sutherland",
+                          first "Tara",
+                          initials "T."
+                        }
+                      }
+                    }
+                  },
+                  title "Comparative evolution of coiled coil silks amongst
+ the honey bees."
+                }
+              }
+            },
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Maitip",
+                          first "Jakkrawut",
+                          initials "J."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Phokasem",
+                          first "Panuwan",
+                          initials "P."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Trueman",
+                          first "Holly",
+                          initials "H."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Sutherland",
+                          first "Tara",
+                          initials "T."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Chiang Mai University",
+                      div "Department of Biology",
+                      city "Chiang Mai",
+                      sub "Muang District",
+                      country "Thailand",
+                      street "Huay Kaew Road",
+                      postal-code "50200"
+                    }
+                  },
+                  medium email,
+                  date std {
+                    year 2014,
+                    month 12,
+                    day 31
+                  }
+                }
+              }
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "SmartComment",
+                  data str "ALT EMAIL:m_jakkrawut@hotmail.com"
+                },
+                {
+                  label str "AdditionalComment",
+                  data str "BankIt1782272"
+                }
+              }
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "SmartComment",
+                  data str "TOTAL # OF SEQS:1"
+                }
+              }
+            },
+            user {
+              type str "NcbiCleanup",
+              data {
+                {
+                  label str "method",
+                  data str "SeriousSeqEntryCleanup"
+                },
+                {
+                  label str "version",
+                  data int 7
+                },
+                {
+                  label str "month",
+                  data int 12
+                },
+                {
+                  label str "day",
+                  data int 31
+                },
+                {
+                  label str "year",
+                  data int 2014
+                }
+              }
+            },
+            update-date std {
+              year 2014,
+              month 12,
+              day 10,
+              hour 23,
+              minute 37,
+              second 34
+            }
+          },
+          seq-set {
+            seq {
+              id {
+                local str "Seq1_1",
+                general {
+                  db "BankIt",
+                  tag str "1782272/Seq1"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 8602429
+                }
+              },
+              descr {
+                title "[Apis florea] silk fibroin 1 gene, partial cds.",
+                molinfo {
+                  biomol genomic,
+                  completeness partial
+                },
+                user {
+                  type str "StructuredComment",
+                  data {
+                    {
+                      label str "StructuredCommentPrefix",
+                      data str "##Assembly-Data-START##"
+                    },
+                    {
+                      label str "Sequencing Technology",
+                      data str "Sanger dideoxy sequencing"
+                    },
+                    {
+                      label str "StructuredCommentSuffix",
+                      data str "##Assembly-Data-END##"
+                    }
+                  }
+                },
+                user {
+                  type str "Submission",
+                  data {
+                    {
+                      label str "AdditionalComment",
+                      data str "LocalID:Seq1"
+                    }
+                  }
+                },
+                user {
+                  type str "OrginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "Seq1"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 851,
+                strand ds,
+                seq-data ncbi2na '9EE167234A1F225A12B27F27D920A396C7509E09E793
+5966D229199E79637869C07C9420DA6D2E4364A79650290A01A28A49AFAD09C89E9762DACD4D96
+4DA51F79E50209341659401E493593CDC4946B109803278889250A7827BE5D228250AD0A63E592
+507E9A79A52E496682495D0A5880BA582094D9089A5DE40A79E42A79E6967725D760A09251A52E
+62019668358A528182C9ECF8D9623E30022CA80D864947D9F0E66E59E50A4275281B201A610DAA
+704D877D8042DB343D4BA030203D5A25A07B4134E88823822BC60280028A3303703A7C'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data gene {
+                        locus "AfloF1"
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 848,
+                        strand plus,
+                        id local str "Seq1_1",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                local str "Seq1_prot_1_1",
+                general {
+                  db "TMSMART",
+                  tag id 8602430
+                }
+              },
+              descr {
+                title "Silk Fibroin1, partial [Apis florea]",
+                molinfo {
+                  biomol peptide,
+                  completeness no-ends
+                },
+                user {
+                  type str "OrginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "Seq1_prot_1"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol aa,
+                length 283,
+                seq-data ncbieaa "AVTARSGLRAGQVALASQKDAVLQAEAAASAASEARAAADLTAK
+LSQESASVQSQAAAKGKETEEAAVGQARAGLESVSIAASATSAAKEASTAAKTAASALSTATVQAKIAERAAKAEAVA
+SEEAKVKAIAAANLAAAASAAAEAALKAEKVAEEAIARAASAKAAARAAAAALASSKEAATASARNAAESEARNEVAV
+LIAEIDKKSREIDAATSLNARAAAKASSRNVETATIGANIDSSKQVVSIPVEIKKFPEPELSTSWREDEEVTKGKKED
+INLNG"
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data prot {
+                        name {
+                          "Silk Fibroin1"
+                        }
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 282,
+                        id local str "Seq1_prot_1_1",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data cdregion {
+                    frame one,
+                    code {
+                      id 1
+                    }
+                  },
+                  partial TRUE,
+                  product whole local str "Seq1_prot_1_1",
+                  location int {
+                    from 0,
+                    to 848,
+                    strand plus,
+                    id local str "Seq1_1",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
