@@ -722,79 +722,6 @@ void CValidError_imp::ValidatePubHasAuthor
 }
 
 
-static bool s_BadCharsInAuthorName (string str, string& badauthor, bool allowcomma, bool allowperiod, bool last)
-{
-    if (NStr::IsBlank (str)) {
-        return false;
-    }
-
-
-    size_t stp = string::npos;
-    if (last) {
-        if (NStr::StartsWith (str, "St.")) {
-            stp = 2;
-        } else if (NStr::StartsWith (str, "de M.")) {
-            stp = 4;
-        }
-    }
-
-    size_t pos = 0;
-    const char *ptr = str.c_str();
-
-    while (*ptr != 0) {
-        if (isalpha (*ptr)
-            || *ptr == '-'
-            || *ptr == '\''
-            || *ptr == ' '
-            || (*ptr == ',' && allowcomma)
-            || (*ptr == '.' && (allowperiod || pos == stp))) {
-            // all these are ok
-            ptr++;
-            pos++;
-        } else {
-            badauthor = str;
-            return true;
-        }
-    }
-    return false;
-}
-
-
-static bool s_BadCharsInAuthor (const CAuthor& author, string& badauthor, bool& last_is_bad)
-{
-    badauthor = "";
-    last_is_bad = false;
-
-    if (author.IsSetName() && author.GetName().IsName()) {
-        if (author.GetName().GetName().IsSetLast()
-            && NStr::EqualNocase (author.GetName().GetName().GetLast(), "et al.")) {
-            return false;
-        }
-        if (author.GetName().GetName().IsSetLast()
-            && s_BadCharsInAuthorName (author.GetName().GetName().GetLast(), badauthor, false, false, true)) {
-            last_is_bad = true;
-            return true;
-        }
-        if (author.GetName().GetName().IsSetFirst()
-            && s_BadCharsInAuthorName (author.GetName().GetName().GetFirst(), badauthor, false, true, false)) {
-            return true;
-        }
-        // for testing, remove
-        if (author.GetName().GetName().IsSetInitials() 
-            && NStr::StartsWith(author.GetName().GetName().GetInitials(), "J.S.R")) {
-            string foo = "";
-            foo = author.GetName().GetName().GetInitials();
-        }
-
-        if (author.GetName().GetName().IsSetInitials()
-            && s_BadCharsInAuthorName (author.GetName().GetName().GetInitials(), badauthor, false, true, false)) {
-            return true;
-        }
-    }
-    return false;
-}
-
-
 void CValidError_imp::ValidateAuthorList 
 (const CAuth_list::C_Names& names,
  const CSerialObject& obj,
@@ -804,16 +731,12 @@ void CValidError_imp::ValidateAuthorList
         list<string> consortium_list;
 
         ITERATE ( CAuth_list::C_Names::TStd, name, names.GetStd() ) {
-            string badauthor = "";
             bool   last_is_bad = false;
-            if (s_BadCharsInAuthor (**name, badauthor, last_is_bad)) {
-                if (last_is_bad) {
-                    PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_BadCharInAuthorLastName, 
-                                "Bad characters in author " + badauthor, obj, ctx);
-                } else {
-                    PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_BadCharInAuthorName,
-                                "Bad characters in author " + badauthor, obj, ctx);
-                }
+            string badauthor = CValidator::BadCharsInAuthor(**name, last_is_bad);
+            if (!NStr::IsBlank(badauthor)) {
+                PostObjErr(eDiag_Warning,
+                    last_is_bad ? eErr_SEQ_FEAT_BadCharInAuthorLastName : eErr_SEQ_FEAT_BadCharInAuthorName,
+                          "Bad characters in author " + badauthor, obj, ctx);
             }
             if ( (*name)->GetName().IsName() ) {
                 const CName_std& nstd = (*name)->GetName().GetName();
@@ -886,25 +809,17 @@ void CValidError_imp::ValidateAuthorList
         }
     } else if (names.IsMl()) {
         ITERATE ( list< string >, str, names.GetMl()) {
-            string badauthor = "";
-            if (s_BadCharsInAuthorName (*str, badauthor, true, true, false)) {
-                if (NStr::IsBlank (badauthor)) {
-                    badauthor = "?";
-                }
+            if (CValidator::BadCharsInAuthorName(*str, true, true, false)) {
                 PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_BadCharInAuthorName, 
-                            "Bad characters in author " + badauthor, obj, ctx);
+                            "Bad characters in author " + *str, obj, ctx);
             }
         }           
     } else if (names.IsStr()) {
 
         ITERATE ( list< string >, str, names.GetStr()) {
-            string badauthor = "";
-            if (s_BadCharsInAuthorName (*str, badauthor, true, true, false)) {
-                if (NStr::IsBlank (badauthor)) {
-                    badauthor = "?";
-                }
+            if (CValidator::BadCharsInAuthorName(*str, true, true, false)) {
                 PostObjErr (eDiag_Warning, eErr_SEQ_FEAT_BadCharInAuthorName, 
-                            "Bad characters in author " + badauthor, obj, ctx);
+                            "Bad characters in author " + *str, obj, ctx);
             }
         }           
     }

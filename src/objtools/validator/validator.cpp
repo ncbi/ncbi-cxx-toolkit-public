@@ -274,6 +274,96 @@ void CValidator::SetProgressCallback(TProgressCallback callback, void* user_data
     m_UserData = user_data;
 }
 
+
+bool CValidator::BadCharsInAuthorName(const string& str, bool allowcomma, bool allowperiod, bool last)
+{
+    if (NStr::IsBlank(str)) {
+        return false;
+    }
+
+
+    size_t stp = string::npos;
+    if (last) {
+        if (NStr::StartsWith(str, "St.")) {
+            stp = 2;
+        }
+        else if (NStr::StartsWith(str, "de M.")) {
+            stp = 4;
+        }
+    }
+
+    size_t pos = 0;
+    const char *ptr = str.c_str();
+
+    while (*ptr != 0) {
+        if (isalpha(*ptr)
+            || *ptr == '-'
+            || *ptr == '\''
+            || *ptr == ' '
+            || (*ptr == ',' && allowcomma)
+            || (*ptr == '.' && (allowperiod || pos == stp))) {
+            // all these are ok
+            ptr++;
+            pos++;
+        }
+        else {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+bool CValidator::BadCharsInAuthorLastName(const string& str)
+{
+    if (NStr::EqualNocase(str, "et al.")) {
+        // this is ok
+        return false;
+    } else {
+        return BadCharsInAuthorName(str, false, false, true);
+    }
+}
+
+bool CValidator::BadCharsInAuthorFirstName(const string& str)
+{
+    return BadCharsInAuthorName(str, false, true, false);
+}
+
+
+bool CValidator::BadCharsInAuthorInitials(const string& str)
+{
+    return BadCharsInAuthorName(str, false, true, false);
+}
+
+string CValidator::BadCharsInAuthor(const CName_std& author, bool& last_is_bad)
+{
+    string badauthor = kEmptyStr;
+    last_is_bad = false;
+
+    if (author.IsSetLast() && BadCharsInAuthorLastName(author.GetLast())) {
+        last_is_bad = true;
+        badauthor = author.GetLast();
+    } else if (author.IsSetFirst() && BadCharsInAuthorFirstName(author.GetFirst())) {
+        badauthor = author.GetFirst();
+    }
+    else if (author.IsSetInitials() && BadCharsInAuthorInitials(author.GetInitials())) {
+        badauthor = author.GetInitials();
+    }
+    return badauthor;
+}
+
+
+string CValidator::BadCharsInAuthor(const CAuthor& author, bool& last_is_bad)
+{
+    last_is_bad = false;
+    if (author.IsSetName() && author.GetName().IsName()) {
+        return BadCharsInAuthor(author.GetName().GetName(), last_is_bad);
+    } else {
+        return kEmptyStr;
+    }
+}
+
+
 CCache::CCache(void)
 {
     m_impl.reset(new CCacheImpl);

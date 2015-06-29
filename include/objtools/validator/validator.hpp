@@ -37,6 +37,8 @@
 #include <corelib/ncbidiag.hpp>
 #include <serial/objectinfo.hpp>
 #include <serial/serialbase.hpp>
+#include <objects/general/Name_std.hpp>
+#include <objects/biblio/Author.hpp>
 #include <objects/valerr/ValidErrItem.hpp>
 #include <objects/valerr/ValidError.hpp>
 #include <objmgr/scope.hpp>
@@ -170,6 +172,13 @@ public:
     CConstRef<CValidError> GetTSANStretchErrors(const CBioseq& seq); 
     CConstRef<CValidError> GetTSACDSOnMinusStrandErrors (const CSeq_feat& f, const CBioseq& seq);
     CConstRef<CValidError> GetTSAConflictingBiomolTechErrors (const CBioseq& seq);
+
+    static bool BadCharsInAuthorName(const string& str, bool allowcomma, bool allowperiod, bool last);
+    static bool BadCharsInAuthorLastName(const string& str);
+    static bool BadCharsInAuthorFirstName(const string& str);
+    static bool BadCharsInAuthorInitials(const string& str);
+    static string BadCharsInAuthor(const CName_std& author, bool& last_is_bad);
+    static string BadCharsInAuthor(const CAuthor& author, bool& last_is_bad);
 
     // progress reporting
     class NCBI_VALIDATOR_EXPORT CProgressInfo
