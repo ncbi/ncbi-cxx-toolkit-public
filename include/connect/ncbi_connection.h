@@ -439,6 +439,33 @@ extern NCBI_XCONNECT_EXPORT TCONN_Flags CONN_GetFlags
  );
 
 
+/** Associate an arbitraty user data pointer with the connection.
+ * The pointer is not used by the connection itself but is retrievable with
+ * CONN_GetUserData() from the user's code as long as the CONN handle remains
+ * valid.  Successive calls to CONN_SetUserData() replace the pointer value.
+ * @return
+ *  eIO_Success on success, other error code on error.
+ * @sa
+ *  CONN_Create, CONN_GetUserData
+ */
+extern NCBI_XCONNECT_EXPORT EIO_Status CONN_SetUserData
+(CONN  conn,  /**< [in]  connection handle */
+ void* data   /**< [in]  user data pointer */
+ );
+
+
+/** Get current value of the user's data pointer last associated with the
+ * connection, or NULL (if CONN is NULL or no pointer is currently set).
+ * @return
+ *  Current value of the user pointer.
+ * @sa
+ *  CONN_Create, CONN_SetUserData
+ */
+extern NCBI_XCONNECT_EXPORT void* CONN_GetUserData
+(CONN conn  /**< [in]  connection handle */
+ );
+
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

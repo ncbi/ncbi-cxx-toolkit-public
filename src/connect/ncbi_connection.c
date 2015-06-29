@@ -150,6 +150,8 @@ typedef struct SConnectionTag {
 
     BUF             buf;         /* storage for peek data                    */
 
+    void*           data;        /* user data pointer                        */
+
     /* "[o|r|w|c]_timeout" is either 0 (kInfiniteTimeout), kDefaultTimeout
        (to use connector-specific one), or points to "[oo|rr|ww|cc]_timeout" */
     const STimeout* o_timeout;   /* timeout on open                          */
@@ -1194,4 +1196,24 @@ extern TCONN_Flags CONN_GetFlags(CONN conn)
     CONN_CALLTRACE(GetFlags);
 
     return conn ? conn->flags & ~fCONN_Flush : 0;
+}
+
+
+extern EIO_Status CONN_SetUserData(CONN conn, void* data)
+{
+    CONN_CALLTRACE(SetUserPtr);
+
+    if (!conn)
+        return eIO_InvalidArg;
+
+    conn->data = data;
+    return eIO_Success;
+}
+
+
+extern void* CONN_GetUserData(CONN conn)
+{
+    CONN_CALLTRACE(GetUserPtr);
+
+    return conn ? conn->data : 0;
 }
