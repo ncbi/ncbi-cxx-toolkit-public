@@ -141,3 +141,7 @@ Fixed code generation and serialization of sequences of base64binary elements.
 Use HTML entities in Identifier names if needed and possible.
 Added possibility to rename enum values from DEF file.
 Fixed bugs in schema parsing .
+
+June 29, 2015
+version 2.14.0,  CXX-6104
+Added option to selectively write named integers by value only.
