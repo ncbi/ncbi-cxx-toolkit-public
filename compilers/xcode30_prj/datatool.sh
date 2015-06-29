@@ -91,9 +91,10 @@ fi
 if test ! -x "$DATATOOL_EXE"; then
   echo "=============================================================================="
   echo Building $DT locally, please wait
-  echo "xcodebuild -project $PTB_SLN -target $DT -configuration ReleaseDLL"
+  cmd="`dirname $0`/xcodebuild.sh -project $PTB_SLN -target $DT -configuration ReleaseDLL"
+  echo "$cmd"
   echo "=============================================================================="
-  xcodebuild -project $PTB_SLN -target $DT -configuration ReleaseDLL
+  $cmd
 else
   echo "=============================================================================="
   echo "Using PREBUILT $DT at $DATATOOL_EXE"
