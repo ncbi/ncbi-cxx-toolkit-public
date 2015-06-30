@@ -1269,7 +1269,7 @@ BOOST_AUTO_TEST_CASE(Scaffold2Fasta2)
 }
 
 
-BOOST_AUTO_TEST_CASE(WithdrawnCheck)
+BOOST_AUTO_TEST_CASE(WithdrawnStateTest)
 {
     CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
     CScope scope(*om);
@@ -1406,4 +1406,10 @@ BOOST_AUTO_TEST_CASE(HashTest)
     BOOST_CHECK(gb_hash != 0);
 
     BOOST_CHECK_EQUAL(wgs_hash, gb_hash);
+}
+
+NCBITEST_INIT_TREE()
+{
+    NCBITEST_DISABLE(StateTest);
+    NCBITEST_DISABLE(WithdrawnStateTest);
 }
