@@ -217,7 +217,7 @@ int CCleanupApp::Run(void)
     } 
     else {
         
-            string asn_type = args["type"].AsString();
+        string asn_type = args["type"].AsString();
         if (args["sub"] || asn_type == "seq-submit") {  // submission
             CRef<CSeq_submit> sub(new CSeq_submit);
             if (sub.Empty()) {
@@ -285,26 +285,34 @@ int CCleanupApp::Run(void)
                 HandleSeqEntry( se );
 			}
             else if ( asn_type == "any" ) {
-                //
-                //  Try the first three in turn:
-                //
-                string strNextTypeName = is->PeekNextTypeName();
+                size_t num_cleaned = 0;
+                while (true) {
+                    //
+                    //  Try the first three in turn:
+                    //
+                    string strNextTypeName = is->PeekNextTypeName();
                 
-                if ( ! ObtainSeqEntryFromSeqEntry( is, se ) ) {
-                    is->Close();
-                    is.reset( x_OpenIStream( args ) );
-                    if ( ! ObtainSeqEntryFromBioseqSet( is, se ) ) {
+                    if ( ! ObtainSeqEntryFromSeqEntry( is, se ) ) {
                         is->Close();
                         is.reset( x_OpenIStream( args ) );
-                        if ( ! ObtainSeqEntryFromBioseq( is, se ) ) {
-                            NCBI_THROW( 
-                                CFlatException, eInternal, 
-                                "Unable to construct Seq-entry object" 
-                            );
+                        if ( ! ObtainSeqEntryFromBioseqSet( is, se ) ) {
+                            is->Close();
+                            is.reset( x_OpenIStream( args ) );
+                            if ( ! ObtainSeqEntryFromBioseq( is, se ) ) {
+                                if (num_cleaned == 0) {
+                                    NCBI_THROW(
+                                        CFlatException, eInternal,
+                                        "Unable to construct Seq-entry object"
+                                        );
+                                } else {
+                                    break;
+                                }
+                            }
                         }
                     }
+                    HandleSeqEntry(se);
+                    num_cleaned++;
                 }
-                HandleSeqEntry(se);
             }
         }
     }
