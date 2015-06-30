@@ -130,7 +130,9 @@ extern "C" {
 #  if defined(__sparc)  &&  !defined(__sparcv9)
 #    define NCBI_COUNTER_RESERVED_VALUE 0x3FFFFFFF
 #  endif
-#elif defined(NCBI_HAVE_CXX11)
+#elif defined(NCBI_HAVE_CXX11) && !defined(NCBI_OS_MSWIN)
+   /* std::atomic<> in MSVC has non-default constructor so
+      static CAtomicCounter couldn't be initialized in MT-safe manner */
     typedef size_t TNCBIAtomicValue;
 #  if SIZEOF_SIZE_T == 8
 #    define NCBI_COUNTER_64_BIT 1
