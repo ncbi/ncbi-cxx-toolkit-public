@@ -140,6 +140,9 @@ void CCleanupApp::Init(void)
         arg_desc->AddFlag("c", "Compressed file");
         // propogate top descriptors
         arg_desc->AddFlag("p", "Propogate top descriptors");
+
+        // imitate limitation of C Toolkit version
+        arg_desc->AddFlag("firstonly", "Process only first element");
     }}
     
     // output
@@ -312,6 +315,9 @@ int CCleanupApp::Run(void)
                     }
                     HandleSeqEntry(se);
                     num_cleaned++;
+                    if (args["firstonly"]) {
+                        break;
+                    }
                 }
             }
         }
