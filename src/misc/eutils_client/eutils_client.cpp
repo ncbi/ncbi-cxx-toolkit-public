@@ -862,6 +862,59 @@ void CEutilsClient::Summary(const string& db,
     }
 }
 
+
+void CEutilsClient::Fetch(const string& db,
+                          const vector<int>& uids,
+                          CNcbiOstream& ostr,
+                          const string& retmode)
+{
+    string params;
+    params += "db=" + NStr::URLEncode(db);
+    params += "&retmode=" + NStr::URLEncode(retmode);
+
+    string s;
+    ITERATE (vector<int>, it, uids) {
+        if ( !s.empty() ) {
+            s += ",";
+        }
+        s += NStr::NumericToString(*it);
+    }
+    params += "&id=" + s;
+
+    bool success = false;
+    m_Url.clear();
+    m_Time.clear();
+    for (int retries = 0;  retries < 10;  ++retries) {
+        try {
+            string path = "/entrez/eutils/efetch.fcgi";
+            CConn_HttpStream istr(m_HostName,
+                                  path);
+            m_Url.push_back(x_BuildUrl(m_HostName, path, params));
+            istr << params;
+            m_Time.push_back(CTime(CTime::eCurrent));
+            if (NcbiStreamCopy(ostr, istr)) {
+                success = true;
+                break;
+            }
+        }
+        catch (CException& e) {
+            ERR_POST(Warning << "failed on attempt " << retries + 1
+                     << ": " << e);
+        }
+
+        int sleep_secs = ::sqrt((double)retries);
+        if (sleep_secs) {
+            SleepSec(sleep_secs);
+        }
+    }
+
+    if ( !success ) {
+        NCBI_THROW(CException, eUnknown,
+                   "failed to execute efetch request: " + params);
+    }
+}
+
+
 const list<string> CEutilsClient::GetUrl()
 {
     return m_Url;

@@ -80,6 +80,28 @@ void CTestEutilsClient::Init(void)
                      "Entrez Ids, comma separated.",
                      CArgDescriptions::eString);
 
+    arg_desc->AddDefaultKey("retmode", "format",
+                            "Format (retmode argument for efetch.cgi)",
+                            CArgDescriptions::eString,
+                            "xml");
+    arg_desc->SetConstraint("retmode",
+                            &(*new CArgAllow_Strings,
+                              "xml",
+                              "html",
+                              "text",
+                              "asn.1"));
+
+    arg_desc->AddOptionalKey("fetch", "UID",
+                             "Fetch data for a given UID in db",
+                             CArgDescriptions::eInteger);
+    arg_desc->SetDependency("fetch",
+                            CArgDescriptions::eRequires,
+                            "db");
+    arg_desc->SetDependency("fetch",
+                            CArgDescriptions::eRequires,
+                            "retmode");
+
+
     arg_desc->AddDefaultKey("o", "Output",
             "Output stream, default to stdin.",
             CArgDescriptions::eOutputFile, "-", CArgDescriptions::fFileFlags);
@@ -131,6 +153,12 @@ int CTestEutilsClient::Run(void)
         docsums.save_to_stream( ostr, xml::save_op_no_decl);
     }
 
+    if (args["fetch"]) {
+        string db_to = args["db"].AsString();
+        int uid = args["fetch"].AsInteger();
+        vector<int> uids(1, uid);
+        ecli.Fetch(db, uids, ostr, args["retmode"].AsString());
+    }
     return 0;
 }
 

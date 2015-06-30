@@ -128,6 +128,11 @@ public:
                 const vector<int>& uids,
                 xml::document& docsums);
 
+    void Fetch(const string& db,
+               const vector<int>& uids,
+               CNcbiOstream& ostr,
+               const string& retmode="xml");
+
     const list<string> GetUrl();
     const list<CTime> GetTime();
 
