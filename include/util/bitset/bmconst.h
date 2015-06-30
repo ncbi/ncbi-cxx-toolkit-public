@@ -147,11 +147,11 @@ const unsigned DeBruijn_bit_position<T>::_multiply[32] = {
 */
 template<bool T> struct first_bit_table
 {
-    static const char _idx[256];
+    static const signed char _idx[256];
 };
 
 template<bool T>
-const char first_bit_table<T>::_idx[256] = {
+const signed char first_bit_table<T>::_idx[256] = {
   -1, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3,
     4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
     5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
