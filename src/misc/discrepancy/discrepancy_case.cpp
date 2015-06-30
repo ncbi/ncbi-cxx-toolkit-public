@@ -135,8 +135,8 @@ DISCREPANCY_CASE(COUNT_TRNAS, CSeqFeatData)
     if (obj.GetSubtype() != CSeqFeatData::eSubtype_tRNA) {
         return;
     }
-    //CBioSource::TGenome genome = context.GetCurrentGenome();
-    //if (genome != CBioSource::eGenome_mitochondrion && genome != CBioSource::eGenome_chloroplast && genome != CBioSource::eGenome_plastid) return;
+    CBioSource::TGenome genome = context.GetCurrentGenome();
+    if (genome != CBioSource::eGenome_mitochondrion && genome != CBioSource::eGenome_chloroplast && genome != CBioSource::eGenome_plastid) return;
 
     static size_t countBS = 0;
     if (countBS != context.GetCountBioseq()) {
@@ -240,8 +240,8 @@ DISCREPANCY_CASE(COUNT_RRNAS, CSeqFeatData)
     if (obj.GetSubtype() != CSeqFeatData::eSubtype_rRNA) {
         return;
     }
-    //CBioSource::TGenome genome = context.GetCurrentGenome();
-    //if (genome != CBioSource::eGenome_mitochondrion && genome != CBioSource::eGenome_chloroplast && genome != CBioSource::eGenome_plastid) return;
+    CBioSource::TGenome genome = context.GetCurrentGenome();
+    if (genome != CBioSource::eGenome_mitochondrion && genome != CBioSource::eGenome_chloroplast && genome != CBioSource::eGenome_plastid) return;
 
     static size_t countBS = 0;
     if (countBS != context.GetCountBioseq()) {

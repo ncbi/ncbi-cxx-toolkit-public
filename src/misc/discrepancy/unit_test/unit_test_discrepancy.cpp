@@ -165,8 +165,8 @@ BOOST_AUTO_TEST_CASE(COUNT_TRNAS)
       inst {\
         repr raw,\
         mol dna,\
-        length 24,\
-        seq-data iupacna \"AATTGGCCAANNAATTGGCCAANN\"\
+        length 5,\
+        seq-data iupacna \"AAAAA\"\
       },\
       annot {\
         {\
@@ -233,13 +233,92 @@ BOOST_AUTO_TEST_CASE(COUNT_TRNAS)
 
 BOOST_AUTO_TEST_CASE(COUNT_RRNAS)
 {
-    CRef<CSeq_entry> e1 = unit_test_util::BuildGoodSeq();
+    const char* inp = "Seq-entry ::= set {\
+      class genbank ,\
+      seq-set {\
+        set {\
+          class nuc-prot ,\
+          descr {\
+            source {\
+              genome mitochondrion ,\
+              org {\
+                taxname \"Simulium aureohirtum\" ,\
+                db {\
+                  {\
+                    db \"taxon\" ,\
+                    tag\
+                      id 154798 } } ,\
+                orgname {\
+                  name\
+                    binomial {\
+                      genus \"Simulium\" ,\
+                      species \"aureohirtum\" } ,\
+                  gcode 1 ,\
+                  mgcode 5 ,\
+                  div \"INV\" } } ,\
+              subtype {\
+                {\
+                  subtype country ,\
+                  name \"China Nanfeng Mountian\" } } } } ,\
+          seq-set {\
+            seq {\
+              id {\
+                genbank {\
+                  accession \"KP793690\" } } ,\
+              inst {\
+                repr raw,\
+                mol dna,\
+                length 5,\
+                seq-data iupacna \"AAAAA\"\
+              },\
+              annot {\
+                {\
+                  data\
+                    ftable {\
+                      {\
+                        data\
+                          rna {\
+                            type rRNA ,\
+                            ext\
+                              name \"16S ribosomal RNA\" } ,\
+                        location\
+                          int {\
+                            from 12765 ,\
+                            to 14100 ,\
+                            strand minus ,\
+                            id\
+                              local\
+                                str \"nuc_1\" } } ,\
+                      {\
+                        data\
+                          rna {\
+                            type rRNA ,\
+                            ext\
+                              name \"16S ribosomal RNA\" } ,\
+                        location\
+                          int {\
+                            from 12765 ,\
+                            to 14100 ,\
+                            strand minus ,\
+                            id\
+                              local\
+                                str \"nuc_1\" } } } } } } } } } } }";
+    CNcbiIstrstream istr(inp);
+    CRef<CSeq_entry> entry (new CSeq_entry);
+    istr >> MSerial_AsnText >> *entry;
     CScope scope(*CObjectManager::GetInstance());
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*e1);
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
 
     CRef<CDiscrepancySet> Set = CDiscrepancySet::New(scope);
     Set->AddTest("COUNT_RRNAS");
+    Set->Parse(seh);
+    Set->Summarize();
+    const vector<CRef<CDiscrepancyCase> >& tst = Set->GetTests();
+    BOOST_REQUIRE_EQUAL(tst.size(), 1);
+    TReportItemList rep = tst[0]->GetReport();
+    BOOST_REQUIRE_EQUAL(rep.size(), 2);
+    BOOST_REQUIRE_EQUAL(rep[0]->GetMsg(), "sequence KP793690 has 2 rRNA features");
+    BOOST_REQUIRE_EQUAL(rep[1]->GetMsg(), "2 rRNA features on KP793690 have the same name (16S ribosomal RNA)");
 }
 
 

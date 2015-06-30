@@ -223,7 +223,7 @@ const CBioSource* CDiscrepancyContext::GetCurrentBiosource()
     static size_t count = 0;
     if (count != m_Count_Bioseq) {
         count = m_Count_Bioseq;
-        biosrc = sequence::GetBioSource(*m_Current_Bioseq);
+        biosrc = sequence::GetBioSource(m_Scope->GetBioseqHandle(*m_Current_Bioseq));
     }
     return biosrc;
 }
@@ -236,7 +236,7 @@ CBioSource::TGenome CDiscrepancyContext::GetCurrentGenome()
     if (count != m_Count_Bioseq) {
         count = m_Count_Bioseq;
         const CBioSource* biosrc = GetCurrentBiosource();
-        genome = biosrc->GetGenome();
+        genome = biosrc ? biosrc->GetGenome() : NULL;
     }
     return genome;
 }
