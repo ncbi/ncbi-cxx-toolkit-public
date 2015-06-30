@@ -129,19 +129,105 @@ BOOST_AUTO_TEST_CASE(COUNT_PROTEINS)
     BOOST_REQUIRE_EQUAL(tst.size(), 1);
     TReportItemList rep = tst[0]->GetReport();
     BOOST_REQUIRE_EQUAL(rep.size(), 1);
-    //BOOST_REQUIRE_EQUAL(rep[0]->GetMsg(), "1 nucleotide Bioseq is present");
+    BOOST_REQUIRE_EQUAL(rep[0]->GetMsg(), "0 protein sequences are present");
 }
 
 
 BOOST_AUTO_TEST_CASE(COUNT_TRNAS)
 {
-    CRef<CSeq_entry> e1 = unit_test_util::BuildGoodSeq();
+    const char* inp = "Seq-entry ::= seq {\
+      id {\
+        local str \"my_id\"\
+      },\
+      descr {\
+        source {\
+          genome plastid,\
+          org {\
+            taxname \"Sebaea microphylla\",\
+            db {\
+              {\
+                db \"taxon\",\
+                tag id 592768\
+              }\
+            },\
+            orgname {\
+              lineage \"some lineage\"\
+            }\
+          },\
+          subtype {\
+            {\
+              subtype chromosome,\
+              name \"1\"\
+            }\
+          }\
+        }\
+      },\
+      inst {\
+        repr raw,\
+        mol dna,\
+        length 24,\
+        seq-data iupacna \"AATTGGCCAANNAATTGGCCAANN\"\
+      },\
+      annot {\
+        {\
+          data ftable {\
+            {\
+              data rna {\
+                type tRNA,\
+                ext tRNA {\
+                  aa iupacaa 70,\
+                  anticodon int {\
+                    from 8,\
+                    to 10,\
+                    id local str \"my_id\"\
+                  }\
+                }\
+              },\
+              location int {\
+                from 0,\
+                to 10,\
+                id local str \"my_id\"\
+              }\
+            },\
+            {\
+              data rna {\
+                type tRNA,\
+                ext tRNA {\
+                  aa iupacaa 70,\
+                  anticodon int {\
+                    from 8,\
+                    to 10,\
+                    id local str \"my_id\"\
+                  }\
+                }\
+              },\
+              location int {\
+                from 0,\
+                to 10,\
+                id local str \"my_id\"\
+              }\
+            }\
+          }\
+        }\
+      }\
+    }";
+    CNcbiIstrstream istr(inp);
+    CRef<CSeq_entry> entry (new CSeq_entry);
+    istr >> MSerial_AsnText >> *entry;
     CScope scope(*CObjectManager::GetInstance());
-    scope.AddDefaults();
-    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*e1);
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
 
     CRef<CDiscrepancySet> Set = CDiscrepancySet::New(scope);
     Set->AddTest("COUNT_TRNAS");
+    Set->Parse(seh);
+    Set->Summarize();
+    const vector<CRef<CDiscrepancyCase> >& tst = Set->GetTests();
+    BOOST_REQUIRE_EQUAL(tst.size(), 1);
+    TReportItemList rep = tst[0]->GetReport();
+    BOOST_REQUIRE_EQUAL(rep.size(), 21);
+    BOOST_REQUIRE_EQUAL(rep[0]->GetMsg(), "sequence my_id has 2 tRNA features");
+    BOOST_REQUIRE_EQUAL(rep[1]->GetMsg(), "sequence my_id has 2 trna-Phe features");
+    BOOST_REQUIRE_EQUAL(rep[2]->GetMsg(), "sequence my_id is missing trna-Ala");
 }
 
 
