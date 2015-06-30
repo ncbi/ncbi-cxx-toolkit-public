@@ -70,6 +70,9 @@ static const char* const s_taxonName = "taxon" ;
 int
 COrg_ref::GetTaxId() const
 {
+    if( ! IsSetDb() ) {
+        return 0;
+    }
     const TDb& lDbTags = GetDb();
  
     for(TDb::const_iterator i = lDbTags.begin();
