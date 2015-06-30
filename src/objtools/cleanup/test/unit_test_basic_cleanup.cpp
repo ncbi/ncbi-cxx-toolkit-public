@@ -538,3 +538,30 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2209)
     BOOST_CHECK_EQUAL(true, cbr.GetLoc().GetMix().Get().back()->IsPnt());
     BOOST_CHECK_EQUAL(cbr.GetLoc().GetMix().Get().back()->GetPnt().GetPoint(), 1549);
 }
+
+BOOST_AUTO_TEST_CASE(Test_SQD_2212)
+{
+    CRef<CSeq_feat> feat(new CSeq_feat());
+    feat->SetData().SetCdregion();
+    CRef<CSeq_loc> part1(new CSeq_loc());
+    part1->SetInt().SetId().SetLocal().SetStr("foo");
+    part1->SetInt().SetFrom(100);
+    part1->SetInt().SetTo(223);
+    feat->SetLocation().SetMix().Set().push_back(part1);
+    CRef<CSeq_loc> part2(new CSeq_loc());
+    part2->SetInt().SetId().SetLocal().SetStr("foo");
+    part2->SetInt().SetFrom(1549);
+    part2->SetInt().SetTo(1600);
+    feat->SetLocation().SetMix().Set().push_back(part2);
+    CRef<CGb_qual> q(new CGb_qual("transl_except", "(pos:4..6,aa:Leu)"));
+    feat->SetQual().push_back(q);
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    changes = cleanup.BasicCleanup(*feat);
+    // should not convert transl_except qual to code break
+    // because not in coding region location
+    BOOST_CHECK_EQUAL(true, feat->IsSetQual());
+    BOOST_CHECK_EQUAL(false, feat->GetData().GetCdregion().IsSetCode_break());
+}
