@@ -503,3 +503,38 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2231)
     BOOST_CHECK_EQUAL(src->GetSubtype().front()->GetName(), "New Zealand: Natural CO2 spring, Hakanoa, Northland");
 
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_SQD_2209)
+{
+    CRef<CSeq_feat> feat(new CSeq_feat());
+    feat->SetData().SetCdregion();
+    CRef<CSeq_loc> part1(new CSeq_loc());
+    part1->SetInt().SetId().SetLocal().SetStr("foo");
+    part1->SetInt().SetFrom(100);
+    part1->SetInt().SetTo(223);
+    feat->SetLocation().SetMix().Set().push_back(part1);
+    CRef<CSeq_loc> part2(new CSeq_loc());
+    part2->SetInt().SetId().SetLocal().SetStr("foo");
+    part2->SetInt().SetFrom(1549);
+    part2->SetInt().SetTo(1600);
+    feat->SetLocation().SetMix().Set().push_back(part2);
+    CRef<CGb_qual> q(new CGb_qual("transl_except", "(pos:223..224,1550,aa:Met)"));
+    feat->SetQual().push_back(q);
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    changes = cleanup.BasicCleanup(*feat);
+    BOOST_CHECK_EQUAL(false, feat->IsSetQual());
+    BOOST_CHECK_EQUAL(feat->GetData().GetCdregion().GetCode_break().size(), 1);
+    const CCode_break& cbr = *(feat->GetData().GetCdregion().GetCode_break().front());
+    BOOST_CHECK_EQUAL(cbr.GetAa().GetNcbieaa(), 77);
+    BOOST_CHECK_EQUAL(true, cbr.GetLoc().IsMix());
+    BOOST_CHECK_EQUAL(cbr.GetLoc().GetMix().Get().size(), 2);
+    BOOST_CHECK_EQUAL(true, cbr.GetLoc().GetMix().Get().front()->IsInt());
+    BOOST_CHECK_EQUAL(cbr.GetLoc().GetMix().Get().front()->GetInt().GetFrom(), 222);
+    BOOST_CHECK_EQUAL(cbr.GetLoc().GetMix().Get().front()->GetInt().GetTo(), 223);
+    BOOST_CHECK_EQUAL(true, cbr.GetLoc().GetMix().Get().back()->IsPnt());
+    BOOST_CHECK_EQUAL(cbr.GetLoc().GetMix().Get().back()->GetPnt().GetPoint(), 1549);
+}
