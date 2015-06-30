@@ -195,7 +195,7 @@ static
 #endif
 void wait_threads(CAtomicCounter& counter)
 {
-    CAtomicCounter::TValue add = 1;
+    int add = 1;
     int wait_count = 0;
     while ( counter.Add(add) < CAtomicCounter::TValue(sNumThreads) ) {
         add = 0;
