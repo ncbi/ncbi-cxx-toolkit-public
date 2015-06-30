@@ -8087,6 +8087,16 @@ void CNewCleanup_imp::ProtFeatfBC (
             ChangeMade (CCleanupChange::eChangeComment);
         }
     }
+        
+    // move prot.db to feat.dbxref
+    if (PROTREF_HAS_DBXREF (pr)) {
+        FOR_EACH_DBXREF_ON_PROTREF (db_itr, pr) {
+            CRef <CDbtag> dbc (*db_itr);
+            ADD_DBXREF_TO_SEQFEAT (sf, dbc);
+        }
+        RESET_FIELD (pr, Db);
+        ChangeMade (CCleanupChange::eChangeDbxrefs);
+    }
 
     REMOVE_IF_EMPTY_NAME_ON_PROTREF(pr);
 }
