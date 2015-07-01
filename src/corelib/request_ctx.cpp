@@ -342,7 +342,7 @@ void CRequestContext::SetHitID(const string& hit)
 
 const string& CRequestContext::GetNextSubHitID(void)
 {
-    static CSafeStatic<CAtomicCounter_WithAutoInit> s_DefaultSubHitCounter;
+    static CAtomicCounter s_DefaultSubHitCounter;
 
     _ASSERT(IsSetHitID());
 
@@ -350,7 +350,7 @@ const string& CRequestContext::GetNextSubHitID(void)
     // duplicate phids in different threads.
     m_SubHitIDCache = GetHitID();
     int sub_hit_id = m_SubHitIDCache == GetDiagContext().GetDefaultHitID() ?
-        s_DefaultSubHitCounter->Add(1) : ++m_SubHitID;
+        s_DefaultSubHitCounter.Add(1) : ++m_SubHitID;
 
     // Cache the string so that C code can use it.
     m_SubHitIDCache += "." + NStr::NumericToString(sub_hit_id);
