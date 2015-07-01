@@ -236,7 +236,7 @@ CBioSource::TGenome CDiscrepancyContext::GetCurrentGenome()
     if (count != m_Count_Bioseq) {
         count = m_Count_Bioseq;
         const CBioSource* biosrc = GetCurrentBiosource();
-        genome = biosrc ? biosrc->GetGenome() : NULL;
+        genome = biosrc ? biosrc->GetGenome() : CBioSource::eGenome_unknown;
     }
     return genome;
 }
