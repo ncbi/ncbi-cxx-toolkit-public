@@ -565,3 +565,18 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2212)
     BOOST_CHECK_EQUAL(true, feat->IsSetQual());
     BOOST_CHECK_EQUAL(false, feat->GetData().GetCdregion().IsSetCode_break());
 }
+
+BOOST_AUTO_TEST_CASE(Test_SQD_2221)
+{
+    CRef<CBioSource> src(new CBioSource());
+    CRef<CSubSource> q(new CSubSource(CSubSource::eSubtype_fwd_primer_seq, "GATTA  CAgattaca<OTHER>"));
+    src->SetSubtype().push_back(q);
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    changes = cleanup.BasicCleanup(*src);
+    BOOST_CHECK_EQUAL(false, src->IsSetSubtype());
+    BOOST_CHECK_EQUAL(true, src->IsSetPcr_primers());
+    BOOST_CHECK_EQUAL(src->GetPcr_primers().Get().front()->GetForward().Get().front()->GetSeq(), "gattacagattaca<OTHER>");
+}
