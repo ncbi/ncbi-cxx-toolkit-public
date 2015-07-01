@@ -225,7 +225,7 @@ void CIdMapper::MapObject(CSerialObject& object)
 
 // Composite mapper
 
-CAtomicCounter_WithAutoInit CIdMapperComposite::SNode::sm_Counter(0);
+CAtomicCounter CIdMapperComposite::SNode::sm_Counter;
 
 void CIdMapperComposite::AddMapper(IIdMapper* mapper,
                                     TPriority  priority,

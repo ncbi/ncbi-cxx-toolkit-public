@@ -34,6 +34,7 @@
  */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbicntr.hpp>
 #include <objtools/readers/iidmapper.hpp>
 #include <objmgr/seq_loc_mapper.hpp>
 #include <objmgr/scope.hpp>
@@ -147,7 +148,7 @@ public:
     virtual CRef<CSeq_loc> Map(const CSeq_loc& loc);
 
 private:
-    typedef int TOrder;
+    typedef CAtomicCounter::TValue TOrder;
     struct SNode {
         typedef CIdMapperComposite::TPriority TPriority;
         typedef CIdMapperComposite::TOrder TOrder;
@@ -155,7 +156,7 @@ private:
         AutoPtr<IIdMapper>    m_Mapper;
         TPriority             m_Priority;
         TOrder                m_Order;
-        static CAtomicCounter_WithAutoInit sm_Counter;
+        static CAtomicCounter sm_Counter;
 
         SNode(IIdMapper* mapper, TPriority priority, EOwnership ownership)
             : m_Mapper(mapper, ownership),
