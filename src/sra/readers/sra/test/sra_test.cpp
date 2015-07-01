@@ -116,6 +116,9 @@ void CheckRc(rc_t rc)
 
 int CSRATestApp::Run(void)
 {
+    SetDiagPostLevel(eDiag_Info);
+    CNcbiEnvironment env;
+    env.Set("GENBANK_ID2_DEBUG", "5");
     // Get arguments
     const CArgs& args = GetArgs();
 
