@@ -1593,7 +1593,7 @@ for x_arg in "$@" ; do
       --with-extra-action=* | --with-build-root=* | --with-build-root-sfx=* \
       | --with-fake-root=* | --with-saved-settings=* \
       | --with-projects=* | --with-check=* | --with-check-tools=* \
-      | --with-universal=* | --with-tcheck=* \
+      | --with-universal=* | --with-tcheck=* | --with-experimental=* \
       | --cache-file=* | --build=* | --host=* | --prefix=* | --exec-prefix=* \
       | --libdir=* | --bindir=* | --includedir=* | --srcdir=* \
       | [A-Z]*=* \
@@ -1739,6 +1739,7 @@ Optional Packages:
  --with-hard-runpath     hard-code runtime path, ignoring LD_LIBRARY_PATH
  --with-lfs              enable large file support to the extent possible
  --with-limited-linker   don't attempt to build especially large projects
+ --with-experimental=... enable named experimental feature(s)
  --with-extra-action=    script to call after the configuration is complete
  --with-autodep          automatic generation of dependencies (GNU make)
  --with-build-root=DIR   specify a non-default build directory name
@@ -2921,6 +2922,12 @@ fi
 # Check whether --with-limited-linker was given.
 if test "${with_limited_linker+set}" = set; then
   withval=$with_limited_linker;
+fi
+
+
+# Check whether --with-experimental was given.
+if test "${with_experimental+set}" = set; then
+  withval=$with_experimental;
 fi
 
 
@@ -4121,6 +4128,22 @@ fi
 USER_CFLAGS=$CFLAGS
 USER_CXXFLAGS=$CXXFLAGS
 USER_LDFLAGS=$LDFLAGS
+
+if test -n "$with_experimental"; then
+   for x in `echo $with_experimental | tr , ' '`; do
+      case "$x" in
+         StrictGI )
+	    CPPFLAGS="$CPPFLAGS -DNCBI_STRICT_GI"
+	              WithFeatures="$WithFeatures${WithFeaturesSep}StrictGI"; WithFeaturesSep=" "
+	    ;;
+         * )
+	    { { echo "$as_me:$LINENO: error: unrecognized experimental feature \"$x\"." >&5
+echo "$as_me: error: unrecognized experimental feature \"$x\"." >&2;}
+   { (exit 1); exit 1; }; }
+	    ;;
+      esac
+   done
+fi
 
 #### Always define this
 
@@ -41244,7 +41267,7 @@ FEATURES="$WithFeatures $WithPackages $WithProjects"
 
 ### Compute Without{Features,Packages,Projects}.  Takes quadratic time,
 ### but that's life.
-for x in GCC KCC ICC VisualAge CompaqCompiler Cray WorkShop MIPSpro MSVC MT LFS DLL DLL_BUILD MaxDebug MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin XCODE IRIX Linux OSF Solaris MacOS in-house-resources PubSeqOS JDK Ncbi-JNI check Valgrind LimitedLinker; do
+for x in StrictGI GCC KCC ICC VisualAge CompaqCompiler Cray WorkShop MIPSpro MSVC MT LFS DLL DLL_BUILD MaxDebug MSWin unix WinMain AIX BSD Cygwin CygwinMT Darwin XCODE IRIX Linux OSF Solaris MacOS in-house-resources PubSeqOS JDK Ncbi-JNI check Valgrind LimitedLinker; do
       case " $WithFeatures " in
          *" $x "*) ;;
          *) WithoutFeatures="$WithoutFeatures$WithoutFeaturesSep$x"

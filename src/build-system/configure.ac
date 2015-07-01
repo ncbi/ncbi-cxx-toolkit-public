@@ -163,6 +163,8 @@ AC_ARG_WITH(lfs,
    [ --with-lfs              enable large file support to the extent possible])
 AC_ARG_WITH(limited-linker,
    [ --with-limited-linker   don't attempt to build especially large projects])
+AC_ARG_WITH(experimental,
+   [ --with-experimental=... enable named experimental feature(s)])
 
 ## Scripts, make features, and directory naming
 AC_ARG_WITH(extra-action,
@@ -561,7 +563,7 @@ for x_arg in "$@" ; do
       --with-extra-action=* | --with-build-root=* | --with-build-root-sfx=* \
       | --with-fake-root=* | --with-saved-settings=* \
       | --with-projects=* | --with-check=* | --with-check-tools=* \
-      | --with-universal=* | --with-tcheck=* \
+      | --with-universal=* | --with-tcheck=* | --with-experimental=* \
       | --cache-file=* | --build=* | --host=* | --prefix=* | --exec-prefix=* \
       | --libdir=* | --bindir=* | --includedir=* | --srcdir=* \
       | [[A-Z]*=*] \
@@ -700,6 +702,20 @@ fi
 USER_CFLAGS=$CFLAGS
 USER_CXXFLAGS=$CXXFLAGS
 USER_LDFLAGS=$LDFLAGS
+
+if test -n "$with_experimental"; then
+   for x in `echo $with_experimental | tr , ' '`; do
+      case "$x" in
+         StrictGI )
+	    CPPFLAGS="$CPPFLAGS -DNCBI_STRICT_GI"
+	    NCBI_FEATURE(StrictGI)
+	    ;;
+         * )
+	    AC_MSG_ERROR([unrecognized experimental feature "$x".])
+	    ;;
+      esac
+   done
+fi
 
 #### Always define this
 AC_DEFINE(NCBI_CXX_TOOLKIT, 1, [This is the NCBI C++ Toolkit.])
