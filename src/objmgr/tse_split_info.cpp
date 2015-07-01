@@ -497,7 +497,7 @@ void CTSE_Split_Info::x_LoadDescr(const TPlace& place,
 
 void CTSE_Split_Info::x_LoadAnnot(const TPlace& place,
                                   const CSeq_annot& annot,
-                                  TIntId chunk_id)
+                                  int chunk_id)
 {
     CRef<CSeq_annot> add;
     NON_CONST_ITERATE ( TTSE_Set, it, m_TSE_Set ) {

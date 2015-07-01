@@ -72,7 +72,7 @@ public:
                            const CSeq_descr& descr) = 0;
     virtual void LoadAnnot(CTSE_Info&, const TPlace& place, 
                            CRef<CSeq_annot> annot,
-                           TIntId chunk_id) = 0;
+                           int chunk_id) = 0;
     virtual void LoadBioseq(CTSE_Info&, const TPlace& place, 
                             CRef<CSeq_entry> entry) = 0;
     virtual void LoadSequence(CTSE_Info&, const TPlace& place, TSeqPos pos,
@@ -116,7 +116,7 @@ public:
                            const CSeq_descr& descr);
     virtual void LoadAnnot(CTSE_Info&, const TPlace& place, 
                            CRef<CSeq_annot> annot,
-                           TIntId chunk_id);
+                           int chunk_id);
     virtual void LoadBioseq(CTSE_Info&, const TPlace& place, 
                             CRef<CSeq_entry> entry);
     virtual void LoadSequence(CTSE_Info&, const TPlace& place, TSeqPos pos,

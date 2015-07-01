@@ -183,7 +183,7 @@ void CTSE_Default_Assigner::LoadDescr(CTSE_Info& tse,
 void CTSE_Default_Assigner::LoadAnnot(CTSE_Info& tse,
                                       const TPlace& place, 
                                       CRef<CSeq_annot> annot,
-                                      TIntId chunk_id)
+                                      int chunk_id)
 {
     CRef<CSeq_annot_Info> annot_info;
     {{

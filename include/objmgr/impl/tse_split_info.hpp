@@ -146,7 +146,7 @@ public:
 
     // loading results
     void x_LoadDescr(const TPlace& place, const CSeq_descr& descr);
-    void x_LoadAnnot(const TPlace& place, const CSeq_annot& annot, TIntId chunk_id);
+    void x_LoadAnnot(const TPlace& place, const CSeq_annot& annot, int chunk_id);
     void x_LoadBioseq(const TPlace& place, const CBioseq& bioseq);
     void x_LoadSequence(const TPlace& place, TSeqPos pos,
                         const TSequence& sequence);
