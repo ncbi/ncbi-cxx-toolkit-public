@@ -58,7 +58,7 @@ struct SOperation {
     int size;
     void* ptr;
 };
-static SOperation operations[kMaxOperationCount];
+static SOperation* operations = new SOperation[kMaxOperationCount];
 
 inline void add_operation(int type, int size, void* ptr)
 {
