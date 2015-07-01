@@ -268,7 +268,7 @@ int CHttpCookie::sx_Compare(const CHttpCookie& c1, const CHttpCookie& c2)
     int x_cmp;
 
     // Longer domains go first.
-    x_cmp = c1.m_Domain.size() - c2.m_Domain.size();
+    x_cmp = int(c1.m_Domain.size() - c2.m_Domain.size());
     if ( x_cmp ) {
         return x_cmp;
     }
@@ -279,7 +279,7 @@ int CHttpCookie::sx_Compare(const CHttpCookie& c1, const CHttpCookie& c2)
     }
 
     // Longer paths should go first.
-    x_cmp = c1.m_Path.size() - c2.m_Path.size();
+    x_cmp = int(c1.m_Path.size() - c2.m_Path.size());
     if ( x_cmp ) {
         return x_cmp;
     }
@@ -418,7 +418,7 @@ CTime s_ParseDateTime(const string& value)
         if (mon <= 0  &&  field.size() == 3) {
             size_t mpos = NStr::FindNoCase(kMonthNames, field);
             if (mpos != NPOS) {
-                mon = mpos/4 + 1;
+                mon = int(mpos/4 + 1);
                 continue;
             }
 
