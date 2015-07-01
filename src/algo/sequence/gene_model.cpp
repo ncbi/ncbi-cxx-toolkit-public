@@ -1517,7 +1517,7 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
         bool starts_with_code_break = false;
         if (cdr.IsSetCode_break()) {
             ITERATE (CCdregion::TCode_break, it, cdr.GetCode_break()) {
-                if ((*it)->GetLoc().GetStart(eExtreme_Positional) == 0) {
+                if ((*it)->GetLoc().GetStart(eExtreme_Positional) == protloc_on_mrna->GetStart(eExtreme_Positional)) {
                     starts_with_code_break = true;
                     break;
                 }
