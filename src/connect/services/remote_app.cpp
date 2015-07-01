@@ -316,7 +316,7 @@ void CRemoteAppRequest::x_CreateWDir()
 {
     if (!m_TmpDirName.empty())
         return;
-    m_TmpDirName = m_TmpDirPath + NStr::ULongToString(sm_DirCounter.Add(1));
+    m_TmpDirName = m_TmpDirPath + NStr::NumericToString(sm_DirCounter.Add(1));
     CDir wdir(m_TmpDirName);
     if (wdir.Exists())
         wdir.Remove();
