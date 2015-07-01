@@ -5772,16 +5772,16 @@ public:
     const string &GetRevName() const { return m_Rev_name; }
 
     bool operator <( const CPCRParsedSet &rhs ) {
-        const int fwd_seq_comparison = NStr::CompareNocase( m_Fwd_seq, rhs.m_Fwd_seq );
-        if( fwd_seq_comparison != 0 ) return fwd_seq_comparison;
-        const int rev_seq_comparison = NStr::CompareNocase( m_Rev_seq, rhs.m_Rev_seq );
-        if( rev_seq_comparison != 0 ) return rev_seq_comparison;
-        const int fwd_name_comparison = NStr::CompareNocase( m_Fwd_name, rhs.m_Fwd_name );
-        if( fwd_name_comparison != 0 ) return fwd_name_comparison;
-        const int rev_name_comparison = NStr::CompareNocase( m_Rev_name, rhs.m_Rev_name );
-        if( rev_name_comparison != 0 ) return rev_name_comparison;
+        if ( int diff = NStr::CompareNocase( m_Fwd_seq, rhs.m_Fwd_seq ) )
+            return diff < 0;
+        if ( int diff = NStr::CompareNocase( m_Rev_seq, rhs.m_Rev_seq ) )
+            return diff < 0;
+        if ( int diff = NStr::CompareNocase( m_Fwd_name, rhs.m_Fwd_name ) )
+            return diff < 0;
+        if ( int diff = NStr::CompareNocase( m_Rev_name, rhs.m_Rev_name ) )
+            return diff < 0;
         // last resort
-        return m_Original_order - rhs.m_Original_order;
+        return m_Original_order < rhs.m_Original_order;
     }
 
 private:
@@ -5789,12 +5789,12 @@ private:
     string m_Rev_seq;
     string m_Fwd_name;
     string m_Rev_name;
-    int m_Original_order;
+    CAtomicCounter::TValue m_Original_order;
 
-    static CAtomicCounter_WithAutoInit ms_Next_original_order;
+    static CAtomicCounter ms_Next_original_order;
 };
 
-CAtomicCounter_WithAutoInit CPCRParsedSet::ms_Next_original_order;
+CAtomicCounter CPCRParsedSet::ms_Next_original_order;
 
 static
 void s_ParsePCRSet( const CBioSource &biosrc, list<CPCRParsedSet> &out_pcr_set )
