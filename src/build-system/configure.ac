@@ -560,31 +560,58 @@ for x_arg in "$@" ; do
       AC_MSG_ERROR([$x_arg:  requires value;  use --help to show usage])
       ;;
 
-      --with-extra-action=* | --with-build-root=* | --with-build-root-sfx=* \
-      | --with-fake-root=* | --with-saved-settings=* \
-      | --with-projects=* | --with-check=* | --with-check-tools=* \
-      | --with-universal=* | --with-tcheck=* | --with-experimental=* \
-      | --cache-file=* | --build=* | --host=* | --prefix=* | --exec-prefix=* \
-      | --libdir=* | --bindir=* | --includedir=* | --srcdir=* \
-      | [[A-Z]*=*] \
-      | --with-z=* | --with-bz2=* | --with-lzo=* \
-      | --with-pcre=* | --with-ncbi-c=* | --with-sss=* | --with-vdb=* \
-      | --with-gcrypt=* | --with-gnutls=* | --with-openssl=* | --with-krb5=* \
-      | --with-curl=* | --with-gsoap=* | --with-avro=* | --with-mongodb=* \
-      | --with-sybase-local=* | --with-wxwidgets=* | --with-mimetic=* \
-      | --with-ftds=* | --with-mysql=* | --with-fastcgi=* \
-      | --with-sqlite3=* | --with-expat=* | --with-sablot=* | --with-cereal=* \
-      | --with-icu=* | --with-xerces=* | --with-xalan=* | --with-zorba=* \
-      | --with-libxml=* | --with-libxslt=* | --with-exslt=* \
-      | --with-bdb=* | --with-odbc=* | --with-python=* | --with-perl=* \
-      | --with-freetype=* | --with-ftgl=* | --with-gif=* | --with-jpeg=* \
-      | --with-png=* | --with-tiff=* | --with-xpm=* | --with-opengl=* \
-      | --with-mesa=* | --with-glut=* | --with-glew=* | --with-oechem=* \
-      | --with-boost=* | --with-boost-tag=* | --with-orbacus=* | --with-sge=* \
-      | --with-muparser=* | --with-hdf5=* | --with-jni=* | --with-magic=* \
-      | --x-includes=* | --x-libraries=* | --with-3psw=* \
-      | --target=* | --with-runpath=* | --with-relative-runpath=* \
-      | --help | --no-create | --no-recursion)
+      --with-projects=* | --with-saved-settings=* )
+      # Confirm that the specified file exists and is readable.
+      file=`echo $x_arg | sed -e 's/^[[^=]]*=//'`
+      if test -f "$file"; then
+         if test -r "$file"; then
+            :
+         else
+            AC_MSG_ERROR([$x_arg:  requires a readable file; use --help to show usage])
+         fi
+      else
+         AC_MSG_ERROR([$x_arg:  requires a (readable) file; use --help to show usage])
+      fi
+      ;;
+
+      --srcdir=* | --x-includes=* | --x-libraries=* | --with-tcheck=* \
+      | --with-ncbi-c=* | --with-sss=* | --with-vdb=* | --with-z=* \
+      | --with-bz2=* | --with-lzo=* | --with-pcre=* | --with-gcrypt=* \
+      | --with-gnutls=* | --with-openssl=* | --with-krb5=* \
+      | --with-sybase-local=* | --with-ftds=*/* | --with-mysql=* \
+      | --with-opengl=* | --with-mesa=* | --with-glut=* | --with-glew=* \
+      | --with-wxwidgets=* | --with-freetype=* | --with-ftgl=* \
+      | --with-fastcgi=*/* | --with-bdb=*/* | --with-orbacus=* \
+      | --with-odbc=* | --with-python=* | --with-perl=* | --with-jni=* \
+      | --with-boost=* | --with-sqlite3=* | --with-icu=* | --with-expat=* \
+      | --with-sablot=* | --with-libxml=* | --with-libxslt=* | --with-exslt=* \
+      | --with-xerces=* | --with-xalan=* | --with-zorba=* | --with-oechem=* \
+      | --with-sge=* | --with-muparser=* | --with-hdf5=* | --with-gif=* \
+      | --with-jpeg=* | --with-png=* | --with-tiff=* | --with-xpm=* \
+      | --with-magic=* | --with-curl=* | --with-mimetic=* | --with-gsoap=* \
+      | --with-avro=* | --with-cereal=* | --with-mongodb=* )
+      # Confirm that the specified directory exists and is readable.
+      dir=`echo $x_arg | sed -e 's/^[[^=]]*=//'`
+      if test -d "$dir"; then
+         if test -r "$dir"; then
+            :
+         else
+            AC_MSG_ERROR([$x_arg:  requires a readable directory; use --help to show usage])
+         fi
+      else
+         AC_MSG_ERROR([$x_arg:  requires a (readable) directory; use --help to show usage])
+      fi
+      ;;
+
+      [[A-Z]*=*] | -h | --help | --help=* | -V | --version | -q | --quiet \
+      | --silent | --cache-file=* | -C | --config-cache | -n | --no-create \
+      | --no-recursion | --prefix=* | --exec-prefix=* | --bindir=* \
+      | --libdir=* | --includedir=* | --build=* | --host=* | --target=* \
+      | --with-universal=* | --with-runpath=* | --with-relative-runpath=* \
+      | --with-experimental=* | --with-extra-action=* | --with-build-root=* \
+      | --with-fake-root=* | --with-build-root-sfx=* | --with-check=* \
+      | --with-check-tools=* | --with-ftds=[[0-9]]* | --with-fastcgi=[[0-9]]* \
+      | --with-bdb=[[1-9]]* | --with-boost-tag=* | --with-3psw=* )
       ;;
 
       * )
