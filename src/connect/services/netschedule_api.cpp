@@ -388,6 +388,57 @@ void SNetScheduleAPIImpl::x_ClearNode()
     }
 }
 
+// The purpose of this class is to suppress possible errors
+// when config loading is not enabled/disabled explicitly.
+//
+// Errors would happen when we try to load config from servers that either
+// do not support "GETP2" command (introduced in 4.16.9)
+// or, do not support "QINF2 service=name" command (introduced in 4.17.0)
+// or, do not have "service to queue" mapping set
+//
+// This class is turned off (becomes noop, by providing NULL as api_impl)
+// when config loading is enabled explicitly
+class CNetScheduleConfigLoader::CErrorSuppressor
+{
+private:
+    typedef CRef<INetEventHandler> THandlerRef;
+
+    struct SHandler : public INetEventHandler
+    {
+        bool OnError(CException::TErrCode err_code)
+        {
+            switch (err_code) {
+            case CNetScheduleException::eProtocolSyntaxError:
+            case CNetScheduleException::eUnknownService:
+                return true;
+            default:
+                return false;
+            }
+        }
+    };
+public:
+    CErrorSuppressor(SNetScheduleAPIImpl* api_impl) :
+        m_ApiImpl(api_impl)
+    {
+        if (m_ApiImpl) {
+            THandlerRef& handler = m_ApiImpl->GetListener()->m_EventHandler;
+            m_OriginalHandler = handler;
+            handler = new SHandler;
+        }
+    }
+
+    ~CErrorSuppressor()
+    {
+        if (m_ApiImpl) {
+            m_ApiImpl->GetListener()->m_EventHandler = m_OriginalHandler;
+        }
+    }
+
+private:
+    SNetScheduleAPIImpl* m_ApiImpl;
+    THandlerRef m_OriginalHandler;
+};
+
 CNetScheduleConfigLoader::CNetScheduleConfigLoader(
         const CTempString& qinf2_prefix, const CTempString& qinf2_section,
         const CTempString& getp2_prefix, const CTempString& getp2_section) :
@@ -432,12 +483,24 @@ CConfig* CNetScheduleConfigLoader::Get(SNetScheduleAPIImpl* impl,
 {
     _ASSERT(impl);
 
-    // If it is disabled explicitly
-    if (config && !config->GetBool(section, "load_config_from_ns",
-                CConfig::eErr_NoThrow, true)) {
-        return NULL;
+    bool set_explicitly = false;
+
+    try {
+        if (config) {
+            // If it is disabled explicitly
+            if (!config->GetBool(section, "load_config_from_ns",
+                        CConfig::eErr_Throw, true)) {
+                return NULL;
+            }
+
+            set_explicitly = true;
+        }
+    }
+    catch (CConfigException&) {
     }
 
+    // Disable error suppressor if config loading is set explicitly
+    CErrorSuppressor suppressor(set_explicitly ? NULL : impl);
     TParams queue_params;
 
     if (impl->m_Queue.empty()) {
@@ -729,6 +792,10 @@ void CNetScheduleServerListener::OnError(
 
     // Map code into numeric value
     CException::TErrCode err_code = CNetScheduleExceptionMap::GetCode(code);
+
+    if (m_EventHandler && m_EventHandler->OnError(err_code)) {
+        return;
+    }
 
     switch (err_code) {
     case CException::eInvalid:

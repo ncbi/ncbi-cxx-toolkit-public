@@ -158,7 +158,8 @@ inline CNetServer CNetService::GetServer(unsigned host, unsigned short port)
 class NCBI_XCONNECT_EXPORT INetEventHandler : public CObject
 {
 public:
-    virtual void OnWarning(const string& warn_msg, CNetServer server) = 0;
+    virtual bool OnError(CException::TErrCode) { return false; }
+    virtual void OnWarning(const string&, CNetServer) {}
 };
 
 /// This class is for use by the grid_cli utility only.

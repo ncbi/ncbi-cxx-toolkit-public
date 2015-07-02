@@ -77,6 +77,8 @@ struct SNetScheduleServerProperties : public INetServerProperties
 
 class CNetScheduleConfigLoader
 {
+    class CErrorSuppressor;
+
 public:
     CNetScheduleConfigLoader(
             const CTempString& qinf2_prefix,
