@@ -8667,48 +8667,58 @@ void CNewCleanup_imp::x_ConvertDoubleQuotesMarkChanged( std::string &str )
     }
 }
 
-static void 
-s_AddStringToUserField( CSeqdesc_Base::TUser& user, const char* field, const char *str )
-{
-    CRef< CUser_field > new_field( new CUser_field );
-
-    new_field->SetLabel().SetStr( field );
-    new_field->SetData().SetStr( CUtf8::AsUTF8(str, eEncoding_Ascii) );
-
-    user.SetData().push_back( new_field );
-}
-
-static void 
-s_AddIntegerToUserField
-( CSeqdesc_Base::TUser& user, const char* field, int num )
-{
-    CRef< CUser_field > new_field( new CUser_field );
-
-    new_field->SetLabel().SetStr( field );
-    new_field->SetData().SetInt(num);
-
-    user.SetData().push_back( new_field );
-}
-
 void CNewCleanup_imp::x_AddNcbiCleanupObject( CSeq_entry &seq_entry )
 {
+    // remove from lower levels
+    if (seq_entry.IsSet() && seq_entry.GetSet().IsSetSeq_set()) {
+        NON_CONST_ITERATE(CBioseq_set::TSeq_set, it, seq_entry.SetSet().SetSeq_set()) {
+            x_RemoveNcbiCleanupObject(**it);
+        }
+    }
+
+    // update existing
+    if (seq_entry.IsSetDescr()) {
+        NON_CONST_ITERATE(CBioseq::TDescr::Tdata, it, seq_entry.SetDescr().Set()) {
+            if ((*it)->IsUser() && (*it)->GetUser().GetObjectType() == CUser_object::eObjectType_Cleanup) {
+                (*it)->SetUser().UpdateNcbiCleanup(NCBI_CLEANUP_VERSION);
+                ChangeMade(CCleanupChange::eAddNcbiCleanupObject);
+                return;
+            }
+        }
+    }
+    // create new
     CRef<CSeqdesc> ncbi_cleanup_object( new CSeqdesc );
     CSeqdesc_Base::TUser& user = ncbi_cleanup_object->SetUser();
-
-    user.SetType().SetStr("NcbiCleanup");
-
-    s_AddStringToUserField(  user, "method", "ExtendedSeqEntryCleanup" );
-    s_AddIntegerToUserField( user, "version", NCBI_CLEANUP_VERSION );
-  
-    // get current time
-    CTime curr_time( CTime::eCurrent );
-    s_AddIntegerToUserField( user, "month", curr_time.Month() );
-    s_AddIntegerToUserField( user, "day",   curr_time.Day() );
-    s_AddIntegerToUserField( user, "year",  curr_time.Year() );
-
+    user.UpdateNcbiCleanup(NCBI_CLEANUP_VERSION);
     seq_entry.SetDescr().Set().push_back( ncbi_cleanup_object );
 
     ChangeMade(CCleanupChange::eAddNcbiCleanupObject);
+}
+
+void CNewCleanup_imp::x_RemoveNcbiCleanupObject(CSeq_entry &seq_entry)
+{
+    if (seq_entry.IsSetDescr()) {
+        CBioseq::TDescr::Tdata::iterator it = seq_entry.SetDescr().Set().begin();
+        while (it != seq_entry.SetDescr().Set().end()) {
+            if ((*it)->IsUser() && (*it)->GetUser().GetObjectType() == CUser_object::eObjectType_Cleanup){
+                it = seq_entry.SetDescr().Set().erase(it);
+            } else {
+                ++it;
+            }
+        }
+        if (seq_entry.SetDescr().Set().empty()) {
+            if (seq_entry.IsSeq()) {
+                seq_entry.SetSeq().ResetDescr();
+            } else if (seq_entry.IsSet()) {
+                seq_entry.SetSet().ResetDescr();
+            }
+        }
+    }
+    if (seq_entry.IsSet() && seq_entry.GetSet().IsSetSeq_set()) {
+        NON_CONST_ITERATE(CBioseq_set::TSeq_set, it, seq_entry.SetSet().SetSeq_set()) {
+            x_RemoveNcbiCleanupObject(**it);
+        }
+    }
 }
 
 static

@@ -582,6 +582,7 @@ const string kOriginalId = "OriginalID";
 const string kOrigIdAltSpell = "OrginalID";
 const string kUnverified = "Unverified";
 const string kValidationSuppression = "ValidationSuppression";
+const string kNcbiCleanup = "NcbiCleanup";
 
 CUser_object::EObjectType CUser_object::GetObjectType() const
 {
@@ -603,6 +604,8 @@ CUser_object::EObjectType CUser_object::GetObjectType() const
         rval = eObjectType_Unverified;
     } else if (NStr::Equal(label, kValidationSuppression)) {
         rval = eObjectType_ValidationSuppression;
+    } else if (NStr::Equal(label, kNcbiCleanup)) {
+        rval = eObjectType_Cleanup;
     }
     return rval;
 }
@@ -625,6 +628,9 @@ void CUser_object::SetObjectType(EObjectType obj_type)
             break;
         case eObjectType_ValidationSuppression:
             SetType().SetStr(kValidationSuppression);
+            break;
+        case eObjectType_Cleanup:
+            SetType().SetStr(kNcbiCleanup);
             break;
         case eObjectType_Unknown:
             ResetType();
@@ -742,7 +748,23 @@ void CUser_object::RemoveUnverifiedFeature()
 }
 
 
+void CUser_object::UpdateNcbiCleanup(int version)
+{
+    SetObjectType(eObjectType_Cleanup);
+    CRef<CUser_field> method = SetFieldRef("method");
+    method->SetData().SetStr(CUtf8::AsUTF8("ExtendedSeqEntryCleanup", eEncoding_Ascii));
+    CRef<CUser_field> version_field = SetFieldRef("version");
+    version_field->SetData().SetInt(version);
 
+    // get current time
+    CTime curr_time(CTime::eCurrent);
+    CRef<CUser_field> month = SetFieldRef("month");
+    month->SetData().SetInt(curr_time.Month());
+    CRef<CUser_field> day = SetFieldRef("day");
+    day->SetData().SetInt(curr_time.Day());
+    CRef<CUser_field> year = SetFieldRef("year");
+    year->SetData().SetInt(curr_time.Year());
+}
 
 
 END_objects_SCOPE // namespace ncbi::objects::

@@ -155,7 +155,8 @@ public:
         eObjectType_StructuredComment,
         eObjectType_OriginalId,
         eObjectType_Unverified,
-        eObjectType_ValidationSuppression
+        eObjectType_ValidationSuppression,
+        eObjectType_Cleanup
     };
 
     EObjectType GetObjectType() const;
@@ -168,6 +169,8 @@ public:
     bool IsUnverifiedFeature() const;
     void AddUnverifiedFeature();
     void RemoveUnverifiedFeature();
+
+    void UpdateNcbiCleanup(int version);
 
 private:
     /// Prohibit copy constructor and assignment operator
