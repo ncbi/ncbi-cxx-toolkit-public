@@ -7118,10 +7118,10 @@ void CValidError_bioseq::ValidateDupOrOverlapFeats(
 void CValidError_bioseq::ValidateTwintrons(
     const CBioseq& bioseq)
 {
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(bioseq);
+    if (!bsh) return;
+    SAnnotSelector sel(CSeqFeatData::eSubtype_intron);
     try {
-        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(bioseq);
-        if (!bsh) return;
-        SAnnotSelector sel (CSeqFeatData::eSubtype_intron);
         for (CFeat_CI feat_ci(bsh, sel); feat_ci;  ++feat_ci) {
             bool twintron = false;
             const CSeq_feat& const_feat = feat_ci->GetOriginalFeature();
@@ -7180,10 +7180,8 @@ void CValidError_bioseq::ValidateTwintrons(
         }
     }
     catch (CException& e) {
-        if (NStr::Find(e.what(), "Error: Cannot resolve") == string::npos) {
-            if (NStr::Find(e.what(), "Error: ncbi::objects::CSeqMap_CI::x_Push()") == string::npos) {
-                LOG_POST(Error << "ValidateTwintrons error: " << e.what());
-            }
+        if (!NStr::Find(e.what(), "Error: Cannot resolve") == string::npos) {
+            LOG_POST(Error << "ValidateTwintrons error: " << e.what());
         }
     }
 }
