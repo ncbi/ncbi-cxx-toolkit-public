@@ -687,7 +687,6 @@ void CNewCleanup_imp::X_CommentTildeFixes(std::string & str)
 /*
 #ifndef NCBI_OS_MSWIN
     string orig = str;
-    NStr::ReplaceInPlace(str, "annotated by GenomeRefine~~", "annotated by GenomeRefine", false, false);
     NStr::ReplaceInPlace(str, "based on SOLiD3 (Applied Biosystems)~~", "based on SOLiD3 (Applied Biosystems)", false, false);
     NStr::ReplaceInPlace(str, "Biological resourse center, NITE (NRBC)~~", "Biological resourse center, NITE (NRBC)", false, false);
     NStr::ReplaceInPlace(str, "developmental01.html~~", "developmental01.html", false, false);
