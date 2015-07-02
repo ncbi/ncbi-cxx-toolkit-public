@@ -169,6 +169,55 @@ SeqLocToBioseq(const objects::CSeq_loc& loc, objects::CScope& scope)
     return bioseq;
 }
 
+
+//////////////////////////////////////////////////////////////////////////////
+///
+/// Sequence Entropy Calculation
+///
+/// This is a straightforward computation of Shannon entropy for all tetramers
+/// observed in a given sequence.  This was tuned to work specifically with DNA
+/// sequence.  While it should also apply for proteins, the denominator is much
+/// different in that case (20^4 instead of 4^4).
+///
+///
+/// The function has been heavily optimized to use caching of partial results.
+/// For large sequence sets, this caching makes a huge difference.  The
+/// notional normative function we are trying to reproduce is included inline
+/// below for reference.
+
+#if 0
+///
+/// This is the normative copy of the function
+///
+double ComputeNormalizedEntropy(const CTempString& sequence,
+                               size_t word_size)
+{
+    typedef map<CTempString, double> TCounts;
+    TCounts counts;
+    double total = sequence.size() - word_size;
+    for (size_t i = word_size;  i < sequence.size();  ++i) {
+        CTempString t(sequence, i - word_size, word_size);
+        TCounts::iterator it =
+            counts.insert(TCounts::value_type(t, 0)).first;
+        it->second += 1;
+    }
+
+    NON_CONST_ITERATE (TCounts, it, counts) {
+        it->second /= total;
+    }
+
+    double entropy = 0;
+    ITERATE (TCounts, it, counts) {
+        entropy += it->second * log(it->second);
+    }
+    double denom = pow(4, word_size);
+    denom = min(denom, total);
+    entropy = -entropy / log(denom);
+    return max<double>(0.0, entropy);
+}
+#endif
+
+
 CEntropyCalculator::CEntropyCalculator(size_t sequence_size, size_t word_size)
     : m_WordSize(word_size)
     , m_NumWords(sequence_size - word_size)
