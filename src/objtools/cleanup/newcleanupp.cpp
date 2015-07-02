@@ -684,6 +684,7 @@ void CNewCleanup_imp::x_RemoveSpacesBetweenTildesMarkChanged( std::string & str 
 
 void CNewCleanup_imp::X_CommentTildeFixes(std::string & str)
 {
+/*
 #ifndef NCBI_OS_MSWIN
     string orig = str;
     NStr::ReplaceInPlace(str, "annotated by GenomeRefine~~", "annotated by GenomeRefine", false, false);
@@ -703,6 +704,7 @@ void CNewCleanup_imp::X_CommentTildeFixes(std::string & str)
         ChangeMade(CCleanupChange::eTrimSpaces);
     }
 #endif //NCBI_OS_MSWIN
+*/
 }
 
 void CNewCleanup_imp::x_TruncateSpacesMarkChanged( std::string & str )
