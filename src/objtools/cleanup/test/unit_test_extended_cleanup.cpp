@@ -640,3 +640,24 @@ BOOST_AUTO_TEST_CASE(Test_RemoveUnnecessaryGeneXrefs)
     s_CheckXrefs(seh, 1);
 
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_SQD_2375)
+{
+    CRef<CSeq_entry> entry = BuildGoodNucProtSet();
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+    BOOST_CHECK_EQUAL(seh.GetSet().GetCompleteBioseq_set()->GetSeq_set().back()->GetSeq().GetDescr().Get().size(), 1);
+
+    CCleanup cleanup(scope);
+    CConstRef<CCleanupChange> changes;
+
+    changes = cleanup.ExtendedCleanup(seh, CCleanup::eClean_NoProteinTitles);
+    BOOST_CHECK_EQUAL(seh.GetSet().GetCompleteBioseq_set()->GetSeq_set().back()->GetSeq().GetDescr().Get().size(), 1);
+
+    changes = cleanup.ExtendedCleanup(seh);
+    BOOST_CHECK_EQUAL(seh.GetSet().GetCompleteBioseq_set()->GetSeq_set().back()->GetSeq().GetDescr().Get().size(), 2);
+
+
+}

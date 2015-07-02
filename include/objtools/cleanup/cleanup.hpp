@@ -63,7 +63,8 @@ public:
         eClean_NoReporting       = 0x1,
         eClean_GpipeMode         = 0x2,
         eClean_NoNcbiUserObjects = 0x4,
-        eClean_SyncGenCodes      = 0x8
+        eClean_SyncGenCodes      = 0x8,
+        eClean_NoProteinTitles   = 0x10
     };
 
     // Construtor / Destructor
