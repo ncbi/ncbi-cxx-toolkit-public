@@ -34,6 +34,14 @@
 
 
 {
+   NCBI VDB ver 2.5.0 -- uninit value created on stack, passed around
+   Memcheck:Param
+   fun:__open_nocancel
+   fun:KSysDirOpenFileRead_v1 (sysdir.c:1838)
+}
+
+
+{
    NCBI VDB ver 2.5.0 -- uninit value created on stack in string_vprintf (printf.c:3374)
    Memcheck:Cond
    ...
