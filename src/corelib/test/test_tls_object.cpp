@@ -51,6 +51,9 @@ static CAtomicCounter object_count;
 static CAtomicCounter::TValue total_steps;
 static CAtomicCounter current_step;
 
+//#define CHECK_OPERATIONS
+
+#ifdef CHECK_OPERATIONS
 static CAtomicCounter operation_count;
 static const size_t kMaxOperationCount = 50000000;
 struct SOperation {
@@ -58,17 +61,15 @@ struct SOperation {
     int size;
     void* ptr;
 };
-static SOperation* operations = new SOperation[kMaxOperationCount];
+static AutoArray<SOperation> operations(kMaxOperationCount);
 
 inline void add_operation(int type, int size, void* ptr)
 {
-  /*
     size_t index = operation_count.Add(1)-1;
     _ASSERT(index < kMaxOperationCount);
     operations[index].type = type;
     operations[index].size = size;
     operations[index].ptr = ptr;
-  */
 }
 
 void check_operations()
@@ -95,6 +96,14 @@ void check_operations()
     }
     _ASSERT(allocated.empty());
 }
+#else
+inline void add_operation(int /*type*/, int /*size*/, void* /*ptr*/)
+{
+}
+void check_operations()
+{
+}
+#endif
 
 inline void add_alloc(int d)
 {
