@@ -222,6 +222,7 @@ private:
     void SubmitblockBC (CSubmit_block& sb);
 
     void SeqsetBC (CBioseq_set& bss);
+    void ProtSeqBC (CBioseq& bs);
 
     void SeqIdBC( CSeq_id &seq_id );
 

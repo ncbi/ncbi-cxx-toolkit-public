@@ -781,6 +781,101 @@ void CNewCleanup_imp::SeqsetBC (
     }
 }
 
+static CMolInfo::TCompleteness GetCompletenessFromFlags(bool partial5, bool partial3, bool partial)
+{
+    CMolInfo::TCompleteness comp = CMolInfo::eCompleteness_unknown;
+    if (partial5 && partial3) {
+        comp = CMolInfo::eCompleteness_no_ends;
+    } else if (partial5) {
+        comp = CMolInfo::eCompleteness_no_left;
+    } else if (partial3) {
+        comp = CMolInfo::eCompleteness_no_right;
+    } else if (partial) {
+        comp = CMolInfo::eCompleteness_partial;
+    }
+    return comp;
+}
+
+void CNewCleanup_imp::ProtSeqBC (CBioseq& bs)
+{
+    // Bail if not protein
+    if( ! FIELD_CHAIN_OF_2_IS_SET(bs, Inst, Mol) || 
+        bs.GetInst().GetMol() != NCBI_SEQMOL(aa) ) 
+    {
+        return;
+    }
+
+    // Bail if no GIBBSQ ID
+    if (!bs.IsSetId()) {
+        return;
+    }
+    bool has_gibbsq = false;
+    ITERATE(CBioseq::TId, id, bs.GetId()) {
+       if ((*id)->IsGibbsq()) {
+           has_gibbsq = true;
+           break;
+       }
+    }
+    if (!has_gibbsq) {
+        return;
+    }
+
+    CSeq_entry_Handle seh = m_Scope->GetSeq_entryHandle(*(bs.GetParentEntry()));
+
+    // Bail if no title or no partialness clues in title
+    CSeqdesc_CI title(seh, CSeqdesc::e_Title);
+    if (!title) {
+        return;
+    }
+    bool make_partial5 = false;
+    bool make_partial3 = false;
+    if (NStr::Find(title->GetTitle(), "{C-terminal}") != string::npos) {
+        make_partial5 = true;
+    }
+    if (NStr::Find(title->GetTitle(), "{N-terminal}") != string::npos) {
+        make_partial3 = true;
+    }
+    if (!make_partial5 && !make_partial3) {
+        return;
+    }
+
+    // Bail if no protein feature with missing partials
+    SAnnotSelector sel(CSeqFeatData::e_Prot);
+    CFeat_CI fi(seh, sel);
+
+    if (fi && fi->IsSetPartial() && fi->GetPartial()) {
+        const CSeq_feat& orig = *(fi->GetOriginalSeq_feat());
+        if (orig.IsSetLocation() &&
+            !orig.GetLocation().IsPartialStart(eExtreme_Biological) &&
+            !orig.GetLocation().IsPartialStop(eExtreme_Biological)) {
+            CSeq_feat_EditHandle edit_feature_handle(fi->GetSeq_feat_Handle());
+            CRef<CSeq_feat> replace(new CSeq_feat());
+            replace->Assign(orig);
+            if (make_partial5) {
+                replace->SetLocation().SetPartialStart(true, eExtreme_Biological);
+            }
+            if (make_partial3) {
+                replace->SetLocation().SetPartialStop(true, eExtreme_Biological);
+            }
+            edit_feature_handle.Replace(*replace);
+            ChangeMade(CCleanupChange::eChangeSeqloc);
+
+            if (bs.IsSetDescr()) {
+                CMolInfo::TCompleteness wanted = GetCompletenessFromFlags(make_partial5, make_partial3, true);
+                NON_CONST_ITERATE(CBioseq::TDescr::Tdata, ds, bs.SetDescr().Set()) {
+                    if ((*ds)->IsMolinfo() &&
+                        (!(*ds)->GetMolinfo().IsSetCompleteness() ||
+                         (*ds)->GetMolinfo().GetCompleteness() != wanted)) {
+                        (*ds)->SetMolinfo().SetCompleteness(wanted);
+                        ChangeMade(CCleanupChange::eChangeMolInfo);
+                    }
+                }
+            }
+        }
+    }
+}
+
+
 void CNewCleanup_imp::SeqIdBC( CSeq_id &seq_id )
 {
     // try to find CObject_id in Seq-id for certain types

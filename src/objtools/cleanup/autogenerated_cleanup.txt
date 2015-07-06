@@ -225,6 +225,8 @@ use m_NewCleanup.SeqLocMixBC { Seq-loc.mix }
 
 use m_NewCleanup.SeqsetBC { Bioseq-set }
 
+use m_NewCleanup.ProtSeqBC { Bioseq }
+
 # This really works on the Imp-feat inside the Seq-feat, if any.
 # It's here so we convert Seq-feat's imp to another type (e.g. cdregion)
 # if necessary.  And, we put it before SeqfeatBC, etc. so it happens
