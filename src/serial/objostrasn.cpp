@@ -174,7 +174,7 @@ void CObjectOStreamAsn::WriteUint8(Uint8 data)
 
 void CObjectOStreamAsn::WriteDouble2(double data, unsigned digits)
 {
-#if 1
+#if 0
     if (isnan(data)) {
         ThrowError(fInvalidData, "invalid double: not a number");
     }

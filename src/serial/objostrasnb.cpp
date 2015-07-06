@@ -705,7 +705,7 @@ void CObjectOStreamAsnBinary::WriteDouble2(double data, unsigned digits)
     Uint1 type = eDecimal;
     WriteSysTag(eReal);
 
-#if 1
+#if 0
     if (isnan(data)) {
         ThrowError(fInvalidData, "invalid double: not a number");
     }
@@ -713,9 +713,6 @@ void CObjectOStreamAsnBinary::WriteDouble2(double data, unsigned digits)
         ThrowError(fInvalidData, "invalid double: infinite");
     }
 #else
-// changed 21 Sep 2014
-// to enable later
-// also see below
     if (data == 0.) {
         double zero = 0.;
         if (memcmp(&data, &zero, sizeof(double)) == 0) {
@@ -758,9 +755,7 @@ void CObjectOStreamAsnBinary::WriteDouble2(double data, unsigned digits)
 
     WriteLength(width + 1);
     if (width) {
-// added 21 Sep 2014
-// to enable later
-#if 0
+#if 1
         type = eDecimal_NR1;
         if (strchr(buffer,'.')) {
             type = eDecimal_NR2;
