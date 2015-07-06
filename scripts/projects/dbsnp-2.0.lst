@@ -29,6 +29,7 @@ internal/refgene/refseq_aln_source
 internal/asn_cache
 internal/trackmgr
 internal/gpipe/common$
+internal/gpipe/grid_wrapper
 sra
 -objtools/snputil
 -misc/hgvs/test
