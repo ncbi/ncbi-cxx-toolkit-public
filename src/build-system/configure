@@ -1593,6 +1593,10 @@ for x_arg in "$@" ; do
       --with-projects=* | --with-saved-settings=* )
       # Confirm that the specified file exists and is readable.
       file=`echo $x_arg | sed -e 's/^[^=]*=//'`
+      case "$file" in
+         /* ) ;;
+         *  ) file=$srcdir/$file ;;
+      esac
       if test -f "$file"; then
          if test -r "$file"; then
             :
@@ -1624,6 +1628,10 @@ for x_arg in "$@" ; do
       | --with-avro=* | --with-cereal=* | --with-mongodb=* )
       # Confirm that the specified directory exists and is readable.
       dir=`echo $x_arg | sed -e 's/^[^=]*=//'`
+      case "$dir" in
+         /* ) ;;
+         *  ) dir=$srcdir/$dir ;;
+      esac
       if test -d "$dir"; then
          if test -r "$dir"; then
             :
