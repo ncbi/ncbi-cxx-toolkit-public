@@ -71,7 +71,8 @@ CNetScheduleServer::CNetScheduleServer(const string &  dbpath)
       m_MaxClientData(default_max_client_data),
       m_NodeID("not_initialized"),
       m_SessionID("s" + x_GenerateGUID()),
-      m_StartIDs(dbpath)
+      m_StartIDs(dbpath),
+      m_AnybodyCanReconfigure(false)
 {
     m_CurrentSubmitsCounter.Set(kSubmitCounterInitialValue);
     sm_netschedule_server = this;

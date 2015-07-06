@@ -43,7 +43,8 @@ BEGIN_NCBI_SCOPE
 // Validates the config file and populates a warnings list if the file has
 // problems.
 void NS_ValidateConfigFile(const IRegistry &  reg, vector<string> &  warnings,
-                           bool  throw_port_exception);
+                           bool  throw_port_exception,
+                           bool &  decrypting_error);
 
 
 string NS_GetConfigFileChecksum(const string &  file_name,

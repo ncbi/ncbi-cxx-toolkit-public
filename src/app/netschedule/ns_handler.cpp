@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 
 #include <corelib/ncbi_system.hpp>
+#include <corelib/resource_info.hpp>
 
 #include "ns_handler.hpp"
 #include "ns_server.hpp"
@@ -106,7 +107,7 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
           { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
     { "RECO",          { &CNetScheduleHandler::x_ProcessReloadConfig,
-                         eNS_Admin },
+                         eNS_NoChecks },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  },
           { "ncbi_phid",         eNSPT_Str, eNSPA_Optional, ""  } } },
@@ -2803,14 +2804,29 @@ void CNetScheduleHandler::x_ProcessStatistics(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessReloadConfig(CQueue* q)
 {
+    // Check permissions explicitly due to additional case (the encrypted admin
+    // names could be not available)
+    if (!m_Server->IsAdminClientName(m_ClientId.GetClientName()) &&
+        !m_Server->AnybodyCanReconfigure()) {
+            m_Server->RegisterAlert(eAccess, "admin privileges required "
+                                             "to execute RECO");
+            NCBI_THROW(CNetScheduleException, eAccessDenied,
+                       "Access denied: admin privileges required");
+    }
+
+    // Unconditionally reload the decryptor in case if the key files are
+    // changed
+    CNcbiEncrypt::Reload();
+
     CNcbiApplication *      app = CNcbiApplication::Instance();
     bool                    reloaded = app->ReloadConfig(
                                             CMetaRegistry::fReloadIfChanged);
 
-    if (reloaded) {
+    if (reloaded || m_Server->AnybodyCanReconfigure()) {
         const CNcbiRegistry &   reg = app->GetConfig();
         vector<string>          config_warnings;
-        NS_ValidateConfigFile(reg, config_warnings, false);
+        bool                    admin_decrypt_error(false); // ignored here
+        NS_ValidateConfigFile(reg, config_warnings, false, admin_decrypt_error);
 
         if (!config_warnings.empty()) {
             string      msg;
@@ -2890,6 +2906,7 @@ void CNetScheduleHandler::x_ProcessReloadConfig(CQueue* q)
 
         m_Server->AcknowledgeAlert(eReconfigure, "NSAcknowledge");
         m_Server->AcknowledgeAlert(eConfigOutOfSync, "NSAcknowledge");
+        m_Server->SetAnybodyCanReconfigure(false);
         x_WriteMessage("OK:" + diff_as_string);
     }
     else

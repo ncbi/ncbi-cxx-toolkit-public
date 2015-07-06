@@ -170,8 +170,9 @@ int CNetScheduleDApp::Run(void)
     signal(SIGTERM, Threaded_Server_SignalHandler);
 
     vector<string>      config_warnings;
+    bool                admin_decrypt_error(false);
     // true -> throw exception if there is a port problem
-    NS_ValidateConfigFile(reg, config_warnings, true);
+    NS_ValidateConfigFile(reg, config_warnings, true, admin_decrypt_error);
 
     // [bdb] section
     SNSDBEnvironmentParams  bdb_params;
@@ -194,6 +195,7 @@ int CNetScheduleDApp::Run(void)
                                                         bdb_params.db_path));
     server->SetCustomThreadSuffix("_h");
     server->SetNSParameters(params, false);
+    server->SetAnybodyCanReconfigure(admin_decrypt_error);
 
     // Use port passed through parameters
     server->AddDefaultListener(new CNetScheduleConnectionFactory(&*server));

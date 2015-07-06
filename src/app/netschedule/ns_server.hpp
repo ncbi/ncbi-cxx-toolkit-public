@@ -204,6 +204,10 @@ public:
     void SetDiskConfigFileChecksum(const string &  checksum);
     string GetDiskConfigFileChecksum(void) const
     { return m_DiskConfigFileChecksum; }
+    void SetAnybodyCanReconfigure(bool  val)
+    { m_AnybodyCanReconfigure = val; }
+    bool AnybodyCanReconfigure(void) const
+    { return m_AnybodyCanReconfigure; }
 
 protected:
     virtual void Exit();
@@ -277,6 +281,8 @@ private:
 
     string                          m_RAMConfigFileChecksum;
     string                          m_DiskConfigFileChecksum;
+
+    bool                            m_AnybodyCanReconfigure;
 
 private:
     string x_GenerateGUID(void) const;

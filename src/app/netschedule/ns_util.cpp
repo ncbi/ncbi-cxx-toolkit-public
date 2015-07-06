@@ -47,7 +47,8 @@ BEGIN_NCBI_SCOPE
 
 static void NS_ValidateServerSection(const IRegistry &  reg,
                                      vector<string> &   warnings,
-                                     bool               throw_port_exception);
+                                     bool               throw_port_exception,
+                                     bool &             decrypting_error);
 static void NS_ValidateQueuesAndClasses(const IRegistry &  reg,
                                         list<string> &  queues,
                                         vector<string> &  warnings);
@@ -69,11 +70,13 @@ const string    g_ValidPrefix = "Validating config file: ";
 
 
 void NS_ValidateConfigFile(const IRegistry &  reg, vector<string> &  warnings,
-                           bool  throw_port_exception)
+                           bool  throw_port_exception,
+                           bool &  decrypting_error)
 {
     list<string>    queues;
 
-    NS_ValidateServerSection(reg, warnings, throw_port_exception);
+    NS_ValidateServerSection(reg, warnings, throw_port_exception,
+                             decrypting_error);
     NS_ValidateQueuesAndClasses(reg, queues, warnings);
     NS_ValidateServiceToQueueSection(reg, queues, warnings);
 }
@@ -82,7 +85,8 @@ void NS_ValidateConfigFile(const IRegistry &  reg, vector<string> &  warnings,
 // Populates the warnings list if there are problems
 void NS_ValidateServerSection(const IRegistry &  reg,
                               vector<string> &   warnings,
-                              bool               throw_port_exception)
+                              bool               throw_port_exception,
+                              bool &             decrypting_error)
 {
     const string    section = "server";
 
@@ -377,7 +381,24 @@ void NS_ValidateServerSection(const IRegistry &  reg,
                  "affinity_low_removal <= affinity_high_removal");
 
     NS_ValidateString(reg, section, "admin_host", warnings);
-    NS_ValidateString(reg, section, "admin_client_name", warnings);
+
+    // Instead of just validating the administrator names we try to read them
+    decrypting_error = false;
+    try {
+        reg.GetEncryptedString(section, "admin_client_name",
+                               IRegistry::fPlaintextAllowed);
+    } catch (const CRegistryException &  ex) {
+        warnings.push_back(g_ValidPrefix +
+                           NS_RegValName(section, "admin_client_name") +
+                           " decrypting error detected. " +
+                           string(ex.what()));
+        decrypting_error = true;
+    } catch (...) {
+        warnings.push_back(g_ValidPrefix +
+                           NS_RegValName(section, "admin_client_name") +
+                           " unknown decrypting error");
+        decrypting_error = true;
+    }
 }
 
 

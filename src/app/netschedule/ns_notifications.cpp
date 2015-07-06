@@ -559,7 +559,7 @@ CNSNotificationList::Notify(const TNSBitVector &   jobs,
                                       targets[j]->m_NewFormat,
                                       targets[j]->m_Reason);
 
-        // This will reschedule when the thread should wake up net time
+        // This will reschedule when the thread should wake up next time
         m_QueueDB.WakeupNotifThread();
     }
 }

@@ -220,7 +220,13 @@ void SNS_Parameters::Read(const IRegistry &  reg)
         max_client_data = default_max_client_data;
 
     admin_hosts        = reg.GetString(sname, "admin_host", kEmptyStr);
-    admin_client_names = reg.GetString(sname, "admin_client_name", kEmptyStr);
+    try {
+        admin_client_names = reg.GetEncryptedString(sname, "admin_client_name",
+                                                IRegistry::fPlaintextAllowed);
+    } catch (...) {
+        // All the warnings are collected at the time of validating the
+        // configuration file, so here a problem is simply suppressed
+    }
 
     #if defined(_DEBUG) && !defined(NDEBUG)
     ReadErrorEmulatorSection(reg);
