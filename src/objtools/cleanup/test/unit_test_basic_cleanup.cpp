@@ -64,6 +64,7 @@
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/misc/sequence_macros.hpp>
 #include <objtools/cleanup/cleanup.hpp>
+#include <objtools/unit_test_util/unit_test_util.hpp>
 
 #include <serial/objistrasn.hpp>
 
@@ -72,6 +73,8 @@
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
+
+using namespace unit_test_util;
 
 // Needed under windows for some reason.
 #ifdef BOOST_NO_EXCEPTIONS
@@ -580,3 +583,35 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2221)
     BOOST_CHECK_EQUAL(true, src->IsSetPcr_primers());
     BOOST_CHECK_EQUAL(src->GetPcr_primers().Get().front()->GetForward().Get().front()->GetSeq(), "gattacagattaca<OTHER>");
 }
+
+BOOST_AUTO_TEST_CASE(Test_SQD_2200)
+{
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+
+    CRef<CPub> pub(new CPub());
+    pub->SetGen().SetCit("unpublished title");
+    pub->SetGen().SetAuthors().SetNames().SetMl().push_back("abc");
+    pub->SetGen().SetAuthors().SetNames().SetMl().push_back("def");
+    CRef<CSeqdesc> d(new CSeqdesc());
+    d->SetPub().SetPub().Set().push_back(pub);
+
+    entry->SetSeq().SetDescr().Set().push_back(d);
+
+
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    entry->Parentize();
+
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+
+    cleanup.SetScope (scope);
+    changes = cleanup.BasicCleanup (*entry);
+
+    const CAuth_list& result = entry->GetDescr().Get().back()->GetPub().GetPub().Get().back()->GetGen().GetAuthors();
+
+    BOOST_CHECK_EQUAL(result.GetNames().IsStd(), true);
+    BOOST_CHECK_EQUAL(result.GetNames().GetStd().front()->GetName().GetName().GetLast(), "abc");
+    BOOST_CHECK_EQUAL(result.GetNames().GetStd().back()->GetName().GetName().GetLast(), "def");
+}
+
