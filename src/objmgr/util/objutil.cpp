@@ -55,7 +55,7 @@
 #include <objmgr/util/sequence.hpp>
 #include <objects/general/general_macros.hpp>
 #include <algorithm>
-#include "utils.hpp"
+#include <objmgr/util/objutil.hpp>
 
 
 BEGIN_NCBI_SCOPE

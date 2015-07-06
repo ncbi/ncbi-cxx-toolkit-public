@@ -69,7 +69,7 @@
 #include <objtools/format/items/html_anchor_item.hpp>
 #include <objtools/format/context.hpp>
 #include <objtools/format/ostream_text_ostream.hpp>
-#include "utils.hpp"
+#include <objmgr/util/objutil.hpp>
 
 #include <algorithm>
 #include <stdio.h>

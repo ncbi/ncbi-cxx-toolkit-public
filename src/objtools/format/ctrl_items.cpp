@@ -56,7 +56,7 @@
 #include <objtools/format/text_ostream.hpp>
 #include <objtools/format/items/ctrl_items.hpp>
 #include <objtools/format/context.hpp>
-#include "utils.hpp"
+#include <objmgr/util/objutil.hpp>
 
 
 BEGIN_NCBI_SCOPE

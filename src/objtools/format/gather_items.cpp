@@ -105,7 +105,7 @@
 #include <objtools/format/feature_gather.hpp>
 #include <objtools/format/context.hpp>
 #include <objtools/error_codes.hpp>
-#include "utils.hpp"
+#include <objmgr/util/objutil.hpp>
 
 #include <connect/ncbi_socket.hpp>
 

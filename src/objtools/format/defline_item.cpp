@@ -39,7 +39,7 @@
 #include <objtools/format/text_ostream.hpp>
 #include <objtools/format/items/defline_item.hpp>
 #include <objtools/format/context.hpp>
-#include "utils.hpp"
+#include <objmgr/util/objutil.hpp>
 
 
 BEGIN_NCBI_SCOPE

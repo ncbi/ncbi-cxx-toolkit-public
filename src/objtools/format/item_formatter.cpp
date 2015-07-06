@@ -59,7 +59,7 @@
 #include <objtools/format/gbseq_formatter.hpp>
 #include <objtools/format/context.hpp>
 #include <objtools/format/flat_expt.hpp>
-#include "utils.hpp"
+#include <objmgr/util/objutil.hpp>
 
 
 BEGIN_NCBI_SCOPE

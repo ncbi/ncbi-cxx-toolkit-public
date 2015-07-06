@@ -5,7 +5,8 @@
 
 ASN_DEP = submit
 
-SRC = weight sequence feature seqtitle create_defline obj_sniff seq_loc_util seq_align_util seq_trimmer bioseqgaps_ci
+SRC = weight sequence feature seqtitle create_defline obj_sniff seq_loc_util seq_align_util seq_trimmer bioseqgaps_ci \
+        objutil
 LIB = xobjutil
 
 DLL_LIB = $(SOBJMGR_LIBS)

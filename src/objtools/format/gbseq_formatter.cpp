@@ -67,7 +67,7 @@
 #include <objtools/format/items/segment_item.hpp>
 #include <objtools/format/items/contig_item.hpp>
 #include <objtools/format/items/genome_project_item.hpp>
-#include "utils.hpp"
+#include <objmgr/util/objutil.hpp>
 
 
 BEGIN_NCBI_SCOPE

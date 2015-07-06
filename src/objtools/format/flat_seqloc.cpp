@@ -47,7 +47,7 @@
 #include <objtools/format/items/flat_seqloc.hpp>
 #include <objtools/format/context.hpp>
 #include <algorithm>
-#include "utils.hpp"
+#include <objmgr/util/objutil.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)

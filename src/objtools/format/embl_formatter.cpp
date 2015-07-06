@@ -42,7 +42,7 @@
 #include <objtools/format/items/source_item.hpp>
 #include <objtools/format/embl_formatter.hpp>
 #include <objtools/format/context.hpp>
-#include "utils.hpp"
+#include <objmgr/util/objutil.hpp>
 
 
 BEGIN_NCBI_SCOPE

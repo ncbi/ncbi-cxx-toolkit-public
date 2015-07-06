@@ -44,7 +44,7 @@
 #include <objtools/format/text_ostream.hpp>
 #include <objtools/format/items/accession_item.hpp>
 #include <objtools/format/context.hpp>
-#include "utils.hpp"
+#include <objmgr/util/objutil.hpp>
 #include <algorithm>
 
 

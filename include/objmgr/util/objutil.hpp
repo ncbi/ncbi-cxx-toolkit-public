@@ -1,5 +1,5 @@
-#ifndef OBJTOOLS_FORMAT___UTILS_HPP
-#define OBJTOOLS_FORMAT___UTILS_HPP
+#ifndef OBJMGR_UTIL___OBJUTILS_HPP
+#define OBJMGR_UTIL___OBJUTILS_HPP
 
 /*  $Id$
 * ===========================================================================

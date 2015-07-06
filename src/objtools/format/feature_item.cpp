@@ -107,7 +107,7 @@
 #include <objtools/format/items/gene_finder.hpp>
 #include <objtools/format/context.hpp>
 #include <objtools/format/items/qualifiers.hpp>
-#include "utils.hpp"
+#include <objmgr/util/objutil.hpp>
 #include "inst_info_map.hpp"
 
 // On Mac OS X 10.3, FixMath.h defines ff as a one-argument macro(!)
