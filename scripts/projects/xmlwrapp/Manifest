@@ -44,5 +44,8 @@ IntelMAC          : GCC            : GCC.sh           --without-debug --with-mt 
 Win32_10          : 1000-static-32 : static 32 ReleaseDLL
 Win64_10          : 1000-static-64 : static 64 ReleaseDLL
 
+Win32_13          : 13-static-32   : static 32 ReleaseDLL
+Win64_13          : 13-static-64   : static 64 ReleaseDLL
+
 XCode             : plain          : Xcode.sh 30
 
