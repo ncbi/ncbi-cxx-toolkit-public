@@ -883,7 +883,7 @@ static void s_TestFormats(void)
 
     // CTimeFormat::GetPredefined() test
     {{
-        CTime t(2003, 2, 10, 20, 40, 30, 123456789, CTime::eUTC);
+        CTime t(2003, 2, 10, 20, 40, 30, 123, CTime::eUTC);
         string s;
         s = t.AsString(CTimeFormat::GetPredefined(CTimeFormat::eISO8601_Year));
         assert(s.compare("2003") == 0);
@@ -896,7 +896,24 @@ static void s_TestFormats(void)
         s = t.AsString(CTimeFormat::GetPredefined(CTimeFormat::eISO8601_DateTimeSec));
         assert(s.compare("2003-02-10T20:40:30") == 0);
         s = t.AsString(CTimeFormat::GetPredefined(CTimeFormat::eISO8601_DateTimeFrac));
-        assert(s.compare("2003-02-10T20:40:30.123") == 0);
+        assert(s.compare("2003-02-10T20:40:30.000000123") == 0);
+    }}
+    // CTimeFormat::GetPredefined( eISO8601_DateTimeFrac ) test
+    {{
+        CTime t(2003, 2, 10, 20, 40, 30, 0, CTime::eLocal);
+        CTimeFormat fmt = CTimeFormat::GetPredefined(CTimeFormat::eISO8601_DateTimeFrac);
+        t.SetNanoSecond(0);
+        assert(t.AsString(fmt) == "2003-02-10T20:40:30.0");
+        t.SetNanoSecond(2);
+        assert(t.AsString(fmt) == "2003-02-10T20:40:30.000000002");
+        t.SetNanoSecond(1234);
+        assert(t.AsString(fmt) == "2003-02-10T20:40:30.000001234");
+        t.SetNanoSecond(123456789);
+        assert(t.AsString(fmt) == "2003-02-10T20:40:30.123456789");
+        t.SetNanoSecond(123000);
+        assert(t.AsString(fmt) == "2003-02-10T20:40:30.000123");
+        t.SetNanoSecond(123000000);
+        assert(t.AsString(fmt) == "2003-02-10T20:40:30.123");
     }}
 
     // Test assignment operator in different (from default) time format
@@ -946,7 +963,7 @@ static void s_TestFormats(void)
 
 //============================================================================
 //
-// Test GMT
+// Test UTC/GMT
 //
 //============================================================================
 
@@ -974,7 +991,11 @@ static void s_TestUTC(void)
     {{   
         CTime t;
         t.SetFormat("M/D/Y h:m:s Z");
+        t = "03/12/2001 11:22:33 UTC";
+        assert(t.AsString() == "03/12/2001 11:22:33 GMT");
         t = "03/12/2001 11:22:33 GMT";
+        assert(t.AsString() == "03/12/2001 11:22:33 GMT");
+        t = "03/12/2001 11:22:33 Z";
         assert(t.AsString() == "03/12/2001 11:22:33 GMT");
         t = "03/12/2001 11:22:33 ";
         assert(t.AsString() == "03/12/2001 11:22:33 ");

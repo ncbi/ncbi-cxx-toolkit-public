@@ -383,12 +383,12 @@ CTimeFormat CTimeFormat::GetPredefined(EPredefined fmt, TFlags flags)
     // Predefined time formats
     static const char* s_Predefined[][2] =
     {
-        {"Y",              "$Y"},
-        {"Y-M",            "$Y-$M"},
-        {"Y-M-D",          "$Y-$M-$D"},
-        {"Y-M-DTh:m",      "$Y-$M-$DT$h:$m"},
-        {"Y-M-DTh:m:s",    "$Y-$M-$DT$h:$m:$s"},
-        {"Y-M-DTh:m:s.l",  "$Y-$M-$DT$h:$m:$s.$l"},
+        {"Y",            "$Y"},
+        {"Y-M",         "$Y-$M"},
+        {"Y-M-D",       "$Y-$M-$D"},
+        {"Y-M-DTh:m",   "$Y-$M-$DT$h:$m"},
+        {"Y-M-DTh:m:s", "$Y-$M-$DT$h:$m:$s"},
+        {"Y-M-DTh:m:g", "$Y-$M-$DT$h:$m:$g"},
     };
     int fmt_type = (flags & fFormat_Ncbi) ? 1 : 0;
     return CTimeFormat(s_Predefined[(int)fmt][(int)fmt_type], flags);
@@ -644,9 +644,10 @@ bool CTime::x_Init(const string& str, const CTimeFormat& format, EErrAction err_
         // Timezone (UTC time)
         if (*fff == 'Z') {
             if ((NStr::strncasecmp(sss, "UTC", 3) == 0) ||
-                (NStr::strncasecmp(sss, "GMT", 3) == 0)) {
+                (NStr::strncasecmp(sss, "GMT", 3) == 0) ||
+                (*sss == 'Z')) {
                 m_Data.tz = eUTC;
-                sss += 3;
+                sss += ((*sss == 'Z') ? 1 : 3);
             } else {
                 m_Data.tz = eLocal;
             }

@@ -121,7 +121,7 @@ typedef struct {
 ///
 /// Defines a storage class for time format.
 ///
-/// See CTime::SetFormat and CTimeSpan::SetFormat for description
+/// See CTime::SetFormat() and CTimeSpan::SetFormat() for description
 /// of format symbols for specific class.
 
 class NCBI_XNCBI_EXPORT CTimeFormat
@@ -186,12 +186,12 @@ public:
     /// @sa GetPredefined, CTime::SetFormat
     enum EPredefined {
         // ISO 8601 formats (without time zone)
-        eISO8601_Year         = 0,  ///< Y            (eg 1997)
-        eISO8601_YearMonth    = 1,  ///< Y-M          (eg 1997-07)
-        eISO8601_Date         = 2,  ///< Y-M-D        (eg 1997-07-16)
-        eISO8601_DateTimeMin  = 3,  ///< Y-M-DTh:m    (eg 1997-07-16T19:20)
-        eISO8601_DateTimeSec  = 4,  ///< Y-M-DTh:m:s  (eg 1997-07-16T19:20:30)
-        eISO8601_DateTimeFrac = 5   ///< Y-M-DTh:m:s.l(eg 1997-07-16T19:20:30.123)
+        eISO8601_Year         = 0,  ///< Y           (eg 1997)
+        eISO8601_YearMonth    = 1,  ///< Y-M         (eg 1997-07)
+        eISO8601_Date         = 2,  ///< Y-M-D       (eg 1997-07-16)
+        eISO8601_DateTimeMin  = 3,  ///< Y-M-DTh:m   (eg 1997-07-16T19:20)
+        eISO8601_DateTimeSec  = 4,  ///< Y-M-DTh:m:s (eg 1997-07-16T19:20:30)
+        eISO8601_DateTimeFrac = 5   ///< Y-M-DTh:m:g (eg 1997-07-16T19:20:30.123)
     };
 
     /// Default constructor.
@@ -230,7 +230,7 @@ public:
     /// @param flags
     ///   Flags specifying how to match a time string against format string.
     /// @sa
-    ///   GetFormat, EFormat
+    ///   GetFormat, EFormat, CTime::SetFormat, CTimeSpan::SetFormat
     void SetFormat(const string& fmt, TFlags flags = fDefault);
 
     /// Get format string.
@@ -458,7 +458,8 @@ public:
     ///   method, or default "M/D/Y h:m:s".
     /// @param tz
     ///   If current format contains 'Z', then objects timezone will be set to:
-    ///     - eUTC if "str" has words "GMT" or "UTC" in the appropriate position;
+    ///     - eUTC if "str" has words "GMT", "UTC" or "Z" (zero UTC offset) in 
+    ///       the appropriate position;
     ///     - eLocal otherwise.
     ///   If current format does not contain 'Z', objects timezone
     ///   will be set to 'tz' value.
@@ -476,7 +477,8 @@ public:
     /// Assignment operator from string.
     ///
     /// If current format contains 'Z', then objects timezone will be set to:
-    ///   - eUTC if "str" has words "GMT" or "UTC" in the appropriate position;
+    ///   - eUTC if "str" has words "GMT", "UTC" or "Z" (zero UTC offset) in
+    ///     the appropriate position;
     ///   - eLocal otherwise.
     /// If current format does not contain 'Z', objects timezone
     /// will not be changed.
@@ -602,7 +604,7 @@ public:
     ///   - p = am/pm                          (am/pm)
     ///   - W = full day of week name          (Sunday-Saturday)
     ///   - w = abbreviated day of week name   (Sun-Sat)
-    ///   - Z = timezone format                (GMT/UTC or none)
+    ///   - Z = UTC timezone designator        (GMT/UTC/Z or none)
     ///
     ///   following available on POSIX platforms only:
     ///   - z = timezone shift                 ([GMT/UTC]+/-HHMM)
@@ -682,10 +684,10 @@ public:
     ///   Output timezone. This is a difference in seconds between universal
     ///   and local time for some place (for example, for EST5 timezone
     ///   its value is 18000). This parameter works only with local time.
-    ///   If the time object contains universal (GMT/UTC) time it is ignored.
+    ///   If the time object contains universal (GMT/UTC/Z) time it is ignored.
     ///   Before doing transformation to string, the time will be converted
     ///   to the output timezone. Timezone can be printed as a string 
-    ///   'GMT/UTC[+|-]HHMM' using the format symbol 'z'.
+    ///   'GMT/UTC/Z[+|-]HHMM' using the format symbol 'z'.
     ///   By default the current timezone is used.
     /// @sa
     ///   GetFormat, SetFormat
@@ -1093,7 +1095,7 @@ public:
     /// Is time local time?
     bool IsLocalTime (void) const;
 
-    /// Is time universal (GMT/UTC)?
+    /// Is time universal (GMT/UTC/Z)?
     bool IsUniversalTime(void) const;
     bool IsGmtTime(void) const { return IsUniversalTime(); };
 
@@ -1155,11 +1157,13 @@ public:
     CTime& ToUniversalTime(void);
     CTime& ToGmtTime(void) { return ToUniversalTime(); };
 
-    /// Get difference between local timezone for current time object and UTC in seconds.
+    /// Get difference between local timezone for current time object
+    /// and UTC in seconds.
     /// @deprecated Use CTime::TimeZoneOffset() instead.
     NCBI_DEPRECATED TSeconds TimeZoneDiff(void) const;
 
-    /// Get difference between local timezone for current time object and UTC in seconds.
+    /// Get difference between local timezone for current time object
+    /// and UTC in seconds.
     TSeconds TimeZoneOffset(void) const;
 
     /// Get time zone offset string in format [+/-]HHMM.
@@ -1355,9 +1359,9 @@ public:
     ///   - N = total whole number of nanoseconds stored in the time span
     ///   - n = nanoseconds (-999999999 - 999999999)
     ///   - G = total whole number of seconds and part of second as double value
-    ///         ("S.nnn") with floating number (1-9) of digits after dot.
+    ///         ("S.n") with floating number (1-9) of digits after dot.
     ///   - g = seconds, "S" modulo 60 and part of second as double value
-    ///         ("s.nnn") with floating number (1-9) of digits after dot.
+    ///         ("s.n") with floating number (1-9) of digits after dot.
     /// @sa
     ///   CTimeFormat, GetFormat, AsString
     static void SetFormat(const CTimeFormat& format);
