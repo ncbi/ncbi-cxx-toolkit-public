@@ -10,9 +10,9 @@ var g_open_solution = true;
 var g_def_branch = "toolkit/trunk/internal/c++";
 var g_branch     = "toolkit/trunk/internal/c++";
 
-// valid:   "71", "80", "80x64", "90", "90x64", "100", "100x64", "110", "110x64"
-var g_def_msvcver = "100";
-var g_msvcver     = "100";
+// valid:   "71", "80", "80x64", "90", "90x64", "100", "100x64", "120", "120x64"
+var g_def_msvcver = "120";
+var g_msvcver     = "120";
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Utility functions :
@@ -500,6 +500,7 @@ function SetMsvcVer(oArgs, flag)
                             && msvcver != "90" &&  msvcver != "90x64"
                             && msvcver != "100" && msvcver != "100x64"
                             && msvcver != "110" && msvcver != "110x64"
+                            && msvcver != "120" && msvcver != "120x64"
            ) {
             WScript.Echo("ERROR: Unknown version of MSVC requested: " + msvcver);
             WScript.Quit(1);    
@@ -520,6 +521,9 @@ function GetMsvcFolder()
         return "msvc1000_prj";
     }
     if (g_msvcver == "110" || g_msvcver == "110x64") {
+        return "vs2013";
+    }
+    if (g_msvcver == "120" || g_msvcver == "120x64") {
         return "vs2013";
     }
     return "msvc710_prj";
@@ -600,9 +604,9 @@ function GetDefaultSuffix()
         s = "msvc10";
     } else if (g_msvcver == "100x64") {
         s = "msvc10.64";
-    } else if (g_msvcver == "110") {
+    } else if (g_msvcver == "110" || g_msvcver == "120") {
         s = "vs2013";
-    } else if (g_msvcver == "110x64") {
+    } else if (g_msvcver == "110x64" || g_msvcver == "120x64") {
         s = "vs2013.64";
     } else {
         s = "msvc71";
@@ -632,6 +636,10 @@ function GetPtbTargetSolutionArgs(oShell, ptb)
         s = " -ide 1100 -arch Win32";
     } else if (g_msvcver == "110x64") {
         s = " -ide 1100 -arch x64";
+    } else if (g_msvcver == "120") {
+        s = " -ide 1200 -arch Win32";
+    } else if (g_msvcver == "120x64") {
+        s = " -ide 1200 -arch x64";
     } else {
         s = " -ide 710 -arch Win32";
     }
@@ -639,7 +647,9 @@ function GetPtbTargetSolutionArgs(oShell, ptb)
 }
 function GetTargetPlatform()
 {
-    if (g_msvcver == "80x64" || g_msvcver == "90x64" || g_msvcver == "100x64" || g_msvcver == "110x64") {
+    if (g_msvcver == "80x64"  || g_msvcver == "90x64" ||
+        g_msvcver == "100x64" || g_msvcver == "110x64" ||
+        g_msvcver == "120x64") {
         return "x64";
     }
     return "Win32";
