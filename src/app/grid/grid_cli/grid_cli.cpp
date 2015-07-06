@@ -1265,7 +1265,7 @@ int CGridCommandLineInterfaceApp::Run()
             }
             --m_ArgC;
             if (argc > 0)
-                memcpy(argv, argv + 1, argc * sizeof(*argv));
+                memmove(argv, argv + 1, argc * sizeof(*argv));
         }
 
         CCommandLineParser clparser(GRID_APP_NAME, GRID_APP_VERSION_INFO,
