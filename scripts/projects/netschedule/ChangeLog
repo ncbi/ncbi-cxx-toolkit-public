@@ -1,3 +1,17 @@
+Release 4.22.0 based on SC-16.1 (2015-07-06)
+
+Improvements:
+    * NetSchedule: fresh Berkley DB version (JIRA: CXX-6094)
+    * NetSchedule: RDRB to have blacklist option (JIRA: CXX-6077)
+    * NetSchedule: new GET2/READ2 flag (JIRA: CXX-6054)
+    * NetSchedule -- change default behavior of READ/READ2 with affinity and/or
+      group restriction (JIRA: CXX-5989)
+    * NetSchedule: encrypted admin names support (JIRA: CXX-5809)
+    * NetStorage & NetSchedule: reconfigurable on-the-fly CServer parameters
+      (JIRA: CXX-5580)
+    * NetSchedule -- job lifetime performance metrics (JIRA: CXX-4581)
+
+
 Release 4.21.2 cloned from 4.21.1 (2015-04-21)
 
 Improvements:
