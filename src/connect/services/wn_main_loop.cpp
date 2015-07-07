@@ -722,14 +722,15 @@ bool CMainLoopThread::x_WaitForNewJob(CNetScheduleJob& job)
         if (CGridGlobals::GetInstance().IsShuttingDown())
             return false;
 
-        if (m_Timeline.HasScheduledActions()) {
-            if (m_WorkerNode->m_NSExecutor->
-                    m_NotificationHandler.WaitForNotification(
-                        m_Timeline.GetNextTimeout()))
-                x_ProcessRequestJobNotification();
-            else if (x_PerformTimelineAction(
-                        m_Timeline.PullScheduledAction(), job))
-                return true;
+        // At least, the discovery action must be there
+        _ASSERT(m_Timeline.HasScheduledActions());
+
+        if (m_WorkerNode->m_NSExecutor->
+                m_NotificationHandler.WaitForNotification(
+                    m_Timeline.GetNextTimeout()))
+            x_ProcessRequestJobNotification();
+        else {
+            m_Timeline.PushImmediateAction(m_Timeline.PullScheduledAction());
         }
     }
 }

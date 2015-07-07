@@ -237,20 +237,21 @@ CNetScheduleJobReader::EReadNextJobResult SNetScheduleJobReaderImpl::ReadNextJob
         if (timeout == NULL || deadline.GetRemainingTime().IsZero())
             return CNetScheduleJobReader::eRNJ_NotReady;
 
+        // At least, the discovery action must be there
+        _ASSERT(m_Timeline.HasScheduledActions());
+
         // There's still time. Wait for notifications and query the servers.
-        if (m_Timeline.HasScheduledActions()) {
-            const CDeadline next_event_time = m_Timeline.GetNextTimeout();
-            if (deadline < next_event_time) {
-                if (!m_API->m_NotificationThread->
-                        m_ReadNotifications.Wait(deadline))
-                    return CNetScheduleJobReader::eRNJ_NotReady;
-                x_ProcessReadJobNotifications();
-            } else if (m_API->m_NotificationThread->
-                    m_ReadNotifications.Wait(next_event_time))
-                x_ProcessReadJobNotifications();
-            else if (x_PerformTimelineAction(m_Timeline.PullScheduledAction(),
-                    *job, job_status, &no_more_jobs))
-                return CNetScheduleJobReader::eRNJ_JobReady;
+        const CDeadline next_event_time = m_Timeline.GetNextTimeout();
+        if (deadline < next_event_time) {
+            if (!m_API->m_NotificationThread->
+                    m_ReadNotifications.Wait(deadline))
+                return CNetScheduleJobReader::eRNJ_NotReady;
+            x_ProcessReadJobNotifications();
+        } else if (m_API->m_NotificationThread->
+                m_ReadNotifications.Wait(next_event_time))
+            x_ProcessReadJobNotifications();
+        else {
+            m_Timeline.PushImmediateAction(m_Timeline.PullScheduledAction());
         }
     }
 }
