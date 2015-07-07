@@ -9802,6 +9802,7 @@ void CNewCleanup_imp::x_PCRPrimerSetBC( CPCRPrimerSet &primer_set )
             string &name = GET_MUTABLE(primer, Name).Set();
             const string before = name;
             x_CleanupStringMarkChanged(name);
+            x_CompressStringSpacesMarkChanged(name);
             if( before != name ) {
                 ChangeMade(CCleanupChange::eChangePCRPrimers);
             }
