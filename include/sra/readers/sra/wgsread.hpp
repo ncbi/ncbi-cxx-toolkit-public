@@ -152,6 +152,7 @@ public:
     CWGSDb_Impl(CVDBMgr& mgr,
                 CTempString path_or_acc,
                 CTempString vol_path = CTempString());
+    virtual ~CWGSDb_Impl(void);
 
     const string& GetIdPrefix(void) const {
         return m_IdPrefix;
@@ -337,11 +338,42 @@ protected:
     };
 
     // open tables
-    const CVDBTable& SeqTable(void) const;
-    const CVDBTable& ScfTable(void) const;
-    const CVDBTable& ProtTable(void) const;
-    const CVDBTable& GiIdxTable(void) const;
+    void OpenTable(CVDBTable& table,
+                   const char* table_name,
+                   volatile bool& table_is_opened);
+    void OpenScfTable(void);
+    void OpenProtTable(void);
+    void OpenGiIdxTable(void);
+    void OpenProtAccIndex(void);
 
+    const CVDBTable& SeqTable(void) {
+        return m_SeqTable;
+    }
+    const CVDBTable& ScfTable(void) {
+        if ( !m_ScfTableIsOpened ) {
+            OpenScfTable();
+        }
+        return m_ScfTable;
+    }
+    const CVDBTable& ProtTable(void) {
+        if ( !m_ProtTableIsOpened ) {
+            OpenProtTable();
+        }
+        return m_ProtTable;
+    }
+    const CVDBTable& GiIdxTable(void) {
+        if ( !m_GiIdxTableIsOpened ) {
+            OpenGiIdxTable();
+        }
+        return m_GiIdxTable;
+    }
+    const CVDBTableIndex& ProtAccIndex(void) {
+        if ( !m_ProtAccIndexIsOpened ) {
+            OpenProtAccIndex();
+        }
+        return m_ProtAccIndex;
+    }
+    
     // get table accessor object for exclusive access
     CRef<SSeqTableCursor> Seq(void);
     CRef<SScfTableCursor> Scf(void);
@@ -369,13 +401,13 @@ private:
     CVDBMgr m_Mgr;
     string m_WGSPath;
     CVDB m_Db;
+    CVDBTable m_SeqTable;
     string m_IdPrefixWithVersion;
     string m_IdPrefix;
     int m_IdVersion;
     SIZE_TYPE m_IdRowDigits;
 
-    CMutex m_TableMutex;
-    CVDBTable m_SeqTable;
+    CFastMutex m_TableMutex;
     volatile bool m_ScfTableIsOpened;
     volatile bool m_ProtTableIsOpened;
     volatile bool m_GiIdxTableIsOpened;
@@ -383,17 +415,6 @@ private:
     CVDBTable m_ScfTable;
     CVDBTable m_ProtTable;
     CVDBTable m_GiIdxTable;
-
-    const CVDBTable& x_InitTable(CVDBTable& table,
-                                 const char* table_name);
-    const CVDBTable& x_InitTable(CVDBTable& table,
-                                 const char* table_name,
-                                 volatile bool& table_is_opened);
-
-    const CVDBTable& SeqTable(void);
-    const CVDBTable& ScfTable(void);
-    const CVDBTable& ProtTable(void);
-    const CVDBTable& GiIdxTable(void);
 
     CVDBObjectCache<SSeqTableCursor> m_Seq;
     CVDBObjectCache<SScfTableCursor> m_Scf;
@@ -403,10 +424,6 @@ private:
 
     bool m_IsSetMasterDescr;
     TMasterDescr m_MasterDescr;
-
-private:
-    CWGSDb_Impl(const CWGSDb_Impl&);
-    void operator=(const CWGSDb_Impl&);
 };
 
 
@@ -436,7 +453,7 @@ public:
     // if is_scaffold flag pointer is not null, then scaffold ids are also
     // accepted and the flag is set appropriately
     NCBI_DEPRECATED
-    uint64_t ParseRow(CTempString acc, bool* is_scaffold = 0) const {
+    uint64_t ParseRow(CTempString acc, bool* is_scaffold = NULL) const {
         return GetObject().ParseRow(acc, is_scaffold);
     }
     // parse contig row id from accession
@@ -530,7 +547,7 @@ public:
                     EWithdrawn withdrawn = eExcludeWithdrawn);
     ~CWGSSeqIterator(void);
 
-    DECLARE_SAFE_BOOL_METHOD(m_CurrId < m_FirstBadId);
+    DECLARE_OPERATOR_BOOL(m_CurrId < m_FirstBadId);
 
     CWGSSeqIterator& operator++(void)
         {
@@ -644,7 +661,7 @@ public:
     CWGSScaffoldIterator(const CWGSDb& wgs_db, CTempString acc);
     ~CWGSScaffoldIterator(void);
 
-    DECLARE_SAFE_BOOL_METHOD(m_CurrId < m_FirstBadId);
+    DECLARE_OPERATOR_BOOL(m_CurrId < m_FirstBadId);
 
     CWGSScaffoldIterator& operator++(void) {
         ++m_CurrId;
@@ -716,7 +733,7 @@ public:
     CWGSGiIterator(const CWGSDb& wgs_db, TGi gi, ESeqType seq_type = eAll);
     ~CWGSGiIterator(void);
 
-    DECLARE_SAFE_BOOL_METHOD(m_CurrGi < m_FirstBadGi);
+    DECLARE_OPERATOR_BOOL(m_CurrGi < m_FirstBadGi);
 
     CWGSGiIterator& operator++(void) {
         ++m_CurrGi;
@@ -767,7 +784,7 @@ public:
     CWGSProteinIterator(const CWGSDb& wgs_db, CTempString acc);
     ~CWGSProteinIterator(void);
 
-    DECLARE_SAFE_BOOL_METHOD(m_CurrId < m_FirstBadId);
+    DECLARE_OPERATOR_BOOL(m_CurrId < m_FirstBadId);
 
     CWGSProteinIterator& operator++(void) {
         ++m_CurrId;

@@ -33,6 +33,7 @@
  */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbimtx.hpp>
 #include <util/range.hpp>
 #include <sra/readers/sra/vdbread.hpp>
 #include <objects/seq/seq_id_handle.hpp>
@@ -53,8 +54,8 @@ class CVDBGraphSeqIterator;
 class NCBI_SRAREAD_EXPORT CVDBGraphDb_Impl : public CObject
 {
 public:
-    CVDBGraphDb_Impl(void) {}
     CVDBGraphDb_Impl(CVDBMgr& mgr, CTempString path);
+    virtual ~CVDBGraphDb_Impl(void);
 
     // check if there are graph track of intermediate zoom level
     bool HasMidZoomGraphs(void);
@@ -64,9 +65,8 @@ protected:
 
     // SSeqTableCursor is helper accessor structure for SEQUENCE table
     struct SGraphTableCursor : public CObject {
-        SGraphTableCursor(const CVDBGraphDb_Impl& db);
+        SGraphTableCursor(const CVDBTable& table);
 
-        CVDBTable m_Table;
         CVDBCursor m_Cursor;
 
         typedef int64_t TGraphV;
@@ -117,6 +117,10 @@ protected:
         return m_SeqMapBySeq_id;
     }
 
+    // get table object
+    const CVDBTable& GraphTable(void) {
+        return m_GraphTable;
+    }
     // get table accessor object for exclusive access
     CRef<SGraphTableCursor> Graph(void);
     // return table accessor object for reuse
@@ -124,22 +128,16 @@ protected:
         m_Graph.Put(curs);
     }
 
-protected:
-
 private:
     CVDBMgr m_Mgr;
     string m_Path;
-    CVDB m_Db;
 
+    CVDBTable m_GraphTable;
     CVDBObjectCache<SGraphTableCursor> m_Graph;
 
     TSeqInfoList m_SeqList; // list of cached refseqs' information
     TSeqInfoMapByName m_SeqMapByName; // index for refseq info lookup
     TSeqInfoMapBySeq_id m_SeqMapBySeq_id; // index for refseq info lookup
-
-private:
-    CVDBGraphDb_Impl(const CVDBGraphDb_Impl&);
-    void operator=(const CVDBGraphDb_Impl&);
 };
 
 

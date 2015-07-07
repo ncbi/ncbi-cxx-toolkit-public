@@ -314,8 +314,7 @@ CTempString CWGSProtAccResolver::Find(const string& acc) const
 
 
 CWGSDb_Impl::SSeqTableCursor::SSeqTableCursor(const CVDBTable& table)
-    : m_Table(table),
-      m_Cursor(table),
+    : m_Cursor(table),
       INIT_OPTIONAL_VDB_COLUMN(GI),
       INIT_VDB_COLUMN(ACCESSION),
       INIT_VDB_COLUMN(ACC_VERSION),
@@ -342,8 +341,7 @@ CWGSDb_Impl::SSeqTableCursor::SSeqTableCursor(const CVDBTable& table)
 
 
 CWGSDb_Impl::SScfTableCursor::SScfTableCursor(const CVDBTable& table)
-    : m_Table(table),
-      m_Cursor(table),
+    : m_Cursor(table),
       INIT_VDB_COLUMN(SCAFFOLD_NAME),
       INIT_OPTIONAL_VDB_COLUMN(ACCESSION),
       INIT_VDB_COLUMN(COMPONENT_ID),
@@ -357,8 +355,7 @@ CWGSDb_Impl::SScfTableCursor::SScfTableCursor(const CVDBTable& table)
 
 
 CWGSDb_Impl::SIdxTableCursor::SIdxTableCursor(const CVDBTable& table)
-    : m_Table(table),
-      m_Cursor(table),
+    : m_Cursor(table),
       INIT_OPTIONAL_VDB_COLUMN(NUC_ROW_ID),
       INIT_OPTIONAL_VDB_COLUMN(PROT_ROW_ID)
 {
@@ -366,8 +363,7 @@ CWGSDb_Impl::SIdxTableCursor::SIdxTableCursor(const CVDBTable& table)
 
 
 CWGSDb_Impl::SProtTableCursor::SProtTableCursor(const CVDBTable& table)
-    : m_Table(table),
-      m_Cursor(table),
+    : m_Cursor(table),
       INIT_VDB_COLUMN(ACCESSION),
       INIT_OPTIONAL_VDB_COLUMN(GB_ACCESSION),
       INIT_VDB_COLUMN(ACC_VERSION),
@@ -388,6 +384,7 @@ CWGSDb_Impl::CWGSDb_Impl(CVDBMgr& mgr,
     : m_Mgr(mgr),
       m_WGSPath(NormalizePathOrAccession(path_or_acc, vol_path)),
       m_Db(mgr, m_WGSPath),
+      m_SeqTable(m_Db, "SEQUENCE"),
       m_IdVersion(0),
       m_ScfTableIsOpened(false),
       m_ProtTableIsOpened(false),
@@ -396,6 +393,11 @@ CWGSDb_Impl::CWGSDb_Impl(CVDBMgr& mgr,
       m_IsSetMasterDescr(false)
 {
     x_InitIdParams();
+}
+
+
+CWGSDb_Impl::~CWGSDb_Impl(void)
+{
 }
 
 
@@ -459,67 +461,49 @@ string CWGSDb_Impl::NormalizePathOrAccession(CTempString path_or_acc,
 
 
 inline
-const CVDBTable& CWGSDb_Impl::x_InitTable(CVDBTable& table,
-                                          const char* table_name)
+void CWGSDb_Impl::OpenTable(CVDBTable& table,
+                            const char* table_name,
+                            volatile bool& table_is_opened)
 {
-    if ( !table ) {
-        CMutexGuard guard(m_TableMutex);
-        if ( !table ) {
-            table = CVDBTable(m_Db, table_name);
-        }
-    }
-    return table;
-}
-
-
-inline
-const CVDBTable& CWGSDb_Impl::x_InitTable(CVDBTable& table,
-                                          const char* table_name,
-                                          volatile bool& table_is_opened)
-{
+    CFastMutexGuard guard(m_TableMutex);
     if ( !table_is_opened ) {
-        CMutexGuard guard(m_TableMutex);
-        if ( !table_is_opened ) {
-            try {
-                table = CVDBTable(m_Db, table_name);
-            }
-            catch ( CSraException& exc ) {
-                if ( exc.GetErrCode() != CSraException::eNotFoundTable ) {
-                    throw;
-                }
-            }
-            table_is_opened = true;
-        }
+        table = CVDBTable(m_Db, table_name, CVDBTable::eMissing_Allow);
+        table_is_opened = true;
     }
-    return table;
 }
 
 
-inline
-const CVDBTable& CWGSDb_Impl::SeqTable(void)
+void CWGSDb_Impl::OpenScfTable(void)
 {
-    return x_InitTable(m_SeqTable, "SEQUENCE");
+    OpenTable(m_ScfTable, "SCAFFOLD", m_ScfTableIsOpened);
 }
 
 
-inline
-const CVDBTable& CWGSDb_Impl::ScfTable(void)
+void CWGSDb_Impl::OpenProtTable(void)
 {
-    return x_InitTable(m_ScfTable, "SCAFFOLD", m_ScfTableIsOpened);
+    OpenTable(m_ProtTable, "PROTEIN", m_ProtTableIsOpened);
 }
 
 
-inline
-const CVDBTable& CWGSDb_Impl::ProtTable(void)
+void CWGSDb_Impl::OpenGiIdxTable(void)
 {
-    return x_InitTable(m_ProtTable, "PROTEIN", m_ProtTableIsOpened);
+    OpenTable(m_GiIdxTable, "GI_IDX", m_GiIdxTableIsOpened);
 }
 
 
-inline
-const CVDBTable& CWGSDb_Impl::GiIdxTable(void)
+void CWGSDb_Impl::OpenProtAccIndex(void)
 {
-    return x_InitTable(m_GiIdxTable, "GI_IDX", m_GiIdxTableIsOpened);
+    if ( const CVDBTable& table = ProtTable() ) {
+        CFastMutexGuard guard(m_TableMutex);
+        if ( !m_ProtAccIndexIsOpened ) {
+            m_ProtAccIndex = CVDBTableIndex(table, "gb_accession",
+                                            CVDBTableIndex::eMissing_Allow);
+        }
+        m_ProtAccIndexIsOpened = true;
+    }
+    else {
+        m_ProtAccIndexIsOpened = true;
+    }
 }
 
 
@@ -763,9 +747,7 @@ bool CWGSDb_Impl::LoadMasterDescr(int filter)
 {
     if ( !IsSetMasterDescr() &&
          NCBI_PARAM_TYPE(WGS, MASTER_DESCR)::GetDefault() ) {
-        CRef<SSeqTableCursor> seq = Seq();
-        x_LoadMasterDescr(seq->m_Table, filter);
-        Put(seq);
+        x_LoadMasterDescr(SeqTable(), filter);
     }
     return IsSetMasterDescr();
 }
@@ -775,7 +757,7 @@ void CWGSDb_Impl::x_LoadMasterDescr(const CVDBTable& table,
                                     int filter)
 {
     CKMetadata meta(table);
-    CKMDataNode node(meta, "MASTER", CKMDataNode::eMissingIgnore);
+    CKMDataNode node(meta, "MASTER", CKMDataNode::eMissing_Allow);
     if ( !node ) {
         return;
     }
@@ -910,26 +892,17 @@ pair<uint64_t, bool> CWGSDb_Impl::GetGiRowId(TGi gi)
     pair<uint64_t, bool> ret;
     if ( CRef<SIdxTableCursor> idx = Idx() ) {
         if ( idx->m_NUC_ROW_ID ) {
-            try {
-                ret.first = *idx->NUC_ROW_ID(TIntId(gi));
-            }
-            catch ( CSraException& exc ) {
-                if ( exc.GetErrCode() != CSraException::eNotFoundValue ) {
-                    throw;
-                }
+            CVDBValueFor<uint64_t> value =
+                idx->NUC_ROW_ID(TIntId(gi), CVDBValue::eMissing_Allow);
+            if ( value.data() ) {
+                ret.first = value;
             }
         }
         if ( !ret.first && idx->m_PROT_ROW_ID ) {
-            try {
-                ret.first = *idx->PROT_ROW_ID(TIntId(gi));
-                if ( ret.first ) {
-                    ret.second = true;
-                }
-            }
-            catch ( CSraException& exc ) {
-                if ( exc.GetErrCode() != CSraException::eNotFoundValue ) {
-                    throw;
-                }
+            CVDBValueFor<uint64_t> value =
+                idx->PROT_ROW_ID(TIntId(gi), CVDBValue::eMissing_Allow);
+            if ( value.data() ) {
+                ret.first = value;
             }
         }
         Put(idx);
@@ -943,13 +916,10 @@ uint64_t CWGSDb_Impl::GetNucGiRowId(TGi gi)
     uint64_t ret = 0;
     if ( CRef<SIdxTableCursor> idx = Idx() ) {
         if ( idx->m_NUC_ROW_ID ) {
-            try {
-                ret = *idx->NUC_ROW_ID(TIntId(gi));
-            }
-            catch ( CSraException& exc ) {
-                if ( exc.GetErrCode() != CSraException::eNotFoundValue ) {
-                    throw;
-                }
+            CVDBValueFor<uint64_t> value =
+                idx->NUC_ROW_ID(TIntId(gi), CVDBValue::eMissing_Allow);
+            if ( value.data() ) {
+                ret = value;
             }
         }
         Put(idx);
@@ -963,13 +933,10 @@ uint64_t CWGSDb_Impl::GetProtGiRowId(TGi gi)
     uint64_t ret = 0;
     if ( CRef<SIdxTableCursor> idx = Idx() ) {
         if ( idx->m_PROT_ROW_ID ) {
-            try {
-                ret = *idx->PROT_ROW_ID(TIntId(gi));
-            }
-            catch ( CSraException& exc ) {
-                if ( exc.GetErrCode() != CSraException::eNotFoundValue ) {
-                    throw;
-                }
+            CVDBValueFor<uint64_t> value =
+                idx->PROT_ROW_ID(TIntId(gi), CVDBValue::eMissing_Allow);
+            if ( value.data() ) {
+                ret = value;
             }
         }
         Put(idx);
@@ -980,27 +947,11 @@ uint64_t CWGSDb_Impl::GetProtGiRowId(TGi gi)
 
 uint64_t CWGSDb_Impl::GetProtAccRowId(const string& acc)
 {
-    if ( !m_ProtAccIndexIsOpened ) {
-        CMutexGuard guard(m_TableMutex);
-        if ( !m_ProtAccIndexIsOpened ) {
-            if ( const CVDBTable& table = ProtTable() ) {
-                try {
-                    m_ProtAccIndex = CVDBTableIndex(table, "gb_accession");
-                }
-                catch ( CSraException& exc ) {
-                    if ( exc.GetErrCode() != CSraException::eNotFoundIndex ) {
-                        throw;
-                    }
-                }
-            }
-            m_ProtAccIndexIsOpened = true;
-        }
+    if ( const CVDBTableIndex& index = ProtAccIndex() ) {
+        pair<int64_t, uint64_t> range = index.Find(acc);
+        return range.second? range.first: 0;
     }
-    if ( !m_ProtAccIndex ) {
-        return 0;
-    }
-    pair<int64_t, uint64_t> range = m_ProtAccIndex.Find(acc);
-    return range.second? range.first: 0;
+    return 0;
 }
 
 
@@ -2579,30 +2530,24 @@ void CWGSGiIterator::x_Init(const CWGSDb& wgs_db, ESeqType seq_type)
 bool CWGSGiIterator::x_Excluded(void)
 {
     if ( m_FilterSeqType != eProt && m_Idx->m_NUC_ROW_ID ) {
-        try {
-            m_CurrRowId = m_Idx->NUC_ROW_ID(TIntId(m_CurrGi));
+        CVDBValueFor<uint64_t> value =
+            m_Idx->NUC_ROW_ID(TIntId(m_CurrGi), CVDBValue::eMissing_Allow);
+        if ( value.data() ) {
+            m_CurrRowId = value;
             if ( m_CurrRowId ) {
                 m_CurrSeqType = eNuc;
                 return false;
             }
         }
-        catch ( CSraException& exc ) {
-            if ( exc.GetErrCode() != CSraException::eNotFoundValue ) {
-                throw;
-            }
-        }
     }
     if ( m_FilterSeqType != eNuc && m_Idx->m_PROT_ROW_ID ) {
-        try {
-            m_CurrRowId = m_Idx->PROT_ROW_ID(TIntId(m_CurrGi));
+        CVDBValueFor<uint64_t> value =
+            m_Idx->PROT_ROW_ID(TIntId(m_CurrGi), CVDBValue::eMissing_Allow);
+        if ( value.data() ) {
+            m_CurrRowId = value;
             if ( m_CurrRowId ) {
                 m_CurrSeqType = eProt;
                 return false;
-            }
-        }
-        catch ( CSraException& exc ) {
-            if ( exc.GetErrCode() != CSraException::eNotFoundValue ) {
-                throw;
             }
         }
     }

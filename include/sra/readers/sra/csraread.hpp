@@ -34,6 +34,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbimtx.hpp>
 #include <util/range.hpp>
 #include <sra/readers/sra/vdbread.hpp>
 #include <objects/seq/seq_id_handle.hpp>
@@ -79,6 +80,7 @@ public:
                  IIdMapper* ref_id_mapper,
                  ERefIdType ref_id_type,
                  const string& sra_id_part);
+    virtual ~CCSraDb_Impl(void);
 
     // SRefInfo holds cached refseq information - ids, len, rows
     struct SRefInfo {
@@ -130,8 +132,8 @@ public:
         m_SraIdPart = s;
     }
 
-    CRef<CSeq_id> MakeShortReadId(uint64_t id1, uint32_t id2) const;
-    void SetShortReadId(string& str, uint64_t id1, uint32_t id2) const;
+    CRef<CSeq_id> MakeShortReadId(uint64_t id1, INSDC_coord_one id2) const;
+    void SetShortReadId(string& str, uint64_t id1, INSDC_coord_one id2) const;
 
 protected:
     friend class CCSraRefSeqIterator;
@@ -142,9 +144,8 @@ protected:
 
     // SRefTableCursor is helper accessor structure for refseq table
     struct SRefTableCursor : public CObject {
-        SRefTableCursor(const CVDB& db);
+        SRefTableCursor(const CVDBTable& table);
 
-        CVDBTable m_Table;
         CVDBCursor m_Cursor;
 
         DECLARE_VDB_COLUMN_AS(Uint1, CGRAPH_HIGH);
@@ -162,9 +163,8 @@ protected:
 
     // SAlnTableCursor is helper accessor structure for align table
     struct SAlnTableCursor : public CObject {
-        SAlnTableCursor(const CVDB& db, bool is_secondary);
+        SAlnTableCursor(const CVDBTable& table, bool is_secondary);
 
-        CVDBTable m_Table;
         CVDBCursor m_Cursor;
         bool m_IsSecondary;
         
@@ -194,11 +194,8 @@ protected:
 
     // SSeqTableCursor is helper accessor structure for sequence table
     struct SSeqTableCursor : public CObject {
-        SSeqTableCursor(const CVDB& db);
-        SSeqTableCursor(const CCSraDb_Impl& db);
         SSeqTableCursor(const CVDBTable& table);
 
-        CVDBTable m_Table;
         CVDBCursor m_Cursor;
         
         DECLARE_VDB_COLUMN_AS_STRING(SPOT_GROUP);
@@ -233,6 +230,32 @@ protected:
     }
 
 protected:
+    void OpenRefTable(void);
+    void OpenAlnTable(bool is_secondary);
+    void OpenSeqTable(void);
+
+    const CVDBTable& RefTable(void) {
+        const CVDBTable& table = m_RefTable;
+        if ( !table ) {
+            OpenRefTable();
+        }
+        return table;
+    }
+    const CVDBTable& AlnTable(bool is_secondary) {
+        const CVDBTable& table = m_AlnTable[is_secondary];
+        if ( !table ) {
+            OpenAlnTable(is_secondary);
+        }
+        return table;
+    }
+    const CVDBTable& SeqTable(void) {
+        const CVDBTable& table = m_SeqTable;
+        if ( !table ) {
+            OpenSeqTable();
+        }
+        return table;
+    }
+    
     void x_MakeRefSeq_ids(SRefInfo& info,
                           IIdMapper* ref_id_mapper,
                           int ref_id_type);
@@ -243,9 +266,13 @@ private:
     string m_CSraPath;
     string m_SraIdPart;
 
+    CFastMutex m_TableMutex;
+    CVDBTable m_RefTable;
+    CVDBTable m_AlnTable[2];
+    CVDBTable m_SeqTable;
+
     CVDBObjectCache<SRefTableCursor> m_Ref;
     CVDBObjectCache<SAlnTableCursor> m_Aln[2];
-    CVDBTable m_SeqTable;
     CVDBObjectCache<SSeqTableCursor> m_Seq;
 
     TSeqPos m_RowSize; // cached size of refseq row in bases
@@ -264,13 +291,13 @@ public:
     NCBI_SRAREAD_EXPORT
     CCSraDb(CVDBMgr& mgr,
             const string& csra_path,
-            IIdMapper* ref_id_mapper = 0,
+            IIdMapper* ref_id_mapper = NULL,
             ERefIdType ref_id_type = eRefId_SEQ_ID);
     NCBI_SRAREAD_EXPORT
     CCSraDb(CVDBMgr& mgr,
             const string& csra_path,
             const string& sra_id_part,
-            IIdMapper* ref_id_mapper = 0,
+            IIdMapper* ref_id_mapper = NULL,
             ERefIdType ref_id_type = eRefId_SEQ_ID);
     
     NCBI_SRAREAD_EXPORT
@@ -434,7 +461,7 @@ public:
     int GetMapQuality(void) const;
 
     uint64_t GetShortId1(void) const;
-    uint32_t GetShortId2(void) const;
+    INSDC_coord_one GetShortId2(void) const;
     TSeqPos GetShortPos(void) const;
     TSeqPos GetShortLen(void) const;
 
@@ -654,7 +681,12 @@ public:
 
     // clip coordinate (inclusive)
     TSeqPos GetClipQualityLeft(void) const;
-    TSeqPos GetClipQualityRight(void) const;
+    TSeqPos GetClipQualityLength(void) const;
+    TSeqPos GetClipQualityRight(void) const
+        {
+            // inclusive
+            return GetClipQualityLeft() + GetClipQualityLength() - 1;
+        }
 
     CRef<CSeq_graph> GetQualityGraph(void) const;
     CRef<CSeq_annot> GetQualityGraphAnnot(void) const;
@@ -667,7 +699,7 @@ public:
     typedef int TBioseqFlags;
     CRef<CBioseq> GetShortBioseq(TBioseqFlags flags = fDefaultBioseqFlags) const;
 
-    CCSraRefSeqIterator GetRefSeqIter(TSeqPos* ref_pos_ptr = 0) const;
+    CCSraRefSeqIterator GetRefSeqIter(TSeqPos* ref_pos_ptr = NULL) const;
 
 protected:
     CCSraDb_Impl& GetDb(void) const {

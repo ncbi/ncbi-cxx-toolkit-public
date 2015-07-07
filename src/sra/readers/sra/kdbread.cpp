@@ -88,13 +88,13 @@ void CKMetadata::x_Init(const CKTable& table)
 
 CKMDataNode::CKMDataNode(const CKMetadata& meta,
                          const char* node_name,
-                         EMissingAction missing_action)
+                         EMissing missing)
 {
     if ( rc_t rc = KMetadataOpenNodeRead(meta, x_InitPtr(), node_name) ) {
         *x_InitPtr() = 0;
         if ( GetRCObject(rc) == RCObject(rcPath) &&
              GetRCState(rc) == rcNotFound ) {
-            if ( missing_action == eMissingThrow ) {
+            if ( missing == eMissing_Throw ) {
                 NCBI_THROW3(CSraException, eNotFound,
                             "Cannot open KMDataNode", rc, node_name);
             }
@@ -109,13 +109,13 @@ CKMDataNode::CKMDataNode(const CKMetadata& meta,
 
 CKMDataNode::CKMDataNode(const CKMDataNode& parent,
                          const char* node_name,
-                         EMissingAction missing_action)
+                         EMissing missing)
 {
     if ( rc_t rc = KMDataNodeOpenNodeRead(parent, x_InitPtr(), node_name) ) {
         *x_InitPtr() = 0;
         if ( GetRCObject(rc) == RCObject(rcPath) &&
              GetRCState(rc) == rcNotFound ) {
-            if ( missing_action == eMissingThrow ) {
+            if ( missing == eMissing_Throw ) {
                 NCBI_THROW3(CSraException, eNotFound,
                             "Cannot open child KMDataNode", rc, node_name);
             }

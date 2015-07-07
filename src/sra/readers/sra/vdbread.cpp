@@ -413,7 +413,7 @@ void CVDBMgr::x_Init(void)
 }
 
 
-void CVDB::Init(const CVDBMgr& mgr, const string& acc_or_path)
+CVDB::CVDB(const CVDBMgr& mgr, const string& acc_or_path)
 {
     DECLARE_SDK_GUARD();
     string path = CVPath::ConvertAccOrSysPathToPOSIX(acc_or_path);
@@ -442,7 +442,9 @@ void CVDB::Init(const CVDBMgr& mgr, const string& acc_or_path)
 }
 
 
-void CVDBTable::Init(const CVDB& db, const char* table_name)
+CVDBTable::CVDBTable(const CVDB& db,
+                     const char* table_name,
+                     EMissing missing)
 {
     DECLARE_SDK_GUARD();
     if ( rc_t rc = VDatabaseOpenTableRead(db, x_InitPtr(), table_name) ) {
@@ -453,6 +455,9 @@ void CVDBTable::Init(const CVDB& db, const char* table_name)
              (rc_object == rcParam ||
               rc_object == rcPath) ) {
             // missing table in the DB
+            if ( missing != eMissing_Throw ) {
+                return;
+            }
             NCBI_THROW3(CSraException, eNotFoundTable,
                         "Cannot open VDB table", rc, table_name);
         }
@@ -465,7 +470,9 @@ void CVDBTable::Init(const CVDB& db, const char* table_name)
 }
 
 
-void CVDBTable::Init(const CVDBMgr& mgr, const string& acc_or_path)
+CVDBTable::CVDBTable(const CVDBMgr& mgr,
+                     const string& acc_or_path,
+                     EMissing missing)
 {
     *x_InitPtr() = 0;
     VSchema *schema;
@@ -483,6 +490,9 @@ void CVDBTable::Init(const CVDBMgr& mgr, const string& acc_or_path)
               GetRCObject(rc) == RCObject(rcPath)) &&
              GetRCState(rc) == rcNotFound ) {
             // no SRA accession
+            if ( missing != eMissing_Throw ) {
+                return;
+            }
             NCBI_THROW3(CSraException, eNotFoundTable,
                         "Cannot open SRA table", rc, acc_or_path);
         }
@@ -502,13 +512,18 @@ void CVDBTable::Init(const CVDBMgr& mgr, const string& acc_or_path)
 }
 
 
-void CVDBTableIndex::Init(const CVDBTable& table, const char* index_name)
+CVDBTableIndex::CVDBTableIndex(const CVDBTable& table,
+                               const char* index_name,
+                               EMissing missing)
 {
     if ( rc_t rc = VTableOpenIndexRead(table, x_InitPtr(), index_name) ) {
         *x_InitPtr() = 0;
         if ( GetRCObject(rc) == RCObject(rcIndex) &&
              GetRCState(rc) == rcNotFound ) {
             // no such index
+            if ( missing != eMissing_Throw ) {
+                return;
+            }
             NCBI_THROW3(CSraException, eNotFoundIndex,
                         "Cannot open VDB table index", rc, index_name);
         }
@@ -678,7 +693,7 @@ void CVDBColumn::Init(const CVDBCursor& cursor,
             return;
         }
         m_Index = kInvalidIndex;
-        if ( missing == eMissingDisallow ) {
+        if ( missing == eMissing_Throw ) {
             NCBI_THROW3(CSraException, eNotFoundColumn,
                         "Cannot get VDB column", rc, name);
         }
@@ -725,13 +740,21 @@ void CVDBValue::x_Get(const VCursor* cursor, uint32_t column)
 }
 
 
-void CVDBValue::x_Get(const VCursor* cursor, uint64_t row, uint32_t column)
+void CVDBValue::x_Get(const VCursor* cursor,
+                      uint64_t row,
+                      uint32_t column,
+                      EMissing missing)
 {
     DECLARE_SDK_GET_GUARD();
     uint32_t bit_offset, bit_length;
     if ( rc_t rc = VCursorCellDataDirect(cursor, row, column,
                                          &bit_length, &m_Data, &bit_offset,
                                          &m_ElemCount) ) {
+        if ( missing != eMissing_Throw ) {
+            m_Data = 0;
+            m_ElemCount = 0;
+            return;
+        }
         NCBI_THROW3(CSraException, eNotFoundValue,
                     "Cannot read VDB value", rc, row);
     }

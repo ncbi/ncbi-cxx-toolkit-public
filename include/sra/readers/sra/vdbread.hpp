@@ -245,12 +245,7 @@ public:
     CVDB(void)
         {
         }
-    CVDB(const CVDBMgr& mgr, const string& acc_or_path)
-        {
-            Init(mgr, acc_or_path);
-        }
-
-    void Init(const CVDBMgr& mgr, const string& acc_or_path);
+    CVDB(const CVDBMgr& mgr, const string& acc_or_path);
 };
 
 
@@ -258,20 +253,20 @@ class NCBI_SRAREAD_EXPORT CVDBTable
     : public CSraRef<const VTable>
 {
 public:
+    enum EMissing {
+        eMissing_Throw,
+        eMissing_Allow
+    };
+
     CVDBTable(void)
         {
         }
-    CVDBTable(const CVDB& db, const char* table_name)
-        {
-            Init(db, table_name);
-        }
-    CVDBTable(const CVDBMgr& mgr, const string& acc_or_path)
-        {
-            Init(mgr, acc_or_path);
-        }
-
-    void Init(const CVDB& db, const char* table_name);
-    void Init(const CVDBMgr& mgr, const string& acc_or_path);
+    CVDBTable(const CVDB& db,
+              const char* table_name,
+              EMissing missing = eMissing_Throw);
+    CVDBTable(const CVDBMgr& mgr,
+              const string& acc_or_path,
+              EMissing missing = eMissing_Throw);
 };
 
 
@@ -279,18 +274,19 @@ class NCBI_SRAREAD_EXPORT CVDBTableIndex
     : public CSraRef<const KIndex>
 {
 public:
+    enum EMissing {
+        eMissing_Throw,
+        eMissing_Allow
+    };
+
     CVDBTableIndex(void)
         {
         }
-    CVDBTableIndex(const CVDBTable& table, const char* index_name)
-        {
-            Init(table, index_name);
-        }
+    CVDBTableIndex(const CVDBTable& table,
+                   const char* index_name,
+                   EMissing missing = eMissing_Throw);
     
     pair<int64_t, uint64_t> Find(const string& value) const;
-    
-private:
-    void Init(const CVDBTable& table, const char* index_name);
 };
 
 
@@ -372,28 +368,28 @@ class NCBI_SRAREAD_EXPORT CVDBColumn
 {
 public:
     enum EMissing {
-        eMissingDisallow,
-        eMissingAllow
+        eMissing_Throw,
+        eMissing_Allow
     };
 
     CVDBColumn(const CVDBCursor& cursor,
                const char* name,
                EMissing missing)
         {
-            Init(cursor, 0, name, 0, missing);
+            Init(cursor, 0, name, NULL, missing);
         }
     CVDBColumn(const CVDBCursor& cursor,
                const char* name,
-               const char* backup_name = 0,
-               EMissing missing = eMissingDisallow)
+               const char* backup_name = NULL,
+               EMissing missing = eMissing_Throw)
         {
             Init(cursor, 0, name, backup_name, missing);
         }
     CVDBColumn(const CVDBCursor& cursor,
                size_t element_bit_size,
                const char* name,
-               const char* backup_name = 0,
-               EMissing missing = eMissingDisallow)
+               const char* backup_name = NULL,
+               EMissing missing = eMissing_Throw)
         {
             Init(cursor, element_bit_size, name, backup_name, missing);
         }
@@ -401,7 +397,7 @@ public:
     enum {
         kInvalidIndex = uint32_t(~0)
     };
-    DECLARE_SAFE_BOOL_METHOD(m_Index != kInvalidIndex);
+    DECLARE_OPERATOR_BOOL(m_Index != kInvalidIndex);
 
     uint32_t GetIndex(void) const
         {
@@ -432,14 +428,8 @@ class CVDBColumnBits : public CVDBColumn
 public:
     CVDBColumnBits(const CVDBCursor& cursor,
                    const char* name,
-                   CVDBColumn::EMissing missing)
-        : CVDBColumn(cursor, ElementBitSize, name, 0, missing)
-        {
-        }
-    CVDBColumnBits(const CVDBCursor& cursor,
-                   const char* name,
-                   const char* backup_name = 0,
-                   CVDBColumn::EMissing missing = CVDBColumn::eMissingDisallow)
+                   const char* backup_name = NULL,
+                   EMissing missing = eMissing_Throw)
         : CVDBColumn(cursor, ElementBitSize, name, backup_name, missing)
         {
         }
@@ -455,8 +445,8 @@ public:
 
 // DECLARE_VDB_COLUMN is helper macro to declare accessor to VDB column
 #define DECLARE_VDB_COLUMN_AS(type, name)                               \
-    CVDBValueFor<type> name(uint64_t row) const {                       \
-        return CVDBValueFor<type>(m_Cursor, row, NCBI_NAME2(m_,name));  \
+    CVDBValueFor<type> name(uint64_t row, CVDBValue::EMissing missing = CVDBValue::eMissing_Throw) const { \
+        return CVDBValueFor<type>(m_Cursor, row, NCBI_NAME2(m_,name), missing); \
     }                                                                   \
     CVDBColumnBits<sizeof(type)*8> NCBI_NAME2(m_, name)
 
@@ -482,21 +472,22 @@ public:
 #define INIT_VDB_COLUMN_AS(name, type)                  \
     NCBI_NAME2(m_, name)(m_Cursor, "("#type")"#name)
 #define INIT_OPTIONAL_VDB_COLUMN(name)                                  \
-    NCBI_NAME2(m_, name)(m_Cursor, #name, CVDBColumn::eMissingAllow)
+    NCBI_NAME2(m_, name)(m_Cursor, #name, NULL, CVDBColumn::eMissing_Allow)
 #define INIT_OPTIONAL_VDB_COLUMN_BACKUP(name, backup_name)              \
-    NCBI_NAME2(m_, name)(m_Cursor, #name, #backup_name, CVDBColumn::eMissingAllow)
+    NCBI_NAME2(m_, name)(m_Cursor, #name, #backup_name, CVDBColumn::eMissing_Allow)
 #define INIT_OPTIONAL_VDB_COLUMN_AS(name, type)                         \
-    NCBI_NAME2(m_, name)(m_Cursor, "("#type")"#name, CVDBColumn::eMissingAllow)
+    NCBI_NAME2(m_, name)(m_Cursor, "("#type")"#name, NULL, CVDBColumn::eMissing_Allow)
 
 
 class NCBI_SRAREAD_EXPORT CVDBValue
 {
 public:
+    enum EMissing {
+        eMissing_Throw,
+        eMissing_Allow
+    };
+
     struct SValueIndex {
-        SValueIndex(const VCursor* cursor, uint64_t row, uint32_t column)
-            : cursor(cursor), row(row), column(column)
-            {
-            }
         SValueIndex(const CVDBCursor& cursor,
                     uint64_t row,
                     const CVDBColumn& column)
@@ -508,19 +499,18 @@ public:
         uint64_t row;
         uint32_t column;
     };
-    CVDBValue(const CVDBCursor& cursor,
-              const CVDBColumn& column)
+    CVDBValue(const CVDBCursor& cursor, const CVDBColumn& column)
         : m_Data(0),
           m_ElemCount(0)
         {
             x_Get(cursor, column.GetIndex());
         }
     CVDBValue(const CVDBCursor& cursor, uint64_t row,
-              const CVDBColumn& column)
+              const CVDBColumn& column, EMissing missing = eMissing_Throw)
         : m_Data(0),
           m_ElemCount(0)
         {
-            x_Get(cursor, row, column.GetIndex());
+            x_Get(cursor, row, column.GetIndex(), missing);
         }
     explicit CVDBValue(const SValueIndex& value_index)
         : m_Data(0),
@@ -544,14 +534,24 @@ public:
         }
 
 protected:
-    void x_Get(const VCursor* cursor, uint32_t column);
-    void x_Get(const VCursor* cursor, uint64_t row, uint32_t column);
+    void x_Get(const VCursor* cursor,
+               uint32_t column);
+    void x_Get(const VCursor* cursor,
+               uint64_t row,
+               uint32_t column,
+               EMissing missing = eMissing_Throw);
 
     void x_ReportIndexOutOfBounds(size_t index) const;
     void x_CheckIndex(size_t index) const
         {
             if ( index >= size() ) {
                 x_ReportIndexOutOfBounds(index);
+            }
+        }
+    void x_CheckOneValue(void) const
+        {
+            if ( size() != 1 ) {
+                x_ReportIndexOutOfBounds(0);
             }
         }
 
@@ -635,14 +635,13 @@ class CVDBValueFor : public CVDBValue
 {
 public:
     typedef V TValue;
-    CVDBValueFor(const CVDBCursor& cursor,
-                 const CVDBColumn& column)
+    CVDBValueFor(const CVDBCursor& cursor, const CVDBColumn& column)
         : CVDBValue(cursor, column)
         {
         }
     CVDBValueFor(const CVDBCursor& cursor, uint64_t row,
-                 const CVDBColumn& column)
-        : CVDBValue(cursor, row, column)
+                 const CVDBColumn& column, EMissing missing = eMissing_Throw)
+        : CVDBValue(cursor, row, column, missing)
         {
         }
     explicit CVDBValueFor(const CVDBValue::SValueIndex& value_index)
@@ -667,11 +666,8 @@ public:
         }
     const TValue& Value(void) const
         {
-            return (*this)[0];
-        }
-    operator const TValue&(void) const
-        {
-            return Value();
+            x_CheckOneValue();
+            return *data();
         }
     const TValue& operator*(void) const
         {
@@ -681,6 +677,14 @@ public:
         {
             return &Value();
         }
+
+    operator const TValue&(void) const
+        {
+            return Value();
+        }
+private:
+    // to cause ambiguity if assigned to a wrong type
+    operator double(void) const;
 };
 
 

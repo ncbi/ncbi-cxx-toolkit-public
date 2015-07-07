@@ -80,16 +80,17 @@ class NCBI_SRAREAD_EXPORT CKMDataNode
     : public CSraRef<const KMDataNode>
 {
 public:
-    enum EMissingAction {
-        eMissingThrow,
-        eMissingIgnore
+    enum EMissing {
+        eMissing_Throw,
+        eMissing_Allow
     };
+
     CKMDataNode(const CKMetadata& meta,
                 const char* node_name,
-                EMissingAction missing_action = eMissingThrow);
+                EMissing missing = eMissing_Throw);
     CKMDataNode(const CKMDataNode& parent,
                 const char* node_name,
-                EMissingAction missing_action = eMissingThrow);
+                EMissing missing = eMissing_Throw);
 
     // 'buffer' must be at least 'size' big, may be null if 'size' is 0
     // 'size' is the requested number of bytes
@@ -101,7 +102,7 @@ public:
     void GetData(char* buffer, size_t size, size_t offset = 0) const;
 
     size_t GetSize(void) const {
-        return TryToGetData(0, 0, 0).second;
+        return TryToGetData(NULL, 0, 0).second;
     }
 
     Uint8 GetUint8(void) const;

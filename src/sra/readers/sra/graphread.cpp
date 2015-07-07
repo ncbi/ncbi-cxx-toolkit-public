@@ -61,9 +61,8 @@ BEGIN_NAMESPACE(objects);
 /////////////////////////////////////////////////////////////////////////////
 
 
-CVDBGraphDb_Impl::SGraphTableCursor::SGraphTableCursor(const CVDBGraphDb_Impl& db)
-    : m_Table(db.m_Mgr, db.GetPath()),
-      m_Cursor(m_Table),
+CVDBGraphDb_Impl::SGraphTableCursor::SGraphTableCursor(const CVDBTable& table)
+    : m_Cursor(table),
       INIT_VDB_COLUMN(SID),
       INIT_VDB_COLUMN(START),
       INIT_VDB_COLUMN(LEN),
@@ -86,21 +85,14 @@ CVDBGraphDb_Impl::SGraphTableCursor::SGraphTableCursor(const CVDBGraphDb_Impl& d
 
 CVDBGraphDb_Impl::CVDBGraphDb_Impl(CVDBMgr& mgr, CTempString path)
     : m_Mgr(mgr),
-      m_Path(path)
+      m_Path(path),
+      m_GraphTable(mgr, path)
 {
     CRef<SGraphTableCursor> curs = Graph();
 
     uint64_t last_row = curs->m_Cursor.GetMaxRowId();
     SSeqInfo info;
-    CVDBTableIndex idx;
-    try {
-        idx = CVDBTableIndex(curs->m_Table, "sid");
-    }
-    catch ( CSraException& exc ) {
-        if ( exc.GetErrCode() != exc.eNotFoundIndex ) {
-            throw;
-        }
-    }
+    CVDBTableIndex idx(GraphTable(), "sid", CVDBTableIndex::eMissing_Allow);
     if ( !idx ) {
         LOG_POST(Warning<<"CVDBGraphDb: sid index not found. Scanning sequentially.");
         for ( uint64_t row = 1; row <= last_row; ++row ) {
@@ -153,11 +145,16 @@ CVDBGraphDb_Impl::CVDBGraphDb_Impl(CVDBMgr& mgr, CTempString path)
 }
 
 
+CVDBGraphDb_Impl::~CVDBGraphDb_Impl(void)
+{
+}
+
+
 CRef<CVDBGraphDb_Impl::SGraphTableCursor> CVDBGraphDb_Impl::Graph(void)
 {
     CRef<SGraphTableCursor> curs = m_Graph.Get();
     if ( !curs ) {
-        curs = new SGraphTableCursor(*this);
+        curs = new SGraphTableCursor(GraphTable());
     }
     return curs;
 }
@@ -473,7 +470,7 @@ bool CVDBGraphSeqIterator::x_SeqTableIsSmaller(COpenRange<TSeqPos> range,
     uint64_t row = pos/row_size;
     for ( ; pos < range.GetToOpen(); ++row, pos += row_size ) {
         values += row_size;
-        switches += cursor.NUM_SWITCHES(info.m_RowFirst+row);
+        switches += *cursor.NUM_SWITCHES(info.m_RowFirst+row);
         TValue v = cursor.GR_Q100(info.m_RowFirst+row);
         if ( v > max_v ) {
             max_v = v;
