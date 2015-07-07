@@ -150,10 +150,6 @@ public:
     bool m_WorkerNodeCompatMode;
 };
 
-// Node IDs of the servers that are ready
-// (i.e. the servers have sent notifications).
-typedef set<string> TReadyServers;
-
 // Structure that governs NetSchedule server notifications.
 struct SServerNotifications
 {
@@ -188,7 +184,9 @@ private:
     CSemaphore m_NotificationSemaphore;
     // Protection against concurrent access to m_ReadyServers.
     CFastMutex m_Mutex;
-    // A set of NetSchedule node IDs that are ready.
+    // A set of NetSchedule node IDs of the servers that are ready.
+    // (i.e. the servers have sent notifications).
+    typedef set<string> TReadyServers;
     TReadyServers m_ReadyServers;
     // This flag is set when the wait must be interrupted.
     bool m_Interrupted;
