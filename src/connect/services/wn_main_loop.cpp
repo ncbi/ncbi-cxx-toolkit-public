@@ -678,13 +678,13 @@ bool CMainLoopThread::x_EnterSuspendedState()
             if (!m_WorkerNode->m_TimelineIsSuspended) {
                 // Stop the timeline.
                 m_WorkerNode->m_TimelineIsSuspended = true;
-                m_Timeline.Suspend(m_WorkerNode->m_NSTimeout);
+                m_Timeline = CNetScheduleTimeline(m_WorkerNode->m_NSTimeout);
             }
         } else { /* event == RESUME_EVENT */
             if (m_WorkerNode->m_TimelineIsSuspended) {
                 // Resume the timeline.
                 m_WorkerNode->m_TimelineIsSuspended = false;
-                m_Timeline.Resume();
+                m_Timeline = CNetScheduleTimeline();
             }
         }
     }

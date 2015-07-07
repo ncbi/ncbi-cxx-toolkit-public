@@ -448,10 +448,14 @@ public:
 
     typedef deque<SEntry> TTimeline;
 
-    CNetScheduleTimeline() :
+    CNetScheduleTimeline(unsigned timeout = 0) :
         m_DiscoveryAction(SServerAddress(0, 0), false)
     {
-        m_ImmediateActions.push_back(m_DiscoveryAction);
+        if (timeout) {
+            PushScheduledAction(m_DiscoveryAction, timeout);
+        } else {
+            PushImmediateAction(m_DiscoveryAction);
+        }
     }
 
     bool HasImmediateActions() const { return !m_ImmediateActions.empty(); }
@@ -543,19 +547,6 @@ public:
         }
 
         return false;
-    }
-
-    void Suspend(unsigned timeout)
-    {
-        m_ImmediateActions.clear();
-        m_ScheduledActions.clear();
-        PushScheduledAction(m_DiscoveryAction, timeout);
-    }
-
-    void Resume()
-    {
-        m_ImmediateActions.push_back(m_DiscoveryAction);
-        Erase(m_ScheduledActions, m_DiscoveryAction.server_address);
     }
 
 private:
