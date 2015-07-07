@@ -139,7 +139,7 @@ typedef list<ILineError::EProblem> TErrList;
 
 static void 
 s_CheckErrorsVersusExpected( 
-    IMessageListener * pMessageListener, 
+    ILineErrorListener * pMessageListener, 
     TErrList expected_errors // yes, *copy* the container
     )
 {
@@ -169,13 +169,13 @@ static CRef<CSeq_annot> s_ReadOneTableFromString (
     // no errors expected by default
      const TErrList & expected_errors = TErrList(),
      CFeature_table_reader::TFlags additional_flags = 0,
-     IMessageListener * pMessageListener = NULL );
+     ILineErrorListener * pMessageListener = NULL );
 
 static CRef<CSeq_annot> s_ReadOneTableFromString (
     const char * str,
     const TErrList & expected_errors,
     CFeature_table_reader::TFlags additional_flags,
-    IMessageListener * pMessageListener )
+    ILineErrorListener * pMessageListener )
 {
     CNcbiIstrstream istr(str);
     CRef<ILineReader> reader = ILineReader::New(istr);
@@ -183,7 +183,7 @@ static CRef<CSeq_annot> s_ReadOneTableFromString (
     CSimpleTableFilter tbl_filter(ITableFilter::eAction_Okay);
     tbl_filter.SetActionForFeat("source", ITableFilter::eAction_Disallowed );
 
-    auto_ptr<IMessageListener> p_temp_err_container;
+    auto_ptr<ILineErrorListener> p_temp_err_container;
     if( ! pMessageListener ) {
         p_temp_err_container.reset( new CMessageListenerLenientIgnoreProgress );
         pMessageListener = p_temp_err_container.get();
@@ -213,14 +213,14 @@ s_ReadMultipleTablesFromString(
     // no errors expected by default
     const TErrList & expected_errors = TErrList(),
     CFeature_table_reader::TFlags additional_flags = 0,
-    IMessageListener * pMessageListener = NULL );
+    ILineErrorListener * pMessageListener = NULL );
 
 static TAnnotRefListPtr
 s_ReadMultipleTablesFromString(
     const char * str,
     const TErrList & expected_errors,
     CFeature_table_reader::TFlags additional_flags,
-    IMessageListener * pMessageListener )
+    ILineErrorListener * pMessageListener )
 {
     TAnnotRefListPtr pAnnotRefList( new TAnnotRefList );
 
@@ -230,7 +230,7 @@ s_ReadMultipleTablesFromString(
     CSimpleTableFilter tbl_filter(ITableFilter::eAction_Okay);
     tbl_filter.SetActionForFeat("source", ITableFilter::eAction_Disallowed );
 
-    auto_ptr<IMessageListener> p_temp_err_container;
+    auto_ptr<ILineErrorListener> p_temp_err_container;
     if( ! pMessageListener ) {
         p_temp_err_container.reset( new CMessageListenerLenientIgnoreProgress );
         pMessageListener = p_temp_err_container.get();

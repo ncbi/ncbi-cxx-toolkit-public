@@ -64,7 +64,7 @@ class CSeq_loc;
 
 class CSeqIdGenerator;
 
-class IMessageListener;
+class ILineErrorListener;
 
 /// Base class for reading FASTA sequences.
 ///
@@ -117,24 +117,24 @@ public:
     virtual ~CFastaReader(void);
 
     /// CReaderBase overrides
-    virtual CRef<CSerialObject> ReadObject   (ILineReader &lr, IMessageListener *pErrors);
-    virtual CRef<CSeq_entry>    ReadSeqEntry (ILineReader &lr, IMessageListener *pErrors);
+    virtual CRef<CSerialObject> ReadObject   (ILineReader &lr, ILineErrorListener *pErrors);
+    virtual CRef<CSeq_entry>    ReadSeqEntry (ILineReader &lr, ILineErrorListener *pErrors);
 
     /// Indicates (negatively) whether there is any more input.
     bool AtEOF(void) const { return m_LineReader->AtEOF(); }
 
     /// Read a single effective sequence, which may turn out to be a
     /// segmented set.
-    virtual CRef<CSeq_entry> ReadOneSeq(IMessageListener * pMessageListener = 0);
+    virtual CRef<CSeq_entry> ReadOneSeq(ILineErrorListener * pMessageListener = 0);
 
     /// Read multiple sequences (by default, as many as are available.)
-    CRef<CSeq_entry> ReadSet(int max_seqs = kMax_Int, IMessageListener * pMessageListener = 0);
+    CRef<CSeq_entry> ReadSet(int max_seqs = kMax_Int, ILineErrorListener * pMessageListener = 0);
 
     /// Read as many sequences as are available, and interpret them as
     /// an alignment, with hyphens marking relative deletions.
     /// @param reference_row
     ///   0-based; the special value -1 yields a full (pseudo-?)N-way alignment.
-    CRef<CSeq_entry> ReadAlignedSet(int reference_row, IMessageListener * pMessageListener = 0);
+    CRef<CSeq_entry> ReadAlignedSet(int reference_row, ILineErrorListener * pMessageListener = 0);
 
     // also allow changing?
     TFlags GetFlags(void) const { return m_Flags.top(); }
@@ -241,27 +241,27 @@ protected:
         TSeqPos m_iLineNum;
     };
 
-    virtual CRef<CSeq_entry> x_ReadSegSet(IMessageListener * pMessageListener);
+    virtual CRef<CSeq_entry> x_ReadSegSet(ILineErrorListener * pMessageListener);
 
-    virtual void   ParseDefLine  (const TStr& s, IMessageListener * pMessageListener);
-    virtual bool   ParseIDs      (const TStr& s, IMessageListener * pMessageListener);
-    virtual size_t ParseRange    (const TStr& s, TSeqPos& start, TSeqPos& end, IMessageListener * pMessageListener);
-    virtual void   ParseTitle    (const SLineTextAndLoc & lineInfo, IMessageListener * pMessageListener);
+    virtual void   ParseDefLine  (const TStr& s, ILineErrorListener * pMessageListener);
+    virtual bool   ParseIDs      (const TStr& s, ILineErrorListener * pMessageListener);
+    virtual size_t ParseRange    (const TStr& s, TSeqPos& start, TSeqPos& end, ILineErrorListener * pMessageListener);
+    virtual void   ParseTitle    (const SLineTextAndLoc & lineInfo, ILineErrorListener * pMessageListener);
     virtual bool   IsValidLocalID(const TStr& s);
     virtual void   GenerateID    (void);
-    virtual void   ParseDataLine (const TStr& s, IMessageListener * pMessageListener);
-    virtual void   CheckDataLine (const TStr& s, IMessageListener * pMessageListener);
-    virtual void   x_CloseGap    (TSeqPos len, bool atStartOfLine, IMessageListener * pMessageListener);
+    virtual void   ParseDataLine (const TStr& s, ILineErrorListener * pMessageListener);
+    virtual void   CheckDataLine (const TStr& s, ILineErrorListener * pMessageListener);
+    virtual void   x_CloseGap    (TSeqPos len, bool atStartOfLine, ILineErrorListener * pMessageListener);
     virtual void   x_OpenMask    (void);
     virtual void   x_CloseMask   (void);
-    virtual bool   ParseGapLine  (const TStr& s, IMessageListener * pMessageListener);
-    virtual void   AssembleSeq   (IMessageListener * pMessageListener);
-    virtual void   AssignMolType (IMessageListener * pMessageListener);
+    virtual bool   ParseGapLine  (const TStr& s, ILineErrorListener * pMessageListener);
+    virtual void   AssembleSeq   (ILineErrorListener * pMessageListener);
+    virtual void   AssignMolType (ILineErrorListener * pMessageListener);
     virtual bool   CreateWarningsForSeqDataInTitle(
         const TStr& sLineText, 
         TSeqPos iLineNum,
-        IMessageListener * pMessageListener);
-    virtual void   PostWarning(IMessageListener * pMessageListener,
+        ILineErrorListener * pMessageListener);
+    virtual void   PostWarning(ILineErrorListener * pMessageListener,
             EDiagSev _eSeverity, size_t _uLineNum, CTempString _MessageStrmOps, 
             CObjReaderParseException::EErrCode _eErrCode, 
             ILineError::EProblem _eProblem, 
@@ -273,13 +273,13 @@ protected:
     typedef map<TSeqPos, TSubMap>       TStartsMap;
     typedef vector<CRef<CSeq_id> >      TIds;
 
-    CRef<CSeq_entry> x_ReadSeqsToAlign(TIds& ids, IMessageListener * pMessageListener);
+    CRef<CSeq_entry> x_ReadSeqsToAlign(TIds& ids, ILineErrorListener * pMessageListener);
     void             x_AddPairwiseAlignments(CSeq_annot& annot, const TIds& ids,
                                              TRowNum reference_row);
     void             x_AddMultiwayAlignment(CSeq_annot& annot, const TIds& ids);
 
     // inline utilities 
-    void CloseGap(bool atStartOfLine=true, IMessageListener * pMessageListener = 0);
+    void CloseGap(bool atStartOfLine=true, ILineErrorListener * pMessageListener = 0);
     void OpenMask(void);
     void CloseMask(void)
         { if (m_MaskRangeStart != kInvalidSeqPos) { x_CloseMask(); } }
@@ -306,7 +306,7 @@ protected:
     TSeqPos GetCurrentPos(EPosType pos_type);
 
     void x_ApplyAllMods( CBioseq & bioseq, TSeqPos iLineNum, 
-        IMessageListener * pMessageListener );
+        ILineErrorListener * pMessageListener );
 
     std::string x_NucOrProt(void) const;
     
@@ -442,7 +442,7 @@ NCBI_XOBJREAD_EXPORT
 CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags = 0,
                            int* counter = 0,
                            vector<CConstRef<CSeq_loc> >* lcv = 0,
-                           IMessageListener * pMessageListener = 0);
+                           ILineErrorListener * pMessageListener = 0);
 
 //////////////////////////////////////////////////////////////////
 //

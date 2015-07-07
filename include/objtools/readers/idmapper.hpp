@@ -69,7 +69,7 @@ public:
     ///   mapping errors result in exceptions that need to be handled.
     CIdMapper(const std::string& strContext = "",
               bool bInvert = false,
-              IMessageListener* pErrors = 0 );
+              ILineErrorListener* pErrors = 0 );
 
     virtual ~CIdMapper() {};
 
@@ -116,7 +116,7 @@ protected:
     typedef std::map<CSeq_id_Handle, SMapper> TMapperCache;
     TMapperCache m_Cache;
 
-    IMessageListener* m_pErrors;
+    ILineErrorListener* m_pErrors;
 };
 
 
@@ -242,11 +242,11 @@ public:
     CIdMapperConfig(CNcbiIstream& istr,
                     const std::string& strContext = "",
                     bool bInvert = false,
-                    IMessageListener* pErrors = 0);
+                    ILineErrorListener* pErrors = 0);
 
     CIdMapperConfig(const std::string& strContext = "",
                     bool bInvert = false,
-                    IMessageListener* pErrors = 0);
+                    ILineErrorListener* pErrors = 0);
 
     void Initialize(CNcbiIstream& istr);
     static void DescribeContexts(CNcbiIstream& istr,
@@ -288,7 +288,7 @@ public:
     ///   mapping errors result in exceptions that need to be handled.
     CIdMapperBuiltin(const std::string& strContext,
                      bool bInvert = false,
-                     IMessageListener* pErrors = 0 );
+                     ILineErrorListener* pErrors = 0 );
 
     void Initialize();
 
@@ -326,7 +326,7 @@ public:
         const std::string& strDatabase,
         const std::string& strContext,
         bool bInvert = false,
-        IMessageListener* pErrors = 0)
+        ILineErrorListener* pErrors = 0)
         : CIdMapper(strContext, bInvert, pErrors),
           m_strServer(strServer),
           m_strDatabase(strDatabase)

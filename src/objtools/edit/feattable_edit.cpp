@@ -65,7 +65,7 @@ const string str)
 CFeatTableEdit::CFeatTableEdit(
     CSeq_annot& annot,
 	const string& locusTagPrefix,
-    IMessageListener* pMessageListener):
+    ILineErrorListener* pMessageListener):
 //  -------------------------------------------------------------------------
     mAnnot(annot),
     mpMessageListener(pMessageListener),

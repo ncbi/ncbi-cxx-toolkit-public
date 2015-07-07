@@ -122,7 +122,7 @@ CBedReader::~CBedReader()
 CRef< CSeq_annot >
 CBedReader::ReadSeqAnnot(
     CNcbiIstream& istr,
-    IMessageListener* pMessageListener ) 
+    ILineErrorListener* pMessageListener ) 
 //  ----------------------------------------------------------------------------
 {
     CStreamLineReader lr( istr );
@@ -133,7 +133,7 @@ CBedReader::ReadSeqAnnot(
 CRef< CSeq_annot >
 CBedReader::ReadSeqAnnot(
     ILineReader& lr,
-    IMessageListener* pEC ) 
+    ILineErrorListener* pEC ) 
 //  ----------------------------------------------------------------------------                
 {
     const size_t MAX_RECORDS = 100000;
@@ -216,7 +216,7 @@ CBedReader::ReadSeqAnnot(
 CRef< CSerialObject >
 CBedReader::ReadObject(
     ILineReader& lr,
-    IMessageListener* pMessageListener ) 
+    ILineErrorListener* pMessageListener ) 
 //  ----------------------------------------------------------------------------                
 { 
     CRef<CSerialObject> object( 
@@ -228,7 +228,7 @@ CBedReader::ReadObject(
 bool
 CBedReader::xParseTrackLine(
     const string& strLine,
-    IMessageListener* pEC)
+    ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     if ( ! NStr::StartsWith( strLine, "track" ) ) {
@@ -280,7 +280,7 @@ bool CBedReader::xParseFeature(
     const vector<string>& fields,
     CRef<CSeq_annot>& annot,
     unsigned int featureCount,
-    IMessageListener* pEC)
+    ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     static int count = 0;
@@ -314,7 +314,7 @@ bool CBedReader::xParseFeatureThreeFeatFormat(
     const vector<string>& fields,
     CRef<CSeq_annot>& annot,
     unsigned int baseId,
-    IMessageListener* pEC)
+    ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     if (!xAppendFeatureChrom(fields, annot, baseId, pEC)) {
@@ -336,7 +336,7 @@ bool CBedReader::xAppendFeatureChrom(
     const vector<string>& fields,
     CRef<CSeq_annot>& annot,
     unsigned int baseId,
-    IMessageListener* pEC)
+    ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     CSeq_annot::C_Data::TFtable& ftable = annot->SetData().SetFtable();
@@ -363,7 +363,7 @@ bool CBedReader::xAppendFeatureThick(
     const vector<string>& fields,
     CRef<CSeq_annot>& annot,
     unsigned int baseId,
-    IMessageListener* pEC)
+    ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     CSeq_annot::C_Data::TFtable& ftable = annot->SetData().SetFtable();
@@ -389,7 +389,7 @@ bool CBedReader::xAppendFeatureBlock(
     const vector<string>& fields,
     CRef<CSeq_annot>& annot,
     unsigned int baseId,
-    IMessageListener* pEC)
+    ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     CSeq_annot::C_Data::TFtable& ftable = annot->SetData().SetFtable();
@@ -413,7 +413,7 @@ bool CBedReader::xAppendFeatureBlock(
 bool CBedReader::xParseFeatureUserFormat(
     const vector<string>& fields,
     CRef<CSeq_annot>& annot,
-    IMessageListener* pEC)
+    ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     //  assign
@@ -1010,7 +1010,7 @@ bool
 CBedReader::ReadTrackData(
     ILineReader& lr,
     CRawBedTrack& rawdata,
-    IMessageListener* pMessageListener)
+    ILineErrorListener* pMessageListener)
 //  ----------------------------------------------------------------------------
 {
     if (m_CurBatchSize == m_MaxBatchSize) {
@@ -1039,7 +1039,7 @@ bool
 CBedReader::xReadBedRecordRaw(
     const string& line,
     CRawBedRecord& record,
-    IMessageListener* pMessageListener)
+    ILineErrorListener* pMessageListener)
 //  ----------------------------------------------------------------------------
 {
     if (line == "browser"  || NStr::StartsWith(line, "browser ")
@@ -1185,7 +1185,7 @@ bool
 CBedReader::xReadBedDataRaw(
     ILineReader& lr,
     CRawBedTrack& rawdata,
-    IMessageListener* pMessageListener)
+    ILineErrorListener* pMessageListener)
 //  ----------------------------------------------------------------------------
 {
     rawdata.Reset();

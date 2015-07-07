@@ -68,12 +68,12 @@ public:
     virtual CRef< CSeq_annot >
     ReadSeqAnnot(
         ILineReader&,
-        IMessageListener* =0 );
+        ILineErrorListener* =0 );
                 
     virtual CRef< CSerialObject >
     ReadObject(
         ILineReader&,
-        IMessageListener* =0 );
+        ILineErrorListener* =0 );
                 
     //
     //  helpers:
@@ -81,12 +81,12 @@ public:
 protected:
     virtual bool xParseTrackLine(
         const string&,
-        IMessageListener*);
+        ILineErrorListener*);
         
     bool xParseFeature(
         const vector<string>&,
         CRef<CSeq_annot>&,
-        IMessageListener*);
+        ILineErrorListener*);
 
     void xSetFeatureLocation(
         CRef<CSeq_feat>&,

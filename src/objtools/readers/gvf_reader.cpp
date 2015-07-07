@@ -214,7 +214,7 @@ CGvfReader::~CGvfReader()
 bool CGvfReader::x_ParseFeatureGff(
     const string& strLine,
     TAnnots& annots,
-    IMessageListener* pMessageListener)
+    ILineErrorListener* pMessageListener)
 //  ----------------------------------------------------------------------------
 {
     //
@@ -289,7 +289,7 @@ CRef<CSeq_annot> CGvfReader::x_GetAnnotById(
 bool CGvfReader::x_MergeRecord(
     const CGvfReadRecord& record,
     CRef< CSeq_annot > pAnnot,
-    IMessageListener* pMessageListener)
+    ILineErrorListener* pMessageListener)
 //  ----------------------------------------------------------------------------
 {
     if ( ! record.SanityCheck() ) {
@@ -984,7 +984,7 @@ bool CGvfReader::xVariationSetSnvs(
 bool CGvfReader::x_FeatureSetExt(
     const CGvfReadRecord& record,
     CRef< CSeq_feat > pFeature,
-    IMessageListener* pMessageListener)
+    ILineErrorListener* pMessageListener)
 //  ---------------------------------------------------------------------------
 {
     string strAttribute;

@@ -75,7 +75,7 @@ public:
 
     // hack to deal with interval format
     virtual void ParseDataLine(const TStr &s, 
-        IMessageListener * pMessageListener) 
+        ILineErrorListener * pMessageListener) 
     {
         if (s[0] >= '0' && s[0] <= '9' && s.find('-') > 0) {
             string s1, s2;

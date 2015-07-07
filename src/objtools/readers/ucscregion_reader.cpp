@@ -202,7 +202,7 @@ void CUCSCRegionReader::xSmartFieldSplit(vector<string>& fields, CTempString lin
 bool CUCSCRegionReader::xParseFeature(
     const vector<string>& fields,
     CRef<CSeq_annot>& annot,
-    IMessageListener* pEC)
+    ILineErrorListener* pEC)
 {
     //  assign
     string str_line_number = NStr::IntToString(m_uLineNumber);
@@ -316,7 +316,7 @@ void CUCSCRegionReader::x_SetFeatureLocation(
     
 }
 //  ----------------------------------------------------------------------------
-CRef<CSerialObject> CUCSCRegionReader::ReadObject(ILineReader& lr, IMessageListener* pErrors)
+CRef<CSerialObject> CUCSCRegionReader::ReadObject(ILineReader& lr, ILineErrorListener* pErrors)
 {
     CRef<CSeq_annot> annot = ReadSeqAnnot(lr, pErrors);
     return CRef<CSerialObject>(annot);
@@ -324,7 +324,7 @@ CRef<CSerialObject> CUCSCRegionReader::ReadObject(ILineReader& lr, IMessageListe
 //  ----------------------------------------------------------------------------                
 CRef<CSeq_annot> CUCSCRegionReader::ReadSeqAnnot(
     ILineReader& lr,
-    IMessageListener* pEC ) 
+    ILineErrorListener* pEC ) 
 {
     const size_t MAX_RECORDS = 100000;
 

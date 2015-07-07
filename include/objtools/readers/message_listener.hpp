@@ -35,6 +35,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbi_message.hpp>
 #include <objtools/readers/line_error.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -42,11 +43,20 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects) // namespace ncbi::objects::
 
 //  ============================================================================
-class IMessageListener
+class ILineErrorListener : public ncbi::IMessageListener
 //  ============================================================================
 {
 public:
-    virtual ~IMessageListener() {}
+    virtual ~ILineErrorListener() {}
+    
+    // IListener::Post() implementation
+    virtual void Post(const IMessage& message)
+    {
+        const ILineError* le = dynamic_cast<const ILineError*>(&message);
+        if (!le) return;
+        PutError(*le);
+    }
+
     /// Store error in the container, and 
     /// return true if error was stored fine, and
     /// return false if the caller should terminate all further processing.
@@ -55,23 +65,30 @@ public:
     PutError(
         const ILineError& ) = 0;
     
+    // IListener::Get() implementation
+    virtual const IMessage& Get(size_t index) const
+    { return const_cast<ILineErrorListener*>(this)->GetError(index); }
+
     /// 0-based error retrieval.
     virtual const ILineError&
     GetError(
         size_t ) =0;
-        
-    /// Return number of errors seen so far.
-    virtual size_t
-    Count() const =0;
-    
+
+    virtual size_t Count(void) const = 0;
+
     /// Returns the number of errors seen so far at the given severity.
     virtual size_t
     LevelCount(
         EDiagSev ) =0;
-            
+
     /// Clear all accumulated messages.
     virtual void
     ClearAll() =0;
+
+    // IListener::Progress() implementation
+    virtual void Progress(const string& message,
+                          Uint8         current,
+                          Uint8         total) { PutProgress(message, current, total); }
 
     /// This is used for processing progress messages.
     virtual void
@@ -79,12 +96,37 @@ public:
         const string & sMessage,
         const Uint8 iNumDone = 0,
         const Uint8 iNumTotal = 0 ) = 0;
+
+    // IMessageListener proxy methods
+    virtual void PostMessage(const IMessage& message)
+    { Post(message); }
+    
+    virtual void PostProgress(const string& message,
+                              Uint8         current,
+                              Uint8         total)
+    { Progress(message, current, total); }
+
+    virtual const IMessage& GetMessage(size_t index) const
+    { return Get(index); }
+
+    virtual void Clear(void)
+    { ClearAll(); }
 };
-            
+
+
+// Compatibility declaration, avoid using objects::IMessageListener -
+// use ncbi::IMessageListener or objects::ILineErrorListener instead.
+class IMessageListener : public ILineErrorListener
+{
+public:
+    virtual ~IMessageListener(void) {}
+};
+
+
 //  ============================================================================
 class NCBI_XOBJREAD_EXPORT CMessageListenerBase:
 //  ============================================================================
-    public CObject, public IMessageListener
+public CObject, public objects::IMessageListener
 {
 public:
     CMessageListenerBase() : m_pProgressOstrm(0) {};

@@ -45,7 +45,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 class CSeq_entry;
-class IMessageListener;
+class ILineErrorListener;
 class CObjReaderLineException;
 class CTrackData;
 
@@ -110,7 +110,7 @@ public:
     virtual CRef< CSerialObject >
     ReadObject(
         CNcbiIstream& istr,
-        IMessageListener* pErrors=0 );
+        ILineErrorListener* pErrors=0 );
                 
     /// Read an object from a given line reader, render it as the most
     /// appropriate Genbank object.
@@ -125,7 +125,7 @@ public:
     virtual CRef< CSerialObject >
     ReadObject(
         ILineReader& lr,
-        IMessageListener* pErrors=0 ) =0;
+        ILineErrorListener* pErrors=0 ) =0;
     
     /// Read an object from a given input stream, render it as a single
     /// Seq-annot. Return empty Seq-annot otherwise.
@@ -137,7 +137,7 @@ public:
     virtual CRef< CSeq_annot >
     ReadSeqAnnot(
         CNcbiIstream& istr,
-        IMessageListener* pErrors=0 );
+        ILineErrorListener* pErrors=0 );
                 
     /// Read an object from a given line reader, render it as a single
     /// Seq-annot, if possible. Return empty Seq-annot otherwise.
@@ -149,7 +149,7 @@ public:
     virtual CRef< CSeq_annot >
     ReadSeqAnnot(
         ILineReader& lr,
-        IMessageListener* pErrors=0 );
+        ILineErrorListener* pErrors=0 );
 
     /// Read all objects from given insput stream, returning them as a vector of
     /// Seq-annots.
@@ -164,7 +164,7 @@ public:
     ReadSeqAnnots(
         vector< CRef<CSeq_annot> >& annots,
         CNcbiIstream& istr,
-        IMessageListener* pErrors=0 );
+        ILineErrorListener* pErrors=0 );
                         
     /// Read all objects from given insput stream, returning them as a vector of
     /// Seq-annots.
@@ -179,7 +179,7 @@ public:
     ReadSeqAnnots(
         vector< CRef<CSeq_annot> >& annots,
         ILineReader& lr,
-        IMessageListener* pErrors=0 );
+        ILineErrorListener* pErrors=0 );
                         
     /// Read an object from a given input stream, render it as a single
     /// Seq-entry, if possible. Return empty Seq-entry otherwise.
@@ -191,7 +191,7 @@ public:
     virtual CRef< CSeq_entry >
     ReadSeqEntry(
         CNcbiIstream& istr,
-        IMessageListener* pErrors=0 );
+        ILineErrorListener* pErrors=0 );
                 
     /// Read an object from a given line reader, render it as a single
     /// Seq-entry, if possible. Return empty Seq-entry otherwise.
@@ -203,7 +203,7 @@ public:
     virtual CRef< CSeq_entry >
     ReadSeqEntry(
         ILineReader& lr,
-        IMessageListener* pErrors=0 );
+        ILineErrorListener* pErrors=0 );
        
     void
     SetProgressReportInterval(
@@ -239,20 +239,20 @@ protected:
     virtual bool xParseBrowserLine(
         const string&,
         CRef<CSeq_annot>&,
-        IMessageListener*);
+        ILineErrorListener*);
         
     virtual bool xParseTrackLine(
         const string&,
-        IMessageListener*);
+        ILineErrorListener*);
         
     virtual bool xParseBrowserLine(
         const string&,
-        IMessageListener*);
+        ILineErrorListener*);
         
     virtual void xSetBrowserRegion(
         const string&,
         CAnnot_descr&,
-        IMessageListener*);
+        ILineErrorListener*);
 
     virtual void xSetTrackData(
         CRef<CSeq_annot>&,
@@ -262,14 +262,14 @@ protected:
                 
     virtual void xAddConversionInfo(
         CRef< CSeq_annot >&,
-        IMessageListener* );
+        ILineErrorListener* );
                     
     virtual void xAddConversionInfo(
         CRef< CSeq_entry >&,
-        IMessageListener*);
+        ILineErrorListener*);
     
     virtual CRef<CUser_object> xMakeAsnConversionInfo(
-        IMessageListener*);
+        ILineErrorListener*);
 
     bool xParseComment(
         const CTempString&,
@@ -281,7 +281,7 @@ protected:
         ILineReader& istr);
 
     void xReportProgress(
-        IMessageListener* =0 );
+        ILineErrorListener* =0 );
 
     bool xIsReportingProgress() const;
 
@@ -291,22 +291,22 @@ protected:
     void
     ProcessError(
         CObjReaderLineException&,
-        IMessageListener* );
+        ILineErrorListener* );
         
     void
     ProcessError(
         CLineError&,
-        IMessageListener* );
+        ILineErrorListener* );
         
     void
     ProcessWarning(
         CObjReaderLineException&,
-        IMessageListener* );
+        ILineErrorListener* );
         
     void
     ProcessWarning(
         CLineError&,
-        IMessageListener* );
+        ILineErrorListener* );
         
     //
     //  Data:

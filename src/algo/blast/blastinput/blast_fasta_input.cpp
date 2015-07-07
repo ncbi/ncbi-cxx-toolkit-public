@@ -82,13 +82,13 @@ public:
     /// @param len length of the gap? @sa CFastaReader
     protected:
     virtual void x_CloseGap(TSeqPos /*len*/, bool /*atStartOfLine*/,
-                            IMessageListener * /*pMessageListener*/)
+                            ILineErrorListener * /*pMessageListener*/)
         { }
 
     /// Override logic for assigning the molecule type
     /// @note fForceType is ignored if the sequence length is less than the
     /// value configured in the constructor
-    virtual void AssignMolType(IMessageListener * pMessageListener) {
+    virtual void AssignMolType(ILineErrorListener * pMessageListener) {
         if (GetCurrentPos(eRawPos) < m_SeqLenThreshold) {
             _ASSERT( (TestFlag(fAssumeNuc) ^ TestFlag(fAssumeProt) ) );
             SetCurrentSeq().SetInst().SetMol(TestFlag(fAssumeNuc) 
@@ -131,7 +131,7 @@ public:
           m_RetrieveSeqData(retrieve_seq_data) {}
 
     /// Overloaded method to attempt to read non-FASTA input types
-    virtual CRef<CSeq_entry> ReadOneSeq(IMessageListener * pMessageListener) {
+    virtual CRef<CSeq_entry> ReadOneSeq(ILineErrorListener * pMessageListener) {
         
         const string line = NStr::TruncateSpaces_Unsafe(*++GetLineReader());
         if ( !line.empty() && isalnum(line.data()[0]&0xff) ) {

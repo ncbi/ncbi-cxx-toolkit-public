@@ -76,7 +76,7 @@ public:
     typedef map<string, string> NAMEMAP;
     typedef list<string> NAMELIST;
     typedef vector<string> FIELDS;
-    typedef bool (CSrcWriter::*HANDLER)(const CBioSource&, const string&, IMessageListener*);
+    typedef bool (CSrcWriter::*HANDLER)(const CBioSource&, const string&, ILineErrorListener*);
     typedef map<string, CSrcWriter::HANDLER> HANDLERMAP;
 
 public:
@@ -105,7 +105,7 @@ public:
         const vector<CBioseq_Handle>&,
         const FIELDS&,
         CNcbiOstream&,
-        IMessageListener* = 0);
+        ILineErrorListener* = 0);
 
     /// Set the column delimiter for the output table.
     void SetDelimiter(
@@ -116,7 +116,7 @@ public:
     /// Verify that each string in fields is a valid qualifier name.
     static bool ValidateFields(
         const FIELDS& fields,
-        IMessageListener* = 0);
+        ILineErrorListener* = 0);
 
     /** Write a table of all qualifier-field entries occurring
       * in the BioSources for a given Seq-entry,
@@ -132,25 +132,25 @@ public:
 protected:
     void xInit();
 
-    virtual bool xGather(CBioseq_Handle, const FIELDS&, IMessageListener* =0);
-    virtual bool xGatherId(CBioseq_Handle, IMessageListener* =0); 
-    virtual bool xGatherGi(CBioseq_Handle, IMessageListener* =0);
-    virtual bool xGatherLocalId(CBioseq_Handle, IMessageListener* = 0);
-    virtual bool xGatherDefline(CBioseq_Handle, IMessageListener* =0);
-    virtual bool xHandleSourceField(const CBioSource&, const string&, IMessageListener* =0);
+    virtual bool xGather(CBioseq_Handle, const FIELDS&, ILineErrorListener* =0);
+    virtual bool xGatherId(CBioseq_Handle, ILineErrorListener* =0); 
+    virtual bool xGatherGi(CBioseq_Handle, ILineErrorListener* =0);
+    virtual bool xGatherLocalId(CBioseq_Handle, ILineErrorListener* = 0);
+    virtual bool xGatherDefline(CBioseq_Handle, ILineErrorListener* =0);
+    virtual bool xHandleSourceField(const CBioSource&, const string&, ILineErrorListener* =0);
 
 
-    virtual bool xGatherTaxname(const CBioSource&, const string&, IMessageListener* =0);
-    virtual bool xGatherDivision(const CBioSource&, const string&, IMessageListener* =0);
-    virtual bool xGatherGenome(const CBioSource&, const string&,  IMessageListener* =0);
-    virtual bool xGatherOrigin(const CBioSource&, const string&, IMessageListener* =0);
-    virtual bool xGatherSubtypeFeat(const CBioSource&, const string&, IMessageListener* =0);
-    virtual bool xGatherOrgModFeat(const CBioSource&, const string&, IMessageListener* =0);
-    virtual bool xGatherOrgCommon(const CBioSource&, const string&, IMessageListener* =0);
-    virtual bool xGatherOrgnameLineage(const CBioSource&, const string&, IMessageListener* =0);
-    virtual bool xGatherPcrPrimers(const CBioSource&, const string&, IMessageListener* =0);
-    virtual bool xGatherDb(const CBioSource&, const string&, IMessageListener* =0);
-    virtual bool xGatherTaxonId(const CBioSource&, const string&, IMessageListener* =0);
+    virtual bool xGatherTaxname(const CBioSource&, const string&, ILineErrorListener* =0);
+    virtual bool xGatherDivision(const CBioSource&, const string&, ILineErrorListener* =0);
+    virtual bool xGatherGenome(const CBioSource&, const string&,  ILineErrorListener* =0);
+    virtual bool xGatherOrigin(const CBioSource&, const string&, ILineErrorListener* =0);
+    virtual bool xGatherSubtypeFeat(const CBioSource&, const string&, ILineErrorListener* =0);
+    virtual bool xGatherOrgModFeat(const CBioSource&, const string&, ILineErrorListener* =0);
+    virtual bool xGatherOrgCommon(const CBioSource&, const string&, ILineErrorListener* =0);
+    virtual bool xGatherOrgnameLineage(const CBioSource&, const string&, ILineErrorListener* =0);
+    virtual bool xGatherPcrPrimers(const CBioSource&, const string&, ILineErrorListener* =0);
+    virtual bool xGatherDb(const CBioSource&, const string&, ILineErrorListener* =0);
+    virtual bool xGatherTaxonId(const CBioSource&, const string&, ILineErrorListener* =0);
 
     virtual bool xFormatTabDelimited(const FIELDS&, CNcbiOstream&);
      

@@ -185,7 +185,7 @@ CVcfReader::~CVcfReader()
 CRef< CSeq_annot >
 CVcfReader::ReadSeqAnnot(
     ILineReader& lr,
-    IMessageListener* pEC ) 
+    ILineErrorListener* pEC ) 
 //  ----------------------------------------------------------------------------                
 {
     xProgressInit(lr);
@@ -253,7 +253,7 @@ CVcfReader::ReadSeqAnnot(
 CRef< CSerialObject >
 CVcfReader::ReadObject(
     ILineReader& lr,
-    IMessageListener* pMessageListener ) 
+    ILineErrorListener* pMessageListener ) 
 //  ----------------------------------------------------------------------------                
 { 
     CRef<CSerialObject> object( 
@@ -266,7 +266,7 @@ bool
 CVcfReader::xProcessMetaLine(
     const string& line,
     CRef<CSeq_annot> pAnnot,
-    IMessageListener* pEC)
+    ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     if ( ! NStr::StartsWith( line, "##" ) ) {
@@ -291,7 +291,7 @@ bool
 CVcfReader::xProcessMetaLineInfo(
     const string& line,
     CRef<CSeq_annot> pAnnot,
-    IMessageListener* pEC)
+    ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     const string prefix = "##INFO=<";
@@ -360,7 +360,7 @@ bool
 CVcfReader::xProcessMetaLineFilter(
     const string& line,
     CRef<CSeq_annot> pAnnot,
-    IMessageListener* pEC)
+    ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     const string prefix = "##FILTER=<";
@@ -409,7 +409,7 @@ bool
 CVcfReader::xProcessMetaLineFormat(
     const string& line,
     CRef<CSeq_annot> pAnnot,
-    IMessageListener* pEC)
+    ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     const string prefix = "##FORMAT=<";
@@ -531,7 +531,7 @@ bool
 CVcfReader::xProcessDataLine(
     const string& line,
     CRef<CSeq_annot> pAnnot,
-    IMessageListener* pEC)
+    ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     if ( NStr::StartsWith( line, "#" ) ) {
@@ -777,7 +777,7 @@ bool
 CVcfReader::xParseData(
     const string& line,
     CVcfData& data,
-    IMessageListener* pEC)
+    ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     vector<string> columns;
@@ -907,7 +907,7 @@ CVcfReader::xParseData(
 bool
 CVcfReader::xNormalizeData(
     CVcfData& data,
-    IMessageListener* pEC)
+    ILineErrorListener* pEC)
 //  ---------------------------------------------------------------------------
 {
     // make sure none of the alternatives is equal to the reference:
@@ -1086,7 +1086,7 @@ bool
 CVcfReader::xProcessInfo(
     CVcfData& data,
     CRef<CSeq_feat> pFeature,
-    IMessageListener* pEC)
+    ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     if (!xAssignVariantProps(data, pFeature, pEC)) {
@@ -1119,7 +1119,7 @@ bool
 CVcfReader::xProcessTrackLine(
     const string& strLine,
     CRef< CSeq_annot >& current,
-    IMessageListener* pEC)
+    ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     if (!xIsTrackLine(strLine)) {
@@ -1224,7 +1224,7 @@ bool
 CVcfReader::xAssignVariantProps(
     CVcfData& data,
     CRef<CSeq_feat> pFeat,
-    IMessageListener* pEC)
+    ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     typedef CVariantProperties VP;

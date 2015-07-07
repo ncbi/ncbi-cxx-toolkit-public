@@ -287,7 +287,7 @@ void CFastaReader::SetMinGaps(TSeqPos gapNmin, TSeqPos gap_Unknown_length)
 }
 
 inline
-void CFastaReader::CloseGap(bool atStartOfLine, IMessageListener * pMessageListener)
+void CFastaReader::CloseGap(bool atStartOfLine, ILineErrorListener * pMessageListener)
 {
     if (m_CurrentGapLength > 0) {
         x_CloseGap(m_CurrentGapLength, atStartOfLine, pMessageListener);
@@ -296,7 +296,7 @@ void CFastaReader::CloseGap(bool atStartOfLine, IMessageListener * pMessageListe
 }
 
 CRef<CSerialObject>
-CFastaReader::ReadObject (ILineReader &lr, IMessageListener *pMessageListener)
+CFastaReader::ReadObject (ILineReader &lr, ILineErrorListener *pMessageListener)
 {
     CRef<CSerialObject> object( 
         ReadSeqEntry( lr, pMessageListener ).ReleaseOrNull() );
@@ -304,7 +304,7 @@ CFastaReader::ReadObject (ILineReader &lr, IMessageListener *pMessageListener)
 }
 
 CRef<CSeq_entry> 
-CFastaReader::ReadSeqEntry (ILineReader &lr, IMessageListener *pMessageListener)
+CFastaReader::ReadSeqEntry (ILineReader &lr, ILineErrorListener *pMessageListener)
 {
     CRef<ILineReader> pTempLineReader( &lr );
     CTempRefSwap<ILineReader> tempRefSwap(m_LineReader, pTempLineReader);
@@ -312,7 +312,7 @@ CFastaReader::ReadSeqEntry (ILineReader &lr, IMessageListener *pMessageListener)
     return ReadSet(kMax_Int, pMessageListener);
 }
 
-CRef<CSeq_entry> CFastaReader::ReadOneSeq(IMessageListener * pMessageListener)
+CRef<CSeq_entry> CFastaReader::ReadOneSeq(ILineErrorListener * pMessageListener)
 {
     m_CurrentSeq.Reset(new CBioseq);
     // m_CurrentMask.Reset();
@@ -435,7 +435,7 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(IMessageListener * pMessageListener)
     return entry;
 }
 
-CRef<CSeq_entry> CFastaReader::x_ReadSegSet(IMessageListener * pMessageListener)
+CRef<CSeq_entry> CFastaReader::x_ReadSegSet(ILineErrorListener * pMessageListener)
 {
     CFlagGuard guard(m_Flags, GetFlags() | fInSegSet);
     CRef<CSeq_entry> entry(new CSeq_entry), master(new CSeq_entry), parts;
@@ -491,7 +491,7 @@ CRef<CSeq_entry> CFastaReader::x_ReadSegSet(IMessageListener * pMessageListener)
     return entry;
 }
 
-CRef<CSeq_entry> CFastaReader::ReadSet(int max_seqs, IMessageListener * pMessageListener)
+CRef<CSeq_entry> CFastaReader::ReadSet(int max_seqs, ILineErrorListener * pMessageListener)
 {
     CRef<CSeq_entry> entry(new CSeq_entry);
     if (TestFlag(fOneSeq)) {
@@ -534,7 +534,7 @@ void CFastaReader::SetIDGenerator(CSeqIdGenerator& gen)
     m_IDGenerator.Reset(&gen);
 }
 
-void CFastaReader::ParseDefLine(const TStr& s, IMessageListener * pMessageListener)
+void CFastaReader::ParseDefLine(const TStr& s, ILineErrorListener * pMessageListener)
 {
     size_t start = 1, pos, len = s.length(), range_len = 0, title_start;
     TSeqPos range_start, range_end;
@@ -729,7 +729,7 @@ void CFastaReader::ParseDefLine(const TStr& s, IMessageListener * pMessageListen
 }
 
 bool CFastaReader::ParseIDs(
-    const TStr& s, IMessageListener * pMessageListener)
+    const TStr& s, ILineErrorListener * pMessageListener)
 {
     // if user wants all ids to be purely local, no problem
     if( m_iFlags & CReaderBase::fAllIdsAsLocal )
@@ -811,7 +811,7 @@ bool CFastaReader::ParseIDs(
 
 size_t CFastaReader::ParseRange(
     const TStr& s, TSeqPos& start, TSeqPos& end, 
-    IMessageListener * pMessageListener)
+    ILineErrorListener * pMessageListener)
 {
     bool    on_start = false;
     bool    negative = false;
@@ -849,7 +849,7 @@ size_t CFastaReader::ParseRange(
 }
 
 void CFastaReader::ParseTitle(
-    const SLineTextAndLoc & lineInfo, IMessageListener * pMessageListener)
+    const SLineTextAndLoc & lineInfo, ILineErrorListener * pMessageListener)
 {
     const static size_t kWarnTitleLength = 1000;
     if( lineInfo.m_sLineText.length() > kWarnTitleLength ) {
@@ -894,7 +894,7 @@ void CFastaReader::GenerateID(void)
 }
 
 void CFastaReader::CheckDataLine(
-    const TStr& s, IMessageListener * pMessageListener)
+    const TStr& s, ILineErrorListener * pMessageListener)
 {
     // make sure the first data line has at least SOME resemblance to
     // actual sequence data.
@@ -950,7 +950,7 @@ void CFastaReader::CheckDataLine(
 }
 
 void CFastaReader::ParseDataLine(
-    const TStr& s, IMessageListener * pMessageListener)
+    const TStr& s, ILineErrorListener * pMessageListener)
 {
     if( NStr::StartsWith(s, ">?") ) {
         ParseGapLine(s, pMessageListener);
@@ -1072,7 +1072,7 @@ void CFastaReader::ParseDataLine(
 }
 
 void CFastaReader::x_CloseGap(
-    TSeqPos len, bool atStartOfLine, IMessageListener * pMessageListener)
+    TSeqPos len, bool atStartOfLine, ILineErrorListener * pMessageListener)
 {
     _ASSERT(len > 0  &&  TestFlag(fParseGaps));
 
@@ -1142,7 +1142,7 @@ void CFastaReader::x_CloseMask(void)
 }
 
 bool CFastaReader::ParseGapLine(
-    const TStr& line, IMessageListener * pMessageListener)
+    const TStr& line, ILineErrorListener * pMessageListener)
 {
     _ASSERT( NStr::StartsWith(line, ">?") );
 
@@ -1380,7 +1380,7 @@ bool CFastaReader::ParseGapLine(
     return true;
 }
 
-void CFastaReader::AssembleSeq(IMessageListener * pMessageListener)
+void CFastaReader::AssembleSeq(ILineErrorListener * pMessageListener)
 {
     CSeq_inst& inst = m_CurrentSeq->SetInst();
 
@@ -1547,7 +1547,7 @@ void CFastaReader::AssembleSeq(IMessageListener * pMessageListener)
     }
 }
 
-void CFastaReader::AssignMolType(IMessageListener * pMessageListener)
+void CFastaReader::AssignMolType(ILineErrorListener * pMessageListener)
 {
     CSeq_inst&                  inst = m_CurrentSeq->SetInst();
     CSeq_inst::EMol             default_mol;
@@ -1600,7 +1600,7 @@ bool
 CFastaReader::CreateWarningsForSeqDataInTitle(
     const TStr& sLineText, 
     TSeqPos iLineNum,
-    IMessageListener * pMessageListener)
+    ILineErrorListener * pMessageListener)
 {
     bool bFoundProblem = false;
 
@@ -1661,7 +1661,7 @@ CFastaReader::CreateWarningsForSeqDataInTitle(
 }
 
 CRef<CSeq_entry> CFastaReader::ReadAlignedSet(
-    int reference_row, IMessageListener * pMessageListener)
+    int reference_row, ILineErrorListener * pMessageListener)
 {
     TIds             ids;
     CRef<CSeq_entry> entry = x_ReadSeqsToAlign(ids, pMessageListener);
@@ -1686,7 +1686,7 @@ CRef<CSeq_entry> CFastaReader::ReadAlignedSet(
 }
 
 CRef<CSeq_entry> CFastaReader::x_ReadSeqsToAlign(TIds& ids,
-    IMessageListener * pMessageListener)
+    ILineErrorListener * pMessageListener)
 {
     CRef<CSeq_entry> entry(new CSeq_entry);
     vector<TSeqPos>  lengths;
@@ -1865,7 +1865,7 @@ private:
 
 CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags,
                            int* counter, vector<CConstRef<CSeq_loc> >* lcv,
-                           IMessageListener * pMessageListener)
+                           ILineErrorListener * pMessageListener)
 {
     CRef<ILineReader> lr(ILineReader::New(in));
     CFastaReader      reader(*lr, flags);
@@ -1891,10 +1891,10 @@ public:
 
 protected:
     void ParseDefLine(const TStr& s, 
-        IMessageListener * pMessageListener);
+        ILineErrorListener * pMessageListener);
     void ParseTitle(const SLineTextAndLoc & lineInfo, 
-        IMessageListener * pMessageListener = 0);
-    void AssembleSeq(IMessageListener * pMessageListener);
+        ILineErrorListener * pMessageListener = 0);
+    void AssembleSeq(ILineErrorListener * pMessageListener);
 
 private:
     SFastaFileMap*             m_Map;
@@ -1909,7 +1909,7 @@ CFastaMapper::CFastaMapper(ILineReader& reader, SFastaFileMap* fasta_map,
     fasta_map->file_map.resize(0);
 }
 
-void CFastaMapper::ParseDefLine(const TStr& s, IMessageListener * pMessageListener)
+void CFastaMapper::ParseDefLine(const TStr& s, ILineErrorListener * pMessageListener)
 {
     TParent::ParseDefLine(s, pMessageListener); // We still want the default behavior.
     m_MapEntry.seq_id = GetIDs().front()->AsFastaString(); // XXX -- GetBestID?
@@ -1921,13 +1921,13 @@ void CFastaMapper::ParseDefLine(const TStr& s, IMessageListener * pMessageListen
 }
 
 void CFastaMapper::ParseTitle(const SLineTextAndLoc & s, 
-    IMessageListener * pMessageListener)
+    ILineErrorListener * pMessageListener)
 {
     TParent::ParseTitle(s, pMessageListener);
     m_MapEntry.description = s.m_sLineText;
 }
 
-void CFastaMapper::AssembleSeq(IMessageListener * pMessageListener)
+void CFastaMapper::AssembleSeq(ILineErrorListener * pMessageListener)
 {
     TParent::AssembleSeq(pMessageListener);
     m_Map->file_map.push_back(m_MapEntry);
@@ -1979,7 +1979,7 @@ void ScanFastaFile(IFastaEntryScan* scanner,
 void CFastaReader::x_ApplyAllMods( 
     CBioseq & bioseq,
     TSeqPos iLineNum,
-    IMessageListener * pMessageListener )
+    ILineErrorListener * pMessageListener )
 {
     // this is called even if there the user did not request
     // mods to be added because we want to give a warning if there
@@ -2181,7 +2181,7 @@ void CFastaReader::SetGapLinkageEvidences(CSeq_gap::EType type, const set<int>& 
 }
 
 void CFastaReader::PostWarning(
-            IMessageListener * pMessageListener,
+            ILineErrorListener * pMessageListener,
             EDiagSev _eSeverity, size_t _uLineNum, CTempString _MessageStrmOps, CObjReaderParseException::EErrCode _eErrCode, ILineError::EProblem _eProblem, CTempString _sFeature, CTempString _sQualName, CTempString _sQualValue)
 {
     if (find(m_ignorable.begin(), m_ignorable.end(), _eProblem) != m_ignorable.end())

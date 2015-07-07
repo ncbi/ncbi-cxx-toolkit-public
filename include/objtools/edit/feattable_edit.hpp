@@ -53,7 +53,7 @@ public:
     CFeatTableEdit(
         CSeq_annot&,
 		const string& = "",
-        IMessageListener* =0);
+        ILineErrorListener* =0);
     ~CFeatTableEdit();
 
 	void GenerateLocusTags();
@@ -100,7 +100,7 @@ protected:
     CSeq_annot_Handle mHandle;
     feature::CFeatTree mTree;
     CSeq_annot_EditHandle mEditHandle;
-    IMessageListener* mpMessageListener;
+    ILineErrorListener* mpMessageListener;
     unsigned int mNextFeatId;
 	unsigned int mLocusTagNumber;
 	string mLocusTagPrefix;

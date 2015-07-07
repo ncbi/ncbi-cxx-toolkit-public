@@ -93,7 +93,7 @@ protected:
     virtual bool x_UpdateAnnotFeature(
         const CGff2Record&,
         CRef< CSeq_annot >,
-        IMessageListener*);
+        ILineErrorListener*);
 
     virtual bool x_UpdateFeatureCds(
         const CGff2Record&,
@@ -107,31 +107,31 @@ protected:
         const CGff2Record&,
         CRef<CSeq_feat>,
         CRef<CSeq_annot>,
-        IMessageListener*);
+        ILineErrorListener*);
 
     virtual bool xUpdateAnnotCds(
         const CGff2Record&,
         CRef<CSeq_feat>,
         CRef<CSeq_annot>,
-        IMessageListener*);
+        ILineErrorListener*);
 
     virtual bool xUpdateAnnotGene(
         const CGff2Record&,
         CRef<CSeq_feat>,
         CRef<CSeq_annot>,
-        IMessageListener*);
+        ILineErrorListener*);
 
     virtual bool xUpdateAnnotGeneric(
         const CGff2Record&,
         CRef<CSeq_feat>,
         CRef<CSeq_annot>,
-        IMessageListener*);
+        ILineErrorListener*);
 
     virtual bool xUpdateAnnotMrna(
         const CGff2Record&,
         CRef<CSeq_feat>,
         CRef<CSeq_annot>,
-        IMessageListener*);
+        ILineErrorListener*);
 
     virtual bool xVerifyCdsParents(
         const CGff2Record&);
@@ -151,7 +151,7 @@ protected:
     void xVerifyExonLocation(
         const string&,
         const CGff2Record&,
-        IMessageListener*);
+        ILineErrorListener*);
 
     // Data:
     map<string, string> mCdsParentMap;

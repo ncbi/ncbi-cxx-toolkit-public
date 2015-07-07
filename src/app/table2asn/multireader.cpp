@@ -86,14 +86,14 @@ namespace
         CFastaReaderEx(ILineReader& reader, TFlags flags) : CFastaReader(reader, flags)
         {
         };
-        virtual void AssignMolType(IMessageListener * pMessageListener)
+        virtual void AssignMolType(ILineErrorListener * pMessageListener)
         {
             CFastaReader::AssignMolType(pMessageListener);
             CSeq_inst& inst = SetCurrentSeq().SetInst();
             if (!inst.IsSetMol() || inst.GetMol() ==  CSeq_inst::eMol_na)
                 inst.SetMol( CSeq_inst::eMol_dna);
         }
-        virtual void AssembleSeq (IMessageListener * pMessageListener)
+        virtual void AssembleSeq (ILineErrorListener * pMessageListener)
         {
             CFastaReader::AssembleSeq(pMessageListener);
 

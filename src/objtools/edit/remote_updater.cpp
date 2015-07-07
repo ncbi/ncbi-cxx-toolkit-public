@@ -142,7 +142,7 @@ public:
         }
     }
 
-    CRef<COrg_ref> GetOrg(const COrg_ref& org, objects::IMessageListener* logger)
+    CRef<COrg_ref> GetOrg(const COrg_ref& org, objects::ILineErrorListener* logger)
     {
         CRef<COrg_ref> result;
         CRef<CT3Reply> reply = GetOrgReply(org);
@@ -212,7 +212,7 @@ protected:
     auto_ptr<CCachedReplyMap> m_cache;
 };
 
-void CRemoteUpdater::UpdateOrgFromTaxon(objects::IMessageListener* logger, objects::CSeqdesc& obj)
+void CRemoteUpdater::UpdateOrgFromTaxon(objects::ILineErrorListener* logger, objects::CSeqdesc& obj)
 {
     if (obj.IsOrg())
     {
@@ -225,7 +225,7 @@ void CRemoteUpdater::UpdateOrgFromTaxon(objects::IMessageListener* logger, objec
     }
 }
 
-void CRemoteUpdater::xUpdateOrgTaxname(objects::IMessageListener* logger, COrg_ref& org)
+void CRemoteUpdater::xUpdateOrgTaxname(objects::ILineErrorListener* logger, COrg_ref& org)
 {
     CMutexGuard guard(m_Mutex);
 
@@ -362,7 +362,7 @@ void CRemoteUpdater::xUpdatePubReferences(objects::CSeq_descr& seq_descr)
     }
 }
 
-void CRemoteUpdater::UpdateOrgFromTaxon(objects::IMessageListener* logger, objects::CSeq_entry& entry)
+void CRemoteUpdater::UpdateOrgFromTaxon(objects::ILineErrorListener* logger, objects::CSeq_entry& entry)
 {
     if (entry.IsSet())
     {
@@ -390,7 +390,7 @@ void CRemoteUpdater::UpdateOrgFromTaxon(objects::IMessageListener* logger, objec
     }
 }
 
-void CRemoteUpdater::UpdateOrgFromTaxon(objects::IMessageListener* logger, objects::CSeq_entry_EditHandle& obj)
+void CRemoteUpdater::UpdateOrgFromTaxon(objects::ILineErrorListener* logger, objects::CSeq_entry_EditHandle& obj)
 {
     for (CBioseq_CI bioseq_it(obj); bioseq_it; ++bioseq_it)
     {

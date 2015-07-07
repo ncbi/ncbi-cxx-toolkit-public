@@ -183,7 +183,7 @@ bool CGff3Reader::x_UpdateFeatureCds(
 bool CGff3Reader::x_UpdateAnnotFeature(
     const CGff2Record& record,
     CRef< CSeq_annot > pAnnot,
-    IMessageListener* pEC)
+    ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     CRef< CSeq_feat > pFeature(new CSeq_feat);
@@ -209,7 +209,7 @@ bool CGff3Reader::x_UpdateAnnotFeature(
 void CGff3Reader::xVerifyExonLocation(
     const string& mrnaId,
     const CGff2Record& exon,
-    IMessageListener* pEC)
+    ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     map<string,CRef<CSeq_interval> >::const_iterator cit = mMrnaLocs.find(mrnaId);
@@ -243,7 +243,7 @@ bool CGff3Reader::xUpdateAnnotExon(
     const CGff2Record& record,
     CRef<CSeq_feat>,
     CRef<CSeq_annot>,
-    IMessageListener* pEC)
+    ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     list<string> parents;
@@ -268,7 +268,7 @@ bool CGff3Reader::xUpdateAnnotCds(
     const CGff2Record& record,
     CRef<CSeq_feat> pFeature,
     CRef<CSeq_annot> pAnnot,
-    IMessageListener* pEC)
+    ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     if (!xVerifyCdsParents(record)) {
@@ -457,7 +457,7 @@ bool CGff3Reader::xUpdateAnnotGeneric(
     const CGff2Record& record,
     CRef<CSeq_feat> pFeature,
     CRef<CSeq_annot> pAnnot,
-    IMessageListener* pEC)
+    ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     string id;
@@ -486,7 +486,7 @@ bool CGff3Reader::xUpdateAnnotMrna(
     const CGff2Record& record,
     CRef<CSeq_feat> pFeature,
     CRef<CSeq_annot> pAnnot,
-    IMessageListener* pEC)
+    ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     string id;
@@ -547,7 +547,7 @@ bool CGff3Reader::xUpdateAnnotGene(
     const CGff2Record& record,
     CRef<CSeq_feat> pFeature,
     CRef<CSeq_annot> pAnnot,
-    IMessageListener* pEC)
+    ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     return xUpdateAnnotGeneric(record, pFeature, pAnnot, pEC);

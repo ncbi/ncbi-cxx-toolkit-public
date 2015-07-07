@@ -160,12 +160,12 @@ public:
     virtual CRef< CSerialObject >
     ReadObject(
         ILineReader&,
-        IMessageListener* =0 );
+        ILineErrorListener* =0 );
                 
     virtual CRef< CSeq_annot >
     ReadSeqAnnot(
         ILineReader&,
-        IMessageListener* =0 );
+        ILineErrorListener* =0 );
 
     //
     //  helpers:
@@ -179,31 +179,31 @@ protected:
     xProcessTrackLine(
         const string&,
         CRef< CSeq_annot >&,
-        IMessageListener*);
+        ILineErrorListener*);
         
     virtual bool
     xProcessMetaLine(
         const string&,
         CRef<CSeq_annot>,
-        IMessageListener*);
+        ILineErrorListener*);
 
     virtual bool
     xProcessMetaLineInfo(
         const string&,
         CRef<CSeq_annot>,
-        IMessageListener*);
+        ILineErrorListener*);
 
     virtual bool
     xProcessMetaLineFilter(
         const string&,
         CRef<CSeq_annot>,
-        IMessageListener*);
+        ILineErrorListener*);
 
     virtual bool
     xProcessMetaLineFormat(
         const string&,
         CRef<CSeq_annot>,
-        IMessageListener*);
+        ILineErrorListener*);
 
     virtual bool
     xProcessHeaderLine(
@@ -214,7 +214,7 @@ protected:
     xProcessDataLine(
         const string&,
         CRef<CSeq_annot>,
-        IMessageListener*);
+        ILineErrorListener*);
         
     virtual bool
     xAssignVcfMeta(
@@ -269,7 +269,7 @@ protected:
     xAssignVariantProps(
         CVcfData&,
         CRef<CSeq_feat>,
-        IMessageListener*);
+        ILineErrorListener*);
 
     virtual bool
     xProcessScore(
@@ -285,7 +285,7 @@ protected:
     xProcessInfo(
         CVcfData&,
         CRef<CSeq_feat>,
-        IMessageListener*);
+        ILineErrorListener*);
 
     virtual bool
     xProcessFormat(
@@ -296,12 +296,12 @@ protected:
     xParseData(
         const string&,
         CVcfData&,
-        IMessageListener* =0);
+        ILineErrorListener* =0);
 
     virtual bool
     xNormalizeData(
         CVcfData&,
-        IMessageListener* =0);
+        ILineErrorListener* =0);
 
     //
     //  data:

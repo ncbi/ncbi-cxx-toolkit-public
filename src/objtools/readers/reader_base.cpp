@@ -172,7 +172,7 @@ CReaderBase::~CReaderBase()
 CRef< CSerialObject >
 CReaderBase::ReadObject(
     CNcbiIstream& istr,
-    IMessageListener* pMessageListener ) 
+    ILineErrorListener* pMessageListener ) 
 //  ----------------------------------------------------------------------------
 {
     CStreamLineReader lr( istr );
@@ -183,7 +183,7 @@ CReaderBase::ReadObject(
 CRef< CSeq_annot >
 CReaderBase::ReadSeqAnnot(
     CNcbiIstream& istr,
-    IMessageListener* pMessageListener ) 
+    ILineErrorListener* pMessageListener ) 
 //  ----------------------------------------------------------------------------
 {
     CStreamLineReader lr( istr );
@@ -194,7 +194,7 @@ CReaderBase::ReadSeqAnnot(
 CRef< CSeq_annot >
 CReaderBase::ReadSeqAnnot(
     ILineReader& lr,
-    IMessageListener* ) 
+    ILineErrorListener* ) 
 //  ----------------------------------------------------------------------------
 {
     xProgressInit(lr);
@@ -206,7 +206,7 @@ void
 CReaderBase::ReadSeqAnnots(
     vector< CRef<CSeq_annot> >& annots,
     CNcbiIstream& istr,
-    IMessageListener* pMessageListener )
+    ILineErrorListener* pMessageListener )
 //  ---------------------------------------------------------------------------
 {
     CStreamLineReader lr( istr );
@@ -218,7 +218,7 @@ void
 CReaderBase::ReadSeqAnnots(
     vector< CRef<CSeq_annot> >& annots,
     ILineReader& lr,
-    IMessageListener* pMessageListener )
+    ILineErrorListener* pMessageListener )
 //  ----------------------------------------------------------------------------
 {
     xProgressInit(lr);
@@ -234,7 +234,7 @@ CReaderBase::ReadSeqAnnots(
 CRef< CSeq_entry >
 CReaderBase::ReadSeqEntry(
     CNcbiIstream& istr,
-    IMessageListener* pMessageListener ) 
+    ILineErrorListener* pMessageListener ) 
 //  ----------------------------------------------------------------------------
 {
     CStreamLineReader lr( istr );
@@ -246,7 +246,7 @@ CReaderBase::ReadSeqEntry(
 CRef< CSeq_entry >
 CReaderBase::ReadSeqEntry(
     ILineReader& lr,
-    IMessageListener* ) 
+    ILineErrorListener* ) 
 //  ----------------------------------------------------------------------------
 {
     xProgressInit(lr);
@@ -257,7 +257,7 @@ CReaderBase::ReadSeqEntry(
 void
 CReaderBase::ProcessError(
     CObjReaderLineException& err,
-    IMessageListener* pContainer )
+    ILineErrorListener* pContainer )
 //  ----------------------------------------------------------------------------
 {
     err.SetLineNumber( m_uLineNumber );
@@ -280,7 +280,7 @@ CReaderBase::ProcessError(
 void
 CReaderBase::ProcessWarning(
     CObjReaderLineException& err,
-    IMessageListener* pContainer )
+    ILineErrorListener* pContainer )
 //  ----------------------------------------------------------------------------
 {
     err.SetLineNumber( m_uLineNumber );
@@ -298,7 +298,7 @@ CReaderBase::ProcessWarning(
 void
 CReaderBase::ProcessError(
     CLineError& err,
-    IMessageListener* pContainer )
+    ILineErrorListener* pContainer )
 //  ----------------------------------------------------------------------------
 {
     if (!pContainer  ||  !pContainer->PutError(err)) {
@@ -310,7 +310,7 @@ CReaderBase::ProcessError(
 void
 CReaderBase::ProcessWarning(
     CLineError& err,
-    IMessageListener* pContainer )
+    ILineErrorListener* pContainer )
 //  ----------------------------------------------------------------------------
 {
     if (!pContainer) {
@@ -327,7 +327,7 @@ CReaderBase::ProcessWarning(
 void CReaderBase::xSetBrowserRegion(
     const string& strRaw,
     CAnnot_descr& desc,
-    IMessageListener* pEC)
+    ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     CRef<CSeq_loc> location( new CSeq_loc );
@@ -398,7 +398,7 @@ void CReaderBase::xSetBrowserRegion(
 bool CReaderBase::xParseBrowserLine(
     const string& strLine,
     CRef<CSeq_annot>& annot,
-    IMessageListener* pEC)
+    ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     if ( ! NStr::StartsWith( strLine, "browser" ) ) {
@@ -465,7 +465,7 @@ void CReaderBase::xAssignTrackData(
 //  ----------------------------------------------------------------------------
 bool CReaderBase::xParseTrackLine(
     const string& strLine,
-    IMessageListener* pEC)
+    ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     vector<string> parts;
@@ -480,7 +480,7 @@ bool CReaderBase::xParseTrackLine(
 //  ----------------------------------------------------------------------------
 bool CReaderBase::xParseBrowserLine(
     const string& strLine,
-    IMessageListener* pEC)
+    ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     return true;
@@ -512,7 +512,7 @@ bool CReaderBase::xParseComment(
 //  ----------------------------------------------------------------------------
 void CReaderBase::xAddConversionInfo(
     CRef<CSeq_annot >& annot,
-    IMessageListener *pMessageListener)
+    ILineErrorListener *pMessageListener)
 //  ----------------------------------------------------------------------------
 {
     if (!annot || !pMessageListener) {
@@ -534,7 +534,7 @@ void CReaderBase::xAddConversionInfo(
 //  ----------------------------------------------------------------------------
 void CReaderBase::xAddConversionInfo(
     CRef<CSeq_entry >& entry,
-    IMessageListener *pMessageListener)
+    ILineErrorListener *pMessageListener)
 //  ----------------------------------------------------------------------------
 {
     if (!entry || !pMessageListener) {
@@ -547,7 +547,7 @@ void CReaderBase::xAddConversionInfo(
 
 //  ----------------------------------------------------------------------------
 CRef<CUser_object> CReaderBase::xMakeAsnConversionInfo(
-    IMessageListener* pMessageListener )
+    ILineErrorListener* pMessageListener )
 //  ----------------------------------------------------------------------------
 {
     CRef<CUser_object> conversioninfo(new CUser_object());
@@ -587,7 +587,7 @@ bool CReaderBase::xIsReportingProgress() const
 
 //  ----------------------------------------------------------------------------
 void CReaderBase::xReportProgress(
-    IMessageListener* pProgress)
+    ILineErrorListener* pProgress)
 //  ----------------------------------------------------------------------------
 {
     if (!xIsReportingProgress()) { // progress reports disabled

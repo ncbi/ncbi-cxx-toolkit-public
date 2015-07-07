@@ -71,24 +71,24 @@ public:
     virtual CRef< CSerialObject >
     ReadObject(
         ILineReader&,
-        IMessageListener* =0 );
+        ILineErrorListener* =0 );
                 
     virtual CRef< CSeq_annot >
     ReadSeqAnnot(
         ILineReader&,
-        IMessageListener* =0 );
+        ILineErrorListener* =0 );
 
     virtual void
     ReadSeqAnnots(
         vector< CRef<CSeq_annot> >&,
         CNcbiIstream&,
-        IMessageListener* =0 );
+        ILineErrorListener* =0 );
                         
     virtual void
     ReadSeqAnnots(
         vector< CRef<CSeq_annot> >&,
         ILineReader&,
-        IMessageListener* =0 );
+        ILineErrorListener* =0 );
                         
     //
     //  helpers:

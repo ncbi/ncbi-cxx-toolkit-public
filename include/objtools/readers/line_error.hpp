@@ -36,6 +36,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbimisc.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbi_message.hpp>
 #include <objtools/readers/reader_exception.hpp>
 
 
@@ -44,7 +45,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects) // namespace ncbi::objects::
 
 //  ============================================================================
-class NCBI_XOBJUTIL_EXPORT ILineError
+class NCBI_XOBJUTIL_EXPORT ILineError : public IMessage
 //  ============================================================================
 {
 public:
@@ -113,9 +114,6 @@ public:
     virtual EProblem
     Problem(void) const = 0;
 
-    virtual EDiagSev
-    Severity(void) const =0;
-    
     virtual const std::string &
     SeqId(void) const = 0;
 
@@ -163,24 +161,11 @@ public:
     std::string
     SeverityStr(void) const
     {
-        switch ( Severity() ) {
-        default:
-            return "Unknown";
-        case eDiag_Info:
-            return "Info";
-        case eDiag_Warning:
-            return "Warning";
-        case eDiag_Error:
-            return "Error";
-        case eDiag_Critical:
-            return "Critical";
-        case eDiag_Fatal:
-            return "Fatal";
-        }
+        return CNcbiDiag::SeverityName(Severity());
     };
 
     virtual const std::string&
-    ErrorMessage(void) const { 
+    ErrorMessage(void) const {
         static string empty("");
         return empty; 
     }
@@ -342,8 +327,26 @@ public:
 
         out << "</message>" << endl;
     };
+
+    // IMessage methods - default implementations or wrappers for ILineError
+    // methods (for backward compatibility).
+    virtual string GetText(void) const { return Message(); }
+    virtual EDiagSev GetSeverity(void) const { return Severity(); }
+    virtual int GetCode(void) const { return 0; }
+    virtual int GetSubCode(void) const { return 0; }
+    virtual void Write(CNcbiOstream& out) const { Dump(out); }
+    virtual std::string Compose(void) const
+    {
+        CNcbiOstrstream out;
+        Write(out);
+        return CNcbiOstrstreamToString(out);
+    }
+
+    // This is required to disambiguate IMessage::GetSeverity() and
+    // CException::GetSeverity() in CObjReaderLineException
+    virtual EDiagSev Severity(void) const { return eDiag_Error; }
 };
-    
+
 //  ============================================================================
 class NCBI_XOBJUTIL_EXPORT CLineError:
 //  ============================================================================
@@ -387,7 +390,7 @@ public:
     EProblem
     Problem(void) const { return m_eProblem; }
 
-    EDiagSev
+    virtual EDiagSev
     Severity(void) const { return m_eSeverity; }
     
     const std::string &
@@ -494,7 +497,7 @@ public:
 
     EProblem Problem(void) const { return m_eProblem; }
     const std::string &SeqId(void) const { return m_strSeqId; }
-    EDiagSev Severity(void) const { return GetSeverity(); }
+    EDiagSev Severity(void) const { return CObjReaderParseException::GetSeverity(); }
     unsigned int Line(void) const { return m_uLineNumber; }
     const TVecOfLines & OtherLines(void) const { return m_vecOfOtherLines; }
     const std::string &FeatureName(void) const { return m_strFeatureName; }

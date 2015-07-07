@@ -141,7 +141,7 @@ CWiggleReader::~CWiggleReader()
 CRef< CSerialObject >
 CWiggleReader::ReadObject(
     ILineReader& lr,
-    IMessageListener* pMessageListener ) 
+    ILineErrorListener* pMessageListener ) 
 //  ----------------------------------------------------------------------------                
 { 
     CRef<CSerialObject> object( 
@@ -153,7 +153,7 @@ CWiggleReader::ReadObject(
 CRef<CSeq_annot>
 CWiggleReader::ReadSeqAnnot(
     ILineReader& lr,
-    IMessageListener* pMessageListener ) 
+    ILineErrorListener* pMessageListener ) 
 //  ----------------------------------------------------------------------------                
 {
     xProgressInit(lr);
@@ -174,7 +174,7 @@ CWiggleReader::ReadSeqAnnot(
 CRef<CSeq_annot>
 CWiggleReader::xReadSeqAnnotGraph(
     ILineReader& lr,
-    IMessageListener* pMessageListener ) 
+    ILineErrorListener* pMessageListener ) 
 //  ----------------------------------------------------------------------------                
 {
     m_ChromId.clear();
@@ -240,7 +240,7 @@ CWiggleReader::xReadSeqAnnotGraph(
 CRef<CSeq_annot>
 CWiggleReader::xReadSeqAnnotTable(
     ILineReader& lr,
-    IMessageListener* pMessageListener ) 
+    ILineErrorListener* pMessageListener ) 
 //  ----------------------------------------------------------------------------                
 {
     m_ChromId.clear();
@@ -308,7 +308,7 @@ bool
 CWiggleReader::ReadTrackData(
     ILineReader& lr,
     CRawWiggleTrack& rawdata,
-    IMessageListener* pMessageListener)
+    ILineErrorListener* pMessageListener)
 //  ----------------------------------------------------------------------------
 {
     while (xGetLine(lr, m_CurLine)) {
@@ -336,7 +336,7 @@ bool
 CWiggleReader::xReadFixedStepDataRaw(
     ILineReader& lr,
     CRawWiggleTrack& rawdata,
-    IMessageListener* pMessageListener)
+    ILineErrorListener* pMessageListener)
 //  ----------------------------------------------------------------------------
 {
     rawdata.Reset();
@@ -365,7 +365,7 @@ bool
 CWiggleReader::xReadVariableStepDataRaw(
     ILineReader& lr,
     CRawWiggleTrack& rawdata,
-    IMessageListener* pMessageListener)
+    ILineErrorListener* pMessageListener)
 //  ----------------------------------------------------------------------------
 {
     rawdata.Reset();
@@ -751,7 +751,7 @@ inline bool CWiggleReader::xCommentLine(void) const
 
 //  ----------------------------------------------------------------------------
 string CWiggleReader::xGetWord(
-    IMessageListener* pMessageListener)
+    ILineErrorListener* pMessageListener)
 //  ----------------------------------------------------------------------------
 {
     const char* ptr = m_CurLine.c_str();
@@ -777,7 +777,7 @@ string CWiggleReader::xGetWord(
 
 //  ----------------------------------------------------------------------------
 string CWiggleReader::xGetParamName(
-    IMessageListener* pMessageListener)
+    ILineErrorListener* pMessageListener)
 //  ----------------------------------------------------------------------------
 {
     const char* ptr = m_CurLine.c_str();
@@ -804,7 +804,7 @@ string CWiggleReader::xGetParamName(
 
 //  ----------------------------------------------------------------------------
 string CWiggleReader::xGetParamValue(
-    IMessageListener* pMessageListener)
+    ILineErrorListener* pMessageListener)
 //  ----------------------------------------------------------------------------
 {
     const char* ptr = m_CurLine.c_str();
@@ -832,7 +832,7 @@ string CWiggleReader::xGetParamValue(
 //  ----------------------------------------------------------------------------
 void CWiggleReader::xGetPos(
     TSeqPos& v,
-    IMessageListener* pMessageListener)
+    ILineErrorListener* pMessageListener)
 //  ----------------------------------------------------------------------------
 {
     TSeqPos ret = 0;
@@ -922,7 +922,7 @@ bool CWiggleReader::xTryGetDoubleSimple(double& v)
 //  ----------------------------------------------------------------------------
 bool CWiggleReader::xTryGetDouble(
     double& v,
-    IMessageListener* pMessageListener)
+    ILineErrorListener* pMessageListener)
 //  ----------------------------------------------------------------------------
 {
     if ( xTryGetDoubleSimple(v) ) {
@@ -949,7 +949,7 @@ bool CWiggleReader::xTryGetDouble(
 //  ----------------------------------------------------------------------------
 inline bool CWiggleReader::xTryGetPos(
     TSeqPos& v,
-    IMessageListener* pMessageListener)
+    ILineErrorListener* pMessageListener)
 //  ----------------------------------------------------------------------------
 {
     char c = m_CurLine.c_str()[0];
@@ -963,7 +963,7 @@ inline bool CWiggleReader::xTryGetPos(
 //  ----------------------------------------------------------------------------
 inline void CWiggleReader::xGetDouble(
     double& v,
-    IMessageListener* pMessageListener)
+    ILineErrorListener* pMessageListener)
 //  ----------------------------------------------------------------------------
 {
     if ( !xTryGetDouble(v, pMessageListener) ) {
@@ -1034,7 +1034,7 @@ void CWiggleReader::xSetChrom(
 
 //  ----------------------------------------------------------------------------
 bool CWiggleReader::xProcessBrowserLine(
-    IMessageListener* pMl)
+    ILineErrorListener* pMl)
 //  ----------------------------------------------------------------------------
 {
     if (!NStr::StartsWith(m_CurLine, "browser")) {
@@ -1046,7 +1046,7 @@ bool CWiggleReader::xProcessBrowserLine(
 //  ----------------------------------------------------------------------------
 bool CWiggleReader::xParseTrackLine(
     const string& line,
-    IMessageListener* pMessageListener)
+    ILineErrorListener* pMessageListener)
 //  ----------------------------------------------------------------------------
 {
     if (!xIsTrackLine(line)) {
@@ -1075,7 +1075,7 @@ bool CWiggleReader::xParseTrackLine(
 //  ----------------------------------------------------------------------------
 void CWiggleReader::xGetFixedStepInfo(
     SFixedStepInfo& fixedStepInfo,
-    IMessageListener* pMessageListener)
+    ILineErrorListener* pMessageListener)
 //  ----------------------------------------------------------------------------
 {
     if ( m_TrackType != eTrackType_wiggle_0 ) {
@@ -1147,7 +1147,7 @@ void CWiggleReader::xGetFixedStepInfo(
 void CWiggleReader::xReadFixedStepData(
     const SFixedStepInfo& fixedStepInfo,
     ILineReader& lr,
-    IMessageListener* pMessageListener)
+    ILineErrorListener* pMessageListener)
 //  ----------------------------------------------------------------------------
 {
     xSetChrom(fixedStepInfo.mChrom);
@@ -1168,7 +1168,7 @@ void CWiggleReader::xReadFixedStepData(
 //  ----------------------------------------------------------------------------
 void CWiggleReader::xGetVarStepInfo(
     SVarStepInfo& varStepInfo,
-    IMessageListener* pMessageListener)
+    ILineErrorListener* pMessageListener)
 //  ----------------------------------------------------------------------------
 {
     if ( m_TrackType != eTrackType_wiggle_0 ) {
@@ -1218,7 +1218,7 @@ void CWiggleReader::xGetVarStepInfo(
 void CWiggleReader::xReadVariableStepData(
     const SVarStepInfo& varStepInfo,
     ILineReader& lr,
-    IMessageListener* pMessageListener)
+    ILineErrorListener* pMessageListener)
 //  =========================================================================
 {
     xSetChrom(varStepInfo.mChrom);
@@ -1240,7 +1240,7 @@ void CWiggleReader::xReadVariableStepData(
 //  =========================================================================
 void CWiggleReader::xReadBedLine(
     const string& chrom,
-    IMessageListener* pMessageListener)
+    ILineErrorListener* pMessageListener)
 //  =========================================================================
 {
     if ( m_TrackType != eTrackType_bedGraph &&

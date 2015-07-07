@@ -44,7 +44,7 @@ BEGIN_SCOPE(objects) // namespace ncbi::objects::
 // be used because old files might have forward declarations
 // like "class IErrorContainer;" that would conflict with a typedef.
 
-class NCBI_DEPRECATED IErrorContainer        : public IMessageListener        { };
+class NCBI_DEPRECATED IErrorContainer        : public ILineErrorListener      { };
 class NCBI_DEPRECATED CErrorContainerBase    : public CMessageListenerBase    { };
 class NCBI_DEPRECATED CErrorContainerLenient : public CMessageListenerLenient { };
 class NCBI_DEPRECATED CErrorContainerStrict  : public CMessageListenerStrict  { };

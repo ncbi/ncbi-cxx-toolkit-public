@@ -116,7 +116,7 @@ CMicroArrayReader::~CMicroArrayReader()
 CRef< CSerialObject >
 CMicroArrayReader::ReadObject(
     ILineReader& lr,
-    IMessageListener* pMessageListener ) 
+    ILineErrorListener* pMessageListener ) 
 //  ----------------------------------------------------------------------------                
 { 
     CRef<CSerialObject> object( 
@@ -128,7 +128,7 @@ CMicroArrayReader::ReadObject(
 CRef< CSeq_annot >
 CMicroArrayReader::ReadSeqAnnot(
     ILineReader& lr,
-    IMessageListener* pEC) 
+    ILineErrorListener* pEC) 
 //  ----------------------------------------------------------------------------                
 {
     const int MAX_RECORDS = 100000;
@@ -207,7 +207,7 @@ CMicroArrayReader::ReadSeqAnnot(
 bool CMicroArrayReader::xParseFeature(
     const vector<string>& fields,
     CRef<CSeq_annot>& annot,
-    IMessageListener* pEC)
+    ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     const size_t columncount = 15;
@@ -305,7 +305,7 @@ void CMicroArrayReader::xSetFeatureDisplayData(
 //  ----------------------------------------------------------------------------
 bool CMicroArrayReader::xParseTrackLine(
     const string& strLine,
-    IMessageListener* pEC)
+    ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     m_strExpNames = "";

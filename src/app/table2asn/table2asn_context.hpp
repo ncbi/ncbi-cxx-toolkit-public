@@ -12,7 +12,7 @@ class CSeq_submit;
 class CBioseq;
 class CSeq_descr;
 class CDate;
-class IMessageListener;
+class ILineErrorListener;
 class CUser_object;
 class CBioSource;
 class CScope;
@@ -146,7 +146,7 @@ public:
 
     CRef<objects::CSeq_submit> m_submit_template;
     CRef<objects::CSeq_entry>  m_entry_template;
-    objects::IMessageListener* m_logger;
+    objects::ILineErrorListener* m_logger;
 
     CRef<objects::CScope>      m_scope;
     CRef<objects::CObjectManager> m_ObjMgr;

@@ -54,7 +54,7 @@ USING_SCOPE(objects);
 
 CIdMapper::CIdMapper(const std::string& strContext,
                      bool bInvert,
-                     IMessageListener* pErrors)
+                     ILineErrorListener* pErrors)
     : m_strContext(strContext),
       m_bInvert(bInvert),
       m_pErrors( pErrors )

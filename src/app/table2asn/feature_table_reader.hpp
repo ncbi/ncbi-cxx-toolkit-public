@@ -10,7 +10,7 @@ BEGIN_NCBI_SCOPE
 namespace objects
 {
     class CSeq_entry;
-    class IMessageListener;
+    class ILineErrorListener;
     class CSeq_entry_Handle;
     class CScope;
     class CDelta_seq;
@@ -23,7 +23,7 @@ class ILineReader;
 class CFeatureTableReader
 {
 public:
-   CFeatureTableReader(objects::IMessageListener* logger);
+   CFeatureTableReader(objects::ILineErrorListener* logger);
 
    bool CheckIfNeedConversion(const objects::CSeq_entry& entry) const;
    void ConvertSeqIntoSeqSet(objects::CSeq_entry& entry, bool nuc_prod_set) const;
@@ -49,7 +49,7 @@ private:
    CRef<objects::CSeq_entry> TranslateProtein(
        objects::CScope& scope, objects::CSeq_entry_Handle top_entry_h, 
        const objects::CSeq_feat& feature, CTempString locustag);
-   objects::IMessageListener* m_logger;
+   objects::ILineErrorListener* m_logger;
    int m_local_id_counter;
    bool AddProteinToSeqEntry(const objects::CSeq_entry* protein, objects::CSeq_entry_Handle seh);
 };

@@ -8,7 +8,7 @@ class CSerialObject;
 BEGIN_SCOPE(objects)
 
 class CSeq_entry_EditHandle;
-class IMessageListener;
+class ILineErrorListener;
 class CSeq_entry;
 class CSeqdesc;
 class CSeq_descr;
@@ -29,9 +29,9 @@ public:
    void UpdatePubReferences(CSerialObject& obj);
    void UpdatePubReferences(CSeq_entry_EditHandle& obj);
 
-   void UpdateOrgFromTaxon(IMessageListener* logger, CSeq_entry& entry);
-   void UpdateOrgFromTaxon(IMessageListener* logger, CSeq_entry_EditHandle& obj);
-   void UpdateOrgFromTaxon(IMessageListener* logger, CSeqdesc& obj);
+   void UpdateOrgFromTaxon(ILineErrorListener* logger, CSeq_entry& entry);
+   void UpdateOrgFromTaxon(ILineErrorListener* logger, CSeq_entry_EditHandle& obj);
+   void UpdateOrgFromTaxon(ILineErrorListener* logger, CSeqdesc& obj);
    void ClearCache();
    static void ConvertToStandardAuthors(CAuth_list& auth_list);
    static void PostProcessPubs(CSeq_entry_EditHandle& obj);
@@ -44,7 +44,7 @@ public:
 private:
    void xUpdatePubReferences(CSeq_entry& entry);
    void xUpdatePubReferences(CSeq_descr& descr);
-   void xUpdateOrgTaxname(IMessageListener* logger, COrg_ref& org);
+   void xUpdateOrgTaxname(ILineErrorListener* logger, COrg_ref& org);
 
 
    CRef<CMLAClient>  m_mlaClient;

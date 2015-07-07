@@ -72,13 +72,13 @@ public:
     ReadSeqAnnots(
         TAnnots&,
         CNcbiIstream&,
-        IMessageListener* =0 );
+        ILineErrorListener* =0 );
                         
     virtual void
     ReadSeqAnnots(
         TAnnots&,
         ILineReader&,
-        IMessageListener* =0 );
+        ILineErrorListener* =0 );
 
 protected:
     virtual CGff2Record* x_CreateRecord() { return new CGtfReadRecord(); };    
@@ -86,7 +86,7 @@ protected:
     virtual bool x_UpdateAnnotFeature(
         const CGff2Record&,
         CRef< CSeq_annot >,
-        IMessageListener* =0);
+        ILineErrorListener* =0);
 
     virtual bool x_UpdateAnnotCds(
         const CGff2Record&,

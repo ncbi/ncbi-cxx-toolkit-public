@@ -92,30 +92,30 @@ public:
     CRef< CSeq_entry >
     ReadSeqEntry(
         ILineReader&,
-        IMessageListener* =0 );
+        ILineErrorListener* =0 );
         
     virtual CRef< CSerialObject >
     ReadObject(
         ILineReader&,
-        IMessageListener* =0 );
+        ILineErrorListener* =0 );
                 
     virtual void
     ReadSeqAnnots(
         TAnnots&,
         CNcbiIstream&,
-        IMessageListener* =0 );
+        ILineErrorListener* =0 );
                         
     virtual void
     ReadSeqAnnots(
         TAnnots&,
         ILineReader&,
-        IMessageListener* =0 );
+        ILineErrorListener* =0 );
 
     virtual void
     ReadSeqAnnotsNew(
         TAnnots&,
         ILineReader&,
-        IMessageListener* =0 );
+        ILineErrorListener* =0 );
 
     //
     // class interface:
@@ -142,12 +142,12 @@ public:
     virtual bool x_ParseDataGff(
         const string&,
         TAnnots&,
-        IMessageListener*);
+        ILineErrorListener*);
 
     virtual bool x_ParseFeatureGff(
         const string&,
         TAnnots&,
-        IMessageListener*);
+        ILineErrorListener*);
 
     virtual bool x_ParseAlignmentGff(
         const string&,
@@ -156,12 +156,12 @@ public:
     virtual bool x_InitAnnot(
         const CGff2Record&,
         CRef< CSeq_annot >,
-        IMessageListener* =0);
+        ILineErrorListener* =0);
 
     virtual bool x_UpdateAnnotFeature(
         const CGff2Record&,
         CRef< CSeq_annot >,
-        IMessageListener* =0);
+        ILineErrorListener* =0);
 
     virtual bool x_UpdateAnnotAlignment(
         const CGff2Record&,
@@ -297,7 +297,7 @@ protected:
     //
 protected:
 //    TFlags             m_iFlags;
-    IMessageListener* m_pErrors;
+    ILineErrorListener* m_pErrors;
     CRef<CAnnotdesc> m_CurrentTrackInfo;
     CRef<CAnnotdesc> m_CurrentBrowserInfo;
 };

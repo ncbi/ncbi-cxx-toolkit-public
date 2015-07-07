@@ -50,7 +50,7 @@ extern const char* sc_BuiltinConfig;
 
 CIdMapperBuiltin::CIdMapperBuiltin(const std::string& strContext,
                                    bool bInvert,
-                                   IMessageListener* pErrors)
+                                   ILineErrorListener* pErrors)
     : CIdMapperConfig(strContext, bInvert, pErrors)
 {
     Initialize();

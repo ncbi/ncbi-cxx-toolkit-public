@@ -761,7 +761,7 @@ CRepeatMaskerReader::TConverter& CRepeatMaskerReader::SetConverter()
 }
 
 CRef<CSerialObject>
-CRepeatMaskerReader::ReadObject(ILineReader& lr, IMessageListener* pMessageListener)
+CRepeatMaskerReader::ReadObject(ILineReader& lr, ILineErrorListener* pMessageListener)
 {
     CRef<CSerialObject> object(
             ReadSeqAnnot(lr, pMessageListener).ReleaseOrNull());
@@ -769,7 +769,7 @@ CRepeatMaskerReader::ReadObject(ILineReader& lr, IMessageListener* pMessageListe
 }
 
 CRef<CSeq_annot>
-CRepeatMaskerReader::ReadSeqAnnot(ILineReader& lr, IMessageListener* pMessageListener)
+CRepeatMaskerReader::ReadSeqAnnot(ILineReader& lr, ILineErrorListener* pMessageListener)
 {
     CRef<CSeq_annot> annot(new CSeq_annot);
     // CRef<CAnnot_descr> desc(new CAnnot_descr);

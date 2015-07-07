@@ -13,7 +13,7 @@ namespace objects
     class CBioseq;
     class CObject_id;
     class CSeq_entry;
-    class IMessageListener;
+    class ILineErrorListener;
 };
 
 class CSerialObject;
@@ -41,8 +41,8 @@ class CStructuredCommentsReader
 {
 public:
    // If you need messages and error to be logged
-   // supply an optional IMessageListener instance
-   CStructuredCommentsReader(objects::IMessageListener* logger): m_logger(logger)
+   // supply an optional ILineErrorListener instance
+   CStructuredCommentsReader(objects::ILineErrorListener* logger): m_logger(logger)
    {
    }
    // Read input tab delimited file and apply Structured Comments to the container
@@ -70,7 +70,7 @@ private:
 
    void ApplyAllQualifiers(const vector<string>& cols, const vector<string>& values, objects::CBioseq& bioseq);
 
-   objects::IMessageListener* m_logger;
+   objects::ILineErrorListener* m_logger;
 };
 
 class CStructuredComments

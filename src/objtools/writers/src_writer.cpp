@@ -149,7 +149,7 @@ bool CSrcWriter::WriteBioseqHandles(
         const vector<CBioseq_Handle>& vecBsh,
         const FIELDS& desiredFields,
         CNcbiOstream& out,
-        IMessageListener* pEC)
+        ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     typedef vector<CBioseq_Handle> HANDLES;
@@ -481,7 +481,7 @@ CSrcWriter::HANDLER CSrcWriter::xGetHandler(
 bool CSrcWriter::xHandleSourceField(
         const CBioSource& src, 
         const string& fieldName,
-        IMessageListener* pEC)
+        ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     HANDLER pHandler = xGetHandler(fieldName);
@@ -503,7 +503,7 @@ bool CSrcWriter::xHandleSourceField(
 bool CSrcWriter::xGather(
         CBioseq_Handle bsh,
         const FIELDS& desiredFields,
-        IMessageListener*)
+        ILineErrorListener*)
 //  ----------------------------------------------------------------------------
 {
     // for each of biosources we may create individual record
@@ -557,7 +557,7 @@ bool CSrcWriter::xGather(
 //  ----------------------------------------------------------------------------
 bool CSrcWriter::xGatherId(
         CBioseq_Handle bsh,
-        IMessageListener*)
+        ILineErrorListener*)
 //  ----------------------------------------------------------------------------
 {
     static const string colName = "id";
@@ -575,7 +575,7 @@ bool CSrcWriter::xGatherId(
 //  ----------------------------------------------------------------------------
 bool CSrcWriter::xGatherGi(
         CBioseq_Handle bsh,
-        IMessageListener*)
+        ILineErrorListener*)
 //  ----------------------------------------------------------------------------
 {
     static const string colName = "gi";
@@ -628,7 +628,7 @@ string CSrcWriter::xGetOriginalId(const CBioseq_Handle& bsh) const
 //  ----------------------------------------------------------------------------
 bool CSrcWriter::xGatherLocalId(
         CBioseq_Handle bsh,
-        IMessageListener*)
+        ILineErrorListener*)
 //  ----------------------------------------------------------------------------
 {
     static const string colName = "localid";
@@ -654,7 +654,7 @@ bool CSrcWriter::xGatherLocalId(
 
 bool CSrcWriter::xGatherDefline(
         CBioseq_Handle bsh,
-        IMessageListener*)
+        ILineErrorListener*)
 //  ----------------------------------------------------------------------------
 {
     static const string colName = "definition";
@@ -675,7 +675,7 @@ bool CSrcWriter::xGatherDefline(
 bool CSrcWriter::xGatherTaxname(
         const CBioSource& src,
         const string& colName,
-        IMessageListener*)
+        ILineErrorListener*)
 //  ----------------------------------------------------------------------------
 {
     const string displayName = "organism";
@@ -695,7 +695,7 @@ bool CSrcWriter::xGatherTaxname(
 bool CSrcWriter::xGatherOrgCommon(
         const CBioSource& src,
         const string& colName,
-        IMessageListener*)
+        ILineErrorListener*)
 //  ----------------------------------------------------------------------------
 {
     const string displayName = "common";
@@ -715,7 +715,7 @@ bool CSrcWriter::xGatherOrgCommon(
 bool CSrcWriter::xGatherOrgnameLineage(
         const CBioSource& src,
         const string& colName,
-        IMessageListener*)
+        ILineErrorListener*)
 //  ----------------------------------------------------------------------------
 {
     const string displayName = "lineage";
@@ -736,7 +736,7 @@ bool CSrcWriter::xGatherOrgnameLineage(
 bool CSrcWriter::xGatherDivision(
         const CBioSource& src,
         const string& colName,
-        IMessageListener*)
+        ILineErrorListener*)
 //  ----------------------------------------------------------------------------
 {
     const string displayName = "division";
@@ -756,7 +756,7 @@ bool CSrcWriter::xGatherDivision(
 bool CSrcWriter::xGatherGenome(
         const CBioSource& src,
         const string& colName,
-        IMessageListener*)
+        ILineErrorListener*)
 //  ----------------------------------------------------------------------------
 {
     const string displayName = "genome";
@@ -776,7 +776,7 @@ bool CSrcWriter::xGatherGenome(
 bool CSrcWriter::xGatherOrigin(
         const CBioSource& src,
         const string& colName,
-        IMessageListener*)
+        ILineErrorListener*)
 //  ----------------------------------------------------------------------------
 {
     const string displayName = "origin";
@@ -796,7 +796,7 @@ bool CSrcWriter::xGatherOrigin(
 bool CSrcWriter::xGatherSubtypeFeat(
         const CBioSource& src,
         const string& colName,
-        IMessageListener*)
+        ILineErrorListener*)
 //  ----------------------------------------------------------------------------
 {
 
@@ -854,7 +854,7 @@ bool CSrcWriter::xGatherSubtypeFeat(
 bool CSrcWriter::xGatherOrgModFeat(
         const CBioSource& src,
         const string& colName,
-        IMessageListener*)
+        ILineErrorListener*)
 //  ----------------------------------------------------------------------------
 {
     if ( !src.IsSetOrgMod() ) {
@@ -904,7 +904,7 @@ bool CSrcWriter::xGatherOrgModFeat(
 bool CSrcWriter::xGatherDb(
         const CBioSource& src,
         const string& colName,
-        IMessageListener*)
+        ILineErrorListener*)
 //  ----------------------------------------------------------------------------
 {
 
@@ -952,7 +952,7 @@ bool CSrcWriter::xGatherDb(
 bool CSrcWriter::xGatherTaxonId(
         const CBioSource& src,
         const string& colName,
-        IMessageListener*)
+        ILineErrorListener*)
 //  ----------------------------------------------------------------------------
 {
     static const string displayName = "taxid";
@@ -997,7 +997,7 @@ bool CSrcWriter::xGatherTaxonId(
 bool CSrcWriter::xGatherPcrPrimers(
         const CBioSource& src,
         const string& colName,
-        IMessageListener*)
+        ILineErrorListener*)
 //  ----------------------------------------------------------------------------
 {
     const string pcrPrimersFwdNames = "pcr-primers.names.fwd";
@@ -1198,7 +1198,7 @@ void CSrcWriter::xAppendColumnValue(
 //  ----------------------------------------------------------------------------
 bool CSrcWriter::ValidateFields(
         const FIELDS& fields,
-        IMessageListener* pEC)
+        ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     for (FIELDS::const_iterator cit = fields.begin(); cit != fields.end(); ++cit) { 

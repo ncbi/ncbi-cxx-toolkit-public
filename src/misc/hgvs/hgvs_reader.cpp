@@ -119,7 +119,7 @@ CHgvsReader::~CHgvsReader()
 CRef< CSeq_annot >
 CHgvsReader::ReadSeqAnnot(
     ILineReader& lr,
-    IMessageListener* pEC )
+    ILineErrorListener* pEC )
 //  ----------------------------------------------------------------------------
 {
     CRef<CSeq_annot> annot(new CSeq_annot);
@@ -218,7 +218,7 @@ void
 CHgvsReader::ReadSeqAnnots(
     vector< CRef<CSeq_annot> >& annots,
     CNcbiIstream& istr,
-    IMessageListener* pMessageListener )
+    ILineErrorListener* pMessageListener )
 //  ---------------------------------------------------------------------------
 {
     CStreamLineReader lr(istr);
@@ -230,7 +230,7 @@ void
 CHgvsReader::ReadSeqAnnots(
     vector< CRef<CSeq_annot> >& annots,
     ILineReader& lr,
-    IMessageListener* pMessageListener )
+    ILineErrorListener* pMessageListener )
 //  ----------------------------------------------------------------------------
 {
     annots.push_back(ReadSeqAnnot(lr, pMessageListener));
@@ -240,7 +240,7 @@ CHgvsReader::ReadSeqAnnots(
 CRef< CSerialObject >
 CHgvsReader::ReadObject(
     ILineReader& lr,
-    IMessageListener* pMessageListener )
+    ILineErrorListener* pMessageListener )
 //  ----------------------------------------------------------------------------
 {
     return Ref<CSerialObject>(ReadSeqAnnot(lr, pMessageListener).GetPointer());

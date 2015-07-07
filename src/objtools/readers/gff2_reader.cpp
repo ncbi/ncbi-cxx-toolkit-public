@@ -146,7 +146,7 @@ void
 CGff2Reader::ReadSeqAnnots(
     vector< CRef<CSeq_annot> >& annots,
     CNcbiIstream& istr,
-    IMessageListener* pMessageListener )
+    ILineErrorListener* pMessageListener )
 //  ---------------------------------------------------------------------------
 {
     xReadInit();
@@ -159,7 +159,7 @@ void
 CGff2Reader::ReadSeqAnnots(
     vector< CRef<CSeq_annot> >& annots,
     ILineReader& lr,
-    IMessageListener* pMessageListener )
+    ILineErrorListener* pMessageListener )
 //  ----------------------------------------------------------------------------
 {
     xProgressInit(lr);
@@ -179,7 +179,7 @@ void
 CGff2Reader::ReadSeqAnnotsNew(
     vector< CRef<CSeq_annot> >& annots,
     ILineReader& lr,
-    IMessageListener* pEC )
+    ILineErrorListener* pEC )
 //  ----------------------------------------------------------------------------
 {
     string line;
@@ -232,7 +232,7 @@ CGff2Reader::ReadSeqAnnotsNew(
 CRef< CSeq_entry >
 CGff2Reader::ReadSeqEntry(
     ILineReader& lr,
-    IMessageListener* pMessageListener ) 
+    ILineErrorListener* pMessageListener ) 
 //  ----------------------------------------------------------------------------                
 { 
     xProgressInit(lr);
@@ -263,7 +263,7 @@ CGff2Reader::ReadSeqEntry(
 CRef< CSerialObject >
 CGff2Reader::ReadObject(
     ILineReader& lr,
-    IMessageListener* pMessageListener ) 
+    ILineErrorListener* pMessageListener ) 
 //  ----------------------------------------------------------------------------                
 { 
     CRef<CSerialObject> object( 
@@ -312,7 +312,7 @@ bool CGff2Reader::x_ParseStructuredCommentGff(
 bool CGff2Reader::x_ParseDataGff(
     const string& strLine,
     TAnnots& annots,
-    IMessageListener* pEC)
+    ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     if ( CGff2Reader::IsAlignmentData(strLine) ) {
@@ -325,7 +325,7 @@ bool CGff2Reader::x_ParseDataGff(
 bool CGff2Reader::x_ParseFeatureGff(
     const string& strLine,
     TAnnots& annots,
-    IMessageListener* pEC)
+    ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     //
@@ -522,7 +522,7 @@ bool CGff2Reader::x_ParseTrackLineGff(
 bool CGff2Reader::x_InitAnnot(
     const CGff2Record& gff,
     CRef< CSeq_annot > pAnnot,
-    IMessageListener* pEC )
+    ILineErrorListener* pEC )
 //  ----------------------------------------------------------------------------
 {
     CRef< CAnnot_id > pAnnotId( new CAnnot_id );
@@ -561,7 +561,7 @@ bool CGff2Reader::x_InitAnnot(
 bool CGff2Reader::x_UpdateAnnotFeature(
     const CGff2Record& gff,
     CRef< CSeq_annot > pAnnot,
-    IMessageListener* pEC)
+    ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     CRef< CSeq_feat > pFeature( new CSeq_feat );

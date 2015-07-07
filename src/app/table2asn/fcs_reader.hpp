@@ -9,7 +9,7 @@ class CSeq_entry;
 class CSeq_submit;
 class CSeq_descr;
 class CSeqdesc;
-class IMessageListener;
+class ILineErrorListener;
 class CIdMapper;
 class CBioseq;
 class CSeq_inst;

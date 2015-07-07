@@ -180,7 +180,7 @@ public:
     virtual CRef< CSerialObject >
     ReadObject(
         ILineReader& lr,
-        IMessageListener* pErrors=0 );
+        ILineErrorListener* pErrors=0 );
                 
     /// Read a single object from given line reader containing BED data. The
     /// resulting Seq-annot will contain a feature table.
@@ -192,58 +192,58 @@ public:
     virtual CRef< CSeq_annot >
     ReadSeqAnnot(
         ILineReader& lr,
-        IMessageListener* pErrors=0 );
+        ILineErrorListener* pErrors=0 );
 
     virtual CRef< CSeq_annot >
     ReadSeqAnnot(
         CNcbiIstream& istr,
-        IMessageListener* pErrors=0 );
+        ILineErrorListener* pErrors=0 );
 
     virtual bool 
     ReadTrackData(
         ILineReader&,
         CRawBedTrack&,
-        IMessageListener* =0 );
+        ILineErrorListener* =0 );
 
 protected:
     virtual bool xParseTrackLine(
         const string&,
-        IMessageListener*);
+        ILineErrorListener*);
         
     bool xParseFeature(
         const vector<string>&,
         CRef<CSeq_annot>&,
         unsigned int,
-        IMessageListener*);
+        ILineErrorListener*);
 
     bool xParseFeatureUserFormat(
         const vector<string>&,
         CRef<CSeq_annot>&,
-        IMessageListener*);
+        ILineErrorListener*);
 
     bool xParseFeatureThreeFeatFormat(
         const vector<string>&,
         CRef<CSeq_annot>&,
         unsigned int,
-        IMessageListener*);
+        ILineErrorListener*);
 
     bool xAppendFeatureChrom(
         const vector<string>&,
         CRef<CSeq_annot>&,
         unsigned int,
-        IMessageListener*);
+        ILineErrorListener*);
 
     bool xAppendFeatureThick(
         const vector<string>&,
         CRef<CSeq_annot>&,
         unsigned int,
-        IMessageListener*);
+        ILineErrorListener*);
 
     bool xAppendFeatureBlock(
         const vector<string>&,
         CRef<CSeq_annot>&,
         unsigned int,
-        IMessageListener*);
+        ILineErrorListener*);
 
     void x_SetFeatureLocation(
         CRef<CSeq_feat>&,
@@ -310,13 +310,13 @@ protected:
     xReadBedDataRaw(
         ILineReader&,
         CRawBedTrack&,
-        IMessageListener*);
+        ILineErrorListener*);
 
     bool
     xReadBedRecordRaw(
         const string&,
         CRawBedRecord&,
-        IMessageListener*);
+        ILineErrorListener*);
 
     static void xCleanColumnValues(
         vector<string>&);

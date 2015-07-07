@@ -8,7 +8,7 @@ BEGIN_NCBI_SCOPE
 // forward declarations
 namespace objects
 {
-    class IMessageListener;
+    class ILineErrorListener;
 };
 
 class CSerialObject;
@@ -45,7 +45,7 @@ public:
    }; 
 
    // If you need messages and error to be logged
-   // supply an optional IMessageListener instance
+   // supply an optional ILineErrorListener instance
    CTabDelimitedValidator(e_Flags flags = e_tab_tab_delim): 
    m_flags(flags)
    {

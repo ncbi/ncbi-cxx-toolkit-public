@@ -100,7 +100,7 @@ public:
 class COpticalxml2asnOperatorImpl
 {
 public:
-    COpticalxml2asnOperatorImpl(IMessageListener* logger):
+    COpticalxml2asnOperatorImpl(ILineErrorListener* logger):
       m_logger(logger),
       m_genome(CBioSource::eGenome_chromosome) // eGenome_plasmid ??
       {
@@ -117,7 +117,7 @@ private:
 
 
     list <COpticalChrData> m_vchr;
-    IMessageListener* m_logger;
+    ILineErrorListener* m_logger;
 
 public:
     CBioSource::EGenome m_genome;

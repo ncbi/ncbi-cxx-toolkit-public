@@ -48,7 +48,7 @@ USING_SCOPE(objects);
 CIdMapperConfig::CIdMapperConfig(CNcbiIstream& istr,
                                  const std::string& strContext,
                                  bool bInvert,
-                                 IMessageListener* pErrors)
+                                 ILineErrorListener* pErrors)
     : CIdMapper(strContext, bInvert, pErrors)
 {
     Initialize(istr);
@@ -57,7 +57,7 @@ CIdMapperConfig::CIdMapperConfig(CNcbiIstream& istr,
 
 CIdMapperConfig::CIdMapperConfig(const std::string& strContext,
                                  bool bInvert,
-                                 IMessageListener* pErrors)
+                                 ILineErrorListener* pErrors)
     : CIdMapper(strContext, bInvert, pErrors)
 {
 }

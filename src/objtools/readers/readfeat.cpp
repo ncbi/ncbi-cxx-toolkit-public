@@ -237,14 +237,14 @@ public:
                                              const string& seqid,
                                              const string& annotname,
                                              const CFeature_table_reader::TFlags flags, 
-                                             IMessageListener* pMessageListener,
+                                             ILineErrorListener* pMessageListener,
                                              ITableFilter *filter);
 
     // create single feature from key
     CRef<CSeq_feat> CreateSeqFeat (const string& feat,
                                    CSeq_loc& location,
                                    const CFeature_table_reader::TFlags flags, 
-                                   IMessageListener* pMessageListener,
+                                   ILineErrorListener* pMessageListener,
                                    unsigned int line,
                                    const string &seq_id,
                                    ITableFilter *filter);
@@ -255,7 +255,7 @@ public:
                       const string& qual,
                       const string& val,
                       const CFeature_table_reader::TFlags flags,
-                      IMessageListener* pMessageListener,
+                      ILineErrorListener* pMessageListener,
                       int line,
                       const string &seq_id );
 
@@ -276,35 +276,35 @@ private:
     bool x_ParseFeatureTableLine (const string& line, Int4* startP, Int4* stopP,
                                   bool* partial5P, bool* partial3P, bool* ispointP, bool* isminusP,
                                   string& featP, string& qualP, string& valP, Int4 offset,
-                                  IMessageListener *pMessageListener, int line_num, const string &seq_id );
+                                  ILineErrorListener *pMessageListener, int line_num, const string &seq_id );
 
     bool x_IsWebComment(CTempString line);
 
     bool x_AddIntervalToFeature (CTempString strFeatureName, CRef<CSeq_feat> sfp, CSeq_loc_mix& mix,
                                  Int4 start, Int4 stop,
                                  bool partial5, bool partial3, bool ispoint, bool isminus,
-                                 IMessageListener *pMessageListener, int line_num, const string& seqid);
+                                 ILineErrorListener *pMessageListener, int line_num, const string& seqid);
 
     bool x_AddQualifierToFeature (CRef<CSeq_feat> sfp,
         const string &feat_name,
         const string& qual, const string& val,
         const CFeature_table_reader::TFlags flags,
-        IMessageListener *pMessageListener, int line_num, const string &seq_id );
+        ILineErrorListener *pMessageListener, int line_num, const string &seq_id );
 
     bool x_AddQualifierToGene     (CSeqFeatData& sfdata,
                                    EQual qtype, const string& val);
     bool x_AddQualifierToCdregion (CRef<CSeq_feat> sfp, CSeqFeatData& sfdata,
                                    EQual qtype, const string& val,
-                                   IMessageListener *pMessageListener, int line_num, const string &seq_id );
+                                   ILineErrorListener *pMessageListener, int line_num, const string &seq_id );
     bool x_AddQualifierToRna      (CSeqFeatData& sfdata,
                                    EQual qtype, const string& val,
-                                   IMessageListener *pMessageListener, int line_num, const string &seq_id );
+                                   ILineErrorListener *pMessageListener, int line_num, const string &seq_id );
     bool x_AddQualifierToImp      (CRef<CSeq_feat> sfp, CSeqFeatData& sfdata,
                                    EQual qtype, const string& qual, const string& val);
     bool x_AddQualifierToBioSrc   (CSeqFeatData& sfdata,
                                    const string &feat_name,
                                    EOrgRef rtype, const string& val,
-                                   IMessageListener *pMessageListener, int line, const string &seq_id );
+                                   ILineErrorListener *pMessageListener, int line, const string &seq_id );
     bool x_AddQualifierToBioSrc   (CSeqFeatData& sfdata,
                                    CSubSource::ESubtype stype, const string& val);
     bool x_AddQualifierToBioSrc   (CSeqFeatData& sfdata,
@@ -347,7 +347,7 @@ private:
         CRef<CSeq_annot> sap,
         TChoiceToFeatMap & choiceToFeatMap, // an input param, but might get more items added
         const CFeature_table_reader::TFlags flags,
-        IMessageListener *pMessageListener,
+        ILineErrorListener *pMessageListener,
         const string& seqid );
 
     bool x_StringIsJustQuotes (const string& str);
@@ -360,7 +360,7 @@ private:
 
     long x_StringToLongNoThrow (
         CTempString strToConvert,
-        IMessageListener *pMessageListener, 
+        ILineErrorListener *pMessageListener, 
         const std::string& strSeqId,
         unsigned int uLine,
         CTempString strFeatureName,
@@ -373,11 +373,11 @@ private:
                          const CFeature_table_reader::TFlags flags, 
                          unsigned int line,
                          const string &seq_id,
-                         IMessageListener* pMessageListener,
+                         ILineErrorListener* pMessageListener,
                          ITableFilter *filter);
 
     void  x_ProcessMsg (
-        IMessageListener* pMessageListener,
+        ILineErrorListener* pMessageListener,
         ILineError::EProblem eProblem,
         EDiagSev eSeverity,
         const std::string& strSeqId,
@@ -821,7 +821,7 @@ bool CFeature_table_reader_imp::x_ParseFeatureTableLine (
     string& valP,
     Int4 offset,
 
-    IMessageListener *pMessageListener, 
+    ILineErrorListener *pMessageListener, 
     int line_num, 
     const string &seq_id
 )
@@ -1088,7 +1088,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToCdregion (
     CRef<CSeq_feat> sfp,
     CSeqFeatData& sfdata,
     EQual qtype, const string& val,
-    IMessageListener *pMessageListener, 
+    ILineErrorListener *pMessageListener, 
     int line, 
     const string &seq_id 
 )
@@ -1350,7 +1350,7 @@ SIZE_TYPE CFeature_table_reader_imp::x_MatchingParenPos(
 
 long CFeature_table_reader_imp::x_StringToLongNoThrow (
     CTempString strToConvert,
-    IMessageListener *pMessageListener, 
+    ILineErrorListener *pMessageListener, 
     const std::string& strSeqId,
     unsigned int uLine,
     CTempString strFeatureName,
@@ -1400,7 +1400,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToRna (
     CSeqFeatData& sfdata,
     EQual qtype,
     const string& val,
-    IMessageListener *pMessageListener, 
+    ILineErrorListener *pMessageListener, 
     int line_num, 
     const string &seq_id
 )
@@ -1632,7 +1632,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToBioSrc (
     const string &feat_name,
     EOrgRef rtype,
     const string& val,
-    IMessageListener *pMessageListener, 
+    ILineErrorListener *pMessageListener, 
     int line, 	
     const string &seq_id 
 )
@@ -1862,7 +1862,7 @@ void CFeature_table_reader_imp::x_CreateGenesFromCDSs(
     CRef<CSeq_annot> sap,
     TChoiceToFeatMap & choiceToFeatMap,
     const CFeature_table_reader::TFlags flags,
-    IMessageListener *pMessageListener,
+    ILineErrorListener *pMessageListener,
     const string& seq_id )
 {
     // load cds_equal_range to hold the CDSs
@@ -2072,7 +2072,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
     const string& qual,
     const string& val,
     const CFeature_table_reader::TFlags flags,
-    IMessageListener *pMessageListener, 
+    ILineErrorListener *pMessageListener, 
     int line, 	
     const string &seq_id 
 )
@@ -2450,7 +2450,7 @@ bool CFeature_table_reader_imp::x_AddIntervalToFeature(
     bool partial3,
     bool ispoint,
     bool isminus,
-    IMessageListener *pMessageListener, 
+    ILineErrorListener *pMessageListener, 
     int line_num, 
     const string& seqid
 )
@@ -2528,7 +2528,7 @@ bool CFeature_table_reader_imp::x_SetupSeqFeat (
     const CFeature_table_reader::TFlags flags,
     unsigned int line,
     const std::string &seq_id,
-    IMessageListener* pMessageListener,
+    ILineErrorListener* pMessageListener,
     ITableFilter *filter
 )
 
@@ -2669,7 +2669,7 @@ bool CFeature_table_reader_imp::x_SetupSeqFeat (
 
 
 void CFeature_table_reader_imp::x_ProcessMsg(
-    IMessageListener* pMessageListener,
+    ILineErrorListener* pMessageListener,
     ILineError::EProblem eProblem,
     EDiagSev eSeverity,
     const std::string& strSeqId,
@@ -2711,7 +2711,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
     const string& seqid,
     const string& annotname,
     const CFeature_table_reader::TFlags flags,
-    IMessageListener* pMessageListener,
+    ILineErrorListener* pMessageListener,
     ITableFilter *filter
 )
 {
@@ -2985,7 +2985,7 @@ CRef<CSeq_feat> CFeature_table_reader_imp::CreateSeqFeat (
     const string& feat,
     CSeq_loc& location,
     const CFeature_table_reader::TFlags flags,
-    IMessageListener* pMessageListener,
+    ILineErrorListener* pMessageListener,
     unsigned int line,
     const string &seq_id,
     ITableFilter *filter
@@ -3021,7 +3021,7 @@ void CFeature_table_reader_imp::AddFeatQual (
     const string& qual,
     const string& val,
     const CFeature_table_reader::TFlags flags,
-    IMessageListener* pMessageListener,
+    ILineErrorListener* pMessageListener,
     int line, 	
     const string &seq_id )
 
@@ -3111,7 +3111,7 @@ CFeature_table_reader::CFeature_table_reader(
 
 CRef<CSerialObject> 
 CFeature_table_reader::ReadObject(
-    ILineReader &lr, IMessageListener *pMessageListener)
+    ILineReader &lr, ILineErrorListener *pMessageListener)
 {
     CRef<CSerialObject> object( 
         ReadSeqAnnot( lr, pMessageListener ).ReleaseOrNull() );
@@ -3120,7 +3120,7 @@ CFeature_table_reader::ReadObject(
 
 CRef<CSeq_annot>
 CFeature_table_reader::ReadSeqAnnot(
-    ILineReader &lr, IMessageListener *pMessageListener)
+    ILineReader &lr, ILineErrorListener *pMessageListener)
 {
     return ReadSequinFeatureTable(lr, 0, pMessageListener);
 }
@@ -3130,7 +3130,7 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
     const string& seqid,
     const string& annotname,
     const TFlags flags,
-    IMessageListener* pMessageListener,
+    ILineErrorListener* pMessageListener,
     ITableFilter *filter
 )
 {
@@ -3144,7 +3144,7 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
     const string& seqid,
     const string& annotname,
     const TFlags flags,
-    IMessageListener* pMessageListener,
+    ILineErrorListener* pMessageListener,
     ITableFilter *filter
 )
 {
@@ -3181,7 +3181,7 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
 CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
     CNcbiIstream& ifs,
     const TFlags flags,
-    IMessageListener* pMessageListener,
+    ILineErrorListener* pMessageListener,
     ITableFilter *filter
 )
 {
@@ -3193,7 +3193,7 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
 CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
     ILineReader& reader,
     const TFlags flags,
-    IMessageListener* pMessageListener,
+    ILineErrorListener* pMessageListener,
     ITableFilter *filter
 )
 {
@@ -3219,7 +3219,7 @@ void CFeature_table_reader::ReadSequinFeatureTables(
     CNcbiIstream& ifs,
     CSeq_entry& entry,
     const TFlags flags,
-    IMessageListener* pMessageListener,
+    ILineErrorListener* pMessageListener,
     ITableFilter *filter
 )
 {
@@ -3240,7 +3240,7 @@ void CFeature_table_reader::ReadSequinFeatureTables(
     ILineReader& reader,
     CSeq_entry& entry,
     const TFlags flags,
-    IMessageListener* pMessageListener,
+    ILineErrorListener* pMessageListener,
     ITableFilter *filter
 )
 {
@@ -3285,7 +3285,7 @@ CRef<CSeq_feat> CFeature_table_reader::CreateSeqFeat (
     const string& feat,
     CSeq_loc& location,
     const TFlags flags,
-    IMessageListener* pMessageListener,
+    ILineErrorListener* pMessageListener,
     unsigned int line,
     string *seq_id,
     ITableFilter *filter
@@ -3303,7 +3303,7 @@ void CFeature_table_reader::AddFeatQual (
     const string& qual,
     const string& val,
     const CFeature_table_reader::TFlags flags,
-    IMessageListener* pMessageListener,
+    ILineErrorListener* pMessageListener,
     int line, 	
     const string &seq_id 
 )

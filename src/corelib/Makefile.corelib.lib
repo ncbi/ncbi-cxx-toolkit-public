@@ -8,7 +8,7 @@ SRC = $(ncbicntr) blob_storage ddumpable env_reg metareg ncbi_config \
       plugin_manager plugin_manager_store rwstreambuf stream_utils \
       syslog version request_ctx request_control expr ncbi_strings \
       resource_info interprocess_lock ncbi_autoinit perf_log ncbi_toolkit \
-      ncbierror ncbi_url ncbi_cookies guard
+      ncbierror ncbi_url ncbi_cookies guard ncbi_message
 
 UNIX_SRC = ncbi_os_unix
 

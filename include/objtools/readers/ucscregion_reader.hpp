@@ -53,11 +53,11 @@ public:
     CUCSCRegionReader(unsigned int = fNormal);
     virtual ~CUCSCRegionReader();  
 
-    virtual CRef<CSeq_annot> ReadSeqAnnot(ILineReader& lr, IMessageListener* pEC);
+    virtual CRef<CSeq_annot> ReadSeqAnnot(ILineReader& lr, ILineErrorListener* pEC);
     virtual CRef< CSerialObject > 
     ReadObject(
         ILineReader& lr,
-        IMessageListener* pErrors=0);
+        ILineErrorListener* pErrors=0);
 
 protected:
 
@@ -71,7 +71,7 @@ protected:
     bool xParseFeature(
         const vector<string>&,
         CRef<CSeq_annot>&,
-        IMessageListener*);
+        ILineErrorListener*);
 };
 //  ----------------------------------------------------------------------------
 

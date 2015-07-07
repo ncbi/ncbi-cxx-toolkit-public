@@ -60,7 +60,7 @@ public:
     /// Read alignment
     /// Modified parent class function that allows reading one sequence as
     /// aligned set
-    CRef<CSeq_entry> ReadAlignedSet(IMessageListener * pMessageListener = 0) {
+    CRef<CSeq_entry> ReadAlignedSet(ILineErrorListener * pMessageListener = 0) {
         CFastaReader::TIds ids;
         CRef<CSeq_entry> entry = x_ReadSeqsToAlign(ids, pMessageListener);
         CRef<CSeq_annot> annot(new CSeq_annot);

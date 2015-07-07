@@ -203,7 +203,7 @@ void
 CGtfReader::ReadSeqAnnots(
     vector< CRef<CSeq_annot> >& annots,
     ILineReader& lr,
-    IMessageListener* pEC)
+    ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     xProgressInit(lr);
@@ -244,7 +244,7 @@ void
 CGtfReader::ReadSeqAnnots(
     vector< CRef<CSeq_annot> >& annots,
     CNcbiIstream& istr,
-    IMessageListener* pMessageListener )
+    ILineErrorListener* pMessageListener )
 //  ---------------------------------------------------------------------------
 {
     CStreamLineReader lr( istr );
@@ -255,7 +255,7 @@ CGtfReader::ReadSeqAnnots(
 bool CGtfReader::x_UpdateAnnotFeature(
     const CGff2Record& gff,
     CRef< CSeq_annot > pAnnot,
-    IMessageListener* pEC)
+    ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     CRef< CSeq_feat > pFeature( new CSeq_feat );

@@ -416,7 +416,7 @@ namespace
 
 }
 
-CFeatureTableReader::CFeatureTableReader(IMessageListener* logger): m_logger(logger), m_local_id_counter(0)
+CFeatureTableReader::CFeatureTableReader(ILineErrorListener* logger): m_logger(logger), m_local_id_counter(0)
 {
 }
 
