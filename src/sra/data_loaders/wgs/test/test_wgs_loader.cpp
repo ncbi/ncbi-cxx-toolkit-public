@@ -1027,6 +1027,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq21)
     if ( !CDirEntry(s_ProteinFile).Exists() ) {
         return;
     }
+    NcbiCout << "Testing protein file: "<<s_ProteinFile<<NcbiEndl;
     CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr, s_ProteinFile);
 
     CRef<CScope> scope(new CScope(*om));
@@ -1368,7 +1369,7 @@ BOOST_AUTO_TEST_CASE(QualityTest)
 
 BOOST_AUTO_TEST_CASE(GITest)
 {
-    CRef<CObjectManager> om = sx_InitOM(eWithoutMasterDescr);
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
     CScope scope(*om);
 
     scope.AddDefaults();
@@ -1380,7 +1381,21 @@ BOOST_AUTO_TEST_CASE(GITest)
 
     bh = scope.GetBioseqHandle(CSeq_id_Handle::GetGiHandle(25725721));
     BOOST_CHECK(bh);
+    BOOST_CHECK(sx_Equal(bh, sx_LoadFromGB(bh)));
 
+    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetGiHandle(25561849));
+    BOOST_CHECK(bh);
+    BOOST_CHECK(sx_Equal(bh, sx_LoadFromGB(bh)));
+
+    // zero value in gi index
+    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetGiHandle(25561850));
+    BOOST_CHECK(!bh);
+
+    // absent value in gi index
+    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetGiHandle(25562845));
+    BOOST_CHECK(!bh);
+
+    // gi is out of WGS range
     bh = scope.GetBioseqHandle(CSeq_id_Handle::GetGiHandle(2));
     BOOST_CHECK(!bh);
 }
