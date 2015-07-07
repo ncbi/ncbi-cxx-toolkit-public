@@ -261,12 +261,45 @@ g_CalcStatPct(Uint8 val, Uint8 total)
     return total == 0? 0: val * 100 / total;
 }
 
-inline string
-g_ToSizeStr(Uint8 size)
+#if NCBI_HAVE_CXX11
+template<typename T> 
+typename std::enable_if< std::is_unsigned<T>::value, string>::type
+g_ToSizeStr(T size)
 {
     return NStr::UInt8ToString_DataSize(size,
             NStr::fDS_PutSpaceBeforeSuffix | NStr::fDS_PutBSuffixToo);
 }
+
+template<typename T> 
+typename std::enable_if< std::is_signed<T>::value, string>::type
+g_ToSizeStr(T size)
+{
+    if (size < 0) {
+        return string("-") + g_ToSizeStr(Uint8(-size));
+    } else {
+        return g_ToSizeStr(Uint8(size));
+    }
+}
+
+#else
+
+inline string
+_impl_g_ToSizeStr(Uint8 size)
+{
+    return NStr::UInt8ToString_DataSize(size,
+            NStr::fDS_PutSpaceBeforeSuffix | NStr::fDS_PutBSuffixToo);
+}
+
+template<typename T> inline string
+g_ToSizeStr(T size)
+{
+    if (size < 0) {
+        return string("-") + _impl_g_ToSizeStr(Uint8(-size));
+    } else {
+        return _impl_g_ToSizeStr(Uint8(size));
+    }
+}
+#endif
 
 template<typename T>
 inline string

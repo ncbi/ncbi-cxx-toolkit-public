@@ -37,11 +37,9 @@
 # include <sys/mman.h>
 #endif
 
-// adds few sanity checks
+// adds several debug checks
 #define __NC_MEMMAN_DEBUG 0
-#if __NC_MEMMAN_DEBUG
-static Uint8 s_fdMemManStamp = 0xFEEDFEEDFEEDFEED;
-#endif
+
 
 BEGIN_NCBI_SCOPE;
 
@@ -128,6 +126,38 @@ static Uint8 s_TotalSysMem = 0;
 static Int8 s_TotalPageCount = 0;
 static SMMStateStat s_StartState;
 
+#if __NC_MEMMAN_DEBUG
+static Uint8 s_fdMemManStamp = 0xFEEDFEEDFEEDFEED;
+static const Uint8 s_MaxAllPools = 200;
+static SMMMemPoolsSet*  s_AllMemPoolsSet[s_MaxAllPools];
+static CMiniMutex lock_AllPools;
+
+static void s_IncPoolIdx(Uint2& idx);
+static SMMPageHeader* s_GetPageByPtr(void* ptr);
+// verify that this ptr is not listed in any pool as available
+static void s_VerifyUnavailable( void* ptr, Uint2 size_idx)
+{
+    for (Uint8 p = 0; p < s_MaxAllPools; ++p) {
+        SMMMemPoolsSet *pset = s_AllMemPoolsSet[p];
+        if (pset) {
+            const SMMBlocksPool* test_pool = &(pset->pools[size_idx]);
+            for (Uint2 idx = test_pool->get_idx; idx != test_pool->put_idx; s_IncPoolIdx(idx)) {
+                void* available = test_pool->blocks[idx];
+                if (available == ptr) {
+                    abort();
+                }
+            }
+        }
+    }
+    SMMPageHeader* page = s_GetPageByPtr(ptr);
+    for (void* next_block = page->free_list; next_block; next_block = *(void**)next_block) {
+        if (next_block == ptr) {
+            abort();
+        }
+    }
+}
+#endif
+
 static const Uint4 kMMPageDataSize = kMMAllocPageSize - sizeof(SMMPageHeader);
 static const Uint2 kMMMaxBlockSize = (kMMPageDataSize / 2) & ~7;
 static const Uint2 kMMBlockSizes[kMMCntBlockSizes] =
@@ -178,6 +208,9 @@ s_LowLevelInit(void)
     }
     s_InitPoolsSet(&s_MainPoolsSet);
     s_InitPoolsSet(&s_GlobalPoolsSet);
+#if __NC_MEMMAN_DEBUG
+    s_AllMemPoolsSet[s_MaxAllPools-1] = &s_GlobalPoolsSet;
+#endif
     for (Uint2 i = 0; i < kMMCntBlockSizes; ++i) {
         kMMCntForSize[i] = Uint2(kMMPageDataSize / kMMBlockSizes[i]);
 
@@ -290,6 +323,11 @@ s_FreeListRemove(SMMPageHeader* page)
 static inline void
 s_FreeListAddHead(SMMPageHeader* list_head, SMMPageHeader* page)
 {
+#if __NC_MEMMAN_DEBUG
+    if (list_head->block_size != 0 && list_head->block_size != page->block_size) {
+        abort();
+    }
+#endif
     page->prev_page = list_head;
     page->next_page = list_head->next_page;
     page->next_page->prev_page = page;
@@ -299,6 +337,11 @@ s_FreeListAddHead(SMMPageHeader* list_head, SMMPageHeader* page)
 static inline void
 s_FreeListAddTail(SMMPageHeader* list_head, SMMPageHeader* page)
 {
+#if __NC_MEMMAN_DEBUG
+    if (list_head->block_size != 0 && list_head->block_size != page->block_size) {
+        abort();
+    }
+#endif
     page->next_page = list_head;
     page->prev_page = list_head->prev_page;
     page->prev_page->next_page = page;
@@ -354,6 +397,11 @@ s_AllocNewPage(Uint2 size_idx, SMMStat* stat)
 
     char* block = (char*)page + sizeof(SMMPageHeader);
     page->free_list = block;
+#if __NC_MEMMAN_DEBUG
+    if (page->free_list && memcmp(page->free_list, &s_fdMemManStamp, sizeof(s_fdMemManStamp)) == 0) {
+        abort();
+    }
+#endif
     char* next = block + page->block_size;
     for (Uint2 i = page->cnt_free - 1; i > 0; --i) {
         *(void**)block = next;
@@ -375,21 +423,39 @@ s_FillFromPage(SMMBlocksPool* pool, Uint2 size_idx, SMMPageHeader* page)
     void* result = next_block;
     next_block = *(void**)next_block;
     --page->cnt_free;
-    if (pool) {
-        Uint2 to_fill = min(kMMDrainBatchSize, page->cnt_free);
-        page->cnt_free -= to_fill;
-        for (; to_fill != 0; --to_fill) {
-            pool->blocks[pool->cnt_avail++] = next_block;
-            next_block = *(void**)next_block;
-        }
-        pool->get_idx = 0;
-        pool->put_idx = pool->cnt_avail;
+#if __NC_MEMMAN_DEBUG
+    Uint2 prev_cnt_avail = pool->cnt_avail;
+#endif
+    Uint2 to_fill = min(kMMDrainBatchSize, page->cnt_free);
+    page->cnt_free -= to_fill;
+    for (; to_fill != 0; --to_fill) {
+        pool->blocks[pool->cnt_avail++] = next_block;
+        next_block = *(void**)next_block;
     }
+    pool->get_idx = 0;
+    pool->put_idx = pool->cnt_avail;
     page->free_list = next_block;
+#if __NC_MEMMAN_DEBUG
+    if (page->free_list && memcmp(page->free_list, &s_fdMemManStamp, sizeof(s_fdMemManStamp)) == 0) {
+        abort();
+    }
+    for (Uint2 cnt = prev_cnt_avail; cnt < pool->cnt_avail; ++cnt) {
+        memcpy(pool->blocks[cnt], &s_fdMemManStamp, sizeof(s_fdMemManStamp));
+    }
+    if (page->free_list && memcmp(page->free_list, &s_fdMemManStamp, sizeof(s_fdMemManStamp)) == 0) {
+        abort();
+    }
+#endif
     if (page->cnt_free)
         s_PutToFreeList(page, size_idx, true);
     page->page_lock.Unlock();
 
+#if __NC_MEMMAN_DEBUG
+    memcpy(result, &s_fdMemManStamp, sizeof(s_fdMemManStamp));
+    if (page->free_list && memcmp(page->free_list, &s_fdMemManStamp, sizeof(s_fdMemManStamp)) == 0) {
+        abort();
+    }
+#endif
     return result;
 }
 
@@ -423,7 +489,17 @@ s_ReleaseToFreePages(void** blocks, Uint2 cnt, Uint2 size_idx, SMMStat* stat)
         SMMPageHeader* page = s_GetPageByPtr(ptr);
         page->page_lock.Lock();
         *(void**)ptr = page->free_list;
+#if __NC_MEMMAN_DEBUG
+        if (page->free_list && memcmp(page->free_list, &s_fdMemManStamp, sizeof(s_fdMemManStamp)) == 0) {
+            abort();
+        }
+#endif
         page->free_list = ptr;
+#if __NC_MEMMAN_DEBUG
+        if (page->free_list && memcmp(page->free_list, &s_fdMemManStamp, sizeof(s_fdMemManStamp)) == 0) {
+            abort();
+        }
+#endif
         ++page->cnt_free;
         if (page->cnt_free == 1  ||  s_RemoveFromFreeList(page, size_idx)) {
             if (page->cnt_free == kMMCntForSize[size_idx]) {
@@ -480,6 +556,11 @@ s_FillPool(SMMBlocksPool* pool, SMMStat* stat)
     Uint4 cnt_copy = min(glob_pool.cnt_avail, kMMDrainBatchSize);
     if (cnt_copy != 0) {
         memcpy(pool->blocks, &glob_pool.blocks[1], cnt_copy * sizeof(void*));
+#if __NC_MEMMAN_DEBUG
+        for (Uint2 cnt = 0; cnt < cnt_copy; ++cnt) {
+            memcpy(pool->blocks[cnt], &s_fdMemManStamp, sizeof(s_fdMemManStamp));
+        }
+#endif
         pool->cnt_avail = cnt_copy;
         pool->get_idx = 0;
         pool->put_idx = cnt_copy;
@@ -546,13 +627,16 @@ s_DrainPool(SMMBlocksPool* pool, void* ptr, SMMStat* stat)
 static void*
 s_GetFromPool(SMMBlocksPool* pool, SMMStat* stat)
 {
-    if (pool->cnt_avail == 0)
-        return s_FillPool(pool, stat);
-    --pool->cnt_avail;
-    void* ptr = pool->blocks[pool->get_idx];
-    s_IncPoolIdx(pool->get_idx);
-    _ASSERT((pool->put_idx + kMMCntBlocksInPool - pool->get_idx)
-                % kMMCntBlocksInPool == pool->cnt_avail);
+    void* ptr = nullptr;
+    if (pool->cnt_avail == 0) {
+        ptr = s_FillPool(pool, stat);
+    } else {
+        --pool->cnt_avail;
+        ptr = pool->blocks[pool->get_idx];
+        s_IncPoolIdx(pool->get_idx);
+        _ASSERT((pool->put_idx + kMMCntBlocksInPool - pool->get_idx)
+                    % kMMCntBlocksInPool == pool->cnt_avail);
+    }
     return ptr;
 }
 
@@ -587,6 +671,12 @@ s_AllocBigPage(size_t size, SMMStat* stat)
     AtomicAdd(stat->m_BigAllocedSize, size);
     page->block_size = size - sizeof(SMMPageHeader);
 
+#if __NC_MEMMAN_DEBUG
+    memcpy(&page[1], &s_fdMemManStamp, sizeof(s_fdMemManStamp));
+    if (page->free_list && memcmp(page->free_list, &s_fdMemManStamp, sizeof(s_fdMemManStamp)) == 0) {
+        abort();
+    }
+#endif
     return &page[1];
 }
 
@@ -627,22 +717,39 @@ s_AllocMemory(size_t size)
     if (!s_HadLowLevelInit)
         s_LowLevelInit();
 
+#if __NC_MEMMAN_DEBUG
+    lock_AllPools.Lock();
+#endif
     SMMMemPoolsSet* pool_set = s_GetCurPoolsSet();
     SMMStat* stat = (pool_set? &pool_set->stat: &s_MainPoolsSet.stat);
     void* ptr = nullptr;
     if (size <= kMMMaxBlockSize) {
         Uint2 size_idx = s_CalcSizeIndex(size);
         AtomicAdd(stat->m_UserBlAlloced[size_idx], 1);
-        if (pool_set)
+        if (pool_set) {
             ptr = s_GetFromPool(&pool_set->pools[size_idx], stat);
-        else
+        } else {
             ptr = s_GetFromGlobal(size_idx, stat);
+        }
+#if __NC_MEMMAN_DEBUG
+        if (s_FreePages[size_idx].lists[0].list_head.block_size != 0 &&
+            s_FreePages[size_idx].lists[0].list_head.block_size !=  kMMBlockSizes[size_idx]) {
+            abort();
+        }
+//        s_VerifyUnavailable(ptr, size_idx);
+#endif
     }
     else {
         ptr = s_AllocBigPage(size, stat);
     }
 #if __NC_MEMMAN_DEBUG
+    if (memcmp(ptr, &s_fdMemManStamp, sizeof(s_fdMemManStamp)) != 0) {
+        abort();
+    }
     memset(ptr, 0, sizeof(s_fdMemManStamp));
+#endif
+#if __NC_MEMMAN_DEBUG
+    lock_AllPools.Unlock();
 #endif
     return ptr;
 }
@@ -654,34 +761,44 @@ s_DeallocMemory(void* ptr)
         return;
     }
 
+#if __NC_MEMMAN_DEBUG
+    lock_AllPools.Lock();
+#endif
     SMMMemPoolsSet* pool_set = s_GetCurPoolsSet();
     SMMStat* stat = (pool_set? &pool_set->stat: &s_MainPoolsSet.stat);
     SMMPageHeader* page = s_GetPageByPtr(ptr);
     if (page->block_size <= kMMMaxBlockSize) {
         Uint2 size_idx = s_CalcSizeIndex(page->block_size);
         AtomicAdd(stat->m_UserBlFreed[size_idx], 1);
-
 #if __NC_MEMMAN_DEBUG
         if (memcmp(ptr, &s_fdMemManStamp, sizeof(s_fdMemManStamp)) == 0) {
             abort();
         }
         memcpy(ptr, &s_fdMemManStamp, sizeof(s_fdMemManStamp));
+        s_VerifyUnavailable(ptr, size_idx);
 #endif
-        if (pool_set)
+        if (pool_set) {
             s_PutToPool(&pool_set->pools[size_idx], ptr, stat);
-        else
+        } else {
             s_ReleaseToFreePages(&ptr, 1, size_idx, stat);
+        }
+// here,  'page' may be freed already
     }
     else {
-
 #if __NC_MEMMAN_DEBUG
         if (memcmp(ptr, &s_fdMemManStamp, sizeof(s_fdMemManStamp)) == 0) {
             abort();
         }
         memcpy(ptr, &s_fdMemManStamp, sizeof(s_fdMemManStamp));
+        if (page->free_list && memcmp(page->free_list, &s_fdMemManStamp, sizeof(s_fdMemManStamp)) == 0) {
+            abort();
+        }
 #endif
         s_DeallocBigPage(page, stat);
     }
+#if __NC_MEMMAN_DEBUG
+    lock_AllPools.Unlock();
+#endif
 }
 
 static void*
@@ -736,6 +853,13 @@ AssignThreadMemMgr(SSrvThread* thr)
         s_InitPoolsSet(pool_set);
         thr->mm_pool = pool_set;
     }
+#if __NC_MEMMAN_DEBUG
+    if (thr->thread_num < s_MaxAllPools) {
+        s_AllMemPoolsSet[thr->thread_num] = thr->mm_pool;
+    } else {
+        abort();
+    }
+#endif
     // Per-thread stat is never deleted, thus we can do this trick
     thr->stat->SetMMStat(&thr->mm_pool->stat);
 }
