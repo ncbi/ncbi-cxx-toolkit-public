@@ -757,11 +757,14 @@ void CObjectOStreamAsnBinary::WriteDouble2(double data, unsigned digits)
     if (width) {
 #if 1
         type = eDecimal_NR1;
-        if (strchr(buffer,'.')) {
-            type = eDecimal_NR2;
-        }
-        if (strpbrk(buffer,"eE") != NULL) {
-            type = eDecimal_NR3;
+        for (const char* p = buffer + width - 1;  p >= buffer;  --p) {
+            if (*p == '.') {
+                type = eDecimal_NR2;
+                break;
+            } else if (*p == 'e'  ||  *p == 'E') {
+                type = eDecimal_NR3;
+                break;
+            }
         }
 #endif
         WriteByte(type);
