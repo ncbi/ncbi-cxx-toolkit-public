@@ -421,7 +421,7 @@ bool CLocationEditPolicy::Interpret3Policy
             }
             break;
         case ePartialPolicy_eClearForGoodEnd:
-            if (orig_feat.GetLocation().IsPartialStart(eExtreme_Biological)
+            if (orig_feat.GetLocation().IsPartialStop(eExtreme_Biological)
                 && orig_feat.GetData().IsCdregion()
                 && bsh) {
                 string transl_prot;
