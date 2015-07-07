@@ -45,6 +45,29 @@ USING_NCBI_SCOPE;
 #endif
 
 
+template<class A, class B>
+static
+void s_failed_assert_equal(const A& a, const B& b,
+                           const char* aexpr, const char* bexpr,
+                           const char* file, int line)
+{
+    using namespace NCBI_NS_NCBI;
+    EndmFatal(CNcbiDiag(CDiagCompileInfo(file, line)).GetRef()
+              << "assert_equal("<<aexpr<<", "<<bexpr<<") failed: "
+              << a << " != " << b);
+}
+
+
+template<class A, class B>
+static inline void s_assert_equal(const A& a, const B& b,
+                                  const char* aexpr, const char* bexpr,
+                                  const char* file, int line)
+{
+    if ( a != b ) s_failed_assert_equal(a, b, aexpr, bexpr, file, line);
+}
+
+#define assert_equal(a, b) s_assert_equal(a, b, #a, #b, __FILE__, __LINE__)
+
 //=============================================================================
 //
 // TestMisc
@@ -56,11 +79,11 @@ static void s_TestMisc(int idx)
     // AsString()
     {{
         CTime t1;
-        assert(t1.AsString() == "");
+        assert_equal(t1.AsString(), "");
 
         CTime t2(2000, 365 / 2);
         t2.SetFormat("M/D/Y h:m:s");
-        assert(t2.AsString() == "06/30/2000 00:00:00");
+        assert_equal(t2.AsString(), "06/30/2000 00:00:00");
     }}
     
     // Year 2000 problem
@@ -68,29 +91,29 @@ static void s_TestMisc(int idx)
         CTime t(1999, 12, 30); 
         t.SetFormat("M/D/Y");
         t.AddDay();
-        assert(t.AsString() == "12/31/1999");
+        assert_equal(t.AsString(), "12/31/1999");
         t.AddDay();
-        assert(t.AsString() == "01/01/2000");
+        assert_equal(t.AsString(), "01/01/2000");
         t.AddDay();
-        assert(t.AsString() == "01/02/2000");
+        assert_equal(t.AsString(), "01/02/2000");
         t="02/27/2000";
         t.AddDay();
-        assert(t.AsString() == "02/28/2000");
+        assert_equal(t.AsString(), "02/28/2000");
         t.AddDay();
-        assert(t.AsString() == "02/29/2000");
+        assert_equal(t.AsString(), "02/29/2000");
         t.AddDay();
-        assert(t.AsString() == "03/01/2000");
+        assert_equal(t.AsString(), "03/01/2000");
         t.AddDay();
-        assert(t.AsString() == "03/02/2000");
+        assert_equal(t.AsString(), "03/02/2000");
     }}
 
     // String assignment
     {{
         CTime::SetFormat("M/D/Y h:m:s");
         CTime t("02/15/2000 01:12:33");
-        assert(t.AsString() == "02/15/2000 01:12:33");
+        assert_equal(t.AsString(), "02/15/2000 01:12:33");
         t = "3/16/2001 02:13:34";
-        assert(t.AsString() == "03/16/2001 02:13:34");
+        assert_equal(t.AsString(), "03/16/2001 02:13:34");
     }}
 
     CTime::SetFormat("M/D/Y h:m:s.S");
@@ -102,7 +125,7 @@ static void s_TestMisc(int idx)
              ti <= CTime(2000, 1, 1, 0, 0, 0, 000000003);
              t = ti, ti.AddNanoSecond(2)) {
         }
-        assert(t.AsString() == "01/01/2000 00:00:00.000000003");
+        assert_equal(t.AsString(), "01/01/2000 00:00:00.000000003");
     }}
 
     CTime::SetFormat("M/D/Y h:m:s");
@@ -114,7 +137,7 @@ static void s_TestMisc(int idx)
              ti <= CTime(2000, 1, 1, 0, 1, 20);
              t = ti, ti.AddSecond(11)) {
         }
-        assert(t.AsString() == "01/01/2000 00:01:17");
+        assert_equal(t.AsString(), "01/01/2000 00:01:17");
     }}
 
     // Adding minutes
@@ -124,7 +147,7 @@ static void s_TestMisc(int idx)
              ti <= CTime(2000, 1, 1, 0, 15);
              t = ti, ti.AddMinute(11)) {
         }
-        assert(t.AsString() == "01/01/2000 00:07:00");
+        assert_equal(t.AsString(), "01/01/2000 00:07:00");
     }}
 
     // Adding hours
@@ -133,7 +156,7 @@ static void s_TestMisc(int idx)
         for (CTime ti(1999, 12, 31); ti <= CTime(2000, 1, 1, 15);
              t = ti, ti.AddHour(11)) {
         }
-        assert(t.AsString() == "01/01/2000 09:00:00");
+        assert_equal(t.AsString(), "01/01/2000 09:00:00");
     }}
 
     // Adding months
@@ -142,7 +165,7 @@ static void s_TestMisc(int idx)
         for (CTime ti(1998, 12, 29); ti <= CTime(1999, 4, 1);
              t = ti, ti.AddMonth()) {
         }
-        assert(t.AsString() == "03/28/1999 00:00:00");
+        assert_equal(t.AsString(), "03/28/1999 00:00:00");
     }}
     
     // Difference
@@ -153,7 +176,7 @@ static void s_TestMisc(int idx)
         assert((t2.DiffDay(t1)-1.12) < 0.01);
         assert((t2.DiffHour(t1)-26.85) < 0.01);
         assert((t2.DiffMinute(t1)-1611.27) < 0.01);
-        assert(t2.DiffSecond(t1) == 96676);
+        assert_equal(t2.DiffSecond(t1), 96676);
     }}
 
     // Database time formats
@@ -167,7 +190,7 @@ static void s_TestMisc(int idx)
         dbi.days = 37093;
         dbi.time = 12301381;
         t.SetTimeDBI(dbi);
-        assert(t.AsString() == "07/23/2001 11:23:24");
+        assert_equal(t.AsString(), "07/23/2001 11:23:24");
     }}
 }
 
@@ -236,13 +259,13 @@ static void s_TestFormats(void)
                 CNcbiOstrstream s;
                 s << "04/02/2001 " << hour/10 << hour%10 << ":04:05";
                 string need_str = CNcbiOstrstreamToString(s);
-                assert(test_str == need_str);
+                assert_equal(test_str, need_str);
             } else {
-                assert(t1 == t2);
+                assert_equal(t1, t2);
             }
             CTime::SetFormat(fmt);
             string t2_str = t2;
-            assert(t1_str.compare(t2_str) == 0);
+            assert_equal(t1_str, t2_str);
             assert(CTime::ValidateString(t1_str, fmt));
         }
     }
@@ -254,43 +277,43 @@ static void s_TestFormats(void)
             CTime t(2003, 2, 10, 20, 40, 30, 0, CTime::eGmt);
             t.SetFormat(fmtstr);
             string s = t.AsString();
-            assert(s.compare("02/10/2003 20:40:30 GMT Monday") == 0);
+            assert_equal(s, "02/10/2003 20:40:30 GMT Monday");
         }}
         {{
             CTime t(1998, 2, 10, 20, 40, 30, 0, CTime::eGmt);
             t.SetFormat(fmtstr);
             string s = t.AsString();
-            assert(s.compare("02/10/1998 20:40:30 GMT Tuesday") == 0);
+            assert_equal(s, "02/10/1998 20:40:30 GMT Tuesday");
         }}
         {{
             CTime t(2003, 3, 13, 15, 49, 30, 0, CTime::eGmt);
             t.SetFormat(fmtstr);
             string s = t.AsString();
-            assert(s.compare("03/13/2003 15:49:30 GMT Thursday") == 0);
+            assert_equal(s, "03/13/2003 15:49:30 GMT Thursday");
         }}
         {{
             CTime t(2001, 3, 13, 15, 49, 30, 0, CTime::eGmt);
             t.SetFormat(fmtstr);
             string s = t.AsString();
-            assert(s.compare("03/13/2001 15:49:30 GMT Tuesday") == 0);
+            assert_equal(s, "03/13/2001 15:49:30 GMT Tuesday");
         }}
         {{
             CTime t(2002, 12, 31, 23, 59, 59, 0, CTime::eGmt);
             t.SetFormat(fmtstr);
             string s = t.AsString();
-            assert(s.compare("12/31/2002 23:59:59 GMT Tuesday") == 0);
+            assert_equal(s, "12/31/2002 23:59:59 GMT Tuesday");
         }}
         {{
             CTime t(2003, 1, 1, 0, 0, 0, 0, CTime::eGmt);
             t.SetFormat(fmtstr);
             string s = t.AsString();
-            assert(s.compare("01/01/2003 00:00:00 GMT Wednesday") == 0);
+            assert_equal(s, "01/01/2003 00:00:00 GMT Wednesday");
         }}
         {{
             CTime t(2002, 12, 13, 12, 34, 56, 0, CTime::eGmt);
             t.SetFormat(fmtstr);
             string s = t.AsString();
-            assert(s.compare("12/13/2002 12:34:56 GMT Friday") == 0);
+            assert_equal(s, "12/13/2002 12:34:56 GMT Friday");
         }}
     }}
     {{
@@ -299,43 +322,43 @@ static void s_TestFormats(void)
             CTime t(2003, 2, 10, 20, 40, 30, 0, CTime::eGmt);
             t.SetFormat(fmtstr);
             string s = t.AsString();
-            assert(s.compare("02/10/2003 08:40:30 PM GMT Monday") == 0);
+            assert_equal(s, "02/10/2003 08:40:30 PM GMT Monday");
         }}
         {{
             CTime t(1998, 2, 10, 20, 40, 30, 0, CTime::eGmt);
             t.SetFormat(fmtstr);
             string s = t.AsString();
-            assert(s.compare("02/10/1998 08:40:30 PM GMT Tuesday") == 0);
+            assert_equal(s, "02/10/1998 08:40:30 PM GMT Tuesday");
         }}
         {{
             CTime t(2003, 3, 13, 15, 49, 30, 0, CTime::eGmt);
             t.SetFormat(fmtstr);
             string s = t.AsString();
-            assert(s.compare("03/13/2003 03:49:30 PM GMT Thursday") == 0);
+            assert_equal(s, "03/13/2003 03:49:30 PM GMT Thursday");
         }}
         {{
             CTime t(2001, 3, 13, 15, 49, 30, 0, CTime::eGmt);
             t.SetFormat(fmtstr);
             string s = t.AsString();
-            assert(s.compare("03/13/2001 03:49:30 PM GMT Tuesday") == 0);
+            assert_equal(s, "03/13/2001 03:49:30 PM GMT Tuesday");
         }}
         {{
             CTime t(2002, 12, 31, 23, 59, 59, 0, CTime::eGmt);
             t.SetFormat(fmtstr);
             string s = t.AsString();
-            assert(s.compare("12/31/2002 11:59:59 PM GMT Tuesday") == 0);
+            assert_equal(s, "12/31/2002 11:59:59 PM GMT Tuesday");
         }}
         {{
             CTime t(2003, 1, 1, 0, 0, 0, 0, CTime::eGmt);
             t.SetFormat(fmtstr);
             string s = t.AsString();
-            assert(s.compare("01/01/2003 12:00:00 AM GMT Wednesday") == 0);
+            assert_equal(s, "01/01/2003 12:00:00 AM GMT Wednesday");
         }}
         {{
             CTime t(2002, 12, 13, 12, 34, 56, 0, CTime::eGmt);
             t.SetFormat(fmtstr);
             string s = t.AsString();
-            assert(s.compare("12/13/2002 12:34:56 PM GMT Friday") == 0);
+            assert_equal(s, "12/13/2002 12:34:56 PM GMT Friday");
         }}
     }}
 
@@ -345,12 +368,12 @@ static void s_TestFormats(void)
         {{  // Y
             CTime t("2001", "Y");
             s = t.AsString("M/D/Y h:m:s");
-            assert(s.compare("01/01/2001 00:00:00") == 0);
+            assert_equal(s, "01/01/2001 00:00:00");
         }}
         {{  // Y/M
             CTime t("2001/2", "Y/M");
             s = t.AsString("M/D/Y h:m:s");
-            assert(s.compare("02/01/2001 00:00:00") == 0);
+            assert_equal(s, "02/01/2001 00:00:00");
         }}
         {{  // M/D
             CTime current(CTime::eCurrent);
@@ -358,7 +381,7 @@ static void s_TestFormats(void)
             CTime t("01/02", "M/D");
             current.SetMonth(1);
             current.SetDay(2);
-            assert(t == current);
+            assert_equal(t, current);
         }}
         {{  // M
             CTime current(CTime::eCurrent);
@@ -366,7 +389,7 @@ static void s_TestFormats(void)
             CTime t("2", "M");
             current.SetMonth(2);
             current.SetDay(1);
-            assert(t == current);
+            assert_equal(t, current);
         }}
         {{  // D time
             CTime current(CTime::eCurrent);
@@ -375,14 +398,14 @@ static void s_TestFormats(void)
             current.SetDay(2);
             current.SetHour(11);
             current.SetMinute(22);
-            assert(t == current);
+            assert_equal(t, current);
         }}
         {{  // D
             CTime current(CTime::eCurrent);
             current.Truncate();
             CTime t("2", "D");
             current.SetDay(2);
-            assert(t == current);
+            assert_equal(t, current);
         }}
         {{  // time
             CTime current(CTime::eCurrent);
@@ -391,7 +414,7 @@ static void s_TestFormats(void)
             current.SetMinute(22);
             current.SetSecond(0);
             current.SetNanoSecond(0);
-            assert(t == current);
+            assert_equal(t, current);
         }}
 
         try {
@@ -436,24 +459,24 @@ static void s_TestFormats(void)
         {{
             CTime t("2001", CTimeFormat("Y/M/D", CTimeFormat::fMatch_ShortTime));
             s = t.AsString("M/D/Y h:m:s");
-            assert(s.compare("01/01/2001 00:00:00") == 0);
+            assert_equal(s, "01/01/2001 00:00:00");
         }}
         {{
             // Note that day and month changed
             CTime t("2001/01/02", CTimeFormat("Y", CTimeFormat::fMatch_ShortFormat));
             s = t.AsString("M/D/Y h:m:s");
-            assert(s.compare("01/01/2001 00:00:00") == 0);
+            assert_equal(s, "01/01/2001 00:00:00");
         }}
         {{
             CTime t("2001", CTimeFormat("Y/M/D", CTimeFormat::fMatch_Weak));
             s = t.AsString("M/D/Y h:m:s");
-            assert(s.compare("01/01/2001 00:00:00") == 0);
+            assert_equal(s, "01/01/2001 00:00:00");
         }}
         {{
             // Note that day and month changed
             CTime t("2001/01/02", CTimeFormat("Y", CTimeFormat::fMatch_Weak));
             s = t.AsString("M/D/Y h:m:s");
-            assert(s.compare("01/01/2001 00:00:00") == 0);
+            assert_equal(s, "01/01/2001 00:00:00");
         }}
         {{  
             try {
@@ -476,12 +499,12 @@ static void s_TestFormats(void)
         CTime t(2003, 2, 10, 20, 40, 30, 0, CTime::eGmt);
         string s;
         s = t.AsString("M/D/Y h:m:s");
-        assert(s.compare("02/10/2003 20:40:30") == 0);
+        assert_equal(s, "02/10/2003 20:40:30");
         s = t.AsString("MDY $M/$D/$Y $h:$m:$s hms");
-        assert(s.compare("02102003 $02/$10/$2003 $20:$40:$30 204030") == 0);
+        assert_equal(s, "02102003 $02/$10/$2003 $20:$40:$30 204030");
         s = t.AsString(CTimeFormat("MDY $M/$D/$Y $h:$m:$s hms",
                                    CTimeFormat::eNcbi));
-        assert(s.compare("MDY 02/10/2003 20:40:30 hms") == 0);
+        assert_equal(s, "MDY 02/10/2003 20:40:30 hms");
     }}
 
     // CTimeFormat::GetPredefined() test
@@ -489,17 +512,17 @@ static void s_TestFormats(void)
         CTime t(2003, 2, 10, 20, 40, 30, 123456789, CTime::eGmt);
         string s;
         s = t.AsString(CTimeFormat::GetPredefined(CTimeFormat::eISO8601_Year));
-        assert(s.compare("2003") == 0);
+        assert_equal(s, "2003");
         s = t.AsString(CTimeFormat::GetPredefined(CTimeFormat::eISO8601_YearMonth));
-        assert(s.compare("2003-02") == 0);
+        assert_equal(s, "2003-02");
         s = t.AsString(CTimeFormat::GetPredefined(CTimeFormat::eISO8601_Date));
-        assert(s.compare("2003-02-10") == 0);
+        assert_equal(s, "2003-02-10");
         s = t.AsString(CTimeFormat::GetPredefined(CTimeFormat::eISO8601_DateTimeMin));
-        assert(s.compare("2003-02-10T20:40") == 0);
+        assert_equal(s, "2003-02-10T20:40");
         s = t.AsString(CTimeFormat::GetPredefined(CTimeFormat::eISO8601_DateTimeSec));
-        assert(s.compare("2003-02-10T20:40:30") == 0);
+        assert_equal(s, "2003-02-10T20:40:30");
         s = t.AsString(CTimeFormat::GetPredefined(CTimeFormat::eISO8601_DateTimeFrac));
-        assert(s.compare("2003-02-10T20:40:30.123") == 0);
+        assert_equal(s, "2003-02-10T20:40:30.123");
     }}
 
     // Test assignment operator in different (from default) time format
@@ -508,10 +531,10 @@ static void s_TestFormats(void)
         CTime::SetFormat(CTimeFormat::GetPredefined(
                                 CTimeFormat::eISO8601_DateTimeMin,
                                 CTimeFormat::eNcbi));
-        assert(t0.AsString() == "2003-02-10T20:40");
+        assert_equal(t0.AsString(), "2003-02-10T20:40");
         CTime t("2003-02-10T20:40");
         t.SetSecond(30);
-        assert(t == t0);
+        assert_equal(t, t0);
     }}
 }
 
@@ -528,9 +551,9 @@ static void s_TestGMT(int idx)
     {{   
         CTime::SetFormat("M/D/Y h:m:s Z");
         CTime t1(2001, 3, 12, 11, 22, 33, 999, CTime::eGmt);
-        assert(t1.AsString() == "03/12/2001 11:22:33 GMT");
+        assert_equal(t1.AsString(), "03/12/2001 11:22:33 GMT");
         CTime t2(2001, 3, 12, 11, 22, 33, 999, CTime::eLocal);
-        assert(t2.AsString() == "03/12/2001 11:22:33 ");
+        assert_equal(t2.AsString(), "03/12/2001 11:22:33 ");
     }}
 
     // Process timezone string
@@ -538,9 +561,9 @@ static void s_TestGMT(int idx)
         CTime t;
         t.SetFormat("M/D/Y h:m:s Z");
         t="03/12/2001 11:22:33 GMT";
-        assert(t.AsString() == "03/12/2001 11:22:33 GMT");
+        assert_equal(t.AsString(), "03/12/2001 11:22:33 GMT");
         t="03/12/2001 11:22:33 ";
-        assert(t.AsString() == "03/12/2001 11:22:33 ");
+        assert_equal(t.AsString(), "03/12/2001 11:22:33 ");
     }}
 
     // Day of week
@@ -549,7 +572,7 @@ static void s_TestGMT(int idx)
         t.SetFormat("M/D/Y h:m:s w");
         int i;
         for (i=0; t<=CTime(2001, 4, 10); t.AddDay(),i++) {
-            assert(t.DayOfWeek() == (i%7));
+            assert_equal(t.DayOfWeek(), (i%7));
         }
     }}
 
@@ -563,8 +586,8 @@ static void s_TestGMT(int idx)
         tgmt.SetTimeT(timer);
         tloc.SetTimeT(timer);
 
-        assert(timer == t.GetTimeT());
-        assert(timer == tgmt.GetTimeT());
+        assert_equal(timer, t.GetTimeT());
+        assert_equal(timer, tgmt.GetTimeT());
         // On the day of changing to summer/winter time, the local time
         // converted to GMT may differ from the value returned by time(0),
         // because in the common case API don't know if DST is in effect for
@@ -572,7 +595,7 @@ static void s_TestGMT(int idx)
         time_t l_ = tloc.GetTimeT();
         if (timer != l_ ) {
             if ( abs((int)(timer - l_)) > 3600 )
-                assert(timer == l_);
+                assert_equal(timer, l_);
         }
     }}
 
@@ -580,16 +603,16 @@ static void s_TestGMT(int idx)
     {{   
         CTime tw(2001, 1, 1, 12); 
         CTime ts(2001, 6, 1, 12);
-        assert(tw.TimeZoneOffset() / 3600 == -5);
-        assert(ts.TimeZoneOffset()/3600 == -4);
+        assert_equal(tw.TimeZoneOffset() / 3600, -5);
+        assert_equal(ts.TimeZoneOffset() / 3600, -4);
     }}
 
     // Test TimeZoneOffset (2) -- EST timezone only
     {{   
         CTime tw(2001, 6, 1, 12); 
         CTime ts(2002, 1, 1, 12);
-        assert(tw.TimeZoneOffset() / 3600 == -4);
-        assert(ts.TimeZoneOffset() / 3600 == -5);
+        assert_equal(tw.TimeZoneOffset() / 3600, -4);
+        assert_equal(ts.TimeZoneOffset() / 3600, -5);
     }}
 
     // Test AdjustTime
@@ -603,43 +626,43 @@ static void s_TestGMT(int idx)
         t.SetTimeZone(CTime::eGmt);
         tn = t;
         tn.AddDay(5);  
-        assert(tn.AsString() == "03/16/2007 01:01:00");
+        assert_equal(tn.AsString(), "03/16/2007 01:01:00");
         tn = t;
         tn.AddDay(40); 
-        assert(tn.AsString() == "04/20/2007 01:01:00");
+        assert_equal(tn.AsString(), "04/20/2007 01:01:00");
 
         // Local eNone
         t.SetTimeZone(CTime::eLocal);
         t.SetTimeZonePrecision(CTime::eNone);
         tn = t;
         tn.AddDay(5);
-        assert(tn.AsString() == "03/16/2007 01:01:00");
+        assert_equal(tn.AsString(), "03/16/2007 01:01:00");
         tn = t;
         tn.AddDay(40);
-        assert(tn.AsString() == "04/20/2007 01:01:00");
+        assert_equal(tn.AsString(), "04/20/2007 01:01:00");
 
         //Local eMonth
         t.SetTimeZonePrecision(CTime::eMonth);
         tn = t;
         tn.AddDay(5);
-        assert(tn.AsString() == "03/16/2007 01:01:00");
+        assert_equal(tn.AsString(), "03/16/2007 01:01:00");
         tn = t; 
         tn.AddMonth(-1);
-        assert(tn.AsString() == "02/11/2007 01:01:00");
+        assert_equal(tn.AsString(), "02/11/2007 01:01:00");
         tn = t; 
         tn.AddMonth(+1);
-        assert(tn.AsString() == "04/11/2007 02:01:00");
+        assert_equal(tn.AsString(), "04/11/2007 02:01:00");
 
         // Local eDay
         t.SetTimeZonePrecision(CTime::eDay);
         tn = t;
         tn.AddDay(-1); 
-        assert(tn.AsString() == "03/10/2007 01:01:00");
+        assert_equal(tn.AsString(), "03/10/2007 01:01:00");
         tn.AddDay();   
-        assert(tn.AsString() == "03/11/2007 01:01:00");
+        assert_equal(tn.AsString(), "03/11/2007 01:01:00");
         tn = t;
         tn.AddDay(); 
-        assert(tn.AsString() == "03/12/2007 02:01:00");
+        assert_equal(tn.AsString(), "03/12/2007 02:01:00");
 
         // Local eHour
         t.SetTimeZonePrecision(CTime::eHour);
@@ -647,30 +670,30 @@ static void s_TestGMT(int idx)
         tn.AddHour(-3);
         CTime te = t; 
         te.AddHour(3);
-        assert(tn.AsString() == "03/10/2007 22:01:00");
-        assert(te.AsString() == "03/11/2007 05:01:00");
+        assert_equal(tn.AsString(), "03/10/2007 22:01:00");
+        assert_equal(te.AsString(), "03/11/2007 05:01:00");
         CTime th = tn; 
         th.AddHour(49);
-        assert(th.AsString() == "03/13/2007 00:01:00");
+        assert_equal(th.AsString(), "03/13/2007 00:01:00");
 
         tn = "11/04/2007 00:01:00"; 
         tn.SetTimeZonePrecision(CTime::eHour);
         te = tn; 
         tn.AddHour(-3); 
         te.AddHour(9);
-        assert(tn.AsString() == "11/03/2007 21:01:00");
-        assert(te.AsString() == "11/04/2007 08:01:00");
+        assert_equal(tn.AsString(), "11/03/2007 21:01:00");
+        assert_equal(te.AsString(), "11/04/2007 08:01:00");
         th = tn; 
         th.AddHour(49);
-        assert(th.AsString() == "11/05/2007 21:01:00");
+        assert_equal(th.AsString(), "11/05/2007 21:01:00");
 
         tn = "11/04/2007 09:01:00"; 
         tn.SetTimeZonePrecision(CTime::eHour);
         te = tn; 
         tn.AddHour(-10); 
         te.AddHour(+10);
-        assert(tn.AsString() == "11/04/2007 00:01:00");
-        assert(te.AsString() == "11/04/2007 19:01:00");
+        assert_equal(tn.AsString(), "11/04/2007 00:01:00");
+        assert_equal(te.AsString(), "11/04/2007 19:01:00");
     }}
 }
 
