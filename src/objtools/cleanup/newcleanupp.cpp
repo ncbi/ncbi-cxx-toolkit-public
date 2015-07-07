@@ -9093,6 +9093,14 @@ void CNewCleanup_imp::x_ModernizeRNAFeat(CSeq_feat& feat)
 
 }
 
+static bool s_IsEmpty(const CTrna_ext& trna)
+{
+    if (trna.IsSetAa()) return false;
+    if (trna.IsSetCodon() && trna.GetCodon().size() > 0) return false;
+    if (trna.IsSetAnticodon()) return false;
+    return true;
+}
+
 void CNewCleanup_imp::RnaFeatBC (
     CRNA_ref& rna,
     CSeq_feat& seq_feat
@@ -9288,6 +9296,15 @@ void CNewCleanup_imp::RnaFeatBC (
                 }
             }
         }
+    }
+
+    // if not tRNA and ext is tRNA and tRNA is empty, remove ext.tRNA
+    if (rna.IsSetType() && 
+        (rna.GetType() == CRNA_ref::eType_mRNA || rna.GetType() == CRNA_ref::eType_rRNA) &&
+        rna.IsSetExt() && rna.GetExt().IsTRNA() &&
+        s_IsEmpty(rna.GetExt().GetTRNA())) {
+        rna.ResetExt();
+        ChangeMade(CCleanupChange::eChangeRNAref);
     }
 
     x_ModernizeRNAFeat(seq_feat);
