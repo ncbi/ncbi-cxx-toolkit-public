@@ -418,6 +418,7 @@ bool CNetCache::Init()
         if (m_ObjectLoc.GetLocation() == eNFL_NetCache) {
             m_Client = CNetICacheClient(m_ObjectLoc.GetNCServiceName(),
                     m_ObjectLoc.GetAppDomain(), kEmptyStr);
+            m_Client.SetFlags(ICache::fBestReliability);
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
             if (m_ObjectLoc.IsXSiteProxyAllowed())
                 m_Client.GetService().AllowXSiteConnections();
@@ -820,6 +821,10 @@ SContext::SContext(const string& domain, CNetICacheClient client,
         NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
                 "No storages available when using backend_storage=\"" <<
                 backend_storage << "\" and flags=" << default_flags);
+    }
+
+    if (icache_client) {
+        icache_client.SetFlags(ICache::fBestReliability);
     }
 }
 
