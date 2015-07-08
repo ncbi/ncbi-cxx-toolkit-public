@@ -39,17 +39,17 @@
 #include "ncbi_priv.h"
 #include <errno.h>
 #include <ctype.h>
-#include <netdb.h>
+/*#include <netdb.h>*/
 #include <stdlib.h>
 #include <time.h>
 
 extern int h_errno;
 
 static const int   kInitialCandidatesCount =  1;          /**< For initial memory allocation */
-static const int   kHostportStringLength  =  (16+1+5);     /**< strlen("255.255.255.255")+
+#define kHostportStringLength (16+1+5)     /**< strlen("255.255.255.255")+
                                                      strlen(":") +
                                                      strlen("65535") */
-static const int   kMaxLineSize  =            1024;       /**< used to read from socket*/
+#define kMaxLineSize            1024       /**< used to read from socket*/
 
 static const char* kNotFoundMessage =         "Not found";  /**< To know that LBOS does not
                                                      know  requested service */
@@ -276,12 +276,10 @@ int/*bool*/ g_LBOS_UnitTesting_SetLBOSRoleAndDomainFiles (const char* roleFile,
         const char* domainFile)
 {
     if (roleFile != NULL) {
-        kRoleFile = malloc(sizeof(char) * (strlen(roleFile) + 1));
-        strcpy(kRoleFile, roleFile);
+        kRoleFile = strdup(roleFile);
     }
     if (domainFile != NULL) {
-        kDomainFile = malloc(sizeof(char) * (strlen(domainFile) + 1));
-        strcpy(kDomainFile, domainFile);
+        kDomainFile = strdup(domainFile);
     }
     return 1;
 }
@@ -591,7 +589,7 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
 {
     /*Access server at the specified IP and port and receive answer to
      * std::stringstream*/
-    SSERV_Info** infos = (char**)calloc(2, sizeof(SSERV_Info*));
+    SSERV_Info** infos = (SSERV_Info**)calloc(2, sizeof(SSERV_Info*));
     int infos_count = 0;
     int infos_capacity = 1;
     char* servicename_url_encoded = s_LBOS_URLEncode(serviceName);
@@ -621,7 +619,11 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
     if (!g_StringIsNullOrEmpty(lbzk_answer)) {
         char* token, *saveptr, *str;
         for(str = lbzk_answer  ;  ;  str = NULL) {
+#ifdef NCBI_COMPILER_MSVC
+            token = strtok_s(str, "\n", &saveptr);
+#else
             token = strtok_r(str, "\n", &saveptr);
+#endif
             if (token == NULL) break;
             SSERV_Info * info = SERV_ReadInfoEx(token, serviceName, 0);
             /* Ocasionally, the info returned by LBOS can be invalid. */
@@ -696,8 +698,8 @@ char** g_LBOS_getLBOSAddressesEx (ELBOSFindMethod priority_find_method,
     struct hostent* dns_answer = NULL;
     char * alias, * host;
     int i = 0;
-    struct addrinfo hints, *res;
-    struct in_addr addr;
+    /*struct addrinfo hints, *res;*/
+    /*struct in_addr addr;*/
     struct addrinfo *rp;
     struct in_addr **addr_list;
     int err;
@@ -939,7 +941,7 @@ const SSERV_VTable* SERV_LBOS_Open( SERV_ITER            iter,
 static const char*      s_LBOS_MyInstance    =  NULL; /* LBOS which handles our service*/
 static const char*      s_LBOS_MyService     =  NULL; /* service which we announce*/
 static const char*      s_LBOS_MyVersion     =  NULL; /* version of service which we announce*/
-static unsigned short   s_LBOS_MyPort        =  NULL; /* port of service which we announce*/
+static unsigned short   s_LBOS_MyPort        =  0; /* port of service which we announce*/
 
 
 
