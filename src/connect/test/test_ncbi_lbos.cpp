@@ -113,7 +113,7 @@ static char*            s_FakeComposeLBOSAddress            ( );
  * This is not thread-safe! */
 static int              s_call_counter                      = 0;
 static char*            s_last_header                       = NULL;
-static char*            s_LBOS_hostport                     = NULL;
+/*static char*            s_LBOS_hostport                     = NULL;*/
 
 
 NCBITEST_INIT_TREE()
@@ -276,7 +276,7 @@ static void DomainFail__ShouldReturnNULL()
     path = path.substr(0, max(lastSlash, lastBackSlash));
     string corruptDomainString = path + string("/ncbi_lbos_domain");
     const char* corruptDomain = corruptDomainString.c_str();
-    ofstream domainFile (corruptDomainString);
+    ofstream domainFile (corruptDomain);
     domainFile << "";
     domainFile.close();
 
@@ -1851,7 +1851,7 @@ static void GetNext_Reset__ShouldNotCrash()
     SConnNetInfo* net_info;
     SERV_ITER iter;
     const SSERV_Info* info;
-    int i, j;
+    int i;
     setlocale(LC_ALL, "");
     CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
                            fLOG_OmitNoteLevel | fLOG_DateTime);
@@ -1997,7 +1997,7 @@ static void FullCycle__ShouldNotCrash()
                           net_info, 0/*skip*/, 0/*n_skip*/,
                           0/*external*/, 0/*arg*/, 0/*val*/);
         int hosts_found = 0;
-        while (info = SERV_GetNextInfoEx(iter, NULL)) {
+        while ((info = SERV_GetNextInfoEx(iter, NULL)) != NULL) {
             ++hosts_found;
             ++total_hosts;
             ++cycle_hosts;;

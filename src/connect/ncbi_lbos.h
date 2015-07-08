@@ -126,7 +126,7 @@ int   g_StringIsNullOrEmpty(const char* str);
 char* g_LBOS_ComposeLBOSAddress();
 /*ELBOSAnnounceResult  g_LBOS_AnnounceEx(const char*, const char*, unsigned short,
                         const char*, unsigned int*, unsigned short*);*/
-/*int/*bool*/ /*g_LBOS_DeannounceSelf();*/
+/*int*/ /* bool*/ /*g_LBOS_DeannounceSelf();*/
 
 typedef struct {
     SSERV_Info** (*ResolveIPPort) (const char* lbos_address,
