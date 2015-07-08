@@ -2457,6 +2457,7 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_
                     }
                     out<<"\n";
                     isFirst = false;
+		    delete alnDispParams;
                 }
             }
             if(m_AlignOption&eHtml && bMultipleDeflines) {

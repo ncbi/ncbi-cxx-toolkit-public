@@ -2703,7 +2703,7 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
         int numAligns[6];
         Blast_KarlinBlk * kbp = NULL;
         BlastCompo_MatchingSequence matchingSeq = {0,};
-        BlastHSPList * hsp_list = Blast_HSPListNew(0);
+        BlastHSPList * hsp_list = NULL; 
         double best_evalue;   
         Int4 best_score;
         void * discarded_aligns = NULL;
@@ -2757,6 +2757,7 @@ Blast_RedoAlignmentCore(EBlastProgramType program_number,
             goto match_loop_cleanup;
         }
 
+        hsp_list = Blast_HSPListNew(0);
         for (frame_index=0; frame_index<numFrames; frame_index++, context_index++) {
             incoming_aligns = incoming_align_set[frame_index];
             if (!incoming_aligns) continue;
