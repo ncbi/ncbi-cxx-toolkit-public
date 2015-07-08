@@ -94,6 +94,9 @@ private:
     CObjectIStream* x_OpenIStream(const CArgs& args);
 
     int x_SeqIdToGiNumber( const string& seq_id, const string database );
+
+    void x_FeatureOptionsValid(const string& opt);
+    void x_ProcessFeatureOptions(const string& opt, CSeq_entry_Handle seh);
     
     // data
     CRef<CObjectManager>        m_Objmgr;       // Object Manager
@@ -158,6 +161,12 @@ void CCleanupApp::Init(void)
         // html
         arg_desc->AddFlag("html", "Produce HTML output");
     }}
+
+    // extra cleanup options
+    {{
+        arg_desc->AddOptionalKey("F", "Feature", "Feature Cleaning Options",
+                                  CArgDescriptions::eString);
+    }}
     
     // misc
     {{
@@ -180,6 +189,27 @@ void CCleanupApp::Init(void)
 }
 
 
+void CCleanupApp::x_FeatureOptionsValid(const string& opt)
+{
+    if (NStr::IsBlank(opt)){
+        return;
+    }
+    string unrecognized = "";
+    string::const_iterator s = opt.begin();
+    while (s != opt.end()) {
+        if (!isspace(*s)) {
+            if (*s != 'r') {
+                unrecognized += *s;
+            }
+        }
+        s++;
+    }
+    if (unrecognized.length() > 0) {
+        NCBI_THROW(CFlatException, eInternal, "Invalid -F arguments:" + unrecognized);
+    }
+}
+
+
 int CCleanupApp::Run(void)
 {
 	// initialize conn library
@@ -187,6 +217,10 @@ int CCleanupApp::Run(void)
 
     const CArgs&   args = GetArgs();
 
+    // flag validation
+    if (args["F"]) {
+        x_FeatureOptionsValid(args["F"].AsString());
+    }
 
     // create object manager
     m_Objmgr = CObjectManager::GetInstance();
@@ -463,8 +497,6 @@ bool CCleanupApp::HandleSeqID( const string& seq_id )
     CRef<CScope> scope(new CScope(*m_Objmgr));
     scope->AddDefaults();
     CBioseq_Handle bsh = scope->GetBioseqHandle( id );
-    if ( ! bsh ) {
-    }
 
     CArgs args = GetArgs();
 
@@ -525,6 +557,16 @@ bool CCleanupApp::HandleSeqID( const string& seq_id )
     return true;
 }
 
+void CCleanupApp::x_ProcessFeatureOptions(const string& opt, CSeq_entry_Handle seh)
+{
+    if (NStr::IsBlank(opt)) {
+        return;
+    }
+    if (NStr::Find(opt, "r") != string::npos) {
+        CCleanup::RemoveUnnecessaryGeneXrefs(seh);
+    }
+}
+
 bool CCleanupApp::HandleSeqEntry(CRef<CSeq_entry>& se)
 {
     if (!se) {
@@ -565,6 +607,10 @@ bool CCleanupApp::HandleSeqEntry(CRef<CSeq_entry>& se)
     string file_name = args["o"].AsString();
     bool any_changes = false;
 
+    if (args["F"]) {
+        x_ProcessFeatureOptions(args["F"].AsString(), entry);
+    }
+
 	if (args["basic"] || !args["nocleanup"]) {
         CCleanup cleanup;
         cleanup.SetScope(scope);
@@ -598,7 +644,7 @@ bool CCleanupApp::HandleSeqEntry(CRef<CSeq_entry>& se)
 		if (!args["nocleanup"]) {
 			// perform ExtendedCleanup
 			try {
-				CConstRef<CCleanupChange> changes = cleanup.ExtendedCleanup (const_cast<CSeq_entry& >(*(entry.GetCompleteSeq_entry())), options);
+				CConstRef<CCleanupChange> changes = cleanup.ExtendedCleanup (entry, options);
 				vector<string> changes_str = changes->GetAllDescriptions();
 				if (changes_str.size() == 0) {
 				    printf ("No changes from ExtendedCleanup\n");
