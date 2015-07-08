@@ -67,8 +67,7 @@ static const char* kReservedHeaders[]  = {
     "NCBI-PHID"
 };
 
-
-static const CHttpHeaders::THeaderValues kEmptyValues;
+static  CSafeStatic<CHttpHeaders::THeaderValues> kEmptyValues;
 static const char kHttpHeaderDelimiter = ':';
 
 
@@ -105,7 +104,7 @@ const CHttpHeaders::THeaderValues&
     CHttpHeaders::GetAllValues(CHeaderNameConverter name) const
 {
     THeaders::const_iterator it = m_Headers.find(name.GetName());
-    if (it == m_Headers.end()) return kEmptyValues;
+    if (it == m_Headers.end()) return kEmptyValues.Get();
     return it->second;
 }
 

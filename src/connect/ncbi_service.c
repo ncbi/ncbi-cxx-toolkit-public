@@ -34,6 +34,9 @@
 #include "ncbi_dispd.h"
 #include "ncbi_lbsmd.h"
 #include "ncbi_local.h"
+#ifdef NCBI_CXX_TOOLKIT
+#  include "ncbi_lbos.h"
+#endif
 #include "ncbi_priv.h"
 #include <ctype.h>
 #include <stdlib.h>
@@ -170,6 +173,25 @@ static int/*bool*/ s_IsMapperConfigured(const char* service, const char* key)
 }
 
 
+/** @brief Based on service name, find hosts and return first found host
+ *
+ * Parameters info and host_info are optional and can be zeroes
+ *
+ * @param[in]  service         The name of service of which to look servers for
+ * @param[in]  ismask          If service name is a wildcard (can be zero)
+ * @param[in]  types           Types of server that will be accepted
+ * @param[in]  preferred_host  Optional (can be zero)
+ * @param[in]  preferred_port  Optional (can be zero)
+ * @param[in]  preference      Optional (can be zero)
+ * @param[in]  net_info        Connection information of the  current host
+ * @param[in]  skip            Optional (can be zero)
+ * @param[in]  n_skip          Optional (can be zero)
+ * @param[in]  external        Optional (can be zero)
+ * @param[in]  arg             Optional (can be zero)
+ * @param[in]  val             Optional (can be zero)
+ * @param[in]  info            Optional (can be zero)
+ * @param[in]  host_info       Optional (can be zero)
+ */
 static SERV_ITER s_Open(const char*         service,
                         unsigned/*bool*/    ismask,
                         TSERV_Type          types,
@@ -185,7 +207,23 @@ static SERV_ITER s_Open(const char*         service,
                         SSERV_Info**        info,
                         HOST_INFO*          host_info)
 {
-    int/*bool*/ do_lbsmd = -1/*unassigned*/, do_dispd = -1/*unassigned*/;
+    int/*bool*/   do_lbsmd = -1/*-1 means unassigned, 0 means disabled*/,
+                  do_dispd = -1/*-1 means unassigned, 0 means disabled*/,
+                  do_lbos  = -1/*-1 means unassigned, 0 means disabled*/;
+
+    /* We consider changes in code in "do_xxx" more important, since
+     * corresponding variables are for debugging purposes mostly.
+     */
+    if (do_dispd == -1) {
+        do_dispd = !s_IsMapperConfigured(service, REG_CONN_DISPD_DISABLE);
+    }
+    if (do_lbsmd == -1) {
+        do_lbsmd = !s_IsMapperConfigured(service, REG_CONN_LBSMD_DISABLE);
+    }
+    if (do_lbos == -1) {
+        do_lbos = !s_IsMapperConfigured(service, REG_CONN_LBOS_DISABLE);
+    }
+
     const SSERV_VTable* op;
     SERV_ITER iter;
     const char* s;
@@ -263,17 +301,39 @@ static SERV_ITER s_Open(const char*         service,
     } else
         do_dispd = 0/*false*/;
     /* Ugly optimization not to access the registry more than necessary */
-    if ((!s_IsMapperConfigured(service, REG_CONN_LOCAL_ENABLE)               ||
-         !(op = SERV_LOCAL_Open(iter, info, host_info)))                 &&
-        (!do_lbsmd                                                           ||
-         !(do_lbsmd= !s_IsMapperConfigured(service, REG_CONN_LBSMD_DISABLE)) ||
-         !(op = SERV_LBSMD_Open(iter, info, host_info,
-                                !do_dispd                                    ||
-                                !(do_dispd = !s_IsMapperConfigured
-                                  (service, REG_CONN_DISPD_DISABLE)))))  &&
-        (!do_dispd                                                           ||
-         !(do_dispd= !s_IsMapperConfigured(service, REG_CONN_DISPD_DISABLE)) ||
-         !(op = SERV_DISPD_Open(iter, net_info, info, host_info)))) {
+    if (
+            /*Search locally*/
+    	    (
+                !s_IsMapperConfigured(service, REG_CONN_LOCAL_ENABLE)       ||
+                !(op = SERV_LOCAL_Open(iter, info, host_info))
+    	    )
+    	    &&
+		    /*Search in shared memory*/
+    	    (
+                !do_lbsmd
+                ||
+                !(
+                      op = SERV_LBSMD_Open(iter, info, host_info,
+                                                        !(do_lbos || do_dispd))
+                 )
+    	    )
+#ifdef NCBI_CXX_TOOLKIT
+    	    &&
+    	    /*  Search in LBOS */
+    	    (
+    	        !do_lbos
+    	        ||
+		        !(op = SERV_LBOS_Open(iter, net_info, info))
+    	    )
+#endif
+    	    &&
+    	    /*Search in dispd */
+    	    (
+                !do_dispd                                                    ||
+                !(op = SERV_DISPD_Open(iter, net_info, info, host_info))
+    	    )
+    	)
+    {
         if (!do_lbsmd  &&  !do_dispd) {
             CORE_LOGF_X(1, eLOG_Error,
                         ("[%s]  No service mappers available", service));
@@ -429,9 +489,10 @@ static SSERV_Info* s_GetInfo(const char*         service,
     assert(!iter  ||  iter->op);
     if (!iter)
         info = 0;
-    else if (!info) /* all LOCAL/DISPD searches here, but no LBSMD ones */
+    else if (!info) /* If info is empty after s_Open, we do not know the real
+                       reason, so just call search once again */
         info = s_GetNextInfo(iter, host_info, 1/*internal*/);
-    else if (info == (SSERV_Info*)(-1L))
+    else if (info == (SSERV_Info*)(-1L)) /* This is error 404 */
         info = 0;
     SERV_Close(iter);
     return info;

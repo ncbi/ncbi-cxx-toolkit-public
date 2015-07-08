@@ -68,7 +68,23 @@ extern "C" {
 #endif
 
 
-/* Table of iterator's "virtual functions"
+/** @brief Table of iterator's "virtual functions"
+ *
+ * In order to provide same functionality with different implementations
+ * via local registry, LBSMD's shared memory, LBOS, and dispd.cgi, we introduce
+ * this structure with pointers to same-typed functions.
+ *
+ * You should look for these functions in ncbi_lbsmd.c, ncbi_local.c,
+ * ncbi_lbos.c and ncbi_dispd.c:
+ * -s_GetNextInfo:  given an iterator and pointer to HOST_INFO, this function
+ *                  iterates through previously found servers and returns
+ *                  next found server. Info about server's host is written
+ *                  to HOST_INFO* host_info
+ * -s_Feedback:     Penalize some server (change its rate)
+ * -s_Update:       TODO: write description
+ * -s_Reset:        Set iterator to the state in which it was after SERV_OPEN
+ * -s_Close:        Clean all information corresponding to specific mapper
+ *                  in the given iterator
  */
 typedef struct {
     SSERV_Info* (*GetNextInfo)(SERV_ITER iter, HOST_INFO* host_info);
@@ -159,6 +175,7 @@ extern NCBI_XCONNECT_EXPORT SSERV_Info* SERV_GetInfoP
  const char*          val,           /* environment variable value to match  */
  HOST_INFO*           hinfo          /* host information to return on match  */
  );
+
 
 /* Same as the above but creates an iterator to get the servers one by one.
  * CAUTION:  Special requirement for "skip" infos in case of a wildcard
