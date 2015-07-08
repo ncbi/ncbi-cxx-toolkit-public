@@ -45,6 +45,7 @@
 
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbi_config.hpp>
+#include <corelib/ncbi_message.hpp>
 
 #include <util/random_gen.hpp>
 #include <util/checksum.hpp>
@@ -1005,6 +1006,8 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
     STimeout* timeout = retry_count <= 0 && !m_UseSmartRetries ?
             NULL : &m_ServerPool->m_FirstServerTimeout;
 
+    CListener_Base err_listener;
+
     for (;;) {
         skip_server = false;
 
@@ -1023,6 +1026,8 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
                 throw;
             else
                 conn_listener->OnWarning(ex.GetMsg(), server);
+
+            err_listener.PostMessage(CMessage_Base(ex.GetMsg(), eDiag_Warning));
         }
         catch (CNetScheduleException& ex) {
             if (retry_count <= 0 && !m_UseSmartRetries)
@@ -1034,6 +1039,8 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
                 throw;
             else
                 conn_listener->OnWarning(ex.GetMsg(), server);
+
+            err_listener.PostMessage(CMessage_Base(ex.GetMsg(), eDiag_Warning));
         }
         catch (CNetSrvConnException& ex) {
             if (retry_count <= 0 && !m_UseSmartRetries)
@@ -1052,6 +1059,8 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
             default:
                 throw;
             }
+
+            err_listener.PostMessage(CMessage_Base(ex.GetMsg(), eDiag_Warning));
         }
 
         ++number_of_servers;
@@ -1104,6 +1113,11 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
                         "] on any of the discovered servers.");
             }
 
+            for (size_t i = 0; i < err_listener.Count(); ++i) {
+                LOG_POST(Warning << err_listener.GetMessage(i).GetText());
+            }
+
+            err_listener.Clear();
             LOG_POST(Warning << "Unable to send [" << cmd << "] to any "
                     "of the discovered servers; will retry after delay.");
 
