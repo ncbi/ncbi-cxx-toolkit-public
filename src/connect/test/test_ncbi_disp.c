@@ -33,7 +33,6 @@
 #include "../ncbi_ansi_ext.h"
 #include "../ncbi_lbsmd.h"
 #include "../ncbi_priv.h"               /* CORE logging facilities */
-#include <locale.h>
 #include <stdlib.h>
 #include <time.h>
 #ifdef NCBI_OS_MSWIN
@@ -160,7 +159,6 @@ int main(int argc, const char* argv[])
     int n_found = 0;
     SERV_ITER iter;
 
-    setlocale(LC_ALL, "");
     CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
                            fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);

@@ -33,7 +33,6 @@
 #include <connect/ncbi_service_connector.h>
 #include "../ncbi_ansi_ext.h"
 #include "../ncbi_priv.h"               /* CORE logging facilities */
-#include <locale.h>
 #include <stdlib.h>
 #include <time.h>
 
@@ -51,7 +50,6 @@ int main(int argc, const char* argv[])
     CONN conn;
     size_t n;
 
-    setlocale(LC_ALL, "");
     g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
     srand(g_NCBI_ConnectRandomSeed);
 
