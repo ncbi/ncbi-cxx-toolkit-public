@@ -94,7 +94,7 @@ void SNetStorageServerParameters::Read(const IRegistry &    reg,
                           "decrypting error detected. " + string(ex.what());
     } catch (...) {
         decrypt_warning = "[server]/admin_client_name "
-                          "unknown error";
+                          "unknown decrypting error";
     }
 }
 

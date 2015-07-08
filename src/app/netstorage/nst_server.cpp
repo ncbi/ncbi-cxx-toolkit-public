@@ -57,6 +57,7 @@ CNetStorageServer::CNetStorageServer()
      m_SessionID("s" + x_GenerateGUID()),
      m_NetworkTimeout(0),
      m_StartTime(CNSTPreciseTime::Current()),
+     m_AnybodyCanReconfigure(false),
      m_NeedDecryptCacheReset(false),
      m_LastDecryptCacheReset(0.0)
 {

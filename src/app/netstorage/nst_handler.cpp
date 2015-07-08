@@ -37,6 +37,7 @@
 #include <netinet/tcp.h>
 #include <signal.h>
 
+#include <corelib/resource_info.hpp>
 #include <connect/services/netstorage.hpp>
 #include <connect/services/netstorage_impl.hpp>
 
@@ -1196,27 +1197,28 @@ CNetStorageHandler::x_ProcessReconfigure(
                    "Anonymous client cannot reconfigure server");
     }
 
-    if (!m_Server->IsAdminClientName(m_Client)) {
-        string      msg = "Only administrators can reconfigure server "
-                          "(client: ";
-        if (m_Client.empty())
-            msg += "anonymous)";
-        else
-            msg += m_Client;
-
-        m_Server->RegisterAlert(eAccess, msg);
-        NCBI_THROW(CNetStorageServerException, ePrivileges, msg);
+    if (!m_Server->AnybodyCanReconfigure()) {
+        if (!m_Server->IsAdminClientName(m_Client)) {
+            string      msg = "Only administrators can reconfigure server "
+                              "(client: " + m_Client + ")";
+            m_Server->RegisterAlert(eAccess, msg);
+            NCBI_THROW(CNetStorageServerException, ePrivileges, msg);
+        }
     }
 
     m_Server->GetClientRegistry().AppendType(m_Client,
                                              CNSTClient::eAdministrator);
+
+    // Unconditionally reload the decryptor in case if the key files are
+    // changed
+    CNcbiEncrypt::Reload();
 
     CJsonNode           reply = CreateResponseMessage(
                                             common_args.m_SerialNumber);
     CNcbiApplication *  app = CNcbiApplication::Instance();
     bool                reloaded = app->ReloadConfig(
                                             CMetaRegistry::fReloadIfChanged);
-    if (!reloaded) {
+    if (!reloaded && !m_Server->AnybodyCanReconfigure()) {
         AppendWarning(reply, eConfigNotChangedWarning,
                       "Configuration file has not been changed, "
                       "RECONFIGURE ignored");
@@ -1264,7 +1266,7 @@ CNetStorageHandler::x_ProcessReconfigure(
 
 
     // Reconfigurable at runtime:
-    // [server]: logging and admin name list
+    // [server]: logging, admin name list, max connections, network timeout
     // [metadata_conf]
     SNetStorageServerParameters     params;
     string                          decrypt_warning;
@@ -1280,6 +1282,7 @@ CNetStorageHandler::x_ProcessReconfigure(
     CJsonNode   metadata_diff = m_Server->ReadMetadataConfiguration(reg);
 
     m_Server->AcknowledgeAlert(eReconfigure, "NSTAcknowledge");
+    m_Server->SetAnybodyCanReconfigure(false);
 
     if (server_diff.IsNull() && metadata_diff.IsNull()) {
         if (m_ConnContext.NotNull())

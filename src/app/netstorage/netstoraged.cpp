@@ -169,6 +169,7 @@ int CNetStorageDApp::Run(void)
     server->SetCustomThreadSuffix("_h");
     server->SetParameters(params, false);
     server->ReadMetadataConfiguration(reg);
+    server->SetAnybodyCanReconfigure(!decrypt_warning.empty());
 
     // Use port passed through parameters
     server->AddDefaultListener(new CNetStorageConnectionFactory(&*server));

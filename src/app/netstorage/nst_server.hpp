@@ -99,6 +99,10 @@ public:
     { m_RAMConfigFileChecksum = checksum; }
     CNSTClientRegistry &  GetClientRegistry(void)
     { return m_ClientRegistry; }
+    void SetAnybodyCanReconfigure(bool  val)
+    { m_AnybodyCanReconfigure = val; }
+    bool AnybodyCanReconfigure(void) const
+    { return m_AnybodyCanReconfigure; }
 
     bool IsAdminClientName(const string &  name) const;
 
@@ -165,6 +169,8 @@ private:
                                 m_ServiceThread;
 
     CNSTClientRegistry          m_ClientRegistry;
+
+    bool                        m_AnybodyCanReconfigure;
 
     // Filetrack API keys support - decrypt may fail
 private:
