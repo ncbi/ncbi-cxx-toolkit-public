@@ -61,6 +61,8 @@ public:
     /// Creates object with default options set
     CBlastAdvancedProteinOptionsHandle(EAPILocality locality = CBlastOptions::eLocal);
 
+    CBlastAdvancedProteinOptionsHandle(CRef<CBlastOptions> opt):CBlastProteinOptionsHandle(opt){}
+
 /******************* Gapped extension options *******************/
 
     /// Returns this mode, which mostly specifies whether composition of db

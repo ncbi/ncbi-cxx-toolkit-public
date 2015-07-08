@@ -56,6 +56,7 @@ public:
 
     /// Creates object with default options set
     CTBlastnOptionsHandle(EAPILocality locality = CBlastOptions::eLocal);
+    CTBlastnOptionsHandle(CRef<CBlastOptions> opt):CBlastAdvancedProteinOptionsHandle(opt) {}
     ~CTBlastnOptionsHandle() {}
 
     /************************ Scoring options ************************/

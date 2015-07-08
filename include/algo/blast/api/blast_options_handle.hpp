@@ -323,7 +323,7 @@ public:
         m_Opts->SetEffectiveSearchSpace(eff);
     }
     
-protected: 
+protected:
     /// Create Options Handle from Existing CBlastOptions Object
     CBlastOptionsHandle(CRef<CBlastOptions> opt);
 

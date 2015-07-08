@@ -56,6 +56,8 @@ public:
     
     /// Creates object with default options set
     CPSIBlastOptionsHandle(EAPILocality locality = CBlastOptions::eLocal);
+
+    CPSIBlastOptionsHandle(CRef<CBlastOptions> opt):CBlastAdvancedProteinOptionsHandle(opt) {}
     /// Destructor
     ~CPSIBlastOptionsHandle() {}
     
