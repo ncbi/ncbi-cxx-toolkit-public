@@ -196,13 +196,6 @@ public:
           m_Client(eVoid)
     {}
 
-    // TODO: This ctor is not used, investigate possible loss of functionality
-    CNetCache(TObjLoc& object_loc, SContext* context, bool ctx_client)
-        : CLocation(object_loc),
-          m_Context(context),
-          m_Client(ctx_client ? m_Context->icache_client : CNetICacheClient(eVoid))
-    {}
-
     bool Init();
     void SetLocator();
 
@@ -294,8 +287,7 @@ bool CRWNotFound::EofImpl()
 ERW_Result CRONetCache::ReadImpl(void* buf, size_t count, size_t* bytes_read)
 {
     size_t bytes_read_local = 0;
-    ERW_Result rw_res = g_ReadFromNetCache(m_Reader.get(),
-            reinterpret_cast<char*>(buf), count, &bytes_read_local);
+    ERW_Result rw_res = m_Reader->Read(buf, count, &bytes_read_local);
     m_BytesRead += bytes_read_local;
     if (bytes_read != NULL)
         *bytes_read = bytes_read_local;
