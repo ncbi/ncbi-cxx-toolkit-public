@@ -39,6 +39,17 @@
 
 // adds several debug checks
 #define __NC_MEMMAN_DEBUG 0
+#define __NC_MEMMAN_ALLPTR_COUNT 0
+// use per-thread MM stat or global static counters
+// memory allocation is a foundation: it starts before main is called, before threads are created
+// it seems using static counters makes more sense
+#define __NC_MEMMAN_PERTHREAD_STAT 0
+
+#if __NC_MEMMAN_PERTHREAD_STAT
+#define __NC_MEMMAN_PERTHREAD_STAT_ARG(x) x
+#else
+#define __NC_MEMMAN_PERTHREAD_STAT_ARG(x)
+#endif
 
 
 BEGIN_NCBI_SCOPE;
@@ -126,6 +137,21 @@ static Uint8 s_TotalSysMem = 0;
 static Int8 s_TotalPageCount = 0;
 static SMMStateStat s_StartState;
 
+#if !__NC_MEMMAN_PERTHREAD_STAT
+Uint8 s_UserBlAlloced[kMMCntBlockSizes];
+Uint8 s_UserBlFreed[kMMCntBlockSizes];
+Uint8 s_SysBlAlloced[kMMCntBlockSizes];
+Uint8 s_SysBlFreed[kMMCntBlockSizes];
+Uint8 s_BigAllocedCnt = 0;
+Uint8 s_BigAllocedSize = 0;
+Uint8 s_BigFreedCnt = 0;
+Uint8 s_BigFreedSize = 0;
+#endif
+
+#if __NC_MEMMAN_ALLPTR_COUNT
+static Int8  s_AllPtrCount[kMMCntBlockSizes] = {0};
+static Int8  s_AllSysPtrCount[kMMCntBlockSizes] = {0};
+#endif
 #if __NC_MEMMAN_DEBUG
 static Uint8 s_fdMemManStamp = 0xFEEDFEEDFEEDFEED;
 static const Uint8 s_MaxAllPools = 200;
@@ -156,7 +182,41 @@ static void s_VerifyUnavailable( void* ptr, Uint2 size_idx)
         }
     }
 }
+
+#if 0
+// need much more, 200K, 2M ?
+static const Uint8 s_MaxAllPtr = 20000;
+static void* s_AllPtr[s_MaxAllPtr*kMMCntBlockSizes];
 #endif
+
+static void s_GivePtr( void* ptr, Uint2 size_idx)
+{
+#if 0
+    void** p = s_AllPtr + (size_idx * s_MaxAllPtr);
+    for( Uint8 i = 0; i < s_MaxAllPtr; ++i, ++p) {
+        if (*p == nullptr) {
+            *p = ptr;
+            return;
+        }
+    }
+    abort();
+#endif
+}
+static void s_TakePtr( void* ptr, Uint2 size_idx)
+{
+#if 0
+    void** p = s_AllPtr + (size_idx * s_MaxAllPtr);
+    for( Uint8 i = 0; i < s_MaxAllPtr; ++i, ++p) {
+        if (*p == ptr) {
+            *p = nullptr;
+            return;
+        }
+    }
+    abort();
+#endif
+}
+
+#endif //__NC_MEMMAN_DEBUG
 
 static const Uint4 kMMPageDataSize = kMMAllocPageSize - sizeof(SMMPageHeader);
 static const Uint2 kMMMaxBlockSize = (kMMPageDataSize / 2) & ~7;
@@ -386,13 +446,20 @@ s_RemoveFromFreeList(SMMPageHeader* page, Uint2 size_idx)
 }
 
 static SMMPageHeader*
-s_AllocNewPage(Uint2 size_idx, SMMStat* stat)
+s_AllocNewPage(Uint2 size_idx, SMMStat* __NC_MEMMAN_PERTHREAD_STAT_ARG(stat))
 {
     SMMPageHeader* page = (SMMPageHeader*)s_SysAlloc(kMMAllocPageSize);
     new (page) SMMPageHeader();
     page->block_size = kMMBlockSizes[size_idx];
     page->cnt_free = kMMCntForSize[size_idx];
+#if __NC_MEMMAN_PERTHREAD_STAT
     AtomicAdd(stat->m_SysBlAlloced[size_idx], page->cnt_free);
+#else
+    AtomicAdd(s_SysBlAlloced[size_idx], page->cnt_free);
+#endif
+#if __NC_MEMMAN_ALLPTR_COUNT
+    AtomicAdd(s_AllSysPtrCount[size_idx], page->cnt_free);
+#endif
     page->next_page = page->prev_page = NULL;
 
     char* block = (char*)page + sizeof(SMMPageHeader);
@@ -482,7 +549,8 @@ s_FillFromFreePages(SMMBlocksPool* pool, Uint2 size_idx, SMMStat* stat)
 }
 
 static void
-s_ReleaseToFreePages(void** blocks, Uint2 cnt, Uint2 size_idx, SMMStat* stat)
+s_ReleaseToFreePages(void** blocks, Uint2 cnt, 
+    Uint2 size_idx, SMMStat* __NC_MEMMAN_PERTHREAD_STAT_ARG(stat))
 {
     for (Uint4 i = 0; i < cnt; ++i) {
         void* ptr = blocks[i];
@@ -503,7 +571,14 @@ s_ReleaseToFreePages(void** blocks, Uint2 cnt, Uint2 size_idx, SMMStat* stat)
         ++page->cnt_free;
         if (page->cnt_free == 1  ||  s_RemoveFromFreeList(page, size_idx)) {
             if (page->cnt_free == kMMCntForSize[size_idx]) {
+#if __NC_MEMMAN_PERTHREAD_STAT
                 AtomicAdd(stat->m_SysBlFreed[size_idx], page->cnt_free);
+#else
+                AtomicAdd(s_SysBlFreed[size_idx], page->cnt_free);
+#endif
+#if __NC_MEMMAN_ALLPTR_COUNT
+                AtomicSub(s_AllSysPtrCount[size_idx], page->cnt_free);
+#endif
                 s_SysFree(page, kMMAllocPageSize);
                 continue;
             }
@@ -663,12 +738,17 @@ s_CalcBigPageSize(size_t size)
 }
 
 static void*
-s_AllocBigPage(size_t size, SMMStat* stat)
+s_AllocBigPage(size_t size, SMMStat* __NC_MEMMAN_PERTHREAD_STAT_ARG(stat))
 {
     size = s_CalcBigPageSize(size);
     SMMPageHeader* page = (SMMPageHeader*)s_SysAlloc(size);
+#if __NC_MEMMAN_PERTHREAD_STAT
     AtomicAdd(stat->m_BigAllocedCnt, 1);
     AtomicAdd(stat->m_BigAllocedSize, size);
+#else
+    AtomicAdd(s_BigAllocedCnt, 1);
+    AtomicAdd(s_BigAllocedSize, size);
+#endif
     page->block_size = size - sizeof(SMMPageHeader);
 
 #if __NC_MEMMAN_DEBUG
@@ -681,12 +761,17 @@ s_AllocBigPage(size_t size, SMMStat* stat)
 }
 
 static void
-s_DeallocBigPage(SMMPageHeader* page, SMMStat* stat)
+s_DeallocBigPage(SMMPageHeader* page, SMMStat* __NC_MEMMAN_PERTHREAD_STAT_ARG(stat))
 {
     size_t size = page->block_size + sizeof(SMMPageHeader);
     s_SysFree(page, size);
+#if __NC_MEMMAN_PERTHREAD_STAT
     AtomicAdd(stat->m_BigFreedCnt, 1);
     AtomicAdd(stat->m_BigFreedSize, size);
+#else
+    AtomicAdd(s_BigFreedCnt, 1);
+    AtomicAdd(s_BigFreedSize, size);
+#endif
 }
 
 static inline Uint2
@@ -725,13 +810,21 @@ s_AllocMemory(size_t size)
     void* ptr = nullptr;
     if (size <= kMMMaxBlockSize) {
         Uint2 size_idx = s_CalcSizeIndex(size);
+#if __NC_MEMMAN_PERTHREAD_STAT
         AtomicAdd(stat->m_UserBlAlloced[size_idx], 1);
+#else
+        AtomicAdd(s_UserBlAlloced[size_idx], 1);
+#endif
         if (pool_set) {
             ptr = s_GetFromPool(&pool_set->pools[size_idx], stat);
         } else {
             ptr = s_GetFromGlobal(size_idx, stat);
         }
+#if __NC_MEMMAN_ALLPTR_COUNT
+        AtomicAdd(s_AllPtrCount[size_idx],1);
+#endif
 #if __NC_MEMMAN_DEBUG
+        s_GivePtr(ptr,size_idx);
         if (s_FreePages[size_idx].lists[0].list_head.block_size != 0 &&
             s_FreePages[size_idx].lists[0].list_head.block_size !=  kMMBlockSizes[size_idx]) {
             abort();
@@ -769,8 +862,16 @@ s_DeallocMemory(void* ptr)
     SMMPageHeader* page = s_GetPageByPtr(ptr);
     if (page->block_size <= kMMMaxBlockSize) {
         Uint2 size_idx = s_CalcSizeIndex(page->block_size);
+#if __NC_MEMMAN_PERTHREAD_STAT
         AtomicAdd(stat->m_UserBlFreed[size_idx], 1);
+#else
+        AtomicAdd(s_UserBlFreed[size_idx], 1);
+#endif
+#if __NC_MEMMAN_ALLPTR_COUNT
+        AtomicSub(s_AllPtrCount[size_idx],1);
+#endif
 #if __NC_MEMMAN_DEBUG
+        s_TakePtr(ptr,size_idx);
         if (memcmp(ptr, &s_fdMemManStamp, sizeof(s_fdMemManStamp)) == 0) {
             abort();
         }
@@ -916,6 +1017,7 @@ void
 SMMStat::InitStartState(void)
 {
     if (s_StartState.m_TotalSys == 0) {
+#if __NC_MEMMAN_PERTHREAD_STAT
         Uint8 total_data = 0;
         SMMStat* main_stat = &s_MainPoolsSet.stat;
         for (Uint1 i = 0; i < kMMCntBlockSizes; ++i) {
@@ -932,7 +1034,21 @@ SMMStat::InitStartState(void)
         total_data += size;
         s_StartState.m_TotalData = total_data;
         s_StartState.m_TotalSys = s_TotalSysMem;
-        main_stat->ClearStats();
+#else
+        Uint8 total_data = 0;
+        for (Uint1 i = 0; i < kMMCntBlockSizes; ++i) {
+            Int8 cnt = s_UserBlAlloced[i] - s_UserBlFreed[i];
+            s_StartState.m_UserBlocks[i] = cnt;
+            total_data += cnt * kMMBlockSizes[i];
+            s_StartState.m_SysBlocks[i] = s_SysBlAlloced[i] - s_SysBlFreed[i];
+        }
+        s_StartState.m_BigBlocksCnt = s_BigAllocedCnt - s_BigFreedCnt;
+        Int8 size = s_BigAllocedSize - s_BigFreedSize;
+        s_StartState.m_BigBlocksSize = size;
+        total_data += size;
+        s_StartState.m_TotalData = total_data;
+        s_StartState.m_TotalSys = s_TotalSysMem;
+#endif
     }
 
     m_EndState = m_StartState = s_StartState;
@@ -954,29 +1070,33 @@ void
 SMMStat::CopyEndState(SMMStat* src_stat)
 {
     m_EndState = src_stat->m_EndState;
-
-    for (size_t i = 0; i < kMMCntBlockSizes; ++i) {
-        if (m_EndState.m_UserBlocks[i] < 0) {
-            m_EndState.m_UserBlocks[i] = 0;
-        }
-    }
 }
 
 void
 SMMStat::SaveEndState(void)
 {
+#if __NC_MEMMAN_PERTHREAD_STAT
     Uint8 total_data = 0;
     for (size_t i = 0; i < kMMCntBlockSizes; ++i) {
-        Int8 cnt = (m_StartState.m_UserBlocks[i]
-                        + m_UserBlAlloced[i]) - m_UserBlFreed[i];
+        Int8 cnt = m_UserBlAlloced[i] - m_UserBlFreed[i];
         m_EndState.m_UserBlocks[i] = cnt;
         total_data += cnt * kMMBlockSizes[i];
-        m_EndState.m_SysBlocks[i] = (m_StartState.m_SysBlocks[i]
-                                      + m_SysBlAlloced[i]) - m_SysBlFreed[i];
+        m_EndState.m_SysBlocks[i] = m_SysBlAlloced[i] - m_SysBlFreed[i];
     }
-    m_EndState.m_BigBlocksCnt = (m_StartState.m_BigBlocksCnt
-                                 + m_BigAllocedCnt) - m_BigFreedCnt;
-    Int8 size = (m_StartState.m_BigBlocksSize + m_BigAllocedSize) - m_BigFreedSize;
+    m_EndState.m_BigBlocksCnt = m_BigAllocedCnt - m_BigFreedCnt;
+    Int8 size = m_BigAllocedSize - m_BigFreedSize;
+#else
+    Uint8 total_data = 0;
+    for (size_t i = 0; i < kMMCntBlockSizes; ++i) {
+        Int8 cnt = s_UserBlAlloced[i] - s_UserBlFreed[i];
+        m_EndState.m_UserBlocks[i] = cnt;
+        total_data += cnt * kMMBlockSizes[i];
+        m_EndState.m_SysBlocks[i] = s_SysBlAlloced[i] - s_SysBlFreed[i];
+    }
+    m_EndState.m_BigBlocksCnt = s_BigAllocedCnt - s_BigFreedCnt;
+    Int8 size = s_BigAllocedSize - s_BigFreedSize;
+#endif
+
     m_EndState.m_BigBlocksSize = size;
     total_data += size;
     m_EndState.m_TotalData = total_data;
@@ -999,6 +1119,7 @@ SMMStat::ClearStats(void)
 void
 SMMStat::AddStats(SMMStat* src_stat)
 {
+#if __NC_MEMMAN_PERTHREAD_STAT
     for (Uint1 i = 0; i < kMMCntBlockSizes; ++i) {
         AtomicAdd(m_UserBlAlloced[i], src_stat->m_UserBlAlloced[i]);
         AtomicAdd(m_UserBlFreed[i],   src_stat->m_UserBlFreed[i]);
@@ -1009,6 +1130,18 @@ SMMStat::AddStats(SMMStat* src_stat)
     AtomicAdd(m_BigAllocedSize, src_stat->m_BigAllocedSize);
     AtomicAdd(m_BigFreedCnt,    src_stat->m_BigFreedCnt);
     AtomicAdd(m_BigFreedSize,   src_stat->m_BigFreedSize);
+#else
+    for (Uint1 i = 0; i < kMMCntBlockSizes; ++i) {
+        m_UserBlAlloced[i] = s_UserBlAlloced[i];
+        m_UserBlFreed[i]   = s_UserBlFreed[i];
+        m_SysBlAlloced[i]  = s_SysBlAlloced[i];
+        m_SysBlFreed[i]    = s_SysBlFreed[i];
+    }
+    m_BigAllocedCnt  = s_BigAllocedCnt;
+    m_BigAllocedSize = s_BigAllocedSize;
+    m_BigFreedCnt    = s_BigFreedCnt;
+    m_BigFreedSize   = s_BigFreedSize;
+#endif
     m_TotalSysMem.AddValues(src_stat->m_TotalSysMem);
     m_TotalDataMem.AddValues(src_stat->m_TotalDataMem);
 }
@@ -1043,17 +1176,17 @@ SMMStat::PrintToLogs(CRequestContext* ctx, CSrvPrintProxy& proxy)
 
 static void
 s_PrintSizeDiff(CSrvPrintProxy& proxy, Uint2 size_idx,
-                Uint8 was_blocks, Uint8 is_blocks)
+                Int8 was_blocks, Int8 is_blocks)
 {
     if (was_blocks == is_blocks) {
         proxy << "0";
     }
     else if (is_blocks > was_blocks) {
-        Uint8 diff = is_blocks - was_blocks;
+        Int8 diff = is_blocks - was_blocks;
         proxy << "+" << g_ToSizeStr(diff * kMMBlockSizes[size_idx]);
     }
     else {
-        Uint8 diff = was_blocks - is_blocks;
+        Int8 diff = was_blocks - is_blocks;
         proxy << "-" << g_ToSizeStr(diff * kMMBlockSizes[size_idx]);
     }
 }
@@ -1193,6 +1326,26 @@ void SMMStat::PrintState(CSrvSocketTask& task)
     task.WriteText(eol).WriteText("big_blocks_size" ).WriteText(iss)
                                      .WriteText( NStr::UInt8ToString_DataSize( m_EndState.m_BigBlocksSize)).WriteText(qt);
     task.WriteText(eol).WriteText("mmap_page_cnt").WriteText(is).WriteNumber(s_TotalPageCount);
+#if __NC_MEMMAN_ALLPTR_COUNT
+    task.WriteText(eol).WriteText("AllPtrCount").WriteText(is);
+    task.WriteText("[");
+    for (Int8 i=0; i < kMMCntBlockSizes; ++i) {
+        if (i != 0) {
+            task.WriteText(",");
+        }
+        task.WriteNumber( s_AllPtrCount[i]);
+    }
+    task.WriteText("]");
+    task.WriteText(eol).WriteText("AllSysPtrCount").WriteText(is);
+    task.WriteText("[");
+    for (Int8 i=0; i < kMMCntBlockSizes; ++i) {
+        if (i != 0) {
+            task.WriteText(",");
+        }
+        task.WriteNumber( s_AllSysPtrCount[i]);
+    }
+    task.WriteText("]");
+#endif
 }
 
 END_NCBI_SCOPE;

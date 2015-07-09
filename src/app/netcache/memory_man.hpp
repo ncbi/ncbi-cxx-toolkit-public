@@ -66,7 +66,7 @@ struct SMMStateStat
 struct SMMStat
 {
     SMMStat(void) {
-        ClearStats();
+//        ClearStats();
     }
 
     void InitStartState(void);
