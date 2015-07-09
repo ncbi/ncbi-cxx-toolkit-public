@@ -669,7 +669,7 @@ EUTILS_LIBS = eutils egquery elink epost esearch espell esummary linkout \
 OBJREAD_LIBS = xobjread variation creaders submit
 
 # formatting code
-XFORMAT_LIBS = xformat xcleanup gbseq submit mlacli mla medlars pubmed valid
+XFORMAT_LIBS = xformat xcleanup gbseq submit mlacli mla medlars pubmed valid taxon3
 
 # object editing library
 OBJEDIT_LIBS = xobjedit $(OBJREAD_LIBS) taxon3
