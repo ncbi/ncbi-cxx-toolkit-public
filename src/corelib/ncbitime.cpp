@@ -388,7 +388,7 @@ CTimeFormat CTimeFormat::GetPredefined(EPredefined fmt, TFlags flags)
         {"Y-M-D",       "$Y-$M-$D"},
         {"Y-M-DTh:m",   "$Y-$M-$DT$h:$m"},
         {"Y-M-DTh:m:s", "$Y-$M-$DT$h:$m:$s"},
-        {"Y-M-DTh:m:g", "$Y-$M-$DT$h:$m:$g"},
+        {"Y-M-DTh:m:G", "$Y-$M-$DT$h:$m:$G"},
     };
     int fmt_type = (flags & fFormat_Ncbi) ? 1 : 0;
     return CTimeFormat(s_Predefined[(int)fmt][(int)fmt_type], flags);
