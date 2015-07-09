@@ -85,6 +85,10 @@ class CNSTClient
         { m_Ticket = ticket; }
         void SetService(const string &  service)
         { m_Service = service; }
+        void SetProtocolVersion(const string &  protocol_version)
+        { m_ProtocolVersion = protocol_version; }
+        void SetProtocolVersionProvided(bool val )
+        { m_ProtocolVersionProvided = val; }
         void SetMetadataOption(EMetadataOption  val)
         { m_MetadataOption = val; }
         void SetPeerAddress(unsigned int  peer_address)
@@ -117,6 +121,8 @@ class CNSTClient
         string          m_Ticket;         // Optional auth ticket
         string          m_Service;        // Optional service
         EMetadataOption m_MetadataOption; // Metadata option after HELLO
+        string          m_ProtocolVersion;
+        bool            m_ProtocolVersionProvided;
 
         unsigned int    m_Type;           // bit mask of ENSTClientType
         unsigned int    m_Addr;           // Client peer address
@@ -152,6 +158,7 @@ class CNSTClientRegistry
                     const string &  applications,
                     const string &  ticket,
                     const string &  service,
+                    const string &  protocol_version,
                     EMetadataOption metadataOption,
                     unsigned int    peer_address);
         void  Touch(const string &  client);

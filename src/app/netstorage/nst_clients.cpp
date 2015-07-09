@@ -42,6 +42,7 @@ USING_NCBI_SCOPE;
 
 CNSTClient::CNSTClient() :
     m_MetadataOption(eMetadataUnknown),
+    m_ProtocolVersionProvided(false),
     m_Type(0),
     m_Addr(0),
     m_RegistrationTime(CNSTPreciseTime::Current()),
@@ -72,6 +73,8 @@ CJsonNode  CNSTClient::Serialize(void) const
 
     client.SetString("Application", m_Application);
     client.SetString("Service", m_Service);
+    client.SetString("ProtocolVersion", m_ProtocolVersion);
+    client.SetBoolean("ProtocolVersionProvided", m_ProtocolVersionProvided);
     client.SetBoolean("TicketProvided", !m_Ticket.empty());
     client.SetString("Type", x_TypeAsString());
     client.SetString("PeerAddress", CSocketAPI::gethostbyaddr(m_Addr));
@@ -135,6 +138,7 @@ void  CNSTClientRegistry::Touch(const string &  client,
                                 const string &  applications,
                                 const string &  ticket,
                                 const string &  service,
+                                const string &  protocol_version,
                                 EMetadataOption metadata_option,
                                 unsigned int    peer_address)
 {
@@ -152,6 +156,14 @@ void  CNSTClientRegistry::Touch(const string &  client,
         found->second.SetService(service);
         found->second.SetPeerAddress(peer_address);
         found->second.SetMetadataOption(metadata_option);
+
+        if (protocol_version.empty()) {
+            found->second.SetProtocolVersion("1.0.0");
+            found->second.SetProtocolVersionProvided(false);
+        } else {
+            found->second.SetProtocolVersion(protocol_version);
+            found->second.SetProtocolVersionProvided(true);
+        }
         return;
     }
 
@@ -162,6 +174,14 @@ void  CNSTClientRegistry::Touch(const string &  client,
     new_client.SetPeerAddress(peer_address);
     new_client.SetMetadataOption(metadata_option);
     m_Clients[client] = new_client;
+
+    if (protocol_version.empty()) {
+        new_client.SetProtocolVersion("1.0.0");
+        new_client.SetProtocolVersionProvided(false);
+    } else {
+        new_client.SetProtocolVersion(protocol_version);
+        new_client.SetProtocolVersionProvided(true);
+    }
 }
 
 

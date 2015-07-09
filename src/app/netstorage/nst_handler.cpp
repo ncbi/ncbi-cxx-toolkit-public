@@ -992,8 +992,9 @@ CNetStorageHandler::x_ProcessHello(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
 {
-    string      application;    // Optional field
-    string      ticket;         // Optional field
+    string      application;        // Optional field
+    string      ticket;             // Optional field
+    string      protocol_version;   // Optional field
 
     if (!message.HasKey("Client")) {
         NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
@@ -1011,6 +1012,8 @@ CNetStorageHandler::x_ProcessHello(
         application = message.GetString("Application");
     if (message.HasKey("Ticket"))
         ticket = message.GetString("Ticket");
+    if (message.HasKey("ProtocolVersion"))
+        protocol_version = message.GetString("ProtocolVersion");
     if (message.HasKey("Service"))
         m_Service = NStr::TruncateSpaces(message.GetString("Service"));
     else
@@ -1019,8 +1022,8 @@ CNetStorageHandler::x_ProcessHello(
 
     // Memorize the client in the registry
     m_Server->GetClientRegistry().Touch(m_Client, application,
-                           ticket, m_Service, m_MetadataOption,
-                           x_GetPeerAddress());
+                           ticket, m_Service, protocol_version,
+                           m_MetadataOption, x_GetPeerAddress());
 
     // Send success response
     x_SendSyncMessage(CreateResponseMessage(common_args.m_SerialNumber));
