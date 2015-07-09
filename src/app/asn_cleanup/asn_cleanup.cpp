@@ -96,7 +96,9 @@ private:
     int x_SeqIdToGiNumber( const string& seq_id, const string database );
 
     void x_FeatureOptionsValid(const string& opt);
-    void x_ProcessFeatureOptions(const string& opt, CSeq_entry_Handle seh);
+    void x_KOptionsValid(const string& opt);
+    bool x_ProcessFeatureOptions(const string& opt, CSeq_entry_Handle seh);
+    bool x_BasicAndExtended(CSeq_entry_Handle entry, const string& label, bool do_basic = true, bool do_extended = false, Uint4 options = 0);
     
     // data
     CRef<CObjectManager>        m_Objmgr;       // Object Manager
@@ -162,6 +164,12 @@ void CCleanupApp::Init(void)
         arg_desc->AddFlag("html", "Produce HTML output");
     }}
 
+    // normal cleanup options (will replace -nocleanup and -basic)
+    {{
+        arg_desc->AddOptionalKey("K", "Cleanup", "Systemic Cleaning Options",
+            CArgDescriptions::eString);
+    }}
+
     // extra cleanup options
     {{
         arg_desc->AddOptionalKey("F", "Feature", "Feature Cleaning Options",
@@ -210,6 +218,27 @@ void CCleanupApp::x_FeatureOptionsValid(const string& opt)
 }
 
 
+void CCleanupApp::x_KOptionsValid(const string& opt)
+{
+    if (NStr::IsBlank(opt)){
+        return;
+    }
+    string unrecognized = "";
+    string::const_iterator s = opt.begin();
+    while (s != opt.end()) {
+        if (!isspace(*s)) {
+            if (*s != 'b' && *s != 's') {
+                unrecognized += *s;
+            }
+        }
+        s++;
+    }
+    if (unrecognized.length() > 0) {
+        NCBI_THROW(CFlatException, eInternal, "Invalid -K arguments:" + unrecognized);
+    }
+}
+
+
 int CCleanupApp::Run(void)
 {
 	// initialize conn library
@@ -220,6 +249,9 @@ int CCleanupApp::Run(void)
     // flag validation
     if (args["F"]) {
         x_FeatureOptionsValid(args["F"].AsString());
+    }
+    if (args["K"]) {
+        x_KOptionsValid(args["K"].AsString());
     }
 
     // create object manager
@@ -557,15 +589,73 @@ bool CCleanupApp::HandleSeqID( const string& seq_id )
     return true;
 }
 
-void CCleanupApp::x_ProcessFeatureOptions(const string& opt, CSeq_entry_Handle seh)
+bool CCleanupApp::x_ProcessFeatureOptions(const string& opt, CSeq_entry_Handle seh)
 {
     if (NStr::IsBlank(opt)) {
-        return;
+        return false;
     }
+    bool any_changes = false;
     if (NStr::Find(opt, "r") != string::npos) {
-        CCleanup::RemoveUnnecessaryGeneXrefs(seh);
+        any_changes |= CCleanup::RemoveUnnecessaryGeneXrefs(seh);
     }
+    return any_changes;
 }
+
+bool CCleanupApp::x_BasicAndExtended(CSeq_entry_Handle entry, const string& label, 
+                                     bool do_basic, bool do_extended, Uint4 options)
+{
+    if (!do_basic && !do_extended) {
+        return false;
+    }
+
+    bool any_changes = false;
+    CCleanup cleanup;
+    cleanup.SetScope(&(entry.GetScope()));
+
+    if (do_basic) {
+        // perform BasicCleanup
+        try {
+            CConstRef<CCleanupChange> changes = cleanup.BasicCleanup(entry, options);
+            vector<string> changes_str = changes->GetAllDescriptions();
+            if (changes_str.size() == 0) {
+                printf("No changes from BasicCleanup\n");
+            }
+            else {
+                printf("Changes from BasicCleanup:\n");
+                ITERATE(vector<string>, vit, changes_str) {
+                    printf("%s\n", (*vit).c_str());
+                }
+                any_changes = true;
+            }
+        }
+        catch (CException& e) {
+            LOG_POST(Error << "error in basic cleanup: " << e.GetMsg() << label);
+        }
+    }
+
+    if (do_extended) {
+        // perform ExtendedCleanup
+        try {
+            CConstRef<CCleanupChange> changes = cleanup.ExtendedCleanup(entry, options);
+            vector<string> changes_str = changes->GetAllDescriptions();
+            if (changes_str.size() == 0) {
+                printf("No changes from ExtendedCleanup\n");
+            }
+            else {
+                printf("Changes from ExtendedCleanup:\n");
+                ITERATE(vector<string>, vit, changes_str) {
+                    printf("%s\n", (*vit).c_str());
+                }
+                any_changes = true;
+            }
+        }
+        catch (CException& e) {
+            LOG_POST(Error << "error in extended cleanup: " << e.GetMsg() << label);
+        }
+    }
+    return any_changes;
+}
+
 
 bool CCleanupApp::HandleSeqEntry(CRef<CSeq_entry>& se)
 {
@@ -608,60 +698,34 @@ bool CCleanupApp::HandleSeqEntry(CRef<CSeq_entry>& se)
     bool any_changes = false;
 
     if (args["F"]) {
-        x_ProcessFeatureOptions(args["F"].AsString(), entry);
+        any_changes |= x_ProcessFeatureOptions(args["F"].AsString(), entry);
     }
 
-	if (args["basic"] || !args["nocleanup"]) {
-        CCleanup cleanup;
-        cleanup.SetScope(scope);
-
-        Uint4 options = 0;
-        if (args["noobj"]) {
-            options = CCleanup::eClean_NoNcbiUserObjects;
+    bool do_basic = false;
+    bool do_extended = false;
+    if (args["K"]) {
+        if (NStr::Find(args["K"].AsString(), "b")) {
+            do_basic = true;
         }
-
-		if (args["basic"]) {
-			// perform BasicCleanup
-			try {
-				CConstRef<CCleanupChange> changes = cleanup.BasicCleanup (entry, options);
-				vector<string> changes_str = changes->GetAllDescriptions();
-				if (changes_str.size() == 0) {
-					printf ("No changes from BasicCleanup\n");
-				} else {
-					printf ("Changes from BasicCleanup:\n");
-				    ITERATE(vector<string>, vit, changes_str) {
-					    printf ("%s\n", (*vit).c_str());
-				    }
-				    any_changes = true;
-				}
-			}
-			catch (CException& e) {
-				LOG_POST(Error << "error in basic cleanup: " << e.GetMsg() << label);
-				file_name = "last_error.sqn";
-			}
-		}
-    
-		if (!args["nocleanup"]) {
-			// perform ExtendedCleanup
-			try {
-				CConstRef<CCleanupChange> changes = cleanup.ExtendedCleanup (entry, options);
-				vector<string> changes_str = changes->GetAllDescriptions();
-				if (changes_str.size() == 0) {
-				    printf ("No changes from ExtendedCleanup\n");
-				} else {
-					printf ("Changes from ExtendedCleanup:\n");
-				    ITERATE(vector<string>, vit, changes_str) {
-					    printf ("%s\n", (*vit).c_str());
-				    }
-				    any_changes = true;
-				}
-			}
-			catch (CException& e) {
-				LOG_POST(Error << "error in extended cleanup: " << e.GetMsg() << label);
-				file_name = "last_error.sqn";
-			}
-		}
+        if (NStr::Find(args["K"].AsString(), "s")) {
+            do_basic = true;
+            do_extended = true;
+        }
+    } else {
+        if (args["basic"]) {
+            do_basic = true;
+        }
+        if (!args["nocleanup"]) {
+            do_extended = true;
+        }
     }
+
+    Uint4 options = 0;
+    if (args["noobj"]) {
+        options = CCleanup::eClean_NoNcbiUserObjects;
+    }
+
+    any_changes |= x_BasicAndExtended(entry, label, do_basic, do_extended, options);
 
     auto_ptr<CObjectOStream> out(!args["o"]? 0:
                                  CObjectOStream::Open(outFormat, file_name,
@@ -671,12 +735,6 @@ bool CCleanupApp::HandleSeqEntry(CRef<CSeq_entry>& se)
 
     fflush(NULL);
 
-    if (any_changes && args["debug"]) {
-        string diff_cmd = "diff before.sqn " + file_name;
-        if (!system (diff_cmd.c_str())) {
-            printf("No differences were found.\n");
-        }
-    }
     printf ("generated asn.1\n");
     return true;
 }
