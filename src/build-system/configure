@@ -668,6 +668,7 @@ CXX
 CXXFLAGS
 ac_ct_CXX
 MT_SFX
+DPKG_ARCHITECTURE
 DLL
 DLL_LIB_SETTING
 IF_WITH_DLL
@@ -7580,6 +7581,52 @@ case "$host_os:$ncbi_cv_prog_cc_wl_rpath" in
         ;;
 esac
 
+# Extract the first word of "dpkg-architecture", so it can be a program name with args.
+set dummy dpkg-architecture; ac_word=$2
+{ echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
+if test "${ac_cv_path_DPKG_ARCHITECTURE+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $DPKG_ARCHITECTURE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_DPKG_ARCHITECTURE="$DPKG_ARCHITECTURE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_DPKG_ARCHITECTURE="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+DPKG_ARCHITECTURE=$ac_cv_path_DPKG_ARCHITECTURE
+if test -n "$DPKG_ARCHITECTURE"; then
+  { echo "$as_me:$LINENO: result: $DPKG_ARCHITECTURE" >&5
+echo "${ECHO_T}$DPKG_ARCHITECTURE" >&6; }
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+if test -x "$DPKG_ARCHITECTURE"; then
+   multiarch=`$DPKG_ARCHITECTURE -qDEB_HOST_MULTIARCH`
+else
+   multiarch=`echo $host | sed -e 's/-unknown-/-/; s/^i[3-9]86-/^i\[3-9\]86/'`
+fi
+
 case "$compiler:$compiler_version:$with_bin_release" in
   GCC:*:yes )
     libstdcxx=`$CXX $LDFLAGS -print-file-name=libstdc++.a`
@@ -7608,7 +7655,8 @@ echo "$as_me: WARNING: Unable to find static libstdc++ requested by --with-bin-r
         dir=`dirname "$path"`
         abs_dir=`cd "$dir" && pwd`
         case "$dir:$abs_dir" in
-            *:/lib | *:/usr/lib | *:/usr/lib32 | *:/usr/lib64 )
+            *:/lib | *:/usr/lib | *:/usr/lib32 | *:/usr/lib64 \
+            | *:/usr/lib/$multiarch )
                # no rpath needed
                break
                ;;
@@ -25499,7 +25547,7 @@ case "$signature_compiler:$ac_cv_have_decl__LIBCPP_VERSION" in
 esac
 
 usr_lib='[/usr]*/lib/*[amdsprcv]*[23469]*'
-no_usr_lib="s,-L$usr_lib ,,g;"
+no_usr_lib="s,-L$usr_lib ,,g; s,-L/usr/lib/$multiarch ,,g"
 
 if test "$with_z" != "no"; then
     case "$with_z" in
@@ -25518,6 +25566,11 @@ if test "$with_z" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $Z_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -25526,6 +25579,11 @@ if test "$with_z" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $Z_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -25539,6 +25597,11 @@ if test "$with_z" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $Z_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -25547,6 +25610,11 @@ if test "$with_z" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $Z_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -25685,6 +25753,11 @@ if test "$with_bz2" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $BZ2_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -25693,6 +25766,11 @@ if test "$with_bz2" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $BZ2_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -25706,6 +25784,11 @@ if test "$with_bz2" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $BZ2_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -25714,6 +25797,11 @@ if test "$with_bz2" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $BZ2_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -25873,6 +25961,11 @@ if test "$with_lzo" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $LZO_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -25881,6 +25974,11 @@ if test "$with_lzo" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $LZO_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -25894,6 +25992,11 @@ if test "$with_lzo" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $LZO_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -25902,6 +26005,11 @@ if test "$with_lzo" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $LZO_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -26032,6 +26140,11 @@ if test "$with_pcre" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $PCRE_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -26040,6 +26153,11 @@ if test "$with_pcre" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $PCRE_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -26053,6 +26171,11 @@ if test "$with_pcre" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $PCRE_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -26061,6 +26184,11 @@ if test "$with_pcre" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $PCRE_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -26268,6 +26396,10 @@ if test "x$with_gcrypt" != xno; then
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in `$LIBGCRYPT_CONFIG --exec-prefix | sed -e "s,^,-L,; s,$,/lib,;"`; do
        case "$x" in
+          -L/lib | -L/usr/lib | -L/usr/lib32 | -L/usr/lib64 \
+          | -L/usr/lib/$multiarch )
+             continue
+             ;;
           -L*)
              GCRYPT_LIBPATH="$GCRYPT_LIBPATH${ncbi_rp_L_sep}$x"
              x=`echo $x | sed -e "s/^-L//; $ncbi_rpath_sed"`
@@ -26307,6 +26439,11 @@ if test "$with_gcrypt" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $GCRYPT_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -26315,6 +26452,11 @@ if test "$with_gcrypt" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $GCRYPT_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -26328,6 +26470,11 @@ if test "$with_gcrypt" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $GCRYPT_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -26336,6 +26483,11 @@ if test "$with_gcrypt" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $GCRYPT_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -26457,6 +26609,10 @@ if test "x$with_gcrypt" != xno -a -n "$GCRYPT_CONFIG_LIBS"; then
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in `echo $GCRYPT_CONFIG_LIBS | sed -e "$no_usr_lib"`; do
        case "$x" in
+          -L/lib | -L/usr/lib | -L/usr/lib32 | -L/usr/lib64 \
+          | -L/usr/lib/$multiarch )
+             continue
+             ;;
           -L*)
              GCRYPT_LIBS="$GCRYPT_LIBS${ncbi_rp_L_sep}$x"
              x=`echo $x | sed -e "s/^-L//; $ncbi_rpath_sed"`
@@ -26561,6 +26717,10 @@ if test "x$with_gnutls" != xno; then
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in `$LIBGNUTLS_CONFIG --libs-only-L | sed -e ""`; do
        case "$x" in
+          -L/lib | -L/usr/lib | -L/usr/lib32 | -L/usr/lib64 \
+          | -L/usr/lib/$multiarch )
+             continue
+             ;;
           -L*)
              GNUTLS_LIBPATH="$GNUTLS_LIBPATH${ncbi_rp_L_sep}$x"
              x=`echo $x | sed -e "s/^-L//; $ncbi_rpath_sed"`
@@ -26592,6 +26752,10 @@ if test "x$with_gnutls" != xno; then
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in `$LIBGNUTLS_CONFIG --exec-prefix | sed -e "s,^,-L,; s,$,/lib,;"`; do
        case "$x" in
+          -L/lib | -L/usr/lib | -L/usr/lib32 | -L/usr/lib64 \
+          | -L/usr/lib/$multiarch )
+             continue
+             ;;
           -L*)
              GNUTLS_LIBPATH="$GNUTLS_LIBPATH${ncbi_rp_L_sep}$x"
              x=`echo $x | sed -e "s/^-L//; $ncbi_rpath_sed"`
@@ -26635,6 +26799,11 @@ if test "$with_gnutls" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $GNUTLS_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -26643,6 +26812,11 @@ if test "$with_gnutls" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $GNUTLS_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -26656,6 +26830,11 @@ if test "$with_gnutls" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $GNUTLS_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -26664,6 +26843,11 @@ if test "$with_gnutls" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $GNUTLS_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -26782,6 +26966,10 @@ if test "x$with_gnutls" != xno -a -n "$GNUTLS_CONFIG_LIBS"; then
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in `echo $GNUTLS_CONFIG_LIBS | sed -e "$no_usr_lib"`; do
        case "$x" in
+          -L/lib | -L/usr/lib | -L/usr/lib32 | -L/usr/lib64 \
+          | -L/usr/lib/$multiarch )
+             continue
+             ;;
           -L*)
              GNUTLS_LIBS="$GNUTLS_LIBS${ncbi_rp_L_sep}$x"
              x=`echo $x | sed -e "s/^-L//; $ncbi_rpath_sed"`
@@ -26829,6 +27017,11 @@ if test "$with_openssl" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $OPENSSL_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -26837,6 +27030,11 @@ if test "$with_openssl" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $OPENSSL_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -26850,6 +27048,11 @@ if test "$with_openssl" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $OPENSSL_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -26858,6 +27061,11 @@ if test "$with_openssl" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $OPENSSL_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -27062,6 +27270,11 @@ if test "$with_krb5" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $KRB5_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -27070,6 +27283,11 @@ if test "$with_krb5" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $KRB5_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -27083,6 +27301,11 @@ if test "$with_krb5" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $KRB5_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -27091,6 +27314,11 @@ if test "$with_krb5" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $KRB5_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -27217,6 +27445,10 @@ if test "x$with_krb5" != xno; then
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in `echo $KRB5_CONFIG_LIBS | sed -e "$no_usr_lib"`; do
        case "$x" in
+          -L/lib | -L/usr/lib | -L/usr/lib32 | -L/usr/lib64 \
+          | -L/usr/lib/$multiarch )
+             continue
+             ;;
           -L*)
              KRB5_LIBS="$KRB5_LIBS${ncbi_rp_L_sep}$x"
              x=`echo $x | sed -e "s/^-L//; $ncbi_rpath_sed"`
@@ -27253,6 +27485,11 @@ if test "$with_curl" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $CURL_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -27261,6 +27498,11 @@ if test "$with_curl" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $CURL_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -27274,6 +27516,11 @@ if test "$with_curl" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $CURL_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -27282,6 +27529,11 @@ if test "$with_curl" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $CURL_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -27604,6 +27856,11 @@ echo "${ECHO_T}$ncbi_cv_lib_sybase_r" >&6; }
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $SYBASE_LIBPATH; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -27612,6 +27869,11 @@ echo "${ECHO_T}$ncbi_cv_lib_sybase_r" >&6; }
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $SYBASE_LIBPATH; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -27626,6 +27888,11 @@ echo "${ECHO_T}$ncbi_cv_lib_sybase_r" >&6; }
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $SYBASE_LCL_LIBPATH $SYBASE_LIBPATH; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -27634,6 +27901,11 @@ echo "${ECHO_T}$ncbi_cv_lib_sybase_r" >&6; }
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $SYBASE_LCL_LIBPATH $SYBASE_LIBPATH; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -27893,6 +28165,11 @@ if test "$with_ftds" != "no" ; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $FTDS_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -27901,6 +28178,11 @@ if test "$with_ftds" != "no" ; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $FTDS_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -28124,6 +28406,10 @@ fi
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in `$mysql_config --libs${mt_sfx:+_r} | sed -e "s/'//g; $no_usr_lib"`; do
        case "$x" in
+          -L/lib | -L/usr/lib | -L/usr/lib32 | -L/usr/lib64 \
+          | -L/usr/lib/$multiarch )
+             continue
+             ;;
           -L*)
              MYSQL_LIBS="$MYSQL_LIBS${ncbi_rp_L_sep}$x"
              x=`echo $x | sed -e "s/^-L//; $ncbi_rpath_sed"`
@@ -28305,6 +28591,11 @@ if test "$with_bdb" != "no" ; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in ${BERKELEYDB_LIBPATH}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -28313,6 +28604,11 @@ if test "$with_bdb" != "no" ; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in ${BERKELEYDB_LIBPATH}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -28472,6 +28768,11 @@ _ACEOF
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in ${BERKELEYDB_LIBPATH}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -28480,6 +28781,11 @@ _ACEOF
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in ${BERKELEYDB_LIBPATH}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -28596,6 +28902,11 @@ case "$ODBC_PATH" in
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in ${ODBC_LIBPATH}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -28604,6 +28915,11 @@ case "$ODBC_PATH" in
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in ${ODBC_LIBPATH}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -29119,6 +29435,11 @@ fi
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $PYTHON_LIBPATH; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -29127,6 +29448,11 @@ fi
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $PYTHON_LIBPATH; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -29283,6 +29609,11 @@ fi
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $PYTHON23_LIBPATH; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -29291,6 +29622,11 @@ fi
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $PYTHON23_LIBPATH; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -29448,6 +29784,11 @@ fi
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $PYTHON24_LIBPATH; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -29456,6 +29797,11 @@ fi
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $PYTHON24_LIBPATH; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -29612,6 +29958,11 @@ fi
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $PYTHON25_LIBPATH; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -29620,6 +29971,11 @@ fi
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $PYTHON25_LIBPATH; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -29806,6 +30162,11 @@ fi
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $PERL_ARCHLIB/CORE; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -29814,6 +30175,11 @@ fi
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $PERL_ARCHLIB/CORE; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -30238,6 +30604,11 @@ if test "$with_boost" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $BOOST_LIBPATH_; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -30246,6 +30617,11 @@ if test "$with_boost" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $BOOST_LIBPATH_; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -33203,6 +33579,11 @@ if test "$with_opengl" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $OPENGL_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -33211,6 +33592,11 @@ if test "$with_opengl" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $OPENGL_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -33224,6 +33610,11 @@ if test "$with_opengl" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in /usr/lib/mesa; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -33232,6 +33623,11 @@ if test "$with_opengl" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in /usr/lib/mesa; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -33368,6 +33764,11 @@ _ACEOF
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $OSMESA_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -33376,6 +33777,11 @@ _ACEOF
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $OSMESA_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -33498,6 +33904,11 @@ echo "$as_me: error: --with-mesa explicitly specified, but no usable version fou
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $GLUT_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -33506,6 +33917,11 @@ echo "$as_me: error: --with-mesa explicitly specified, but no usable version fou
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $GLUT_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -33809,6 +34225,10 @@ echo "$as_me: error: --with-glew-mx explicitly specified, but no usable version 
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in `echo $GLEW_LDFLAGS $GLEW_LIBS | sed -e ""`; do
        case "$x" in
+          -L/lib | -L/usr/lib | -L/usr/lib32 | -L/usr/lib64 \
+          | -L/usr/lib/$multiarch )
+             continue
+             ;;
           -L*)
              tmp_LIBS="$tmp_LIBS${ncbi_rp_L_sep}$x"
              x=`echo $x | sed -e "s/^-L//; $ncbi_rpath_sed"`
@@ -34050,6 +34470,10 @@ else
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in `"$wxconf" $wxcfflags --libs $wxlibs | sed -e "$libsed; s/ -lm / /g;"`; do
        case "$x" in
+          -L/lib | -L/usr/lib | -L/usr/lib32 | -L/usr/lib64 \
+          | -L/usr/lib/$multiarch )
+             continue
+             ;;
           -L*)
              WXWIDGETS_LIBS="$WXWIDGETS_LIBS${ncbi_rp_L_sep}$x"
              x=`echo $x | sed -e "s/^-L//; $ncbi_rpath_sed"`
@@ -34170,6 +34594,10 @@ else
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in `$wxconf $wxcfflags --libs $wxlibs | sed -e "$libsed; s/ -lm / /g;"`; do
        case "$x" in
+          -L/lib | -L/usr/lib | -L/usr/lib32 | -L/usr/lib64 \
+          | -L/usr/lib/$multiarch )
+             continue
+             ;;
           -L*)
              WXWIDGETS_LIBS="$WXWIDGETS_LIBS${ncbi_rp_L_sep}$x"
              x=`echo $x | sed -e "s/^-L//; $ncbi_rpath_sed"`
@@ -34241,6 +34669,11 @@ if test "$with_fastcgi" != "no" ; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $FASTCGI_LIBDIR; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -34249,6 +34682,11 @@ if test "$with_fastcgi" != "no" ; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $FASTCGI_LIBDIR; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -34904,6 +35342,11 @@ if test "$with_orbacus" != no; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $fullpath/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -34912,6 +35355,11 @@ if test "$with_orbacus" != no; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $fullpath/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -34928,6 +35376,11 @@ if test "$with_orbacus" != no; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $ORBACUS_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -34936,6 +35389,11 @@ if test "$with_orbacus" != no; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $ORBACUS_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -35101,6 +35559,10 @@ else
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in `$ICU_CONFIG --ldflags-searchpath | sed -e ""`; do
        case "$x" in
+          -L/lib | -L/usr/lib | -L/usr/lib32 | -L/usr/lib64 \
+          | -L/usr/lib/$multiarch )
+             continue
+             ;;
           -L*)
              ICU_LIBS="$ICU_LIBS${ncbi_rp_L_sep}$x"
              x=`echo $x | sed -e "s/^-L//; $ncbi_rpath_sed"`
@@ -35215,6 +35677,10 @@ else
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in `$ICU_CONFIG --ldflags-searchpath | sed -e ""`; do
        case "$x" in
+          -L/lib | -L/usr/lib | -L/usr/lib32 | -L/usr/lib64 \
+          | -L/usr/lib/$multiarch )
+             continue
+             ;;
           -L*)
              ICU_LIBS="$ICU_LIBS${ncbi_rp_L_sep}$x"
              x=`echo $x | sed -e "s/^-L//; $ncbi_rpath_sed"`
@@ -35233,8 +35699,9 @@ else
  fi
       ICU_LIBS="$ICU_LIBS `$ICU_CONFIG --ldflags-libsonly`"
    fi
+   ICU_SEARCHPATH=`$ICU_CONFIG --ldflags-searchpath | sed -e "$no_usr_lib"`
    ICU_STATIC_LIBS=`$ICU_CONFIG --ldflags-libsonly | sed -e 's/-licu/-lsicu/g'`
-   ICU_STATIC_LIBS="`$ICU_CONFIG --ldflags-searchpath` $ICU_STATIC_LIBS"
+   ICU_STATIC_LIBS="$ICU_SEARCHPATH $ICU_STATIC_LIBS"
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_ICU 1
@@ -35261,6 +35728,11 @@ if test "$with_expat" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $EXPAT_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -35269,6 +35741,11 @@ if test "$with_expat" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $EXPAT_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -35282,6 +35759,11 @@ if test "$with_expat" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $EXPAT_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -35290,6 +35772,11 @@ if test "$with_expat" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $EXPAT_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -35438,6 +35925,11 @@ if test "$with_sablot" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $SABLOT_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -35446,6 +35938,11 @@ if test "$with_sablot" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $SABLOT_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -35459,6 +35956,11 @@ if test "$with_sablot" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $SABLOT_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -35467,6 +35969,11 @@ if test "$with_sablot" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $SABLOT_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -35634,6 +36141,11 @@ if test "$with_libxml" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $LIBXML_LIBPATH_; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -35642,6 +36154,11 @@ if test "$with_libxml" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $LIBXML_LIBPATH_; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -35779,6 +36296,11 @@ if test "$with_libxslt" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $LIBXSLT_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -35787,6 +36309,11 @@ if test "$with_libxslt" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $LIBXSLT_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -35800,6 +36327,11 @@ if test "$with_libxslt" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $LIBXSLT_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -35808,6 +36340,11 @@ if test "$with_libxslt" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $LIBXSLT_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -35991,6 +36528,11 @@ if test "$with_libexslt" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $LIBEXSLT_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -35999,6 +36541,11 @@ if test "$with_libexslt" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $LIBEXSLT_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -36012,6 +36559,11 @@ if test "$with_libexslt" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $LIBEXSLT_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -36020,6 +36572,11 @@ if test "$with_libexslt" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $LIBEXSLT_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -36236,6 +36793,11 @@ if test "$with_xerces" != no; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $XERCES_LIBPATH; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -36244,6 +36806,11 @@ if test "$with_xerces" != no; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $XERCES_LIBPATH; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -36451,6 +37018,11 @@ if test "$with_xalan" != no; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $XALAN_LIBPATH; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -36459,6 +37031,11 @@ if test "$with_xalan" != no; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $XALAN_LIBPATH; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -36674,6 +37251,11 @@ if test "$with_zorba" != no; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $ZORBA_LIBPATH; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -36682,6 +37264,11 @@ if test "$with_zorba" != no; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $ZORBA_LIBPATH; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -36823,6 +37410,11 @@ ncbi_rp_L_flags=
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $SQLITE3_LIBDIR; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -36831,6 +37423,11 @@ ncbi_rp_L_flags=
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $SQLITE3_LIBDIR; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -36856,6 +37453,11 @@ if test "$with_sqlite3" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $SQLITE3_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -36864,6 +37466,11 @@ if test "$with_sqlite3" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $SQLITE3_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -36877,6 +37484,11 @@ if test "$with_sqlite3" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $SQLITE3_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -36885,6 +37497,11 @@ if test "$with_sqlite3" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $SQLITE3_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -37345,6 +37962,11 @@ echo "$as_me: error: --with-vdb explicitly specified,
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $VDB_LIBDIR; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -37353,6 +37975,11 @@ echo "$as_me: error: --with-vdb explicitly specified,
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $VDB_LIBDIR; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -37520,6 +38147,11 @@ if test "$with_oechem" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $OECHEM_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -37528,6 +38160,11 @@ if test "$with_oechem" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $OECHEM_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -37541,6 +38178,11 @@ if test "$with_oechem" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $OECHEM_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -37549,6 +38191,11 @@ if test "$with_oechem" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $OECHEM_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -37689,6 +38336,11 @@ if test -d "$SGE_PATH" -a -z "$SGE_LIBPATH"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $SGE_LIBPATH; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -37697,6 +38349,11 @@ if test -d "$SGE_PATH" -a -z "$SGE_LIBPATH"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $SGE_LIBPATH; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -37723,6 +38380,11 @@ if test "$with_sge" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $SGE_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -37731,6 +38393,11 @@ if test "$with_sge" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $SGE_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -37744,6 +38411,11 @@ if test "$with_sge" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $SGE_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -37752,6 +38424,11 @@ if test "$with_sge" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $SGE_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -37908,6 +38585,11 @@ if test "$with_muparser" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $MUPARSER_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -37916,6 +38598,11 @@ if test "$with_muparser" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $MUPARSER_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -37929,6 +38616,11 @@ if test "$with_muparser" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $MUPARSER_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -37937,6 +38629,11 @@ if test "$with_muparser" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $MUPARSER_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -38092,6 +38789,11 @@ if test "$with_hdf5" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $HDF5_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -38100,6 +38802,11 @@ if test "$with_hdf5" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $HDF5_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -38113,6 +38820,11 @@ if test "$with_hdf5" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $HDF5_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -38121,6 +38833,11 @@ if test "$with_hdf5" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $HDF5_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -38251,6 +38968,11 @@ if test "$with_jpeg" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $JPEG_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -38259,6 +38981,11 @@ if test "$with_jpeg" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $JPEG_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -38272,6 +38999,11 @@ if test "$with_jpeg" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $JPEG_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -38280,6 +39012,11 @@ if test "$with_jpeg" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $JPEG_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -38414,6 +39151,11 @@ if test "$with_png" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $PNG_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -38422,6 +39164,11 @@ if test "$with_png" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $PNG_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -38435,6 +39182,11 @@ if test "$with_png" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $PNG_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -38443,6 +39195,11 @@ if test "$with_png" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $PNG_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -38572,6 +39329,11 @@ if test "$with_tiff" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $TIFF_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -38580,6 +39342,11 @@ if test "$with_tiff" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $TIFF_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -38593,6 +39360,11 @@ if test "$with_tiff" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $TIFF_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -38601,6 +39373,11 @@ if test "$with_tiff" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $TIFF_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -38730,6 +39507,11 @@ if test "$with_ungif" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $UNGIF_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -38738,6 +39520,11 @@ if test "$with_ungif" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $UNGIF_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -38751,6 +39538,11 @@ if test "$with_ungif" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $UNGIF_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -38759,6 +39551,11 @@ if test "$with_ungif" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $UNGIF_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -38887,6 +39684,11 @@ if test "$with_ungif" = "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $GIF_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -38895,6 +39697,11 @@ if test "$with_ungif" = "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $GIF_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -38908,6 +39715,11 @@ if test "$with_ungif" = "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $GIF_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -38916,6 +39728,11 @@ if test "$with_ungif" = "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $GIF_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -39054,6 +39871,11 @@ if test "$with_xpm" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $XPM_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -39062,6 +39884,11 @@ if test "$with_xpm" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $XPM_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -39075,6 +39902,11 @@ if test "$with_xpm" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $XPM_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -39083,6 +39915,11 @@ if test "$with_xpm" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $XPM_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -39251,6 +40088,10 @@ fi
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in `$freetype_config --libs | sed -e "$no_usr_lib"`; do
        case "$x" in
+          -L/lib | -L/usr/lib | -L/usr/lib32 | -L/usr/lib64 \
+          | -L/usr/lib/$multiarch )
+             continue
+             ;;
           -L*)
              FREETYPE_LIBS="$FREETYPE_LIBS${ncbi_rp_L_sep}$x"
              x=`echo $x | sed -e "s/^-L//; $ncbi_rpath_sed"`
@@ -39490,6 +40331,11 @@ ncbi_rp_L_flags=
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $FTGL_LIBDIR; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -39498,6 +40344,11 @@ ncbi_rp_L_flags=
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $FTGL_LIBDIR; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -39524,6 +40375,11 @@ if test "$with_ftgl" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $FTGL_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -39532,6 +40388,11 @@ if test "$with_ftgl" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $FTGL_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -39545,6 +40406,11 @@ if test "$with_ftgl" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $FTGL_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -39553,6 +40419,11 @@ if test "$with_ftgl" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $FTGL_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -39680,6 +40551,11 @@ if test "$with_magic" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $MAGIC_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -39688,6 +40564,11 @@ if test "$with_magic" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $MAGIC_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -39701,6 +40582,11 @@ if test "$with_magic" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $MAGIC_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -39709,6 +40595,11 @@ if test "$with_magic" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $MAGIC_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -39856,6 +40747,11 @@ ncbi_rp_L_flags=
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $MIMETIC_LIBDIR; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -39864,6 +40760,11 @@ ncbi_rp_L_flags=
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $MIMETIC_LIBDIR; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -39890,6 +40791,11 @@ if test "$with_mimetic" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $MIMETIC_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -39898,6 +40804,11 @@ if test "$with_mimetic" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $MIMETIC_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -39911,6 +40822,11 @@ if test "$with_mimetic" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $MIMETIC_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -39919,6 +40835,11 @@ if test "$with_mimetic" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $MIMETIC_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -40080,6 +41001,11 @@ ncbi_rp_L_flags=
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $GSOAP_LIBDIR; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -40088,6 +41014,11 @@ ncbi_rp_L_flags=
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $GSOAP_LIBDIR; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -40198,6 +41129,11 @@ if test "$with_gsoap" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $GSOAP_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -40206,6 +41142,11 @@ if test "$with_gsoap" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $GSOAP_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -40219,6 +41160,11 @@ if test "$with_gsoap" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $GSOAP_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -40227,6 +41173,11 @@ if test "$with_gsoap" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $GSOAP_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -40404,6 +41355,11 @@ if test "$with_avro" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $AVRO_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -40412,6 +41368,11 @@ if test "$with_avro" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $AVRO_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -40425,6 +41386,11 @@ if test "$with_avro" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $AVRO_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -40433,6 +41399,11 @@ if test "$with_avro" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $AVRO_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -40729,6 +41700,11 @@ ncbi_rp_L_flags=
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $MONGODB_LIBDIR; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -40737,6 +41713,11 @@ ncbi_rp_L_flags=
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $MONGODB_LIBDIR; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -40762,6 +41743,11 @@ if test "$with_mongodb" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $MONGODB_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -40770,6 +41756,11 @@ if test "$with_mongodb" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $MONGODB_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -40783,6 +41774,11 @@ if test "$with_mongodb" != "no"; then
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $MONGODB_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -40791,6 +41787,11 @@ if test "$with_mongodb" != "no"; then
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $MONGODB_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -42426,6 +43427,7 @@ CXX!$CXX$ac_delim
 CXXFLAGS!$CXXFLAGS$ac_delim
 ac_ct_CXX!$ac_ct_CXX$ac_delim
 MT_SFX!$MT_SFX$ac_delim
+DPKG_ARCHITECTURE!$DPKG_ARCHITECTURE$ac_delim
 DLL!$DLL$ac_delim
 DLL_LIB_SETTING!$DLL_LIB_SETTING$ac_delim
 IF_WITH_DLL!$IF_WITH_DLL$ac_delim
@@ -42462,7 +43464,6 @@ PCRE_LIBS!$PCRE_LIBS$ac_delim
 LIBGCRYPT_CONFIG!$LIBGCRYPT_CONFIG$ac_delim
 GCRYPT_INCLUDE!$GCRYPT_INCLUDE$ac_delim
 GCRYPT_LIBS!$GCRYPT_LIBS$ac_delim
-LIBGNUTLS_CONFIG!$LIBGNUTLS_CONFIG$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -42504,6 +43505,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+LIBGNUTLS_CONFIG!$LIBGNUTLS_CONFIG$ac_delim
 GNUTLS_INCLUDE!$GNUTLS_INCLUDE$ac_delim
 GNUTLS_LIBS!$GNUTLS_LIBS$ac_delim
 OPENSSL_INCLUDE!$OPENSSL_INCLUDE$ac_delim
@@ -42600,7 +43602,6 @@ top_srcdir!$top_srcdir$ac_delim
 srcdir!$srcdir$ac_delim
 status_dir!$status_dir$ac_delim
 builddir!$builddir$ac_delim
-runpath!$runpath$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -42642,6 +43643,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+runpath!$runpath$ac_delim
 ncbi_runpath!$ncbi_runpath$ac_delim
 c_ncbi_runpath!$c_ncbi_runpath$ac_delim
 LINK!$LINK$ac_delim
@@ -42738,7 +43740,6 @@ ICONV_LIBS!$ICONV_LIBS$ac_delim
 Z_LIB!$Z_LIB$ac_delim
 BZ2_LIB!$BZ2_LIB$ac_delim
 PCREPOSIX_LIBS!$PCREPOSIX_LIBS$ac_delim
-PCRE_LIB!$PCRE_LIB$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -42780,6 +43781,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+PCRE_LIB!$PCRE_LIB$ac_delim
 OPENSSL_STATIC_LIBS!$OPENSSL_STATIC_LIBS$ac_delim
 TLS_INCLUDE!$TLS_INCLUDE$ac_delim
 TLS_LIBS!$TLS_LIBS$ac_delim
@@ -42876,7 +43878,6 @@ XALAN_STATIC_LIBS!$XALAN_STATIC_LIBS$ac_delim
 ZORBA_INCLUDE!$ZORBA_INCLUDE$ac_delim
 ZORBA_LIBS!$ZORBA_LIBS$ac_delim
 ZORBA_STATIC_LIBS!$ZORBA_STATIC_LIBS$ac_delim
-SQLITE3_STATIC_LIBS!$SQLITE3_STATIC_LIBS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -42918,6 +43919,7 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+SQLITE3_STATIC_LIBS!$SQLITE3_STATIC_LIBS$ac_delim
 FREETYPE_INCLUDE!$FREETYPE_INCLUDE$ac_delim
 FREETYPE_LIBS!$FREETYPE_LIBS$ac_delim
 GSOAP_PATH!$GSOAP_PATH$ac_delim
@@ -42964,7 +43966,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 44; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 45; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

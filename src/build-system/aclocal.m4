@@ -120,6 +120,11 @@ AC_DEFUN(NCBI_RPATHIFY,
  ncbi_rp_L_sep=$CONF_f_libpath
  if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
     for x in $2; do
+       case "$x" in 
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
     done
@@ -128,6 +133,11 @@ AC_DEFUN(NCBI_RPATHIFY,
     ncbi_rp_R_flags=
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in $2; do
+       case "$x" in 
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
        ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
        ncbi_rp_L_sep=" $CONF_f_libpath"
        x=`echo $x | sed -e "$ncbi_rpath_sed"`
@@ -163,6 +173,10 @@ AC_DEFUN(NCBI_RPATHIFY_OUTPUT,
     ncbi_rp_R_sep=" $CONF_f_runpath"
     for x in `$2 | sed -e "$3"`; do
        case "$x" in
+          -L/lib | -L/usr/lib | -L/usr/lib32 | -L/usr/lib64 \
+          | -L/usr/lib/$multiarch )
+             continue
+             ;;
           -L*)
              $1="[$]$1${ncbi_rp_L_sep}$x"
              x=`echo $x | sed -e "s/^-L//; $ncbi_rpath_sed"`

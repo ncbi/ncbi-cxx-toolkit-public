@@ -1879,6 +1879,13 @@ case "$host_os:$ncbi_cv_prog_cc_wl_rpath" in
         ;;
 esac
 
+AC_PATH_PROG(DPKG_ARCHITECTURE, dpkg-architecture)
+if test -x "$DPKG_ARCHITECTURE"; then
+   multiarch=`$DPKG_ARCHITECTURE -qDEB_HOST_MULTIARCH`
+else
+   multiarch=`echo $host | sed -e 's/-unknown-/-/; [s/^i[3-9]86-/^i\[3-9\]86/]'`
+fi
+
 case "$compiler:$compiler_version:$with_bin_release" in
   GCC:*:yes )
     libstdcxx=`$CXX $LDFLAGS -print-file-name=libstdc++.a`
@@ -1906,7 +1913,8 @@ case "$compiler:$compiler_version:$with_bin_release" in
         dir=`dirname "$path"`
         abs_dir=`cd "$dir" && pwd`
         case "$dir:$abs_dir" in
-            *:/lib | *:/usr/lib | *:/usr/lib32 | *:/usr/lib64 ) 
+            *:/lib | *:/usr/lib | *:/usr/lib32 | *:/usr/lib64 \
+            | *:/usr/lib/$multiarch )
                # no rpath needed
                break
                ;;
@@ -4070,7 +4078,7 @@ case "$signature_compiler:$ac_cv_have_decl__LIBCPP_VERSION" in
 esac
 
 usr_lib=['[/usr]*/lib/*[amdsprcv]*[23469]*']
-no_usr_lib="s,-L$usr_lib ,,g;"
+no_usr_lib="s,-L$usr_lib ,,g; s,-L/usr/lib/$multiarch ,,g"
 
 NCBI_CHECK_THIRD_PARTY_LIB(z,
  [[AC_LANG_PROGRAM([#include <zlib.h>],
@@ -6197,8 +6205,9 @@ else
       NCBI_RPATHIFY_OUTPUT(ICU_LIBS, $ICU_CONFIG --ldflags-searchpath)
       ICU_LIBS="$ICU_LIBS `$ICU_CONFIG --ldflags-libsonly`"
    fi
+   ICU_SEARCHPATH=`$ICU_CONFIG --ldflags-searchpath | sed -e "$no_usr_lib"`
    ICU_STATIC_LIBS=`$ICU_CONFIG --ldflags-libsonly | sed -e 's/-licu/-lsicu/g'`
-   ICU_STATIC_LIBS="`$ICU_CONFIG --ldflags-searchpath` $ICU_STATIC_LIBS"
+   ICU_STATIC_LIBS="$ICU_SEARCHPATH $ICU_STATIC_LIBS"
    AC_DEFINE(HAVE_ICU, 1, [Define to 1 if ICU libraries are available.])
 fi
 
