@@ -1,4 +1,16 @@
-Release X.X.X 
+Release 2.1.0 based on SC-16.1 (2015-07-09)
+
+Improvements and bug fixes:
+    * NetStorage API does not use ICache::fBestReliability for NetCache
+      (JIRA: CXX-6141)
+    * NetStorage: RECONFIGURE when admin names decryptor failed
+      (JIRA: CXX-6123)
+    * NetStorage: new flags for fine grain timing logging control
+      (JIRA: CXX-6041)
+    * NetStorage: protocol version from a client (JIRA: CXX-5992)
+    * NetStorage & NetSchedule: reconfigurable on-the-fly CServer parameters
+      (JIRA: CXX-5580)
+
 
 Improvements and bug fixes:
     * Ability to change [server]/max_connections and [server]/network_timeout
