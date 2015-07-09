@@ -347,7 +347,6 @@ private:
     EAction GBQualSeqFeatBC(CGb_qual& gbq, CSeq_feat& seqfeat);
 
     void x_AddNcbiCleanupObject( CSeq_entry &seq_entry );
-    void x_RemoveNcbiCleanupObject(CSeq_entry &seq_entry);
 
     void x_CleanupConsSplice(CGb_qual& gbq);
 

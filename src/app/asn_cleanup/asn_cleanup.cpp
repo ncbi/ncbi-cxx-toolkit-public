@@ -227,7 +227,7 @@ void CCleanupApp::x_KOptionsValid(const string& opt)
     string::const_iterator s = opt.begin();
     while (s != opt.end()) {
         if (!isspace(*s)) {
-            if (*s != 'b' && *s != 's') {
+            if (*s != 'b' && *s != 's' && *s != 'u') {
                 unrecognized += *s;
             }
         }
@@ -696,6 +696,10 @@ bool CCleanupApp::HandleSeqEntry(CRef<CSeq_entry>& se)
 
     string file_name = args["o"].AsString();
     bool any_changes = false;
+
+    if (args["K"] && NStr::Find(args["K"].AsString(), "u")) {
+        any_changes |= CCleanup::RemoveNcbiCleanupObject(*se);
+    }
 
     if (args["F"]) {
         any_changes |= x_ProcessFeatureOptions(args["F"].AsString(), entry);

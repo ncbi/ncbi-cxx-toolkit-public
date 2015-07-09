@@ -189,6 +189,11 @@ public:
 /// @return Boolean return value indicates whether title was added
     static bool AddProteinTitle(CBioseq_Handle bsh);
 
+    /// Removes NcbiCleanup User Objects in the Seq-entry
+    /// @param seq_entry Seq-entry to edit
+    /// @return Boolean return value indicates whether object was removed
+    static bool RemoveNcbiCleanupObject(CSeq_entry &seq_entry);
+
 private:
     // Prohibit copy constructor & assignment operator
     CCleanup(const CCleanup&);

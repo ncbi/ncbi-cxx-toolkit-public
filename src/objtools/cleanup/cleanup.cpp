@@ -38,6 +38,7 @@
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
+#include <objects/general/User_object.hpp>
 #include <objects/submit/Seq_submit.hpp>
 
 
@@ -801,6 +802,36 @@ bool CCleanup::AddProteinTitle(CBioseq_Handle bsh)
 }
 
 
+bool CCleanup::RemoveNcbiCleanupObject(CSeq_entry &seq_entry)
+{
+    bool rval = false;
+    if (seq_entry.IsSetDescr()) {
+        CBioseq::TDescr::Tdata::iterator it = seq_entry.SetDescr().Set().begin();
+        while (it != seq_entry.SetDescr().Set().end()) {
+            if ((*it)->IsUser() && (*it)->GetUser().GetObjectType() == CUser_object::eObjectType_Cleanup){
+                it = seq_entry.SetDescr().Set().erase(it);
+                rval = true;
+            }
+            else {
+                ++it;
+            }
+        }
+        if (seq_entry.SetDescr().Set().empty()) {
+            if (seq_entry.IsSeq()) {
+                seq_entry.SetSeq().ResetDescr();
+            }
+            else if (seq_entry.IsSet()) {
+                seq_entry.SetSet().ResetDescr();
+            }
+        }
+    }
+    if (seq_entry.IsSet() && seq_entry.GetSet().IsSetSeq_set()) {
+        NON_CONST_ITERATE(CBioseq_set::TSeq_set, it, seq_entry.SetSet().SetSeq_set()) {
+            rval |= RemoveNcbiCleanupObject(**it);
+        }
+    }
+    return rval;
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

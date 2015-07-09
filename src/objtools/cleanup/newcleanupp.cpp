@@ -8767,7 +8767,7 @@ void CNewCleanup_imp::x_AddNcbiCleanupObject( CSeq_entry &seq_entry )
     // remove from lower levels
     if (seq_entry.IsSet() && seq_entry.GetSet().IsSetSeq_set()) {
         NON_CONST_ITERATE(CBioseq_set::TSeq_set, it, seq_entry.SetSet().SetSeq_set()) {
-            x_RemoveNcbiCleanupObject(**it);
+            CCleanup::RemoveNcbiCleanupObject(**it);
         }
     }
 
@@ -8788,32 +8788,6 @@ void CNewCleanup_imp::x_AddNcbiCleanupObject( CSeq_entry &seq_entry )
     seq_entry.SetDescr().Set().push_back( ncbi_cleanup_object );
 
     ChangeMade(CCleanupChange::eAddNcbiCleanupObject);
-}
-
-void CNewCleanup_imp::x_RemoveNcbiCleanupObject(CSeq_entry &seq_entry)
-{
-    if (seq_entry.IsSetDescr()) {
-        CBioseq::TDescr::Tdata::iterator it = seq_entry.SetDescr().Set().begin();
-        while (it != seq_entry.SetDescr().Set().end()) {
-            if ((*it)->IsUser() && (*it)->GetUser().GetObjectType() == CUser_object::eObjectType_Cleanup){
-                it = seq_entry.SetDescr().Set().erase(it);
-            } else {
-                ++it;
-            }
-        }
-        if (seq_entry.SetDescr().Set().empty()) {
-            if (seq_entry.IsSeq()) {
-                seq_entry.SetSeq().ResetDescr();
-            } else if (seq_entry.IsSet()) {
-                seq_entry.SetSet().ResetDescr();
-            }
-        }
-    }
-    if (seq_entry.IsSet() && seq_entry.GetSet().IsSetSeq_set()) {
-        NON_CONST_ITERATE(CBioseq_set::TSeq_set, it, seq_entry.SetSet().SetSeq_set()) {
-            x_RemoveNcbiCleanupObject(**it);
-        }
-    }
 }
 
 static
