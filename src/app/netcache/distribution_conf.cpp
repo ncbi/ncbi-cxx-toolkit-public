@@ -629,11 +629,6 @@ CNCDistributionConf::GetPeerNameOrEmpty(Uint8 srv_id)
         if (peers.find(srv_id) != peers.end()) {
             name = peers.find(srv_id)->second;
         }
-#if 0
-        else {
-            name = CNCPeerControl::GetPeerNameOrEmpty(srv_id);
-        }
-#endif
     }
     return name;
 }
@@ -643,7 +638,10 @@ CNCDistributionConf::GetPeerName(Uint8 srv_id)
 {
     string name(GetPeerNameOrEmpty(srv_id));
     if (name.empty()) {
-        name = "unknown_server";
+        name = CNCPeerControl::GetPeerNameOrEmpty(srv_id);
+        if (name.empty()) {
+            name = "unknown_server";
+        }
     }
     return name;
 }

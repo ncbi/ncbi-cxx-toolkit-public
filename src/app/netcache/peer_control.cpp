@@ -854,7 +854,7 @@ void CNCPeerControl::PrintState(CSrvSocketTask& task)
         task.WriteText("{\n");
         CNCPeerControl* peer = it->second;
         task.WriteText(qt).WriteText("hostname").WriteText(iss).WriteText(
-                    peer->GetPeerNameOrEmpty(peer->GetSrvId())).WriteText(qt);
+                    CNCDistributionConf::GetPeerName(peer->GetSrvId())).WriteText(qt);
         task.WriteText(eol).WriteText("hostIPname").WriteText(iss).WriteText(peer->m_HostIPname).WriteText(qt);
         task.WriteText(eol).WriteText("hostProtocol").WriteText(is).WriteNumber(peer->m_HostProtocol);
         task.WriteText(eol).WriteText("healthy").WriteText(is).WriteText(

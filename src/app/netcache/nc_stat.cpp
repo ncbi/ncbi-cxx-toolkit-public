@@ -883,11 +883,16 @@ CNCStat::PrintToSocket(CSrvSocketTask* sock)
         CMiniMutexGuard guard(s_CommonStatLock);
         Uint8 now = CSrvTime::Current().AsUSec();
         if (!s_SyncSrv.empty()) {
-            vector<string> t;
-            ITERATE(set<Uint8>, s, s_SyncSrv) {
-                t.push_back(CNCDistributionConf::GetPeerName(*s));
+            {
+                vector<string> t;
+                ITERATE(set<Uint8>, s, s_SyncSrv) {
+                    string n(CNCDistributionConf::GetPeerNameOrEmpty(*s));
+                    if (!n.empty()) {
+                        t.push_back();
+                    }
+                }
+                proxy << "Sync servers:  " <<  NStr::Join(t,",") << endl;
             }
-            proxy << "Sync servers - " <<  NStr::Join(t,",") << endl;
             ITERATE(TSyncTimes, s, s_SyncSucceeded) {
                 s->second.Print(buf, CSrvTime::eFmtHumanUSecs);
                 proxy << "Initial  Sync succeeded - " <<
@@ -902,27 +907,31 @@ CNCStat::PrintToSocket(CSrvSocketTask* sock)
             }
 #if USE_DETAILED_SLOT_STAT
             ITERATE(TDetailedSyncTimes, s,  s_SyncPeriodic) {
-                string peer_name(CNCDistributionConf::GetPeerName(s->first));
-                const map<Uint2, CSrvTime>& per_slot = s->second;
-                for (map<Uint2, CSrvTime>::const_iterator i = per_slot.begin(); i != per_slot.end(); ++i) {
-                    Uint8 agoSec = (now - i->second.AsUSec())/(kUSecsPerMSec*kMSecsPerSecond);
-                    Uint8 agoUsec = (now - i->second.AsUSec())%(kUSecsPerMSec*kMSecsPerSecond);
-                    i->second.Print(buf, CSrvTime::eFmtHumanUSecs);
+                string peer_name(CNCDistributionConf::GetPeerNameOrEmpty(s->first));
+                if (!peer_name.empty()) {
+                    const map<Uint2, CSrvTime>& per_slot = s->second;
+                    for (map<Uint2, CSrvTime>::const_iterator i = per_slot.begin(); i != per_slot.end(); ++i) {
+                        Uint8 agoSec = (now - i->second.AsUSec())/(kUSecsPerMSec*kMSecsPerSecond);
+                        Uint8 agoUsec = (now - i->second.AsUSec())%(kUSecsPerMSec*kMSecsPerSecond);
+                        i->second.Print(buf, CSrvTime::eFmtHumanUSecs);
 
-                    proxy << "Periodic Sync succeeded - " <<
-                        peer_name << " slot " << i->first << "  " <<
-                        agoSec << "." << agoUsec << "s ago" << endl;
+                        proxy << "Periodic Sync succeeded - " <<
+                            peer_name << " slot " << i->first << "  " <<
+                            agoSec << "." << agoUsec << "s ago" << endl;
+                    }
                 }
-
             }
 #else
             ITERATE(TSyncTimes, s,  s_SyncPeriodic) {
-                Uint8 agoSec = (now - s->second.AsUSec())/(kUSecsPerMSec*kMSecsPerSecond);
-                Uint8 agoUsec = (now - s->second.AsUSec())%(kUSecsPerMSec*kMSecsPerSecond);
-                s->second.Print(buf, CSrvTime::eFmtHumanUSecs);
-                proxy << "Periodic Sync succeeded - " <<
-                    CNCDistributionConf::GetPeerName(s->first) << " at " << buf <<
-                    ", " << agoSec << "." << agoUsec << "s ago" << endl;
+                string peer_name(CNCDistributionConf::GetPeerNameOrEmpty(s->first));
+                if (!peer_name.empty()) {
+                    Uint8 agoSec = (now - s->second.AsUSec())/(kUSecsPerMSec*kMSecsPerSecond);
+                    Uint8 agoUsec = (now - s->second.AsUSec())%(kUSecsPerMSec*kMSecsPerSecond);
+                    s->second.Print(buf, CSrvTime::eFmtHumanUSecs);
+                    proxy << "Periodic Sync succeeded - " <<
+                        peer_name << " at " << buf << ", " << 
+                        agoSec << "." << agoUsec << "s ago" << endl;
+                }
             }
 #endif
         }

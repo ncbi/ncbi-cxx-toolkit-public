@@ -1343,7 +1343,7 @@ void CNCActiveSyncControl::PrintState(CSrvSocketTask& task, Uint2 slot, bool one
             task.WriteText(",");
         }
         task.WriteText("{");
-        task.WriteText("\n\"").WriteText("peer"       ).WriteText(iss).WriteText(CNCPeerControl::GetPeerNameOrEmpty( (*c)->m_SrvId)).WriteText("\"");
+        task.WriteText("\n\"").WriteText("peer"       ).WriteText(iss).WriteText(CNCDistributionConf::GetPeerName( (*c)->m_SrvId)).WriteText("\"");
         task.WriteText(eol).WriteText("stuck"         ).WriteText(is ).WriteBool( (*c)->IsStuck());
         task.WriteText(eol).WriteText("slot"          ).WriteText(is ).WriteNumber( (*c)->m_Slot);
         task.WriteText(eol).WriteText("started_cmds"  ).WriteText(is ).WriteNumber( (*c)->m_StartedCmds);
@@ -1378,7 +1378,7 @@ void CNCActiveSyncControl::PrintState(CSrvSocketTask& task, Uint2 slot, bool one
                 task.WriteText(",");
             }
             task.WriteText("{");
-            task.WriteText("\n\"").WriteText("peer"          ).WriteText(iss).WriteText(CNCPeerControl::GetPeerNameOrEmpty( (*srv)->peer->GetSrvId())).WriteText("\"");
+            task.WriteText("\n\"").WriteText("peer"          ).WriteText(iss).WriteText(CNCDistributionConf::GetPeerName( (*srv)->peer->GetSrvId())).WriteText("\"");
             task.WriteText(eol).WriteText("sync_started"     ).WriteText(is ).WriteBool(   (*srv)->sync_started);
             task.WriteText(eol).WriteText("is_passive"       ).WriteText(is ).WriteBool(   (*srv)->is_passive);
             task.WriteText(eol).WriteText("is_by_blobs"      ).WriteText(is ).WriteBool(   (*srv)->is_by_blobs);
