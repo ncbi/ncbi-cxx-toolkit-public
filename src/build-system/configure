@@ -4172,14 +4172,14 @@ if test -n "$with_experimental"; then
    for x in `echo $with_experimental | tr , ' '`; do
       case "$x" in
          StrictGI )
-	    CPPFLAGS="$CPPFLAGS -DNCBI_STRICT_GI"
-	              WithFeatures="$WithFeatures${WithFeaturesSep}StrictGI"; WithFeaturesSep=" "
-	    ;;
+            CPPFLAGS="$CPPFLAGS -DNCBI_STRICT_GI"
+                      WithFeatures="$WithFeatures${WithFeaturesSep}StrictGI"; WithFeaturesSep=" "
+            ;;
          * )
-	    { { echo "$as_me:$LINENO: error: unrecognized experimental feature \"$x\"." >&5
+            { { echo "$as_me:$LINENO: error: unrecognized experimental feature \"$x\"." >&5
 echo "$as_me: error: unrecognized experimental feature \"$x\"." >&2;}
    { (exit 1); exit 1; }; }
-	    ;;
+            ;;
       esac
    done
 fi

@@ -742,12 +742,12 @@ if test -n "$with_experimental"; then
    for x in `echo $with_experimental | tr , ' '`; do
       case "$x" in
          StrictGI )
-	    CPPFLAGS="$CPPFLAGS -DNCBI_STRICT_GI"
-	    NCBI_FEATURE(StrictGI)
-	    ;;
+            CPPFLAGS="$CPPFLAGS -DNCBI_STRICT_GI"
+            NCBI_FEATURE(StrictGI)
+            ;;
          * )
-	    AC_MSG_ERROR([unrecognized experimental feature "$x".])
-	    ;;
+            AC_MSG_ERROR([unrecognized experimental feature "$x".])
+            ;;
       esac
    done
 fi
