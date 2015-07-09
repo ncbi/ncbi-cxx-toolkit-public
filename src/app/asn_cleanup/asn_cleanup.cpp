@@ -704,10 +704,10 @@ bool CCleanupApp::HandleSeqEntry(CRef<CSeq_entry>& se)
     bool do_basic = false;
     bool do_extended = false;
     if (args["K"]) {
-        if (NStr::Find(args["K"].AsString(), "b")) {
+        if (NStr::Find(args["K"].AsString(), "b") != string::npos) {
             do_basic = true;
         }
-        if (NStr::Find(args["K"].AsString(), "s")) {
+        if (NStr::Find(args["K"].AsString(), "s") != string::npos) {
             do_basic = true;
             do_extended = true;
         }
