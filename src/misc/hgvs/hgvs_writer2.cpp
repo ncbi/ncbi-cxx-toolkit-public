@@ -779,6 +779,15 @@ bool IsMitochondrion(CBioseq_Handle bsh)
     return bs && bs->GetGenome() == CBioSource::eGenome_mitochondrion;
 }
 
+//VAR-1556
+bool IsFuzzOnlyOffsetLoc(CConstRef<CVariantPlacement> p)
+{
+    return p
+        && (   ((!p->IsSetStart_offset() || p->GetStart_offset() == 0) && p->IsSetStart_offset_fuzz())
+            || ((!p->IsSetStop_offset()  || p->GetStop_offset()  == 0) && p->IsSetStop_offset_fuzz()));
+}
+
+
 string CHgvsParser::x_AsHgvsInstExpression(
         const CVariation& variation,
         CConstRef<CVariantPlacement> placement,
@@ -904,6 +913,8 @@ string CHgvsParser::x_AsHgvsInstExpression(
             inst_str = "0"; //whole-product deletion
         } else if(is_prot) {
             inst_str = "del"; //do not generate asserted part for protein expressions: SNP-4623
+        } else if(IsFuzzOnlyOffsetLoc(placement)) { //VAR-1556
+            inst_str = "del";
         } else {
             inst_str = "del" + asserted_seq_str;
         }
