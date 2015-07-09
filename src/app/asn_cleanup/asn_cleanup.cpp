@@ -174,6 +174,8 @@ void CCleanupApp::Init(void)
     {{
         arg_desc->AddOptionalKey("F", "Feature", "Feature Cleaning Options",
                                   CArgDescriptions::eString);
+
+        arg_desc->AddFlag("T", "TaxonomyLookup", "Taxonomy Lookup");
     }}
     
     // misc
@@ -696,6 +698,10 @@ bool CCleanupApp::HandleSeqEntry(CRef<CSeq_entry>& se)
 
     string file_name = args["o"].AsString();
     bool any_changes = false;
+
+    if (args["T"]) {
+        any_changes |= CCleanup::TaxonomyLookup(entry);
+    }
 
     if (args["K"] && NStr::Find(args["K"].AsString(), "u")) {
         any_changes |= CCleanup::RemoveNcbiCleanupObject(*se);

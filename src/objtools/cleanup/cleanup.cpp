@@ -36,10 +36,12 @@
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/submit/Seq_submit.hpp>
+#include <objects/taxon3/taxon3.hpp>
 
 
 #include <objmgr/util/sequence.hpp>
@@ -831,6 +833,102 @@ bool CCleanup::RemoveNcbiCleanupObject(CSeq_entry &seq_entry)
         }
     }
     return rval;
+}
+
+
+void GetSourceDescriptors(const CSeq_entry& se, vector<const CSeqdesc* >& src_descs)
+{
+    if (se.IsSetDescr()) {
+        ITERATE(CBioseq::TDescr::Tdata, it, se.GetDescr().Get()) {
+            if ((*it)->IsSource() && (*it)->GetSource().IsSetOrg()) {
+                src_descs.push_back(*it);
+            }
+        }
+    }
+
+    if (se.IsSet() && se.GetSet().IsSetSeq_set()) {
+        ITERATE(CBioseq_set::TSeq_set, it, se.GetSet().GetSeq_set()) {
+            GetSourceDescriptors(**it, src_descs);
+        }
+    }
+}
+
+
+bool CCleanup::TaxonomyLookup(CSeq_entry_Handle seh)
+{
+    bool any_changes = false;
+
+    vector<CRef<COrg_ref> > rq_list;
+    vector<const CSeqdesc* > src_descs;
+    vector<CConstRef<CSeq_feat> > src_feats;
+
+    GetSourceDescriptors(*(seh.GetCompleteSeq_entry()), src_descs);
+    vector<const CSeqdesc* >::iterator desc_it = src_descs.begin();
+    while (desc_it != src_descs.end()) {
+        // add org ref for descriptor to request list
+        CRef<COrg_ref> org(new COrg_ref());
+        org->Assign((*desc_it)->GetSource().GetOrg());
+        rq_list.push_back(org);
+
+        ++desc_it;
+    }
+
+    CFeat_CI feat(seh, SAnnotSelector(CSeqFeatData::e_Biosrc));
+    while (feat) {
+        if (feat->GetData().GetBiosrc().IsSetOrg()) {
+            // add org ref for feature to request list
+            CRef<COrg_ref> org(new COrg_ref());
+            org->Assign(feat->GetData().GetBiosrc().GetOrg());
+            rq_list.push_back(org);
+            // add feature to list
+            src_feats.push_back(feat->GetOriginalSeq_feat());
+        }
+        ++feat;
+    }
+
+    if (rq_list.size() > 0) {
+        CTaxon3 taxon3;
+        taxon3.Init();
+        CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(rq_list);
+        if (reply) {
+            CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
+
+            // process descriptor responses
+            desc_it = src_descs.begin();
+
+            while (reply_it != reply->GetReply().end()
+                && desc_it != src_descs.end()) {
+                if ((*reply_it)->IsData() &&
+                    !(*desc_it)->GetSource().GetOrg().Equals((*reply_it)->GetData().GetOrg())) {
+                    any_changes = true;
+                    CSeqdesc* desc = const_cast<CSeqdesc*>(*desc_it);
+                    desc->SetSource().SetOrg().Assign((*reply_it)->GetData().GetOrg());
+                }
+                ++reply_it;
+                ++desc_it;
+            }
+
+            // process feature responses
+            vector<CConstRef<CSeq_feat> >::iterator feat_it = src_feats.begin();
+            while (reply_it != reply->GetReply().end()
+                && feat_it != src_feats.end()) {
+                if ((*reply_it)->IsData() &&
+                    !(*feat_it)->GetData().GetBiosrc().GetOrg().Equals((*reply_it)->GetData().GetOrg())) {
+                    any_changes = true;
+                    CRef<CSeq_feat> new_feat(new CSeq_feat());
+                    new_feat->Assign(**feat_it);
+                    new_feat->SetData().SetBiosrc().SetOrg().Assign((*reply_it)->GetData().GetOrg());
+                    CSeq_feat_Handle fh = seh.GetScope().GetSeq_featHandle(**feat_it);
+                    CSeq_feat_EditHandle efh(fh);
+                    efh.Replace(*new_feat);
+                }
+                ++reply_it;
+                ++feat_it;
+            }
+        }
+    }
+
+    return any_changes;
 }
 
 END_SCOPE(objects)

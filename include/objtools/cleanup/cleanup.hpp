@@ -194,6 +194,8 @@ public:
     /// @return Boolean return value indicates whether object was removed
     static bool RemoveNcbiCleanupObject(CSeq_entry &seq_entry);
 
+    static bool TaxonomyLookup(CSeq_entry_Handle seh);
+
 private:
     // Prohibit copy constructor & assignment operator
     CCleanup(const CCleanup&);
