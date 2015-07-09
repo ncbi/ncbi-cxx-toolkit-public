@@ -15,7 +15,7 @@ PROJ_TAG = core
 
 LIBS     = $(NETWORK_LIBS) $(ORIG_LIBS)
 
-WATCHERS = lavr
+WATCHERS = lavr elisovdn
 
 
 USES_LIBRARIES =  \
