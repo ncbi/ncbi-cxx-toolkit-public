@@ -131,7 +131,7 @@ char* g_LBOS_ComposeLBOSAddress();
 typedef struct {
     SSERV_Info** (*ResolveIPPort) (const char* lbos_address,
             const char* serviceName, SConnNetInfo* net_info);
-    EIO_Status (*Read) (CONN    conn, char*   line, size_t  size,
+    EIO_Status (*Read) (CONN    conn, void*   line, size_t  size,
             size_t* n_read, EIO_ReadMethod how); /* This function pointer
             is not used only by external functions, but also by
             s_LBOS_UrlReadAll */

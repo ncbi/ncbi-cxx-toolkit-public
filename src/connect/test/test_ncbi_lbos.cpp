@@ -764,7 +764,7 @@ static void FakeMassiveInput__ShouldProcess()
     /*
      * We know that iter is LBOS's.
      */
-    EIO_Status  (*temp_func_pointer) (CONN    conn, char*   line,
+    EIO_Status  (*temp_func_pointer) (CONN    conn, void*   line,
             size_t  size, size_t* n_read, EIO_ReadMethod how)
                                              = g_lbos_funcs.Read;
     g_lbos_funcs.Read = s_FakeReadDiscovery<10>;
@@ -819,7 +819,7 @@ static void FakeErrorInput__ShouldNotCrash()
     /*
      * We know that iter is LBOS's.
      */
-    EIO_Status  (*temp_func_pointer) (CONN    conn, char*   line, size_t  size,
+    EIO_Status  (*temp_func_pointer) (CONN    conn, void*   line, size_t  size,
             size_t* n_read, EIO_ReadMethod) = g_lbos_funcs.Read;
     g_lbos_funcs.Read = s_FakeReadDiscoveryCorrupt<200>;
     SSERV_Info** hostports = g_lbos_funcs.ResolveIPPort(
@@ -1782,7 +1782,7 @@ static void LbosExist__ShouldWork()
 //    int count_before = s_CountServers("lbostest", addr);
 //    /* Since we cannot guarantee that there is any working healthcheck
 //     * on the current host, we will mock */
-//    EIO_Status  (*temp_func_pointer) (CONN    conn, char*   line,
+//    EIO_Status  (*temp_func_pointer) (CONN    conn, void*   line,
 //            size_t  size, size_t* n_read, EIO_ReadMethod how)
 //            = g_lbos_funcs.Read;
 //    g_lbos_funcs.Read = s_FakeReadAnnouncement<1>;
@@ -2822,7 +2822,7 @@ static void s_TestFindMethod(ELBOSFindMethod find_method)
  * IPs with digits more than 7 invalid */
 template <int lines>
 static EIO_Status s_FakeReadDiscoveryCorrupt(CONN conn,
-                           char* line,
+                           void* line,
                            size_t size,
                            size_t* n_read,
                            EIO_ReadMethod how)
@@ -2848,7 +2848,7 @@ static EIO_Status s_FakeReadDiscoveryCorrupt(CONN conn,
 /* Emulate a lot of records to be sure that algorithm can take so much */
 template <int lines>
 static EIO_Status s_FakeReadDiscovery(CONN conn,
-                           char* line,
+                           void* line,
                            size_t size,
                            size_t* n_read,
                            EIO_ReadMethod how)
@@ -2874,7 +2874,7 @@ static EIO_Status s_FakeReadDiscovery(CONN conn,
 /* Emulate a lot of records to be sure that algorithm can take so much */
 template <int lines>
 static EIO_Status s_FakeReadAnnouncement(CONN conn,
-                           char* line,
+                           void* line,
                            size_t size,
                            size_t* n_read,
                            EIO_ReadMethod how)

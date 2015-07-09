@@ -698,8 +698,6 @@ char** g_LBOS_getLBOSAddressesEx (ELBOSFindMethod priority_find_method,
     struct hostent* dns_answer = NULL;
     char * alias, * host;
     int i = 0;
-    /*struct addrinfo hints, *res;*/
-    /*struct in_addr addr;*/
     struct addrinfo *rp;
     struct in_addr **addr_list;
     int err;
