@@ -7,7 +7,7 @@ SRC = test_ncbi_lbos
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIB = xconnect xncbi $(NCBIATOMIC_LIB) test_boost
+LIB = xconnect test_boost xncbi
 
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 

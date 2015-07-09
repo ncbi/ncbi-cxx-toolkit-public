@@ -71,17 +71,17 @@ USING_NCBI_SCOPE;
 static void             s_PrintInfo                         (HOST_INFO);
 static void             s_TestFindMethod                    (ELBOSFindMethod);
 template <int lines>
-    static EIO_Status   s_FakeReadDiscovery                 (CONN,   char*,
+    static EIO_Status   s_FakeReadDiscovery                 (CONN,   void*,
                                                              size_t, size_t*,
                                                              EIO_ReadMethod );
 template <int lines>
     static EIO_Status   s_FakeReadAnnouncement              (CONN conn,
-                                                             char* line,
+                                                             void* line,
                                                              size_t size,
                                                              size_t* n_read,
                                                              EIO_ReadMethod how);
 template <int lines>
-    static EIO_Status   s_FakeReadDiscoveryCorrupt          (CONN, char*,
+    static EIO_Status   s_FakeReadDiscoveryCorrupt          (CONN, void*,
                                                              size_t, size_t*,
                                                              EIO_ReadMethod);
 template<int count>
@@ -2834,7 +2834,7 @@ static EIO_Status s_FakeReadDiscoveryCorrupt(CONN conn,
                  "STANDALONE %0d.0%d.0%d.0%d:%d Regular R=1000.0 L=yes T=30\n",
                  s_call_counter, s_call_counter+1,
                  s_call_counter+2, s_call_counter+3, s_call_counter*215);
-        strncat(line, buf, size-1);
+        strncat((char*)line, buf, size-1);
         *n_read = strlen(buf);
         free(buf);
         return eIO_Success;
@@ -2860,7 +2860,7 @@ static EIO_Status s_FakeReadDiscovery(CONN conn,
                  "STANDALONE %d.%d.%d.%d:%d Regular R=1000.0 L=yes T=30\n",
                  s_call_counter, s_call_counter+1,
                  s_call_counter+2, s_call_counter+3, s_call_counter*215);
-        strncat(line, buf, size-1);
+        strncat((char*)line, buf, size-1);
         *n_read = strlen(buf);
         free(buf);
         return eIO_Success;
@@ -2883,7 +2883,7 @@ static EIO_Status s_FakeReadAnnouncement(CONN conn,
     if (s_call_counter++ < lines) {
         char* buf = static_cast<char*>(calloc(100, sizeof(char)));
         sprintf (buf, "1.2.3.4:5");
-        strncat(line, buf, size-1);
+        strncat((char*)line, buf, size-1);
         *n_read = strlen(buf);
         free(buf);
         return eIO_Success;
