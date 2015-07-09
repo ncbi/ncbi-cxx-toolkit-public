@@ -888,7 +888,7 @@ CNCStat::PrintToSocket(CSrvSocketTask* sock)
                 ITERATE(set<Uint8>, s, s_SyncSrv) {
                     string n(CNCDistributionConf::GetPeerNameOrEmpty(*s));
                     if (!n.empty()) {
-                        t.push_back();
+                        t.push_back(n);
                     }
                 }
                 proxy << "Sync servers:  " <<  NStr::Join(t,",") << endl;
