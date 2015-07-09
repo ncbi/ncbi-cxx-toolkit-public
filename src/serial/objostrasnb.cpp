@@ -755,7 +755,9 @@ void CObjectOStreamAsnBinary::WriteDouble2(double data, unsigned digits)
 
     WriteLength(width + 1);
     if (width) {
-#if 1
+// CXX-5248
+// for backward compatibility, this stays disabled
+#if 0
         type = eDecimal_NR1;
         for (const char* p = buffer + width - 1;  p >= buffer;  --p) {
             if (*p == '.') {
