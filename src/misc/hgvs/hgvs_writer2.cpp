@@ -780,11 +780,14 @@ bool IsMitochondrion(CBioseq_Handle bsh)
 }
 
 //VAR-1556
-bool IsFuzzOnlyOffsetLoc(CConstRef<CVariantPlacement> p)
+bool ContainsAnyFuzz(CConstRef<CVariantPlacement> p)
 {
-    return p
-        && (   ((!p->IsSetStart_offset() || p->GetStart_offset() == 0) && p->IsSetStart_offset_fuzz())
-            || ((!p->IsSetStop_offset()  || p->GetStop_offset()  == 0) && p->IsSetStop_offset_fuzz()));
+    return !p                     ? false
+         : p->IsSetStart_offset() ? true
+         : p->IsSetStop_offset()  ? true
+         : CTypeConstIterator<CInt_fuzz>(Begin(p->GetLoc()))
+                                  ? true
+         :                          false;
 }
 
 
@@ -913,7 +916,7 @@ string CHgvsParser::x_AsHgvsInstExpression(
             inst_str = "0"; //whole-product deletion
         } else if(is_prot) {
             inst_str = "del"; //do not generate asserted part for protein expressions: SNP-4623
-        } else if(IsFuzzOnlyOffsetLoc(placement)) { //VAR-1556
+        } else if(ContainsAnyFuzz(placement)) { //VAR-1556
             inst_str = "del";
         } else {
             inst_str = "del" + asserted_seq_str;
