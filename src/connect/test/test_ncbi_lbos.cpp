@@ -41,16 +41,32 @@ USING_NCBI_SCOPE;
  * test config is as high as possible */
 static void                           s_PrintInfo                  (HOST_INFO);
 static void                           s_TestFindMethod       (ELBOSFindMethod);
-template <int lines>
-    static FConnReadMethod            s_FakeReadDiscovery;
-template <int lines>
-    static FConnReadMethod            s_FakeReadAnnouncement;
-template <int lines>
-    static FConnReadMethod            s_FakeReadDiscoveryCorrupt;
-template<int count>
-    static FFillCandidatesMethod      s_FakeFillCandidates;
-static     FFillCandidatesMethod      s_FakeFillCandidatesWithError;
-static     FResolveIPPortMethod       s_FakeResolveIPPort;
+
+  template <int lines>
+     static EIO_Status   s_FakeReadDiscovery                 (CONN,   void*,
+                                                              size_t, size_t*,
+                                                               EIO_ReadMethod );
+  template <int lines>
+      static EIO_Status   s_FakeReadAnnouncement              (CONN conn,
+                                                               void* line,
+                                                               size_t size,
+                                                               size_t* n_read,
+                                                               EIO_ReadMethod how);
+  template <int lines>
+      static EIO_Status   s_FakeReadDiscoveryCorrupt          (CONN, void*,
+                                                               size_t, size_t*,
+                                                               EIO_ReadMethod);
+ template<int count>
+      static void         s_FakeFillCandidates                (SLBOS_Data*,
+                                                              const char*);
+  static void             s_FakeFillCandidatesWithError       (SLBOS_Data*,
+                                                               const char*);
+  static SSERV_Info**     s_FakeResolveIPPort                 (const char*,
+                                                               const char*,
+                                                               SConnNetInfo*);
+/** @brief Return a priori known LBOS address */
+static char*            s_FakeComposeLBOSAddress            ( );
+
 static     FComposeLBOSAddressMethod  s_FakeComposeLBOSAddress;
 #ifdef NCBI_OS_MSWIN
     static int          s_GetTimeOfDay                      (struct timeval*);
