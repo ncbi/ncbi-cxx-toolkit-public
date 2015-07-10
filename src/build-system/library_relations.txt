@@ -454,6 +454,7 @@ gpipe_ftp_new needs xrepeatdb
 gpipe_jira needs connssl
 gpipe_jira needs gpinit_access
 gpipe_jira needs gpipe_attr
+gpipe_jira needs3party $(CURL_LIBS)
 gpipe_jira needs3party $(GSOAP_LIBS)
 gpipe_kmer needs gpipe_objutil
 gpipe_kmer needs sampling
@@ -1304,6 +1305,7 @@ xcgi needs xutil
 xcgi_redirect needs xcgi
 xcgi_redirect needs xhtml
 xcleanup needs submit
+xcleanup needs taxon3
 xcleanup needs valid
 xcleanup needs xobjutil
 xcompress needs $(CMPRS_LIB)
@@ -1419,7 +1421,6 @@ xngalign needs xalgoalignutil
 xngalign needs xmergetree
 xobjedit needs $(OBJREAD_LIBS)
 xobjedit needs $(XFORMAT_LIBS)
-xobjedit needs taxon3
 xobjedit needs xalnmgr
 xobjmanip needs general
 xobjmgr needs genome_collection
