@@ -125,24 +125,32 @@ typedef int/*bool*/ FDeannounceMethod (const char* lbos_hostport,
  *               registry
  *  @param[in]   method
  */
+NCBI_XCONNECT_EXPORT
 int/*bool*/ g_LBOS_UnitTesting_SetLBOSFindMethod (SERV_ITER iter,
                                                        ELBOSFindMethod method);
-
+NCBI_XCONNECT_EXPORT
 int/*bool*/ g_LBOS_UnitTesting_SetLBOSaddress (SERV_ITER iter, char* address);
+NCBI_XCONNECT_EXPORT
 int/*bool*/ g_LBOS_UnitTesting_SetLBOSRoleAndDomainFiles (const char* roleFile,
                                                         const char* domainFile);
+NCBI_XCONNECT_EXPORT
 char** g_LBOS_getLBOSAddresses ();
+NCBI_XCONNECT_EXPORT
 char** g_LBOS_getLBOSAddressesEx(ELBOSFindMethod, const char* );
-
+NCBI_XCONNECT_EXPORT
 int/*bool*/ g_LBOS_SetLBOSFindError (SERV_ITER iter,
                                                     ELBOSFindError find_error);
-
+NCBI_XCONNECT_EXPORT
 const SSERV_VTable* SERV_LBOS_Open(SERV_ITER            iter,
                                    const SConnNetInfo*  net_info,
                                    SSERV_Info**         info);
-
+NCBI_XCONNECT_EXPORT
 int   g_LBOS_CheckIterator(SERV_ITER iter, int/*bool*/ should_have_data);
+
+NCBI_XCONNECT_EXPORT
 int   g_StringIsNullOrEmpty(const char* str);
+
+NCBI_XCONNECT_EXPORT
 char* g_LBOS_ComposeLBOSAddress();
 /*ELBOSAnnounceResult  g_LBOS_AnnounceEx(const char*, const char*, unsigned short,
                         const char*, unsigned int*, unsigned short*);*/
@@ -163,6 +171,7 @@ typedef struct {
     FDeannounceMethod Deannounce;*/
 } SLBOS_functions;
 
+NCBI_XCONNECT_EXPORT
 extern SLBOS_functions g_lbos_funcs;
 
 #ifdef __cplusplus
