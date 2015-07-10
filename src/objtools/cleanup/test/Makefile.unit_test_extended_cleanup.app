@@ -5,10 +5,10 @@ SRC = unit_test_extended_cleanup
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIB = xcleanup xunittestutil xobjutil valid taxon3 submit xregexp $(PCRE_LIB) \
-      test_boost $(SOBJMGR_LIBS)
+LIB = xcleanup xunittestutil xobjutil valid taxon3 submit xconnect \
+      xregexp $(PCRE_LIB) test_boost $(SOBJMGR_LIBS)
 
-LIBS = $(PCRE_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIBS = $(PCRE_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 REQUIRES = Boost.Test.Included
 
