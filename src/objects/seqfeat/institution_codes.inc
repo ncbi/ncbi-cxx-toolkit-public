@@ -183,7 +183,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "AM:Ornithology	s	Australian Museum, Vertebrate Collections: Ornithology",
 "AM:Palaeontology	s	Australian Museum, Palaeontology Collection",
 "AM<ARG>	s	Acatushun Museum at the Estancia Haberton",
-"AM<BLG>	s	Asenovgrad Museum",
+"AM<BLG>	s	Asenovgrad Paleontology Museum",
 "AMAZ	s	Universidad Nacional de la Amazonia Peruana",
 "AMC	c	Department of Biologics Research",
 "AMCC	s	Ambrose Monell Cryo Collection, American Museum of Natural History",
