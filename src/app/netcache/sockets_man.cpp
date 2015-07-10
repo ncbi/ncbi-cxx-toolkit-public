@@ -156,6 +156,7 @@ static Uint4 s_ListenErrors[kMaxCntListeningSocks];
 static CSrvListener s_Listener;
 static int s_EpollFD = -1;
 int s_TotalSockets = 0;
+int s_AllSocketsCount = 0;
 int s_SoftSocketLimit = 0;
 int s_HardSocketLimit = 0;
 static int s_SocketTimeout = 0;
@@ -342,6 +343,7 @@ s_CreateListeningSocket(Uint1 idx)
 
     sock_info.fd = sock;
 #endif
+    AtomicAdd(s_TotalSockets, 1);
     return true;
 }
 
@@ -429,6 +431,7 @@ s_CloseSocket(int fd, bool do_abort)
     if (res)
         LOG_WITH_ERRNO(Critical, "Error closing socket", x_errno);
 #endif
+    AtomicSub(s_TotalSockets, 1);
 }
 
 static void
@@ -580,6 +583,7 @@ s_ProcessListenEvent(Uint1 sock_idx, TSrvThreadNum thread_num)
         s_CreateDiagRequest(task, s_ListenSocks[sock_idx].port,
                             task->m_PeerAddr, task->m_PeerPort);
         s_Threads[thread_num]->stat->SockOpenPassive();
+        AtomicAdd(s_TotalSockets, 1);
         if (!task->StartProcessing(thread_num))
             task->Terminate();
 #endif
@@ -743,7 +747,7 @@ MoveAllSockets(SSocketsData* dst_socks, SSocketsData* src_socks)
 void
 PromoteSockAmount(SSocketsData* socks)
 {
-    AtomicAdd(s_TotalSockets, socks->sock_cnt);
+    AtomicAdd(s_AllSocketsCount, socks->sock_cnt);
     socks->sock_cnt = 0;
 }
 
@@ -1422,6 +1426,7 @@ retry:
     m_Fd = sock;
     s_CreateDiagRequest(this, GetLocalPort(), host, port);
     GetCurThread()->stat->SockOpenActive();
+    AtomicAdd(s_TotalSockets, 1);
     return true;
 
 close_and_error:
