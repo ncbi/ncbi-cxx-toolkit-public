@@ -292,7 +292,7 @@ case "$ncbi_platform" in
         if [ "x$with_vdb" = 'xrc' ]; then
             with_vdb=$vdb_base/cxx_toolkit/2-rc
         else
-            : ${VDB_PATH=$vdb_base/2.5.0}
+            : ${VDB_PATH=$vdb_base/2.5.2}
         fi
         ;;
 esac
