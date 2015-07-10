@@ -46,7 +46,7 @@ extern "C" {
 #endif /*__cplusplus*/
 
 /** @brief The first method to try to find LBOS before default algorithm of
- *         going through methods (maybe even through the same emthod again)
+ *         going through methods (maybe even through the same method again)
  */
 typedef enum {
     eLBOSFindMethod_none,           /*< do not search. Used to skip
@@ -100,6 +100,26 @@ typedef enum {
     ELBOSAnnounceResult_LBOSError     = 3
 } ELBOSAnnounceResult;
 
+typedef SSERV_Info** FResolveIPPortMethod (const char* lbos_address,
+    const char* serviceName, SConnNetInfo* net_info);
+typedef EIO_Status FConnReadMethod (CONN conn, void* line, size_t  size,
+    size_t* n_read, EIO_ReadMethod);
+typedef char* FComposeLBOSAddressMethod();
+typedef void FFillCandidatesMethod (SLBOS_Data* data, const char* service);
+typedef void FDestroyDataMethod (SLBOS_Data* data);
+typedef SLBOS_Data* FConstructDataMethod (int candidatesCapacity);
+typedef SSERV_Info* FGetNextInfoMethod (SERV_ITER iter, HOST_INFO* host_info);
+typedef ELBOSAnnounceResult FAnnounceExMethod (const char* service,
+    const char* version,
+    unsigned short port,
+    const char* healthcheck_url,
+    unsigned int* LBOS_host,
+    unsigned short* LBOS_port);
+typedef int/*bool*/ FDeannounceMethod (const char* lbos_hostport,
+    const char* service,
+    const char* version,
+    unsigned short port,
+    const char* ip);
 
 /** @brief       Set method how to find LBOS. Default is eLBOSFindMethod_
  *               registry
@@ -129,28 +149,18 @@ char* g_LBOS_ComposeLBOSAddress();
 /*int*/ /* bool*/ /*g_LBOS_DeannounceSelf();*/
 
 typedef struct {
-    SSERV_Info** (*ResolveIPPort) (const char* lbos_address,
-            const char* serviceName, SConnNetInfo* net_info);
-    EIO_Status (*Read) (CONN    conn, void*   line, size_t  size,
-            size_t* n_read, EIO_ReadMethod how); /* This function pointer
-            is not used only by external functions, but also by
-            s_LBOS_UrlReadAll */
-    char* (*ComposeLBOSAddress)();
-    void (*FillCandidates) (SLBOS_Data* data, const char* service);
-    SLBOS_Data* (*ConstructData) (int candidatesCapacity);
-    void (*DestroyData) (SLBOS_Data* data);
-    SSERV_Info* (*GetNextInfo) (SERV_ITER iter, HOST_INFO* host_info);
-    /*ELBOSAnnounceResult (*AnnounceEx)(const char* service,
-                                          const char* version,
-                                          unsigned short port,
-                                          const char* healthcheck_url,
-                                          unsigned int* LBOS_host,
-                                          unsigned short* LBOS_port);
-    ELBOSDeannounceResult (*Deannounce)(const char* lbos_hostport,
-                                            const char* service,
-                                            const char* version,
-                                            unsigned short port,
-                                            const char* ip);*/
+    FResolveIPPortMethod*   ResolveIPPort;
+    FConnReadMethod*        Read; /*    This function pointer
+                                        is not used only by external
+                                        functions, but also by
+                                        s_LBOS_UrlReadAll */
+    FComposeLBOSAddressMethod* ComposeLBOSAddress;
+    FFillCandidatesMethod* FillCandidates;
+    FConstructDataMethod* ConstructData;
+    FDestroyDataMethod* DestroyData;
+    FGetNextInfoMethod* GetNextInfo;
+    /*FAnnounceExMethod AnnounceEx;
+    FDeannounceMethod Deannounce;*/
 } SLBOS_functions;
 
 extern SLBOS_functions g_lbos_funcs;

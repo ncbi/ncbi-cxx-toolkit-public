@@ -1,37 +1,7 @@
-/* $Id$
- * ===========================================================================
- *
- *                            PUBLIC DOMAIN NOTICE
- *               National Center for Biotechnology Information
- *
- *  This software/database is a "United States Government Work" under the
- *  terms of the United States Copyright Act.  It was written as part of
- *  the author's official duties as a United States Government employee and
- *  thus cannot be copyrighted.  This software/database is freely available
- *  to the public for use. The National Library of Medicine and the U.S.
- *  Government have not placed any restriction on its use or reproduction.
- *
- *  Although all reasonable efforts have been taken to ensure the accuracy
- *  and reliability of the software and data, the NLM and the U.S.
- *  Government do not and cannot warrant the performance or results that
- *  may be obtained by using this software or data. The NLM and the U.S.
- *  Government disclaim all warranties, express or implied, including
- *  warranties of performance, merchantability or fitness for any particular
- *  purpose.
- *
- *  Please cite the author in any work or product based on this material.
- *
- * ===========================================================================
- *
- * Author:  Anton Lavrentiev, Dmitriy Elisov
- *
- * File Description:
- *   Standard test for named service resolution facility
- *
- */
 
 /*C++*/
 #include <ncbi_pch.hpp>
+
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbireg.hpp>
@@ -45,16 +15,17 @@
 #include "../ncbi_priv.h"               /* CORE logging facilities */
 #include "../ncbi_lbos.h"
 
-#define BOOST_AUTO_TEST_MAIN
+//#define BOOST_AUTO_TEST_MAIN
 /*std*/
 #include <locale.h>
 #include <stdlib.h>
 #include <time.h>
 #ifdef NCBI_OS_MSWIN
-#  include <windows.h>
+#  include <winsock2.h>
 #else
 #  include <sys/time.h>
 #endif
+
 // This header must be included before all Boost.Test headers if there are any
 #include <corelib/test_boost.hpp>
 /*test*/
@@ -68,43 +39,31 @@ USING_NCBI_SCOPE;
  * used in different test suites. It is convenient
  * that their difinitions are at the very end, so that
  * test config is as high as possible */
-static void             s_PrintInfo                         (HOST_INFO);
-static void             s_TestFindMethod                    (ELBOSFindMethod);
+static void                           s_PrintInfo                  (HOST_INFO);
+static void                           s_TestFindMethod       (ELBOSFindMethod);
 template <int lines>
-    static EIO_Status   s_FakeReadDiscovery                 (CONN,   void*,
-                                                             size_t, size_t*,
-                                                             EIO_ReadMethod );
+    static FConnReadMethod            s_FakeReadDiscovery;
 template <int lines>
-    static EIO_Status   s_FakeReadAnnouncement              (CONN conn,
-                                                             void* line,
-                                                             size_t size,
-                                                             size_t* n_read,
-                                                             EIO_ReadMethod how);
+    static FConnReadMethod            s_FakeReadAnnouncement;
 template <int lines>
-    static EIO_Status   s_FakeReadDiscoveryCorrupt          (CONN, void*,
-                                                             size_t, size_t*,
-                                                             EIO_ReadMethod);
+    static FConnReadMethod            s_FakeReadDiscoveryCorrupt;
 template<int count>
-    static void         s_FakeFillCandidates                (SLBOS_Data*,
-                                                             const char*);
-static void             s_FakeFillCandidatesWithError       (SLBOS_Data*,
-                                                             const char*);
-static SSERV_Info**     s_FakeResolveIPPort                 (const char*,
-                                                             const char*,
-                                                             SConnNetInfo*);
+    static FFillCandidatesMethod      s_FakeFillCandidates;
+static     FFillCandidatesMethod      s_FakeFillCandidatesWithError;
+static     FResolveIPPortMethod       s_FakeResolveIPPort;
+static     FComposeLBOSAddressMethod  s_FakeComposeLBOSAddress;
 #ifdef NCBI_OS_MSWIN
     static int          s_GetTimeOfDay                      (struct timeval*);
 #else
-#   define              s_GetTimeOfDay(tv)                   gettimeofday(tv, 0)
+#   define              s_GetTimeOfDay(tv)                  gettimeofday(tv, 0)
 #endif
 static unsigned short   s_Msb                               (unsigned short);
 static const char*      s_OS                                (TNcbiOSType);
 static const char*      s_Bits                              (TNcbiCapacity);
 /** @brief Count difference between two timestamps, in seconds*/
 static double           s_TimeDiff                      (const struct timeval*,
-                                                         const struct timeval*);
-/** @brief Return a priori known LBOS address */
-static char*            s_FakeComposeLBOSAddress            ( );
+                                                        const struct timeval*);
+
 /** @brief Get number of servers with specified IP announced in ZK  */
 //static int            s_CountServers                      (const char*,
 //                                                             unsigned int);
@@ -200,9 +159,11 @@ static void DomainFail__ShouldReturnNULL();
 
 static void LBOSExists__ShouldReturnLbos()
 {
+#ifndef NCBI_OS_MSWIN
     char* result = g_LBOS_ComposeLBOSAddress();
     NCBITEST_CHECK_MESSAGE(!g_StringIsNullOrEmpty(result), "LBOS address was "
                            "not constructed appropriately");
+#endif
 }
 
 /* Thread-unsafe because of g_LBOS_UnitTesting_SetLBOSRoleAndDomainFiles().
@@ -211,8 +172,8 @@ static void LBOSExists__ShouldReturnLbos()
 static void RoleFail__ShouldReturnNULL()
 {
     string path = CNcbiApplication::Instance()->GetProgramExecutablePath();
-    int lastSlash = min(path.rfind('/'), string::npos); //UNIX
-    int lastBackSlash = min(path.rfind("\\"), string::npos); //WIN
+    size_t lastSlash = min(path.rfind('/'), string::npos); //UNIX
+    size_t lastBackSlash = min(path.rfind("\\"), string::npos); //WIN
     path = path.substr(0, max(lastSlash, lastBackSlash));
     string corruptRoleString = path + string("/ncbi_lbos_role");
     const char* corruptRole = corruptRoleString.c_str();
@@ -271,8 +232,8 @@ static void RoleFail__ShouldReturnNULL()
 static void DomainFail__ShouldReturnNULL()
 {
     string path = CNcbiApplication::Instance()->GetProgramExecutablePath();
-    int lastSlash = min(path.rfind('/'), string::npos); //UNIX
-    int lastBackSlash = min(path.rfind("\\"), string::npos); //WIN
+    size_t lastSlash = min(path.rfind('/'), string::npos); //UNIX
+    size_t lastBackSlash = min(path.rfind("\\"), string::npos); //WIN
     path = path.substr(0, max(lastSlash, lastBackSlash));
     string corruptDomainString = path + string("/ncbi_lbos_domain");
     const char* corruptDomain = corruptDomainString.c_str();
@@ -315,12 +276,8 @@ static void Multiple_AfterGetNextInfo__ShouldNotCrash();
 static void NoConditions__IterContainsZeroCandidates()
 {
     const char* service = "/lbos";
-    SConnNetInfo* net_info;
-    SERV_ITER iter;
-
-    setlocale(LC_ALL, "");
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
-                           fLOG_OmitNoteLevel | fLOG_DateTime);
+    SConnNetInfo* net_info = NULL;
+    SERV_ITER iter = NULL;
 
     CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
     net_info = ConnNetInfo_Create(service);
@@ -334,6 +291,10 @@ static void NoConditions__IterContainsZeroCandidates()
      * We know that iter is LBOS's.
      */
     SERV_Reset(iter);
+    if (iter == NULL) {
+        NCBITEST_CHECK_MESSAGE(iter != NULL, "LBOS not found when should be");
+        return;
+    }
     SLBOS_Data* data = static_cast<SLBOS_Data*>(iter->data);
 
     NCBITEST_CHECK_MESSAGE(data->n_cand == 0,
@@ -353,13 +314,9 @@ static void NoConditions__IterContainsZeroCandidates()
 static void MultipleReset__ShouldNotCrash()
 {
     const char* service = "/lbos";
-    SConnNetInfo* net_info;
+    SConnNetInfo* net_info = NULL;
     SLBOS_Data* data;
-    SERV_ITER iter;
-
-    setlocale(LC_ALL, "");
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
-                           fLOG_OmitNoteLevel | fLOG_DateTime);
+    SERV_ITER iter = NULL;
 
     CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
     net_info = ConnNetInfo_Create(service);
@@ -375,19 +332,21 @@ static void MultipleReset__ShouldNotCrash()
      * implementation before GetNextInfo is called, so we can set
      * source of LBOS address now
      */
-    int i;
+    int i = 0;
     for (i = 0;  i < 15;  ++i) {
         /* If just don't crash here, it is good enough. No assert is
          * necessary, plus this will cause valgrind to swear if not all iter
          * is reset
          */
         SERV_Reset(iter);
+        if (iter == NULL)
+            continue;//If nothing found, and reset does not crash - good enough
         data = static_cast<SLBOS_Data*>(iter->data);
         NCBITEST_CHECK_MESSAGE(data->n_cand == 0,
-                               "Reset did not set n_cand to 0");
+            "Reset did not set n_cand to 0");
         NCBITEST_CHECK_MESSAGE(data->pos_cand == 0,
-                               "Reset did not set pos_cand "
-                               "to 0");
+            "Reset did not set pos_cand "
+            "to 0");
     }
     return;
 }
@@ -396,13 +355,9 @@ static void MultipleReset__ShouldNotCrash()
 static void Multiple_AfterGetNextInfo__ShouldNotCrash()
 {
     const char* service = "/lbos";
-    SConnNetInfo* net_info;
-    SERV_ITER iter;
+    SConnNetInfo* net_info = NULL;
+    SERV_ITER iter = NULL;
     SLBOS_Data* data;
-
-    setlocale(LC_ALL, "");
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
-                           fLOG_OmitNoteLevel | fLOG_DateTime);
 
     CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
     net_info = ConnNetInfo_Create(service);
@@ -417,18 +372,21 @@ static void Multiple_AfterGetNextInfo__ShouldNotCrash()
      * We know that iter is LBOS's. It must have clear info by implementation
      * before GetNextInfo is called, so we can set source of LBOS address now
      */
-    int i;
+    int i = 0;
     for (i = 0;  i < 15;  ++i) {
         /* If just don't crash here, it is good enough. No assert is
          * necessary, plus this will cause valgrind to swear if not all iter
          * is reset
          */
         SERV_Reset(iter);
+        if (iter == NULL)
+            continue;//If nothing found, and reset does not crash - good enough
         data = static_cast<SLBOS_Data*>(iter->data);
         NCBITEST_CHECK_MESSAGE(data->n_cand == 0,
-                               "Reset did not set n_cand to 0");
+            "Reset did not set n_cand to 0");
         NCBITEST_CHECK_MESSAGE(data->pos_cand == 0,
-                               "Reset did not set pos_cand to 0");
+            "Reset did not set pos_cand "
+            "to 0");
 
         HOST_INFO host_info; // we leave garbage here for a reason
         SERV_GetNextInfoEx(iter, &host_info);
@@ -478,12 +436,8 @@ static void FullCycle__ShouldWork();
 static void AfterOpen__ShouldWork()
 {
     const char* service = "/lbos";
-    SConnNetInfo* net_info;
-    SERV_ITER iter;
-
-    setlocale(LC_ALL, "");
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
-                           fLOG_OmitNoteLevel | fLOG_DateTime);
+    SConnNetInfo* net_info = NULL;
+    SERV_ITER iter = NULL;
 
     CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
     net_info = ConnNetInfo_Create(service);
@@ -493,25 +447,22 @@ static void AfterOpen__ShouldWork()
                       SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
                       net_info, 0/*skip*/, 0/*n_skip*/,
                       0/*external*/, 0/*arg*/, 0/*val*/);
+    if (iter == NULL) {
+        NCBITEST_CHECK_MESSAGE(iter != NULL,
+            "LBOS not found when it should be");
+        return;
+    }
     /*
      * We know that iter is LBOS's.
      */
     SERV_Close(iter);
-
-    SLBOS_Data* data = static_cast<SLBOS_Data*>(iter->data);
-
-    NCBITEST_CHECK_MESSAGE(data == NULL, "Reset did not set data to 0");
     return;
 }
 static void AfterReset__ShouldWork()
 {
     const char* service = "/lbos";
-    SConnNetInfo* net_info;
-    SERV_ITER iter;
-
-    setlocale(LC_ALL, "");
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
-                           fLOG_OmitNoteLevel | fLOG_DateTime);
+    SConnNetInfo* net_info = NULL;
+    SERV_ITER iter = NULL;
 
     CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
     net_info = ConnNetInfo_Create(service);
@@ -521,28 +472,25 @@ static void AfterReset__ShouldWork()
                       SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
                       net_info, 0/*skip*/, 0/*n_skip*/,
                       0/*external*/, 0/*arg*/, 0/*val*/);
+    if (iter == NULL) {
+        NCBITEST_CHECK_MESSAGE(iter != NULL,
+            "LBOS not found when it should be");
+        return;
+    }
     /*
      * We know that iter is LBOS's.
      */
     SERV_Reset(iter);
     SERV_Close(iter);
-
-    SLBOS_Data* data = static_cast<SLBOS_Data*>(iter->data);
-
-    NCBITEST_CHECK_MESSAGE(data == NULL, "Reset did not set data to 0");
     return;
 }
 
 static void AfterGetNextInfo__ShouldWork()
 {
     const char* service = "/lbos";
-    SConnNetInfo* net_info;
-    SERV_ITER iter;
+    SConnNetInfo* net_info = NULL;
+    SERV_ITER iter = NULL;
     SLBOS_Data* data;
-
-    setlocale(LC_ALL, "");
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
-                           fLOG_OmitNoteLevel | fLOG_DateTime);
 
     CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
     net_info = ConnNetInfo_Create(service);
@@ -552,34 +500,31 @@ static void AfterGetNextInfo__ShouldWork()
                       SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
                       net_info, 0/*skip*/, 0/*n_skip*/,
                       0/*external*/, 0/*arg*/, 0/*val*/);
+    SERV_GetNextInfo(iter);
+    if (iter == NULL) {
+        NCBITEST_CHECK_MESSAGE(iter != NULL,
+            "LBOS not found when it should be");
+        return;
+    }
     /*
      * We know that iter is LBOS's.
      */
-    SERV_GetNextInfo(iter);
     data = static_cast<SLBOS_Data*>(iter->data);
     NCBITEST_CHECK_MESSAGE(data->n_cand > 0, "n_cand should be more than 0"
                            " after GetNExtInfo");
     NCBITEST_CHECK_MESSAGE(data->pos_cand > 0, "pos_cand should be more "
                            "than 0 after GetNExtInfo");
     SERV_Close(iter);
-
-    data = static_cast<SLBOS_Data*>(iter->data);
-
-    NCBITEST_CHECK_MESSAGE(data == NULL, "Reset did not set data to 0");
     return;
 }
 
 static void FullCycle__ShouldWork()
 {
     const char* service = "/lbos";
-    SConnNetInfo* net_info;
-    SERV_ITER iter;
+    SConnNetInfo* net_info = NULL;
+    SERV_ITER iter = NULL;
     SLBOS_Data* data;
     size_t i;
-
-    setlocale(LC_ALL, "");
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
-                           fLOG_OmitNoteLevel | fLOG_DateTime);
 
     CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
     net_info = ConnNetInfo_Create(service);
@@ -592,6 +537,11 @@ static void FullCycle__ShouldWork()
                       SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
                       net_info, 0/*skip*/, 0/*n_skip*/,
                       0/*external*/, 0/*arg*/, 0/*val*/);
+    if (iter == NULL) {
+        NCBITEST_CHECK_MESSAGE(iter != NULL,
+            "LBOS not found when it should be");
+        return;
+    }
     SERV_GetNextInfo(iter);
     data = static_cast<SLBOS_Data*>(iter->data);
     NCBITEST_CHECK_MESSAGE(data->n_cand > 0, "n_cand should be more than 0"
@@ -600,8 +550,6 @@ static void FullCycle__ShouldWork()
                            "than 0 after GetNExtInfo");
     SERV_Reset(iter);
     SERV_Close(iter);
-    data = static_cast<SLBOS_Data*>(iter->data);
-    NCBITEST_CHECK_MESSAGE(data == NULL, "Reset did not set data to 0");
 
     /*
      * 2. We close after half hosts checked with GetNextInfo
@@ -622,8 +570,6 @@ static void FullCycle__ShouldWork()
                            "than 0 after GetNExtInfo");
     SERV_Reset(iter);
     SERV_Close(iter);
-    data = static_cast<SLBOS_Data*>(iter->data);
-    NCBITEST_CHECK_MESSAGE(data == NULL, "Reset did not set data to 0");
 
     /* 3. We close after all hosts checked with GetNextInfo*/
     iter = SERV_OpenP(service, (fSERV_All & ~fSERV_Firewall) |
@@ -642,8 +588,6 @@ static void FullCycle__ShouldWork()
                            "than 0 after GetNExtInfo");
     SERV_Reset(iter);
     SERV_Close(iter);
-    data = static_cast<SLBOS_Data*>(iter->data);
-    NCBITEST_CHECK_MESSAGE(data == NULL, "Reset did not set data to 0");
 
     /* Cleanup */
     ConnNetInfo_Destroy(net_info);
@@ -665,11 +609,7 @@ static void FakeErrorInput__ShouldNotCrash();
 static void ServiceExists__ReturnHostIP()
 {
     const char* service = "/lbos";
-    SConnNetInfo* net_info;
-
-    setlocale(LC_ALL, "");
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
-                           fLOG_OmitNoteLevel | fLOG_DateTime);
+    SConnNetInfo* net_info = NULL;
 
     CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
     net_info = ConnNetInfo_Create(service);
@@ -678,7 +618,7 @@ static void ServiceExists__ReturnHostIP()
      */
 
     SSERV_Info** hostports = g_lbos_funcs.ResolveIPPort(
-            "lbos.dev.ac-va.ncbi.nlm.nih.gov:80", service, net_info);
+            "lbos.dev.be-md.ncbi.nlm.nih.gov:8080", service, net_info);
     size_t i = 0;
     if (hostports != NULL) {
         for (i = 0;  hostports[i] != NULL;  i++) {
@@ -697,11 +637,7 @@ static void ServiceExists__ReturnHostIP()
 static void ServiceDoesNotExist__ReturnNULL()
 {
     const char* service = "/service/doesnotexist";
-    SConnNetInfo* net_info;
-
-    setlocale(LC_ALL, "");
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
-                           fLOG_OmitNoteLevel | fLOG_DateTime);
+    SConnNetInfo* net_info = NULL;
 
     CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
     net_info = ConnNetInfo_Create(service);
@@ -710,7 +646,7 @@ static void ServiceDoesNotExist__ReturnNULL()
      */
 
     SSERV_Info** hostports = g_lbos_funcs.ResolveIPPort(
-            "lbos.dev.ac-va.ncbi.nlm.nih.gov:80", service, net_info);
+            "lbos.dev.be-md.ncbi.nlm.nih.gov:8080", service, net_info);
     size_t i = 0;
     if (hostports != NULL) {
         for (i = 0;  hostports[i] != NULL;  i++) continue;
@@ -723,11 +659,7 @@ static void ServiceDoesNotExist__ReturnNULL()
 static void NoLBOS__ReturnNULL()
 {
     const char* service = "/lbos";
-    SConnNetInfo* net_info;
-
-    setlocale(LC_ALL, "");
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
-                           fLOG_OmitNoteLevel | fLOG_DateTime);
+    SConnNetInfo* net_info = NULL;
 
     CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
     net_info = ConnNetInfo_Create(service);
@@ -749,28 +681,22 @@ static void NoLBOS__ReturnNULL()
 static void FakeMassiveInput__ShouldProcess()
 {
     const char* service = "/service/doesnotexist";
-    SConnNetInfo* net_info;
+    SConnNetInfo* net_info = NULL;
     char* temp_host;
     unsigned int temp_ip;
     unsigned short temp_port;
     s_call_counter = 0;
-
-    setlocale(LC_ALL, "");
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
-                           fLOG_OmitNoteLevel | fLOG_DateTime);
 
     CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
     net_info = ConnNetInfo_Create(service);
     /*
      * We know that iter is LBOS's.
      */
-    EIO_Status  (*temp_func_pointer) (CONN    conn, void*   line,
-            size_t  size, size_t* n_read, EIO_ReadMethod how)
-                                             = g_lbos_funcs.Read;
+    FConnReadMethod* temp_func_pointer = g_lbos_funcs.Read;
     g_lbos_funcs.Read = s_FakeReadDiscovery<10>;
     SSERV_Info** hostports = g_lbos_funcs.ResolveIPPort(
             "lbosdevacvancbinlmnih.gov", "/lbos", net_info);
-    int i;
+    int i = 0;
     NCBITEST_CHECK_MESSAGE(hostports != NULL,
                            "Problem with fake massive input, "
                            "no servers found. "
@@ -804,23 +730,18 @@ static void FakeMassiveInput__ShouldProcess()
 static void FakeErrorInput__ShouldNotCrash()
 {
     const char* service = "/service/doesnotexist";
-    SConnNetInfo* net_info;
+    SConnNetInfo* net_info = NULL;
     char* temp_host;
     unsigned int temp_ip;
     unsigned short temp_port;
     s_call_counter = 0;
-
-    setlocale(LC_ALL, "");
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
-                           fLOG_OmitNoteLevel | fLOG_DateTime);
 
     CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
     net_info = ConnNetInfo_Create(service);
     /*
      * We know that iter is LBOS's.
      */
-    EIO_Status  (*temp_func_pointer) (CONN    conn, void*   line, size_t  size,
-            size_t* n_read, EIO_ReadMethod) = g_lbos_funcs.Read;
+    FConnReadMethod* temp_func_pointer = g_lbos_funcs.Read;
     g_lbos_funcs.Read = s_FakeReadDiscoveryCorrupt<200>;
     SSERV_Info** hostports = g_lbos_funcs.ResolveIPPort(
             "lbosdevacvancbinlmnih.gov", "/lbos", net_info);
@@ -874,7 +795,7 @@ static void NoConditions__AddressDefOrder();
 /* Not thread-safe because of using g_lbos_funcs */
 static void SpecificMethod__FirstInResult()
 {
-    int i;
+    int i = 0;
     string custom_lbos = "lbos.custom.host";
     char** addresses = g_LBOS_getLBOSAddressesEx(eLBOSFindMethod_custom_host,
                                                custom_lbos.c_str());
@@ -887,7 +808,7 @@ static void SpecificMethod__FirstInResult()
 
     addresses = g_LBOS_getLBOSAddressesEx(eLBOSFindMethod_registry, NULL);
     NCBITEST_CHECK_MESSAGE(strcmp(addresses[0],
-                                  "lbos.dev.ac-va.ncbi.nlm.nih.gov:80") == 0,
+                                  "lbos.dev.be-md.ncbi.nlm.nih.gov:8080") == 0,
                            "Registry specified lbos address method error");
     for (i = 0;  addresses[i] != NULL;  ++i) {
         free(addresses[i]);
@@ -904,12 +825,17 @@ static void SpecificMethod__FirstInResult()
 
     /* We have to fake last method, because its result is dependent on
      * location */
-    char* (*temp_func_pointer)() = g_lbos_funcs.ComposeLBOSAddress;
+    FComposeLBOSAddressMethod* temp_func_pointer =
+                                              g_lbos_funcs.ComposeLBOSAddress;
     g_lbos_funcs.ComposeLBOSAddress = s_FakeComposeLBOSAddress;
-    addresses = g_LBOS_getLBOSAddressesEx(eLBOSFindMethod_etc_ncbi_domain, NULL);
+    addresses =
+              g_LBOS_getLBOSAddressesEx(eLBOSFindMethod_etc_ncbi_domain, NULL);
     NCBITEST_CHECK_MESSAGE(strcmp(addresses[0], "lbos.foo") == 0,
                            "/etc/ncbi{role, domain} specified lbos "
                            "address method error");
+    NCBITEST_CHECK_MESSAGE(strcmp(addresses[1], "lbos.foo:8080") == 0,
+        "/etc/ncbi{role, domain} specified lbos "
+        "address method error");
     for (i = 0;  addresses[i] != NULL;  ++i) {
         free(addresses[i]);
     }
@@ -927,8 +853,13 @@ static void CustomHostNotProvided__SkipCustomHost()
                                                  NULL);
     for (i = 0;  addresses[i] != NULL;  ++i) continue;
     /* We check that there are only 3 LBOS addresses */
-    NCBITEST_CHECK_MESSAGE(i == 4, "Custom host not specified, but "
+#ifdef NCBI_OS_MSWIN //in this case, no /etc/ncbi{role, domain} hosts
+    NCBITEST_CHECK_MESSAGE(i == 2, "Custom host not specified, but "
                            "LBOS still provides it");
+#else
+    NCBITEST_CHECK_MESSAGE(i == 4, "Custom host not specified, but "
+        "LBOS still provides it");
+#endif
     /* Cleanup */
     for (i = 0;  addresses[i] != NULL;  ++i) {
         free(addresses[i]);
@@ -938,8 +869,9 @@ static void CustomHostNotProvided__SkipCustomHost()
 
 static void NoConditions__AddressDefOrder()
 {
-    int i;
-    char* (*temp_func_pointer)() = g_lbos_funcs.ComposeLBOSAddress;
+    int i = 0;
+    FComposeLBOSAddressMethod* temp_func_pointer =
+        g_lbos_funcs.ComposeLBOSAddress;
     g_lbos_funcs.ComposeLBOSAddress = s_FakeComposeLBOSAddress;
     char** addresses = g_LBOS_getLBOSAddressesEx(eLBOSFindMethod_custom_host,
                                                  "lbos.custom.host");
@@ -948,7 +880,7 @@ static void NoConditions__AddressDefOrder()
                                   "lbos.custom.host") == 0,
                            "Custom lbos address error");
     NCBITEST_CHECK_MESSAGE(strcmp(addresses[1],
-                                  "lbos.dev.ac-va.ncbi.nlm.nih.gov:80") == 0,
+                                  "lbos.dev.be-md.ncbi.nlm.nih.gov:8080") == 0,
                            "Registry lbos address error");
     NCBITEST_CHECK_MESSAGE(strcmp(addresses[2], "127.0.0.1:8080") == 0,
                            "Localhost lbos address error");
@@ -981,21 +913,16 @@ static void NetInfoProvided__UseNetInfo();
 static void LBOSNoResponse__SkipLBOS()
 {
     const char* service = "/lbos";
-    SConnNetInfo* net_info;
-    SERV_ITER iter;
+    SConnNetInfo* net_info = NULL;
+    SERV_ITER iter = NULL;
     s_call_counter = 0;
-
-    setlocale(LC_ALL, "");
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
-                           fLOG_OmitNoteLevel | fLOG_DateTime);
 
     CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
     net_info = ConnNetInfo_Create(service);
     ConnNetInfo_SetUserHeader(net_info, "My header fq34facsadf");
     CORE_LOG(eLOG_Trace, "Opening service mapper");
 
-    SSERV_Info** (*temp_func_pointer)(const char*,
-            const char*, SConnNetInfo*) = g_lbos_funcs.ResolveIPPort;
+    FResolveIPPortMethod* temp_func_pointer = g_lbos_funcs.ResolveIPPort;
     g_lbos_funcs.ResolveIPPort = s_FakeResolveIPPort;
 
     iter = SERV_OpenP(service, (fSERV_All & ~fSERV_Firewall) |
@@ -1003,7 +930,12 @@ static void LBOSNoResponse__SkipLBOS()
                       SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
                       net_info, 0/*skip*/, 0/*n_skip*/,
                       0/*external*/, 0/*arg*/, 0/*val*/);
-    ((SLBOS_Data*)iter->data)->lbos = "lbos.dev.ac-va.ncbi.nlm.nih.gov";
+    if (iter == NULL) {
+        NCBITEST_CHECK_MESSAGE(iter != NULL,
+            "LBOS not found when it should be");
+        return;
+    }
+    ((SLBOS_Data*)iter->data)->lbos = "lbos.dev.be-md.ncbi.nlm.nih.gov:8080";
     ConnNetInfo_Destroy(net_info);
     HOST_INFO hinfo;
     SERV_GetNextInfoEx(iter, &hinfo);
@@ -1024,12 +956,8 @@ static void LBOSResponds__Finish()
 {
     s_call_counter = 0;
     const char* service = "/lbos";
-    SConnNetInfo* net_info;
-    SERV_ITER iter;
-
-    setlocale(LC_ALL, "");
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
-                           fLOG_OmitNoteLevel | fLOG_DateTime);
+    SConnNetInfo* net_info = NULL;
+    SERV_ITER iter = NULL;
 
     CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
     net_info = ConnNetInfo_Create(service);
@@ -1037,8 +965,7 @@ static void LBOSResponds__Finish()
     CORE_LOG(eLOG_Trace, "Opening service mapper");
     s_call_counter = 2;
 
-    SSERV_Info** (*temp_func_pointer)(const char*,
-            const char*, SConnNetInfo*) = g_lbos_funcs.ResolveIPPort;
+    FResolveIPPortMethod* temp_func_pointer = g_lbos_funcs.ResolveIPPort;
     g_lbos_funcs.ResolveIPPort = s_FakeResolveIPPort;
 
     iter = SERV_OpenP(service, (fSERV_All & ~fSERV_Firewall) |
@@ -1046,7 +973,12 @@ static void LBOSResponds__Finish()
                       SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
                       net_info, 0/*skip*/, 0/*n_skip*/,
                       0/*external*/, 0/*arg*/, 0/*val*/);
-    ((SLBOS_Data*)iter->data)->lbos = "lbos.dev.ac-va.ncbi.nlm.nih.gov";
+    if (iter == NULL) {
+        NCBITEST_CHECK_MESSAGE(iter != NULL,
+            "LBOS not found when it should be");
+        return;
+    }
+    ((SLBOS_Data*)iter->data)->lbos = "lbos.dev.be-md.ncbi.nlm.nih.gov:8080";
     ConnNetInfo_Destroy(net_info);
     HOST_INFO hinfo;
     SERV_GetNextInfoEx(iter, &hinfo);
@@ -1068,20 +1000,16 @@ static void LBOSResponds__Finish()
 static void NetInfoProvided__UseNetInfo()
 {
     const char* service = "/lbos";
-    SConnNetInfo* net_info;
-    SERV_ITER iter;
+    SConnNetInfo* net_info = NULL;
+    SERV_ITER iter = NULL;
     s_call_counter = 0;
-    setlocale(LC_ALL, "");
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
-                           fLOG_OmitNoteLevel | fLOG_DateTime);
 
     CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
     net_info = ConnNetInfo_Create(service);
     ConnNetInfo_SetUserHeader(net_info, "My header fq34facsadf");
     CORE_LOG(eLOG_Trace, "Opening service mapper");
     s_call_counter = 2;
-    SSERV_Info** (*temp_func_pointer)(const char*,
-            const char*, SConnNetInfo*) = g_lbos_funcs.ResolveIPPort;
+    FResolveIPPortMethod* temp_func_pointer = g_lbos_funcs.ResolveIPPort;
     g_lbos_funcs.ResolveIPPort = s_FakeResolveIPPort;
 
     iter = SERV_OpenP(service, (fSERV_All & ~fSERV_Firewall) |
@@ -1089,7 +1017,12 @@ static void NetInfoProvided__UseNetInfo()
                       SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
                       net_info, 0/*skip*/, 0/*n_skip*/,
                       0/*external*/, 0/*arg*/, 0/*val*/);
-    ((SLBOS_Data*)iter->data)->lbos = "lbos.dev.ac-va.ncbi.nlm.nih.gov";
+    if (iter == NULL) {
+        NCBITEST_CHECK_MESSAGE(iter != NULL,
+            "LBOS not found when it should be");
+        return;
+    }
+    ((SLBOS_Data*)iter->data)->lbos = "lbos.dev.be-md.ncbi.nlm.nih.gov";
     ConnNetInfo_Destroy(net_info);
     HOST_INFO hinfo;
     SERV_GetNextInfoEx(iter, &hinfo);
@@ -1125,11 +1058,11 @@ static void EmptyCands__RunGetCandidates()
 {
     s_call_counter = 0;
     const char* service = "/lbos";
-    SConnNetInfo* net_info;
-    const SSERV_Info* info;
-    SERV_ITER iter;
+    SConnNetInfo* net_info = NULL;
+    const SSERV_Info* info = NULL;
+    SERV_ITER iter = NULL;
     string hostport = "1.2.3.4:210";
-    unsigned int host;
+    unsigned int host = 0;
     unsigned short port;
     SOCK_StringToHostPort(hostport.c_str(), &host, &port);
 
@@ -1138,8 +1071,7 @@ static void EmptyCands__RunGetCandidates()
     ConnNetInfo_SetUserHeader(net_info, "My header fq34facsadf");
     CORE_LOG(eLOG_Trace, "Opening service mapper");
 
-    void (*temp_func_pointer) (SLBOS_Data* data, const char* service) =
-            g_lbos_funcs.FillCandidates;
+    FFillCandidatesMethod* temp_func_pointer = g_lbos_funcs.FillCandidates;
     g_lbos_funcs.FillCandidates = s_FakeFillCandidates<10>;
 
     /* If no candidates found yet, get candidates and return first of them. */
@@ -1148,6 +1080,11 @@ static void EmptyCands__RunGetCandidates()
                       SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
                       net_info, 0/*skip*/, 0/*n_skip*/,
                       0/*external*/, 0/*arg*/, 0/*val*/);
+    if (iter == NULL) {
+        NCBITEST_CHECK_MESSAGE(iter != NULL,
+            "LBOS not found when it should be");
+        return;
+    }
     ConnNetInfo_Destroy(net_info);
     HOST_INFO hinfo;
     info = SERV_GetNextInfoEx(iter, &hinfo);
@@ -1189,21 +1126,16 @@ static void EmptyCands__RunGetCandidates()
 static void ErrorUpdating__ReturnNull()
 {
     const char* service = "/lbos";
-    SConnNetInfo* net_info;
-    const SSERV_Info* info;
-    SERV_ITER iter;
-
-    setlocale(LC_ALL, "");
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
-                           fLOG_OmitNoteLevel | fLOG_DateTime);
+    SConnNetInfo* net_info = NULL;
+    const SSERV_Info* info = NULL;
+    SERV_ITER iter = NULL;
 
     CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
     net_info = ConnNetInfo_Create(service);
     ConnNetInfo_SetUserHeader(net_info, "My header fq34facsadf");
     CORE_LOG(eLOG_Trace, "Opening service mapper");
 
-    void (*temp_func_pointer) (SLBOS_Data* data, const char* service) =
-            g_lbos_funcs.FillCandidates;
+    FFillCandidatesMethod* temp_func_pointer = g_lbos_funcs.FillCandidates;
     g_lbos_funcs.FillCandidates = s_FakeFillCandidatesWithError;
 
     /*If no candidates found yet, get candidates, catch error and return NULL*/
@@ -1261,11 +1193,11 @@ static void ErrorUpdating__ReturnNull()
 static void HaveCands__ReturnNext()
 {
     const char* service = "/lbos";
-    SConnNetInfo* net_info;
-    const SSERV_Info* info;
-    SERV_ITER iter;
+    SConnNetInfo* net_info = NULL;
+    const SSERV_Info* info = NULL;
+    SERV_ITER iter = NULL;
     string hostport = "127.0.0.1:80";
-    unsigned int host;
+    unsigned int host = 0;
     unsigned short port;
     SOCK_StringToHostPort(hostport.c_str(), &host, &port);
 
@@ -1273,8 +1205,7 @@ static void HaveCands__ReturnNext()
     net_info = ConnNetInfo_Create(service);
     CORE_LOG(eLOG_Trace, "Opening service mapper");
 
-    void (*temp_func_pointer) (SLBOS_Data* data, const char* service) =
-            g_lbos_funcs.FillCandidates;
+    FFillCandidatesMethod* temp_func_pointer = g_lbos_funcs.FillCandidates;
     g_lbos_funcs.FillCandidates = s_FakeFillCandidates<10>;
 
     /* We will get 200 candidates, iterate 220 times and see how the system
@@ -1330,13 +1261,13 @@ static void HaveCands__ReturnNext()
 static void LastCandReturned__ReturnNull()
 {
     const char* service = "/lbos";
-    SConnNetInfo* net_info;
-    const SSERV_Info* info;
+    SConnNetInfo* net_info = NULL;
+    const SSERV_Info* info = NULL;
     HOST_INFO hinfo = NULL;
-    SERV_ITER iter;
+    SERV_ITER iter = NULL;
     string hostport = "127.0.0.1:80";
-    unsigned int host;
-    unsigned short port;
+    unsigned int host = 0;
+    unsigned short port = 0;
     SOCK_StringToHostPort(hostport.c_str(), &host, &port);
 
     CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
@@ -1358,7 +1289,7 @@ static void LastCandReturned__ReturnNull()
                            "SERV_GetNextInfoEx: mapper did not ask "
                            "LBOS for candidates");
 
-    int i;
+    int i = 0;
     for (i = 0;  info != NULL;  i++) {
         info = SERV_GetNextInfoEx(iter, &hinfo);
     }
@@ -1378,11 +1309,11 @@ static void LastCandReturned__ReturnNull()
 static void DataIsNull__ReconstructData()
 {
     const char* service = "/lbos";
-    SConnNetInfo* net_info;
-    const SSERV_Info* info;
-    SERV_ITER iter;
+    SConnNetInfo* net_info = NULL;
+    const SSERV_Info* info = NULL;
+    SERV_ITER iter = NULL;
     string hostport = "1.2.3.4:210";
-    unsigned int host;
+    unsigned int host = 0;
     unsigned short port;
     SOCK_StringToHostPort(hostport.c_str(), &host, &port);
 
@@ -1390,8 +1321,7 @@ static void DataIsNull__ReconstructData()
     net_info = ConnNetInfo_Create(service);
     CORE_LOG(eLOG_Trace, "Opening service mapper");
 
-    void (*temp_func_pointer) (SLBOS_Data* data, const char* service) =
-            g_lbos_funcs.FillCandidates;
+    FFillCandidatesMethod* temp_func_pointer = g_lbos_funcs.FillCandidates;
     g_lbos_funcs.FillCandidates = s_FakeFillCandidates<10>;
 
     /* We will get iterator, and then delete data from it and run GetNextInfo.
@@ -1403,6 +1333,11 @@ static void DataIsNull__ReconstructData()
                       0/*external*/, 0/*arg*/, 0/*val*/);
     ConnNetInfo_Destroy(net_info);
     HOST_INFO hinfo;
+    if (iter == NULL) {
+        NCBITEST_CHECK_MESSAGE(iter != NULL,
+            "LBOS not found when it should be");
+        return;
+    }
     /* Now we destroy data */
     SLBOS_Data* data = static_cast<SLBOS_Data*>(iter->data);
     g_lbos_funcs.DestroyData(data);
@@ -1428,7 +1363,7 @@ static void DataIsNull__ReconstructData()
 
 static void IterIsNull__ReconstructData()
 {
-    const SSERV_Info* info;
+    const SSERV_Info* info = NULL;
     HOST_INFO host_info;
     info = g_lbos_funcs.GetNextInfo(NULL, &host_info);
 
@@ -1440,9 +1375,9 @@ static void IterIsNull__ReconstructData()
 static void WrongMapper__ReturnNull()
 {
     const char* service = "/lbos";
-    SConnNetInfo* net_info;
-    const SSERV_Info* info;
-    SERV_ITER iter;
+    SConnNetInfo* net_info = NULL;
+    const SSERV_Info* info = NULL;
+    SERV_ITER iter = NULL;
 
     CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
     net_info = ConnNetInfo_Create(service);
@@ -1456,6 +1391,11 @@ static void WrongMapper__ReturnNull()
                       SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
                       net_info, 0/*skip*/, 0/*n_skip*/,
                       0/*external*/, 0/*arg*/, 0/*val*/);
+    if (iter == NULL) {
+        NCBITEST_CHECK_MESSAGE(iter != NULL,
+            "LBOS not found when it should be");
+        return;
+    }
     ConnNetInfo_Destroy(net_info);
     HOST_INFO hinfo;
     const SSERV_VTable* origTable = iter->op;
@@ -1492,12 +1432,8 @@ static void NoSuchService__ReturnNull();
 static void IterIsNull__ReturnNull()
 {
     const char* service = "/lbos";
-    SConnNetInfo* net_info;
-    SERV_ITER iter = static_cast<SERV_ITER>(calloc(1, sizeof(*iter)));
-
-    setlocale(LC_ALL, "");
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
-                           fLOG_OmitNoteLevel | fLOG_DateTime);
+    SConnNetInfo* net_info = NULL;
+    SERV_ITER iter = static_cast<SERV_ITER>(calloc(sizeof(*iter), 1));
 
     CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
     net_info = ConnNetInfo_Create(service);
@@ -1512,11 +1448,7 @@ static void IterIsNull__ReturnNull()
 static void NetInfoNull__ReturnNull()
 {
     const char* service = "/lbos";
-    SERV_ITER iter = static_cast<SERV_ITER>(calloc(1, sizeof(*iter)));
-
-    setlocale(LC_ALL, "");
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
-                           fLOG_OmitNoteLevel | fLOG_DateTime);
+    SERV_ITER iter = static_cast<SERV_ITER>(calloc(sizeof(*iter), 1));
 
     CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
     CORE_LOG(eLOG_Trace, "Opening service mapper");
@@ -1525,6 +1457,11 @@ static void NetInfoNull__ReturnNull()
                       SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
                       NULL/*net_info*/, 0/*skip*/, 0/*n_skip*/,
                       0/*external*/, 0/*arg*/, 0/*val*/);
+    if (iter == NULL) {
+        NCBITEST_CHECK_MESSAGE(iter != NULL,
+            "LBOS not found when it should be");
+        return;
+    }
     NCBITEST_CHECK_MESSAGE(iter->op != NULL, "Mapper returned NULL when it "
                            "should return s_op");
     NCBITEST_CHECK_MESSAGE(strcmp(iter->op->mapper, "LBOS") == 0,
@@ -1544,19 +1481,20 @@ static void NetInfoNull__ReturnNull()
 static void ServerExists__ReturnLbosOperations()
 {
     const char* service = "/lbos";
-    SConnNetInfo* net_info;
-    SERV_ITER iter;
-    iter = static_cast<SERV_ITER>(calloc(1, sizeof(*iter)));
+    SConnNetInfo* net_info = NULL;
+    SERV_ITER iter = static_cast<SERV_ITER>(calloc(sizeof(*iter), 1));
     iter->name = service;
-    setlocale(LC_ALL, "");
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
-                           fLOG_OmitNoteLevel | fLOG_DateTime);
 
     CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
     net_info = ConnNetInfo_Create(service);
     CORE_LOG(eLOG_Trace, "Opening service mapper");
 
     iter->op = SERV_LBOS_Open(iter, net_info, NULL);
+    if (iter->op == NULL) {
+        NCBITEST_CHECK_MESSAGE(iter->op != NULL,
+            "LBOS not found when it should be");
+        return;
+    }
     NCBITEST_CHECK_MESSAGE(iter->op != NULL, "Mapper returned "
             "NULL when it should return s_op");
     NCBITEST_CHECK_MESSAGE(strcmp(iter->op->mapper, "LBOS") == 0,
@@ -1576,23 +1514,20 @@ static void ServerExists__ReturnLbosOperations()
 static void InfoPointerProvided__WriteNull()
 {
     const char* service = "/lbos";
-    SConnNetInfo* net_info;
-    SERV_ITER iter;
-    iter = static_cast<SERV_ITER>(calloc(1, sizeof(*iter)));
+    SConnNetInfo* net_info = NULL;
+    SERV_ITER iter = static_cast<SERV_ITER>(calloc(sizeof(*iter), 1));
     iter->name = service;
     SSERV_Info* info;
-
-    setlocale(LC_ALL, "");
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
-                           fLOG_OmitNoteLevel | fLOG_DateTime);
 
     CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
     net_info = ConnNetInfo_Create(service);
     CORE_LOG(eLOG_Trace, "Opening service mapper");
     iter->op = SERV_LBOS_Open(iter, net_info, &info);
-    NCBITEST_CHECK_MESSAGE(iter->op != NULL,
-                           "Mapper returned NULL when it should "
-                           "return s_op");
+    if (iter->op == NULL) {
+        NCBITEST_CHECK_MESSAGE(iter->op != NULL,
+            "LBOS not found when it should be");
+        return;
+    }
     NCBITEST_CHECK_MESSAGE(strcmp(iter->op->mapper, "LBOS") == 0,
                            "Name of mapper that returned answer "
                            "is not \"LBOS\"");
@@ -1603,14 +1538,9 @@ static void InfoPointerProvided__WriteNull()
 static void NoSuchService__ReturnNull()
 {
     const char* service = "/service/donotexist";
-    SConnNetInfo* net_info;
-    SERV_ITER iter;
-    iter = static_cast<SERV_ITER>(calloc(1, sizeof(*iter)));
+    SConnNetInfo* net_info = NULL;
+    SERV_ITER iter = static_cast<SERV_ITER>(calloc(sizeof(*iter), 1));
     iter->name = service;
-
-    setlocale(LC_ALL, "");
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
-                           fLOG_OmitNoteLevel | fLOG_DateTime);
 
     CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
     net_info = ConnNetInfo_Create(service);
@@ -1635,11 +1565,8 @@ static void LbosExist__ShouldWork();
 static void ServerExists__ShouldReturnLbosOperations()
 {
     const char* service = "/lbos";
-    SConnNetInfo* net_info;
-    SERV_ITER iter;
-    setlocale(LC_ALL, "");
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
-                           fLOG_OmitNoteLevel | fLOG_DateTime);
+    SConnNetInfo* net_info = NULL;
+    SERV_ITER iter = NULL;
 
     CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
     net_info = ConnNetInfo_Create(service);
@@ -1650,6 +1577,11 @@ static void ServerExists__ShouldReturnLbosOperations()
                       SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
                       net_info, 0/*skip*/, 0/*n_skip*/,
                       0/*external*/, 0/*arg*/, 0/*val*/);
+    if (iter == NULL) {
+        NCBITEST_CHECK_MESSAGE(iter != NULL,
+            "LBOS not found when it should be");
+        return;
+    }
     NCBITEST_CHECK_MESSAGE(iter->op != NULL,
                            "Mapper returned NULL when it "
                            "should return s_op");
@@ -1672,12 +1604,8 @@ static void ServerExists__ShouldReturnLbosOperations()
 static void ServerDoesNotExist__ShouldReturnNull()
 {
     const char* service = "/asdf/idonotexist";
-    SConnNetInfo* net_info;
-    SERV_ITER iter;
-
-    setlocale(LC_ALL, "");
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
-                           fLOG_OmitNoteLevel | fLOG_DateTime);
+    SConnNetInfo* net_info = NULL;
+    SERV_ITER iter = NULL;
 
     CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
     net_info = ConnNetInfo_Create(service);
@@ -1782,7 +1710,7 @@ static void LbosExist__ShouldWork()
 //    int count_before = s_CountServers("lbostest", addr);
 //    /* Since we cannot guarantee that there is any working healthcheck
 //     * on the current host, we will mock */
-//    EIO_Status  (*temp_func_pointer) (CONN    conn, void*   line,
+//    EIO_Status  (*temp_func_pointer) (CONN    conn, char*   line,
 //            size_t  size, size_t* n_read, EIO_ReadMethod how)
 //            = g_lbos_funcs.Read;
 //    g_lbos_funcs.Read = s_FakeReadAnnouncement<1>;
@@ -1840,7 +1768,7 @@ static void FullCycle__ShouldNotCrash();
 static void GetNext_Reset__ShouldNotCrash()
 {
     int secondsBeforeStop = 60;  /* when to stop this test */
-    struct timeval start; /**< we will measure time from start
+    struct ::timeval start; /**< we will measure time from start
                                    of test as main measure of when
                                    to finish */
     struct timeval stop;
@@ -1848,13 +1776,10 @@ static void GetNext_Reset__ShouldNotCrash()
         memset(&start, 0, sizeof(start));
     }
     const char* service = "/lbos";
-    SConnNetInfo* net_info;
-    SERV_ITER iter;
-    const SSERV_Info* info;
-    int i;
-    setlocale(LC_ALL, "");
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
-                           fLOG_OmitNoteLevel | fLOG_DateTime);
+    SConnNetInfo* net_info = NULL;
+    SERV_ITER iter = NULL;
+    const SSERV_Info* info = NULL;
+    int i = 0;
 
     CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
     net_info = ConnNetInfo_Create(service);
@@ -1891,13 +1816,10 @@ static void FullCycle__ShouldNotCrash()
         memset(&start, 0, sizeof(start));
     }
     const char* service = "/lbos";
-    SConnNetInfo* net_info;
-    SERV_ITER iter;
-    const SSERV_Info* info;
+    SConnNetInfo* net_info = NULL;
+    SERV_ITER iter = NULL;
+    const SSERV_Info* info = NULL;
     int i = 0;
-    setlocale(LC_ALL, "");
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
-                           fLOG_OmitNoteLevel | fLOG_DateTime);
 
     CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
     net_info = ConnNetInfo_Create(service);
@@ -1970,9 +1892,6 @@ static void FullCycle__ShouldNotCrash()
     /*
      * Basic initialization
      */
-    setlocale(LC_ALL, "");
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
-                           fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
     net_info = ConnNetInfo_Create(service);
     CORE_LOG(eLOG_Trace, "Opening service mapper");
@@ -2747,15 +2666,11 @@ static void s_PrintInfo(HOST_INFO hinfo)
 static void s_TestFindMethod(ELBOSFindMethod find_method)
 {
     const char* service = "/lbos";
-    SConnNetInfo* net_info;
-    const SSERV_Info* info;
+    SConnNetInfo* net_info = NULL;
+    const SSERV_Info* info = NULL;
     struct timeval start;
     int n_found = 0;
-    SERV_ITER iter;
-
-    setlocale(LC_ALL, "");
-    CORE_SetLOGFormatFlags(fLOG_None          | fLOG_Level   |
-                           fLOG_OmitNoteLevel | fLOG_DateTime);
+    SERV_ITER iter = NULL;
 
     CORE_LOGF(eLOG_Note, ("Looking for service `%s'", service));
     net_info = ConnNetInfo_Create(service);
@@ -2768,11 +2683,16 @@ static void s_TestFindMethod(ELBOSFindMethod find_method)
                       SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
                       net_info, 0/*skip*/, 0/*n_skip*/,
                       0/*external*/, 0/*arg*/, 0/*val*/);
+    if (iter == NULL) {
+        NCBITEST_CHECK_MESSAGE(iter != NULL,
+            "LBOS not found when it should be");
+        return;
+    }
     /*
      * We know that iter is LBOS's. It must have clear info by implementation
      * before GetNextInfo is called, so we can set source of LBOS address now
      */
-    ((SLBOS_Data*)iter->data)->lbos = "lbos.dev.ac-va.ncbi.nlm.nih.gov";
+    ((SLBOS_Data*)iter->data)->lbos = "lbos.dev.be-md.ncbi.nlm.nih.gov";
     ConnNetInfo_Destroy(net_info);
     if (iter) {
         g_LBOS_UnitTesting_SetLBOSFindMethod(iter, find_method);
@@ -2829,12 +2749,12 @@ static EIO_Status s_FakeReadDiscoveryCorrupt(CONN conn,
 {
     /* We use conn's  r_pos to remember how many strings we have written */
     if (s_call_counter++ < lines) {
-        char* buf = static_cast<char*>(calloc(100, sizeof(char)));
+        char* buf = static_cast<char*>(calloc(sizeof(char), 100));
         sprintf (buf,
                  "STANDALONE %0d.0%d.0%d.0%d:%d Regular R=1000.0 L=yes T=30\n",
                  s_call_counter, s_call_counter+1,
                  s_call_counter+2, s_call_counter+3, s_call_counter*215);
-        strncat((char*)line, buf, size-1);
+        strncat(static_cast<char*>(line), buf, size-1);
         *n_read = strlen(buf);
         free(buf);
         return eIO_Success;
@@ -2855,12 +2775,12 @@ static EIO_Status s_FakeReadDiscovery(CONN conn,
 {
     /* We use conn's  r_pos to remember how many strings we have written */
     if (s_call_counter++ < lines) {
-        char* buf = static_cast<char*>(calloc(100, sizeof(char)));
+        char* buf = static_cast<char*>(calloc(sizeof(char), 100));
         sprintf (buf,
                  "STANDALONE %d.%d.%d.%d:%d Regular R=1000.0 L=yes T=30\n",
                  s_call_counter, s_call_counter+1,
                  s_call_counter+2, s_call_counter+3, s_call_counter*215);
-        strncat((char*)line, buf, size-1);
+        strncat(static_cast<char*>(line), buf, size-1);
         *n_read = strlen(buf);
         free(buf);
         return eIO_Success;
@@ -2881,9 +2801,9 @@ static EIO_Status s_FakeReadAnnouncement(CONN conn,
 {
     /* We use conn's  r_pos to remember how many strings we have written */
     if (s_call_counter++ < lines) {
-        char* buf = static_cast<char*>(calloc(100, sizeof(char)));
+        char* buf = static_cast<char*>(calloc(sizeof(char), 100));
         sprintf (buf, "1.2.3.4:5");
-        strncat((char*)line, buf, size-1);
+        strncat(static_cast<char*>(line), buf, size-1);
         *n_read = strlen(buf);
         free(buf);
         return eIO_Success;
@@ -2942,8 +2862,8 @@ static SSERV_Info** s_FakeResolveIPPort (const char* lbos_address,
         SSERV_Info** hostports = static_cast<SSERV_Info**>(
                 malloc(sizeof(SSERV_Info*)*2));
         hostports[0] = static_cast<SSERV_Info*>(calloc(sizeof(SSERV_Info), 1));
-        unsigned int host;
-        unsigned short int port;
+        unsigned int host = 0;
+        unsigned short int port = 0;
         SOCK_StringToHostPort("127.0.0.1:80", &host, &port);
         hostports[0]->host = host;
         hostports[0]->port = port;
@@ -2958,9 +2878,7 @@ static SSERV_Info** s_FakeResolveIPPort (const char* lbos_address,
  * called. Original function is thoroughly tested in another test module.*/
 static char* s_FakeComposeLBOSAddress()
 {
-    char* temp = static_cast<char*>(calloc(20, sizeof(char)));
-    strcpy(temp, "lbos.foo");
-    return temp;
+    return strdup("lbos.foo");
 }
 
 //static int s_CountServers(const char * service, unsigned int host)
@@ -2969,8 +2887,8 @@ static char* s_FakeComposeLBOSAddress()
 //    if (s_GetTimeOfDay(&start) != 0) {
 //        memset(&start, 0, sizeof(start));
 //    }
-//    SConnNetInfo* net_info;
-//    SERV_ITER iter;
+//    SConnNetInfo* net_info = NULL;
+//    SERV_ITER iter = NULL;
 //
 //    net_info = ConnNetInfo_Create(service);
 //    iter = SERV_OpenP(service, (fSERV_All & ~fSERV_Firewall) |
@@ -2994,4 +2912,3 @@ static char* s_FakeComposeLBOSAddress()
 //    s_LBOS_hostport = strdup(lbos_hostport);
 //    return ELBOSAnnounceResult_Success;
 //}
-

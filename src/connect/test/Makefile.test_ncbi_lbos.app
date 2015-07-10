@@ -13,7 +13,7 @@ LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 
 #LINK = purify $(ORIG_LINK)
 
-REQUIRES = Boost.Test.Included -MSWin
+REQUIRES = Boost.Test.Included
 
 # Comment out if you do not want it to run automatically as part of
 # "make check".
