@@ -178,6 +178,7 @@ build_config needs $(GPIPE_COMMON_LIBS)
 build_config needs $(GPIPE_GENCOLL_LIBS)
 build_config needs bacterial_pipeline_proc
 build_config needs build_config_base
+build_config needs gpipe_xmlutil
 build_config needs reftrack_access
 build_config_base needs gencoll_client
 build_config_base needs gpinit_bag_util
