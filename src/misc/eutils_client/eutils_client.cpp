@@ -835,15 +835,15 @@ void CEutilsClient::Summary(const string& db,
 
             // turn it into an xml::document
             xml::error_messages msgs;
-            xml::tree_parser parser(docstr.data(), docstr.size(), &msgs );
-            if (msgs.has_errors()  ||  msgs.has_fatal_errors()) {
-                NCBI_THROW(CException, eUnknown,
-                           "error parsing xml: " + msgs.print());
-            }
-            xml::document& xmldoc( parser.get_document() );
+            xml::document xmldoc(docstr.data(), docstr.size(), &msgs );
+
             docsums.swap(xmldoc);
             success = true;
             break;
+        }
+        catch (const xml::parser_exception& e) {
+            ERR_POST_X(6, Warning << "failed on attempt " << retries + 1
+                     << ": error parsing xml: " << e.what());
         }
         catch (CException& e) {
             ERR_POST_X(6, Warning << "failed on attempt " << retries + 1
