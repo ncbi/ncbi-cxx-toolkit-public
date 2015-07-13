@@ -1050,7 +1050,7 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry)
             new_cds->SetLocation().SetPartialStart(true, eExtreme_Biological);
             change_this_cds = true;
         }
-
+#if 0
         // retranslate
         if (new_cds->IsSetProduct() && entry.GetScope().GetBioseqHandle(new_cds->GetProduct())) {
             any_changes |= edit::RetranslateCDS(*new_cds, entry.GetScope());
@@ -1070,6 +1070,7 @@ bool CCleanup::WGSCleanup(CSeq_entry_Handle entry)
                 }
             }
         }
+#endif
 
         if (change_this_cds) {
             CSeq_feat_EditHandle cds_h(*cds_it);
