@@ -2214,6 +2214,19 @@ size_t GetCommonSuffixLen(const string& a, const string& b)
     return i;
 }
 
+
+// Return true iff can't use the CDS for mapping between prot and mRNA;
+bool HasProblematicExceptions(const CSeq_feat& cds_feat)
+{
+    return !cds_feat.IsSetExcept()      ? false
+         : !cds_feat.GetExcept()        ? false
+         : !cds_feat.IsSetExcept_text() ? true
+         : cds_feat.GetExcept_text().size() > ( //not all of except-text is explained by benign exceptions
+             27 * (NStr::Find(cds_feat.GetExcept_text(), "mismatches in translation") != NPOS)
+          +  20 * (NStr::Find(cds_feat.GetExcept_text(), "ribosomal slippage")        != NPOS));
+}
+
+
 CRef<CVariation> CVariationUtil::TranslateNAtoAA(
         const CVariation_inst& nuc_inst,
         const CVariantPlacement& nuc_p,
@@ -2490,9 +2503,8 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
 
     //will have two placements: one describing the AA, and the other describing codons
     CRef<CVariantPlacement> prot_p(new CVariantPlacement);
-    if(cds_feat.IsSetExcept() && cds_feat.GetExcept()
-       && !(cds_feat.IsSetExcept_text() && cds_feat.GetExcept_text() == "mismatches in translation"))
-    {
+
+    if(HasProblematicExceptions(cds_feat)) {
         //mapped protein position is bogus, as cds is either partial or there are indels.
         prot_p->SetLoc().SetEmpty().Assign(sequence::GetId(*prot_loc, NULL));
         prot_p->SetMol(GetMolType(sequence::GetId(prot_p->GetLoc(), NULL)));
