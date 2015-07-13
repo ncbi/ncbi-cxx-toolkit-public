@@ -97,7 +97,9 @@ private:
 
     void x_FeatureOptionsValid(const string& opt);
     void x_KOptionsValid(const string& opt);
+    void x_XOptionsValid(const string& opt);
     bool x_ProcessFeatureOptions(const string& opt, CSeq_entry_Handle seh);
+    bool x_ProcessXOptions(const string& opt, CSeq_entry_Handle seh);
     bool x_BasicAndExtended(CSeq_entry_Handle entry, const string& label, bool do_basic = true, bool do_extended = false, Uint4 options = 0);
     
     // data
@@ -175,6 +177,9 @@ void CCleanupApp::Init(void)
         arg_desc->AddOptionalKey("F", "Feature", "Feature Cleaning Options",
                                   CArgDescriptions::eString);
 
+        arg_desc->AddOptionalKey("X", "Miscellaneous", "Other Cleaning Options",
+            CArgDescriptions::eString);
+
         arg_desc->AddFlag("T", "TaxonomyLookup", "Taxonomy Lookup");
     }}
     
@@ -240,6 +245,26 @@ void CCleanupApp::x_KOptionsValid(const string& opt)
     }
 }
 
+
+void CCleanupApp::x_XOptionsValid(const string& opt)
+{
+    if (NStr::IsBlank(opt)){
+        return;
+    }
+    string unrecognized = "";
+    string::const_iterator s = opt.begin();
+    while (s != opt.end()) {
+        if (!isspace(*s)) {
+            if (*s != 'w') {
+                unrecognized += *s;
+            }
+        }
+        s++;
+    }
+    if (unrecognized.length() > 0) {
+        NCBI_THROW(CFlatException, eInternal, "Invalid -X arguments:" + unrecognized);
+    }
+}
 
 int CCleanupApp::Run(void)
 {
@@ -603,6 +628,15 @@ bool CCleanupApp::x_ProcessFeatureOptions(const string& opt, CSeq_entry_Handle s
     return any_changes;
 }
 
+bool CCleanupApp::x_ProcessXOptions(const string& opt, CSeq_entry_Handle seh)
+{
+    bool any_changes = false;
+    if (NStr::Find(opt, "w") != string::npos) {
+        any_changes = CCleanup::WGSCleanup(seh);
+    }
+    return any_changes;
+}
+
 bool CCleanupApp::x_BasicAndExtended(CSeq_entry_Handle entry, const string& label, 
                                      bool do_basic, bool do_extended, Uint4 options)
 {
@@ -709,6 +743,9 @@ bool CCleanupApp::HandleSeqEntry(CRef<CSeq_entry>& se)
 
     if (args["F"]) {
         any_changes |= x_ProcessFeatureOptions(args["F"].AsString(), entry);
+    }
+    if (args["X"]) {
+        any_changes |= x_ProcessXOptions(args["X"].AsString(), entry);
     }
 
     bool do_basic = false;

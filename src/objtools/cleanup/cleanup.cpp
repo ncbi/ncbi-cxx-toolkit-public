@@ -39,6 +39,7 @@
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
+#include <objects/general/Object_id.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/submit/Seq_submit.hpp>
 #include <objects/taxon3/taxon3.hpp>
@@ -49,6 +50,7 @@
 #include <objmgr/seq_annot_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objtools/cleanup/cleanup.hpp>
+#include <objtools/edit/cds_fix.hpp>
 
 #include "newcleanupp.hpp"
 
@@ -927,6 +929,170 @@ bool CCleanup::TaxonomyLookup(CSeq_entry_Handle seh)
             }
         }
     }
+
+    return any_changes;
+}
+
+CRef<CSeq_entry> AddProtein(const CSeq_feat& cds, CScope& scope)
+{
+    CBioseq_Handle cds_bsh = scope.GetBioseqHandle(cds.GetLocation());
+    if (!cds_bsh) {
+        return CRef<CSeq_entry>(NULL);
+    }
+    CSeq_entry_Handle seh = cds_bsh.GetSeq_entry_Handle();
+    if (!seh) {
+        return CRef<CSeq_entry>(NULL);
+    }
+
+    CRef<CBioseq> new_product = CSeqTranslator::TranslateToProtein(cds, scope);
+    if (cds.IsSetProduct()) {
+        CRef<CSeq_id> prot_id(new CSeq_id());
+        prot_id->Assign(*(cds.GetProduct().GetId()));
+        new_product->SetId().push_back(prot_id);
+    }
+    CRef<CSeq_entry> prot_entry(new CSeq_entry());
+    prot_entry->SetSeq(*new_product);
+
+    CSeq_entry_EditHandle eh = seh.GetEditHandle();
+    if (!eh.IsSet()) {
+        CBioseq_set_Handle nuc_parent = eh.GetParentBioseq_set();
+        if (nuc_parent && nuc_parent.IsSetClass() && nuc_parent.GetClass() == objects::CBioseq_set::eClass_nuc_prot) {
+            eh = nuc_parent.GetParentEntry().GetEditHandle();
+        }
+    }
+    if (!eh.IsSet()) {
+        eh.ConvertSeqToSet();
+        // move all descriptors on nucleotide sequence except molinfo and title to set
+        eh.SetSet().SetClass(CBioseq_set::eClass_nuc_prot);
+        CConstRef<CBioseq_set> set = eh.GetSet().GetCompleteBioseq_set();
+        if (set && set->IsSetSeq_set()) {
+            CConstRef<CSeq_entry> nuc = set->GetSeq_set().front();
+            CSeq_entry_EditHandle neh = eh.GetScope().GetSeq_entryEditHandle(*nuc);
+            CBioseq_set::TDescr::Tdata::const_iterator it = nuc->GetDescr().Get().begin();
+            while (it != nuc->GetDescr().Get().end()) {
+                if (!(*it)->IsMolinfo() && !(*it)->IsTitle()) {
+                    CRef<CSeqdesc> copy(new CSeqdesc());
+                    copy->Assign(**it);
+                    eh.AddSeqdesc(*copy);
+                    neh.RemoveSeqdesc(**it);
+                    if (nuc->IsSetDescr()) {
+                        it = nuc->GetDescr().Get().begin();
+                    }
+                    else {
+                        break;
+                    }
+                }
+                else {
+                    ++it;
+                }
+            }
+        }
+    }
+
+    CSeq_entry_EditHandle added = eh.AttachEntry(*prot_entry);
+    return prot_entry;
+}
+
+
+CRef<objects::CSeq_id> GetNewProteinId(objects::CSeq_entry_Handle seh, objects::CBioseq_Handle bsh)
+{
+    string id_base;
+    objects::CSeq_id_Handle hid;
+
+    ITERATE(objects::CBioseq_Handle::TId, it, bsh.GetId()) {
+        if (!hid || !it->IsBetter(hid)) {
+            hid = *it;
+        }
+    }
+
+    hid.GetSeqId()->GetLabel(&id_base, objects::CSeq_id::eContent);
+
+    int offset = 1;
+    string id_label = id_base + "_" + NStr::NumericToString(offset);
+    CRef<objects::CSeq_id> id(new objects::CSeq_id());
+    id->SetLocal().SetStr(id_label);
+    objects::CBioseq_Handle b_found = seh.GetBioseqHandle(*id);
+    while (b_found) {
+        offset++;
+        id_label = id_base + "_" + NStr::NumericToString(offset);
+        id->SetLocal().SetStr(id_label);
+        b_found = seh.GetBioseqHandle(*id);
+    }
+    return id;
+}
+
+
+bool CCleanup::WGSCleanup(CSeq_entry_Handle entry)
+{
+    bool any_changes = false;
+
+    SAnnotSelector sel(CSeqFeatData::e_Cdregion);
+    for (CFeat_CI cds_it(entry, sel); cds_it; ++cds_it) {
+        bool change_this_cds;
+        CRef<CSeq_feat> new_cds(new CSeq_feat());
+        new_cds->Assign(*(cds_it->GetSeq_feat()));
+
+        // set best frame
+        CCdregion::TFrame frame = CCdregion::eFrame_not_set;
+        if (new_cds->GetData().GetCdregion().IsSetFrame()) {
+            frame = new_cds->GetData().GetCdregion().GetFrame();
+        }
+        CCdregion::TFrame new_frame = CSeqTranslator::FindBestFrame(*new_cds, entry.GetScope());
+        if (frame != new_frame) {
+            new_cds->SetData().SetCdregion().SetFrame(new_frame);
+            change_this_cds = true;
+            frame = new_frame;
+        }
+
+        // set partials for frames
+        if (frame != CCdregion::eFrame_not_set && frame != CCdregion::eFrame_one &&
+            !new_cds->GetLocation().IsPartialStart(eExtreme_Biological)) {
+            new_cds->SetLocation().SetPartialStart(true, eExtreme_Biological);
+            change_this_cds = true;
+        }
+
+        // retranslate
+        if (new_cds->IsSetProduct() && entry.GetScope().GetBioseqHandle(new_cds->GetProduct())) {
+            any_changes |= edit::RetranslateCDS(*new_cds, entry.GetScope());
+        } else {
+            // need to set product if not set
+            if (!new_cds->IsSetProduct()) {
+                CRef<CSeq_id> new_id = GetNewProteinId(entry, entry.GetScope().GetBioseqHandle(new_cds->GetLocation()));
+                if (new_id) {
+                    new_cds->SetProduct().SetWhole().Assign(*new_id);
+                    change_this_cds = true;
+                }
+            }
+            if (new_cds->IsSetProduct()) {
+                CRef<CSeq_entry> prot = AddProtein(*new_cds, entry.GetScope());
+                if (prot) {
+                    any_changes = true;
+                }
+            }
+        }
+
+        if (change_this_cds) {
+            CSeq_feat_EditHandle cds_h(*cds_it);
+            CRef<CSeq_feat> new_cds(new CSeq_feat());
+            new_cds->Assign(*(cds_it->GetSeq_feat()));
+            
+            cds_h.Replace(*new_cds);
+            any_changes = true;
+        }
+
+    }
+
+    // SSEC
+    // remove protein titles
+    // add missing prot-refs
+    // CopyCDSproductToMrna
+    // instantiate protein titles
+    // ImposeCodingRegionPartials
+    // ResynchCodingRegionPartials
+    // ResynchMessengerRNAPartials
+    // ResynchProteinPartials
+    // InstantiateProteinTitles
+    // NormalizeDescriptorOrder
 
     return any_changes;
 }
