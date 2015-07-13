@@ -811,6 +811,7 @@ bool CSrcWriter::xGatherSubtypeFeat(
         return true;
     }
 
+
     typedef list<CRef<CSubSource> > SUBSOURCES;
     const SUBSOURCES& subsources = src.GetSubtype();
 
@@ -826,14 +827,14 @@ bool CSrcWriter::xGatherSubtypeFeat(
             continue;
         }
 
-        INDEXCOUNTER::iterator it = indexCounter.find(key);
+        INDEXCOUNTER::iterator it = indexCounter.find(colName);
         if (it != indexCounter.end()) {
-            int index = it->second;
-            indexCounter[key] = index+1;
-            key += "#" + NStr::IntToString(index);
+            const int index = it->second;
+            indexCounter[colName] = index+1;
+            key = colName + "#" + NStr::IntToString(index+1);
         }
         else {
-            indexCounter[key] = 1;
+            indexCounter[colName] = 1;
         }
 
         string value = "";
