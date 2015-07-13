@@ -97,8 +97,8 @@
 /* (BEGIN C++ interface) */
 
 /* [C++]  built-in integer types */
-const signed   char   kMin_Char   = CHAR_MIN;
-const signed   char   kMax_Char   = CHAR_MAX;
+const          char   kMin_Char   = CHAR_MIN;
+const          char   kMax_Char   = CHAR_MAX;
 const signed   char   kMin_SChar  = SCHAR_MIN;
 const signed   char   kMax_SChar  = SCHAR_MAX;
 const unsigned char   kMax_UChar  = UCHAR_MAX;
