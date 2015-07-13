@@ -713,6 +713,9 @@ void CObjectOStreamAsnBinary::WriteDouble2(double data, unsigned digits)
         ThrowError(fInvalidData, "invalid double: infinite");
     }
 #else
+// CXX-5248
+// for backward compatibility, this stays disabled
+#if 0
     if (data == 0.) {
         double zero = 0.;
         if (memcmp(&data, &zero, sizeof(double)) == 0) {
@@ -720,7 +723,9 @@ void CObjectOStreamAsnBinary::WriteDouble2(double data, unsigned digits)
             return;
         }
         type = eNegativeZero;
-    } else if (isnan(data)) {
+    } else 
+#endif
+    if (isnan(data)) {
         type = eNotANumber;
     } else if (!finite(data)) {
         if (data > 0) {
