@@ -209,7 +209,7 @@ static SERV_ITER s_Open(const char*         service,
 {
     int/*bool*/   do_lbsmd = -1/*-1 means unassigned, 0 means disabled*/,
                   do_dispd = -1/*-1 means unassigned, 0 means disabled*/,
-                  do_lbos  = 0/*-1 means unassigned, 0 means disabled*/;
+                  do_lbos  = -1/*-1 means unassigned, 0 means disabled*/;
 
     /* We consider changes in code in "do_xxx" more important, since
      * corresponding variables are for debugging purposes mostly.

@@ -1,3 +1,34 @@
+/* $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Anton Lavrentiev, Dmitriy Elisov
+ *
+ * File Description:
+ *   Standard test for named service resolution facility
+ *
+ */
 
 /*C++*/
 #include <ncbi_pch.hpp>
@@ -13,7 +44,7 @@
 #include "../ncbi_ansi_ext.h"
 #include "../ncbi_lbsmd.h"
 #include "../ncbi_priv.h"               /* CORE logging facilities */
-#include "../ncbi_lbos.h"
+#include "../ncbi_lbosp.h"
 
 //#define BOOST_AUTO_TEST_MAIN
 /*std*/
@@ -41,33 +72,17 @@ USING_NCBI_SCOPE;
  * test config is as high as possible */
 static void                           s_PrintInfo                  (HOST_INFO);
 static void                           s_TestFindMethod       (ELBOSFindMethod);
-
-  template <int lines>
-     static EIO_Status   s_FakeReadDiscovery                 (CONN,   void*,
-                                                              size_t, size_t*,
-                                                               EIO_ReadMethod );
-  template <int lines>
-      static EIO_Status   s_FakeReadAnnouncement              (CONN conn,
-                                                               void* line,
-                                                               size_t size,
-                                                               size_t* n_read,
-                                                               EIO_ReadMethod how);
-  template <int lines>
-      static EIO_Status   s_FakeReadDiscoveryCorrupt          (CONN, void*,
-                                                               size_t, size_t*,
-                                                               EIO_ReadMethod);
- template<int count>
-      static void         s_FakeFillCandidates                (SLBOS_Data*,
-                                                              const char*);
-  static void             s_FakeFillCandidatesWithError       (SLBOS_Data*,
-                                                               const char*);
-  static SSERV_Info**     s_FakeResolveIPPort                 (const char*,
-                                                               const char*,
-                                                               SConnNetInfo*);
-/** @brief Return a priori known LBOS address */
-static char*            s_FakeComposeLBOSAddress            ( );
-
-static     FComposeLBOSAddressMethod  s_FakeComposeLBOSAddress;
+template <int lines>
+    static FLBOS_ConnReadMethod            s_FakeReadDiscovery;
+template <int lines>
+    static FLBOS_ConnReadMethod            s_FakeReadAnnouncement;
+template <int lines>
+    static FLBOS_ConnReadMethod            s_FakeReadDiscoveryCorrupt;
+template<int count>
+    static FLBOS_FillCandidatesMethod      s_FakeFillCandidates;
+static     FLBOS_FillCandidatesMethod      s_FakeFillCandidatesWithError;
+static     FLBOS_ResolveIPPortMethod       s_FakeResolveIPPort;
+static     FLBOS_ComposeLBOSAddressMethod  s_FakeComposeLBOSAddress;
 #ifdef NCBI_OS_MSWIN
     static int          s_GetTimeOfDay                      (struct timeval*);
 #else
@@ -118,9 +133,9 @@ NCBITEST_INIT_TREE()
 //    NCBITEST_DISABLE(s_LBOS_ResolveIPPort__FakeMassiveInput__ShouldProcess);
 //    NCBITEST_DISABLE(s_LBOS_ResolveIPPort__FakeErrorInput__ShouldNotCrash);
 //    /* Get LBOS address */
-//    NCBITEST_DISABLE(g_LBOS_getLBOSAddresses__SpecificMethod__FirstInResult);
-//    //NCBITEST_DISABLE(g_LBOS_getLBOSAddresses__CustomHostNotProvided__SkipCustomHost);
-//    NCBITEST_DISABLE(g_LBOS_getLBOSAddresses__NoConditions__AddressDefOrder);
+//    NCBITEST_DISABLE(g_LBOS_GetLBOSAddresses__SpecificMethod__FirstInResult);
+//    //NCBITEST_DISABLE(g_LBOS_GetLBOSAddresses__CustomHostNotProvided__SkipCustomHost);
+//    NCBITEST_DISABLE(g_LBOS_GetLBOSAddresses__NoConditions__AddressDefOrder);
 //    /* Get candidates */
 //    NCBITEST_DISABLE(s_LBOS_FillCandidates__LBOSNoResponse__SkipLBOS);
 //    NCBITEST_DISABLE(s_LBOS_FillCandidates__LBOSResponse__Finish);
@@ -177,7 +192,7 @@ static void LBOSExists__ShouldReturnLbos()
 {
 #ifndef NCBI_OS_MSWIN
     char* result = g_LBOS_ComposeLBOSAddress();
-    NCBITEST_CHECK_MESSAGE(!g_StringIsNullOrEmpty(result), "LBOS address was "
+    NCBITEST_CHECK_MESSAGE(!g_LBOS_StringIsNullOrEmpty(result), "LBOS address was "
                            "not constructed appropriately");
 #endif
 }
@@ -202,11 +217,11 @@ static void RoleFail__ShouldReturnNULL()
     roleFile.close();
 
     char* result = g_LBOS_ComposeLBOSAddress();
-    NCBITEST_CHECK_MESSAGE(g_StringIsNullOrEmpty(result), "LBOS address "
+    NCBITEST_CHECK_MESSAGE(g_LBOS_StringIsNullOrEmpty(result), "LBOS address "
                            "construction did not fail appropriately "
                            "on empty role");
     /* Intermediary cleanup*/
-    if (!g_StringIsNullOrEmpty(result)) {
+    if (!g_LBOS_StringIsNullOrEmpty(result)) {
         free(result);
         result = NULL;
     }
@@ -216,11 +231,11 @@ static void RoleFail__ShouldReturnNULL()
     roleFile << "I play a thousand of roles";
     roleFile.close();
     result = g_LBOS_ComposeLBOSAddress();
-    NCBITEST_CHECK_MESSAGE(g_StringIsNullOrEmpty(result), "LBOS address "
+    NCBITEST_CHECK_MESSAGE(g_LBOS_StringIsNullOrEmpty(result), "LBOS address "
                            "construction did not fail appropriately "
                            "on garbage role");
     /* Intermediary cleanup*/
-    if (!g_StringIsNullOrEmpty(result)) {
+    if (!g_LBOS_StringIsNullOrEmpty(result)) {
         free(result);
         result = NULL;
     }
@@ -229,12 +244,12 @@ static void RoleFail__ShouldReturnNULL()
      * cannot constitute a file name)*/
     g_LBOS_UnitTesting_SetLBOSRoleAndDomainFiles("|*%&&*^", NULL);
     result = g_LBOS_ComposeLBOSAddress();
-    NCBITEST_CHECK_MESSAGE(g_StringIsNullOrEmpty(result), "LBOS address "
+    NCBITEST_CHECK_MESSAGE(g_LBOS_StringIsNullOrEmpty(result), "LBOS address "
                            "construction did not fail appropriately "
                            "on bad role file");
 
     /* Revert changes */
-    if (!g_StringIsNullOrEmpty(result)) {
+    if (!g_LBOS_StringIsNullOrEmpty(result)) {
         free(result);
         result = NULL;
     }
@@ -260,14 +275,14 @@ static void DomainFail__ShouldReturnNULL()
     /* 1. Empty role file */
     g_LBOS_UnitTesting_SetLBOSRoleAndDomainFiles(NULL, corruptDomain);
     char* result = g_LBOS_ComposeLBOSAddress();
-    NCBITEST_CHECK_MESSAGE(g_StringIsNullOrEmpty(result), "LBOS address "
+    NCBITEST_CHECK_MESSAGE(g_LBOS_StringIsNullOrEmpty(result), "LBOS address "
                            "construction did not fail appropriately");
 
     /* 2. No domain file (use set of symbols that certainly cannot constitute
      * a file name)*/
     g_LBOS_UnitTesting_SetLBOSRoleAndDomainFiles(NULL, "|*%&&*^");
     result = g_LBOS_ComposeLBOSAddress();
-    NCBITEST_CHECK_MESSAGE(g_StringIsNullOrEmpty(result), "LBOS address "
+    NCBITEST_CHECK_MESSAGE(g_LBOS_StringIsNullOrEmpty(result), "LBOS address "
                            "construction did not fail appropriately "
                            "on bad domain file");
 
@@ -633,7 +648,7 @@ static void ServiceExists__ReturnHostIP()
      * We know that iter is LBOS's.
      */
 
-    SSERV_Info** hostports = g_lbos_funcs.ResolveIPPort(
+    SSERV_Info** hostports = g_LBOS_GetLBOSFuncs()->ResolveIPPort(
             "lbos.dev.be-md.ncbi.nlm.nih.gov:8080", service, net_info);
     size_t i = 0;
     if (hostports != NULL) {
@@ -661,7 +676,7 @@ static void ServiceDoesNotExist__ReturnNULL()
      * We know that iter is LBOS's.
      */
 
-    SSERV_Info** hostports = g_lbos_funcs.ResolveIPPort(
+    SSERV_Info** hostports = g_LBOS_GetLBOSFuncs()->ResolveIPPort(
             "lbos.dev.be-md.ncbi.nlm.nih.gov:8080", service, net_info);
     size_t i = 0;
     if (hostports != NULL) {
@@ -683,7 +698,7 @@ static void NoLBOS__ReturnNULL()
      * We know that iter is LBOS's.
      */
 
-    SSERV_Info** hostports = g_lbos_funcs.ResolveIPPort(
+    SSERV_Info** hostports = g_LBOS_GetLBOSFuncs()->ResolveIPPort(
             "lbosdevacvancbinlmnih.gov:80", service, net_info);
     size_t i = 0;
     if (hostports != NULL) {
@@ -708,9 +723,9 @@ static void FakeMassiveInput__ShouldProcess()
     /*
      * We know that iter is LBOS's.
      */
-    FConnReadMethod* temp_func_pointer = g_lbos_funcs.Read;
-    g_lbos_funcs.Read = s_FakeReadDiscovery<10>;
-    SSERV_Info** hostports = g_lbos_funcs.ResolveIPPort(
+    FLBOS_ConnReadMethod* temp_func_pointer = g_LBOS_GetLBOSFuncs()->Read;
+    g_LBOS_GetLBOSFuncs()->Read = s_FakeReadDiscovery<10>;
+    SSERV_Info** hostports = g_LBOS_GetLBOSFuncs()->ResolveIPPort(
             "lbosdevacvancbinlmnih.gov", "/lbos", net_info);
     int i = 0;
     NCBITEST_CHECK_MESSAGE(hostports != NULL,
@@ -739,7 +754,7 @@ static void FakeMassiveInput__ShouldProcess()
         free(hostports);
     }
     /* Return everything back*/
-    g_lbos_funcs.Read = temp_func_pointer;
+    g_LBOS_GetLBOSFuncs()->Read = temp_func_pointer;
 }
 
 
@@ -757,9 +772,9 @@ static void FakeErrorInput__ShouldNotCrash()
     /*
      * We know that iter is LBOS's.
      */
-    FConnReadMethod* temp_func_pointer = g_lbos_funcs.Read;
-    g_lbos_funcs.Read = s_FakeReadDiscoveryCorrupt<200>;
-    SSERV_Info** hostports = g_lbos_funcs.ResolveIPPort(
+    FLBOS_ConnReadMethod* temp_func_pointer = g_LBOS_GetLBOSFuncs()->Read;
+    g_LBOS_GetLBOSFuncs()->Read = s_FakeReadDiscoveryCorrupt<200>;
+    SSERV_Info** hostports = g_LBOS_GetLBOSFuncs()->ResolveIPPort(
             "lbosdevacvancbinlmnih.gov", "/lbos", net_info);
     int i=0, /* iterate test numbers*/
             j=0; /*iterate hostports from ResolveIPPort */
@@ -796,7 +811,7 @@ static void FakeErrorInput__ShouldNotCrash()
         }
         free(hostports);
     }
-    g_lbos_funcs.Read = temp_func_pointer;
+    g_LBOS_GetLBOSFuncs()->Read = temp_func_pointer;
 }
 } /* namespace Resolve_via_LBOS */
 
@@ -808,12 +823,12 @@ static void SpecificMethod__FirstInResult();
 static void CustomHostNotProvided__SkipCustomHost();
 static void NoConditions__AddressDefOrder();
 
-/* Not thread-safe because of using g_lbos_funcs */
+/* Not thread-safe because of using g_LBOS_funcs */
 static void SpecificMethod__FirstInResult()
 {
     int i = 0;
     string custom_lbos = "lbos.custom.host";
-    char** addresses = g_LBOS_getLBOSAddressesEx(eLBOSFindMethod_custom_host,
+    char** addresses = g_LBOS_GetLBOSAddressesEx(eLBOSFindMethod_CustomHost,
                                                custom_lbos.c_str());
     NCBITEST_CHECK_MESSAGE(strcmp(addresses[0], custom_lbos.c_str()) == 0,
                            "Custom specified lbos address method error");
@@ -822,7 +837,7 @@ static void SpecificMethod__FirstInResult()
     }
     free(addresses);
 
-    addresses = g_LBOS_getLBOSAddressesEx(eLBOSFindMethod_registry, NULL);
+    addresses = g_LBOS_GetLBOSAddressesEx(eLBOSFindMethod_Registry, NULL);
     NCBITEST_CHECK_MESSAGE(strcmp(addresses[0],
                                   "lbos.dev.be-md.ncbi.nlm.nih.gov:8080") == 0,
                            "Registry specified lbos address method error");
@@ -831,7 +846,7 @@ static void SpecificMethod__FirstInResult()
     }
     free(addresses);
 
-    addresses = g_LBOS_getLBOSAddressesEx(eLBOSFindMethod_127_0_0_1, NULL);
+    addresses = g_LBOS_GetLBOSAddressesEx(eLBOSFindMethod_127001, NULL);
     NCBITEST_CHECK_MESSAGE(strcmp(addresses[0], "127.0.0.1:8080") == 0,
                            "Localhost specified lbos address method error");
     for (i = 0;  addresses[i] != NULL;  ++i) {
@@ -841,11 +856,11 @@ static void SpecificMethod__FirstInResult()
 
     /* We have to fake last method, because its result is dependent on
      * location */
-    FComposeLBOSAddressMethod* temp_func_pointer =
-                                              g_lbos_funcs.ComposeLBOSAddress;
-    g_lbos_funcs.ComposeLBOSAddress = s_FakeComposeLBOSAddress;
+    FLBOS_ComposeLBOSAddressMethod* temp_func_pointer =
+                                              g_LBOS_GetLBOSFuncs()->ComposeLBOSAddress;
+    g_LBOS_GetLBOSFuncs()->ComposeLBOSAddress = s_FakeComposeLBOSAddress;
     addresses =
-              g_LBOS_getLBOSAddressesEx(eLBOSFindMethod_etc_ncbi_domain, NULL);
+              g_LBOS_GetLBOSAddressesEx(eLBOSFindMethod_EtcNcbiDomain, NULL);
     NCBITEST_CHECK_MESSAGE(strcmp(addresses[0], "lbos.foo") == 0,
                            "/etc/ncbi{role, domain} specified lbos "
                            "address method error");
@@ -858,14 +873,14 @@ static void SpecificMethod__FirstInResult()
     free(addresses);
 
     /* Cleanup */
-    g_lbos_funcs.ComposeLBOSAddress = temp_func_pointer;
+    g_LBOS_GetLBOSFuncs()->ComposeLBOSAddress = temp_func_pointer;
 }
 
 static void CustomHostNotProvided__SkipCustomHost()
 {
     /* Test */
     int i = 0;
-    char** addresses = g_LBOS_getLBOSAddressesEx(eLBOSFindMethod_custom_host,
+    char** addresses = g_LBOS_GetLBOSAddressesEx(eLBOSFindMethod_CustomHost,
                                                  NULL);
     for (i = 0;  addresses[i] != NULL;  ++i) continue;
     /* We check that there are only 3 LBOS addresses */
@@ -886,10 +901,10 @@ static void CustomHostNotProvided__SkipCustomHost()
 static void NoConditions__AddressDefOrder()
 {
     int i = 0;
-    FComposeLBOSAddressMethod* temp_func_pointer =
-        g_lbos_funcs.ComposeLBOSAddress;
-    g_lbos_funcs.ComposeLBOSAddress = s_FakeComposeLBOSAddress;
-    char** addresses = g_LBOS_getLBOSAddressesEx(eLBOSFindMethod_custom_host,
+    FLBOS_ComposeLBOSAddressMethod* temp_func_pointer =
+        g_LBOS_GetLBOSFuncs()->ComposeLBOSAddress;
+    g_LBOS_GetLBOSFuncs()->ComposeLBOSAddress = s_FakeComposeLBOSAddress;
+    char** addresses = g_LBOS_GetLBOSAddressesEx(eLBOSFindMethod_CustomHost,
                                                  "lbos.custom.host");
 
     NCBITEST_CHECK_MESSAGE(strcmp(addresses[0],
@@ -912,7 +927,7 @@ static void NoConditions__AddressDefOrder()
         free(addresses[i]);
     }
     free(addresses);
-    g_lbos_funcs.ComposeLBOSAddress = temp_func_pointer;
+    g_LBOS_GetLBOSFuncs()->ComposeLBOSAddress = temp_func_pointer;
 }
 } /* namespace Get_LBOS_address */
 
@@ -938,8 +953,8 @@ static void LBOSNoResponse__SkipLBOS()
     ConnNetInfo_SetUserHeader(net_info, "My header fq34facsadf");
     CORE_LOG(eLOG_Trace, "Opening service mapper");
 
-    FResolveIPPortMethod* temp_func_pointer = g_lbos_funcs.ResolveIPPort;
-    g_lbos_funcs.ResolveIPPort = s_FakeResolveIPPort;
+    FLBOS_ResolveIPPortMethod* temp_func_pointer = g_LBOS_GetLBOSFuncs()->ResolveIPPort;
+    g_LBOS_GetLBOSFuncs()->ResolveIPPort = s_FakeResolveIPPort;
 
     iter = SERV_OpenP(service, (fSERV_All & ~fSERV_Firewall) |
                       (strpbrk(service, "?*") ? fSERV_Promiscuous : 0),
@@ -965,7 +980,7 @@ static void LBOSNoResponse__SkipLBOS()
 
     /* Cleanup*/
     s_call_counter = 0;
-    g_lbos_funcs.ResolveIPPort = temp_func_pointer;
+    g_LBOS_GetLBOSFuncs()->ResolveIPPort = temp_func_pointer;
 }
 
 static void LBOSResponds__Finish()
@@ -981,8 +996,8 @@ static void LBOSResponds__Finish()
     CORE_LOG(eLOG_Trace, "Opening service mapper");
     s_call_counter = 2;
 
-    FResolveIPPortMethod* temp_func_pointer = g_lbos_funcs.ResolveIPPort;
-    g_lbos_funcs.ResolveIPPort = s_FakeResolveIPPort;
+    FLBOS_ResolveIPPortMethod* temp_func_pointer = g_LBOS_GetLBOSFuncs()->ResolveIPPort;
+    g_LBOS_GetLBOSFuncs()->ResolveIPPort = s_FakeResolveIPPort;
 
     iter = SERV_OpenP(service, (fSERV_All & ~fSERV_Firewall) |
                       (strpbrk(service, "?*") ? fSERV_Promiscuous : 0),
@@ -1009,7 +1024,7 @@ static void LBOSResponds__Finish()
 
     /* Cleanup*/
     s_call_counter = 0;
-    g_lbos_funcs.ResolveIPPort = temp_func_pointer;
+    g_LBOS_GetLBOSFuncs()->ResolveIPPort = temp_func_pointer;
 }
 
 /*Not thread safe because of s_last_header*/
@@ -1025,8 +1040,8 @@ static void NetInfoProvided__UseNetInfo()
     ConnNetInfo_SetUserHeader(net_info, "My header fq34facsadf");
     CORE_LOG(eLOG_Trace, "Opening service mapper");
     s_call_counter = 2;
-    FResolveIPPortMethod* temp_func_pointer = g_lbos_funcs.ResolveIPPort;
-    g_lbos_funcs.ResolveIPPort = s_FakeResolveIPPort;
+    FLBOS_ResolveIPPortMethod* temp_func_pointer = g_LBOS_GetLBOSFuncs()->ResolveIPPort;
+    g_LBOS_GetLBOSFuncs()->ResolveIPPort = s_FakeResolveIPPort;
 
     iter = SERV_OpenP(service, (fSERV_All & ~fSERV_Firewall) |
                       (strpbrk(service, "?*") ? fSERV_Promiscuous : 0),
@@ -1052,7 +1067,7 @@ static void NetInfoProvided__UseNetInfo()
 
     /* Cleanup*/
     s_call_counter = 0;
-    g_lbos_funcs.ResolveIPPort = temp_func_pointer;
+    g_LBOS_GetLBOSFuncs()->ResolveIPPort = temp_func_pointer;
 }
 } /* namespace Get_candidates */
 
@@ -1087,8 +1102,8 @@ static void EmptyCands__RunGetCandidates()
     ConnNetInfo_SetUserHeader(net_info, "My header fq34facsadf");
     CORE_LOG(eLOG_Trace, "Opening service mapper");
 
-    FFillCandidatesMethod* temp_func_pointer = g_lbos_funcs.FillCandidates;
-    g_lbos_funcs.FillCandidates = s_FakeFillCandidates<10>;
+    FLBOS_FillCandidatesMethod* temp_func_pointer = g_LBOS_GetLBOSFuncs()->FillCandidates;
+    g_LBOS_GetLBOSFuncs()->FillCandidates = s_FakeFillCandidates<10>;
 
     /* If no candidates found yet, get candidates and return first of them. */
     iter = SERV_OpenP(service, (fSERV_All & ~fSERV_Firewall) |
@@ -1134,7 +1149,7 @@ static void EmptyCands__RunGetCandidates()
 
     /* Cleanup*/
     SERV_Close(iter);
-    g_lbos_funcs.FillCandidates = temp_func_pointer;
+    g_LBOS_GetLBOSFuncs()->FillCandidates = temp_func_pointer;
     s_call_counter = 0;
 }
 
@@ -1151,8 +1166,8 @@ static void ErrorUpdating__ReturnNull()
     ConnNetInfo_SetUserHeader(net_info, "My header fq34facsadf");
     CORE_LOG(eLOG_Trace, "Opening service mapper");
 
-    FFillCandidatesMethod* temp_func_pointer = g_lbos_funcs.FillCandidates;
-    g_lbos_funcs.FillCandidates = s_FakeFillCandidatesWithError;
+    FLBOS_FillCandidatesMethod* temp_func_pointer = g_LBOS_GetLBOSFuncs()->FillCandidates;
+    g_LBOS_GetLBOSFuncs()->FillCandidates = s_FakeFillCandidatesWithError;
 
     /*If no candidates found yet, get candidates, catch error and return NULL*/
     iter = SERV_OpenP(service, (fSERV_All & ~fSERV_Firewall) |
@@ -1176,7 +1191,7 @@ static void ErrorUpdating__ReturnNull()
 
     /* Now we first play fair, Open() iter, then Reset() iter, and in the
      * end simulate error */
-    g_lbos_funcs.FillCandidates = s_FakeFillCandidates<10>;
+    g_LBOS_GetLBOSFuncs()->FillCandidates = s_FakeFillCandidates<10>;
     iter = SERV_OpenP(service, (fSERV_All & ~fSERV_Firewall) |
                       (strpbrk(service, "?*") ? fSERV_Promiscuous : 0),
                       SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
@@ -1186,7 +1201,7 @@ static void ErrorUpdating__ReturnNull()
      * We do not care about results, we care how many times algorithm tried
      * to resolve service  */
     SERV_Reset(iter);
-    g_lbos_funcs.FillCandidates = s_FakeFillCandidatesWithError;
+    g_LBOS_GetLBOSFuncs()->FillCandidates = s_FakeFillCandidatesWithError;
     info = SERV_GetNextInfoEx(iter, &hinfo);
     NCBITEST_CHECK_MESSAGE(info == 0, "SERV_GetNextInfoEx: mapper did not "
                            "react correctly to error in LBOS "
@@ -1203,7 +1218,7 @@ static void ErrorUpdating__ReturnNull()
     ConnNetInfo_Destroy(net_info);
     SERV_Close(iter);
     s_call_counter = 0;
-    g_lbos_funcs.FillCandidates = temp_func_pointer;
+    g_LBOS_GetLBOSFuncs()->FillCandidates = temp_func_pointer;
 }
 
 static void HaveCands__ReturnNext()
@@ -1221,8 +1236,8 @@ static void HaveCands__ReturnNext()
     net_info = ConnNetInfo_Create(service);
     CORE_LOG(eLOG_Trace, "Opening service mapper");
 
-    FFillCandidatesMethod* temp_func_pointer = g_lbos_funcs.FillCandidates;
-    g_lbos_funcs.FillCandidates = s_FakeFillCandidates<10>;
+    FLBOS_FillCandidatesMethod* temp_func_pointer = g_LBOS_GetLBOSFuncs()->FillCandidates;
+    g_LBOS_GetLBOSFuncs()->FillCandidates = s_FakeFillCandidates<10>;
 
     /* We will get 200 candidates, iterate 220 times and see how the system
      * behaves */
@@ -1270,7 +1285,7 @@ static void HaveCands__ReturnNext()
 
     /* Cleanup*/
     SERV_Close(iter);
-    g_lbos_funcs.FillCandidates = temp_func_pointer;
+    g_LBOS_GetLBOSFuncs()->FillCandidates = temp_func_pointer;
     s_call_counter = 0;
 }
 
@@ -1291,8 +1306,8 @@ static void LastCandReturned__ReturnNull()
     CORE_LOG(eLOG_Trace, "Opening service mapper");
 
     void (*temp_func_pointer) (SLBOS_Data* data, const char* service) =
-            g_lbos_funcs.FillCandidates;
-    g_lbos_funcs.FillCandidates = s_FakeFillCandidates<10>;
+            g_LBOS_GetLBOSFuncs()->FillCandidates;
+    g_LBOS_GetLBOSFuncs()->FillCandidates = s_FakeFillCandidates<10>;
 
     /* If no candidates found yet, get candidates and return first of them. */
     iter = SERV_OpenP(service, (fSERV_All & ~fSERV_Firewall) |
@@ -1318,7 +1333,7 @@ static void LastCandReturned__ReturnNull()
 
     /* Cleanup*/
     SERV_Close(iter);
-    g_lbos_funcs.FillCandidates = temp_func_pointer;
+    g_LBOS_GetLBOSFuncs()->FillCandidates = temp_func_pointer;
     s_call_counter = 0;
 }
 
@@ -1337,8 +1352,8 @@ static void DataIsNull__ReconstructData()
     net_info = ConnNetInfo_Create(service);
     CORE_LOG(eLOG_Trace, "Opening service mapper");
 
-    FFillCandidatesMethod* temp_func_pointer = g_lbos_funcs.FillCandidates;
-    g_lbos_funcs.FillCandidates = s_FakeFillCandidates<10>;
+    FLBOS_FillCandidatesMethod* temp_func_pointer = g_LBOS_GetLBOSFuncs()->FillCandidates;
+    g_LBOS_GetLBOSFuncs()->FillCandidates = s_FakeFillCandidates<10>;
 
     /* We will get iterator, and then delete data from it and run GetNextInfo.
      * The mapper should recover from this kind of error */
@@ -1356,7 +1371,7 @@ static void DataIsNull__ReconstructData()
     }
     /* Now we destroy data */
     SLBOS_Data* data = static_cast<SLBOS_Data*>(iter->data);
-    g_lbos_funcs.DestroyData(data);
+    g_LBOS_GetLBOSFuncs()->DestroyData(data);
     iter->data = NULL;
     /* Now let's see how the mapper behaves. Let's check the first element */
     info = SERV_GetNextInfoEx(iter, &hinfo);
@@ -1373,7 +1388,7 @@ static void DataIsNull__ReconstructData()
 
     /* Cleanup*/
     SERV_Close(iter);
-    g_lbos_funcs.FillCandidates = temp_func_pointer;
+    g_LBOS_GetLBOSFuncs()->FillCandidates = temp_func_pointer;
     s_call_counter = 0;
 }
 
@@ -1381,7 +1396,7 @@ static void IterIsNull__ReconstructData()
 {
     const SSERV_Info* info = NULL;
     HOST_INFO host_info;
-    info = g_lbos_funcs.GetNextInfo(NULL, &host_info);
+    info = g_LBOS_GetLBOSFuncs()->GetNextInfo(NULL, &host_info);
 
     NCBITEST_CHECK_MESSAGE(info == NULL,
                            "SERV_GetNextInfoEx: mapper did not "
@@ -1639,9 +1654,9 @@ static void ServerDoesNotExist__ShouldReturnNull()
 static void LbosExist__ShouldWork()
 {
     ELBOSFindMethod find_methods_arr[] = {
-                                          eLBOSFindMethod_etc_ncbi_domain,
-                                          eLBOSFindMethod_registry,
-                                          eLBOSFindMethod_custom_host
+                                          eLBOSFindMethod_EtcNcbiDomain,
+                                          eLBOSFindMethod_Registry,
+                                          eLBOSFindMethod_CustomHost
     };
 
     size_t method_iter/*, error_types_iter = 0*/;
@@ -1702,7 +1717,7 @@ static void LbosExist__ShouldWork()
 //    NCBITEST_CHECK_MESSAGE(count_after - count_before = 1,
 //                               "Number of announced servers did not "
 //                               "increase by 1 after announcement");
-//    NCBITEST_CHECK_MESSAGE(result = ELBOSAnnounceResult_Success,
+//    NCBITEST_CHECK_MESSAGE(result = eLBOSAnnounceResult_Success,
 //                               "Announcement function did not return "
 //                               "SUCCESS as expected");
 //    NCBITEST_CHECK_MESSAGE(LBOS_addr != 0,
@@ -1728,8 +1743,8 @@ static void LbosExist__ShouldWork()
 //     * on the current host, we will mock */
 //    EIO_Status  (*temp_func_pointer) (CONN    conn, char*   line,
 //            size_t  size, size_t* n_read, EIO_ReadMethod how)
-//            = g_lbos_funcs.Read;
-//    g_lbos_funcs.Read = s_FakeReadAnnouncement<1>;
+//            = g_LBOS_GetLBOSFuncs()->Read;
+//    g_LBOS_GetLBOSFuncs()->Read = s_FakeReadAnnouncement<1>;
 //    ELBOSAnnounceResult result =
 //            g_LBOS_AnnounceEx("lbostest",
 //                              "1.0.0",
@@ -1743,15 +1758,15 @@ static void LbosExist__ShouldWork()
 //            const char* version,
 //            unsigned short port,
 //            const char* ip)
-//            = g_lbos_funcs.Deannounce;
-//    g_lbos_funcs.Deannounce = s_FakeDeannounce;
-//    g_lbos_funcs.Read = s_FakeReadAnnouncement<1>;
+//            = g_LBOS_GetLBOSFuncs()->Deannounce;
+//    g_LBOS_GetLBOSFuncs()->Deannounce = s_FakeDeannounce;
+//    g_LBOS_GetLBOSFuncs()->Read = s_FakeReadAnnouncement<1>;
 //    g_LBOS_DeannounceSelf();
 //    unsigned int addr = SOCK_GetLocalHostAddress(eOn);
 //    NCBITEST_CHECK_MESSAGE(strcmp(s_LBOS_hostport, "1.2.3.4:5") == 0,
 //                           "Problem with saving LBOS address on self-announcement");
-//    g_lbos_funcs.Read = temp_func_pointer;
-//    g_lbos_funcs.Deannounce = temp_func_pointer2;
+//    g_LBOS_GetLBOSFuncs()->Read = temp_func_pointer;
+//    g_LBOS_GetLBOSFuncs()->Deannounce = temp_func_pointer2;
 //    /* Second, we check that announce another server does not remember LBOS */
 //}
 //
@@ -2233,7 +2248,7 @@ BOOST_AUTO_TEST_SUITE( Compose_LBOS_address )//////////////////////////////////
 
 /* Composing LBOS address from /etc/ncbi/role + /etc/ncbi/domain:
  * Should try only one current zone and return it  */
-BOOST_AUTO_TEST_CASE(g_LBOS_getLBOSAddresses__SpecificMethod__FirstInResult)
+BOOST_AUTO_TEST_CASE(g_LBOS_GetLBOSAddresses__SpecificMethod__FirstInResult)
 {
     Get_LBOS_address::SpecificMethod__FirstInResult();
 }
@@ -2241,14 +2256,14 @@ BOOST_AUTO_TEST_CASE(g_LBOS_getLBOSAddresses__SpecificMethod__FirstInResult)
 /* Composing LBOS address from /etc/ncbi/role + /etc/ncbi/domain:
  * Should return NULL if fail on ZONE  */
 BOOST_AUTO_TEST_CASE(
-        g_LBOS_getLBOSAddresses__CustomHostNotProvided__SkipCustomHost)
+        g_LBOS_GetLBOSAddresses__CustomHostNotProvided__SkipCustomHost)
 {
     Get_LBOS_address::CustomHostNotProvided__SkipCustomHost();
 }
 
 /* Composing LBOS address from /etc/ncbi/role + /etc/ncbi/domain:
  * Should return NULL if fail on DOMAIN  */
-BOOST_AUTO_TEST_CASE(g_LBOS_getLBOSAddresses__NoConditions__AddressDefOrder)
+BOOST_AUTO_TEST_CASE(g_LBOS_GetLBOSAddresses__NoConditions__AddressDefOrder)
 {
     Get_LBOS_address::NoConditions__AddressDefOrder();
 }
@@ -2897,6 +2912,7 @@ static char* s_FakeComposeLBOSAddress()
     return strdup("lbos.foo");
 }
 
+
 //static int s_CountServers(const char * service, unsigned int host)
 //{
 //    int servers = 0;
@@ -2920,11 +2936,13 @@ static char* s_FakeComposeLBOSAddress()
 //    return servers - 1;
 //}
 
+
 //static ELBOSDeannounceResult FakeDeannounce (const char* lbos_hostport,
 //        const char* service,
 //        const char* version,
 //        unsigned short port,
 //        const char* ip) {
 //    s_LBOS_hostport = strdup(lbos_hostport);
-//    return ELBOSAnnounceResult_Success;
+//    return eLBOSAnnounceResult_Success;
 //}
+
