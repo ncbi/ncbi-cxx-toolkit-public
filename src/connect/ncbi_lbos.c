@@ -86,7 +86,7 @@ static char** s_LBOS_InstancesList = NULL; /* Not to get 404 errors on
                                        every resolve, we will remeber the last
                                           successful LBOS and put it first */
 
-SLBOS_functions g_LBOS_funcs = {
+SLBOS_Functions g_LBOS_funcs = {
                         s_LBOS_ResolveIPPort,
                         CONN_Read,
                         g_LBOS_ComposeLBOSAddress,
@@ -125,7 +125,7 @@ int/*bool*/ g_LBOS_StringIsNullOrEmpty(const char* str)
 }
 
 
-SLBOS_functions* g_LBOS_GetLBOSFuncs(void)
+SLBOS_Functions* g_LBOS_GetLBOSFuncs(void)
 {
     return &g_LBOS_funcs;
 }

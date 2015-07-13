@@ -218,7 +218,7 @@ typedef struct {
     FLBOS_GetNextInfoMethod*        GetNextInfo;
     /*FLBOS_AnnounceExMethod             AnnounceEx;
     FLBOS_DeannounceMethod               Deannounce;*/
-} SLBOS_functions;
+} SLBOS_Functions;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -266,9 +266,9 @@ int/*bool*/ g_LBOS_UnitTesting_SetLBOSRoleAndDomainFiles(const char* roleFile,
 
 /** @brief              Table of all functions to mock, used solely for
  *                      unit testing purposes
- *  @see                SLBOS_functions                                      */
+ *  @see                SLBOS_Functions                                      */
 NCBI_XCONNECT_EXPORT
-SLBOS_functions*    g_LBOS_GetLBOSFuncs                (void);
+SLBOS_Functions*    g_LBOS_GetLBOSFuncs                (void);
 
 
 #ifdef __cplusplus
