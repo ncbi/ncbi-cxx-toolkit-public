@@ -815,10 +815,8 @@ bool CSrcWriter::xGatherSubtypeFeat(
     typedef list<CRef<CSubSource> > SUBSOURCES;
     const SUBSOURCES& subsources = src.GetSubtype();
 
-    typedef map<string, int> INDEXCOUNTER;
-    INDEXCOUNTER indexCounter;
-
     string key = colName;
+    int count = 0;
     for (SUBSOURCES::const_iterator cit = subsources.begin();
             cit != subsources.end(); ++cit) {
 
@@ -827,15 +825,10 @@ bool CSrcWriter::xGatherSubtypeFeat(
             continue;
         }
 
-        INDEXCOUNTER::iterator it = indexCounter.find(colName);
-        if (it != indexCounter.end()) {
-            const int index = it->second;
-            indexCounter[colName] = index+1;
-            key = colName + "#" + NStr::IntToString(index+1);
+        if (count) {
+            key = colName + "#" + NStr::IntToString(count+1);
         }
-        else {
-            indexCounter[colName] = 1;
-        }
+        ++count;
 
         string value = "";
         if (subsrc.IsSetName()) {
@@ -871,10 +864,8 @@ bool CSrcWriter::xGatherOrgModFeat(
     typedef list<CRef<COrgMod> > ORGMODS;
     const ORGMODS& orgmods = src.GetOrgname().GetMod();
 
-    typedef map<string, int> INDEXCOUNTER;
-    INDEXCOUNTER indexCounter;
-
     string key = colName;
+    int count = 0;
     for (ORGMODS::const_iterator cit = orgmods.begin();
             cit != orgmods.end(); ++cit) {
         const COrgMod& orgmod = **cit;
@@ -883,15 +874,10 @@ bool CSrcWriter::xGatherOrgModFeat(
             continue;
         }
 
-        INDEXCOUNTER::iterator it = indexCounter.find(colName);
-        if (it != indexCounter.end()) {
-            const int index = it->second;
-            indexCounter[colName] = index+1;
-            key = colName + "#" + NStr::IntToString(index+1);
+        if (count) {
+            key = colName + "#" + NStr::IntToString(count+1);
         }
-        else {
-            indexCounter[colName] = 1;
-        }
+        ++count;
 
         string value = orgmod.GetSubname();
         xPrepareTableColumn(key, key, "");
