@@ -157,6 +157,7 @@ int/*bool*/ g_LBOS_StringIsNullOrEmpty                       (const char* str);
 /** @brief              Compose LBOS address from /etc/ncbi/{role, domain}
  *  @return             char* with constructed host:port or IP:port, which
                         can (and must be) safely free()'d                    */
+NCBI_XCONNECT_EXPORT
 char*       g_LBOS_ComposeLBOSAddress                   (void);
 
 
