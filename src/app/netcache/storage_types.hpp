@@ -258,8 +258,8 @@ private:
     TNCDBFilesMap::const_iterator m_CurFile;
     TRecNumsSet* m_CurRecsSet;
     TRecNumsSet::iterator m_CurRecIt;
-    Uint1 m_CurCreatePass;
-    Uint1 m_CurCreateFile;
+    size_t m_CurCreatePass;
+    size_t m_CurCreateFile;
 };
 
 
@@ -413,7 +413,7 @@ private:
     Uint4 m_ExtraGCTime;
     Uint2 m_CurBucket;
     Uint2 m_CurDelData;
-    Uint2 m_BatchSize;
+    int m_BatchSize;
     bool m_DoExtraGC;
     vector<SNCCacheData*> m_CacheDatas;
 };

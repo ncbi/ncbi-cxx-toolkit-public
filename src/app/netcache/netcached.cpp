@@ -928,7 +928,7 @@ private:
 
     CNCBlobAccessor*          m_BlobAccess;
     string                    m_RawKey;
-    string                    m_BlobKey;
+    CNCBlobKey                m_BlobKey;
     size_t                    m_Command;
     CSrvTime                  m_CmdStartTime;
 
@@ -994,7 +994,7 @@ void CTest_BlobStorage::Reset(void)
     
     m_BlobAccess = nullptr;
     m_RawKey.clear();
-    m_BlobKey.clear();
+    m_BlobKey.Clear();
     m_Command = 0;
 
     ms_RndLock.Lock();
@@ -1004,7 +1004,7 @@ void CTest_BlobStorage::Reset(void)
     if (m_Keys.size() > 10) {
         if (ms_Rnd.GetRand(1, 2) == 2) {
             random_shuffle(m_Keys.begin(), m_Keys.end());
-            m_BlobKey = *m_Keys.begin();
+            m_BlobKey.Assign( *m_Keys.begin());
             m_Keys.erase(m_Keys.begin());
         }
     }
@@ -1020,7 +1020,7 @@ void CTest_BlobStorage::Reset(void)
     m_ChunkLen = rand2;
     m_BlobSize = 0; 
 
-    if (m_BlobKey.empty()) {
+    if (!m_BlobKey.IsValid()) {
         m_Command = s_Put3;
     } else {
         m_Command = s_Remove;
@@ -1138,15 +1138,13 @@ CTest_BlobStorage::x_Start(void)
 
     if (m_Command == s_Put3) {
         CNCDistributionConf::GenerateBlobKey(m_LocalPort, m_RawKey, m_BlobSlot, m_TimeBucket);
-        CNCBlobStorage::PackBlobKey(&m_BlobKey, CTempString(), m_RawKey, CTempString());
-        m_Keys.push_back(m_BlobKey);
+        m_BlobKey.Assign(m_RawKey);
+        m_Keys.push_back(m_RawKey);
     } else {
-        if ( !CNCDistributionConf::GetSlotByNetCacheKey(m_BlobKey, m_BlobSlot, m_TimeBucket)) {
-            abort();
-        }
+        CNCDistributionConf::GetSlotByRnd(m_BlobKey.GetRandomPart(), m_BlobSlot, m_TimeBucket);
     }
 
-    m_BlobAccess = CNCBlobStorage::GetBlobAccess( eNCCreate, m_BlobKey, "", m_TimeBucket);
+    m_BlobAccess = CNCBlobStorage::GetBlobAccess( eNCCreate, m_BlobKey.PackedKey(), "", m_TimeBucket);
     m_BlobAccess->RequestMetaInfo(this);
     return &CTest_BlobStorage::x_WaitForBlobAccess;
 }

@@ -128,12 +128,12 @@ static string s_Path;
 /// Name of the storage
 static string s_Prefix;
 /// Number of blobs treated by GC and by caching mechanism in one batch
-static Uint2 s_GCBatchSize   = 0;
+static int s_GCBatchSize   = 0;
 static int s_FlushTimePeriod = 0;
-static Uint1 s_MaxGarbagePct = 0;
+static int s_MaxGarbagePct = 0;
 static int s_MinMoveLife     = 0;
 static int s_FailedMoveDelay = 0;
-static Uint8 s_MinDBSize     = 0;
+static Int8 s_MinDBSize     = 0;
 /// Name of guard file excluding several instances to run on the same
 /// database.
 static string s_GuardName;
@@ -165,8 +165,8 @@ static Uint8 s_CurBlobsCnt = 0;
 static Uint8 s_CurKeysCnt = 0;
 static bool s_Draining = false;
 /// Current size of storage database. Kept here for printing statistics.
-volatile static Uint8 s_CurDBSize = 0;
-volatile static Uint8 s_GarbageSize = 0;
+volatile static Int8 s_CurDBSize = 0;
+volatile static Int8 s_GarbageSize = 0;
 static int s_LastFlushTime = 0;
 /// Internal cache of blobs identification information sorted to be able
 /// to search by key, subkey and version.
@@ -175,17 +175,17 @@ static EStopCause s_IsStopWrite = eNoStop;
 static bool s_CleanStart = false;
 static bool s_NeedSaveLogRecNo = false;
 static bool s_NeedSavePurgeData = false;
-static Uint1 s_WarnLimitOnPct = 0;
-static Uint1 s_WarnLimitOffPct = 0;
+static int s_WarnLimitOnPct = 0;
+static int s_WarnLimitOffPct = 0;
 static int s_MinRecNoSavePeriod = 0;
 static int s_LastRecNoSaveTime = 0;
 static CAtomicCounter s_BlobCounter;
-static Uint8 s_ExtraGCOnSize = 0;
-static Uint8 s_ExtraGCOffSize = 0;
-static Uint8 s_StopWriteOnSize = 0;
-static Uint8 s_StopWriteOffSize = 0;
-static Uint8 s_DiskFreeLimit = 0;
-static Uint8 s_DiskCritical = 0;
+static Int8 s_ExtraGCOnSize = 0;
+static Int8 s_ExtraGCOffSize = 0;
+static Int8 s_StopWriteOnSize = 0;
+static Int8 s_StopWriteOffSize = 0;
+static Int8 s_DiskFreeLimit = 0;
+static Int8 s_DiskCritical = 0;
 static Uint8 s_MaxBlobSizeStore = 0;
 static CNewFileCreator* s_NewFileCreator = nullptr;
 static CDiskFlusher* s_DiskFlusher = nullptr;
@@ -296,14 +296,14 @@ s_ReadVariableParams(void)
                        << warn_pct << ". Assuming it's 65.");
         warn_pct = 65;
     }
-    s_WarnLimitOnPct = Uint1(warn_pct);
+    s_WarnLimitOnPct = warn_pct;
     warn_pct = reg.GetInt(kNCStorage_RegSection, "db_limit_percentage_alert_delta", 5);
     if (warn_pct <= 0  ||  warn_pct >= s_WarnLimitOnPct) {
         SRV_LOG(Error, "Parameter db_limit_percentage_alert_delta has wrong value "
                        << warn_pct << ". Assuming it's 5.");
         warn_pct = 5;
     }
-    s_WarnLimitOffPct = s_WarnLimitOnPct - Uint1(warn_pct);
+    s_WarnLimitOffPct = s_WarnLimitOnPct - warn_pct;
 
     SetWBSoftSizeLimit(NStr::StringToUInt8_DataSize(reg.GetString(
                        kNCStorage_RegSection, "write_back_soft_size_limit", "3 GB")));
@@ -1072,8 +1072,62 @@ void CNCBlobStorage::WriteEnvInfo(CSrvSocketTask& task)
     string is("\": "),iss("\": \""), eol(",\n\""), str("_str"), eos("\"");
     task.WriteText(eol).WriteText("storagepath"  ).WriteText(iss).WriteText(   s_Path).WriteText(eos);
     task.WriteText(eol).WriteText(kNCStorage_GuardNameParam   ).WriteText(iss).WriteText(   s_GuardName).WriteText(eos);
-    task.WriteText(eol).WriteText("diskfreespace").WriteText(is   ).WriteText(iss).WriteText(
-        NStr::UInt8ToString_DataSize(GetDiskFree())).WriteText(eos);
+    task.WriteText(eol).WriteText("DBindex"  ).WriteText(iss).WriteText(   s_GetIndexFileName()).WriteText(eos);
+    task.WriteText(eol).WriteText("DBfiles_count").WriteText( is).WriteNumber( s_DBFiles->size());
+    task.WriteText(eol).WriteText("DBsize"       ).WriteText(iss).WriteText(NStr::UInt8ToString_DataSize(s_CurDBSize)).WriteText(eos);
+    task.WriteText(eol).WriteText("DBgarbage"    ).WriteText(iss).WriteText(NStr::UInt8ToString_DataSize(s_GarbageSize)).WriteText(eos);
+    task.WriteText(eol).WriteText("diskfreespace").WriteText(iss).WriteText(NStr::UInt8ToString_DataSize(GetDiskFree())).WriteText(eos);
+}
+
+void CNCBlobStorage::WriteDbInfo(CSrvSocketTask& task, const CTempString& mask)
+{
+    Uint4 id = 0;
+    bool use_mask = false, is_id = false;
+    if (!mask.empty()) {
+        use_mask = true;
+        try {
+            id = NStr::StringToUInt(mask);
+            is_id = true;
+        } catch (...) {
+        }
+    }
+
+    string is("\": "),iss("\": \""), eol(",\n\""), str("_str"), eos("\"");
+    task.WriteText(eol).WriteText("storagepath"  ).WriteText(iss).WriteText(   s_Path).WriteText(eos);
+    task.WriteText(eol).WriteText("DBfiles\": [\n");
+    s_DBFilesLock.Lock();
+    bool is_first = true;
+    for (TNCDBFilesMap::const_iterator it = s_DBFiles->begin();  it != s_DBFiles->end(); ++it) {
+        if (use_mask) {
+            if (is_id && it->second->file_id != id) {
+                continue;
+            }
+            if (NStr::FindNoCase(it->second->file_name, mask) == NPOS) {
+                continue;
+            }
+        }
+        if (!is_first) {
+            task.WriteText(",");
+        }
+        is_first = false;
+        task.WriteText("{\n");
+        task.WriteText("\"").WriteText(it->second->file_name).WriteText("\": {");
+        task.WriteText("\n\"").WriteText("file_type").WriteText( is).WriteNumber( (int)(it->second->file_type));
+        task.WriteText(eol).WriteText("file_id").WriteText( is).WriteNumber( it->second->file_id);
+        task.WriteText(eol).WriteText("file_size").WriteText( is).WriteNumber( it->second->file_size);
+        task.WriteText(eol).WriteText("garb_size").WriteText( is).WriteNumber( it->second->garb_size);
+        task.WriteText(eol).WriteText("used_size").WriteText( is).WriteNumber( it->second->used_size);
+        task.WriteText(eol).WriteText("is_releasing").WriteText( is).WriteBool( it->second->is_releasing);
+        char buf[50];
+        CSrvTime(it->second->create_time).Print(buf, CSrvTime::eFmtJson);
+        task.WriteText(eol).WriteText("create_time").WriteText( is).WriteText( buf);
+        CSrvTime(it->second->next_shrink_time).Print(buf, CSrvTime::eFmtJson);
+        task.WriteText(eol).WriteText("next_shrink_time").WriteText( is).WriteText( buf);
+        task.WriteText(eol).WriteText("cnt_unfinished").WriteText( is).WriteNumber( it->second->cnt_unfinished.Get());
+        task.WriteText("}\n}");
+    }
+    s_DBFilesLock.Unlock();
+    task.WriteText("]");
 }
 
 string
@@ -1792,7 +1846,7 @@ CNCBlobStorage::GetMaxBlobSizeStore(void)
     return s_MaxBlobSizeStore;
 }
 
-Uint8
+Int8
 CNCBlobStorage::GetDiskFree(void)
 {
     try {
@@ -1804,11 +1858,11 @@ CNCBlobStorage::GetDiskFree(void)
     }
 }
 
-Uint8
-CNCBlobStorage::GetAllowedDBSize(Uint8 free_space)
+Int8
+CNCBlobStorage::GetAllowedDBSize(Int8 free_space)
 {
-    Uint8 total_space = s_CurDBSize + free_space;
-    Uint8 allowed_db_size = total_space;
+    Int8 total_space = s_CurDBSize + free_space;
+    Int8 allowed_db_size = total_space;
 
     if (total_space < s_DiskCritical)
         allowed_db_size = 0;
@@ -1824,7 +1878,7 @@ CNCBlobStorage::GetAllowedDBSize(Uint8 free_space)
     return allowed_db_size;
 }
 
-Uint8
+Int8
 CNCBlobStorage::GetDBSize(void)
 {
     return s_CurDBSize;
@@ -2311,7 +2365,7 @@ CBlobCacher::x_CreateInitialFile(void)
         ++m_CurCreateFile;
     }
     else {
-        for (Uint1 i = 0; i < s_CntAllFiles; ++i) {
+        for (size_t i = 0; i < s_CntAllFiles; ++i) {
             s_SwitchToNextFile(s_AllWritings[i]);
         }
         m_CurCreateFile = 0;
@@ -2634,9 +2688,9 @@ CBlobCacher::~CBlobCacher(void)
 void
 CNCBlobStorage::CheckDiskSpace(void)
 {
-    Uint8 free_space = GetDiskFree();
-    Uint8 allowed_db_size = GetAllowedDBSize(free_space);
-    Uint8 cur_db_size = s_CurDBSize;
+    Int8 free_space = GetDiskFree();
+    Int8 allowed_db_size = GetAllowedDBSize(free_space);
+    Int8 cur_db_size = s_CurDBSize;
 
     if (s_IsStopWrite == eNoStop
         &&  cur_db_size * 100 >= allowed_db_size * s_WarnLimitOnPct)
@@ -3509,7 +3563,7 @@ void
 CNewFileCreator::ExecuteSlice(TSrvThreadNum /* thr_num */)
 {
 // create new (next) db file
-    for (Uint1 i = 0; i < s_CntAllFiles; ++i) {
+    for (size_t i = 0; i < s_CntAllFiles; ++i) {
         bool need_new = false;
         s_NextWriteLock.Lock();
         need_new = s_AllWritings[i].next_file == NULL;

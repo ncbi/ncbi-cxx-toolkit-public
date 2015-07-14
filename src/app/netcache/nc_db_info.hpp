@@ -273,7 +273,7 @@ enum ENCDBFileType {
 static ENCDBFileType const s_AllFileTypes[]
                     = {eDBFileMeta, eDBFileData, eDBFileMaps
                        /*, eDBFileMoveMeta, eDBFileMoveData, eDBFileMoveMaps*/};
-static Uint1 const s_CntAllFiles = sizeof(s_AllFileTypes) / sizeof(s_AllFileTypes[0]);
+static size_t const s_CntAllFiles = sizeof(s_AllFileTypes) / sizeof(s_AllFileTypes[0]);
 
 enum EDBFileIndex {
     eFileIndexMeta = 0,

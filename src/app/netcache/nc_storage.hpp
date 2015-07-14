@@ -88,6 +88,7 @@ public:
 
     static void WriteSetup(CSrvSocketTask& task);
     static void WriteEnvInfo(CSrvSocketTask& task);
+    static void WriteDbInfo(CSrvSocketTask& task, const CTempString& mask);
 
     static bool IsCleanStart(void);
     static bool NeedStopWrite(void);
@@ -106,9 +107,9 @@ public:
     /// Get number of files in the database
     static int GetNDBFiles(void);
     /// Get total size of database for the storage
-    static Uint8 GetDBSize(void);
-    static Uint8 GetDiskFree(void);
-    static Uint8 GetAllowedDBSize(Uint8 free_space);
+    static Int8 GetDBSize(void);
+    static Int8 GetDiskFree(void);
+    static Int8 GetAllowedDBSize(Int8 free_space);
     static bool IsDBSizeAlert(void);
     static void CheckDiskSpace(void);
     static void MeasureDB(SNCStateStat& state);

@@ -3521,8 +3521,8 @@ CNCMessageHandler::x_DoCmd_Health(void)
     WriteText("OK:UP_TIME=").WriteNumber(CNCServer::GetUpTime()).WriteText("\n");
     WriteText("OK:CACHING_COMPLETE=").WriteText(CNCServer::IsCachingComplete()? "yes": "no").WriteText("\n");
     WriteText("OK:INITIALLY_SYNCED=").WriteText(CNCServer::IsInitiallySynced()? "yes": "no").WriteText("\n");
-    Uint8 free_space = CNCBlobStorage::GetDiskFree();
-    Uint8 allowed_size = CNCBlobStorage::GetAllowedDBSize(free_space);
+    Int8 free_space = CNCBlobStorage::GetDiskFree();
+    Int8 allowed_size = CNCBlobStorage::GetAllowedDBSize(free_space);
     WriteText("OK:DISK_FREE=").WriteNumber(free_space).WriteText("\n");
     WriteText("OK:DISK_LIMIT=").WriteNumber(allowed_size).WriteText("\n");
     WriteText("OK:DISK_USED=").WriteNumber(CNCBlobStorage::GetDBSize()).WriteText("\n");
@@ -3620,9 +3620,12 @@ CNCMessageHandler::x_DoCmd_GetConfig(void)
                 }
             }
             CNCActiveSyncControl::PrintState(*this, slot, one_slot);
+        } else if (section == "db") {
+            CTempString mask = params.find("port") != params.end() ? params.at("port") : CTempString(kEmptyStr);
+            CNCBlobStorage::WriteDbInfo(*this, mask);
         } else {
             WriteText(",\n\"error\": \"Unknown section name, valid names: ");
-            WriteText("netcache, storage, mirror, alerts, allalerts, env, stat, sync\"");
+            WriteText("netcache, storage, mirror, alerts, allalerts, env, stat, sync, db\"");
         }
         WriteText("\n}}");
     } else {
