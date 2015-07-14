@@ -196,142 +196,149 @@ const string kInferenceMessage[] = {
 void CValidError_feat::ValidateSeqFeat(
     const CSeq_feat& feat)
 {
-    if ( !feat.IsSetLocation() ) {
-        PostErr(eDiag_Critical, eErr_SEQ_FEAT_MissingLocation,
-            "The feature is missing a location", feat);
-        return;
-    }
+    try {
+        if ( !feat.IsSetLocation() ) {
+            PostErr(eDiag_Critical, eErr_SEQ_FEAT_MissingLocation,
+                "The feature is missing a location", feat);
+            return;
+        }
 
-    if (m_Scope) {
-        CBioseq_Handle bsh = GetCache().GetBioseqHandleFromLocation(m_Scope, feat.GetLocation(), m_Imp.GetTSE_Handle());
-        m_Imp.ValidateSeqLoc(feat.GetLocation(), bsh, 
-                             (feat.GetData().IsGene() || !m_Imp.IsGpipe()),
-                             "Location", feat);
+        if (m_Scope) {
+            CBioseq_Handle bsh = GetCache().GetBioseqHandleFromLocation(m_Scope, feat.GetLocation(), m_Imp.GetTSE_Handle());
+            m_Imp.ValidateSeqLoc(feat.GetLocation(), bsh, 
+                                 (feat.GetData().IsGene() || !m_Imp.IsGpipe()),
+                                 "Location", feat);
 
-        if ( feat.CanGetProduct() ) {
-            ValidateSeqFeatProduct(feat.GetProduct(), feat);
-            CBioseq_Handle p_bsh = GetCache().GetBioseqHandleFromLocation(m_Scope, feat.GetProduct(), m_Imp.GetTSE_Handle());
-            if (p_bsh == bsh) {
-                PostErr (eDiag_Error, eErr_SEQ_FEAT_SelfReferentialProduct, "Self-referential feature product", feat);
+            if ( feat.CanGetProduct() ) {
+                ValidateSeqFeatProduct(feat.GetProduct(), feat);
+                CBioseq_Handle p_bsh = GetCache().GetBioseqHandleFromLocation(m_Scope, feat.GetProduct(), m_Imp.GetTSE_Handle());
+                if (p_bsh == bsh) {
+                    PostErr (eDiag_Error, eErr_SEQ_FEAT_SelfReferentialProduct, "Self-referential feature product", feat);
+                }
             }
         }
-    }
-    x_ValidateSeqFeatLoc(feat);
+        x_ValidateSeqFeatLoc(feat);
     
-    ValidateFeatPartialness(feat);
+        ValidateFeatPartialness(feat);
     
-    ValidateExcept(feat);
+        ValidateExcept(feat);
 
-    if (feat.IsSetXref()) {
-        FOR_EACH_SEQFEATXREF_ON_SEQFEAT (it, feat) {
-            ValidateSeqFeatXref (**it, feat);
+        if (feat.IsSetXref()) {
+            FOR_EACH_SEQFEATXREF_ON_SEQFEAT (it, feat) {
+                ValidateSeqFeatXref (**it, feat);
+            }
         }
-    }
 
 
-    ValidateSeqFeatData(feat.GetData(), feat);
+        ValidateSeqFeatData(feat.GetData(), feat);
   
-    ValidateBothStrands (feat);
+        ValidateBothStrands (feat);
     
-    if (feat.CanGetDbxref ()) {
-        m_Imp.ValidateDbxref (feat.GetDbxref (), feat);
-    }
-    
-    if ( feat.CanGetComment() ) {
-        ValidateFeatComment(feat.GetComment(), feat);
-    }
-
-    if ( feat.CanGetCit() ) {
-        ValidateFeatCit(feat.GetCit(), feat);
-    }
-
-    /*
-    if ( feat.IsSetPseudo()  &&  feat.GetPseudo() ) {
-        m_Imp.IncrementPseudoCount();
-    }
-    */
-
-    FOR_EACH_GBQUAL_ON_FEATURE (it, feat) {
-        if (!(*it)->IsSetQual()) {
-            continue;
+        if (feat.CanGetDbxref ()) {
+            m_Imp.ValidateDbxref (feat.GetDbxref (), feat);
         }
-        /* first check for anything other than replace */
-        if (!(*it)->IsSetVal() || NStr::IsBlank ((*it)->GetVal())) {
-            if (NStr::EqualNocase ((*it)->GetQual(), "replace")) {
-                /* ok for replace */
-            } else {
-                PostErr (eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue, 
-                         "Qualifier other than replace has just quotation marks", feat);
-                if (NStr::EqualNocase ((*it)->GetQual(), "EC_number")) {
-                      PostErr (eDiag_Warning, eErr_SEQ_FEAT_EcNumberProblem, "EC number should not be empty", feat);
-                }
-            }
-        } else if (NStr::EqualNocase ((*it)->GetQual(), "EC_number")) {
-            if (!s_IsValidECNumberFormat((*it)->GetVal())) {
-                PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberFormat,
-                        (*it)->GetVal() + " is not in proper EC_number format", feat);
-            } else {
-                  string ec_number = (*it)->GetVal();
-                  CProt_ref::EECNumberStatus status = CProt_ref::GetECNumberStatus (ec_number);
-                  x_ReportECNumFileStatus(feat);
-                  switch (status) {
-                      case CProt_ref::eEC_deleted:
-                          PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
-                                   "EC_number " + ec_number + " was deleted",
-                                   feat);
-                          break;
-                      case CProt_ref::eEC_replaced:
-                          PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
-                                   "EC_number " + ec_number + " was replaced",
-                                   feat);
-                          break;
-                      case CProt_ref::eEC_unknown:
-                    {
-                        size_t pos = NStr::Find (ec_number, "n");
-                        if (pos == string::npos || !isdigit (ec_number.c_str()[pos + 1])) {
-                                  PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
-                                             ec_number + " is not a legal value for qualifier EC_number",
-                                               feat);
-                        } else {
-                                  PostErr (eDiag_Info, eErr_SEQ_FEAT_BadEcNumberValue, 
-                                             ec_number + " is not a legal preliminary value for qualifier EC_number",
-                                               feat);
-                        }
-                    }
-                          break;
-                      default:
-                          break;
-                  }
-            }
-        } else if (NStr::EqualNocase ((*it)->GetQual(), "inference")) {
-            /* TODO: Validate inference */
-            string val = "";
-            if ((*it)->IsSetVal()) {
-                val = (*it)->GetVal();
-            }
-            EInferenceValidCode rsult = ValidateInference (val, m_Imp.ValidateInferenceAccessions());
-            if (rsult > eInferenceValidCode_valid) {
-                if (NStr::IsBlank (val)) {
-                    val = "?";
-                }
-                PostErr (eDiag_Warning, eErr_SEQ_FEAT_InvalidInferenceValue,
-                         "Inference qualifier problem - " + kInferenceMessage [(int) rsult] + " ("
-                         + val + ")", feat);
-            }
+    
+        if ( feat.CanGetComment() ) {
+            ValidateFeatComment(feat.GetComment(), feat);
+        }
+
+        if ( feat.CanGetCit() ) {
+            ValidateFeatCit(feat.GetCit(), feat);
+        }
+
         /*
-        } else if (NStr::EqualNocase ((*it)->GetQual(), "pseudogene")) {
-            m_Imp.IncrementPseudogeneCount();
-        */
+        if ( feat.IsSetPseudo()  &&  feat.GetPseudo() ) {
+            m_Imp.IncrementPseudoCount();
         }
-        if ((*it)->IsSetVal() && ContainsSgml ((*it)->GetVal())) {
-            PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
-                     "feature qualifier " + (*it)->GetVal() + " has SGML",
-                     feat);
+        */
+
+        FOR_EACH_GBQUAL_ON_FEATURE (it, feat) {
+            if (!(*it)->IsSetQual()) {
+                continue;
+            }
+            /* first check for anything other than replace */
+            if (!(*it)->IsSetVal() || NStr::IsBlank ((*it)->GetVal())) {
+                if (NStr::EqualNocase ((*it)->GetQual(), "replace")) {
+                    /* ok for replace */
+                } else {
+                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue, 
+                             "Qualifier other than replace has just quotation marks", feat);
+                    if (NStr::EqualNocase ((*it)->GetQual(), "EC_number")) {
+                          PostErr (eDiag_Warning, eErr_SEQ_FEAT_EcNumberProblem, "EC number should not be empty", feat);
+                    }
+                }
+            } else if (NStr::EqualNocase ((*it)->GetQual(), "EC_number")) {
+                if (!s_IsValidECNumberFormat((*it)->GetVal())) {
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberFormat,
+                            (*it)->GetVal() + " is not in proper EC_number format", feat);
+                } else {
+                      string ec_number = (*it)->GetVal();
+                      CProt_ref::EECNumberStatus status = CProt_ref::GetECNumberStatus (ec_number);
+                      x_ReportECNumFileStatus(feat);
+                      switch (status) {
+                          case CProt_ref::eEC_deleted:
+                              PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
+                                       "EC_number " + ec_number + " was deleted",
+                                       feat);
+                              break;
+                          case CProt_ref::eEC_replaced:
+                              PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
+                                       "EC_number " + ec_number + " was replaced",
+                                       feat);
+                              break;
+                          case CProt_ref::eEC_unknown:
+                        {
+                            size_t pos = NStr::Find (ec_number, "n");
+                            if (pos == string::npos || !isdigit (ec_number.c_str()[pos + 1])) {
+                                      PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
+                                                 ec_number + " is not a legal value for qualifier EC_number",
+                                                   feat);
+                            } else {
+                                      PostErr (eDiag_Info, eErr_SEQ_FEAT_BadEcNumberValue, 
+                                                 ec_number + " is not a legal preliminary value for qualifier EC_number",
+                                                   feat);
+                            }
+                        }
+                              break;
+                          default:
+                              break;
+                      }
+                }
+            } else if (NStr::EqualNocase ((*it)->GetQual(), "inference")) {
+                /* TODO: Validate inference */
+                string val = "";
+                if ((*it)->IsSetVal()) {
+                    val = (*it)->GetVal();
+                }
+                EInferenceValidCode rsult = ValidateInference (val, m_Imp.ValidateInferenceAccessions());
+                if (rsult > eInferenceValidCode_valid) {
+                    if (NStr::IsBlank (val)) {
+                        val = "?";
+                    }
+                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_InvalidInferenceValue,
+                             "Inference qualifier problem - " + kInferenceMessage [(int) rsult] + " ("
+                             + val + ")", feat);
+                }
+            /*
+            } else if (NStr::EqualNocase ((*it)->GetQual(), "pseudogene")) {
+                m_Imp.IncrementPseudogeneCount();
+            */
+            }
+            if ((*it)->IsSetVal() && ContainsSgml ((*it)->GetVal())) {
+                PostErr (eDiag_Warning, eErr_GENERIC_SgmlPresentInText, 
+                         "feature qualifier " + (*it)->GetVal() + " has SGML",
+                         feat);
+            }
+        }
+
+        if (feat.IsSetExt()) {
+            ValidateExtUserObject (feat.GetExt(), feat);
         }
     }
-
-    if (feat.IsSetExt()) {
-        ValidateExtUserObject (feat.GetExt(), feat);
+    catch (const exception& e) {
+        PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
+            string("Exception while validating feature. EXCEPTION: ") +
+            e.what(), feat);
     }
 }
 
