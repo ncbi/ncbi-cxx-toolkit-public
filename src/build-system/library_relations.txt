@@ -63,6 +63,8 @@ align_format needs seqdb
 align_format needs xalnmgr
 align_format needs xcgi
 align_format needs xhtml
+align_part_ci needs $(SEQ_LIBS)
+align_part_ci needs pub
 aligndb_client needs $(SEQ_LIBS)
 aligndb_client needs pub
 aligndb_reader needs $(COMPRESS_LIBS)
@@ -114,7 +116,6 @@ auxnet_g needs generic_db_utils
 backendcommon needs $(SDBAPI_LIB)
 backendcommon needs txxmldoc
 backendcommon needs xconnect
-bacterial_pipeline_proc includes prok_align_monomer
 bacterial_pipeline_proc needs gencoll_client
 bacterial_pipeline_proc needs gpipe_objutil
 bacterial_pipeline_proc needs xalgoalignutil
@@ -907,6 +908,7 @@ png needs3party $(Z_LIBS)
 proj needs pubmed
 proj needs seqset
 prok_align_monomer needs $(SOBJMGR_LIBS)
+prok_align_monomer needs align_part_ci
 prosplign needs xalgoalignutil
 proxsort needs taxoscli
 pstub needs3party $(ORIG_LIBS)
