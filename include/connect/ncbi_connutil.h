@@ -343,8 +343,8 @@ extern NCBI_XCONNECT_EXPORT int/*bool*/ ConnNetInfo_Boolean
  *  svc               SERVICE_NAME      no search/no value without service
  *
  * A value of the field NAME is first looked up in the environment variable
- * of the form service_CONN_<NAME>; then in the current corelib registry,
- * in the section 'service' by using key CONN_<NAME>; then in the environment
+ * of the form <service>_CONN_<NAME>; then in the current corelib registry, in
+ * the section 'service' by using the CONN_<NAME> key; then in the environment
  * variable again, but using the name CONN_<NAME>; and finally in the default
  * registry section (DEF_CONN_REG_SECTION), using just <NAME>. If service
  * is NULL or empty then the first 2 steps in the above lookup are skipped.
