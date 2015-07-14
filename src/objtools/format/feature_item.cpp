@@ -1639,13 +1639,45 @@ void CFeatureItem::x_AddQuals(
 
     const CGene_ref* gene_ref = 0;
     CConstRef<CSeq_feat> gene_feat;
+    const CGene_ref* feat_gene_xref = m_Feat.GetGeneXref();
+    bool suppressed = false;
 
     const bool gene_forbidden_if_genbank = 
         ( subtype == CSeqFeatData::eSubtype_repeat_region || 
           subtype == CSeqFeatData::eSubtype_mobile_element ||
           subtype == CSeqFeatData::eSubtype_centromere ||
           subtype == CSeqFeatData::eSubtype_telomere );
-    const CGene_ref* feat_gene_xref = m_Feat.GetGeneXref();
+
+    if ( type == CSeqFeatData::e_Gene ) {
+    } else if (subtype != CSeqFeatData::eSubtype_operon &&
+               subtype != CSeqFeatData::eSubtype_gap &&
+               (is_not_genbank || ! gene_forbidden_if_genbank)) {
+        if (feat_gene_xref) {
+            if (feat_gene_xref->IsSuppressed()) {
+                suppressed = true;
+            }
+        }
+        if (feat_gene_xref && ! suppressed && 
+            ! CGeneFinder::ResolveGeneXref(feat_gene_xref, ctx.GetTopLevelEntry())) {
+            gene_ref = feat_gene_xref;
+        } else if (! feat_gene_xref || ! suppressed) {
+            CMappedFeat mapped_gene = GetBestGeneForFeat (m_Feat, m_Feat_Tree);
+            if (mapped_gene && subtype != CSeqFeatData::eSubtype_primer_bind) {
+                gene_feat = &mapped_gene.GetOriginalFeature();
+                gene_ref = &gene_feat->GetData().GetGene();
+            } else {
+                // e.g., check sig_peptide for gene overlapping parent CDS
+                CSeq_feat_Handle parent_feat_handle;
+                if( parentFeatureItem ) {
+                    parent_feat_handle = parentFeatureItem->GetFeat();
+                }
+                CGeneFinder::GetAssociatedGeneInfo( m_Feat, ctx, m_Loc, m_GeneRef, gene_ref, 
+                    gene_feat, parent_feat_handle );
+            }
+        }
+    }
+
+    /*
     if ( feat_gene_xref && feat_gene_xref->IsSuppressed() ) {
         // suppress gene by overlap
     } else if ( type != CSeqFeatData::e_Gene &&
@@ -1675,6 +1707,8 @@ void CFeatureItem::x_AddQuals(
             gene_ref = feat_gene_xref;
         }
     }
+    */
+
     bool pseudo = x_GetPseudo(gene_ref, gene_feat );
 
     //
@@ -2110,19 +2144,19 @@ void CFeatureItem::x_AddQualProteinConflict(
     static const string conflict_msg = 
         "Protein sequence is in conflict with the conceptual translation";
 
-	const bool conflict_set = (cdr.IsSetConflict() && cdr.GetConflict());
+    const bool conflict_set = (cdr.IsSetConflict() && cdr.GetConflict());
 
-	if (conflict_set) 
-	{
-		if (!ctx.IsProt() || !IsMappedFromCDNA()) {
-			bool has_prot = false;
-			if (m_Feat.IsSetProduct() && m_Feat.GetProduct().GetId() != 0) {
-				has_prot = (sequence::GetLength(m_Feat.GetProduct(), &ctx.GetScope()) > 0);
-			}
-			if (has_prot) {
-				x_AddQual(eFQ_prot_conflict, new CFlatStringQVal(conflict_msg));
-			}
-		}
+    if (conflict_set) 
+    {
+        if (!ctx.IsProt() || !IsMappedFromCDNA()) {
+            bool has_prot = false;
+            if (m_Feat.IsSetProduct() && m_Feat.GetProduct().GetId() != 0) {
+                has_prot = (sequence::GetLength(m_Feat.GetProduct(), &ctx.GetScope()) > 0);
+            }
+            if (has_prot) {
+                x_AddQual(eFQ_prot_conflict, new CFlatStringQVal(conflict_msg));
+            }
+        }
     } 
 }
 
