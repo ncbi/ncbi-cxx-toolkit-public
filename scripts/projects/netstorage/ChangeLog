@@ -1,3 +1,10 @@
+Release 2.1.1 based on SC-16.1 (2015-07-14)
+
+Improvements and bug fixes:
+    * NST 2.1.0: can't parse grid_cli HELLO with ProtocolVersion
+      (JIRA: CXX-6157)
+
+
 Release 2.1.0 based on SC-16.1 (2015-07-09)
 
 Improvements and bug fixes:
