@@ -231,7 +231,7 @@ void CAsnvalApp::Init(void)
         CArgDescriptions::eInteger, "3");
     arg_desc->AddDefaultKey(
         "P", "SevLevel", "Highest Severity for Error to Show",
-        CArgDescriptions::eInteger, "4");
+        CArgDescriptions::eInteger, "5");
     CArgAllow* constraint = new CArgAllow_Integers(eDiagSevMin, eDiagSevMax);
     arg_desc->SetConstraint("Q", constraint);
     arg_desc->SetConstraint("P", constraint);
