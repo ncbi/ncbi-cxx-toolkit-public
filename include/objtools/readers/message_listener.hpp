@@ -98,13 +98,13 @@ public:
         const Uint8 iNumTotal = 0 ) = 0;
 
     // IMessageListener proxy methods
-    virtual void PostMessage(const IMessage& message)
-    { Post(message); }
+    virtual EPostResult PostMessage(const IMessage& message)
+    { Post(message); return eHandled; }
     
-    virtual void PostProgress(const string& message,
+    virtual EPostResult PostProgress(const string& message,
                               Uint8         current,
                               Uint8         total)
-    { Progress(message, current, total); }
+    { Progress(message, current, total); return eHandled; }
 
     virtual const IMessage& GetMessage(size_t index) const
     { return Get(index); }
@@ -124,9 +124,8 @@ public:
 
 
 //  ============================================================================
-class NCBI_XOBJREAD_EXPORT CMessageListenerBase:
+class NCBI_XOBJREAD_EXPORT CMessageListenerBase : public objects::IMessageListener
 //  ============================================================================
-public CObject, public objects::IMessageListener
 {
 public:
     CMessageListenerBase() : m_pProgressOstrm(0) {};

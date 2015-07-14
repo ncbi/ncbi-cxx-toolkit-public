@@ -37,6 +37,8 @@
 /// IMessage/IMessageListener interfaces and basic implementations.
 ///
 
+#include <corelib/ncbiobj.hpp>
+#include <list>
 #include <corelib/version.hpp>
 
 /** @addtogroup MESSAGE
@@ -125,13 +127,22 @@ private:
 /// Interface for IMessage listener/collector.
 ///
 
-class IMessageListener
+class NCBI_XNCBI_EXPORT IMessageListener : public CObject
 {
 public:
     virtual ~IMessageListener(void) {}
 
+    /// Result of PostXXXX() operation.
+    enum EPostResult {
+        eHandled,   ///< The message was successfully handled and will not be
+                    ///< passed to other listeners installed with
+                    ///< eListen_Unhandled flag.
+        eUnhandled  ///< The message was not handled and should be passed to
+                    ///< other listeners.
+    };
+
     /// Post new message to the listener.
-    virtual void PostMessage(const IMessage& /*message*/) = 0;
+    virtual EPostResult PostMessage(const IMessage& /*message*/) = 0;
 
     /// Report progress.
     /// @param message
@@ -140,9 +151,9 @@ public:
     ///   Current progress value.
     /// @param total
     ///   Max progress value.
-    virtual void PostProgress(const string& /*message*/,
-                              Uint8         /*current*/,
-                              Uint8         /*total*/) = 0;
+    virtual EPostResult PostProgress(const string& /*message*/,
+                                     Uint8         /*current*/,
+                                     Uint8         /*total*/) = 0;
 
     /// Get a previously collected message.
     /// @param index
@@ -154,18 +165,70 @@ public:
 
     /// Clear all collected messages.
     virtual void Clear(void) = 0;
+
+    /// Which messages should be passed to the listener
+    enum EListenFlag {
+        eListen_Unhandled, ///< Default flag. The listener only wants messages
+                           ///< not handled by previous listeners.
+        eListen_All        ///< The listener wants to see all messages, even
+                           ///< those already handled.
+    };
+
+    /// Push a new listener to the stack in the current thread.
+    /// @param listener
+    ///   The listener to be installed.
+    /// @param flag
+    ///   Flag specifying if the new listener should receive all messages
+    ///   or only those not handled by other listeners above the current.
+    /// @return
+    ///   Total number of listeners in the current thread's stack including
+    ///   the new one. This number can be passed to PopListener() for more
+    ///   reliable cleanup.
+    /// @sa PopListener()
+    static size_t PushListener(IMessageListener& listener,
+                               EListenFlag flag = eListen_Unhandled);
+
+    /// Remove listener(s) from the current thread's stack.
+    /// @param depth
+    ///   Index of the listener to be removed, as returned by PushListener().
+    ///   If the current stack size is less than depth, no action is performed.
+    ///   If the depth is zero (default), only the topmost listener is removed.
+    /// @sa PushListener()
+    static void PopListener(size_t depth = 0);
+
+    /// Post the message to listener(s), if any. The message is posted
+    /// to each listener starting from the top of the stack. After a
+    /// listener returns eHandled, the message is posted only to the
+    /// listeners which were installed with eListen_All flag.
+    /// @return
+    ///   eHandled if at least one listener has handled the message,
+    ///   eUnhandled otherwise.
+    /// @sa PostMessage()
+    static EPostResult Post(const IMessage& message);
+
+    /// Post the progress to listener(s), if any. The progress is posted
+    /// to each listener starting from the top of the stack. After a
+    /// listener returns eHandled, the progress is posted only to the
+    /// listeners which were installed with eListen_All flag.
+    /// @return
+    ///   eHandled if at least one listener has handled the event,
+    ///   eUnhandled otherwise.
+    /// @sa PostProgress()
+    static EPostResult Post(const string& message,
+                            Uint8         current,
+                            Uint8         total);
 };
 
 
 /// Default implementation of IMessageListener: collects all messages
 /// posted.
-class NCBI_XNCBI_EXPORT CListener_Base : public IMessageListener
+class NCBI_XNCBI_EXPORT CMessageListener_Base : public IMessageListener
 {
 public:
-    virtual void PostMessage(const IMessage& message);
-    virtual void PostProgress(const string& message,
-                              Uint8         current,
-                              Uint8         total);
+    virtual EPostResult PostMessage(const IMessage& message);
+    virtual EPostResult PostProgress(const string& message,
+                                     Uint8         current,
+                                     Uint8         total);
     virtual const IMessage& GetMessage(size_t index) const;
     virtual size_t Count(void) const;
     virtual void Clear(void);

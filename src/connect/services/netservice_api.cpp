@@ -1006,7 +1006,7 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
     STimeout* timeout = retry_count <= 0 && !m_UseSmartRetries ?
             NULL : &m_ServerPool->m_FirstServerTimeout;
 
-    CListener_Base err_listener;
+    CMessageListener_Base err_listener;
 
     for (;;) {
         skip_server = false;
