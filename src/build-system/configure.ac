@@ -241,8 +241,10 @@ AC_ARG_WITH(vdb,
    [ --with-vdb=DIR          use NCBI SRA/VDB Toolkit installation in DIR])
 AC_ARG_WITH(vdb2,
    [ --without-vdb           do not use the NCBI SRA/VDB Toolkit])
+AC_ARG_WITH(downloaded-vdb,
+   [ --with-downloaded-vdb   download and build SRA/VDB from GitHub])
 AC_ARG_WITH(included-vdb,
-   [ --with-included-vdb     always use the bundled NCBI SRA/VDB Toolkit copy])
+   [ --with-included-vdb     use the DEPRECATED bundled SRA/VDB Toolkit copy])
 
 ## Third-party and system packages
 AC_ARG_WITH(z,
@@ -522,7 +524,7 @@ autodep suffix hostspec version execopy bincopy lib-rebuilds lib-rebuilds=ask \
 deactivation makefile-auto-update projects flat-makefile configure-dialog \
 check ncbi-public strip pch caution ccache distcc \
 ncbi-c wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
-geo included-geo vdb included-vdb \
+geo included-geo vdb downloaded-vdb included-vdb \
 z bz2 lzo pcre gcrypt gnutls openssl krb5 sybase sybase-local sybase-new \
 ftds mysql orbacus freetype ftgl opengl mesa glut glew glew-mx \
 bdb python perl jni sqlite3 icu boost boost-tag \
@@ -680,13 +682,23 @@ if test "$with_openmp" = yes; then
    : ${with_mt=yes} 
 fi
 
-if test "$with_included_vdb" = yes; then
-   if test "$with_vdb" = no; then
+case "$with_downloaded_vdb:$with_included_vdb:$with_vdb" in
+   yes:yes:* )
+      AC_MSG_ERROR([incompatible options: --with-downloaded-vdb and
+                    --with-included-vdb])
+      ;;
+   yes:*:no )
+      AC_MSG_ERROR([incompatible options: --without-vdb but
+                    --with-downloaded-vdb])
+      ;;
+   *:yes:no )
       AC_MSG_ERROR([incompatible options: --without-vdb but
                     --with-included-vdb])
-   fi
-   : ${with_vdb=yes}
-fi
+      ;;
+   yes:*: | *:yes: )
+      with_vdb=yes
+      ;;
+esac
 
 #### Check for special options
 if test "$with_extra_action" = "yes" ; then
@@ -6581,10 +6593,32 @@ VDB_REQ=VDB
 if test "$with_vdb" != "no" ; then
    # CURL?
    vdb_deps="$LIBXML_LIBS $NETWORK_LIBS $BZ2_LIBS $Z_LIBS $DL_LIBS"
-   if test "$with_included_vdb" != "yes"; then
-      if test "${with_vdb:-yes}" != "yes" -a -d "$with_vdb"; then
-         VDB_PATH=$with_vdb
+   if test "${with_vdb:-yes}" != "yes" -a -d "$with_vdb"; then
+      VDB_PATH=$with_vdb
+   fi
+   if test -d "$VDB_PATH"; then
+      : ${with_downloaded_vdb=no}
+   else
+      : ${with_downloaded_vdb=$with_vdb}
+   fi
+   if test "$with_downloaded_vdb" != "no"; then
+      AC_MSG_NOTICE([trying to build the NCBI SRA/VDB Toolkit from GitHub.])
+      VDB_PATH=`$srcdir/scripts/common/add_vdb.sh 2>&AS_MESSAGE_LOG_FD`
+      status=$?
+      if test $status != 0; then
+         message="SRA/VDB build failed with status $status"
+      elif test ! -d "$VDB_PATH"; then
+         message="SRA/VDB build nominally succeeded, but failed to report where"
+      else
+         message=
       fi
+      case "$message:$with_downloaded_vdb" in
+         :*    ) ;;
+         *:yes ) AC_MSG_FAILURE([$message]) ;;
+         *     ) AC_MSG_WARN([$message])  ;;
+      esac
+   fi
+   if test "$with_included_vdb" != "yes"; then
       if test -z "$VDB_PATH"; then
          in_path=
       else
@@ -6606,12 +6640,9 @@ if test "$with_vdb" != "no" ; then
                ;;
          esac
          case "$host_os:$host_cpu:$bit64_sfx" in
-            darwin*:*86*:64 )
-               : ${VDB_LIBDIR=$VDB_PATH/mac/$vdb_mode/x86_64/lib}   ;;
-            darwin*:*86*:* )
-               : ${VDB_LIBDIR=$VDB_PATH/mac/$vdb_mode/fat86/lib}    ;;
-            linux*:*86*:64 )
-               : ${VDB_LIBDIR=$VDB_PATH/linux/$vdb_mode/x86_64/lib} ;;
+            darwin*:*86*:64 ) vdb_libpath=mac/$vdb_mode/x86_64/lib   ;;
+            darwin*:*86*:* )  vdb_libpath=mac/$vdb_mode/fat86/lib    ;;
+            linux*:*86*:64 )  vdb_libpath=linux/$vdb_mode/x86_64/lib ;;
             * )
                if test -n "$with_vdb"; then
                   AC_MSG_ERROR([--with-vdb explicitly specified,
@@ -6619,6 +6650,12 @@ if test "$with_vdb" != "no" ; then
                fi
                ;;
          esac
+         for x in "$vdb_libpath" "lib$bit64_sfx" lib; do
+            if test -d "$VDB_PATH/$x"; then
+               : ${VDB_LIBDIR=$VDB_PATH/$x}
+               break
+            fi
+         done
       fi
       NCBI_RPATHIFY_COND(VDB_LIBS, $VDB_LIBDIR, [ -lncbi-vdb $vdb_deps])
       CPPFLAGS="$orig_CPPFLAGS $VDB_INCLUDE"
@@ -6654,9 +6691,7 @@ if test "$with_vdb" != "no" ; then
          VDB_LIBS=
          VDB_STATIC_LIBS=
       fi
-   fi
-   if test "$with_included_vdb" != "no" -a -z "$VDB_LIBS" \
-           -a -d "$real_srcdir/src/sra/sdk/interfaces"; then
+   elif test -d "$real_srcdir/src/sra/sdk/interfaces"; then
       case "$host_os" in
          darwin* | linux* | solaris* )
             AC_MSG_NOTICE([Using local NCBI SRA/VDB copy in src/sra/sdk])
@@ -6675,15 +6710,16 @@ if test "$with_vdb" != "no" ; then
             VDB_REQ=LocalVDB
             ;;
          * )
-            if test -n "${with_vdb}${with_included_vdb}"; then
-                AC_MSG_ERROR([--with-vdb or --with-included-vdb explicitly
-                              specified, but not supported on this platform.])
-            fi
+            AC_MSG_ERROR([--with-included-vdb explicitly specified,
+                          but not supported on this platform.])
             ;;
       esac
+   else
+      AC_MSG_ERROR([--with-included-vdb explicitly specified,
+                    but no local copy exists.])
    fi
    if test -z "$VDB_LIBS"; then
-      NCBI_MISSING_PACKAGE(VDB)
+      NCBI_MISSING_PACKAGE(vdb)
    fi
 fi
 

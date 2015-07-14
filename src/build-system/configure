@@ -1554,7 +1554,7 @@ autodep suffix hostspec version execopy bincopy lib-rebuilds lib-rebuilds=ask \
 deactivation makefile-auto-update projects flat-makefile configure-dialog \
 check ncbi-public strip pch caution ccache distcc \
 ncbi-c wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
-geo included-geo vdb included-vdb \
+geo included-geo vdb downloaded-vdb included-vdb \
 z bz2 lzo pcre gcrypt gnutls openssl krb5 sybase sybase-local sybase-new \
 ftds mysql orbacus freetype ftgl opengl mesa glut glew glew-mx \
 bdb python perl jni sqlite3 icu boost boost-tag \
@@ -1816,7 +1816,8 @@ Optional Packages:
  --with-included-sss     use the in-tree copy of SSS
  --with-vdb=DIR          use NCBI SRA/VDB Toolkit installation in DIR
  --without-vdb           do not use the NCBI SRA/VDB Toolkit
- --with-included-vdb     always use the bundled NCBI SRA/VDB Toolkit copy
+ --with-downloaded-vdb   download and build SRA/VDB from GitHub
+ --with-included-vdb     use the DEPRECATED bundled SRA/VDB Toolkit copy
  --with-z=DIR            use zlib installation in DIR
  --without-z             use internal copy of zlib
  --with-bz2=DIR          use bzlib installation in DIR
@@ -3190,6 +3191,12 @@ if test "${with_vdb2+set}" = set; then
 fi
 
 
+# Check whether --with-downloaded-vdb was given.
+if test "${with_downloaded_vdb+set}" = set; then
+  withval=$with_downloaded_vdb;
+fi
+
+
 # Check whether --with-included-vdb was given.
 if test "${with_included_vdb+set}" = set; then
   withval=$with_included_vdb;
@@ -4094,16 +4101,32 @@ echo "$as_me: error: incompatible options: --without-mt but --with-openmp" >&2;}
    : ${with_mt=yes}
 fi
 
-if test "$with_included_vdb" = yes; then
-   if test "$with_vdb" = no; then
+case "$with_downloaded_vdb:$with_included_vdb:$with_vdb" in
+   yes:yes:* )
+      { { echo "$as_me:$LINENO: error: incompatible options: --with-downloaded-vdb and
+                    --with-included-vdb" >&5
+echo "$as_me: error: incompatible options: --with-downloaded-vdb and
+                    --with-included-vdb" >&2;}
+   { (exit 1); exit 1; }; }
+      ;;
+   yes:*:no )
+      { { echo "$as_me:$LINENO: error: incompatible options: --without-vdb but
+                    --with-downloaded-vdb" >&5
+echo "$as_me: error: incompatible options: --without-vdb but
+                    --with-downloaded-vdb" >&2;}
+   { (exit 1); exit 1; }; }
+      ;;
+   *:yes:no )
       { { echo "$as_me:$LINENO: error: incompatible options: --without-vdb but
                     --with-included-vdb" >&5
 echo "$as_me: error: incompatible options: --without-vdb but
                     --with-included-vdb" >&2;}
    { (exit 1); exit 1; }; }
-   fi
-   : ${with_vdb=yes}
-fi
+      ;;
+   yes:*: | *:yes: )
+      with_vdb=yes
+      ;;
+esac
 
 #### Check for special options
 if test "$with_extra_action" = "yes" ; then
@@ -37902,10 +37925,38 @@ VDB_REQ=VDB
 if test "$with_vdb" != "no" ; then
    # CURL?
    vdb_deps="$LIBXML_LIBS $NETWORK_LIBS $BZ2_LIBS $Z_LIBS $DL_LIBS"
-   if test "$with_included_vdb" != "yes"; then
-      if test "${with_vdb:-yes}" != "yes" -a -d "$with_vdb"; then
-         VDB_PATH=$with_vdb
+   if test "${with_vdb:-yes}" != "yes" -a -d "$with_vdb"; then
+      VDB_PATH=$with_vdb
+   fi
+   if test -d "$VDB_PATH"; then
+      : ${with_downloaded_vdb=no}
+   else
+      : ${with_downloaded_vdb=$with_vdb}
+   fi
+   if test "$with_downloaded_vdb" != "no"; then
+      { echo "$as_me:$LINENO: trying to build the NCBI SRA/VDB Toolkit from GitHub." >&5
+echo "$as_me: trying to build the NCBI SRA/VDB Toolkit from GitHub." >&6;}
+      VDB_PATH=`$srcdir/scripts/common/add_vdb.sh 2>&5`
+      status=$?
+      if test $status != 0; then
+         message="SRA/VDB build failed with status $status"
+      elif test ! -d "$VDB_PATH"; then
+         message="SRA/VDB build nominally succeeded, but failed to report where"
+      else
+         message=
       fi
+      case "$message:$with_downloaded_vdb" in
+         :*    ) ;;
+         *:yes ) { { echo "$as_me:$LINENO: error: $message
+See \`config.log' for more details." >&5
+echo "$as_me: error: $message
+See \`config.log' for more details." >&2;}
+   { (exit 1); exit 1; }; } ;;
+         *     ) { echo "$as_me:$LINENO: WARNING: $message" >&5
+echo "$as_me: WARNING: $message" >&2;}  ;;
+      esac
+   fi
+   if test "$with_included_vdb" != "yes"; then
       if test -z "$VDB_PATH"; then
          in_path=
       else
@@ -37940,12 +37991,9 @@ if test "$with_vdb" != "no" ; then
                ;;
          esac
          case "$host_os:$host_cpu:$bit64_sfx" in
-            darwin*:*86*:64 )
-               : ${VDB_LIBDIR=$VDB_PATH/mac/$vdb_mode/x86_64/lib}   ;;
-            darwin*:*86*:* )
-               : ${VDB_LIBDIR=$VDB_PATH/mac/$vdb_mode/fat86/lib}    ;;
-            linux*:*86*:64 )
-               : ${VDB_LIBDIR=$VDB_PATH/linux/$vdb_mode/x86_64/lib} ;;
+            darwin*:*86*:64 ) vdb_libpath=mac/$vdb_mode/x86_64/lib   ;;
+            darwin*:*86*:* )  vdb_libpath=mac/$vdb_mode/fat86/lib    ;;
+            linux*:*86*:64 )  vdb_libpath=linux/$vdb_mode/x86_64/lib ;;
             * )
                if test -n "$with_vdb"; then
                   { { echo "$as_me:$LINENO: error: --with-vdb explicitly specified,
@@ -37956,6 +38004,12 @@ echo "$as_me: error: --with-vdb explicitly specified,
                fi
                ;;
          esac
+         for x in "$vdb_libpath" "lib$bit64_sfx" lib; do
+            if test -d "$VDB_PATH/$x"; then
+               : ${VDB_LIBDIR=$VDB_PATH/$x}
+               break
+            fi
+         done
       fi
       if test -z "${VDB_LIBS+set}"; then
     ncbi_rp_L_flags=
@@ -38085,9 +38139,7 @@ echo "${ECHO_T}$ncbi_cv_lib_ncbi_vdb" >&6; }
          VDB_LIBS=
          VDB_STATIC_LIBS=
       fi
-   fi
-   if test "$with_included_vdb" != "no" -a -z "$VDB_LIBS" \
-           -a -d "$real_srcdir/src/sra/sdk/interfaces"; then
+   elif test -d "$real_srcdir/src/sra/sdk/interfaces"; then
       case "$host_os" in
          darwin* | linux* | solaris* )
             { echo "$as_me:$LINENO: Using local NCBI SRA/VDB copy in src/sra/sdk" >&5
@@ -38107,20 +38159,24 @@ echo "$as_me: Using local NCBI SRA/VDB copy in src/sra/sdk" >&6;}
             VDB_REQ=LocalVDB
             ;;
          * )
-            if test -n "${with_vdb}${with_included_vdb}"; then
-                { { echo "$as_me:$LINENO: error: --with-vdb or --with-included-vdb explicitly
-                              specified, but not supported on this platform." >&5
-echo "$as_me: error: --with-vdb or --with-included-vdb explicitly
-                              specified, but not supported on this platform." >&2;}
+            { { echo "$as_me:$LINENO: error: --with-included-vdb explicitly specified,
+                          but not supported on this platform." >&5
+echo "$as_me: error: --with-included-vdb explicitly specified,
+                          but not supported on this platform." >&2;}
    { (exit 1); exit 1; }; }
-            fi
             ;;
       esac
+   else
+      { { echo "$as_me:$LINENO: error: --with-included-vdb explicitly specified,
+                    but no local copy exists." >&5
+echo "$as_me: error: --with-included-vdb explicitly specified,
+                    but no local copy exists." >&2;}
+   { (exit 1); exit 1; }; }
    fi
    if test -z "$VDB_LIBS"; then
-      if test "${with_VDB:=no}" != no; then
-       { { echo "$as_me:$LINENO: error: --with-VDB explicitly specified, but no usable version found." >&5
-echo "$as_me: error: --with-VDB explicitly specified, but no usable version found." >&2;}
+      if test "${with_vdb:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-vdb explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-vdb explicitly specified, but no usable version found." >&2;}
    { (exit 1); exit 1; }; }
     fi
    fi
