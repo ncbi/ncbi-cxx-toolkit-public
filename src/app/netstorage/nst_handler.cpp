@@ -1012,8 +1012,21 @@ CNetStorageHandler::x_ProcessHello(
         application = message.GetString("Application");
     if (message.HasKey("Ticket"))
         ticket = message.GetString("Ticket");
-    if (message.HasKey("ProtocolVersion"))
-        protocol_version = message.GetString("ProtocolVersion");
+    if (message.HasKey("ProtocolVersion")) {
+        // Some clients may send the protocol version as an integer
+        // See CXX-6157
+        CJsonNode               ver = message.GetByKey("ProtocolVersion");
+        CJsonNode::ENodeType    node_type = ver.GetNodeType();
+        if (node_type == CJsonNode::eString)
+            protocol_version = ver.AsString();
+        else if (node_type == CJsonNode::eInteger)
+            protocol_version = NStr::NumericToString(ver.AsInteger()) +
+                               ".0.0";
+        else
+            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                       "Invalid type of the 'ProtocolVersion'. "
+                       "String is expected.");
+    }
     if (message.HasKey("Service"))
         m_Service = NStr::TruncateSpaces(message.GetString("Service"));
     else
