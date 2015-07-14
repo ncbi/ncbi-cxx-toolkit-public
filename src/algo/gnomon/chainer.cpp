@@ -2179,8 +2179,24 @@ void CChainer::CChainerImpl::FindContainedAlignments(TContained& pointers) {
         const CCDSInfo& ai_cds_info = *mi.m_cds_info;
 
         // knockdown spliced notconsensus UTRs in reads
+        if(mi.m_type != eCDS && ai.Exons().size() > 1) {
+            if(ai.Status()&CGeneModel::eUnknownOrientation) {
+                mi.m_not_for_chaining = true;
+            } else {
+                for(int i = 1; i < (int)ai.Exons().size(); ++i) {
+                    if(ai.Exons()[i-1].m_ssplice_sig == "XX" || ai.Exons()[i].m_fsplice_sig == "XX")
+                        continue;
+                    else if(ai.Strand() == ePlus && (ai.Exons()[i-1].m_ssplice_sig != "GT" || ai.Exons()[i].m_fsplice_sig != "AG"))
+                        mi.m_not_for_chaining = true;
+                    else if(ai.Strand() == eMinus && (ai.Exons()[i-1].m_ssplice_sig != "AG" || ai.Exons()[i].m_fsplice_sig != "GT"))
+                        mi.m_not_for_chaining = true;
+                }
+            }
+        }
+        /*
         if(mi.m_type != eCDS && (ai.Status()&CGeneModel::eUnknownOrientation) && ai.Exons().size() > 1)
             mi.m_not_for_chaining = true;
+        */
 
         //don't use alignments intersection with frameshifts for hiding smaller alignments
         TSignedSeqRange intersect_with_fs;
