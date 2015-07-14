@@ -1,5 +1,7 @@
 #!/bin/sh
 # $Id$
+. "`dirname $0`/common.sh"
+
 set -e
 exec 3>&1 >&2
 root=`dirname $0`/../../local
@@ -9,6 +11,7 @@ root=`pwd`
 ptb_ini=../src/build-system/project_tree_builder.ini
 tag=`sed -ne 's,.*/vdb-versions/,,p' $ptb_ini`
 name=ncbi-vdb${tag+"-$tag"}
+platform=`COMMON_DetectPlatform`
 
 mkdir -p src
 cd src
@@ -24,13 +27,23 @@ else
 fi
 cd ncbi-vdb
 git checkout "${tag:-master}"
-./configure --prefix=$root/$name --build-prefix=$root/build/$name
+if [ "$platform" = IntelMAC ]; then
+    archflag=--arch=fat86
+else
+    archflag=
+fi
+./configure --prefix=$root/$name --build-prefix=$root/build/$name $archflag
 make
 make install
 if [ -f $root/$name/include/klib/rc.h ]; then
     :
 else
     (cd interfaces  &&  tar cf - *)  |  (cd $root/$name/include  &&  tar xf -)
+fi
+if [ -d $root/$name/lib32_64 ]; then
+    for x in lib lib64; do
+        [ -d $root/$name/$x ] || ln -s lib32_64 $root/$name/$x
+    done
 fi
 cat <<EOF
 
