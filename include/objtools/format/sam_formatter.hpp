@@ -60,6 +60,7 @@ public:
         fSAM_NumNucDiff         = 1 << 2,  ///< Generate NM tags
         fSAM_PercentageIdentity = 1 << 3,  ///< Generate PI tags
         fSAM_BitScore           = 1 << 4,  ///< Generate BS tags
+        fSAM_PlainSeqIds        = 1 << 5,  ///< Drop type prefix in seq-ids
 
         //? Include all tags by default
         fSAM_Default            = fSAM_AlignmentScore     |
@@ -81,6 +82,24 @@ public:
     void SetFlag  (EFlags flag)  { m_Flags |= flag; }
     void UnsetFlag(EFlags flag)  { m_Flags &= ~flag; }
 
+    /// @PG tag fields
+    struct SProgramInfo {
+        SProgramInfo(const string& id = kEmptyStr,
+                     const string& ver = kEmptyStr,
+                     const string& cmd = kEmptyStr)
+                     : m_Id(id), m_Version(ver), m_CmdLine(cmd) {}
+
+        string m_Id;         ///< ID - program id
+        string m_Version;    ///< VN - version
+        string m_CmdLine;    ///< CL - command line
+        string m_Desc;       ///< DS - description
+        string m_Name;       ///< PN - program name
+    };
+
+    void SetProgram(const SProgramInfo& pg) { m_ProgramInfo = pg; }
+    SProgramInfo& SetProgram(void) { return m_ProgramInfo; }
+    const SProgramInfo& GetProgram(void) const { return m_ProgramInfo; }
+
     CSAM_Formatter& Print(const CSeq_align&     aln,
                           const CSeq_id&        query_id);
     CSAM_Formatter& Print(const CSeq_align&     aln,
@@ -97,6 +116,7 @@ private:
     CNcbiOstream* m_Out;
     CRef<CScope>  m_Scope;
     TFlags        m_Flags;
+    SProgramInfo  m_ProgramInfo;
 
     friend class CSAM_CIGAR_Formatter;
 

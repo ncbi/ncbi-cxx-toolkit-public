@@ -74,6 +74,7 @@ private:
     };
     typedef unsigned int TReadFlags;
 
+    string x_GetSeqIdString(const CSeq_id& id, TFlags flags) const;
     string x_GetRefIdString(void) const;
     string x_GetTargetIdString(void) const;
 
@@ -101,18 +102,24 @@ CSAM_CIGAR_Formatter::CSAM_CIGAR_Formatter(THeaders&          headers,
 
 
 inline
+string CSAM_CIGAR_Formatter::x_GetSeqIdString(const CSeq_id& id, TFlags flags) const
+{
+    return (flags & CSAM_Formatter::fSAM_PlainSeqIds) ?
+        id.GetSeqIdString(true) : id.AsFastaString();
+}
+
+
+inline
 string CSAM_CIGAR_Formatter::x_GetRefIdString(void) const
 {
-    // ???
-    return GetRefId().AsFastaString();
+    return x_GetSeqIdString(GetRefId(), m_Flags);
 }
 
 
 inline
 string CSAM_CIGAR_Formatter::x_GetTargetIdString(void) const
 {
-    // ???
-    return GetTargetId().AsFastaString();
+    return x_GetSeqIdString(GetTargetId(), m_Flags);
 }
 
 
@@ -309,12 +316,32 @@ CSAM_Formatter& CSAM_Formatter::Print(const CSeq_align_set& aln_set,
 void CSAM_Formatter::Flush(void)
 {
     if ( !m_Out ) return;
-    if (!m_Header.m_Data.empty() || !m_Body.empty()) {
+    // Headers
+    bool have_data = !m_Header.m_Data.empty() || !m_Body.empty();
+    if (have_data) {
         *m_Out << "@HD\tVN:1.2\tGO:query" << '\n';
     }
     ITERATE(CSAM_Headers::TData, it, m_Header.m_Data) {
         *m_Out << it->second << '\n';
     }
+    if (have_data  &&  !m_ProgramInfo.m_Id.empty()) {
+        *m_Out << "@PG\tID:" << m_ProgramInfo.m_Id;
+        if ( !m_ProgramInfo.m_Version.empty() ) {
+            *m_Out << "\tVN:" << m_ProgramInfo.m_Version;
+        }
+        if ( !m_ProgramInfo.m_CmdLine.empty() ) {
+            *m_Out << "\tCL:" << m_ProgramInfo.m_CmdLine;
+        }
+        if ( !m_ProgramInfo.m_Desc.empty() ) {
+            *m_Out << "\tDS:" << m_ProgramInfo.m_Desc;
+        }
+        if ( !m_ProgramInfo.m_Name.empty() ) {
+            *m_Out << "\tPN:" << m_ProgramInfo.m_Name;
+        }
+        *m_Out << '\n';
+    }
+
+    // Alignments
     ITERATE(TLines, it, m_Body) {
         *m_Out << *it << '\n';
     }
