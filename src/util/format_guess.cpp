@@ -1137,7 +1137,8 @@ CFormatGuess::TestFormatAlignment(
     // Don't skip though if file is very short - add up to 3, 1 for each line 
     // over 5:
     for (size_t i=5; i<7; ++i)
-        if (m_TestLines.size() > i) ++iter;
+        if (m_TestLines.size() > i) 
+            ++iter;
 
     /// determine the number of observed columns
     size_t ncols = 0;
@@ -1184,6 +1185,9 @@ CFormatGuess::TestFormatTable(
     EMode /* not used */ )
 {
     if ( ! EnsureTestBuffer() || ! EnsureSplitLines() ) {
+        return false;
+    }
+    if ( ! IsAsciiText()) {//gp-13007:  "table" means "ascii table"
         return false;
     }
 
