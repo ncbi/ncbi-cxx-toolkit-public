@@ -566,6 +566,8 @@ public:
      size_t              buf_size     = kConn_DefaultBufSize
      );
 
+    ~CConn_HttpStream();
+
     /// Flush the stream and fetch the response (w/o extracting any user data)
     EIO_Status    Fetch(const STimeout* timeout = kDefaultTimeout);
 
@@ -634,6 +636,8 @@ public:
      const SSERVICE_Extra* extra    = 0,
      const STimeout*       timeout  = kDefaultTimeout,
      size_t                buf_size = kConn_DefaultBufSize);
+
+    ~CConn_ServiceStream();
 
     /// Flush the stream and fetch the response (w/o extracting any user data)
     EIO_Status    Fetch(const STimeout* timeout = kDefaultTimeout);

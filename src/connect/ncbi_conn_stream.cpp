@@ -99,6 +99,7 @@ CConn_IOStream::CConn_IOStream(CONN conn, bool close,
 
 CConn_IOStream::~CConn_IOStream()
 {
+    // Explicitly destroy so that the callbacks are not called out of context.
     x_Destroy();
 }
 
@@ -626,6 +627,12 @@ CConn_HttpStream::CConn_HttpStream(const SConnNetInfo* net_info,
 }
 
 
+CConn_HttpStream::~CConn_HttpStream()
+{
+    x_Destroy();
+}
+
+
 // NB: see CConn_ServiceStream::Fetch()
 EIO_Status CConn_HttpStream::Fetch(const STimeout* timeout)
 {
@@ -793,6 +800,13 @@ CConn_ServiceStream::CConn_ServiceStream(const string&         service,
                      timeout, buf_size)
 {
     return;
+}
+
+
+CConn_ServiceStream::~CConn_ServiceStream()
+{
+    // Explicitly destroy so that the callbacks are not called out of context.
+    x_Destroy();
 }
 
 
