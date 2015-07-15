@@ -29,6 +29,11 @@ cd ncbi-vdb
 git checkout "${tag:-master}"
 if [ "$platform" = IntelMAC ]; then
     archflag=--arch=fat86
+    if [ ! -d $root/tmp/force-clang ]; then
+        mkdir -p $root/tmp/force-clang
+        ln -s /usr/bin/clang $root/tmp/force-clang/gcc
+    fi
+    PATH=$root/tmp/force-clang:$PATH
 else
     archflag=
 fi
