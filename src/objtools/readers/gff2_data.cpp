@@ -665,8 +665,6 @@ bool CGff2Record::x_MigrateAttributes(
                     cit++;
                 }
             }
-            string gene = xNormalizedAttributeValue(it->second);
-            pFeature->SetData().SetGene().SetLocus(gene);
             attrs_left.erase(it);
         }
     }
