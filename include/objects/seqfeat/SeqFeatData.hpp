@@ -105,6 +105,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 class CFeatList;
 class CBondList;
 class CSiteList;
+class CGb_qual;
 
 class NCBI_SEQFEAT_EXPORT CSeqFeatData : public CSeqFeatData_Base
 {
