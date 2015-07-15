@@ -1731,10 +1731,17 @@ bool CValidError_imp::x_CheckSeqInt
         int_cur->GetStrand() : eNa_strand_unknown;
     id_cur = &int_cur->GetId();
     bool chk = IsValid(*int_cur, m_Scope);
-    // check for invalid fuzz on Point represented by Interval
+
+    // check for Point represented by Interval
     if (int_cur->IsSetFrom() && int_cur->IsSetTo()
-        && int_cur->GetFrom() == int_cur->GetTo()
-        && int_cur->IsSetFuzz_from() 
+        && int_cur->GetFrom() == int_cur->GetTo()) {
+        PostErr(eDiag_Warning,
+                eErr_SEQ_FEAT_SeqLocTypeProblem,
+                "Seq-loc.int has identical from and to values, should be Seq-loc.pt", obj);
+    }
+
+    // check for invalid fuzz on both ends of Interval
+    if (int_cur->IsSetFuzz_from() 
         && int_cur->GetFuzz_from().IsLim()
         && int_cur->IsSetFuzz_to()
         && int_cur->GetFuzz_to().IsLim()

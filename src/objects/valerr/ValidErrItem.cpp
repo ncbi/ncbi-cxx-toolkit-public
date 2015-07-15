@@ -1616,6 +1616,9 @@ same id type" } },
    { eErr_SEQ_FEAT_MultiIntervalIntron,
    { "MultiIntervalIntron",
 "Introns should only have a single interval." } },
+   { eErr_SEQ_FEAT_SeqLocTypeProblem,
+   { "SeqLocTypeProblem",
+"A sequence location component is not the expected type." } },
 
 /* SEQ_ALIGN */
 
