@@ -173,7 +173,6 @@ void  CNSTClientRegistry::Touch(const string &  client,
     new_client.SetService(service);
     new_client.SetPeerAddress(peer_address);
     new_client.SetMetadataOption(metadata_option);
-    m_Clients[client] = new_client;
 
     if (protocol_version.empty()) {
         new_client.SetProtocolVersion("1.0.0");
@@ -182,6 +181,8 @@ void  CNSTClientRegistry::Touch(const string &  client,
         new_client.SetProtocolVersion(protocol_version);
         new_client.SetProtocolVersionProvided(true);
     }
+
+    m_Clients[client] = new_client;
 }
 
 
