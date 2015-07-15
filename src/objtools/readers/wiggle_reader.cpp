@@ -1101,6 +1101,15 @@ void CWiggleReader::xGetFixedStepInfo(
         }
         else if ( name == "start" ) {
             fixedStepInfo.mStart = NStr::StringToUInt(value);
+            if (0 == fixedStepInfo.mStart) {
+                AutoPtr<CObjReaderLineException> pErr(
+                    CObjReaderLineException::Create(
+                    eDiag_Warning,
+                    0,
+                    "Bad start value: must be positive. Assuming \"start=1\"."));
+                ProcessError(*pErr, pMessageListener);
+                fixedStepInfo.mStart = 1;
+            }
         }
         else if ( name == "step" ) {
             fixedStepInfo.mStep = NStr::StringToUInt(value);
