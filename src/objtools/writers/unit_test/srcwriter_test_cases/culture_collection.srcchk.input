@@ -1,0 +1,376 @@
+Seq-entry ::= seq {
+  id {
+    other {
+      accession "NR_119850" ,
+      version 1 } ,
+    gi 626520404 } ,
+  descr {
+    title "Cladosporium paracladosporioides ITS region; from TYPE material." ,
+    source {
+      genome genomic ,
+      org {
+        taxname "Cladosporium paracladosporioides" ,
+        db {
+          {
+            db "taxon" ,
+            tag
+              id 887097 } } ,
+        orgname {
+          name
+            binomial {
+              genus "Cladosporium" ,
+              species "paracladosporioides" } ,
+          mod {
+            {
+              subtype strain ,
+              subname "CBS 171.54" } ,
+            {
+              subtype culture-collection ,
+              subname "ATCC:11278" } ,
+            {
+              subtype culture-collection ,
+              subname "ATCC:200943" } ,
+            {
+              subtype culture-collection ,
+              subname "CBS:171.54" } ,
+            {
+              subtype culture-collection ,
+              subname "IFO:6369" } ,
+            {
+              subtype culture-collection ,
+              subname "IMI:049626" } ,
+            {
+              subtype culture-collection ,
+              subname "MUCL:917" } ,
+            {
+              subtype culture-collection ,
+              subname "NCTC:4097" } ,
+            {
+              subtype other ,
+              subname "ex-holotype culture of Cladosporium
+ paracladosporioides" } } ,
+          lineage "Eukaryota; Fungi; Dikarya; Ascomycota; Pezizomycotina;
+ Dothideomycetes; Dothideomycetidae; Capnodiales; Cladosporiaceae;
+ Cladosporium" ,
+          gcode 1 ,
+          mgcode 4 ,
+          div "PLN" } } } ,
+    molinfo {
+      biomol genomic } ,
+    pub {
+      pub {
+        article {
+          title {
+            name "Species and ecological diversity within the Cladosporium
+ cladosporioides complex (Davidiellaceae, Capnodiales)." } ,
+          authors {
+            names
+              std {
+                {
+                  name
+                    name {
+                      last "Bensch" ,
+                      first "K" ,
+                      initials "K." } } ,
+                {
+                  name
+                    name {
+                      last "Groenewald" ,
+                      first "Johannes" ,
+                      initials "J.Z." } } ,
+                {
+                  name
+                    name {
+                      last "Dijksterhuis" ,
+                      first "M" ,
+                      initials "M." } } ,
+                {
+                  name
+                    name {
+                      last "Starink-Willemse" ,
+                      first "Mieke" ,
+                      initials "M." } } ,
+                {
+                  name
+                    name {
+                      last "Andersen" ,
+                      first "B" ,
+                      initials "B." } } ,
+                {
+                  name
+                    name {
+                      last "Summerell" ,
+                      first "B" ,
+                      initials "B.A." } } ,
+                {
+                  name
+                    name {
+                      last "Shin" ,
+                      first "H" ,
+                      initials "H.D." } } ,
+                {
+                  name
+                    name {
+                      last "Dugan" ,
+                      first "F" ,
+                      initials "F.M." } } ,
+                {
+                  name
+                    name {
+                      last "Schroers" ,
+                      first "H-J" ,
+                      initials "H.-J." } } ,
+                {
+                  name
+                    name {
+                      last "Braun" ,
+                      first "Uwe" ,
+                      initials "U." } } ,
+                {
+                  name
+                    name {
+                      last "Crous" ,
+                      first "Pedro" ,
+                      initials "P.W." } } } ,
+            affil
+              std {
+                affil "CBS-KNAW Fungal Biodiversity Centre" ,
+                div "Evolutionary Phytopathology" ,
+                city "Utrecht" ,
+                sub "Utrecht" ,
+                country "The Netherlands" ,
+                street "Uppsalalaan 8" ,
+                postal-code "3584 CT" } } ,
+          from
+            journal {
+              title {
+                iso-jta "Stud. Mycol." ,
+                ml-jta "Stud Mycol" ,
+                issn "1872-9797" ,
+                name "Studies in mycology" } ,
+              imp {
+                date
+                  std {
+                    year 2010 } ,
+                volume "67" ,
+                pages "1-94" ,
+                language "eng" ,
+                pubstatus ppublish ,
+                history {
+                  {
+                    pubstatus other ,
+                    date
+                      std {
+                        year 2010 ,
+                        month 9 ,
+                        day 30 ,
+                        hour 6 ,
+                        minute 0 } } ,
+                  {
+                    pubstatus pubmed ,
+                    date
+                      std {
+                        year 2010 ,
+                        month 9 ,
+                        day 30 ,
+                        hour 6 ,
+                        minute 0 } } ,
+                  {
+                    pubstatus medline ,
+                    date
+                      std {
+                        year 2010 ,
+                        month 9 ,
+                        day 30 ,
+                        hour 6 ,
+                        minute 1 } } } } } ,
+          ids {
+            doi "10.3114/sim.2010.67.01" ,
+            pubmed 20877444 ,
+            other {
+              db "pmc" ,
+              tag
+                str "PMC2945380" } } } ,
+        pmid 20877444 } } ,
+    pub {
+      pub {
+        sub {
+          authors {
+            names
+              std {
+                {
+                  name
+                    name {
+                      last "Bensch-Schubert" ,
+                      first "Konstanze" ,
+                      initials "K." } } ,
+                {
+                  name
+                    name {
+                      last "Groenewald" ,
+                      first "Johannes" ,
+                      initials "J.Z." } } ,
+                {
+                  name
+                    name {
+                      last "Starink-Willemse" ,
+                      first "Mieke" ,
+                      initials "M." } } ,
+                {
+                  name
+                    name {
+                      last "Braun" ,
+                      first "Uwe" ,
+                      initials "U." } } ,
+                {
+                  name
+                    name {
+                      last "Crous" ,
+                      first "Pedro" ,
+                      initials "P.W." } } } ,
+            affil
+              std {
+                affil "CBS-KNAW Fungal Biodiversity Centre" ,
+                div "Evolutionary Phytopathology" ,
+                city "Utrecht" ,
+                sub "Utrecht" ,
+                country "The Netherlands" ,
+                street "Uppsalalaan 8" ,
+                postal-code "3584 CT" } } ,
+          date
+            std {
+              year 2010 ,
+              month 4 ,
+              day 23 } } } } ,
+    user {
+      type
+        str "DBLink" ,
+      data {
+        {
+          label
+            str "BioProject" ,
+          num 1 ,
+          data
+            strs {
+              "PRJNA177353" } } } } ,
+    pub {
+      pub {
+        sub {
+          authors {
+            names
+              std {
+                {
+                  name
+                    consortium "NCBI RefSeq Targeted Loci Project" } } ,
+            affil
+              std {
+                affil "National Center for Biotechnology Information, NIH" ,
+                city "Bethesda" ,
+                sub "MD" ,
+                country "USA" ,
+                postal-code "20894" } } ,
+          date
+            std {
+              year 2014 ,
+              month 4 ,
+              day 29 } } } } ,
+    user {
+      type
+        str "RefGeneTracking" ,
+      data {
+        {
+          label
+            str "IdenticalTo" ,
+          data
+            fields {
+              {
+                label
+                  id 0 ,
+                data
+                  fields {
+                    {
+                      label
+                        str "accession" ,
+                      data
+                        str "HM148120" } ,
+                    {
+                      label
+                        str "gi" ,
+                      data
+                        int 309384455 } } } } } ,
+        {
+          label
+            str "Status" ,
+          data
+            str "REVIEWED" } } } ,
+    update-date
+      std {
+        year 2014 ,
+        month 4 ,
+        day 30 } ,
+    create-date
+      std {
+        year 2014 ,
+        month 4 ,
+        day 30 } } ,
+  inst {
+    repr raw ,
+    mol dna ,
+    length 476 ,
+    seq-data
+      ncbi2na '34F10B855ADF145A8EF4C15FEFB5877BE5D6A985797DA9AA9D6AE847D01DF9B
+07F92DE2C07C3C303C01FF041A377EBDE936382064980E630B0EE0F920F4B834D837F81913E655
+7ACF5AAA4E5EF626D3F451D09767EB3EA419AD659B9740D85A7AB7DED5709BEE8073D9C0ABBDA8
+A7196C010553F70AF85'H } ,
+  annot {
+    {
+      data
+        ftable {
+          {
+            data
+              rna {
+                type miscRNA ,
+                ext
+                  gen {
+                    product "internal transcribed spacer 1" } } ,
+            partial TRUE ,
+            location
+              int {
+                from 0 ,
+                to 161 ,
+                strand plus ,
+                id
+                  gi 626520404 ,
+                fuzz-from
+                  lim lt } } ,
+          {
+            data
+              rna {
+                type rRNA ,
+                ext
+                  name "5.8S ribosomal RNA" } ,
+            location
+              int {
+                from 162 ,
+                to 319 ,
+                strand plus ,
+                id
+                  gi 626520404 } } ,
+          {
+            data
+              rna {
+                type miscRNA ,
+                ext
+                  gen {
+                    product "internal transcribed spacer 2" } } ,
+            partial TRUE ,
+            location
+              int {
+                from 320 ,
+                to 475 ,
+                strand plus ,
+                id
+                  gi 626520404 ,
+                fuzz-to
+                  lim gt } } } } } }
+
