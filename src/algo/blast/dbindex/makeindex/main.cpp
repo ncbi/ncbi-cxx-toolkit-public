@@ -50,5 +50,5 @@ USING_NCBI_SCOPE;
 
 int main( int argc, char * argv[] )
 { 
-    return CMkIndexApplication().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CMkIndexApplication().AppMain(argc, argv, 0, eDS_Default, "");
 }

@@ -177,6 +177,6 @@ int CRMBlastnApp::Run(void)
 #ifndef SKIP_DOXYGEN_PROCESSING
 int main(int argc, const char* argv[] /*, const char* envp[]*/)
 {
-    return CRMBlastnApp().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CRMBlastnApp().AppMain(argc, argv, 0, eDS_Default, "");
 }
 #endif /* SKIP_DOXYGEN_PROCESSING */

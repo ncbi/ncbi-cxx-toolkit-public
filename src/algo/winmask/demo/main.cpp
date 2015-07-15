@@ -38,5 +38,5 @@ USING_NCBI_SCOPE;
 
 int main( int argc, char * argv[] )
 {
-    return CWinMaskApplication().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CWinMaskApplication().AppMain(argc, argv, 0, eDS_Default, "");
 }

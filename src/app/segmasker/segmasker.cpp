@@ -269,7 +269,7 @@ void SegMaskerApplication::Exit(void)
 int main(int argc, const char* argv[])
 {
     // Execute main application function
-    return SegMaskerApplication().AppMain(argc, argv, 0, eDS_Default, 0);
+    return SegMaskerApplication().AppMain(argc, argv, 0, eDS_Default, "");
 }
 #endif /* SKIP_DOXYGEN_PROCESSING */
 

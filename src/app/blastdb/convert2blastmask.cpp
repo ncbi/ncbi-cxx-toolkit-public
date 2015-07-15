@@ -230,7 +230,7 @@ void CConvert2BlastMaskApplication::Exit(void)
 int main(int argc, const char* argv[])
 {
     // Execute main application function
-    return CConvert2BlastMaskApplication().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CConvert2BlastMaskApplication().AppMain(argc, argv, 0, eDS_Default, "");
 }
 #endif /* SKIP_DOXYGEN_PROCESSING */
 

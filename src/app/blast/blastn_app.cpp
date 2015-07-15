@@ -224,6 +224,6 @@ int CBlastnApp::Run(void)
 #ifndef SKIP_DOXYGEN_PROCESSING
 int main(int argc, const char* argv[] /*, const char* envp[]*/)
 {
-    return CBlastnApp().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CBlastnApp().AppMain(argc, argv, 0, eDS_Default, "");
 }
 #endif /* SKIP_DOXYGEN_PROCESSING */
