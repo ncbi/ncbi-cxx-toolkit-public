@@ -3803,6 +3803,112 @@ bool CSeqFeatData::AllowStrandBoth(ESubtype subtype)
     return rval;
 }
 
+bool CSeqFeatData::ShouldRepresentAsGbqual (CSeqFeatData::ESubtype feat_subtype, CSeqFeatData::EQualifier qual_type)
+{
+	// experiment and inference get their own panels
+	if (qual_type == CSeqFeatData::eQual_experiment || qual_type == CSeqFeatData::eQual_inference) {
+		return false;
+	}
+    // pseudo and pseudogene are handled separately
+    if (qual_type == CSeqFeatData::eQual_pseudogene || qual_type == CSeqFeatData::eQual_pseudo) {
+        return false;
+    }
+
+    if (qual_type == CSeqFeatData::eQual_product) {
+        if (feat_subtype == CSeqFeatData::eSubtype_mat_peptide
+            || feat_subtype == CSeqFeatData::eSubtype_sig_peptide
+            || feat_subtype == CSeqFeatData::eSubtype_transit_peptide
+            || feat_subtype == CSeqFeatData::eSubtype_C_region
+            || feat_subtype == CSeqFeatData::eSubtype_D_segment
+            || feat_subtype == CSeqFeatData::eSubtype_exon
+            || feat_subtype == CSeqFeatData::eSubtype_J_segment
+            || feat_subtype == CSeqFeatData::eSubtype_misc_feature
+            || feat_subtype == CSeqFeatData::eSubtype_N_region
+            || feat_subtype == CSeqFeatData::eSubtype_S_region
+            || feat_subtype == CSeqFeatData::eSubtype_V_region
+            || feat_subtype == CSeqFeatData::eSubtype_V_segment
+            || feat_subtype == CSeqFeatData::eSubtype_variation) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    if (feat_subtype == CSeqFeatData::eSubtype_gene)
+    {
+        if (  qual_type == CSeqFeatData::eQual_allele ||
+              qual_type == CSeqFeatData::eQual_gene_synonym ||
+              qual_type == CSeqFeatData::eQual_locus_tag ||
+              qual_type == CSeqFeatData::eQual_map
+            )
+            return true;
+        else
+            return false;
+    }
+
+
+    if (qual_type == CSeqFeatData::eQual_citation
+        || qual_type == CSeqFeatData::eQual_db_xref
+        || qual_type == CSeqFeatData::eQual_evidence
+        || qual_type == CSeqFeatData::eQual_exception
+        || qual_type == CSeqFeatData::eQual_gene
+        || qual_type == CSeqFeatData::eQual_gene_synonym
+        || qual_type == CSeqFeatData::eQual_insertion_seq
+        || qual_type == CSeqFeatData::eQual_label
+        || qual_type == CSeqFeatData::eQual_locus_tag
+        || qual_type == CSeqFeatData::eQual_note
+        || qual_type == CSeqFeatData::eQual_partial
+        || qual_type == CSeqFeatData::eQual_product
+        || qual_type == CSeqFeatData::eQual_pseudo
+        || qual_type == CSeqFeatData::eQual_rpt_unit
+        || qual_type == CSeqFeatData::eQual_transposon
+        || qual_type == CSeqFeatData::eQual_experiment
+        || qual_type == CSeqFeatData::eQual_trans_splicing
+        || qual_type == CSeqFeatData::eQual_ribosomal_slippage
+        || qual_type == CSeqFeatData::eQual_standard_name
+        || qual_type == CSeqFeatData::eQual_usedin) {
+        return false;
+    }
+    if (feat_subtype == CSeqFeatData::eSubtype_cdregion) {
+        if (qual_type == CSeqFeatData::eQual_codon_start
+            || qual_type == CSeqFeatData::eQual_codon
+            || qual_type == CSeqFeatData::eQual_EC_number
+            || qual_type == CSeqFeatData::eQual_gdb_xref
+            || qual_type == CSeqFeatData::eQual_number
+            || qual_type == CSeqFeatData::eQual_protein_id
+            || qual_type == CSeqFeatData::eQual_transl_except
+            || qual_type == CSeqFeatData::eQual_transl_table
+            || qual_type == CSeqFeatData::eQual_translation
+            || qual_type == CSeqFeatData::eQual_allele
+            || qual_type == CSeqFeatData::eQual_translation
+            || qual_type == CSeqFeatData::eQual_function
+            || qual_type == CSeqFeatData::eQual_old_locus_tag) {
+            return false;
+        }
+    }
+
+   
+
+    if (qual_type == CSeqFeatData::eQual_map 
+        && feat_subtype != CSeqFeatData::eSubtype_repeat_region 
+        && feat_subtype != CSeqFeatData::eSubtype_gap) {
+      return false;
+    }
+    if (qual_type == CSeqFeatData::eQual_operon
+        && feat_subtype != CSeqFeatData::eSubtype_operon) {
+        return false;
+    }
+    return true;    
+}
+
+
+bool CSeqFeatData::ShouldRepresentAsGbqual (CSeqFeatData::ESubtype feat_subtype, const CGb_qual& qual)
+{
+	if (!qual.IsSetQual()) {
+		return false;
+	}
+	return ShouldRepresentAsGbqual(feat_subtype, CSeqFeatData::GetQualifierType(qual.GetQual()));
+}
 
 END_objects_SCOPE // namespace ncbi::objects::
 

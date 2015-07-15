@@ -497,6 +497,9 @@ public:
 
     static bool AllowStrandBoth(ESubtype subtype);
 
+    static bool ShouldRepresentAsGbqual (CSeqFeatData::ESubtype feat_subtype, const CGb_qual& qual);
+    static bool ShouldRepresentAsGbqual (CSeqFeatData::ESubtype feat_subtype, CSeqFeatData::EQualifier qual_type);
+
     // Internal structure to hold additional info
     struct SFeatDataInfo
     {
