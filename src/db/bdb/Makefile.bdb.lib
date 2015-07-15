@@ -11,6 +11,9 @@ SRC = bdb_types bdb_file bdb_cursor bdb_blob \
 
 LIB = bdb
 
+DLL_LIB = xthrserv xconnect xutil xncbi
+LIBS = $(BERKELEYDB_LIBS) $(ORIG_LIBS)
+
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BERKELEYDB_INCLUDE)
 
 WATCHERS = kuznets
