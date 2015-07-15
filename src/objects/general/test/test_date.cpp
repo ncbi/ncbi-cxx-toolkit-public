@@ -101,5 +101,5 @@ int CTestDateApp::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CTestDateApp().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CTestDateApp().AppMain(argc, argv);
 }

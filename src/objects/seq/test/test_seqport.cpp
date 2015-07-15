@@ -1359,5 +1359,5 @@ void CSeqportTestApp::DisplaySeq(const CSeq_data& seq, TSeqPos uSize)
 int main(int argc, const char* argv[])
 {
     CSeqportTestApp theApp;
-    return theApp.AppMain(argc, argv, 0, eDS_Default, 0, "seqport_test");
+    return theApp.AppMain(argc, argv);
 }

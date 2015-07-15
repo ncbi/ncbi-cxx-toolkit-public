@@ -69,5 +69,5 @@ int CUOConvTestApp::Run(void)
 
 int main(int argc, char** argv)
 {
-    return CUOConvTestApp().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CUOConvTestApp().AppMain(argc, argv);
 }

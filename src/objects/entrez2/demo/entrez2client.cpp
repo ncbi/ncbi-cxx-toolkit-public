@@ -462,5 +462,5 @@ void CEntrez2ClientApp::x_FormatReply(CEntrez2_boolean_reply& reply)
 
 int main(int argc, const char* argv[])
 {
-    return CEntrez2ClientApp().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CEntrez2ClientApp().AppMain(argc, argv);
 }

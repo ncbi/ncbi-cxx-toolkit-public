@@ -181,5 +181,5 @@ void CTestID1ClientApp::RunCommand(const string& command)
 
 int main(int argc, const char* argv[])
 {
-    return CTestID1ClientApp().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CTestID1ClientApp().AppMain(argc, argv);
 }
