@@ -356,6 +356,8 @@ generic_db_utils_cgi includes generic_db_utils
 genesbyloc needs xser
 genome_collection needs $(SEQ_LIBS)
 genome_collection needs pub
+genomic_repeat_region needs $(SEQ_LIBS)
+genomic_repeat_region needs pub
 gensvc_g needs xser
 geoauth needs GMA
 geobrowse needs xser
@@ -907,8 +909,8 @@ png needs3party $(ORIG_LIBS)
 png needs3party $(Z_LIBS)
 proj needs pubmed
 proj needs seqset
-prok_align_monomer needs $(SOBJMGR_LIBS)
 prok_align_monomer needs align_part_ci
+prok_align_monomer needs gpipe_align_format
 prosplign needs xalgoalignutil
 proxsort needs taxoscli
 pstub needs3party $(ORIG_LIBS)
