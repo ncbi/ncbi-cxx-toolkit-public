@@ -572,5 +572,5 @@ int CLDS2TestApplication::Run(void)
 int main(int argc, const char* argv[])
 {
     CLDS2TestApplication app;
-    return app.AppMain(argc, argv, 0, eDS_Default);
+    return app.AppMain(argc, argv);
 }
