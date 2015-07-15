@@ -88,7 +88,7 @@ void CConvImageApp::Init(void)
 
 int CConvImageApp::Run(void)
 {
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     string in_file  = args["in"].AsString();
     string out_file = args["out"].AsString();

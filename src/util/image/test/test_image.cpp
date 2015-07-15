@@ -79,7 +79,7 @@ void CImageTestApp::Init(void)
 
 int CImageTestApp::Run(void)
 {
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     //
     // test image conversions

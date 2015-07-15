@@ -91,7 +91,7 @@ void CSubImageApp::Init(void)
 
 int CSubImageApp::Run(void)
 {
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     CNcbiIstream& istr = args["image"].AsInputFile();
     int x = args["x"].AsInteger();

@@ -78,7 +78,7 @@ void CImageTestApp::Init(void)
 
 int CImageTestApp::Run(void)
 {
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     CNcbiIstream& istr = args["image"].AsInputFile();
 
