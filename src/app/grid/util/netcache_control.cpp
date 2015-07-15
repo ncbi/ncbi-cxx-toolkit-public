@@ -482,5 +482,5 @@ int main(int argc, const char* argv[])
 {
     GRID_APP_CHECK_VERSION_ARGS();
 
-    return CNetCacheControl().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CNetCacheControl().AppMain(argc, argv);
 }

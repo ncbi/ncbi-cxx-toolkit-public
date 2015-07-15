@@ -263,5 +263,5 @@ int main(int argc, char** argv)
     SetSplitLogFile(true);
     GetDiagContext().SetOldPostFormat(false);
 
-    return CFileUploadApplication().AppMain(argc, argv, 0, eDS_Default);
+    return CFileUploadApplication().AppMain(argc, argv);
 }

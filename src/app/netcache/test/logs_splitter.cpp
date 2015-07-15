@@ -431,5 +431,5 @@ CLogsSplitterApp::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CLogsSplitterApp().AppMain(argc, argv, 0, eDS_Default);
+    return CLogsSplitterApp().AppMain(argc, argv);
 }

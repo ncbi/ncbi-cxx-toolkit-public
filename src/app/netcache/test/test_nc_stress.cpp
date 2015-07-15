@@ -545,5 +545,5 @@ int CTestNetCacheStressApp::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CTestNetCacheStressApp().AppMain(argc, argv, 0, eDS_Default);
+    return CTestNetCacheStressApp().AppMain(argc, argv);
 }

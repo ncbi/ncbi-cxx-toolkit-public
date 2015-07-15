@@ -941,5 +941,5 @@ CLogsReplayApp::Run(void)
 
 int main(int argc, const char* argv[])
 {
-    return CLogsReplayApp().AppMain(argc, argv, 0, eDS_Default);
+    return CLogsReplayApp().AppMain(argc, argv);
 }

@@ -498,7 +498,7 @@ int main(int argc, const char* argv[])
 {
     GRID_APP_CHECK_VERSION_ARGS();
 
-    int result = CCgiTunnel2Grid().AppMain(argc, argv, 0, eDS_Default);
+    int result = CCgiTunnel2Grid().AppMain(argc, argv);
     _TRACE("back to normal diags");
     return result;
 }

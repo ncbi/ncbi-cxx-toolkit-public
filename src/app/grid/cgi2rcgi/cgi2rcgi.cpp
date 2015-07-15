@@ -1088,5 +1088,5 @@ int main(int argc, const char* argv[])
     GRID_APP_CHECK_VERSION_ARGS();
 
     GetDiagContext().SetOldPostFormat(false);
-    return CCgi2RCgiApp().AppMain(argc, argv, 0, eDS_Default);
+    return CCgi2RCgiApp().AppMain(argc, argv);
 }

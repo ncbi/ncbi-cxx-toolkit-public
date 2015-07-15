@@ -303,5 +303,5 @@ USING_NCBI_SCOPE;
 
 int main( int argc, const char* argv[])
 {
-    return CTestApplication().AppMain( argc, argv, 0, eDS_Default, 0);
+    return CTestApplication().AppMain( argc, argv);
 }

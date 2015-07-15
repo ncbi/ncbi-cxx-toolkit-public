@@ -230,5 +230,5 @@ int main(int argc, const char* argv[])
 {
     GRID_APP_CHECK_VERSION_ARGS();
 
-    return CTestNetScheduleNode().AppMain(argc, argv, 0, eDS_Default);
+    return CTestNetScheduleNode().AppMain(argc, argv);
 }

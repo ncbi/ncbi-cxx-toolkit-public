@@ -418,5 +418,5 @@ int main(int argc, const char* argv[])
 {
     GRID_APP_CHECK_VERSION_ARGS();
 
-    return CTestNetScheduleStress().AppMain(argc, argv, 0, eDS_Default);
+    return CTestNetScheduleStress().AppMain(argc, argv);
 }

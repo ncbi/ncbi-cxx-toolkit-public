@@ -253,5 +253,5 @@ void CId1FetchApp::Exit(void)
 
 int main(int argc, const char* argv[]) 
 {
-    return CId1FetchApp().AppMain(argc, argv /*, 0, eDS_Default, 0*/);
+    return CId1FetchApp().AppMain(argc, argv);
 }

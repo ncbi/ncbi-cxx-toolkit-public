@@ -37,19 +37,20 @@
 #include "WriteTest.h"
 #include "ReadTest.h"
 
-///////////////////////////////////////////////////////////////////////
+
 
 const string CCheckNcMirrorApp::m_AppName = "check_nc_mirror";
 
+
 void CCheckNcMirrorApp::Init()
 {
-	CNcbiRegistry& reg( CNcbiApplication::Instance()->GetConfig() );
+    CNcbiRegistry& reg( CNcbiApplication::Instance()->GetConfig() );
+    m_MirrorsPool.load( GetConfig() );
 
-	m_MirrorsPool.load( GetConfig() );
-
-	reg.Set( "netservice_api", "connection_max_retries", "0" );
-	reg.Set( "netcache_api", "connection_timeout", "0.001" );
+    reg.Set( "netservice_api", "connection_max_retries", "0" );
+    reg.Set( "netcache_api", "connection_timeout", "0.001" );
 }
+
 
 int CCheckNcMirrorApp::Run()
 {
@@ -66,16 +67,14 @@ int CCheckNcMirrorApp::Run()
 		test->DoMirrorsCheck( m_MirrorsPool );
 	});
 */
-	CConnectivityTest::DoMirrorsCheck( m_MirrorsPool );
-	
-	CReadTest::DoMirrorsCheck( m_MirrorsPool );
-	
-	CWriteTest::DoMirrorsCheck( m_MirrorsPool );
-
-	return 0;
+    CConnectivityTest::DoMirrorsCheck( m_MirrorsPool );
+    CReadTest::DoMirrorsCheck( m_MirrorsPool );
+    CWriteTest::DoMirrorsCheck( m_MirrorsPool );
+    return 0;
 }
+
 
 int main(int argc, const char* argv[])
 {
-	return CCheckNcMirrorApp().AppMain(argc, argv, 0, eDS_Default);
+    return CCheckNcMirrorApp().AppMain(argc, argv);
 }

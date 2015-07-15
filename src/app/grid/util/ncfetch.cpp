@@ -198,5 +198,5 @@ int main(int argc, const char* argv[])
     SetSplitLogFile(true);
     GetDiagContext().SetOldPostFormat(false);
 
-    return CNetCacheBlobFetchApp().AppMain(argc, argv, 0, eDS_Default);
+    return CNetCacheBlobFetchApp().AppMain(argc, argv);
 }
