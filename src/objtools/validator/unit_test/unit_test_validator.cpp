@@ -10899,15 +10899,17 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_SeqLocOrder)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    CLEAR_ERRORS
+
     scope.RemoveTopLevelSeqEntry(seh);
     entry = unit_test_util::BuildGoodSeq();
     CRef<CSeq_feat> misc = unit_test_util::AddMiscFeature (entry);
     misc->SetLocation().Assign(*anticodon_loc);
     seh = scope.AddTopLevelSeqEntry(*entry);
-    delete expected_errors[1];
-    expected_errors.pop_back();
-    expected_errors[0]->SetSeverity(eDiag_Error);
-    expected_errors[0]->SetErrMsg("Location: Intervals out of order in SeqLoc [[lcl|good:10-11, 1-1]]");
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "SeqLocTypeProblem",
+                                                 "Seq-loc.int has identical from and to values, should be Seq-loc.pt"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "SeqLocOrder",
+                                                 "Location: Intervals out of order in SeqLoc [[lcl|good:10-11, 1-1]]"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -14646,6 +14648,8 @@ BOOST_AUTO_TEST_CASE (Test_SEQ_FEAT_PolyAsignalNotRange)
     feat->SetLocation().SetInt().SetTo(0);
 
     STANDARD_SETUP
+    expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "SeqLocTypeProblem",
+                                "Seq-loc.int has identical from and to values, should be Seq-loc.pt"));
     expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "PolyAsignalNotRange",
                                 "PolyA_signal should be a range"));
     eval = validator.Validate(seh, options);
