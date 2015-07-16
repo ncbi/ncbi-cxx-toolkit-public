@@ -87,11 +87,13 @@ void CReadUtil::Tokenize(
 
 //  -----------------------------------------------------------------
 CRef<CSeq_id> CReadUtil::AsSeqId(
-    const string& rawId,
+    const string& givenId,
     unsigned int flags,
     bool localInts)
 //  -----------------------------------------------------------------
 {
+    string rawId(NStr::URLDecode(givenId));
+
     if (flags & CReaderBase::fAllIdsAsLocal) {
         CRef<CSeq_id> pId(new CSeq_id);
         if (string::npos == rawId.find_first_not_of("0987654321")  &&
