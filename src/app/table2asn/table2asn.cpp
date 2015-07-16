@@ -74,6 +74,7 @@
 #include <objtools/readers/fasta_exception.hpp>
 
 #include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <sra/data_loaders/vdbgraph/vdbgraphloader.hpp>
 
 //#include <objtools/writers/fasta_writer.hpp>
 
@@ -1052,6 +1053,7 @@ void CTbl2AsnApp::Setup(const CArgs& args)
         // The last argument "eDefault" informs the OM that the loader must
         // be included in scopes during the CScope::AddDefaults() call.
         CGBDataLoader::RegisterInObjectManager(*m_context.m_ObjMgr);
+        CVDBGraphDataLoader::RegisterInObjectManager(*m_context.m_ObjMgr);
     }
     m_context.m_scope->AddDefaults();
 }
