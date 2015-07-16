@@ -7815,7 +7815,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
 
     int i = 0;
     ITERATE(vector<string>, it, required_fields) {
-        expected_errors.push_back(new CExpectedError("good", levels[i], "BadStrucCommInvalidFieldValue",
+        expected_errors.push_back(new CExpectedError("good", levels[i], "BadStrucCommMissingField",
                                   "Required field " + *it + " is missing"));
         i++;
     }
@@ -7867,7 +7867,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
     required_fields.push_back("sequencing_meth");
 
     ITERATE(vector<string>, it, required_fields) {
-        expected_errors.push_back(new CExpectedError("good", eDiag_Info, "BadStrucCommInvalidFieldValue",
+        expected_errors.push_back(new CExpectedError("good", eDiag_Info, "BadStrucCommMissingField",
                                   "Required field " + *it + " is missing"));
     }
 
@@ -7892,7 +7892,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
     required_fields.push_back("seq_meth");
 
     ITERATE(vector<string>, it, required_fields) {
-        expected_errors.push_back(new CExpectedError("good", eDiag_Info, "BadStrucCommInvalidFieldValue",
+        expected_errors.push_back(new CExpectedError("good", eDiag_Info, "BadStrucCommMissingField",
                                   "Required field " + *it + " is missing"));
     }
 
@@ -7911,7 +7911,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
     field->SetData().SetStr("Singer");
     desc->SetUser().SetData().push_back(field);
 
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadStrucCommInvalidFieldValue",
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadStrucCommMissingField",
                                   "Required field Assembly Method is missing when Sequencing Technology has value 'Singer'"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -7919,7 +7919,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
     CLEAR_ERRORS
 
     field->SetData().SetStr("something else");
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadStrucCommInvalidFieldValue",
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadStrucCommMissingField",
                                   "Required field Assembly Method is missing when Sequencing Technology has value 'something else'"));
     
     eval = validator.Validate(seh, options);
@@ -8088,7 +8088,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MissingKeyword)
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Info, "BadKeyword",
                                                  "Structured Comment is non-compliant, keyword should be removed"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Info, "BadStrucCommInvalidFieldValue",
+    expected_errors.push_back(new CExpectedError("good", eDiag_Info, "BadStrucCommMissingField",
                                                  "Required field finishing_strategy is missing when investigation_type has value 'eukaryote'"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);

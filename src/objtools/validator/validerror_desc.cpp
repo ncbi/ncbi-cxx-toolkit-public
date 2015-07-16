@@ -279,7 +279,7 @@ EErrType s_GetErrTypeFromString(const string& msg)
         et = eErr_SEQ_DESCR_BadStrucCommInvalidFieldValue;
     } else if (NStr::Find(msg, "field is out of order") != string::npos) {
         et = eErr_SEQ_DESCR_BadStrucCommFieldOutOfOrder;
-    } else if (!NStr::StartsWith(msg, "Required field")) {
+    } else if (NStr::StartsWith(msg, "Required field")) {
         et = eErr_SEQ_DESCR_BadStrucCommMissingField;
     } else if (NStr::Find(msg, "is not a valid field name") != string::npos
                || NStr::Find(msg, "field without label") != string::npos) {
