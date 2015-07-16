@@ -94,7 +94,7 @@ public:
     /// @return
     ///   object stream
     static CObjectOStream*
-    GetOStream(CNcbiOstream& ostr, SStreamProp stream_prop = SStreamProp(CCompressStream::eLZO))
+    GetOStream(CNcbiOstream& ostr, SStreamProp stream_prop = SStreamProp(CCompressStream::eZip))
     {
         auto_ptr<CCompressionOStream> outstr_zip(
             new CCompressionOStream(
