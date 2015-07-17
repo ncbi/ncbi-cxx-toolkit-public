@@ -21,13 +21,13 @@ case "`uname -s`" in
    test $test_mem -eq 0    -o  $test_mem -eq 255  ||  exit 1
    test $test_cpu -eq 255  -o  $test_cpu -eq 158  ||  exit 1
    ;;
- Linux | FreeBSD )
+ Linux )
    test $test_mem -eq 0    -o  $test_mem -eq 255  ||  exit 1
    test $test_cpu -eq 255  -o  $test_cpu -eq 137  ||  exit 1
    ;;
- Darwin )
-   test $test_mem -eq 0    ||  exit 1
-   test $test_cpu -eq 255  ||  exit 1
+ Darwin | FreeBSD )
+   test $test_mem -eq 0    -o  $test_mem -eq 134  -o  $test_mem -eq 255  ||  exit 1
+   test $test_cpu -eq 255  -o  $test_cpu -eq 137  ||  exit 1
    ;;
  *CYGWIN* )
    test $test_mem -eq 3  -o  $test_mem -eq 127  -o  $test_mem -eq 129  -o  $test_mem -eq 134  -o  $test_cpu -eq 139  ||  exit 1
