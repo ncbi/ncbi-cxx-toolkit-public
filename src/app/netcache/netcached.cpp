@@ -888,6 +888,7 @@ int main(int argc, const char* argv[])
 
 static Uint4 MAKE_TEST_TASKS = 100;
 static Uint8 MAKE_TEST_MAXSIZE = 1000000;
+
 static Uint4 MAKE_TEST_DELAY = 1;
 static Uint4 MAKE_TEST_INTERVAL = 10;
 
@@ -998,7 +999,7 @@ void CTest_BlobStorage::Reset(void)
     m_Command = 0;
 
     ms_RndLock.Lock();
-    Uint4 rand1 =  ms_Rnd.GetRand(1, MAKE_TEST_MAXSIZE);
+    Uint4 rand1 =  ms_Rnd.GetRand(0, MAKE_TEST_MAXSIZE);
     Uint4 rand2 =  max( ms_Rnd.GetRand(1, (rand1+3)/4 + 1), rand1/100);
 #if 1
     if (m_Keys.size() > 10) {
