@@ -772,10 +772,9 @@ template<typename T>void CCleanupApp::x_WriteToFile(const T& obj)
 {
     const CArgs& args = GetArgs();
     ESerialDataFormat outFormat = eSerial_AsnText;
-    string file_name = args["o"].AsString();
 
-    auto_ptr<CObjectOStream> out(!args["o"] ? 0 :
-        CObjectOStream::Open(outFormat, file_name,
+    auto_ptr<CObjectOStream> out(!args["o"] ? CObjectOStream::Open(outFormat, cout) :
+        CObjectOStream::Open(outFormat, args["o"].AsOutputFile(),
         eSerial_StdWhenAny));
 
     *out << obj;
