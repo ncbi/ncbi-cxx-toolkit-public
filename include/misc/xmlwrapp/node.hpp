@@ -1358,10 +1358,8 @@ public:
      *
      * @param other The other node to copy.
      * @author Peter Jones
-     * @deprecated
     **/
     //####################################################################
-    NCBI_DEPRECATED
     node (const node &other);
 
     //####################################################################
@@ -1371,10 +1369,8 @@ public:
      * @param other The other node to copy.
      * @return A reference to this node.
      * @author Peter Jones
-     * @deprecated
     **/
     //####################################################################
-    NCBI_DEPRECATED
     node& operator= (const node &other);
 
 private:
