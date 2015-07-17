@@ -36,6 +36,7 @@
 #include <corelib/ncbimtx.hpp>
 #include <util/range.hpp>
 #include <util/rangemap.hpp>
+#include <util/simple_buffer.hpp>
 #include <sra/readers/sra/vdbread.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 #include <objects/seq/Bioseq.hpp>
@@ -234,6 +235,13 @@ public:
         return m_MasterDescr;
     }
 
+    typedef CSimpleBufferT<char> TMasterDescrBytes;
+    // return size of the master Seq-entry data (ASN.1 binary)
+    // the size is also available as buffer.size()
+    size_t GetMasterDescrBytes(TMasterDescrBytes& buffer);
+    // return entry or null if absent
+    CRef<CSeq_entry> GetMasterDescrEntry(void);
+
     void ResetMasterDescr(void);
     void SetMasterDescr(const TMasterDescr& descr, int filter);
     bool LoadMasterDescr(int filter);
@@ -277,6 +285,8 @@ protected:
         DECLARE_VDB_COLUMN_AS(INSDC_coord_zero, READ_START);
         DECLARE_VDB_COLUMN_AS(INSDC_coord_len, READ_LEN);
         DECLARE_VDB_COLUMN_AS_4BITS(READ);
+        DECLARE_VDB_COLUMN_AS(INSDC_coord_zero, TRIM_START);
+        DECLARE_VDB_COLUMN_AS(INSDC_coord_len, TRIM_LEN);
         DECLARE_VDB_COLUMN_AS(NCBI_taxid, TAXID);
         DECLARE_VDB_COLUMN_AS_STRING(DESCR);
         DECLARE_VDB_COLUMN_AS_STRING(ANNOT);
@@ -395,7 +405,7 @@ protected:
 
 protected:
     void x_InitIdParams(void);
-    void x_LoadMasterDescr(const CVDBTable& table, int filter);
+    void x_LoadMasterDescr(int filter);
 
 private:
     CVDBMgr m_Mgr;
@@ -532,19 +542,30 @@ public:
         eExcludeWithdrawn,
         eIncludeWithdrawn
     };
+
+    enum EClipType {
+        eDefaultClip,  // as defined by config
+        eNoClip,       // force no clipping
+        eClipByQuality // force clipping
+    };
+
     CWGSSeqIterator(void);
     explicit
     CWGSSeqIterator(const CWGSDb& wgs_db,
-                    EWithdrawn withdrawn = eExcludeWithdrawn);
+                    EWithdrawn withdrawn = eExcludeWithdrawn,
+                    EClipType clip_type = eDefaultClip);
     CWGSSeqIterator(const CWGSDb& wgs_db,
                     uint64_t row,
-                    EWithdrawn withdrawn = eExcludeWithdrawn);
+                    EWithdrawn withdrawn = eExcludeWithdrawn,
+                    EClipType clip_type = eDefaultClip);
     CWGSSeqIterator(const CWGSDb& wgs_db,
                     uint64_t first_row, uint64_t last_row,
-                    EWithdrawn withdrawn = eExcludeWithdrawn);
+                    EWithdrawn withdrawn = eExcludeWithdrawn,
+                    EClipType clip_type = eDefaultClip);
     CWGSSeqIterator(const CWGSDb& wgs_db,
                     CTempString acc,
-                    EWithdrawn withdrawn = eExcludeWithdrawn);
+                    EWithdrawn withdrawn = eExcludeWithdrawn,
+                    EClipType clip_type = eDefaultClip);
     ~CWGSSeqIterator(void);
 
     DECLARE_OPERATOR_BOOL(m_CurrId < m_FirstBadId);
@@ -571,6 +592,45 @@ public:
     CSeq_id::TGi GetGi(void) const;
     CTempString GetAccession(void) const;
     int GetAccVersion(void) const;
+ 
+    bool HasTitle(void) const;
+    CTempString GetTitle(void) const;
+
+    // return raw trim/clip values
+    TSeqPos GetClipQualityLeft(void) const;
+    TSeqPos GetClipQualityLength(void) const;
+    TSeqPos GetClipQualityRight(void) const
+        {
+            // inclusive
+            return GetClipQualityLeft() + GetClipQualityLength() - 1;
+        }
+
+    // Returns true if current read has clipping info that can or does 
+    // reduce sequence length.
+    bool HasClippingInfo(void) const;
+    // Returns true if current read is actually clipped by quality.
+    // It can be true only if clipping by quality is on.
+    bool IsClippedByQuality(void) const {
+        return m_ClipByQuality && HasClippingInfo();
+    }
+    // Returns true if current read has actual clipping info that is not
+    // applied because clipping by quality is off.
+    bool ShouldBeClippedByQuality(void) const {
+        return !m_ClipByQuality && HasClippingInfo();
+    }
+
+    // return clip type
+    bool GetClipByQualityFlag(EClipType clip_type = eDefaultClip) const
+        {
+            return (clip_type == eDefaultClip?
+                    m_ClipByQuality:
+                    clip_type == eClipByQuality);
+        }
+
+    // return raw unclipped sequence length
+    TSeqPos GetRawSeqLength(void) const;
+    // return effective sequence length, depending on clip type
+    TSeqPos GetSeqLength(EClipType clip_type = eDefaultClip) const;
 
     // return corresponding kind of Seq-id if exists
     // return null if there is no such Seq-id
@@ -584,10 +644,26 @@ public:
     bool HasTaxId(void) const;
     int GetTaxId(void) const;
 
-    TSeqPos GetSeqLength(void) const;
-
     bool HasSeqHash(void) const;
     int GetSeqHash(void) const;
+
+    typedef struct SWGSContigGapInfo {
+        size_t gaps_count;
+        const INSDC_coord_one* gaps_start;
+        const INSDC_coord_len* gaps_len;
+        const NCBI_WGS_component_props* gaps_props;
+        const NCBI_WGS_gap_linkage* gaps_linkage;
+        SWGSContigGapInfo(void)
+            : gaps_count(0),
+              gaps_start(0),
+              gaps_len(0),
+              gaps_props(0),
+              gaps_linkage(0)
+            {
+            }
+    } TWGSContigGapInfo;
+
+    void GetGapInfo(TWGSContigGapInfo& gap_info) const;
 
     enum EFlags {
         fIds_gi       = 1<<0,
@@ -609,13 +685,19 @@ public:
     void GetIds(CBioseq::TId& ids, TFlags flags = fDefaultFlags) const;
 
     bool HasSeq_descr(void) const;
+    // Return descr binary byte sequence as is
+    CTempString GetSeqDescrBytes(void) const;
+    // Parse the binary byte sequence and instantiate ASN.1 object
     CRef<CSeq_descr> GetSeq_descr(void) const;
 
     bool HasAnnotSet(void) const;
+    // Return annot binary byte sequence as is
+    CTempString GetAnnotBytes(void) const;
     typedef CBioseq::TAnnot TAnnotSet;
     void GetAnnotSet(TAnnotSet& annot_set) const;
 
     bool HasQualityGraph(void) const;
+    void GetQualityVec(vector<INSDC_quality_phred>& quality_vec) const;
     void GetQualityAnnot(TAnnotSet& annot_set,
                          TFlags flags = fDefaultFlags) const;
 
@@ -623,12 +705,26 @@ public:
 
     bool IsCircular(void) const;
 
+    typedef CVDBValueFor4Bits TSequencePacked4na;
+    // Return raw sequence in packed 4na encoding
+    TSequencePacked4na GetRawSequencePacked4na(void) const;
+    // Return trimmed sequence in packed 4na encoding
+    TSequencePacked4na GetSequencePacked4na(void) const;
+
+    typedef string TSequenceIUPACna;
+    // Return raw sequence in IUPACna encoding
+    TSequenceIUPACna GetRawSequenceIUPACna(void) const;
+    // Return trimmed sequence in IUPACna encoding
+    TSequenceIUPACna GetSequenceIUPACna(void) const;
+
     CRef<CSeq_inst> GetSeq_inst(TFlags flags = fDefaultFlags) const;
 
     CRef<CBioseq> GetBioseq(TFlags flags = fDefaultFlags) const;
 
 protected:
-    void x_Init(const CWGSDb& wgs_db, EWithdrawn withdrawn);
+    void x_Init(const CWGSDb& wgs_db,
+                EWithdrawn withdrawn,
+                EClipType clip_type);
 
     CWGSDb_Impl& GetDb(void) const {
         return m_Db.GetNCObject();
@@ -649,6 +745,7 @@ private:
     CRef<CWGSDb_Impl::SSeqTableCursor> m_Seq; // VDB seq table accessor
     uint64_t m_CurrId, m_FirstBadId;
     EWithdrawn m_Withdrawn;
+    bool m_ClipByQuality;
 };
 
 

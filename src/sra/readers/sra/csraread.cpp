@@ -958,12 +958,10 @@ CRef<CSeq_id> CCSraAlignIterator::GetShortSeq_id(void) const
 CRef<CSeq_id> CCSraAlignIterator::GetMateShortSeq_id(void) const
 {
     CVDBValueFor<uint64_t> value = m_Aln->MATE_ALIGN_ID(*m_AlnRowCur);
-    if ( value.size() == 0 ) {
+    if ( value.empty() ) {
         return null;
     }
-    _ASSERT(value.size() == 1);
     uint64_t mate_id = *value;
-    _ASSERT(mate_id);
     return GetDb().MakeShortReadId(m_Aln->SEQ_SPOT_ID(mate_id),
                                    m_Aln->SEQ_READ_ID(mate_id));
 }
@@ -1195,7 +1193,7 @@ CRef<CSeq_align> CCSraAlignIterator::GetMatchAlign(void) const
 
     if ( s_GetExplicitMateInfoParam() ) {
         CVDBValueFor<uint64_t> mate_id_v = m_Aln->MATE_ALIGN_ID(*m_AlnRowCur);
-        if ( mate_id_v.size() != 0 ) {
+        if ( !mate_id_v.empty() ) {
             _ASSERT(mate_id_v.size() == 1);
             uint64_t mate_id = *mate_id_v;
             _ASSERT(mate_id);
