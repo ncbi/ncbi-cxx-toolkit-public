@@ -78,7 +78,7 @@ public:
     virtual IMessage* Clone(void) const = 0;
 
     /// Print the message and any additional information to the stream.
-    virtual void Write(CNcbiOstream& /*out*/) const = 0;
+    virtual void Write(CNcbiOstream& out) const = 0;
 
     /// Get the whole composed message as string.
     /// The default implementation uses Write() to compose the string.
@@ -142,7 +142,7 @@ public:
     };
 
     /// Post new message to the listener.
-    virtual EPostResult PostMessage(const IMessage& /*message*/) = 0;
+    virtual EPostResult PostMessage(const IMessage& message) = 0;
 
     /// Report progress.
     /// @param message
@@ -151,14 +151,14 @@ public:
     ///   Current progress value.
     /// @param total
     ///   Max progress value.
-    virtual EPostResult PostProgress(const string& /*message*/,
-                                     Uint8         /*current*/,
-                                     Uint8         /*total*/) = 0;
+    virtual EPostResult PostProgress(const string& message,
+                                     Uint8         current,
+                                     Uint8         total) = 0;
 
     /// Get a previously collected message.
     /// @param index
     ///   Index of the message, must be less than Count().
-    virtual const IMessage& GetMessage(size_t /*index*/) const = 0;
+    virtual const IMessage& GetMessage(size_t index) const = 0;
 
     /// Get total number of collected messages.
     virtual size_t Count(void) const = 0;
@@ -191,10 +191,16 @@ public:
     /// Remove listener(s) from the current thread's stack.
     /// @param depth
     ///   Index of the listener to be removed, as returned by PushListener().
-    ///   If the current stack size is less than depth, no action is performed.
     ///   If the depth is zero (default), only the topmost listener is removed.
+    ///   If there are listeners whose index is larger than (non-zero) depth, then
+    ///   all such listeners will be removed too, and a warning will be posted.
+    ///   If the current stack size is less than depth, no action is performed,
+    ///   and a warning will be posted.
     /// @sa PushListener()
     static void PopListener(size_t depth = 0);
+
+    /// Check if there are any listeners installed in the current thread.
+    static bool HaveListeners(void);
 
     /// Post the message to listener(s), if any. The message is posted
     /// to each listener starting from the top of the stack. After a

@@ -32,9 +32,11 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbi_message.hpp>
 #include <corelib/ncbithr.hpp>
+#include <corelib/error_codes.hpp>
 #include <stdlib.h>
 #include <list>
 
+#define NCBI_USE_ERRCODE_X   Corelib_Message
 
 BEGIN_NCBI_SCOPE
 
@@ -86,13 +88,30 @@ size_t IMessageListener::PushListener(IMessageListener& listener,
 void IMessageListener::PopListener(size_t depth)
 {
     TListenerStack& ls = s_GetListenerStack();
-    if ( ls.empty() ) return;
-    if (depth == 0) {
-        depth = ls.size();
+    size_t sz = ls.size();
+    if (depth == 0) depth = sz;
+    if (ls.empty()  ||  sz < depth) {
+        // Nothing to pop.
+        ERR_POST_X_ONCE(1, Warning <<
+            "Unbalanced PushListener/PopListener calls: "
+            "listener index " << depth << " has been already removed");
+        return;
+    }
+    if (sz > depth) {
+        // Report lost listeners.
+        ERR_POST_X_ONCE(2, Warning <<
+            "Unbalanced PushListener/PopListener calls: "
+            "removing " << sz - depth << " lost listeners");
     }
     while (ls.size() >= depth) {
         ls.pop_front();
     }
+}
+
+
+bool IMessageListener::HaveListeners(void)
+{
+    return !s_GetListenerStack().empty();
 }
 
 
