@@ -105,7 +105,7 @@ public:
     static Uint4 GetNewBlobId(void);
 
     /// Get number of files in the database
-    static int GetNDBFiles(void);
+    static size_t GetNDBFiles(void);
     /// Get total size of database for the storage
     static Int8 GetDBSize(void);
     static Int8 GetDiskFree(void);

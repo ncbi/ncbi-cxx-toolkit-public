@@ -248,7 +248,9 @@ struct SNCBlobSummary
     }
     bool isExpired(void) const
     {
-        return expire < CSrvTime::CurSecs();
+// 16jul15: expire or ver_expire? looks suspicious
+//        return expire < CSrvTime::CurSecs();
+        return dead_time < CSrvTime::CurSecs();
     }
 };
 
@@ -269,11 +271,6 @@ enum ENCDBFileType {
     //eDBFileMoveData = eDBFileData + fDBFileForMove,
     //eDBFileMoveMaps = eDBFileMaps + fDBFileForMove
 };
-
-static ENCDBFileType const s_AllFileTypes[]
-                    = {eDBFileMeta, eDBFileData, eDBFileMaps
-                       /*, eDBFileMoveMeta, eDBFileMoveData, eDBFileMoveMaps*/};
-static size_t const s_CntAllFiles = sizeof(s_AllFileTypes) / sizeof(s_AllFileTypes[0]);
 
 enum EDBFileIndex {
     eFileIndexMeta = 0,

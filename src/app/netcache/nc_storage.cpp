@@ -157,6 +157,10 @@ static Uint4 s_LastFileId = 0;
 
 /// manages access to s_AllWritings
 static CMiniMutex s_NextWriteLock;
+static ENCDBFileType const s_AllFileTypes[]
+                    = {eDBFileMeta, eDBFileData, eDBFileMaps
+                       /*, eDBFileMoveMeta, eDBFileMoveData, eDBFileMoveMaps*/};
+static size_t const s_CntAllFiles = sizeof(s_AllFileTypes) / sizeof(s_AllFileTypes[0]);
 static SWritingInfo s_AllWritings[s_CntAllFiles];
 
 static Uint4 s_NewFileSize = 0;
@@ -659,17 +663,27 @@ s_MoveRecToGarbage(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec)
     AtomicAdd(s_GarbageSize,size);
 }
 
+
+static CSrvRef<SNCDBFileInfo>
+s_GetDBFileNoLock(Uint4 file_id)
+{
+    TNCDBFilesMap::const_iterator it = s_DBFiles->find(file_id);
+    if (it == s_DBFiles->end()) {
+        DB_CORRUPTED("Cannot find file id: " << file_id);
+    }
+    return it->second;
+}
+
 static CSrvRef<SNCDBFileInfo>
 s_GetDBFile(Uint4 file_id)
 {
     s_DBFilesLock.Lock();
     TNCDBFilesMap::const_iterator it = s_DBFiles->find(file_id);
     if (it == s_DBFiles->end()) {
-        DB_CORRUPTED("Cannot find file " << file_id);
+        DB_CORRUPTED("Cannot find file id: " << file_id);
     }
     CSrvRef<SNCDBFileInfo> file_info = it->second;
     s_DBFilesLock.Unlock();
-
     return file_info;
 }
 
@@ -822,7 +836,7 @@ s_CalcChunkAddress(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec)
 /// Do set of procedures creating and initializing new database part and
 /// switching storage to using new database part as current one.
 static bool
-s_CreateNewFile(size_t type_idx)
+s_CreateNewFile(size_t type_idx, bool need_lock)
 {
     // No need in mutex because m_LastBlob is changed only here and will be
     // executed only from one thread.
@@ -895,21 +909,23 @@ s_CreateNewFile(size_t type_idx)
         SRV_FATAL("Unsupported file type: " << true_type_idx);
     }
 
-    s_DBFilesLock.Lock();
+    if (need_lock) {
+        s_DBFilesLock.Lock();
+    }
     (*s_DBFiles)[file_id] = file_info;
-
     s_NextWriteLock.Lock();
     s_AllWritings[type_idx].next_file = file_info;
-    AtomicAdd(s_CurDBSize, kSignatureSize + sizeof(SFileIndexRec));
     s_NextWriteLock.Unlock();
-
-    s_DBFilesLock.Unlock();
+    if (need_lock) {
+        s_DBFilesLock.Unlock();
+    }
+    AtomicAdd(s_CurDBSize, kSignatureSize + sizeof(SFileIndexRec));
 
     return true;
 }
 
 static void
-s_DeleteDBFile(const CSrvRef<SNCDBFileInfo>& file_info)
+s_DeleteDBFile(const CSrvRef<SNCDBFileInfo>& file_info, bool need_lock)
 {
     s_IndexLock.Lock();
     try {
@@ -920,9 +936,14 @@ s_DeleteDBFile(const CSrvRef<SNCDBFileInfo>& file_info)
     }
     s_IndexLock.Unlock();
 
-    s_DBFilesLock.Lock();
+    if (need_lock) {
+        s_DBFilesLock.Lock();
+    }
+    SRV_LOG(Info, "Deleted file id: " << file_info->file_id);
     s_DBFiles->erase(file_info->file_id);
-    s_DBFilesLock.Unlock();
+    if (need_lock) {
+        s_DBFilesLock.Unlock();
+    }
 
     AtomicSub(s_CurDBSize,   file_info->file_size);
     AtomicSub(s_GarbageSize, file_info->garb_size);
@@ -1073,7 +1094,7 @@ void CNCBlobStorage::WriteEnvInfo(CSrvSocketTask& task)
     task.WriteText(eol).WriteText("storagepath"  ).WriteText(iss).WriteText(   s_Path).WriteText(eos);
     task.WriteText(eol).WriteText(kNCStorage_GuardNameParam   ).WriteText(iss).WriteText(   s_GuardName).WriteText(eos);
     task.WriteText(eol).WriteText("DBindex"  ).WriteText(iss).WriteText(   s_GetIndexFileName()).WriteText(eos);
-    task.WriteText(eol).WriteText("DBfiles_count").WriteText( is).WriteNumber( s_DBFiles->size());
+    task.WriteText(eol).WriteText("DBfiles_count").WriteText( is).WriteNumber( CNCBlobStorage::GetNDBFiles());
     task.WriteText(eol).WriteText("DBsize"       ).WriteText(iss).WriteText(NStr::UInt8ToString_DataSize(s_CurDBSize)).WriteText(eos);
     task.WriteText(eol).WriteText("DBgarbage"    ).WriteText(iss).WriteText(NStr::UInt8ToString_DataSize(s_GarbageSize)).WriteText(eos);
     task.WriteText(eol).WriteText("diskfreespace").WriteText(iss).WriteText(NStr::UInt8ToString_DataSize(GetDiskFree())).WriteText(eos);
@@ -1270,6 +1291,10 @@ s_GetNextWriteCoord(EDBFileIndex file_index,
     s_NextWriteLock.Lock();
     SWritingInfo& w_info = s_AllWritings[file_index];
 
+    if (w_info.cur_file == NULL) {
+        s_NextWriteLock.Unlock();
+        return false;
+    }
     if (w_info.left_file_size < reserve_size  &&  w_info.next_file == NULL) {
         s_NextWriteLock.Unlock();
         return false;
@@ -1536,9 +1561,9 @@ CNCBlobStorage::WriteBlobInfo(const string& blob_key,
 }
 
 static void
-s_MoveDataToGarbage(SNCDataCoord coord, Uint1 map_depth, SNCDataCoord up_coord)
+s_MoveDataToGarbage(SNCDataCoord coord, Uint1 map_depth, SNCDataCoord up_coord, bool need_lock)
 {
-    CSrvRef<SNCDBFileInfo> file_info = s_GetDBFile(coord.file_id);
+    CSrvRef<SNCDBFileInfo> file_info = need_lock ? s_GetDBFile(coord.file_id) : s_GetDBFileNoLock(coord.file_id);
     SFileIndexRec* ind_rec = s_GetIndexRec(file_info, coord.rec_num);
     if (ind_rec->chain_coord != up_coord) {
         DB_CORRUPTED("Index record " << coord.rec_num
@@ -1554,7 +1579,7 @@ s_MoveDataToGarbage(SNCDataCoord coord, Uint1 map_depth, SNCDataCoord up_coord)
         SFileChunkMapRec* map_rec = s_CalcMapAddress(file_info, ind_rec);
         Uint2 cnt_downs = s_CalcCntMapDowns(ind_rec->rec_size);
         for (Uint2 i = 0; i < cnt_downs; ++i) {
-            s_MoveDataToGarbage(map_rec->down_coords[i], map_depth - 1, coord);
+            s_MoveDataToGarbage(map_rec->down_coords[i], map_depth - 1, coord, need_lock);
         }
         s_MoveRecToGarbage(file_info, ind_rec);
     }
@@ -1571,7 +1596,7 @@ CNCBlobStorage::DeleteBlobInfo(const SNCBlobVerData* ver_data,
         if (ver_data->size != 0) {
             s_MoveDataToGarbage(ver_data->data_coord,
                                 ver_data->map_depth,
-                                ver_data->coord);
+                                ver_data->coord, true);
         }
         s_MoveRecToGarbage(meta_file, meta_ind);
     }
@@ -1583,7 +1608,7 @@ CNCBlobStorage::DeleteBlobInfo(const SNCBlobVerData* ver_data,
             while (idx < ver_data->map_size
                    &&  !maps->maps[depth]->coords[idx].empty())
             {
-                s_MoveDataToGarbage(maps->maps[depth]->coords[idx], depth, empty_coord);
+                s_MoveDataToGarbage(maps->maps[depth]->coords[idx], depth, empty_coord, true);
                 ++idx;
             }
         }
@@ -1884,10 +1909,10 @@ CNCBlobStorage::GetDBSize(void)
     return s_CurDBSize;
 }
 
-int
+size_t
 CNCBlobStorage::GetNDBFiles(void)
 {
-    return int(s_DBFiles->size());
+    return s_DBFiles->size();
 }
 
 bool
@@ -2015,10 +2040,7 @@ CNCBlobStorage::GetFullBlobsList(Uint2 slot, TNCBlobSumList& blobs_lst, const CN
 void
 CNCBlobStorage::MeasureDB(SNCStateStat& state)
 {
-    s_DBFilesLock.Lock();
-    state.db_files = Uint4(s_DBFiles->size());
-    s_DBFilesLock.Unlock();
-
+    state.db_files = Uint4(CNCBlobStorage::GetNDBFiles());
     state.db_size = s_CurDBSize;
     state.db_garb = s_GarbageSize;
     state.cnt_blobs = s_CurBlobsCnt;
@@ -2330,7 +2352,7 @@ CBlobCacher::x_CacheMetaRec(SNCDBFileInfo* file_info,
             Uint1 map_depth = s_CalcMapDepth(old_rec->size,
                                              old_rec->chunk_size,
                                              old_rec->map_size);
-            s_MoveDataToGarbage(old_ind->chain_coord, map_depth, old_data->coord);
+            s_MoveDataToGarbage(old_ind->chain_coord, map_depth, old_data->coord, false);
         }
         s_MoveRecToGarbage(old_file, old_ind);
         delete old_data;
@@ -2346,28 +2368,30 @@ CBlobCacher::x_StartCreateFiles(void)
 {
     m_CurCreatePass = 0;
     m_CurCreateFile = 0;
-    return &Me::x_CreateInitialFile;
+    return &CBlobCacher::x_CreateInitialFile;
 }
 
 CBlobCacher::State
 CBlobCacher::x_CreateInitialFile(void)
 {
     if (CTaskServer::IsInShutdown())
-        return &Me::x_CancelCaching;
+        return &CBlobCacher::x_CancelCaching;
     if (m_CurCreatePass == 1  &&  m_CurCreateFile >= s_CntAllFiles)
-        return &Me::x_StartCacheBlobs;
+        return &CBlobCacher::x_StartCacheBlobs;
 
     if (m_CurCreateFile < s_CntAllFiles) {
-        if (!s_CreateNewFile(m_CurCreateFile))
-            return &Me::x_DelFileAndRetryCreate;
+        if (!s_CreateNewFile(m_CurCreateFile, false))
+            return &CBlobCacher::x_DelFileAndRetryCreate;
 
         m_NewFileIds.insert(s_AllWritings[m_CurCreateFile].next_file->file_id);
         ++m_CurCreateFile;
     }
     else {
+        s_NextWriteLock.Lock();
         for (size_t i = 0; i < s_CntAllFiles; ++i) {
             s_SwitchToNextFile(s_AllWritings[i]);
         }
+        s_NextWriteLock.Unlock();
         m_CurCreateFile = 0;
         ++m_CurCreatePass;
     }
@@ -2384,7 +2408,7 @@ CBlobCacher::x_DelFileAndRetryCreate(void)
         SRV_LOG(Critical, "Cannot create initial database files.");
         GetDiagCtx()->SetRequestStatus(eStatus_ServerError);
         CTaskServer::RequestShutdown(eSrvFastShutdown);
-        return &Me::x_CancelCaching;
+        return &CBlobCacher::x_CancelCaching;
     }
 
     CSrvRef<SNCDBFileInfo> file_to_del;
@@ -2397,10 +2421,10 @@ CBlobCacher::x_DelFileAndRetryCreate(void)
     }
     if (!file_to_del)
         file_to_del = s_DBFiles->begin()->second;
-    s_DeleteDBFile(file_to_del);
+    s_DeleteDBFile(file_to_del, false);
 
     // Yield execution to other tasks
-    SetState(&Me::x_CreateInitialFile);
+    SetState(&CBlobCacher::x_CreateInitialFile);
 // file creation failed; probably, makes sense to wait longer
 // instead of failing again and again, like thousands times per sec
 //    SetRunnable();
@@ -2413,9 +2437,9 @@ CBlobCacher::State
 CBlobCacher::x_PreCacheRecNums(void)
 {
     if (CTaskServer::IsInShutdown())
-        return &Me::x_CancelCaching;
+        return &CBlobCacher::x_CancelCaching;
     if (m_CurFile == s_DBFiles->end())
-        return &Me::x_StartCreateFiles;
+        return &CBlobCacher::x_StartCreateFiles;
 
     SNCDBFileInfo* const file_info = m_CurFile->second.GetNCPointerOrNull();
     TRecNumsSet& recs_set = m_RecsMap[file_info->file_id];
@@ -2569,13 +2593,15 @@ CBlobCacher::x_StartCaching(void)
     CreateNewDiagCtx();
     CSrvDiagMsg().StartRequest().PrintParam("_type", "caching");
 
+    s_DBFilesLock.Lock();
     m_CurFile = s_DBFiles->begin();
-    return &Me::x_PreCacheRecNums;
+    return &CBlobCacher::x_PreCacheRecNums;
 }
 
 CBlobCacher::State
 CBlobCacher::x_CancelCaching(void)
 {
+    s_DBFilesLock.Unlock();
     if (GetDiagCtx()->GetRequestStatus() == eStatus_OK)
         GetDiagCtx()->SetRequestStatus(eStatus_OperationCanceled);
     CSrvDiagMsg().StopRequest();
@@ -2586,10 +2612,28 @@ CBlobCacher::x_CancelCaching(void)
 }
 
 CBlobCacher::State
+CBlobCacher::x_FinishCaching(void)
+{
+    s_DBFilesLock.Unlock();
+    CSrvDiagMsg().StopRequest();
+    ReleaseDiagCtx();
+
+    s_DiskFlusher->SetRunnable();
+    s_RecNoSaver->SetRunnable();
+    s_SpaceShrinker->SetRunnable();
+    s_ExpiredCleaner->SetRunnable();
+
+    CNCServer::CachingCompleted();
+
+    Terminate();
+    return NULL;
+}
+
+CBlobCacher::State
 CBlobCacher::x_StartCacheBlobs(void)
 {
     m_CurFile = s_DBFiles->begin();
-    return &Me::x_CacheNextFile;
+    return &CBlobCacher::x_CacheNextFile;
 }
 
 CBlobCacher::State
@@ -2597,9 +2641,9 @@ CBlobCacher::x_CacheNextFile(void)
 {
 try_next_file:
     if (CTaskServer::IsInShutdown())
-        return &Me::x_CancelCaching;
+        return &CBlobCacher::x_CancelCaching;
     if (m_CurFile == s_DBFiles->end())
-        return &Me::x_CleanOrphanRecs;
+        return &CBlobCacher::x_CleanOrphanRecs;
 
     SNCDBFileInfo* file_info = m_CurFile->second.GetNCPointerOrNull();
     if (file_info->file_type != eDBFileMeta
@@ -2610,18 +2654,18 @@ try_next_file:
     }
     m_CurRecsSet = &m_RecsMap[file_info->file_id];
     m_CurRecIt = m_CurRecsSet->begin();
-    return &Me::x_CacheNextRecord;
+    return &CBlobCacher::x_CacheNextRecord;
 }
 
 CBlobCacher::State
 CBlobCacher::x_CacheNextRecord(void)
 {
     if (CTaskServer::IsInShutdown())
-        return &Me::x_CancelCaching;
+        return &CBlobCacher::x_CancelCaching;
     if (m_CurRecIt == m_CurRecsSet->end()) {
         m_CurRecsSet->clear();
         ++m_CurFile;
-        return &Me::x_CacheNextFile;
+        return &CBlobCacher::x_CacheNextFile;
     }
 
     Uint4 rec_num = *m_CurRecIt;
@@ -2656,29 +2700,12 @@ CBlobCacher::x_CleanOrphanRecs(void)
         }
     }
 
-    return &Me::x_FinishCaching;
-}
-
-CBlobCacher::State
-CBlobCacher::x_FinishCaching(void)
-{
-    CSrvDiagMsg().StopRequest();
-    ReleaseDiagCtx();
-
-    s_DiskFlusher->SetRunnable();
-    s_RecNoSaver->SetRunnable();
-    s_SpaceShrinker->SetRunnable();
-    s_ExpiredCleaner->SetRunnable();
-
-    CNCServer::CachingCompleted();
-
-    Terminate();
-    return NULL;
+    return &CBlobCacher::x_FinishCaching;
 }
 
 CBlobCacher::CBlobCacher(void)
 {
-    SetState(&Me::x_StartCaching);
+    SetState(&CBlobCacher::x_StartCaching);
 }
 
 CBlobCacher::~CBlobCacher(void)
@@ -2796,7 +2823,7 @@ CExpiredCleaner::x_DeleteNextData(void)
         s_CalcMetaAddress(meta_file, meta_ind);
         if (!meta_ind->chain_coord.empty()) {
             Uint1 map_depth = s_CalcMapDepth(size, chunk_size, map_size);
-            s_MoveDataToGarbage(meta_ind->chain_coord, map_depth, coord);
+            s_MoveDataToGarbage(meta_ind->chain_coord, map_depth, coord, true);
         }
         s_MoveRecToGarbage(meta_file, meta_ind);
     }
@@ -3195,7 +3222,7 @@ CSpaceShrinker::x_DeleteNextFile(void)
         return &Me::x_StartMoves;
     }
 
-    s_DeleteDBFile(*m_CurDelFile);
+    s_DeleteDBFile(*m_CurDelFile, true);
     m_CurDelFile->Reset();
     ++m_CurDelFile;
     SetRunnable();
@@ -3390,7 +3417,7 @@ CSpaceShrinker::x_FinishMoves(void)
     if (!m_Failed) {
         m_MaxFile->is_releasing = true;
         if (m_MaxFile->used_size == 0)
-            s_DeleteDBFile(m_MaxFile);
+            s_DeleteDBFile(m_MaxFile, true);
         else if (m_CntProcessed == 0) {
             SRV_LOG(Warning, "Didn't find anything to process in the file");
             m_MaxFile->next_shrink_time = CSrvTime::CurSecs() + max(s_MinMoveLife, 300);
@@ -3569,7 +3596,7 @@ CNewFileCreator::ExecuteSlice(TSrvThreadNum /* thr_num */)
         need_new = s_AllWritings[i].next_file == NULL;
         s_NextWriteLock.Unlock();
         if (need_new) {
-            s_CreateNewFile(i);
+            s_CreateNewFile(i, true);
             SetRunnable();
             break;
         }
