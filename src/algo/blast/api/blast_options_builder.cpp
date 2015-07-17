@@ -98,7 +98,7 @@ CBlastOptionsBuilder::ComputeProgram(const string & program,
             p = "vecscreen";
             found = true;
         }
-        if (s == "sra") {
+        if ((s == "sra") || (s == "wgs")) {
         	found = true;
         }
     } else if (p == "tblastn") {
