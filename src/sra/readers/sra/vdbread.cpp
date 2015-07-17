@@ -799,18 +799,45 @@ void CVDBValueFor4Bits::x_Get(const VCursor* cursor,
     }
     m_RawData = static_cast<const char*>(data);
     m_ElemOffset = bit_offset >> 2;
-    m_RawElemCount = elem_count + offset();
+    m_ElemCount = elem_count;
 }
 
 
-void CVDBValueFor4Bits::x_ReportRawIndexOutOfBounds(size_t raw_index) const
+void CVDBValueFor4Bits::x_ReportIndexOutOfBounds(size_t index) const
 {
-    if ( raw_index >= raw_size() ) {
+    if ( index >= size() ) {
         NCBI_THROW3(CSraException, eInvalidIndex,
                     "Invalid index for VDB 4-bits value array",
                     RC(rcApp, rcData, rcRetrieving, rcOffset, rcTooBig),
-                    raw_index);
+                    index);
     }
+}
+
+
+CVDBValueFor4Bits CVDBValueFor4Bits::substr(size_t pos, size_t len) const
+{
+    if ( pos > size() ) {
+        NCBI_THROW3(CSraException, eInvalidIndex,
+                    "Invalid position for VDB 4-bits value sub-array",
+                    RC(rcApp, rcData, rcRetrieving, rcOffset, rcTooBig),
+                    pos);
+    }
+    if ( pos+len < pos ) {
+        NCBI_THROW3(CSraException, eInvalidIndex,
+                    "Invalid length for VDB 4-bits value sub-array",
+                    RC(rcApp, rcData, rcRetrieving, rcOffset, rcTooBig),
+                    len);
+    }
+    if ( pos+len > size() ) {
+        NCBI_THROW3(CSraException, eInvalidIndex,
+                    "Invalid end of VDB 4-bits value sub-array",
+                    RC(rcApp, rcData, rcRetrieving, rcOffset, rcTooBig),
+                    pos+len);
+    }
+    uint32_t offset = m_ElemOffset + pos;
+    const char* raw_data = m_RawData + offset/2;
+    offset %= 2;
+    return CVDBValueFor4Bits(raw_data, offset, len);
 }
 
 

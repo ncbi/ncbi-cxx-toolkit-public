@@ -528,6 +528,10 @@ public:
             x_Get(cursor, column.GetIndex());
         }
 
+    bool empty(void) const
+        {
+            return !m_ElemCount;
+        }
     size_t size(void) const
         {
             return m_ElemCount;
@@ -567,24 +571,20 @@ public:
 
     explicit CVDBValueFor4Bits(const CVDBValue::SValueIndex& value_index)
         : m_RawData(0),
-          m_RawElemCount(0),
-          m_ElemOffset(0)
+          m_ElemOffset(0),
+          m_ElemCount(0)
         {
             x_Get(value_index.cursor, value_index.row, value_index.column);
         }
     CVDBValueFor4Bits(const CVDBCursor& cursor, uint64_t row,
                       const CVDBColumn& column)
         : m_RawData(0),
-          m_RawElemCount(0),
-          m_ElemOffset(0)
+          m_ElemOffset(0),
+          m_ElemCount(0)
         {
             x_Get(cursor, row, column.GetIndex());
         }
 
-    uint32_t raw_size(void) const
-        {
-            return m_RawElemCount;
-        }
     const char* raw_data(void) const
         {
             return m_RawData;
@@ -593,40 +593,56 @@ public:
         {
             return m_ElemOffset;
         }
-
     uint32_t size(void) const
         {
-            return raw_size()-offset();
+            return m_ElemCount;
+        }
+    bool empty(void) const
+        {
+            return !size();
         }
 
+    TValue Value(size_t index) const
+        {
+            x_CheckIndex(index);
+            return x_ValueByRawIndex(index+offset());
+        }
+    TValue operator[](size_t index) const
+        {
+            return Value(index);
+        }
+
+    CVDBValueFor4Bits substr(size_t pos, size_t len) const;
+
+protected:
+    void x_Get(const VCursor* cursor, uint64_t row, uint32_t column);
     static TValue sub_value(uint8_t v, size_t sub_index)
         {
             return sub_index? (v&0xf): (v>>4);
         }
-    TValue ValueByRawIndex(size_t raw_index) const
+    TValue x_ValueByRawIndex(size_t raw_index) const
         {
-            x_CheckRawIndex(raw_index);
             return sub_value(raw_data()[raw_index/2], raw_index%2);
         }
-    TValue Value(size_t index) const
-        {
-            return ValueByRawIndex(index+offset());
-        }
 
-protected:
-    void x_Get(const VCursor* cursor, uint64_t row, uint32_t column);
-
-    void x_ReportRawIndexOutOfBounds(size_t index) const;
-    void x_CheckRawIndex(size_t raw_index) const
+    void x_ReportIndexOutOfBounds(size_t index) const;
+    void x_CheckIndex(size_t index) const
         {
-            if ( raw_index >= raw_size() ) {
-                x_ReportRawIndexOutOfBounds(raw_index);
+            if ( index >= size() ) {
+                x_ReportIndexOutOfBounds(index);
             }
         }
 
+    CVDBValueFor4Bits(const char* raw_data, uint32_t offset, uint32_t size)
+        : m_RawData(raw_data),
+          m_ElemOffset(offset),
+          m_ElemCount(size)
+        {
+        }
+
     const char* m_RawData;
-    uint32_t m_RawElemCount;
     uint32_t m_ElemOffset;
+    uint32_t m_ElemCount;
 };
 
 
