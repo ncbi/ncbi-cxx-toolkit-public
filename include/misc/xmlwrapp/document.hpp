@@ -714,11 +714,9 @@ public:
      * copy of the original.
      *
      * @param other The other document object to copy from.
-     * @deprecated
      * @author Peter Jones
     **/
     //####################################################################
-    NCBI_DEPRECATED
     document (const document &other);
 
     //####################################################################
@@ -729,11 +727,9 @@ public:
      *
      * @param other The document to copy from.
      * @return *this.
-     * @deprecated
      * @author Peter Jones
     **/
     //####################################################################
-    NCBI_DEPRECATED
     document& operator= (const document &other);
 
 private:
