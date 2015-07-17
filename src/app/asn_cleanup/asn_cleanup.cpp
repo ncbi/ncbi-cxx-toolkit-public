@@ -76,6 +76,7 @@ public:
     int  Run (void);
 
     bool HandleSeqEntry(CRef<CSeq_entry>& se);
+    bool HandleSeqEntry(CSeq_entry_Handle entry);
     bool HandleSeqID( const string& seqID );
     
     bool ObtainSeqEntryFromSeqEntry( 
@@ -92,6 +93,7 @@ private:
     // types
 
     CObjectIStream* x_OpenIStream(const CArgs& args);
+    bool x_ProcessSeqSubmit(auto_ptr<CObjectIStream>& is);
 
     int x_SeqIdToGiNumber( const string& seq_id, const string database );
 
@@ -101,7 +103,9 @@ private:
     bool x_ProcessFeatureOptions(const string& opt, CSeq_entry_Handle seh);
     bool x_ProcessXOptions(const string& opt, CSeq_entry_Handle seh);
     bool x_BasicAndExtended(CSeq_entry_Handle entry, const string& label, bool do_basic = true, bool do_extended = false, Uint4 options = 0);
-    
+
+    template<typename T> void x_WriteToFile(const T& s);
+
     // data
     CRef<CObjectManager>        m_Objmgr;       // Object Manager
     CRef<CFlatFileGenerator>    m_FFGenerator;  // Flat-file generator
@@ -266,6 +270,39 @@ void CCleanupApp::x_XOptionsValid(const string& opt)
     }
 }
 
+// returns false if fails to read object of expected type, throws for all other errors
+bool CCleanupApp::x_ProcessSeqSubmit(auto_ptr<CObjectIStream>& is)
+{
+    CRef<CSeq_submit> sub(new CSeq_submit);
+    if (sub.Empty()) {
+        NCBI_THROW(CFlatException, eInternal,
+            "Could not allocate Seq-submit object");
+    }
+    try {
+        *is >> *sub;
+    }
+    catch (...) {
+        return false;
+    }
+    if (!sub->IsSetSub() || !sub->IsSetData()) {
+        NCBI_THROW(CFlatException, eInternal, "No data in Seq-submit");
+    }
+    else if (!sub->GetData().IsEntrys()) {
+        NCBI_THROW(CFlatException, eInternal, "Wrong data in Seq-submit");
+    }
+    
+    CRef<CScope> scope(new CScope(*m_Objmgr));
+    if (!scope) {
+        NCBI_THROW(CFlatException, eInternal, "Could not create scope");
+    }
+    scope->AddDefaults();
+    NON_CONST_ITERATE(CSeq_submit::TData::TEntrys, it, sub->SetData().SetEntrys()) {
+        HandleSeqEntry(*it);
+    }
+    x_WriteToFile(*sub);
+    return true;
+}
+
 int CCleanupApp::Run(void)
 {
 	// initialize conn library
@@ -315,21 +352,8 @@ int CCleanupApp::Run(void)
         
         string asn_type = args["type"].AsString();
         if (args["sub"] || asn_type == "seq-submit") {  // submission
-            CRef<CSeq_submit> sub(new CSeq_submit);
-            if (sub.Empty()) {
-                NCBI_THROW(CFlatException, eInternal, 
-                    "Could not allocate Seq-submit object");
-            }
-            *is >> *sub;
-            if (sub->IsSetSub()  &&  sub->IsSetData()) {
-                CRef<CScope> scope(new CScope(*m_Objmgr));
-                if ( !scope ) {
-                    NCBI_THROW(CFlatException, eInternal, "Could not create scope");
-                }
-                scope->AddDefaults();
-                CRef<CSeq_entry> se(new CSeq_entry);
-                se.Reset( sub->SetData().SetEntrys().front() );
-                HandleSeqEntry(se);
+            if (!x_ProcessSeqSubmit(is)) {
+                NCBI_THROW(CFlatException, eInternal, "Unable to read Seq-submit");
             }
         } else if ( args["id"] ) {
         
@@ -356,7 +380,7 @@ int CCleanupApp::Run(void)
                         CFlatException, eInternal, "Unable to construct Seq-entry object" );
                 }
                 HandleSeqEntry(se);
-				//m_Objmgr.Reset();
+                x_WriteToFile(*se);
 			}
 			else if ( asn_type == "bioseq" ) {				
 				//
@@ -368,6 +392,7 @@ int CCleanupApp::Run(void)
                         CFlatException, eInternal, "Unable to construct Seq-entry object" );
                 }
                 HandleSeqEntry( se );
+                x_WriteToFile(se->GetSeq());
 			}
 			else if ( asn_type == "bioseq-set" ) {
 				//
@@ -379,34 +404,45 @@ int CCleanupApp::Run(void)
                         CFlatException, eInternal, "Unable to construct Seq-entry object" );
                 }
                 HandleSeqEntry( se );
+                x_WriteToFile(se->GetSet());
 			}
             else if ( asn_type == "any" ) {
                 size_t num_cleaned = 0;
                 while (true) {
+                    CNcbiStreampos start = is->GetStreamPos();
                     //
                     //  Try the first three in turn:
                     //
                     string strNextTypeName = is->PeekNextTypeName();
-                
-                    if ( ! ObtainSeqEntryFromSeqEntry( is, se ) ) {
-                        is->Close();
-                        is.reset( x_OpenIStream( args ) );
-                        if ( ! ObtainSeqEntryFromBioseqSet( is, se ) ) {
-                            is->Close();
-                            is.reset( x_OpenIStream( args ) );
-                            if ( ! ObtainSeqEntryFromBioseq( is, se ) ) {
-                                if (num_cleaned == 0) {
-                                    NCBI_THROW(
-                                        CFlatException, eInternal,
-                                        "Unable to construct Seq-entry object"
-                                        );
-                                } else {
-                                    break;
+                    if (ObtainSeqEntryFromSeqEntry(is, se)) {
+                        HandleSeqEntry(se);
+                        x_WriteToFile(*se);
+                    } else {
+                        is->SetStreamPos(start);
+                        if (ObtainSeqEntryFromBioseqSet(is, se)) {
+                            HandleSeqEntry(se);
+                            x_WriteToFile(se->GetSet());
+                        } else {
+                            is->SetStreamPos(start);
+                            if (ObtainSeqEntryFromBioseq(is, se)) {
+                                HandleSeqEntry(se);
+                                x_WriteToFile(se->GetSeq());
+                            } else {
+                                is->SetStreamPos(start);
+                                if (!x_ProcessSeqSubmit(is)) {
+                                    if (num_cleaned == 0) {
+                                        NCBI_THROW(
+                                            CFlatException, eInternal,
+                                            "Unable to construct Seq-entry object"
+                                            );
+                                    }
+                                    else {
+                                        break;
+                                    }
                                 }
                             }
                         }
                     }
-                    HandleSeqEntry(se);
                     num_cleaned++;
                     if (args["firstonly"]) {
                         break;
@@ -556,63 +592,11 @@ bool CCleanupApp::HandleSeqID( const string& seq_id )
     CRef<CScope> scope(new CScope(*m_Objmgr));
     scope->AddDefaults();
     CBioseq_Handle bsh = scope->GetBioseqHandle( id );
+    CRef<CSeq_entry> entry(new CSeq_entry());
+    entry->Assign(*(bsh.GetSeq_entry_Handle().GetCompleteSeq_entry()));
+    HandleSeqEntry(entry);
+    x_WriteToFile(*entry);
 
-    CArgs args = GetArgs();
-
-	if (args["basic"] || !args["nocleanup"]) {
-        CCleanup cleanup;
-        cleanup.SetScope(scope);
-        
-        Uint4 options = 0;
-        if (args["noobj"]) {
-            options = CCleanup::eClean_NoNcbiUserObjects;
-        }
-		if (args["basic"]) {
-			// perform BasicCleanup
-			try {
-				CConstRef<CCleanupChange> changes = cleanup.BasicCleanup (const_cast<CSeq_entry& >(*(bsh.GetSeq_entry_Handle().GetCompleteSeq_entry())), options);
-				vector<string> changes_str = changes->GetAllDescriptions();
-				if (changes_str.size() == 0) {
-					printf ("No changes from BasicCleanup\n");
-				} else {
-					printf ("Changes from BasicCleanup:\n");
-				    ITERATE(vector<string>, vit, changes_str) {
-					    printf ("%s\n", (*vit).c_str());
-				    }
-				}
-			}
-			catch (CException& e) {
-				LOG_POST(Error << "error in basic cleanup: " << e.GetMsg());
-			}
-		}
-
-		if (!args["nocleanup"]) {
-			// perform ExtendedCleanup
-			try {
-				CConstRef<CCleanupChange> changes = cleanup.ExtendedCleanup (const_cast<CSeq_entry& >(*(bsh.GetSeq_entry_Handle().GetCompleteSeq_entry())), options);
-				vector<string> changes_str = changes->GetAllDescriptions();
-				if (changes_str.size() == 0) {
-				    printf ("No changes from ExtendedCleanup\n");
-				} else {
-					printf ("Changes from ExtendedCleanup:\n");
-				    ITERATE(vector<string>, vit, changes_str) {
-					    printf ("%s\n", (*vit).c_str());
-				    }
-				}
-			}
-			catch (CException& e) {
-				LOG_POST(Error << "error in extended cleanup: " << e.GetMsg());
-			}
-		}
-    }
-    
-    ESerialDataFormat outFormat = eSerial_AsnText;
-    auto_ptr<CObjectOStream> out(!args["o"]? 0:
-                                 CObjectOStream::Open(outFormat, args["o"].AsString(),
-                                                      eSerial_StdWhenAny));
-
-    *out << *(bsh.GetSeq_entry_Handle().GetCompleteSeq_entry());
-    
     return true;
 }
 
@@ -693,44 +677,26 @@ bool CCleanupApp::x_BasicAndExtended(CSeq_entry_Handle entry, const string& labe
 }
 
 
-bool CCleanupApp::HandleSeqEntry(CRef<CSeq_entry>& se)
+bool CCleanupApp::HandleSeqEntry(CSeq_entry_Handle entry)
 {
-    if (!se) {
-        return false;
-    }
+    string label;    
+    entry.GetCompleteSeq_entry()->GetLabel(&label, CSeq_entry::eBoth);
 
-    string label;
-    se->GetLabel(&label, CSeq_entry::eBoth);
-
-    // create new scope
-    CRef<CScope> scope(new CScope(*m_Objmgr));
-    if ( !scope ) {
-        NCBI_THROW(CFlatException, eInternal, "Could not create scope");
-    }
-    scope->AddDefaults();
-
-    // add entry to scope   
-    CSeq_entry_Handle entry = scope->AddTopLevelSeqEntry(*se);
-    if ( !entry ) {
-        NCBI_THROW(CFlatException, eInternal, "Failed to insert entry to scope.");
-    }
-
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     if (args["showprogress"]) {
-        printf ("%s\n", label.c_str());
-    }   
-    
+        printf("%s\n", label.c_str());
+    }
+
     ESerialDataFormat outFormat = eSerial_AsnText;
 
     if (args["debug"]) {
-      auto_ptr<CObjectOStream> debug_out(CObjectOStream::Open(outFormat, "before.sqn",
-                                                      eSerial_StdWhenAny));
+        auto_ptr<CObjectOStream> debug_out(CObjectOStream::Open(outFormat, "before.sqn",
+            eSerial_StdWhenAny));
 
-      *debug_out << *(entry.GetCompleteSeq_entry());
+        *debug_out << *(entry.GetCompleteSeq_entry());
     }
 
-    string file_name = args["o"].AsString();
     bool any_changes = false;
 
     if (args["T"]) {
@@ -738,6 +704,7 @@ bool CCleanupApp::HandleSeqEntry(CRef<CSeq_entry>& se)
     }
 
     if (args["K"] && NStr::Find(args["K"].AsString(), "u")) {
+        CRef<CSeq_entry> se(const_cast<CSeq_entry *>(entry.GetCompleteSeq_entry().GetPointer()));
         any_changes |= CCleanup::RemoveNcbiCleanupObject(*se);
     }
 
@@ -758,7 +725,8 @@ bool CCleanupApp::HandleSeqEntry(CRef<CSeq_entry>& se)
             do_basic = true;
             do_extended = true;
         }
-    } else {
+    }
+    else {
         if (args["basic"]) {
             do_basic = true;
         }
@@ -774,16 +742,45 @@ bool CCleanupApp::HandleSeqEntry(CRef<CSeq_entry>& se)
 
     any_changes |= x_BasicAndExtended(entry, label, do_basic, do_extended, options);
 
-    auto_ptr<CObjectOStream> out(!args["o"]? 0:
-                                 CObjectOStream::Open(outFormat, file_name,
-                                                      eSerial_StdWhenAny));
+    return true;
+}
 
-    *out << *(entry.GetCompleteSeq_entry());
+bool CCleanupApp::HandleSeqEntry(CRef<CSeq_entry>& se)
+{
+    if (!se) {
+        return false;
+    }
+
+    // create new scope
+    CRef<CScope> scope(new CScope(*m_Objmgr));
+    if ( !scope ) {
+        NCBI_THROW(CFlatException, eInternal, "Could not create scope");
+    }
+    scope->AddDefaults();
+
+    // add entry to scope   
+    CSeq_entry_Handle entry = scope->AddTopLevelSeqEntry(*se);
+    if ( !entry ) {
+        NCBI_THROW(CFlatException, eInternal, "Failed to insert entry to scope.");
+    }
+
+    return HandleSeqEntry(entry);
+}
+
+
+template<typename T>void CCleanupApp::x_WriteToFile(const T& obj)
+{
+    const CArgs& args = GetArgs();
+    ESerialDataFormat outFormat = eSerial_AsnText;
+    string file_name = args["o"].AsString();
+
+    auto_ptr<CObjectOStream> out(!args["o"] ? 0 :
+        CObjectOStream::Open(outFormat, file_name,
+        eSerial_StdWhenAny));
+
+    *out << obj;
 
     fflush(NULL);
-
-    printf ("generated asn.1\n");
-    return true;
 }
 
 
