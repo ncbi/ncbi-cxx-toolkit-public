@@ -276,6 +276,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
         } },
     // Mark the given blob version as "valid" and do that only if this version
     // is still current and wasn't rewritten with another version.
+    // For NC blobs - PROLONG is used instead
     { "SETVALID",
         {&CNCMessageHandler::x_DoCmd_SetValid,
             "IC_SETVALID",
@@ -1195,6 +1196,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
     // Command provides a minimum time this blob should be still available for.
     // If blob's expiration time was already later than that this command is
     // a no-op.
+    // For IC blobs - SETVALID is used instead
     { "PROLONG",
         {&CNCMessageHandler::x_DoCmd_Prolong,
             "PROLONG",
@@ -1473,7 +1475,8 @@ static SNSProtoArgument s_AuthArgs[] = {
 inline void
 CNCMessageHandler::x_ResetFlags(void)
 {
-    m_Flags = fNoCmdFlags;
+    TNCCmdFlags keep = m_Flags & fNoReplyOnFinish;
+    m_Flags = fNoCmdFlags | keep;
 }
 
 inline void

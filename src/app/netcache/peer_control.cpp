@@ -236,6 +236,7 @@ CNCPeerControl::RegisterConnSuccess(void)
     {
         CMiniMutexGuard guard(m_ObjLock);
         m_InThrottle = false;
+        m_MaybeThrottle = !m_InitiallySynced;
         m_FirstNWErrTime = 0;
         m_CntNWErrors = 0;
         m_CntNWThrottles = 0;
@@ -277,6 +278,7 @@ CNCPeerControl::CreateNewSocket(CNCActiveHandler* conn)
                 m_CntNWThrottles = 0;
             }
             m_InThrottle = false;
+            m_MaybeThrottle = !m_InitiallySynced;
             if (m_InitiallySynced)
                 m_FirstNWErrTime = 0;
             m_CntNWErrors = 0;
@@ -990,6 +992,9 @@ void CNCPeerControl::AbortInitialSync(void)
 void CNCPeerControl::SetHostProtocol(Uint8 ver)
 {
     m_HostProtocol = ver;
+    if (ver != 0) {
+        m_MaybeThrottle = !m_InitiallySynced;
+    }
 }
 
 bool

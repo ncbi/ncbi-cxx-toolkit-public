@@ -265,7 +265,7 @@ SSyncSlotSrv::SSyncSlotSrv(CNCPeerControl* peer_)
       started_cmds(0),
       next_sync_time(0),
       last_active_time(CSrvTime::Current().Sec()),
-      last_success_time(CSrvTime::Current().Sec()),
+      last_success_time(0),
       cur_sync_id(0),
       cnt_sync_ops(0)
 {}
