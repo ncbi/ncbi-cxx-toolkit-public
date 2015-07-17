@@ -3731,7 +3731,7 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
     }
 
     // look for Ns next to gaps 
-    if (seq.IsNa() && seq.GetLength() > 1) {
+    if (seq.IsNa() && seq.GetLength() > 1 && x_IsDeltaLitOnly(inst)) {
         try {
             TSeqPos pos = 0;
             CSeqVector sv = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
