@@ -5285,7 +5285,7 @@ static string GetRuleText(const CSuspect_rule& rule)
 
 ///////////////////////////////////// SUSPECT_PRODUCT_NAMES
 
-DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData)
+DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eNormal, "Suspect Product Name")
 {
     if (obj.GetSubtype() != CSeqFeatData::eSubtype_prot) {
         return;
@@ -5319,7 +5319,7 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData)
 
 DISCREPANCY_SUMMARIZE(SUSPECT_PRODUCT_NAMES)
 {
-    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), "it works!"));
+    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), GetName()));
     item->SetDetails(m_Objs[kEmptyStr]);
     AddItem(*item);
 
@@ -5342,7 +5342,7 @@ DISCREPANCY_AUTOFIX(SUSPECT_PRODUCT_NAMES)
 ///////////////////////////////////// TEST_ORGANELLE_PRODUCTS
 
 
-DISCREPANCY_CASE(TEST_ORGANELLE_PRODUCTS, CSeqFeatData)
+DISCREPANCY_CASE(TEST_ORGANELLE_PRODUCTS, CSeqFeatData, eNormal, "Organelle products on non-organelle sequence: on when neither bacteria nor virus")
 {
     if (obj.GetSubtype() != CSeqFeatData::eSubtype_prot) {
         return;
@@ -5376,7 +5376,7 @@ cout << "found! " << GetRuleText(**rule) << "\t" << prot_name << "\n";
 
 DISCREPANCY_SUMMARIZE(TEST_ORGANELLE_PRODUCTS)
 {
-    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), "it works!"));
+    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), GetName()));
     item->SetDetails(m_Objs[kEmptyStr]);
     AddItem(*item);
 

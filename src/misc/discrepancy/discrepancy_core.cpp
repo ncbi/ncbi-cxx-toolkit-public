@@ -38,6 +38,8 @@ BEGIN_SCOPE(NDiscrepancy)
 USING_SCOPE(objects);
 
 CSafeStatic<map<string, CDiscrepancyConstructor*> > CDiscrepancyConstructor::sm_Table;
+CSafeStatic<map<string, string> > CDiscrepancyConstructor::sm_DescrTable;
+CSafeStatic<map<string, TGroup> > CDiscrepancyConstructor::sm_GroupTable;
 CSafeStatic<map<string, string> > CDiscrepancyConstructor::sm_AliasTable;
 CSafeStatic<map<string, vector<string> > > CDiscrepancyConstructor::sm_AliasListTable;
 
@@ -69,6 +71,20 @@ const CDiscrepancyConstructor* CDiscrepancyConstructor::GetDiscrepancyConstructo
 string GetDiscrepancyCaseName(const string& name)
 {
     return CDiscrepancyConstructor::GetDiscrepancyCaseName(name);
+}
+
+
+string GetDiscrepancyCaseDescr(const string& name)
+{
+    string str = GetDiscrepancyCaseName(name);
+    return str.empty() ? "" : CDiscrepancyConstructor::GetDescrTable()[str];
+}
+
+
+TGroup GetDiscrepancyCaseGroup(const string& name)
+{
+    string str = GetDiscrepancyCaseName(name);
+    return str.empty() ? 0 : CDiscrepancyConstructor::GetGroupTable()[str];
 }
 
 

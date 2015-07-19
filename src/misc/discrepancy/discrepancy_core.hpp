@@ -46,18 +46,24 @@ class CDiscrepancyConstructor
 {
 protected:
     virtual CRef<CDiscrepancyCase> Create(void) const = 0;
-    static void Register(const string& name, CDiscrepancyConstructor& obj);
+    static void Register(const string& name, const string& descr, TGroup group, CDiscrepancyConstructor& obj);
     static string GetDiscrepancyCaseName(const string& s);
     static const CDiscrepancyConstructor* GetDiscrepancyConstructor(const string& name);
     static map<string, CDiscrepancyConstructor*>& GetTable(void) { return sm_Table.Get();}
-    static map<string, string>& GetAliasTable(void) { return sm_AliasTable.Get();}
-    static map<string, vector<string> >& GetAliasListTable(void) { return sm_AliasListTable.Get();}
+    static map<string, string>& GetDescrTable(void) { return sm_DescrTable.Get(); }
+    static map<string, TGroup>& GetGroupTable(void) { return sm_GroupTable.Get(); }
+    static map<string, string>& GetAliasTable(void) { return sm_AliasTable.Get(); }
+    static map<string, vector<string> >& GetAliasListTable(void) { return sm_AliasListTable.Get(); }
 private:
     static CSafeStatic<map<string, CDiscrepancyConstructor*> > sm_Table;
+    static CSafeStatic<map<string, string> > sm_DescrTable;
+    static CSafeStatic<map<string, TGroup> > sm_GroupTable;
     static CSafeStatic<map<string, string> > sm_AliasTable;
     static CSafeStatic<map<string, vector<string> > > sm_AliasListTable;
 
 friend string GetDiscrepancyCaseName(const string& s);
+friend string GetDiscrepancyCaseDescr(const string& s);
+friend TGroup GetDiscrepancyCaseGroup(const string& s);
 friend vector<string> GetDiscrepancyNames(void);
 friend vector<string> GetDiscrepancyAliases(const string& name);
 friend class CDiscrepancyAlias;
@@ -65,9 +71,11 @@ friend class CDiscrepancyContext;
 };
 
 
-inline void CDiscrepancyConstructor::Register(const string& name, CDiscrepancyConstructor& obj)
+inline void CDiscrepancyConstructor::Register(const string& name, const string& descr, TGroup group, CDiscrepancyConstructor& obj)
 {
     GetTable()[name] = &obj;
+    GetDescrTable()[name] = descr;
+    GetGroupTable()[name] = group;
     GetAliasListTable()[name] = vector<string>();
 }
 
@@ -120,6 +128,7 @@ public:
     string GetTitle(void) const { return m_Title;}
     string GetMsg(void) const { return m_Msg;}
     TReportObjectList GetDetails(void) const { return m_Objs;}
+    TReportItemList GetSubitems(void) const { return m_Subs;}
     void SetDetails(const TReportObjectList& list){ m_Objs = list;}
     void AddDetails(const CRef<CReportObj> obj){ m_Objs.push_back(obj);}
     void AddDetails(const vector<CRef<CReportObj> >& v){ m_Objs.insert(m_Objs.end(), v.begin(), v.end());}
@@ -127,6 +136,7 @@ protected:
     string m_Title;
     string m_Msg;
     TReportObjectList m_Objs;
+    TReportItemList m_Subs;
 };
 
 
@@ -222,7 +232,7 @@ protected:
     void* CDiscrepancyModule_##name::dummy=0;
 
 
-#define DISCREPANCY_CASE(name, type, ...) \
+#define DISCREPANCY_CASE(name, type, group, descr, ...) \
     class CDiscrepancyCase_##name : public CDiscrepancyVisitor<type>                                                \
     {                                                                                                               \
     public:                                                                                                         \
@@ -236,11 +246,13 @@ protected:
     class CDiscrepancyConstructor_##name : public CDiscrepancyConstructor                                           \
     {                                                                                                               \
     public:                                                                                                         \
-        CDiscrepancyConstructor_##name(void){ Register(#name, *this);}                                              \
+        CDiscrepancyConstructor_##name(void){ Register(#name, descr, group, *this);}                                \
     protected:                                                                                                      \
         CRef<CDiscrepancyCase> Create(void) const { return CRef<CDiscrepancyCase>(new CDiscrepancyCase_##name);}    \
     };                                                                                                              \
     static CDiscrepancyConstructor_##name DiscrepancyConstructor_##name;                                            \
+    static const char* descr_for_##name = descr;                                                                    \
+    static TGroup group_for_##name = group;                                                                         \
     void CDiscrepancyCase_##name::Visit(const type& obj, CDiscrepancyContext& context)
 
 
@@ -257,7 +269,7 @@ protected:
     class CDiscrepancyCaseAConstructor_##name : public CDiscrepancyConstructor                                      \
     {                                                                                                               \
     public:                                                                                                         \
-        CDiscrepancyCaseAConstructor_##name(void){ Register(#name, *this);}                                         \
+        CDiscrepancyCaseAConstructor_##name(void){ Register(#name, descr_for_##name, group_for_##name, *this);}     \
     protected:                                                                                                      \
         CRef<CDiscrepancyCase> Create(void) const { return CRef<CDiscrepancyCase>(new CDiscrepancyCaseA_##name);}   \
     };                                                                                                              \

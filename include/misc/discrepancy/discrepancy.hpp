@@ -56,6 +56,7 @@ public:
     virtual string GetTitle(void) const = 0;
     virtual string GetMsg(void) const = 0;
     virtual TReportObjectList GetDetails(void) const = 0;
+    virtual vector<CRef<CReportItem> > GetSubitems(void) const = 0;
 };
 typedef vector<CRef<CReportItem> > TReportItemList;
 
@@ -101,7 +102,19 @@ protected:
 };
 
 
+enum EGroup {
+    eNormal = 1,
+    eMega = 2,
+    eOncaller = 4,
+    eBig = 8,
+    eAll = (eNormal | eMega | eOncaller | eBig)
+};
+typedef unsigned short TGroup;
+
+
 NCBI_DISCREPANCY_EXPORT string GetDiscrepancyCaseName(const string&);
+NCBI_DISCREPANCY_EXPORT string GetDiscrepancyDescr(const string&);
+NCBI_DISCREPANCY_EXPORT TGroup GetDiscrepancyGroup(const string&);
 NCBI_DISCREPANCY_EXPORT vector<string> GetDiscrepancyNames(void);
 NCBI_DISCREPANCY_EXPORT vector<string> GetDiscrepancyAliases(const string&);
 

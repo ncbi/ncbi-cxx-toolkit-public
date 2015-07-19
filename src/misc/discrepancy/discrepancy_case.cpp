@@ -46,7 +46,7 @@ DISCREPANCY_MODULE(discrepancy_case);
 
 // COUNT_NUCLEOTIDES
 
-DISCREPANCY_CASE(COUNT_NUCLEOTIDES, CSeq_inst)
+DISCREPANCY_CASE(COUNT_NUCLEOTIDES, CSeq_inst, eAll, "Count nucleotide sequences")
 {
     CSeq_inst::TMol mol = obj.GetMol();
     if (mol != CSeq_inst::eMol_dna && mol != CSeq_inst::eMol_rna && mol != CSeq_inst::eMol_na) {
@@ -69,7 +69,7 @@ DISCREPANCY_SUMMARIZE(COUNT_NUCLEOTIDES)
 
 // COUNT_PROTEINS
 
-DISCREPANCY_CASE(COUNT_PROTEINS, CSeq_inst)
+DISCREPANCY_CASE(COUNT_PROTEINS, CSeq_inst, eAll, "Count Proteins")
 {
     if (obj.GetMol() != CSeq_inst::eMol_aa) {
         return;
@@ -130,7 +130,7 @@ static const DesiredAAData desired_aaList [] = {
 };
 
 
-DISCREPANCY_CASE(COUNT_TRNAS, CSeqFeatData)
+DISCREPANCY_CASE(COUNT_TRNAS, CSeqFeatData, eNormal, "Count tRNAs")
 {
     if (obj.GetSubtype() != CSeqFeatData::eSubtype_tRNA) {
         return;
@@ -235,7 +235,7 @@ DISCREPANCY_ALIAS(COUNT_TRNAS, FIND_DUP_TRNAS);
 
 // COUNT_RRNAS
 
-DISCREPANCY_CASE(COUNT_RRNAS, CSeqFeatData)
+DISCREPANCY_CASE(COUNT_RRNAS, CSeqFeatData, eNormal, "Count rRNAs")
 {
     if (obj.GetSubtype() != CSeqFeatData::eSubtype_rRNA) {
         return;
@@ -732,6 +732,56 @@ DISCREPANCY_AUTOFIX(CONTAINED_CDS)
     return rval;
 }
 */
+
+
+DISCREPANCY_CASE(DUMMY_NORMAL, CSeq_inst, eNormal, "Dummy entry for the debug purpose")
+{
+}
+
+
+DISCREPANCY_SUMMARIZE(DUMMY_NORMAL)
+{
+    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), GetName()));
+    //item->SetDetails(m_Objs[kEmptyStr]);
+    AddItem(*item);
+}
+
+
+DISCREPANCY_CASE(DUMMY_ONCALLER, CSeq_inst, eOncaller, "Dummy entry for the debug purpose")
+{
+}
+
+
+DISCREPANCY_SUMMARIZE(DUMMY_ONCALLER)
+{
+    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), GetName()));
+    AddItem(*item);
+}
+
+
+DISCREPANCY_CASE(DUMMY_MEGA, CSeq_inst, eMega, "Dummy entry for the debug purpose")
+{
+}
+
+
+DISCREPANCY_SUMMARIZE(DUMMY_MEGA)
+{
+    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), GetName()));
+    AddItem(*item);
+}
+
+
+DISCREPANCY_CASE(DUMMY_ALL, CSeq_inst, eAll, "Dummy entry for the debug purpose")
+{
+}
+
+
+DISCREPANCY_SUMMARIZE(DUMMY_ALL)
+{
+    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), GetName()));
+    AddItem(*item);
+}
+
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
