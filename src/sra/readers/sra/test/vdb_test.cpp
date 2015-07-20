@@ -128,6 +128,9 @@ void CCSRATestApp::Init(void)
                             "RefSeq window",
                             CArgDescriptions::eInteger,
                             "0");
+    arg_desc->AddOptionalKey("refend", "RefSeqEnd",
+                            "RefSeq end position",
+                            CArgDescriptions::eInteger);
     
     arg_desc->AddDefaultKey("limit_count", "LimitCount",
                             "Number of cSRA entries to read (0 - unlimited)",
@@ -784,6 +787,7 @@ int CCSRATestApp::Run(void)
                         out << it.GetAlignmentId() << ": "
                             << it.GetShortId1()<<"."<<it.GetShortId2() << ": "
                             << it.GetRefSeqId() << "@" << it.GetRefSeqPos()
+                            << "+" << it.GetRefSeqLen()
                             << " vs " << it.GetShortSeq_id()->AsFastaString();
                         if ( args["spot_groups"] ) {
                             out << "  GROUP: "<<it.GetSpotGroup();
