@@ -74,14 +74,14 @@ string GetDiscrepancyCaseName(const string& name)
 }
 
 
-string GetDiscrepancyCaseDescr(const string& name)
+string GetDiscrepancyDescr(const string& name)
 {
     string str = GetDiscrepancyCaseName(name);
     return str.empty() ? "" : CDiscrepancyConstructor::GetDescrTable()[str];
 }
 
 
-TGroup GetDiscrepancyCaseGroup(const string& name)
+TGroup GetDiscrepancyGroup(const string& name)
 {
     string str = GetDiscrepancyCaseName(name);
     return str.empty() ? 0 : CDiscrepancyConstructor::GetGroupTable()[str];
