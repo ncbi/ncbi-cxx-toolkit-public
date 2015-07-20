@@ -909,7 +909,7 @@ void CCSRAFileInfo::x_Initialize(CCSRADataLoader_Impl& impl,
                        impl.m_IdMapper.get(),
                        ref_id_type);
     if ( GetDebugLevel() >= 1 ) {
-        LOG_POST_X(9, Info <<
+        LOG_POST_X(8, Info <<
                    "CCSRADataLoader("<<csra<<")="<<m_CSRADb->GetSraIdPart());
     }
     int max_separate_spot_groups = impl.GetSpotGroups();
@@ -1156,7 +1156,8 @@ namespace {
               m_RefPosFirst(0),
               m_RefPosLast(0),
               m_RefPosMax(0),
-              m_RefLenMax(0)
+              m_RefLenMax(0),
+              m_RefLenMaxAll(0)
             {
             }
 
@@ -1166,6 +1167,7 @@ namespace {
         TSeqPos m_RefPosLast;
         TSeqPos m_RefPosMax;
         TSeqPos m_RefLenMax;
+        TSeqPos m_RefLenMaxAll;
 
         void Collect(CCSraDb& csra_db, const CSeq_id_Handle& ref_id,
                      TSeqPos ref_pos, unsigned count, int min_quality);
@@ -1187,16 +1189,19 @@ namespace {
         CCSraAlignIterator ait(csra_db, ref_id, ref_pos);
         for ( ; ait; ++ait ) {
             TSeqPos pos = ait.GetRefSeqPos();
-            if ( pos < ref_pos ) {
-                // the alignment starts before current range
-                continue;
-            }
             if ( min_quality > 0 && ait.GetMapQuality() < min_quality ) {
                 ++skipped;
                 continue;
             }
-            m_RefPosLast = pos;
             TSeqPos len = ait.GetRefSeqLen();
+            if (len > m_RefLenMaxAll) {
+                m_RefLenMaxAll = len;
+            }
+            if (pos < ref_pos) {
+                // the alignment starts before current range
+                continue;
+            }
+            m_RefPosLast = pos;
             if ( len > m_RefLenMax ) {
                 m_RefLenMax = len;
             }
@@ -1284,7 +1289,7 @@ void CCSRARefSeqInfo::x_LoadRangesStat(void)
             return;
         }
         ref_begin = stat[0].m_RefPosFirst;
-        max_len = stat[0].m_RefLenMax;
+        max_len = stat[0].m_RefLenMaxAll;
         stat_len = stat[0].GetStatLen();
         stat_cnt = stat[0].GetStatCount();
     }
@@ -1299,8 +1304,8 @@ void CCSRARefSeqInfo::x_LoadRangesStat(void)
                         kStatCount, m_MinMapQuality);
         stat_len += stat[k].GetStatLen();
         stat_cnt += stat[k].GetStatCount();
-        if ( stat[k].m_RefLenMax > max_len ) {
-            max_len = stat[k].m_RefLenMax;
+        if ( stat[k].m_RefLenMaxAll > max_len ) {
+            max_len = stat[k].m_RefLenMaxAll;
         }
     }
     double density = stat_cnt / stat_len;
@@ -1644,14 +1649,14 @@ struct SBaseStat
 
 struct SBaseStats
 {
-    size_t x_size;
+    TSeqPos x_size;
     vector<SBaseStat> ss;
 
-    size_t size(void) const
+    TSeqPos size(void) const
         {
             return x_size;
         }
-    void resize(size_t len)
+    void resize(TSeqPos len)
         {
             x_size = len;
         }
@@ -1659,28 +1664,32 @@ struct SBaseStats
         {
             return false;
         }
-    unsigned x_get(EBaseStat stat, size_t pos) const
+    unsigned x_get(EBaseStat stat, TSeqPos pos) const
         {
             return ss[pos].cnts[stat];
         }
-    void x_add(EBaseStat stat, size_t pos)
+    void x_add(EBaseStat stat, TSeqPos pos)
         {
             ss.resize(size());
             ss[pos].cnts[stat] += 1;
         }
 
-    void add_stat(EBaseStat stat, size_t pos)
+    void add_stat(EBaseStat stat, TSeqPos pos)
         {
             x_add(stat, pos);
         }
-    void add_stat(EBaseStat stat, size_t pos, size_t count)
+    void add_stat(EBaseStat stat, TSeqPos pos, TSeqPos count)
         {
-            size_t end = min(size(), pos+count);
-            for ( size_t i = pos; i < end; ++i ) {
+            TSeqPos end = pos + count;
+            if ( pos > end ) {
+                pos = 0;
+            }
+            end = min(size(), end);
+            for ( TSeqPos i = pos; i < end; ++i ) {
                 x_add(stat, i);
             }
         }
-    void add_base(char b, size_t pos)
+    void add_base(char b, TSeqPos pos)
         {
             if ( pos < size() ) {
                 EBaseStat stat;
@@ -1695,11 +1704,11 @@ struct SBaseStats
                 add_stat(stat, pos);
             }
         }
-    void add_match(size_t pos, size_t count)
+    void add_match(TSeqPos pos, TSeqPos count)
         {
             add_stat(kStat_Match, pos, count);
         }
-    void add_insert(size_t pos, size_t count)
+    void add_insert(TSeqPos pos, TSeqPos count)
         {
             add_stat(kStat_Insert, pos, count);
         }
@@ -1709,7 +1718,7 @@ struct SBaseStats
             pair<unsigned, unsigned> c_min_max;
             if ( !x_empty(stat) ) {
                 c_min_max.first = c_min_max.second = x_get(stat, 0);
-                for ( size_t i = 1; i < size(); ++i ) {
+                for ( TSeqPos i = 1; i < size(); ++i ) {
                     unsigned c = x_get(stat, i);
                     c_min_max.first = min(c_min_max.first, c);
                     c_min_max.second = max(c_min_max.second, c);
@@ -1721,14 +1730,14 @@ struct SBaseStats
     void get_bytes(EBaseStat stat, CByte_graph::TValues& vv)
         {
             vv.reserve(size());
-            for ( size_t i = 0; i < size(); ++i ) {
+            for ( TSeqPos i = 0; i < size(); ++i ) {
                 vv.push_back(CByte_graph::TValues::value_type(x_get(stat, i)));
             }
         }
     void get_ints(EBaseStat stat, CInt_graph::TValues& vv)
         {
             vv.reserve(size());
-            for ( size_t i = 0; i < size(); ++i ) {
+            for ( TSeqPos i = 0; i < size(); ++i ) {
                 vv.push_back(CInt_graph::TValues::value_type(x_get(stat, i)));
             }
         }
@@ -1953,7 +1962,7 @@ void CCSRARefSeqInfo::LoadAnnotPileupChunk(CTSE_Chunk_Info& chunk_info)
     if ( GetDebugLevel() >= 2 ) {
         LOG_POST_X(10, Info<<"CCSRADataLoader: "
                    "Loaded pileup "<<GetRefSeqId()<<" @ "<<
-                   chunk.GetRefSeqRange()<<": "<<
+                   COpenRange<TSeqPos>(pos, pos+len)<<": "<<
                    count<<" skipped: "<<skipped);
     }
 
@@ -2001,6 +2010,12 @@ void CCSRARefSeqInfo::LoadAnnotPileupChunk(CTSE_Chunk_Info& chunk_info)
                 data.SetAxis(0);
             }
             it->second.first->SetData().SetGraph().push_back(graph);
+        }
+        if ( GetDebugLevel() >= 9 ) {
+            LOG_POST_X(11, Info<<"CCSRADataLoader: "
+                       "Loaded pileup "<<GetRefSeqId()<<" @ "<<
+                       COpenRange<TSeqPos>(pos, pos+len)<<": "<<
+                       MSerial_AsnText<<*it->second.first);
         }
         chunk_info.x_LoadAnnot(place, *it->second.first);
     }
