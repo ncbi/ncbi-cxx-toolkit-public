@@ -290,6 +290,9 @@ CheckForFreqRatioFile(const string& rps_dbname, CRef<blast::CBlastOptionsHandle>
 bool
 IsIStreamEmpty(CNcbiIstream & in);
 
+string
+GetCmdlineArgs(const CNcbiArguments & a);
+
 END_NCBI_SCOPE
 
 #endif /* APP__BLAST_APP_UTIL__HPP */

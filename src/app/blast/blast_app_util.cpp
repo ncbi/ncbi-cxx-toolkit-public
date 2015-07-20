@@ -860,4 +860,14 @@ IsIStreamEmpty(CNcbiIstream & in)
 	return false;
 }
 
+string
+GetCmdlineArgs(const CNcbiArguments & a)
+{
+	string cmd = kEmptyStr;
+	for(unsigned int i=0; i < a.Size(); i++) {
+		cmd += a[i] + " ";
+	}
+	return cmd;
+}
+
 END_NCBI_SCOPE
