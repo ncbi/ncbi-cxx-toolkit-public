@@ -86,6 +86,7 @@ public:
     static bool Initialize(bool do_reinit);
     static void Finalize(void);
 
+    static bool ReConfig(const CNcbiRegistry& new_reg, string& err_message);
     static void WriteSetup(CSrvSocketTask& task);
     static void WriteEnvInfo(CSrvSocketTask& task);
     static void WriteDbInfo(CSrvSocketTask& task, const CTempString& mask);

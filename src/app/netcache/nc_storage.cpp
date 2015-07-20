@@ -262,10 +262,8 @@ s_EnsureDirExist(const string& dir_name)
 /// Read from registry only those parameters that can be changed on the
 /// fly, without re-starting the application.
 static bool
-s_ReadVariableParams(void)
+s_ReadVariableParams(const CNcbiRegistry& reg)
 {
-    const CNcbiRegistry& reg = CTaskServer::GetConfRegistry();
-
     s_GCBatchSize = Uint2(reg.GetInt(kNCStorage_RegSection, kNCStorage_GCBatchParam, 500));
 
     string str = reg.GetString(kNCStorage_RegSection, kNCStorage_FileSizeParam, "100 MB");
@@ -316,7 +314,7 @@ s_ReadVariableParams(void)
 
     int to2 = reg.GetInt(kNCStorage_RegSection, "write_back_timeout", 1000);
     int to1 = reg.GetInt(kNCStorage_RegSection, "write_back_timeout_startup", to2);
-    SetWBWriteTimeout(to1, to2);
+    SetWBWriteTimeout( CNCServer::IsInitiallySynced() ? to2 : to1, to2);
     SetWBFailedWriteDelay(reg.GetInt(kNCStorage_RegSection, "write_back_failed_delay", 2));
 
     int failed_write = reg.GetInt(kNCStorage_RegSection, kNCStorage_FailedWriteSize, 0);
@@ -350,7 +348,7 @@ s_ReadStorageParams(void)
                                           s_Prefix);
     }
     try {
-        return s_ReadVariableParams();
+        return s_ReadVariableParams(reg);
     }
     catch (CStringException& ex) {
         SRV_LOG(Critical, "Bad configuration: " << ex);
@@ -1042,6 +1040,11 @@ CNCBlobStorage::Finalize(void)
     s_IndexDB.reset();
 
     s_UnlockInstanceGuard();
+}
+
+bool CNCBlobStorage::ReConfig(const CNcbiRegistry& new_reg, string& /*err_message*/)
+{
+    return s_ReadVariableParams(new_reg);
 }
 
 void CNCBlobStorage::WriteSetup(CSrvSocketTask& task)

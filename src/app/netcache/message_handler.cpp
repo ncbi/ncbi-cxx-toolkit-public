@@ -3676,7 +3676,9 @@ CNCMessageHandler::x_DoCmd_ReConfig(void)
     bool result = false;
     if (params.find("section") != params.end()) {
         string section(params["section"]);
-        if (section != "mirror") {
+        if (section != "mirror" &&
+            section != "storage") {
+            err_message += ": " + section;
             goto done;
         }
         CNcbiRegistry* new_reg = NULL;
@@ -3685,11 +3687,14 @@ CNCMessageHandler::x_DoCmd_ReConfig(void)
             err_message = "ERR:Failed to load registry";
             goto done;
         }
-        result = CNCDistributionConf::ReConfig(*new_reg, err_message);
-        if (result) {
-            CNCPeriodicSync::ReConfig();
+        if (section == "mirror") {
+            result = CNCDistributionConf::ReConfig(*new_reg, err_message);
+            if (result) {
+                CNCPeriodicSync::ReConfig();
+            }
+        }  else if (section == "storage") {
+            result = CNCBlobStorage::ReConfig(*new_reg, err_message);
         }
-
         delete new_reg;
     }
 done:
