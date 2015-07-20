@@ -1117,6 +1117,24 @@ extern int GetProcessFDCount(int* soft_limit, int* hard_limit)
     int            fd_count = 0;
     struct dirent* dp;
 
+    rlim_t  cur_limit = -1;
+    rlim_t  max_limit = -1;
+
+    struct rlimit rlim;
+    if (getrlimit(RLIMIT_NOFILE, &rlim) == 0) {
+        cur_limit = rlim.rlim_cur;
+        max_limit = rlim.rlim_max;
+    } else {
+        // fallback to sysconf
+        ERR_POST_ONCE(Warning << "getrlimit(RLIMIT_NOFILE, ...) call failed. "
+                                 "Using sysconf(_SC_OPEN_MAX) instead.");
+        long        sysconf_limit = sysconf(_SC_OPEN_MAX);
+        if (sysconf_limit > RLIM_INFINITY)
+            cur_limit = RLIM_INFINITY;
+        else
+            cur_limit = static_cast<rlim_t>(sysconf(_SC_OPEN_MAX));
+    }
+
     DIR* dir = opendir("/proc/self/fd/");
     if (dir) {
         while ((dp = readdir(dir)) != NULL)
@@ -1126,51 +1144,42 @@ extern int GetProcessFDCount(int* soft_limit, int* hard_limit)
         if (fd_count < 0)
             fd_count = -1;
     } else {
-        // Fallback to rlimit analysis
-        struct rlimit rlim;
-        if (getrlimit(RLIMIT_NOFILE, &rlim) == 0) {
-            // Try till max because the soft limit could be lowered after some
-            // FD were opened.
-            for (unsigned int fd = 0;  fd < rlim.rlim_max;  ++fd) {
+        // Fallback to analysis via looping over all fds
+        if (cur_limit > 0) {
+            int     max_fd = static_cast<int>(cur_limit);
+            if (cur_limit > INT_MAX)
+                max_fd = INT_MAX;
+            for (int fd = 0;  fd < max_fd;  ++fd) {
                 if (fcntl(fd, F_GETFD, 0) == -1) {
                     if (errno == EBADF)
                         continue;
                 }
                 ++fd_count;
             }
-            if ( soft_limit )
-                *soft_limit = rlim.rlim_cur;
-            if ( hard_limit )
-                *hard_limit = rlim.rlim_max;
         } else {
             fd_count = -1;
-            if ( soft_limit )
-                *soft_limit = -1;
-            if ( hard_limit )
-                *hard_limit = -1;
         }
-        return fd_count;
     }
 
     if (soft_limit  ||  hard_limit) {
-        struct rlimit rlim;
-        if (getrlimit(RLIMIT_NOFILE, &rlim) == 0) {
-            if ( soft_limit )
-                *soft_limit = rlim.rlim_cur;
-            if ( hard_limit )
-                *hard_limit = rlim.rlim_max;
-        } else {
-            if ( soft_limit )
-                *soft_limit = -1;
-            if ( hard_limit )
-                *hard_limit = -1;
+        if (soft_limit) {
+            if (cur_limit > INT_MAX)
+                *soft_limit = INT_MAX;
+            else
+                *soft_limit = static_cast<int>(cur_limit);
+        }
+        if (hard_limit) {
+            if (max_limit > INT_MAX)
+                *hard_limit = INT_MAX;
+            else
+                *hard_limit = static_cast<int>(max_limit);
         }
     }
     return fd_count;
 #else
-    if ( soft_limit )
+    if (soft_limit)
         *soft_limit = -1;
-    if ( hard_limit )
+    if (hard_limit)
         *hard_limit = -1;
     return -1;
 #endif //NCBI_OS_UNIX
