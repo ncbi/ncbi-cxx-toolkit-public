@@ -62,24 +62,24 @@ const size_t kBlobSize    = kNumSubBlobs * kSubBlobSize;
 //
 
 // Reading from pipe
-static EIO_Status s_ReadPipe(CNamedPipe& pipe, void* buf, size_t size,
-                             size_t* n_read) 
+static EIO_Status s_ReadPipe(CNamedPipe& pipe, void* buf, size_t buf_size,
+                             size_t msg_size, size_t* n_read) 
 {
     size_t     n_read_total = 0;
     size_t     x_read       = 0;
     EIO_Status status;
-    
+
     do {
-        status = pipe.Read((char*)buf + n_read_total,
-                           size - n_read_total, &x_read);
+        status = pipe.Read((char*) buf + n_read_total,
+                           buf_size - n_read_total, &x_read);
         ERR_POST(Info <<
                  "Read from pipe: " + 
-                 NStr::UIntToString((unsigned int)x_read) + " bytes");
+                 NStr::UIntToString((unsigned int) x_read) + " bytes");
         n_read_total += x_read;
-    } while (status == eIO_Success  &&  n_read_total < size);
-    
+    } while (status == eIO_Success  &&  n_read_total < msg_size);
+
     if (status == eIO_Timeout) {
-        status = eIO_Success;
+        status  = eIO_Success;
     }
     *n_read = n_read_total;
     return status;
@@ -93,18 +93,18 @@ static EIO_Status s_WritePipe(CNamedPipe& pipe, const void* buf, size_t size,
     size_t     n_written_total = 0;
     size_t     x_written       = 0;
     EIO_Status status;
-    
+
     do {
-        status = pipe.Write((char*)buf + n_written_total,
+        status = pipe.Write((char*) buf + n_written_total,
                            size - n_written_total, &x_written);
         ERR_POST(Info <<
                  "Write to pipe: " + 
-                 NStr::UIntToString((unsigned int)x_written) + " bytes");
+                 NStr::UIntToString((unsigned int) x_written) + " bytes");
         n_written_total += x_written;
     } while (status == eIO_Success  &&  n_written_total < size);
-    
+
     if (status == eIO_Timeout) {
-        status = eIO_Success;
+        status  = eIO_Success;
     }
     *n_written = n_written_total;
     return status;
@@ -241,7 +241,7 @@ void CTest::Client(int num)
         assert(s_WritePipe(pipe, "Hello", 5, &n_written) == eIO_Success);
         assert(n_written == 5);
 
-        assert(s_ReadPipe(pipe, buf, 2, &n_read) == eIO_Success);
+        assert(s_ReadPipe(pipe, buf, sizeof(buf), 2, &n_read) == eIO_Success);
         assert(n_read == 2);
         assert(::memcmp(buf, "OK", 2) == 0);
     }}
@@ -263,12 +263,12 @@ void CTest::Client(int num)
         ::memset(blob, 0, kBlobSize);
         for (i = 0;  i < kNumSubBlobs; i++) {
             assert(s_ReadPipe(pipe, blob + i*kSubBlobSize, kSubBlobSize,
-                              &n_read) == eIO_Success);
+                              kSubBlobSize, &n_read) == eIO_Success);
             assert(n_read == kSubBlobSize);
         }
         // Check its content
         for (i = 0; i < kBlobSize; i++) {
-            assert(blob[i] == (unsigned char)i);
+            assert(blob[i] == (unsigned char) i);
         }
         ::free(blob);
         ERR_POST(Info << "Blob test is OK...");
@@ -306,7 +306,8 @@ void CTest::Server(void)
 
             // "Hello" test
             {{
-                assert(s_ReadPipe(pipe, buf, 5 , &n_read) == eIO_Success);
+                assert(s_ReadPipe(pipe, buf, sizeof(buf), 5, &n_read)
+                       == eIO_Success);
                 assert(n_read == 5);
                 assert(memcmp(buf, "Hello", 5) == 0);
 
@@ -321,7 +322,7 @@ void CTest::Server(void)
                 unsigned char* blob = (unsigned char*) ::malloc(kBlobSize);
 
                 for (i = 0;  i < kNumSubBlobs; i++) {
-                    assert(s_ReadPipe(pipe, blob + i*kSubBlobSize,
+                    assert(s_ReadPipe(pipe, blob + i*kSubBlobSize,kSubBlobSize,
                                       kSubBlobSize, &n_read) == eIO_Success);
                     assert(n_read == kSubBlobSize);
                 }
