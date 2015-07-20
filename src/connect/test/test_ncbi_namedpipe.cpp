@@ -250,7 +250,7 @@ void CTest::Client(int num)
     {{
         // Send a very big binary blob
         size_t i;
-        unsigned char* blob = (unsigned char*) ::malloc(kBlobSize);
+        unsigned char* blob = (unsigned char*) ::malloc(kBlobSize + 1);
         for (i = 0; i < kBlobSize; i++) {
             blob[i] = (unsigned char) i;
         }
@@ -261,11 +261,8 @@ void CTest::Client(int num)
         }
         // Receive back a very big binary blob
         ::memset(blob, 0, kBlobSize);
-        for (i = 0;  i < kNumSubBlobs; i++) {
-            assert(s_ReadPipe(pipe, blob + i*kSubBlobSize, kSubBlobSize,
-                              kSubBlobSize, &n_read) == eIO_Success);
-            assert(n_read == kSubBlobSize);
-        }
+        assert(s_ReadPipe(pipe, blob, kBlobSize + 1, kBlobSize, &n_read)
+               == eIO_Success);
         // Check its content
         for (i = 0; i < kBlobSize; i++) {
             assert(blob[i] == (unsigned char) i);
@@ -319,13 +316,11 @@ void CTest::Server(void)
             {{
                 // Receive a very big binary blob
                 size_t i;
-                unsigned char* blob = (unsigned char*) ::malloc(kBlobSize);
+                unsigned char* blob = (unsigned char*) ::malloc(kBlobSize + 1);
 
-                for (i = 0;  i < kNumSubBlobs; i++) {
-                    assert(s_ReadPipe(pipe, blob + i*kSubBlobSize,kSubBlobSize,
-                                      kSubBlobSize, &n_read) == eIO_Success);
-                    assert(n_read == kSubBlobSize);
-                }
+                assert(s_ReadPipe(pipe, blob, kBlobSize +1, kBlobSize, &n_read)
+                       == eIO_Success);
+                assert(n_read == kBlobSize);
  
                 // Check its content
                 for (i = 0; i < kBlobSize; i++) {
