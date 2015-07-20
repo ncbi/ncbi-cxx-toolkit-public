@@ -1124,15 +1124,15 @@ extern SConnNetInfo* ConnNetInfo_Clone(const SConnNetInfo* info)
     x_info->http_referer = 0;
 
     if (info->timeout) {
-        x_info->tmo = *info->timeout;
+        x_info->tmo     = *info->timeout;
         x_info->timeout = &x_info->tmo;
     }
-    if (info->http_user_header
+    if (info->http_user_header  &&  *info->http_user_header
         &&  !(x_info->http_user_header = strdup(info->http_user_header))) {
         ConnNetInfo_Destroy(x_info);
         return 0;
     }
-    if (x_info->http_referer
+    if (info->http_referer  &&  *info->http_referer
         &&  !(x_info->http_referer = strdup(info->http_referer))) {
         ConnNetInfo_Destroy(x_info);
         return 0;
