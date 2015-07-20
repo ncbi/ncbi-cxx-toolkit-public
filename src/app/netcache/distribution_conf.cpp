@@ -390,7 +390,7 @@ do_error:
 }
 
 bool
-CNCDistributionConf::ReConfig(CNcbiRegistry& new_reg, string& err_message)
+CNCDistributionConf::ReConfig(const CNcbiRegistry& new_reg, string& err_message)
 // we only add or remove peer servers, nothing else
 {
     if (!InitMirrorConfig(new_reg, err_message)) {

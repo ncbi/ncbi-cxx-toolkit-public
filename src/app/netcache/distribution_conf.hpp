@@ -47,7 +47,7 @@ public:
     // frequently used by other dudes
     static bool Initialize(Uint2 control_port);
     static bool InitMirrorConfig(const CNcbiRegistry& reg, string& err_message);
-    static bool ReConfig(CNcbiRegistry& new_reg, string& err_message);
+    static bool ReConfig(const CNcbiRegistry& new_reg, string& err_message);
     static void Finalize(void);
 
     static void WriteSetup(CSrvSocketTask& task);
