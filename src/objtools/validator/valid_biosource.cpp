@@ -423,6 +423,20 @@ bool CValidError_imp::IsOrganelle (CBioseq_Handle seq)
 }
 
 
+static string x_RepairCountryName (string countryname)
+{
+    if (! NStr::StartsWith (countryname, "USA:")) return countryname;
+
+    if (NStr::CompareNocase (countryname, "USA: Washington DC") == 0 || NStr::CompareNocase (countryname, "USA: Washington, DC") == 0) {
+        countryname = "USA: District of Columbia";
+    } else if (NStr::EndsWith (countryname, ", Puerto Rico")) {
+        countryname = "USA: Puerto Rico";
+    }
+
+    return countryname;
+}
+
+
 void CValidError_imp::ValidateLatLonCountry
 (string countryname,
  string lat_lon,
@@ -430,6 +444,7 @@ void CValidError_imp::ValidateLatLonCountry
  const CSeq_entry *ctx)
 {
     CSubSource::ELatLonCountryErr errcode;
+    countryname = x_RepairCountryName (countryname);
     string error = CSubSource::ValidateLatLonCountry(countryname, lat_lon, IsLatLonCheckState(), errcode);
 
     if (!NStr::IsBlank(error)) {
