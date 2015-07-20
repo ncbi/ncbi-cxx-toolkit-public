@@ -109,6 +109,7 @@ case "$method" in
         rm -f "$build_dir/check.sh.*.out_err" > /dev/null 2>&1
         ;;
     load_to_db )
+        rm -f "$build_dir/test_stat_load.log" > /dev/null 2>&1
         ;;
     * )
         Error "Invalid method name"
