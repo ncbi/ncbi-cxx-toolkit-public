@@ -491,6 +491,128 @@ CMappingRanges::BeginMappingRanges(CSeq_id_Handle id,
 
 /////////////////////////////////////////////////////////////////////
 //
+// CSeq_loc_Mapper_Message
+//
+
+
+CSeq_loc_Mapper_Message::CSeq_loc_Mapper_Message(const string& msg,
+                                                 EDiagSev      sev,
+                                                 int           err_code,
+                                                 int           sub_code)
+    : CMessage_Base(msg, sev, err_code, sub_code),
+      m_ObjType(eNot_set),
+      m_Obj(null)
+{
+}
+
+
+CSeq_loc_Mapper_Message::~CSeq_loc_Mapper_Message(void)
+{
+}
+
+
+CSeq_loc_Mapper_Message* CSeq_loc_Mapper_Message::Clone(void) const
+{
+    return new CSeq_loc_Mapper_Message(*this);
+}
+
+
+void CSeq_loc_Mapper_Message::Write(CNcbiOstream& out) const
+{
+    CMessage_Base::Write(out);
+    switch ( Which() ) {
+    case CSeq_loc_Mapper_Message::eNot_set:
+        cout << "NULL";
+        break;
+    case CSeq_loc_Mapper_Message::eSeq_loc:
+        cout << MSerial_AsnText << *GetLoc();
+        break;
+    case CSeq_loc_Mapper_Message::eSeq_feat:
+        cout << MSerial_AsnText << *GetFeat();
+        break;
+    case CSeq_loc_Mapper_Message::eSeq_align:
+        cout << MSerial_AsnText << *GetAlign();
+        break;
+    case CSeq_loc_Mapper_Message::eSeq_graph:
+        cout << MSerial_AsnText << *GetGraph();
+        break;
+    }
+}
+
+
+void CSeq_loc_Mapper_Message::SetLoc(const CSeq_loc& loc)
+{
+    m_ObjType = eSeq_loc;
+    CRef<CSeq_loc> ref(new CSeq_loc());
+    ref->Assign(loc);
+    m_Obj = ref;
+}
+
+
+const CSeq_loc* CSeq_loc_Mapper_Message::GetLoc(void) const
+{
+    return m_ObjType == eSeq_loc ?
+        dynamic_cast<const CSeq_loc*>(m_Obj.GetPointerOrNull()) : 0;
+}
+
+
+void CSeq_loc_Mapper_Message::SetFeat(const CSeq_feat& feat)
+{
+    m_ObjType = eSeq_feat;
+    CRef<CSeq_feat> ref(new CSeq_feat());
+    ref->Assign(feat);
+    m_Obj = ref;
+}
+
+
+const CSeq_feat* CSeq_loc_Mapper_Message::GetFeat(void) const
+{
+    return m_ObjType == eSeq_feat ?
+        dynamic_cast<const CSeq_feat*>(m_Obj.GetPointerOrNull()) : 0;
+}
+
+
+void CSeq_loc_Mapper_Message::SetAlign(const CSeq_align& align)
+{
+    m_ObjType = eSeq_align;
+    CRef<CSeq_align> ref(new CSeq_align());
+    ref->Assign(align);
+    m_Obj = ref;
+}
+
+
+const CSeq_align* CSeq_loc_Mapper_Message::GetAlign(void) const
+{
+    return m_ObjType == eSeq_align ?
+        dynamic_cast<const CSeq_align*>(m_Obj.GetPointerOrNull()) : 0;
+}
+
+
+void CSeq_loc_Mapper_Message::SetGraph(const CSeq_graph& graph)
+{
+    m_ObjType = eSeq_graph;
+    CRef<CSeq_graph> ref(new CSeq_graph());
+    ref->Assign(graph);
+    m_Obj = ref;
+}
+
+
+const CSeq_graph* CSeq_loc_Mapper_Message::GetGraph(void) const
+{
+    return m_ObjType == eSeq_graph ?
+        dynamic_cast<const CSeq_graph*>(m_Obj.GetPointerOrNull()) : 0;
+}
+
+
+void CSeq_loc_Mapper_Message::ResetObject(void)
+{
+    m_ObjType = eNot_set;
+    m_Obj.Reset();
+}
+
+
+/////////////////////////////////////////////////////////////////////
+//
 // CSeq_loc_Mapper_Base
 //
 
@@ -3914,26 +4036,32 @@ CSeq_loc_Mapper_Base::Map(CSeq_annot& annot, TAnnotMapFlags flags)
             CSeq_annot::C_Data::TFtable& ftable = annot.SetData().SetFtable();
             ERASE_ITERATE(CSeq_annot::C_Data::TFtable, it, ftable) {
                 bool mapped = false;
+                // For error reporting we may need the original feature.
                 CSeq_feat& feat = **it;
                 CRef<CSeq_loc> loc;
                 if (flags & fAnnotMap_Location) {
                     loc = Map(feat.GetLocation());
-                    if ( loc ) {
+                    if ( loc  &&  !loc->IsNull() ) {
                         feat.SetLocation(*loc);
-                        mapped = mapped  ||  !loc->IsNull();
+                        mapped = true;
                     }
                 }
                 if ((flags & fAnnotMap_Product)  &&  feat.IsSetProduct() ) {
                     loc = Map(feat.GetProduct());
-                    if ( loc ) {
+                    if ( loc  &&  !loc->IsNull() ) {
                         feat.SetProduct(*loc);
-                        mapped = mapped  ||  !loc->IsNull();
+                        mapped = true;
                     }
                 }
                 if ( mapped ) {
                     mapped_count++;
                 }
                 else {
+                    if ( IMessageListener::HaveListeners() ) {
+                        CSeq_loc_Mapper_Message msg("Failed to map seq-feat", eDiag_Error);
+                        msg.SetFeat(**it);
+                        IMessageListener::Post(msg);
+                    }
                     non_mapped_count++;
                     if (flags & fAnnotMap_RemoveNonMapping) {
                         ftable.erase(it);
@@ -3956,6 +4084,11 @@ CSeq_loc_Mapper_Base::Map(CSeq_annot& annot, TAnnotMapFlags flags)
                     mapped_count++;
                 }
                 else {
+                    if ( IMessageListener::HaveListeners() ) {
+                        CSeq_loc_Mapper_Message msg("Failed to map seq-align", eDiag_Error);
+                        msg.SetAlign(**it);
+                        IMessageListener::Post(msg);
+                    }
                     non_mapped_count++;
                     if (flags & fAnnotMap_RemoveNonMapping) {
                         aligns.erase(it);
@@ -3978,6 +4111,11 @@ CSeq_loc_Mapper_Base::Map(CSeq_annot& annot, TAnnotMapFlags flags)
                     mapped_count++;
                 }
                 else {
+                    if ( IMessageListener::HaveListeners() ) {
+                        CSeq_loc_Mapper_Message msg("Failed to map seq-graph", eDiag_Error);
+                        msg.SetGraph(**it);
+                        IMessageListener::Post(msg);
+                    }
                     non_mapped_count++;
                     if (flags & fAnnotMap_RemoveNonMapping) {
                         graphs.erase(it);

@@ -35,6 +35,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbi_message.hpp>
 #include <util/range.hpp>
 #include <util/rangemap.hpp>
 #include <objects/seqloc/Na_strand.hpp>
@@ -915,6 +916,65 @@ public:
     /// Any derived class must add at least the original id to the collection.
     virtual void CollectSynonyms(const CSeq_id_Handle& id,
                                  TSynonyms&            synonyms) = 0;
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+///  CSeq_loc_Mapper_Message
+///
+///  Class used to report CSeq_loc_Mapper_Base issues through
+///  IMessageListener.
+class NCBI_SEQ_EXPORT CSeq_loc_Mapper_Message : public CMessage_Base
+{
+public:
+    CSeq_loc_Mapper_Message(const string& msg,
+                            EDiagSev      sev,
+                            int           err_code = 0,
+                            int           sub_code = 0);
+    virtual ~CSeq_loc_Mapper_Message(void);
+
+    virtual CSeq_loc_Mapper_Message* Clone(void) const;
+    virtual void Write(CNcbiOstream& out) const;
+
+    enum EObjectType {
+        eNot_set,
+        eSeq_loc,
+        eSeq_feat,
+        eSeq_align,
+        eSeq_graph
+    };
+
+    /// Check type of the object stored in the message.
+    EObjectType Which(void) const { return m_ObjType; }
+
+    /// Set seq-loc object (copy into the message).
+    void SetLoc(const CSeq_loc& loc);
+    /// Get seq-loc object or null.
+    const CSeq_loc* GetLoc(void) const;
+
+    /// Set seq-feat object (copy into the message).
+    void SetFeat(const CSeq_feat& feat);
+    /// Get seq-feat object or null.
+    const CSeq_feat* GetFeat(void) const;
+
+    /// Set seq-align object (copy into the message).
+    void SetAlign(const CSeq_align& align);
+    /// Get seq-align object or null.
+    const CSeq_align* GetAlign(void) const;
+
+    /// Set seq-graph object (copy into the message).
+    void SetGraph(const CSeq_graph& graph);
+    /// Get seq-graph object or null.
+    const CSeq_graph* GetGraph(void) const;
+
+    /// Set the stored object to null.
+    void ResetObject(void);
+
+private:
+    EObjectType m_ObjType;
+
+    CRef<CObject> m_Obj;
 };
 
 
