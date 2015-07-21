@@ -7,7 +7,7 @@ SRC = blastfmtutil blastxml_format blastxml2_format blast_format data4xmlformat 
 
 CPPFLAGS = -DNCBI_MODULE=BLASTFORMAT $(ORIG_CPPFLAGS)
 
-DLL_LIB = $(BLAST_LIBS) align_format blastxml blastxml2 xhtml xcgi sam
+DLL_LIB = $(BLAST_LIBS) align_format blastxml blastxml2 xhtml xcgi 
 
 WATCHERS = jianye zaretska madden camacho fongah2
 
