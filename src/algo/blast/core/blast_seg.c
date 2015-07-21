@@ -2085,7 +2085,10 @@ s_SegSeq(SSequence* seq, SegParameters* sparamsp, SSeg **segs,
             SSeg *leftsegs = (SSeg*) NULL;
             status = s_SegSeq(leftseq, sparamsp, &leftsegs, offset+lend);
             if (status < 0)
-              return status;
+	    {
+   		sfree(H);
+                return status;
+	    }
 
             /* prepend here, order will be restored in s_SegToSeqLoc */
             if (leftsegs!=NULL)

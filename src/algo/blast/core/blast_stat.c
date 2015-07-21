@@ -4600,6 +4600,7 @@ RPSfindUngappedLambda(const char *matrixName)
         sfree(lambda_array);
         return retval;
     } else {
+        sfree(lambda_array);
         return 0.0;
     }
 }
@@ -5215,7 +5216,7 @@ BLAST_SpougeEtoS(double e0,
                  Blast_GumbelBlk* gbp,
                  Int4 m, Int4 n) 
 {
-    Int4 a, b, c;
+    Int4 a=0, b, c;
     double e;
     double db_scale_factor = (gbp->db_length) ? 
             (double)gbp->db_length : 1.0;

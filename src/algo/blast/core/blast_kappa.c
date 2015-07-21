@@ -1168,7 +1168,7 @@ static int s_FindNumIdentical(Uint1* query_seq,
 
             int query_left_len, query_right_len;
             int subject_left_len, subject_right_len;
-            int align_len_left, align_len_right;
+            int align_len_left=0, align_len_right=0;
             
             match = TRUE;
             num_identical += word_size;

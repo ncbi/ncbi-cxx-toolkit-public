@@ -688,7 +688,10 @@ s_WindowsFromTranslatedAligns(BlastCompo_Alignment * alignments,
                                 sequence_length, 0, align_copy);
         }
         if (windows[k] == NULL)
+	{
+	    BlastCompo_AlignmentsFree(align_copy);
             goto error_return;
+	}
     }
     qsort(windows, hspcnt, sizeof(s_WindowInfo*),
         s_LocationCompareWindows);

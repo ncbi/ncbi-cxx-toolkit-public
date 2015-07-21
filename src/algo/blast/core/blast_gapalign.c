@@ -3771,6 +3771,8 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
              if (rpsblast_pssms) {
                  gap_align->sbp->psi_matrix->pssm->data = rpsblast_pssms;
              }
+   	    sfree(found_high_score);
+   	    tree = Blast_IntervalTreeFree(tree);
             return status;
          }
         
@@ -3795,7 +3797,11 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
                            query_frame, subject->frame, gap_align->score, 
                            &(gap_align->edit_script), &new_hsp);
              if (status)
+	     {
+   		sfree(found_high_score);
+   		tree = Blast_IntervalTreeFree(tree);
                 return status;
+	     }
              status = Blast_HSPListSaveHSP(hsp_list, new_hsp);
              if (status)
                  break;

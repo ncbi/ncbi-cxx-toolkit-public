@@ -1146,7 +1146,10 @@ int Blast_GetPartialTranslation(const Uint1* nucl_seq,
    if (!mixed_seq_ptr) {
        if ((translation_buffer = 
             (Uint1*) malloc(nucl_length/CODON_LENGTH+2)) == NULL)
+	{
+	   sfree(nucl_seq_rev);
            return -1;
+	}
            
        length = 
            BLAST_GetTranslation(nucl_seq, nucl_seq_rev, 
@@ -1162,7 +1165,10 @@ int Blast_GetPartialTranslation(const Uint1* nucl_seq,
        Uint1* seq;
        
        if ((translation_buffer = (Uint1*) malloc(nucl_length+2)) == NULL)
+       {
+	   sfree(nucl_seq_rev);
            return -1;
+       }
 
        for (index = 1; index <= CODON_LENGTH; ++index) {
            length = 
