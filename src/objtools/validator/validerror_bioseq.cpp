@@ -673,8 +673,10 @@ void CValidError_bioseq::ValidateSeqIds
             if (is_eb_db) {
                 sev = eDiag_Warning;
             }
-            PostErr(sev, eErr_SEQ_DESCR_InconsistentWGSFlags,
-                "Mol-info.tech of wgs should have WGS accession", seq);
+            if (! is_eb_db) {
+                PostErr(sev, eErr_SEQ_DESCR_InconsistentWGSFlags,
+                    "Mol-info.tech of wgs should have WGS accession", seq);
+            }
         }
 
           if (is_nc && mi && seq.IsNa()
