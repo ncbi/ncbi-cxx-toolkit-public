@@ -1542,32 +1542,6 @@ void CValidError_feat::ValidateCdregion (
                     "A pseudo coding region should not have a product", feat);
             }
         }
-        bool has_protxref = false;
-        FOR_EACH_SEQFEATXREF_ON_SEQFEAT (it, feat) {
-            if ((*it)->IsSetData() && (*it)->GetData().IsProt()) {
-                has_protxref = true;
-            }
-        }
-        if (has_protxref) {
-            EDiagSev sev = eDiag_Error;
-            // determine warning level based on location of feature
-            if (bsh) {
-                FOR_EACH_SEQID_ON_BIOSEQ (it, *(bsh.GetCompleteBioseq())) {
-                    if ((*it)->IsEmbl()) {
-                        sev = eDiag_Warning;
-                    } else if ((*it)->IsOther()) {
-                        string acc = (*it)->GetOther().GetAccession();
-                        if (NStr::StartsWith(acc, "NT_", NStr::eNocase)
-                            || NStr::StartsWith(acc, "NG_", NStr::eNocase)
-                            || NStr::StartsWith(acc, "NW_", NStr::eNocase)) {
-                            sev = eDiag_Warning;
-                        }
-                    }
-                }
-            }
-            PostErr (sev, eErr_SEQ_FEAT_PseudoCdsHasProtXref,
-                     "A pseudo coding region should not have a protein xref", feat);
-        }
     }
     
     if ( bsh ) {

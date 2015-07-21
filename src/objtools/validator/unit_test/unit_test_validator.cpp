@@ -15002,27 +15002,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_GapFeatureProblem)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_PseudoCdsHasProtXref)
-{
-    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
-    CRef<CSeq_feat> cds = unit_test_util::AddMiscFeature (entry);
-    cds->SetData().SetCdregion();
-    cds->SetPseudo(true);
-    CRef<CSeqFeatXref> x1 (new CSeqFeatXref());
-    x1->SetData().SetProt().SetName().push_back("a name");
-    cds->SetXref().push_back(x1);
-
-    STANDARD_SETUP
-
-    expected_errors.push_back (new CExpectedError("good", eDiag_Error, "PseudoCdsHasProtXref",
-                               "A pseudo coding region should not have a protein xref"));
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    CLEAR_ERRORS
-}
-
-
 static CRef<CSeq_entry> BuildGenProdSetBigNucProtSet (CRef<CSeq_id> nuc_id, CRef<CSeq_id> prot_id)
 {
     CRef<CSeq_entry> np = unit_test_util::BuildGoodNucProtSet();
