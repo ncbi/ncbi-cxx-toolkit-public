@@ -265,15 +265,21 @@ string CVPath::ConvertSysPathToPOSIX(const string& sys_path)
 {
     // Convert Windows path with drive letter
     // C:\Users\Public -> /C/Users/Public
-    string path = CDirEntry::CreateAbsolutePath(sys_path);
-    replace(path.begin(), path.end(), '\\', '/');
-    if ( s_HasWindowsDriveLetter(path) ) {
-        // move drive letter from first symbol to second (in place of ':')
-        path[1] = toupper(path[0]&0xff);
-        // add leading slash
-        path[0] = '/';
+    try {
+        string path = CDirEntry::CreateAbsolutePath(sys_path);
+        replace(path.begin(), path.end(), '\\', '/');
+        if (s_HasWindowsDriveLetter(path)) {
+            // move drive letter from first symbol to second (in place of ':')
+            path[1] = toupper(path[0] & 0xff);
+            // add leading slash
+            path[0] = '/';
+        }
+        return path;
     }
-    return path;
+    catch (exception&) {
+        // CDirEntry::CreateAbsolutePath() can fail on URL for remote access
+        return sys_path;
+    }
 }
 
 
@@ -834,10 +840,11 @@ CVDBValueFor4Bits CVDBValueFor4Bits::substr(size_t pos, size_t len) const
                     RC(rcApp, rcData, rcRetrieving, rcOffset, rcTooBig),
                     pos+len);
     }
-    uint32_t offset = m_ElemOffset + pos;
+    size_t offset = m_ElemOffset + pos;
     const char* raw_data = m_RawData + offset/2;
     offset %= 2;
-    return CVDBValueFor4Bits(raw_data, offset, len);
+    // limits are checked above
+    return CVDBValueFor4Bits(raw_data, uint32_t(offset), uint32_t(len));
 }
 
 
