@@ -1229,17 +1229,6 @@ void SFixture<TPolicy>::ReadTwoAndCompare(const string& ctx,
     CGetInfo<TLocation>(Line(__LINE__), object2, data->Size()).Check(TLoc::loc_info);
 }
 
-template <class TLocation>
-inline void Sleep()
-{
-}
-
-template <>
-inline void Sleep<TLocationFileTrack>()
-{
-    SleepSec(2UL);
-}
-
 template <class TPolicy>
 template <class TLocation>
 string SFixture<TPolicy>::WriteTwoAndRead(CNetStorageObject object1,
@@ -1268,9 +1257,6 @@ string SFixture<TPolicy>::WriteTwoAndRead(CNetStorageObject object1,
 
     attr_tester.Write(TLocation(), Line(__LINE__), object1);
     attr_tester.Write(TLocation(), Line(__LINE__), object2);
-
-    // May wait some time for changes to take effect
-    Sleep<TLocation>();
 
     ReadTwoAndCompare<TLocation>("Reading after writing", object1, object2);
 
@@ -1344,9 +1330,6 @@ void SFixture<TPolicy>::ExistsAndRemoveTests(const TId& id)
     LOG_POST(Trace << "Removing existent object");
     Remove(netstorage, id);
 
-    // May wait some time for changes to take effect
-    Sleep<TLocation>();
-
     Ctx("Checking non-existent object").Line(__LINE__);
     BOOST_CHECK_CTX(!Exists(netstorage, id), ctx);
 
@@ -1358,9 +1341,6 @@ template <class TPolicy>
 void SFixture<TPolicy>::Test(CNetStorage&)
 {
     data.reset(new TExpected(netstorage.Create(TLoc::source)));
-
-    // May wait some time for changes to take effect
-    Sleep<typename TLoc::TSource>();
 
     ReadAndCompare<TLocationNotFound>("Trying to read non-existent object",
         netstorage.Open(TLoc::not_found()));
@@ -1380,9 +1360,6 @@ void SFixture<TPolicy>::Test(CNetStorage&)
         // Relocate the object to a different storage.
         Ctx("Relocating object");
         string relocated_loc = Relocate(netstorage, object_loc, TLoc::relocate);
-
-        // Will wait some time for changes to take effect
-        Sleep<TLocationFileTrack>();
 
         // Verify that the object has disappeared from the original storage.
         ReadAndCompare<TLocationRelocated>("Trying to read relocated object",
@@ -1415,9 +1392,6 @@ void SFixture<TPolicy>::Test(CNetStorageByKey&)
 
     data.reset(new TExpected(netstorage.Open(unique_key1, TLoc::source)));
 
-    // May wait some time for changes to take effect
-    Sleep<typename TLoc::TSource>();
-
     ReadAndCompare<TLocationNotFound>("Trying to read non-existent object",
         netstorage.Open(unique_key2, TLoc::non_existent));
 
@@ -1434,9 +1408,6 @@ void SFixture<TPolicy>::Test(CNetStorageByKey&)
     // it can be read from there.
     Ctx("Relocating object");
     Relocate(netstorage, unique_key2, TLoc::relocate, TLoc::create);
-
-    // Will some time for changes to take effect
-    Sleep<TLocationFileTrack>();
 
     // Verify that the object has disappeared from the original storage.
     ReadAndCompare<TLocationRelocated>("Trying to read relocated object",
