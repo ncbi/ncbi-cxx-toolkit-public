@@ -2013,28 +2013,17 @@ BOOST_AUTO_TEST_CASE(CheckPrivate1)
     params.m_CSRAFiles.push_back(path);
 
     string loader_name;
-    bool isError(false);
+    bool isError = false;
     try {
-
-        NcbiCout << "Trying to create a loader for: " << path << NcbiEndl << NcbiFlush;
-
-        loader_name = CCSRADataLoader::RegisterInObjectManager(*om, params,
-                                                 CObjectManager::eNonDefault, 90)
-        .GetLoader()->GetName();
-    } catch (CException& e) {
-        isError = true;
-        NcbiCout << "!!!! Caught error: " << e.GetMsg() << NcbiEndl;
-    }
-    if(!loader_name.empty()) {
+        NcbiCout << "Trying to create a loader for: " << path << NcbiEndl;
+        loader_name = CCSRADataLoader::RegisterInObjectManager(*om, params)
+            .GetLoader()->GetName();
         NcbiCout << "Loader created successfully" << NcbiEndl;
-
         sx_ReportCSraLoaderName(loader_name);
     }
-    BOOST_CHECK(!isError);
-}
-
-
-NCBITEST_INIT_TREE()
-{
-    NCBITEST_DISABLE(CheckPrivate1);
+    catch (CException& e) {
+        isError = true;
+        ERR_POST("Exception: "<<e);
+    }
+    BOOST_CHECK(isError);
 }
