@@ -139,19 +139,21 @@ class Scenario602( TestBase ):
         ns_client1.set_client_identification( 'node1', 'session1' )
         # Socket to receive notifications
         notifSocket1 = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-        notifSocket1.bind( ( "", 9007 ) )
+        notifSocket1.bind( ( "", 0 ) )
+        notifPort1 = notifSocket1.getsockname()[ 1 ]
 
         # Client2 for a job
         ns_client2 = self.getNetScheduleService( 'TEST', 'scenario602' )
         ns_client2.set_client_identification( 'node2', 'session2' )
         # Socket to receive notifications
         notifSocket2 = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-        notifSocket2.bind( ( "", 9008 ) )
+        notifSocket2.bind( ( "", 0 ) )
+        notifPort2 = notifSocket2.getsockname()[ 1 ]
 
         execAny( ns_client1,
-                 'GET2 wnode_aff=0 any_aff=1 exclusive_new_aff=0 port=9007 timeout=15' )
+                 'GET2 wnode_aff=0 any_aff=1 exclusive_new_aff=0 port=' + str( notifPort1 ) + ' timeout=15' )
         execAny( ns_client2,
-                 'GET2 wnode_aff=0 any_aff=1 exclusive_new_aff=0 port=9008 timeout=15' )
+                 'GET2 wnode_aff=0 any_aff=1 exclusive_new_aff=0 port=' + str( notifPort2 ) + ' timeout=15' )
 
         # Submit a job and wait for notifications
         jobID = self.ns.submitJob( 'TEST', 'bla', 'a0' )        # analysis:ignore
@@ -160,17 +162,24 @@ class Scenario602( TestBase ):
         time.sleep( 0.1 )
         result1 = self.getNotif( notifSocket1, notifSocket2 )
         if result1 == 0:
+            notifSocket1.close()
+            notifSocket2.close()
             raise Exception( "Expected one notification, received nothing" )
 
         time.sleep( 10 )
         result2 = self.getNotif( notifSocket1, notifSocket2 )
         if result2 == 0:
+            notifSocket1.close()
+            notifSocket2.close()
             raise Exception( "Expected another notification, received nothing" )
 
         if result1 + result2 != 3:
+            notifSocket1.close()
+            notifSocket2.close()
             raise Exception( "Expected notifications to both worker nodes, " \
                              "received in the same" )
-
+        notifSocket1.close()
+        notifSocket2.close()
         return True
 
     @staticmethod
@@ -1368,29 +1377,37 @@ class Scenario1201( TestBase ):
         ns_client1.set_client_identification( 'node1', 'session1' )
         # Socket to receive notifications
         notifSocket1 = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-        notifSocket1.bind( ( "", 9007 ) )
+        notifSocket1.bind( ( "", 0 ) )
+        notifPort1 = notifSocket1.getsockname()[ 1 ]
 
         # Client2 for a job
         ns_client2 = self.getNetScheduleService( 'TEST', 'scenario1201' )
         ns_client2.set_client_identification( 'node2', 'session2' )
         # Socket to receive notifications
         notifSocket2 = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-        notifSocket2.bind( ( "", 9008 ) )
+        notifSocket2.bind( ( "", 0 ) )
+        notifPort2 = notifSocket2.getsockname()[ 1 ]
 
         execAny( ns_client1,
-                 'GET2 wnode_aff=0 any_aff=1 exclusive_new_aff=0 port=9007 timeout=15 group=aaa' )
+                 'GET2 wnode_aff=0 any_aff=1 exclusive_new_aff=0 port=' + str( notifPort1 ) + ' timeout=15 group=aaa' )
         execAny( ns_client2,
-                 'GET2 wnode_aff=0 any_aff=1 exclusive_new_aff=0 port=9008 timeout=15 group=bbb' )
+                 'GET2 wnode_aff=0 any_aff=1 exclusive_new_aff=0 port=' + str( notifPort2 ) + ' timeout=15 group=bbb' )
 
         # Submit a job and wait for notifications
         execAny( ns_client1, "SUBMIT blah aff=a0 group=aaa" )
 
         time.sleep( 10 )
         if not self.hasNotification( notifSocket1 ):
+            notifSocket1.close()
+            notifSocket2.close()
             raise Exception( "Expected notification, received nothing" )
 
         if self.hasNotification( notifSocket2 ):
+            notifSocket1.close()
+            notifSocket2.close()
             raise Exception( "Expected no notifications, received one" )
+        notifSocket1.close()
+        notifSocket2.close()
         return True
 
     @staticmethod

@@ -86,18 +86,21 @@ class Scenario401( TestBase ):
 
         # Socket to receive notifications
         notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-        notifSocket.bind( ( "", 9007 ) )
+        notifSocket.bind( ( "", 0 ) )
+        notifPort = notifSocket.getsockname()[ 1 ]
 
         # Second client tries to get the pending job - should get nothing
         output = execAny( ns_client1,
-                          'GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=1 port=9007 timeout=15' )
+                          'GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=1 port=' + str( notifPort ) + ' timeout=15' )
         if output != "":
+            notifSocket.close()
             raise Exception( "Expect no jobs, received: " + output )
 
         # 10 seconds till the job becomes outdated
         time.sleep( 12 )
 
         data = notifSocket.recv( 8192, socket.MSG_DONTWAIT )
+        notifSocket.close()
         if "queue=TEST" not in data:
             raise Exception( "Expected notification, received garbage: " + data )
         return True

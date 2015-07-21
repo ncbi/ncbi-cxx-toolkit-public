@@ -761,10 +761,11 @@ class Scenario1520( TestBase ):
         ns_client.set_client_identification( 'node', 'session' )
 
         notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-        notifSocket.bind( ( "", 9007 ) )
+        notifSocket.bind( ( "", 0 ) )
+        notifPort = notifSocket.getsockname()[ 1 ]
 
         execAny( ns_client,
-                 'READ2 reader_aff=0 any_aff=0 exclusive_new_aff=0 aff=a1 port=9007 timeout=3' )
+                 'READ2 reader_aff=0 any_aff=0 exclusive_new_aff=0 aff=a1 port=' + str( notifPort ) + ' timeout=3' )
 
         # Submit a job
         jobID = self.ns.submitJob( 'TEST', 'input' )
@@ -776,7 +777,9 @@ class Scenario1520( TestBase ):
         time.sleep( 3 )
         result = self.getNotif( notifSocket )
         if result != 0:
+            notifSocket.close()
             raise Exception( "Expect no notifications but received some" )
+        notifSocket.close()
         return True
 
     def getNotif( self, s ):
@@ -811,10 +814,11 @@ class Scenario1521( TestBase ):
         ns_client.set_client_identification( 'node', 'session' )
 
         notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-        notifSocket.bind( ( "", 9007 ) )
+        notifSocket.bind( ( "", 0 ) )
+        notifPort = notifSocket.getsockname()[ 1 ]
 
         execAny( ns_client,
-                 'READ2 reader_aff=0 any_aff=0 exclusive_new_aff=0 aff=a1 port=9007 timeout=5' )
+                 'READ2 reader_aff=0 any_aff=0 exclusive_new_aff=0 aff=a1 port=' + str( notifPort ) + ' timeout=5' )
 
         # Submit a job
         jobID = self.ns.submitJob( 'TEST', 'input', 'a1' )
@@ -825,6 +829,7 @@ class Scenario1521( TestBase ):
 
         time.sleep( 3 )
         result = self.getNotif( notifSocket )
+        notifSocket.close()
         if result == 0:
             raise Exception( "Expected notification(s), received nothing" )
         return True
@@ -861,10 +866,11 @@ class Scenario1522( TestBase ):
         ns_client.set_client_identification( 'node', 'session' )
 
         notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-        notifSocket.bind( ( "", 9007 ) )
+        notifSocket.bind( ( "", 0 ) )
+        notifPort = notifSocket.getsockname()[ 1 ]
 
         execAny( ns_client,
-                 'READ2 reader_aff=0 any_aff=1 exclusive_new_aff=0 aff=a1 port=9007 timeout=3' )
+                 'READ2 reader_aff=0 any_aff=1 exclusive_new_aff=0 aff=a1 port=' + str( notifPort ) + ' timeout=3' )
 
         # Submit a job
         jobID = self.ns.submitJob( 'TEST', 'input', 'a2' )
@@ -875,6 +881,7 @@ class Scenario1522( TestBase ):
 
         time.sleep( 3 )
         result = self.getNotif( notifSocket )
+        notifSocket.close()
         if result == 0:
             raise Exception( "Expected notification(s), received nothing" )
         return True
@@ -913,10 +920,11 @@ class Scenario1523( TestBase ):
         execAny( ns_client, "CHRAFF add=a3" )
 
         notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-        notifSocket.bind( ( "", 9007 ) )
+        notifSocket.bind( ( "", 0 ) )
+        notifPort = notifSocket.getsockname()[ 1 ]
 
         execAny( ns_client,
-                 'READ2 reader_aff=1 any_aff=0 exclusive_new_aff=1 port=9007 timeout=3' )
+                 'READ2 reader_aff=1 any_aff=0 exclusive_new_aff=1 port=' + str( notifPort ) + ' timeout=3' )
 
         # Submit a job
         jobID = self.ns.submitJob( 'TEST', 'input', 'a3' )
@@ -927,6 +935,7 @@ class Scenario1523( TestBase ):
 
         time.sleep( 3 )
         result = self.getNotif( notifSocket )
+        notifSocket.close()
         if result == 0:
             raise Exception( "Expected one notification, received nothing" )
         return True
@@ -965,10 +974,11 @@ class Scenario1524( TestBase ):
         execAny( ns_client, "CHRAFF add=a3" )
 
         notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-        notifSocket.bind( ( "", 9007 ) )
+        notifSocket.bind( ( "", 0 ) )
+        notifPort = notifSocket.getsockname()[ 1 ]
 
         execAny( ns_client,
-                 'READ2 reader_aff=1 any_aff=0 exclusive_new_aff=0 port=9007 timeout=3' )
+                 'READ2 reader_aff=1 any_aff=0 exclusive_new_aff=0 port=' + str( notifPort ) + ' timeout=3' )
 
         # Submit a job
         jobID = self.ns.submitJob( 'TEST', 'input', 'a4' )
@@ -979,6 +989,7 @@ class Scenario1524( TestBase ):
 
         time.sleep( 3 )
         result = self.getNotif( notifSocket )
+        notifSocket.close()
         if result != 0:
             raise Exception( "Received notifications when not expected" )
         return True
@@ -1059,10 +1070,11 @@ class Scenario1527( TestBase ):
         ns_client.set_client_identification( 'node', 'session' )
 
         notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-        notifSocket.bind( ( "", 9007 ) )
+        notifSocket.bind( ( "", 0 ) )
+        notifPort = notifSocket.getsockname()[ 1 ]
 
         execAny( ns_client,
-                 'READ2 reader_aff=0 any_aff=1 exclusive_new_aff=0 port=9007 timeout=3' )
+                 'READ2 reader_aff=0 any_aff=1 exclusive_new_aff=0 port=' + str( notifPort ) + ' timeout=3' )
         execAny( ns_client, 'CWREAD' )
 
         # Submit a job
@@ -1074,6 +1086,7 @@ class Scenario1527( TestBase ):
 
         time.sleep( 3 )
         result = self.getNotif( notifSocket )
+        notifSocket.close()
         if result != 0:
             raise Exception( "Received notifications when not expected" )
         return True
@@ -1503,11 +1516,12 @@ class Scenario1537( TestBase ):
         passport = values[ 'auth_token' ][ 0 ]
 
         notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-        notifSocket.bind( ( "", 9007 ) )
+        notifSocket.bind( ( "", 0 ) )
+        notifPort = notifSocket.getsockname()[ 1 ]
 
         # The first client waits for a job
         execAny( ns_client, "READ2 reader_aff=0 any_aff=0 exclusive_new_aff=0 "
-                            "aff=a0 port=9007 timeout=3" )
+                            "aff=a0 port=" + str( notifPort ) + " timeout=3" )
 
         # Sometimes it takes so long to spawn grid_cli that the next
         # command is sent before GET2 is sent. So, we have a sleep here
@@ -1517,6 +1531,7 @@ class Scenario1537( TestBase ):
         execAny( ns_client2, 'RDRB ' + jobID + ' ' + passport )
 
         result = self.getNotif( notifSocket )
+        notifSocket.close()
         if result != 0:
             raise Exception( "Received notifications when not expected" )
         return True
@@ -1550,7 +1565,8 @@ class Scenario1538( TestBase ):
 
         # Socket to receive notifications
         notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-        notifSocket.bind( ( "", 9007 ) )
+        notifSocket.bind( ( "", 0 ) )
+        notifPort = notifSocket.getsockname()[ 1 ]
 
         receivedJobID = self.ns.getJob( 'TEST' )[ 0 ]
         if jobID != receivedJobID:
@@ -1560,24 +1576,27 @@ class Scenario1538( TestBase ):
         # Second client tries to get the - should get nothing
         output = execAny( ns_client2,
                           'READ2 reader_aff=1 any_aff=0 exclusive_new_aff=1 '
-                          'port=9007 timeout=3' )
+                          'port=' + str( notifPort ) + ' timeout=3' )
         if output != "no_more_jobs=true":
+            notifSocket.close()
             raise Exception( "Expect no jobs, received: " + output )
 
         time.sleep( 4 )
         try:
             # Exception is expected
             data = notifSocket.recv( 8192, socket.MSG_DONTWAIT )
+            notifSocket.close()
             raise Exception( "Expected no notifications, received one: " +
                              data )
         except Exception, exc:
             if "Resource temporarily unavailable" not in str( exc ):
+                notifSocket.close()
                 raise
 
         # Second client tries to get another pending job
         output = execAny( ns_client2,
                           'READ2 reader_aff=1 any_aff=0 exclusive_new_aff=1 '
-                          'port=9007 timeout=3' )
+                          'port=' + str( notifPort ) + ' timeout=3' )
 
         # Should get notifications after this submit
         jobID = self.ns.submitJob( 'TEST', 'bla', 'a5' )    # analysis:ignore
@@ -1588,6 +1607,7 @@ class Scenario1538( TestBase ):
 
         time.sleep( 4 )
         data = notifSocket.recv( 8192, socket.MSG_DONTWAIT )
+        notifSocket.close()
 
         if "queue=TEST" not in data:
             raise Exception( "Expected notification, received garbage: " +
@@ -1638,29 +1658,33 @@ class Scenario1539( TestBase ):
 
         # Socket to receive notifications
         notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-        notifSocket.bind( ( "", 9007 ) )
+        notifSocket.bind( ( "", 0 ) )
+        notifPort = notifSocket.getsockname()[ 1 ]
 
         # Second client tries to get the pending job - should get nothing
         output = execAny( ns_client2,
                           'READ2 reader_aff=1 any_aff=0 exclusive_new_aff=1 '
-                          'port=9007 timeout=3' )
+                          'port=' + str( notifPort ) + ' timeout=3' )
         if output != "no_more_jobs=true":
+            notifSocket.close()
             raise Exception( "Expect no jobs, received: " + output )
 
         time.sleep( 4 )
         try:
             # Exception is expected
             data = notifSocket.recv( 8192, socket.MSG_DONTWAIT )
+            notifSocket.close()
             raise Exception( "Expected no notifications, received one: " +
                              data )
         except Exception, exc:
             if "Resource temporarily unavailable" not in str( exc ):
+                notifSocket.close()
                 raise
 
         # Second client tries to get another job
         output = execAny( ns_client2,
                           'READ2 reader_aff=1 any_aff=0 exclusive_new_aff=1 '
-                          'port=9007 timeout=3' )
+                          'port=' + str( notifPort ) + ' timeout=3' )
 
         # Should get notifications after this clear because
         # the a0 affinity becomes available
@@ -1668,6 +1692,7 @@ class Scenario1539( TestBase ):
 
         time.sleep( 4 )
         data = notifSocket.recv( 8192, socket.MSG_DONTWAIT )
+        notifSocket.close()
 
         if "queue=TEST" not in data:
             raise Exception( "Expected notification, received garbage: " +
@@ -1950,18 +1975,21 @@ class Scenario1545( TestBase ):
 
         # Socket to receive notifications
         notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-        notifSocket.bind( ( "", 9007 ) )
+        notifSocket.bind( ( "", 0 ) )
+        notifPort = notifSocket.getsockname()[ 1 ]
 
         # Second client tries to get the pending job - should get nothing
         output = execAny( ns_client1,
-                          'READ2 reader_aff=1 any_aff=0 exclusive_new_aff=1 port=9007 timeout=15' )
+                          'READ2 reader_aff=1 any_aff=0 exclusive_new_aff=1 port=' + str( notifPort ) + ' timeout=15' )
         if output != "no_more_jobs=true":
+            notifSocket.close()
             raise Exception( "Expect no jobs, received: " + output )
 
         # 10 seconds till the job becomes outdated
         time.sleep( 12 )
 
         data = notifSocket.recv( 8192, socket.MSG_DONTWAIT )
+        notifSocket.close()
         if "queue=TEST" not in data:
             raise Exception( "Expected notification, received garbage: " + data )
         return True
@@ -2174,16 +2202,18 @@ class Scenario1604( TestBase ):
         ns_client.set_client_identification( 'node', 'session' )
 
         notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-        notifSocket.bind( ( "", 9007 ) )
+        notifSocket.bind( ( "", 0 ) )
+        notifPort = notifSocket.getsockname()[ 1 ]
 
         execAny( ns_client,
-                 'GET2 wnode_aff=0 any_aff=0 exclusive_new_aff=0 aff=a1,a2 port=9007 timeout=3 prioritized_aff=1' )
+                 'GET2 wnode_aff=0 any_aff=0 exclusive_new_aff=0 aff=a1,a2 port=' + str( notifPort ) + ' timeout=3 prioritized_aff=1' )
 
         # Submit a job
         self.ns.submitJob( 'TEST', 'input', affinity='a2' )
 
         time.sleep( 3 )
         result = self.getNotif( notifSocket )
+        notifSocket.close()
         if result != 1:
             raise Exception( "Expect notifications but received none" )
         return True
@@ -2347,10 +2377,11 @@ class Scenario1607( TestBase ):
         ns_client.set_client_identification( 'node', 'session' )
 
         notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-        notifSocket.bind( ( "", 9007 ) )
+        notifSocket.bind( ( "", 0 ) )
+        notifPort = notifSocket.getsockname()[ 1 ]
 
         execAny( ns_client,
-                 'READ2 reader_aff=0 any_aff=0 exclusive_new_aff=0 aff=a1,a2 port=9007 timeout=3 prioritized_aff=1' )
+                 'READ2 reader_aff=0 any_aff=0 exclusive_new_aff=0 aff=a1,a2 port=' + str( notifPort ) + ' timeout=3 prioritized_aff=1' )
 
         # Submit a job
         jobID = self.ns.submitJob( 'TEST', 'input', affinity='a2' )
@@ -2358,6 +2389,7 @@ class Scenario1607( TestBase ):
 
         time.sleep( 3 )
         result = self.getNotif( notifSocket )
+        notifSocket.close()
         if result != 1:
             raise Exception( "Expect notifications but received none" )
         return True

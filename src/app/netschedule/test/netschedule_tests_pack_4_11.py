@@ -368,35 +368,40 @@ class Scenario308( TestBase ):
 
         # Socket to receive notifications
         notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-        notifSocket.bind( ( "", 9007 ) )
+        notifSocket.bind( ( "", 0 ) )
+        notifPort = notifSocket.getsockname()[ 1 ]
 
         # Second client tries to get the pending job - should get nothing
         output = execAny( ns_client2,
                           'GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=1 '
-                          'port=9007 timeout=3' )
+                          'port=' + str( notifPort ) + ' timeout=3' )
         if output != "":
+            notifSocket.close()
             raise Exception( "Expect no jobs, received: " + output )
 
         time.sleep( 4 )
         try:
             # Exception is expected
             data = notifSocket.recv( 8192, socket.MSG_DONTWAIT )
+            notifSocket.close()
             raise Exception( "Expected no notifications, received one: " +
                              data )
         except Exception, exc:
             if "Resource temporarily unavailable" not in str( exc ):
+                notifSocket.close()
                 raise
 
         # Second client tries to get another pending job
         output = execAny( ns_client2,
                           'GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=1 '
-                          'port=9007 timeout=3' )
+                          'port=' + str( notifPort ) + ' timeout=3' )
 
         # Should get notifications after this submit
         jobID = self.ns.submitJob( 'TEST', 'bla', 'a5' )    # analysis:ignore
 
         time.sleep( 4 )
         data = notifSocket.recv( 8192, socket.MSG_DONTWAIT )
+        notifSocket.close()
 
         if "queue=TEST" not in data:
             raise Exception( "Expected notification, received garbage: " +
@@ -445,12 +450,13 @@ class Scenario309( TestBase ):
 
         # Socket to receive notifications
         notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-        notifSocket.bind( ( "", 9007 ) )
+        notifSocket.bind( ( "", 0 ) )
+        notifPort = notifSocket.getsockname()[ 1 ]
 
         # Second client tries to get the pending job - should get nothing
         output = execAny( ns_client2,
                           'GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=1 '
-                          'port=9007 timeout=3' )
+                          'port=' + str( notifPort ) + ' timeout=3' )
         if output != "":
             raise Exception( "Expect no jobs, received: " + output )
 
@@ -458,16 +464,18 @@ class Scenario309( TestBase ):
         try:
             # Exception is expected
             data = notifSocket.recv( 8192, socket.MSG_DONTWAIT )
+            notifSocket.close()
             raise Exception( "Expected no notifications, received one: " +
                              data )
         except Exception, exc:
-            if "Resource temporarily unavailable" not in str( exc ):
+            if not "Resource temporarily unavailable" in str( exc ):
+                notifSocket.close()
                 raise
 
         # Second client tries to get another pending job
         output = execAny( ns_client2,
                           'GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=1 '
-                          'port=9007 timeout=3' )
+                          'port=' + str( notifPort ) + ' timeout=3' )
 
         # Should get notifications after this clear because
         # the a0 affinity becomes available
@@ -475,6 +483,7 @@ class Scenario309( TestBase ):
 
         time.sleep( 4 )
         data = notifSocket.recv( 8192, socket.MSG_DONTWAIT )
+        notifSocket.close()
 
         if "queue=TEST" not in data:
             raise Exception( "Expected notification, received garbage: " +

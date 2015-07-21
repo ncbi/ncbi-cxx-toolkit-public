@@ -630,9 +630,10 @@ class Scenario1312( TestBase ):
 
         # Socket to receive notifications
         notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-        notifSocket.bind( ( "", 9007 ) )
+        notifSocket.bind( ( "", 0 ) )
+        notifPort = notifSocket.getsockname()[ 1 ]
 
-        execAny( ns_client, 'READ port=9007 timeout=15' )
+        execAny( ns_client, 'READ port=' + str( notifPort ) + ' timeout=15' )
 
         # Submit a job and move it to Done state
         self.ns.submitJob( 'TEST', 'blah' )
@@ -643,7 +644,9 @@ class Scenario1312( TestBase ):
 
         time.sleep( 10 )
         if not self.hasNotification( notifSocket ):
+            notifSocket.close()
             raise Exception( "Expected notification, received nothing" )
+        notifSocket.close()
         return True
 
 
@@ -681,9 +684,10 @@ class Scenario1313( TestBase ):
 
         # Socket to receive notifications
         notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-        notifSocket.bind( ( "", 9007 ) )
+        notifSocket.bind( ( "", 0 ) )
+        notifPort = notifSocket.getsockname()[ 1 ]
 
-        execAny( ns_client, 'READ port=9007 timeout=15' )
+        execAny( ns_client, 'READ port=' + str( notifPort ) + ' timeout=15' )
 
         # Submit a job and move it to Done state
         self.ns.submitJob( 'TEST', 'blah' )
@@ -695,7 +699,9 @@ class Scenario1313( TestBase ):
 
         time.sleep( 10 )
         if not self.hasNotification( notifSocket ):
+            notifSocket.close()
             raise Exception( "Expected notification, received nothing" )
+        notifSocket.close()
         return True
 
 
@@ -733,9 +739,10 @@ class Scenario1314( TestBase ):
 
         # Socket to receive notifications
         notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-        notifSocket.bind( ( "", 9007 ) )
+        notifSocket.bind( ( "", 0 ) )
+        notifPort = notifSocket.getsockname()[ 1 ]
 
-        execAny( ns_client, 'READ port=9007 timeout=15' )
+        execAny( ns_client, 'READ port=' + str( notifPort ) + ' timeout=15' )
 
         # Submit a job and move it to Done state
         self.ns.submitJob( 'TEST', 'blah' )
@@ -743,7 +750,9 @@ class Scenario1314( TestBase ):
 
         time.sleep( 10 )
         if not self.hasNotification( notifSocket ):
+            notifSocket.close()
             raise Exception( "Expected notification, received nothing" )
+        notifSocket.close()
         return True
 
 
@@ -781,9 +790,10 @@ class Scenario1315( TestBase ):
 
         # Socket to receive notifications
         notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-        notifSocket.bind( ( "", 9007 ) )
+        notifSocket.bind( ( "", 0 ) )
+        notifPort = notifSocket.getsockname()[ 1 ]
 
-        execAny( ns_client, 'READ port=9007 timeout=15 group=group1' )
+        execAny( ns_client, 'READ port=' + str( notifPort ) + ' timeout=15 group=group1' )
 
         # Submit a job and move it to Done state
         self.ns.submitJob( 'TEST', 'blah', '', 'group1' )
@@ -799,6 +809,7 @@ class Scenario1315( TestBase ):
                          'blah-out', 'node', 'session' )
         time.sleep( 3 )
         if self.hasNotification( notifSocket ):
+            notifSocket.close()
             raise Exception( "Expected no notifications, received some" )
 
         time.sleep( 1 )
@@ -806,7 +817,9 @@ class Scenario1315( TestBase ):
                          'blah-out', 'node', 'session' )
         time.sleep( 3 )
         if not self.hasNotification( notifSocket ):
+            notifSocket.close()
             raise Exception( "Expected notification, received nothing" )
+        notifSocket.close()
         return True
 
 class Scenario1316( TestBase ):
@@ -843,9 +856,10 @@ class Scenario1316( TestBase ):
 
         # Socket to receive notifications
         notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-        notifSocket.bind( ( "", 9007 ) )
+        notifSocket.bind( ( "", 0 ) )
+        notifPort = notifSocket.getsockname()[ 1 ]
 
-        execAny( ns_client, 'READ port=9007 timeout=15 group=group1' )
+        execAny( ns_client, 'READ port=' + str( notifPort ) + ' timeout=15 group=group1' )
 
         # Submit a job and move it to Done state
         self.ns.submitJob( 'TEST', 'blah', '', 'group1' )
@@ -856,20 +870,24 @@ class Scenario1316( TestBase ):
         jobID2, authToken2, attrs2, jobInput2 = self.ns.getJob( "TEST", -1, '', '',
                                                                 "node", "session" )
 
+        # run_timeout = 7 secs
         # Fail the non expected group2 job
         self.ns.failJob( 'TEST', jobID2, authToken2, 4,
                          'blah-out', 'blah-err',
                          'node', 'session' )
-        time.sleep( 7 )
+        time.sleep( 2 )
         if self.hasNotification( notifSocket ):
+            notifSocket.close()
             raise Exception( "Expected no notifications, received some" )
 
         self.ns.failJob( 'TEST', jobID1, authToken1, 4,
                          'blah-out', 'blah-err',
                          'node', 'session' )
-        time.sleep( 7 )
+        time.sleep( 2 )
         if not self.hasNotification( notifSocket ):
+            notifSocket.close()
             raise Exception( "Expected notification, received nothing" )
+        notifSocket.close()
         return True
 
 
@@ -907,9 +925,10 @@ class Scenario1317( TestBase ):
 
         # Socket to receive notifications
         notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-        notifSocket.bind( ( "", 9007 ) )
+        notifSocket.bind( ( "", 0 ) )
+        notifPort = notifSocket.getsockname()[ 1 ]
 
-        execAny( ns_client, 'READ port=9007 timeout=15 group=group1' )
+        execAny( ns_client, 'READ port=' + str( notifPort ) + ' timeout=15 group=group1' )
 
         # Submit a job and move it to Done state
         self.ns.submitJob( 'TEST', 'blah', '', 'group1' )
@@ -927,12 +946,15 @@ class Scenario1317( TestBase ):
         execAny( ns_client, "CANCEL group=group2" )
         time.sleep( 3 )
         if self.hasNotification( notifSocket ):
+            notifSocket.close()
             raise Exception( "Expected no notifications, received some" )
 
         execAny( ns_client, "CANCEL group=group1" )
         time.sleep( 3 )
         if not self.hasNotification( notifSocket ):
+            notifSocket.close()
             raise Exception( "Expected notification, received nothing" )
+        notifSocket.close()
         return True
 
 
@@ -971,9 +993,10 @@ class Scenario1318( TestBase ):
 
         # Socket to receive notifications
         notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-        notifSocket.bind( ( "", 9007 ) )
+        notifSocket.bind( ( "", 0 ) )
+        notifPort = notifSocket.getsockname()[ 1 ]
 
-        execAny( ns_client, 'READ port=9007 timeout=15 group=group1' )
+        execAny( ns_client, 'READ port=' + str( notifPort ) + ' timeout=15 group=group1' )
         time.sleep( 1 )
         execAny( ns_client, "CWREAD" )
 
@@ -985,7 +1008,9 @@ class Scenario1318( TestBase ):
 
         time.sleep( 7 )
         if self.hasNotification( notifSocket ):
+            notifSocket.close()
             raise Exception( "Expected no notifications, received some" )
+        notifSocket.close()
         return True
 
 
@@ -1023,9 +1048,10 @@ class Scenario1319( TestBase ):
 
         # Socket to receive notifications
         notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-        notifSocket.bind( ( "", 9007 ) )
+        notifSocket.bind( ( "", 0 ) )
+        notifPort = notifSocket.getsockname()[ 1 ]
 
-        execAny( ns_client, 'READ port=9007 timeout=15 group=group1' )
+        execAny( ns_client, 'READ port=' + str( notifPort ) + ' timeout=15 group=group1' )
         time.sleep( 1 )
         execAny( ns_client, "CWREAD" )
 
@@ -1038,7 +1064,9 @@ class Scenario1319( TestBase ):
 
         time.sleep( 7 )
         if self.hasNotification( notifSocket ):
+            notifSocket.close()
             raise Exception( "Expected no notifications, received some" )
+        notifSocket.close()
         return True
 
 
@@ -1076,9 +1104,10 @@ class Scenario1320( TestBase ):
 
         # Socket to receive notifications
         notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-        notifSocket.bind( ( "", 9007 ) )
+        notifSocket.bind( ( "", 0 ) )
+        notifPort = notifSocket.getsockname()[ 1 ]
 
-        execAny( ns_client, 'READ port=9007 timeout=15 group=group1' )
+        execAny( ns_client, 'READ port=' + str( notifPort ) + ' timeout=15 group=group1' )
         time.sleep( 1 )
         execAny( ns_client, "CWREAD" )
 
@@ -1089,7 +1118,9 @@ class Scenario1320( TestBase ):
 
         time.sleep( 7 )
         if self.hasNotification( notifSocket ):
+            notifSocket.close()
             raise Exception( "Expected no notifications, received some" )
+        notifSocket.close()
         return True
 
 
@@ -1127,9 +1158,10 @@ class Scenario1321( TestBase ):
 
         # Socket to receive notifications
         notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-        notifSocket.bind( ( "", 9007 ) )
+        notifSocket.bind( ( "", 0 ) )
+        notifPort = notifSocket.getsockname()[ 1 ]
 
-        execAny( ns_client, 'READ port=9007 timeout=10 group=group1' )
+        execAny( ns_client, 'READ port=' + str( notifPort ) + ' timeout=10 group=group1' )
         time.sleep( 11 )
 
         self.ns.submitJob( 'TEST', 'blah', '', 'group1' )
@@ -1140,7 +1172,9 @@ class Scenario1321( TestBase ):
 
         time.sleep( 7 )
         if self.hasNotification( notifSocket ):
+            notifSocket.close()
             raise Exception( "Expected no notifications, received some" )
+        notifSocket.close()
         return True
 
 class Scenario1322( TestBase ):
@@ -1177,9 +1211,10 @@ class Scenario1322( TestBase ):
 
         # Socket to receive notifications
         notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-        notifSocket.bind( ( "", 9007 ) )
+        notifSocket.bind( ( "", 0 ) )
+        notifPort = notifSocket.getsockname()[ 1 ]
 
-        execAny( ns_client, 'READ port=9007 timeout=10 group=group1' )
+        execAny( ns_client, 'READ port=' + str( notifPort ) + ' timeout=10 group=group1' )
         time.sleep( 11 )
 
         self.ns.submitJob( 'TEST', 'blah', '', 'group1' )
@@ -1191,7 +1226,9 @@ class Scenario1322( TestBase ):
 
         time.sleep( 7 )
         if self.hasNotification( notifSocket ):
+            notifSocket.close()
             raise Exception( "Expected no notifications, received some" )
+        notifSocket.close()
         return True
 
 
@@ -1229,9 +1266,10 @@ class Scenario1323( TestBase ):
 
         # Socket to receive notifications
         notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-        notifSocket.bind( ( "", 9007 ) )
+        notifSocket.bind( ( "", 0 ) )
+        notifPort = notifSocket.getsockname()[ 1 ]
 
-        execAny( ns_client, 'READ port=9007 timeout=10 group=group1' )
+        execAny( ns_client, 'READ port=' + str( notifPort ) + ' timeout=10 group=group1' )
         time.sleep( 11 )
 
         self.ns.submitJob( 'TEST', 'blah', '', 'group1' )
@@ -1241,7 +1279,9 @@ class Scenario1323( TestBase ):
 
         time.sleep( 7 )
         if self.hasNotification( notifSocket ):
+            notifSocket.close()
             raise Exception( "Expected no notifications, received some" )
+        notifSocket.close()
         return True
 
 

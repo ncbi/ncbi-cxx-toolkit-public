@@ -994,7 +994,7 @@ class Scenario125( TestBase ):
 
         try:
             ns_client = self.getNetScheduleService( 'TEST', 'scenario125' )
-            output = execAny( ns_client,
+            output = execAny( ns_client,                       # analysis:ignore
                               'GET2 wnode_aff=1 any_aff=1' )
         except Exception, exc:
             if "Anonymous client" in str( exc ):
@@ -1033,7 +1033,7 @@ class Scenario126( TestBase ):
             passport = values[ 'auth_token' ][ 0 ]
         else:
             receivedJobID = output.split()[ 0 ].strip()
-            passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()
+            passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()  # analysis:ignore
 
         if jobID != receivedJobID:
             raise Exception( "Received job ID does not match. Expected: " + \
@@ -1057,7 +1057,7 @@ class Scenario127( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        jobID = self.ns.submitJob( 'TEST', 'bla', 'a1' )
+        jobID = self.ns.submitJob( 'TEST', 'bla', 'a1' )    # analysis:ignore
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario126' )
         ns_client.set_client_identification( 'node', 'session' )
@@ -1099,7 +1099,7 @@ class Scenario128( TestBase ):
             passport = values[ 'auth_token' ][ 0 ]
         else:
             receivedJobID = output.split()[ 0 ].strip()
-            passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()
+            passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()  # analysis:ignore
 
         if jobID != receivedJobID:
             raise Exception( "Received job ID does not match. Expected: " + \
@@ -1127,7 +1127,7 @@ class Scenario129( TestBase ):
         ns_client.set_client_identification( 'node', 'session' )
 
         changeAffinity( ns_client, [ 'a0', 'a1', 'a2' ], [] )
-        jobID = self.ns.submitJob( 'TEST', 'bla', 'a5' )
+        jobID = self.ns.submitJob( 'TEST', 'bla', 'a5' )    # analysis:ignore
 
         output = execAny( ns_client,
                           'GET2 wnode_aff=1 any_aff=0' )
@@ -1167,7 +1167,7 @@ class Scenario131( TestBase ):
             passport = values[ 'auth_token' ][ 0 ]
         else:
             receivedJobID = output.split()[ 0 ].strip()
-            passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()
+            passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip() # analysis:ignore
 
         if jobID != receivedJobID:
             raise Exception( "Received job ID does not match. Expected: " + \
@@ -1191,9 +1191,9 @@ class Scenario132( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        jobID1 = self.ns.submitJob( 'TEST', 'bla', 'a0' )
+        jobID1 = self.ns.submitJob( 'TEST', 'bla', 'a0' )   # analysis:ignore
         jobID2 = self.ns.submitJob( 'TEST', 'bla', 'a1' )
-        jobID3 = self.ns.submitJob( 'TEST', 'bla', '' )
+        jobID3 = self.ns.submitJob( 'TEST', 'bla', '' )     # analysis:ignore
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario132' )
         ns_client.set_client_identification( 'node', 'session' )
@@ -1208,7 +1208,7 @@ class Scenario132( TestBase ):
             passport = values[ 'auth_token' ][ 0 ]
         else:
             receivedJobID = output.split()[ 0 ].strip()
-            passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()
+            passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()  # analysis:ignore
 
         if jobID2 != receivedJobID:
             raise Exception( "Received job ID does not match. Expected: " + \
@@ -1232,9 +1232,9 @@ class Scenario133( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        jobID1 = self.ns.submitJob( 'TEST', 'bla', 'a1' )
+        jobID1 = self.ns.submitJob( 'TEST', 'bla', 'a1' )   # analysis:ignore
         jobID2 = self.ns.submitJob( 'TEST', 'bla', 'a2' )
-        jobID3 = self.ns.submitJob( 'TEST', 'bla', '' )
+        jobID3 = self.ns.submitJob( 'TEST', 'bla', '' )     # analysis:ignore
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario133' )
         ns_client.set_client_identification( 'node', 'session' )
@@ -1249,7 +1249,7 @@ class Scenario133( TestBase ):
             passport = values[ 'auth_token' ][ 0 ]
         else:
             receivedJobID = output.split()[ 0 ].strip()
-            passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()
+            passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()  # analysis:ignore
 
         if jobID2 != receivedJobID:
             raise Exception( "Received job ID does not match. Expected: " + \
@@ -1274,8 +1274,8 @@ class Scenario134( TestBase ):
         self.fromScratch()
 
         jobID1 = self.ns.submitJob( 'TEST', 'bla', 'a1' )
-        jobID2 = self.ns.submitJob( 'TEST', 'bla', 'a2' )
-        jobID3 = self.ns.submitJob( 'TEST', 'bla', '' )
+        jobID2 = self.ns.submitJob( 'TEST', 'bla', 'a2' )   # analysis:ignore
+        jobID3 = self.ns.submitJob( 'TEST', 'bla', '' )     # analysis:ignore
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario134' )
         ns_client.set_client_identification( 'node', 'session' )
@@ -1290,7 +1290,7 @@ class Scenario134( TestBase ):
             passport = values[ 'auth_token' ][ 0 ]
         else:
             receivedJobID = output.split()[ 0 ].strip()
-            passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()
+            passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()  # analysis:ignore
 
         if jobID1 != receivedJobID:
             raise Exception( "Received job ID does not match. Expected: " + \
@@ -1314,9 +1314,9 @@ class Scenario135( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        jobID1 = self.ns.submitJob( 'TEST', 'bla', 'a1' )
-        jobID2 = self.ns.submitJob( 'TEST', 'bla', 'a2' )
-        jobID3 = self.ns.submitJob( 'TEST', 'bla', '' )
+        jobID1 = self.ns.submitJob( 'TEST', 'bla', 'a1' )   # analysis:ignore
+        jobID2 = self.ns.submitJob( 'TEST', 'bla', 'a2' )   # analysis:ignore
+        jobID3 = self.ns.submitJob( 'TEST', 'bla', '' )     # analysis:ignore
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario135' )
         ns_client.set_client_identification( 'node', 'session' )
@@ -1347,8 +1347,8 @@ class Scenario136( TestBase ):
         self.fromScratch()
 
         jobID1 = self.ns.submitJob( 'TEST', 'bla', 'a1' )
-        jobID2 = self.ns.submitJob( 'TEST', 'bla', 'a2' )
-        jobID3 = self.ns.submitJob( 'TEST', 'bla', '' )
+        jobID2 = self.ns.submitJob( 'TEST', 'bla', 'a2' )   # analysis:ignore
+        jobID3 = self.ns.submitJob( 'TEST', 'bla', '' )     # analysis:ignore
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario136' )
         ns_client.set_client_identification( 'node', 'session' )
@@ -1363,7 +1363,7 @@ class Scenario136( TestBase ):
             passport = values[ 'auth_token' ][ 0 ]
         else:
             receivedJobID = output.split()[ 0 ].strip()
-            passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()
+            passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()  # analysis:ignore
 
         if jobID1 != receivedJobID:
             raise Exception( "Received job ID does not match. Expected: " + \
@@ -1412,7 +1412,7 @@ class Scenario137( TestBase ):
             passport = values[ 'auth_token' ][ 0 ]
         else:
             receivedJobID = output.split()[ 0 ].strip()
-            passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()
+            passport = output.split( '"' )[ -1 ].strip().split()[ -1 ].strip()  # analysis:ignore
 
         if jobID1 != receivedJobID:
             raise Exception( "Received job ID does not match. Expected: " + \
@@ -3417,16 +3417,18 @@ class Scenario188( TestBase ):
             ns_client.set_client_identification( 'node', 'session' )
 
             notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-            notifSocket.bind( ( "", 9007 ) )
+            notifSocket.bind( ( "", 0 ) )
+            notifPort = notifSocket.getsockname()[ 1 ]
 
             execAny( ns_client,
-                     'GET2 wnode_aff=0 any_aff=1 exclusive_new_aff=0 port=9007 timeout=3' )
+                     'GET2 wnode_aff=0 any_aff=1 exclusive_new_aff=0 port=' + str( notifPort ) + ' timeout=3' )
 
             # Submit a job
             self.ns.submitJob( 'TEST', 'input' )
 
             time.sleep( 3 )
             result = self.getNotif( notifSocket )
+            notifSocket.close()
             if result == 0:
                 raise Exception( "Expected notification(s), received nothing" )
             return True
@@ -3492,16 +3494,18 @@ class Scenario189( TestBase ):
             ns_client.set_client_identification( 'node', 'session' )
 
             notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-            notifSocket.bind( ( "", 9007 ) )
+            notifSocket.bind( ( "", 0 ) )
+            notifPort = notifSocket.getsockname()[ 1 ]
 
             execAny( ns_client,
-                     'GET2 wnode_aff=0 any_aff=0 exclusive_new_aff=0 aff=a1 port=9007 timeout=3' )
+                     'GET2 wnode_aff=0 any_aff=0 exclusive_new_aff=0 aff=a1 port=' + str( notifPort ) +' timeout=3' )
 
             # Submit a job
             self.ns.submitJob( 'TEST', 'input' )
 
             time.sleep( 3 )
             result = self.getNotif( notifSocket )
+            notifSocket.close()
             if result != 0:
                 raise Exception( "Expect no notifications but received some" )
             return True
@@ -3566,16 +3570,18 @@ class Scenario190( TestBase ):
             ns_client.set_client_identification( 'node', 'session' )
 
             notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-            notifSocket.bind( ( "", 9007 ) )
+            notifSocket.bind( ( "", 0 ) )
+            notifPort = notifSocket.getsockname()[ 1 ]
 
             execAny( ns_client,
-                     'GET2 wnode_aff=0 any_aff=0 exclusive_new_aff=0 aff=a1 port=9007 timeout=3' )
+                     'GET2 wnode_aff=0 any_aff=0 exclusive_new_aff=0 aff=a1 port=' + str( notifPort ) + ' timeout=3' )
 
             # Submit a job
             self.ns.submitJob( 'TEST', 'input', 'a1' )
 
             time.sleep( 3 )
             result = self.getNotif( notifSocket )
+            notifSocket.close()
             if result == 0:
                 raise Exception( "Expected notification(s), received nothing" )
             return True
@@ -3640,16 +3646,18 @@ class Scenario191( TestBase ):
             ns_client.set_client_identification( 'node', 'session' )
 
             notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-            notifSocket.bind( ( "", 9007 ) )
+            notifSocket.bind( ( "", 0 ) )
+            notifPort = notifSocket.getsockname()[ 1 ]
 
             execAny( ns_client,
-                     'GET2 wnode_aff=0 any_aff=1 exclusive_new_aff=0 aff=a1 port=9007 timeout=3' )
+                     'GET2 wnode_aff=0 any_aff=1 exclusive_new_aff=0 aff=a1 port=' + str( notifPort ) + ' timeout=3' )
 
             # Submit a job
             self.ns.submitJob( 'TEST', 'input', 'a2' )
 
             time.sleep( 3 )
             result = self.getNotif( notifSocket )
+            notifSocket.close()
             if result == 0:
                 raise Exception( "Expected notification(s), received nothing" )
             return True
@@ -3716,16 +3724,18 @@ class Scenario192( TestBase ):
             changeAffinity( ns_client, ['a3'], [] )
 
             notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-            notifSocket.bind( ( "", 9007 ) )
+            notifSocket.bind( ( "", 0 ) )
+            notifPort = notifSocket.getsockname()[ 1 ]
 
             execAny( ns_client,
-                     'GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=1 port=9007 timeout=3' )
+                     'GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=1 port=' + str( notifPort ) + ' timeout=3' )
 
             # Submit a job
             self.ns.submitJob( 'TEST', 'input', 'a3' )
 
             time.sleep( 3 )
             result = self.getNotif( notifSocket )
+            notifSocket.close()
             if result == 0:
                 raise Exception( "Expected one notification, received nothing" )
             return True
@@ -3798,16 +3808,18 @@ class Scenario193( TestBase ):
             changeAffinity( ns_client, ['a3'], [] )
 
             notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
-            notifSocket.bind( ( "", 9007 ) )
+            notifSocket.bind( ( "", 0 ) )
+            notifPort = notifSocket.getsockname()[ 1 ]
 
             execAny( ns_client,
-                     'GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=0 port=9007 timeout=3' )
+                     'GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=0 port=' + str( notifPort ) + ' timeout=3' )
 
             # Submit a job
             self.ns.submitJob( 'TEST', 'input', 'a4' )
 
             time.sleep( 3 )
             result = self.getNotif( notifSocket )
+            notifSocket.close()
             if result != 0:
                 raise Exception( "Received notifications when not expected" )
             return True
@@ -4013,7 +4025,7 @@ class Scenario203( TestBase ):
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario203' )
         self.ns.getBriefStat( 'TEST' )
-        client = getClientInfo( ns_client, None, 0, 0 )
+        client = getClientInfo( ns_client, None, 0, 0 )     # analysis:ignore
 
         self.ns.getBriefStat( 'TEST', 'mynode', 'mysession' )
         getClientInfo( ns_client, 'mynode', 1, 1 )
@@ -4177,7 +4189,7 @@ class Scenario213( TestBase ):
         self.fromScratch()
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario213' )
-        jobID = self.ns.submitJob( 'TEST', 'bla', affinity = 'myaff',
+        jobID = self.ns.submitJob( 'TEST', 'bla', affinity = 'myaff',   # analysis:ignore
                                    node = 'prep', session = 'session' )
         self.ns.getAffinityStatus( 'TEST', 'myaff' )
 
@@ -4210,7 +4222,7 @@ class Scenario214( TestBase ):
 
         ns_client1 = self.getNetScheduleService( 'TEST', 'scenario214' )
         ns_client1.set_client_identification( 'mynode', 'mysession' )
-        output = execAny( ns_client1, 'GETP' )
+        output = execAny( ns_client1, 'GETP' )      # analysis:ignore
         getClientInfo( ns_client, 'mynode', 1, 1 )
         return True
 
@@ -4237,7 +4249,7 @@ class Scenario215( TestBase ):
 
         ns_client1 = self.getNetScheduleService( 'TEST', 'scenario215' )
         ns_client1.set_client_identification( 'mynode', 'mysession' )
-        output = execAny( ns_client1, 'GETC' )
+        output = execAny( ns_client1, 'GETC' )      # analysis:ignore
         getClientInfo( ns_client, 'mynode', 1, 1 )
         return True
 
@@ -5641,7 +5653,7 @@ class Scenario260( TestBase ):
     def execute( self ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
-        jobID = self.ns.submitJob(  'TEST', 'bla', '', 'gita', '', '' )
+        jobID = self.ns.submitJob(  'TEST', 'bla', '', 'gita', '', '' )     # analysis:ignore
 
         self.ns.connect( 10 )
         self.ns.directLogin( 'TEST' )
@@ -5714,9 +5726,9 @@ class Scenario262( TestBase ):
     def execute( self ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
-        jobID1 = self.ns.submitJob(  'TEST', 'bla', '', '111', '', '' )
-        jobID2 = self.ns.submitJob(  'TEST', 'bla', '', '111', '', '' )
-        jobID3 = self.ns.submitJob(  'TEST', 'bla', '', '111', '', '' )
+        jobID1 = self.ns.submitJob(  'TEST', 'bla', '', '111', '', '' ) # analysis:ignore
+        jobID2 = self.ns.submitJob(  'TEST', 'bla', '', '111', '', '' ) # analysis:ignore
+        jobID3 = self.ns.submitJob(  'TEST', 'bla', '', '111', '', '' ) # analysis:ignore
 
         j1 = self.ns.getJob( 'TEST' )
         self.ns.getJob( 'TEST' )
@@ -5762,7 +5774,7 @@ class Scenario263( TestBase ):
     def execute( self ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
-        jobID = self.ns.submitJob(  'TEST', 'bla', '', '222', '', '' )
+        jobID = self.ns.submitJob(  'TEST', 'bla', '', '222', '', '' )  # analysis:ignore
         self.ns.cancelGroup( 'TEST', '222' )
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario263' )
@@ -5846,8 +5858,8 @@ class Scenario265( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        jobID1 = self.ns.submitJob(  'TEST', 'bla', '', '444', '', '' )
-        jobID2 = self.ns.submitJob(  'TEST', 'bla', '', '555', '', '' )
+        jobID1 = self.ns.submitJob(  'TEST', 'bla', '', '444', '', '' ) # analysis:ignore
+        jobID2 = self.ns.submitJob(  'TEST', 'bla', '', '555', '', '' ) # analysis:ignore
 
         dump = self.ns.getQueueDump( 'TEST', '', '', 0, '555', '', '' )
         if "group: 2 ('555')" in dump:
@@ -5900,10 +5912,10 @@ class Scenario267( TestBase ):
     def execute( self ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
-        jobID1 = self.ns.submitJob(  'TEST', 'bla', 'a1', 'g1', '', '' )
-        jobID2 = self.ns.submitJob(  'TEST', 'bla', 'a1', 'g2', '', '' )
-        jobID3 = self.ns.submitJob(  'TEST', 'bla', 'a2', 'g1', '', '' )
-        jobID4 = self.ns.submitJob(  'TEST', 'bla', 'a2', 'g2', '', '' )
+        jobID1 = self.ns.submitJob(  'TEST', 'bla', 'a1', 'g1', '', '' )    # analysis:ignore
+        jobID2 = self.ns.submitJob(  'TEST', 'bla', 'a1', 'g2', '', '' )    # analysis:ignore
+        jobID3 = self.ns.submitJob(  'TEST', 'bla', 'a2', 'g1', '', '' )    # analysis:ignore
+        jobID4 = self.ns.submitJob(  'TEST', 'bla', 'a2', 'g2', '', '' )    # analysis:ignore
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario267' )
 
