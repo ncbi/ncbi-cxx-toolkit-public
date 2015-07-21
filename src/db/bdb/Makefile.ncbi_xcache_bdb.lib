@@ -8,7 +8,8 @@ SRC = bdb_blobcache
 LIB = ncbi_xcache_bdb
 
 LIB_OR_DLL = both
-DLL_LIB = bdb xthrserv xconnect xutil xncbi
+DLL_LIB = bdb xthrserv xconnect xutil
+# xncbi
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BERKELEYDB_INCLUDE)
 LIBS = $(BERKELEYDB_LIBS) $(ORIG_LIBS)
