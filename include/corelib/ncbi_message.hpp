@@ -50,19 +50,52 @@ BEGIN_NCBI_SCOPE
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// IMessage::
+/// IMessage_Base::
 ///
-/// Generic message interface to be used with IMessageListener to collect and
-/// report error messages and progress.
+/// Common base class for IMessage and IProgressMessage.
 ///
 
-class IMessage
+class IMessage_Base
 {
 public:
-    virtual ~IMessage(void) {}
+    virtual ~IMessage_Base(void) {}
 
     /// Get text message.
     virtual string GetText(void) const = 0;
+
+    /// Print the message and any additional information to the stream.
+    virtual void Write(CNcbiOstream& out) const = 0;
+
+    /// Get the whole composed message as string.
+    /// The default implementations use Write() to compose the string.
+    virtual string Compose(void) const = 0;
+
+    /// Create a copy of the message. The caller is responsible for
+    /// destroying the copy.
+    virtual IMessage_Base* Clone(void) const = 0;
+};
+
+
+inline
+ostream& operator<<(CNcbiOstream& out, const IMessage_Base& msg)
+{
+    msg.Write(out);
+    return out;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
+/// IMessage::
+///
+/// Generic message interface to be used with IMessageListener to collect and
+/// report error messages.
+///
+
+class IMessage : public IMessage_Base
+{
+public:
+    virtual ~IMessage(void) {}
 
     /// Get message severity.
     virtual EDiagSev GetSeverity(void) const = 0;
@@ -73,25 +106,32 @@ public:
     /// Get error subcode. Zero = not set.
     virtual int GetSubCode(void) const = 0;
 
-    /// Create a copy of the message. The caller is responsible for
-    /// destroying the copy.
     virtual IMessage* Clone(void) const = 0;
-
-    /// Print the message and any additional information to the stream.
-    virtual void Write(CNcbiOstream& out) const = 0;
-
-    /// Get the whole composed message as string.
-    /// The default implementation uses Write() to compose the string.
-    virtual string Compose(void) const = 0;
 };
 
 
-inline
-ostream& operator<<(CNcbiOstream& out, const IMessage& msg)
+/////////////////////////////////////////////////////////////////////////////
+///
+/// IProgressMessage::
+///
+/// Generic progress status interface to be used with IMessageListener.
+/// Unlike IMessage, typical IProgressMessage is intended for immediate
+/// display rather than collecting and reporting later.
+///
+
+class IProgressMessage : public IMessage_Base
 {
-    msg.Write(out);
-    return out;
-}
+public:
+    virtual ~IProgressMessage(void) {}
+
+    /// Get current progress value (e.g. % or bytes written).
+    virtual Uint8 GetCurrent(void) const = 0;
+
+    /// Get total progress value (e.g. 100% or file size).
+    virtual Uint8 GetTotal(void) const = 0;
+
+    virtual IProgressMessage* Clone(void) const = 0;
+};
 
 
 /// Default IMessage implementation: text and severity only.
@@ -118,6 +158,27 @@ private:
     int      m_SubCode;
 };
 
+
+/// Default IProgressMessage implementation.
+class NCBI_XNCBI_EXPORT CProgressMessage_Base : public IProgressMessage
+{
+public:
+    CProgressMessage_Base(const string& txt,
+                          Uint8         current,
+                          Uint8         total);
+
+    virtual string GetText(void) const;
+    virtual Uint8 GetCurrent(void) const;
+    virtual Uint8 GetTotal(void) const;
+    virtual CProgressMessage_Base* Clone(void) const;
+    virtual void Write(CNcbiOstream& out) const;
+    virtual string Compose(void) const;
+
+private:
+    string   m_Text;
+    Uint8    m_Current;
+    Uint8    m_Total;
+};
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -151,9 +212,7 @@ public:
     ///   Current progress value.
     /// @param total
     ///   Max progress value.
-    virtual EPostResult PostProgress(const string& message,
-                                     Uint8         current,
-                                     Uint8         total) = 0;
+    virtual EPostResult PostProgress(const IProgressMessage& progress) = 0;
 
     /// Get a previously collected message.
     /// @param index
@@ -220,9 +279,7 @@ public:
     ///   eHandled if at least one listener has handled the event,
     ///   eUnhandled otherwise.
     /// @sa PostProgress()
-    static EPostResult Post(const string& message,
-                            Uint8         current,
-                            Uint8         total);
+    static EPostResult Post(const IProgressMessage& progress);
 };
 
 
@@ -232,9 +289,7 @@ class NCBI_XNCBI_EXPORT CMessageListener_Base : public IMessageListener
 {
 public:
     virtual EPostResult PostMessage(const IMessage& message);
-    virtual EPostResult PostProgress(const string& message,
-                                     Uint8         current,
-                                     Uint8         total);
+    virtual EPostResult PostProgress(const IProgressMessage& progress);
     virtual const IMessage& GetMessage(size_t index) const;
     virtual size_t Count(void) const;
     virtual void Clear(void);
@@ -248,5 +303,7 @@ private:
 /* @} */
 
 END_NCBI_SCOPE
+
+#include <corelib/impl/listener_stack.hpp>
 
 #endif  /* CORELIB___NCBI_MESSAGE__HPP */

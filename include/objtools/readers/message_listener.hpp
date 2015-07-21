@@ -101,10 +101,8 @@ public:
     virtual EPostResult PostMessage(const IMessage& message)
     { Post(message); return eHandled; }
     
-    virtual EPostResult PostProgress(const string& message,
-                              Uint8         current,
-                              Uint8         total)
-    { Progress(message, current, total); return eHandled; }
+    virtual EPostResult PostProgress(const IProgressMessage& p)
+    { Progress(p.GetText(), p.GetCurrent(), p.GetTotal()); return eHandled; }
 
     virtual const IMessage& GetMessage(size_t index) const
     { return Get(index); }

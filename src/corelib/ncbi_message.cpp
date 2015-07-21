@@ -41,56 +41,24 @@
 BEGIN_NCBI_SCOPE
 
 
-struct SListenerNode {
-public:
-    SListenerNode(IMessageListener& listener,
-                  IMessageListener::EListenFlag flag)
-                  : m_Listener(&listener), m_Flag(flag) {}
-
-    CRef<IMessageListener> m_Listener;
-    IMessageListener::EListenFlag m_Flag;
-};
-
-
-typedef list<SListenerNode> TListenerStack;
-
-void s_ListenerStackCleanup(TListenerStack* value,
-                          void* /*cleanup_data*/)
+CMessageListener_Stack::CMessageListener_Stack(void)
 {
-    if ( !value ) return;
-    delete value;
 }
 
 
-static CStaticTls<TListenerStack> s_Listeners;
-
-
-TListenerStack& s_GetListenerStack(void)
+size_t CMessageListener_Stack::PushListener(IMessageListener& listener,
+    IMessageListener::EListenFlag flag)
 {
-    TListenerStack* ls = s_Listeners.GetValue();
-    if ( !ls ) {
-        ls = new TListenerStack;
-        s_Listeners.SetValue(ls, s_ListenerStackCleanup);
-    }
-    _ASSERT(ls);
-    return *ls;
-}
-
-size_t IMessageListener::PushListener(IMessageListener& listener,
-                                      EListenFlag flag)
-{
-    TListenerStack& ls = s_GetListenerStack();
-    ls.push_front(SListenerNode(listener, flag));
-    return ls.size();
+    m_Stack.push_front(SListenerNode(listener, flag));
+    return m_Stack.size();
 }
 
 
-void IMessageListener::PopListener(size_t depth)
+void CMessageListener_Stack::PopListener(size_t depth)
 {
-    TListenerStack& ls = s_GetListenerStack();
-    size_t sz = ls.size();
+    size_t sz = m_Stack.size();
     if (depth == 0) depth = sz;
-    if (ls.empty()  ||  sz < depth) {
+    if (m_Stack.empty()  ||  sz < depth) {
         // Nothing to pop.
         ERR_POST_X_ONCE(1, Warning <<
             "Unbalanced PushListener/PopListener calls: "
@@ -103,47 +71,102 @@ void IMessageListener::PopListener(size_t depth)
             "Unbalanced PushListener/PopListener calls: "
             "removing " << sz - depth << " lost listeners");
     }
-    while (ls.size() >= depth) {
-        ls.pop_front();
+    while (m_Stack.size() >= depth) {
+        m_Stack.pop_front();
     }
+}
+
+
+bool CMessageListener_Stack::HaveListeners(void)
+{
+    return !m_Stack.empty();
+}
+
+
+IMessageListener::EPostResult
+CMessageListener_Stack::Post(const IMessage& message)
+{
+    IMessageListener::EPostResult ret = IMessageListener::eUnhandled;
+    NON_CONST_ITERATE(TListenerStack, it, m_Stack) {
+        if (ret == IMessageListener::eHandled  &&
+            it->m_Flag == IMessageListener::eListen_Unhandled) continue;
+        if (it->m_Listener->PostMessage(message) == IMessageListener::eHandled) {
+            ret = IMessageListener::eHandled;
+        }
+    }
+    return ret;
+}
+
+
+IMessageListener::EPostResult
+CMessageListener_Stack::Post(const IProgressMessage& progress)
+{
+    IMessageListener::EPostResult ret = IMessageListener::eUnhandled;
+    NON_CONST_ITERATE(TListenerStack, it, m_Stack) {
+        if (ret == IMessageListener::eHandled  &&
+            it->m_Flag == IMessageListener::eListen_Unhandled) continue;
+        if (it->m_Listener->PostProgress(progress) == IMessageListener::eHandled) {
+            ret = IMessageListener::eHandled;
+        }
+    }
+    return ret;
+}
+
+
+void s_ListenerStackCleanup(CMessageListener_Stack* value,
+                          void* /*cleanup_data*/)
+{
+    if ( !value ) return;
+    delete value;
+}
+
+
+static CStaticTls<CMessageListener_Stack> s_Listeners;
+
+
+CMessageListener_Stack& s_GetListenerStack(void)
+{
+    CMessageListener_Stack* ls = s_Listeners.GetValue();
+    if ( !ls ) {
+        ls = new CMessageListener_Stack;
+        s_Listeners.SetValue(ls, s_ListenerStackCleanup);
+    }
+    _ASSERT(ls);
+    return *ls;
+}
+
+size_t IMessageListener::PushListener(IMessageListener& listener,
+                                      EListenFlag flag)
+{
+    CMessageListener_Stack& ls = s_GetListenerStack();
+    return ls.PushListener(listener, flag);
+}
+
+
+void IMessageListener::PopListener(size_t depth)
+{
+    CMessageListener_Stack& ls = s_GetListenerStack();
+    return ls.PopListener(depth);
 }
 
 
 bool IMessageListener::HaveListeners(void)
 {
-    return !s_GetListenerStack().empty();
+    return s_GetListenerStack().HaveListeners();
 }
 
 
 IMessageListener::EPostResult
 IMessageListener::Post(const IMessage& message)
 {
-    EPostResult ret = eUnhandled;
-    TListenerStack ls = s_GetListenerStack();
-    NON_CONST_ITERATE(TListenerStack, it, ls) {
-        if (ret == eHandled  &&  it->m_Flag == eListen_Unhandled) continue;
-        if (it->m_Listener->PostMessage(message) == eHandled) {
-            ret = eHandled;
-        }
-    }
-    return ret;
+    return s_GetListenerStack().Post(message);
 }
 
 
 IMessageListener::EPostResult
-IMessageListener::Post(const string& message,
-                       Uint8         current,
-                       Uint8         total)
+IMessageListener::Post(const IProgressMessage& progress)
 {
-    EPostResult ret = eUnhandled;
-    TListenerStack ls = s_GetListenerStack();
-    NON_CONST_ITERATE(TListenerStack, it, ls) {
-        if (ret == eHandled  &&  it->m_Flag == eListen_Unhandled) continue;
-        if (it->m_Listener->PostProgress(message, current, total) == eHandled) {
-            ret = eHandled;
-        }
-    }
-    return ret;
+    return s_GetListenerStack().Post(progress);
 }
 
 
@@ -203,6 +226,54 @@ string CMessage_Base::Compose(void) const
 }
 
 
+CProgressMessage_Base::CProgressMessage_Base(const string& txt,
+                                             Uint8         current,
+                                             Uint8         total)
+    : m_Text(txt),
+      m_Current(current),
+      m_Total(total)
+{
+}
+
+
+string CProgressMessage_Base::GetText(void) const
+{
+    return m_Text;
+}
+
+
+Uint8 CProgressMessage_Base::GetCurrent(void) const
+{
+    return m_Current;
+}
+
+
+Uint8 CProgressMessage_Base::GetTotal(void) const
+{
+    return m_Total;
+}
+
+
+CProgressMessage_Base* CProgressMessage_Base::Clone(void) const
+{
+    return new CProgressMessage_Base(*this);
+}
+
+
+void CProgressMessage_Base::Write(CNcbiOstream& out) const
+{
+    out << GetText() << " [" << m_Current << "/" << m_Total << "]" << endl;
+}
+
+
+string CProgressMessage_Base::Compose(void) const
+{
+    CNcbiOstrstream out;
+    Write(out);
+    return CNcbiOstrstreamToString(out);
+}
+
+
 IMessageListener::EPostResult
 CMessageListener_Base::PostMessage(const IMessage& message)
 {
@@ -212,11 +283,9 @@ CMessageListener_Base::PostMessage(const IMessage& message)
 
 
 IMessageListener::EPostResult
-CMessageListener_Base::PostProgress(const string& message,
-                                    Uint8         current,
-                                    Uint8         total)
+CMessageListener_Base::PostProgress(const IProgressMessage& progress)
 {
-    ERR_POST(Note << message << " [" << current << "/" << total << "]");
+    ERR_POST(Note << progress);
     return eHandled;
 }
 
