@@ -4777,18 +4777,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_Inconsistent)
 
     // look for correct accession if WGS tech present
     scope.RemoveTopLevelSeqEntry(seh);
-    entry = unit_test_util::BuildGoodSeq();
-    entry->SetSeq().SetId().front()->SetGenbank().SetAccession("AY123456");
-    SetTech(entry, CMolInfo::eTech_wgs);
-    seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors.push_back(new CExpectedError("AY123456", eDiag_Error, "InconsistentWGSFlags",
-                              "Mol-info.tech of wgs should have WGS accession"));
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    scope.RemoveTopLevelSeqEntry(seh);
     entry->SetSeq().SetId().front()->SetEmbl().SetAccession("AY123456");
-    expected_errors[0]->SetSeverity(eDiag_Warning);
     seh = scope.AddTopLevelSeqEntry(*entry);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -4796,6 +4785,16 @@ BOOST_AUTO_TEST_CASE(Test_Descr_Inconsistent)
     scope.RemoveTopLevelSeqEntry(seh);
     entry->SetSeq().SetId().front()->SetDdbj().SetAccession("AY123456");
     seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry = unit_test_util::BuildGoodSeq();
+    entry->SetSeq().SetId().front()->SetGenbank().SetAccession("AY123456");
+    SetTech(entry, CMolInfo::eTech_wgs);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("AY123456", eDiag_Error, "InconsistentWGSFlags",
+                              "Mol-info.tech of wgs should have WGS accession"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
