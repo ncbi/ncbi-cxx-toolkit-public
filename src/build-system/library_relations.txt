@@ -345,6 +345,7 @@ gene_info needs xncbi
 gene_info_writer needs gene_info
 gene_info_writer needs seqdb
 genemark_proc needs bacterial_pipeline_proc
+genemark_proc needs genomic_repeat_region
 general needs xser
 generic_db_asn needs xser
 generic_db_core needs $(CONNEXT)
