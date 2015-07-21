@@ -1735,9 +1735,11 @@ bool CValidError_imp::x_CheckSeqInt
     // check for Point represented by Interval
     if (int_cur->IsSetFrom() && int_cur->IsSetTo()
         && int_cur->GetFrom() == int_cur->GetTo()) {
+        /*
         PostErr(eDiag_Warning,
                 eErr_SEQ_FEAT_SeqLocTypeProblem,
                 "Seq-loc.int has identical from and to values, should be Seq-loc.pt", obj);
+        */
     }
 
     // check for invalid fuzz on both ends of Interval
