@@ -205,5 +205,35 @@ const string kArgProduceHtml("html");
 const bool kDfltArgProduceHtml = false;
 const size_t kDfltLineLength = 60;
 
+const size_t kNumSAMOutputFormatSpecifiers = 3;
+const SSAMFormatSpec sc_SAMFormatSpecifiers[kNumSAMOutputFormatSpecifiers] = {
+	 SSAMFormatSpec("SR",
+	                "Subject as Reference Seq",
+	                eSAM_SubjAsRefSeq),
+    SSAMFormatSpec("QR",
+                   "Query as Reference Seq",
+                   eSAM_QueryAsRefSeq),
+    SSAMFormatSpec("FA",
+                   "Use NCBI FASTA-ID Format",
+                   eSAM_NCBIFastaID)
+
+};
+
+string DescribeSAMOutputFormatSpecifiers(bool is_vdb)
+{
+    ostringstream os;
+    size_t i = is_vdb ? 0:1;
+    for (; i < kNumSAMOutputFormatSpecifiers; i++) {
+    	if(is_vdb && i == 1)
+    		continue;
+        os << "\t" << setw(10) << sc_SAMFormatSpecifiers[i].name << " means ";
+        os << sc_SAMFormatSpecifiers[i].description << "\n";
+    }
+    if(is_vdb)
+    	os << "When not provided, the default value is: R";
+
+    return os.str();
+}
+
 END_SCOPE(align_format)
 END_NCBI_SCOPE

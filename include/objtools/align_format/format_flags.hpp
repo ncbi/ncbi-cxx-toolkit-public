@@ -153,6 +153,37 @@ NCBI_ALIGN_FORMAT_EXPORT extern const size_t kNumTabularOutputFormatSpecifiers;
 /// Returns a string documenting the available format specifiers
 NCBI_ALIGN_FORMAT_EXPORT string DescribeTabularOutputFormatSpecifiers(bool is_igblast=false);
 
+enum ESAMField {
+    eSAM_QueryAsRefSeq = 0,  ///< Query as reference seq
+    eSAM_SubjAsRefSeq,  ///< Query as reference seq
+    eSAM_NCBIFastaID         ///< Use NCBI FASTA ID
+
+};
+
+struct SSAMFormatSpec {
+    /// Format specification name
+    string name;
+    /// A description of what the above name represents
+    string description;
+    /// Enumeration that corresponds to this field
+    ESAMField field;
+
+    /// Constructor
+    /// @param n format specification name [in]
+    /// @param d format specification description [in]
+    /// @param f enumeration value [in]
+    SSAMFormatSpec(string n, string d, ESAMField f)
+        : name(n), description(d), field(f) {}
+};
+
+/// Array containing the supported output formats for SAM output.
+NCBI_ALIGN_FORMAT_EXPORT extern const SSAMFormatSpec sc_SAMFormatSpecifiers[];
+/// Number of elements in the sc_SAMFormatSpecifiers array.
+NCBI_ALIGN_FORMAT_EXPORT extern const size_t kNumSAMOutputFormatSpecifiers;
+
+/// Returns a string documenting the available format specifiers
+NCBI_ALIGN_FORMAT_EXPORT string DescribeSAMOutputFormatSpecifiers(bool is_vdb=false);
+
 END_SCOPE(align_format)
 END_NCBI_SCOPE
 
