@@ -440,7 +440,7 @@ s_WithDistinctEnds(BlastCompo_Alignment **p_newAlign,
                      align->matchEnd == newAlign->matchEnd))) {
                 /* The alignment shares an end with newAlign; */
                 /* delete it. */
-                BlastCompo_AlignmentsFree(&align, free_align_context);
+                Blign_contextlastCompo_AlignmentsFree(&align, free_align_context);
             } else { /* The alignment does not share an end with newAlign; */
                 /* add it to the output list. */
                 *tail =  align;
@@ -689,7 +689,7 @@ s_WindowsFromTranslatedAligns(BlastCompo_Alignment * alignments,
         }
         if (windows[k] == NULL)
 	{
-	    BlastCompo_AlignmentsFree(align_copy);
+	    BlastCompo_AlignmentsFree(&align_copy, NULL);
             goto error_return;
 	}
     }
