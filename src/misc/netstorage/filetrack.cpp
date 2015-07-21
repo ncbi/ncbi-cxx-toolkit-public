@@ -611,7 +611,7 @@ string SFileTrackAPI::MakeMutipartFormDataHeader(const string& boundary)
 const STimeout SFileTrackAPI::GetTimeout()
 {
     STimeout result;
-    result.sec = 5;
+    result.sec = 30;
     result.usec = 0;
     return result;
 }
