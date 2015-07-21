@@ -440,7 +440,7 @@ s_WithDistinctEnds(BlastCompo_Alignment **p_newAlign,
                      align->matchEnd == newAlign->matchEnd))) {
                 /* The alignment shares an end with newAlign; */
                 /* delete it. */
-                Blign_contextlastCompo_AlignmentsFree(&align, free_align_context);
+                BlastCompo_AlignmentsFree(&align, free_align_context);
             } else { /* The alignment does not share an end with newAlign; */
                 /* add it to the output list. */
                 *tail =  align;
