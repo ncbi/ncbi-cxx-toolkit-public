@@ -3,11 +3,11 @@
 ASN_DEP = blastdb blastxml blastxml2 xnetblast
 
 LIB = xblastformat
-SRC = blastfmtutil blastxml_format blastxml2_format blast_format data4xmlformat data4xml2format build_archive vecscreen_run
+SRC = blastfmtutil blastxml_format blastxml2_format blast_format data4xmlformat data4xml2format build_archive vecscreen_run sam
 
 CPPFLAGS = -DNCBI_MODULE=BLASTFORMAT $(ORIG_CPPFLAGS)
 
-DLL_LIB = $(BLAST_LIBS) align_format blastxml blastxml2 xhtml xcgi
+DLL_LIB = $(BLAST_LIBS) align_format blastxml blastxml2 xhtml xcgi sam
 
 WATCHERS = jianye zaretska madden camacho fongah2
 
