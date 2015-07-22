@@ -286,17 +286,21 @@ char* g_LBOS_ComposeLBOSAddress(void)
 /** @brief  Checks iterator, fact that iterator belongs to this mapper,
  *          iterator data. Only debug function.
  */
-int g_LBOS_CheckIterator(SERV_ITER iter, int should_have_data)
+int g_LBOS_CheckIterator(SERV_ITER iter, 
+                         ELBOSIteratorCheckType should_have_data)
 {
-    assert (iter != NULL);
-    if (should_have_data == 1) {
-        assert (iter->data != NULL);
+    if (iter == NULL) 
+        return 0;
+    if (should_have_data == 1 && iter->data == NULL) {
+        return 0;
     }
-    if (should_have_data == 0) {
-        assert (iter->data == NULL);
+    if (should_have_data == 0 && iter->data != NULL) {
+        return 0;
     }
-    assert(strcmp(iter->op->mapper, s_lbos_op.mapper) == 0);
-    return (1);
+    if (strcmp(iter->op->mapper, s_lbos_op.mapper) != 0) {
+        return 0;
+    }
+    return 1;
 }
 
 /* UNIT TESTING*/
@@ -885,7 +889,7 @@ static void s_LBOS_FillCandidates(SLBOS_Data* data, const char* service)
      * but anyway we have to prepare */
     char** to_delete = lbos_addresses;
     CORE_LOCK_READ;
-    for (int i = 0; i < addresses_count; i++) {
+    for (i = 0; i < addresses_count; i++) {
         lbos_addresses[i] = strdup(s_LBOS_InstancesList[i]);
     }
     CORE_UNLOCK;

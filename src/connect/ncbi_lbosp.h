@@ -37,8 +37,8 @@
 #include "ncbi_lbos.h"
 
 
-//#define ANNOUNCE_DEANNOUNCE_TEST /* Define for announcement/deannouncement. \
-                                    * Not meant to be in trunk yet */
+/*#define ANNOUNCE_DEANNOUNCE_TEST*/ /* Define for announcement/deannouncement.
+                                      * Not meant to be in trunk yet */
 
 
 #ifdef __cplusplus
@@ -49,15 +49,15 @@ extern "C" {
 ///////////////////////////////////////////////////////////////////////////////
 //                             DATA TYPES                                    //
 ///////////////////////////////////////////////////////////////////////////////
-/** @brief              Very simple internal structure which
-                        stores information about found servers               */
+/** Very simple internal structure which stores information about found 
+   servers                                                                   */
 typedef struct {
     SSERV_Info*         info;        /**< stores only IP and port for now    */
 } SLBOS_Candidate;
 
 
-/** @brief              All the data required to store state of one request
-                        to LBOS between calls to SERV_GetNextInfo            */
+/** All the data required to store state of one request to LBOS between 
+ * calls to SERV_GetNextInfo                                                 */
 typedef struct {
     SConnNetInfo*       net_info;
     SLBOS_Candidate*    cand;
@@ -72,19 +72,34 @@ typedef struct {
 } SLBOS_Data;
 
 
+
+/** Possible values of parameter for g_LBOS_CheckIterator()
+ * @see
+ *  g_LBOS_CheckIterator()                                                   */
+typedef enum {
+    ELBOSIteratorCheckType_MustHaveData,   /**< iterator MUST have 'data'
+                                                filled or error will be
+                                                returned                     */
+    ELBOSIteratorCheckType_DataMustBeNULL, /**< iterator MUST have 'data' NULL
+                                                or error will be returned    */
+    ELBOSIteratorCheckType_NoCheck         /**< no check of 'data'           */
+} ELBOSIteratorCheckType;
+
 ///////////////////////////////////////////////////////////////////////////////
 //                        MOCK FUNCTION TYPEDEFS                             //
 ///////////////////////////////////////////////////////////////////////////////
-/** @brief              Send REST API request to LBOS, read answer and
- *                      return filled array of SSERV_INFO, containing
- *                      info about all found servers
- *  @param lbos_address[in]  IP:port or host:port where to send request
- *  @param serviceName[in]   Name of service to ask for
- *  @param net_info[in] Connection point
- *  @return             Array of pointers to SSERV_Info structs, containing
- *                      all found servers. It can (and must) be safely
- *                      free()'d. Do not forget to first free() all single
- *                      SSERV_Info, then free() the array itself             */
+/** Send REST API request to LBOS, read answer and return filled array of 
+   SSERV_INFO, containing info about all found servers
+ * @param lbos_address[in]  
+    IP:port or host:port where to send request
+ * @param serviceName[in]   
+    Name of service to ask for
+ * @param 
+    net_info[in] Connection point
+ *  @return             
+     Array of pointers to SSERV_Info structs, containing all found servers. 
+     It can (and must) be safely free()'d. Do not forget to first free() 
+     all single SSERV_Info, then free() the array itself                     */
 typedef
 SSERV_Info**        FLBOS_ResolveIPPortMethod    (const char*     lbos_address,
                                                   const char*      serviceName,
@@ -100,18 +115,34 @@ SSERV_Info**        FLBOS_ResolveIPPortMethod    (const char*     lbos_address,
  *  @param how[in]      peek/read/persist
  *  @return             Success or some error code                           */
 typedef
-EIO_Status          FLBOS_ConnReadMethod         (CONN                    conn,
-                                                  void*                    buf,
-                                                  size_t                  size,
-                                                  size_t*               n_read,
-                                                  EIO_ReadMethod          how);
+EIO_Status FLBOS_ConnReadMethod(CONN           conn,
+                                void*          buf,
+                                size_t         size,
+                                size_t*        n_read,
+                                EIO_ReadMethod how);
+
+
+/**  Checks iterator, fact that iterator belongs to this mapper, iterator data. 
+ * Only debug function.
+ * @param iter[in]     
+ *  Iterator to check. Not modified in any way
+ * @param 
+ *  should_have_data[in]  
+ * @see               
+ *  ELBOSIteratorCheckType
+ * @return
+ *  true  - iterator is valid
+ *  false - iterator is invalid                                              */
+NCBI_XCONNECT_EXPORT
+int/*bool*/  g_LBOS_CheckIterator(SERV_ITER              iter,
+                                  ELBOSIteratorCheckType should_have_data);
 
 
 /** @brief              Compose LBOS address from /etc/ncbi/{role, domain}
  *  @return             char* with constructed host:port or IP:port, which
  *                      can (and must be) safely free()'d                    */
 typedef
-char*               FLBOS_ComposeLBOSAddressMethod(void);
+char* FLBOS_ComposeLBOSAddressMethod(void);
 
 
 /** @brief              Given just empty data structure and name of service,
@@ -121,8 +152,8 @@ char*               FLBOS_ComposeLBOSAddressMethod(void);
  *  @param service[in]  Name of the service of which we search servers
  *  @return             None                                                 */
 typedef
-void                FLBOS_FillCandidatesMethod   (SLBOS_Data*             data,
-                                                  const char*         service);
+void FLBOS_FillCandidatesMethod(SLBOS_Data* data,
+                                const char* service);
 
 
 /** @brief              Destroy data (simulation of destructor as if
@@ -135,7 +166,7 @@ void                FLBOS_FillCandidatesMethod   (SLBOS_Data*             data,
  *  @note               It presumes that s_LBOS_Reset was called previously
  *  @see                S_LBOS_Reset(), SLBOS_Data                           */
 typedef
-void                FLBOS_DestroyDataMethod      (SLBOS_Data*            data);
+void FLBOS_DestroyDataMethod(SLBOS_Data* data);
 
 
 /* Delete on 8/1/2015  if not needed
@@ -155,8 +186,8 @@ SLBOS_Data*      FLBOS_ConstructDataMethod    (int      candidatesCapacity);*/
  *                       limitations of AWS cloud, it is always NULL
  *  @return              Next server                                         */
 typedef
-SSERV_Info*         FLBOS_GetNextInfoMethod      (SERV_ITER               iter,
-                                                  HOST_INFO*        host_info);
+SSERV_Info* FLBOS_GetNextInfoMethod(SERV_ITER  iter,
+                                    HOST_INFO* host_info);
 
 
 /** @brief                For announcement we search for a LBOS which
@@ -184,11 +215,11 @@ SSERV_Info*         FLBOS_GetNextInfoMethod      (SERV_ITER               iter,
  * @return               Code of success or some error
  * @see                  ELBOSAnnounceResult                                 */
 typedef
-ELBOSAnnounceResult FLBOS_AnnounceExMethod        (const char*         service,
-                                                   const char*         version,
-                                                   unsigned short         port,
-                                                   const char* healthcheck_url,
-                                                   char**         LBOS_answer);
+ELBOSAnnounceResult FLBOS_AnnounceExMethod(const char*      service,
+                                           const char*      version,
+                                           unsigned short   port,
+                                           const char*      healthcheck_url,
+                                           char**           LBOS_answer);
 
 
 /** @brief               Deannounce previously announced service.
@@ -202,17 +233,17 @@ ELBOSAnnounceResult FLBOS_AnnounceExMethod        (const char*         service,
  * @return               0 means any error, no deannounce was made
  *                       1 means success, deannounce was made                */
 typedef
-int/*bool*/         FLBOS_DeannounceMethod       (const char*    lbos_hostport,
-                                                  const char*          service,
-                                                  const char*          version,
-                                                  unsigned short          port,
-                                                  const char*              ip);
+int/*bool*/ FLBOS_DeannounceMethod(const char*      lbos_hostport,
+                                   const char*      service,
+                                   const char*      version,
+                                   unsigned short   port,
+                                   const char*      ip);
 
 
 /** @brief This function test existence of the application that should always
            be found - LBOS itself. If it is not found, we turn mapper off.   */
 typedef 
-void                FLBOS_Initialize             (void);
+void FLBOS_Initialize(void);
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -248,8 +279,8 @@ typedef struct {
  *                      changed
  *                      1 - success                                          */
 NCBI_XCONNECT_EXPORT
-int/*bool*/ g_LBOS_UnitTesting_SetLBOSFindMethod    (SERV_ITER            iter,
-                                                     ELBOSFindMethod   method);
+int/*bool*/ g_LBOS_UnitTesting_SetLBOSFindMethod(SERV_ITER       iter,
+                                                 ELBOSFindMethod method);
 
 
 /** @brief              Set custom host for LBOS. It will be used when
@@ -259,8 +290,8 @@ int/*bool*/ g_LBOS_UnitTesting_SetLBOSFindMethod    (SERV_ITER            iter,
  *  @return             0 - something went wrong, LBOS address was not changed
  *                      1 - success                                          */
 NCBI_XCONNECT_EXPORT
-int/*bool*/ g_LBOS_UnitTesting_SetLBOSaddress       (SERV_ITER            iter,
-                                                     char*            address);
+int/*bool*/ g_LBOS_UnitTesting_SetLBOSaddress(SERV_ITER iter,
+                                              char*     address);
 
 
 /** @brief              Set custom files to load role and domain from,
@@ -273,7 +304,7 @@ int/*bool*/ g_LBOS_UnitTesting_SetLBOSaddress       (SERV_ITER            iter,
  *                      1 - success                                          */
 NCBI_XCONNECT_EXPORT
 int/*bool*/ g_LBOS_UnitTesting_SetLBOSRoleAndDomainFiles(const char*  roleFile,
-                                                     const char*   domainFile);
+                                                       const char* domainFile);
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -284,20 +315,20 @@ int/*bool*/ g_LBOS_UnitTesting_SetLBOSRoleAndDomainFiles(const char*  roleFile,
  *                      unit testing purposes
  *  @see                SLBOS_Functions                                      */
 NCBI_XCONNECT_EXPORT
-SLBOS_Functions*    g_LBOS_UnitTesting_GetLBOSFuncs     (void);
+SLBOS_Functions* g_LBOS_UnitTesting_GetLBOSFuncs(void);
 
 /** @brief          Check whether LBOS mapper is turned ON or OFF
  *  @return         address of static variable s_LBOS_TurnedOn
     @see            SERV_LBOS_Open()                                         */
 NCBI_XCONNECT_EXPORT
-int*                g_LBOS_UnitTesting_PowerStatus      (void);
+int* g_LBOS_UnitTesting_PowerStatus(void);
 
 
 /** @brief          Check whether LBOS mapper is turned ON or OFF
  *  @return         address of static variable s_LBOS_TurnedOn
     @see            SERV_LBOS_Open()                                         */
 NCBI_XCONNECT_EXPORT
-int*                g_LBOS_UnitTesting_InitStatus       (void);
+int* g_LBOS_UnitTesting_InitStatus(void);
 
 
 /** @brief          List of addresses of LBOS that is maintained in actual 
@@ -305,7 +336,7 @@ int*                g_LBOS_UnitTesting_InitStatus       (void);
  *  @return         address of static variable s_LBOS_InstancesList
     @see            SERV_LBOS_Open(), s_LBOS_FillCandidates()                */
 NCBI_XCONNECT_EXPORT
-char**              g_LBOS_UnitTesting_InstancesList    (void);
+char** g_LBOS_UnitTesting_InstancesList(void);
 
 
 #ifdef __cplusplus
