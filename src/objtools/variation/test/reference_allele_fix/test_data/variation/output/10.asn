@@ -1,0 +1,58 @@
+Check Variation type: 3
+Ref/Alt : G - A
+Variation ::= {
+  name "NM_000426.3:c.9212-1G>A",
+  data set {
+    type package,
+    variations {
+      {
+        placements {
+          {
+            loc pnt {
+              point 9316,
+              strand plus,
+              id other {
+                accession "NM_000426",
+                version 3
+              }
+            },
+            mol cdna,
+            start-offset -1
+          }
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type snv,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "A"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "G"
+                    }
+                  }
+                },
+                observation asserted
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

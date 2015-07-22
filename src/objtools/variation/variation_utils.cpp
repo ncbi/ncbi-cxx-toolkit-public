@@ -70,15 +70,13 @@
 
 #include <objtools/variation/variation_utils.hpp>
 
-bool x_CheckForFirstNTSeq(const CVariation_inst& inst)
+static bool s_ContainsSeqDataIupacna(const CDelta_item& delta_item)
 {
-    if(    inst.IsSetDelta() 
-        && !inst.GetDelta().empty() 
-        && inst.GetDelta().front()->IsSetSeq() 
-        && inst.GetDelta().front()->GetSeq().IsLiteral()
-        && inst.GetDelta().front()->GetSeq().GetLiteral().IsSetSeq_data() 
-        && inst.GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().IsIupacna() 
-        )
+    if (delta_item.IsSetSeq() &&
+        delta_item.GetSeq().IsLiteral() &&
+        delta_item.GetSeq().GetLiteral().IsSetSeq_data() &&
+        delta_item.GetSeq().GetLiteral().GetSeq_data().IsIupacna())
+
         return true;
 
     return false;
@@ -122,6 +120,13 @@ void CVariationUtilities::CorrectRefAllele(CVariation& variation, CScope& scope)
 
         CVariantPlacement& vp = *var.SetPlacements().front(); 
 
+        if (vp.IsSetStart_offset() || vp.IsSetStop_offset()) {
+            //We cannot determine the reference allele for intronic placements without remapping,
+            //which is beyond the remit of this method.
+            continue;
+        }
+       
+
         string asserted_ref;
         string ref_at_location;
         NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, var_it2, var.SetData().SetSet().SetVariations()) {
@@ -130,12 +135,18 @@ void CVariationUtilities::CorrectRefAllele(CVariation& variation, CScope& scope)
                 continue;
 
             CVariation_inst& inst = var2.SetData().SetInstance();
-            if(x_CheckForFirstNTSeq(inst) && inst.GetType() == CVariation_inst::eType_identity) 
-            {
-                asserted_ref = inst.SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set();
-                ref_at_location = x_GetRefAlleleFromVP(vp, scope, asserted_ref.length());
-                inst.SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(ref_at_location);
+            if (inst.GetType() == CVariation_inst::eType_identity) {
                 inst.SetObservation(CVariation_inst::eObservation_reference);
+
+                NON_CONST_ITERATE(CVariation_inst::TDelta, delta_it, inst.SetDelta()) {
+                    CDelta_item& delta_item = **delta_it;
+                    if (!s_ContainsSeqDataIupacna(delta_item)) {
+                        continue;
+                    }
+                    asserted_ref = delta_item.SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set();
+                    ref_at_location = x_GetRefAlleleFromVP(vp, scope, asserted_ref.length());
+                    delta_item.SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(ref_at_location);
+                }
             }
         }
         vp.SetSeq().SetSeq_data().SetIupacna().Set(ref_at_location);
@@ -207,6 +218,19 @@ void CVariationUtilities::CorrectRefAllele(CSeq_feat& feature, CScope& scope)
     ERR_POST(Trace << "After set ref: " << MSerial_AsnText << feature);
 }
 
+static bool s_ContainsOffset(const CVariation_inst& inst)
+{
+    ITERATE(CVariation_inst::TDelta, delta_it, inst.GetDelta())
+    {
+        const CDelta_item& delta_item = **delta_it;
+        if (delta_item.IsSetAction() &&
+            delta_item.GetAction() == CDelta_item::eAction_offset) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool CVariationUtilities::x_SetReference(CVariation_ref& vr, const string& ref_at_location)
 {
     string asserted_ref;
@@ -217,10 +241,26 @@ bool CVariationUtilities::x_SetReference(CVariation_ref& vr, const string& ref_a
             continue;
 
         CVariation_inst& inst = vref.SetData().SetInstance();
-        if(x_CheckForFirstNTSeq(inst) && inst.GetType() == CVariation_inst::eType_identity) {
-            asserted_ref  = inst.SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(); 
-            inst.SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(ref_at_location);
+
+        if(s_ContainsOffset(inst))
+            return false;
+
+
+        //if inst is identity, iterate through delta-items 
+        // asking if they have seq-data set, and if so, retrieve asserted-ref, and set ref_at_location.
+        if (inst.GetType() == CVariation_inst::eType_identity) {
             inst.SetObservation(CVariation_inst::eObservation_reference);
+
+            NON_CONST_ITERATE(CVariation_inst::TDelta, delta_it, inst.SetDelta())
+            {
+                CDelta_item& delta_item = **delta_it;
+                if (!s_ContainsSeqDataIupacna(delta_item)) {
+                    continue;
+                }
+                asserted_ref = delta_item.SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set();
+                delta_item.SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(ref_at_location);
+                break;
+            }
         }
     }
     if (asserted_ref.empty())
@@ -254,17 +294,26 @@ bool CVariationUtilities::x_FixAlleles(CVariation_ref& vr, string asserted_ref, 
                     continue;
 
                 CVariation_inst& inst = vref.SetData().SetInstance();
-                if(x_CheckForFirstNTSeq(inst) && inst.GetType() != CVariation_inst::eType_identity) {
-                    string allele = inst.SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set();
-                    if (asserted_ref  == allele) {
-                        add_asserted_ref = false;
-                    }
-                    
-                    if (ref_at_location == allele) {
-                        inst.SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(asserted_ref);
-                        inst.SetObservation(CVariation_inst::eObservation_asserted
-                            |CVariation_inst::eObservation_variant);
-                        add_asserted_ref = false;
+
+                if (inst.GetType() != CVariation_inst::eType_identity) {
+                    NON_CONST_ITERATE(CVariation_inst::TDelta, delta_it, inst.SetDelta())
+                    {
+                        CDelta_item& delta_item = **delta_it;
+                        if (!s_ContainsSeqDataIupacna(delta_item)) {
+                            continue;
+                        }
+                        string allele = delta_item.SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set();
+                        if (asserted_ref == allele) {
+                            add_asserted_ref = false;
+                        }
+
+                        if (ref_at_location == allele) {
+                            delta_item.SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(asserted_ref);
+
+                            inst.SetObservation(CVariation_inst::eObservation_asserted
+                                | CVariation_inst::eObservation_variant);
+                            add_asserted_ref = false;
+                        }
                     }
                 }
             }
@@ -364,22 +413,29 @@ bool CVariationUtilities::x_FixAlleles(CVariation& variation, string asserted_re
                     continue;
 
                 CVariation_inst& inst = var2.SetData().SetInstance();
-                if(x_CheckForFirstNTSeq(inst) && inst.GetType() != CVariation_inst::eType_identity) {
+                if (inst.GetType() != CVariation_inst::eType_identity) {
 
-                    string allele = inst.SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set();
+                    NON_CONST_ITERATE(CVariation_inst::TDelta, delta_it, inst.SetDelta())
+                    {
+                        CDelta_item& delta_item = **delta_it;
+                        if (!s_ContainsSeqDataIupacna(delta_item)) {
+                            continue;
+                        }
+                        string allele = delta_item.SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set();
+                        if (asserted_ref == allele) {
+                            add_asserted_ref = false;
+                        }
 
-                    if (asserted_ref  == allele) {
-                        add_asserted_ref = false;
-                    }
-                    if (ref_at_location == allele) {
-                        inst.SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(asserted_ref);
-                        add_asserted_ref = false;
-                        inst.SetObservation(CVariation_inst::eObservation_asserted
-                            |CVariation_inst::eObservation_variant);
+                        if (ref_at_location == allele) {
+                            delta_item.SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(asserted_ref);
+
+                            inst.SetObservation(CVariation_inst::eObservation_asserted
+                                | CVariation_inst::eObservation_variant);
+                            add_asserted_ref = false;
+                        }
                     }
                 }
             }
-
         }
     default: break;
     }
@@ -451,9 +507,17 @@ bool CVariationUtilities::IsReferenceCorrect(const CSeq_feat& feature, string& a
             continue;
 
         const CVariation_inst& inst = vref.GetData().GetInstance();
-        if(x_CheckForFirstNTSeq(inst) && inst.GetType() == CVariation_inst::eType_identity) {
-            asserted_ref  = inst.GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get(); 
+        if (inst.GetType() == CVariation_inst::eType_identity) {
             found_allele_from_identity = true;
+            ITERATE(CVariation_inst::TDelta, delta_it, inst.GetDelta())
+            {
+                const CDelta_item& delta_item = **delta_it;
+                if (!s_ContainsSeqDataIupacna(delta_item)) {
+                    continue;
+                }
+                asserted_ref = delta_item.GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get();
+                break;
+            }
         }
     }
 
@@ -478,6 +542,7 @@ CVariation_inst::TType
         return CVariation_inst::eType_unknown;
     }
 
+    bool identity_present = false;
     set<int> types;
     switch(vr.GetData().Which())
     {
@@ -485,6 +550,12 @@ CVariation_inst::TType
     case  CVariation_ref::C_Data::e_Set : 
         ITERATE(CVariation_ref::TData::TSet::TVariations, vref_it, vr.GetData().GetSet().GetVariations()) {
             const CVariation_ref& vref = **vref_it;
+            if (vref.IsSetData()
+                && vref.GetData().IsInstance()
+                && vref.GetData().GetInstance().GetType() == CVariation_inst::eType_identity) {
+                identity_present = true;
+            }
+
             if ( vref.IsSetData() 
                 && vref.GetData().IsInstance() 
                 && vref.GetData().GetInstance().GetType() != CVariation_inst::eType_identity)
@@ -495,8 +566,12 @@ CVariation_inst::TType
     default: break;            
     }
 
-    if (types.empty())
+    if (types.empty()) {
+        if (identity_present)
+            return CVariation_inst::eType_identity;
         return  CVariation_inst::eType_unknown;
+    }
+
     if (types.size() == 1)
         return *types.begin();
     
@@ -511,6 +586,7 @@ CVariation_inst::TType
         return CVariation_inst::eType_unknown;
     }
 
+    bool identity_present;
     set<CVariation_inst::TType> types;
     switch(var.GetData().Which()) {
     case CVariation::C_Data::e_Instance:
@@ -524,20 +600,44 @@ CVariation_inst::TType
         ITERATE(CVariation::TData::TSet::TVariations, var_it, var.GetData().GetSet().GetVariations()) {
             const CVariation& var2 = **var_it;
             CVariation_inst::TType type = GetVariationType(var2);
-            if(type != CVariation_inst::eType_identity)
+            if (type != CVariation_inst::eType_identity)
                 types.insert(type);
+            else
+                identity_present = true;
         }
         break;
     default: 
         break;
     }
 
-    if (types.empty())
+    if (types.empty()) {
+        if (identity_present)
+            return CVariation_inst::eType_identity;
         return  CVariation_inst::eType_unknown;
+    }
     if (types.size() == 1)
         return *types.begin();
 
     return  CVariation_inst::eType_other;
+}
+
+static void s_GetAltRefFromInst(const CVariation_inst& inst, string& ref, vector<string> &alt)
+{
+    ITERATE(CVariation_inst::TDelta, delta_it, inst.GetDelta())
+    {
+        const CDelta_item& delta_item = **delta_it;
+        if (!s_ContainsSeqDataIupacna(delta_item)) {
+            continue;
+        }
+        string a = delta_item.GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get();
+        if (!a.empty()) {
+            if (inst.GetType() == CVariation_inst::eType_identity)
+                ref = a;
+            else 
+                alt.push_back(a);
+        }
+        break;
+    }
 }
 
 void CVariationUtilities::GetVariationRefAlt(const CVariation_ref& vr, string &ref,  vector<string> &alt)
@@ -552,35 +652,13 @@ void CVariationUtilities::GetVariationRefAlt(const CVariation_ref& vr, string &r
             if(!vref.IsSetData() || !vref.GetData().IsInstance())
                 continue;
 
-            const CVariation_inst& inst = vref.GetData().GetInstance();
-            if(x_CheckForFirstNTSeq(inst) ) {
-                string a = inst.GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get();
-                if (!a.empty())
-                {
-                    if (inst.GetType() == CVariation_inst::eType_identity )
-                        ref = a;
-                    else if (inst.GetType() != CVariation_inst::eType_del) 
-                        alt.push_back(a);
-                }
-            }
+            s_GetAltRefFromInst(vref.GetData().GetInstance(), ref, alt);
+           
         }
         break;
     case  CVariation_Base::C_Data::e_Instance :
-    {
-        const CVariation_inst &inst = vr.GetData().GetInstance();
-        const CVariation_inst::TType type = inst.GetType();
-        if (x_CheckForFirstNTSeq(inst)) {
-            string a = inst.GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get();
-            if (!a.empty())
-            {
-                if (type == CVariation_inst::eType_identity )
-                    ref = a;
-                else if (type != CVariation_inst::eType_del) 
-                    alt.push_back(a);
-            }
-        }
+        s_GetAltRefFromInst(vr.GetData().GetInstance(), ref, alt);
         break;
-    }
     default : break;
     }           
 }
@@ -593,42 +671,18 @@ void CVariationUtilities::GetVariationRefAlt(const CVariation& v, string &ref,  
     switch (v.GetData().Which())
     {
     case  CVariation_Base::C_Data::e_Set :
-        ITERATE(CVariation::TData::TSet::TVariations, var2, v.GetData().GetSet().GetVariations())
-        {
-            if ( (*var2)->IsSetData() && (*var2)->GetData().IsInstance())
-            {
-                const CVariation_inst &inst = (*var2)->GetData().GetInstance();
-                const CVariation_inst::TType type = inst.GetType();
-                if (x_CheckForFirstNTSeq(inst)) {
-                    string a = inst.GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get();
-                    if (!a.empty())
-                    {
-                        if (type == CVariation_inst::eType_identity )
-                            ref = a;
-                        else if (type != CVariation_inst::eType_del) 
-                            alt.push_back(a);
-                    }
-                }
-            }
+        ITERATE(CVariation::TData::TSet::TVariations, var_it, v.GetData().GetSet().GetVariations()) {
+            const CVariation& inner_var = **var_it;
+        
+            if (!inner_var.IsSetData() || !inner_var.GetData().IsInstance())
+                continue;
+            s_GetAltRefFromInst(inner_var.GetData().GetInstance(), ref, alt);
         }
         break;
     case  CVariation_Base::C_Data::e_Instance :
-        {
-            const CVariation_inst &inst = v.GetData().GetInstance();
-            const CVariation_inst::TType type = inst.GetType();
-            if(x_CheckForFirstNTSeq(inst)) {
-                string a = inst.GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get();
-                if (!a.empty())
-                {
-                    if (type == CVariation_inst::eType_identity )
-                        ref = a;
-                    else if (type != CVariation_inst::eType_del) 
-                        alt.push_back(a);
-                }
-            }
-            break;
-        }
-    default : break;
+        s_GetAltRefFromInst(v.GetData().GetInstance(), ref, alt);
+        break;
+    default: break;
     }           
 }
 
@@ -938,9 +992,17 @@ void CVariationNormalization_base<T>::x_Shift(CVariation& variation, CScope &sco
                     continue;
 
                 CVariation_inst& inst = var.SetData().SetInstance();
-                if(x_CheckForFirstNTSeq(inst) && inst.GetType() == CVariation_inst::eType_identity ) {
-                    ref_allele  = inst.GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get();
-                    ref_literal = Ref(&inst.SetDelta().front()->SetSeq().SetLiteral());
+                if (inst.GetType() == CVariation_inst::eType_identity) {
+                    NON_CONST_ITERATE(CVariation_inst::TDelta, delta_it, inst.SetDelta())
+                    {
+                        CDelta_item& delta_item = **delta_it;
+                        if (!s_ContainsSeqDataIupacna(delta_item)) {
+                            continue;
+                        }
+                        ref_allele = delta_item.GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get();
+                        ref_literal = Ref(&delta_item.SetSeq().SetLiteral());
+                        break;
+                    }
                 }
             }
 
@@ -1136,9 +1198,16 @@ void CVariationNormalization_base<T>::x_Shift(CSeq_feat& feat, CScope &scope)
                 continue;
 
             CVariation_inst& inst = vref.SetData().SetInstance();
-            if(x_CheckForFirstNTSeq(inst) && inst.GetType() == CVariation_inst::eType_identity ) {
-                ref_allele  = inst.GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get();
-                ref_literal = Ref(&inst.SetDelta().front()->SetSeq().SetLiteral());
+            if (inst.GetType() == CVariation_inst::eType_identity) {
+                NON_CONST_ITERATE(CVariation_inst::TDelta, delta_it, inst.SetDelta())
+                {
+                    CDelta_item& delta_item = **delta_it;
+                    if (!s_ContainsSeqDataIupacna(delta_item)) {
+                        continue;
+                    }
+                    ref_allele = delta_item.GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get();
+                    ref_literal = Ref(&delta_item.SetSeq().SetLiteral());
+                }
             }
         }
 
