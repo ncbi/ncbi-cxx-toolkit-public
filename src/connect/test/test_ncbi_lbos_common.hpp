@@ -2291,7 +2291,7 @@ namespace Initialization
                                 single threaded mode or test_mt with 
                                 synchronization points between different
                                 tests */
-    template<int instance_num, int testnum, bool predictable_first = false>
+    template<int instance_num, int testnum, bool predictable_first>
     void SwapAddressesTest() 
     {
         s_call_counter = 0;
@@ -2393,36 +2393,36 @@ namespace Initialization
             g_LBOS_UnitTesting_GetLBOSFuncs()->ResolveIPPort;
 
         /* Pseudo random order */
-        SwapAddressesTest<1, 1>();
-        SwapAddressesTest<2, 2>();
-        SwapAddressesTest<3, 3>();
-        SwapAddressesTest<1, 4>();
-        SwapAddressesTest<7, 5>();
-        SwapAddressesTest<2, 6>();
-        SwapAddressesTest<4, 7>();
-        SwapAddressesTest<1, 8>();
-        SwapAddressesTest<2, 9>();
-        SwapAddressesTest<3, 10>();
-        SwapAddressesTest<1, 11>();
-        SwapAddressesTest<7, 12>();
-        SwapAddressesTest<2, 13>();
-        SwapAddressesTest<4, 14>();
-        SwapAddressesTest<2, 15>();
-        SwapAddressesTest<6, 16>();
-        SwapAddressesTest<3, 17>();
-        SwapAddressesTest<5, 18>();
-        SwapAddressesTest<2, 19>();
-        SwapAddressesTest<1, 20>();
-        SwapAddressesTest<6, 21>();
-        SwapAddressesTest<4, 22>();
-        SwapAddressesTest<2, 23>();
-        SwapAddressesTest<6, 24>();
-        SwapAddressesTest<3, 25>();
-        SwapAddressesTest<5, 26>();
-        SwapAddressesTest<2, 27>();
-        SwapAddressesTest<1, 28>();
-        SwapAddressesTest<6, 29>();
-        SwapAddressesTest<4, 30>();
+        SwapAddressesTest<1, 1, false>();
+        SwapAddressesTest<2, 2, false>();
+        SwapAddressesTest<3, 3, false>();
+        SwapAddressesTest<1, 4, false>();
+        SwapAddressesTest<7, 5, false>();
+        SwapAddressesTest<2, 6, false>();
+        SwapAddressesTest<4, 7, false>();
+        SwapAddressesTest<1, 8, false>();
+        SwapAddressesTest<2, 9, false>();
+        SwapAddressesTest<3, 10, false>();
+        SwapAddressesTest<1, 11, false>();
+        SwapAddressesTest<7, 12, false>();
+        SwapAddressesTest<2, 13, false>();
+        SwapAddressesTest<4, 14, false>();
+        SwapAddressesTest<2, 15, false>();
+        SwapAddressesTest<6, 16, false>();
+        SwapAddressesTest<3, 17, false>();
+        SwapAddressesTest<5, 18, false>();
+        SwapAddressesTest<2, 19, false>();
+        SwapAddressesTest<1, 20, false>();
+        SwapAddressesTest<6, 21, false>();
+        SwapAddressesTest<4, 22, false>();
+        SwapAddressesTest<2, 23, false>();
+        SwapAddressesTest<6, 24, false>();
+        SwapAddressesTest<3, 25, false>();
+        SwapAddressesTest<5, 26, false>();
+        SwapAddressesTest<2, 27, false>();
+        SwapAddressesTest<1, 28, false>();
+        SwapAddressesTest<6, 29, false>();
+        SwapAddressesTest<4, 30, false>();
 
         /* Cleanup */
         g_LBOS_UnitTesting_GetLBOSFuncs()->ResolveIPPort = temp_func_pointer;
