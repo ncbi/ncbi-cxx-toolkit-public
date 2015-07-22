@@ -331,5 +331,5 @@ void CClustererApplication::Exit(void)
 int main(int argc, const char* argv[])
 {
     // Execute main application function
-    return CClustererApplication().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CClustererApplication().AppMain(argc, argv, 0, eDS_Default, "");
 }

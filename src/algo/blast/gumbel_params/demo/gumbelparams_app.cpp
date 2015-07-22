@@ -503,5 +503,5 @@ void CGumbelParamsApplication::Exit(void)
 int main(int argc, const char* argv[])
 {
     // Execute main application function
-    return CGumbelParamsApplication().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CGumbelParamsApplication().AppMain(argc, argv, 0, eDS_Default, "");
 }
