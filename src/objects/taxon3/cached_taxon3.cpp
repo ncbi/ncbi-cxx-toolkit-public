@@ -55,7 +55,7 @@ const string kInvalidReplyMsg = "Taxonomy service returned invalid reply";
 
 
 CCachedTaxon3::CCachedTaxon3(AutoPtr<ITaxon3> taxon, TSizeType capacity)
-    : CCache<string, CRef<CTaxon3_reply>>(capacity),
+    : CCache<string, CRef<CTaxon3_reply> >(capacity),
     m_taxon(taxon)
 {
 }

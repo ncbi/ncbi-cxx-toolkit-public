@@ -5,7 +5,7 @@ SRC = taxon3__ taxon3___ taxon3 cached_taxon3
 
 DLL_LIB = xconnect
 
-WATCHERS = bollin
+WATCHERS = bollin holmesbr
 
 
 USES_LIBRARIES =  \
