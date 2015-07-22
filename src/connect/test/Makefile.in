@@ -17,7 +17,7 @@ APP_PROJ = test_ncbi_buffer test_ncbi_core test_ncbi_socket test_ncbi_dsock \
            test_ncbi_pipe test_ncbi_pipe_connector test_ncbi_trigger \
            test_ncbi_ftp_download test_conn_tar test_ncbi_null \
            test_server test_threaded_server test_threaded_client \
-           test_ncbi_conn_stream_mt test_ncbi_lbos
+           test_ncbi_conn_stream_mt test_ncbi_lbos test_ncbi_lbos_mt
 
 PROJ_TAG = test
 
