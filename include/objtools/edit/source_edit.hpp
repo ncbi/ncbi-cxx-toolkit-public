@@ -27,8 +27,8 @@
  */
 
 
-#ifndef _EDIT_SOURCE_EDIT_H_
-#define _EDIT_SOURCE_EDIT__H_
+#ifndef _EDIT_SOURCE_EDIT__HPP_
+#define _EDIT_SOURCE_EDIT__HPP_
 
 #include <corelib/ncbistd.hpp>
 #include <objmgr/scope.hpp>
@@ -50,5 +50,5 @@ END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
-#endif
+#endif  /* _EDIT_SOURCE_EDIT__HPP_ */
 
