@@ -476,8 +476,8 @@ gpipe_objutil needs taxon1
 gpipe_objutil needs writedb
 gpipe_objutil needs3party $(GPIPE_LOADER_THIRDPARTY_LIBS)
 gpipe_objutil needs3party $(UUID_LIBS)
+gpipe_prok_clean_prot_names needs gpipe_attr
 gpipe_prok_clean_prot_names needs gpipe_clean_prot_names
-gpipe_prok_clean_prot_names needs gpipe_property
 gpipe_property needs gpipe_common
 gpipe_property needs xregexp
 gpipe_remap needs xobjreadex
