@@ -803,6 +803,7 @@ void CFlatGatherer::x_GatherComments(void) const
     x_BasemodComment(ctx);
     x_StructuredComments(ctx);
     x_HTGSComments(ctx);
+    x_UnorderedComments(ctx);
     if( ctx.ShowAnnotCommentAsCOMMENT() ) {
         x_AnnotComments(ctx);
     }
@@ -1296,6 +1297,28 @@ void CFlatGatherer::x_StructuredComments(CBioseqContext& ctx) const
     }
     if ( m_FirstGenAnnotSCAD ) {
         x_AddComment(new CCommentItem(*m_FirstGenAnnotSCAD, ctx));
+    }
+}
+
+void CFlatGatherer::x_UnorderedComments(CBioseqContext& ctx) const
+{
+    CSeqdesc_CI desc(ctx.GetHandle(), CSeqdesc::e_Genbank);
+    if ( !desc ) {
+        return;
+    }
+    const list<string>* keywords = NULL;
+    const CGB_block& gb = desc->GetGenbank();
+    if (gb.CanGetKeywords()) {
+        keywords = &(gb.GetKeywords());
+        if (keywords != NULL) {
+            ITERATE (list<string>, kwd, *keywords) {
+                if (NStr::EqualNocase (*kwd, "UNORDERED")) {
+                    x_AddComment(new CCommentItem(
+                        CCommentItem::GetStringForUnordered(ctx), ctx, &(*desc)));
+                    return;
+                }
+            }
+        }
     }
 }
 

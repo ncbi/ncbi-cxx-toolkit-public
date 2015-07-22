@@ -136,6 +136,7 @@ public:
     static string GetStringForTSA(CBioseqContext& ctx);
     static string GetStringForMolinfo(const CMolInfo& mi, CBioseqContext& ctx);
     static string GetStringForHTGS(CBioseqContext& ctx);
+    static string GetStringForUnordered(CBioseqContext& ctx);
     static string GetStringForModelEvidance(const SModelEvidance& me,
         ECommentFormat format = eFormat_Text);
     static TRefTrackStatus GetRefTrackStatus(const CUser_object& uo,

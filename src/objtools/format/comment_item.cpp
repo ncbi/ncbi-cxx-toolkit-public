@@ -963,6 +963,32 @@ string CCommentItem::GetStringForMolinfo(const CMolInfo& mi, CBioseqContext& ctx
 }
 
 
+string CCommentItem::GetStringForUnordered(CBioseqContext& ctx)
+{
+    SDeltaSeqSummary summary;
+    if (ctx.IsDelta()) {
+        GetDeltaSeqSummary(ctx.GetHandle(), summary);
+    }
+
+    CNcbiOstrstream text;
+
+    text << "* NOTE: This is a partial genome representation.";
+    if ( summary.num_gaps > 0 ) {
+        text << " It currently~* consists of " << (summary.num_gaps + 1) << " contigs. The true order of the pieces~"
+             << "* is not known and their order in this sequence record is~"
+             << "* arbitrary. Gaps between the contigs are represented as~"
+             << "* runs of N, but the exact sizes of the gaps are unknown.";
+    }
+    text << "~";
+
+    string comment = CNcbiOstrstreamToString(text);
+    ConvertQuotes(comment);
+    ncbi::objects::AddPeriod(comment);
+
+    return comment;
+}
+
+
 string CCommentItem::GetStringForHTGS(CBioseqContext& ctx)
 {
     SDeltaSeqSummary summary;

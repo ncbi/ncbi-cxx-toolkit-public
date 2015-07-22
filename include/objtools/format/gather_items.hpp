@@ -174,6 +174,7 @@ protected:
     void x_FeatComments(CBioseqContext& ctx) const;
     void x_NameComments(CBioseqContext& ctx) const;
     void x_StructuredComments(CBioseqContext& ctx) const;
+    void x_UnorderedComments(CBioseqContext& ctx) const;
 
     // sequence 
     void x_GatherSequence  (void) const;
