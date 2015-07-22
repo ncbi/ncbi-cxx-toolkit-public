@@ -41,6 +41,7 @@
 #include <objects/biblio/Author.hpp>
 #include <objects/valerr/ValidErrItem.hpp>
 #include <objects/valerr/ValidError.hpp>
+#include <objects/taxon3/itaxon3.hpp>
 #include <objmgr/scope.hpp>
 
 #include <map>
@@ -93,8 +94,10 @@ public:
         eVal_genome_submission       = 0x100000,
     };
 
-    // Construtor / Destructor
-    CValidator(CObjectManager& objmgr);
+    // Constructor / Destructor
+    // If no taxon service is provided, a CTAxon3 client will
+    // be created.
+    CValidator(CObjectManager& objmgr, AutoPtr<ITaxon3> taxon = NULL);
     ~CValidator(void);
 
     // If many validations are being done without changing the underlying
@@ -228,7 +231,11 @@ private:
     CValidator(const CValidator&);
     CValidator& operator= (const CValidator&);
 
+    // Services belong here, in the outside class
+    // and are passed into the implementation.
     CRef<CObjectManager>    m_ObjMgr;
+    AutoPtr<ITaxon3>        m_Taxon;
+
     TProgressCallback       m_PrgCallback;
     void*                   m_UserData;
 };

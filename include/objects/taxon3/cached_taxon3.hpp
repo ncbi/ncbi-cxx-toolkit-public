@@ -1,5 +1,5 @@
-#ifndef NCBI_TAXON3_HPP
-#define NCBI_TAXON3_HPP
+#ifndef NCBI_CACHED_TAXON3_HPP
+#define NCBI_CACHED_TAXON3_HPP
 
 /* $Id$
  * ===========================================================================
@@ -26,21 +26,23 @@
  *
  * ===========================================================================
  *
- * Author:  Colleen Bollin, based on work by Vladimir Soussov, Michael Domrachev
+ * Author:  Brad Holmes
  *
  * File Description:
- *     NCBI Taxonomy information retreival library
+ *     Taxon service that caches a parameterized number of replies
+ *      for queries by list of org-ref.  It *DOES NOT* cache replies
+ *      for request objects.
  *
  */
 
 
 #include <objects/taxon3/taxon3__.hpp>
+#include <objects/taxon3/itaxon3.hpp>
 #include <objects/seqfeat/seqfeat__.hpp>
 #include <serial/serialdef.hpp>
 #include <connect/ncbi_types.h>
 #include <corelib/ncbi_limits.hpp>
-
-#include <objects/taxon3/itaxon3.hpp>
+#include <util/ncbi_cache.hpp>
 
 #include <list>
 #include <vector>
@@ -55,11 +57,26 @@ class CConn_ServiceStream;
 
 BEGIN_objects_SCOPE
 
-class NCBI_TAXON3_EXPORT CTaxon3 : public ITaxon3 {
-public:
+class NCBI_TAXON3_EXPORT CCachedTaxon3 : public ITaxon3,
+    protected CCache<string, CRef<CTaxon3_reply> > 
+{
 
-    CTaxon3();
-    virtual ~CTaxon3();
+private:
+    CCachedTaxon3(AutoPtr<ITaxon3> taxon, TSizeType capacity);
+
+public:
+    virtual ~CCachedTaxon3() {};
+
+    typedef string TCacheKey;
+
+    // The method to create the cache one-off
+    static AutoPtr<CCachedTaxon3> Create(
+        AutoPtr<ITaxon3> taxon, TSizeType capacity = 100000);
+
+    // This should only be used if it will be
+    // immediately wrapped into a safe pointer
+    static CCachedTaxon3* CreateUnSafe(
+        AutoPtr<ITaxon3> taxon, TSizeType capacity = 100000);
 
     //---------------------------------------------
     // Taxon1 server init
@@ -71,19 +88,22 @@ public:
     virtual void Init(const STimeout* timeout, unsigned reconnect_attempts=5);
 
     // submit a list of org_refs
-    virtual CRef<CTaxon3_reply> SendOrgRefList(const vector<CRef< COrg_ref> >& list);
-    virtual CRef< CTaxon3_reply >    SendRequest(const CTaxon3_request& request);
+    virtual CRef<CTaxon3_reply>    SendOrgRefList(const vector<CRef< COrg_ref> >& list);
+    virtual CRef< CTaxon3_reply >  SendRequest(const CTaxon3_request& request);
 
     //--------------------------------------------------
     // Get error message after latest erroneous operation
     // Returns: error message, or empty string if no error occurred
-    ///
-    virtual const string& GetLastError() const { return m_sLastError; }
-
-
+    // FIXME: Not implemented properly at this time.
+    virtual const string& GetLastError() const { NCBI_USER_THROW("LastError state is not properly implemented");  return m_sLastError; }
 
 
 private:
+
+    CRef<CTaxon3_reply> x_AddReplyToCache(const TCacheKey& key, const COrg_ref& org_ref);
+    CRef<CTaxon3_reply> x_GetReplyForOrgRef(const COrg_ref& org_ref);
+
+
 
     ESerialDataFormat        m_eDataFormat;
     const char*              m_pchService;
@@ -94,11 +114,15 @@ private:
 
     string                   m_sLastError;
 
+    /// The cached taxon does not own the taxon.
+    AutoPtr<ITaxon3>         m_taxon;
+
     void             SetLastError(const char* err_msg);
+
 };
 
 
 END_objects_SCOPE
 END_NCBI_SCOPE
 
-#endif //NCBI_TAXON1_HPP
+#endif //NCBI_CACHED_TAXON3_HPP

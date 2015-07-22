@@ -1,7 +1,7 @@
 # $Id$
 
 LIB = taxon3
-SRC = taxon3__ taxon3___ taxon3
+SRC = taxon3__ taxon3___ taxon3 cached_taxon3
 
 DLL_LIB = xconnect
 

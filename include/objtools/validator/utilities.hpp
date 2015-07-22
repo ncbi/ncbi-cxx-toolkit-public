@@ -38,8 +38,8 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
-#include <objects/taxon3/T3Data.hpp>
-#include <objects/taxon3/Taxon3_reply.hpp>
+//#include <objects/taxon3/T3Data.hpp>
+//#include <objects/taxon3/Taxon3_reply.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/biblio/Id_pat.hpp> 
 #include <objects/biblio/Auth_list.hpp>
@@ -58,6 +58,7 @@ class CGb_qual;
 class CScope;
 class CSeq_entry;
 class CT3Data;
+class CT3Reply;
 
 BEGIN_SCOPE(validator)
 

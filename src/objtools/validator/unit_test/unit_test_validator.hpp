@@ -34,6 +34,8 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/valerr/ValidError.hpp>
 #include <objects/valerr/ValidErrItem.hpp>
+#include <objects/taxon3/itaxon3.hpp>
+#include <objects/taxon3/Taxon3_reply.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -61,14 +63,54 @@ private:
     string m_ErrMsg;
 };
 
+class CMockTaxon : public ITaxon3
+{
+public:
+
+    typedef list<CRef<CTaxon3_reply> > TReplies;
+
+    CMockTaxon(TReplies replies,
+        const string& estr = kEmptyStr) :
+        m_replies(replies),
+        m_error_string(estr)
+    {
+    }
+
+private:
+    TReplies m_replies;
+    const string m_error_string;
+
+
+public:
+
+    virtual void Init(void) {}
+
+    virtual void Init(const STimeout* timeout, unsigned reconnect_attempts /*= 5*/) {}
+
+    virtual const string& GetLastError() const { return m_error_string; }
+
+    virtual CRef< CTaxon3_reply > SendRequest(const CTaxon3_request& request)
+    {
+        CRef<CTaxon3_reply> v = m_replies.front();
+        m_replies.pop_front();
+        return v;
+    }
+
+    virtual CRef<CTaxon3_reply> SendOrgRefList(const vector<CRef< COrg_ref> >& list)
+    {
+        CRef<CTaxon3_reply> v = m_replies.front();
+        m_replies.pop_front();
+        return v;
+    }
+};
 
 #define CLEAR_ERRORS \
-    while (expected_errors.size() > 0) { \
+                    while (expected_errors.size() > 0) { \
         if (expected_errors[expected_errors.size() - 1] != NULL) { \
             delete expected_errors[expected_errors.size() - 1]; \
-        } \
+                                        } \
         expected_errors.pop_back(); \
-    }
+                                                            }
 
 #define STANDARD_SETUP \
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance(); \
@@ -82,6 +124,21 @@ private:
 	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version \
 	                      | CValidator::eVal_use_entrez; \
     vector< CExpectedError *> expected_errors;
+
+#define STANDARD_SETUP_WITH_MOCK_TAXON(replies) \
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance(); \
+    CScope scope(*objmgr); \
+    scope.AddDefaults(); \
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry); \
+    CConstRef<CValidError> eval; \
+    AutoPtr<ITaxon3> taxon(new CMockTaxon(replies)); \
+    CValidator validator(*objmgr, taxon); \
+    unsigned int options = CValidator::eVal_need_isojta \
+                          | CValidator::eVal_far_fetch_mrna_products \
+	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version \
+	                      | CValidator::eVal_use_entrez; \
+    vector< CExpectedError *> expected_errors;
+
 
 #define STANDARD_SETUP_NAME(entry_name) \
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance(); \
@@ -128,6 +185,8 @@ private:
 
 void CheckErrors(const CValidError& eval,
                  vector< CExpectedError* >& expected_errors);
+
+
 				 
 END_SCOPE(objects)
 END_NCBI_SCOPE

@@ -99,6 +99,7 @@ class CCountries;
 class CInferencePrefixList;
 class CComment_set;
 class CTaxon3_reply;
+class ITaxon3;
 
 BEGIN_SCOPE(validator)
 
@@ -411,9 +412,13 @@ public:
 
     // Interface to be used by the CValidError class
 
-    // Constructor & Destructor
-    CValidError_imp(CObjectManager& objmgr, CValidError* errors, 
-        Uint4 options = 0);
+    // Constructor allowing over-ride of Services
+    // Namely, the taxonomy service.
+    // NB: ITaxon is owned by CValidator.
+    CValidError_imp(CObjectManager& objmgr, CValidError* errors,
+        ITaxon3* taxon, Uint4 options = 0);
+
+    // Destructor
     virtual ~CValidError_imp(void);
 
     void SetOptions (Uint4 options);
@@ -656,6 +661,9 @@ public:
 
 private:
 
+    // Setup common options during consturction;
+    void x_Init(Uint4 options);
+
     // This is so we can temporarily set m_Scope in a function
     // and be sure that it will be set to its old value when we're done
     class CScopeRestorer {
@@ -702,6 +710,16 @@ private:
 
     void FindEmbeddedScript (const CSerialObject& obj);
     void FindCollidingSerialNumbers (const CSerialObject& obj);
+
+    void x_HandleTaxonomyError(const CT3Error& error,
+        const string& host, const COrg_ref& orf);
+
+    void x_HandleTaxonomyError(const CT3Error& error,
+        const EErrType type, const CSeq_feat& feat);
+
+    void x_HandleTaxonomyError(const CT3Error& error,
+        const EErrType type, const CSeqdesc& desc, 
+        const CSeq_entry* entry);
 
     void GatherTentativeName (const CSeq_entry& se, vector<CConstRef<CSeqdesc> >& usr_descs, vector<CConstRef<CSeq_entry> >& desc_ctxs, vector<CConstRef<CSeq_feat> >& usr_feats);
 
@@ -850,6 +868,10 @@ private:
 
     SIZE_TYPE   m_NumPseudo;
     SIZE_TYPE   m_NumPseudogene;
+
+    // Taxonomy service interface.
+    ITaxon3* m_taxon;
+    ITaxon3* x_GetTaxonService();
 
 };
 

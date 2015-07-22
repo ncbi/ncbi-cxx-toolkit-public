@@ -104,8 +104,6 @@
 #include <objects/biblio/Imprint.hpp>
 #include <objects/biblio/Affil.hpp>
 #include <objects/misc/sequence_macros.hpp>
-#include <objects/taxon3/taxon3.hpp>
-#include <objects/taxon3/Taxon3_reply.hpp>
 
 #include <objtools/error_codes.hpp>
 #include <util/sgml_entity.hpp>

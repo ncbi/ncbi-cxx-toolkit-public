@@ -4,6 +4,7 @@ APP = unit_test_validator
 SRC = unit_test_validator wrong_qual
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
+CXXFLAGS = -DVALID_BIOSOURCE_ENABLE_TAXONOMY_CACHING
 
 LIB  = xvalidate xunittestutil $(XFORMAT_LIBS) xalnmgr xobjutil valerr gbseq submit \
        tables xregexp $(PCRE_LIB) test_boost $(OBJMGR_LIBS) \

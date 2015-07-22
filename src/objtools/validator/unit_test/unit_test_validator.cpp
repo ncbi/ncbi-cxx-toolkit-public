@@ -19274,3 +19274,39 @@ BOOST_AUTO_TEST_CASE(Test_IsLocationInFrame)
     BOOST_CHECK_EQUAL(feature::eLocationInFrame_NotIn, feature::IsLocationInFrame(fh, *loc));    
 }
 
+CRef<CTaxon3_reply> s_CreateReplyWithMessage(const string& message)
+{
+    CRef<CTaxon3_reply> reply(new CTaxon3_reply);
+    CRef<CT3Reply> t3reply(new CT3Reply);
+    t3reply->SetError().SetLevel(CT3Reply::TError::eLevel_error);
+    t3reply->SetError().SetMessage(message);
+    reply->SetReply().push_back(t3reply);
+    return reply;
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_Empty_Taxon_Reply)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+
+    CMockTaxon::TReplies replies;
+    CRef<CTaxon3_reply> reply(new CTaxon3_reply);
+    replies.push_back(reply);
+
+    STANDARD_SETUP_WITH_MOCK_TAXON(replies);
+
+    eval = validator.Validate(seh, options);
+
+    expected_errors.push_back(new CExpectedError("good",
+        eDiag_Error,
+        "TaxonomyLookupProblem",
+        "Taxonomy service connection failure"));
+
+
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
+

@@ -1,5 +1,5 @@
-#ifndef NCBI_TAXON3_HPP
-#define NCBI_TAXON3_HPP
+#ifndef NCBI_ITAXON3_HPP
+#define NCBI_ITAXON3_HPP
 
 /* $Id$
  * ===========================================================================
@@ -27,6 +27,7 @@
  * ===========================================================================
  *
  * Author:  Colleen Bollin, based on work by Vladimir Soussov, Michael Domrachev
+ *          Brad Holmes : Added ITaxon interface, to support mocking the service.
  *
  * File Description:
  *     NCBI Taxonomy information retreival library
@@ -39,8 +40,6 @@
 #include <serial/serialdef.hpp>
 #include <connect/ncbi_types.h>
 #include <corelib/ncbi_limits.hpp>
-
-#include <objects/taxon3/itaxon3.hpp>
 
 #include <list>
 #include <vector>
@@ -55,50 +54,33 @@ class CConn_ServiceStream;
 
 BEGIN_objects_SCOPE
 
-class NCBI_TAXON3_EXPORT CTaxon3 : public ITaxon3 {
+class NCBI_TAXON3_EXPORT ITaxon3 {
 public:
 
-    CTaxon3();
-    virtual ~CTaxon3();
+    virtual ~ITaxon3(){};
 
     //---------------------------------------------
     // Taxon1 server init
     // Returns: TRUE - OK
     //          FALSE - Can't open connection to taxonomy service
-    ///
-    virtual void Init(void);  // default:  120 sec timeout, 5 reconnect attempts,
+    virtual void Init(void) = 0;  
                      
-    virtual void Init(const STimeout* timeout, unsigned reconnect_attempts=5);
+    virtual void Init(const STimeout* timeout, unsigned reconnect_attempts=5) = 0;
 
     // submit a list of org_refs
-    virtual CRef<CTaxon3_reply> SendOrgRefList(const vector<CRef< COrg_ref> >& list);
-    virtual CRef< CTaxon3_reply >    SendRequest(const CTaxon3_request& request);
+    virtual CRef<CTaxon3_reply> SendOrgRefList(const vector<CRef< COrg_ref> >& list) = 0;
+    virtual CRef< CTaxon3_reply >    SendRequest(const CTaxon3_request& request) = 0;
 
     //--------------------------------------------------
     // Get error message after latest erroneous operation
     // Returns: error message, or empty string if no error occurred
     ///
-    virtual const string& GetLastError() const { return m_sLastError; }
+    virtual const string& GetLastError() const = 0;
 
-
-
-
-private:
-
-    ESerialDataFormat        m_eDataFormat;
-    const char*              m_pchService;
-    STimeout*                m_timeout;  // NULL, or points to "m_timeout_value"
-    STimeout                 m_timeout_value;
-
-    unsigned                 m_nReconnectAttempts;
-
-    string                   m_sLastError;
-
-    void             SetLastError(const char* err_msg);
 };
 
 
 END_objects_SCOPE
 END_NCBI_SCOPE
 
-#endif //NCBI_TAXON1_HPP
+#endif //NCBI_ITAXON1_HPP

@@ -104,6 +104,7 @@
 #include <objects/biblio/Imprint.hpp>
 #include <objects/biblio/Affil.hpp>
 #include <objects/misc/sequence_macros.hpp>
+#include <objects/taxon3/itaxon3.hpp>
 #include <objects/taxon3/taxon3.hpp>
 #include <objects/taxon3/Taxon3_reply.hpp>
 
@@ -156,20 +157,30 @@ const CBioseq_Handle CCacheImpl::kAnyBioseq;
 
 // Constructor
 CValidError_imp::CValidError_imp
-(CObjectManager& objmgr, 
- CValidError*       errs,
- Uint4              options) :
-      m_ObjMgr(&objmgr),
-      m_ErrRepository(errs)
+(CObjectManager& objmgr,
+CValidError*     errs,
+ITaxon3*         taxon,
+Uint4            options) :
+m_ObjMgr(&objmgr),
+m_ErrRepository(errs),
+m_taxon(taxon)
+{
+    if (m_taxon == NULL) {
+        throw runtime_error("Taxon service not defined by CValidator");
+    }
+
+    x_Init(options);
+}
+
+void CValidError_imp::x_Init(Uint4 options)
 {
     SetOptions(options);
     Reset();
 
-    if ( m_SourceQualTags.get() == 0 ) {
+    if (m_SourceQualTags.get() == 0) {
         InitializeSourceQualTags();
     }
 }
-
 
 // Destructor
 CValidError_imp::~CValidError_imp()
@@ -2949,6 +2960,15 @@ bool CValidError_imp::GetTSAConflictingBiomolTechErrors (const CBioseq& seq)
     return bioseq_validator.GetTSAConflictingBiomolTechErrors(*(seh.GetSeq().GetCompleteBioseq()));
 }
 
+
+ITaxon3* CValidError_imp::x_GetTaxonService()
+{
+    if (m_taxon == NULL) {
+        //Impossible to reach code, as c'tor requires non-null taxon service
+        throw runtime_error("Taxon service not defined by CValidator");
+    }
+    return m_taxon;
+}
 
 // =============================================================================
 //                         CValidError_base Implementation

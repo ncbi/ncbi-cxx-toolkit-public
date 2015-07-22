@@ -43,6 +43,8 @@
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/misc/sequence_macros.hpp>
+#include <objects/taxon3/T3Data.hpp>
+#include <objects/taxon3/Taxon3_reply.hpp>
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_vector.hpp>
