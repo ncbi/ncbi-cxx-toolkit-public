@@ -52,7 +52,7 @@ Author: Jason Papadopoulos
 #include <algo/blast/blastinput/blast_args.hpp>
 #include <algo/blast/api/local_db_adapter.hpp>
 #include <algo/blast/api/blast_seqinfosrc.hpp>
-#include <objtools/format/sam_formatter.hpp>
+#include <algo/blast/format/sam.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -124,7 +124,8 @@ public:
                  bool is_megablast = false,
                  bool is_indexed = false,
                  const blast::CIgBlastOptions * ig_opts = NULL,
-                 const blast::CLocalDbAdapter* domain_db_adapter = NULL);
+                 const blast::CLocalDbAdapter* domain_db_adapter = NULL,
+                 const string & cmdline = kEmptyStr);
 
     /// Constructor
     /// @param opts BLAST options used in the search [in]
@@ -164,7 +165,8 @@ public:
                  bool is_html = false, 
                  bool is_remote_search = false,
                  const string& custom_output_format = kEmptyStr,
-                 bool is_vdb = false);
+                 bool is_vdb = false,
+                 const string & cmdline = kEmptyStr);
 
     /// Class destructor
     ~CBlastFormat();
@@ -348,7 +350,9 @@ private:
     IOS_BASE::iostate m_OrigExceptionMask;
 
     /// Pointer to the SAM formatting object
-    auto_ptr<CSAM_Formatter> m_SamFormatter;
+    auto_ptr<CBlast_SAM_Formatter> m_SamFormatter;
+
+    string m_Cmdline;
 
     /// Output the ancillary data for one query that was searched
     /// @param summary The ancillary data to report [in]
@@ -439,6 +443,8 @@ private:
    void x_GenerateXML2MasterFile(void);
    void x_GenerateJSONMasterFile(void);
    void x_WriteXML2(CCmdLineBlastXML2ReportData & report_data);
+
+   void x_InitSAMFormatter();
 };
 
 END_NCBI_SCOPE

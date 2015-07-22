@@ -84,7 +84,8 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
                  bool is_megablast /* = false */,
                  bool is_indexed /* = false */,
                  const blast::CIgBlastOptions *ig_opts /* = NULL */,
-                 const blast::CLocalDbAdapter* domain_db_adapter /* = NULL*/)
+                 const blast::CLocalDbAdapter* domain_db_adapter /* = NULL*/,
+                 const string & cmdline /* =kEMptyStr*/)
         : m_FormatType(format_type), m_IsHTML(is_html), 
           m_DbIsAA(db_adapter.IsProtein()), m_BelieveQuery(believe_query),
           m_Outfile(outfile), m_NumSummary(num_summary),
@@ -109,7 +110,8 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
           m_BaseFile(kEmptyStr),
           m_XMLFileCount(0),
           m_LineLength(align_format::kDfltLineLength),
-          m_OrigExceptionMask(outfile.exceptions())
+          m_OrigExceptionMask(outfile.exceptions()),
+          m_Cmdline(cmdline)
 {
     m_Outfile.exceptions(NcbiBadbit);
     m_DbName = db_adapter.GetDatabaseName();
@@ -162,7 +164,7 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
 
     m_IsIterative = options.IsIterativeSearch();
     if (m_FormatType == CFormattingArgs::eSAM) {
-        m_SamFormatter.reset(new CSAM_Formatter(m_Outfile, *m_Scope));
+    	x_InitSAMFormatter();
     }
 }
 
@@ -177,7 +179,8 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& opts,
                  bool is_html, 
                  bool is_remote_search,
                  const string& custom_output_format,
-                 bool is_vdb)
+                 bool is_vdb,
+                 const string & cmdline)
         : m_FormatType(format_type),
           m_IsHTML(is_html), 
           m_DbIsAA(!Blast_SubjectIsNucleotide(opts.GetProgramType())),
@@ -208,7 +211,8 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& opts,
           m_BaseFile(kEmptyStr),
           m_XMLFileCount(0),
           m_LineLength(align_format::kDfltLineLength),
-          m_OrigExceptionMask(outfile.exceptions())
+          m_OrigExceptionMask(outfile.exceptions()),
+          m_Cmdline(cmdline)
 {
     m_Outfile.exceptions(NcbiBadbit);
     m_DbInfo.assign(dbinfo_list.begin(), dbinfo_list.end());
@@ -259,7 +263,7 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& opts,
     }
     m_IsIterative = opts.IsIterativeSearch();
     if (m_FormatType == CFormattingArgs::eSAM) {
-        m_SamFormatter.reset(new CSAM_Formatter(m_Outfile, *m_Scope));
+    	x_InitSAMFormatter();
     }
 }
 
@@ -670,9 +674,8 @@ CBlastFormat::x_PrintStructuredReport(const blast::CSearchResults& results,
     	return;
     }
     else if (m_FormatType == CFormattingArgs::eSAM) {
-        ITERATE (CSeq_align_set::Tdata, it, results.GetSeqAlign()->Get()) {
-            _ASSERT(m_SamFormatter.get());
-            m_SamFormatter->Print(**it, (*it)->GetSeq_id(0));
+    	if(results.HasAlignments()) {
+            m_SamFormatter->Print(*(results.GetSeqAlign()));
         }
         return;
     }
@@ -1764,3 +1767,11 @@ void CBlastFormat::x_GenerateJSONMasterFile(void)
 	m_Outfile << "\t]\n}";
 }
 
+void CBlastFormat::x_InitSAMFormatter()
+{
+	CSAM_Formatter::SProgramInfo  pg("0", blast::CBlastVersion().Print(), m_Cmdline);
+   	pg.m_Name = m_Program;
+    m_SamFormatter.reset(new CBlast_SAM_Formatter(m_Outfile, *m_Scope,
+        		                                  m_CustomOutputFormatSpec, pg,
+        		                                  m_IsVdb));
+}
