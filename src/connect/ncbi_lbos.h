@@ -35,8 +35,6 @@
 
 #include "ncbi_servicep.h"
 #include <connect/ncbi_http_connector.h>
-#include <string.h>
-#include <stdlib.h>
 
 
 #ifdef __cplusplus
@@ -203,7 +201,7 @@ ELBOSAnnounceResult  g_LBOS_AnnounceEx                   (const char* service,
  * @param[in]            IP or hostname of service to be deannounced
  * @return               0 means any error, no deannounce was made
  *                       1 means success, deannounce was made                */
-/*int*//*bool*/ /*    g_LBOS_Deannounce               (const char* lbos_hostport,
+/*int*//*bool*/ /*    g_LBOS_Deannounce              (const char* lbos_hostport,
                                                         const char* service,
                                                         const char* version,
                                                         unsigned short port,
