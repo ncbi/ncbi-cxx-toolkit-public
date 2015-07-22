@@ -157,13 +157,31 @@ protected:
     /// The call may be ignored by the application
     void TestApp_IntraGroupSyncPoint(void);
 
+    /// Wait until ALL threads reach a call of TestApp_GlobalSyncPoint().
+    ///
+    /// @note                   Calling TestApp_GlobalSyncPoint() 
+    ///                         automatically awakes all threads that would 
+    ///                         be otherwise awaken only with 
+    ///                         TestApp_DelayedStartSyncPoint().
+    /// @note                   You can use this method if you want threads
+    ///                         to be synchronized across different branches
+    ///                         of code. The only thing to keep in mind is 
+    ///                         that EVERY thread has to reach 
+    ///                         TestApp_GlobalSyncPoint() for execution 
+    ///                         to be continued.
+    void TestApp_GlobalSyncPoint(void);
+
     /// Set allowed range of delayed-start sync points.
     /// The real number will be chosen randomly.
+    /// Note:   Specifying wrong number will cause inner assert() to fail
     void SetNumberOfDelayedStartSyncPoints(unsigned int num_min,
                                            unsigned int num_max);
     
-    /// Report that the calling thread has reached some point in execution
-    /// The call can trigger start of other threads, or be ignored.
+    /// When some thread reaches call of this function, it will with 
+    /// some probability start other threads that were sleeping since 
+    /// the beginning of the test. Please note that new threads 
+    /// will start from the beginning of Thread_Run(), not from anywhere
+    /// in the middle.
     ///
     /// @param name
     ///   Name can be anything you like, providing other

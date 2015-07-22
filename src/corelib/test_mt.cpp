@@ -58,7 +58,7 @@ static volatile unsigned int s_NextIndex = 0;
 #define TESTAPP_LOG_POST(x)  do { ++m_LogMsgCount; ERR_POST(x); } while (0)
 
 /////////////////////////////////////////////////////////////////////////////
-// Randomization paramaters
+// Randomization parameters
 
 // if (rand() % 100 < threshold) then use cascading threads
 NCBI_PARAM_DECL(unsigned int, TEST_MT, Cascading);
@@ -86,8 +86,8 @@ public:
     static void StartCascadingThreads(void);
 
     CTestThread(int id);
-    virtual void SyncPoint(void) {
-    }
+    virtual void SyncPoint(void) {};
+    virtual void GlobalSyncPoint(void);
 
 protected:
     ~CTestThread(void);
@@ -108,9 +108,20 @@ public:
 };
 
 
+static CSemaphore           s_Semaphore(0, INT_MAX); /* For GlobalSyncPoint()*/
+DEFINE_STATIC_FAST_MUTEX    (s_Mutex);               /* For GlobalSyncPoint()*/
+static CAtomicCounter       s_SyncCounter;           /* For GlobalSyncPoint()*/
+static CAtomicCounter       s_NumberOfThreads;       /* For GlobalSyncPoint()*/
+
+
 CTestThread::CTestThread(int idx)
     : m_Idx(idx)
 {
+    /* We want to know total number of threads, and the easiest way is to make
+       them register themselves */
+    s_Mutex.Lock();
+    s_NumberOfThreads.Add(1);
+    s_Mutex.Unlock();
     if ( s_Application != 0 )
         assert(s_Application->Thread_Init(m_Idx));
 }
@@ -118,6 +129,10 @@ CTestThread::CTestThread(int idx)
 
 CTestThread::~CTestThread(void)
 {
+    s_Mutex.Lock();
+    s_NumberOfThreads.Add(-1);
+    assert(s_NumberOfThreads.Get() >= 0);
+    s_Mutex.Unlock();
     if ( s_Application != 0 )
         assert(s_Application->Thread_Destroy(m_Idx));
 }
@@ -127,6 +142,24 @@ void CTestThread::OnExit(void)
 {
     if ( s_Application != 0 )
         assert(s_Application->Thread_Exit(m_Idx));
+}
+
+
+void CTestThread::GlobalSyncPoint(void) 
+{
+    bool reached = false;
+    int thread_number = s_SyncCounter.Add(1);
+    if (thread_number == s_NumberOfThreads.Get()) {
+        reached = true;
+    }
+    if (reached) {
+        if (s_NumberOfThreads.Get() > 1) {
+            s_Semaphore.Post(s_NumberOfThreads.Get() - 1);
+            SleepMilliSec(0);
+        }
+    } else {
+        s_Semaphore.Wait();
+    }
 }
 
 
@@ -289,9 +322,10 @@ private:
     CFastMutex m_Mutex;
     unsigned int m_SyncCounter;
 };
-static CRef<CThreadGroup> thr_group[k_NumThreadsMax];
-static CStaticTls<int> s_ThreadIdxTLS;
 
+
+static CRef<CThreadGroup>   thr_group[k_NumThreadsMax];
+static CStaticTls<int>      s_ThreadIdxTLS;
 
 CInGroupThread::CInGroupThread(CThreadGroup& group, int id)
     : CTestThread(id), m_Group(group)
@@ -306,6 +340,7 @@ void CInGroupThread::SyncPoint(void)
 {
     m_Group.SyncPoint();
 }
+
 
 void* CInGroupThread::Main(void)
 {
@@ -343,6 +378,9 @@ CThreadGroup::~CThreadGroup(void)
 inline
 void CThreadGroup::Go(void)
 {
+    s_Mutex.Lock();
+    s_NumberOfThreads.Add(m_Number_of_threads);
+    s_Mutex.Unlock();
     m_Semaphore.Post(m_Number_of_threads);
 }
 
@@ -368,9 +406,14 @@ void CThreadGroup::SyncPoint(void)
     }
 }
 
+
 inline
 void CThreadGroup::ThreadWait(void)
 {
+    s_Mutex.Lock();
+    s_NumberOfThreads.Add(-1);
+    assert(s_NumberOfThreads.Get() >= 0);
+    s_Mutex.Unlock();
     m_Semaphore.Wait();
 }
 
@@ -475,9 +518,9 @@ int CThreadedApp::Run(void)
     assert(TestApp_Init());
 
     unsigned int seed = GetArgs()["seed"]
-        ? (unsigned int) GetArgs()["seed"].AsInteger()
-        : ((unsigned int) CProcess::GetCurrentPid() ^
-           (unsigned int) time(NULL)) % 1000000;
+        ? static_cast<unsigned int>(GetArgs()["seed"].AsInteger())
+        : (static_cast<unsigned int>(CProcess::GetCurrentPid()) ^
+           static_cast<unsigned int>(time(NULL)) % 1000000);
     TESTAPP_LOG_POST("Randomization seed value: " << seed);
     srand(seed);
 
@@ -485,11 +528,10 @@ int CThreadedApp::Run(void)
     if (threshold > 100) {
         ERR_FATAL("Cascading threshold must be less than 100");
     }
-    bool cascading = ((unsigned int)(rand() % 100)) < threshold;
+    bool cascading = (static_cast<unsigned int>(rand() % 100)) < threshold;
 #if !defined(NCBI_THREADS)
     cascading = true;
 #endif
-
     if ( !cascading ) {
         x_InitializeThreadGroups();
         x_PrintThreadGroups();
@@ -626,7 +668,7 @@ void CThreadedApp::x_PrintThreadGroups( void)
 
 unsigned int CThreadedApp::x_InitializeDelayedStart(void)
 {
-    const unsigned int count = (unsigned int)m_ThreadGroups.size();
+    const unsigned int count = static_cast<unsigned int>(m_ThreadGroups.size());
     unsigned int start_now = count;
     unsigned int g;
     if (m_Max == 0)
@@ -663,7 +705,6 @@ void CThreadedApp::x_StartThreadGroup(unsigned int count)
         thr_group[m_NextGroup++]->Go();
     }
 }
-
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -706,6 +747,24 @@ void CThreadedApp::TestApp_IntraGroupSyncPoint(void)
 {
     int idx = (int)(intptr_t(s_ThreadIdxTLS.GetValue()));
     thr[idx]->SyncPoint();
+}
+
+
+void CThreadedApp::TestApp_GlobalSyncPoint(void)
+{
+    {{
+        CFastMutexGuard LOCK(m_AppMutex);
+        if (!m_Delayed.empty()) {
+            TESTAPP_LOG_POST("There were delayed threads, running them now, "
+                "because TestApp_GlobalSyncPoint() was called");
+            for (int i = m_Reached.size(); i < m_Delayed.size(); i++) {
+                m_Reached.insert(NStr::IntToString(i));
+                x_StartThreadGroup(m_Delayed[i]);
+            }
+        }
+    }}
+    int idx = static_cast<int>(intptr_t(s_ThreadIdxTLS.GetValue()));
+    thr[idx]->GlobalSyncPoint();
 }
 
 
