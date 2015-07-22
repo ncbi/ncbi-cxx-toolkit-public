@@ -263,8 +263,15 @@ bool CVariationUtilities::x_SetReference(CVariation_ref& vr, const string& ref_a
             }
         }
     }
-    if (asserted_ref.empty())
+
+    if (asserted_ref.empty()
+        && GetVariationType(vr) == CVariation_inst::eType_del) { //VAR-1562 - Large deletions do not have reference allele present)
+        return false;
+    }
+
+    if (asserted_ref.empty()) {
         NCBI_THROW(CException, eUnknown, "Old reference allele not found in input Seq-annot");
+    }
 
     return x_FixAlleles(vr,asserted_ref,ref_at_location);
 }
@@ -525,8 +532,16 @@ bool CVariationUtilities::IsReferenceCorrect(const CSeq_feat& feature, string& a
     if (ref_at_location.empty())
         NCBI_THROW(CException, eUnknown, "Cannot access correct reference allele at given location");
 
-    if (found_allele_from_identity && asserted_ref.empty())
+    if (found_allele_from_identity
+        && asserted_ref.empty()
+        && type == CVariation_inst::eType_del) { //VAR-1562 - Large deletions do not have reference allele present
+        return false;
+    }
+
+    if (found_allele_from_identity
+        && asserted_ref.empty()) {
         NCBI_THROW(CException, eUnknown, "Old reference allele not found in input Seq-feat");
+    }
 
     // No identity -- may be insertion which has 'no reference'.
     if (!found_allele_from_identity)

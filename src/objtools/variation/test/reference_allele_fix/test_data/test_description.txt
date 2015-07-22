@@ -7,5 +7,6 @@
  7.asn | Deletion, not shifted, with incorrect allele
  8.asn | MNP, with correct deletion
  9.asn | MNP with incorrect deletion
- 10.asn | Intronic SNV where sequence is not in first delta-item
+ 10.asn | Intronic SNV where sequence is not in first delta-item VAR-1561
  11.asn | Identity Variation-inst in a set returns appropriate type
+ 12.asn | Large deletions should not have their reference allele fixed. VAR-1562
