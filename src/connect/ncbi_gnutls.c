@@ -185,6 +185,7 @@ static EIO_Status x_ErrorToStatus(int* error,
                                   gnutls_session_t session,EIO_Event direction)
 {
     EIO_Status status;
+    SOCK       sock = (SOCK) gnutls_transport_get_ptr(session);
 
     assert(error  &&  *error <= 0);
 
@@ -201,6 +202,16 @@ static EIO_Status x_ErrorToStatus(int* error,
     else if (*error == GNUTLS_E_FATAL_ALERT_RECEIVED) {
         status = eIO_Closed;
         *error = GNUTLS_E_APPLICATION_ERROR_MAX - gnutls_alert_get(session);
+    }
+    else if (*error == GNUTLS_E_PULL_ERROR
+             &&  sock->r_status != eIO_Success
+             &&  sock->r_status != eIO_Unknown) {
+        status = sock->r_status;
+    }
+    else if (*error == GNUTLS_E_PUSH_ERROR
+             &&  sock->w_status != eIO_Success
+             &&  sock->w_status != eIO_Unknown) {
+        status = sock->w_status;
     }
     else if (gnutls_error_is_fatal(*error))
         status = eIO_Closed;
@@ -336,6 +347,11 @@ static void* s_GnuTlsCreate(ESOCK_Side side, SOCK sock,
     gnutls_transport_set_push_function(session, x_GnuTlsPush);
     gnutls_transport_set_ptr(session, ptr);
     gnutls_session_set_ptr(session, sock);
+
+#  if LIBGNUTLS_VERSION_NUMBER >= 0x030000
+    gnutls_handshake_set_timeout(session, 0);
+#  endif /*LIBGNUTLS_VERSION_NUMBER>=3.0.0*/
+
     return session;
 }
 
