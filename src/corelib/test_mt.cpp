@@ -147,12 +147,7 @@ void CTestThread::OnExit(void)
 
 void CTestThread::GlobalSyncPoint(void) 
 {
-    bool reached = false;
-    int thread_number = s_SyncCounter.Add(1);
-    if (thread_number == s_NumberOfThreads.Get()) {
-        reached = true;
-    }
-    if (reached) {
+    if (s_SyncCounter.Add(1) == s_NumberOfThreads.Get()) {
         if (s_NumberOfThreads.Get() > 1) {
             s_Semaphore.Post(s_NumberOfThreads.Get() - 1);
             SleepMilliSec(0);
