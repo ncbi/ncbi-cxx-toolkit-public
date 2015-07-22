@@ -86,7 +86,7 @@ static bool s_IsTokenInteger(
     const string& strToken )
 //  ----------------------------------------------------------------------------
 {
-    if ( ! strToken.empty() && strToken[0] == '-' ) {
+    if ( ! strToken.empty() && (strToken[0] == '-'  ||  strToken[0] == '+')) {
         return s_IsTokenPosInt( strToken.substr( 1 ) );
     }
     return s_IsTokenPosInt( strToken );
@@ -101,7 +101,10 @@ static bool s_IsTokenDouble(
     if ( token.size() > 1 && token[0] == '-' ) {
         token[0] = '1';
     }
-    return s_IsTokenPosInt( token );
+    if (token.size() > 1 && token[0] == '0') {
+        token[0] = '1';
+    }
+    return s_IsTokenPosInt(token);
 }
 
 //  ----------------------------------------------------------------------------
@@ -528,6 +531,7 @@ CFormatGuess::Initialize()
     m_iStatsCountAlNumChars = 0;
     m_iStatsCountDnaChars = 0;
     m_iStatsCountAaChars = 0;
+    m_iStatsCountBraces = 0;
 }
 
 //  ----------------------------------------------------------------------------
@@ -600,6 +604,7 @@ CFormatGuess::EnsureStats()
     //     from the DNA alphabet
     //   m_iStatsCountAaChars: number of characters counted in m_iStatsCountData
     //     from the AA alphabet
+    //  m_iStatsCountBraces: Opening { and closing } braces
     //
     while ( ! TestBuffer.fail() ) {
         NcbiGetlineEOL( TestBuffer, strLine );
@@ -616,6 +621,9 @@ CFormatGuess::EnsureStats()
 
             if ( type & (fAlpha | fDigit | fSpace) ) {
                 ++m_iStatsCountAlNumChars;
+            }
+            else if (c == '{'  ||  c == '}') {
+                ++m_iStatsCountBraces;
             }
             if ( !is_header ) {
                 if ( !(type & fSpace) ) {
@@ -1297,7 +1305,7 @@ CFormatGuess::TestFormatTextAsn(
     // at least 80% text-ish,
     // "::=" as the 2nd field of the first non-blank non comment line.
     //
-    double dAlNumFraction =  (double)m_iStatsCountAlNumChars / m_iTestDataSize;
+    double dAlNumFraction =  (double)(m_iStatsCountAlNumChars+m_iStatsCountBraces) / m_iTestDataSize;
     if ( dAlNumFraction < 0.80 ) {
         return false;
     }

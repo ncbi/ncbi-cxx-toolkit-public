@@ -340,6 +340,7 @@ protected:
     unsigned int m_iStatsCountAlNumChars;
     unsigned int m_iStatsCountDnaChars;
     unsigned int m_iStatsCountAaChars;
+    unsigned int m_iStatsCountBraces;
     std::list<std::string> m_TestLines;
     CFormatHints m_Hints;
 };
