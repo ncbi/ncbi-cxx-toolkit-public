@@ -277,7 +277,7 @@ typedef struct SOCK_tag {
     WSAEVENT         event;     /* event bound to I/O                        */
 #endif /*!NCBI_OS_MSWIN*/
 
-    void*            session;   /* secure session id if secure, else 0       */
+    void*            session;   /* secure session handle if used, else 0     */
     NCBI_CRED        cred;      /* secure session credentials, 0 if none     */
 
     /* timeouts */
@@ -323,7 +323,7 @@ typedef struct SOCK_tag {
  *    that has to be sent upon connection establishment.
  *
  * 2. eof is used differently for stream and datagram sockets:
- *    =1 for stream sockets means that read has hit EOF;
+ *    =1 for stream sockets means that last read has hit EOF;
  *    =1 for datagram sockets means that message in w_buf has been completed.
  *
  * 3. r_status keeps completion code of the last low-level read call;
