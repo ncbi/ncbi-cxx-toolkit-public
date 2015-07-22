@@ -63,6 +63,27 @@ inline int GetObject(HGDIOBJ hGdiObj, int cbBuffer, LPVOID lpvObject)
 #endif
 
 
+#ifdef   GetMessage
+#  undef GetMessage
+inline 
+WINUSERAPI
+BOOL
+WINAPI
+GetMessage(
+    _Out_ LPMSG lpMsg,
+    _In_opt_ HWND hWnd,
+    _In_ UINT wMsgFilterMin,
+    _In_ UINT wMsgFilterMax)
+{
+#  ifdef _UNICODE
+    return GetMessageW(lpMsg, hWnd, wMsgFilterMin, wMsgFilterMax);
+#  else
+    return GetMessageA(lpMsg, hWnd, wMsgFilterMin, wMsgFilterMax);
+#  endif
+}
+#endif
+
+
 // DrawText
 #ifdef   DrawText
 #  undef DrawText
