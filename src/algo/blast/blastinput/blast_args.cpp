@@ -1918,11 +1918,14 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     " 12 = JSON Seqalign output,\n"
     " 13 = JSON Blast output,\n"
     " 14 = XML2 Blast output\n\n"
-    /* " 15 = SAM format \n\n" */
-    "Options 6, 7, and 10 can be additionally configured to produce\n"
+    " 15 = SAM format \n\n"
+    "Options 6, 7, 10 and 15 can be additionally configured to produce\n"
     "a custom format specified by space delimited format specifiers.\n"
-    "The supported format specifiers are:\n") +
+    "The supported format specifiers for options 6, 7 and 10 are:\n") +
         DescribeTabularOutputFormatSpecifiers() + 
+        string("\n") +
+    "The supported format specifiers for option 15 are:\n" +
+        DescribeSAMOutputFormatSpecifiers(m_isVdb) +
         string("\n");
 
     int dft_outfmt = kDfltArgOutputFormat;
@@ -1937,7 +1940,7 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     "Options 7 can be additionally configured to produce\n"
     "a custom format specified by space delimited format specifiers.\n"
     "The supported format specifiers are:\n") +
-        DescribeTabularOutputFormatSpecifiers(true) + 
+        DescribeTabularOutputFormatSpecifiers(true) +
         string("\n");
         dft_outfmt = 3;
     }
@@ -2043,7 +2046,8 @@ CFormattingArgs::ParseFormattingString(const CArgs& args,
         fmt_type = static_cast<EOutputFormat>(val);
         if ( !(fmt_type == eTabular ||
                fmt_type == eTabularWithComments ||
-               fmt_type == eCommaSeparatedValues) ) {
+               fmt_type == eCommaSeparatedValues ||
+               fmt_type == eSAM) ) {
                custom_fmt_spec.clear();
         }
     }

@@ -866,13 +866,14 @@ public:
     };
 
     /// Default constructor
-    CFormattingArgs(bool isIgblast = false)
+    CFormattingArgs(bool isIgblast = false, bool isVdb=false)
         : m_OutputFormat(ePairwise), m_ShowGis(false), 
         m_NumDescriptions(0), m_NumAlignments(0),
         m_DfltNumDescriptions(0), m_DfltNumAlignments(0),
         m_Html(false),
         m_IsIgBlast(isIgblast),
-        m_LineLength(align_format::kDfltLineLength)
+        m_LineLength(align_format::kDfltLineLength),
+        m_isVdb(isVdb)
     {
         if (m_IsIgBlast) {
             m_DfltNumAlignments = m_DfltNumDescriptions = 10;
@@ -960,6 +961,8 @@ private:
     /// comma-separated value (populated if applicable)
     string m_CustomOutputFormatSpec;
     size_t m_LineLength;
+
+    bool m_isVdb;
 
 };
 
