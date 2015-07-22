@@ -232,6 +232,7 @@ private:
     bool m_TPAExp;
     bool m_TPAInf;
     bool m_TPAReasm;
+    bool m_Unordered;
 
     /// pdb block fields
     CTempString m_PDBCompound;

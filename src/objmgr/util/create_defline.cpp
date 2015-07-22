@@ -308,6 +308,7 @@ void CDeflineGenerator::x_SetFlags (
     m_TPAExp = false;
     m_TPAInf = false;
     m_TPAReasm = false;
+    m_Unordered = false;
 
     m_PDBCompound.clear();
 
@@ -652,13 +653,17 @@ void CDeflineGenerator::x_SetFlags (
         }
     }
 
-    if (keywords != NULL  &&  (m_HTGTech || m_ThirdParty)) {
+    if (keywords != NULL) {
         FOR_EACH_STRING_IN_LIST (kw_itr, *keywords) {
             const string& clause = *kw_itr;
             list<string> kywds;
             NStr::Split( clause, ";", kywds );
             FOR_EACH_STRING_IN_LIST ( k_itr, kywds ) {
                 const string& str = *k_itr;
+                if (NStr::EqualNocase (str, "UNORDERED")) {
+                    m_Unordered = true;
+                }
+                if ((! m_HTGTech) && (! m_ThirdParty)) continue;
                 if (NStr::EqualNocase (str, "HTGS_DRAFT")) {
                     m_HTGSDraft = true;
                 } else if (NStr::EqualNocase (str, "HTGS_CANCELLED")) {
@@ -2071,8 +2076,16 @@ void CDeflineGenerator::x_SetSuffix (
             break;
     }
 
-    /*
-    */
+    if (m_Unordered && m_IsDelta) {
+        unsigned int num_gaps = 0;
+        for (CSeqMap_CI it (bsh, CSeqMap::fFindGap); it; ++it) {
+            ++num_gaps;
+        }
+        if (num_gaps > 0) {
+            type += (", " + NStr::IntToString (num_gaps + 1)
+                       + " unordered pieces");
+        }
+    }
 
     suffix = type + comp;
 }
