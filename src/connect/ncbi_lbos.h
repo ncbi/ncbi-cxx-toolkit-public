@@ -25,7 +25,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Denis Vakatov, Anton Lavrentiev, Dmitriy Elisov
+ * Authors:  Dmitriy Elisov
  * @file
  * File Description:
  *   A service discovery API based on LBOS. LBOS is an adapter for ZooKeeper
@@ -44,7 +44,7 @@ extern "C" {
 ///////////////////////////////////////////////////////////////////////////////
 //                             DATA TYPES                                    //
 ///////////////////////////////////////////////////////////////////////////////
-/** Result of calling function g_LBOS_AnnounceEx() or g_LBOS_AnnounceSelf()  */
+/** Result of calling function g_LBOS_AnnounceEx() or g_LBOS_AnnounceSelf(). */
 typedef enum {
     eLBOSAnnounceResult_Success,             /**< Success                    */
     eLBOSAnnounceResult_NoLBOS,              /**< LBOS was not found, error  */
@@ -60,15 +60,15 @@ typedef enum {
 
 /** @brief Possible values to set primary address where to search for LBOS.
  *
- * LBOS can be located in different places, such as: 
- *   - localhost, 
- *   - home zone server (i.e. lbos.dev.be-md.ncbi.nlm.nih.gov, if you 
- *     are be-md domain on dev machine), 
+ * LBOS can be located in different places, such as:
+ *   - localhost,
+ *   - home zone server (i.e. lbos.dev.be-md.ncbi.nlm.nih.gov, if you
+ *     are be-md domain on dev machine),
  *   - somewhere else (set in registry with [CONN]lbos)
- * You can set priority for the first place to try. If LBOS is not found in 
- * this primary location, then it will be searched for in other places 
+ * You can set priority for the first place to try. If LBOS is not found in
+ * this primary location, then it will be searched for in other places
  * following default algorithm of going through places (maybe even through
- * the same place again)                                                      */
+ * the same place again).                                                    */
 typedef enum {
     eLBOSFindMethod_None,           /**< do not search. Used to skip
                                          "custom host" method                */
@@ -83,39 +83,39 @@ typedef enum {
 //                             GLOBAL FUNCTIONS                              //
 ///////////////////////////////////////////////////////////////////////////////
 /** Get all possible LBOS addresses for this platform.
- * @return    
- *  Array of LBOS addresses which needs to be free()'d by the caller
- * @see       
+ * @return
+ *  Array of LBOS addresses that needs to be free()'d by the caller.
+ * @see
  *  g_LBOS_GetLBOSAddressesEx()                                              */
 NCBI_XCONNECT_EXPORT
 char** g_LBOS_GetLBOSAddresses(void);
 
 
 /** Get all possible LBOS addresses for this platform, extended version.
- * @param priority_find_method[in]   
- *  First method to try
- * @param lbos[in]     
- *  If primary method is set to eLBOSFindMethod_CustomHost, lbos IP:port or 
- *  host:port should be provided
- * @return             
- *  Array of LBOS addresses which needs to be free()'d by the caller
- * @see                
+ * @param priority_find_method[in]
+ *  First method to try.
+ * @param lbos[in]
+ *  If primary method is set to eLBOSFindMethod_CustomHost, lbos IP:port or
+ *  host:port should be provided.
+ * @return
+ *  Array of LBOS addresses that needs to be free()'d by the caller.
+ * @see
  *  g_LBOS_GetLBOSAddresses()                                                */
 NCBI_XCONNECT_EXPORT
 char** g_LBOS_GetLBOSAddressesEx(ELBOSFindMethod priority_find_method,
                                  const char*     lbos);
 
-/** Creates iterator and fills it with found servers. 
- * @param[in,out] iter  
- *  Pointer to iterator. It is read and rewritten. If nothing found, it is 
- *  freed and points to unallocated area.
- * @param[in] net_info  
- *  Connection point
- * @param[out] info     
- *  Always assigned NULL, as not used in this mapper
- * @return              
- *  Table of methods if found servers, NULL if not found
- * @see                 
+/** Creates iterator and fills it with found servers.
+ * @param[in,out] iter
+ *  Pointer to iterator. It is read and rewritten. If nothing found, it is
+ *  free()'d and points to unallocated area.
+ * @param[in] net_info
+ *  Connection point.
+ * @param[out] info
+ *  Always assigned NULL, as not used in this mapper.
+ * @return
+ *  Table of methods if found servers, NULL if not found.
+ * @see
  *  s_Open(), SERV_LOCAL_Open(), SERV_LBSMD_Open(), SERV_DISPD_Open()        */
 NCBI_XCONNECT_EXPORT
 const SSERV_VTable*  SERV_LBOS_Open(SERV_ITER           iter,
@@ -125,44 +125,45 @@ const SSERV_VTable*  SERV_LBOS_Open(SERV_ITER           iter,
 
 
 
-/** Checks C-string if it is NULL or is of zero length
- * @param str[in]      
- *  String to check
- * @return             
- *  true - string is NULL or empty
- *  false - string exists and contains elements                              */
+/** Checks C-string if it is NULL or is of zero length.
+ * @param str[in]
+ *  String to check.
+ * @return
+ *  true - string is NULL or empty;
+ *  false - string exists and contains elements.                             */
 NCBI_XCONNECT_EXPORT
 int/*bool*/ g_LBOS_StringIsNullOrEmpty(const char* str);
 
 
-/** Compose LBOS address from /etc/ncbi/{role, domain}
- *  @return             
- *   LBOS address. Must be free()'d by the caller                            */
+/** Compose LBOS address from /etc/ncbi/{role, domain}.
+ *  @return
+ *   LBOS address. Must be free()'d by the caller.                           */
 NCBI_XCONNECT_EXPORT
 char* g_LBOS_ComposeLBOSAddress(void);
 
 
-/** For announcement we search for a LBOS which can handle our request. Search 
+/** For announcement we search for a LBOS which can handle our request. Search
  * starts with default order of LBOS.
- * @param service[in]    
- *  Name of service as it will appear in ZK. For services this means that name 
- *  should start with '/'
- * @param version[in]    
- *  Any non-NULL valid C-string
- * @param port[in]       
- *  Port for service. Can differ from healthcheck port
- * @param healthcheck_url[in]   
- *  Full absolute URL starting with "http://" or "https://". Should include 
+ * @param service[in]
+ *  Name of service as it will appear in ZK. For services this means that name
+ *  should start with '/'.
+ * @param version[in]
+ *  Any string that will help to identify certain version of service. A good
+ *  idea is to use [semantic versioning](http://semver.org/) like '4.7.2'
+ * @param port[in]
+ *  Port for service. Can differ from healthcheck port.
+ * @param healthcheck_url[in]
+ *  Full absolute URL starting with "http://" or "https://". Should include
  *  hostname or IP and port, if necessary.
- * @param LBOS_answer[out]   
- *  This variable will be assigned a pointer to char* with exact answer of 
- *  LBOS, or NULL. If it is not NULL, do not forget to free() it! If 
- *  eLBOSAnnounceResult_Success is returned, LBOS answer contains "host:port" 
- *  of LBOS that was used for announce. If something else is returned, LBOS 
+ * @param LBOS_answer[out]
+ *  This variable will be assigned a pointer to char* with exact answer of
+ *  LBOS, or NULL. If it is not NULL, must be free()'d by the caller. If
+ *  eLBOSAnnounceResult_Success is returned, LBOS answer contains "host:port"
+ *  of LBOS that was used for announce. If something else is returned, LBOS
  *  answer contains human-readable error message.
- * @return               
- *  Code of success or some error
- * @see                  
+ * @return
+ *  Code of success or some error.
+ * @see
  *  ELBOSAnnounceResult                                                      */
 /*NCBI_XCONNECT_EXPORT
 ELBOSAnnounceResult  g_LBOS_AnnounceEx(const char*      service,
@@ -173,20 +174,20 @@ ELBOSAnnounceResult  g_LBOS_AnnounceEx(const char*      service,
 
 
 /** Deannounce previously announced service.
- * @param lbos_hostport[in]    
- *  Address of the same LBOS that was used for announcement of the service 
- *  now being deannounced
- * @param service[in]    
- *  Name of service to be deannounced
- * @param version[in]    
- *  Version of service to be deannounced
- * @param port[in]       
- *  Port of service to be deannounced
- * @param[in]           
- *  IP or hostname of service to be deannounced
- * @return             
- *  0 - any error, no deannounce was made 
- *  1 - success, deannounce was made                                         */
+ * @param lbos_hostport[in]
+ *  Address of the same LBOS that was used for announcement of the service
+ *  now being deannounced.
+ * @param service[in]
+ *  Name of service to be deannounced.
+ * @param version[in]
+ *  Version of service to be deannounced.
+ * @param port[in]
+ *  Port of service to be deannounced.
+ * @param[in]
+ *  IP or hostname of service to be deannounced.
+ * @return
+ *  false - any error, no deannounce was made;
+ *  true  - success, deannounce was made.                                    */
 /*int*//*bool*/ /*g_LBOS_Deannounce (const char*    lbos_hostport,
                                      const char*    service,
                                      const char*    version,
@@ -194,12 +195,12 @@ ELBOSAnnounceResult  g_LBOS_AnnounceEx(const char*      service,
                                      const char*    ip)                      */
 
 
-/*  To deannounce we need to go the very same LBOS which we used for 
- * announcement. If it is dead, that means that we are anyway not visible 
- * for ZK, so we can just exit deannouncement
- * @return               
- *  0 - any error, no deannounce was made
- *  1 - success, deannounce was made                */
+/*  To deannounce we need to go the very same LBOS which we used for
+ * announcement. If it is dead, that means that we are anyway not visible
+ * for ZK, so we can just exit deannouncement.
+ * @return
+ *  false - any error, no deannounce was made;
+ *  true  - success, deannounce was made.                                    */
 /*NCBI_XCONNECT_EXPORT*/
 /*int*/ /* bool*/ /*g_LBOS_DeannounceSelf(void);                             */
 

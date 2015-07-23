@@ -37,24 +37,21 @@
 #include <connect/ncbi_http_connector.h>
 #include "ncbi_lbosp.h"
 #include "ncbi_priv.h"
-#include <errno.h>
-#include <ctype.h>
 #include <stdlib.h>
-#include <time.h>
 
 
 #define            kHostportStringLength      (16+1+5)/**<
                                                      strlen("255.255.255.255")+
                                                      strlen(":") +
-                                                     strlen("65535") */
+                                                     strlen("65535")         */
 #define            kMaxLineSize               1024  /**< used to read
-                                                         from socket*/
+                                                         from socket         */
 
 #define            NCBI_USE_ERRCODE_X         Connect_LBSM /**< Used in
-                                                                CORE_LOG*_X */
-static const int   kLBOSAddresses    =        7; /**< How many addresses of
+                                                                CORE_LOG*_X  */
+static const size_t kLBOSAddresses   =        7; /**< How many addresses of
                                                       LBOS to expect initially,
-                                                      plus one for NULL. */
+                                                      plus one for NULL.     */
 static const char* kRoleFile         =        "/etc/ncbi/role";
 static const char* kDomainFile       =        "/etc/ncbi/domain";
 static const char* kLBOSQuery        =        "/lbos/text/mlresolve?name=";
@@ -62,43 +59,44 @@ static const
 unsigned short int kDefaultLBOSPort  =        8080;  /**< if by
                                                      /etc/ncbi{role, domain} */
 static const int   kInitialCandidatesCount =  1; /**< For initial memory
-                                                      allocation */
+                                                      allocation             */
 static       int   s_LBOS_TurnedOn   =        1; /* If LBOS cannot resolve
                                                     even itself,
                                                     we turn it off for
-                                                    performance */
+                                                    performance              */
 
 static       int   s_LBOS_Init       =        0; /* If mapper has already
-                                                     been initialized */
+                                                     been initialized        */
 /*
  * Declarations of functions we need to be mocking
  */
-static SSERV_Info**     s_LBOS_ResolveIPPort    (const char* lbos_address,
-                                                 const char* serviceName,
-                                                 SConnNetInfo* net_info);
-static char *           s_LBOS_UrlReadAll       (SConnNetInfo* net_info,
-                                                 const char* url);
-static void             s_LBOS_FillCandidates   (SLBOS_Data* data,
-                                                 const char* service);
-static SLBOS_Data*      s_LBOS_ConstructData    (int candidatesCapacity);
-static void             s_LBOS_DestroyData      (SLBOS_Data* data);
-static SSERV_Info*      s_LBOS_GetNextInfo      (SERV_ITER iter,
-                                                 HOST_INFO* host_info);
-static void             s_LBOS_Initialize       (void);
-static int/*bool*/      s_LBOS_Feedback         (SERV_ITER, 
-                                                 double, int);
-static void             s_LBOS_Close            (SERV_ITER);
-static void             s_LBOS_Reset            (SERV_ITER iter);
-static int/*bool*/      s_LBOS_Update           (SERV_ITER,
-                                                 const char*, 
-                                                 int);
+static SSERV_Info**   s_LBOS_ResolveIPPort (const char*   lbos_address,
+                                            const char*   serviceName,
+                                            SConnNetInfo* net_info);
+static char *         s_LBOS_UrlReadAll    (SConnNetInfo* net_info,
+                                            const char*   url);
+static void           s_LBOS_FillCandidates(SLBOS_Data*   data,
+                                            const char*   service);
+static SLBOS_Data*    s_LBOS_ConstructData (size_t        candidatesCapacity);
+static void           s_LBOS_DestroyData   (SLBOS_Data*   data);
+static SSERV_Info*    s_LBOS_GetNextInfo   (SERV_ITER     iter,
+                                            HOST_INFO*    host_info);
+static void           s_LBOS_Initialize    (void);
+static int/*bool*/    s_LBOS_Feedback      (SERV_ITER     a,
+                                            double        b,
+                                            int           c);
+static void           s_LBOS_Close         (SERV_ITER     iter);
+static void           s_LBOS_Reset         (SERV_ITER     iter);
+static int/*bool*/    s_LBOS_Update        (SERV_ITER     iter,
+                                            const char*   text,
+                                            int           code);
 /*LBOS is intended to answer in 0.5 sec, or is considered dead*/
 static const STimeout   s_LBOS_Timeout       =  {2, 500000};
 static char**           s_LBOS_InstancesList =  NULL;/* Not to get 404 errors
                                                         on every resolve, we
                                                         will remember the last
                                                         successful LBOS and
-                                                        put it first */
+                                                        put it first         */
 
 
 static SLBOS_Functions s_LBOS_funcs = {
@@ -106,7 +104,7 @@ static SLBOS_Functions s_LBOS_funcs = {
                 CONN_Read,
                 g_LBOS_ComposeLBOSAddress,
                 s_LBOS_FillCandidates,
-               /* s_LBOS_ConstructData,*/
+               /* s_LBOS_ConstructData,*/ /* delete on 6/1/2015 */
                 s_LBOS_DestroyData,
                 s_LBOS_GetNextInfo,
                 s_LBOS_Initialize
@@ -118,12 +116,13 @@ static SLBOS_Functions s_LBOS_funcs = {
 
 
 static const SSERV_VTable s_lbos_op =  {
-        s_LBOS_GetNextInfo,
-        s_LBOS_Feedback,
-        s_LBOS_Update,
-        s_LBOS_Reset,
-        s_LBOS_Close,
-        "LBOS"      /**< name of mapper */
+        s_LBOS_GetNextInfo, /**< Use open()'ed iterator to get next found
+                             *   server*/
+        s_LBOS_Feedback,    /**< Not used                                    */
+        s_LBOS_Update,      /**< Not used                                    */
+        s_LBOS_Reset,       /**< Free iterator's 'data'                      */
+        s_LBOS_Close,       /**< Close iterator and free its 'data'          */
+        "LBOS"              /**< name of mapper                              */
 };
 
 
@@ -142,37 +141,40 @@ SLBOS_Functions* g_LBOS_UnitTesting_GetLBOSFuncs(void)
 }
 
 
-/** @brief          Check whether LBOS mapper is turned ON or OFF
- *  @return         address of static variable s_LBOS_TurnedOn
-    @see            SERV_LBOS_Open()                                         */
+/** Check whether LBOS mapper is turned ON or OFF
+ * @return
+ *  address of static variable s_LBOS_TurnedOn
+ * @see
+ *  SERV_LBOS_Open()                                                         */
 int* g_LBOS_UnitTesting_PowerStatus(void)
 {
     return &s_LBOS_TurnedOn;
 }
 
 
-/** @brief          Check whether LBOS mapper is turned ON or OFF
- *  @return         address of static variable s_LBOS_Init
-    @see            SERV_LBOS_Open()                                         */
+/**  Check whether LBOS mapper is turned ON or OFF
+ *  @return
+ *   Address of static variable s_LBOS_Init
+ *  @see
+ *   SERV_LBOS_Open()                                                        */
 int* g_LBOS_UnitTesting_InitStatus(void)
 {
     return &s_LBOS_Init;
 }
 
 
-/** @brief          List of addresses of LBOS that is maintained in actual 
-                    state
- *  @return         address of static variable s_LBOS_InstancesList
-    @see            SERV_LBOS_Open(), s_LBOS_FillCandidates()                */
+/**  List of addresses of LBOS that is maintained in actual state.
+ *  @return
+ *   address of static variable s_LBOS_InstancesList.
+ *  @see
+ *   SERV_LBOS_Open(), s_LBOS_FillCandidates()                               */
 char** g_LBOS_UnitTesting_InstancesList(void)
 {
     return s_LBOS_InstancesList;
 }
 
 
-/** @brief We compose LBOS hostname based on /etc/ncbi/domain and
- *         /etc/ncbi/role
- */
+/**  We compose LBOS hostname based on /etc/ncbi/domain and /etc/ncbi/role.  */
 char* g_LBOS_ComposeLBOSAddress(void)
 {
     char* site = calloc(sizeof(char*), kMaxLineSize), *read_result;
@@ -283,13 +285,12 @@ char* g_LBOS_ComposeLBOSAddress(void)
 }
 
 
-/** @brief  Checks iterator, fact that iterator belongs to this mapper,
- *          iterator data. Only debug function.
- */
-int g_LBOS_CheckIterator(SERV_ITER iter, 
+/** Checks iterator, fact that iterator belongs to this mapper, iterator data.
+ * Only debug function.                                                      */
+int/*bool*/ g_LBOS_CheckIterator(SERV_ITER              iter,
                          ELBOSIteratorCheckType should_have_data)
 {
-    if (iter == NULL) 
+    if (iter == NULL)
         return 0;
     if (should_have_data == 1 && iter->data == NULL) {
         return 0;
@@ -333,11 +334,10 @@ int/*bool*/ g_LBOS_UnitTesting_SetLBOSRoleAndDomainFiles (const char* roleFile,
 
 
 /* UNIT TESTING*/
-/** @brief           Set custom address for LBOS. Can be both hostname:port and
- *                   IP:port. Intended mostly for testing
- * @param[in] iter   Where to set address for LBOS. The settings is made for
- *                   only one iterator
- */
+/**  Set custom address for LBOS. Can be both hostname:port and IP:port.
+ *  Intended mostly for testing.
+ * @param[in] iter
+ *  Where to set address for LBOS. The settings is made for only one iterator*/
 int/*bool*/ g_LBOS_UnitTesting_SetLBOSaddress (SERV_ITER iter, char* address) {
     if (!g_LBOS_CheckIterator(iter, 1)) {
         CORE_LOG_X(1, eLOG_Error, "Could not set LBOS address, problem with "
@@ -345,14 +345,14 @@ int/*bool*/ g_LBOS_UnitTesting_SetLBOSaddress (SERV_ITER iter, char* address) {
         return (0);
     }
     SLBOS_Data* data = (SLBOS_Data*) iter->data;
-    data->lbos = address;
+    data->lbos_addr = address;
     return (1);
 }
 
 
-/** @brief This function test existence of the application that should always
-           be found - LBOS itself. If it is not found, we turn LBOS off.     */
-static void s_LBOS_Initialize(void) 
+/**  This function test existence of the application that should always be
+ *  found - LBOS itself. If it is not found, we turn LBOS off.               */
+static void s_LBOS_Initialize(void)
 {
     const char* service = "/lbos";
     SConnNetInfo* net_info;
@@ -362,7 +362,7 @@ static void s_LBOS_Initialize(void)
             "Turning LBOS off in this process.");
         s_LBOS_TurnedOn = 0;
         return;
-    } 
+    }
     iter->name = service;
     net_info = ConnNetInfo_Create(service);
     iter->op = SERV_LBOS_Open(iter, net_info, NULL);
@@ -375,9 +375,8 @@ static void s_LBOS_Initialize(void)
 }
 
 
-/** @brief After we receive answer from dispd.cgi, we parse header
- * to get all hosts
- */
+/** After we receive answer from dispd.cgi, we parse header
+ * to get all hosts.                                                         */
 static EHTTP_HeaderParse s_LBOS_ParseHeader(const char*      header,
                                             void* /* int* */ response,
                                             int              server_error)
@@ -401,10 +400,9 @@ static EHTTP_HeaderParse s_LBOS_ParseHeader(const char*      header,
 }
 
 
-/** @brief Constructor for SLBOS_Data. Returns pointer to new empty
- *         initialized SLBOS_Data
- */
-static SLBOS_Data* s_LBOS_ConstructData(int candidatesCapacity)
+/** Constructor for SLBOS_Data. Returns pointer to new empty initialized
+ * SLBOS_Data.                                                              */
+static SLBOS_Data* s_LBOS_ConstructData(size_t candidatesCapacity)
 {
     SLBOS_Data* data;
 
@@ -420,7 +418,7 @@ static SLBOS_Data* s_LBOS_ConstructData(int candidatesCapacity)
     data->a_cand = candidatesCapacity;
     data->pos_cand = 0;
     data->n_cand = 0;
-    data->lbos = NULL;
+    data->lbos_addr = NULL;
     data->find_method = eLBOSFindMethod_None;
     data->cand = (SLBOS_Candidate*)calloc(sizeof(SLBOS_Candidate),
                                                         candidatesCapacity);
@@ -428,12 +426,9 @@ static SLBOS_Data* s_LBOS_ConstructData(int candidatesCapacity)
 }
 
 
-/** @brief  Destructor for SLBOS_Data
- *          It presumes that s_LBOS_Reset was called previously
- *
- * @param[in] data_to_delete   Please note that you have to set pointer to NULL
- *                             yourself
- */
+/** Destructor for SLBOS_Data.
+ * @param[in] data_to_delete
+ *  Please note that you have to set pointer to NULL yourself.               */
 static void s_LBOS_DestroyData(SLBOS_Data* data)
 {
     if (data == NULL) {
@@ -501,14 +496,14 @@ static void s_LBOS_Reset(SERV_ITER iter)
 }
 
 
-/** Did not need to implement this yet*/
+/** Not implemented in LBOS mapper. */
 static int/*bool*/ s_LBOS_Feedback (SERV_ITER a, double b, int c)
 {
     return 0;
 }
 
 
-/** Did not need to implement this yet*/
+/** Not implemented in LBOS mapper. */
 static int/*bool*/ s_LBOS_Update(SERV_ITER iter, const char* text, int code)
 {
     return 1;
@@ -538,7 +533,7 @@ static void s_LBOS_Close (SERV_ITER iter)
 }
 
 
-/** \brief Just connect and return connection
+/** @brief Just connect and return connection
  *
  *  Internal function to create connection, which simplifies process
  *  by ignoring many settings and making them default
@@ -581,7 +576,7 @@ static CONN s_LBOS_ConnectURL(SConnNetInfo* net_info, const char* url,
 
 
 /** If you are sure that all answer will fit in one char*, use this function
- * to read all input. Need to free() result by yourself
+ * to read all input. Must be free()'d by the caller.
  */
 static char * s_LBOS_UrlReadAll(SConnNetInfo* net_info, const char* url)
 {
@@ -645,9 +640,9 @@ static char * s_LBOS_UrlReadAll(SConnNetInfo* net_info, const char* url)
     return (buf);
 }
 
-/* TODO: test this function */
-/* @brief  Takes original string and returns URL-encoded string.
- *         Original string is untouched.
+
+/*   Takes original string and returns URL-encoded string. Original string
+ *  is untouched.
  */
 char* s_LBOS_URLEncode (const char* to_encode)
 {
@@ -661,46 +656,39 @@ char* s_LBOS_URLEncode (const char* to_encode)
     return encoded_string;
 }
 
-/**Resolve service name to one of the hosts implementing service.
- * Uses LBZK at specified IP and port.
- * */
+/**   Resolve service name to one of the hosts implementing service.
+ *   Uses LBZK at specified IP and port.
+ */
 static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
         const char* serviceName, SConnNetInfo* net_info)
 {
     /*Access server at the specified IP and port and receive answer to
      * std::stringstream*/
     SSERV_Info** infos = (SSERV_Info**)calloc(sizeof(SSERV_Info*), 2);
-    int infos_count = 0;
-    int infos_capacity = 1;
+    size_t infos_count = 0;
+    size_t infos_capacity = 1;
     char* servicename_url_encoded = s_LBOS_URLEncode(serviceName);
     /*encode service
        namename to url encoding (change ' ' to %20, '/' to %2f, etc.)*/
     size_t url_length = strlen("http://") + strlen(lbos_address) +
             strlen(kLBOSQuery) + strlen(servicename_url_encoded);
     char * url = (char*)malloc(sizeof(char) * url_length + 1); /** to make up
-                                                   lbzk query URI to connect*/
+                                                   lbos query URI to connect*/
     if (url == NULL)
     {
         CORE_LOG(eLOG_Warning, "s_LBOS_ResolveIPPort: No RAM. "
             "Returning NULL.");
         return NULL;
     }
-    char * lbzk_answer; /*to write down lbzk's answer*/
+    char * lbzk_answer; /*to write down lbos's answer*/
     sprintf(url, "%s%s%s%s", "http://", lbos_address, kLBOSQuery,
             servicename_url_encoded);
     lbzk_answer = s_LBOS_UrlReadAll(net_info, url);
     free(url);
     free(servicename_url_encoded);
     /*
-     * Process stream to separate IP:port from additional symbols. Now it is
-     * really simple processing. Illustrative example is
-     * "{"/gws/qsearch":"10.50.2.228:8080"}" (without outer commas). We go until
-     * first ":", then take two more symbols to the right which are ':' and '"',
-     * start cutting and finish cutting two symbols before end of the string.
-     * This technique works only if we receive only one entity in json
-     */
-    /* We read all the answer, find host:port in the answer and fill
-     * hostports, occasionally reallocating array, if needed
+     * We read all the answer, find host:port in the answer and fill
+     * 'hostports', occasionally reallocating array, if needed
      */
     if (!g_LBOS_StringIsNullOrEmpty(lbzk_answer)) {
         char* token = NULL, *saveptr = NULL, *str = NULL;
@@ -712,7 +700,7 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
 #endif
             if (token == NULL) break;
             SSERV_Info * info = SERV_ReadInfoEx(token, serviceName, 0);
-            /* Ocasionally, the info returned by LBOS can be invalid. */
+            /* Occasionally, the info returned by LBOS can be invalid. */
             if (info == NULL) continue;
             /* We check if we have at least two more places: one for current
              * info and one for finalizing NULL
@@ -723,7 +711,7 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
                 if (realloc_result == NULL) {
                     /* If error with realloc, return as much as could allocate
                      * for*/
-                    infos_count--; /*Will jsut rewrite last info with NULL to
+                    infos_count--; /*Will just rewrite last info with NULL to
                                      mark end of array*/
                     break;
                 } else { /*If realloc successful */
@@ -755,32 +743,27 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
 }
 
 
-/*TODO*/
-/** @brief This function is needed to get LBOS hostname in different situations
- *  @param priority_find_method[in] The first method to try to find LBOS.
- *                                  If it fails, default order of methods
- *                                  will be used to find LBOS.
- *                                  Default order is:
- *                                  1) registry value of [CONN]->LBOS;
- *                                  2) 127.0.0.1:8080;
- *                                  3) lbos for current
- *                                  /etc/ncbi/{role, domain}.
- *                                  To not specify default method, use
- *                                  eLBOSFindMethod_None
- *  @param lbos[in]                 If priority_find_method is
- *                                  eLBOSFindMethod_CustomHost, then
- *                                  lbos is first looked for at hostname:port
- *                                  specified in this variable
- */
+/**  This function is needed to get LBOS hostname in different situations.
+ *  @param priority_find_method[in]
+ *   The first method to try to find LBOS. If it fails, default order of
+ *   methods will be used to find LBOS.
+ *   Default order is:
+ *   1) registry value of [CONN]->LBOS;
+ *   2) 127.0.0.1:8080;
+ *   3) lbos for current /etc/ncbi/{role, domain}.
+ *   To not specify default method, use eLBOSFindMethod_None.
+ *  @param lbos[in]
+ *   If priority_find_method is eLBOSFindMethod_CustomHost, then lbos is
+ *   first looked for at hostname:port specified in this variable.           */
 char** g_LBOS_GetLBOSAddressesEx (ELBOSFindMethod priority_find_method,
-                                  const char* lbos)
+                                  const char* lbos_addr)
 {
     char** addresses = (char**)malloc(sizeof(char*) *
             kLBOSAddresses);
     /* Section for custom-set address*/
     CORE_LOG_X(1, eLOG_Trace, "Getting LBOS addresses...");
     char* lbosaddress = NULL;
-    int lbosaddresses_count = 0;
+    size_t lbosaddresses_count = 0;
     ELBOSFindMethod find_method_order[] = { /*We will change first item since
                                            it is not what we want, but static
                                            array is a luxury we will not miss*/
@@ -789,20 +772,20 @@ char** g_LBOS_GetLBOSAddressesEx (ELBOSFindMethod priority_find_method,
                , eLBOSFindMethod_127001
                , eLBOSFindMethod_EtcNcbiDomain
                };
-    int find_method_iter;
-    int find_method_count = sizeof(find_method_order)/sizeof(ELBOSFindMethod);
+    size_t find_method_iter;
+    size_t find_method_count = sizeof(find_method_order)/sizeof(ELBOSFindMethod);
     for (find_method_iter = 0; find_method_iter < find_method_count;
             ++find_method_iter) {
         switch (find_method_order[find_method_iter]) {
         case eLBOSFindMethod_None :
             break;
         case eLBOSFindMethod_CustomHost :
-            if (g_LBOS_StringIsNullOrEmpty(lbos)) {
+            if (g_LBOS_StringIsNullOrEmpty(lbos_addr)) {
                 CORE_LOG_X(1, eLOG_Warning, "Use of custom LBOS address was "
                         "asked for, but no custom address was supplied. Using "
                         "default LBOS.");
             } else {
-                lbosaddress = strdup(lbos);
+                lbosaddress = strdup(lbos_addr);
                 if (lbosaddress != NULL) {
                     addresses[lbosaddresses_count++] = lbosaddress;
                 }
@@ -855,23 +838,20 @@ char** g_LBOS_GetLBOSAddressesEx (ELBOSFindMethod priority_find_method,
     return addresses;
 }
 
-/* @brief Get possible addresses of LBOS in default order */
+/* Get possible addresses of LBOS in default order */
 char** g_LBOS_GetLBOSAddresses(void)
 {
     return g_LBOS_GetLBOSAddressesEx(eLBOSFindMethod_None, NULL);
 }
 
-/** @brief Given an empty iterator which has service name in its "name" field
+/** Given an empty iterator which has service name in its "name" field
  * we fill it with all servers which were found by asking LBOS
- *
- * @param[in,out] iter We need name from it, then set "data" field with
- * all servers. All previous "data" will be overwritten, causing possible
- * memory leak
+ * @param[in,out] iter
+ *  We need name from it, then set "data" field with all servers. All
+ *  previous "data" will be overwritten, causing possible memory leak.
  */
 static void s_LBOS_FillCandidates(SLBOS_Data* data, const char* service)
 {
-    unsigned int host = 0;
-    unsigned short port = 0;
     SSERV_Info** hostports_array = 0;
     /*
      * We iterate through known LBOSes to find working instance
@@ -880,12 +860,12 @@ static void s_LBOS_FillCandidates(SLBOS_Data* data, const char* service)
 
     /* We copy all LBOS addresses to  */
     char** lbos_addresses = NULL;
-    int addresses_count = 0;
-    /* We suppose that number of addresses is constant (and so 
+    size_t addresses_count = 0;
+    /* We suppose that number of addresses is constant (and so
        is position of NULL), so no mutex is necessary */
     while (s_LBOS_InstancesList[++addresses_count] != NULL) continue;
     lbos_addresses = calloc(sizeof(char*), addresses_count + 1);
-    /* We can either delete this list or assign to s_LBOS_InstancesList, 
+    /* We can either delete this list or assign to s_LBOS_InstancesList,
      * but anyway we have to prepare */
     char** to_delete = lbos_addresses;
     CORE_LOCK_READ;
@@ -903,25 +883,25 @@ static void s_LBOS_FillCandidates(SLBOS_Data* data, const char* service)
                 data->net_info);
         i++;
     } while (hostports_array == NULL  &&  lbos_addresses[i] != NULL);
-    int j = 0;
+    size_t j = 0;
     if (hostports_array != NULL) {
         while (hostports_array[++j] != NULL) continue;
-        CORE_LOGF_X(1, eLOG_Trace, ("Found %d servers of \"%s\" with "
+        CORE_LOGF_X(1, eLOG_Trace, ("Found %hu servers of \"%s\" with "
             "LBOS at %s", j, service, lbos_addresses[i - 1]));
         if (i != 1) {
             /* If we did not succeed with first LBOS in list, let's swap
-             * first LBOS with good LBOS. We will use CORE_LOCK_WRITE only 
+             * first LBOS with good LBOS. We will use CORE_LOCK_WRITE only
              in the very last moment */
             char* temp = lbos_addresses[i-1];
             lbos_addresses[i-1] = lbos_addresses[0];
             lbos_addresses[0] = temp;
             if (strcmp(lbos_addresses[0], s_LBOS_InstancesList[0])  !=  0) {
                 /* By default, we free() locally created list */
-                int/*bool*/ swapped = 0; /* to see which thread actually 
+                int/*bool*/ swapped = 0; /* to see which thread actually
                                             did swap */
                 CORE_LOCK_WRITE;
                 if (strcmp(lbos_addresses[0], s_LBOS_InstancesList[0]) != 0) {
-                /* If nobody has swapped static list before us, We assign 
+                /* If nobody has swapped static list before us, We assign
                  * static list with our list, and delete previous static list
                  * instead of local list */
                     to_delete = s_LBOS_InstancesList;
@@ -932,8 +912,8 @@ static void s_LBOS_FillCandidates(SLBOS_Data* data, const char* service)
                 if (swapped) {
                     CORE_LOGF_X(1, eLOG_Trace, (
                         "Swapping LBOS order, changing \"%s\" (good) and "
-                        "%s (bad)", 
-                        lbos_addresses[i - 1], 
+                        "%s (bad)",
+                        lbos_addresses[i - 1],
                         lbos_addresses[0]));
                 }
             }
@@ -974,10 +954,9 @@ static void s_LBOS_FillCandidates(SLBOS_Data* data, const char* service)
 }
 
 
-/** @brief 1) If iterator is fresh - we find and return next server.
- * 2) If iterator is outdated or empty - we update it and fill it with hosts
- * and go to 1)
- */
+/** 1) If iterator is valid - find and return next server;
+ *  2) If iterator is outdated or empty - we update it and fill it with hosts
+ *     and go to 1)                                                          */
 static SSERV_Info* s_LBOS_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
 {
     /*
@@ -1021,19 +1000,15 @@ static SSERV_Info* s_LBOS_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
 }
 
 
-/** @brief Resolve service name to one of the hosts implementing service.
- *
- * Uses LBOS at specified IP and port.
- * Returns char* which needs to be free()'d manually
- * Returns NULL if nothing found or error
- *
- * @param[in,out] iter           Pointer to iterator. It is read and rewritten
- * @param[out] info              Pointer to variable to return pointer to info
- *                               about server.
- * @param[out] host_info         To return info about host
- * @param[in[ no_dispd_follows   To tell whether there will be dispd if all
- *                               other methods fail
- */
+/** Creates iterator and fills it with found servers.
+ * @param[in,out] iter
+ *  Pointer to iterator. It is read and rewritten
+ * @param[out] info
+ *  Pointer to variable to return pointer to info about server.
+ * @param[out] host_info
+ *  To return info about host
+ * @param[in[ no_dispd_follows
+ *  To tell whether there will be dispd if all other methods fail.           */
 const SSERV_VTable* SERV_LBOS_Open( SERV_ITER            iter,
                                     const SConnNetInfo*  net_info,
                                     SSERV_Info**         info     )
@@ -1044,7 +1019,7 @@ const SSERV_VTable* SERV_LBOS_Open( SERV_ITER            iter,
                 s_LBOS_InstancesList = g_LBOS_GetLBOSAddresses();
             }
         CORE_UNLOCK;
-        s_LBOS_TurnedOn = 1; /* To ensure that initialization does 
+        s_LBOS_TurnedOn = 1; /* To ensure that initialization does
                                 not depend on this variable */
         s_LBOS_Init = 1;
         s_LBOS_funcs.Initialize();
@@ -1107,28 +1082,25 @@ static unsigned short   s_LBOS_MyPort        =  0;    /* port of service
                                                          which we announce*/
 
 
-/* @brief                       For announcement we search for a LBOS which
- *                              can handle our request. Search starts with
- *                              default order of LBOS.
- * @param service        [in]   Name of service as it will appear in ZK. For
- *                              services this means that name should start
- *                              with '/'
- * @param version        [in]   TODO: not yet known. Good example: 4.7.1
- * @param port           [in]   Port for service. Can differ from healthcheck
- *                              port
- * @param healthcheck_url[in]   Full absolute URL starting with "http://" or
- *                              "https://".
- *                              Should include hostname or IP and port, if
- *                              necessary.
- * @param LBOS_answer   [out]   This variable will be assigned a pointer to
- *                              char* with exact answer of LBOS, or NULL.
- *                              If it is not NULL, do not forget to
- *                              free() it!
- *                              If eLBOSAnnounceResult_Success is
- *                              returned, LBOS answer contains "host:port"
- *                              of LBOS that was used for announce.
- *                              If something else is returned, LBOS answer
- *                              contains human-readable error message.
+/* For announcement we search for a LBOS which can handle our request.
+ *Search starts with default order of LBOS.
+ * @param service[in]
+ *  Name of service as it will appear in ZK. For services this means that
+ *  name should start with '/'
+ * @param version[in]
+ *  Any string that will help to identify certain version of service. A good
+ *  idea is to use semantic versioning (http://semver.org/) like '4.7.2'
+ * @param port[in]
+ *  Port for service. Can differ from healthcheck port
+ * @param healthcheck_url[in]
+ *  Full absolute URL starting with "http://" or "https://". Should include
+ *  hostname or IP and port, if necessary.
+ * @param LBOS_answer[out]
+ *  This variable will be assigned a pointer to char* with exact answer of
+ *  LBOS, or NULL. Must be free()'d by the caller. If
+ *  eLBOSAnnounceResult_Success is returned, LBOS answer contains "host:port"
+ *  of LBOS that was used for announce. If something else is returned, LBOS
+ *  answer contains human-readable error message.
  */
 /*ELBOSAnnounceResult g_LBOS_AnnounceEx(const char* service,
                      const char* version,
@@ -1180,7 +1152,7 @@ static unsigned short   s_LBOS_MyPort        =  0;    /* port of service
                 lbos_addresses[i], service, version, port, healthcheck_encoded);
         CONN conn = s_LBOS_ConnectURL(net_info,  query, &response_code);*/
         /* Let's check if LBOS exists at this address */
-       /* int bytesRead;
+       /* size_t bytesRead;
         g_LBOS_UnitTesting_GetLBOSFuncs()->Read(conn, buf,
                           kMaxLineSize, &bytesRead, eIO_ReadPlain);
         CONN_Close(conn);
@@ -1213,15 +1185,13 @@ static unsigned short   s_LBOS_MyPort        =  0;    /* port of service
 }*/
 
 
-/** @brief  Announce this process. In this case, you can use "0.0.0.0" as
- *          IP, and it will be
- *  @param healthcheck_url[in]  If you want to announce a service
- *                              that is on the same machine that announces it
- *                              (i.e., if service announces itself), you can
- *                              write "0.0.0.0" for IP (this is convention with
- *                              LBOS). You still have to provide port, even if
- *                              you write "0.0.0.0".
- *                              */
+/** Announce this process. In this case, you can use "0.0.0.0" as IP, and
+ * it will be converted to local machine's IP
+ * @param healthcheck_url[in]
+ *  If you want to announce a service that is on the same machine that
+ *  announces it (i.e., if service announces itself), you can write
+ *  "0.0.0.0" for IP (this is convention with LBOS). You still have to
+ *  provide port, even if you write "0.0.0.0".                               */
 /*ELBOSAnnounceResult g_LBOS_AnnounceSelf(const char* service,
                      const char* version,
                      unsigned short port,
@@ -1236,7 +1206,7 @@ static unsigned short   s_LBOS_MyPort        =  0;    /* port of service
         char  *temp = calloc(sizeof(char), kMaxLineSize),
                 *realloc_result,
                 *hostname = calloc(sizeof(char), kMaxLineSize);
-        int chars_to_copy = replace_pos - my_healthcheck_url;
+        size_t chars_to_copy = replace_pos - my_healthcheck_url;
         strncpy(temp, my_healthcheck_url, chars_to_copy);
         if (SOCK_gethostbyaddrEx(0, hostname, kMaxLineSize - 1, eOn) == NULL) {
             CORE_LOG(eLOG_Warning, "Error with announcement, "
@@ -1269,16 +1239,17 @@ static unsigned short   s_LBOS_MyPort        =  0;    /* port of service
 }*/
 
 
-/** @brief  Deannounce previously announced service. 0 means error, 1
- *          means success.
- * param lbos_hostport[in]  Address of the same LBOS that was used for
- *                          announcement of the service now being
- *                          deannounced
- * param service[in]        Name of service to be deannounced
- * param version[in]        Version of service to be deannounced
- * param port[in]           Port of service to be deannounced
- * param[in]                IP or hostname of service to be deannounced
- */
+/** Deannounce previously announced service. 0 means error, 1 means success.
+ * @param lbos_hostport[in]  Address of the same LBOS that was used for
+ *  announcement of the service now being deannounced
+ * @param service[in]
+ *  Name of service to be deannounced
+ * @param version[in]
+ *  Version of service to be deannounced
+ * @param port[in]
+ *  Port of service to be deannounced
+ * @param[in]
+ *  IP or hostname of service to be deannounced                              */
 /*int*//*bool*/ /*g_LBOS_Deannounce(const char*       lbos_hostport,
                               const char*       service,
                               const char*       version,
@@ -1322,9 +1293,9 @@ static unsigned short   s_LBOS_MyPort        =  0;    /* port of service
 }*/
 
 
-/* @brief   To deannounce we need to go the very same LBOS which we used for
- *          announcement. If it is dead, that means that we are anyway not
- *          visible for ZK, so we can just exit deannouncement              */
+/*  To deannounce we need to go the very same LBOS which we used for
+ * announcement. If it is dead, that means that we are anyway not visible for
+   ZK, so we can just exit deannouncement                                    */
 /*int*//*bool*/ /*g_LBOS_DeannounceSelf(void)
 {*/
     /* IF we did not announce ourself, exit with error */
@@ -1338,7 +1309,8 @@ static unsigned short   s_LBOS_MyPort        =  0;    /* port of service
                  "cannot find local IP.");
         return 0;
     }*/
-    /*int*//*bool*/ /*result = g_LBOS_UnitTesting_GetLBOSFuncs()->Deannounce(s_LBOS_MyInstance, s_LBOS_MyService,
+    /*int*//*bool*/ /*result = g_LBOS_UnitTesting_GetLBOSFuncs()->
+                    Deannounce(s_LBOS_MyInstance, s_LBOS_MyService,
                              s_LBOS_MyVersion, s_LBOS_MyPort,
                              myhost);
     free(myhost);
