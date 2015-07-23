@@ -91,6 +91,9 @@ public:
     AddInsertion(
         unsigned int);
     void
+    AddForwardShift(
+        unsigned int);
+    void
     AddDeletion(
         unsigned int);
     void

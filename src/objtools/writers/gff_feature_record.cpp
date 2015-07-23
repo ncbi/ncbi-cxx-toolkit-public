@@ -150,6 +150,22 @@ void CGffAlignRecord::AddInsertion(
     mGapIsTrivial = false;
 }
 
+
+//  ----------------------------------------------------------------------------
+void CGffAlignRecord::AddForwardShift(
+    unsigned int size)
+//  ----------------------------------------------------------------------------
+{
+    FinalizeMatches();
+    if (!mAttrGap.empty()) {
+        mAttrGap += " ";
+    }
+    mAttrGap += "F";
+    mAttrGap += NStr::IntToString(size);
+    mGapIsTrivial = false;
+}
+
+
 //  ----------------------------------------------------------------------------
 void CGffAlignRecord::AddDeletion(
     unsigned int size)
@@ -163,6 +179,7 @@ void CGffAlignRecord::AddDeletion(
     mAttrGap += NStr::IntToString(size);
     mGapIsTrivial = false;
 }
+
 
 //  ----------------------------------------------------------------------------
 void CGffAlignRecord::AddMatch(
