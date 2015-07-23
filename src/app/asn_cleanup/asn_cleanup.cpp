@@ -764,7 +764,14 @@ bool CCleanupApp::HandleSeqEntry(CRef<CSeq_entry>& se)
         NCBI_THROW(CFlatException, eInternal, "Failed to insert entry to scope.");
     }
 
-    return HandleSeqEntry(entry);
+    if (HandleSeqEntry(entry)) {
+        if (entry.GetCompleteSeq_entry().GetPointer() != se.GetPointer()) {
+            se->Assign(*entry.GetCompleteSeq_entry());
+        }
+        return true;
+    } else {
+        return false;
+    }
 }
 
 
@@ -825,6 +832,7 @@ CObjectIStream* CCleanupApp::x_OpenIStream(const CArgs& args)
     
     if ( 0 != pI ) {
         pI->UseMemoryPool();
+        pI->SetDelayBufferParsingPolicy(CObjectIStream::eDelayBufferPolicyAlwaysParse);
     }
     return pI;
 }
