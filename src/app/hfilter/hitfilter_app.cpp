@@ -736,7 +736,7 @@ void CAppHitFilter::x_LoadConstraints(CNcbiIstream& istr, THitRefs& all)
         }
     }
     float score_factor = 0.25 / maxlen;
-    CArgs args = GetArgs();    
+    const CArgs& args = GetArgs();    
     NON_CONST_ITERATE(THitRefs, ii, all) {
         THitRef& h = *ii;
         h->SetScore(h->GetScore() * (1 + score_factor * h->GetLength()));

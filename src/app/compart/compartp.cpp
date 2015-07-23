@@ -110,7 +110,7 @@ int PdbBadRank(const CRef<CSeq_id>& id)
 int CCompartApplication::Run(void)
 {
     // Get arguments
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     CCompartOptions compart_options(args);
     string ifmt = args["ifmt"].AsString();
