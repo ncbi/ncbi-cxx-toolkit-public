@@ -1416,35 +1416,54 @@ GetCacheParamsCopy(const SCacheInfo::TParams* src_params,
 }
 
 static const SPluginParams::SDefaultValue s_DefaultParams[] = {
-    { "path", ".genbank_cache" },
+    // common:
     { "keep_versions", "all" },
     { "write_sync", "no" },
+    // bdb:
+    { "path", ".genbank_cache" },
     { "mem_size", "20M" },
     { "log_file_max", "20M" },
     { "purge_batch_sleep", "500" }, // .5 sec
     { "purge_thread_delay", "3600" }, // 1 hour
     { "purge_clean_log", "16" },
+    // netcache:
+    { "connection_max_retries", "0" },
+    { "connection_timeout", "0.3" },
+    { "communication_timeout", "0.1" },
+    { "max_connection_pool_size", "30" },
+    { "max_find_lbname_retries", "2" },
+    { "retry_delay", "0.001" },
+
     { 0, 0 }
 };
 static const SPluginParams::SDefaultValue s_DefaultIdParams[] = {
+    // common:
     { "name", "ids" },
     { "timeout", "172800" }, // 2 days
     { "timestamp", "subkey check_expiration" /* purge_on_startup"*/ },
+    // bdb:
     { "page_size", "small" },
-    { 0, 0}
+
+    { 0, 0 }
 };
 static const SPluginParams::SDefaultValue s_DefaultBlobParams[] = {
+    // common:
     { "name", "blobs" },
     { "timeout", "432000" }, // 5 days
     { "timestamp", "onread expire_not_used" /* purge_on_startup"*/ },
+
     { 0, 0 }
 };
 static const SPluginParams::SDefaultValue s_DefaultReaderParams[] = {
+    // bdb:
     { "purge_thread", "yes" },
+
     { 0, 0 }
 };
 static const SPluginParams::SDefaultValue s_DefaultWriterParams[] = {
+    // bdb:
     { "purge_thread", "no" },
+
     { 0, 0 }
 };
 
