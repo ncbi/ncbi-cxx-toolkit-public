@@ -1892,7 +1892,8 @@ case "$host_os:$ncbi_cv_prog_cc_wl_rpath" in
 esac
 
 AC_PATH_PROG(DPKG_ARCHITECTURE, dpkg-architecture)
-if test -x "$DPKG_ARCHITECTURE"; then
+if test -x "$DPKG_ARCHITECTURE" \
+    &&  $DPKG_ARCHITECTURE -qDEB_HOST_MULTIARCH >/dev/null 2>&1; then
    multiarch=`$DPKG_ARCHITECTURE -qDEB_HOST_MULTIARCH`
 else
    multiarch=`echo $host | sed -e 's/-unknown-/-/; [s/^i[3-9]86-/^i\[3-9\]86/]'`
