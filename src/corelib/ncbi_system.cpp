@@ -1128,11 +1128,7 @@ extern int GetProcessFDCount(int* soft_limit, int* hard_limit)
         // fallback to sysconf
         ERR_POST_ONCE(Warning << "getrlimit(RLIMIT_NOFILE, ...) call failed. "
                                  "Using sysconf(_SC_OPEN_MAX) instead.");
-        long        sysconf_limit = sysconf(_SC_OPEN_MAX);
-        if (sysconf_limit > RLIM_INFINITY)
-            cur_limit = RLIM_INFINITY;
-        else
-            cur_limit = static_cast<rlim_t>(sysconf(_SC_OPEN_MAX));
+        cur_limit = static_cast<rlim_t>(sysconf(_SC_OPEN_MAX));
     }
 
     DIR* dir = opendir("/proc/self/fd/");
