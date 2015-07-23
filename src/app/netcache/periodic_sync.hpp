@@ -334,6 +334,7 @@ private:
     bool m_FinishSyncCalled;
     bool m_Stuck;
     bool m_First;
+    bool m_NeedReply;
     Uint8 m_MinNextTime;
     Uint8 m_LoopStart;
     TSyncSlotsList::const_iterator m_NextSlotIt;

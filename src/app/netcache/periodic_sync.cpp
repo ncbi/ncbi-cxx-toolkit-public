@@ -577,6 +577,7 @@ CNCActiveSyncControl::CNCActiveSyncControl(void)
     m_ForceInitSync = false;
     m_Stuck = false;
     m_First = false;
+    m_NeedReply = false;
     m_StartTime = 0;
     m_LoopStart = 0;
     m_CntUnfinished = 0;
@@ -700,6 +701,7 @@ CNCActiveSyncControl::x_CheckSlotTheirSync(void)
 
     ++m_NextSlotIt;
     m_VisitedSrv.clear();
+    m_NeedReply = false;
     SetState(&CNCActiveSyncControl::x_CheckSlotOurSync);
     SetRunnable();
     return NULL;
@@ -757,6 +759,7 @@ CNCActiveSyncControl::x_DoPeriodicSync(void)
     m_WriteOK = m_WriteERR = 0;
     m_ProlongOK = m_ProlongERR = 0;
     m_DelOK = m_DelERR = 0;
+    m_NeedReply = false;
 
     CreateNewDiagCtx();
     CSrvDiagMsg().StartRequest()
@@ -791,6 +794,7 @@ CNCActiveSyncControl::x_WaitSyncStarted(void)
     if (m_Result != eSynOK)
         return &CNCActiveSyncControl::x_FinishSync;
 
+    m_NeedReply = true;
     m_LocalSyncedRecNo = 0;
     m_RemoteSyncedRecNo = 0;
     m_SlotSrv->last_active_time = CSrvTime::CurSecs();
@@ -816,9 +820,11 @@ CNCActiveSyncControl::x_ExecuteSyncCommands(void)
     if (m_SlotSrv->peer->AddSyncControl(this))
         return &CNCActiveSyncControl::x_WaitForExecutingTasks;
 
-    m_NextTask = eSynNoTask;
+// it is probably network error, so maybe there is no point to cancel sync - it will fail
+// but let us try, anyway
+    m_NextTask = eSynNeedFinalize;
     m_Result = eSynNetworkError;
-    return &CNCActiveSyncControl::x_FinishSync;
+    return &CNCActiveSyncControl::x_ExecuteFinalize;
 }
 
 CNCActiveSyncControl::State
@@ -827,8 +833,9 @@ CNCActiveSyncControl::x_ExecuteFinalize(void)
     if (m_FinishSyncCalled) {
         SRV_FATAL("Command finalized already");
     }
-    if (m_Result == eSynOK) {
-        if (m_SlotSrv->peer->FinishSync(this)) {
+    if (m_NeedReply) {
+        m_NeedReply = false;
+        if (!CTaskServer::IsInShutdown() && m_SlotSrv->peer->FinishSync(this)) {
             m_FinishSyncCalled = true;
             return &CNCActiveSyncControl::x_WaitForExecutingTasks;
         }
@@ -1107,6 +1114,24 @@ sync_next_key:
     // when 'draining', only update existing blobs, never get new ones.
     } while(CNCBlobStorage::IsDraining() &&
             (m_NextTask == eSynEventGet || m_NextTask == eSynBlobGet));
+
+// sanity check
+    string blob_key;
+    switch (m_NextTask) {
+    case eSynEventSend:   blob_key = (*m_CurSendEvent)->key.PackedKey();  break;
+    case eSynEventGet:    blob_key = (*m_CurGetEvent)->key.PackedKey();   break;
+    case eSynBlobSend:    blob_key = m_CurLocalBlob->first;               break;
+    case eSynBlobGet:     blob_key = m_CurRemoteBlob->first;              break;
+    default:
+        break;
+    }
+    if (!blob_key.empty()) {
+        Uint2 slot=0, bucket;
+        if (!CNCDistributionConf::GetSlotByKey(blob_key,slot, bucket) || slot != m_Slot) {
+            m_Result = eSynAborted;
+            m_NextTask = eSynNeedFinalize;
+        }
+    }
 }
 
 void
@@ -1210,11 +1235,15 @@ CNCActiveSyncControl::x_DoFinalize(CNCActiveHandler* conn)
                                      m_LocalSyncedRecNo, m_RemoteSyncedRecNo);
         conn->SyncCommit(this, m_LocalSyncedRecNo, m_RemoteSyncedRecNo);
     }
-    else if (m_Result == eSynAborted) {
+    else if (m_Result == eSynAborted || m_Result == eSynNetworkError) {
         conn->SyncCancel(this);
     }
     else {
+#ifdef _DEBUG
         SRV_FATAL("Unexpected Finalize call: m_Result: " << m_Result);
+#else
+        SRV_LOG(Critical, "Unexpected Finalize call: m_Result: " << m_Result);
+#endif
     }
 }
 
@@ -1359,8 +1388,14 @@ void CNCActiveSyncControl::PrintState(CSrvSocketTask& task, Uint2 slot, bool one
     bool is_first = true;
     task.WriteText("\"SlotsList\": [");
     ITERATE(TSyncSlotsList, sl, s_SlotsList) {
-        if (one_slot && (*sl)->slot != slot) {
-            continue;
+        if (one_slot) {
+            if ((*sl)->slot != slot) {
+                continue;
+            }
+        } else {
+            if ((*sl)->cnt_sync_started == 0) {
+                continue;
+            }
         }
         if (!is_first) {
             task.WriteText(",");
