@@ -109,7 +109,6 @@ public:
 
 
 static CSemaphore           s_Semaphore(0, INT_MAX); /* For GlobalSyncPoint()*/
-DEFINE_STATIC_FAST_MUTEX    (s_Mutex);               /* For GlobalSyncPoint()*/
 static CAtomicCounter       s_SyncCounter;           /* For GlobalSyncPoint()*/
 static CAtomicCounter       s_NumberOfThreads;       /* For GlobalSyncPoint()*/
 
@@ -119,9 +118,7 @@ CTestThread::CTestThread(int idx)
 {
     /* We want to know total number of threads, and the easiest way is to make
        them register themselves */
-    s_Mutex.Lock();
     s_NumberOfThreads.Add(1);
-    s_Mutex.Unlock();
     if ( s_Application != 0 )
         assert(s_Application->Thread_Init(m_Idx));
 }
@@ -129,10 +126,8 @@ CTestThread::CTestThread(int idx)
 
 CTestThread::~CTestThread(void)
 {
-    s_Mutex.Lock();
     s_NumberOfThreads.Add(-1);
     assert(s_NumberOfThreads.Get() >= 0);
-    s_Mutex.Unlock();
     if ( s_Application != 0 )
         assert(s_Application->Thread_Destroy(m_Idx));
 }
@@ -145,15 +140,19 @@ void CTestThread::OnExit(void)
 }
 
 
-void CTestThread::GlobalSyncPoint(void) 
+void CTestThread::GlobalSyncPoint(void)
 {
-    if (s_SyncCounter.Add(1) == s_NumberOfThreads.Get()) {
-        if (s_NumberOfThreads.Get() > 1) {
-            s_Semaphore.Post(s_NumberOfThreads.Get() - 1);
-            SleepMilliSec(0);
-        }
-    } else {
+    /* Semaphore is supposed to have zero value when threads come here,
+       so Wait() causes stop */
+    if (s_SyncCounter.Add(1) != s_NumberOfThreads.Get()) {
         s_Semaphore.Wait();
+        return;
+    }
+    /* If we are the last thread to come to sync point, we yield 
+       so that threads that were waiting for us go first      */
+    if (s_NumberOfThreads.Get() > 1) {
+        s_Semaphore.Post(s_NumberOfThreads.Get() - 1);
+        SleepMilliSec(0);
     }
 }
 
@@ -373,9 +372,7 @@ CThreadGroup::~CThreadGroup(void)
 inline
 void CThreadGroup::Go(void)
 {
-    s_Mutex.Lock();
     s_NumberOfThreads.Add(m_Number_of_threads);
-    s_Mutex.Unlock();
     m_Semaphore.Post(m_Number_of_threads);
 }
 
@@ -405,10 +402,8 @@ void CThreadGroup::SyncPoint(void)
 inline
 void CThreadGroup::ThreadWait(void)
 {
-    s_Mutex.Lock();
     s_NumberOfThreads.Add(-1);
     assert(s_NumberOfThreads.Get() >= 0);
-    s_Mutex.Unlock();
     m_Semaphore.Wait();
 }
 
@@ -509,7 +504,6 @@ int CThreadedApp::Run(void)
 
     s_SpawnBy = args["spawnby"].AsInteger();
 
-    //
     assert(TestApp_Init());
 
     unsigned int seed = GetArgs()["seed"]
