@@ -793,6 +793,7 @@ void CFlatGatherer::x_GatherComments(void) const
     x_RefSeqGenomeComments(ctx);
     x_WGSComment(ctx);
     x_TSAComment(ctx);
+    x_UnorderedComments(ctx);
     if ( ctx.ShowGBBSource() ) {
         x_GBBSourceComment(ctx);
     }
@@ -803,7 +804,6 @@ void CFlatGatherer::x_GatherComments(void) const
     x_BasemodComment(ctx);
     x_StructuredComments(ctx);
     x_HTGSComments(ctx);
-    x_UnorderedComments(ctx);
     if( ctx.ShowAnnotCommentAsCOMMENT() ) {
         x_AnnotComments(ctx);
     }
