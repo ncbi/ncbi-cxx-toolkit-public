@@ -23,10 +23,10 @@
  *
  * ===========================================================================
  *
- * Author:  Anton Lavrentiev, Dmitriy Elisov
+ * Author:  Dmitriy Elisov
  *
  * File Description:
- *   Common functions for LBOS mapper tests
+ *   LBOS mapper tests
  *
  */
 
@@ -34,13 +34,12 @@
 #include "test_ncbi_lbos_common.hpp"
 
 #ifdef LBOS_TEST_MT
-#pragma    message("Replacing NCBITEST_CHECK_MESSAGE with NCBI_ALWAYS_ASSERT")
 #undef     NCBITEST_CHECK_MESSAGE
 #define    NCBITEST_CHECK_MESSAGE( P, M )  NCBI_ALWAYS_ASSERT(P,M)
 #else  /* if LBOS_TEST_MT not defined */
-    // This header must be included before all Boost.Test headers if there are any
-#pragma    message("Leaving NCBITEST_CHECK_MESSAGE")
-#include    <corelib/test_boost.hpp>
+    /* This header must be included before all Boost.Test headers if there
+       are any                                                               */
+    #include    <corelib/test_boost.hpp>
 #endif /* #ifdef LBOS_TEST_MT */
 
 USING_NCBI_SCOPE;
@@ -54,59 +53,60 @@ NCBITEST_INIT_TREE()
      * it now! */
 
       /* Compose LBOS address */
-//    NCBITEST_DISABLE(g_LBOS_ComposeLBOSAddress__LBOSExists__ShouldReturnLbos);
-//    NCBITEST_DISABLE(g_LBOS_ComposeLBOSAddress__RoleFail__ShouldReturnNULL);
-//    NCBITEST_DISABLE(g_LBOS_ComposeLBOSAddress__DomainFail__ShouldReturnNULL);
-//    /* Reset iterator */
-//    NCBITEST_DISABLE(SERV_Reset__NoConditions__IterContainsZeroCandidates);
-//    NCBITEST_DISABLE(SERV_Reset__MultipleReset__ShouldNotCrash);
-//    NCBITEST_DISABLE(SERV_Reset__Multiple_AfterGetNextInfo__ShouldNotCrash);
-//    /* Close iterator */
-//    NCBITEST_DISABLE(SERV_CloseIter__AfterOpen__ShouldWork);
-//    NCBITEST_DISABLE(SERV_CloseIter__AfterReset__ShouldWork);
-//    NCBITEST_DISABLE(SERV_CloseIter__AfterGetNextInfo__ShouldWork);
-//    NCBITEST_DISABLE(SERV_CloseIter__FullCycle__ShouldWork);
-//    /* Resolve via LBOS */
-//    NCBITEST_DISABLE(s_LBOS_ResolveIPPort__ServiceExists__ReturnHostIP);
-//    NCBITEST_DISABLE(s_LBOS_ResolveIPPort__ServiceDoesNotExist__ReturnNULL);
-//    NCBITEST_DISABLE(s_LBOS_ResolveIPPort__NoLBOS__ReturnNULL);
-//    NCBITEST_DISABLE(s_LBOS_ResolveIPPort__FakeMassiveInput__ShouldProcess);
-//    NCBITEST_DISABLE(s_LBOS_ResolveIPPort__FakeErrorInput__ShouldNotCrash);
-//    /* Get LBOS address */
-//    NCBITEST_DISABLE(g_LBOS_GetLBOSAddresses__SpecificMethod__FirstInResult);
-//    //NCBITEST_DISABLE(g_LBOS_GetLBOSAddresses__CustomHostNotProvided__SkipCustomHost);
-//    NCBITEST_DISABLE(g_LBOS_GetLBOSAddresses__NoConditions__AddressDefOrder);
-//    /* Get candidates */
-//    NCBITEST_DISABLE(s_LBOS_FillCandidates__LBOSNoResponse__SkipLBOS);
-//    NCBITEST_DISABLE(s_LBOS_FillCandidates__LBOSResponse__Finish);
-//    //NCBITEST_DISABLE(s_LBOS_FillCandidates__NetInfoProvided__UseNetInfo);
-//    /* GetNextInfo */
-//    NCBITEST_DISABLE(SERV_GetNextInfoEx__EmptyCands__RunGetCandidates);
-//    NCBITEST_DISABLE(SERV_GetNextInfoEx__ErrorUpdating__ReturnNull);
-//    NCBITEST_DISABLE(SERV_GetNextInfoEx__HaveCands__ReturnNext);
-//    NCBITEST_DISABLE(SERV_GetNextInfoEx__LastCandReturned__ReturnNull);
-//    NCBITEST_DISABLE(SERV_GetNextInfoEx__DataIsNull__ReconstructData);
-//    NCBITEST_DISABLE(SERV_GetNextInfoEx__IterIsNull__ReconstructData);
-//    NCBITEST_DISABLE(SERV_GetNextInfoEx__WrongMapper__ReturnNull);
-//    /* Open */
-//    NCBITEST_DISABLE(SERV_LBOS_Open__IterIsNull__ReturnNull);
-//    NCBITEST_DISABLE(SERV_LBOS_Open__NetInfoNull__ReturnNull);
-//    NCBITEST_DISABLE(SERV_LBOS_Open__ServerExists__ReturnLbosOperations);
-//    NCBITEST_DISABLE(SERV_LBOS_Open__InfoPointerProvided__WriteNull);
-//    NCBITEST_DISABLE(SERV_LBOS_Open__NoSuchService__ReturnNull);
-//    /*General LBOS*/
-//    NCBITEST_DISABLE(SERV_OpenP__ServerExists__ShouldReturnLbosOperations);
-//    NCBITEST_DISABLE(TestLbos_OpenP__ServerDoesNotExist__ShouldReturnNull);
-//    NCBITEST_DISABLE(TestLbos_FindMethod__LbosExist__ShouldWork);
-//    /* Announcement / deannouncement */
-//    //NCBITEST_DISABLE(AnnouncementDeannouncement__Announce__FindMyself);
-//    /* Stability */
-//    NCBITEST_DISABLE(Stability__GetNext_Reset__ShouldNotCrash);
-//    NCBITEST_DISABLE(Stability__FullCycle__ShouldNotCrash);
-//    /* Performance */
-//     NCBITEST_DISABLE(Performance__FullCycle__ShouldNotCrash);
-//    /*Multi-threading*/
-//    NCBITEST_DISABLE(MultiThreading_test1);
+//   NCBITEST_DISABLE(g_LBOS_ComposeLBOSAddress__LBOSExists__ShouldReturnLbos);
+//   NCBITEST_DISABLE(g_LBOS_ComposeLBOSAddress__RoleFail__ShouldReturnNULL);
+//   NCBITEST_DISABLE(g_LBOS_ComposeLBOSAddress__DomainFail__ShouldReturnNULL);
+//   /* Reset iterator */
+//   NCBITEST_DISABLE(SERV_Reset__NoConditions__IterContainsZeroCandidates);
+//   NCBITEST_DISABLE(SERV_Reset__MultipleReset__ShouldNotCrash);
+//   NCBITEST_DISABLE(SERV_Reset__Multiple_AfterGetNextInfo__ShouldNotCrash);
+//   /* Close iterator */
+//   NCBITEST_DISABLE(SERV_CloseIter__AfterOpen__ShouldWork);
+//   NCBITEST_DISABLE(SERV_CloseIter__AfterReset__ShouldWork);
+//   NCBITEST_DISABLE(SERV_CloseIter__AfterGetNextInfo__ShouldWork);
+//   NCBITEST_DISABLE(SERV_CloseIter__FullCycle__ShouldWork);
+//   /* Resolve via LBOS */
+//   NCBITEST_DISABLE(s_LBOS_ResolveIPPort__ServiceExists__ReturnHostIP);
+//   NCBITEST_DISABLE(s_LBOS_ResolveIPPort__ServiceDoesNotExist__ReturnNULL);
+//   NCBITEST_DISABLE(s_LBOS_ResolveIPPort__NoLBOS__ReturnNULL);
+//   NCBITEST_DISABLE(s_LBOS_ResolveIPPort__FakeMassiveInput__ShouldProcess);
+//   NCBITEST_DISABLE(s_LBOS_ResolveIPPort__FakeErrorInput__ShouldNotCrash);
+//   /* Get LBOS address */
+//   NCBITEST_DISABLE(g_LBOS_GetLBOSAddresses__SpecificMethod__FirstInResult);
+//   //NCBITEST_DISABLE(
+//           g_LBOS_GetLBOSAddresses__CustomHostNotProvided__SkipCustomHost);
+//   CBITEST_DISABLE(g_LBOS_GetLBOSAddresses__NoConditions__AddressDefOrder);
+//   /* Get candidates */
+//   NCBITEST_DISABLE(s_LBOS_FillCandidates__LBOSNoResponse__SkipLBOS);
+//   NCBITEST_DISABLE(s_LBOS_FillCandidates__LBOSResponse__Finish);
+//   //NCBITEST_DISABLE(s_LBOS_FillCandidates__NetInfoProvided__UseNetInfo);
+//   /* GetNextInfo */
+//   CBITEST_DISABLE(SERV_GetNextInfoEx__EmptyCands__RunGetCandidates);
+//   NCBITEST_DISABLE(SERV_GetNextInfoEx__ErrorUpdating__ReturnNull);
+//   NCBITEST_DISABLE(SERV_GetNextInfoEx__HaveCands__ReturnNext);
+//   NCBITEST_DISABLE(SERV_GetNextInfoEx__LastCandReturned__ReturnNull);
+//   NCBITEST_DISABLE(SERV_GetNextInfoEx__DataIsNull__ReconstructData);
+//   NCBITEST_DISABLE(SERV_GetNextInfoEx__IterIsNull__ReconstructData);
+//   NCBITEST_DISABLE(SERV_GetNextInfoEx__WrongMapper__ReturnNull);
+//   /* Open */
+//   NCBITEST_DISABLE(SERV_LBOS_Open__IterIsNull__ReturnNull);
+//   CBITEST_DISABLE(SERV_LBOS_Open__NetInfoNull__ReturnNull);
+//   NCBITEST_DISABLE(SERV_LBOS_Open__ServerExists__ReturnLbosOperations);
+//   NCBITEST_DISABLE(SERV_LBOS_Open__InfoPointerProvided__WriteNull);
+//   NCBITEST_DISABLE(SERV_LBOS_Open__NoSuchService__ReturnNull);
+//   /*General LBOS*/
+//   NCBITEST_DISABLE(SERV_OpenP__ServerExists__ShouldReturnLbosOperations);
+//   NCBITEST_DISABLE(TestLbos_OpenP__ServerDoesNotExist__ShouldReturnNull);
+//   NCBITEST_DISABLE(TestLbos_FindMethod__LbosExist__ShouldWork);
+//   /* Announcement / deannouncement */
+//   //NCBITEST_DISABLE(AnnouncementDeannouncement__Announce__FindMyself);
+//   /* Stability */
+//   NCBITEST_DISABLE(Stability__GetNext_Reset__ShouldNotCrash);
+//   NCBITEST_DISABLE(Stability__FullCycle__ShouldNotCrash);
+//   /* Performance */
+//    NCBITEST_DISABLE(Performance__FullCycle__ShouldNotCrash);
+//   /*Multi-threading*/
+//   NCBITEST_DISABLE(MultiThreading_test1);
 }
 
 
@@ -448,67 +448,65 @@ BOOST_AUTO_TEST_SUITE_END()
 
 
 ///////////////////////////////////////////////////////////////////////////////
-BOOST_AUTO_TEST_SUITE(Initialization)///////////////////////////////////////////
+BOOST_AUTO_TEST_SUITE(Initialization)//////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 /* 1. Multithread simultaneous SERV_LBOS_Open() when LBOS is not yet
 *    initialized should not crash
 * 2. At initialization if no LBOS found, mapper must turn OFF
 * 3. At initialization if LBOS found, mapper should be ON
-* 4. If LBOS has not yet been initialized, it should be initialized 
+* 4. If LBOS has not yet been initialized, it should be initialized
 *    at SERV_LBOS_Open()
 * 5. If LBOS turned OFF, it MUST return NULL on SERV_LBOS_Open()
 * 6. s_LBOS_InstancesList MUST not be NULL at beginning of s_LBOS_
 *    Initialize()
-* 7. s_LBOS_InstancesList MUST not be NULL at beginning of 
+* 7. s_LBOS_InstancesList MUST not be NULL at beginning of
 *    s_LBOS_FillCandidates()
-* 8. s_LBOS_FillCandidates() should switch first and good LBOS 
+* 8. s_LBOS_FillCandidates() should switch first and good LBOS
 *    addresses, if first is not responding
 */
 
-/** @brief      Multithread simultaneous SERV_LBOS_Open() when 
-                LBOS is not yet initialized should not crash */
+/** Multithread simultaneous SERV_LBOS_Open() when LBOS is not yet
+ * initialized should not crash                                              */
 BOOST_AUTO_TEST_CASE(Initialization__MultithreadInitialization__ShouldNotCrash)
 {
      Initialization::MultithreadInitialization__ShouldNotCrash();
 }
-/** @brief      At initialization if no LBOS found, mapper must turn OFF */
+/** At initialization if no LBOS found, mapper must turn OFF                 */
 BOOST_AUTO_TEST_CASE(Initialization__InitializationFail__TurnOff)
 {
      Initialization::InitializationFail__TurnOff();
 }
-/** @brief      At initialization if LBOS found, mapper should be ON     */
+/** At initialization if LBOS found, mapper should be ON                     */
 BOOST_AUTO_TEST_CASE(Initialization__InitializationSuccess__StayOn)
 {
      Initialization::InitializationSuccess__StayOn();
 }
-/** @brief      If LBOS has not yet been initialized, it should be 
-                initialized at SERV_LBOS_Open()                          */
+/** If LBOS has not yet been initialized, it should be initialized at
+ * SERV_LBOS_Open()                                                          */
 BOOST_AUTO_TEST_CASE(Initialization__OpenNotInitialized__ShouldInitialize)
 {
      Initialization::OpenNotInitialized__ShouldInitialize();
 }
-/** @brief      If LBOS turned OFF, it MUST return NULL on 
-                SERV_LBOS_Open()                                         */
+/** If LBOS turned OFF, it MUST return NULL on SERV_LBOS_Open()              */
 BOOST_AUTO_TEST_CASE(Initialization__OpenWhenTurnedOff__ReturnNull)
 {
      Initialization::OpenWhenTurnedOff__ReturnNull();
 }
-/** @brief      s_LBOS_InstancesList MUST not be NULL at beginning 
-                of s_LBOS_Initialize()                                   */
+/** s_LBOS_InstancesList MUST not be NULL at beginning of s_LBOS_Initialize()*/
 BOOST_AUTO_TEST_CASE(
                 Initialization__s_LBOS_Initialize__s_LBOS_InstancesListNotNULL)
 {
      Initialization::s_LBOS_Initialize__s_LBOS_InstancesListNotNULL();
 }
-/** @brief      s_LBOS_InstancesList MUST not be NULL at beginning 
-                of s_LBOS_FillCandidates()                               */
+/** s_LBOS_InstancesList MUST not be NULL at beginning of
+ * s_LBOS_FillCandidates()                                                   */
 BOOST_AUTO_TEST_CASE(
             Initialization__s_LBOS_FillCandidates__s_LBOS_InstancesListNotNULL)
 {
      Initialization::s_LBOS_FillCandidates__s_LBOS_InstancesListNotNULL();
 }
-/** @brief      s_LBOS_FillCandidates() should switch first and 
-                good LBOS addresses, if first is not responding          */
+/** s_LBOS_FillCandidates() should switch first and good LBOS addresses, if
+   first is not responding                                                   */
 BOOST_AUTO_TEST_CASE(Initialization__PrimaryLBOSInactive__SwapAddresses)
 {
      Initialization::PrimaryLBOSInactive__SwapAddresses();
@@ -516,8 +514,8 @@ BOOST_AUTO_TEST_CASE(Initialization__PrimaryLBOSInactive__SwapAddresses)
 BOOST_AUTO_TEST_SUITE_END()
 
 ///////////////////////////////////////////////////////////////////////////////
-//BOOST_AUTO_TEST_SUITE( Announcement )//////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////
+//BOOST_AUTO_TEST_SUITE( Announcement )////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 //BOOST_AUTO_TEST_CASE(Announcement__AllOK__AnnounceAndFind)
 //{
 //    Announce::AllOK__AnnounceAndFind();
@@ -543,7 +541,8 @@ BOOST_AUTO_TEST_SUITE_END()
 //    Announce::IPResolveError__ReturnErrorAndNotFind();
 //}
 //
-//BOOST_AUTO_TEST_CASE(Announcement__IncorrectHealthcheckURL__ReturnErrorAndNotFind)
+//BOOST_AUTO_TEST_CASE(
+//                Announcement__IncorrectHealthcheckURL__ReturnErrorAndNotFind)
 //{
 //    Announce::IncorrectHealthcheckURL__ReturnErrorAndNotFind();
 //}
@@ -558,7 +557,8 @@ BOOST_AUTO_TEST_SUITE_END()
 //    Announce::IncorrectVersion__ReturnErrorAndNotFind();
 //}
 //
-//BOOST_AUTO_TEST_CASE(Announcement__IncorrectServiceName__ReturnErrorAndNotFind)
+//BOOST_AUTO_TEST_CASE(
+//                   Announcement__IncorrectServiceName__ReturnErrorAndNotFind)
 //{
 //    Announce::IncorrectServiceName__ReturnErrorAndNotFind();
 //}
@@ -572,7 +572,7 @@ BOOST_AUTO_TEST_SUITE(Stability)///////////////////////////////////////////////
  * 1. Just reset
  * 2. Full cycle: open mapper, get all servers, close iterator, repeat.
  */
-/* @brief A simple stability test. We open iterator, and then, not closing it,
+/*  A simple stability test. We open iterator, and then, not closing it,
  * we get all servers and reset iterator and start getting all servers again
  */
 BOOST_AUTO_TEST_CASE(Stability__GetNext_Reset__ShouldNotCrash)
@@ -592,8 +592,8 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_SUITE(Performance)/////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 /*
- * 1. Perform full cycle: open mapper, get all servers, close iterator, repeat.
- *    Test lasts 60 seconds and measures min, max and avg performance.
+ *  Perform full cycle: open mapper, get all servers, close iterator, repeat.
+ * Test lasts 60 seconds and measures min, max and avg performance.
  */
 BOOST_AUTO_TEST_CASE(Performance__FullCycle__ShouldNotCrash)
 {
@@ -607,8 +607,8 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_SUITE(MultiThreading)//////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 /*
- * 1. Run all tests at once in concurrent threads and expect all tests to run
- *    with the same results, except those in which mocks are not thread safe
+ *  Run all tests at once in concurrent threads and expect all tests to run
+ * with the same results, except those in which mocks are not thread safe
  */
 BOOST_AUTO_TEST_CASE(MultiThreading_test1)
 {

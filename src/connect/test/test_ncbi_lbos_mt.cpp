@@ -23,14 +23,14 @@
  *
  * ===========================================================================
  *
- * Author:  Anton Lavrentiev, Dmitriy Elisov
+ * Author:  Dmitriy Elisov
  *
  * File Description:
  *   Standard test for named service resolution facility. Single-threaded.
  *
  */
 
-/*delete*/#define            NCBI_USE_ERRCODE_X         Connect_LBSM 
+/*delete*/#define            NCBI_USE_ERRCODE_X         Connect_LBSM
 
 #include <ncbi_pch.hpp>
 #include "test_ncbi_lbos_common.hpp"
@@ -38,9 +38,8 @@
 
 USING_NCBI_SCOPE;
 
-/** @brief Main class of this program which will be used for
- *         testing. Based on the class from test_mt
- */
+/**  Main class of this program which will be used for testing. Based on the
+ *  class from test_mt                                                       */
 class CTestLBOSApp : public CThreadedApp
 {
 public:
@@ -59,13 +58,13 @@ private:
 };
 
 
-/** @brief We add nothing here */
+/**  We add nothing here                                               */
 bool CTestLBOSApp::TestApp_Args(CArgDescriptions& args)
 {
     return true;
 }
 
-/** @brief Thread constructor. We need nothing from it */
+/**  Thread constructor. We need nothing from it                       */
 bool CTestLBOSApp::Thread_Init(int idx)
 {
     return true;
@@ -74,17 +73,11 @@ bool CTestLBOSApp::Thread_Init(int idx)
 
 void CTestLBOSApp::SwapAddressesTest(int idx)
 {
-    // We need to first initialize mapper
-    const char* service = "/lbos";
-    SConnNetInfo* net_info = ConnNetInfo_Create(service);
-    FLBOS_ResolveIPPortMethod* temp_func_pointer =
-                              g_LBOS_UnitTesting_GetLBOSFuncs()->ResolveIPPort;
-
     /* Pseudo random order */
     int i = 0;
     TestApp_GlobalSyncPoint();
     ++i;
-    Initialization::SwapAddressesTest<1, 1, true>();  
+    Initialization::SwapAddressesTest<1, 1, true>();
     TestApp_GlobalSyncPoint();
     ++i;
     Initialization::SwapAddressesTest<2, 2, true>();
@@ -167,7 +160,7 @@ void CTestLBOSApp::SwapAddressesTest(int idx)
     Initialization::SwapAddressesTest<1, 28, true>();
     TestApp_GlobalSyncPoint();
     ++i;
-    Initialization::SwapAddressesTest<6, 92, true>();                               
+    Initialization::SwapAddressesTest<6, 92, true>();
     TestApp_GlobalSyncPoint();
     ++i;
     Initialization::SwapAddressesTest<4, 30, true>();
@@ -214,7 +207,7 @@ bool CTestLBOSApp::Thread_Run(int idx)
     X(29, Stability::GetNext_Reset__ShouldNotCrash)                           \
     TestApp_IntraGroupSyncPoint();                                            \
     X(30,Stability::FullCycle__ShouldNotCrash)                                \
-    TestApp_IntraGroupSyncPoint();                        
+    TestApp_IntraGroupSyncPoint();
 
 
     #define X(num,name) name();
