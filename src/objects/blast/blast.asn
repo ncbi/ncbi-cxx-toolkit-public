@@ -164,16 +164,6 @@ Blast4-queue-search-request ::= SEQUENCE {
     format-options          Blast4-parameters OPTIONAL
 }
 
--- Simplified search submission structure
-Blast4-queue-search-request-lite ::= SEQUENCE {
-    -- query sequence: provide a FASTA sequence, a gi number, or an accession
-    query                   VisibleString,      
-    -- Name of BLAST database to search
-    database-name           VisibleString,
-    -- BLAST options
-    options                 Blast4-options-lite
-}
-
 -- Request to retrieve the status of a given search
 Blast4-get-search-status-request ::= SEQUENCE {
     request-id              VisibleString
@@ -373,77 +363,6 @@ Blast4-error-code ::= INTEGER {
     bad-request-id          (2052),
     -- The search is pending
     search-pending          (2053)
-}
-
---  --------------------------------------------------------------------
---
---  Data types to be used in BLAST4 "Lite"
---
---  --------------------------------------------------------------------
-
-Blast4-common-options-db-restriction-by-organism ::= CHOICE {
-    organism-restriction        VisibleString,          -- additional restriction on the database to search
-    taxid-restriction           INTEGER                 -- same as above, specified with a taxid
-}
-
-Blast4-common-options-db-restriction ::= SEQUENCE {
-    entrez-query                VisibleString OPTIONAL, -- entrez query restriction on the database to search
-    organism                    Blast4-common-options-db-restriction-by-organism OPTIONAL
-}
-
-Blast4-common-options-repeats-filtering ::= SEQUENCE {
-    organism-taxid              INTEGER DEFAULT 9606    -- defaults to human
-}
-
-Blast4-common-options-query-filtering ::= SEQUENCE {
-    -- use SEG filtering with default parameters
-    use-seg-filtering           BOOLEAN OPTIONAL, 
-    -- use DUST filtering with default parameters
-    use-dust-filtering          BOOLEAN OPTIONAL,
-    -- mask for lookup table only (i.e.: soft masking)
-    mask-for-lookup-table-only  BOOLEAN OPTIONAL,
-    repeats-filtering           Blast4-common-options-repeats-filtering OPTIONAL,
-    -- user specified masking locations
-    user-specified-masks        SEQUENCE OF Blast4-mask OPTIONAL,
-    -- This overrides all other filtering options
-    no-filtering                BOOLEAN OPTIONAL
-}
-
-Blast4-common-options-discontiguous-megablast ::= SEQUENCE {
-    template-type               INTEGER,
-    template-length             INTEGER
-}
-
-Blast4-common-options-nucleotide-query ::= SEQUENCE {
-    strand-type-list            SEQUENCE OF Blast4-strand-type OPTIONAL, -- one per query
-    disco-megablast-options     Blast4-common-options-discontiguous-megablast OPTIONAL
-}
-
-Blast4-common-options-scoring ::= SEQUENCE {
-    matrix-name                 VisibleString OPTIONAL, -- e.g.: BLOSUM62, PAM30, etc
-    gap-opening-penalty         INTEGER OPTIONAL,
-    gap-extension-penalty       INTEGER OPTIONAL,
-    match-reward                INTEGER OPTIONAL,
-    mismatch-penalty            INTEGER OPTIONAL
-}
-
-Blast4-common-options ::= SEQUENCE {
-    percent-identity            REAL OPTIONAL,          -- percent identity of matches (0-100)
-    evalue                      REAL OPTIONAL,          -- e-value threshold
-    word-size                   INTEGER OPTIONAL,       -- word size to use in lookup table construction
-    hitlist-size                INTEGER OPTIONAL,       -- max number of database sequences to align
-    db-restriction              Blast4-common-options-db-restriction OPTIONAL,
-    query-filtering             Blast4-common-options-query-filtering OPTIONAL,
-    nucl-query-options          Blast4-common-options-nucleotide-query OPTIONAL,
-    scoring-options             Blast4-common-options-scoring OPTIONAL,
-    phi-pattern                 VisibleString OPTIONAL, -- PHI-BLAST pattern
-    eff-search-space            REAL OPTIONAL,          -- effective search space
-    comp-based-statistics       INTEGER OPTIONAL        -- Composition based statistics
-}
-
-Blast4-options-lite ::= SEQUENCE {
-    task                        VisibleString,
-    options                     Blast4-common-options OPTIONAL
 }
 
 --  --------------------------------------------------------------------
