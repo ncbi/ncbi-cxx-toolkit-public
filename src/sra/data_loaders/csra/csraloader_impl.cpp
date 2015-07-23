@@ -1716,7 +1716,7 @@ struct SBaseStats
     pair<unsigned, unsigned> get_min_max(EBaseStat stat) const
         {
             pair<unsigned, unsigned> c_min_max;
-            if ( !x_empty(stat) ) {
+            if ( !ss.empty() && !x_empty(stat) ) {
                 c_min_max.first = c_min_max.second = x_get(stat, 0);
                 for ( TSeqPos i = 1; i < size(); ++i ) {
                     unsigned c = x_get(stat, i);
