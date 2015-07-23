@@ -925,7 +925,7 @@ public:
 ///
 ///  Class used to report CSeq_loc_Mapper_Base issues through
 ///  IMessageListener.
-class NCBI_SEQ_EXPORT CSeq_loc_Mapper_Message : public CMessage_Base
+class NCBI_SEQ_EXPORT CSeq_loc_Mapper_Message : public CMessage_Basic
 {
 public:
     CSeq_loc_Mapper_Message(const string& msg,

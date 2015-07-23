@@ -170,10 +170,10 @@ IMessageListener::Post(const IProgressMessage& progress)
 }
 
 
-CMessage_Base::CMessage_Base(const string& txt,
-                             EDiagSev      sev,
-                             int           err_code,
-                             int           sub_code)
+CMessage_Basic::CMessage_Basic(const string& txt,
+                               EDiagSev      sev,
+                               int           err_code,
+                               int           sub_code)
     : m_Text(txt),
       m_Severity(sev),
       m_ErrCode(err_code),
@@ -182,43 +182,43 @@ CMessage_Base::CMessage_Base(const string& txt,
 }
 
 
-string CMessage_Base::GetText(void) const
+string CMessage_Basic::GetText(void) const
 {
     return m_Text;
 }
 
 
-EDiagSev CMessage_Base::GetSeverity(void) const
+EDiagSev CMessage_Basic::GetSeverity(void) const
 {
     return m_Severity;
 }
 
 
-int CMessage_Base::GetCode(void) const
+int CMessage_Basic::GetCode(void) const
 {
     return m_ErrCode;
 }
 
 
-int CMessage_Base::GetSubCode(void) const
+int CMessage_Basic::GetSubCode(void) const
 {
     return m_SubCode;
 }
 
 
-IMessage* CMessage_Base::Clone(void) const
+IMessage* CMessage_Basic::Clone(void) const
 {
-    return new CMessage_Base(*this);
+    return new CMessage_Basic(*this);
 }
 
 
-void CMessage_Base::Write(CNcbiOstream& out) const
+void CMessage_Basic::Write(CNcbiOstream& out) const
 {
     out << CNcbiDiag::SeverityName(GetSeverity()) << ": " << GetText() << endl;
 }
 
 
-string CMessage_Base::Compose(void) const
+string CMessage_Basic::Compose(void) const
 {
     CNcbiOstrstream out;
     Write(out);
@@ -226,9 +226,9 @@ string CMessage_Base::Compose(void) const
 }
 
 
-CProgressMessage_Base::CProgressMessage_Base(const string& txt,
-                                             Uint8         current,
-                                             Uint8         total)
+CProgressMessage_Basic::CProgressMessage_Basic(const string& txt,
+                                               Uint8         current,
+                                               Uint8         total)
     : m_Text(txt),
       m_Current(current),
       m_Total(total)
@@ -236,37 +236,37 @@ CProgressMessage_Base::CProgressMessage_Base(const string& txt,
 }
 
 
-string CProgressMessage_Base::GetText(void) const
+string CProgressMessage_Basic::GetText(void) const
 {
     return m_Text;
 }
 
 
-Uint8 CProgressMessage_Base::GetCurrent(void) const
+Uint8 CProgressMessage_Basic::GetCurrent(void) const
 {
     return m_Current;
 }
 
 
-Uint8 CProgressMessage_Base::GetTotal(void) const
+Uint8 CProgressMessage_Basic::GetTotal(void) const
 {
     return m_Total;
 }
 
 
-CProgressMessage_Base* CProgressMessage_Base::Clone(void) const
+CProgressMessage_Basic* CProgressMessage_Basic::Clone(void) const
 {
-    return new CProgressMessage_Base(*this);
+    return new CProgressMessage_Basic(*this);
 }
 
 
-void CProgressMessage_Base::Write(CNcbiOstream& out) const
+void CProgressMessage_Basic::Write(CNcbiOstream& out) const
 {
     out << GetText() << " [" << m_Current << "/" << m_Total << "]" << endl;
 }
 
 
-string CProgressMessage_Base::Compose(void) const
+string CProgressMessage_Basic::Compose(void) const
 {
     CNcbiOstrstream out;
     Write(out);
@@ -275,7 +275,7 @@ string CProgressMessage_Base::Compose(void) const
 
 
 IMessageListener::EPostResult
-CMessageListener_Base::PostMessage(const IMessage& message)
+CMessageListener_Basic::PostMessage(const IMessage& message)
 {
     m_Messages.push_back(AutoPtr<IMessage>(message.Clone()));
     return eHandled;
@@ -283,26 +283,26 @@ CMessageListener_Base::PostMessage(const IMessage& message)
 
 
 IMessageListener::EPostResult
-CMessageListener_Base::PostProgress(const IProgressMessage& progress)
+CMessageListener_Basic::PostProgress(const IProgressMessage& progress)
 {
     ERR_POST(Note << progress);
     return eHandled;
 }
 
 
-const IMessage& CMessageListener_Base::GetMessage(size_t index) const
+const IMessage& CMessageListener_Basic::GetMessage(size_t index) const
 {
     return *m_Messages[index].get();
 }
 
 
-size_t CMessageListener_Base::Count(void) const
+size_t CMessageListener_Basic::Count(void) const
 {
     return m_Messages.size();
 }
 
 
-void CMessageListener_Base::Clear(void)
+void CMessageListener_Basic::Clear(void)
 {
     m_Messages.clear();
 }

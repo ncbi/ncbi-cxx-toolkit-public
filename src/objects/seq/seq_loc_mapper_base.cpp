@@ -499,7 +499,7 @@ CSeq_loc_Mapper_Message::CSeq_loc_Mapper_Message(const string& msg,
                                                  EDiagSev      sev,
                                                  int           err_code,
                                                  int           sub_code)
-    : CMessage_Base(msg, sev, err_code, sub_code),
+    : CMessage_Basic(msg, sev, err_code, sub_code),
       m_ObjType(eNot_set),
       m_Obj(null)
 {
@@ -519,7 +519,7 @@ CSeq_loc_Mapper_Message* CSeq_loc_Mapper_Message::Clone(void) const
 
 void CSeq_loc_Mapper_Message::Write(CNcbiOstream& out) const
 {
-    CMessage_Base::Write(out);
+    CMessage_Basic::Write(out);
     switch ( Which() ) {
     case CSeq_loc_Mapper_Message::eNot_set:
         cout << "NULL";

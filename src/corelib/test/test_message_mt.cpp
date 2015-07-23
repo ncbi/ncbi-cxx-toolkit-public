@@ -53,7 +53,7 @@ protected:
 };
 
 
-class CTestListener : public CMessageListener_Base
+class CTestListener : public CMessageListener_Basic
 {
 public:
     CTestListener(const string& handle_prefix) : m_HandlePrefix(handle_prefix) {}
@@ -61,7 +61,7 @@ public:
     virtual EPostResult PostMessage(const IMessage& message)
     {
         if ( NStr::StartsWith(message.GetText(), m_HandlePrefix) ) {
-            return CMessageListener_Base::PostMessage(message);
+            return CMessageListener_Basic::PostMessage(message);
         }
         return eUnhandled;
     }
@@ -81,9 +81,9 @@ void CTestMessageApp::DoPostMessages(int idx)
 
     for (int i = 0; i < kMsgCount; i++) {
         string s = idx_str + "-" + NStr::NumericToString(i);
-        IMessageListener::Post(CMessage_Base("msg2-" + s, eDiag_Error));
-        IMessageListener::Post(CMessage_Base("msg3-" + s, eDiag_Error));
-        IMessageListener::Post(CMessage_Base("msg4-" + s, eDiag_Error));
+        IMessageListener::Post(CMessage_Basic("msg2-" + s, eDiag_Error));
+        IMessageListener::Post(CMessage_Basic("msg3-" + s, eDiag_Error));
+        IMessageListener::Post(CMessage_Basic("msg4-" + s, eDiag_Error));
     }
 }
 
@@ -91,11 +91,11 @@ void CTestMessageApp::DoPostMessages(int idx)
 bool CTestMessageApp::Thread_Run(int idx)
 {
     // This one should receive all messages, both handled and unhandled.
-    CRef<CMessageListener_Base> ml1(new CMessageListener_Base());
+    CRef<CMessageListener_Basic> ml1(new CMessageListener_Basic());
     size_t ml1_depth = IMessageListener::PushListener(*ml1, IMessageListener::eListen_All);
 
     // Receive unhandled messages only.
-    CRef<CMessageListener_Base> ml2(new CMessageListener_Base());
+    CRef<CMessageListener_Basic> ml2(new CMessageListener_Basic());
     size_t ml2_depth = IMessageListener::PushListener(*ml2);
 
     // Receive all messages, handle only those starting with 'msg3'

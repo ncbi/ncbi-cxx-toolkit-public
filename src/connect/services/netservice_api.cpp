@@ -1006,7 +1006,7 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
     STimeout* timeout = retry_count <= 0 && !m_UseSmartRetries ?
             NULL : &m_ServerPool->m_FirstServerTimeout;
 
-    CMessageListener_Base err_listener;
+    CMessageListener_Basic err_listener;
 
     for (;;) {
         skip_server = false;
@@ -1027,7 +1027,7 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
             else
                 conn_listener->OnWarning(ex.GetMsg(), server);
 
-            err_listener.PostMessage(CMessage_Base(ex.GetMsg(), eDiag_Warning));
+            err_listener.PostMessage(CMessage_Basic(ex.GetMsg(), eDiag_Warning));
         }
         catch (CNetScheduleException& ex) {
             if (retry_count <= 0 && !m_UseSmartRetries)
@@ -1040,7 +1040,7 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
             else
                 conn_listener->OnWarning(ex.GetMsg(), server);
 
-            err_listener.PostMessage(CMessage_Base(ex.GetMsg(), eDiag_Warning));
+            err_listener.PostMessage(CMessage_Basic(ex.GetMsg(), eDiag_Warning));
         }
         catch (CNetSrvConnException& ex) {
             if (retry_count <= 0 && !m_UseSmartRetries)
@@ -1060,7 +1060,7 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
                 throw;
             }
 
-            err_listener.PostMessage(CMessage_Base(ex.GetMsg(), eDiag_Warning));
+            err_listener.PostMessage(CMessage_Basic(ex.GetMsg(), eDiag_Warning));
         }
 
         ++number_of_servers;

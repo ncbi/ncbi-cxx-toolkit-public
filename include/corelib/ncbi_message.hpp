@@ -135,13 +135,13 @@ public:
 
 
 /// Default IMessage implementation: text and severity only.
-class NCBI_XNCBI_EXPORT CMessage_Base : public IMessage
+class NCBI_XNCBI_EXPORT CMessage_Basic : public IMessage
 {
 public:
-    CMessage_Base(const string& txt,
-                  EDiagSev      sev,
-                  int           err_code = 0,
-                  int           sub_code = 0);
+    CMessage_Basic(const string& txt,
+                   EDiagSev      sev,
+                   int           err_code = 0,
+                   int           sub_code = 0);
 
     virtual string GetText(void) const;
     virtual EDiagSev GetSeverity(void) const;
@@ -160,17 +160,17 @@ private:
 
 
 /// Default IProgressMessage implementation.
-class NCBI_XNCBI_EXPORT CProgressMessage_Base : public IProgressMessage
+class NCBI_XNCBI_EXPORT CProgressMessage_Basic : public IProgressMessage
 {
 public:
-    CProgressMessage_Base(const string& txt,
-                          Uint8         current,
-                          Uint8         total);
+    CProgressMessage_Basic(const string& txt,
+                           Uint8         current,
+                           Uint8         total);
 
     virtual string GetText(void) const;
     virtual Uint8 GetCurrent(void) const;
     virtual Uint8 GetTotal(void) const;
-    virtual CProgressMessage_Base* Clone(void) const;
+    virtual CProgressMessage_Basic* Clone(void) const;
     virtual void Write(CNcbiOstream& out) const;
     virtual string Compose(void) const;
 
@@ -285,7 +285,7 @@ public:
 
 /// Default implementation of IMessageListener: collects all messages
 /// posted.
-class NCBI_XNCBI_EXPORT CMessageListener_Base : public IMessageListener
+class NCBI_XNCBI_EXPORT CMessageListener_Basic : public IMessageListener
 {
 public:
     virtual EPostResult PostMessage(const IMessage& message);
