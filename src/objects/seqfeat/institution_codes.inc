@@ -1161,6 +1161,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CO	s	Museum National d'Histoire Naturelle, Department of Marine Biology",
 "COA	s	Herbario, Universidad de Cordoba - Jardin Botanico de Cordoba",
 "COA<USA-ME>	s	College of the Atlantic, Museum",
+"COAD	c	Colecao Octavio de Almeida Drumond",
 "COAH	s	Herbario Amazonico Colombiano (Instituto Amazonico de Investigaciones Cientificas SINCHI)",
 "COCA	s	Comision Tecnico Consultiva de Coeficientes de Agostadero (COTECOCA)",
 "COCH	s	Universidad Mayor de San Simon, Departamento de Botanica",
