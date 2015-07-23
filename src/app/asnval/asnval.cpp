@@ -358,14 +358,27 @@ void CAsnvalApp::ValidateOneFile(string fname)
             if ( NStr::Equal(args["a"].AsString(), "t")) {          // Release file
                 // Open File 
                 ProcessReleaseFile(args);
-            } else {
+            }
+            else {
+                size_t num_validated = 0;
+                while (true) {
+                    try {
+                        CConstRef<CValidError> eval = ValidateInput();
 
-                CConstRef<CValidError> eval = ValidateInput ();
-
-                if ( eval ) {
-                    PrintValidError(eval, args);
+                        if (eval) {
+                            PrintValidError(eval, args);
+                        }
+                        num_validated++;
+                    }
+                    catch (CException &e) {
+                        if (num_validated == 0) {
+                            throw(e);
+                        }
+                        else {
+                            break;
+                        }
+                    }
                 }
-
             }
         } catch (CException &e) {
             // Also log to XML?
