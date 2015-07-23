@@ -96,22 +96,46 @@ T* LeaveAsIs(void)
 }
 
 template<class _T>
-class CAutoInitDesc: public CAutoAddDesc
+class CAutoInitDesc : protected CAutoAddDesc
 {
 public:
     CAutoInitDesc(CSeq_descr& descr, CSeqdesc::E_Choice which);
+    CAutoInitDesc(CBioseq& bioseq, CSeqdesc::E_Choice which);
+    CAutoInitDesc(CBioseq_set& bioset, CSeqdesc::E_Choice which);
     CAutoInitDesc(_T& obj);
     _T* operator->();
     _T& operator*();
 protected:
     _T* m_ptr;
     void _getfromdesc();
+    mutable CRef<CBioseq> m_bioseq;
+    mutable CRef<CBioseq_set> m_bioset;
 };
 
 template<class _T>
 inline
-CAutoInitDesc<_T>::CAutoInitDesc(CSeq_descr& descr, CSeqdesc::E_Choice which):
-   CAutoAddDesc(descr, which), m_ptr(0)
+CAutoInitDesc<_T>::CAutoInitDesc(CSeq_descr& descr, CSeqdesc::E_Choice which) :
+  CAutoAddDesc(descr, which), 
+  m_ptr(0)
+{
+}
+
+template<class _T>
+inline
+CAutoInitDesc<_T>::CAutoInitDesc(CBioseq& bioseq, CSeqdesc::E_Choice which) :
+  CAutoAddDesc(*(CSeq_descr*)0, which), 
+   m_ptr(0),
+   m_bioseq(&bioseq)
+{
+}
+
+template<class _T>
+inline
+CAutoInitDesc<_T>::CAutoInitDesc(CBioseq_set& bioset, CSeqdesc::E_Choice which) :
+  CAutoAddDesc(*(CSeq_descr*)0, which), 
+  m_ptr(0),
+  m_bioset(&bioset)
+
 {
 }
 
@@ -137,7 +161,15 @@ _T* CAutoInitDesc<_T>::operator->()
     if (m_ptr == 0 &&
         m_which != CSeqdesc::e_not_set)
     {
-        _getfromdesc();
+      if (m_descr.Empty())
+      {
+        if (!m_bioseq.Empty())
+          m_descr = &m_bioseq->SetDescr();
+        else
+        if (!m_bioset.Empty())
+          m_descr = &m_bioset->SetDescr();
+      }
+      _getfromdesc();
     }
 
     return m_ptr;
@@ -289,17 +321,33 @@ void CSourceModParser::ApplyAllMods(CBioseq& seq, CTempString organism, CConstRe
     }
 
     {{
-        CAutoInitDesc<CBioSource> bsrc(seq.SetDescr(), CSeqdesc::e_Source);
-        x_ApplyMods(bsrc, organism);
+        //CSeq_descr* descr = 0;
+        if (
+          seq.GetParentSet() && seq.GetParentSet()->IsSetClass() &&
+          seq.GetParentSet()->GetClass() == CBioseq_set::eClass_nuc_prot)
+        {
+            CBioseq_set& bioset = *(CBioseq_set*)(seq.GetParentSet().GetPointerOrNull());
+            //descr = &bioset.SetDescr();
+            CAutoInitDesc<CBioSource> bsrc(bioset, CSeqdesc::e_Source);
+            x_ApplyMods(bsrc, organism);
+        }
+        else
+        {
+          //descr = &seq.SetDescr();
+            CAutoInitDesc<CBioSource> bsrc(seq, CSeqdesc::e_Source);
+            x_ApplyMods(bsrc, organism);
+        }
+        //CAutoInitDesc<CBioSource> bsrc(*descr, CSeqdesc::e_Source);
+        //x_ApplyMods(bsrc, organism);
     }}
 
     {{
-        CAutoInitDesc<CMolInfo> mi(seq.SetDescr(), CSeqdesc::e_Molinfo);
+        CAutoInitDesc<CMolInfo> mi(seq, CSeqdesc::e_Molinfo);
         x_ApplyMods(mi);
     }}
 
     {{
-        CAutoInitDesc<CGB_block> gbb(seq.SetDescr(), CSeqdesc::e_Genbank);
+        CAutoInitDesc<CGB_block> gbb(seq, CSeqdesc::e_Genbank);
         x_ApplyMods(gbb);
     }}
 
@@ -658,19 +706,20 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
             ++db_xref_iter ) {
         CRef< CDbtag > new_db( new CDbtag );
 
-        const string &db_xref_str = db_xref_iter->value;
-        int colon_location = db_xref_str.find( ":" );
-        if( colon_location == string::npos ) {
+        const CTempString db_xref_str = db_xref_iter->value;
+        CRef<CObject_id> object_id(new CObject_id);
+
+        size_t colon_location = db_xref_str.find(":");
+        if (colon_location == string::npos) {
             // no colon: it's just tag, and db is unknown
-            colon_location = -1; // we imagine the colon to be just before the start of the string
-            new_db->SetDb( "?" );
+            new_db->SetDb() = "?";
+            db_xref_str.Copy(object_id->SetStr(), 0, CTempString::npos);
         } else {
             // there's a colon, so db and tag are both known
-            new_db->SetDb( db_xref_str.substr( 0, colon_location ) );
+            db_xref_str.Copy(new_db->SetDb(), 0, colon_location);
+            db_xref_str.Copy(object_id->SetStr(), colon_location + 1, CTempString::npos);
         }
         
-        CRef<CObject_id> object_id( new CObject_id );
-        object_id->SetStr( db_xref_str.substr( colon_location + 1 ) );
         new_db->SetTag( *object_id );
 
         bsrc->SetOrg().SetDb().push_back( new_db );
