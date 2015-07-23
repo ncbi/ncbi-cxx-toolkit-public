@@ -151,7 +151,9 @@ int CRPSBlastApp::Run(void)
                                opt.GetSumStatisticsMode(),
                                m_CmdLineArgs->ExecuteRemotely(),
                                db_adapter->GetFilteringAlgorithm(),
-                               fmt_args->GetCustomOutputFormatSpec());
+                               fmt_args->GetCustomOutputFormatSpec(),
+                               false, false, NULL, NULL,
+                               GetCmdlineArgs(GetArguments()));
 
         formatter.SetQueryRange(query_opts->GetRange());
         formatter.SetLineLength(fmt_args->GetLineLength());

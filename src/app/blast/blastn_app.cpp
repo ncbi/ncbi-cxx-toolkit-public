@@ -135,7 +135,6 @@ int CBlastnApp::Run(void)
             CRef<CBlastOptions> my_options(&(opts_hndl->SetOptions()));
             CSetupFactory::InitializeMegablastDbIndex(my_options);
         }
-
         /*** Get the formatting options ***/
         CRef<CFormattingArgs> fmt_args(m_CmdLineArgs->GetFormattingArgs());
         CBlastFormat formatter(opt, *db_adapter,
@@ -155,7 +154,9 @@ int CBlastnApp::Run(void)
                                db_adapter->GetFilteringAlgorithm(),
                                fmt_args->GetCustomOutputFormatSpec(),
                                m_CmdLineArgs->GetTask() == "megablast",
-                               opt.GetMBIndexLoaded());
+                               opt.GetMBIndexLoaded(),
+                               NULL, NULL,
+                               GetCmdlineArgs(GetArguments()));
                                
         formatter.SetQueryRange(query_opts->GetRange());
         formatter.SetLineLength(fmt_args->GetLineLength());

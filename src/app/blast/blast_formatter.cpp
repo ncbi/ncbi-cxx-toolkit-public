@@ -314,7 +314,9 @@ int CBlastFormatterApp::PrintFormattedOutput(void)
                            filtering_algorithm,
                            fmt_args.GetCustomOutputFormatSpec(),
                            kTask == "megablast",
-                           opts.GetMBIndexLoaded());
+                           opts.GetMBIndexLoaded(),
+                           NULL, NULL,
+                           GetCmdlineArgs(GetArguments()));
     formatter.SetLineLength(fmt_args.GetLineLength());
     if((fmt_args.GetFormattedOutputChoice() ==  CFormattingArgs::eXml2 ||
         fmt_args.GetFormattedOutputChoice() ==  CFormattingArgs::eJson)

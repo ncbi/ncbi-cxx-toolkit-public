@@ -270,7 +270,8 @@ int CDeltaBlastApp::Run(void)
                                db_adapter->GetFilteringAlgorithm(),
                                fmt_args->GetCustomOutputFormatSpec(),
                                false, false, NULL,
-                               domain_db_ptr);
+                               domain_db_ptr,
+                               GetCmdlineArgs(GetArguments()));
         
         formatter.SetQueryRange(query_opts->GetRange());
         formatter.SetLineLength(fmt_args->GetLineLength());
