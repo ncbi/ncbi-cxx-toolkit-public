@@ -194,8 +194,6 @@ void CVariationUtilities::CorrectRefAllele(CSeq_feat& feature, CScope& scope)
     const CVariation_inst::TType type = 
         CVariationUtilities::GetVariationType(feature.GetData().GetVariation());
     
-    cerr << "HERE " << type << endl;
-
     //Insertions do not have a reference to fix
     if(type == CVariation_inst::eType_ins)
         return;
