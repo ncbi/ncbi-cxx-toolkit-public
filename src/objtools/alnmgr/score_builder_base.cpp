@@ -94,10 +94,22 @@ static void s_GetNucIdentityMismatch(const vector<string>& data,
                                      int* identities,
                                      int* mismatches)
 {
-    for (size_t a = 0;  a < data[0].size();  ++a) {
+    if ( data.empty() ) {
+        return;
+    }
+    size_t rows = data.size();
+    size_t size = data[0].size();
+    for (size_t i = 1; i < rows; ++i ) {
+        if ( data[i].size() != size ) {
+            NCBI_THROW(CSeqalignException, eInvalidInputData,
+                       "Rows have different lengths");
+        }
+    }
+    for (size_t a = 0;  a < size;  ++a) {
         bool is_mismatch = false;
-        for (size_t b = 1;  b < data.size();  ++b) {
-            if (data[b][a] != data[0][a]) {
+        char c = data[0][a];
+        for (size_t b = 1;  b < rows;  ++b) {
+            if (data[b][a] != c) {
                 is_mismatch = true;
                 break;
             }
