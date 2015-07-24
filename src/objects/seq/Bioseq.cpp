@@ -262,8 +262,10 @@ const CSeq_id* CBioseq::GetFirstId() const
 
 static int s_BestNonLocalRank(const CRef<CSeq_id>& id)
 {
-    if (id.Empty()  ||  id->IsLocal()) {
+    if (id.Empty()) {
         return kMax_Int;
+    } else if (id->IsLocal()) {
+        return kMax_Int - 1;
     } else {
         return id->BestRankScore();
     }
