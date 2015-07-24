@@ -2872,6 +2872,7 @@ void CNetScheduleHandler::x_ProcessReloadConfig(CQueue* q)
 
         CJsonNode       diff = CJsonNode::NewObjectNode();
         m_Server->Configure(reg, diff);
+        m_Server->SetAnybodyCanReconfigure(false);
 
         // Logging from the [server] section
         SNS_Parameters          params;
@@ -2906,7 +2907,6 @@ void CNetScheduleHandler::x_ProcessReloadConfig(CQueue* q)
 
         m_Server->AcknowledgeAlert(eReconfigure, "NSAcknowledge");
         m_Server->AcknowledgeAlert(eConfigOutOfSync, "NSAcknowledge");
-        m_Server->SetAnybodyCanReconfigure(false);
         x_WriteMessage("OK:" + diff_as_string);
     }
     else
@@ -3015,10 +3015,16 @@ void CNetScheduleHandler::x_ProcessShutdown(CQueue*)
             x_PrintCmdRequestStop();
             return;
         }
-        x_WriteMessage("OK:");
-        x_PrintCmdRequestStop();
-        m_Server->SetRefuseSubmits(true);
-        m_Server->SetDrainShutdown();
+        if (m_Server->IsDrainShutdown()) {
+            x_WriteMessage("OK:WARNING:eAlreadyDrainShutdown:The server is "
+                           "already in drain shutdown state;");
+            x_PrintCmdRequestStop();
+        } else {
+            x_WriteMessage("OK:");
+            x_PrintCmdRequestStop();
+            m_Server->SetRefuseSubmits(true);
+            m_Server->SetDrainShutdown();
+        }
         return;
     }
 
