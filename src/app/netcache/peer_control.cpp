@@ -326,6 +326,11 @@ CNCPeerControl::x_UpdateHasTasks(void)
 {
     m_HasBGTasks = !m_SmallMirror.empty()  ||  !m_BigMirror.empty()
                    ||  !m_SyncList.empty();
+    if (m_HasBGTasks && CTaskServer::IsInShutdown() && m_BusyConns.empty()) {
+// probably, something went wrong: we still have work to do, but nobody to work on it
+// but, it is shutdown time...
+        m_HasBGTasks = false;
+    }
 }
 
 bool
