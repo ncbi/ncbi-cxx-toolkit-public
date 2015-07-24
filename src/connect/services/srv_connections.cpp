@@ -119,7 +119,9 @@ void SNetServerConnectionImpl::DeleteThis()
         TFastMutexGuard guard(
                 m_Server->m_ServerInPool->m_FreeConnectionListLock);
 
+        //int upper_limit = m_Server.m_Impl->m_MaxConnPoolSize;
         int upper_limit = TServConn_MaxConnPoolSize::GetDefault();
+        //LOG_POST("pool size: "<<upper_limit);
 
         if (upper_limit == 0 || m_Server->m_ServerInPool->
                 m_FreeConnectionListSize < upper_limit) {
@@ -504,6 +506,11 @@ inline static bool operator <(const STimeout& t1, const STimeout& t2)
     return t1.sec == t2.sec ? t1.usec < t2.usec : t1.sec < t2.sec;
 }
 
+inline ostream& operator<<(ostream& out, const STimeout& tm)
+{
+    return out << (tm.sec+tm.usec*1e-6);
+}
+
 CNetServerConnection SNetServerImpl::Connect(STimeout* timeout,
         INetServerConnectionListener* conn_listener)
 {
@@ -515,6 +522,8 @@ CNetServerConnection SNetServerImpl::Connect(STimeout* timeout,
     CDeadline deadline(conn_timeout.sec, conn_timeout.usec * 1000);
     STimeout internal_timeout = conn_timeout < s_InternalConnectTimeout ?
             conn_timeout : s_InternalConnectTimeout;
+
+    //LOG_POST("internal timeout: "<<internal_timeout);
 
     SServerAddress server_address(m_ServerInPool->m_Address);
 
@@ -629,6 +638,7 @@ CNetServerConnection SNetServerImpl::Connect(STimeout* timeout,
 
     m_ServerInPool->AdjustThrottlingParameters(SNetServerInPool::eCOR_Success);
 
+    //LOG_POST("comm timeout: "<<*(timeout != NULL ? timeout: &m_ServerInPool->m_ServerPool->m_CommTimeout));
     conn->m_Socket.SetDataLogging(eOff);
     conn->m_Socket.SetTimeout(eIO_ReadWrite, timeout != NULL ? timeout :
                               &m_ServerInPool->m_ServerPool->m_CommTimeout);

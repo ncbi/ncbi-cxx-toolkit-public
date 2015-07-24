@@ -457,6 +457,18 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
 
         m_UseSmartRetries = config->GetBool(section,
                 "smart_service_retries", CConfig::eErr_NoThrow, true);
+        m_ConnectionMaxRetries = config->GetInt(section,
+                "connection_max_retries", CConfig::eErr_NoThrow, -1);
+        double retry_delay = config->GetDouble(section,
+                "retry_delay", CConfig::eErr_NoThrow, -1);
+        m_ConnectionRetryDelay = retry_delay < 0? -1:
+            (int)SECONDS_DOUBLE_TO_MS_UL(retry_delay);
+    }
+    if ( m_ConnectionMaxRetries < 0 ) {
+        m_ConnectionMaxRetries = (int)TServConn_ConnMaxRetries::GetDefault();
+    }
+    if ( m_ConnectionRetryDelay < 0 ) {
+        m_ConnectionRetryDelay = (int)s_GetRetryDelay();
     }
 
     m_ServerPool->Init(config, section, m_Listener.GetPointerOrNull());
@@ -861,6 +873,7 @@ void SNetServiceImpl::DiscoverServersIfNeeded()
             // FIXME Retry logic can be removed as soon as LBSMD with
             // packet compression is installed universally.
             int try_count = TServConn_MaxFineLBNameRetries::GetDefault();
+            //LOG_POST("lbname_retries: "<<try_count);
             for (;;) {
                 SConnNetInfo* net_info =
                     ConnNetInfo_Create(m_ServiceName.c_str());
@@ -980,9 +993,11 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
     if (conn_listener == NULL)
         conn_listener = m_Listener;
 
-    int retry_count = (int) TServConn_ConnMaxRetries::GetDefault();
+    int retry_count = m_ConnectionMaxRetries;
+    //LOG_POST("retry_count = "<<retry_count);
 
-    const unsigned long retry_delay = s_GetRetryDelay();
+    const unsigned long retry_delay = m_ConnectionRetryDelay;
+    //LOG_POST("retry_delay = "<<retry_delay);
 
     CDeadline max_connection_time(m_ServerPool->m_MaxConnectionTime / 1000,
          (m_ServerPool->m_MaxConnectionTime % 1000) * 1000 * 1000);
@@ -1015,6 +1030,9 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
             server->ConnectAndExec(cmd, multiline_output, exec_result,
                     timeout, NULL, conn_listener);
             return;
+        }
+        catch (CNetCacheBlobTooOldException& ex) {
+            throw;
         }
         catch (CNetCacheException& ex) {
             if (retry_count <= 0 && !m_UseSmartRetries)

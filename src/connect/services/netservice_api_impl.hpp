@@ -253,7 +253,9 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
         m_ColoNetwork(0),
         m_AllowXSiteConnections(false),
 #endif
-        m_UseSmartRetries(true)
+        m_UseSmartRetries(true),
+        m_ConnectionMaxRetries(-1),
+        m_ConnectionRetryDelay(-1)
     {
         ZeroInit();
     }
@@ -267,7 +269,9 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
         m_ColoNetwork(prototype->m_ColoNetwork),
         m_AllowXSiteConnections(prototype->m_AllowXSiteConnections),
 #endif
-        m_UseSmartRetries(prototype->m_UseSmartRetries)
+        m_UseSmartRetries(prototype->m_UseSmartRetries),
+        m_ConnectionMaxRetries(prototype->m_ConnectionMaxRetries),
+        m_ConnectionRetryDelay(prototype->m_ConnectionRetryDelay)
     {
         ZeroInit();
         Construct(server);
@@ -280,7 +284,9 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
         m_ColoNetwork(prototype->m_ColoNetwork),
         m_AllowXSiteConnections(prototype->m_AllowXSiteConnections),
 #endif
-        m_UseSmartRetries(prototype->m_UseSmartRetries)
+        m_UseSmartRetries(prototype->m_UseSmartRetries),
+        m_ConnectionMaxRetries(prototype->m_ConnectionMaxRetries),
+        m_ConnectionRetryDelay(prototype->m_ConnectionRetryDelay)
     {
         ZeroInit();
         Construct();
@@ -346,7 +352,10 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
     bool m_AllowXSiteConnections;
 #endif
 
+    // connection parameters from config
     bool m_UseSmartRetries;
+    int m_ConnectionMaxRetries;
+    int m_ConnectionRetryDelay;
 };
 
 struct SNetServiceMap {

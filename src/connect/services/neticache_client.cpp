@@ -809,6 +809,11 @@ IReader* SNetICacheClientImpl::ReadCurrentBlobNotOlderThan(const string& key,
 
         return NULL;
     }
+    catch (CNetCacheException& e) {
+        if (e.GetErrCode() != CNetCacheException::eBlobNotFound)
+            throw;
+        return NULL;
+    }
 }
 
 class CSetValidWarningSuppressor : public CNetICacheServerListener

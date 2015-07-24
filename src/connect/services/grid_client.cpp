@@ -325,7 +325,7 @@ string CGridClient::GetProgressMessage()
             return buffer;
         }
     }
-    return kEmptyStr;
+    return string();
 }
 
 void CGridClient::SetJobKey(const string& job_key)

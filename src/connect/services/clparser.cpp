@@ -408,7 +408,7 @@ void SCommandLineParserImpl::HelpOnCommand(const SCommonParts* common_parts,
 
 void SCommandLineParserImpl::Throw(const string& error, const string& cmd) const
 {
-    string message(kEmptyStr);
+    string message;
     if (error.empty())
         message.append(m_Synopsis);
     else {
@@ -557,7 +557,7 @@ int SCommandLineParserImpl::ParseAndValidate(int argc, const char* const *argv)
         ret_val = 0;
     } else {
         if (positional_arguments.empty())
-            Throw(m_OptionValues.empty() ? kEmptyStr : "a command is required");
+            Throw(m_OptionValues.empty() ? "" : "a command is required");
 
         command_name = positional_arguments.front();
         positional_arguments.pop_front();
