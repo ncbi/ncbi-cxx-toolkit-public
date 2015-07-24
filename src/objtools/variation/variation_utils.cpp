@@ -102,6 +102,12 @@ void CVariationUtilities::CorrectRefAllele(CVariation& variation, CScope& scope)
     if(type == CVariation_inst::eType_ins)
         return;
 
+
+    //STRs (microsatellite) and inversions are also not fixed
+    if (type == CVariation_inst::eType_microsatellite ||
+        type == CVariation_inst::eType_inv)
+        return;
+
     //If deletion type, left shift so that the SeqLoc is accurate
     // NB: RSNP-267 - We are arbitrarily fixing allele on left-shift
     // coordinate.  If there are multiple, then we should fix
@@ -188,8 +194,15 @@ void CVariationUtilities::CorrectRefAllele(CSeq_feat& feature, CScope& scope)
     const CVariation_inst::TType type = 
         CVariationUtilities::GetVariationType(feature.GetData().GetVariation());
     
+    cerr << "HERE " << type << endl;
+
     //Insertions do not have a reference to fix
     if(type == CVariation_inst::eType_ins)
+        return;
+
+    //STRs (microsatellite) and inversions are also not fixed
+    if (type == CVariation_inst::eType_microsatellite ||
+        type == CVariation_inst::eType_inv)
         return;
 
     //If deletion type, left shift so that the SeqLoc is accurate
@@ -491,6 +504,12 @@ bool CVariationUtilities::IsReferenceCorrect(const CSeq_feat& feature, string& a
     const CVariation_inst::TType type = GetVariationType(feature.GetData().GetVariation());
     if(type == CVariation_inst::eType_ins)
         return true;
+
+    //STRs (microsatellite) and inversions are also not fixed
+    if (type == CVariation_inst::eType_microsatellite ||
+        type == CVariation_inst::eType_inv)
+        return true;
+
 
     //If deletion type, left shift so that the SeqLoc is accurate
     CConstRef<CSeq_feat> feat = ConstRef(&feature);

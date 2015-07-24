@@ -1,0 +1,27 @@
+Is Reference Correct? : 1 .  . 
+Check Variation type: 8
+Ref/Alt :  - 
+Seq-feat ::= {
+  data variation {
+    name "NG_007085.2:g.8385_8387(15_45)",
+    data instance {
+      type microsatellite,
+      delta {
+        {
+          seq this NULL,
+          multiplier 15,
+          multiplier-fuzz range {
+            max 45,
+            min 15
+          }
+        }
+      }
+    }
+  },
+  location int {
+    from 8384,
+    to 8386,
+    strand plus,
+    id gi 163954919
+  }
+}

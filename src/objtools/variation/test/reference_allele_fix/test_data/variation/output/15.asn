@@ -1,0 +1,39 @@
+Check Variation type: 8
+Ref/Alt :  - 
+Variation ::= {
+  name "NG_007085.2:g.8385_8387(15_45)",
+  data set {
+    type package,
+    variations {
+      {
+        placements {
+          {
+            loc int {
+              from 8384,
+              to 8386,
+              strand plus,
+              id other {
+                accession "NG_007085",
+                version 2
+              }
+            },
+            mol genomic
+          }
+        },
+        data instance {
+          type microsatellite,
+          delta {
+            {
+              seq this NULL,
+              multiplier 15,
+              multiplier-fuzz range {
+                max 45,
+                min 15
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

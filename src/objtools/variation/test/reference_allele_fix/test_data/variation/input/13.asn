@@ -1,0 +1,36 @@
+Variation ::= {
+  name "NG_007070.1:g.10256_10258GAC[7]",
+  data set {
+    type package,
+    variations {
+      {
+        placements {
+          {
+            loc int {
+              from 10255,
+              to 10269,
+              strand plus,
+              id other {
+                accession "NG_007070",
+                version 1
+              }
+            },
+            mol genomic
+          }
+        },
+        data instance {
+          type microsatellite,
+          delta {
+            {
+              seq literal {
+                length 3,
+                seq-data iupacna "GAC"
+              },
+              multiplier 7
+            }
+          }
+        }
+      }
+    }
+  }
+}
