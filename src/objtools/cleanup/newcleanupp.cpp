@@ -1155,14 +1155,13 @@ void CNewCleanup_imp::GBblockBC (
 
     CLEAN_STRING_LIST (gbk, Keywords);
 
-    CCachedRegexp reassembly_regex = regexpCache.Get(
-        "^tpa[:_]reassembly$", 
-        CRegexp::fCompile_ignore_case );
+    CCachedRegexp reassembly_regex
+        = regexpCache.Get("^tpa(?:_|[_:]re)assembly$",
+                          CRegexp::fCompile_ignore_case);
     EDIT_EACH_KEYWORD_ON_EMBLBLOCK(keyword_it, gbk) {
         string & sKeyword = *keyword_it;
         if( reassembly_regex->IsMatch(sKeyword) ) {
-            // remove the "re" in "reassembly"
-            sKeyword.erase(4, 2);
+            sKeyword = "TPA:assembly";
             ChangeMade (CCleanupChange::eCleanQualifiers);
         }
     }
