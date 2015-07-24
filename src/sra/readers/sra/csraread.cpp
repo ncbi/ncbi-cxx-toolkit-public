@@ -1151,6 +1151,10 @@ CRef<CSeq_align> CCSraAlignIterator::GetMatchAlign(void) const
                 // soft clipping already accounted in seqpos
                 continue;
             }
+            if ( type == 'I' && starts.empty() && seglen == seqpos ) {
+                // soft clipping already accounted in seqpos
+                seqpos = 0;
+            }
             insert_size += seglen;
             refstart = kInvalidSeqPos;
             seqstart = seqpos;
