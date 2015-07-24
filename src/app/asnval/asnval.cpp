@@ -114,6 +114,7 @@ private:
     auto_ptr<CObjectIStream> OpenFile(const CArgs& args);
     auto_ptr<CObjectIStream> OpenFile(const string& fname);
 
+    CConstRef<CValidError> ProcessCatenated(void);
     CConstRef<CValidError> ProcessSeqEntry(CSeq_entry& se);
     CConstRef<CValidError> ProcessSeqEntry(void);
     CConstRef<CValidError> ProcessSeqSubmit(void);
@@ -241,7 +242,7 @@ void CAsnvalApp::Init(void)
         CArgDescriptions::eString);
 
     arg_desc->AddDefaultKey("a", "a", 
-                            "ASN.1 Type (a Automatic, z Any, e Seq-entry, b Bioseq, s Bioseq-set, m Seq-submit, t Batch Bioseq-set, u Batch Seq-submit",
+                            "ASN.1 Type (a Automatic, c Catenated, z Any, e Seq-entry, b Bioseq, s Bioseq-set, m Seq-submit, t Batch Bioseq-set, u Batch Seq-submit",
                             CArgDescriptions::eString,
                             "a");
 
@@ -301,7 +302,9 @@ CConstRef<CValidError> CAsnvalApp::ValidateInput (void)
         }
     }
 
-    if (header == "Seq-submit" ) {  // Seq-submit
+    if (!m_obj_type.empty() && m_obj_type[0] == 'c') {
+        eval = ProcessCatenated();
+    } else if (header == "Seq-submit" ) {           // Seq-submit
         eval = ProcessSeqSubmit();
     } else if ( header == "Seq-entry" ) {           // Seq-entry
         eval = ProcessSeqEntry();
@@ -608,6 +611,61 @@ CRef<CSeq_entry> CAsnvalApp::ReadSeqEntry(void)
     m_In->Read(ObjectInfo(*se), CObjectIStream::eNoFileHeader);
 
     return se;
+}
+
+CConstRef<CValidError> CAsnvalApp::ProcessCatenated(void)
+{
+    try {
+        while (true) {
+            // Get seq-entry to validate
+            CRef<CSeq_entry> se(new CSeq_entry);
+
+            try {
+                m_In->Read(ObjectInfo(*se), CObjectIStream::eNoFileHeader);
+            }
+            catch (const CSerialException& e) {
+                if (e.GetErrCode() == CSerialException::eEOF) {
+                    break;
+                } else {
+                    throw;
+                }
+            }
+            catch (const CException& e) {
+                ERR_POST(Error << e);
+                ReportReadFailure();
+                CRef<CValidError> errors(new CValidError());
+                return errors;
+            }
+            try {
+                CConstRef<CValidError> eval = ProcessSeqEntry(*se);
+                if ( eval ) {
+                    PrintValidError(eval, GetArgs());
+                }
+            }
+            catch (const CObjMgrException& om_ex) {
+                if (om_ex.GetErrCode() == CObjMgrException::eAddDataError)
+                  se->ReassignConflictingIds();
+                CConstRef<CValidError> eval = ProcessSeqEntry(*se);
+                if ( eval ) {
+                    PrintValidError(eval, GetArgs());
+                }
+            }
+            try {
+                m_In->SkipFileHeader(CSeq_entry::GetTypeInfo());
+            }
+            catch (const CEofException&) {
+                break;
+            }
+        }
+    }
+    catch (const CException& e) {
+        ERR_POST(Error << e);
+        ReportReadFailure();
+        CRef<CValidError> errors(new CValidError());
+        return errors;
+    }
+
+    return CConstRef<CValidError>();
 }
 
 CConstRef<CValidError> CAsnvalApp::ProcessBioseq(void)
