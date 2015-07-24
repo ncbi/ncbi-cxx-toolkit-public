@@ -3813,6 +3813,18 @@ CNewCleanup_imp::EAction CNewCleanup_imp::GBQualSeqFeatBC(CGb_qual& gb_qual, CSe
             ChangeMade(CCleanupChange::eChangeComment);
         }
         return eAction_Erase;
+    } else if (NStr::EqualNocase(qual, "regulatory_class")) {
+        string::size_type colon_pos = val.find_first_of(":");
+        if (colon_pos != string::npos && ! NStr::StartsWith (val, "other:")) {
+            string comment = val.substr( colon_pos + 1 );
+            val.resize( colon_pos );
+            if( GET_STRING_FLD_OR_BLANK(feat, Comment).empty() ) {
+                SET_FIELD(feat, Comment, comment );
+            } else {
+                GET_MUTABLE(feat, Comment) += "; " + comment;
+            }
+            ChangeMade(CCleanupChange::eChangeComment);
+        }
     } else if (NStr::EqualNocase(qual, "db_xref")) {
         string tag, db;
         if (NStr::SplitInTwo(val, ":", db, tag)) {
