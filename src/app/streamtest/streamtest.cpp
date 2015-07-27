@@ -93,6 +93,7 @@ USING_SCOPE(validator);
 #include "presenter.hpp"
 #include "presenter_releasefile.hpp"
 #include "presenter_seqset.hpp"
+#include "presenter_catenated.hpp"
 
 //  ============================================================================
 class CStreamTestApp : public CNcbiApplication
@@ -193,6 +194,9 @@ void CStreamTestApp::Init()
 
     arg_desc->AddFlag( "batch",
         "Process genbank release file" );
+
+    arg_desc->AddFlag( "catenated",
+        "Process concatenated Seq-entry" );
 
     arg_desc->AddFlag("gbload",
         "Use GenBank data loader");
@@ -356,6 +360,9 @@ CStreamTestApp::GetPresenter(
     CSeqEntryPresenter* pPresenter = 0;
     if ( args["batch"] ) {
         pPresenter = new CReleaseFilePresenter;
+    }
+    else if ( args["catenated"] ) {
+        pPresenter = new CCatenatedPresenter;
     }
     else {
         pPresenter = new CSeqSetPresenter;
