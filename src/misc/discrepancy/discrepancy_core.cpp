@@ -94,9 +94,6 @@ vector<string> GetDiscrepancyNames()
     map<string, CDiscrepancyConstructor*>& Table = CDiscrepancyConstructor::GetTable();
     vector<string> V;
     ITERATE (MyMap, J, Table) {
-        if (J->first == "NOT_IMPL") {
-            continue;
-        }
         V.push_back(J->first);
     }
     return V;

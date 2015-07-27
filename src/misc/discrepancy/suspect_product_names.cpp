@@ -5312,13 +5312,16 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eNormal, "Suspect Product 
         CRef<CDiscrepancyObject> r(new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), false));
         Add(kEmptyStr, *r);
 
-//cout << "found! " << GetRuleText(**rule) << "\t" << prot_name << "\n";
+//cout << "found! " << GetRuleText(**rule) << "\t:\t" << prot_name << "\n";
     }
 }
 
 
 DISCREPANCY_SUMMARIZE(SUSPECT_PRODUCT_NAMES)
 {
+    if (m_Objs.empty()) {
+        return;
+    }
     CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), GetName()));
     item->SetDetails(m_Objs[kEmptyStr]);
     AddItem(*item);
@@ -5376,6 +5379,9 @@ cout << "found! " << GetRuleText(**rule) << "\t" << prot_name << "\n";
 
 DISCREPANCY_SUMMARIZE(TEST_ORGANELLE_PRODUCTS)
 {
+    if (m_Objs.empty()) {
+        return;
+    }
     CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), GetName()));
     item->SetDetails(m_Objs[kEmptyStr]);
     AddItem(*item);

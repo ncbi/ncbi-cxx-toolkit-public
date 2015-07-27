@@ -30,6 +30,7 @@ internal/mapview/objects
 misc/grid_cgi$
 misc/xmlwrapp
 misc/discrepancy$
+misc/discrepancy_report$
 objects
 objmgr
 objtools
