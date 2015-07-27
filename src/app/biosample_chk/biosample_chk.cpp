@@ -97,8 +97,8 @@
 #include <misc/xmlwrapp/xmlwrapp.hpp>
 
 
-#include "util.hpp"
-#include "struc_table_column.hpp"
+#include <misc/biosample_util/biosample_util.hpp>
+#include <misc/biosample_util/struc_table_column.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -134,8 +134,6 @@ private:
     CObjectIStream* OpenFile(string fname, const CArgs& args);
 
     void GetBioseqDiffs(CBioseq_Handle bh);
-    bool DoDiffsContainConflicts();
-    void AddBioseqToTable(CBioseq_Handle bh, bool with_id = false);
     void PushToRecord(CBioseq_Handle bh);
 
     void ProcessBioseqForUpdate(CBioseq_Handle bh);
@@ -153,18 +151,11 @@ private:
     CRef<CSeq_entry> ReadSeqEntry(void);
     CRef<CBioseq_set> ReadBioseqSet(void);
 
-    void PrintResults(TBiosampleFieldDiffList& diffs);
-    void PrintDiffs(TBiosampleFieldDiffList& diffs);
+    void PrintResults(biosample_util::TBiosampleFieldDiffList& diffs);
+    void PrintDiffs(biosample_util::TBiosampleFieldDiffList& diffs);
     void PrintTable(CRef<CSeq_table> table);
-    void PrintBioseqXML(CBioseq_Handle bh);
 
     CRef<CScope> BuildScope(void);
-	bool x_IsReportableStructuredComment(const CSeqdesc& desc);
-
-    bool x_ResolveSuppliedBioSampleAccession(vector<string>& biosample_ids);
-
-    string x_OwnerFromAffil(const CAffil& affil);
-    string x_OwnerFromPub(const CPub& pub);
 
     // for mode 3, biosample_push
     void UpdateBioSource (CBioseq_Handle bh, const CBioSource& src);
@@ -201,7 +192,7 @@ private:
 
     int m_Mode;
     int m_ListType;
-	string m_StructuredCommentPrefix;
+    string m_StructuredCommentPrefix;
     bool m_CompareStructuredComments;
     bool m_UseDevServer;
     bool m_FirstSeqOnly;
@@ -215,7 +206,7 @@ private:
     size_t m_Processed;
     size_t m_Unprocessed;
 
-    TBiosampleFieldDiffList m_Diffs;
+    biosample_util::TBiosampleFieldDiffList m_Diffs;
     CRef<CSeq_table> m_Table;
     vector<CRef<CSeqdesc> > m_Descriptors;
 };
@@ -776,22 +767,6 @@ CRef<CBioseq_set> CBiosampleChkApp::ReadBioseqSet(void)
 }
 
 
-bool s_CompareBiosampleFieldDiffs (CRef<CBiosampleFieldDiff> f1, CRef<CBiosampleFieldDiff> f2)
-{ 
-    if (!f1) {
-        return true;
-    } else if (!f2) {
-        return false;
-    } 
-    int cmp = f1->Compare(*f2);
-    if (cmp < 0) {
-        return true;
-    } else {
-        return false;
-    }        
-}
-
-
 void CBiosampleChkApp::PrintTable(CRef<CSeq_table> table)
 {
     if (table->GetNum_rows() == 0) {
@@ -816,7 +791,7 @@ void CBiosampleChkApp::PrintTable(CRef<CSeq_table> table)
 }
 
 
-void CBiosampleChkApp::PrintDiffs(TBiosampleFieldDiffList & diffs)
+void CBiosampleChkApp::PrintDiffs(biosample_util::TBiosampleFieldDiffList & diffs)
 {
     if (diffs.size() == 0) {
         if (m_Processed == 0) {
@@ -826,11 +801,11 @@ void CBiosampleChkApp::PrintDiffs(TBiosampleFieldDiffList & diffs)
         }
     } else {
         if (m_NeedReportHeader) {
-            CBiosampleFieldDiff::PrintHeader(*m_ReportStream, false);
+            biosample_util::CBiosampleFieldDiff::PrintHeader(*m_ReportStream, false);
             m_NeedReportHeader = false;
         }
 
-        ITERATE(TBiosampleFieldDiffList, it, diffs) {
+        ITERATE(biosample_util::TBiosampleFieldDiffList, it, diffs) {
             (*it)->Print(*m_ReportStream, false);
         }
     }
@@ -840,691 +815,30 @@ void CBiosampleChkApp::PrintDiffs(TBiosampleFieldDiffList & diffs)
 }
 
 
-void CBiosampleChkApp::PrintResults(TBiosampleFieldDiffList & diffs)
+void CBiosampleChkApp::PrintResults(biosample_util::TBiosampleFieldDiffList & diffs)
 {
     PrintDiffs(diffs);
 }
 
 
-static const string kStructuredCommentPrefix = "StructuredCommentPrefix";
-static const string kStructuredCommentSuffix = "StructuredCommentSuffix";
-
-
-static string s_GetStructuredCommentPrefix(const CUser_object& usr)
-{
-	if (!usr.IsSetType() || !usr.GetType().IsStr()
-		|| !NStr::Equal(usr.GetType().GetStr(), "StructuredComment")){
-		return "";
-    }
-    string prefix = "";
-	try {
-		const CUser_field& field = usr.GetField(kStructuredCommentPrefix);
-		if (field.IsSetData() && field.GetData().IsStr()) {
-			prefix = field.GetData().GetStr();		
-		}
-	} catch (...) {
-        // no prefix
-	}
-    return prefix;
-}
-
-
-bool CBiosampleChkApp::x_IsReportableStructuredComment(const CSeqdesc& desc)
-{
-    if (!desc.IsUser()) {
-        return false;
-    }
-
-	bool rval = false;
-
-    const CUser_object& user = desc.GetUser();
-
-	if (!user.IsSetType() || !user.GetType().IsStr()
-		|| !NStr::Equal(user.GetType().GetStr(), "StructuredComment")){
-		rval = false;
-	} else {
-        string prefix = s_GetStructuredCommentPrefix(user);
-        if (NStr::IsBlank (m_StructuredCommentPrefix)) {
-            if (!NStr::StartsWith(prefix, "##Genome-Assembly-Data", NStr::eNocase)
-                && !NStr::StartsWith(prefix, "##Assembly-Data", NStr::eNocase)
-                && !NStr::StartsWith(prefix, "##Genome-Annotation-Data", NStr::eNocase)) {
-		        rval = true;
-            }
-        } else if (NStr::StartsWith(prefix, m_StructuredCommentPrefix)) {
-			rval = true;
-		}
-	}
-	return rval;
-}
-
-
-static bool s_IsCitSub (const CSeqdesc& desc)
-{
-    if (!desc.IsPub() || !desc.GetPub().IsSetPub()) {
-        return false;
-    }
-    ITERATE(CPubdesc::TPub::Tdata, it, desc.GetPub().GetPub().Get()) {
-        if ((*it)->IsSub()) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-
-string GetBestBioseqLabel(CBioseq_Handle bsh)
-{
-    string label = "";
- 
-    CConstRef<CSeq_id> id(NULL);
-    vector<CRef <CSeq_id> > id_list;
-    ITERATE(CBioseq_Handle::TId, it, bsh.GetId()) {
-        CConstRef<CSeq_id> ir = (*it).GetSeqId();
-        if (ir->IsGenbank()) {
-            id = ir;
-        }
-        CRef<CSeq_id> ic(const_cast<CSeq_id *>(ir.GetPointer()));
-        id_list.push_back(ic);
-    }
-    if (!id) {
-        id = FindBestChoice(id_list, CSeq_id::BestRank);
-    }
-    if (id) {
-        id->GetLabel(&label);
-    }
-
-    return label;
-}
-
-
-const string kSequenceID = "Sequence ID";
-const string kAffilInst = "Institution";
-const string kAffilDept = "Department";
-const string kBioProject = "BioProject";
-
-// This function is for generating a table of biosample values for a bioseq
-// that does not currently have a biosample ID
-void CBiosampleChkApp::AddBioseqToTable(CBioseq_Handle bh, bool with_id)
-{
-    vector<string> biosample_ids = GetBiosampleIDs(bh);
-    if (biosample_ids.size() > 0 && !with_id) {
-		// do not collect if already has biosample ID
-        string label = GetBestBioseqLabel(bh);
-        *m_LogStream << label << " already has Biosample ID " << biosample_ids[0] << endl;
-		return;
-	}
-	vector<string> bioproject_ids = GetBioProjectIDs(bh);
-
-    CSeqdesc_CI src_desc_ci(bh, CSeqdesc::e_Source);
-	CSeqdesc_CI comm_desc_ci(bh, CSeqdesc::e_User);
-	while (comm_desc_ci && !x_IsReportableStructuredComment(*comm_desc_ci)) {
-		++comm_desc_ci;
-	}
-
-    CSeqdesc_CI pub_desc_ci(bh, CSeqdesc::e_Pub);
-    while (pub_desc_ci && !s_IsCitSub(*pub_desc_ci)) {
-        ++pub_desc_ci;
-    }
-
-    if (!src_desc_ci && !comm_desc_ci && bioproject_ids.size() == 0 && !pub_desc_ci) {
-        return;
-    }
-
-    string sequence_id = GetBestBioseqLabel(bh);
-	size_t row = m_Table->GetNum_rows();
-	AddValueToTable (m_Table, kSequenceID, sequence_id, row);
-
-	if (bioproject_ids.size() > 0) {
-		string val = bioproject_ids[0];
-		for (size_t i = 1; i < bioproject_ids.size(); i++) {
-			val += ";";
-			val += bioproject_ids[i];
-		}
-		AddValueToTable(m_Table, kBioProject, val, row);
-	}
-
-    if (pub_desc_ci) {
-        ITERATE(CPubdesc::TPub::Tdata, it, pub_desc_ci->GetPub().GetPub().Get()) {
-            if ((*it)->IsSub() && (*it)->GetSub().IsSetAuthors() && (*it)->GetSub().GetAuthors().IsSetAffil()) {
-                const CAffil& affil = (*it)->GetSub().GetAuthors().GetAffil();
-                if (affil.IsStd()) {
-                    if (affil.GetStd().IsSetAffil()) {
-                        AddValueToTable(m_Table, kAffilInst, affil.GetStd().GetAffil(), row);
-                    }
-                    if (affil.GetStd().IsSetDiv()) {
-                        AddValueToTable(m_Table, kAffilDept, affil.GetStd().GetDiv(), row);
-                    }
-                } else if (affil.IsStr()) {
-                    AddValueToTable(m_Table, kAffilInst, affil.GetStr(), row);
-                }
-                break;
-            }
-        }
-    }
-
-	if (src_desc_ci) {
-		const CBioSource& src = src_desc_ci->GetSource();
-        CBioSource::TNameValList src_vals = src.GetNameValPairs();
-        ITERATE(CBioSource::TNameValList, it, src_vals) {
-            AddValueToTable(m_Table, it->first, it->second, row);
-        }
-	}
-    
-    if (m_CompareStructuredComments) {
-	    while (comm_desc_ci) {
-		    const CUser_object& usr = comm_desc_ci->GetUser();
-		    TStructuredCommentTableColumnList comm_fields = GetStructuredCommentFields(usr);
-	        ITERATE(TStructuredCommentTableColumnList, it, comm_fields) {
-			    string label = (*it)->GetLabel();
-                AddValueToTable(m_Table, (*it)->GetLabel(), (*it)->GetFromComment(usr), row);
-		    }
-		    ++comm_desc_ci;
-		    while (comm_desc_ci && !x_IsReportableStructuredComment(*comm_desc_ci)) {
-			    ++comm_desc_ci;
-		    }
-	    }
-    }
-    if (with_id && biosample_ids.size() > 0) {
-        AddValueToTable(m_Table, "BioSample ID", biosample_ids[0], row);
-    }
-	int num_rows = (int)row  + 1;
-	m_Table->SetNum_rows(num_rows);
-}
-
-
-void AddContact(node::iterator& organization, CConstRef<CAuth_list> auth_list)
-{
-    string email = "";
-    string street = "";
-    string city = "";
-    string sub = "";
-    string country = "";
-    string first = "";
-    string last = "";
-    bool add_address = false;
-
-    CConstRef<CAffil> affil(NULL);
-    if (auth_list && auth_list->IsSetAffil()) {
-        affil = &(auth_list->GetAffil());
-    }
-
-    if (affil && affil->IsStd()) {
-        const CAffil::TStd& std = affil->GetStd();
-        string email = "";
-        if (std.IsSetEmail()) {
-            email = std.GetEmail();
-        } 
-        if (std.IsSetStreet() && !NStr::IsBlank(std.GetStreet())
-            && std.IsSetCity() && !NStr::IsBlank(std.GetCity())
-            && std.IsSetSub() && !NStr::IsBlank(std.GetSub())
-            && std.IsSetCountry() && !NStr::IsBlank(std.GetCountry())) {
-            street = std.GetStreet();
-            city = std.GetCity();
-            sub = std.GetSub();
-            country = std.GetCountry();
-            add_address = true;
-        }
-    }
-
-    if (auth_list && auth_list->IsSetNames() && auth_list->GetNames().IsStd()
-        && auth_list->GetNames().GetStd().size() 
-        && auth_list->GetNames().GetStd().front()->IsSetName()
-        && auth_list->GetNames().GetStd().front()->GetName().IsName()) {
-        const CName_std& nstd = auth_list->GetNames().GetStd().front()->GetName().GetName();
-        string first = "";
-        string last = "";
-        if (nstd.IsSetFirst()) {
-            first = nstd.GetFirst();
-        }
-        if (nstd.IsSetLast()) {
-            last = nstd.GetLast();
-        }
-    }
-
-    if (NStr::IsBlank(email) || NStr::IsBlank(first) || NStr::IsBlank(last)) {
-        // just don't add contact if no email address or name
-        return;
-    }
-    node::iterator contact = organization->insert(node("Contact"));
-    contact->get_attributes().insert("email", email.c_str());
-    if (add_address) {
-        node::iterator address = contact->insert(node("Address"));
-        address->insert(node("Street", street.c_str()));
-        address->insert(node("City", city.c_str()));
-        address->insert(node("Sub", sub.c_str()));
-        address->insert(node("Country", country.c_str()));
-    }
-
-    node::iterator name = contact->insert(node("Name"));
-    name->insert(node("First", first.c_str()));
-    name->insert(node("Last", last.c_str()));
-
-}
-
-
-void s_AddSamplePair(node& sample_attrs, string attribute_name, string val)
-{
-    sample_attrs.insert(node("Attribute", val.c_str()))
-                    ->get_attributes().insert("attribute_name", attribute_name.c_str());
-
-}
-
-
-void AddBioSourceToAttributes(node& organism, node& sample_attrs, const CBioSource& src)
-{
-    if (src.IsSetSubtype()) {
-        ITERATE(CBioSource::TSubtype, it, src.GetSubtype()) {
-            if ((*it)->IsSetSubtype() && (*it)->IsSetName()) {
-                CSubSource::TSubtype st = (*it)->GetSubtype();
-                string attribute_name = "";
-                if (st == CSubSource::eSubtype_other) {
-                    attribute_name = "subsrc_note";
-                } else {
-                    attribute_name = CSubSource::GetSubtypeName((*it)->GetSubtype()); 
-                }
-
-                string val = (*it)->GetName();
-                if (CSubSource::NeedsNoText(st) && NStr::IsBlank(val)) {
-                    val = "true";
-                }
-                if (!CBioSource::ShouldIgnoreConflict(attribute_name, val, "")) {
-                    s_AddSamplePair(sample_attrs, attribute_name, val);
-                }
-            }
-        }
-    }
-
-    if (src.IsSetOrg()) {
-        if (src.GetOrg().IsSetTaxname()) {
-            organism.insert(node("OrganismName", src.GetOrg().GetTaxname().c_str()));
-        }
-        if (src.GetOrg().IsSetOrgMod()) {
-            ITERATE(COrgName::TMod, it, src.GetOrg().GetOrgname().GetMod()) {
-                if ((*it)->IsSetSubtype() && (*it)->IsSetSubname()) {
-                    string attribute_name = "";
-                    if ((*it)->GetSubtype() == COrgMod::eSubtype_other) {
-                        attribute_name = "orgmod_note";
-                    } else {
-                        attribute_name = COrgMod::GetSubtypeName((*it)->GetSubtype()); 
-                    }
-                    if (!CBioSource::ShouldIgnoreConflict(attribute_name, (*it)->GetSubname(), "")) {
-                        s_AddSamplePair(sample_attrs, attribute_name, (*it)->GetSubname());
-                    }
-                }
-            }
-        }
-    }
-}
-
-
-void AddStructuredCommentToAttributes(node& sample_attrs, const CUser_object& usr)
-{
-	TStructuredCommentTableColumnList comm_fields = GetStructuredCommentFields(usr);
-	ITERATE(TStructuredCommentTableColumnList, it, comm_fields) {
-		string label = (*it)->GetLabel();
-        if (NStr::EqualNocase(label, kStructuredCommentPrefix)
-            || NStr::EqualNocase(label, kStructuredCommentSuffix)) {
-            continue;
-        }
-        string val = (*it)->GetFromComment(usr);
-
-        node::iterator a = sample_attrs.begin();
-        bool found = false;
-        while (a != sample_attrs.end() && !found) {
-            if (NStr::Equal(a->get_name(), "Attribute")) {
-                attributes::const_iterator at = a->get_attributes().begin();
-                bool name_match = false;
-                while (at != a->get_attributes().end() && !name_match) {
-                    if (NStr::Equal(at->get_name(), "attribute_name")
-                        && AttributeNamesAreEquivalent(at->get_value(), label)) {
-                        name_match = true;                        
-                    } 
-                    ++at;
-                }
-                if (name_match) {
-                    if (NStr::Equal(a->get_content(), val)) {
-                        found = true;
-                    }
-                }
-            }
-            ++a;
-        }
-        if (!found) {
-            sample_attrs.insert(node("Attribute", val.c_str()))
-                ->get_attributes().insert("attribute_name", label.c_str());
-        }
-	}
-
-}
-
-
-// This function is for generating a table of biosample values for a bioseq
-// that does not currently have a biosample ID
-void CBiosampleChkApp::PrintBioseqXML(CBioseq_Handle bh)
-{
-    vector<string> biosample_ids = GetBiosampleIDs(bh);
-    if (biosample_ids.size() > 0) {
-		// do not collect if already has biosample ID
-        string label = GetBestBioseqLabel(bh);
-        *m_LogStream << label << " already has BioSample ID " << biosample_ids[0] << endl;
-		return;
-	}
-	vector<string> bioproject_ids = GetBioProjectIDs(bh);
-    if (bioproject_ids.size() > 0) {
-        if (!NStr::IsBlank(m_BioProjectAccession)) {
-            bool found = false;
-            ITERATE(vector<string>, it, bioproject_ids) {
-                if (NStr::EqualNocase(*it, m_BioProjectAccession)) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                // error
-                string label = GetBestBioseqLabel(bh);
-                *m_LogStream << label << " has conflicting BioProject ID " << bioproject_ids[0] << endl;
-		        return;
-	        }
-            bioproject_ids.clear();
-            bioproject_ids.push_back(m_BioProjectAccession);
-        }
-    } else if (!NStr::IsBlank(m_BioProjectAccession)) {
-        bioproject_ids.push_back(m_BioProjectAccession);
-    }
-
-    CSeqdesc_CI src_desc_ci(bh, CSeqdesc::e_Source);
-	CSeqdesc_CI comm_desc_ci(bh, CSeqdesc::e_User);
-	while (comm_desc_ci && !x_IsReportableStructuredComment(*comm_desc_ci)) {
-		++comm_desc_ci;
-	}
-
-    CConstRef<CAuth_list> auth_list(NULL);
-    CSeqdesc_CI pub_desc_ci(bh, CSeqdesc::e_Pub);
-    while (pub_desc_ci){
-        if (pub_desc_ci->GetPub().IsSetPub()) {
-            ITERATE(CPubdesc::TPub::Tdata, it, pub_desc_ci->GetPub().GetPub().Get()) {
-                if ((*it)->IsSub() && (*it)->GetSub().IsSetAuthors()) {
-                    auth_list = &((*it)->GetSub().GetAuthors());
-                    break;
-                } else if ((*it)->IsGen() && (*it)->GetGen().IsSetAuthors()) {
-                    auth_list = &((*it)->GetGen().GetAuthors());
-                }
-            }
-        }
-        ++pub_desc_ci;
-    }
-
-    if (!src_desc_ci && !comm_desc_ci && bioproject_ids.size() == 0) {
-        string label = GetBestBioseqLabel(bh);
-        *m_LogStream << label << " has no BioSample information" << endl;
-        return;
-    }
-
-    string sequence_id = GetBestBioseqLabel(bh);
-
-    CTime tNow(CTime::eCurrent);
-    document doc("Submission");
-    doc.set_encoding("UTF-8");
-    doc.set_is_standalone(true);
-
-    node & root = doc.get_root_node();
-
-    node::iterator description = root.insert(node("Description"));
-    string title = "Auto generated from GenBank Accession " + sequence_id;
-    description->insert(node("Comment", title.c_str()));
-
-    node::iterator node_iter = description->insert(node("Submitter"));
-
-    CConstRef<CAffil> affil(NULL);
-    if (auth_list && auth_list->IsSetAffil()) {
-        affil = &(auth_list->GetAffil());
-    }
-
-    // Contact info
-    node::iterator organization = description->insert(node("Organization"));
-    {
-        attributes & attrs = organization->get_attributes();
-        attrs.insert("role", "owner");
-        attrs.insert("type", "institute");
-    }
-    // same info for sample structure
-    node owner("Owner");
-
-    string owner_str = "";
-    if (affil) {
-        owner_str = x_OwnerFromAffil(*affil);
-    }
-    if (NStr::IsBlank(owner_str)) {
-        owner_str = m_Owner;
-    }
-        
-    organization->insert(node("Name", owner_str.c_str()));
-    owner.insert(node("Name", owner_str.c_str()));
-
-    AddContact(organization, auth_list);
-
-    if (!NStr::IsBlank(m_HUPDate)) {
-        node hup("Hold");
-        hup.get_attributes().insert("release_date", m_HUPDate.c_str());
-        description->insert(hup);
-    }
-
-    node::iterator add_data = root.insert(node("Action"))->insert(node("AddData"));
-    add_data->get_attributes().insert("target_db", "BioSample");
-
-    // BioSample-specific xml
-    node::iterator data = add_data->insert(node("Data"));
-    data->get_attributes().insert("content_type", "XML");
-
-    node::iterator sample = data->insert(node("XmlContent"))->insert(node("BioSample"));
-    sample->get_attributes().insert("schema_version", "2.0");    
-    xml::ns ourns("xsi", "http://www.w3.org/2001/XMLSchema-instance");
-    sample->add_namespace_definition(ourns, node::type_replace_if_exists);
-    sample->get_attributes().insert("xsi:noNamespaceSchemaLocation", "http://www.ncbi.nlm.nih.gov/viewvc/v1/trunk/submit/public-docs/biosample/biosample.xsd?view=co");
-    
-    node::iterator ids = sample->insert(node("SampleId"));
-    string sample_id = sequence_id;
-    if (!NStr::IsBlank(m_IDPrefix)) {
-        if (m_FirstSeqOnly) {
-            sample_id = m_IDPrefix;
-        } else {
-            sample_id = m_IDPrefix + ":" + sequence_id;
-        }
-    }
-    node_iter = ids->insert(node("SPUID", sample_id.c_str()));
-    node_iter->get_attributes().insert( "spuid_namespace", "GenBank");
-
-    node::iterator descr = sample->insert(node("Descriptor"));
-
-    if (!NStr::IsBlank(m_Comment)) {
-        descr->insert(node("Description", m_Comment.c_str()));
-    }
-
-
-    node::iterator organism = sample->insert(node("Organism"));
-
-    // add unique bioproject links from series
-    if (bioproject_ids.size() > 0) {
-        node links("BioProject");
-        ITERATE(vector<string>, it, bioproject_ids) {
-            if (! it->empty()) {
-                node_iter = links.insert(node("PrimaryId", it->c_str()));
-                node_iter->get_attributes().insert("db", "BioProject");
-            }
-        }
-        sample->insert(links);
-    }
-
-    sample->insert(node("Package", "Generic.1.0"));
-
-    node sample_attrs("Attributes");
-	if (src_desc_ci) {
-		const CBioSource& src = src_desc_ci->GetSource();
-        AddBioSourceToAttributes(*organism, sample_attrs, src);
-    }
-    
-    if (m_CompareStructuredComments) {
-	    while (comm_desc_ci) {
-		    const CUser_object& usr = comm_desc_ci->GetUser();
-            AddStructuredCommentToAttributes(sample_attrs, usr);
-		    ++comm_desc_ci;
-		    while (comm_desc_ci && !x_IsReportableStructuredComment(*comm_desc_ci)) {
-			    ++comm_desc_ci;
-		    }
-	    }
-    }
-    sample->insert(sample_attrs);
-
-    node::iterator identifier = add_data->insert(node("Identifier"));
-    node_iter = identifier->insert(node("SPUID", sample_id.c_str()));
-    node_iter->get_attributes().insert( "spuid_namespace", "GenBank");
-
-
-    // write XML to file
-    if (m_ReportStream) {
-        *m_ReportStream << doc << endl;
-    } else {
-        string path = sequence_id;
-        NStr::ReplaceInPlace(path, "|", "_");
-        NStr::ReplaceInPlace(path, ".", "_");
-        NStr::ReplaceInPlace(path, ":", "_");
-
-        path = path + ".xml";
-        CNcbiOstream* xml_out = new CNcbiOfstream(path.c_str());
-        if (!xml_out)
-        {
-            NCBI_THROW(CException, eUnknown, "Unable to open " + path);
-        }
-        *xml_out << doc << endl;
-    }
-}
-
-
-bool CBiosampleChkApp::x_ResolveSuppliedBioSampleAccession(vector<string>& biosample_ids)
-{
-    if (!NStr::IsBlank(m_BioSampleAccession)) {
-        if (biosample_ids.size() == 0) {
-            // use supplied BioSample accession
-            biosample_ids.push_back(m_BioSampleAccession);
-        } else {
-            // make sure supplied BioSample accession is listed
-            bool found = false;
-            ITERATE(vector<string>, it, biosample_ids) {
-                if (NStr::EqualNocase(*it, m_BioSampleAccession)) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                return false;
-	        }
-            biosample_ids.clear();
-            biosample_ids.push_back(m_BioSampleAccession);
-        }
-    }
-    return true;
-}
-
-
 void CBiosampleChkApp::GetBioseqDiffs(CBioseq_Handle bh)
 {
-    CSeqdesc_CI src_desc_ci(bh, CSeqdesc::e_Source);
-	CSeqdesc_CI comm_desc_ci(bh, CSeqdesc::e_User);
-    vector<string> user_labels;
-    vector<CConstRef<CUser_object> > user_objs;    
-	while (comm_desc_ci) {
-        if (x_IsReportableStructuredComment(*comm_desc_ci)) {
-            const CUser_object& user = comm_desc_ci->GetUser();
-            string prefix = s_GetStructuredCommentPrefix(user);
-            CConstRef<CUser_object> obj(&user);
-            user_labels.push_back(prefix);
-            user_objs.push_back(obj);
-        }
-		++comm_desc_ci;
-	}
-    if (!src_desc_ci && user_labels.size() == 0) {
-        return;
-    }
-
-    vector<string> biosample_ids = GetBiosampleIDs(bh);
-
-    if (!x_ResolveSuppliedBioSampleAccession(biosample_ids)) {
-        // error
-        string label = GetBestBioseqLabel(bh);
-        *m_LogStream << label << " has conflicting BioSample Accession " << biosample_ids[0] << endl;
-        return;
-    }
-
-    if (biosample_ids.size() == 0) {
-        // for report mode, do not report if no biosample ID
-        return;
-    }
-
-    string sequence_id = GetBestBioseqLabel(bh);
-
-    ITERATE(vector<string>, id, biosample_ids) {
-        CRef<CSeq_descr> descr = GetBiosampleData(*id, m_UseDevServer);
-        if (descr) {
-            ITERATE(CSeq_descr::Tdata, it, descr->Get()) {
-                if ((*it)->IsSource()) {
-					if (src_desc_ci) {
-                        TBiosampleFieldDiffList these_diffs = GetFieldDiffs(sequence_id, *id, src_desc_ci->GetSource(), (*it)->GetSource());
-						m_Diffs.insert(m_Diffs.end(), these_diffs.begin(), these_diffs.end());
-					}
-                } else if ((*it)->IsUser() && x_IsReportableStructuredComment(**it)) {
-                    if (m_CompareStructuredComments) {
-                        CConstRef<CUser_object> sample(&(*it)->GetUser());
-                        string this_prefix = s_GetStructuredCommentPrefix((*it)->GetUser());
-                        bool found = false;
-                        vector<string>::iterator sit = user_labels.begin();
-                        vector<CConstRef<CUser_object> >::iterator uit = user_objs.begin();
-                        while (sit != user_labels.end() && uit != user_objs.end()) {
-                            if (NStr::EqualNocase(*sit, this_prefix)) {
-                                TBiosampleFieldDiffList these_diffs = GetFieldDiffs(sequence_id, *id, *uit, sample);
-                                m_Diffs.insert(m_Diffs.end(), these_diffs.begin(), these_diffs.end());
-                                found = true;
-                            }
-                            ++sit;
-                            ++uit;
-                        }
-				        if (!found) {
-                            TBiosampleFieldDiffList these_diffs = GetFieldDiffs(sequence_id, *id, CConstRef<CUser_object>(NULL), sample);
-                            m_Diffs.insert(m_Diffs.end(), these_diffs.begin(), these_diffs.end());                           
-                        }
-                    }
-				}
-            }
-            m_Processed++;
-        } else {
-            m_Unprocessed++;
+    vector<string> unprocessed_ids;
+    biosample_util::TBiosampleFieldDiffList new_diffs = 
+                  biosample_util::GetBioseqDiffs(bh,
+                                       m_BioSampleAccession,
+                                       m_Processed,
+                                       unprocessed_ids,
+                                       m_UseDevServer,
+                                       m_CompareStructuredComments,
+                                       m_StructuredCommentPrefix);
+    if (new_diffs.size() > 0) {
+        m_Diffs.insert(m_Diffs.end(), new_diffs.begin(), new_diffs.end());
+        ITERATE(vector<string>, id, unprocessed_ids) {
             *m_LogStream << "Failed to retrieve BioSample data for  " << *id << endl;
         }
+        m_Unprocessed += unprocessed_ids.size();
     }
-}
-
-
-bool CBiosampleChkApp::DoDiffsContainConflicts()
-{
-    if (m_Diffs.empty()) {
-        return false;;
-    }
-
-    bool rval = false;
-    bool printed_header = false;
-
-    ITERATE (TBiosampleFieldDiffList, it, m_Diffs) {
-        string src_val = (*it)->GetSrcVal();
-        if (!NStr::IsBlank(src_val)) {
-            if (!printed_header) {
-                *m_LogStream << "Conflict found for " << (*it)->GetSequenceId() << " for " << (*it)->GetBioSample() << endl;
-                printed_header = true;
-            }
-            *m_LogStream << "\t" << (*it)->GetFieldName() << ": BioSource contains \"" << src_val << "\", BioSample contains \"" << (*it)->GetSampleVal() << "\"" << endl;
-            rval = true;
-        }
-    }
-    return rval;
 }
 
 
@@ -1540,11 +854,11 @@ void CBiosampleChkApp::PushToRecord(CBioseq_Handle bh)
 
 void CBiosampleChkApp::ProcessBioseqForUpdate(CBioseq_Handle bh)
 {
-    vector<string> biosample_ids = GetBiosampleIDs(bh);
+    vector<string> biosample_ids = biosample_util::GetBiosampleIDs(bh);
 
-    if (!x_ResolveSuppliedBioSampleAccession(biosample_ids)) {
+    if (!biosample_util::ResolveSuppliedBioSampleAccession(m_BioSampleAccession, biosample_ids)) {
         // error
-        string label = GetBestBioseqLabel(bh);
+        string label = biosample_util::GetBestBioseqLabel(bh);
         *m_LogStream << label << " has conflicting BioSample Accession " << biosample_ids[0] << endl;
         return;
     }
@@ -1555,7 +869,7 @@ void CBiosampleChkApp::ProcessBioseqForUpdate(CBioseq_Handle bh)
     }
 
     ITERATE(vector<string>, id, biosample_ids) {
-        CRef<CSeq_descr> descr = GetBiosampleData(*id, m_UseDevServer);
+        CRef<CSeq_descr> descr = biosample_util::GetBiosampleData(*id, m_UseDevServer);
         if (descr) {
             m_Descriptors.clear();
             copy(descr->Set().begin(), descr->Set().end(),
@@ -1575,7 +889,21 @@ void CBiosampleChkApp::ProcessBioseqHandle(CBioseq_Handle bh)
             GetBioseqDiffs(bh);
             break;
         case e_generate_biosample:
-            PrintBioseqXML(bh);
+            try {
+                biosample_util::PrintBioseqXML(
+                          bh,
+                          m_IDPrefix,
+                          m_ReportStream,
+                          m_BioProjectAccession,
+                          m_Owner,
+                          m_HUPDate,
+                          m_Comment,
+                          m_FirstSeqOnly,
+                          m_CompareStructuredComments,
+                          m_StructuredCommentPrefix);
+            } catch (CException& e) {
+                *m_LogStream << e.GetMsg() << endl;
+            }
             break;
         case e_push:
             PushToRecord(bh);
@@ -1583,10 +911,18 @@ void CBiosampleChkApp::ProcessBioseqHandle(CBioseq_Handle bh)
         case e_take_from_biosample:
             m_Diffs.clear();
             GetBioseqDiffs(bh);
-            if (DoDiffsContainConflicts()) {
-                string sequence_id = GetBestBioseqLabel(bh);
+            if (biosample_util::DoDiffsContainConflicts(m_Diffs, m_LogStream)) {
+                string sequence_id = biosample_util::GetBestBioseqLabel(bh);
                 *m_LogStream << "Conflicts found for  " << sequence_id << endl;
-                AddBioseqToTable(bh, true);
+                try {
+                    biosample_util::AddBioseqToTable(
+                                  bh, *m_Table,
+                                  true, 
+                                  m_CompareStructuredComments,
+                                  m_StructuredCommentPrefix);
+                } catch (CException& e) {
+                    *m_LogStream << e.GetMsg() << endl;
+                }
             } else {
                 ProcessBioseqForUpdate(bh);
             }
@@ -1645,38 +981,6 @@ void CBiosampleChkApp::ProcessSet(void)
 }
 
 
-string CBiosampleChkApp::x_OwnerFromAffil(const CAffil& affil)
-{
-    list<string> sbm_info;
-    if (affil.IsStd()) {
-        if (affil.GetStd().IsSetAffil()) {
-            sbm_info.push_back(affil.GetStd().GetAffil());
-        }
-        if (affil.GetStd().IsSetDiv() 
-            && (!affil.GetStd().IsSetAffil() 
-                || !NStr::EqualNocase(affil.GetStd().GetDiv(), affil.GetStd().GetAffil()))) {
-            sbm_info.push_back(affil.GetStd().GetDiv());
-        }
-    } else if (affil.IsStr()) {
-        sbm_info.push_back(affil.GetStr());
-    }
-
-    return NStr::Join(sbm_info, ", ");
-}
-
-
-string CBiosampleChkApp::x_OwnerFromPub(const CPub& pub)
-{
-    string owner = "";
-    if (pub.IsSub() && pub.IsSetAuthors() && pub.GetAuthors().IsSetAffil()) {
-        owner = x_OwnerFromAffil(pub.GetAuthors().GetAffil());
-    } else if (pub.IsGen() && pub.GetGen().IsSetAuthors() && pub.GetGen().GetAuthors().IsSetAffil()) {
-        owner = x_OwnerFromAffil(pub.GetAuthors().GetAffil());
-    }
-    return owner;
-}
-
-
 void CBiosampleChkApp::ProcessSeqSubmit(void)
 {
     CRef<CSeq_submit> ss(new CSeq_submit);
@@ -1690,10 +994,10 @@ void CBiosampleChkApp::ProcessSeqSubmit(void)
         if (ss->GetSub().IsSetCit() 
             && ss->GetSub().GetCit().IsSetAuthors()
             && ss->GetSub().GetCit().GetAuthors().IsSetAffil()) {
-            m_Owner = x_OwnerFromAffil(ss->GetSub().GetCit().GetAuthors().GetAffil());
+            m_Owner = biosample_util::OwnerFromAffil(ss->GetSub().GetCit().GetAuthors().GetAffil());
         } else if (ss->GetSub().IsSetContact() && ss->GetSub().GetContact().IsSetContact()
             && ss->GetSub().GetContact().GetContact().IsSetAffil()) {
-            m_Owner = x_OwnerFromAffil(ss->GetSub().GetContact().GetContact().GetAffil());
+            m_Owner = biosample_util::OwnerFromAffil(ss->GetSub().GetContact().GetContact().GetAffil());
         }
     }
 

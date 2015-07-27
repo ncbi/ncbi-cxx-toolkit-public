@@ -1,0 +1,6 @@
+# $Id$
+
+EXPENDABLE_APP_PROJ = unit_test_biosample_util
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

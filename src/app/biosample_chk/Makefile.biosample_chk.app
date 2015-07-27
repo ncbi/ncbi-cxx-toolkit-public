@@ -7,8 +7,8 @@
 #################################
 
 APP = biosample_chk
-SRC = biosample_chk util struc_table_column
-LIB = ncbi_xloader_wgs $(SRAREAD_LIBS) xvalidate xcleanup $(XFORMAT_LIBS) \
+SRC = biosample_chk
+LIB = ncbi_xloader_wgs $(SRAREAD_LIBS) xvalidate xcleanup xbiosample_util $(XFORMAT_LIBS) \
       xalnmgr xobjutil valerr submit gbseq \
       tables xregexp xmlwrapp xser $(PCRE_LIB) $(OBJMGR_LIBS) \
       $(OBJEDIT_LIBS)

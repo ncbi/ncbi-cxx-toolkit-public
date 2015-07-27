@@ -1,0 +1,14 @@
+# $Id$
+
+# Meta-makefile (object utilities)
+##################################
+
+LIB_PROJ = biosample_util
+SUB_PROJ = unit_test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
+
+REQUIRES = 
+
+WATCHERS = bollin
