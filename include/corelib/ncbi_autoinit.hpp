@@ -65,6 +65,8 @@ public:
 
     ~CAutoInitPtr_Base(void);
 
+    bool IsInitialized(void) const;
+
 protected:
     /// Cleanup function type used by derived classes
     typedef void (*FSelfCleanup)(void** ptr);
@@ -244,11 +246,20 @@ private:
 //
 // Large inline methods
 
+inline
+bool CAutoInitPtr_Base::IsInitialized(void) const
+{
+    CMutexGuard guard(sm_Mutex);
+    return m_Ptr != NULL;
+}
+
+
 template <class T>
 inline
 void CAutoInitPtr<T>::Set(T* object)
 {
     CMutexGuard guard(sm_Mutex);
+    if ( m_Ptr ) return;
     m_Ptr = object;
 }
 
@@ -258,6 +269,7 @@ inline
 void CAutoInitPtr<T>::x_Init(void)
 {
     CMutexGuard guard(sm_Mutex);
+    if ( m_Ptr ) return;
     m_Ptr = new T;
 }
 
@@ -268,6 +280,7 @@ inline
 void CAutoInitPtr<T>::x_Init(FUserCreate user_create)
 {
     CMutexGuard guard(sm_Mutex);
+    if ( m_Ptr ) return;
     m_Ptr = user_create();
 }
 
@@ -277,6 +290,7 @@ inline
 void CAutoInitRef<T>::Set(T* object)
 {
     CMutexGuard guard(sm_Mutex);
+    if ( m_Ptr ) return;
     if ( object ) {
         object->AddReference();
         m_Ptr = object;
@@ -289,6 +303,7 @@ inline
 void CAutoInitRef<T>::x_Init(void)
 {
     CMutexGuard guard(sm_Mutex);
+    if ( m_Ptr ) return;
     CRef<T> ref(new T);
     ref->AddReference();
     m_Ptr = ref.Release();
@@ -301,6 +316,7 @@ inline
 void CAutoInitRef<T>::x_Init(FUserCreate user_create)
 {
     CMutexGuard guard(sm_Mutex);
+    if ( m_Ptr ) return;
     CRef<T> ref(user_create());
     if ( ref ) {
         ref->AddReference();
