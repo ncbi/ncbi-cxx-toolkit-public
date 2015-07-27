@@ -1776,3 +1776,262 @@ ACACGGAAGCTTAAGCAAAGGAAATCTGGCCGCTCTGCTGGGAAGTATGATGTGTATTTGATCAAT"
     }
   }
 }
+Variation ::= {
+  name "NG_011646.1:g.1508delT",
+  description "",
+  placements {
+    {
+      loc pnt {
+        point 1507,
+        strand plus,
+        id other {
+          accession "NG_011646",
+          version 1
+        }
+      },
+      mol genomic,
+      seq {
+        length 1,
+        seq-data iupacna "T"
+      },
+      gene-location 0
+    }
+  },
+  variant-prop {
+    version 5,
+    gene-location 0
+  },
+  data set {
+    type package,
+    variations {
+      {
+        data instance {
+          type del,
+          delta {
+            {
+              seq this NULL,
+              action del-at
+            }
+          }
+        },
+        consequence {
+          variation {
+            placements {
+              {
+                loc pnt {
+                  point 578,
+                  strand plus,
+                  id other {
+                    accession "NP_001157284",
+                    version 1
+                  }
+                },
+                mol protein,
+                seq {
+                  length 1,
+                  seq-data ncbieaa "V"
+                }
+              },
+              {
+                loc int {
+                  from 1502,
+                  to 1504,
+                  strand minus,
+                  id other {
+                    accession "NG_011646",
+                    version 1
+                  }
+                },
+                mol genomic,
+                frame 0,
+                seq {
+                  length 3,
+                  seq-data iupacna "GTG"
+                }
+              }
+            },
+            variant-prop {
+              version 5,
+              effect frameshift
+            },
+            data instance {
+              type prot-nonsense,
+              delta {
+                {
+                  seq literal {
+                    length 3,
+                    seq-data iupacna "TGA"
+                  }
+                }
+              }
+            },
+            frameshift {
+              phase 2
+            },
+            so-terms {
+              1587,
+              1589
+            }
+          },
+          variation {
+            placements {
+              {
+                loc pnt {
+                  point 124,
+                  strand plus,
+                  id other {
+                    accession "NP_001157286",
+                    version 1
+                  }
+                },
+                mol protein,
+                seq {
+                  length 1,
+                  seq-data ncbieaa "V"
+                }
+              },
+              {
+                loc int {
+                  from 1502,
+                  to 1504,
+                  strand minus,
+                  id other {
+                    accession "NG_011646",
+                    version 1
+                  }
+                },
+                mol genomic,
+                frame 0,
+                seq {
+                  length 3,
+                  seq-data iupacna "GTG"
+                }
+              }
+            },
+            variant-prop {
+              version 5,
+              effect frameshift
+            },
+            data instance {
+              type prot-nonsense,
+              delta {
+                {
+                  seq literal {
+                    length 3,
+                    seq-data iupacna "TGA"
+                  }
+                }
+              }
+            },
+            frameshift {
+              phase 2
+            },
+            so-terms {
+              1587,
+              1589
+            }
+          },
+          variation {
+            placements {
+              {
+                loc pnt {
+                  point 577,
+                  strand minus,
+                  id other {
+                    accession "NP_068602",
+                    version 2
+                  }
+                },
+                mol protein,
+                exceptions {
+                  {
+                    code inconsistent-consequence,
+                    message "Cannot infer consequence; projecting location only"
+                  }
+                }
+              },
+              {
+                loc int {
+                  from 1505,
+                  to 1507,
+                  strand plus,
+                  id other {
+                    accession "NG_011646",
+                    version 1
+                  }
+                },
+                mol genomic
+              }
+            },
+            method {
+              method {
+                computational
+              }
+            },
+            data unknown NULL,
+            so-terms {
+              1589
+            }
+          },
+          variation {
+            placements {
+              {
+                loc pnt {
+                  point 123,
+                  strand minus,
+                  id other {
+                    accession "NP_001157285",
+                    version 1
+                  }
+                },
+                mol protein,
+                exceptions {
+                  {
+                    code inconsistent-consequence,
+                    message "Cannot infer consequence; projecting location only"
+                  }
+                }
+              },
+              {
+                loc int {
+                  from 1505,
+                  to 1507,
+                  strand plus,
+                  id other {
+                    accession "NG_011646",
+                    version 1
+                  }
+                },
+                mol genomic
+              }
+            },
+            method {
+              method {
+                computational
+              }
+            },
+            data unknown NULL,
+            so-terms {
+              1589
+            }
+          }
+        }
+      },
+      {
+        data instance {
+          type identity,
+          delta {
+            {
+              seq literal {
+                length 1,
+                seq-data iupacna "T"
+              }
+            }
+          },
+          observation asserted
+        }
+      }
+    }
+  }
+}
+

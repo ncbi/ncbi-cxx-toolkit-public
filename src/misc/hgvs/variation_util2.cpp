@@ -2161,6 +2161,9 @@ CRef<CVariation> CreateUnknownProtConsequenceVariation(
 
         prot_loc = nuc2prot_mapper->Map(nuc_p.GetLoc());
         codons_loc = prot2nuc_mapper->Map(*prot_loc);
+    
+
+
         if(codons_loc->IsNull()) {
             // normally shouldn't happen, but may happen with
             // dubious annotation, e.g. BC149603.1:c.1A>G.
@@ -2491,6 +2494,17 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
         prot_loc = sequence::Seq_loc_Merge(*prot_loc, 0, NULL); //to convert single-pos int to point, as appropriate
 
         codons_loc = prot2nuc_mapper->Map(*prot_loc);
+
+        if(codons_loc->IsNull()) {
+            // may have gone past the end of the CDS, e.g. NG_011646.1:g.1508delT
+            return CreateUnknownProtConsequenceVariation(
+                    nuc_p, 
+                    cds_feat, 
+                    frameshift_phase != 0,
+                    *m_scope);
+        }
+
+
         codons_loc->SetId(sequence::GetId(p->GetLoc(), NULL));
 
         if(verbose) NcbiCerr << "prot_ref_str: " << prot_ref_str << ":" << prot_ref_str.size() << "\n"
