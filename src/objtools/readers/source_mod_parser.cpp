@@ -88,13 +88,6 @@ const unsigned char CSourceModParser::kKeyCanonicalizationTable[257] =
     "\xF0\xF1\xF2\xF3\xF4\xF5\xF6\xF7\xF8\xF9\xFA\xFB\xFC\xFD\xFE\xFF";
 
 
-template <typename T>
-inline
-T* LeaveAsIs(void)
-{
-    return static_cast<T*>(NULL);
-}
-
 template<class _T>
 class CAutoInitDesc : protected CAutoAddDesc
 {
@@ -282,7 +275,7 @@ void CSourceModParser::ApplyAllMods(CBioseq& seq, CTempString organism, CConstRe
             if( ! FIELD_CHAIN_OF_2_IS_SET(seq, Inst, Mol) || seq.IsNa() ) {
                 CAutoInitRef<CGene_ref> gene;
                 x_ApplyMods(gene);
-                if (&gene.Get(LeaveAsIs<CGene_ref>) != NULL) {
+                if (gene.IsInitialized()) {
                     CRef<CSeq_feat> feat(new CSeq_feat);
                     feat->SetData().SetGene(*gene);
                     feat->SetLocation().Assign(*location);
@@ -296,7 +289,7 @@ void CSourceModParser::ApplyAllMods(CBioseq& seq, CTempString organism, CConstRe
             if( ! FIELD_CHAIN_OF_2_IS_SET(seq, Inst, Mol) || seq.IsAa() ) {
                 CAutoInitRef<CProt_ref> prot;
                 x_ApplyMods(prot);
-                if ( &prot.Get(LeaveAsIs<CProt_ref>) != NULL ) {
+                if ( prot.IsInitialized() ) {
                     CRef<CSeq_feat> feat(new CSeq_feat);
                     feat->SetData().SetProt(*prot);
                     feat->SetLocation().Assign(*location);
@@ -304,7 +297,7 @@ void CSourceModParser::ApplyAllMods(CBioseq& seq, CTempString organism, CConstRe
                 }
             }
 
-            if ( !had_ftable  &&  &ftable.Get(LeaveAsIs<CSeq_annot>) != NULL ) {
+            if ( !had_ftable  &&  ftable.IsInitialized() ) {
                 seq.SetAnnot().push_back(CRef<CSeq_annot>(&*ftable));
             }
         }
@@ -315,7 +308,7 @@ void CSourceModParser::ApplyAllMods(CBioseq& seq, CTempString organism, CConstRe
     } else {
         CAutoInitRef<CSeq_hist> hist;
         x_ApplyMods(hist);
-        if (&hist.Get(LeaveAsIs<CSeq_hist>) != NULL) {
+        if (hist.IsInitialized()) {
             seq.SetInst().SetHist(*hist);
         }
     }
@@ -354,7 +347,7 @@ void CSourceModParser::ApplyAllMods(CBioseq& seq, CTempString organism, CConstRe
     {{
         CAutoInitRef<CUser_object> tpa;
         x_ApplyTPAMods(tpa);
-        if (&tpa.Get(LeaveAsIs<CUser_object>) != NULL) {
+        if (tpa.IsInitialized()) {
             CRef<CSeqdesc> desc(new CSeqdesc);
             desc->SetUser(*tpa);
             seq.SetDescr().Set().push_back(desc);
@@ -364,7 +357,7 @@ void CSourceModParser::ApplyAllMods(CBioseq& seq, CTempString organism, CConstRe
     {{
         CAutoInitRef<CUser_object> gpdb;
         x_ApplyGenomeProjectsDBMods(gpdb);
-        if (&gpdb.Get(LeaveAsIs<CUser_object>) != NULL) {
+        if (gpdb.IsInitialized()) {
             CRef<CSeqdesc> desc(new CSeqdesc);
             desc->SetUser(*gpdb);
             seq.SetDescr().Set().push_back(desc);
