@@ -158,6 +158,7 @@ CCSraDb_Impl::SAlnTableCursor::SAlnTableCursor(const CVDBTable& table,
       INIT_VDB_COLUMN(HAS_REF_OFFSET),
       INIT_VDB_COLUMN(HAS_MISMATCH),
       INIT_VDB_COLUMN(REF_OFFSET),
+      INIT_OPTIONAL_VDB_COLUMN(REF_OFFSET_TYPE),
       INIT_VDB_COLUMN(CIGAR_SHORT),
       INIT_VDB_COLUMN(CIGAR_LONG),
       INIT_VDB_COLUMN(RAW_READ),
@@ -970,13 +971,14 @@ CRef<CSeq_id> CCSraAlignIterator::GetMateShortSeq_id(void) const
 TSeqPos CCSraAlignIterator::GetShortPos(void) const
 {
     bool has_off = m_Aln->HAS_REF_OFFSET(*m_AlnRowCur)[0] == '1';
-    if ( has_off ) {
-        int off = m_Aln->REF_OFFSET(*m_AlnRowCur)[0];
-        return -off;
-    }
-    else {
+    if ( !has_off ) {
         return 0;
     }
+    if ( m_Aln->m_REF_OFFSET_TYPE &&
+         *m_Aln->REF_OFFSET_TYPE(*m_AlnRowCur) != 1 ) {
+        return 0;
+    }
+    return -m_Aln->REF_OFFSET(*m_AlnRowCur)[0];
 }
 
 
@@ -1150,10 +1152,6 @@ CRef<CSeq_align> CCSraAlignIterator::GetMatchAlign(void) const
             if ( type == 'S' ) {
                 // soft clipping already accounted in seqpos
                 continue;
-            }
-            if ( type == 'I' && starts.empty() && seglen == seqpos ) {
-                // soft clipping already accounted in seqpos
-                seqpos = 0;
             }
             insert_size += seglen;
             refstart = kInvalidSeqPos;
