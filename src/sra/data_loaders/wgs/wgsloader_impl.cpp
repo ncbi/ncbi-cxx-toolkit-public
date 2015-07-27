@@ -258,7 +258,8 @@ CConstRef<CWGSFileInfo> CWGSDataLoader_Impl::GetWGSFile(const string& prefix)
         return info;
     }
     catch ( CSraException& exc ) {
-        if ( exc.GetErrCode() == CSraException::eNotFoundDb ) {
+        if ( exc.GetErrCode() == exc.eNotFoundDb ||
+             exc.GetErrCode() == exc.eProtectedDb ) {
             // no such WGS table
             return null;
         }
