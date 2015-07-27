@@ -1,3 +1,12 @@
+Release 2.1.2 based on SC-16.1 (2015-07-27)
+
+    * Bug fix: client protocol version update at the first HELLO
+      (JIRA: CXX-6162)
+    * Bug fix: Investigate premature closes of connections to FileTrack
+      (JIRA: CXX-5958)
+    * Bug fix: Investigation of suspicious error message in socket API
+      (JRIA: CXX-6179)
+
 Release 2.1.1 based on SC-16.1 (2015-07-14)
 
 Improvements and bug fixes:
