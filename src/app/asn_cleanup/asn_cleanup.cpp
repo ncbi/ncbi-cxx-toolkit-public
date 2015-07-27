@@ -703,7 +703,7 @@ bool CCleanupApp::HandleSeqEntry(CSeq_entry_Handle entry)
         any_changes |= CCleanup::TaxonomyLookup(entry);
     }
 
-    if (args["K"] && NStr::Find(args["K"].AsString(), "u")) {
+    if (args["K"] && NStr::Find(args["K"].AsString(), "u") != string::npos) {
         CRef<CSeq_entry> se(const_cast<CSeq_entry *>(entry.GetCompleteSeq_entry().GetPointer()));
         any_changes |= CCleanup::RemoveNcbiCleanupObject(*se);
     }
