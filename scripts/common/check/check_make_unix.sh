@@ -499,7 +499,7 @@ RunTest()
             esac
             if test -f \$x_applog_sh; then
                chmod a+x \$x_applog_sh 2>&1
-               \$x_applog_sh >> "$x_build_dir/test_stat_load.log" 2>&1
+               \$x_applog_sh >> "$x_build_dir/test_stat_load_applog.log" 2>&1
             else
                echo "Error generating \$x_applog_sh "
             fi
