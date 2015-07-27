@@ -44,33 +44,8 @@ BEGIN_SCOPE(objects)
 class CSeq_entry;
 
 /////////////////////////////////////////////////////////////////////////////
-//  CSraException
+//  CSraRcFormatter
 /////////////////////////////////////////////////////////////////////////////
-
-#ifndef NCBI_EXCEPTION3_VAR
-/// Create an instance of the exception with one additional parameter.
-# define NCBI_EXCEPTION3_VAR(name, exc_cls, err_code, msg, extra1, extra2) \
-    exc_cls name(DIAG_COMPILE_INFO, 0, exc_cls::err_code, msg,          \
-                 extra1, extra2)
-#endif
-
-#ifndef NCBI_EXCEPTION3
-# define NCBI_EXCEPTION3(exc_cls, err_code, msg, extra1, extra2)        \
-    NCBI_EXCEPTION3_VAR(NCBI_EXCEPTION_EMPTY_NAME,                      \
-                        exc_cls, err_code, msg, extra1, extra2)
-#endif
-
-#ifndef NCBI_THROW3
-# define NCBI_THROW3(exc_cls, err_code, msg, extra1, extra2)            \
-    throw NCBI_EXCEPTION3(exc_cls, err_code, msg, extra1, extra2)
-#endif
-
-#ifndef NCBI_RETHROW3
-# define NCBI_RETHROW3(prev_exc, exc_cls, err_code, msg, extra1, extra2) \
-    throw exc_cls(DIAG_COMPILE_INFO, &(prev_exc), exc_cls::err_code, msg, \
-                  extra1, extra2)
-#endif
-
 
 class CSraRcFormatter
 {
@@ -86,100 +61,6 @@ private:
 };
 NCBI_SRAREAD_EXPORT
 ostream& operator<<(ostream& out, const CSraRcFormatter& f);
-
-class NCBI_SRAREAD_EXPORT CSraException
-    : EXCEPTION_VIRTUAL_BASE public CException
-{
-public:
-    /// Error types that  corelib can generate.
-    ///
-    /// These generic error conditions can occur for corelib applications.
-    enum EErrCode {
-        eOtherError,
-        eNullPtr,       ///< Null pointer error
-        eAddRefFailed,  ///< AddRef failed
-        eInvalidArg,    ///< Invalid argument error
-        eInitFailed,    ///< Initialization failed
-        eNotFound,      ///< Data not found
-        eInvalidState,  ///< State of object is invalid for the operation
-        eInvalidIndex,  ///< Invalid index for array-like retrieval
-        eNotFoundDb,    ///< DB main file not found
-        eNotFoundTable, ///< DB table not found
-        eNotFoundColumn,///< DB column not found
-        eNotFoundValue, ///< DB value not found
-        eDataError,     ///< VDB data is incorrect
-        eNotFoundIndex  ///< VDB index not found
-    };
-    /// Constructors.
-    CSraException(const CDiagCompileInfo& info,
-                  const CException* prev_exception,
-                  EErrCode err_code,
-                  const string& message,
-                  EDiagSev severity = eDiag_Error);
-    CSraException(const CDiagCompileInfo& info,
-                  const CException* prev_exception,
-                  EErrCode err_code,
-                  const string& message,
-                  rc_t rc,
-                  EDiagSev severity = eDiag_Error);
-    CSraException(const CDiagCompileInfo& info,
-                  const CException* prev_exception,
-                  EErrCode err_code,
-                  const string& message,
-                  rc_t rc,
-                  const string& param,
-                  EDiagSev severity = eDiag_Error);
-    CSraException(const CDiagCompileInfo& info,
-                  const CException* prev_exception,
-                  EErrCode err_code,
-                  const string& message,
-                  rc_t rc,
-                  uint64_t param,
-                  EDiagSev severity = eDiag_Error);
-    CSraException(const CSraException& other);
-
-    ~CSraException(void) throw();
-
-    /// Report "non-standard" attributes.
-    virtual void ReportExtra(ostream& out) const;
-
-    virtual const char* GetType(void) const;
-
-    /// Translate from the error code value to its string representation.
-    typedef int TErrCode;
-    virtual TErrCode GetErrCode(void) const;
-
-    /// Translate from the error code value to its string representation.
-    virtual const char* GetErrCodeString(void) const;
-
-    rc_t GetRC(void) const
-        {
-            return m_RC;
-        }
-
-    const string& GetParam(void) const
-        {
-            return m_Param;
-        }
-    void SetParam(const string& param)
-        {
-            m_Param = param;
-        }
-
-    static void ReportError(const char* msg, rc_t rc);
-
-protected:
-    /// Constructor.
-    CSraException(void);
-
-    /// Helper clone method.
-    virtual const CException* x_Clone(void) const;
-
-private:
-    rc_t   m_RC;
-    string m_Param;
-};
-
 
 template<class Object>
 struct CSraRefTraits

@@ -433,6 +433,12 @@ CVDB::CVDB(const CVDBMgr& mgr, const string& acc_or_path)
             NCBI_THROW3(CSraException, eNotFoundDb,
                         "Cannot open VDB", rc, acc_or_path);
         }
+        else if ( GetRCObject(rc) == RCObject(rcFile) &&
+                  GetRCState(rc) == rcUnauthorized ) {
+            // invalid SRA database
+            NCBI_THROW3(CSraException, eProtectedDb,
+                        "Cannot open VDB", rc, acc_or_path);
+        }
         else if ( GetRCObject(rc) == RCObject(rcDatabase) &&
                   GetRCState(rc) == rcIncorrect ) {
             // invalid SRA database

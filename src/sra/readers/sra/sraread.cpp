@@ -183,6 +183,7 @@ const char* CSraException::GetErrCodeString(void) const
     case eNotFoundValue: return "eNotFoundValue";
     case eDataError:    return "eDataError";
     case eNotFoundIndex: return "eNotFoundIndex";
+    case eProtectedDb:  return "eProtectedDb";
     default:            return CException::GetErrCodeString();
     }
 }

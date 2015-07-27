@@ -33,6 +33,7 @@
  */
 
 #include <corelib/ncbistd.hpp>
+#include <sra/readers/sra/exception.hpp>
 #include <sra/readers/sra/sdk.hpp>
 
 // SRA SDK structures

@@ -33,9 +33,7 @@
  */
 
 #include <corelib/ncbistd.hpp>
-#include <corelib/ncbiexpt.hpp>
-#include <corelib/ncbiobj.hpp>
-
+#include <sra/readers/sra/exception.hpp>
 #include <sra/readers/sra/sdk.hpp>
 
 #include <objects/seqset/Seq_entry.hpp>
