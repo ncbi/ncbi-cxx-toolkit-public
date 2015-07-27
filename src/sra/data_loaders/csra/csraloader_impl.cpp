@@ -463,7 +463,8 @@ CRef<CCSRAFileInfo> CCSRADataLoader_Impl::GetSRRFile(const string& acc)
         info = new CCSRAFileInfo(*this, acc, CCSraDb::eRefId_gnl_NAME);
     }
     catch ( CSraException& exc ) {
-        if ( exc.GetErrCode() == CSraException::eNotFoundDb ) {
+        if ( exc.GetErrCode() == exc.eNotFoundDb ||
+             exc.GetErrCode() == exc.eProtectedDb ) {
             // no such SRA table
             return null;
         }
