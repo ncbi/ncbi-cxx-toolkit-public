@@ -33,7 +33,7 @@ esac
 
 try_local() {
     # /sw (Mac)? /usr/sfw (Solaris)?
-    for d in /usr /usr/local /usr/X11 /usr/openwin; do
+    for d in /usr /usr/local /usr/X11 /opt/X11 /usr/openwin; do
         test -d "$d"  ||  continue
         test -f "$d/include/avro"          &&  : ${AVRO_PATH=$d}
         test -f "$d/include/db.h"          &&  : ${BERKELEYDB_PATH=$d}
@@ -138,7 +138,7 @@ case "$ncbi_platform" in
 esac
 
 case "$ncbi_platform" in
-    *MAC       ) : ${FREETYPE_PATH=/usr/X11} ;;
+    *MAC       ) : ${FREETYPE_PATH=/opt/X11} ;;
 esac
 
 : ${FTDS_PATH:="/netopt/Sybase/clients-mssql/current"}
@@ -220,7 +220,7 @@ case "$ncbi_platform" in
 esac
 
 case "$ncbi_platform" in
-    *MAC       ) : ${PNG_PATH=/usr/X11} ;;
+    *MAC       ) : ${PNG_PATH=/opt/X11} ;;
 esac
 
 case "$ncbi_platform" in
