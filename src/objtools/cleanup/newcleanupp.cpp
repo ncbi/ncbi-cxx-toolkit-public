@@ -2013,7 +2013,6 @@ static bool s_OrgModCompare (
 
 // Two OrgMod's are equal and duplicates if:
 // they have the same subname and same subtype
-// or one has subtype 'other'.
 
 static bool s_OrgModEqual (
     const CRef<COrgMod>& om1,
@@ -2035,7 +2034,6 @@ static bool s_OrgModEqual (
     TORGMOD_SUBTYPE chs1 = GET_FIELD (omd1, Subtype);
     TORGMOD_SUBTYPE chs2 = GET_FIELD (omd2, Subtype);
     if (chs1 == chs2) return true;
-    if ( chs1 == NCBI_ORGMOD(other) || chs2 == NCBI_ORGMOD(other)) return true;
 
     return false;
 }
@@ -10831,14 +10829,7 @@ bool CNewCleanup_imp::x_IsDBLinkUserObj( const CSeqdesc & desc )
         if( ! desc.IsUser() ) {
             return false;
         }
-
-        const CUser_object & user_obj = desc.GetUser();
-
-        if( ! FIELD_IS_SET_AND_IS(user_obj, Type, Str) ) {
-            return false;
-        }
-
-        return ( user_obj.GetType().GetStr() == "DBLink" );
+        return (desc.GetUser().GetObjectType() == CUser_object::eObjectType_DBLink);
 }
 
 // neg for "<", 0 for "==", and pos for ">"
