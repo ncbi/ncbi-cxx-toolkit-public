@@ -4699,7 +4699,7 @@ void CBioseq_on_base :: TestOnObj(const CBioseq& bioseq)
     unsigned cnt_a, cnt_t, cnt_g, cnt_c, cnt_n, tot_n, cnt_non_nt;
     cnt_a = cnt_t = cnt_g = cnt_c = cnt_n = tot_n = cnt_non_nt = 0;
 
-    unsigned start_n, i=0;
+    unsigned start_n=0, i=0;
     string n10_intvls(kEmptyStr), n14_intvls(kEmptyStr);
 
     CBioseq_Handle bioseq_h = thisInfo.scope->GetBioseqHandle(bioseq);
