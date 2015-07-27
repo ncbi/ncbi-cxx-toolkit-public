@@ -159,18 +159,27 @@ const CBioseq_Handle CCacheImpl::kAnyBioseq;
 CValidError_imp::CValidError_imp
 (CObjectManager& objmgr,
 CValidError*     errs,
+Uint4            options) :
+m_ObjMgr(&objmgr),
+m_ErrRepository(errs),
+m_taxon(NULL)
+{
+    x_Init(options);
+}
+
+// Constructor
+CValidError_imp::CValidError_imp
+(CObjectManager& objmgr,
+CValidError*     errs,
 ITaxon3*         taxon,
 Uint4            options) :
 m_ObjMgr(&objmgr),
 m_ErrRepository(errs),
 m_taxon(taxon)
 {
-    if (m_taxon == NULL) {
-        throw runtime_error("Taxon service not defined by CValidator");
-    }
-
     x_Init(options);
 }
+
 
 void CValidError_imp::x_Init(Uint4 options)
 {

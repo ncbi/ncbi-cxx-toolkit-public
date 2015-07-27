@@ -412,6 +412,9 @@ public:
 
     // Interface to be used by the CValidError class
 
+    CValidError_imp(CObjectManager& objmgr, CValidError* errors,
+        Uint4 options = 0);
+
     // Constructor allowing over-ride of Services
     // Namely, the taxonomy service.
     // NB: ITaxon is owned by CValidator.
