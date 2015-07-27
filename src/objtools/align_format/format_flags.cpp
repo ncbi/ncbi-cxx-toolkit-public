@@ -229,8 +229,6 @@ string DescribeSAMOutputFormatSpecifiers(bool is_vdb)
         os << "\t" << setw(10) << sc_SAMFormatSpecifiers[i].name << " means ";
         os << sc_SAMFormatSpecifiers[i].description << "\n";
     }
-    if(is_vdb)
-    	os << "When not provided, the default value is: R";
 
     return os.str();
 }
