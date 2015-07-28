@@ -327,8 +327,17 @@ CNCPeerControl::x_UpdateHasTasks(void)
     m_HasBGTasks = !m_SmallMirror.empty()  ||  !m_BigMirror.empty()
                    ||  !m_SyncList.empty();
     if (m_HasBGTasks && CTaskServer::IsInShutdown() && m_BusyConns.empty()) {
-// probably, something went wrong: we still have work to do, but nobody to work on it
+
+// something went wrong: we still have work to do, but nobody to work on it
 // but, it is shutdown time...
+//
+// the problem has to do with "size == 0" addition in x_AddMirrorEvent, here:
+//    if (size == 0 && x_ReserveBGConn()) {...}
+
+        SRV_LOG(Error, "Incomplete jobs on shutdown:"
+            << " m_SmallMirror: " << m_SmallMirror.size()
+            << ", m_BigMirror: " << m_BigMirror.size()
+            << ", m_SyncList: " << m_SyncList.size());
         m_HasBGTasks = false;
     }
 }
