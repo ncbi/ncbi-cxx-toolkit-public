@@ -17,7 +17,7 @@ APP_PROJ = test_tls_object \
            test_weakref test_request_control test_expr test_sub_reg \
            test_resource_info test_interprocess_lock test_ncbithr_native \
            test_ncbi_rwstream test_condvar test_base64 test_trial_check \
-           test_message_mt
+           test_message_mt test_ncbicntr
 EXPENDABLE_APP_PROJ = test_strdbl test_trial test_trial_fail
 PROJ_TAG = test
 
