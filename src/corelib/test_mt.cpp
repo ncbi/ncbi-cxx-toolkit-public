@@ -152,6 +152,7 @@ void CTestThread::GlobalSyncPoint(void)
        so that threads that were waiting for us go first      */
     if (s_NumberOfThreads.Get() > 1) {
         s_Semaphore.Post(s_NumberOfThreads.Get() - 1);
+        s_SyncCounter.Set(0);
         SleepMilliSec(0);
     }
 }
@@ -609,17 +610,16 @@ void CThreadedApp::x_InitializeThreadGroups(void)
         ERR_FATAL("IntragroupSyncPoint threshold must be less than 100");
     }
 
-    unsigned int threads_left = s_NumThreads;
     for (unsigned int g = 0;  g < count;  ++g) {
         SThreadGroup group;
         // randomize intra-group sync points
         group.has_sync_point = ((unsigned int)(rand() % 100)) < threshold;
-        group.number_of_threads = 1; // mio
+        group.number_of_threads = 1;
         m_ThreadGroups.push_back(group);
     }
 
     if (s_NumThreads > count) {
-        threads_left = s_NumThreads - count;
+        unsigned int threads_left = s_NumThreads - count;
         for (unsigned int t = 0;  t < threads_left;  ++t) {
             // randomize # of threads
             m_ThreadGroups[ rand() % count ].number_of_threads += 1;
