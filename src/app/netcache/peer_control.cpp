@@ -1040,7 +1040,13 @@ bool
 CNCPeerControl::FinishSync(CNCActiveSyncControl* sync_ctrl)
 {
     m_ObjLock.Lock();
-    if (x_ReserveBGConn()) {
+// 24jul15: not sure:
+//  sync_ctrl may have been added into m_SyncList, meaning processing of some tasks were delayed
+//  now we should make sure that finalization is really the last step
+//  it seems safer to put this one into m_SyncList always, to ensure it will be last indeed
+#if 1
+//    if (x_ReserveBGConn()) {
+    if (m_SyncList.empty() && x_ReserveBGConn()) {
         // x_GetBGConnImpl() releases m_ObjLock
         CNCActiveHandler* conn = x_GetBGConnImpl();
         if (!conn) {
@@ -1052,7 +1058,9 @@ CNCPeerControl::FinishSync(CNCActiveSyncControl* sync_ctrl)
         sync_ctrl->GetNextTask(task_info);
         sync_ctrl->ExecuteSyncTask(task_info, conn);
     }
-    else {
+    else
+#endif
+    {
         m_SyncList.push_back(sync_ctrl);
         if (m_NextTaskSync == m_SyncList.end())
             m_NextTaskSync = m_SyncList.begin();
