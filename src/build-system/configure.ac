@@ -598,8 +598,8 @@ for x_arg in "$@" ; do
       | --with-avro=* | --with-cereal=* | --with-mongodb=* )
       # Confirm that the specified directory exists and is readable.
       dir=`echo $x_arg | sed -e 's/^[[^=]]*=//'`
-      case "$dir" in
-         /* ) ;;
+      case "$x_arg" in
+         --srcdir=* | --*=/* ) ;;
          *  ) dir=$srcdir/$dir ;;
       esac
       if test -d "$dir"; then
