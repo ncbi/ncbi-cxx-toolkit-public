@@ -802,6 +802,7 @@ void CDiagSyntaxParser::x_PutIntoFilter(CDiagFilter& to, EInto into)
         break;
     default :
         _ASSERT( false );
+        return;
     }
     m_Matchers.clear();
     m_ErrCodeMatcher = NULL;

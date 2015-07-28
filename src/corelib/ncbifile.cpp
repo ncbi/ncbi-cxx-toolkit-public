@@ -6123,7 +6123,7 @@ void CFileIO::Open(const string& filename,
             _TROUBLE;
     };
     // -- Ignore 'share_mode' on UNIX.
-    share_mode = eShare;
+    //share_mode = eShare;
 
     // Try to open/create file
     m_Handle = open(filename.c_str(), flags, mode);

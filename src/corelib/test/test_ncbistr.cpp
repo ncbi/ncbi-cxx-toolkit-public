@@ -3871,8 +3871,7 @@ BOOST_AUTO_TEST_CASE(s_StringToIntSpeed)
         if ( 1 ) {
             sw.Restart();
             for ( int i = 0; i < COUNT; ++i ) {
-                Uint8 v = NStr::StringToUInt8(s, NStr::fConvErr_NoThrow);
-                if ( !v && errno ) v = Uint8(-1);
+                NStr::StringToUInt8(s, NStr::fConvErr_NoThrow);
             }
             time = sw.Elapsed();
             LOG_POST("StringToInt8("<<ss[t]<<") time: " << time);
@@ -3975,9 +3974,7 @@ BOOST_AUTO_TEST_CASE(s_StringToDoubleSpeed)
         if ( 1 ) {
             sw.Restart();
             for ( int i = 0; i < COUNT; ++i ) {
-                errno = 0;
-                v = NStr::StringToDouble(s, flags|NStr::fDecimalPosix);
-                if ( errno ) v = -1;
+                NStr::StringToDouble(s, flags|NStr::fDecimalPosix);
             }
             time = sw.Elapsed();
             LOG_POST("StringToDouble("<<ss[t]<<", Posix) time: " << time);
@@ -3985,9 +3982,7 @@ BOOST_AUTO_TEST_CASE(s_StringToDoubleSpeed)
         if ( 1 ) {
             sw.Restart();
             for ( int i = 0; i < COUNT; ++i ) {
-                errno = 0;
-                v = NStr::StringToDouble(s, flags);
-                if ( errno ) v = -1;
+                NStr::StringToDouble(s, flags);
             }
             time = sw.Elapsed();
             LOG_POST("StringToDouble("<<ss[t]<<") time: " << time);
@@ -3995,10 +3990,8 @@ BOOST_AUTO_TEST_CASE(s_StringToDoubleSpeed)
         if ( 1 ) {
             sw.Restart();
             for ( int i = 0; i < COUNT; ++i ) {
-                errno = 0;
                 char* errptr;
-                v = NStr::StringToDoublePosix(s2, &errptr);
-                if ( errno || (errptr&&(*errptr||errptr==s2)) ) v = -1;
+                NStr::StringToDoublePosix(s2, &errptr);
             }
             time = sw.Elapsed();
             LOG_POST("StringToDoublePosix("<<ss[t]<<") time: " << time);
@@ -4006,10 +3999,8 @@ BOOST_AUTO_TEST_CASE(s_StringToDoubleSpeed)
         if ( 1 ) {
             sw.Restart();
             for ( int i = 0; i < COUNT; ++i ) {
-                errno = 0;
                 char* errptr;
-                v = strtod(s2, &errptr);
-                if ( errno || (errptr&&(*errptr||errptr==s2)) ) v = -1;
+                strtod(s2, &errptr);
             }
             time = sw.Elapsed();
             LOG_POST("strtod("<<ss[t]<<") time: " << time);
