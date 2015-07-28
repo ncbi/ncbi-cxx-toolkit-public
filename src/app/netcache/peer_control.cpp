@@ -668,7 +668,7 @@ CNCPeerControl::x_AddMirrorEvent(SNCMirrorEvent* event, Uint8 size)
     m_ObjLock.Lock();
 // all blobs (size!=0) go into queue
 // this reduces response time
-    if (size == 0 && x_ReserveBGConn()) {
+    if ((size == 0 || m_BusyConns.empty()) && x_ReserveBGConn()) {
         // x_GetBGConnImpl() releases m_ObjLock
         CNCActiveHandler* conn = x_GetBGConnImpl();
         if (conn)
