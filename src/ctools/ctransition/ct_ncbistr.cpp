@@ -72,13 +72,16 @@ NLM_EXTERN Nlm_CharPtr LIBCALL  Nlm_StringNCpy (char FAR *to, const char FAR *fr
 
 NLM_EXTERN Nlm_CharPtr LIBCALL  Nlm_StringNCpy_0 (char FAR *to, const char FAR *from, size_t max)
 {
-  if (to != NULL  &&  max > 0)
-    to[0] = '\0';
-
-  if (from != NULL)
-    StrNCat(to, from, max - 1);
-
-  return to;
+    if (!to || !max) {
+        return to;
+    }
+    if (max > 0) {
+        to[0] = '\0';
+    }
+    if (from) {
+        StrNCat(to, from, max - 1);
+    }
+    return to;
 }
 
 NLM_EXTERN Nlm_CharPtr LIBCALL  Nlm_StringCat (char FAR *to, const char FAR *from)
@@ -1411,8 +1414,9 @@ NLM_EXTERN Nlm_Boolean LIBCALL StringSubString(char FAR *theString, char FAR *Fi
   Nlm_Int4 SpaceNeeded,Len;
   Nlm_Boolean Replaced = FALSE;
 
-  if (*Find == NULLB)
-    return(FALSE);
+  if (*Find == NULLB) {
+      return(FALSE);
+  }
 
   Len = (Nlm_Int4)Nlm_StringLen(theString);
   SpaceNeeded = MAX( (Nlm_Int4)((Len * Nlm_StringLen(Replace) 

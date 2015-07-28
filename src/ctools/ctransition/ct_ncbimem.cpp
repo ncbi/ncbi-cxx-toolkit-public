@@ -296,9 +296,9 @@ NLM_EXTERN void* LIBCALL Nlm_MemExtend(void *ptr, size_t size, size_t oldsize)
 
 NLM_EXTERN void * LIBCALL  Nlm_MemFree (void *ptr)
 {
-	if (ptr != NULL)
-		Nlm_Free (ptr);
-
+    if (ptr) {
+        free(ptr);
+    }
     return NULL;
 }
 
@@ -307,11 +307,9 @@ NLM_EXTERN void * LIBCALL  Nlm_MemFree (void *ptr)
 NLM_EXTERN void * LIBCALL  Nlm_MemFreeTrace (void *ptr, const char *module,
 			const char *filename, int linenum)
 {
-	if (ptr != NULL)
-	{
-		Nlm_Free(ptr);
-		if (g_bBadPtr)
-		{
+	if (ptr != NULL) {
+		free(ptr);
+		if (g_bBadPtr) {
 			ErrPostEx(SEV_WARNING,E_Programmer,0,
 			          "MemFree: attempt to free invalid pointer");
 		}
@@ -344,14 +342,16 @@ NLM_EXTERN void * LIBCALL  Nlm_MemDup (const void *orig, size_t size)
 {
 	Nlm_VoidPtr	copy;
 
-	if (orig == NULL || size == 0)
-		return NULL;
-
-	if ((copy = Nlm_Malloc (size)) == NULL)
-		ErrPostEx(SEV_FATAL,E_NoMemory,0,_msgMemory);
-
+    if (!orig || !size) {
+        return NULL;
+    }
+    copy = Nlm_Malloc(size);
+    if (!copy) {
+        ErrPostEx(SEV_FATAL, E_NoMemory, 0, _msgMemory);
+        return NULL;
+    }
 	Nlm_MemCpy(copy, orig, size);
-		return copy;
+    return copy;
 }
 
 /*****************************************************************************
@@ -803,7 +803,7 @@ NLM_EXTERN Nlm_MemMapPtr Nlm_MemMapInit(const Nlm_Char PNTR name)
   }}
 
   /* Error;  cleanup */
-  Nlm_MemFree(mem_mapp->mmp_begin);
+  Nlm_MemFree(mem_mapp);
   return NULL;
 }
 
@@ -821,7 +821,7 @@ NLM_EXTERN void Nlm_MemMapFini(Nlm_MemMapPtr mem_mapp)
   munmap(mem_mapp->mmp_begin, mem_mapp->file_size);
 #endif
 
-  Nlm_MemFree( mem_mapp->mmp_begin );
+  Nlm_MemFree(mem_mapp);
 }
 
 
