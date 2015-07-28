@@ -423,6 +423,7 @@ s_JoinAllThreads(void)
             ReleaseThreadLogging(thr);
         }
     }
+    ReleaseThreadLogging(s_SvcThr);
 #endif
 }
 
