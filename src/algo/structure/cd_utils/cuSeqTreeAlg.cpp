@@ -64,10 +64,10 @@ void MidpointRootSeqTree(const SeqTree& oldTree, SeqTree& newTree) {
     SeqItem item;
 	SeqTree::iterator cursor1, cursor2, newTreeRoot, newTreeCursor;
     SeqTree::sibling_iterator  tmpSibling, tmpTreeCursor;
-	SeqTree::iterator end1, end2;//
+	SeqTree::iterator end1, end2;
 
 	newTree.clear();
-	if (! &oldTree) {
+	if (oldTree.size() == 0) {
 		return;
 	}
 
