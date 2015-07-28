@@ -2397,6 +2397,26 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
         }
 
 
+        //GP-12069 
+        //apply 40/85 rule for all 'stand alone' exons 
+        if( is_test ) {//test mode
+            for(size_t k (0); k < segments.size(); ++k) {
+                TSegment& s (segments[k]);
+                if(s.m_exon == false) continue;
+                //the first exon or gap on left 
+                if( ( k == 0 ) || ( ! segments[k-1].m_exon ) ) {
+                    //the last exon or gap on right 
+                    if( ( k + 1 == segments.size() ) ||  ( ! segments[k+1].m_exon ) ) {
+                        //stand alone
+                        if (s.m_idty < .85 && s.m_len < 40) {
+                            s.SetToGap();
+                        }
+                    }
+                }
+            }
+        }
+
+
         // turn to gaps exons with low identity
         //20_28_90 TEST MODE
         // turn to gaps exons with combination of shortness and low identity           
