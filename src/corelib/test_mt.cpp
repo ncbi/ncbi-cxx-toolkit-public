@@ -55,7 +55,7 @@ int           s_SpawnBy    = 6;
 // Next test thread index
 static volatile unsigned int s_NextIndex = 0;
 
-#define TESTAPP_LOG_POST(x)  do { ++m_LogMsgCount; ERR_POST(x); } while (0)
+#define TESTAPP_LOG_POST(x)  do { ++m_LogMsgCount; LOG_POST(x); } while (0)
 
 /////////////////////////////////////////////////////////////////////////////
 // Randomization parameters
@@ -746,8 +746,8 @@ void CThreadedApp::TestApp_GlobalSyncPoint(void)
         if (!m_Delayed.empty()) {
             TESTAPP_LOG_POST("There were delayed threads, running them now, "
                 "because TestApp_GlobalSyncPoint() was called");
-            for (int i = m_Reached.size(); i < m_Delayed.size(); i++) {
-                m_Reached.insert(NStr::IntToString(i));
+            for (size_t i = m_Reached.size(); i < m_Delayed.size(); i++) {
+                m_Reached.insert(NStr::SizetToString(i));
                 x_StartThreadGroup(m_Delayed[i]);
             }
         }
