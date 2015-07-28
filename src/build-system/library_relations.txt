@@ -1288,6 +1288,10 @@ xasn needs xhtml
 xasn needs3party $(NCBI_C_ncbi)
 xassembly_svc needs gcaccess_utils
 xassembly_svc needs xgencollstats
+xbiosample_util needs $(OBJEDIT_LIBS)
+xbiosample_util needs $(XFORMAT_LIBS)
+xbiosample_util needs xalnmgr
+xbiosample_util needs xmlwrapp
 xblast includes blast
 xblast needs xalgoblastdbindex
 xblast needs xalgodustmask
