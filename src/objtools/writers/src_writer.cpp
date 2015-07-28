@@ -635,17 +635,17 @@ bool CSrcWriter::xGatherLocalId(
     static const string displayName = colName;
     static const string defaultValue = "";
 
-    // First check to see if OriginalID is available
-    //string local_id = s_FastaGetOriginalID(*(bsh.GetCompleteBioseq()));
-    string local_id = xGetOriginalId(bsh);
-
-    if ( NStr::IsBlank(local_id) ) {
-        CConstRef<CSeq_id> seq_id = bsh.GetLocalIdOrNull();
-        if ( !seq_id ) {
-            return true;
-        }
-        seq_id->GetLabel(&local_id, CSeq_id::eContent);
+    CConstRef<CSeq_id> seq_id = bsh.GetLocalIdOrNull();
+    if ( !seq_id ) {
+        return true;
     }
+
+    string local_id = "";
+    seq_id->GetLabel(&local_id, CSeq_id::eContent);
+    if ( local_id.empty() ) {
+        return true;
+    }
+
     xPrepareTableColumn(colName, displayName, defaultValue);
     xAppendColumnValue(colName, local_id);
     return true;
