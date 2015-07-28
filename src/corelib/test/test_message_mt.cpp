@@ -92,7 +92,8 @@ bool CTestMessageApp::Thread_Run(int idx)
 {
     // This one should receive all messages, both handled and unhandled.
     CRef<CMessageListener_Basic> ml1(new CMessageListener_Basic());
-    size_t ml1_depth = IMessageListener::PushListener(*ml1, IMessageListener::eListen_All);
+    /*size_t ml1_depth = */
+    IMessageListener::PushListener(*ml1, IMessageListener::eListen_All);
 
     // Receive unhandled messages only.
     CRef<CMessageListener_Basic> ml2(new CMessageListener_Basic());
@@ -100,7 +101,8 @@ bool CTestMessageApp::Thread_Run(int idx)
 
     // Receive all messages, handle only those starting with 'msg3'
     CRef<CTestListener> ml3(new CTestListener("msg3"));
-    size_t ml3_depth = IMessageListener::PushListener(*ml3, IMessageListener::eListen_All);
+    /*size_t ml3_depth = */
+    IMessageListener::PushListener(*ml3, IMessageListener::eListen_All);
 
     // Handle messages starting with 'msg4'
     CRef<CTestListener> ml4(new CTestListener("msg4"));
