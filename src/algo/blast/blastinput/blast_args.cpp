@@ -1917,16 +1917,30 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     " 11 = BLAST archive format (ASN.1),\n"
     " 12 = JSON Seqalign output,\n"
     " 13 = JSON Blast output,\n"
-    " 14 = XML2 Blast output,\n"
-    " 15 = SAM format \n\n"
-    "Options 6, 7, 10 and 15 can be additionally configured to produce\n"
-    "a custom format specified by space delimited format specifiers.\n"
-    "The supported format specifiers for options 6, 7 and 10 are:\n") +
-        DescribeTabularOutputFormatSpecifiers() + 
-        string("\n") +
-    "The supported format specifiers for option 15 are:\n" +
-        DescribeSAMOutputFormatSpecifiers(m_isVdb) +
-        string("\n");
+    " 14 = XML2 Blast output");
+
+    if(m_FormatFlags & eIsSAM) {
+    	kOutputFormatDescription +=
+    			",\n 15 = SAM format \n\n"
+                "Options 6, 7, 10 and 15 "
+    			"can be additionally configured to produce\n"
+    		    "a custom format specified by space delimited format specifiers.\n"
+    		    "The supported format specifiers for options 6, 7 and 10 are:\n";
+    }
+    else {
+    	kOutputFormatDescription +=
+    			"\n\nOptions 6, 7 and 10 "
+    			"can be additionally configured to produce\n"
+    		    "a custom format specified by space delimited format specifiers.\n"
+    		    "The supported format specifiers are:\n";
+    }
+    kOutputFormatDescription += DescribeTabularOutputFormatSpecifiers() +  string("\n");
+
+    if(m_FormatFlags & eIsSAM) {
+    	kOutputFormatDescription +=
+    			"The supported format specifiers for option 15 are:\n" +
+        		DescribeSAMOutputFormatSpecifiers(m_FormatFlags & eIsVDB);
+    }
 
     int dft_outfmt = kDfltArgOutputFormat;
 
@@ -2059,6 +2073,10 @@ CFormattingArgs::ExtractAlgorithmOptions(const CArgs& args,
                                          CBlastOptions& opt)
 {
     ParseFormattingString(args, m_OutputFormat, m_CustomOutputFormatSpec);
+    if((m_OutputFormat == eSAM) && !(m_FormatFlags & eIsSAM) ){
+    		NCBI_THROW(CInputException, eInvalidInput,
+    		                        "SAM format is only applicable to blastn" );
+    }
     m_ShowGis = static_cast<bool>(args[kArgShowGIs]);
     if(m_IsIgBlast){
         m_Html = false;

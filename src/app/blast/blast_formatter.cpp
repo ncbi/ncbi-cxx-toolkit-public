@@ -116,7 +116,7 @@ void CBlastFormatterApp::Init()
                      CArgDescriptions::eInputFile);
     arg_desc->SetDependency(kArgRid, CArgDescriptions::eExcludes, kArgArchive);
 
-    CFormattingArgs fmt_args;
+    CFormattingArgs fmt_args(false, CFormattingArgs::eIsSAM);
     fmt_args.SetArgumentDescriptions(*arg_desc);
 
     arg_desc->SetCurrentGroup("Output configuration options");
@@ -264,6 +264,12 @@ int CBlastFormatterApp::PrintFormattedOutput(void)
 
 
     const EBlastProgramType p = opts.GetProgramType();
+    if((fmt_args.GetFormattedOutputChoice() == CFormattingArgs::eSAM) &&
+       (p != eBlastTypeBlastn )) {
+		NCBI_THROW(CInputException, eInvalidInput,
+		                        "SAM format is only applicable to blastn results" );
+    }
+
     CRef<CBlastQueryVector> queries = 
 		x_ExtractQueries(Blast_QueryIsProtein(p)?true:false);
     CRef<CScope> scope = queries->GetScope(0);

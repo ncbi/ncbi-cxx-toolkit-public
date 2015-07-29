@@ -865,15 +865,24 @@ public:
         eEndValue
     };
 
+    enum EFormatFlags {
+    	eDefaultFlag = 0,
+    	// Set if VDB
+    	eIsVDB = 0x01,
+    	// Set if SAM format is supported
+    	eIsSAM = 0x02,
+    	// Set if both VDB and SAM is true
+    	eIsVDB_SAM = eIsVDB | eIsSAM
+    };
     /// Default constructor
-    CFormattingArgs(bool isIgblast = false, bool isVdb=false)
+    CFormattingArgs(bool isIgblast = false, EFormatFlags flag = eDefaultFlag)
         : m_OutputFormat(ePairwise), m_ShowGis(false), 
         m_NumDescriptions(0), m_NumAlignments(0),
         m_DfltNumDescriptions(0), m_DfltNumAlignments(0),
         m_Html(false),
         m_IsIgBlast(isIgblast),
         m_LineLength(align_format::kDfltLineLength),
-        m_isVdb(isVdb)
+        m_FormatFlags(flag)
     {
         if (m_IsIgBlast) {
             m_DfltNumAlignments = m_DfltNumDescriptions = 10;
@@ -962,7 +971,7 @@ private:
     string m_CustomOutputFormatSpec;
     size_t m_LineLength;
 
-    bool m_isVdb;
+    EFormatFlags m_FormatFlags;
 
 };
 

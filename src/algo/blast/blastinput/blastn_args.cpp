@@ -106,7 +106,7 @@ CBlastnAppArgs::CBlastnAppArgs()
     arg.Reset(m_QueryOptsArgs);
     m_Args.push_back(arg);
 
-    m_FormattingArgs.Reset(new CFormattingArgs);
+    m_FormattingArgs.Reset(new CFormattingArgs(false, CFormattingArgs::eIsSAM));
     arg.Reset(m_FormattingArgs);
     m_Args.push_back(arg);
 
