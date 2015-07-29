@@ -99,6 +99,7 @@ public:
         }
         uint64_t m_RowFirst, m_RowLast;
         bool m_Circular;
+        vector<TSeqPos> m_AlnOverStarts; // relative to m_RowFirst
     };
     typedef list<SRefInfo> TRefInfoList;
     typedef map<string, TRefInfoList::iterator, PNocase> TRefInfoMapByName;
@@ -159,6 +160,7 @@ protected:
         DECLARE_VDB_COLUMN_AS(INSDC_coord_len, MAX_SEQ_LEN);
         DECLARE_VDB_COLUMN_AS_STRING(READ);
         DECLARE_VDB_COLUMN_AS(bool, CIRCULAR);
+        DECLARE_VDB_COLUMN_AS(INSDC_coord_zero, OVERLAP_REF_POS);
     };
 
     // SAlnTableCursor is helper accessor structure for align table
@@ -394,8 +396,15 @@ public:
     typedef list< CRef<CSeq_literal> > TLiterals;
     typedef CRange<TSeqPos> TRange;
     void GetRefLiterals(TLiterals& literals,
-                        const TRange& range,
+                        TRange range,
                         ELoadData load = eLoadData) const;
+
+    // return array of start position of alignmnets overlapping with each page
+    // return empty array if at most one page overlapping is allowed
+    const vector<TSeqPos>& GetAlnOverStarts(void) const;
+    // return first position that is surely not covered by alignments
+    // with starting position in the argument range
+    TSeqPos GetAlnOverToOpen(TRange range) const;
 
 protected:
     friend class CCSraAlignIterator;
@@ -418,19 +427,28 @@ class NCBI_SRAREAD_EXPORT CCSraAlignIterator
 {
 public:
     CCSraAlignIterator(void);
-    
+
+    enum ESearchMode {
+        eSearchByOverlap,
+        eSearchByStart
+    };
+
     NCBI_DEPRECATED
     CCSraAlignIterator(const CCSraDb& csra_db,
                        const string& ref_id,
                        TSeqPos ref_pos,
-                       TSeqPos window = 0);
+                       TSeqPos window = 0,
+                       ESearchMode search_mode = eSearchByOverlap);
     CCSraAlignIterator(const CCSraDb& csra_db,
                        const CSeq_id_Handle& ref_id,
                        TSeqPos ref_pos,
-                       TSeqPos window = 0);
+                       TSeqPos window = 0,
+                       ESearchMode search_mode = eSearchByOverlap);
     ~CCSraAlignIterator(void);
 
-    void Select(TSeqPos ref_pos, TSeqPos window = 0);
+    void Select(TSeqPos ref_pos,
+                TSeqPos window = 0,
+                ESearchMode search_mode = eSearchByOverlap);
     
     operator const void*(void) const {
         return m_Error? 0: this;
@@ -554,22 +572,28 @@ private:
     uint64_t m_RefRowNext; // refseq row range
     uint64_t m_RefRowLast;
     bool m_AlnRowIsSecondary;
+    ESearchMode m_SearchMode;
     const uint64_t* m_AlnRowCur; // current refseq row alignments ids
     const uint64_t* m_AlnRowEnd;
 
-    mutable CRef<CAnnotdesc> m_MatchAnnotIndicator;
+    struct SCreateCache {
+        CRef<CAnnotdesc> m_MatchAnnotIndicator;
 
-    mutable TObjectIdCache m_ObjectIdMateRead;
-    mutable TObjectIdCache m_ObjectIdRefId;
-    mutable TObjectIdCache m_ObjectIdRefPos;
-    mutable TObjectIdCache m_ObjectIdLcl;
-    mutable TObjectIdCache m_ObjectIdTracebacks;
-    mutable TObjectIdCache m_ObjectIdCIGAR;
-    mutable TObjectIdCache m_ObjectIdMISMATCH;
-    mutable TUserFieldCache m_UserFieldCacheCigar;
-    mutable TUserFieldCache m_UserFieldCacheMismatch;
-    mutable CRef<CUser_object> m_SecondaryIndicator;
-    mutable CRef<CUser_object> m_ReadFilterIndicator[4];
+        TObjectIdCache m_ObjectIdMateRead;
+        TObjectIdCache m_ObjectIdRefId;
+        TObjectIdCache m_ObjectIdRefPos;
+        TObjectIdCache m_ObjectIdLcl;
+        TObjectIdCache m_ObjectIdTracebacks;
+        TObjectIdCache m_ObjectIdCIGAR;
+        TObjectIdCache m_ObjectIdMISMATCH;
+        TUserFieldCache m_UserFieldCacheCigar;
+        TUserFieldCache m_UserFieldCacheMismatch;
+        CRef<CUser_object> m_SecondaryIndicator;
+        CRef<CUser_object> m_ReadFilterIndicator[4];
+    };
+    mutable AutoPtr<SCreateCache> m_CreateCache;
+
+    SCreateCache& x_GetCreateCache(void) const;
 };
 
 
@@ -717,13 +741,13 @@ protected:
     
 
     void x_GetMaxReadId(void);
-    CTempString x_GetReadData(const TOpenRange& range) const;
+    CTempString x_GetReadData(TOpenRange range) const;
 
     CRef<CSeq_annot> x_GetSeq_annot(const string* annot_name) const;
     CRef<CSeq_annot> x_GetQualityGraphAnnot(const string* annot_name) const;
-    CRef<CSeq_annot> x_GetQualityGraphAnnot(const TOpenRange& range,
+    CRef<CSeq_annot> x_GetQualityGraphAnnot(TOpenRange range,
                                             const string* annot_name) const;
-    CRef<CSeq_graph> x_GetQualityGraph(const TOpenRange& range) const;
+    CRef<CSeq_graph> x_GetQualityGraph(TOpenRange range) const;
     
 private:
     CCSraDb m_Db; // refseq selector

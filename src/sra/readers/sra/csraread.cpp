@@ -141,7 +141,8 @@ CCSraDb_Impl::SRefTableCursor::SRefTableCursor(const CVDBTable& table)
       INIT_VDB_COLUMN(SEQ_LEN),
       INIT_VDB_COLUMN(MAX_SEQ_LEN),
       INIT_VDB_COLUMN(READ),
-      INIT_VDB_COLUMN(CIRCULAR)
+      INIT_VDB_COLUMN(CIRCULAR),
+      INIT_OPTIONAL_VDB_COLUMN(OVERLAP_REF_POS)
 {
 }
 
@@ -694,7 +695,7 @@ CRef<CBioseq> CCSraRefSeqIterator::GetRefBioseq(ELoadData load) const
 
 
 void CCSraRefSeqIterator::GetRefLiterals(TLiterals& literals,
-                                         const TRange& range,
+                                         TRange range,
                                          ELoadData load) const
 {
     const CCSraDb_Impl::SRefInfo& info = GetInfo();
@@ -720,6 +721,57 @@ void CCSraRefSeqIterator::GetRefLiterals(TLiterals& literals,
 }
 
 
+const vector<TSeqPos>& CCSraRefSeqIterator::GetAlnOverStarts(void) const
+{
+    const CCSraDb_Impl::SRefInfo& info = GetInfo();
+    if ( info.m_AlnOverStarts.empty() ) {
+        CRef<CCSraDb_Impl::SRefTableCursor> ref(GetDb().Ref());
+        if ( ref->m_OVERLAP_REF_POS ) {
+            CFastMutexGuard guard(GetDb().m_TableMutex);
+            if ( info.m_AlnOverStarts.empty() ) {
+                TSeqPos segment_len = GetDb().GetRowSize();
+                vector<TSeqPos> pp;
+                // collect overlaps
+                for ( uint64_t row = info.m_RowFirst; row <= info.m_RowLast; ++row ) {
+                    CVDBValueFor<INSDC_coord_zero> vv = ref->OVERLAP_REF_POS(row);
+                    TSeqPos pos = TSeqPos((row+1-info.m_RowFirst)*segment_len);
+                    for ( size_t i = 0; i < 2 && i < vv.size(); ++i ) {
+                        TSeqPos p = vv[i];
+                        if ( p && p < pos ) {
+                            pos = p;
+                        }
+                    }
+                    pp.push_back(pos);
+                }
+                // propagate overlaps
+                for ( size_t i = pp.size(); i-- > 1; ) {
+                    pp[i-1] = min(pp[i-1], pp[i]);
+                }
+                swap(const_cast<vector<TSeqPos>&>(info.m_AlnOverStarts), pp);
+            }
+        }
+        GetDb().Put(ref);
+    }
+    return info.m_AlnOverStarts;
+}
+
+
+TSeqPos CCSraRefSeqIterator::GetAlnOverToOpen(TRange range) const
+{
+    const vector<TSeqPos>& pp = GetAlnOverStarts();
+    TSeqPos segment_len = GetDb().GetRowSize();
+    TSeqPos seg = range.GetToOpen()/segment_len;
+    if ( pp.empty() ) {
+        ++seg;
+    }
+    else {
+        while ( seg+1 < pp.size() && pp[seg+1] < range.GetToOpen() ) {
+            ++seg;
+        }
+    }
+    return min(GetSeqLength(), (seg+1)*segment_len);
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // CCSraAlignIterator
 /////////////////////////////////////////////////////////////////////////////
@@ -733,28 +785,30 @@ CCSraAlignIterator::CCSraAlignIterator(void)
 CCSraAlignIterator::CCSraAlignIterator(const CCSraDb& csra_db,
                                        const string& ref_id,
                                        TSeqPos ref_pos,
-                                       TSeqPos window)
+                                       TSeqPos window,
+                                       ESearchMode search_mode)
     : m_RefIter(csra_db, CSeq_id_Handle::GetHandle(ref_id)),
       m_Ref(m_RefIter.GetDb().Ref()),
       m_Error(RC_NO_MORE_ALIGNMENTS),
       m_ArgRefPos(0),
       m_ArgRefLast(0) 
 {
-    Select(ref_pos, window);
+    Select(ref_pos, window, search_mode);
 }
 
 
 CCSraAlignIterator::CCSraAlignIterator(const CCSraDb& csra_db,
                                        const CSeq_id_Handle& ref_id,
                                        TSeqPos ref_pos,
-                                       TSeqPos window)
+                                       TSeqPos window,
+                                       ESearchMode search_mode)
     : m_RefIter(csra_db, ref_id),
       m_Ref(m_RefIter.GetDb().Ref()),
       m_Error(RC_NO_MORE_ALIGNMENTS),
       m_ArgRefPos(0),
       m_ArgRefLast(0) 
 {
-    Select(ref_pos, window);
+    Select(ref_pos, window, search_mode);
 }
 
 
@@ -770,10 +824,12 @@ CCSraAlignIterator::~CCSraAlignIterator(void)
 
 
 void CCSraAlignIterator::Select(TSeqPos ref_pos,
-                                TSeqPos window)
+                                TSeqPos window,
+                                ESearchMode search_mode)
 {
     m_Error = RC_NO_MORE_ALIGNMENTS;
     m_ArgRefPos = m_ArgRefLast = 0;
+    m_SearchMode = search_mode;
 
     m_RefRowNext = m_RefRowLast = 0;
     m_AlnRowIsSecondary = true;
@@ -785,10 +841,25 @@ void CCSraAlignIterator::Select(TSeqPos ref_pos,
 
     m_ArgRefPos = ref_pos;
     m_ArgRefLast = ref_pos+window-1 < ref_pos? kInvalidSeqPos: ref_pos+window-1;
-    
+
     TSeqPos row_size = GetDb().GetRowSize();
     const CCSraDb_Impl::SRefInfo& info = *m_RefIter;
-    m_RefRowNext = info.m_RowFirst + max(m_ArgRefPos, row_size)/row_size - 1;
+    TSeqPos start_pos;
+    if ( search_mode == eSearchByOverlap ) {
+        const vector<TSeqPos>& pp = m_RefIter.GetAlnOverStarts();
+        if ( pp.empty() ) {
+            // max overlap is 1 row
+            start_pos = max(ref_pos, row_size)-row_size;
+        }
+        else {
+            start_pos = pp[ref_pos/row_size];
+        }
+    }
+    else {
+        start_pos = ref_pos;
+    }
+    
+    m_RefRowNext = info.m_RowFirst + start_pos/row_size;
     m_RefRowLast = min(info.m_RowLast, info.m_RowFirst + m_ArgRefLast/row_size);
     m_AlnRowCur = m_AlnRowEnd = 0;
     m_AlnRowIsSecondary = true;
@@ -798,10 +869,10 @@ void CCSraAlignIterator::Select(TSeqPos ref_pos,
 
 void CCSraAlignIterator::x_Settle(void)
 {
-    m_Error = RC_NO_MORE_ALIGNMENTS;
     for ( ;; ) {
         if ( m_AlnRowCur == m_AlnRowEnd ) {
             if ( m_RefRowNext > m_RefRowLast ) {
+                m_Error = RC_NO_MORE_ALIGNMENTS;
                 return;
             }
             
@@ -828,21 +899,29 @@ void CCSraAlignIterator::x_Settle(void)
             }
         }
         else {
-            m_CurRefPos = *m_Aln->REF_POS(*m_AlnRowCur);
-            if ( m_CurRefPos > m_ArgRefLast ) {
-                // skip remaining non-overlapping
-                m_AlnRowCur = m_AlnRowEnd;
-                continue;
-            }
-            m_CurRefLen = m_Aln->REF_LEN(*m_AlnRowCur);
-            TSeqPos end = m_CurRefPos + m_CurRefLen;
-            if ( end <= m_ArgRefPos ) {
-                // skip non-overlapping
+            uint64_t row = *m_AlnRowCur;
+            TSeqPos pos = *m_Aln->REF_POS(row);
+            if ( pos > m_ArgRefLast ) {
+                // completely after
                 ++m_AlnRowCur;
                 continue;
             }
+            if ( m_SearchMode == eSearchByStart && pos < m_ArgRefPos ) {
+                // starts before
+                ++m_AlnRowCur;
+                continue;
+            }
+            TSeqPos len = *m_Aln->REF_LEN(row);
+            TSeqPos end = pos + len;
+            if ( end <= m_ArgRefPos ) {
+                // completely before
+                ++m_AlnRowCur;
+                continue;
+            }
+            m_CurRefPos = pos;
+            m_CurRefLen = len;
             m_Error = 0;
-            break;
+            return;
         }
     }
 }
@@ -1083,8 +1162,20 @@ void CCSraAlignIterator::MakeFullMismatch(string& ret,
 }
 
 
+CCSraAlignIterator::SCreateCache&
+CCSraAlignIterator::x_GetCreateCache(void) const
+{
+    if ( !m_CreateCache ) {
+        m_CreateCache = new SCreateCache;
+    }
+    return *m_CreateCache;
+}
+
+
 CRef<CSeq_align> CCSraAlignIterator::GetMatchAlign(void) const
 {
+    SCreateCache& cache = x_GetCreateCache();
+
     CRef<CSeq_align> align(new CSeq_align);
     align->SetType(CSeq_align::eType_diags);
     CDense_seg& denseg = align->SetSegs().SetDenseg();
@@ -1200,7 +1291,8 @@ CRef<CSeq_align> CCSraAlignIterator::GetMatchAlign(void) const
             uint64_t mate_id = *mate_id_v;
             _ASSERT(mate_id);
             CRef<CUser_object> obj(new CUser_object());
-            obj->SetType(x_GetObject_id("Mate read", m_ObjectIdMateRead));
+            obj->SetType(x_GetObject_id("Mate read",
+                                        cache.m_ObjectIdMateRead));
             CTempString mate_name = m_Aln->REF_NAME(mate_id);
             if ( mate_name != m_RefIter->m_Name ) {
                 CCSraRefSeqIterator mate_iter
@@ -1208,21 +1300,22 @@ CRef<CSeq_align> CCSraAlignIterator::GetMatchAlign(void) const
                 if ( mate_iter ) {
                     x_AddField(*obj,
                                "RefId", mate_iter.GetRefSeq_id()->AsFastaString(),
-                               m_ObjectIdRefId);
+                               cache.m_ObjectIdRefId);
                 }
                 else {
                     CTempString mate_ref_id = m_Aln->REF_SEQ_ID(mate_id);
                     x_AddField(*obj,
                                "RefId", mate_ref_id,
-                               m_ObjectIdRefId);
+                               cache.m_ObjectIdRefId);
                 }
             }
             x_AddField(*obj,
                        "RefPos", m_Aln->REF_POS(mate_id),
-                       m_ObjectIdRefPos);
+                       cache.m_ObjectIdRefPos);
             
             CRef<CUser_field> field(new CUser_field());
-            field->SetLabel(x_GetObject_id("gnl|SRA|", m_ObjectIdLcl));
+            field->SetLabel(x_GetObject_id("gnl|SRA|",
+                                           cache.m_ObjectIdLcl));
             GetDb().SetShortReadId(field->SetData().SetStr(),
                                    m_Aln->SEQ_SPOT_ID(mate_id),
                                    m_Aln->SEQ_READ_ID(mate_id));
@@ -1234,18 +1327,21 @@ CRef<CSeq_align> CCSraAlignIterator::GetMatchAlign(void) const
 
     if ( s_GetCigarInAlignExt() ) {
         CRef<CUser_object> obj(new CUser_object);
-        obj->SetType(x_GetObject_id("Tracebacks", m_ObjectIdTracebacks));
+        obj->SetType(x_GetObject_id("Tracebacks",
+                                    cache.m_ObjectIdTracebacks));
         CTempString cigar = GetCIGARLong();
         CTempString mismatch = GetMismatchRaw();
         x_AddField(*obj, "CIGAR", cigar,
-                   m_ObjectIdCIGAR, m_UserFieldCacheCigar, 8, 8192);
+                   cache.m_ObjectIdCIGAR,
+                   cache.m_UserFieldCacheCigar, 8, 8192);
         if ( insert_size == 0 ) {
             x_AddField(*obj, "MISMATCH", mismatch,
-                       m_ObjectIdMISMATCH, m_UserFieldCacheMismatch, 8, 8192);
+                       cache.m_ObjectIdMISMATCH,
+                       cache.m_UserFieldCacheMismatch, 8, 8192);
         }
         else {
             CUser_field& field = x_AddField(*obj, "MISMATCH",
-                                            m_ObjectIdMISMATCH);
+                                            cache.m_ObjectIdMISMATCH);
             MakeFullMismatch(field.SetData().SetStr(), cigar, mismatch);
         }
         align->SetExt().push_back(obj);
@@ -1255,7 +1351,7 @@ CRef<CSeq_align> CCSraAlignIterator::GetMatchAlign(void) const
         INSDC_read_filter filter = GetReadFilter();
         if ( filter > SRA_READ_FILTER_PASS &&
              filter <= SRA_READ_FILTER_REDACTED ) {
-            if ( !m_ReadFilterIndicator[filter] ) {
+            if ( !cache.m_ReadFilterIndicator[filter] ) {
                 static const char* const value[4] = {
                     "Good",
                     "Poor sequence quality",
@@ -1265,9 +1361,9 @@ CRef<CSeq_align> CCSraAlignIterator::GetMatchAlign(void) const
                 CRef<CUser_object> obj(new CUser_object);
                 obj->SetType().SetStr(value[filter]);
                 obj->SetData();
-                m_ReadFilterIndicator[filter] = obj;
+                cache.m_ReadFilterIndicator[filter] = obj;
             }
-            align->SetExt().push_back(m_ReadFilterIndicator[filter]);
+            align->SetExt().push_back(cache.m_ReadFilterIndicator[filter]);
         }
     }
 
@@ -1352,10 +1448,11 @@ CCSraAlignIterator::x_GetEmptyMatchAnnot(const string* annot_name) const
 {
     CRef<CSeq_annot> annot = x_GetSeq_annot(annot_name);
     if ( !s_GetExplicitMateInfoParam() ) {
-        if ( !m_MatchAnnotIndicator ) {
-            m_MatchAnnotIndicator = MakeMatchAnnotIndicator();
+        SCreateCache& cache = x_GetCreateCache();
+        if ( !cache.m_MatchAnnotIndicator ) {
+            cache.m_MatchAnnotIndicator = MakeMatchAnnotIndicator();
         }
-        annot->SetDesc().Set().push_back(m_MatchAnnotIndicator);
+        annot->SetDesc().Set().push_back(cache.m_MatchAnnotIndicator);
     }
     return annot;
 }
@@ -1401,12 +1498,13 @@ CCSraAlignIterator::x_GetMatchEntry(const string* annot_name) const
 
 CRef<CUser_object> CCSraAlignIterator::x_GetSecondaryIndicator(void) const
 {
-    if ( !m_SecondaryIndicator ) {
-        m_SecondaryIndicator = new CUser_object();
-        m_SecondaryIndicator->SetType().SetStr("Secondary");
-        m_SecondaryIndicator->SetData();
+    SCreateCache& cache = x_GetCreateCache();
+    if ( !cache.m_SecondaryIndicator ) {
+        cache.m_SecondaryIndicator = new CUser_object();
+        cache.m_SecondaryIndicator->SetType().SetStr("Secondary");
+        cache.m_SecondaryIndicator->SetData();
     }
-    return m_SecondaryIndicator;
+    return cache.m_SecondaryIndicator;
 }
 
 
@@ -1754,7 +1852,7 @@ CCSraShortReadIterator::GetReadRange(EClipType clip_type) const
 
 
 CTempString
-CCSraShortReadIterator::x_GetReadData(const TOpenRange& range) const
+CCSraShortReadIterator::x_GetReadData(TOpenRange range) const
 {
     CTempString s = *m_Seq->READ(m_SpotId);
     return s.substr(range.GetFrom(), range.GetLength());
@@ -1793,7 +1891,7 @@ CCSraShortReadIterator::GetShortBioseq(TBioseqFlags flags) const
 
 
 CRef<CSeq_graph>
-CCSraShortReadIterator::x_GetQualityGraph(const TOpenRange& range) const
+CCSraShortReadIterator::x_GetQualityGraph(TOpenRange range) const
 {
     CRef<CSeq_graph> graph(new CSeq_graph);
     graph->SetTitle("Phred Quality");
@@ -1850,7 +1948,7 @@ CCSraShortReadIterator::x_GetSeq_annot(const string* annot_name) const
 
 
 CRef<CSeq_annot>
-CCSraShortReadIterator::x_GetQualityGraphAnnot(const TOpenRange& range,
+CCSraShortReadIterator::x_GetQualityGraphAnnot(TOpenRange range,
                                                const string* annot_name) const
 {
     CRef<CSeq_annot> annot = x_GetSeq_annot(annot_name);
