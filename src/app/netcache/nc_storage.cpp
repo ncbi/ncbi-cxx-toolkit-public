@@ -601,13 +601,8 @@ s_GetIndexRec(SNCDBFileInfo* file_info, Uint4 rec_num)
 }
 
 static void
-s_DeleteIndexRec(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec, bool skip_lock = false);
-static void
-s_DeleteIndexRec(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec, bool skip_lock)
+s_DeleteIndexRecNoLock(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec)
 {
-    if (!skip_lock) {
-        file_info->info_lock.Lock();
-    }
     SFileIndexRec* prev_rec;
     SFileIndexRec* next_rec;
     if (ind_rec->prev_num == 0)
@@ -623,16 +618,14 @@ s_DeleteIndexRec(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec, bool skip_loc
     ACCESS_ONCE(prev_rec->next_num) = ind_rec->next_num;
     ACCESS_ONCE(next_rec->prev_num) = ind_rec->prev_num;
     ind_rec->next_num = ind_rec->prev_num = Uint4(file_info->index_head - ind_rec);
-    if (!skip_lock) {
-        file_info->info_lock.Unlock();
-    }
 }
 
 static inline void
-s_DeleteIndexRec(SNCDBFileInfo* file_info, Uint4 rec_num)
+s_DeleteIndexRec(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec)
 {
-    SFileIndexRec* ind_rec = s_GetIndexRec(file_info, rec_num);
-    s_DeleteIndexRec(file_info, ind_rec);
+    file_info->info_lock.Lock();
+    s_DeleteIndexRecNoLock(file_info, ind_rec);
+    file_info->info_lock.Unlock();
 }
 
 static void
@@ -644,7 +637,7 @@ s_MoveRecToGarbage(SNCDBFileInfo* file_info, SFileIndexRec* ind_rec)
     size += sizeof(SFileIndexRec);
 
     file_info->info_lock.Lock();
-    s_DeleteIndexRec(file_info, ind_rec, true);
+    s_DeleteIndexRecNoLock(file_info, ind_rec);
     if (file_info->used_size < size) {
         SRV_FATAL("DB file info broken");
     }
@@ -2699,7 +2692,8 @@ CBlobCacher::x_CleanOrphanRecs(void)
         SNCDBFileInfo* file_info = it_file->second;
         TRecNumsSet::iterator it_rec = recs_set.begin();
         for (; it_rec != recs_set.end(); ++it_rec) {
-            s_DeleteIndexRec(file_info, *it_rec);
+            SFileIndexRec* ind_rec = s_GetIndexRec(file_info, *it_rec);
+            s_DeleteIndexRec(file_info, ind_rec);
         }
     }
 
