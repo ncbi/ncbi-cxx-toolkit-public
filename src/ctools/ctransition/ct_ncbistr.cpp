@@ -745,7 +745,7 @@ NLM_EXTERN Nlm_CharPtr Nlm_SearchSubString (
   if (str == NULL || str [0] == '\0') return NULL;
   if (data == NULL || ! data->initialized) return NULL;
 
-  strLen = Nlm_StringLen (str);
+  strLen = Nlm_StringLen(str);
   subLen = data->subLen;
   if (strLen < subLen) return NULL;
 
@@ -753,9 +753,9 @@ NLM_EXTERN Nlm_CharPtr Nlm_SearchSubString (
   sub = data->sub;
   if (sub == NULL || sub [0] == '\0') return NULL;
 
-  i = subLen;
+  i = (int)subLen;
   do {
-	j = subLen;
+	j = (int)subLen;
 	k = i;
 	do {
 	  k--;
@@ -772,8 +772,9 @@ NLM_EXTERN Nlm_CharPtr Nlm_SearchSubString (
 	  }
 	}
   } while (j >= 0 && i <= (int) strLen);
+
   if (j < 0) {
-	i -= subLen;
+	i -= (int)subLen;
 	return (Nlm_CharPtr) (str + i);
   }
 
@@ -805,9 +806,9 @@ static Nlm_CharPtr Nlm_FindSubString (const char FAR *str, const char FAR *sub,
           d [ch] = subLen - j - 1;
         }
       }
-      i = subLen;
+      i = (int)subLen;
       do {
-        j = subLen;
+        j = (int)subLen;
         k = i;
         do {
           k--;
@@ -818,15 +819,15 @@ static Nlm_CharPtr Nlm_FindSubString (const char FAR *str, const char FAR *sub,
         if (j >= 0) {
           ch = (int) (caseCounts ? str [i - 1] : TO_UPPER (str [i - 1]));
           if (ch >= 0 && ch <= 255) {
-            i += d [ch];
+            i += (int)d[ch];
           } else {
             i++;
           }
         }
       } while (j >= 0 && i <= (int)strLen);
       if (j < 0) {
-        i -= subLen;
-        return (Nlm_CharPtr) (str + i);
+        i -= (int)subLen;
+        return (Nlm_CharPtr)(str+i);
       }
     }
   }
@@ -942,9 +943,8 @@ NLM_EXTERN Nlm_Int8  LIBCALL Nlm_StringToInt8(const char* str, const char** endp
     Nlm_Uint8 result = s_StringToUint8(str, endptr, &sign);
     if (*endptr) {
         /* Check for overflow */
-        if (result > (sign
-                      ? -((Nlm_Uint8)(INT8_MIN + 1)) + 1
-                      : (Nlm_Uint8)(INT8_MAX)))
+        if (result > (sign ? (Nlm_Uint8)(INT8_MAX + 1)
+                           : (Nlm_Uint8)(INT8_MAX)))
             *endptr = 0;            
     }
     if (!*endptr)
@@ -987,15 +987,16 @@ NLM_EXTERN char* LIBCALL Nlm_Int8ToString (Nlm_Int8  value, char* str, size_t st
     char *save = str;
 
     if (value < 0) {
-        if (!str || !str_size)
+        if (!str || !str_size) {
             return 0;
+        }
         *str++ = '-';
         str_size--;
-        val = -(Nlm_Uint8)(value + 1) + 1;
-    } else
+        val = (Nlm_Uint8)(-value);
+    } else {
         val = value;
-
-    return s_Uint8ToString(val, str, str_size) ? save : 0;
+    }
+    return s_Uint8ToString(val, str, str_size) ? save : NULL;
 }
 
 
