@@ -267,7 +267,7 @@ CReaderBase::ProcessError(
     if (!pContainer->PutError(err)) {
         AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
-            eDiag_Fatal,
+            eDiag_Critical,
             0,
             "Error allowance exceeded",
             ILineError::eProblem_GeneralParsingError) );

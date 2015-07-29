@@ -216,11 +216,12 @@ void CGff3Reader::xVerifyExonLocation(
     if (cit == mMrnaLocs.end()) {
         AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
-            eDiag_Fatal,
+            eDiag_Error,
             0,
             "Bad data line: Exon record referring to non-existing mRNA parent.",
             ILineError::eProblem_FeatureBadStartAndOrStop));
         ProcessError(*pErr, pEC);
+        return; // can not continue without cit being valid, regardless of ProcessError() 
     }
     const CSeq_interval& containingInt = cit->second.GetObject();
     const CRef<CSeq_loc> pContainedLoc = exon.GetSeqLoc(m_iFlags);
@@ -230,7 +231,7 @@ void CGff3Reader::xVerifyExonLocation(
     if (failed) {
         AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
-            eDiag_Fatal,
+            eDiag_Error,
             0,
             "Bad data line: Exon record that lies outside its parent location.",
             ILineError::eProblem_FeatureBadStartAndOrStop));
@@ -274,7 +275,7 @@ bool CGff3Reader::xUpdateAnnotCds(
     if (!xVerifyCdsParents(record)) {
         AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
-            eDiag_Fatal,
+            eDiag_Error,
             0,
             "Bad data line: CDS record with bad parent assignments.",
             ILineError::eProblem_FeatureBadStartAndOrStop) );
@@ -505,7 +506,7 @@ bool CGff3Reader::xUpdateAnnotMrna(
     if (choice != CSeq_loc::e_Int) {
         AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
-            eDiag_Fatal,
+            eDiag_Error,
             0,
             "Internal error: Unexpected location type.",
             ILineError::eProblem_BadFeatureInterval));
