@@ -249,6 +249,8 @@ public:
 
     virtual bool xAnnotPostProcess(
         CRef<CSeq_annot>);
+    virtual bool xGenerateParentChildXrefs(
+        CRef<CSeq_annot>);
 
     bool xAlignmentSetSegment(
         const CGff2Record&,
@@ -292,6 +294,14 @@ protected:
     static bool s_GetAnnotId(
         const CSeq_annot&,
         string& );
+
+    void xSetAncestryLine(
+        CSeq_feat&,
+        const string&);
+
+    void xSetAncestorXrefs(
+        CSeq_feat&,
+        CSeq_feat&);
 
     //  data:
     //

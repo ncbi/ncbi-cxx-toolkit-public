@@ -85,6 +85,8 @@
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqalign/Score.hpp>
 
+#include <objmgr/feat_ci.hpp>
+
 #include <objtools/readers/read_util.hpp>
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/line_error.hpp>
@@ -1207,7 +1209,108 @@ bool CGff2Reader::xAnnotPostProcess(
     CRef<CSeq_annot> pAnnot)
 //  ============================================================================
 {
+    if (!xGenerateParentChildXrefs(pAnnot)) {
+        return false;
+    }
     return true;
+}
+
+//  ============================================================================
+bool CGff2Reader::xGenerateParentChildXrefs(
+    CRef<CSeq_annot> pAnnot)
+//  ============================================================================
+{
+    typedef list<CRef<CSeq_feat> > FTABLE;
+    typedef list<string> PARENTS;
+
+    if (!(m_iFlags & CGff2Reader::fGenbankMode)) {
+        return true;
+    }
+    FTABLE& ftable = pAnnot->SetData().SetFtable();
+    for (FTABLE::iterator featIt = ftable.begin(); featIt != ftable.end(); ++featIt) {
+        CSeq_feat& feat = **featIt;
+        const string& parentStr = feat.GetNamedQual("Parent");
+        PARENTS parents;
+        NStr::Split(parentStr, ",", parents);
+        for (PARENTS::iterator parentIt = parents.begin(); parentIt != parents.end(); ++parentIt) {
+            const string& parent = *parentIt; 
+            xSetAncestryLine(feat, parent);
+        }
+    }
+    return true;
+}
+
+//  ============================================================================
+void CGff2Reader::xSetAncestryLine(
+    CSeq_feat& feat,
+    const string& directParentStr)
+//  ============================================================================
+{
+    typedef list<string> PARENTS;
+
+    string ancestorStr(directParentStr);
+    CRef<CSeq_feat> pAncestor;
+    while (!ancestorStr.empty()) {
+        if (!x_GetFeatureById(ancestorStr, pAncestor)) {
+            return;
+        }
+        xSetAncestorXrefs(feat, *pAncestor);
+        ancestorStr = pAncestor->GetNamedQual("Parent");
+        PARENTS ancestors;
+        NStr::Split(ancestorStr, ",", ancestors);
+        for (PARENTS::iterator it = ancestors.begin(); it != ancestors.end(); ++it) {
+            const string& ancestorStr = *it;
+            xSetAncestryLine(feat, ancestorStr);
+        }
+    }
+}
+
+//  ============================================================================
+bool sFeatureHasXref(
+    const CSeq_feat& feat,
+    const CFeat_id& featId)
+//  ============================================================================
+{
+    typedef vector<CRef<CSeqFeatXref> > XREFS;
+    if (!feat.IsSetXref()) {
+        return false;
+    }
+    const string xrefStr = featId.GetLocal().GetStr();
+    const XREFS& xrefs = feat.GetXref();
+    for (XREFS::const_iterator cit = xrefs.begin(); cit != xrefs.end(); ++cit) {
+        const CSeqFeatXref& ref = **cit; 
+        string contentStr = ref.GetId().GetLocal().GetStr();
+        if (contentStr == xrefStr) {
+            return true;
+        }
+    }
+    return false;
+}
+
+//  ============================================================================
+void CGff2Reader::xSetAncestorXrefs(
+    CSeq_feat& descendent,
+    CSeq_feat& ancestor)
+//  ============================================================================
+{
+
+    //xref descendent->ancestor
+    if (!sFeatureHasXref(descendent, ancestor.GetId())) {
+        CRef<CFeat_id> pAncestorId(new CFeat_id);
+        pAncestorId->Assign(ancestor.GetId());
+        CRef<CSeqFeatXref> pAncestorXref(new CSeqFeatXref);
+        pAncestorXref->SetId(*pAncestorId);
+        descendent.SetXref().push_back(pAncestorXref);
+    }
+
+    //xref ancestor->descendent
+    if (!sFeatureHasXref(ancestor, descendent.GetId())) {
+        CRef<CFeat_id> pDescendentId(new CFeat_id);
+        pDescendentId->Assign(descendent.GetId());
+        CRef<CSeqFeatXref> pDescendentXref(new CSeqFeatXref);
+        pDescendentXref->SetId(*pDescendentId);
+        ancestor.SetXref().push_back(pDescendentXref);
+    }
 }
 
 //  ============================================================================
