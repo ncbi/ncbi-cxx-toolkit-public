@@ -11,10 +11,10 @@ SRC = biosample_chk
 
 LIB  = xbiosample_util ncbi_xloader_wgs $(SRAREAD_LIBS) xmlwrapp xvalidate \
        $(OBJEDIT_LIBS) $(XFORMAT_LIBS) xalnmgr xobjutil valerr tables \
-       xregexp $(PCRE_LIB) $(OBJMGR_LIBS) LIBS = $(LIBXSLT_LIBS) $(PCRE_LIBS) $(VDB_LIBS) \
-       $(NETWORK_LIBS) $(CMPRS_LIBS) $(ORIG_LIBS)
+       xregexp $(PCRE_LIB) $(OBJMGR_LIBS)
 
-LIBS = $(PCRE_LIBS) $(SRA_SDK_SYSLIBS) $(ORIG_LIBS) $(LIBXML_LIBS) $(LIBXSLT_LIBS)
+LIBS = $(LIBXSLT_LIBS) $(PCRE_LIBS) $(VDB_LIBS) \
+       $(NETWORK_LIBS) $(CMPRS_LIBS) $(ORIG_LIBS)
 
 POST_LINK = $(VDB_POST_LINK)
 
