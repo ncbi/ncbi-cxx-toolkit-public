@@ -117,34 +117,17 @@ public:
 class CCSRARefSeqChunkInfo
 {
 public:
-    CCSRARefSeqChunkInfo(void)
-        : m_AlignCount(0), m_MaxRefSeqFrom(0)
-        {
-        }
-
-    size_t GetAlignCount(void) const
-        {
-            return m_AlignCount;
-        }
-
     typedef CRange<TSeqPos> TRange;
 
-    void AddRefSeqRange(const TRange& range);
-    const TRange& GetRefSeqRange(void) const
+    const TRange& GetRefSeqRangeStart(void) const
         {
-            return m_RefSeqRange;
-        }
-    TSeqPos GetMaxRefSeqFrom(void) const
-        {
-            return m_MaxRefSeqFrom;
+            return m_RefSeqRangeStart;
         }
 
 protected:
     friend class CCSRARefSeqInfo;
 
-    size_t m_AlignCount; // 0 - graph only
-    TRange m_RefSeqRange; // total range of alignments in the chunk
-    TSeqPos m_MaxRefSeqFrom; // max 'from' coordinate of alignments
+    TRange m_RefSeqRangeStart; // range of alignments' start positions
 };
 
 
