@@ -1559,6 +1559,9 @@ CNCBlobStorage::WriteBlobInfo(const string& blob_key,
 static void
 s_MoveDataToGarbage(SNCDataCoord coord, Uint1 map_depth, SNCDataCoord up_coord, bool need_lock)
 {
+    if (coord.empty()) {
+        return;
+    }
     CSrvRef<SNCDBFileInfo> file_info = need_lock ? s_GetDBFile(coord.file_id) : s_GetDBFileNoLock(coord.file_id);
     SFileIndexRec* ind_rec = s_GetIndexRec(file_info, coord.rec_num);
     if (ind_rec->chain_coord != up_coord) {
@@ -2058,7 +2061,7 @@ CNCBlobStorage::MeasureDB(SNCStateStat& state)
 void
 CBlobCacher::x_DeleteIndexes(SNCDataCoord map_coord, Uint1 map_depth)
 {
-    SNCDBFileInfo* file_info = (*s_DBFiles)[map_coord.file_id];
+    CSrvRef<SNCDBFileInfo> file_info = s_GetDBFileNoLock(map_coord.file_id);
     SFileIndexRec* map_ind = s_GetIndexRec(file_info, map_coord.rec_num);
     s_DeleteIndexRec(file_info, map_ind);
     if (map_depth != 0) {
@@ -2297,7 +2300,7 @@ CBlobCacher::x_CacheMetaRec(SNCDBFileInfo* file_info,
             return false;
         }
         ITERATE(TSizesMap, it, sizes_map) {
-            SNCDBFileInfo* info = (*s_DBFiles)[it->first];
+            CSrvRef<SNCDBFileInfo> info = s_GetDBFileNoLock(it->first);
             info->used_size += it->second;
             if (info->garb_size < it->second) {
                 SRV_FATAL("Blob coords broken");
@@ -2341,16 +2344,18 @@ CBlobCacher::x_CacheMetaRec(SNCDBFileInfo* file_info,
         bucket_cache->key_map.insert_equal(*cache_data);
         --s_CurBlobsCnt;
         time_table->time_map.erase(time_table->time_map.iterator_to(*old_data));
-        SNCDBFileInfo* old_file = (*s_DBFiles)[old_data->coord.file_id];
-        SFileIndexRec* old_ind = s_GetIndexRec(old_file, old_data->coord.rec_num);
-        SFileMetaRec* old_rec = s_CalcMetaAddress(old_file, old_ind);
-        if (old_rec->size != 0  &&  old_ind->chain_coord != ind_rec->chain_coord) {
-            Uint1 map_depth = s_CalcMapDepth(old_rec->size,
-                                             old_rec->chunk_size,
-                                             old_rec->map_size);
-            s_MoveDataToGarbage(old_ind->chain_coord, map_depth, old_data->coord, false);
+        if (!old_data->coord.empty()) {
+            CSrvRef<SNCDBFileInfo> old_file = s_GetDBFileNoLock(old_data->coord.file_id);
+            SFileIndexRec* old_ind = s_GetIndexRec(old_file, old_data->coord.rec_num);
+            SFileMetaRec* old_rec = s_CalcMetaAddress(old_file, old_ind);
+            if (old_rec->size != 0  &&  old_ind->chain_coord != ind_rec->chain_coord && !old_ind->chain_coord.empty()) {
+                Uint1 map_depth = s_CalcMapDepth(old_rec->size,
+                                                 old_rec->chunk_size,
+                                                 old_rec->map_size);
+                s_MoveDataToGarbage(old_ind->chain_coord, map_depth, old_data->coord, false);
+            }
+            s_MoveRecToGarbage(old_file, old_ind);
         }
-        s_MoveRecToGarbage(old_file, old_ind);
         delete old_data;
     }
     time_table->time_map.insert_equal(*cache_data);
