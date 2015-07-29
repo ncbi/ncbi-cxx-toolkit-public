@@ -152,13 +152,13 @@ CSeq_id_Handle CSeq_id_Resolver__CCDS::x_Create(const string& s)
     //Get gis back; sort desc; walk bioseqs and look for the CCDS of interest.
 
     string query_str = "srcdb_refseq[prop] AND biomol_mRNA[prop] AND dbxref_ccds[prop] AND \"CCDS:" + s + "\"";
-    vector<int> gis;
+    vector<TGi> gis;
     m_entrez->Query(query_str, "nuccore", gis, 0, 5);
 
     if (gis.size() != 1) {
         NCBI_THROW(CException, eUnknown, "Could not resolve " + s + " to a unique gi");
     }
-    CSeq_id_Handle gi_handle = CSeq_id_Handle::GetHandle(GI_FROM(int, gis.front()));
+    CSeq_id_Handle gi_handle = CSeq_id_Handle::GetHandle(gis.front());
     CSeq_id_Handle idh = sequence::GetId(gi_handle, *m_scope, sequence::eGetId_ForceAcc);
     return idh;
 }
