@@ -876,7 +876,7 @@ CNCActiveSyncControl::x_WaitForExecutingTasks(void)
 CNCActiveSyncControl::State
 CNCActiveSyncControl::x_FinishSync(void)
 {
-    x_CleanRemoteObjects();
+    x_CleanSyncObjects();
 
     switch (m_Result) {
     case eSynOK:
@@ -1013,17 +1013,30 @@ CNCActiveSyncControl::x_PrepareSyncByBlobs(void)
 }
 
 void
-CNCActiveSyncControl::x_CleanRemoteObjects(void)
+CNCActiveSyncControl::x_CleanSyncObjects(void)
 {
     ITERATE(TNCBlobSumList, it, m_RemoteBlobs) {
         delete it->second;
     }
     m_RemoteBlobs.clear();
+    m_CurRemoteBlob = m_RemoteBlobs.begin();
+
+    ITERATE(TNCBlobSumList, it, m_LocalBlobs) {
+        delete it->second;
+    }
+    m_LocalBlobs.clear();
+    m_CurLocalBlob = m_LocalBlobs.begin();
+
     ITERATE(TReducedSyncEvents, it, m_RemoteEvents) {
         delete it->second.wr_or_rm_event;
         delete it->second.prolong_event;
     }
     m_RemoteEvents.clear();
+
+    m_Events2Get.clear();
+    m_Events2Send.clear();
+    m_CurGetEvent = m_Events2Get.begin();
+    m_CurSendEvent = m_Events2Send.begin();
 }
 
 void

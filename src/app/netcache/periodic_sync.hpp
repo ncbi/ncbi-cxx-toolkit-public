@@ -287,7 +287,7 @@ private:
     State x_ExecuteFinalize(void);
     State x_WaitForExecutingTasks(void);
     State x_FinishSync(void);
-    void x_CleanRemoteObjects(void);
+    void x_CleanSyncObjects(void);
     void x_CalcNextTask(void);
     void x_DoEventSend(const SSyncTaskInfo& task_info, CNCActiveHandler* conn);
     void x_DoEventGet(const SSyncTaskInfo& task_info, CNCActiveHandler* conn);
