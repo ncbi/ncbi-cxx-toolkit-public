@@ -1127,6 +1127,6 @@ USING_NCBI_SCOPE;
 
 int main(int argc, const char* argv[]) 
 {
-    const int rv (CSplignApp().AppMain(argc, argv, 0, eDS_Default, 0));
+    const int rv (CSplignApp().AppMain(argc, argv));
     return rv;
 }

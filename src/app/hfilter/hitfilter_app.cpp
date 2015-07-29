@@ -761,5 +761,5 @@ USING_NCBI_SCOPE;
 
 int main(int argc, const char* argv[]) 
 {
-    return CAppHitFilter().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CAppHitFilter().AppMain(argc, argv);
 }
