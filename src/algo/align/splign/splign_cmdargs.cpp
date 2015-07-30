@@ -186,6 +186,15 @@ void CSplignArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
          CArgDescriptions::eDouble,
          NStr::DoubleToString(double(CNWAligner::GetDefaultSpaceLimit()) / kMb));
 
+    argdescr->AddDefaultKey
+        ("max_part_exon_ident_drop",
+         "max_part_exon_ident_drop",
+         "Don't allow identity of part of exon to drop more than max_part_exon_trim_drop.  "
+         "If identity near alignment gap drops more than max_part_exon_trim_drop in comparison to the rest of exon, "
+         "the low identity part will be trimmed out.",
+         CArgDescriptions::eDouble,
+         NStr::NumericToString(CSplign::s_GetDefaultMaxPartExonIdentDrop()));
+
      argdescr->AddOptionalKey
          ("test",
           "test_mode",
@@ -214,6 +223,10 @@ void CSplignArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
     CArgAllow_Strings * constrain_testtype (new CArgAllow_Strings);
     constrain_testtype ->Allow(kTestType_20_28)->Allow(kTestType_20_28_plus);
     argdescr->SetConstraint("test", constrain_testtype);
+
+    CArgAllow * constrain005 (new CArgAllow_Doubles(0,0.5));
+    argdescr->SetConstraint("max_part_exon_ident_drop", constrain005);
+
 }
 
 

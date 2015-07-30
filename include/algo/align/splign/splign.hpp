@@ -151,6 +151,10 @@ public:
     static size_t s_GetDefaultMinPolyaLen(void);
     size_t GetMinPolyaLen(void) const;
 
+    void   SetMaxPartExonIdentDrop(double ident);
+    static double s_GetDefaultMaxPartExonIdentDrop(void);
+    double GetMaxPartExonIdentDrop(void) const;
+
     void   SetTestType(const string& test_type);
     string GetTestType(void) const;
     
@@ -437,6 +441,10 @@ protected:
 
     // max intron length
     size_t                m_MaxIntron;
+
+    // max part of exon identity drop
+    //If identity near alignment gap drops more, the low identity part will be trimmed out.
+    double                m_MaxPartExonIdentDrop;
 
     // The limiting range as defined by the compartment hits,
     // if the max compartment hit identity is less than a cut-off.

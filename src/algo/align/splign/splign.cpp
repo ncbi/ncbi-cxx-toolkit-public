@@ -182,6 +182,7 @@ CSplign::CSplign(void):
     m_cds_stop (0),
     m_max_genomic_ext (s_GetDefaultMaxGenomicExtent()),
     m_MaxIntron (CCompartmentFinder<THit>::s_GetDefaultMaxIntron()),
+    m_MaxPartExonIdentDrop (s_GetDefaultMaxPartExonIdentDrop()),
     m_model_id (0),
     m_MaxCompsPerQuery (0),
     m_MinPatternHitLength (13)
@@ -503,6 +504,19 @@ size_t CSplign::GetMinSingletonIdentityBps(void) const {
 double CSplign::s_GetDefaultMinCompartmentIdty(void)
 {
     return 0.70;
+}
+
+void CSplign::SetMaxPartExonIdentDrop(double ident) {
+    m_MaxPartExonIdentDrop = ident;
+}
+
+double CSplign::GetMaxPartExonIdentDrop(void) const {
+    return m_MaxPartExonIdentDrop;
+}
+
+double CSplign::s_GetDefaultMaxPartExonIdentDrop(void)
+{
+    return 0.25;
 }
 
 void CSplign::SetTestType(const string& test_type) {
@@ -1983,7 +1997,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
         is_test_plus = true;
     } 
 
-    CSplignTrim trim(&m_genomic.front(), (int)m_genomic.size(), m_aligner); 
+    CSplignTrim trim(&m_genomic.front(), (int)m_genomic.size(), m_aligner, m_MaxPartExonIdentDrop); 
     
     //partial trimming near sequence gaps   
     {{

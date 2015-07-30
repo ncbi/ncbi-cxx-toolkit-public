@@ -46,7 +46,7 @@ public:
 
     typedef CNWFormatter::SSegment TSeg;
 
-    CSplignTrim(const char *seq, int seqlen, CConstRef<CSplicedAligner> aligner) : m_seq(seq), m_seqlen(seqlen), m_aligner(aligner)
+    CSplignTrim(const char *seq, int seqlen, CConstRef<CSplicedAligner> aligner, double max_part_exon_drop) : m_seq(seq), m_seqlen(seqlen), m_aligner(aligner), m_MaxPartExonIdentDrop(max_part_exon_drop)
     {
     }
 
@@ -78,7 +78,8 @@ public:
 private:
     const char *m_seq;//genomic sequence
     const int m_seqlen;
-    CConstRef<CSplicedAligner> m_aligner; 
+    CConstRef<CSplicedAligner> m_aligner;
+    const double m_MaxPartExonIdentDrop; 
 };
 
 END_NCBI_SCOPE

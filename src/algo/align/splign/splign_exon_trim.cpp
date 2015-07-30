@@ -331,8 +331,7 @@ void CSplignTrim::ImproveFromLeft(TSeg& s)
 
         //dropoff check
         double epsilon = 1e-10;
-        const double dropoff_diff = .19; 
-        if( rid - lid - dropoff_diff > epsilon ) {
+        if( rid - lid - m_MaxPartExonIdentDrop > epsilon ) {
             irs_tr = irs;
             //do not count trimmed part, adjust values
             match_total -= match;
@@ -396,8 +395,7 @@ void CSplignTrim::ImproveFromRight(TSeg& s)
 
         //dropoff check
         double epsilon = 1e-10;
-        const double dropoff_diff = .19; 
-        if( lid - rid - dropoff_diff > epsilon ) {
+        if( lid - rid - m_MaxPartExonIdentDrop > epsilon ) {
             irs_tr = irs;
             //do not count trimmed part, adjust values
             match_total -= match;
