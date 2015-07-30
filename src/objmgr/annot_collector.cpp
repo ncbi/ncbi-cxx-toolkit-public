@@ -1347,9 +1347,11 @@ CCreatedFeat_Ref::GetMappedLocation(const CAnnotMapping_Info& map,
                 mapped_feat.Reset();
             }
             else {
-                // hack with null ptr as ResetLocation doesn't reset CRef<>
-                CSeq_loc* loc = 0;
-                mapped_feat->SetLocation(*loc);
+                CRef<CSeq_loc> null_loc(new CSeq_loc);
+                null_loc->SetNull();
+                // ResetLocation doesn't do what we'd like because
+                // Seq-feat.location isn't optional.
+                mapped_feat->SetLocation(*null_loc);
                 mapped_feat->ResetProduct();
             }
         }
