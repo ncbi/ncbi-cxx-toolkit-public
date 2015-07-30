@@ -61,6 +61,14 @@ public:
         {
             return *static_cast<const TObjectType*>(object);
         }
+    static TObjectType* GetPointer(TObjectPtr object)
+        {
+            return static_cast<TObjectType*>(object);
+        }
+    static const TObjectType* GetPointer(TConstObjectPtr object)
+        {
+            return static_cast<const TObjectType*>(object);
+        }
 
     // set of SafeCast functions which will check validity of casting by
     // dynamic_cast<> in debug mode and will use static_cast<> in release

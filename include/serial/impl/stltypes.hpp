@@ -118,7 +118,7 @@ protected:
                         TObjectPtr dataPtr)
         {
             CTypeConverter<TObjectType>::Get(objectPtr).
-                Reset(&CTypeConverter<TDataType>::Get(dataPtr));
+                Reset(CTypeConverter<TDataType>::GetPointer(dataPtr));
         }
 };
 
