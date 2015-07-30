@@ -2546,7 +2546,7 @@ void CDisplaySeqalign::x_OutputSeq(string& sequence, const CSeq_id& id,
                 if(from == i){                 
                     frontTag = true;
                 }
-                if(to == i){
+                if(to == i && to > 0){
                     endTag = true;
                 }                
             }
