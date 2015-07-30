@@ -52,18 +52,14 @@ DISCREPANCY_CASE(COUNT_NUCLEOTIDES, CSeq_inst, eAll, "Count nucleotide sequences
     if (mol != CSeq_inst::eMol_dna && mol != CSeq_inst::eMol_rna && mol != CSeq_inst::eMol_na) {
         return;
     }
-    CRef<CDiscrepancyObject> r(new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), false));
-    Add(kEmptyStr, *r);
+    m_Objs["[n] nucleotide Bioseq[s] [is] present"].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), false));
 }
 
 
 DISCREPANCY_SUMMARIZE(COUNT_NUCLEOTIDES)
 {
-    CNcbiOstrstream ss;
-    ss << m_Objs[kEmptyStr].size() << " nucleotide Bioseq" << (m_Objs[kEmptyStr].size()==1 ? " is" : "s are") << " present";
-    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), CNcbiOstrstreamToString(ss)));
-    item->SetDetails(m_Objs[kEmptyStr]);
-    AddItem(*item);
+    m_Objs["[n] nucleotide Bioseq[s] [is] present"]; // If no sequences found still report 0
+    m_ReportItems = m_Objs.Export(GetName())->GetSubitems();
 }
 
 
@@ -74,18 +70,14 @@ DISCREPANCY_CASE(COUNT_PROTEINS, CSeq_inst, eAll, "Count Proteins")
     if (obj.GetMol() != CSeq_inst::eMol_aa) {
         return;
     }
-    CRef<CDiscrepancyObject> r(new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), false));
-    Add(kEmptyStr, *r);
+    m_Objs["[n] protein sequence[s] [is] present"].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), false));
 }
 
 
 DISCREPANCY_SUMMARIZE(COUNT_PROTEINS)
 {
-    CNcbiOstrstream ss;
-    ss << m_Objs[kEmptyStr].size() << " protein sequence" << (m_Objs[kEmptyStr].size()==1 ? " is" : "s are") << " present";
-    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), CNcbiOstrstreamToString(ss)));
-    item->SetDetails(m_Objs[kEmptyStr]);
-    AddItem(*item);
+    m_Objs["[n] protein sequence[s] [is] present"]; // If no sequences found still report 0
+    m_ReportItems = m_Objs.Export(GetName())->GetSubitems();
 }
 
 
@@ -142,8 +134,7 @@ DISCREPANCY_CASE(COUNT_TRNAS, CSeqFeatData, eNormal, "Count tRNAs")
     if (countBS != context.GetCountBioseq()) {
         countBS = context.GetCountBioseq();
         Summarize();
-        CRef<CDiscrepancyObject> r(new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), false));
-        Add(kEmptyStr, *r);
+        m_Objs[kEmptyStr].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), false));
     }
 
     string aa;
@@ -152,9 +143,7 @@ DISCREPANCY_CASE(COUNT_TRNAS, CSeqFeatData, eNormal, "Count tRNAs")
     if (n != string::npos) {
         aa = aa.substr(n+1); // is there any better way to get the aminoacid name?
     }
-
-    CRef<CDiscrepancyObject> r(new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), false));
-    Add(aa, *r);
+    m_Objs[aa].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), false), false);
 }
 
 
@@ -171,45 +160,42 @@ DISCREPANCY_SUMMARIZE(COUNT_TRNAS)
         }
     }
 
-    CRef<CReportObj> bioseq = m_Objs[kEmptyStr][0];
+    CRef<CReportObj> bioseq = m_Objs[kEmptyStr].GetObjects()[0];
     string short_name = bioseq->GetShort();
+    m_Objs[kEmptyStr].clear();
 
     size_t total = 0;
     // count tRNAs
-    for (TReportObjectMap::iterator J = m_Objs.begin(); J != m_Objs.end(); J++) {
-        if (!NStr::IsBlank(J->first)) {
-            total += J->second.size();
+    CReportNode::TNodeMap& map = m_Objs.GetMap();
+    NON_CONST_ITERATE (CReportNode::TNodeMap, it, map) {
+        if (!NStr::IsBlank(it->first)) {
+            total += it->second->GetObjects().size();
         }
     }
+
     CNcbiOstrstream ss;
-    ss << "sequence " << short_name << " has " << total << " tRNA feature" << (total==1 ? kEmptyStr : "s");
-    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), CNcbiOstrstreamToString(ss)));
-    item->AddDetails(bioseq);
-    AddItem(*item);
+    ss << " sequence " << short_name << " has " << total << " tRNA feature" << (total==1 ? kEmptyStr : "s");
+    m_Objs[kEmptyStr][CNcbiOstrstreamToString(ss)].Add(*bioseq);
 
     // extra tRNAs
     for (size_t i = 0; i < sizeof(desired_aaList)/sizeof(desired_aaList[0]); i++) {
-        const size_t n = m_Objs.find(desired_aaList[i].long_symbol) == m_Objs.end() ? 0 : m_Objs[desired_aaList[i].long_symbol].size();
+        const size_t n = m_Objs[desired_aaList[i].long_symbol].GetObjects().size();
         if (n <= desired_aaList[i].num_expected) {
             continue;
         }
         CNcbiOstrstream ss;
         ss << "sequence " << short_name << " has " << n << " trna-" << desired_aaList[i].long_symbol << " feature" << (n==1 ? kEmptyStr : "s");
-        CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), CNcbiOstrstreamToString(ss)));
-        item->AddDetails(bioseq);
-        item->AddDetails(m_Objs[desired_aaList[i].long_symbol]);
-        AddItem(*item);
+        m_Objs[kEmptyStr][CNcbiOstrstreamToString(ss)].Add(*bioseq);
+        m_Objs[kEmptyStr][CNcbiOstrstreamToString(ss)].Add(m_Objs[desired_aaList[i].long_symbol].GetObjects(), false);
     }
-    for (TReportObjectMap::iterator J = m_Objs.begin(); J != m_Objs.end(); J++) {
-        if (NStr::IsBlank(J->first) || DesiredCount.find(J->first) != DesiredCount.end()) {
+    NON_CONST_ITERATE (CReportNode::TNodeMap, it, map) {
+        if (NStr::IsBlank(it->first) || DesiredCount.find(it->first) != DesiredCount.end()) {
             continue;
         }
         CNcbiOstrstream ss;
-        ss << "sequence " << short_name << " has " << J->second.size() << " trna-" << J->first << " feature" << (J->second.size()==1 ? kEmptyStr : "s");
-        CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), CNcbiOstrstreamToString(ss)));
-        item->AddDetails(bioseq);
-        item->AddDetails(J->second);
-        AddItem(*item);
+        ss << "sequence " << short_name << " has " << it->second->GetObjects().size() << " trna-" << it->first << " feature" << (it->second->GetObjects().size() == 1 ? kEmptyStr : "s");
+        m_Objs[kEmptyStr][CNcbiOstrstreamToString(ss)].Add(*bioseq);
+        m_Objs[kEmptyStr][CNcbiOstrstreamToString(ss)].Add(m_Objs[it->first].GetObjects(), false);
     }
 
     // missing tRNAs
@@ -217,15 +203,16 @@ DISCREPANCY_SUMMARIZE(COUNT_TRNAS)
         if (!desired_aaList[i].num_expected) {
             continue;
         }
-        size_t n = m_Objs.find(desired_aaList[i].long_symbol) == m_Objs.end() ? 0 : m_Objs[desired_aaList[i].long_symbol].size();
+        const size_t n = m_Objs[desired_aaList[i].long_symbol].GetObjects().size();
         if (n >= desired_aaList[i].num_expected) {
             continue;
         }
-        CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), "sequence "+short_name+" is missing trna-"+desired_aaList[i].long_symbol));
-        item->AddDetails(bioseq);
-        AddItem(*item);
+        CNcbiOstrstream ss;
+        ss << "sequence " << short_name << " is missing trna-" << desired_aaList[i].long_symbol;
+        m_Objs[kEmptyStr][CNcbiOstrstreamToString(ss)].Add(*bioseq);
     }
 
+    m_ReportItems = m_Objs[kEmptyStr].Export(GetName(), false)->GetSubitems();
     m_Objs.clear();
 }
 
@@ -247,8 +234,7 @@ DISCREPANCY_CASE(COUNT_RRNAS, CSeqFeatData, eNormal, "Count rRNAs")
     if (countBS != context.GetCountBioseq()) {
         countBS = context.GetCountBioseq();
         Summarize();
-        CRef<CDiscrepancyObject> r(new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), false));
-        Add(kEmptyStr, *r);
+        m_Objs[kEmptyStr].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), false));
     }
 
     string aa;
@@ -257,9 +243,7 @@ DISCREPANCY_CASE(COUNT_RRNAS, CSeqFeatData, eNormal, "Count rRNAs")
     if (n != string::npos) {
         aa = aa.substr(n+1); // is there any better way to get the aminoacid name?
     }
-
-    CRef<CDiscrepancyObject> r(new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), false));
-    Add(aa, *r);
+    m_Objs[aa].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), false), false);
 }
 
 
@@ -269,41 +253,41 @@ DISCREPANCY_SUMMARIZE(COUNT_RRNAS)
         return;
     }
 
-    CRef<CReportObj> bioseq = m_Objs[kEmptyStr][0];
+    CRef<CReportObj> bioseq = m_Objs[kEmptyStr].GetObjects()[0];
     string short_name = bioseq->GetShort();
+    m_Objs[kEmptyStr].clear();
 
     size_t total = 0;
     // count rRNAs
-    NON_CONST_ITERATE (TReportObjectMap, J, m_Objs) {
-        if (!NStr::IsBlank(J->first)) {
-            total += J->second.size();
+    CReportNode::TNodeMap& map = m_Objs.GetMap();
+    NON_CONST_ITERATE (CReportNode::TNodeMap, it, map) {
+        if (!NStr::IsBlank(it->first)) {
+            total += it->second->GetObjects().size();
         }
     }
     CNcbiOstrstream ss;
-    ss << "sequence " << short_name << " has " << total << " rRNA feature" << (total==1 ? kEmptyStr : "s");
-    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), CNcbiOstrstreamToString(ss)));
-    item->AddDetails(bioseq);
-    AddItem(*item);
+    ss << " sequence " << short_name << " has " << total << " rRNA feature" << (total==1 ? kEmptyStr : "s");
+    m_Objs[kEmptyStr][CNcbiOstrstreamToString(ss)].Add(*bioseq);
 
     // duplicated rRNA names
-    NON_CONST_ITERATE (TReportObjectMap, J, m_Objs) {
-        if (NStr::IsBlank(J->first) || J->second.size() <= 1) {
+    NON_CONST_ITERATE (CReportNode::TNodeMap, it, map) {
+        if (NStr::IsBlank(it->first) || it->second->GetObjects().size() <= 1) {
             continue;
         }
         CNcbiOstrstream ss;
-        ss << J->second.size() << " rRNA features on " << short_name << " have the same name (" << J->first << ")";
-        CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), CNcbiOstrstreamToString(ss)));
-        item->AddDetails(bioseq);
-        item->AddDetails(J->second);
-        AddItem(*item);
+        ss << it->second->GetObjects().size() << " rRNA features on " << short_name << " have the same name (" << it->first << ")";
+        m_Objs[kEmptyStr][CNcbiOstrstreamToString(ss)].Add(*bioseq);
+        m_Objs[kEmptyStr][CNcbiOstrstreamToString(ss)].Add(m_Objs[it->first].GetObjects(), false);
     }
+
+    m_ReportItems = m_Objs[kEmptyStr].Export(GetName(), false)->GetSubitems();
+    m_Objs.clear();
 }
 
 
 DISCREPANCY_ALIAS(COUNT_RRNAS, FIND_DUP_RRNAS);
 
 /*
-
 // OVERLAPPING_CDS
 
 static bool StrandsMatch(const CSeq_loc& loc1, const CSeq_loc& loc2)    //
@@ -733,7 +717,7 @@ DISCREPANCY_AUTOFIX(CONTAINED_CDS)
 }
 */
 
-
+/*
 DISCREPANCY_CASE(DUMMY_NORMAL, CSeq_inst, eNormal, "Dummy entry for the debug purpose")
 {
 }
@@ -781,7 +765,7 @@ DISCREPANCY_SUMMARIZE(DUMMY_ALL)
     CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), GetName()));
     AddItem(*item);
 }
-
+*/
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

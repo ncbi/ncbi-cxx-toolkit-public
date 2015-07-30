@@ -58,6 +58,7 @@ protected:
     void x_ProcessFile(const string& filename);
     void x_ProcessAll(const string& outname);
     void x_Output(const string& filename, const vector<CRef<CDiscrepancyCase> >& tests);
+    void x_RecursiveOutput(CNcbiOfstream& out, const TReportItemList& list);
 
     CScope m_Scope;
     string m_SuspectRules;
@@ -289,6 +290,28 @@ void CDiscRepApp::x_ProcessAll(const string& outname)
 }
 
 
+void CDiscRepApp::x_RecursiveOutput(CNcbiOfstream& out, const TReportItemList& list)
+{
+    ITERATE(TReportItemList, it, list) {
+        out << (*it)->GetTitle() << ": " << (*it)->GetMsg() << "\n";
+        cout << (*it)->GetTitle() << ": " << (*it)->GetMsg() << "\n";        // TODO: remove from the final version
+        TReportItemList subs = (*it)->GetSubitems();
+        if (!subs.empty()) {
+            x_RecursiveOutput(out, subs);
+        }
+        else {
+            TReportObjectList det = (*it)->GetDetails();
+            ITERATE(TReportObjectList, obj, det) {
+                out << (*obj)->GetText() << "\n";
+                cout << (*obj)->GetText() << "\n";  // TODO: remove from the final version
+            }
+            out << "\n";
+            cout << "\n";                           // TODO: remove from the final version
+        }
+    }
+}
+
+
 void CDiscRepApp::x_Output(const string& filename, const vector<CRef<CDiscrepancyCase> >& tests)
 {
     bool summary = GetArgs()["S"].AsBoolean();
@@ -308,17 +331,7 @@ void CDiscRepApp::x_Output(const string& filename, const vector<CRef<CDiscrepanc
     out << "\nDetailed Report\n\n";
     ITERATE(vector<CRef<CDiscrepancyCase> >, tst, tests) {
         TReportItemList rep = (*tst)->GetReport();
-        ITERATE(TReportItemList, it, rep) {
-            out << (*it)->GetTitle() << ": " << (*it)->GetMsg() << "\n";
-            cout << (*it)->GetTitle() << ": " << (*it)->GetMsg() << "\n";        // TODO: remove from the final version
-            TReportObjectList det = (*it)->GetDetails();
-            ITERATE(TReportObjectList, obj, det) {
-                out << (*obj)->GetText() << "\n";
-                cout << (*obj)->GetText() << "\n";  // TODO: remove from the final version
-            }
-            out << "\n";
-            cout << "\n";                           // TODO: remove from the final version
-        }
+        x_RecursiveOutput(out, rep);
     }
 }
 

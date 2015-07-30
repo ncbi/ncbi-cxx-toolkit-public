@@ -121,6 +121,8 @@ public:
 };
 
 
+class CReportNode;
+
 class CDiscrepancyItem : public CReportItem
 {
 public:
@@ -129,32 +131,53 @@ public:
     string GetMsg(void) const { return m_Msg;}
     TReportObjectList GetDetails(void) const { return m_Objs;}
     TReportItemList GetSubitems(void) const { return m_Subs;}
-    void SetDetails(const TReportObjectList& list){ m_Objs = list;}
-    void AddDetails(const CRef<CReportObj> obj){ m_Objs.push_back(obj);}
-    void AddDetails(const vector<CRef<CReportObj> >& v){ m_Objs.insert(m_Objs.end(), v.begin(), v.end());}
 protected:
     string m_Title;
     string m_Msg;
     TReportObjectList m_Objs;
     TReportItemList m_Subs;
+friend class CReportNode;
 };
 
 
 /// CDiscrepancyCore and CDiscrepancyVisitor - parents for CDiscrepancyCase_* classes
 
 class CDiscrepancyContext;
-typedef map<string, vector<CRef<CReportObj> > > TReportObjectMap;
+//typedef map<string, vector<CRef<CReportObj> > > TReportObjectMap; // sema: dont forget to remove it!
+
+class CReportNode : public CObject
+{
+public:
+    typedef map<string, CRef<CReportNode> > TNodeMap;
+    CReportNode(const string& name = kEmptyStr) : m_Name(name) {}
+    CReportNode& operator[](const string& name);
+    void SetFatal(bool b = true) { m_Fatal = b; }
+    void SetAutofix(bool b = true) { m_Autofix = b; }
+    static void Add(TReportObjectList& list, CReportObj& obj, bool unique = true);
+    void Add(CReportObj& obj, bool unique = true) { Add(m_Objs, obj, unique); }
+    static void Add(TReportObjectList& list, TReportObjectList& objs, bool unique = true);
+    void Add(TReportObjectList& objs, bool unique = true) { Add(m_Objs, objs, unique); }
+    TReportObjectList& GetObjects() { return m_Objs; }
+    TNodeMap& GetMap() { return m_Map; }
+    CRef<CReportItem> Export(const string& test, bool unique = true);
+    bool empty() { return m_Map.empty() && m_Objs.empty(); }
+    void clear() { m_Map.clear(); m_Objs.clear(); }
+protected:
+    string m_Name;
+    TNodeMap m_Map;
+    TReportObjectList m_Objs;
+    bool m_Fatal;
+    bool m_Autofix;
+};
+
 
 class CDiscrepancyCore : public CDiscrepancyCase
 {
 public:
     void Summarize(void){}
     virtual TReportItemList GetReport(void) const { return m_ReportItems;}
-    void AddItem(CReportItem& item){ m_ReportItems.push_back(CRef<CReportItem>(&item));}
-    void Add(const string& key, CDiscrepancyObject& obj);
-    void AddUnique(const string& key, CDiscrepancyObject& obj);
 protected:
-    TReportObjectMap m_Objs;
+    CReportNode m_Objs;
     TReportItemList m_ReportItems;
 };
 

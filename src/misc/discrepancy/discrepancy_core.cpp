@@ -107,6 +107,61 @@ vector<string> GetDiscrepancyAliases(const string& name)
 }
 
 
+CReportNode& CReportNode::operator[](const string& name)
+{
+    if (m_Map.find(name) == m_Map.end()) {
+        m_Map[name] = CRef<CReportNode>(new CReportNode(name));
+    }
+    return *m_Map[name];
+}
+
+
+void CReportNode::Add(TReportObjectList& list, CReportObj& obj, bool unique)
+{
+    if (unique) {
+        ITERATE(TReportObjectList, it, list) {
+            if (static_cast<CDiscrepancyObject&>(obj).Equal(**it)) {
+                return;
+            }
+        }
+    }
+    list.push_back(CRef<CReportObj>(&obj));
+}
+
+
+void CReportNode::Add(TReportObjectList& list, TReportObjectList& objs, bool unique)
+{
+    NON_CONST_ITERATE (TReportObjectList, it, objs) {
+        Add(list, **it, unique);
+    }
+}
+
+
+CRef<CReportItem> CReportNode::Export(const string& test, bool unique)
+{
+    TReportObjectList objs = m_Objs;
+    TReportItemList subs;
+    NON_CONST_ITERATE (TNodeMap, it, m_Map) {
+        CRef<CReportItem> sub = it->second->Export(test, unique);
+        subs.push_back(sub);
+        TReportObjectList details = sub->GetDetails();
+        NON_CONST_ITERATE (TReportObjectList, ob, details) {
+            Add(objs, **ob, unique);
+        }
+    }
+    string str = m_Name;
+    NStr::TruncateSpacesInPlace(str);
+    NStr::ReplaceInPlace(str, "[n]", NStr::Int8ToString(objs.size()));
+    NStr::ReplaceInPlace(str, "[s]", objs.size() == 1 ? "" : "s");
+    NStr::ReplaceInPlace(str, "[S]", objs.size() == 1 ? "s" : "");
+    NStr::ReplaceInPlace(str, "[is]", objs.size() == 1 ? "is" : "are");
+    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(test, str));
+    item->m_Subs = subs;
+    item->m_Objs = objs;
+    return CRef<CReportItem>((CReportItem*)item);
+}
+
+
 template<typename T> void CDiscrepancyVisitor<T>::Call(const T& obj, CDiscrepancyContext& context)
 {
     try {
@@ -114,25 +169,8 @@ template<typename T> void CDiscrepancyVisitor<T>::Call(const T& obj, CDiscrepanc
     }
     catch (CException& e) {
         string ss = "EXCEPTION caught: "; ss += e.what();
-        AddItem(*(new CDiscrepancyItem(GetName(), ss)));
+        m_Objs[ss].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), false));
     }
-}
-
-
-void CDiscrepancyCore::Add(const string& s, CDiscrepancyObject& obj)
-{
-    m_Objs[s].push_back(CRef<CReportObj>(&obj));
-}
-
-
-void CDiscrepancyCore::AddUnique(const string& s, CDiscrepancyObject& obj)
-{
-    ITERATE(TReportObjectList, it, m_Objs[s]) {
-        if (obj.Equal(**it)) {
-            return;
-        }
-    }
-    m_Objs[s].push_back(CRef<CReportObj>(&obj));
 }
 
 
@@ -185,7 +223,7 @@ void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
 #define HANDLE_DISCREPANCY_TYPE(type) \
         else if (m_Enable_##type && CType<type>::Match(i)) {                                    \
             const type& obj = *CType<type>::Get(i);                                             \
-            NON_CONST_ITERATE(vector<CDiscrepancyVisitor<type>* >, it, m_All_##type) {          \
+            NON_CONST_ITERATE (vector<CDiscrepancyVisitor<type>* >, it, m_All_##type) {         \
                 Call(**it, obj);                                                                \
             }                                                                                   \
         }
@@ -197,7 +235,7 @@ void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
 
 void CDiscrepancyContext::Summarize()
 {
-    NON_CONST_ITERATE(vector<CRef<CDiscrepancyCase> >, it, m_Tests) {
+    NON_CONST_ITERATE (vector<CRef<CDiscrepancyCase> >, it, m_Tests) {
         (*it)->Summarize();
     }
 }

@@ -5279,11 +5279,62 @@ static bool DoesObjectMatchConstraintChoiceSet(const CDiscrepancyContext& contex
 
 static string GetRuleText(const CSuspect_rule& rule)
 {
-    return "...";
+    static const char* rule_type[] = {
+        "None",
+        "Typo",
+        "Putative Typo",
+        "Quick fix",
+        "Organelles not appropriate in prokaryote",
+        "Suspicious phrase; should this be nonfunctional?",
+        "May contain database identifier more appropriate in note; remove from product name",
+        "Remove organism from product name",
+        "Possible parsing error or incorrect formatting; remove inappropriate symbols",
+        "Implies evolutionary relationship; change to -like protein",
+        "Consider adding 'protein' to the end of the product name",
+        "Correct the name or use 'hypothetical protein'",
+        "Use American spelling",
+        "Use short product name instead of descriptive phrase",
+        "use protein instead of gene as appropriate"
+    };
+    return rule_type[rule.GetRule_type()];
+}
+
+
+static string GetRuleMatch(const CSuspect_rule& rule)
+{
+    if (rule.CanGetFind()) {
+        const CSearch_func& find = rule.GetFind();
+        switch (find.Which()) {
+            case CSearch_func::e_String_constraint:
+                return string("[n] feature[s] contain[S] \"") + find.GetString_constraint().GetMatch_text() + "\"";
+            case CSearch_func::e_Contains_plural:
+                return "[n] feature[s] violate[S] e_Contains_plural !!!";
+            case CSearch_func::e_N_or_more_brackets_or_parentheses:
+                return "[n] feature[s] violate[S] e_N_or_more_brackets_or_parentheses !!!";
+            case CSearch_func::e_Three_numbers:
+                return "[n] feature[s] contain[S] three or more numbers together, but not contain[S] \'methyltransferas\'";
+            case CSearch_func::e_Underscore:
+                return "[n] feature[s] contain[S] underscore";
+            case CSearch_func::e_Prefix_and_numbers:
+                return "[n] feature[s] violate[S] e_Prefix_and_numbers !!!";
+            case CSearch_func::e_All_caps:
+                return "[n] feature[s] violate[S] e_All_caps !!!";
+            case CSearch_func::e_Unbalanced_paren:
+                return "[n] feature[s] violate[S] e_Unbalanced_paren !!!";
+            case CSearch_func::e_Too_long:
+                return "[n] feature[s] violate[S] e_Too_long !!!";
+            case CSearch_func::e_Has_term:
+                return "[n] feature[s] violate[S] e_Has_term !!!";
+            default:
+                break;
+        }
+    }
+    return "[n] feature[s] violate[S] some other misterious rule!";
 }
 
 
 ///////////////////////////////////// SUSPECT_PRODUCT_NAMES
+
 
 DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eNormal, "Suspect Product Name")
 {
@@ -5307,32 +5358,18 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eNormal, "Suspect Product 
         }
         if ((*rule)->CanGetFeat_constraint()) {
             const CConstraint_choice_set& constr = (*rule)->GetFeat_constraint();
-            //if (!DoesObjectMatchConstraintChoiceSet(*context.GetCurrentSeq_feat(), constr)) continue;
+            if (!DoesObjectMatchConstraintChoiceSet(context, constr)) continue;
         }
-        CRef<CDiscrepancyObject> r(new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), false));
-        Add(kEmptyStr, *r);
-
-//cout << "found! " << GetRuleText(**rule) << "\t:\t" << prot_name << "\n";
+        CReportNode& node = m_Objs["[n] product name[s] contain[S] suspect phrase[s] or character[s]"][GetRuleText(**rule)][GetRuleMatch(**rule)];
+        node.Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), false));
+        node.SetFatal((*rule)->GetFatal());
     }
 }
 
 
 DISCREPANCY_SUMMARIZE(SUSPECT_PRODUCT_NAMES)
 {
-    if (m_Objs.empty()) {
-        return;
-    }
-    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), GetName()));
-    item->SetDetails(m_Objs[kEmptyStr]);
-    AddItem(*item);
-
-/*
-    CNcbiOstrstream ss;
-    ss << GetName() << ": " << m_Objs.size() << " nucleotide Bioseq" << (m_Objs.size()==1 ? " is" : "s are") << " present";
-    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(CNcbiOstrstreamToString(ss)));
-    item->SetDetails(m_Objs);
-    AddItem(CRef<CReportItem>(item.Release()));
-*/
+    m_ReportItems = m_Objs.Export(GetName())->GetSubitems();
 }
 
 
@@ -5367,32 +5404,18 @@ DISCREPANCY_CASE(TEST_ORGANELLE_PRODUCTS, CSeqFeatData, eNormal, "Organelle prod
         }
         if ((*rule)->CanGetFeat_constraint()) {
             const CConstraint_choice_set& constr = (*rule)->GetFeat_constraint();
-            //if (!DoesObjectMatchConstraintChoiceSet(*context.GetCurrentSeq_feat(), constr)) continue;
+            if (!DoesObjectMatchConstraintChoiceSet(context, constr)) continue;
         }
-        CRef<CDiscrepancyObject> r(new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), false));
-        Add(kEmptyStr, *r);
-
-cout << "found! " << GetRuleText(**rule) << "\t" << prot_name << "\n";
+        CReportNode& node = m_Objs["[n] organelle product name[s] contain[S] suspect phrase[s] or character[s]"][GetRuleText(**rule)][GetRuleMatch(**rule)];
+        node.Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), false));
+        node.SetFatal((*rule)->GetFatal());
     }
 }
 
 
 DISCREPANCY_SUMMARIZE(TEST_ORGANELLE_PRODUCTS)
 {
-    if (m_Objs.empty()) {
-        return;
-    }
-    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), GetName()));
-    item->SetDetails(m_Objs[kEmptyStr]);
-    AddItem(*item);
-
-/*
-    CNcbiOstrstream ss;
-    ss << GetName() << ": " << m_Objs.size() << " nucleotide Bioseq" << (m_Objs.size()==1 ? " is" : "s are") << " present";
-    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(CNcbiOstrstreamToString(ss)));
-    item->SetDetails(m_Objs);
-    AddItem(CRef<CReportItem>(item.Release()));
-*/
+    m_ReportItems = m_Objs.Export(GetName())->GetSubitems();
 }
 
 
