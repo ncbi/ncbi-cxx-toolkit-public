@@ -249,7 +249,7 @@ int CBlastFormatterApp::PrintFormattedOutput(void)
     const string& kRid = args[kArgRid].HasValue() 
         ? args[kArgRid].AsString() : kEmptyStr;
     CNcbiOstream& out = args[kArgOutput].AsOutputFile();
-    CFormattingArgs fmt_args;
+    CFormattingArgs fmt_args(false, CFormattingArgs::eIsSAM) ;
 
     CRef<CBlastOptionsHandle> opts_handle = m_RmtBlast->GetSearchOptions();
     CBlastOptions& opts = opts_handle->SetOptions();
