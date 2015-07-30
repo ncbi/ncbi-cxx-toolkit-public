@@ -943,7 +943,7 @@ NLM_EXTERN Nlm_Int8  LIBCALL Nlm_StringToInt8(const char* str, const char** endp
     Nlm_Uint8 result = s_StringToUint8(str, endptr, &sign);
     if (*endptr) {
         /* Check for overflow */
-        if (result > (sign ? (Nlm_Uint8)(INT8_MAX + 1)
+        if (result > (sign ? (Nlm_Uint8)(INT8_MAX) + 1
                            : (Nlm_Uint8)(INT8_MAX)))
             *endptr = 0;            
     }
