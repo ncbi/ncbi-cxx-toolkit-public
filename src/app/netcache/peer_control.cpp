@@ -438,8 +438,8 @@ CNCPeerControl::x_AssignClientConn(CNCActiveClientHub* hub,
     if (!conn) {
         conn = x_CreateNewConn(false);
         if (!conn) {
-            hub->SetErrMsg(m_InThrottle? "Connection is throttled"
-                                       : "Cannot connect to peer");
+            hub->SetErrMsg(m_InThrottle? "ERR:Connection is throttled"
+                                       : "ERR:Cannot connect to peer");
             hub->SetStatus(eNCHubError);
             return false;
         }
@@ -1107,7 +1107,7 @@ CNCPeerControl::GetReadyForShutdown(void)
         while (!m_Clients.empty()) {
             CNCActiveClientHub* hub = m_Clients.front();
             m_Clients.pop_front();
-            hub->SetErrMsg("Server is shutting down");
+            hub->SetErrMsg(GetMessageByStatus(eStatus_ShuttingDown));
             hub->SetStatus(eNCHubError);
             result = false;
         }

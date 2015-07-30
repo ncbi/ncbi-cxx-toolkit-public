@@ -3105,7 +3105,7 @@ CNCMessageHandler::x_ProxyToNextPeer(void)
 
     // Either there's no servers to execute this command on or all servers were
     // tried and some error was the result from all of them.
-    SRV_LOG(Warning, "Got error on all peer servers");
+    SRV_LOG(Warning, "Got error on all peer servers, LastPeerError is " << m_LastPeerError);
     if (m_LastPeerError.empty())
         m_LastPeerError = "ERR:Cannot execute command on peer servers";
     GetDiagCtx()->SetRequestStatus( GetStatusByMessage(m_LastPeerError, eStatus_PeerError));
