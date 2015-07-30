@@ -103,6 +103,9 @@ struct SStringNumericValues
 };
 
 
+// Macro to silence GCC's __wur (warn unused result)
+#define _no_warning(expr)  while ( expr ) break
+
 // Test errno value, to check that 'errno' changes inside conversion methods.
 static const int kTestErrno = 555;
 #define CHECK_ERRNO  BOOST_CHECK(errno != kTestErrno)
@@ -4000,7 +4003,7 @@ BOOST_AUTO_TEST_CASE(s_StringToDoubleSpeed)
             sw.Restart();
             for ( int i = 0; i < COUNT; ++i ) {
                 char* errptr;
-                strtod(s2, &errptr);
+                _no_warning(strtod(s2, &errptr));
             }
             time = sw.Elapsed();
             LOG_POST("strtod("<<ss[t]<<") time: " << time);
