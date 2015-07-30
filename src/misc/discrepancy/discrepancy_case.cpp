@@ -717,7 +717,7 @@ DISCREPANCY_AUTOFIX(CONTAINED_CDS)
 }
 */
 
-/*
+
 DISCREPANCY_CASE(DUMMY_NORMAL, CSeq_inst, eNormal, "Dummy entry for the debug purpose")
 {
 }
@@ -725,9 +725,8 @@ DISCREPANCY_CASE(DUMMY_NORMAL, CSeq_inst, eNormal, "Dummy entry for the debug pu
 
 DISCREPANCY_SUMMARIZE(DUMMY_NORMAL)
 {
-    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), GetName()));
-    //item->SetDetails(m_Objs[kEmptyStr]);
-    AddItem(*item);
+    m_Objs[GetName()][GetName()][GetName()];
+    m_ReportItems = m_Objs.Export(GetName())->GetSubitems();
 }
 
 
@@ -738,8 +737,8 @@ DISCREPANCY_CASE(DUMMY_ONCALLER, CSeq_inst, eOncaller, "Dummy entry for the debu
 
 DISCREPANCY_SUMMARIZE(DUMMY_ONCALLER)
 {
-    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), GetName()));
-    AddItem(*item);
+    m_Objs[GetName()][GetName()][GetName()];
+    m_ReportItems = m_Objs.Export(GetName())->GetSubitems();
 }
 
 
@@ -750,8 +749,8 @@ DISCREPANCY_CASE(DUMMY_MEGA, CSeq_inst, eMega, "Dummy entry for the debug purpos
 
 DISCREPANCY_SUMMARIZE(DUMMY_MEGA)
 {
-    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), GetName()));
-    AddItem(*item);
+    m_Objs[GetName()][GetName()][GetName()];
+    m_ReportItems = m_Objs.Export(GetName())->GetSubitems();
 }
 
 
@@ -762,10 +761,10 @@ DISCREPANCY_CASE(DUMMY_ALL, CSeq_inst, eAll, "Dummy entry for the debug purpose"
 
 DISCREPANCY_SUMMARIZE(DUMMY_ALL)
 {
-    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), GetName()));
-    AddItem(*item);
+    m_Objs[GetName()][GetName()][GetName()];
+    m_ReportItems = m_Objs.Export(GetName())->GetSubitems();
 }
-*/
+
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
