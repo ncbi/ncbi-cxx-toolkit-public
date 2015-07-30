@@ -761,6 +761,7 @@ void CBioseq_EditHandle::x_Detach(void) const
 
 void CBioseq_EditHandle::ResetId(void) const
 {
+    CScope_Impl::TConfWriteLockGuard guard(x_GetScopeImpl().m_ConfLock);
     CCommandProcessor processor(x_GetScopeImpl());
     processor.run(new CResetIds_EditCommand(*this));
 }
@@ -768,19 +769,17 @@ void CBioseq_EditHandle::ResetId(void) const
 
 bool CBioseq_EditHandle::AddId(const CSeq_id_Handle& id) const
 {
-    typedef CAddId_EditCommand TCommand;
+    CScope_Impl::TConfWriteLockGuard guard(x_GetScopeImpl().m_ConfLock);
     CCommandProcessor processor(x_GetScopeImpl());
-    return processor.run(new TCommand(*this,id));
-    //    return x_GetScopeInfo().AddId(id);
+    return processor.run(new CAddId_EditCommand(*this,id));
 }
 
 
 bool CBioseq_EditHandle::RemoveId(const CSeq_id_Handle& id) const
 {
-    typedef CRemoveId_EditCommand TCommand;
+    CScope_Impl::TConfWriteLockGuard guard(x_GetScopeImpl().m_ConfLock);
     CCommandProcessor processor(x_GetScopeImpl());
-    return processor.run(new TCommand(*this,id));
-    //    return x_GetScopeInfo().RemoveId(id);
+    return processor.run(new CRemoveId_EditCommand(*this,id));
 }
 
 

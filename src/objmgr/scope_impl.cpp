@@ -945,23 +945,23 @@ void CScope_Impl::x_ClearCacheOnNewData(const TIds& seq_ids,
             while ( it1 != seq_ids.end() && it2 != m_Seq_idMap.end() ) {
                 if ( *it1 < it2->first ) {
                     ++it1;
+                    continue;
                 }
                 else if ( it2->first < *it1 ) {
                     ++it2;
+                    continue;
                 }
-                else {
-                    if ( it2->second.m_Bioseq_Info ) {
-                        conflict_id = &*it1;
-                        CBioseq_ScopeInfo& binfo = *it2->second.m_Bioseq_Info;
-                        if ( !binfo.HasBioseq() ) {
-                            // try to resolve again
-                            binfo.m_SynCache.Reset(); // break circular link
-                            it2->second.m_Bioseq_Info.Reset();
-                        }
+                if ( it2->second.m_Bioseq_Info ) {
+                    CBioseq_ScopeInfo& binfo = *it2->second.m_Bioseq_Info;
+                    if ( !binfo.HasBioseq() ) {
+                        // try to resolve again
+                        binfo.m_SynCache.Reset(); // break circular link
+                        it2->second.m_Bioseq_Info.Reset();
                     }
-                    ++it1;
-                    ++it2;
+                    conflict_id = &*it1;
                 }
+                ++it1;
+                ++it2;
             }
         }
         else if ( add_count < old_count ) {
@@ -970,27 +970,31 @@ void CScope_Impl::x_ClearCacheOnNewData(const TIds& seq_ids,
                 TSeq_idMap::iterator it2 = m_Seq_idMap.find(*it1);
                 if ( it2 != m_Seq_idMap.end() &&
                      it2->second.m_Bioseq_Info ) {
-                    conflict_id = &*it1;
                     CBioseq_ScopeInfo& binfo = *it2->second.m_Bioseq_Info;
                     if ( !binfo.HasBioseq() ) {
                         // try to resolve again
                         binfo.m_SynCache.Reset(); // break circular link
                         it2->second.m_Bioseq_Info.Reset();
                     }
+                    conflict_id = &*it1;
                 }
             }
         }
         else {
             // lookup in add
             NON_CONST_ITERATE ( TSeq_idMap, it2, m_Seq_idMap ) {
-                if ( it2->second.m_Bioseq_Info &&
-                     binary_search(seq_ids.begin(), seq_ids.end(), it2->first) ) {
-                    conflict_id = &it2->first;
-                    CBioseq_ScopeInfo& binfo = *it2->second.m_Bioseq_Info;
-                    if ( !binfo.HasBioseq() ) {
-                        // try to resolve again
-                        binfo.m_SynCache.Reset(); // break circular link
-                        it2->second.m_Bioseq_Info.Reset();
+                if ( it2->second.m_Bioseq_Info ) {
+                    TIds::const_iterator it1 = lower_bound(seq_ids.begin(),
+                                                           seq_ids.end(),
+                                                           it2->first);
+                    if ( it1 != seq_ids.end() ) {
+                        CBioseq_ScopeInfo& binfo = *it2->second.m_Bioseq_Info;
+                        if ( !binfo.HasBioseq() ) {
+                            // try to resolve again
+                            binfo.m_SynCache.Reset(); // break circular link
+                            it2->second.m_Bioseq_Info.Reset();
+                        }
+                        conflict_id = &*it1;
                     }
                 }
             }
@@ -1095,6 +1099,41 @@ void CScope_Impl::x_ClearCacheOnRemoveData(const CTSE_Info* old_tse)
             }
         }
         ++it;
+    }
+}
+
+
+void CScope_Impl::x_ClearCacheOnRemoveSeqId(const CSeq_id_Handle& id,
+                                            CBioseq_ScopeInfo& seq)
+{
+    if ( id ) {
+        // clear erased id
+        TSeq_idMap::iterator it = m_Seq_idMap.find(id);
+        if ( it != m_Seq_idMap.end() &&
+             &*it->second.m_Bioseq_Info == &seq ) {
+            m_Seq_idMap.erase(it);
+        }
+    }
+    else {
+        // clear all ids
+        ITERATE ( TIds, id_it, seq.GetIds() ) {
+            TSeq_idMap::iterator it = m_Seq_idMap.find(*id_it);
+            if ( it != m_Seq_idMap.end() &&
+                 &*it->second.m_Bioseq_Info == &seq ) {
+                m_Seq_idMap.erase(it);
+            }
+        }
+    }
+    if ( seq.m_SynCache ) {
+        // clear synonyms
+        ITERATE ( CSynonymsSet, id_it, *seq.m_SynCache ) {
+            TSeq_idMap::iterator it = m_Seq_idMap.find(*id_it);
+            if ( it != m_Seq_idMap.end() &&
+                 &*it->second.m_Bioseq_Info == &seq ) {
+                m_Seq_idMap.erase(it);
+            }
+        }
+        seq.m_SynCache.Reset();
     }
 }
 

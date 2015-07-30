@@ -1861,6 +1861,7 @@ void CBioseq_ScopeInfo::ResetId(void)
 {
     _ASSERT(HasObject());
     const_cast<CBioseq_Info&>(GetObjectInfo()).ResetId();
+    x_GetScopeImpl().x_ClearCacheOnRemoveSeqId(CSeq_id_Handle(), *this);
     ITERATE ( TIds, it, GetIds() ) {
         x_GetTSE_ScopeInfo().x_UnindexBioseq(*it, this);
     }
@@ -1890,8 +1891,9 @@ bool CBioseq_ScopeInfo::RemoveId(const CSeq_id_Handle& id)
     }
     TIds::iterator it = find(m_Ids.begin(), m_Ids.end(), id);
     _ASSERT(it != m_Ids.end());
-    m_Ids.erase(it);
+    x_GetScopeImpl().x_ClearCacheOnRemoveSeqId(id, *this);
     x_GetTSE_ScopeInfo().x_UnindexBioseq(id, this);
+    m_Ids.erase(it);
     return true;
 }
 

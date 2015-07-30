@@ -433,6 +433,8 @@ public:
 private:
     void x_ClearAnnotCache(void);
     void x_ClearCacheOnNewAnnot(const CTSE_Info& new_tse);
+    void x_ClearCacheOnRemoveSeqId(const CSeq_id_Handle& id,
+                                   CBioseq_ScopeInfo& seq);
     void x_ClearCacheOnRemoveAnnot(const CTSE_Info& old_tse);
 
     CRef<CDataSource_ScopeInfo>
