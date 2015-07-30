@@ -617,22 +617,65 @@ Uint8 CEutilsClient::Search(const string& db,
 
 void CEutilsClient::Search(const string& db,
                            const string& term,
-                           CNcbiOstream& ostr)
+                           CNcbiOstream& ostr,
+                           EUseHistory use_history)
 {
-    string params;
-    params += "db=" + NStr::URLEncode(db);
-    params += "&term=" + NStr::URLEncode(term);
-    params += "&retmode=xml";
+    ostringstream oss;
+    oss << "db=" << NStr::URLEncode(db)
+        << "&term=" << NStr::URLEncode(term)
+        << "&retmode=xml";
     if (m_RetMax) {
-        params += "&retmax=" + NStr::NumericToString(m_RetMax);
+        oss << "&retmax="
+            << m_RetMax;
     }
 
+    if ( use_history == eUseHistoryEnabled ) {
+        oss << "&usehistory=y";
+    }
+
+    x_Get("/entrez/eutils/esearch.fcgi", oss.str(), ostr);
+}
+
+void CEutilsClient::SearchHistory(const string& db,
+                                  const string& term,
+                                  const string& web_env,
+                                  int query_key,
+                                  int retstart,
+                                  CNcbiOstream& ostr)
+{
+    ostringstream oss;
+    oss << "db=" << NStr::URLEncode(db)
+        << "&term=" << NStr::URLEncode(term)
+        << "&retmode=xml";
+    if ( retstart ) {
+        oss << "&retstart="
+            << retstart;
+    }
+    if (m_RetMax) {
+        oss << "&retmax="
+            << m_RetMax;
+    }
+
+    oss << "&usehistory=y"
+        << "&WebEnv="
+        << web_env;
+    if ( query_key > 0 ) {
+        oss << "&query_key="
+            << query_key;
+    } 
+
+    x_Get("/entrez/eutils/esearch.fcgi", oss.str(), ostr);
+}
+
+void CEutilsClient::x_Get(string const& path, 
+                          string const& params, 
+                          CNcbiOstream& ostr)
+{
     bool success = false;
     m_Url.clear();
     m_Time.clear();
     for (int retries = 0;  retries < 10;  ++retries) {
         try {
-            string path = "/entrez/eutils/esearch.fcgi";
             CConn_HttpStream istr(m_HostName,
                                   path);
             m_Url.push_back(x_BuildUrl(m_HostName, path, params));
@@ -655,8 +698,12 @@ void CEutilsClient::Search(const string& db,
     }
 
     if ( !success ) {
-        NCBI_THROW(CException, eUnknown,
-                   "failed to execute esearch request: " + term);
+        ostringstream msg;
+        msg << "Failed to execute request: "
+            << path
+            << "?"
+            << params;
+        NCBI_THROW(CException, eUnknown, msg.str());
     }
 }
 
@@ -796,23 +843,40 @@ void CEutilsClient::Link(const string& db_from,
     }
 }
 
+void CEutilsClient::LinkHistory(const string& db_from,
+                                const string& db_to,
+                                const string& web_env,
+                                int query_key,
+                                CNcbiOstream& ostr)
+{
+    std::ostringstream oss;
+    
+    oss << "db=" << NStr::URLEncode(db_to)
+        << "&dbfrom=" << NStr::URLEncode(db_from)
+        << "&retmode=xml"
+        << "&WebEnv=" << web_env 
+        << "&query_key=" << query_key;
+
+    x_Get("/entrez/eutils/elink.fcgi", oss.str(), ostr);
+}
 
 void CEutilsClient::Summary(const string& db,
                             const vector<int>& uids,
-                            xml::document& docsums)
+                            xml::document& docsums,
+                            const string version)
 {
-    string params;
-    params += "db=" + NStr::URLEncode(db);
-    params += "&retmode=xml";
-
-    string s;
-    ITERATE (vector<int>, it, uids) {
-        if ( !s.empty() ) {
-            s += ",";
-        }
-        s += NStr::NumericToString(*it);
-    }
-    params += "&id=" + s;
+    ostringstream oss;
+    oss << "db=" << NStr::URLEncode(db)
+        << "&retmode=xml";
+    if ( !version.empty() ) {
+        oss << "&version=" 
+            << version;
+    } 
+    oss << "&id=";
+    std::copy(uids.begin(), uids.end(), std::ostream_iterator<int>(oss, ",") );
+    string params = oss.str();
+    // remove trailing comma
+    params.resize(params.size() - 1);
 
     bool success = false;
     m_Url.clear();
@@ -862,6 +926,35 @@ void CEutilsClient::Summary(const string& db,
     }
 }
 
+void CEutilsClient::SummaryHistory(const string& db,
+                                   const string& web_env,
+                                   int query_key,
+                                   int retstart,
+                                   const string version,
+                                   CNcbiOstream& ostr)
+{
+    ostringstream oss;
+    oss << "db=" << NStr::URLEncode(db)
+        << "&retmode=xml"
+        << "&WebEnv=" << web_env
+        << "&query_key=" << query_key;
+
+    if ( retstart > 0 ) {
+        oss << "&retstart=" << retstart;
+    }
+   
+    if ( m_RetMax ) {
+        oss << "&retmax=" << m_RetMax;
+    } 
+
+        
+    if ( !version.empty() ) {
+        oss << "&version=" 
+            << version;
+    } 
+ 
+    x_Get("/entrez/eutils/esummary.fcgi?", oss.str(), ostr);
+}
 
 void CEutilsClient::Fetch(const string& db,
                           const vector<int>& uids,
@@ -914,6 +1007,30 @@ void CEutilsClient::Fetch(const string& db,
     }
 }
 
+void CEutilsClient::FetchHistory(const string& db,
+                                 const string& web_env,
+                                 int query_key,
+                                 int retstart,
+                                 EContentType content_type,
+                                 CNcbiOstream& ostr)
+{
+    ostringstream oss;
+    oss << "db=" << NStr::URLEncode(db)
+        << "&retmode=" << x_GetContentType(content_type)
+        << "&WebEnv=" << web_env
+        << "&query_key=" << query_key;
+
+    if ( retstart > 0 ) {
+        oss << "&retstart=" << retstart;
+    }
+
+    if ( m_RetMax ) {
+        oss << "&retmax=" << m_RetMax;
+    }
+
+    x_Get("/entrez/eutils/efetch.fcgi", oss.str(), ostr);
+}
+
 
 const list<string> CEutilsClient::GetUrl()
 {
@@ -935,6 +1052,25 @@ string CEutilsClient::x_BuildUrl(const string& host, const string &path, const s
     return url;
 }
 
+string CEutilsClient::x_GetContentType(EContentType content_type)
+{
+    if ( eContentType_xml == content_type ) {
+        return "xml";
+    }
+    else if ( eContentType_text == content_type ) {
+        return "text";
+    }
+    else if ( eContentType_html == content_type ) {
+        return "html";
+    }
+    else if ( eContentType_asn1 == content_type ) {
+        return "asn.1";
+    }
+    else {
+        // Default content type
+        return "xml";
+    }
+}
 
 END_NCBI_SCOPE
 

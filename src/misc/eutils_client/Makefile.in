@@ -5,7 +5,7 @@
 
 LIB_PROJ = eutils_client
 
-SUB_PROJ = test
+SUB_PROJ = test unit_test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

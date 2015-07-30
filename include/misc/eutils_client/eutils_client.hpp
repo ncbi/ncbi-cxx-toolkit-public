@@ -78,6 +78,19 @@ public:
                                    const string & message) const = 0;
     };
 
+    enum EUseHistory {
+        eUseHistoryDisabled = 1,
+        eUseHistoryEnabled
+    };
+
+    enum EContentType {
+        eContentType_default = 1, // maps to "xml"
+        eContentType_xml,
+        eContentType_text,
+        eContentType_html,
+        eContentType_asn1 
+    };
+
     CEutilsClient();
     CEutilsClient(const string& host);
 
@@ -109,7 +122,17 @@ public:
 
     void Search(const string& db,
                 const string& term,
-                CNcbiOstream& ostr);
+                CNcbiOstream& ostr,
+                EUseHistory use_history=eUseHistoryDisabled);
+
+    void SearchHistory(const string& db,
+                       const string& term,
+                       string const& web_env,
+                       int query_key,
+                       int retstart,
+                       CNcbiOstream& ostr);
+
+
 
     void Link(const string& db_from,
               const string& db_to,
@@ -124,14 +147,38 @@ public:
               CNcbiOstream& ostr,
               const string command="neighbor");
 
+    void LinkHistory(const string& db_from,
+                     const string& db_to,
+                     const string& web_env,
+                     int query_key,
+                     CNcbiOstream& ostr);
+
+
+
     void Summary(const string& db,
                 const vector<int>& uids,
-                xml::document& docsums);
+                xml::document& docsums,
+                const string version="");
+
+    void SummaryHistory(const string& db,
+                        const string& web_env,
+                        int query_key,
+                        int retstart,           // Position within the result set
+                        const string version,   // Version: "" or "2.0" 
+                        CNcbiOstream& ostr);
 
     void Fetch(const string& db,
                const vector<int>& uids,
                CNcbiOstream& ostr,
                const string& retmode="xml");
+
+    void FetchHistory(const string& db,
+                      const string& web_env,
+                      int query_key,
+                      int retstart,
+                      EContentType content_type,
+                      CNcbiOstream& ostr);
+
 
     const list<string> GetUrl();
     const list<CTime> GetTime();
@@ -156,6 +203,11 @@ private:
     //time of last request
     //list holds multiple entries if multiple tried needed
     list<CTime> m_Time;
+
+    // Execute HTTP GET request.
+    // Store received content into the @ostr.
+    void x_Get(string const& path, string const& params, CNcbiOstream& ostr);
+    string x_GetContentType(EContentType content_type);
 
     static string x_BuildUrl(const string& host, const string &path, const string &params);
 };
