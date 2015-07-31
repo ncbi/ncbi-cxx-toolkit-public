@@ -26,7 +26,7 @@ DEFAULT_CONFIGURE_FLAGS: --without-debug --with-mt
 # to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
 # --with-distcc, --with-action etc.
 
-FreeBSD32         : plain          : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
+FreeBSD32         : plain          : Clang.sh         --without-debug --with-mt    --without-runpath --with-flat-makefile
 
 Linux64-Centos    : plain-GCC      : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
 Linux64-Centos    : GCC-nomt       : GCC.sh           --without-debug --without-mt --without-runpath --with-flat-makefile
