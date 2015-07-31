@@ -1,0 +1,15 @@
+>Feature contig2
+11	38	assembly_gap
+			gap_type	within scaffold
+			linkage_evidence	paired-ends
+			linkage_evidence	align_genus
+459	598	assembly_gap
+			gap_type	within scaffold
+			linkage_evidence	align_genus
+1019	1084	assembly_gap
+			gap_type	within scaffold
+			linkage_evidence	paired-ends
+>Feature contig3
+281	560	assembly_gap
+			gap_type	within scaffold
+			linkage_evidence	map

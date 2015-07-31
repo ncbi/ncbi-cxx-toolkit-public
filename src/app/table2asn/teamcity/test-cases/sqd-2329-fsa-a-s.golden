@@ -1,0 +1,143 @@
+Seq-entry ::= set {
+  class genbank,
+  seq-set {
+    seq {
+      id {
+        local str "contig2"
+      },
+      descr {
+        molinfo {
+          biomol genomic
+        },
+        create-date std {
+          year 2014,
+          month 2,
+          day 1
+        }
+      },
+      inst {
+        repr delta,
+        mol dna,
+        length 1714,
+        ext delta {
+          literal {
+            length 10,
+            seq-data ncbi2na '0021E0'H
+          },
+          literal {
+            length 28,
+            seq-data gap {
+              type scaffold,
+              linkage linked,
+              linkage-evidence {
+                {
+                  type paired-ends
+                },
+                {
+                  type align-genus
+                }
+              }
+            }
+          },
+          literal {
+            length 420,
+            seq-data ncbi2na '000FFBFF2AFF7B3C3BF3DC368EC90C08C37D080300024B9E
+C8101E50FC1279045CC40BF235241E7BE34042CF11FF240EE3A0A7CCDBFA30000D09205E4F2480
+27D484CDC086B003910020F07917043F007233FEBE886883D800027A20FFC40343C420DFC02AF8
+7B04BC'H
+          },
+          literal {
+            length 140,
+            seq-data gap {
+              type scaffold,
+              linkage linked,
+              linkage-evidence {
+                {
+                  type align-genus
+                }
+              }
+            }
+          },
+          literal {
+            length 420,
+            seq-data ncbi2na '652C5240E440F802FB70AB8FFDCF2DF3EBE909A8CE48D4F8
+9FDC9C3F42103257383CEAAF388B0E0FE33DF7008C7DE30DA7822FE02092083EF0F8E39A63ED50
+F35012BDCB03E3C35037008CC27E44BB2B2C8CE1CC880E0028B84F2D9D7FFDF8001FFCCBE87FD3
+0BFB33'H
+          },
+          literal {
+            length 66,
+            seq-data gap {
+              type scaffold,
+              linkage linked,
+              linkage-evidence {
+                {
+                  type paired-ends
+                }
+              }
+            }
+          },
+          literal {
+            length 630,
+            seq-data ncbi2na 'B53BD3E10C50E0BFF17FF6DD5DFB8CB23BDC082F747EF490
+DDC7574337D0B0343B38861FCFC0CFF23FF2CB06CC0C40FFCFBB332FCFFB3F32728038B892F4FB
+033F00EA08337D337FFDC801F5E700CF3D0130E490FDFD2F472C7BFDE33E8009DB6C40AFF27580
+0803DE078CF2428FFB0E8302E07C700FF80CDFFF1B7040DE8C343FC70FFB737CD2300F0FD34E0B
+32BD3B3FC882E0382E0107F1CC0BDF7030'H
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        local str "contig3"
+      },
+      descr {
+        molinfo {
+          biomol genomic
+        },
+        create-date std {
+          year 2014,
+          month 2,
+          day 1
+        }
+      },
+      inst {
+        repr delta,
+        mol dna,
+        length 1610,
+        ext delta {
+          literal {
+            length 280,
+            seq-data ncbi2na '3CC3B6CD8F20FC75E3B00012F0000E8C0CD0984F9C108EBE
+CD80CF8E81A50D72224E8027F349036E4AD2E98CCA3280F36ED3EC80C82381B7EFBC494F4AFA51
+2080CFC6103030'H
+          },
+          literal {
+            length 280,
+            seq-data gap {
+              type scaffold,
+              linkage linked,
+              linkage-evidence {
+                {
+                  type map
+                }
+              }
+            }
+          },
+          literal {
+            length 1050,
+            seq-data ncbi2na '9413D43F3D209260D2CD0B23E9838D9E7113024F860FFDD5
+8280059C39FA8ED420F7FD28823FE3F07FA02D06ED9D00BC2E03E0F245104B38CF5183FF42C4A0
+A3C8D43C0F9BADE45802E2C7C73823CD005FA736141239FCB808FA0619FC43342CF4771082423C
+7A2BECC506010E082038030F0238101800B1024774FB749B4BF897F7F82484B5E782494E7EE001
+CE9F509AC8408236100334040182D483600080793A9CE2C8C28B838010E99CFE063A02841484B5
+0C45083C8107B36CD18C4207EC28350383C450FFC6FFD2941ECC0CE33A327CF273739109160E60
+BF3E78FF8C6E8022CADB2ED1FCA340243003FC6D002212B9FFCD3803B3F8EFDD2144A8086F5FD5
+E3E9E78B00'H
+          }
+        }
+      }
+    }
+  }
+}

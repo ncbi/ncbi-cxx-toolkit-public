@@ -1253,68 +1253,75 @@ void CFeatureTableReader::RemoveEmptyFtable(objects::CBioseq& bioseq)
 CRef<CDelta_seq> CFeatureTableReader::MakeGap(objects::CBioseq_Handle bsh, const CSeq_feat& feature_gap)
 {
     const string& sGT = feature_gap.GetNamedQual(kGapType_qual);
-    const string& sLE = feature_gap.GetNamedQual(kLinkageEvidence_qual);
 
     TSeqPos gap_start(kInvalidSeqPos);
     TSeqPos gap_length(kInvalidSeqPos);
 
     CSeq_gap::EType gap_type = CSeq_gap::eType_unknown;
-    CLinkage_evidence::EType evidence = (CLinkage_evidence::EType)-1; //CLinkage_evidence::eType_unspecified;
+    set<int> evidences;
 
     if (!sGT.empty())
     {
-        const CEnumeratedTypeValues::TNameToValue& 
-            linkage_evidence_to_value_map = CLinkage_evidence::GetTypeInfo_enum_EType()->NameToValue();
-
-        CEnumeratedTypeValues::TNameToValue::const_iterator it = linkage_evidence_to_value_map.find(CFastaReader::CanonicalizeString(sLE));
-        if (it == linkage_evidence_to_value_map.end())
-        {
-            m_logger->PutError(*auto_ptr<CLineError>(
-                CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
-                string("Unrecognized linkage evidence ") + sLE)));
-            return CRef<CDelta_seq>(0);
-        }
-        else
-        {
-            evidence = (CLinkage_evidence::EType)it->second;
-        }
-    }
-
-    if (!sLE.empty())
-    {
-        const CFastaReader::SGapTypeInfo * gap_type_info = 
-            CFastaReader::NameToGapTypeInfo(sGT);
+        const CFastaReader::SGapTypeInfo * gap_type_info = CFastaReader::NameToGapTypeInfo(sGT);
 
         if (gap_type_info)
         {
             gap_type = gap_type_info->m_eType;
-            switch (gap_type_info->m_eType)
+
+            const CEnumeratedTypeValues::TNameToValue&
+                linkage_evidence_to_value_map = CLinkage_evidence::GetTypeInfo_enum_EType()->NameToValue();
+
+            ITERATE(CSeq_feat::TQual, sLE_qual, feature_gap.GetQual()) // we support multiple linkage evidence qualifiers
             {
-            /// only the "unspecified" linkage-evidence is allowed
-            case CFastaReader::eLinkEvid_UnspecifiedOnly:
-                if (evidence != CLinkage_evidence::eType_unspecified)
+                const string& sLE_name = (**sLE_qual).GetQual();
+                if (sLE_name != kLinkageEvidence_qual)
+                    continue;
+
+                CLinkage_evidence::EType evidence = (CLinkage_evidence::EType) - 1; //CLinkage_evidence::eType_unspecified;
+
+                CEnumeratedTypeValues::TNameToValue::const_iterator it = linkage_evidence_to_value_map.find(CFastaReader::CanonicalizeString((**sLE_qual).GetVal()));
+                if (it == linkage_evidence_to_value_map.end())
                 {
                     m_logger->PutError(*auto_ptr<CLineError>(
                         CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
-                        string("Linkage evidence must not be specified for ") + sGT)));
+                        string("Unrecognized linkage evidence ") + (**sLE_qual).GetVal())));
                     return CRef<CDelta_seq>(0);
                 }
-                break;
-            /// no linkage-evidence is allowed
-            case CFastaReader::eLinkEvid_Forbidden:
-                if (evidence == CLinkage_evidence::eType_unspecified)
+                else
                 {
-                    m_logger->PutError(*auto_ptr<CLineError>(
-                        CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
-                        string("Linkage evidence must be specified for ") + sGT)));
-                    return CRef<CDelta_seq>(0);
+                    evidence = (CLinkage_evidence::EType)it->second;
                 }
-                break;
-            /// any linkage-evidence is allowed, and at least one is required
-            case CFastaReader::eLinkEvid_Required:
-                break;
-            default:
-                break;
+
+                switch (gap_type_info->m_eType)
+                {
+                    /// only the "unspecified" linkage-evidence is allowed
+                case CFastaReader::eLinkEvid_UnspecifiedOnly:
+                    if (evidence != CLinkage_evidence::eType_unspecified)
+                    {
+                        m_logger->PutError(*auto_ptr<CLineError>(
+                            CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
+                            string("Linkage evidence must not be specified for ") + sGT)));
+                        return CRef<CDelta_seq>(0);
+                    }
+                    break;
+                    /// no linkage-evidence is allowed
+                case CFastaReader::eLinkEvid_Forbidden:
+                    if (evidence == CLinkage_evidence::eType_unspecified)
+                    {
+                        m_logger->PutError(*auto_ptr<CLineError>(
+                            CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
+                            string("Linkage evidence must be specified for ") + sGT)));
+                        return CRef<CDelta_seq>(0);
+                    }
+                    break;
+                    /// any linkage-evidence is allowed, and at least one is required
+                case CFastaReader::eLinkEvid_Required:
+                    break;
+                default:
+                    break;
+                }
+                if (evidence != -1)
+                    evidences.insert(evidence);
             }
         }
         else
@@ -1338,10 +1345,6 @@ CRef<CDelta_seq> CFeatureTableReader::MakeGap(objects::CBioseq_Handle bsh, const
         gap_length++;
     }
 
-
-    set<int> evidences; 
-    if (evidence != -1)
-       evidences.insert(evidence);
     return CGapsEditor::CreateGap((CBioseq&)*bsh.GetEditHandle().GetCompleteBioseq(), gap_start, gap_length, gap_type, evidences);
 }
 
