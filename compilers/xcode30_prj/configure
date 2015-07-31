@@ -335,6 +335,7 @@ else
     fi
   fi
 fi
+conf="$CONFIGURATION"
 if test "$use_gui" = "yes"; then
   PTB_FLAGS="$PTB_FLAGS -cfg"
 fi
