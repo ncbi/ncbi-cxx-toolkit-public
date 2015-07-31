@@ -323,6 +323,7 @@ struct SNetScheduleAPIImpl : public CObject
     list<string> m_AffinityLadder;
 
     string m_JobGroup;
+    unsigned m_JobTtl;
 
     bool m_UseEmbeddedStorage;
 

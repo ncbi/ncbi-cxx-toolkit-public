@@ -141,9 +141,9 @@ CNetScheduleAPI::EJobStatus CGridClient::SubmitAndWait(unsigned wait_time)
     CloseStream();
     CNetScheduleAPI::EJobStatus status =
             GetNetScheduleSubmitter().SubmitJobAndWait(m_Job, wait_time);
-    x_CleanUpAllJobBlobs(status);
-    m_JobDetailsRead = true;
-    return status;
+
+    time_t job_exptime = time(NULL) + m_NetScheduleSubmitter->m_API->m_JobTtl;
+    return x_CheckAllJobBlobs(status, job_exptime);
 }
 
 //////////////////////////////////////////////////////////
@@ -250,7 +250,8 @@ CGridJobBatchSubmitter::CGridJobBatchSubmitter(CGridClient& grid_client)
 //////////////////////////////////////////////////////////////////////////////
 //
 
-bool CGridClient::x_CleanUpAllJobBlobs(CNetScheduleAPI::EJobStatus status)
+CNetScheduleAPI::EJobStatus CGridClient::x_CheckAllJobBlobs(
+        CNetScheduleAPI::EJobStatus status, time_t job_exptime)
 {
     if (m_AutoCleanUp && (
               status == CNetScheduleAPI::eDone ||
@@ -267,11 +268,12 @@ bool CGridClient::x_CleanUpAllJobBlobs(CNetScheduleAPI::EJobStatus status)
                     RemoveDataBlob(m_Job.progress_msg.c_str() + 2);
             }
         }
-
-        return true;
+    } else {
+        x_RenewAllJobBlobs(job_exptime);
     }
 
-    return false;
+    m_JobDetailsRead = true;
+    return status;
 }
 CNetScheduleAPI::EJobStatus CGridClient::GetStatus()
 {
@@ -280,11 +282,7 @@ CNetScheduleAPI::EJobStatus CGridClient::GetStatus()
     CNetScheduleAPI::EJobStatus status =
         GetNetScheduleSubmitter().GetJobDetails(m_Job, &job_exptime);
 
-    if (!x_CleanUpAllJobBlobs(status)) {
-        x_RenewAllJobBlobs(job_exptime);
-    }
-    m_JobDetailsRead = true;
-    return status;
+    return x_CheckAllJobBlobs(status, job_exptime);
 }
 
 CNcbiIstream& CGridClient::GetIStream()

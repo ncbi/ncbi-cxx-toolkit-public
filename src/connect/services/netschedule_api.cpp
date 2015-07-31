@@ -537,6 +537,13 @@ bool CNetScheduleOwnConfigLoader::Transform(const CTempString& prefix,
         return true;
     }
 
+    // Queue parameter "timeout" determines the initial TTL of a submitted job.
+    // Since "timeout" is too generic, replaced it with "job_ttl" on client side.
+    if (name == "timeout") {
+        name = "job_ttl";
+        return true;
+    }
+
     return CNetScheduleConfigLoader::Transform(prefix, name);
 }
 
@@ -720,6 +727,9 @@ void CNetScheduleServerListener::OnInit(
             ns_impl->m_JobGroup = config->GetString(config_section,
                     "job_group", CConfig::eErr_NoThrow, kEmptyStr);
 
+            ns_impl->m_JobTtl = config->GetInt(config_section,
+                    "job_ttl", CConfig::eErr_NoThrow, 0);
+
             ns_impl->m_ClientNode = config->GetString(config_section,
                 "client_node", CConfig::eErr_NoThrow, kEmptyStr);
 
@@ -841,7 +851,8 @@ SNetScheduleAPIImpl::SNetScheduleAPIImpl(
         const string& queue_name) :
     m_Service(new SNetServiceImpl("NetScheduleAPI",
         client_name, new CNetScheduleServerListener)),
-    m_Queue(queue_name)
+    m_Queue(queue_name),
+    m_JobTtl(0)
 {
     m_Service->Init(this, service_name,
         config, section, s_NetScheduleConfigSections);
@@ -855,6 +866,7 @@ SNetScheduleAPIImpl::SNetScheduleAPIImpl(
     m_ClientNode(parent->m_ClientNode),
     m_ClientSession(parent->m_ClientSession),
     m_AffinityPreference(parent->m_AffinityPreference),
+    m_JobTtl(0),
     m_UseEmbeddedStorage(parent->m_UseEmbeddedStorage)
 {
 }

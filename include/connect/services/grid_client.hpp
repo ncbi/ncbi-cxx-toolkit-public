@@ -296,7 +296,8 @@ private:
     void x_ProlongBlobLifetime(const string& blob_key, unsigned ttl);
     bool x_ProlongJobFieldLifetime(const string& job_field, unsigned ttl);
     void x_RenewAllJobBlobs(time_t job_exptime);
-    bool x_CleanUpAllJobBlobs(CNetScheduleAPI::EJobStatus status);
+    CNetScheduleAPI::EJobStatus x_CheckAllJobBlobs(
+            CNetScheduleAPI::EJobStatus status, time_t job_exptime);
     void x_GetJobDetails();
 
     size_t       m_BlobSize;
