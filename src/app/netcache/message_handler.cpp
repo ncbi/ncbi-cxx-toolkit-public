@@ -2509,8 +2509,6 @@ void
 CNCMessageHandler::x_ProlongBlobDeadTime(unsigned int add_time)
 {
     LOG_CURRENT_FUNCTION
-    if (!m_AppSetup->prolong_on_read)
-        return;
 
     CSrvTime cur_srv_time = CSrvTime::Current();
     Uint8 cur_time = cur_srv_time.AsUSec();
@@ -2520,8 +2518,8 @@ CNCMessageHandler::x_ProlongBlobDeadTime(unsigned int add_time)
         return;
     }
     int old_expire = m_BlobAccess->GetCurBlobExpire();
-    if (!CNCServer::IsDebugMode()  && new_expire > old_expire &&
-            new_expire - old_expire < m_AppSetup->ttl_unit) {
+    if (!CNCServer::IsDebugMode() &&
+        new_expire - old_expire < (int)m_AppSetup->ttl_unit) {
         return;
     }
 
