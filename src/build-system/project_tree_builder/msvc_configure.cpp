@@ -276,6 +276,10 @@ void CMsvcConfigure::AnalyzeDefines(
     signature += "_";
     signature += CMsvc7RegSettings::GetMsvcVersionName();
     signature += "-" + config.GetConfigFullName();
+    if (config.m_rtType == SConfigInfo::rtMultiThreadedDLL ||
+        config.m_rtType == SConfigInfo::rtMultiThreadedDebugDLL) {
+        signature += "MT";
+    }
 #ifdef NCBI_XCODE_BUILD
     string tmp = CMsvc7RegSettings::GetRequestedArchs();
     NStr::ReplaceInPlace(tmp, " ", "_");
