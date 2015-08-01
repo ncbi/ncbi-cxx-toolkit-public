@@ -595,6 +595,8 @@ hogweed needs3party gmp
 hogweed needs3party nettle
 homologene needs $(SEQ_LIBS)
 homologene needs pub
+htbcli needs txserv
+htbcon needs txserv
 icudata needs3party $(ORIG_LIBS)
 icui18n needs3party $(ORIG_LIBS)
 icuuc needs3party $(ORIG_LIBS)
