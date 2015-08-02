@@ -449,6 +449,7 @@ gpipe_common needs $(SDBAPI_LIB)
 gpipe_common needs xcgi
 gpipe_common needs xconnect
 gpipe_common needs xmlwrapp
+gpipe_common needs xregexp
 gpipe_dateutil needs xregexp
 gpipe_ftp needs gc_utils
 gpipe_ftp needs gcaccess_utils
@@ -486,7 +487,6 @@ gpipe_objutil needs3party $(UUID_LIBS)
 gpipe_prok_clean_prot_names needs gpipe_attr
 gpipe_prok_clean_prot_names needs gpipe_clean_prot_names
 gpipe_property needs gpipe_common
-gpipe_property needs xregexp
 gpipe_remap needs xobjreadex
 gpipe_resource_req needs xncbi
 gpipe_sadb needs $(COMPRESS_LIBS)
