@@ -178,7 +178,12 @@ void CSAM_CIGAR_Formatter::AddRow(const string& cigar)
     const TRange& tgt_rg = GetTargetRange();
     string clip_front, clip_back;
     if (tgt_rg.GetFrom() > 0) {
-        clip_front = NStr::UInt8ToString(tgt_rg.GetFrom()) + "H";
+    	if(flags & fRead_Reverse) {
+    		clip_back = NStr::UInt8ToString(tgt_rg.GetFrom()) + "H";
+    	}
+    	else {
+    		clip_front = NStr::UInt8ToString(tgt_rg.GetFrom()) + "H";
+    	}
     }
 
     //string seq_data;
@@ -188,8 +193,14 @@ void CSAM_CIGAR_Formatter::AddRow(const string& cigar)
         //CSeqVector vect = h.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
         //vect.GetSeqData(tgt_rg.GetFrom(), tgt_rg.GetTo(), seq_data);
         if ( TSeqPos(tgt_rg.GetToOpen()) < h.GetBioseqLength() ) {
-            clip_back = NStr::UInt8ToString(
-                h.GetBioseqLength() - tgt_rg.GetToOpen()) + "H";
+        	if(flags & fRead_Reverse) {
+        		clip_front = NStr::UInt8ToString(
+        		    h.GetBioseqLength() - tgt_rg.GetToOpen()) + "H";
+		}
+        	else {
+        		clip_back = NStr::UInt8ToString(
+        		    h.GetBioseqLength() - tgt_rg.GetToOpen()) + "H";
+        	}
         }
     }
     /*
