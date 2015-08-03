@@ -106,7 +106,7 @@ BOOST_AUTO_TEST_CASE(ReadAccession_MismatchNuclProt)
     }
     catch (const CInputException& e) {
         string msg(e.what());
-        BOOST_REQUIRE(msg.find("Gi/accession mismatch: requested protein, found nucleotide")
+        BOOST_REQUIRE(msg.find("GI/accession/sequence mismatch: protein input required but nucleotide provided")
                     != NPOS);
         BOOST_REQUIRE_EQUAL(CInputException::eSequenceMismatch, e.GetErrCode());
         caught_exception = true;
@@ -132,7 +132,7 @@ BOOST_AUTO_TEST_CASE(ReadAccession_MismatchProtNucl)
     }
     catch (const CInputException& e) {
         string msg(e.what());
-        BOOST_REQUIRE(msg.find("Gi/accession mismatch: requested nucleotide, found protein")
+        BOOST_REQUIRE(msg.find("GI/accession/sequence mismatch: nucleotide input required but protein provided")
                     != NPOS);
         BOOST_REQUIRE_EQUAL(CInputException::eSequenceMismatch, e.GetErrCode());
         caught_exception = true;
@@ -158,7 +158,7 @@ BOOST_AUTO_TEST_CASE(ReadGi_MismatchNuclProt)
     }
     catch (const CInputException& e) {
         string msg(e.what());
-        BOOST_REQUIRE(msg.find("Gi/accession mismatch: requested protein, found nucleotide")
+        BOOST_REQUIRE(msg.find("GI/accession/sequence mismatch: protein input required but nucleotide provided")
                     != NPOS);
         BOOST_REQUIRE_EQUAL(CInputException::eSequenceMismatch, e.GetErrCode());
         caught_exception = true;
@@ -184,7 +184,7 @@ BOOST_AUTO_TEST_CASE(ReadGi_MismatchProtNucl)
     }
     catch (const CInputException& e) {
         string msg(e.what());
-        BOOST_REQUIRE(msg.find("Gi/accession mismatch: requested nucleotide, found protein")
+        BOOST_REQUIRE(msg.find("GI/accession/sequence mismatch: nucleotide input required but protein provided")
                     != NPOS);
         BOOST_REQUIRE_EQUAL(CInputException::eSequenceMismatch, e.GetErrCode());
         caught_exception = true;

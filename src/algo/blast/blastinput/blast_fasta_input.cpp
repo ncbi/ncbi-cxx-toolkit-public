@@ -196,12 +196,12 @@ private:
         if (!isProtein && m_ReadProteins)
         {
             NCBI_THROW(CInputException, eSequenceMismatch,
-               "Gi/accession mismatch: requested protein, found nucleotide");
+               "GI/accession/sequence mismatch: protein input required but nucleotide provided");
         }
         if (isProtein && !m_ReadProteins)
         {
             NCBI_THROW(CInputException, eSequenceMismatch,
-               "Gi/accession mismatch: requested nucleotide, found protein");
+               "GI/accession/sequence mismatch: nucleotide input required but protein provided");
         }
 
         if (!isProtein)  // Never seen a virtual protein sequence.
