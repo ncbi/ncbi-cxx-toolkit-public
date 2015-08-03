@@ -68,6 +68,12 @@ ifneq "" "$(wildcard Makefile.$(TMPL).dll.libdep)"
   endif
 endif
 
+ifeq "" "$(filter-out 0 N% n% F% f% OFF Off off, $(KEEP_CORELIB))"
+  ifneq "" "$(filter @OSTYPE@, darwin freebsd)"
+    XDLL_LIB := $(filter-out @lib_l_pre@xncbi%@lib_l_ext@, $(XDLL_LIB))
+  endif
+endif
+
 include $(builddir)/Makefile.$(Rules)
 
 # This definition loses any trailing #, and is only useful in conditionals.
