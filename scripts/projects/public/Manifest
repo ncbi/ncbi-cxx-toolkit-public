@@ -27,7 +27,7 @@ Linux64-Centos : GCC472  : GCC.sh 4.7.2 --without-debug --with-mt
 Linux64-Centos : ICC101  : ICC.sh 10.1  --with-mt --with-3psw=system
 Linux64-Centos : ICC130  : ICC.sh 13.0  --without-debug --with-mt
 
-FreeBSD32 : GCC : GCC.sh --without-debug
+FreeBSD32 : plain : Clang.sh --without-debug
 
 SunOSx86 : GCC  : GCC.sh 4.5.3     --without-debug --without-mt --with-static
 SunOSx86 : WS64 : WorkShop59.sh 64 --with-debug --with-dll --with-mt
