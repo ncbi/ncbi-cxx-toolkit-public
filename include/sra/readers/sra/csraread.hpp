@@ -406,6 +406,9 @@ public:
     // with starting position in the argument range
     TSeqPos GetAlnOverToOpen(TRange range) const;
 
+    // estimate number of alignments mapped to the reference sequence
+    Uint8 GetEstimatedNumberOfAlignments(void) const;
+
 protected:
     friend class CCSraAlignIterator;
 

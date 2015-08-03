@@ -772,6 +772,41 @@ TSeqPos CCSraRefSeqIterator::GetAlnOverToOpen(TRange range) const
     return min(GetSeqLength(), (seg+1)*segment_len);
 }
 
+
+Uint8 CCSraRefSeqIterator::GetEstimatedNumberOfAlignments(void) const
+{
+    uint64_t first_align_id = 0, last_align_id = 0;
+    const CCSraDb_Impl::SRefInfo& info = GetInfo();
+    CRef<CCSraDb_Impl::SRefTableCursor> ref(GetDb().Ref());
+    for ( uint64_t row = info.m_RowFirst; row <= info.m_RowLast; ++row ) {
+        CVDBValueFor<uint64_t> ids = ref->PRIMARY_ALIGNMENT_IDS(row);
+        size_t count = ids.size();
+        if ( count ) {
+            first_align_id = *min_element(ids.data(), ids.data()+count);
+            if ( first_align_id ) {
+                break;
+            }
+        }
+    }
+    if ( !first_align_id ) {
+        GetDb().Put(ref);
+        return 0;
+    }
+    for ( uint64_t row = info.m_RowLast; row >= info.m_RowFirst; --row ) {
+        CVDBValueFor<uint64_t> ids = ref->PRIMARY_ALIGNMENT_IDS(row);
+        size_t count = ids.size();
+        if ( count ) {
+            last_align_id = *max_element(ids.data(), ids.data()+count);
+            if ( last_align_id ) {
+                break;
+            }
+        }
+    }
+    GetDb().Put(ref);
+    return last_align_id-first_align_id+1;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CCSraAlignIterator
 /////////////////////////////////////////////////////////////////////////////

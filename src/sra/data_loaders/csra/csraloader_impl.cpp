@@ -1265,61 +1265,82 @@ bool CCSRARefSeqInfo::x_LoadRangesCov(void)
 
 void CCSRARefSeqInfo::x_LoadRangesStat(void)
 {
-    const unsigned kNumStat = 10;
-    const unsigned kStatCount = 1000;
-    vector<SRefStat> stat(kNumStat);
-    TSeqPos ref_length =
-        CCSraRefSeqIterator(*m_File, GetRefSeqId()).GetSeqLength();
-    TSeqPos ref_begin = 0, ref_end = ref_length;
-    double stat_len = 0, stat_cnt = 0;
-    const unsigned scan_first = 1;
-    if ( scan_first ) {
-        stat[0].Collect(*m_File, GetRefSeqId(), 0,
-                        kStatCount, m_MinMapQuality);
-        if ( stat[0].m_Count != kStatCount ) {
-            // single chunk
-            if ( stat[0].m_Count > 0 ) {
-                CCSRARefSeqChunkInfo chunk;
-                chunk.m_RefSeqRangeStart.SetFrom(stat[0].m_RefPosFirst);
-                chunk.m_RefSeqRangeStart.SetTo(stat[0].m_RefPosLast);
-                m_Chunks.push_back(chunk);
+    vector<TSeqPos> pp;
+    const bool use_estimate = false;
+    if ( use_estimate ) {
+        TSeqPos segment_len = m_File->GetDb().GetRowSize();
+        CCSraRefSeqIterator iter(*m_File, GetRefSeqId());
+        TSeqPos ref_length = iter.GetSeqLength();
+        Uint8 est_count = iter.GetEstimatedNumberOfAlignments();
+        if ( est_count <= 2*kChunkSize ) {
+            pp.push_back(0);
+        }
+        else {
+            TSeqPos chunk_len = TSeqPos((double(ref_length)*kChunkSize/est_count/segment_len+.5))*segment_len;
+            chunk_len = max(chunk_len, segment_len);
+            for ( TSeqPos pos = 0; pos < ref_length; pos += chunk_len ) {
+                pp.push_back(pos);
             }
-            m_LoadedRanges = true;
-            return;
         }
-        ref_begin = stat[0].m_RefPosFirst;
-        stat_len = stat[0].GetStatLen();
-        stat_cnt = stat[0].GetStatCount();
+        pp.push_back(ref_length);
     }
-    for ( unsigned k = scan_first; k < kNumStat; ++k ) {
-        TSeqPos ref_pos = ref_begin +
-            TSeqPos(double(ref_end - ref_begin)*k/kNumStat);
-        if ( k && ref_pos < stat[k-1].m_RefPosLast ) {
-            ref_pos = stat[k-1].m_RefPosLast;
+    else {
+        const unsigned kNumStat = 10;
+        const unsigned kStatCount = 1000;
+        vector<SRefStat> stat(kNumStat);
+        TSeqPos ref_length =
+            CCSraRefSeqIterator(*m_File, GetRefSeqId()).GetSeqLength();
+        TSeqPos ref_begin = 0, ref_end = ref_length;
+        double stat_len = 0, stat_cnt = 0;
+        const unsigned scan_first = 1;
+        if ( scan_first ) {
+            stat[0].Collect(*m_File, GetRefSeqId(), 0,
+                            kStatCount, m_MinMapQuality);
+            if ( stat[0].m_Count != kStatCount ) {
+                // single chunk
+                if ( stat[0].m_Count > 0 ) {
+                    CCSRARefSeqChunkInfo chunk;
+                    chunk.m_RefSeqRangeStart.SetFrom(stat[0].m_RefPosFirst);
+                    chunk.m_RefSeqRangeStart.SetTo(stat[0].m_RefPosLast);
+                    m_Chunks.push_back(chunk);
+                }
+                m_LoadedRanges = true;
+                return;
+            }
+            ref_begin = stat[0].m_RefPosFirst;
+            stat_len = stat[0].GetStatLen();
+            stat_cnt = stat[0].GetStatCount();
         }
-        _TRACE("stat["<<k<<"] @ "<<ref_pos);
-        stat[k].Collect(*m_File, GetRefSeqId(), ref_pos,
-                        kStatCount, m_MinMapQuality);
-        stat_len += stat[k].GetStatLen();
-        stat_cnt += stat[k].GetStatCount();
+        for ( unsigned k = scan_first; k < kNumStat; ++k ) {
+            TSeqPos ref_pos = ref_begin +
+                TSeqPos(double(ref_end - ref_begin)*k/kNumStat);
+            if ( k && ref_pos < stat[k-1].m_RefPosLast ) {
+                ref_pos = stat[k-1].m_RefPosLast;
+            }
+            _TRACE("stat["<<k<<"] @ "<<ref_pos);
+            stat[k].Collect(*m_File, GetRefSeqId(), ref_pos,
+                            kStatCount, m_MinMapQuality);
+            stat_len += stat[k].GetStatLen();
+            stat_cnt += stat[k].GetStatCount();
+        }
+        double density = stat_cnt / stat_len;
+        double exp_count = (ref_end-ref_begin)*density;
+        unsigned chunks = unsigned(exp_count/kChunkSize+1);
+        chunks = min(chunks, unsigned(sqrt(exp_count)+1));
+        if ( GetDebugLevel() >= 1 ) {
+            LOG_POST_X(5, Info << "CCSRADataLoader: "
+                       "Total range: "<<ref_begin<<"-"<<ref_end-1<<
+                       " exp count: "<<exp_count<<" chunks: "<<chunks);
+        }
+        pp.resize(chunks+1);
+        for ( unsigned k = 1; k < chunks; ++k ) {
+            TSeqPos pos = ref_begin +
+                TSeqPos(double(ref_end-ref_begin)*k/chunks);
+            pp[k] = pos;
+        }
+        pp[chunks] = ref_end;
     }
-    double density = stat_cnt / stat_len;
-    double exp_count = (ref_end-ref_begin)*density;
-    unsigned chunks = unsigned(exp_count/kChunkSize+1);
-    chunks = min(chunks, unsigned(sqrt(exp_count)+1));
-    if ( GetDebugLevel() >= 1 ) {
-        LOG_POST_X(5, Info << "CCSRADataLoader: "
-                   "Total range: "<<ref_begin<<"-"<<ref_end-1<<
-                   " exp count: "<<exp_count<<" chunks: "<<chunks);
-    }
-    vector<TSeqPos> pp(chunks+1);
-    for ( unsigned k = 1; k < chunks; ++k ) {
-        TSeqPos pos = ref_begin +
-            TSeqPos(double(ref_end-ref_begin)*k/chunks);
-        pp[k] = pos;
-    }
-    pp[chunks] = ref_end;
-    for ( unsigned k = 0; k < chunks; ++k ) {
+    for ( size_t k = 0; k+1 < pp.size(); ++k ) {
         CCSRARefSeqChunkInfo chunk;
         TSeqPos pos = pp[k];
         TSeqPos end = pp[k+1];

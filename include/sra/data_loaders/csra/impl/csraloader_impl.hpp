@@ -180,7 +180,6 @@ protected:
     typedef vector<CCSRARefSeqChunkInfo> TChunks;
     typedef map<CSeq_id_Handle, int> TSeq2Chunk;
 
-    void x_LoadRangesScan(void);
     void x_LoadRangesStat(void);
     bool x_LoadRangesCov(void);
 
