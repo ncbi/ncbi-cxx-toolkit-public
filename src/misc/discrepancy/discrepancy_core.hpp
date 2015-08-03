@@ -174,11 +174,13 @@ protected:
 class CDiscrepancyCore : public CDiscrepancyCase
 {
 public:
+    CDiscrepancyCore() : m_Count(0) {}
     void Summarize(void){}
     virtual TReportItemList GetReport(void) const { return m_ReportItems;}
 protected:
     CReportNode m_Objs;
     TReportItemList m_ReportItems;
+    size_t m_Count;
 };
 
 

@@ -620,7 +620,7 @@ static bool AdvancedStringCompare(const string& str, const string& str_match, co
                 len1 = word_word[i].size();
                 //text match
                 if (CaseNCompareEqual(word_word[i++], cp_m, len1, wd_case)) {
-                    word_start_m = (!pos_match && is_start) || !isalpha(cp_m[pos_match-1]);
+                    word_start_m = (!pos_match && is_start) || !isalpha(str_match[pos_match - 1]);
                     ch1 = (cp_m.size() <= len1) ? ' ' : cp_m[len1];
            
                     // whole word mch
@@ -637,7 +637,7 @@ static bool AdvancedStringCompare(const string& str, const string& str_match, co
 
                                 // text match
                                 if (CaseNCompareEqual(*sit, cp_s, len2, wd_case)) {
-                                    word_start_s = (!pos_str && is_start) || !isalpha(cp_s[pos_str-1]);
+                                    word_start_s = (!pos_str && is_start) || !isalpha(str[pos_str - 1]);
                                     ch2 = (cp_s.size() <= len2) ? ' ' : cp_s[len2];
                                     // whole word match
                                     if (!whole_wd || (!isalpha(ch2) && word_start_s)) {

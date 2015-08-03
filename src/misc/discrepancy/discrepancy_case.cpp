@@ -130,9 +130,8 @@ DISCREPANCY_CASE(COUNT_TRNAS, CSeqFeatData, eNormal, "Count tRNAs")
     CBioSource::TGenome genome = context.GetCurrentGenome();
     if (genome != CBioSource::eGenome_mitochondrion && genome != CBioSource::eGenome_chloroplast && genome != CBioSource::eGenome_plastid) return;
 
-    static size_t countBS = 0;
-    if (countBS != context.GetCountBioseq()) {
-        countBS = context.GetCountBioseq();
+    if (m_Count != context.GetCountBioseq()) {
+        m_Count = context.GetCountBioseq();
         Summarize();
         m_Objs[kEmptyStr].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), false));
     }
@@ -230,9 +229,8 @@ DISCREPANCY_CASE(COUNT_RRNAS, CSeqFeatData, eNormal, "Count rRNAs")
     CBioSource::TGenome genome = context.GetCurrentGenome();
     if (genome != CBioSource::eGenome_mitochondrion && genome != CBioSource::eGenome_chloroplast && genome != CBioSource::eGenome_plastid) return;
 
-    static size_t countBS = 0;
-    if (countBS != context.GetCountBioseq()) {
-        countBS = context.GetCountBioseq();
+    if (m_Count != context.GetCountBioseq()) {
+        m_Count = context.GetCountBioseq();
         Summarize();
         m_Objs[kEmptyStr].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), false));
     }
