@@ -406,6 +406,9 @@ CWGSDb_Impl::CWGSDb_Impl(CVDBMgr& mgr,
       m_ProtTableIsOpened(false),
       m_GiIdxTableIsOpened(false),
       m_ProtAccIndexIsOpened(false),
+      m_ContigNameIndexIsOpened(false),
+      m_ScaffoldNameIndexIsOpened(false),
+      m_ProteinNameIndexIsOpened(false),
       m_IsSetMasterDescr(false)
 {
     x_InitIdParams();
@@ -489,6 +492,26 @@ void CWGSDb_Impl::OpenTable(CVDBTable& table,
 }
 
 
+inline
+void CWGSDb_Impl::OpenIndex(const CVDBTable& table,
+                            CVDBTableIndex& index,
+                            const char* index_name,
+                            volatile bool& index_is_opened)
+{
+    if ( table ) {
+        CFastMutexGuard guard(m_TableMutex);
+        if ( !index_is_opened ) {
+            index = CVDBTableIndex(table, index_name,
+                                   CVDBTableIndex::eMissing_Allow);
+            index_is_opened = true;
+        }
+    }
+    else {
+        index_is_opened = true;
+    }
+}
+
+
 void CWGSDb_Impl::OpenScfTable(void)
 {
     OpenTable(m_ScfTable, "SCAFFOLD", m_ScfTableIsOpened);
@@ -507,19 +530,27 @@ void CWGSDb_Impl::OpenGiIdxTable(void)
 }
 
 
+void CWGSDb_Impl::OpenContigNameIndex(void)
+{
+    OpenIndex(SeqTable(), m_ContigNameIndex, "contig_name", m_ContigNameIndexIsOpened);
+}
+
+
+void CWGSDb_Impl::OpenScaffoldNameIndex(void)
+{
+    OpenIndex(ScfTable(), m_ScaffoldNameIndex, "scaffold_name", m_ScaffoldNameIndexIsOpened);
+}
+
+
+void CWGSDb_Impl::OpenProteinNameIndex(void)
+{
+    OpenIndex(ProtTable(), m_ProteinNameIndex, "protein_name", m_ProteinNameIndexIsOpened);
+}
+
+
 void CWGSDb_Impl::OpenProtAccIndex(void)
 {
-    if ( const CVDBTable& table = ProtTable() ) {
-        CFastMutexGuard guard(m_TableMutex);
-        if ( !m_ProtAccIndexIsOpened ) {
-            m_ProtAccIndex = CVDBTableIndex(table, "gb_accession",
-                                            CVDBTableIndex::eMissing_Allow);
-        }
-        m_ProtAccIndexIsOpened = true;
-    }
-    else {
-        m_ProtAccIndexIsOpened = true;
-    }
+    OpenIndex(ProtTable(), m_ProtAccIndex, "gb_accession", m_ProtAccIndexIsOpened);
 }
 
 
@@ -977,6 +1008,36 @@ uint64_t CWGSDb_Impl::GetProtGiRowId(TGi gi)
         Put(idx);
     }
     return ret;
+}
+
+
+uint64_t CWGSDb_Impl::GetContigNameRowId(const string& name)
+{
+    if ( const CVDBTableIndex& index = ContigNameIndex() ) {
+        pair<int64_t, uint64_t> range = index.Find(name);
+        return range.second? range.first: 0;
+    }
+    return 0;
+}
+
+
+uint64_t CWGSDb_Impl::GetScaffoldNameRowId(const string& name)
+{
+    if ( const CVDBTableIndex& index = ScaffoldNameIndex() ) {
+        pair<int64_t, uint64_t> range = index.Find(name);
+        return range.second? range.first: 0;
+    }
+    return 0;
+}
+
+
+uint64_t CWGSDb_Impl::GetProteinNameRowId(const string& name)
+{
+    if ( const CVDBTableIndex& index = ProteinNameIndex() ) {
+        pair<int64_t, uint64_t> range = index.Find(name);
+        return range.second? range.first: 0;
+    }
+    return 0;
 }
 
 

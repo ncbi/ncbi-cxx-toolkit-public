@@ -111,9 +111,23 @@ void CWGSTestApp::Init(void)
 
     arg_desc->AddFlag("gi_range", "Print GI range if any");
     arg_desc->AddFlag("gi_check", "Check GI index");
+    arg_desc->AddFlag("check_non_empty_lookup",
+                      "Check that lookup produce non-empty result");
     arg_desc->AddOptionalKey("gi", "GI",
                              "lookup by GI",
                              CArgDescriptions::eInt8);
+    arg_desc->AddOptionalKey("contig_name", "ContigName",
+                             "lookup by contig name",
+                             CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("scaffold_name", "ScaffoldName",
+                             "lookup by scaffold name",
+                             CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("protein_name", "ProteinName",
+                             "lookup by protein name",
+                             CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("protein_acc", "ProteinAcc",
+                             "lookup by protein accession",
+                             CArgDescriptions::eString);
 
     arg_desc->AddDefaultKey("o", "OutputFile",
                             "Output file of ASN.1",
@@ -517,6 +531,7 @@ int CWGSTestApp::Run(void)
             ++error_count;
         }
     }
+    bool check_non_empty_lookup = args["check_non_empty_lookup"];
     if ( args["gi"] ) {
         TGi gi = TIntId(args["gi"].AsInt8());
         CWGSGiResolver gi_resolver;
@@ -532,6 +547,9 @@ int CWGSTestApp::Run(void)
         CWGSGiIterator gi_it(wgs_db, gi);
         if ( !gi_it ) {
             out << "GI "<<gi<<" not found" << NcbiEndl;
+            if ( check_non_empty_lookup ) {
+                return 1;
+            }
         }
         else if ( gi_it.GetSeqType() == gi_it.eNuc ) {
             out << "GI "<<gi<<" Nucleotide row: "<<gi_it.GetRowId()
@@ -539,6 +557,7 @@ int CWGSTestApp::Run(void)
             CWGSSeqIterator it(wgs_db, gi_it.GetRowId());
             if ( !it ) {
                 out << "No such row: "<< gi_it.GetRowId() << NcbiEndl;
+                return 1;
             }
             else {
                 out << "GI "<<gi<<" len: "<<it.GetSeqLength() << NcbiEndl;
@@ -549,6 +568,117 @@ int CWGSTestApp::Run(void)
         }
         else {
             out << "GI "<<gi<<" Protein row: "<<gi_it.GetRowId() << NcbiEndl;
+            CWGSProteinIterator it(wgs_db, gi_it.GetRowId());
+            if ( !it ) {
+                out << "No such row: "<< gi_it.GetRowId() << NcbiEndl;
+                return 1;
+            }
+            else {
+                out << "GI "<<gi<<" len: "<<it.GetSeqLength() << NcbiEndl;
+                if ( print_seq ) {
+                    out << MSerial_AsnText << *it.GetBioseq();
+                }
+            }
+        }
+    }
+    if ( args["contig_name"] ) {
+        string name = args["contig_name"].AsString();
+        uint64_t row_id = wgs_db.GetContigNameRowId(name);
+        out << "Contig name "<<name<<" is in CONTIG table row " << row_id
+            << NcbiEndl;
+        if ( !row_id ) {
+            if ( check_non_empty_lookup ) {
+                return 1;
+            }
+        }
+        else {
+            CWGSSeqIterator it(wgs_db, row_id);
+            if ( !it ) {
+                out << "CONTIG: No such row: "<< row_id << NcbiEndl;
+                return 1;
+            }
+            else {
+                out << "CONTIG["<<row_id<<"] len: "<<it.GetSeqLength()
+                    << NcbiEndl;
+                if ( print_seq ) {
+                    out << MSerial_AsnText << *it.GetBioseq();
+                }
+            }
+        }
+    }
+    if ( args["scaffold_name"] ) {
+        string name = args["scaffold_name"].AsString();
+        uint64_t row_id = wgs_db.GetScaffoldNameRowId(name);
+        out << "Scaffold name "<<name<<" is in SCAFFOLD table row " << row_id
+            << NcbiEndl;
+        if ( !row_id ) {
+            if ( check_non_empty_lookup ) {
+                return 1;
+            }
+        }
+        else {
+            CWGSScaffoldIterator it(wgs_db, row_id);
+            if ( !it ) {
+                out << "SCAFFOLD: No such row: "<< row_id << NcbiEndl;
+                return 1;
+            }
+            else {
+                out << "SCAFFOLD["<<row_id<<"] len: "<<it.GetSeqLength()
+                    << NcbiEndl;
+                if ( print_seq ) {
+                    out << MSerial_AsnText << *it.GetBioseq();
+                }
+            }
+        }
+    }
+    if ( args["protein_name"] ) {
+        string name = args["protein_name"].AsString();
+        uint64_t row_id = wgs_db.GetProteinNameRowId(name);
+        out << "Protein name "<<name<<" is in PROTEIN table row " << row_id
+            << NcbiEndl;
+        if ( !row_id ) {
+            if ( check_non_empty_lookup ) {
+                return 1;
+            }
+        }
+        else {
+            CWGSProteinIterator it(wgs_db, row_id);
+            if ( !it ) {
+                out << "PROTEIN: No such row: "<< row_id << NcbiEndl;
+                return 1;
+            }
+            else {
+                out << "PROTEIN["<<row_id<<"] len: "<<it.GetSeqLength()
+                    << NcbiEndl;
+                if ( print_seq ) {
+                    out << MSerial_AsnText << *it.GetBioseq();
+                }
+            }
+        }
+    }
+    if ( args["protein_acc"] ) {
+        string name = args["protein_acc"].AsString();
+        uint64_t row_id = wgs_db.GetProtAccRowId(name);
+        out << "Protein acc "<<name<<" is in PROTEIN table row " << row_id
+            << NcbiEndl;
+        if ( !row_id ) {
+            if ( check_non_empty_lookup ) {
+                return 1;
+            }
+        }
+        else {
+            CWGSProteinIterator it(wgs_db, row_id);
+            if ( !it ) {
+                out << "PROTEIN: No such row: "<< row_id << NcbiEndl;
+                return 1;
+            }
+            else {
+                out << "PROTEIN["<<row_id<<"] len: "<<it.GetSeqLength()
+                    << NcbiEndl;
+                if ( print_seq ) {
+                    out << MSerial_AsnText << *it.GetBioseq();
+                }
+            }
         }
     }
 

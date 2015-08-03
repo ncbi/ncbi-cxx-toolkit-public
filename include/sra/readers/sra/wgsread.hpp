@@ -258,6 +258,12 @@ public:
     // get protein row_id (PROTEIN) for a given GI or 0 if there is no GI
     uint64_t GetProtGiRowId(TGi gi);
 
+    // get contig row_id (SEQUENCE) for contig name or 0 if there is none
+    uint64_t GetContigNameRowId(const string& name);
+    // get scaffold row_id (SCAFFOLD) for scaffold name or 0 if there is none
+    uint64_t GetScaffoldNameRowId(const string& name);
+    // get protein row_id (PROTEIN) for protein name or 0 if there is none
+    uint64_t GetProteinNameRowId(const string& name);
     // get protein row_id (PROTEIN) for GB accession or 0 if there is no acc
     uint64_t GetProtAccRowId(const string& acc);
 
@@ -351,10 +357,18 @@ protected:
     void OpenTable(CVDBTable& table,
                    const char* table_name,
                    volatile bool& table_is_opened);
+    void OpenIndex(const CVDBTable& table,
+                   CVDBTableIndex& index,
+                   const char* index_name,
+                   volatile bool& index_is_opened);
+
     void OpenScfTable(void);
     void OpenProtTable(void);
     void OpenGiIdxTable(void);
     void OpenProtAccIndex(void);
+    void OpenContigNameIndex(void);
+    void OpenScaffoldNameIndex(void);
+    void OpenProteinNameIndex(void);
 
     const CVDBTable& SeqTable(void) {
         return m_SeqTable;
@@ -382,6 +396,24 @@ protected:
             OpenProtAccIndex();
         }
         return m_ProtAccIndex;
+    }
+    const CVDBTableIndex& ContigNameIndex(void) {
+        if ( !m_ContigNameIndexIsOpened ) {
+            OpenContigNameIndex();
+        }
+        return m_ContigNameIndex;
+    }
+    const CVDBTableIndex& ScaffoldNameIndex(void) {
+        if ( !m_ScaffoldNameIndexIsOpened ) {
+            OpenScaffoldNameIndex();
+        }
+        return m_ScaffoldNameIndex;
+    }
+    const CVDBTableIndex& ProteinNameIndex(void) {
+        if ( !m_ProteinNameIndexIsOpened ) {
+            OpenProteinNameIndex();
+        }
+        return m_ProteinNameIndex;
     }
     
     // get table accessor object for exclusive access
@@ -422,6 +454,9 @@ private:
     volatile bool m_ProtTableIsOpened;
     volatile bool m_GiIdxTableIsOpened;
     volatile bool m_ProtAccIndexIsOpened;
+    volatile bool m_ContigNameIndexIsOpened;
+    volatile bool m_ScaffoldNameIndexIsOpened;
+    volatile bool m_ProteinNameIndexIsOpened;
     CVDBTable m_ScfTable;
     CVDBTable m_ProtTable;
     CVDBTable m_GiIdxTable;
@@ -431,6 +466,9 @@ private:
     CVDBObjectCache<SProtTableCursor> m_Prot;
     CVDBObjectCache<SIdxTableCursor> m_GiIdx;
     CVDBTableIndex m_ProtAccIndex;
+    CVDBTableIndex m_ContigNameIndex;
+    CVDBTableIndex m_ScaffoldNameIndex;
+    CVDBTableIndex m_ProteinNameIndex;
 
     bool m_IsSetMasterDescr;
     TMasterDescr m_MasterDescr;
@@ -502,6 +540,24 @@ public:
     // get protein row_id (PROTEIN) for a given GI or 0 if there is no GI
     uint64_t GetProtGiRowId(TGi gi) const {
         return GetNCObject().GetProtGiRowId(gi);
+    }
+
+    // get nucleotide row_id (SEQUENCE) for a given contig name or 0 if
+    // name not found.
+    uint64_t GetContigNameRowId(const string& name) const {
+        return GetNCObject().GetContigNameRowId(name);
+    }
+
+    // get scaffold row_id (SCAFFOLD) for a given scaffold name or 0 if
+    // name not found.
+    uint64_t GetScaffoldNameRowId(const string& name) const {
+        return GetNCObject().GetScaffoldNameRowId(name);
+    }
+
+    // get protein row_id (PROTEIN) for a protein name or 0 if
+    // name not found.
+    uint64_t GetProteinNameRowId(const string& name) const {
+        return GetNCObject().GetProteinNameRowId(name);
     }
 
     // get protein row_id (PROTEIN) for GB accession or 0 if there is no acc
