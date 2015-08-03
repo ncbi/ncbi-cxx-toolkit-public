@@ -64,4 +64,11 @@ CAutoInitPtr_Base::~CAutoInitPtr_Base(void)
 }
 
 
+void CAutoInitPtr_Base::AssertUninitialized(void) const
+{
+    NCBI_ASSERT(!m_Ptr,
+        "Multiple CAutoInitPtr_Base initializations are not allowed.");
+}
+
+
 END_NCBI_SCOPE

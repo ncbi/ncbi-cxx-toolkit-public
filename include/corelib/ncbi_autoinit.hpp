@@ -85,6 +85,9 @@ protected:
           m_UserCleanup(user_cleanup)
     {}
 
+    // Make sure the pointer is uninitialized, _ASSERT otherwise.
+    void AssertUninitialized(void) const;
+
     /// Pointer to the data
     void* m_Ptr;
 
@@ -259,6 +262,7 @@ inline
 void CAutoInitPtr<T>::Set(T* object)
 {
     CMutexGuard guard(sm_Mutex);
+    AssertUninitialized();
     if ( m_Ptr ) return;
     m_Ptr = object;
 }
@@ -290,6 +294,7 @@ inline
 void CAutoInitRef<T>::Set(T* object)
 {
     CMutexGuard guard(sm_Mutex);
+    AssertUninitialized();
     if ( m_Ptr ) return;
     if ( object ) {
         object->AddReference();
