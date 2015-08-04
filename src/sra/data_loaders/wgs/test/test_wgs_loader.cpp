@@ -1423,6 +1423,82 @@ BOOST_AUTO_TEST_CASE(HashTest)
     BOOST_CHECK_EQUAL(wgs_hash, gb_hash);
 }
 
+
+BOOST_AUTO_TEST_CASE(FetchNoSeq1)
+{
+    CRef<CObjectManager> om = sx_InitOM(eWithoutMasterDescr);
+
+    string id = "NZ_AAAA01000102";
+    CScope scope(*om);
+    scope.AddDefaults();
+
+    CRef<CSeq_id> seqid(new CSeq_id(id));
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*seqid);
+    CBioseq_Handle bh = scope.GetBioseqHandle(idh);
+    BOOST_REQUIRE(!bh);
+}
+
+
+BOOST_AUTO_TEST_CASE(FetchNoSeq2)
+{
+    CRef<CObjectManager> om = sx_InitOM(eWithoutMasterDescr);
+
+    string id = "AAAA010000102";
+    CScope scope(*om);
+    scope.AddDefaults();
+
+    CRef<CSeq_id> seqid(new CSeq_id(id));
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*seqid);
+    CBioseq_Handle bh = scope.GetBioseqHandle(idh);
+    BOOST_REQUIRE(!bh);
+}
+
+
+BOOST_AUTO_TEST_CASE(FetchNoSeq3)
+{
+    CRef<CObjectManager> om = sx_InitOM(eWithoutMasterDescr);
+
+    string id = "AAAA09000102";
+    CScope scope(*om);
+    scope.AddDefaults();
+
+    CRef<CSeq_id> seqid(new CSeq_id(id));
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*seqid);
+    CBioseq_Handle bh = scope.GetBioseqHandle(idh);
+    BOOST_REQUIRE(!bh);
+}
+
+
+BOOST_AUTO_TEST_CASE(FetchNoSeq4)
+{
+    CRef<CObjectManager> om = sx_InitOM(eWithoutMasterDescr);
+
+    string id = "ref|XXXX01000001";
+    CScope scope(*om);
+    scope.AddDefaults();
+
+    CRef<CSeq_id> seqid(new CSeq_id(id));
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*seqid);
+    CBioseq_Handle bh = scope.GetBioseqHandle(idh);
+    BOOST_REQUIRE(!bh);
+}
+
+
+BOOST_AUTO_TEST_CASE(FetchNoSeq5)
+{
+    CRef<CObjectManager> om = sx_InitOM(eWithoutMasterDescr);
+
+    string id = "AAPB01000001";
+    CScope scope(*om);
+    scope.AddDefaults();
+
+    CRef<CSeq_id> seqid(new CSeq_id(id));
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*seqid);
+    CBioseq_Handle bh = scope.GetBioseqHandle(idh);
+    BOOST_REQUIRE(!bh);
+}
+
+
 NCBITEST_INIT_TREE()
 {
     NCBITEST_DISABLE(StateTest);
