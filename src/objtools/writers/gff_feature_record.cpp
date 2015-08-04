@@ -167,6 +167,21 @@ void CGffAlignRecord::AddForwardShift(
 
 
 //  ----------------------------------------------------------------------------
+void CGffAlignRecord::AddReverseShift(
+    unsigned int size)
+//  ----------------------------------------------------------------------------
+{
+    FinalizeMatches();
+    if (!mAttrGap.empty()) {
+        mAttrGap += " ";
+    }
+    mAttrGap += "R";
+    mAttrGap += NStr::IntToString(size);
+    mGapIsTrivial = false;
+}
+
+
+//  ----------------------------------------------------------------------------
 void CGffAlignRecord::AddDeletion(
     unsigned int size)
 //  ----------------------------------------------------------------------------

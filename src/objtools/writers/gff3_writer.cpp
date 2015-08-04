@@ -636,22 +636,39 @@ bool CGff3Writer::xAssignAlignmentSplicedGap(
             record.AddMatch(chunk.GetMismatch()); 
             break;
         case CSpliced_exon_chunk::e_Diag:
-            record.AddMatch(chunk.GetDiag()/tgtWidth);
+            // Round to next multiple of tgtWidth to account for reverse frameshifts
+            record.AddMatch((chunk.GetDiag()+tgtWidth-1)/tgtWidth);
             break;
         case CSpliced_exon_chunk::e_Match:
-            record.AddMatch(chunk.GetMatch()/tgtWidth); 
+            // Round to next multiple of tgtWidth to account for reverse framshifts
+            record.AddMatch((chunk.GetMatch()+tgtWidth-1)/tgtWidth); 
             break;
         case CSpliced_exon_chunk::e_Genomic_ins:
-            record.AddDeletion(chunk.GetGenomic_ins()); // D
+            {
+                const int del_length = chunk.GetGenomic_ins()/tgtWidth;
+                if (del_length > 0) {
+                    record.AddDeletion(del_length);
+                }
+            }
+            if (tgtWidth > 1) {
+                const int forward_shift = chunk.GetGenomic_ins()%tgtWidth;
+                if (forward_shift >  0) {
+                    record.AddForwardShift(forward_shift);
+                }
+            }
             break;
         case CSpliced_exon_chunk::e_Product_ins:
-            const int insertLength = chunk.GetProduct_ins()/tgtWidth;
-            if (insertLength > 0) { // May not be a valid insertion
-                record.AddInsertion(insertLength);
+            if (tgtWidth > 1) { // Can only occur when target is prot
+                const int reverse_shift = chunk.GetProduct_ins()%tgtWidth;
+                if (reverse_shift > 0) { 
+                    record.AddReverseShift(reverse_shift);
+                }
             }
-            const int remainder = chunk.GetProduct_ins()%tgtWidth;
-            if (remainder > 0) { // Can only occur when target is prot
-               record.AddForwardShift(remainder);
+            {
+                const int insert_length = chunk.GetProduct_ins()/tgtWidth;
+                if (insert_length > 0) { 
+                    record.AddInsertion(insert_length);
+                }
             }
             break;
         }
@@ -958,25 +975,39 @@ bool CGff3Writer::xAssignAlignmentDensegGap(
 
         if (IS_INSERTION(tgtFlags, srcFlags)) {
             CRange<int> tgtPiece = alnMap.GetRange(0, seg);
-            const int insertLength = tgtPiece.GetLength()/tgtWidth;
-            if (insertLength > 0) { // May not be a valid insertion
-                record.AddInsertion(insertLength);
+
+            if (tgtWidth > 1) {
+                const int reverse_shift = tgtPiece.GetLength()%tgtWidth;
+                if (reverse_shift > 0) { // Can only occur when target is prot
+                    record.AddReverseShift(reverse_shift);
+                }
             }
 
-            const int remainder = tgtPiece.GetLength()%tgtWidth;
-            if (remainder > 0) { // Can only occur when target is prot
-               record.AddForwardShift(remainder);
+            const int insert_length = tgtPiece.GetLength()/tgtWidth;
+            if (insert_length > 0) { 
+                record.AddInsertion(insert_length);
             }
         }
 
         if (IS_DELETION(tgtFlags, srcFlags)) {
             CRange<int> srcPiece = alnMap.GetRange(srcRow, seg);
-            record.AddDeletion(srcPiece.GetLength()/srcWidth);
+
+            const int del_length = srcPiece.GetLength()/tgtWidth;
+            if (del_length > 0) {
+                record.AddDeletion(del_length);
+            }
+
+            if (tgtWidth > 1) {
+                const int forward_shift = srcPiece.GetLength()%tgtWidth;
+                if (forward_shift > 0) {
+                    record.AddForwardShift(forward_shift);
+                }
+            }
         }
 
         if (IS_MATCH(tgtFlags, srcFlags)) {
             CRange<int> tgtPiece = alnMap.GetRange(0, seg); //either will work
-            record.AddMatch(tgtPiece.GetLength()/tgtWidth);
+            record.AddMatch((tgtPiece.GetLength()+tgtWidth-1)/tgtWidth);
         } 
     }
     record.FinalizeMatches();

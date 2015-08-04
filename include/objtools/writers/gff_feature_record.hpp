@@ -94,6 +94,9 @@ public:
     AddForwardShift(
         unsigned int);
     void
+    AddReverseShift(
+        unsigned int);
+    void
     AddDeletion(
         unsigned int);
     void
