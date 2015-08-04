@@ -796,6 +796,8 @@ AVRO_LIBS
 AVROGENCPP
 MONGODB_INCLUDE
 MONGODB_LIBS
+GMOCK_INCLUDE
+GMOCK_LIBS
 signature
 build_root
 top_srcdir
@@ -1560,7 +1562,7 @@ ftds mysql orbacus freetype ftgl opengl mesa glut glew glew-mx \
 bdb python perl jni sqlite3 icu boost boost-tag \
 sp expat sablot libxml libxslt libexslt xerces xalan zorba \
 oechem sge muparser hdf5 \
-gif jpeg tiff png xpm magic curl mimetic gsoap avro cereal mongodb 3psw \
+gif jpeg tiff png xpm magic curl mimetic gsoap avro cereal mongodb gmock 3psw \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -1626,7 +1628,7 @@ for x_arg in "$@" ; do
       | --with-sge=* | --with-muparser=* | --with-hdf5=* | --with-gif=* \
       | --with-jpeg=* | --with-png=* | --with-tiff=* | --with-xpm=* \
       | --with-magic=* | --with-curl=* | --with-mimetic=* | --with-gsoap=* \
-      | --with-avro=* | --with-cereal=* | --with-mongodb=* )
+      | --with-avro=* | --with-cereal=* | --with-mongodb=* | --with-gmock=* )
       # Confirm that the specified directory exists and is readable.
       dir=`echo $x_arg | sed -e 's/^[^=]*=//'`
       case "$x_arg" in
@@ -1930,6 +1932,8 @@ Optional Packages:
  --without-cereal        do not use USC Cereal
  --with-mongodb=DIR      use MongoDB installation in DIR
  --without-mongodb       do not use MongoDB
+ --with-gmock=DIR        use Google Mock installation in DIR
+ --without-gmock         do not use Google Mock
  --with-3psw=std:netopt  favor standard (system) builds of the above pkgs.
  --without-3psw          do not use any of the above packages
  --without-local-lbsm    turn off support for IPC with locally running LBSMD
@@ -2439,6 +2443,12 @@ case "$with_3psw" in
    { (exit 1); exit 1; }; }
          else
             with_mongodb=no
+         fi
+        if test "${with_gmock-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-gmock but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_gmock=no
          fi
 
       $as_unset NCBI || test "${NCBI+set}" != set || { NCBI=; export NCBI; }
@@ -3874,6 +3884,18 @@ fi
 # Check whether --with-mongodb2 was given.
 if test "${with_mongodb2+set}" = set; then
   withval=$with_mongodb2;
+fi
+
+
+# Check whether --with-gmock was given.
+if test "${with_gmock+set}" = set; then
+  withval=$with_gmock;
+fi
+
+
+# Check whether --with-gmock2 was given.
+if test "${with_gmock2+set}" = set; then
+  withval=$with_gmock2;
 fi
 
 
@@ -41967,6 +41989,260 @@ else
    MONGODB_STATIC_LIBS=
 fi
 
+
+# Google Mock
+case "$with_gmock" in
+   yes | no | '' ) ;;
+   *             ) GMOCK_PATH=$with_gmock ;;
+esac
+if test -d "$GMOCK_PATH"; then
+   ncbi_fix_dir_tmp=`if cd $GMOCK_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $GMOCK_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            GMOCK_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$GMOCK_PATH" in
+               /*) ;;
+               * ) GMOCK_PATH=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) GMOCK_PATH=$ncbi_fix_dir_tmp ;;
+ esac
+   for d in "$GMOCK_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx/lib" \
+            "$GMOCK_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx/lib" \
+            "$GMOCK_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx/lib" \
+            "$GMOCK_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx/lib" \
+	    "$GMOCK_PATH/lib$bit64_sfx" "$GMOCK_PATH/lib"; do
+      if test -d "$d"; then
+         GMOCK_LIBDIR=$d
+	 ncbi_fix_dir_tmp=`if cd $GMOCK_LIBDIR; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $GMOCK_LIBDIR && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            GMOCK_LIBDIR=$ncbi_fix_dir_tmp2
+         else
+            case "$GMOCK_LIBDIR" in
+               /*) ;;
+               * ) GMOCK_LIBDIR=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) GMOCK_LIBDIR=$ncbi_fix_dir_tmp ;;
+ esac
+         break
+      fi
+   done
+fi
+ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $GMOCK_LIBDIR; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    GMOCK_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $GMOCK_LIBDIR; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    GMOCK_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+if test "$with_gmock" != "no"; then
+    case "$with_gmock" in
+       yes | "" ) ;;
+       *        ) GMOCK_PATH=$with_gmock ;;
+    esac
+    if test "$GMOCK_PATH" != /usr -a -d "$GMOCK_PATH"; then
+       in_path=" in $GMOCK_PATH"
+       if test -z "$GMOCK_INCLUDE" -a -d "$GMOCK_PATH/include"; then
+          GMOCK_INCLUDE="-I$GMOCK_PATH/include"
+       fi
+       if test -n "$GMOCK_LIBPATH"; then
+          :
+       elif test -d "$GMOCK_PATH/lib${bit64_sfx}"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $GMOCK_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    GMOCK_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $GMOCK_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    GMOCK_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       elif test -d "$GMOCK_PATH/lib"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $GMOCK_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    GMOCK_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $GMOCK_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    GMOCK_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       fi
+       GMOCK_LIBS="$GMOCK_LIBPATH -lgmock -lgtest"
+    else
+       GMOCK_INCLUDE=""
+       GMOCK_LIBS="-lgmock -lgtest"
+       in_path=
+    fi
+    { echo "$as_me:$LINENO: checking for libgmock$in_path" >&5
+echo $ECHO_N "checking for libgmock$in_path... $ECHO_C" >&6; }
+if test "${ncbi_cv_lib_gmock+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CPPFLAGS=" $GMOCK_INCLUDE $orig_CPPFLAGS"
+       LIBS="$GMOCK_LIBS  $orig_LIBS"
+       cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <gmock/gmock.h>
+int
+main ()
+{
+int    my_argc;
+       char** my_argv;
+       testing::InitGoogleMock(&my_argc, my_argv);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_gmock=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ncbi_cv_lib_gmock=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ncbi_cv_lib_gmock" >&5
+echo "${ECHO_T}$ncbi_cv_lib_gmock" >&6; }
+    if test "$ncbi_cv_lib_gmock" = "no"; then
+       if test "${with_gmock:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-gmock explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-gmock explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+    fi
+ fi
+ if test "$with_gmock" = "no"; then
+    GMOCK_PATH="No_GMOCK"
+    GMOCK_INCLUDE=
+    GMOCK_LIBS=
+ else
+              WithPackages="$WithPackages${WithPackagesSep}GMOCK"; WithPackagesSep=" "
+    GMOCK_INCLUDE=" $GMOCK_INCLUDE"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBGMOCK 1
+_ACEOF
+
+ fi
+
+
+
+
+
 ### Restore original compiler/linker flags
 LIBS="$orig_LIBS"
 CPPFLAGS="$orig_CPPFLAGS"
@@ -42373,7 +42649,7 @@ for x in StrictGI GCC KCC ICC VisualAge CompaqCompiler Cray WorkShop MIPSpro MSV
           ;;
       esac
    done
-  for x in UUID FUSE Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE GCRYPT GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON23 PYTHON24 PYTHON25 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Threads C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB LocalVDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF UNGIF GIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal MONGODB; do
+  for x in UUID FUSE Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE GCRYPT GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON23 PYTHON24 PYTHON25 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Threads C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB LocalVDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF UNGIF GIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal MONGODB GMOCK; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"
@@ -43653,12 +43929,12 @@ AVRO_LIBS!$AVRO_LIBS$ac_delim
 AVROGENCPP!$AVROGENCPP$ac_delim
 MONGODB_INCLUDE!$MONGODB_INCLUDE$ac_delim
 MONGODB_LIBS!$MONGODB_LIBS$ac_delim
+GMOCK_INCLUDE!$GMOCK_INCLUDE$ac_delim
+GMOCK_LIBS!$GMOCK_LIBS$ac_delim
 signature!$signature$ac_delim
 build_root!$build_root$ac_delim
 top_srcdir!$top_srcdir$ac_delim
 srcdir!$srcdir$ac_delim
-status_dir!$status_dir$ac_delim
-builddir!$builddir$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -43700,6 +43976,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+status_dir!$status_dir$ac_delim
+builddir!$builddir$ac_delim
 runpath!$runpath$ac_delim
 ncbi_runpath!$ncbi_runpath$ac_delim
 c_ncbi_runpath!$c_ncbi_runpath$ac_delim
@@ -43795,8 +44073,6 @@ UUID_LIBS!$UUID_LIBS$ac_delim
 DEMANGLE_LIBS!$DEMANGLE_LIBS$ac_delim
 ICONV_LIBS!$ICONV_LIBS$ac_delim
 Z_LIB!$Z_LIB$ac_delim
-BZ2_LIB!$BZ2_LIB$ac_delim
-PCREPOSIX_LIBS!$PCREPOSIX_LIBS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -43838,6 +44114,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+BZ2_LIB!$BZ2_LIB$ac_delim
+PCREPOSIX_LIBS!$PCREPOSIX_LIBS$ac_delim
 PCRE_LIB!$PCRE_LIB$ac_delim
 OPENSSL_STATIC_LIBS!$OPENSSL_STATIC_LIBS$ac_delim
 TLS_INCLUDE!$TLS_INCLUDE$ac_delim
@@ -43933,8 +44211,6 @@ XALAN_INCLUDE!$XALAN_INCLUDE$ac_delim
 XALAN_LIBS!$XALAN_LIBS$ac_delim
 XALAN_STATIC_LIBS!$XALAN_STATIC_LIBS$ac_delim
 ZORBA_INCLUDE!$ZORBA_INCLUDE$ac_delim
-ZORBA_LIBS!$ZORBA_LIBS$ac_delim
-ZORBA_STATIC_LIBS!$ZORBA_STATIC_LIBS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -43976,6 +44252,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+ZORBA_LIBS!$ZORBA_LIBS$ac_delim
+ZORBA_STATIC_LIBS!$ZORBA_STATIC_LIBS$ac_delim
 SQLITE3_STATIC_LIBS!$SQLITE3_STATIC_LIBS$ac_delim
 FREETYPE_INCLUDE!$FREETYPE_INCLUDE$ac_delim
 FREETYPE_LIBS!$FREETYPE_LIBS$ac_delim
@@ -44023,7 +44301,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 45; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 47; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

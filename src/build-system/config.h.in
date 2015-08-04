@@ -237,6 +237,9 @@
 /* Define to 1 if you have libglut. */
 #undef HAVE_LIBGLUT
 
+/* Define to 1 if libgmock is available. */
+#undef HAVE_LIBGMOCK
+
 /* Define to 1 if libgnutls is available. */
 #undef HAVE_LIBGNUTLS
 

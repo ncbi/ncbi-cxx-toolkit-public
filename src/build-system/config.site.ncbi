@@ -46,6 +46,7 @@ try_local() {
         test -x "$d/bin/libgcrypt-config"  &&  : ${GCRYPT_PATH=$d}
         test -f "$d/include/gif_lib.h"     &&  : ${GIF_PATH=$d}
         test -f "$d/include/GL/glew.h"     &&  : ${GLEW_PATH=$d}
+        test -d "$d/include/gmock"         &&  : ${GMOCK_PATH=$d}
         test -x "$d/bin/libgnutls-config"  &&  : ${GNUTLS_PATH=$d}
         test -f "$d/include/stdsoap2.h"    &&  : ${GSOAP_PATH=$d}
         test -f "$d/include/hdf5.h"        &&  : ${HDF5_PATH=$d}
@@ -154,6 +155,10 @@ case "$ncbi_platform" in
 esac
 
 : ${GLEW_PATH=$NCBI/glew-1.5.8}
+
+case "$ncbi_platform" in
+    Linux64    ) : ${GMOCK_PATH=$NCBI/gmock-1.7.0} ;;
+esac
 
 case "$ncbi_platform" in
     Linux64    ) : ${GNUTLS_PATH=$NCBI/gnutls-3.4.0} ;;

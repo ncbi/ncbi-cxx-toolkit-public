@@ -71,7 +71,7 @@ case "$with_3psw" in
                      python, perl, jni, sqlite3, mimetic, sge, icu, sp, expat,
                      sablot, libxml, libxslt, libexslt, xerces, xalan, zorba,
                      oechem, muparser, hdf5, gif, jpeg, png, tiff, xpm,
-                     magic, curl, gsoap, avro, cereal, mongodb],
+                     magic, curl, gsoap, avro, cereal, mongodb, gmock],
         [if test "${[with_]X-no}" != "no"; then
             AC_MSG_ERROR([incompatible options: --with-]X[ but --without-3psw])
          else
@@ -471,6 +471,10 @@ AC_ARG_WITH(mongodb,
    [ --with-mongodb=DIR      use MongoDB installation in DIR])
 AC_ARG_WITH(mongodb2,
    [ --without-mongodb       do not use MongoDB])
+AC_ARG_WITH(gmock,
+   [ --with-gmock=DIR        use Google Mock installation in DIR])
+AC_ARG_WITH(gmock2,
+   [ --without-gmock         do not use Google Mock])
 AC_ARG_WITH(3psw,
    [ --with-3psw=std:netopt  favor standard (system) builds of the above pkgs.])
 AC_ARG_WITH(3psw2,
@@ -530,7 +534,7 @@ ftds mysql orbacus freetype ftgl opengl mesa glut glew glew-mx \
 bdb python perl jni sqlite3 icu boost boost-tag \
 sp expat sablot libxml libxslt libexslt xerces xalan zorba \
 oechem sge muparser hdf5 \
-gif jpeg tiff png xpm magic curl mimetic gsoap avro cereal mongodb 3psw \
+gif jpeg tiff png xpm magic curl mimetic gsoap avro cereal mongodb gmock 3psw \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -595,7 +599,7 @@ for x_arg in "$@" ; do
       | --with-sge=* | --with-muparser=* | --with-hdf5=* | --with-gif=* \
       | --with-jpeg=* | --with-png=* | --with-tiff=* | --with-xpm=* \
       | --with-magic=* | --with-curl=* | --with-mimetic=* | --with-gsoap=* \
-      | --with-avro=* | --with-cereal=* | --with-mongodb=* )
+      | --with-avro=* | --with-cereal=* | --with-mongodb=* | --with-gmock=* )
       # Confirm that the specified directory exists and is readable.
       dir=`echo $x_arg | sed -e 's/^[[^=]]*=//'`
       case "$x_arg" in
@@ -7116,6 +7120,35 @@ if test -n "$MONGODB_LIBS"; then
 else
    MONGODB_STATIC_LIBS=
 fi
+
+
+# Google Mock
+case "$with_gmock" in
+   yes | no | '' ) ;;
+   *             ) GMOCK_PATH=$with_gmock ;;
+esac
+if test -d "$GMOCK_PATH"; then
+   NCBI_FIX_DIR(GMOCK_PATH)
+   for d in "$GMOCK_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx$bit64_sfx/lib" \
+            "$GMOCK_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx/lib" \
+            "$GMOCK_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx/lib" \
+            "$GMOCK_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx/lib" \
+	    "$GMOCK_PATH/lib$bit64_sfx" "$GMOCK_PATH/lib"; do
+      if test -d "$d"; then
+         GMOCK_LIBDIR=$d
+	 NCBI_FIX_DIR(GMOCK_LIBDIR)
+         break
+      fi
+   done
+fi
+NCBI_RPATHIFY(GMOCK_LIBPATH, $GMOCK_LIBDIR)
+NCBI_CHECK_THIRD_PARTY_LIB(gmock,
+   [AC_LANG_PROGRAM([#include <gmock/gmock.h>],
+      [int    my_argc;
+       char** my_argv;
+       testing::InitGoogleMock(&my_argc, my_argv);])],
+   [-lgtest])
+
 
 ### Restore original compiler/linker flags
 LIBS="$orig_LIBS"
