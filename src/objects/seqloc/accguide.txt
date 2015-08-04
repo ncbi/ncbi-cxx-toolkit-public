@@ -447,8 +447,8 @@ version  1 # of file format
 2+6  LF  ddbj_patent
 2+6  LG  ddbj_patent
 2+6  LH  ddbj_tsa_nuc
-2+6  LI  ddbj_other_nuc
-2+6  LJ  ddbj_other_nuc
+2+6  LI  ddbj_tsa_nuc
+2+6  LJ  ddbj_tsa_nuc
 2+6  LK  embl_other_nuc
 2+6  LL  embl_other_nuc
 2+6  LM  embl_other_nuc
@@ -459,6 +459,16 @@ version  1 # of file format
 2+6  LR  embl_other_nuc
 2+6  LS  embl_other_nuc
 2+6  LT  embl_other_nuc
+2+6  LU  ddbj_other_nuc
+2+6  LV  ddbj_other_nuc
+2+6  LX  ddbj_other_nuc
+2+6  LY  ddbj_other_nuc
+2+6  LZ  ddbj_other_nuc
+2+6  MA  ddbj_other_nuc
+2+6  MB  ddbj_other_nuc
+2+6  MC  ddbj_other_nuc
+2+6  MD  ddbj_other_nuc
+2+6  ME  ddbj_other_nuc
 2+6  ??  unreserved_nuc
 
 # Specially handled type-general Dbtag names; commented out for now in
