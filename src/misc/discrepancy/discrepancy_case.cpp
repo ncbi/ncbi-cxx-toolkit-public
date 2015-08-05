@@ -52,7 +52,7 @@ DISCREPANCY_CASE(COUNT_NUCLEOTIDES, CSeq_inst, eAll, "Count nucleotide sequences
     if (mol != CSeq_inst::eMol_dna && mol != CSeq_inst::eMol_rna && mol != CSeq_inst::eMol_na) {
         return;
     }
-    m_Objs["[n] nucleotide Bioseq[s] [is] present"].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), false));
+    m_Objs["[n] nucleotide Bioseq[s] [is] present"].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
 }
 
 
@@ -70,7 +70,7 @@ DISCREPANCY_CASE(COUNT_PROTEINS, CSeq_inst, eAll, "Count Proteins")
     if (obj.GetMol() != CSeq_inst::eMol_aa) {
         return;
     }
-    m_Objs["[n] protein sequence[s] [is] present"].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), false));
+    m_Objs["[n] protein sequence[s] [is] present"].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
 }
 
 
@@ -133,7 +133,7 @@ DISCREPANCY_CASE(COUNT_TRNAS, CSeqFeatData, eNormal, "Count tRNAs")
     if (m_Count != context.GetCountBioseq()) {
         m_Count = context.GetCountBioseq();
         Summarize();
-        m_Objs[kEmptyStr].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), false));
+        m_Objs[kEmptyStr].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
     }
 
     string aa;
@@ -142,7 +142,7 @@ DISCREPANCY_CASE(COUNT_TRNAS, CSeqFeatData, eNormal, "Count tRNAs")
     if (n != string::npos) {
         aa = aa.substr(n+1); // is there any better way to get the aminoacid name?
     }
-    m_Objs[aa].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), false), false);
+    m_Objs[aa].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef()), false);
 }
 
 
@@ -232,7 +232,7 @@ DISCREPANCY_CASE(COUNT_RRNAS, CSeqFeatData, eNormal, "Count rRNAs")
     if (m_Count != context.GetCountBioseq()) {
         m_Count = context.GetCountBioseq();
         Summarize();
-        m_Objs[kEmptyStr].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), false));
+        m_Objs[kEmptyStr].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
     }
 
     string aa;
@@ -241,7 +241,7 @@ DISCREPANCY_CASE(COUNT_RRNAS, CSeqFeatData, eNormal, "Count rRNAs")
     if (n != string::npos) {
         aa = aa.substr(n+1); // is there any better way to get the aminoacid name?
     }
-    m_Objs[aa].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), false), false);
+    m_Objs[aa].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef()), false);
 }
 
 

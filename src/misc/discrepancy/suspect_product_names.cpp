@@ -1039,9 +1039,7 @@ static bool DoesSingleStringMatchConstraint(const string& str, const CString_con
                     pattern = StripUnimportantCharacters(pattern, ig_space, ig_punct);
                 } 
 
-                size_t pFound = string::npos;
-                pFound = (str_cons->GetCase_sensitive())?
-                search.find(pattern) : NStr::FindNoCase(search, pattern);
+                size_t pFound = str_cons->GetCase_sensitive() ?  search.find(pattern) : NStr::FindNoCase(search, pattern);
                 switch (str_cons->GetMatch_location()) {
                     case eString_location_contains:
                         if (string::npos == pFound) {
@@ -1070,8 +1068,7 @@ static bool DoesSingleStringMatchConstraint(const string& str, const CString_con
                     case eString_location_ends:
                         while (pFound != string::npos && !rval) {
                             if ((pFound + pattern.size()) == search.size()) {
-                                rval = (str_cons->GetWhole_word())? 
-                                IsWholeWordMatch (search, pFound, pattern.size()): true;
+                                rval = str_cons->GetWhole_word() ?  IsWholeWordMatch (search, pFound, pattern.size()): true;
                                 /* stop the search, we're at the end of the string */
                                 pFound = string::npos;
                             }
@@ -1080,7 +1077,7 @@ static bool DoesSingleStringMatchConstraint(const string& str, const CString_con
                                     pFound = false;
                                 }
                                 else {
-                                    pFound = (str_cons->GetCase_sensitive()) ? pFound = search.find(pattern, pFound+1) : NStr::FindNoCase(search, pattern, pFound+1);
+                                    pFound = str_cons->GetCase_sensitive() ? search.find(pattern, pFound+1) : NStr::FindNoCase(search, pattern, pFound+1);
                                 }
                             }
                         }
@@ -5361,7 +5358,7 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eNormal, "Suspect Product 
             if (!DoesObjectMatchConstraintChoiceSet(context, constr)) continue;
         }
         CReportNode& node = m_Objs["[n] product name[s] contain[S] suspect phrase[s] or character[s]"][GetRuleText(**rule)][GetRuleMatch(**rule)];
-        node.Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), false));
+        node.Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
         node.SetFatal((*rule)->GetFatal());
     }
 }
@@ -5407,7 +5404,7 @@ DISCREPANCY_CASE(TEST_ORGANELLE_PRODUCTS, CSeqFeatData, eNormal, "Organelle prod
             if (!DoesObjectMatchConstraintChoiceSet(context, constr)) continue;
         }
         CReportNode& node = m_Objs["[n] organelle product name[s] contain[S] suspect phrase[s] or character[s]"][GetRuleText(**rule)][GetRuleMatch(**rule)];
-        node.Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), false));
+        node.Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
         node.SetFatal((*rule)->GetFatal());
     }
 }
