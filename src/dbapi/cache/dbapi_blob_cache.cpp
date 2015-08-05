@@ -266,7 +266,7 @@ public:
             *bytes_read = min(count, bytes_left);
             ::memcpy(buf, m_Buffer + m_ReadPos, *bytes_read);
         } else {
-            if (&*m_TmpFile) {
+            if (m_TmpFile.get() != NULL) {
                 m_TmpFile->read((char*)buf, count);
                 *bytes_read = (size_t)m_TmpFile->gcount();
                 if (*bytes_read == 0) {
@@ -384,7 +384,7 @@ public:
             }
         }
 
-        if (&*m_TmpFile) {
+        if (m_TmpFile.get() != NULL) {
             m_TmpFile->write((char*)buf, count);
             if ( m_TmpFile->good() ) {
                 *bytes_written = count;
@@ -411,7 +411,7 @@ private:
             out.write((char*)m_Buffer, m_BytesInBuffer);
         }
 
-        if (&*m_TmpFile) {
+        if (m_TmpFile.get() != NULL) {
             _ASSERT(m_Buffer == 0);
 
             m_TmpFile->seekg(0, IOS_BASE::beg);
@@ -439,7 +439,7 @@ private:
             ostream& out = cur.GetBlobOStream(1, m_BytesInBuffer);
             ret = x_SaveBlob(out);
         }
-        if (&*m_TmpFile) {
+        if (m_TmpFile.get() != NULL) {
             CT_OFF_TYPE total_bytes = m_TmpFile->tellg() - CT_POS_TYPE(0);
             ostream& out = cur.GetBlobOStream(1, (size_t)total_bytes);
             ret = x_SaveBlob(out);
