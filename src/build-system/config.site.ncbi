@@ -47,7 +47,7 @@ try_local() {
         test -f "$d/include/gif_lib.h"     &&  : ${GIF_PATH=$d}
         test -f "$d/include/GL/glew.h"     &&  : ${GLEW_PATH=$d}
         test -d "$d/include/gmock"         &&  : ${GMOCK_PATH=$d}
-        test -x "$d/bin/libgnutls-config"  &&  : ${GNUTLS_PATH=$d}
+        test -x "$d/lib/pkgconfig/gnutls.pc"  &&  : ${GNUTLS_PATH=$d}
         test -f "$d/include/stdsoap2.h"    &&  : ${GSOAP_PATH=$d}
         test -f "$d/include/hdf5.h"        &&  : ${HDF5_PATH=$d}
         test -x "$d/bin/icu-config"        &&  : ${ICU_PATH=$d}
@@ -163,6 +163,7 @@ esac
 case "$ncbi_platform" in
     Linux64    ) : ${GNUTLS_PATH=$NCBI/gnutls-3.4.0} ;;
     Linux*     ) : ${GNUTLS_PATH=$NCBI/gnutls-2.4.2} ;;
+    *MAC       ) : ${GNUTLS_PATH=$NCBI/gnutls-3.4.0} ;;
 esac
 
 case "$ncbi_platform" in
