@@ -1179,9 +1179,7 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
         {
             return CS_SUCCEED;
         }
-        if (msg->msgstring) {
-            message.message = msg->msgstring;
-        }
+        message.message = msg->msgstring;
 
         // Retrieve CDBHandlerStack ...
         if (con != NULL  &&
@@ -1421,9 +1419,7 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
         if (handlers->HandleMessage(msg->severity, msg->msgnumber, msg->text))
             return CS_SUCCEED;
 
-        if ( msg->text ) {
-            message.message = msg->text;
-        }
+        message.message = msg->text;
         if (ctl_conn) {
             message.context.Reset(&ctl_conn->GetDbgInfo());
             params = ctl_conn->GetLastParams();
