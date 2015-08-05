@@ -95,4 +95,21 @@ void CServer_Monitor::SendString(const string& str)
     SendMessage(str.data(), str.length());
 }
 
+
+bool CServer_Monitor::IsActive()
+{
+    return IsMonitorActive();
+}
+
+void CServer_Monitor::Send(const char* msg, size_t length)
+{
+    SendMessage(msg, length);
+}
+
+void CServer_Monitor::Send(const string& str)
+{
+    SendString(str);
+}
+
+
 END_NCBI_SCOPE

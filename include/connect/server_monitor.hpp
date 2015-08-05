@@ -48,6 +48,7 @@ BEGIN_NCBI_SCOPE
 struct IServer_Monitor
 {
     virtual ~IServer_Monitor() {}
+
     /// Check if monitoring is active
     virtual bool IsActive() = 0;
     /// Send message
@@ -55,6 +56,8 @@ struct IServer_Monitor
     /// Send message
     virtual void Send(const string& str) = 0;
 };
+
+
 
 /// Server monitor
 ///
@@ -74,16 +77,9 @@ public:
 
     /// @name IServer_Monitor interface
     /// @{
-
-    virtual bool IsActive() 
-        { return IsMonitorActive(); };
-    /// Send message
-    virtual void Send(const char* msg, size_t length) 
-        { SendMessage(msg, length); }
-    /// Send message
-    virtual void Send(const string& str)
-        { SendString(str); }
-
+    virtual bool IsActive();
+    virtual void Send(const char* msg, size_t length);
+    virtual void Send(const string& str);
     ///@}
 
 private:
