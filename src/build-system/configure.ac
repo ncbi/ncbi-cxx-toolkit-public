@@ -4213,7 +4213,7 @@ if test "x$with_gnutls" != xno; then
          test "x$p" = "x/usr"  ||  GNUTLS_PATH=$p
       fi
    else
-      LIBGNUTLS_CONFIG="eval PKG_CONFIG_PATH=\"$GNUTLS_PATH/lib/pkgconfig\" pkg-config gnutls --static"
+      LIBGNUTLS_CONFIG="eval PKG_CONFIG_PATH=\"$GNUTLS_PATH/lib$bit64_sfx/pkgconfig:$GNUTLS_PATH/lib/pkgconfig\" pkg-config gnutls --static"
       $LIBGNUTLS_CONFIG --exists >/dev/null 2>&1 ||  LIBGNUTLS_CONFIG=no
    fi
    case "$LIBGNUTLS_CONFIG" in
