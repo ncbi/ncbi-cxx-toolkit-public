@@ -607,7 +607,7 @@ int CTestNetCacheClient::Run(void)
 {
     int error_level = 0;
 
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
     const string& service  = args["service"].AsString();
     int stress_test_repetitions = args["repeat"].AsInteger();
 

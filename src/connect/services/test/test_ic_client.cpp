@@ -100,7 +100,7 @@ void CTestICClient::Init(void)
 
 int CTestICClient::Run(void)
 {
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     string service(args["service"].AsString());
     string cache_name(args["cache"].AsString());
