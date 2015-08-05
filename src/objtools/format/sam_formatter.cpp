@@ -170,7 +170,7 @@ void CSAM_CIGAR_Formatter::AddRow(const string& cigar)
     string id = x_GetTargetIdString();
 
     TReadFlags flags = fRead_Default;
-    if ( GetTargetSign() < 0 ) {
+    if ( GetTargetSign() != GetRefSign() ) {
         flags |= fRead_Reverse;
     }
 

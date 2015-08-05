@@ -212,12 +212,14 @@ void CCIGAR_Formatter::x_FormatLine(bool width_inverted)
     // one of (1, 1) for nuc-nuc, (1, 3) for nuc-prot,
     // (3, 1) for prot-nuc, and (3, 3) for prot-prot.
     TSeqPos width = max(m_RefWidth, m_TargetWidth);
-
-    for (CAlnMap::TNumchunk i0 = 0; i0 < m_AlnMap->GetNumSegs(); ++i0) {
-        TRange ref_piece = m_AlnMap->GetRange(m_RefRow, i0);
-        TRange tgt_piece = m_AlnMap->GetRange(m_TargetRow, i0);
-        CAlnMap::TSegTypeFlags ref_flags = m_AlnMap->GetSegType(m_RefRow, i0);
-        CAlnMap::TSegTypeFlags tgt_flags = m_AlnMap->GetSegType(m_TargetRow, i0);
+    CAlnMap::TNumchunk numseg = m_AlnMap->GetNumSegs();
+    for (CAlnMap::TNumchunk idx = 0; idx < numseg; ++idx) {
+        // If ref is on minus strand, revert the order of segments.
+        CAlnMap::TNumchunk seg = m_RefSign > 0 ? idx : numseg - idx - 1;
+        TRange ref_piece = m_AlnMap->GetRange(m_RefRow, seg);
+        TRange tgt_piece = m_AlnMap->GetRange(m_TargetRow, seg);
+        CAlnMap::TSegTypeFlags ref_flags = m_AlnMap->GetSegType(m_RefRow, seg);
+        CAlnMap::TSegTypeFlags tgt_flags = m_AlnMap->GetSegType(m_TargetRow, seg);
         //The type and count are guaranteed set by one of the if/else cases below.  
         char type = 'X'; // Guaranteed set. Pacify compiler.
         TSeqPos count = 0;  // Guaranteed set. Pacify compiler.
@@ -229,7 +231,7 @@ void CCIGAR_Formatter::x_FormatLine(bool width_inverted)
             //       on an aa boundary.
             //
             type = 'I';
-            if (i0 == 0  &&  IsSetFlag(fCIGAR_GffForFlybase)  &&  m_TargetWidth == 3) {
+            if (idx == 0  &&  IsSetFlag(fCIGAR_GffForFlybase)  &&  m_TargetWidth == 3) {
                 // See comments about frame and phase, below.
                 m_Frame = tgt_piece.GetFrom() % m_TargetWidth;
             }
@@ -244,7 +246,7 @@ void CCIGAR_Formatter::x_FormatLine(bool width_inverted)
             // TODO: Handle gap that does not start on an aa boundary.
             //
             type = 'D';
-            if (i0 == 0  &&  IsSetFlag(fCIGAR_GffForFlybase)  &&  m_RefWidth == 3) {
+            if (idx == 0  &&  IsSetFlag(fCIGAR_GffForFlybase)  &&  m_RefWidth == 3) {
                 // See comments about frame and phase, below.
                 m_Frame = ref_piece.GetFrom() % m_RefWidth;
             }
@@ -276,7 +278,7 @@ void CCIGAR_Formatter::x_FormatLine(bool width_inverted)
                     "Frameshift(s) in Spliced-exon-chunk's diag "
                     "not supported in current CIGAR output");
             }
-            if (i0 == 0  &&  IsSetFlag(fCIGAR_GffForFlybase)) {
+            if (idx == 0  &&  IsSetFlag(fCIGAR_GffForFlybase)) {
                 // Semantics of the phase aren't defined in GFF3 for
                 // feature types other than a CDS, and this is an alignment.
                 //
