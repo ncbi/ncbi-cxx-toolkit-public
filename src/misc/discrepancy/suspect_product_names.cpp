@@ -1039,7 +1039,7 @@ static bool DoesSingleStringMatchConstraint(const string& str, const CString_con
                     pattern = StripUnimportantCharacters(pattern, ig_space, ig_punct);
                 } 
 
-                size_t pFound;
+                size_t pFound = string::npos;
                 pFound = (str_cons->GetCase_sensitive())?
                 search.find(pattern) : NStr::FindNoCase(search, pattern);
                 switch (str_cons->GetMatch_location()) {
