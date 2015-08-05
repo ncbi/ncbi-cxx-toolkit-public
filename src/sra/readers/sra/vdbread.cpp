@@ -265,6 +265,11 @@ string CVPath::ConvertSysPathToPOSIX(const string& sys_path)
 {
     // Convert Windows path with drive letter
     // C:\Users\Public -> /C/Users/Public
+    if ( sys_path[0] == 'h' &&
+         (NStr::StartsWith(sys_path, "http://") ||
+          NStr::StartsWith(sys_path, "https://")) ) {
+        return sys_path;
+    }
     try {
         string path = CDirEntry::CreateAbsolutePath(sys_path);
         replace(path.begin(), path.end(), '\\', '/');
