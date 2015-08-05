@@ -6783,8 +6783,9 @@ CAlignModel CGnomonAnnotator_Base::MapOneModelToEditedContig(const CGeneModel& a
         if(cds.IsMappedToGenome())
             cds = cds.MapFromOrigToEdited(amap);
         double score = cds.Score();
+        bool open = cds.OpenCds();
         cds.Clip(editedalign.TranscriptLimits());
-        cds.SetScore(score, cds.OpenCds());
+        cds.SetScore(score, open);
         editedalign.SetCdsInfo(cds.MapFromEditedToOrig(editedamap));
     }
 
