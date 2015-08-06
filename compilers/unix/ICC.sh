@@ -38,6 +38,7 @@ case "$1" in
   12*         ) search=$intel_root/Compiler/$1/bin               ;;
   *13.[15]*   ) search=$intel_root/Compiler/13.5.192/bin/$arch   ;;
   13* | 2013  ) search=$intel_root/2013/bin                      ;;
+  15* | 2015  ) search=$intel_root/2015/bin                      ;;
   *           ) search=                                          ;;
 esac
 
