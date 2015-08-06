@@ -586,13 +586,12 @@ export FEATURES
 NCBI_CONFIG__LOG__FILE="-"
 export NCBI_CONFIG__LOG__FILE
 
-
-# Add current configuration's build 'bin' and 'lib' directories to PATH
-export PATH=".:\${build_dir}/\${build_tree}/bin/\${build_cfg}:\${build_dir}/\${build_tree}/lib/\${build_cfg}:\${saved_path}"
-
 # Export bin and lib paths
 export CFG_BIN="\${build_dir}/\${build_tree}/bin/\${build_cfg}"
 export CFG_LIB="\${build_dir}/\${build_tree}/lib/\${build_cfg}"
+
+# Add current configuration's build 'bin' and 'lib' directories to PATH
+export PATH=".:\${CFG_BIN}:\${CFG_LIB}:\${saved_path}"
 
 
 EOF
