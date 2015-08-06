@@ -30689,11 +30689,17 @@ if test "$with_boost" != "no"; then
          # presumably stale, particularly if boost_version WASN'T cached;
          # uncache all relevant settings
          $as_unset ncbi_cv_lib_boost_version || test "${ncbi_cv_lib_boost_version+set}" != set || { ncbi_cv_lib_boost_version=; export ncbi_cv_lib_boost_version; }
+         $as_unset ncbi_cv_lib_boost_version_num || test "${ncbi_cv_lib_boost_version_num+set}" != set || { ncbi_cv_lib_boost_version_num=; export ncbi_cv_lib_boost_version_num; }
          $as_unset ncbi_cv_lib_boost_regex || test "${ncbi_cv_lib_boost_regex+set}" != set || { ncbi_cv_lib_boost_regex=; export ncbi_cv_lib_boost_regex; }
          $as_unset ncbi_cv_lib_boost_spirit || test "${ncbi_cv_lib_boost_spirit+set}" != set || { ncbi_cv_lib_boost_spirit=; export ncbi_cv_lib_boost_spirit; }
          $as_unset ncbi_cv_lib_boost_system || test "${ncbi_cv_lib_boost_system+set}" != set || { ncbi_cv_lib_boost_system=; export ncbi_cv_lib_boost_system; }
+         $as_unset ncbi_cv_lib_boost_filesystem || test "${ncbi_cv_lib_boost_filesystem+set}" != set || { ncbi_cv_lib_boost_filesystem=; export ncbi_cv_lib_boost_filesystem; }
+         $as_unset ncbi_cv_lib_boost_iostreams || test "${ncbi_cv_lib_boost_iostreams+set}" != set || { ncbi_cv_lib_boost_iostreams=; export ncbi_cv_lib_boost_iostreams; }
+         $as_unset ncbi_cv_lib_boost_program_options || test "${ncbi_cv_lib_boost_program_options+set}" != set || { ncbi_cv_lib_boost_program_options=; export ncbi_cv_lib_boost_program_options; }
          $as_unset ncbi_cv_lib_boost_test || test "${ncbi_cv_lib_boost_test+set}" != set || { ncbi_cv_lib_boost_test=; export ncbi_cv_lib_boost_test; }
          $as_unset ncbi_cv_lib_boost_thread || test "${ncbi_cv_lib_boost_thread+set}" != set || { ncbi_cv_lib_boost_thread=; export ncbi_cv_lib_boost_thread; }
+      elif test -z "$ncbi_cv_lib_boost_version_num"; then
+         $as_unset ncbi_cv_lib_boost_version || test "${ncbi_cv_lib_boost_version+set}" != set || { ncbi_cv_lib_boost_version=; export ncbi_cv_lib_boost_version; }
       fi
    fi
       { echo "$as_me:$LINENO: checking Boost version" >&5
@@ -30709,6 +30715,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 
 #include <boost/version.hpp>
+ncbi_cv_lib_boost_version_num=BOOST_VERSION
 ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
 
 _ACEOF
@@ -30721,6 +30728,11 @@ _ACEOF
 fi
 { echo "$as_me:$LINENO: result: $ncbi_cv_lib_boost_version" >&5
 echo "${ECHO_T}$ncbi_cv_lib_boost_version" >&6; }
+
+cat >>confdefs.h <<_ACEOF
+#define NCBI_EXPECTED_BOOST_VERSION $ncbi_cv_lib_boost_version_num
+_ACEOF
+
    if test -d `echo $BOOST_INCLUDE | sed -e 's/^-I//'`/boost-${ncbi_cv_lib_boost_version}/boost; then
       BOOST_INCLUDE=$BOOST_INCLUDE/boost-${ncbi_cv_lib_boost_version}
    fi
@@ -31435,8 +31447,8 @@ echo "${ECHO_T}$ncbi_cv_lib_boost_test" >&6; }
        BOOST_THREAD_STATIC_LIBS=$BOOST_THREAD_LIBS
    fi
 
-   { echo "$as_me:$LINENO: checking for Boost.Threads$in_path" >&5
-echo $ECHO_N "checking for Boost.Threads$in_path... $ECHO_C" >&6; }
+   { echo "$as_me:$LINENO: checking for Boost.Thread$in_path" >&5
+echo $ECHO_N "checking for Boost.Thread$in_path... $ECHO_C" >&6; }
 if test "${ncbi_cv_lib_boost_thread+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -31519,7 +31531,12 @@ else
 fi
 
 if test "$ncbi_cv_lib_boost_filesystem" != "no"; then
-                   WithPackages="$WithPackages${WithPackagesSep}Boost.Filesystem"; WithPackagesSep=" "
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_BOOST_FILESYSTEM 1
+_ACEOF
+
+             WithPackages="$WithPackages${WithPackagesSep}Boost.Filesystem"; WithPackagesSep=" "
 else
    boost_fs_lib=
    boost_fs_static_lib=
@@ -31528,14 +31545,24 @@ else
 fi
 
 if test "$ncbi_cv_lib_boost_iostreams" != "no"; then
-                   WithPackages="$WithPackages${WithPackagesSep}Boost.Iostreams"; WithPackagesSep=" "
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_BOOST_IOSTREAMS 1
+_ACEOF
+
+             WithPackages="$WithPackages${WithPackagesSep}Boost.Iostreams"; WithPackagesSep=" "
 else
    BOOST_IOSTREAMS_LIBS=
    BOOST_IOSTREAMS_STATIC_LIBS=
 fi
 
 if test "$ncbi_cv_lib_boost_program_options" != "no"; then
-                   WithPackages="$WithPackages${WithPackagesSep}Boost.Program-Options"; WithPackagesSep=" "
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_BOOST_PROGRAM_OPTIONS 1
+_ACEOF
+
+             WithPackages="$WithPackages${WithPackagesSep}Boost.Program-Options"; WithPackagesSep=" "
 else
    BOOST_PROGRAM_OPTIONS_LIBS=
    BOOST_PROGRAM_OPTIONS_STATIC_LIBS=
@@ -31563,7 +31590,12 @@ _ACEOF
 fi
 
 if test "$ncbi_cv_lib_boost_system" != "no"; then
-                   WithPackages="$WithPackages${WithPackagesSep}Boost.System"; WithPackagesSep=" "
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_BOOST_SYSTEM 1
+_ACEOF
+
+             WithPackages="$WithPackages${WithPackagesSep}Boost.System"; WithPackagesSep=" "
 # BOOST_SYSTEM(_STATIC)_LIBS already conditionally cleared above
 fi
 
@@ -31594,7 +31626,7 @@ cat >>confdefs.h <<\_ACEOF
 #define HAVE_BOOST_THREAD 1
 _ACEOF
 
-             WithPackages="$WithPackages${WithPackagesSep}Boost.Threads"; WithPackagesSep=" "
+             WithPackages="$WithPackages${WithPackagesSep}Boost.Thread"; WithPackagesSep=" "
 else
    BOOST_THREAD_LIBS=
    BOOST_THREAD_STATIC_LIBS=
@@ -42649,7 +42681,7 @@ for x in StrictGI GCC KCC ICC VisualAge CompaqCompiler Cray WorkShop MIPSpro MSV
           ;;
       esac
    done
-  for x in UUID FUSE Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE GCRYPT GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON23 PYTHON24 PYTHON25 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Threads C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB LocalVDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF UNGIF GIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal MONGODB GMOCK; do
+  for x in UUID FUSE Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE GCRYPT GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON23 PYTHON24 PYTHON25 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB LocalVDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF UNGIF GIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal MONGODB GMOCK; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"

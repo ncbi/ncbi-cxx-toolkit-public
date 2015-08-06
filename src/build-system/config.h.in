@@ -38,16 +38,28 @@
 /* Define to 1 if the Berkeley `db_cxx' library is available. */
 #undef HAVE_BERKELEY_DB_CXX
 
+/* Define to 1 if the `Boost.Filesystem' library is available. */
+#undef HAVE_BOOST_FILESYSTEM
+
+/* Define to 1 if the `Boost.Iostreams' library is available. */
+#undef HAVE_BOOST_IOSTREAMS
+
+/* Define to 1 if the `Boost.Program-Options' library is available. */
+#undef HAVE_BOOST_PROGRAM_OPTIONS
+
 /* Define to 1 if the `Boost.Regex' library is available. */
 #undef HAVE_BOOST_REGEX
 
 /* Define to 1 if the `Boost.Spirit' headers are available. */
 #undef HAVE_BOOST_SPIRIT
 
+/* Define to 1 if the `Boost.System' library is available. */
+#undef HAVE_BOOST_SYSTEM
+
 /* Define to 1 if the `Boost.Test' libraries are available. */
 #undef HAVE_BOOST_TEST
 
-/* Define to 1 if the `Boost.Threads' library is available. */
+/* Define to 1 if the `Boost.Thread' library is available. */
 #undef HAVE_BOOST_THREAD
 
 /* Define to 1 if the preprocessor supports GNU-style variadic macros. */
@@ -716,6 +728,9 @@
 /* Define to 1 if building dynamic libraries at all (albeit not necessarily by
    default). */
 #undef NCBI_DLL_SUPPORT
+
+/* Define to the expected Boost version, to help catch skew. */
+#undef NCBI_EXPECTED_BOOST_VERSION
 
 /* Define to whatever syntax your compiler supports for marking functions as
    to be inlined even if they might not otherwise be. */

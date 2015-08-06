@@ -5052,17 +5052,24 @@ if test "$with_boost" != "no"; then
          # presumably stale, particularly if boost_version WASN'T cached;
          # uncache all relevant settings
          AS_UNSET(ncbi_cv_lib_boost_version)
+         AS_UNSET(ncbi_cv_lib_boost_version_num)
          AS_UNSET(ncbi_cv_lib_boost_regex)
          AS_UNSET(ncbi_cv_lib_boost_spirit)
          AS_UNSET(ncbi_cv_lib_boost_system)
+         AS_UNSET(ncbi_cv_lib_boost_filesystem)
+         AS_UNSET(ncbi_cv_lib_boost_iostreams)
+         AS_UNSET(ncbi_cv_lib_boost_program_options)
          AS_UNSET(ncbi_cv_lib_boost_test)
          AS_UNSET(ncbi_cv_lib_boost_thread)
+      elif test -z "$ncbi_cv_lib_boost_version_num"; then
+         AS_UNSET(ncbi_cv_lib_boost_version)
       fi
    fi
       AC_CACHE_CHECK([Boost version],
          ncbi_cv_lib_boost_version,
          [AC_LANG_CONFTEST([AC_LANG_SOURCE([[
 #include <boost/version.hpp>
+ncbi_cv_lib_boost_version_num=BOOST_VERSION
 ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
           ]])])
           eval "$ac_cpp $BOOST_INCLUDE conftest.$ac_ext" \
@@ -5071,6 +5078,9 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
           . ./conftest.sh
           rm -f contest*
          ])
+      AC_DEFINE_UNQUOTED(NCBI_EXPECTED_BOOST_VERSION,
+         $ncbi_cv_lib_boost_version_num,
+         [Define to the expected Boost version, to help catch skew.])
    if test -d `echo $BOOST_INCLUDE | sed -e 's/^-I//'`/boost-${ncbi_cv_lib_boost_version}/boost; then
       BOOST_INCLUDE=$BOOST_INCLUDE/boost-${ncbi_cv_lib_boost_version}
    fi
@@ -5360,7 +5370,7 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
        BOOST_THREAD_STATIC_LIBS=$BOOST_THREAD_LIBS
    fi
 
-   AC_CACHE_CHECK([for Boost.Threads$in_path], ncbi_cv_lib_boost_thread,
+   AC_CACHE_CHECK([for Boost.Thread$in_path], ncbi_cv_lib_boost_thread,
       CPPFLAGS="$BOOST_INCLUDE $orig_CPPFLAGS"
       LIBS="$BOOST_LIBPATH $BOOST_THREAD_LIBS $RT_LIBS $orig_LIBS"
       [AC_LINK_IFELSE(
@@ -5382,8 +5392,8 @@ else
 fi
 
 if test "$ncbi_cv_lib_boost_filesystem" != "no"; then
-   dnl AC_DEFINE(HAVE_BOOST_FILESYSTEM, 1,
-   dnl           [Define to 1 if the `Boost.Filesystem' library is available.])
+   AC_DEFINE(HAVE_BOOST_FILESYSTEM, 1,
+             [Define to 1 if the `Boost.Filesystem' library is available.])
    NCBI_PACKAGE(Boost.Filesystem)
 else
    boost_fs_lib=
@@ -5393,8 +5403,8 @@ else
 fi
 
 if test "$ncbi_cv_lib_boost_iostreams" != "no"; then
-   dnl AC_DEFINE(HAVE_BOOST_IOSTREAMS, 1,
-   dnl           [Define to 1 if the `Boost.Iostreams' library is available.])
+   AC_DEFINE(HAVE_BOOST_IOSTREAMS, 1,
+             [Define to 1 if the `Boost.Iostreams' library is available.])
    NCBI_PACKAGE(Boost.Iostreams)
 else
    BOOST_IOSTREAMS_LIBS=
@@ -5402,8 +5412,8 @@ else
 fi
 
 if test "$ncbi_cv_lib_boost_program_options" != "no"; then
-   dnl AC_DEFINE(HAVE_BOOST_PROGRAM_OPTIONS, 1,
-   dnl           [Define to 1 if the `Boost.Program-Options' library is available.])
+   AC_DEFINE(HAVE_BOOST_PROGRAM_OPTIONS, 1,
+             [Define to 1 if the `Boost.Program-Options' library is available.])
    NCBI_PACKAGE(Boost.Program-Options)
 else
    BOOST_PROGRAM_OPTIONS_LIBS=
@@ -5426,8 +5436,8 @@ if test "$ncbi_cv_lib_boost_spirit" != "no"; then
 fi
 
 if test "$ncbi_cv_lib_boost_system" != "no"; then
-   dnl AC_DEFINE(HAVE_BOOST_SYSTEM, 1,
-   dnl           [Define to 1 if the `Boost.System' library is available.])
+   AC_DEFINE(HAVE_BOOST_SYSTEM, 1,
+             [Define to 1 if the `Boost.System' library is available.])
    NCBI_PACKAGE(Boost.System)
 # BOOST_SYSTEM(_STATIC)_LIBS already conditionally cleared above
 fi
@@ -5452,8 +5462,8 @@ fi
 
 if test "$ncbi_cv_lib_boost_thread" != "no"; then
    AC_DEFINE(HAVE_BOOST_THREAD, 1,
-             [Define to 1 if the `Boost.Threads' library is available.])
-   NCBI_PACKAGE(Boost.Threads)
+             [Define to 1 if the `Boost.Thread' library is available.])
+   NCBI_PACKAGE(Boost.Thread)
 else
    BOOST_THREAD_LIBS=
    BOOST_THREAD_STATIC_LIBS=
