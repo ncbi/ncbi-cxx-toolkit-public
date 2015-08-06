@@ -7133,10 +7133,10 @@ if test -d "$GMOCK_PATH"; then
             "$GMOCK_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx/lib" \
             "$GMOCK_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx/lib" \
             "$GMOCK_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx/lib" \
-	    "$GMOCK_PATH/lib$bit64_sfx" "$GMOCK_PATH/lib"; do
+            "$GMOCK_PATH/lib$bit64_sfx" "$GMOCK_PATH/lib"; do
       if test -d "$d"; then
          GMOCK_LIBDIR=$d
-	 NCBI_FIX_DIR(GMOCK_LIBDIR)
+         NCBI_FIX_DIR(GMOCK_LIBDIR)
          break
       fi
    done

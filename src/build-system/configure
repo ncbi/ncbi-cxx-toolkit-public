@@ -42014,10 +42014,10 @@ if test -d "$GMOCK_PATH"; then
             "$GMOCK_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx$bit64_sfx/lib" \
             "$GMOCK_PATH/$compiler_vpfx$DEBUG_SFX$mt_sfx/lib" \
             "$GMOCK_PATH/$compiler_pfx$DEBUG_SFX$mt_sfx/lib" \
-	    "$GMOCK_PATH/lib$bit64_sfx" "$GMOCK_PATH/lib"; do
+            "$GMOCK_PATH/lib$bit64_sfx" "$GMOCK_PATH/lib"; do
       if test -d "$d"; then
          GMOCK_LIBDIR=$d
-	 ncbi_fix_dir_tmp=`if cd $GMOCK_LIBDIR; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
+         ncbi_fix_dir_tmp=`if cd $GMOCK_LIBDIR; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
     /.*) ncbi_fix_dir_tmp2=`cd $GMOCK_LIBDIR && $smart_pwd 2>/dev/null`
          if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
