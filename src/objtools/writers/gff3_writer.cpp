@@ -919,34 +919,25 @@ bool CGff3Writer::xAssignAlignmentDensegTarget(
     int numSegs = alnMap.GetNumSegs();
 
     int start2 = -1;
-    int seg = 0;
-    while (start2 < 0 && seg < numSegs) {
-        start2 = alnMap.GetStart(0, seg++);
+    int start_seg = 0;
+    while (start2 < 0 && start_seg < numSegs) { // Skip over -1 start coords
+        start2 = alnMap.GetStart(0, start_seg++);
     }
 
-    //int stop2 = start2 + seqStop + seqDiff - seqStart;
     int stop2 = -1;
-    seg = numSegs-1;
-    while (stop2 < 0 && seg >= 0) {
-        stop2 = alnMap.GetStart(0, seg--);
+    int stop_seg = numSegs-1;
+    while (stop2 < 0 && stop_seg >= 0) { // Skip over -1 stop coords
+        stop2 = alnMap.GetStart(0, stop_seg--);
     }
-    stop2 += alnMap.GetLen(seg+1)-1;
 
     if (strand == eNa_strand_minus) {
-        start2 = alnMap.GetStart(0, numSegs-1);
-        start2 = -1;
-        seg = numSegs-1;
-        while (start2 < 0 && seg >= 0) {
-            start2 = alnMap.GetStart(0, seg--);
-        }
-
-        stop2 = -1;
-        seg = 0;
-        while (stop2 < 0 && seg < numSegs) {
-            stop2 = alnMap.GetStart(0, seg++);
-        }
-        stop2 += alnMap.GetLen(seg-1)-1;
+        swap(start2, stop2);
+        stop2 += alnMap.GetLen(start_seg-1)-1;
+    } 
+    else {
+        stop2 += alnMap.GetLen(stop_seg+1)-1;
     }
+
 
     CSeq_id::EAccessionInfo sourceInfo = pSourceId->IdentifyAccession();
     const int tgtWidth = (sourceInfo & CSeq_id::fAcc_prot) ? 3 : 1;
