@@ -1266,8 +1266,44 @@ bool CCSRARefSeqInfo::x_LoadRangesCov(void)
 void CCSRARefSeqInfo::x_LoadRangesStat(void)
 {
     vector<TSeqPos> pp;
+    const bool use_all_ids = true;
     const bool use_estimate = false;
-    if ( use_estimate ) {
+    if ( use_all_ids ) {
+        static const size_t kLimitSize = kChunkSize;
+        TSeqPos segment_len = m_File->GetDb().GetRowSize();
+        CCSraRefSeqIterator iter(*m_File, GetRefSeqId());
+        TSeqPos ref_length = iter.GetSeqLength();
+        TSeqPos c_start = 0;
+        size_t c_count = 0;
+        uint64_t total = 0;
+        for ( TSeqPos p = 0; p < ref_length; p += segment_len ) {
+            size_t c = iter.GetAlignCountAtPos(p);
+            total += c;
+            if ( c+c_count > 2*kLimitSize && c_start != p ) {
+                // this chunk only is too big ->
+                // add previous range as a separate chunk
+                pp.push_back(c_start);
+                c_start = p;
+                c_count = 0;
+            }
+            c_count += c;
+            if ( c_count > kLimitSize ) {
+                pp.push_back(c_start);
+                c_start = p+segment_len;
+                c_count = 0;
+            }
+        }
+        if ( c_start < ref_length ) {
+            pp.push_back(c_start);
+            c_start = ref_length;
+        }
+        if ( GetDebugLevel() >= 1 ) {
+            LOG_POST_X(5, Info << "CCSRADataLoader: "
+                       " align count: "<<total<<" chunks: "<<pp.size());
+        }
+        pp.push_back(ref_length);
+    }
+    else if ( use_estimate ) {
         TSeqPos segment_len = m_File->GetDb().GetRowSize();
         CCSraRefSeqIterator iter(*m_File, GetRefSeqId());
         TSeqPos ref_length = iter.GetSeqLength();
@@ -1281,6 +1317,10 @@ void CCSRARefSeqInfo::x_LoadRangesStat(void)
             for ( TSeqPos pos = 0; pos < ref_length; pos += chunk_len ) {
                 pp.push_back(pos);
             }
+        }
+        if ( GetDebugLevel() >= 1 ) {
+            LOG_POST_X(5, Info << "CCSRADataLoader: "
+                       " exp count: "<<est_count<<" chunks: "<<pp.size());
         }
         pp.push_back(ref_length);
     }
