@@ -22,7 +22,7 @@ else
 fi
 
 test "`uname | grep -ic '^cygwin'`" != "0"  &&  exe=".exe"
-PATH="$CFG_BIN:.:$PATH"
+PATH="${CFG_BIN}${CFG_BIN:+:}.:${PATH}"
 test_tar=${test_conn_tar:-test_tar}${exe}
 $test_tar -help >/dev/null 2>&1  ||  {
   echo "Test binary $test_tar not found.  Stop."
@@ -80,8 +80,8 @@ echo
 
 mkdir $test_base.1  ||  exit 1
 
-cp -rp .         $test_base.1/ 2>/dev/null
-cp -fp $test_tar $test_base.1/ 2>/dev/null
+cp -rp .                       $test_base.1/ 2>/dev/null
+cp -fp ${CFG_BIN:-.}/$test_tar $test_base.1/ 2>/dev/null
 
 mkdir $test_base.1/testdir 2>/dev/null
 
@@ -193,15 +193,15 @@ echo
 echo "`date` *** Checking single entry streaming feature"
 echo
 
-$test_tar -x -s -v -O -f $test_base.tar "*test_tar${exe}" | cmp -l - $test_tar | head -n 100 >$test_base.cmp  ||  exit 1
-cat $test_base.cmp  &&  test -s $test_base.cmp                                                                &&  exit 1
+$test_tar -x -s -v -O -f $test_base.tar "*test_tar${exe}" | cmp -l - ${CFG_BIN:-.}/$test_tar | head -n 100 >$test_base.cmp  ||  exit 1
+cat $test_base.cmp  &&  test -s $test_base.cmp                                                                              &&  exit 1
 
 echo "`date` *** Checking multiple entry streaming feature"
 echo
 
 $test_tar -x -s -v -O -f $test_base.tar "*test_tar${exe}" newdir/datefile newdir/datefile > $test_base.out.1  ||  exit 1
 head -1 "$test_base.2/newdir/datefile" > "$test_base.out.temp"                                                ||  exit 1
-cat $test_tar $test_base.out.temp $test_base.2/newdir/datefile                            > $test_base.out.2  ||  exit 1
+cat ${CFG_BIN:-.}/$test_tar $test_base.out.temp $test_base.2/newdir/datefile              > $test_base.out.2  ||  exit 1
 cmp -l $test_base.out.1 $test_base.out.2 | head -n 100 >$test_base.cmp                                        ||  exit 1
 cat $test_base.cmp  &&  test -s $test_base.cmp                                                                &&  exit 1
 
