@@ -569,7 +569,7 @@ TSeqPos CCSraRefSeqIterator::GetSeqLength(void) const
 
 size_t CCSraRefSeqIterator::GetRowAlignCount(int64_t row) const
 {
-    return GetAlignCountAtPos((row-GetInfo().m_RowFirst)*GetDb().GetRowSize(),
+    return GetAlignCountAtPos(TSeqPos((row-GetInfo().m_RowFirst)*GetDb().GetRowSize()),
                               fPrimaryAlign);
 }
 
