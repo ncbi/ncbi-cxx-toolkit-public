@@ -917,12 +917,35 @@ bool CGff3Writer::xAssignAlignmentDensegTarget(
     ENa_strand strand = 
         (alnMap.StrandSign(0) == -1) ? eNa_strand_minus : eNa_strand_plus;
     int numSegs = alnMap.GetNumSegs();
-    int start2 = alnMap.GetStart(0, 0);
+
+    int start2 = -1;
+    int seg = 0;
+    while (start2 < 0 && seg < numSegs) {
+        start2 = alnMap.GetStart(0, seg++);
+    }
+
     //int stop2 = start2 + seqStop + seqDiff - seqStart;
-    int stop2 = alnMap.GetStart(0, numSegs-1) + alnMap.GetLen(numSegs-1) - 1;
+    int stop2 = -1;
+    seg = numSegs-1;
+    while (stop2 < 0 && seg >= 0) {
+        stop2 = alnMap.GetStart(0, seg--);
+    }
+    stop2 += alnMap.GetLen(seg+1)-1;
+
     if (strand == eNa_strand_minus) {
         start2 = alnMap.GetStart(0, numSegs-1);
-        stop2 = alnMap.GetStart(0, 0) + alnMap.GetLen(0) - 1;
+        start2 = -1;
+        seg = numSegs-1;
+        while (start2 < 0 && seg >= 0) {
+            start2 = alnMap.GetStart(0, seg--);
+        }
+
+        stop2 = -1;
+        seg = 0;
+        while (stop2 < 0 && seg < numSegs) {
+            stop2 = alnMap.GetStart(0, seg++);
+        }
+        stop2 += alnMap.GetLen(seg-1)-1;
     }
 
     CSeq_id::EAccessionInfo sourceInfo = pSourceId->IdentifyAccession();
