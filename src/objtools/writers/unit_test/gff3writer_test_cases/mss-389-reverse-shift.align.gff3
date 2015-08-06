@@ -1,0 +1,13 @@
+##gff-version 3
+#!gff-spec-version 1.21
+#!processor NCBI annotwriter
+L43967.2	RefSeq	nucleotide_to_protein_match	346846	347249	679	+	.	ID=634208e9-42ac-4347-9b16-0ba39c5772dd;Target=WP_009885996.1 1 135 +;align_length=405;gap_count=1;genomic_gap_length=1;num_ident=402;num_mismatch=2;num_negatives=3;num_positives=402;pct_coverage=99.7531;pct_coverage_hiqual=99.7531;pct_identity_gap=99.2593;pct_identity_ungap=99.505;product_gap_length=0;product_internal_gap_length=0;score=679;Gap=M12 R1 M123
+###
+L43967.2	RefSeq	nucleotide_to_protein_match	314204	314895	916	+	.	ID=f55bcc26-1293-41c6-85d9-1d258cba9b4f;Target=WP_014894208.1 1 227 +;align_length=699;gap_count=5;genomic_gap_length=7;num_ident=558;num_mismatch=116;num_negatives=57;num_positives=618;pct_coverage=97.6812;pct_coverage_hiqual=97.6812;pct_identity_gap=79.8283;pct_identity_ungap=82.7893;product_gap_length=18;product_internal_gap_length=18;score=916;Gap=M19 D1 M7 D2 M141 D1 M14 D2 M30 R1 I2 M14
+###
+L43967.2	RefSeq	nucleotide_to_protein_match	86173	86639	583	+	.	ID=34b3d3d9-4bb0-4e35-9bd7-415c0432f308;Target=WP_014893959.1 1 153 +;align_length=477;gap_count=4;genomic_gap_length=10;num_ident=354;num_mismatch=95;num_negatives=60;num_positives=390;pct_coverage=97.1861;pct_coverage_hiqual=97.1861;pct_identity_gap=74.2138;pct_identity_ungap=78.8419;product_gap_length=18;product_internal_gap_length=18;score=583;Gap=M38 I1 M7 D6 M3 I2 M89 R1 M13
+###
+L43967.2	RefSeq	nucleotide_to_protein_match	314240	314904	905	+	.	ID=83c0d446-a8cd-4c97-86f4-6a4e8dab2972;Target=WP_014894609.1 2 221 +;align_length=672;gap_count=3;genomic_gap_length=7;num_ident=546;num_mismatch=107;num_negatives=75;num_positives=579;pct_coverage=98.4917;pct_coverage_hiqual=98.4917;pct_identity_gap=81.25;pct_identity_ungap=83.6141;product_gap_length=12;product_internal_gap_length=12;score=905;Gap=M12 D2 M76 D2 M113 R1 I2 M17
+###
+L43967.2	SwissProt	nucleotide_to_protein_match	158023	158306	327	+	.	ID=edc04b9d-6137-45e7-ad7c-75306f5dac55;Target=Q9EXD1.1 1 95 +;align_length=285;gap_count=1;genomic_gap_length=1;num_ident=195;num_mismatch=89;num_negatives=39;num_positives=246;pct_coverage=99.6491;pct_coverage_hiqual=99.6491;pct_identity_gap=68.4211;pct_identity_ungap=68.662;product_gap_length=0;product_internal_gap_length=0;score=327;Gap=M72 R1 M23
+###
