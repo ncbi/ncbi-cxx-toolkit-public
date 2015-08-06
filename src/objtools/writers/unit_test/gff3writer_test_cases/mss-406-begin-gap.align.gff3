@@ -1,0 +1,5 @@
+##gff-version 3
+#!gff-spec-version 1.21
+#!processor NCBI annotwriter
+NC_000016.9	RefSeq	match	15034118	15045825	.	+	.	ID=ffc8861b-7d3e-4a85-96be-aa40e6c372c0;Target=NT_187607.1 779587 791299 +;best_on_subject=1;chromosome_to_alt=1;gap_count=8;genomic_to_genomic=1;num_ident=11696;num_ident_quantized=4;num_mismatch=7;pct_coverage=0.0129523;pct_coverage_hiqual=0.0129523;pct_identity_gap=99.8123;pct_identity_ungap=99.9402;reciprocity=1;Gap=D2 M2882 D1 M1461 I1 M301 I1 M360 D2 M167 I1 M3726 I4 M363 I3 M2443
+###
