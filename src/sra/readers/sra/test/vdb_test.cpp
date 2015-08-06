@@ -163,6 +163,8 @@ void CCSRATestApp::Init(void)
                              "Start short read id",
                              CArgDescriptions::eInteger);
     arg_desc->AddFlag("fasta", "Print reads in fasta format");
+    arg_desc->AddFlag("count_primary_ids", "Count primary ids");
+    arg_desc->AddFlag("count_secondary_ids", "Count secondary ids");
 
     arg_desc->AddDefaultKey("o", "OutputFile",
                             "Output file of ASN.1",
@@ -510,6 +512,7 @@ int CCSRATestApp::Run(void)
 
     string query_id;
     CRange<TSeqPos> query_range = CRange<TSeqPos>::GetWhole();
+    CSeq_id_Handle query_idh;
     
     if ( args["refseq"] ) {
         query_id = args["refseq"].AsString();
@@ -530,19 +533,39 @@ int CCSRATestApp::Run(void)
     if ( args["q"] ) {
         string q = args["q"].AsString();
         SIZE_TYPE colon_pos = q.find(':');
-        if ( colon_pos == NPOS || colon_pos == 0 ) {
+        if ( colon_pos == 0 ) {
             ERR_POST(Fatal << "Invalid query format: " << q);
         }
-        query_id = q.substr(0, colon_pos);
-        SIZE_TYPE dash_pos = q.find('-', colon_pos+1);
-        if ( dash_pos == NPOS ) {
-            ERR_POST(Fatal << "Invalid query format: " << q);
+        if ( colon_pos == NPOS ) {
+            query_id = q;
+            query_range = query_range.GetWhole();
         }
-        TSeqPos from =
-            NStr::StringToNumeric<TSeqPos>(q.substr(colon_pos+1,
-                                                    dash_pos-colon_pos-1));
-        TSeqPos to = NStr::StringToNumeric<TSeqPos>(q.substr(dash_pos+1));
-        query_range.SetFrom(from).SetTo(to);
+        else {
+            query_id = q.substr(0, colon_pos);
+            SIZE_TYPE dash_pos = q.find('-', colon_pos+1);
+            if ( dash_pos == NPOS ) {
+                ERR_POST(Fatal << "Invalid query format: " << q);
+            }
+            string q_from = q.substr(colon_pos+1, dash_pos-colon_pos-1);
+            string q_to = q.substr(dash_pos+1);
+            TSeqPos from, to;
+            if ( q_from.empty() ) {
+                from = 0;
+            }
+            else {
+                from = NStr::StringToNumeric<TSeqPos>(q_from);
+            }
+            if ( q_to.empty() ) {
+                to = kInvalidSeqPos;
+            }
+            else {
+                to = NStr::StringToNumeric<TSeqPos>(q_to);
+            }
+            query_range.SetFrom(from).SetTo(to);
+        }
+    }
+    if ( !query_id.empty() ) {
+        query_idh = CSeq_id_Handle::GetHandle(query_id);
     }
     int min_quality = args["min_quality"].AsInteger();
     bool make_ref_seq = args["ref_seq"];
@@ -654,6 +677,28 @@ int CCSRATestApp::Run(void)
                 << NcbiEndl;
             sw.Restart();
         }
+        
+        if ( query_idh &&
+             (args["count_primary_ids"] || args["count_secondary_ids"]) ) {
+            CCSraRefSeqIterator ref_it(csra_db, query_idh);
+            sw.Restart();
+            CCSraRefSeqIterator::TAlignType align_type = 0;
+            if ( args["count_primary_ids"] ) {
+                align_type |= CCSraRefSeqIterator::fPrimaryAlign;
+            }
+            if ( args["count_secondary_ids"] ) {
+                align_type |= CCSraRefSeqIterator::fSecondaryAlign;
+            }
+            TSeqPos step = csra_db.GetRowSize();
+            uint64_t count = 0;
+            TSeqPos end = min(query_range.GetToOpen(), ref_it.GetSeqLength());
+            for ( TSeqPos p = query_range.GetFrom(); p < end; p += step ) {
+                count += ref_it.GetAlignCountAtPos(p, align_type);
+            }
+            out << "Alignment count: " << count << " in " << sw.Elapsed()
+                << NcbiEndl;
+            sw.Restart();
+        }
 
         if ( args["make_graphs"] ) {
             sw.Restart();
@@ -678,7 +723,7 @@ int CCSRATestApp::Run(void)
                 double k_min = 0, k_max = 1e9;
                 for ( uint64_t row = it.GetInfo().m_RowFirst; row <= it.GetInfo().m_RowLast; ++row ) {
                     Uint1 b = graph->GetGraph().GetByte().GetValues()[size_t(row-it.GetInfo().m_RowFirst)];
-                    size_t a = it.GetRowAlignCount(row);
+                    size_t a = it.GetAlignCountAtPos(row*csra_db.GetRowSize());
                     total_count_a += a;
                     if ( a > max_a ) {
                         max_a = a;
@@ -704,9 +749,7 @@ int CCSRATestApp::Run(void)
                 << NcbiEndl;
         }
 
-        CSeq_id_Handle query_idh;
-        if ( !query_id.empty() ) {
-            query_idh = CSeq_id_Handle::GetHandle(query_id);
+        if ( query_idh ) {
             sw.Restart();
             if ( make_seq_entry || make_seq_annot || make_quality_graph ||
                  make_ref_seq || make_short_seq || !make_stat_graph ) {

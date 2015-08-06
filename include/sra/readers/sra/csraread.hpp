@@ -379,7 +379,17 @@ public:
     bool IsCircular(void) const;
 
     TSeqPos GetSeqLength(void) const;
+
+    NCBI_DEPRECATED
     size_t GetRowAlignCount(int64_t row) const;
+
+    enum EAlignType {
+        fPrimaryAlign   = 1<<0,
+        fSecondaryAlign = 1<<1,
+        fAnyAlign       = fPrimaryAlign | fSecondaryAlign
+    };
+    typedef int TAlignType;
+    size_t GetAlignCountAtPos(TSeqPos pos, TAlignType type = fAnyAlign) const;
 
     CRef<CSeq_graph> GetCoverageGraph(void) const;
     CRef<CSeq_annot> GetCoverageAnnot(void) const;

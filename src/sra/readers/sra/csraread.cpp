@@ -569,8 +569,27 @@ TSeqPos CCSraRefSeqIterator::GetSeqLength(void) const
 
 size_t CCSraRefSeqIterator::GetRowAlignCount(int64_t row) const
 {
+    return GetAlignCountAtPos((row-GetInfo().m_RowFirst)*GetDb().GetRowSize(),
+                              fPrimaryAlign);
+}
+
+
+size_t CCSraRefSeqIterator::GetAlignCountAtPos(TSeqPos pos,
+                                               TAlignType type) const
+{
+    if ( pos >= GetSeqLength() ) {
+        NCBI_THROW(CSraException, eInvalidArg,
+                   "pos is beyond reference sequence");
+    }
+    uint64_t row = GetInfo().m_RowFirst + pos/GetDb().GetRowSize();
     CRef<CCSraDb_Impl::SRefTableCursor> ref(GetDb().Ref());
-    size_t ret = ref->PRIMARY_ALIGNMENT_IDS(row).size();
+    size_t ret = 0;
+    if ( type & fPrimaryAlign ) {
+        ret += ref->PRIMARY_ALIGNMENT_IDS(row).size();
+    }
+    if ( type & fSecondaryAlign ) {
+        ret += ref->SECONDARY_ALIGNMENT_IDS(row).size();
+    }
     GetDb().Put(ref);
     return ret;
 }
