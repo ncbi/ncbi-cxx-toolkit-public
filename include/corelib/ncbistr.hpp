@@ -2995,7 +2995,7 @@ public:
 ///
 
 
-#define NCBITOOLKIT_USE_LONG_UCS4 0
+#define NCBITOOLKIT_USE_LONG_UCS4 (SIZEOF_LONG == 4)
 #if NCBITOOLKIT_USE_LONG_UCS4
 /// UCS-4 character
 typedef unsigned long TCharUCS4;
