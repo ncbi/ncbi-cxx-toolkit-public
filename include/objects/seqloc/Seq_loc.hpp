@@ -372,9 +372,10 @@ private:
         kSeveralIds = -3
     };
 
-    mutable TRange m_TotalRangeCache;
+    mutable volatile TSeqPos m_TotalRangeCacheFrom;
+    mutable volatile TSeqPos m_TotalRangeCacheToOpen;
     // Seq-id for the whole seq-loc or null if multiple IDs were found
-    mutable const CSeq_id* m_IdCache;
+    mutable const CSeq_id* volatile m_IdCache;
 };
 
 
@@ -856,7 +857,7 @@ protected:
 inline
 void CSeq_loc::InvalidateTotalRangeCache(void) const
 {
-    m_TotalRangeCache.SetFrom(TSeqPos(kDirtyCache));
+    m_TotalRangeCacheFrom = TSeqPos(kDirtyCache);
 }
 
 
@@ -886,11 +887,14 @@ CSeq_loc::CSeq_loc(void)
 inline
 CSeq_loc::TRange CSeq_loc::GetTotalRange(void) const
 {
-    TRange range = m_TotalRangeCache;
-    if ( range.GetFrom() == TSeqPos(kDirtyCache) ) {
-        range = x_UpdateTotalRange();
+    TSeqPos range_from  = m_TotalRangeCacheFrom;
+    if ( range_from == TSeqPos(kDirtyCache) ) {
+        return x_UpdateTotalRange();
     }
-    return range;
+    else {
+        TSeqPos range_to_open  = m_TotalRangeCacheToOpen;
+        return COpenRange<TSeqPos>(range_from, range_to_open);
+    }
 }
 
 

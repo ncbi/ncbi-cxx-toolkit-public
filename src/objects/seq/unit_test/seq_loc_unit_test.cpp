@@ -36,6 +36,8 @@
 #include <objects/seqloc/seqloc__.hpp>
 
 #include <corelib/ncbiapp.hpp>
+#include <corelib/ncbithr.hpp>
+#include <util/random_gen.hpp>
 #include <corelib/test_boost.hpp>
 
 #include <boost/test/parameterized_test.hpp>
@@ -1351,3 +1353,84 @@ BOOST_AUTO_TEST_CASE(TestMakeEquiv7)
                       "  }\n"
                       "}\n");
 }
+
+
+#ifdef NCBI_THREADS
+
+typedef vector< CRef<CSeq_loc> > TSeqLocs;
+
+DEFINE_STATIC_MUTEX(s_BoostMutex);
+
+class CTotalRangeThread : public CThread
+{
+public:
+    CTotalRangeThread(const TSeqLocs& locs, CAtomicCounter& start_counter)
+        : m_Locs(locs), m_StartCounter(start_counter)
+        {
+        }
+
+    static void x_CheckPoint(CSeq_loc::TRange range, TSeqPos point)
+        {
+            if ( range.GetFrom() != point || range.GetTo() != point ) {
+                CMutexGuard guard(s_BoostMutex);
+                BOOST_REQUIRE_EQUAL(range, CSeq_loc::TRange(point, point));
+            }
+        }
+
+    virtual void* Main(void)
+        {
+            m_StartCounter.Add(-1);
+            // wait for all threads to start
+            while ( m_StartCounter.Get() != 0 ) {
+            }
+
+            const size_t LCOUNT = m_Locs.size();
+            for ( TSeqPos i = 0; i < LCOUNT; ++i ) {
+                x_CheckPoint(m_Locs[i]->GetTotalRange(), i);
+            }
+            for ( TSeqPos i = 0; i < LCOUNT; ++i ) {
+                x_CheckPoint(m_Locs[i]->GetTotalRange(), i);
+            }
+            return 0;
+        }
+
+private:
+    const TSeqLocs& m_Locs;
+    CAtomicCounter& m_StartCounter;
+};
+
+BOOST_AUTO_TEST_CASE(TestTotalRange)
+{
+    const int LCOUNT = 1000000;
+    const int TCOUNT = 4;
+
+    CRandom rnd(1);
+    TSeqLocs ll;
+    CRef<CSeq_id> id(new CSeq_id("1"));
+    for ( int i = 0; i < LCOUNT; ++i ) {
+        CRef<CSeq_loc> loc(new CSeq_loc);
+        if ( rnd.GetRand(0, 2) > 0 ) {
+            loc->SetPnt().SetPoint(i);
+        }
+        else {
+            loc->SetInt().SetFrom(i);
+            loc->SetInt().SetTo(i);
+        }
+        loc->SetId(*id);
+        ll.push_back(loc);
+    }
+    
+    CAtomicCounter start_counter;
+    start_counter.Set(TCOUNT);
+    
+    vector< CRef<CThread> > tt(TCOUNT);
+    for ( int i = 0; i < TCOUNT; ++i ) {
+        tt[i] = new CTotalRangeThread(ll, start_counter);
+        tt[i]->Run();
+    }
+    for ( int i = 0; i < TCOUNT; ++i ) {
+        void* exit_data;
+        tt[i]->Join(&exit_data);
+    }
+}
+#endif

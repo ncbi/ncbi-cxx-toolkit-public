@@ -383,15 +383,19 @@ void CSeq_loc::Assign(const CSerialObject& obj, ESerialRecursionMode how)
 
 CSeq_loc::TRange CSeq_loc::x_UpdateTotalRange(void) const
 {
-    TRange range = m_TotalRangeCache;
-    if ( range.GetFrom() == TSeqPos(kDirtyCache) ) {
+    TSeqPos range_from = m_TotalRangeCacheFrom;
+    if ( range_from == TSeqPos(kDirtyCache) ) {
         const CSeq_id* id = 0;
-        range = x_CalculateTotalRangeCheckId(id);
+        TRange range = x_CalculateTotalRangeCheckId(id);
         m_IdCache = id;
-        m_TotalRangeCache.SetToOpen(range.GetToOpen());
-        m_TotalRangeCache.SetFrom(range.GetFrom());
+        m_TotalRangeCacheToOpen = range.GetToOpen();
+        m_TotalRangeCacheFrom = range.GetFrom();
+        return range;
     }
-    return range;
+    else {
+        TSeqPos range_to_open = m_TotalRangeCacheToOpen;
+        return COpenRange<TSeqPos>(range_from, range_to_open);
+    }
 }
 
 
