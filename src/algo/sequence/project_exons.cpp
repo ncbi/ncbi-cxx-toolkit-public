@@ -71,7 +71,8 @@ USING_SCOPE(objects);
 
 
 
-/// Recursively convert empty container-locs to null-locs, drop null sublocs from containers, and unwrap singleton containers
+/// Recursively convert empty container-locs to null-locs, 
+/// drop null sublocs from containers, and unwrap singleton containers
 void Canonicalize(CSeq_loc& loc)
 {
     if(loc.IsMix()) {
@@ -119,7 +120,8 @@ bool AreAbuttingOnProduct(const CSpliced_exon& exon1,
     return max_start == min_stop + 1;
 }
 
-/// ::first and ::second indicate partialness for of a loc or an exon, 5' and 3' end respectively.
+/// ::first and ::second indicate partialness 
+/// for of a loc or an exon, 5' and 3' end respectively.
 typedef pair<bool, bool> T53Partialness; 
 
 /// Return whether 5' and/or 3' end of exon is partial based on
@@ -231,7 +233,494 @@ void AugmentPartialness(CSeq_loc& loc, T53Partialness partialness)
 }
 
 
-/// Project exon to genomic coordinates, preserving discontinuities.
+
+/* 
+ * GP-13080
+ *
+ * Tweak the biostops of projected exon's subintervals 
+ * while preserving the reading frame.
+ *
+ * Stitch all non-frameshifting indels.
+ *
+ * Truncate all overlaps and close all gops down to 1 or 2 bp gap
+ * as to preserve the frame.
+ *
+ * Note:
+ * This approach suffers from some problems - we could be truncating
+ * bases in perfectly good codons instead of truncating 
+ * bases strictly from affected codons that contain product-ins.
+ * An alternative approach is possible, but will require rewriting 
+ * the whole projection code from scratch:
+ *
+ * Alternative approach:
+ *   Implement a function  (spliced-seg, product-cds-loc) -> tweaked-product-cds
+ *   where the output CDS has only non-frameshifting gaps and has lossless
+ *   mapping through the spliced-seg.
+ *   (i.e. project gaps onto query and tweak them to codon boundaries; 
+ *   pay special attention to ribosomal-slippage case).
+ *
+ *   When projecting CDS, use tweaked-product-cds to map to genome, and 
+ *   collapse mod-3 exonic gaps.
+ *
+ *   When projecting mRNA, replace the cds-range on mRNA with 
+ *   tweaked-product-cds, and map like CDS. Afterwards, collapse all
+ *   indels UTRs.
+ *
+ *   When projecting RNA, map the product-range and collase all indels.
+ *
+ */
+struct NTweakExon
+{
+public:
+    static CRef<CSeq_loc> TweakExon(const CSeq_loc& orig_loc)
+    {
+        if(!orig_loc.IsPacked_int()) {
+            NCBI_THROW(CException, eUnknown, "Expected packed-int");
+        }
+
+        CRef<CSeq_loc> loc = Clone(orig_loc);
+
+        // Note: Adjusting-biostops is done twice: first time 
+        // before subsuming micro-intervals (as they're not
+        // 'micro' prior to this), and after subsuming, which
+        // may have elongated some intervals, while the 
+        // next step expects upper bound of 2bp on all overlaps.
+
+#if 0
+        NcbiCerr << "Orig:  " << AsString(loc->GetPacked_int()) << "\n";
+        AdjustBiostops                   (loc->SetPacked_int());
+        NcbiCerr << "Adj1:  " << AsString(loc->GetPacked_int()) << "\n";
+        SubsumeMicroIntervals            (loc->SetPacked_int());
+        NcbiCerr << "Subs:  " << AsString(loc->GetPacked_int()) << "\n";
+        AdjustBiostops                   (loc->SetPacked_int());
+        NcbiCerr << "Adj2:  " << AsString(loc->GetPacked_int()) << "\n";
+        ConvertOverlapsToGaps            (loc->SetPacked_int());
+        NcbiCerr << "Ovlp:  " << AsString(loc->GetPacked_int()) << "\n";
+        CollapseNonframeshiftting        (loc->SetPacked_int());
+        NcbiCerr << "Final: " << AsString(loc->GetPacked_int()) << "\n";
+        NcbiCerr << "Tweaked: " 
+                 << (orig_loc.Equals(*loc) ? "equal" : "not-equal")
+                 << "\n\n";
+#else
+        AdjustBiostops            (loc->SetPacked_int());
+        SubsumeMicroIntervals     (loc->SetPacked_int());
+        AdjustBiostops            (loc->SetPacked_int());
+        ConvertOverlapsToGaps     (loc->SetPacked_int());
+        CollapseNonframeshiftting (loc->SetPacked_int());
+#endif
+        Validate(orig_loc, *loc);
+        return loc;
+    }
+
+private:
+
+    template<typename T>
+    static CRef<T> Clone(const T& x)
+    {
+        return CRef<T>(SerialClone<T>(x));
+    }
+
+
+    // advance iterator by d (can be negative);
+    // if out of bounds, assign end.
+    template<typename iterator_t>
+    static void safe_advance(
+        iterator_t begin,
+        iterator_t end,
+        iterator_t& it,
+        Int8 d)
+    {
+        if(   (d < 0 && distance(begin, it) < abs(d))
+           || (d > 0 && distance(it,   end) < abs(d))) 
+        {
+            it = end;
+        } else {
+            std::advance(it, d);
+        }
+    }
+
+
+    // return element at iterator advanced by d.
+    // if out of bounds, return sentinel value
+    template<typename container_t>
+    static typename container_t::value_type rel_at(
+            const container_t& container,
+            typename container_t::const_iterator it,
+            Int8 delta,
+            typename container_t::value_type default_value)
+    {
+        safe_advance(container.begin(), 
+                     container.end(), 
+                     it, delta);
+
+        return it == container.end() ? default_value : *it;
+    }
+
+
+    static CRef<CSeq_interval> Next(
+            const CPacked_seqint::Tdata& seqints,
+            const CPacked_seqint::Tdata::const_iterator it)
+    {
+        return rel_at(seqints, it, 1, CRef<CSeq_interval>(NULL));
+    }
+
+
+    static CRef<CSeq_interval> Prev(
+            const CPacked_seqint::Tdata& seqints,
+            const CPacked_seqint::Tdata::const_iterator it)
+    {
+        return rel_at(seqints, it, -1, CRef<CSeq_interval>(NULL));
+    }
+
+
+    // Will subsume micro-intervals smaller than this into upstream
+    // neighboring intervals; This number can't be smaller than 4,
+    // because an interval must be able to survive truncation by
+    // 3 bases when changing overlaps to gaps
+    static const TSeqPos k_min_len = 4;
+    
+
+    // Will not subsume intervals of this length or longer.
+    // Otherwise can subsume if this creates a nonframeshifting gap
+    static const TSeqPos k_keep_len = 6;
+
+
+    static TSeqPos GetBiostartsDelta(
+            const CSeq_interval& upst,
+            const CSeq_interval& downst)
+    {
+        TSignedSeqPos d = downst.GetStart(eExtreme_Biological)
+                        - upst.GetStart(eExtreme_Biological);
+
+        return d * (MinusStrand(upst) ? -1 : 1);
+    }
+
+
+    static CRef<CSeq_interval> Collapse(
+            const CSeq_interval& a,
+            const CSeq_interval& b)
+    {
+        CRef<CSeq_interval> c = Clone(a);
+        c->SetFrom( min(a.GetFrom(), b.GetFrom()));
+        c->SetTo(   max(a.GetTo(),   b.GetTo()));
+        return c;
+    }
+
+
+    static bool MinusStrand(const CSeq_interval& seqint)
+    {
+        return seqint.IsSetStrand() 
+            && seqint.GetStrand() == eNa_strand_minus;
+    }
+
+
+    static bool SameIdAndStrand(
+            const CSeq_interval& a,
+            const CSeq_interval& b)
+    {
+        return a.GetId().Equals(b.GetId())
+            && MinusStrand(a) == MinusStrand(b);
+    }
+
+
+    // return true iff subsuming curr into prev will result
+    // in a non-frameshifting indel between prev and next.
+    static bool CanCreateNonframeshiftingGap(
+            const CSeq_interval& prev,
+            const CSeq_interval& curr,
+            const CSeq_interval& next)
+    {
+        TSignedSeqPos g = GetBiostartsDelta(prev, next) 
+                        - prev.GetLength()
+                        - curr.GetLength();
+        return (g % 3) == 0;
+    }
+
+
+    // can be negative in case of overlap
+    static TSignedSeqPos GetGapLength(
+            const CSeq_interval& prev,
+            const CSeq_interval& curr)
+    {
+        return GetBiostartsDelta(prev, curr) 
+             - prev.GetLength();
+    }
+
+
+    static void SetBioStop(CSeq_interval& seqint, TSeqPos pos)
+    {
+        (MinusStrand(seqint) ? seqint.SetFrom(pos)
+                             : seqint.SetTo(pos));
+    }
+
+
+    static void SetBioStart(CSeq_interval& seqint, TSeqPos pos)
+    {
+        (MinusStrand(seqint) ? seqint.SetTo(pos)
+                             : seqint.SetFrom(pos));
+    }
+
+
+    // amount < 0 -> truncate 3'end upstream; else extend downstream
+    static void AdjustBioStop(
+            CSeq_interval& seqint, 
+            TSignedSeqPos amt)
+    {
+        amt *= MinusStrand(seqint) ? -1 : 1;
+        amt += seqint.GetStop(eExtreme_Biological);
+        SetBioStop(seqint, amt);
+    }
+
+
+    // amount < 0 -> extend 5'end upstream; else truncate downstream
+    static void AdjustBioStart(
+            CSeq_interval& seqint, 
+            TSignedSeqPos amt)
+    {
+        amt *= MinusStrand(seqint) ? -1 : 1;
+        amt += seqint.GetStart(eExtreme_Biological);
+        SetBioStart(seqint, amt);
+    }
+
+
+    static void CheckIdAndStrand(const CPacked_seqint& ps)
+    {
+        ITERATE(CPacked_seqint::Tdata, it, ps.Get()) {
+            CRef<CSeq_interval> prev = Prev(ps.Get(), it);
+            if(prev && !SameIdAndStrand(*prev, **it)) {
+                NcbiCerr << MSerial_AsnText << ps;
+                NCBI_THROW(CException, 
+                           eUnknown, 
+                           "Expected same seq-id and strand");
+            }
+        }
+    }
+
+
+    // maximally close gaps and truncate overlaps in multiples of three.
+    static void AdjustBiostops(CPacked_seqint& ps)
+    {
+        NON_CONST_ITERATE(CPacked_seqint::Tdata, it, ps.Set()) {
+            CRef<CSeq_interval> prev = Prev(ps.Set(), it);
+
+            if(!prev) {
+                continue;
+            }
+
+            const TSignedSeqPos indel = GetGapLength(*prev, **it);
+            AdjustBioStop(*prev, indel / 3 * 3);
+        }
+    }
+
+
+    // Subsume micro-intervals into upstream predecessors
+    static void SubsumeMicroIntervals(CPacked_seqint& ps)
+    {
+        CPacked_seqint::Tdata& seqints = ps.Set();
+        CPacked_seqint::Tdata::iterator dest = seqints.begin();
+
+        NON_CONST_ITERATE(CPacked_seqint::Tdata, it, ps.Set()) {
+            CRef<CSeq_interval> current = *it;
+            CRef<CSeq_interval> next = Next(seqints, it);
+
+
+            if(it == dest) {
+                // special-case - short interval and no predecessor
+                // - try to subsume into 5' end of next one instead.
+                if(   current->GetLength() < k_min_len 
+                   && next
+                   && next->GetStart(eExtreme_Positional) > current->GetLength())
+                {
+                    AdjustBioStart(*next, -1 * current->GetLength());
+                    *dest = next;
+                    ++it; //so we don't process next in the next iteration
+                }
+
+                continue;
+            }
+
+
+            const bool creates_nonframeshifting_gap = 
+                current->GetLength() < k_keep_len
+             && next
+             && CanCreateNonframeshiftingGap(**dest, *current, *next);
+
+            if(   current->GetLength() < k_min_len
+               || creates_nonframeshifting_gap)
+            {
+                // drop current and extend prev to compensate
+                AdjustBioStop(**dest, current->GetLength());
+            } else {
+                // keep current
+                ++dest;
+                *dest = current;
+            }
+        }
+
+        seqints.erase(seqints.end() == dest ? dest : ++dest,
+                      seqints.end());
+    }
+
+
+    // Precondition: overlaps are at most 2bp
+    // Each interval is long enough to be truncated by 3bp, i.e.
+    // at least 4bp long.
+    static void ConvertOverlapsToGaps(CPacked_seqint& ps)
+    {
+        NON_CONST_ITERATE(CPacked_seqint::Tdata, it, ps.Set()) {
+            CRef<CSeq_interval> current = *it;
+            CRef<CSeq_interval> prev = Prev(ps.Set(), it);
+
+            if(!prev) {
+                continue;
+            }
+
+            const TSignedSeqPos overlap = -1 * GetGapLength(*prev, *current);
+
+            if(overlap <= 0) {
+                continue;
+            } else if(overlap > 2) {
+                NcbiCerr << MSerial_AsnText << ps;
+                NCBI_THROW(CException, eUnknown, "Unexpected overlap");
+            } else if(prev->GetLength() < k_min_len) {
+                //Not an exception, because it is theoretically
+                //possible to have a micro-interval that's not
+                //subsumable (see the special-case handling in
+                //SubsumeMicroIntervals
+                ERR_POST(Error << "Unexpectedly short interval: " 
+                               << AsString(ps));
+            } else {
+                AdjustBioStop(*prev, -3);
+            }
+        }
+    }
+
+
+    static void CollapseNonframeshiftting(CPacked_seqint& ps)
+    {
+        CPacked_seqint::Tdata& seqints = ps.Set();
+        CPacked_seqint::Tdata::iterator dest = seqints.begin();
+
+        NON_CONST_ITERATE(CPacked_seqint::Tdata, it, ps.Set()) {
+            if(it == dest) {
+                continue;
+            }
+
+            if(GetGapLength(**dest, **it) % 3 == 0) {
+                *dest = Collapse(**dest, **it);
+            } else {
+                ++dest;
+                *dest = *it;
+            }
+        }
+
+        seqints.erase(seqints.end() == dest ? dest : ++dest,
+                      seqints.end());
+    }
+
+
+
+    // It's difficult to make sense of a printed seq-loc ASN 
+    // or label the way it is done in the toolkit, especially 
+    // when the coordinates are large.
+    //
+    // This prints intervals as comma-delimited sequence of tuples 
+    // "header,length" in bio-order, where header is either gap 
+    // length to previous interval iff seq-id and strands are the same, 
+    // and otherwise the header is seq-id@signed-biostart.
+    //
+    // E.g. NC_000001.11@-12304058:100,+1,150,-2,300
+    //                   ^strand
+    //                    ^biostart
+    //                             ^      ^      ^ lengths (unsigned)
+    //                                  ^gap   ^overlap    (signed)
+    static string AsString(const CPacked_seqint& packed_seqint)
+    {
+        if(packed_seqint.Get().empty()) {
+            return "Empty-Packed-seqint";
+        }
+
+        CNcbiOstrstream ostr;
+        CConstRef<CSeq_interval> prev_seqint;
+        ITERATE(CPacked_seqint::Tdata, it, packed_seqint.Get()) {
+            CConstRef<CSeq_interval> seqint = *it;
+
+            if(prev_seqint && SameIdAndStrand(*prev_seqint, *seqint)) {
+                TSignedSeqPos d = 
+                    (seqint->GetStart(eExtreme_Biological))
+                  - (  prev_seqint->GetStop(eExtreme_Biological) 
+                     + (MinusStrand(*seqint) ? -1 : 1));
+
+                d *= MinusStrand(*seqint) ? -1 : 1;
+
+                ostr << "," 
+                     << (d < 0 ? "-" : "+") << abs(d)
+                     << "," << seqint->GetLength();
+            } else {
+                ostr << (!prev_seqint ? "" : ",")
+                     << seqint->GetId().GetSeqIdString() 
+                     << "@" << (MinusStrand(*seqint) ? "-" : "+")
+                     << seqint->GetStart(eExtreme_Biological) + 1
+                     << ":" << seqint->GetLength();
+            }
+
+            prev_seqint = seqint;
+        }
+
+        return CNcbiOstrstreamToString(ostr);
+    }
+
+
+    static void Validate(const CSeq_loc& orig_loc, const CSeq_loc& final_loc)
+    {
+        if(   sequence::GetLength(final_loc, NULL) % 3 
+           != sequence::GetLength(orig_loc,  NULL) % 3)
+        {
+            NCBI_THROW(CException, eUnknown, 
+                       "Logic error - frame not preserved");
+        }
+
+        string problem_str;
+        CConstRef<CSeq_interval> prev_seqint(NULL);
+        ITERATE(CPacked_seqint::Tdata, it, final_loc.GetPacked_int().Get()) {
+
+            const CSeq_interval& seqint = **it;
+
+            if(seqint.GetFrom() > seqint.GetTo()) {
+                problem_str += "invalid seqint";
+            }
+
+            const TSignedSeqPos d = 
+                !prev_seqint ? 1 : GetGapLength(*prev_seqint, seqint);
+
+            if(d != 1 && d != 2) {
+                problem_str += "Gap length is not 1 or 2";
+            }
+
+            if(!problem_str.empty()) {
+                NcbiCerr << "orig_loc: "           
+                         << AsString(orig_loc.GetPacked_int())
+                         << "\nfinal_loc: "        
+                         << AsString(final_loc.GetPacked_int())
+                         << "\ndownstream-int: "   
+                         << MSerial_AsnText << seqint;
+
+                if(prev_seqint) {
+                    NcbiCerr << "upstream-int: " 
+                             << MSerial_AsnText << *prev_seqint;
+                }
+                NCBI_THROW(CException, eUnknown, problem_str);
+            }
+
+            prev_seqint = *it;
+        }
+    }
+};
+
+
+
+
+// Project exon to genomic coordinates, preserving discontinuities.
 CRef<CSeq_loc> ProjectExon(const CSpliced_exon& spliced_exon, 
                            const CSeq_id& aln_genomic_id,  //of the parent alignment (if not specified in spliced_exon)
                            ENa_strand aln_genomic_strand)  //of the parent alignment (if not specified in spliced_exon)
@@ -255,9 +744,13 @@ CRef<CSeq_loc> ProjectExon(const CSpliced_exon& spliced_exon,
     }
 
     typedef vector<pair<int, int> > TExonStructure; 
-        //Each element is an exon chunk comprised of alignment diag (match or mismatch run) and abutting downstream gaps.
-        //::first  is diag+query_gap  , corresponding to the transcribed chunk length. 
-        //::second is diag+subject_gap, corresponding to distance to the start of the next chunk.
+        // Each element is an exon chunk comprised of alignment diag 
+        // (match or mismatch run) and abutting downstream gaps.
+        // ::first  is diag+query_gap  , 
+        //      corresponding to the transcribed chunk length. 
+        //
+        // ::second is diag+subject_gap, 
+        //      corresponding to distance to the start of the next chunk.
 
     TExonStructure exon_structure;
     bool last_is_diag = false;
@@ -280,13 +773,18 @@ CRef<CSeq_loc> ProjectExon(const CSpliced_exon& spliced_exon,
             if(exon_structure.empty()) {
                 exon_structure.push_back(TExonStructure::value_type(0, 0));
             }
-            (chunk.IsProduct_ins() ? exon_structure.back().first : exon_structure.back().second) += len;
+            (chunk.IsProduct_ins() ? exon_structure.back().first 
+                                   : exon_structure.back().second) += len;
         }
         last_is_diag = is_diag;
     }
 
-    //make the subject values cumulative (i.e. relative to the exon boundary, rather than neighboring chunk)
-    //After this, the biological start of a chunk relative to the exon-start is ::second of the previous element
+    // make the subject values cumulative 
+    // (i.e. relative to the exon boundary, 
+    // rather than neighboring chunk)
+    // After this, the biological start of 
+    // a chunk relative to the exon-start 
+    // is ::second of the previous element
     NON_CONST_ITERATE(TExonStructure, it, exon_structure) {
         if(it != exon_structure.begin()) {
             it->second += (it-1)->second;
@@ -294,19 +792,23 @@ CRef<CSeq_loc> ProjectExon(const CSpliced_exon& spliced_exon,
     }
 
     int genomic_sign = genomic_strand == eNa_strand_minus ? -1 : 1;
-    TSeqPos exon_bio_start_pos = genomic_sign > 0 ? spliced_exon.GetGenomic_start() : spliced_exon.GetGenomic_end(); 
+    TSeqPos exon_bio_start_pos = 
+        genomic_sign > 0 ? spliced_exon.GetGenomic_start() 
+                         : spliced_exon.GetGenomic_end(); 
     exon_loc->SetPacked_int();
     ITERATE(TExonStructure, it, exon_structure) {
         int chunk_length = it->first;
         int chunk_offset = it == exon_structure.begin() ? 0 : (it-1)->second; 
 
         if(chunk_length == 0) {
-            //can happen if we have a gap-only chunk (e.g. arising from truncating alignment to CDS)
+            // can happen if we have a gap-only chunk 
+            // (e.g. arising from truncating alignment to CDS)
             continue;
         }
 
         TSeqPos bio_start = exon_bio_start_pos + (chunk_offset * genomic_sign);
-        TSeqPos bio_stop = bio_start + (chunk_length - 1) * genomic_sign; //-1 because stop is inclusive
+        TSeqPos bio_stop = bio_start + (chunk_length - 1) * genomic_sign; 
+            // -1 because stop is inclusive
  
         CRef<CSeq_interval> chunk(new CSeq_interval);
         chunk->SetId().Assign(genomic_id);
@@ -316,17 +818,20 @@ CRef<CSeq_loc> ProjectExon(const CSpliced_exon& spliced_exon,
         exon_loc->SetPacked_int().Set().push_back(chunk);
     }
 
-    return exon_loc;
+    return NTweakExon::TweakExon(*exon_loc);
 }
 
 
-/// Create an exon with the structure consisting of two diags extending inwards from the exon terminals
+/// Create an exon with the structure consisting of 
+/// two diags extending inwards from the exon terminals
 /// with a single gap of required length in the middle. 
-/// This is used for projecting cds-exons consisting entirely of gaps (see ProjectExons)
+/// This is used for projecting cds-exons consisting 
+/// entirely of gaps (see ProjectExons)
 CRef<CSpliced_exon> CollapseExonStructure(const CSpliced_exon& orig_exon)
 {
     CRef<CSpliced_exon> exon(SerialClone(orig_exon));
-    TSeqPos query_range = exon->GetProduct_end().GetNucpos() - exon->GetProduct_start().GetNucpos() + 1;
+    TSeqPos query_range = exon->GetProduct_end().GetNucpos() 
+                        - exon->GetProduct_start().GetNucpos() + 1;
     TSeqPos subject_range = exon->GetGenomic_end() - exon->GetGenomic_start() + 1;
     TSeqPos min_range = min(query_range, subject_range);
     TSeqPos max_range = max(query_range, subject_range);
