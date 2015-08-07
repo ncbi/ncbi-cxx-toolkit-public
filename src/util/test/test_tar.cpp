@@ -319,6 +319,13 @@ string CTarTest::x_Pos(const CTarEntryInfo& info)
 }
 
 
+static string x_OSReason(int x_errno)
+{
+    const char* strerr = x_errno ? strerror(x_errno) : 0;
+    return strerr  &&  *strerr ? string(": ") + strerr : kEmptyStr;
+}
+
+
 auto_ptr<CTar::TEntries> CTarTest::x_Append(CTar& tar, const string& name)
 {
     CDirEntry entry(name);
@@ -609,13 +616,14 @@ int CTarTest::Run(void)
         }
         if (!NcbiStreamCopy(!tocout  ||  pipethru ? of : NcbiCout, rs)) {
             // NB: CTar would throw archive read exception
+            string reason = x_OSReason(errno);
             string errmsg("Write error");
             if (!tocout) {
                 errmsg += " in \"";
                 errmsg += args[1].AsString();
                 errmsg += '"';
             }
-            NCBI_THROW(CTarException, eWrite, errmsg);
+            NCBI_THROW(CTarException, eWrite, errmsg + reason);
         }
     } else {
         tar->SetFlags(m_Flags);
