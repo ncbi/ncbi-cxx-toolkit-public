@@ -6665,8 +6665,8 @@ if test "$with_vdb" != "no" ; then
                fi
                ;;
          esac
-         for x in "$vdb_libpath" "lib$bit64_sfx" lib; do
-            if test -d "$VDB_PATH/$x"; then
+         for x in "$vdb_libpath" "lib${bit64_sfx:-32}" lib; do
+            if test -n "$x" -a -d "$VDB_PATH/$x"; then
                : ${VDB_LIBDIR=$VDB_PATH/$x}
                break
             fi
