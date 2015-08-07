@@ -164,9 +164,9 @@ CFormatGuess::s_CheckOrder[] =
     eSra,
     eRmo,
     eVcf,
-    eGtf,
     eGvf,
     eGff3,
+    eGtf,
     eGff2,
     eGlimmer3,
     eAgp,
@@ -777,6 +777,9 @@ CFormatGuess::TestFormatGff3(
         //  Make sure to ignore any UCSC track and browser lines prior to the
         //  start of data
         //
+        if (!uGffLineCount && NStr::StartsWith(*it, "##gff-version 3")) {
+            return true;
+        }
         if ( it->empty() || (*it)[0] == '#' ) {
             continue;
         }
