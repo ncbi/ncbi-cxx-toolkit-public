@@ -475,7 +475,7 @@ public:
 struct SHTTP_StatusData {
     int    code;
     string text;
-    SHTTP_StatusData(void) : code(0), text(kEmptyStr) { }
+    SHTTP_StatusData(void) : code(0) { }
 };
 
 

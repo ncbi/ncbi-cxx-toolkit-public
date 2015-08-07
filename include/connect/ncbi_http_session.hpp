@@ -85,7 +85,7 @@ CHttpResponse g_HttpGet(const CUrl&         url,
 NCBI_XCONNECT_EXPORT
 CHttpResponse g_HttpPost(const CUrl&     url,
                          CTempString     data,
-                         CTempString     content_type = kEmptyStr,
+                         CTempString     content_type = CTempString(),
                          const CTimeout& timeout = CTimeout(CTimeout::eDefault),
                          THttpRetries    retries = null);
 
@@ -96,7 +96,7 @@ NCBI_XCONNECT_EXPORT
 CHttpResponse g_HttpPost(const CUrl&         url,
                          const CHttpHeaders& headers,
                          CTempString         data,
-                         CTempString         content_type = kEmptyStr,
+                         CTempString         content_type = CTempString(),
                          const CTimeout&     timeout = CTimeout(CTimeout::eDefault),
                          THttpRetries        retries = null);
 
@@ -222,10 +222,10 @@ class NCBI_XCONNECT_EXPORT CFormDataProvider_Base : public CObject
 public:
     /// Get content type. Returns empty string by default, indicating
     /// no Content-Type header should be used for the part.
-    virtual string GetContentType(void) const { return kEmptyStr; }
+    virtual string GetContentType(void) const { return string(); }
 
     /// Get optional filename to be shown in Content-Disposition header.
-    virtual string GetFileName(void) const { return kEmptyStr; }
+    virtual string GetFileName(void) const { return string(); }
 
     /// Write user data to the stream.
     virtual void WriteData(CNcbiOstream& out) const = 0;
@@ -260,7 +260,7 @@ public:
     ///   content type. Not used when sending eFormUrlEncoded content.
     void AddEntry(CTempString entry_name,
                   CTempString value,
-                  CTempString content_type = kEmptyStr);
+                  CTempString content_type = CTempString());
 
     /// Add file entry. The form content type is automatically set to
     /// eMultipartFormData and can not be changed later.
@@ -277,7 +277,7 @@ public:
     ///   protocol assumes it to be 'application/octet-stream'.
     void AddFile(CTempString entry_name,
                  CTempString file_name,
-                 CTempString content_type = kEmptyStr);
+                 CTempString content_type = CTempString());
 
     /// Add custom data provider. The data written by the provider is
     /// properly prefixed with Content-Disposition, boundary, Content-Type etc.
@@ -540,7 +540,7 @@ public:
     /// @sa NewRequest() CHttpRequest
     CHttpResponse Post(const CUrl&     url,
                        CTempString     data,
-                       CTempString     content_type = kEmptyStr,
+                       CTempString     content_type = CTempString(),
                        const CTimeout& timeout = CTimeout(CTimeout::eDefault),
                        THttpRetries    retries = null);
 

@@ -582,7 +582,7 @@ class NCBI_XCONNECT_EXPORT CGridWorkerNode
 #ifdef NCBI_OS_UNIX
             ESwitch daemonize = eDefault,
 #endif
-            string procinfo_file_name = kEmptyStr);
+            string procinfo_file_name = string());
 
     void RequestShutdown();
 
