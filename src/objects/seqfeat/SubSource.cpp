@@ -1889,6 +1889,7 @@ string CSubSource::ValidateLatLonCountry (const string& input_countryname, strin
         if (m_LatLonWaterMap->IsCountryInLatLon(country, lat_value, lon_value)) {
             return "";
         }
+    } else if (NStr::EqualNocase (country, "Palestine") || NStr::EqualNocase (country, "State of Palestine")) {
     } else {
         // report unrecognized country
         return "";
@@ -1905,6 +1906,13 @@ string CSubSource::ValidateLatLonCountry (const string& input_countryname, strin
         return "";
     }
     if (NStr::EqualNocase (country, "USA") && NStr::EqualNocase (cguess, "Puerto Rico")) {
+        return "";
+    }
+    if ((NStr::EqualNocase (country, "Palestine") ||
+         NStr::EqualNocase (country, "State of Palestine")) &&
+        (NStr::EqualNocase (cguess, "Gaza Strip") ||
+         NStr::EqualNocase (cguess, "Israel") ||
+         NStr::EqualNocase (cguess, "West Bank"))) {
         return "";
     }
 
@@ -2618,6 +2626,7 @@ static const char* const s_Countries[] = {
     "Pacific Ocean",
     "Pakistan",
     "Palau",
+    "Palestine",
     "Palmyra Atoll",
     "Panama",
     "Papua New Guinea",
@@ -2663,6 +2672,7 @@ static const char* const s_Countries[] = {
     "Spain",
     "Spratly Islands",
     "Sri Lanka",
+    "State of Palestine",
     "Sudan",
     "Suriname",
     "Svalbard",
