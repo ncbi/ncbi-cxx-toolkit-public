@@ -4754,7 +4754,8 @@ PE	s	Institute of Botany, Chinese Academy of Sciences
 PECA	s	Pratt Education Center and Aquarium
 PECS	s	Janus Pannonius Museum, Natural History Department
 PEFO	s	Petrified Forest
-PEI	s	Agriculture and Agri-Food Canada
+PEI	cb	Paul-Ehrlich-Institut
+PEI<CAN>	s	Agriculture and Agri-Food Canada
 PEL	s	Universidade Federal de Pelotas, Departamento de Botanica
 PEM<CHN>	s	Beijing Medical University, Botany Department
 PEM<ZAF>	s	Port Elizabeth Museum
