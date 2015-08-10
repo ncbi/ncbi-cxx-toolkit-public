@@ -463,11 +463,7 @@ public:
         m_API(ns_api_impl),
         m_Timeout(timeout)
     {
-        if (timeout) {
-            PushScheduledAction(m_DiscoveryAction);
-        } else {
-            PushImmediateAction(m_DiscoveryAction);
-        }
+        PushImmediateAction(m_DiscoveryAction);
     }
 
     enum EState {
