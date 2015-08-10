@@ -587,8 +587,6 @@ public:
         }
     }
 
-    TImpl& m_Impl;
-
 private:
     static void MoveHead(TTimeline& from, TTimeline& to)
     {
@@ -657,6 +655,7 @@ private:
         }
     }
 
+    TImpl& m_Impl;
     TTimeline m_ImmediateActions, m_ScheduledActions;
     SEntry m_DiscoveryAction;
 };
