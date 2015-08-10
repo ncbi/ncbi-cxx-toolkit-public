@@ -510,7 +510,8 @@ class CNetScheduleGetJob
             if (timeline_entry == m_DiscoveryAction) {
                 NextDiscoveryIteration();
                 timeline_entry.deadline = CDeadline(m_Impl.m_Timeout, 0);
-                MoveHead(m_ImmediateActions, m_ScheduledActions);
+                m_ScheduledActions.splice(m_ScheduledActions.end(),
+                        m_ImmediateActions, m_ImmediateActions.begin());
             } else {
                 try {
                     if (m_Impl.CheckEntry(timeline_entry, kEmptyStr, job, job_status)) {
@@ -522,7 +523,8 @@ class CNetScheduleGetJob
                         // No job has been returned by this server;
                         // query the server later.
                         timeline_entry.deadline = CDeadline(m_Impl.m_Timeout, 0);
-                        MoveHead(m_ImmediateActions, m_ScheduledActions);
+                        m_ScheduledActions.splice(m_ScheduledActions.end(),
+                                m_ImmediateActions, m_ImmediateActions.begin());
                     }
                 }
                 catch (CNetSrvConnException& e) {
@@ -540,7 +542,8 @@ class CNetScheduleGetJob
             // Check all servers that have timeout expired
             while (!m_ScheduledActions.empty() &&
                     m_ScheduledActions.front().deadline.GetRemainingTime().IsZero()) {
-                MoveHead(m_ScheduledActions, m_ImmediateActions);
+                m_ImmediateActions.splice(m_ImmediateActions.end(),
+                        m_ScheduledActions, m_ScheduledActions.begin());
             }
 
             // Check if there's a notification in the UDP socket.
@@ -596,17 +599,13 @@ public:
             } else if (last_wait) {
                 return NNetScheduleGetJob::eAgain;
             } else {
-                MoveHead(m_ScheduledActions, m_ImmediateActions);
+                m_ImmediateActions.splice(m_ImmediateActions.end(),
+                        m_ScheduledActions, m_ScheduledActions.begin());
             }
         }
     }
 
 private:
-    static void MoveHead(TTimeline& from, TTimeline& to)
-    {
-        to.splice(to.end(), from, from.begin());
-    }
-
     static void Filter(TTimeline& timeline, TServers& servers)
     {
         TTimeline::iterator i = timeline.begin();
