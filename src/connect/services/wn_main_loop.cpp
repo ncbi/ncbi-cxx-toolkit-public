@@ -692,7 +692,7 @@ CNetServer CMainLoopThread::CImpl::x_ProcessRequestJobNotification()
     return server;
 }
 
-bool MoreJobs()
+bool MoreJobs(const CNetScheduleTimeline::SEntry& /*entry*/)
 {
     return true;
 }

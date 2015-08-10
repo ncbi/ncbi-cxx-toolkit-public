@@ -40,6 +40,9 @@
 
 #include <deque>
 #include <map>
+#include <functional>
+#include <boost/bind.hpp>
+#include <boost/function.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -475,17 +478,7 @@ public:
             CNetScheduleTimeline::SEntry& entry,
             CNetScheduleJob& job,
             CNetScheduleAPI::EJobStatus* job_status) = 0;
-    virtual bool MoreJobs()
-    {
-        for (TTimeline::const_iterator i = m_ScheduledActions.begin();
-                i != m_ScheduledActions.end(); ++i) {
-            if (i->more_jobs) {
-                return true;
-            }
-        }
-
-        return false;
-    }
+    virtual bool MoreJobs(const CNetScheduleTimeline::SEntry& entry) = 0;
 
     enum EResult {
         eJob,
@@ -549,8 +542,12 @@ public:
                 }
             }
 
-            if (!MoreJobs())
+            // If MoreJobs() returned false for all entries of m_ScheduledActions
+            // TODO: This can be replaced by lambda after we migrate to C++11
+            if (!Find(m_ScheduledActions,
+                        boost::bind(&CNetScheduleTimeline::MoreJobs, this, _1))) {
                 return eNoJobs;
+            }
 
             if (deadline.IsExpired())
                 return eAgain;
@@ -576,18 +573,6 @@ public:
     }
 
 private:
-    struct SEntryByAddress
-    {
-        const SServerAddress server_address;
-
-        SEntryByAddress(const SServerAddress& a) : server_address(a) {}
-
-        bool operator()(const SEntry& e)
-        {
-            return e.server_address == server_address;
-        }
-    };
-
     static SEntry Pop(TTimeline& timeline)
     {
         SEntry entry = timeline.front();
@@ -595,12 +580,14 @@ private:
         return entry;
     }
 
-    static bool Find(const TTimeline& timeline, const SEntryByAddress& cmp)
+    template <class TCmp>
+    static bool Find(const TTimeline& timeline, const TCmp& cmp)
     {
         return find_if(timeline.begin(), timeline.end(), cmp) != timeline.end();
     }
 
-    static bool Erase(TTimeline& timeline, const SEntryByAddress& cmp)
+    template <class TCmp>
+    static bool Erase(TTimeline& timeline, const TCmp& cmp)
     {
         TTimeline::iterator i = find_if(timeline.begin(), timeline.end(), cmp);
 
@@ -647,9 +634,15 @@ private:
     {
         const SServerAddress address(server_impl->m_ServerInPool->m_Address);
 
+        // This is used to find entries by address.
+        // TODO: This can be replaced by lambda after we migrate to C++11
+        boost::function<bool(const SEntry&)> cmp(
+                boost::bind(equal_to<SServerAddress>(), address,
+                    boost::bind(&SEntry::server_address, _1)));
+
         // If it's new server or is postponed or is not found in queues
-        if (Erase(m_ScheduledActions, address) ||
-                !Find(m_ImmediateActions, address)) {
+        if (Erase(m_ScheduledActions, cmp) ||
+                !Find(m_ImmediateActions, cmp)) {
             m_ImmediateActions.push_back(address);
         }
     }
@@ -736,7 +729,7 @@ private:
     EState CheckState();
     CNetServer ReadNotifications();
     CNetServer WaitForNotifications(const CDeadline& deadline);
-    bool MoreJobs();
+    bool MoreJobs(const CNetScheduleTimeline::SEntry& entry);
     bool CheckEntry(
             CNetScheduleTimeline::SEntry& entry,
             CNetScheduleJob& job,

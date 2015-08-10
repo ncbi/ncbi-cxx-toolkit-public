@@ -342,7 +342,7 @@ private:
         EState CheckState();
         CNetServer ReadNotifications();
         CNetServer WaitForNotifications(const CDeadline& deadline);
-        bool MoreJobs();
+        bool MoreJobs(const CNetScheduleTimeline::SEntry& entry);
         bool CheckEntry(
                 CNetScheduleTimeline::SEntry& entry,
                 CNetScheduleJob& job,

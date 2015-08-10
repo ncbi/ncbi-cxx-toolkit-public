@@ -178,11 +178,14 @@ SNetScheduleJobReaderImpl::EState SNetScheduleJobReaderImpl::CheckState()
     return eWorking;
 }
 
-bool SNetScheduleJobReaderImpl::MoreJobs()
+bool SNetScheduleJobReaderImpl::MoreJobs(const CNetScheduleTimeline::SEntry& entry)
 {
-    bool ret = m_MoreJobs || CNetScheduleTimeline::MoreJobs();
-    m_MoreJobs = false;
-    return ret;
+    if (m_MoreJobs) {
+        m_MoreJobs = false;
+        return true;
+    }
+
+    return entry.more_jobs;
 }
 
 bool SNetScheduleJobReaderImpl::CheckEntry(
