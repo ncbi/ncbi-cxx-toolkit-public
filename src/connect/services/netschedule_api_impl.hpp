@@ -447,24 +447,7 @@ public:
         }
     };
 
-    // TODO: This can be replaced by lambda after we migrate to C++11
-    struct SEntryHasMoreJobs
-    {
-        CNetScheduleTimeline* const that;
-        SEntryHasMoreJobs(CNetScheduleTimeline* t) : that(t) {}
-        bool operator()(const SEntry& entry) { return that->MoreJobs(entry); }
-    };
-
     typedef deque<SEntry> TTimeline;
-
-    CNetScheduleTimeline(
-            CNetScheduleAPI::TInstance ns_api_impl, unsigned timeout) :
-        m_DiscoveryAction(SServerAddress(0, 0), false),
-        m_API(ns_api_impl),
-        m_Timeout(timeout)
-    {
-        m_ImmediateActions.push_back(m_DiscoveryAction);
-    }
 
     enum EState {
         eWorking,
@@ -480,6 +463,23 @@ public:
             CNetScheduleJob& job,
             CNetScheduleAPI::EJobStatus* job_status) = 0;
     virtual bool MoreJobs(const CNetScheduleTimeline::SEntry& entry) = 0;
+
+    CNetScheduleTimeline(
+            CNetScheduleAPI::TInstance ns_api_impl, unsigned timeout) :
+        m_DiscoveryAction(SServerAddress(0, 0), false),
+        m_API(ns_api_impl),
+        m_Timeout(timeout)
+    {
+        m_ImmediateActions.push_back(m_DiscoveryAction);
+    }
+
+    // TODO: This can be replaced by lambda after we migrate to C++11
+    struct SEntryHasMoreJobs
+    {
+        CNetScheduleTimeline* const that;
+        SEntryHasMoreJobs(CNetScheduleTimeline* t) : that(t) {}
+        bool operator()(const SEntry& entry) { return that->MoreJobs(entry); }
+    };
 
     enum EResult {
         eJob,
