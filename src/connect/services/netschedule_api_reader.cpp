@@ -155,6 +155,11 @@ void SNetScheduleJobReaderImpl::x_ProcessReadJobNotifications()
             m_Timeline.MoveToImmediateActions(server);
 }
 
+SNetScheduleJobReaderImpl::EState SNetScheduleJobReaderImpl::CheckState()
+{
+    return eWorking;
+}
+
 CNetScheduleJobReader::EReadNextJobResult SNetScheduleJobReaderImpl::ReadNextJob(
         CNetScheduleJob* job,
         CNetScheduleAPI::EJobStatus* job_status,
@@ -175,9 +180,12 @@ CNetScheduleJobReader::EReadNextJobResult SNetScheduleJobReaderImpl::ReadNextJob
             no_more_jobs = true;
 
             if (m_Timeline.IsDiscoveryAction(timeline_entry)) {
-                m_Timeline.NextDiscoveryIteration(m_API);
+                if (CheckState() == eWorking) {
+                    m_Timeline.NextDiscoveryIteration(m_API);
+                }
+
                 m_Timeline.PushScheduledAction(timeline_entry, READJOB_TIMEOUT);
-            } else {
+            } else if (CheckState() == eWorking) {
                 CNetServer server(m_Timeline.GetServer(m_API, timeline_entry));
 
                 try {
@@ -215,13 +223,12 @@ CNetScheduleJobReader::EReadNextJobResult SNetScheduleJobReaderImpl::ReadNextJob
             x_ProcessReadJobNotifications();
         }
 
+        if (CheckState() == eStop)
+            return CNetScheduleJobReader::eRNJ_Interrupt;
+
         // All servers returned 'no_more_jobs'.
         if (!matching_job_exists && !m_Timeline.MoreJobs())
             return CNetScheduleJobReader::eRNJ_NoMoreJobs;
-
-        // FIXME Check for interrupt
-        // if (CGridGlobals::GetInstance().IsShuttingDown())
-            // return eRNJ_Interrupt;
 
         if (timeout == NULL || deadline.GetRemainingTime().IsZero())
             return CNetScheduleJobReader::eRNJ_NotReady;

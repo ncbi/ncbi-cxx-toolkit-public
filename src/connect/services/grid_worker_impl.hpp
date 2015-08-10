@@ -335,6 +335,14 @@ private:
         void Main();
 
     private:
+        enum EState {
+            eWorking,
+            eIdle,
+            eStop
+        };
+
+        EState CheckState();
+
         CNetScheduleTimeline m_Timeline;
         SGridWorkerNodeImpl* m_WorkerNode;
 

@@ -627,10 +627,11 @@ void CMainLoopThread::CImpl::Main()
     }
 }
 
-bool CMainLoopThread::CImpl::x_EnterSuspendedState()
+
+CMainLoopThread::CImpl::EState CMainLoopThread::CImpl::CheckState()
 {
     if (CGridGlobals::GetInstance().IsShuttingDown())
-        return true;
+        return eStop;
 
     void* event;
 
@@ -651,7 +652,13 @@ bool CMainLoopThread::CImpl::x_EnterSuspendedState()
         }
     }
 
-    return m_WorkerNode->m_TimelineIsSuspended;
+    return m_WorkerNode->m_TimelineIsSuspended ? eIdle : eWorking;
+}
+
+bool CMainLoopThread::CImpl::x_EnterSuspendedState()
+{
+    // Exact class name to avoid vtable lookup
+    return CMainLoopThread::CImpl::CheckState() != eWorking;
 }
 
 void CMainLoopThread::CImpl::x_ProcessRequestJobNotification()
@@ -673,12 +680,12 @@ bool CMainLoopThread::CImpl::x_WaitForNewJob(CNetScheduleJob& job)
             CNetScheduleTimeline::SEntry timeline_entry(m_Timeline.PullImmediateAction());
 
             if (m_Timeline.IsDiscoveryAction(timeline_entry)) {
-                if (!x_EnterSuspendedState()) {
+                if (CheckState() == eWorking) {
                     m_Timeline.NextDiscoveryIteration(m_WorkerNode->m_NetScheduleAPI);
                 }
 
                 m_Timeline.PushScheduledAction(timeline_entry, m_WorkerNode->m_NSTimeout);
-            } else if (!x_EnterSuspendedState()) {
+            } else if (CheckState() == eWorking) {
                 CNetServer server(m_Timeline.GetServer(m_WorkerNode->m_NetScheduleAPI,
                             timeline_entry));
 
@@ -712,7 +719,7 @@ bool CMainLoopThread::CImpl::x_WaitForNewJob(CNetScheduleJob& job)
                 x_ProcessRequestJobNotification();
         }
 
-        if (CGridGlobals::GetInstance().IsShuttingDown())
+        if (CheckState() == eStop)
             return false;
 
         // At least, the discovery action must be there

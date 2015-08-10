@@ -645,6 +645,14 @@ struct SNetScheduleJobReaderImpl : public CObject
         const CTimeout* timeout);
 
 private:
+    enum EState {
+        eWorking,
+        eIdle,
+        eStop
+    };
+
+    EState CheckState();
+
     CNetScheduleTimeline m_Timeline;
 };
 
