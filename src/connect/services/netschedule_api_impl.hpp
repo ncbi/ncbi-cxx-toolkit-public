@@ -510,12 +510,9 @@ class CNetScheduleGetJob
     // TODO:
     class CMostAffinityJob;
 
-    NNetScheduleGetJob::EResult GetJobImmediately(
-            CNetScheduleJob& job,
-            CNetScheduleAPI::EJobStatus* job_status)
+    template <class TJobHolder>
+    NNetScheduleGetJob::EResult GetJobImmediately(TJobHolder& holder)
     {
-        CAnyAffinityJob holder(job, job_status, m_ImmediateActions);
-
         for (;;) {
             NNetScheduleGetJob::EState state = m_Impl.CheckState();
 
@@ -610,8 +607,17 @@ public:
             CNetScheduleJob& job,
             CNetScheduleAPI::EJobStatus* job_status)
     {
+        CAnyAffinityJob holder(job, job_status, m_ImmediateActions);
+        return GetJobImpl(deadline, holder);
+    }
+
+private:
+    template <class TJobHolder>
+    NNetScheduleGetJob::EResult GetJobImpl(
+            const CDeadline& deadline, TJobHolder& holder)
+    {
         for (;;) {
-            NNetScheduleGetJob::EResult ret = GetJobImmediately(job, job_status);
+            NNetScheduleGetJob::EResult ret = GetJobImmediately(holder);
 
             if (ret != NNetScheduleGetJob::eAgain) {
                 return ret;
@@ -647,7 +653,6 @@ public:
         }
     }
 
-private:
     static void Filter(TTimeline& timeline, TServers& servers)
     {
         TTimeline::iterator i = timeline.begin();
