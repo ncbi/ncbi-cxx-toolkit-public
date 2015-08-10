@@ -440,6 +440,11 @@ public:
             more_jobs(j)
         {
         }
+
+        bool operator==(const SEntry& rhs) const
+        {
+            return server_address == rhs.server_address;
+        }
     };
 
     // TODO: This can be replaced by lambda after we migrate to C++11
@@ -510,7 +515,7 @@ public:
 
                 CNetScheduleTimeline::SEntry timeline_entry(Pop(m_ImmediateActions));
 
-                if (IsDiscoveryAction(timeline_entry)) {
+                if (timeline_entry == m_DiscoveryAction) {
                     NextDiscoveryIteration();
                     PushScheduledAction(timeline_entry);
                 } else {
@@ -543,7 +548,8 @@ public:
             }
 
             // If MoreJobs() returned false for all entries of m_ScheduledActions
-            if (!Find(m_ScheduledActions, SEntryHasMoreJobs(this))) {
+            if (find_if(m_ScheduledActions.begin(), m_ScheduledActions.end(),
+                        SEntryHasMoreJobs(this)) == m_ScheduledActions.end()) {
                 return eNoJobs;
             }
 
@@ -571,41 +577,11 @@ public:
     }
 
 private:
-    struct SEntryByAddress
-    {
-        const SServerAddress server_address;
-
-        SEntryByAddress(const SServerAddress& a) : server_address(a) {}
-
-        bool operator()(const SEntry& e)
-        {
-            return e.server_address == server_address;
-        }
-    };
-
     static SEntry Pop(TTimeline& timeline)
     {
         SEntry entry = timeline.front();
         timeline.pop_front();
         return entry;
-    }
-
-    template <class TCmp>
-    static bool Find(const TTimeline& timeline, const TCmp& cmp)
-    {
-        return find_if(timeline.begin(), timeline.end(), cmp) != timeline.end();
-    }
-
-    static bool Erase(TTimeline& timeline, const SEntryByAddress& cmp)
-    {
-        TTimeline::iterator i = find_if(timeline.begin(), timeline.end(), cmp);
-
-        if (i == timeline.end()) {
-            return false;
-        }
-
-        timeline.erase(i);
-        return true;
     }
 
     static void Filter(TTimeline& timeline, TServers& servers)
@@ -634,20 +610,26 @@ private:
         }
     }
 
-    bool IsDiscoveryAction(const SEntry& entry) const
-    {
-        return entry.server_address == m_DiscoveryAction.server_address;
-    }
-
     void MoveToImmediateActions(SNetServerImpl* server_impl)
     {
-        const SServerAddress address(server_impl->m_ServerInPool->m_Address);
-        const SEntryByAddress cmp(address);
+        SEntry entry(server_impl->m_ServerInPool->m_Address);
 
-        // If it's new server or is postponed or is not found in queues
-        if (Erase(m_ScheduledActions, cmp) ||
-                !Find(m_ImmediateActions, cmp)) {
-            m_ImmediateActions.push_back(address);
+        TTimeline::iterator i = find(m_ScheduledActions.begin(),
+                m_ScheduledActions.end(), entry);
+
+        // Server was postponed, move to immediate
+        if (i != m_ScheduledActions.end()) {
+            m_ScheduledActions.erase(i);
+            m_ImmediateActions.push_back(entry);
+            return;
+        }
+
+        TTimeline::iterator j = find(m_ImmediateActions.begin(),
+                m_ImmediateActions.end(), entry);
+
+        // It's new server, add to immediate
+        if (i == m_ImmediateActions.end()) {
+            m_ImmediateActions.push_back(entry);
         }
     }
 
