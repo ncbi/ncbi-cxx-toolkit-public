@@ -40,9 +40,6 @@
 
 #include <deque>
 #include <map>
-#include <functional>
-#include <boost/bind.hpp>
-#include <boost/function.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -445,6 +442,14 @@ public:
         }
     };
 
+    // TODO: This can be replaced by lambda after we migrate to C++11
+    struct SEntryHasMoreJobs
+    {
+        CNetScheduleTimeline* const that;
+        SEntryHasMoreJobs(CNetScheduleTimeline* t) : that(t) {}
+        bool operator()(const SEntry& entry) { return that->MoreJobs(entry); }
+    };
+
     typedef deque<SEntry> TTimeline;
 
     CNetScheduleTimeline(
@@ -538,9 +543,7 @@ public:
             }
 
             // If MoreJobs() returned false for all entries of m_ScheduledActions
-            // TODO: This can be replaced by lambda after we migrate to C++11
-            if (!Find(m_ScheduledActions,
-                        boost::bind(&CNetScheduleTimeline::MoreJobs, this, _1))) {
+            if (!Find(m_ScheduledActions, SEntryHasMoreJobs(this))) {
                 return eNoJobs;
             }
 
@@ -568,6 +571,18 @@ public:
     }
 
 private:
+    struct SEntryByAddress
+    {
+        const SServerAddress server_address;
+
+        SEntryByAddress(const SServerAddress& a) : server_address(a) {}
+
+        bool operator()(const SEntry& e)
+        {
+            return e.server_address == server_address;
+        }
+    };
+
     static SEntry Pop(TTimeline& timeline)
     {
         SEntry entry = timeline.front();
@@ -581,8 +596,7 @@ private:
         return find_if(timeline.begin(), timeline.end(), cmp) != timeline.end();
     }
 
-    template <class TCmp>
-    static bool Erase(TTimeline& timeline, const TCmp& cmp)
+    static bool Erase(TTimeline& timeline, const SEntryByAddress& cmp)
     {
         TTimeline::iterator i = find_if(timeline.begin(), timeline.end(), cmp);
 
@@ -628,12 +642,7 @@ private:
     void MoveToImmediateActions(SNetServerImpl* server_impl)
     {
         const SServerAddress address(server_impl->m_ServerInPool->m_Address);
-
-        // This is used to find entries by address.
-        // TODO: This can be replaced by lambda after we migrate to C++11
-        boost::function<bool(const SEntry&)> cmp(
-                boost::bind(equal_to<SServerAddress>(), address,
-                    boost::bind(&SEntry::server_address, _1)));
+        const SEntryByAddress cmp(address);
 
         // If it's new server or is postponed or is not found in queues
         if (Erase(m_ScheduledActions, cmp) ||
