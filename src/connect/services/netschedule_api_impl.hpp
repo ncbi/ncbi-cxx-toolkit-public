@@ -40,6 +40,7 @@
 
 #include <list>
 #include <map>
+#include <vector>
 
 
 BEGIN_NCBI_SCOPE
@@ -320,7 +321,15 @@ struct SNetScheduleAPIImpl : public CObject
 
     CNetScheduleExecutor::EJobAffinityPreference m_AffinityPreference;
     list<string> m_AffinityList;
-    list<string> m_AffinityLadder;
+
+    // Vector of priority-ordered pairs of affinities and
+    // corresponding priority-ordered comma-separated affinity lists.
+    // E.g., for "a, b, c" it would be:
+    // { "a", "a"       },
+    // { "b", "a, b"    },
+    // { "c", "a, b, c" }
+    typedef vector<pair<string, string> > TAffinityLadder;
+    TAffinityLadder m_AffinityLadder;
 
     string m_JobGroup;
     unsigned m_JobTtl;

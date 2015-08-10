@@ -373,10 +373,11 @@ bool SNetScheduleExecutorImpl::x_GetJobWithAffinityLadder(
         return x_GetJobWithAffinityList(server, &timeout, job,
                 m_AffinityPreference, kEmptyStr);
 
-    list<string>::const_iterator it = m_API->m_AffinityLadder.begin();
+    SNetScheduleAPIImpl::TAffinityLadder::const_iterator it =
+        m_API->m_AffinityLadder.begin();
 
     for (;;) {
-        string affinity_list = *it;
+        string affinity_list = it->second;
         if (++it == m_API->m_AffinityLadder.end())
             return x_GetJobWithAffinityList(server, &timeout, job,
                     m_AffinityPreference, affinity_list);
