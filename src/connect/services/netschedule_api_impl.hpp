@@ -500,7 +500,10 @@ public:
             }
             
             if (state == eRestarted) {
-                Restart();
+                // Restart (rediscover all servers)
+                m_ScheduledActions.clear();
+                m_ImmediateActions.clear();
+                m_ImmediateActions.push_back(m_DiscoveryAction);
             }
 
             if (m_ImmediateActions.empty()) {
@@ -536,7 +539,12 @@ public:
                 }
             }
 
-            CheckScheduledActions();
+            // Check all servers that have timeout expired
+            while (!m_ScheduledActions.empty() &&
+                    m_ScheduledActions.front().deadline.GetRemainingTime().IsZero()) {
+                m_ImmediateActions.push_back(m_ScheduledActions.front());
+                m_ScheduledActions.pop_front();
+            }
 
             // Check if there's a notification in the UDP socket.
             while (CNetServer server = ReadNotifications()) {
@@ -608,15 +616,6 @@ private:
         timeline.swap(new_timeline);
     }
 
-    void CheckScheduledActions()
-    {
-        while (!m_ScheduledActions.empty() &&
-                m_ScheduledActions.front().deadline.GetRemainingTime().IsZero()) {
-            m_ImmediateActions.push_back(m_ScheduledActions.front());
-            m_ScheduledActions.pop_front();
-        }
-    }
-
     void MoveToImmediateActions(SNetServerImpl* server_impl)
     {
         SEntry entry(server_impl->m_ServerInPool->m_Address);
@@ -659,13 +658,6 @@ private:
                 i != servers.end(); ++i) {
             m_ImmediateActions.push_back(*i);
         }
-    }
-
-    void Restart()
-    {
-        m_ScheduledActions.clear();
-        m_ImmediateActions.clear();
-        m_ImmediateActions.push_back(m_DiscoveryAction);
     }
 
     TTimeline m_ImmediateActions, m_ScheduledActions;
