@@ -38,7 +38,7 @@
 #include <connect/services/netschedule_api.hpp>
 #include <connect/services/error_codes.hpp>
 
-#include <deque>
+#include <list>
 #include <map>
 
 
@@ -465,7 +465,7 @@ class CNetScheduleGetJob
 
 public:
     typedef NNetScheduleGetJob::SEntry SEntry;
-    typedef deque<SEntry> TTimeline;
+    typedef list<SEntry> TTimeline;
 
     CNetScheduleGetJob(TImpl& impl) :
         m_Impl(impl),
@@ -505,30 +505,29 @@ public:
             }
 
             SEntry timeline_entry(m_ImmediateActions.front());
-            m_ImmediateActions.pop_front();
 
             if (timeline_entry == m_DiscoveryAction) {
                 NextDiscoveryIteration();
                 timeline_entry.deadline = CDeadline(m_Impl.m_Timeout, 0);
-                m_ScheduledActions.push_back(timeline_entry);
+                MoveHead(m_ImmediateActions, m_ScheduledActions);
             } else {
                 try {
                     if (m_Impl.CheckEntry(timeline_entry, job, job_status)) {
                         // A job has been returned; add the server to
                         // immediate actions because there can be more
                         // jobs in the queue.
-                        m_ImmediateActions.push_back(timeline_entry);
                         return NNetScheduleGetJob::eJob;
                     } else {
                         // No job has been returned by this server;
                         // query the server later.
                         timeline_entry.deadline = CDeadline(m_Impl.m_Timeout, 0);
-                        m_ScheduledActions.push_back(timeline_entry);
+                        MoveHead(m_ImmediateActions, m_ScheduledActions);
                     }
                 }
                 catch (CNetSrvConnException& e) {
                     // Because a connection error has occurred, do not
                     // put this server back to the timeline.
+                    m_ImmediateActions.pop_front();
                     LOG_POST(Warning << e.GetMsg());
                 }
             }
@@ -536,8 +535,7 @@ public:
             // Check all servers that have timeout expired
             while (!m_ScheduledActions.empty() &&
                     m_ScheduledActions.front().deadline.GetRemainingTime().IsZero()) {
-                m_ImmediateActions.push_back(m_ScheduledActions.front());
-                m_ScheduledActions.pop_front();
+                MoveHead(m_ScheduledActions, m_ImmediateActions);
             }
 
             // Check if there's a notification in the UDP socket.
@@ -585,8 +583,7 @@ public:
             } else if (last_wait) {
                 return NNetScheduleGetJob::eAgain;
             } else {
-                m_ImmediateActions.push_back(m_ScheduledActions.front());
-                m_ScheduledActions.pop_front();
+                MoveHead(m_ScheduledActions, m_ImmediateActions);
             }
         }
     }
@@ -594,6 +591,11 @@ public:
     TImpl& m_Impl;
 
 private:
+    static void MoveHead(TTimeline& from, TTimeline& to)
+    {
+        to.splice(to.end(), from, from.begin());
+    }
+
     static void Filter(TTimeline& timeline, TServers& servers)
     {
         TTimeline new_timeline;
@@ -621,8 +623,8 @@ private:
 
         // Server was postponed, move to immediate
         if (i != m_ScheduledActions.end()) {
-            m_ScheduledActions.erase(i);
-            m_ImmediateActions.push_back(entry);
+            m_ImmediateActions.splice(m_ImmediateActions.end(),
+                    m_ScheduledActions, i);
             return;
         }
 
