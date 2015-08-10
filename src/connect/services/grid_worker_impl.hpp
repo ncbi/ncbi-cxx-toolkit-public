@@ -328,6 +328,8 @@ private:
     {
     public:
         CImpl(SGridWorkerNodeImpl* worker_node) :
+            CNetScheduleTimeline(m_WorkerNode->m_NetScheduleAPI,
+                    m_WorkerNode->m_NSTimeout),
             m_WorkerNode(worker_node),
             m_API(m_WorkerNode->m_NetScheduleAPI),
             m_Timeout(m_WorkerNode->m_NSTimeout)

@@ -449,8 +449,11 @@ public:
 
     typedef deque<SEntry> TTimeline;
 
-    CNetScheduleTimeline(unsigned timeout = 0) :
-        m_DiscoveryAction(SServerAddress(0, 0), false)
+    CNetScheduleTimeline(
+            CNetScheduleAPI::TInstance ns_api_impl, unsigned timeout) :
+        m_DiscoveryAction(SServerAddress(0, 0), false),
+        m_API(ns_api_impl),
+        m_Timeout(timeout)
     {
         if (timeout) {
             PushScheduledAction(m_DiscoveryAction, timeout);
@@ -608,18 +611,22 @@ private:
     }
 
     TTimeline m_ImmediateActions, m_ScheduledActions;
-
     SEntry m_DiscoveryAction;
+    CNetScheduleAPI m_API;
+    const unsigned m_Timeout;
 };
+
+const unsigned s_Timeout = 10;
 
 struct SNetScheduleJobReaderImpl : public CObject, private CNetScheduleTimeline
 {
     SNetScheduleJobReaderImpl(CNetScheduleAPI::TInstance ns_api_impl,
             const string& group, const string& affinity) :
+        CNetScheduleTimeline(ns_api_impl, s_Timeout),
         m_API(ns_api_impl),
         m_JobGroup(group),
         m_Affinity(affinity),
-        m_Timeout(10),
+        m_Timeout(s_Timeout),
         m_MoreJobs(false)
     {
         SNetScheduleAPIImpl::VerifyJobGroupAlphabet(group);
