@@ -347,6 +347,7 @@ private:
                 const string& prio_aff_list,
                 CNetScheduleJob& job,
                 CNetScheduleAPI::EJobStatus* job_status);
+        void ReturnJob(CNetScheduleJob& job);
 
         CNetScheduleAPI m_API;
         const unsigned m_Timeout;

@@ -704,6 +704,11 @@ bool CMainLoopThread::CImpl::CheckEntry(
             m_Timeout, prio_aff_list, job);
 }
 
+void CMainLoopThread::CImpl::ReturnJob(CNetScheduleJob& job)
+{
+    m_WorkerNode->m_NSExecutor.ReturnJob(job);
+}
+
 bool CMainLoopThread::x_GetNextJob(CNetScheduleJob& job)
 {
     if (!m_WorkerNode->x_AreMastersBusy()) {

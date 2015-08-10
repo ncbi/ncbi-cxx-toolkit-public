@@ -147,6 +147,13 @@ bool SNetScheduleJobReaderImpl::CImpl::CheckEntry(
     return ret;
 }
 
+void SNetScheduleJobReaderImpl::CImpl::ReturnJob(CNetScheduleJob& job)
+{
+    SNetScheduleSubmitterImpl submitter_impl(m_API);
+    submitter_impl.FinalizeRead("RDRB blacklist=0 job_key=", "ReadRollback",
+            job.job_id, job.auth_token, kEmptyStr);
+}
+
 CNetServer SNetScheduleJobReaderImpl::CImpl::WaitForNotifications(const CDeadline& deadline)
 {
     if (m_API->m_NotificationThread->m_ReadNotifications.Wait(deadline)) {
