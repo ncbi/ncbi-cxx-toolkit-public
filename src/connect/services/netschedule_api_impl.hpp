@@ -489,19 +489,19 @@ class CNetScheduleGetJob
     {
     public:
         CNetScheduleJob& job;
-        CNetScheduleAPI::EJobStatus *job_status;
+        CNetScheduleAPI::EJobStatus* job_status;
 
         CAnyAffinityJob(CNetScheduleJob& j, CNetScheduleAPI::EJobStatus* js,
                 TTimeline& timeline) :
             job(j), job_status(js), m_Timeline(timeline)
         {}
 
-        void Interrupt() {}
-        TIterator Begin() const     { return m_Timeline.begin(); }
-        TIterator Next() const      { return m_Timeline.begin(); }
-        const string& Affinity()    { return kEmptyStr; }
-        bool Done()                 { return true; }
-        bool HasJob()               { return false; }
+        void Interrupt()                {}
+        TIterator Begin()               { return m_Timeline.begin(); }
+        TIterator Next()                { return m_Timeline.begin(); }
+        const string& Affinity() const  { return kEmptyStr; }
+        bool Done()                     { return true; }
+        bool HasJob() const             { return false; }
 
     private:
         TTimeline& m_Timeline;
@@ -551,7 +551,7 @@ class CNetScheduleGetJob
             return ++ret;
         }
 
-        const string& Affinity()
+        const string& Affinity() const
         {
             // Must not happen, since otherwise Done() has returned true already
             _ASSERT(m_JobPriority);
@@ -601,7 +601,7 @@ class CNetScheduleGetJob
             return false;
         }
 
-        bool HasJob()
+        bool HasJob() const
         {
             return m_JobPriority < numeric_limits<size_t>::max();
         }
