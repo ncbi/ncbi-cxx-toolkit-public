@@ -171,7 +171,7 @@ CNetScheduleJobReader::EReadNextJobResult SNetScheduleJobReaderImpl::ReadNextJob
     _ASSERT(job);
 
     x_StartNotificationThread();
-    CDeadline deadline(timeout ? *timeout : CTimeout());
+    CDeadline deadline(timeout ? *timeout : CTimeout(0, 0));
 
     bool no_more_jobs;
     bool matching_job_exists = false;
@@ -233,7 +233,7 @@ CNetScheduleJobReader::EReadNextJobResult SNetScheduleJobReaderImpl::ReadNextJob
         if (!matching_job_exists && !m_Timeline.MoreJobs())
             return CNetScheduleJobReader::eRNJ_NoMoreJobs;
 
-        if (timeout == NULL || deadline.GetRemainingTime().IsZero())
+        if (deadline.IsExpired())
             return CNetScheduleJobReader::eRNJ_NotReady;
 
         // At least, the discovery action must be there

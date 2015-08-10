@@ -681,6 +681,8 @@ void CMainLoopThread::CImpl::ProcessNotifications()
 
 bool CMainLoopThread::CImpl::x_WaitForNewJob(CNetScheduleJob& job)
 {
+    CDeadline deadline(CTimeout::eInfinite);
+
     for (;;) {
         while (m_Timeline.HasImmediateActions()) {
             CNetScheduleTimeline::SEntry timeline_entry(m_Timeline.PullImmediateAction());
@@ -726,12 +728,19 @@ bool CMainLoopThread::CImpl::x_WaitForNewJob(CNetScheduleJob& job)
         if (CheckState() == eStop)
             return false;
 
+        if (deadline.IsExpired())
+            return false;
+
         // At least, the discovery action must be there
         _ASSERT(m_Timeline.HasScheduledActions());
 
         // There's still time. Wait for notifications and query the servers.
         const CDeadline next_event_time = m_Timeline.GetNextTimeout();
-        if (WaitForNotifications(next_event_time))
+        if (deadline < next_event_time) {
+            if (!WaitForNotifications(deadline))
+                return false;
+            ProcessNotifications();
+        } else if (WaitForNotifications(next_event_time))
             ProcessNotifications();
         else {
             m_Timeline.PushImmediateAction(m_Timeline.PullScheduledAction());
