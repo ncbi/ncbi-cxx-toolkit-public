@@ -617,7 +617,8 @@ struct SNetScheduleJobReaderImpl : public CObject
         m_API(ns_api_impl),
         m_JobGroup(group),
         m_Affinity(affinity),
-        m_Timeout(10)
+        m_Timeout(10),
+        m_MoreJobs(false)
     {
         SNetScheduleAPIImpl::VerifyJobGroupAlphabet(group);
         SNetScheduleAPIImpl::VerifyAffinityAlphabet(affinity);
@@ -654,6 +655,7 @@ private:
     EState CheckState();
     void ReadNotifications();
     bool WaitForNotifications(const CDeadline& deadline);
+    bool MoreJobs();
 
     enum EResult {
         eJob,
@@ -669,6 +671,7 @@ private:
 
     CNetScheduleTimeline m_Timeline;
     const unsigned m_Timeout;
+    bool m_MoreJobs;
 
     void x_ProcessReadJobNotifications();
 };

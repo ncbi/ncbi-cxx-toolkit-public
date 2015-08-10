@@ -691,6 +691,11 @@ void CMainLoopThread::CImpl::x_ProcessRequestJobNotification()
     }
 }
 
+bool MoreJobs()
+{
+    return true;
+}
+
 CMainLoopThread::CImpl::EResult CMainLoopThread::CImpl::GetJob(
         const CDeadline& deadline,
         CNetScheduleJob& job,
@@ -738,6 +743,10 @@ CMainLoopThread::CImpl::EResult CMainLoopThread::CImpl::GetJob(
 
         if (CheckState() == eStop)
             return eInterrupt;
+
+        // All servers returned 'no_more_jobs'.
+        if (!MoreJobs())
+            return eNoJobs;
 
         if (deadline.IsExpired())
             return eAgain;

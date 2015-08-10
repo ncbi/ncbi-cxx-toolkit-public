@@ -346,6 +346,7 @@ private:
         EState CheckState();
         void ReadNotifications();
         bool WaitForNotifications(const CDeadline& deadline);
+        bool MoreJobs();
 
         enum EResult {
             eJob,

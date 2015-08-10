@@ -138,8 +138,13 @@ bool SNetScheduleJobReaderImpl::x_ReadJob(SNetServerImpl* server,
 
     server->ConnectAndExec(cmd, false, exec_result);
 
-    return s_ParseReadJobResponse(exec_result.response, job,
+    bool ret = s_ParseReadJobResponse(exec_result.response, job,
             job_status, no_more_jobs);
+
+    if (!no_more_jobs)
+        m_MoreJobs = true;
+
+    return ret;
 }
 
 void SNetScheduleJobReaderImpl::ReadNotifications()
@@ -173,19 +178,21 @@ SNetScheduleJobReaderImpl::EState SNetScheduleJobReaderImpl::CheckState()
     return eWorking;
 }
 
+bool SNetScheduleJobReaderImpl::MoreJobs()
+{
+    bool ret = m_MoreJobs || m_Timeline.MoreJobs();
+    m_MoreJobs = false;
+    return ret;
+}
+
 SNetScheduleJobReaderImpl::EResult SNetScheduleJobReaderImpl::GetJob(
         const CDeadline& deadline,
         CNetScheduleJob& job,
         CNetScheduleAPI::EJobStatus* job_status)
 {
-    bool no_more_jobs;
-    bool matching_job_exists = false;
-
     for (;;) {
         while (m_Timeline.HasImmediateActions()) {
             CNetScheduleTimeline::SEntry timeline_entry(m_Timeline.PullImmediateAction());
-
-            no_more_jobs = true;
 
             if (m_Timeline.IsDiscoveryAction(timeline_entry)) {
                 if (CheckState() == eWorking) {
@@ -197,6 +204,8 @@ SNetScheduleJobReaderImpl::EResult SNetScheduleJobReaderImpl::GetJob(
                 CNetServer server(m_Timeline.GetServer(m_API, timeline_entry));
 
                 try {
+                    bool no_more_jobs = true;
+
                     if (x_ReadJob(server, m_Timeout,
                             job, job_status, &no_more_jobs)) {
                         // A job has been returned; add the server to
@@ -222,9 +231,6 @@ SNetScheduleJobReaderImpl::EResult SNetScheduleJobReaderImpl::GetJob(
                 }
             }
 
-            if (!no_more_jobs)
-                matching_job_exists = true;
-
             m_Timeline.CheckScheduledActions();
 
             // Check if there's a notification in the UDP socket.
@@ -235,7 +241,7 @@ SNetScheduleJobReaderImpl::EResult SNetScheduleJobReaderImpl::GetJob(
             return eInterrupt;
 
         // All servers returned 'no_more_jobs'.
-        if (!matching_job_exists && !m_Timeline.MoreJobs())
+        if (!MoreJobs())
             return eNoJobs;
 
         if (deadline.IsExpired())
