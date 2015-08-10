@@ -374,9 +374,8 @@ bool SNetScheduleExecutorImpl::x_GetJobWithAffinityLadder(
         return x_GetJobWithAffinityList(server, &timeout, job,
                 m_AffinityPreference, kEmptyStr);
 
-    // TODO: Implement version check (and throw #ifdef out)
-#ifdef NETSCHEDULE_API_HAS_SERVER_VERSION_CHECK
-    if (server_version >= "4.22.0") {
+    // If prioritized_aff flag is supported (NS v4.22.0+)
+    if (server->m_VersionInfo.IsUpCompatible(CVersionInfo(4, 22, 0))) {
         string cmd("GET2 wnode_aff=0 any_aff=0 prioritized_aff=1 aff=");
         cmd += prio_aff_list;
 
@@ -385,7 +384,6 @@ bool SNetScheduleExecutorImpl::x_GetJobWithAffinityLadder(
 
         return ExecGET(server, cmd, job);
     }
-#endif
 
     // XXX: Compatibility mode.
     // TODO: Can be thrown out after all NS serves are updated to version 4.22.0+

@@ -769,6 +769,8 @@ void CNetScheduleServerListener::OnConnected(CNetServerConnection& connection)
                 ns_node = attr_value;
             else if (attr_name == "ns_session")
                 ns_session = attr_value;
+            else if (attr_name == "server_version")
+                connection->m_Server->m_VersionInfo = CVersionInfo(attr_value);
 
         if (!ns_node.empty() && !ns_session.empty()) {
             CRef<SNetScheduleServerProperties> server_props =
