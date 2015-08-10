@@ -507,8 +507,15 @@ class CNetScheduleGetJob
         TTimeline& m_Timeline;
     };
 
-    // TODO:
-    class CMostAffinityJob;
+    // TODO, no-op currently
+    class CMostAffinityJob : public CAnyAffinityJob
+    {
+    public:
+        CMostAffinityJob(CNetScheduleJob& j, CNetScheduleAPI::EJobStatus* js,
+                TTimeline& timeline, TImpl&) :
+            CAnyAffinityJob(j, js, timeline)
+        {}
+    };
 
     template <class TJobHolder>
     NNetScheduleGetJob::EResult GetJobImmediately(TJobHolder& holder)
@@ -607,8 +614,13 @@ public:
             CNetScheduleJob& job,
             CNetScheduleAPI::EJobStatus* job_status)
     {
-        CAnyAffinityJob holder(job, job_status, m_ImmediateActions);
-        return GetJobImpl(deadline, holder);
+        if (m_Impl.m_API->m_AffinityLadder.empty()) {
+            CAnyAffinityJob holder(job, job_status, m_ImmediateActions);
+            return GetJobImpl(deadline, holder);
+        } else {
+            CMostAffinityJob holder(job, job_status, m_ImmediateActions, m_Impl);
+            return GetJobImpl(deadline, holder);
+        }
     }
 
 private:
