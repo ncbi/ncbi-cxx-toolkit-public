@@ -598,20 +598,20 @@ private:
 
     static void Filter(TTimeline& timeline, TServers& servers)
     {
-        TTimeline new_timeline;
+        TTimeline::iterator i = timeline.begin();
 
-        for (TTimeline::const_iterator i = timeline.begin();
-                i != timeline.end(); ++i) {
+        while (i != timeline.end()) {
             const SServerAddress& address(i->server_address);
             TServers::iterator j = find(servers.begin(), servers.end(), address);
 
+            // If this server is still valid
             if (j != servers.end()) {
-                new_timeline.push_back(*i);
                 servers.erase(j);
+                ++i;
+            } else {
+                timeline.erase(i++);
             }
         }
-
-        timeline.swap(new_timeline);
     }
 
     void MoveToImmediateActions(SNetServerImpl* server_impl)
