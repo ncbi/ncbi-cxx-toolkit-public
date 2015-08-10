@@ -180,7 +180,7 @@ SNetScheduleJobReaderImpl::EState SNetScheduleJobReaderImpl::CheckState()
 
 bool SNetScheduleJobReaderImpl::MoreJobs()
 {
-    bool ret = m_MoreJobs || m_Timeline.MoreJobs();
+    bool ret = m_MoreJobs;
     m_MoreJobs = false;
     return ret;
 }
@@ -249,7 +249,7 @@ SNetScheduleJobReaderImpl::EResult SNetScheduleJobReaderImpl::GetJob(
         if (CheckState() == eStop)
             return eInterrupt;
 
-        if (!MoreJobs())
+        if (!MoreJobs() && !m_Timeline.MoreJobs())
             return eNoJobs;
 
         if (deadline.IsExpired())

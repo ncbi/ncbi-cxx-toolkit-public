@@ -754,7 +754,7 @@ CMainLoopThread::CImpl::EResult CMainLoopThread::CImpl::GetJob(
         if (CheckState() == eStop)
             return eInterrupt;
 
-        if (!MoreJobs())
+        if (!MoreJobs() && !m_Timeline.MoreJobs())
             return eNoJobs;
 
         if (deadline.IsExpired())
