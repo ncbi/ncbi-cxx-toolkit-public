@@ -462,30 +462,12 @@ public:
         }
     }
 
-    bool HasImmediateActions() const { return !m_ImmediateActions.empty(); }
-    bool HasScheduledActions() const { return !m_ScheduledActions.empty(); }
-
     void CheckScheduledActions()
     {
         while (!m_ScheduledActions.empty() &&
                 m_ScheduledActions.front().deadline.GetRemainingTime().IsZero()) {
             m_ImmediateActions.push_back(Pop(m_ScheduledActions));
         }
-    }
-
-    const CDeadline GetNextTimeout() const
-    {
-        return m_ScheduledActions.front().deadline;
-    }
-
-    SEntry PullImmediateAction()
-    {
-        return Pop(m_ImmediateActions);
-    }
-
-    SEntry PullScheduledAction()
-    {
-        return Pop(m_ScheduledActions);
     }
 
     bool IsDiscoveryAction(const SEntry& entry) const
@@ -585,11 +567,11 @@ public:
                     Restart();
                 }
 
-                if (!HasImmediateActions()) {
+                if (m_ImmediateActions.empty()()) {
                     break;
                 }
 
-                CNetScheduleTimeline::SEntry timeline_entry(PullImmediateAction());
+                CNetScheduleTimeline::SEntry timeline_entry(Pop(m_ImmediateActions));
 
                 if (IsDiscoveryAction(timeline_entry)) {
                     NextDiscoveryIteration(m_API);
@@ -630,10 +612,10 @@ public:
                 return eAgain;
 
             // At least, the discovery action must be there
-            _ASSERT(HasScheduledActions());
+            _ASSERT(!m_ScheduledActions.empty());
 
             // There's still time. Wait for notifications and query the servers.
-            CDeadline next_event_time = GetNextTimeout();
+            CDeadline next_event_time = m_ScheduledActions.front().deadline;
             bool last_wait = deadline < next_event_time;
             if (last_wait) next_event_time = deadline;
 
@@ -644,7 +626,7 @@ public:
             } else if (last_wait) {
                 return eAgain;
             } else {
-                PushImmediateAction(PullScheduledAction());
+                PushImmediateAction(Pop(m_ScheduledActions));
             }
         }
     }
