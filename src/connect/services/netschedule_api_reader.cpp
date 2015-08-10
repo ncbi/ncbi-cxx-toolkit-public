@@ -36,8 +36,6 @@
 
 #define NCBI_USE_ERRCODE_X   ConnServ_NetSchedule
 
-#define READJOB_TIMEOUT 10
-
 BEGIN_NCBI_SCOPE
 
 void CNetScheduleJobReader::SetJobGroup(const string& group_name)
@@ -184,12 +182,12 @@ CNetScheduleJobReader::EReadNextJobResult SNetScheduleJobReaderImpl::ReadNextJob
                     m_Timeline.NextDiscoveryIteration(m_API);
                 }
 
-                m_Timeline.PushScheduledAction(timeline_entry, READJOB_TIMEOUT);
+                m_Timeline.PushScheduledAction(timeline_entry, m_Timeout);
             } else if (CheckState() == eWorking) {
                 CNetServer server(m_Timeline.GetServer(m_API, timeline_entry));
 
                 try {
-                    if (x_ReadJob(server, READJOB_TIMEOUT,
+                    if (x_ReadJob(server, m_Timeout,
                             *job, job_status, &no_more_jobs)) {
                         // A job has been returned; add the server to
                         // immediate actions because there can be more
@@ -204,7 +202,7 @@ CNetScheduleJobReader::EReadNextJobResult SNetScheduleJobReaderImpl::ReadNextJob
 
                         // No job has been returned by this server;
                         // query the server later.
-                        m_Timeline.PushScheduledAction(timeline_entry, READJOB_TIMEOUT);
+                        m_Timeline.PushScheduledAction(timeline_entry, m_Timeout);
                     }
                 }
                 catch (CNetSrvConnException& e) {

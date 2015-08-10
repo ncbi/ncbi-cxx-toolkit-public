@@ -681,17 +681,16 @@ bool CMainLoopThread::CImpl::x_WaitForNewJob(CNetScheduleJob& job)
 
             if (m_Timeline.IsDiscoveryAction(timeline_entry)) {
                 if (CheckState() == eWorking) {
-                    m_Timeline.NextDiscoveryIteration(m_WorkerNode->m_NetScheduleAPI);
+                    m_Timeline.NextDiscoveryIteration(m_API);
                 }
 
-                m_Timeline.PushScheduledAction(timeline_entry, m_WorkerNode->m_NSTimeout);
+                m_Timeline.PushScheduledAction(timeline_entry, m_Timeout);
             } else if (CheckState() == eWorking) {
-                CNetServer server(m_Timeline.GetServer(m_WorkerNode->m_NetScheduleAPI,
-                            timeline_entry));
+                CNetServer server(m_Timeline.GetServer(m_API, timeline_entry));
 
                 try {
                     if (m_WorkerNode->m_NSExecutor->x_GetJobWithAffinityLadder(server,
-                            m_WorkerNode->m_NSTimeout, job)) {
+                            m_Timeout, job)) {
                         // A job has been returned; add the server to
                         // immediate actions because there can be more
                         // jobs in the queue.
@@ -700,8 +699,7 @@ bool CMainLoopThread::CImpl::x_WaitForNewJob(CNetScheduleJob& job)
                     } else {
                         // No job has been returned by this server;
                         // query the server later.
-                        m_Timeline.PushScheduledAction(timeline_entry,
-                                m_WorkerNode->m_NSTimeout);
+                        m_Timeline.PushScheduledAction(timeline_entry, m_Timeout);
                     }
                 }
                 catch (CNetSrvConnException& e) {

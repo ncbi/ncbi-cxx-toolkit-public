@@ -616,7 +616,8 @@ struct SNetScheduleJobReaderImpl : public CObject
             const string& group, const string& affinity) :
         m_API(ns_api_impl),
         m_JobGroup(group),
-        m_Affinity(affinity)
+        m_Affinity(affinity),
+        m_Timeout(10)
     {
         SNetScheduleAPIImpl::VerifyJobGroupAlphabet(group);
         SNetScheduleAPIImpl::VerifyAffinityAlphabet(affinity);
@@ -654,6 +655,7 @@ private:
     EState CheckState();
 
     CNetScheduleTimeline m_Timeline;
+    const unsigned m_Timeout;
 };
 
 struct SNetScheduleAdminImpl : public CObject

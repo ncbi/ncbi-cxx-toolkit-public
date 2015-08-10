@@ -328,7 +328,9 @@ private:
     {
     public:
         CImpl(SGridWorkerNodeImpl* worker_node) :
-            m_WorkerNode(worker_node)
+            m_WorkerNode(worker_node),
+            m_API(m_WorkerNode->m_NetScheduleAPI),
+            m_Timeout(m_WorkerNode->m_NSTimeout)
         {
         }
 
@@ -345,6 +347,8 @@ private:
 
         CNetScheduleTimeline m_Timeline;
         SGridWorkerNodeImpl* m_WorkerNode;
+        CNetScheduleAPI m_API;
+        const unsigned m_Timeout;
 
         bool x_EnterSuspendedState();
         void x_ProcessRequestJobNotification();
