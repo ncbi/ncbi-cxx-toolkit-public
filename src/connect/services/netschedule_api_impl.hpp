@@ -642,9 +642,6 @@ class CNetScheduleGetJob
 
             if (timeline_entry == m_DiscoveryAction) {
                 NextDiscoveryIteration();
-                timeline_entry.deadline = CDeadline(m_Impl.m_Timeout, 0);
-                m_ScheduledActions.splice(m_ScheduledActions.end(),
-                        m_ImmediateActions, i);
             } else {
                 try {
                     if (m_Impl.CheckEntry(timeline_entry, holder.Affinity(),
@@ -821,6 +818,10 @@ private:
                 i != servers.end(); ++i) {
             m_ImmediateActions.push_back(*i);
         }
+
+        // Reschedule discovery after timeout
+        m_DiscoveryAction.deadline = CDeadline(m_Impl.m_Timeout, 0);
+        m_ScheduledActions.push_back(m_DiscoveryAction);
     }
 
     TImpl& m_Impl;
