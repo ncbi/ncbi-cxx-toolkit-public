@@ -701,7 +701,7 @@ bool CMainLoopThread::CImpl::CheckEntry(
         CNetScheduleJob& job,
         CNetScheduleAPI::EJobStatus* /*job_status*/)
 {
-    CNetServer server(m_Timeline.GetServer(m_API, entry));
+    CNetServer server(m_API.GetService().GetServer(entry.server_address));
     return m_WorkerNode->m_NSExecutor->x_GetJobWithAffinityLadder(server,
             m_Timeout, job);
 }

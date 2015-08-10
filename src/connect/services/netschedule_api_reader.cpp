@@ -190,7 +190,7 @@ bool SNetScheduleJobReaderImpl::CheckEntry(
         CNetScheduleJob& job,
         CNetScheduleAPI::EJobStatus* job_status)
 {
-    CNetServer server(m_Timeline.GetServer(m_API, entry));
+    CNetServer server(m_API.GetService().GetServer(entry.server_address));
     bool no_more_jobs = true;
     bool ret = x_ReadJob(server, m_Timeout, job, job_status, &no_more_jobs);
 

@@ -512,11 +512,6 @@ public:
         m_ScheduledActions.push_back(entry);
     }
 
-    CNetServer GetServer(CNetScheduleAPI api, const SEntry& entry)
-    {
-        return api.GetService().GetServer(entry.server_address);
-    }
-
     void NextDiscoveryIteration(CNetScheduleAPI api)
     {
         TServers servers;
