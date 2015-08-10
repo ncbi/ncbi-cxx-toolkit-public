@@ -371,7 +371,6 @@ private:
 
         bool x_EnterSuspendedState();
         CNetServer x_ProcessRequestJobNotification();
-        bool x_WaitForNewJob(CNetScheduleJob& job);
         bool x_GetNextJob(CNetScheduleJob& job);
     };
 

@@ -780,12 +780,6 @@ CMainLoopThread::CImpl::EResult CMainLoopThread::CImpl::GetJob(
     }
 }
 
-bool CMainLoopThread::CImpl::x_WaitForNewJob(CNetScheduleJob& job)
-{
-    CDeadline deadline(CTimeout::eInfinite);
-    return GetJob(deadline, job, NULL) == eJob;
-}
-
 bool CMainLoopThread::CImpl::x_GetNextJob(CNetScheduleJob& job)
 {
     if (!m_WorkerNode->x_AreMastersBusy()) {
@@ -796,7 +790,7 @@ bool CMainLoopThread::CImpl::x_GetNextJob(CNetScheduleJob& job)
     if (!m_WorkerNode->WaitForExclusiveJobToFinish())
         return false;
 
-    if (!x_WaitForNewJob(job)) {
+    if (GetJob(CTimeout::eInfinite, job, NULL) != eJob) {
         return false;
     }
 
