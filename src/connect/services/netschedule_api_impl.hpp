@@ -488,62 +488,75 @@ public:
         eNoJobs
     };
 
+    EResult GetJobImmediately(
+            CNetScheduleJob& job,
+            CNetScheduleAPI::EJobStatus* job_status)
+    {
+        for (;;) {
+            EState state = CheckState();
+
+            if (state == eStopped) {
+                return eInterrupt;
+            }
+            
+            if (state == eRestarted) {
+                Restart();
+            }
+
+            if (m_ImmediateActions.empty()) {
+                break;
+            }
+
+            SEntry timeline_entry(m_ImmediateActions.front());
+            m_ImmediateActions.pop_front();
+
+            if (timeline_entry == m_DiscoveryAction) {
+                NextDiscoveryIteration();
+                timeline_entry.deadline = CDeadline(m_Timeout, 0);
+                m_ScheduledActions.push_back(timeline_entry);
+            } else {
+                try {
+                    if (CheckEntry(timeline_entry, job, job_status)) {
+                        // A job has been returned; add the server to
+                        // immediate actions because there can be more
+                        // jobs in the queue.
+                        m_ImmediateActions.push_back(timeline_entry);
+                        return eJob;
+                    } else {
+                        // No job has been returned by this server;
+                        // query the server later.
+                        timeline_entry.deadline = CDeadline(m_Timeout, 0);
+                        m_ScheduledActions.push_back(timeline_entry);
+                    }
+                }
+                catch (CNetSrvConnException& e) {
+                    // Because a connection error has occurred, do not
+                    // put this server back to the timeline.
+                    LOG_POST(Warning << e.GetMsg());
+                }
+            }
+
+            CheckScheduledActions();
+
+            // Check if there's a notification in the UDP socket.
+            while (CNetServer server = ReadNotifications()) {
+                MoveToImmediateActions(server);
+            }
+        }
+
+        return eAgain;
+    }
+
     EResult GetJob(
             const CDeadline& deadline,
             CNetScheduleJob& job,
             CNetScheduleAPI::EJobStatus* job_status)
     {
         for (;;) {
-            for (;;) {
-                EState state = CheckState();
+            EResult ret = GetJobImmediately(job, job_status);
 
-                if (state == eStopped) {
-                    return eInterrupt;
-                }
-                
-                if (state == eRestarted) {
-                    Restart();
-                }
-
-                if (m_ImmediateActions.empty()) {
-                    break;
-                }
-
-                SEntry timeline_entry(m_ImmediateActions.front());
-                m_ImmediateActions.pop_front();
-
-                if (timeline_entry == m_DiscoveryAction) {
-                    NextDiscoveryIteration();
-                    timeline_entry.deadline = CDeadline(m_Timeout, 0);
-                    m_ScheduledActions.push_back(timeline_entry);
-                } else {
-                    try {
-                        if (CheckEntry(timeline_entry, job, job_status)) {
-                            // A job has been returned; add the server to
-                            // immediate actions because there can be more
-                            // jobs in the queue.
-                            m_ImmediateActions.push_back(timeline_entry);
-                            return eJob;
-                        } else {
-                            // No job has been returned by this server;
-                            // query the server later.
-                            timeline_entry.deadline = CDeadline(m_Timeout, 0);
-                            m_ScheduledActions.push_back(timeline_entry);
-                        }
-                    }
-                    catch (CNetSrvConnException& e) {
-                        // Because a connection error has occurred, do not
-                        // put this server back to the timeline.
-                        LOG_POST(Warning << e.GetMsg());
-                    }
-                }
-
-                CheckScheduledActions();
-
-                // Check if there's a notification in the UDP socket.
-                while (CNetServer server = ReadNotifications()) {
-                    MoveToImmediateActions(server);
-                }
+            if (ret != eAgain) {
+                return ret;
             }
 
             // If MoreJobs() returned false for all entries of m_ScheduledActions
