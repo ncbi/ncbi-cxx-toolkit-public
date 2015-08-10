@@ -443,11 +443,6 @@ public:
             more_jobs(j)
         {
         }
-
-        void ResetTimeout(unsigned seconds)
-        {
-            deadline = CDeadline(seconds, 0);
-        }
     };
 
     typedef deque<SEntry> TTimeline;
@@ -654,7 +649,7 @@ private:
 
     void PushScheduledAction(SEntry entry)
     {
-        entry.ResetTimeout(m_Timeout);
+        entry.deadline = CDeadline(m_Timeout, 0);
         m_ScheduledActions.push_back(entry);
     }
 
