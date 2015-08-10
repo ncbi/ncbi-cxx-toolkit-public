@@ -545,6 +545,13 @@ public:
         return false;
     }
 
+    void Restart()
+    {
+        m_ScheduledActions.clear();
+        m_ImmediateActions.clear();
+        m_ImmediateActions.push_back(m_DiscoveryAction);
+    }
+
 private:
     struct SEntryByAddress
     {

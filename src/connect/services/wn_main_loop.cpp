@@ -721,7 +721,7 @@ CMainLoopThread::CImpl::EResult CMainLoopThread::CImpl::GetJob(
             }
             
             if (state == eRestarted) {
-                m_Timeline = CNetScheduleTimeline();
+                m_Timeline.Restart();
             }
 
             if (!m_Timeline.HasImmediateActions()) {
