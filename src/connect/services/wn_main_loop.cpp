@@ -661,7 +661,7 @@ bool CMainLoopThread::CImpl::x_EnterSuspendedState()
     return CMainLoopThread::CImpl::CheckState() != eWorking;
 }
 
-void CMainLoopThread::CImpl::x_ProcessRequestJobNotification()
+void CMainLoopThread::CImpl::ProcessNotifications()
 {
     if (!x_EnterSuspendedState()) {
         CNetServer server;
@@ -714,7 +714,7 @@ bool CMainLoopThread::CImpl::x_WaitForNewJob(CNetScheduleJob& job)
             // Check if there's a notification in the UDP socket.
             while (m_WorkerNode->m_NSExecutor->
                     m_NotificationHandler.ReceiveNotification())
-                x_ProcessRequestJobNotification();
+                ProcessNotifications();
         }
 
         if (CheckState() == eStop)
@@ -726,7 +726,7 @@ bool CMainLoopThread::CImpl::x_WaitForNewJob(CNetScheduleJob& job)
         if (m_WorkerNode->m_NSExecutor->
                 m_NotificationHandler.WaitForNotification(
                     m_Timeline.GetNextTimeout()))
-            x_ProcessRequestJobNotification();
+            ProcessNotifications();
         else {
             m_Timeline.PushImmediateAction(m_Timeline.PullScheduledAction());
         }

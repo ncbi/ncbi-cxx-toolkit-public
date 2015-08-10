@@ -142,7 +142,7 @@ bool SNetScheduleJobReaderImpl::x_ReadJob(SNetServerImpl* server,
             job_status, no_more_jobs);
 }
 
-void SNetScheduleJobReaderImpl::x_ProcessReadJobNotifications()
+void SNetScheduleJobReaderImpl::ProcessNotifications()
 {
     string ns_node;
     CNetServer server;
@@ -218,7 +218,7 @@ CNetScheduleJobReader::EReadNextJobResult SNetScheduleJobReaderImpl::ReadNextJob
             m_Timeline.CheckScheduledActions();
 
             // Check if there's a notification in the UDP socket.
-            x_ProcessReadJobNotifications();
+            ProcessNotifications();
         }
 
         if (CheckState() == eStop)
@@ -240,10 +240,10 @@ CNetScheduleJobReader::EReadNextJobResult SNetScheduleJobReaderImpl::ReadNextJob
             if (!m_API->m_NotificationThread->
                     m_ReadNotifications.Wait(deadline))
                 return CNetScheduleJobReader::eRNJ_NotReady;
-            x_ProcessReadJobNotifications();
+            ProcessNotifications();
         } else if (m_API->m_NotificationThread->
                 m_ReadNotifications.Wait(next_event_time))
-            x_ProcessReadJobNotifications();
+            ProcessNotifications();
         else {
             m_Timeline.PushImmediateAction(m_Timeline.PullScheduledAction());
         }
