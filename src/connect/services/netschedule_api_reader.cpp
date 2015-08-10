@@ -38,18 +38,6 @@
 
 BEGIN_NCBI_SCOPE
 
-void CNetScheduleJobReader::SetJobGroup(const string& group_name)
-{
-    SNetScheduleAPIImpl::VerifyJobGroupAlphabet(group_name);
-    m_Impl->m_JobGroup = group_name;
-}
-
-void CNetScheduleJobReader::SetAffinity(const string& affinity)
-{
-    SNetScheduleAPIImpl::VerifyAffinityAlphabet(affinity);
-    m_Impl->m_Affinity = affinity;
-}
-
 // True if a job is returned.
 static bool s_ParseReadJobResponse(const string& response,
         CNetScheduleJob& job,
@@ -111,7 +99,7 @@ static bool s_ParseReadJobResponse(const string& response,
     return job_fields == (1 << eNumberOfRequiredFields) - 1;
 }
 
-bool SNetScheduleJobReaderImpl::x_ReadJob(SNetServerImpl* server,
+bool SNetScheduleJobReaderImpl::CImpl::x_ReadJob(SNetServerImpl* server,
         const CDeadline& timeout, CNetScheduleJob& job,
         CNetScheduleAPI::EJobStatus* job_status,
         bool* no_more_jobs)
@@ -147,21 +135,16 @@ bool SNetScheduleJobReaderImpl::x_ReadJob(SNetServerImpl* server,
     return ret;
 }
 
-CNetServer SNetScheduleJobReaderImpl::ReadNotifications()
-{
-    return x_ProcessReadJobNotifications();
-}
-
-CNetServer SNetScheduleJobReaderImpl::WaitForNotifications(const CDeadline& deadline)
+CNetServer SNetScheduleJobReaderImpl::CImpl::WaitForNotifications(const CDeadline& deadline)
 {
     if (m_API->m_NotificationThread->m_ReadNotifications.Wait(deadline)) {
-        return x_ProcessReadJobNotifications();
+        return ReadNotifications();
     }
 
     return CNetServer();
 }
 
-CNetServer SNetScheduleJobReaderImpl::x_ProcessReadJobNotifications()
+CNetServer SNetScheduleJobReaderImpl::CImpl::ReadNotifications()
 {
     string ns_node;
     CNetServer server;
@@ -173,12 +156,12 @@ CNetServer SNetScheduleJobReaderImpl::x_ProcessReadJobNotifications()
     return server;
 }
 
-SNetScheduleJobReaderImpl::EState SNetScheduleJobReaderImpl::CheckState()
+CNetScheduleTimeline::EState SNetScheduleJobReaderImpl::CImpl::CheckState()
 {
-    return eWorking;
+    return CNetScheduleTimeline::eWorking;
 }
 
-bool SNetScheduleJobReaderImpl::MoreJobs(const CNetScheduleTimeline::SEntry& entry)
+bool SNetScheduleJobReaderImpl::CImpl::MoreJobs(const CNetScheduleTimeline::SEntry& entry)
 {
     if (m_MoreJobs) {
         m_MoreJobs = false;
@@ -188,7 +171,7 @@ bool SNetScheduleJobReaderImpl::MoreJobs(const CNetScheduleTimeline::SEntry& ent
     return entry.more_jobs;
 }
 
-bool SNetScheduleJobReaderImpl::CheckEntry(
+bool SNetScheduleJobReaderImpl::CImpl::CheckEntry(
         CNetScheduleTimeline::SEntry& entry,
         CNetScheduleJob& job,
         CNetScheduleAPI::EJobStatus* job_status)
@@ -205,30 +188,84 @@ bool SNetScheduleJobReaderImpl::CheckEntry(
     return ret;
 }
 
+void SNetScheduleJobReaderImpl::SetJobGroup(const string& group_name)
+{
+    if (m_Impl.m_JobGroup.empty()) {
+        SNetScheduleAPIImpl::VerifyJobGroupAlphabet(group_name);
+        m_Impl.m_JobGroup = group_name;
+    } else {
+        NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                "It's not allowed to change group");
+    }
+}
+
+void SNetScheduleJobReaderImpl::SetAffinity(const string& affinity)
+{
+    if (m_Impl.m_Affinity.empty()) {
+        SNetScheduleAPIImpl::VerifyAffinityAlphabet(affinity);
+        m_Impl.m_Affinity = affinity;
+    } else {
+        NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                "It's not allowed to change affinity");
+    }
+}
+
+CNetScheduleJobReader::EReadNextJobResult SNetScheduleJobReaderImpl::ReadNextJob(
+        CNetScheduleJob* job,
+        CNetScheduleAPI::EJobStatus* job_status,
+        const CTimeout* timeout)
+{
+    _ASSERT(job);
+
+    x_StartNotificationThread();
+    CDeadline deadline(timeout ? *timeout : CTimeout(0, 0));
+
+    switch (m_Timeline.GetJob(deadline, *job, job_status)) {
+    case CNetScheduleTimeline::eJob:
+        return CNetScheduleJobReader::eRNJ_JobReady;
+
+    case CNetScheduleTimeline::eAgain:
+        return CNetScheduleJobReader::eRNJ_NotReady;
+
+    case CNetScheduleTimeline::eInterrupt:
+        return CNetScheduleJobReader::eRNJ_Interrupt;
+
+    default /* CNetScheduleTimeline::eNoJobs */:
+        return CNetScheduleJobReader::eRNJ_NoMoreJobs;
+    }
+}
+
+void SNetScheduleJobReaderImpl::InterruptReading()
+{
+    x_StartNotificationThread();
+    m_Impl.m_API->m_NotificationThread->m_ReadNotifications.InterruptWait();
+}
+
+void CNetScheduleJobReader::SetJobGroup(const string& group_name)
+{
+    _ASSERT(m_Impl);
+    m_Impl->SetJobGroup(group_name);
+}
+
+void CNetScheduleJobReader::SetAffinity(const string& affinity)
+{
+    _ASSERT(m_Impl);
+    m_Impl->SetAffinity(affinity);
+}
+
 CNetScheduleJobReader::EReadNextJobResult CNetScheduleJobReader::ReadNextJob(
         CNetScheduleJob* job,
         CNetScheduleAPI::EJobStatus* job_status,
         const CTimeout* timeout)
 {
     _ASSERT(m_Impl);
-    _ASSERT(job);
-
-    m_Impl->x_StartNotificationThread();
-    CDeadline deadline(timeout ? *timeout : CTimeout(0, 0));
-
-    switch (m_Impl->GetJob(deadline, *job, job_status)) {
-        case SNetScheduleJobReaderImpl::eJob:             return eRNJ_JobReady;
-        case SNetScheduleJobReaderImpl::eAgain:           return eRNJ_NotReady;
-        case SNetScheduleJobReaderImpl::eInterrupt:       return eRNJ_Interrupt;
-        default /* SNetScheduleJobReaderImpl::eNoJobs */: return eRNJ_NoMoreJobs;
-    }
+    return m_Impl->ReadNextJob(job, job_status, timeout);
 }
 
 void CNetScheduleJobReader::InterruptReading()
 {
-    m_Impl->x_StartNotificationThread();
-
-    m_Impl->m_API->m_NotificationThread->m_ReadNotifications.InterruptWait();
+    _ASSERT(m_Impl);
+    m_Impl->InterruptReading();
 }
 
 END_NCBI_SCOPE

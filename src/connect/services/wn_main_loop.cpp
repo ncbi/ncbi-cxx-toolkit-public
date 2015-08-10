@@ -549,12 +549,6 @@ void SWorkerNodeJobContextImpl::x_RunJob()
 void* CMainLoopThread::Main()
 {
     SetCurrentThreadName(m_ThreadName);
-    m_Impl.Main();
-    return NULL;
-}
-
-void CMainLoopThread::CImpl::Main()
-{
     CDeadline max_wait_for_servers(
             TWorkerNode_MaxWaitForServers::GetDefault());
 
@@ -625,15 +619,17 @@ void CMainLoopThread::CImpl::Main()
         }
         try_count = 0;
     }
+
+    return NULL;
 }
 
 
-CMainLoopThread::CImpl::EState CMainLoopThread::CImpl::CheckState()
+CNetScheduleTimeline::EState CMainLoopThread::CImpl::CheckState()
 {
     if (CGridGlobals::GetInstance().IsShuttingDown())
-        return eStopped;
+        return CNetScheduleTimeline::eStopped;
 
-    EState ret = eWorking;
+    CNetScheduleTimeline::EState ret = CNetScheduleTimeline::eWorking;
 
     do {
         void* event;
@@ -644,7 +640,7 @@ CMainLoopThread::CImpl::EState CMainLoopThread::CImpl::CheckState()
                 if (!m_WorkerNode->m_TimelineIsSuspended) {
                     // Stop the timeline.
                     m_WorkerNode->m_TimelineIsSuspended = true;
-                    ret = eRestarted;
+                    ret = CNetScheduleTimeline::eRestarted;
                 }
             } else { /* event == RESUME_EVENT */
                 if (m_WorkerNode->m_TimelineIsSuspended) {
@@ -707,7 +703,7 @@ bool CMainLoopThread::CImpl::CheckEntry(
             m_Timeout, job);
 }
 
-bool CMainLoopThread::CImpl::x_GetNextJob(CNetScheduleJob& job)
+bool CMainLoopThread::x_GetNextJob(CNetScheduleJob& job)
 {
     if (!m_WorkerNode->x_AreMastersBusy()) {
         SleepSec(m_WorkerNode->m_NSTimeout);
@@ -717,7 +713,7 @@ bool CMainLoopThread::CImpl::x_GetNextJob(CNetScheduleJob& job)
     if (!m_WorkerNode->WaitForExclusiveJobToFinish())
         return false;
 
-    if (GetJob(CTimeout::eInfinite, job, NULL) != eJob) {
+    if (m_Timeline.GetJob(CTimeout::eInfinite, job, NULL) != CNetScheduleTimeline::eJob) {
         return false;
     }
 

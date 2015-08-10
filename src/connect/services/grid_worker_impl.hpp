@@ -316,7 +316,9 @@ class CMainLoopThread : public CThread
 {
 public:
     CMainLoopThread(SGridWorkerNodeImpl* worker_node) :
+        m_WorkerNode(worker_node),
         m_Impl(worker_node),
+        m_Timeline(m_Impl),
         m_ThreadName(worker_node->GetAppName() + "_mn")
     {
     }
@@ -324,22 +326,18 @@ public:
     virtual void* Main();
 
 private:
-    class CImpl : private CNetScheduleTimeline
+    class CImpl : public CNetScheduleTimeline::IImpl
     {
     public:
         CImpl(SGridWorkerNodeImpl* worker_node) :
-            CNetScheduleTimeline(m_WorkerNode->m_NetScheduleAPI,
-                    m_WorkerNode->m_NSTimeout),
-            m_WorkerNode(worker_node),
-            m_API(m_WorkerNode->m_NetScheduleAPI),
-            m_Timeout(m_WorkerNode->m_NSTimeout)
+            IImpl(worker_node->m_NetScheduleAPI, worker_node->m_NSTimeout),
+            m_WorkerNode(worker_node)
         {
         }
 
         void Main();
 
-    private:
-        EState CheckState();
+        CNetScheduleTimeline::EState CheckState();
         CNetServer ReadNotifications();
         CNetServer WaitForNotifications(const CDeadline& deadline);
         bool MoreJobs(const CNetScheduleTimeline::SEntry& entry);
@@ -348,15 +346,17 @@ private:
                 CNetScheduleJob& job,
                 CNetScheduleAPI::EJobStatus* job_status);
 
+    private:
         SGridWorkerNodeImpl* m_WorkerNode;
-        CNetScheduleAPI m_API;
-        const unsigned m_Timeout;
 
         CNetServer x_ProcessRequestJobNotification();
-        bool x_GetNextJob(CNetScheduleJob& job);
     };
 
+    bool x_GetNextJob(CNetScheduleJob& job);
+
+    SGridWorkerNodeImpl* m_WorkerNode;
     CImpl m_Impl;
+    CNetScheduleTimeline m_Timeline;
     const string m_ThreadName;
 };
 

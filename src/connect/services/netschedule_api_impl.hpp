@@ -455,30 +455,40 @@ public:
         eStopped
     };
 
-    virtual EState CheckState() = 0;
-    virtual CNetServer ReadNotifications() = 0;
-    virtual CNetServer WaitForNotifications(const CDeadline& deadline) = 0;
-    virtual bool CheckEntry(
-            CNetScheduleTimeline::SEntry& entry,
-            CNetScheduleJob& job,
-            CNetScheduleAPI::EJobStatus* job_status) = 0;
-    virtual bool MoreJobs(const CNetScheduleTimeline::SEntry& entry) = 0;
+    struct IImpl
+    {
+        CNetScheduleAPI m_API;
+        const unsigned m_Timeout;
 
-    CNetScheduleTimeline(
-            CNetScheduleAPI::TInstance ns_api_impl, unsigned timeout) :
-        m_DiscoveryAction(SServerAddress(0, 0), false),
-        m_API(ns_api_impl),
-        m_Timeout(timeout)
+        IImpl(CNetScheduleAPI::TInstance ns_api_impl, unsigned timeout) :
+            m_API(ns_api_impl),
+            m_Timeout(timeout)
+        {
+        }
+
+        virtual EState CheckState() = 0;
+        virtual CNetServer ReadNotifications() = 0;
+        virtual CNetServer WaitForNotifications(const CDeadline& deadline) = 0;
+        virtual bool CheckEntry(
+                CNetScheduleTimeline::SEntry& entry,
+                CNetScheduleJob& job,
+                CNetScheduleAPI::EJobStatus* job_status) = 0;
+        virtual bool MoreJobs(const CNetScheduleTimeline::SEntry& entry) = 0;
+    };
+
+    CNetScheduleTimeline(IImpl& impl) :
+        m_Impl(impl),
+        m_DiscoveryAction(SServerAddress(0, 0), false)
     {
         m_ImmediateActions.push_back(m_DiscoveryAction);
     }
 
-    // TODO: This can be replaced by lambda after we migrate to C++11
+   // TODO: This can be replaced by lambda after we migrate to C++11
     struct SEntryHasMoreJobs
     {
-        CNetScheduleTimeline* const that;
-        SEntryHasMoreJobs(CNetScheduleTimeline* t) : that(t) {}
-        bool operator()(const SEntry& entry) { return that->MoreJobs(entry); }
+        IImpl& impl;
+        SEntryHasMoreJobs(IImpl& i) : impl(i) {}
+        bool operator()(const SEntry& entry) { return impl.MoreJobs(entry); }
     };
 
     enum EResult {
@@ -493,7 +503,7 @@ public:
             CNetScheduleAPI::EJobStatus* job_status)
     {
         for (;;) {
-            EState state = CheckState();
+            EState state = m_Impl.CheckState();
 
             if (state == eStopped) {
                 return eInterrupt;
@@ -515,11 +525,11 @@ public:
 
             if (timeline_entry == m_DiscoveryAction) {
                 NextDiscoveryIteration();
-                timeline_entry.deadline = CDeadline(m_Timeout, 0);
+                timeline_entry.deadline = CDeadline(m_Impl.m_Timeout, 0);
                 m_ScheduledActions.push_back(timeline_entry);
             } else {
                 try {
-                    if (CheckEntry(timeline_entry, job, job_status)) {
+                    if (m_Impl.CheckEntry(timeline_entry, job, job_status)) {
                         // A job has been returned; add the server to
                         // immediate actions because there can be more
                         // jobs in the queue.
@@ -528,7 +538,7 @@ public:
                     } else {
                         // No job has been returned by this server;
                         // query the server later.
-                        timeline_entry.deadline = CDeadline(m_Timeout, 0);
+                        timeline_entry.deadline = CDeadline(m_Impl.m_Timeout, 0);
                         m_ScheduledActions.push_back(timeline_entry);
                     }
                 }
@@ -547,7 +557,7 @@ public:
             }
 
             // Check if there's a notification in the UDP socket.
-            while (CNetServer server = ReadNotifications()) {
+            while (CNetServer server = m_Impl.ReadNotifications()) {
                 MoveToImmediateActions(server);
             }
         }
@@ -569,7 +579,7 @@ public:
 
             // If MoreJobs() returned false for all entries of m_ScheduledActions
             if (find_if(m_ScheduledActions.begin(), m_ScheduledActions.end(),
-                        SEntryHasMoreJobs(this)) == m_ScheduledActions.end()) {
+                        SEntryHasMoreJobs(m_Impl)) == m_ScheduledActions.end()) {
                 return eNoJobs;
             }
 
@@ -584,10 +594,10 @@ public:
             bool last_wait = deadline < next_event_time;
             if (last_wait) next_event_time = deadline;
 
-            if (CNetServer server = WaitForNotifications(next_event_time)) {
+            if (CNetServer server = m_Impl.WaitForNotifications(next_event_time)) {
                 do {
                     MoveToImmediateActions(server);
-                } while (server = ReadNotifications());
+                } while (server = m_Impl.ReadNotifications());
             } else if (last_wait) {
                 return eAgain;
             } else {
@@ -596,6 +606,8 @@ public:
             }
         }
     }
+
+    IImpl& m_Impl;
 
 private:
     static void Filter(TTimeline& timeline, TServers& servers)
@@ -644,7 +656,7 @@ private:
         TServers servers;
 
         for (CNetServiceIterator it =
-                m_API.GetService().Iterate(
+                m_Impl.m_API.GetService().Iterate(
                     CNetService::eIncludePenalized); it; ++it) {
             servers.push_back((*it)->m_ServerInPool->m_Address);
         }
@@ -662,57 +674,72 @@ private:
 
     TTimeline m_ImmediateActions, m_ScheduledActions;
     SEntry m_DiscoveryAction;
-    CNetScheduleAPI m_API;
-    const unsigned m_Timeout;
 };
 
 const unsigned s_Timeout = 10;
 
-struct SNetScheduleJobReaderImpl : public CObject, public CNetScheduleTimeline
+struct SNetScheduleJobReaderImpl : public CObject
 {
     SNetScheduleJobReaderImpl(CNetScheduleAPI::TInstance ns_api_impl,
             const string& group, const string& affinity) :
-        CNetScheduleTimeline(ns_api_impl, s_Timeout),
-        m_API(ns_api_impl),
-        m_JobGroup(group),
-        m_Affinity(affinity),
-        m_Timeout(s_Timeout),
-        m_MoreJobs(false)
+        m_Impl(ns_api_impl, group, affinity),
+        m_Timeline(m_Impl)
     {
-        SNetScheduleAPIImpl::VerifyJobGroupAlphabet(group);
-        SNetScheduleAPIImpl::VerifyAffinityAlphabet(affinity);
     }
-
-    CNetScheduleAPI m_API;
 
     void x_StartNotificationThread()
     {
-        m_API->StartNotificationThread();
+        m_Impl.m_API->StartNotificationThread();
     }
 
-    string m_JobGroup;
-    string m_Affinity;
-
-    bool x_ReadJob(SNetServerImpl* server,
-            const CDeadline& timeout,
-            CNetScheduleJob& job,
-            CNetScheduleAPI::EJobStatus* job_status,
-            bool* no_more_jobs);
+    void SetJobGroup(const string& group_name);
+    void SetAffinity(const string& affinity);
+    CNetScheduleJobReader::EReadNextJobResult ReadNextJob(
+        CNetScheduleJob* job,
+        CNetScheduleAPI::EJobStatus* job_status,
+        const CTimeout* timeout);
+    void InterruptReading();
 
 private:
-    EState CheckState();
-    CNetServer ReadNotifications();
-    CNetServer WaitForNotifications(const CDeadline& deadline);
-    bool MoreJobs(const CNetScheduleTimeline::SEntry& entry);
-    bool CheckEntry(
-            CNetScheduleTimeline::SEntry& entry,
-            CNetScheduleJob& job,
-            CNetScheduleAPI::EJobStatus* job_status);
+    class CImpl : public CNetScheduleTimeline::IImpl
+    {
+    public:
+        CImpl(CNetScheduleAPI::TInstance ns_api_impl,
+                const string& group, const string& affinity) :
+            IImpl(ns_api_impl, s_Timeout),
+            m_JobGroup(group),
+            m_Affinity(affinity),
+            m_MoreJobs(false)
+        {
+            SNetScheduleAPIImpl::VerifyJobGroupAlphabet(group);
+            SNetScheduleAPIImpl::VerifyAffinityAlphabet(affinity);
+        }
 
-    const unsigned m_Timeout;
-    bool m_MoreJobs;
+        CNetScheduleTimeline::EState CheckState();
+        CNetServer ReadNotifications();
+        CNetServer WaitForNotifications(const CDeadline& deadline);
+        bool MoreJobs(const CNetScheduleTimeline::SEntry& entry);
+        bool CheckEntry(
+                CNetScheduleTimeline::SEntry& entry,
+                CNetScheduleJob& job,
+                CNetScheduleAPI::EJobStatus* job_status);
 
-    CNetServer x_ProcessReadJobNotifications();
+        string m_JobGroup;
+        string m_Affinity;
+
+    private:
+        CNetServer x_ProcessReadJobNotifications();
+        bool x_ReadJob(SNetServerImpl* server,
+                const CDeadline& timeout,
+                CNetScheduleJob& job,
+                CNetScheduleAPI::EJobStatus* job_status,
+                bool* no_more_jobs);
+
+        bool m_MoreJobs;
+    };
+
+    CImpl m_Impl;
+    CNetScheduleTimeline m_Timeline;
 };
 
 struct SNetScheduleAdminImpl : public CObject
