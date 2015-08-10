@@ -468,6 +468,25 @@ public:
         eStopped
     };
 
+    virtual EState CheckState() = 0;
+    virtual CNetServer ReadNotifications() = 0;
+    virtual CNetServer WaitForNotifications(const CDeadline& deadline) = 0;
+    virtual bool CheckEntry(
+            CNetScheduleTimeline::SEntry& entry,
+            CNetScheduleJob& job,
+            CNetScheduleAPI::EJobStatus* job_status) = 0;
+    virtual bool MoreJobs()
+    {
+        for (TTimeline::const_iterator i = m_ScheduledActions.begin();
+                i != m_ScheduledActions.end(); ++i) {
+            if (i->more_jobs) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     enum EResult {
         eJob,
         eAgain,
@@ -556,18 +575,6 @@ public:
         }
     }
 
-    virtual bool MoreJobs()
-    {
-        for (TTimeline::const_iterator i = m_ScheduledActions.begin();
-                i != m_ScheduledActions.end(); ++i) {
-            if (i->more_jobs) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
 private:
     struct SEntryByAddress
     {
@@ -622,14 +629,6 @@ private:
 
         timeline.swap(new_timeline);
     }
-
-    virtual EState CheckState() = 0;
-    virtual CNetServer ReadNotifications() = 0;
-    virtual CNetServer WaitForNotifications(const CDeadline& deadline) = 0;
-    virtual bool CheckEntry(
-            CNetScheduleTimeline::SEntry& entry,
-            CNetScheduleJob& job,
-            CNetScheduleAPI::EJobStatus* job_status) = 0;
 
     void CheckScheduledActions()
     {
