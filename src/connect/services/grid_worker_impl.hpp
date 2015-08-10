@@ -369,7 +369,6 @@ private:
         CNetScheduleAPI m_API;
         const unsigned m_Timeout;
 
-        bool x_EnterSuspendedState();
         CNetServer x_ProcessRequestJobNotification();
         bool x_GetNextJob(CNetScheduleJob& job);
     };

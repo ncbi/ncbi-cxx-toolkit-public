@@ -655,12 +655,6 @@ CMainLoopThread::CImpl::EState CMainLoopThread::CImpl::CheckState()
     return m_WorkerNode->m_TimelineIsSuspended ? eIdle : eWorking;
 }
 
-bool CMainLoopThread::CImpl::x_EnterSuspendedState()
-{
-    // Exact class name to avoid vtable lookup
-    return CMainLoopThread::CImpl::CheckState() != eWorking;
-}
-
 CNetServer CMainLoopThread::CImpl::ReadNotifications()
 {
     if (m_WorkerNode->m_NSExecutor->
@@ -683,11 +677,11 @@ CNetServer CMainLoopThread::CImpl::WaitForNotifications(const CDeadline& deadlin
 CNetServer CMainLoopThread::CImpl::x_ProcessRequestJobNotification()
 {
     CNetServer server;
-    if (!x_EnterSuspendedState()) {
-        m_WorkerNode->m_NSExecutor->
-            m_NotificationHandler.CheckRequestJobNotification(
-                    m_WorkerNode->m_NSExecutor, &server);
-    }
+
+    // No need to check state here, it will be checked before entry processing
+    m_WorkerNode->m_NSExecutor->
+        m_NotificationHandler.CheckRequestJobNotification(
+                m_WorkerNode->m_NSExecutor, &server);
 
     return server;
 }
@@ -807,7 +801,8 @@ bool CMainLoopThread::CImpl::x_GetNextJob(CNetScheduleJob& job)
         }
     }
 
-    if (x_EnterSuspendedState()) {
+    // No need to check for idleness here, running jobs won't be stopped anyway
+    if (CGridGlobals::GetInstance().IsShuttingDown()) {
         m_WorkerNode->m_NSExecutor.ReturnJob(job);
         return false;
     }
