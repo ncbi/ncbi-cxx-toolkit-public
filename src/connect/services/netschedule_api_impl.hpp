@@ -654,10 +654,11 @@ private:
     EState CheckState();
     void ReadNotifications();
     bool WaitForNotifications(const CDeadline& deadline);
-    void ProcessNotifications();
 
     CNetScheduleTimeline m_Timeline;
     const unsigned m_Timeout;
+
+    void x_ProcessReadJobNotifications();
 };
 
 struct SNetScheduleAdminImpl : public CObject

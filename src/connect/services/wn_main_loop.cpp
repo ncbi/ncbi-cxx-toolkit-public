@@ -665,17 +665,21 @@ void CMainLoopThread::CImpl::ReadNotifications()
 {
     while (m_WorkerNode->m_NSExecutor->
             m_NotificationHandler.ReceiveNotification())
-        // Exact class name to avoid additional vtable lookup
-        CMainLoopThread::CImpl::ProcessNotifications();
+        x_ProcessRequestJobNotification();
 }
 
 bool CMainLoopThread::CImpl::WaitForNotifications(const CDeadline& deadline)
 {
-    return m_WorkerNode->m_NSExecutor->
-        m_NotificationHandler.WaitForNotification(deadline);
+     if (m_WorkerNode->m_NSExecutor->
+             m_NotificationHandler.WaitForNotification(deadline)) {
+        x_ProcessRequestJobNotification();
+        return true;
+     }
+
+     return false;
 }
 
-void CMainLoopThread::CImpl::ProcessNotifications()
+void CMainLoopThread::CImpl::x_ProcessRequestJobNotification()
 {
     if (!x_EnterSuspendedState()) {
         CNetServer server;
@@ -745,10 +749,7 @@ bool CMainLoopThread::CImpl::x_WaitForNewJob(CNetScheduleJob& job)
         if (deadline < next_event_time) {
             if (!WaitForNotifications(deadline))
                 return false;
-            ProcessNotifications();
-        } else if (WaitForNotifications(next_event_time))
-            ProcessNotifications();
-        else {
+        } else if (!WaitForNotifications(next_event_time)) {
             m_Timeline.PushImmediateAction(m_Timeline.PullScheduledAction());
         }
     }

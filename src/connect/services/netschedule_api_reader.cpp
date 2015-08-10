@@ -144,16 +144,20 @@ bool SNetScheduleJobReaderImpl::x_ReadJob(SNetServerImpl* server,
 
 void SNetScheduleJobReaderImpl::ReadNotifications()
 {
-    // Exact class name to avoid additional vtable lookup
-    return SNetScheduleJobReaderImpl::ProcessNotifications();
+    x_ProcessReadJobNotifications();
 }
 
 bool SNetScheduleJobReaderImpl::WaitForNotifications(const CDeadline& deadline)
 {
-    return m_API->m_NotificationThread->m_ReadNotifications.Wait(deadline);
+    if (m_API->m_NotificationThread->m_ReadNotifications.Wait(deadline)) {
+        x_ProcessReadJobNotifications();
+        return true;
+    }
+
+    return false;
 }
 
-void SNetScheduleJobReaderImpl::ProcessNotifications()
+void SNetScheduleJobReaderImpl::x_ProcessReadJobNotifications()
 {
     string ns_node;
     CNetServer server;
@@ -250,10 +254,7 @@ CNetScheduleJobReader::EReadNextJobResult SNetScheduleJobReaderImpl::ReadNextJob
         if (deadline < next_event_time) {
             if (!WaitForNotifications(deadline))
                 return CNetScheduleJobReader::eRNJ_NotReady;
-            ProcessNotifications();
-        } else if (WaitForNotifications(next_event_time))
-            ProcessNotifications();
-        else {
+        } else if (!WaitForNotifications(next_event_time)) {
             m_Timeline.PushImmediateAction(m_Timeline.PullScheduledAction());
         }
     }

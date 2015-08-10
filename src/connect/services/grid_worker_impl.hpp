@@ -346,7 +346,6 @@ private:
         EState CheckState();
         void ReadNotifications();
         bool WaitForNotifications(const CDeadline& deadline);
-        void ProcessNotifications();
 
         CNetScheduleTimeline m_Timeline;
         SGridWorkerNodeImpl* m_WorkerNode;
@@ -354,6 +353,7 @@ private:
         const unsigned m_Timeout;
 
         bool x_EnterSuspendedState();
+        void x_ProcessRequestJobNotification();
         bool x_WaitForNewJob(CNetScheduleJob& job);
         bool x_GetNextJob(CNetScheduleJob& job);
     };
