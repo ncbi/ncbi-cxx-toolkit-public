@@ -144,7 +144,7 @@ bool SNetScheduleJobReaderImpl::x_ReadJob(SNetServerImpl* server,
 
 bool SNetScheduleJobReaderImpl::WaitForNotifications(const CDeadline& deadline)
 {
-    return !m_API->m_NotificationThread->m_ReadNotifications.Wait(deadline);
+    return m_API->m_NotificationThread->m_ReadNotifications.Wait(deadline);
 }
 
 void SNetScheduleJobReaderImpl::ProcessNotifications()
