@@ -628,11 +628,9 @@ class CNetScheduleGetJob
             }
             
             if (state == NNetScheduleGetJob::eRestarted) {
-                // Restart (rediscover all servers)
-                m_ScheduledActions.clear();
-                m_ImmediateActions.clear();
-                m_ImmediateActions.push_back(m_DiscoveryAction);
+                Restart();
                 i = holder.Begin();
+                continue;
             }
 
             // We must check i here to let state be checked before leaving loop
@@ -780,6 +778,14 @@ private:
                 timeline.erase(i++);
             }
         }
+    }
+
+    void Restart()
+    {
+        // Rediscover all servers
+        m_ImmediateActions.clear();
+        m_ScheduledActions.clear();
+        NextDiscoveryIteration();
     }
 
     void MoveToImmediateActions(SNetServerImpl* server_impl)
