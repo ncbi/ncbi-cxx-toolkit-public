@@ -462,17 +462,8 @@ template <class TImpl>
 class CNetScheduleGetJob
 {
     typedef list<SServerAddress> TServers;
-
-public:
     typedef NNetScheduleGetJob::SEntry SEntry;
     typedef list<SEntry> TTimeline;
-
-    CNetScheduleGetJob(TImpl& impl) :
-        m_Impl(impl),
-        m_DiscoveryAction(SServerAddress(0, 0), false)
-    {
-        m_ImmediateActions.push_back(m_DiscoveryAction);
-    }
 
     // TODO: This can be replaced by lambda after we migrate to C++11
     struct SEntryHasMoreJobs
@@ -545,6 +536,14 @@ public:
         }
 
         return NNetScheduleGetJob::eAgain;
+    }
+
+public:
+    CNetScheduleGetJob(TImpl& impl) :
+        m_Impl(impl),
+        m_DiscoveryAction(SServerAddress(0, 0), false)
+    {
+        m_ImmediateActions.push_back(m_DiscoveryAction);
     }
 
     NNetScheduleGetJob::EResult GetJob(
