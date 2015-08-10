@@ -484,10 +484,36 @@ class CNetScheduleGetJob
         bool operator()(const SEntry& entry) { return impl.MoreJobs(entry); }
     };
 
+    class CAnyAffinityJob
+    {
+    public:
+        CNetScheduleJob& job;
+        CNetScheduleAPI::EJobStatus *job_status;
+
+        CAnyAffinityJob(CNetScheduleJob& j, CNetScheduleAPI::EJobStatus* js,
+                TTimeline& timeline) :
+            job(j), job_status(js), m_Timeline(timeline)
+        {}
+
+        void Restart() {}
+        TIterator Next() const      { return m_Timeline.begin(); }
+        const string& Affinity()    { return kEmptyStr; }
+        bool Done()                 { return true; }
+        bool HasJob()               { return false; }
+
+    private:
+        TTimeline& m_Timeline;
+    };
+
+    // TODO:
+    class CMostAffinityJob;
+
     NNetScheduleGetJob::EResult GetJobImmediately(
             CNetScheduleJob& job,
             CNetScheduleAPI::EJobStatus* job_status)
     {
+        CAnyAffinityJob holder(job, job_status, m_ImmediateActions);
+
         for (;;) {
             NNetScheduleGetJob::EState state = m_Impl.CheckState();
 
@@ -500,9 +526,10 @@ class CNetScheduleGetJob
                 m_ScheduledActions.clear();
                 m_ImmediateActions.clear();
                 m_ImmediateActions.push_back(m_DiscoveryAction);
+                holder.Restart();
             }
 
-            TIterator i = m_ImmediateActions.begin();
+            TIterator i = holder.Next();
 
             if (i == m_ImmediateActions.end()) {
                 break;
@@ -517,11 +544,14 @@ class CNetScheduleGetJob
                         m_ImmediateActions, i);
             } else {
                 try {
-                    if (m_Impl.CheckEntry(timeline_entry, kEmptyStr, job, job_status)) {
+                    if (m_Impl.CheckEntry(timeline_entry, holder.Affinity(),
+                                holder.job, holder.job_status)) {
                         // A job has been returned; add the server to
                         // immediate actions because there can be more
                         // jobs in the queue.
-                        return NNetScheduleGetJob::eJob;
+                        if (holder.Done()) {
+                            return NNetScheduleGetJob::eJob;
+                        }
                     } else {
                         // No job has been returned by this server;
                         // query the server later.
@@ -538,6 +568,11 @@ class CNetScheduleGetJob
                 }
                 catch (...) {
                     m_ImmediateActions.erase(i);
+
+                    if (holder.HasJob()) {
+                        return NNetScheduleGetJob::eJob;
+                    }
+
                     throw;
                 }
             }
@@ -555,7 +590,8 @@ class CNetScheduleGetJob
             }
         }
 
-        return NNetScheduleGetJob::eAgain;
+        return holder.HasJob() ? NNetScheduleGetJob::eJob :
+            NNetScheduleGetJob::eAgain;
     }
 
 public:
