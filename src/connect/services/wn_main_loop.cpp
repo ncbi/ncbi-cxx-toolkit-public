@@ -688,7 +688,7 @@ CNetServer CMainLoopThread::CImpl::x_ProcessRequestJobNotification()
     return server;
 }
 
-bool MoreJobs(const NNetScheduleGetJob::SEntry& /*entry*/)
+bool CMainLoopThread::CImpl::MoreJobs(const NNetScheduleGetJob::SEntry& /*entry*/)
 {
     return true;
 }
