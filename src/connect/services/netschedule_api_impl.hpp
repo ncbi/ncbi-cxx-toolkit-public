@@ -567,7 +567,7 @@ public:
                     Restart();
                 }
 
-                if (m_ImmediateActions.empty()()) {
+                if (m_ImmediateActions.empty()) {
                     break;
                 }
 
