@@ -1275,12 +1275,12 @@ bool sFeatureHasXref(
     if (!feat.IsSetXref()) {
         return false;
     }
-    const string xrefStr = featId.GetLocal().GetStr();
+    int xrefId = featId.GetLocal().GetId();
     const XREFS& xrefs = feat.GetXref();
     for (XREFS::const_iterator cit = xrefs.begin(); cit != xrefs.end(); ++cit) {
         const CSeqFeatXref& ref = **cit; 
-        string contentStr = ref.GetId().GetLocal().GetStr();
-        if (contentStr == xrefStr) {
+        int contentId = ref.GetId().GetLocal().GetId();
+        if (contentId == xrefId) {
             return true;
         }
     }

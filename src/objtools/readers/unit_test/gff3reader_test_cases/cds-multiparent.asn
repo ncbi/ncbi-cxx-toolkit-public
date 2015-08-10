@@ -4,7 +4,7 @@ Seq-annot ::= {
   },
   data ftable {
     {
-      id local str "gene00001",
+      id local id 1,
       data gene {
       },
       location int {
@@ -25,7 +25,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local str "local-id:1",
+      id local id 2,
       data imp {
         key "TF_binding_site"
       },
@@ -43,7 +43,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local str "mRNA00001",
+      id local id 3,
       data rna {
         type mRNA
       },
@@ -85,12 +85,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "cds00001"
+          id local id 6
         }
       }
     },
     {
-      id local str "mRNA00002",
+      id local id 4,
       data rna {
         type mRNA
       },
@@ -132,15 +132,15 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "cds00001"
+          id local id 7
         },
         {
-          id local str "cds00002"
+          id local id 8
         }
       }
     },
     {
-      id local str "mRNA00003",
+      id local id 5,
       data rna {
         type mRNA
       },
@@ -176,12 +176,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "cds00002"
+          id local id 9
         }
       }
     },
     {
-      id local str "cds00001",
+      id local id 6,
       data cdregion {
         frame one
       },
@@ -227,12 +227,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "mRNA00001"
+          id local id 3
         }
       }
     },
     {
-      id local str "cds00001",
+      id local id 7,
       data cdregion {
         frame one
       },
@@ -278,12 +278,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "mRNA00002"
+          id local id 4
         }
       }
     },
     {
-      id local str "cds00002",
+      id local id 8,
       data cdregion {
         frame one
       },
@@ -323,12 +323,12 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "mRNA00002"
+          id local id 4
         }
       }
     },
     {
-      id local str "cds00002",
+      id local id 9,
       data cdregion {
         frame one
       },
@@ -368,7 +368,7 @@ Seq-annot ::= {
       },
       xref {
         {
-          id local str "mRNA00003"
+          id local id 5
         }
       }
     }

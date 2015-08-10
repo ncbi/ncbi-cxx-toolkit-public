@@ -50,7 +50,8 @@ public:
     CGff2Record();
     virtual ~CGff2Record();
 
-    static string NextId();
+    static unsigned int NextId();
+    static void ResetId();
 
     //
     //  Input/output:
@@ -210,6 +211,7 @@ protected:
     TFrame* m_pePhase;
     string m_strAttributes;    
     TAttributes m_Attributes;
+    static unsigned int m_nextId;
 };
 
 END_objects_SCOPE
