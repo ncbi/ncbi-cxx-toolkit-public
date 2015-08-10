@@ -761,11 +761,15 @@ CMainLoopThread::CImpl::EResult CMainLoopThread::CImpl::GetJob(
         _ASSERT(m_Timeline.HasScheduledActions());
 
         // There's still time. Wait for notifications and query the servers.
-        const CDeadline next_event_time = m_Timeline.GetNextTimeout();
-        if (deadline < next_event_time) {
-            if (!WaitForNotifications(deadline))
+        CDeadline next_event_time = m_Timeline.GetNextTimeout();
+        bool last_wait = deadline < next_event_time;
+        if (last_wait) next_event_time = deadline;
+
+        if (!WaitForNotifications(next_event_time)) {
+            if (last_wait) {
                 return eAgain;
-        } else if (!WaitForNotifications(next_event_time)) {
+            }
+
             m_Timeline.PushImmediateAction(m_Timeline.PullScheduledAction());
         }
     }
