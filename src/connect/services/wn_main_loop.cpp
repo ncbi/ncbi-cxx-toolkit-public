@@ -631,7 +631,7 @@ NNetScheduleGetJob::EState CMainLoopThread::CImpl::CheckState()
 
     NNetScheduleGetJob::EState ret = NNetScheduleGetJob::eWorking;
 
-    do {
+    for (;;) {
         void* event;
 
         while ((event = SwapPointers(&m_WorkerNode->m_SuspendResumeEvent,
@@ -650,11 +650,13 @@ NNetScheduleGetJob::EState CMainLoopThread::CImpl::CheckState()
             }
         }
 
+        if (!m_WorkerNode->m_TimelineIsSuspended) {
+            return ret;
+        }
+
         m_WorkerNode->m_NSExecutor->
             m_NotificationHandler.WaitForNotification(m_Timeout);
-    } while (m_WorkerNode->m_TimelineIsSuspended);
-
-    return ret;
+    }
 }
 
 CNetServer CMainLoopThread::CImpl::ReadNotifications()
