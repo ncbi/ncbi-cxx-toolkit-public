@@ -344,6 +344,7 @@ private:
         };
 
         EState CheckState();
+        bool WaitForNotifications(const CDeadline& deadline);
         void ProcessNotifications();
 
         CNetScheduleTimeline m_Timeline;

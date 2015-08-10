@@ -142,6 +142,11 @@ bool SNetScheduleJobReaderImpl::x_ReadJob(SNetServerImpl* server,
             job_status, no_more_jobs);
 }
 
+bool SNetScheduleJobReaderImpl::WaitForNotifications(const CDeadline& deadline)
+{
+    return !m_API->m_NotificationThread->m_ReadNotifications.Wait(deadline);
+}
+
 void SNetScheduleJobReaderImpl::ProcessNotifications()
 {
     string ns_node;
@@ -237,12 +242,10 @@ CNetScheduleJobReader::EReadNextJobResult SNetScheduleJobReaderImpl::ReadNextJob
         // There's still time. Wait for notifications and query the servers.
         const CDeadline next_event_time = m_Timeline.GetNextTimeout();
         if (deadline < next_event_time) {
-            if (!m_API->m_NotificationThread->
-                    m_ReadNotifications.Wait(deadline))
+            if (!WaitForNotifications(deadline))
                 return CNetScheduleJobReader::eRNJ_NotReady;
             ProcessNotifications();
-        } else if (m_API->m_NotificationThread->
-                m_ReadNotifications.Wait(next_event_time))
+        } else if (WaitForNotifications(next_event_time))
             ProcessNotifications();
         else {
             m_Timeline.PushImmediateAction(m_Timeline.PullScheduledAction());

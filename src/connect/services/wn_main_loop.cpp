@@ -661,6 +661,12 @@ bool CMainLoopThread::CImpl::x_EnterSuspendedState()
     return CMainLoopThread::CImpl::CheckState() != eWorking;
 }
 
+bool CMainLoopThread::CImpl::WaitForNotifications(const CDeadline& deadline)
+{
+    return m_WorkerNode->m_NSExecutor->
+        m_NotificationHandler.WaitForNotification(deadline);
+}
+
 void CMainLoopThread::CImpl::ProcessNotifications()
 {
     if (!x_EnterSuspendedState()) {
@@ -723,9 +729,9 @@ bool CMainLoopThread::CImpl::x_WaitForNewJob(CNetScheduleJob& job)
         // At least, the discovery action must be there
         _ASSERT(m_Timeline.HasScheduledActions());
 
-        if (m_WorkerNode->m_NSExecutor->
-                m_NotificationHandler.WaitForNotification(
-                    m_Timeline.GetNextTimeout()))
+        // There's still time. Wait for notifications and query the servers.
+        const CDeadline next_event_time = m_Timeline.GetNextTimeout();
+        if (WaitForNotifications(next_event_time))
             ProcessNotifications();
         else {
             m_Timeline.PushImmediateAction(m_Timeline.PullScheduledAction());
