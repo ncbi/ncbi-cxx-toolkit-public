@@ -463,7 +463,7 @@ public:
         m_API(ns_api_impl),
         m_Timeout(timeout)
     {
-        PushImmediateAction(m_DiscoveryAction);
+        m_ImmediateActions.push_back(m_DiscoveryAction);
     }
 
     enum EState {
@@ -509,23 +509,26 @@ public:
                     break;
                 }
 
-                CNetScheduleTimeline::SEntry timeline_entry(Pop(m_ImmediateActions));
+                SEntry timeline_entry(m_ImmediateActions.front());
+                m_ImmediateActions.pop_front();
 
                 if (timeline_entry == m_DiscoveryAction) {
                     NextDiscoveryIteration();
-                    PushScheduledAction(timeline_entry);
+                    timeline_entry.deadline = CDeadline(m_Timeout, 0);
+                    m_ScheduledActions.push_back(timeline_entry);
                 } else {
                     try {
                         if (CheckEntry(timeline_entry, job, job_status)) {
                             // A job has been returned; add the server to
                             // immediate actions because there can be more
                             // jobs in the queue.
-                            PushImmediateAction(timeline_entry);
+                            m_ImmediateActions.push_back(timeline_entry);
                             return eJob;
                         } else {
                             // No job has been returned by this server;
                             // query the server later.
-                            PushScheduledAction(timeline_entry);
+                            timeline_entry.deadline = CDeadline(m_Timeout, 0);
+                            m_ScheduledActions.push_back(timeline_entry);
                         }
                     }
                     catch (CNetSrvConnException& e) {
@@ -567,19 +570,13 @@ public:
             } else if (last_wait) {
                 return eAgain;
             } else {
-                PushImmediateAction(Pop(m_ScheduledActions));
+                m_ImmediateActions.push_back(m_ScheduledActions.front());
+                m_ScheduledActions.pop_front();
             }
         }
     }
 
 private:
-    static SEntry Pop(TTimeline& timeline)
-    {
-        SEntry entry = timeline.front();
-        timeline.pop_front();
-        return entry;
-    }
-
     static void Filter(TTimeline& timeline, TServers& servers)
     {
         TTimeline new_timeline;
@@ -602,7 +599,8 @@ private:
     {
         while (!m_ScheduledActions.empty() &&
                 m_ScheduledActions.front().deadline.GetRemainingTime().IsZero()) {
-            m_ImmediateActions.push_back(Pop(m_ScheduledActions));
+            m_ImmediateActions.push_back(m_ScheduledActions.front());
+            m_ScheduledActions.pop_front();
         }
     }
 
@@ -627,17 +625,6 @@ private:
         if (i == m_ImmediateActions.end()) {
             m_ImmediateActions.push_back(entry);
         }
-    }
-
-    void PushImmediateAction(const SEntry& entry)
-    {
-        m_ImmediateActions.push_back(entry);
-    }
-
-    void PushScheduledAction(SEntry entry)
-    {
-        entry.deadline = CDeadline(m_Timeout, 0);
-        m_ScheduledActions.push_back(entry);
     }
 
     void NextDiscoveryIteration()
