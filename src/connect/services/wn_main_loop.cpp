@@ -631,28 +631,34 @@ void CMainLoopThread::CImpl::Main()
 CMainLoopThread::CImpl::EState CMainLoopThread::CImpl::CheckState()
 {
     if (CGridGlobals::GetInstance().IsShuttingDown())
-        return eStop;
+        return eStopped;
 
-    void* event;
+    EState ret = eWorking;
 
-    while ((event = SwapPointers(&m_WorkerNode->m_SuspendResumeEvent,
-            NO_EVENT)) != NO_EVENT) {
-        if (event == SUSPEND_EVENT) {
-            if (!m_WorkerNode->m_TimelineIsSuspended) {
-                // Stop the timeline.
-                m_WorkerNode->m_TimelineIsSuspended = true;
-                m_Timeline = CNetScheduleTimeline(m_WorkerNode->m_NSTimeout);
-            }
-        } else { /* event == RESUME_EVENT */
-            if (m_WorkerNode->m_TimelineIsSuspended) {
-                // Resume the timeline.
-                m_WorkerNode->m_TimelineIsSuspended = false;
-                m_Timeline = CNetScheduleTimeline();
+    do {
+        void* event;
+
+        while ((event = SwapPointers(&m_WorkerNode->m_SuspendResumeEvent,
+                NO_EVENT)) != NO_EVENT) {
+            if (event == SUSPEND_EVENT) {
+                if (!m_WorkerNode->m_TimelineIsSuspended) {
+                    // Stop the timeline.
+                    m_WorkerNode->m_TimelineIsSuspended = true;
+                    ret = eRestarted;
+                }
+            } else { /* event == RESUME_EVENT */
+                if (m_WorkerNode->m_TimelineIsSuspended) {
+                    // Resume the timeline.
+                    m_WorkerNode->m_TimelineIsSuspended = false;
+                }
             }
         }
-    }
 
-    return m_WorkerNode->m_TimelineIsSuspended ? eIdle : eWorking;
+        m_WorkerNode->m_NSExecutor->
+            m_NotificationHandler.WaitForNotification(m_Timeout);
+    } while (m_WorkerNode->m_TimelineIsSuspended);
+
+    return ret;
 }
 
 CNetServer CMainLoopThread::CImpl::ReadNotifications()
@@ -707,16 +713,27 @@ CMainLoopThread::CImpl::EResult CMainLoopThread::CImpl::GetJob(
         CNetScheduleAPI::EJobStatus* job_status)
 {
     for (;;) {
-        while (m_Timeline.HasImmediateActions()) {
+        for (;;) {
+            EState state = CheckState();
+
+            if (state == eStopped) {
+                return eInterrupt;
+            }
+            
+            if (state == eRestarted) {
+                m_Timeline = CNetScheduleTimeline();
+            }
+
+            if (!m_Timeline.HasImmediateActions()) {
+                break;
+            }
+
             CNetScheduleTimeline::SEntry timeline_entry(m_Timeline.PullImmediateAction());
 
             if (m_Timeline.IsDiscoveryAction(timeline_entry)) {
-                if (CheckState() == eWorking) {
-                    m_Timeline.NextDiscoveryIteration(m_API);
-                }
-
+                m_Timeline.NextDiscoveryIteration(m_API);
                 m_Timeline.PushScheduledAction(timeline_entry, m_Timeout);
-            } else if (CheckState() == eWorking) {
+            } else {
                 try {
                     if (CheckEntry(timeline_entry, job, job_status)) {
                         // A job has been returned; add the server to
@@ -744,9 +761,6 @@ CMainLoopThread::CImpl::EResult CMainLoopThread::CImpl::GetJob(
                 m_Timeline.MoveToImmediateActions(server);
             }
         }
-
-        if (CheckState() == eStop)
-            return eInterrupt;
 
         if (!MoreJobs() && !m_Timeline.MoreJobs())
             return eNoJobs;

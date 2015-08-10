@@ -339,8 +339,8 @@ private:
     private:
         enum EState {
             eWorking,
-            eIdle,
-            eStop
+            eRestarted,
+            eStopped
         };
 
         EState CheckState();

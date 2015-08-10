@@ -643,8 +643,8 @@ struct SNetScheduleJobReaderImpl : public CObject
 private:
     enum EState {
         eWorking,
-        eIdle,
-        eStop
+        eRestarted,
+        eStopped
     };
 
     EState CheckState();

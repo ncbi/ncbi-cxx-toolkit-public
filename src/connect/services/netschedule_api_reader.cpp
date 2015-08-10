@@ -208,16 +208,27 @@ SNetScheduleJobReaderImpl::EResult SNetScheduleJobReaderImpl::GetJob(
         CNetScheduleAPI::EJobStatus* job_status)
 {
     for (;;) {
-        while (m_Timeline.HasImmediateActions()) {
+        for (;;) {
+            EState state = CheckState();
+
+            if (state == eStopped) {
+                return eInterrupt;
+            }
+            
+            if (state == eRestarted) {
+                m_Timeline = CNetScheduleTimeline();
+            }
+
+            if (!m_Timeline.HasImmediateActions()) {
+                break;
+            }
+
             CNetScheduleTimeline::SEntry timeline_entry(m_Timeline.PullImmediateAction());
 
             if (m_Timeline.IsDiscoveryAction(timeline_entry)) {
-                if (CheckState() == eWorking) {
-                    m_Timeline.NextDiscoveryIteration(m_API);
-                }
-
+                m_Timeline.NextDiscoveryIteration(m_API);
                 m_Timeline.PushScheduledAction(timeline_entry, m_Timeout);
-            } else if (CheckState() == eWorking) {
+            } else {
                 try {
                     if (CheckEntry(timeline_entry, job, job_status)) {
                         // A job has been returned; add the server to
@@ -245,9 +256,6 @@ SNetScheduleJobReaderImpl::EResult SNetScheduleJobReaderImpl::GetJob(
                 m_Timeline.MoveToImmediateActions(server);
             }
         }
-
-        if (CheckState() == eStop)
-            return eInterrupt;
 
         if (!MoreJobs() && !m_Timeline.MoreJobs())
             return eNoJobs;
