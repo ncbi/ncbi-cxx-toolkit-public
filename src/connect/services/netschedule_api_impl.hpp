@@ -507,14 +507,111 @@ class CNetScheduleGetJob
         TTimeline& m_Timeline;
     };
 
-    // TODO, no-op currently
-    class CMostAffinityJob : public CAnyAffinityJob
+    class CMostAffinityJob
     {
     public:
+        CNetScheduleJob& job;
+        CNetScheduleAPI::EJobStatus* job_status;
+
         CMostAffinityJob(CNetScheduleJob& j, CNetScheduleAPI::EJobStatus* js,
-                TTimeline& timeline, TImpl&) :
-            CAnyAffinityJob(j, js, timeline)
-        {}
+                TTimeline& timeline, TImpl& get_job_impl) :
+            job(j), job_status(js), m_JobPriority(numeric_limits<size_t>::max()),
+            m_Timeline(timeline), m_Iterator(timeline.end()),
+            m_GetJobImpl(get_job_impl)
+        {
+            _ASSERT(m_GetJobImpl.m_API->m_AffinityLadder.size());
+        }
+
+        void Interrupt()
+        {
+            if (HasJob()) {
+                m_GetJobImpl.ReturnJob(job);
+                job.Reset();
+            }
+        }
+
+        TIterator Begin()
+        {
+            m_Iterator = m_Timeline.end();
+            return m_Timeline.begin();
+        }
+
+        TIterator Next()
+        {
+            if (m_Iterator == m_Timeline.end()) {
+                m_Iterator = m_Timeline.begin();
+            } else {
+                ++m_Iterator;
+            }
+
+            // This is checked on loop iteration before, so must not happen
+            _ASSERT(m_Iterator != m_Timeline.end());
+
+            TIterator ret = m_Iterator;
+            return ++ret;
+        }
+
+        const string& Affinity()
+        {
+            // Must not happen, since otherwise Done() has returned true already
+            _ASSERT(m_JobPriority);
+
+            SNetScheduleAPIImpl::TAffinityLadder&
+                affinity_ladder(m_GetJobImpl.m_API->m_AffinityLadder);
+
+            if (HasJob()) {
+                // Only affinities that are higher that current job's one
+                return affinity_ladder[m_JobPriority - 1].second;
+            } else {
+                // All affinities
+                return affinity_ladder.back().second;
+            }
+        }
+
+        bool Done()
+        {
+            // Must not happen, since otherwise Done() has returned true already
+            _ASSERT(m_JobPriority);
+
+            // Return a less-priority job back
+            if (HasJob()) {
+                m_GetJobImpl.ReturnJob(m_PreviousJob);
+            }
+
+            m_PreviousJob = job;
+
+            SNetScheduleAPIImpl::TAffinityLadder&
+                affinity_ladder(m_GetJobImpl.m_API->m_AffinityLadder);
+
+            size_t priority = min(affinity_ladder.size(), m_JobPriority) - 1;
+
+            do {
+                if (job.affinity == affinity_ladder[priority].first) {
+                    m_JobPriority = priority;
+
+                    // Return true, if job has the highest priority (zero)
+                    return !m_JobPriority;
+                }
+            } while (priority-- > 0);
+
+            // Should not happen
+            LOG_POST(Error << "Got a job " << job.job_id <<
+                    " with unexpected affinity " << job.affinity);
+            m_JobPriority = numeric_limits<size_t>::max();
+            return false;
+        }
+
+        bool HasJob()
+        {
+            return m_JobPriority < numeric_limits<size_t>::max();
+        }
+
+    private:
+        size_t m_JobPriority;
+        TTimeline& m_Timeline;
+        TIterator m_Iterator;
+        TImpl& m_GetJobImpl;
+        CNetScheduleJob m_PreviousJob;
     };
 
     template <class TJobHolder>
