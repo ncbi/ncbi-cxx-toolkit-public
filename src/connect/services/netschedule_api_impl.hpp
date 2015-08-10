@@ -456,7 +456,7 @@ public:
         m_Timeout(timeout)
     {
         if (timeout) {
-            PushScheduledAction(m_DiscoveryAction, timeout);
+            PushScheduledAction(m_DiscoveryAction);
         } else {
             PushImmediateAction(m_DiscoveryAction);
         }
@@ -518,8 +518,8 @@ public:
                 CNetScheduleTimeline::SEntry timeline_entry(Pop(m_ImmediateActions));
 
                 if (IsDiscoveryAction(timeline_entry)) {
-                    NextDiscoveryIteration(m_API);
-                    PushScheduledAction(timeline_entry, m_Timeout);
+                    NextDiscoveryIteration();
+                    PushScheduledAction(timeline_entry);
                 } else {
                     try {
                         if (CheckEntry(timeline_entry, job, job_status)) {
@@ -531,7 +531,7 @@ public:
                         } else {
                             // No job has been returned by this server;
                             // query the server later.
-                            PushScheduledAction(timeline_entry, m_Timeout);
+                            PushScheduledAction(timeline_entry);
                         }
                     }
                     catch (CNetSrvConnException& e) {
@@ -659,18 +659,18 @@ private:
         m_ImmediateActions.push_back(entry);
     }
 
-    void PushScheduledAction(SEntry entry, unsigned seconds)
+    void PushScheduledAction(SEntry entry)
     {
-        entry.ResetTimeout(seconds);
+        entry.ResetTimeout(m_Timeout);
         m_ScheduledActions.push_back(entry);
     }
 
-    void NextDiscoveryIteration(CNetScheduleAPI api)
+    void NextDiscoveryIteration()
     {
         TServers servers;
 
         for (CNetServiceIterator it =
-                api.GetService().Iterate(
+                m_API.GetService().Iterate(
                     CNetService::eIncludePenalized); it; ++it) {
             servers.push_back((*it)->m_ServerInPool->m_Address);
         }
