@@ -498,7 +498,7 @@ class CNetScheduleGetJob
 
         void Interrupt()                {}
         TIterator Begin()               { return m_Timeline.begin(); }
-        TIterator Next()                { return m_Timeline.begin(); }
+        TIterator Next(bool)            { return m_Timeline.begin(); }
         const string& Affinity() const  { return kEmptyStr; }
         bool Done()                     { return true; }
         bool HasJob() const             { return false; }
@@ -536,12 +536,14 @@ class CNetScheduleGetJob
             return m_Timeline.begin();
         }
 
-        TIterator Next()
+        TIterator Next(bool increment)
         {
-            if (m_Iterator == m_Timeline.end()) {
-                m_Iterator = m_Timeline.begin();
-            } else {
-                ++m_Iterator;
+            if (increment) {
+                if (m_Iterator == m_Timeline.end()) {
+                    m_Iterator = m_Timeline.begin();
+                } else {
+                    ++m_Iterator;
+                }
             }
 
             // This is checked on loop iteration before, so must not happen
@@ -645,6 +647,8 @@ class CNetScheduleGetJob
                 continue;
             }
 
+            bool valid_iterator = false;
+
             try {
                 if (m_Impl.CheckEntry(*i, holder.Affinity(),
                             holder.job, holder.job_status)) {
@@ -654,6 +658,8 @@ class CNetScheduleGetJob
                     if (holder.Done()) {
                         return NNetScheduleGetJob::eJob;
                     }
+
+                    valid_iterator = true;
                 } else {
                     // No job has been returned by this server;
                     // query the server later.
@@ -690,7 +696,7 @@ class CNetScheduleGetJob
                 MoveToImmediateActions(server);
             }
 
-            i = holder.Next();
+            i = holder.Next(valid_iterator);
         }
     }
 
