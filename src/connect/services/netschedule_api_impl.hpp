@@ -468,6 +468,7 @@ namespace NNetScheduleGetJob
     };
 };
 
+// TODO: Move implementation into a cpp file after merge to trunk completed
 template <class TImpl>
 class CNetScheduleGetJob
 {
@@ -495,6 +496,7 @@ class CNetScheduleGetJob
             job(j), job_status(js), m_Timeline(timeline)
         {}
 
+        void Interrupt() {}
         void Restart() {}
         TIterator Next() const      { return m_Timeline.begin(); }
         const string& Affinity()    { return kEmptyStr; }
@@ -518,6 +520,7 @@ class CNetScheduleGetJob
             NNetScheduleGetJob::EState state = m_Impl.CheckState();
 
             if (state == NNetScheduleGetJob::eStopped) {
+                holder.Interrupt();
                 return NNetScheduleGetJob::eInterrupt;
             }
             
