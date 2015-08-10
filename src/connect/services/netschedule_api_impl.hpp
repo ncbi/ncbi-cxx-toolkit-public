@@ -495,7 +495,7 @@ class CNetScheduleGetJob
                 break;
             }
 
-            SEntry timeline_entry(m_ImmediateActions.front());
+            SEntry& timeline_entry(m_ImmediateActions.front());
 
             if (timeline_entry == m_DiscoveryAction) {
                 NextDiscoveryIteration();
