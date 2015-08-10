@@ -1911,7 +1911,6 @@ string CSubSource::ValidateLatLonCountry (const string& input_countryname, strin
     if ((NStr::EqualNocase (country, "Palestine") ||
          NStr::EqualNocase (country, "State of Palestine")) &&
         (NStr::EqualNocase (cguess, "Gaza Strip") ||
-         NStr::EqualNocase (cguess, "Israel") ||
          NStr::EqualNocase (cguess, "West Bank"))) {
         return "";
     }
