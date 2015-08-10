@@ -691,10 +691,11 @@ void CMainLoopThread::CImpl::x_ProcessRequestJobNotification()
     }
 }
 
-bool CMainLoopThread::CImpl::x_WaitForNewJob(CNetScheduleJob& job)
+CMainLoopThread::CImpl::EResult CMainLoopThread::CImpl::GetJob(
+        const CDeadline& deadline,
+        CNetScheduleJob& job,
+        CNetScheduleAPI::EJobStatus* /*job_status*/)
 {
-    CDeadline deadline(CTimeout::eInfinite);
-
     for (;;) {
         while (m_Timeline.HasImmediateActions()) {
             CNetScheduleTimeline::SEntry timeline_entry(m_Timeline.PullImmediateAction());
@@ -715,7 +716,7 @@ bool CMainLoopThread::CImpl::x_WaitForNewJob(CNetScheduleJob& job)
                         // immediate actions because there can be more
                         // jobs in the queue.
                         m_Timeline.PushImmediateAction(timeline_entry);
-                        return true;
+                        return eJob;
                     } else {
                         // No job has been returned by this server;
                         // query the server later.
@@ -736,10 +737,10 @@ bool CMainLoopThread::CImpl::x_WaitForNewJob(CNetScheduleJob& job)
         }
 
         if (CheckState() == eStop)
-            return false;
+            return eInterrupt;
 
         if (deadline.IsExpired())
-            return false;
+            return eAgain;
 
         // At least, the discovery action must be there
         _ASSERT(m_Timeline.HasScheduledActions());
@@ -748,11 +749,17 @@ bool CMainLoopThread::CImpl::x_WaitForNewJob(CNetScheduleJob& job)
         const CDeadline next_event_time = m_Timeline.GetNextTimeout();
         if (deadline < next_event_time) {
             if (!WaitForNotifications(deadline))
-                return false;
+                return eAgain;
         } else if (!WaitForNotifications(next_event_time)) {
             m_Timeline.PushImmediateAction(m_Timeline.PullScheduledAction());
         }
     }
+}
+
+bool CMainLoopThread::CImpl::x_WaitForNewJob(CNetScheduleJob& job)
+{
+    CDeadline deadline(CTimeout::eInfinite);
+    return GetJob(deadline, job, NULL) == eJob;
 }
 
 bool CMainLoopThread::CImpl::x_GetNextJob(CNetScheduleJob& job)

@@ -655,6 +655,18 @@ private:
     void ReadNotifications();
     bool WaitForNotifications(const CDeadline& deadline);
 
+    enum EResult {
+        eJob,
+        eAgain,
+        eInterrupt,
+        eNoJobs
+    };
+
+    EResult GetJob(
+            const CDeadline& deadline,
+            CNetScheduleJob& job,
+            CNetScheduleAPI::EJobStatus* job_status);
+
     CNetScheduleTimeline m_Timeline;
     const unsigned m_Timeout;
 

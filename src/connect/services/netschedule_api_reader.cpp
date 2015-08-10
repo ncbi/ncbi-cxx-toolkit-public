@@ -173,16 +173,11 @@ SNetScheduleJobReaderImpl::EState SNetScheduleJobReaderImpl::CheckState()
     return eWorking;
 }
 
-CNetScheduleJobReader::EReadNextJobResult SNetScheduleJobReaderImpl::ReadNextJob(
-        CNetScheduleJob* job,
-        CNetScheduleAPI::EJobStatus* job_status,
-        const CTimeout* timeout)
+SNetScheduleJobReaderImpl::EResult SNetScheduleJobReaderImpl::GetJob(
+        const CDeadline& deadline,
+        CNetScheduleJob& job,
+        CNetScheduleAPI::EJobStatus* job_status)
 {
-    _ASSERT(job);
-
-    x_StartNotificationThread();
-    CDeadline deadline(timeout ? *timeout : CTimeout(0, 0));
-
     bool no_more_jobs;
     bool matching_job_exists = false;
 
@@ -203,12 +198,12 @@ CNetScheduleJobReader::EReadNextJobResult SNetScheduleJobReaderImpl::ReadNextJob
 
                 try {
                     if (x_ReadJob(server, m_Timeout,
-                            *job, job_status, &no_more_jobs)) {
+                            job, job_status, &no_more_jobs)) {
                         // A job has been returned; add the server to
                         // immediate actions because there can be more
                         // jobs in the queue.
                         m_Timeline.PushImmediateAction(timeline_entry);
-                        return CNetScheduleJobReader::eRNJ_JobReady;
+                        return eJob;
                     } else {
                         // Cache the result for the server,
                         // so we don't need to ask the server again about matching jobs
@@ -237,14 +232,14 @@ CNetScheduleJobReader::EReadNextJobResult SNetScheduleJobReaderImpl::ReadNextJob
         }
 
         if (CheckState() == eStop)
-            return CNetScheduleJobReader::eRNJ_Interrupt;
+            return eInterrupt;
 
         // All servers returned 'no_more_jobs'.
         if (!matching_job_exists && !m_Timeline.MoreJobs())
-            return CNetScheduleJobReader::eRNJ_NoMoreJobs;
+            return eNoJobs;
 
         if (deadline.IsExpired())
-            return CNetScheduleJobReader::eRNJ_NotReady;
+            return eAgain;
 
         // At least, the discovery action must be there
         _ASSERT(m_Timeline.HasScheduledActions());
@@ -253,10 +248,28 @@ CNetScheduleJobReader::EReadNextJobResult SNetScheduleJobReaderImpl::ReadNextJob
         const CDeadline next_event_time = m_Timeline.GetNextTimeout();
         if (deadline < next_event_time) {
             if (!WaitForNotifications(deadline))
-                return CNetScheduleJobReader::eRNJ_NotReady;
+                return eAgain;
         } else if (!WaitForNotifications(next_event_time)) {
             m_Timeline.PushImmediateAction(m_Timeline.PullScheduledAction());
         }
+    }
+}
+
+CNetScheduleJobReader::EReadNextJobResult SNetScheduleJobReaderImpl::ReadNextJob(
+        CNetScheduleJob* job,
+        CNetScheduleAPI::EJobStatus* job_status,
+        const CTimeout* timeout)
+{
+    _ASSERT(job);
+
+    x_StartNotificationThread();
+    CDeadline deadline(timeout ? *timeout : CTimeout(0, 0));
+
+    switch (GetJob(deadline, *job, job_status)) {
+        case eJob:              return CNetScheduleJobReader::eRNJ_JobReady;
+        case eAgain:            return CNetScheduleJobReader::eRNJ_NotReady;
+        case eInterrupt:        return CNetScheduleJobReader::eRNJ_Interrupt;
+        default /* eNoJobs */:  return CNetScheduleJobReader::eRNJ_NoMoreJobs;
     }
 }
 
