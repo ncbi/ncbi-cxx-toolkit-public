@@ -448,13 +448,6 @@ namespace NNetScheduleGetJob
         eNoJobs
     };
 
-    struct SPriority
-    {
-        size_t value;
-        SPriority(size_t v = Max()) : value(v) {}
-        static size_t Max() { return numeric_limits<size_t>::max(); }
-    };
-
     struct SEntry
     {
         SServerAddress server_address;
@@ -524,7 +517,7 @@ class CNetScheduleGetJob
 
         CMostAffinityJob(CNetScheduleJob& j, CNetScheduleAPI::EJobStatus* js,
                 TTimeline& timeline, TImpl& get_job_impl) :
-            job(j), job_status(js),
+            job(j), job_status(js), m_JobPriority(numeric_limits<size_t>::max()),
             m_Timeline(timeline), m_Iterator(timeline.end()),
             m_GetJobImpl(get_job_impl)
         {
@@ -569,7 +562,7 @@ class CNetScheduleGetJob
         const string& Affinity(bool& all_affinities) const
         {
             // Must not happen, since otherwise Done() has returned true already
-            _ASSERT(m_JobPriority.value);
+            _ASSERT(m_JobPriority);
 
             SNetScheduleAPIImpl::TAffinityLadder&
                 affinity_ladder(m_GetJobImpl.m_API->m_AffinityLadder);
@@ -577,7 +570,7 @@ class CNetScheduleGetJob
             if (HasJob()) {
                 // Only affinities that are higher that current job's one
                 all_affinities = false;
-                return affinity_ladder[m_JobPriority.value - 1].second;
+                return affinity_ladder[m_JobPriority - 1].second;
             } else {
                 // All affinities
                 all_affinities = true;
@@ -588,7 +581,7 @@ class CNetScheduleGetJob
         bool Done()
         {
             // Must not happen, since otherwise Done() has returned true already
-            _ASSERT(m_JobPriority.value);
+            _ASSERT(m_JobPriority);
 
             // Return a less-priority job back
             if (HasJob()) {
@@ -600,31 +593,31 @@ class CNetScheduleGetJob
             SNetScheduleAPIImpl::TAffinityLadder&
                 affinity_ladder(m_GetJobImpl.m_API->m_AffinityLadder);
 
-            size_t priority = min(affinity_ladder.size(), m_JobPriority.value) - 1;
+            size_t priority = min(affinity_ladder.size(), m_JobPriority) - 1;
 
             do {
                 if (job.affinity == affinity_ladder[priority].first) {
-                    m_JobPriority.value = priority;
+                    m_JobPriority = priority;
 
                     // Return true, if job has the highest priority (zero)
-                    return !m_JobPriority.value;
+                    return !m_JobPriority;
                 }
             } while (priority-- > 0);
 
             // Should not happen
             LOG_POST(Error << "Got a job " << job.job_id <<
                     " with unexpected affinity " << job.affinity);
-            m_JobPriority.value = m_JobPriority.Max();
+            m_JobPriority = numeric_limits<size_t>::max();
             return false;
         }
 
         bool HasJob() const
         {
-            return m_JobPriority.value < m_JobPriority.Max();
+            return m_JobPriority < numeric_limits<size_t>::max();
         }
 
     private:
-        NNetScheduleGetJob::SPriority m_JobPriority;
+        size_t m_JobPriority;
         TTimeline& m_Timeline;
         TIterator m_Iterator;
         TImpl& m_GetJobImpl;
