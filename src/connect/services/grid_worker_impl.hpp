@@ -324,7 +324,7 @@ public:
     virtual void* Main();
 
 private:
-    class CImpl
+    class CImpl : private CNetScheduleTimeline
     {
     public:
         CImpl(SGridWorkerNodeImpl* worker_node) :
@@ -364,7 +364,6 @@ private:
                 CNetScheduleJob& job,
                 CNetScheduleAPI::EJobStatus* job_status);
 
-        CNetScheduleTimeline m_Timeline;
         SGridWorkerNodeImpl* m_WorkerNode;
         CNetScheduleAPI m_API;
         const unsigned m_Timeout;

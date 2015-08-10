@@ -612,7 +612,7 @@ private:
     SEntry m_DiscoveryAction;
 };
 
-struct SNetScheduleJobReaderImpl : public CObject
+struct SNetScheduleJobReaderImpl : public CObject, private CNetScheduleTimeline
 {
     SNetScheduleJobReaderImpl(CNetScheduleAPI::TInstance ns_api_impl,
             const string& group, const string& affinity) :
@@ -675,7 +675,6 @@ private:
             CNetScheduleJob& job,
             CNetScheduleAPI::EJobStatus* job_status);
 
-    CNetScheduleTimeline m_Timeline;
     const unsigned m_Timeout;
     bool m_MoreJobs;
 
