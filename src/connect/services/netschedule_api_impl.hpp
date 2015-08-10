@@ -530,6 +530,10 @@ class CNetScheduleGetJob
                     m_ImmediateActions.pop_front();
                     LOG_POST(Warning << e.GetMsg());
                 }
+                catch (...) {
+                    m_ImmediateActions.pop_front();
+                    throw;
+                }
             }
 
             // Check all servers that have timeout expired
