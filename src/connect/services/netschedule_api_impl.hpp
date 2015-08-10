@@ -544,10 +544,14 @@ class CNetScheduleGetJob
                 } else {
                     ++m_Iterator;
                 }
-            }
 
-            // This is checked on loop iteration before, so must not happen
-            _ASSERT(m_Iterator != m_Timeline.end());
+                // We've already got a job from an entry at m_Iterator + 1
+                // (that is why increment is true), so must not happen
+                _ASSERT(m_Iterator != m_Timeline.end());
+
+            } else if (m_Iterator == m_Timeline.end()) {
+                return m_Timeline.begin();
+            }
 
             TIterator ret = m_Iterator;
             return ++ret;
