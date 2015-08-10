@@ -317,7 +317,6 @@ class CMainLoopThread : public CThread
 public:
     CMainLoopThread(SGridWorkerNodeImpl* worker_node) :
         m_WorkerNode(worker_node),
-        m_Semaphore(0, 1),
         m_ThreadName(worker_node->GetAppName() + "_mn")
     {
     }
@@ -326,7 +325,6 @@ public:
 
 private:
     SGridWorkerNodeImpl* m_WorkerNode;
-    CSemaphore m_Semaphore;
     const string m_ThreadName;
     CNetScheduleTimeline m_Timeline;
 
