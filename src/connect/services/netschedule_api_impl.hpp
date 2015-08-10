@@ -462,81 +462,6 @@ public:
         }
     }
 
-    void CheckScheduledActions()
-    {
-        while (!m_ScheduledActions.empty() &&
-                m_ScheduledActions.front().deadline.GetRemainingTime().IsZero()) {
-            m_ImmediateActions.push_back(Pop(m_ScheduledActions));
-        }
-    }
-
-    bool IsDiscoveryAction(const SEntry& entry) const
-    {
-        return entry.server_address == m_DiscoveryAction.server_address;
-    }
-
-    void MoveToImmediateActions(SNetServerImpl* server_impl)
-    {
-        const SServerAddress address(server_impl->m_ServerInPool->m_Address);
-
-        // If it's new server or is postponed or is not found in queues
-        if (Erase(m_ScheduledActions, address) ||
-                !Find(m_ImmediateActions, address)) {
-            m_ImmediateActions.push_back(address);
-        }
-    }
-
-    void PushImmediateAction(const SEntry& entry)
-    {
-        m_ImmediateActions.push_back(entry);
-    }
-
-    void PushScheduledAction(SEntry entry, unsigned seconds)
-    {
-        entry.ResetTimeout(seconds);
-        m_ScheduledActions.push_back(entry);
-    }
-
-    void NextDiscoveryIteration(CNetScheduleAPI api)
-    {
-        TServers servers;
-
-        for (CNetServiceIterator it =
-                api.GetService().Iterate(
-                    CNetService::eIncludePenalized); it; ++it) {
-            servers.push_back((*it)->m_ServerInPool->m_Address);
-        }
-
-        // Keep up to date servers
-        Filter(m_ImmediateActions, servers);
-        Filter(m_ScheduledActions, servers);
-
-        // Add newly discovered servers
-        for (TServers::const_iterator i = servers.begin();
-                i != servers.end(); ++i) {
-            m_ImmediateActions.push_back(*i);
-        }
-    }
-
-    virtual bool MoreJobs()
-    {
-        for (TTimeline::const_iterator i = m_ScheduledActions.begin();
-                i != m_ScheduledActions.end(); ++i) {
-            if (i->more_jobs) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    void Restart()
-    {
-        m_ScheduledActions.clear();
-        m_ImmediateActions.clear();
-        m_ImmediateActions.push_back(m_DiscoveryAction);
-    }
-
     enum EState {
         eWorking,
         eRestarted,
@@ -631,6 +556,18 @@ public:
         }
     }
 
+    virtual bool MoreJobs()
+    {
+        for (TTimeline::const_iterator i = m_ScheduledActions.begin();
+                i != m_ScheduledActions.end(); ++i) {
+            if (i->more_jobs) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
 private:
     struct SEntryByAddress
     {
@@ -693,6 +630,69 @@ private:
             CNetScheduleTimeline::SEntry& entry,
             CNetScheduleJob& job,
             CNetScheduleAPI::EJobStatus* job_status) = 0;
+
+    void CheckScheduledActions()
+    {
+        while (!m_ScheduledActions.empty() &&
+                m_ScheduledActions.front().deadline.GetRemainingTime().IsZero()) {
+            m_ImmediateActions.push_back(Pop(m_ScheduledActions));
+        }
+    }
+
+    bool IsDiscoveryAction(const SEntry& entry) const
+    {
+        return entry.server_address == m_DiscoveryAction.server_address;
+    }
+
+    void MoveToImmediateActions(SNetServerImpl* server_impl)
+    {
+        const SServerAddress address(server_impl->m_ServerInPool->m_Address);
+
+        // If it's new server or is postponed or is not found in queues
+        if (Erase(m_ScheduledActions, address) ||
+                !Find(m_ImmediateActions, address)) {
+            m_ImmediateActions.push_back(address);
+        }
+    }
+
+    void PushImmediateAction(const SEntry& entry)
+    {
+        m_ImmediateActions.push_back(entry);
+    }
+
+    void PushScheduledAction(SEntry entry, unsigned seconds)
+    {
+        entry.ResetTimeout(seconds);
+        m_ScheduledActions.push_back(entry);
+    }
+
+    void NextDiscoveryIteration(CNetScheduleAPI api)
+    {
+        TServers servers;
+
+        for (CNetServiceIterator it =
+                api.GetService().Iterate(
+                    CNetService::eIncludePenalized); it; ++it) {
+            servers.push_back((*it)->m_ServerInPool->m_Address);
+        }
+
+        // Keep up to date servers
+        Filter(m_ImmediateActions, servers);
+        Filter(m_ScheduledActions, servers);
+
+        // Add newly discovered servers
+        for (TServers::const_iterator i = servers.begin();
+                i != servers.end(); ++i) {
+            m_ImmediateActions.push_back(*i);
+        }
+    }
+
+    void Restart()
+    {
+        m_ScheduledActions.clear();
+        m_ImmediateActions.clear();
+        m_ImmediateActions.push_back(m_DiscoveryAction);
+    }
 
     TTimeline m_ImmediateActions, m_ScheduledActions;
     SEntry m_DiscoveryAction;
