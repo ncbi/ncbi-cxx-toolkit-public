@@ -423,11 +423,21 @@ public:
     SNetScheduleExecutorImpl* m_Executor;
 };
 
-class CNetScheduleGetJob
+namespace NNetScheduleGetJob
 {
-    typedef list<SServerAddress> TServers;
+    enum EState {
+        eWorking,
+        eRestarted,
+        eStopped
+    };
 
-public:
+    enum EResult {
+        eJob,
+        eAgain,
+        eInterrupt,
+        eNoJobs
+    };
+
     struct SEntry
     {
         SServerAddress server_address;
@@ -446,14 +456,15 @@ public:
             return server_address == rhs.server_address;
         }
     };
+};
 
+class CNetScheduleGetJob
+{
+    typedef list<SServerAddress> TServers;
+
+public:
+    typedef NNetScheduleGetJob::SEntry SEntry;
     typedef deque<SEntry> TTimeline;
-
-    enum EState {
-        eWorking,
-        eRestarted,
-        eStopped
-    };
 
     struct IImpl
     {
@@ -466,14 +477,14 @@ public:
         {
         }
 
-        virtual EState CheckState() = 0;
+        virtual NNetScheduleGetJob::EState CheckState() = 0;
         virtual CNetServer ReadNotifications() = 0;
         virtual CNetServer WaitForNotifications(const CDeadline& deadline) = 0;
         virtual bool CheckEntry(
-                CNetScheduleGetJob::SEntry& entry,
+                NNetScheduleGetJob::SEntry& entry,
                 CNetScheduleJob& job,
                 CNetScheduleAPI::EJobStatus* job_status) = 0;
-        virtual bool MoreJobs(const CNetScheduleGetJob::SEntry& entry) = 0;
+        virtual bool MoreJobs(const NNetScheduleGetJob::SEntry& entry) = 0;
     };
 
     CNetScheduleGetJob(IImpl& impl) :
@@ -491,25 +502,18 @@ public:
         bool operator()(const SEntry& entry) { return impl.MoreJobs(entry); }
     };
 
-    enum EResult {
-        eJob,
-        eAgain,
-        eInterrupt,
-        eNoJobs
-    };
-
-    EResult GetJobImmediately(
+    NNetScheduleGetJob::EResult GetJobImmediately(
             CNetScheduleJob& job,
             CNetScheduleAPI::EJobStatus* job_status)
     {
         for (;;) {
-            EState state = m_Impl.CheckState();
+            NNetScheduleGetJob::EState state = m_Impl.CheckState();
 
-            if (state == eStopped) {
-                return eInterrupt;
+            if (state == NNetScheduleGetJob::eStopped) {
+                return NNetScheduleGetJob::eInterrupt;
             }
             
-            if (state == eRestarted) {
+            if (state == NNetScheduleGetJob::eRestarted) {
                 // Restart (rediscover all servers)
                 m_ScheduledActions.clear();
                 m_ImmediateActions.clear();
@@ -534,7 +538,7 @@ public:
                         // immediate actions because there can be more
                         // jobs in the queue.
                         m_ImmediateActions.push_back(timeline_entry);
-                        return eJob;
+                        return NNetScheduleGetJob::eJob;
                     } else {
                         // No job has been returned by this server;
                         // query the server later.
@@ -562,29 +566,29 @@ public:
             }
         }
 
-        return eAgain;
+        return NNetScheduleGetJob::eAgain;
     }
 
-    EResult GetJob(
+    NNetScheduleGetJob::EResult GetJob(
             const CDeadline& deadline,
             CNetScheduleJob& job,
             CNetScheduleAPI::EJobStatus* job_status)
     {
         for (;;) {
-            EResult ret = GetJobImmediately(job, job_status);
+            NNetScheduleGetJob::EResult ret = GetJobImmediately(job, job_status);
 
-            if (ret != eAgain) {
+            if (ret != NNetScheduleGetJob::eAgain) {
                 return ret;
             }
 
             // If MoreJobs() returned false for all entries of m_ScheduledActions
             if (find_if(m_ScheduledActions.begin(), m_ScheduledActions.end(),
                         SEntryHasMoreJobs(m_Impl)) == m_ScheduledActions.end()) {
-                return eNoJobs;
+                return NNetScheduleGetJob::eNoJobs;
             }
 
             if (deadline.IsExpired())
-                return eAgain;
+                return NNetScheduleGetJob::eAgain;
 
             // At least, the discovery action must be there
             _ASSERT(!m_ScheduledActions.empty());
@@ -599,7 +603,7 @@ public:
                     MoveToImmediateActions(server);
                 } while (server = m_Impl.ReadNotifications());
             } else if (last_wait) {
-                return eAgain;
+                return NNetScheduleGetJob::eAgain;
             } else {
                 m_ImmediateActions.push_back(m_ScheduledActions.front());
                 m_ScheduledActions.pop_front();
@@ -715,12 +719,12 @@ private:
             SNetScheduleAPIImpl::VerifyAffinityAlphabet(affinity);
         }
 
-        CNetScheduleGetJob::EState CheckState();
+        NNetScheduleGetJob::EState CheckState();
         CNetServer ReadNotifications();
         CNetServer WaitForNotifications(const CDeadline& deadline);
-        bool MoreJobs(const CNetScheduleGetJob::SEntry& entry);
+        bool MoreJobs(const NNetScheduleGetJob::SEntry& entry);
         bool CheckEntry(
-                CNetScheduleGetJob::SEntry& entry,
+                NNetScheduleGetJob::SEntry& entry,
                 CNetScheduleJob& job,
                 CNetScheduleAPI::EJobStatus* job_status);
 

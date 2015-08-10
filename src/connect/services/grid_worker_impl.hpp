@@ -337,12 +337,12 @@ private:
 
         void Main();
 
-        CNetScheduleGetJob::EState CheckState();
+        NNetScheduleGetJob::EState CheckState();
         CNetServer ReadNotifications();
         CNetServer WaitForNotifications(const CDeadline& deadline);
-        bool MoreJobs(const CNetScheduleGetJob::SEntry& entry);
+        bool MoreJobs(const NNetScheduleGetJob::SEntry& entry);
         bool CheckEntry(
-                CNetScheduleGetJob::SEntry& entry,
+                NNetScheduleGetJob::SEntry& entry,
                 CNetScheduleJob& job,
                 CNetScheduleAPI::EJobStatus* job_status);
 
