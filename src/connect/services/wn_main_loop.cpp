@@ -549,6 +549,12 @@ void SWorkerNodeJobContextImpl::x_RunJob()
 void* CMainLoopThread::Main()
 {
     SetCurrentThreadName(m_ThreadName);
+    m_Impl.Main();
+    return NULL;
+}
+
+void CMainLoopThread::CImpl::Main()
+{
     CDeadline max_wait_for_servers(
             TWorkerNode_MaxWaitForServers::GetDefault());
 
@@ -619,11 +625,9 @@ void* CMainLoopThread::Main()
         }
         try_count = 0;
     }
-
-    return NULL;
 }
 
-bool CMainLoopThread::x_EnterSuspendedState()
+bool CMainLoopThread::CImpl::x_EnterSuspendedState()
 {
     if (CGridGlobals::GetInstance().IsShuttingDown())
         return true;
@@ -650,7 +654,7 @@ bool CMainLoopThread::x_EnterSuspendedState()
     return m_WorkerNode->m_TimelineIsSuspended;
 }
 
-void CMainLoopThread::x_ProcessRequestJobNotification()
+void CMainLoopThread::CImpl::x_ProcessRequestJobNotification()
 {
     if (!x_EnterSuspendedState()) {
         CNetServer server;
@@ -662,7 +666,7 @@ void CMainLoopThread::x_ProcessRequestJobNotification()
     }
 }
 
-bool CMainLoopThread::x_WaitForNewJob(CNetScheduleJob& job)
+bool CMainLoopThread::CImpl::x_WaitForNewJob(CNetScheduleJob& job)
 {
     for (;;) {
         while (m_Timeline.HasImmediateActions()) {
@@ -724,7 +728,7 @@ bool CMainLoopThread::x_WaitForNewJob(CNetScheduleJob& job)
     }
 }
 
-bool CMainLoopThread::x_GetNextJob(CNetScheduleJob& job)
+bool CMainLoopThread::CImpl::x_GetNextJob(CNetScheduleJob& job)
 {
     if (!m_WorkerNode->x_AreMastersBusy()) {
         SleepSec(m_WorkerNode->m_NSTimeout);

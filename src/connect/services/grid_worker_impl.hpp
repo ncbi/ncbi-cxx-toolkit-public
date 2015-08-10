@@ -316,7 +316,7 @@ class CMainLoopThread : public CThread
 {
 public:
     CMainLoopThread(SGridWorkerNodeImpl* worker_node) :
-        m_WorkerNode(worker_node),
+        m_Impl(worker_node),
         m_ThreadName(worker_node->GetAppName() + "_mn")
     {
     }
@@ -324,14 +324,28 @@ public:
     virtual void* Main();
 
 private:
-    SGridWorkerNodeImpl* m_WorkerNode;
-    const string m_ThreadName;
-    CNetScheduleTimeline m_Timeline;
+    class CImpl
+    {
+    public:
+        CImpl(SGridWorkerNodeImpl* worker_node) :
+            m_WorkerNode(worker_node)
+        {
+        }
 
-    bool x_EnterSuspendedState();
-    void x_ProcessRequestJobNotification();
-    bool x_WaitForNewJob(CNetScheduleJob& job);
-    bool x_GetNextJob(CNetScheduleJob& job);
+        void Main();
+
+    private:
+        CNetScheduleTimeline m_Timeline;
+        SGridWorkerNodeImpl* m_WorkerNode;
+
+        bool x_EnterSuspendedState();
+        void x_ProcessRequestJobNotification();
+        bool x_WaitForNewJob(CNetScheduleJob& job);
+        bool x_GetNextJob(CNetScheduleJob& job);
+    };
+
+    CImpl m_Impl;
+    const string m_ThreadName;
 };
 
 END_NCBI_SCOPE
