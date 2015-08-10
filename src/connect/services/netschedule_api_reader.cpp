@@ -147,30 +147,30 @@ bool SNetScheduleJobReaderImpl::x_ReadJob(SNetServerImpl* server,
     return ret;
 }
 
-void SNetScheduleJobReaderImpl::ReadNotifications()
+CNetServer SNetScheduleJobReaderImpl::ReadNotifications()
 {
-    x_ProcessReadJobNotifications();
+    return x_ProcessReadJobNotifications();
 }
 
-bool SNetScheduleJobReaderImpl::WaitForNotifications(const CDeadline& deadline)
+CNetServer SNetScheduleJobReaderImpl::WaitForNotifications(const CDeadline& deadline)
 {
     if (m_API->m_NotificationThread->m_ReadNotifications.Wait(deadline)) {
-        x_ProcessReadJobNotifications();
-        return true;
+        return x_ProcessReadJobNotifications();
     }
 
-    return false;
+    return CNetServer();
 }
 
-void SNetScheduleJobReaderImpl::x_ProcessReadJobNotifications()
+CNetServer SNetScheduleJobReaderImpl::x_ProcessReadJobNotifications()
 {
     string ns_node;
     CNetServer server;
 
-    while (m_API->m_NotificationThread->m_ReadNotifications.GetNextNotification(
+    if (m_API->m_NotificationThread->m_ReadNotifications.GetNextNotification(
                 &ns_node))
-        if (m_API->GetServerByNode(ns_node, &server))
-            m_Timeline.MoveToImmediateActions(server);
+        m_API->GetServerByNode(ns_node, &server);
+
+    return server;
 }
 
 SNetScheduleJobReaderImpl::EState SNetScheduleJobReaderImpl::CheckState()
@@ -241,7 +241,9 @@ SNetScheduleJobReaderImpl::EResult SNetScheduleJobReaderImpl::GetJob(
             m_Timeline.CheckScheduledActions();
 
             // Check if there's a notification in the UDP socket.
-            ReadNotifications();
+            while (CNetServer server = ReadNotifications()) {
+                m_Timeline.MoveToImmediateActions(server);
+            }
         }
 
         if (CheckState() == eStop)
@@ -261,7 +263,10 @@ SNetScheduleJobReaderImpl::EResult SNetScheduleJobReaderImpl::GetJob(
         bool last_wait = deadline < next_event_time;
         if (last_wait) next_event_time = deadline;
 
-        if (WaitForNotifications(next_event_time)) {
+        if (CNetServer server = WaitForNotifications(next_event_time)) {
+            do {
+                m_Timeline.MoveToImmediateActions(server);
+            } while (server = ReadNotifications());
         } else if (last_wait) {
             return eAgain;
         } else {

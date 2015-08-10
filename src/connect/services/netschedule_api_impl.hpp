@@ -648,8 +648,8 @@ private:
     };
 
     EState CheckState();
-    void ReadNotifications();
-    bool WaitForNotifications(const CDeadline& deadline);
+    CNetServer ReadNotifications();
+    CNetServer WaitForNotifications(const CDeadline& deadline);
     bool MoreJobs();
     bool CheckEntry(
             CNetScheduleTimeline::SEntry& entry,
@@ -672,7 +672,7 @@ private:
     const unsigned m_Timeout;
     bool m_MoreJobs;
 
-    void x_ProcessReadJobNotifications();
+    CNetServer x_ProcessReadJobNotifications();
 };
 
 struct SNetScheduleAdminImpl : public CObject

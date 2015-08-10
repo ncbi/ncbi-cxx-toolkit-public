@@ -661,34 +661,35 @@ bool CMainLoopThread::CImpl::x_EnterSuspendedState()
     return CMainLoopThread::CImpl::CheckState() != eWorking;
 }
 
-void CMainLoopThread::CImpl::ReadNotifications()
+CNetServer CMainLoopThread::CImpl::ReadNotifications()
 {
-    while (m_WorkerNode->m_NSExecutor->
+    if (m_WorkerNode->m_NSExecutor->
             m_NotificationHandler.ReceiveNotification())
-        x_ProcessRequestJobNotification();
+        return x_ProcessRequestJobNotification();
+
+    return CNetServer();
 }
 
-bool CMainLoopThread::CImpl::WaitForNotifications(const CDeadline& deadline)
+CNetServer CMainLoopThread::CImpl::WaitForNotifications(const CDeadline& deadline)
 {
      if (m_WorkerNode->m_NSExecutor->
              m_NotificationHandler.WaitForNotification(deadline)) {
-        x_ProcessRequestJobNotification();
-        return true;
+        return x_ProcessRequestJobNotification();
      }
 
-     return false;
+     return CNetServer();
 }
 
-void CMainLoopThread::CImpl::x_ProcessRequestJobNotification()
+CNetServer CMainLoopThread::CImpl::x_ProcessRequestJobNotification()
 {
+    CNetServer server;
     if (!x_EnterSuspendedState()) {
-        CNetServer server;
-
-        if (m_WorkerNode->m_NSExecutor->
-                m_NotificationHandler.CheckRequestJobNotification(
-                        m_WorkerNode->m_NSExecutor, &server))
-            m_Timeline.MoveToImmediateActions(server);
+        m_WorkerNode->m_NSExecutor->
+            m_NotificationHandler.CheckRequestJobNotification(
+                    m_WorkerNode->m_NSExecutor, &server);
     }
+
+    return server;
 }
 
 bool MoreJobs()
@@ -745,7 +746,9 @@ CMainLoopThread::CImpl::EResult CMainLoopThread::CImpl::GetJob(
             m_Timeline.CheckScheduledActions();
 
             // Check if there's a notification in the UDP socket.
-            ReadNotifications();
+            while (CNetServer server = ReadNotifications()) {
+                m_Timeline.MoveToImmediateActions(server);
+            }
         }
 
         if (CheckState() == eStop)
@@ -765,7 +768,10 @@ CMainLoopThread::CImpl::EResult CMainLoopThread::CImpl::GetJob(
         bool last_wait = deadline < next_event_time;
         if (last_wait) next_event_time = deadline;
 
-        if (WaitForNotifications(next_event_time)) {
+        if (CNetServer server = WaitForNotifications(next_event_time)) {
+            do {
+                m_Timeline.MoveToImmediateActions(server);
+            } while (server = ReadNotifications());
         } else if (last_wait) {
             return eAgain;
         } else {

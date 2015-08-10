@@ -344,8 +344,8 @@ private:
         };
 
         EState CheckState();
-        void ReadNotifications();
-        bool WaitForNotifications(const CDeadline& deadline);
+        CNetServer ReadNotifications();
+        CNetServer WaitForNotifications(const CDeadline& deadline);
         bool MoreJobs();
         bool CheckEntry(
                 CNetScheduleTimeline::SEntry& entry,
@@ -370,7 +370,7 @@ private:
         const unsigned m_Timeout;
 
         bool x_EnterSuspendedState();
-        void x_ProcessRequestJobNotification();
+        CNetServer x_ProcessRequestJobNotification();
         bool x_WaitForNewJob(CNetScheduleJob& job);
         bool x_GetNextJob(CNetScheduleJob& job);
     };
