@@ -348,11 +348,6 @@ private:
                 CNetScheduleJob& job,
                 CNetScheduleAPI::EJobStatus* job_status);
 
-        EResult GetJob(
-                const CDeadline& deadline,
-                CNetScheduleJob& job,
-                CNetScheduleAPI::EJobStatus* job_status);
-
         SGridWorkerNodeImpl* m_WorkerNode;
         CNetScheduleAPI m_API;
         const unsigned m_Timeout;

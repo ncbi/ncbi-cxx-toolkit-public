@@ -568,6 +568,87 @@ public:
         eNoJobs
     };
 
+    EResult GetJob(
+            const CDeadline& deadline,
+            CNetScheduleJob& job,
+            CNetScheduleAPI::EJobStatus* job_status)
+    {
+        for (;;) {
+            for (;;) {
+                EState state = CheckState();
+
+                if (state == eStopped) {
+                    return eInterrupt;
+                }
+                
+                if (state == eRestarted) {
+                    Restart();
+                }
+
+                if (!HasImmediateActions()) {
+                    break;
+                }
+
+                CNetScheduleTimeline::SEntry timeline_entry(PullImmediateAction());
+
+                if (IsDiscoveryAction(timeline_entry)) {
+                    NextDiscoveryIteration(m_API);
+                    PushScheduledAction(timeline_entry, m_Timeout);
+                } else {
+                    try {
+                        if (CheckEntry(timeline_entry, job, job_status)) {
+                            // A job has been returned; add the server to
+                            // immediate actions because there can be more
+                            // jobs in the queue.
+                            PushImmediateAction(timeline_entry);
+                            return eJob;
+                        } else {
+                            // No job has been returned by this server;
+                            // query the server later.
+                            PushScheduledAction(timeline_entry, m_Timeout);
+                        }
+                    }
+                    catch (CNetSrvConnException& e) {
+                        // Because a connection error has occurred, do not
+                        // put this server back to the timeline.
+                        LOG_POST(Warning << e.GetMsg());
+                    }
+                }
+
+                CheckScheduledActions();
+
+                // Check if there's a notification in the UDP socket.
+                while (CNetServer server = ReadNotifications()) {
+                    MoveToImmediateActions(server);
+                }
+            }
+
+            if (!MoreJobs())
+                return eNoJobs;
+
+            if (deadline.IsExpired())
+                return eAgain;
+
+            // At least, the discovery action must be there
+            _ASSERT(HasScheduledActions());
+
+            // There's still time. Wait for notifications and query the servers.
+            CDeadline next_event_time = GetNextTimeout();
+            bool last_wait = deadline < next_event_time;
+            if (last_wait) next_event_time = deadline;
+
+            if (CNetServer server = WaitForNotifications(next_event_time)) {
+                do {
+                    MoveToImmediateActions(server);
+                } while (server = ReadNotifications());
+            } else if (last_wait) {
+                return eAgain;
+            } else {
+                PushImmediateAction(PullScheduledAction());
+            }
+        }
+    }
+
 private:
     struct SEntryByAddress
     {
@@ -682,11 +763,6 @@ private:
     bool MoreJobs();
     bool CheckEntry(
             CNetScheduleTimeline::SEntry& entry,
-            CNetScheduleJob& job,
-            CNetScheduleAPI::EJobStatus* job_status);
-
-    EResult GetJob(
-            const CDeadline& deadline,
             CNetScheduleJob& job,
             CNetScheduleAPI::EJobStatus* job_status);
 
