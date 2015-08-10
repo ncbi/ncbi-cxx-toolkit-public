@@ -109,12 +109,14 @@ bool SNetScheduleJobReaderImpl::CImpl::CheckEntry(
     bool no_more_jobs = true;
 
     string cmd("READ2 reader_aff=0 ");
+    bool prioritized_aff = false;
 
     if (!m_Affinity.empty()) {
         cmd.append("any_aff=0 aff=");
         cmd.append(m_Affinity);
     } else if (!prio_aff_list.empty()) {
-        cmd.append("any_aff=0 prioritized_aff=1 aff=");
+        prioritized_aff = true;
+        cmd.append("any_aff=0 aff=");
         cmd.append(prio_aff_list);
     } else {
         cmd.append("any_aff=1");
@@ -128,6 +130,10 @@ bool SNetScheduleJobReaderImpl::CImpl::CheckEntry(
     }
 
     g_AppendClientIPSessionIDHitID(cmd);
+
+    if (prioritized_aff) {
+        cmd.append(" prioritized_aff=1");
+    }
 
     CNetServer::SExecResult exec_result;
 
