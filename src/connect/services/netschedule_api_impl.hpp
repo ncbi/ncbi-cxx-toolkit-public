@@ -474,6 +474,7 @@ class CNetScheduleGetJob
     typedef list<SServerAddress> TServers;
     typedef NNetScheduleGetJob::SEntry SEntry;
     typedef list<SEntry> TTimeline;
+    typedef TTimeline::iterator TIterator;
 
     // TODO: This can be replaced by lambda after we migrate to C++11
     struct SEntryHasMoreJobs
@@ -501,17 +502,19 @@ class CNetScheduleGetJob
                 m_ImmediateActions.push_back(m_DiscoveryAction);
             }
 
-            if (m_ImmediateActions.empty()) {
+            TIterator i = m_ImmediateActions.begin();
+
+            if (i == m_ImmediateActions.end()) {
                 break;
             }
 
-            SEntry& timeline_entry(m_ImmediateActions.front());
+            SEntry& timeline_entry(*i);
 
             if (timeline_entry == m_DiscoveryAction) {
                 NextDiscoveryIteration();
                 timeline_entry.deadline = CDeadline(m_Impl.m_Timeout, 0);
                 m_ScheduledActions.splice(m_ScheduledActions.end(),
-                        m_ImmediateActions, m_ImmediateActions.begin());
+                        m_ImmediateActions, i);
             } else {
                 try {
                     if (m_Impl.CheckEntry(timeline_entry, kEmptyStr, job, job_status)) {
@@ -524,17 +527,17 @@ class CNetScheduleGetJob
                         // query the server later.
                         timeline_entry.deadline = CDeadline(m_Impl.m_Timeout, 0);
                         m_ScheduledActions.splice(m_ScheduledActions.end(),
-                                m_ImmediateActions, m_ImmediateActions.begin());
+                                m_ImmediateActions, i);
                     }
                 }
                 catch (CNetSrvConnException& e) {
                     // Because a connection error has occurred, do not
                     // put this server back to the timeline.
-                    m_ImmediateActions.pop_front();
+                    m_ImmediateActions.erase(i);
                     LOG_POST(Warning << e.GetMsg());
                 }
                 catch (...) {
-                    m_ImmediateActions.pop_front();
+                    m_ImmediateActions.erase(i);
                     throw;
                 }
             }
