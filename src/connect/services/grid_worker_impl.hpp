@@ -326,11 +326,12 @@ public:
     virtual void* Main();
 
 private:
-    class CImpl : public CNetScheduleGetJob::IImpl
+    class CImpl
     {
     public:
         CImpl(SGridWorkerNodeImpl* worker_node) :
-            IImpl(worker_node->m_NetScheduleAPI, worker_node->m_NSTimeout),
+            m_API(worker_node->m_NetScheduleAPI),
+            m_Timeout(worker_node->m_NSTimeout),
             m_WorkerNode(worker_node)
         {
         }
@@ -346,6 +347,9 @@ private:
                 CNetScheduleJob& job,
                 CNetScheduleAPI::EJobStatus* job_status);
 
+        CNetScheduleAPI m_API;
+        const unsigned m_Timeout;
+
     private:
         SGridWorkerNodeImpl* m_WorkerNode;
 
@@ -356,7 +360,7 @@ private:
 
     SGridWorkerNodeImpl* m_WorkerNode;
     CImpl m_Impl;
-    CNetScheduleGetJob m_Timeline;
+    CNetScheduleGetJob<CImpl> m_Timeline;
     const string m_ThreadName;
 };
 

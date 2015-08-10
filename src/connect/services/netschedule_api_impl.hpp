@@ -458,6 +458,7 @@ namespace NNetScheduleGetJob
     };
 };
 
+template <class TImpl>
 class CNetScheduleGetJob
 {
     typedef list<SServerAddress> TServers;
@@ -466,39 +467,18 @@ public:
     typedef NNetScheduleGetJob::SEntry SEntry;
     typedef deque<SEntry> TTimeline;
 
-    struct IImpl
-    {
-        CNetScheduleAPI m_API;
-        const unsigned m_Timeout;
-
-        IImpl(CNetScheduleAPI::TInstance ns_api_impl, unsigned timeout) :
-            m_API(ns_api_impl),
-            m_Timeout(timeout)
-        {
-        }
-
-        virtual NNetScheduleGetJob::EState CheckState() = 0;
-        virtual CNetServer ReadNotifications() = 0;
-        virtual CNetServer WaitForNotifications(const CDeadline& deadline) = 0;
-        virtual bool CheckEntry(
-                NNetScheduleGetJob::SEntry& entry,
-                CNetScheduleJob& job,
-                CNetScheduleAPI::EJobStatus* job_status) = 0;
-        virtual bool MoreJobs(const NNetScheduleGetJob::SEntry& entry) = 0;
-    };
-
-    CNetScheduleGetJob(IImpl& impl) :
+    CNetScheduleGetJob(TImpl& impl) :
         m_Impl(impl),
         m_DiscoveryAction(SServerAddress(0, 0), false)
     {
         m_ImmediateActions.push_back(m_DiscoveryAction);
     }
 
-   // TODO: This can be replaced by lambda after we migrate to C++11
+    // TODO: This can be replaced by lambda after we migrate to C++11
     struct SEntryHasMoreJobs
     {
-        IImpl& impl;
-        SEntryHasMoreJobs(IImpl& i) : impl(i) {}
+        TImpl& impl;
+        SEntryHasMoreJobs(TImpl& i) : impl(i) {}
         bool operator()(const SEntry& entry) { return impl.MoreJobs(entry); }
     };
 
@@ -611,7 +591,7 @@ public:
         }
     }
 
-    IImpl& m_Impl;
+    TImpl& m_Impl;
 
 private:
     static void Filter(TTimeline& timeline, TServers& servers)
@@ -705,12 +685,13 @@ struct SNetScheduleJobReaderImpl : public CObject
     void InterruptReading();
 
 private:
-    class CImpl : public CNetScheduleGetJob::IImpl
+    class CImpl
     {
     public:
         CImpl(CNetScheduleAPI::TInstance ns_api_impl,
                 const string& group, const string& affinity) :
-            IImpl(ns_api_impl, s_Timeout),
+            m_API(ns_api_impl),
+            m_Timeout(s_Timeout),
             m_JobGroup(group),
             m_Affinity(affinity),
             m_MoreJobs(false)
@@ -728,6 +709,8 @@ private:
                 CNetScheduleJob& job,
                 CNetScheduleAPI::EJobStatus* job_status);
 
+        CNetScheduleAPI m_API;
+        const unsigned m_Timeout;
         string m_JobGroup;
         string m_Affinity;
 
@@ -743,7 +726,7 @@ private:
     };
 
     CImpl m_Impl;
-    CNetScheduleGetJob m_Timeline;
+    CNetScheduleGetJob<CImpl> m_Timeline;
 };
 
 struct SNetScheduleAdminImpl : public CObject
