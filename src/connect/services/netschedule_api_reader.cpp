@@ -101,6 +101,7 @@ static bool s_ParseReadJobResponse(const string& response,
 
 bool SNetScheduleJobReaderImpl::CImpl::CheckEntry(
         NNetScheduleGetJob::SEntry& entry,
+        const string& prio_aff_list,
         CNetScheduleJob& job,
         CNetScheduleAPI::EJobStatus* job_status)
 {
@@ -109,11 +110,14 @@ bool SNetScheduleJobReaderImpl::CImpl::CheckEntry(
 
     string cmd("READ2 reader_aff=0 ");
 
-    if (m_Affinity.empty())
-        cmd.append("any_aff=1");
-    else {
+    if (!m_Affinity.empty()) {
         cmd.append("any_aff=0 aff=");
         cmd.append(m_Affinity);
+    } else if (!prio_aff_list.empty()) {
+        cmd.append("any_aff=0 prioritized_aff=1 aff=");
+        cmd.append(prio_aff_list);
+    } else {
+        cmd.append("any_aff=1");
     }
 
     m_API->m_NotificationThread->CmdAppendPortAndTimeout(&cmd, m_Timeout);

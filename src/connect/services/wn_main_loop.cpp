@@ -695,12 +695,13 @@ bool MoreJobs(const NNetScheduleGetJob::SEntry& /*entry*/)
 
 bool CMainLoopThread::CImpl::CheckEntry(
         NNetScheduleGetJob::SEntry& entry,
+        const string& prio_aff_list,
         CNetScheduleJob& job,
         CNetScheduleAPI::EJobStatus* /*job_status*/)
 {
     CNetServer server(m_API.GetService().GetServer(entry.server_address));
     return m_WorkerNode->m_NSExecutor->x_GetJobWithAffinityLadder(server,
-            m_Timeout, job);
+            m_Timeout, prio_aff_list, job);
 }
 
 bool CMainLoopThread::x_GetNextJob(CNetScheduleJob& job)

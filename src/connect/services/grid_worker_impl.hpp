@@ -344,6 +344,7 @@ private:
         bool MoreJobs(const NNetScheduleGetJob::SEntry& entry);
         bool CheckEntry(
                 NNetScheduleGetJob::SEntry& entry,
+                const string& prio_aff_list,
                 CNetScheduleJob& job,
                 CNetScheduleAPI::EJobStatus* job_status);
 

@@ -391,6 +391,7 @@ struct SNetScheduleExecutorImpl : public CObject
             const string& affinity_list);
     bool x_GetJobWithAffinityLadder(SNetServerImpl* server,
             const CDeadline& timeout,
+            const string& prio_aff_list,
             CNetScheduleJob& job);
 
     void ExecWithOrWithoutRetry(const CNetScheduleJob& job, const string& cmd);
@@ -512,7 +513,7 @@ class CNetScheduleGetJob
                 MoveHead(m_ImmediateActions, m_ScheduledActions);
             } else {
                 try {
-                    if (m_Impl.CheckEntry(timeline_entry, job, job_status)) {
+                    if (m_Impl.CheckEntry(timeline_entry, kEmptyStr, job, job_status)) {
                         // A job has been returned; add the server to
                         // immediate actions because there can be more
                         // jobs in the queue.
@@ -719,6 +720,7 @@ private:
         bool MoreJobs(const NNetScheduleGetJob::SEntry& entry);
         bool CheckEntry(
                 NNetScheduleGetJob::SEntry& entry,
+                const string& prio_aff_list,
                 CNetScheduleJob& job,
                 CNetScheduleAPI::EJobStatus* job_status);
 

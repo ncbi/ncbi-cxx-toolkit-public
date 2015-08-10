@@ -367,24 +367,48 @@ bool SNetScheduleExecutorImpl::x_GetJobWithAffinityList(SNetServerImpl* server,
 }
 
 bool SNetScheduleExecutorImpl::x_GetJobWithAffinityLadder(
-        SNetServerImpl* server, const CDeadline& timeout, CNetScheduleJob& job)
+        SNetServerImpl* server, const CDeadline& timeout, 
+        const string& prio_aff_list, CNetScheduleJob& job)
 {
-    if (m_API->m_AffinityLadder.empty())
+    if (prio_aff_list.empty())
         return x_GetJobWithAffinityList(server, &timeout, job,
                 m_AffinityPreference, kEmptyStr);
 
-    SNetScheduleAPIImpl::TAffinityLadder::const_iterator it =
-        m_API->m_AffinityLadder.begin();
+    // TODO: Implement version check (and throw #ifdef out)
+#ifdef NETSCHEDULE_API_HAS_SERVER_VERSION_CHECK
+    if (server_version >= "4.22.0") {
+        string cmd("GET2 wnode_aff=0 any_aff=0 prioritized_aff=1 aff=");
+        cmd += prio_aff_list;
 
-    for (;;) {
-        string affinity_list = it->second;
-        if (++it == m_API->m_AffinityLadder.end())
-            return x_GetJobWithAffinityList(server, &timeout, job,
-                    m_AffinityPreference, affinity_list);
-        else if (x_GetJobWithAffinityList(server, NULL, job,
-                CNetScheduleExecutor::ePreferredAffinities, affinity_list))
-            return true;
+        m_NotificationHandler.CmdAppendTimeoutGroupAndClientInfo(cmd,
+                &timeout, m_JobGroup);
+
+        return ExecGET(server, cmd, job);
     }
+#endif
+
+    // XXX: Compatibility mode.
+    // TODO: Can be thrown out after all NS serves are updated to version 4.22.0+
+    list<CTempString> affinity_tokens;
+    NStr::Split(prio_aff_list, ",", affinity_tokens);
+
+    string affinity_list;
+    list<CTempString>::const_iterator it = affinity_tokens.begin();
+
+    while (it != affinity_tokens.end()) {
+        affinity_list += *it;
+        const bool last_try = ++it == affinity_tokens.end();
+
+        if (x_GetJobWithAffinityList(server, last_try ? &timeout : NULL,
+                    job, CNetScheduleExecutor::eExplicitAffinitiesOnly,
+                    affinity_list)) {
+            return true;
+        }
+
+        affinity_list += ',';
+    }
+
+    return false;
 }
 
 bool CNetScheduleExecutor::GetJob(CNetScheduleJob& job,
