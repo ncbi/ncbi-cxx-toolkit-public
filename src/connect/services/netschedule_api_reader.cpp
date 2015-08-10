@@ -142,6 +142,12 @@ bool SNetScheduleJobReaderImpl::x_ReadJob(SNetServerImpl* server,
             job_status, no_more_jobs);
 }
 
+void SNetScheduleJobReaderImpl::ReadNotifications()
+{
+    // Exact class name to avoid additional vtable lookup
+    return SNetScheduleJobReaderImpl::ProcessNotifications();
+}
+
 bool SNetScheduleJobReaderImpl::WaitForNotifications(const CDeadline& deadline)
 {
     return m_API->m_NotificationThread->m_ReadNotifications.Wait(deadline);
@@ -223,7 +229,7 @@ CNetScheduleJobReader::EReadNextJobResult SNetScheduleJobReaderImpl::ReadNextJob
             m_Timeline.CheckScheduledActions();
 
             // Check if there's a notification in the UDP socket.
-            ProcessNotifications();
+            ReadNotifications();
         }
 
         if (CheckState() == eStop)

@@ -661,6 +661,14 @@ bool CMainLoopThread::CImpl::x_EnterSuspendedState()
     return CMainLoopThread::CImpl::CheckState() != eWorking;
 }
 
+void CMainLoopThread::CImpl::ReadNotifications()
+{
+    while (m_WorkerNode->m_NSExecutor->
+            m_NotificationHandler.ReceiveNotification())
+        // Exact class name to avoid additional vtable lookup
+        CMainLoopThread::CImpl::ProcessNotifications();
+}
+
 bool CMainLoopThread::CImpl::WaitForNotifications(const CDeadline& deadline)
 {
     return m_WorkerNode->m_NSExecutor->
@@ -720,9 +728,7 @@ bool CMainLoopThread::CImpl::x_WaitForNewJob(CNetScheduleJob& job)
             m_Timeline.CheckScheduledActions();
 
             // Check if there's a notification in the UDP socket.
-            while (m_WorkerNode->m_NSExecutor->
-                    m_NotificationHandler.ReceiveNotification())
-                ProcessNotifications();
+            ReadNotifications();
         }
 
         if (CheckState() == eStop)
