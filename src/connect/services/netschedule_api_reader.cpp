@@ -156,12 +156,12 @@ CNetServer SNetScheduleJobReaderImpl::CImpl::ReadNotifications()
     return server;
 }
 
-CNetScheduleTimeline::EState SNetScheduleJobReaderImpl::CImpl::CheckState()
+CNetScheduleGetJob::EState SNetScheduleJobReaderImpl::CImpl::CheckState()
 {
-    return CNetScheduleTimeline::eWorking;
+    return CNetScheduleGetJob::eWorking;
 }
 
-bool SNetScheduleJobReaderImpl::CImpl::MoreJobs(const CNetScheduleTimeline::SEntry& entry)
+bool SNetScheduleJobReaderImpl::CImpl::MoreJobs(const CNetScheduleGetJob::SEntry& entry)
 {
     if (m_MoreJobs) {
         m_MoreJobs = false;
@@ -172,7 +172,7 @@ bool SNetScheduleJobReaderImpl::CImpl::MoreJobs(const CNetScheduleTimeline::SEnt
 }
 
 bool SNetScheduleJobReaderImpl::CImpl::CheckEntry(
-        CNetScheduleTimeline::SEntry& entry,
+        CNetScheduleGetJob::SEntry& entry,
         CNetScheduleJob& job,
         CNetScheduleAPI::EJobStatus* job_status)
 {
@@ -221,16 +221,16 @@ CNetScheduleJobReader::EReadNextJobResult SNetScheduleJobReaderImpl::ReadNextJob
     CDeadline deadline(timeout ? *timeout : CTimeout(0, 0));
 
     switch (m_Timeline.GetJob(deadline, *job, job_status)) {
-    case CNetScheduleTimeline::eJob:
+    case CNetScheduleGetJob::eJob:
         return CNetScheduleJobReader::eRNJ_JobReady;
 
-    case CNetScheduleTimeline::eAgain:
+    case CNetScheduleGetJob::eAgain:
         return CNetScheduleJobReader::eRNJ_NotReady;
 
-    case CNetScheduleTimeline::eInterrupt:
+    case CNetScheduleGetJob::eInterrupt:
         return CNetScheduleJobReader::eRNJ_Interrupt;
 
-    default /* CNetScheduleTimeline::eNoJobs */:
+    default /* CNetScheduleGetJob::eNoJobs */:
         return CNetScheduleJobReader::eRNJ_NoMoreJobs;
     }
 }

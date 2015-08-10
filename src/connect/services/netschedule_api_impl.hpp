@@ -423,7 +423,7 @@ public:
     SNetScheduleExecutorImpl* m_Executor;
 };
 
-class CNetScheduleTimeline
+class CNetScheduleGetJob
 {
     typedef list<SServerAddress> TServers;
 
@@ -470,13 +470,13 @@ public:
         virtual CNetServer ReadNotifications() = 0;
         virtual CNetServer WaitForNotifications(const CDeadline& deadline) = 0;
         virtual bool CheckEntry(
-                CNetScheduleTimeline::SEntry& entry,
+                CNetScheduleGetJob::SEntry& entry,
                 CNetScheduleJob& job,
                 CNetScheduleAPI::EJobStatus* job_status) = 0;
-        virtual bool MoreJobs(const CNetScheduleTimeline::SEntry& entry) = 0;
+        virtual bool MoreJobs(const CNetScheduleGetJob::SEntry& entry) = 0;
     };
 
-    CNetScheduleTimeline(IImpl& impl) :
+    CNetScheduleGetJob(IImpl& impl) :
         m_Impl(impl),
         m_DiscoveryAction(SServerAddress(0, 0), false)
     {
@@ -701,7 +701,7 @@ struct SNetScheduleJobReaderImpl : public CObject
     void InterruptReading();
 
 private:
-    class CImpl : public CNetScheduleTimeline::IImpl
+    class CImpl : public CNetScheduleGetJob::IImpl
     {
     public:
         CImpl(CNetScheduleAPI::TInstance ns_api_impl,
@@ -715,12 +715,12 @@ private:
             SNetScheduleAPIImpl::VerifyAffinityAlphabet(affinity);
         }
 
-        CNetScheduleTimeline::EState CheckState();
+        CNetScheduleGetJob::EState CheckState();
         CNetServer ReadNotifications();
         CNetServer WaitForNotifications(const CDeadline& deadline);
-        bool MoreJobs(const CNetScheduleTimeline::SEntry& entry);
+        bool MoreJobs(const CNetScheduleGetJob::SEntry& entry);
         bool CheckEntry(
-                CNetScheduleTimeline::SEntry& entry,
+                CNetScheduleGetJob::SEntry& entry,
                 CNetScheduleJob& job,
                 CNetScheduleAPI::EJobStatus* job_status);
 
@@ -739,7 +739,7 @@ private:
     };
 
     CImpl m_Impl;
-    CNetScheduleTimeline m_Timeline;
+    CNetScheduleGetJob m_Timeline;
 };
 
 struct SNetScheduleAdminImpl : public CObject

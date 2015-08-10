@@ -326,7 +326,7 @@ public:
     virtual void* Main();
 
 private:
-    class CImpl : public CNetScheduleTimeline::IImpl
+    class CImpl : public CNetScheduleGetJob::IImpl
     {
     public:
         CImpl(SGridWorkerNodeImpl* worker_node) :
@@ -337,12 +337,12 @@ private:
 
         void Main();
 
-        CNetScheduleTimeline::EState CheckState();
+        CNetScheduleGetJob::EState CheckState();
         CNetServer ReadNotifications();
         CNetServer WaitForNotifications(const CDeadline& deadline);
-        bool MoreJobs(const CNetScheduleTimeline::SEntry& entry);
+        bool MoreJobs(const CNetScheduleGetJob::SEntry& entry);
         bool CheckEntry(
-                CNetScheduleTimeline::SEntry& entry,
+                CNetScheduleGetJob::SEntry& entry,
                 CNetScheduleJob& job,
                 CNetScheduleAPI::EJobStatus* job_status);
 
@@ -356,7 +356,7 @@ private:
 
     SGridWorkerNodeImpl* m_WorkerNode;
     CImpl m_Impl;
-    CNetScheduleTimeline m_Timeline;
+    CNetScheduleGetJob m_Timeline;
     const string m_ThreadName;
 };
 
