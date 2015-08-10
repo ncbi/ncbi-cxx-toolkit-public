@@ -632,37 +632,33 @@ bool CMainLoopThread::x_PerformTimelineAction(
         }
 
         m_Timeline.PushScheduledAction(timeline_entry, m_WorkerNode->m_NSTimeout);
-        return false;
-    }
+    } else if (!x_EnterSuspendedState()) {
+        CNetServer server(m_Timeline.GetServer(m_WorkerNode->m_NetScheduleAPI,
+                    timeline_entry));
 
-    if (x_EnterSuspendedState())
-        return false;
-
-    CNetServer server(m_Timeline.GetServer(m_WorkerNode->m_NetScheduleAPI,
-                timeline_entry));
-
-    try {
-        if (m_WorkerNode->m_NSExecutor->x_GetJobWithAffinityLadder(server,
-                m_WorkerNode->m_NSTimeout, job)) {
-            // A job has been returned; add the server to
-            // immediate actions because there can be more
-            // jobs in the queue.
-            m_Timeline.PushImmediateAction(timeline_entry);
-            return true;
-        } else {
-            // No job has been returned by this server;
-            // query the server later.
-            m_Timeline.PushScheduledAction(timeline_entry,
-                    m_WorkerNode->m_NSTimeout);
-            return false;
+        try {
+            if (m_WorkerNode->m_NSExecutor->x_GetJobWithAffinityLadder(server,
+                    m_WorkerNode->m_NSTimeout, job)) {
+                // A job has been returned; add the server to
+                // immediate actions because there can be more
+                // jobs in the queue.
+                m_Timeline.PushImmediateAction(timeline_entry);
+                return true;
+            } else {
+                // No job has been returned by this server;
+                // query the server later.
+                m_Timeline.PushScheduledAction(timeline_entry,
+                        m_WorkerNode->m_NSTimeout);
+            }
+        }
+        catch (CNetSrvConnException& e) {
+            // Because a connection error has occurred, do not
+            // put this server back to the timeline.
+            LOG_POST(Warning << e.GetMsg());
         }
     }
-    catch (CNetSrvConnException& e) {
-        // Because a connection error has occurred, do not
-        // put this server back to the timeline.
-        LOG_POST(Warning << e.GetMsg());
-        return false;
-    }
+
+    return false;
 }
 
 bool CMainLoopThread::x_EnterSuspendedState()

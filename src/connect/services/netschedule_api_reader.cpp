@@ -156,37 +156,36 @@ bool SNetScheduleJobReaderImpl::x_PerformTimelineAction(
     if (m_Timeline.IsDiscoveryAction(timeline_entry)) {
         m_Timeline.NextDiscoveryIteration(m_API);
         m_Timeline.PushScheduledAction(timeline_entry, READJOB_TIMEOUT);
-        return false;
-    }
+    } else {
+        CNetServer server(m_Timeline.GetServer(m_API, timeline_entry));
 
-    CNetServer server(m_Timeline.GetServer(m_API, timeline_entry));
+        try {
+            if (x_ReadJob(server, READJOB_TIMEOUT,
+                    job, job_status, no_more_jobs)) {
+                // A job has been returned; add the server to
+                // immediate actions because there can be more
+                // jobs in the queue.
+                m_Timeline.PushImmediateAction(timeline_entry);
+                return true;
+            } else {
+                // Cache the result for the server,
+                // so we don't need to ask the server again about matching jobs
+                // while waiting for its notifications
+                timeline_entry.more_jobs = !*no_more_jobs;
 
-    try {
-        if (x_ReadJob(server, READJOB_TIMEOUT,
-                job, job_status, no_more_jobs)) {
-            // A job has been returned; add the server to
-            // immediate actions because there can be more
-            // jobs in the queue.
-            m_Timeline.PushImmediateAction(timeline_entry);
-            return true;
-        } else {
-            // Cache the result for the server,
-            // so we don't need to ask the server again about matching jobs
-            // while waiting for its notifications
-            timeline_entry.more_jobs = !*no_more_jobs;
-
-            // No job has been returned by this server;
-            // query the server later.
-            m_Timeline.PushScheduledAction(timeline_entry, READJOB_TIMEOUT);
-            return false;
+                // No job has been returned by this server;
+                // query the server later.
+                m_Timeline.PushScheduledAction(timeline_entry, READJOB_TIMEOUT);
+            }
+        }
+        catch (CNetSrvConnException& e) {
+            // Because a connection error has occurred, do not
+            // put this server back to the timeline.
+            LOG_POST(Warning << e.GetMsg());
         }
     }
-    catch (CNetSrvConnException& e) {
-        // Because a connection error has occurred, do not
-        // put this server back to the timeline.
-        LOG_POST(Warning << e.GetMsg());
-        return false;
-    }
+
+    return false;
 }
 
 void SNetScheduleJobReaderImpl::x_ProcessReadJobNotifications()
