@@ -498,6 +498,7 @@ class CNetScheduleGetJob
 
         void Interrupt() {}
         void Restart() {}
+        TIterator Begin() const     { return m_Timeline.begin(); }
         TIterator Next() const      { return m_Timeline.begin(); }
         const string& Affinity()    { return kEmptyStr; }
         bool Done()                 { return true; }
@@ -520,7 +521,7 @@ class CNetScheduleGetJob
     template <class TJobHolder>
     NNetScheduleGetJob::EResult GetJobImmediately(TJobHolder& holder)
     {
-        for (;;) {
+        for (TIterator i = holder.Begin(); ; i = holder.Next()) {
             NNetScheduleGetJob::EState state = m_Impl.CheckState();
 
             if (state == NNetScheduleGetJob::eStopped) {
@@ -534,10 +535,10 @@ class CNetScheduleGetJob
                 m_ImmediateActions.clear();
                 m_ImmediateActions.push_back(m_DiscoveryAction);
                 holder.Restart();
+                continue;
             }
 
-            TIterator i = holder.Next();
-
+            // We must check i here to let state be checked before leaving loop
             if (i == m_ImmediateActions.end()) {
                 break;
             }
