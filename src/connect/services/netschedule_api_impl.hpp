@@ -651,7 +651,9 @@ class CNetScheduleGetJob
                 continue;
             }
 
-            bool valid_iterator = false;
+            // Whether to move to the next entry
+            // (false means we are already at the next entry due to splice/erase)
+            bool increment = false;
 
             try {
                 if (m_Impl.CheckEntry(*i, holder.Affinity(),
@@ -663,7 +665,7 @@ class CNetScheduleGetJob
                         return NNetScheduleGetJob::eJob;
                     }
 
-                    valid_iterator = true;
+                    increment = true;
                 } else {
                     // No job has been returned by this server;
                     // query the server later.
@@ -700,7 +702,7 @@ class CNetScheduleGetJob
                 MoveToImmediateActions(server);
             }
 
-            i = holder.Next(valid_iterator);
+            i = holder.Next(increment);
         }
     }
 
