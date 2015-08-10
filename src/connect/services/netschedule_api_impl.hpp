@@ -617,7 +617,9 @@ class CNetScheduleGetJob
     template <class TJobHolder>
     NNetScheduleGetJob::EResult GetJobImmediately(TJobHolder& holder)
     {
-        for (TIterator i = holder.Begin(); ; i = holder.Next()) {
+        TIterator i = holder.Begin();
+
+        for (;;) {
             NNetScheduleGetJob::EState state = m_Impl.CheckState();
 
             if (state == NNetScheduleGetJob::eStopped) {
@@ -642,39 +644,41 @@ class CNetScheduleGetJob
 
             if (timeline_entry == m_DiscoveryAction) {
                 NextDiscoveryIteration();
-            } else {
-                try {
-                    if (m_Impl.CheckEntry(timeline_entry, holder.Affinity(),
-                                holder.job, holder.job_status)) {
-                        // A job has been returned; add the server to
-                        // immediate actions because there can be more
-                        // jobs in the queue.
-                        if (holder.Done()) {
-                            return NNetScheduleGetJob::eJob;
-                        }
-                    } else {
-                        // No job has been returned by this server;
-                        // query the server later.
-                        timeline_entry.deadline = CDeadline(m_Impl.m_Timeout, 0);
-                        m_ScheduledActions.splice(m_ScheduledActions.end(),
-                                m_ImmediateActions, i);
-                    }
-                }
-                catch (CNetSrvConnException& e) {
-                    // Because a connection error has occurred, do not
-                    // put this server back to the timeline.
-                    m_ImmediateActions.erase(i);
-                    LOG_POST(Warning << e.GetMsg());
-                }
-                catch (...) {
-                    m_ImmediateActions.erase(i);
+                i = holder.Begin();
+                continue;
+            }
 
-                    if (holder.HasJob()) {
+            try {
+                if (m_Impl.CheckEntry(timeline_entry, holder.Affinity(),
+                            holder.job, holder.job_status)) {
+                    // A job has been returned; add the server to
+                    // immediate actions because there can be more
+                    // jobs in the queue.
+                    if (holder.Done()) {
                         return NNetScheduleGetJob::eJob;
                     }
-
-                    throw;
+                } else {
+                    // No job has been returned by this server;
+                    // query the server later.
+                    timeline_entry.deadline = CDeadline(m_Impl.m_Timeout, 0);
+                    m_ScheduledActions.splice(m_ScheduledActions.end(),
+                            m_ImmediateActions, i);
                 }
+            }
+            catch (CNetSrvConnException& e) {
+                // Because a connection error has occurred, do not
+                // put this server back to the timeline.
+                m_ImmediateActions.erase(i);
+                LOG_POST(Warning << e.GetMsg());
+            }
+            catch (...) {
+                m_ImmediateActions.erase(i);
+
+                if (holder.HasJob()) {
+                    return NNetScheduleGetJob::eJob;
+                }
+
+                throw;
             }
 
             // Check all servers that have timeout expired
@@ -688,6 +692,8 @@ class CNetScheduleGetJob
             while (CNetServer server = m_Impl.ReadNotifications()) {
                 MoveToImmediateActions(server);
             }
+
+            i = holder.Next();
         }
 
         return holder.HasJob() ? NNetScheduleGetJob::eJob :
