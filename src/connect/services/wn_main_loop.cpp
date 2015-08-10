@@ -765,11 +765,10 @@ CMainLoopThread::CImpl::EResult CMainLoopThread::CImpl::GetJob(
         bool last_wait = deadline < next_event_time;
         if (last_wait) next_event_time = deadline;
 
-        if (!WaitForNotifications(next_event_time)) {
-            if (last_wait) {
-                return eAgain;
-            }
-
+        if (WaitForNotifications(next_event_time)) {
+        } else if (last_wait) {
+            return eAgain;
+        } else {
             m_Timeline.PushImmediateAction(m_Timeline.PullScheduledAction());
         }
     }
