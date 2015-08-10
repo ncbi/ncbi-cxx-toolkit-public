@@ -497,7 +497,6 @@ class CNetScheduleGetJob
         {}
 
         void Interrupt() {}
-        void Restart() {}
         TIterator Begin() const     { return m_Timeline.begin(); }
         TIterator Next() const      { return m_Timeline.begin(); }
         const string& Affinity()    { return kEmptyStr; }
@@ -534,8 +533,7 @@ class CNetScheduleGetJob
                 m_ScheduledActions.clear();
                 m_ImmediateActions.clear();
                 m_ImmediateActions.push_back(m_DiscoveryAction);
-                holder.Restart();
-                continue;
+                i = holder.Begin();
             }
 
             // We must check i here to let state be checked before leaving loop
