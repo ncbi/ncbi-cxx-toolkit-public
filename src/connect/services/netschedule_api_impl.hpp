@@ -701,7 +701,7 @@ private:
 
 const unsigned s_Timeout = 10;
 
-struct SNetScheduleJobReaderImpl : public CObject, private CNetScheduleTimeline
+struct SNetScheduleJobReaderImpl : public CObject, public CNetScheduleTimeline
 {
     SNetScheduleJobReaderImpl(CNetScheduleAPI::TInstance ns_api_impl,
             const string& group, const string& affinity) :
@@ -731,11 +731,6 @@ struct SNetScheduleJobReaderImpl : public CObject, private CNetScheduleTimeline
             CNetScheduleJob& job,
             CNetScheduleAPI::EJobStatus* job_status,
             bool* no_more_jobs);
-
-    CNetScheduleJobReader::EReadNextJobResult ReadNextJob(
-        CNetScheduleJob* job,
-        CNetScheduleAPI::EJobStatus* job_status,
-        const CTimeout* timeout);
 
 private:
     EState CheckState();

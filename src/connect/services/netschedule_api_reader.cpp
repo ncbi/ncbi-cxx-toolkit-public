@@ -202,31 +202,23 @@ bool SNetScheduleJobReaderImpl::CheckEntry(
     return ret;
 }
 
-CNetScheduleJobReader::EReadNextJobResult SNetScheduleJobReaderImpl::ReadNextJob(
-        CNetScheduleJob* job,
-        CNetScheduleAPI::EJobStatus* job_status,
-        const CTimeout* timeout)
-{
-    _ASSERT(job);
-
-    x_StartNotificationThread();
-    CDeadline deadline(timeout ? *timeout : CTimeout(0, 0));
-
-    switch (GetJob(deadline, *job, job_status)) {
-        case eJob:              return CNetScheduleJobReader::eRNJ_JobReady;
-        case eAgain:            return CNetScheduleJobReader::eRNJ_NotReady;
-        case eInterrupt:        return CNetScheduleJobReader::eRNJ_Interrupt;
-        default /* eNoJobs */:  return CNetScheduleJobReader::eRNJ_NoMoreJobs;
-    }
-}
-
 CNetScheduleJobReader::EReadNextJobResult CNetScheduleJobReader::ReadNextJob(
         CNetScheduleJob* job,
         CNetScheduleAPI::EJobStatus* job_status,
         const CTimeout* timeout)
 {
     _ASSERT(m_Impl);
-    return m_Impl->ReadNextJob(job, job_status, timeout);
+    _ASSERT(job);
+
+    m_Impl->x_StartNotificationThread();
+    CDeadline deadline(timeout ? *timeout : CTimeout(0, 0));
+
+    switch (m_Impl->GetJob(deadline, *job, job_status)) {
+        case SNetScheduleJobReaderImpl::eJob:             return eRNJ_JobReady;
+        case SNetScheduleJobReaderImpl::eAgain:           return eRNJ_NotReady;
+        case SNetScheduleJobReaderImpl::eInterrupt:       return eRNJ_Interrupt;
+        default /* SNetScheduleJobReaderImpl::eNoJobs */: return eRNJ_NoMoreJobs;
+    }
 }
 
 void CNetScheduleJobReader::InterruptReading()
