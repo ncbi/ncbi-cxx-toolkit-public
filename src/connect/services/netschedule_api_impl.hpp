@@ -459,11 +459,13 @@ namespace NNetScheduleGetJob
     {
         SServerAddress server_address;
         CDeadline deadline;
+        bool all_affinities;
         bool more_jobs;
 
         SEntry(const SServerAddress& a, bool j = true) :
             server_address(a),
             deadline(0, 0),
+            all_affinities(true),
             more_jobs(j)
         {
         }
@@ -506,7 +508,7 @@ class CNetScheduleGetJob
         void Interrupt()                {}
         TIterator Begin()               { return m_Timeline.begin(); }
         TIterator Next(bool)            { return m_Timeline.begin(); }
-        const string& Affinity() const  { return kEmptyStr; }
+        const string& Affinity(bool&) const { return kEmptyStr; }
         bool Done()                     { return true; }
         bool HasJob() const             { return false; }
 
@@ -564,7 +566,7 @@ class CNetScheduleGetJob
             return ++ret;
         }
 
-        const string& Affinity() const
+        const string& Affinity(bool& all_affinities) const
         {
             // Must not happen, since otherwise Done() has returned true already
             _ASSERT(m_JobPriority.value);
@@ -574,9 +576,11 @@ class CNetScheduleGetJob
 
             if (HasJob()) {
                 // Only affinities that are higher that current job's one
+                all_affinities = false;
                 return affinity_ladder[m_JobPriority.value - 1].second;
             } else {
                 // All affinities
+                all_affinities = true;
                 return affinity_ladder.back().second;
             }
         }
@@ -663,7 +667,12 @@ class CNetScheduleGetJob
             bool increment = false;
 
             try {
-                if (m_Impl.CheckEntry(*i, holder.Affinity(),
+                // Get prioritized affinity list and
+                // a flag whether the list contains all possible affinities
+                bool all_affinities = true;
+                const string& prio_aff_list(holder.Affinity(all_affinities));
+
+                if (m_Impl.CheckEntry(*i, prio_aff_list,
                             holder.job, holder.job_status)) {
                     // A job has been returned; keep the server in
                     // immediate actions because there can be more
@@ -677,6 +686,7 @@ class CNetScheduleGetJob
                     // No job has been returned by this server;
                     // query the server later.
                     i->deadline = CDeadline(m_Impl.m_Timeout, 0);
+                    i->all_affinities = all_affinities;
                     m_ScheduledActions.splice(m_ScheduledActions.end(),
                             m_ImmediateActions, i);
                 }
@@ -730,6 +740,7 @@ public:
             CAnyAffinityJob holder(job, job_status, m_ImmediateActions);
             return GetJobImpl(deadline, holder);
         } else {
+            ReturnNotFullyCheckedServers();
             CMostAffinityJob holder(job, job_status, m_ImmediateActions, m_Impl);
             return GetJobImpl(deadline, holder);
         }
@@ -849,6 +860,22 @@ private:
         // Reschedule discovery after timeout
         m_DiscoveryAction.deadline = CDeadline(m_Impl.m_Timeout, 0);
         m_ScheduledActions.push_back(m_DiscoveryAction);
+    }
+
+    void ReturnNotFullyCheckedServers()
+    {
+        // Return back to immediate actions
+        // all servers that have not been checked for all possible affinities
+        TIterator i = m_ScheduledActions.begin();
+
+        while (i != m_ScheduledActions.end()) {
+            if (i->all_affinities) {
+                ++i;
+            } else {
+                m_ImmediateActions.splice(m_ImmediateActions.end(),
+                        m_ScheduledActions, i++);
+            } 
+        }
     }
 
     TImpl& m_Impl;
