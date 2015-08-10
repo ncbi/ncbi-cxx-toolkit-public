@@ -536,7 +536,7 @@ public:
         }
     }
 
-    bool MoreJobs() const
+    virtual bool MoreJobs()
     {
         for (TTimeline::const_iterator i = m_ScheduledActions.begin();
                 i != m_ScheduledActions.end(); ++i) {
@@ -554,6 +554,19 @@ public:
         m_ImmediateActions.clear();
         m_ImmediateActions.push_back(m_DiscoveryAction);
     }
+
+    enum EState {
+        eWorking,
+        eRestarted,
+        eStopped
+    };
+
+    enum EResult {
+        eJob,
+        eAgain,
+        eInterrupt,
+        eNoJobs
+    };
 
 private:
     struct SEntryByAddress
@@ -610,6 +623,14 @@ private:
         timeline.swap(new_timeline);
     }
 
+    virtual EState CheckState() = 0;
+    virtual CNetServer ReadNotifications() = 0;
+    virtual CNetServer WaitForNotifications(const CDeadline& deadline) = 0;
+    virtual bool CheckEntry(
+            CNetScheduleTimeline::SEntry& entry,
+            CNetScheduleJob& job,
+            CNetScheduleAPI::EJobStatus* job_status) = 0;
+
     TTimeline m_ImmediateActions, m_ScheduledActions;
     SEntry m_DiscoveryAction;
     CNetScheduleAPI m_API;
@@ -655,12 +676,6 @@ struct SNetScheduleJobReaderImpl : public CObject, private CNetScheduleTimeline
         const CTimeout* timeout);
 
 private:
-    enum EState {
-        eWorking,
-        eRestarted,
-        eStopped
-    };
-
     EState CheckState();
     CNetServer ReadNotifications();
     CNetServer WaitForNotifications(const CDeadline& deadline);
@@ -669,13 +684,6 @@ private:
             CNetScheduleTimeline::SEntry& entry,
             CNetScheduleJob& job,
             CNetScheduleAPI::EJobStatus* job_status);
-
-    enum EResult {
-        eJob,
-        eAgain,
-        eInterrupt,
-        eNoJobs
-    };
 
     EResult GetJob(
             const CDeadline& deadline,

@@ -762,7 +762,7 @@ CMainLoopThread::CImpl::EResult CMainLoopThread::CImpl::GetJob(
             }
         }
 
-        if (!MoreJobs() && !CNetScheduleTimeline::MoreJobs())
+        if (!MoreJobs())
             return eNoJobs;
 
         if (deadline.IsExpired())

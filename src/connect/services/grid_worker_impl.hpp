@@ -339,12 +339,6 @@ private:
         void Main();
 
     private:
-        enum EState {
-            eWorking,
-            eRestarted,
-            eStopped
-        };
-
         EState CheckState();
         CNetServer ReadNotifications();
         CNetServer WaitForNotifications(const CDeadline& deadline);
@@ -353,13 +347,6 @@ private:
                 CNetScheduleTimeline::SEntry& entry,
                 CNetScheduleJob& job,
                 CNetScheduleAPI::EJobStatus* job_status);
-
-        enum EResult {
-            eJob,
-            eAgain,
-            eInterrupt,
-            eNoJobs
-        };
 
         EResult GetJob(
                 const CDeadline& deadline,
