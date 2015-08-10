@@ -330,8 +330,6 @@ private:
     const string m_ThreadName;
     CNetScheduleTimeline m_Timeline;
 
-    bool x_PerformTimelineAction(CNetScheduleTimeline::SEntry timeline_entry,
-            CNetScheduleJob& job);
     bool x_EnterSuspendedState();
     void x_ProcessRequestJobNotification();
     bool x_WaitForNewJob(CNetScheduleJob& job);

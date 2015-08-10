@@ -637,10 +637,6 @@ struct SNetScheduleJobReaderImpl : public CObject
             CNetScheduleJob& job,
             CNetScheduleAPI::EJobStatus* job_status,
             bool* no_more_jobs);
-    bool x_PerformTimelineAction(CNetScheduleTimeline::SEntry timeline_entry,
-            CNetScheduleJob& job,
-            CNetScheduleAPI::EJobStatus* job_status,
-            bool* no_more_jobs);
     void x_ProcessReadJobNotifications();
 
     CNetScheduleJobReader::EReadNextJobResult ReadNextJob(
