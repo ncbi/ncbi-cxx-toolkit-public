@@ -635,21 +635,20 @@ class CNetScheduleGetJob
 
             // We must check i here to let state be checked before leaving loop
             if (i == m_ImmediateActions.end()) {
-                break;
+                return holder.HasJob() ? NNetScheduleGetJob::eJob :
+                    NNetScheduleGetJob::eAgain;
             }
 
-            SEntry& timeline_entry(*i);
-
-            if (timeline_entry == m_DiscoveryAction) {
+            if (*i == m_DiscoveryAction) {
                 NextDiscoveryIteration();
                 i = holder.Begin();
                 continue;
             }
 
             try {
-                if (m_Impl.CheckEntry(timeline_entry, holder.Affinity(),
+                if (m_Impl.CheckEntry(*i, holder.Affinity(),
                             holder.job, holder.job_status)) {
-                    // A job has been returned; add the server to
+                    // A job has been returned; keep the server in
                     // immediate actions because there can be more
                     // jobs in the queue.
                     if (holder.Done()) {
@@ -658,7 +657,7 @@ class CNetScheduleGetJob
                 } else {
                     // No job has been returned by this server;
                     // query the server later.
-                    timeline_entry.deadline = CDeadline(m_Impl.m_Timeout, 0);
+                    i->deadline = CDeadline(m_Impl.m_Timeout, 0);
                     m_ScheduledActions.splice(m_ScheduledActions.end(),
                             m_ImmediateActions, i);
                 }
@@ -693,9 +692,6 @@ class CNetScheduleGetJob
 
             i = holder.Next();
         }
-
-        return holder.HasJob() ? NNetScheduleGetJob::eJob :
-            NNetScheduleGetJob::eAgain;
     }
 
 public:
