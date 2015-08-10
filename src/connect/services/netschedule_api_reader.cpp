@@ -99,11 +99,14 @@ static bool s_ParseReadJobResponse(const string& response,
     return job_fields == (1 << eNumberOfRequiredFields) - 1;
 }
 
-bool SNetScheduleJobReaderImpl::CImpl::x_ReadJob(SNetServerImpl* server,
-        const CDeadline& timeout, CNetScheduleJob& job,
-        CNetScheduleAPI::EJobStatus* job_status,
-        bool* no_more_jobs)
+bool SNetScheduleJobReaderImpl::CImpl::CheckEntry(
+        NNetScheduleGetJob::SEntry& entry,
+        CNetScheduleJob& job,
+        CNetScheduleAPI::EJobStatus* job_status)
 {
+    CNetServer server(m_API.GetService().GetServer(entry.server_address));
+    bool no_more_jobs = true;
+
     string cmd("READ2 reader_aff=0 ");
 
     if (m_Affinity.empty())
@@ -113,7 +116,7 @@ bool SNetScheduleJobReaderImpl::CImpl::x_ReadJob(SNetServerImpl* server,
         cmd.append(m_Affinity);
     }
 
-    m_API->m_NotificationThread->CmdAppendPortAndTimeout(&cmd, timeout);
+    m_API->m_NotificationThread->CmdAppendPortAndTimeout(&cmd, m_Timeout);
 
     if (!m_JobGroup.empty()) {
         cmd.append(" group=");
@@ -127,10 +130,15 @@ bool SNetScheduleJobReaderImpl::CImpl::x_ReadJob(SNetServerImpl* server,
     server->ConnectAndExec(cmd, false, exec_result);
 
     bool ret = s_ParseReadJobResponse(exec_result.response, job,
-            job_status, no_more_jobs);
+            job_status, &no_more_jobs);
 
     if (!no_more_jobs)
         m_MoreJobs = true;
+
+    // Cache the result for the server,
+    // so we don't need to ask the server again about matching jobs
+    // while waiting for its notifications
+    entry.more_jobs = !no_more_jobs;
 
     return ret;
 }
@@ -169,23 +177,6 @@ bool SNetScheduleJobReaderImpl::CImpl::MoreJobs(const NNetScheduleGetJob::SEntry
     }
 
     return entry.more_jobs;
-}
-
-bool SNetScheduleJobReaderImpl::CImpl::CheckEntry(
-        NNetScheduleGetJob::SEntry& entry,
-        CNetScheduleJob& job,
-        CNetScheduleAPI::EJobStatus* job_status)
-{
-    CNetServer server(m_API.GetService().GetServer(entry.server_address));
-    bool no_more_jobs = true;
-    bool ret = x_ReadJob(server, m_Timeout, job, job_status, &no_more_jobs);
-
-    // Cache the result for the server,
-    // so we don't need to ask the server again about matching jobs
-    // while waiting for its notifications
-    entry.more_jobs = !no_more_jobs;
-
-    return ret;
 }
 
 void SNetScheduleJobReaderImpl::SetJobGroup(const string& group_name)

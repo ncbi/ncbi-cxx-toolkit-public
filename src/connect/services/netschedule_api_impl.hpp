@@ -724,13 +724,6 @@ private:
         string m_Affinity;
 
     private:
-        CNetServer x_ProcessReadJobNotifications();
-        bool x_ReadJob(SNetServerImpl* server,
-                const CDeadline& timeout,
-                CNetScheduleJob& job,
-                CNetScheduleAPI::EJobStatus* job_status,
-                bool* no_more_jobs);
-
         bool m_MoreJobs;
     };
 
