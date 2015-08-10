@@ -347,6 +347,10 @@ private:
         void ReadNotifications();
         bool WaitForNotifications(const CDeadline& deadline);
         bool MoreJobs();
+        bool CheckEntry(
+                CNetScheduleTimeline::SEntry& entry,
+                CNetScheduleJob& job,
+                CNetScheduleAPI::EJobStatus* job_status);
 
         enum EResult {
             eJob,

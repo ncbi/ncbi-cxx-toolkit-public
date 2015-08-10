@@ -696,10 +696,20 @@ bool MoreJobs()
     return true;
 }
 
+bool CMainLoopThread::CImpl::CheckEntry(
+        CNetScheduleTimeline::SEntry& entry,
+        CNetScheduleJob& job,
+        CNetScheduleAPI::EJobStatus* /*job_status*/)
+{
+    CNetServer server(m_Timeline.GetServer(m_API, entry));
+    return m_WorkerNode->m_NSExecutor->x_GetJobWithAffinityLadder(server,
+            m_Timeout, job);
+}
+
 CMainLoopThread::CImpl::EResult CMainLoopThread::CImpl::GetJob(
         const CDeadline& deadline,
         CNetScheduleJob& job,
-        CNetScheduleAPI::EJobStatus* /*job_status*/)
+        CNetScheduleAPI::EJobStatus* job_status)
 {
     for (;;) {
         while (m_Timeline.HasImmediateActions()) {
@@ -712,11 +722,8 @@ CMainLoopThread::CImpl::EResult CMainLoopThread::CImpl::GetJob(
 
                 m_Timeline.PushScheduledAction(timeline_entry, m_Timeout);
             } else if (CheckState() == eWorking) {
-                CNetServer server(m_Timeline.GetServer(m_API, timeline_entry));
-
                 try {
-                    if (m_WorkerNode->m_NSExecutor->x_GetJobWithAffinityLadder(server,
-                            m_Timeout, job)) {
+                    if (CheckEntry(timeline_entry, job, job_status)) {
                         // A job has been returned; add the server to
                         // immediate actions because there can be more
                         // jobs in the queue.
@@ -744,7 +751,6 @@ CMainLoopThread::CImpl::EResult CMainLoopThread::CImpl::GetJob(
         if (CheckState() == eStop)
             return eInterrupt;
 
-        // All servers returned 'no_more_jobs'.
         if (!MoreJobs())
             return eNoJobs;
 
