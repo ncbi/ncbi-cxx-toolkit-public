@@ -6,6 +6,8 @@ BlastOutput2 ::= SEQUENCE {
 	error  Err OPTIONAL
 }
 
+BlastXML2 ::= SET OF BlastOutput2
+
 Report ::= SEQUENCE {
 	program VisibleString ,		-- BLAST program: blastp, tblastx etc.
 	version VisibleString ,		-- Program version 
