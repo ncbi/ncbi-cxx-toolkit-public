@@ -339,14 +339,14 @@ CSrcWriter::FIELDS CSrcWriter::xGetOrderedFieldNames(const FIELDS& defaultFields
     //  ----------------------------------------------------------------------------
 {
     FIELDS orderedFields;
-    set<string> defaultSet;
+    set<string> processedFields;
 
     for (FIELDS::const_iterator cit=defaultFields.begin();
             cit != defaultFields.end();
             ++cit) {
         string colName = *cit;
         orderedFields.push_back(colName);
-        defaultSet.insert(colName);
+        processedFields.insert(xCompressFieldName(colName));
     }
 
     FIELDS lexicalFields;
@@ -383,10 +383,13 @@ CSrcWriter::FIELDS CSrcWriter::xGetOrderedFieldNames(const FIELDS& defaultFields
     for (FIELDS::const_iterator cit = lexicalFields.begin();
             cit != lexicalFields.end();  ++cit)
     {
-        if (defaultSet.find(*cit) == defaultSet.end()) {
+        string compressed_name = xCompressFieldName(*cit);
+        if (processedFields.find(compressed_name) == processedFields.end()) {
             orderedFields.push_back(*cit);
+            processedFields.insert(compressed_name);
         }
     }
+
     return orderedFields;
 }
 
