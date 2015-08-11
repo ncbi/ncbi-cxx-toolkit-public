@@ -42,6 +42,7 @@ class CSrvPrintProxy;
 
 
 void InitMemoryMan(void);
+void FinalizeMemoryMan(void);
 void AssignThreadMemMgr(SSrvThread* thr);
 void ReleaseThreadMemMgr(SSrvThread* thr);
 size_t GetMemSize(void* ptr);

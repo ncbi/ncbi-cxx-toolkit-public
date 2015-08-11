@@ -37,6 +37,10 @@
 # include <sys/mman.h>
 #endif
 
+// malloc hooks are deprecated
+// in case they will disappear, we should have an alternative
+#define __NC_MEMMAN_USE_MALLOC_HOOK 1
+
 // adds several debug checks
 #define __NC_MEMMAN_DEBUG 0
 #define __NC_MEMMAN_ALLPTR_COUNT 0
@@ -850,6 +854,11 @@ s_AllocMemory(size_t size)
 static void
 s_DeallocMemory(void* ptr)
 {
+#if !__NC_MEMMAN_USE_MALLOC_HOOK
+    if (!s_HadLowLevelInit) {
+        return;
+    }
+#endif
     if (!ptr) {
         return;
     }
@@ -941,6 +950,19 @@ InitMemoryMan(void)
     s_Flusher->RunAfter(kMMFlushPeriod);
 
     s_HadMemMgrInit = true;
+}
+
+void FinalizeMemoryMan(void)
+{
+// when NOT using malloc hooks, when the app terminates and static objects are being deleted
+// there are attempts to free "wrong" memory and the app coredumps
+// I did not investigate that in details. Probably, not all allocations are truly intercepted
+// and some static objects are created using one allocator then deleted using another one.
+// From another side, it is probably safe to just ignore memory freeing at this time.
+// so, this is what we do. After this, all s_DeallocMemory calls will do nothing
+#if !__NC_MEMMAN_USE_MALLOC_HOOK
+    s_HadLowLevelInit = false;
+#endif
 }
 
 void
@@ -1383,9 +1405,9 @@ operator delete[] (void* ptr) throw ()
 
 #ifdef __GLIBC__
 // glibc has special method of overriding C library allocation functions.
-
+// Also, see comments in FinalizeMemoryMan
+#if __NC_MEMMAN_USE_MALLOC_HOOK
 #include <malloc.h>
-
 
 static void*
 s_MallocHook(size_t size, const void* caller)
@@ -1414,5 +1436,27 @@ s_InitMallocHook(void)
 }
 
 void (*__malloc_initialize_hook) (void) = &s_InitMallocHook;
+
+#else
+
+extern "C" {
+
+void* malloc(size_t size)
+{
+    return ncbi::s_AllocMemory(size);
+}
+
+void* realloc(void* mem_ptr, size_t size)
+{
+    return ncbi::s_ReallocMemory(mem_ptr, size);
+}
+
+void free(void* mem_ptr)
+{
+    ncbi::s_DeallocMemory(mem_ptr);
+}
+}
+
+#endif
 
 #endif

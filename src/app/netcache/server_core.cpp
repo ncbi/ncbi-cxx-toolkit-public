@@ -330,6 +330,7 @@ CTaskServer::Finalize(void)
     FinalizeThreadsMan();
     FinalizeSocketsMan();
     FinalizeLogging();
+    FinalizeMemoryMan();
 }
 
 void
