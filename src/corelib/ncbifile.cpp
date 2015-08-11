@@ -2419,9 +2419,35 @@ bool CDirEntry::Rename(const string& newname, TRenameFlags flags)
                              " Source path does not exist: " + src.GetPath(),
                              CNcbiError::eNoSuchFileOrDirectory);
     }
+
+    // Try to "move" in one atomic operation if possible to avoid race
+    // conditions between check on destination existence and renaming.
+
+#ifdef NCBI_OS_MSWIN
+    // On Windows we can try to move file or whole directory, even across volumes
+    if ( MoveFileEx(_T_XCSTRING(src.GetPath()),
+                    _T_XCSTRING(dst.GetPath()), MOVEFILE_COPY_ALLOWED) ) {
+        Reset(newname);
+        return true;
+    }
+#else
+    // On Unix we can use "link" technique for files
+    if ( link(_T_XCSTRING(src.GetPath()),
+              _T_XCSTRING(dst.GetPath())) == 0 ) {
+        // Hard link successfully created, so we can just remove source file
+        if ( src.Remove() ) {
+            Reset(newname);
+            return true;
+        }
+    }
+#endif
+    // On error or destination existence --
+    // continue on regular processing below
+
     EType dst_type = dst.GetType();
-    
+
     // If destination exists...
+
     if ( dst_type != eUnknown ) {
         // Can rename entries with different types?
         if ( F_ISSET(flags, fRF_EqualTypes)  &&  (src_type != dst_type) ) {
@@ -2467,20 +2493,21 @@ bool CDirEntry::Rename(const string& newname, TRenameFlags flags)
         LOG_ERROR_AND_RETURN("CDirEntry::Rename():"
                              " Destination path exists: " + GetPath());
     }
+    
     // Rename
-#ifdef NCBI_OS_MSWIN
-    int ok_code = EACCES;
-#else  // NCBI_OS_UNIX
-    int ok_code = EXDEV;
-#endif // NCBI_OS_...
+    
     if ( NcbiSys_rename(_T_XCSTRING(src.GetPath()),
                         _T_XCSTRING(dst.GetPath())) != 0 ) {
-        if ( errno != ok_code ) {
+#ifdef NCBI_OS_MSWIN
+        if ( errno != EACCES ) {
+#else
+        if ( errno != EXDEV ) {
+#endif
             LOG_ERROR_AND_RETURN_ERRNO("CDirEntry::Rename():"
                                        " rename() failed for " + GetPath());
         }
         // Note that rename() fails in the case of cross-device renaming.
-        // So, try to copy, instead, then remove the original.
+        // So, try to make a copy and remove the original later.
         auto_ptr<CDirEntry>
             e(CDirEntry::CreateObject(src_type, src.GetPath()));
         if ( !e->Copy(dst.GetPath(), fCF_Recursive | fCF_PreserveAll ) ) {
