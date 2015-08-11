@@ -126,3 +126,10 @@ version 6.8.10
 Corrected synchronization report to hide currently inactive peers.
 Changed way memory and socket statistics is calculated.
 
+July 31, 2015
+version 6.8.11 (CXX-6216)
+Changed way memory and socket statistics is calculated; corrected synchronization reporting to hide currently inactive peers;
+Corrected synchronization of access to database configuration data, blob synchronization finalization, mirror event handling, storage data access.
+Added error checks during synchronization. 
+Added database state report. 
+Added option of reloading some storage configuration parameters.
