@@ -40,6 +40,7 @@
 #include <objects/seq/Seq_hist_rec.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/MolInfo.hpp>
+#include <objects/seq/seq_macros.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/SubSource.hpp>
@@ -50,6 +51,7 @@
 #include <objects/general/Object_id.hpp>
 #include <objects/general/Date.hpp>
 #include <objects/general/Dbtag.hpp>
+#include <objects/general/general_macros.hpp>
 #include <objects/misc/sequence_util_macros.hpp>
 
 #include <objmgr/seqdesc_ci.hpp>
@@ -2021,24 +2023,65 @@ CLocalIdComment::CLocalIdComment(const CObject_id& oid, CBioseqContext& ctx) :
 }
 
 
-void CLocalIdComment::x_GatherInfo(CBioseqContext&)
+static string s_GetOriginalID (CBioseqContext& ctx)
+
+{
+    const CBioseq_Handle& bsh = ctx.GetHandle();
+    const CBioseq& seq = *bsh.GetCompleteBioseq();
+
+    FOR_EACH_SEQDESC_ON_BIOSEQ (it, seq) {
+        const CSeqdesc& desc = **it;
+        if (! desc.IsUser()) continue;
+        if (! desc.GetUser().IsSetType()) continue;
+        const CUser_object& usr = desc.GetUser();
+        const CObject_id& oi = usr.GetType();
+        if (! oi.IsStr()) continue;
+        const string& type = oi.GetStr();
+        if (! NStr::EqualNocase(type, "OrginalID") && ! NStr::EqualNocase(type, "OriginalID")) continue;
+        FOR_EACH_USERFIELD_ON_USEROBJECT (uitr, usr) {
+            const CUser_field& fld = **uitr;
+            if (FIELD_IS_SET_AND_IS(fld, Label, Str)) {
+                const string &label_str = GET_FIELD(fld.GetLabel(), Str);
+                if (! NStr::EqualNocase(label_str, "LocalId")) continue;
+                if (fld.IsSetData() && fld.GetData().IsStr()) {
+                    return fld.GetData().GetStr();
+                }
+            }
+        }
+    }
+
+    return "";
+}
+
+
+void CLocalIdComment::x_GatherInfo(CBioseqContext& ctx)
 {
     CNcbiOstrstream msg;
 
-    switch ( m_Oid->Which() ) {
-    case CObject_id::e_Id:
-        msg << "LocalID: " << m_Oid->GetId();    
-        break;
-    case CObject_id::e_Str:
-        if ( m_Oid->GetStr().length() < 1000 ) {
-            msg << "LocalID: " << m_Oid->GetStr();
+    string orig_id = s_GetOriginalID (ctx);
+    if (!NStr::EqualNocase(orig_id, "")) {
+        if ( orig_id.length() < 1000 ) {
+            msg << "LocalID: " << orig_id;
         } else {
             msg << "LocalID string too large";
         }
-        break;
-    default:
-        break;
+    } else {
+        switch ( m_Oid->Which() ) {
+        case CObject_id::e_Id:
+            msg << "LocalID: " << m_Oid->GetId();    
+            break;
+        case CObject_id::e_Str:
+            if ( m_Oid->GetStr().length() < 1000 ) {
+                msg << "LocalID: " << m_Oid->GetStr();
+            } else {
+                msg << "LocalID string too large";
+            }
+            break;
+        default:
+            break;
+        }
     }
+
     x_SetComment(CNcbiOstrstreamToString(msg));
 }
 
