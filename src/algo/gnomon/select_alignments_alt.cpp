@@ -176,6 +176,31 @@ bool CModelCompare::HaveCommonExonOrIntron(const CGeneModel& a, const CGeneModel
 void CGeneSelector::FilterGenes(TGeneModelList& chains, TGeneModelList& bad_aligns,
                                 TGeneModelList& dest)
 {
+    NON_CONST_ITERATE(TGeneModelList, im, chains) {
+        CGeneModel& model = *im;
+        CCDSInfo cds_info = model.GetCdsInfo();
+        if(cds_info.ReadingFrame().Empty())
+            continue;
+
+        if(cds_info.IsMappedToGenome())
+            cds_info = cds_info.MapFromOrigToEdited(model.GetAlignMap());
+        TSignedSeqRange cds = cds_info.Cds();
+
+        bool gapfilled = false;
+        int genome_cds = 0;
+        for(int ie = 0; ie < (int)model.Exons().size(); ++ie) {
+            if(model.Exons()[ie].Limits().Empty())
+                gapfilled = true;
+            else
+                genome_cds += (cds&model.TranscriptExon(ie)).GetLength();
+        }
+        
+        if(gapfilled && genome_cds < 45) {
+            model.Status() |= CGeneModel::eSkipped;
+            model.AddComment("Most CDS in genomic gap");
+        }
+    }
+
     ITERATE(TGeneModelList, it, chains) {
         if(it->Status()&CGeneModel::eSkipped) {
             bad_aligns.push_back(*it);
