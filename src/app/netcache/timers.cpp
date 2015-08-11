@@ -137,7 +137,7 @@ s_FireTimers(int fire_time)
     while (!tlist.empty()) {
         STimerTicket* ticket = &tlist.front();
         if (ticket->timer_time != fire_time) {
-            SRV_FATAL("Timers broken");
+            SRV_LOG(Critical, "Timers broken");
         }
         tlist.pop_front();
         s_ExecuteTimerTicket(ticket);
