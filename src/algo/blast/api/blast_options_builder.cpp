@@ -118,7 +118,7 @@ CBlastOptionsBuilder::ComputeProgram(const string & program,
         }
     }
     
-    if (s != "plain" && (! found)) {
+    if (!found && !(s=="plain" || s=="multi_blast")) {
         string msg = "Unsupported combination of program (";
         msg += program;
         msg += ") and service (";
