@@ -3777,6 +3777,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MMB	s	Moravske Muzeum",
 "MMBC	s	Moravske Muzeum [Moravian Museum]",
 "MMBS	s	Mukaishima Marine Biological Station",
+"MMCC	c	MARDI Microbial Culture Collection",
 "MMChPV	s	Museo Municipal El Chocon",
 "MMCM	s	Museum of Malawi",
 "MMF	s	Museu Municipal do Funchal",
