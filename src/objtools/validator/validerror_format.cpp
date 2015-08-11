@@ -148,6 +148,9 @@ string CValidErrorFormat::FormatForSubmitterReport(const CValidErrItem& error, C
         case eErr_SEQ_FEAT_RareSpliceConsensusDonor:
             rval = x_FormatConsensusSpliceForSubmitterReport(error);
             break;
+        case eErr_SEQ_FEAT_PartialProblem:
+            rval = x_FormatPartialProblemForSubmitterReport(error);
+            break;
         case eErr_SEQ_FEAT_BadEcNumberFormat:
         case eErr_SEQ_FEAT_BadEcNumberValue:
         case eErr_SEQ_FEAT_EcNumberProblem:
@@ -163,7 +166,7 @@ string CValidErrorFormat::FormatForSubmitterReport(const CValidErrItem& error, C
             rval = x_FormatLatLonCountryForSubmitterReport(error);
             break;
         default:
-            rval = rval = error.GetAccession() + ":" + error.GetObjDesc();
+            rval = error.GetAccession() + ":" + error.GetObjDesc();
             break;
     }
 
@@ -180,7 +183,8 @@ string CValidErrorFormat::x_FormatConsensusSpliceForSubmitterReport(const CValid
     string msg = error.GetMsg();
     if (NStr::Find(msg, "(AG) not found") != string::npos) {
         rval = "AG";
-    } else if (NStr::Find(msg, "(GT) not found") != string::npos) {
+    }
+    else if (NStr::Find(msg, "(GT) not found") != string::npos) {
         rval = "GT";
     }
     if (NStr::IsBlank(rval)) {
@@ -197,9 +201,40 @@ string CValidErrorFormat::x_FormatConsensusSpliceForSubmitterReport(const CValid
             if (seq_pos != string::npos) {
                 rval = pos_str.substr(seq_pos + 4) + "\t" + rval;
             }
-        }                
+        }
     }
-    rval = "\t" + error.GetObjDesc() + "\t" + rval;
+
+    string obj_desc = error.GetObjDesc();
+    size_t type_pos = NStr::Find(obj_desc, "FEATURE: ");
+    if (type_pos != string::npos) {
+        obj_desc = obj_desc.substr(type_pos + 9);
+        size_t space_pos = NStr::Find(obj_desc, ":");
+        if (space_pos != string::npos) {
+            obj_desc = obj_desc.substr(0, space_pos);
+        }
+    }
+
+    rval = obj_desc + "\t" + rval;
+
+    return rval;
+}
+
+
+string CValidErrorFormat::x_FormatPartialProblemForSubmitterReport(const CValidErrItem& error) const
+{
+    string obj_desc = error.GetObjDesc();
+    size_t type_pos = NStr::Find(obj_desc, "FEATURE: ");
+    if (type_pos != string::npos) {
+        obj_desc = obj_desc.substr(type_pos + 9);
+    }
+    NStr::ReplaceInPlace(obj_desc, ":", "\t", 0, 1);
+    size_t close_pos = NStr::Find(obj_desc, "]");
+    if (close_pos != string::npos) {
+        obj_desc = obj_desc.substr(0, close_pos);
+        NStr::ReplaceInPlace(obj_desc, "[", "\t");
+    }
+
+    string rval = error.GetAccession() + ":" + obj_desc;
 
     return rval;
 }
