@@ -45,6 +45,8 @@ public:
     virtual ~CReportObj(void){}
     virtual const string& GetText(void) const = 0;
     virtual const string& GetShort(void) const = 0;
+    virtual CConstRef<CSerialObject> GetObject(void) const = 0;
+    virtual objects::CScope& GetScope(void) const = 0;
 };
 typedef vector<CRef<CReportObj> > TReportObjectList;
 

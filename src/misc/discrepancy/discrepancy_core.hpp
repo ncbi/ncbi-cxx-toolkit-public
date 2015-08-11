@@ -102,7 +102,7 @@ protected:
 class CDiscrepancyObject : public CReportObject
 {
 public:
-    CDiscrepancyObject(CConstRef<CBioseq> obj, CScope& scope, const string& filename, bool keep_ref) : CReportObject(obj)
+    CDiscrepancyObject(CConstRef<CBioseq> obj, CScope& scope, const string& filename, bool keep_ref) : CReportObject(obj, scope)
     {
         SetFilename(filename);
         SetText(scope);
@@ -110,7 +110,7 @@ public:
             DropReference();
         }
     }
-    CDiscrepancyObject(CConstRef<CSeq_feat> obj, CScope& scope, const string& filename, bool keep_ref) : CReportObject(obj)
+    CDiscrepancyObject(CConstRef<CSeq_feat> obj, CScope& scope, const string& filename, bool keep_ref) : CReportObject(obj, scope)
     {
         SetFilename(filename);
         SetText(scope);

@@ -285,7 +285,7 @@ DISCREPANCY_SUMMARIZE(COUNT_RRNAS)
 
 DISCREPANCY_ALIAS(COUNT_RRNAS, FIND_DUP_RRNAS);
 
-/*
+
 // OVERLAPPING_CDS
 
 static bool StrandsMatch(const CSeq_loc& loc1, const CSeq_loc& loc2)    //
@@ -302,9 +302,7 @@ static string GetProductNameForProteinSequence(CBioseq_Handle bsh)
         return "";
     }
     CFeat_CI prot(bsh, CSeqFeatData::eSubtype_prot);
-    if (!prot || !prot->IsSetData() || !prot->GetData().IsProt() ||
-        !prot->GetData().GetProt().IsSetName() ||
-        prot->GetData().GetProt().GetName().size() < 1) {
+    if (!prot || !prot->IsSetData() || !prot->GetData().IsProt() || !prot->GetData().GetProt().IsSetName() || prot->GetData().GetProt().GetName().size() < 1) {
         return "";
     }
     return prot->GetData().GetProt().GetName().front();
@@ -313,8 +311,7 @@ static string GetProductNameForProteinSequence(CBioseq_Handle bsh)
 
 static string GetProductForCDS(const CMappedFeat& f, CScope& scope)
 {
-    if (!f.IsSetData() || !f.GetData().IsCdregion() ||
-        !f.IsSetProduct()) {
+    if (!f.IsSetData() || !f.GetData().IsCdregion() || !f.IsSetProduct()) {
         return "";
     }
     CBioseq_Handle bsh = scope.GetBioseqHandle(f.GetProduct());
@@ -322,20 +319,14 @@ static string GetProductForCDS(const CMappedFeat& f, CScope& scope)
 }
 
 
-static const string kSimilarProductWords[] = 
-{ "transposase",
-  "integrase"
-};
+static const string kSimilarProductWords[] = { "transposase", "integrase" };
 
 static const int kNumSimilarProductWords = sizeof (kSimilarProductWords) / sizeof (string);
 
-static const string kIgnoreSimilarProductWords[] = 
-{ "hypothetical protein",
-  "phage",
-  "predicted protein"
-};
+static const string kIgnoreSimilarProductWords[] = { "hypothetical protein", "phage", "predicted protein" };
 
 static const int kNumIgnoreSimilarProductWords = sizeof (kIgnoreSimilarProductWords) / sizeof (string);
+
 
 static bool ProductNamesAreSimilar(const string& product1, const string& product2)
 {
@@ -361,9 +352,7 @@ static bool ProductNamesAreSimilar(const string& product1, const string& product
     // words, the product names are not similar.
 
     for (i = 0; i < kNumIgnoreSimilarProductWords; i++) {
-        if (string::npos != NStr::FindNoCase(product1, kSimilarProductWords[i])
-            || string::npos 
-                != NStr::FindNoCase(product2, kSimilarProductWords[i])) {
+        if (string::npos != NStr::FindNoCase(product1, kSimilarProductWords[i]) || string::npos != NStr::FindNoCase(product2, kSimilarProductWords[i])) {
             return false;
         }
     }
@@ -374,8 +363,7 @@ static bool ProductNamesAreSimilar(const string& product1, const string& product
 
 static bool ShouldIgnore(const string& product)
 {
-    if (NStr::Find(product, "transposon") != string::npos ||
-        NStr::Find(product, "transposase") != string::npos) {
+    if (NStr::Find(product, "transposon") != string::npos || NStr::Find(product, "transposase") != string::npos) {
         return true;
     }
     CString_constraint constraint;
@@ -415,7 +403,7 @@ static bool SetOverlapNote(CSeq_feat& feat)
     return true;
 }
 
-
+/*
 DISCREPANCY_CASE(OVERLAPPING_CDS, TReportObjectList m_ObjsNoNote)
 {
     CBioseq_CI bi(seh, CSeq_inst::eMol_na);

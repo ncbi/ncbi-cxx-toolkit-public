@@ -44,10 +44,9 @@ BEGIN_SCOPE(NDiscrepancy)
 class NCBI_DISCREPANCY_EXPORT CReportObject : public CReportObj
 {
 public:
-    CReportObject(){}
-    CReportObject(CConstRef<CBioseq> obj) : m_Bioseq(obj) {}
-    CReportObject(CConstRef<CSeq_feat> obj) : m_Seq_feat(obj) {}
-    CReportObject(CConstRef<CSeqdesc> obj) : m_Seqdesc(obj) {}
+    CReportObject(CConstRef<CBioseq> obj, CScope& scope) : m_Bioseq(obj), m_Scope(scope) {}
+    CReportObject(CConstRef<CSeq_feat> obj, CScope& scope) : m_Seq_feat(obj), m_Scope(scope) {}
+    CReportObject(CConstRef<CSeqdesc> obj, CScope& scope) : m_Seqdesc(obj), m_Scope(scope) {}
     ~CReportObject() {}
 
     const string& GetText() const { return m_Text; }
@@ -92,6 +91,21 @@ public:
     /// Do CReportObjects represent the same object?
     bool Equal(const CReportObj& other) const;
 
+    CScope& GetScope(void) const { return m_Scope; }
+    CConstRef<CSerialObject> GetObject(void) const
+    {
+        if (m_Bioseq) {
+            return CConstRef<CSerialObject>(&*m_Bioseq);
+        }
+        if (m_Seq_feat) {
+            return CConstRef<CSerialObject>(&*m_Seq_feat);
+        }
+        if (m_Seqdesc) {
+            return CConstRef<CSerialObject>(&*m_Seqdesc);
+        }
+        return CConstRef<CSerialObject>();
+    }
+
 protected:
     string                m_Text;
     string                m_ShortName;
@@ -101,6 +115,7 @@ protected:
     CConstRef<CSeq_feat>  m_Seq_feat;
     CConstRef<CSeqdesc>   m_Seqdesc;
     string                m_Filename;
+    CScope&               m_Scope;
 };
 
 
