@@ -338,6 +338,11 @@ CSearchResults::SetSubjectMasks(const TSeqLocInfoVector& subj_masks)
 
 void CSearchResults::TrimSeqAlign(CSeq_align_set::Tdata::size_type max_size)
 {
+	if (!HasAlignments())
+	{
+		return;
+	}
+
 	if(max_size == 0)
 	{
 		m_Alignment.Reset();
