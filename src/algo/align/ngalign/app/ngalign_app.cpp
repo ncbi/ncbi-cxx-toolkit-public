@@ -67,14 +67,14 @@
 
 #include <algo/align/ngalign/merge_tree_aligner.hpp>
 
-/*
+
 #include <asn_cache/lib/Cache_blob.hpp>
 #include <asn_cache/lib/asn_index.hpp>
 #include <asn_cache/lib/chunk_file.hpp>
 #include <asn_cache/lib/asn_cache_util.hpp>
 #include <asn_cache/lib/seq_id_chunk_file.hpp>
 #include <internal/asn_cache/lib/asn_cache_loader.hpp>
-*/
+
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -166,8 +166,8 @@ void CNgAlignApp::Init()
 					CArgDescriptions::eInputFile);	
     arg_desc->AddOptionalKey("blastdb", "blastdb", "Blastdb Name",
 					CArgDescriptions::eInputFile);
-	arg_desc->AddOptionalKey("softfilter", "integer", "blastdb soft filter id",
-					CArgDescriptions::eInteger);
+	arg_desc->AddOptionalKey("softfilter", "string", "blastdb soft filter, int or string",
+					CArgDescriptions::eString);
 	arg_desc->AddOptionalKey("fasta", "file", "fasta file",
 					CArgDescriptions::eInputFile);
 	
@@ -211,13 +211,19 @@ int CNgAlignApp::Run()
 		CGBDataLoader::RegisterInObjectManager(*om);
 
 	if(args["blastdb"].HasValue()) {
-		CBlastDbDataLoader::RegisterInObjectManager
-        	(*om, args["blastdb"].AsString(),
-	    		CBlastDbDataLoader::eNucleotide,
-				true, CObjectManager::eDefault, 100);
+		string Orig = args["blastdb"].AsString();
+        vector<string> DBs;
+        NStr::Tokenize(Orig, ",", DBs);
+        ITERATE(vector<string>, DBIter, DBs) {
+            cerr << *DBIter << endl;
+            CBlastDbDataLoader::RegisterInObjectManager
+        	    (*om, *DBIter,
+	    		    CBlastDbDataLoader::eNucleotide,
+				    true, CObjectManager::eDefault, 100);
+        }
 	}
    
-    /* 
+     
     if(args["asn_cache"].HasValue()) {
 	    vector<string> Tokens;
         NStr::Tokenize(args["asn_cache"].AsString(), ",", Tokens);
@@ -230,7 +236,7 @@ int CNgAlignApp::Run()
                 Priority++;
 		    }
         }	
-    }*/
+    }
     
 
 	m_Scope.Reset(new CScope(*om));
@@ -436,13 +442,12 @@ CNgAlignApp::x_CreateSequenceSet(IRegistry* RunRegistry,
 			LoadedIdsIter = m_LoadedIds.begin();
 		}
 	
-        cerr << __LINE__ << endl;
 		if(IdList->SetIdList().empty() && !m_LoadedIds.empty()) {
 			int BatchSize = Args["batch"].AsInteger();
 			for(int Count = 0; 
 				Count < BatchSize && LoadedIdsIter != m_LoadedIds.end(); 
 				Count++) {
-			cerr << __LINE__ << (*LoadedIdsIter)->AsFastaString() << endl;
+			//cerr << __LINE__ << (*LoadedIdsIter)->AsFastaString() << endl;
                 IdList->SetIdList().push_back(*LoadedIdsIter);
 				++LoadedIdsIter;
 			}
@@ -551,12 +556,18 @@ CNgAlignApp::x_CreateSequenceSet(IRegistry* RunRegistry,
 		Result.Reset(LocList.GetPointer());
     }
 	else if(Type == "blastdb") {
-		CRef<CBlastDbSet> BlastDb(new CBlastDbSet(Args["blastdb"].AsString()));
-		if(Args["softfilter"].HasValue()) {
-			BlastDb->SetSoftFiltering(Args["softfilter"].AsInteger());
-		}
-		Result.Reset(BlastDb.GetPointer());
-	} 
+		string Orig = Args["blastdb"].AsString();
+        vector<string> DBs;
+        NStr::Tokenize(Orig, ",", DBs);
+        ITERATE(vector<string>, DBIter, DBs) {
+            CRef<CBlastDbSet> BlastDb(new CBlastDbSet(*DBIter));
+		    if(Args["softfilter"].HasValue()) {
+			    BlastDb->SetSoftFiltering(Args["softfilter"].AsString());
+		    }
+		    Result.Reset(BlastDb.GetPointer());
+	        break;
+        }
+    }
 	else if(Type == "fasta") {
 		string FileName;
 		FileName = RunRegistry->Get(Category, "fasta");
@@ -924,14 +935,14 @@ CNgAlignApp::x_CreateBlastAligner(IRegistry* RunRegistry, const string& Name)
 {
 	string Params = RunRegistry->Get(Name, "params");
 	int Threshold = RunRegistry->GetInt(Name, "threshold", 0);
-	int Filter = RunRegistry->GetInt(Name, "filter", -1);
+	string Filter = RunRegistry->Get(Name, "filter");
     bool UseNegatives = RunRegistry->GetBool(Name, "useneg", true);
 
 	const CArgs& Args = GetArgs();	
 	
 	
 	if(Args["softfilter"].HasValue())
-		Filter = Args["softfilter"].AsInteger();
+		Filter = Args["softfilter"].AsString();
 
 	
 
@@ -972,7 +983,14 @@ CNgAlignApp::x_CreateMergeAligner(IRegistry* RunRegistry, const string& Name)
 {
 	int Threshold = RunRegistry->GetInt(Name, "threshold", 0);
 	double Clip = RunRegistry->GetDouble(Name, "clip", 3.0);
-	return CRef<CMergeAligner>(new CMergeAligner(Threshold/*, Clip*/));
+	string ModeStr = RunRegistry->Get(Name, "mode");
+    CMergeAligner::TMode Mode = CMergeAligner::eDefault;
+    if(ModeStr == "cleanup")
+        Mode = CMergeAligner::eAlignCleanup;
+    else if(ModeStr == "tree")
+        Mode = CMergeAligner::eTreeAlignMerger;
+
+    return CRef<CMergeAligner>(new CMergeAligner(Threshold, Mode/*, Clip*/));
 }
 
 /*CRef<CCoverageAligner> 
