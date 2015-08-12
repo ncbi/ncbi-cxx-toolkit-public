@@ -18879,15 +18879,15 @@ BOOST_AUTO_TEST_CASE(Test_ValidError_Format)
     CValidErrorFormat format(*objmgr);
 
     vector<string> expected;
-    expected.push_back("\tFEATURE: intron:  [lcl|nuc:17-46] [lcl|nuc: raw, dna len= 60]\tlcl|nuc\tGT at 17");
+    expected.push_back("intron\tlcl|nuc\tGT at 17");
     expected.push_back("prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
     expected.push_back("prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
     expected.push_back("prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
     expected.push_back("prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
     expected.push_back("prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
-    expected.push_back("\tFEATURE: CDS: fake protein name [(lcl|nuc:1-16, 47-57)] [lcl|nuc: raw, dna len= 60] -> [lcl|prot]\tlcl|nuc\tGT at 16");
-    expected.push_back("\tFEATURE: intron: misc_feature needs a comment [lcl|nuc:1-11] [lcl|nuc: raw, dna len= 60]\tlcl|nuc\tGT at 1");
-    expected.push_back("\tFEATURE: intron: misc_feature needs a comment [lcl|nuc:1-11] [lcl|nuc: raw, dna len= 60]\tlcl|nuc\tAG at 11");
+    expected.push_back("CDS\tlcl|nuc\tGT at 16");
+    expected.push_back("intron\tlcl|nuc\tGT at 1");
+    expected.push_back("intron\tlcl|nuc\tAG at 11");
     expected.push_back("nuc:Lat_lon '30 N 30 E' maps to 'Egypt' instead of 'Panama'");
     expected.push_back("nuc\tXXX;YYY;ZZZ");
     expected.push_back("nuc\tXXX;YYY;ZZZ");
@@ -18940,9 +18940,9 @@ BOOST_AUTO_TEST_CASE(Test_ValidError_Format)
     seen.clear();
     NStr::Tokenize(rval, "\n", seen);
     expected.push_back("Not Splice Consensus");
-    expected.push_back("\tFEATURE: intron:  [lcl|nuc:17-46] [lcl|nuc: raw, dna len= 60]\tlcl|nuc\tGT at 17");
-    expected.push_back("\tFEATURE: CDS: fake protein name [(lcl|nuc:1-16, 47-57)] [lcl|nuc: raw, dna len= 60] -> [lcl|prot]\tlcl|nuc\tGT at 16");
-    expected.push_back("\tFEATURE: intron: misc_feature needs a comment [lcl|nuc:1-11] [lcl|nuc: raw, dna len= 60]\tlcl|nuc\tGT at 1");
+    expected.push_back("intron\tlcl|nuc\tGT at 17");
+    expected.push_back("CDS\tlcl|nuc\tGT at 16");
+    expected.push_back("intron\tlcl|nuc\tGT at 1");
     expected.push_back("");
     CheckStrings(seen, expected);
 
@@ -18951,10 +18951,10 @@ BOOST_AUTO_TEST_CASE(Test_ValidError_Format)
     seen.clear();
     NStr::Tokenize(rval, "\n", seen);
     expected.push_back("Not Splice Consensus");
-    expected.push_back("\tFEATURE: intron:  [lcl|nuc:17-46] [lcl|nuc: raw, dna len= 60]\tlcl|nuc\tGT at 17");
-    expected.push_back("\tFEATURE: CDS: fake protein name [(lcl|nuc:1-16, 47-57)] [lcl|nuc: raw, dna len= 60] -> [lcl|prot]\tlcl|nuc\tGT at 16");
-    expected.push_back("\tFEATURE: intron: misc_feature needs a comment [lcl|nuc:1-11] [lcl|nuc: raw, dna len= 60]\tlcl|nuc\tGT at 1");
-    expected.push_back("\tFEATURE: intron: misc_feature needs a comment [lcl|nuc:1-11] [lcl|nuc: raw, dna len= 60]\tlcl|nuc\tAG at 11");
+    expected.push_back("intron\tlcl|nuc\tGT at 17");
+    expected.push_back("CDS\tlcl|nuc\tGT at 16");
+    expected.push_back("intron\tlcl|nuc\tGT at 1");
+    expected.push_back("intron\tlcl|nuc\tAG at 11");
     expected.push_back("");
     CheckStrings(seen, expected);
 
@@ -18969,10 +18969,10 @@ BOOST_AUTO_TEST_CASE(Test_ValidError_Format)
         }
     }
     expected.push_back("Not Splice Consensus");
-    expected.push_back("\tFEATURE: intron:  [lcl|nuc:17-46] [lcl|nuc: raw, dna len= 60]\tlcl|nuc\tGT at 17");
-    expected.push_back("\tFEATURE: CDS: fake protein name [(lcl|nuc:1-16, 47-57)] [lcl|nuc: raw, dna len= 60] -> [lcl|prot]\tlcl|nuc\tGT at 16");
-    expected.push_back("\tFEATURE: intron: misc_feature needs a comment [lcl|nuc:1-11] [lcl|nuc: raw, dna len= 60]\tlcl|nuc\tGT at 1");
-    expected.push_back("\tFEATURE: intron: misc_feature needs a comment [lcl|nuc:1-11] [lcl|nuc: raw, dna len= 60]\tlcl|nuc\tAG at 11");
+    expected.push_back("intron\tlcl|nuc\tGT at 17");
+    expected.push_back("CDS\tlcl|nuc\tGT at 16");
+    expected.push_back("intron\tlcl|nuc\tGT at 1");
+    expected.push_back("intron\tlcl|nuc\tAG at 11");
     expected.push_back("");
     expected.push_back("EC Number Format");
     expected.push_back("prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
