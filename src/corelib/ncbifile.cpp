@@ -2431,8 +2431,17 @@ bool CDirEntry::Rename(const string& newname, TRenameFlags flags)
         return true;
     }
 #else
-    // On Unix we can use "link" technique for files
-    if ( link(_T_XCSTRING(src.GetPath()),
+    // On Unix we can use "link" technique for files.
+    
+    // link() have dirrerent behavior on some flavors of Unix
+    // regarding symbolic links handlink, and can automatically
+    // dereference both source and destination as POSIX required, or not.
+    // We need to rename symlink itself, if it didn't dereferenced before
+    // (see fRF_FollowLinks), and the destination should remains a symlink.
+    // So just dont use link() in this case and  fall back to regular rename().
+    
+    if ( src_type != eLink  && 
+         link(_T_XCSTRING(src.GetPath()),
               _T_XCSTRING(dst.GetPath())) == 0 ) {
         // Hard link successfully created, so we can just remove source file
         if ( src.Remove() ) {
@@ -2441,7 +2450,7 @@ bool CDirEntry::Rename(const string& newname, TRenameFlags flags)
         }
     }
 #endif
-    // On error or destination existence --
+    // On error, symlink, or destination existence --
     // continue on regular processing below
 
     EType dst_type = dst.GetType();
