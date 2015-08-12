@@ -8184,12 +8184,31 @@ extern size_t SOCK_HostPortToString(unsigned int   host,
 
 extern void SOCK_SetupSSL(FSSLSetup setup)
 {
-    s_SSLSetup = setup;
+    CORE_LOCK_WRITE;
+
+    if (!setup) {
+        s_SSLSetup = 0;
+        if (s_SSL) {
+            FSSLExit sslexit = s_SSL->Exit;
+            s_SSL = 0;
+            if (sslexit)
+                sslexit();
+        }
+    } else if (s_SSLSetup != setup) {
+        if (!s_SSLSetup)
+            s_SSLSetup = setup;
+        else if (s_Initialized < 0)
+            s_SSLSetup = 0;
+        else
+            CORE_LOG(eLOG_Critical, "Cannot reset SSL while it is in use");
+    }
+
+    CORE_UNLOCK;
 }
 
 
 extern EIO_Status SOCK_SetupSSLEx(FSSLSetup setup)
 {
     SOCK_SetupSSL(setup);
-    return s_InitAPI(1/*secure*/);
+    return setup ? s_InitAPI(1/*secure*/) : eIO_Success;
 }
