@@ -355,6 +355,16 @@ public:
             m_AlwaysLoadExternal = flag;
         }
 
+    bool GetAlwaysLoadNamedAcc(void) const
+        {
+            return m_AlwaysLoadNamedAcc;
+        }
+
+    void SetAlwaysLoadNamedAcc(bool flag)
+        {
+            m_AlwaysLoadNamedAcc = flag;
+        }
+
     bool GetAddWGSMasterDescr(void) const
         {
             return m_AddWGSMasterDescr;
@@ -398,6 +408,7 @@ private:
     TExpirationTimeout      m_IdExpirationTimeout;
 
     bool                    m_AlwaysLoadExternal;
+    bool                    m_AlwaysLoadNamedAcc;
     bool                    m_AddWGSMasterDescr;
 
     //

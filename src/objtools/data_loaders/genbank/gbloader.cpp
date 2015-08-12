@@ -503,6 +503,22 @@ void CGBDataLoader::x_CreateDriver(const CGBLoaderParams& params)
             }
         }
     }
+    m_AlwaysLoadNamedAcc = true;
+    if ( gb_params ) {
+        string param =
+            GetParam(gb_params, NCBI_GBLOADER_PARAM_ALWAYS_LOAD_NAMED_ACC);
+        if ( !param.empty() ) {
+            try {
+                m_AlwaysLoadNamedAcc = NStr::StringToBool(param);
+            }
+            catch ( CException& exc ) {
+                NCBI_RETHROW_FMT(exc, CLoaderException, eBadConfig,
+                                 "Bad value of parameter "
+                                 NCBI_GBLOADER_PARAM_ALWAYS_LOAD_NAMED_ACC
+                                 ": \""<<param<<"\"");
+            }
+        }
+    }
     m_AddWGSMasterDescr = true;
     if ( gb_params ) {
         string param =
@@ -1494,10 +1510,22 @@ CDataLoader::TTSE_LockSet
 CGBDataLoader::GetOrphanAnnotRecords(const CSeq_id_Handle& idh,
                                      const SAnnotSelector* sel)
 {
-    if ( !m_AlwaysLoadExternal ) {
+    bool load_external = m_AlwaysLoadExternal;
+    bool load_namedacc = m_AlwaysLoadNamedAcc &&
+        sel && sel->IsIncludedAnyNamedAnnotAccession();
+    if ( load_external || load_namedacc ) {
+        TBlobContentsMask mask = 0;
+        if ( load_external ) {
+            mask |= fBlobHasExtAnnot;
+        }
+        if ( load_namedacc ) {
+            mask |= fBlobHasNamedAnnot;
+        }
+        return x_GetRecords(idh, mask, sel);
+    }
+    else {
         return CDataLoader::GetOrphanAnnotRecords(idh, sel);
     }
-    return GetExternalAnnotRecords(idh, sel);
 }
 
 
