@@ -685,6 +685,31 @@ CChainer::CChainerImpl::ECompat CChainer::CChainerImpl::CheckCompatibility(const
         return eNotCompatible;
     }
 
+    // don't include overlapping gapfil 'introns' in different genes
+    set<TSignedSeqRange> gene_gapfill_introns;
+    set<TSignedSeqRange> align_gapfill_introns;
+    ITERATE(CGene, it, gene) {
+        const CGeneModel& b = **it;
+        for(int i = 1; i < (int)b.Exons().size(); ++i) {
+            if(b.Exons()[i-1].m_ssplice_sig == "XX" || b.Exons()[i].m_fsplice_sig == "XX") {
+                TSignedSeqRange intron(b.Exons()[i-1].GetTo(),b.Exons()[i].GetFrom());
+                gene_gapfill_introns.insert(intron);
+            }
+        }
+    }
+    for(int i = 1; i < (int)algn.Exons().size(); ++i) {
+        if(algn.Exons()[i-1].m_ssplice_sig == "XX" || algn.Exons()[i].m_fsplice_sig == "XX") {
+            TSignedSeqRange intron(algn.Exons()[i-1].GetTo(),algn.Exons()[i].GetFrom());
+            align_gapfill_introns.insert(intron);
+        }
+    }
+    ITERATE(set<TSignedSeqRange>, ig, gene_gapfill_introns) {
+        ITERATE(set<TSignedSeqRange>, ia, align_gapfill_introns) {
+            if(ig->IntersectingWith(*ia))
+                return eNotCompatible;
+        }
+    }
+    
     if(algn.HarborsNested(gene, gene_good_enough_to_be_annotation)) {    // gene is nested in align's intron (could be partial)
         if(gene_good_enough_to_be_annotation || algn.HasTrustedEvidence(orig_aligns))
             return eExternal;
