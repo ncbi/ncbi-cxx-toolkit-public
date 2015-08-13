@@ -771,7 +771,7 @@ private:
             if (CNetServer server = m_Impl.WaitForNotifications(next_event_time)) {
                 do {
                     MoveToImmediateActions(server);
-                } while (server = m_Impl.ReadNotifications());
+                } while ((server = m_Impl.ReadNotifications()));
             } else if (last_wait) {
                 return NNetScheduleGetJob::eAgain;
             } else {
@@ -825,7 +825,7 @@ private:
                 m_ImmediateActions.end(), entry);
 
         // It's new server, add to immediate
-        if (i == m_ImmediateActions.end()) {
+        if (j == m_ImmediateActions.end()) {
             m_ImmediateActions.push_back(entry);
         }
     }
