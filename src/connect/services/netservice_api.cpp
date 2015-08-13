@@ -1031,7 +1031,7 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
                     timeout, NULL, conn_listener);
             return;
         }
-        catch (CNetCacheBlobTooOldException& ex) {
+        catch (CNetCacheBlobTooOldException& /*ex rethrown*/) {
             throw;
         }
         catch (CNetCacheException& ex) {
