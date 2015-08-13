@@ -212,7 +212,7 @@ struct SNetScheduleNotificationThread : public CThread
 
     void PrintPortNumber();
 
-    void CmdAppendPortAndTimeout(string* cmd, const CDeadline& deadline);
+    void CmdAppendPortAndTimeout(string* cmd, unsigned remaining_seconds);
 
     SNetScheduleAPIImpl* m_API;
 
