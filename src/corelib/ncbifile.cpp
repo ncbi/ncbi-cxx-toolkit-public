@@ -2434,11 +2434,13 @@ bool CDirEntry::Rename(const string& newname, TRenameFlags flags)
     // On Unix we can use "link" technique for files.
     
     // link() have dirrerent behavior on some flavors of Unix
-    // regarding symbolic links handlink, and can automatically
-    // dereference both source and destination as POSIX required, or not.
-    // We need to rename symlink itself, if it didn't dereferenced before
-    // (see fRF_FollowLinks), and the destination should remains a symlink.
-    // So just dont use link() in this case and  fall back to regular rename().
+    // regarding symbolic links handling, and can automatically
+    // dereference both source and destination as POSIX required, 
+    // or not (Linux with kernel 2.0 and up behavior).
+    // We need to rename symlink itself, if not dereferenced yet
+    // (see fRF_FollowLinks), and the destination should remains
+    // a symlink. So just dont use link() in this case and,
+    // fall back to regular rename() instead.
     
     if ( src_type != eLink  && 
          link(_T_XCSTRING(src.GetPath()),
