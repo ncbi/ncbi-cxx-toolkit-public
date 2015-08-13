@@ -915,6 +915,19 @@ static bool s_IsHtgInSep(const CSeq_entry& se)
 }
 
 
+static bool s_IsPDBInSep(const CSeq_entry& se, CScope& scope)
+{
+    for (CBioseq_CI it(scope, se); it; ++it) {
+        FOR_EACH_SEQID_ON_BIOSEQ (id, *(it->GetCompleteBioseq())) {
+            if ((*id)->IsPdb()) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
 void CValidError_imp::ValidateSubAffil
 (const CAffil::TStd& std,
  const CSerialObject& obj,
@@ -1000,7 +1013,7 @@ void CValidError_imp::ValidateCitSub
     }
     if ( !has_affil ) {
         EDiagSev sev = 
-            s_IsRefSeqInSep(GetTSE(), *m_Scope)  ||  s_IsHtgInSep(GetTSE()) ?
+            s_IsRefSeqInSep(GetTSE(), *m_Scope)  ||  s_IsHtgInSep(GetTSE())  || s_IsPDBInSep(GetTSE(), *m_Scope) ?
                 eDiag_Warning : eDiag_Error;
         PostObjErr(sev, eErr_GENERIC_MissingPubInfo,
             "Submission citation has no affiliation", obj, ctx);
