@@ -683,6 +683,20 @@ CVcfReader::xAssignVariantMnv(
 }
 
 //  ----------------------------------------------------------------------------
+static void 
+s_AddDeleteDeltaItem(
+    CVariation_inst& instance )
+{
+    CRef<CDelta_item> pItem(new CDelta_item);
+
+    pItem->SetSeq().SetThis();
+    instance.SetType(CVariation_inst::eType_del);
+    pItem->SetAction(CDelta_item::eAction_del_at);
+    instance.SetDelta().push_back(pItem);
+}
+
+
+//  ----------------------------------------------------------------------------
 bool
 CVcfReader::xAssignVariantDel(
     const CVcfData& data,
@@ -698,10 +712,8 @@ CVcfReader::xAssignVariantDel(
         //pVariant->SetData().SetNote("DEL");
         pVariant->SetDeletion();
         CVariation_inst& instance =  pVariant->SetData().SetInstance();
-        CRef<CDelta_item> pItem(new CDelta_item);
-        pItem->SetAction(CDelta_item::eAction_del_at);
-        pItem->SetSeq().SetThis();
-        instance.SetDelta().push_back(pItem);
+        s_AddDeleteDeltaItem(instance);
+
     }}
     variants.push_back(pVariant);
     return true;
@@ -735,6 +747,8 @@ CVcfReader::xAssignVariantIns(
     return true;
 }
 
+
+
 //  ----------------------------------------------------------------------------
 bool
 CVcfReader::xAssignVariantDelins(
@@ -743,33 +757,41 @@ CVcfReader::xAssignVariantDelins(
     CRef<CSeq_feat> pFeature )
 //  ----------------------------------------------------------------------------
 {
+    string insertion(data.m_Alt[index]);
+
     CVariation_ref::TData::TSet::TVariations& variants =
         pFeature->SetData().SetVariation().SetData().SetSet().SetVariations();
 
     CRef<CVariation_ref> pVariant(new CVariation_ref);
-    {{
-        string insertion(data.m_Alt[index]);
-        CRef<CSeq_literal> pLiteral(new CSeq_literal);
-        pLiteral->SetSeq_data().SetIupacna().Set(insertion);
-        pLiteral->SetLength(insertion.size());
-        CRef<CDelta_item> pItem(new CDelta_item);
-        pItem->SetSeq().SetLiteral(*pLiteral); 
-        CVariation_inst& instance =  pVariant->SetData().SetInstance();
+    CVariation_inst& instance = pVariant->SetData().SetInstance();
 
+    // If it is a deletion, add Deleteion Delta-item and be done.
+    if (insertion.size() == 0) {
 
-        //Let's try to smartly set the Type.
+        s_AddDeleteDeltaItem(instance);
+        variants.push_back(pVariant);
+        return true;
+    }
 
-        if( data.m_Alt[index].size() == 1 && data.m_strRef.size() == 1) {
-          instance.SetType(CVariation_inst::eType_snv);
-        } else {
-          instance.SetType(CVariation_inst::eType_delins);
-        }
+    // Must be a SNV or delins
+    CRef<CSeq_literal> pLiteral(new CSeq_literal);
+    pLiteral->SetSeq_data().SetIupacna().Set(insertion);
+    pLiteral->SetLength(insertion.size());
+    
+    CRef<CDelta_item> pItem(new CDelta_item);
+    pItem->SetSeq().SetLiteral(*pLiteral);
+    instance.SetDelta().push_back(pItem);
 
+    //Let's try to smartly set the Type.
+    if (insertion.size() == 1 && data.m_strRef.size() == 1) {
+        instance.SetType(CVariation_inst::eType_snv);
+    } else {
+        instance.SetType(CVariation_inst::eType_delins);
+    }
 
-        instance.SetDelta().push_back(pItem);       
-    }}
     variants.push_back(pVariant);
     return true;
+
 }
 
 //  ----------------------------------------------------------------------------
