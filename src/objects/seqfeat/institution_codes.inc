@@ -217,6 +217,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ANDES:A	s	La Universidad de Los Andes, Amphibian Collection",
 "ANDES:O	s	La Universidad de Los Andes, Ornithology Collection",
 "ANES	s	Anadolu University, Biology Department",
+"ANFC	s	Australian National Fish Collection",
 "ANFM	s	Associazione Naturalisti Forlivesi Pro Museo",
 "ANG	s	Arboretum de la Maulevrie",
 "ANGU	s	Instituto Nacional de Tecnologia Agropecuaria",
