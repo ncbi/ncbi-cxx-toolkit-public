@@ -115,6 +115,12 @@ bool SNetScheduleJobReaderImpl::CImpl::CheckEntry(
         cmd.append("any_aff=0 aff=");
         cmd.append(m_Affinity);
     } else if (!prio_aff_list.empty()) {
+        // If prioritized_aff flag is not supported (NS v4.22.0+)
+        // TODO: Can be thrown out after all NS serves are updated to version 4.22.0+
+        if (!server->m_VersionInfo.IsUpCompatible(CVersionInfo(4, 22, 0))) {
+            return CheckEntryOld(server, entry, prio_aff_list, job, job_status);
+        }
+ 
         prioritized_aff = true;
         cmd.append("any_aff=0 aff=");
         cmd.append(prio_aff_list);
@@ -141,6 +147,66 @@ bool SNetScheduleJobReaderImpl::CImpl::CheckEntry(
 
     bool ret = s_ParseReadJobResponse(exec_result.response, job,
             job_status, &no_more_jobs);
+
+    if (!no_more_jobs)
+        m_MoreJobs = true;
+
+    // Cache the result for the server,
+    // so we don't need to ask the server again about matching jobs
+    // while waiting for its notifications
+    entry.more_jobs = !no_more_jobs;
+
+    return ret;
+}
+
+// XXX: Compatibility mode.
+// TODO: Can be thrown out after all NS serves are updated to version 4.22.0+
+bool SNetScheduleJobReaderImpl::CImpl::CheckEntryOld(
+        CNetServer server,
+        NNetScheduleGetJob::SEntry& entry,
+        const string& prio_aff_list,
+        CNetScheduleJob& job,
+        CNetScheduleAPI::EJobStatus* job_status)
+{
+
+    list<CTempString> affinity_tokens;
+    NStr::Split(prio_aff_list, ",", affinity_tokens);
+
+    string affinity_list;
+    list<CTempString>::const_iterator it = affinity_tokens.begin();
+    bool no_more_jobs;
+    bool ret = false;
+
+    while (it != affinity_tokens.end()) {
+        no_more_jobs = true;
+        affinity_list += *it;
+        const bool last_try = ++it == affinity_tokens.end();
+
+        string cmd("READ2 reader_aff=0 any_aff=0 aff=");
+        cmd.append(affinity_list);
+
+        m_API->m_NotificationThread->CmdAppendPortAndTimeout(&cmd,
+                last_try ? m_Timeout : 0);
+
+        if (!m_JobGroup.empty()) {
+            cmd.append(" group=");
+            cmd.append(m_JobGroup);
+        }
+
+        g_AppendClientIPSessionIDHitID(cmd);
+
+        CNetServer::SExecResult exec_result;
+
+        server->ConnectAndExec(cmd, false, exec_result);
+
+        if (s_ParseReadJobResponse(exec_result.response, job,
+                job_status, &no_more_jobs)) {
+            ret = true;
+            break;
+        }
+
+        affinity_list += ',';
+    }
 
     if (!no_more_jobs)
         m_MoreJobs = true;

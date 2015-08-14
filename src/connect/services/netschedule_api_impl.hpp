@@ -933,6 +933,13 @@ private:
         string m_Affinity;
 
     private:
+        bool CheckEntryOld(
+                CNetServer server,
+                NNetScheduleGetJob::SEntry& entry,
+                const string& prio_aff_list,
+                CNetScheduleJob& job,
+                CNetScheduleAPI::EJobStatus* job_status);
+
         bool m_MoreJobs;
     };
 
