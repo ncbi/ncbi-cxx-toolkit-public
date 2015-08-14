@@ -64,14 +64,15 @@ const string str)
 //  -------------------------------------------------------------------------
 CFeatTableEdit::CFeatTableEdit(
     CSeq_annot& annot,
-	const string& locusTagPrefix,
-    ILineErrorListener* pMessageListener):
-//  -------------------------------------------------------------------------
+    const string& locusTagPrefix,
+    unsigned int locusTagNumber,
+    ILineErrorListener* pMessageListener) :
+    //  -------------------------------------------------------------------------
     mAnnot(annot),
     mpMessageListener(pMessageListener),
     mNextFeatId(1),
-	mLocusTagNumber(1),
-	mLocusTagPrefix(locusTagPrefix)
+    mLocusTagNumber(locusTagNumber),
+    mLocusTagPrefix(locusTagPrefix)
 {
     mpScope.Reset(new CScope(*CObjectManager::GetInstance()));
     mpScope->AddDefaults();
@@ -79,6 +80,7 @@ CFeatTableEdit::CFeatTableEdit(
     mEditHandle = mpScope->GetEditHandle(mHandle);
     mTree = feature::CFeatTree(mHandle);
 };
+
 
 //  -------------------------------------------------------------------------
 CFeatTableEdit::~CFeatTableEdit()

@@ -1172,11 +1172,13 @@ void CMultiReaderApp::xPostProcessAnnot(
     CSeq_annot& annot)
 //  ----------------------------------------------------------------------------
 {
+    static unsigned int startingLocusTagNumber = 1;
+
     if (!args["genbank"].AsBoolean()) {
 		return;
 	}
     edit::CFeatTableEdit fte(annot, args["locus-tag-prefix"].AsString(),
-		m_pErrors);
+        startingLocusTagNumber, m_pErrors);
     fte.InferPartials();
     fte.InferParentMrnas();
     fte.InferParentGenes();
@@ -1184,6 +1186,8 @@ void CMultiReaderApp::xPostProcessAnnot(
     fte.GenerateLocusTags();
     fte.GenerateProteinAndTranscriptIds();
     fte.SubmitFixProducts();
+
+    startingLocusTagNumber = fte.PendingLocusTagNumber();
 
     CCleanup cleanup;
     CConstRef<CCleanupChange> changed = cleanup.BasicCleanup(annot);

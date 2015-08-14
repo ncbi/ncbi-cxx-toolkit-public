@@ -53,6 +53,7 @@ public:
     CFeatTableEdit(
         CSeq_annot&,
 		const string& = "",
+        unsigned int = 1,
         ILineErrorListener* =0);
     ~CFeatTableEdit();
 
@@ -64,6 +65,10 @@ public:
     void GenerateProteinAndTranscriptIds();
     void GenerateLocusIds();
     void SubmitFixProducts();
+
+    unsigned int PendingLocusTagNumber() const {
+        return mLocusTagNumber;
+    }
 
 protected:
     void xGenerateLocusIdsUseExisting();
