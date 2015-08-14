@@ -344,16 +344,28 @@ bool CGff2Reader::x_ParseFeatureGff(
         ProcessError(err, pEC);
         return false;
     }
-    if ((m_iFlags & CGff2Reader::fGenbankMode)  &&  (pRecord->Type() == "protein")) {
-        cerr << "";
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
-            eDiag_Error,
-            0,
-            "Type \"protein\" in column 3 is not supported in -genbank mode.",
-            ILineError::eProblem_FeatureNameNotAllowed));
-        ProcessError(*pErr, pEC);
+    if (pRecord->Type() == "protein") {
+        if (this->m_iFlags & CGff2Reader::fGenbankMode) {
+            AutoPtr<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
+                eDiag_Error,
+                0,
+                "Type \"protein\" in column 3 is not supported in -genbank mode.",
+                ILineError::eProblem_FeatureNameNotAllowed));
+            ProcessError(*pErr, pEC);
+        }
+        else {
+            AutoPtr<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
+                eDiag_Warning,
+                0,
+                "Type \"protein\" in column 3 is not supported - ignored.",
+                ILineError::eProblem_FeatureNameNotAllowed));
+            ProcessError(*pErr, pEC);
+        }
+        return false;
     }
+
     //
     //  Search annots for a pre-existing annot pertaining to the same ID:
     //
