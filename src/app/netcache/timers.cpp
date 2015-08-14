@@ -200,8 +200,10 @@ retry:
         new_flags = old_flags - fTaskOnTimer;
         if (!AtomicCAS(task->m_TaskFlags, old_flags, new_flags))
             goto retry;
-        task->m_Timer->unlink();
-        delete task->m_Timer;
+        if (task->m_Timer) {
+            task->m_Timer->unlink();
+            delete task->m_Timer;
+        }
         task->m_Timer = NULL;
     }
     s_TimerLock.Unlock();
@@ -224,11 +226,12 @@ CSrvTask::RunAfter(Uint4 delay_sec)
     else {
 retry:
         TSrvTaskFlags old_flags = ACCESS_ONCE(m_TaskFlags);
-        if ((old_flags & fTaskOnTimer)  ||  m_Timer) {
-            SRV_FATAL("Invalid task flags: " << old_flags);
+        if ((old_flags & fTaskOnTimer)) {
+            SRV_LOG(Critical, "Invalid task flags: " << old_flags);
+            RemoveTaskFromTimer(this, old_flags - fTaskOnTimer);
         }
         if (!(old_flags & (fTaskQueued + fTaskRunnable))) {
-            TSrvTaskFlags new_flags = old_flags + fTaskOnTimer;
+            TSrvTaskFlags new_flags = old_flags | fTaskOnTimer;
             if (!AtomicCAS(m_TaskFlags, old_flags, new_flags))
                 goto retry;
             s_AddTimerTicket(ticket);
