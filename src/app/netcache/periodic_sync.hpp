@@ -260,8 +260,8 @@ public:
 
     Uint2 GetSyncSlot(void);
     void StartResponse(Uint8 local_rec_no, Uint8 remote_rec_no, bool by_blobs);
-    void AddStartEvent(SNCSyncEvent* evt);
-    void AddStartBlob(const string& key, SNCBlobSummary* blob_sum);
+    bool AddStartEvent(SNCSyncEvent* evt);
+    bool AddStartBlob(const string& key, SNCBlobSummary* blob_sum);
     bool GetNextTask(SSyncTaskInfo& task_info);
     void ExecuteSyncTask(const SSyncTaskInfo& task_info, CNCActiveHandler* conn);
     void CmdFinished(ESyncResult res, ESynActionType action, CNCActiveHandler* conn);
@@ -279,6 +279,7 @@ private:
     State x_CheckSlotTheirSync(void);
     State x_FinishScanSlots(void);
     State x_DoPeriodicSync(void);
+    State x_ScheduleTimeoutCheck(void);
     State x_WaitSyncStarted(void);
     State x_PrepareSyncByEvents(void);
     State x_WaitForBlobList(void);
@@ -380,19 +381,27 @@ CNCActiveSyncControl::StartResponse(Uint8 local_rec_no,
     m_SlotSrv->is_by_blobs = by_blobs;
 }
 
-inline void
+inline bool
 CNCActiveSyncControl::AddStartEvent(SNCSyncEvent* evt)
 {
+    if (m_Result != eSynOK) {
+        return false;
+    }
     if (evt->event_type == eSyncProlong)
         m_RemoteEvents[evt->key.PackedKey()].prolong_event = evt;
     else
         m_RemoteEvents[evt->key.PackedKey()].wr_or_rm_event = evt;
+    return true;
 }
 
-inline void
+inline bool
 CNCActiveSyncControl::AddStartBlob(const string& key, SNCBlobSummary* blob_sum)
 {
+    if (m_Result != eSynOK) {
+        return false;
+    }
     m_RemoteBlobs[key] = blob_sum;
+    return true;
 }
 
 END_NCBI_SCOPE

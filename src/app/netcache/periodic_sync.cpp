@@ -681,6 +681,7 @@ CNCActiveSyncControl::x_CheckSlotTheirSync(void)
                 (slot_srv->is_passive && slot_srv->started_cmds == 0 && 
                 CSrvTime::CurSecs() - slot_srv->last_active_time
                         > (CNCDistributionConf::GetPeriodicSyncTimeout() / kUSecsPerSecond))) {
+                SRV_LOG(Error, "Periodic sync canceled by timeout");
                 s_CancelSync(m_SlotData, slot_srv, 0);
                 slot_srv->lock.Unlock();
                 m_SlotData->lock.Unlock();
@@ -783,12 +784,53 @@ CNCActiveSyncControl::x_DoPeriodicSync(void)
 }
 
 CNCActiveSyncControl::State
+CNCActiveSyncControl::x_ScheduleTimeoutCheck(void)
+{
+#if 0
+// does not work: thread sync problems
+    if (CTaskServer::IsInShutdown()) {
+        return NULL;
+    }
+    bool need_abort = false;
+    m_SlotData->lock.Lock();
+    ITERATE(TSlotSrvsList, it_srv, m_SlotData->srvs) {
+        SSyncSlotSrv* slot_srv = *it_srv;
+        slot_srv->lock.Lock();
+        if (slot_srv->peer->GetSrvId() == m_SrvId) {
+            if (!slot_srv->sync_started) {
+                need_abort = true;
+            } else {
+                if (
+                    (CSrvTime::CurSecs() - slot_srv->last_active_time
+                                > (CNCDistributionConf::GetNetworkErrorTimeout() / kUSecsPerSecond)) ||
+                    (slot_srv->is_passive && slot_srv->started_cmds == 0 && 
+                    CSrvTime::CurSecs() - slot_srv->last_active_time
+                            > (CNCDistributionConf::GetPeriodicSyncTimeout() / kUSecsPerSecond))) {
+                    need_abort = true;
+                }
+            }
+        }
+        slot_srv->lock.Unlock();
+    }
+    m_SlotData->lock.Unlock();
+    if (need_abort) {
+        SRV_LOG(Critical, "Periodic sync aborted by timeout");
+        m_Result = eSynAborted;
+        return &CNCActiveSyncControl::x_FinishSync;
+    }
+    RunAfter(CNCDistributionConf::GetPeriodicSyncInterval() / kUSecsPerSecond);
+#endif
+    return NULL;
+}
+
+CNCActiveSyncControl::State
 CNCActiveSyncControl::x_WaitSyncStarted(void)
 {
     // wait for sync started
     // see CmdFinished()
-    if (m_StartedCmds != 0)
-        return NULL;
+    if (m_StartedCmds != 0) {
+        return x_ScheduleTimeoutCheck();
+    }
     if (CTaskServer::IsInShutdown())
         m_Result = eSynAborted;
     if (m_Result != eSynOK)
@@ -820,11 +862,15 @@ CNCActiveSyncControl::x_ExecuteSyncCommands(void)
     if (m_SlotSrv->peer->AddSyncControl(this))
         return &CNCActiveSyncControl::x_WaitForExecutingTasks;
 
-// it is probably network error, so maybe there is no point to cancel sync - it will fail
-// but let us try, anyway
-    m_NextTask = eSynNeedFinalize;
+// it is probably network error, so maybe there is no point in canceling sync - it will fail
     m_Result = eSynNetworkError;
+#if 0
+    m_NextTask = eSynNeedFinalize;
     return &CNCActiveSyncControl::x_ExecuteFinalize;
+#else
+    m_NextTask = eSynNoTask;
+    return &CNCActiveSyncControl::x_FinishSync;
+#endif
 }
 
 CNCActiveSyncControl::State
@@ -870,7 +916,7 @@ CNCActiveSyncControl::x_WaitForExecutingTasks(void)
             break;
         }
     }
-    return NULL;
+    return x_ScheduleTimeoutCheck();
 }
 
 CNCActiveSyncControl::State
@@ -983,8 +1029,9 @@ CNCActiveSyncControl::x_PrepareSyncByEvents(void)
 CNCActiveSyncControl::State
 CNCActiveSyncControl::x_WaitForBlobList(void)
 {
-    if (m_StartedCmds != 0)
-        return NULL;
+    if (m_StartedCmds != 0) {
+        return x_ScheduleTimeoutCheck();
+    }
     if (CTaskServer::IsInShutdown())
         m_Result = eSynAborted;
     if (m_Result != eSynOK)
@@ -1037,6 +1084,8 @@ CNCActiveSyncControl::x_CleanSyncObjects(void)
     m_Events2Send.clear();
     m_CurGetEvent = m_Events2Get.begin();
     m_CurSendEvent = m_Events2Send.begin();
+    m_StartedCmds = 0;
+    m_NeedReply = false;
 }
 
 void
@@ -1248,15 +1297,8 @@ CNCActiveSyncControl::x_DoFinalize(CNCActiveHandler* conn)
                                      m_LocalSyncedRecNo, m_RemoteSyncedRecNo);
         conn->SyncCommit(this, m_LocalSyncedRecNo, m_RemoteSyncedRecNo);
     }
-    else if (m_Result == eSynAborted || m_Result == eSynNetworkError) {
-        conn->SyncCancel(this);
-    }
     else {
-#ifdef _DEBUG
-        SRV_FATAL("Unexpected Finalize call: m_Result: " << m_Result);
-#else
-        SRV_LOG(Critical, "Unexpected Finalize call: m_Result: " << m_Result);
-#endif
+        conn->SyncCancel(this);
     }
 }
 
@@ -1363,10 +1405,7 @@ CNCActiveSyncControl::CmdFinished(ESyncResult res, ESynActionType action, CNCAct
     else if (res != eSynOK)
         m_Result = res;
 
-    if (m_StartedCmds == 0) {
-        SRV_FATAL("Invalid state: no m_StartedCmds");
-    }
-    if (--m_StartedCmds == 0
+    if ((m_StartedCmds == 0 || --m_StartedCmds == 0)
         &&  (m_NextTask == eSynNeedFinalize  ||  m_NextTask == eSynNoTask))
     {
         SetRunnable();
@@ -1394,6 +1433,15 @@ void CNCActiveSyncControl::PrintState(CSrvSocketTask& task, Uint2 slot, bool one
         CSrvTime((*c)->m_LoopStart / kUSecsPerSecond).Print(buf, CSrvTime::eFmtJson);
         task.WriteText(eol).WriteText("slot_LoopStart").WriteText(is ).WriteText( buf);
         task.WriteText(eol).WriteText("cnt_Unfinished").WriteText(is ).WriteNumber( (*c)->m_CntUnfinished);
+
+        task.WriteText(eol).WriteText("Events2Get_size").WriteText(is ).WriteNumber( (*c)->m_Events2Get.size());
+        task.WriteText(eol).WriteText("Events2Send_size").WriteText(is ).WriteNumber( (*c)->m_Events2Send.size());
+        task.WriteText(eol).WriteText("LocalBlobs_size").WriteText(is ).WriteNumber( (*c)->m_LocalBlobs.size());
+        task.WriteText(eol).WriteText("RemoteBlobs_size").WriteText(is ).WriteNumber( (*c)->m_RemoteBlobs.size());
+        task.WriteText(eol).WriteText("NextTask").WriteText(is ).WriteNumber( (int)(*c)->m_NextTask);
+        task.WriteText(eol).WriteText("Result").WriteText(is ).WriteNumber( (int)(*c)->m_Result);
+        task.WriteText(eol).WriteText("FinishSyncCalled").WriteText(is ).WriteBool( (*c)->m_FinishSyncCalled);
+        task.WriteText(eol).WriteText("NeedReply").WriteText(is ).WriteBool( (*c)->m_NeedReply);
         task.WriteText("\n}");
     }
     task.WriteText("],\n");

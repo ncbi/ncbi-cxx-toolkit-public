@@ -1748,7 +1748,10 @@ CNCActiveHandler::x_ReadEventsListBody(void)
     memcpy(&evt->orig_time, data, sizeof(evt->orig_time));
 
     m_SizeToRead -= rec_size;
-    m_SyncCtrl->AddStartEvent(evt);
+    if (!m_SyncCtrl->AddStartEvent(evt)) {
+        x_FinishSyncCmd(eSynAborted);
+        return &CNCActiveHandler::x_FinishCommand;
+    }
 
     return &CNCActiveHandler::x_ReadEventsListKeySize;
 }
@@ -1809,7 +1812,10 @@ CNCActiveHandler::x_ReadBlobsListBody(void)
     memcpy(&blob_sum->ver_expire, data, sizeof(blob_sum->ver_expire));
 
     m_SizeToRead -= rec_size;
-    m_SyncCtrl->AddStartBlob(key, blob_sum);
+    if (!m_SyncCtrl->AddStartBlob(key, blob_sum)) {
+        x_FinishSyncCmd(eSynAborted);
+        return &CNCActiveHandler::x_FinishCommand;
+    }
 
     return &CNCActiveHandler::x_ReadBlobsListKeySize;
 }
