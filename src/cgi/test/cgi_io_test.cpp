@@ -139,7 +139,7 @@ int CCgiIOTestApplication::ProcessRequest(CCgiContext& ctx)
     response.SetContentType("text/plain");
 
     size_t buf_size = (size_t) s_Arg("chunk_size").AsInteger();
-    char*  buf      = new char[buf_size];
+    AutoArray<char> buf(buf_size);
     for (size_t j = 0;  j < buf_size;  j++) {
         static char x[101] = "ABCDE6789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789\n";
         buf[j] = x[j%100];
@@ -163,7 +163,7 @@ int CCgiIOTestApplication::ProcessRequest(CCgiContext& ctx)
     int data_chunks = s_Arg("data_chunks").AsInteger();
     for (int i = 0 ;  i < data_chunks;  i++) {
         X_TRACE("write(buf)");
-        response.out().write(buf, buf_size);
+        response.out().write(buf.get(), buf_size);
         X_TRACE("flush()");
         response.out().flush();
         X_TRACE("sleep(chunk_wait)");
