@@ -1669,9 +1669,10 @@ CNCMessageHandler::x_ReadAuthMessage(void)
             m_Parser.ParseArguments(auth_line, s_AuthArgs, &params);
         }
         catch (CNSProtoParserException& ex) {
-            SRV_LOG(Warning, "Error authenticating client: '"
+            SRV_LOG(Error, "Error authenticating client: '"
                              << auth_line << "': " << ex);
             params["client"] = auth_line;
+            return &CNCMessageHandler::x_SaveStatsAndClose;
         }
         ITERATE(TNSProtoParams, it, params) {
             m_ClientParams[it->first] = it->second;
