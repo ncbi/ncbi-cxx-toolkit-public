@@ -761,6 +761,7 @@ void CNetScheduleServerListener::OnConnected(CNetServerConnection& connection)
 
         string attr_name, attr_value;
         string ns_node, ns_session;
+        CVersionInfo version;
 
         while (server_info.GetNextAttribute(attr_name, attr_value))
             if (attr_name == "ns_node")
@@ -768,18 +769,20 @@ void CNetScheduleServerListener::OnConnected(CNetServerConnection& connection)
             else if (attr_name == "ns_session")
                 ns_session = attr_value;
             else if (attr_name == "server_version")
-                connection->m_Server->m_VersionInfo = CVersionInfo(attr_value);
+                version = CVersionInfo(attr_value);
 
+        // Usually, all attributes come together, so no need to check version
         if (!ns_node.empty() && !ns_session.empty()) {
             CRef<SNetScheduleServerProperties> server_props =
                 x_GetServerProperties(connection->m_Server);
 
+            // Version cannot change without session, so no need to compare, too
             if (server_props->ns_node != ns_node ||
                     server_props->ns_session != ns_session) {
                 CFastMutexGuard guard(m_ServerByNodeMutex);
-
                 server_props->ns_node = ns_node;
                 server_props->ns_session = ns_session;
+                server_props->version = version;
                 m_ServerByNode[ns_node] = connection->m_Server->m_ServerInPool;
                 server_props->affs_synced = false;
             }

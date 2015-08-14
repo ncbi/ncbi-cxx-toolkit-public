@@ -375,7 +375,10 @@ bool SNetScheduleExecutorImpl::x_GetJobWithAffinityLadder(
                 m_AffinityPreference, kEmptyStr);
 
     // If prioritized_aff flag is supported (NS v4.22.0+)
-    if (server->m_VersionInfo.IsUpCompatible(CVersionInfo(4, 22, 0))) {
+    CRef<SNetScheduleServerProperties> server_props =
+        CNetScheduleServerListener::x_GetServerProperties(server);
+
+    if (!server_props->version.IsUpCompatible(CVersionInfo(4, 22, 0))) {
         string cmd("GET2 wnode_aff=0 any_aff=0 prioritized_aff=1 aff=");
         cmd += prio_aff_list;
 

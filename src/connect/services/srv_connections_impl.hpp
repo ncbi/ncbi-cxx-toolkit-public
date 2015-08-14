@@ -208,7 +208,6 @@ struct SNetServerImpl : public CObject
 
     CNetService m_Service;
     CRef<SNetServerInPool> m_ServerInPool;
-    CVersionInfo m_VersionInfo;
 };
 
 END_NCBI_SCOPE

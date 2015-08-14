@@ -68,10 +68,9 @@ struct SNetScheduleServerProperties : public INetServerProperties
     {
     }
 
-    CFastMutex m_Mutex;
-
     string ns_node;
     string ns_session;
+    CVersionInfo version;
 
     bool affs_synced;
 };
@@ -125,7 +124,7 @@ public:
     bool NeedToSubmitAffinities(SNetServerImpl* server_impl);
     void SetAffinitiesSynced(SNetServerImpl* server_impl, bool affs_synced);
 
-    CRef<SNetScheduleServerProperties> x_GetServerProperties(
+    static CRef<SNetScheduleServerProperties> x_GetServerProperties(
             SNetServerImpl* server_impl);
 
     virtual CRef<INetServerProperties> AllocServerProperties();

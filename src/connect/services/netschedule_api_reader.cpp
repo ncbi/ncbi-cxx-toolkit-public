@@ -117,7 +117,10 @@ bool SNetScheduleJobReaderImpl::CImpl::CheckEntry(
     } else if (!prio_aff_list.empty()) {
         // If prioritized_aff flag is not supported (NS v4.22.0+)
         // TODO: Can be thrown out after all NS serves are updated to version 4.22.0+
-        if (!server->m_VersionInfo.IsUpCompatible(CVersionInfo(4, 22, 0))) {
+        CRef<SNetScheduleServerProperties> server_props =
+            CNetScheduleServerListener::x_GetServerProperties(server);
+
+        if (!server_props->version.IsUpCompatible(CVersionInfo(4, 22, 0))) {
             return CheckEntryOld(server, entry, prio_aff_list, job, job_status);
         }
  
