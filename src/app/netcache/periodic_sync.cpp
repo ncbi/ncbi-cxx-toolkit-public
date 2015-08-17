@@ -784,52 +784,12 @@ CNCActiveSyncControl::x_DoPeriodicSync(void)
 }
 
 CNCActiveSyncControl::State
-CNCActiveSyncControl::x_ScheduleTimeoutCheck(void)
-{
-#if 0
-// does not work: thread sync problems
-    if (CTaskServer::IsInShutdown()) {
-        return NULL;
-    }
-    bool need_abort = false;
-    m_SlotData->lock.Lock();
-    ITERATE(TSlotSrvsList, it_srv, m_SlotData->srvs) {
-        SSyncSlotSrv* slot_srv = *it_srv;
-        slot_srv->lock.Lock();
-        if (slot_srv->peer->GetSrvId() == m_SrvId) {
-            if (!slot_srv->sync_started) {
-                need_abort = true;
-            } else {
-                if (
-                    (CSrvTime::CurSecs() - slot_srv->last_active_time
-                                > (CNCDistributionConf::GetNetworkErrorTimeout() / kUSecsPerSecond)) ||
-                    (slot_srv->is_passive && slot_srv->started_cmds == 0 && 
-                    CSrvTime::CurSecs() - slot_srv->last_active_time
-                            > (CNCDistributionConf::GetPeriodicSyncTimeout() / kUSecsPerSecond))) {
-                    need_abort = true;
-                }
-            }
-        }
-        slot_srv->lock.Unlock();
-    }
-    m_SlotData->lock.Unlock();
-    if (need_abort) {
-        SRV_LOG(Critical, "Periodic sync aborted by timeout");
-        m_Result = eSynAborted;
-        return &CNCActiveSyncControl::x_FinishSync;
-    }
-    RunAfter(CNCDistributionConf::GetPeriodicSyncInterval() / kUSecsPerSecond);
-#endif
-    return NULL;
-}
-
-CNCActiveSyncControl::State
 CNCActiveSyncControl::x_WaitSyncStarted(void)
 {
     // wait for sync started
     // see CmdFinished()
     if (m_StartedCmds != 0) {
-        return x_ScheduleTimeoutCheck();
+        return NULL;
     }
     if (CTaskServer::IsInShutdown())
         m_Result = eSynAborted;
@@ -916,7 +876,7 @@ CNCActiveSyncControl::x_WaitForExecutingTasks(void)
             break;
         }
     }
-    return x_ScheduleTimeoutCheck();
+    return NULL;
 }
 
 CNCActiveSyncControl::State
@@ -1030,7 +990,7 @@ CNCActiveSyncControl::State
 CNCActiveSyncControl::x_WaitForBlobList(void)
 {
     if (m_StartedCmds != 0) {
-        return x_ScheduleTimeoutCheck();
+        return NULL;
     }
     if (CTaskServer::IsInShutdown())
         m_Result = eSynAborted;

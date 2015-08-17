@@ -279,7 +279,6 @@ private:
     State x_CheckSlotTheirSync(void);
     State x_FinishScanSlots(void);
     State x_DoPeriodicSync(void);
-    State x_ScheduleTimeoutCheck(void);
     State x_WaitSyncStarted(void);
     State x_PrepareSyncByEvents(void);
     State x_WaitForBlobList(void);
