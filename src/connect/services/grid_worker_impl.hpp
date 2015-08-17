@@ -338,12 +338,12 @@ private:
 
         void Main();
 
-        NNetScheduleGetJob::EState CheckState();
+        CNetScheduleGetJob::EState CheckState();
         CNetServer ReadNotifications();
         CNetServer WaitForNotifications(const CDeadline& deadline);
-        bool MoreJobs(const NNetScheduleGetJob::SEntry& entry);
+        bool MoreJobs(const CNetScheduleGetJob::SEntry& entry);
         bool CheckEntry(
-                NNetScheduleGetJob::SEntry& entry,
+                CNetScheduleGetJob::SEntry& entry,
                 const string& prio_aff_list,
                 CNetScheduleJob& job,
                 CNetScheduleAPI::EJobStatus* job_status);
@@ -362,7 +362,7 @@ private:
 
     SGridWorkerNodeImpl* m_WorkerNode;
     CImpl m_Impl;
-    CNetScheduleGetJob<CImpl> m_Timeline;
+    CNetScheduleGetJobImpl<CImpl> m_Timeline;
     const string m_ThreadName;
 };
 

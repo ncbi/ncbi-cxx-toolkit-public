@@ -100,7 +100,7 @@ static bool s_ParseReadJobResponse(const string& response,
 }
 
 bool SNetScheduleJobReaderImpl::CImpl::CheckEntry(
-        NNetScheduleGetJob::SEntry& entry,
+        CNetScheduleGetJob::SEntry& entry,
         const string& prio_aff_list,
         CNetScheduleJob& job,
         CNetScheduleAPI::EJobStatus* job_status)
@@ -166,7 +166,7 @@ bool SNetScheduleJobReaderImpl::CImpl::CheckEntry(
 // TODO: Can be thrown out after all NS serves are updated to version 4.22.0+
 bool SNetScheduleJobReaderImpl::CImpl::CheckEntryOld(
         CNetServer server,
-        NNetScheduleGetJob::SEntry& entry,
+        CNetScheduleGetJob::SEntry& entry,
         const string& prio_aff_list,
         CNetScheduleJob& job,
         CNetScheduleAPI::EJobStatus* job_status)
@@ -256,12 +256,12 @@ CNetServer SNetScheduleJobReaderImpl::CImpl::ReadNotifications()
     return server;
 }
 
-NNetScheduleGetJob::EState SNetScheduleJobReaderImpl::CImpl::CheckState()
+CNetScheduleGetJob::EState SNetScheduleJobReaderImpl::CImpl::CheckState()
 {
-    return NNetScheduleGetJob::eWorking;
+    return CNetScheduleGetJob::eWorking;
 }
 
-bool SNetScheduleJobReaderImpl::CImpl::MoreJobs(const NNetScheduleGetJob::SEntry& entry)
+bool SNetScheduleJobReaderImpl::CImpl::MoreJobs(const CNetScheduleGetJob::SEntry& entry)
 {
     if (m_MoreJobs) {
         m_MoreJobs = false;
@@ -304,16 +304,16 @@ CNetScheduleJobReader::EReadNextJobResult SNetScheduleJobReaderImpl::ReadNextJob
     CDeadline deadline(timeout ? *timeout : CTimeout(0, 0));
 
     switch (m_Timeline.GetJob(deadline, *job, job_status)) {
-    case NNetScheduleGetJob::eJob:
+    case CNetScheduleGetJob::eJob:
         return CNetScheduleJobReader::eRNJ_JobReady;
 
-    case NNetScheduleGetJob::eAgain:
+    case CNetScheduleGetJob::eAgain:
         return CNetScheduleJobReader::eRNJ_NotReady;
 
-    case NNetScheduleGetJob::eInterrupt:
+    case CNetScheduleGetJob::eInterrupt:
         return CNetScheduleJobReader::eRNJ_Interrupt;
 
-    default /* NNetScheduleGetJob::eNoJobs */:
+    default /* CNetScheduleGetJob::eNoJobs */:
         return CNetScheduleJobReader::eRNJ_NoMoreJobs;
     }
 }

@@ -472,12 +472,12 @@ private:
             SNetScheduleAPIImpl::VerifyAffinityAlphabet(affinity);
         }
 
-        NNetScheduleGetJob::EState CheckState();
+        CNetScheduleGetJob::EState CheckState();
         CNetServer ReadNotifications();
         CNetServer WaitForNotifications(const CDeadline& deadline);
-        bool MoreJobs(const NNetScheduleGetJob::SEntry& entry);
+        bool MoreJobs(const CNetScheduleGetJob::SEntry& entry);
         bool CheckEntry(
-                NNetScheduleGetJob::SEntry& entry,
+                CNetScheduleGetJob::SEntry& entry,
                 const string& prio_aff_list,
                 CNetScheduleJob& job,
                 CNetScheduleAPI::EJobStatus* job_status);
@@ -491,7 +491,7 @@ private:
     private:
         bool CheckEntryOld(
                 CNetServer server,
-                NNetScheduleGetJob::SEntry& entry,
+                CNetScheduleGetJob::SEntry& entry,
                 const string& prio_aff_list,
                 CNetScheduleJob& job,
                 CNetScheduleAPI::EJobStatus* job_status);
@@ -500,7 +500,7 @@ private:
     };
 
     CImpl m_Impl;
-    CNetScheduleGetJob<CImpl> m_Timeline;
+    CNetScheduleGetJobImpl<CImpl> m_Timeline;
 };
 
 struct SNetScheduleAdminImpl : public CObject
