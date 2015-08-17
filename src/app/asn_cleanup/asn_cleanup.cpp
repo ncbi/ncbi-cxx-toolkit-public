@@ -184,7 +184,7 @@ void CCleanupApp::Init(void)
         arg_desc->AddOptionalKey("X", "Miscellaneous", "Other Cleaning Options",
             CArgDescriptions::eString);
 
-        arg_desc->AddFlag("T", "TaxonomyLookup", "Taxonomy Lookup");
+        arg_desc->AddFlag("T", "TaxonomyLookup");
     }}
     
     // misc
