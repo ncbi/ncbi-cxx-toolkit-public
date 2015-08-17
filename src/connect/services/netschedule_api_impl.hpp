@@ -667,14 +667,23 @@ class CNetScheduleGetJob
 
                 if (m_Impl.CheckEntry(*i, prio_aff_list,
                             holder.job, holder.job_status)) {
+                    if (i == m_ImmediateActions.begin()) {
+                        increment = true;
+                    } else {
+                        // We have got a more prioritized job from this server.
+                        // Move this server to the top of immediate actions,
+                        // so we will have servers ordered (most-to-least)
+                        // by affinities of the jobs they have returned last
+                        m_ImmediateActions.splice(m_ImmediateActions.begin(),
+                                m_ImmediateActions, i);
+                    }
+
                     // A job has been returned; keep the server in
                     // immediate actions because there can be more
                     // jobs in the queue.
                     if (holder.Done()) {
                         return NNetScheduleGetJob::eJob;
                     }
-
-                    increment = true;
                 } else {
                     // No job has been returned by this server;
                     // query the server later.
