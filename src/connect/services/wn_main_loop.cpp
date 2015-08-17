@@ -627,9 +627,9 @@ void* CMainLoopThread::Main()
 CNetScheduleGetJob::EState CMainLoopThread::CImpl::CheckState()
 {
     if (CGridGlobals::GetInstance().IsShuttingDown())
-        return CNetScheduleGetJob::eStopped;
+        return eStopped;
 
-    CNetScheduleGetJob::EState ret = CNetScheduleGetJob::eWorking;
+    EState ret = eWorking;
 
     for (;;) {
         void* event;
@@ -640,7 +640,7 @@ CNetScheduleGetJob::EState CMainLoopThread::CImpl::CheckState()
                 if (!m_WorkerNode->m_TimelineIsSuspended) {
                     // Stop the timeline.
                     m_WorkerNode->m_TimelineIsSuspended = true;
-                    ret = CNetScheduleGetJob::eRestarted;
+                    ret = eRestarted;
                 }
             } else { /* event == RESUME_EVENT */
                 if (m_WorkerNode->m_TimelineIsSuspended) {
@@ -690,13 +690,13 @@ CNetServer CMainLoopThread::CImpl::x_ProcessRequestJobNotification()
     return server;
 }
 
-bool CMainLoopThread::CImpl::MoreJobs(const CNetScheduleGetJob::SEntry& /*entry*/)
+bool CMainLoopThread::CImpl::MoreJobs(const SEntry& /*entry*/)
 {
     return true;
 }
 
 bool CMainLoopThread::CImpl::CheckEntry(
-        CNetScheduleGetJob::SEntry& entry,
+        SEntry& entry,
         const string& prio_aff_list,
         CNetScheduleJob& job,
         CNetScheduleAPI::EJobStatus* /*job_status*/)

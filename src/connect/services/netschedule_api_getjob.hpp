@@ -42,16 +42,17 @@
 BEGIN_NCBI_SCOPE
 
 
-// Vector of priority-ordered pairs of affinities and
-// corresponding priority-ordered comma-separated affinity lists.
-// E.g., for "a, b, c" it would be:
-// { "a", "a"       },
-// { "b", "a, b"    },
-// { "c", "a, b, c" }
-typedef vector<pair<string, string> > TNetScheduleAffinityLadder;
-
+// A namespace-like class
 struct CNetScheduleGetJob
 {
+    // Vector of priority-ordered pairs of affinities and
+    // corresponding priority-ordered comma-separated affinity lists.
+    // E.g., for "a, b, c" it would be:
+    // { "a", "a"       },
+    // { "b", "a, b"    },
+    // { "c", "a, b, c" }
+    typedef vector<pair<string, string> > TAffinityLadder;
+
     enum EState {
         eWorking,
         eRestarted,
@@ -88,10 +89,9 @@ struct CNetScheduleGetJob
 };
 
 template <class TImpl>
-class CNetScheduleGetJobImpl
+class CNetScheduleGetJobImpl : public CNetScheduleGetJob
 {
     typedef list<SServerAddress> TServers;
-    typedef CNetScheduleGetJob::SEntry SEntry;
     typedef list<SEntry> TTimeline;
     typedef TTimeline::iterator TIterator;
 
@@ -180,7 +180,7 @@ class CNetScheduleGetJobImpl
             // Must not happen, since otherwise Done() has returned true already
             _ASSERT(m_JobPriority);
 
-            TNetScheduleAffinityLadder&
+            TAffinityLadder&
                 affinity_ladder(m_GetJobImpl.m_API->m_AffinityLadder);
 
             if (HasJob()) {
@@ -206,7 +206,7 @@ class CNetScheduleGetJobImpl
 
             m_PreviousJob = job;
 
-            TNetScheduleAffinityLadder&
+            TAffinityLadder&
                 affinity_ladder(m_GetJobImpl.m_API->m_AffinityLadder);
 
             size_t priority = min(affinity_ladder.size(), m_JobPriority) - 1;
@@ -241,19 +241,19 @@ class CNetScheduleGetJobImpl
     };
 
     template <class TJobHolder>
-    CNetScheduleGetJob::EResult GetJobImmediately(TJobHolder& holder)
+    EResult GetJobImmediately(TJobHolder& holder)
     {
         TIterator i = holder.Begin();
 
         for (;;) {
-            CNetScheduleGetJob::EState state = m_Impl.CheckState();
+            EState state = m_Impl.CheckState();
 
-            if (state == CNetScheduleGetJob::eStopped) {
+            if (state == eStopped) {
                 holder.Interrupt();
-                return CNetScheduleGetJob::eInterrupt;
+                return eInterrupt;
             }
             
-            if (state == CNetScheduleGetJob::eRestarted) {
+            if (state == eRestarted) {
                 Restart();
                 i = holder.Begin();
                 continue;
@@ -261,8 +261,7 @@ class CNetScheduleGetJobImpl
 
             // We must check i here to let state be checked before leaving loop
             if (i == m_ImmediateActions.end()) {
-                return holder.HasJob() ? CNetScheduleGetJob::eJob :
-                    CNetScheduleGetJob::eAgain;
+                return holder.HasJob() ? eJob : eAgain;
             }
 
             if (*i == m_DiscoveryAction) {
@@ -298,7 +297,7 @@ class CNetScheduleGetJobImpl
                     // immediate actions because there can be more
                     // jobs in the queue.
                     if (holder.Done()) {
-                        return CNetScheduleGetJob::eJob;
+                        return eJob;
                     }
                 } else {
                     // No job has been returned by this server;
@@ -319,7 +318,7 @@ class CNetScheduleGetJobImpl
                 m_ImmediateActions.erase(i);
 
                 if (holder.HasJob()) {
-                    return CNetScheduleGetJob::eJob;
+                    return eJob;
                 }
 
                 throw;
@@ -349,7 +348,7 @@ public:
         m_ImmediateActions.push_back(m_DiscoveryAction);
     }
 
-    CNetScheduleGetJob::EResult GetJob(
+    EResult GetJob(
             const CDeadline& deadline,
             CNetScheduleJob& job,
             CNetScheduleAPI::EJobStatus* job_status)
@@ -366,24 +365,24 @@ public:
 
 private:
     template <class TJobHolder>
-    CNetScheduleGetJob::EResult GetJobImpl(
+    EResult GetJobImpl(
             const CDeadline& deadline, TJobHolder& holder)
     {
         for (;;) {
-            CNetScheduleGetJob::EResult ret = GetJobImmediately(holder);
+            EResult ret = GetJobImmediately(holder);
 
-            if (ret != CNetScheduleGetJob::eAgain) {
+            if (ret != eAgain) {
                 return ret;
             }
 
             // If MoreJobs() returned false for all entries of m_ScheduledActions
             if (find_if(m_ScheduledActions.begin(), m_ScheduledActions.end(),
                         SEntryHasMoreJobs(m_Impl)) == m_ScheduledActions.end()) {
-                return CNetScheduleGetJob::eNoJobs;
+                return eNoJobs;
             }
 
             if (deadline.IsExpired())
-                return CNetScheduleGetJob::eAgain;
+                return eAgain;
 
             // At least, the discovery action must be there
             _ASSERT(!m_ScheduledActions.empty());
@@ -398,7 +397,7 @@ private:
                     MoveToImmediateActions(server);
                 } while ((server = m_Impl.ReadNotifications()));
             } else if (last_wait) {
-                return CNetScheduleGetJob::eAgain;
+                return eAgain;
             } else {
                 m_ImmediateActions.splice(m_ImmediateActions.end(),
                         m_ScheduledActions, m_ScheduledActions.begin());

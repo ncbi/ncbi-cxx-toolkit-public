@@ -100,7 +100,7 @@ static bool s_ParseReadJobResponse(const string& response,
 }
 
 bool SNetScheduleJobReaderImpl::CImpl::CheckEntry(
-        CNetScheduleGetJob::SEntry& entry,
+        SEntry& entry,
         const string& prio_aff_list,
         CNetScheduleJob& job,
         CNetScheduleAPI::EJobStatus* job_status)
@@ -166,7 +166,7 @@ bool SNetScheduleJobReaderImpl::CImpl::CheckEntry(
 // TODO: Can be thrown out after all NS serves are updated to version 4.22.0+
 bool SNetScheduleJobReaderImpl::CImpl::CheckEntryOld(
         CNetServer server,
-        CNetScheduleGetJob::SEntry& entry,
+        SEntry& entry,
         const string& prio_aff_list,
         CNetScheduleJob& job,
         CNetScheduleAPI::EJobStatus* job_status)
@@ -258,10 +258,10 @@ CNetServer SNetScheduleJobReaderImpl::CImpl::ReadNotifications()
 
 CNetScheduleGetJob::EState SNetScheduleJobReaderImpl::CImpl::CheckState()
 {
-    return CNetScheduleGetJob::eWorking;
+    return eWorking;
 }
 
-bool SNetScheduleJobReaderImpl::CImpl::MoreJobs(const CNetScheduleGetJob::SEntry& entry)
+bool SNetScheduleJobReaderImpl::CImpl::MoreJobs(const SEntry& entry)
 {
     if (m_MoreJobs) {
         m_MoreJobs = false;

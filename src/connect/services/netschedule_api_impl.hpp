@@ -327,7 +327,7 @@ struct SNetScheduleAPIImpl : public CObject
     CNetScheduleExecutor::EJobAffinityPreference m_AffinityPreference;
     list<string> m_AffinityList;
 
-    TNetScheduleAffinityLadder m_AffinityLadder;
+    CNetScheduleGetJob::TAffinityLadder m_AffinityLadder;
 
     string m_JobGroup;
     unsigned m_JobTtl;
@@ -457,7 +457,7 @@ struct SNetScheduleJobReaderImpl : public CObject
     void InterruptReading();
 
 private:
-    class CImpl
+    class CImpl : public CNetScheduleGetJob
     {
     public:
         CImpl(CNetScheduleAPI::TInstance ns_api_impl,
@@ -472,12 +472,12 @@ private:
             SNetScheduleAPIImpl::VerifyAffinityAlphabet(affinity);
         }
 
-        CNetScheduleGetJob::EState CheckState();
+        EState CheckState();
         CNetServer ReadNotifications();
         CNetServer WaitForNotifications(const CDeadline& deadline);
-        bool MoreJobs(const CNetScheduleGetJob::SEntry& entry);
+        bool MoreJobs(const SEntry& entry);
         bool CheckEntry(
-                CNetScheduleGetJob::SEntry& entry,
+                SEntry& entry,
                 const string& prio_aff_list,
                 CNetScheduleJob& job,
                 CNetScheduleAPI::EJobStatus* job_status);
@@ -491,7 +491,7 @@ private:
     private:
         bool CheckEntryOld(
                 CNetServer server,
-                CNetScheduleGetJob::SEntry& entry,
+                SEntry& entry,
                 const string& prio_aff_list,
                 CNetScheduleJob& job,
                 CNetScheduleAPI::EJobStatus* job_status);
