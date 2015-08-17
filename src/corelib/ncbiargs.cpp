@@ -1358,6 +1358,7 @@ CArgDescSynopsis::CArgDescSynopsis(const string& synopsis)
 CArgDesc_Flag::CArgDesc_Flag(const string& name,
                              const string& comment,
                              bool  set_value)
+
     : CArgDesc(name, comment),
       m_Group(0),
       m_SetValue(set_value)
@@ -1995,7 +1996,7 @@ static string s_CArgs_ReadFromConsole(const string& name, EEchoInput echo_input,
             GENERIC_WRITE, FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
             FILE_ATTRIBUTE_NORMAL, NULL);
         if (hOut != INVALID_HANDLE_VALUE) {
-            WriteFile(hOut,prompt.data(),prompt.length(), &dw, NULL);
+            WriteFile(hOut, prompt.data(), (DWORD)prompt.length(), &dw, NULL);
         }
     }
 
@@ -2030,7 +2031,7 @@ static string s_CArgs_ReadFromConsole(const string& name, EEchoInput echo_input,
     }
 
     if (hOut != INVALID_HANDLE_VALUE) {
-        WriteFile(hOut,thx.data(),thx.length(), &dw, NULL);
+        WriteFile(hOut, thx.data(), (DWORD)thx.length(), &dw, NULL);
         CloseHandle(hOut);
     }
 #else
@@ -2252,23 +2253,22 @@ void CArgDescriptions::AddDefaultKey
 }
 
 
-void CArgDescriptions::AddFlag
-(const string& name,
- const string& comment,
- bool          set_value)
+void CArgDescriptions::AddFlag(
+    const string& name,
+    const string& comment,
+    CBoolEnum<EFlagValue> set_value)
 {
-    auto_ptr<CArgDesc_Flag> arg(new CArgDesc_Flag(name, comment, set_value));
-
+    auto_ptr<CArgDesc_Flag> arg(new CArgDesc_Flag(name, comment, set_value == eFlagHasValueIfSet));
     x_AddDesc(*arg);
     arg.release();
 }
 
 
-void CArgDescriptions::AddPositional
-(const string& name,
- const string& comment,
- EType         type,
- TFlags        flags)
+void CArgDescriptions::AddPositional(
+    const string& name,
+    const string& comment,
+    EType         type,
+    TFlags        flags)
 {
     auto_ptr<CArgDesc_Pos> arg(new CArgDesc_Pos(name, comment, type, flags));
 
@@ -2277,11 +2277,11 @@ void CArgDescriptions::AddPositional
 }
 
 
-void CArgDescriptions::AddOpening
-(const string& name,
- const string& comment,
- EType         type,
- TFlags        flags)
+void CArgDescriptions::AddOpening(
+    const string& name,
+    const string& comment,
+    EType         type,
+    TFlags        flags)
 {
     auto_ptr<CArgDesc_Opening> arg(new CArgDesc_Opening(name, comment, type, flags));
 
@@ -2290,11 +2290,11 @@ void CArgDescriptions::AddOpening
 }
 
 
-void CArgDescriptions::AddOptionalPositional
-(const string& name,
- const string& comment,
- EType         type,
- TFlags        flags)
+void CArgDescriptions::AddOptionalPositional(
+    const string& name,
+    const string& comment,
+    EType         type,
+    TFlags        flags)
 {
     auto_ptr<CArgDesc_PosOpt> arg
         (new CArgDesc_PosOpt(name, comment, type, flags));
@@ -2304,14 +2304,14 @@ void CArgDescriptions::AddOptionalPositional
 }
 
 
-void CArgDescriptions::AddDefaultPositional
-(const string& name,
- const string& comment,
- EType         type,
- const string& default_value,
- TFlags        flags,
- const string& env_var,
- const char*   display_value)
+void CArgDescriptions::AddDefaultPositional(
+     const string& name,
+     const string& comment,
+     EType         type,
+     const string& default_value,
+     TFlags        flags,
+     const string& env_var,
+     const char*   display_value)
 {
     auto_ptr<CArgDesc_PosDef> arg(new CArgDesc_PosDef(name,
         comment, type, flags, default_value, env_var, display_value));
@@ -2321,12 +2321,12 @@ void CArgDescriptions::AddDefaultPositional
 }
 
 
-void CArgDescriptions::AddExtra
-(unsigned      n_mandatory,
- unsigned      n_optional,
- const string& comment,
- EType         type,
- TFlags        flags)
+void CArgDescriptions::AddExtra(
+    unsigned      n_mandatory,
+    unsigned      n_optional,
+    const string& comment,
+    EType         type,
+    TFlags        flags)
 {
     if (!n_mandatory  &&  !n_optional) {
         NCBI_THROW(CArgException,eSynopsis,

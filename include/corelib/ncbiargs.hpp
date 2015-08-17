@@ -84,6 +84,7 @@
 #include <corelib/ncbiobj.hpp>
 #include <corelib/ncbi_limits.h>
 #include <corelib/ncbitime.hpp>
+#include <corelib/ncbimisc.hpp>
 #include <memory>
 #include <set>
 #include <list>
@@ -517,8 +518,8 @@ public:
     virtual ~CArgDescriptions(void);
 
     /// Type of CArgDescriptions
-    /// For a CGI application positional argumants and flags does not make
-    /// sense (this sintax cannot be expressed by CGI protocol)
+    /// For a CGI application positional arguments and flags does not make
+    /// sense (this syntax cannot be expressed by CGI protocol)
     enum EArgSetType {
         eRegularArgs,  ///< Regular application
         eCgiArgs       ///< CGI application
@@ -555,8 +556,8 @@ public:
         eInteger,    ///< Convertible into an integer number (int or Int8)
         eDouble,     ///< Convertible into a floating point number (double)
         eInputFile,  ///< Name of file (must exist and be readable)
-        eOutputFile, ///< Name of file (must be writeable)
-        eIOFile,     ///< Name of file (must be writeable)
+        eOutputFile, ///< Name of file (must be writable)
+        eIOFile,     ///< Name of file (must be writable)
         eDirectory,  ///< Name of file directory
         eDataSize,   ///< Integer number with possible "software" qualifiers (KB, KiB, et al)
         eDateTime,   ///< DateTime string, formats "Y-M-DTh:m:gZ" or "Y/M/D h:m:gZ"
@@ -625,12 +626,12 @@ public:
         /// Such arguments can be read from command line, from file, or from
         /// console.
         /// On command line, they can appear in one of the following forms:
-        ///   -key                   -- read value from console, with automatically
-        ///                             generated prompt
-        ///   -key-file      fname   -- read value from file 'fname',
-        ///                             if 'fname' equals '-',  read value from
-        ///                             standard input (stdin) without any prompt
-        ///   -key-verbatim  value   -- read value from the command line, as is
+        ///   -key                 -- read value from console, with automatically
+        ///                           generated prompt
+        ///   -key-file fname      -- read value from file 'fname',
+        ///                           if 'fname' equals '-',  read value from
+        ///                           standard input (stdin) without any prompt
+        ///   -key-verbatim value  -- read value from the command line, as is
         fConfidential  = (1 << 13)
     };
     typedef unsigned int TFlags;  ///< Bitwise OR of "EFlags"
@@ -704,13 +705,20 @@ public:
                        const char*   display_value = nullptr
                       );
 
+    /// Define how flag presence affect CArgValue::HasValue().
+    /// @sa AddFlag
+    enum EFlagValue {
+        eFlagHasValueIfMissed = 0,
+        eFlagHasValueIfSet    = 1
+    };
+
     /// Add description for flag argument.
     ///
     /// Flag argument has the following syntax:
     ///
     ///  arg_flag  := -<flag>,     <flag> := "name"
     ///
-    /// If argument "set_value" is TRUE, then:
+    /// If argument "set_value" is eFlagHasValueIfSet (TRUE), then:
     ///    - if the flag is provided (in the command-line), then the resultant
     ///      CArgValue::HasValue() will be TRUE;
     ///    - else it will be FALSE.
@@ -719,11 +727,10 @@ public:
     ///
     /// NOTE: If CArgValue::HasValue() is TRUE, then AsBoolean() is
     /// always TRUE.
-    void AddFlag(const string& name,            ///< Name of argument
-                 const string& comment,         ///< Argument description
-                 bool          set_value = true ///< Is value set or not?
-                );
-
+    void AddFlag(const string& name,      ///< Name of argument
+                 const string& comment,   ///< Argument description
+                 CBoolEnum<EFlagValue> set_value = eFlagHasValueIfSet
+                 );
 
     /// Add description of mandatory opening positional argument.
     ///
@@ -748,7 +755,7 @@ public:
                     TFlags        flags = 0 ///< Optional flags
                     );
 
-    /// Add description for mandatory postional argument.
+    /// Add description for mandatory positional argument.
     ///
     /// Mandatory positional argument has the following syntax:
     ///
@@ -1019,6 +1026,7 @@ public:
     {
         return m_AutoHelp;
     }
+
 private:
     typedef set< AutoPtr<CArgDesc> >  TArgs;    ///< Argument descr. type
     typedef TArgs::iterator           TArgsI;   ///< Arguments iterator
@@ -1072,13 +1080,13 @@ private:
                                                 bool negated=false) const;
 
     /// Helper method to find named parameter.
-    /// 'negative' (if provided) will indicate if the name refered to a
+    /// 'negative' (if provided) will indicate if the name referred to a
     /// negative alias.
     TArgsI  x_Find(const string& name,
                    bool*         negative = NULL);
 
     /// Helper method to find named parameter -- const version.
-    /// 'negative' (if provided) will indicate if the name refered to a
+    /// 'negative' (if provided) will indicate if the name referred to a
     /// negative alias.
     TArgsCI x_Find(const string& name,
                    bool*         negative = NULL) const;
@@ -1723,7 +1731,7 @@ public:
     /// Get argument name.
     const string& GetName   (void) const { return m_Name; }
 
-    /// Get arument description.
+    /// Get argument description.
     const string& GetComment(void) const { return m_Comment; }
 
     /// Get argument group
@@ -1752,7 +1760,7 @@ public:
                        CArgDescriptions::EConstraintNegate  negate 
                                     = CArgDescriptions::eConstraint);
 
-    /// Returns TRUE if associated contraint is inverted (NOT)
+    /// Returns TRUE if associated constraint is inverted (NOT)
     /// @sa SetConstraint
     virtual bool IsConstraintInverted() const { return false; }
 

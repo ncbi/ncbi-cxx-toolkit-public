@@ -283,6 +283,41 @@ private:
 };
 
 
+/// Template used to replace bool type arguments with some strict equivalent.
+/// This allow to prevent compiler to do an implicit casts from other types
+/// to bool. "TEnum" should be an enumerated type with two values:
+///   - negative (FALSE/OFF) should have value 0
+//    - positive (TRUE/ON) have value 1.
+
+template <class TEnum>
+class CBoolEnum
+{
+public:
+    // Constructors
+    CBoolEnum(bool  value) : m_Value(value) {}
+    CBoolEnum(TEnum value) : m_Value(value ? true : false) {}
+
+    /// Operator bool
+    operator bool() const   { return m_Value; }
+    /// Operator enum
+    operator TEnum () const { return TEnum(m_Value); }
+
+private:
+    bool m_Value;
+
+private:
+    // Disable implicit conversions from/to other types
+    CBoolEnum(char*);
+    CBoolEnum(int);
+    CBoolEnum(unsigned int);
+    template <class T> CBoolEnum(T);
+
+    operator int() const;
+    operator unsigned int() const;
+};
+
+
+
 #ifdef HAVE_NO_AUTO_PTR
 
 
