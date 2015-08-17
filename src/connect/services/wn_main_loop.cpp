@@ -708,7 +708,7 @@ bool CMainLoopThread::CImpl::CheckEntry(
 
 void CMainLoopThread::CImpl::ReturnJob(CNetScheduleJob& job)
 {
-    m_WorkerNode->m_NSExecutor.ReturnJob(job);
+    m_WorkerNode->m_NSExecutor->ReturnJob(job, false);
 }
 
 bool CMainLoopThread::x_GetNextJob(CNetScheduleJob& job)

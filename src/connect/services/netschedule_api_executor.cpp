@@ -714,7 +714,8 @@ CNetScheduleAPI::EJobStatus CNetScheduleExecutor::GetJobStatus(
     return m_Impl->m_API->GetJobStatus("WST2", job, job_exptime, pause_mode);
 }
 
-void CNetScheduleExecutor::ReturnJob(const CNetScheduleJob& job)
+void SNetScheduleExecutorImpl::ReturnJob(const CNetScheduleJob& job,
+        bool blacklist)
 {
     string cmd("RETURN2 job_key=" + job.job_id);
 
@@ -722,9 +723,18 @@ void CNetScheduleExecutor::ReturnJob(const CNetScheduleJob& job)
     cmd.append(" auth_token=");
     cmd.append(job.auth_token);
 
+    if (!blacklist) {
+        cmd.append(" blacklist=0");
+    }
+
     g_AppendClientIPSessionIDHitID(cmd);
 
-    m_Impl->ExecWithOrWithoutRetry(job, cmd);
+    ExecWithOrWithoutRetry(job, cmd);
+}
+
+void CNetScheduleExecutor::ReturnJob(const CNetScheduleJob& job)
+{
+    m_Impl->ReturnJob(job);
 }
 
 int SNetScheduleExecutorImpl::AppendAffinityTokens(string& cmd,

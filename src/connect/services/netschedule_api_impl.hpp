@@ -394,6 +394,7 @@ struct SNetScheduleExecutorImpl : public CObject
             CNetScheduleJob& job);
 
     void ExecWithOrWithoutRetry(const CNetScheduleJob& job, const string& cmd);
+    void ReturnJob(const CNetScheduleJob& job, bool blacklist = true);
 
     enum EChangeAffAction {
         eAddAffs,
