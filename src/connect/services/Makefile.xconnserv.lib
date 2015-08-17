@@ -8,7 +8,7 @@ SRC     = grid_worker ns_client_factory grid_worker_app \
           srv_connections netservice_api \
           balancing netservice_params \
           netschedule_api netschedule_api_submitter netschedule_api_executor \
-          netschedule_api_reader netschedule_api_admin \
+          netschedule_api_reader netschedule_api_admin netschedule_api_getjob \
           netschedule_key netschedule_api_expt \
           netcache_key netcache_rw netcache_params netcache_api \
           netcache_api_admin \
