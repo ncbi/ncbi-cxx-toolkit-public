@@ -224,9 +224,15 @@ bool SNetScheduleJobReaderImpl::CImpl::CheckEntryOld(
 
 void SNetScheduleJobReaderImpl::CImpl::ReturnJob(CNetScheduleJob& job)
 {
-    SNetScheduleSubmitterImpl submitter_impl(m_API);
-    submitter_impl.FinalizeRead("RDRB blacklist=0 job_key=", "ReadRollback",
-            job.job_id, job.auth_token, kEmptyStr);
+    string cmd = "RDRB job_key=";
+    cmd += job.job_id;
+    cmd += " auth_token=";
+    cmd += job.auth_token;
+    cmd += " blacklist=0";
+
+    g_AppendClientIPSessionIDHitID(cmd);
+
+    m_API->GetServer(job.job_id).ExecWithRetry(cmd, false);
 }
 
 CNetServer SNetScheduleJobReaderImpl::CImpl::WaitForNotifications(const CDeadline& deadline)
