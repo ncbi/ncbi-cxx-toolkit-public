@@ -70,6 +70,11 @@ struct SNetScheduleServerProperties : public INetServerProperties
 
     string ns_node;
     string ns_session;
+
+    // Warning:
+    // Version is not set until we execute a command on a server.
+    // Therefore, if that command is version dependent,
+    // old version of the command will be sent to the server at first.
     CVersionInfo version;
 
     bool affs_synced;
