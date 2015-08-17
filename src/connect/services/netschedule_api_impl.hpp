@@ -197,6 +197,14 @@ private:
     bool m_Interrupted;
 };
 
+// Vector of priority-ordered pairs of affinities and
+// corresponding priority-ordered comma-separated affinity lists.
+// E.g., for "a, b, c" it would be:
+// { "a", "a"       },
+// { "b", "a, b"    },
+// { "c", "a, b, c" }
+typedef vector<pair<string, string> > TNetScheduleAffinityLadder;
+
 struct SNetScheduleNotificationThread : public CThread
 {
     SNetScheduleNotificationThread(SNetScheduleAPIImpl* ns_api);
@@ -326,14 +334,7 @@ struct SNetScheduleAPIImpl : public CObject
     CNetScheduleExecutor::EJobAffinityPreference m_AffinityPreference;
     list<string> m_AffinityList;
 
-    // Vector of priority-ordered pairs of affinities and
-    // corresponding priority-ordered comma-separated affinity lists.
-    // E.g., for "a, b, c" it would be:
-    // { "a", "a"       },
-    // { "b", "a, b"    },
-    // { "c", "a, b, c" }
-    typedef vector<pair<string, string> > TAffinityLadder;
-    TAffinityLadder m_AffinityLadder;
+    TNetScheduleAffinityLadder m_AffinityLadder;
 
     string m_JobGroup;
     unsigned m_JobTtl;
@@ -569,7 +570,7 @@ class CNetScheduleGetJob
             // Must not happen, since otherwise Done() has returned true already
             _ASSERT(m_JobPriority);
 
-            SNetScheduleAPIImpl::TAffinityLadder&
+            TNetScheduleAffinityLadder&
                 affinity_ladder(m_GetJobImpl.m_API->m_AffinityLadder);
 
             if (HasJob()) {
@@ -595,7 +596,7 @@ class CNetScheduleGetJob
 
             m_PreviousJob = job;
 
-            SNetScheduleAPIImpl::TAffinityLadder&
+            TNetScheduleAffinityLadder&
                 affinity_ladder(m_GetJobImpl.m_API->m_AffinityLadder);
 
             size_t priority = min(affinity_ladder.size(), m_JobPriority) - 1;
