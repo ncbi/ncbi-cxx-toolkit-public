@@ -381,11 +381,11 @@ bool SNetScheduleExecutorImpl::x_GetJobWithAffinityLadder(
     if (server_props->version.IsUpCompatible(CVersionInfo(4, 22, 0))) {
         string cmd("GET2 wnode_aff=0 any_aff=0 aff=");
         cmd += prio_aff_list;
-        cmd.append(" prioritized_aff=1");
 
         m_NotificationHandler.CmdAppendTimeoutGroupAndClientInfo(cmd,
                 &timeout, m_JobGroup);
 
+        cmd.append(" prioritized_aff=1");
         return ExecGET(server, cmd, job);
     }
 
