@@ -91,6 +91,30 @@ struct CNetScheduleGetJob
 template <class TImpl>
 class CNetScheduleGetJobImpl : public CNetScheduleGetJob
 {
+public:
+    CNetScheduleGetJobImpl(TImpl& impl) :
+        m_Impl(impl),
+        m_DiscoveryAction(SServerAddress(0, 0), false)
+    {
+        m_ImmediateActions.push_back(m_DiscoveryAction);
+    }
+
+    EResult GetJob(
+            const CDeadline& deadline,
+            CNetScheduleJob& job,
+            CNetScheduleAPI::EJobStatus* job_status)
+    {
+        if (m_Impl.m_API->m_AffinityLadder.empty()) {
+            CAnyAffinityJob holder(job, job_status, m_ImmediateActions);
+            return GetJobImpl(deadline, holder);
+        } else {
+            ReturnNotFullyCheckedServers();
+            CMostAffinityJob holder(job, job_status, m_ImmediateActions, m_Impl);
+            return GetJobImpl(deadline, holder);
+        }
+    }
+
+private:
     typedef list<SServerAddress> TServers;
     typedef list<SEntry> TTimeline;
     typedef TTimeline::iterator TIterator;
@@ -340,30 +364,6 @@ class CNetScheduleGetJobImpl : public CNetScheduleGetJob
         }
     }
 
-public:
-    CNetScheduleGetJobImpl(TImpl& impl) :
-        m_Impl(impl),
-        m_DiscoveryAction(SServerAddress(0, 0), false)
-    {
-        m_ImmediateActions.push_back(m_DiscoveryAction);
-    }
-
-    EResult GetJob(
-            const CDeadline& deadline,
-            CNetScheduleJob& job,
-            CNetScheduleAPI::EJobStatus* job_status)
-    {
-        if (m_Impl.m_API->m_AffinityLadder.empty()) {
-            CAnyAffinityJob holder(job, job_status, m_ImmediateActions);
-            return GetJobImpl(deadline, holder);
-        } else {
-            ReturnNotFullyCheckedServers();
-            CMostAffinityJob holder(job, job_status, m_ImmediateActions, m_Impl);
-            return GetJobImpl(deadline, holder);
-        }
-    }
-
-private:
     template <class TJobHolder>
     EResult GetJobImpl(
             const CDeadline& deadline, TJobHolder& holder)
