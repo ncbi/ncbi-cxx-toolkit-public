@@ -3,6 +3,8 @@
 LIB = eutils_client
 SRC = eutils_client
 
+DLL_LIB = xmlwrapp
+
 WATCHERS = grichenk
 
 USES_LIBRARIES = xconnect xmlwrapp
