@@ -826,7 +826,7 @@ void CXcompareAnnotsApplication::Init(void)
             "If using spliced alignments, this option must be specified such that"
             "a spliced query location is not collapsed to single range as it would by default");
     arg_desc->AddFlag("adaptive_depth",
-            "Use adaptive depth in SAnnotSelector (e.g. when dealing with chromosome locations)",
+            "Use adaptive depth in SAnnotSelector (e.g. when dealing with chromosome locations)"
             "Default is false, because normally we don't want to dig down to find features");
 
     arg_desc->AddFlag("allow_ID",
@@ -1528,7 +1528,7 @@ void CXcompareAnnotsApplication::x_ProcessComparison(
 ///////////////////////////////////////////////////////////////////////////////
 int CXcompareAnnotsApplication::Run(void)
 {
-    m_args = GetArgs();
+    m_args.Assign(GetArgs());
 
     string args_str = "";
     m_args.Print(args_str);
