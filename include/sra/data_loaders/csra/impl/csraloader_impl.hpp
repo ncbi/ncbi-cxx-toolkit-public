@@ -176,20 +176,24 @@ public:
 protected:
     friend class CCSRADataLoader_Impl;
 
-    typedef CRange<TSeqPos> TRange;
-    typedef vector<CCSRARefSeqChunkInfo> TChunks;
-    typedef map<CSeq_id_Handle, int> TSeq2Chunk;
+    // start of chunk and number of alignments in the chunk
+    struct SChunkInfo {
+        TSeqPos start_pos;
+        unsigned align_count;
+
+        bool operator()(TSeqPos pos, const SChunkInfo& chunk) const
+            { return pos < chunk.start_pos; }
+    };
+    typedef vector<SChunkInfo> TChunks;
 
     void x_LoadRangesStat(void);
-    bool x_LoadRangesCov(void);
 
     CCSRAFileInfo* m_File;
     CSeq_id_Handle m_RefSeqId;
     CRef<CSeq_annot> m_CovAnnot;
     int m_MinMapQuality;
-    TChunks m_Chunks;
-    bool m_LoadedRanges;
-    TSeq2Chunk m_Seq2Chunk;
+    TChunks m_AlignChunks;
+    TChunks m_GraphChunks;
 };
 
 

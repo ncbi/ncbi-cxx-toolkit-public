@@ -67,17 +67,28 @@ BEGIN_SCOPE(objects)
 
 class CDataLoader;
 
+// magic chunk ids
 static const int kTSEId = 1;
 static const int kMainChunkId = -1;
 
-// refseq data chunks
-static const size_t kChunkSize = 500;
-static const size_t kChunkSeqDataMul = 8;
+// algirithm options
+static const bool kUseFullAlignCounts = true;
+static const bool kEstimateAlignCounts = true;
+static const bool kOmitEmptyPileup = true;
 
-// reads
-static const size_t kReadsPerBlob = 1;
+// splitter parameters for aligns and graphs
+static const unsigned kAlignChunkSize = 1000;
+static const unsigned kGraphChunkSize = 10000;
+static const unsigned kAlignEmptyPages = 16;
+static const unsigned kGraphEmptyPages = 4;
+static const unsigned kChunkGraphMul = 8;
+static const unsigned kChunkSeqDataMul = 8;
 
-static const Uint4 kMaxReadId = 8;
+// splitter parameters for reads
+static const unsigned kReadsPerBlob = 1;
+
+// Seq-id parser parameters
+static const unsigned kMaxReadId = 8;
 
 #define SPOT_GROUP_SEPARATOR ": "
 #define PILEUP_NAME_SUFFIX "pileup graphs"
@@ -1121,8 +1132,7 @@ CCSRARefSeqInfo::CCSRARefSeqInfo(CCSRAFileInfo* csra_file,
                                  const CSeq_id_Handle& seq_id)
     : m_File(csra_file),
       m_RefSeqId(seq_id),
-      m_MinMapQuality(csra_file->GetMinMapQuality()),
-      m_LoadedRanges(false)
+      m_MinMapQuality(csra_file->GetMinMapQuality())
 {
 }
 
@@ -1152,23 +1162,15 @@ void CCSRARefSeqInfo::SetBlobId(CRef<CCSRABlobId>& ret,
 namespace {
     struct SRefStat {
         SRefStat(void)
-            : m_RefPosQuery(0),
-              m_Count(0),
+            : m_Count(0),
               m_RefPosFirst(0),
-              m_RefPosLast(0),
-              m_RefPosMax(0),
-              m_RefLenMax(0),
-              m_RefLenMaxAll(0)
+              m_RefPosLast(0)
             {
             }
 
-        TSeqPos m_RefPosQuery;
         unsigned m_Count;
         TSeqPos m_RefPosFirst;
         TSeqPos m_RefPosLast;
-        TSeqPos m_RefPosMax;
-        TSeqPos m_RefLenMax;
-        TSeqPos m_RefLenMaxAll;
 
         void Collect(CCSraDb& csra_db, const CSeq_id_Handle& ref_id,
                      TSeqPos ref_pos, unsigned count, int min_quality);
@@ -1185,33 +1187,22 @@ namespace {
     void SRefStat::Collect(CCSraDb& csra_db, const CSeq_id_Handle& ref_id,
                            TSeqPos ref_pos, unsigned count, int min_quality)
     {
-        m_RefPosQuery = ref_pos;
+        m_RefPosFirst = kInvalidSeqPos;
+        m_RefPosLast = 0;
         size_t skipped = 0;
         CCSraAlignIterator ait(csra_db, ref_id, ref_pos);
         for ( ; ait; ++ait ) {
-            TSeqPos pos = ait.GetRefSeqPos();
             if ( min_quality > 0 && ait.GetMapQuality() < min_quality ) {
                 ++skipped;
                 continue;
             }
-            TSeqPos len = ait.GetRefSeqLen();
-            if (len > m_RefLenMaxAll) {
-                m_RefLenMaxAll = len;
-            }
-            if (pos < ref_pos) {
-                // the alignment starts before current range
-                continue;
-            }
-            m_RefPosLast = pos;
-            if ( len > m_RefLenMax ) {
-                m_RefLenMax = len;
-            }
-            TSeqPos max = pos + len;
-            if ( max > m_RefPosMax ) {
-                m_RefPosMax = max;
-            }
-            if ( m_Count == 0 ) {
+            TSeqPos pos = ait.GetRefSeqPos();
+            _ASSERT(pos >= ref_pos); // filtering is done by CCSraAlignIterator
+            if ( pos < m_RefPosFirst ) {
                 m_RefPosFirst = pos;
+            }
+            if ( pos > m_RefPosLast ) {
+                m_RefPosLast = pos;
             }
             if ( ++m_Count == count ) {
                 break;
@@ -1219,10 +1210,8 @@ namespace {
         }
         if ( GetDebugLevel() >= 2 ) {
             LOG_POST_X(4, Info << "CCSRADataLoader: "
-                       "Stat @ "<<m_RefPosQuery<<": "<<m_Count<<" entries: "<<
+                       "Stat @ "<<ref_pos<<": "<<m_Count<<" entries: "<<
                        m_RefPosFirst<<"-"<<m_RefPosLast<<
-                       "(+"<<m_RefPosMax-m_RefPosLast<<")"<<
-                       " max len: "<<m_RefLenMax<<
                        " skipped: "<<skipped);
         }
     }
@@ -1231,20 +1220,45 @@ namespace {
 
 void CCSRARefSeqInfo::LoadRanges(void)
 {
-    if ( m_LoadedRanges ) {
+    if ( !m_AlignChunks.empty() ) {
         return;
     }
     CMutexGuard guard(m_File->GetMutex());
-    if ( m_LoadedRanges ) {
+    if ( !m_AlignChunks.empty() ) {
         return;
     }
 
     _TRACE("Loading "<<GetRefSeqId());
-    if ( !x_LoadRangesCov() ) {
-        x_LoadRangesStat();
-    }
+
+    m_CovAnnot = CCSraRefSeqIterator(*m_File, GetRefSeqId())
+        .GetCoverageAnnot(m_File->GetAlignAnnotName());
+    x_LoadRangesStat();
+
     _TRACE("Loaded ranges on "<<GetRefSeqId());
-    m_LoadedRanges = true;
+    _ASSERT(!m_AlignChunks.empty());
+    if ( GetDebugLevel() >= 2 ) {
+        CRange<TSeqPos> range;
+        for ( size_t k = 0; k+1 < m_AlignChunks.size(); ++k ) {
+            if ( !m_AlignChunks[k].align_count ) {
+                continue;
+            }
+            range.SetFrom(m_AlignChunks[k].start_pos);
+            range.SetToOpen(m_AlignChunks[k+1].start_pos);
+            LOG_POST_X(6, Info << "CCSRADataLoader: "
+                       "Align Chunk "<<k<<": "<<range<<
+                       " with "<<m_AlignChunks[k].align_count<<" aligns");
+        }
+        for ( size_t k = 0; k+1 < m_GraphChunks.size(); ++k ) {
+            if ( !m_GraphChunks[k].align_count ) {
+                continue;
+            }
+            range.SetFrom(m_GraphChunks[k].start_pos);
+            range.SetToOpen(m_GraphChunks[k+1].start_pos);
+            LOG_POST_X(6, Info << "CCSRADataLoader: "
+                       "Graph Chunk "<<k<<": "<<range<<
+                       " with "<<m_GraphChunks[k].align_count<<" aligns");
+        }
+    }
 }
 
 
@@ -1255,64 +1269,137 @@ CCSRARefSeqInfo::GetRefSeqIterator(void) const
 }
 
 
-bool CCSRARefSeqInfo::x_LoadRangesCov(void)
-{
-    m_CovAnnot = CCSraRefSeqIterator(*m_File, GetRefSeqId())
-        .GetCoverageAnnot(m_File->GetAlignAnnotName());
-    return false;
-}
-
-
 void CCSRARefSeqInfo::x_LoadRangesStat(void)
 {
-    vector<TSeqPos> pp;
-    const bool use_all_ids = true;
-    const bool use_estimate = false;
-    if ( use_all_ids ) {
-        static const size_t kLimitSize = kChunkSize;
+    if ( kUseFullAlignCounts ) {
         TSeqPos segment_len = m_File->GetDb().GetRowSize();
+        const size_t kAlignLimitCount = kAlignChunkSize;
+        const size_t kGraphLimitCount = kGraphChunkSize;
+        const TSeqPos kAlignEmptyLength = kAlignEmptyPages*segment_len;
+        const TSeqPos kGraphEmptyLength = kGraphEmptyPages*segment_len;
+        const TSeqPos kGraphLimitLength = segment_len*kChunkGraphMul;
         CCSraRefSeqIterator iter(*m_File, GetRefSeqId());
         TSeqPos ref_length = iter.GetSeqLength();
-        TSeqPos c_start = 0;
-        size_t c_count = 0;
         uint64_t total = 0;
+
+        SChunkInfo a = { 0, 0 }, g = { 0, 0 };
+        TSeqPos a_empty = 0, g_empty = 0;
         for ( TSeqPos p = 0; p < ref_length; p += segment_len ) {
+            TSeqPos end = min(ref_length, p + segment_len);
             size_t c = iter.GetAlignCountAtPos(p);
             total += c;
-            if ( c+c_count > 2*kLimitSize && c_start != p ) {
-                // this chunk only is too big ->
-                // add previous range as a separate chunk
-                pp.push_back(c_start);
-                c_start = p;
-                c_count = 0;
+
+            // annot chunk
+
+            // If this page itself is too big
+            // or previous empty range is too big
+            // add previous range as a separate chunk
+            if ( (p > a.start_pos && a.align_count+c >= 2*kAlignLimitCount) ||
+                 (p >= a.start_pos+kAlignEmptyLength && c && !a.align_count) ) {
+                m_AlignChunks.push_back(a);
+                a.start_pos = p;
+                a.align_count = 0;
             }
-            c_count += c;
-            if ( c_count > kLimitSize ) {
-                pp.push_back(c_start);
-                c_start = p+segment_len;
-                c_count = 0;
+            if ( c ) {
+                a.align_count += c;
+                a_empty = end;
+            }
+            else if ( a.align_count && end >= a_empty+kAlignEmptyLength ) {
+                // too large empty region started
+                m_AlignChunks.push_back(a);
+                a.start_pos = a_empty;
+                a.align_count = 0;
+            }
+            if ( a.align_count >= kAlignLimitCount ) {
+                // collected data is big enough -> add it as a chunk
+                m_AlignChunks.push_back(a);
+                a.start_pos = end;
+                a.align_count = 0;
+            }
+
+            // graph chunk
+            // If this page itself is too big
+            // or previous empty range is too big
+            // add previous range as a separate chunk
+            if ( (p > g.start_pos && g.align_count+c >= 2*kGraphLimitCount) ||
+                 (p >= g.start_pos+kGraphEmptyLength && c && !g.align_count) ) {
+                m_GraphChunks.push_back(g);
+                g.start_pos = p;
+                g.align_count = 0;
+            }
+            if ( c ) {
+                g.align_count += c;
+                g_empty = end;
+            }
+            else if ( g.align_count && end >= g_empty+kGraphEmptyLength ) {
+                // too large empty region started
+                m_GraphChunks.push_back(g);
+                g.start_pos = g_empty;
+                g.align_count = 0;
+            }
+            if ( g.align_count >= kGraphLimitCount ||
+                 (g.align_count &&
+                  (p + segment_len - g.start_pos) >= kGraphLimitLength) ) {
+                // collected data is big enough -> add it as a chunk
+                m_GraphChunks.push_back(g);
+                g.start_pos = end;
+                g.align_count = 0;
             }
         }
-        if ( c_start < ref_length ) {
-            pp.push_back(c_start);
-            c_start = ref_length;
+
+        // finalize annot chunks
+        if ( a.align_count ) {
+            _ASSERT(a.start_pos < ref_length);
+            m_AlignChunks.push_back(a);
+            a.start_pos = ref_length;
+            a.align_count = 0;
         }
+        _ASSERT(a.start_pos <= ref_length);
+        _ASSERT(!a.align_count);
+        m_AlignChunks.push_back(a);
+
+        // finalize graph chunks
+        if ( g.align_count ) {
+            _ASSERT(g.start_pos < ref_length);
+            m_GraphChunks.push_back(g);
+            g.start_pos = ref_length;
+            g.align_count = 0;
+        }
+        _ASSERT(g.start_pos <= ref_length);
+        _ASSERT(!g.align_count);
+        m_GraphChunks.push_back(g);
+
         if ( GetDebugLevel() >= 1 ) {
-            LOG_POST_X(5, Info << "CCSRADataLoader: "
-                       " align count: "<<total<<" chunks: "<<pp.size());
+            size_t align_chunks = 0;
+            ITERATE ( TChunks, it, m_AlignChunks ) {
+                if ( it->align_count ) {
+                    ++align_chunks;
+                }
+            }
+            size_t graph_chunks = 0;
+            ITERATE ( TChunks, it, m_GraphChunks ) {
+                if ( it->align_count ) {
+                    ++graph_chunks;
+                }
+            }
+            LOG_POST_X(5, Info << "CCSRADataLoader:"
+                       " align count: "<<total<<
+                       " align chunks: "<<align_chunks<<
+                       " graph chunks: "<<graph_chunks);
         }
-        pp.push_back(ref_length);
+        return;
     }
-    else if ( use_estimate ) {
+    vector<TSeqPos> pp;
+    if ( kEstimateAlignCounts ) {
         TSeqPos segment_len = m_File->GetDb().GetRowSize();
         CCSraRefSeqIterator iter(*m_File, GetRefSeqId());
         TSeqPos ref_length = iter.GetSeqLength();
         Uint8 est_count = iter.GetEstimatedNumberOfAlignments();
-        if ( est_count <= 2*kChunkSize ) {
+        if ( est_count <= 2*kAlignChunkSize ) {
             pp.push_back(0);
         }
         else {
-            TSeqPos chunk_len = TSeqPos((double(ref_length)*kChunkSize/est_count/segment_len+.5))*segment_len;
+            TSeqPos chunk_len = TSeqPos((double(ref_length)*kAlignChunkSize/est_count/segment_len+.5))*segment_len;
             chunk_len = max(chunk_len, segment_len);
             for ( TSeqPos pos = 0; pos < ref_length; pos += chunk_len ) {
                 pp.push_back(pos);
@@ -1338,13 +1425,19 @@ void CCSRARefSeqInfo::x_LoadRangesStat(void)
                             kStatCount, m_MinMapQuality);
             if ( stat[0].m_Count != kStatCount ) {
                 // single chunk
+                SChunkInfo c;
                 if ( stat[0].m_Count > 0 ) {
-                    CCSRARefSeqChunkInfo chunk;
-                    chunk.m_RefSeqRangeStart.SetFrom(stat[0].m_RefPosFirst);
-                    chunk.m_RefSeqRangeStart.SetTo(stat[0].m_RefPosLast);
-                    m_Chunks.push_back(chunk);
+                    c.start_pos = stat[0].m_RefPosFirst;
+                    c.align_count = 1;
+                    m_AlignChunks.push_back(c);
+                    c.start_pos = stat[0].m_RefPosLast+1;
                 }
-                m_LoadedRanges = true;
+                else {
+                    c.start_pos = 0;
+                }
+                c.align_count = 0;
+                m_AlignChunks.push_back(c);
+                m_GraphChunks = m_AlignChunks;
                 return;
             }
             ref_begin = stat[0].m_RefPosFirst;
@@ -1365,7 +1458,7 @@ void CCSRARefSeqInfo::x_LoadRangesStat(void)
         }
         double density = stat_cnt / stat_len;
         double exp_count = (ref_end-ref_begin)*density;
-        unsigned chunks = unsigned(exp_count/kChunkSize+1);
+        unsigned chunks = unsigned(exp_count/kAlignChunkSize+1);
         chunks = min(chunks, unsigned(sqrt(exp_count)+1));
         if ( GetDebugLevel() >= 1 ) {
             LOG_POST_X(5, Info << "CCSRADataLoader: "
@@ -1380,33 +1473,26 @@ void CCSRARefSeqInfo::x_LoadRangesStat(void)
         }
         pp[chunks] = ref_end;
     }
-    for ( size_t k = 0; k+1 < pp.size(); ++k ) {
-        CCSRARefSeqChunkInfo chunk;
-        TSeqPos pos = pp[k];
-        TSeqPos end = pp[k+1];
-        chunk.m_RefSeqRangeStart.SetFrom(pos);
-        chunk.m_RefSeqRangeStart.SetToOpen(end);
-        m_Chunks.push_back(chunk);
-        if ( GetDebugLevel() >= 1 ) {
-            LOG_POST_X(6, Info << "CCSRADataLoader: "
-                       "Chunk "<<k<<": "<<chunk.m_RefSeqRangeStart);
-        }
+    SChunkInfo c = { 0, 1 };
+    ITERATE ( vector<TSeqPos>, it, pp ) {
+        c.start_pos = *it;
+        m_AlignChunks.push_back(c);
     }
+    m_AlignChunks.back().align_count = 0;
+    m_GraphChunks = m_AlignChunks;
 }
 
 
 int CCSRARefSeqInfo::GetAnnotChunkId(TSeqPos ref_pos) const
 {
-    int chunk_count = int(m_Chunks.size());
-    for ( int range_id = 0; range_id < chunk_count; ++range_id ) {
-        const CCSRARefSeqChunkInfo& info = m_Chunks[range_id];
-        if ( info.GetRefSeqRangeStart().GetFrom() <= ref_pos &&
-             ref_pos < info.GetRefSeqRangeStart().GetToOpen() ) {
-            int chunk_id = range_id*eCSRAAnnotChunk_mul + eCSRAAnnotChunk_align;
-            return chunk_id;
-        }
+    TChunks::const_iterator it =
+        upper_bound(m_AlignChunks.begin(), m_AlignChunks.end(),
+                    ref_pos, SChunkInfo());
+    if ( it == m_AlignChunks.begin() || it == m_AlignChunks.end() ) {
+        return -1;
     }
-    return -1;
+    int k = int(it-m_AlignChunks.begin()-1);
+    return k*eCSRAAnnotChunk_mul + eCSRAAnnotChunk_align;
 }
 
 
@@ -1484,18 +1570,14 @@ void CCSRARefSeqInfo::LoadAnnotMainChunk(CTSE_Chunk_Info& chunk_info)
     LoadRanges(); // also loads m_CovAnnot
     CTSE_Split_Info& split_info =
         const_cast<CTSE_Split_Info&>(chunk_info.GetSplitInfo());
-    int chunk_count = int(m_Chunks.size());
-    bool has_pileup = m_File->GetPileupGraphs();
-    string align_name, pileup_name;
+    string align_name;
     bool separate_spot_groups = !m_File->GetSeparateSpotGroups().empty();
     if ( !separate_spot_groups ) {
         align_name = m_File->GetAlignAnnotName();
-        if ( has_pileup ) {
-            pileup_name = m_File->GetPileupAnnotName();
-        }
     }
     CTSE_Chunk_Info::TPlace place(CSeq_id_Handle(), kTSEId);
 
+    // whole coverage graph
     if ( separate_spot_groups ) {
         // duplucate coverage graph for all spot groups
         ITERATE ( vector<string>, it, m_File->GetSeparateSpotGroups() ) {
@@ -1511,60 +1593,72 @@ void CCSRARefSeqInfo::LoadAnnotMainChunk(CTSE_Chunk_Info& chunk_info)
     else {
         chunk_info.x_LoadAnnot(place, *m_CovAnnot);
     }
-
+    
     CCSraRefSeqIterator iter(*m_File, GetRefSeqId());
-    // create chunk info for alignments
-    for ( int range_id = 0; range_id < chunk_count; ++range_id ) {
-        const CCSRARefSeqChunkInfo& info = m_Chunks[range_id];
-        
-        int chunk_id = range_id*eCSRAAnnotChunk_mul + eCSRAAnnotChunk_align;
-        CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(chunk_id));
-        TRange graph_range = info.GetRefSeqRangeStart();
-        TRange align_range = graph_range;
-        align_range.SetToOpen(iter.GetAlnOverToOpen(align_range));
-        if ( separate_spot_groups ) {
-            ITERATE ( vector<string>, it, m_File->GetSeparateSpotGroups() ) {
+    CRange<TSeqPos> range;
+    {{
+        // aligns
+        const TChunks& chunks = m_AlignChunks;
+        // create chunk info for alignments
+        for ( size_t k = 0; k+1 < chunks.size(); ++k ) {
+            if ( !chunks[k].align_count ) {
+                continue;
+            }
+            int id = int(k)*eCSRAAnnotChunk_mul + eCSRAAnnotChunk_align;
+            CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(id));
+            range.SetFrom(chunks[k].start_pos);
+            range.SetToOpen(chunks[k+1].start_pos);
+            range.SetToOpen(iter.GetAlnOverToOpen(range));
+            if ( separate_spot_groups ) {
+                ITERATE (vector<string>, it, m_File->GetSeparateSpotGroups()) {
+                    chunk->x_AddAnnotType
+                        (CAnnotName(m_File->GetAlignAnnotName(*it)),
+                         SAnnotTypeSelector(CSeq_annot::C_Data::e_Align),
+                         GetRefSeqId(),
+                         range);
+                }
+            }
+            else {
                 chunk->x_AddAnnotType
-                    (CAnnotName(m_File->GetAlignAnnotName(*it)),
+                    (align_name,
                      SAnnotTypeSelector(CSeq_annot::C_Data::e_Align),
                      GetRefSeqId(),
-                     align_range);
+                     range);
             }
+            chunk->x_AddAnnotPlace(kTSEId);
+            split_info.AddChunk(*chunk);
         }
-        else {
-            chunk->x_AddAnnotType
-                (align_name,
-                 SAnnotTypeSelector(CSeq_annot::C_Data::e_Align),
-                 GetRefSeqId(),
-                 align_range);
-        }
-        chunk->x_AddAnnotPlace(kTSEId);
-        split_info.AddChunk(*chunk);
-
-        if ( !has_pileup ) {
-            continue;
-        }
-
-        chunk_id = range_id*eCSRAAnnotChunk_mul+eCSRAAnnotChunk_pileup_graph;
-        chunk = new CTSE_Chunk_Info(chunk_id);
-        if ( separate_spot_groups ) {
-            ITERATE ( vector<string>, it, m_File->GetSeparateSpotGroups() ) {
+    }}
+    if ( m_File->GetPileupGraphs() ) {
+        string pileup_name = m_File->GetPileupAnnotName();
+        
+        // pileup
+        const TChunks& chunks = m_GraphChunks;
+        // create chunk info for alignments
+        for ( size_t k = 0; k+1 < chunks.size(); ++k ) {
+            int id = int(k)*eCSRAAnnotChunk_mul + eCSRAAnnotChunk_pileup_graph;
+            CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(id));
+            range.SetFrom(chunks[k].start_pos);
+            range.SetToOpen(chunks[k+1].start_pos);
+            if ( separate_spot_groups ) {
+                ITERATE (vector<string>, it, m_File->GetSeparateSpotGroups()) {
+                    chunk->x_AddAnnotType
+                        (CAnnotName(m_File->GetPileupAnnotName(*it)),
+                         SAnnotTypeSelector(CSeq_annot::C_Data::e_Graph),
+                         GetRefSeqId(),
+                         range);
+                }
+            }
+            else {
                 chunk->x_AddAnnotType
-                    (CAnnotName(m_File->GetPileupAnnotName(*it)),
+                    (pileup_name,
                      SAnnotTypeSelector(CSeq_annot::C_Data::e_Graph),
                      GetRefSeqId(),
-                     graph_range);
+                     range);
             }
+            chunk->x_AddAnnotPlace(kTSEId);
+            split_info.AddChunk(*chunk);
         }
-        else {
-            chunk->x_AddAnnotType
-                (pileup_name,
-                 SAnnotTypeSelector(CSeq_annot::C_Data::e_Graph),
-                 GetRefSeqId(),
-                 graph_range);
-        }
-        chunk->x_AddAnnotPlace(kTSEId);
-        split_info.AddChunk(*chunk);
     }
 
     chunk_info.SetLoaded();
@@ -1635,7 +1729,7 @@ void CCSRARefSeqInfo::LoadRefSeqChunk(CTSE_Chunk_Info& chunk_info)
     CMutexGuard guard(m_File->GetMutex());
     int range_id = chunk_info.GetChunkId();
     CTSE_Chunk_Info::TPlace place(GetRefSeqId(), 0);
-    TRange range;
+    CRange<TSeqPos> range;
     TSeqPos chunk_data_size = m_File->GetDb().GetRowSize()*kChunkSeqDataMul;
     range.SetFrom(range_id*chunk_data_size);
     range.SetLength(chunk_data_size);
@@ -1735,7 +1829,7 @@ struct SBaseStats
     void add_stat(EBaseStat stat, TSeqPos pos, TSeqPos count)
         {
             TSeqPos end = pos + count;
-            if ( pos > end ) {
+            if ( pos > end ) { // alignment starts before current graph
                 pos = 0;
             }
             end = min(size(), end);
@@ -1875,20 +1969,18 @@ void CCSRARefSeqInfo::LoadAnnotAlignChunk(CTSE_Chunk_Info& chunk_info)
     }
     CMutexGuard guard(m_File->GetMutex());
     int range_id = chunk_info.GetChunkId() / eCSRAAnnotChunk_mul;
-    const CCSRARefSeqChunkInfo& chunk = m_Chunks[range_id];
-    TRange range = chunk.GetRefSeqRangeStart();
-    TSeqPos pos = range.GetFrom();
-    TSeqPos len = range.GetLength();
+    TSeqPos pos = m_AlignChunks[range_id].start_pos;
+    TSeqPos end = m_AlignChunks[range_id+1].start_pos;
     CTSE_Chunk_Info::TPlace place(CSeq_id_Handle(), kTSEId);
     int min_quality = m_MinMapQuality;
-    _TRACE("Loading aligns "<<GetRefSeqId()<<" @ "<<range);
+    _TRACE("Loading aligns "<<GetRefSeqId()<<" @ "<<pos<<"-"<<(end-1));
     size_t skipped = 0, count = 0;
     SChunkAnnots annots(m_File, eCSRAAnnotChunk_align);
    
-    CCSraAlignIterator ait(*m_File, GetRefSeqId(), pos, len,
+    CCSraAlignIterator ait(*m_File, GetRefSeqId(), pos, end-pos,
                            CCSraAlignIterator::eSearchByStart);
     for( ; ait; ++ait ){
-        _ASSERT(ait.GetRefSeqPos() >= pos && ait.GetRefSeqPos() < pos+len);
+        _ASSERT(ait.GetRefSeqPos() >= pos && ait.GetRefSeqPos() < end);
         if ( min_quality > 0 && ait.GetMapQuality() < min_quality ) {
             ++skipped;
             continue;
@@ -1910,7 +2002,7 @@ void CCSRARefSeqInfo::LoadAnnotAlignChunk(CTSE_Chunk_Info& chunk_info)
     if ( GetDebugLevel() >= 2 ) {
         LOG_POST_X(7, Info<<"CCSRADataLoader: "
                    "Loaded "<<GetRefSeqId()<<" @ "<<
-                   range<<": "<<
+                   pos<<"-"<<(end-1)<<": "<<
                    count<<" skipped: "<<skipped);
     }
     chunk_info.SetLoaded();
@@ -1928,13 +2020,12 @@ void CCSRARefSeqInfo::LoadAnnotPileupChunk(CTSE_Chunk_Info& chunk_info)
     CMutexGuard guard(m_File->GetMutex());
     int chunk_id = chunk_info.GetChunkId();
     int range_id = chunk_id / eCSRAAnnotChunk_mul;
-    const CCSRARefSeqChunkInfo& chunk = m_Chunks[range_id];
-    TRange range = chunk.GetRefSeqRangeStart();
-    TSeqPos pos = range.GetFrom();
-    TSeqPos len = range.GetLength();
+    TSeqPos pos = m_GraphChunks[range_id].start_pos;
+    TSeqPos end = m_GraphChunks[range_id+1].start_pos;
+    TSeqPos len = end - pos;
     CTSE_Chunk_Info::TPlace place(CSeq_id_Handle(), kTSEId);
     int min_quality = m_MinMapQuality;
-    _TRACE("Loading pileup "<<GetRefSeqId()<<" @ "<<range);
+    _TRACE("Loading pileup "<<GetRefSeqId()<<" @ "<<pos<<"-"<<(end-1));
     size_t count = 0, skipped = 0;
 
     SChunkAnnots annots(m_File, eCSRAAnnotChunk_pileup_graph);
@@ -2015,12 +2106,16 @@ void CCSRARefSeqInfo::LoadAnnotPileupChunk(CTSE_Chunk_Info& chunk_info)
     if ( GetDebugLevel() >= 2 ) {
         LOG_POST_X(10, Info<<"CCSRADataLoader: "
                    "Loaded pileup "<<GetRefSeqId()<<" @ "<<
-                   range<<": "<<
+                   pos<<"-"<<(end-1)<<": "<<
                    count<<" skipped: "<<skipped);
     }
 
+    size_t total_bytes = 0;
     NON_CONST_ITERATE ( SChunkAnnots::TAnnots, it, annots.m_Annots ) {
         SBaseStats& ss = it->second.second;
+        if ( kOmitEmptyPileup && !ss.size() ) {
+            continue;
+        }
         for ( int k = 0; k < kNumStat; ++k ) {
             CRef<CSeq_graph> graph(new CSeq_graph);
             static const char* const titles[6] = {
@@ -2045,6 +2140,7 @@ void CCSRARefSeqInfo::LoadAnnotPileupChunk(CTSE_Chunk_Info& chunk_info)
                 data.SetMin(0);
                 data.SetMax(0);
                 data.SetAxis(0);
+                total_bytes += data.SetValues().size();
             }
             else if ( c_min_max.second < 256 ) {
                 CByte_graph& data = graph->SetGraph().SetByte();
@@ -2053,6 +2149,7 @@ void CCSRARefSeqInfo::LoadAnnotPileupChunk(CTSE_Chunk_Info& chunk_info)
                 data.SetMin(c_min_max.first);
                 data.SetMax(c_min_max.second);
                 data.SetAxis(0);
+                total_bytes += vv.size();
             }
             else {
                 CInt_graph& data = graph->SetGraph().SetInt();
@@ -2061,16 +2158,22 @@ void CCSRARefSeqInfo::LoadAnnotPileupChunk(CTSE_Chunk_Info& chunk_info)
                 data.SetMin(c_min_max.first);
                 data.SetMax(c_min_max.second);
                 data.SetAxis(0);
+                total_bytes += vv.size()*sizeof(vv[0]);
             }
             it->second.first->SetData().SetGraph().push_back(graph);
         }
         if ( GetDebugLevel() >= 9 ) {
             LOG_POST_X(11, Info<<"CCSRADataLoader: "
                        "Loaded pileup "<<GetRefSeqId()<<" @ "<<
-                       range<<": "<<
+                       pos<<"-"<<(end-1)<<": "<<
                        MSerial_AsnText<<*it->second.first);
         }
         chunk_info.x_LoadAnnot(place, *it->second.first);
+    }
+    if ( GetDebugLevel() >= 2 ) {
+        LOG_POST_X(11, Info<<"CCSRADataLoader: "
+                   "Loaded pileup "<<GetRefSeqId()<<" @ "<<
+                   pos<<"-"<<(end-1)<<": "<<total_bytes<<" bytes");
     }
     chunk_info.SetLoaded();
 }
