@@ -1375,7 +1375,20 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // forget blobs created earlier than cr_time
           { "cr_time", eNSPT_Int,  eNSPA_Required } } },
 
-
+    // Get list of blobs by mask: "cache,key,*"
+    // Added in 6.8.12, CXX-6246
+    { "BLIST",
+        {&CNCMessageHandler::x_DoCmd_GetBList,
+            "BLIST",
+            fNoCmdFlags, eNCNone, eProxyGetBList},
+          // Name of cache for blob.
+        { { "cache",   eNSPT_Id,   eNSPA_ICPrefix },
+          // Blob's key.
+          { "key",     eNSPT_Str,  eNSPA_Required },
+          // Blob's subkey.
+          { "subkey",  eNSPT_Str,  eNSPA_Optional },
+          { "local",   eNSPT_Int,  eNSPA_Optional }
+        } },
 
 // HTTP commands
     { "DELETE",
@@ -4561,6 +4574,16 @@ CNCMessageHandler::x_DoCmd_CopyPurge(void)
         CNCBlobStorage::SavePurgeData();
     }
     return &CNCMessageHandler::x_FinishCommand;
+}
+
+CNCMessageHandler::State
+CNCMessageHandler::x_DoCmd_GetBList(void)
+{
+    m_SendBuff.reset(new TNCBufferType());
+    CNCBlobStorage::GetBList(m_NCBlobKey.PackedKey(), m_SendBuff);
+    x_ReportOK("OK: SIZE=").WriteNumber(m_SendBuff->size()).WriteText("\n");
+    m_SendPos = 0;
+    return &CNCMessageHandler::x_WriteSendBuff;
 }
 
 void

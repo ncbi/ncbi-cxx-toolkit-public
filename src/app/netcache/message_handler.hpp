@@ -132,7 +132,8 @@ enum ENCProxyCmd {
     eProxySetValid,
     eProxyRemove,
     eProxyGetMeta,
-    eProxyProlong
+    eProxyProlong,
+    eProxyGetBList
 } NCBI_PACKED_ENUM_END();
 
 
@@ -200,6 +201,8 @@ public:
 
     State x_DoCmd_Purge(void);
     State x_DoCmd_CopyPurge(void);
+
+    State x_DoCmd_GetBList(void);
 
     State x_FinishCommand(void);
 

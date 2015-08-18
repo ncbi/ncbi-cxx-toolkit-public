@@ -207,6 +207,28 @@ static CExpiredCleaner* s_ExpiredCleaner = nullptr;
     } while (0)                                                             \
 /**/
 
+void
+CNCBlobStorage::GetBList(const string& mask, auto_ptr<TNCBufferType>& buffer)
+{
+    SNCCacheData search_mask;
+    search_mask.key = mask;
+
+    ITERATE( TBucketCacheMap, bkt, s_BucketsCache) {
+        SBucketCache* cache = bkt->second;
+        cache->lock.Lock();
+        TKeyMap::iterator lb = cache->key_map.lower_bound(search_mask);
+        for ( ; lb != cache->key_map.end(); ++lb) {
+            if (strncmp(search_mask.key.data(), lb->key.data(), search_mask.key.size())== 0) {
+                string bkey( NStr::Replace(lb->key,"\1",","));
+                buffer->append(bkey.data(), bkey.size()).append("\n",1);
+                continue;
+            }
+            break;
+        }
+        cache->lock.Unlock();
+    }
+
+}
 
 
 static inline char*
