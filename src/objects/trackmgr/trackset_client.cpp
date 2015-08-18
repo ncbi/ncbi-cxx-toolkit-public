@@ -67,7 +67,7 @@ CTMS_TrackSet_Client::Fetch(const TRequest& request) const
         TBaseClient::Ask(request, *reply);
     }
     catch (const CException& e) {
-        NCBI_REPORT_EXCEPTION("Exception communicating with TMS-ItemResolver service ", e);
+        NCBI_REPORT_EXCEPTION("Exception communicating with TMS-RetrieveTrackset service ", e);
         reply.Reset();
     }
     return reply;
