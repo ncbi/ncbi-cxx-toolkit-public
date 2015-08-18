@@ -35,6 +35,8 @@
 
 
 #include "ns_command_arguments.hpp"
+#include "ns_db.hpp"
+
 
 USING_NCBI_SCOPE;
 
@@ -120,51 +122,24 @@ void SNSCommandArguments::AssignValues(TNSProtoParams &           params,
         case 'a':
             if (key == "aff") {
                 affinity_token = NStr::ParseEscapes(val);
-                size_to_check = affinity_token.size();
+                x_CheckAffinityList(affinity_token);
             }
             else if (key == "auth_token")
                 auth_token = val;
             else if (key == "add") {
                 aff_to_add = NStr::ParseEscapes(val);
-                list<string>    aff_to_add_list;
-                NStr::Split(aff_to_add, "\t,", aff_to_add_list,
-                            NStr::eNoMergeDelims);
-                for (list<string>::const_iterator k(aff_to_add_list.begin());
-                     k != aff_to_add_list.end(); ++k)
-                    if (k->size() > kNetScheduleMaxDBDataSize - 1)
-                        NCBI_THROW(CNetScheduleException, eDataTooLong,
-                                   "Affinity token '" + *k + "' size (" +
-                                   NStr::NumericToString(k->size()) +
-                                   " bytes) exceeds the DB max limit ( " +
-                                   NStr::NumericToString(kNetScheduleMaxDBDataSize - 1) +
-                                   " bytes)");
+                x_CheckAffinityList(aff_to_add);
             }
-            else if (key == "any_aff") {
-                int tmp = NStr::StringToInt(val);
-                if (tmp != 0 && tmp != 1)
-                    NCBI_THROW(CNetScheduleException, eInvalidParameter,
-                               "any_aff accepted values are 0 and 1.");
-                any_affinity = (tmp == 1);
-            }
-            else if (key == "alert") {
+            else if (key == "any_aff")
+                any_affinity = x_GetBooleanValue(val, key);
+            else if (key == "alert")
                 alert = NStr::ParseEscapes(val);
-            }
-            else if (key == "affinity_may_change") {
-                int tmp = NStr::StringToInt(val);
-                if (tmp != 0 && tmp != 1)
-                    NCBI_THROW(CNetScheduleException, eInvalidParameter,
-                               "affinity_may_change accepted values are 0 and 1.");
-                affinity_may_change = (tmp == 1);
-            }
+            else if (key == "affinity_may_change")
+                affinity_may_change = x_GetBooleanValue(val, key);
             break;
         case 'b':
-            if (key == "blacklist") {
-                int tmp = NStr::StringToInt(val);
-                if (tmp != 0 && tmp != 1)
-                    NCBI_THROW(CNetScheduleException, eInvalidParameter,
-                               "blacklist accepted values are 0 and 1.");
-                blacklist = (tmp == 1);
-            }
+            if (key == "blacklist")
+                blacklist = x_GetBooleanValue(val, key);
             break;
         case 'c':
             if (key == "comment")
@@ -173,15 +148,12 @@ void SNSCommandArguments::AssignValues(TNSProtoParams &           params,
                 count = NStr::StringToUInt(val, NStr::fConvErr_NoThrow);
             break;
         case 'd':
-            if (key == "del")
+            if (key == "del") {
                 aff_to_del = NStr::ParseEscapes(val);
-            else if (key == "drain") {
-                int tmp = NStr::StringToInt(val);
-                if (tmp != 0 && tmp != 1)
-                    NCBI_THROW(CNetScheduleException, eInvalidParameter,
-                               "drain accepted values are 0 and 1.");
-                drain = (tmp == 1);
+                x_CheckAffinityList(aff_to_del);
             }
+            else if (key == "drain")
+                drain = x_GetBooleanValue(val, key);
             else if (key == "description") {
                 description = NStr::ParseEscapes(val);
                 size_to_check = description.size();
@@ -190,41 +162,33 @@ void SNSCommandArguments::AssignValues(TNSProtoParams &           params,
                 client_data = NStr::ParseEscapes(val);
             break;
         case 'e':
-            if (key == "exclusive_new_aff") {
-                int tmp = NStr::StringToInt(val);
-                if (tmp != 0 && tmp != 1)
-                    NCBI_THROW(CNetScheduleException, eInvalidParameter,
-                               "exclusive_new_aff accepted values are 0 and 1.");
-                exclusive_new_aff = (tmp == 1);
-            }
-            else if (key == "err_msg") {
-                err_msg = NStr::ParseEscapes(val);
-                size_to_check = err_msg.size();
-            }
-            else if (key == "effective") {
-                int tmp = NStr::StringToInt(val);
-                if (tmp != 0 && tmp != 1)
-                    NCBI_THROW(CNetScheduleException, eInvalidParameter,
-                               "effective accepted values are 0 and 1.");
-                effective = (tmp == 1);
-            }
+            if (key == "exclusive_new_aff")
+                exclusive_new_aff = x_GetBooleanValue(val, key);
+            else if (key == "err_msg")
+                err_msg = x_NormalizeErrorMessage(NStr::ParseEscapes(val));
+            else if (key == "effective")
+                effective = x_GetBooleanValue(val, key);
             break;
         case 'g':
             if (key == "group") {
                 group = NStr::ParseEscapes(val);
-                size_to_check = group.size();
+                x_CheckGroupList(group);
             }
-            else if (key == "group_may_change") {
-                int tmp = NStr::StringToInt(val);
-                if (tmp != 0 && tmp != 1)
-                    NCBI_THROW(CNetScheduleException, eInvalidParameter,
-                               "group_may_change accepted values are 0 and 1.");
-                group_may_change = (tmp == 1);
-            }
+            else if (key == "group_may_change")
+                group_may_change = x_GetBooleanValue(val, key);
             break;
         case 'i':
-            if (key == "input")
+            if (key == "input") {
                 input = NStr::ParseEscapes(val);
+                if (input.size() > kNetScheduleMaxOverflowSize)
+                    NCBI_THROW(CNetScheduleException, eDataTooLong,
+                               "input exceeds the max allowed length. "
+                               "Received: " +
+                               NStr::NumericToString(input.size()) +
+                               " Allowed: " +
+                               NStr::NumericToString(
+                                                kNetScheduleMaxOverflowSize));
+            }
             else if (key == "ip") {
                 ip = NStr::ParseEscapes(val);
                 if (ip.empty()) {
@@ -252,13 +216,8 @@ void SNSCommandArguments::AssignValues(TNSProtoParams &           params,
         case 'm':
             if (key == "msk")
                 job_mask = NStr::StringToUInt(val, NStr::fConvErr_NoThrow);
-            else if (key == "mode") {
-                int tmp = NStr::StringToInt(val);
-                if (tmp != 0 && tmp != 1)
-                    NCBI_THROW(CNetScheduleException, eInvalidParameter,
-                               "mode accepted values are 0 and 1.");
-                mode = (tmp == 1);
-            }
+            else if (key == "mode")
+                mode = x_GetBooleanValue(val, key);
             break;
         case 'n':
             if (key == "ncbi_phid") {
@@ -273,17 +232,21 @@ void SNSCommandArguments::AssignValues(TNSProtoParams &           params,
                 else
                     CDiagContext::GetRequestContext().SetHitID(ncbi_phid);
             }
-            else if (key == "no_retries") {
-                int tmp = NStr::StringToInt(val);
-                if (tmp != 0 && tmp != 1)
-                    NCBI_THROW(CNetScheduleException, eInvalidParameter,
-                               "no_retries accepted values are 0 and 1.");
-                no_retries = (tmp == 1);
-            }
+            else if (key == "no_retries")
+                no_retries = x_GetBooleanValue(val, key);
             break;
         case 'o':
-            if (key == "output")
+            if (key == "output") {
                 output = NStr::ParseEscapes(val);
+                if (output.size() > kNetScheduleMaxOverflowSize)
+                    NCBI_THROW(CNetScheduleException, eDataTooLong,
+                               "output exceeds the max allowed length. "
+                               "Received: " +
+                               NStr::NumericToString(output.size()) +
+                               " Allowed: " +
+                               NStr::NumericToString(
+                                                kNetScheduleMaxOverflowSize));
+            }
             else if (key == "option")
                 option = NStr::ParseEscapes(val);
             break;
@@ -298,37 +261,24 @@ void SNSCommandArguments::AssignValues(TNSProtoParams &           params,
                 progress_msg = NStr::ParseEscapes(val);
                 size_to_check = progress_msg.size();
             }
-            else if (key == "pullback") {
-                int tmp = NStr::StringToInt(val);
-                if (tmp != 0 && tmp != 1)
-                    NCBI_THROW(CNetScheduleException, eInvalidParameter,
-                               "pullback accepted values are 0 and 1.");
-                pullback = (tmp == 1);
-            }
-            else if (key == "prioritized_aff") {
-                int tmp = NStr::StringToInt(val);
-                if (tmp != 0 && tmp != 1)
-                    NCBI_THROW(CNetScheduleException, eInvalidParameter,
-                               "prioritized_aff accepted values are 0 and 1.");
-                prioritized_aff = (tmp == 1);
-            }
+            else if (key == "pullback")
+                pullback = x_GetBooleanValue(val, key);
+            else if (key == "prioritized_aff")
+                prioritized_aff = x_GetBooleanValue(val, key);
             break;
         case 'q':
             if (key == "qname") {
                 qname = NStr::ParseEscapes(val);
-                size_to_check = qname.size();
+                x_CheckQueueName(qname, key);
             }
-            else if (key == "qclass")
+            else if (key == "qclass") {
                 qclass = NStr::ParseEscapes(val);
+                x_CheckQueueName(qclass, key);
+            }
             break;
         case 'r':
-            if (key == "reader_aff") {
-                int tmp = NStr::StringToInt(val);
-                if (tmp != 0 && tmp != 1)
-                    NCBI_THROW(CNetScheduleException, eInvalidParameter,
-                               "reader_aff accepted values are 0 and 1.");
-                reader_affinity = (tmp == 1);
-            }
+            if (key == "reader_aff")
+                reader_affinity = x_GetBooleanValue(val, key);
             break;
         case 's':
             if (key == "status") {
@@ -365,9 +315,8 @@ void SNSCommandArguments::AssignValues(TNSProtoParams &           params,
                                eInvalidParameter,
                                "Invalid job ID in 'start_after' option key");
             }
-            else if (key == "service") {
+            else if (key == "service")
                 service = NStr::ParseEscapes(val);
-            }
             break;
         case 't':
             if (key == "timeout")
@@ -382,13 +331,8 @@ void SNSCommandArguments::AssignValues(TNSProtoParams &           params,
                 client_data_version = NStr::StringToInt(val);
             break;
         case 'w':
-            if (key == "wnode_aff") {
-                int tmp = NStr::StringToInt(val);
-                if (tmp != 0 && tmp != 1)
-                    NCBI_THROW(CNetScheduleException, eInvalidParameter,
-                               "wnode_aff accepted values are 0 and 1.");
-                wnode_affinity = (tmp == 1);
-            }
+            if (key == "wnode_aff")
+                wnode_affinity = x_GetBooleanValue(val, key);
             break;
         default:
             break;
@@ -405,5 +349,99 @@ void SNSCommandArguments::AssignValues(TNSProtoParams &           params,
     }
 
     return;
+}
+
+
+// A single affinity is a particular case of a list of affinities
+// So it is harmless to use this function to check both:
+// - commands which accept a single affinity
+// - commands which accept a list of affinities
+void SNSCommandArguments::x_CheckAffinityList(const string &  val)
+{
+    list<string>    affs;
+    NStr::Split(val, "\t,", affs, NStr::eNoMergeDelims);
+    for (list<string>::const_iterator
+            k = affs.begin(); k != affs.end(); ++k)
+        if (k->size() > kNetScheduleMaxDBDataSize - 1)
+            NCBI_THROW(
+                CNetScheduleException, eDataTooLong,
+                "Affinity token '" + *k + "' length (" +
+                NStr::NumericToString(k->size()) +
+                " bytes) exceeds the limit ( " +
+                NStr::NumericToString(kNetScheduleMaxDBDataSize - 1) +
+                " bytes)");
+}
+
+
+// A single group is a particular case of a list of groups
+// So it is harmless to use this function to check both:
+// - commands which accept a single group
+// - commands which accept a list of groups
+void SNSCommandArguments::x_CheckGroupList(const string &  val)
+{
+    list<string>    groups;
+    NStr::Split(val, "\t,", groups, NStr::eNoMergeDelims);
+    for (list<string>::const_iterator
+            k = groups.begin(); k != groups.end(); ++k)
+        if (k->size() > kNetScheduleMaxDBDataSize - 1)
+            NCBI_THROW(
+                CNetScheduleException, eDataTooLong,
+                "Group token '" + *k + "' length (" +
+                NStr::NumericToString(k->size()) +
+                " bytes) exceeds the limit ( " +
+                NStr::NumericToString(kNetScheduleMaxDBDataSize - 1) +
+                " bytes)");
+}
+
+
+void SNSCommandArguments::x_CheckQueueName(const string &  val,
+                                           const string &  key)
+{
+    if (val.size() > kMaxQueueNameSize - 1) {
+        string      q = "queue";
+        if (key == "qclass")
+            q += " class";
+        NCBI_THROW(CNetScheduleException, eDataTooLong,
+                   "The  '" + key + "' " + q + " name length (" +
+                   NStr::NumericToString(val.size()) +
+                   " bytes) exceeds the limit ( " +
+                   NStr::NumericToString(kMaxQueueNameSize - 1) +
+                   " bytes)");
+    }
+}
+
+
+bool SNSCommandArguments::x_GetBooleanValue(const string &  val,
+                                            const string &  key)
+{
+    int tmp = 0;
+    try {
+        tmp = NStr::StringToInt(val);
+    } catch (...) {
+        NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                   key +
+                   " parameter must be an integer value (0 or 1 are allowed)");
+    }
+
+    if (tmp != 0 && tmp != 1)
+        NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                   key + " parameter accepted values are 0 and 1");
+    return tmp == 1;
+}
+
+
+string SNSCommandArguments::x_NormalizeErrorMessage(const string &  val)
+{
+    if (val.size() > kNetScheduleMaxDBErrSize - 1) {
+        // Truncate the message, see CXX-2617
+        ERR_POST(Warning << "The err_msg parameter length ("
+                         << val.size() << "bytes) exceeds the limit "
+                         << kNetScheduleMaxDBErrSize - 1 << " bytes) and is "
+                            "truncated");
+        const string        suffix = " TRUNCATED";
+        return val.substr(0, kNetScheduleMaxDBErrSize - suffix.size() - 2) +
+               suffix;
+    }
+    return val;
 }
 

@@ -106,6 +106,11 @@ struct SNSCommandArguments
 
     private:
         void x_Reset();
+        void x_CheckAffinityList(const string &  val);
+        void x_CheckGroupList(const string &  val);
+        void x_CheckQueueName(const string &  val, const string &  key);
+        bool x_GetBooleanValue(const string &  val, const string &  key);
+        string x_NormalizeErrorMessage(const string &  val);
 };
 
 END_NCBI_SCOPE

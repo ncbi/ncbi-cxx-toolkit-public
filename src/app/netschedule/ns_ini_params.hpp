@@ -80,6 +80,7 @@ const unsigned int      default_affinity_high_removal = 1000;
 const unsigned int      default_affinity_low_removal = 100;
 const unsigned int      default_affinity_dirt_percentage = 20;
 
+const unsigned int      default_reserve_dump_space = 1024 * 1024 * 1024; // 1GB
 
 
 // Queue section values

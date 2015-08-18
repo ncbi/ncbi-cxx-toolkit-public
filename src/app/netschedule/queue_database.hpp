@@ -35,12 +35,6 @@
  */
 
 
-/// @file queue_database.hpp
-/// NetSchedule Top level queue database (Thread-Safe, synchronized).
-///
-/// @internal
-
-
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbicntr.hpp>
 
@@ -70,8 +64,6 @@ typedef map<string,
 
 struct SNSDBEnvironmentParams
 {
-    string    db_storage_ver;      // Version of DB schema, should match
-                                   //  NETSCHEDULED_STORAGE_VERSION
     string    db_path;
     string    db_log_path;
     unsigned  max_queues;          // Number of pre-allocated queues
@@ -216,22 +208,19 @@ private:
 
     CBackgroundHost &    m_Host;
     CRequestExecutor &   m_Executor;
-    CBDB_Env*            m_Env;
-    string               m_Path;
-    string               m_Name;
+    CBDB_Env *           m_Env;
+    string               m_DataPath;
+    string               m_DumpPath;
 
     mutable CFastMutex   m_ConfigureLock;
-    SQueueDescriptionDB  m_QueueDescriptionDB;
 
     // Effective queue classes
     TQueueParams         m_QueueClasses;
     // Effective queues
     TQueueInfo           m_Queues;
 
-
     // Pre-allocated Berkeley DB blocks
     CQueueDbBlockArray   m_QueueDbBlockArray;
-
 
     bool                 m_StopPurge;         // Purge stop flag
     CFastMutex           m_PurgeLock;
@@ -270,30 +259,31 @@ private:
     CRef<CQueue>  x_GetLastPurged(void);
     CRef<CQueue>  x_GetFirst(void);
     CRef<CQueue>  x_GetNext(const string &  current_name);
-    void  x_SetSignallingFile(bool  drained);
-    bool  x_IsDBDrained(void) const;
 
     // Crash detect support:
-    // - upon start the server creates NEEDREINIT file
-    // - when grafully finished the file is deleted
+    // - upon start the server creates CRASH_FLAG file
+    // - when gracefully finished the file is deleted
     // - at the start it is checked if the file is there. If it is then
-    //   it means the server crashed and reinit must be done
-    void  x_CreateNeedReinitFile(void);
-    bool  x_DoesNeedReinitFileExist(void) const;
-    void  x_RemoveNeedReinitFile(void);
+    //   it means the server crashed
+    void  x_CreateCrashFlagFile(void);
+    bool  x_DoesCrashFlagFileExist(void) const;
+    void  x_RemoveCrashFlagFile(void);
+
+    // Dump problem detect support:
+    // - upon dtart the server creates DUMP_ERROR_FLAG file
+    // - if all the NS info was dumped successfully the file is deleted
+    // - at the start it is checked if the file is there. If it is then
+    //   it means the previous instance had problems dumping something
+    void  x_CreateDumpErrorFlagFile(void);
+    bool  x_DoesDumpErrorFlagFileExist(void) const;
+    void  x_RemoveDumpErrorFlagFile(void);
+
 
     bool  x_ConfigureQueueClasses(const TQueueParams &  classes_from_ini,
                                   CJsonNode &           diff);
     bool  x_ConfigureQueues(const TQueueParams &  queues_from_ini,
                             CJsonNode &           diff);
 
-    // Used to read/write both queues and queue classes
-    TQueueParams  x_ReadDBQueueDescriptions(const string &  expected_prefix);
-    void  x_WriteDBQueueDescriptions(const TQueueParams &  queue_classes);
-    void  x_WriteDBQueueDescriptions(const TQueueInfo &  queues);
-    void  x_DeleteDBRecordsWithPrefix(const string &  prefix);
-    void  x_InsertParamRecord(const string &            key,
-                              const SQueueParameters &  params);
     TQueueParams  x_ReadIniFileQueueClassDescriptions(const IRegistry &   reg);
     TQueueParams  x_ReadIniFileQueueDescriptions(const IRegistry &     reg,
                                                  const TQueueParams &  classes);
@@ -309,6 +299,30 @@ private:
 
     CRef<CQueue>  x_GetQueueAt(unsigned int  index);
 
+    void x_Dump(void);
+    void x_DumpQueueOrClass(FILE *  f,
+                            const string &  qname, const string &  qclass,
+                            bool  is_queue,
+                            const SQueueParameters &  params);
+    void x_DumpLinkedSection(FILE *  f, const string &  sname,
+                             const map<string, string> &  values);
+    void x_RemoveDump(void);
+    void x_RemoveBDBFiles(void);
+    void x_CreateStorageVersionFile(void);
+
+    bool x_CheckOpenPreconditions(bool  reinit);
+    CBDB_Env *  x_CreateBDBEnvironment(const SNSDBEnvironmentParams &  params);
+
+    void x_ReadDumpQueueDesrc(set<string> &  dump_static_queues,
+                              map<string, string> &  dump_dynamic_queues,
+                              TQueueParams &  dump_queue_classes);
+    set<string> x_GetConfigQueues(void);
+    void x_AppendDumpLinkedSections(void);
+    CNSPreciseTime CalculateRuntimePrecision(void) const;
+    void x_BackupDump(void);
+    void x_CreateSpaceReserveFile(void);
+    bool x_RemoveSpaceReserveFile(void);
+    string x_GetDumpSpaceFileName(void) const;
 }; // CQueueDataBase
 
 

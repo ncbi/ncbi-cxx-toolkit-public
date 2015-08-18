@@ -35,17 +35,16 @@
 #include <corelib/ncbifile.hpp>
 
 #include "ns_start_ids.hpp"
+#include "ns_types.hpp"
 
 
 BEGIN_NCBI_SCOPE
 
 
-const string    k_StartsIDs = "STARTJOBIDS";
-
 
 CNSStartIDs::CNSStartIDs(const string &  data_dir_name)
 {
-    m_FileName = CFile::MakePath(data_dir_name, k_StartsIDs);
+    m_FileName = CFile::MakePath(data_dir_name, kStartJobIDsFileName);
 }
 
 
@@ -126,8 +125,8 @@ void CNSStartIDs::Load(void)
         list<string>        tokens;
         NStr::Split(s, "=", tokens, NStr::eNoMergeDelims);
         if (tokens.size() != 2) {
-            ERR_POST("Poor format of the " + k_StartsIDs + " file. Line: " +
-                     s + ". Ignore and continue.");
+            ERR_POST("Poor format of the " + kStartJobIDsFileName +
+                     " file. Line: " + s + ". Ignore and continue.");
             continue;
         }
         list<string>::const_iterator    item = tokens.begin();

@@ -81,14 +81,11 @@ public:
 // slight violation of naming convention for porting to util/time_line
 typedef CTimeLine<TNSBitVector>     CJobTimeLine;
 
-/// Mutex protected Queue database with job status FSM
-///
-/// Class holds the queue database (open files and indexes),
-/// thread sync mutexes and classes auxiliary queue management concepts
-/// (like affinity and job status bit-matrix)
-///
-/// @internal
-///
+// Mutex protected Queue database with job status FSM
+//
+// Class holds the queue database (open files and indexes),
+// thread sync mutexes and classes auxiliary queue management concepts
+// (like affinity and job status bit-matrix)
 class CQueue : public CObjectEx
 {
 public:
@@ -125,6 +122,7 @@ public:
 
     void Attach(SQueueDbBlock* block);
     int  GetPos() const { return m_QueueDbBlock->pos; }
+    TQueueKind GetQueueKind(void) const { return m_Kind; }
 
     // Thread-safe parameter access
     typedef list<pair<string, string> > TParameterList;
@@ -159,9 +157,6 @@ public:
         return m_JobsToDelete.count();
     }
 
-    // Status matrix related
-    unsigned int  LoadStatusMatrix(void);
-
     const string& GetQueueName() const {
         return m_QueueName;
     }
@@ -177,8 +172,8 @@ public:
                          bool                       logging,
                          CNSRollbackInterface * &   rollback_action);
 
-    /// Submit job batch
-    /// @return ID of the first job, second is first_id+1 etc.
+    // Submit job batch
+    // Returns ID of the first job, second is first_id+1 etc.
     unsigned SubmitBatch(const CNSClientId &             client,
                          vector< pair<CJob, string> > &  batch,
                          const string &                  group,
@@ -347,7 +342,7 @@ public:
     // of jobs belonging to them, e.g.
     // "a1=500&a2=600a3=200"
     //
-    // @return
+    // return
     //     affinity preference string
     string GetAffinityList(const CNSClientId &    client);
 
@@ -467,6 +462,10 @@ public:
                                          unsigned short  port,
                                          bool  new_format);
 
+    void Dump(const string &  dump_dir_name);
+    void RemoveDump(const string &  dump_dir_name);
+    unsigned int LoadFromDump(const string &  dump_dir_name);
+
 private:
     void x_Detach(void);
 
@@ -574,7 +573,6 @@ private:
                               bool                  logging);
     CNSPreciseTime x_GetEstimatedJobLifetime(unsigned int   job_id,
                                              TJobStatus     status) const;
-    CNSPreciseTime x_GetSubmitTime(unsigned int  job_id);
     bool x_NoMoreReadJobs(const CNSClientId &   client,
                           const TNSBitVector &  aff_list,
                           bool                  reader_affinity,
@@ -583,6 +581,9 @@ private:
                           const string &        group,
                           bool                  affinity_may_change,
                           bool                  group_may_change);
+
+    string x_GetJobsDumpFileName(const string &  dump_dname) const;
+    void x_ClearQueue(void);
 
 private:
     friend class CJob;
@@ -802,12 +803,6 @@ public:
 
         if (what_tables & eJobEventsTable)
             queue->m_QueueDbBlock->events_db.SetTransaction(this);
-
-        if (what_tables & eAffinityTable)
-            queue->m_QueueDbBlock->aff_dict_db.SetTransaction(this);
-
-        if (what_tables & eGroupTable)
-            queue->m_QueueDbBlock->group_dict_db.SetTransaction(this);
     }
 };
 

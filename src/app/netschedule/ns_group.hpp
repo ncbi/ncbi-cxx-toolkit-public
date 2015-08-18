@@ -43,10 +43,6 @@
 
 #include "ns_types.hpp"
 
-#include <db/bdb/bdb_file.hpp>
-#include <db/bdb/bdb_env.hpp>
-#include <db/bdb/bdb_cursor.hpp>
-
 #include <map>
 #include <vector>
 
@@ -91,9 +87,6 @@ class CNSGroupsRegistry
         CNSGroupsRegistry();
         ~CNSGroupsRegistry();
 
-        void  Attach(SGroupDictDB *  group_dict_db);
-        void  Detach(void);
-
         size_t        size(void) const;
 
         TNSBitVector  GetJobs(const string &  group,
@@ -110,20 +103,28 @@ class CNSGroupsRegistry
                      unsigned int    job_id);
         void  RemoveJob(unsigned int  group_id,
                         unsigned int  job_id);
-        void  ClearMemoryAndDatabase(void);
         string  Print(const CQueue *  queue,
                       size_t          batch_size,
                       bool            verbose) const;
 
-        // Used to load the group DB table and register loaded jobs.
+        void  Clear(void);
+
+        unsigned int  CollectGarbage(unsigned int  max_to_del);
+        void Dump(const string &  dump_dir_name,
+                  const string &  queue_name) const;
+        void RemoveDump(const string &  dump_dir_name,
+                        const string &  queue_name) const;
+
+        // Used to load the groups and register loaded jobs.
         // The loading procedure has 3 steps:
-        // 1. Load the dictionary from the DB
-        // 2. For each loaded job -> call AddJob()
+        // 1. Load the dictionary from the flat file
+        // 2. For each loaded job -> call AddJobToGroup()
         // 3. Call FinalizeGroupDictionaryLoading()
         // These functions should not be used for anything but loading DB.
-        void  LoadGroupDictionary(void);
+        void  LoadFromDump(const string &  dump_dir_name,
+                           const string &  queue_name);
+        void  AddJobToGroup(unsigned int  group_id, unsigned int  job_id);
         void  FinalizeGroupDictionaryLoading(void);
-        unsigned int  CollectGarbage(unsigned int  max_to_del);
 
     private:
 
@@ -134,8 +135,6 @@ class CNSGroupsRegistry
                      SNSGroupTokenCompare >     TGroupTokenToAttrMap;
 
     private:
-        SGroupDictDB *          m_GroupDictDB;  // DB to store group id -> token
-
         TGroupIDToAttrMap       m_IDToAttr;
         TGroupTokenToAttrMap    m_TokenToAttr;
 
@@ -160,8 +159,9 @@ class CNSGroupsRegistry
         string  x_PrintOne(const SNSGroupJobs &     group_attr,
                            const CQueue *           queue,
                            bool                     verbose) const;
-        void  x_Clear(void);
         void  x_DeleteSingleInMemory(TGroupIDToAttrMap::iterator  to_del);
+        string x_GetDumpFileName(const string &  dump_dir_name,
+                                 const string &  qname) const;
 };
 
 

@@ -44,73 +44,6 @@
 BEGIN_NCBI_SCOPE
 
 
-const string    g_WarnPrefix = "Validating config file: unexpected value of ";
-
-
-// Forms the ini file value name for warnings
-string NS_RegValName(const string &  section, const string &  entry)
-{
-    return "[" + section + "]/" + entry;
-}
-
-bool NS_ValidateDouble(const IRegistry &  reg,
-                       const string &  section, const string &  entry,
-                       vector<string> &  warnings)
-{
-    try {
-        reg.GetDouble(section, entry, 0.0);
-    } catch (...) {
-        warnings.push_back(g_WarnPrefix + NS_RegValName(section, entry) +
-                           ". Expected a floating point value.");
-        return false;
-    }
-    return true;
-}
-
-bool NS_ValidateBool(const IRegistry &  reg,
-                     const string &  section, const string &  entry,
-                     vector<string> &  warnings)
-{
-    try {
-        reg.GetBool(section, entry, false);
-    } catch (...) {
-        warnings.push_back(g_WarnPrefix + NS_RegValName(section, entry) +
-                           ". Expected boolean value.");
-        return false;
-    }
-    return true;
-}
-
-bool NS_ValidateInt(const IRegistry &  reg,
-                    const string &  section, const string &  entry,
-                    vector<string> &  warnings)
-{
-    try {
-        reg.GetInt(section, entry, 0);
-    } catch (...) {
-        warnings.push_back(g_WarnPrefix + NS_RegValName(section, entry) +
-                           ". Expected integer value.");
-        return false;
-    }
-    return true;
-}
-
-bool NS_ValidateString(const IRegistry &  reg,
-                       const string &  section, const string &  entry,
-                       vector<string> &  warnings)
-{
-    try {
-        reg.GetString(section, entry, "");
-    } catch (...) {
-        warnings.push_back(g_WarnPrefix + NS_RegValName(section, entry) +
-                           ". Expected string value.");
-        return false;
-    }
-    return true;
-}
-
-
-
 SQueueParameters::SQueueParameters() :
     kind(CQueue::eKindStatic),
     position(-1),
@@ -164,7 +97,7 @@ SQueueParameters::SQueueParameters() :
 
 
 
-void SQueueParameters::ReadQueueClass(const IRegistry &  reg,
+bool SQueueParameters::ReadQueueClass(const IRegistry &  reg,
                                       const string &  sname,
                                       vector<string> &  warnings)
 {
@@ -221,19 +154,22 @@ void SQueueParameters::ReadQueueClass(const IRegistry &  reg,
                                                 reg, sname, warnings);
     client_registry_min_unknowns = ReadClientRegistryMinUnknowns(reg, sname,
                                                                  warnings);
-    linked_sections = ReadLinkedSections(reg, sname, warnings);
+
+    bool    linked_sections_ok;
+    linked_sections = ReadLinkedSections(reg, sname, warnings,
+                                         &linked_sections_ok);
+    return linked_sections_ok;
 }
 
 
-void SQueueParameters::ReadQueue(const IRegistry &  reg, const string &  sname,
+bool SQueueParameters::ReadQueue(const IRegistry &  reg, const string &  sname,
                                  const TQueueParams &  queue_classes,
                                  vector<string> &  warnings)
 {
     string      queue_class = ReadClass(reg, sname, warnings);
     if (queue_class.empty()) {
         // There is no class so it exactly matches a queue class
-        ReadQueueClass(reg, sname, warnings);
-        return;
+        return ReadQueueClass(reg, sname, warnings);
     }
 
     // This queue derives from a class
@@ -243,8 +179,7 @@ void SQueueParameters::ReadQueue(const IRegistry &  reg, const string &  sname,
                            NS_RegValName(sname, "class") +
                            ". It refers to un unknown queue class");
         // Read the queue as if there were no queue class
-        ReadQueueClass(reg, sname, warnings);
-        return;
+        return ReadQueueClass(reg, sname, warnings);
     }
 
     // Here: the queue class is here and the queue needs to derive everything
@@ -365,8 +300,10 @@ void SQueueParameters::ReadQueue(const IRegistry &  reg, const string &  sname,
     }
 
     // Apply linked sections if so
+    bool                linked_sections_ok;
     map<string, string> queue_linked_sections =
-                            ReadLinkedSections(reg, sname, warnings);
+                            ReadLinkedSections(reg, sname, warnings,
+                                               &linked_sections_ok);
     for (map<string, string>::const_iterator  k = queue_linked_sections.begin();
          k != queue_linked_sections.end(); ++k)
         linked_sections[k->first] = k->second;
@@ -400,6 +337,7 @@ void SQueueParameters::ReadQueue(const IRegistry &  reg, const string &  sname,
                     double(read_timeout + read_timeout));
         client_registry_timeout_reader = CNSPreciseTime(fixed_timeout);
     }
+    return linked_sections_ok;
 }
 
 
@@ -1169,7 +1107,18 @@ SQueueParameters::ReadProgram(const IRegistry &  reg,
     if (!ok)
         return kEmptyStr;
 
-    return reg.GetString(sname, "program", kEmptyStr);
+    string  val = reg.GetString(sname, "program", kEmptyStr);
+    if (val.size() > kMaxQueueLimitsSize) {
+        // See CXX-2617
+        warnings.push_back(g_WarnPrefix + NS_RegValName(sname, "program") +
+                           ". The value length (" +
+                           NStr::NumericToString(val.size()) + " bytes) "
+                           "exceeds the max allowed length (" +
+                           NStr::NumericToString(kMaxQueueLimitsSize - 1) +
+                           " bytes)");
+        val = "";
+    }
+    return val;
 }
 
 unsigned int
@@ -1347,7 +1296,18 @@ SQueueParameters::ReadSubmHosts(const IRegistry &  reg,
     if (!ok)
         return kEmptyStr;
 
-    return reg.GetString(sname, "subm_host", kEmptyStr);
+    string  val = reg.GetString(sname, "subm_host", kEmptyStr);
+    if (val.size() > kMaxQueueLimitsSize) {
+        // See CXX-2617
+        warnings.push_back(g_WarnPrefix + NS_RegValName(sname, "subm_host") +
+                           ". The value length (" +
+                           NStr::NumericToString(val.size()) + " bytes) "
+                           "exceeds the max allowed length (" +
+                           NStr::NumericToString(kMaxQueueLimitsSize - 1) +
+                           " bytes)");
+        val = "";
+    }
+    return val;
 }
 
 string
@@ -1359,7 +1319,18 @@ SQueueParameters::ReadWnodeHosts(const IRegistry &  reg,
     if (!ok)
         return kEmptyStr;
 
-    return reg.GetString(sname, "wnode_host", kEmptyStr);
+    string  val = reg.GetString(sname, "wnode_host", kEmptyStr);
+    if (val.size() > kMaxQueueLimitsSize) {
+        // See CXX-2617
+        warnings.push_back(g_WarnPrefix + NS_RegValName(sname, "wnode_host") +
+                           ". The value length (" +
+                           NStr::NumericToString(val.size()) + " bytes) "
+                           "exceeds the max allowed length (" +
+                           NStr::NumericToString(kMaxQueueLimitsSize - 1) +
+                           " bytes)");
+        val = "";
+    }
+    return val;
 }
 
 string
@@ -1371,7 +1342,18 @@ SQueueParameters::ReadReaderHosts(const IRegistry &  reg,
     if (!ok)
         return kEmptyStr;
 
-    return reg.GetString(sname, "reader_host", kEmptyStr);
+    string  val = reg.GetString(sname, "reader_host", kEmptyStr);
+    if (val.size() > kMaxQueueLimitsSize) {
+        // See CXX-2617
+        warnings.push_back(g_WarnPrefix + NS_RegValName(sname, "reader_host") +
+                           ". The value length (" +
+                           NStr::NumericToString(val.size()) + " bytes) "
+                           "exceeds the max allowed length (" +
+                           NStr::NumericToString(kMaxQueueLimitsSize - 1) +
+                           " bytes)");
+        val = "";
+    }
+    return val;
 }
 
 CNSPreciseTime
@@ -1484,7 +1466,18 @@ SQueueParameters::ReadDescription(const IRegistry &  reg,
     bool    ok = NS_ValidateString(reg, sname, "description", warnings);
     if (!ok)
         return kEmptyStr;
-    return reg.GetString(sname, "description", kEmptyStr);
+
+    string      descr = reg.GetString(sname, "description", kEmptyStr);
+    if (descr.size() > kMaxDescriptionSize - 1) {
+        warnings.push_back(g_WarnPrefix + NS_RegValName(sname, "description") +
+                           ". The value length (" +
+                           NStr::NumericToString(descr.size()) + " bytes) "
+                           "exceeds the max allowed length (" +
+                           NStr::NumericToString(kMaxDescriptionSize - 1) +
+                           " bytes)");
+        descr = descr.substr(0, kMaxDescriptionSize - 1);
+    }
+    return descr;
 }
 
 bool
@@ -1749,11 +1742,14 @@ SQueueParameters::ReadClientRegistryMinUnknowns(const IRegistry &  reg,
 map<string, string>
 SQueueParameters::ReadLinkedSections(const IRegistry &  reg,
                                      const string &     sname,
-                                     vector<string> &   warnings)
+                                     vector<string> &   warnings,
+                                     bool *  linked_sections_ok)
 {
     map<string, string>     conf_linked_sections;
     list<string>            entries;
     list<string>            available_sections;
+
+    *linked_sections_ok = true;
 
     reg.EnumerateEntries(sname, &entries);
     reg.EnumerateSections(&available_sections);
@@ -1792,6 +1788,72 @@ SQueueParameters::ReadLinkedSections(const IRegistry &  reg,
         // Here: linked section exists and the prefix is fine
         conf_linked_sections[entry] = ref_section;
     }
+
+    // Check the limit of the serialized sections/prefixes lengths
+    // See how the serialization is done
+    string      prefixes;
+    string      sections;
+    for (map<string, string>::const_iterator
+            k = conf_linked_sections.begin(); k != conf_linked_sections.end();
+            ++k) {
+        if (!prefixes.empty())
+            prefixes += ",";
+        prefixes += k->first;
+        if (!sections.empty())
+            sections += ",";
+        sections += k->second;
+    }
+    if (prefixes.size() > kLinkedSectionsList - 1) {
+        warnings.push_back("Validating config file: total length of the "
+                           "serialized linked section prefixes (" +
+                           NStr::NumericToString(prefixes.size()) +
+                           " bytes) exceeds the limit (" +
+                           NStr::NumericToString(kLinkedSectionsList - 1) +
+                           "bytes) in the section " + sname);
+        *linked_sections_ok = false;
+    }
+    if (sections.size() > kLinkedSectionsList - 1) {
+        warnings.push_back("Validating config file: total length of the "
+                           "serialized linked section names (" +
+                           NStr::NumericToString(prefixes.size()) +
+                           " bytes) exceeds the limit (" +
+                           NStr::NumericToString(kLinkedSectionsList - 1) +
+                           "bytes) in the section " + sname);
+        *linked_sections_ok = false;
+    }
+
+    // Check each individual value in the linked section
+    for (map<string, string>::const_iterator
+            k = conf_linked_sections.begin(); k != conf_linked_sections.end();
+            ++k) {
+        entries.clear();
+        reg.EnumerateEntries(k->second, &entries);
+        for (list<string>::const_iterator  j = entries.begin();
+                j != entries.end(); ++j) {
+            if (j->size() > kLinkedSectionValueNameSize - 1) {
+                string  limit_as_str =
+                    NStr::NumericToString(kLinkedSectionValueNameSize - 1);
+                warnings.push_back("Validating config file: linked section [" +
+                                   k->second + "]/" + *j + " name length (" +
+                                   NStr::NumericToString(j->size()) +
+                                   " bytes) exceeds the limit (" +
+                                   limit_as_str + " bytes)");
+                *linked_sections_ok = false;
+            }
+            string  value = reg.GetString(k->second, *j, kEmptyStr);
+            if (value.size() > kLinkedSectionValueSize - 1) {
+                string  limit_as_str =
+                    NStr::NumericToString(kLinkedSectionValueSize - 1);
+                warnings.push_back("Validating config file: linked section [" +
+                                   k->second + "]/" + *j + " value length (" +
+                                   NStr::NumericToString(value.size()) +
+                                   " bytes) exceeds the limit (" +
+                                   limit_as_str + " bytes)");
+                *linked_sections_ok = false;
+            }
+        }
+    }
+
     return conf_linked_sections;
 }
 

@@ -29,13 +29,14 @@
  *
  */
 #include <ncbi_pch.hpp>
+#include <unistd.h>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbistd.hpp>
 
 #include "ns_affinity.hpp"
 #include "ns_queue.hpp"
-#include "ns_db.hpp"
 #include "job_status.hpp"
+#include "ns_db_dump.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -111,28 +112,13 @@ void SNSJobsAffinity::x_WaitReadOp(void)
 }
 
 CNSAffinityRegistry::CNSAffinityRegistry() :
-    m_AffDictDB(NULL),
     m_LastAffinityID(0)
 {}
 
 
 CNSAffinityRegistry::~CNSAffinityRegistry()
 {
-    Detach();
-    x_Clear();
-    return;
-}
-
-
-void CNSAffinityRegistry::Attach(SAffinityDictDB *  aff_dict_db)
-{
-    m_AffDictDB = aff_dict_db;
-}
-
-
-void CNSAffinityRegistry::Detach(void)
-{
-    m_AffDictDB = NULL;
+    Clear();
 }
 
 
@@ -140,7 +126,6 @@ void  CNSAffinityRegistry::x_InitLastAffinityID(unsigned int  value)
 {
     CFastMutexGuard     guard(m_LastAffinityIDLock);
     m_LastAffinityID = value;
-    return;
 }
 
 
@@ -183,8 +168,7 @@ string  CNSAffinityRegistry::GetTokenByID(unsigned int  aff_id) const
 }
 
 
-// Adds a new record in the database if required
-// and adds the job to the affinity
+// Adds the job to the affinity
 unsigned int
 CNSAffinityRegistry::ResolveAffinityToken(const string &     token,
                                           unsigned int       job_id,
@@ -215,7 +199,7 @@ CNSAffinityRegistry::ResolveAffinityToken(const string &     token,
         return aff_id;
     }
 
-    // Here: this is a new token. The DB and memory structures should be
+    // Here: this is a new token. The memory structures should be
     //       created. Let's start with a new identifier.
     unsigned int    aff_id = x_GetNextAffinityID();
     for (;;) {
@@ -242,11 +226,6 @@ CNSAffinityRegistry::ResolveAffinityToken(const string &     token,
     // Memorize the new affinity id
     m_RegisteredAffinities.set_bit(aff_id);
 
-    // Update the database. The transaction is created in the outer scope.
-    m_AffDictDB->aff_id = aff_id;
-    m_AffDictDB->token = token;
-    m_AffDictDB->UpdateInsert();
-
     return aff_id;
 }
 
@@ -254,7 +233,6 @@ CNSAffinityRegistry::ResolveAffinityToken(const string &     token,
 // The function is used when a WGET is received and there were no jobs for this
 // client. In this case non-existed affinities must be resolved and the client
 // must be memorized as a referencer of the affinities.
-// The DB transaction must be set in the outer scope.
 vector<unsigned int>
 CNSAffinityRegistry::ResolveAffinities(const list< string > &  tokens)
 {
@@ -278,7 +256,7 @@ unsigned int  CNSAffinityRegistry::ResolveAffinity(const string &  token)
     if (found != m_AffinityIDs.end())
         return found->second;
 
-    // Here: this is a new token. The DB and memory structures should be
+    // Here: this is a new token. The memory structures should be
     //       created. Let's start with a new identifier.
     unsigned int    aff_id = x_GetNextAffinityID();
     for (;;) {
@@ -298,11 +276,6 @@ unsigned int  CNSAffinityRegistry::ResolveAffinity(const string &  token)
 
     // Memorize the new affinity ID
     m_RegisteredAffinities.set_bit(aff_id);
-
-    // Update the database. The transaction is created in the outer scope.
-    m_AffDictDB->aff_id = aff_id;
-    m_AffDictDB->token = token;
-    m_AffDictDB->UpdateInsert();
 
     return aff_id;
 }
@@ -407,7 +380,6 @@ void CNSAffinityRegistry::RemoveJobFromAffinity(unsigned int  job_id,
     if (found->second.CanBeDeleted())
         // Mark for deletion by the garbage collector
         m_RemoveCandidates.set_bit(aff_id);
-    return;
 }
 
 
@@ -452,7 +424,6 @@ CNSAffinityRegistry::AddClientToAffinity(unsigned int   client_id,
                     // This should never happened basically.
 
     x_AddClient(found->second, client_id, cmd_group);
-    return;
 }
 
 
@@ -697,36 +668,6 @@ CNSAffinityRegistry::x_PrintOne(unsigned int                aff_id,
 }
 
 
-// Reads the DB and fills in two maps. The jobs list for a certain affinity is
-// empty at this stage.
-// A set of AddJobToAffinity(...) calls is expected after loading the
-// dictionary.
-// The final step in the loading affinities is to get the
-// FinalizeAffinityDictionaryLoading() call.
-void  CNSAffinityRegistry::LoadAffinityDictionary(void)
-{
-    CMutexGuard         guard(m_Lock);
-    CBDB_FileCursor     cur(*m_AffDictDB);
-
-    cur.InitMultiFetch(1024*1024);
-    cur.SetCondition(CBDB_FileCursor::eGE);
-    cur.From << 0;
-    for (; cur.Fetch() == eBDB_Ok;) {
-        unsigned int        aff_id = m_AffDictDB->aff_id;
-        string *            new_token = new string(m_AffDictDB->token);
-        SNSJobsAffinity     new_record;
-
-        new_record.m_AffToken = new_token;
-
-        m_JobsAffinity[aff_id] = new_record;
-        m_AffinityIDs[new_token] = aff_id;
-
-        m_RegisteredAffinities.set_bit(aff_id);
-    }
-    return;
-}
-
-
 // Adds one job to the affinity.
 // The affinity must exist in the dictionary, otherwise it is an internal logic
 // error.
@@ -737,19 +678,16 @@ void  CNSAffinityRegistry::AddJobToAffinity(unsigned int  job_id,
     map< unsigned int,
          SNSJobsAffinity >::iterator    found = m_JobsAffinity.find(aff_id);
 
-    if (found == m_JobsAffinity.end()) {
-        // It is likely an internal error
-        ERR_POST("Internal error while loading affinity registry. "
+    if (found == m_JobsAffinity.end())
+        throw runtime_error("Error while restoring jobs from the dump. "
                  "The affinity with id " + NStr::NumericToString(aff_id) +
-                 " is not found in the loaded dictionary.");
-        return;
-    }
+                 " is not found in the loaded dictionary."
+                 " (Lost affinity dictionary dump?)");
 
     found->second.AddJob(job_id);
 
     // It is for sure that the affinity cannot be deleted
     m_RemoveCandidates.set_bit(aff_id, false);
-    return;
 }
 
 
@@ -779,23 +717,9 @@ void  CNSAffinityRegistry::FinalizeAffinityDictionaryLoading(void)
 
     // Update the affinity id
     x_InitLastAffinityID(max_aff_id);
-    return;
 }
 
 
-void CNSAffinityRegistry::ClearMemoryAndDatabase(void)
-{
-    // Clear the data structures in memory
-    x_Clear();
-
-    // Clear the Berkley DB table.
-    // Safe truncate can delete everything without a transaction.
-    m_AffDictDB->SafeTruncate();
-    return;
-}
-
-
-// The DB transaction is set in the outer scope
 unsigned int  CNSAffinityRegistry::CollectGarbage(unsigned int  max_to_del)
 {
     unsigned int                del_count = 0;
@@ -849,7 +773,7 @@ unsigned int  CNSAffinityRegistry::CheckRemoveCandidates(void)
 }
 
 
-void CNSAffinityRegistry::x_Clear(void)
+void CNSAffinityRegistry::Clear(void)
 {
     // Delete all the allocated strings
     CMutexGuard                         guard(m_Lock);
@@ -862,7 +786,6 @@ void CNSAffinityRegistry::x_Clear(void)
     m_AffinityIDs.clear();
     m_JobsAffinity.clear();
     m_RegisteredAffinities.clear();
-    return;
 }
 
 
@@ -881,11 +804,7 @@ void CNSAffinityRegistry::x_DeleteAffinity(
     delete found_aff->second.m_AffToken;
     m_JobsAffinity.erase(found_aff);
 
-    m_AffDictDB->aff_id = aff_id;
-    m_AffDictDB->Delete(CBDB_File::eIgnoreError);
-
     m_RegisteredAffinities.set_bit(aff_id, false);
-    return;
 }
 
 
@@ -971,6 +890,122 @@ CNSAffinityRegistry::x_RemoveWaitClient(SNSJobsAffinity &  aff_data,
             break;
     }
 }
+
+
+// Called at shutdown to save the registry to a flat file
+void CNSAffinityRegistry::Dump(const string &  dump_dir_name,
+                               const string &  qname) const
+{
+    // Collect info about all the affinities which have at least one job
+    TNSBitVector    affs_to_dump;
+
+    for (map< unsigned int, SNSJobsAffinity >::const_iterator
+            k = m_JobsAffinity.begin();
+            k != m_JobsAffinity.end(); ++k) {
+        if (k->second.m_Jobs.any())
+            affs_to_dump.set_bit(k->first);
+    }
+
+    if (!affs_to_dump.any())
+        return;
+
+    string  aff_dict_file_name = x_GetDumpFileName(dump_dir_name, qname);
+    FILE *  aff_dict_file = fopen(aff_dict_file_name.c_str(), "wb");
+
+    if (aff_dict_file == NULL)
+        throw runtime_error("Cannot open file " + aff_dict_file_name +
+                            " to dump affinities");
+
+    // Disable buffering to detect errors straight away
+    setbuf(aff_dict_file, NULL);
+
+    TNSBitVector::enumerator    en(affs_to_dump.first());
+    for ( ; en.valid(); ++en) {
+        map< unsigned int,
+             SNSJobsAffinity >::const_iterator  aff_it =
+                                        m_JobsAffinity.find(*en);
+        const string &      token = *(aff_it->second.m_AffToken);
+        SAffinityDictDump   aff_dump;
+
+        aff_dump.aff_id = *en;
+        aff_dump.token_size = token.size();
+        memcpy(aff_dump.token, token.data(), token.size());
+
+        try {
+            aff_dump.Write(aff_dict_file);
+        } catch (const exception &  ex) {
+            fclose(aff_dict_file);
+            throw runtime_error("Writing error while dumping affinities: " +
+                                string(ex.what()));
+        }
+    }
+
+    fclose(aff_dict_file);
+}
+
+
+void CNSAffinityRegistry::RemoveDump(const string &  dump_dir_name,
+                                     const string &  qname) const
+{
+    string  aff_dict_file_name = x_GetDumpFileName(dump_dir_name, qname);
+    if (access(aff_dict_file_name.c_str(), F_OK) != -1)
+        remove(aff_dict_file_name.c_str());
+}
+
+
+string CNSAffinityRegistry::x_GetDumpFileName(const string &  dump_dir_name,
+                                              const string &  qname) const
+{
+    const string    fname("aff_dict_dump.");
+    return dump_dir_name + fname + qname;
+}
+
+
+// Called at startup to load the registry from a flat file.
+// Fills in two maps. The jobs list for a certain affinity is
+// empty at this stage.
+// A set of AddJobToAffinity(...) calls is expected after loading the
+// dictionary.
+// The final step in the loading affinities is to get the
+// FinalizeAffinityDictionaryLoading() call.
+void CNSAffinityRegistry::LoadFromDump(const string &  dump_dir_name,
+                                       const string &  qname)
+{
+    if (!CDir(dump_dir_name).Exists())
+        return;
+
+    string  aff_dict_file_name = x_GetDumpFileName(dump_dir_name, qname);
+    if (!CFile(aff_dict_file_name).Exists())
+        return;
+
+    FILE *  aff_dict_file = fopen(aff_dict_file_name.c_str(), "rb");
+    if (aff_dict_file == NULL)
+        throw runtime_error("Cannot open file " + aff_dict_file_name +
+                            " to load dumped affinities");
+    try {
+        SAffinityDictDump   aff_dump;
+        while (aff_dump.Read(aff_dict_file) == 0) {
+            string *            new_token = new string(aff_dump.token,
+                                                       aff_dump.token_size);
+            SNSJobsAffinity     new_record;
+
+            new_record.m_AffToken = new_token;
+
+            m_JobsAffinity[aff_dump.aff_id] = new_record;
+            m_AffinityIDs[new_token] = aff_dump.aff_id;
+
+            m_RegisteredAffinities.set_bit(aff_dump.aff_id);
+        }
+    } catch (const exception &  ex) {
+        fclose(aff_dict_file);
+        Clear();
+        throw runtime_error("Reading error while loading dumped affinities: " +
+                            string(ex.what()));
+    }
+
+    fclose(aff_dict_file);
+}
+
 
 END_NCBI_SCOPE
 

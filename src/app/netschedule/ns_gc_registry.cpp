@@ -225,5 +225,13 @@ CJobGCRegistry::IsOutdatedJob(unsigned int            job_id,
     return (available_time + timeout) < CNSPreciseTime::Current();
 }
 
+
+void CJobGCRegistry::Clear(void)
+{
+    CFastMutexGuard     guard(m_Lock);
+    m_JobsAttrs.clear();
+}
+
+
 END_NCBI_SCOPE
 

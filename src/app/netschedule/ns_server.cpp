@@ -34,6 +34,7 @@
 #include "ns_server.hpp"
 #include "ns_ini_params.hpp"
 #include "queue_database.hpp"
+#include "ns_types.hpp"
 
 
 USING_NCBI_SCOPE;
@@ -72,7 +73,8 @@ CNetScheduleServer::CNetScheduleServer(const string &  dbpath)
       m_NodeID("not_initialized"),
       m_SessionID("s" + x_GenerateGUID()),
       m_StartIDs(dbpath),
-      m_AnybodyCanReconfigure(false)
+      m_AnybodyCanReconfigure(false),
+      m_ReserveDumpSpace(default_reserve_dump_space)
 {
     m_CurrentSubmitsCounter.Set(kSubmitCounterInitialValue);
     sm_netschedule_server = this;
@@ -185,6 +187,15 @@ CJsonNode CNetScheduleServer::SetNSParameters(const SNS_Parameters &  params,
         changes.SetByKey("network_timeout", values);
     }
     m_InactivityTimeout = params.network_timeout;
+
+    if (m_ReserveDumpSpace != params.reserve_dump_space) {
+        CJsonNode       values = CJsonNode::NewArrayNode();
+        values.AppendInteger(m_ReserveDumpSpace);
+        values.AppendInteger(params.reserve_dump_space);
+        changes.SetByKey("reserve_dump_space", values);
+    }
+    m_ReserveDumpSpace = params.reserve_dump_space;
+
 
     if (limited) {
         // max_connections CServer parameter could be changed on the fly via
@@ -576,7 +587,7 @@ void CNetScheduleServer::InitNodeID(const string &  db_path)
 {
     CFile   node_id_file(CFile::MakePath(
                             CDirEntry::AddTrailingPathSeparator(db_path),
-                            "NODE_ID"));
+                            kNodeIDFileName));
 
     if (node_id_file.Exists()) {
         // File exists, read the ID from it

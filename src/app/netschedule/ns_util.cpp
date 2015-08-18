@@ -66,7 +66,113 @@ static string NS_OutOfLimitMessage(const string &  section,
                                    unsigned int  low_limit,
                                    unsigned int  high_limit);
 
-const string    g_ValidPrefix = "Validating config file: ";
+
+// Forms the ini file value name for warnings
+string NS_RegValName(const string &  section, const string &  entry)
+{
+    return "[" + section + "]/" + entry;
+}
+
+bool NS_ValidateDouble(const IRegistry &  reg,
+                       const string &  section, const string &  entry,
+                       vector<string> &  warnings)
+{
+    try {
+        reg.GetDouble(section, entry, 0.0);
+    } catch (...) {
+        warnings.push_back(g_WarnPrefix + NS_RegValName(section, entry) +
+                           ". Expected a floating point value.");
+        return false;
+    }
+    return true;
+}
+
+bool NS_ValidateBool(const IRegistry &  reg,
+                     const string &  section, const string &  entry,
+                     vector<string> &  warnings)
+{
+    try {
+        reg.GetBool(section, entry, false);
+    } catch (...) {
+        warnings.push_back(g_WarnPrefix + NS_RegValName(section, entry) +
+                           ". Expected boolean value.");
+        return false;
+    }
+    return true;
+}
+
+bool NS_ValidateInt(const IRegistry &  reg,
+                    const string &  section, const string &  entry,
+                    vector<string> &  warnings)
+{
+    try {
+        reg.GetInt(section, entry, 0);
+    } catch (...) {
+        warnings.push_back(g_WarnPrefix + NS_RegValName(section, entry) +
+                           ". Expected integer value.");
+        return false;
+    }
+    return true;
+}
+
+bool NS_ValidateString(const IRegistry &  reg,
+                       const string &  section, const string &  entry,
+                       vector<string> &  warnings)
+{
+    try {
+        reg.GetString(section, entry, "");
+    } catch (...) {
+        warnings.push_back(g_WarnPrefix + NS_RegValName(section, entry) +
+                           ". Expected string value.");
+        return false;
+    }
+    return true;
+}
+
+
+bool NS_ValidateDataSize(const IRegistry &  reg,
+                         const string &  section, const string &  entry,
+                         vector<string> &  warnings)
+{
+    if (!reg.HasEntry(section, entry))
+        return true;
+
+    try {
+        CConfig                         conf(reg);
+        const CConfig::TParamTree *     param_tree = conf.GetTree();
+        const TPluginManagerParamTree * section_tree =
+                                            param_tree->FindSubNode(section);
+
+        if (!section_tree)
+            return true;    // Section not found
+
+        CConfig     c((CConfig::TParamTree*)section_tree, eNoOwnership);
+        c.GetDataSize("netschedule", entry, CConfig::eErr_Throw, 0);
+    } catch (...) {
+        warnings.push_back(g_WarnPrefix + NS_RegValName(section, entry) +
+                           ". Expected data size value.");
+        return false;
+    }
+    return true;
+}
+
+
+unsigned int NS_GetDataSize(const IRegistry &  reg,
+                            const string &  section, const string &  entry,
+                            unsigned int  default_val)
+{
+    CConfig                         conf(reg);
+    const CConfig::TParamTree *     param_tree = conf.GetTree();
+    const TPluginManagerParamTree * section_tree =
+                                        param_tree->FindSubNode(section);
+
+    if (!section_tree)
+        return default_val;
+
+    CConfig     c((CConfig::TParamTree*)section_tree, eNoOwnership);
+    return c.GetDataSize("netschedule", entry, CConfig::eErr_NoThrow,
+                         default_val);
+}
 
 
 void NS_ValidateConfigFile(const IRegistry &  reg, vector<string> &  warnings,
@@ -399,6 +505,8 @@ void NS_ValidateServerSection(const IRegistry &  reg,
                            " unknown decrypting error");
         decrypting_error = true;
     }
+
+    NS_ValidateDataSize(reg, section, "reserve_dump_space", warnings);
 }
 
 
@@ -436,12 +544,21 @@ TQueueParams NS_ValidateClasses(const IRegistry &   reg,
                                " does not have a queue class name");
             continue;
         }
+        if (queue_class.size() > kMaxQueueNameSize - 1) {
+            warnings.push_back(g_ValidPrefix + "section " + section_name +
+                               " introduces a queue class which name length"
+                               " exceeds the max allowed lenght of " +
+                               NStr::NumericToString(kMaxQueueNameSize - 1) +
+                               " bytes");
+            continue;
+        }
 
         SQueueParameters    params;
-        params.ReadQueueClass(reg, section_name, warnings);
-
-        // The same sections cannot appear twice
-        queue_classes[queue_class] = params;
+        if (params.ReadQueueClass(reg, section_name, warnings)) {
+            // false => problems with linked sections; see CXX-2617
+            // The same sections cannot appear twice
+            queue_classes[queue_class] = params;
+        }
     }
 
     return queue_classes;
@@ -472,11 +589,20 @@ void NS_ValidateQueues(const IRegistry &     reg,
                                " does not have a queue name");
             continue;
         }
-
-        queues.push_back(queue_name);
+        if (queue_name.size() > kMaxQueueNameSize - 1) {
+            warnings.push_back(g_ValidPrefix + "section " + section_name +
+                               " introduces a queue which name length"
+                               " exceeds the max allowed lenght of " +
+                               NStr::NumericToString(kMaxQueueNameSize - 1) +
+                               " bytes");
+            continue;
+        }
 
         SQueueParameters    params;
-        params.ReadQueue(reg, section_name, qclasses, warnings);
+        if (params.ReadQueue(reg, section_name, qclasses, warnings)) {
+            // false => problems with linked sections; see CXX-2617
+            queues.push_back(queue_name);
+        }
     }
 }
 

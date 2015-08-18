@@ -30,6 +30,8 @@
  */
 #include <ncbi_pch.hpp>
 
+#include <unistd.h>
+
 #include "ns_queue.hpp"
 #include "ns_queue_param_accessor.hpp"
 #include "background_host.hpp"
@@ -163,8 +165,6 @@ void CQueue::Attach(SQueueDbBlock* block)
 {
     x_Detach();
     m_QueueDbBlock = block;
-    m_AffinityRegistry.Attach(&m_QueueDbBlock->aff_dict_db);
-    m_GroupRegistry.Attach(&m_QueueDbBlock->group_dict_db);
 
     // Here we have a db, so we can read the counter value we should start from
     m_LastId = m_Server->GetJobsStartID(m_QueueName);
@@ -203,11 +203,10 @@ private:
 
 void CQueue::x_Detach(void)
 {
-    m_AffinityRegistry.Detach();
     if (!m_QueueDbBlock)
         return;
 
-    // We are here have synchronized access to m_QueueDbBlock without mutex
+    // Here we have synchronized access to m_QueueDbBlock without mutex
     // because we are here only when the last reference to CQueue is
     // destroyed. So as long m_QueueDbBlock->allocated is true it cannot
     // be allocated again and thus cannot be accessed as well.
@@ -335,22 +334,6 @@ CQueue::GetLinkedSections(map< string,
 }
 
 
-// Used while loading the status matrix.
-// The access to the DB is not protected here.
-CNSPreciseTime  CQueue::x_GetSubmitTime(unsigned int  job_id)
-{
-    CBDB_FileCursor     events_cur(m_QueueDbBlock->events_db);
-    events_cur.SetCondition(CBDB_FileCursor::eEQ);
-    events_cur.From << job_id;
-
-    // The submit event is always first
-    if (events_cur.FetchFirst() == eBDB_Ok)
-        return CNSPreciseTime(m_QueueDbBlock->events_db.timestamp_sec,
-                              m_QueueDbBlock->events_db.timestamp_nsec);
-    return kTimeZero;
-}
-
-
 // It is called only if there was no job for reading
 bool CQueue::x_NoMoreReadJobs(const CNSClientId  &  client,
                               const TNSBitVector &  aff_ids,
@@ -451,103 +434,6 @@ bool CQueue::x_NoMoreReadJobs(const CNSClientId  &  client,
 }
 
 
-unsigned int  CQueue::LoadStatusMatrix(void)
-{
-    unsigned int        recs = 0;
-    CFastMutexGuard     guard(m_OperationLock);
-
-    // Load the known affinities and groups
-    m_AffinityRegistry.LoadAffinityDictionary();
-    m_GroupRegistry.LoadGroupDictionary();
-
-    // scan the queue, load the state machine from DB
-    CBDB_FileCursor     cur(m_QueueDbBlock->job_db);
-
-    cur.InitMultiFetch(1024*1024);
-    cur.SetCondition(CBDB_FileCursor::eGE);
-    cur.From << 0;
-
-    for (; cur.Fetch() == eBDB_Ok; ) {
-        unsigned int    job_id = m_QueueDbBlock->job_db.id;
-        unsigned int    group_id = m_QueueDbBlock->job_db.group_id;
-        unsigned int    aff_id = m_QueueDbBlock->job_db.aff_id;
-        CNSPreciseTime  last_touch =
-                            CNSPreciseTime(
-                                    m_QueueDbBlock->job_db.last_touch_sec,
-                                    m_QueueDbBlock->job_db.last_touch_nsec);
-        CNSPreciseTime  job_timeout =
-                            CNSPreciseTime(
-                                    m_QueueDbBlock->job_db.timeout_sec,
-                                    m_QueueDbBlock->job_db.timeout_nsec);
-        CNSPreciseTime  job_run_timeout =
-                            CNSPreciseTime(
-                                    m_QueueDbBlock->job_db.run_timeout_sec,
-                                    m_QueueDbBlock->job_db.run_timeout_nsec);
-        CNSPreciseTime  job_read_timeout =
-                            CNSPreciseTime(
-                                    m_QueueDbBlock->job_db.read_timeout_sec,
-                                    m_QueueDbBlock->job_db.read_timeout_nsec);
-        TJobStatus      status = TJobStatus(static_cast<int>(
-                                                m_QueueDbBlock->job_db.status));
-
-        m_StatusTracker.SetExactStatusNoLock(job_id, status, true);
-
-        if ((status == CNetScheduleAPI::eRunning ||
-             status == CNetScheduleAPI::eReading) &&
-            m_RunTimeLine) {
-            // Add object to the first available slot;
-            // it is going to be rescheduled or dropped
-            // in the background control thread
-            // We can use time line without lock here because
-            // the queue is still in single-use mode while
-            // being loaded.
-            m_RunTimeLine->AddObject(m_RunTimeLine->GetHead(), job_id);
-        }
-
-        // Register the job for the affinity if so
-        if (aff_id != 0)
-            m_AffinityRegistry.AddJobToAffinity(job_id, aff_id);
-
-        // Register the job in the group registry
-        if (group_id != 0)
-            m_GroupRegistry.AddJob(group_id, job_id);
-
-        CNSPreciseTime      submit_time(0, 0);
-        if (status == CNetScheduleAPI::ePending) {
-            submit_time = x_GetSubmitTime(job_id);
-            if (submit_time == kTimeZero)
-                submit_time = CNSPreciseTime::Current();  // Be on a safe side
-        }
-
-        // Register the loaded job with the garbage collector
-        // Pending jobs will be processed later
-        CNSPreciseTime      precise_submit(submit_time);
-        m_GCRegistry.RegisterJob(job_id, precise_submit, aff_id, group_id,
-                                 GetJobExpirationTime(last_touch, status,
-                                                      submit_time,
-                                                      job_timeout,
-                                                      job_run_timeout,
-                                                      job_read_timeout,
-                                                      m_Timeout,
-                                                      m_RunTimeout,
-                                                      m_ReadTimeout,
-                                                      m_PendingTimeout,
-                                                      kTimeZero));
-        ++recs;
-    }
-
-    // Make sure that there are no affinity IDs in the registry for which there
-    // are no jobs and initialize the next affinity ID counter.
-    m_AffinityRegistry.FinalizeAffinityDictionaryLoading();
-
-    // Make sure that there are no group IDs in the registry for which there
-    // are no jobs and initialize the next group ID counter.
-    m_GroupRegistry.FinalizeGroupDictionaryLoading();
-
-    return recs;
-}
-
-
 // Used to log a single job
 void CQueue::x_LogSubmit(const CJob &  job)
 {
@@ -603,20 +489,19 @@ unsigned int  CQueue::Submit(const CNSClientId &        client,
     {{
         CFastMutexGuard     guard(m_OperationLock);
 
+        if (!group.empty()) {
+            group_id = m_GroupRegistry.AddJob(group, job_id);
+            job.SetGroupId(group_id);
+        }
+        if (!aff_token.empty()) {
+            aff_id = m_AffinityRegistry.ResolveAffinityToken(aff_token,
+                                                    job_id, 0, eUndefined);
+            job.SetAffinityId(aff_id);
+        }
+
         {{
             CNSTransaction      transaction(this);
-
-            if (!group.empty()) {
-                group_id = m_GroupRegistry.AddJob(group, job_id);
-                job.SetGroupId(group_id);
-            }
-            if (!aff_token.empty()) {
-                aff_id = m_AffinityRegistry.ResolveAffinityToken(aff_token,
-                                                        job_id, 0, eUndefined);
-                job.SetAffinityId(aff_id);
-            }
             job.Flush(this);
-
             transaction.Commit();
         }}
 
@@ -675,11 +560,9 @@ CQueue::SubmitBatch(const CNSClientId &             client,
 
         CFastMutexGuard     guard(m_OperationLock);
 
+        group_id = m_GroupRegistry.ResolveGroup(group);
         {{
             CNSTransaction      transaction(this);
-
-            // This might create a new record in the DB
-            group_id = m_GroupRegistry.ResolveGroup(group);
 
             for (size_t  k = 0; k < batch_size; ++k) {
 
@@ -883,13 +766,8 @@ CQueue::GetJobOrWait(const CNSClientId &       client,
         // Resolve affinities and groups. It is supposed that the client knows
         // better what affinities and groups to expect i.e. even if they do not
         // exist yet, they may appear soon.
-        {{
-            CNSTransaction      transaction(this);
-
-            m_GroupRegistry.ResolveGroup(group);
-            aff_ids = m_AffinityRegistry.ResolveAffinities(*aff_list);
-            transaction.Commit();
-        }}
+        m_GroupRegistry.ResolveGroup(group);
+        aff_ids = m_AffinityRegistry.ResolveAffinities(*aff_list);
 
         x_UnregisterGetListener(client, port);
     }}
@@ -1129,7 +1007,6 @@ CQueue::ChangeAffinity(const CNSClientId &     client,
 
     {{
         CFastMutexGuard     guard(m_OperationLock);
-        CNSTransaction      transaction(this);
 
         // Convert the aff_to_add to the affinity IDs
         for (list<string>::const_iterator  k(aff_to_add.begin());
@@ -1147,8 +1024,6 @@ CQueue::ChangeAffinity(const CNSClientId &     client,
             aff_id_to_add.set_bit(aff_id);
             any_to_add = true;
         }
-
-        transaction.Commit();
     }}
 
     // Log the warnings and add it to the warning message
@@ -1207,7 +1082,6 @@ void  CQueue::SetAffinity(const CNSClientId &     client,
                                                                   cmd_group);
     {{
         CFastMutexGuard     guard(m_OperationLock);
-        CNSTransaction      transaction(this);
 
         // Convert the aff to the affinity IDs
         for (list<string>::const_iterator  k(aff.begin());
@@ -1222,8 +1096,6 @@ void  CQueue::SetAffinity(const CNSClientId &     client,
 
             aff_id_to_set.set_bit(aff_id);
         }
-
-        transaction.Commit();
     }}
 
     m_ClientsRegistry.SetPreferredAffinities(client, aff_id_to_set, cmd_group);
@@ -1607,14 +1479,10 @@ TJobStatus  CQueue::RescheduleJob(const CNSClientId &     client,
 
     // Resolve affinity and group in a separate transaction
     if (!aff_token.empty() || !group.empty()) {
-        {{
-            CNSTransaction      transaction(this);
-            if (!aff_token.empty())
-                affinity_id = m_AffinityRegistry.ResolveAffinity(aff_token);
-            if (!group.empty())
-                group_id = m_GroupRegistry.ResolveGroup(group);
-            transaction.Commit();
-        }}
+        if (!aff_token.empty())
+            affinity_id = m_AffinityRegistry.ResolveAffinity(aff_token);
+        if (!group.empty())
+            group_id = m_GroupRegistry.ResolveGroup(group);
     }
 
     {{
@@ -1823,8 +1691,8 @@ void CQueue::Truncate(bool  logging)
         m_StatusTracker.ClearStatus(CNetScheduleAPI::eConfirmed, &bvConfirmed);
         m_StatusTracker.ClearStatus(CNetScheduleAPI::eReadFailed, &bvReadFailed);
 
-        m_AffinityRegistry.ClearMemoryAndDatabase();
-        m_GroupRegistry.ClearMemoryAndDatabase();
+        m_AffinityRegistry.Clear();
+        m_GroupRegistry.Clear();
 
         CWriteLockGuard     rtl_guard(m_RunTimeLineLock);
         m_RunTimeLine->ReInit(0);
@@ -2251,13 +2119,8 @@ CQueue::GetJobForReadingOrWait(const CNSClientId &       client,
         // Resolve affinities and groups. It is supposed that the client knows
         // better what affinities and groups to expect i.e. even if they do not
         // exist yet, they may appear soon.
-        {{
-            CNSTransaction      transaction(this);
-
-            m_GroupRegistry.ResolveGroup(group);
-            aff_ids = m_AffinityRegistry.ResolveAffinities(*aff_list);
-            transaction.Commit();
-        }}
+        m_GroupRegistry.ResolveGroup(group);
+        aff_ids = m_AffinityRegistry.ResolveAffinities(*aff_list);
 
         m_ClientsRegistry.CancelWaiting(client, eRead);
     }}
@@ -3668,27 +3531,14 @@ unsigned int  CQueue::PurgeAffinities(void)
     }
 
 
-    // Here: need to delete affinities from the memory and DB
-    CFastMutexGuard     guard(m_OperationLock);
-    CNSTransaction      transaction(this);
-
-    unsigned int        del_count =
-                                m_AffinityRegistry.CollectGarbage(del_limit);
-    transaction.Commit();
-
-    return del_count;
+    // Here: need to delete affinities from the memory
+    return m_AffinityRegistry.CollectGarbage(del_limit);
 }
 
 
 unsigned int  CQueue::PurgeGroups(void)
 {
-    CFastMutexGuard     guard(m_OperationLock);
-    CNSTransaction      transaction(this);
-
-    unsigned int        del_count = m_GroupRegistry.CollectGarbage(100);
-    transaction.Commit();
-
-    return del_count;
+    return m_GroupRegistry.CollectGarbage(100);
 }
 
 
@@ -4476,6 +4326,236 @@ void CQueue::x_UpdateDB_ProvideJobNoLock(const CNSClientId &     client,
 
     job.Flush(this);
     transaction.Commit();
+}
+
+
+// Dumps all the jobs into a flat file at the time of shutdown
+void CQueue::Dump(const string &  dump_dname)
+{
+    // Form a bit vector of all jobs to dump
+    vector<TJobStatus>      statuses;
+    TNSBitVector            jobs_to_dump;
+
+    // All statuses
+    statuses.push_back(CNetScheduleAPI::ePending);
+    statuses.push_back(CNetScheduleAPI::eRunning);
+    statuses.push_back(CNetScheduleAPI::eCanceled);
+    statuses.push_back(CNetScheduleAPI::eFailed);
+    statuses.push_back(CNetScheduleAPI::eDone);
+    statuses.push_back(CNetScheduleAPI::eReading);
+    statuses.push_back(CNetScheduleAPI::eConfirmed);
+    statuses.push_back(CNetScheduleAPI::eReadFailed);
+
+    jobs_to_dump = m_StatusTracker.GetJobs(statuses);
+    if (!jobs_to_dump.any())
+        return;     // Nothing to dump
+
+
+    string      jobs_file_name = x_GetJobsDumpFileName(dump_dname);
+    FILE *      jobs_file = NULL;
+
+    try {
+        // Dump the affinity registry
+        m_AffinityRegistry.Dump(dump_dname, m_QueueName);
+
+        // Dump the group registry
+        m_GroupRegistry.Dump(dump_dname, m_QueueName);
+
+        jobs_file = fopen(jobs_file_name.c_str(), "wb");
+        if (jobs_file == NULL)
+            throw runtime_error("Cannot open file " + jobs_file_name +
+                                " to dump jobs");
+
+        // Disable buffering to detect errors right away
+        setbuf(jobs_file, NULL);
+
+        m_QueueDbBlock->job_db.SetTransaction(NULL);
+        m_QueueDbBlock->events_db.SetTransaction(NULL);
+        m_QueueDbBlock->job_info_db.SetTransaction(NULL);
+
+        TNSBitVector::enumerator    en(jobs_to_dump.first());
+        for ( ; en.valid(); ++en) {
+            CJob        job;
+            if (job.Fetch(this, *en) != CJob::eJF_Ok) {
+                ERR_POST("Dump at SHUTDOWN: error fetching job " <<
+                         DecorateJob(*en) << ". Skip and continue.");
+                continue;
+            }
+
+            job.Dump(jobs_file);
+        }
+    } catch (const exception &  ex) {
+        if (jobs_file != NULL)
+            fclose(jobs_file);
+        RemoveDump(dump_dname);
+        throw runtime_error("Error dumping queue " + m_QueueName +
+                            ": " + string(ex.what()));
+    }
+
+    fclose(jobs_file);
+}
+
+
+void CQueue::RemoveDump(const string &  dump_dname)
+{
+    m_AffinityRegistry.RemoveDump(dump_dname, m_QueueName);
+    m_GroupRegistry.RemoveDump(dump_dname, m_QueueName);
+
+    string      jobs_file_name = x_GetJobsDumpFileName(dump_dname);
+
+    if (access(jobs_file_name.c_str(), F_OK) != -1)
+        remove(jobs_file_name.c_str());
+}
+
+
+string CQueue::x_GetJobsDumpFileName(const string &  dump_dname) const
+{
+    return dump_dname + kJobsFileName + "." + m_QueueName;
+}
+
+
+unsigned int  CQueue::LoadFromDump(const string &  dump_dname)
+{
+    unsigned int    recs = 0;
+    string          jobs_file_name = x_GetJobsDumpFileName(dump_dname);
+    FILE *          jobs_file = NULL;
+
+    if (!CDir(dump_dname).Exists())
+        return 0;
+    if (!CFile(jobs_file_name).Exists())
+        return 0;
+
+    try {
+        m_AffinityRegistry.LoadFromDump(dump_dname, m_QueueName);
+        m_GroupRegistry.LoadFromDump(dump_dname, m_QueueName);
+
+        jobs_file = fopen(jobs_file_name.c_str(), "rb");
+        if (jobs_file == NULL)
+            throw runtime_error("Cannot open file " + jobs_file_name +
+                                " to load dumped jobs");
+
+        CJob    job;
+        while (job.LoadFromDump(jobs_file)) {
+            unsigned int    job_id = job.GetId();
+            unsigned int    group_id = job.GetGroupId();
+            unsigned int    aff_id = job.GetAffinityId();
+            TJobStatus      status = job.GetStatus();
+
+            {
+                CNSTransaction      transaction(this);
+                job.Flush(this);
+                transaction.Commit();
+            }
+
+            m_StatusTracker.SetExactStatusNoLock(job_id, status, true);
+
+            if ((status == CNetScheduleAPI::eRunning ||
+                 status == CNetScheduleAPI::eReading) &&
+                m_RunTimeLine) {
+                // Add object to the first available slot;
+                // it is going to be rescheduled or dropped
+                // in the background control thread
+                // We can use time line without lock here because
+                // the queue is still in single-use mode while
+                // being loaded.
+                m_RunTimeLine->AddObject(m_RunTimeLine->GetHead(), job_id);
+            }
+
+            // Register the job for the affinity if so
+            if (aff_id != 0)
+                m_AffinityRegistry.AddJobToAffinity(job_id, aff_id);
+
+            // Register the job in the group registry
+            if (group_id != 0)
+                m_GroupRegistry.AddJobToGroup(group_id, job_id);
+
+            // Register the loaded job with the garbage collector
+            CNSPreciseTime  submit_time = job.GetSubmitTime();
+            CNSPreciseTime  expiration =
+                    GetJobExpirationTime(job.GetLastTouch(), status,
+                                         submit_time, job.GetTimeout(),
+                                         job.GetRunTimeout(),
+                                         job.GetReadTimeout(),
+                                         m_Timeout, m_RunTimeout, m_ReadTimeout,
+                                         m_PendingTimeout, kTimeZero);
+            m_GCRegistry.RegisterJob(job_id, job.GetSubmitTime(),
+                                     aff_id, group_id, expiration);
+            ++recs;
+        }
+
+        // Make sure that there are no affinity IDs in the registry for which
+        // there are no jobs and initialize the next affinity ID counter.
+        m_AffinityRegistry.FinalizeAffinityDictionaryLoading();
+
+        // Make sure that there are no group IDs in the registry for which there
+        // are no jobs and initialize the next group ID counter.
+        m_GroupRegistry.FinalizeGroupDictionaryLoading();
+    } catch (const exception &  ex) {
+        if (jobs_file != NULL)
+            fclose(jobs_file);
+
+        x_ClearQueue();
+        throw runtime_error("Error loading queue " + m_QueueName +
+                            " from its dump: " + string(ex.what()));
+    } catch (...) {
+        if (jobs_file != NULL)
+        fclose(jobs_file);
+
+        x_ClearQueue();
+        throw runtime_error("Unknown error loading queue " + m_QueueName +
+                            " from its dump");
+    }
+
+    fclose(jobs_file);
+    return recs;
+}
+
+
+// The member does not grab the operational lock.
+// The member is used at the time of loading jobs from dump and at that time
+// there is no concurrent access.
+void CQueue::x_ClearQueue(void)
+{
+    // Form a bit vector of all jobs to remove
+    TNSBitVector            jobs_to_erase;
+
+    m_StatusTracker.ClearAll(&jobs_to_erase);
+    m_RunTimeLine->ReInit();
+    m_JobsToDelete.clear(true);
+    m_ReadJobs.clear(true);
+    m_JobsToNotify.clear(true);
+
+    m_AffinityRegistry.Clear();
+    m_GroupRegistry.Clear();
+    m_GCRegistry.Clear();
+
+    TNSBitVector::enumerator    en = jobs_to_erase.first();
+    for ( ; en.valid(); ++en) {
+        unsigned int        job_id = *en;
+        try {
+            CNSTransaction      transaction(this);
+
+            m_QueueDbBlock->job_db.id = job_id;
+            m_QueueDbBlock->job_db.Delete();
+
+            m_QueueDbBlock->job_info_db.id = job_id;
+            m_QueueDbBlock->job_info_db.Delete();
+
+            for (unsigned int  event_number = 0; ; ++event_number) {
+                m_QueueDbBlock->events_db.id = job_id;
+                m_QueueDbBlock->events_db.event_id = event_number;
+                if (m_QueueDbBlock->events_db.Delete() == eBDB_NotFound)
+                    break;
+            }
+
+            transaction.Commit();
+        } catch (const exception &  ex) {
+            ERR_POST("Error while clearing the queue " << m_QueueName <<
+                     ": " << ex.what());
+        } catch (...) {
+            ERR_POST("Unknown error while clearing the queue " << m_QueueName);
+        }
+    }
 }
 
 

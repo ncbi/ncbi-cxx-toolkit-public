@@ -143,8 +143,8 @@ public:
     //
     // If not NULL all ids from the matrix are OR-ed with this vector
     // (bv is not cleared)
-    void ClearAll(TNSBitVector* bv = 0);
-    void ClearStatus(TJobStatus  status, TNSBitVector* bv = 0);
+    void ClearAll(TNSBitVector* bv = NULL);
+    void ClearStatus(TJobStatus  status, TNSBitVector* bv = NULL);
 
     // Optimize bitvectors memory
     void OptimizeMem();

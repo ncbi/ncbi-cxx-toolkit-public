@@ -34,6 +34,7 @@
 #include <corelib/request_ctx.hpp>
 #include "ns_server_params.hpp"
 #include "ns_ini_params.hpp"
+#include "ns_util.hpp"
 
 
 USING_NCBI_SCOPE;
@@ -209,6 +210,9 @@ void SNS_Parameters::Read(const IRegistry &  reg)
     affinity_dirt_percentage = GetIntNoErr("affinity_dirt_percentage",
                                            default_affinity_dirt_percentage);
     x_CheckAffinityGarbageCollectorSettings();
+
+    reserve_dump_space = NS_GetDataSize(reg, "server", "reserve_dump_space",
+                                        default_reserve_dump_space);
 
     // Max affinities
     max_affinities = GetIntNoErr("max_affinities", default_max_affinities);

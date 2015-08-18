@@ -35,6 +35,7 @@
 #include <connect/services/netschedule_api.hpp>
 #include <connect/ncbi_socket.hpp>
 #include <corelib/ncbi_limits.hpp>
+#include <util/checksum.hpp>
 
 #include "ns_clients.hpp"
 #include "ns_queue.hpp"
@@ -96,6 +97,13 @@ void CNSClientId::Update(unsigned int            peer_addr,
     if (!m_ClientNode.empty() && m_ClientSession.empty())
         NCBI_THROW(CNetScheduleException, eAuthenticationError,
                    "client_node is provided but client_session is not");
+
+    if (!m_ClientNode.empty())
+        m_ClientNode = x_NormalizeNodeOrSession(m_ClientNode,
+                                                "client_node");
+    if (!m_ClientSession.empty())
+        m_ClientSession = x_NormalizeNodeOrSession(m_ClientSession,
+                                                   "client_session");
 
     found = params.find("prog");
     if (found != params.end())
@@ -226,6 +234,47 @@ CNSClientId::x_ConvertToClaimedType(const string &  claimed_type) const
              "Received: " << m_ClientType);
     return eClaimedNotProvided;
 }
+
+
+// If the client identification - client_node and/or client_session - breaks
+// the length limit then it should be 'normalized'. Basically it is shortening
+// the values in a special way embedding the MD5 checksum.
+// See CXX-2617
+string  CNSClientId::x_NormalizeNodeOrSession(const string &  val,
+                                              const string &  key)
+{
+    if (val.size() < kMaxWorkerNodeIdSize)
+        return val;
+
+    // The limit is broken. Let's calculate the value MD5
+    CChecksum   checksum(CChecksum::eMD5);
+    string      checksum_as_string;
+
+    checksum.AddLine(val);
+    checksum_as_string = checksum.GetHexSum();
+
+
+    string      normalized;
+    if (checksum_as_string.size() >= kMaxWorkerNodeIdSize - 2) {
+        // Very defensive: if kMaxWorkerNodeIdSize is defined a way too small
+        normalized = checksum_as_string.substr(0, kMaxWorkerNodeIdSize - 1);
+    } else {
+        size_t      outer_lenght = ((kMaxWorkerNodeIdSize - 1) - // available
+                                    2 -                          // separators
+                                    checksum_as_string.size())   // md5
+                                   / 2;
+        normalized = val.substr(0, outer_lenght) + "/" +
+                     checksum_as_string + "/" +
+                     val.substr(val.size() - outer_lenght, outer_lenght);
+    }
+
+    ERR_POST("Client identification parameter " << key <<
+             " exceeds the max allowed length of " <<
+             kMaxWorkerNodeIdSize - 1 << " bytes. It will be replaced with " <<
+            normalized);
+    return normalized;
+}
+
 
 
 SRemoteNodeData::SRemoteNodeData() :

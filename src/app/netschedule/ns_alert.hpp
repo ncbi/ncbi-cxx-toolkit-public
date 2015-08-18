@@ -50,7 +50,13 @@ enum EAlertType {
     ePidFile = 2,
     eStartAfterCrash = 3,
     eAccess = 4,
-    eConfigOutOfSync = 5
+    eConfigOutOfSync = 5,
+    eReinit = 6,
+    eNoDump = 7,
+    eDumpError = 8,
+    eMaxQueues = 9,
+    eDumpLoadError = 10,
+    eDumpSpaceError = 11
 };
 
 enum EAlertAckResult {

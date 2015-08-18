@@ -48,6 +48,8 @@
 #include "netschedule_version.hpp"
 #include "ns_server.hpp"
 #include "ns_handler.hpp"
+#include "ns_db_dump.hpp"
+#include "ns_types.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -63,6 +65,7 @@ BEGIN_NCBI_SCOPE
     bdb_conf.GetBool("netschedule", name, CConfig::eErr_NoThrow, dflt)
 
 
+
 /////////////////////////////////////////////////////////////////////////////
 // SNSDBEnvironmentParams implementation
 
@@ -76,8 +79,6 @@ bool SNSDBEnvironmentParams::Read(const IRegistry& reg, const string& sname)
         return false;
 
     CConfig bdb_conf((CConfig::TParamTree*)bdb_tree, eNoOwnership);
-    db_storage_ver = bdb_conf.GetString("netschedule", "force_storage_version",
-        CConfig::eErr_NoThrow, NETSCHEDULED_STORAGE_VERSION);
 
     db_path = bdb_conf.GetString("netschedule", "path", CConfig::eErr_Throw);
     db_log_path = ""; // doesn't work yet
@@ -114,7 +115,7 @@ CQueueDataBase::CQueueDataBase(CNetScheduleServer *            server,
                                bool                            reinit)
 : m_Host(server->GetBackgroundHost()),
   m_Executor(server->GetRequestExecutor()),
-  m_Env(0),
+  m_Env(NULL),
   m_StopPurge(false),
   m_FreeStatusMemCnt(0),
   m_LastFreeMem(time(0)),
@@ -123,40 +124,18 @@ CQueueDataBase::CQueueDataBase(CNetScheduleServer *            server,
   m_PurgeStatusIndex(0),
   m_PurgeJobScanned(0)
 {
-    // Creates/re-creates if needed and opens DB tables
+    m_DataPath = CDirEntry::AddTrailingPathSeparator(params.db_path);
+    m_DumpPath = CDirEntry::AddTrailingPathSeparator(m_DataPath +
+                                                     kDumpSubdirName);
+
+    // First, load the previous session start job IDs if file existed
+    m_Server->LoadJobsStartIDs();
+
+    // Old instance bdb files are not needed (even if they survived)
+    x_RemoveBDBFiles();
+
+    // Creates the queues from the ini file and loads jobs from the dump
     x_Open(params, reinit);
-
-    // Read queue classes and queues descriptions from the DB
-    m_QueueClasses = x_ReadDBQueueDescriptions("qclass");
-    TQueueParams    queues_from_db = x_ReadDBQueueDescriptions("queue");
-
-    // Mount all the queues in accordance with the DB info
-    for (TQueueParams::const_iterator  k = queues_from_db.begin();
-         k != queues_from_db.end(); ++k ) {
-         SQueueDbBlock *   block = m_QueueDbBlockArray.Get(k->second.position);
-
-        if (block == NULL) {
-            // That means the DB has more a queue allocated in a slot which
-            // index exceeds the max tables configured in .ini file
-            try {
-                Close();
-            } catch (...) {}
-
-            NCBI_THROW(CNetScheduleException, eInvalidParameter,
-                       "Error detected: the DB has a queue allocated in a "
-                       "slot (" + NStr::NumericToString(k->second.position) +
-                       ") which index exceeds the max configured number "
-                       "of queues. Consider increasing the "
-                       "[bdb]/max_queues value.");
-        }
-
-        // OK, the block is available
-        m_QueueDbBlockArray.Allocate(k->second.position);
-
-        // This will actually create CQueue and insert it to m_Queues
-        x_CreateAndMountQueue(k->first, k->second, block);
-    }
-    return;
 }
 
 
@@ -171,495 +150,172 @@ CQueueDataBase::~CQueueDataBase()
 void  CQueueDataBase::x_Open(const SNSDBEnvironmentParams &  params,
                              bool                            reinit)
 {
-    const string &   db_path     = params.db_path;
-    const string &   db_log_path = params.db_log_path;
+    // Checks preconditions and provides the final reinit value
+    // It sets alerts and throws exceptions if needed.
+    reinit = x_CheckOpenPreconditions(reinit);
 
-    // First, load the previous session start job IDs if file existed
-    m_Server->LoadJobsStartIDs();
-
-    if (reinit) {
-        CDir(db_path).Remove();
-        LOG_POST(Note << "Reinitialization. " << db_path << " removed.");
-    }
-
-    m_Path = CDirEntry::AddTrailingPathSeparator(db_path);
-
-    if (x_IsDBDrained()) {
-        CDir(db_path).Remove();
-        LOG_POST(Note << "Reinitialization due to the DB was drained "
-                         "on last shutdown. " << db_path << " removed.");
-    }
-
-    string trailed_log_path = CDirEntry::AddTrailingPathSeparator(db_log_path);
-
-    const string* effective_log_path = trailed_log_path.empty() ?
-                                       &m_Path :
-                                       &trailed_log_path;
-
-    bool        fresh_db(false);
-    {{
-        CDir    dir(m_Path);
-        if (!dir.Exists()) {
-            fresh_db = true;
-            dir.Create();
-        }
-    }}
-
-    if (!fresh_db) {
-        // Check for the last instance crash
-        if (x_DoesNeedReinitFileExist()) {
-            CDir(db_path).Remove();
-            CDir(m_Path).Create();
-            fresh_db = true;
-
-            ERR_POST("Reinitialization due to the server "
-                     "did not stop gracefully last time. "
-                     << db_path << " removed.");
-            m_Server->RegisterAlert(eStartAfterCrash, "database has been "
-                                    "reinitialized due to the server did not "
-                                    "stop gracefully last time");
-        }
-    }
-
-    string      db_storage_ver;
-    CFile       ver_file(CFile::MakePath(m_Path, "DB_STORAGE_VER"));
-    if (fresh_db) {
-        db_storage_ver = NETSCHEDULED_STORAGE_VERSION;
-        CFileIO f;
-        f.Open(ver_file.GetPath(), CFileIO_Base::eCreate,
-                                   CFileIO_Base::eReadWrite);
-        f.Write(db_storage_ver.data(), db_storage_ver.size());
-        f.Close();
-    } else {
-        if (!ver_file.Exists()) {
-            // Last storage version which does not have DB_STORAGE_VER file
-            db_storage_ver = "4.0.0";
-        } else {
-            CFileIO f;
-            char buf[32];
-            f.Open(ver_file.GetPath(), CFileIO_Base::eOpen,
-                                       CFileIO_Base::eRead);
-            size_t n = f.Read(buf, sizeof(buf));
-            db_storage_ver.append(buf, n);
-            NStr::TruncateSpacesInPlace(db_storage_ver, NStr::eTrunc_End);
-            f.Close();
-        }
-        if (db_storage_ver != params.db_storage_ver)
-            NCBI_THROW(CNetScheduleException, eInvalidParameter,
-                       "Error detected: Storage version mismatch, required: " +
-                       params.db_storage_ver + ", found: " + db_storage_ver);
-    }
-
-    delete m_Env;
-    m_Env = new CBDB_Env();
-
-    if (!trailed_log_path.empty()) {
-        m_Env->SetLogDir(trailed_log_path);
-    }
-
-    // memory log option. we probably need to reset LSN
-    // numbers
-/*
-    if (log_mem_size) {
-    }
-
-    // Private environment for LSN recovery
-    {{
-        m_Name = "jsqueue";
-        string err_file = m_Path + "err" + string(m_Name) + ".log";
-        m_Env->OpenErrFile(err_file.c_str());
-
-        m_Env->SetCacheSize(1024*1024);
-        m_Env->OpenPrivate(path.c_str());
-
-        m_Env->LsnReset("jsq_test.db");
-
-        delete m_Env;
-        m_Env = new CBDB_Env();
-    }}
-*/
-
-    m_Name = "jsqueue";
-    string err_file = m_Path + "err" + string(m_Name) + ".log";
-    m_Env->OpenErrFile(err_file.c_str());
-
-    m_Env->SetLogRegionMax(512 * 1024);
-    if (params.log_mem_size) {
-        m_Env->SetLogInMemory(true);
-        m_Env->SetLogBSize(params.log_mem_size);
-    } else {
-        m_Env->SetLogFileMax(200 * 1024 * 1024);
-        m_Env->SetLogAutoRemove(true);
-    }
-
-    // Check if bdb env. files are in place and try to join
-    CDir            dir(*effective_log_path);
-    CDir::TEntries  fl = dir.GetEntries("__db.*", CDir::eIgnoreRecursive);
-
-    if (!params.private_env && !fl.empty()) {
-        // Opening db with recover flags is unreliable.
-        BDB_RecoverEnv(m_Path, false);
-        LOG_POST(Note << "Running recovery...");
-    }
-
-    CBDB_Env::TEnvOpenFlags opt = CBDB_Env::eThreaded;
-    if (params.private_env)
-        opt |= CBDB_Env::ePrivate;
-
-    if (params.cache_ram_size)
-        m_Env->SetCacheSize(params.cache_ram_size);
-    if (params.mutex_max)
-        m_Env->MutexSetMax(params.mutex_max);
-    if (params.max_locks)
-        m_Env->SetMaxLocks(params.max_locks);
-    if (params.max_lockers)
-        m_Env->SetMaxLockers(params.max_lockers);
-    if (params.max_lockobjects)
-        m_Env->SetMaxLockObjects(params.max_lockobjects);
-    if (params.max_trans)
-        m_Env->SetTransactionMax(params.max_trans);
-    m_Env->SetTransactionSync(params.sync_transactions ?
-                                  CBDB_Transaction::eTransSync :
-                                  CBDB_Transaction::eTransASync);
-
-    m_Env->OpenWithTrans(m_Path.c_str(), opt);
-    GetDiagContext().Extra()
-        .Print("_type", "startup")
-        .Print("info", "opened BDB environment")
-        .Print("private", params.private_env ? "true" : "false")
-        .Print("max_locks", m_Env->GetMaxLocks())
-        .Print("transactions",
-               m_Env->GetTransactionSync() == CBDB_Transaction::eTransSync ?
-                    "syncronous" : "asyncronous")
-        .Print("max_mutexes", m_Env->MutexGetMax());
-
-    m_Env->SetDirectDB(params.direct_db);
-    m_Env->SetDirectLog(params.direct_log);
-
-    m_Env->SetCheckPointKB(params.checkpoint_kb);
-    m_Env->SetCheckPointMin(params.checkpoint_min);
-
-    m_Env->SetLockTimeout(10 * 1000000); // 10 sec
-
-    m_Env->SetTasSpins(5);
-
-    if (m_Env->IsTransactional()) {
-        m_Env->SetTransactionTimeout(10 * 1000000); // 10 sec
-        m_Env->ForceTransactionCheckpoint();
-        m_Env->CleanLog();
-    }
-
-    m_QueueDescriptionDB.SetEnv(*m_Env);
-    m_QueueDescriptionDB.Open("sys_qdescr.db", CBDB_RawFile::eReadWriteCreate);
-
-    // Allocate SQueueDbBlock's here, open/create corresponding databases
-    m_QueueDbBlockArray.Init(*m_Env, m_Path, params.max_queues);
+    CDir    data_dir(m_DataPath);
+    if (reinit)
+        data_dir.Remove();
+    if (!data_dir.Exists())
+        data_dir.Create();
 
     // The initialization must be done before the queues are created but after
     // the directory is possibly re-created
-    m_Server->InitNodeID(db_path);
+    m_Server->InitNodeID(m_DataPath);
 
-    x_SetSignallingFile(false);
-    x_CreateNeedReinitFile();
+    m_Env = x_CreateBDBEnvironment(params);
+
+    // Detect what queues need to be loaded. It depends on the configuration
+    // file and on the dumped queues. It might be that the saved queues +
+    // the config file queues excced the configured max number of queues.
+    set<string>             dump_static_queues;
+    map<string, string>     dump_dynamic_queues;    // qname -> qclass
+    TQueueParams            dump_queue_classes;
+    x_ReadDumpQueueDesrc(dump_static_queues, dump_dynamic_queues,
+                         dump_queue_classes);
+    set<string>             config_static_queues = x_GetConfigQueues();
+    string                  last_queue_load_error;
+    size_t                  queue_load_error_count = 0;
+
+    // Exclude number of queues will be the static queues from the config
+    // plus the dumped dynamic queues
+    size_t      final_dynamic_count = 0;
+    for (map<string, string>::const_iterator  k = dump_dynamic_queues.begin();
+            k != dump_dynamic_queues.end(); ++k)
+        if (config_static_queues.find(k->first) == config_static_queues.end())
+            ++final_dynamic_count;
+
+    size_t      total_queues = final_dynamic_count +
+                               config_static_queues.size();
+    size_t      queues_limit = total_queues;
+    if (total_queues > params.max_queues) {
+        string  msg = "The initial number of queues on the server exceeds the "
+                      "configured max number of queues. Configured: " +
+                      NStr::NumericToString(params.max_queues) + ". Real: " +
+                      NStr::NumericToString(total_queues) + ". The limit will "
+                      "be extended to accomodate all the queues.";
+        LOG_POST(Note << msg);
+        m_Server->RegisterAlert(eMaxQueues, msg);
+    } else {
+        // The configuration file limit has not been exceeded
+        queues_limit = params.max_queues;
+    }
+
+    // Allocate SQueueDbBlock's here, open/create corresponding databases
+    m_QueueDbBlockArray.Init(*m_Env, m_DataPath, queues_limit);
+
+    try {
+        // Here: we can start restoring what was saved. The first step is
+        //       to get the linked sections. Linked sections have two sources:
+        //       - config file
+        //       - dumped sections
+        // The config file sections must override the dumped ones
+        CJsonNode       unused_diff = CJsonNode::NewObjectNode();
+        x_ReadLinkedSections(CNcbiApplication::Instance()->GetConfig(),
+                             unused_diff);
+        x_AppendDumpLinkedSections();
+
+        // Read the queue classes from the config file and append those which
+        // come from the dump
+        m_QueueClasses = x_ReadIniFileQueueClassDescriptions(
+                                    CNcbiApplication::Instance()->GetConfig());
+        for (TQueueParams::const_iterator  k = dump_queue_classes.begin();
+                k != dump_queue_classes.end(); ++k) {
+            if (m_QueueClasses.find(k->first) == m_QueueClasses.end())
+                m_QueueClasses[k->first] = k->second;
+        }
+
+        // Read the queues from the config file
+        TQueueParams    queues_from_ini =
+                            x_ReadIniFileQueueDescriptions(
+                                    CNcbiApplication::Instance()->GetConfig(),
+                                    m_QueueClasses);
+        x_ConfigureQueues(queues_from_ini, unused_diff);
+
+        // Add the queues from the dump
+        for (map<string, string>::const_iterator
+                k = dump_dynamic_queues.begin();
+                k != dump_dynamic_queues.end(); ++k) {
+            string      qname = k->first;
+            if (config_static_queues.find(qname) != config_static_queues.end())
+                continue;
+
+            // Here: the dumped queue has not been changed from a dynamic one
+            //       to a static. So, it needs to be added.
+            string      qclass = k->second;
+            int         new_position = m_QueueDbBlockArray.Allocate();
+
+            SQueueParameters    params = m_QueueClasses[qclass];
+
+            params.kind = CQueue::eKindDynamic;
+            params.position = new_position;
+            params.delete_request = false;
+            params.qclass = qclass;
+
+            // Lost parameter: description. The only dynamic queue classes are
+            // dumped so the description is lost.
+            // params.description = ...
+
+            x_CreateAndMountQueue(qname, params,
+                                  m_QueueDbBlockArray.Get(new_position));
+        }
+
+        // All the structures are ready to upload the jobs from the dump
+        for (TQueueInfo::iterator  k = m_Queues.begin();
+                k != m_Queues.end(); ++k) {
+            try {
+                unsigned int   records =
+                                    k->second.second->LoadFromDump(m_DumpPath);
+                GetDiagContext().Extra()
+                    .Print("_type", "startup")
+                    .Print("_queue", k->first)
+                    .Print("info", "load_from_dump")
+                    .Print("records", records);
+            } catch (const exception &  ex) {
+                ERR_POST(ex.what());
+                last_queue_load_error = ex.what();
+                ++queue_load_error_count;
+            } catch (...) {
+                last_queue_load_error = "Unknown error loading queue " +
+                                        k->first + " from dump";
+                ERR_POST(last_queue_load_error);
+                ++queue_load_error_count;
+            }
+        }
+    } catch (const exception &  ex) {
+        ERR_POST(ex.what());
+        last_queue_load_error = ex.what();
+        ++queue_load_error_count;
+    } catch (...) {
+        last_queue_load_error = "Unknown error loading queues from dump";
+        ERR_POST(last_queue_load_error);
+        ++queue_load_error_count;
+    }
+
+    x_CreateCrashFlagFile();
+    x_CreateDumpErrorFlagFile();
+    x_CreateStorageVersionFile();
 
     // Serialize the start job IDs file if it was deleted during the database
     // initialization. Even if it is overwriting an existing file there is no
     // performance issue at this point (it's done once anyway).
     m_Server->SerializeJobsStartIDs();
-}
 
-
-TQueueParams
-CQueueDataBase::x_ReadDBQueueDescriptions(const string &  expected_prefix)
-{
-    // Reads what is stored in the DB about currently served queues
-    m_QueueDescriptionDB.SetTransaction(NULL);
-
-    CBDB_FileCursor     cur(m_QueueDescriptionDB);
-    TQueueParams        queues;
-
-    cur.SetCondition(CBDB_FileCursor::eFirst);
-    while (cur.Fetch() == eBDB_Ok) {
-        string      prefix;
-        string      queue_name;
-
-        NStr::SplitInTwo(m_QueueDescriptionDB.queue.GetString(),
-                         "_", prefix, queue_name);
-        if (NStr::CompareNocase(prefix, expected_prefix) != 0)
-            continue;
-
-        SQueueParameters    params;
-        params.kind = m_QueueDescriptionDB.kind;
-        params.position = m_QueueDescriptionDB.pos;
-        params.delete_request = m_QueueDescriptionDB.delete_request;
-        params.qclass = m_QueueDescriptionDB.qclass;
-        params.timeout = CNSPreciseTime(m_QueueDescriptionDB.timeout_sec,
-                                        m_QueueDescriptionDB.timeout_nsec);
-        params.notif_hifreq_interval =
-            CNSPreciseTime(m_QueueDescriptionDB.notif_hifreq_interval_sec,
-                           m_QueueDescriptionDB.notif_hifreq_interval_nsec);
-        params.notif_hifreq_period =
-            CNSPreciseTime(m_QueueDescriptionDB.notif_hifreq_period_sec,
-                           m_QueueDescriptionDB.notif_hifreq_period_nsec);
-        params.notif_lofreq_mult = m_QueueDescriptionDB.notif_lofreq_mult;
-        params.notif_handicap =
-            CNSPreciseTime(m_QueueDescriptionDB.notif_handicap_sec,
-                           m_QueueDescriptionDB.notif_handicap_nsec);
-        params.dump_buffer_size = m_QueueDescriptionDB.dump_buffer_size;
-        params.dump_client_buffer_size =
-                            m_QueueDescriptionDB.dump_client_buffer_size;
-        params.dump_aff_buffer_size = m_QueueDescriptionDB.dump_aff_buffer_size;
-        params.dump_group_buffer_size =
-                            m_QueueDescriptionDB.dump_group_buffer_size;
-        params.run_timeout =
-            CNSPreciseTime(m_QueueDescriptionDB.run_timeout_sec,
-                           m_QueueDescriptionDB.run_timeout_nsec);
-        params.read_timeout =
-            CNSPreciseTime(m_QueueDescriptionDB.read_timeout_sec,
-                           m_QueueDescriptionDB.read_timeout_nsec);
-        params.program_name = m_QueueDescriptionDB.program_name;
-        params.failed_retries = m_QueueDescriptionDB.failed_retries;
-        params.read_failed_retries = m_QueueDescriptionDB.read_failed_retries;
-        params.blacklist_time =
-            CNSPreciseTime(m_QueueDescriptionDB.blacklist_time_sec,
-                           m_QueueDescriptionDB.blacklist_time_nsec);
-        params.read_blacklist_time =
-            CNSPreciseTime(m_QueueDescriptionDB.read_blacklist_time_sec,
-                           m_QueueDescriptionDB.read_blacklist_time_nsec);
-        params.max_input_size = m_QueueDescriptionDB.max_input_size;
-        params.max_output_size = m_QueueDescriptionDB.max_output_size;
-        params.subm_hosts = m_QueueDescriptionDB.subm_hosts;
-        params.wnode_hosts = m_QueueDescriptionDB.wnode_hosts;
-        params.reader_hosts = m_QueueDescriptionDB.reader_hosts;
-        params.wnode_timeout =
-            CNSPreciseTime(m_QueueDescriptionDB.wnode_timeout_sec,
-                           m_QueueDescriptionDB.wnode_timeout_nsec);
-        params.reader_timeout =
-            CNSPreciseTime(m_QueueDescriptionDB.reader_timeout_sec,
-                           m_QueueDescriptionDB.reader_timeout_nsec);
-        params.pending_timeout =
-            CNSPreciseTime(m_QueueDescriptionDB.pending_timeout_sec,
-                           m_QueueDescriptionDB.pending_timeout_nsec);
-        params.max_pending_wait_timeout =
-            CNSPreciseTime(m_QueueDescriptionDB.max_pending_wait_timeout_sec,
-                           m_QueueDescriptionDB.max_pending_wait_timeout_nsec);
-        params.max_pending_read_wait_timeout =
-            CNSPreciseTime(m_QueueDescriptionDB.max_pending_read_wait_timeout_sec,
-                           m_QueueDescriptionDB.max_pending_read_wait_timeout_nsec);
-        params.description = m_QueueDescriptionDB.description;
-        params.scramble_job_keys =
-                            (m_QueueDescriptionDB.scramble_job_keys != 0);
-
-        params.client_registry_timeout_worker_node =
-            CNSPreciseTime(m_QueueDescriptionDB.
-                                client_registry_timeout_worker_node_sec,
-                           m_QueueDescriptionDB.
-                                client_registry_timeout_worker_node_nsec);
-        params.client_registry_min_worker_nodes =
-                        m_QueueDescriptionDB.client_registry_min_worker_nodes;
-        params.client_registry_timeout_admin =
-            CNSPreciseTime(m_QueueDescriptionDB.
-                                client_registry_timeout_admin_sec,
-                           m_QueueDescriptionDB.
-                                client_registry_timeout_admin_nsec);
-        params.client_registry_min_admins =
-                        m_QueueDescriptionDB.client_registry_min_admins;
-        params.client_registry_timeout_submitter =
-            CNSPreciseTime(m_QueueDescriptionDB.
-                                client_registry_timeout_submitter_sec,
-                           m_QueueDescriptionDB.
-                                client_registry_timeout_submitter_nsec);
-        params.client_registry_min_submitters =
-                        m_QueueDescriptionDB.client_registry_min_submitters;
-        params.client_registry_timeout_reader =
-            CNSPreciseTime(m_QueueDescriptionDB.
-                                client_registry_timeout_reader_sec,
-                           m_QueueDescriptionDB.
-                                client_registry_timeout_reader_nsec);
-        params.client_registry_min_readers =
-                        m_QueueDescriptionDB.client_registry_min_readers;
-        params.client_registry_timeout_unknown =
-            CNSPreciseTime(m_QueueDescriptionDB.
-                                client_registry_timeout_unknown_sec,
-                           m_QueueDescriptionDB.
-                                client_registry_timeout_unknown_nsec);
-        params.client_registry_min_unknowns =
-                        m_QueueDescriptionDB.client_registry_min_unknowns;
-
-        // It is impossible to have the same entries twice in the DB
-        queues[queue_name] = params;
-    }
-    return queues;
-}
-
-
-void
-CQueueDataBase::x_DeleteDBRecordsWithPrefix(const string &  prefix)
-{
-    // Transaction must be created outside
-
-    vector<string>      to_delete;
-    CBDB_FileCursor     cur(m_QueueDescriptionDB);
-    cur.SetCondition(CBDB_FileCursor::eFirst);
-
-    while (cur.Fetch() == eBDB_Ok) {
-        string      qprefix;
-        string      queue_name;
-
-        NStr::SplitInTwo(m_QueueDescriptionDB.queue.GetString(),
-                         "_", qprefix, queue_name);
-        if (NStr::CompareNocase(qprefix, prefix) == 0)
-            to_delete.push_back(m_QueueDescriptionDB.queue);
+    if (queue_load_error_count > 0) {
+        m_Server->RegisterAlert(eDumpLoadError,
+                                "There were error(s) loading the previous "
+                                "instance dump. Number of errors: " +
+                                NStr::NumericToString(queue_load_error_count) +
+                                ". See log for all the loading errors. "
+                                "Last error: " + last_queue_load_error);
+        x_BackupDump();
+    } else {
+        x_RemoveDump();
     }
 
-    for (vector<string>::const_iterator  k = to_delete.begin();
-         k != to_delete.end(); ++k) {
-        m_QueueDescriptionDB.queue = *k;
-        m_QueueDescriptionDB.Delete(CBDB_File::eIgnoreError);
-    }
+    x_CreateSpaceReserveFile();
 }
-
-
-void
-CQueueDataBase::x_InsertParamRecord(const string &            key,
-                                    const SQueueParameters &  params)
-{
-    // Transaction must be created outside
-
-    m_QueueDescriptionDB.queue = key;
-
-    m_QueueDescriptionDB.kind = params.kind;
-    m_QueueDescriptionDB.pos = params.position;
-    m_QueueDescriptionDB.delete_request = params.delete_request;
-    m_QueueDescriptionDB.qclass = params.qclass;
-    m_QueueDescriptionDB.timeout_sec = params.timeout.Sec();
-    m_QueueDescriptionDB.timeout_nsec = params.timeout.NSec();
-    m_QueueDescriptionDB.notif_hifreq_interval_sec =
-                                params.notif_hifreq_interval.Sec();
-    m_QueueDescriptionDB.notif_hifreq_interval_nsec =
-                                params.notif_hifreq_interval.NSec();
-    m_QueueDescriptionDB.notif_hifreq_period_sec =
-                                params.notif_hifreq_period.Sec();
-    m_QueueDescriptionDB.notif_hifreq_period_nsec =
-                                params.notif_hifreq_period.NSec();
-    m_QueueDescriptionDB.notif_lofreq_mult = params.notif_lofreq_mult;
-    m_QueueDescriptionDB.notif_handicap_sec = params.notif_handicap.Sec();
-    m_QueueDescriptionDB.notif_handicap_nsec = params.notif_handicap.NSec();
-    m_QueueDescriptionDB.dump_buffer_size = params.dump_buffer_size;
-    m_QueueDescriptionDB.dump_client_buffer_size =
-                                params.dump_client_buffer_size;
-    m_QueueDescriptionDB.dump_aff_buffer_size = params.dump_aff_buffer_size;
-    m_QueueDescriptionDB.dump_group_buffer_size = params.dump_group_buffer_size;
-    m_QueueDescriptionDB.run_timeout_sec = params.run_timeout.Sec();
-    m_QueueDescriptionDB.run_timeout_nsec = params.run_timeout.NSec();
-    m_QueueDescriptionDB.read_timeout_sec = params.read_timeout.Sec();
-    m_QueueDescriptionDB.read_timeout_nsec = params.read_timeout.NSec();
-    m_QueueDescriptionDB.program_name = params.program_name;
-    m_QueueDescriptionDB.failed_retries = params.failed_retries;
-    m_QueueDescriptionDB.read_failed_retries = params.read_failed_retries;
-    m_QueueDescriptionDB.blacklist_time_sec = params.blacklist_time.Sec();
-    m_QueueDescriptionDB.blacklist_time_nsec = params.blacklist_time.NSec();
-    m_QueueDescriptionDB.read_blacklist_time_sec =
-                                params.read_blacklist_time.Sec();
-    m_QueueDescriptionDB.read_blacklist_time_nsec =
-                                params.read_blacklist_time.NSec();
-    m_QueueDescriptionDB.max_input_size = params.max_input_size;
-    m_QueueDescriptionDB.max_output_size = params.max_output_size;
-    m_QueueDescriptionDB.subm_hosts = params.subm_hosts;
-    m_QueueDescriptionDB.wnode_hosts = params.wnode_hosts;
-    m_QueueDescriptionDB.reader_hosts = params.reader_hosts;
-    m_QueueDescriptionDB.wnode_timeout_sec = params.wnode_timeout.Sec();
-    m_QueueDescriptionDB.wnode_timeout_nsec = params.wnode_timeout.NSec();
-    m_QueueDescriptionDB.reader_timeout_sec = params.reader_timeout.Sec();
-    m_QueueDescriptionDB.reader_timeout_nsec = params.reader_timeout.NSec();
-    m_QueueDescriptionDB.pending_timeout_sec = params.pending_timeout.Sec();
-    m_QueueDescriptionDB.pending_timeout_nsec = params.pending_timeout.NSec();
-    m_QueueDescriptionDB.max_pending_wait_timeout_sec =
-                                params.max_pending_wait_timeout.Sec();
-    m_QueueDescriptionDB.max_pending_wait_timeout_nsec =
-                                params.max_pending_wait_timeout.NSec();
-    m_QueueDescriptionDB.max_pending_read_wait_timeout_sec =
-                                params.max_pending_read_wait_timeout.Sec();
-    m_QueueDescriptionDB.max_pending_read_wait_timeout_nsec =
-                                params.max_pending_read_wait_timeout.NSec();
-    m_QueueDescriptionDB.description = params.description;
-    m_QueueDescriptionDB.scramble_job_keys = params.scramble_job_keys;
-
-
-    m_QueueDescriptionDB.client_registry_timeout_worker_node_sec =
-                params.client_registry_timeout_worker_node.Sec();
-    m_QueueDescriptionDB.client_registry_timeout_worker_node_nsec =
-                params.client_registry_timeout_worker_node.NSec();
-    m_QueueDescriptionDB.client_registry_min_worker_nodes =
-                params.client_registry_min_worker_nodes;
-    m_QueueDescriptionDB.client_registry_timeout_admin_sec =
-                params.client_registry_timeout_admin.Sec();
-    m_QueueDescriptionDB.client_registry_timeout_admin_nsec =
-                params.client_registry_timeout_admin.NSec();
-    m_QueueDescriptionDB.client_registry_min_admins =
-                params.client_registry_min_admins;
-    m_QueueDescriptionDB.client_registry_timeout_submitter_sec =
-                params.client_registry_timeout_submitter.Sec();
-    m_QueueDescriptionDB.client_registry_timeout_submitter_nsec =
-                params.client_registry_timeout_submitter.NSec();
-    m_QueueDescriptionDB.client_registry_min_submitters =
-                params.client_registry_min_submitters;
-    m_QueueDescriptionDB.client_registry_timeout_reader_sec =
-                params.client_registry_timeout_reader.Sec();
-    m_QueueDescriptionDB.client_registry_timeout_reader_nsec =
-                params.client_registry_timeout_reader.NSec();
-    m_QueueDescriptionDB.client_registry_min_readers =
-                params.client_registry_min_readers;
-    m_QueueDescriptionDB.client_registry_timeout_unknown_sec =
-                params.client_registry_timeout_unknown.Sec();
-    m_QueueDescriptionDB.client_registry_timeout_unknown_nsec =
-                params.client_registry_timeout_unknown.NSec();
-    m_QueueDescriptionDB.client_registry_min_unknowns =
-                params.client_registry_min_unknowns;
-
-    m_QueueDescriptionDB.UpdateInsert();
-}
-
-
-void
-CQueueDataBase::x_WriteDBQueueDescriptions(const TQueueParams &   queue_classes)
-{
-    CBDB_Transaction        trans(*m_Env, CBDB_Transaction::eEnvDefault,
-                                          CBDB_Transaction::eNoAssociation);
-
-    m_QueueDescriptionDB.SetTransaction(&trans);
-
-    // First, delete all the records with the appropriate prefix
-    x_DeleteDBRecordsWithPrefix("qclass");
-
-    // Second, write down the new records
-    for (TQueueParams::const_iterator  k = queue_classes.begin();
-         k != queue_classes.end(); ++k )
-        x_InsertParamRecord("qclass_" + k->first, k->second);
-
-    trans.Commit();
-}
-
-
-void
-CQueueDataBase::x_WriteDBQueueDescriptions(const TQueueInfo &  queues)
-{
-    CBDB_Transaction        trans(*m_Env, CBDB_Transaction::eEnvDefault,
-                                          CBDB_Transaction::eNoAssociation);
-
-    m_QueueDescriptionDB.SetTransaction(&trans);
-
-    // First, delete all the records with the appropriate prefix
-    x_DeleteDBRecordsWithPrefix("queue");
-
-    // Second, write down the new records
-    for (TQueueInfo::const_iterator  k = queues.begin();
-         k != queues.end(); ++k )
-        x_InsertParamRecord("queue_" + k->first, k->second.first);
-
-    trans.Commit();
-}
-
 
 
 TQueueParams
@@ -676,7 +332,11 @@ CQueueDataBase::x_ReadIniFileQueueClassDescriptions(const IRegistry &  reg)
         const string &      section_name = *it;
 
         NStr::SplitInTwo(section_name, "_", prefix, queue_class);
-        if (NStr::CompareNocase(prefix, "qclass") != 0 || queue_class.empty())
+        if (NStr::CompareNocase(prefix, "qclass") != 0)
+           continue;
+        if (queue_class.empty())
+            continue;
+        if (queue_class.size() > kMaxQueueNameSize - 1)
             continue;
 
         // Warnings are ignored here. At this point they are not of interest
@@ -684,10 +344,11 @@ CQueueDataBase::x_ReadIniFileQueueClassDescriptions(const IRegistry &  reg)
         // or at RECO - a file with warnings is not allowed
         SQueueParameters    params;
         vector<string>      warnings;
-        params.ReadQueueClass(reg, section_name, warnings);
-
-        // The same sections cannot appear twice
-        queue_classes[queue_class] = params;
+        if (params.ReadQueueClass(reg, section_name, warnings)) {
+            // false => problems with linked sections; see CXX-2617
+            // The same sections cannot appear twice
+            queue_classes[queue_class] = params;
+        }
     }
 
     return queue_classes;
@@ -710,7 +371,11 @@ CQueueDataBase::x_ReadIniFileQueueDescriptions(const IRegistry &     reg,
         const string &      section_name = *it;
 
         NStr::SplitInTwo(section_name, "_", prefix, queue_name);
-        if (NStr::CompareNocase(prefix, "queue") != 0 || queue_name.empty())
+        if (NStr::CompareNocase(prefix, "queue") != 0)
+           continue;
+        if (queue_name.empty())
+            continue;
+        if (queue_name.size() > kMaxQueueNameSize - 1)
             continue;
 
         // Warnings are ignored here. At this point they are not of interest
@@ -718,9 +383,11 @@ CQueueDataBase::x_ReadIniFileQueueDescriptions(const IRegistry &     reg,
         // or at RECO - a file with warnings is not allowed
         SQueueParameters    params;
         vector<string>      warnings;
-        params.ReadQueue(reg, section_name, classes, warnings);
 
-        queues[queue_name] = params;
+        if (params.ReadQueue(reg, section_name, classes, warnings)) {
+            // false => problems with linked sections; see CXX-2617
+            queues[queue_name] = params;
+        }
     }
 
     return queues;
@@ -746,6 +413,8 @@ void  CQueueDataBase::x_ReadLinkedSections(const IRegistry &  reg,
             continue;
         if (NStr::CompareNocase(prefix, "qclass") != 0 &&
             NStr::CompareNocase(prefix, "queue") != 0)
+            continue;
+        if (queue_or_class.size() > kMaxQueueNameSize - 1)
             continue;
 
         list<string>    entries;
@@ -1275,18 +944,14 @@ time_t  CQueueDataBase::Configure(const IRegistry &  reg,
 
     // Here: validation is finished. There is enough resources for the new
     // configuration.
-    bool    has_changes = false;
-
-    has_changes = x_ConfigureQueueClasses(classes_from_ini, diff);
-    if (has_changes)
-        x_WriteDBQueueDescriptions(m_QueueClasses);
-
-
-    has_changes = x_ConfigureQueues(queues_from_ini, diff);
-    if (has_changes)
-        x_WriteDBQueueDescriptions(m_Queues);
+    x_ConfigureQueueClasses(classes_from_ini, diff);
+    x_ConfigureQueues(queues_from_ini, diff);
+    return CalculateRuntimePrecision();
+}
 
 
+CNSPreciseTime CQueueDataBase::CalculateRuntimePrecision(void) const
+{
     // Calculate the new min_run_timeout: required at the time of loading
     // NetSchedule and not used while reconfiguring on the fly
     CNSPreciseTime      min_precision = kTimeNever;
@@ -1365,15 +1030,13 @@ CQueueDataBase::x_CreateAndMountQueue(const string &            qname,
     q->Attach(queue_db_block);
     q->SetParameters(params);
 
-    unsigned int        recs = q->LoadStatusMatrix();
     m_Queues[qname] = make_pair(params, q.release());
 
     GetDiagContext().Extra()
         .Print("_type", "startup")
         .Print("_queue", qname)
         .Print("qclass", params.qclass)
-        .Print("info", "mount")
-        .Print("records", recs);
+        .Print("info", "mount");
 }
 
 
@@ -1466,8 +1129,6 @@ void CQueueDataBase::CreateDynamicQueue(const CNSClientId &  client,
     params.description = description;
 
     x_CreateAndMountQueue(qname, params, m_QueueDbBlockArray.Get(new_position));
-
-    x_WriteDBQueueDescriptions(m_Queues);
 }
 
 
@@ -1497,8 +1158,6 @@ void  CQueueDataBase::DeleteDynamicQueue(const CNSClientId &  client,
     }
 
     found_queue->second.first.delete_request = true;
-    x_WriteDBQueueDescriptions(m_Queues);
-
     queue->SetRefuseSubmits(true);
 }
 
@@ -1568,14 +1227,11 @@ void CQueueDataBase::Close(void)
         CStatisticsCounters::PrintServerWide(aff_count);
     }
 
-
-
     if (m_Server->IsDrainShutdown() && m_Server->WasDBDrained()) {
-        // That was a not interrupted drain shutdown
+        // That was a not interrupted drain shutdown so there is no
+        // need to dump anything
         LOG_POST("Drained shutdown: the DB has been successfully drained");
-        m_QueueDescriptionDB.Close();
-        x_SetSignallingFile(true);  // Create/update signalling file
-        x_RemoveNeedReinitFile();
+        x_RemoveDumpErrorFlagFile();
     } else {
         // That was either:
         // - hard shutdown
@@ -1586,33 +1242,30 @@ void CQueueDataBase::Close(void)
                      "when a hard shutdown is received. "
                      "Shutting down immediately.");
 
-        m_Env->ForceTransactionCheckpoint();
-        m_Env->CleanLog();
+        // Dump all the queues/queue classes/queue parameters to flat files
+        x_Dump();
+
+        // A Dump is created, so we may avoid calling
+        // - m_Env->ForceTransactionCheckpoint();
+        // - m_Env->CleanLog();
+        // which may take very long time to complete
 
         m_QueueClasses.clear();
+
+        // CQueue objects destructors are called from here because the last
+        // reference to the object has gone
         m_Queues.clear();
 
         // Close pre-allocated databases
         m_QueueDbBlockArray.Close();
-
-        m_QueueDescriptionDB.Close();
-        try {
-            GetDiagContext().Extra()
-                .Print("_type", "finishing")
-                .Print("info", "unmount")
-                .Print("name", m_Name)
-                .Print("in_use", m_Env->CheckRemove() ? "false" : "true");
-            x_RemoveNeedReinitFile();
-        }
-        catch (exception &  ex) {
-            ERR_POST("JS: '" << m_Name << "' Exception in Close() " <<
-                     ex.what() <<
-                     " (ignored; DB will be reinitialized at next start)");
-        }
     }
 
     delete m_Env;
     m_Env = 0;
+
+    // BDB files are not needed anymore. They could be safely deleted.
+    x_RemoveBDBFiles();
+    x_RemoveCrashFlagFile();
 }
 
 
@@ -2099,57 +1752,14 @@ bool  CQueueDataBase::x_PurgeQueue(CQueue &                queue,
 }
 
 
-static const char *     drained_file_name =    "DB_DRAINED_Y";
-static const char *     nondrained_file_name = "DB_DRAINED_N";
-
-void  CQueueDataBase::x_SetSignallingFile(bool  drained)
+void  CQueueDataBase::x_CreateCrashFlagFile(void)
 {
     try {
-        const char *    src = NULL;
-        const char *    dst = NULL;
-
-        if (drained) {
-            src = nondrained_file_name;
-            dst = drained_file_name;
-        } else {
-            src = drained_file_name;
-            dst = nondrained_file_name;
-        }
-
-        CFile       src_file(CFile::MakePath(m_Path, src));
-        if (src_file.Exists())
-            src_file.Rename(CFile::MakePath(m_Path, dst));
-        else {
+        CFile       crash_file(CFile::MakePath(m_DataPath,
+                                               kCrashFlagFileName));
+        if (!crash_file.Exists()) {
             CFileIO     f;
-            f.Open(CFile::MakePath(m_Path, dst),
-                   CFileIO_Base::eCreate,
-                   CFileIO_Base::eReadWrite);
-            f.Close();
-        }
-    }
-    catch (...) {
-        ERR_POST("Error creating drained DB signalling file. "
-                 "The server might not start correct with this DB.");
-    }
-}
-
-
-bool  CQueueDataBase::x_IsDBDrained(void) const
-{
-    CFile       drained_file(CFile::MakePath(m_Path, drained_file_name));
-    return drained_file.Exists();
-}
-
-
-static const char *     need_reinit_file_name = "NEED_REINIT";
-
-void  CQueueDataBase::x_CreateNeedReinitFile(void)
-{
-    try {
-        CFile       reinit_file(CFile::MakePath(m_Path, need_reinit_file_name));
-        if (!reinit_file.Exists()) {
-            CFileIO     f;
-            f.Open(CFile::MakePath(m_Path, need_reinit_file_name),
+            f.Open(CFile::MakePath(m_DataPath, kCrashFlagFileName),
                    CFileIO_Base::eCreate,
                    CFileIO_Base::eReadWrite);
             f.Close();
@@ -2161,13 +1771,13 @@ void  CQueueDataBase::x_CreateNeedReinitFile(void)
 }
 
 
-void  CQueueDataBase::x_RemoveNeedReinitFile(void)
+void  CQueueDataBase::x_RemoveCrashFlagFile(void)
 {
     try {
-        CFile       reinit_file(CFile::MakePath(m_Path, need_reinit_file_name));
-        if (reinit_file.Exists()) {
-            reinit_file.Remove();
-        }
+        CFile       crash_file(CFile::MakePath(m_DataPath,
+                                               kCrashFlagFileName));
+        if (crash_file.Exists())
+            crash_file.Remove();
     }
     catch (...) {
         ERR_POST("Error removing crash detection file. When the server "
@@ -2176,10 +1786,49 @@ void  CQueueDataBase::x_RemoveNeedReinitFile(void)
 }
 
 
-bool  CQueueDataBase::x_DoesNeedReinitFileExist(void) const
+bool  CQueueDataBase::x_DoesCrashFlagFileExist(void) const
 {
-    CFile   reinit_file(CFile::MakePath(m_Path, need_reinit_file_name));
-    return reinit_file.Exists();
+    return CFile(CFile::MakePath(m_DataPath, kCrashFlagFileName)).Exists();
+}
+
+
+void  CQueueDataBase::x_CreateDumpErrorFlagFile(void)
+{
+    try {
+        CFile       crash_file(CFile::MakePath(m_DataPath,
+                                               kDumpErrorFlagFileName));
+        if (!crash_file.Exists()) {
+            CFileIO     f;
+            f.Open(CFile::MakePath(m_DataPath, kDumpErrorFlagFileName),
+                   CFileIO_Base::eCreate,
+                   CFileIO_Base::eReadWrite);
+            f.Close();
+        }
+    }
+    catch (...) {
+        ERR_POST("Error creating dump error  detection file.");
+    }
+}
+
+
+bool  CQueueDataBase::x_DoesDumpErrorFlagFileExist(void) const
+{
+    return CFile(CFile::MakePath(m_DataPath, kDumpErrorFlagFileName)).Exists();
+}
+
+
+void  CQueueDataBase::x_RemoveDumpErrorFlagFile(void)
+{
+    try {
+        CFile       crash_file(CFile::MakePath(m_DataPath,
+                                               kDumpErrorFlagFileName));
+        if (crash_file.Exists())
+            crash_file.Remove();
+    }
+    catch (...) {
+        ERR_POST("Error removing dump error detection file. When the server "
+                 "restarts it will set an alert.");
+    }
 }
 
 
@@ -2459,6 +2108,830 @@ void CQueueDataBase::StopExecutionWatcherThread(void)
         m_ExeWatchThread->Join();
         m_ExeWatchThread.Reset(0);
     }
+}
+
+
+void CQueueDataBase::x_Dump()
+{
+    LOG_POST(Note << "Start dumping jobs");
+
+    // Create the directory if needed
+    CDir        dump_dir(m_DumpPath);
+    if (!dump_dir.Exists())
+        dump_dir.Create();
+
+    // Remove the file which reserves the disk space
+    x_RemoveSpaceReserveFile();
+
+    // Walk all the queues and dump them
+    // Note: no need for a lock because it is a shutdown time
+    bool                dump_error = false;
+    set<string>         dumped_queues;
+    const string        lbsm_test_queue("LBSMDTestQueue");
+    for (TQueueInfo::iterator  k = m_Queues.begin();
+            k != m_Queues.end(); ++k) {
+        if (k->first != lbsm_test_queue) {
+            try {
+                k->second.second->Dump(m_DumpPath);
+                dumped_queues.insert(k->first);
+            } catch (const exception &  ex) {
+                dump_error = true;
+                ERR_POST("Error dumping queue " << k->first << ": " <<
+                         ex.what());
+            }
+        }
+    }
+
+    // Dump the required queue classes. The only classes required are those
+    // which were used by dynamic queues. The dynamic queue classes may also
+    // use linked sections
+    set<string>     classes_to_dump;
+    set<string>     linked_sections_to_dump;
+    set<string>     dynamic_queues_to_dump;
+    for (TQueueInfo::iterator  k = m_Queues.begin();
+            k != m_Queues.end(); ++k) {
+        if (k->first == lbsm_test_queue)
+            continue;
+        if (k->second.second->GetQueueKind() == CQueue::eKindStatic)
+            continue;
+        if (dumped_queues.find(k->first) == dumped_queues.end())
+            continue;   // There was a dumping error
+
+        classes_to_dump.insert(k->second.first.qclass);
+        for (map<string, string>::const_iterator
+                j = k->second.first.linked_sections.begin();
+                j != k->second.first.linked_sections.end(); ++j)
+            linked_sections_to_dump.insert(j->second);
+        dynamic_queues_to_dump.insert(k->first);
+    }
+
+
+    // Dump classes if so and linked sections if so
+    if (!classes_to_dump.empty()) {
+        string      qclasses_dump_file_name = m_DumpPath +
+                                            kQClassDescriptionFileName;
+        string      linked_sections_dump_file_name = m_DumpPath +
+                                            kLinkedSectionsFileName;
+        FILE *      qclasses_dump_file = NULL;
+        FILE *      linked_sections_dump_file = NULL;
+        try {
+            qclasses_dump_file = fopen(qclasses_dump_file_name.c_str(), "wb");
+            if (qclasses_dump_file == NULL)
+                throw runtime_error("Cannot open file " +
+                                    qclasses_dump_file_name);
+            setbuf(qclasses_dump_file, NULL);
+
+            // Dump dynamic queue classes
+            for (set<string>::const_iterator  k = classes_to_dump.begin();
+                    k != classes_to_dump.end(); ++k) {
+                TQueueParams::const_iterator  queue_class =
+                                                    m_QueueClasses.find(*k);
+                x_DumpQueueOrClass(qclasses_dump_file, "", *k, false,
+                                   queue_class->second);
+            }
+
+            // Dump dynamic queues: qname and its class.
+            for (set<string>::const_iterator
+                    k = dynamic_queues_to_dump.begin();
+                    k != dynamic_queues_to_dump.end(); ++k) {
+                TQueueInfo::const_iterator  q = m_Queues.find(*k);
+                x_DumpQueueOrClass(qclasses_dump_file, *k,
+                                   q->second.first.qclass,true,
+                                   q->second.first);
+            }
+
+            fclose(qclasses_dump_file);
+            qclasses_dump_file = NULL;
+
+            // Dump linked sections if so
+            if (!linked_sections_to_dump.empty()) {
+                linked_sections_dump_file = fopen(
+                                linked_sections_dump_file_name.c_str(), "wb");
+                if (linked_sections_dump_file == NULL)
+                    throw runtime_error("Cannot open file " +
+                                         linked_sections_dump_file_name);
+                setbuf(linked_sections_dump_file, NULL);
+
+                for (set<string>::const_iterator
+                        k = linked_sections_to_dump.begin();
+                        k != linked_sections_to_dump.end(); ++k) {
+                    map<string, map<string, string> >::const_iterator
+                        j = m_LinkedSections.find(*k);
+                    x_DumpLinkedSection(linked_sections_dump_file, *k,
+                                        j->second);
+                }
+                fclose(linked_sections_dump_file);
+                linked_sections_dump_file = NULL;
+            }
+        } catch (const exception &  ex) {
+            dump_error = true;
+            ERR_POST("Error dumping dynamic queue classes and "
+                     "their linked sections. Dynamic queue dumps are lost.");
+            if (qclasses_dump_file != NULL)
+                fclose(qclasses_dump_file);
+            if (linked_sections_dump_file != NULL)
+                fclose(linked_sections_dump_file);
+
+            // Remove the classes and linked sections files
+            if (access(qclasses_dump_file_name.c_str(), F_OK) != -1)
+                remove(qclasses_dump_file_name.c_str());
+            if (access(linked_sections_dump_file_name.c_str(), F_OK) != -1)
+                remove(linked_sections_dump_file_name.c_str());
+
+            // Remove dynamic queues dumps
+            for (set<string>::const_iterator
+                    k = dynamic_queues_to_dump.begin();
+                    k != dynamic_queues_to_dump.end(); ++k) {
+                m_Queues[*k].second->RemoveDump(m_DumpPath);
+            }
+        }
+    }
+
+    if (!dump_error)
+        x_RemoveDumpErrorFlagFile();
+
+    LOG_POST(Note << "Dumping jobs finished");
+}
+
+
+void CQueueDataBase::x_DumpQueueOrClass(FILE *  f,
+                                        const string &  qname,
+                                        const string &  qclass,
+                                        bool  is_queue,
+                                        const SQueueParameters &  params)
+{
+    SQueueDescriptionDump       descr_dump;
+
+    descr_dump.is_queue = is_queue;
+    descr_dump.qname_size = qname.size();
+    memcpy(descr_dump.qname, qname.data(), qname.size());
+    descr_dump.qclass_size = qclass.size();
+    memcpy(descr_dump.qclass, qclass.data(), qclass.size());
+
+    if (!is_queue) {
+        // The other parameters are required for the queue classes only
+        descr_dump.timeout = (double)params.timeout;
+        descr_dump.notif_hifreq_interval = (double)params.notif_hifreq_interval;
+        descr_dump.notif_hifreq_period = (double)params.notif_hifreq_period;
+        descr_dump.notif_lofreq_mult = params.notif_lofreq_mult;
+        descr_dump.notif_handicap = (double)params.notif_handicap;
+        descr_dump.dump_buffer_size = params.dump_buffer_size;
+        descr_dump.dump_client_buffer_size = params.dump_client_buffer_size;
+        descr_dump.dump_aff_buffer_size = params.dump_aff_buffer_size;
+        descr_dump.dump_group_buffer_size = params.dump_group_buffer_size;
+        descr_dump.run_timeout = (double)params.run_timeout;
+        descr_dump.read_timeout = (double)params.read_timeout;
+        descr_dump.program_name_size = params.program_name.size();
+        memcpy(descr_dump.program_name, params.program_name.data(),
+                                        params.program_name.size());
+        descr_dump.failed_retries = params.failed_retries;
+        descr_dump.read_failed_retries = params.read_failed_retries;
+        descr_dump.blacklist_time = (double)params.blacklist_time;
+        descr_dump.read_blacklist_time = (double)params.read_blacklist_time;
+        descr_dump.max_input_size = params.max_input_size;
+        descr_dump.max_output_size = params.max_output_size;
+        descr_dump.subm_hosts_size = params.subm_hosts.size();
+        memcpy(descr_dump.subm_hosts, params.subm_hosts.data(),
+                                      params.subm_hosts.size());
+        descr_dump.wnode_hosts_size = params.wnode_hosts.size();
+        memcpy(descr_dump.wnode_hosts, params.wnode_hosts.data(),
+                                       params.wnode_hosts.size());
+        descr_dump.reader_hosts_size = params.reader_hosts.size();
+        memcpy(descr_dump.reader_hosts, params.reader_hosts.data(),
+                                        params.reader_hosts.size());
+        descr_dump.wnode_timeout = (double)params.wnode_timeout;
+        descr_dump.reader_timeout = (double)params.reader_timeout;
+        descr_dump.pending_timeout = (double)params.pending_timeout;
+        descr_dump.max_pending_wait_timeout =
+                                (double)params.max_pending_wait_timeout;
+        descr_dump.max_pending_read_wait_timeout =
+                                (double)params.max_pending_read_wait_timeout;
+        descr_dump.description_size = params.description.size();
+        memcpy(descr_dump.description, params.description.data(),
+                                       params.description.size());
+        descr_dump.scramble_job_keys = params.scramble_job_keys;
+        descr_dump.client_registry_timeout_worker_node =
+                        (double)params.client_registry_timeout_worker_node;
+        descr_dump.client_registry_min_worker_nodes =
+                        params.client_registry_min_worker_nodes;
+        descr_dump.client_registry_timeout_admin =
+                        (double)params.client_registry_timeout_admin;
+        descr_dump.client_registry_min_admins =
+                        params.client_registry_min_admins;
+        descr_dump.client_registry_timeout_submitter =
+                        (double)params.client_registry_timeout_submitter;
+        descr_dump.client_registry_min_submitters =
+                        params.client_registry_min_submitters;
+        descr_dump.client_registry_timeout_reader =
+                        (double)params.client_registry_timeout_reader;
+        descr_dump.client_registry_min_readers =
+                        params.client_registry_min_readers;
+        descr_dump.client_registry_timeout_unknown =
+                        (double)params.client_registry_timeout_unknown;
+        descr_dump.client_registry_min_unknowns =
+                        params.client_registry_min_unknowns;
+
+        // Dump the linked sections prefixes and names in the same order
+        string      prefixes;
+        string      names;
+        for (map<string, string>::const_iterator
+                k = params.linked_sections.begin();
+                k != params.linked_sections.end(); ++k) {
+            if (!prefixes.empty()) {
+                prefixes += ",";
+                names += ",";
+            }
+            prefixes += k->first;
+            names += k->second;
+        }
+        descr_dump.linked_section_prefixes_size = prefixes.size();
+        memcpy(descr_dump.linked_section_prefixes, prefixes.data(),
+                                                   prefixes.size());
+        descr_dump.linked_section_names_size = names.size();
+        memcpy(descr_dump.linked_section_names, names.data(), names.size());
+    }
+
+    try {
+        descr_dump.Write(f);
+    } catch (const exception &  ex) {
+        string      msg = "Writing error while dumping queue ";
+        if (is_queue)
+            msg += qname;
+        else
+            msg += "class " + qclass;
+        msg += string(": ") + ex.what();
+        throw runtime_error(msg);
+    }
+}
+
+
+void CQueueDataBase::x_DumpLinkedSection(FILE *  f, const string &  sname,
+                                         const map<string, string> &  values)
+{
+    for (map<string, string>::const_iterator  k = values.begin();
+            k != values.end(); ++k) {
+        SLinkedSectionDump      section_dump;
+
+        section_dump.section_size = sname.size();
+        memcpy(section_dump.section, sname.data(), sname.size());
+        section_dump.value_name_size = k->first.size();
+        memcpy(section_dump.value_name, k->first.data(), k->first.size());
+        section_dump.value_size = k->second.size();
+        memcpy(section_dump.value, k->second.data(), k->second.size());
+
+        try {
+            section_dump.Write(f);
+        } catch (const exception &  ex) {
+            throw runtime_error("Writing error while dumping linked section " +
+                                sname + " values: " + ex.what());
+        }
+    }
+}
+
+
+void CQueueDataBase::x_RemoveDump(void)
+{
+    try {
+        CDir    dump_dir(m_DumpPath);
+        if (dump_dir.Exists())
+            dump_dir.Remove();
+    } catch (const exception &  ex) {
+        ERR_POST("Error removing the dump directory: " << ex.what());
+    } catch (...) {
+        ERR_POST("Unknown error removing the dump directory");
+    }
+}
+
+
+void CQueueDataBase::x_RemoveBDBFiles(void)
+{
+    CDir        data_dir(m_DataPath);
+    if (!data_dir.Exists())
+        return;
+
+    CDir::TEntries      entries = data_dir.GetEntries(
+                                    kEmptyStr, CDir::fIgnoreRecursive);
+    for (CDir::TEntries::const_iterator  k = entries.begin();
+            k != entries.end(); ++k) {
+        if ((*k)->IsDir())
+            continue;
+        if ((*k)->IsLink())
+            continue;
+        string      entryName = (*k)->GetName();
+        if (entryName == kDBStorageVersionFileName ||
+            entryName == kNodeIDFileName ||
+            entryName == kStartJobIDsFileName ||
+            entryName == kCrashFlagFileName ||
+            entryName == kDumpErrorFlagFileName)
+            continue;
+
+        CFile   f(m_DataPath + entryName);
+        try {
+            f.Remove();
+        } catch (...) {}
+    }
+}
+
+
+// Logs the corresponding message if needed and provides the overall reinit
+// status.
+bool CQueueDataBase::x_CheckOpenPreconditions(bool  reinit)
+{
+    if (x_DoesCrashFlagFileExist()) {
+        ERR_POST("Reinitialization due to the server "
+                 "did not stop gracefully last time. "
+                 << m_DataPath << " removed.");
+        m_Server->RegisterAlert(eStartAfterCrash, "Database has been "
+                                "reinitialized due to the server did not "
+                                "stop gracefully last time");
+        return true;
+    }
+
+    if (reinit) {
+        LOG_POST(Note << "Reinitialization due to a command line option or "
+                         "a .ini file option. " << m_DataPath << " removed.");
+        m_Server->RegisterAlert(eReinit, "Database has been reinitialized due "
+                                         "to a command line option or a .ini "
+                                         "file option");
+        return true;
+    }
+
+    if (CDir(m_DataPath).Exists()) {
+        bool    ver_file_exists = CFile(m_DataPath +
+                                        kDBStorageVersionFileName).Exists();
+        bool    dump_dir_exists = CDir(m_DumpPath).Exists();
+
+        if (dump_dir_exists && !ver_file_exists) {
+            // Strange. Some service file exist while the storage version
+            // does not. It might be that the data dir has been altered
+            // manually. Let's not start.
+            NCBI_THROW(CNetScheduleException, eInternalError,
+                       "Error detected: Storage version file is not found "
+                       "while the dump directory exists.");
+        }
+
+        if (dump_dir_exists && ver_file_exists) {
+            CFileIO     f;
+            char        buf[32];
+            size_t      read_count = 0;
+            string      storage_ver;
+
+            f.Open(m_DataPath + kDBStorageVersionFileName,
+                   CFileIO_Base::eOpen, CFileIO_Base::eRead);
+
+            read_count = f.Read(buf, sizeof(buf));
+            storage_ver.append(buf, read_count);
+            NStr::TruncateSpacesInPlace(storage_ver, NStr::eTrunc_End);
+            f.Close();
+
+            if (storage_ver != NETSCHEDULED_STORAGE_VERSION)
+                NCBI_THROW(CNetScheduleException, eInternalError,
+                           "Error detected: Storage version mismatch, "
+                           "required: " NETSCHEDULED_STORAGE_VERSION
+                           ", found: " + storage_ver);
+        }
+
+        if (!dump_dir_exists && ver_file_exists) {
+            LOG_POST(Note << "Non-empty data directory exists however the "
+                          << kDumpSubdirName
+                          << " subdirectory is not found");
+            m_Server->RegisterAlert(eNoDump,
+                                    "Non-empty data directory exists "
+                                    "however the " + kDumpSubdirName +
+                                    " subdirectory is not found");
+        }
+    }
+
+    if (x_DoesDumpErrorFlagFileExist()) {
+        string  msg = "The previous instance of the server had problems with "
+                      "dumping the information on the disk. Some queues may be "
+                      "not restored. "
+                      "See the previous instance log for details.";
+        LOG_POST(Note << msg);
+        m_Server->RegisterAlert(eDumpError, msg);
+    }
+
+    return false;
+}
+
+
+CBDB_Env *
+CQueueDataBase::x_CreateBDBEnvironment(const SNSDBEnvironmentParams &  params)
+{
+    string      trailed_log_path =
+                        CDirEntry::AddTrailingPathSeparator(params.db_log_path);
+    string      err_file = m_DataPath + "errjsqueue.log";
+    CBDB_Env *  env = new CBDB_Env();
+
+    if (!trailed_log_path.empty())
+        env->SetLogDir(trailed_log_path);
+
+    env->OpenErrFile(err_file.c_str());
+
+    env->SetLogRegionMax(512 * 1024);
+    if (params.log_mem_size) {
+        env->SetLogInMemory(true);
+        env->SetLogBSize(params.log_mem_size);
+    } else {
+        env->SetLogFileMax(200 * 1024 * 1024);
+        env->SetLogAutoRemove(true);
+    }
+
+    CBDB_Env::TEnvOpenFlags opt = CBDB_Env::eThreaded;
+    if (params.private_env)
+        opt |= CBDB_Env::ePrivate;
+
+    if (params.cache_ram_size)
+        env->SetCacheSize(params.cache_ram_size);
+    if (params.mutex_max)
+        env->MutexSetMax(params.mutex_max);
+    if (params.max_locks)
+        env->SetMaxLocks(params.max_locks);
+    if (params.max_lockers)
+        env->SetMaxLockers(params.max_lockers);
+    if (params.max_lockobjects)
+        env->SetMaxLockObjects(params.max_lockobjects);
+    if (params.max_trans)
+        env->SetTransactionMax(params.max_trans);
+    env->SetTransactionSync(params.sync_transactions ?
+                                  CBDB_Transaction::eTransSync :
+                                  CBDB_Transaction::eTransASync);
+
+    env->OpenWithTrans(m_DataPath.c_str(), opt);
+    GetDiagContext().Extra()
+        .Print("_type", "startup")
+        .Print("info", "opened BDB environment")
+        .Print("private", params.private_env ? "true" : "false")
+        .Print("max_locks", env->GetMaxLocks())
+        .Print("transactions",
+               env->GetTransactionSync() == CBDB_Transaction::eTransSync ?
+                    "syncronous" : "asyncronous")
+        .Print("max_mutexes", env->MutexGetMax());
+
+    env->SetDirectDB(params.direct_db);
+    env->SetDirectLog(params.direct_log);
+
+    env->SetCheckPointKB(params.checkpoint_kb);
+    env->SetCheckPointMin(params.checkpoint_min);
+
+    env->SetLockTimeout(10 * 1000000); // 10 sec
+
+    env->SetTasSpins(5);
+
+    if (env->IsTransactional()) {
+        env->SetTransactionTimeout(10 * 1000000); // 10 sec
+        env->ForceTransactionCheckpoint();
+        env->CleanLog();
+    }
+
+    return env;
+}
+
+
+void CQueueDataBase::x_CreateStorageVersionFile(void)
+{
+    CFileIO     f;
+    f.Open(m_DataPath + kDBStorageVersionFileName, CFileIO_Base::eCreate,
+                                                   CFileIO_Base::eReadWrite);
+    f.Write(NETSCHEDULED_STORAGE_VERSION, strlen(NETSCHEDULED_STORAGE_VERSION));
+    f.Close();
+}
+
+
+void
+CQueueDataBase::x_ReadDumpQueueDesrc(set<string> &  dump_static_queues,
+                                     map<string, string> &  dump_dynamic_queues,
+                                     TQueueParams &  dump_queue_classes)
+{
+    CDir        dump_dir(m_DumpPath);
+    if (!dump_dir.Exists())
+        return;
+
+    // The file contains dynamic queue classes and dynamic queue names
+    string      queue_desrc_file_name = m_DumpPath + kQClassDescriptionFileName;
+    CFile       queue_desrc_file(queue_desrc_file_name);
+    if (queue_desrc_file.Exists()) {
+        FILE *      f = fopen(queue_desrc_file_name.c_str(), "rb");
+        if (f == NULL)
+            throw runtime_error("Cannot open the existing dump file "
+                                "for reading: " + queue_desrc_file_name);
+        SQueueDescriptionDump   dump_struct;
+        try {
+            while (dump_struct.Read(f) == 0) {
+                if (dump_struct.is_queue) {
+                    string  qname(dump_struct.qname, dump_struct.qname_size);
+                    string  qclass(dump_struct.qclass, dump_struct.qclass_size);
+                    dump_dynamic_queues[qname] = qclass;
+                } else {
+                    SQueueParameters    p;
+                    p.qclass = "";
+                    p.timeout = CNSPreciseTime(dump_struct.timeout);
+                    p.notif_hifreq_interval =
+                        CNSPreciseTime(dump_struct.notif_hifreq_interval);
+                    p.notif_hifreq_period =
+                        CNSPreciseTime(dump_struct.notif_hifreq_period);
+                    p.notif_lofreq_mult = dump_struct.notif_lofreq_mult;
+                    p.notif_handicap =
+                        CNSPreciseTime(dump_struct.notif_handicap);
+                    p.dump_buffer_size = dump_struct.dump_buffer_size;
+                    p.dump_client_buffer_size =
+                        dump_struct.dump_client_buffer_size;
+                    p.dump_aff_buffer_size = dump_struct.dump_aff_buffer_size;
+                    p.dump_group_buffer_size =
+                        dump_struct.dump_group_buffer_size;
+                    p.run_timeout = CNSPreciseTime(dump_struct.run_timeout);
+                    p.read_timeout = CNSPreciseTime(dump_struct.read_timeout);
+                    p.program_name = string(dump_struct.program_name,
+                                            dump_struct.program_name_size);
+                    p.failed_retries = dump_struct.failed_retries;
+                    p.read_failed_retries = dump_struct.read_failed_retries;
+                    p.blacklist_time =
+                        CNSPreciseTime(dump_struct.blacklist_time);
+                    p.read_blacklist_time =
+                        CNSPreciseTime(dump_struct.read_blacklist_time);
+                    p.max_input_size = dump_struct.max_input_size;
+                    p.max_output_size = dump_struct.max_output_size;
+                    p.subm_hosts = string(dump_struct.subm_hosts,
+                                          dump_struct.subm_hosts_size);
+                    p.wnode_hosts = string(dump_struct.wnode_hosts,
+                                           dump_struct.wnode_hosts_size);
+                    p.reader_hosts = string(dump_struct.reader_hosts,
+                                            dump_struct.reader_hosts_size);
+                    p.wnode_timeout =
+                        CNSPreciseTime(dump_struct.wnode_timeout);
+                    p.reader_timeout =
+                        CNSPreciseTime(dump_struct.reader_timeout);
+                    p.pending_timeout =
+                        CNSPreciseTime(dump_struct.pending_timeout);
+                    p.max_pending_wait_timeout =
+                        CNSPreciseTime(dump_struct.max_pending_wait_timeout);
+                    p.max_pending_read_wait_timeout =
+                        CNSPreciseTime(dump_struct.
+                                max_pending_read_wait_timeout);
+                    p.description = string(dump_struct.description,
+                                           dump_struct.description_size);
+                    p.scramble_job_keys = dump_struct.scramble_job_keys;
+                    p.client_registry_timeout_worker_node =
+                        CNSPreciseTime(dump_struct.
+                                client_registry_timeout_worker_node);
+                    p.client_registry_min_worker_nodes =
+                        dump_struct.client_registry_min_worker_nodes;
+                    p.client_registry_timeout_admin =
+                        CNSPreciseTime(dump_struct.
+                                client_registry_timeout_admin);
+                    p.client_registry_min_admins =
+                        dump_struct.client_registry_min_admins;
+                    p.client_registry_timeout_submitter =
+                        CNSPreciseTime(dump_struct.
+                                client_registry_timeout_submitter);
+                    p.client_registry_min_submitters =
+                        dump_struct.client_registry_min_submitters;
+                    p.client_registry_timeout_reader =
+                        CNSPreciseTime(dump_struct.
+                                client_registry_timeout_reader);
+                    p.client_registry_min_readers =
+                        dump_struct.client_registry_min_readers;
+                    p.client_registry_timeout_unknown =
+                        CNSPreciseTime(dump_struct.
+                                client_registry_timeout_unknown);
+                    p.client_registry_min_unknowns =
+                        dump_struct.client_registry_min_unknowns;;
+
+                    // Unpack linked sections
+                    string          dump_prefs(dump_struct.
+                                                linked_section_prefixes,
+                                               dump_struct.
+                                                linked_section_prefixes_size);
+                    string          dump_names(dump_struct.
+                                                linked_section_names,
+                                               dump_struct.
+                                                linked_section_names_size);
+                    list<string>    prefixes;
+                    list<string>    names;
+                    NStr::Split(dump_prefs, ",", prefixes);
+                    NStr::Split(dump_names, ",", names);
+                    list<string>::const_iterator pref_it = prefixes.begin();
+                    list<string>::const_iterator names_it = names.begin();
+                    for ( ; pref_it != prefixes.end() &&
+                            names_it != names.end(); ++pref_it, ++names_it)
+                        p.linked_sections[*pref_it] = *names_it;
+
+                    string  qclass(dump_struct.qclass, dump_struct.qclass_size);
+                    dump_queue_classes[qclass] = p;
+                }
+            }
+        } catch (const exception &  ex) {
+            fclose(f);
+            throw;
+        }
+        fclose(f);
+    }
+
+
+    CDir::TEntries      entries = dump_dir.GetEntries(
+                                    kEmptyStr, CDir::fIgnoreRecursive);
+    for (CDir::TEntries::const_iterator  k = entries.begin();
+            k != entries.end(); ++k) {
+        if ((*k)->IsDir())
+            continue;
+        if ((*k)->IsLink())
+            continue;
+        string      entry_name = (*k)->GetName();
+        if (!NStr::StartsWith(entry_name, "db_dump."))
+            continue;
+
+        string  prefix;
+        string  qname;
+        NStr::SplitInTwo(entry_name, ".", prefix, qname);
+        if (dump_dynamic_queues.find(qname) == dump_dynamic_queues.end())
+            dump_static_queues.insert(qname);
+    }
+}
+
+
+set<string> CQueueDataBase::x_GetConfigQueues(void)
+{
+    const CNcbiRegistry &   reg = CNcbiApplication::Instance()->GetConfig();
+    set<string>             queues;
+    list<string>            sections;
+
+    reg.EnumerateSections(&sections);
+    for (list<string>::const_iterator  k = sections.begin();
+            k != sections.end(); ++k) {
+        string              queue_name;
+        string              prefix;
+        const string &      section_name = *k;
+
+        NStr::SplitInTwo(section_name, "_", prefix, queue_name);
+        if (NStr::CompareNocase(prefix, "queue") != 0)
+            continue;
+        if (queue_name.empty())
+            continue;
+        if (queue_name.size() > kMaxQueueNameSize - 1)
+            continue;
+        queues.insert(queue_name);
+    }
+
+    return queues;
+}
+
+
+void CQueueDataBase::x_AppendDumpLinkedSections(void)
+{
+    // Here: the m_LinkedSections has already been read from the configuration
+    //       file. Let's append the sections from the dump.
+    CDir        dump_dir(m_DumpPath);
+    if (!dump_dir.Exists())
+        return;
+
+    string  linked_sections_file_name = m_DumpPath + kLinkedSectionsFileName;
+    CFile   linked_sections_file(linked_sections_file_name);
+
+    if (linked_sections_file.Exists()) {
+        FILE *      f = fopen(linked_sections_file_name.c_str(), "rb");
+        if (f == NULL)
+            throw runtime_error("Cannot open the existing dump file "
+                                "for reading: " + linked_sections_file_name);
+        SLinkedSectionDump                  dump_struct;
+        map<string, map<string, string> >   dump_sections;
+        try {
+            while (dump_struct.Read(f) == 0) {
+                if (m_LinkedSections.find(dump_struct.section) !=
+                        m_LinkedSections.end())
+                    continue;
+                string  sname(dump_struct.section, dump_struct.section_size);
+                string  vname(dump_struct.value_name,
+                              dump_struct.value_name_size);
+                string  val(dump_struct.value, dump_struct.value_size);
+                dump_sections[sname][vname] = val;
+            }
+        } catch (const exception &  ex) {
+            fclose(f);
+            throw;
+        }
+        fclose(f);
+
+        m_LinkedSections.insert(dump_sections.begin(), dump_sections.end());
+    }
+}
+
+
+void CQueueDataBase::x_BackupDump(void)
+{
+    CDir    dump_dir(m_DumpPath);
+    if (!dump_dir.Exists())
+        return;
+
+    size_t      backup_number = 0;
+    string      backup_dir_name;
+    for ( ; ; ) {
+        backup_dir_name = CDirEntry::DeleteTrailingPathSeparator(m_DumpPath) +
+                          "." +
+                          NStr::NumericToString(backup_number);
+        if (!CDir(backup_dir_name).Exists())
+            break;
+        ++backup_number;
+    }
+
+    try {
+        dump_dir.Rename(backup_dir_name);
+    } catch (const exception &  ex) {
+        ERR_POST("Error renaming the dump directory: " << ex.what());
+    } catch (...) {
+        ERR_POST("Unknown error renaming the dump directory");
+    }
+}
+
+
+string CQueueDataBase::x_GetDumpSpaceFileName(void) const
+{
+    return m_DumpPath + kDumpReservedSpaceFileName;
+}
+
+
+bool CQueueDataBase::x_RemoveSpaceReserveFile(void)
+{
+    CFile       space_file(x_GetDumpSpaceFileName());
+    if (space_file.Exists()) {
+        try {
+            space_file.Remove();
+        } catch (const exception &  ex) {
+            string  msg = "Error removing reserving dump space file: " +
+                          string(ex.what());
+            ERR_POST(msg);
+            m_Server->RegisterAlert(eDumpSpaceError, msg);
+            return false;
+        }
+    }
+    return true;
+}
+
+
+void CQueueDataBase::x_CreateSpaceReserveFile(void)
+{
+    unsigned int        space = m_Server->GetReserveDumpSpace();
+    if (space == 0)
+        return;
+
+    CDir    dump_dir(m_DumpPath);
+    if (!dump_dir.Exists()) {
+        try {
+            dump_dir.Create();
+        } catch (const exception &  ex) {
+            string  msg = "Error creating dump directory: " + string(ex.what());
+            ERR_POST(msg);
+            m_Server->RegisterAlert(eDumpSpaceError, msg);
+            return;
+        }
+    }
+
+    // This will truncate the file if it existed
+    FILE *      space_file = fopen(x_GetDumpSpaceFileName().c_str(), "w");
+    if (space_file == NULL) {
+        string  msg = "Error opening reserving dump space file " +
+                      x_GetDumpSpaceFileName();
+        ERR_POST(msg);
+        m_Server->RegisterAlert(eDumpSpaceError, msg);
+        return;
+    }
+
+    void *      buffer = malloc(kDumpReservedSpaceFileBuffer);
+    if (buffer == NULL) {
+        fclose(space_file);
+        string  msg = "Error creating a memory buffer to write into the "
+                      "reserving dump space file";
+        ERR_POST(msg);
+        m_Server->RegisterAlert(eDumpSpaceError, msg);
+        return;
+    }
+
+    memset(buffer, 0, kDumpReservedSpaceFileBuffer);
+    while (space > kDumpReservedSpaceFileBuffer) {
+        errno = 0;
+        if (fwrite(buffer, kDumpReservedSpaceFileBuffer, 1, space_file) != 1) {
+            free(buffer);
+            fclose(space_file);
+            string  msg = "Error writing into the reserving dump space file: " +
+                          string(strerror(errno));
+            ERR_POST(msg);
+            m_Server->RegisterAlert(eDumpSpaceError, msg);
+            return;
+        }
+        space -= kDumpReservedSpaceFileBuffer;
+    }
+
+    if (space > 0) {
+        errno = 0;
+        if (fwrite(buffer, space, 1, space_file) != 1) {
+            string  msg = "Error writing into the reserving dump space file: " +
+                          string(strerror(errno));
+            ERR_POST(msg);
+            m_Server->RegisterAlert(eDumpSpaceError, msg);
+        }
+    }
+
+    free(buffer);
+    fclose(space_file);
 }
 
 

@@ -29,16 +29,10 @@
  * Authors:  Victor Joukov
  *
  * File Description:
- *   NetSchedule common types
+ *   NetSchedule common types and various string constants
  *
  */
 
-/// @file ns_types.hpp
-/// NetSchedule common types.
-///
-/// This file defines datatypes, common for internal working of NetSchedule
-///
-/// @internal
 
 #include <string>
 
@@ -73,6 +67,26 @@ typedef CNetScheduleAPI::EJobStatus                         TJobStatus;
 // Holds all the queue parameters - used for queue classes
 // and for reading from DB and ini files
 typedef map<string, SQueueParameters>                       TQueueParams;
+
+
+
+const string    kDumpSubdirName("dump");
+const string    kDumpReservedSpaceFileName("space_keeper.dat");
+const string    kQClassDescriptionFileName("qclass_descr.dump");
+const string    kLinkedSectionsFileName("linked_sections.dump");
+const string    kJobsFileName("jobs.dump");
+const string    kDBStorageVersionFileName("DB_STORAGE_VER");
+const string    kStartJobIDsFileName("STARTJOBIDS");
+const string    kNodeIDFileName("NODE_ID");
+const string    kCrashFlagFileName("CRASH_FLAG");
+const string    kDumpErrorFlagFileName("DUMP_ERROR_FLAG");
+const size_t    kDumpReservedSpaceFileBuffer = 1024 * 1024;
+
+// Various hex viewers show this magic in a different way.
+// Some swap first two bytes with the last two bytes
+// Some reverse the signature byte by byte. So the magic is selected to be
+// visible the same way everywhere.
+const Int4      kDumpMagic(0xD0D0D0D0);
 
 
 END_NCBI_SCOPE

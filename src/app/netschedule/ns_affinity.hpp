@@ -33,19 +33,11 @@
  *
  */
 
-/// @file bdb_affinity.hpp
-/// NetSchedule job affinity.
-///
-/// @internal
 
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbicntr.hpp>
 
 #include "ns_types.hpp"
-
-#include <db/bdb/bdb_file.hpp>
-#include <db/bdb/bdb_env.hpp>
-#include <db/bdb/bdb_cursor.hpp>
 
 #include <map>
 #include <vector>
@@ -176,9 +168,6 @@ class CNSAffinityRegistry
         CNSAffinityRegistry();
         ~CNSAffinityRegistry();
 
-        void  Attach(SAffinityDictDB *  aff_dict_db);
-        void  Detach(void);
-
         size_t        size(void) const;
         unsigned int  GetIDByToken(const string &  aff_token) const;
         string        GetTokenByID(unsigned int  aff_id) const;
@@ -216,21 +205,26 @@ class CNSAffinityRegistry
                      size_t                      batch_size,
                      bool                        verbose) const;
 
-        // Used to load the affinity DB table and register loaded jobs.
-        // The loading procedure has 3 steps:
-        // 1. Load the dictionary from the DB
-        // 2. For each loaded job -> call AddJobToAffinity()
-        // 3. Call FinalizeAffinityDictionaryLoading()
-        // These functions should not be used for anything but loading DB.
-        void  LoadAffinityDictionary(void);
-        void  AddJobToAffinity(unsigned int  job_id,  unsigned int  aff_id);
-        void  FinalizeAffinityDictionaryLoading(void);
-
-        // Needs when all the jobs are deleted (DROPQ)
-        void  ClearMemoryAndDatabase(void);
+        void Clear(void);
 
         unsigned int  CollectGarbage(unsigned int  max_to_del);
         unsigned int  CheckRemoveCandidates(void);
+        void Dump(const string &  dump_dir_name,
+                  const string &  queue_name) const;
+        void RemoveDump(const string &  dump_dir_name,
+                        const string &  queue_name) const;
+
+        // Used to load the affinities and register loaded jobs.
+        // The loading procedure has 3 steps:
+        // 1. Load the dictionary from the flat file
+        // 2. For each loaded job -> call AddJobToAffinity()
+        // 3. Call FinalizeAffinityDictionaryLoading()
+        // These functions should not be used for anything but loading
+        // affinities from files
+        void LoadFromDump(const string &  dump_dir_name,
+                          const string &  queue_name);
+        void  AddJobToAffinity(unsigned int  job_id,  unsigned int  aff_id);
+        void  FinalizeAffinityDictionaryLoading(void);
 
     private:
         size_t
@@ -238,15 +232,11 @@ class CNSAffinityRegistry
                                      const TNSBitVector &  aff_ids,
                                      bool                  is_wait_client,
                                      ECommandGroup         cmd_group);
-        void x_Clear(void);
         void x_DeleteAffinity(unsigned int                   aff_id,
                               map<unsigned int,
                                   SNSJobsAffinity>::iterator found_aff);
 
     private:
-        SAffinityDictDB *       m_AffDictDB;    // DB to store
-                                                // aff id -> aff token map
-
         map< const string *,
              unsigned int,
              SNSTokenCompare >  m_AffinityIDs;  // Aff token -> aff id
@@ -286,6 +276,8 @@ class CNSAffinityRegistry
         void x_RemoveWaitClient(SNSJobsAffinity &  aff_data,
                                 unsigned int       client_id,
                                 ECommandGroup      command_group);
+        string x_GetDumpFileName(const string &  dump_dir_name,
+                                 const string &  qname) const;
 };
 
 

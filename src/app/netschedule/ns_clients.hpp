@@ -157,6 +157,8 @@ class CNSClientId
     private:
         EClaimedClientType  x_ConvertToClaimedType(
                                         const string &  claimed_type) const;
+        string  x_NormalizeNodeOrSession(const string &  val,
+                                         const string &  key);
 };
 
 

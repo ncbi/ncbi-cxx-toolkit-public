@@ -4306,7 +4306,10 @@ string CNetScheduleHandler::x_GetServerSection(void) const
                         m_Server->GetAffinityLowRemoval()) + "\"\n"
            "affinity_dirt_percentage=\"" +
                 NStr::NumericToString(
-                        m_Server->GetAffinityDirtPercentage()) + "\"\n";
+                        m_Server->GetAffinityDirtPercentage()) + "\"\n"
+           "reserve_dump_space=\"" +
+                NStr::NumericToString(
+                        m_Server->GetReserveDumpSpace()) + "\"\n";
 }
 
 

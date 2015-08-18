@@ -32,12 +32,17 @@
 
 #include <ncbi_pch.hpp>
 
+#include <string.h>
+
+#include <connect/services/netschedule_api_expt.hpp>
+
 #include "job.hpp"
 #include "ns_queue.hpp"
 #include "ns_handler.hpp"
 #include "ns_command_arguments.hpp"
 #include "ns_affinity.hpp"
 #include "ns_group.hpp"
+#include "ns_db_dump.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -89,33 +94,6 @@ CJobEvent::CJobEvent() :
     m_NodeAddr(0),
     m_RetCode(0)
 {}
-
-
-void CJobEvent::SetClientNode(const string &  client_node)
-{
-    m_Dirty = true;
-    m_ClientNode = client_node.substr(0, kMaxWorkerNodeIdSize);
-}
-
-
-void CJobEvent::SetClientSession(const string &  cliet_session)
-{
-    m_Dirty = true;
-    m_ClientSession = cliet_session.substr(0, kMaxWorkerNodeIdSize);
-}
-
-
-static const string     kTruncatedTail = " MSG_TRUNCATED";
-void CJobEvent::SetErrorMsg(const string &  msg)
-{
-    m_Dirty = true;
-    if (msg.size() < kMaxWorkerNodeErrMsgSize)
-        m_ErrorMsg = msg;
-    else
-        m_ErrorMsg = msg.substr(0, kMaxWorkerNodeErrMsgSize -
-                                   kTruncatedTail.size() - 1) + kTruncatedTail;
-}
-
 
 
 CNSPreciseTime
@@ -341,29 +319,23 @@ CJob::EJobFetchResult CJob::x_Fetch(CQueue* queue)
 
     m_Passport      = job_db.passport;
     m_Status        = TJobStatus(int(job_db.status));
-    m_Timeout       = CNSPreciseTime(job_db.timeout_sec,
-                                     job_db.timeout_nsec);
-    m_RunTimeout    = CNSPreciseTime(job_db.run_timeout_sec,
-                                     job_db.run_timeout_nsec);
-    m_ReadTimeout   = CNSPreciseTime(job_db.read_timeout_sec,
-                                     job_db.read_timeout_nsec);
+    m_Timeout       = CNSPreciseTime(job_db.timeout);
+    m_RunTimeout    = CNSPreciseTime(job_db.run_timeout);
+    m_ReadTimeout   = CNSPreciseTime(job_db.read_timeout);
 
     m_SubmNotifPort    = job_db.subm_notif_port;
-    m_SubmNotifTimeout = CNSPreciseTime(job_db.subm_notif_timeout_sec,
-                                        job_db.subm_notif_timeout_nsec);
+    m_SubmNotifTimeout = CNSPreciseTime(job_db.subm_notif_timeout);
 
     m_ListenerNotifAddress = job_db.listener_notif_addr;
     m_ListenerNotifPort    = job_db.listener_notif_port;
-    m_ListenerNotifAbsTime = CNSPreciseTime(job_db.listener_notif_abstime_sec,
-                                            job_db.listener_notif_abstime_nsec);
+    m_ListenerNotifAbsTime = CNSPreciseTime(job_db.listener_notif_abstime);
 
     m_RunCount      = job_db.run_counter;
     m_ReadCount     = job_db.read_counter;
     m_AffinityId    = job_db.aff_id;
     m_Mask          = job_db.mask;
     m_GroupId       = job_db.group_id;
-    m_LastTouch     = CNSPreciseTime(job_db.last_touch_sec,
-                                     job_db.last_touch_nsec);
+    m_LastTouch     = CNSPreciseTime(job_db.last_touch);
 
     m_ClientIP      = job_db.client_ip;
     m_ClientSID     = job_db.client_sid;
@@ -414,8 +386,7 @@ CJob::EJobFetchResult CJob::x_Fetch(CQueue* queue)
 
         event.m_Status     = TJobStatus(int(events_db.status));
         event.m_Event      = CJobEvent::EJobEvent(int(events_db.event));
-        event.m_Timestamp  = CNSPreciseTime(events_db.timestamp_sec,
-                                            events_db.timestamp_nsec);
+        event.m_Timestamp  = CNSPreciseTime(events_db.timestamp);
         event.m_NodeAddr   = events_db.node_addr;
         event.m_RetCode    = events_db.ret_code;
         events_db.client_node.ToString(event.m_ClientNode);
@@ -478,33 +449,27 @@ bool CJob::Flush(CQueue* queue)
         job_db.passport = m_Passport;
         job_db.status   = int(m_Status);
 
-        job_db.timeout_sec       = m_Timeout.Sec();
-        job_db.timeout_nsec      = m_Timeout.NSec();
-        job_db.run_timeout_sec   = m_RunTimeout.Sec();
-        job_db.run_timeout_nsec  = m_RunTimeout.NSec();
-        job_db.read_timeout_sec  = m_ReadTimeout.Sec();
-        job_db.read_timeout_nsec = m_ReadTimeout.NSec();
+        job_db.timeout      = (double)m_Timeout;
+        job_db.run_timeout  = (double)m_RunTimeout;
+        job_db.read_timeout = (double)m_ReadTimeout;
 
-        job_db.subm_notif_port         = m_SubmNotifPort;
-        job_db.subm_notif_timeout_sec  = m_SubmNotifTimeout.Sec();
-        job_db.subm_notif_timeout_nsec = m_SubmNotifTimeout.NSec();
+        job_db.subm_notif_port    = m_SubmNotifPort;
+        job_db.subm_notif_timeout = (double)m_SubmNotifTimeout;
 
-        job_db.listener_notif_addr         = m_ListenerNotifAddress;
-        job_db.listener_notif_port         = m_ListenerNotifPort;
-        job_db.listener_notif_abstime_sec  = m_ListenerNotifAbsTime.Sec();
-        job_db.listener_notif_abstime_nsec = m_ListenerNotifAbsTime.NSec();
+        job_db.listener_notif_addr    = m_ListenerNotifAddress;
+        job_db.listener_notif_port    = m_ListenerNotifPort;
+        job_db.listener_notif_abstime = (double)m_ListenerNotifAbsTime;
 
-        job_db.run_counter    = m_RunCount;
-        job_db.read_counter   = m_ReadCount;
-        job_db.aff_id         = m_AffinityId;
-        job_db.mask           = m_Mask;
-        job_db.group_id       = m_GroupId;
-        job_db.last_touch_sec  = m_LastTouch.Sec();
-        job_db.last_touch_nsec = m_LastTouch.NSec();
+        job_db.run_counter  = m_RunCount;
+        job_db.read_counter = m_ReadCount;
+        job_db.aff_id       = m_AffinityId;
+        job_db.mask         = m_Mask;
+        job_db.group_id     = m_GroupId;
+        job_db.last_touch   = (double)m_LastTouch;
 
-        job_db.client_ip      = m_ClientIP;
-        job_db.client_sid     = m_ClientSID;
-        job_db.ncbi_phid      = m_NCBIPHID;
+        job_db.client_ip    = m_ClientIP;
+        job_db.client_sid   = m_ClientSID;
+        job_db.ncbi_phid    = m_NCBIPHID;
 
         if (!input_overflow) {
             job_db.input_overflow = 0;
@@ -555,8 +520,7 @@ bool CJob::Flush(CQueue* queue)
             events_db.event_id       = n;
             events_db.status         = int(event.m_Status);
             events_db.event          = int(event.m_Event);
-            events_db.timestamp_sec  = event.m_Timestamp.Sec();
-            events_db.timestamp_nsec = event.m_Timestamp.NSec();
+            events_db.timestamp      = (double)event.m_Timestamp;
             events_db.node_addr      = event.m_NodeAddr;
             events_db.ret_code       = event.m_RetCode;
             events_db.client_node    = event.m_ClientNode;
@@ -792,6 +756,176 @@ TJobStatus  CJob::GetStatusBeforeReading(void) const
                    "No reading status found or no event before reading.");
     return m_Events[index].GetStatus();
 }
+
+
+void CJob::Dump(FILE *  jobs_file) const
+{
+    // Fill in the job dump structure
+    SJobDump        job_dump;
+
+    job_dump.id = m_Id;
+    job_dump.passport = m_Passport;
+    job_dump.status = (int) m_Status;
+    job_dump.timeout = (double)m_Timeout;
+    job_dump.run_timeout = (double)m_RunTimeout;
+    job_dump.read_timeout = (double)m_ReadTimeout;
+    job_dump.subm_notif_port = m_SubmNotifPort;
+    job_dump.subm_notif_timeout = (double)m_SubmNotifTimeout;
+    job_dump.listener_notif_addr = m_ListenerNotifAddress;
+    job_dump.listener_notif_port = m_ListenerNotifPort;
+    job_dump.listener_notif_abstime = (double)m_ListenerNotifAbsTime;
+    job_dump.run_counter = m_RunCount;
+    job_dump.read_counter = m_ReadCount;
+    job_dump.aff_id = m_AffinityId;
+    job_dump.mask = m_Mask;
+    job_dump.group_id = m_GroupId;
+    job_dump.last_touch = (double)m_LastTouch;
+    job_dump.progress_msg_size = m_ProgressMsg.size();
+    job_dump.number_of_events = m_Events.size();
+
+    job_dump.client_ip_size = m_ClientIP.size();
+    memcpy(job_dump.client_ip, m_ClientIP.data(), m_ClientIP.size());
+    job_dump.client_sid_size = m_ClientSID.size();
+    memcpy(job_dump.client_sid, m_ClientSID.data(), m_ClientSID.size());
+    job_dump.ncbi_phid_size = m_NCBIPHID.size();
+    memcpy(job_dump.ncbi_phid, m_NCBIPHID.data(), m_NCBIPHID.size());
+
+    try {
+        job_dump.Write(jobs_file, m_ProgressMsg.data());
+    } catch (const exception &  ex) {
+        throw runtime_error("Writing error while dumping a job properties: " +
+                            string(ex.what()));
+    }
+
+    // Fill in the events structure
+    for (vector<CJobEvent>::const_iterator it = m_Events.begin();
+         it != m_Events.end(); ++it) {
+        const CJobEvent &   event = *it;
+        SJobEventsDump      events_dump;
+
+        events_dump.event = int(event.m_Event);
+        events_dump.status = int(event.m_Status);
+        events_dump.timestamp = (double)event.m_Timestamp;
+        events_dump.node_addr = event.m_NodeAddr;
+        events_dump.ret_code = event.m_RetCode;
+        events_dump.client_node_size = event.m_ClientNode.size();
+        events_dump.client_session_size = event.m_ClientSession.size();
+        events_dump.err_msg_size = event.m_ErrorMsg.size();
+
+        try {
+            events_dump.Write(jobs_file, event.m_ClientNode.data(),
+                                         event.m_ClientSession.data(),
+                                         event.m_ErrorMsg.data());
+        } catch (const exception &  ex) {
+            throw runtime_error("Writing error while dumping a job events: " +
+                                string(ex.what()));
+        }
+    }
+
+    // Fill in the job input/output structure
+    SJobIODump      job_io_dump;
+
+    job_io_dump.input_size = m_Input.size();
+    job_io_dump.output_size = m_Output.size();
+
+    try {
+        job_io_dump.Write(jobs_file, m_Input.data(), m_Output.data());
+    } catch (const exception &  ex) {
+        throw runtime_error("Writing error while dumping a job "
+                            "input/output: " + string(ex.what()));
+    }
+}
+
+
+// true => job loaded
+// false => EOF
+// exception => reading problem
+bool CJob::LoadFromDump(FILE *  jobs_file)
+{
+    SJobDump        job_dump;
+    char            progress_msg_buf[kNetScheduleMaxDBDataSize];
+
+    if (job_dump.Read(jobs_file, progress_msg_buf) == 1)
+        return false;
+
+    // Fill in the job fields
+    m_New = true;
+    m_Deleted = false;
+    m_Id = job_dump.id;
+    m_Passport = job_dump.passport;
+    m_Status = (TJobStatus)job_dump.status;
+    m_Timeout = CNSPreciseTime(job_dump.timeout);
+    m_RunTimeout = CNSPreciseTime(job_dump.run_timeout);
+    m_ReadTimeout = CNSPreciseTime(job_dump.read_timeout);
+    m_SubmNotifPort = job_dump.subm_notif_port;
+    m_SubmNotifTimeout = CNSPreciseTime(job_dump.subm_notif_timeout);
+    m_ListenerNotifAddress = job_dump.listener_notif_addr;
+    m_ListenerNotifPort = job_dump.listener_notif_port;
+    m_ListenerNotifAbsTime = CNSPreciseTime(job_dump.listener_notif_abstime);
+    m_RunCount = job_dump.run_counter;
+    m_ReadCount = job_dump.read_counter;
+    m_ProgressMsg.clear();
+    if (job_dump.progress_msg_size > 0)
+        m_ProgressMsg = string(progress_msg_buf, job_dump.progress_msg_size);
+    m_AffinityId = job_dump.aff_id;
+    m_Mask = job_dump.mask;
+    m_GroupId = job_dump.group_id;
+    m_LastTouch = CNSPreciseTime(job_dump.last_touch);
+    m_ClientIP = string(job_dump.client_ip, job_dump.client_ip_size);
+    m_ClientSID = string(job_dump.client_sid, job_dump.client_sid_size);
+    m_NCBIPHID = string(job_dump.ncbi_phid, job_dump.ncbi_phid_size);
+
+    // Read the job events
+    m_Events.clear();
+    SJobEventsDump  event_dump;
+    char            client_node_buf[kMaxWorkerNodeIdSize];
+    char            client_session_buf[kMaxWorkerNodeIdSize];
+    char            err_msg_buf[kNetScheduleMaxDBErrSize];
+    for (size_t  k = 0; k < job_dump.number_of_events; ++k) {
+        if (event_dump.Read(jobs_file, client_node_buf, client_session_buf,
+                                       err_msg_buf) != 0)
+            throw runtime_error("Unexpected end of the dump file. "
+                                "Cannot read expected job events." );
+
+        // Fill the event and append it to the job events
+        CJobEvent       event;
+        event.m_Dirty = true;
+        event.m_Status = (TJobStatus)event_dump.status;
+        event.m_Event = (CJobEvent::EJobEvent)event_dump.event;
+        event.m_Timestamp = CNSPreciseTime(event_dump.timestamp);
+        event.m_NodeAddr = event_dump.node_addr;
+        event.m_RetCode = event_dump.ret_code;
+        event.m_ClientNode.clear();
+        if (event_dump.client_node_size > 0)
+            event.m_ClientNode = string(client_node_buf,
+                                        event_dump.client_node_size);
+        event.m_ClientSession.clear();
+        if (event_dump.client_session_size > 0)
+            event.m_ClientSession = string(client_session_buf,
+                                           event_dump.client_session_size);
+        event.m_ErrorMsg.clear();
+        if (event_dump.err_msg_size > 0)
+            event.m_ErrorMsg = string(err_msg_buf,
+                                      event_dump.err_msg_size);
+
+        m_Events.push_back(event);
+    }
+
+
+    // Read the job input/output
+    SJobIODump  io_dump;
+    char        input_buf[kNetScheduleMaxOverflowSize];
+    char        output_buf[kNetScheduleMaxOverflowSize];
+
+    if (io_dump.Read(jobs_file, input_buf, output_buf) != 0)
+        throw runtime_error("Unexpected end of the dump file. "
+                            "Cannot read expected job input/output." );
+
+    SetInput(string(input_buf, io_dump.input_size));
+    SetOutput(string(output_buf, io_dump.output_size));
+    return true;
+}
+
 
 
 END_NCBI_SCOPE

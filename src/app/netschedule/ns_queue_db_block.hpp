@@ -57,8 +57,6 @@ struct SQueueDbBlock
     SJobDB                  job_db;
     SJobInfoDB              job_info_db;
     SEventsDB               events_db;
-    SAffinityDictDB         aff_dict_db;
-    SGroupDictDB            group_dict_db;
 };
 
 

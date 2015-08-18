@@ -147,9 +147,19 @@ public:
     void SetRetCode(int retcode)
     { m_Dirty = true;
       m_RetCode = retcode; }
-    void SetClientNode(const string& client_node);
-    void SetClientSession(const string& client_session);
-    void SetErrorMsg(const string& msg);
+    // The size of the client_node is normalized at the handshake stage
+    void SetClientNode(const string &  client_node)
+    { m_Dirty = true;
+      m_ClientNode = client_node; }
+    // The size of the client_session is normalized at the handshake stage
+    void SetClientSession(const string &  cliet_session)
+    { m_Dirty = true;
+      m_ClientSession = cliet_session; }
+    // The size of the error message is truncated (if needed) at the
+    // command parameters processing stage
+    void SetErrorMsg(const string &  msg)
+    { m_Dirty = true;
+      m_ErrorMsg = msg; }
 
 private:
     friend class CJob;
@@ -412,6 +422,8 @@ public:
                  const CNSGroupsRegistry &    group_registry) const;
 
     TJobStatus GetStatusBeforeReading(void) const;
+    void Dump(FILE *  jobs_file) const;
+    bool LoadFromDump(FILE *  jobs_file);
 
 private:
     EJobFetchResult x_Fetch(CQueue* queue);

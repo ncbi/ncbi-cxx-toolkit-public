@@ -43,29 +43,16 @@ BEGIN_NCBI_SCOPE
 class IRegistry;
 
 
-string NS_RegValName(const string &  section, const string &  entry);
-bool NS_ValidateDouble(const IRegistry &  reg,
-                       const string &  section, const string &  entry,
-                       vector<string> &  warnings);
-bool NS_ValidateBool(const IRegistry &  reg,
-                     const string &  section, const string &  entry,
-                     vector<string> &  warnings);
-bool NS_ValidateInt(const IRegistry &  reg,
-                    const string &  section, const string &  entry,
-                    vector<string> &  warnings);
-bool NS_ValidateString(const IRegistry &  reg,
-                       const string &  section, const string &  entry,
-                       vector<string> &  warnings);
-
-
-
 // Queue parameters
 struct SQueueParameters
 {
     SQueueParameters();
-    void ReadQueueClass(const IRegistry &  reg, const string &  sname,
+
+    // Returns true if evrything is OK with the linked sections
+    bool ReadQueueClass(const IRegistry &  reg, const string &  sname,
                         vector<string> &  warnings);
-    void ReadQueue(const IRegistry &  reg, const string &  sname,
+    // Returns true if evrything is OK with the linked sections
+    bool ReadQueue(const IRegistry &  reg, const string &  sname,
                    const map<string, SQueueParameters> &  queue_classes,
                    vector<string> &  warnings);
 
@@ -117,9 +104,6 @@ struct SQueueParameters
     unsigned int    client_registry_min_unknowns;
     map<string,
         string>     linked_sections;
-
-    // This parameter is not reconfigurable
-    CNSPreciseTime  run_timeout_precision;
 
     // These fields are not for reading/writing/printing
     // It is used for QINF2 command which should print this status
@@ -238,8 +222,10 @@ struct SQueueParameters
                                                   const string &,
                                                   vector<string> &);
     map<string,
-        string>     ReadLinkedSections(const IRegistry &, const string &,
-                                       vector<string> &);
+        string>     ReadLinkedSections(const IRegistry &,
+                                       const string &  sname,
+                                       vector<string> &  warnings,
+                                       bool *  linked_sections_ok);
 };
 
 

@@ -49,7 +49,13 @@ const AlertToId     alertToIdMap[] = {
                         { ePidFile,         "PidFile" },
                         { eStartAfterCrash, "StartedAfterCrash" },
                         { eAccess,          "AccessDenied" },
-                        { eConfigOutOfSync, "ConfigOutOfSync" } };
+                        { eConfigOutOfSync, "ConfigOutOfSync" },
+                        { eReinit,          "Reinit" },
+                        { eNoDump,          "NoDump" },
+                        { eDumpError,       "DumpError" },
+                        { eMaxQueues,       "MaxQueues" },
+                        { eDumpLoadError,   "DumpLoadError" },
+                        { eDumpSpaceError,  "DumpSpaceError" } };
 const size_t        alertToIdMapSize = sizeof(alertToIdMap) / sizeof(AlertToId);
 
 

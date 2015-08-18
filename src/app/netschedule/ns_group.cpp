@@ -36,17 +36,17 @@
 /// @internal
 
 #include <ncbi_pch.hpp>
+#include <unistd.h>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbistd.hpp>
 
 #include "ns_group.hpp"
 #include "ns_db.hpp"
 #include "ns_queue.hpp"
+#include "ns_db_dump.hpp"
 
 
 BEGIN_NCBI_SCOPE
-
-
 
 
 
@@ -68,30 +68,13 @@ bool SNSGroupJobs::CanBeDeleted(void) const
 
 
 CNSGroupsRegistry::CNSGroupsRegistry() :
-    m_GroupDictDB(NULL),
     m_LastGroupID(0)
 {}
 
 
 CNSGroupsRegistry::~CNSGroupsRegistry()
 {
-    Detach();
-    x_Clear();
-    return;
-}
-
-
-void  CNSGroupsRegistry::Attach(SGroupDictDB *  group_dict_db)
-{
-    m_GroupDictDB = group_dict_db;
-    return;
-}
-
-
-void  CNSGroupsRegistry::Detach(void)
-{
-    m_GroupDictDB = NULL;
-    return;
+    Clear();
 }
 
 
@@ -99,7 +82,6 @@ void  CNSGroupsRegistry::x_InitLastGroupID(unsigned int  value)
 {
     CFastMutexGuard     guard(m_LastGroupIDLock);
     m_LastGroupID = value;
-    return;
 }
 
 
@@ -136,7 +118,6 @@ TNSBitVector  CNSGroupsRegistry::GetRegisteredGroups(void) const
 
 // Provides the group integer identifier.
 // If the group does not exist then a new one, with no jobs in it is created.
-// Requires a DB transaction in the outer scope
 unsigned int  CNSGroupsRegistry::ResolveGroup(const string &  group)
 {
     if (group.empty())
@@ -190,7 +171,6 @@ unsigned int  CNSGroupsRegistry::AddJobs(unsigned int    group_id,
 }
 
 
-// Requires a DB transaction in the outer scope
 unsigned int  CNSGroupsRegistry::AddJob(const string &  group,
                                         unsigned int    job_id)
 {
@@ -213,7 +193,6 @@ unsigned int  CNSGroupsRegistry::AddJob(const string &  group,
 }
 
 
-// No DB transaction is required
 void  CNSGroupsRegistry::AddJob(unsigned int    group_id,
                                 unsigned int    job_id)
 {
@@ -235,7 +214,22 @@ void  CNSGroupsRegistry::AddJob(unsigned int    group_id,
 }
 
 
-// No DB transaction is required
+// This member is used when there is a single thread access to the queue - at
+// the restoring from dump time. So the container lock is not required.
+void  CNSGroupsRegistry::AddJobToGroup(unsigned int    group_id,
+                                       unsigned int    job_id)
+{
+    TGroupIDToAttrMap::iterator     found = m_IDToAttr.find(group_id);
+
+    if (found == m_IDToAttr.end())
+        throw runtime_error("Error while restoring jobs from the dump. "
+                    "The group with id " + NStr::NumericToString(group_id) +
+                    " is not found in the loaded dictionary."
+                    " (Lost group dictionary dump?)");
+    found->second->m_Jobs.set_bit(job_id);
+}
+
+
 void  CNSGroupsRegistry::RemoveJob(unsigned int  group_id,
                                    unsigned int  job_id)
 {
@@ -253,19 +247,6 @@ void  CNSGroupsRegistry::RemoveJob(unsigned int  group_id,
             x_DeleteSingleInMemory(found);
         return;
     }
-}
-
-
-// No DB transaction required
-void  CNSGroupsRegistry::ClearMemoryAndDatabase(void)
-{
-    // Clear the data structures in memory
-    x_Clear();
-
-    // Clear the Berkley DB table.
-    // Safe truncate can delete everything without a transaction.
-    m_GroupDictDB->SafeTruncate();
-    return;
 }
 
 
@@ -295,39 +276,8 @@ string  CNSGroupsRegistry::Print(const CQueue *  queue,
 }
 
 
-// Reads the DB and fills in two maps. The jobs list for a certain group is
-// empty at this stage.
-// A set of AddJob(...) calls is expected after loading the
-// dictionary.
-// The final step in the loading groups is to get the
-// FinalizeGroupDictionaryLoading() call.
-void  CNSGroupsRegistry::LoadGroupDictionary(void)
-{
-    CMutexGuard         guard(m_Lock);
-    CBDB_FileCursor     cur(*m_GroupDictDB);
-
-    cur.InitMultiFetch(1024*1024);
-    cur.SetCondition(CBDB_FileCursor::eGE);
-    cur.From << 0;
-    for (; cur.Fetch() == eBDB_Ok;) {
-        unsigned int        group_id = m_GroupDictDB->group_id;
-        string *            new_token = new string(m_GroupDictDB->token);
-        SNSGroupJobs *      new_record = new SNSGroupJobs;
-
-        new_record->m_GroupToken = new_token;
-        new_record->m_GroupId = group_id;
-
-        m_IDToAttr[group_id] = new_record;
-        m_TokenToAttr[new_token] = new_record;
-
-        m_RegisteredGroups.set_bit(group_id);
-    }
-    return;
-}
-
-
 // Deletes all the records for which there are no jobs. It might happened
-// because the DB reloading might happened after a long delay and some jobs
+// because the NS reloading might happened after a long delay and some jobs
 // could be expired by that time.
 // After all the initial value of the group ID is set as the max value of
 // those which survived.
@@ -351,11 +301,9 @@ void  CNSGroupsRegistry::FinalizeGroupDictionaryLoading(void)
 
     // Update the group id
     x_InitLastGroupID(max_group_id);
-    return;
 }
 
 
-// The DB transaction is set in the outer scope
 unsigned int  CNSGroupsRegistry::CollectGarbage(unsigned int  max_to_del)
 {
     unsigned int                del_count = 0;
@@ -366,9 +314,6 @@ unsigned int  CNSGroupsRegistry::CollectGarbage(unsigned int  max_to_del)
         unsigned int        group_id = *en;
 
         m_RemoveCandidates.set_bit(group_id, false);
-
-        m_GroupDictDB->group_id = group_id;
-        m_GroupDictDB->Delete(CBDB_File::eIgnoreError);
 
         TGroupIDToAttrMap::iterator     found = m_IDToAttr.find(group_id);
         if (found == m_IDToAttr.end())
@@ -399,8 +344,6 @@ unsigned int  CNSGroupsRegistry::x_GetNextGroupID(void)
 
 // Creates a group with no jobs in it and saves the info in the DB.
 // The caller provides the containers lock.
-// It's the caller responsibility to provide the berkley DB transaction for
-// this.
 unsigned int  CNSGroupsRegistry::x_CreateGroup(const string &  group)
 {
     unsigned int        group_id = x_GetNextGroupID();
@@ -425,12 +368,6 @@ unsigned int  CNSGroupsRegistry::x_CreateGroup(const string &  group)
 
     // Add to the registered groups list
     m_RegisteredGroups.set_bit(group_id);
-
-    // Update the database.
-    // The transaction is in the outer scope.
-    m_GroupDictDB->group_id = group_id;
-    m_GroupDictDB->token = group;
-    m_GroupDictDB->UpdateInsert();
 
     return group_id;
 }
@@ -494,7 +431,7 @@ CNSGroupsRegistry::x_PrintOne(const SNSGroupJobs &     group_attr,
 
 
 // Cleans up the allocated memory and does not touch the DB
-void  CNSGroupsRegistry::x_Clear(void)
+void  CNSGroupsRegistry::Clear(void)
 {
     CMutexGuard                         guard(m_Lock);
     TGroupIDToAttrMap::iterator         to_del = m_IDToAttr.begin();
@@ -507,7 +444,6 @@ void  CNSGroupsRegistry::x_Clear(void)
     m_IDToAttr.clear();
     m_TokenToAttr.clear();
     m_RegisteredGroups.clear();
-    return;
 }
 
 
@@ -535,9 +471,121 @@ void  CNSGroupsRegistry::x_DeleteSingleInMemory(TGroupIDToAttrMap::iterator  to_
     // Registered group
     m_RegisteredGroups.set_bit(group_id, false);
     m_RemoveCandidates.set_bit(group_id);
-    return;
 }
 
+
+// Dumps all the groups into a flat file at the time of shutdown
+void CNSGroupsRegistry::Dump(const string &  dump_dir_name,
+                             const string &  qname) const
+{
+    // Collect info about all the groups which have at least one job
+    TNSBitVector    groups_to_dump;
+
+    for (TGroupIDToAttrMap::const_iterator  k = m_IDToAttr.begin();
+            k != m_IDToAttr.end(); ++k) {
+        if (k->second->m_Jobs.any())
+            groups_to_dump.set_bit(k->first);
+    }
+
+    if (!groups_to_dump.any())
+        return;
+
+    string  grp_dict_file_name = x_GetDumpFileName(dump_dir_name, qname);
+    FILE *  grp_dict_file = fopen(grp_dict_file_name.c_str(), "wb");
+
+    if (grp_dict_file == NULL)
+        throw runtime_error("Cannot open file " + grp_dict_file_name +
+                            " to dump groups");
+
+    // Disable buffering to detect errors straight away
+    setbuf(grp_dict_file, NULL);
+
+    TNSBitVector::enumerator    en(groups_to_dump.first());
+    for ( ; en.valid(); ++en) {
+        TGroupIDToAttrMap::const_iterator  grp_it =
+                                            m_IDToAttr.find(*en);
+        const string &      token = *(grp_it->second->m_GroupToken);
+        SGroupDictDump      grp_dump;
+
+        grp_dump.group_id = *en;
+        grp_dump.token_size = token.size();
+        memcpy(grp_dump.token, token.data(), token.size());
+
+        try {
+            grp_dump.Write(grp_dict_file);
+        } catch (const exception &  ex) {
+            fclose(grp_dict_file);
+            throw runtime_error("Writing error while dumping groups: " +
+                                string(ex.what()));
+        }
+    }
+
+    fclose(grp_dict_file);
+}
+
+
+void CNSGroupsRegistry::RemoveDump(const string &  dump_dir_name,
+                                   const string &  qname) const
+{
+    string  grp_dict_file_name = x_GetDumpFileName(dump_dir_name, qname);
+    if (access(grp_dict_file_name.c_str(), F_OK) != -1)
+        remove(grp_dict_file_name.c_str());
+}
+
+
+string CNSGroupsRegistry::x_GetDumpFileName(const string &  dump_dir_name,
+                                            const string &  qname) const
+{
+    const string    fname("group_dict_dump.");
+    return dump_dir_name + fname + qname;
+}
+
+
+// Called at startup to load the registry from a flat file.
+// Fills in two maps. The jobs list for a certain group is
+// empty at this stage.
+// A set of AddJob(...) calls is expected after loading the
+// dictionary.
+// The final step in the loading groups is to get the
+// FinalizeGroupDictionaryLoading() call.
+void  CNSGroupsRegistry::LoadFromDump(const string &  dump_dir_name,
+                                      const string &  qname)
+{
+    if (!CDir(dump_dir_name).Exists())
+        return;
+
+    string  grp_dict_file_name = x_GetDumpFileName(dump_dir_name, qname);
+    if (!CFile(grp_dict_file_name).Exists())
+        return;
+
+    FILE *  grp_dict_file = fopen(grp_dict_file_name.c_str(), "rb");
+    if (grp_dict_file == NULL)
+        throw runtime_error("Cannot open file " + grp_dict_file_name +
+                            " to load dumped groups");
+    try {
+        SGroupDictDump      grp_dump;
+        while (grp_dump.Read(grp_dict_file) == 0) {
+            string *            new_token = new string(grp_dump.token,
+                                                       grp_dump.token_size);
+            SNSGroupJobs *      new_record = new SNSGroupJobs;
+
+            new_record->m_GroupToken = new_token;
+            new_record->m_GroupId = grp_dump.group_id;
+
+            m_IDToAttr[grp_dump.group_id] = new_record;
+            m_TokenToAttr[new_token] = new_record;
+
+            m_RegisteredGroups.set_bit(grp_dump.group_id);
+        }
+    } catch (const exception &  ex) {
+        fclose(grp_dict_file);
+        Clear();
+        throw runtime_error("Reading error while loading dumped groups: " +
+                            string(ex.what()));
+    }
+
+    fclose(grp_dict_file);
+}
 
 END_NCBI_SCOPE
 

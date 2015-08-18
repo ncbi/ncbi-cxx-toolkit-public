@@ -47,50 +47,23 @@ void SQueueDbBlock::Open(CBDB_Env& env, const string& path, int pos_)
     allocated = false;
 
     string      prefix = "jsq_" + NStr::NumericToString(pos);
-    bool        group_tables_for_queue = false;
 
     try {
-        string      fname = prefix + ".db";
-        string      tname = "";
-
         job_db.SetEnv(env);
         // TODO: RevSplitOff make sense only for long living queues,
         // for dynamic ones it slows down the process, but because queue
         // if eventually is disposed of, it does not make sense to save
         // space here
         job_db.RevSplitOff();
+        job_db.Open(prefix + ".db", "", CBDB_RawFile::eReadWriteCreate);
 
-        if (group_tables_for_queue)
-            tname = "job";
-        job_db.Open(fname, tname, CBDB_RawFile::eReadWriteCreate);
-
-        if (group_tables_for_queue)
-            tname = "jobinfo";
-        else
-            fname = prefix + "_jobinfo.db";
         job_info_db.SetEnv(env);
-        job_info_db.Open(fname, tname, CBDB_RawFile::eReadWriteCreate);
+        job_info_db.Open(prefix + "_jobinfo.db", "",
+                         CBDB_RawFile::eReadWriteCreate);
 
-        if (group_tables_for_queue)
-            tname = "events";
-        else
-            fname = prefix + "_events.db";
         events_db.SetEnv(env);
-        events_db.Open(fname, tname, CBDB_RawFile::eReadWriteCreate);
-
-        if (group_tables_for_queue)
-            tname = "affdict";
-        else
-            fname = prefix + "_affdict.db";
-        aff_dict_db.SetEnv(env);
-        aff_dict_db.Open(fname, tname, CBDB_RawFile::eReadWriteCreate);
-
-        if (group_tables_for_queue)
-            tname = "groupdict";
-        else
-            fname = prefix + "_groupdict.db";
-        group_dict_db.SetEnv(env);
-        group_dict_db.Open(fname, tname, CBDB_RawFile::eReadWriteCreate);
+        events_db.Open(prefix + "_events.db", "",
+                       CBDB_RawFile::eReadWriteCreate);
     } catch (CBDB_ErrnoException&) {
         throw;
     }
@@ -99,8 +72,6 @@ void SQueueDbBlock::Open(CBDB_Env& env, const string& path, int pos_)
 
 void SQueueDbBlock::Close()
 {
-    group_dict_db.Close();
-    aff_dict_db.Close();
     events_db.Close();
     job_info_db.Close();
     job_db.Close();
@@ -109,8 +80,6 @@ void SQueueDbBlock::Close()
 
 void SQueueDbBlock::Truncate()
 {
-    group_dict_db.SafeTruncate();
-    aff_dict_db.SafeTruncate();
     events_db.SafeTruncate();
     job_info_db.SafeTruncate();
     job_db.SafeTruncate();

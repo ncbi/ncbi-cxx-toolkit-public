@@ -40,12 +40,42 @@
 BEGIN_NCBI_SCOPE
 
 
+class IRegistry;
+
+
+const string    g_ValidPrefix = "Validating config file: ";
+const string    g_WarnPrefix = g_ValidPrefix + "unexpected value of ";
+
+
+
+// A few helpers
+string NS_RegValName(const string &  section, const string &  entry);
+bool NS_ValidateDouble(const IRegistry &  reg,
+                       const string &  section, const string &  entry,
+                       vector<string> &  warnings);
+bool NS_ValidateBool(const IRegistry &  reg,
+                     const string &  section, const string &  entry,
+                     vector<string> &  warnings);
+bool NS_ValidateInt(const IRegistry &  reg,
+                    const string &  section, const string &  entry,
+                    vector<string> &  warnings);
+bool NS_ValidateString(const IRegistry &  reg,
+                       const string &  section, const string &  entry,
+                       vector<string> &  warnings);
+bool NS_ValidateDataSize(const IRegistry &  reg,
+                         const string &  section, const string &  entry,
+                         vector<string> &  warnings);
+unsigned int NS_GetDataSize(const IRegistry &  reg,
+                            const string &  section, const string &  entry,
+                            unsigned int  default_val);
+
+
+
 // Validates the config file and populates a warnings list if the file has
 // problems.
 void NS_ValidateConfigFile(const IRegistry &  reg, vector<string> &  warnings,
                            bool  throw_port_exception,
                            bool &  decrypting_error);
-
 
 string NS_GetConfigFileChecksum(const string &  file_name,
                                 vector<string> &  warnings);

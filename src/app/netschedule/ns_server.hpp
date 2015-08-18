@@ -208,6 +208,8 @@ public:
     { m_AnybodyCanReconfigure = val; }
     bool AnybodyCanReconfigure(void) const
     { return m_AnybodyCanReconfigure; }
+    unsigned int GetReserveDumpSpace(void) const
+    { return m_ReserveDumpSpace; }
 
 protected:
     virtual void Exit();
@@ -283,6 +285,8 @@ private:
     string                          m_DiskConfigFileChecksum;
 
     bool                            m_AnybodyCanReconfigure;
+
+    unsigned int                    m_ReserveDumpSpace;
 
 private:
     string x_GenerateGUID(void) const;

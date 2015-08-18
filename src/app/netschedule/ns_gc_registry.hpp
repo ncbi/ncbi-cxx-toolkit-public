@@ -104,6 +104,7 @@ class CJobGCRegistry
         bool  IsOutdatedJob(unsigned int            job_id,
                             ECommandGroup           cmd_group,
                             const CNSPreciseTime &  timeout) const;
+        void Clear(void);
 
     private:
         mutable CFastMutex              m_Lock;         // Lock for the operations

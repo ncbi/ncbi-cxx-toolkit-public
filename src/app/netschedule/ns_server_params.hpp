@@ -125,6 +125,8 @@ struct SNS_Parameters : SServer_Parameters
     unsigned int    affinity_low_removal;
     unsigned int    affinity_dirt_percentage;
 
+    unsigned int    reserve_dump_space;
+
     void Read(const IRegistry &  reg);
 
     #if defined(_DEBUG) && !defined(NDEBUG)
