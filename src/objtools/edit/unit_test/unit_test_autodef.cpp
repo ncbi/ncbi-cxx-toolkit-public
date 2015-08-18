@@ -1253,6 +1253,20 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2370)
     CheckDeflineMatches(seq);
 }
 
+BOOST_AUTO_TEST_CASE(Test_GB_4242)
+{
+    CRef<CSeq_entry> seq = unit_test_util::BuildGoodSeq();
+    unit_test_util::SetTaxname(seq, "Trichoderma sp. FPZSP372");
+    unit_test_util::SetOrgMod(seq, COrgMod::eSubtype_isolate, "FPZSP37");
+    AddTitle(seq, "Trichoderma sp. FPZSP372.");
+
+    vector<CSubSource::ESubtype> subsrcs;
+    vector<COrgMod::ESubtype> orgmods;
+    orgmods.push_back(COrgMod::eSubtype_isolate);
+
+    CheckDeflineMatches(seq, subsrcs, orgmods);
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

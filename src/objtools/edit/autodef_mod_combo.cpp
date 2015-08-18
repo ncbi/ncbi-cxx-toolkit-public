@@ -420,7 +420,8 @@ bool CAutoDefModifierCombo::x_AddOrgModString (string &source_description, const
                  || st == COrgMod::eSubtype_forma
                  || st == COrgMod::eSubtype_forma_specialis
                  || st == COrgMod::eSubtype_pathovar
-                 || st == COrgMod::eSubtype_specimen_voucher)
+                 || st == COrgMod::eSubtype_specimen_voucher
+                 || st == COrgMod::eSubtype_isolate)
                 && NStr::Find (bsrc.GetOrg().GetTaxname(), " " + val) != NCBI_NS_STD::string::npos) {
                 // can't use this
             } else {
