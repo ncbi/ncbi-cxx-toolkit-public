@@ -256,8 +256,10 @@ bool XSDParser::DefineElementType(DTDElement& node)
     if (IsValue("string") || IsValue("token") ||
         IsValue("normalizedString") ||
         IsValue("duration") || IsValue("language") ||
-        IsValue("anyType") || IsValue("anyURI") || IsValue("QName") ||
+        IsValue("anyType") || IsValue("anyURI") ||
+        IsValue("Name") ||IsValue("NCName") || IsValue("QName") ||
         IsValue("dateTime") || IsValue("time") || IsValue("date") ||
+        IsValue("gYearMonth") || IsValue("gYear") || IsValue("gMonthDay") || IsValue("gMonth") || IsValue("gDay") || 
         IsValue("anySimpleType")) {
         node.SetType(DTDElement::eString);
     } else if (IsValue("double") || IsValue("float") || IsValue("decimal")) {
