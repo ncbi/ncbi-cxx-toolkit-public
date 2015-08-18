@@ -4036,7 +4036,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MUDH	s	The Hague, Museon",
 "MUFE	s	University of Marmara, Department of Botany",
 "MUFM	s	Manipur University Fish Museum",
-"MUFS	s	Department of Animal Science",
+"MUFS	s	Department of Animal Science, Miyazaki  University",
 "MUGM	s	Museo de Ciencias Naturales, Coleccion \"Gustavo Orces\" (Ecuador)",
 "MUHW	s	Marshall University, Biological Sciences Department",
 "MUJ	s	Museo Javeriano de Historia Natural, Laboratoriao de Entomologia",
