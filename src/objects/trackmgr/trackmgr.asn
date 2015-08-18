@@ -28,7 +28,8 @@ TMgr-Request ::= CHOICE {
     blast-tracks TMgr-BlastRIDRequest,
     create-user-tracks TMgr-CreateUserTrackRequest,
     resolve-track-items TMgr-ItemResolverRequest,
-    remove-user-tracks TMgr-RemoveUserTrackRequest
+    remove-user-tracks TMgr-RemoveUserTrackRequest,
+    retrieve-tracksets TMgr-RetrieveTracksetRequest
 }
 
 TMgr-Reply ::= CHOICE {
@@ -38,7 +39,8 @@ TMgr-Reply ::= CHOICE {
     blast-tracks TMgr-BlastRIDReply,
     create-user-tracks TMgr-CreateUserTrackReply,
     resolve-track-items TMgr-ItemResolverReply,
-    remove-user-tracks TMgr-RemoveUserTrackReply
+    remove-user-tracks TMgr-RemoveUserTrackReply,
+    retrieve-tracksets TMgr-RetrieveTracksetReply
 }
 
 TMgr-GenomeContext ::= CHOICE {
@@ -344,6 +346,21 @@ TMgr-AnnotCounts ::= SEQUENCE {
     counts SET OF TMgr-TypeStat
 }
 
+TMgr-TrackSet ::= SEQUENCE {
+    name UTF8String,
+    description UTF8String OPTIONAL,
+    tracks SEQUENCE OF TMgr-DisplayTrack
+}
+
+TMgr-RetrieveTracksetRequest ::= SEQUENCE {
+    genome-context TMgr-GenomeContext,
+    identity TMgr-Identity OPTIONAL
+}
+
+TMgr-RetrieveTracksetReply ::= SEQUENCE {
+    messages SEQUENCE OF TMgr-Message OPTIONAL,
+    tracksets SET OF TMgr-TrackSet OPTIONAL
+}
 
 END
 
