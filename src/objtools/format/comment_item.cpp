@@ -1479,7 +1479,7 @@ string s_HtmlizeStructuredCommentData( const bool is_html, const string &label_s
                << data_str
                << "\">" << data_str << "</a>";
         return CNcbiOstrstreamToString(result);
-    } else if ( label_str == "Annotation Version" && provider == "NCBI" ) {
+    } else if ( NStr::Equal (label_str, "Annotation Version") && NStr::Equal (provider, "NCBI") ) {
         string fst;
         string snd;
         NStr::Replace( data_str, " Annotation Release ", "/", fst );
