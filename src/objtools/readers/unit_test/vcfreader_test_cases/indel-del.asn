@@ -70,14 +70,12 @@ Seq-annot ::= {
             },
             {
               data instance {
-                type delins,
-                delta {
+                type del,       
+                delta { 
                   {
-                    seq literal {
-                      length 0,
-                      seq-data iupacna ""
-                    }
-                  }
+                    seq this NULL,
+                    action del-at
+                  } 
                 }
               }
             },

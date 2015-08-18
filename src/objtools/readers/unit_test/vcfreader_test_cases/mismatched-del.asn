@@ -62,13 +62,11 @@ Seq-annot ::= {
             },
             {
               data instance {
-                type delins,
+                type del,
                 delta {
                   {
-                    seq literal {
-                      length 0,
-                      seq-data iupacna ""
-                    }
+                    seq this NULL,
+                    action del-at
                   }
                 }
               }
