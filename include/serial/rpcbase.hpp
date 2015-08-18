@@ -50,29 +50,62 @@
 
 BEGIN_NCBI_SCOPE
 
-/// CRPCClient -- prototype client for ASN.1/XML-based RPC.
-/// Normally connects automatically on the first real request and
-/// disconnects automatically in the destructor, but allows both events
-/// to occur explicitly.
 
-template <class TRequest, class TReply>
-class CRPCClient : public    CObject,
-                   protected CConnIniter
+/// Retry related values.
+struct SRPC_RetryData
+{
+    /// Content override flags
+    enum EContentOverride {
+        eNot_set,       ///< Send the original request data
+        eNoContent,     ///< Do not send any content on retry
+        eFromResponse,  ///< On retry send content from the current response
+        eData           ///< Send data from m_Content
+    };
+
+    /// Stop retries if not empty.
+    string           m_StopReason;
+    /// Delay before retries.
+    CTimeSpan        m_Delay;
+    /// Arguments to be sent on retries.
+    string           m_Args;
+    /// URL to be used for retries.
+    string           m_URL;
+    /// Content override flag.
+    EContentOverride m_ContentOverride;
+    /// Content for the next retry.
+    string           m_Content;
+    /// If true, force connection reset.
+    bool             m_Reconnect;
+
+    SRPC_RetryData(void) : m_ContentOverride(eNot_set), m_Reconnect(false) {}
+
+    void Reset(void) {
+        m_StopReason.clear();
+        m_Delay.Clear();
+        m_Args.clear();
+        m_URL.clear();
+        m_ContentOverride = eNot_set;
+        m_Content.clear();
+        m_Reconnect = false;
+    }
+
+    void ParseHeader(const char* http_header);
+};
+
+
+/// Base class for CRPCClient template - defines methods
+/// independent of request and response types.
+class NCBI_XSERIAL_EXPORT CRPCClient_Base
 {
 public:
-    CRPCClient(const string&     service     = kEmptyStr,
-               ESerialDataFormat format      = eSerial_AsnBinary,
-               unsigned int      retry_limit = 3)
-        : m_Service(service), m_Format(format), m_Timeout(kDefaultTimeout),
-          m_RetryLimit(retry_limit)
-    {
-    }
-    virtual ~CRPCClient(void);
+    CRPCClient_Base(const string&     service,
+                    ESerialDataFormat format,
+                    unsigned int      retry_limit);
+    virtual ~CRPCClient_Base(void);
 
-    virtual void Ask(const TRequest& request, TReply& reply);
-            void Connect(void);
-            void Disconnect(void);
-            void Reset(void);
+    void Connect(void);
+    void Disconnect(void);
+    void Reset(void);
 
     const string& GetService(void) const            { return m_Service; }
              void SetService(const string& service) { m_Service = service; }
@@ -86,130 +119,196 @@ public:
     const CTimeSpan GetRetryDelay(void) const          { return m_RetryDelay; }
     void            SetRetryDelay(const CTimeSpan& ts) { m_RetryDelay = ts; }
 
+protected:
+    void SetAffinity(const string& affinity);
+
+    /// These run with m_Mutex already acquired.
+    virtual void x_Connect(void) = 0;
+    virtual void x_Disconnect(void);
+            void x_SetStream(CNcbiIostream* stream);
+
+    void x_Ask(const CSerialObject& request, CSerialObject& reply);
+    // Casting stubs.
+    virtual void x_WriteRequest(CObjectOStream& out, const CSerialObject& request) = 0;
+    virtual void x_ReadReply(CObjectIStream& in, CSerialObject& reply) = 0;
+    virtual string x_GetAffinity(const CSerialObject& request) const = 0;
+
+private:
+    /// Prohibit default copy constructor and assignment operator.
+    CRPCClient_Base(const CRPCClient_Base&);
+    bool operator= (const CRPCClient_Base&);
+
+    auto_ptr<CObjectIStream> m_In;
+    auto_ptr<CObjectOStream> m_Out;
+    ESerialDataFormat        m_Format;
+    CMutex                   m_Mutex;   ///< To allow sharing across threads.
+    CTimeSpan                m_RetryDelay;
+
+protected:
+    string                   m_Service; ///< Used by default Connect().
+    auto_ptr<CNcbiIostream>  m_Stream;
+    string                   m_Affinity;
+    const STimeout*          m_Timeout; ///< Cloned if not special.
+    unsigned int             m_RetryLimit;
+    SRPC_RetryData           m_RetryData;
+
+    // Retry policy; by default, just _TRACEs the event and returns
+    // true.  May reset the connection (or do anything else, really),
+    // but note that Ask() will always automatically reconnect if the
+    // stream is explicitly bad.  (Ask() also takes care of enforcing
+    // m_RetryLimit.)
+    virtual bool x_ShouldRetry(unsigned int tries);
+
+    // Calculate effective retry delay. Returns value from m_RetryData
+    // if any, or the value set by SetRetryDelay. The returned value never
+    // exceeds max_delay.
+    CTimeSpan x_GetRetryDelay(double max_delay) const;
+
+    // CConn_HttpStream callback for parsing headers.
+    // 'user_data' must point to an instance of CRPCConnStatus.
+    static EHTTP_HeaderParse sx_ParseHeader(const char* http_header,
+                                            void*       user_data,
+                                            int         server_error);
+
+    static bool sx_IsSpecial(const STimeout* timeout);
+};
+
+
+/// CRPCClient -- prototype client for ASN.1/XML-based RPC.
+/// Normally connects automatically on the first real request and
+/// disconnects automatically in the destructor, but allows both events
+/// to occur explicitly.
+
+template <class TRequest, class TReply>
+class CRPCClient : public    CObject,
+                   public    CRPCClient_Base,
+                   protected CConnIniter
+{
+public:
+    CRPCClient(const string&     service     = kEmptyStr,
+               ESerialDataFormat format      = eSerial_AsnBinary,
+               unsigned int      retry_limit = 3)
+        : CRPCClient_Base(service, format, retry_limit) {}
+    virtual ~CRPCClient(void) {}
+
+    virtual void Ask(const TRequest& request, TReply& reply)
+    { x_Ask(request, reply); }
+
+    virtual void WriteRequest(CObjectOStream& out, const TRequest& request)
+    { out << request; }
+
+    virtual void ReadReply(CObjectIStream& in, TReply& reply)
+    { in >> reply; }
+
     EIO_Status      SetTimeout(const STimeout* timeout,
                                EIO_Event direction = eIO_ReadWrite);
     const STimeout* GetTimeout(EIO_Event direction = eIO_Read) const;
 
 protected:
-    virtual string GetAffinity(const TRequest& request) const;
-              void SetAffinity(const string& affinity);
+    virtual string GetAffinity(const TRequest& request) const
+    {
+        return "";
+    }
 
-    /// These run with m_Mutex already acquired.
+    virtual void x_WriteRequest(CObjectOStream& out, const CSerialObject& request)
+    {
+        WriteRequest(out, dynamic_cast<const TRequest&>(request));
+    }
+
+    virtual void x_ReadReply(CObjectIStream& in, CSerialObject& reply)
+    {
+        ReadReply(in, dynamic_cast<TReply&>(reply));
+    }
+
+    virtual string x_GetAffinity(const CSerialObject& request) const
+    {
+        return GetAffinity(dynamic_cast<const TRequest&>(request));
+    }
+
     virtual void x_Connect(void);
-    virtual void x_Disconnect(void);
-            void x_SetStream(CNcbiIostream* stream);
+
     /// Connect to a URL.  (Discouraged; please establish and use a
     /// suitable named service if possible.)
             void x_ConnectURL(const string& url);
+};
 
-    /// Retry policy; by default, just _TRACEs the event and returns
-    /// true.  May reset the connection (or do anything else, really),
-    /// but note that Ask() will always automatically reconnect if the
-    /// stream is explicitly bad.  (Ask() also takes care of enforcing
-    /// m_RetryLimit.)
-    virtual bool x_ShouldRetry(unsigned int tries);
+
+class NCBI_XSERIAL_EXPORT CRPCClientException : public CException
+{
+public:
+    enum EErrCode {
+        eRetry,   ///< Request failed, should be retried if possible.
+        eFailed,  ///< Request (or retry) failed.
+        eOther
+    };
+
+    virtual const char* GetErrCodeString(void) const;
+
+    /// Read retry related data.
+    const SRPC_RetryData& GetRetryData(void) const { return m_RetryData; }
+    /// Modify retry related data.
+    SRPC_RetryData& SetRetryData(void) { return m_RetryData; }
+
+    NCBI_EXCEPTION_DEFAULT(CRPCClientException, CException);
 
 private:
-    static bool x_IsSpecial(const STimeout* timeout)
-        { return timeout == kDefaultTimeout  ||  timeout == kInfiniteTimeout; }
-
-    typedef CRPCClient<TRequest, TReply> TSelf;
-    /// Prohibit default copy constructor and assignment operator.
-    CRPCClient(const TSelf& x);
-    bool operator= (const TSelf& x);
-
-    auto_ptr<CNcbiIostream>  m_Stream;
-    auto_ptr<CObjectIStream> m_In;
-    auto_ptr<CObjectOStream> m_Out;
-    string                   m_Service; ///< Used by default Connect().
-    string                   m_Affinity;
-    ESerialDataFormat        m_Format;
-    CMutex                   m_Mutex;   ///< To allow sharing across threads.
-    const STimeout*          m_Timeout; ///< Cloned if not special.
-    CTimeSpan                m_RetryDelay;
-
-protected:
-    unsigned int             m_RetryLimit;
+    SRPC_RetryData m_RetryData;
 };
 
 
 ///////////////////////////////////////////////////////////////////////////
 // Inline methods
 
-
-template <class TRequest, class TReply>
+template<class TRequest, class TReply>
 inline
-CRPCClient<TRequest, TReply>::~CRPCClient(void)
+void CRPCClient<TRequest, TReply>::x_Connect(void)
 {
-    Disconnect();
-    if ( !x_IsSpecial(m_Timeout) ) {
-        delete const_cast<STimeout*>(m_Timeout);
-    }
-}
-
-
-template <class TRequest, class TReply>
-inline
-void CRPCClient<TRequest, TReply>::Connect(void)
-{
-    if (m_Stream.get()  &&  m_Stream->good()) {
-        return; // already connected
-    }
-    CMutexGuard LOCK(m_Mutex);
-    // repeat test with mutex held to avoid races
-    if (m_Stream.get()  &&  m_Stream->good()) {
-        return; // already connected
-    }
-    x_Connect();
-}
-
-
-template <class TRequest, class TReply>
-inline
-void CRPCClient<TRequest, TReply>::Disconnect(void)
-{
-    CMutexGuard LOCK(m_Mutex);
-    if ( !m_Stream.get()  ||  !m_Stream->good() ) {
-        // not connected -- don't call x_Disconnect, which might
-        // temporarily reconnect to send a fini!
+    if ( !m_RetryData.m_URL.empty() ) {
+        x_ConnectURL(m_RetryData.m_URL);
         return;
     }
-    x_Disconnect();
-}
-
-
-template <class TRequest, class TReply>
-inline
-void CRPCClient<TRequest, TReply>::Reset(void)
-{
-    CMutexGuard LOCK(m_Mutex);
-    if (m_Stream.get()  &&  m_Stream->good()) {
-        x_Disconnect();
+    _ASSERT( !m_Service.empty() );
+    SConnNetInfo* net_info = ConnNetInfo_Create(m_Service.c_str());
+    if ( !m_RetryData.m_Args.empty() ) {
+        ConnNetInfo_AppendArg(net_info, m_RetryData.m_Args.c_str(), 0);
     }
-    x_Connect();
-}
-
-
-template <class TRequest, class TReply>
-inline
-string CRPCClient<TRequest, TReply>::GetAffinity(const TRequest& ) const
-{
-    return kEmptyStr;
-}
-
-
-template <class TRequest, class TReply>
-inline
-void CRPCClient<TRequest, TReply>::SetAffinity(const string& affinity)
-{
-    if (m_Affinity != affinity) {
-        Disconnect();
-        m_Affinity  = affinity;
+    else if (!m_Affinity.empty()) {
+        ConnNetInfo_PostOverrideArg(net_info, m_Affinity.c_str(), 0);
     }
+
+    // Install callback for parsing headers.
+    SSERVICE_Extra x_extra;
+    memset(&x_extra, 0, sizeof(x_extra));
+    x_extra.data = &m_RetryData;
+    x_extra.parse_header = sx_ParseHeader;
+
+    x_SetStream(new CConn_ServiceStream(m_Service, fSERV_Any, net_info,
+        &x_extra, m_Timeout));
+    ConnNetInfo_Destroy(net_info);
 }
 
 
-template <class TRequest, class TReply>
+template<class TRequest, class TReply>
+inline
+void CRPCClient<TRequest, TReply>::x_ConnectURL(const string& url)
+{
+    SConnNetInfo* net_info = ConnNetInfo_Create(0);
+    ConnNetInfo_ParseURL(net_info, url.c_str());
+    if ( !m_RetryData.m_Args.empty() ) {
+        ConnNetInfo_PostOverrideArg(net_info, m_RetryData.m_Args.c_str(), 0);
+    }
+    x_SetStream(new CConn_HttpStream(net_info,
+        kEmptyStr, // user_header
+        sx_ParseHeader, // callback
+        &m_RetryData, // user data for the callback
+        0, // adjust callback
+        0, // cleanup callback
+        fHTTP_AutoReconnect,
+        m_Timeout));
+}
+
+
+template<class TRequest, class TReply>
 inline
 EIO_Status CRPCClient<TRequest, TReply>::SetTimeout(const STimeout* timeout,
                                                     EIO_Event direction)
@@ -217,12 +316,12 @@ EIO_Status CRPCClient<TRequest, TReply>::SetTimeout(const STimeout* timeout,
     // save for future use, especially if there's no stream at present.
     {{
         const STimeout* old_timeout = m_Timeout;
-        if (x_IsSpecial(timeout)) {
+        if (sx_IsSpecial(timeout)) {
             m_Timeout = timeout;
         } else { // make a copy
             m_Timeout = new STimeout(*timeout);
         }
-        if ( !x_IsSpecial(old_timeout) ) {
+        if ( !sx_IsSpecial(old_timeout) ) {
             delete const_cast<STimeout*>(old_timeout);
         }
     }}
@@ -239,7 +338,7 @@ EIO_Status CRPCClient<TRequest, TReply>::SetTimeout(const STimeout* timeout,
 }
 
 
-template <class TRequest, class TReply>
+template<class TRequest, class TReply>
 inline
 const STimeout* CRPCClient<TRequest, TReply>::GetTimeout(EIO_Event direction)
     const
@@ -251,96 +350,6 @@ const STimeout* CRPCClient<TRequest, TReply>::GetTimeout(EIO_Event direction)
     } else {
         return m_Timeout;
     }
-}
-
-
-template <class TRequest, class TReply>
-inline
-void CRPCClient<TRequest, TReply>::Ask(const TRequest& request, TReply& reply)
-{
-    CMutexGuard LOCK(m_Mutex);
-    
-    unsigned int tries = 0;
-    for (;;) {
-        try {
-            SetAffinity(GetAffinity(request));
-            Connect(); // No-op if already connected
-            *m_Out << request;
-            *m_In >> reply;
-            break;
-        } catch (CException& e) {
-            // Some exceptions tend to correspond to transient glitches;
-            // the remainder, however, may as well get propagated immediately.
-            if ( !dynamic_cast<CSerialException*>(&e)
-                 &&  !dynamic_cast<CIOException*>(&e) ) {
-                throw;
-            } else if (++tries == m_RetryLimit  ||  !x_ShouldRetry(tries)) {
-                throw;
-            } else if ( !(tries & 1) ) {
-                // reset on every other attempt in case we're out of sync
-                try {
-                    Reset();
-                } STD_CATCH_ALL_XX(Serial_RPCClient,1,"CRPCClient<>::Reset()");
-            }
-            SleepSec(m_RetryDelay.GetCompleteSeconds());
-            SleepMicroSec(m_RetryDelay.GetNanoSecondsAfterSecond() / 1000);
-        }
-    }
-}
-
-
-template <class TRequest, class TReply>
-inline
-void CRPCClient<TRequest, TReply>::x_Connect(void)
-{
-    _ASSERT( !m_Service.empty() );
-    SConnNetInfo* net_info = ConnNetInfo_Create(m_Service.c_str());
-    if (!m_Affinity.empty()) {
-        ConnNetInfo_PostOverrideArg(net_info, m_Affinity.c_str(), 0);
-    }
-    x_SetStream(new CConn_ServiceStream(m_Service, fSERV_Any, net_info, 0,
-                                        m_Timeout));
-    ConnNetInfo_Destroy(net_info);
-}
-
-
-template <class TRequest, class TReply>
-inline
-void CRPCClient<TRequest, TReply>::x_Disconnect(void)
-{
-    m_In.reset();
-    m_Out.reset();
-    m_Stream.reset();
-}
-
-
-template <class TRequest, class TReply>
-inline
-void CRPCClient<TRequest, TReply>::x_SetStream(CNcbiIostream* stream)
-{
-    m_In .reset();
-    m_Out.reset();
-    m_Stream.reset(stream);
-    m_In .reset(CObjectIStream::Open(m_Format, *stream));
-    m_Out.reset(CObjectOStream::Open(m_Format, *stream));
-}
-
-
-template <class TRequest, class TReply>
-inline
-void CRPCClient<TRequest, TReply>::x_ConnectURL(const string& url)
-{
-    x_SetStream(new CConn_HttpStream(url, fHTTP_AutoReconnect, m_Timeout));
-}
-
-
-template <class TRequest, class TReply>
-inline
-bool CRPCClient<TRequest, TReply>::x_ShouldRetry(unsigned int tries)
-{
-    _TRACE("CRPCClient<>::x_ShouldRetry: retrying after " << tries
-           << " failures");
-    return true;
 }
 
 
