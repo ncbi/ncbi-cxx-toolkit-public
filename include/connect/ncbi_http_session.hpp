@@ -128,6 +128,10 @@ public:
     /// The class should not be used explicitly - all conversions are automatic.
     class CHeaderNameConverter {
     public:
+        CHeaderNameConverter(const char* name)
+            : m_Name(name) {}
+        CHeaderNameConverter(const string& name)
+            : m_Name(name) {}
         CHeaderNameConverter(CTempString name)
             : m_Name(name) {}
         CHeaderNameConverter(CHttpHeaders::EHeaderName name)
