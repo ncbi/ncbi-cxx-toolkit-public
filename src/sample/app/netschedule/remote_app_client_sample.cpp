@@ -104,7 +104,7 @@ const string kData =
     "!====================================================================================================!";
 int CRemoteAppClientSampleApp::Run(void)
 {
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     if (args["showblob"]) {
         ShowBlob(args["showblob"].AsString());

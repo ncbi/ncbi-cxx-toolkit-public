@@ -93,7 +93,7 @@ void CGridClientTestApp::Init(void)
 
 int CGridClientTestApp::Run(void)
 {
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     unsigned jcount = 5;
     int vsize = 10000;

@@ -99,8 +99,8 @@ void CSampleNetScheduleClient::Init(void)
 
 int CSampleNetScheduleClient::Run(void)
 {
-    CArgs args = GetArgs();
-    const string&  service  = args["service"].AsString();
+    const CArgs&   args = GetArgs();
+    const string&  service = args["service"].AsString();
     const string&  queue_name = args["queue"].AsString();  
 
     unsigned jcount = 100;

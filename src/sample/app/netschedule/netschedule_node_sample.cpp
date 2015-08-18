@@ -90,7 +90,7 @@ void CSampleNetScheduleNode::Init(void)
 
 int CSampleNetScheduleNode::Run(void)
 {
-    CArgs args = GetArgs();
+    const CArgs&   args = GetArgs();
     const string&  service  = args["service"].AsString();
     const string&  queue_name = args["queue"].AsString();  
 
