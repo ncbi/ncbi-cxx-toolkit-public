@@ -30,6 +30,7 @@
 #include <ncbi_pch.hpp>
 #include "discrepancy_core.hpp"
 #include <objects/seqfeat/Imp_feat.hpp>
+#include <objects/seqfeat/SeqFeatXref.hpp>
 #include <objects/macro/String_constraint.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/feat_ci.hpp>
@@ -296,26 +297,38 @@ static bool StrandsMatch(const CSeq_loc& loc1, const CSeq_loc& loc2)    //
 }
 
 
-static string GetProductNameForProteinSequence(CBioseq_Handle bsh)
+static string GetProductName(const CProt_ref& prot)
 {
-    if (!bsh) {
-        return "";
+    string prot_nm(kEmptyStr);
+    if (prot.IsSetName() && prot.GetName().size() > 0) {
+        prot_nm = prot.GetName().front();
     }
-    CFeat_CI prot(bsh, CSeqFeatData::eSubtype_prot);
-    if (!prot || !prot->IsSetData() || !prot->GetData().IsProt() || !prot->GetData().GetProt().IsSetName() || prot->GetData().GetProt().GetName().size() < 1) {
-        return "";
-    }
-    return prot->GetData().GetProt().GetName().front();
+    return prot_nm;
 }
 
 
-static string GetProductForCDS(const CMappedFeat& f, CScope& scope)
+static string GetProductName(const CSeq_feat& cds, CScope& scope)
 {
-    if (!f.IsSetData() || !f.GetData().IsCdregion() || !f.IsSetProduct()) {
-        return "";
+    string prot_nm(kEmptyStr);
+    if (cds.IsSetProduct()) {
+        CBioseq_Handle prot_bsq = sequence::GetBioseqFromSeqLoc(cds.GetProduct(), scope);
+
+        if (prot_bsq) {
+            CFeat_CI prot_ci(prot_bsq, CSeqFeatData::e_Prot);
+            if (prot_ci) {
+                prot_nm = GetProductName(prot_ci->GetOriginalFeature().GetData().GetProt());
+            }
+        }
     }
-    CBioseq_Handle bsh = scope.GetBioseqHandle(f.GetProduct());
-    return GetProductNameForProteinSequence(bsh);
+    else if (cds.IsSetXref()) {
+        ITERATE(CSeq_feat::TXref, it, cds.GetXref()) {
+            if ((*it)->IsSetData() && (*it)->GetData().IsProt()) {
+                prot_nm = GetProductName((*it)->GetData().GetProt());
+            }
+        }
+    }
+    return prot_nm;
+
 }
 
 
@@ -352,7 +365,7 @@ static bool ProductNamesAreSimilar(const string& product1, const string& product
     // words, the product names are not similar.
 
     for (i = 0; i < kNumIgnoreSimilarProductWords; i++) {
-        if (string::npos != NStr::FindNoCase(product1, kSimilarProductWords[i]) || string::npos != NStr::FindNoCase(product2, kSimilarProductWords[i])) {
+        if (string::npos != NStr::FindNoCase(product1, kIgnoreSimilarProductWords[i]) || string::npos != NStr::FindNoCase(product2, kIgnoreSimilarProductWords[i])) {
             return false;
         }
     }
@@ -402,6 +415,58 @@ static bool SetOverlapNote(CSeq_feat& feat)
     feat.SetComment() += kOverlappingCDSNoteText;
     return true;
 }
+
+
+DISCREPANCY_CASE(OVERLAPPING_CDS, CSeqFeatData, eNormal, "Overlapping CDs")
+{
+    static const char* kOverlap0 = "[n] coding region[s] overlap[S] another coding region with a similar or identical name.";
+    static const char* kOverlap1 = "[n] coding region[s] overlap[S] another coding region with a similar or identical name, but [has] the appropriate note text.";
+    static const char* kOverlap2 = "[n] coding region[s] overlap[S] another coding region with a similar or identical name and [does] not have the appropriate note text.";
+
+    if (obj.Which() != CSeqFeatData::e_Cdregion) {
+        return;
+    }
+    if (!context.GetCurrentBioseq()->CanGetInst() || !context.GetCurrentBioseq()->GetInst().IsNa()) {
+        return;
+    }
+    string product = GetProductName(*context.GetCurrentSeq_feat(), context.GetScope());
+    if (product.empty() || ShouldIgnore(product)) {
+        return;
+    }
+    const CSeq_loc& location = context.GetCurrentSeq_feat()->GetLocation();
+
+    if (m_Count != context.GetCountBioseq()) {  // cleanup temporary data
+        m_Count = context.GetCountBioseq();
+        CReportNode tmp = m_Objs[kEmptyStr];    // keep the test results
+        m_Objs.clear();
+        m_Objs[kEmptyStr] = tmp;
+    }
+
+    CReportNode::TNodeMap& map = m_Objs.GetMap();
+    NON_CONST_ITERATE(CReportNode::TNodeMap, it, map) {
+        if (it->first.empty() || !ProductNamesAreSimilar(it->first, product)) {
+            continue;
+        }
+        TReportObjectList& list = it->second->GetObjects();
+        NON_CONST_ITERATE(TReportObjectList, robj, list) {
+            CConstRef<CSeq_feat> sf((CSeq_feat*)&*(*robj)->GetObject());
+            const CSeq_loc& loc = sf->GetLocation();
+            if (!LocationsOverlapOnSameStrand(location, loc, &context.GetScope())) {
+                continue;
+            }
+            m_Objs[kEmptyStr][kOverlap0][HasOverlapNote(*sf) ? kOverlap1 : kOverlap2].Add(*new CDiscrepancyObject(sf, context.GetScope(), context.GetFile(), context.GetKeepRef()));
+            m_Objs[kEmptyStr][kOverlap0][HasOverlapNote(*context.GetCurrentSeq_feat()) ? kOverlap1 : kOverlap2].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+        }
+    }
+    m_Objs[product].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), true), false);
+}
+
+
+DISCREPANCY_SUMMARIZE(OVERLAPPING_CDS)
+{
+    m_ReportItems = m_Objs[kEmptyStr].Export(GetName())->GetSubitems();
+}
+
 
 /*
 DISCREPANCY_CASE(OVERLAPPING_CDS, TReportObjectList m_ObjsNoNote)

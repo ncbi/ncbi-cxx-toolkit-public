@@ -155,6 +155,8 @@ CRef<CReportItem> CReportNode::Export(const string& test, bool unique)
     NStr::ReplaceInPlace(str, "[s]", objs.size() == 1 ? "" : "s");
     NStr::ReplaceInPlace(str, "[S]", objs.size() == 1 ? "s" : "");
     NStr::ReplaceInPlace(str, "[is]", objs.size() == 1 ? "is" : "are");
+    NStr::ReplaceInPlace(str, "[does]", objs.size() == 1 ? "does" : "do");
+    NStr::ReplaceInPlace(str, "[has]", objs.size() == 1 ? "has" : "have");
     CRef<CDiscrepancyItem> item(new CDiscrepancyItem(test, str));
     item->m_Subs = subs;
     item->m_Objs = objs;
