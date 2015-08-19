@@ -74,7 +74,7 @@
 #include <objtools/readers/fasta_exception.hpp>
 
 #include <objtools/data_loaders/genbank/gbloader.hpp>
-#include <sra/data_loaders/vdbgraph/vdbgraphloader.hpp>
+#include <sra/data_loaders/wgs/wgsloader.hpp>
 
 //#include <objtools/writers/fasta_writer.hpp>
 
@@ -301,7 +301,7 @@ void CTbl2AsnApp::Init(void)
       C Apply comments in .cmt files to all sequences\n\
       E Treat like eukaryota in the Discrepancy Report", CArgDescriptions::eString);
 
-    arg_desc->AddOptionalKey("N", "Integer", "Project Version Number", CArgDescriptions::eInteger); //done
+    arg_desc->AddOptionalKey("N", "String", "Project Version Number", CArgDescriptions::eString); //done
 
     arg_desc->AddOptionalKey("w", "InFile", "Single Structured Comment File (overrides the use of -X C)", CArgDescriptions::eInputFile); //done
     arg_desc->AddOptionalKey("M", "String", "Master Genome Flags\n\
@@ -590,27 +590,31 @@ int CTbl2AsnApp::Run(void)
     {
         try
         {
-            CTime time(args["H"].AsString(), "M/D/Y");
-            m_context.m_HoldUntilPublish.Reset(new CDate(time, CDate::ePrecision_day));
+            string sdate = args["H"].AsString();
+            if (sdate[0] == '\'' && sdate.length() > 0 && sdate[sdate.length() - 1] == '\'')
+            {
+                sdate.erase(0, 1);
+                sdate.erase(sdate.length() - 1, 1);
+            }
+
+            m_context.m_HoldUntilPublish = CTime(sdate, "M/D/Y");
         }
         catch (const CException &)
         {
             int years = NStr::StringToInt(args["H"].AsString());
-            CTime time;
-            time.SetCurrent();
-            time.SetYear(time.Year() + years);
-            m_context.m_HoldUntilPublish.Reset(new CDate(time, CDate::ePrecision_day));
+            m_context.m_HoldUntilPublish.SetCurrent();
+            m_context.m_HoldUntilPublish.SetYear(m_context.m_HoldUntilPublish.Year() + years);
         }
     }
 
     if (args["N"])
-        m_context.m_ProjectVersionNumber = args["N"].AsInteger();
+        m_context.m_ProjectVersionNumber = args["N"].AsString();
 
     if (args["C"])
     {
         m_context.m_genome_center_id = args["C"].AsString();
-        if (m_context.m_ProjectVersionNumber>0)
-            m_context.m_genome_center_id += NStr::NumericToString(m_context.m_ProjectVersionNumber);
+        if (!m_context.m_ProjectVersionNumber.empty())
+            m_context.m_genome_center_id += m_context.m_ProjectVersionNumber;
     }
 
     if (args["V"])
@@ -1053,7 +1057,7 @@ void CTbl2AsnApp::Setup(const CArgs& args)
         // The last argument "eDefault" informs the OM that the loader must
         // be included in scopes during the CScope::AddDefaults() call.
         CGBDataLoader::RegisterInObjectManager(*m_context.m_ObjMgr);
-        CVDBGraphDataLoader::RegisterInObjectManager(*m_context.m_ObjMgr);
+        CWGSDataLoader::RegisterInObjectManager(*m_context.m_ObjMgr, CObjectManager::eDefault, 88);
     }
     m_context.m_scope->AddDefaults();
 }
@@ -1108,6 +1112,7 @@ void CTbl2AsnApp::ProcessTBLFile(const string& pathname, CSeq_entry& result)
     CRef<ILineReader> reader(ILineReader::New(pathname));
 
     CFeatureTableReader feature_reader(m_logger);
+
     feature_reader.ReadFeatureTable(result, *reader);
 }
 

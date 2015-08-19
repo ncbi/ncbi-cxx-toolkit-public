@@ -11,7 +11,6 @@ class CSeq_entry;
 class CSeq_submit;
 class CBioseq;
 class CSeq_descr;
-class CDate;
 class ILineErrorListener;
 class CUser_object;
 class CBioSource;
@@ -47,7 +46,7 @@ public:
     string m_strain;
     string m_ft_url;
     string m_ft_url_mod;
-    CRef<objects::CDate> m_HoldUntilPublish;
+    CTime m_HoldUntilPublish;
     string F;
     string A;
     string m_genome_center_id;
@@ -70,7 +69,7 @@ public:
     string m;
     string m_cleanup;
     string m_single_structure_cmt;   
-    int    m_ProjectVersionNumber;
+    string m_ProjectVersionNumber;
     bool   m_flipped_struc_cmt;
     bool   m_RemoteTaxonomyLookup;
     bool   m_RemotePubLookup;

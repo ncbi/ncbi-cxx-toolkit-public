@@ -139,7 +139,6 @@ CTable2AsnContext::CTable2AsnContext():
     m_remove_unnec_xref(false),
     m_save_bioseq_set(false),
     m_discrepancy_file(0),
-    m_ProjectVersionNumber(0),
     m_flipped_struc_cmt(false),
     m_RemoteTaxonomyLookup(false),
     m_RemotePubLookup(false),
@@ -326,6 +325,14 @@ CRef<CSerialObject> CTable2AsnContext::CreateSubmitFromTemplate(CRef<CSeq_entry>
     {
         CRef<CSeq_submit> submit(new CSeq_submit);
         submit->Assign(*m_submit_template);
+        if (!m_HoldUntilPublish.IsEmpty())
+        {
+          submit->SetSub().SetHup(true);
+          CRef<CDate> reldate(new CDate(m_HoldUntilPublish, CDate::ePrecision_day));
+          submit->SetSub().SetReldate(*reldate);
+        }
+
+
         submit->SetData().SetEntrys().clear();
         submit->SetData().SetEntrys().push_back(object);
 

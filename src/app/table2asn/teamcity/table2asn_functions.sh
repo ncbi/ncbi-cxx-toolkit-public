@@ -33,5 +33,5 @@ function create_output_file()
 
 function make_test_name()
 {
-   echo "$1" | sed -r -e 's/^-i //' -e 's/[ &=\\.\\(\\),\:\/"]+/-/g' -e 's/--/-/g'
+   echo "$1" | sed -r -e 's/^-i //' -e 's/[ &=\\.\\(\\),\:\/"\x27]+/-/g' -e 's/--/-/g'
 }
