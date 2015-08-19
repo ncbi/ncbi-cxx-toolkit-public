@@ -1893,21 +1893,19 @@ void CAlignCollapser::GetCollapsedAlgnments(TAlignModelClusterSet& clsset) {
         right_exon_ends.insert(a);
     }
 
-    int total = 0;
+    TAlignModelList rnaseq_or_est;
     NON_CONST_ITERATE(Tdata, i, m_aligns) {
         const CAlignCommon& alc = i->first;
         const deque<char>& id_pool = m_target_id_pool[alc];
         deque<SAlignIndividual>& alideque = i->second;
+        sort(alideque.begin(),alideque.end(),LeftAndLongFirstOrder(id_pool));
 
         if(alc.isSR() && !m_collapssr) {   // don't collaps
             ITERATE(deque<SAlignIndividual>, k, alideque) {
                 CAlignModel align(alc.GetAlignment(*k, id_pool));
-                if(CheckAndInsert(align, clsset))
-                    ++total;
+                rnaseq_or_est.push_back(align);
             }
         } else {
-            sort(alideque.begin(),alideque.end(),LeftAndLongFirstOrder(id_pool));
-
             bool leftisfixed = (alc.isCap() && alc.isPlus()) || (alc.isPolyA() && alc.isMinus());
             bool rightisfixed = (alc.isPolyA() && alc.isPlus()) || (alc.isCap() && alc.isMinus());
             bool notspliced = alc.GetIntrons().empty();
@@ -1925,8 +1923,7 @@ void CAlignCollapser::GetCollapsedAlgnments(TAlignModelClusterSet& clsset) {
 
                     if(aj.m_range.GetFrom() >= min((leftisfixed ? ai.m_range.GetFrom():ai.m_range.GetTo())+1,ita->m_llimb)) {  // extendent align is completed  
                         CAlignModel align(alc.GetAlignment(ai, id_pool));
-                        if(CheckAndInsert(align, clsset))
-                            ++total;
+                        rnaseq_or_est.push_back(align);
                         extended_aligns.erase(ita);
                     } else if(!collapsed) {    // even if collapsed must check extended_aligns to the end to purge finished
                         if(rightisfixed && ai.m_range.GetTo() != aj.m_range.GetTo())
@@ -1955,10 +1952,52 @@ void CAlignCollapser::GetCollapsedAlgnments(TAlignModelClusterSet& clsset) {
 
             ITERATE(TEA_List, ita, extended_aligns) {
                 CAlignModel align(alc.GetAlignment(*ita->m_ali, id_pool));
-                if(CheckAndInsert(align, clsset))
-                    ++total;
+                rnaseq_or_est.push_back(align);
             }
         }
+    }
+
+    //stranded intervals (start->len)
+    TIntMap strandedplus_len; 
+    TIntMap strandedminus_len; 
+    ITERATE(TAlignModelList, ia, rnaseq_or_est) {
+        const CAlignModel& align = *ia;
+        if((align.Type()&CGeneModel::eSR) && !(align.Status()&CGeneModel::eUnknownOrientation) && align.Exons().size() == 1) {  // ORINTEED notspliced rnaseq
+            TIntMap* mp = (align.Strand() == ePlus) ? &strandedplus_len : &strandedminus_len;
+            if(mp->empty() || mp->rbegin()->first+mp->rbegin()->second < align.Limits().GetFrom()) {   // abutting intervals are united
+                (*mp)[align.Limits().GetFrom()] = align.Limits().GetLength();
+            } else {
+                mp->rbegin()->second = max(mp->rbegin()->second, align.Limits().GetTo()-mp->rbegin()->first+1);
+            }
+        }
+    }
+
+    int forced_orientation = 0;
+    NON_CONST_ITERATE(TAlignModelList, ia, rnaseq_or_est) {
+        CAlignModel& align = *ia;
+        if((align.Type()&CGeneModel::eSR) && (align.Status()&CGeneModel::eUnknownOrientation) && align.Exons().size() == 1) {  // NOTORINTEED notspliced rnaseq
+            bool included_in_plus = false;
+            TIntMap::iterator plus = strandedplus_len.lower_bound(align.Limits().GetTo());
+            if(plus != strandedplus_len.begin() && (--plus)->first <= align.Limits().GetFrom() && plus->first+plus->second > align.Limits().GetTo())
+                included_in_plus = true;
+            bool included_in_minus = false;
+            TIntMap::iterator minus = strandedminus_len.lower_bound(align.Limits().GetTo());
+            if(minus != strandedminus_len.begin() && (--minus)->first <= align.Limits().GetFrom() && minus->first+minus->second > align.Limits().GetTo())
+                included_in_minus = true;
+        
+            if(included_in_plus != included_in_minus) {
+                align.Status() -= CGeneModel::eUnknownOrientation;
+                align.SetStrand(included_in_plus ? ePlus : eMinus);
+                ++forced_orientation;
+            }
+        }
+    }
+    cerr << "Forced orintation: " << forced_orientation << endl;
+
+    int total = 0;
+    ITERATE(TAlignModelList, ia, rnaseq_or_est) {
+        if(CheckAndInsert(*ia, clsset))
+            ++total;
     }
 
     if(m_collapsest && m_fillgenomicgaps) {   // collaps ests used for gapfilling
