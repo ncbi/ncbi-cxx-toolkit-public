@@ -54,7 +54,6 @@ private:
     void SwapAddressesTest(int idx);
     void x_TestOldFormat(TStringList& messages);
     void x_TestNewFormat(TStringList& messages);
-    FLBOS_ResolveIPPortMethod* m_original_resolve;
 };
 
 
@@ -73,146 +72,171 @@ bool CTestLBOSApp::Thread_Init(int idx)
 
 void CTestLBOSApp::SwapAddressesTest(int idx)
 {
+    /* Save current function pointer. It will be changed inside
+     * test functions */
+    CMockFunction<FLBOS_ResolveIPPortMethod*> mock(
+                        g_LBOS_UnitTesting_GetLBOSFuncs()->ResolveIPPort,
+                        g_LBOS_UnitTesting_GetLBOSFuncs()->ResolveIPPort);
     /* Pseudo random order */
     int i = 0;
     TestApp_GlobalSyncPoint();
     ++i;
-    Initialization::SwapAddressesTest<1, 1, true>();
+    Initialization::SwapAddressesTest<1, 1, true>(mock);
     TestApp_GlobalSyncPoint();
     ++i;
-    Initialization::SwapAddressesTest<2, 2, true>();
+    Initialization::SwapAddressesTest<2, 2, true>(mock);
     TestApp_GlobalSyncPoint();
     ++i;
-    Initialization::SwapAddressesTest<3, 3, true>();
+    Initialization::SwapAddressesTest<3, 3, true>(mock);
     TestApp_GlobalSyncPoint();
     ++i;
-    Initialization::SwapAddressesTest<1, 4, true>();
+    Initialization::SwapAddressesTest<1, 4, true>(mock);
     TestApp_GlobalSyncPoint();
     ++i;
-    Initialization::SwapAddressesTest<7, 5, true>();
+    Initialization::SwapAddressesTest<7, 5, true>(mock);
     TestApp_GlobalSyncPoint();
     ++i;
-    Initialization::SwapAddressesTest<2, 6, true>();
+    Initialization::SwapAddressesTest<2, 6, true>(mock);
     TestApp_GlobalSyncPoint();
     ++i;
-    Initialization::SwapAddressesTest<4, 7, true>();
+    Initialization::SwapAddressesTest<4, 7, true>(mock);
     TestApp_GlobalSyncPoint();
     ++i;
-    Initialization::SwapAddressesTest<1, 8, true>();
+    Initialization::SwapAddressesTest<-1, 8, true>(mock);
     TestApp_GlobalSyncPoint();
     ++i;
-    Initialization::SwapAddressesTest<2, 9, true>();
+    Initialization::SwapAddressesTest<2, 9, true>(mock);
     TestApp_GlobalSyncPoint();
     ++i;
-    Initialization::SwapAddressesTest<3, 10, true>();
+    Initialization::SwapAddressesTest<3, 10, true>(mock);
     TestApp_GlobalSyncPoint();
     ++i;
-    Initialization::SwapAddressesTest<1, 11, true>();
+    Initialization::SwapAddressesTest<1, 11, true>(mock);
     TestApp_GlobalSyncPoint();
     ++i;
-    Initialization::SwapAddressesTest<7, 12, true>();
+    Initialization::SwapAddressesTest<-1, 12, true>(mock);
     TestApp_GlobalSyncPoint();
     ++i;
-    Initialization::SwapAddressesTest<2, 13, true>();
+    Initialization::SwapAddressesTest<2, 13, true>(mock);
     TestApp_GlobalSyncPoint();
     ++i;
-    Initialization::SwapAddressesTest<4, 14, true>();
+    Initialization::SwapAddressesTest<4, 14, true>(mock);
     TestApp_GlobalSyncPoint();
     ++i;
-    Initialization::SwapAddressesTest<2, 15, true>();
+    Initialization::SwapAddressesTest<2, 15, true>(mock);
     TestApp_GlobalSyncPoint();
     ++i;
-    Initialization::SwapAddressesTest<6, 16, true>();
+    Initialization::SwapAddressesTest<-1, 16, true>(mock);
     TestApp_GlobalSyncPoint();
     ++i;
-    Initialization::SwapAddressesTest<3, 17, true>();
+    Initialization::SwapAddressesTest<3, 17, true>(mock);
     TestApp_GlobalSyncPoint();
     ++i;
-    Initialization::SwapAddressesTest<5, 18, true>();
+    Initialization::SwapAddressesTest<-1, 18, true>(mock);
     TestApp_GlobalSyncPoint();
     ++i;
-    Initialization::SwapAddressesTest<2, 19, true>();
+    Initialization::SwapAddressesTest<2, 19, true>(mock);
     TestApp_GlobalSyncPoint();
     ++i;
-    Initialization::SwapAddressesTest<1, 20, true>();
+    Initialization::SwapAddressesTest<1, 20, true>(mock);
     TestApp_GlobalSyncPoint();
     ++i;
-    Initialization::SwapAddressesTest<6, 21, true>();
+    Initialization::SwapAddressesTest<6, 21, true>(mock);
     TestApp_GlobalSyncPoint();
     ++i;
-    Initialization::SwapAddressesTest<4, 22, true>();
+    Initialization::SwapAddressesTest<4, 22, true>(mock);
     TestApp_GlobalSyncPoint();
     ++i;
-    Initialization::SwapAddressesTest<2, 23, true>();
+    Initialization::SwapAddressesTest<2, 23, true>(mock);
     TestApp_GlobalSyncPoint();
     ++i;
-    Initialization::SwapAddressesTest<6, 24, true>();
+    Initialization::SwapAddressesTest<6, 24, true>(mock);
     TestApp_GlobalSyncPoint();
     ++i;
-    Initialization::SwapAddressesTest<3, 25, true>();
+    Initialization::SwapAddressesTest<3, 25, true>(mock);
     TestApp_GlobalSyncPoint();
     ++i;
-    Initialization::SwapAddressesTest<5, 26, true>();
+    Initialization::SwapAddressesTest<5, 26, true>(mock);
     TestApp_GlobalSyncPoint();
     ++i;
-    Initialization::SwapAddressesTest<2, 27, true>();
+    Initialization::SwapAddressesTest<2, 27, true>(mock);
     TestApp_GlobalSyncPoint();
-    Initialization::SwapAddressesTest<1, 28, true>();
-    TestApp_GlobalSyncPoint();
-    ++i;
-    Initialization::SwapAddressesTest<6, 92, true>();
+    Initialization::SwapAddressesTest<1, 28, true>(mock);
     TestApp_GlobalSyncPoint();
     ++i;
-    Initialization::SwapAddressesTest<4, 30, true>();
+    Initialization::SwapAddressesTest<6, 92, true>(mock);
     TestApp_GlobalSyncPoint();
-
-    /* Cleanup */
-    g_LBOS_UnitTesting_GetLBOSFuncs()->ResolveIPPort = m_original_resolve;
+    ++i;
+    Initialization::SwapAddressesTest<4, 30, true>(mock);
+    TestApp_GlobalSyncPoint();
 }
 
 bool CTestLBOSApp::Thread_Run(int idx)
-{
-#define LIST_OF_FUNCS                                                         \
-    SwapAddressesTest(idx);                                                   \
-    TestApp_GlobalSyncPoint();                                              \
-    g_LBOS_UnitTesting_GetLBOSFuncs()->ResolveIPPort = m_original_resolve;    \
-    X(01,Compose_LBOS_address::LBOSExists__ShouldReturnLbos)                  \
-    TestApp_IntraGroupSyncPoint();                                            \
-    X(04, Reset_iterator::NoConditions__IterContainsZeroCandidates)           \
-    TestApp_IntraGroupSyncPoint();                                            \
-    X(05, Reset_iterator::MultipleReset__ShouldNotCrash)                      \
-    TestApp_IntraGroupSyncPoint();                                            \
-    X(06, Reset_iterator::Multiple_AfterGetNextInfo__ShouldNotCrash)          \
-    TestApp_IntraGroupSyncPoint();                                            \
-    X(07, Close_iterator::AfterOpen__ShouldWork)                              \
-    TestApp_IntraGroupSyncPoint();                                            \
-    X(08, Close_iterator::AfterReset__ShouldWork)                             \
-    TestApp_IntraGroupSyncPoint();                                            \
-    X(9, Close_iterator::AfterGetNextInfo__ShouldWork)                        \
-    TestApp_IntraGroupSyncPoint();                                            \
-    X(10, Close_iterator::FullCycle__ShouldWork)                              \
-    TestApp_IntraGroupSyncPoint();                                            \
-    X(11, Resolve_via_LBOS::ServiceExists__ReturnHostIP)                      \
-    TestApp_IntraGroupSyncPoint();                                            \
-    X(12, Resolve_via_LBOS::ServiceDoesNotExist__ReturnNULL)                  \
-    TestApp_IntraGroupSyncPoint();                                            \
-    X(13, Resolve_via_LBOS::NoLBOS__ReturnNULL)                               \
-    TestApp_IntraGroupSyncPoint();                                            \
-    X(17,Get_LBOS_address::CustomHostNotProvided__SkipCustomHost)             \
-    TestApp_IntraGroupSyncPoint();                                            \
-    X(27, GetNextInfo::IterIsNull__ReconstructData)                           \
-    TestApp_IntraGroupSyncPoint();                                            \
-    X(28, GetNextInfo::WrongMapper__ReturnNull)                               \
-    TestApp_IntraGroupSyncPoint();                                            \
-    X(29, Stability::GetNext_Reset__ShouldNotCrash)                           \
-    TestApp_IntraGroupSyncPoint();                                            \
-    X(30,Stability::FullCycle__ShouldNotCrash)                                \
+{    
+    //SwapAddressesTest(idx);
+    Compose_LBOS_address::LBOSExists__ShouldReturnLbos();
+    TestApp_IntraGroupSyncPoint();
+    Reset_iterator::NoConditions__IterContainsZeroCandidates();
+    TestApp_IntraGroupSyncPoint();
+    Reset_iterator::MultipleReset__ShouldNotCrash();
+    TestApp_IntraGroupSyncPoint();
+    Reset_iterator::Multiple_AfterGetNextInfo__ShouldNotCrash();
+    TestApp_IntraGroupSyncPoint();
+    Close_iterator::AfterOpen__ShouldWork();
+    TestApp_IntraGroupSyncPoint();
+    Close_iterator::AfterReset__ShouldWork();
+    TestApp_IntraGroupSyncPoint();
+    Close_iterator::AfterGetNextInfo__ShouldWork();
+    TestApp_IntraGroupSyncPoint();
+    Close_iterator::FullCycle__ShouldWork();
+    TestApp_IntraGroupSyncPoint();
+    Resolve_via_LBOS::ServiceExists__ReturnHostIP();
+    TestApp_IntraGroupSyncPoint();
+    Resolve_via_LBOS::ServiceDoesNotExist__ReturnNULL();
+    TestApp_IntraGroupSyncPoint();
+    Resolve_via_LBOS::NoLBOS__ReturnNULL();
+    TestApp_IntraGroupSyncPoint();
+    Get_LBOS_address::CustomHostNotProvided__SkipCustomHost();
+    TestApp_IntraGroupSyncPoint();
+    GetNextInfo::IterIsNull__ReturnNull();
+    TestApp_IntraGroupSyncPoint();
+    GetNextInfo::WrongMapper__ReturnNull();
     TestApp_IntraGroupSyncPoint();
 
+    Announcement::AllOK__ReturnSuccess(idx);
+    TestApp_IntraGroupSyncPoint();
+    Announcement::AllOK__LBOSAnswerProvided(idx);
+    TestApp_IntraGroupSyncPoint();
+    Announcement::AllOK__AnnouncedServerSaved(idx);
+    TestApp_IntraGroupSyncPoint();
+    Announcement::AlreadyAnnouncedInTheSameZone__ReplaceInStorage(idx);
+    TestApp_IntraGroupSyncPoint();
+    Announcement::IncorrectURL__ReturnInvalidArgs(idx);
+    TestApp_IntraGroupSyncPoint();
+    Announcement::IncorrectPort__ReturnInvalidArgs(idx);
+    TestApp_IntraGroupSyncPoint();
+    Announcement::IncorrectVersion__ReturnInvalidArgs(idx);
+    TestApp_IntraGroupSyncPoint();
+    Announcement::IncorrectServiceName__ReturnInvalidArgs(idx);
+    TestApp_IntraGroupSyncPoint();
+    Announcement::RealLife__VisibleAfterAnnounce(idx);
+    TestApp_IntraGroupSyncPoint();
 
-    #define X(num,name) name();
-        LIST_OF_FUNCS
-    #undef X
+    Deannouncement::Deannounced__Return1(0, idx);
+    TestApp_IntraGroupSyncPoint();
+    Deannouncement::Deannounced__AnnouncedServerRemoved(idx);
+    TestApp_IntraGroupSyncPoint();
+    Deannouncement::LBOSExistsDeannounceError__Return0(idx);
+    TestApp_IntraGroupSyncPoint();
+    Deannouncement::RealLife__InvisibleAfterDeannounce(idx);
+    TestApp_IntraGroupSyncPoint();
+
+    TestApp_IntraGroupSyncPoint();
+    Stability::GetNext_Reset__ShouldNotCrash();
+    TestApp_IntraGroupSyncPoint();
+    Stability::FullCycle__ShouldNotCrash();
+    TestApp_IntraGroupSyncPoint();
+
     return true;
 }
 
@@ -220,7 +244,6 @@ bool CTestLBOSApp::TestApp_Init(void)
 {
     CNcbiRegistry& config = CNcbiApplication::Instance()->GetConfig();
     CONNECT_Init(dynamic_cast<ncbi::IRWRegistry*>(&config));
-    m_original_resolve = g_LBOS_UnitTesting_GetLBOSFuncs()->ResolveIPPort;
     return true;
 }
 
