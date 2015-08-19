@@ -346,7 +346,13 @@ TMgr-AnnotCounts ::= SEQUENCE {
     counts SET OF TMgr-TypeStat
 }
 
+TMgr-TrackSetType ::= INTEGER {
+    tms (0),
+    myncbi-collection (1)
+}
+
 TMgr-TrackSet ::= SEQUENCE {
+    type TMgr-TrackSetType,
     name UTF8String,
     description UTF8String OPTIONAL,
     tracks SEQUENCE OF TMgr-DisplayTrack
