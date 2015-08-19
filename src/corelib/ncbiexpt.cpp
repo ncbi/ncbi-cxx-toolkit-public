@@ -711,6 +711,7 @@ void CExceptionReporterStream::Report(const char* file, int line,
 }
 
 
+
 /////////////////////////////////////////////////////////////////////////////
 // Core exceptions
 /////////////////////////////////////////////////////////////////////////////
@@ -728,6 +729,7 @@ const char* CCoreException::GetErrCodeString(void) const
     }
 }
 
+
 const char* CInvalidParamException::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {
@@ -736,6 +738,8 @@ const char* CInvalidParamException::GetErrCodeString(void) const
     default:                    return CException::GetErrCodeString();
     }
 }
+
+
 
 #if (defined(NCBI_OS_MSWIN) && defined(_UNICODE)) || \
         (NCBI_COMPILER_MSVC && (_MSC_VER >= 1400) && __STDC_WANT_SECURE_LIB__)
@@ -746,6 +750,8 @@ static void s_TlsStrerrorMessageCleanup(char* msg, void* /* data */)
     delete [] msg;
 }
 #endif
+
+
 
 extern const char*  Ncbi_strerror(int errnum)
 {
@@ -768,6 +774,8 @@ extern const char*  Ncbi_strerror(int errnum)
 #endif
 }
 
+
+
 #if defined(NCBI_OS_MSWIN)
 
 // MT: Store pointer to the last error message in TLS
@@ -776,6 +784,7 @@ static void s_TlsErrorMessageCleanup(char* msg, void* /* data */)
 {
     LocalFree(msg);
 }
+
 
 const char* CLastErrorAdapt::GetErrCodeString(int errnum)
 {
@@ -787,9 +796,9 @@ const char* CLastErrorAdapt::GetErrCodeString(int errnum)
                   "%0", errnum,
                   MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                   (TXChar*)&xptr, 0, NULL);
-#if defined(NCBI_OS_MSWIN) && defined(_UNICODE)
+#if defined(_UNICODE)
     CStringUTF8 tmp( CUtf8::AsUTF8(xptr));
-    char* ptr = (char*)LocalAlloc( LPTR, tmp.size() + 1);
+    char* ptr = (char*) LocalAlloc(LPTR, tmp.size() + 1);
     strcpy(ptr, tmp.c_str());
     LocalFree(xptr);
 #else
@@ -808,6 +817,7 @@ const char* CLastErrorAdapt::GetErrCodeString(int errnum)
 }
 
 #endif
+
 
 
 // Function declared in ncbimics.hpp
