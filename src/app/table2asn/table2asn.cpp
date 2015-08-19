@@ -1097,7 +1097,7 @@ void CTbl2AsnApp::ProcessSecretFiles(CSeq_entry& result)
     ProcessRNAFile(name + ".rna", result);
     ProcessPRTFile(name + ".prt", result);
 
-    ProcessAnnotFile(name + ".gff3", result);
+    ProcessAnnotFile(name + ".gff", result);
     ProcessAnnotFile(name + ".gff3", result);
     ProcessAnnotFile(name + ".gff2", result);
     ProcessAnnotFile(name + ".bed", result);
