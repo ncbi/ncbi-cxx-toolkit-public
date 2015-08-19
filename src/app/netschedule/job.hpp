@@ -423,7 +423,8 @@ public:
 
     TJobStatus GetStatusBeforeReading(void) const;
     void Dump(FILE *  jobs_file) const;
-    bool LoadFromDump(FILE *  jobs_file);
+    bool LoadFromDump(FILE *  jobs_file,
+                      char *  input_buf, char * output_buf);
 
 private:
     EJobFetchResult x_Fetch(CQueue* queue);

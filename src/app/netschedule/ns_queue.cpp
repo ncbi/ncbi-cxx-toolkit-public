@@ -4434,8 +4434,10 @@ unsigned int  CQueue::LoadFromDump(const string &  dump_dname)
             throw runtime_error("Cannot open file " + jobs_file_name +
                                 " to load dumped jobs");
 
-        CJob    job;
-        while (job.LoadFromDump(jobs_file)) {
+        CJob                job;
+        AutoArray<char>     input_buf(new char[kNetScheduleMaxOverflowSize]);
+        AutoArray<char>     output_buf(new char[kNetScheduleMaxOverflowSize]);
+        while (job.LoadFromDump(jobs_file, input_buf.get(), output_buf.get())) {
             unsigned int    job_id = job.GetId();
             unsigned int    group_id = job.GetGroupId();
             unsigned int    aff_id = job.GetAffinityId();

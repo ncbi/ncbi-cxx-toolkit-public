@@ -840,7 +840,9 @@ void CJob::Dump(FILE *  jobs_file) const
 // true => job loaded
 // false => EOF
 // exception => reading problem
-bool CJob::LoadFromDump(FILE *  jobs_file)
+bool CJob::LoadFromDump(FILE *  jobs_file,
+                        char *  input_buf,
+                        char *  output_buf)
 {
     SJobDump        job_dump;
     char            progress_msg_buf[kNetScheduleMaxDBDataSize];
@@ -914,8 +916,6 @@ bool CJob::LoadFromDump(FILE *  jobs_file)
 
     // Read the job input/output
     SJobIODump  io_dump;
-    char        input_buf[kNetScheduleMaxOverflowSize];
-    char        output_buf[kNetScheduleMaxOverflowSize];
 
     if (io_dump.Read(jobs_file, input_buf, output_buf) != 0)
         throw runtime_error("Unexpected end of the dump file. "
