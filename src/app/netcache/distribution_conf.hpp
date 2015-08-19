@@ -57,7 +57,7 @@ public:
     static bool GetSlotByKey(const string& key, Uint2& slot, Uint2& time_bucket);
     static bool GetSlotByNetCacheKey(const string& key,
             Uint2& slot, Uint2& time_bucket);
-    static void GetSlotByICacheKey(const string& key,
+    static void GetSlotByICacheKey(const CNCBlobKeyLight& key,
             Uint2& slot, Uint2& time_bucket);
     static void GetSlotByRnd(Uint4 key_rnd, Uint2& slot, Uint2& time_bucket);
 

@@ -766,6 +766,25 @@ CNCActiveHandler::ProxyProlong(CRequestContext* cmd_ctx,
     x_SetStateAndStartProcessing(&CNCActiveHandler::x_SendCmdToExecute);
 }
 
+void CNCActiveHandler::ProxyBList(
+    CRequestContext* cmd_ctx, const CNCBlobKey& nc_key, bool force_local)
+{
+    SetDiagCtx(cmd_ctx);
+    m_CurCmd = eReadData;
+
+    m_CmdToSend.resize(0);
+    m_CmdToSend += "PROXY_BLIST \"";
+    m_CmdToSend += nc_key.Cache();
+    m_CmdToSend += "\" \"";
+    m_CmdToSend += nc_key.RawKey();
+    m_CmdToSend += "\" \"";
+    m_CmdToSend += nc_key.SubKey();
+    m_CmdToSend += "\" ";
+    m_CmdToSend += NStr::UIntToString(Uint1(force_local));
+
+    x_SetStateAndStartProcessing(&CNCActiveHandler::x_SendCmdToExecute);
+}
+
 void
 CNCActiveHandler::CopyProlong(const CNCBlobKeyLight& key,
                               Uint2 slot,

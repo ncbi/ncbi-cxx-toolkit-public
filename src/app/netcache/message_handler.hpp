@@ -106,6 +106,8 @@ enum ENCCmdFlags {
     fComesFromClient    = 1 << 22,
     /// HTTP-related.
     fIsHttp             = 1 << 23,
+    /// Command needs access to the blob list.
+    fNeedsBlobList     = 1 <<  24,
 
 
     eProxyBlobRead      = fNeedsBlobAccess | fUsesPeerSearch,

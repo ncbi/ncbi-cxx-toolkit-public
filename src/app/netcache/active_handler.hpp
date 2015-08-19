@@ -213,6 +213,9 @@ public:
                       Uint1 quorum,
                       bool search,
                       bool force_local);
+    void ProxyBList(CRequestContext* cmd_ctx,
+                    const CNCBlobKey& key,
+                    bool force_local);
 
     CSrvSocketTask* GetSocket(void);
     CTempString GetCmdResponse(void);

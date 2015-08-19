@@ -129,6 +129,7 @@ static Uint8    s_NetworkErrorTimeout = 0;
 static Uint8    s_MaxBlobSizeSync = 0;
 static bool     s_WarnBlobSizeSync = true;
 static bool     s_BlobUpdateHotline = true;
+static bool     s_SlotByRawkey = false;
 
 static const char*  kNCReg_NCPoolSection       = "mirror";
 static string       kNCReg_NCServerPrefix      = "server_";
@@ -221,6 +222,7 @@ CNCDistributionConf::Initialize(Uint2 control_port)
             s_WarnBlobSizeSync = false;
         }
         s_BlobUpdateHotline =  reg.GetBool( kNCReg_NCPoolSection, "blob_update_hotline", true);
+        s_SlotByRawkey=  reg.GetBool( kNCReg_NCPoolSection, "slot_calculation_by_rawkey", true);
 
         if (s_WarnBlobSizeSync && s_SmallBlobBoundary > s_MaxBlobSizeSync) {
             SRV_LOG(Critical, log_pfx << "small_blob_max_size ("
@@ -546,8 +548,9 @@ void CNCDistributionConf::WriteSetup(CSrvSocketTask& task)
     task.WriteText(eol).WriteText("max_blob_size_sync").WriteText(str).WriteText(iss)
                                                    .WriteText(NStr::UInt8ToString_DataSize( s_MaxBlobSizeSync)).WriteText(eos);
     task.WriteText(eol).WriteText("max_blob_size_sync").WriteText(is ).WriteNumber( s_MaxBlobSizeSync);
-    task.WriteText(eol).WriteText("warn_blob_size_sync").WriteText(is ).WriteText( NStr::BoolToString(s_WarnBlobSizeSync));
-    task.WriteText(eol).WriteText("blob_update_hotline").WriteText(is ).WriteText( NStr::BoolToString(s_BlobUpdateHotline));
+    task.WriteText(eol).WriteText("warn_blob_size_sync").WriteText(is ).WriteBool(s_WarnBlobSizeSync);
+    task.WriteText(eol).WriteText("blob_update_hotline").WriteText(is ).WriteBool(s_BlobUpdateHotline);
+    task.WriteText(eol).WriteText("slot_calculation_by_rawkey").WriteText(is ).WriteBool(s_SlotByRawkey);
 }
 
 void CNCDistributionConf::WriteEnvInfo(CSrvSocketTask& task)
@@ -699,7 +702,7 @@ CNCDistributionConf::GetSlotByKey(const string& key, Uint2& slot, Uint2& time_bu
         return GetSlotByNetCacheKey(key, slot, time_bucket);
     else {
         // ICache key provided by client
-        GetSlotByICacheKey(key, slot, time_bucket);
+        GetSlotByICacheKey(CNCBlobKeyLight(key), slot, time_bucket);
         return true;
     }
 }
@@ -751,12 +754,16 @@ on_error:
 }
 
 void
-CNCDistributionConf::GetSlotByICacheKey(const string& key,
+CNCDistributionConf::GetSlotByICacheKey(const CNCBlobKeyLight& key,
         Uint2& slot, Uint2& time_bucket)
 {
     CChecksum crc32(CChecksum::eCRC32);
 
-    crc32.AddChars(key.data(), key.size());
+    if (s_SlotByRawkey) {
+        crc32.AddChars(key.RawKey().data(), key.RawKey().size());
+    } else {
+        crc32.AddChars(key.PackedKey().data(), key.PackedKey().size());
+    }
 
     GetSlotByRnd(crc32.GetChecksum(), slot, time_bucket);
 }

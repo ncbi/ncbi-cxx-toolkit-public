@@ -1380,7 +1380,8 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
     { "BLIST",
         {&CNCMessageHandler::x_DoCmd_GetBList,
             "BLIST",
-            fNoCmdFlags, eNCNone, eProxyGetBList},
+            fComesFromClient | fNeedsStorageCache | fNeedsBlobList,
+            eNCNone, eProxyGetBList},
           // Name of cache for blob.
         { { "cache",   eNSPT_Id,   eNSPA_ICPrefix },
           // Blob's key.
@@ -1388,6 +1389,19 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Blob's subkey.
           { "subkey",  eNSPT_Str,  eNSPA_Optional },
           { "local",   eNSPT_Int,  eNSPA_Optional }
+        } },
+    { "PROXY_BLIST",
+        {&CNCMessageHandler::x_DoCmd_GetBList,
+            "PROXY_BLIST",
+            fNeedsStorageCache | fNeedsBlobList,
+            eNCNone, eProxyNone},
+          // Name of cache for blob.
+        { { "cache",   eNSPT_Str,  eNSPA_Required },
+          // Blob's key.
+          { "key",     eNSPT_Str,  eNSPA_Required },
+          // Blob's subkey.
+          { "subkey",  eNSPT_Str,  eNSPA_Required },
+          { "local",   eNSPT_Int,  eNSPA_Required }
         } },
 
 // HTTP commands
@@ -2129,7 +2143,7 @@ CNCMessageHandler::x_StartCommand(void)
         return &CNCMessageHandler::x_FinishCommand;
     }
         
-    if (!x_IsFlagSet(fNeedsBlobAccess)) {
+    if (!x_IsFlagSet(fNeedsBlobAccess) && !x_IsFlagSet(fNeedsBlobList)) {
         diag_msg.Flush();
         // if we do not need blob access
         return m_CmdProcessor;
@@ -2167,7 +2181,7 @@ CNCMessageHandler::x_StartCommand(void)
         return &CNCMessageHandler::x_FinishCommand;
     }
     else if (m_NCBlobKey.IsICacheKey()) {
-        CNCDistributionConf::GetSlotByICacheKey(m_NCBlobKey.PackedKey(), m_BlobSlot, m_TimeBucket);
+        CNCDistributionConf::GetSlotByICacheKey(m_NCBlobKey, m_BlobSlot, m_TimeBucket);
     } else {
         CNCDistributionConf::GetSlotByRnd(m_NCBlobKey.GetRandomPart(), m_BlobSlot, m_TimeBucket);
     }
@@ -2184,6 +2198,12 @@ CNCMessageHandler::x_StartCommand(void)
         diag_msg.Flush();
         x_GetCurSlotServers();
         return &CNCMessageHandler::x_ProxyToNextPeer;
+    }
+        
+    if (!x_IsFlagSet(fNeedsBlobAccess)) {
+        diag_msg.Flush();
+        // if we do not need blob access
+        return m_CmdProcessor;
     }
 
     diag_msg.Flush();
@@ -3132,8 +3152,13 @@ CNCMessageHandler::x_SendCmdAsProxy(void)
     ENCClientHubStatus status = m_ActiveHub->GetStatus();
     if (status == eNCHubWaitForConn)
         return NULL;
-    if (status == eNCHubError || status == eNCHubSuccess ||
-        !m_ActiveHub->GetHandler()->GetPeer()->AcceptsBlobKey(m_NCBlobKey)) {
+    ENCProxyCmd proxy_cmd = m_ParsedCmd.command->extra.proxy_cmd;
+    CNCActiveHandler* pHandler = m_ActiveHub->GetHandler();
+    if (status == eNCHubError ||
+        status == eNCHubSuccess ||
+        (proxy_cmd == eProxyGetBList && !pHandler->GetPeer()->AcceptsBList()) ||
+        !pHandler->GetPeer()->AcceptsBlobKey(m_NCBlobKey)
+       ) {
         m_LastPeerError = m_ActiveHub->GetErrMsg();
         m_ActiveHub->Release();
         m_ActiveHub = NULL;
@@ -3146,48 +3171,51 @@ CNCMessageHandler::x_SendCmdAsProxy(void)
         return &CNCMessageHandler::x_CloseCmdAndConn;
 
 
-    switch (m_ParsedCmd.command->extra.proxy_cmd) {
+    switch (proxy_cmd) {
     case eProxyRead:
-        m_ActiveHub->GetHandler()->ProxyRead(GetDiagCtx(), m_NCBlobKey, m_RawBlobPass,
+        pHandler->ProxyRead(GetDiagCtx(), m_NCBlobKey, m_RawBlobPass,
                                              m_BlobVersion, m_StartPos, m_Size,
                                              m_Quorum, m_SearchOnRead, m_ForceLocal,
                                              m_AgeMax);
         break;
     case eProxyWrite:
-        m_ActiveHub->GetHandler()->ProxyWrite(GetDiagCtx(), m_NCBlobKey, m_RawBlobPass,
+        pHandler->ProxyWrite(GetDiagCtx(), m_NCBlobKey, m_RawBlobPass,
                                               m_BlobVersion, m_BlobTTL, m_Quorum);
         // The only place that needs to go further to a different state.
         return &CNCMessageHandler::x_WriteInitWriteResponse;
     case eProxyHasBlob:
-        m_ActiveHub->GetHandler()->ProxyHasBlob(GetDiagCtx(), m_NCBlobKey, m_RawBlobPass,
+        pHandler->ProxyHasBlob(GetDiagCtx(), m_NCBlobKey, m_RawBlobPass,
                                                 m_Quorum);
         break;
     case eProxyGetSize:
-        m_ActiveHub->GetHandler()->ProxyGetSize(GetDiagCtx(), m_NCBlobKey, m_RawBlobPass,
+        pHandler->ProxyGetSize(GetDiagCtx(), m_NCBlobKey, m_RawBlobPass,
                                                 m_BlobVersion, m_Quorum,
                                                 m_SearchOnRead, m_ForceLocal);
         break;
     case eProxyReadLast:
-        m_ActiveHub->GetHandler()->ProxyReadLast(GetDiagCtx(), m_NCBlobKey, m_RawBlobPass,
+        pHandler->ProxyReadLast(GetDiagCtx(), m_NCBlobKey, m_RawBlobPass,
                                                  m_StartPos, m_Size, m_Quorum,
                                                  m_SearchOnRead, m_ForceLocal, m_AgeMax);
         break;
     case eProxySetValid:
-        m_ActiveHub->GetHandler()->ProxySetValid(GetDiagCtx(), m_NCBlobKey, m_RawBlobPass,
+        pHandler->ProxySetValid(GetDiagCtx(), m_NCBlobKey, m_RawBlobPass,
                                                  m_BlobVersion);
         break;
     case eProxyRemove:
-        m_ActiveHub->GetHandler()->ProxyRemove(GetDiagCtx(), m_NCBlobKey, m_RawBlobPass,
+        pHandler->ProxyRemove(GetDiagCtx(), m_NCBlobKey, m_RawBlobPass,
                                                m_BlobVersion, m_Quorum);
         break;
     case eProxyGetMeta:
-        m_ActiveHub->GetHandler()->ProxyGetMeta(GetDiagCtx(), m_NCBlobKey,
+        pHandler->ProxyGetMeta(GetDiagCtx(), m_NCBlobKey,
                                                 m_Quorum, m_ForceLocal, m_HttpMode);
         break;
     case eProxyProlong:
-        m_ActiveHub->GetHandler()->ProxyProlong(GetDiagCtx(), m_NCBlobKey, m_RawBlobPass,
+        pHandler->ProxyProlong(GetDiagCtx(), m_NCBlobKey, m_RawBlobPass,
                                                 m_BlobTTL, m_Quorum,
                                                 m_SearchOnRead, m_ForceLocal);
+        break;
+    case eProxyGetBList:
+        pHandler->ProxyBList(GetDiagCtx(), m_NCBlobKey, m_ForceLocal);
         break;
     default:
         SRV_FATAL("Unsupported command: " << m_ParsedCmd.command->extra.proxy_cmd);
@@ -4582,6 +4610,7 @@ CNCMessageHandler::x_DoCmd_GetBList(void)
     m_SendBuff.reset(new TNCBufferType());
     CNCBlobStorage::GetBList(m_NCBlobKey.PackedKey(), m_SendBuff);
     x_ReportOK("OK: SIZE=").WriteNumber(m_SendBuff->size()).WriteText("\n");
+    Flush();
     m_SendPos = 0;
     return &CNCMessageHandler::x_WriteSendBuff;
 }
