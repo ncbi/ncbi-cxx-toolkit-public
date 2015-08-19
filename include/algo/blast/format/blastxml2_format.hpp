@@ -135,6 +135,9 @@ NCBI_XBLASTFORMAT_EXPORT
 void BlastXML2_FormatReport(const IBlastXML2ReportData* data, string file_name);
 
 NCBI_XBLASTFORMAT_EXPORT
+void BlastXML2_PrintHeader(CNcbiOstream *out_stream);
+
+NCBI_XBLASTFORMAT_EXPORT
 void BlastXML2_FormatError( int exit_code,
 						   string err_msg,
                           CNcbiOstream *out_stream);

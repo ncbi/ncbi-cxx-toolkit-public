@@ -53,6 +53,7 @@
 #include <serial/objostrjson.hpp>
 
 #include <algo/blast/api/version.hpp>
+#include <sstream>
 
 #include <algorithm>
 
@@ -700,6 +701,29 @@ static void s_FillBlastOutput(blastxml2::CBlastOutput2 & bxmlout, const IBlastXM
 	}
 
 }
+class CBlastOStreamXml : public CObjectOStreamXml
+{
+public:
+
+    CBlastOStreamXml (CNcbiOstream& stream, EOwnership deleteOut)
+        : CObjectOStreamXml(stream , deleteOut) {}
+    virtual ~CBlastOStreamXml (void) {};
+    // WriteFileHeader() is a dummy to keep xml prolog, doctype
+    // from being printed with each object
+    virtual void WriteFileHeader(TTypeInfo type) {;};
+};
+
+static void
+s_WriteXML2ObjectNoHeader(blastxml2::CBlastOutput2 & bxmlout, CNcbiOstream *out_stream)
+{
+    TTypeInfo typeInfo = bxmlout.GetThisTypeInfo();
+    auto_ptr<CBlastOStreamXml> xml_out(new CBlastOStreamXml (*out_stream, eNoOwnership));
+    xml_out->SetEncoding(eEncoding_Ascii);
+    xml_out->SetVerifyData( eSerialVerifyData_No );
+    xml_out->SetEnforcedStdXml();
+    xml_out->Write(&bxmlout, typeInfo );
+}
+
 
 static void
 s_WriteXML2Object(blastxml2::CBlastOutput2 & bxmlout, CNcbiOstream *out_stream)
@@ -723,12 +747,12 @@ s_WriteXML2Object(blastxml2::CBlastOutput2 & bxmlout, CNcbiOstream *out_stream)
 ///             retrieved [in]
 /// @param out_stream Output  stream for incremental output, ignore if NULL [out]
 void
-BlastXML2_FormatReport(const IBlastXML2ReportData* data, CNcbiOstream *out_stream )
+BlastXML2_FormatReport(const IBlastXML2ReportData* data, CNcbiOstream *out_stream)
 {
 	blastxml2::CBlastOutput2 bxmlout;
 	try {
 		s_FillBlastOutput(bxmlout, data);
-		s_WriteXML2Object(bxmlout, out_stream);
+		s_WriteXML2ObjectNoHeader(bxmlout, out_stream);
 	}
 	catch(CException &e){
 	    ERR_POST(Error << e.GetMsg() << e.what() );
@@ -763,6 +787,29 @@ BlastXML2_FormatReport(const IBlastXML2ReportData* data, string file_name)
 	}
 }
 
+void
+BlastXML2_PrintHeader(CNcbiOstream *out_stream)
+{
+	CNcbiOstrstream ostr;
+	auto_ptr<CObjectOStreamXml> xml_out(new CObjectOStreamXml (ostr, eNoOwnership));
+	xml_out->SetEncoding(eEncoding_Ascii);
+	xml_out->SetVerifyData( eSerialVerifyData_No );
+	xml_out->SetReferenceSchema();
+    xml_out->SetUseSchemaLocation(true);
+    xml_out->SetEnforcedStdXml();
+    xml_out->SetDTDFilePrefix("http://www.ncbi.nlm.nih.gov/data_specs/schema_alt/");
+    xml_out->SetDefaultSchemaNamespace("http://www.ncbi.nlm.nih.gov");
+
+    blastxml2::CBlastXML2 xml2;
+	TTypeInfo typeInfo = xml2.GetThisTypeInfo();
+    xml_out->Write(&xml2, typeInfo);
+
+    string out_str = string(CNcbiOstrstreamToString(ostr));
+    string::size_type end_pos = out_str.find("</BlastXML2>");
+    out_str.erase(end_pos);
+
+    *out_stream << out_str;
+}
 
 void
 BlastXML2_FormatError(int exit_code, string err_msg,

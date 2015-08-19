@@ -300,8 +300,12 @@ void
 CBlastFormat::PrintProlog()
 {
     // no header for some output types
-    if (m_FormatType >= CFormattingArgs::eXml)
+    if (m_FormatType >= CFormattingArgs::eXml) {
+    	if(m_FormatType == CFormattingArgs::eXml2 && m_BaseFile == kEmptyStr) {
+    		BlastXML2_PrintHeader(&m_Outfile);
+    	}
         return;
+    }
 
     if (m_IsHTML) {
         m_Outfile << kHTML_Prefix << "\n";
@@ -1736,10 +1740,12 @@ void CBlastFormat::x_PrintXML2Report(const blast::CSearchResults& results,
 
 void CBlastFormat::x_GenerateXML2MasterFile(void)
 {
-	if(m_BaseFile == kEmptyStr)
+	if(m_BaseFile == kEmptyStr) {
+		m_Outfile << "</BlastXML2>\n";
 		return;
+	}
 
-	m_Outfile << "<?xml version=\"1.0\"?>\n<BlastXML\n"
+	m_Outfile << "<?xml version=\"1.0\"?>\n<BlastXML2\n"
 			"xmlns=\"http://www.ncbi.nlm.nih.gov\"\n"
 			"xmlns:xi=\"http://www.w3.org/2003/XInclude\">\n";
 
@@ -1748,7 +1754,7 @@ void CBlastFormat::x_GenerateXML2MasterFile(void)
 		string file_name = base + "_" + NStr::IntToString(i) + ".xml";
 		m_Outfile << "\t<xi:include href=\"" + file_name + "\"/>\n";
 	}
-	m_Outfile << "</BlastXML>\n";
+	m_Outfile << "</BlastXML2>\n";
 }
 
 void CBlastFormat::x_GenerateJSONMasterFile(void)
