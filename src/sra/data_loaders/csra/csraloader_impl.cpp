@@ -1286,11 +1286,10 @@ void CCSRARefSeqInfo::x_LoadRangesStat(void)
         TSeqPos a_empty = 0, g_empty = 0;
         for ( TSeqPos p = 0; p < ref_length; p += segment_len ) {
             TSeqPos end = min(ref_length, p + segment_len);
-            size_t c = iter.GetAlignCountAtPos(p);
+            unsigned c = unsigned(iter.GetAlignCountAtPos(p));
             total += c;
 
-            // annot chunk
-
+            // align chunk
             // If this page itself is too big
             // or previous empty range is too big
             // add previous range as a separate chunk
