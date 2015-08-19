@@ -17,5 +17,6 @@ REQUIRES = Boost.Test.Included
 # "make check".
 CHECK_CMD =
 CHECK_COPY = test_ncbi_lbos.ini
+CHECK_TIMEOUT = 600
 
 WATCHERS = elisovdn

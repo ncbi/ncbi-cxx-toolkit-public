@@ -15,6 +15,7 @@ LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 # "make check".
 CHECK_CMD =
 CHECK_COPY = test_ncbi_lbos_mt.ini
+CHECK_TIMEOUT = 600
 
 WATCHERS = elisovdn
 
