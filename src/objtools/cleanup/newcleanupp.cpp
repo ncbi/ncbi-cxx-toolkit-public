@@ -4807,6 +4807,7 @@ CNewCleanup_imp::EAction CNewCleanup_imp::x_HandleStandardNameRnaGBQual(CSeq_fea
     {
         case CRNA_ref::eType_rRNA:
         case CRNA_ref::eType_premsg:
+            /*
             if (NStr::IsBlank(previous_product)) {
                 string remainder;
                 rna.SetRnaProductName(standard_name, remainder);
@@ -4817,12 +4818,16 @@ CNewCleanup_imp::EAction CNewCleanup_imp::x_HandleStandardNameRnaGBQual(CSeq_fea
                 x_AddToComment(feat, standard_name);
             }
             rval = eAction_Erase;
+            */
             break;
         case CRNA_ref::eType_ncRNA:
+            /*
             x_AddToComment(feat, standard_name);
             rval = eAction_Erase;
+            */
             break;
         case CRNA_ref::eType_mRNA:
+            /*
             if (NStr::IsBlank(standard_name)) {
                 if (!m_SeqEntryInfoStack.top().m_IsEmblOrDdbj) {
                     rval = eAction_Erase;
@@ -4833,9 +4838,12 @@ CNewCleanup_imp::EAction CNewCleanup_imp::x_HandleStandardNameRnaGBQual(CSeq_fea
                     rval = eAction_Erase;
                 }
             }
+            */
             break;
         case CRNA_ref::eType_tRNA:            
+            /*
             rval = x_HandleTrnaProductGBQual(feat, rna, standard_name);
+            */
             break;
         default:
             break;
