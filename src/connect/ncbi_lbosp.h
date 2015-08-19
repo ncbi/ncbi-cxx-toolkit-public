@@ -462,12 +462,14 @@ char*** g_LBOS_UnitTesting_InstancesList(void);
 /** List of announced servers that is stored statically
  * @return 
  *  address of static variable s_LBOS_AnnouncedServers                       */
+NCBI_XCONNECT_EXPORT
 struct SLBOS_AnnounceHandle_Tag** g_LBOS_UnitTesting_GetAnnouncedServers(void);
 
 
 /** Number of announced servers stored
  * @return 
  *  pointer to s_LBOS_AnnouncedServersNum                                    */
+NCBI_XCONNECT_EXPORT
 int g_LBOS_UnitTesting_GetAnnouncedServersNum(void);
 
 
@@ -475,6 +477,7 @@ int g_LBOS_UnitTesting_GetAnnouncedServersNum(void);
  *  @return
  *   address of static variable s_LBOS_CurrentDomain.
  *  @see                                                                     */
+NCBI_XCONNECT_EXPORT
 char** g_LBOS_UnitTesting_CurrentDomain(void);
 
 
@@ -482,6 +485,7 @@ char** g_LBOS_UnitTesting_CurrentDomain(void);
  *  @return
  *   address of static variable s_LBOS_CurrentRole.
  *  @see                                                                     */
+NCBI_XCONNECT_EXPORT
 char** g_LBOS_UnitTesting_CurrentRole(void);
 
 
