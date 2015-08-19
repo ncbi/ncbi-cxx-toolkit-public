@@ -65,7 +65,7 @@ private:
        objects::CSeq_descr& container,
        const string& name, const string& value);
 
-   void AddSourceQualifier(objects::CBioseq& container,
+   bool ParseAndAddTracks(objects::CBioseq& container,
        const string& name, const string& value);
 
    void ApplyAllQualifiers(const vector<string>& cols, const vector<string>& values, objects::CBioseq& bioseq);

@@ -1,0 +1,578 @@
+Seq-submit ::= {
+  sub {
+    contact {
+      contact {
+        name name {
+          last "LEE",
+          first "YUNG MI",
+          middle "",
+          initials "",
+          suffix "",
+          title ""
+        },
+        affil std {
+          affil "KORIA POLAR RESEARCH INSTITUTE",
+          div "DIVISION OF POLAR LIFE SCIENCES",
+          city "Incheon",
+          country "Korea, Republic of",
+          street "26 Songdomirae-ro, Yeonsu-gu",
+          email "ymlee@kopri.re.kr",
+          postal-code "406-840"
+        }
+      }
+    },
+    cit {
+      authors {
+        names std {
+          {
+            name name {
+              last "LEE",
+              first "YUNG MI",
+              middle "",
+              initials "",
+              suffix "",
+              title ""
+            }
+          }
+        },
+        affil std {
+          affil "KORIA POLAR RESEARCH INSTITUTE",
+          div "DIVISION OF POLAR LIFE SCIENCES",
+          city "Incheon",
+          country "Korea, Republic of",
+          street "26 Songdomirae-ro, Yeonsu-gu",
+          postal-code "406-840"
+        }
+      },
+      date std {
+        year 2014,
+        month 2,
+        day 1
+      }
+    },
+    hup TRUE,
+    reldate std {
+      year 2017,
+      month 8,
+      day 19
+    },
+    subtype new,
+    tool "table2asn 1.0.0"
+  },
+  data entrys {
+    set {
+      class genbank,
+      seq-set {
+        seq {
+          id {
+            local str "A1",
+            general {
+              db "BankIt",
+              tag str "SUB175178_A1"
+            }
+          },
+          descr {
+            source {
+              org {
+                taxname "uncultured bacterium",
+                db {
+                  {
+                    db "taxon",
+                    tag id 77133
+                  }
+                },
+                orgname {
+                  name partial {
+                    {
+                      fixed-level other,
+                      level "species",
+                      name "uncultured bacterium"
+                    }
+                  },
+                  mod {
+                    {
+                      subtype isolate,
+                      subname "A"
+                    }
+                  },
+                  lineage "Bacteria; environmental samples",
+                  gcode 11,
+                  div "ENV"
+                }
+              },
+              subtype {
+                {
+                  subtype isolation-source,
+                  name "soil"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            pub {
+              pub {
+                pmid 25038886,
+                article {
+                  title {
+                    name "Lacinutrix jangbogonensis sp. nov., a psychrophilic
+ bacterium isolated from Antarctic marine sediment and emended description of
+ the genus Lacinutrix."
+                  },
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Lee",
+                          first "Y",
+                          initials "YM"
+                        }
+                      },
+                      {
+                        name name {
+                          last "Hwang",
+                          first "C",
+                          initials "CY"
+                        }
+                      },
+                      {
+                        name name {
+                          last "Lee",
+                          first "I",
+                          initials "I"
+                        }
+                      },
+                      {
+                        name name {
+                          last "Jung",
+                          first "Y",
+                          initials "YJ"
+                        }
+                      },
+                      {
+                        name name {
+                          last "Cho",
+                          first "Y",
+                          initials "Y"
+                        }
+                      },
+                      {
+                        name name {
+                          last "Baek",
+                          first "K",
+                          initials "K"
+                        }
+                      },
+                      {
+                        name name {
+                          last "Hong",
+                          first "S",
+                          initials "SG"
+                        }
+                      },
+                      {
+                        name name {
+                          last "Kim",
+                          first "J",
+                          initials "JH"
+                        }
+                      },
+                      {
+                        name name {
+                          last "Chun",
+                          first "J",
+                          initials "J"
+                        }
+                      },
+                      {
+                        name name {
+                          last "Lee",
+                          first "H",
+                          initials "HK"
+                        }
+                      }
+                    }
+                  },
+                  from journal {
+                    title {
+                      iso-jta "Antonie Van Leeuwenhoek",
+                      ml-jta "Antonie Van Leeuwenhoek",
+                      issn "1572-9699",
+                      name "Antonie van Leeuwenhoek"
+                    },
+                    imp {
+                      date std {
+                        year 2014,
+                        month 2
+                      },
+                      volume "106",
+                      issue "3",
+                      pages "527-533",
+                      language "eng",
+                      pubstatus ppublish,
+                      history {
+                        {
+                          pubstatus received,
+                          date std {
+                            year 2014,
+                            month 2,
+                            day 1
+                          }
+                        },
+                        {
+                          pubstatus accepted,
+                          date std {
+                            year 2014,
+                            month 2,
+                            day 1
+                          }
+                        },
+                        {
+                          pubstatus aheadofprint,
+                          date std {
+                            year 2014,
+                            month 2,
+                            day 1
+                          }
+                        },
+                        {
+                          pubstatus other,
+                          date std {
+                            year 2014,
+                            month 2,
+                            day 1,
+                            hour 6,
+                            minute 0
+                          }
+                        },
+                        {
+                          pubstatus pubmed,
+                          date std {
+                            year 2014,
+                            month 2,
+                            day 1,
+                            hour 6,
+                            minute 0
+                          }
+                        },
+                        {
+                          pubstatus medline,
+                          date std {
+                            year 2014,
+                            month 2,
+                            day 1,
+                            hour 6,
+                            minute 0
+                          }
+                        }
+                      }
+                    }
+                  },
+                  ids {
+                    doi "10.1007/s10482-014-0221-5",
+                    pubmed 25038886,
+                    other {
+                      db "ELocationID doi",
+                      tag str "10.1007/s10482-014-0221-5"
+                    }
+                  }
+                }
+              }
+            },
+            user {
+              type str "DBLink",
+              data {
+                {
+                  label str "BioProject",
+                  num 1,
+                  data strs {
+                    "PRJNA239392"
+                  }
+                },
+                {
+                  label str "BioSample",
+                  num 1,
+                  data strs {
+                    "SAMN02665270"
+                  }
+                }
+              }
+            },
+            create-date std {
+              year 2014,
+              month 2,
+              day 1
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 259,
+            seq-data ncbi4na '124128821222214821241122284224844811424222822881
+2448814428FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF24441124818
+8212242F412188284182248142418822412882124214824148842141284241822441281241F284
+42888184441881428222228242444884421122282848122142218840'H
+          }
+        },
+        seq {
+          id {
+            local str "A2",
+            general {
+              db "BankIt",
+              tag str "SUB175178_A2"
+            }
+          },
+          descr {
+            source {
+              org {
+                taxname "uncultured bacterium",
+                db {
+                  {
+                    db "taxon",
+                    tag id 77133
+                  }
+                },
+                orgname {
+                  name partial {
+                    {
+                      fixed-level other,
+                      level "species",
+                      name "uncultured bacterium"
+                    }
+                  },
+                  mod {
+                    {
+                      subtype isolate,
+                      subname "A"
+                    }
+                  },
+                  lineage "Bacteria; environmental samples",
+                  gcode 11,
+                  div "ENV"
+                }
+              },
+              subtype {
+                {
+                  subtype isolation-source,
+                  name "soil"
+                }
+              }
+            },
+            molinfo {
+              biomol genomic
+            },
+            pub {
+              pub {
+                pmid 25038886,
+                article {
+                  title {
+                    name "Lacinutrix jangbogonensis sp. nov., a psychrophilic
+ bacterium isolated from Antarctic marine sediment and emended description of
+ the genus Lacinutrix."
+                  },
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Lee",
+                          first "Y",
+                          initials "YM"
+                        }
+                      },
+                      {
+                        name name {
+                          last "Hwang",
+                          first "C",
+                          initials "CY"
+                        }
+                      },
+                      {
+                        name name {
+                          last "Lee",
+                          first "I",
+                          initials "I"
+                        }
+                      },
+                      {
+                        name name {
+                          last "Jung",
+                          first "Y",
+                          initials "YJ"
+                        }
+                      },
+                      {
+                        name name {
+                          last "Cho",
+                          first "Y",
+                          initials "Y"
+                        }
+                      },
+                      {
+                        name name {
+                          last "Baek",
+                          first "K",
+                          initials "K"
+                        }
+                      },
+                      {
+                        name name {
+                          last "Hong",
+                          first "S",
+                          initials "SG"
+                        }
+                      },
+                      {
+                        name name {
+                          last "Kim",
+                          first "J",
+                          initials "JH"
+                        }
+                      },
+                      {
+                        name name {
+                          last "Chun",
+                          first "J",
+                          initials "J"
+                        }
+                      },
+                      {
+                        name name {
+                          last "Lee",
+                          first "H",
+                          initials "HK"
+                        }
+                      }
+                    }
+                  },
+                  from journal {
+                    title {
+                      iso-jta "Antonie Van Leeuwenhoek",
+                      ml-jta "Antonie Van Leeuwenhoek",
+                      issn "1572-9699",
+                      name "Antonie van Leeuwenhoek"
+                    },
+                    imp {
+                      date std {
+                        year 2014,
+                        month 2
+                      },
+                      volume "106",
+                      issue "3",
+                      pages "527-533",
+                      language "eng",
+                      pubstatus ppublish,
+                      history {
+                        {
+                          pubstatus received,
+                          date std {
+                            year 2014,
+                            month 2,
+                            day 1
+                          }
+                        },
+                        {
+                          pubstatus accepted,
+                          date std {
+                            year 2014,
+                            month 2,
+                            day 1
+                          }
+                        },
+                        {
+                          pubstatus aheadofprint,
+                          date std {
+                            year 2014,
+                            month 2,
+                            day 1
+                          }
+                        },
+                        {
+                          pubstatus other,
+                          date std {
+                            year 2014,
+                            month 2,
+                            day 1,
+                            hour 6,
+                            minute 0
+                          }
+                        },
+                        {
+                          pubstatus pubmed,
+                          date std {
+                            year 2014,
+                            month 2,
+                            day 1,
+                            hour 6,
+                            minute 0
+                          }
+                        },
+                        {
+                          pubstatus medline,
+                          date std {
+                            year 2014,
+                            month 2,
+                            day 1,
+                            hour 6,
+                            minute 0
+                          }
+                        }
+                      }
+                    }
+                  },
+                  ids {
+                    doi "10.1007/s10482-014-0221-5",
+                    pubmed 25038886,
+                    other {
+                      db "ELocationID doi",
+                      tag str "10.1007/s10482-014-0221-5"
+                    }
+                  }
+                }
+              }
+            },
+            user {
+              type str "DBLink",
+              data {
+                {
+                  label str "BioProject",
+                  num 1,
+                  data strs {
+                    "PRJNA239392"
+                  }
+                },
+                {
+                  label str "BioSample",
+                  num 1,
+                  data strs {
+                    "SAMN02665270"
+                  }
+                }
+              }
+            },
+            create-date std {
+              year 2014,
+              month 2,
+              day 1
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 1600,
+            seq-data ncbi2na '95FAF17EF187D154B4605796EB0995D7C6BCA7171F7A4815
+9D53AEE1A9AEEC4215A81B3D16613DE3598F1C98F587D192D8BE48798D687187A7F3A8F2755766
+AFA415DEC5253ECE1BBB2551730A94E287E1B4D545F5D6BFB45A4B54F22E57F6C9070E90ABE676
+F9A87C1504DD1846278612539245EEE4AF57F6A460D4DDE807D794ED02BAB0AFFD9BE4D83C0513
+4D459FB9AB55B657EBC5FBC61F4552D1815E5BAC26575F1AF29C5C7DE92056754EBB86A6BBB108
+56A06CF45984F78D663C7263D61F464B62F921E635A1C61E9FCEA3C9D55D9ABE90577B1494FB38
+6EEC9545CC2A538A1F86D35517D75AFED1692D53C8B95FDB241C3A42AF99DBE6A1F05413746118
+9E18494E4917BB92BD5FDA91835377A01F5E53B40AEAC2BFF66F9360F0144D35167EE6AD56D95F
+AF17EF187D154B4605796EB0995D7C6BCA7171F7A48159D53AEE1A9AEEC4215A81BCA7171F7A48
+159D53AEE1A9AEEC4215A81BCA7171F7A48159D53AEE1A9AEEC4215A81BCA7171F7A48159D53AE
+E1A9AEEC4215A81BCA7171F7A48159D53AEE1A9AEEC4215A81'H
+          }
+        }
+      }
+    }
+  }
+}

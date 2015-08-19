@@ -202,13 +202,21 @@ void CStructuredCommentsReader::ProcessCommentsFileByRows(ILineReader& reader, C
 
 void CStructuredCommentsReader::ApplyAllQualifiers(const vector<string>& cols, const vector<string>& values, CBioseq& bioseq)
 {
-    for (size_t i=0; i<values.size() && i<cols.size(); i++)
+    string quals;
+    for (size_t i = 0; i < values.size() && i < cols.size(); i++)
     {
         if (!values[i].empty())
         {
-            // apply structure comment
-            AddSourceQualifier(bioseq, cols[i], values[i]);
+            if (!ParseAndAddTracks(bioseq, cols[i], values[i]))
+                quals += " [" + cols[i] + "=" + values[i] + "]";
         }
+    }
+    if (!quals.empty())
+    {
+        CSourceModParser mod;
+        mod.ParseTitle(quals, CConstRef<CSeq_id>(bioseq.GetFirstId()));
+
+        mod.ApplyAllMods(bioseq);
     }
 }
 
@@ -228,8 +236,10 @@ void CStructuredCommentsReader::ProcessSourceQualifiers(ILineReader& reader, CSe
         reader.ReadLine();
         // First line is a collumn definitions
         CTempString current = reader.GetCurrentLine();
+        if (current.empty())
+            continue;
 
-        if (reader.GetLineNumber() == 1)
+        if (cols.empty())
         {
             NStr::Tokenize(current, "\t", cols);
             if (!opt_map_filename.empty())
@@ -246,6 +256,9 @@ void CStructuredCommentsReader::ProcessSourceQualifiers(ILineReader& reader, CSe
                     }
                 }
             }
+            if (cols.empty())
+                NCBI_THROW(CArgException, eConstraint,
+                "source modifiers file header line is not valid");
             continue;
         }
 
@@ -291,7 +304,7 @@ void CStructuredCommentsReader::ProcessSourceQualifiers(ILineReader& reader, CSe
     }
 }
 
-void CStructuredCommentsReader::AddSourceQualifier(CBioseq& container, const string& name, const string& value)
+bool CStructuredCommentsReader::ParseAndAddTracks(CBioseq& container, const string& name, const string& value)
 {
     if (name == "ft-url" ||
         name == "ft-map")
@@ -300,12 +313,9 @@ void CStructuredCommentsReader::AddSourceQualifier(CBioseq& container, const str
     if (name == "ft-mod")
         CTable2AsnContext::AddUserTrack(container.SetDescr(), "FileTrack", "BaseModification-FileTrackURL", value);
     else
-    {
-        CSourceModParser mod;
-        mod.ParseTitle("[" + name + "=" + value + "]", CConstRef<CSeq_id>(container.GetFirstId()));
+        return false;
 
-        mod.ApplyAllMods(container);
-    }
+    return true;
 }
 
 CStructuredComments::CStructuredComments(objects::CSeq_entry& container)

@@ -28,7 +28,7 @@
 -i sqd-2187.sqn -gaps-min 1 -l paired-ends
 -i wgs-832.sqn -gaps-min 0 -src-file wgs-832-src.src
 -i sqd-2329.fsa -a s
--i sqd-2046.fsa -T -P -X C -t wgs-715.sbt -H '05/31/2015'
--i sqd-2046.fsa -T -P -X C -t wgs-715.sbt -H "06/30/2015"
--i sqd-2046.fsa -T -P -X C -t wgs-715.sbt -H 07/31/2015
--i sqd-2046.fsa -T -P -X C -t wgs-715.sbt -H 2
+-i sqd-2406.fsa -s -T -P -X C -t wgs-715.sbt -H '05/31/2015'
+-i sqd-2406.fsa -s -T -P -X C -t wgs-715.sbt -H "06/30/2015"
+-i sqd-2406.fsa -s -T -P -X C -t wgs-715.sbt -H 07/31/2015
+-i sqd-2406.fsa -s -T -P -X C -t wgs-715.sbt -H 2

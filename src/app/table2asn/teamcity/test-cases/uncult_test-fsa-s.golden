@@ -16,12 +16,12 @@ Seq-entry ::= set {
                   subname "andromeda"
                 },
                 {
-                  subtype nat-host,
-                  subname "ia io"
-                },
-                {
                   subtype isolate,
                   subname "a1"
+                },
+                {
+                  subtype nat-host,
+                  subname "ia io"
                 }
               }
             }
@@ -66,12 +66,12 @@ Seq-entry ::= set {
                   subname "andromeda"
                 },
                 {
-                  subtype nat-host,
-                  subname "ia io"
-                },
-                {
                   subtype isolate,
                   subname "a2"
+                },
+                {
+                  subtype nat-host,
+                  subname "ia io"
                 }
               }
             }
@@ -116,12 +116,12 @@ Seq-entry ::= set {
                   subname "andromeda"
                 },
                 {
-                  subtype nat-host,
-                  subname "ia io"
-                },
-                {
                   subtype isolate,
                   subname "a3"
+                },
+                {
+                  subtype nat-host,
+                  subname "ia io"
                 }
               }
             }
@@ -166,12 +166,12 @@ Seq-entry ::= set {
                   subname "andromeda"
                 },
                 {
-                  subtype nat-host,
-                  subname "ia io"
-                },
-                {
                   subtype isolate,
                   subname "a4"
+                },
+                {
+                  subtype nat-host,
+                  subname "ia io"
                 }
               }
             }
@@ -216,12 +216,12 @@ Seq-entry ::= set {
                   subname "andromeda"
                 },
                 {
-                  subtype nat-host,
-                  subname "ia io"
-                },
-                {
                   subtype isolate,
                   subname "a5"
+                },
+                {
+                  subtype nat-host,
+                  subname "ia io"
                 }
               }
             }
@@ -266,12 +266,12 @@ Seq-entry ::= set {
                   subname "andromeda"
                 },
                 {
-                  subtype nat-host,
-                  subname "ia io"
-                },
-                {
                   subtype isolate,
                   subname "a6"
+                },
+                {
+                  subtype nat-host,
+                  subname "ia io"
                 }
               }
             }
@@ -316,12 +316,12 @@ Seq-entry ::= set {
                   subname "andromeda"
                 },
                 {
-                  subtype nat-host,
-                  subname "ia io"
-                },
-                {
                   subtype isolate,
                   subname "a7"
+                },
+                {
+                  subtype nat-host,
+                  subname "ia io"
                 }
               }
             }
