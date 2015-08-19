@@ -222,7 +222,7 @@ CNCDistributionConf::Initialize(Uint2 control_port)
             s_WarnBlobSizeSync = false;
         }
         s_BlobUpdateHotline =  reg.GetBool( kNCReg_NCPoolSection, "blob_update_hotline", true);
-        s_SlotByRawkey = reg.GetBool( kNCReg_NCPoolSection, "slot_calculation_by_rawkey", false);
+        s_SlotByRawkey = reg.GetBool( kNCReg_NCPoolSection, "slot_calculation_by_key_only", false);
 
         if (s_WarnBlobSizeSync && s_SmallBlobBoundary > s_MaxBlobSizeSync) {
             SRV_LOG(Critical, log_pfx << "small_blob_max_size ("
