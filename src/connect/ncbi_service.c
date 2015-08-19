@@ -35,7 +35,7 @@
 #include "ncbi_lbsmd.h"
 #include "ncbi_local.h"
 #ifdef NCBI_CXX_TOOLKIT
-#  include "ncbi_lbos.h"
+#  include "ncbi_lbosp.h"
 #endif
 #include "ncbi_priv.h"
 #include <ctype.h>
@@ -209,7 +209,7 @@ static SERV_ITER s_Open(const char*         service,
 {
     int/*bool*/   do_lbsmd = -1/*-1 means unassigned, 0 means disabled*/,
                   do_dispd = -1/*-1 means unassigned, 0 means disabled*/,
-                  do_lbos  = 0/*-1 means unassigned, 0 means disabled*/;
+                  do_lbos  = -1/*-1 means unassigned, 0 means disabled*/;
 
     /* We consider changes in code in "do_xxx" more important, since
      * corresponding variables are for debugging purposes mostly.
@@ -221,7 +221,7 @@ static SERV_ITER s_Open(const char*         service,
         do_lbsmd = !s_IsMapperConfigured(service, REG_CONN_LBSMD_DISABLE);
     }
     if (do_lbos == -1) {
-        do_lbos = !s_IsMapperConfigured(service, REG_CONN_LBOS_DISABLE);
+        do_lbos  =  s_IsMapperConfigured(service, REG_CONN_LBOS_ENABLE);
     }
 
     const SSERV_VTable* op;
@@ -319,7 +319,7 @@ static SERV_ITER s_Open(const char*         service,
     	    )
 #ifdef NCBI_CXX_TOOLKIT
     	    &&
-    	    /*  Search in LBOS */
+    	    /*  Search in lbos */
     	    (
     	        !do_lbos
     	        ||
@@ -550,7 +550,7 @@ SSERV_Info* SERV_GetInfoP(const char*         service,
                           const SConnNetInfo* net_info,
                           SSERV_InfoCPtr      skip[],
                           size_t              n_skip,
-                          int/*bool*/         external, 
+                          int/*bool*/         external,
                           const char*         arg,
                           const char*         val,
                           HOST_INFO*          host_info)
@@ -841,7 +841,7 @@ char* SERV_Print(SERV_ITER iter, SConnNetInfo* net_info, int/*bool*/ but_last)
                 buflen = sizeof(kUsedServerInfo) - 1;
                 memcpy(buffer, kUsedServerInfo, buflen);
             } else
-                buflen = sprintf(buffer, kSkipInfo, (unsigned) i + 1); 
+                buflen = sprintf(buffer, kSkipInfo, (unsigned) i + 1);
             assert(buflen < sizeof(buffer) - 1);
             if (!BUF_Write(&buf, buffer, buflen)                ||
                 (namelen  &&  !BUF_Write(&buf, name, namelen))  ||
