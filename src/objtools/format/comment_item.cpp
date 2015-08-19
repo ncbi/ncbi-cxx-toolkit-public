@@ -1526,9 +1526,10 @@ void s_GetStrForStructuredComment(
                 prefix = (*it_for_len)->GetData().GetStr().c_str();
             } else if( label == "StructuredCommentSuffix" ) {
                 suffix = (*it_for_len)->GetData().GetStr().c_str();
-            } else if( label == "Annotation Provider" ) {
-                provider = (*it_for_len)->GetData().GetStr().c_str();
             } else {
+                if ( label == "Annotation Provider" ) {
+                    provider = (*it_for_len)->GetData().GetStr().c_str();
+                }
                 const string::size_type label_len = label.length();
                 if( (label_len > longest_label_len) && (label_len <= kFieldLenThreshold) ) {
                     longest_label_len = label_len;
