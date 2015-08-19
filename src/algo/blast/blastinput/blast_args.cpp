@@ -1942,6 +1942,7 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
         		DescribeSAMOutputFormatSpecifiers(m_FormatFlags & eIsVDB);
     }
 
+    kOutputFormatDescription += "Add specifier 'X' to option 13 and 14 to produce output file per query.\n";
     int dft_outfmt = kDfltArgOutputFormat;
 
     // Igblast shows extra column of gaps
@@ -2061,7 +2062,9 @@ CFormattingArgs::ParseFormattingString(const CArgs& args,
         if ( !(fmt_type == eTabular ||
                fmt_type == eTabularWithComments ||
                fmt_type == eCommaSeparatedValues ||
-               fmt_type == eSAM) ) {
+               fmt_type == eSAM ||
+               fmt_type == eXml2 ||
+               fmt_type == eJson) ) {
                custom_fmt_spec.clear();
         }
     }
