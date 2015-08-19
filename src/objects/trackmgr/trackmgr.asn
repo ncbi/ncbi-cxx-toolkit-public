@@ -353,6 +353,7 @@ TMgr-TrackSetType ::= INTEGER {
 
 TMgr-TrackSet ::= SEQUENCE {
     type TMgr-TrackSetType,
+    genome-context TMgr-GenomeContext,
     name UTF8String,
     description UTF8String OPTIONAL,
     tracks SEQUENCE OF TMgr-DisplayTrack
