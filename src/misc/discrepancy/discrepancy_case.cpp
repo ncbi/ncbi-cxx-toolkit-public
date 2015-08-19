@@ -458,7 +458,7 @@ DISCREPANCY_CASE(OVERLAPPING_CDS, CSeqFeatData, eNormal, "Overlapping CDs")
             m_Objs[kEmptyStr][kOverlap0][HasOverlapNote(*context.GetCurrentSeq_feat()) ? kOverlap1 : kOverlap2].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
         }
     }
-    m_Objs[product].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), true), false);
+    m_Objs[product].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), true));
 }
 
 
@@ -545,7 +545,7 @@ DISCREPANCY_AUTOFIX(OVERLAPPING_CDS)
     }
     return ret;
 }
-
+*/
 
 // CONTAINED_CDS
 
@@ -556,17 +556,18 @@ static bool HasLineage(const CBioSource& biosrc, const string& def_lineage, cons
 }
 
 
-static bool IsEukaryotic(CBioseq_Handle bh, const string& def_lineage)
+static bool IsEukaryotic(const CBioSource* biosrc, const string& def_lineage)
 {
-    const CBioSource* 
-        biosrc = sequence::GetBioSource(bh);
+    //const CBioSource* biosrc = sequence::GetBioSource(bh);
+    //context.GetCurrentBiosource();
+
     if (biosrc) {
         CBioSource :: EGenome genome = (CBioSource::EGenome) biosrc->GetGenome();
         if (genome != CBioSource :: eGenome_mitochondrion
-                  && genome != CBioSource :: eGenome_chloroplast
-                  && genome != CBioSource :: eGenome_plastid
-                  && genome != CBioSource :: eGenome_apicoplast
-                  && HasLineage(*biosrc, def_lineage, "Eukaryota")) {
+            && genome != CBioSource :: eGenome_chloroplast
+            && genome != CBioSource :: eGenome_plastid
+            && genome != CBioSource :: eGenome_apicoplast
+            && HasLineage(*biosrc, def_lineage, "Eukaryota")) {
             return true;
         }
     }
@@ -605,7 +606,7 @@ static void DeleteProteinSequence(CBioseq_Handle prot)
     }
 }
 
-
+/*
 static bool ConvertCDSToMiscFeat(const CSeq_feat& feat, CScope& scope)
 {
     if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_feature) {
@@ -648,8 +649,49 @@ static bool ConvertCDSToMiscFeat(const CSeq_feat& feat, CScope& scope)
     }
     return true;
 }
+*/
+
+DISCREPANCY_CASE(CONTAINED_CDS, CSeqFeatData, eNormal, "Contained CDs")
+{
+    static const char* kContained = "[n] coding region[s] completely contained in another coding region.";
+    static const char* kContainedNote = "[n] coding region[s] completely contained in another coding region, but have note.";
+    static const char* kContainedSame = "[n] coding region[s] completely contained in another coding region on the same strand.";
+    static const char* kContainedOpps = "[n] coding region[s] completely contained in another coding region, but on the opposite strand.";
+
+    if (obj.Which() != CSeqFeatData::e_Cdregion) {
+        return;
+    }
+    if (!context.GetCurrentBioseq()->CanGetInst() || !context.GetCurrentBioseq()->GetInst().IsNa() || !IsEukaryotic(context.GetCurrentBiosource(), context.GetLineage())) {
+        return;
+    }
+
+    if (m_Count != context.GetCountBioseq()) {
+        m_Count = context.GetCountBioseq();
+        m_Objs["tmp"].clear();
+    }
+
+    const CSeq_loc& location = context.GetCurrentSeq_feat()->GetLocation();
+    TReportObjectList& list = m_Objs["tmp"].GetObjects();
+    NON_CONST_ITERATE(TReportObjectList, robj, list) {
+        CConstRef<CSeq_feat> sf((CSeq_feat*)&*(*robj)->GetObject());
+        const CSeq_loc& loc = sf->GetLocation();
+        sequence::ECompare compare = sequence::Compare(loc, location, &context.GetScope(), sequence::fCompareOverlapping);
+        if (compare == sequence::eContains || compare == sequence::eSame || compare == sequence::eContained) {
+            const char* strand = StrandsMatch(loc, location) ? kContainedSame : kContainedOpps;
+            m_Objs[kEmptyStr][kContained][HasContainedNote(*sf) ? kContainedNote : strand].Add(*new CDiscrepancyObject(sf, context.GetScope(), context.GetFile(), context.GetKeepRef()));
+            m_Objs[kEmptyStr][kContained][HasContainedNote(*context.GetCurrentSeq_feat()) ? kContainedNote : strand].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+        }
+    }
+    m_Objs["tmp"].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), true));
+}
 
 
+DISCREPANCY_SUMMARIZE(CONTAINED_CDS)
+{
+    m_ReportItems = m_Objs[kEmptyStr].Export(GetName())->GetSubitems();
+}
+
+/*
 DISCREPANCY_CASE(CONTAINED_CDS, TReportObjectList m_ObjsSameStrand; TReportObjectList m_ObjsDiffStrand)
 {
     CBioseq_CI bi(seh, CSeq_inst::eMol_na);
