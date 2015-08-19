@@ -48,7 +48,7 @@ struct SFileTrackAPI;
 struct SFileTrackRequest : public CObject
 {
     SFileTrackRequest(SFileTrackAPI* storage_impl,
-            CNetStorageObjectLoc* object_loc,
+            const CNetStorageObjectLoc& object_loc,
             const string& url,
             const string& user_header = kEmptyStr,
             FHTTP_ParseHeader parse_header = 0);
@@ -61,7 +61,7 @@ struct SFileTrackRequest : public CObject
     void CheckIOStatus();
 
     SFileTrackAPI* m_FileTrackAPI;
-    CNetStorageObjectLoc* m_ObjectLoc;
+    const CNetStorageObjectLoc& m_ObjectLoc;
     string m_URL;
     CConn_HttpStream m_HTTPStream;
     int m_HTTPStatus;
@@ -72,7 +72,7 @@ struct SFileTrackRequest : public CObject
 struct SFileTrackPostRequest : public SFileTrackRequest
 {
     SFileTrackPostRequest(SFileTrackAPI* storage_impl,
-            CNetStorageObjectLoc* object_loc,
+            const CNetStorageObjectLoc& object_loc,
             const string& url, const string& boundary,
             const string& user_header = kEmptyStr,
             FHTTP_ParseHeader parse_header = 0);
@@ -91,19 +91,19 @@ struct SFileTrackAPI
 {
     SFileTrackAPI(const IRegistry&);
 
-    string LoginAndGetSessionKey(CNetStorageObjectLoc* object_loc);
+    string LoginAndGetSessionKey(const CNetStorageObjectLoc& object_loc);
 
-    CJsonNode GetFileInfo(CNetStorageObjectLoc* object_loc);
+    CJsonNode GetFileInfo(const CNetStorageObjectLoc& object_loc);
 
-    string GetFileAttribute(CNetStorageObjectLoc* object_loc,
+    string GetFileAttribute(const CNetStorageObjectLoc& object_loc,
             const string& attr_name);
-    void SetFileAttribute(CNetStorageObjectLoc* object_loc,
+    void SetFileAttribute(const CNetStorageObjectLoc& object_loc,
             const string& attr_name, const string& attr_value);
 
-    CRef<SFileTrackPostRequest> StartUpload(CNetStorageObjectLoc* object_loc);
-    CRef<SFileTrackRequest> StartDownload(CNetStorageObjectLoc* object_loc);
+    CRef<SFileTrackPostRequest> StartUpload(const CNetStorageObjectLoc& object_loc);
+    CRef<SFileTrackRequest> StartDownload(const CNetStorageObjectLoc& object_loc);
 
-    void Remove(CNetStorageObjectLoc* object_loc);
+    void Remove(const CNetStorageObjectLoc& object_loc);
 
     string GenerateUniqueBoundary();
     string MakeMutipartFormDataHeader(const string& boundary);

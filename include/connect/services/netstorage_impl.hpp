@@ -349,7 +349,7 @@ public:
 
     void SetLocation_FileTrack(const char* ft_site_name);
 
-    string GetFileTrackURL();
+    string GetFileTrackURL() const;
 
     string GetLocator() const
     {

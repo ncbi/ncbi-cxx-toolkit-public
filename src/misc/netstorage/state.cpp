@@ -556,7 +556,7 @@ IState* CFileTrack::StartRead(void* buf, size_t count,
 {
     _ASSERT(result);
 
-    CROFileTrack::TRequest request = m_Context->filetrack_api.StartDownload(&m_ObjectLoc);
+    CROFileTrack::TRequest request = m_Context->filetrack_api.StartDownload(m_ObjectLoc);
 
     try {
         m_Read.Set(request);
@@ -588,7 +588,7 @@ IState* CFileTrack::StartWrite(const void* buf, size_t count,
     try { exists = ExistsImpl(); } catch (...) { }
     if (exists) RemoveImpl();
 
-    CWOFileTrack::TRequest request = m_Context->filetrack_api.StartUpload(&m_ObjectLoc);
+    CWOFileTrack::TRequest request = m_Context->filetrack_api.StartUpload(m_ObjectLoc);
     m_Write.Set(request);
     *result = m_Write.WriteImpl(buf, count, bytes_written);
     SetLocator();
@@ -599,14 +599,14 @@ IState* CFileTrack::StartWrite(const void* buf, size_t count,
 Uint8 CFileTrack::GetSizeImpl()
 {
     return (Uint8) m_Context->filetrack_api.GetFileInfo(
-            &m_ObjectLoc).GetInteger("size");
+            m_ObjectLoc).GetInteger("size");
 }
 
 
 CNetStorageObjectInfo CFileTrack::GetInfoImpl()
 {
     CJsonNode file_info_node =
-            m_Context->filetrack_api.GetFileInfo(&m_ObjectLoc);
+            m_Context->filetrack_api.GetFileInfo(m_ObjectLoc);
 
     Uint8 file_size = 0;
 
@@ -623,14 +623,14 @@ CNetStorageObjectInfo CFileTrack::GetInfoImpl()
 bool CFileTrack::ExistsImpl()
 {
     LOG_POST(Trace << "Checking existence in FileTrack " << m_ObjectLoc.GetLocator());
-    return !m_Context->filetrack_api.GetFileInfo(&m_ObjectLoc).GetBoolean("deleted");
+    return !m_Context->filetrack_api.GetFileInfo(m_ObjectLoc).GetBoolean("deleted");
 }
 
 
 void CFileTrack::RemoveImpl()
 {
     LOG_POST(Trace << "Trying to remove from FileTrack " << m_ObjectLoc.GetLocator());
-    m_Context->filetrack_api.Remove(&m_ObjectLoc);
+    m_Context->filetrack_api.Remove(m_ObjectLoc);
 }
 
 

@@ -321,7 +321,7 @@ void CNetStorageObjectLoc::SetLocation_FileTrack(const char* ft_site_name)
         m_LocatorFlags |= fLF_QAEnv;
 }
 
-string CNetStorageObjectLoc::GetFileTrackURL()
+string CNetStorageObjectLoc::GetFileTrackURL() const
 {
     EFileTrackSite ft_site = m_LocatorFlags & fLF_DevEnv ? eFileTrack_DevSite :
             m_LocatorFlags & fLF_QAEnv ? eFileTrack_QASite :
