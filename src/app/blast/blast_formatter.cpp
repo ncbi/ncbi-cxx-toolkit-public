@@ -324,10 +324,9 @@ int CBlastFormatterApp::PrintFormattedOutput(void)
                            NULL, NULL,
                            GetCmdlineArgs(GetArguments()));
     formatter.SetLineLength(fmt_args.GetLineLength());
-    if((fmt_args.GetFormattedOutputChoice() ==  CFormattingArgs::eXml2 ||
-        fmt_args.GetFormattedOutputChoice() ==  CFormattingArgs::eJson)
-        && args[kArgOutput].AsString() != "-")
-           	formatter.SetBaseFile(args[kArgOutput].AsString());
+    if(UseXInclude(fmt_args, args[kArgOutput].AsString())) {
+       	formatter.SetBaseFile(args[kArgOutput].AsString());
+    }
     CRef<CSearchResultSet> results = m_RmtBlast->GetResultSet();
     formatter.PrintProlog();
     bool isPsiBlast = ("psiblast" == kTask);

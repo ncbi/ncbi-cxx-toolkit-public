@@ -151,10 +151,10 @@ int CBlastxApp::Run(void)
                                GetCmdlineArgs(GetArguments()));
         
         formatter.SetQueryRange(query_opts->GetRange());
-        if((fmt_args->GetFormattedOutputChoice() ==  CFormattingArgs::eXml2 ||
-            fmt_args->GetFormattedOutputChoice() ==  CFormattingArgs::eJson)
-                   && args[kArgOutput].AsString() != "-")
-                	formatter.SetBaseFile(args[kArgOutput].AsString());
+        formatter.SetLineLength(fmt_args->GetLineLength());
+        if(UseXInclude(*fmt_args, args[kArgOutput].AsString())) {
+        	formatter.SetBaseFile(args[kArgOutput].AsString());
+        }
         formatter.PrintProlog();
 
         /*** Process the input ***/

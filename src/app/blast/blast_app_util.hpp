@@ -293,6 +293,9 @@ IsIStreamEmpty(CNcbiIstream & in);
 string
 GetCmdlineArgs(const CNcbiArguments & a);
 
+bool
+UseXInclude(const blast::CFormattingArgs & f, const string & s);
+
 END_NCBI_SCOPE
 
 #endif /* APP__BLAST_APP_UTIL__HPP */

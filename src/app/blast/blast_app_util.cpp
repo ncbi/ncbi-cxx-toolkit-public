@@ -870,4 +870,17 @@ GetCmdlineArgs(const CNcbiArguments & a)
 	return cmd;
 }
 
+bool
+UseXInclude(const CFormattingArgs & f, const string & s)
+{
+	bool xin =
+	(((f.GetFormattedOutputChoice() ==  CFormattingArgs::eXml2)||
+	    (f.GetFormattedOutputChoice() ==  CFormattingArgs::eJson)) &&
+	   ((f.GetCustomOutputFormatSpec() == "X") ||
+	    (f.GetCustomOutputFormatSpec() == "x")) &&
+	   (s != "-"))? true:false;
+
+	return xin;
+}
+
 END_NCBI_SCOPE

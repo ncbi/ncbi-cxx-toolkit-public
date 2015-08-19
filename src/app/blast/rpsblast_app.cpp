@@ -157,10 +157,9 @@ int CRPSBlastApp::Run(void)
 
         formatter.SetQueryRange(query_opts->GetRange());
         formatter.SetLineLength(fmt_args->GetLineLength());
-        if((fmt_args->GetFormattedOutputChoice() ==  CFormattingArgs::eXml2 ||
-            fmt_args->GetFormattedOutputChoice() ==  CFormattingArgs::eJson)
-           && args[kArgOutput].AsString() != "-")
+        if(UseXInclude(*fmt_args, args[kArgOutput].AsString())) {
         	formatter.SetBaseFile(args[kArgOutput].AsString());
+        }
         formatter.PrintProlog();
 
         /*** Process the input ***/
