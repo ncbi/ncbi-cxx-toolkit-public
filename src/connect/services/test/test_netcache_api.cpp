@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Anatoliy Kuznetsov, Dmitry Kazimirov
+ * Authors:  Anatoliy Kuznetsov, Dmitry Kazimirov, Rafael Sadyrov
  *
  * File Description:  NetCache client test
  *
@@ -43,6 +43,13 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbimisc.hpp>
 
+#include <corelib/test_boost.hpp>
+
+#include <util/random_gen.hpp>
+
+#include <memory>
+#include <vector>
+
 #include <common/test_assert.h>  /* This header must go last */
 
 
@@ -51,19 +58,14 @@ USING_NCBI_SCOPE;
 
 ///////////////////////////////////////////////////////////////////////
 
+
+// Configuration parameters
+NCBI_PARAM_DECL(string, netcache, service_name);
+typedef NCBI_PARAM_TYPE(netcache, service_name) TNetCache_ServiceName;
+NCBI_PARAM_DEF(string, netcache, service_name, "NC_UnitTest");
+
+
 static const string s_ClientName("test_netcache_api");
-
-/// Test application
-///
-/// @internal
-///
-class CTestNetCacheClient : public CNcbiApplication
-{
-public:
-    void Init(void);
-    int Run(void);
-};
-
 
 /// @internal
 
@@ -213,6 +215,7 @@ void s_ReportStatistics(const vector<STransactionInfo>& log)
 /// @internal
 static
 void s_StressTest(const string&             service,
+                  const CNamedParameterList* nc_params,
                   size_t                    size,
                   unsigned int              repeats,
                   vector<STransactionInfo>* log_write,
@@ -227,6 +230,7 @@ void s_StressTest(const string&             service,
          << ". Please wait... " << endl;
 
     CNetCacheAPI nc_client(service, s_ClientName);
+    nc_client.SetDefaultParameters(nc_params);
 
     AutoPtr<char, ArrayDeleter<char> > buf  = new char[size];
     AutoPtr<char, ArrayDeleter<char> > buf2 = new char[size];
@@ -325,33 +329,12 @@ void s_TestKeysRead(CNetCacheAPI              nc_client,
 }
 
 
-void CTestNetCacheClient::Init(void)
-{
-    // Setup command line arguments and parameters
-
-    // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
-
-    // Specify USAGE context
-    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              "Net cache client");
-
-    arg_desc->AddDefaultKey("repeat", "times",
-        "Number of stress test repetitions",
-        CArgDescriptions::eInteger, "5");
-
-    arg_desc->AddPositional("service",
-                            "NetCache service.", CArgDescriptions::eString);
-
-
-    // Setup arg.descriptions for this application
-    SetupArgDescriptions(arg_desc.release());
-}
-
 static
-void s_RemoveBLOB_Test(const string& service)
+void s_RemoveBLOB_Test(const string& service,
+        const CNamedParameterList* nc_params)
 {
     CNetCacheAPI nc(service, s_ClientName);
+    nc.SetDefaultParameters(nc_params);
 
     char z = 'Z';
     string key = nc.PutData(&z, 1, nc_blob_ttl = 1);
@@ -368,9 +351,11 @@ void s_RemoveBLOB_Test(const string& service)
 }
 
 static
-void s_ReadUpdateCharTest(const string& service)
+void s_ReadUpdateCharTest(const string& service,
+        const CNamedParameterList* nc_params)
 {
     CNetCacheAPI nc(service, s_ClientName);
+    nc.SetDefaultParameters(nc_params);
 
     char z = 'Z';
     string key = nc.PutData(&z, 1, nc_blob_ttl = 100);
@@ -406,10 +391,12 @@ void s_ReadUpdateCharTest(const string& service)
 
 }
 
-static int s_PasswordTest(const string& service)
+static int s_PasswordTest(const string& service,
+        const CNamedParameterList* nc_params)
 {
     static const int err_code = 4;
     CNetCacheAPI nc(service, s_ClientName);
+    nc.SetDefaultParameters(nc_params);
     string password("password");
 
     static const char data[] = "data";
@@ -437,11 +424,13 @@ static int s_PasswordTest(const string& service)
     return 0;
 }
 
-static int s_AbortTest(const string& service)
+static int s_AbortTest(const string& service,
+        const CNamedParameterList* nc_params)
 {
     static const int err_code = 8;
 
     CNetCacheAPI nc(service, s_ClientName);
+    nc.SetDefaultParameters(nc_params);
 
     string key;
 
@@ -467,7 +456,8 @@ static int s_AbortTest(const string& service)
     return err_code;
 }
 
-static int s_ServiceInBlobKeyTest(const string& service)
+static int s_ServiceInBlobKeyTest(const string& service,
+        const CNamedParameterList* nc_params)
 {
     static const int err_code = 16;
 
@@ -475,6 +465,7 @@ static int s_ServiceInBlobKeyTest(const string& service)
     static size_t data_size = sizeof(data) - 1;
 
     CNetCacheAPI nc(service, s_ClientName);
+    nc.SetDefaultParameters(nc_params);
 
     string blob_id = nc.PutData(data, data_size,
             (nc_mirroring_mode = CNetCacheAPI::eMirroringDisabled,
@@ -531,7 +522,8 @@ static int s_ServiceInBlobKeyTest(const string& service)
     return 0;
 }
 
-static int s_BlobAgeTest(const string& service)
+static int s_BlobAgeTest(const string& service,
+        const CNamedParameterList* nc_params)
 {
 #ifdef DISABLED_UNTIL_NC_WITH_AGE_SUPPORT_IS_DEPLOYED
     static const int err_code = 32;
@@ -540,6 +532,7 @@ static int s_BlobAgeTest(const string& service)
     static size_t data_size = sizeof(data) - 1;
 
     CNetCacheAPI nc(service, s_ClientName);
+    nc.SetDefaultParameters(nc_params);
 
     string blob_id = nc.PutData(data, data_size);
 
@@ -603,13 +596,12 @@ static size_t s_ReadIntoBuffer(IReader* reader, char* buf_ptr, size_t buf_size)
     return total_bytes_read;
 }
 
-int CTestNetCacheClient::Run(void)
+static int s_Run(const CNamedParameterList* nc_params)
 {
     int error_level = 0;
 
-    const CArgs& args = GetArgs();
-    const string& service  = args["service"].AsString();
-    int stress_test_repetitions = args["repeat"].AsInteger();
+    const string& service  = TNetCache_ServiceName::GetDefault();
+    const int stress_test_repetitions = 1;
 
     const char test_data[] = "The quick brown fox jumps over the lazy dog.";
     const char test_data2[] = "New data.";
@@ -617,6 +609,7 @@ int CTestNetCacheClient::Run(void)
 
     {{
         CNetCacheAPI nc_client(service, s_ClientName);
+        nc_client.SetDefaultParameters(nc_params);
 
         key = nc_client.PutData(NULL, 0, nc_blob_ttl = 120);
         NcbiCout << key << NcbiEndl;
@@ -637,6 +630,7 @@ int CTestNetCacheClient::Run(void)
 
     {{
         CNetCacheAPI nc_client(service, s_ClientName);
+        nc_client.SetDefaultParameters(nc_params);
 
         key = nc_client.PutData(test_data, sizeof(test_data));
         NcbiCout << key << NcbiEndl;
@@ -650,6 +644,7 @@ int CTestNetCacheClient::Run(void)
 
     {{
         CNetCacheAPI nc_client(service, s_ClientName);
+        nc_client.SetDefaultParameters(nc_params);
 
         char dataBuf[1024];
         memset(dataBuf, 0xff, sizeof(dataBuf));
@@ -684,6 +679,7 @@ int CTestNetCacheClient::Run(void)
 
     {{
         CNetCacheAPI nc_client(s_ClientName);
+        nc_client.SetDefaultParameters(nc_params);
 
         char dataBuf[1024];
         memset(dataBuf, 0xff, sizeof(dataBuf));
@@ -707,10 +703,12 @@ int CTestNetCacheClient::Run(void)
     {{
         {
         CNetCacheAPI nc_client(service, s_ClientName);
+        nc_client.SetDefaultParameters(nc_params);
         nc_client.PutData(key, test_data2, sizeof(test_data2));
         }
         {
         CNetCacheAPI nc_client(service, s_ClientName);
+        nc_client.SetDefaultParameters(nc_params);
         char dataBuf[1024];
         memset(dataBuf, 0xff, sizeof(dataBuf));
         CNetCacheAPI::EReadResult rres =
@@ -726,12 +724,14 @@ int CTestNetCacheClient::Run(void)
     // timeout test
     {{
         CNetCacheAPI nc_client(service, s_ClientName);
+        nc_client.SetDefaultParameters(nc_params);
 
         key = nc_client.PutData(test_data, sizeof(test_data), nc_blob_ttl = 80);
         assert(!key.empty());
     }}
 
     CNetCacheAPI nc_client(service, s_ClientName);
+    nc_client.SetDefaultParameters(nc_params);
 
     bool exists = s_CheckExists(nc_client, key);
     assert(exists);
@@ -743,14 +743,14 @@ int CTestNetCacheClient::Run(void)
     exists = s_CheckExists(nc_client, key);
     assert(!exists);
 
-    s_RemoveBLOB_Test(service);
+    s_RemoveBLOB_Test(service, nc_params);
 
-    s_ReadUpdateCharTest(service);
+    s_ReadUpdateCharTest(service, nc_params);
 
-    error_level |= s_PasswordTest(service);
-    error_level |= s_AbortTest(service);
-    error_level |= s_ServiceInBlobKeyTest(service);
-    error_level |= s_BlobAgeTest(service);
+    error_level |= s_PasswordTest(service, nc_params);
+    error_level |= s_AbortTest(service, nc_params);
+    error_level |= s_ServiceInBlobKeyTest(service, nc_params);
+    error_level |= s_BlobAgeTest(service, nc_params);
 
     vector<STransactionInfo> log;
     vector<STransactionInfo> log_read;
@@ -763,7 +763,7 @@ int CTestNetCacheClient::Run(void)
         NcbiCout << "STRESS TEST " << (i + 1) << "/" <<
             stress_test_repetitions << NcbiEndl << NcbiEndl;
 
-        s_StressTest(service, 256, repeats, &log, &log_read, &rep_keys, 10);
+        s_StressTest(service, nc_params, 256, repeats, &log, &log_read, &rep_keys, 10);
         NcbiCout << NcbiEndl << "BLOB write statistics:" << NcbiEndl;
         s_ReportStatistics(log);
         NcbiCout << NcbiEndl << "BLOB read statistics:" << NcbiEndl;
@@ -771,21 +771,21 @@ int CTestNetCacheClient::Run(void)
         NcbiCout << NcbiEndl << NcbiEndl;
 
 
-        s_StressTest(service, 1024 * 5, repeats, &log, &log_read, &rep_keys, 10);
+        s_StressTest(service, nc_params, 1024 * 5, repeats, &log, &log_read, &rep_keys, 10);
         NcbiCout << NcbiEndl << "BLOB write statistics:" << NcbiEndl;
         s_ReportStatistics(log);
         NcbiCout << NcbiEndl << "BLOB read statistics:" << NcbiEndl;
         s_ReportStatistics(log_read);
         NcbiCout << NcbiEndl;
 
-        s_StressTest(service, 1024 * 100, repeats/2, &log, &log_read, &rep_keys, 20);
+        s_StressTest(service, nc_params, 1024 * 100, repeats/2, &log, &log_read, &rep_keys, 20);
         NcbiCout << NcbiEndl << "BLOB write statistics:" << NcbiEndl;
         s_ReportStatistics(log);
         NcbiCout << NcbiEndl << "BLOB read statistics:" << NcbiEndl;
         s_ReportStatistics(log_read);
         NcbiCout << NcbiEndl;
 
-        s_StressTest(service, 1024 * 1024 * 5, repeats/50, &log, &log_read, &rep_keys, 30);
+        s_StressTest(service, nc_params, 1024 * 1024 * 5, repeats/50, &log, &log_read, &rep_keys, 30);
         NcbiCout << NcbiEndl << "BLOB write statistics:" << NcbiEndl;
         s_ReportStatistics(log);
         NcbiCout << NcbiEndl << "BLOB read statistics:" << NcbiEndl;
@@ -807,8 +807,128 @@ int CTestNetCacheClient::Run(void)
 }
 
 
-int main(int argc, const char* argv[])
+// Convenience class for random generator
+struct CRandomSingleton
+{
+    CRandom r;
+    CRandomSingleton() { r.Randomize(); }
+
+    static CRandom& instance()
+    {
+        static CRandomSingleton rs;
+        return rs.r;
+    }
+};
+
+
+// Convenience function to fill container with random char data
+template <class TContainer>
+void RandomFill(TContainer& container, size_t length, bool printable = true)
+{
+    CRandom& random(CRandomSingleton::instance());
+    const char kMin = printable ? '!' : numeric_limits<char>::min();
+    const char kMax = printable ? '~' : numeric_limits<char>::max();
+    container.clear();
+    container.reserve(length);
+    while (length-- > 0) {
+        container.push_back(kMin + random.GetRandIndex(kMax - kMin + 1));
+    }
+}
+
+
+static void s_SimpleTest(const CNamedParameterList* nc_params)
+{
+    CNetCacheAPI api(TNetCache_ServiceName::GetDefault(), s_ClientName);
+    api.SetDefaultParameters(nc_params);
+
+    const size_t kIterations = 50;
+    const size_t kSrcSize = 20 * 1024 * 1024; // 20MB
+    const size_t kBufSize = 100 * 1024; // 100KB
+    vector<char> src;
+    vector<char> buf;
+
+    src.reserve(kSrcSize);
+    buf.reserve(kBufSize);
+
+    for (size_t i = 0; i < kIterations; ++i) {
+        // Creating blob
+        RandomFill(src, kSrcSize, false);
+        string key = api.PutData(src.data(), src.size());
+        BOOST_REQUIRE_MESSAGE(api.HasBlob(key),
+                "Blob does not exist (" << i << ")");
+        BOOST_REQUIRE_MESSAGE(api.GetBlobSize(key) == kSrcSize,
+                "Blob size (GetBlobSize) differs from the source (" << i << ")");
+
+        // Checking blob
+        size_t size = 0;
+        auto_ptr<IReader> reader(api.GetData(key, &size));
+
+        BOOST_REQUIRE_MESSAGE(size == kSrcSize,
+                "Blob size (GetData) differs from the source (" << i << ")");
+        BOOST_REQUIRE_MESSAGE(reader.get(),
+                "Failed to get reader (" << i << ")");
+
+        const char* ptr = src.data();
+
+        for (;;) {
+            size_t read = 0;
+
+            switch (reader->Read(buf.data(), kBufSize, &read)) {
+            case eRW_Success:
+                BOOST_REQUIRE_MESSAGE(!memcmp(buf.data(), ptr, read),
+                        "Blob content does not match the source (" << i << ")");
+                BOOST_REQUIRE_MESSAGE(size >= read,
+                        "Blob size is greater than the source (" << i << ")");
+                ptr += read;
+                size -= read;
+                continue;
+
+            case eRW_Eof:
+                BOOST_REQUIRE_MESSAGE(!size,
+                        "Blob size is less than the source (" << i << ")");
+                break;
+
+            default:
+                BOOST_ERROR("Reading blob failed (" << i << ")");
+            }
+
+            break;
+        }
+
+        // Removing blob
+        api.Remove(key);
+
+        // Checking removed blob
+        BOOST_REQUIRE_MESSAGE(!api.HasBlob(key),
+                "Removed blob still exists (" << i << ")");
+        auto_ptr<IReader> fail_reader(api.GetData(key, &size));
+        BOOST_REQUIRE_MESSAGE(!fail_reader.get(),
+                "Got reader for removed blob (" << i << ")");
+    }
+}
+
+BOOST_AUTO_TEST_SUITE(NetCache)
+
+BOOST_AUTO_TEST_CASE(OldStressTest)
 {
     SetDiagPostLevel(eDiag_Warning);
-    return CTestNetCacheClient().AppMain(argc, argv);
+    s_Run(nc_mirroring_mode = CNetCacheAPI::eMirroringDisabled);
 }
+
+BOOST_AUTO_TEST_CASE(OldStressTestMirroring)
+{
+    SetDiagPostLevel(eDiag_Warning);
+    s_Run(nc_mirroring_mode = CNetCacheAPI::eMirroringEnabled);
+}
+
+BOOST_AUTO_TEST_CASE(SimpleTest)
+{
+    s_SimpleTest(nc_mirroring_mode = CNetCacheAPI::eMirroringDisabled);
+}
+
+BOOST_AUTO_TEST_CASE(SimpleTestMirroring)
+{
+    s_SimpleTest(nc_mirroring_mode = CNetCacheAPI::eMirroringEnabled);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
