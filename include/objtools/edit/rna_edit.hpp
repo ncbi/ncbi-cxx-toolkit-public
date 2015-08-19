@@ -26,9 +26,8 @@
  * Authors:  Igor Filippov
  */
 
-
-#ifndef _EDIT_RNA_EDIT_H_
-#define _EDIT_RNA_EDIT__H_
+#ifndef _EDIT_RNA_EDIT__HPP_
+#define _EDIT_RNA_EDIT__HPP_
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
@@ -73,4 +72,4 @@ END_SCOPE(objects)
 END_NCBI_SCOPE
 
 #endif
-
+        // _EDIT_RNA_EDIT__HPP_
