@@ -53,6 +53,8 @@ NCBI_DEFINE_ERRCODE_X(WGSReader,            2111,  0);
 NCBI_DEFINE_ERRCODE_X(WGSLoader,            2112,  0);
 NCBI_DEFINE_ERRCODE_X(VDBGraphReader,       2113,  0);
 NCBI_DEFINE_ERRCODE_X(VDBGraphLoader,       2114,  0);
+NCBI_DEFINE_ERRCODE_X(SNPReader,            2115,  0);
+NCBI_DEFINE_ERRCODE_X(SNPLoader,            2116,  0);
 
 
 END_NCBI_SCOPE

@@ -1,7 +1,7 @@
 # $Id$
 
 LIB = sraread
-SRC = sraread vdbread kdbread csraread wgsread graphread
+SRC = sraread vdbread kdbread csraread wgsread graphread snpread
 
 ASN_DEP = seq seqset
 
