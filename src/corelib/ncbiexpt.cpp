@@ -324,6 +324,14 @@ void CException::Throw(void) const
 const char* CException::what(void) const throw()
 {
     m_What = ReportAll();
+    if ( m_StackTrace.get()  &&  !m_StackTrace->Empty() ) {
+        CNcbiOstrstream os;
+        string old_prefix = m_StackTrace->GetPrefix();
+        m_StackTrace->SetPrefix("      ");
+        os << "     Stack trace:\n" << *m_StackTrace;
+        m_StackTrace->SetPrefix(old_prefix);
+        m_What += (string) CNcbiOstrstreamToString(os);
+    }
     return m_What.c_str();
 }
 
