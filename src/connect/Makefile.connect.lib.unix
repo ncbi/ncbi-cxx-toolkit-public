@@ -24,4 +24,8 @@ ifeq "$(COMPILER)-$(DEBUG_SFX)$(DLL)" "icc-Release"
   ncbi_socket.o: $(srcdir)/ncbi_socket.c
 	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL) -fno-builtin-strcat $< -o $@ \
 	    $(CC_FILTER)
+
+  ncbi_lbos.o: $(srcdir)/ncbi_lbos.c
+	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL) -fno-builtin-strcat $< -o $@ \
+	    $(CC_FILTER)
 endif
