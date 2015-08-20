@@ -24,6 +24,8 @@ Win64_10       : MSVC10-64 : dll    64 ReleaseDLL
 Win32_13       : MSVC13-32 : dll    32 ReleaseDLL
 Win64_13       : MSVC13-64 : static 64 ReleaseDLL
 
+Cygwin64       : GCC       : GCC.sh --without-debug --with-mt --with-flat-makefile
+
 Linux64-Centos : GCC442    : GCC.sh 4.4.2 --without-debug --with-mt --with-distcc
 Linux64-Centos : GCC442d   : GCC.sh 4.4.2 --with-mt --with-distcc --with-3psw=system
 Linux64-Centos : GCC463    : GCC.sh 4.6.3 --with-distcc
