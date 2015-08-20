@@ -1,3 +1,10 @@
+Release 4.32.0 based on SC-16.1 (2015-08-20)
+
+Improvements:
+    * NetSchedule: way too long graceful shutdown (JIRA: CXX-2617)
+    * NetSchedule can't execute SHUTDOWN drain=1 (JIRA: CXX-6186)
+    * NetSchedule: GET2/READ/READ2 to accept a list of groups (JIRA: CXX-6247)
+
 Release 4.22.0 based on SC-16.1 (2015-07-06)
 
 Improvements:
