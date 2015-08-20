@@ -132,7 +132,6 @@ public:
     void VisitAllSeqDesc(objects::CSeq_entry_EditHandle& entry_h, SeqdescVisitorMethod m);
 
     static void UpdateOrgFromTaxon(CTable2AsnContext& context, objects::CSeqdesc& seqdesc);
-    void MergeSeqDescr(objects::CSeq_descr& dest, const objects::CSeq_descr& src) const;
     void MergeWithTemplate(objects::CSeq_entry& entry) const;
     void SetSeqId(objects::CSeq_entry& entry) const;
     void CopyFeatureIdsToComments(objects::CSeq_entry& entry) const;
@@ -151,6 +150,7 @@ public:
     CRef<objects::CObjectManager> m_ObjMgr;
 
 private:
+    void MergeSeqDescr(objects::CSeq_descr& dest, const objects::CSeq_descr& src, bool only_pub) const;
 };
 
 

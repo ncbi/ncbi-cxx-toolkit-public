@@ -56,6 +56,13 @@ Seq-submit ::= {
   data entrys {
     set {
       class genbank,
+      descr {
+        pub {
+          pub {
+            pmid 25038886
+          }
+        }
+      },
       seq-set {
         seq {
           id {
@@ -83,11 +90,6 @@ Seq-submit ::= {
             },
             molinfo {
               biomol genomic
-            },
-            pub {
-              pub {
-                pmid 25038886
-              }
             },
             user {
               type str "DBLink",
@@ -155,11 +157,6 @@ FF07CA008BF942FC42FFF34A4E43F704EBFB2B3641FC3E4AECFE43E80CFF3C3C4B0080810088FA
             molinfo {
               biomol genomic
             },
-            pub {
-              pub {
-                pmid 25038886
-              }
-            },
             user {
               type str "DBLink",
               data {
@@ -224,11 +221,6 @@ DF8EB0FD3C2C34627FF49F4DEF297B8FF373F541BF2F2FDD08337330DC082CCC450C6FB92CF200
             },
             molinfo {
               biomol genomic
-            },
-            pub {
-              pub {
-                pmid 25038886
-              }
             },
             user {
               type str "DBLink",
@@ -297,11 +289,6 @@ DF9C8F4F02FF2B52FF0BF0B776FF4382FFFEAD03914D06EFB308F2F9B0'H
             molinfo {
               biomol genomic
             },
-            pub {
-              pub {
-                pmid 25038886
-              }
-            },
             user {
               type str "DBLink",
               data {
@@ -367,11 +354,6 @@ CAD3233CB36DF640ED48714D9C524128A0C7008C7BC5825024D1C404A1C822B85B32B303D5AECD
             },
             molinfo {
               biomol genomic
-            },
-            pub {
-              pub {
-                pmid 25038886
-              }
             },
             user {
               type str "DBLink",
@@ -442,11 +424,6 @@ B0C6BCD44834AA3064A0204EE240294900A52816C00A59BE7A6FFD4CA7595578624D1003619D0B
             molinfo {
               biomol genomic
             },
-            pub {
-              pub {
-                pmid 25038886
-              }
-            },
             user {
               type str "DBLink",
               data {
@@ -516,11 +493,6 @@ D604882F0973F9963AC711FBA88B2B6D97FFC8835C04F0FEFCA3FFFEF301FFB033ADFB8893EF0B
             molinfo {
               biomol genomic
             },
-            pub {
-              pub {
-                pmid 25038886
-              }
-            },
             user {
               type str "DBLink",
               data {
@@ -589,11 +561,6 @@ C1438C03DFC800C21007E78E80'H
             molinfo {
               biomol genomic
             },
-            pub {
-              pub {
-                pmid 25038886
-              }
-            },
             user {
               type str "DBLink",
               data {
@@ -660,11 +627,6 @@ A2FD33EE027F8FF02000F4681D082C3EE06F83F003E8402800C1C3DF303F873C02C0C001845104
             molinfo {
               biomol genomic
             },
-            pub {
-              pub {
-                pmid 25038886
-              }
-            },
             user {
               type str "DBLink",
               data {
@@ -730,11 +692,6 @@ C6910C3CFAFF73C31F7E8C7FFDE1E8331327EF5CEB1B803E830FB27A3FD3F7A01E7C770BE0C0CC
             molinfo {
               biomol genomic
             },
-            pub {
-              pub {
-                pmid 25038886
-              }
-            },
             user {
               type str "DBLink",
               data {
@@ -799,11 +756,6 @@ F28F3AFC403A839F5C0E264710176012800BC731D30187482E7CC82DC0440CC03A77F1FACE30FD
             },
             molinfo {
               biomol genomic
-            },
-            pub {
-              pub {
-                pmid 25038886
-              }
             },
             user {
               type str "DBLink",
@@ -874,11 +826,6 @@ BAFCFCB03CBADC0C641C37CC411BE904270300610E081F437FDA801402922740F7837800DA0FE0
             },
             molinfo {
               biomol genomic
-            },
-            pub {
-              pub {
-                pmid 25038886
-              }
             },
             user {
               type str "DBLink",
@@ -1755,11 +1702,6 @@ CDB9BE636EF9D0AEC3E39F30013A81CF06C50F3EC6FC4281C3921324023F0F8C3DE8F23BCE2E71
             molinfo {
               biomol genomic
             },
-            pub {
-              pub {
-                pmid 25038886
-              }
-            },
             user {
               type str "DBLink",
               data {
@@ -1919,11 +1861,6 @@ F45EB0C7397DC3853100B330EC937097BB73C7A60FCC3F7B14F2CF8C4C3031D25DC0B028E93E8F
             },
             molinfo {
               biomol genomic
-            },
-            pub {
-              pub {
-                pmid 25038886
-              }
             },
             user {
               type str "DBLink",
@@ -4357,11 +4294,6 @@ F3B30FF5D73FC5001143380173E67FFA3EE03B3CB2583CC30D94F2CFB2FC8527F0F5035DF5BFE2
             molinfo {
               biomol genomic
             },
-            pub {
-              pub {
-                pmid 25038886
-              }
-            },
             user {
               type str "DBLink",
               data {
@@ -4808,11 +4740,6 @@ BFC703C4C30BF0EC9FBBFF09C73F341CBCE076EF3C103BC3054008'H
             },
             molinfo {
               biomol genomic
-            },
-            pub {
-              pub {
-                pmid 25038886
-              }
             },
             user {
               type str "DBLink",
@@ -6007,11 +5934,6 @@ FF377D06C0B891B3E3F7FD37B1FAF77B3DC0B014B2D9FBEB1E8F94FB0B54F535E45EFA1F0FBFCA
             molinfo {
               biomol genomic
             },
-            pub {
-              pub {
-                pmid 25038886
-              }
-            },
             user {
               type str "DBLink",
               data {
@@ -6905,11 +6827,6 @@ F3C8FBB2F3CF1001BC090FE003043CB031FC0C002770'H
             molinfo {
               biomol genomic
             },
-            pub {
-              pub {
-                pmid 25038886
-              }
-            },
             user {
               type str "DBLink",
               data {
@@ -7271,11 +7188,6 @@ C507F4029E0AE79C304E0E4AF7AFC24CAE8B3D03CC33FFF1FD13000258'H
             },
             molinfo {
               biomol genomic
-            },
-            pub {
-              pub {
-                pmid 25038886
-              }
             },
             user {
               type str "DBLink",
@@ -8855,11 +8767,6 @@ B008E8303F388FC3FFCCBDC00C930001'H
             molinfo {
               biomol genomic
             },
-            pub {
-              pub {
-                pmid 25038886
-              }
-            },
             user {
               type str "DBLink",
               data {
@@ -9350,11 +9257,6 @@ FC6B02DF4BEBD97BACD37B0FA0D8C4F04B6FED6FE836F96F1ECB1F830D8FA34BE78BEDC4B2C3E0
             },
             molinfo {
               biomol genomic
-            },
-            pub {
-              pub {
-                pmid 25038886
-              }
             },
             user {
               type str "DBLink",
@@ -9984,11 +9886,6 @@ D6FE3F9D01A3F0033FE3FCF43137D1767E2E42CE00E38ECBE0C0BD3B7BFFBDF4408F300F3BF103
             molinfo {
               biomol genomic
             },
-            pub {
-              pub {
-                pmid 25038886
-              }
-            },
             user {
               type str "DBLink",
               data {
@@ -10308,11 +10205,6 @@ F01D0B050FECCF46DB3F743FAC30EB23FF3F9087C1FC5F00C04CC0F0FAFC00356241C9FA8FFFF3
             molinfo {
               biomol genomic
             },
-            pub {
-              pub {
-                pmid 25038886
-              }
-            },
             user {
               type str "DBLink",
               data {
@@ -10621,11 +10513,6 @@ F6327FC1BC18FCFC32C80183D0D471C7507FE39202E0FD0E8A81B2FF05ED3F1F323F05200201B8
             },
             molinfo {
               biomol genomic
-            },
-            pub {
-              pub {
-                pmid 25038886
-              }
             },
             user {
               type str "DBLink",
@@ -11717,11 +11604,6 @@ CB8F00E107044833EB463F2F1A3831C6702039CC521203E0'H
             },
             molinfo {
               biomol genomic
-            },
-            pub {
-              pub {
-                pmid 25038886
-              }
             },
             user {
               type str "DBLink",
@@ -13967,11 +13849,6 @@ B40DBC06F96FD304E73CFAE722BE245EF1054C042F1ECF039E7BF4C139EF3EBDC0AF8BD7BC4D50
             molinfo {
               biomol genomic
             },
-            pub {
-              pub {
-                pmid 25038886
-              }
-            },
             user {
               type str "DBLink",
               data {
@@ -14163,11 +14040,6 @@ C90CB11003D0FDFDEBAFA754FDC43143F6B377213E02CAB42A0650EEBEFC0FD732D96E3B4CFDFE
             },
             molinfo {
               biomol genomic
-            },
-            pub {
-              pub {
-                pmid 25038886
-              }
             },
             user {
               type str "DBLink",
@@ -15062,11 +14934,6 @@ EF1804906FC10CC1FBBFA2EC1EB1105DC914304D3BFE01241BF0E3307EEFEA3B04A07417F2050C
             },
             molinfo {
               biomol genomic
-            },
-            pub {
-              pub {
-                pmid 25038886
-              }
             },
             user {
               type str "DBLink",
@@ -17321,11 +17188,6 @@ DF204D6E7F7242F9EB0B7BFD7F2CCB7D5038C928387EFF5D7B0006E5928C04FEC9BEFFD3F70D53
             molinfo {
               biomol genomic
             },
-            pub {
-              pub {
-                pmid 25038886
-              }
-            },
             user {
               type str "DBLink",
               data {
@@ -18535,11 +18397,6 @@ CAC47C4304AE1B90918FCCF77806B04A23F718E33E53218EF1FD8E2F1713BB015340DF96F04B10
             molinfo {
               biomol genomic
             },
-            pub {
-              pub {
-                pmid 25038886
-              }
-            },
             user {
               type str "DBLink",
               data {
@@ -19454,11 +19311,6 @@ BC8015068BCF0E0C38CF0009FC81FCB0CC324FC44004000449FCEA7BB0'H
             },
             molinfo {
               biomol genomic
-            },
-            pub {
-              pub {
-                pmid 25038886
-              }
             },
             user {
               type str "DBLink",
@@ -20680,11 +20532,6 @@ D411440F1069E70FC115F20BFB8C38E58E9FE7BFD0FCD0DC081488DC07CF211231B7063F2153CF
             },
             molinfo {
               biomol genomic
-            },
-            pub {
-              pub {
-                pmid 25038886
-              }
             },
             user {
               type str "DBLink",
@@ -22108,11 +21955,6 @@ E7308B3C'H
             molinfo {
               biomol genomic
             },
-            pub {
-              pub {
-                pmid 25038886
-              }
-            },
             user {
               type str "DBLink",
               data {
@@ -23269,11 +23111,6 @@ B7E402BAEF422FB3A6C8E68CFBF9F6802F3E9A2B7D7BA897F9E420380F38347C994F2B56ECD292
             molinfo {
               biomol genomic
             },
-            pub {
-              pub {
-                pmid 25038886
-              }
-            },
             user {
               type str "DBLink",
               data {
@@ -23512,11 +23349,6 @@ B1F803F7FAFBC240F2D8087F00FC18E08BF8D7A74A3819C9A4A7C11390B62AB04A89F9D6786169
             },
             molinfo {
               biomol genomic
-            },
-            pub {
-              pub {
-                pmid 25038886
-              }
             },
             user {
               type str "DBLink",
@@ -25114,11 +24946,6 @@ A07733FFA8D3CE'H
             molinfo {
               biomol genomic
             },
-            pub {
-              pub {
-                pmid 25038886
-              }
-            },
             user {
               type str "DBLink",
               data {
@@ -25557,11 +25384,6 @@ A00C070E80184090CBE03001E034CF14C74D0E8AFCE010C035B231FC8E68005FDF0E01F87E50C5
             molinfo {
               biomol genomic
             },
-            pub {
-              pub {
-                pmid 25038886
-              }
-            },
             user {
               type str "DBLink",
               data {
@@ -25645,11 +25467,6 @@ FFC10280FDC3594BF5B00D037099FCFFFEBDF83F7083000F6BF7210284B5FFF30EB7B03CCF4017
             },
             molinfo {
               biomol genomic
-            },
-            pub {
-              pub {
-                pmid 25038886
-              }
             },
             user {
               type str "DBLink",
@@ -25758,11 +25575,6 @@ E0F0FA33A1FD3FFEFFFC53F35FAF3BDFAC0D07F0093F2DDF687CFFF6F2CBFDFFC7DDF3DA23F20A
             },
             molinfo {
               biomol genomic
-            },
-            pub {
-              pub {
-                pmid 25038886
-              }
             },
             user {
               type str "DBLink",
@@ -25899,11 +25711,6 @@ FFFA64400400FF270AFFAFCFCF0ADBD5C9AF8907F3033FFF2DAFDFFD5C8D2C3C0FFEFFF040A03F
             molinfo {
               biomol genomic
             },
-            pub {
-              pub {
-                pmid 25038886
-              }
-            },
             user {
               type str "DBLink",
               data {
@@ -26038,11 +25845,6 @@ FF20A843500D4F000BBF2251EC0CF9C205C85F3E8AEFF1F9AB8E81407C8910075080043C414020
             molinfo {
               biomol genomic
             },
-            pub {
-              pub {
-                pmid 25038886
-              }
-            },
             user {
               type str "DBLink",
               data {
@@ -26158,11 +25960,6 @@ F7AB789C88'H
             },
             molinfo {
               biomol genomic
-            },
-            pub {
-              pub {
-                pmid 25038886
-              }
             },
             user {
               type str "DBLink",
@@ -26291,11 +26088,6 @@ B37F2F389C4F42BFC1200425BFC3D580432043C3248030D7B19FCF8E5FEC0F4423BEF9FEABF023
             },
             molinfo {
               biomol genomic
-            },
-            pub {
-              pub {
-                pmid 25038886
-              }
             },
             user {
               type str "DBLink",
@@ -26467,11 +26259,6 @@ FC4DC69CDF0C0308DF7624F200A0ECF203BA0F8EE9F300A1FBD48530C53770FF20A843500D4F00
             },
             molinfo {
               biomol genomic
-            },
-            pub {
-              pub {
-                pmid 25038886
-              }
             },
             user {
               type str "DBLink",
@@ -27821,11 +27608,6 @@ A8853CDFF03AE400EE8F2C3D94FFB04D9EFBFA9008E02EB6CF46BF2FB206EB3A0AFFDC45201110
             molinfo {
               biomol genomic
             },
-            pub {
-              pub {
-                pmid 25038886
-              }
-            },
             user {
               type str "DBLink",
               data {
@@ -28082,11 +27864,6 @@ BE8B20DEC937E10C67AE4D30F01824D340'H
             },
             molinfo {
               biomol genomic
-            },
-            pub {
-              pub {
-                pmid 25038886
-              }
             },
             user {
               type str "DBLink",
