@@ -373,6 +373,7 @@ void CTable2AsnContext::MergeSeqDescr(objects::CSeq_descr& dest, const objects::
         switch ((**it).Which())
         {
         case CSeqdesc::e_Pub:
+        case CSeqdesc::e_User:
             break;
         default:
             desc = CAutoAddDesc::LocateDesc(dest, (**it).Which());
