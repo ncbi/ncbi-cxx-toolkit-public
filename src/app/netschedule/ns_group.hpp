@@ -91,9 +91,12 @@ class CNSGroupsRegistry
 
         TNSBitVector  GetJobs(const string &  group,
                               bool  allow_exception = true) const;
+        TNSBitVector  GetJobs(const vector<unsigned int> &  group_ids) const;
+        TNSBitVector  GetJobs(const TNSBitVector &  group_ids) const;
         TNSBitVector  GetRegisteredGroups(void) const;
         unsigned int  ResolveGroup(const string &  group);
         string        ResolveGroup(unsigned int  group) const;
+        vector<unsigned int>  ResolveGroups(const list< string > &  tokens);
         unsigned int  AddJobs(unsigned int    group_id,
                               unsigned int    first_job_id,
                               unsigned int    count);

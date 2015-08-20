@@ -72,7 +72,7 @@ struct SNSNotificationAttributes
                                     // notifications will be used. New format
                                     // is for clients used GET2 command.
                                     // Old format is for clients used WGET.
-    string          m_Group;
+    TNSBitVector    m_Groups;
 
     // Support for two stage (different frequency) notifications
     // First stage is frequent (fast) within configured timeout from the moment
@@ -86,6 +86,7 @@ struct SNSNotificationAttributes
 
     string  Print(const CNSClientsRegistry &   clients_registry,
                   const CNSAffinityRegistry &  aff_registry,
+                  const CNSGroupsRegistry &    group_registry,
                   bool                         is_active,
                   bool                         verbose) const;
 };
@@ -130,7 +131,7 @@ class CNSNotificationList
                               bool                  any_job,
                               bool                  exclusive_new_affinity,
                               bool                  new_format,
-                              const string &        group,
+                              const TNSBitVector &  groups,
                               ECommandGroup         cmd_group);
         void UnregisterListener(const CNSClientId &  client,
                                 unsigned short       port,
@@ -174,6 +175,7 @@ class CNSNotificationList
         void onQueueResumed(bool  any_pending);
         string Print(const CNSClientsRegistry &   clients_registry,
                      const CNSAffinityRegistry &  aff_registry,
+                     const CNSGroupsRegistry &    group_registry,
                      bool                         verbose) const;
         size_t size(void) const
         {

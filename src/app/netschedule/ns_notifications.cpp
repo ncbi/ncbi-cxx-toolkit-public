@@ -51,6 +51,7 @@ BEGIN_NCBI_SCOPE
 string  SNSNotificationAttributes::Print(
                        const CNSClientsRegistry &   clients_registry,
                        const CNSAffinityRegistry &  aff_registry,
+                       const CNSGroupsRegistry &    group_registry,
                        bool                         is_active,
                        bool                         verbose) const
 {
@@ -130,7 +131,27 @@ string  SNSNotificationAttributes::Print(
     else
         buffer += s_False;
 
-    buffer += "OK:  GROUP: '" + m_Group + "'\n";
+    if (!m_Groups.any()) {
+        buffer += "OK:  GROUPS: NONE\n";
+    } else {
+        if (verbose) {
+            buffer += "OK:  GROUPS:\n";
+            TNSBitVector::enumerator    en(m_Groups.first());
+            for ( ; en.valid(); ++en) {
+                try {
+                    string      token = group_registry.ResolveGroup(*en);
+                    buffer += "OK:    '" + token + "'\n";
+                } catch (const exception &  ex) {
+                    ERR_POST("Error resolving group number while printing "
+                             "the notification registry: " << ex.what());
+                } catch (...) {
+                    ERR_POST("Unknown resolving group number error while "
+                             "printing the notification registry");
+                }
+            }
+        } else
+            buffer += "OK:  GROUPS: n/a (available in VERBOSE mode)\n";
+    }
 
     buffer += "OK:  REASON: ";
     if (m_Reason == eGet)
@@ -192,7 +213,7 @@ CNSNotificationList::RegisterListener(
                                 bool                  any_job,
                                 bool                  exclusive_new_affinity,
                                 bool                  new_format,
-                                const string &        group,
+                                const TNSBitVector &  groups,
                                 ECommandGroup         reason)
 {
     unsigned int                                address = client.GetAddress();
@@ -210,7 +231,7 @@ CNSNotificationList::RegisterListener(
         found->m_AnyJob = any_job;
         found->m_ExclusiveNewAff = exclusive_new_affinity;
         found->m_NewFormat = new_format;
-        found->m_Group = group;
+        found->m_Groups = groups;
         found->m_HifreqNotifyLifetime = kTimeZero;
         found->m_SlowRate = false;
         found->m_SlowRateCount = 0;
@@ -246,7 +267,7 @@ CNSNotificationList::RegisterListener(
     attributes.m_AnyJob = any_job;
     attributes.m_ExclusiveNewAff = exclusive_new_affinity;
     attributes.m_NewFormat = new_format;
-    attributes.m_Group = group;
+    attributes.m_Groups = groups;
     attributes.m_HifreqNotifyLifetime = kTimeZero;
     attributes.m_SlowRate = false;
     attributes.m_SlowRateCount = 0;
@@ -499,8 +520,8 @@ CNSNotificationList::Notify(const TNSBitVector &   jobs,
         }
 
         // Check if the group restriction is applicable
-        if (!k->m_Group.empty()) {
-            group_jobs = group_registry.GetJobs(k->m_Group, false);
+        if (k->m_Groups.any()) {
+            group_jobs = group_registry.GetJobs(k->m_Groups);
             if ((jobs & group_jobs).any() == false) {
                 ++k;
                 continue;
@@ -599,6 +620,7 @@ void CNSNotificationList::onQueueResumed(bool  any_pending)
 string
 CNSNotificationList::Print(const CNSClientsRegistry &   clients_registry,
                            const CNSAffinityRegistry &  aff_registry,
+                           const CNSGroupsRegistry &    group_registry,
                            bool                         verbose) const
 {
     string                                              buffer;
@@ -613,12 +635,12 @@ CNSNotificationList::Print(const CNSClientsRegistry &   clients_registry,
     for (current = m_ActiveListeners.begin();
          current != m_ActiveListeners.end(); ++current)
         buffer += current->Print(clients_registry, aff_registry,
-                                 true, verbose);
+                                 group_registry, true, verbose);
 
     for (current = m_PassiveListeners.begin();
          current != m_PassiveListeners.end(); ++current)
         buffer += current->Print(clients_registry, aff_registry,
-                                 false, verbose);
+                                 group_registry, false, verbose);
 
     return buffer;
 }

@@ -109,6 +109,40 @@ TNSBitVector  CNSGroupsRegistry::GetJobs(const string &  group,
 }
 
 
+TNSBitVector
+CNSGroupsRegistry::GetJobs(const vector<unsigned int> &  group_ids) const
+{
+    TNSBitVector                            jobs;
+    TGroupIDToAttrMap::const_iterator       found;
+    CMutexGuard                             guard(m_Lock);
+
+    for (vector<unsigned int>::const_iterator  k = group_ids.begin();
+            k != group_ids.end(); ++k) {
+        found = m_IDToAttr.find(*k);
+        if (found != m_IDToAttr.end())
+            jobs |= found->second->m_Jobs;
+    }
+    return jobs;
+}
+
+
+TNSBitVector
+CNSGroupsRegistry::GetJobs(const TNSBitVector &  group_ids) const
+{
+    TNSBitVector                            jobs;
+    TGroupIDToAttrMap::const_iterator       found;
+    TNSBitVector::enumerator                en;
+    CMutexGuard                             guard(m_Lock);
+
+    for (en = group_ids.first(); en.valid(); ++en) {
+        found = m_IDToAttr.find(*en);
+        if (found != m_IDToAttr.end())
+            jobs |= found->second->m_Jobs;
+    }
+    return jobs;
+}
+
+
 TNSBitVector  CNSGroupsRegistry::GetRegisteredGroups(void) const
 {
     CMutexGuard         guard(m_Lock);
@@ -145,6 +179,19 @@ string  CNSGroupsRegistry::ResolveGroup(unsigned int  group_id) const
                    " is unknown");
 
     return *found->second->m_GroupToken;
+}
+
+
+vector<unsigned int>
+CNSGroupsRegistry::ResolveGroups(const list< string > &  tokens)
+{
+    vector<unsigned int>    result;
+
+    for (list<string>::const_iterator  k(tokens.begin());
+            k != tokens.end(); ++k)
+        if (!k->empty())
+            result.push_back(ResolveGroup(*k));
+    return result;
 }
 
 

@@ -2030,6 +2030,9 @@ void CNetScheduleHandler::x_ProcessGetJob(CQueue* q)
     list<string>    aff_list;
     NStr::Split(m_CommandArguments.affinity_token,
                 "\t,", aff_list, NStr::eNoMergeDelims);
+    list<string>    group_list;
+    NStr::Split(m_CommandArguments.group,
+                "\t,", group_list, NStr::eNoMergeDelims);
 
     CJob            job;
     string          added_pref_aff;
@@ -2043,7 +2046,7 @@ void CNetScheduleHandler::x_ProcessGetJob(CQueue* q)
                         m_CommandArguments.exclusive_new_aff,
                         m_CommandArguments.prioritized_aff,
                         cmdv2,
-                        m_CommandArguments.group,
+                        &group_list,
                         &job,
                         m_RollbackAction,
                         added_pref_aff) == false) {
@@ -2242,7 +2245,7 @@ void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
                         false,
                         false,
                         false,
-                        "",
+                        NULL,
                         &job,
                         m_RollbackAction,
                         added_pref_aff) == false) {
@@ -3466,6 +3469,9 @@ void CNetScheduleHandler::x_ProcessReading(CQueue* q)
     list<string>    aff_list;
     NStr::Split(m_CommandArguments.affinity_token,
                 "\t,", aff_list, NStr::eNoMergeDelims);
+    list<string>    group_list;
+    NStr::Split(m_CommandArguments.group,
+                "\t,", group_list, NStr::eNoMergeDelims);
 
     x_ClearRollbackAction();
     if (q->GetJobForReadingOrWait(m_ClientId,
@@ -3476,7 +3482,7 @@ void CNetScheduleHandler::x_ProcessReading(CQueue* q)
                                   m_CommandArguments.any_affinity,
                                   m_CommandArguments.exclusive_new_aff,
                                   m_CommandArguments.prioritized_aff,
-                                  m_CommandArguments.group,
+                                  &group_list,
                                   m_CommandArguments.affinity_may_change,
                                   m_CommandArguments.group_may_change,
                                   &job,

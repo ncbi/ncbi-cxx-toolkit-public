@@ -431,7 +431,7 @@ def pickPenaltyValue( lastCheckExitCode, calculatedCode ):
     " Provides a new value for the returned penalty "
     if lastCheckExitCode is None:
         lastCheckExitCode = BASE_RESERVE_CODE      # By default the previous
-                                                    # return code is 100
+                                                   # return code is 100
 
     # No intersection => the calculated value
     # There is intersection => the point of intersection

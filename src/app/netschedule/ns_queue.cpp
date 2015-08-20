@@ -340,7 +340,7 @@ bool CQueue::x_NoMoreReadJobs(const CNSClientId  &  client,
                               bool                  reader_affinity,
                               bool                  any_affinity,
                               bool                  exclusive_new_affinity,
-                              const string &        group,
+                              const TNSBitVector &  group_ids,
                               bool                  affinity_may_change,
                               bool                  group_may_change)
 {
@@ -378,11 +378,11 @@ bool CQueue::x_NoMoreReadJobs(const CNSClientId  &  client,
     // be excluded.
     TNSBitVector        reading_jobs =
                             m_StatusTracker.GetJobs(CNetScheduleAPI::eReading);
-    if (!group.empty()) {
+    if (group_ids.any()) {
         // The pending and running jobs may change their group and or affinity
         // later via the RESCHEDULE command
         TNSBitVector                            group_jobs;
-        group_jobs = m_GroupRegistry.GetJobs(group, false);
+        group_jobs = m_GroupRegistry.GetJobs(group_ids);
         if (!group_may_change)
             pending_running_jobs &= group_jobs;
 
@@ -735,7 +735,7 @@ CQueue::GetJobOrWait(const CNSClientId &       client,
                      bool                      exclusive_new_affinity,
                      bool                      prioritized_aff,
                      bool                      new_format,
-                     const string &            group,
+                     const list<string> *      group_list,
                      CJob *                    new_job,
                      CNSRollbackInterface * &  rollback_action,
                      string &                  added_pref_aff)
@@ -749,6 +749,8 @@ CQueue::GetJobOrWait(const CNSClientId &       client,
 
     vector<unsigned int>    aff_ids;
     TNSBitVector            aff_ids_vector;
+    vector<unsigned int>    group_ids;
+    TNSBitVector            group_ids_vector;
 
     {{
         CFastMutexGuard     guard(m_OperationLock);
@@ -766,8 +768,10 @@ CQueue::GetJobOrWait(const CNSClientId &       client,
         // Resolve affinities and groups. It is supposed that the client knows
         // better what affinities and groups to expect i.e. even if they do not
         // exist yet, they may appear soon.
-        m_GroupRegistry.ResolveGroup(group);
-        aff_ids = m_AffinityRegistry.ResolveAffinities(*aff_list);
+        if (group_list != NULL)
+            group_ids = m_GroupRegistry.ResolveGroups(*group_list);
+        if (aff_list != NULL)
+            aff_ids = m_AffinityRegistry.ResolveAffinities(*aff_list);
 
         x_UnregisterGetListener(client, port);
     }}
@@ -775,6 +779,9 @@ CQueue::GetJobOrWait(const CNSClientId &       client,
     for (vector<unsigned int>::const_iterator k = aff_ids.begin();
             k != aff_ids.end(); ++k)
         aff_ids_vector.set(*k, true);
+    for (vector<unsigned int>::const_iterator k = group_ids.begin();
+            k != group_ids.end(); ++k)
+        group_ids_vector.set(*k, true);
 
     for (;;) {
         // No lock here to make it possible to pick a job
@@ -784,7 +791,7 @@ CQueue::GetJobOrWait(const CNSClientId &       client,
                                                any_affinity,
                                                exclusive_new_affinity,
                                                prioritized_aff,
-                                               group, eGet);
+                                               group_ids, eGet);
         {{
             bool                outdated_job = false;
             CFastMutexGuard     guard(m_OperationLock);
@@ -798,11 +805,11 @@ CQueue::GetJobOrWait(const CNSClientId &       client,
                     if (timeout != 0 && port > 0)
                         // WGET: // There is no job, so the client might need to
                         // be registered in the waiting list
-                        x_RegisterGetListener( client, port, timeout,
-                                               aff_ids_vector,
-                                               wnode_affinity, any_affinity,
-                                               exclusive_new_affinity,
-                                               new_format, group);
+                        x_RegisterGetListener(client, port, timeout,
+                                              aff_ids_vector,
+                                              wnode_affinity, any_affinity,
+                                              exclusive_new_affinity,
+                                              new_format, group_ids_vector);
                     return true;
                 }
                 outdated_job = true;
@@ -2087,7 +2094,7 @@ CQueue::GetJobForReadingOrWait(const CNSClientId &       client,
                                bool                      any_affinity,
                                bool                      exclusive_new_affinity,
                                bool                      prioritized_aff,
-                               const string &            group,
+                               const list<string> *      group_list,
                                bool                      affinity_may_change,
                                bool                      group_may_change,
                                CJob *                    job,
@@ -2097,6 +2104,7 @@ CQueue::GetJobForReadingOrWait(const CNSClientId &       client,
 {
     CNSPreciseTime          curr = CNSPreciseTime::Current();
     vector<unsigned int>    aff_ids;
+    vector<unsigned int>    group_ids;
 
     // This is a reader command, so mark the node type as a reader
     m_ClientsRegistry.AppendType(client, CNSClient::eReader);
@@ -2119,8 +2127,10 @@ CQueue::GetJobForReadingOrWait(const CNSClientId &       client,
         // Resolve affinities and groups. It is supposed that the client knows
         // better what affinities and groups to expect i.e. even if they do not
         // exist yet, they may appear soon.
-        m_GroupRegistry.ResolveGroup(group);
-        aff_ids = m_AffinityRegistry.ResolveAffinities(*aff_list);
+        if (group_list != NULL)
+            group_ids = m_GroupRegistry.ResolveGroups(*group_list);
+        if (aff_list != NULL)
+            aff_ids = m_AffinityRegistry.ResolveAffinities(*aff_list);
 
         m_ClientsRegistry.CancelWaiting(client, eRead);
     }}
@@ -2129,6 +2139,10 @@ CQueue::GetJobForReadingOrWait(const CNSClientId &       client,
     for (vector<unsigned int>::const_iterator  k = aff_ids.begin();
             k != aff_ids.end(); ++k)
         aff_ids_vector.set(*k, true);
+    TNSBitVector    group_ids_vector;
+    for (vector<unsigned int>::const_iterator  k = group_ids.begin();
+            k != group_ids.end(); ++k)
+        group_ids_vector.set(*k, true);
 
     for (;;) {
         // No lock here to make it possible to pick a job
@@ -2137,7 +2151,7 @@ CQueue::GetJobForReadingOrWait(const CNSClientId &       client,
                                                any_affinity,
                                                exclusive_new_affinity,
                                                prioritized_aff,
-                                               group, eRead);
+                                               group_ids, eRead);
 
         {{
             bool                outdated_job = false;
@@ -2151,14 +2165,16 @@ CQueue::GetJobForReadingOrWait(const CNSClientId &       client,
                 if (job_pick.job_id == 0) {
                     *no_more_jobs = x_NoMoreReadJobs(client, aff_ids_vector,
                                                  reader_affinity, any_affinity,
-                                                 exclusive_new_affinity, group,
+                                                 exclusive_new_affinity,
+                                                 group_ids_vector,
                                                  affinity_may_change,
                                                  group_may_change);
                     if (timeout != 0 && port > 0)
                         x_RegisterReadListener(client, port, timeout,
                                            aff_ids_vector,
                                            reader_affinity, any_affinity,
-                                           exclusive_new_affinity, group);
+                                           exclusive_new_affinity,
+                                           group_ids_vector);
                     return true;
                 }
                 outdated_job = true;
@@ -2493,7 +2509,7 @@ CQueue::x_FindVacantJob(const CNSClientId  &          client,
                         bool                          any_affinity,
                         bool                          exclusive_new_affinity,
                         bool                          prioritized_aff,
-                        const string &                group,
+                        const vector<unsigned int> &  group_ids,
                         ECommandGroup                 cmd_group)
 {
     x_SJobPick      job_pick = { 0, false, 0 };
@@ -2501,7 +2517,7 @@ CQueue::x_FindVacantJob(const CNSClientId  &          client,
     bool            effective_use_pref_affinity = use_pref_affinity;
     unsigned int    pref_aff_candidate_job_id = 0;
     unsigned int    exclusive_aff_candidate = 0;
-    TNSBitVector    group_jobs = m_GroupRegistry.GetJobs(group, false);
+    TNSBitVector    group_jobs = m_GroupRegistry.GetJobs(group_ids);
     TNSBitVector    blacklisted_jobs =
                     m_ClientsRegistry.GetBlacklistedJobs(client, cmd_group);
 
@@ -2531,8 +2547,8 @@ CQueue::x_FindVacantJob(const CNSClientId  &          client,
 
         // Exclude blacklisted jobs
         vacant_jobs -= blacklisted_jobs;
-        // Keep only the group jobs if the group is provided
-        if (!group.empty())
+        // Keep only the group jobs if the groups are provided
+        if (!group_ids.empty())
             vacant_jobs &= group_jobs;
 
         // Exclude jobs which have been read or in a process of reading
@@ -2637,7 +2653,7 @@ CQueue::x_FindVacantJob(const CNSClientId  &          client,
             job_pick.job_id = m_StatusTracker.GetJobByStatus(
                                         CNetScheduleAPI::ePending,
                                         blacklisted_jobs,
-                                        group_jobs, !group.empty());
+                                        group_jobs, !group_ids.empty());
         else {
             vector<CNetScheduleAPI::EJobStatus>     from_state;
             from_state.push_back(CNetScheduleAPI::eDone);
@@ -2646,7 +2662,7 @@ CQueue::x_FindVacantJob(const CNSClientId  &          client,
             job_pick.job_id = m_StatusTracker.GetJobByStatus(
                                         from_state,
                                         blacklisted_jobs | m_ReadJobs,
-                                        group_jobs, !group.empty());
+                                        group_jobs, !group_ids.empty());
         }
         job_pick.exclusive = false;
         job_pick.aff_id = 0;
@@ -3046,7 +3062,7 @@ string CQueue::PrintClientsList(bool verbose) const
 string CQueue::PrintNotificationsList(bool verbose) const
 {
     return m_NotificationsList.Print(m_ClientsRegistry, m_AffinityRegistry,
-                                     verbose);
+                                     m_GroupRegistry, verbose);
 }
 
 
@@ -4013,13 +4029,13 @@ void CQueue::x_RegisterGetListener(const CNSClientId &   client,
                                    bool                  any_aff,
                                    bool                  exclusive_new_affinity,
                                    bool                  new_format,
-                                   const string &        group)
+                                   const TNSBitVector &  group_ids)
 {
     // Add to the notification list and save the wait port
     m_NotificationsList.RegisterListener(client, port, timeout,
                                          wnode_aff, any_aff,
                                          exclusive_new_affinity, new_format,
-                                         group, eGet);
+                                         group_ids, eGet);
     if (client.IsComplete())
         m_ClientsRegistry.SetNodeWaiting(client, port,
                                          aff_ids, eGet);
@@ -4035,13 +4051,13 @@ CQueue::x_RegisterReadListener(const CNSClientId &   client,
                                bool                  reader_aff,
                                bool                  any_aff,
                                bool                  exclusive_new_affinity,
-                               const string &        group)
+                               const TNSBitVector &  group_ids)
 {
     // Add to the notification list and save the wait port
     m_NotificationsList.RegisterListener(client, port, timeout,
                                          reader_aff, any_aff,
                                          exclusive_new_affinity, true,
-                                         group, eRead);
+                                         group_ids, eRead);
     m_ClientsRegistry.SetNodeWaiting(client, port, aff_ids, eRead);
 }
 

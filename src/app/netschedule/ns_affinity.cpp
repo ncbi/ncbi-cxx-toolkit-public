@@ -240,7 +240,8 @@ CNSAffinityRegistry::ResolveAffinities(const list< string > &  tokens)
 
     for (list<string>::const_iterator  k(tokens.begin());
          k != tokens.end(); ++k)
-        result.push_back(ResolveAffinity(*k));
+        if (!k->empty())
+            result.push_back(ResolveAffinity(*k));
     return result;
 }
 

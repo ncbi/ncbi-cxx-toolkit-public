@@ -38,6 +38,7 @@ scripts = [ "make_ncbi_grid_module_tree.sh", "netschedule.py",
             "netschedule_tests_pack_4_11.py", "netschedule_tests_pack_4_13.py",
             "netschedule_tests_pack_4_14.py", "netschedule_tests_pack_4_16.py",
             "netschedule_tests_pack_4_17.py", "netschedule_tests_pack_4_18.py",
+            "netschedule_tests_pack_4_19.py",
             "ns.py", "test_netschedule.py" ]
 
 

@@ -200,7 +200,7 @@ public:
                       bool                      exclusive_new_affinity,
                       bool                      prioritized_aff,
                       bool                      new_format,
-                      const string &            group,
+                      const list<string> *      group_list,
                       CJob *                    new_job,
                       CNSRollbackInterface * &  rollback_action,
                       string &                  added_pref_aff);
@@ -301,7 +301,7 @@ public:
                                 bool                      any_affinity,
                                 bool                      exclusive_new_affinity,
                                 bool                      prioritized_aff,
-                                const string &            group,
+                                const list<string> *      group_list,
                                 bool                      affinity_may_change,
                                 bool                      group_may_change,
                                 CJob *                    job,
@@ -496,7 +496,7 @@ private:
                     bool                          any_affinity,
                     bool                          exclusive_new_affinity,
                     bool                          prioritized_aff,
-                    const string &                group,
+                    const vector<unsigned int> &  group_ids,
                     ECommandGroup                 cmd_group);
     x_SJobPick
     x_FindOutdatedPendingJob(const CNSClientId &  client,
@@ -549,7 +549,7 @@ private:
                                bool                  any_aff,
                                bool                  exclusive_new_affinity,
                                bool                  new_format,
-                               const string &        group);
+                               const TNSBitVector &  group_ids);
     void x_RegisterReadListener(const CNSClientId &   client,
                                 unsigned short        port,
                                 unsigned int          timeout,
@@ -557,7 +557,7 @@ private:
                                 bool                  reader_aff,
                                 bool                  any_aff,
                                 bool                  exclusive_new_affinity,
-                                const string &        group);
+                                const TNSBitVector &  group_ids);
     bool x_UnregisterGetListener(const CNSClientId &  client,
                                  unsigned short       port);
 
@@ -578,7 +578,7 @@ private:
                           bool                  reader_affinity,
                           bool                  any_affinity,
                           bool                  exclusive_new_affinity,
-                          const string &        group,
+                          const TNSBitVector &  group_list,
                           bool                  affinity_may_change,
                           bool                  group_may_change);
 
