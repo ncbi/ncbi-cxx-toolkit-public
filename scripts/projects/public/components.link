@@ -1,13 +1,13 @@
 [components]
-infrastructure  13.0
-core            13.0
-dbase           13.0
-web             13.0
-objects         13.0
-objtools        13.0
-algo            13.0
-misc            13.0
-blast           13.0
-app             13.0
-sample          13.0
-sra             13.0
+algo            16.1
+app             16.1
+blast           16.1
+core            16.1
+dbase           16.1
+infrastructure  16.1
+misc            16.1
+objects         16.1
+objtools        16.1
+sample          16.1
+sra             16.1
+web             16.1
