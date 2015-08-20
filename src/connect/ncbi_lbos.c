@@ -261,8 +261,9 @@ int/*bool*/ s_LBOS_AddAnnouncedServer(const char*            service,
     if (*count == *alloc)
     {
         int new_size = *alloc*2 + 1;
-        void* realloc_result = 
-            realloc(*arr, new_size * sizeof(struct SLBOS_AnnounceHandle_Tag));
+        struct SLBOS_AnnounceHandle_Tag* realloc_result = 
+            (struct SLBOS_AnnounceHandle_Tag*)realloc(*arr,
+                           new_size * sizeof(struct SLBOS_AnnounceHandle_Tag));
         if (realloc_result != NULL) {
             *arr = realloc_result;
             *alloc = new_size;
@@ -317,7 +318,7 @@ char* g_LBOS_ComposeLBOSAddress(void)
     if (role == NULL || domain == NULL) 
         return NULL;
     
-    char* site = calloc(kMaxLineSize, sizeof(char));
+    char* site = (char*)calloc(kMaxLineSize, sizeof(char));
     if (site == NULL) {
         CORE_LOG(eLOG_Warning, "s_LBOS_ComposeLBOSAddress: "
                                  "memory allocation failed");
@@ -327,7 +328,7 @@ char* g_LBOS_ComposeLBOSAddress(void)
     sprintf(site, "lbos.%s.%s", role, domain);
     /*Release unneeded resources for this C-string */
     char* realloc_result;
-    if ((realloc_result = realloc(site,
+    if ((realloc_result = (char*)realloc(site,
                                  sizeof(char) * (strlen(site) + 1))) == NULL) {
         CORE_LOG(eLOG_Warning, "s_LBOS_ComposeLBOSAddress: problem with "
                 "realloc while trimming string, using untrimmed string");
@@ -348,7 +349,7 @@ int/*bool*/ g_LBOS_CheckIterator(SERV_ITER              iter,
         return 0;
     if (should_have_data == ELBOSIteratorCheckType_MustHaveData) {
         if (iter->data == NULL) return 0;
-        SLBOS_Data* data = iter->data;
+        SLBOS_Data* data = (SLBOS_Data*)iter->data;
         assert(data->a_cand >= data->n_cand);
         assert(data->pos_cand <= data->n_cand);
     }
@@ -437,7 +438,7 @@ char** g_LBOS_GetLBOSAddressesEx (ELBOSFindMethod priority_find_method,
             }
             break;
         case eLBOSFindMethod_127001 :
-            lbosaddress = calloc(kHostportStringLength, sizeof(char));
+            lbosaddress = (char*)calloc(kHostportStringLength, sizeof(char));
             if (lbosaddress != NULL) {
                 sprintf(lbosaddress, "127.0.0.1:8080");
                 addresses[lbosaddresses_count++] = lbosaddress;
@@ -468,7 +469,7 @@ char** g_LBOS_GetLBOSAddressesEx (ELBOSFindMethod priority_find_method,
 #endif
             break;
         case eLBOSFindMethod_Registry:
-            lbosaddress = calloc(kMaxLineSize, sizeof(char));
+            lbosaddress = (char*)calloc(kMaxLineSize, sizeof(char));
             CORE_REG_GET("CONN", "lbos", lbosaddress, kMaxLineSize, NULL);
             if (g_LBOS_StringIsNullOrEmpty(lbosaddress)) {
                 CORE_LOG_X(1, eLOG_Warning, "Trying to find lbos using "
@@ -805,7 +806,7 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
              * info and one for finalizing NULL
              */
             if (infos_capacity <= infos_count + 1) {
-                SSERV_Info** realloc_result = realloc(infos,
+                SSERV_Info** realloc_result = (SSERV_Info**)realloc(infos,
                         sizeof(SSERV_Info*) * (infos_capacity*2 + 1));
                 if (realloc_result == NULL) {
                     /* If error with realloc, return as much as could allocate
@@ -862,7 +863,7 @@ static void s_LBOS_FillCandidates(SLBOS_Data* data, const char* service)
     /* We suppose that number of addresses is constant (and so
        is position of NULL), so no mutex is necessary */
     while (s_LBOS_InstancesList[++addresses_count] != NULL) continue;
-    lbos_addresses = calloc(addresses_count + 1, sizeof(char*));
+    lbos_addresses = (char**)calloc(addresses_count + 1, sizeof(char*));
     if (lbos_addresses == NULL) {
         CORE_LOG(eLOG_Warning, "s_LBOS_FillCandidates: No RAM. "
             "Returning.");
@@ -955,7 +956,7 @@ static void s_LBOS_FillCandidates(SLBOS_Data* data, const char* service)
          */
         for (i = 0;  hostports_array[i] != NULL;  ++i) continue;
         /* ...and allocate space */
-        SLBOS_Candidate* realloc_result = realloc(data->cand,
+        SLBOS_Candidate* realloc_result = (SLBOS_Candidate*)realloc(data->cand,
                                             sizeof(SLBOS_Candidate) * (i + 1));
         if (realloc_result == NULL) {
             CORE_LOGF_X(1, eLOG_Warning, ("s_LBOS_FillCandidates: Could not "
@@ -1060,12 +1061,12 @@ static char* s_LBOS_Replace000WithIP(const char* healthcheck_url)
     /* By 'const' said that we will not touch healthcheck_url, but actually 
      * we need to be able to change it, so we copy it */
     char* my_healthcheck_url; /* new url with replaced "0.0.0.0" (if needed) */
-    char* replace_pos;/* to check if we need to replace 0.0.0.0 with hostname*/
+    const char* replace_pos;/* to check if there is 0.0.0.0 */
     /* If we need to insert local IP instead of 0.0.0.0, we will */
     if ((replace_pos = strstr(healthcheck_url, "0.0.0.0")) == NULL) {
         my_healthcheck_url = strdup(healthcheck_url);
     } else {
-        my_healthcheck_url = calloc(kMaxLineSize, sizeof(char));
+        my_healthcheck_url = (char*)calloc(kMaxLineSize, sizeof(char));
         if (my_healthcheck_url == NULL) {
             CORE_LOG(eLOG_Warning, "Failed memory allocation. Most likely, "
                                    "not enough RAM.");
@@ -1277,7 +1278,7 @@ static void s_LBOS_Initialize(void)
 {
     const char* service = "/lbos";
     SConnNetInfo* net_info;
-    SERV_ITER iter = calloc(1, sizeof(*iter));
+    SERV_ITER iter = (SERV_ITER)calloc(1, sizeof(*iter));
     if (iter == NULL) {
         CORE_LOG_X(1, eLOG_Warning, "RAM error. "
                                     "Turning lbos off in this process.");
@@ -1301,7 +1302,7 @@ static void s_LBOS_Initialize(void)
      * Load DTAB Local from registry
      */
     free(s_LBOS_DTABLocal);
-    s_LBOS_DTABLocal = calloc(kMaxLineSize, sizeof(char));
+    s_LBOS_DTABLocal = (char*)calloc(kMaxLineSize, sizeof(char));
     if (s_LBOS_DTABLocal == NULL) {
         CORE_LOG_X(1, eLOG_Warning, "RAM error. "
                                     "Turning lbos off in this process.");
@@ -1317,7 +1318,7 @@ static void s_LBOS_Initialize(void)
         /* If string does not start with "DTab-Local:", we add it */
         if (strstr(s_LBOS_DTABLocal, "DTab-Local:") != s_LBOS_DTABLocal)
         {
-            char* tempDTAB = calloc(strlen(s_LBOS_DTABLocal) + 
+            char* tempDTAB = (char*)calloc(strlen(s_LBOS_DTABLocal) + 
                                                     strlen("DTab-Local: ") + 1, 
                                     sizeof(char));
             if (tempDTAB == NULL) {
@@ -1444,7 +1445,7 @@ static void s_LBOS_Close (SERV_ITER iter)
         /*s_Reset() has to be called before*/
         s_LBOS_Reset(iter);
     }
-    s_LBOS_DestroyData(iter->data);
+    s_LBOS_DestroyData((SLBOS_Data*)iter->data);
     iter->data = NULL;
     return;
 }
@@ -1557,7 +1558,7 @@ const SSERV_VTable* SERV_LBOS_Open( SERV_ITER            iter,
      */
     if (!g_LBOS_StringIsNullOrEmpty(s_LBOS_DTABLocal)) 
     {
-        char* dtab = calloc(kMaxLineSize, sizeof(char));
+        char* dtab = (char*)calloc(kMaxLineSize, sizeof(char));
         if (dtab != NULL) {
             strcat(dtab, s_LBOS_DTABLocal);
             strcat(dtab, "\r\n");
@@ -1615,7 +1616,7 @@ ELBOS_Result s_LBOS_Announce(const char*             service,
     SConnNetInfo* net_info = ConnNetInfo_Create(service);
     net_info->req_method = eReqMethod_Post;
     ELBOS_Result return_code = eLBOS_Success;
-    char* buf = calloc(kMaxLineSize, sizeof(char));
+    char* buf = (char*)calloc(kMaxLineSize, sizeof(char));
     if (buf == NULL) {
         CORE_LOG(eLOG_Warning, "Failed memory allocation. Most likely, "
             "not enough RAM.");
@@ -1672,7 +1673,7 @@ ELBOS_Result s_LBOS_Announce(const char*             service,
         return_code = eLBOS_ServerError;
         goto clear_and_exit;
     }
-    char* lbos_addr = calloc(kMaxLineSize, sizeof(char)); /* will not be 
+    char* lbos_addr = (char*)calloc(kMaxLineSize, sizeof(char)); /* will not be 
                                                            * free()'d */
     if (lbos_addr == NULL) {
         CORE_LOG(eLOG_Warning, "Failed memory allocation. Most likely, "
@@ -1815,7 +1816,7 @@ ELBOS_Result LBOS_Deannounce(const char*       service,
         }
         CONN conn = s_LBOS_ConnectURL(net_info, query, &response_code);
         /* Let's check if lbos exists at this address */
-        int bytesRead;
+        size_t bytesRead;
         read_status =
             g_LBOS_UnitTesting_GetLBOSFuncs()->Read(conn, buf, kMaxLineSize,
                                                     &bytesRead, eIO_ReadPlain);
@@ -1865,7 +1866,8 @@ void LBOS_DeannounceAll()
     CORE_LOCK_READ;
     struct SLBOS_AnnounceHandle_Tag** arr = &s_LBOS_AnnouncedServers;
     unsigned int servers = s_LBOS_AnnouncedServersNum;
-    struct SLBOS_AnnounceHandle_Tag* local_arr = calloc(servers, sizeof(**arr)); 
+    struct SLBOS_AnnounceHandle_Tag* local_arr = 
+              (struct SLBOS_AnnounceHandle_Tag*)calloc(servers, sizeof(**arr)); 
     if (local_arr == NULL) {
         CORE_LOG_X(1, eLOG_Warning, "RAM error. Cancelling deannounce all.");
         CORE_UNLOCK;
