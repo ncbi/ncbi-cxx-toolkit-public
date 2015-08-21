@@ -68,12 +68,12 @@ s_ShuffleList( vector<Type>& lst)
 static void
 s_ShuffleSrvsLists(void)
 {
-#if 0
     TSyncSlotsList::const_iterator sl = s_SlotsList.begin();
     for ( ; sl != s_SlotsList.end(); ++sl) {
+        (*sl)->lock.Lock();
         s_ShuffleList<SSyncSlotSrv*>((*sl)->srvs);
+        (*sl)->lock.Unlock();
     }
-#endif
 }
 
 
@@ -675,12 +675,9 @@ CNCActiveSyncControl::x_CheckSlotTheirSync(void)
         SSyncSlotSrv* slot_srv = *it_srv;
         slot_srv->lock.Lock();
         if (slot_srv->sync_started) {
-            if (
-                (CSrvTime::CurSecs() - slot_srv->last_active_time
-                            > (CNCDistributionConf::GetNetworkErrorTimeout() / kUSecsPerSecond)) ||
-                (slot_srv->is_passive && slot_srv->started_cmds == 0 && 
+            if (slot_srv->is_passive && slot_srv->started_cmds == 0 && 
                 CSrvTime::CurSecs() - slot_srv->last_active_time
-                        > (CNCDistributionConf::GetPeriodicSyncTimeout() / kUSecsPerSecond))) {
+                        > (CNCDistributionConf::GetPeriodicSyncTimeout() / kUSecsPerSecond)) {
                 SRV_LOG(Error, "Periodic sync canceled by timeout");
                 s_CancelSync(m_SlotData, slot_srv, 0);
                 slot_srv->lock.Unlock();
@@ -828,7 +825,6 @@ CNCActiveSyncControl::x_ExecuteSyncCommands(void)
     m_NextTask = eSynNeedFinalize;
     return &CNCActiveSyncControl::x_ExecuteFinalize;
 #else
-    m_NextTask = eSynNoTask;
     return &CNCActiveSyncControl::x_FinishSync;
 #endif
 }
@@ -847,8 +843,6 @@ CNCActiveSyncControl::x_ExecuteFinalize(void)
         }
       m_Result = eSynNetworkError;
     }
-    m_StartedCmds = 0;
-    m_NextTask = eSynNoTask;
     return &CNCActiveSyncControl::x_FinishSync;
 }
 
@@ -876,6 +870,13 @@ CNCActiveSyncControl::x_WaitForExecutingTasks(void)
             break;
         }
     }
+    if (CSrvTime::CurSecs() - m_SlotSrv->last_active_time
+        > (CNCDistributionConf::GetNetworkErrorTimeout() / kUSecsPerSecond)) {
+        SRV_LOG(Error, "Active periodic sync aborted by timeout");
+        m_Result = eSynAborted;
+        return &CNCActiveSyncControl::x_FinishSync;
+    }
+    RunAfter(CNCDistributionConf::GetPeriodicSyncTimeout() / kUSecsPerSecond);
     return NULL;
 }
 
@@ -1046,6 +1047,7 @@ CNCActiveSyncControl::x_CleanSyncObjects(void)
     m_CurSendEvent = m_Events2Send.begin();
     m_StartedCmds = 0;
     m_NeedReply = false;
+    m_NextTask = eSynNoTask;
 }
 
 void
@@ -1440,6 +1442,7 @@ void CNCActiveSyncControl::PrintState(CSrvSocketTask& task, Uint2 slot, bool one
             task.WriteText(eol).WriteText("is_by_blobs"      ).WriteText(is ).WriteBool(   (*srv)->is_by_blobs);
             task.WriteText(eol).WriteText("was_blobs_sync"   ).WriteText(is ).WriteBool(   (*srv)->was_blobs_sync);
             task.WriteText(eol).WriteText("made_initial_sync").WriteText(is ).WriteBool(   (*srv)->made_initial_sync);
+            task.WriteText(eol).WriteText("started_cmds"     ).WriteText(is ).WriteNumber( (*srv)->started_cmds);
             CSrvTime((*srv)->next_sync_time / kUSecsPerSecond).Print(buf, CSrvTime::eFmtJson);
             task.WriteText(eol).WriteText("next_sync_time"   ).WriteText(is ).WriteText( buf);
             CSrvTime((*srv)->last_active_time).Print(buf, CSrvTime::eFmtJson);
