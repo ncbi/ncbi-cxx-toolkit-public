@@ -132,6 +132,7 @@ string CGridClient::Submit(const string& affinity)
     if (!affinity.empty() && m_Job.affinity.empty())
         m_Job.affinity = affinity;
     string job_key = GetNetScheduleSubmitter().SubmitJob(m_Job);
+    x_RenewAllJobBlobs(m_NetScheduleSubmitter->m_API->m_JobTtl);
     m_Job.Reset();
     return job_key;
 }
@@ -139,10 +140,10 @@ string CGridClient::Submit(const string& affinity)
 CNetScheduleAPI::EJobStatus CGridClient::SubmitAndWait(unsigned wait_time)
 {
     CloseStream();
+    time_t job_exptime = 0;
     CNetScheduleAPI::EJobStatus status =
-            GetNetScheduleSubmitter().SubmitJobAndWait(m_Job, wait_time);
+        m_NetScheduleSubmitter->SubmitJobAndWait(m_Job, wait_time, &job_exptime);
 
-    time_t job_exptime = time(NULL) + m_NetScheduleSubmitter->m_API->m_JobTtl;
     return x_CheckAllJobBlobs(status, job_exptime);
 }
 
@@ -247,6 +248,8 @@ CGridJobBatchSubmitter::CGridJobBatchSubmitter(CGridClient& grid_client)
 {
 }
 
+static unsigned s_TimeToTtl(time_t time);
+
 //////////////////////////////////////////////////////////////////////////////
 //
 
@@ -269,7 +272,7 @@ CNetScheduleAPI::EJobStatus CGridClient::x_CheckAllJobBlobs(
             }
         }
     } else {
-        x_RenewAllJobBlobs(job_exptime);
+        x_RenewAllJobBlobs(s_TimeToTtl(job_exptime));
     }
 
     m_JobDetailsRead = true;
@@ -357,12 +360,14 @@ bool CGridClient::x_ProlongJobFieldLifetime(
     return true;
 }
 
-void CGridClient::x_RenewAllJobBlobs(time_t job_exptime)
+static unsigned s_TimeToTtl(time_t exptime)
 {
     time_t current_time = time(NULL);
-    unsigned ttl = 0;
-    if (job_exptime > current_time)
-        ttl = unsigned(job_exptime - current_time + 1);
+    return exptime > current_time ? unsigned(exptime - current_time + 1) : 0;
+}
+
+void CGridClient::x_RenewAllJobBlobs(unsigned ttl)
+{
     x_ProlongJobFieldLifetime(m_Job.input, ttl);
     x_ProlongJobFieldLifetime(m_Job.output, ttl);
     if (!m_Job.progress_msg.empty() &&
@@ -379,7 +384,7 @@ void CGridClient::x_GetJobDetails()
         return;
     time_t job_exptime = 0;
     GetNetScheduleSubmitter().GetJobDetails(m_Job, &job_exptime);
-    x_RenewAllJobBlobs(job_exptime);
+    x_RenewAllJobBlobs(s_TimeToTtl(job_exptime));
     m_JobDetailsRead = true;
 }
 

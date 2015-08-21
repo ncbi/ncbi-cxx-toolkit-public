@@ -1059,7 +1059,8 @@ public:
 
     // This method requires calling SubmitJob prior with wait_time set
     CNetScheduleAPI::EJobStatus WaitForJobCompletion(CNetScheduleJob& job,
-            CDeadline& deadline, CNetScheduleAPI ns_api);
+            CDeadline& deadline, CNetScheduleAPI ns_api,
+            time_t* job_exptime = NULL);
 
     bool RequestJobWatching(CNetScheduleAPI::TInstance ns_api,
             const string& job_id,

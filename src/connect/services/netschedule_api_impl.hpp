@@ -355,6 +355,9 @@ struct SNetScheduleSubmitterImpl : public CObject
         const string& auth_token,
         const string& error_message);
 
+    CNetScheduleAPI::EJobStatus SubmitJobAndWait(CNetScheduleJob& job,
+            unsigned wait_time, time_t* job_exptime = NULL);
+
     CNetScheduleAPI m_API;
 };
 

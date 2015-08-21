@@ -398,21 +398,29 @@ CNetScheduleAPI::EJobStatus
 CNetScheduleSubmitter::SubmitJobAndWait(CNetScheduleJob& job,
                                         unsigned       wait_time)
 {
+    return m_Impl->SubmitJobAndWait(job, wait_time);
+}
+
+CNetScheduleAPI::EJobStatus
+SNetScheduleSubmitterImpl::SubmitJobAndWait(CNetScheduleJob& job,
+        unsigned wait_time, time_t* job_exptime)
+{
     CDeadline deadline(wait_time, 0);
 
     CNetScheduleNotificationHandler submit_job_handler;
 
-    submit_job_handler.SubmitJob(m_Impl, job, wait_time);
+    submit_job_handler.SubmitJob(this, job, wait_time);
 
     return submit_job_handler.WaitForJobCompletion(job,
-                                                   deadline, m_Impl->m_API);
+            deadline, m_API, job_exptime);
 }
 
 CNetScheduleAPI::EJobStatus
 CNetScheduleNotificationHandler::WaitForJobCompletion(
         CNetScheduleJob& job,
         CDeadline& deadline,
-        CNetScheduleAPI ns_api)
+        CNetScheduleAPI ns_api,
+        time_t* job_exptime)
 {
     CNetScheduleAPI::EJobStatus status = CNetScheduleAPI::ePending;
 
@@ -431,13 +439,13 @@ CNetScheduleNotificationHandler::WaitForJobCompletion(
             if (CheckJobStatusNotification(job.job_id, &status) &&
                     status != CNetScheduleAPI::eRunning &&
                     status != CNetScheduleAPI::ePending)
-                return ns_api.GetJobDetails(job);
+                return ns_api.GetJobDetails(job, job_exptime);
         } else {
             // The wait has timed out - query the server directly.
 
             string err_msg;
             try {
-                status = ns_api.GetJobDetails(job);
+                status = ns_api.GetJobDetails(job, job_exptime);
                 if ((status != CNetScheduleAPI::eRunning &&
                         status != CNetScheduleAPI::ePending) || last_wait)
                     return status;
