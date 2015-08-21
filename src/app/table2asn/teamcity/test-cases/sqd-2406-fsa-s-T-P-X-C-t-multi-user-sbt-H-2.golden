@@ -66,7 +66,7 @@ Seq-submit ::= {
     reldate std {
       year 2017,
       month 8,
-      day 20
+      day 21
     },
     subtype new,
     tool "table2asn 1.0.0"
