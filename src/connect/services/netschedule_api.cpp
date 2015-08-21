@@ -501,20 +501,11 @@ CConfig* CNetScheduleConfigLoader::Get(SNetScheduleAPIImpl* impl,
     CErrorSuppressor suppressor(set_explicitly ? NULL : impl);
     TParams queue_params;
 
-    if (impl->m_Queue.empty()) {
-        impl->GetQueueParams(kEmptyStr, queue_params);
+    impl->GetQueueParams(kEmptyStr, queue_params);
 
-        if (CConfig* result = Parse(queue_params, m_Qinf2Prefix)) {
-            section = m_Qinf2Section;
-            return result;
-        }
-    } else {
-        impl->GetQueueParams(queue_params);
-
-        if (CConfig* result = Parse(queue_params, m_Getp2Prefix)) {
-            section = m_Getp2Section;
-            return result;
-        }
+    if (CConfig* result = Parse(queue_params, m_Qinf2Prefix)) {
+        section = m_Qinf2Section;
+        return result;
     }
 
     return NULL;
