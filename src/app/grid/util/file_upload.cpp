@@ -166,6 +166,7 @@ void CFileUploadApplication::Copy(SContext& ctx, CCgiEntry& entry)
 
     char buf[16384];
     CMD5 sum;
+    size_t length = 0;
     for (;;) {
         size_t read = 0;
         ERW_Result read_result = reader->Read(buf, sizeof(buf), &read);
@@ -176,6 +177,7 @@ void CFileUploadApplication::Copy(SContext& ctx, CCgiEntry& entry)
         }
 
         sum.Update(buf, read);
+        length += read;
 
         size_t written = 0;
         for (const char *ptr = buf; read > 0; read -= written) {
@@ -189,9 +191,15 @@ void CFileUploadApplication::Copy(SContext& ctx, CCgiEntry& entry)
 
         if (read_result == eRW_Eof) {
             netstorage_object.Close();
+            string key = netstorage_object.GetLoc();
+            string md5 = sum.GetHexSum();
             ctx.json.SetBoolean("success", true);
-            ctx.json.SetString("key", netstorage_object.GetLoc());
-            ctx.json.SetString("md5", sum.GetHexSum());
+            ctx.json.SetString("key", key);
+            ctx.json.SetString("md5", md5);
+            GetDiagContext().Extra().
+                Print("key", key).
+                Print("md5", md5).
+                Print("length", length);
             return;
         }
     }
