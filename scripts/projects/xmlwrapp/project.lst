@@ -26,4 +26,4 @@ util/xregexp$
 util/bitset$
 serial$
 serial/datatool$
-
+connect$
