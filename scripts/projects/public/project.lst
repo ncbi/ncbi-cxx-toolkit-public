@@ -17,7 +17,6 @@ objtools
 sample
 serial
 util
-sra
 ./doc/public/LICENSE
 ./doc/public/gpl.txt
 ./doc/public/index_html_files
