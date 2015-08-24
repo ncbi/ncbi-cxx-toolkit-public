@@ -102,7 +102,7 @@ protected:
 class CDiscrepancyObject : public CReportObject
 {
 public:
-    CDiscrepancyObject(CConstRef<CBioseq> obj, CScope& scope, const string& filename, bool keep_ref) : CReportObject(obj, scope)
+    CDiscrepancyObject(CConstRef<CBioseq> obj, CScope& scope, const string& filename, bool keep_ref, bool autofix = false) : CReportObject(obj, scope), m_Autofix(autofix)
     {
         SetFilename(filename);
         SetText(scope);
@@ -110,7 +110,7 @@ public:
             DropReference();
         }
     }
-    CDiscrepancyObject(CConstRef<CSeq_feat> obj, CScope& scope, const string& filename, bool keep_ref) : CReportObject(obj, scope)
+    CDiscrepancyObject(CConstRef<CSeq_feat> obj, CScope& scope, const string& filename, bool keep_ref, bool autofix = false) : CReportObject(obj, scope), m_Autofix(autofix)
     {
         SetFilename(filename);
         SetText(scope);
@@ -118,6 +118,9 @@ public:
             DropReference();
         }
     }
+    bool CanAutofix() const { return m_Autofix; }
+protected:
+    bool m_Autofix;
 };
 
 
@@ -126,14 +129,16 @@ class CReportNode;
 class CDiscrepancyItem : public CReportItem
 {
 public:
-    CDiscrepancyItem(const string& t, const string& s) : m_Title(t), m_Msg(s) {}
+    CDiscrepancyItem(const string& t, const string& s) : m_Title(t), m_Msg(s), m_Autofix(false) {}
     string GetTitle(void) const { return m_Title;}
     string GetMsg(void) const { return m_Msg;}
     TReportObjectList GetDetails(void) const { return m_Objs;}
     TReportItemList GetSubitems(void) const { return m_Subs;}
+    bool CanAutofix() const { return m_Autofix;}
 protected:
     string m_Title;
     string m_Msg;
+    bool m_Autofix;
     TReportObjectList m_Objs;
     TReportItemList m_Subs;
 friend class CReportNode;
@@ -289,7 +294,7 @@ protected:
     class CDiscrepancyCaseA_##name : public CDiscrepancyCase_##name                                                 \
     {                                                                                                               \
     public:                                                                                                         \
-        bool Autofix(CScope& scope);                                                                                \
+        void Autofix(CScope& scope);                                                                                \
     };                                                                                                              \
     class CDiscrepancyCaseAConstructor_##name : public CDiscrepancyConstructor                                      \
     {                                                                                                               \
@@ -299,7 +304,7 @@ protected:
         CRef<CDiscrepancyCase> Create(void) const { return CRef<CDiscrepancyCase>(new CDiscrepancyCaseA_##name);}   \
     };                                                                                                              \
     static CDiscrepancyCaseAConstructor_##name DiscrepancyCaseAConstructor_##name;                                  \
-    bool CDiscrepancyCaseA_##name::Autofix(CScope& scope)
+    void CDiscrepancyCaseA_##name::Autofix(CScope& scope)
 
 
 #define DISCREPANCY_ALIAS(name, alias) \

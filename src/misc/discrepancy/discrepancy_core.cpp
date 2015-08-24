@@ -141,12 +141,16 @@ CRef<CReportItem> CReportNode::Export(const string& test, bool unique)
 {
     TReportObjectList objs = m_Objs;
     TReportItemList subs;
+    bool autofix = false;
     NON_CONST_ITERATE (TNodeMap, it, m_Map) {
         CRef<CReportItem> sub = it->second->Export(test, unique);
         subs.push_back(sub);
         TReportObjectList details = sub->GetDetails();
         NON_CONST_ITERATE (TReportObjectList, ob, details) {
             Add(objs, **ob, unique);
+            if ((*ob)->CanAutofix()) {
+                autofix = true;
+            }
         }
     }
     string str = m_Name;
@@ -158,6 +162,7 @@ CRef<CReportItem> CReportNode::Export(const string& test, bool unique)
     NStr::ReplaceInPlace(str, "[does]", objs.size() == 1 ? "does" : "do");
     NStr::ReplaceInPlace(str, "[has]", objs.size() == 1 ? "has" : "have");
     CRef<CDiscrepancyItem> item(new CDiscrepancyItem(test, str));
+    item->m_Autofix = autofix;
     item->m_Subs = subs;
     item->m_Objs = objs;
     return CRef<CReportItem>((CReportItem*)item);

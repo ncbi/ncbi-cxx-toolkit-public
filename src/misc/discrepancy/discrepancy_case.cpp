@@ -454,8 +454,10 @@ DISCREPANCY_CASE(OVERLAPPING_CDS, CSeqFeatData, eNormal, "Overlapping CDs")
             if (!LocationsOverlapOnSameStrand(location, loc, &context.GetScope())) {
                 continue;
             }
-            m_Objs[kEmptyStr][kOverlap0][HasOverlapNote(*sf) ? kOverlap1 : kOverlap2].Add(*new CDiscrepancyObject(sf, context.GetScope(), context.GetFile(), context.GetKeepRef()));
-            m_Objs[kEmptyStr][kOverlap0][HasOverlapNote(*context.GetCurrentSeq_feat()) ? kOverlap1 : kOverlap2].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+            bool has_note = HasOverlapNote(*sf);
+            m_Objs[kEmptyStr][kOverlap0][has_note ? kOverlap1 : kOverlap2].Add(*new CDiscrepancyObject(sf, context.GetScope(), context.GetFile(), context.GetKeepRef(), !has_note));
+            has_note = HasOverlapNote(*context.GetCurrentSeq_feat());
+            m_Objs[kEmptyStr][kOverlap0][has_note ? kOverlap1 : kOverlap2].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef(), !has_note));
         }
     }
     m_Objs[product].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), true));
@@ -467,6 +469,11 @@ DISCREPANCY_SUMMARIZE(OVERLAPPING_CDS)
     m_ReportItems = m_Objs[kEmptyStr].Export(GetName())->GetSubitems();
 }
 
+
+DISCREPANCY_AUTOFIX(OVERLAPPING_CDS)
+{
+
+}
 
 /*
 DISCREPANCY_CASE(OVERLAPPING_CDS, TReportObjectList m_ObjsNoNote)
@@ -520,8 +527,8 @@ DISCREPANCY_CASE(OVERLAPPING_CDS, TReportObjectList m_ObjsNoNote)
 
     return true;
 }
-
-
+*/
+/*
 DISCREPANCY_AUTOFIX(OVERLAPPING_CDS)
 {
     bool ret = false;
@@ -558,9 +565,6 @@ static bool HasLineage(const CBioSource& biosrc, const string& def_lineage, cons
 
 static bool IsEukaryotic(const CBioSource* biosrc, const string& def_lineage)
 {
-    //const CBioSource* biosrc = sequence::GetBioSource(bh);
-    //context.GetCurrentBiosource();
-
     if (biosrc) {
         CBioSource :: EGenome genome = (CBioSource::EGenome) biosrc->GetGenome();
         if (genome != CBioSource :: eGenome_mitochondrion
