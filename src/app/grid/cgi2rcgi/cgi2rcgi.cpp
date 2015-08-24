@@ -299,6 +299,7 @@ private:
     EJobPhase x_CheckJobStatus(CGridCgiContext&, CNetScheduleAPI::EJobStatus);
 
     int m_RefreshDelay;
+    int m_RefreshWait;
     int m_FirstDelay;
 
     CNetScheduleAPI m_NetScheduleAPI;
@@ -354,6 +355,11 @@ void CCgi2RCgiApp::Init()
 
     m_RefreshDelay = config.GetInt(grid_cgi_section,
         "refresh_delay", 5, IRegistry::eReturn);
+
+    m_RefreshWait = config.GetInt(grid_cgi_section,
+        "refresh_wait", 0, IRegistry::eReturn);
+    if (m_RefreshWait < 0)  m_RefreshWait = 0;
+    if (m_RefreshWait > 20) m_RefreshWait = 20;
 
     m_FirstDelay = config.GetInt(grid_cgi_section,
         "expect_complete", 5, IRegistry::eReturn);
@@ -645,7 +651,20 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
                 GetDiagContext().Extra().Print("ctg_poll", "true");
                 m_GridClient->SetJobKey(grid_ctx.GetJobKey());
 
-                phase = x_CheckJobStatus(grid_ctx);
+                if (m_RefreshWait) {
+                    CDeadline wait_deadline(m_RefreshWait);
+
+                    CNetScheduleAPI::EJobStatus status =
+                        CNetScheduleNotificationHandler().WaitForJobEvent(
+                                grid_ctx.GetJobKey(),
+                                wait_deadline,
+                                m_NetScheduleAPI,
+                                ~(CNetScheduleNotificationHandler::fJSM_Pending |
+                                CNetScheduleNotificationHandler::fJSM_Running));
+                    phase = x_CheckJobStatus(grid_ctx, status);
+                } else {
+                    phase = x_CheckJobStatus(grid_ctx);
+                }
 
                 if (phase == eTerminated)
                     grid_ctx.Clear();
