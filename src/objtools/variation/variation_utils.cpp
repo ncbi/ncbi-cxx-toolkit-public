@@ -102,36 +102,36 @@ static bool s_ContainsOffset(const CVariation_inst& inst)
     return false;
 }
 
-inline static bool s_IsIntronicVariation(const CVariation_inst& inst) {
-    bool result = inst.IsSetDelta() && s_ContainsOffset(inst);
-    return result;
+static bool s_IsIntronicVariation(const CVariation_inst& inst) {
+    return s_ContainsOffset(inst);
 }
 
-static bool s_IsIntronicVariation(const CVariation_ref& var_ref, const CVariation_inst::TType type) {
+template<class T>
+static bool s_IsIntronicVariation(const T& var, const CVariation_inst::TType type) {
     if( type != CVariation_inst::eType_ins 
         && type != CVariation_inst::eType_del) {
             return false;
     }
 
-    if (!var_ref.IsSetData()) {
+    if (!var.IsSetData()) {
         return false;
     }
 
-    switch(var_ref.GetData().Which()) {
-    case CVariation_ref::C_Data::e_Instance:
+    switch(var.GetData().Which()) {
+    case T::C_Data::e_Instance:
         {
-            return s_IsIntronicVariation(var_ref.GetData().GetInstance());
+            return s_IsIntronicVariation(var.GetData().GetInstance());
         }
         break;
-    case CVariation_ref::C_Data::e_Set:
+    case T::C_Data::e_Set:
         {
-            ITERATE(CVariation_ref::TData::TSet::TVariations, vref_it, var_ref.GetData().GetSet().GetVariations())
+            ITERATE(typename T::TData::TSet::TVariations, v_it, var.GetData().GetSet().GetVariations())
             {
-                const CVariation_ref& var_ref2 = **vref_it;
+                const T& var2 = **v_it;
 
-                if(!var_ref2.IsSetData() || !var_ref2.GetData().IsInstance())
+                if(!var2.IsSetData() || !var2.GetData().IsInstance())
                     continue;
-                return s_IsIntronicVariation(var_ref2.GetData().GetInstance());
+                return s_IsIntronicVariation(var2.GetData().GetInstance());
             }
         }
         break;
@@ -142,14 +142,15 @@ static bool s_IsIntronicVariation(const CVariation_ref& var_ref, const CVariatio
     return false;
 }
 
-static bool s_IsIntronicVariation(const CVariation_ref& var_ref) {
-    if (!var_ref.IsSetData()) {
+template<class T>
+static bool s_IsIntronicVariation(const T& var) {
+    if (!var.IsSetData()) {
         return false;
     }
     CVariation_inst::TType type = 
-        CVariationUtilities::GetVariationType(var_ref);
+        CVariationUtilities::GetVariationType(var);
 
-    return s_IsIntronicVariation(var_ref, type);
+    return s_IsIntronicVariation<T>(var, type);
 }
 
 void CVariationUtilities::CorrectRefAllele(CVariation& variation, CScope& scope)
@@ -954,6 +955,10 @@ void CVariationNormalization_base<T>::x_Shift(CVariation& variation, CScope &sco
                 continue;
         }
 
+        if (s_IsIntronicVariation<CVariation>(var, type)) {
+            return;
+        }
+
         //Correct SeqLoc interval *around* the insertion
         // to point *after* the insertion.
         // Placements are stored in the first variation in the Set.
@@ -1160,7 +1165,7 @@ void CVariationNormalization_base<T>::x_Shift(CSeq_feat& feat, CScope &scope)
             return;
     }
 
-    if (s_IsIntronicVariation(vref, type)) {
+    if (s_IsIntronicVariation<CVariation_ref>(vref, type)) {
         return;
     }
 
