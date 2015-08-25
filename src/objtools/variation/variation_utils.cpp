@@ -82,6 +82,76 @@ static bool s_ContainsSeqDataIupacna(const CDelta_item& delta_item)
     return false;
 }
 
+static string s_GetFirstSeqDataIupacna(const CVariation_inst_Base::TDelta& deltas)
+{
+    if (!deltas.empty() && s_ContainsSeqDataIupacna(*(deltas.front())))
+        return deltas.front()->GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get();
+    return "";
+}
+
+static bool s_ContainsOffset(const CVariation_inst& inst)
+{
+    ITERATE(CVariation_inst::TDelta, delta_it, inst.GetDelta())
+    {
+        const CDelta_item& delta_item = **delta_it;
+        if (delta_item.IsSetAction() &&
+            delta_item.GetAction() == CDelta_item::eAction_offset) {
+                return true;
+        }
+    }
+    return false;
+}
+
+inline static bool s_IsIntronicVariation(const CVariation_inst& inst) {
+    bool result = inst.IsSetDelta() && s_ContainsOffset(inst);
+    return result;
+}
+
+static bool s_IsIntronicVariation(const CVariation_ref& var_ref, const CVariation_inst::TType type) {
+    if( type != CVariation_inst::eType_ins 
+        && type != CVariation_inst::eType_del) {
+            return false;
+    }
+
+    if (!var_ref.IsSetData()) {
+        return false;
+    }
+
+    switch(var_ref.GetData().Which()) {
+    case CVariation_ref::C_Data::e_Instance:
+        {
+            return s_IsIntronicVariation(var_ref.GetData().GetInstance());
+        }
+        break;
+    case CVariation_ref::C_Data::e_Set:
+        {
+            ITERATE(CVariation_ref::TData::TSet::TVariations, vref_it, var_ref.GetData().GetSet().GetVariations())
+            {
+                const CVariation_ref& var_ref2 = **vref_it;
+
+                if(!var_ref2.IsSetData() || !var_ref2.GetData().IsInstance())
+                    continue;
+                return s_IsIntronicVariation(var_ref2.GetData().GetInstance());
+            }
+        }
+        break;
+    default: // gets rid of warning
+        break;
+    }
+
+    return false;
+}
+
+static bool s_IsIntronicVariation(const CVariation_ref& var_ref) {
+    if (!var_ref.IsSetData()) {
+        return false;
+    }
+    CVariation_inst::TType type = 
+        CVariationUtilities::GetVariationType(var_ref);
+
+    return s_IsIntronicVariation(var_ref, type);
+}
+
 void CVariationUtilities::CorrectRefAllele(CVariation& variation, CScope& scope)
 {
     if (variation.IsSetPlacements()) {
@@ -227,19 +297,6 @@ void CVariationUtilities::CorrectRefAllele(CSeq_feat& feature, CScope& scope)
     }
 
     ERR_POST(Trace << "After set ref: " << MSerial_AsnText << feature);
-}
-
-static bool s_ContainsOffset(const CVariation_inst& inst)
-{
-    ITERATE(CVariation_inst::TDelta, delta_it, inst.GetDelta())
-    {
-        const CDelta_item& delta_item = **delta_it;
-        if (delta_item.IsSetAction() &&
-            delta_item.GetAction() == CDelta_item::eAction_offset) {
-            return true;
-        }
-    }
-    return false;
 }
 
 bool CVariationUtilities::x_SetReference(CVariation_ref& vr, const string& ref_at_location)
@@ -967,6 +1024,7 @@ void CVariationNormalization_base<T>::x_Shift(CVariation& variation, CScope &sco
             //on parent object
             SetShiftFlag(variation);
 
+            string allele;
 
             //alleles are sometimes here, or can be instance
             switch(var.GetData().Which()) {
@@ -974,9 +1032,8 @@ void CVariationNormalization_base<T>::x_Shift(CVariation& variation, CScope &sco
                 {
                     CVariation_inst& inst = var.SetData().SetInstance();
 
-                    if (inst.IsSetDelta() && !inst.GetDelta().empty() && s_ContainsSeqDataIupacna(inst.GetDelta().front().GetObject())) {
-                        string allele = inst.GetDelta().front()->GetSeq()
-                            .GetLiteral().GetSeq_data().GetIupacna().Get();
+                    if (inst.IsSetDelta() 
+                        && !(allele=s_GetFirstSeqDataIupacna(inst.GetDelta())).empty()) {
 
                         for(int ii=0; ii<rotation_counter; ++ii) {
                             Rotate(allele);
@@ -985,7 +1042,7 @@ void CVariationNormalization_base<T>::x_Shift(CVariation& variation, CScope &sco
                         inst.SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(allele);
                     }
                     else {
-                        ERR_POST(Trace << "insertion does not contain Iupacna");
+                        ERR_POST(Trace << "instance does not contain a iupacna in its first delta's literal");
                         continue;
                     }
                 }
@@ -999,9 +1056,8 @@ void CVariationNormalization_base<T>::x_Shift(CVariation& variation, CScope &sco
                             continue;
 
                         CVariation_inst& inst = var2.SetData().SetInstance();
-                        if (inst.IsSetDelta() && !inst.GetDelta().empty() && s_ContainsSeqDataIupacna(inst.GetDelta().front().GetObject())) {
-                            string allele = inst.GetDelta().front()->GetSeq()
-                                .GetLiteral().GetSeq_data().GetIupacna().Get();
+                        if (inst.IsSetDelta() 
+                            && !(allele=s_GetFirstSeqDataIupacna(inst.GetDelta())).empty()) {
 
                             for(int ii=0; ii<rotation_counter; ++ii) {
                                 Rotate(allele);
@@ -1010,7 +1066,7 @@ void CVariationNormalization_base<T>::x_Shift(CVariation& variation, CScope &sco
                             inst.SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(allele);
                         }
                         else {
-                            ERR_POST(Trace << "insertion does not contain Iupacna");
+                            ERR_POST(Trace << "instance does not contain a iupacna in its first delta's literal");
                             continue;
                         }
                     }
@@ -1104,6 +1160,10 @@ void CVariationNormalization_base<T>::x_Shift(CSeq_feat& feat, CScope &scope)
             return;
     }
 
+    if (s_IsIntronicVariation(vref, type)) {
+        return;
+    }
+
     CSeq_loc& featloc = feat.SetLocation();
     //Correct SeqLoc interval *around* the insertion
     // to point *after* the insertion.
@@ -1134,8 +1194,6 @@ void CVariationNormalization_base<T>::x_Shift(CSeq_feat& feat, CScope &scope)
 
             sep.left = featloc.GetStop(eExtreme_Positional);
     }
-
-
 
 	const CSeq_id &seq_id = *feat.GetLocation().GetId();
 	
@@ -1183,17 +1241,18 @@ void CVariationNormalization_base<T>::x_Shift(CSeq_feat& feat, CScope &scope)
         
         SetShiftFlag(feat);
         
+        string allele;
 
         //Apply rotation to each allele, in either set or instances:
         switch(vref.GetData().Which()) {
         case CVariation_ref::C_Data::e_Instance:
             {
                 CVariation_inst& inst = vref.SetData().SetInstance();
-                if (inst.IsSetDelta() && !inst.GetDelta().empty() && s_ContainsSeqDataIupacna(inst.GetDelta().front().GetObject())) {
-                    string allele = inst.GetDelta().front()->GetSeq()
-                        .GetLiteral().GetSeq_data().GetIupacna().Get();
 
-                    for(int ii=0; ii<rotation_counter; ++ii) {
+                if (inst.IsSetDelta() 
+                    && !(allele=s_GetFirstSeqDataIupacna(inst.GetDelta())).empty()) {
+
+                    for (int ii=0; ii<rotation_counter; ++ii) {
                         Rotate(allele);
                         LOG_POST(Trace << "Rotate allele : " << ii << " : " << allele);
                     }
@@ -1201,7 +1260,7 @@ void CVariationNormalization_base<T>::x_Shift(CSeq_feat& feat, CScope &scope)
                     inst.SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(allele);
                 }
                 else {
-                    ERR_POST(Trace << "insertion does not contain Iupacna");
+                    ERR_POST(Trace << "instance does not contain a iupacna in its first delta's literal");
                 }
             }
             break;
@@ -1215,10 +1274,8 @@ void CVariationNormalization_base<T>::x_Shift(CSeq_feat& feat, CScope &scope)
                         continue;
 
                     CVariation_inst& inst = vref2.SetData().SetInstance();
-
-                    if (inst.IsSetDelta() && !inst.GetDelta().empty() && s_ContainsSeqDataIupacna(inst.GetDelta().front().GetObject())) {
-                        string allele = inst.GetDelta().front()->GetSeq()
-                            .GetLiteral().GetSeq_data().GetIupacna().Get();
+                    if (inst.IsSetDelta() 
+                        && !(allele=s_GetFirstSeqDataIupacna(inst.GetDelta())).empty()) {
 
                         for(int ii=0; ii<rotation_counter; ++ii) {
                             Rotate(allele);
@@ -1228,7 +1285,7 @@ void CVariationNormalization_base<T>::x_Shift(CSeq_feat& feat, CScope &scope)
                         inst.SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(allele);
                     }
                     else {
-                        ERR_POST(Trace << "insertion does not contain Iupacna");
+                        ERR_POST(Trace << "instance does not contain a iupacna in its first delta's literal");
                         continue;
                     }
                 }
