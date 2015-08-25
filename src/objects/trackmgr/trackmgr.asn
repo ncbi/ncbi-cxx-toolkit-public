@@ -30,7 +30,8 @@ TMgr-Request ::= CHOICE {
     create-user-tracks TMgr-CreateUserTrackRequest,
     resolve-track-items TMgr-ItemResolverRequest,
     remove-user-tracks TMgr-RemoveUserTrackRequest,
-    retrieve-tracksets TMgr-RetrieveTracksetRequest
+    retrieve-tracksets TMgr-RetrieveTracksetRequest,
+    create-trackset TMgr-CreateTracksetRequest
 }
 
 TMgr-Reply ::= CHOICE {
@@ -41,7 +42,8 @@ TMgr-Reply ::= CHOICE {
     create-user-tracks TMgr-CreateUserTrackReply,
     resolve-track-items TMgr-ItemResolverReply,
     remove-user-tracks TMgr-RemoveUserTrackReply,
-    retrieve-tracksets TMgr-RetrieveTracksetReply
+    retrieve-tracksets TMgr-RetrieveTracksetReply,
+    create-trackset TMgr-CreateTracksetReply
 }
 
 TMgr-GenomeContext ::= CHOICE {
@@ -281,6 +283,11 @@ TMgr-RemoveUserTrackRequest ::= SEQUENCE {
     dtrack-ids SET OF TMgr-DTrackId
 }
 
+TMgr-Status ::= INTEGER {
+    success (0),
+    failure (1)
+}
+
 TMgr-RemoveUserTrackReply ::= SEQUENCE {
     messages SEQUENCE OF TMgr-Message OPTIONAL
 }
@@ -368,6 +375,19 @@ TMgr-RetrieveTracksetRequest ::= SEQUENCE {
 TMgr-RetrieveTracksetReply ::= SEQUENCE {
     messages SEQUENCE OF TMgr-Message OPTIONAL,
     tracksets SET OF TMgr-TrackSet OPTIONAL
+}
+
+TMgr-CreateTracksetRequest ::= SEQUENCE {
+    identity TMgr-Identity OPTIONAL,
+    genome-context TMgr-GenomeContext,
+    name UTF8String,
+    description UTF8String OPTIONAL,
+    tracks SEQUENCE OF TMgr-DTrackId
+}
+
+TMgr-CreateTracksetReply ::= SEQUENCE {
+    messages SEQUENCE OF TMgr-Message OPTIONAL,
+    status TMgr-Status
 }
 
 END
