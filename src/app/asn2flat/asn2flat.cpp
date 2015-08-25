@@ -529,6 +529,8 @@ bool CAsn2FlatApp::HandleSeqEntry(const CSeq_entry_Handle& seh )
         }
     }
 
+    m_FFGenerator->SetFeatTree(new feature::CFeatTree(seh));
+    
     for (CBioseq_CI bioseq_it(seh);  bioseq_it;  ++bioseq_it) {
         CBioseq_Handle bsh = *bioseq_it;
         CConstRef<CBioseq> bsr = bsh.GetCompleteBioseq();
