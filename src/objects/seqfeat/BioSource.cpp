@@ -864,7 +864,7 @@ static const char* const s_TaxNameElementQuals[] = {
     "forma",
     "forma-specialis",
     "genotype",
-    "pathova",
+    "pathovar",
     "serotype",
     "serovar",
     "subspecies",
