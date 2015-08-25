@@ -427,6 +427,10 @@ public:
     const CSeq_loc* GetLocation(void) const { return m_Loc; }
     void SetLocation(const CSeq_loc* loc) { m_Loc.Reset(loc); }
 
+    const feature::CFeatTree* GetFeatTree(void) const { return m_FeatTree; }
+    feature::CFeatTree* GetFeatTree(void) { return m_FeatTree; }
+    void SetFeatTree(feature::CFeatTree* tree) { m_FeatTree.Reset(tree); }
+    
     void AddSection(TSection& section) { m_Sections.push_back(section); }
 
     void Reset(void);
@@ -439,6 +443,7 @@ private:
     CConstRef<CSubmit_block>    m_Submit;
     auto_ptr<SAnnotSelector>    m_Selector;
     CConstRef<CSeq_loc>         m_Loc;
+    CRef<feature::CFeatTree>    m_FeatTree;
 };
 
 /////////////////////////////////////////////////////////////////////////////

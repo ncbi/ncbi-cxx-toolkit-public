@@ -79,7 +79,7 @@ protected:
     CBioseqContext& Context      (void) const { return *m_Current; }
     const CFlatFileConfig& Config(void) const { return m_Context->GetConfig(); }
 
-    virtual void x_GatherSeqEntry(const CSeq_entry_Handle& entry, 
+    virtual void x_GatherSeqEntry(CFlatFileContext& ctx,
         CRef<CTopLevelSeqEntryContext> topLevelSeqEntryContext = CRef<CTopLevelSeqEntryContext>() ) const;
     virtual void x_GatherBioseq(
         const CBioseq_Handle& prev_seq, const CBioseq_Handle& this_seq, const CBioseq_Handle& next_seq, 

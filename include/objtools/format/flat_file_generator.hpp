@@ -76,6 +76,8 @@ public:
     // Supply an annotation selector to be used in feature gathering.
     SAnnotSelector& SetAnnotSelector(void);
 
+    void SetFeatTree(feature::CFeatTree* tree);
+
     void Generate(CSeq_submit& submit, CScope& scope, CNcbiOstream& os);
     void Generate(const CBioseq& bioseq, CScope& scope, CNcbiOstream& os);
     void Generate(const CSeq_loc& loc, CScope& scope, CNcbiOstream& os);
