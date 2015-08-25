@@ -3706,6 +3706,10 @@ void CFeatureItem::x_ImportQuals(
         case eFQ_replace:
             {{
                  string s(val);
+                 if (string::npos == s.find_first_not_of("ACGTUacgtu")) {
+                      NStr::ToLower(s);
+                      NStr::ReplaceInPlace(s, "u", "t");
+                 }
                  replace_quals.push_back(s);
              }}
             break;
