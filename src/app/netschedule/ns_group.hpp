@@ -91,7 +91,6 @@ class CNSGroupsRegistry
 
         TNSBitVector  GetJobs(const string &  group,
                               bool  allow_exception = true) const;
-        TNSBitVector  GetJobs(const vector<unsigned int> &  group_ids) const;
         TNSBitVector  GetJobs(const TNSBitVector &  group_ids) const;
         TNSBitVector  GetRegisteredGroups(void) const;
         unsigned int  ResolveGroup(const string &  group);

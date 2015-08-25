@@ -110,23 +110,6 @@ TNSBitVector  CNSGroupsRegistry::GetJobs(const string &  group,
 
 
 TNSBitVector
-CNSGroupsRegistry::GetJobs(const vector<unsigned int> &  group_ids) const
-{
-    TNSBitVector                            jobs;
-    TGroupIDToAttrMap::const_iterator       found;
-    CMutexGuard                             guard(m_Lock);
-
-    for (vector<unsigned int>::const_iterator  k = group_ids.begin();
-            k != group_ids.end(); ++k) {
-        found = m_IDToAttr.find(*k);
-        if (found != m_IDToAttr.end())
-            jobs |= found->second->m_Jobs;
-    }
-    return jobs;
-}
-
-
-TNSBitVector
 CNSGroupsRegistry::GetJobs(const TNSBitVector &  group_ids) const
 {
     TNSBitVector                            jobs;

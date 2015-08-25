@@ -791,7 +791,7 @@ CQueue::GetJobOrWait(const CNSClientId &       client,
                                                any_affinity,
                                                exclusive_new_affinity,
                                                prioritized_aff,
-                                               group_ids, eGet);
+                                               group_ids_vector, eGet);
         {{
             bool                outdated_job = false;
             CFastMutexGuard     guard(m_OperationLock);
@@ -2151,7 +2151,7 @@ CQueue::GetJobForReadingOrWait(const CNSClientId &       client,
                                                any_affinity,
                                                exclusive_new_affinity,
                                                prioritized_aff,
-                                               group_ids, eRead);
+                                               group_ids_vector, eRead);
 
         {{
             bool                outdated_job = false;
@@ -2509,7 +2509,7 @@ CQueue::x_FindVacantJob(const CNSClientId  &          client,
                         bool                          any_affinity,
                         bool                          exclusive_new_affinity,
                         bool                          prioritized_aff,
-                        const vector<unsigned int> &  group_ids,
+                        const TNSBitVector&           group_ids,
                         ECommandGroup                 cmd_group)
 {
     x_SJobPick      job_pick = { 0, false, 0 };
@@ -2548,7 +2548,7 @@ CQueue::x_FindVacantJob(const CNSClientId  &          client,
         // Exclude blacklisted jobs
         vacant_jobs -= blacklisted_jobs;
         // Keep only the group jobs if the groups are provided
-        if (!group_ids.empty())
+        if (group_ids.any())
             vacant_jobs &= group_jobs;
 
         // Exclude jobs which have been read or in a process of reading
@@ -2653,7 +2653,7 @@ CQueue::x_FindVacantJob(const CNSClientId  &          client,
             job_pick.job_id = m_StatusTracker.GetJobByStatus(
                                         CNetScheduleAPI::ePending,
                                         blacklisted_jobs,
-                                        group_jobs, !group_ids.empty());
+                                        group_jobs, group_ids.any());
         else {
             vector<CNetScheduleAPI::EJobStatus>     from_state;
             from_state.push_back(CNetScheduleAPI::eDone);
@@ -2662,7 +2662,7 @@ CQueue::x_FindVacantJob(const CNSClientId  &          client,
             job_pick.job_id = m_StatusTracker.GetJobByStatus(
                                         from_state,
                                         blacklisted_jobs | m_ReadJobs,
-                                        group_jobs, !group_ids.empty());
+                                        group_jobs, group_ids.any());
         }
         job_pick.exclusive = false;
         job_pick.aff_id = 0;

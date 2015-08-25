@@ -496,7 +496,7 @@ private:
                     bool                          any_affinity,
                     bool                          exclusive_new_affinity,
                     bool                          prioritized_aff,
-                    const vector<unsigned int> &  group_ids,
+                    const TNSBitVector &          group_ids,
                     ECommandGroup                 cmd_group);
     x_SJobPick
     x_FindOutdatedPendingJob(const CNSClientId &  client,
