@@ -65,7 +65,7 @@ void CGFFGatherer::Gather(
     CConstRef<IFlatItem> item;
     item.Reset( new CStartItem(seh) );
     os << item;
-    x_GatherSeqEntry(ctx.GetEntry());
+    x_GatherSeqEntry(ctx);
     item.Reset( new CEndItem() );
     os << item;
 }

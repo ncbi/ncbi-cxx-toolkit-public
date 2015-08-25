@@ -103,6 +103,10 @@ SAnnotSelector& CFlatFileGenerator::SetAnnotSelector(void)
     return m_Ctx->SetAnnotSelector();
 }
 
+void CFlatFileGenerator::SetFeatTree(feature::CFeatTree* tree)
+{
+    m_Ctx->SetFeatTree(tree);
+}
 
 // Generate a flat-file report for a Seq-entry
 // (the other CFlatFileGenerator::Generate functions ultimately

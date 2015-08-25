@@ -218,7 +218,7 @@ void CFlatGatherer::Gather(CFlatFileContext& ctx, CFlatItemOStream& os) const
     CConstRef<IFlatItem> item;
     item.Reset( new CStartItem() );
     os << item;
-    x_GatherSeqEntry(ctx.GetEntry(), topLevelSeqEntryContext);
+    x_GatherSeqEntry(ctx, topLevelSeqEntryContext);
     item.Reset( new CEndItem() );
     os << item;
 }
@@ -233,16 +233,19 @@ CFlatGatherer::~CFlatGatherer(void)
 //
 // Protected:
 
-void CFlatGatherer::x_GatherSeqEntry(const CSeq_entry_Handle& entry,
+void CFlatGatherer::x_GatherSeqEntry(CFlatFileContext& ctx,
     CRef<CTopLevelSeqEntryContext> topLevelSeqEntryContext) const
 {
-    m_TopSEH = entry;
-    CFeat_CI iter (m_TopSEH);
-    m_Feat_Tree.Reset (new feature::CFeatTree (iter));
+    m_TopSEH = ctx.GetEntry();
+    m_Feat_Tree.Reset(ctx.GetFeatTree());
+    if (m_Feat_Tree.Empty()) {
+        CFeat_CI iter (m_TopSEH);
+        m_Feat_Tree.Reset (new feature::CFeatTree (iter));
+    }
 
 
     // visit bioseqs in the entry (excluding segments)
-    CGather_Iter seq_iter(entry, Config());
+    CGather_Iter seq_iter(m_TopSEH, Config());
     CBioseq_Handle prev_seq;
     CBioseq_Handle this_seq;
     CBioseq_Handle next_seq;
