@@ -13,7 +13,7 @@ ifneq "" "$(filter GCC_41% GCC_42%,$(signature))"
  endif
 endif
 
-DLL_LIB = objcoords xobjmgr
+DLL_LIB = objcoords xobjmgr entrez2cli entrez2
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 CXXFLAGS = $(ORIG_CXXFLAGS)
