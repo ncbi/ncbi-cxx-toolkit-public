@@ -91,6 +91,10 @@ static string s_GetFirstSeqDataIupacna(const CVariation_inst_Base::TDelta& delta
 
 static bool s_ContainsOffset(const CVariation_inst& inst)
 {
+    if (!inst.IsSetDelta()) {
+        return false;
+    }
+
     ITERATE(CVariation_inst::TDelta, delta_it, inst.GetDelta())
     {
         const CDelta_item& delta_item = **delta_it;
