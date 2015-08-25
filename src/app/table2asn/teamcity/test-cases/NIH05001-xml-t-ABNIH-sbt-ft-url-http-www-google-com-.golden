@@ -146,9 +146,9 @@ Seq-submit ::= {
                 },
                 imp {
                   date std {
-                    year 2011,
-                    month 8,
-                    day 16
+                    year 2014,
+                    month 2,
+                    day 1
                   },
                   volume "108",
                   issue "33",

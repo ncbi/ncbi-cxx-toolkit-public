@@ -8,7 +8,7 @@ CONVERT_CREATE_DATE="
 b
 :edit_year
 n
-/^ +year 201[456]/b edit_date
+/^ +year [0123456789]+/b edit_date
 b
 :edit_date
 s/year [0-9]+/year 2014/
