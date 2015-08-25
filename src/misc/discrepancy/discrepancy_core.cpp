@@ -148,9 +148,11 @@ CRef<CReportItem> CReportNode::Export(const string& test, bool unique)
         TReportObjectList details = sub->GetDetails();
         NON_CONST_ITERATE (TReportObjectList, ob, details) {
             Add(objs, **ob, unique);
-            if ((*ob)->CanAutofix()) {
-                autofix = true;
-            }
+        }
+    }
+    NON_CONST_ITERATE(TReportObjectList, ob, objs) {
+        if ((*ob)->CanAutofix()) {
+            autofix = true;
         }
     }
     string str = m_Name;
