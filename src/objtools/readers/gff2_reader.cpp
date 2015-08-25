@@ -348,7 +348,7 @@ bool CGff2Reader::x_ParseFeatureGff(
         if (this->m_iFlags & CGff2Reader::fGenbankMode) {
             AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(
-                eDiag_Error,
+                eDiag_Fatal,
                 0,
                 "Type \"protein\" in column 3 is not supported in -genbank mode.",
                 ILineError::eProblem_FeatureNameNotAllowed));
