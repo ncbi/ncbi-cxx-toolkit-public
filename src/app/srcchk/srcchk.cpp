@@ -185,10 +185,24 @@ bool CSrcChkApp::xTryProcessIdFile(
         }
         string id(line);
         NStr::TruncateSpacesInPlace(id);
-        CSeq_id_Handle seqh = CSeq_id_Handle::GetHandle(id);
-        CBioseq_Handle bsh = m_pScope->GetBioseqHandle(seqh);
-        if (bsh) {
-            vecBsh.push_back(bsh);
+        try {
+            CSeq_id_Handle seqh = CSeq_id_Handle::GetHandle(id);
+            CBioseq_Handle bsh = m_pScope->GetBioseqHandle(seqh);
+            if (bsh) {
+                vecBsh.push_back(bsh);
+            }
+        } catch (const CSeqIdException& e) {
+            if (e.GetErrCode() != CSeqIdException::eFormat) {
+                throw;
+            }
+            cerr << e.GetMsg() << "\n";
+            /*
+            CSrcError* pE = CSrcError::Create(
+                    ncbi::eDiag_Error,
+                    e.GetMsg());
+            m_pErrors->PutError(*pE);
+            delete pE;
+            */
         }
     }
 
