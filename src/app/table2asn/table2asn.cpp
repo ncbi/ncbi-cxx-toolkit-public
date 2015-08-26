@@ -522,16 +522,18 @@ int CTbl2AsnApp::Run(void)
             }
         }
         else
-            if (a_arg.length() == 1)
-                switch (a_arg[0])
+        {
+            if (a_arg == "s")
             {
-                case 's':
-                    m_context.m_HandleAsSet = true;
-                    break;
-                default:
-                    // error
-                    break;
+                m_context.m_HandleAsSet = true;
             }
+            else
+            if (a_arg == "s4")
+            {
+                m_context.m_HandleAsSet = true;
+                m_context.m_ecoset = true;
+            }
+        }
     }
     if (args["gaps-min"])
         m_context.m_gapNmin = args["gaps-min"].AsInteger();
@@ -791,6 +793,10 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
         if (m_context.m_SetIDFromFile)
         {
             m_context.SetSeqId(*entry);
+        }
+        if (m_context.m_ecoset && entry->IsSet())
+        {
+            entry->SetSet().SetClass(CBioseq_set::eClass_eco_set);
         }
 
         switch (format)

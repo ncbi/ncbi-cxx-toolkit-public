@@ -74,6 +74,7 @@ public:
     bool   m_RemoteTaxonomyLookup;
     bool   m_RemotePubLookup;
     bool   m_HandleAsSet;
+    bool   m_ecoset;
     bool   m_GenomicProductSet;
     bool   m_SetIDFromFile;
     bool   m_NucProtSet;
