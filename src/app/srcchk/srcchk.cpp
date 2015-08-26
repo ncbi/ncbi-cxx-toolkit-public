@@ -195,7 +195,8 @@ bool CSrcChkApp::xTryProcessIdFile(
             if (e.GetErrCode() != CSeqIdException::eFormat) {
                 throw;
             }
-            cerr << e.GetMsg() << "\n";
+
+            ERR_POST(e.GetMsg());
             /*
             CSrcError* pE = CSrcError::Create(
                     ncbi::eDiag_Error,
