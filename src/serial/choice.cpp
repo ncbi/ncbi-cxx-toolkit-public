@@ -338,7 +338,7 @@ void CChoiceTypeInfoFunctions::AssignSimple(TTypeInfo typeInfo,
 }
 
 
-void CChoiceTypeInfo::SetSelectDelayFunction(TSelectDelayFunction func)
+void CChoiceTypeInfo::SetSelectDelay(TSelectDelayFunction func)
 {
     _ASSERT(m_SelectDelayFunction == 0);
     _ASSERT(func != 0);

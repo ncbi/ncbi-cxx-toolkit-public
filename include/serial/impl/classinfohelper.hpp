@@ -165,7 +165,8 @@ public:
                 Get(choicePtr).Select(E_Choice(index + eMemberIndexToGeneratedChoice), NCBI_NS_NCBI::eDoResetVariant, memPool);
             }
         }
-    static void SelectDelayBuffer(void* choicePtr,
+    static void SelectDelayBuffer(const CChoiceTypeInfo* /*choiceType*/,
+                                  void* choicePtr,
                                   TMemberIndex index)
         {
             typedef typename CClassType::E_Choice E_Choice;

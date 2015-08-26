@@ -432,7 +432,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             "inline\n"
             "void "<<methodPrefix<<"SelectDelayBuffer(" STATE_ENUM " index)\n"
             "{\n"
-            "    if ( " STATE_MEMBER " != " STATE_NOT_SET " || " DELAY_MEMBER ".GetIndex() != (index - 1))\n"
+            "    if ( " STATE_MEMBER " != " STATE_NOT_SET " || " DELAY_MEMBER ".GetIndex() != index)\n"
             "        NCBI_THROW(ncbi::CSerialException,eIllegalCall, \"illegal call\");\n"
             "    " STATE_MEMBER " = index;\n"
             "}\n"
