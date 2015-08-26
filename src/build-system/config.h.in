@@ -252,6 +252,9 @@
 /* Define to 1 if libgmock is available. */
 #undef HAVE_LIBGMOCK
 
+/* Define to 1 if libgmp is available. */
+#undef HAVE_LIBGMP
+
 /* Define to 1 if libgnutls is available. */
 #undef HAVE_LIBGNUTLS
 
@@ -289,6 +292,9 @@
 
 /* Define to 1 if libmuparser is available. */
 #undef HAVE_LIBMUPARSER
+
+/* Define to 1 if libhogweed is available. */
+#undef HAVE_LIBNETTLE
 
 /* Define to 1 if liboechem is available. */
 #undef HAVE_LIBOECHEM

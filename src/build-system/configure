@@ -702,9 +702,13 @@ LZO_INCLUDE
 LZO_LIBS
 PCRE_INCLUDE
 PCRE_LIBS
+GMP_INCLUDE
+GMP_LIBS
 LIBGCRYPT_CONFIG
 GCRYPT_INCLUDE
 GCRYPT_LIBS
+NETTLE_INCLUDE
+NETTLE_LIBS
 LIBGNUTLS_CONFIG
 GNUTLS_INCLUDE
 GNUTLS_LIBS
@@ -1557,8 +1561,9 @@ deactivation makefile-auto-update projects flat-makefile configure-dialog \
 check ncbi-public strip pch caution ccache distcc \
 ncbi-c wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
 geo included-geo vdb downloaded-vdb included-vdb \
-z bz2 lzo pcre gcrypt gnutls openssl krb5 sybase sybase-local sybase-new \
-ftds mysql orbacus freetype ftgl opengl mesa glut glew glew-mx \
+z bz2 lzo pcre gmp gcrypt nettle gnutls openssl krb5 \
+sybase sybase-local sybase-new ftds mysql \
+orbacus freetype ftgl opengl mesa glut glew glew-mx \
 bdb python perl jni sqlite3 icu boost boost-tag \
 sp expat sablot libxml libxslt libexslt xerces xalan zorba \
 oechem sge muparser hdf5 \
@@ -1615,7 +1620,8 @@ for x_arg in "$@" ; do
 
       --srcdir=* | --x-includes=* | --x-libraries=* | --with-tcheck=* \
       | --with-ncbi-c=* | --with-sss=* | --with-vdb=* | --with-z=* \
-      | --with-bz2=* | --with-lzo=* | --with-pcre=* | --with-gcrypt=* \
+      | --with-bz2=* | --with-lzo=* | --with-pcre=* \
+      | --with-gmp=* | --with-gcrypt=* | --with-nettle=* \
       | --with-gnutls=* | --with-openssl=* | --with-krb5=* \
       | --with-sybase-local=* | --with-ftds=*/* | --with-mysql=* \
       | --with-opengl=* | --with-mesa=* | --with-glut=* | --with-glew=* \
@@ -1828,8 +1834,12 @@ Optional Packages:
  --without-lzo           do not use LZO
  --with-pcre=DIR         use PCRE installation in DIR
  --without-pcre          use internal copy of PCRE
+ --with-gmp=DIR          use GMP installation in DIR
+ --without-gmp           do not use GMP
  --with-gcrypt=DIR       use gcrypt installation in DIR
  --without-gcrypt        do not use gcrypt
+ --with-nettle=DIR       use Nettle installation in DIR
+ --without-nettle        do not use Nettle
  --with-gnutls=DIR       use GNUTLS installation in DIR
  --without-gnutls        do not use GNUTLS
  --with-openssl=DIR      use OpenSSL installation in DIR
@@ -2150,11 +2160,23 @@ case "$with_3psw" in
          else
             with_pcre=no
          fi
+        if test "${with_gmp-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-gmp but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_gmp=no
+         fi
         if test "${with_gcrypt-no}" != "no"; then
             { echo "$as_me: error: incompatible options: --with-gcrypt but --without-3psw" >&2
    { (exit 1); exit 1; }; }
          else
             with_gcrypt=no
+         fi
+        if test "${with_nettle-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-nettle but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_nettle=no
          fi
         if test "${with_gnutls-no}" != "no"; then
             { echo "$as_me: error: incompatible options: --with-gnutls but --without-3psw" >&2
@@ -3263,6 +3285,18 @@ if test "${with_pcre2+set}" = set; then
 fi
 
 
+# Check whether --with-gmp was given.
+if test "${with_gmp+set}" = set; then
+  withval=$with_gmp;
+fi
+
+
+# Check whether --with-gmp2 was given.
+if test "${with_gmp2+set}" = set; then
+  withval=$with_gmp2;
+fi
+
+
 # Check whether --with-gcrypt was given.
 if test "${with_gcrypt+set}" = set; then
   withval=$with_gcrypt;
@@ -3272,6 +3306,18 @@ fi
 # Check whether --with-gcrypt2 was given.
 if test "${with_gcrypt2+set}" = set; then
   withval=$with_gcrypt2;
+fi
+
+
+# Check whether --with-nettle was given.
+if test "${with_nettle+set}" = set; then
+  withval=$with_nettle;
+fi
+
+
+# Check whether --with-nettle2 was given.
+if test "${with_nettle2+set}" = set; then
+  withval=$with_nettle2;
 fi
 
 
@@ -26363,7 +26409,217 @@ else
    PCREPOSIX_LIBS=`echo "$PCRE_LIBS" | sed -e 's/-lpcre/-lpcreposix -lpcre/'`
 fi
 
-## SSL/TLS libraries
+## SSL/TLS libraries (and supporting libraries)
+if test "x$with_gmp" != xno; then
+   case "$with_gmp" in
+      yes | '' ) ;;
+      *        ) GMP_PATH=$with_gmp ;;
+   esac
+   for pfx in "$compiler_vpfx" "$compiler_pfx" "" ; do
+      vpath=$GMP_PATH/$pfx${DEBUG_SFX}${mt_sfx}${bit64_sfx}
+      if test -d "$vpath" ; then
+         GMP_PATH=$vpath
+         break
+      fi
+   done
+   if test -d "$GMP_PATH"; then
+      ncbi_fix_dir_tmp=`if cd $GMP_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $GMP_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            GMP_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$GMP_PATH" in
+               /*) ;;
+               * ) GMP_PATH=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) GMP_PATH=$ncbi_fix_dir_tmp ;;
+ esac
+   fi
+   if test "$with_gmp" != "no"; then
+    case "$with_gmp" in
+       yes | "" ) ;;
+       *        ) GMP_PATH=$with_gmp ;;
+    esac
+    if test "$GMP_PATH" != /usr -a -d "$GMP_PATH"; then
+       in_path=" in $GMP_PATH"
+       if test -z "$GMP_INCLUDE" -a -d "$GMP_PATH/include"; then
+          GMP_INCLUDE="-I$GMP_PATH/include"
+       fi
+       if test -n "$GMP_LIBPATH"; then
+          :
+       elif test -d "$GMP_PATH/lib${bit64_sfx}"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $GMP_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    GMP_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $GMP_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    GMP_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       elif test -d "$GMP_PATH/lib"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $GMP_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    GMP_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $GMP_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    GMP_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       fi
+       GMP_LIBS="$GMP_LIBPATH -lgmp "
+    else
+       GMP_INCLUDE=""
+       GMP_LIBS="-lgmp "
+       in_path=
+    fi
+    { echo "$as_me:$LINENO: checking for libgmp$in_path" >&5
+echo $ECHO_N "checking for libgmp$in_path... $ECHO_C" >&6; }
+if test "${ncbi_cv_lib_gmp+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CPPFLAGS=" $GMP_INCLUDE $orig_CPPFLAGS"
+       LIBS="$GMP_LIBS  $orig_LIBS"
+       cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <gmp.h>
+int
+main ()
+{
+mpz_t x; mpz_init(x);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_gmp=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ncbi_cv_lib_gmp=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ncbi_cv_lib_gmp" >&5
+echo "${ECHO_T}$ncbi_cv_lib_gmp" >&6; }
+    if test "$ncbi_cv_lib_gmp" = "no"; then
+       if test "${with_gmp:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-gmp explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-gmp explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+    fi
+ fi
+ if test "$with_gmp" = "no"; then
+    GMP_PATH="No_GMP"
+    GMP_INCLUDE=
+    GMP_LIBS=
+ else
+              WithPackages="$WithPackages${WithPackagesSep}GMP"; WithPackagesSep=" "
+    GMP_INCLUDE=" $GMP_INCLUDE"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBGMP 1
+_ACEOF
+
+ fi
+
+
+
+fi
+if test "$with_gmp" = no; then
+   $as_unset GMP_INCLUDE || test "${GMP_INCLUDE+set}" != set || { GMP_INCLUDE=; export GMP_INCLUDE; }
+   $as_unset GMP_LIBS || test "${GMP_LIBS+set}" != set || { GMP_LIBS=; export GMP_LIBS; }
+else
+             WithPackages="$WithPackages${WithPackagesSep}GMP"; WithPackagesSep=" "
+fi
+
 case "$with_gcrypt" in
    no )       ac_cv_path_LIBGCRYPT_CONFIG=no ;;
    yes | '' )                                ;;
@@ -26675,6 +26931,268 @@ if test "x$with_gcrypt" != xno -a -n "$GCRYPT_CONFIG_LIBS"; then
     done
     GCRYPT_LIBS="$GCRYPT_LIBS${ncbi_rp_R_flags}"
  fi
+fi
+
+if test "x$with_nettle" != xno; then
+   case "$with_nettle" in
+      yes | '' ) ;;
+      *        ) NETTLE_PATH=$with_nettle ;;
+   esac
+   if test -d "$NETTLE_PATH"; then
+      ncbi_fix_dir_tmp=`if cd $NETTLE_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $NETTLE_PATH && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            NETTLE_PATH=$ncbi_fix_dir_tmp2
+         else
+            case "$NETTLE_PATH" in
+               /*) ;;
+               * ) NETTLE_PATH=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) NETTLE_PATH=$ncbi_fix_dir_tmp ;;
+ esac
+   fi
+   if test -d "$NETTLE_PATH/lib$bit64_sfx"; then
+      NETTLE_LIBDIR=$NETTLE_PATH/lib$bit64_sfx
+   else
+      NETTLE_LIBDIR=$NETTLE_PATH/lib
+   fi
+   for pfx in "$compiler_vpfx" "$compiler_pfx" "" ; do
+      vpath=$NETTLE_PATH/$pfx${DEBUG_SFX}${mt_sfx}${bit64_sfx}
+      if test -d "$vpath" ; then
+         NETTLE_LIBDIR=$vpath/lib
+         break
+      fi
+   done
+   if test -d "$NETTLE_LIBDIR"; then
+      ncbi_fix_dir_tmp=`if cd $NETTLE_LIBDIR; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
+ case "$ncbi_fix_dir_tmp" in
+    /.*) ncbi_fix_dir_tmp2=`cd $NETTLE_LIBDIR && $smart_pwd 2>/dev/null`
+         if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
+            NETTLE_LIBDIR=$ncbi_fix_dir_tmp2
+         else
+            case "$NETTLE_LIBDIR" in
+               /*) ;;
+               * ) NETTLE_LIBDIR=$ncbi_fix_dir_tmp ;;
+            esac
+         fi
+         ;;
+    /*) NETTLE_LIBDIR=$ncbi_fix_dir_tmp ;;
+ esac
+      ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $NETTLE_LIBDIR; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    NETTLE_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $NETTLE_LIBDIR; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    NETTLE_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+   fi
+   if test "$with_nettle" != "no"; then
+    case "$with_nettle" in
+       yes | "" ) ;;
+       *        ) NETTLE_PATH=$with_nettle ;;
+    esac
+    if test "$NETTLE_PATH" != /usr -a -d "$NETTLE_PATH"; then
+       in_path=" in $NETTLE_PATH"
+       if test -z "$NETTLE_INCLUDE" -a -d "$NETTLE_PATH/include"; then
+          NETTLE_INCLUDE="-I$NETTLE_PATH/include"
+       fi
+       if test -n "$NETTLE_LIBPATH"; then
+          :
+       elif test -d "$NETTLE_PATH/lib${bit64_sfx}"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $NETTLE_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    NETTLE_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $NETTLE_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    NETTLE_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       elif test -d "$NETTLE_PATH/lib"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $NETTLE_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    NETTLE_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $NETTLE_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    NETTLE_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       fi
+       NETTLE_LIBS="$NETTLE_LIBPATH -lhogweed -lnettle"
+    else
+       NETTLE_INCLUDE=""
+       NETTLE_LIBS="-lhogweed -lnettle"
+       in_path=
+    fi
+    { echo "$as_me:$LINENO: checking for libhogweed$in_path" >&5
+echo $ECHO_N "checking for libhogweed$in_path... $ECHO_C" >&6; }
+if test "${ncbi_cv_lib_nettle+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CPPFLAGS=" $NETTLE_INCLUDE $orig_CPPFLAGS"
+       LIBS="$NETTLE_LIBS $GMP_LIBS $orig_LIBS"
+       cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <nettle/sexp.h>
+int
+main ()
+{
+struct sexp_iterator it;
+             sexp_iterator_first(&it, 0, (const uint8_t*) NULL);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_nettle=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ncbi_cv_lib_nettle=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ncbi_cv_lib_nettle" >&5
+echo "${ECHO_T}$ncbi_cv_lib_nettle" >&6; }
+    if test "$ncbi_cv_lib_nettle" = "no"; then
+       if test "${with_nettle:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-nettle explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-nettle explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+    fi
+ fi
+ if test "$with_nettle" = "no"; then
+    NETTLE_PATH="No_NETTLE"
+    NETTLE_INCLUDE=
+    NETTLE_LIBS=
+ else
+              WithPackages="$WithPackages${WithPackagesSep}NETTLE"; WithPackagesSep=" "
+    NETTLE_INCLUDE=" $NETTLE_INCLUDE"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBNETTLE 1
+_ACEOF
+
+ fi
+
+
+
+fi
+if test "$with_nettle" = no; then
+   $as_unset NETTLE_INCLUDE || test "${NETTLE_INCLUDE+set}" != set || { NETTLE_INCLUDE=; export NETTLE_INCLUDE; }
+   $as_unset NETTLE_LIBS || test "${NETTLE_LIBS+set}" != set || { NETTLE_LIBS=; export NETTLE_LIBS; }
+else
+             WithPackages="$WithPackages${WithPackagesSep}NETTLE"; WithPackagesSep=" "
 fi
 
 case "$with_gnutls" in
@@ -42681,7 +43199,7 @@ for x in StrictGI GCC KCC ICC VisualAge CompaqCompiler Cray WorkShop MIPSpro MSV
           ;;
       esac
    done
-  for x in UUID FUSE Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE GCRYPT GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON23 PYTHON24 PYTHON25 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB LocalVDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF UNGIF GIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal MONGODB GMOCK; do
+  for x in UUID FUSE Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON23 PYTHON24 PYTHON25 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB LocalVDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF UNGIF GIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal MONGODB GMOCK; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"
@@ -43826,9 +44344,9 @@ LZO_INCLUDE!$LZO_INCLUDE$ac_delim
 LZO_LIBS!$LZO_LIBS$ac_delim
 PCRE_INCLUDE!$PCRE_INCLUDE$ac_delim
 PCRE_LIBS!$PCRE_LIBS$ac_delim
+GMP_INCLUDE!$GMP_INCLUDE$ac_delim
+GMP_LIBS!$GMP_LIBS$ac_delim
 LIBGCRYPT_CONFIG!$LIBGCRYPT_CONFIG$ac_delim
-GCRYPT_INCLUDE!$GCRYPT_INCLUDE$ac_delim
-GCRYPT_LIBS!$GCRYPT_LIBS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -43870,6 +44388,10 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+GCRYPT_INCLUDE!$GCRYPT_INCLUDE$ac_delim
+GCRYPT_LIBS!$GCRYPT_LIBS$ac_delim
+NETTLE_INCLUDE!$NETTLE_INCLUDE$ac_delim
+NETTLE_LIBS!$NETTLE_LIBS$ac_delim
 LIBGNUTLS_CONFIG!$LIBGNUTLS_CONFIG$ac_delim
 GNUTLS_INCLUDE!$GNUTLS_INCLUDE$ac_delim
 GNUTLS_LIBS!$GNUTLS_LIBS$ac_delim
@@ -43963,10 +44485,6 @@ MONGODB_INCLUDE!$MONGODB_INCLUDE$ac_delim
 MONGODB_LIBS!$MONGODB_LIBS$ac_delim
 GMOCK_INCLUDE!$GMOCK_INCLUDE$ac_delim
 GMOCK_LIBS!$GMOCK_LIBS$ac_delim
-signature!$signature$ac_delim
-build_root!$build_root$ac_delim
-top_srcdir!$top_srcdir$ac_delim
-srcdir!$srcdir$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -44008,6 +44526,10 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+signature!$signature$ac_delim
+build_root!$build_root$ac_delim
+top_srcdir!$top_srcdir$ac_delim
+srcdir!$srcdir$ac_delim
 status_dir!$status_dir$ac_delim
 builddir!$builddir$ac_delim
 runpath!$runpath$ac_delim
@@ -44101,10 +44623,6 @@ RPCSVC_LIBS!$RPCSVC_LIBS$ac_delim
 CRYPT_LIBS!$CRYPT_LIBS$ac_delim
 DL_LIBS!$DL_LIBS$ac_delim
 RT_LIBS!$RT_LIBS$ac_delim
-UUID_LIBS!$UUID_LIBS$ac_delim
-DEMANGLE_LIBS!$DEMANGLE_LIBS$ac_delim
-ICONV_LIBS!$ICONV_LIBS$ac_delim
-Z_LIB!$Z_LIB$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -44146,6 +44664,10 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+UUID_LIBS!$UUID_LIBS$ac_delim
+DEMANGLE_LIBS!$DEMANGLE_LIBS$ac_delim
+ICONV_LIBS!$ICONV_LIBS$ac_delim
+Z_LIB!$Z_LIB$ac_delim
 BZ2_LIB!$BZ2_LIB$ac_delim
 PCREPOSIX_LIBS!$PCREPOSIX_LIBS$ac_delim
 PCRE_LIB!$PCRE_LIB$ac_delim
@@ -44239,10 +44761,6 @@ LIBEXSLT_STATIC_LIBS!$LIBEXSLT_STATIC_LIBS$ac_delim
 XERCES_INCLUDE!$XERCES_INCLUDE$ac_delim
 XERCES_LIBS!$XERCES_LIBS$ac_delim
 XERCES_STATIC_LIBS!$XERCES_STATIC_LIBS$ac_delim
-XALAN_INCLUDE!$XALAN_INCLUDE$ac_delim
-XALAN_LIBS!$XALAN_LIBS$ac_delim
-XALAN_STATIC_LIBS!$XALAN_STATIC_LIBS$ac_delim
-ZORBA_INCLUDE!$ZORBA_INCLUDE$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -44284,6 +44802,10 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+XALAN_INCLUDE!$XALAN_INCLUDE$ac_delim
+XALAN_LIBS!$XALAN_LIBS$ac_delim
+XALAN_STATIC_LIBS!$XALAN_STATIC_LIBS$ac_delim
+ZORBA_INCLUDE!$ZORBA_INCLUDE$ac_delim
 ZORBA_LIBS!$ZORBA_LIBS$ac_delim
 ZORBA_STATIC_LIBS!$ZORBA_STATIC_LIBS$ac_delim
 SQLITE3_STATIC_LIBS!$SQLITE3_STATIC_LIBS$ac_delim
@@ -44333,7 +44855,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 47; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 51; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

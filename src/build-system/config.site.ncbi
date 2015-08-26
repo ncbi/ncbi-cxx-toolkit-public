@@ -47,6 +47,7 @@ try_local() {
         test -f "$d/include/gif_lib.h"     &&  : ${GIF_PATH=$d}
         test -f "$d/include/GL/glew.h"     &&  : ${GLEW_PATH=$d}
         test -d "$d/include/gmock"         &&  : ${GMOCK_PATH=$d}
+        test -f "$d/include/gmp.h"         &&  : ${GMP_PATH=$d}
         test -x "$d/lib/pkgconfig/gnutls.pc"  &&  : ${GNUTLS_PATH=$d}
         test -f "$d/include/stdsoap2.h"    &&  : ${GSOAP_PATH=$d}
         test -f "$d/include/hdf5.h"        &&  : ${HDF5_PATH=$d}
@@ -59,6 +60,7 @@ try_local() {
         test -d "$d/include/mongo"         &&  : ${MONGODB_PATH=$d}
         test -d "$d/include/muParser"      &&  : ${MUPARSER_PATH=$d}
         test -x "$d/bin/mysql-config"      &&  : ${MYSQL_PATH=$d}
+        test -d "$d/include/nettle"        &&  : ${NETTLE_PATH=$d}
         test -d "$d/include/GL"            &&  : ${OPENGL_PATH=$d}
         test -d "$d/include/OB"            &&  : ${ORBACUS_PATH=$d}
         test -f "$d/include/png.h"         &&  : ${PNG_PATH=$d}
@@ -161,6 +163,10 @@ case "$ncbi_platform" in
 esac
 
 case "$ncbi_platform" in
+    Linux64    ) : ${GMP_PATH=$NCBI/gmp-6.0.0a} ;;
+esac
+
+case "$ncbi_platform" in
     Linux64    ) : ${GNUTLS_PATH=$NCBI/gnutls-3.4.0} ;;
     Linux*     ) : ${GNUTLS_PATH=$NCBI/gnutls-2.4.2} ;;
     *MAC       ) : ${GNUTLS_PATH=$NCBI/gnutls-3.4.0} ;;
@@ -202,6 +208,10 @@ esac
 
 # C Toolkit (path overridden in stable components to avoid version skew)
 : ${NCBI_C_PATH=$NCBI}
+
+case "$ncbi_platform" in
+    Linux64    ) : ${NETTLE_PATH=$NCBI/nettle-3.1.1} ;;
+esac
 
 # : ${ODBC_PATH:="/opt/machine/merant"}
 

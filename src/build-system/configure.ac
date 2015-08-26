@@ -65,7 +65,7 @@ case "$with_3psw" in
          with_ncbi_c=no
       fi
       m4_foreach(X, [sss, sssutils, sssdb, vdb, z, bz2, lzo, pcre,
-                     gcrypt, gnutls, openssl, krb5, boost,
+                     gmp, gcrypt, nettle, gnutls, openssl, krb5, boost,
                      sybase, ftds, mysql, opengl, mesa, glut, glew,
                      wxwidgets, freetype, ftgl, fastcgi, bdb, orbacus, odbc,
                      python, perl, jni, sqlite3, mimetic, sge, icu, sp, expat,
@@ -263,10 +263,18 @@ AC_ARG_WITH(pcre,
    [ --with-pcre=DIR         use PCRE installation in DIR])
 AC_ARG_WITH(pcre2,
    [ --without-pcre          use internal copy of PCRE])
+AC_ARG_WITH(gmp,
+   [ --with-gmp=DIR          use GMP installation in DIR])
+AC_ARG_WITH(gmp2,
+   [ --without-gmp           do not use GMP])
 AC_ARG_WITH(gcrypt,
    [ --with-gcrypt=DIR       use gcrypt installation in DIR])
 AC_ARG_WITH(gcrypt2,
    [ --without-gcrypt        do not use gcrypt])
+AC_ARG_WITH(nettle,
+   [ --with-nettle=DIR       use Nettle installation in DIR])
+AC_ARG_WITH(nettle2,
+   [ --without-nettle        do not use Nettle])
 AC_ARG_WITH(gnutls,
    [ --with-gnutls=DIR       use GNUTLS installation in DIR])
 AC_ARG_WITH(gnutls2,
@@ -529,8 +537,9 @@ deactivation makefile-auto-update projects flat-makefile configure-dialog \
 check ncbi-public strip pch caution ccache distcc \
 ncbi-c wxwidgets wxwidgets-ucs fastcgi sss sssdb sssutils included-sss \
 geo included-geo vdb downloaded-vdb included-vdb \
-z bz2 lzo pcre gcrypt gnutls openssl krb5 sybase sybase-local sybase-new \
-ftds mysql orbacus freetype ftgl opengl mesa glut glew glew-mx \
+z bz2 lzo pcre gmp gcrypt nettle gnutls openssl krb5 \
+sybase sybase-local sybase-new ftds mysql \
+orbacus freetype ftgl opengl mesa glut glew glew-mx \
 bdb python perl jni sqlite3 icu boost boost-tag \
 sp expat sablot libxml libxslt libexslt xerces xalan zorba \
 oechem sge muparser hdf5 \
@@ -586,7 +595,8 @@ for x_arg in "$@" ; do
 
       --srcdir=* | --x-includes=* | --x-libraries=* | --with-tcheck=* \
       | --with-ncbi-c=* | --with-sss=* | --with-vdb=* | --with-z=* \
-      | --with-bz2=* | --with-lzo=* | --with-pcre=* | --with-gcrypt=* \
+      | --with-bz2=* | --with-lzo=* | --with-pcre=* \
+      | --with-gmp=* | --with-gcrypt=* | --with-nettle=* \
       | --with-gnutls=* | --with-openssl=* | --with-krb5=* \
       | --with-sybase-local=* | --with-ftds=*/* | --with-mysql=* \
       | --with-opengl=* | --with-mesa=* | --with-glut=* | --with-glew=* \
@@ -4157,7 +4167,33 @@ else
    PCREPOSIX_LIBS=`echo "$PCRE_LIBS" | sed -e 's/-lpcre/-lpcreposix -lpcre/'`
 fi
 
-## SSL/TLS libraries
+## SSL/TLS libraries (and supporting libraries)
+if test "x$with_gmp" != xno; then
+   case "$with_gmp" in
+      yes | '' ) ;;
+      *        ) GMP_PATH=$with_gmp ;;
+   esac
+   for pfx in "$compiler_vpfx" "$compiler_pfx" "" ; do
+      vpath=$GMP_PATH/$pfx${DEBUG_SFX}${mt_sfx}${bit64_sfx}
+      if test -d "$vpath" ; then
+         GMP_PATH=$vpath
+         break
+      fi
+   done
+   if test -d "$GMP_PATH"; then
+      NCBI_FIX_DIR(GMP_PATH)
+   fi
+   NCBI_CHECK_THIRD_PARTY_LIB(gmp,
+      [[AC_LANG_PROGRAM([#include <gmp.h>],
+           [[mpz_t x; mpz_init(x);]])]])
+fi
+if test "$with_gmp" = no; then
+   AS_UNSET(GMP_INCLUDE)
+   AS_UNSET(GMP_LIBS)
+else
+   NCBI_PACKAGE(GMP)
+fi
+
 case "$with_gcrypt" in
    no )       ac_cv_path_LIBGCRYPT_CONFIG=no ;;
    yes | '' )                                ;;
@@ -4191,6 +4227,43 @@ NCBI_CHECK_THIRD_PARTY_LIB(gcrypt,
  $GCRYPT_CONFIG_LIBS)
 if test "x$with_gcrypt" != xno -a -n "$GCRYPT_CONFIG_LIBS"; then
    NCBI_RPATHIFY_OUTPUT(GCRYPT_LIBS, [echo $GCRYPT_CONFIG_LIBS], [$no_usr_lib])
+fi
+
+if test "x$with_nettle" != xno; then
+   case "$with_nettle" in
+      yes | '' ) ;;
+      *        ) NETTLE_PATH=$with_nettle ;;
+   esac
+   if test -d "$NETTLE_PATH"; then
+      NCBI_FIX_DIR(NETTLE_PATH)
+   fi
+   if test -d "$NETTLE_PATH/lib$bit64_sfx"; then
+      NETTLE_LIBDIR=$NETTLE_PATH/lib$bit64_sfx
+   else
+      NETTLE_LIBDIR=$NETTLE_PATH/lib
+   fi
+   for pfx in "$compiler_vpfx" "$compiler_pfx" "" ; do
+      vpath=$NETTLE_PATH/$pfx${DEBUG_SFX}${mt_sfx}${bit64_sfx}
+      if test -d "$vpath" ; then
+         NETTLE_LIBDIR=$vpath/lib
+         break
+      fi
+   done
+   if test -d "$NETTLE_LIBDIR"; then
+      NCBI_FIX_DIR(NETTLE_LIBDIR)
+      NCBI_RPATHIFY(NETTLE_LIBPATH, $NETTLE_LIBDIR)
+   fi
+   NCBI_CHECK_THIRD_PARTY_LIB_EX(nettle, NETTLE, hogweed,
+      [[AC_LANG_PROGRAM([#include <nettle/sexp.h>],
+           [[struct sexp_iterator it;
+             sexp_iterator_first(&it, 0, (const uint8_t*) NULL);]])]],
+      [-lnettle], [$GMP_LIBS])
+fi
+if test "$with_nettle" = no; then
+   AS_UNSET(NETTLE_INCLUDE)
+   AS_UNSET(NETTLE_LIBS)
+else
+   NCBI_PACKAGE(NETTLE)
 fi
 
 case "$with_gnutls" in

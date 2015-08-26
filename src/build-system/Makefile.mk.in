@@ -343,9 +343,14 @@ PCRE_LIBS      = @PCRE_LIBS@
 PCREPOSIX_LIBS = @PCREPOSIX_LIBS@
 PCRE_LIB       = @PCRE_LIB@
 
-# OpenSSL, GnuTLS: headers and libs; TLS_* points to GNUTLS_* by preference.
+# OpenSSL, GnuTLS, and potential supporting packages: headers and libs.
+# TLS_* points to GNUTLS_* by preference.
+GMP_INCLUDE     = @GMP_INCLUDE@
+GMP_LIBS        = @GMP_LIBS@
 GCRYPT_INCLUDE  = @GCRYPT_INCLUDE@
 GCRYPT_LIBS     = @GCRYPT_LIBS@
+NETTLE_INCLUDE  = @NETTLE_INCLUDE@
+NETTLE_LIBS     = @NETTLE_LIBS@
 GNUTLS_INCLUDE  = @GNUTLS_INCLUDE@
 GNUTLS_LIBS     = @GNUTLS_LIBS@
 OPENSSL_INCLUDE = @OPENSSL_INCLUDE@
