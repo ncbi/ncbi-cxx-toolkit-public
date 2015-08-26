@@ -2325,7 +2325,7 @@ bool CSubSource::IsAltitudeValid (const string& value)
     string number = "";
     string units = "";
     s_CollectNumberAndUnits(value, number, units);
-    if (NStr::IsBlank(number) || !NStr::EqualCase(units, "m.")) {
+    if (NStr::IsBlank(number) || !NStr::EqualCase(units, "m")) {
         return false;
     } else {
         return true;
@@ -2349,14 +2349,14 @@ string CSubSource::FixAltitude (const string& value)
         double val = NStr::StringToDouble(number);
         val *= 0.3048;
         NStr::NumericToString(number, val);
-        units = "m.";
+        units = "m";
     } 
     
     if (NStr::Equal(units, "m.")
         || NStr::Equal(units, "meters")
         || NStr::Equal(units, "meter")
         || NStr::Equal(units, "m")) {
-        return number + " " + "m.";
+        return number + " " + "m";
     } else {
         return "";
     }

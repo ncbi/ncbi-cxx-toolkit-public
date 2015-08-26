@@ -6510,7 +6510,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadAltitude)
 {
     // prepare entry
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
-    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_altitude, "123 m.");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_altitude, "123 m");
     STANDARD_SETUP
 
     eval = validator.Validate(seh, options);
@@ -6536,7 +6536,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadAltitude)
 
     CLEAR_ERRORS
 
-    BOOST_CHECK_EQUAL(CSubSource::FixAltitude("123 ft."), "37.4904 m.");
+    BOOST_CHECK_EQUAL(CSubSource::FixAltitude("123 ft."), "37.4904 m");
 }
 
 
@@ -18744,7 +18744,7 @@ BOOST_AUTO_TEST_CASE(Test_SubSourceAutofix)
     ss->SetSubtype(CSubSource::eSubtype_altitude);
     ss->SetName("123 ft.");
     ss->AutoFix();
-    BOOST_CHECK_EQUAL(ss->GetName(), "37.4904 m.");
+    BOOST_CHECK_EQUAL(ss->GetName(), "37.4904 m");
 
 }
 
