@@ -207,6 +207,7 @@ private:
     virtual EPointerType ReadPointerType(void);
     virtual TObjectIndex ReadObjectPointer(void);
     virtual string ReadOtherPointer(void);
+    virtual void StartDelayBuffer(void);
 
     // low level methods
     char GetChar(void);

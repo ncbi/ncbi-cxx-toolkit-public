@@ -1594,4 +1594,10 @@ string CObjectIStreamAsn::ReadOtherPointer(void)
     return ReadTypeId(SkipWhiteSpace());
 }
 
+void CObjectIStreamAsn::StartDelayBuffer(void)
+{
+    SkipWhiteSpace();
+    CObjectIStream::StartDelayBuffer();
+}
+
 END_NCBI_SCOPE
