@@ -1176,7 +1176,6 @@ CSrvTask::ReleaseDiagCtx(void)
         m_DiagCtx = m_DiagChain[cnt_in_chain - 1];
 }
 
-
 CDiagCompileInfo::CDiagCompileInfo(void)
     : m_File(""),
       m_Line(0),
@@ -1312,7 +1311,11 @@ SDiagMessage::Write(CNcbiOstream& os, int flags /* = 0 */) const
 
 
 CLogWriter::CLogWriter(void)
-{}
+{
+#if __NC_TASKS_MONITOR
+    m_TaskName = "CLogWriter";
+#endif
+}
 
 CLogWriter::~CLogWriter(void)
 {}

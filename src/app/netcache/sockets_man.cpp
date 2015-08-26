@@ -1092,7 +1092,11 @@ unlock_and_exit:
 
 
 CSrvListener::CSrvListener(void)
-{}
+{
+#if __NC_TASKS_MONITOR
+    m_TaskName = "CSrvListener";
+#endif
+}
 
 CSrvListener::~CSrvListener(void)
 {}
@@ -1122,7 +1126,6 @@ CSrvSocketTask::CSrvSocketTask(void)
     : m_ProxySrc(NULL),
       m_ProxyDst(NULL),
       m_ConnStartJfy(0),
-      m_LastActive(0),
       m_Fd(-1),
       m_RdSize(0),
       m_RdPos(0),
@@ -1147,6 +1150,9 @@ CSrvSocketTask::CSrvSocketTask(void)
     is_listening = false;
     m_RdBuf = (char*)malloc(kSockReadBufSize);
     m_WrBuf = (char*)malloc(kSockWriteBufSize);
+#if __NC_TASKS_MONITOR
+    m_TaskName = "CSrvSocketTask";
+#endif
 }
 
 CSrvSocketTask::~CSrvSocketTask(void)

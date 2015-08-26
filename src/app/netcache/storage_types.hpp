@@ -266,6 +266,7 @@ private:
 class CNewFileCreator : public CSrvTask
 {
 public:
+    CNewFileCreator(void);
     virtual ~CNewFileCreator(void);
 
 private:
@@ -294,6 +295,7 @@ private:
 class CRecNoSaver : public CSrvTask
 {
 public:
+    CRecNoSaver(void);
     virtual ~CRecNoSaver(void);
 
 private:

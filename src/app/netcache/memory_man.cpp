@@ -995,7 +995,11 @@ ReleaseThreadMemMgr(SSrvThread* thr)
 
 
 CMMFlusher::CMMFlusher(void)
-{}
+{
+#if __NC_TASKS_MONITOR
+    m_TaskName = "CMMFlusher";
+#endif
+}
 
 CMMFlusher::~CMMFlusher(void)
 {}

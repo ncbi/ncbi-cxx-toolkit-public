@@ -215,7 +215,11 @@ CSrvTime::TZAdjustment(void)
 
 
 CTZAdjuster::CTZAdjuster(void)
-{}
+{
+#if __NC_TASKS_MONITOR
+    m_TaskName = "CTZAdjuster";
+#endif
+}
 
 CTZAdjuster::~CTZAdjuster(void)
 {}

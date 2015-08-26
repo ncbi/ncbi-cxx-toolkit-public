@@ -1536,6 +1536,9 @@ CNCMessageHandler::CNCMessageHandler(void)
       m_ActiveHub(NULL)
 {
     LOG_CURRENT_FUNCTION
+#if __NC_TASKS_MONITOR
+    m_TaskName = "CNCMessageHandler";
+#endif
     m_CopyBlobInfo = new SNCBlobVerData();
     m_LatestBlobSum = new SNCBlobSummary();
 

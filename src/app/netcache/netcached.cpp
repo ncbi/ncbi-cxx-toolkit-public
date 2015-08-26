@@ -234,6 +234,13 @@ void CNCBlobKey::Assign( const CTempString& cache_name,
 }
 
 
+CNCHeartBeat::CNCHeartBeat(void)
+{
+#if __NC_TASKS_MONITOR
+    m_TaskName = "CNCHeartBeat";
+#endif
+}
+
 CNCHeartBeat::~CNCHeartBeat(void)
 {}
 

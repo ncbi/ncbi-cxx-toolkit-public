@@ -452,7 +452,11 @@ SWriteBackData::SWriteBackData(void)
 
 
 CWriteBackControl::CWriteBackControl(void)
-{}
+{
+#if __NC_TASKS_MONITOR
+    m_TaskName = "CWriteBackControl";
+#endif
+}
 
 CWriteBackControl::~CWriteBackControl(void)
 {}
@@ -634,6 +638,9 @@ CNCBlobVerManager::CNCBlobVerManager(Uint2         time_bucket,
     //AtomicAdd(s_CntMgrs, 1);
     //Uint8 cnt = AtomicAdd(s_CntMgrs, 1);
     //INFO("CNCBlobVerManager, cnt=" << cnt);
+#if __NC_TASKS_MONITOR
+    m_TaskName = "CNCBlobVerManager";
+#endif
 }
 
 CNCBlobVerManager::~CNCBlobVerManager(void)
@@ -865,7 +872,11 @@ CNCBlobVerManager::DeadTimeChanged(SNCBlobVerData* ver_data)
 
 CCurVerReader::CCurVerReader(CNCBlobVerManager* mgr)
     : m_VerMgr(mgr)
-{}
+{
+#if __NC_TASKS_MONITOR
+    m_TaskName = "CCurVerReader";
+#endif
+}
 
 CCurVerReader::~CCurVerReader(void)
 {}
@@ -988,6 +999,9 @@ SNCBlobVerData::SNCBlobVerData(void)
     //AtomicAdd(s_CntVers, 1);
     //Uint8 cnt = AtomicAdd(s_CntVers, 1);
     //INFO("SNCBlobVerData, cnt=" << cnt);
+#if __NC_TASKS_MONITOR
+    m_TaskName = "SNCBlobVerData";
+#endif
 }
 
 SNCBlobVerData::~SNCBlobVerData(void)
@@ -1335,6 +1349,9 @@ CNCBlobAccessor::CNCBlobAccessor(void)
       m_WriteMemRequested(false),
       m_Buffer(NULL)
 {
+#if __NC_TASKS_MONITOR
+    m_TaskName = "CNCBlobAccessor";
+#endif
     //Uint8 cnt = AtomicAdd(s_CntAccs, 1);
     //INFO("CNCBlobAccessor, cnt=" << cnt);
 }

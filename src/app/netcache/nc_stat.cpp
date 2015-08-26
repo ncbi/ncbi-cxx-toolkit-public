@@ -1164,7 +1164,11 @@ s_CollectCurStats(void)
 
 
 CStatRotator::CStatRotator(void)
-{}
+{
+#if __NC_TASKS_MONITOR
+    m_TaskName = "CStatRotator";
+#endif
+}
 
 CStatRotator::~CStatRotator(void)
 {}

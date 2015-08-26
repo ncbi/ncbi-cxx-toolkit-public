@@ -36,10 +36,16 @@ namespace intr = boost::intrusive;
 
 BEGIN_NCBI_SCOPE
 
+// adds task statistics
+#define __NC_TASKS_MONITOR  1
+// uses Boost intrusive set to hold task stat (versus std::set)
+// uses member_hook, because base_hook caused conflicts on linking
+#define __NC_TASKS_INTR_SET 1
+
 
 class CRequestContext;
 struct STimerTicket;
-
+class CSrvSocketTask;
 
 struct SSrvTaskList_tag;
 typedef intr::slist_member_hook<intr::tag<SSrvTaskList_tag> >   TSrvTaskListHook;
@@ -159,6 +165,8 @@ public:
     /// erroneous situations will result in program abort.
     void ReleaseDiagCtx(void);
 
+    static void PrintState(CSrvSocketTask& task);
+
 // Consider this section protected as it's public for internal use only
 // to minimize implementation-specific clutter in headers.
 public:
@@ -198,6 +206,9 @@ public:
     /// Bit-OR of flags for this task. For possible flag values see
     /// scheduler.hpp.
     TSrvTaskFlags m_TaskFlags;
+    /// Time (in seconds) when the task was active last time, i.e. when
+    /// InternalRunSlice() was called last time.
+    int m_LastActive;
     /// Task's priority.
     Uint1 m_Priority;
     /// Current diagnostic context for this task.
@@ -211,6 +222,12 @@ public:
     STimerTicket* m_Timer;
     /// Object that will delete this task after call to Terminate().
     CSrvTaskTerminator m_Terminator;
+#if __NC_TASKS_MONITOR
+    string m_TaskName;
+#if __NC_TASKS_INTR_SET
+    intr::set_member_hook<> m_intr_member_hook;
+#endif
+#endif
 };
 
 

@@ -240,6 +240,7 @@ private:
 class CNCHeartBeat : public CSrvTask
 {
 public:
+    CNCHeartBeat(void);
     virtual ~CNCHeartBeat(void);
 
     static void CheckConfFile(void);

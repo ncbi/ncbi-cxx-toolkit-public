@@ -240,6 +240,9 @@ CNCLogCleaner::ExecuteSlice(TSrvThreadNum /* thr_idx */)
 
 CNCLogCleaner::CNCLogCleaner(void)
 {
+#if __NC_TASKS_MONITOR
+    m_TaskName = "CNCLogCleaner";
+#endif
     m_NextSlotIt = s_SlotsList.begin();
 }
 
@@ -573,6 +576,9 @@ CNCPeriodicSync::Commit(Uint8 server_id,
 
 CNCActiveSyncControl::CNCActiveSyncControl(void)
 {
+#if __NC_TASKS_MONITOR
+    m_TaskName = "CNCActiveSyncControl";
+#endif
     SetState(&CNCActiveSyncControl::x_StartScanSlots);
     m_ForceInitSync = false;
     m_Stuck = false;

@@ -54,6 +54,10 @@ CNCActiveHandler_Proxy::CNCActiveHandler_Proxy(CNCActiveHandler* handler)
     : m_Handler(handler),
       m_NeedToProxy(false)
 {
+#if __NC_TASKS_MONITOR
+    m_TaskName = "CNCActiveHandler_Proxy";
+#endif
+
     //Uint8 cnt = AtomicAdd(s_CntProxys, 1);
     //INFO("CNCActiveHandler_Proxy, cnt=" << cnt);
 }
@@ -159,6 +163,9 @@ CNCActiveHandler::CNCActiveHandler(Uint8 srv_id, CNCPeerControl* peer)
       m_CmdFromClient(false),
       m_Purge(false)
 {
+#if __NC_TASKS_MONITOR
+    m_TaskName = "CNCActiveHandler";
+#endif
     // Right after creation CNCActiveHandler shouldn't become runnable until
     // it's assigned to CNCActiveHandlerHub or some command-executing method
     // (like CopyPut(), SyncStart() etc.) is called.

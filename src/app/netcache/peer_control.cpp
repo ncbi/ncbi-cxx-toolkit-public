@@ -197,6 +197,10 @@ CNCPeerControl::CNCPeerControl(Uint8 srv_id)
       m_HasBGTasks(false),
       m_InitiallySynced(false)
 {
+#if __NC_TASKS_MONITOR
+    m_TaskName = "CNCPeerControl";
+#endif
+
     m_NextTaskSync = m_SyncList.end();
 
      // it MUST be "host:port", see CNCDistributionConf::Initialize

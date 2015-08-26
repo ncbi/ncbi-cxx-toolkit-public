@@ -279,9 +279,6 @@ public:
     /// Jiffy number when Connect() method was called. Variable is used to
     /// track connection timeouts.
     Uint4 m_ConnStartJfy;
-    /// Time (as time_t) when the socket was active last time, i.e. when
-    /// InternalRunSlice() was called last time.
-    int m_LastActive;
     /// File descriptor for the socket.
     int m_Fd;
     /// Size of data available for reading in the read buffer.

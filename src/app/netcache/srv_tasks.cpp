@@ -30,37 +30,127 @@
 #include "task_server_pch.hpp"
 
 #include "scheduler.hpp"
-
+#include "srv_stat.hpp"
 
 BEGIN_NCBI_SCOPE;
 
+#if __NC_TASKS_MONITOR
+static CMiniMutex     s_all_tasks_lock;
+#if __NC_TASKS_INTR_SET
+struct SrvTaskCompare
+{
+    bool operator() (const CSrvTask& x, const CSrvTask& y) const
+    {
+        return &x < &y;
+    }
+};
+#if 0
+typedef intr::set< CSrvTask, intr::compare< SrvTaskCompare > > TAllTasksSet;
+#else
+typedef intr::member_hook<CSrvTask, intr::set_member_hook<>, &CSrvTask::m_intr_member_hook> TAllTasksSetOption;
+typedef intr::set< CSrvTask, TAllTasksSetOption, intr::compare< SrvTaskCompare >>   TAllTasksSet;
+#endif
+#else
+typedef std::set<const CSrvTask*>  TAllTasksSet;
+#endif
+#endif
+TAllTasksSet  s_all_tasks;
 
 CSrvTask::CSrvTask(void)
     : m_LastThread(0),
       m_TaskFlags(0),
+      m_LastActive(0),
       m_Priority(1),
       m_DiagCtx(NULL),
       m_DiagChain(NULL),
       m_Timer(NULL)
-{}
+{
+#if __NC_TASKS_MONITOR
+    s_all_tasks_lock.Lock();
+#if __NC_TASKS_INTR_SET
+    s_all_tasks.insert(*this);
+#else
+    s_all_tasks.insert(this);
+#endif
+    s_all_tasks_lock.Unlock();
+    m_TaskName = "CSrvTask";
+#endif
+}
 
 CSrvTask::~CSrvTask(void)
 {
     _ASSERT(!(m_TaskFlags & fTaskOnTimer)  &&  !m_Timer);
     _ASSERT(!m_DiagCtx);
     free(m_DiagChain);
+#if __NC_TASKS_MONITOR
+    s_all_tasks_lock.Lock();
+#if __NC_TASKS_INTR_SET
+    s_all_tasks.erase(*this);
+#else
+    s_all_tasks.erase(this);
+#endif
+    s_all_tasks_lock.Unlock();
+#endif
 }
 
 void
 CSrvTask::InternalRunSlice(TSrvThreadNum thr_num)
 {
+    m_LastActive = CSrvTime::CurSecs();
     ExecuteSlice(thr_num);
+    m_LastActive = CSrvTime::CurSecs();
 }
 
+void CSrvTask::PrintState(CSrvSocketTask& task)
+{
+#if __NC_TASKS_MONITOR
+    string is("\": "), eol(",\n\"");
+    map<string, int> idle_tasks;
+    map<string, CSrvStatTerm<int>> busy_tasks;
+    size_t len = 0;
+
+    s_all_tasks_lock.Lock();
+    int now = CSrvTime::CurSecs();
+    ITERATE(TAllTasksSet, t,  s_all_tasks) {
+#if __NC_TASKS_INTR_SET
+        const CSrvTask* job = &*t;
+#else
+        const CSrvTask* job = *t;
+#endif
+        if (busy_tasks.find(job->m_TaskName) == busy_tasks.end()) {
+            busy_tasks[job->m_TaskName].Initialize();
+        }
+        if (idle_tasks.find(job->m_TaskName) == idle_tasks.end()) {
+            idle_tasks[job->m_TaskName] = 0;
+        }
+        if (job->m_LastActive != 0) {
+            busy_tasks[job->m_TaskName].AddValue(max(0, now - job->m_LastActive));
+        } else {
+            ++idle_tasks[job->m_TaskName];
+        }
+        len = max(len, job->m_TaskName.size());
+    }
+    s_all_tasks_lock.Unlock();
+
+    task.WriteText(eol).WriteText("cnt_tasks").WriteText(is).WriteNumber(s_all_tasks.size());
+    for (map<string, CSrvStatTerm<int>>::const_iterator t = busy_tasks.begin(); t != busy_tasks.end(); ++t) {
+        task.WriteText(eol).WriteText(t->first).WriteText(is).WriteText(string( len - t->first.size(), ' ')).WriteText("{ \"");
+        task.WriteText("cnt").WriteText(is).WriteNumber(t->second.GetCount());
+        task.WriteText(", \"").WriteText("avg").WriteText(is).WriteNumber(t->second.GetAverage());
+        task.WriteText(", \"").WriteText("max").WriteText(is).WriteNumber(t->second.GetMaximum());
+        task.WriteText(", \"").WriteText("idle").WriteText(is).WriteNumber(idle_tasks.at(t->first));
+        task.WriteText("}");
+    }
+#endif
+}
 
 CSrvTransitionTask::CSrvTransitionTask(void)
     : m_TransState(eState_Initial)
-{}
+{
+#if __NC_TASKS_MONITOR
+    m_TaskName = "CSrvTransitionTask";
+#endif
+}
 
 CSrvTransitionTask::~CSrvTransitionTask(void)
 {
@@ -130,7 +220,11 @@ CSrvTransitionTask::CancelTransRequest(CSrvTransConsumer* consumer)
 
 CSrvTransConsumer::CSrvTransConsumer(void)
     : m_TransFinished(false)
-{}
+{
+#if __NC_TASKS_MONITOR
+    m_TaskName = "CSrvTransConsumer";
+#endif
+}
 
 CSrvTransConsumer::~CSrvTransConsumer(void)
 {}

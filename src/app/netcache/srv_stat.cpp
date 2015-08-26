@@ -292,6 +292,7 @@ void CSrvStat::PrintState(CSrvSocketTask& task)
     task.WriteText(eol).WriteText("cnt_threads").WriteText(is).WriteNumber(m_EndState.cnt_threads);
     task.WriteText(eol).WriteText("cnt_sockets").WriteText(is).WriteNumber(m_EndState.cnt_sockets);
     m_MMStat->PrintState(task);
+    CSrvTask::PrintState(task);
 }
 
 void

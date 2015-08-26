@@ -2729,6 +2729,9 @@ CBlobCacher::x_CleanOrphanRecs(void)
 
 CBlobCacher::CBlobCacher(void)
 {
+#if __NC_TASKS_MONITOR
+    m_TaskName = "CBlobCacher";
+#endif
     SetState(&CBlobCacher::x_StartCaching);
 }
 
@@ -2963,6 +2966,9 @@ CExpiredCleaner::x_FinishSession(void)
 CExpiredCleaner::CExpiredCleaner(void)
     : m_DoExtraGC(false)
 {
+#if __NC_TASKS_MONITOR
+    m_TaskName = "CExpiredCleaner";
+#endif
     SetState(&Me::x_StartSession);
 }
 
@@ -3481,6 +3487,9 @@ CSpaceShrinker::x_FinishSession(void)
 
 CSpaceShrinker::CSpaceShrinker(void)
 {
+#if __NC_TASKS_MONITOR
+    m_TaskName = "CSpaceShrinker";
+#endif
     SetState(&Me::x_PrepareToShrink);
 }
 
@@ -3503,6 +3512,13 @@ CMovedRecDeleter::ExecuteRCU(void)
     delete this;
 }
 
+
+CRecNoSaver::CRecNoSaver(void)
+{
+#if __NC_TASKS_MONITOR
+    m_TaskName = "CRecNoSaver";
+#endif
+}
 
 CRecNoSaver::~CRecNoSaver(void)
 {}
@@ -3556,6 +3572,9 @@ CRecNoSaver::ExecuteSlice(TSrvThreadNum /* thr_num */)
 
 CDiskFlusher::CDiskFlusher(void)
 {
+#if __NC_TASKS_MONITOR
+    m_TaskName = "CDiskFlusher";
+#endif
     SetState(&Me::x_CheckFlushTime);
 }
 
@@ -3606,6 +3625,13 @@ CDiskFlusher::x_FlushNextFile(void)
     return NULL;
 }
 
+
+CNewFileCreator::CNewFileCreator(void)
+{
+#if __NC_TASKS_MONITOR
+    m_TaskName = "CNewFileCreator";
+#endif
+}
 
 CNewFileCreator::~CNewFileCreator(void)
 {}
