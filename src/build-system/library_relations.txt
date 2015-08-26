@@ -393,11 +393,10 @@ gnomon_access needs xalgognomon
 gnomon_access needs xqueryparse
 gnomon_asn_proc needs xobjutil
 gnutls needs $(Z_LIB)
+gnutls needs3party $(GMP_LIBS)
+gnutls needs3party $(NETTLE_LIBS)
 gnutls needs3party $(ORIG_LIBS)
 gnutls needs3party $(Z_LIBS)
-gnutls needs3party gmp
-gnutls needs3party hogweed
-gnutls needs3party nettle
 gp_python_attr needs gpipe_attr
 gp_python_attr needs3party $(PYTHON_LIBS)
 gpcgi needs $(SDBAPI_LIB)
@@ -590,9 +589,8 @@ hgvs_name needs gui_objutils
 hgvs_name needs sv_objects
 hmm_file needs xregexp
 hmm_hit_handle needs xobjutil
+hogweed needs3party $(GMP_LIBS)
 hogweed needs3party $(ORIG_LIBS)
-hogweed needs3party gmp
-hogweed needs3party nettle
 homologene needs $(SEQ_LIBS)
 homologene needs pub
 htbcli needs txserv
