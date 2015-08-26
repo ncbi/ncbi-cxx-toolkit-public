@@ -413,39 +413,103 @@ void CNetCacheWriter::AbortConnection()
     m_Connection = NULL;
 }
 
-void CNetCacheWriter::Transmit(const void* buf,
-    size_t count, size_t* bytes_written)
+EIO_Status CNetCacheWriter::TransmitImpl(const void* buf,
+        size_t count, size_t* bytes_written)
 {
-    ERW_Result res = m_TransmissionWriter->Write(buf, count, bytes_written);
+    STimeout timeout =
+        m_NetCacheAPI->m_Service->m_ServerPool.GetCommunicationTimeout();
+    CDeadline deadline(g_STimeoutToCTimeout(&timeout));
 
-    try {
-        STimeout to = {0, 0};
-        switch (m_Connection->m_Socket.Wait(eIO_Read, &to)) {
-            case eIO_Success:
-                {
-                    string msg;
-                    if (m_Connection->m_Socket.ReadLine(msg) != eIO_Closed) {
-                        if (msg.empty())
-                            break;
+    vector<CSocketAPI::SPoll> poll(1,
+            CSocketAPI::SPoll(&m_Connection->m_Socket, eIO_ReadWrite));
+    EIO_Event& in = poll[0].m_Event;
+    EIO_Event& out = poll[0].m_REvent;
+    EIO_Status stat = eIO_Success;
+    ERW_Result res = eRW_Success;
+
+    for (;;) {
+        const CNanoTimeout remaining = deadline.GetRemainingTime();
+        const STimeout* wait = g_CTimeoutToSTimeout(remaining, timeout);
+        stat = CSocketAPI::Poll(poll, wait);
+
+        if (stat != eIO_Interrupt) {
+            if (stat != eIO_Success) {
+                break;
+            }
+
+            if (out == eIO_Close) {
+                stat = eIO_Closed;
+                break;
+            }
+
+            if (out & eIO_Read) {
+                string msg;
+
+                if (m_Connection->m_Socket.ReadLine(msg) != eIO_Closed) {
+                    if (!msg.empty()) {
                         if (msg.find("ERR:") == 0) {
                             msg.erase(0, 4);
                             msg = NStr::ParseEscapes(msg);
                         }
+
                         NCBI_THROW(CNetCacheException, eServerError, msg);
                     }
-
-                    if (res != eRW_Success) {
-                        NCBI_THROW(CNetServiceException, eCommunicationError,
-                            g_RW_ResultToString(res));
-                    } // else FALL THROUGH
                 }
+            }
 
-            case eIO_Closed:
-                NCBI_THROW(CNetServiceException, eCommunicationError,
-                    "Server closed communication channel (timeout?)");
-
-            default:
+            // If we have already done writing
+            if (in == eIO_Read) {
                 break;
+            }
+
+            if (out & eIO_Write) {
+                res = m_TransmissionWriter->Write(buf, count, bytes_written);
+
+                // Non-waiting check for incoming messages after writing
+                in = eIO_Read;
+                deadline = CDeadline(0, 0);
+            }
+        }
+    }
+
+    // If we have not done writing yet
+    if (in != eIO_Read) {
+        return stat;
+    }
+
+    if (res == eRW_Success) {
+        return eIO_Success;
+    }
+
+    NCBI_THROW(CNetServiceException, eCommunicationError,
+        g_RW_ResultToString(res));
+}
+
+void CNetCacheWriter::Transmit(const void* buf,
+        size_t count, size_t* bytes_written)
+{
+    try {
+        switch (TransmitImpl(buf, count, bytes_written))
+        {
+        case eIO_Closed:
+            NCBI_THROW(CNetServiceException, eCommunicationError,
+                "Server closed communication channel (timeout?)");
+
+        case eIO_Timeout:
+            NCBI_THROW(CNetServiceException, eTimeout,
+                    "Timeout while writing blob contents");
+
+        case eIO_InvalidArg:
+        case eIO_NotSupported:
+            _TROUBLE;
+            /* FALL THROUGH if not DEBUG */
+
+        case eIO_Unknown:
+            NCBI_THROW(CNetServiceException, eCommunicationError,
+                "Unknown error");
+
+        default:
+            return;
         }
     }
     catch (...) {
@@ -453,7 +517,7 @@ void CNetCacheWriter::Transmit(const void* buf,
         throw;
     }
 }
-
+ 
 void CNetCacheWriter::EstablishConnection()
 {
     ResetWriters();
