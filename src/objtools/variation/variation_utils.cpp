@@ -133,11 +133,10 @@ static bool s_IsIntronicVariation(const T& var, const CVariation_inst::TType typ
             {
                 const T& var2 = **v_it;
 
-                if(!var2.IsSetData() || !var2.GetData().IsInstance())
-                    continue;
-
-                if (s_IsIntronicVariation(var2.GetData().GetInstance()))
-                    return true;
+                if (var2.IsSetData() && var2.GetData().IsInstance() &&
+                    s_IsIntronicVariation(var2.GetData().GetInstance())) {
+                            return true;
+                }
             }
         }
         break;
