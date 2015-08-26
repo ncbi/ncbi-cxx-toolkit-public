@@ -93,6 +93,7 @@
 #include <objects/seqfeat/OrgName.hpp>
 #include <objects/seqfeat/OrgMod.hpp>
 #include <objects/seqfeat/MultiOrgName.hpp>
+#include <objects/seqfeat/SubSource.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqfeat/Clone_ref.hpp>
@@ -383,6 +384,10 @@ void x_BasicCleanupSeqFeat_xref_E_E_data_data_txinit_txinit_txorg_txorg_orgname_
   void x_BasicCleanupSeqFeat_data_data_biosrc_biosrc_org_org( COrg_ref & arg0 );
   void x_BasicCleanupSeqFeat_data_data_biosrc_biosrc_org( COrg_ref & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_pcr_primers_ETC( CPCRReactionSet & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_somatic_origin_E_source_source_ETC( CSubSource & arg0 );
+  void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_somatic_origin_E_source_ETC( CSubSource & arg0 );
+  template< typename Tcontainer_ncbi_cref_csubsource_ >
+void x_BasicCleanupSeqFeat_xref_E_E_data_data_biosrc_biosrc_subtype_ETC( Tcontainer_ncbi_cref_csubsource_ & arg0 );
   void x_BasicCleanupSeqFeat_data_data_biosrc_biosrc( CBioSource & arg0 );
   void x_BasicCleanupSeqFeat_data_data_biosrc( CBioSource & arg0 );
   void x_BasicCleanupSeqFeat_xref_E_E_data_data_variation_variation_ext_locs_E_E_location_location1813_ETC( CSeq_loc & arg0 );
