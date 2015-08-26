@@ -134,6 +134,23 @@ private:
 
 END_objects_SCOPE // namespace ncbi::objects::
 
+class CCachedAssembly : public CObject
+{
+public:
+    CCachedAssembly(CRef<objects::CGC_Assembly> assembly);
+    CCachedAssembly(const string& blob);
+
+    CRef<objects::CGC_Assembly> Assembly();
+    const string& Blob();
+
+public:
+    static bool ValidBlob(int blobSize);
+
+private:
+    CRef<objects::CGC_Assembly> m_assembly;
+    string m_blob;
+};
+
 END_NCBI_SCOPE
 
 

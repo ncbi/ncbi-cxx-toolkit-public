@@ -16,4 +16,4 @@ WATCHERS = kumarv2 dicuccio
 
 
 USES_LIBRARIES =  \
-    genome_collection xconnect
+    genome_collection xconnect $(COMPRESS_LIBS)

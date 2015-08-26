@@ -12,7 +12,7 @@ SRC = test_genomic_collections_svc
 # OBJ =
 
 LIB_ = gencoll_client genome_collection $(SEQ_LIBS) pub medline biblio \
-	   general xser xconnect xutil xncbi
+	   general xser xconnect xutil xncbi $(COMPRESS_LIBS)
 
 
 LIB = $(LIB_:%=%$(STATIC))
@@ -25,7 +25,7 @@ LIB = $(LIB_:%=%$(STATIC))
 # LIB_OR_DLL = dll
 
 CPPFLAGS = $(ORIG_CPPFLAGS)
-LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
+LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
 CHECK_CMD = test_genomic_collections_svc -request get-assembly -acc GCF_000001405.27 /CHECK_NAME=test_gencoll_svc_ASSM
 CHECK_CMD = test_genomic_collections_svc -request get-best-assembly -acc NC_002008.4 /CHECK_NAME=test_gencoll_svc_BEST_ASSM

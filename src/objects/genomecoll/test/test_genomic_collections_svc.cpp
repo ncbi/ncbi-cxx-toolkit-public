@@ -38,6 +38,7 @@
 #include <serial/serial.hpp>
 #include <serial/objostr.hpp>
 
+#include <gpipe/common/scoped_timer.hpp>
 #include <objects/genomecoll/genomic_collections_cli.hpp>
 #include <objects/genomecoll/GC_Assembly.hpp>
 #include <objects/genomecoll/GCClient_ValidateChrTypeLo.hpp>
@@ -205,7 +206,7 @@ int CTestGenomicCollectionsSvcApplication::Run(void)
 void CTestGenomicCollectionsSvcApplication::PrepareRequest(CGCClientRequest& gc_request, const CArgs& args)
 {
     string request = args["request"].AsString();
-    
+
     if(request == "get-chrtype-valid")
     {
         CGCClient_ValidateChrTypeLocRequest& req = gc_request.SetGet_chrtype_valid();
@@ -214,7 +215,7 @@ void CTestGenomicCollectionsSvcApplication::PrepareRequest(CGCClientRequest& gc_
     }
     else if(request == "get-assembly")
     {
-        CGCClient_GetAssemblyRequest& req = gc_request.SetGet_assembly();
+        CGCClient_GetAssemblyRequest& req = gc_request.SetGet_assembly_blob();
         if(args["acc"]) {
             req.SetAccession(args["acc"].AsString());
         } else {
@@ -357,26 +358,29 @@ int CTestGenomicCollectionsSvcApplication::RunUsingClient(const CArgs& args, CNc
         else if(request == "get-assembly")
         {
             CRef<CGC_Assembly> reply;
-
-            if(args["-mode"])
             {
-                if (args["acc"])
-                    reply.Reset(cli->GetAssembly(args["acc"].AsString(), args["-mode"].AsInteger()));
-                else if (args["rel_id"])
-                    reply.Reset(cli->GetAssembly(args["rel_id"].AsInteger(), args["-mode"].AsInteger()));
-            }
-            else
-            {
-                int levelFlag = args["-level"] ? args["-level"].AsInteger():CGCClient_GetAssemblyRequest::eLevel_scaffold;
-                int asmFlags = args["-asm_flags"] ? args["-asm_flags"].AsInteger():eGCClient_AttributeFlags_none;
-                int chrAttrFlags = args["-chr_flags"] ? args["-chr_flags"].AsInteger():eGCClient_AttributeFlags_biosource; 
-                int scafAttrFlags = args["-scf_flags"] ? args["-scf_flags"].AsInteger():eGCClient_AttributeFlags_none; 
-                int compAttrFlags = args["-comp_flags"] ? args["-comp_flags"].AsInteger():eGCClient_AttributeFlags_none;
+                CScopedTimer timer("TEST-CGI-get-assemly-request-processing-time");
 
-                if (args["acc"])
-                    reply.Reset(cli->GetAssembly(args["acc"].AsString(), levelFlag, asmFlags, chrAttrFlags, scafAttrFlags, compAttrFlags));
-                else if (args["rel_id"])
-                    reply.Reset(cli->GetAssembly(args["rel_id"].AsInteger(), levelFlag, asmFlags, chrAttrFlags, scafAttrFlags, compAttrFlags));
+                if(args["-mode"])
+                {
+                    if (args["acc"])
+                        reply.Reset(cli->GetAssembly(args["acc"].AsString(), args["-mode"].AsInteger()));
+                    else if (args["rel_id"])
+                        reply.Reset(cli->GetAssembly(args["rel_id"].AsInteger(), args["-mode"].AsInteger()));
+                }
+                else
+                {
+                    int levelFlag = args["-level"] ? args["-level"].AsInteger():CGCClient_GetAssemblyRequest::eLevel_scaffold;
+                    int asmFlags = args["-asm_flags"] ? args["-asm_flags"].AsInteger():eGCClient_AttributeFlags_none;
+                    int chrAttrFlags = args["-chr_flags"] ? args["-chr_flags"].AsInteger():eGCClient_AttributeFlags_biosource;
+                    int scafAttrFlags = args["-scf_flags"] ? args["-scf_flags"].AsInteger():eGCClient_AttributeFlags_none;
+                    int compAttrFlags = args["-comp_flags"] ? args["-comp_flags"].AsInteger():eGCClient_AttributeFlags_none;
+
+                    if (args["acc"])
+                        reply.Reset(cli->GetAssembly(args["acc"].AsString(), levelFlag, asmFlags, chrAttrFlags, scafAttrFlags, compAttrFlags));
+                    else if (args["rel_id"])
+                        reply.Reset(cli->GetAssembly(args["rel_id"].AsInteger(), levelFlag, asmFlags, chrAttrFlags, scafAttrFlags, compAttrFlags));
+                }
             }
 
             ostr << *reply;
@@ -441,6 +445,7 @@ void CTestGenomicCollectionsSvcApplication::Exit(void)
 
 int main(int argc, const char* argv[])
 {
+    GetDiagContext().SetOldPostFormat(false);
     // Execute main application function
     return CTestGenomicCollectionsSvcApplication().AppMain(argc, argv);
 }

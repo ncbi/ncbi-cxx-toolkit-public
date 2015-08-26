@@ -39,8 +39,6 @@
 
 // generated includes
 #include <objects/genomecoll/genomic_collections_cli.hpp>
-#include <objects/genomecoll/GCClient_AttributeFlags.hpp>
-#include <objects/genomecoll/GCClient_GetAssemblyReques.hpp>
 #include <objects/genomecoll/GCClient_AssemblyInfo.hpp>
 #include <objects/genomecoll/GCClient_AssemblySequenceI.hpp>
 #include <objects/genomecoll/GCClient_AssembliesForSequ.hpp>
@@ -50,6 +48,7 @@
 #include <objects/genomecoll/GCClient_EquivalentAssembl.hpp>
 #include <objects/genomecoll/GCClient_GetEquivalentAsse.hpp>
 #include <sstream>
+#include <util/compress/stream_util.hpp>
 
 // generated classes
 
@@ -95,6 +94,12 @@ void CGenomicCollectionsService::x_Connect()
         x_ConnectURL(url);
 }
 
+static
+CRef<CGC_Assembly> AssemblyFromBlob(const vector<char>& blob)
+{
+    const string blobStr(blob.begin(), blob.end());
+    return CCachedAssembly(blobStr).Assembly();
+}
 
 CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(const string& acc, 
                                             int level, 
@@ -105,22 +110,22 @@ CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(const string& acc,
 {
     CGCClient_GetAssemblyRequest req;
     CGCClientResponse reply;
-    
+
     req.SetAccession(acc);
     req.SetLevel(level);
     req.SetAssm_flags(asmAttrFlags);
     req.SetChrom_flags(chrAttrFlags);
     req.SetScaf_flags(scafAttrFlags);
     req.SetComponent_flags(compAttrFlags);
-    
+
 #ifdef _DEBUG
     ostringstream ostrstrm;
-    ostrstrm << "Making request - " << MSerial_AsnText << req;
+    ostrstrm << "Making request -" << MSerial_AsnText << req;
     LOG_POST(Info << ostrstrm.str());
 #endif
-    
+
     try {
-        return AskGet_assembly(req, &reply);
+        return AssemblyFromBlob(AskGet_assembly_blob(req, &reply));
     } catch (CException& ex) {
         if(reply.Which() == CGCClientResponse::e_Srvr_error) {
             NCBI_THROW(CException, eUnknown, reply.GetSrvr_error().GetDescription());
@@ -146,7 +151,7 @@ CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(int releaseId,
     req.SetChrom_flags(chrAttrFlags);
     req.SetScaf_flags(scafAttrFlags);
     req.SetComponent_flags(compAttrFlags);
-    
+
 #ifdef _DEBUG
     ostringstream ostrstrm;
     ostrstrm << "Making request -" << MSerial_AsnText << req;
@@ -154,7 +159,7 @@ CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(int releaseId,
 #endif
     
     try {
-        return AskGet_assembly(req, &reply);
+        return AssemblyFromBlob(AskGet_assembly_blob(req, &reply));
     } catch (CException& ex) {
         if(reply.Which() == CGCClientResponse::e_Srvr_error) {
             NCBI_THROW(CException, eUnknown, reply.GetSrvr_error().GetDescription());
@@ -334,6 +339,56 @@ CRef<CGCClient_EquivalentAssemblies> CGenomicCollectionsService::GetEquivalentAs
 
 
 END_objects_SCOPE // namespace ncbi::objects::
+
+USING_SCOPE(objects);
+
+CCachedAssembly::CCachedAssembly(CRef<CGC_Assembly> assembly)
+        : m_assembly(assembly)
+{}
+
+CCachedAssembly::CCachedAssembly(const string& blob)
+        : m_blob(blob)
+{}
+
+CRef<CGC_Assembly> CCachedAssembly::Assembly()
+{
+    if (m_assembly.NotNull()) {
+        return m_assembly;
+    }
+
+    if (ValidBlob(m_blob.size())) {
+        CNcbiIstrstream istr(m_blob.data(), m_blob.size());
+        CDecompressIStream decmp_strm(istr, CCompressStream::eBZip2);
+        m_assembly.Reset(new CGC_Assembly);
+        decmp_strm >> MSerial_AsnBinary
+        >> MSerial_SkipUnknownMembers(eSerialSkipUnknown_Yes)   // Make reading cache backward compatible
+        >> MSerial_SkipUnknownVariants(eSerialSkipUnknown_Yes)
+        >> (*m_assembly);
+    }
+    return m_assembly;
+}
+
+const string& CCachedAssembly::Blob()
+{
+    if (!m_blob.empty()) {
+        return m_blob;
+    }
+
+    CNcbiOstrstream sstrm;
+    CCompressOStream cmpstrm(sstrm, CCompressStream::eBZip2);
+
+    cmpstrm << MSerial_AsnBinary << (*m_assembly);
+    cmpstrm.Finalize();
+
+    m_blob = CNcbiOstrstreamToString( sstrm );
+
+    return m_blob;
+}
+
+bool CCachedAssembly::ValidBlob(int blobSize) {
+    const int kSmallestZip(200); // No assembly, let alone a compressed one, will be smaller than this.
+    return blobSize >= kSmallestZip;
+}
 
 END_NCBI_SCOPE
 
