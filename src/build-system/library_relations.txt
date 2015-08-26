@@ -509,11 +509,11 @@ gpipe_val needs $(SEQ_LIBS)
 gpipe_val needs gpipe_common
 gpipe_val needs pub
 gpipe_val needs valerr
+gpipe_xml needs $(SEQ_LIBS)
 gpipe_xml needs connssl
 gpipe_xml needs gpipe_attr
 gpipe_xml needs gpipe_dateutil
-gpipe_xml needs taxon1
-gpipe_xml needs taxon3
+gpipe_xml needs pub
 gpipe_xmlutil needs xmlwrapp
 gpipe_xmlutil needs xutil
 gpxapi needs general
@@ -719,8 +719,7 @@ muxex_g needs dbinfoasncpp_g
 muxex_g needs gensvc_g
 muxex_g needs rcobaltasn_g
 mv_admin needs mv_types
-mv_admincli needs xconnect
-mv_admincli needs xser
+mv_admincli needs mv_admin
 mv_align needs mv_types
 mv_cgi needs mv_types
 mv_entrez needs mv_types
