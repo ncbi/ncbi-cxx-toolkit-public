@@ -401,6 +401,9 @@ private:
 
     void x_OrgnameModBC( COrgName &orgname, const string &org_ref_common );
 
+    void x_SubSourceBC( CSubSource & subsrc );
+    void x_OrgModBC( COrgMod & orgmod );
+
     void x_FixUnsetMolFromBiomol( CMolInfo& molinfo, CBioseq &bioseq );
 
     void x_AddPartialToProteinTitle( CBioseq &bioseq );

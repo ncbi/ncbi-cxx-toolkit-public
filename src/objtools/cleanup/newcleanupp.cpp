@@ -6443,6 +6443,30 @@ CNewCleanup_imp::x_OrgnameModBC( COrgName &orgname, const string &org_ref_common
     }
 }
 
+void CNewCleanup_imp::x_SubSourceBC(CSubSource & subsrc)
+{
+    if (!subsrc.IsSetSubtype() || !subsrc.IsSetName()) {
+        return;
+    }
+    string orig = subsrc.GetName();
+    subsrc.AutoFix();
+    if (!NStr::Equal(subsrc.GetName(), orig)) {
+        ChangeMade(CCleanupChange::eChangeSubsource);
+    }
+}
+
+void CNewCleanup_imp::x_OrgModBC(COrgMod & orgmod)
+{
+    if (!orgmod.IsSetSubtype() || !orgmod.IsSetSubname()) {
+        return;
+    }
+    string orig = orgmod.GetSubname();
+    orgmod.AutoFix();
+    if (!NStr::Equal(orgmod.GetSubname(), orig)) {
+        ChangeMade(CCleanupChange::eChangeOrgmod);
+    }
+}
+
 void CNewCleanup_imp::x_FixUnsetMolFromBiomol( CMolInfo& molinfo, CBioseq &bioseq )
 {
     if( FIELD_IS_SET(molinfo, Biomol) ) 
