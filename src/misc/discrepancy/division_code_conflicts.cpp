@@ -55,12 +55,23 @@ DISCREPANCY_CASE(DIVISION_CODE_CONFLICTS, CBioSource, eOncaller, "Division Code 
 
 DISCREPANCY_SUMMARIZE(DIVISION_CODE_CONFLICTS)
 {
-    if (m_Objs.GetObjects().size() < 2)
-        return;
-    size_t num = m_Objs.GetObjects().size();
+    if (m_Objs.GetMap().size() > 1)
+    {
+        m_Objs[kEmptyStr].clear();
+        NON_CONST_ITERATE (CReportNode::TNodeMap, it, m_Objs.GetMap()) 
+        {
+            if (!NStr::IsBlank(it->first)) 
+            {
+                string str = "[n] bioseq[s] [has] divsion code ";
+                str += it->first;
+                m_Objs[kEmptyStr][str].Add(it->second->GetObjects());
+            }
+        }
+
+        m_Objs[kEmptyStr]["Division code conflicts found"];
+        m_ReportItems = m_Objs[kEmptyStr].Export(GetName())->GetSubitems();
+    }
     m_Objs.clear();
-    m_Objs["Division code conflicts found"];
-    m_ReportItems = m_Objs.Export(GetName())->GetSubitems();
 }
 
 END_SCOPE(NDiscrepancy)
