@@ -284,7 +284,8 @@ depend_l.real: $(sources)
 	$(call make_each_lib_proj,depend)
 	$(call make_each_app_proj,depend)
 
-Makefile.%.libdep: $(srcdir)/Makefile.% $(builddir)/Makefile.mk
+Makefile.%.libdep: $(srcdir)/Makefile.%
+# $(builddir)/Makefile.mk
 ifneq "$(srcdir)" "."
 	cd $(builddir)  &&  $(RWL) -base project_tree_builder \
 	    $(abs_top_srcdir)/scripts/common/impl/create_flat_makefile.sh \
@@ -301,6 +302,7 @@ else
 	@exit 10
   endif
 endif
+	@if [ -f "$@" ]; then touch $@; fi
 
 base_req_needers = $(filter-out mark-as-disabled_l,$(local_targets))
 .PHONY: $(base_targets) $(has_usr_nonusr) $(has_usr_usr)
