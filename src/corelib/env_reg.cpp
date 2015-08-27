@@ -122,17 +122,27 @@ const string& CEnvironmentRegistry::x_Get(const string& section,
                                           const string& name,
                                           TFlags flags) const
 {
+    bool found;
+    return x_Get(section, name, flags, found);
+}
+
+
+const string& CEnvironmentRegistry::x_Get(const string& section,
+                                          const string& name,
+                                          TFlags flags,
+                                          bool& found) const
+{
     if ((flags & fTPFlags) == fPersistent) {
         return kEmptyStr;
     }
     REVERSE_ITERATE (TPriorityMap, it, m_PriorityMap) {
         string        var_name = it->second->RegToEnv(section, name);
-        const string* resultp  = &m_Env->Get(var_name);
-        if ((m_Flags & fCaseFlags) == 0  &&  resultp->empty()) {
+        const string* resultp  = &m_Env->Get(var_name, &found);
+        if ((m_Flags & fCaseFlags) == 0  &&  !found) {
             // try capitalizing the name
             resultp = &m_Env->Get(NStr::ToUpper(var_name));
         }
-        if ( !resultp->empty() ) {
+        if (found) {
             return *resultp;
         }
     }
@@ -144,7 +154,9 @@ bool CEnvironmentRegistry::x_HasEntry(const string& section,
                                       const string& name,
                                       TFlags flags) const
 {
-    return &x_Get(section, name, flags) != &kEmptyStr;
+    bool found;
+    x_Get(section, name, flags, found);
+    return found;
 }
 
 

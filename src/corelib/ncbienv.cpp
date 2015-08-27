@@ -100,24 +100,30 @@ void CNcbiEnvironment::Reset(const char* const* envp)
             ERR_POST_X(3, "CNcbiEnvironment: bad string '" << s << "'");
             continue;
         }
-        m_Cache[string(s, eq)]
-            = SEnvValue(eq + 1, const_cast<TXChar*>(kEmptyXCStr));
+        m_Cache[string(s, eq)] = SEnvValue(eq + 1, kEmptyXCStr);
     }
 }
 
 
-const string& CNcbiEnvironment::Get(const string& name) const
+const string& CNcbiEnvironment::Get(const string& name, bool* found) const
 {
     CFastMutexGuard LOCK(m_CacheMutex);
     TCache::const_iterator i = m_Cache.find(name);
+    bool fake_found;
+    if (found == NULL) {
+        found = &fake_found;
+    }
     if ( i != m_Cache.end() ) {
         if (i->second.ptr == NULL  &&  i->second.value.empty()) {
+            *found = false;
             return kEmptyStr;
         } else {
+            *found = true;
             return i->second.value;
         }
     }
-    const string& s = (m_Cache[name] = SEnvValue(Load(name), NULL)).value;
+    m_Cache[name] = SEnvValue(Load(name, *found), *found ? kEmptyXCStr : NULL);
+    const string& s = m_Cache[name].value;
     return s.empty() ? kEmptyStr : s;
 }
 
@@ -153,7 +159,7 @@ void CNcbiEnvironment::Set(const string& name, const string& value)
     TCache::const_iterator i = m_Cache.find(name);
     if ( i != m_Cache.end() ) {
         if (i->second.ptr != NULL && i->second.ptr != kEmptyXCStr) {
-            free(i->second.ptr);
+            free(const_cast<TXChar*>(i->second.ptr));
         }
     }
     m_Cache[name] = SEnvValue(value, str);
@@ -180,19 +186,22 @@ void CNcbiEnvironment::Unset(const string& name)
     TCache::iterator i = m_Cache.find(name);
     if ( i != m_Cache.end() ) {
         if (i->second.ptr != NULL && i->second.ptr != kEmptyXCStr) {
-            free(i->second.ptr);
+            free(const_cast<TXChar*>(i->second.ptr));
         }
         m_Cache.erase(i);
     }
 }
 
-string CNcbiEnvironment::Load(const string& name) const
+string CNcbiEnvironment::Load(const string& name, bool& found) const
 {
     const TXChar* s = NcbiSys_getenv(_T_XCSTRING(name));
-    if ( !s )
+    if (s == NULL) {
+        found = false;
         return NcbiEmptyString;
-    else
+    } else {
+        found = true;
         return _T_STDSTRING(s);
+    }
 }
 
 
@@ -216,7 +225,7 @@ CAutoEnvironmentVariable::CAutoEnvironmentVariable(const CTempString& var_name,
             m_Env.reset(new CNcbiEnvironment(NULL), eTakeOwnership);
         }
     }
-    m_PrevValue = m_Env->Get(m_VariableName);
+    m_PrevValue = m_Env->Get(m_VariableName, &m_WasSet);
     if ( value.empty() ) {
         m_Env->Unset(m_VariableName);
     } else {
@@ -226,7 +235,11 @@ CAutoEnvironmentVariable::CAutoEnvironmentVariable(const CTempString& var_name,
 
 CAutoEnvironmentVariable::~CAutoEnvironmentVariable()
 {
-    m_Env->Set(m_VariableName, m_PrevValue);
+    if (m_WasSet) {
+        m_Env->Set(m_VariableName, m_PrevValue);
+    } else {
+        m_Env->Unset(m_VariableName);
+    }
 }
 
 

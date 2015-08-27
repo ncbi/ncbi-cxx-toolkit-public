@@ -1467,6 +1467,48 @@ BOOST_AUTO_TEST_CASE(TestCheckMeType)
     }
 }
 
+/////////////////////////////////////////////////////////////////////////////
+
+BOOST_AUTO_TEST_CASE(TestAutoEnv)
+{
+    CNcbiEnvironment& env = CNcbiApplication::Instance()->SetEnvironment();
+    vector<string> options;
+    options.push_back("unset");
+    options.push_back("empty");
+    options.push_back("nonempty");
+    
+    string name;
+    bool found;
+
+    ITERATE (vector<string>, it, options) {
+        env.Unset(name = ("unset_" + *it));
+        BOOST_CHECK(env.Get(name, &found).empty()  &&  !found);
+        env.Set(name = ("empty_" + *it), kEmptyStr);
+        BOOST_CHECK(env.Get(name, &found).empty()  &&  found);
+        env.Set(name = ("nonempty_" + *it), "foo");
+        BOOST_CHECK(env.Get(name, &found) == "foo"  &&  found);
+    }
+    
+    ITERATE (vector<string>, it, options) {
+        CAutoEnvironmentVariable temp_unset(name = (*it + "_unset"),
+                                            kEmptyStr, &env);
+        BOOST_CHECK(env.Get(name, &found).empty()  &&  !found);
+        CAutoEnvironmentVariable temp_empty(name = (*it + "_empty"),
+                                            kEmptyStr, &env);
+        env.Set(name, kEmptyStr);
+        BOOST_CHECK(env.Get(name, &found).empty()  &&  found);
+        CAutoEnvironmentVariable temp_nonempty(name = (*it + "_nonempty"),
+                                               "bar", &env);
+        BOOST_CHECK(env.Get(name, &found) == "bar"  &&  found);
+    }
+
+    ITERATE (vector<string>, it, options) {
+        BOOST_CHECK(env.Get("unset_"    + *it, &found).empty()   &&  !found);
+        BOOST_CHECK(env.Get("empty_"    + *it, &found).empty()   &&  found);
+        BOOST_CHECK(env.Get("nonempty_" + *it, &found) == "foo"  &&  found);
+    }
+}
+
 
 NCBITEST_AUTO_INIT()
 {

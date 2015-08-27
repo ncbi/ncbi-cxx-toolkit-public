@@ -122,7 +122,7 @@ public:
     /// If environmnent value is not cached then call "Load(name)" to load
     /// the environmnent value.  The loaded name/value pair will then be
     /// cached, too, after the call to "Get()".
-    const string& Get(const string& name) const;
+    const string& Get(const string& name, bool* found = NULL) const;
 
     /// Find all variable names starting with an optional prefix.
     void Enumerate(list<string>& names, const string& prefix = kEmptyStr)
@@ -139,16 +139,19 @@ public:
 
 protected:
     /// Load value of specified environment variable.
-    virtual string Load(const string& name) const;
+    virtual string Load(const string& name, bool& found) const;
 
 private:
     /// Cached environment <name,value> pair.
     struct SEnvValue {
         SEnvValue(void) : ptr(NULL) {}
-        SEnvValue(const string& v, TXChar* p) : value(v), ptr(p) {}
+        SEnvValue(const string& v, const TXChar* p) : value(v), ptr(p) {}
 
         string value;  // cached value
-        TXChar*  ptr;  // string created by strdup() or NULL
+        // NULL if the corresponding environment variable is unset.
+        // kEmptyXCStr if the value was loaded from the environment.
+        // A string created by strdup() if the value came from Set().
+        const TXChar* ptr;
     };
     typedef map<string, SEnvValue> TCache;
     mutable TCache m_Cache;
@@ -188,6 +191,8 @@ private:
     string                    m_VariableName;
     /// Previous value of the environment variable manipulated
     string                    m_PrevValue;
+    /// Was the variable originally set at all?
+    bool                      m_WasSet;
 };
 
 

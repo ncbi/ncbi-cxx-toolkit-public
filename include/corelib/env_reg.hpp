@@ -111,6 +111,8 @@ protected:
     void x_SetModifiedFlag(bool modified, TFlags flags);
     const string& x_Get(const string& section, const string& name,
                         TFlags flags) const;
+    const string& x_Get(const string& section, const string& name,
+                        TFlags flags, bool& found) const;
     bool x_HasEntry(const string& section, const string& name,
                     TFlags flags) const;
     const string& x_GetComment(const string& section, const string& name,
