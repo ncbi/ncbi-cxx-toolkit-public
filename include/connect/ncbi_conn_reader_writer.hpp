@@ -51,7 +51,8 @@ class NCBI_XCONNECT_EXPORT CSocketReaderWriter : public    IReaderWriter,
                                                  protected CConnIniter
 {
 public:
-    CSocketReaderWriter(CSocket* sock, EOwnership if_to_own = eNoOwnership);
+    CSocketReaderWriter(CSocket* sock, EOwnership if_to_own = eNoOwnership,
+            EIO_WriteMethod write_method = eIO_WritePersist);
 
     virtual ERW_Result Read(void*   buf,
                             size_t  count,
@@ -75,6 +76,7 @@ protected:
     ERW_Result         x_Result(EIO_Status status);
 
     AutoPtr<CSocket>   m_Sock;
+    const EIO_WriteMethod m_WriteMethod;
 
 private:
     CSocketReaderWriter(const CSocketReaderWriter&);
@@ -84,8 +86,10 @@ private:
 
 
 inline CSocketReaderWriter::CSocketReaderWriter(CSocket*   sock,
-                                                EOwnership if_to_own)
-    : m_Sock(sock, if_to_own)
+                                                EOwnership if_to_own,
+                                                EIO_WriteMethod write_method)
+    : m_Sock(sock, if_to_own),
+      m_WriteMethod(write_method)
 {
 }
 
@@ -105,7 +109,7 @@ inline ERW_Result CSocketReaderWriter::Write(const void* buf,
                                              size_t*     n_written)
 {
     return m_Sock
-        ? x_Result(m_Sock->Write(buf, count, n_written))
+        ? x_Result(m_Sock->Write(buf, count, n_written, m_WriteMethod))
         : eRW_Error;
 }
 
