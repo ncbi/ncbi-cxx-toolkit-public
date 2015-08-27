@@ -46,7 +46,8 @@ CTransmissionWriter::CTransmissionWriter(IWriter* wrt,
                                          ESendEofPacket send_eof)
     : m_Wrt(wrt),
       m_OwnWrt(own_writer),
-      m_SendEof(send_eof)
+      m_SendEof(send_eof),
+      m_ToWrite(0)
 {
     _ASSERT(wrt);
 
@@ -77,51 +78,33 @@ ERW_Result CTransmissionWriter::Write(const void* buf,
                                       size_t      count,
                                       size_t*     bytes_written)
 {
-    size_t wrt_count = 0;
-    CIOBytesCountGuard guard(bytes_written, wrt_count);
+    _ASSERT(bytes_written);
 
-    if (count < sEndPacket)
-        return x_WritePacket(buf, count, wrt_count);
+    if (count >= sEndPacket) {
+        // The buffer cannot fit in one packet -- split it.
+        count = (size_t) 0x80008000LU;
+    }
 
-    // The buffer cannot fit in one packet -- split it.
-    const size_t split_packet_size = (size_t) 0x80008000LU;
-
-    const char* ptr = (const char*) buf;
-    size_t remaining = count;
-
-    do {
-        size_t written;
-        ERW_Result res = x_WritePacket(ptr, remaining < split_packet_size ?
-            remaining : split_packet_size, written);
-        if (res != eRW_Success)
-            return res;
-        ptr += written;
-        wrt_count += written;
-        remaining -= written;
-    } while (remaining > 0);
-
-    return eRW_Success;
+    return x_WritePacket(buf, count, *bytes_written);
 }
 
 ERW_Result CTransmissionWriter::x_WritePacket(const void* buf,
                                               size_t      count,
                                               size_t&     bytes_written)
 {
-    bytes_written = 0;
-    Uint4 cnt = (Uint4) count;
-    size_t written = 0;
-    ERW_Result res = m_Wrt->Write(&cnt, sizeof(cnt), &written);
-    if (res != eRW_Success) 
-        return res;
-    if (written != sizeof(cnt))
-        return eRW_Error;
-    for (const char* ptr = (char*)buf; count > 0; ptr += written) {
-        res = m_Wrt->Write(ptr, count, &written);
+    if (!m_ToWrite) {
+        Uint4 cnt = (Uint4) count;
+        size_t written = 0;
+        ERW_Result res = m_Wrt->Write(&cnt, sizeof(cnt), &written);
         if (res != eRW_Success) 
             return res;
-        count -= written;
-        bytes_written += written;
+        if (written != sizeof(cnt))
+            return eRW_Error;
+        m_ToWrite = cnt;
     }
+
+    ERW_Result res = m_Wrt->Write(buf, m_ToWrite, &bytes_written);
+    if (res == eRW_Success) m_ToWrite -= bytes_written;
     return res;
 }
 
@@ -132,6 +115,10 @@ ERW_Result CTransmissionWriter::Flush(void)
 
 ERW_Result CTransmissionWriter::Close(void)
 {
+    if (m_ToWrite) {
+        return eRW_Error;
+    }
+
     if (m_SendEof != eSendEofPacket)
         return eRW_Success;
 

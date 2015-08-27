@@ -133,6 +133,7 @@ private:
     IWriter*     m_Wrt;
     EOwnership   m_OwnWrt;
     ESendEofPacket m_SendEof;
+    size_t m_ToWrite;
 };
 
 
