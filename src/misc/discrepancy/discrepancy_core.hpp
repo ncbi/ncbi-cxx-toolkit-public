@@ -245,6 +245,7 @@ protected:
 #define ADD_DISCREPANCY_TYPE(type) bool m_Enable_##type; vector<CDiscrepancyVisitor<type>* > m_All_##type;
     ADD_DISCREPANCY_TYPE(CSeq_inst)
     ADD_DISCREPANCY_TYPE(CSeqFeatData)
+    ADD_DISCREPANCY_TYPE(CBioSource)
 };
 
 

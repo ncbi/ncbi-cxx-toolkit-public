@@ -207,6 +207,7 @@ bool CDiscrepancyContext::AddTest(const string& name)
     }
     REGISTER_DISCREPANCY_TYPE(CSeq_inst)
     REGISTER_DISCREPANCY_TYPE(CSeqFeatData)
+    REGISTER_DISCREPANCY_TYPE(CBioSource)
     return false;
 }
 
@@ -219,7 +220,7 @@ void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
 #define ENABLE_DISCREPANCY_TYPE(type) if (m_Enable_##type) CType<type>::AddTo(i);
     ENABLE_DISCREPANCY_TYPE(CSeq_inst)
     ENABLE_DISCREPANCY_TYPE(CSeqFeatData)
-
+    ENABLE_DISCREPANCY_TYPE(CBioSource)
     for (i = Begin(*handle.GetCompleteSeq_entry()); i; ++i) {
         if (CType<CBioseq>::Match(i)) {
             m_Current_Bioseq.Reset(m_Scope->GetBioseqHandle(*CType<CBioseq>::Get(i)).GetCompleteBioseq());
@@ -238,6 +239,7 @@ void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
         }
         HANDLE_DISCREPANCY_TYPE(CSeq_inst)  // no semicolon!
         HANDLE_DISCREPANCY_TYPE(CSeqFeatData)
+        HANDLE_DISCREPANCY_TYPE(CBioSource)
     }
 }
 
@@ -304,6 +306,7 @@ CBioSource::TGenome CDiscrepancyContext::GetCurrentGenome()
 
 DISCREPANCY_LINK_MODULE(discrepancy_case);
 DISCREPANCY_LINK_MODULE(suspect_product_names);
+DISCREPANCY_LINK_MODULE(division_code_conflicts);
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
