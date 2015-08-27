@@ -122,11 +122,6 @@ public:
     IWriter& GetWriter() { _ASSERT(m_Wrt); return *m_Wrt; }
 
 private:
-    ERW_Result x_WritePacket(const void* buf,
-                             size_t      count,
-                             size_t&     bytes_written);
-
-private:
     CTransmissionWriter(const CTransmissionWriter&);
     CTransmissionWriter& operator=(CTransmissionWriter&);
 private:

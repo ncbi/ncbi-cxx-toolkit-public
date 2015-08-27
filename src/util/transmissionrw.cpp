@@ -63,14 +63,14 @@ namespace {
 class CIOBytesCountGuard 
 {
 public:
-    CIOBytesCountGuard(size_t* ret, const size_t& count)
-        : m_Ret(ret), m_Count(count) 
+    size_t count;
+    CIOBytesCountGuard(size_t* ret)
+        : count(0), m_Ret(ret)
     {}
 
-    ~CIOBytesCountGuard() { if (m_Ret) *m_Ret = m_Count; }
+    ~CIOBytesCountGuard() { if (m_Ret) *m_Ret = count; }
 private:
     size_t* m_Ret;
-    const size_t& m_Count;
 };
 } // namespace
 
@@ -78,20 +78,13 @@ ERW_Result CTransmissionWriter::Write(const void* buf,
                                       size_t      count,
                                       size_t*     bytes_written)
 {
-    _ASSERT(bytes_written);
+    CIOBytesCountGuard wrt(bytes_written);
 
     if (count >= sEndPacket) {
         // The buffer cannot fit in one packet -- split it.
         count = (size_t) 0x80008000LU;
     }
 
-    return x_WritePacket(buf, count, *bytes_written);
-}
-
-ERW_Result CTransmissionWriter::x_WritePacket(const void* buf,
-                                              size_t      count,
-                                              size_t&     bytes_written)
-{
     if (!m_PacketBytesToWrite) {
         Uint4 cnt = (Uint4) count;
         size_t written = 0;
@@ -103,8 +96,8 @@ ERW_Result CTransmissionWriter::x_WritePacket(const void* buf,
         m_PacketBytesToWrite = cnt;
     }
 
-    ERW_Result res = m_Wrt->Write(buf, m_PacketBytesToWrite, &bytes_written);
-    if (res == eRW_Success) m_PacketBytesToWrite -= bytes_written;
+    ERW_Result res = m_Wrt->Write(buf, m_PacketBytesToWrite, &wrt.count);
+    if (res == eRW_Success) m_PacketBytesToWrite -= wrt.count;
     return res;
 }
 
@@ -159,8 +152,7 @@ ERW_Result CTransmissionReader::Read(void*    buf,
                                      size_t*  bytes_read)
 {
     ERW_Result res;
-    size_t read_count = 0;
-    CIOBytesCountGuard guard(bytes_read, read_count);
+    CIOBytesCountGuard read(bytes_read);
 
     if (!m_StartRead) {
         res = x_ReadStart();
@@ -188,8 +180,8 @@ ERW_Result CTransmissionReader::Read(void*    buf,
 
     size_t to_read = min(count, m_PacketBytesToRead);
 
-    res = m_Rdr->Read(buf, to_read, &read_count);
-    m_PacketBytesToRead -= read_count;
+    res = m_Rdr->Read(buf, to_read, &read.count);
+    m_PacketBytesToRead -= read.count;
 
     return res;
 }
