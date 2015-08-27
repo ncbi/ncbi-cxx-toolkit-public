@@ -29,7 +29,12 @@ do_test() {
         :
     elif test -f $r/$2.2 && diff -w out $r/$2.2; then
         :
+    elif test -f $r/$2.3 && diff -w out $r/$2.3; then
+        :
     else
+        echo "failed: diff -w out $r/$2"
+        test -f $r/$2.2 && echo "failed: diff -w out $r/$2.2"
+        test -f $r/$2.3 && echo "failed: diff -w out $r/$2.3"
         echo "wrong result!"
         exit 1
     fi
