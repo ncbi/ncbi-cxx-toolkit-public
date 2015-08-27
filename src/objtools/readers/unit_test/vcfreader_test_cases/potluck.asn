@@ -77,15 +77,6 @@ specs/dbSNP_BitField_latest.pdf",
       location pnt {
         point 985954,
         id local id 1
-      },
-      ext {
-        type str "VcfAttributes",
-        data {
-          {
-            label str "filter",
-            data str "."
-          }
-        }
       }
     },
     {
@@ -139,15 +130,6 @@ specs/dbSNP_BitField_latest.pdf",
         from 2338019,
         to 2338020,
         id local id 1
-      },
-      ext {
-        type str "VcfAttributes",
-        data {
-          {
-            label str "filter",
-            data str "."
-          }
-        }
       }
     },
     {
@@ -189,15 +171,6 @@ specs/dbSNP_BitField_latest.pdf",
       location pnt {
         point 4339280,
         id local id 1
-      },
-      ext {
-        type str "VcfAttributes",
-        data {
-          {
-            label str "filter",
-            data str "."
-          }
-        }
       }
     },
     {
@@ -253,15 +226,6 @@ specs/dbSNP_BitField_latest.pdf",
         from 4077314,
         to 4077315,
         id local id 1
-      },
-      ext {
-        type str "VcfAttributes",
-        data {
-          {
-            label str "filter",
-            data str "."
-          }
-        }
       }
     }
   }

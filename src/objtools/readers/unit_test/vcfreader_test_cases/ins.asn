@@ -81,15 +81,6 @@ Seq-annot ::= {
       location pnt {
         point 10228,
         id local id 1
-      },
-      ext {
-        type str "VcfAttributes",
-        data {
-          {
-            label str "filter",
-            data str "."
-          }
-        }
       }
     }
   }

@@ -263,10 +263,6 @@ ird-party annotation(TPA:GWAS,PAGE)"">",
         type str "VcfAttributes",
         data {
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "OTHERKG;RS=373328635;RSPOS=10055;SAO=0;SSR=0;VC=DIV;VP=0
 x050000020001000002000210;dbSNPBuildID=138"

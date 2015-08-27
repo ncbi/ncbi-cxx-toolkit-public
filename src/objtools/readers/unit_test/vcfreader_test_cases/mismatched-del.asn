@@ -78,15 +78,6 @@ Seq-annot ::= {
         from 10228,
         to 10229,
         id local id 1
-      },
-      ext {
-        type str "VcfAttributes",
-        data {
-          {
-            label str "filter",
-            data str "."
-          }
-        }
       }
     }
   }

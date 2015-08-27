@@ -255,10 +255,6 @@ ird-party annotation(TPA:GWAS,PAGE)"">",
         type str "VcfAttributes",
         data {
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "CLNACC=SCV000040200.1;CLNALLE=1;CLNCUI=C1850792;CLNDBN=M
 yasthenia\x2c limb-girdle\x2c
@@ -328,10 +324,6 @@ NV;VP=050260000a05000002110100;dbSNPBuildID=136"
         type str "VcfAttributes",
         data {
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
 0:g.1245104C>A;CLNORIGIN=2;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=PUSL1:126789;
@@ -399,10 +391,6 @@ bSNPBuildID=134"
         type str "VcfAttributes",
         data {
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
 0:g.1469331G>A;CLNORIGIN=2;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=ATAD3A:55210;
@@ -469,10 +457,6 @@ bSNPBuildID=134"
       ext {
         type str "VcfAttributes",
         data {
-          {
-            label str "filter",
-            data str "."
-          },
           {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
@@ -548,10 +532,6 @@ LSD;OM;OTHERKG;REF;RSPOS=1959075;SAO=1;SSR=0;VC=SNV;VP=050260000a0500000211010
         type str "VcfAttributes",
         data {
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "CLNACC=SCV000037873.1|SCV000043847.1;CLNALLE=1;CLNCUI=CN
 043549|C2751603;CLNDBN=Epilepsy\x2c juvenile myoclonic 7|Epilepsy\x2c
@@ -623,10 +603,6 @@ LSD;OM;OTHERKG;REF;RSPOS=1959699;SAO=1;SSR=0;VC=SNV;VP=050260000a0504011611010
         type str "VcfAttributes",
         data {
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
 0:g.1961453C>T;CLNORIGIN=2;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=GABRD:2563;LS
@@ -694,10 +670,6 @@ NPBuildID=134"
         type str "VcfAttributes",
         data {
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
 0:g.2337954C>T;CLNORIGIN=0;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=PEX10:5192;LS
@@ -764,10 +736,6 @@ dbSNPBuildID=129"
       ext {
         type str "VcfAttributes",
         data {
-          {
-            label str "filter",
-            data str "."
-          },
           {
             label str "info",
             data str "CLNACC=SCV000027369.1;CLNALLE=1;CLNCUI=C0282525;CLNDBN=N
@@ -837,10 +805,6 @@ LNSRC=OMIM Allelic
       ext {
         type str "VcfAttributes",
         data {
-          {
-            label str "filter",
-            data str "."
-          },
           {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
@@ -916,10 +880,6 @@ dbSNPBuildID=129"
         type str "VcfAttributes",
         data {
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
 0:g.2337992C>T;CLNORIGIN=0;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=PEX10:5192;KG
@@ -986,10 +946,6 @@ PROD;KGPhase1;LSD;OTHERKG;REF;RSPOS=2337992;RV;SAO=0;SSR=0;VC=SNV;VP=050360000
       ext {
         type str "VcfAttributes",
         data {
-          {
-            label str "filter",
-            data str "."
-          },
           {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
@@ -1065,10 +1021,6 @@ dbSNPBuildID=129"
         type str "VcfAttributes",
         data {
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
 0:g.2338015T>C;CLNORIGIN=0;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=PEX10:5192;KG
@@ -1134,10 +1086,6 @@ a05040116100100;dbSNPBuildID=126"
       ext {
         type str "VcfAttributes",
         data {
-          {
-            label str "filter",
-            data str "."
-          },
           {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
@@ -1206,10 +1154,6 @@ a05040116100100;dbSNPBuildID=126"
         type str "VcfAttributes",
         data {
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
 0:g.2338205G>A;CLNORIGIN=0;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=PEX10:5192;LS
@@ -1263,10 +1207,6 @@ dbSNPBuildID=129"
       ext {
         type str "VcfAttributes",
         data {
-          {
-            label str "filter",
-            data str "."
-          },
           {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
@@ -1334,10 +1274,6 @@ dbSNPBuildID=129"
       ext {
         type str "VcfAttributes",
         data {
-          {
-            label str "filter",
-            data str "."
-          },
           {
             label str "info",
             data str "CLNACC=SCV000027370.1;CLNALLE=1;CLNCUI=C0282525;CLNDBN=N
@@ -1415,10 +1351,6 @@ LNSRC=OMIM Allelic
         type str "VcfAttributes",
         data {
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
 0:g.2340159A>G;CLNORIGIN=0;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=PEX10:5192;KG
@@ -1493,10 +1425,6 @@ a05040516100100;dbSNPBuildID=126"
         type str "VcfAttributes",
         data {
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
 0:g.2340212G>A;CLNORIGIN=0;CLNSIG=1;CLNSRC=.;CLNSRCID=.;G5;GENEINFO=PEX10:5192
@@ -1561,10 +1489,6 @@ a05040516100100;dbSNPBuildID=126"
       ext {
         type str "VcfAttributes",
         data {
-          {
-            label str "filter",
-            data str "."
-          },
           {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
@@ -1633,10 +1557,6 @@ SD;OTHERKG;REF;RSPOS=2343938;RV;SAO=0;SSR=0;VC=DIV;VP=050168001201000002100200
         type str "VcfAttributes",
         data {
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
 0:g.3334486C>T;CLNORIGIN=2;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=PRDM16:63976;
@@ -1703,10 +1623,6 @@ bSNPBuildID=134"
       ext {
         type str "VcfAttributes",
         data {
-          {
-            label str "filter",
-            data str "."
-          },
           {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
@@ -1775,10 +1691,6 @@ PBuildID=134"
         type str "VcfAttributes",
         data {
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
 0:g.3755581G>A;CLNORIGIN=2;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=CEP104:9731;L
@@ -1846,10 +1758,6 @@ SNPBuildID=134"
         type str "VcfAttributes",
         data {
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
 0:g.3765182G>A;CLNORIGIN=2;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=CEP104:9731;L
@@ -1916,10 +1824,6 @@ SNPBuildID=134"
       ext {
         type str "VcfAttributes",
         data {
-          {
-            label str "filter",
-            data str "."
-          },
           {
             label str "info",
             data str "CLNACC=SCV000023729.1;CLNALLE=1;CLNCUI=C1847013;CLNDBN=N
@@ -1989,10 +1893,6 @@ ephronophthisis
         type str "VcfAttributes",
         data {
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "CLNACC=SCV000023727.1;CLNALLE=1;CLNCUI=C1847013;CLNDBN=N
 ephronophthisis
@@ -2060,10 +1960,6 @@ ephronophthisis
       ext {
         type str "VcfAttributes",
         data {
-          {
-            label str "filter",
-            data str "."
-          },
           {
             label str "info",
             data str "CLNACC=SCV000023726.1;CLNALLE=1;CLNCUI=C1847013;CLNDBN=N
@@ -2133,10 +2029,6 @@ ephronophthisis
         type str "VcfAttributes",
         data {
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "CLNACC=SCV000023731.1;CLNALLE=1;CLNCUI=C1846979;CLNDBN=S
 enior-Loken syndrome
@@ -2204,10 +2096,6 @@ enior-Loken syndrome
       ext {
         type str "VcfAttributes",
         data {
-          {
-            label str "filter",
-            data str "."
-          },
           {
             label str "info",
             data str "CLNACC=SCV000023728.1;CLNALLE=1;CLNCUI=C1847013;CLNDBN=N
@@ -2277,10 +2165,6 @@ ephronophthisis
         type str "VcfAttributes",
         data {
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "CLNACC=SCV000023732.1;CLNALLE=1;CLNCUI=C1846979;CLNDBN=S
 enior-Loken syndrome
@@ -2349,10 +2233,6 @@ enior-Loken syndrome
         type str "VcfAttributes",
         data {
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
 0:g.6172231G>A;CLNORIGIN=2;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=CHD5:26038;LS
@@ -2420,10 +2300,6 @@ NPBuildID=134"
         type str "VcfAttributes",
         data {
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
 0:g.6511986A>C;CLNORIGIN=1;CLNSIG=5;CLNSRC=.;CLNSRCID=.;GENEINFO=ESPN:83715;LS
@@ -2490,10 +2366,6 @@ dbSNPBuildID=132"
       ext {
         type str "VcfAttributes",
         data {
-          {
-            label str "filter",
-            data str "."
-          },
           {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
@@ -2763,10 +2635,6 @@ ird-party annotation(TPA:GWAS,PAGE)"">",
         type str "VcfAttributes",
         data {
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "CLNACC=SCV000040200.1;CLNALLE=1;CLNCUI=C1850792;CLNDBN=M
 yasthenia\x2c limb-girdle\x2c
@@ -2836,10 +2704,6 @@ NV;VP=050260000a05000002110100;dbSNPBuildID=136"
         type str "VcfAttributes",
         data {
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
 0:g.1245104C>A;CLNORIGIN=2;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=PUSL1:126789;
@@ -2907,10 +2771,6 @@ bSNPBuildID=134"
         type str "VcfAttributes",
         data {
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
 0:g.1469331G>A;CLNORIGIN=2;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=ATAD3A:55210;
@@ -2977,10 +2837,6 @@ bSNPBuildID=134"
       ext {
         type str "VcfAttributes",
         data {
-          {
-            label str "filter",
-            data str "."
-          },
           {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
@@ -3056,10 +2912,6 @@ LSD;OM;OTHERKG;REF;RSPOS=1959075;SAO=1;SSR=0;VC=SNV;VP=050260000a0500000211010
         type str "VcfAttributes",
         data {
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "CLNACC=SCV000037873.1|SCV000043847.1;CLNALLE=1;CLNCUI=CN
 043549|C2751603;CLNDBN=Epilepsy\x2c juvenile myoclonic 7|Epilepsy\x2c
@@ -3131,10 +2983,6 @@ LSD;OM;OTHERKG;REF;RSPOS=1959699;SAO=1;SSR=0;VC=SNV;VP=050260000a0504011611010
         type str "VcfAttributes",
         data {
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
 0:g.1961453C>T;CLNORIGIN=2;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=GABRD:2563;LS
@@ -3202,10 +3050,6 @@ NPBuildID=134"
         type str "VcfAttributes",
         data {
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
 0:g.2337954C>T;CLNORIGIN=0;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=PEX10:5192;LS
@@ -3272,10 +3116,6 @@ dbSNPBuildID=129"
       ext {
         type str "VcfAttributes",
         data {
-          {
-            label str "filter",
-            data str "."
-          },
           {
             label str "info",
             data str "CLNACC=SCV000027369.1;CLNALLE=1;CLNCUI=C0282525;CLNDBN=N
@@ -3345,10 +3185,6 @@ LNSRC=OMIM Allelic
       ext {
         type str "VcfAttributes",
         data {
-          {
-            label str "filter",
-            data str "."
-          },
           {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
@@ -3424,10 +3260,6 @@ dbSNPBuildID=129"
         type str "VcfAttributes",
         data {
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
 0:g.2337992C>T;CLNORIGIN=0;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=PEX10:5192;KG
@@ -3494,10 +3326,6 @@ PROD;KGPhase1;LSD;OTHERKG;REF;RSPOS=2337992;RV;SAO=0;SSR=0;VC=SNV;VP=050360000
       ext {
         type str "VcfAttributes",
         data {
-          {
-            label str "filter",
-            data str "."
-          },
           {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
@@ -3573,10 +3401,6 @@ dbSNPBuildID=129"
         type str "VcfAttributes",
         data {
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
 0:g.2338015T>C;CLNORIGIN=0;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=PEX10:5192;KG
@@ -3642,10 +3466,6 @@ a05040116100100;dbSNPBuildID=126"
       ext {
         type str "VcfAttributes",
         data {
-          {
-            label str "filter",
-            data str "."
-          },
           {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
@@ -3714,10 +3534,6 @@ a05040116100100;dbSNPBuildID=126"
         type str "VcfAttributes",
         data {
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
 0:g.2338205G>A;CLNORIGIN=0;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=PEX10:5192;LS
@@ -3771,10 +3587,6 @@ dbSNPBuildID=129"
       ext {
         type str "VcfAttributes",
         data {
-          {
-            label str "filter",
-            data str "."
-          },
           {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
@@ -3842,10 +3654,6 @@ dbSNPBuildID=129"
       ext {
         type str "VcfAttributes",
         data {
-          {
-            label str "filter",
-            data str "."
-          },
           {
             label str "info",
             data str "CLNACC=SCV000027370.1;CLNALLE=1;CLNCUI=C0282525;CLNDBN=N
@@ -3923,10 +3731,6 @@ LNSRC=OMIM Allelic
         type str "VcfAttributes",
         data {
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
 0:g.2340159A>G;CLNORIGIN=0;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=PEX10:5192;KG
@@ -4001,10 +3805,6 @@ a05040516100100;dbSNPBuildID=126"
         type str "VcfAttributes",
         data {
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
 0:g.2340212G>A;CLNORIGIN=0;CLNSIG=1;CLNSRC=.;CLNSRCID=.;G5;GENEINFO=PEX10:5192
@@ -4069,10 +3869,6 @@ a05040516100100;dbSNPBuildID=126"
       ext {
         type str "VcfAttributes",
         data {
-          {
-            label str "filter",
-            data str "."
-          },
           {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
@@ -4141,10 +3937,6 @@ SD;OTHERKG;REF;RSPOS=2343938;RV;SAO=0;SSR=0;VC=DIV;VP=050168001201000002100200
         type str "VcfAttributes",
         data {
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
 0:g.3334486C>T;CLNORIGIN=2;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=PRDM16:63976;
@@ -4211,10 +4003,6 @@ bSNPBuildID=134"
       ext {
         type str "VcfAttributes",
         data {
-          {
-            label str "filter",
-            data str "."
-          },
           {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
@@ -4283,10 +4071,6 @@ PBuildID=134"
         type str "VcfAttributes",
         data {
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
 0:g.3755581G>A;CLNORIGIN=2;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=CEP104:9731;L
@@ -4354,10 +4138,6 @@ SNPBuildID=134"
         type str "VcfAttributes",
         data {
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
 0:g.3765182G>A;CLNORIGIN=2;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=CEP104:9731;L
@@ -4424,10 +4204,6 @@ SNPBuildID=134"
       ext {
         type str "VcfAttributes",
         data {
-          {
-            label str "filter",
-            data str "."
-          },
           {
             label str "info",
             data str "CLNACC=SCV000023729.1;CLNALLE=1;CLNCUI=C1847013;CLNDBN=N
@@ -4497,10 +4273,6 @@ ephronophthisis
         type str "VcfAttributes",
         data {
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "CLNACC=SCV000023727.1;CLNALLE=1;CLNCUI=C1847013;CLNDBN=N
 ephronophthisis
@@ -4568,10 +4340,6 @@ ephronophthisis
       ext {
         type str "VcfAttributes",
         data {
-          {
-            label str "filter",
-            data str "."
-          },
           {
             label str "info",
             data str "CLNACC=SCV000023726.1;CLNALLE=1;CLNCUI=C1847013;CLNDBN=N
@@ -4641,10 +4409,6 @@ ephronophthisis
         type str "VcfAttributes",
         data {
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "CLNACC=SCV000023731.1;CLNALLE=1;CLNCUI=C1846979;CLNDBN=S
 enior-Loken syndrome
@@ -4712,10 +4476,6 @@ enior-Loken syndrome
       ext {
         type str "VcfAttributes",
         data {
-          {
-            label str "filter",
-            data str "."
-          },
           {
             label str "info",
             data str "CLNACC=SCV000023728.1;CLNALLE=1;CLNCUI=C1847013;CLNDBN=N
@@ -4785,10 +4545,6 @@ ephronophthisis
         type str "VcfAttributes",
         data {
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "CLNACC=SCV000023732.1;CLNALLE=1;CLNCUI=C1846979;CLNDBN=S
 enior-Loken syndrome
@@ -4857,10 +4613,6 @@ enior-Loken syndrome
         type str "VcfAttributes",
         data {
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
 0:g.6172231G>A;CLNORIGIN=2;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=CHD5:26038;LS
@@ -4928,10 +4680,6 @@ NPBuildID=134"
         type str "VcfAttributes",
         data {
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
 0:g.6511986A>C;CLNORIGIN=1;CLNSIG=5;CLNSRC=.;CLNSRCID=.;GENEINFO=ESPN:83715;LS
@@ -4998,10 +4746,6 @@ dbSNPBuildID=132"
       ext {
         type str "VcfAttributes",
         data {
-          {
-            label str "filter",
-            data str "."
-          },
           {
             label str "info",
             data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1

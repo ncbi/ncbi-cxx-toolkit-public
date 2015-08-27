@@ -72,10 +72,6 @@ Seq-annot ::= {
             data real { 105, 10, 0 }
           },
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "DP=1055;INDEL;VDB=0.0198"
           }
@@ -136,10 +132,6 @@ Seq-annot ::= {
           {
             label str "score",
             data real { 105, 10, 0 }
-          },
-          {
-            label str "filter",
-            data str "."
           },
           {
             label str "info",
@@ -204,10 +196,6 @@ Seq-annot ::= {
             data real { 105, 10, 0 }
           },
           {
-            label str "filter",
-            data str "."
-          },
-          {
             label str "info",
             data str "DP=1055;INDEL;VDB=0.0198"
           }
@@ -268,10 +256,6 @@ Seq-annot ::= {
           {
             label str "score",
             data real { 105, 10, 0 }
-          },
-          {
-            label str "filter",
-            data str "."
           },
           {
             label str "info",
@@ -336,10 +320,6 @@ Seq-annot ::= {
           {
             label str "score",
             data real { 105, 10, 0 }
-          },
-          {
-            label str "filter",
-            data str "."
           },
           {
             label str "info",

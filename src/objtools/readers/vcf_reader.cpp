@@ -1098,8 +1098,10 @@ CVcfReader::xProcessFilter(
     CRef<CSeq_feat> pFeature )
 //  ----------------------------------------------------------------------------
 {
-    CSeq_feat::TExt& ext = pFeature->SetExt();
-    ext.AddField( "filter", data.m_strFilter );
+    if(!NStr::Equal(data.m_strFilter,".")) {
+      CSeq_feat::TExt& ext = pFeature->SetExt();
+      ext.AddField( "filter", data.m_strFilter );
+    }
     return true;
 }
 

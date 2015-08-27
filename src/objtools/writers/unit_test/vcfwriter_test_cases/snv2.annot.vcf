@@ -7,4 +7,4 @@
 ##INFO=<ID=GTP,Number=1,Type=String,Description="Genotype">
 ##INFO=<ID=QC,Number=1,Type=String,Description="Quality Check">
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
-1	1	rs000	A	G,C	.	PASS	DB;PM
+1	1	rs000	A	G,C	.	.	DB;PM

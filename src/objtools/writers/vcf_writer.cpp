@@ -635,7 +635,7 @@ bool CVcfWriter::x_WriteFeatureFilter(
         m_Os << NStr::Join( filters, ":" );
     }
     else {
-        m_Os << "PASS";
+        m_Os << ".";
     }
     return true;
 }
