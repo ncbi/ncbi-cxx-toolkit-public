@@ -5008,22 +5008,19 @@ if test "$with_python" != "no" ; then
       */*      ) PYTHON_PATH=$with_python ;;
    esac
    NCBI_CHECK_PYTHON()
-   NCBI_CHECK_PYTHON(2.3)
-   : ${PYTHON_PATH:="/usr/local/python-2.4.4"}
-   NCBI_CHECK_PYTHON(2.4)
    NCBI_CHECK_PYTHON(2.5)
+   NCBI_CHECK_PYTHON(2.6)
+   NCBI_CHECK_PYTHON(2.7)
    if test "$ncbi_cv_lib_python" = "no"; then
-      # Favor python 2.4 as the only version configure historically
-      # recognized, but otherwise prefer newer versions.
-      if test "$ncbi_cv_lib_python24" = "yes"; then
-         PYTHON_INCLUDE=$PYTHON24_INCLUDE
-         PYTHON_LIBS=$PYTHON24_LIBS
+      if test "$ncbi_cv_lib_python27" = "yes"; then
+         PYTHON_INCLUDE=$PYTHON27_INCLUDE
+         PYTHON_LIBS=$PYTHON27_LIBS
+      elif test "$ncbi_cv_lib_python26" = "yes"; then
+         PYTHON_INCLUDE=$PYTHON26_INCLUDE
+         PYTHON_LIBS=$PYTHON26_LIBS
       elif test "$ncbi_cv_lib_python25" = "yes"; then
          PYTHON_INCLUDE=$PYTHON25_INCLUDE
          PYTHON_LIBS=$PYTHON25_LIBS
-      elif test "$ncbi_cv_lib_python23" = "yes"; then
-         PYTHON_INCLUDE=$PYTHON23_INCLUDE
-         PYTHON_LIBS=$PYTHON23_LIBS
       fi
       if test -n "$PYTHON_LIBS"; then
          NCBI_PACKAGE(PYTHON)

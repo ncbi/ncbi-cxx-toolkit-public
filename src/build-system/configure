@@ -734,15 +734,15 @@ mysql_config
 PYTHON
 PYTHON_INCLUDE
 PYTHON_LIBS
-PYTHON23
-PYTHON23_INCLUDE
-PYTHON23_LIBS
-PYTHON24
-PYTHON24_INCLUDE
-PYTHON24_LIBS
 PYTHON25
 PYTHON25_INCLUDE
 PYTHON25_LIBS
+PYTHON26
+PYTHON26_INCLUDE
+PYTHON26_LIBS
+PYTHON27
+PYTHON27_INCLUDE
+PYTHON27_LIBS
 PERL
 _ACJNI_JAVAC
 XMKMF
@@ -30118,355 +30118,6 @@ _ACEOF
 
 
 
-   # Extract the first word of "python2.3", so it can be a program name with args.
-set dummy python2.3; ac_word=$2
-{ echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
-if test "${ac_cv_path_PYTHON23+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  case $PYTHON23 in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_PYTHON23="$PYTHON23" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-as_dummy="$PYTHON_PATH/bin:$PATH:/usr/local/python-2.3/bin"
-for as_dir in $as_dummy
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_PYTHON23="$as_dir/$ac_word$ac_exec_ext"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-PYTHON23=$ac_cv_path_PYTHON23
-if test -n "$PYTHON23"; then
-  { echo "$as_me:$LINENO: result: $PYTHON23" >&5
-echo "${ECHO_T}$PYTHON23" >&6; }
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
-
- if test -x "$PYTHON23"; then
-    PYTHON23_VERSION=`$PYTHON23 -c 'from distutils import sysconfig; print sysconfig.get_config_var("VERSION")' 2>/dev/null`
- else
-    PYTHON23_VERSION=
-    ncbi_cv_lib_python23=no
- fi
- if test -n "$PYTHON23_VERSION"; then
-    PYTHON23_INCLUDE=`$PYTHON23 -c 'from distutils import sysconfig; f=sysconfig.get_python_inc; print "-I%s -I%s" % (f(), f(True))'`
-    PYTHON23_LIBPATH=`$PYTHON23 -c 'from distutils import sysconfig; print " ".join(sysconfig.get_config_vars("LIBDIR", "LIBPL"))'`
-    PYTHON23_DEPS=`$PYTHON23 -c 'from distutils import sysconfig; print " ".join(sysconfig.get_config_vars("LIBS", "SYSLIBS"))'`
-    ncbi_rp_L_flags=
- ncbi_rp_L_sep=$CONF_f_libpath
- if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
-    for x in $PYTHON23_LIBPATH; do
-       case "$x" in
-          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
-             continue
-             ;;
-       esac
-       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
-       ncbi_rp_L_sep=" $CONF_f_libpath"
-    done
-    PYTHON23_LIBS="${ncbi_rp_L_flags} -lpython$PYTHON23_VERSION $PYTHON23_DEPS"
- else
-    ncbi_rp_R_flags=
-    ncbi_rp_R_sep=" $CONF_f_runpath"
-    for x in $PYTHON23_LIBPATH; do
-       case "$x" in
-          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
-             continue
-             ;;
-       esac
-       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
-       ncbi_rp_L_sep=" $CONF_f_libpath"
-       x=`echo $x | sed -e "$ncbi_rpath_sed"`
-       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
-       ncbi_rp_R_sep=:
-    done
-    PYTHON23_LIBS="${ncbi_rp_L_flags}${ncbi_rp_R_flags} -lpython$PYTHON23_VERSION $PYTHON23_DEPS"
- fi
-    CPPFLAGS="$PYTHON23_INCLUDE $orig_CPPFLAGS"
-    LIBS="$PYTHON23_LIBS $orig_LIBS"
-    { echo "$as_me:$LINENO: checking for usable Python $PYTHON23_VERSION libraries" >&5
-echo $ECHO_N "checking for usable Python $PYTHON23_VERSION libraries... $ECHO_C" >&6; }
-if test "${ncbi_cv_lib_python23+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-#ifdef HAVE_INTTYPES_H
-#include <inttypes.h>
-#endif
-#ifdef HAVE_STDINT_H
-#include <stdint.h>
-#endif
-#include <Python.h>
-int
-main ()
-{
-Py_Initialize(); Py_Finalize();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (ac_try="$ac_link"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_link") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
-  { (case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_try") 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_try") 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ncbi_cv_lib_python23=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	ncbi_cv_lib_python23=no
-fi
-
-rm -f core conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-fi
-{ echo "$as_me:$LINENO: result: $ncbi_cv_lib_python23" >&5
-echo "${ECHO_T}$ncbi_cv_lib_python23" >&6; }
- else
-    ncbi_cv_lib_python23=no
- fi
- if test "$ncbi_cv_lib_python23" = "no"; then
-    PYTHON23_INCLUDE=
-    PYTHON23_LIBS=
- else
-              WithPackages="$WithPackages${WithPackagesSep}PYTHON23"; WithPackagesSep=" "
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_PYTHON23 1
-_ACEOF
-
- fi
-
-
-
-   : ${PYTHON_PATH:="/usr/local/python-2.4.4"}
-   # Extract the first word of "python2.4", so it can be a program name with args.
-set dummy python2.4; ac_word=$2
-{ echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
-if test "${ac_cv_path_PYTHON24+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  case $PYTHON24 in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_PYTHON24="$PYTHON24" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-as_dummy="$PYTHON_PATH/bin:$PATH:/usr/local/python-2.4/bin"
-for as_dir in $as_dummy
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_path_PYTHON24="$as_dir/$ac_word$ac_exec_ext"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-PYTHON24=$ac_cv_path_PYTHON24
-if test -n "$PYTHON24"; then
-  { echo "$as_me:$LINENO: result: $PYTHON24" >&5
-echo "${ECHO_T}$PYTHON24" >&6; }
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
-
- if test -x "$PYTHON24"; then
-    PYTHON24_VERSION=`$PYTHON24 -c 'from distutils import sysconfig; print sysconfig.get_config_var("VERSION")' 2>/dev/null`
- else
-    PYTHON24_VERSION=
-    ncbi_cv_lib_python24=no
- fi
- if test -n "$PYTHON24_VERSION"; then
-    PYTHON24_INCLUDE=`$PYTHON24 -c 'from distutils import sysconfig; f=sysconfig.get_python_inc; print "-I%s -I%s" % (f(), f(True))'`
-    PYTHON24_LIBPATH=`$PYTHON24 -c 'from distutils import sysconfig; print " ".join(sysconfig.get_config_vars("LIBDIR", "LIBPL"))'`
-    PYTHON24_DEPS=`$PYTHON24 -c 'from distutils import sysconfig; print " ".join(sysconfig.get_config_vars("LIBS", "SYSLIBS"))'`
-    ncbi_rp_L_flags=
- ncbi_rp_L_sep=$CONF_f_libpath
- if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
-    for x in $PYTHON24_LIBPATH; do
-       case "$x" in
-          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
-             continue
-             ;;
-       esac
-       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
-       ncbi_rp_L_sep=" $CONF_f_libpath"
-    done
-    PYTHON24_LIBS="${ncbi_rp_L_flags} -lpython$PYTHON24_VERSION $PYTHON24_DEPS"
- else
-    ncbi_rp_R_flags=
-    ncbi_rp_R_sep=" $CONF_f_runpath"
-    for x in $PYTHON24_LIBPATH; do
-       case "$x" in
-          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
-             continue
-             ;;
-       esac
-       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
-       ncbi_rp_L_sep=" $CONF_f_libpath"
-       x=`echo $x | sed -e "$ncbi_rpath_sed"`
-       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
-       ncbi_rp_R_sep=:
-    done
-    PYTHON24_LIBS="${ncbi_rp_L_flags}${ncbi_rp_R_flags} -lpython$PYTHON24_VERSION $PYTHON24_DEPS"
- fi
-    CPPFLAGS="$PYTHON24_INCLUDE $orig_CPPFLAGS"
-    LIBS="$PYTHON24_LIBS $orig_LIBS"
-    { echo "$as_me:$LINENO: checking for usable Python $PYTHON24_VERSION libraries" >&5
-echo $ECHO_N "checking for usable Python $PYTHON24_VERSION libraries... $ECHO_C" >&6; }
-if test "${ncbi_cv_lib_python24+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-#ifdef HAVE_INTTYPES_H
-#include <inttypes.h>
-#endif
-#ifdef HAVE_STDINT_H
-#include <stdint.h>
-#endif
-#include <Python.h>
-int
-main ()
-{
-Py_Initialize(); Py_Finalize();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (ac_try="$ac_link"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_link") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
-  { (case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_try") 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_try") 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ncbi_cv_lib_python24=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	ncbi_cv_lib_python24=no
-fi
-
-rm -f core conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-fi
-{ echo "$as_me:$LINENO: result: $ncbi_cv_lib_python24" >&5
-echo "${ECHO_T}$ncbi_cv_lib_python24" >&6; }
- else
-    ncbi_cv_lib_python24=no
- fi
- if test "$ncbi_cv_lib_python24" = "no"; then
-    PYTHON24_INCLUDE=
-    PYTHON24_LIBS=
- else
-              WithPackages="$WithPackages${WithPackagesSep}PYTHON24"; WithPackagesSep=" "
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_PYTHON24 1
-_ACEOF
-
- fi
-
-
-
    # Extract the first word of "python2.5", so it can be a program name with args.
 set dummy python2.5; ac_word=$2
 { echo "$as_me:$LINENO: checking for $ac_word" >&5
@@ -30641,18 +30292,364 @@ _ACEOF
 
 
 
+   # Extract the first word of "python2.6", so it can be a program name with args.
+set dummy python2.6; ac_word=$2
+{ echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
+if test "${ac_cv_path_PYTHON26+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $PYTHON26 in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PYTHON26="$PYTHON26" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+as_dummy="$PYTHON_PATH/bin:$PATH:/usr/local/python-2.6/bin"
+for as_dir in $as_dummy
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_PYTHON26="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+PYTHON26=$ac_cv_path_PYTHON26
+if test -n "$PYTHON26"; then
+  { echo "$as_me:$LINENO: result: $PYTHON26" >&5
+echo "${ECHO_T}$PYTHON26" >&6; }
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+ if test -x "$PYTHON26"; then
+    PYTHON26_VERSION=`$PYTHON26 -c 'from distutils import sysconfig; print sysconfig.get_config_var("VERSION")' 2>/dev/null`
+ else
+    PYTHON26_VERSION=
+    ncbi_cv_lib_python26=no
+ fi
+ if test -n "$PYTHON26_VERSION"; then
+    PYTHON26_INCLUDE=`$PYTHON26 -c 'from distutils import sysconfig; f=sysconfig.get_python_inc; print "-I%s -I%s" % (f(), f(True))'`
+    PYTHON26_LIBPATH=`$PYTHON26 -c 'from distutils import sysconfig; print " ".join(sysconfig.get_config_vars("LIBDIR", "LIBPL"))'`
+    PYTHON26_DEPS=`$PYTHON26 -c 'from distutils import sysconfig; print " ".join(sysconfig.get_config_vars("LIBS", "SYSLIBS"))'`
+    ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $PYTHON26_LIBPATH; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    PYTHON26_LIBS="${ncbi_rp_L_flags} -lpython$PYTHON26_VERSION $PYTHON26_DEPS"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $PYTHON26_LIBPATH; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    PYTHON26_LIBS="${ncbi_rp_L_flags}${ncbi_rp_R_flags} -lpython$PYTHON26_VERSION $PYTHON26_DEPS"
+ fi
+    CPPFLAGS="$PYTHON26_INCLUDE $orig_CPPFLAGS"
+    LIBS="$PYTHON26_LIBS $orig_LIBS"
+    { echo "$as_me:$LINENO: checking for usable Python $PYTHON26_VERSION libraries" >&5
+echo $ECHO_N "checking for usable Python $PYTHON26_VERSION libraries... $ECHO_C" >&6; }
+if test "${ncbi_cv_lib_python26+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#ifdef HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
+#include <Python.h>
+int
+main ()
+{
+Py_Initialize(); Py_Finalize();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_python26=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ncbi_cv_lib_python26=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ncbi_cv_lib_python26" >&5
+echo "${ECHO_T}$ncbi_cv_lib_python26" >&6; }
+ else
+    ncbi_cv_lib_python26=no
+ fi
+ if test "$ncbi_cv_lib_python26" = "no"; then
+    PYTHON26_INCLUDE=
+    PYTHON26_LIBS=
+ else
+              WithPackages="$WithPackages${WithPackagesSep}PYTHON26"; WithPackagesSep=" "
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_PYTHON26 1
+_ACEOF
+
+ fi
+
+
+
+   # Extract the first word of "python2.7", so it can be a program name with args.
+set dummy python2.7; ac_word=$2
+{ echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
+if test "${ac_cv_path_PYTHON27+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $PYTHON27 in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PYTHON27="$PYTHON27" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+as_dummy="$PYTHON_PATH/bin:$PATH:/usr/local/python-2.7/bin"
+for as_dir in $as_dummy
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_PYTHON27="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+PYTHON27=$ac_cv_path_PYTHON27
+if test -n "$PYTHON27"; then
+  { echo "$as_me:$LINENO: result: $PYTHON27" >&5
+echo "${ECHO_T}$PYTHON27" >&6; }
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+ if test -x "$PYTHON27"; then
+    PYTHON27_VERSION=`$PYTHON27 -c 'from distutils import sysconfig; print sysconfig.get_config_var("VERSION")' 2>/dev/null`
+ else
+    PYTHON27_VERSION=
+    ncbi_cv_lib_python27=no
+ fi
+ if test -n "$PYTHON27_VERSION"; then
+    PYTHON27_INCLUDE=`$PYTHON27 -c 'from distutils import sysconfig; f=sysconfig.get_python_inc; print "-I%s -I%s" % (f(), f(True))'`
+    PYTHON27_LIBPATH=`$PYTHON27 -c 'from distutils import sysconfig; print " ".join(sysconfig.get_config_vars("LIBDIR", "LIBPL"))'`
+    PYTHON27_DEPS=`$PYTHON27 -c 'from distutils import sysconfig; print " ".join(sysconfig.get_config_vars("LIBS", "SYSLIBS"))'`
+    ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $PYTHON27_LIBPATH; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    PYTHON27_LIBS="${ncbi_rp_L_flags} -lpython$PYTHON27_VERSION $PYTHON27_DEPS"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $PYTHON27_LIBPATH; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    PYTHON27_LIBS="${ncbi_rp_L_flags}${ncbi_rp_R_flags} -lpython$PYTHON27_VERSION $PYTHON27_DEPS"
+ fi
+    CPPFLAGS="$PYTHON27_INCLUDE $orig_CPPFLAGS"
+    LIBS="$PYTHON27_LIBS $orig_LIBS"
+    { echo "$as_me:$LINENO: checking for usable Python $PYTHON27_VERSION libraries" >&5
+echo $ECHO_N "checking for usable Python $PYTHON27_VERSION libraries... $ECHO_C" >&6; }
+if test "${ncbi_cv_lib_python27+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#ifdef HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
+#include <Python.h>
+int
+main ()
+{
+Py_Initialize(); Py_Finalize();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_python27=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ncbi_cv_lib_python27=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ncbi_cv_lib_python27" >&5
+echo "${ECHO_T}$ncbi_cv_lib_python27" >&6; }
+ else
+    ncbi_cv_lib_python27=no
+ fi
+ if test "$ncbi_cv_lib_python27" = "no"; then
+    PYTHON27_INCLUDE=
+    PYTHON27_LIBS=
+ else
+              WithPackages="$WithPackages${WithPackagesSep}PYTHON27"; WithPackagesSep=" "
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_PYTHON27 1
+_ACEOF
+
+ fi
+
+
+
    if test "$ncbi_cv_lib_python" = "no"; then
-      # Favor python 2.4 as the only version configure historically
-      # recognized, but otherwise prefer newer versions.
-      if test "$ncbi_cv_lib_python24" = "yes"; then
-         PYTHON_INCLUDE=$PYTHON24_INCLUDE
-         PYTHON_LIBS=$PYTHON24_LIBS
+      if test "$ncbi_cv_lib_python27" = "yes"; then
+         PYTHON_INCLUDE=$PYTHON27_INCLUDE
+         PYTHON_LIBS=$PYTHON27_LIBS
+      elif test "$ncbi_cv_lib_python26" = "yes"; then
+         PYTHON_INCLUDE=$PYTHON26_INCLUDE
+         PYTHON_LIBS=$PYTHON26_LIBS
       elif test "$ncbi_cv_lib_python25" = "yes"; then
          PYTHON_INCLUDE=$PYTHON25_INCLUDE
          PYTHON_LIBS=$PYTHON25_LIBS
-      elif test "$ncbi_cv_lib_python23" = "yes"; then
-         PYTHON_INCLUDE=$PYTHON23_INCLUDE
-         PYTHON_LIBS=$PYTHON23_LIBS
       fi
       if test -n "$PYTHON_LIBS"; then
                    WithPackages="$WithPackages${WithPackagesSep}PYTHON"; WithPackagesSep=" "
@@ -43199,7 +43196,7 @@ for x in StrictGI GCC KCC ICC VisualAge CompaqCompiler Cray WorkShop MIPSpro MSV
           ;;
       esac
    done
-  for x in UUID FUSE Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON23 PYTHON24 PYTHON25 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB LocalVDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF UNGIF GIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal MONGODB GMOCK; do
+  for x in UUID FUSE Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB LocalVDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF UNGIF GIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal MONGODB GMOCK; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"
@@ -44417,15 +44414,15 @@ mysql_config!$mysql_config$ac_delim
 PYTHON!$PYTHON$ac_delim
 PYTHON_INCLUDE!$PYTHON_INCLUDE$ac_delim
 PYTHON_LIBS!$PYTHON_LIBS$ac_delim
-PYTHON23!$PYTHON23$ac_delim
-PYTHON23_INCLUDE!$PYTHON23_INCLUDE$ac_delim
-PYTHON23_LIBS!$PYTHON23_LIBS$ac_delim
-PYTHON24!$PYTHON24$ac_delim
-PYTHON24_INCLUDE!$PYTHON24_INCLUDE$ac_delim
-PYTHON24_LIBS!$PYTHON24_LIBS$ac_delim
 PYTHON25!$PYTHON25$ac_delim
 PYTHON25_INCLUDE!$PYTHON25_INCLUDE$ac_delim
 PYTHON25_LIBS!$PYTHON25_LIBS$ac_delim
+PYTHON26!$PYTHON26$ac_delim
+PYTHON26_INCLUDE!$PYTHON26_INCLUDE$ac_delim
+PYTHON26_LIBS!$PYTHON26_LIBS$ac_delim
+PYTHON27!$PYTHON27$ac_delim
+PYTHON27_INCLUDE!$PYTHON27_INCLUDE$ac_delim
+PYTHON27_LIBS!$PYTHON27_LIBS$ac_delim
 PERL!$PERL$ac_delim
 _ACJNI_JAVAC!$_ACJNI_JAVAC$ac_delim
 XMKMF!$XMKMF$ac_delim

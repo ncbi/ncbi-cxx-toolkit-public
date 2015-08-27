@@ -231,7 +231,7 @@ case "$ncbi_platform" in
 esac
 
 case "$ncbi_platform" in
-    Linux*     ) : ${PERL_PATH=/opt/perl-5.8.8} ;;
+    Linux*     ) : ${PERL=/usr/bin/perl5.16} ;;
     *          ) : ${PERL_PATH=/usr} ;;
 esac
 
@@ -242,17 +242,19 @@ esac
 case "$ncbi_platform" in
     FreeBSD32 )
         : ${PYTHON=/usr/local/bin/python2.7}
+        : ${PYTHON27=/usr/local/bin/python2.7}
         ;;
     *MAC )
         : ${PYTHON_PATH=/usr}
-        : ${PYTHON24=/usr/bin/false}
         : ${PYTHON25=/usr/bin/python2.5}
         : ${PYTHON26=/usr/bin/python2.6}
+        : ${PYTHON27=/usr/bin/python2.7}
         ;;
     Linux* )
-        : ${PYTHON_PATH=/opt/python-2.5.1}
-        : ${PYTHON24=/usr/local/python-2.4.4/bin/python}
+        : ${PYTHON_PATH=/opt/python-2.7env}
         : ${PYTHON25=/opt/python-2.5.1/bin/python}
+        : ${PYTHON26=/usr/bin/python2.6}
+        : ${PYTHON27=/opt/python-2.7env/bin/python}
         ;;
 esac
 
