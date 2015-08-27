@@ -19,8 +19,7 @@ Seq-submit ::= {
     },
     cit {
       authors {
-        names 
-          std {
+        names std {
             {
               name
                 name {

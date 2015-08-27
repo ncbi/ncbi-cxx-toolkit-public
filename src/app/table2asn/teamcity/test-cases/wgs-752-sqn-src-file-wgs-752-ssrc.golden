@@ -24,8 +24,7 @@ Seq-submit ::= {
     },
     cit {
       authors {
-        names    
-          std {
+        names std {
             {
               name
                 name {
@@ -118,8 +117,7 @@ Seq-submit ::= {
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -829,8 +827,7 @@ D0087D26CF76CDE57D54C55CE2700504D20D975001A4CC9BE783D3DC7FBC95074B4293D8290811
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -1082,8 +1079,7 @@ C42E0516E06EDB0617F2ED30'H
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -1257,8 +1253,7 @@ BB0157FFEC3ABF08349F3B1F270DFD31FCD10BE2F28DFE14F42AF7C7B53F7FBCCFCF3E723094C0
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -1453,8 +1448,7 @@ D91FE779CBD67DB2A02249EC67C204205678D9E740106FB5B41AD45B5162085885BE067C026B81
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -1941,8 +1935,7 @@ B84C437E9F479563CF98C11DB67C7D275D850803128BD384D874A49E408D09E74EAA67BF96EFFD
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -3759,8 +3752,7 @@ A1AECFDD0E2FFB3464FF7F74091D30A34290E0781022DE5353209247B839929BF4ED49E3DF42D3
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -3905,8 +3897,7 @@ D9DDF34E529F60CB9ADFD4CD38D13605289DFEF8294C2B47CDDE81281C92BF75CEB3547F1FD867
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -4048,8 +4039,7 @@ B3967BF5F7F42F'H
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -6394,8 +6384,7 @@ FC925900EF642BEEBE87B38840C0220D5F6F5226281FF3DBDCE3996C67808D2F90BDD2F52EE508
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -6673,8 +6662,7 @@ DF3DD8220C1D1D2DAFF74FA4887939535F3A2084C53449924B89EF50D4FD2082228E3BDF42092A
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -7230,8 +7218,7 @@ D0A215E43B52F7408850'H
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -7798,8 +7785,7 @@ E5DF1B7FFD5F61550EBE'H
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -8120,8 +8106,7 @@ AFF4109F83F77F42A20FD076F7F6C2488E4CF632680E3B5D189CB8A8CF8D8C3F5D8073B5A7909D
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -8891,8 +8876,7 @@ FEEC055FFFB0EAFC20D27CEC7C9C37F4C7F3442F8B0A37F853D0ABDF1ED4FDFEF33F3CF9C8C253
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -9049,8 +9033,7 @@ F37F05FA08B228435F7F9D20FA102BEB227E72E8082BFBDCF823F10A208AD7EBEA84ED3312E08D
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -9574,8 +9557,7 @@ F91AA2CEC0023EC0'H
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -9816,8 +9798,7 @@ AE2C5228860C42E0516C06EDB0A17F2ED34016A097AF356A30B7A2'H
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -10125,8 +10106,7 @@ A9008D8E88BA278840813621BD9F674620A6A800D4D1E780C2190E597DA6A390F6582249A68642
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -10311,8 +10291,7 @@ A0816D726D4A24C056D7EA08978AD22908ADA08982237E22CEC0023EEC057720E832083A2A0882
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -10500,8 +10479,7 @@ E58CDAA0'H
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -10692,8 +10670,7 @@ A2280F9230303261D8FFE4F3AC386F7DBE481C927FBDF6FFE90226E2200888894B47AE03886027
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -10911,8 +10888,7 @@ FBF7C54781C29FEFC961D2C7B313F40FE602ED6CB2F0'H
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -11202,8 +11178,7 @@ A8E1E08A67492A4A771A8E125FF7E7FAD35DBB3ED3088A0B222CC838AB22'H
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -11575,8 +11550,7 @@ F7634A0AFB0CBE484AACE04902005D08E340882A33AF1B7F98901D28B394410B8C8900'H
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -11726,8 +11700,7 @@ D4FDFEF33F3CF9C8C2537F08882CD6CA021D5F3DF6F17D74BEDCF078F43A8F2FB301437DD2F5DE
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -11903,8 +11876,7 @@ AE869A16FC6941BB7DB498D26AD76F7C26449A37DAE86BA16F86841BEFF8926C49ABDD67FC26C4
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -12501,8 +12473,7 @@ C9022718E071F39F7EFE2D8006BF7AB5AD3911B96C1B3D1554AA00'H
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -12856,8 +12827,7 @@ DF50F574D67F630C030B87C743DC64F7F477FD71F3E282258B835780F922883D5EF0E42253E41F
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -13001,8 +12971,7 @@ DDE8E09D4BF8'H
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -14309,8 +14278,7 @@ EF5E7FDF09D01F277F6737BCED858B1FE5695839814D5FE02D8438075E03377EB77D6350787438
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -14959,8 +14927,7 @@ F5ECDE6004A42A6F8A3BDF88E35F7EC960B248EE0B93D582806422834F3E1D083A10A5B2B55E90
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -15708,8 +15675,7 @@ CCFFE7F6ADBC17107E81D107E41E337E77C5056416B8B254AA8FD15529DDD205A1F817763D35A7
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -16229,8 +16195,7 @@ AB5DABFA18E86BDC8D23C041D3DF7AB36347966CB4164C3F82A345F48BCE2BF54D12DD87D230'H
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -17165,8 +17130,7 @@ CD82021722F691DCADD4E22378522EE508298200'H
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -17309,8 +17273,7 @@ E30C3763BD9E83875968FD214D0949F5E4E938F63CF39207F13FA3BD0A3B27DD078766C80BEF5D
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -17923,8 +17886,7 @@ E2AA3B557CDDFCED3E00EF96DDE3F41CF7B7B77DE63DF736E2C3CF183BEF5B377EF88D1938A782
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -18440,8 +18402,7 @@ AFE4FFA04E38087CE00A6B43C87828B18F3DD21689F3F7E18CEC4CDA292EFEFA894EBE1A08B8DF
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -18614,8 +18575,7 @@ E1F820D27A138065E64F44B9E7DCE8E921DFEF4BD3E5F8D0'H
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -18787,8 +18747,7 @@ E9E27C6A16D9DECF820965B827DF80EA3B883BDE70222A800A2F77D1282B720B72FBD61FD22C02
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -20385,8 +20344,7 @@ D58402DE0F423CD94DE8D9D981DDC2B3020C767D717598E5B7ACE0C8DE7ADEF7EDDD1B73DC3082
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -20617,8 +20575,7 @@ DF801DEFA64F62DDF1DDC4B104D974DE0A1FEE0437FD889375D2FF6B49F3488BC29F0A18731E77
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -21204,8 +21161,7 @@ A0C820E8A82208E03F848802342DBC362083A3F803B688'H
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -21552,8 +21508,7 @@ DA53FB1D2D3F4F45D4C80CBED2D06BD96F75802B48F43A5C1677CEF7B430167D7E879C09F7DE73
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -21699,8 +21654,7 @@ B8DA828520B33758AD83FA0A30F57BF520268C67E56FF762BD6BA228DFD5EFD1881F567F569C42
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -21847,8 +21801,7 @@ BE96F758AE82890B8FD80BF5224E6BC35BDA4777D0C8'H
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -22048,8 +22001,7 @@ FF78BEFD2D618BD099FD77B176F28BEF3CDB83829379AC592B18C936F1210DB1D3F48C82'H
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -22286,8 +22238,7 @@ ED2D0485FE108D8244CD5A36456A38578128514C4A0578128855012893FEA0'H
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -22513,8 +22464,7 @@ A8C08820925180'H
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -22764,8 +22714,7 @@ F61E50BE30CE1A482B4BD038F80F4E53BDACE40F4E53420206A6F68BA928A7FFA094B46319B54B
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -23214,8 +23163,7 @@ D376C77639DF7F8042CAB4223A66BB0B1217EE2A40'H
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -23856,8 +23804,7 @@ EA3CBECC050DF74BD77A33E020A380'H
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -24059,8 +24006,7 @@ DD8D466980066047E42FB0BEC2A0240296ABEB08908120B8E7975A4A0B8A767A66282E395A0893
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -24568,8 +24514,7 @@ A6F8C89DFB459175F1B0D560B9D8ED383FE8A2DB69F4CA0D8F1A60A59F4C0BD8E4042F53F4101F
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -24964,8 +24909,7 @@ FBF5F230BB87FCB860286A7FF5113CF8B08BF8397D0EC24D0381375447C3D5C8D3F63088805880
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -25332,8 +25276,7 @@ A9440BA68ABB91B0'H
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -25856,8 +25799,7 @@ B6F0D8820E8FE00EDA23BD08AC3828BEFEB84F3C080E30'H
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -26186,8 +26128,7 @@ F510'H
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -26412,8 +26353,7 @@ B52F760885AED7937DF7F3B0888C8C225101E84049FD4F4A8CBD2DF3030AD21D4FFD1DC0620360
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -26642,8 +26582,7 @@ DDA792F05EE900222C4961FF6085261B7D48832424C8F440F94C8FD2E011C06F4E0B84D4F46A2F
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -26963,8 +26902,7 @@ A08F228435F7F9D20FA102BEB227E72E8282BFBDCF823F10A2088D7EBEA04ED3312E08D8E59810
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -27178,8 +27116,7 @@ F830493FAFC7D3815FD8F437C47D3130011000771F98794E0DB0A30BE72390BE4BB9420A608280
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -27351,8 +27288,7 @@ E39E7D928A6100C94B4A7194A52DFEBD90294B765F698B42F59F6EB808967829EE67AAB3AAC92B
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -27523,8 +27459,7 @@ DF6CC8CCF7D4DC8E3555D4C360D334CD20A4D0440D303388'H
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -27669,8 +27604,7 @@ C7D28CAC3D0202DF49FCF221EAE04A01D20844E388080482029F69E822BA2C28A2F1D08D1E8371
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -27838,8 +27772,7 @@ DA0A837E89BF64FE9232FBDF06A0BCABBDC4896F210360F1EFD1F7FDA4222C47D76F990C4D0893
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -27981,8 +27914,7 @@ ED7E6F04C5DEDD41461817D71FE077D7F37EDC5EF55CDB7EBB47EC4D5A3317B3A032B115F62DED
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -28126,8 +28058,7 @@ FDF7EEB0C9E75FA0080A18B20407C3E40952D7330DB49420DED2F3DAFDDDFFFFC19F7E4B37E179
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -28277,8 +28208,7 @@ AE203BABC0'H
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
@@ -28420,8 +28350,7 @@ FE737DFEE7F447BDEF3822C17032AEDD1C340C9F838CD43530DFDD03063AE08E32C0E14623EC2E
                 gen {
                   cit "Unpublished",
                   authors {
-                    names    
-                        std {
+                    names std {
                           {
                             name
                               name {
