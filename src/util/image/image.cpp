@@ -129,7 +129,7 @@ void CImage::SetAlpha(unsigned char val, bool add_if_unavailable)
 // SetDepth()
 // This will force the image to be 24-bit or 32-bit
 //
-void CImage::SetDepth(size_t depth)
+void CImage::SetDepth(size_t depth, bool update_image)
 {
     if ( !m_Data.size() ) {
         return;
@@ -138,17 +138,19 @@ void CImage::SetDepth(size_t depth)
     switch (depth) {
     case 3:
         if (m_Depth == 4) {
-            // squash our data.  we can do this without explicitly reallocating
-            // our buffer - we just have junk on the end
-            TImageStrip::const_iterator from_data = m_Data.begin();
-            TImageStrip::iterator       to_data   = m_Data.begin();
-            for ( ;  from_data != m_Data.end();  ) {
-                *to_data++ = *from_data++;
-                *to_data++ = *from_data++;
-                *to_data++ = *from_data++;
+            if (update_image) {
+                // squash our data.  we can do this without explicitly reallocating
+                // our buffer - we just have junk on the end
+                TImageStrip::const_iterator from_data = m_Data.begin();
+                TImageStrip::iterator       to_data   = m_Data.begin();
+                for ( ;  from_data != m_Data.end();  ) {
+                    *to_data++ = *from_data++;
+                    *to_data++ = *from_data++;
+                    *to_data++ = *from_data++;
 
-                // skip the alpha channel
-                ++from_data;
+                    // skip the alpha channel
+                    ++from_data;
+                }
             }
 
             m_Data.resize(m_Width * m_Height * 3);
@@ -163,24 +165,26 @@ void CImage::SetDepth(size_t depth)
             m_Data.resize(m_Width * m_Height * 4);
             m_Depth = 4;
 
-            // now we need to expand our data
-            // we can do this by marching backwares through the data
-            TImageStrip::const_reverse_iterator from_data(m_Data.end());
-            TImageStrip::const_reverse_iterator end_data (m_Data.begin());
-            TImageStrip::reverse_iterator       to_data  (m_Data.end());
+            if (update_image) {
+                // now we need to expand our data
+                // we can do this by marching backwares through the data
+                TImageStrip::const_reverse_iterator from_data(m_Data.end());
+                TImageStrip::const_reverse_iterator end_data (m_Data.begin());
+                TImageStrip::reverse_iterator       to_data  (m_Data.end());
 
-            // march to the actual end of the data
-            from_data += m_Width * m_Height;
+                // march to the actual end of the data
+                from_data += m_Width * m_Height;
 
-            for ( ;  from_data != end_data;  ) {
-                // insert an alpha channel - this is the first because we're
-                // marching backwards
-                *to_data++ = 255;
+                for ( ;  from_data != end_data;  ) {
+                    // insert an alpha channel - this is the first because we're
+                    // marching backwards
+                    *to_data++ = 255;
 
-                // copy (in reverse order) BGR data
-                *to_data++ = *from_data++;
-                *to_data++ = *from_data++;
-                *to_data++ = *from_data++;
+                    // copy (in reverse order) BGR data
+                    *to_data++ = *from_data++;
+                    *to_data++ = *from_data++;
+                    *to_data++ = *from_data++;
+                }
             }
         }
         break;

@@ -109,7 +109,7 @@ public:
 
     // set the depth for an image.  NOTE: this will create an empty alpha
     // channel or drop the existing one, as required!
-    void SetDepth(size_t depth);
+    void SetDepth(size_t depth, bool update_image=true);
 
     // set one of the 3 (or 4) channels of the image to a given value
     void SetChannel(size_t channel, unsigned char val);
