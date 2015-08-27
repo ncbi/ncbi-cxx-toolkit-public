@@ -146,7 +146,7 @@ private:
     bool IsConnectionOpen() { return m_TransmissionWriter.get() != NULL; }
     void ResetWriters();
     void AbortConnection();
-    EIO_Status TransmitImpl(const void* buf, size_t count, size_t* bytes_written);
+    EIO_Status TransmitImpl(const char* buf, size_t count);
     void Transmit(const void* buf, size_t count, size_t* bytes_written);
 
     void EstablishConnection();

@@ -413,8 +413,7 @@ void CNetCacheWriter::AbortConnection()
     m_Connection = NULL;
 }
 
-EIO_Status CNetCacheWriter::TransmitImpl(const void* buf,
-        size_t count, size_t* bytes_written)
+EIO_Status CNetCacheWriter::TransmitImpl(const char* buf, size_t count)
 {
     STimeout timeout =
         m_NetCacheAPI->m_Service->m_ServerPool.GetCommunicationTimeout();
@@ -457,17 +456,26 @@ EIO_Status CNetCacheWriter::TransmitImpl(const void* buf,
                 }
             }
 
-            // If we have already done writing
+            // If we have done writing everything or due to some error
             if (in == eIO_Read) {
                 break;
             }
 
             if (out & eIO_Write) {
-                res = m_TransmissionWriter->Write(buf, count, bytes_written);
+                size_t written = 0;
+                res = m_TransmissionWriter->Write(buf, count, &written);
 
-                // Non-waiting check for incoming messages after writing
-                in = eIO_Read;
-                deadline = CDeadline(0, 0);
+                if (res == eRW_Success) {
+                    buf += written;
+                    count -= written;
+                }
+
+                // If there is an error on writing or we have done,
+                // do a non-waiting check for incoming messages
+                if (res != eRW_Success || !count) {
+                    in = eIO_Read;
+                    deadline = CDeadline(0, 0);
+                }
             }
         }
     }
@@ -489,7 +497,7 @@ void CNetCacheWriter::Transmit(const void* buf,
         size_t count, size_t* bytes_written)
 {
     try {
-        switch (TransmitImpl(buf, count, bytes_written))
+        switch (TransmitImpl(static_cast<const char*>(buf), count))
         {
         case eIO_Closed:
             NCBI_THROW(CNetServiceException, eCommunicationError,
@@ -509,6 +517,7 @@ void CNetCacheWriter::Transmit(const void* buf,
                 "Unknown error");
 
         default:
+            if (bytes_written) *bytes_written = count;
             return;
         }
     }
@@ -527,7 +536,8 @@ void CNetCacheWriter::EstablishConnection()
     m_Connection->m_Socket.SetCork(true);
 
     m_SocketReaderWriter.reset(
-        new CSocketReaderWriter(&m_Connection->m_Socket));
+        new CSocketReaderWriter(&m_Connection->m_Socket, eNoOwnership,
+            eIO_WritePlain));
 
     m_TransmissionWriter.reset(
         new CTransmissionWriter(m_SocketReaderWriter.get(),
