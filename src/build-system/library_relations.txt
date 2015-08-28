@@ -334,11 +334,13 @@ gc_organism needs taxon1
 gc_util_sdbapi needs gencoll_client
 gc_util_sdbapi needs gpipe_common
 gc_utils needs gpipe_objutil
+gcaccess_utils needs $(GPIPE_COMMON_LIBS)
 gcaccess_utils needs $(GPIPE_GENCOLL_LIBS)
 gcedit needs agp_lookup
 gcedit needs gc_load_utils
 gcrypt needs3party $(ORIG_LIBS)
 gdsutil needs xncbi
+gencoll_client needs $(COMPRESS_LIBS)
 gencoll_client needs genome_collection
 gencoll_client needs xconnect
 gencoll_load needs xser
@@ -549,7 +551,6 @@ gui_glmesa needs ximage
 gui_glmesa needs3party $(OSMESA_LIBS)
 gui_graph needs gui_opengl
 gui_objects needs gui_objutils
-gui_objutils needs $(COMPRESS_LIBS)
 gui_objutils needs $(EUTILS_LIBS)
 gui_objutils needs biotree
 gui_objutils needs entrez2cli
