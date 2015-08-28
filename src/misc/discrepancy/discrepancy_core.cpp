@@ -216,6 +216,7 @@ void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
 {
     CTypesConstIterator i;
     CType<CBioseq>::AddTo(i);
+    CType<CBioseq_set>::AddTo(i);
     CType<CSeq_feat>::AddTo(i);
 #define ENABLE_DISCREPANCY_TYPE(type) if (m_Enable_##type) CType<type>::AddTo(i);
     ENABLE_DISCREPANCY_TYPE(CSeq_inst)
@@ -225,6 +226,11 @@ void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
         if (CType<CBioseq>::Match(i)) {
             m_Current_Bioseq.Reset(m_Scope->GetBioseqHandle(*CType<CBioseq>::Get(i)).GetCompleteBioseq());
             m_Count_Bioseq++;
+            m_Current_Bioseq_set.Reset();
+        }
+        else if (CType<CBioseq_set>::Match(i)) {
+            m_Current_Bioseq.Reset();
+            m_Current_Bioseq_set.Reset(m_Scope->GetBioseq_setHandle(*CType<CBioseq_set>::Get(i)).GetCompleteBioseq_set());
         }
         else if (CType<CSeq_feat>::Match(i)) {
             m_Current_Seq_feat.Reset(m_Scope->GetSeq_featHandle(*CType<CSeq_feat>::Get(i)).GetSeq_feat());
@@ -243,6 +249,35 @@ void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
     }
 }
 
+CConstRef<CBioseq> CDiscrepancyContext::GetCurrentBioseq(void) const 
+{ 
+    if (m_Current_Bioseq)
+    {
+        return m_Current_Bioseq;
+    }
+    else if (m_Current_Bioseq_set && m_Current_Bioseq_set->IsSetClass())
+    {
+        CConstRef<CBioseq> bioseq;
+        CScope &scope = GetScope();
+        if (m_Current_Bioseq_set->GetClass() == CBioseq_set::eClass_nuc_prot)
+        {
+            bioseq.Reset(scope.GetBioseqHandle(m_Current_Bioseq_set->GetNucFromNucProtSet()).GetCompleteBioseq());
+            return bioseq;
+        }
+        if (m_Current_Bioseq_set->GetClass() == CBioseq_set::eClass_gen_prod_set)
+        {
+            bioseq.Reset(scope.GetBioseqHandle(m_Current_Bioseq_set->GetGenomicFromGenProdSet()).GetCompleteBioseq());
+            return bioseq;
+        }
+        if (m_Current_Bioseq_set->GetClass() == CBioseq_set::eClass_segset)
+        {
+            bioseq.Reset(scope.GetBioseqHandle(m_Current_Bioseq_set->GetMasterFromSegSet()).GetCompleteBioseq());
+            return bioseq;
+        }
+
+    }
+    return m_Current_Bioseq;
+}
 
 void CDiscrepancyContext::Summarize()
 {
@@ -285,7 +320,7 @@ const CBioSource* CDiscrepancyContext::GetCurrentBiosource()
     static size_t count = 0;
     if (count != m_Count_Bioseq) {
         count = m_Count_Bioseq;
-        biosrc = sequence::GetBioSource(m_Scope->GetBioseqHandle(*m_Current_Bioseq));
+        biosrc = sequence::GetBioSource(m_Scope->GetBioseqHandle(*GetCurrentBioseq()));
     }
     return biosrc;
 }

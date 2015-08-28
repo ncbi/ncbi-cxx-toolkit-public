@@ -216,7 +216,8 @@ public:
 
     template<typename T> void Call(CDiscrepancyVisitor<T>& disc, const T& obj){ disc.Call(obj, *this);}
 
-    CConstRef<CBioseq> GetCurrentBioseq(void) const { return m_Current_Bioseq;}
+    CConstRef<CBioseq> GetCurrentBioseq(void) const;
+    CConstRef<CBioseq_set> GetCurrentBioseq_set(void) const { return m_Current_Bioseq_set;}
     CConstRef<CSeq_feat> GetCurrentSeq_feat(void) const { return m_Current_Seq_feat;}
     size_t GetCountBioseq(void) const { return m_Count_Bioseq;}
     size_t GetCountSeq_feat(void) const { return m_Count_Seq_feat;}
@@ -235,6 +236,7 @@ protected:
     set<string> m_Names;
     vector<CRef<CDiscrepancyCase> > m_Tests;
     CConstRef<CBioseq> m_Current_Bioseq;
+    CConstRef<CBioseq_set> m_Current_Bioseq_set;
     CConstRef<CSeq_feat> m_Current_Seq_feat;
     CConstRef<CSuspect_rule_set> m_ProductRules;
     CConstRef<CSuspect_rule_set> m_OrganelleProductRules;

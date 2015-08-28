@@ -50,16 +50,15 @@ DISCREPANCY_CASE(DIVISION_CODE_CONFLICTS, CBioSource, eOncaller, "Division Code 
         string div = obj.GetOrg().GetOrgname().GetDiv();
         string str = "[n] bioseq[s] [has] divsion code ";
         str += div;
-        m_Objs[str].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+        m_Objs["Division code conflicts found"][str].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
     }
 }
 
 
 DISCREPANCY_SUMMARIZE(DIVISION_CODE_CONFLICTS)
 {
-    if (m_Objs.GetMap().size() > 1)
+    if (m_Objs["Division code conflicts found"].GetMap().size() > 1)
     {
-        m_Objs["Division code conflicts found"];
         m_ReportItems = m_Objs.Export(GetName())->GetSubitems();
     }
     m_Objs.clear();
