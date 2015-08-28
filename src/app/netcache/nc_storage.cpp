@@ -1116,6 +1116,7 @@ void CNCBlobStorage::WriteEnvInfo(CSrvSocketTask& task)
     task.WriteText(eol).WriteText("DBsize"       ).WriteText(iss).WriteText(NStr::UInt8ToString_DataSize(s_CurDBSize)).WriteText(eos);
     task.WriteText(eol).WriteText("DBgarbage"    ).WriteText(iss).WriteText(NStr::UInt8ToString_DataSize(s_GarbageSize)).WriteText(eos);
     task.WriteText(eol).WriteText("diskfreespace").WriteText(iss).WriteText(NStr::UInt8ToString_DataSize(GetDiskFree())).WriteText(eos);
+    task.WriteText(eol).WriteText("IsStopWrite").WriteText( is).WriteNumber( (int)s_IsStopWrite);
 }
 
 void CNCBlobStorage::WriteDbInfo(CSrvSocketTask& task, const CTempString& mask)

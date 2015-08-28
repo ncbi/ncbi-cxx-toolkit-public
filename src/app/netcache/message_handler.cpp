@@ -3651,6 +3651,8 @@ CNCMessageHandler::x_DoCmd_GetConfig(void)
                 stat->PrintState(*this);
             }
             CNCPeerControl::PrintState(*this);
+        } else if (section == "task") {
+            CSrvTask::PrintState(*this);
         } else if (section == "allalerts") {
             CNCAlerts::Report(*this, true);
         } else if (section == "alerts") {
@@ -3671,7 +3673,7 @@ CNCMessageHandler::x_DoCmd_GetConfig(void)
             CNCBlobStorage::WriteDbInfo(*this, mask);
         } else {
             WriteText(",\n\"error\": \"Unknown section name, valid names: ");
-            WriteText("netcache, storage, mirror, alerts, allalerts, env, stat, sync, db\"");
+            WriteText("netcache, storage, mirror, alerts, allalerts, env, stat, sync, task, db\"");
         }
         WriteText("\n}}");
     } else {

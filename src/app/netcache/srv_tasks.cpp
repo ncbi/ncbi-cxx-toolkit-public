@@ -48,13 +48,14 @@ struct SrvTaskCompare
 typedef intr::set< CSrvTask, intr::compare< SrvTaskCompare > > TAllTasksSet;
 #else
 typedef intr::member_hook<CSrvTask, intr::set_member_hook<>, &CSrvTask::m_intr_member_hook> TAllTasksSetOption;
-typedef intr::set< CSrvTask, TAllTasksSetOption, intr::compare< SrvTaskCompare >>   TAllTasksSet;
+typedef intr::set< CSrvTask, TAllTasksSetOption, intr::compare< SrvTaskCompare > >   TAllTasksSet;
 #endif
 #else
 typedef std::set<const CSrvTask*>  TAllTasksSet;
 #endif
-#endif
+
 TAllTasksSet  s_all_tasks;
+#endif
 
 CSrvTask::CSrvTask(void)
     : m_LastThread(0),
