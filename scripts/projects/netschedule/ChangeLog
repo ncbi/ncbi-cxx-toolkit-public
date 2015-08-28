@@ -1,4 +1,12 @@
-Release 4.32.0 based on SC-16.1 (2015-08-20)
+Release 4.23.1 based on SC-16.1 (2015-08-28)
+
+Improvements:
+    * NetSchedule: conversion from a list to a bit vector done twice
+      (JIRA: CXX-7254)
+    * NetSchedule: long shutdown (JIRA: CXX-7274)
+
+
+Release 4.23.0 based on SC-16.1 (2015-08-20)
 
 Improvements:
     * NetSchedule: way too long graceful shutdown (JIRA: CXX-2617)
