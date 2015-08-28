@@ -125,7 +125,8 @@ CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(const string& acc,
 #endif
 
     try {
-        return AssemblyFromBlob(AskGet_assembly_blob(req, &reply));
+        //return AssemblyFromBlob(AskGet_assembly_blob(req, &reply));
+        return AskGet_assembly(req, &reply);
     } catch (CException& ex) {
         if(reply.Which() == CGCClientResponse::e_Srvr_error) {
             NCBI_THROW(CException, eUnknown, reply.GetSrvr_error().GetDescription());
@@ -159,7 +160,8 @@ CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(int releaseId,
 #endif
     
     try {
-        return AssemblyFromBlob(AskGet_assembly_blob(req, &reply));
+        //return AssemblyFromBlob(AskGet_assembly_blob(req, &reply));
+        return AskGet_assembly(req, &reply);
     } catch (CException& ex) {
         if(reply.Which() == CGCClientResponse::e_Srvr_error) {
             NCBI_THROW(CException, eUnknown, reply.GetSrvr_error().GetDescription());
