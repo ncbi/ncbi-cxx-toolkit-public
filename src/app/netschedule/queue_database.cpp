@@ -1256,8 +1256,16 @@ void CQueueDataBase::Close(void)
         // reference to the object has gone
         m_Queues.clear();
 
+        // The call below may also cause a very long shutdown. At this point
+        // we are not interested in proper BDB file closing because the jobs
+        // have already been dumped. Thus we can ommit calling the DBD files
+        // close and just remove them a few statements later.
+        // The only caveat is that valgrind will complain on memory leaks. This
+        // is however minor in comparison to the shutdown time consumption.
+        // With the close() commented out it only depends on the current number
+        // of jobs but not on the number of job since start.
         // Close pre-allocated databases
-        m_QueueDbBlockArray.Close();
+        // m_QueueDbBlockArray.Close();
     }
 
     delete m_Env;
