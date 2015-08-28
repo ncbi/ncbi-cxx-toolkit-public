@@ -17,22 +17,22 @@ IMPORTS GC-Assembly FROM NCBI-GenomeCollection;
 
 GCClientRequest ::= CHOICE {
     get-assembly GCClient-GetAssemblyRequest,
+    get-assembly-blob GCClient-GetAssemblyRequest,
     get-chrtype-valid  GCClient-ValidateChrTypeLocRequest,
     get-best-assembly GCClient-FindBestAssemblyRequest,
-    get-equivalent-assemblies GCClient-GetEquivalentAssembliesRequest,
-    get-assembly-blob GCClient-GetAssemblyRequest
+    get-equivalent-assemblies GCClient-GetEquivalentAssembliesRequest
 }
 
 
 GCClientResponse ::= CHOICE {
     get-assembly GC-Assembly,
+    get-assembly-blob OCTET STRING,
     get-chrtype-valid  VisibleString,
     get-best-assembly GCClient-AssembliesForSequences,
     get-equivalent-assemblies GCClient-EquivalentAssemblies,
     
     --  errors encountered at the server side.
-    srvr-error GCClient-Error,
-    get-assembly-blob OCTET STRING
+    srvr-error GCClient-Error
 }
 
 GCClient-Error ::= SEQUENCE {
