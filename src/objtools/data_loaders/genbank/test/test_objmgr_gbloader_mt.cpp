@@ -64,7 +64,7 @@ using namespace objects;
 class CTestThread : public CThread
 {
 public:
-    CTestThread(unsigned id, CObjectManager& objmgr, CScope& scope,int start,int stop);
+    CTestThread(unsigned id, CScope& scope,int start,int stop);
     virtual ~CTestThread();
   
 protected:
@@ -73,15 +73,14 @@ protected:
 private:
     unsigned        m_mode;
     CScope         *m_Scope;
-    CObjectManager *m_ObjMgr;
     int             m_Start;
     int             m_Stop;
     bool            m_Verbose;
 };
 
-CTestThread::CTestThread(unsigned id, CObjectManager& objmgr, CScope& scope,
+CTestThread::CTestThread(unsigned id, CScope& scope,
                          int start, int stop)
-    : m_mode(id), m_Scope(&scope), m_ObjMgr(&objmgr),
+    : m_mode(id), m_Scope(&scope),
       m_Start(start), m_Stop(stop),
       m_Verbose(false)
 {
@@ -172,7 +171,7 @@ int CTestApplication::Test(const unsigned test_mode,const unsigned thread_count)
     
     for (unsigned i=0; i<thread_count; ++i)
         {
-            thr[i] = new CTestThread(test_mode, *pOm, scope,
+            thr[i] = new CTestThread(test_mode, scope,
                                      c_TestFrom+i*step,
                                      c_TestFrom+(i+1)*step);
             thr[i]->Run(CThread::fRunAllowST);
