@@ -14,6 +14,7 @@ EXPORTS TMgr-Request, TMgr-Reply, TMgr-GenomeContext,
         TMgr-CreateUserTrackRequest, TMgr-CreateUserTrackReply, TMgr-Identity,
         TMgr-TrackAttrValueRequest, TMgr-TrackAttrValueReply,
         TMgr-RetrieveTracksetRequest, TMgr-RetrieveTracksetReply,
+        TMgr-CreateTracksetRequest, TMgr-CreateTracksetReply,
         TMgr-AttrRequest, TMgr-AttrReply, TMgr-ValueRequest, TMgr-AttrValueReply,
         TMgr-TrackAttributes, TMgr-MessageLevel, TMgr-Message, TMgr-DatasetItemSeq;
 
@@ -361,6 +362,7 @@ TMgr-TrackSetType ::= INTEGER {
 
 TMgr-TrackSet ::= SEQUENCE {
     type TMgr-TrackSetType,
+    id VisibleString, -- internal identifier
     genome-context TMgr-GenomeContext,
     name UTF8String,
     description UTF8String OPTIONAL,
