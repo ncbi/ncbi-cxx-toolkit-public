@@ -19,7 +19,7 @@ LIBS = $(LIBXSLT_LIBS) $(LIBXML_LIBS) $(PCRE_LIBS) \
 
 CPPFLAGS= $(LIBXML_INCLUDE) $(LIBXSLT_INCLUDE) $(ORIG_CPPFLAGS) -I$(import_root)/../include
 
-LDFLAGS= -L$(import_root)/../lib
+LDFLAGS = -L$(import_root)/../lib $(ORIG_LDFLAGS)
 
 REQUIRES = objects
 
