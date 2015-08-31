@@ -1,5 +1,5 @@
-#ifndef NCBI_BOOST___CONFIG__HPP
-#define NCBI_BOOST___CONFIG__HPP
+#ifndef NCBI_BOOST_CONFIG_STDLIB___LIBSTDCPP3__HPP
+#define NCBI_BOOST_CONFIG_STDLIB___LIBSTDCPP3__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -30,15 +30,15 @@
  *
  */
 
-/// @file config.hpp
-/// Simple wrapper around Boost's real config.hpp to help catch
+/// @file libstdcpp3.hpp
+/// Simple wrapper around Boost's real libstdcpp3.hpp to help catch
 /// accidental version skew.
 
 #ifdef __GNUC__
-#  include_next <boost/config.hpp>
+#  include_next <boost/config/stdlib/libstdcpp3.hpp>
 #else
-#  include <boost/test/../config.hpp>
+#  include <boost/test/../config/stdlib/libstdcpp3.hpp>
 #endif
 #include <common/boost_skew_guard.hpp>
 
-#endif  /* NCBI_BOOST___CONFIG__HPP */
+#endif  /* NCBI_BOOST_CONFIG_STDLIB___LIBSTDCPP3__HPP */
