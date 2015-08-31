@@ -39,6 +39,7 @@
 #else
 #  include <boost/test/../config/stdlib/libstdcpp3.hpp>
 #endif
+#undef BOOST_CONFIG_HPP
 #include <common/boost_skew_guard.hpp>
 
 #endif  /* NCBI_BOOST_CONFIG_STDLIB___LIBSTDCPP3__HPP */
