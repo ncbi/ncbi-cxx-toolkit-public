@@ -89,7 +89,7 @@ NCBITEST_INIT_TREE()
 ///////////////////////////////////////////////////////////////////////////////
 //NCBITEST_DISABLE(g_LBOS_GetLBOSAddresses__SpecificMethod__FirstInResult);
 //NCBITEST_DISABLE(
-            g_LBOS_GetLBOSAddresses__CustomHostNotProvided__SkipCustomHost);
+//          g_LBOS_GetLBOSAddresses__CustomHostNotProvided__SkipCustomHost);
 //NCBITEST_DISABLE(g_LBOS_GetLBOSAddresses__NoConditions__AddressDefOrder);
 ///////////////////////////////////////////////////////////////////////////////
 //                           Get candidates                                  //
@@ -130,9 +130,9 @@ NCBITEST_INIT_TREE()
 //NCBITEST_DISABLE(Initialization__OpenNotInitialized__ShouldInitialize);
 //NCBITEST_DISABLE(Initialization__OpenWhenTurnedOff__ReturnNull);
 //NCBITEST_DISABLE(
-            Initialization__s_LBOS_Initialize__s_LBOS_InstancesListNotNULL);
+//            Initialization__s_LBOS_Initialize__s_LBOS_InstancesListNotNULL);
 //NCBITEST_DISABLE(
-        Initialization__s_LBOS_FillCandidates__s_LBOS_InstancesListNotNULL);
+//       Initialization__s_LBOS_FillCandidates__s_LBOS_InstancesListNotNULL);
 //NCBITEST_DISABLE(Initialization__PrimaryLBOSInactive__SwapAddresses);
 ///////////////////////////////////////////////////////////////////////////////
 //                           Announcement                                    //
@@ -145,7 +145,7 @@ NCBITEST_INIT_TREE()
 //NCBITEST_DISABLE(Announcement__LBOSError__ReturnServerError);
 //NCBITEST_DISABLE(Announcement__LBOSError__LBOSAnswerProvided);
 //NCBITEST_DISABLE(
-             Announcement__AlreadyAnnouncedInTheSameZone__ReplaceInStorage);
+//           Announcement__AlreadyAnnouncedInTheSameZone__ReplaceInStorage);
 //NCBITEST_DISABLE(Announcement__AnotherRegion__NoAnnounce);
 //NCBITEST_DISABLE(Announcement__IncorrectURL__ReturnInvalidArgs);
 //NCBITEST_DISABLE(Announcement__IncorrectPort__ReturnInvalidArgs);
@@ -153,7 +153,7 @@ NCBITEST_INIT_TREE()
 //NCBITEST_DISABLE(Announcement__IncorrectServiceName__ReturnInvalidArgs);
 //NCBITEST_DISABLE(Announcement__RealLife__VisibleAfterAnnounce);
 //NCBITEST_DISABLE(
-               Announcement__ResolveLocalIPError__Return_DNS_RESOLVE_ERROR);
+//             Announcement__ResolveLocalIPError__Return_DNS_RESOLVE_ERROR);
 //NCBITEST_DISABLE(Announcement__IP0000__ReplaceWithLocalIP);
 //NCBITEST_DISABLE(Announcement__ResolveLocalIPError__Return_DNS_RESOLVE_ERROR);
 //NCBITEST_DISABLE(Announcement__LBOSOff__ReturnELBOS_Off);
@@ -163,13 +163,13 @@ NCBITEST_INIT_TREE()
 ///////////////////////////////////////////////////////////////////////////////
 //NCBITEST_DISABLE(AnnouncementRegistry__ParamsGood__ReturnSuccess);
 //NCBITEST_DISABLE(
-               AnnouncementRegistry__CustomSectionNoVars__ReturnInvalidArgs);
+//             AnnouncementRegistry__CustomSectionNoVars__ReturnInvalidArgs);
 //NCBITEST_DISABLE(
-AnnouncementRegistry__CustomSectionEmptyOrNullAndSectionIsOk__ReturnSuccess);
+//AnnouncementRegistry__CustomSectionEmptyOrNullAndSectionIsOk__ReturnSuccess);
 //NCBITEST_DISABLE(
-                AnnouncementRegistry__ServiceEmptyOrNull__ReturnInvalidArgs);
+//              AnnouncementRegistry__ServiceEmptyOrNull__ReturnInvalidArgs);
 //NCBITEST_DISABLE(
-                AnnouncementRegistry__VersionEmptyOrNull__ReturnInvalidArgs);
+//              AnnouncementRegistry__VersionEmptyOrNull__ReturnInvalidArgs);
 //NCBITEST_DISABLE(AnnouncementRegistry__PortEmptyOrNull__ReturnInvalidArgs);
 //NCBITEST_DISABLE(AnnouncementRegistry__PortOutOfRange__ReturnInvalidArgs);
 //NCBITEST_DISABLE(
