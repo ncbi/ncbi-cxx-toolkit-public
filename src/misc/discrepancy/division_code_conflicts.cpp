@@ -41,7 +41,7 @@ USING_SCOPE(objects);
 DISCREPANCY_MODULE(division_code_conflicts);
 
 
-const char const* kDivCodeConflict = "Division code conflicts found";
+const char* const kDivCodeConflict = "Division code conflicts found";
 
 // DIVISION_CODE_CONFLICTS
 
