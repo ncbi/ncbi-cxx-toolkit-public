@@ -91,6 +91,23 @@ ELBOS_Result LBOS_Announce(const char*       service,
                            const char*       healthcheck_url,
                            char**            lbos_answer);
 
+/** Modification of LBOS_Announce() that gets all needed parameters from 
+ * registry.                                                                
+ * @param [in] registry_section
+ *  Name of section in registry file where to look for announcement parameters.
+ *  Parameters are:
+ *  SERVICE, VERSION, PORT, HEALTHCHECK
+ *  Example:
+ *  --------------
+ *  [LBOS_ANNOUNCEMENT]
+ *  SERVICE=MYSERVICE
+ *  VERSION=1.0.0
+ *  PORT=8080
+ *  HEALTH=http://0.0.0.0:8080/health
+ *  --------------                                                           */
+NCBI_XCONNECT_EXPORT
+ELBOS_Result LBOS_AnnounceFromRegistry(const char*  registry_section,
+                                   char**       lbos_answer);
 
 /** Deannounce all servers that were announced during runtime.
 *

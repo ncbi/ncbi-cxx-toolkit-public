@@ -81,22 +81,22 @@ typedef struct {
     SConnNetInfo*       net_info;    /**< Connection point                   */
     const char*         lbos_addr;   /**< lbos host:port or IP:port. Used if
                                           find_method == 
-                                           eLBOSFindMethod_CustomHost        */
-    ELBOSFindMethod     find_method; /**< How we find lbos. Mainly for
-                                          testing                            */
+                                          eLBOSFindMethod_CustomHost        */
     SLBOS_Candidate*    cand;        /**< Array of found server to iterate   */
     size_t              pos_cand;    /**< Current candidate                  */
     size_t              n_cand;      /**< Used space for candidates          */
     size_t              a_cand;      /**< Allocated space for candidates     */
+    ELBOSFindMethod     find_method; /**< How we find lbos. Mainly for
+                                          testing                            */
 } SLBOS_Data;
 
 struct SLBOS_AnnounceHandle_Tag
 {
     char*            service;       /**< service name of announced server    */
     char*            version;       /**< service version of announced server */
-    unsigned short   port;          /**< port of announced server            */
     char*            host;          /**< host of announced server            */
     char*            lbos_hostport; /**< lbos that processed announcement    */
+    unsigned short   port;          /**< port of announced server            */
 };
 
 /** Possible values of parameter for g_LBOS_CheckIterator().
@@ -260,7 +260,8 @@ void FLBOS_InitializeMethod(void);
 
 
 typedef char* FLBOS_UrlReadAllMethod(SConnNetInfo* net_info, 
-                                     const char*   url);
+                                     const char*   url,
+                                     int* response_code);
 
 
 /** Standard parse header function. The only thing considered is that
@@ -335,8 +336,6 @@ NCBI_XCONNECT_EXPORT
 const SSERV_VTable*  SERV_LBOS_Open(SERV_ITER           iter,
                                     const SConnNetInfo* net_info,
                                     SSERV_Info**        info);
-
-
 
 
 /** Checks C-string if it is NULL or is of zero length.
@@ -419,7 +418,6 @@ int/*bool*/ g_LBOS_UnitTesting_SetLBOSRoleAndDomainFiles(const char*  roleFile,
                                              const char*          version,
                                              unsigned short       port,
                                              const char*          host);
-
 
 ///////////////////////////////////////////////////////////////////////////////
 //                      GLOBAL VARIABLES FOR UNIT TESTS                      //
