@@ -60,8 +60,8 @@ const char* kRetryContent_content = "content:";
 CRPCClient_Base::CRPCClient_Base(const string&     service,
                                  ESerialDataFormat format,
                                  unsigned int      retry_limit)
-    : m_Service(service),
-      m_Format(format),
+    : m_Format(format),
+      m_Service(service),
       m_Timeout(kDefaultTimeout),
       m_RetryLimit(retry_limit)
 {
