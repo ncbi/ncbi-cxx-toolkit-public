@@ -289,7 +289,7 @@ DISCREPANCY_ALIAS(COUNT_RRNAS, FIND_DUP_RRNAS);
 // DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA
 static const char* kRRNASpacer[] = { "internal", "transcribed", "spacer", "\0" };
 
-DISCREPANCY_CASE(DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA, CRNA_ref, eOncaller, "Look for rRNAs that contain either 'internal', 'transcribed' or 'spacer'")
+DISCREPANCY_CASE(INTERNAL_TRANSCRIBED_SPACER_RRNA, CRNA_ref, eOncaller, "Look for rRNAs that contain either 'internal', 'transcribed' or 'spacer'")
 {
     CConstRef<CSeq_feat> feat = context.GetCurrentSeq_feat();
     if (feat->GetData().GetSubtype() != CSeqFeatData::eSubtype_rRNA) {
@@ -305,7 +305,8 @@ DISCREPANCY_CASE(DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA, CRNA_ref, eOncaller, "Lo
     }
 }
 
-DISCREPANCY_SUMMARIZE(DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA)
+
+DISCREPANCY_SUMMARIZE(INTERNAL_TRANSCRIBED_SPACER_RRNA)
 {
     if (m_Objs.empty()) {
         return;
@@ -313,6 +314,7 @@ DISCREPANCY_SUMMARIZE(DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA)
     m_Objs["[n] rRNA feature products contain 'internal', 'transcribed' or 'spacer'"];
     m_ReportItems = m_Objs.Export(GetName())->GetSubitems();
 }
+
 
 // OVERLAPPING_CDS
 
