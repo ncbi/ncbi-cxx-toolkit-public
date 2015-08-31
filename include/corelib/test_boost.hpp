@@ -74,6 +74,8 @@
 #include <boost/preprocessor/array/elem.hpp>
 #include <boost/preprocessor/arithmetic/inc.hpp>
 
+#include <common/boost_skew_guard.hpp>
+
 #ifdef NCBI_COMPILER_MSVC
 #  pragma warning(pop)
 #endif
