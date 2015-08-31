@@ -63,6 +63,14 @@ BioTreeContainer ::= {
     {
       id 15,
       name "common-name"
+    },
+    {
+      id 16,
+      name "$NODE_SIZE"
+    },
+    {
+      id 17,
+      name "$EDGE_COLOR"
     }
   },
   nodes {

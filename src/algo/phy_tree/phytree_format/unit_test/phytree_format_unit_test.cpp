@@ -773,6 +773,12 @@ static bool s_TestFeatureDict(const CFeatureDictSet& dict)
 
     feature_ids[CPhyTreeFormatter::eCommonNameID]
         = CPhyTreeFormatter::eCommonNameID;
+    
+    feature_ids[CPhyTreeFormatter::eNodeSizeID]
+        = CPhyTreeFormatter::eNodeSizeID;
+
+    feature_ids[CPhyTreeFormatter::eEdgeColorID]
+        = CPhyTreeFormatter::eEdgeColorID;
 
     vector<bool> found(CPhyTreeFormatter::eLastId + 1, false);
 
