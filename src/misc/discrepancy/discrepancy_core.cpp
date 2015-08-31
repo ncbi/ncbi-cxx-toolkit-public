@@ -208,6 +208,7 @@ bool CDiscrepancyContext::AddTest(const string& name)
     REGISTER_DISCREPANCY_TYPE(CSeq_inst)
     REGISTER_DISCREPANCY_TYPE(CSeqFeatData)
     REGISTER_DISCREPANCY_TYPE(CBioSource)
+    REGISTER_DISCREPANCY_TYPE(COrgName)
     REGISTER_DISCREPANCY_TYPE(CRNA_ref)
     return false;
 }
@@ -223,6 +224,7 @@ void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
     ENABLE_DISCREPANCY_TYPE(CSeq_inst)
     ENABLE_DISCREPANCY_TYPE(CSeqFeatData)
     ENABLE_DISCREPANCY_TYPE(CBioSource)
+    ENABLE_DISCREPANCY_TYPE(COrgName)
     ENABLE_DISCREPANCY_TYPE(CRNA_ref)
     
     for (i = Begin(*handle.GetCompleteSeq_entry()); i; ++i) {
@@ -249,9 +251,11 @@ void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
         HANDLE_DISCREPANCY_TYPE(CSeq_inst)  // no semicolon!
         HANDLE_DISCREPANCY_TYPE(CSeqFeatData)
         HANDLE_DISCREPANCY_TYPE(CBioSource)
+        HANDLE_DISCREPANCY_TYPE(COrgName)
         HANDLE_DISCREPANCY_TYPE(CRNA_ref)
     }
 }
+
 
 CConstRef<CBioseq> CDiscrepancyContext::GetCurrentBioseq(void) const 
 { 
@@ -282,6 +286,7 @@ CConstRef<CBioseq> CDiscrepancyContext::GetCurrentBioseq(void) const
     }
     return m_Current_Bioseq;
 }
+
 
 void CDiscrepancyContext::Summarize()
 {

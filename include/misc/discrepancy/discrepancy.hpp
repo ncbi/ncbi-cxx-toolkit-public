@@ -61,6 +61,7 @@ public:
     virtual TReportObjectList GetDetails(void) const = 0;
     virtual vector<CRef<CReportItem> > GetSubitems(void) const = 0;
     virtual bool CanAutofix() const = 0;
+    virtual void Autofix() const = 0;
 };
 typedef vector<CRef<CReportItem> > TReportItemList;
 
@@ -75,7 +76,6 @@ public:
     virtual string GetName(void) const = 0;
     virtual string GetType(void) const = 0;
     virtual void Summarize(void) = 0;
-    virtual void Autofix(objects::CScope& scope) {}
     virtual TReportItemList GetReport(void) const = 0;
 };
 

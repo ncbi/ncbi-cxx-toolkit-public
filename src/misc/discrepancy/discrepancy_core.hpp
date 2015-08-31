@@ -34,6 +34,7 @@
 #include "report_object.hpp"
 #include <objects/macro/Suspect_rule_set.hpp>
 #include <objects/seqfeat/BioSource.hpp>
+#include <objects/seqfeat/OrgName.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -120,8 +121,10 @@ public:
         }
     }
     bool CanAutofix() const { return m_Autofix; }
+    //void Autofix() { m_Case->Autofix(); }
 protected:
     bool m_Autofix;
+    CRef<CDiscrepancyCase> m_Case;
 };
 
 
@@ -135,13 +138,15 @@ public:
     string GetMsg(void) const { return m_Msg;}
     TReportObjectList GetDetails(void) const { return m_Objs;}
     TReportItemList GetSubitems(void) const { return m_Subs;}
-    bool CanAutofix() const { return m_Autofix;}
+    bool CanAutofix() const { return m_Autofix; }
+    void Autofix() const;
 protected:
     string m_Title;
     string m_Msg;
     bool m_Autofix;
     TReportObjectList m_Objs;
     TReportItemList m_Subs;
+    CRef<CDiscrepancyCase> m_Test;
 friend class CReportNode;
 };
 
@@ -183,11 +188,18 @@ public:
     CDiscrepancyCore() : m_Count(0) {}
     void Summarize(void){}
     virtual TReportItemList GetReport(void) const { return m_ReportItems;}
+    virtual void Autofix(const CDiscrepancyItem* item) {}
 protected:
     CReportNode m_Objs;
     TReportItemList m_ReportItems;
     size_t m_Count;
 };
+
+
+inline void CDiscrepancyItem::Autofix() const
+{
+    ((CDiscrepancyCore&)*m_Test).Autofix(this);
+}
 
 
 template<typename T> class CDiscrepancyVisitor : public CDiscrepancyCore
@@ -250,6 +262,7 @@ protected:
     ADD_DISCREPANCY_TYPE(CSeqFeatData)
     ADD_DISCREPANCY_TYPE(CBioSource)
     ADD_DISCREPANCY_TYPE(CRNA_ref)
+    ADD_DISCREPANCY_TYPE(COrgName)
 };
 
 
@@ -299,7 +312,7 @@ protected:
     class CDiscrepancyCaseA_##name : public CDiscrepancyCase_##name                                                 \
     {                                                                                                               \
     public:                                                                                                         \
-        void Autofix(CScope& scope);                                                                                \
+        void Autofix(const CDiscrepancyItem* item);                                                                 \
     };                                                                                                              \
     class CDiscrepancyCaseAConstructor_##name : public CDiscrepancyConstructor                                      \
     {                                                                                                               \
@@ -309,7 +322,7 @@ protected:
         CRef<CDiscrepancyCase> Create(void) const { return CRef<CDiscrepancyCase>(new CDiscrepancyCaseA_##name);}   \
     };                                                                                                              \
     static CDiscrepancyCaseAConstructor_##name DiscrepancyCaseAConstructor_##name;                                  \
-    void CDiscrepancyCaseA_##name::Autofix(CScope& scope)
+    void CDiscrepancyCaseA_##name::Autofix(const CDiscrepancyItem* item)
 
 
 #define DISCREPANCY_ALIAS(name, alias) \
