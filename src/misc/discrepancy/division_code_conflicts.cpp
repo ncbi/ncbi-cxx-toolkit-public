@@ -41,8 +41,6 @@ USING_SCOPE(objects);
 DISCREPANCY_MODULE(division_code_conflicts);
 
 
-const char* const kDivCodeConflict = "Division code conflicts found";
-
 // DIVISION_CODE_CONFLICTS
 
 DISCREPANCY_CASE(DIVISION_CODE_CONFLICTS, CBioSource, eOncaller, "Division Code Conflicts")
@@ -64,29 +62,6 @@ DISCREPANCY_SUMMARIZE(DIVISION_CODE_CONFLICTS)
         m_ReportItems = m_Objs.Export(*this)->GetSubitems();
     }
     m_Objs.clear();
-}
-
-
-// another way to do it
-
-DISCREPANCY_CASE(DIVISION_CODE_CONFLICTS_1, COrgName, eOncaller, "Division Code Conflicts")
-{
-    if (!obj.IsSetDiv()) {
-        return;
-    }
-    string div = obj.GetDiv();
-    static string str = "[n] bioseq[s] [has] divsion code ";
-    if (!div.empty())
-    m_Objs[kDivCodeConflict][str+div].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
-}
-
-
-DISCREPANCY_SUMMARIZE(DIVISION_CODE_CONFLICTS_1)
-{
-    if (m_Objs[kDivCodeConflict].GetMap().size() > 1)
-    {
-        m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-    }
 }
 
 

@@ -844,53 +844,5 @@ DISCREPANCY_AUTOFIX(CONTAINED_CDS)
 */
 
 
-DISCREPANCY_CASE(DUMMY_NORMAL, CSeq_inst, eNormal, "Dummy entry for the debug purpose")
-{
-}
-
-
-DISCREPANCY_SUMMARIZE(DUMMY_NORMAL)
-{
-    m_Objs[GetName()][GetName()][GetName()];
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
-DISCREPANCY_CASE(DUMMY_ONCALLER, CSeq_inst, eOncaller, "Dummy entry for the debug purpose")
-{
-}
-
-
-DISCREPANCY_SUMMARIZE(DUMMY_ONCALLER)
-{
-    m_Objs[GetName()][GetName()][GetName()];
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
-DISCREPANCY_CASE(DUMMY_MEGA, CSeq_inst, eMega, "Dummy entry for the debug purpose")
-{
-}
-
-
-DISCREPANCY_SUMMARIZE(DUMMY_MEGA)
-{
-    m_Objs[GetName()][GetName()][GetName()];
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
-DISCREPANCY_CASE(DUMMY_ALL, CSeq_inst, eAll, "Dummy entry for the debug purpose")
-{
-}
-
-
-DISCREPANCY_SUMMARIZE(DUMMY_ALL)
-{
-    m_Objs[GetName()][GetName()][GetName()];
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-}
-
-
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
