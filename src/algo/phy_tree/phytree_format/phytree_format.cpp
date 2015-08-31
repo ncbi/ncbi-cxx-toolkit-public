@@ -55,6 +55,7 @@ static const string s_kSeqFromVerifiedMatNodeBgColor = "181 228 240";
 static const string s_kSeqQueryNodeBgColor = " 255 200 87";
 static const string s_kSeqReferenceDBNodeBgColor = "114 168 101";
 static const string s_kSeqKmerBlastNodeBgColor = "83 149 208";
+static const string s_kBranchColor = "0 0 0 ";
 
 
 map<int,string> linkotTypeToBGColor;
@@ -65,6 +66,7 @@ static const string s_kUnknown = "unknown";
 
 // initial value for collapsed subtree feature
 static const string s_kSubtreeDisplayed = "0";
+static const string s_kNodeSize = "0";
 
 // feature value for query nodes
 const string CPhyTreeFormatter::kNodeInfoQuery = "query";
@@ -103,6 +105,7 @@ CPhyTreeFormatter::CPhyTreeFormatter(CPhyTreeCalc& guide_tree_calc,
                        label_type, mark_leaves,
                        m_BlastNameColorMap,
                        m_SeqTypeMap,
+                       m_SimpleTree,                       
                        m_LinkoutDB,
                        m_LinkoutType);                     
 
@@ -122,6 +125,7 @@ CPhyTreeFormatter::CPhyTreeFormatter(CPhyTreeCalc& guide_tree_calc,
                        label_type, mark_leaves,
                        m_BlastNameColorMap,
                        m_SeqTypeMap,
+                       m_SimpleTree,                       
                        m_LinkoutDB,
                        m_LinkoutType);
 
@@ -148,6 +152,7 @@ CPhyTreeFormatter::CPhyTreeFormatter(CPhyTreeCalc& guide_tree_calc,
                        label_type, mark_leaves,
                        m_BlastNameColorMap,
                        m_SeqTypeMap,
+                       m_SimpleTree,                       
                        m_LinkoutDB,
                        m_LinkoutType);
 
@@ -181,6 +186,7 @@ CPhyTreeFormatter::CPhyTreeFormatter(CBioTreeContainer& btc,
     x_InitTreeFeatures(btc, seqids, scope, lbl_type, mark_leaves,
                        m_BlastNameColorMap,
                        m_SeqTypeMap,
+                       m_SimpleTree,                       
                        m_LinkoutDB,
                        m_LinkoutType);
 
@@ -188,12 +194,14 @@ CPhyTreeFormatter::CPhyTreeFormatter(CBioTreeContainer& btc,
 }
 
 CPhyTreeFormatter::CPhyTreeFormatter(CPhyTreeCalc& guide_tree_calc,                      
-                      map < string, int > &seqTypeMap,                      
-                      ELabelType lbl_type)
+                      map < string, int > &seqTypeMap,                                           
+                      ELabelType lbl_type,
+                      bool simpleTree)                      
 {
 
     x_Init();
     m_SeqTypeMap = seqTypeMap;    
+    m_SimpleTree = simpleTree;    
     CRef<CBioTreeContainer> btc = guide_tree_calc.GetSerialTree();    
     //Query
     vector<int> mark_leaves;
@@ -204,6 +212,7 @@ CPhyTreeFormatter::CPhyTreeFormatter(CPhyTreeCalc& guide_tree_calc,
                        lbl_type, mark_leaves,
                        m_BlastNameColorMap,
                        m_SeqTypeMap,
+                       m_SimpleTree,                       
                        m_LinkoutDB,
                        m_LinkoutType);                     
 
@@ -510,6 +519,7 @@ void CPhyTreeFormatter::x_Init(void)
     m_SimplifyMode = eNone;
     m_LinkoutDB = NULL;
     m_LinkoutType = 0;
+    m_SimpleTree = false;    
 }
 
 
@@ -801,6 +811,7 @@ static string s_GetBlastNameColor(
     return color;
 }    
 
+    
 
 void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
                                     const vector< CRef<CSeq_id> >& seqids,
@@ -809,6 +820,7 @@ void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
                                     const vector<int>& mark_leaves,
                                     TBlastNameColorMap& bcolormap,
                                     map < string, int> &seqTypeMap,
+                                    bool simpleTree,                                    
                                     ILinkoutDB* linkoutDB,
                                     int linkoutType)
 {
@@ -933,9 +945,15 @@ void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
     x_AddFeatureDesc(eCommonNameID,
                      GetFeatureTag(eCommonNameID), btc);
     
-    
+    x_AddFeatureDesc(eNodeSizeID,
+                         GetFeatureTag(eNodeSizeID), btc);    
+    x_AddFeatureDesc(eEdgeColorID,
+                         GetFeatureTag(eEdgeColorID), btc);    
     int num_leaves = 0;
     NON_CONST_ITERATE (CNodeSet::Tdata, node, btc.SetNodes().Set()) {
+        if(simpleTree) {
+            x_AddFeature(eEdgeColorID,s_kBranchColor,node);
+        }
         if ((*node)->CanGetFeatures()) {
             NON_CONST_ITERATE (CNodeFeatureSet::Tdata, node_feature,
                                (*node)->SetFeatures().Set()) {
@@ -1060,16 +1078,23 @@ void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
                         //color for ReferenceDB KmerBlast
                         if(!bgColor.empty()) {
                             x_AddFeature(eNodeColorId,bgColor, node);
-                            x_AddFeature(eNodeInfoId,nodeInfo,node);
+                            x_AddFeature(eNodeInfoId,nodeInfo,node);                            
                         }                     
                     }
                     
                     // done with this node
                     break;
                 }
+                else if(simpleTree) {
+                    x_AddFeature(eNodeSizeID, s_kNodeSize, node);                    
+                    break;
+                }
             }
             x_AddFeature(eTreeSimplificationTagId, s_kSubtreeDisplayed, node);
         }
+        else if(simpleTree) {            
+            x_AddFeature(eNodeSizeID, s_kNodeSize, node);
+        }        
     }
 
     if ((int)num_rows != num_leaves) {
