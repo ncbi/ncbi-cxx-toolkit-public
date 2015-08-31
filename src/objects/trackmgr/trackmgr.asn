@@ -389,7 +389,8 @@ TMgr-CreateTracksetRequest ::= SEQUENCE {
 
 TMgr-CreateTracksetReply ::= SEQUENCE {
     messages SEQUENCE OF TMgr-Message OPTIONAL,
-    status TMgr-Status
+    status TMgr-Status,
+    trackset-id VisibleString OPTIONAL
 }
 
 END
