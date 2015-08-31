@@ -38,7 +38,7 @@ netstat = "/bin/netstat"
 netcat = "/usr/bin/netcat"
 
 
-latestNetscheduleVersion = "4.23.0"
+latestNetscheduleVersion = "4.23.1"
 
 READ2_tests = [
     50, 108, 109, 110, 115, 116, 144, 148, 150, 151, 153, 154, 155, 156,
@@ -189,6 +189,7 @@ excludeTestsMap = \
     "4.22.0":   [ 801,
                   1700, 1701, 1702, 1703 ],
     "4.23.0":   [ 801 ],
+    "4.23.1":   [ 801 ],
 }
 
 
