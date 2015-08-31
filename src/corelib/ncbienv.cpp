@@ -122,7 +122,8 @@ const string& CNcbiEnvironment::Get(const string& name, bool* found) const
             return i->second.value;
         }
     }
-    m_Cache[name] = SEnvValue(Load(name, *found), *found ? kEmptyXCStr : NULL);
+    string loaded_value = Load(name, *found);
+    m_Cache[name] = SEnvValue(loaded_value, *found ? kEmptyXCStr : NULL);
     const string& s = m_Cache[name].value;
     return s.empty() ? kEmptyStr : s;
 }
