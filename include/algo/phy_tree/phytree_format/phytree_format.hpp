@@ -90,7 +90,9 @@ public:
         eNodeInfoId,     ///< Used for denoting query nodes
         eLeafCountId,
         eCommonNameID,
-        eLastId = eCommonNameID ///< Last Id (with largest index)
+        eNodeSizeID,
+        eEdgeColorID,
+        eLastId = eEdgeColorID ///< Last Id (with largest index)
     };
 
     enum eSeqType {
@@ -141,8 +143,10 @@ public:
                       string mv_build_name = "");
 
     CPhyTreeFormatter(CPhyTreeCalc& guide_tree_calc,                      
-                      map < string, int > &seqTypeMap,
-                      ELabelType lbl_type = eSeqId);
+                      map < string, int > &seqTypeMap,                      
+                      ELabelType lbl_type = eSeqId,
+                      bool simpleTree = false); //no internal nodes
+                      
                       
 
     /// Constructor
@@ -256,7 +260,9 @@ public:
         case eTreeSimplificationTagId : return "$NODE_COLLAPSED";
         case eNodeInfoId : return "node-info";
         case eLeafCountId : return "leaf-count";
-        case eCommonNameID : return "common-name";        
+        case eCommonNameID : return "common-name";  
+        case eNodeSizeID    : return "$NODE_SIZE";
+        case eEdgeColorID    : return "$EDGE_COLOR";
         default: return "";
         }
     }
@@ -432,6 +438,7 @@ private:
                                  const vector<int>& mark_leaves,
                                  TBlastNameColorMap& bcolormap,
                                  map < string, int > &seqTypeMap,
+                                 bool   simpleTree = false,                                 
                                  ILinkoutDB* linkoutDB = NULL,
                                  int linkoutType = 0);
 
@@ -699,6 +706,7 @@ protected:
     string m_MapViewerBuildName;
     map < string, int > m_SeqTypeMap;
     vector <CConstRef<CSeq_id> > m_TreeSeqIDs;        
+    bool                m_SimpleTree;    
 
 public:
     /// Node feature "node-info" value for query nodes
