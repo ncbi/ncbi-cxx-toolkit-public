@@ -73,6 +73,10 @@ NCBITEST_INIT_TREE()
 //NCBITEST_DISABLE(SERV_CloseIter__AfterGetNextInfo__ShouldWork);
 //NCBITEST_DISABLE(SERV_CloseIter__FullCycle__ShouldWork);
 ///////////////////////////////////////////////////////////////////////////////
+//                                DTab                                       //
+///////////////////////////////////////////////////////////////////////////////
+//NCBITEST_DISABLE(DTab::DTabRegistryAndHttp__RegistryGoesFirst);
+///////////////////////////////////////////////////////////////////////////////
 //                        Resolve via lbos                                   //
 ///////////////////////////////////////////////////////////////////////////////
 //NCBITEST_DISABLE(s_LBOS_ResolveIPPort__ServiceExists__ReturnHostIP);
@@ -85,7 +89,7 @@ NCBITEST_INIT_TREE()
 ///////////////////////////////////////////////////////////////////////////////
 //NCBITEST_DISABLE(g_LBOS_GetLBOSAddresses__SpecificMethod__FirstInResult);
 //NCBITEST_DISABLE(
-//             g_LBOS_GetLBOSAddresses__CustomHostNotProvided__SkipCustomHost);
+            g_LBOS_GetLBOSAddresses__CustomHostNotProvided__SkipCustomHost);
 //NCBITEST_DISABLE(g_LBOS_GetLBOSAddresses__NoConditions__AddressDefOrder);
 ///////////////////////////////////////////////////////////////////////////////
 //                           Get candidates                                  //
@@ -126,9 +130,9 @@ NCBITEST_INIT_TREE()
 //NCBITEST_DISABLE(Initialization__OpenNotInitialized__ShouldInitialize);
 //NCBITEST_DISABLE(Initialization__OpenWhenTurnedOff__ReturnNull);
 //NCBITEST_DISABLE(
-//             Initialization__s_LBOS_Initialize__s_LBOS_InstancesListNotNULL);
+            Initialization__s_LBOS_Initialize__s_LBOS_InstancesListNotNULL);
 //NCBITEST_DISABLE(
-//         Initialization__s_LBOS_FillCandidates__s_LBOS_InstancesListNotNULL);
+        Initialization__s_LBOS_FillCandidates__s_LBOS_InstancesListNotNULL);
 //NCBITEST_DISABLE(Initialization__PrimaryLBOSInactive__SwapAddresses);
 ///////////////////////////////////////////////////////////////////////////////
 //                           Announcement                                    //
@@ -141,7 +145,7 @@ NCBITEST_INIT_TREE()
 //NCBITEST_DISABLE(Announcement__LBOSError__ReturnServerError);
 //NCBITEST_DISABLE(Announcement__LBOSError__LBOSAnswerProvided);
 //NCBITEST_DISABLE(
-//              Announcement__AlreadyAnnouncedInTheSameZone__ReplaceInStorage);
+             Announcement__AlreadyAnnouncedInTheSameZone__ReplaceInStorage);
 //NCBITEST_DISABLE(Announcement__AnotherRegion__NoAnnounce);
 //NCBITEST_DISABLE(Announcement__IncorrectURL__ReturnInvalidArgs);
 //NCBITEST_DISABLE(Announcement__IncorrectPort__ReturnInvalidArgs);
@@ -149,8 +153,31 @@ NCBITEST_INIT_TREE()
 //NCBITEST_DISABLE(Announcement__IncorrectServiceName__ReturnInvalidArgs);
 //NCBITEST_DISABLE(Announcement__RealLife__VisibleAfterAnnounce);
 //NCBITEST_DISABLE(
-//                Announcement__ResolveLocalIPError__Return_DNS_RESOLVE_ERROR);
+               Announcement__ResolveLocalIPError__Return_DNS_RESOLVE_ERROR);
 //NCBITEST_DISABLE(Announcement__IP0000__ReplaceWithLocalIP);
+//NCBITEST_DISABLE(Announcement__ResolveLocalIPError__Return_DNS_RESOLVE_ERROR);
+//NCBITEST_DISABLE(Announcement__LBOSOff__ReturnELBOS_Off);
+//NCBITEST_DISABLE(Announcement__LBOSAnnounceCorruptOutput__ReturnServerError);
+///////////////////////////////////////////////////////////////////////////////
+//                     Announcement from Registry                            //
+///////////////////////////////////////////////////////////////////////////////
+//NCBITEST_DISABLE(AnnouncementRegistry__ParamsGood__ReturnSuccess);
+//NCBITEST_DISABLE(
+               AnnouncementRegistry__CustomSectionNoVars__ReturnInvalidArgs);
+//NCBITEST_DISABLE(
+AnnouncementRegistry__CustomSectionEmptyOrNullAndSectionIsOk__ReturnSuccess);
+//NCBITEST_DISABLE(
+                AnnouncementRegistry__ServiceEmptyOrNull__ReturnInvalidArgs);
+//NCBITEST_DISABLE(
+                AnnouncementRegistry__VersionEmptyOrNull__ReturnInvalidArgs);
+//NCBITEST_DISABLE(AnnouncementRegistry__PortEmptyOrNull__ReturnInvalidArgs);
+//NCBITEST_DISABLE(AnnouncementRegistry__PortOutOfRange__ReturnInvalidArgs);
+//NCBITEST_DISABLE(
+//               AnnouncementRegistry__PortContainsLetters__ReturnInvalidArgs);
+//NCBITEST_DISABLE(
+//           AnnouncementRegistry__HealthchecktEmptyOrNull__ReturnInvalidArgs);
+//NCBITEST_DISABLE(
+//   AnnouncementRegistry__HealthcheckDoesNotStartWithHttp__ReturnInvalidArgs);
 ///////////////////////////////////////////////////////////////////////////////
 //                            Deannouncement                                 //
 ///////////////////////////////////////////////////////////////////////////////
@@ -162,7 +189,7 @@ NCBITEST_INIT_TREE()
 //NCBITEST_DISABLE(Deannouncement__AnotherDomain__DoNothing);
 /* This test does not work yet; Vladimir has to fix lbos so it announces 
  * servers with dead health checks.                                          */
-NCBITEST_DISABLE(Deannouncement__NoHostProvided__LocalAddress);
+//NCBITEST_DISABLE(Deannouncement__NoHostProvided__LocalAddress);
 ///////////////////////////////////////////////////////////////////////////////
 //                          Deannounce all                                   //
 ///////////////////////////////////////////////////////////////////////////////
@@ -184,19 +211,21 @@ NCBITEST_DISABLE(Deannouncement__NoHostProvided__LocalAddress);
 
 NCBITEST_AUTO_INIT()
 {
-    SConnNetInfo* net_info = NULL;
-    net_info = ConnNetInfo_Create(NULL);
+    CConnNetInfo net_info;
     boost::unit_test::framework::master_test_suite().p_name->assign(
                                                     "lbos mapper Unit Test");
     CNcbiRegistry& config = CNcbiApplication::Instance()->GetConfig();
     CONNECT_Init(dynamic_cast<ncbi::IRWRegistry*>(&config));
     size_t start = 0, end = 0;
     char *lbos_ouput_orig = g_LBOS_UnitTesting_GetLBOSFuncs()->
-            UrlReadAll(net_info, "http://lbos.dev.be-md.ncbi.nlm.nih.gov:8080"
-            "/lbos/text/service");
+            UrlReadAll(*net_info, "http://lbos.dev.be-md.ncbi.nlm.nih.gov:8080"
+            "/lbos/text/service", NULL);
     string lbos_output = string(lbos_ouput_orig);
     free(lbos_ouput_orig);
-
+    LBOS_Deannounce("/lbostest", /* for initialization */
+                    "1.0.0",
+                    "lbos.dev.be-md.ncbi.nlm.nih.gov",
+                    5000);        
     while (start != string::npos) {
         string to_find = "/lbostest\t";
         start = lbos_output.find(to_find, start);
@@ -215,10 +244,12 @@ NCBITEST_AUTO_INIT()
                         "lbos.dev.be-md.ncbi.nlm.nih.gov",
                         port);        
     }
-    ConnNetInfo_Destroy(net_info);
 }
 
-
+BOOST_AUTO_TEST_CASE(SERV_CloseIter__FullCycle__ShouldWork)
+{
+    Close_iterator::FullCycle__ShouldWork();
+}
 ///////////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_SUITE( Compose_LBOS_address )//////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -312,6 +343,18 @@ BOOST_AUTO_TEST_CASE(SERV_CloseIter__AfterGetNextInfo__ShouldWork)
 BOOST_AUTO_TEST_CASE(SERV_CloseIter__FullCycle__ShouldWork)
 {
     Close_iterator::FullCycle__ShouldWork();
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+
+///////////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_SUITE( Dtab )//////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+/* 1. Mix of registry DTab and HTTP Dtab: registry goes first */
+BOOST_AUTO_TEST_CASE(DTab__DTabRegistryAndHttp__RegistryGoesFirst) 
+{
+    DTab::DTabRegistryAndHttp__RegistryGoesFirst();
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -652,7 +695,9 @@ BOOST_AUTO_TEST_SUITE( AnnounceTest )//////////////////////////////////////////
  *     hostname
  * 19. Was passed "0.0.0.0" as IP and could not manage to resolve local host 
  *     IP: do not announce and return DNS_RESOLVE_ERROR
- * 20. lbos is OFF - return eLBOS_Off                                        */
+ * 20. lbos is OFF - return eLBOS_Off                                        
+ * 21. Announced successfully, but LBOS return corrupted answer - 
+ *     return SERVER_ERROR                                                   */
 
 /*  1. Successfully announced : return SUCCESS                               */
 BOOST_AUTO_TEST_CASE(Announcement__AllOK__ReturnSuccess)
@@ -754,8 +799,96 @@ BOOST_AUTO_TEST_CASE(Announcement__LBOSOff__ReturnELBOS_Off)
 {
     Announcement::LBOSOff__ReturnELBOS_Off();
 }
+/*21. Announced successfully, but LBOS return corrupted answer -
+      return SERVER_ERROR                                                    */
+BOOST_AUTO_TEST_CASE(
+                    Announcement__LBOSAnnounceCorruptOutput__ReturnServerError)
+{
+    Announcement::LBOSAnnounceCorruptOutput__ReturnServerError();
+}
 BOOST_AUTO_TEST_SUITE_END()
 
+
+///////////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_SUITE( AnnounceRegistryTest )//////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+/*  1.  All parameters good (Custom section has all parameters correct in 
+        config) - return eLBOS_Success
+    2.  Custom section has nothing in config - return eLBOS_InvalidArgs
+    3.  Section empty or NULL (should use default section and return 
+        eLBOS_Success)
+    4.  Service is empty or NULL - return eLBOS_InvalidArgs
+    5.  Version is empty or NULL - return eLBOS_InvalidArgs
+    6.  port is empty or NULL - return eLBOS_InvalidArgs
+    7.  port is out of range - return eLBOS_InvalidArgs
+    8.  port contains letters - return eLBOS_InvalidArgs
+    9.  healthcheck is empty or NULL - return eLBOS_InvalidArgs
+    10. healthcheck does not start with http:// or https:// - return 
+        eLBOS_InvalidArgs                                                    */
+
+/*  1.  All parameters good (Custom section has all parameters correct in 
+        config) - return eLBOS_Success                                       */
+BOOST_AUTO_TEST_CASE(AnnouncementRegistry__ParamsGood__ReturnSuccess) 
+{
+    return AnnouncementRegistry::ParamsGood__ReturnSuccess();
+}
+/*  2.  Custom section has nothing in config - return eLBOS_InvalidArgs      */
+BOOST_AUTO_TEST_CASE(
+                  AnnouncementRegistry__CustomSectionNoVars__ReturnInvalidArgs)
+{
+    return AnnouncementRegistry::CustomSectionNoVars__ReturnInvalidArgs();
+}
+/*  3.  Section empty or NULL (should use default section and return 
+        eLBOS_Success)                                                       */
+BOOST_AUTO_TEST_CASE(
+   AnnouncementRegistry__CustomSectionEmptyOrNullAndSectionIsOk__ReturnSuccess)
+{
+    return AnnouncementRegistry::
+                       CustomSectionEmptyOrNullAndSectionIsOk__ReturnSuccess();
+}
+/*  4.  Service is empty or NULL - return eLBOS_InvalidArgs                  */
+BOOST_AUTO_TEST_CASE(
+                   AnnouncementRegistry__ServiceEmptyOrNull__ReturnInvalidArgs)
+{
+    return AnnouncementRegistry::ServiceEmptyOrNull__ReturnInvalidArgs();
+}
+/*  5.  Version is empty or NULL - return eLBOS_InvalidArgs                  */
+BOOST_AUTO_TEST_CASE(
+                   AnnouncementRegistry__VersionEmptyOrNull__ReturnInvalidArgs)
+{
+    return AnnouncementRegistry::VersionEmptyOrNull__ReturnInvalidArgs();
+}
+/*  6.  port is empty or NULL - return eLBOS_InvalidArgs                     */
+BOOST_AUTO_TEST_CASE(AnnouncementRegistry__PortEmptyOrNull__ReturnInvalidArgs)
+{
+    return AnnouncementRegistry::PortEmptyOrNull__ReturnInvalidArgs();
+}
+/*  7.  port is out of range - return eLBOS_InvalidArgs                      */
+BOOST_AUTO_TEST_CASE(AnnouncementRegistry__PortOutOfRange__ReturnInvalidArgs)
+{
+    return AnnouncementRegistry::PortOutOfRange__ReturnInvalidArgs();
+}
+/*  8.  port contains letters - return eLBOS_InvalidArgs                     */
+BOOST_AUTO_TEST_CASE(
+                  AnnouncementRegistry__PortContainsLetters__ReturnInvalidArgs)
+{
+    return AnnouncementRegistry::PortContainsLetters__ReturnInvalidArgs();
+}
+/*  9.  healthcheck is empty or NULL - return eLBOS_InvalidArgs              */
+BOOST_AUTO_TEST_CASE(
+              AnnouncementRegistry__HealthchecktEmptyOrNull__ReturnInvalidArgs)
+{
+    return AnnouncementRegistry::HealthchecktEmptyOrNull__ReturnInvalidArgs();
+}
+/*  10. healthcheck does not start with http:// or https:// - return         
+        eLBOS_InvalidArgs                                                    */  
+BOOST_AUTO_TEST_CASE(
+      AnnouncementRegistry__HealthcheckDoesNotStartWithHttp__ReturnInvalidArgs)
+{
+    return AnnouncementRegistry::
+                          HealthcheckDoesNotStartWithHttp__ReturnInvalidArgs();
+}      
+BOOST_AUTO_TEST_SUITE_END()
 
 ///////////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_SUITE( Deannounce )////////////////////////////////////////////

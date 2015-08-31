@@ -139,7 +139,8 @@ EIO_Status s_FakeReadAnnouncementWithErrorFromLBOS(CONN             conn,
                                                     size_t*          n_read,
                                                     EIO_ReadMethod   how);
 
-static char* s_LBOS_hostport = NULL;
+static string s_LBOS_hostport;
+static string s_LBOS_header;
 
 static
 ELBOS_Result s_FakeAnnounceEx(const char*      service,
@@ -427,11 +428,11 @@ private:
 
 
 static
-EIO_Status s_FakeReadAnnouncementWithErrorFromLBOS(CONN conn,
-                                                   void* line,
-                                                   size_t size,
-                                                   size_t* n_read,
-                                                   EIO_ReadMethod how)
+EIO_Status s_FakeReadAnnouncementWithErrorFromLBOS(CONN             conn,
+                                                   void*            line,
+                                                   size_t           size,
+                                                   size_t*          n_read,
+                                                   EIO_ReadMethod   how)
 {
     *static_cast<int*>(
         static_cast<SHttpConnector*>(conn->meta.c_read->handle)
@@ -439,7 +440,40 @@ EIO_Status s_FakeReadAnnouncementWithErrorFromLBOS(CONN conn,
     const char* error = "Those lbos errors are scaaary";
     strncpy(static_cast<char*>(line), error, size - 1);
     *n_read = strlen(error);
-    return eIO_Success;
+    return eIO_Closed;
+}
+
+
+static
+EIO_Status s_FakeReadAnnouncementSuccessWithCorruptOutputFromLBOS
+(CONN           conn,
+ void*          line,
+ size_t         size,
+ size_t*        n_read,
+ EIO_ReadMethod how)
+{
+    *static_cast<int*>(
+        static_cast<SHttpConnector*>(conn->meta.c_read->handle)
+        ->user_data) = 200;
+    const char* error = "Corrupt output";
+    strncpy(static_cast<char*>(line), error, size - 1);
+    *n_read = strlen(error);
+    return eIO_Closed;
+}
+
+
+static
+EIO_Status s_FakeReadWithErrorFromLBOSCheckDTab(CONN conn,
+                                                void* line,
+                                                size_t size,
+                                                size_t* n_read,
+                                                EIO_ReadMethod how)
+{
+    *static_cast<int*>(static_cast<SHttpConnector*>(conn->meta.c_read->handle)
+        ->user_data) = 400;
+    s_LBOS_header = string(static_cast<SHttpConnector*>
+        (conn->meta.c_read->handle)->net_info->http_user_header);
+    return eIO_Closed;
 }
 
 
@@ -451,6 +485,9 @@ EIO_Status s_FakeReadAnnouncement(CONN conn,
                                   size_t* n_read,
                                   EIO_ReadMethod how)
 {
+    *static_cast<int*>(
+        static_cast<SHttpConnector*>(conn->meta.c_read->handle)
+                                                            ->user_data) = 200;
     int localscope_lines = lines; /* static analysis and compiler react 
                                 strangely to template parameter in equations */
     if (s_call_counter++ < localscope_lines) {
@@ -569,10 +606,10 @@ static unsigned short s_GeneratePort(int thread_num = -1)
 template <unsigned int lines> 
 static
 EIO_Status s_FakeReadDiscoveryCorrupt(CONN conn,
-                           void* line,
-                           size_t size,
-                           size_t* n_read,
-                           EIO_ReadMethod how)
+                                      void* line,
+                                      size_t size,
+                                      size_t* n_read,
+                                      EIO_ReadMethod how)
 {
     static unsigned int bytesSent = 0;
     /* Generate string */
@@ -591,6 +628,9 @@ EIO_Status s_FakeReadDiscoveryCorrupt(CONN conn,
     }
     unsigned int len = buf.length();
     if (bytesSent < len) {
+        *static_cast<int*>(
+            static_cast<SHttpConnector*>(conn->meta.c_read->handle)
+                                                            ->user_data) = 200;
         int length_before = strlen(static_cast<char*>(line));
         strncat(static_cast<char*>(line), buf.c_str() + bytesSent, size - 1);
         int length_after = strlen(static_cast<char*>(line));
@@ -631,6 +671,9 @@ EIO_Status s_FakeReadDiscovery(CONN            conn,
     }
     unsigned int len = buf.length();
     if (bytesSent < len) {
+        *static_cast<int*>(
+            static_cast<SHttpConnector*>(conn->meta.c_read->handle)
+                                                            ->user_data) = 200;
         int length_before = strlen(static_cast<char*>(line));
         strncat(static_cast<char*>(line), buf.c_str() + bytesSent, size-1);
         int length_after = strlen(static_cast<char*>(line));
@@ -755,9 +798,9 @@ SSERV_Info** s_FakeResolveIPPortSwapAddresses(const char*   lbos_address,
 
 template <bool success, int a1, int a2, int a3, int a4>
 static const char*         s_FakeGetHostByAddrEx(unsigned int host,
-                                           char*        buf,
-                                           size_t       bufsize,
-                                           ESwitch      log)
+                                                 char*        buf,
+                                                 size_t       bufsize,
+                                                 ESwitch      log)
 {
     stringstream ss;
     ss << a1 << "." << a2 << "." << a3 << "." << a4;

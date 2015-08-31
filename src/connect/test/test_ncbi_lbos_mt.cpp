@@ -242,8 +242,37 @@ bool CTestLBOSApp::Thread_Run(int idx)
 
 bool CTestLBOSApp::TestApp_Init(void)
 {
+    CConnNetInfo net_info;
     CNcbiRegistry& config = CNcbiApplication::Instance()->GetConfig();
     CONNECT_Init(dynamic_cast<ncbi::IRWRegistry*>(&config));
+    char *lbos_ouput_orig = g_LBOS_UnitTesting_GetLBOSFuncs()->
+        UrlReadAll(*net_info, "http://lbos.dev.be-md.ncbi.nlm.nih.gov:8080"
+        "/lbos/text/service", NULL);
+    string lbos_output = string(lbos_ouput_orig);
+    free(lbos_ouput_orig);
+    size_t start = 0, end = 0;
+    LBOS_Deannounce("/lbostest", /* for initialization */
+                    "1.0.0",
+                    "lbos.dev.be-md.ncbi.nlm.nih.gov",
+                    5000);
+    while (start != string::npos) {
+        string to_find = "/lbostest\t";
+        start = lbos_output.find(to_find, start);
+        if (start == string::npos)
+            break;
+        start = lbos_output.find("\t", start); //skip service name
+        start = lbos_output.find("\t", start); //skip service name
+        start = lbos_output.find(":", start); //skip ip
+        start += 1; //skip ":"
+        end = lbos_output.find("\t", start);
+        unsigned short port =
+            NStr::StringToInt(lbos_output.substr(start, end - start));
+
+        LBOS_Deannounce("/lbostest",
+            "1.0.0",
+            "lbos.dev.be-md.ncbi.nlm.nih.gov",
+            port);
+    }
     return true;
 }
 
