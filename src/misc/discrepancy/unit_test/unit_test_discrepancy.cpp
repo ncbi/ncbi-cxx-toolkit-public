@@ -354,7 +354,7 @@ BOOST_AUTO_TEST_CASE(CONTAINED_CDS)
 }
 
 
-BOOST_AUTO_TEST_CASE(DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA)
+BOOST_AUTO_TEST_CASE(INTERNAL_TRANSCRIBED_SPACER_RRNA)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
     CRef<CSeq_id> id = entry->SetSeq().SetId().front();
@@ -431,7 +431,7 @@ BOOST_AUTO_TEST_CASE(DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA)
     CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
 
     CRef<CDiscrepancySet> Set = CDiscrepancySet::New(scope);
-    Set->AddTest("DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA");
+    Set->AddTest("INTERNAL_TRANSCRIBED_SPACER_RRNA");
     Set->Parse(seh);
     Set->Summarize();
     const vector<CRef<CDiscrepancyCase> >& tst = Set->GetTests();
