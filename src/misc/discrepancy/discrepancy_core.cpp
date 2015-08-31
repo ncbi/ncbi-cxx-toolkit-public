@@ -137,7 +137,7 @@ void CReportNode::Add(TReportObjectList& list, TReportObjectList& objs, bool uni
 }
 
 
-CRef<CReportItem> CReportNode::Export(const string& test, bool unique)
+CRef<CReportItem> CReportNode::Export(CDiscrepancyCase& test, bool unique)
 {
     TReportObjectList objs = m_Objs;
     TReportItemList subs;

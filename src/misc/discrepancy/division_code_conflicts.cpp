@@ -61,7 +61,7 @@ DISCREPANCY_SUMMARIZE(DIVISION_CODE_CONFLICTS)
 {
     if (m_Objs["Division code conflicts found"].GetMap().size() > 1)
     {
-        m_ReportItems = m_Objs.Export(GetName())->GetSubitems();
+        m_ReportItems = m_Objs.Export(*this)->GetSubitems();
     }
     m_Objs.clear();
 }
@@ -85,7 +85,7 @@ DISCREPANCY_SUMMARIZE(DIVISION_CODE_CONFLICTS_1)
 {
     if (m_Objs[kDivCodeConflict].GetMap().size() > 1)
     {
-        m_ReportItems = m_Objs.Export(GetName())->GetSubitems();
+        m_ReportItems = m_Objs.Export(*this)->GetSubitems();
     }
 }
 

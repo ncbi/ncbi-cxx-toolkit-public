@@ -121,7 +121,6 @@ public:
         }
     }
     bool CanAutofix() const { return m_Autofix; }
-    //void Autofix() { m_Case->Autofix(); }
 protected:
     bool m_Autofix;
     CRef<CDiscrepancyCase> m_Case;
@@ -133,15 +132,14 @@ class CReportNode;
 class CDiscrepancyItem : public CReportItem
 {
 public:
-    CDiscrepancyItem(const string& t, const string& s) : m_Title(t), m_Msg(s), m_Autofix(false) {}
-    string GetTitle(void) const { return m_Title;}
+    CDiscrepancyItem(CDiscrepancyCase& t, const string& s) : m_Test(&t), m_Msg(s), m_Autofix(false) {}
+    string GetTitle(void) const { return m_Test->GetName();}
     string GetMsg(void) const { return m_Msg;}
     TReportObjectList GetDetails(void) const { return m_Objs;}
     TReportItemList GetSubitems(void) const { return m_Subs;}
     bool CanAutofix() const { return m_Autofix; }
     void Autofix() const;
 protected:
-    string m_Title;
     string m_Msg;
     bool m_Autofix;
     TReportObjectList m_Objs;
@@ -170,7 +168,7 @@ public:
     void Add(TReportObjectList& objs, bool unique = true) { Add(m_Objs, objs, unique); }
     TReportObjectList& GetObjects() { return m_Objs; }
     TNodeMap& GetMap() { return m_Map; }
-    CRef<CReportItem> Export(const string& test, bool unique = true);
+    CRef<CReportItem> Export(CDiscrepancyCase& test, bool unique = true);
     bool empty() { return m_Map.empty() && m_Objs.empty(); }
     void clear() { m_Map.clear(); m_Objs.clear(); }
 protected:

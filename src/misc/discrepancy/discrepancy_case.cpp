@@ -60,7 +60,7 @@ DISCREPANCY_CASE(COUNT_NUCLEOTIDES, CSeq_inst, eAll, "Count nucleotide sequences
 DISCREPANCY_SUMMARIZE(COUNT_NUCLEOTIDES)
 {
     m_Objs["[n] nucleotide Bioseq[s] [is] present"]; // If no sequences found still report 0
-    m_ReportItems = m_Objs.Export(GetName())->GetSubitems();
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 // COUNT_PROTEINS
@@ -77,7 +77,7 @@ DISCREPANCY_CASE(COUNT_PROTEINS, CSeq_inst, eAll, "Count Proteins")
 DISCREPANCY_SUMMARIZE(COUNT_PROTEINS)
 {
     m_Objs["[n] protein sequence[s] [is] present"]; // If no sequences found still report 0
-    m_ReportItems = m_Objs.Export(GetName())->GetSubitems();
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -211,7 +211,7 @@ DISCREPANCY_SUMMARIZE(COUNT_TRNAS)
         m_Objs[kEmptyStr][CNcbiOstrstreamToString(ss)].Add(*bioseq);
     }
 
-    m_ReportItems = m_Objs[kEmptyStr].Export(GetName(), false)->GetSubitems();
+    m_ReportItems = m_Objs[kEmptyStr].Export(*this, false)->GetSubitems();
     m_Objs.clear();
 }
 
@@ -278,7 +278,7 @@ DISCREPANCY_SUMMARIZE(COUNT_RRNAS)
         m_Objs[kEmptyStr][CNcbiOstrstreamToString(ss)].Add(m_Objs[it->first].GetObjects(), false);
     }
 
-    m_ReportItems = m_Objs[kEmptyStr].Export(GetName(), false)->GetSubitems();
+    m_ReportItems = m_Objs[kEmptyStr].Export(*this, false)->GetSubitems();
     m_Objs.clear();
 }
 
@@ -312,7 +312,7 @@ DISCREPANCY_SUMMARIZE(INTERNAL_TRANSCRIBED_SPACER_RRNA)
         return;
     }
     m_Objs["[n] rRNA feature products contain 'internal', 'transcribed' or 'spacer'"];
-    m_ReportItems = m_Objs.Export(GetName())->GetSubitems();
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -495,7 +495,7 @@ DISCREPANCY_CASE(OVERLAPPING_CDS, CSeqFeatData, eNormal, "Overlapping CDs")
 
 DISCREPANCY_SUMMARIZE(OVERLAPPING_CDS)
 {
-    m_ReportItems = m_Objs[kEmptyStr].Export(GetName())->GetSubitems();
+    m_ReportItems = m_Objs[kEmptyStr].Export(*this)->GetSubitems();
 }
 
 
@@ -721,7 +721,7 @@ DISCREPANCY_CASE(CONTAINED_CDS, CSeqFeatData, eNormal, "Contained CDs")
 
 DISCREPANCY_SUMMARIZE(CONTAINED_CDS)
 {
-    m_ReportItems = m_Objs[kEmptyStr].Export(GetName())->GetSubitems();
+    m_ReportItems = m_Objs[kEmptyStr].Export(*this)->GetSubitems();
 }
 
 /*
@@ -852,7 +852,7 @@ DISCREPANCY_CASE(DUMMY_NORMAL, CSeq_inst, eNormal, "Dummy entry for the debug pu
 DISCREPANCY_SUMMARIZE(DUMMY_NORMAL)
 {
     m_Objs[GetName()][GetName()][GetName()];
-    m_ReportItems = m_Objs.Export(GetName())->GetSubitems();
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -864,7 +864,7 @@ DISCREPANCY_CASE(DUMMY_ONCALLER, CSeq_inst, eOncaller, "Dummy entry for the debu
 DISCREPANCY_SUMMARIZE(DUMMY_ONCALLER)
 {
     m_Objs[GetName()][GetName()][GetName()];
-    m_ReportItems = m_Objs.Export(GetName())->GetSubitems();
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -876,7 +876,7 @@ DISCREPANCY_CASE(DUMMY_MEGA, CSeq_inst, eMega, "Dummy entry for the debug purpos
 DISCREPANCY_SUMMARIZE(DUMMY_MEGA)
 {
     m_Objs[GetName()][GetName()][GetName()];
-    m_ReportItems = m_Objs.Export(GetName())->GetSubitems();
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -888,7 +888,7 @@ DISCREPANCY_CASE(DUMMY_ALL, CSeq_inst, eAll, "Dummy entry for the debug purpose"
 DISCREPANCY_SUMMARIZE(DUMMY_ALL)
 {
     m_Objs[GetName()][GetName()][GetName()];
-    m_ReportItems = m_Objs.Export(GetName())->GetSubitems();
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 

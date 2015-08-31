@@ -5366,7 +5366,7 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eNormal, "Suspect Product 
 
 DISCREPANCY_SUMMARIZE(SUSPECT_PRODUCT_NAMES)
 {
-    m_ReportItems = m_Objs.Export(GetName())->GetSubitems();
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
@@ -5411,7 +5411,7 @@ DISCREPANCY_CASE(TEST_ORGANELLE_PRODUCTS, CSeqFeatData, eNormal, "Organelle prod
 
 DISCREPANCY_SUMMARIZE(TEST_ORGANELLE_PRODUCTS)
 {
-    m_ReportItems = m_Objs.Export(GetName())->GetSubitems();
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 
