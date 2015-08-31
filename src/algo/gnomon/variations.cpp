@@ -7,6 +7,7 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <sstream>
+#include <numeric>      // std::accumulate
 
 
 BEGIN_NCBI_SCOPE
@@ -71,8 +72,8 @@ CLiteAlign::CLiteAlign(const SSamData& ad, const string& contig, set<CLiteIndel>
     size_t first_element = cigar.find_first_not_of("0123456789");
     if(first_element != string::npos && cigar[first_element] == 'I')
         cigar[first_element] = 'S';
-    if(cigar.back() == 'I')
-        cigar.back() = 'S';
+    if(cigar[cigar.size()-1] == 'I')
+        cigar[cigar.size()-1] = 'S';
  
     TLiteInDels sam_indels;
     int matches = 0; 
@@ -634,8 +635,8 @@ pair<string,bool> CMultAlign::SelectVariant(TSIMap& seq_counts, const TSignedSeq
 
         TSIMap::const_iterator selected_variant = most_frequent_variant;
         int sdist = EditDistance(base, selected_variant->first);
-        for(TSIMap::const_iterator iloop = seq_counts.begin(); iloop != seq_counts.end(); ) {
-            TSIMap::const_iterator i = iloop++;
+        for(TSIMap::iterator iloop = seq_counts.begin(); iloop != seq_counts.end(); ) {
+            TSIMap::iterator i = iloop++;
 
             if(i->second < max(m_min_abs_support_for_variant,(int)(m_min_rel_support_for_variant*most_frequent_variant->second+0.5))) {
                 seq_counts.erase(i);
