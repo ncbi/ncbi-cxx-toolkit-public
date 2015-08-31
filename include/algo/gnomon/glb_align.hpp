@@ -59,6 +59,7 @@ public:
     TCharAlign ToAlign(const  char* query, const  char* subject) const;
     int Matches(const  char* query, const  char* subject) const;
     int Distance(const  char* query, const  char* subject) const;
+    int Score(const  char* query, const  char* subject, int gopen, int gapextend, const char delta[256][256]) const;
 
 private:
     list<SElement> m_elements;

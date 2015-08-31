@@ -234,6 +234,31 @@ int CCigar::Distance(const  char* query, const  char* subject) const {
     return dist;
 }
 
+int CCigar::Score(const  char* query, const  char* subject, int gopen, int gapextend, const char delta[256][256]) const {
+    int score = 0;
+
+    query += m_qfrom;
+    subject += m_sfrom;
+    ITERATE(list<SElement>, i, m_elements) {
+        if(i->m_type == 'M') {
+            for(int l = 0; l < i->m_len; ++l) {
+                score += delta[(int)*query][(int)*subject];
+                ++query;
+                ++subject;
+            }
+        } else if(i->m_type == 'D') {
+            subject += i->m_len;
+            score -= gopen+gapextend*i->m_len;
+        } else {
+            query += i->m_len;
+            score -= gopen+gapextend*i->m_len;
+        }
+    }
+
+    return score;
+}
+
+
 CCigar GlbAlign(const  char* a, int na, const  char*  b, int nb, int rho, int sigma, const char delta[256][256]) {
     //	rho - new gap penalty (one base gap rho+sigma)
     // sigma - extension penalty
