@@ -1,8 +1,8 @@
-#! /bin/bash
+#! /bin/sh
 #$Id$
 
 status_dir="$CFG_LIB/../status"
-if ! test -d "$status_dir"; then
+if test ! -d "$status_dir"; then
     status_dir="../../../../../status"
 fi
 
@@ -15,7 +15,7 @@ else
     echo Sybase is disabled or unaware of PubSeqOS: skipping PUBSEQOS loader test
     methods="ID1 ID2"
 fi
-if ! test -f "$status_dir/DLL_BUILD.enabled"; then
+if test ! -f "$status_dir/DLL_BUILD.enabled"; then
     # enable dll plugins for ftds and bdb
     NCBI_LOAD_PLUGINS_FROM_DLLS=1
     export NCBI_LOAD_PLUGINS_FROM_DLLS
@@ -56,7 +56,9 @@ init_cache() {
     if test -n "$nc"; then
         echo "Init netcache $nc/$ncs"
         for c in $ncs; do
-            if ! grid_cli --admin purge --nc "$nc" --auth netcache_admin $c; then
+            if grid_cli --admin purge --nc "$nc" --auth netcache_admin $c; then
+                :
+            else
                 nc=""
                 break
             fi
@@ -66,10 +68,10 @@ init_cache() {
         fi
         unset NCBI_CONFIG_OVERRIDES
     fi
-    if ! test -f "$status_dir/BerkeleyDB.enabled"; then
+    if test ! -f "$status_dir/BerkeleyDB.enabled"; then
         return 1
     fi
-    if ! test -f "$status_dir/MT.enabled"; then
+    if test ! -f "$status_dir/MT.enabled"; then
         return 1
     fi
     echo "Init BDB cache"
@@ -84,7 +86,9 @@ for method in $methods; do
         if test "$cache" = 1; then
             m="$method"
         elif test "$cache" = 2; then
-            if ! init_cache; then
+            if init_cache; then
+                :
+            else
                 echo "Skipping cache test"
                 break
             fi
