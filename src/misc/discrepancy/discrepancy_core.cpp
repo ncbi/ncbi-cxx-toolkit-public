@@ -208,6 +208,7 @@ bool CDiscrepancyContext::AddTest(const string& name)
     REGISTER_DISCREPANCY_TYPE(CSeq_inst)
     REGISTER_DISCREPANCY_TYPE(CSeqFeatData)
     REGISTER_DISCREPANCY_TYPE(CBioSource)
+    REGISTER_DISCREPANCY_TYPE(CRNA_ref)
     return false;
 }
 
@@ -222,6 +223,8 @@ void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
     ENABLE_DISCREPANCY_TYPE(CSeq_inst)
     ENABLE_DISCREPANCY_TYPE(CSeqFeatData)
     ENABLE_DISCREPANCY_TYPE(CBioSource)
+    ENABLE_DISCREPANCY_TYPE(CRNA_ref)
+    
     for (i = Begin(*handle.GetCompleteSeq_entry()); i; ++i) {
         if (CType<CBioseq>::Match(i)) {
             m_Current_Bioseq.Reset(m_Scope->GetBioseqHandle(*CType<CBioseq>::Get(i)).GetCompleteBioseq());
@@ -246,6 +249,7 @@ void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
         HANDLE_DISCREPANCY_TYPE(CSeq_inst)  // no semicolon!
         HANDLE_DISCREPANCY_TYPE(CSeqFeatData)
         HANDLE_DISCREPANCY_TYPE(CBioSource)
+        HANDLE_DISCREPANCY_TYPE(CRNA_ref)
     }
 }
 

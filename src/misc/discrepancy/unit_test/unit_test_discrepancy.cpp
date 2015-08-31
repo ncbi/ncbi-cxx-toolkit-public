@@ -41,7 +41,6 @@
 //#include <objects/general/Dbtag.hpp>
 //#include <objects/seq/Seq_gap.hpp>
 //#include <objects/seqfeat/Imp_feat.hpp>
-//#include <objects/seqfeat/RNA_ref.hpp>
 //#include <objects/seqfeat/RNA_gen.hpp>
 //#include <objects/seqfeat/Cdregion.hpp>
 //#include <objects/seqres/Int_graph.hpp>
@@ -50,6 +49,7 @@
 //#include <objects/biblio/Cit_art.hpp>
 //#include <objects/biblio/Auth_list.hpp>
 //#include <objects/biblio/Affil.hpp>
+#include <objects/seqfeat/RNA_ref.hpp>
 #include <objtools/unit_test_util/unit_test_util.hpp>
 #include <misc/discrepancy/discrepancy.hpp>
 #include <objmgr/object_manager.hpp>
@@ -352,3 +352,94 @@ BOOST_AUTO_TEST_CASE(CONTAINED_CDS)
     dscr->Parse(seh, context);
 */
 }
+
+
+BOOST_AUTO_TEST_CASE(DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<CSeq_id> id = entry->SetSeq().SetId().front();
+
+    //
+    string remainder;
+    CRef<CSeq_feat> feat_1(new CSeq_feat);
+    CRef<CRNA_ref> mrna(new CRNA_ref);
+    mrna->SetType(CRNA_ref::eType_mRNA);
+    mrna->SetRnaProductName("testing the internal rna name", remainder);
+    feat_1->SetData().SetRna(*mrna);
+    feat_1->SetLocation().SetInt().SetFrom(0);
+    feat_1->SetLocation().SetInt().SetTo(10);
+    feat_1->SetLocation().SetInt().SetId().Assign(*id);
+    unit_test_util::AddFeat(feat_1, entry);
+
+    // add rRNA
+    CRef<CSeq_feat> feat_2(new CSeq_feat);
+    CRef<CRNA_ref> rna_1(new CRNA_ref);
+    rna_1->SetType(CRNA_ref::eType_rRNA);
+    rna_1->SetRnaProductName("internal rna region", remainder);
+    feat_2->SetData().SetRna(*rna_1);
+    feat_2->SetLocation().SetInt().SetFrom(2);
+    feat_2->SetLocation().SetInt().SetTo(20);
+    feat_2->SetLocation().SetInt().SetId().Assign(*id);
+    unit_test_util::AddFeat(feat_2, entry);
+
+    // add misc_RNA
+    CRef<CSeq_feat> feat_3(new CSeq_feat);
+    CRef<CRNA_ref> misc_rna(new CRNA_ref);
+    misc_rna->SetType(CRNA_ref::eType_miscRNA);
+    misc_rna->SetRnaProductName("contains spacer", remainder);
+    feat_3->SetData().SetRna(*misc_rna);
+    feat_3->SetLocation().SetInt().SetFrom(3);
+    feat_3->SetLocation().SetInt().SetTo(30);
+    feat_3->SetLocation().SetInt().SetId().Assign(*id);
+    unit_test_util::AddFeat(feat_3, entry);
+    
+    // add rRNA
+    CRef<CSeq_feat> feat_4(new CSeq_feat);
+    CRef<CRNA_ref> rna_2(new CRNA_ref);
+    rna_2->SetType(CRNA_ref::eType_rRNA);
+    rna_2->SetRnaProductName("12S ribosomal rna", remainder);
+    feat_4->SetData().SetRna(*rna_2);
+    feat_4->SetLocation().SetInt().SetFrom(4);
+    feat_4->SetLocation().SetInt().SetTo(40);
+    feat_4->SetLocation().SetInt().SetId().Assign(*id);
+    unit_test_util::AddFeat(feat_4, entry);
+
+    
+    // add rRNA
+    CRef<CSeq_feat> feat_5(new CSeq_feat);
+    CRef<CRNA_ref> rna_3(new CRNA_ref);
+    rna_3->SetType(CRNA_ref::eType_rRNA);
+    rna_3->SetRnaProductName("transcribed region", remainder);
+    feat_5->SetData().SetRna(*rna_3);
+    feat_5->SetLocation().SetInt().SetFrom(5);
+    feat_5->SetLocation().SetInt().SetTo(50);
+    feat_5->SetLocation().SetInt().SetId().Assign(*id);
+    unit_test_util::AddFeat(feat_5, entry);
+    
+    // add rRNA
+    CRef<CSeq_feat> feat_6(new CSeq_feat);
+    CRef<CRNA_ref> rna_4(new CRNA_ref);
+    rna_4->SetType(CRNA_ref::eType_rRNA);
+    rna_4->SetRnaProductName("contains spacer", remainder);
+    feat_6->SetData().SetRna(*rna_4);
+    feat_6->SetLocation().SetInt().SetFrom(6);
+    feat_6->SetLocation().SetInt().SetTo(55);
+    feat_6->SetLocation().SetInt().SetId().Assign(*id);
+    unit_test_util::AddFeat(feat_6, entry);
+    CScope scope(*CObjectManager::GetInstance());
+    scope.AddDefaults();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+
+    CRef<CDiscrepancySet> Set = CDiscrepancySet::New(scope);
+    Set->AddTest("DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA");
+    Set->Parse(seh);
+    Set->Summarize();
+    const vector<CRef<CDiscrepancyCase> >& tst = Set->GetTests();
+    BOOST_REQUIRE_EQUAL(tst.size(), 1);
+    TReportItemList rep = tst[0]->GetReport();
+    BOOST_CHECK(rep.size() == 1);
+    BOOST_CHECK(NStr::StartsWith(rep[0]->GetMsg(), "3 rRNA feature products contain"));
+   
+}
+
+

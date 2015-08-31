@@ -34,6 +34,7 @@
 #include "report_object.hpp"
 #include <objects/macro/Suspect_rule_set.hpp>
 #include <objects/seqfeat/BioSource.hpp>
+#include <objects/seqfeat/RNA_ref.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
@@ -248,6 +249,7 @@ protected:
     ADD_DISCREPANCY_TYPE(CSeq_inst)
     ADD_DISCREPANCY_TYPE(CSeqFeatData)
     ADD_DISCREPANCY_TYPE(CBioSource)
+    ADD_DISCREPANCY_TYPE(CRNA_ref)
 };
 
 
