@@ -682,6 +682,20 @@ CFormatGuess::EFormat CMultiReader::LoadFile(CNcbiIstream& istream, CRef<CSeq_en
     xReadFile(istream, entry, submit);
     if (entry.NotEmpty())
     {
+        if (entry->IsSet() && entry->GetSet().GetSeq_set().size() < 2 &&
+            entry->GetSet().GetSeq_set().front()->IsSeq())
+        {           
+            CRef<CSeq_entry> seq = entry->SetSet().SetSeq_set().front();
+            seq->SetDescr().Set().insert(seq->SetDescr().Set().end(),
+                entry->SetDescr().Set().begin(),
+                entry->SetDescr().Set().end());
+            seq->SetAnnot().insert(seq->SetAnnot().end(),
+                entry->SetAnnot().begin(),
+                entry->SetAnnot().end());
+            entry = seq;
+            seq.Reset();
+            entry->Parentize();
+        }
         m_context.MergeWithTemplate(*entry);
     }
     return m_uFormat;
@@ -990,7 +1004,9 @@ CRef<CSeq_entry> CMultiReader::xReadGFF3(CNcbiIstream& instream)
     CRef<CSeq_entry> entry(new CSeq_entry);
     typedef vector<CRef<CSeq_annot> > ANNOTS;
     ANNOTS annots;
-    CGff3Reader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
+    int flags = 0;
+    flags |= CGff3Reader::fAllIdsAsLocal;
+    CGff3Reader reader(flags, m_AnnotName, m_AnnotTitle);
     reader.ReadSeqAnnots(annots, instream, m_context.m_logger);
     entry->SetSeq().SetAnnot().insert(entry->SetSeq().SetAnnot().end(), annots.begin(), annots.end());
 
