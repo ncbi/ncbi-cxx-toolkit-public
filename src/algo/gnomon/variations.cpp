@@ -7,7 +7,6 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <sstream>
-#include <numeric>      // std::accumulate
 
 
 BEGIN_NCBI_SCOPE
@@ -450,7 +449,10 @@ void CMultAlign::InsertDashesInBase() {
                 deletion_len[(*indl)->Loc()] = max((*indl)->Len(), deletion_len[(*indl)->Loc()]);
         }
     }
-    int total_deletion_len = accumulate(deletion_len.begin(),deletion_len.end(),0);
+
+    int total_deletion_len = 0;
+    ITERATE(vector<int>, i, deletion_len)
+        total_deletion_len += *i;
 
     m_base.clear();
     m_base.reserve(contig_len+total_deletion_len);
