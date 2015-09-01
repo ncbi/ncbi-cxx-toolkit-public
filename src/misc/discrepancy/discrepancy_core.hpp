@@ -138,7 +138,7 @@ public:
     TReportObjectList GetDetails(void) const { return m_Objs;}
     TReportItemList GetSubitems(void) const { return m_Subs;}
     bool CanAutofix(void) const { return m_Autofix; }
-    void Autofix(CScope& scope) const;
+    void Autofix(CScope& scope);
 protected:
     string m_Msg;
     bool m_Autofix;
@@ -194,9 +194,12 @@ protected:
 };
 
 
-inline void CDiscrepancyItem::Autofix(CScope& scope) const
+inline void CDiscrepancyItem::Autofix(CScope& scope)
 {
-    ((CDiscrepancyCore&)*m_Test).Autofix(this, scope);
+    if (m_Autofix) {
+        ((CDiscrepancyCore&)*m_Test).Autofix(this, scope);
+        m_Autofix = false;
+    }
 }
 
 
