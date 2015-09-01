@@ -36,6 +36,7 @@
 
 #include <algo/blast/format/sam.hpp>
 #include <serial/iterator.hpp>
+#include <objtools/align_format/align_format_util.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -54,7 +55,15 @@ CBlast_SAM_Formatter::CBlast_SAM_Formatter(CNcbiOstream& out, CScope& scope,
 
 void CBlast_SAM_Formatter::Print(const CSeq_align_set &  aln)
 {
-	CSAM_Formatter::Print(aln, m_refRow);
+	if(m_refRow == 1) {
+		CSeq_align_set sorted;
+		sorted.Set() = aln.Get();
+		sorted.Set().sort(align_format::CAlignFormatUtil::SortHspByMasterStartAscending);
+		CSAM_Formatter::Print(sorted, m_refRow);
+	}
+	else {
+		CSAM_Formatter::Print(aln, m_refRow);
+	}
 }
 
 void CBlast_SAM_Formatter::x_ProcessCustomSpec(const string & custom_spec,
