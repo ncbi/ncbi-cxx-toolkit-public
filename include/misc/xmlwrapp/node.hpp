@@ -158,6 +158,12 @@ public:
         type_ns_only_non_default    ///< include only non-default namespaces
     };
 
+    /// enum to specify how the content input is encoded
+    enum raw_content_type {
+        type_raw,           ///< content is supposed to be a piece of XML CDATA
+        type_verbatim       ///< unescaped XML special chars are allowed
+    };
+
     /**
      * Helper struct for creating a xml::node of type_cdata.
      *
@@ -390,10 +396,18 @@ public:
      * content for this member.
      *
      * @param raw_content The raw content of the text node.
+     * @param type How the raw_content is treated:
+     *        - type_raw: content is supposed to be a piece of XML CDATA, so it
+     *            allows entity references, but XML special chars need to be
+     *            escaped first
+     *        - type_verbatim: content is supposed to be raw text, so unescaped
+     *            XML special chars are allowed, entity references are not
+     *            supported
      * @author Sergey Satskiy
     **/
     //####################################################################
-    void set_raw_content (const char *raw_content);
+    void set_raw_content (const char *raw_content,
+                          raw_content_type type = type_raw);
 
     //####################################################################
     /**
