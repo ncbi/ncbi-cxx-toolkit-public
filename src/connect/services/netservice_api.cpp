@@ -1016,7 +1016,6 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
     unsigned number_of_servers = 0;
     unsigned ns_with_submits_disabled = 0;
     unsigned servers_throttled = 0;
-    bool blob_not_found = false;
 
     STimeout* timeout = retry_count <= 0 && !m_UseSmartRetries ?
             NULL : &m_ServerPool->m_FirstServerTimeout;
@@ -1038,8 +1037,7 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
             if (retry_count <= 0 && !m_UseSmartRetries)
                 throw;
             if (ex.GetErrCode() == CNetCacheException::eBlobNotFound) {
-                blob_not_found = true;
-                skip_server = true;
+                throw;
             } else if (error_handling == eRethrowServerErrors)
                 throw;
             else
@@ -1122,10 +1120,6 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
                         "]: all servers are throttled.");
             }
             if (retry_count <= 0 || servers_to_retry.empty()) {
-                if (blob_not_found) {
-                    NCBI_THROW_FMT(CNetCacheException, eBlobNotFound,
-                            "Cannot execute ["  << cmd << "]: blob not found.");
-                }
                 NCBI_THROW_FMT(CNetSrvConnException, eSrvListEmpty,
                         "Unable to execute [" << cmd <<
                         "] on any of the discovered servers.");
