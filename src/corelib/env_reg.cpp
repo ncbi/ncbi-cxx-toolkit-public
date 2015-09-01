@@ -154,7 +154,7 @@ bool CEnvironmentRegistry::x_HasEntry(const string& section,
                                       const string& name,
                                       TFlags flags) const
 {
-    bool found;
+    bool found = false;
     x_Get(section, name, flags, found);
     return found;
 }
