@@ -47,7 +47,7 @@ public:
     virtual const string& GetShort(void) const = 0;
     virtual CConstRef<CSerialObject> GetObject(void) const = 0;
     virtual objects::CScope& GetScope(void) const = 0;
-    virtual bool CanAutofix() const = 0;
+    virtual bool CanAutofix(void) const = 0;
 };
 typedef vector<CRef<CReportObj> > TReportObjectList;
 
@@ -60,8 +60,8 @@ public:
     virtual string GetMsg(void) const = 0;
     virtual TReportObjectList GetDetails(void) const = 0;
     virtual vector<CRef<CReportItem> > GetSubitems(void) const = 0;
-    virtual bool CanAutofix() const = 0;
-    virtual void Autofix() const = 0;
+    virtual bool CanAutofix(void) const = 0;
+    virtual void Autofix(objects::CScope&) const = 0;
 };
 typedef vector<CRef<CReportItem> > TReportItemList;
 

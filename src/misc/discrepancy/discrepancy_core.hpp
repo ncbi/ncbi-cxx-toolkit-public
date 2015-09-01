@@ -120,7 +120,7 @@ public:
             DropReference();
         }
     }
-    bool CanAutofix() const { return m_Autofix; }
+    bool CanAutofix(void) const { return m_Autofix; }
 protected:
     bool m_Autofix;
     CRef<CDiscrepancyCase> m_Case;
@@ -137,8 +137,8 @@ public:
     string GetMsg(void) const { return m_Msg;}
     TReportObjectList GetDetails(void) const { return m_Objs;}
     TReportItemList GetSubitems(void) const { return m_Subs;}
-    bool CanAutofix() const { return m_Autofix; }
-    void Autofix() const;
+    bool CanAutofix(void) const { return m_Autofix; }
+    void Autofix(CScope& scope) const;
 protected:
     string m_Msg;
     bool m_Autofix;
@@ -186,7 +186,7 @@ public:
     CDiscrepancyCore() : m_Count(0) {}
     void Summarize(void){}
     virtual TReportItemList GetReport(void) const { return m_ReportItems;}
-    virtual void Autofix(const CDiscrepancyItem* item) {}
+    virtual void Autofix(const CDiscrepancyItem* item, CScope& scope) {}
 protected:
     CReportNode m_Objs;
     TReportItemList m_ReportItems;
@@ -194,9 +194,9 @@ protected:
 };
 
 
-inline void CDiscrepancyItem::Autofix() const
+inline void CDiscrepancyItem::Autofix(CScope& scope) const
 {
-    ((CDiscrepancyCore&)*m_Test).Autofix(this);
+    ((CDiscrepancyCore&)*m_Test).Autofix(this, scope);
 }
 
 
@@ -310,7 +310,7 @@ protected:
     class CDiscrepancyCaseA_##name : public CDiscrepancyCase_##name                                                 \
     {                                                                                                               \
     public:                                                                                                         \
-        void Autofix(const CDiscrepancyItem* item);                                                                 \
+        void Autofix(const CDiscrepancyItem* item, CScope& scope);                                                  \
     };                                                                                                              \
     class CDiscrepancyCaseAConstructor_##name : public CDiscrepancyConstructor                                      \
     {                                                                                                               \
@@ -320,7 +320,7 @@ protected:
         CRef<CDiscrepancyCase> Create(void) const { return CRef<CDiscrepancyCase>(new CDiscrepancyCaseA_##name);}   \
     };                                                                                                              \
     static CDiscrepancyCaseAConstructor_##name DiscrepancyCaseAConstructor_##name;                                  \
-    void CDiscrepancyCaseA_##name::Autofix(const CDiscrepancyItem* item)
+    void CDiscrepancyCaseA_##name::Autofix(const CDiscrepancyItem* item, CScope& scope)
 
 
 #define DISCREPANCY_ALIAS(name, alias) \

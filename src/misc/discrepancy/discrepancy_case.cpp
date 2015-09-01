@@ -501,67 +501,8 @@ DISCREPANCY_SUMMARIZE(OVERLAPPING_CDS)
 
 DISCREPANCY_AUTOFIX(OVERLAPPING_CDS)
 {
-
-}
-
-/*
-DISCREPANCY_CASE(OVERLAPPING_CDS, TReportObjectList m_ObjsNoNote)
-{
-    CBioseq_CI bi(seh, CSeq_inst::eMol_na);
-    while (bi) {
-        CFeat_CI f(*bi, SAnnotSelector(CSeqFeatData::e_Cdregion));
-        
-        while (f) {
-            string product1 = GetProductForCDS(*f, seh.GetScope());
-            bool added_this = false;
-            CFeat_CI f2 = f;
-            ++f2;
-            while (f2) {
-                if (LocationsOverlapOnSameStrand(f->GetLocation(), f2->GetLocation(), &(seh.GetScope()))) {
-                    string product2 = GetProductForCDS(*f2, seh.GetScope());
-                    if (ProductNamesAreSimilar(product1, product2)) {
-                        if (!added_this) {
-                            if (!ShouldIgnore(product1)) {
-                                CConstRef<CObject> obj(f->GetSeq_feat().GetPointer());
-                                CRef<CDiscrepancyObject> r(new CDiscrepancyObject(obj, bi->GetScope(), context.m_File, context.m_KeepRef));
-                                Add(HasOverlapNote(*(f->GetSeq_feat())) ? m_Objs : m_ObjsNoNote, r);
-                            }
-                            added_this = true;
-                        }
-                        if (!ShouldIgnore(product2)) {
-                            CConstRef<CObject> obj(f2->GetSeq_feat().GetPointer());
-                            CRef<CDiscrepancyObject> r(new CDiscrepancyObject(obj, bi->GetScope(), context.m_File, context.m_KeepRef));
-                            Add(HasOverlapNote(*(f2->GetSeq_feat())) ? m_Objs : m_ObjsNoNote, r);
-                        }
-                    }
-                }
-                ++f2;
-            }
-            ++f;
-        }
-        ++bi;
-    }
-
-    size_t n = m_Objs.size() + m_ObjsNoNote.size();
-    if (!n) return false;
-
-    m_ReportItems.clear();
-    CNcbiOstrstream ss;
-    ss << n << " coding region" << (n==1 ? " overlaps" : "s overlap") << " another coding region with a similar or identical name";
-    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), CNcbiOstrstreamToString(ss)));
-    TReportObjectList Objs(m_Objs);
-    copy(m_ObjsNoNote.begin(), m_ObjsNoNote.end(), back_inserter(Objs));
-    item->SetDetails(Objs);
-    m_ReportItems.push_back(CRef<CReportItem>(item.Release()));
-
-    return true;
-}
-*/
-/*
-DISCREPANCY_AUTOFIX(OVERLAPPING_CDS)
-{
-    bool ret = false;
-    NON_CONST_ITERATE(TReportObjectList, it, m_ObjsNoNote) {
+    TReportObjectList list = item->GetDetails();
+    NON_CONST_ITERATE(TReportObjectList, it, list) {
         const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
         if (sf) {
             CRef<CSeq_feat> new_feat(new CSeq_feat());
@@ -575,13 +516,11 @@ DISCREPANCY_AUTOFIX(OVERLAPPING_CDS)
                 // now actually edit feature
                 CSeq_feat_EditHandle feh(fh);
                 feh.Replace(*new_feat);
-                ret = true;
             }
         }
     }
-    return ret;
 }
-*/
+
 
 // CONTAINED_CDS
 
