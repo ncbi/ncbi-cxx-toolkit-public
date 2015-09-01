@@ -6,7 +6,7 @@
 
 APP_PROJ = unit_test_autodef unit_test_entry_edit unit_test_field_handler \
            unit_test_cds_fix unit_test_loc_edit unit_test_mail_report \
-           unit_test_source_edit unit_test_rna_edit
+           unit_test_source_edit unit_test_rna_edit unit_test_parse_text
 PROJ_TAG = test
 
 srcdir = @srcdir@

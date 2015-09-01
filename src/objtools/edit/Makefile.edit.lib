@@ -10,7 +10,7 @@ SRC = gene_utils seq_entry_edit promote autodef_available_modifier autodef \
       struc_comm_field text_desc_field gb_block_field \
       link_cds_mrna cds_fix capitalization_string loc_edit mail_report \
       feattable_edit gaps_edit source_edit rna_edit \
-      remote_updater
+      remote_updater parse_text_options
 
 LIB    = xobjedit
 
