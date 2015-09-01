@@ -325,8 +325,14 @@ class CStackTrace
 public:
     CStackTrace(void)
     {}
-    bool Empty(void)
-    { return true; }
+    bool Empty(void) {
+        return true;
+    }
+    string GetPrefix(void) const {
+        return "";
+    }
+    void SetPrefix(const string& /*prefix*/) const {
+    }
 };
 
 inline CStackTrace* StackTrace(void)
@@ -337,6 +343,12 @@ inline CStackTrace* StackTrace(void)
 inline CStackTrace* Endm(void)
 {
     return NULL;
+}
+
+inline
+CNcbiOstream& operator<<(CNcbiOstream& os, const CStackTrace& stack_trace)
+{
+    return os;
 }
 
 
