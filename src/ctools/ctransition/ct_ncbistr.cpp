@@ -1411,59 +1411,60 @@ NLM_EXTERN Nlm_Boolean LIBCALL StringSubString(char FAR *theString, char FAR *Fi
    It returns TRUE if any strings were replaced, else FALSE.
    */
 {
-  Nlm_CharPtr FindPtr,ComparePtr,StringPtr,NewString, NewStringPtr;
-  Nlm_Int4 SpaceNeeded,Len;
-  Nlm_Boolean Replaced = FALSE;
+    Nlm_CharPtr FindPtr, ComparePtr, StringPtr, NewString, NewStringPtr;
+    Nlm_Int4 SpaceNeeded, Len;
+    Nlm_Boolean Replaced = FALSE;
 
-  if (*Find == NULLB) {
-      return(FALSE);
-  }
-
-  Len = (Nlm_Int4)Nlm_StringLen(theString);
-  SpaceNeeded = MAX( (Nlm_Int4)((Len * Nlm_StringLen(Replace) 
-				 * sizeof(Nlm_Char) )
-				/ Nlm_StringLen(Find) + 1),Len) + 1;
-
-  NewStringPtr = NewString = (Nlm_CharPtr)
-    Nlm_MemGet((size_t)SpaceNeeded, MGET_ERRPOST);
-
-  StringPtr = theString;
-  while (*StringPtr != NULLB)
-    {
-      FindPtr = Find;
-      ComparePtr = StringPtr;
-      while ( (*FindPtr != NULLB) && (*FindPtr == *ComparePtr) )
-	{
-	  FindPtr++;
-	  ComparePtr++;
-	}
-      
-      /* if we found the entire string, replace it. */
-      if (*FindPtr == NULLB)
-	{
-	  NewStringPtr = StringMove(NewStringPtr,Replace);
-	  StringPtr = ComparePtr;
-	  Replaced = TRUE;
-	}
-      else
-	/* otherwise, move on to the next character. */
-	*NewStringPtr++ = *StringPtr++;
+    if (*Find == NULLB) {
+        return FALSE;
     }
-  *NewStringPtr = NULLB;
+    Len = (Nlm_Int4)Nlm_StringLen(theString);
+    SpaceNeeded = MAX( (Nlm_Int4)((Len * Nlm_StringLen(Replace) * sizeof(Nlm_Char) )
+				        / Nlm_StringLen(Find) + 1), Len) + 1;
 
-  if (MaxLength <= 0)
-    MaxLength = (Nlm_Int4)strlen(theString) + 1;
+    NewString = (Nlm_CharPtr)Nlm_MemGet((size_t)SpaceNeeded, MGET_ERRPOST);
+    if ( !NewString ) {
+        /* error */
+        return FALSE;
+    }
+    NewStringPtr = NewString;
+    StringPtr = theString;
+    
+    while (*StringPtr) {
 
-  /* Truncate the string, if necessary.*/
-  if ((Nlm_Int4)strlen(NewString) >= MaxLength - 1)
-    {
-      NewString[MaxLength-1] = NULLB;
+        /* find "Find" in "theString" */
+        FindPtr = Find;
+        ComparePtr = StringPtr;
+        while ( *FindPtr  &&  (*FindPtr == *ComparePtr) ) {
+	        FindPtr++;
+	        ComparePtr++;
+	    }
+      
+        /* if we found the entire string, replace it. */
+        if ( *FindPtr == NULLB ) {
+	        NewStringPtr = StringMove(NewStringPtr, Replace);
+	        StringPtr = ComparePtr;
+	        Replaced = TRUE;
+        } else {
+            /* otherwise, move on to the next character. */
+            *NewStringPtr++ = *StringPtr++;
+        }
+    }
+    *NewStringPtr = NULLB;
+
+    if (MaxLength <= 0) {
+        MaxLength = (Nlm_Int4)strlen(theString) + 1;
+    }
+
+    /* Truncate the string, if necessary.*/
+    if ((Nlm_Int4)strlen(NewString) >= MaxLength - 1) {
+        NewString[MaxLength-1] = NULLB;
     }
     
-  Nlm_StringCpy(theString,NewString);
-  Nlm_MemFree(NewString);
+    Nlm_StringCpy(theString, NewString);
+    Nlm_MemFree(NewString);
 
-  return(Replaced);
+    return Replaced;
 }
 
 
