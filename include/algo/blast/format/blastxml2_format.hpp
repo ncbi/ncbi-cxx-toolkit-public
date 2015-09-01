@@ -150,6 +150,9 @@ NCBI_XBLASTFORMAT_EXPORT
 void
 BlastJSON_FormatReport(const IBlastXML2ReportData* data, CNcbiOstream *out_stream );
 
+NCBI_XBLASTFORMAT_EXPORT
+void
+BlastJSON_PrintHeader(CNcbiOstream *out_stream);
 /* @} */
 
 END_NCBI_SCOPE

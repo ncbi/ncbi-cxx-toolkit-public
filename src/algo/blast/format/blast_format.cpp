@@ -304,6 +304,9 @@ CBlastFormat::PrintProlog()
     	if(m_FormatType == CFormattingArgs::eXml2 && m_BaseFile == kEmptyStr) {
     		BlastXML2_PrintHeader(&m_Outfile);
     	}
+    	else if(m_FormatType == CFormattingArgs::eJson && m_BaseFile == kEmptyStr ){
+    		BlastJSON_PrintHeader(&m_Outfile);
+    	}
         return;
     }
 
@@ -1658,10 +1661,16 @@ static string s_GetBaseName(const string & baseFile, bool isXML, bool withPath)
 void CBlastFormat::x_WriteXML2(CCmdLineBlastXML2ReportData & report_data)
 {
 	if(m_BaseFile == kEmptyStr) {
-		if(m_FormatType == CFormattingArgs::eXml2)
+		if(m_FormatType == CFormattingArgs::eXml2) {
 			BlastXML2_FormatReport(&report_data, &m_Outfile);
-		else
+		}
+		else {
+			m_XMLFileCount++;
+			if(m_XMLFileCount > 1) {
+				m_Outfile << "},\n";
+			}
 			BlastJSON_FormatReport(&report_data, &m_Outfile);
+		}
 	}
 	else {
 		m_XMLFileCount++;
@@ -1759,8 +1768,10 @@ void CBlastFormat::x_GenerateXML2MasterFile(void)
 
 void CBlastFormat::x_GenerateJSONMasterFile(void)
 {
-	if(m_BaseFile == kEmptyStr)
+	if(m_BaseFile == kEmptyStr) {
+		m_Outfile << "}\t]\n}\n";
 		return;
+	}
 
 	m_Outfile << "{\n\t\"BlastJSON\": [\n";
 

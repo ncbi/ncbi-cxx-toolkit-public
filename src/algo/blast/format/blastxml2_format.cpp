@@ -823,6 +823,36 @@ BlastXML2_FormatError(int exit_code, string err_msg,
 	s_WriteXML2Object(bxmlout, out_stream);
 }
 
+class CBlastOStreamJson : public CObjectOStreamJson
+{
+public:
+
+    CBlastOStreamJson (CNcbiOstream& stream, EOwnership deleteOut)
+        : CObjectOStreamJson(stream , deleteOut) {}
+    virtual ~CBlastOStreamJson (void) {};
+    // WriteFileHeader() is a dummy to keep xml prolog, doctype
+    // from being printed with each object
+    virtual void WriteFileHeader(TTypeInfo type) {;};
+};
+
+void
+BlastJSON_PrintHeader(CNcbiOstream *out_stream)
+{
+    *out_stream << "{\n\"BlastOutput2\": [\n";
+}
+
+static void
+s_WriteJSONObjectNoHeader(blastxml2::CBlastOutput2 & bxmlout, CNcbiOstream *out_stream)
+{
+    TTypeInfo typeInfo = bxmlout.GetThisTypeInfo();
+    auto_ptr<CObjectOStreamJson> json_out(new CBlastOStreamJson (*out_stream, eNoOwnership));
+    json_out->SetDefaultStringEncoding(eEncoding_Ascii);
+    //json_out.SetUseIndentation(true);
+    //json_out.SetUseEol(true);
+    json_out->Write(&bxmlout, typeInfo );
+}
+
+
 static void
 s_WriteJSONObject(blastxml2::CBlastOutput2 & bxmlout, CNcbiOstream *out_stream)
 {
@@ -864,7 +894,7 @@ BlastJSON_FormatReport(const IBlastXML2ReportData* data, CNcbiOstream *out_strea
 	blastxml2::CBlastOutput2 bxmlout;
 	try {
 		s_FillBlastOutput(bxmlout, data);
-		s_WriteJSONObject(bxmlout, out_stream);
+		s_WriteJSONObjectNoHeader(bxmlout, out_stream);
 	}
 	catch(CException &e){
 	    ERR_POST(Error << e.GetMsg() << e.what() );
