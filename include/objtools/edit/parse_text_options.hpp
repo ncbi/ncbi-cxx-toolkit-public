@@ -32,6 +32,7 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiobj.hpp>
 
 
 BEGIN_NCBI_SCOPE
