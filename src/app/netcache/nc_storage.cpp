@@ -350,8 +350,8 @@ s_ReadStorageParams(void)
 {
     const CNcbiRegistry& reg = CTaskServer::GetConfRegistry();
 
-    s_Path = reg.Get(kNCStorage_RegSection, kNCStorage_PathParam);
-    s_Prefix = reg.Get(kNCStorage_RegSection, kNCStorage_FilePrefixParam);
+    s_Path = reg.GetString(kNCStorage_RegSection, kNCStorage_PathParam, "./cache");
+    s_Prefix = reg.GetString(kNCStorage_RegSection, kNCStorage_FilePrefixParam, "nccache");
     if (s_Path.empty()  ||  s_Prefix.empty()) {
         SRV_LOG(Critical, "Incorrect parameters for " << kNCStorage_PathParam
                           << " and " << kNCStorage_FilePrefixParam

@@ -447,7 +447,7 @@ s_ReadPerClientConfig(const CNcbiRegistry& reg)
     main_params->ver_ttl         = 3600;
     main_params->ttl_unit        = 300;
     main_params->prolong_on_read = true;
-    main_params->srch_on_read    = false;
+    main_params->srch_on_read    = true;
     main_params->pass_policy     = eNCBlobPassAny;
     main_params->quorum          = 2;
     main_params->fast_on_main    = true;

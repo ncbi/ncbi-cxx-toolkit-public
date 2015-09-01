@@ -196,7 +196,7 @@ CNCDistributionConf::Initialize(Uint2 control_port)
         s_SmallBlobBoundary *= 1000;
         s_MaxMirrorQueueSize = reg.GetInt(kNCReg_NCPoolSection, "max_instant_queue_size", 10000);
 
-        s_SyncLogFileName = reg.GetString(kNCReg_NCPoolSection, "sync_log_file", "sync_events.log");
+        s_SyncLogFileName = reg.GetString(kNCReg_NCPoolSection, "sync_log_file", "./cache/sync_events.log");
         s_MaxSlotLogEvents = reg.GetInt(kNCReg_NCPoolSection, "max_slot_log_records", 100000);
         if (s_MaxSlotLogEvents < 10)
             s_MaxSlotLogEvents = 10;
