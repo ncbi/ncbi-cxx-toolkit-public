@@ -73,10 +73,14 @@ public:
 };
 
 class CProSplignScaledScoring;
+class CSubstMatrix;
 
-list<CNPiece> FindGoodParts(const CProteinAlignText& alignment_text, CProSplignOutputOptionsExt m_options);
+list<CNPiece> FindGoodParts(const CProteinAlignText& alignment_text, CProSplignOutputOptionsExt options, const CProSplignScaledScoring& scoring, const CSubstMatrix& matrix);
 list<CNPiece> ExcludeBadExons(const CNPiece pc, const string& match_all_pos, const string& protein, CProSplignOutputOptionsExt m_options);
 list<CNPiece> FindGoodParts(const CNPiece pc, const string& match_all_pos, const string& protein, CProSplignOutputOptionsExt m_options);
+//tries to trim negative score tail, returns true if trimmed, false otherwise
+//stop at intron. Score frameshift as regular gap
+bool TrimNegativeTail(CNPiece& pc, const CProteinAlignText& alignment_text, const CProSplignScaledScoring& scoring, const CSubstMatrix& matrix);
 
 void RefineAlignment(objects::CScope& scope, objects::CSeq_align& seq_align, const list<CNPiece>& good_parts);
 void SetScores(objects::CSeq_align& seq_align, objects::CScope& scope, const string& matrix_name = "BLOSUM62");

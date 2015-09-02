@@ -634,6 +634,11 @@ public:
         return m_scoring;
     }
 
+    const CSubstMatrix& GetSubstMatrix() const 
+    {
+        return m_matrix;
+    }
+
     virtual const vector<pair<int, int> >& GetExons() const
     {
         NCBI_THROW(CProSplignException, eGenericError, "method relevant only for two stage prosplign");
@@ -663,7 +668,7 @@ private:
 
 protected:
     CProSplignScaledScoring m_scoring;
-    CSubstMatrix m_matrix;
+    CSubstMatrix m_matrix;//scaled to be in the same scale as m_scoring
 
     CScope* m_scope;
     const CSeq_id* m_protein;
@@ -1061,7 +1066,7 @@ CRef<objects::CSeq_align> CProSplign::RefineAlignment(CScope& scope, const CSeq_
     }
 
     CProteinAlignText alignment_text(scope, seq_align, output_options.GetScoreMatrix());
-    list<CNPiece> good_parts = FindGoodParts( alignment_text, output_options);
+    list<CNPiece> good_parts = FindGoodParts( alignment_text, output_options, m_implementation->GetScaleScoring(), m_implementation->GetSubstMatrix() );
 
     prosplign::RefineAlignment(scope, *refined_align, good_parts/*, output_options.GetCutFlankPartialCodons()*/);
 

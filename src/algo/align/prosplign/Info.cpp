@@ -76,7 +76,7 @@ CProSplignOutputOptionsExt::CProSplignOutputOptionsExt(const CProSplignOutputOpt
     splice_cost = GetFlankPositives()?((100 - GetFlankPositives())*GetMinFlankingExonLen())/GetFlankPositives():0;
 }
 
-list<CNPiece> FindGoodParts(const CProteinAlignText& alignment_text, CProSplignOutputOptionsExt m_options)
+list<CNPiece> FindGoodParts(const CProteinAlignText& alignment_text, CProSplignOutputOptionsExt m_options, const CProSplignScaledScoring& scoring, const CSubstMatrix& matrix)
 {
     
     const string& nuc = alignment_text.GetDNA();
@@ -120,6 +120,24 @@ list<CNPiece> FindGoodParts(const CProteinAlignText& alignment_text, CProSplignO
         m_AliPiece.push_back(CNPiece(beg, end, 0, 0));
     }
 
+    //trim short tails with negative score, iterative
+    if( !m_AliPiece.empty() ) {
+        bool keep_trimming = true;
+        while( keep_trimming ) {
+            CNPiece& pc = *m_AliPiece.rbegin();
+            keep_trimming = TrimNegativeTail( pc, alignment_text, scoring, matrix);
+            //cut to match
+            int n = pc.end - 1;
+            for(; n >= pc.beg; --n) {
+                if(match[n] == POSIT_CHAR || match[n] == MATCH_CHAR) break;
+            }
+            pc.end = n+1;            
+            //the whole piece is trimmed, delete    
+            if(pc.beg >= pc.end) {
+                m_AliPiece.pop_back();
+            }
+        }
+    }
 
     //remove trailing NNs
     if( !m_AliPiece.empty() && m_options.GetCutNs() ) {
@@ -348,6 +366,66 @@ list<CNPiece> ExcludeBadExons(const CNPiece pc, const string& match_all_pos, con
     return alip;    
 }
 
+bool TrimNegativeTail(CNPiece& pc, const CProteinAlignText& alignment_text, const CProSplignScaledScoring& scoring, const CSubstMatrix& matrix)
+{
+    int score = 0;
+    int state = 0;//0 - diag, 1 - gap in nuc, 2, gap in prot
+    const string& nuc = alignment_text.GetDNA();
+    const string& prot = alignment_text.GetProtein();
+    const string& tran = alignment_text.GetTranslation();
+    int cnuc = 0, cprot = 0, cmax = 18;
+    int n;
+    for(n = pc.end - 1; n >= pc.beg; --n) {
+        //close gaps
+        if( ( state == 1 && nuc[n] != GAP_CHAR ) || 
+            ( state == 2 && prot[n] != GAP_CHAR ) ) {
+            score -= scoring.sm_Ig;
+        }
+        if(score < 0) {//trim at the beg. of the gap
+            pc.end = n+1;
+            return true;
+        }
+        if( prot[n] == INTRON_CHAR ) {//stop at intron
+            return false;
+        }
+        //score the current alignment position
+        if( prot[n] == GAP_CHAR ) {
+            score -= scoring.sm_Ine;
+            state = 2;
+            ++cnuc;
+        } else if ( nuc[n] == GAP_CHAR ) {
+            score -= scoring.sm_Ine;
+            state = 1;
+            ++cprot;
+        } else {
+            ++cnuc;
+            ++cprot;
+            //no gap, no intron
+            if( islower(tran[n]) ) {
+                if( !islower(prot[n]) ) {
+                    throw runtime_error("CProteinAlignText format error");
+                }                
+                score += matrix.ScaledScore(toupper(prot[n]), toupper(tran[n]))/3;
+            } else if( isupper(prot[n]) && isupper(tran[n]) ) {
+                score += matrix.ScaledScore(prot[n], tran[n]);
+            }
+        }
+        if(score < 0) {//trim
+            pc.end = n;
+            return true;
+        }
+        if(cnuc >= cmax && cprot >= cmax) break;
+    }
+    if(state == 1 || state == 2) {//close gap and check the score
+        score -= scoring.sm_Ig;
+        if(score < 0) {//trim
+            pc.end = n+1;
+            return true;
+        }
+    }        
+    //no negative tail found
+    return false;
+}
 
 
 //CNPiece implementation
