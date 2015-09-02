@@ -1716,16 +1716,13 @@ bool CValidError_imp::x_CheckPackedInt
  ENa_strand& strand_prv,
  CConstRef<CSeq_interval>& int_cur,
  CConstRef<CSeq_interval>& int_prv,
- bool& adjacent,
- bool &ordered,
- bool circular,
  const CSerialObject& obj)
 {
     bool chk = true;
     ITERATE(CPacked_seqint::Tdata, it, packed_int.Get()) {
         int_cur = (*it);
         chk &= x_CheckSeqInt(id_cur, id_prv, int_cur, int_prv, strand_cur, strand_prv,
-                      adjacent, ordered, circular, obj);
+                      obj);
 
         id_prv = id_cur;
         strand_prv = strand_cur;
@@ -1742,75 +1739,88 @@ bool CValidError_imp::x_CheckSeqInt
  const CSeq_interval * int_prv,
  ENa_strand& strand_cur,
  ENa_strand strand_prv,
- bool& adjacent,
- bool &ordered,
- bool circular,
  const CSerialObject& obj)
 {
     strand_cur = int_cur->IsSetStrand() ?
         int_cur->GetStrand() : eNa_strand_unknown;
     id_cur = &int_cur->GetId();
     bool chk = IsValid(*int_cur, m_Scope);
+    
+    return chk;
+}
 
-    // check for Point represented by Interval
-    if (int_cur->IsSetFrom() && int_cur->IsSetTo()
-        && int_cur->GetFrom() == int_cur->GetTo()) {
-        /*
-        PostErr(eDiag_Warning,
-                eErr_SEQ_FEAT_SeqLocTypeProblem,
-                "Seq-loc.int has identical from and to values, should be Seq-loc.pt", obj);
-        */
+
+void CValidError_imp::x_ReportInvalidFuzz(const CPacked_seqint& packed_int, const CSerialObject& obj)
+{
+    ITERATE(CPacked_seqint::Tdata, it, packed_int.Get()) {
+        x_ReportInvalidFuzz(**it, obj);
     }
+}
 
+void CValidError_imp::x_ReportInvalidFuzz(const CSeq_interval& interval, const CSerialObject& obj)
+{
     // check for invalid fuzz on both ends of Interval
-    if (int_cur->IsSetFuzz_from() 
-        && int_cur->GetFuzz_from().IsLim()
-        && int_cur->IsSetFuzz_to()
-        && int_cur->GetFuzz_to().IsLim()
-        && int_cur->GetFuzz_from().GetLim() == int_cur->GetFuzz_to().GetLim()) {
-        CInt_fuzz::TLim lim = int_cur->GetFuzz_from().GetLim();
+    if (interval.IsSetFuzz_from()
+        && interval.GetFuzz_from().IsLim()
+        && interval.IsSetFuzz_to()
+        && interval.GetFuzz_to().IsLim()
+        && interval.GetFuzz_from().GetLim() == interval.GetFuzz_to().GetLim()) {
+        CInt_fuzz::TLim lim = interval.GetFuzz_from().GetLim();
         if (lim == CInt_fuzz::eLim_tl) {
             PostErr(eDiag_Error,
                 eErr_SEQ_FEAT_InvalidFuzz,
                 "Should not specify 'space to left' for both ends of interval", obj);
-        } else if (lim == CInt_fuzz::eLim_tr) {        
+        }
+        else if (lim == CInt_fuzz::eLim_tr) {
             PostErr(eDiag_Error,
                 eErr_SEQ_FEAT_InvalidFuzz,
                 "Should not specify 'space to right' for both ends of interval", obj);
         }
-    }        
-    
-    if (chk  &&  int_prv  && id_prv) {
-        if (IsSameBioseq(*id_prv, *id_cur, m_Scope)) {
-            if (strand_cur == eNa_strand_minus) {
-                if (int_prv->GetTo() < int_cur->GetTo() && !circular) {
-                    ordered = false;
-                }
-                if (int_cur->GetTo() + 1 == int_prv->GetFrom()) {
-                    adjacent = true;
-                }
-            } else {
-                if (int_prv->GetTo() > int_cur->GetTo() && !circular) {
-                    ordered = false;
-                }
-                if (int_prv->GetTo() + 1 == int_cur->GetFrom()) {
-                    adjacent = true;
-                }
-            }
+    }
+}
+
+void CValidError_imp::x_ReportInvalidFuzz(const CSeq_loc& loc, const CSerialObject& obj)
+{
+    CTypeConstIterator<CSeq_loc> lit = ConstBegin(loc);
+    for (; lit; ++lit) {
+        CSeq_loc::E_Choice loc_choice = lit->Which();
+        switch (loc_choice) {
+        case CSeq_loc::e_Int:
+            x_ReportInvalidFuzz(lit->GetInt(), obj);
+            break;
+        case CSeq_loc::e_Packed_int:
+            x_ReportInvalidFuzz(lit->GetPacked_int(), obj);
+            break;
+        default:
+            break;
         }
     }
-    if (int_prv) {
-        if (IsSameBioseq(int_prv->GetId(), int_cur->GetId(), m_Scope)){
-            if (strand_prv == strand_cur  &&
-                int_prv->GetFrom() == int_cur->GetFrom()  &&
-                int_prv->GetTo() == int_cur->GetTo()) {
-                PostErr(eDiag_Error,
-                    eErr_SEQ_FEAT_DuplicateInterval,
-                    "Duplicate exons in location", obj);
-            }
+}
+
+
+unsigned int s_CountMix(const CSeq_loc& loc)
+{
+    unsigned int num_mix = 0;
+    CTypeConstIterator<CSeq_loc> lit = ConstBegin(loc);
+    for (; lit; ++lit) {
+        if (lit->IsMix()) {
+            num_mix++;
         }
     }
-    return chk;
+    return num_mix;
+}
+
+unsigned int s_CountZeroGI(const CSeq_loc& loc)
+{
+    unsigned int zero_gi = 0;
+
+    CTypeConstIterator<CSeq_loc> lit = ConstBegin(loc);
+    for (; lit; ++lit) {
+        if (lit->GetId() != 0 && lit->GetId()->IsGi() && lit->GetId()->GetGi() == ZERO_GI) {
+            zero_gi++;
+        }
+    }
+    return zero_gi;
 }
 
 
@@ -1821,18 +1831,13 @@ void CValidError_imp::ValidateSeqLoc
  const string&   prefix,
  const CSerialObject& obj)
 {
-    bool circular = false;
-    circular = seq  &&  seq.GetInst_Topology() == CSeq_inst::eTopology_circular;
-    
-    bool ordered = true, adjacent = false, chk = true,
+    bool chk = true,
         unmarked_strand = false, mixed_strand = false;
     const CSeq_id* id_cur = 0, *id_prv = 0;
     const CSeq_interval *int_cur = 0, *int_prv = 0;
     ENa_strand strand_cur = eNa_strand_unknown,
         strand_prv = eNa_strand_unknown;
 
-    unsigned int num_mix = 0;
-    unsigned int zero_gi = 0;
 
     CTypeConstIterator<CSeq_loc> lit = ConstBegin(loc);
     for (; lit; ++lit) {
@@ -1844,7 +1849,7 @@ void CValidError_imp::ValidateSeqLoc
                     CConstRef<CSeq_id> this_id_cur(id_cur);
                     int_cur = &lit->GetInt();
                     chk = x_CheckSeqInt(this_id_cur, id_prv, int_cur, int_prv, strand_cur, strand_prv,
-                          adjacent, ordered, circular, obj);
+                          obj);
                     int_prv = int_cur;
                     id_cur = this_id_cur.GetPointer();
                     id_prv = id_cur;
@@ -1875,7 +1880,7 @@ void CValidError_imp::ValidateSeqLoc
                                      this_id_cur, this_id_prv,
                                      strand_cur, strand_prv,
                                      this_int_cur, this_int_prv,
-                                     adjacent, ordered, circular, obj);
+                                     obj);
                     id_cur = this_id_cur.GetPointer();
                     id_prv = this_id_prv.GetPointer();
                 }}
@@ -1894,14 +1899,6 @@ void CValidError_imp::ValidateSeqLoc
                     prefix + ": SeqLoc [" + lbl + "] out of range", obj);
             }
 
-            if (lit->IsMix()) {
-                num_mix ++;
-            }
-
-            if (lit->GetId() != 0 && lit->GetId()->IsGi() && lit->GetId()->GetGi() == ZERO_GI) {
-                zero_gi ++;
-            }
-            
             if (lit->Which() != CSeq_loc::e_Null) {
                 if (strand_prv != eNa_strand_other  &&
                     strand_cur != eNa_strand_other) {
@@ -1936,13 +1933,22 @@ void CValidError_imp::ValidateSeqLoc
         
     }
 
-    if (num_mix > 1) {
+    x_ReportInvalidFuzz(loc, obj);
+
+    if (m_Scope && CValidator::DoesSeqLocContainDuplicateIntervals(loc, *m_Scope)) {
+        PostErr(eDiag_Error,
+            eErr_SEQ_FEAT_DuplicateInterval,
+            "Duplicate exons in location", obj);
+    }
+
+    if (s_CountMix(loc) > 1) {
         string label;
         loc.GetLabel(&label);
         PostErr (eDiag_Error, eErr_SEQ_FEAT_NestedSeqLocMix, 
             prefix + ": SeqLoc [" + label + "] has nested SEQLOC_MIX elements",
                  obj);
     }
+    unsigned int zero_gi = s_CountZeroGI(loc);
     if (zero_gi > 0) {
         string label = "?";
         if (seq && seq.IsSetId()) {
@@ -1965,32 +1971,12 @@ void CValidError_imp::ValidateSeqLoc
     bool exception = false;
     const CSeq_feat* sfp = dynamic_cast<const CSeq_feat*>(&obj);
     if (sfp != 0) {
-        
-        // Publication intervals ordering does not matter
-        
-        if ( sfp->GetData().GetSubtype() == CSeqFeatData::eSubtype_pub ) {
-            ordered = true;
-            adjacent = false;
-        }
-        
-        // ignore ordering of heterogen bonds
-        
-        if ( sfp->GetData().GetSubtype() == CSeqFeatData::eSubtype_het ) {
-            ordered = true;
-            adjacent = false;
-        }
-        
-        // misc_recomb intervals SHOULD be in reverse order
-        if ( sfp->GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_recomb ) {
-            ordered = true;
-        }
-        
+                
         // primer_bind intervals MAY be in on opposite strands
         
         if ( sfp->GetData().GetSubtype() == CSeqFeatData::eSubtype_primer_bind ) {
             mixed_strand = false;
             unmarked_strand = false;
-            ordered = true;
         }
         
         exception = sfp->IsSetExcept() ?  sfp->GetExcept() : false;
@@ -2004,7 +1990,8 @@ void CValidError_imp::ValidateSeqLoc
     }
 
     string loc_lbl;
-    if (adjacent && report_abutting) {
+    if (report_abutting && (!sfp || !CSeqFeatData::AllowAdjacentIntervals(sfp->GetData().GetSubtype())) && 
+         (m_Scope && CValidator::DoesSeqLocContainAdjacentIntervals(loc, *m_Scope))) {
         loc_lbl = GetValidatorLocationLabel(loc, *m_Scope);
 
         EDiagSev sev = exception ? eDiag_Warning : eDiag_Error;
@@ -2017,7 +2004,20 @@ void CValidError_imp::ValidateSeqLoc
         return;
     }
 
-    if (mixed_strand  ||  unmarked_strand  ||  !ordered) {
+    bool ordered = true;
+    try {
+        if (m_Scope && (!sfp || CSeqFeatData::RequireLocationIntervalsInBiologicalOrder(sfp->GetData().GetSubtype()))) {
+            ordered = CValidator::IsSeqLocCorrectlyOrdered(loc, *m_Scope);
+        }
+    } catch ( const CException& ex) {
+        string label;
+        loc.GetLabel(&label);
+        PostErr(eDiag_Error, eErr_INTERNAL_Exception,
+            "Exception caught while validating location " +
+            label + ". Exception: " + ex.what(), obj);
+    }
+
+    if (mixed_strand || unmarked_strand || !ordered) {
         if (loc_lbl.empty()) {
             loc.GetLabel(&loc_lbl);
         }

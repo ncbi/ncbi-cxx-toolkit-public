@@ -18662,6 +18662,50 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadComment)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_InvalidFuzz)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<CSeq_feat> misc1 = unit_test_util::AddMiscFeature(entry);
+    misc1->SetLocation().SetInt().SetFuzz_from().SetLim(CInt_fuzz::eLim_tl);
+    misc1->SetLocation().SetInt().SetFuzz_to().SetLim(CInt_fuzz::eLim_tl);
+
+    CRef<CSeq_feat> misc2 = unit_test_util::AddMiscFeature(entry);
+    misc2->SetLocation().SetInt().SetFrom(5);
+    misc2->SetLocation().SetInt().SetFuzz_from().SetLim(CInt_fuzz::eLim_tr);
+    misc2->SetLocation().SetInt().SetFuzz_to().SetLim(CInt_fuzz::eLim_tr);
+
+    CRef<CSeq_feat> misc3 = unit_test_util::AddMiscFeature(entry);
+    CRef<CSeq_id> id(new CSeq_id());
+    id->Assign(*(entry->GetSeq().GetId().front()));
+    CRef<CSeq_interval> int1(new CSeq_interval(*id, 0, 5));
+    int1->SetFuzz_from().SetLim(CInt_fuzz::eLim_tl);
+    int1->SetFuzz_to().SetLim(CInt_fuzz::eLim_tl);
+    CRef<CSeq_interval> int2(new CSeq_interval(*id, 10, 15));
+    int2->SetFuzz_from().SetLim(CInt_fuzz::eLim_tr);
+    int2->SetFuzz_to().SetLim(CInt_fuzz::eLim_tr);
+
+    misc3->SetLocation().SetPacked_int().Set().push_back(int1);
+    misc3->SetLocation().SetPacked_int().Set().push_back(int2);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "InvalidFuzz",
+                                "Should not specify 'space to left' for both ends of interval"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "InvalidFuzz",
+                                "Should not specify 'space to right' for both ends of interval"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "InvalidFuzz",
+        "Should not specify 'space to left' for both ends of interval"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "InvalidFuzz",
+        "Should not specify 'space to right' for both ends of interval"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
+    CLEAR_ERRORS
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_SQD_1532)
 {
     BOOST_CHECK_EQUAL(COrgMod::IsCultureCollectionValid("50% TSB + 2mM Cr(VI)"), "Culture_collection should be structured, but is not");

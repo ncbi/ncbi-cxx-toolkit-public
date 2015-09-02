@@ -3803,6 +3803,43 @@ bool CSeqFeatData::AllowStrandBoth(ESubtype subtype)
     return rval;
 }
 
+
+bool CSeqFeatData::RequireLocationIntervalsInBiologicalOrder(CSeqFeatData::ESubtype feat_subtype)
+{
+    bool required = true;
+    switch (feat_subtype)
+    {
+        case CSeqFeatData::eSubtype_pub:
+        case CSeqFeatData::eSubtype_het:
+        case CSeqFeatData::eSubtype_primer_bind:
+        case CSeqFeatData::eSubtype_misc_recomb:
+            required = false;
+            break;
+        default:
+            break;
+    }
+    return required;
+}
+
+
+bool CSeqFeatData::AllowAdjacentIntervals(CSeqFeatData::ESubtype feat_subtype)
+{
+    bool allowed = false;
+    switch (feat_subtype)
+    {
+    case CSeqFeatData::eSubtype_pub:
+    case CSeqFeatData::eSubtype_het:
+    case CSeqFeatData::eSubtype_primer_bind:
+    case CSeqFeatData::eSubtype_misc_recomb:
+        allowed = true;
+        break;
+    default:
+        break;
+    }
+    return allowed;
+}
+
+
 bool CSeqFeatData::ShouldRepresentAsGbqual (CSeqFeatData::ESubtype feat_subtype, CSeqFeatData::EQualifier qual_type)
 {
 	// experiment and inference get their own panels

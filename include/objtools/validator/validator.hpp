@@ -183,6 +183,10 @@ public:
     static string BadCharsInAuthor(const CName_std& author, bool& last_is_bad);
     static string BadCharsInAuthor(const CAuthor& author, bool& last_is_bad);
 
+    static bool IsSeqLocCorrectlyOrdered(const CSeq_loc& loc, CScope& scope);
+    static bool DoesSeqLocContainAdjacentIntervals(const CSeq_loc& loc, CScope& scope);
+    static bool DoesSeqLocContainDuplicateIntervals(const CSeq_loc& loc, CScope& scope);
+
     // progress reporting
     class NCBI_VALIDATOR_EXPORT CProgressInfo
     {

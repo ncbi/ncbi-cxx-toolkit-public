@@ -376,6 +376,176 @@ string CValidator::BadCharsInAuthor(const CAuthor& author, bool& last_is_bad)
 }
 
 
+typedef bool(*CompareConsecutiveIntervalProc) (const CSeq_interval& int1, const CSeq_interval& int2, CScope *scope);
+
+bool x_CompareConsecutiveIntervals
+(const CPacked_seqint& packed_int,
+CConstRef<CSeq_interval>& int_cur,
+CConstRef<CSeq_interval>& int_prv,
+CScope* scope,
+CompareConsecutiveIntervalProc compar)
+{
+    bool ok = true;
+    ITERATE(CPacked_seqint::Tdata, it, packed_int.Get()) {
+        int_cur = (*it);
+        if (int_prv && !compar(*int_cur, *int_prv, scope)) {
+            ok = false;
+            break;
+        }
+
+        int_prv = int_cur;
+    }
+    return ok;
+}
+
+
+bool CheckConsecutiveIntervals(const CSeq_loc& loc, CScope& scope, CompareConsecutiveIntervalProc compar)
+{
+    bool ok = true;
+    const CSeq_interval *int_cur = 0, *int_prv = 0;
+
+    CTypeConstIterator<CSeq_loc> lit = ConstBegin(loc);
+    for (; lit && ok; ++lit) {
+        CSeq_loc::E_Choice loc_choice = lit->Which();
+        switch (loc_choice) {
+        case CSeq_loc::e_Int:
+            {{
+            int_cur = &lit->GetInt();
+            if (int_prv) {
+                ok = compar(*int_cur, *int_prv, &scope);
+            }
+            int_prv = int_cur;
+            }}
+            break;
+        case CSeq_loc::e_Pnt:
+            int_prv = 0;
+            break;
+        case CSeq_loc::e_Packed_pnt:
+            int_prv = 0;
+            break;
+        case CSeq_loc::e_Packed_int:
+        {{
+            CConstRef<CSeq_interval> this_int_cur(int_cur);
+            CConstRef<CSeq_interval> this_int_prv(int_prv);
+            ok = x_CompareConsecutiveIntervals
+                (lit->GetPacked_int(), this_int_cur, this_int_prv, &scope, compar);
+            }}
+            break;
+        case CSeq_loc::e_Null:
+            break;
+        default:
+            int_prv = 0;
+            break;
+        }
+
+    }
+    return ok;
+}
+
+
+
+bool x_IsCorrectlyOrdered
+(const CSeq_interval& int_cur,
+ const CSeq_interval& int_prv,
+ CScope* scope)
+{
+    ENa_strand strand_cur = int_cur.IsSetStrand() ?
+        int_cur.GetStrand() : eNa_strand_unknown;
+
+    if (IsSameBioseq(int_prv.GetId(), int_cur.GetId(), scope)) {
+        if (strand_cur == eNa_strand_minus) {
+            if (int_prv.GetTo() < int_cur.GetTo()) {
+                return false;
+            }
+        }
+        else {
+            if (int_prv.GetTo() > int_cur.GetTo()) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+
+bool CValidator::IsSeqLocCorrectlyOrdered(const CSeq_loc& loc, CScope& scope)
+{
+    bool circular = false;
+    CBioseq_Handle seq;
+    try {
+        CBioseq_Handle seq = scope.GetBioseqHandle(loc);
+    } catch (const exception& e) {
+        // no way to tell
+        return true;
+    }
+    if (seq  &&  seq.GetInst_Topology() == CSeq_inst::eTopology_circular) {
+        // no way to check if topology is circular
+        return true;
+    }
+
+    return CheckConsecutiveIntervals(loc, scope, x_IsCorrectlyOrdered);
+}
+
+
+bool x_IsNotAdjacent
+(const CSeq_interval& int_cur,
+const CSeq_interval& int_prv,
+CScope* scope)
+{
+    ENa_strand strand_cur = int_cur.IsSetStrand() ?
+        int_cur.GetStrand() : eNa_strand_unknown;
+
+    bool ok = true;
+    if (IsSameBioseq(int_prv.GetId(), int_cur.GetId(), scope)) {
+        if (strand_cur == eNa_strand_minus) {
+            if (int_cur.GetTo() + 1 == int_prv.GetFrom()) {
+                ok = false;
+            }
+        }
+        else {
+            if (int_prv.GetTo() + 1 == int_cur.GetFrom()) {
+                ok = false;
+            }
+        }
+    }
+    return ok;
+}
+
+
+bool CValidator::DoesSeqLocContainAdjacentIntervals
+(const CSeq_loc& loc, CScope &scope)
+{
+    return !CheckConsecutiveIntervals(loc, scope, x_IsNotAdjacent);
+}
+
+
+bool x_SameStrand(const CSeq_interval& int1, const CSeq_interval& int2)
+{
+    ENa_strand strand1 = int1.IsSetStrand() ?
+        int1.GetStrand() : eNa_strand_unknown;
+    ENa_strand strand2 = int2.IsSetStrand() ?
+        int2.GetStrand() : eNa_strand_unknown;
+    return (strand1 == strand2);
+}
+
+
+bool IsNotDuplicateInterval(const CSeq_interval& int1, const CSeq_interval& int2, CScope* scope)
+{
+    if (IsSameBioseq(int1.GetId(), int2.GetId(), scope) &&
+        x_SameStrand(int1, int2) &&
+        int1.GetFrom() == int2.GetFrom() &&
+        int1.GetTo() == int2.GetTo()) {            
+        return false;
+    }
+    return true;
+}
+
+bool CValidator::DoesSeqLocContainDuplicateIntervals(const CSeq_loc& loc, CScope& scope)
+{
+    return !CheckConsecutiveIntervals(loc, scope, IsNotDuplicateInterval);
+}
+
+
 CCache::CCache(void)
 {
     m_impl.reset(new CCacheImpl);

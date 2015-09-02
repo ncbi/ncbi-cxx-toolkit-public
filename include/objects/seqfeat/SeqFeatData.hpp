@@ -497,6 +497,8 @@ public:
     static EFeatureLocationAllowed AllowedFeatureLocation(ESubtype subtype);
 
     static bool AllowStrandBoth(ESubtype subtype);
+    static bool RequireLocationIntervalsInBiologicalOrder(ESubtype subtype);
+    static bool AllowAdjacentIntervals(ESubtype subtype);
 
     static bool ShouldRepresentAsGbqual (CSeqFeatData::ESubtype feat_subtype, const CGb_qual& qual);
     static bool ShouldRepresentAsGbqual (CSeqFeatData::ESubtype feat_subtype, CSeqFeatData::EQualifier qual_type);

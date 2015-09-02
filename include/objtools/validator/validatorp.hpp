@@ -733,9 +733,6 @@ private:
                           ENa_strand& strand_prv,
                           CConstRef<CSeq_interval>& int_cur,
                           CConstRef<CSeq_interval>& int_prv,
-                          bool& adjacent,
-                          bool &ordered,
-                          bool circular,
                           const CSerialObject& obj);
     bool x_CheckSeqInt(CConstRef<CSeq_id>& id_cur,
                        const CSeq_id * id_prv,
@@ -743,10 +740,10 @@ private:
                        const CSeq_interval * int_prv,
                        ENa_strand& strand_cur,
                        ENa_strand strand_prv,
-                       bool& adjacent,
-                       bool &ordered,
-                       bool circular,
                        const CSerialObject& obj);
+    void x_ReportInvalidFuzz(const CPacked_seqint& packed_int, const CSerialObject& obj);
+    void x_ReportInvalidFuzz(const CSeq_interval& interval, const CSerialObject& obj);
+    void x_ReportInvalidFuzz(const CSeq_loc& loc, const CSerialObject& obj);
     void x_ReportPCRSeqProblem(const string& primer_kind,
                                char badch,
                                const CSerialObject& obj,
