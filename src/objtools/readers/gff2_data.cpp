@@ -488,7 +488,13 @@ bool CGff2Record::UpdateFeature(
     }
     else {
         // indicates the feature location is already under construction
-        pFeature->SetLocation(*pFeature->SetLocation().Add(*pAddLoc, CSeq_loc::fSortAndMerge_All, 0));
+        pFeature->SetLocation(*pFeature->SetLocation().Add(
+            *pAddLoc, CSeq_loc::fSortAndMerge_All, 0));
+        if (pFeature->GetLocation().IsInt()) {
+            CRef<CSeq_loc> pOld(new CSeq_loc);
+            pOld->Assign(pFeature->GetLocation());
+            pFeature->SetLocation().SetMix().AddSeqLoc(*pOld);
+        }
     }        
     return true;
 }
