@@ -39,14 +39,29 @@ XLIB_FLAGS = $(runpath) @f_libpath@$(libdir)
 XLIB    = $(XLIB_FLAGS) $(XAPP_LIB:%=@lib_l_pre@%@lib_l_ext@)
 XLIBDEP = $(XAPP_LIB:%=$(status_dir)/.%.dep)
 
+XLIB2      = $(XLIB)
+XAPP_LIBS2 = $(XAPP_LIBS)
+
 ifneq "" "$(wildcard Makefile.$(TMPL).app.libdep)"
   include Makefile.$(TMPL).app.libdep
   ifneq "" "$(GENERATED_LIB_ORDER)"
-    XLIB = $(XLIB_FLAGS) $(GENERATED_LIB_ORDER)
+    XLIB2 = $(XLIB_FLAGS) $(GENERATED_LIB_ORDER)
   endif
   ifneq "" "$(GENERATED_LIB3PARTY_ORDER)"
-    XAPP_LIBS = $(GENERATED_LIB3PARTY_ORDER)
+    XAPP_LIBS2 = $(GENERATED_LIB3PARTY_ORDER)
   endif
+endif
+
+CMD_BASE = $(LINK_WRAPPER) $(LINK) $(LDFLAGS) $(APP_LDFLAGS) $(XOBJ) $(XOBJ2) $(PRE_LIBS)
+CMD_TAIL = @f_outexe@$(XAPP) $(LINK_FILTER)
+CMD  = $(CMD_BASE) $(XLIB) $(XAPP_LIBS) $(CMD_TAIL)
+CMD2 = $(CMD_BASE) $(XLIB2) $(XAPP_LIBS2) $(CMD_TAIL)
+
+ifeq "$(CMD)" "$(CMD2)"
+  OR_CMD2 =
+else
+  NOTE = "The original settings failed.  Trying project_tree_builder's suggestions:"
+  OR_CMD2 = || (echo $(NOTE); echo $(CMD2); $(CMD2))
 endif
 
 include $(builddir)/Makefile.$(Rules)
@@ -133,7 +148,8 @@ $(XAPP): $(DLL_DEP) $(XOBJ) $(XLIBDEP)
 else
 $(XAPP): $(XOBJ) $(XOBJ2) $(XLIBDEP)
 	@-$(RM) .$(XAPP).stamp
-	$(LINK_WRAPPER) $(LINK) $(LDFLAGS) $(APP_LDFLAGS) $(XOBJ) $(XOBJ2) $(PRE_LIBS) $(XLIB) $(XAPP_LIBS) @f_outexe@$(XAPP) $(LINK_FILTER)
+	@echo $(CMD)
+	@$(CMD) $(OR_CMD2)
 	$(STRIP) $(XAPP)
 	$(POST_LINK) $(XAPP)
   ifneq "$(BINCOPY)" "@:"
