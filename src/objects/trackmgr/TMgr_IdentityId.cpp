@@ -50,8 +50,14 @@ CTMgr_IdentityId::~CTMgr_IdentityId(void)
 CRef<CTMgr_IdentityId>
 CTMgr_IdentityId::FromMyNCBIId(const int myncbi_id)
 {
+    return FromMyNCBIId(NStr::IntToString(myncbi_id));
+}
+
+CRef<CTMgr_IdentityId>
+CTMgr_IdentityId::FromMyNCBIId(const string& myncbi_id)
+{
     CRef<CTMgr_IdentityId> id(new CTMgr_IdentityId());
-    id->SetId(NStr::IntToString(myncbi_id));
+    id->SetId(myncbi_id);
     id->SetId_type(eTMgr_IdentityIdType_myncbi_id);
     return id;
 }

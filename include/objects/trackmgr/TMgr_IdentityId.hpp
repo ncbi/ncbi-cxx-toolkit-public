@@ -56,6 +56,7 @@ public:
     ~CTMgr_IdentityId(void);
 
     static CRef<CTMgr_IdentityId> FromMyNCBIId(int myncbi_id);
+    static CRef<CTMgr_IdentityId> FromMyNCBIId(const string& myncbi_id);
     static CRef<CTMgr_IdentityId> FromSessionId(const string& session_id);
 
 private:
