@@ -192,6 +192,8 @@ void CCIGAR_Formatter::x_FormatLine(bool width_inverted)
             "and thus are not supported in current CIGAR output");
     }
 
+    StartRow();
+
     // HACK HACK HACK
     // Is the following correct???
     //
@@ -349,7 +351,6 @@ void CCIGAR_Formatter::x_FormatLine(bool width_inverted)
             m_TargetId.Reset(acc_id.GetSeqId());
         }
     }
-    StartRow();
 
     AddSegment(cigar, m_LastType, last_count);
     string cigar_string = CNcbiOstrstreamToString(cigar);

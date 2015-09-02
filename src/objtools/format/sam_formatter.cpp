@@ -63,6 +63,10 @@ public:
 
 protected:
     virtual void StartAlignment(void);
+    virtual void StartRow(void)
+    {
+        m_NumDif = 0;
+    }
     virtual void AddRow(const string& cigar);
     virtual void AddSegment(CNcbiOstream& cigar,
                             char seg_type,
