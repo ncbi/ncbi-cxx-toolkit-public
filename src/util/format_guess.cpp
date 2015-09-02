@@ -2218,14 +2218,14 @@ bool CFormatGuess::IsLineGff3(
     }
     if ( tokens.size() >= 9 && tokens[8].size() > 1) {
         const string& col9 = tokens[8];
-        if ( NPOS == NStr::FindNoCase(col9, "ID") &&
-             NPOS == NStr::FindNoCase(col9, "Parent") &&
-             NPOS == NStr::FindNoCase(col9, "Target") &&
-             NPOS == NStr::FindNoCase(col9, "Name") &&
-             NPOS == NStr::FindNoCase(col9, "Alias") &&
-             NPOS == NStr::FindNoCase(col9, "Note") &&
-             NPOS == NStr::FindNoCase(col9, "Dbxref") &&
-             NPOS == NStr::FindNoCase(col9, "Xref") ) {
+        if ( NPOS == NStr::Find(col9, "ID") &&
+             NPOS == NStr::Find(col9, "Parent") &&
+             NPOS == NStr::Find(col9, "Target") &&
+             NPOS == NStr::Find(col9, "Name") &&
+             NPOS == NStr::Find(col9, "Alias") &&
+             NPOS == NStr::Find(col9, "Note") &&
+             NPOS == NStr::Find(col9, "Dbxref") &&
+             NPOS == NStr::Find(col9, "Xref") ) {
             return false;
         }
     }
