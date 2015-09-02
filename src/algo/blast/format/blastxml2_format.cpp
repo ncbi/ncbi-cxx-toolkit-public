@@ -768,23 +768,13 @@ void
 BlastXML2_FormatReport(const IBlastXML2ReportData* data, string file_name)
 {
 	blastxml2::CBlastOutput2 bxmlout;
-	try {
 		CNcbiOfstream out_stream;
 		out_stream.open(file_name.c_str(), IOS_BASE::out);
 		if(!out_stream.is_open())
-			 NCBI_THROW(CException, eInvalid, "Cannot open output file");
+			 NCBI_THROW(CArgException, eInvalidArg, "Cannot open output file");
 
 		s_FillBlastOutput(bxmlout, data);
 		s_WriteXML2Object(bxmlout, &out_stream);
-	}
-	catch(CException &e){
-	    ERR_POST(Error << e.GetMsg() << e.what() );
-	    return;
-	}
-	catch(...){
-	    ERR_POST(Error << "XML format failed" );
-	    return;
-	}
 }
 
 void
@@ -869,23 +859,13 @@ void
 BlastJSON_FormatReport(const IBlastXML2ReportData* data, string file_name)
 {
 	blastxml2::CBlastOutput2 bxmlout;
-	try {
 		CNcbiOfstream out_stream;
 		out_stream.open(file_name.c_str(), IOS_BASE::out);
 		if(!out_stream.is_open())
-			 NCBI_THROW(CException, eInvalid, "Cannot open output file");
+			 NCBI_THROW(CArgException, eInvalidArg, "Cannot open output file");
 
 		s_FillBlastOutput(bxmlout, data);
 		s_WriteJSONObject(bxmlout, &out_stream);
-	}
-	catch(CException &e){
-	    ERR_POST(Error << e.GetMsg() << e.what() );
-	    return;
-	}
-	catch(...){
-	    ERR_POST(Error << "JSON format failed" );
-	    return;
-	}
 }
 
 void
