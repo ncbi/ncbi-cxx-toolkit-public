@@ -48,7 +48,7 @@ struct SSamData {
 
 class CLiteAlign {
 public:
-    CLiteAlign(TSignedSeqRange range, const TLiteInDels& indels, set<CLiteIndel>& indel_holder, double weight, double ident, const string& notalignedl = kEmptyStr, const string& notalignedr = kEmptyStr);
+    CLiteAlign(TSignedSeqRange range, const TLiteInDels& indels, set<CLiteIndel>& indel_holder, double weight, double ident);
     CLiteAlign(const SSamData& ad, const string& contig, set<CLiteIndel>& indel_holder);
     double Weight() const { return m_weight; }
     void SetWeight(double w) { m_weight = w; }
@@ -58,16 +58,12 @@ public:
         return m_indels;
     }
     string TranscriptSeq(const string& contig) const;
-    const string& NotAlignedL() const { return m_notalignedl; }
-    const string& NotAlignedR() const { return m_notalignedr; }
 
 private:
     double m_weight;
     double m_ident;
     TSignedSeqRange m_range;
     TLiteInDelsP m_indels;
-    string m_notalignedl;
-    string m_notalignedr;
 };
 
 typedef list<CLiteAlign> TLiteAlignList;
@@ -109,45 +105,36 @@ public:
     void SetGenomic(const CConstRef<CSeq_id>& seqid, CScope& scope); // makes full reset keeping the parameters
     void AddAlignment(const CAlignModel& align); // adds each exon as a separate CLiteAlign; doesn't do left/right notaligned
     TAlignModelList GetVariationAlignList(bool correctionsonly);
-    list<string> Consensus();
-    void Variations(map<TSignedSeqRange,TSIMap>& variations, list<TSignedSeqRange>& confirmed_ranges, bool use_limits);
+    void Variations(map<TSignedSeqRange,TSIMap>& variations, list<TSignedSeqRange>& confirmed_ranges);
 
     static void SetupArgDescriptions(CArgDescriptions* arg_desc);
     void ProcessArgs(const CArgs& args);
 
 private:
     void SetDefaultParams();
-    void SelectAligns(vector<const CLiteAlign*>& all_alignsp, bool use_limits);
+    void SelectAligns(vector<const CLiteAlign*>& all_alignsp);
     void PrepareReads(const vector<const CLiteAlign*>& all_alignsp);
     void InsertDashesInBase();
     void InsertDashesInReads();
     void GetCounts();
-    void PrepareStats(bool use_limits);
+    void PrepareStats();
 
     TSignedSeqRange LegitRange(int ir);
     string EmitSequenceFromRead(int ir, const TSignedSeqRange& word_range);
     string EmitSequenceFromBase(const TSignedSeqRange& word_range);
     bool CheckWord(const TSignedSeqRange& word_range, const string& word);
     int FindNextStrongWord(int nextp, const string& maximal_bases, string& strong_word, TSignedSeqRange& strong_word_range, int& first_gap);
-    int FindPrevStrongWord(int prevp, const string& maximal_bases, string& strong_word, TSignedSeqRange& strong_word_range);
     void SeqCountsBetweenTwoStrongWords(const TSignedSeqRange& prev_strong_word_range, const string& prev_strong_word, const TSignedSeqRange& strong_word_range, const string& strong_word,  TSIMap& seq_counts, int& total_cross, int& accepted_cross);
-    pair<string,bool> SupportedSeqBetweenTwoStrongWords(const TSignedSeqRange& prev_strong_word_range, const string& prev_strong_word, const TSignedSeqRange& strong_word_range, const string& strong_word, int chunk, int pos);
-    pair<string,bool>  CombinedSeqBetweenTwoStrongWords(const TSignedSeqRange& prev_strong_word_range, const string& prev_strong_word, const TSignedSeqRange& strong_word_range, const string& strong_word, int chunk, int pos);
-    pair<string,bool> SupportedSeqBetweenPolytAndStrongWord(const TSignedSeqRange& strong_word_range, const string& strong_word, int chunk, int pos);
-    pair<string,bool> SupportedSeqBetweenStrongWordAndPolya(const TSignedSeqRange& strong_word_range, const string& strong_word, int chunk, int pos);
-    pair<string,bool> SelectVariant(TSIMap& seq_counts, const TSignedSeqRange weak_range, int total_cross, int accepted_cross, int chunk, int pos, TSIMap* additional_tsp);
-    void AddSimpleRunToConsensus(int curp, int nextp, const TSignedSeqRange& polya_range, const TSignedSeqRange& polyt_range, list<string>& consensus, const string& maximal_bases);
 
     int m_max_len;
     vector<string> m_reads;
-    vector<const string*> m_reads_notalignedl;
-    vector<const string*> m_reads_notalignedr;
     vector<int> m_starts;
     vector<const CLiteAlign*> m_alignsp;
-    vector<int> m_contig_to_align;
-    vector<int> m_align_to_contig;
-    vector<map<char,int> > m_counts;
-    vector<int> m_coverage;
+    typedef map<int,int> TIntMap;
+    TIntMap m_contig_to_align;
+    TIntMap m_align_to_contig;
+    typedef map<char,int> TCharIntMap;
+    map<int,TCharIntMap> m_counts;
     TLiteAlignList m_aligns;
     set<CLiteIndel> m_indel_holder;
 
@@ -163,8 +150,6 @@ private:
     double m_min_rel_support_for_variant;
     int m_min_abs_support_for_variant;
     double m_strong_consensus;
-    int m_entropy_window;
-    double m_entropy_level;
 };
 
 END_SCOPE(gnomon)
