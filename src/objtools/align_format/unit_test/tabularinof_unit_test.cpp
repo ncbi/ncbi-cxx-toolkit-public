@@ -225,13 +225,24 @@ BOOST_AUTO_TEST_CASE(TaxonomyOutput) {
        ctab.SetFields(**iter, *scope);
        ctab.Print();
     }
+    const string ref[8] = {
+	"9940	Ovis aries	sheep	even-toed ungulates	Eukaryota",
+	"9913	Bos taurus	cattle	even-toed ungulates	Eukaryota",
+	"72004	Bos mutus	Bos mutus	even-toed ungulates	Eukaryota",
+	"9970	Syncerus caffer	African buffalo	even-toed ungulates	Eukaryota",
+	"43346	Bison bison bison	Bison bison bison	even-toed ungulates	Eukaryota",
+	"346063	Bubalus carabanensis	carabao	even-toed ungulates	Eukaryota",
+	"89462;365610	Bubalus bubalis;Bubalus bubalis x Bubalus carabanensis	water buffalo;Bubalus bubalis x Bubalus carabanensis	even-toed ungulates	Eukaryota",
+	"89462	Bubalus bubalis	water buffalo	even-toed ungulates	Eukaryota"
+ };
 
     string output = CNcbiOstrstreamToString(output_stream);
+    vector<string> results;
+    NStr::Tokenize(output, "\n", results);
 
-    BOOST_REQUIRE(output.find("M10360	XP_003609077	3880	Medicago truncatula	barrel medic	eudicots	Eukaryota") != NPOS);
-    BOOST_REQUIRE(output.find("M10360	ZP_05395304	536227	Clostridium carboxidivorans P7	Clostridium carboxidivorans P7	firmicutes	Bacteria") != NPOS);
-    BOOST_REQUIRE(output.find("M10360	YP_001109553	3694	Populus trichocarpa	black cottonwood	eudicots	Eukaryota") != NPOS);
-    BOOST_REQUIRE(output.find("M10360	ABZ09338	455551	uncultured marine microorganism HF4000_APKG7H23	uncultured marine microorganism HF4000_APKG7H23	N/A	N/A") != NPOS);
+    for(unsigned int i=0; i < 8; i++) {
+    	BOOST_REQUIRE(results[i].find(ref[i]) != NPOS);
+    }
 }
 
 BOOST_AUTO_TEST_CASE(SubjectTitlesOutput) {
@@ -260,14 +271,22 @@ BOOST_AUTO_TEST_CASE(SubjectTitlesOutput) {
     		ctab.Print();
     	}
 
-    	string output = CNcbiOstrstreamToString(output_stream);
+        const string ref[8] = {
+		"X12497	XP_012015192	PREDICTED: interleukin-1 alpha isoform X1 [Ovis aries]",
+		"X12497	NP_776517	interleukin-1 alpha precursor [Bos taurus]",
+		"X12497	XP_005890049	PREDICTED: interleukin-1 alpha [Bos mutus]",
+		"X12497	BAJ11606	interleukin 1 alpha [Syncerus caffer]",
+		"X12497	XP_010832415	PREDICTED: interleukin-1 alpha [Bison bison bison]",
+		"X12497	BAE76004	Interleukin-1 alpha [Bubalus carabanensis]",
+		"X12497	XP_006056051	PREDICTED: interleukin-1 alpha [Bubalus bubalis]",
+		"X12497	NP_001277833	interleukin 1, alpha [Bubalus bubalis]"};
 
+    	string output = CNcbiOstrstreamToString(output_stream);
     	vector<string> results;
     	NStr::Tokenize(output, "\n", results);
-    	BOOST_REQUIRE(results[0].find("hypothetical protein MTR_4g111700 [Medicago truncatula]") != NPOS);
-    	BOOST_REQUIRE(results[3].find("Glycerophosphodiesterase-like protein [Medicago truncatula]") != NPOS);
-    	BOOST_REQUIRE(results[4].find("Cell wall-associated hydrolase [Medicago truncatula]") != NPOS);
-    	BOOST_REQUIRE(results[6].find("hypothetical protein ALOHA_HF4000APKG7H23ctg3g3 [uncultured marine microorganism HF4000_APKG7H23]") != NPOS);
+    	for(unsigned int i=0; i < 8; i++) {
+    	    BOOST_REQUIRE(results[i].find(ref[i]) != NPOS);
+    	}
     }
 
     {
@@ -281,20 +300,20 @@ BOOST_AUTO_TEST_CASE(SubjectTitlesOutput) {
     	}
 
     	string output = CNcbiOstrstreamToString(output_stream);
+        const string ref[8] = {
+            "PREDICTED: interleukin-1 alpha isoform X1 [Ovis aries]",
+	    "interleukin-1 alpha precursor [Bos taurus]<>RecName: Full=Interleukin-1 alpha; Short=IL-1 alpha; Flags: Precursor [Bos taurus]<>pre-interleukin-1 alpha [Bos taurus]<>interleukin 1-alpha [Bos taurus]<>interleukin-1 alpha precursor [Bos taurus]<>TPA: interleukin-1 alpha precursor [Bos taurus]",
+	    "PREDICTED: interleukin-1 alpha [Bos mutus]<>Interleukin-1 alpha [Bos mutus]",
+	    "interleukin 1 alpha [Syncerus caffer]",
+            "PREDICTED: interleukin-1 alpha [Bison bison bison]",
+            "Interleukin-1 alpha [Bubalus carabanensis]",
+            "PREDICTED: interleukin-1 alpha [Bubalus bubalis]<>interleukin-1 alpha [Bubalus bubalis]<>Interleukin-1 alpha [Bubalus bubalis x Bubalus carabanensis]",
+            "interleukin 1, alpha [Bubalus bubalis]<>Interleukin-1 alpha [Bubalus bubalis]"}; 
     	vector<string> results;
     	NStr::Tokenize(output, "\n", results);
-    	string ref_0 = "hypothetical protein MTR_4g111700 [Medicago truncatula]<>" \
-		       "hypothetical protein MTR_4g112050 [Medicago truncatula]<>" \
-                       "hypothetical protein MTR_4g111700 [Medicago truncatula]";
-    	string ref_2 = "hypothetical protein Poptr_cp075 [Populus trichocarpa]<>hypothetical protein " \
-    			       "Poptr_cp088 [Populus trichocarpa]<>hypothetical protein Poptr_cp075 [Populus " \
-    			       "trichocarpa]<>hypothetical protein Poptr_cp088 [Populus trichocarpa]";
-    	string ref_6 = "hypothetical protein ALOHA_HF4000APKG7H23ctg3g3 [uncultured marine " \
-    			       "microorganism HF4000_APKG7H23]";
-
-    	BOOST_REQUIRE(results[0].find(ref_0) != NPOS);
-    	BOOST_REQUIRE(results[2].find(ref_2) != NPOS);
-    	BOOST_REQUIRE(results[6].find(ref_6) != NPOS);
+    	for(unsigned int i=0; i < 8; i++) {
+    	    BOOST_REQUIRE(results[i].find(ref[i]) != NPOS);
+    	}
     }
 }
 
