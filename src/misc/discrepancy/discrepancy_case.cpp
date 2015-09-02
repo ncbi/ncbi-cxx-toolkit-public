@@ -512,7 +512,6 @@ DISCREPANCY_AUTOFIX(OVERLAPPING_CDS)
                 // This is necessary, to make sure that we are in "editing mode"
                 const CSeq_annot_Handle& annot_handle = fh.GetAnnot();
                 CSeq_entry_EditHandle eh = annot_handle.GetParentEntry().GetEditHandle();
-
                 // now actually edit feature
                 CSeq_feat_EditHandle feh(fh);
                 feh.Replace(*new_feat);
@@ -578,7 +577,7 @@ static void DeleteProteinSequence(CBioseq_Handle prot)
     }
 }
 
-/*
+
 static bool ConvertCDSToMiscFeat(const CSeq_feat& feat, CScope& scope)
 {
     if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_feature) {
@@ -589,39 +588,33 @@ static bool ConvertCDSToMiscFeat(const CSeq_feat& feat, CScope& scope)
         // for now, only Cdregion conversions are implemented
         return false;
     }
-
     CRef<CSeq_feat> replacement(new CSeq_feat());
     replacement->Assign(feat);
     replacement->SetData().SetImp().SetKey("misc_feature");
-
     if (feat.IsSetProduct()) {
-        CBioseq_Handle bsh = scope.GetBioseqHandle(feat.GetProduct());
-        string product = GetProductNameForProteinSequence(bsh);
+        string product = GetProductName(feat, scope);
         if (!NStr::IsBlank(product)) {
             if (replacement->IsSetComment() && !NStr::IsBlank(replacement->GetComment())) {
                 replacement->SetComment() += "; ";
             }
             replacement->SetComment() += product;
         }
-        DeleteProteinSequence(bsh);
     }
-    
     try {
         CSeq_feat_Handle fh = scope.GetSeq_featHandle(feat);
         // This is necessary, to make sure that we are in "editing mode"
         const CSeq_annot_Handle& annot_handle = fh.GetAnnot();
         CSeq_entry_EditHandle eh = annot_handle.GetParentEntry().GetEditHandle();
-
         // now actually edit feature
         CSeq_feat_EditHandle feh(fh);
         feh.Replace(*replacement);
-    } catch (CException& ex) {
+    } catch (...) {
         // feature may have already been removed or converted
         return false;
     }
     return true;
 }
-*/
+
 
 DISCREPANCY_CASE(CONTAINED_CDS, CSeqFeatData, eNormal, "Contained CDs")
 {
@@ -650,8 +643,8 @@ DISCREPANCY_CASE(CONTAINED_CDS, CSeqFeatData, eNormal, "Contained CDs")
         sequence::ECompare compare = sequence::Compare(loc, location, &context.GetScope(), sequence::fCompareOverlapping);
         if (compare == sequence::eContains || compare == sequence::eSame || compare == sequence::eContained) {
             const char* strand = StrandsMatch(loc, location) ? kContainedSame : kContainedOpps;
-            m_Objs[kEmptyStr][kContained][HasContainedNote(*sf) ? kContainedNote : strand].Add(*new CDiscrepancyObject(sf, context.GetScope(), context.GetFile(), context.GetKeepRef()));
-            m_Objs[kEmptyStr][kContained][HasContainedNote(*context.GetCurrentSeq_feat()) ? kContainedNote : strand].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+            m_Objs[kEmptyStr][kContained][HasContainedNote(*sf) ? kContainedNote : strand].Add(*new CDiscrepancyObject(sf, context.GetScope(), context.GetFile(), context.GetKeepRef(), compare == sequence::eContains));
+            m_Objs[kEmptyStr][kContained][HasContainedNote(*context.GetCurrentSeq_feat()) ? kContainedNote : strand].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef(), compare == sequence::eContained));
         }
     }
     m_Objs["tmp"].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), true));
@@ -663,72 +656,23 @@ DISCREPANCY_SUMMARIZE(CONTAINED_CDS)
     m_ReportItems = m_Objs[kEmptyStr].Export(*this)->GetSubitems();
 }
 
-/*
-DISCREPANCY_CASE(CONTAINED_CDS, TReportObjectList m_ObjsSameStrand; TReportObjectList m_ObjsDiffStrand)
-{
-    CBioseq_CI bi(seh, CSeq_inst::eMol_na);
-    while (bi) {
-        if (IsEukaryotic(*bi, context.m_Lineage)) {
-            // ignore this BioSeq
-        } else {
-            CFeat_CI f(*bi, SAnnotSelector(CSeqFeatData::e_Cdregion));
-        
-            while (f) {
-                CFeat_CI f2 = f;
-                ++f2;
-                while (f2) {
-                    sequence::ECompare compare = sequence::Compare(f->GetLocation(), f2->GetLocation(), &(seh.GetScope()), sequence::fCompareOverlapping);
-                    if (compare == sequence::eContains || compare == sequence::eSame || compare == sequence::eContained) {
-                        bool same_strand = StrandsMatch(f->GetLocation(), f2->GetLocation());
-
-                        CConstRef<CObject> obj(f->GetSeq_feat().GetPointer());
-                        CRef<CDiscrepancyObject> r(new CDiscrepancyObject(obj, bi->GetScope(), context.m_File, context.m_KeepRef));
-                        if (HasContainedNote(*(f->GetSeq_feat()))) {
-                            Add(m_Objs, r);
-                        } else if (same_strand) {
-                            Add(m_ObjsSameStrand, r);
-                        } else {
-                            Add(m_ObjsDiffStrand, r);
-                        }
-                        obj.Reset(f2->GetSeq_feat().GetPointer());
-                        r.Reset(new CDiscrepancyObject(obj, bi->GetScope(), context.m_File, context.m_KeepRef));
-                        if (HasContainedNote(*(f->GetSeq_feat()))) {
-                            Add(m_Objs, r);
-                        } else if (same_strand) {
-                            Add(m_ObjsSameStrand, r);
-                        } else {
-                            Add(m_ObjsDiffStrand, r);
-                        }
-                    }
-                    ++f2;
-                }
-                ++f;
-            }
-        }
-        ++bi;
-    }
-
-    size_t n = m_Objs.size() + m_ObjsSameStrand.size() + m_ObjsDiffStrand.size();
-    if (!n) return false;
-
-    m_ReportItems.clear();
-    CNcbiOstrstream ss;
-    ss << n << " coding region" << (n==1 ? " overlaps" : "s overlap") << " another coding region with a similar or identical name";
-    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(GetName(), CNcbiOstrstreamToString(ss)));
-    TReportObjectList Objs(m_Objs);
-    copy(m_ObjsSameStrand.begin(), m_ObjsSameStrand.end(), back_inserter(Objs));
-    copy(m_ObjsDiffStrand.begin(), m_ObjsDiffStrand.end(), back_inserter(Objs));
-    item->SetDetails(Objs);
-    m_ReportItems.push_back(CRef<CReportItem>(item.Release()));
-
-    return true;
-}
-
 
 DISCREPANCY_AUTOFIX(CONTAINED_CDS)
 {
-    bool rval = false;
+    TReportObjectList list = item->GetDetails();
+    NON_CONST_ITERATE(TReportObjectList, it, list) {
+        if ((*it)->CanAutofix()) {
+            const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+            if (sf) {
+                ConvertCDSToMiscFeat(*sf, scope);
+            }
+        }
+    }
+}
 
+
+/*
+{
     TReportObjectList list_all;
     list_all.insert(list_all.end(), m_Objs.begin(), m_Objs.end());
     list_all.insert(list_all.end(), m_ObjsSameStrand.begin(), m_ObjsSameStrand.end());
@@ -752,13 +696,11 @@ DISCREPANCY_AUTOFIX(CONTAINED_CDS)
             if (compare == sequence::eContains) {
                 // convert f2 to misc_feat
                 if (ConvertCDSToMiscFeat(*f2, scope)) {
-                    rval = true;
                     remove_f2 = true;
                 }
             } else if (compare == sequence::eContained) {
                 // convert f1 to misc_feat
                 if (ConvertCDSToMiscFeat(*f1, scope)) {
-                    rval = true;
                     remove_f1 = true;
                 }
             }
@@ -777,8 +719,6 @@ DISCREPANCY_AUTOFIX(CONTAINED_CDS)
             ++it1;
         }
     }
-
-    return rval;
 }
 */
 
