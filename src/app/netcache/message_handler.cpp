@@ -2824,7 +2824,9 @@ CNCMessageHandler::x_FinishReadingBlob(void)
                 if (m_Quorum != 0)
                     --m_Quorum;
                 x_GetCurSlotServers();
-                if (!m_ThisServerIsMain  ||  !m_AppSetup->fast_on_main)
+// probably, this was made intentionally, but now it looks wrong
+// let us respect quorum setting always
+//                if (!m_ThisServerIsMain  ||  !m_AppSetup->fast_on_main)
                     return &CNCMessageHandler::x_PutToNextPeer;
             }
         } else {
