@@ -277,7 +277,9 @@ CSAM_Formatter::CSAM_Formatter(CNcbiOstream& out,
                                TFlags        flags)
     : m_Out(&out),
       m_Scope(&scope),
-      m_Flags(flags)
+      m_Flags(flags),
+      m_SO(eSO_Skip),
+      m_GO(eGO_Query)
 {
 }
 
@@ -328,13 +330,62 @@ CSAM_Formatter& CSAM_Formatter::Print(const CSeq_align_set& aln_set,
 }
 
 
+void CSAM_Formatter::x_PrintSOTag(void) const
+{
+    switch ( m_SO ) {
+    case eSO_Unsorted:
+        *m_Out << "\tSO:unsorted";
+        break;
+    case eSO_QueryName:
+        *m_Out << "\tSO:queryname";
+        break;
+    case eSO_Coordinate:
+        *m_Out << "\tSO:coordinate";
+        break;
+    case eSO_User:
+        if ( !m_SO_Value.empty() ) {
+            *m_Out << "\tSO:" << m_SO_Value;
+        }
+        break;
+    default:
+        break;
+    }
+}
+
+
+void CSAM_Formatter::x_PrintGOTag(void) const
+{
+    switch ( m_GO ) {
+    case eGO_None:
+        *m_Out << "\tGO:none";
+        break;
+    case eGO_Query:
+        *m_Out << "\tGO:query";
+        break;
+    case eGO_Reference:
+        *m_Out << "\tGO:reference";
+        break;
+    case eGO_User:
+        if ( !m_GO_Value.empty() ) {
+            *m_Out << "\tGO:" << m_GO_Value;
+        }
+        break;
+    default:
+        break;
+    }
+}
+
+
 void CSAM_Formatter::Flush(void)
 {
     if ( !m_Out ) return;
     // Headers
     bool have_data = !m_Header.m_Data.empty() || !m_Body.empty();
     if (have_data) {
-        *m_Out << "@HD\tVN:1.2\tGO:query" << '\n';
+        *m_Out << "@HD\tVN:1.2";
+        x_PrintSOTag();
+        x_PrintGOTag();
+        *m_Out << '\n';
     }
     ITERATE(CSAM_Headers::TData, it, m_Header.m_Data) {
         *m_Out << it->second << '\n';

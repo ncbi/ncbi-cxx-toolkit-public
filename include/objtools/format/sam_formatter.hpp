@@ -100,6 +100,44 @@ public:
     SProgramInfo& SetProgram(void) { return m_ProgramInfo; }
     const SProgramInfo& GetProgram(void) const { return m_ProgramInfo; }
 
+    enum ESortOrder {
+        eSO_Skip,            ///< Do not print SO tag (default)
+        eSO_Unsorted,        ///< SO:unsorted
+        eSO_QueryName,       ///< SO:queryname
+        eSO_Coordinate,      ///< SO:coordinate
+        eSO_User             ///< User-provided string
+    };
+
+    /// Set SO tag value.
+    /// @param so
+    ///   Predefined SO tag value.
+    /// @param so_value
+    ///   User-defined SO tag value. Used only if 'so' is set to eSO_User.
+    void SetSortOrder(ESortOrder so, const string& so_value = kEmptyStr)
+    {
+        m_SO = so;
+        m_SO_Value = so_value;
+    }
+
+    enum EGroupOrder {
+        eGO_Skip,            ///< Do not print GO tag
+        eGO_None,            ///< GO:none
+        eGO_Query,           ///< GO:query (default)
+        eGO_Reference,       ///< GO:reference
+        eGO_User             ///< User-provided string
+    };
+
+    /// Set GO tag value.
+    /// @param go
+    ///   Predefined GO tag value.
+    /// @param go_value
+    ///   User-defined GO tag value. Used only if 'go' is set to eGO_User.
+    void SetGroupOrder(EGroupOrder go, const string& go_value = kEmptyStr)
+    {
+        m_GO = go;
+        m_GO_Value = go_value;
+    }
+
     CSAM_Formatter& Print(const CSeq_align&     aln,
                           const CSeq_id&        query_id);
     CSAM_Formatter& Print(const CSeq_align&     aln,
@@ -117,6 +155,13 @@ private:
     CRef<CScope>  m_Scope;
     TFlags        m_Flags;
     SProgramInfo  m_ProgramInfo;
+    ESortOrder    m_SO;
+    string        m_SO_Value;
+    EGroupOrder   m_GO;
+    string        m_GO_Value;
+
+    void x_PrintSOTag(void) const;
+    void x_PrintGOTag(void) const;
 
     friend class CSAM_CIGAR_Formatter;
 
