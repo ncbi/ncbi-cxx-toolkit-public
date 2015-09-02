@@ -464,7 +464,6 @@ void CMultAlign::InsertDashesInReads() {
                 ++p;
             }
         }
-        _ASSERT(indl == indels.end());
     }
 }
 
