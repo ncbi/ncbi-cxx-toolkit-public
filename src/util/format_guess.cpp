@@ -65,10 +65,14 @@ static unsigned char symbol_type_table[256];
 //  ----------------------------------------------------------------------------
 static bool s_IsTokenPosInt(
     const string& strToken )
+    //  ----------------------------------------------------------------------------
 {
     size_t tokenSize = strToken.size();
     if (tokenSize == 0) {
         return false;
+    }
+    if (tokenSize == 1  &&  strToken[0] == '0') {
+        return true;
     }
     if (strToken[0] < '1'  ||  '9' < strToken[0]) {
         return false;
