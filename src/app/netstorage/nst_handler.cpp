@@ -1298,6 +1298,8 @@ CNetStorageHandler::x_ProcessReconfigure(
     CJsonNode   metadata_diff = m_Server->ReadMetadataConfiguration(reg);
 
     m_Server->AcknowledgeAlert(eReconfigure, "NSTAcknowledge");
+    m_Server->AcknowledgeAlert(eStartupConfig, "NSTAcknowledge");
+    m_Server->AcknowledgeAlert(eConfigOutOfSync, "NSTAcknowledge");
     m_Server->SetAnybodyCanReconfigure(false);
 
     if (server_diff.IsNull() && metadata_diff.IsNull()) {
