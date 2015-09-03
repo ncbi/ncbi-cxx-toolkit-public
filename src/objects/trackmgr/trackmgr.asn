@@ -6,7 +6,7 @@
 NCBI-TrackManager DEFINITIONS ::=
 BEGIN
 
-EXPORTS TMgr-Request, TMgr-Reply, TMgr-GenomeContext,
+EXPORTS TMgr-Request, TMgr-Reply, TMgr-GenomeContext, TMgr-Status,
         TMgr-ClientInfo, TMgr-DisplayTrackRequest,
         TMgr-DisplayTrackReply, TMgr-AssemblySpec,TMgr-AttrSpec,
         TMgr-BlastRIDDetail, TMgr-Assembly, TMgr-Attribute, TMgr-DisplayTrack,
@@ -32,7 +32,9 @@ TMgr-Request ::= CHOICE {
     resolve-track-items TMgr-ItemResolverRequest,
     remove-user-tracks TMgr-RemoveUserTrackRequest,
     retrieve-tracksets TMgr-RetrieveTracksetRequest,
-    create-trackset TMgr-CreateTracksetRequest
+    create-trackset TMgr-CreateTracksetRequest,
+    rename-trackset TMgr-RenameMyNCBICollectionRequest,
+    supported-assemblies TMgr-SupportedAssembliesRequest
 }
 
 TMgr-Reply ::= CHOICE {
@@ -44,7 +46,9 @@ TMgr-Reply ::= CHOICE {
     resolve-track-items TMgr-ItemResolverReply,
     remove-user-tracks TMgr-RemoveUserTrackReply,
     retrieve-tracksets TMgr-RetrieveTracksetReply,
-    create-trackset TMgr-CreateTracksetReply
+    create-trackset TMgr-CreateTracksetReply,
+    rename-trackset TMgr-RenameMyNCBICollectionReply,
+    supported-assemblies TMgr-SupportedAssembliesReply
 }
 
 TMgr-GenomeContext ::= CHOICE {
@@ -391,6 +395,26 @@ TMgr-CreateTracksetReply ::= SEQUENCE {
     messages SEQUENCE OF TMgr-Message OPTIONAL,
     status TMgr-Status,
     trackset-id VisibleString OPTIONAL
+}
+
+TMgr-RenameMyNCBICollectionRequest ::= SEQUENCE {
+    collection-id VisibleString,
+    name VisibleString
+}
+
+TMgr-RenameMyNCBICollectionReply ::= SEQUENCE {
+    messages SEQUENCE OF TMgr-Message OPTIONAL,
+    status TMgr-Status
+}
+
+TMgr-SupportedAssembliesRequest ::= CHOICE {
+    assembly-acc VisibleString
+    --tax-id INTEGER (0..MAXINT)
+}
+
+TMgr-SupportedAssembliesReply ::= CHOICE {
+    assembly-acc BOOLEAN
+    --tax-id SET OF VisibleString
 }
 
 END
