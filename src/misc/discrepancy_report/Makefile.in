@@ -4,7 +4,6 @@
 ##################################
 
 LIB_PROJ = discrepancy_report
-SUB_PROJ = unit_test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
