@@ -413,6 +413,7 @@ TMgr-SupportedAssembliesRequest ::= CHOICE {
 }
 
 TMgr-SupportedAssembliesReply ::= CHOICE {
+    messages SEQUENCE OF TMgr-Message OPTIONAL,
     assembly-acc BOOLEAN
     --tax-id SET OF VisibleString
 }
