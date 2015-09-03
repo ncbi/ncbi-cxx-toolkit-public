@@ -453,10 +453,6 @@ struct SOptionDefinition {
     {OPT_DEF(eSwitch, eMultiline),
         "multiline", "Expect multiple lines of output.", {-1}},
 
-    {OPT_DEF(eSwitch, eDebugHTTP),
-        "debug-http", "Dump HTTP request and response headers "
-            "and data for debugging.", {-1}},
-
     {OPT_DEF(eOptionWithParameter, eProtocolDump),
         PROTOCOL_DUMP_OPTION, "Dump input and output messages of "
             "the automation protocol to the specified file.", {-1}},
@@ -618,7 +614,7 @@ struct SCommandDefinition {
         {eOptionalObjectLoc, eNetStorage, ePersistent, eFastStorage,
             eNetCache, eNamespace, eTTL, eMovable, eCacheable, eNoMetaData,
             eInput, eInputFile, eLoginToken, eAuth,
-            eFileTrackSite, eFileTrackAPIKey, eDebugHTTP,
+            eFileTrackSite, eFileTrackAPIKey,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_Download,
@@ -627,7 +623,7 @@ struct SCommandDefinition {
         "send its contents to the standard output or a file."
         ABOUT_NETSTORAGE_OPTION,
         {eID, eNetStorage, eNetCache, eOffset, eSize,
-            eOutputFile, eLoginToken, eAuth, eDebugHTTP,
+            eOutputFile, eLoginToken, eAuth,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_Relocate,
@@ -641,7 +637,7 @@ struct SCommandDefinition {
         ABOUT_NETSTORAGE_OPTION,
         {eID, eNetStorage, ePersistent, eFastStorage, eNetCache, eNamespace,
             eTTL, eMovable, eCacheable, eNoMetaData, eLoginToken, eAuth,
-            eFileTrackSite, eFileTrackAPIKey, eDebugHTTP,
+            eFileTrackSite, eFileTrackAPIKey,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_MkObjectLoc,
@@ -662,7 +658,7 @@ struct SCommandDefinition {
         "objectinfo", "Print information about a NetStorage object.",
         MAY_REQUIRE_LOCATION_HINTING
         ABOUT_NETSTORAGE_OPTION,
-        {eID, eNetStorage, eNetCache, eLoginToken, eAuth, eDebugHTTP,
+        {eID, eNetStorage, eNetCache, eLoginToken, eAuth,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand,
@@ -670,7 +666,7 @@ struct SCommandDefinition {
         "rmobject", "Remove a NetStorage object by its locator.",
         MAY_REQUIRE_LOCATION_HINTING
         ABOUT_NETSTORAGE_OPTION,
-        {eID, eNetStorage, eNetCache, eLoginToken, eAuth, eDebugHTTP,
+        {eID, eNetStorage, eNetCache, eLoginToken, eAuth,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_GetAttr,
@@ -678,7 +674,7 @@ struct SCommandDefinition {
         MAY_REQUIRE_LOCATION_HINTING
         ABOUT_NETSTORAGE_OPTION,
         {eObjectLoc, eAttrName, eNetStorage,
-            eNetCache, eCache, eLoginToken, eAuth, eDebugHTTP,
+            eNetCache, eCache, eLoginToken, eAuth,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_SetAttr,
@@ -687,7 +683,7 @@ struct SCommandDefinition {
         ABOUT_NETSTORAGE_OPTION,
         {eObjectLoc, eAttrName, eAttrValue, eNetStorage,
             eNetCache, eCache, eLoginToken, eAuth,
-            eFileTrackAPIKey, eDebugHTTP,
+            eFileTrackAPIKey,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_JobInfo,
@@ -1250,6 +1246,7 @@ int CGridCommandLineInterfaceApp::Run()
 
     {
         bool enable_extended_cli = false;
+        bool debug = false;
 
         int argc = m_ArgC - 1;
         const char** argv = m_ArgV + 1;
@@ -1259,6 +1256,8 @@ int CGridCommandLineInterfaceApp::Run()
                 enable_extended_cli = true;
             else if (strcmp(*argv, "--admin") == 0)
                 m_AdminMode = true;
+            else if (strcmp(*argv, "--debug") == 0)
+                debug = true;
             else {
                 ++argv;
                 continue;
@@ -1266,6 +1265,22 @@ int CGridCommandLineInterfaceApp::Run()
             --m_ArgC;
             if (argc > 0)
                 memmove(argv, argv + 1, argc * sizeof(*argv));
+        }
+
+        if (enable_extended_cli && debug) {
+            // Setup error posting
+            SetDiagTrace(eDT_Enable);
+            SetDiagPostLevel(eDiag_Trace);
+            SetDiagPostAllFlags(eDPF_All | eDPF_OmitInfoSev);
+            UnsetDiagPostFlag(eDPF_Line);
+            UnsetDiagPostFlag(eDPF_File);
+            UnsetDiagPostFlag(eDPF_Location);
+            UnsetDiagPostFlag(eDPF_LongFilename);
+            SetDiagTraceAllFlags(SetDiagPostAllFlags(eDPF_Default));
+            // Print conn data
+            putenv(s_ConnDebugEnv);
+            // Enable data logging
+            reg.Set(netservice_api_section, "connection_data_logging", "true");
         }
 
         CCommandLineParser clparser(GRID_APP_NAME, GRID_APP_VERSION_INFO,
@@ -1559,19 +1574,6 @@ int CGridCommandLineInterfaceApp::Run()
                 break;
             case eServiceName:
                 m_Opts.service_name = opt_value;
-                break;
-            case eDebugHTTP:
-                // Setup error posting
-                SetDiagTrace(eDT_Enable);
-                SetDiagPostLevel(eDiag_Trace);
-                SetDiagPostAllFlags(eDPF_All | eDPF_OmitInfoSev);
-                UnsetDiagPostFlag(eDPF_Line);
-                UnsetDiagPostFlag(eDPF_File);
-                UnsetDiagPostFlag(eDPF_Location);
-                UnsetDiagPostFlag(eDPF_LongFilename);
-                SetDiagTraceAllFlags(SetDiagPostAllFlags(eDPF_Default));
-                // Print conn data
-                putenv(s_ConnDebugEnv);
                 break;
             case eProtocolDump:
                 if ((m_Opts.protocol_dump = fopen(opt_value, "a")) == NULL) {

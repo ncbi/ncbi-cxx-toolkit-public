@@ -124,6 +124,10 @@ NCBI_PARAM_DECL(int, netservice_api, max_connection_pool_size);
 typedef NCBI_PARAM_TYPE(netservice_api, max_connection_pool_size)
     TServConn_MaxConnPoolSize;
 
+NCBI_PARAM_DECL(bool, netservice_api, connection_data_logging);
+typedef NCBI_PARAM_TYPE(netservice_api, connection_data_logging)
+    TServConn_ConnDataLogging;
+
 // Worker node-specific parameters
 
 // Determine how long the worker node should wait for the

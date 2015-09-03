@@ -253,7 +253,6 @@ enum EOption {
     eClientSession,
     eCommand,
     eMultiline,
-    eDebugHTTP,
     eProtocolDump,
     eDebugConsole,
     eDumpNSNotifications,

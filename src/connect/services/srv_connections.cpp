@@ -639,7 +639,8 @@ CNetServerConnection SNetServerImpl::Connect(STimeout* timeout,
     m_ServerInPool->AdjustThrottlingParameters(SNetServerInPool::eCOR_Success);
 
     //LOG_POST("comm timeout: "<<*(timeout != NULL ? timeout: &m_ServerInPool->m_ServerPool->m_CommTimeout));
-    conn->m_Socket.SetDataLogging(eOff);
+    conn->m_Socket.SetDataLogging(
+            TServConn_ConnDataLogging::GetDefault() ? eOn : eOff);
     conn->m_Socket.SetTimeout(eIO_ReadWrite, timeout != NULL ? timeout :
                               &m_ServerInPool->m_ServerPool->m_CommTimeout);
     conn->m_Socket.DisableOSSendDelay();
