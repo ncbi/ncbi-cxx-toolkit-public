@@ -412,10 +412,12 @@ TMgr-SupportedAssembliesRequest ::= CHOICE {
     --tax-id INTEGER (0..MAXINT)
 }
 
-TMgr-SupportedAssembliesReply ::= CHOICE {
+TMgr-SupportedAssembliesReply ::= SEQUENCE {
     messages SEQUENCE OF TMgr-Message OPTIONAL,
-    assembly-acc BOOLEAN
-    --tax-id SET OF VisibleString
+    reply CHOICE {
+        assembly-acc BOOLEAN
+        --tax-id SET OF VisibleString
+    }
 }
 
 END
