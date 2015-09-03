@@ -220,8 +220,12 @@ public:
             m_Scope(&scope),
             m_Count_Bioseq(0),
             m_Count_Seq_feat(0),
-            m_Enable_CSeq_inst(false),
-            m_Enable_CSeqFeatData(false)
+#define INIT_DISCREPANCY_TYPE(type) m_Enable_##type(false)
+            INIT_DISCREPANCY_TYPE(CSeq_inst),
+            INIT_DISCREPANCY_TYPE(CSeqFeatData),
+            INIT_DISCREPANCY_TYPE(CBioSource),
+            INIT_DISCREPANCY_TYPE(CRNA_ref),
+            INIT_DISCREPANCY_TYPE(COrgName)
         {}
     bool AddTest(const string& name);
     void Parse(const objects::CSeq_entry_Handle& handle);
