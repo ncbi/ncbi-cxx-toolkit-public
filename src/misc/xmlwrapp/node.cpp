@@ -702,17 +702,9 @@ void xml::node::set_content (const char *content) {
                       reinterpret_cast<const xmlChar*>(content));
 }
 //####################################################################
-void xml::node::set_raw_content (const char *raw_content,
-                                 raw_content_type type) {
-    if (type == type_raw)
-        xmlNodeSetContent(pimpl_->xmlnode_,
-                          reinterpret_cast<const xmlChar*>(raw_content));
-    else {
-        xmlNodeSetContent(pimpl_->xmlnode_,
-                          reinterpret_cast<const xmlChar*>(""));
-        xmlNodeAddContent(pimpl_->xmlnode_,
-                          reinterpret_cast<const xmlChar*>(raw_content));
-    }
+void xml::node::set_raw_content (const char *raw_content) {
+    xmlNodeSetContent(pimpl_->xmlnode_,
+                      reinterpret_cast<const xmlChar*>(raw_content));
 }
 //####################################################################
 const char* xml::node::get_content (void) const {
