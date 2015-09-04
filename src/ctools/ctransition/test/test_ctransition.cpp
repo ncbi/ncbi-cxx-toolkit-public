@@ -90,12 +90,12 @@ int CTest::Run()
 
     // ncbierr.hpp
     {{
-        ErrPostEx(SEV_INFO,    E_Programmer, 0, "Warning message without arguments");
-        ErrPostEx(SEV_ERROR,   E_Programmer, 0, "Warning message without arguments");
-        ErrPostEx(SEV_WARNING, E_Programmer, 0, "Warning message without arguments");
-        ErrPostEx(SEV_WARNING, E_Programmer, 1, "Warning message: %ld", 1);
-        ErrPostEx(SEV_WARNING, E_Programmer, 2, "Warning message: %ld %s", 2, "str");
-        ErrPostEx(SEV_WARNING, E_Programmer, 3, "Warning message: %ld %s %s", 3, "str1", "str2");
+        ErrPostEx(SEV_INFO,    E_Programmer, "Warning message without arguments");
+        ErrPostEx(SEV_ERROR,   E_Programmer, "Warning message without arguments");
+        ErrPostEx(SEV_WARNING, E_Programmer, "Warning message without arguments");
+        ErrPostEx(SEV_WARNING, E_Programmer, "Warning message: %ld", 1);
+        ErrPostEx(SEV_WARNING, E_Programmer, "Warning message: %ld %s", 2, "str");
+        ErrPostEx(SEV_WARNING, E_Programmer, "Warning message: %ld %s %s", 3, "str1", "str2");
         
         Nlm_Message(MSG_OK, "Message 0");
         Nlm_Message(MSG_OK, "Message 1: %ld", 1);
