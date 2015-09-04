@@ -1546,6 +1546,8 @@ void CSeq_align_Mapper_Base::x_GetDstStd(CRef<CSeq_align>& dst) const
         if (seg_it == m_Segs.begin()  &&  non_gap_count < 2) {
             continue;
         }
+        // Ignore empty segments
+        if ( std_seg->GetLoc().empty() ) continue;
         std_segs.push_back(std_seg);
     }
     if (non_gap_count < 2  &&  !std_segs.empty()) {
