@@ -122,8 +122,8 @@ struct CShowBlastDeflineTest : public CShowBlastDefline {
         string bit_string[] = {"503", "502"};
         int sum_n[] = {1, 1};
                 
-        string id_url[] = {"<a title=\"Show report for NP_569083.1\" href=\"http://www.ncbi.nlm.nih.gov/nucleotide/18426812?report=genbank&log$=nucltop&blast_rank=1&RID=\" >",
-                           "<a title=\"Show report for NP_031424.1\" href=\"http://www.ncbi.nlm.nih.gov/nucleotide/6680636?report=genbank&log$=nucltop&blast_rank=1&RID=\" >"};
+        string id_url[] = {"<a title=\"Show report for NP_569083.1\" href=\"//www.ncbi.nlm.nih.gov/nucleotide/18426812?report=genbank&log$=nucltop&blast_rank=1&RID=\" >",
+                           "<a title=\"Show report for NP_031424.1\" href=\"//www.ncbi.nlm.nih.gov/nucleotide/6680636?report=genbank&log$=nucltop&blast_rank=1&RID=\" >"};
         string score_url[] = {"<a href=#18426812>", "<a href=#6680636>"};
         bool is_new[] = {false, false};
         bool was_checked[] = {false, false};
