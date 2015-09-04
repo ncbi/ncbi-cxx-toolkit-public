@@ -84,6 +84,23 @@ CTMS_SupportedAssemblies_Client::IsAssemblySupported(const string& assm_acc) con
     if (reply.IsNull()) {
         NCBI_THROW(CException, eUnknown, "Unable to determine support for assembly");
     }
+    if (reply->IsSetMessages()) {
+        for (const auto e : reply->GetMessages()) {
+            switch (e->GetLevel()) {
+            case eTMgr_MessageLevel_warning:
+                ERR_POST(Warning << e->GetMessage());
+                break;
+            case eTMgr_MessageLevel_info:
+                ERR_POST(Info << e->GetMessage());
+                break;
+            default:
+                ERR_POST(e->GetMessage());
+            }
+        }
+    }
+    if (!reply->IsSetReply()) {
+        NCBI_THROW(CException, eUnknown, "Unable to determine support for assembly");
+    }
     return reply->GetReply().GetAssembly_acc();
 }
 
