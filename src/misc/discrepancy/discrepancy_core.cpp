@@ -351,6 +351,7 @@ CBioSource::TGenome CDiscrepancyContext::GetCurrentGenome()
 DISCREPANCY_LINK_MODULE(discrepancy_case);
 DISCREPANCY_LINK_MODULE(suspect_product_names);
 DISCREPANCY_LINK_MODULE(division_code_conflicts);
+DISCREPANCY_LINK_MODULE(duplicate_gene_locus);
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

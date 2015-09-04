@@ -3,7 +3,7 @@
 # Build library "xdiscrepancy"
 ###############################
 
-SRC = discrepancy_core report_object utils discrepancy_case suspect_product_names division_code_conflicts
+SRC = discrepancy_core report_object utils discrepancy_case suspect_product_names division_code_conflicts duplicate_gene_locus
 
 LIB = xdiscrepancy
 
