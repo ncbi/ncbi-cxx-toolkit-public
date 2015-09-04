@@ -85,7 +85,8 @@ CTMS_SupportedAssemblies_Client::IsAssemblySupported(const string& assm_acc) con
         NCBI_THROW(CException, eUnknown, "Unable to determine support for assembly");
     }
     if (reply->IsSetMessages()) {
-        for (const auto e : reply->GetMessages()) {
+        ITERATE (TReply::TMessages, it, reply->GetMessages()) {
+            CConstRef<CTMgr_Message> e = *it;
             switch (e->GetLevel()) {
             case eTMgr_MessageLevel_warning:
                 ERR_POST(Warning << e->GetMessage());
