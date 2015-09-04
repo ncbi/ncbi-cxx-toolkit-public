@@ -77,6 +77,8 @@ void CBlast_SAM_Formatter::x_ProcessCustomSpec(const string & custom_spec,
 			m_refRow = 0;
 		} else if ("QR" == *iter ) {
 			m_refRow = 1;
+			CSAM_Formatter::SetGroupOrder(eGO_Reference);
+			CSAM_Formatter::SetSortOrder(eSO_Coordinate);
 		} else if ("FA" == *iter) {
 			CSAM_Formatter::UnsetFlag(CSAM_Formatter::fSAM_PlainSeqIds);
 		}
