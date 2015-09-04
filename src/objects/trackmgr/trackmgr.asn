@@ -417,7 +417,7 @@ TMgr-SupportedAssembliesReply ::= SEQUENCE {
     reply CHOICE {
         assembly-acc BOOLEAN
         --tax-id SET OF VisibleString
-    }
+    } OPTIONAL
 }
 
 END
