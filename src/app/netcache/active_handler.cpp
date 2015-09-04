@@ -306,8 +306,7 @@ CNCActiveHandler::x_ReplaceServerConn(void)
     if (m_Peer->CreateNewSocket(this)) {
         if (ctx)
             SetDiagCtx(ctx);
-        x_StartProcessing();
-        if (m_ProcessingStarted)
+        if (x_StartProcessing())
             return &CNCActiveHandler::x_SendCmdToExecute;
     }
 
@@ -1110,7 +1109,7 @@ CNCActiveHandler::x_DoSyncGet(void)
     m_BlobAccess->RequestMetaInfo(this);
 }
 
-void
+bool
 CNCActiveHandler::x_StartProcessing(void)
 {
     m_ProcessingStarted = true;
@@ -1120,6 +1119,7 @@ CNCActiveHandler::x_StartProcessing(void)
         m_ErrMsg = "ERR:Error in TaskServer";
         SetState(&CNCActiveHandler::x_CloseCmdAndConn);
     }
+    return m_ProcessingStarted;
 }
 
 void
@@ -1139,10 +1139,11 @@ CNCActiveHandler::x_SetStateAndStartProcessing(State state)
     // object's socket wasn't added to main TaskServer's epoll yet. And in this
     // case it's not possible for it to become runnable on the other thread.
     SetState(state);
-    if (m_ProcessingStarted)
+// if StartProcessing succeeds, then this task will wait for signal from m_Proxy
+// otherwise, schedule this task for execution - to do x_CloseCmdAndConn
+    if (m_ProcessingStarted || !x_StartProcessing()) {
         SetRunnable();
-    else
-        x_StartProcessing();
+    }
 }
 
 CNCActiveHandler::State

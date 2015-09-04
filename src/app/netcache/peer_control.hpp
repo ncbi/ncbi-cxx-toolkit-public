@@ -145,6 +145,7 @@ public:
     CNCActiveHandler* GetBGConn(void);
     bool StartActiveSync(void);
     bool AddSyncControl(CNCActiveSyncControl* sync_ctrl);
+    void RemoveSyncControl(CNCActiveSyncControl* sync_ctrl);
     bool FinishSync(CNCActiveSyncControl* sync_ctrl);
 
     void RegisterConnError(void);

@@ -307,8 +307,16 @@ CNCPeerControl::x_GetPooledConnImpl(void)
     if (m_PooledConns.empty()  ||  CTaskServer::IsInHardShutdown())
         return NULL;
 
+// I do not know if there is any difference
+// but this will use all available CNCActiveHandler objects reducing idle state
+// hope, this will help in identifying abandoned tasks
+#if 0
     CNCActiveHandler* conn = &m_PooledConns.back();
     m_PooledConns.pop_back();
+#else
+    CNCActiveHandler* conn = &m_PooledConns.front();
+    m_PooledConns.pop_front();
+#endif
     m_BusyConns.push_back(*conn);
 
     return conn;
@@ -1047,6 +1055,19 @@ CNCPeerControl::AddSyncControl(CNCActiveSyncControl* sync_ctrl)
     m_ObjLock.Unlock();
 
     return true;
+}
+
+void
+CNCPeerControl::RemoveSyncControl(CNCActiveSyncControl* sync_ctrl)
+{
+    m_ObjLock.Lock();
+    ERASE_ITERATE(TNCActiveSyncList, it_sync, m_SyncList) {
+        CNCActiveSyncControl* ctrl = *it_sync;
+        if (sync_ctrl == *it_sync) {
+            m_SyncList.erase(it_sync);
+        }
+    }
+    m_ObjLock.Unlock();
 }
 
 bool

@@ -288,7 +288,7 @@ private:
     State x_ConnClosedReplaceable(void);
     State x_CloseCmdAndConn(void);
     State x_CloseConn(void);
-    void x_StartProcessing(void);
+    bool x_StartProcessing(void);
     void x_SetStateAndStartProcessing(State state);
     State x_SendCmdToExecute(void);
     void x_StartWritingBlob(void);

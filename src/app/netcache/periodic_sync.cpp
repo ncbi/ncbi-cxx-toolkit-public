@@ -108,6 +108,10 @@ s_StartSync(SSyncSlotData* slot_data, SSyncSlotSrv* slot_srv, bool is_passive)
     if (slot_data->cleaning  ||  slot_data->clean_required) {
         return eServerBusy;
     }
+    // there is a feeling (not knowledge) that more than one sync per slot is not good
+    if (slot_data->cnt_sync_started != 0) {
+        return eServerBusy;
+    }
 
     CMiniMutexGuard g_srv(slot_srv->lock);
     if (slot_srv->sync_started) {
@@ -715,7 +719,8 @@ CNCActiveSyncControl::State
 CNCActiveSyncControl::x_FinishScanSlots(void)
 {
     Uint8 sync_interval = CNCDistributionConf::GetPeriodicSyncInterval();
-    m_ForceInitSync = CNCPeerControl::HasServersForInitSync()  &&  !m_DidSync;
+// I am not sure using m_ForceInitSync makes sense
+//    m_ForceInitSync = CNCPeerControl::HasServersForInitSync()  &&  !m_DidSync;
     Uint8 now = CSrvTime::Current().AsUSec();
     if (now - m_LoopStart >= sync_interval) {
         s_ShuffleSrvsLists();
@@ -948,6 +953,7 @@ CNCActiveSyncControl::x_FinishSync(void)
     if (m_Result == eSynOK) {
         s_CommitSync(m_SlotData, m_SlotSrv);
     } else {
+        m_SlotSrv->peer->RemoveSyncControl(this);
         s_CancelSync(m_SlotData, m_SlotSrv, CNCDistributionConf::GetFailedSyncRetryDelay());
     }
     m_DidSync = m_Result == eSynOK;
@@ -1051,9 +1057,6 @@ CNCActiveSyncControl::x_CleanSyncObjects(void)
     m_Events2Send.clear();
     m_CurGetEvent = m_Events2Get.begin();
     m_CurSendEvent = m_Events2Send.begin();
-    m_StartedCmds = 0;
-    m_NeedReply = false;
-    m_NextTask = eSynNoTask;
 }
 
 void
