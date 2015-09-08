@@ -1216,7 +1216,7 @@ extern char* UTIL_NcbiLocalHostName(char* hostname)
 
     if (len) {
         size_t i;
-        for (i = 0;  i < sizeof(kEndings) / sizeof(kEndings[0]);  i++) {
+        for (i = 0;  i < sizeof(kEndings) / sizeof(kEndings[0]);  ++i) {
             assert(strlen(kEndings[i].text) == kEndings[i].len);
             if (len > kEndings[i].len) {
                 size_t prefix = len - kEndings[i].len;
