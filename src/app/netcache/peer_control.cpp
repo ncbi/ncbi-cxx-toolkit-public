@@ -497,8 +497,7 @@ CNCPeerControl::GetBGConn(void)
                          << ") connections");
         return NULL;
     }
-    // x_GetBGConnImpl() releases m_ObjLock
-    CNCActiveHandler* conn = x_GetBGConnImpl();
+    CNCActiveHandler* conn = x_GetBGConnImpl(); // m_ObjLock.Unlock
     if (!conn)
         x_UnreserveBGConn();
     return conn;
@@ -506,22 +505,26 @@ CNCPeerControl::GetBGConn(void)
 
 bool
 CNCPeerControl::x_DoReleaseConn(CNCActiveHandler* conn)
+// m_ObjLock is locked on entrance
+// method returns m_ObjLock.IsLocked state
+// it is not unlocked here, because sometimes there is something else to do
 {
 retry:
-    bool result = true;
+    bool is_locked = true;
     if (!m_Clients.empty()) {
         CNCActiveClientHub* hub = m_Clients.front();
         m_Clients.pop_front();
-        if (!x_AssignClientConn(hub, conn)) {
+        if (!x_AssignClientConn(hub, conn)) {  // m_ObjLock.Unlock
+            // unlocked now; we need to lock to retry
             m_ObjLock.Lock();
             goto retry;
         }
-
-        result = false;
+        is_locked = false;
     }
     else if (m_HasBGTasks
              &&  m_BGConns < CNCDistributionConf::GetMaxPeerBGConns())
     {
+        // m_ObjLock is locked
         x_IncBGConns();
         if (!m_SmallMirror.empty()  ||  !m_BigMirror.empty()) {
             SNCMirrorEvent* event;
@@ -536,15 +539,18 @@ retry:
             s_MirrorQueueSize.Add(-1);
             x_UpdateHasTasks();
             m_ObjLock.Unlock();
+            is_locked = false;
 
-            if (conn)
+            if (conn) {
                 conn->SetReservedForBG(true);
-            else
+            } else {
                 conn = x_CreateNewConn(true);
-            if (conn)
+            }
+            if (conn) {
                 x_ProcessMirrorEvent(conn, event);
-            else {
+            } else {
                 x_DeleteMirrorEvent(event);
+                // unlocked now; we need to lock to retry
                 m_ObjLock.Lock();
                 x_DecBGConns();
                 goto retry;
@@ -564,6 +570,7 @@ retry:
                 m_NextTaskSync = m_SyncList.begin();
             x_UpdateHasTasks();
             m_ObjLock.Unlock();
+            is_locked = false;
 
             if (conn)
                 conn->SetReservedForBG(true);
@@ -573,6 +580,7 @@ retry:
                 sync_ctrl->ExecuteSyncTask(task_info, conn);
             else {
                 sync_ctrl->CmdFinished(eSynNetworkError, eSynActionNone, NULL, NC_SYNC_HINT);
+                // unlocked now; we need to lock to retry
                 m_ObjLock.Lock();
                 x_DecBGConns();
                 goto retry;
@@ -581,13 +589,11 @@ retry:
         else {
             SRV_FATAL("Unexpected state");
         }
-
-        result = false;
     }
     else {
         x_DecActiveConns();
     }
-    return result;
+    return is_locked;
 }
 
 void
@@ -630,7 +636,7 @@ CNCPeerControl::x_ProcessUpdateEvent(SNCMirrorEvent* event)
     m_ObjLock.Lock();
 //    if (x_ReserveBGConnNow()) {
     if (x_ReserveBGConn()) {
-        CNCActiveHandler* conn = x_GetBGConnImpl();
+        CNCActiveHandler* conn = x_GetBGConnImpl(); // m_ObjLock.Unlock
         if (conn) {
             x_ProcessMirrorEvent(conn, event);
         } else {
@@ -675,8 +681,7 @@ CNCPeerControl::x_AddMirrorEvent(SNCMirrorEvent* event, Uint8 size)
 // all blobs (size!=0) go into queue
 // this reduces response time
     if ((size == 0 || m_BusyConns.empty()) && x_ReserveBGConn()) {
-        // x_GetBGConnImpl() releases m_ObjLock
-        CNCActiveHandler* conn = x_GetBGConnImpl();
+        CNCActiveHandler* conn = x_GetBGConnImpl(); // m_ObjLock.Unlock
         if (conn)
             x_ProcessMirrorEvent(conn, event);
         else {
@@ -1026,8 +1031,7 @@ CNCPeerControl::AddSyncControl(CNCActiveSyncControl* sync_ctrl)
 
     m_ObjLock.Lock();
     while (has_more  &&  x_ReserveBGConn()) {
-        // x_GetBGConnImpl() releases m_ObjLock
-        CNCActiveHandler* conn = x_GetBGConnImpl();
+        CNCActiveHandler* conn = x_GetBGConnImpl(); // m_ObjLock.Unlock
         if (!conn) {
             x_UnreserveBGConn();
             if (!task_added)
@@ -1075,8 +1079,7 @@ CNCPeerControl::FinishSync(CNCActiveSyncControl* sync_ctrl)
 #if 1
 //    if (x_ReserveBGConn()) {
     if (m_SyncList.empty() && x_ReserveBGConn()) {
-        // x_GetBGConnImpl() releases m_ObjLock
-        CNCActiveHandler* conn = x_GetBGConnImpl();
+        CNCActiveHandler* conn = x_GetBGConnImpl(); // m_ObjLock.Unlock
         if (!conn) {
             x_UnreserveBGConn();
             return false;
