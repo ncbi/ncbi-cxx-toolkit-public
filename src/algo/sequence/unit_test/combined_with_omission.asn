@@ -842,13 +842,11 @@ Seq-annot ::= {
  factor (C. elegans)cds (smg6 gene)"
       },
       product whole gi 240248230,
-      location packed-int {
-        {
+      location int {
           from 195029,
           to 196310,
           strand minus,
           id gi 258441149
-        }
       }
     },
     {
@@ -860,15 +858,13 @@ Seq-annot ::= {
       },
       partial TRUE,
       product whole gi 240248231,
-      location packed-int {
-        {
+      location int {
           from 195029,
           to 196310,
           strand plus,
           id gi 258441149,
           fuzz-from lim lt,
           fuzz-to lim gt
-        }
       },
       xref {
         {

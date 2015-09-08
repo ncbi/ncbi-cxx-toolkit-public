@@ -20210,3 +20210,135 @@ CDRKQNQPASLREIIVLADQVQLTNS"
     }
   }
 }
+Bioseq-set ::= {
+  class nuc-prot,
+  seq-set {
+    seq {
+      id {
+        gi 148747135
+      },
+      descr {
+        molinfo {
+          biomol mRNA,
+          completeness unknown
+        }
+      },
+      inst {
+        repr delta,
+        mol rna,
+        length 1225,
+        ext delta {
+          literal {
+            length 792
+          },
+          literal {
+            length 431,
+            seq-data ncbi4na '428242211441428441442448214141442211424821224122
+2284122422248222122241412222422422212444442422828222414424822FFFFFFFFFFFFFFFFF
+FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF822182144822222
+88284141828284812228828482842444218282242222444222248422221122FFFFFFFFFFFFFFFF
+FFFFFFFFFFFFFFFFFFFFFFFFFFF241444218221112212111222118844288448284818282222221
+118818422222118818222211488121812211111884112222821122121222121812118210'H
+          },
+          literal {
+            length 2
+          }
+        },
+        hist {
+          assembly {
+            {
+              type global,
+              dim 2,
+              segs spliced {
+                product-id gi 148747135,
+                genomic-id gi 333778953,
+                product-strand plus,
+                genomic-strand minus,
+                product-type transcript,
+                exons {
+                  {
+                    product-start nucpos 792,
+                    product-end nucpos 1222,
+                    genomic-start 541,
+                    genomic-end 1048,
+                    parts {
+                      match 109,
+                      mismatch 41,
+                      genomic-ins 20,
+                      mismatch 39,
+                      match 77,
+                      mismatch 22,
+                      genomic-ins 57,
+                      mismatch 21,
+                      match 117,
+                      mismatch 1,
+                      match 4
+                    },
+                    scores {
+                      {
+                        id str "idty",
+                        value real { 6043307086, 10, -10 }
+                      }
+                    },
+                    partial TRUE
+                  }
+                },
+                product-length 1225
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                frame one,
+                code {
+                  id 1
+                },
+                code-break {
+                  {
+                    loc int {
+                      from 913,
+                      to 915,
+                      strand plus,
+                      id gi 148747135
+                    },
+                    aa ncbieaa 42
+                  }
+                }
+              },
+              product whole gi 47523092,
+              location int {
+                from 790,
+                to 915,
+                strand plus,
+                id gi 148747135,
+                fuzz-from lim lt
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        gi 47523092
+      },
+      descr {
+        molinfo {
+          biomol peptide,
+          completeness no-ends
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 41,
+        seq-data iupacaa "XLAKELEAVREAKRHRPLTARPTRDPAAHGGASPEASXXXX"
+      }
+    }
+  }
+}

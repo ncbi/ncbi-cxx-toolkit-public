@@ -1083,6 +1083,13 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
         }
     }
 
+    //collapse one interval packed-ints
+    for (  CTypeIterator<CSeq_loc> loc(annot); loc; ++loc) {
+        if (loc->IsPacked_int() && loc->GetPacked_int().Get().size()==1) {
+            auto interval = loc->SetPacked_int().Set().front();
+            loc->SetInt(*interval);
+        }
+    }
     return is_protein_align ? cds_feat_on_genome_with_translated_product : mrna_feat_on_genome_with_translated_product;
 }
 
@@ -2115,6 +2122,39 @@ SImplementation::x_CreateNcRnaFeature(const CSeq_feat* ncrnafeature_on_mrna,
     return ncrna_feat;
 }
 
+namespace {
+CRef<CSeq_loc> ChangeToMix(const CSeq_loc& a)
+{
+    CRef<CSeq_loc> a_mix(new CSeq_loc);
+    a_mix->Assign(a);
+    a_mix->ChangeToMix();
+    return a_mix;
+}
+
+CRef<CSeq_loc> SubtractPreserveBiologicalOrder(const CSeq_loc& a, const CSeq_loc& b)
+{
+    auto a_mix = ChangeToMix(a);
+    auto b_mix = ChangeToMix(b);
+
+    auto& a_list = a_mix->SetMix().Set();
+    auto& b_list = b_mix->GetMix().Get();
+
+    for (auto b_i = b_list.begin(); b_i != b_list.end(); ++b_i) {
+        for (auto a_i = a_list.begin(); a_i != a_list.end();) {
+
+            auto diff = ChangeToMix(*(*a_i)->Subtract(**b_i, CSeq_loc::fSort, nullptr, nullptr));
+            a_list.splice(a_i, diff->SetMix().Set());
+            a_i = a_list.erase(a_i);
+        }
+    }
+    if (a_list.size() == 1) {
+        return a_list.front();
+    }
+    a_mix->ChangeToPackedInt();
+    return a_mix;
+}
+}
+
 CRef<CSeq_feat>
 CFeatureGenerator::
 SImplementation::x_MapFeature(const objects::CSeq_feat* feature_on_mrna,
@@ -2355,9 +2395,7 @@ SImplementation::x_MapFeature(const objects::CSeq_feat* feature_on_mrna,
             mapped_loc->SetPartialStart(true, eExtreme_Biological);
 
             if (no_utr) {
-                loc->Assign(*loc->Subtract(*orig_mapped_loc.Subtract(*mapped_loc, 0, nullptr, nullptr), 0, nullptr, nullptr));
-                cout << MSerial_AsnText << *loc;
-
+                loc->Assign(*SubtractPreserveBiologicalOrder(*loc, *SubtractPreserveBiologicalOrder(orig_mapped_loc, *mapped_loc)));
                 loc->SetPartialStart(true, eExtreme_Biological);       
             }
         }
@@ -2366,7 +2404,7 @@ SImplementation::x_MapFeature(const objects::CSeq_feat* feature_on_mrna,
         if (end_gap > 0) {
             CSeq_loc orig_mapped_loc;
 
-            bool no_utr = mapped_loc->GetStart(eExtreme_Biological) == loc->GetStart(eExtreme_Biological);
+            bool no_utr = mapped_loc->GetStop(eExtreme_Biological) == loc->GetStop(eExtreme_Biological);
             if (no_utr) {
                 orig_mapped_loc.Assign(*mapped_loc);
             }
@@ -2387,7 +2425,7 @@ SImplementation::x_MapFeature(const objects::CSeq_feat* feature_on_mrna,
             }
             mapped_loc->SetPartialStop(true, eExtreme_Biological);
             if (no_utr) {
-                loc->Assign(*loc->Subtract(*orig_mapped_loc.Subtract(*mapped_loc, 0, nullptr, nullptr), 0, nullptr, nullptr));
+                loc->Assign(*SubtractPreserveBiologicalOrder(*loc, *SubtractPreserveBiologicalOrder(orig_mapped_loc, *mapped_loc)));
                 loc->SetPartialStop(true, eExtreme_Biological);       
             }
         }

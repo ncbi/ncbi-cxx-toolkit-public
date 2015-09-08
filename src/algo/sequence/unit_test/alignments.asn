@@ -15510,3 +15510,43 @@ Seq-align ::= {
     }
   }
 }
+Seq-align ::= {
+  type global,
+  dim 2,
+  segs spliced {
+    product-id gi 148747135,
+    genomic-id gi 333778953,
+    product-strand plus,
+    genomic-strand minus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 792, --CDS             371..916
+        product-end nucpos 1222,
+        genomic-start 541,
+        genomic-end 1048,
+        parts {
+          match 109,
+          mismatch 41,
+          genomic-ins 20,
+          mismatch 39,
+          match 77,
+          mismatch 22,
+          genomic-ins 57,
+          mismatch 21,
+          match 117,
+          mismatch 1,
+          match 4
+        },
+        scores {
+          {
+            id str "idty",
+            value real { 6043307086, 10, -10 }
+          }
+        },
+        partial TRUE
+      }
+    },
+    product-length 1225
+  }
+}

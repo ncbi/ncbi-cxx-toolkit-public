@@ -1675,6 +1675,13 @@ Seq-loc ::= packed-int { \
 
     feat_gen.ConvertLocToAnnot(loc, annot, seqs);
 
+    if (annot.GetData().GetFtable().front()->GetLocation().Compare(
+        annot.GetData().GetFtable().back()->GetLocation())
+        != 0
+        ) {
+        cerr << MSerial_AsnText << annot.GetData();
+    }
+
     BOOST_CHECK(annot.GetData().GetFtable().front()->GetLocation().Compare(
                 annot.GetData().GetFtable().back()->GetLocation())
                 == 0

@@ -1879,13 +1879,11 @@ Seq-annot ::= {
  factor (C. elegans)cds (smg6 gene)"
       },
       product whole gi 240248230,
-      location packed-int {
-        {
-          from 195029,
-          to 196310,
-          strand minus,
-          id gi 258441149
-        }
+      location int {
+        from 195029,
+        to 196310,
+        strand minus,
+        id gi 258441149
       }
     },
     {
@@ -1897,15 +1895,13 @@ Seq-annot ::= {
       },
       partial TRUE,
       product whole gi 240248231,
-      location packed-int {
-        {
-          from 195029,
-          to 196310,
-          strand plus,
-          id gi 258441149,
-          fuzz-from lim lt,
-          fuzz-to lim gt
-        }
+      location int {
+        from 195029,
+        to 196310,
+        strand plus,
+        id gi 258441149,
+        fuzz-from lim lt,
+        fuzz-to lim gt
       },
       xref {
         {
@@ -6319,15 +6315,13 @@ Seq-annot ::= {
         accession "NM_205781",
         version 2
       },
-      location packed-int {
-        {
-          from 131748,
-          to 134289,
-          strand plus,
-          id other {
-            accession "NW_001508749",
-            version 2
-          }
+      location int {
+        from 131748,
+        to 134289,
+        strand plus,
+        id other {
+          accession "NW_001508749",
+          version 2
         }
       },
       qual {
@@ -6346,15 +6340,13 @@ Seq-annot ::= {
         }
       },
       product whole gi 45429981,
-      location packed-int {
-        {
-          from 131839,
-          to 132531,
-          strand plus,
-          id other {
-            accession "NW_001508749",
-            version 2
-          }
+      location int {
+        from 131839,
+        to 132531,
+        strand plus,
+        id other {
+          accession "NW_001508749",
+          version 2
         }
       },
       xref {
@@ -7109,15 +7101,13 @@ Seq-annot ::= {
         }
       },
       product whole gi 269846817,
-      location packed-int {
-        {
-          from 12608162,
-          to 12608226,
-          strand plus,
-          id other {
-            accession "NT_011512",
-            version 11
-          }
+      location int {
+        from 12608162,
+        to 12608226,
+        strand plus,
+        id other {
+          accession "NT_011512",
+          version 11
         }
       }
     },
@@ -7129,15 +7119,13 @@ Seq-annot ::= {
           product "hsa-miR-155-5p"
         }
       },
-      location packed-int {
-        {
-          from 12608165,
-          to 12608187,
-          strand plus,
-          id other {
-            accession "NT_011512",
-            version 11
-          }
+      location int {
+        from 12608165,
+        to 12608187,
+        strand plus,
+        id other {
+          accession "NT_011512",
+          version 11
         }
       },
       dbxref {
@@ -7155,15 +7143,13 @@ Seq-annot ::= {
           product "hsa-miR-155-3p"
         }
       },
-      location packed-int {
-        {
-          from 12608204,
-          to 12608225,
-          strand plus,
-          id other {
-            accession "NT_011512",
-            version 11
-          }
+      location int {
+        from 12608204,
+        to 12608225,
+        strand plus,
+        id other {
+          accession "NT_011512",
+          version 11
         }
       },
       dbxref {
@@ -7218,15 +7204,13 @@ Seq-annot ::= {
       comment "The RefSeq transcript has 30 substitutions, 4 non-frameshifting
  indels and aligns at 6% coverage compared to this genomic sequence",
       product whole gi 302632519,
-      location packed-int {
-        {
-          from 0,
-          to 4696,
-          strand plus,
-          id gi 89077346,
-          fuzz-from lim lt,
-          fuzz-to lim gt
-        }
+      location int {
+        from 0,
+        to 4696,
+        strand plus,
+        id gi 89077346,
+        fuzz-from lim lt,
+        fuzz-to lim gt
       },
       qual {
         {
@@ -7327,15 +7311,13 @@ Seq-annot ::= {
         accession "NR_048215",
         version 1
       },
-      location packed-int {
-        {
-          from 891249,
-          to 891474,
-          strand plus,
-          id other {
-            accession "NT_037436",
-            version 3
-          }
+      location int {
+        from 891249,
+        to 891474,
+        strand plus,
+        id other {
+          accession "NT_037436",
+          version 3
         }
       },
       dbxref {
@@ -7394,15 +7376,13 @@ Seq-annot ::= {
         accession "NR_047702",
         version 1
       },
-      location packed-int {
-        {
-          from 1322832,
-          to 1322944,
-          strand minus,
-          id other {
-            accession "NW_001848856",
-            version 1
-          }
+      location int {
+        from 1322832,
+        to 1322944,
+        strand minus,
+        id other {
+          accession "NW_001848856",
+          version 1
         }
       },
       dbxref {
@@ -7421,15 +7401,13 @@ Seq-annot ::= {
         }
       },
       comment "mir-2279-RA; Dmel\mir-2279-RA; CR42911-RA; Dmel\CR42911-RA",
-      location packed-int {
-        {
-          from 1322895,
-          to 1322914,
-          strand minus,
-          id other {
-            accession "NW_001848856",
-            version 1
-          }
+      location int {
+        from 1322895,
+        to 1322914,
+        strand minus,
+        id other {
+          accession "NW_001848856",
+          version 1
         }
       },
       dbxref {
@@ -7452,15 +7430,13 @@ Seq-annot ::= {
         }
       },
       comment "mir-2279-RB; Dmel\mir-2279-RB; CR42911-RB; Dmel\CR42911-RB",
-      location packed-int {
-        {
-          from 1322859,
-          to 1322878,
-          strand minus,
-          id other {
-            accession "NW_001848856",
-            version 1
-          }
+      location int {
+        from 1322859,
+        to 1322878,
+        strand minus,
+        id other {
+          accession "NW_001848856",
+          version 1
         }
       },
       dbxref {
@@ -7518,15 +7494,13 @@ Seq-annot ::= {
         accession "NR_004370",
         version 1
       },
-      location packed-int {
-        {
-          from 190009,
-          to 196034,
-          strand plus,
-          id other {
-            accession "NW_001848859",
-            version 1
-          }
+      location int {
+        from 190009,
+        to 196034,
+        strand plus,
+        id other {
+          accession "NW_001848859",
+          version 1
         }
       },
       dbxref {
@@ -7656,15 +7630,13 @@ Seq-annot ::= {
       partial TRUE,
       except TRUE,
       product whole local str "CDNA_27",
-      location packed-int {
-        {
-          from 122448,
-          to 122756,
-          strand plus,
-          id gi 18466424,
-          fuzz-from lim lt,
-          fuzz-to lim gt
-        }
+      location int {
+        from 122448,
+        to 122756,
+        strand plus,
+        id gi 18466424,
+        fuzz-from lim lt,
+        fuzz-to lim gt
       },
       except-text "unclassified transcription discrepancy"
     },
@@ -7676,15 +7648,13 @@ Seq-annot ::= {
       },
       partial TRUE,
       product whole local str "PROT_27",
-      location packed-int {
-        {
-          from 122448,
-          to 122756,
-          strand plus,
-          id gi 18466424,
-          fuzz-from lim lt,
-          fuzz-to lim gt
-        }
+      location int {
+        from 122448,
+        to 122756,
+        strand plus,
+        id gi 18466424,
+        fuzz-from lim lt,
+        fuzz-to lim gt
       },
       xref {
         {
@@ -8005,13 +7975,11 @@ Seq-annot ::= {
         type mRNA
       },
       product whole local str "CDNA_32",
-      location packed-int {
-        {
-          from 60162,
-          to 60530,
-          strand plus,
-          id gi 385839642
-        }
+      location int {
+        from 60162,
+        to 60530,
+        strand plus,
+        id gi 385839642
       }
     },
     {
@@ -8032,13 +8000,11 @@ Seq-annot ::= {
         }
       },
       product whole local str "PROT_32",
-      location packed-int {
-        {
-          from 60162,
-          to 60530,
-          strand plus,
-          id gi 385839642
-        }
+      location int {
+        from 60162,
+        to 60530,
+        strand plus,
+        id gi 385839642
       }
     }
   }
@@ -8060,13 +8026,11 @@ Seq-annot ::= {
         type mRNA
       },
       product whole local str "CDNA_33",
-      location packed-int {
-        {
-          from 206,
-          to 1072,
-          strand plus,
-          id gi 385839642
-        }
+      location int {
+        from 206,
+        to 1072,
+        strand plus,
+        id gi 385839642
       }
     },
     {
@@ -8087,13 +8051,11 @@ Seq-annot ::= {
         }
       },
       product whole local str "PROT_33",
-      location packed-int {
-        {
-          from 206,
-          to 1072,
-          strand plus,
-          id gi 385839642
-        }
+      location int {
+        from 206,
+        to 1072,
+        strand plus,
+        id gi 385839642
       }
     }
   }
@@ -8115,13 +8077,11 @@ Seq-annot ::= {
         type mRNA
       },
       product whole local str "CDNA_34",
-      location packed-int {
-        {
-          from 1160627,
-          to 1161043,
-          strand minus,
-          id gi 238801501
-        }
+      location int {
+        from 1160627,
+        to 1161043,
+        strand minus,
+        id gi 238801501
       }
     },
     {
@@ -8142,13 +8102,11 @@ Seq-annot ::= {
         }
       },
       product whole local str "PROT_34",
-      location packed-int {
-        {
-          from 1160627,
-          to 1161043,
-          strand minus,
-          id gi 238801501
-        }
+      location int {
+        from 1160627,
+        to 1161043,
+        strand minus,
+        id gi 238801501
       }
     }
   }
@@ -8173,14 +8131,12 @@ Seq-annot ::= {
       },
       partial TRUE,
       product whole local str "CDNA_35",
-      location packed-int {
-        {
-          from 118805,
-          to 119227,
-          strand plus,
-          id gi 291482369,
-          fuzz-to lim gt
-        }
+      location int {
+        from 118805,
+        to 119227,
+        strand plus,
+        id gi 291482369,
+        fuzz-to lim gt
       }
     },
     {
@@ -8191,14 +8147,12 @@ Seq-annot ::= {
       },
       partial TRUE,
       product whole local str "PROT_35",
-      location packed-int {
-        {
-          from 118805,
-          to 119227,
-          strand plus,
-          id gi 291482369,
-          fuzz-to lim gt
-        }
+      location int {
+        from 118805,
+        to 119227,
+        strand plus,
+        id gi 291482369,
+        fuzz-to lim gt
       }
     }
   }
@@ -8225,15 +8179,13 @@ Seq-annot ::= {
       partial TRUE,
       except TRUE,
       product whole local str "CDNA_36",
-      location packed-int {
-        {
-          from 118806,
-          to 119228,
-          strand plus,
-          id gi 291482369,
-          fuzz-from lim lt,
-          fuzz-to lim gt
-        }
+      location int {
+        from 118806,
+        to 119228,
+        strand plus,
+        id gi 291482369,
+        fuzz-from lim lt,
+        fuzz-to lim gt
       },
       except-text "unclassified transcription discrepancy"
     },
@@ -8246,15 +8198,13 @@ Seq-annot ::= {
       },
       partial TRUE,
       product whole local str "PROT_36",
-      location packed-int {
-        {
-          from 118806,
-          to 119228,
-          strand plus,
-          id gi 291482369,
-          fuzz-from lim lt,
-          fuzz-to lim gt
-        }
+      location int {
+        from 118806,
+        to 119228,
+        strand plus,
+        id gi 291482369,
+        fuzz-from lim lt,
+        fuzz-to lim gt
       }
     }
   }
@@ -8661,15 +8611,13 @@ Seq-annot ::= {
       partial TRUE,
       except TRUE,
       product whole local str "CDNA_38",
-      location packed-int {
-        {
-          from 0,
-          to 928,
-          strand minus,
-          id gi 323511446,
-          fuzz-from lim lt,
-          fuzz-to lim gt
-        }
+      location int {
+        from 0,
+        to 928,
+        strand minus,
+        id gi 323511446,
+        fuzz-from lim lt,
+        fuzz-to lim gt
       },
       except-text "unclassified transcription discrepancy"
     },
@@ -8681,15 +8629,13 @@ Seq-annot ::= {
       },
       partial TRUE,
       product whole local str "PROT_38",
-      location packed-int {
-        {
-          from 0,
-          to 928,
-          strand minus,
-          id gi 323511446,
-          fuzz-from lim lt,
-          fuzz-to lim gt
-        }
+      location int {
+        from 0,
+        to 928,
+        strand minus,
+        id gi 323511446,
+        fuzz-from lim lt,
+        fuzz-to lim gt
       },
       xref {
         {
@@ -8724,14 +8670,12 @@ Seq-annot ::= {
       partial TRUE,
       except TRUE,
       product whole local str "CDNA_39",
-      location packed-int {
-        {
-          from 1,
-          to 928,
-          strand minus,
-          id gi 323511446,
-          fuzz-from lim lt
-        }
+      location int {
+        from 1,
+        to 928,
+        strand minus,
+        id gi 323511446,
+        fuzz-from lim lt
       },
       except-text "unclassified transcription discrepancy"
     },
@@ -8743,14 +8687,12 @@ Seq-annot ::= {
       },
       partial TRUE,
       product whole local str "PROT_39",
-      location packed-int {
-        {
-          from 1,
-          to 928,
-          strand minus,
-          id gi 323511446,
-          fuzz-from lim lt
-        }
+      location int {
+        from 1,
+        to 928,
+        strand minus,
+        id gi 323511446,
+        fuzz-from lim lt
       },
       xref {
         {
@@ -9174,13 +9116,11 @@ Seq-annot ::= {
         type mRNA
       },
       product whole local str "CDNA_43",
-      location packed-int {
-        {
-          from 0,
-          to 1175,
-          strand plus,
-          id gi 385243207
-        }
+      location int {
+        from 0,
+        to 1175,
+        strand plus,
+        id gi 385243207
       }
     },
     {
@@ -9201,13 +9141,11 @@ Seq-annot ::= {
         }
       },
       product whole local str "PROT_43",
-      location packed-int {
-        {
-          from 0,
-          to 1175,
-          strand plus,
-          id gi 385243207
-        }
+      location int {
+        from 0,
+        to 1175,
+        strand plus,
+        id gi 385243207
       },
       xref {
         {
@@ -9238,13 +9176,11 @@ Seq-annot ::= {
         type mRNA
       },
       product whole local str "CDNA_44",
-      location packed-int {
-        {
-          from 0,
-          to 1175,
-          strand plus,
-          id gi 385243207
-        }
+      location int {
+        from 0,
+        to 1175,
+        strand plus,
+        id gi 385243207
       }
     },
     {
@@ -9265,13 +9201,11 @@ Seq-annot ::= {
         }
       },
       product whole local str "PROT_44",
-      location packed-int {
-        {
-          from 0,
-          to 1175,
-          strand plus,
-          id gi 385243207
-        }
+      location int {
+        from 0,
+        to 1175,
+        strand plus,
+        id gi 385243207
       },
       xref {
         {
@@ -9331,14 +9265,12 @@ Seq-annot ::= {
       comment "The RefSeq transcript aligns at 89% coverage compared to this
  genomic sequence",
       product whole gi 148277093,
-      location packed-int {
-        {
-          from 2669779,
-          to 2671661,
-          strand minus,
-          id gi 157812221,
-          fuzz-to lim gt
-        }
+      location int {
+        from 2669779,
+        to 2671661,
+        strand minus,
+        id gi 157812221,
+        fuzz-to lim gt
       },
       qual {
         {
@@ -9371,14 +9303,12 @@ Seq-annot ::= {
       comment "The RefSeq protein has 1 substitution and aligns at 92%
  coverage compared to this genomic sequence",
       product whole gi 255958313,
-      location packed-int {
-        {
-          from 2670820,
-          to 2671661,
-          strand minus,
-          id gi 157812221,
-          fuzz-to lim gt
-        }
+      location int {
+        from 2670820,
+        to 2671661,
+        strand minus,
+        id gi 157812221,
+        fuzz-to lim gt
       },
       qual {
         {
@@ -9851,13 +9781,11 @@ Seq-annot ::= {
       },
       except TRUE,
       product whole gi 178405,
-      location packed-int {
-        {
-          from 1364981,
-          to 1367067,
-          strand minus,
-          id gi 157696887
-        }
+      location int {
+        from 1364981,
+        to 1367067,
+        strand minus,
+        id gi 157696887
       },
       except-text "unclassified transcription discrepancy"
     }
@@ -10148,15 +10076,13 @@ Seq-annot ::= {
       partial TRUE,
       except TRUE,
       product whole local str "CDNA_53",
-      location packed-int {
-        {
-          from 1055608,
-          to 1056303,
-          strand plus,
-          id gi 218230750,
-          fuzz-from lim lt,
-          fuzz-to lim gt
-        }
+      location int {
+        from 1055608,
+        to 1056303,
+        strand plus,
+        id gi 218230750,
+        fuzz-from lim lt,
+        fuzz-to lim gt
       },
       except-text "unclassified transcription discrepancy"
     },
@@ -10180,15 +10106,13 @@ Seq-annot ::= {
       },
       partial TRUE,
       product whole local str "PROT_53",
-      location packed-int {
-        {
-          from 1055608,
-          to 1056303,
-          strand plus,
-          id gi 218230750,
-          fuzz-from lim lt,
-          fuzz-to lim gt
-        }
+      location int {
+        from 1055608,
+        to 1056303,
+        strand plus,
+        id gi 218230750,
+        fuzz-from lim lt,
+        fuzz-to lim gt
       },
       xref {
         {
@@ -10311,13 +10235,11 @@ Seq-annot ::= {
       comment "The RefSeq transcript has 1 substitution compared to this
  genomic sequence",
       product whole gi 53933279,
-      location packed-int {
-        {
-          from 49972873,
-          to 49973793,
-          strand plus,
-          id gi 568815275
-        }
+      location int {
+        from 49972873,
+        to 49973793,
+        strand plus,
+        id gi 568815275
       },
       qual {
         {
@@ -10348,13 +10270,11 @@ Seq-annot ::= {
       comment "The RefSeq protein has 1 substitution compared to this genomic
  sequence",
       product whole gi 53933280,
-      location packed-int {
-        {
-          from 49972873,
-          to 49973793,
-          strand plus,
-          id gi 568815275
-        }
+      location int {
+        from 49972873,
+        to 49973793,
+        strand plus,
+        id gi 568815275
       },
       xref {
         {
@@ -10599,6 +10519,98 @@ Seq-annot ::= {
           fuzz-from lim circle
         }
       }
+    }
+  }
+}
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+        locus "IGF2",
+        desc "insulin-like growth factor 2 (somatomedin A)",
+        syn {
+          "IGF-II"
+        }
+      },
+      partial TRUE,
+      location int {
+          from 541,
+          to 1048,
+          strand minus,
+          id gi 333778953,
+--          fuzz-from lim lt,
+          fuzz-to lim gt
+      },
+      dbxref {
+        {
+          db "GeneID",
+          tag id 396916
+        }
+      }
+    },
+    {
+      data rna {
+        type mRNA,
+        ext name "insulin-like growth factor 2 (somatomedin A)"
+      },
+      partial TRUE,
+      except TRUE,
+      comment "The RefSeq transcript has 124 substitutions, 2
+ non-frameshifting indels and aligns at 35% coverage compared to this genomic
+ sequence",
+      product whole gi 148747135,
+      location int {
+        from 541,
+        to 1048,
+        strand minus,
+        id gi 333778953,
+--        fuzz-from lim lt,
+        fuzz-to lim gt
+      },
+      qual {
+        {
+          qual "inference",
+          val "similar to RNA sequence, mRNA (same species):RefSeq:NM_213883.2"
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
+    },
+    {
+      data cdregion {
+        frame two,
+        code {
+          id 1
+        }
+      },
+      partial TRUE,
+      except TRUE,
+      comment "The RefSeq protein has 4 substitutions and aligns at 22%
+ coverage compared to this genomic sequence",
+      product whole gi 47523092,
+      location int {
+        from 940,
+        to 1048,
+        strand minus,
+        id gi 333778953,
+        fuzz-from lim lt,
+        fuzz-to lim gt
+      },
+      qual {
+        {
+          qual "inference",
+          val "similar to AA sequence (same species):RefSeq:NP_999048.1"
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "insulin-like growth factor II preproprotein"
+            }
+          }
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
     }
   }
 }
