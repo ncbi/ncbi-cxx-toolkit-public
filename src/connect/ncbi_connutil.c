@@ -1854,8 +1854,8 @@ static EIO_Status s_StripToPattern
                     if (memcmp(b, pattern, pattern_size) == 0)
                         break; /*found*/
                 }
-                /* pattern found */
                 if ( n_check ) {
+                    /* pattern found */
                     size_t x_discarded = (size_t)(b - buf) + pattern_size;
                     if ( discard )
                         BUF_Write(discard, buf + n_read, x_discarded - n_read);
