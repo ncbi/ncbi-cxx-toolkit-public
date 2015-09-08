@@ -3636,21 +3636,23 @@ static EIO_Status s_Shutdown(SOCK                  sock,
     case eIO_Open:
     case eIO_Close:
         if (sock->w_status != eIO_Closed) {
-            if ((status = s_WritePending(sock, tv, 0, 0)) != eIO_Success
-                &&  !sock->pending   &&  sock->w_len) {
-                CORE_LOGF_X(13, !tv  ||  (tv->tv_sec | tv->tv_usec)
-                            ? eLOG_Warning : eLOG_Trace,
-                            ("%s[SOCK::%s] "
-                             " %s with output (%lu byte%s) still pending (%s)",
-                             s_ID(sock, _id),
-                             dir & eIO_ReadWrite ? "Shutdown" : "Close",
-                             !dir ? "Leaving " : dir == eIO_Close ? "Closing" :
-                             dir == eIO_Write
-                             ? "Shutting down for write"
-                             : "Shutting down for read/write",
-                             (unsigned long) sock->w_len,
-                             &"s"[sock->w_len == 1],
-                             IO_StatusStr(status)));
+            if ((status = s_WritePending(sock, tv, 0, 0)) != eIO_Success) {
+                if (!sock->pending   &&  sock->w_len) {
+                    CORE_LOGF_X(13, !tv  ||  (tv->tv_sec | tv->tv_usec)
+                                ? eLOG_Warning : eLOG_Trace,
+                                ("%s[SOCK::%s] "
+                                 " %s with output (%lu byte%s) still pending"
+                                 " (%s)", s_ID(sock, _id),
+                                 dir & eIO_ReadWrite ? "Shutdown" : "Close",
+                                 !dir ? "Leaving " : dir == eIO_Close
+                                 ?      "Closing"  : dir == eIO_Write
+                                 ?      "Shutting down for write"
+                                 :      "Shutting down for read/write",
+                                 (unsigned long) sock->w_len,
+                                 &"s"[sock->w_len == 1],
+                                 IO_StatusStr(status)));
+                } else if (!(dir & eIO_ReadWrite))
+                    status = eIO_Success;
             }
             if (sock->session  &&  !sock->pending) {
                 FSSLClose sslclose = s_SSL ? s_SSL->Close : 0;
@@ -7960,6 +7962,8 @@ extern int/*bool*/ SOCK_isipEx(const char* str, int/*bool*/ fullquad)
 
 extern int/*bool*/ SOCK_IsLoopbackAddress(unsigned int ip)
 {
+    if (ip == htonl(INADDR_LOOPBACK)) 
+        return 1/*true*/;
     /* 127/8 */
     if (ip) {
         unsigned int addr = ntohl(ip);
