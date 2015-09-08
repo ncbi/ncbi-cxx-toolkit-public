@@ -1086,7 +1086,7 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
     //collapse one interval packed-ints
     for (  CTypeIterator<CSeq_loc> loc(annot); loc; ++loc) {
         if (loc->IsPacked_int() && loc->GetPacked_int().Get().size()==1) {
-            auto interval = loc->SetPacked_int().Set().front();
+            CRef<CSeq_interval> interval = loc->SetPacked_int().Set().front();
             loc->SetInt(*interval);
         }
     }
@@ -2133,16 +2133,16 @@ CRef<CSeq_loc> ChangeToMix(const CSeq_loc& a)
 
 CRef<CSeq_loc> SubtractPreserveBiologicalOrder(const CSeq_loc& a, const CSeq_loc& b)
 {
-    auto a_mix = ChangeToMix(a);
-    auto b_mix = ChangeToMix(b);
+    CRef<CSeq_loc> a_mix = ChangeToMix(a);
+    CRef<CSeq_loc> b_mix = ChangeToMix(b);
 
-    auto& a_list = a_mix->SetMix().Set();
-    auto& b_list = b_mix->GetMix().Get();
+          list< CRef< CSeq_loc > >& a_list = a_mix->SetMix().Set();
+    const list< CRef< CSeq_loc > >& b_list = b_mix->GetMix().Get();
 
-    for (auto b_i = b_list.begin(); b_i != b_list.end(); ++b_i) {
-        for (auto a_i = a_list.begin(); a_i != a_list.end();) {
+    ITERATE (list< CRef< CSeq_loc > >, b_i, b_list) {
+        for (list< CRef< CSeq_loc > >::iterator a_i = a_list.begin(); a_i != a_list.end();) {
 
-            auto diff = ChangeToMix(*(*a_i)->Subtract(**b_i, CSeq_loc::fSort, nullptr, nullptr));
+            CRef<CSeq_loc> diff = ChangeToMix(*(*a_i)->Subtract(**b_i, CSeq_loc::fSort, nullptr, nullptr));
             a_list.splice(a_i, diff->SetMix().Set());
             a_i = a_list.erase(a_i);
         }
