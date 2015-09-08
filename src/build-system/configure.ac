@@ -5299,8 +5299,22 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
       CPPFLAGS="$BOOST_INCLUDE $orig_CPPFLAGS"
       LIBS="$RT_LIBS $orig_LIBS"
       [AC_LINK_IFELSE(
-          [AC_LANG_PROGRAM([[#include <boost/spirit.hpp>]],
-              [[boost::spirit::parse("123", boost::spirit::int_p);]])],
+          [AC_LANG_PROGRAM([[#include <boost/spirit.hpp>
+                             using namespace boost::spirit;
+                             struct MyGrammar : public grammar<MyGrammar>
+                             {
+                                 template <typename TScanner>
+                                 struct definition {
+                                     definition(const MyGrammar&) { }
+                                     typedef rule<TScanner, parser_context<>,
+                                                  parser_tag<0> >
+                                             TRule;
+                                     TRule my_rule;
+                                     TRule const & start() const
+                                         { return my_rule; }
+                                 };
+                             };]],
+              [[MyGrammar g;  parse("123", g);]])],
           [ncbi_cv_lib_boost_spirit=yes], [ncbi_cv_lib_boost_spirit=no])])
 
    BOOST_SYSTEM_LIBS=-lboost_system${BOOST_TAG}

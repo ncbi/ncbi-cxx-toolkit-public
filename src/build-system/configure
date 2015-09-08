@@ -31474,10 +31474,24 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 #include <boost/spirit.hpp>
+                             using namespace boost::spirit;
+                             struct MyGrammar : public grammar<MyGrammar>
+                             {
+                                 template <typename TScanner>
+                                 struct definition {
+                                     definition(const MyGrammar&) { }
+                                     typedef rule<TScanner, parser_context<>,
+                                                  parser_tag<0> >
+                                             TRule;
+                                     TRule my_rule;
+                                     TRule const & start() const
+                                         { return my_rule; }
+                                 };
+                             };
 int
 main ()
 {
-boost::spirit::parse("123", boost::spirit::int_p);
+MyGrammar g;  parse("123", g);
   ;
   return 0;
 }
