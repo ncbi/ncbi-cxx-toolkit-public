@@ -307,16 +307,10 @@ CNCPeerControl::x_GetPooledConnImpl(void)
     if (m_PooledConns.empty()  ||  CTaskServer::IsInHardShutdown())
         return NULL;
 
-// I do not know if there is any difference
-// but this will use all available CNCActiveHandler objects reducing idle state
-// hope, this will help in identifying abandoned tasks
-#if 0
+// it is important to have it this way, not the other
     CNCActiveHandler* conn = &m_PooledConns.back();
     m_PooledConns.pop_back();
-#else
-    CNCActiveHandler* conn = &m_PooledConns.front();
-    m_PooledConns.pop_front();
-#endif
+
     m_BusyConns.push_back(*conn);
 
     return conn;
@@ -578,7 +572,7 @@ retry:
             if (conn)
                 sync_ctrl->ExecuteSyncTask(task_info, conn);
             else {
-                sync_ctrl->CmdFinished(eSynNetworkError, eSynActionNone, NULL);
+                sync_ctrl->CmdFinished(eSynNetworkError, eSynActionNone, NULL, NC_SYNC_HINT);
                 m_ObjLock.Lock();
                 x_DecBGConns();
                 goto retry;
@@ -1147,7 +1141,7 @@ CNCPeerControl::GetReadyForShutdown(void)
 
         SSyncTaskInfo task_info;
         bool has_more = sync_ctrl->GetNextTask(task_info);
-        sync_ctrl->CmdFinished(eSynNetworkError, eSynActionNone, NULL);
+        sync_ctrl->CmdFinished(eSynNetworkError, eSynActionNone, NULL, NC_SYNC_HINT);
         if (has_more)
             sync_ctrl->GetNextTask(task_info);
         result = false;

@@ -294,7 +294,7 @@ private:
     void x_StartWritingBlob(void);
     State x_FinishWritingBlob(void);
     State x_FakeWritingBlob(void);
-    void x_FinishSyncCmd(ESyncResult result);
+    void x_FinishSyncCmd(ESyncResult result, int hint);
     void x_CleanCmdResources(void);
     State x_FinishCommand(void);
     State x_ProcessPeerError(void);

@@ -132,6 +132,7 @@ enum ESynActionType {
     eSynActionRemove
 };
 
+#define NC_SYNC_HINT  __LINE__
 
 struct SSyncSlotSrv
 {
@@ -148,6 +149,8 @@ struct SSyncSlotSrv
     Uint8   last_success_time;
     Uint8   cur_sync_id;
     Uint8   cnt_sync_ops;
+    ESyncResult result;
+    int hint;
 
     SSyncSlotSrv(CNCPeerControl* peer);
 };
@@ -264,7 +267,7 @@ public:
     bool AddStartBlob(const string& key, SNCBlobSummary* blob_sum);
     bool GetNextTask(SSyncTaskInfo& task_info);
     void ExecuteSyncTask(const SSyncTaskInfo& task_info, CNCActiveHandler* conn);
-    void CmdFinished(ESyncResult res, ESynActionType action, CNCActiveHandler* conn);
+    void CmdFinished(ESyncResult res, ESynActionType action, CNCActiveHandler* conn, int hint);
     bool IsStuck(void) const {
         return m_Stuck;
     }
@@ -304,6 +307,7 @@ private:
     Uint8       m_SrvId;
     Uint2       m_Slot;
     ESyncResult m_Result;
+    int         m_Hint;
     CMiniMutex  m_Lock;
     Uint4       m_StartedCmds;
 
