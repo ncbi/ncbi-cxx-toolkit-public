@@ -298,11 +298,13 @@ int CAsn2FlatApp::Run(void)
     // create the flat-file generator
     m_FFGenerator.Reset(x_CreateFlatFileGenerator(args));
     if (args["no-external"]) {
-        m_FFGenerator->SetAnnotSelector()
-            .SetExcludeExternal(true);
+        m_FFGenerator->SetAnnotSelector().SetExcludeExternal(true);
     }
     if( args["resolve-all"]) {
         m_FFGenerator->SetAnnotSelector().SetResolveAll();
+    }
+    if( args["depth"] ) {
+        m_FFGenerator->SetAnnotSelector().SetResolveDepth(args["depth"].AsInteger());
     }
 
     auto_ptr<CObjectIStream> is;

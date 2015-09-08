@@ -577,6 +577,9 @@ void CFlatFileConfig::AddArgumentDescriptions(CArgDescriptions& args)
          arg_desc->AddFlag("resolve-all",
                            "Resolves all, e.g. for contigs.");
 
+         arg_desc->AddOptionalKey("depth", "Depth",
+                                  "Exploration depth", CArgDescriptions::eInteger);
+
          arg_desc->AddFlag("show-flags",
                            "Describe the current flag set in ENUM terms");
 
