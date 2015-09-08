@@ -51,6 +51,7 @@
 #include <objtools/edit/autodef_source_group.hpp>
 #include <objtools/edit/autodef_mod_combo.hpp>
 #include <objtools/edit/autodef_feature_clause.hpp>
+#include <objtools/edit/autodef_options.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)    
