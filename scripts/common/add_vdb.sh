@@ -37,7 +37,8 @@ if [ "$platform" = IntelMAC ]; then
 else
     archflag=
 fi
-./configure --prefix=$root/$name --build-prefix=$root/build/$name $archflag
+./configure --prefix=$root/$name --build-prefix=$root/build/$name $archflag \
+    ${LIBXML_LIBPATH:+"LDFLAGS=$LIBXML_LIBPATH"}
 make
 make install
 if [ -f $root/$name/include/klib/rc.h ]; then

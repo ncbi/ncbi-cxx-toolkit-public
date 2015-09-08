@@ -36861,6 +36861,7 @@ cat >>confdefs.h <<\_ACEOF
 #define HAVE_LIBXML 1
 _ACEOF
 
+   export LIBXML_LIBPATH
 fi
 
 
