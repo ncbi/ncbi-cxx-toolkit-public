@@ -266,12 +266,11 @@ private:
 
 
 CPipeHandle::CPipeHandle(void)
-    : m_ProcHandle(INVALID_HANDLE_VALUE),
-      m_ChildStdIn(INVALID_HANDLE_VALUE),
+    : m_ChildStdIn (INVALID_HANDLE_VALUE),
       m_ChildStdOut(INVALID_HANDLE_VALUE),
       m_ChildStdErr(INVALID_HANDLE_VALUE),
-      m_Flags(0),
-      m_SelfHandles(false)
+      m_ProcHandle (INVALID_HANDLE_VALUE),
+      m_Flags(0), m_SelfHandles(false)
 {
     return;
 }
@@ -883,9 +882,10 @@ static string s_UnixError(int error, string& message)
 //
 // CPipeHandle -- Unix version
 //
-NCBI_PARAM_DECL(bool, conn, pipe_use_poll);
-NCBI_PARAM_DEF_EX(bool, conn, pipe_use_poll, false, eParam_Default, CONN_PIPE_USE_POLL);
-typedef NCBI_PARAM_TYPE(conn, pipe_use_poll) TUsePollParam;
+
+NCBI_PARAM_DECL  (bool, CONN, PIPE_USE_POLL);
+NCBI_PARAM_DEF_EX(bool, CONN, PIPE_USE_POLL,
+                  true, eParam_Default, CONN_PIPE_USE_POLL);
 
 class CPipeHandle
 {
@@ -939,21 +939,19 @@ private:
     // current process, in which case they won't be closed.
     bool m_SelfHandles;
 
-    // Use poll(2) instead of select(2) per CXX-6074
+    // Use poll(2) (now default) instead of select(2) (formerly)
     bool m_UsePoll;
 };
 
 
 CPipeHandle::CPipeHandle(void)
     : m_ChildStdIn(-1), m_ChildStdOut(-1), m_ChildStdErr(-1),
-      m_Pid((pid_t)(-1)), m_Flags(0),
-      m_SelfHandles(false)
+      m_Pid((pid_t)(-1)), m_Flags(0), m_SelfHandles(false)
 {
-    static TUsePollParam use_poll_param;
+    static NCBI_PARAM_TYPE(CONN, PIPE_USE_POLL) use_poll_param;
 
     m_UsePoll = use_poll_param.Get();
-    _TRACE("Using Poll:" + NStr::BoolToString(m_UsePoll));
-    return;
+    _TRACE("CPipeHandle using poll(): " + NStr::BoolToString(m_UsePoll));
 }
 
 
@@ -976,7 +974,7 @@ static void s_Exit(int status, int fd)
 }
 
 
-// Emulate inexistent function execvpe().
+// Emulate nonexistent function execvpe().
 // On success, execve() does not return, on error -1 is returned,
 // and errno is set appropriately.
 
@@ -987,9 +985,9 @@ static int s_ExecShell(const char *file,
 
     // Count number of arguments
     int i;
-    for (i = 0;  argv[i];  i++);
-    i++; // copy last zero element also
-    
+    for (i = 0;  argv[i];  ++i);
+    ++i; // copy last zero element also
+
     // Construct an argument list for the shell.
     // Not all compilers support next construction:
     //   const char* args[i + 1];
@@ -998,7 +996,7 @@ static int s_ExecShell(const char *file,
 
     args[0] = kShell;
     args[1] = file;
-    for (;  i > 1;  i--) {
+    for (;  i > 1;  --i) {
         args[i] = argv[i - 1];
     }
 
@@ -1613,16 +1611,16 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
 {
     CPipe::TChildPollMask poll = 0;
 
-    if(m_UsePoll) {
-        // Required poll(2) structures
+    if (m_UsePoll) {
         struct pollfd poll_fds[3] = {
             {m_ChildStdIn,  POLLOUT|POLLERR, 0},
-            {m_ChildStdOut, POLLIN,  0},
-            {m_ChildStdErr, POLLIN,  0}
+            {m_ChildStdOut, POLLIN,          0},
+            {m_ChildStdErr, POLLIN,          0}
         };
-        int timeout_msec(timeout ? (timeout->sec*1000 + timeout->usec/1000) : 0);    // msec
+        int timeout_msec(timeout
+                         ? timeout->sec * 1000 + (timeout->usec + 500) / 1000
+                         : 0);
 
-        // Build poll(2) structure
         // Negative FDs OK, poll should ignore them
         // Check the mask
         if(!(mask & CPipe::fStdIn))
@@ -1653,7 +1651,7 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
             if ((n = errno) != EINTR) {
                 PIPE_THROW(n, "poll(2) failed");
             }
-            // continue, no need to recreate neither timeout, no poll_fds
+            // continue, no need to recreate either timeout or poll_fds
         }
     } else { // Using select(2), as before
         for (;;) { // Auto-resume if interrupted by a signal
@@ -1717,7 +1715,9 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
                     " select(2), try setting [conn] pipe_use_poll=true");
             }
 
-            int n = ::select(max + 1, rd ? &rfds : 0, wr ? &wfds : 0, &efds, tmp);
+            int n = ::select(max + 1,
+                             rd ? &rfds : 0,
+                             wr ? &wfds : 0, &efds, tmp);
 
             if (n == 0) {
                 // timeout
