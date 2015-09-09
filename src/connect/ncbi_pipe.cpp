@@ -1623,11 +1623,11 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
 
         // Negative FDs OK, poll should ignore them
         // Check the mask
-        if(!(mask & CPipe::fStdIn))
+        if (!(mask & CPipe::fStdIn))
             poll_fds[0].fd = -1;
-        if(!(mask & CPipe::fStdOut))
+        if (!(mask & CPipe::fStdOut))
             poll_fds[1].fd = -1;
-        if(!(mask & CPipe::fStdErr))
+        if (!(mask & CPipe::fStdErr))
             poll_fds[2].fd = -1;
 
         for (;;) { // Auto-resume if interrupted by a signal
@@ -1639,11 +1639,11 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
             }
             if (n > 0) {
                 // no need to check mask here
-                if(poll_fds[0].revents)
+                if (poll_fds[0].revents)
                     poll |= CPipe::fStdIn;
-                if(poll_fds[1].revents)
+                if (poll_fds[1].revents)
                     poll |= CPipe::fStdOut;
-                if(poll_fds[2].revents)
+                if (poll_fds[2].revents)
                     poll |= CPipe::fStdErr;
                 break;
             }
@@ -1680,8 +1680,10 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
             if ( (mask & CPipe::fStdIn)   &&  m_ChildStdIn  != -1 ) {
                 wr = true;
                 FD_ZERO(&wfds);
-                FD_SET(m_ChildStdIn,  &wfds);
-                FD_SET(m_ChildStdIn,  &efds);
+                if (m_ChildStdIn < FD_SETSIZE) {
+                    FD_SET(m_ChildStdIn,  &wfds);
+                    FD_SET(m_ChildStdIn,  &efds);
+                }
                 if (max < m_ChildStdIn) {
                     max = m_ChildStdIn;
                 }
@@ -1691,8 +1693,10 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
                     rd = true;
                     FD_ZERO(&rfds);
                 }
-                FD_SET(m_ChildStdOut, &rfds);
-                FD_SET(m_ChildStdOut, &efds);
+                if (m_ChildStdOut < FD_SETSIZE) {
+                    FD_SET(m_ChildStdOut, &rfds);
+                    FD_SET(m_ChildStdOut, &efds);
+                }
                 if (max < m_ChildStdOut) {
                     max = m_ChildStdOut;
                 }
@@ -1702,17 +1706,18 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
                     rd = true;
                     FD_ZERO(&rfds);
                 }
-                FD_SET(m_ChildStdErr, &rfds);
-                FD_SET(m_ChildStdErr, &efds);
+                if (m_ChildStdErr < FD_SETSIZE) {
+                    FD_SET(m_ChildStdErr, &rfds);
+                    FD_SET(m_ChildStdErr, &efds);
+                }
                 if (max < m_ChildStdErr) {
                     max = m_ChildStdErr;
                 }
             }
             _ASSERT(rd  ||  wr);
-            if(max >= FD_SETSIZE) {
-                throw string(
-                    "file descriptor > FD_SETSIZE, can not use"
-                    " select(2), try setting [conn] pipe_use_poll=true");
+
+            if (max >= FD_SETSIZE) {
+                throw string("File descriptor is too large (FD_SETSIZE)");
             }
 
             int n = ::select(max + 1,
