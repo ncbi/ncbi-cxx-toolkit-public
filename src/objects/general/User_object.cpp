@@ -583,6 +583,7 @@ const string kOrigIdAltSpell = "OrginalID";
 const string kUnverified = "Unverified";
 const string kValidationSuppression = "ValidationSuppression";
 const string kNcbiCleanup = "NcbiCleanup";
+const string kAutoDefOptions = "AutodefOptions";
 
 CUser_object::EObjectType CUser_object::GetObjectType() const
 {
@@ -606,6 +607,8 @@ CUser_object::EObjectType CUser_object::GetObjectType() const
         rval = eObjectType_ValidationSuppression;
     } else if (NStr::Equal(label, kNcbiCleanup)) {
         rval = eObjectType_Cleanup;
+    } else if (NStr::Equal(label, kAutoDefOptions)) {
+        rval = eObjectType_AutodefOptions;
     }
     return rval;
 }
@@ -631,6 +634,9 @@ void CUser_object::SetObjectType(EObjectType obj_type)
             break;
         case eObjectType_Cleanup:
             SetType().SetStr(kNcbiCleanup);
+            break;
+        case eObjectType_AutodefOptions:
+            SetType().SetStr(kAutoDefOptions);
             break;
         case eObjectType_Unknown:
             ResetType();

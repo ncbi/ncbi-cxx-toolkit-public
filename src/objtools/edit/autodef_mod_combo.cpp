@@ -57,7 +57,7 @@ CAutoDefModifierCombo::CAutoDefModifierCombo() : m_UseModifierLabels(false),
                                                  m_ExcludeAffOrgs(false),
                                                  m_KeepParen(true),
                                                  m_KeepAfterSemicolon(false),
-                                                 m_HIVCloneIsolateRule(ePreferClone)
+                                                 m_HIVCloneIsolateRule(CAutoDefOptions::ePreferClone)
 
 {
     m_SubSources.clear();
@@ -111,6 +111,54 @@ CAutoDefModifierCombo::~CAutoDefModifierCombo()
 {
     for (unsigned int k = 0; k < m_GroupList.size(); k++) {
         delete m_GroupList[k];
+    }
+}
+
+
+void CAutoDefModifierCombo::SetOptions(const CAutoDefOptions& options)
+{
+    m_UseModifierLabels = options.GetUseLabels();
+    m_MaxModifiers = options.GetMaxMods();
+    m_KeepCountryText = options.GetIncludeCountryText();
+    m_ExcludeSpOrgs = options.GetDoNotApplyToSp();
+    m_ExcludeCfOrgs = options.GetDoNotApplyToCf();
+    m_ExcludeNrOrgs = options.GetDoNotApplyToNr();
+    m_ExcludeAffOrgs = options.GetDoNotApplyToAff();
+    m_KeepParen = options.GetLeaveParenthetical();
+    m_KeepAfterSemicolon = options.GetKeepAfterSemicolon();
+    m_HIVCloneIsolateRule = (CAutoDefOptions::EHIVCloneIsolateRule)(options.GetHIVRule());
+
+    const CAutoDefOptions::TSubSources& subsrcs = options.GetSubSources();
+    ITERATE(CAutoDefOptions::TSubSources, it, subsrcs) {
+        AddQual(false, *it, true);
+    }
+    const CAutoDefOptions::TOrgMods& orgmods = options.GetOrgMods();
+    ITERATE(CAutoDefOptions::TOrgMods, it, orgmods) {
+        AddQual(true, *it, true);
+    }
+}
+
+
+void CAutoDefModifierCombo::InitOptions(CAutoDefOptions& options) const
+{
+    options.SetUseLabels(m_UseModifierLabels);
+    options.SetMaxMods(m_MaxModifiers);
+    options.SetIncludeCountryText(m_KeepCountryText);
+    options.SetDoNotApplyToSp(m_ExcludeSpOrgs);
+    options.SetDoNotApplyToCf(m_ExcludeCfOrgs);
+    options.SetDoNotApplyToNr(m_ExcludeNrOrgs);
+    options.SetDoNotApplyToAff(m_ExcludeAffOrgs);
+    options.SetLeaveParenthetical(m_KeepParen);
+    options.SetKeepAfterSemicolon(m_KeepAfterSemicolon);
+    options.SetHIVRule(m_HIVCloneIsolateRule);
+
+    // add subsources and orgmods
+    ITERATE(CAutoDefSourceDescription::TModifierVector, it, m_Modifiers) {
+        if (it->IsOrgMod()) {
+            options.AddOrgMod(it->GetSubtype());
+        } else {
+            options.AddSubSource(it->GetSubtype());
+        }
     }
 }
 
@@ -475,15 +523,15 @@ unsigned int CAutoDefModifierCombo::x_AddHIVModifiers (string &source_descriptio
         // no additional changes - isolate and clone rule taken care of
     } else {
         if ( ! HasOrgMod (COrgMod::eSubtype_isolate) && src_has_isolate
-            && (m_HIVCloneIsolateRule == ePreferIsolate
-                || m_HIVCloneIsolateRule == eWantBoth
+            && (m_HIVCloneIsolateRule == CAutoDefOptions::ePreferIsolate
+            || m_HIVCloneIsolateRule == CAutoDefOptions::eWantBoth
                 || !src_has_clone)) {
             x_AddOrgModString (source_description, bsrc, COrgMod::eSubtype_isolate);
             mods_used++;
         }
         if (! HasSubSource(CSubSource::eSubtype_clone) && src_has_clone
-            && (m_HIVCloneIsolateRule == ePreferClone
-                || m_HIVCloneIsolateRule == eWantBoth
+            && (m_HIVCloneIsolateRule == CAutoDefOptions::ePreferClone
+            || m_HIVCloneIsolateRule == CAutoDefOptions::eWantBoth
                 || !src_has_isolate)) {
             x_AddSubsourceString (source_description, bsrc, CSubSource::eSubtype_clone);
             mods_used++;

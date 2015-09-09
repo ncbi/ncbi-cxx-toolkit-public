@@ -36,6 +36,8 @@
 #include <corelib/ncbistd.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/general/User_object.hpp>
+#include <objects/general/User_field.hpp>
+#include <objects/general/Object_id.hpp>
 #include <objtools/edit/autodef_available_modifier.hpp>
 #include <objtools/edit/autodef_source_desc.hpp>
 
@@ -45,6 +47,46 @@ BEGIN_SCOPE(objects)
 class NCBI_XOBJEDIT_EXPORT CAutoDefOptions
 {
 public:
+    CAutoDefOptions();
+    ~CAutoDefOptions() {}
+
+    CRef<CUser_object> MakeUserObject() const;
+    void InitFromUserObject(const CUser_object& obj);
+
+    enum EOptionFieldType {
+        eOptionFieldType_Unknown = 0,
+        eOptionFieldType_MaxMods,
+        eOptionFieldType_UseLabels,
+        eOptionFieldType_LeaveParenthetical,
+        eOptionFieldType_DoNotApplyToSp,
+        eOptionFieldType_DoNotApplyToNr,
+        eOptionFieldType_DoNotApplyToCf,
+        eOptionFieldType_DoNotApplyToAff,
+        eOptionFieldType_IncludeCountryText,
+        eOptionFieldType_KeepAfterSemicolon,
+        eOptionFieldType_HIVRule,
+        eOptionFieldType_FeatureListType,
+        eOptionFieldType_MiscFeatRule,
+        eOptionFieldType_ProductFlag,
+        eOptionFieldType_SpecifyNuclearProduct,
+        eOptionFieldType_AltSpliceFlag,
+        eOptionFieldType_SuppressLocusTags,
+        eOptionFieldType_GeneClusterOppStrand,
+        eOptionFieldType_SuppressFeatureAltSplice,
+        eOptionFieldType_SuppressMobileElementSubfeatures,
+        eOptionFieldType_KeepExons,
+        eOptionFieldType_KeepIntrons,
+        eOptionFieldType_KeepPromoters,
+        eOptionFieldType_UseFakePromoters,
+        eOptionFieldType_KeepLTRs,
+        eOptionFieldType_Keep3UTRs,
+        eOptionFieldType_Keep5UTRs,
+        eOptionFieldType_UseNcRNAComment,
+        eOptionFieldType_SuppressedFeatures,
+        eOptionFieldType_ModifierList,
+        eOptionFieldMax
+    };
+
     enum EFeatureListType {
         eListAllFeatures = 0,
         eCompleteSequence,
@@ -53,56 +95,147 @@ public:
         ePartialGenome,
         eSequence
     };
-    
+
+    typedef unsigned int TFeatureListType;
+    TFeatureListType GetFeatureListType() const { return m_FeatureListType; }
+    void SetFeatureListType(EFeatureListType list_type) { m_FeatureListType = list_type; }
+
     enum EMiscFeatRule {
         eDelete = 0,
         eNoncodingProductFeat,
         eCommentFeat
     };
 
+    typedef unsigned int TMiscFeatRule;
+    TMiscFeatRule GetMiscFeatRule() const { return m_MiscFeatRule; }
+    void SetMiscFeatRule(TMiscFeatRule rule) { m_MiscFeatRule = rule; }
 
-    CAutoDefOptions();
-    ~CAutoDefOptions();
+    enum EHIVCloneIsolateRule {
+        ePreferClone = 0,
+        ePreferIsolate,
+        eWantBoth
+    };
+    typedef unsigned int THIVRule;
+    THIVRule GetHIVRule() const { return m_HIVRule; }
+    void SetHIVRule(EHIVCloneIsolateRule rule) { m_HIVRule = rule; }
 
-    CRef<CUser_object> MakeUserObject();
-    void InitFromUserObject(const CUser_object& obj);
-    
+    bool GetUseFakePromoters() const { return m_BooleanFlags[eOptionFieldType_UseFakePromoters]; }
+    void SetUseFakePromoters(bool val = true) {
+        m_BooleanFlags[eOptionFieldType_UseFakePromoters] = val;
+        if (val) {
+            m_BooleanFlags[eOptionFieldType_KeepPromoters] = true;
+        }
+    }
+
+    CBioSource::TGenome GetProductFlag() const { return m_ProductFlag; };
+    void SetProductFlag(CBioSource::EGenome val) { 
+        m_ProductFlag = val; 
+        m_BooleanFlags[eOptionFieldType_SpecifyNuclearProduct] = false; 
+    }
+
+    bool GetSpecifyNuclearProduct() const { return m_BooleanFlags[eOptionFieldType_SpecifyNuclearProduct]; }
+    void SetSpecifyNuclearProduct(bool val) {
+        m_BooleanFlags[eOptionFieldType_SpecifyNuclearProduct] = val;
+        m_ProductFlag = CBioSource::eGenome_unknown;
+    }
+
+    unsigned int GetMaxMods() const { return m_MaxMods; }
+    void SetMaxMods(unsigned int val) { m_MaxMods = val; }
+
+#define AUTODEFBOOLFIELD(Fieldname) \
+    bool Get##Fieldname() const { return m_BooleanFlags[eOptionFieldType_##Fieldname]; }; \
+    void Set##Fieldname(bool val = true) { m_BooleanFlags[eOptionFieldType_##Fieldname] = val; }
+
+    AUTODEFBOOLFIELD(UseLabels)
+    AUTODEFBOOLFIELD(LeaveParenthetical)
+    AUTODEFBOOLFIELD(DoNotApplyToSp)
+    AUTODEFBOOLFIELD(DoNotApplyToNr)
+    AUTODEFBOOLFIELD(DoNotApplyToCf)
+    AUTODEFBOOLFIELD(DoNotApplyToAff)
+    AUTODEFBOOLFIELD(IncludeCountryText)
+    AUTODEFBOOLFIELD(KeepAfterSemicolon)
+    AUTODEFBOOLFIELD(AltSpliceFlag)
+    AUTODEFBOOLFIELD(SuppressLocusTags)
+    AUTODEFBOOLFIELD(GeneClusterOppStrand)
+    AUTODEFBOOLFIELD(SuppressFeatureAltSplice)
+    AUTODEFBOOLFIELD(SuppressMobileElementSubfeatures)
+    AUTODEFBOOLFIELD(KeepExons)
+    AUTODEFBOOLFIELD(KeepIntrons)
+    AUTODEFBOOLFIELD(KeepPromoters)
+    AUTODEFBOOLFIELD(KeepLTRs)
+    AUTODEFBOOLFIELD(Keep3UTRs)
+    AUTODEFBOOLFIELD(Keep5UTRs)
+    AUTODEFBOOLFIELD(UseNcRNAComment)
+
+    bool IsFeatureSuppressed(CSeqFeatData::ESubtype subtype) const;
+    void SuppressFeature(CSeqFeatData::ESubtype subtype);
+    void SuppressAllFeatures();
+    void ClearSuppressedFeatures();
+
+    void AddSubSource(CSubSource::TSubtype subtype);
+    void AddOrgMod(COrgMod::TSubtype subtype);
+    typedef vector<COrgMod::TSubtype> TOrgMods;
+    const TOrgMods& GetOrgMods() const { return m_OrgMods; }
+    typedef vector<CSubSource::TSubtype> TSubSources;
+    const TSubSources& GetSubSources() const { return m_SubSources; }
+    void ClearModifierList();
 
 private:
 
-    bool    m_UseLabels;
-    bool    m_LeaveParenthetical;
-    bool    m_DoNotApplyToSp;
-    bool    m_DoNotApplyToNr;
-    bool    m_DoNotApplyToCf;
-    bool    m_DoNotApplyToAff;
-    bool    m_IncludeCountryText;
-    bool    m_KeepAfterSemicolon;
+    bool m_BooleanFlags[eOptionFieldMax];
     unsigned int m_MaxMods;
-    unsigned int m_HIVRule;
-    bool         m_NeedHIVRule;
+    THIVRule m_HIVRule;
+    TFeatureListType m_FeatureListType;
+    TMiscFeatRule m_MiscFeatRule;
+    CBioSource::TGenome m_ProductFlag;
+    typedef vector<CSeqFeatData::ESubtype> TSuppressedFeatureSubtypes;
+    TSuppressedFeatureSubtypes m_SuppressedFeatureSubtypes;
 
-    unsigned int m_FeatureListType;
-    unsigned int m_MiscFeatRule;
-    unsigned int m_ProductFlag;
-    bool m_SpecifyNuclearProduct;
-    bool m_AltSpliceFlag;
-    bool m_SuppressLocusTags;
-    bool m_GeneClusterOppStrand;
-    bool m_SuppressFeatureAltSplice;
-    bool m_SuppressMobileElementSubfeatures;
-    bool m_KeepExons;
-    bool m_KeepIntrons;
-    bool m_KeepPromoters;
-    bool m_UseFakePromoters;
-    bool m_KeepLTRs;
-    bool m_Keep3UTRs;
-    bool m_Keep5UTRs;
-    bool m_UseNcRNAComment;
+    TOrgMods m_OrgMods;
+    TSubSources m_SubSources;
+    
+    typedef unsigned int TFieldType;
+    string x_GetFieldType(TFieldType field_type) const;
+    TFieldType x_GetFieldType(const string& field_name) const;
 
-    set<objects::CFeatListItem> m_SuppressedFeatures;
+    string x_GetFeatureListType(TFeatureListType list_type) const;
+    TFeatureListType x_GetFeatureListType(const string& list_type) const;
 
-    objects::CAutoDefSourceDescription::TAvailableModifierVector m_ModifierList;
+    string x_GetMiscFeatRule(TMiscFeatRule list_type) const;
+    TMiscFeatRule x_GetMiscFeatRule(const string& list_type) const;
+
+    string x_GetHIVRule(TMiscFeatRule list_type) const;
+    TMiscFeatRule x_GetHIVRule(const string& list_type) const;
+
+    string x_GetProductFlag(CBioSource::TGenome value) const;
+    CBioSource::TGenome x_GetProductFlag(const string& value) const;
+
+
+    bool x_IsBoolean(TFieldType field_type) const;
+    CRef<CUser_field> x_MakeBooleanField(TFieldType field_type) const;
+
+    CRef<CUser_field> x_MakeSuppressedFeatures() const;
+    void x_SetSuppressedFeatures(const CUser_field& field);
+
+    CRef<CUser_field> x_MakeModifierList() const;
+    void x_SetModifierList(const CUser_field& field);
+
+    CRef<CUser_field> x_MakeMaxMods() const;
+
+#define AUTODEFENUMFIELD(Fieldname) \
+    CRef<CUser_field> x_Make##Fieldname() const { \
+        CRef<CUser_field> field(new CUser_field()); \
+        field->SetLabel().SetStr(x_GetFieldType(eOptionFieldType_##Fieldname)); \
+        field->SetData().SetStr(x_Get##Fieldname(m_##Fieldname)); \
+        return field; \
+    } 
+
+    AUTODEFENUMFIELD(FeatureListType)
+    AUTODEFENUMFIELD(MiscFeatRule)
+    AUTODEFENUMFIELD(HIVRule)
+    AUTODEFENUMFIELD(ProductFlag)
+
+    void x_Reset();
 };
 
 

@@ -59,22 +59,7 @@ BEGIN_SCOPE(objects)
 class NCBI_XOBJEDIT_EXPORT CAutoDef
 {
 public:
-    enum EFeatureListType {
-        eListAllFeatures = 0,
-        eCompleteSequence,
-        eCompleteGenome,
-        ePartialSequence,
-        ePartialGenome,
-        eSequence
-    };
     
-    enum EMiscFeatRule {
-        eDelete = 0,
-        eNoncodingProductFeat,
-        eCommentFeat
-    };
-
-    typedef set<objects::CFeatListItem>  TFeatTypeItemSet;
     typedef set<CAutoDefAvailableModifier> TAvailableModifierSet;
 
     CAutoDef();
@@ -89,15 +74,19 @@ public:
     string GetOneSourceDescription(CBioseq_Handle bh);
     string GetOneFeatureClauseList(CBioseq_Handle bh, unsigned int genome_val);
     string GetOneDefLine(CAutoDefModifierCombo* mod_combo, CBioseq_Handle bh);
+    string GetOneDefLine(CBioseq_Handle bh);
     static string GetDocsumOrgDescription(CSeq_entry_Handle se);
     string GetDocsumDefLine(CSeq_entry_Handle se);
     static bool NeedsDocsumDefline(const CBioseq_set& set);
 
     void DoAutoDef();
     
-    void SetFeatureListType(unsigned int feature_list_type);
-    void SetMiscFeatRule(unsigned int misc_feat_rule);
-    void SetProductFlag (unsigned int product_flag);
+    void SetOptionsObject(const CUser_object& user);
+    CRef<CUser_object> GetOptionsObject() const { return m_Options.MakeUserObject(); }
+
+    void SetFeatureListType(CAutoDefOptions::EFeatureListType feature_list_type);
+    void SetMiscFeatRule(CAutoDefOptions::EMiscFeatRule misc_feat_rule);
+    void SetProductFlag(CBioSource::EGenome product_flag);
 	void SetSpecifyNuclearProduct (bool specify_nuclear_product);
     void SetAltSpliceFlag (bool alt_splice_flag);
     void SetSuppressLocusTags(bool suppress_locus_tags);
@@ -128,26 +117,9 @@ private:
 
     CAutoDefModifierCombo m_OrigModCombo;
 
-    TFeatTypeItemSet m_SuppressedFeatures;
-    
+    CAutoDefOptions m_Options;
+
     // feature clause specifications
-    unsigned int m_FeatureListType;
-    unsigned int m_MiscFeatRule;
-    bool         m_SpecifyNuclearProduct;
-    unsigned int m_ProductFlag;
-    bool         m_AltSpliceFlag;
-    bool         m_SuppressAltSplicePhrase;
-    bool         m_SuppressLocusTags;
-    bool         m_GeneOppStrand;
-    bool         m_RemoveMobileElementAndInsertionSequenceSubfeatures;
-    bool         m_KeepExons;
-    bool         m_KeepIntrons;
-    bool         m_KeepPromoters;
-    bool         m_KeepLTRs;
-    bool         m_Keep3UTRs;
-    bool         m_Keep5UTRs;
-	bool         m_UseNcRNAComment;
-    bool         m_UseFakePromoters;
     bool         m_Cancelled;
     
     void x_SortModifierListByRank
@@ -193,124 +165,121 @@ private:
 
 
 inline
-void CAutoDef::SetFeatureListType(unsigned int feature_list_type)
+void CAutoDef::SetFeatureListType(CAutoDefOptions::EFeatureListType feature_list_type)
 {
-    m_FeatureListType = feature_list_type;
+    m_Options.SetFeatureListType(feature_list_type);
 }
 
 
 inline
-void CAutoDef::SetMiscFeatRule(unsigned int misc_feat_rule)
+void CAutoDef::SetMiscFeatRule(CAutoDefOptions::EMiscFeatRule misc_feat_rule)
 {
-    m_MiscFeatRule = misc_feat_rule;
+    m_Options.SetMiscFeatRule(misc_feat_rule);
 }
 
 
 inline
-void CAutoDef::SetProductFlag(unsigned int product_flag)
+void CAutoDef::SetProductFlag(CBioSource::EGenome product_flag)
 {
-    m_SpecifyNuclearProduct = false;
-    m_ProductFlag = product_flag;
+    m_Options.SetProductFlag(product_flag);
 }
 
 
 inline
 void CAutoDef::SetSpecifyNuclearProduct (bool specify_nuclear_product)
 {
-    m_SpecifyNuclearProduct = specify_nuclear_product;
-	m_ProductFlag = CBioSource::eGenome_unknown;
+    m_Options.SetSpecifyNuclearProduct(specify_nuclear_product);
 }
 
 
 inline
 void CAutoDef::SetAltSpliceFlag (bool alt_splice_flag)
 {
-    m_AltSpliceFlag = alt_splice_flag;
+    m_Options.SetAltSpliceFlag(alt_splice_flag);
 }
 
 
 inline
 void CAutoDef::SetSuppressLocusTags (bool suppress_locus_tags)
 {
-    m_SuppressLocusTags = suppress_locus_tags;
+    m_Options.SetSuppressLocusTags(suppress_locus_tags);
 }
 
 
 inline
 void CAutoDef::SetGeneClusterOppStrand (bool gene_opp_strand)
 {
-    m_GeneOppStrand = gene_opp_strand;
+    m_Options.SetGeneClusterOppStrand(gene_opp_strand);
 }
 
 
 inline
 void CAutoDef::SetSuppressFeatureAltSplice (bool suppress_alt_splice)
 {
-    m_SuppressAltSplicePhrase = suppress_alt_splice;
+    m_Options.SetSuppressFeatureAltSplice(suppress_alt_splice);
 }
 
 
 inline
 void CAutoDef::SuppressMobileElementAndInsertionSequenceSubfeatures(bool suppress)
 {
-    m_RemoveMobileElementAndInsertionSequenceSubfeatures = suppress;
+    m_Options.SetSuppressMobileElementSubfeatures(suppress);
 }
 
 
 inline
 void CAutoDef::SetKeepExons(bool keep)
 {
-    m_KeepExons = keep;
+    m_Options.SetKeepExons(keep);
 }
 
 
 inline
 void CAutoDef::SetKeepIntrons(bool keep)
 {
-    m_KeepIntrons = keep;
+    m_Options.SetKeepIntrons(keep);
 }
 
 
 inline
 void CAutoDef::SetKeepPromoters(bool keep)
 {
-    m_KeepPromoters = keep;
+    m_Options.SetKeepPromoters(keep);
 }
 
 
 inline
 void CAutoDef::SetKeepLTRs(bool keep)
 {
-    m_KeepLTRs = keep;
+    m_Options.SetKeepLTRs(keep);
 }
 
 
 inline
 void CAutoDef::SetKeep3UTRs(bool keep)
 {
-    m_Keep3UTRs = keep;
+    m_Options.SetKeep3UTRs(keep);
 }
 
 
 inline
 void CAutoDef::SetKeep5UTRs(bool keep)
 {
-    m_Keep5UTRs = keep;
+    m_Options.SetKeep5UTRs(keep);
 }
 
 
 inline
 void CAutoDef::SetUseNcRNAComment(bool use_comment)
 {
-    m_UseNcRNAComment = use_comment;
+    m_Options.SetUseNcRNAComment(use_comment);
 }
 
 
 inline
 void CAutoDef::SetUseFakePromoters(bool use_fake)
 {
-    m_UseFakePromoters = use_fake;
-    m_KeepPromoters = true;
+    m_Options.SetUseFakePromoters(use_fake);
 }
 
 

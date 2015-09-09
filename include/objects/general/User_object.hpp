@@ -156,7 +156,8 @@ public:
         eObjectType_OriginalId,
         eObjectType_Unverified,
         eObjectType_ValidationSuppression,
-        eObjectType_Cleanup
+        eObjectType_Cleanup,
+        eObjectType_AutodefOptions
     };
 
     EObjectType GetObjectType() const;

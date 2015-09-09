@@ -48,6 +48,7 @@
 #include <objtools/edit/autodef_available_modifier.hpp>
 #include <objtools/edit/autodef_source_desc.hpp>
 #include <objtools/edit/autodef_source_group.hpp>
+#include <objtools/edit/autodef_options.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -57,15 +58,13 @@ class NCBI_XOBJEDIT_EXPORT CAutoDefModifierCombo : public CObject,
                                                    public IAutoDefCombo
 {
 public:
-    enum EHIVCloneIsolateRule {
-        ePreferClone = 0,
-        ePreferIsolate,
-        eWantBoth
-    };
 
     CAutoDefModifierCombo();
     CAutoDefModifierCombo(CAutoDefModifierCombo *orig);
     ~CAutoDefModifierCombo();
+
+    void SetOptions(const CAutoDefOptions& options);
+    void InitOptions(CAutoDefOptions& options) const;
     
     unsigned int GetNumGroups();
     
@@ -101,10 +100,10 @@ public:
     bool GetExcludeAffOrgs ();
     void SetKeepParen(bool keep);
     bool GetKeepParen();
-	  void SetKeepAfterSemicolon(bool keep);
-	  bool GetKeepAfterSemicolon();
-    void SetHIVCloneIsolateRule(unsigned int rule_num);
-    unsigned int GetHIVCloneIsolateRule();
+    void SetKeepAfterSemicolon(bool keep);
+    bool GetKeepAfterSemicolon();
+    void SetHIVCloneIsolateRule(CAutoDefOptions::EHIVCloneIsolateRule rule_num);
+    CAutoDefOptions::EHIVCloneIsolateRule GetHIVCloneIsolateRule();
 
     string GetSourceDescriptionString(const CBioSource& bsrc);
 
@@ -153,7 +152,7 @@ private:
 
     bool         m_KeepParen;
     bool         m_KeepAfterSemicolon;
-    unsigned int m_HIVCloneIsolateRule;
+    CAutoDefOptions::EHIVCloneIsolateRule m_HIVCloneIsolateRule;
     
     string x_GetSubSourceLabel (CSubSource::ESubtype st);
     string x_GetOrgModLabel(COrgMod::ESubtype st);
@@ -293,14 +292,14 @@ bool CAutoDefModifierCombo::GetKeepAfterSemicolon()
 
 
 inline
-void CAutoDefModifierCombo::SetHIVCloneIsolateRule(unsigned int rule_num)
+void CAutoDefModifierCombo::SetHIVCloneIsolateRule(CAutoDefOptions::EHIVCloneIsolateRule rule_num)
 {
     m_HIVCloneIsolateRule = rule_num;
 }
 
 
 inline
-unsigned int CAutoDefModifierCombo::GetHIVCloneIsolateRule()
+CAutoDefOptions::EHIVCloneIsolateRule CAutoDefModifierCombo::GetHIVCloneIsolateRule()
 {
     return m_HIVCloneIsolateRule;
 }

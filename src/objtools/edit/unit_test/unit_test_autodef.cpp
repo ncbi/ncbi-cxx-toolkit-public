@@ -236,6 +236,12 @@ static void CheckDeflineMatches(CSeq_entry_Handle seh,
        string new_defline = autodef.GetOneDefLine(mod_combo, bh);
 
        BOOST_CHECK_EQUAL(orig_defline, new_defline);
+
+       CRef<CUser_object> user = autodef.GetOptionsObject();
+       CAutoDef autodef2;
+       autodef2.SetOptionsObject(*user);
+       new_defline = autodef2.GetOneDefLine(bh);
+       BOOST_CHECK_EQUAL(orig_defline, new_defline);
     }
 
     // check popset title if needed
@@ -275,16 +281,16 @@ static void CheckDeflineMatches(CRef<CSeq_entry> entry,
         mod_combo->AddOrgMod(*it, true);
     }
 
-    autodef.SetFeatureListType(CAutoDef::eListAllFeatures);
-    autodef.SetMiscFeatRule(CAutoDef::eDelete);    
+    autodef.SetFeatureListType(CAutoDefOptions::eListAllFeatures);
+    autodef.SetMiscFeatRule(CAutoDefOptions::eDelete);
 
     CheckDeflineMatches(seh, autodef, mod_combo);
 }
 
 
 static void CheckDeflineMatches(CRef<CSeq_entry> entry, bool use_best = false,
-                                CAutoDef::EFeatureListType list_type = CAutoDef::eListAllFeatures,
-                                CAutoDef::EMiscFeatRule misc_feat_rule = CAutoDef::eDelete)
+                                CAutoDefOptions::EFeatureListType list_type = CAutoDefOptions::eListAllFeatures,
+                                CAutoDefOptions::EMiscFeatRule misc_feat_rule = CAutoDefOptions::eDelete)
 {
     CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
 
@@ -692,7 +698,7 @@ void TestOneOrganelleSequenceDefline(CBioSource::TGenome genome, const string& d
     CRef<CSeq_entry> seq = unit_test_util::BuildGoodSeq();
     unit_test_util::SetGenome(seq, genome);
     AddTitle(seq, defline);
-    CheckDeflineMatches(seq, true, objects::CAutoDef::eSequence);
+    CheckDeflineMatches(seq, true, objects::CAutoDefOptions::eSequence);
 }
 
 
@@ -1017,16 +1023,16 @@ BOOST_AUTO_TEST_CASE(Test_GB_1851)
     misc1->SetLocation().SetPartialStop(true, eExtreme_Biological);
 
     AddTitle(seq, "Sebaea microphylla.");
-    CheckDeflineMatches(seq, true, CAutoDef::eListAllFeatures, CAutoDef::eDelete);
+    CheckDeflineMatches(seq, true, CAutoDefOptions::eListAllFeatures, CAutoDefOptions::eDelete);
     AddTitle(seq, "Sebaea microphylla nonfunctional xyz gene, partial sequence.");
-    CheckDeflineMatches(seq, true, CAutoDef::eListAllFeatures, CAutoDef::eNoncodingProductFeat);
+    CheckDeflineMatches(seq, true, CAutoDefOptions::eListAllFeatures, CAutoDefOptions::eNoncodingProductFeat);
     AddTitle(seq, "Sebaea microphylla nonfunctional xyz due to argle genomic sequence.");
-    CheckDeflineMatches(seq, true, CAutoDef::eListAllFeatures, CAutoDef::eCommentFeat);
+    CheckDeflineMatches(seq, true, CAutoDefOptions::eListAllFeatures, CAutoDefOptions::eCommentFeat);
 
 
     misc1->SetComment("similar to xyz");
     AddTitle(seq, "Sebaea microphylla xyz-like gene, partial sequence.");
-    CheckDeflineMatches(seq, true, CAutoDef::eListAllFeatures, CAutoDef::eNoncodingProductFeat);
+    CheckDeflineMatches(seq, true, CAutoDefOptions::eListAllFeatures, CAutoDefOptions::eNoncodingProductFeat);
 
 }
 
@@ -1149,8 +1155,8 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2181)
 
     CRef<CAutoDefModifierCombo> mod_combo(new CAutoDefModifierCombo ());
 
-    autodef.SetFeatureListType(CAutoDef::eListAllFeatures);
-    autodef.SetMiscFeatRule(CAutoDef::eDelete);    
+    autodef.SetFeatureListType(CAutoDefOptions::eListAllFeatures);
+    autodef.SetMiscFeatRule(CAutoDefOptions::eDelete);
     autodef.SetUseFakePromoters(true);
 
     CheckDeflineMatches(seh, autodef, mod_combo);
@@ -1265,6 +1271,19 @@ BOOST_AUTO_TEST_CASE(Test_GB_4242)
     orgmods.push_back(COrgMod::eSubtype_isolate);
 
     CheckDeflineMatches(seq, subsrcs, orgmods);
+}
+
+BOOST_AUTO_TEST_CASE(Test_SQD_3440)
+{
+    CAutoDefOptions options;
+
+    CRef<CUser_object> user = options.MakeUserObject();
+    BOOST_CHECK_EQUAL(user->GetObjectType(), CUser_object::eObjectType_AutodefOptions);
+    options.SetUseLabels();
+    user = options.MakeUserObject();
+    BOOST_CHECK_EQUAL(user->GetData().front()->GetLabel().GetStr(), "UseLabels");
+
+
 }
 
 
