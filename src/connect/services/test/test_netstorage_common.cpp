@@ -457,6 +457,35 @@ private:
     CNetStorageObject m_Object;
 };
 
+// NetStorage object guard to remove objects after tests
+template <class TNetStorage>
+class CNstObjectGuard
+{
+public:
+    CNstObjectGuard(TNetStorage& netstorage, const string& key)
+        : m_NetStorage(netstorage),
+          m_Key(key)
+    {}
+
+    ~CNstObjectGuard() { try { m_NetStorage.Remove(m_Key); } catch (...) {} }
+
+private:
+    TNetStorage m_NetStorage;
+    const string m_Key;
+};
+
+// NetStorage source data guard to remove underlying objects after tests
+template <class TNetStorage>
+class CNstDataGuard : public CNstData, private CNstObjectGuard<TNetStorage>
+{
+public:
+    CNstDataGuard(CNetStorageObject& object, TNetStorage& netstorage,
+            const string& key)
+        : CNstData(object),
+          CNstObjectGuard<TNetStorage>(netstorage, key)
+    {}
+};
+
 
 // Convenience function to generate a unique key for CNetStorageByKey
 string GetUniqueKey()
@@ -478,14 +507,18 @@ template <>
 CNstData* Create<CNstData, CNetStorage>(CNetStorage& netstorage,
         TNetStorageFlags flags)
 {
-    return new CNstData(netstorage.Create(flags));
+    CNetStorageObject object(netstorage.Create(flags));
+    const string key(object.GetLoc());
+    return new CNstDataGuard<CNetStorage>(object, netstorage, key);
 }
 
 template <>
 CNstData* Create<CNstData, CNetStorageByKey>(CNetStorageByKey& netstorage,
         TNetStorageFlags flags)
 {
-    return new CNstData(netstorage.Open(GetUniqueKey(), flags));
+    const string key(GetUniqueKey());
+    CNetStorageObject object(netstorage.Open(key, flags));
+    return new CNstDataGuard<CNetStorageByKey>(object, netstorage, key);
 }
 
 
@@ -1367,10 +1400,12 @@ void SFixture<TPolicy>::Test(CNetStorage&)
     ReadAndCompare<TLocationNotFound>("Trying to read non-existent object",
         netstorage.Open(TLoc::not_found()));
 
-    // Create a NetStorage object
+    CNetStorageObject second(netstorage.Create(TLoc::create));
+    CNstObjectGuard<CNetStorage> guard(netstorage, second.GetLoc());
+
+    // Write and read test data.
     string object_loc = WriteTwoAndRead<typename TLoc::TCreate>(
-            netstorage.Create(TLoc::create),
-            netstorage.Create(TLoc::create));
+            netstorage.Create(TLoc::create), second);
 
     if (TLoc::check_relocate) {
         // Generate a "non-movable" object ID by calling Relocate()
@@ -1404,6 +1439,7 @@ void SFixture<TPolicy>::Test(CNetStorageByKey&)
 {
     string unique_key2 = GetUniqueKey();
     string unique_key3 = GetUniqueKey();
+    CNstObjectGuard<CNetStorageByKey> guard(netstorage, unique_key3);
 
     data.reset(Create<TExpected>(netstorage, TLoc::source));
 
