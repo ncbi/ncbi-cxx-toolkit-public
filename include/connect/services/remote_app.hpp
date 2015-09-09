@@ -189,8 +189,6 @@ private:
     EStdOutErrStorageType m_StorageType;
     bool m_ExlusiveMode;
     size_t m_MaxInlineSize;
-
-    bool x_CopyLocalFile(const string& old_fname, string& new_fname);
 };
 
 /// Remote Application Result (both client side and application executor side)

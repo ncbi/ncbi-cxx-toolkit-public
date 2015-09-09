@@ -260,11 +260,7 @@ void CRemoteAppRequest::Deserialize(CNcbiIstream& is)
         ReadStrWithLen(is, fname);
         ReadStrWithLen(is, blobid);
         if (!is.good()) return;
-        if (blobid == kLocalFSSign) {
-            string nfname;
-            if (x_CopyLocalFile(fname, nfname))
-                s_ReplaceArg(args, fname, nfname);
-        } else {
+        if (blobid != kLocalFSSign) {
             string nfname = GetWorkingDir() + CDirEntry::GetPathSeparator()
                 + blobid;
             CNcbiOfstream of(nfname.c_str());
@@ -291,12 +287,6 @@ void CRemoteAppRequest::Deserialize(CNcbiIstream& is)
     if (!is.good()) return;
     is >> tmp;
     m_ExlusiveMode = tmp != 0;
-}
-
-bool CRemoteAppRequest::x_CopyLocalFile(const string& old_fname,
-                                               string& new_fname)
-{
-    return false;
 }
 
 void CRemoteAppRequest::Reset()
