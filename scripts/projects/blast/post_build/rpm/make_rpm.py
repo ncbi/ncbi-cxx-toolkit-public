@@ -41,6 +41,7 @@ def setup_rpmbuild():
         print >> out, os.path.join(cwd, RPMBUILD_HOME, "tmp"), ")"
         print >> out
         print >> out, "%packager Christiam E. Camacho (camacho@ncbi.nlm.nih.gov)"
+        print >> out, "%debug_package %{nil}"
     finally:
         out.close()
     if VERBOSE: 
