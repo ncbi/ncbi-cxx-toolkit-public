@@ -48,6 +48,7 @@
 #      include <sys/syscall.h>
 #  endif
 #  include <fcntl.h> /* for open() constants */
+#  include <sys/errno.h>
 
 #elif defined(NCBI_OS_MSWIN)
 #  include <sys/types.h>
@@ -70,7 +71,6 @@
 
 #if defined(NCBI_POSIX_THREADS)
 #  include <pthread.h>
-#  include <sys/errno.h>
 #endif
 
 /* assert, verify */
