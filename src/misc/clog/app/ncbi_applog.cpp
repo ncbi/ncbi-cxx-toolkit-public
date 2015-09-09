@@ -1294,7 +1294,7 @@ int CNcbiApplogApp::Run(void)
         do {
             if (re.IsMatch(m_Raw_line)) {
                 if ( no_logsite ) {
-                    NcbiLogP_Raw(m_Raw_line.c_str());
+                    NcbiLogP_Raw2(m_Raw_line.c_str(), m_Raw_line.length());
                 } else {
                     // Use logsite name instead of appname if necessary.
 
@@ -1358,14 +1358,14 @@ int CNcbiApplogApp::Run(void)
                                 params = orig_appname + "&" + params;
                             }
                             string s = m_Raw_line.substr(0, pos) + params;
-                            NcbiLogP_Raw(s.c_str());
+                            NcbiLogP_Raw2(s.c_str(), s.length());
                         }
                         break;
 
                     case eCmdOther:
                     case eCmdAppStart:
                         // Post it as is
-                        NcbiLogP_Raw(m_Raw_line.c_str());
+                        NcbiLogP_Raw2(m_Raw_line.c_str(), m_Raw_line.length());
                         if (cmd == eCmdAppStart) {
                             // Add original appname as extra after 'start_app' command,
                             // constructing it from original raw line
@@ -1373,7 +1373,7 @@ int CNcbiApplogApp::Run(void)
                                        + "extra         " + orig_appname;
                             // Replace state: "PB" -> "P "
                             s[16] = ' ';
-                            NcbiLogP_Raw(s.c_str());
+                            NcbiLogP_Raw2(s.c_str(), s.length());
                         }
                         break;
                     }

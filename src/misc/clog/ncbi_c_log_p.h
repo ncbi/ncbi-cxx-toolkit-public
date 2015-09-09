@@ -44,6 +44,16 @@ extern "C" {
 #endif
 
 
+/** If defined, use file descriptors methods (open/write) to perform writing
+    to logfile instead of FILE* to improve performance. Unix only.
+    On MS Windows is is not so important at this moment (can be implemented later).
+    TODO
+ */
+#if defined(NCBI_OS_UNIX)
+#   define NCBILOG_USE_FILE_DESCRIPTORS  1
+#endif
+
+
 /******************************************************************************
  *  Configurables that could theoretically change 
  */
@@ -94,6 +104,19 @@ struct STime_tag {
 typedef struct STime_tag STime;
 
 
+#if NCBILOG_USE_FILE_DESCRIPTORS
+    #if defined(NCBI_OS_MSWIN)
+    #   error "Using file descriptors for file operations implemented on Unix only."
+    #endif
+    typedef  int TFileHandle;
+    #define  kInvalidFileHandle (-1)
+#else
+    typedef  FILE* TFileHandle;
+    #define  kInvalidFileHandle NULL
+#endif   
+
+
+
 /** Application access log and error postings info structure (global).
  */
 struct SInfo_tag {
@@ -140,10 +163,10 @@ struct SInfo_tag {
     ENcbiLog_Destination destination;           /**< Current logging destination            */
     unsigned int      server_port;              /**< $SERVER_PORT on calling/current host   */
     time_t            last_reopen_time;         /**< Last reopen time for log files         */
-    FILE*             file_trace;               /**< Saved files for log files              */
-    FILE*             file_err;
-    FILE*             file_log;
-    FILE*             file_perf;
+    TFileHandle       file_trace;               /**< Saved files for log files              */
+    TFileHandle       file_err;
+    TFileHandle       file_log;
+    TFileHandle       file_perf;
     char*             file_trace_name;          /**< Saved file names for log files         */
     char*             file_err_name;
     char*             file_log_name;
@@ -172,6 +195,7 @@ struct SContext_tag {
     STime req_start_time;                       /**< Request start time                                  */
 };
 typedef struct SContext_tag TNcbiLog_Context_Data;
+
 
 
 
@@ -240,8 +264,16 @@ extern void NcbiLogP_ExtraStr(const char* params);
 /** Post already prepared line in applog format to the applog.
  *  It do not perform any additional check and don' change context as well,
  *  just write specified line to applog as is.
+ *  'line' should not have EOLs, it will be automatically added.
  */
 extern void NcbiLogP_Raw(const char* line);
+
+
+/** Variant of NcbiLogP_Raw with already known line size
+    to avoid double length calculation.
+    line[n] still should be '\0'.
+ */
+extern void NcbiLogP_Raw2(const char* line, size_t n);
 
 
 /** Get value of session ID from the environment.

@@ -47,6 +47,8 @@
 #  if !defined(__CYGWIN__)
 #      include <sys/syscall.h>
 #  endif
+#  include <fcntl.h> /* for open() constants */
+
 #elif defined(NCBI_OS_MSWIN)
 #  include <sys/types.h>
 #  include <sys/timeb.h>
@@ -117,7 +119,8 @@
  */
 
 /** Maximum length of each log entry, all text after this position will be truncated */
-#define NCBILOG_ENTRY_MAX    8191  /* 8Kb - 1 for ending '\0' */ 
+#define NCBILOG_ENTRY_MAX_ALLOC 8192   /* 8Kb*/ 
+#define NCBILOG_ENTRY_MAX       8190   /* NCBILOG_ENTRY_MAX_ALLOC - 2, for ending '\n\0' */ 
 
 #define UNKNOWN_HOST         "UNK_HOST"
 #define UNKNOWN_CLIENT       "UNK_CLIENT"
@@ -151,7 +154,6 @@ static volatile TNcbiLog_Info*    sx_Info      = NULL;
 
 /* Pointer to the context (single-threaded applications only, otherwise use TLS) */
 static volatile TNcbiLog_Context  sx_ContextST = NULL;
-
 
 
 
@@ -431,6 +433,7 @@ static void s_ExtraStr(TNcbiLog_Context ctx, const char* params);
  *  Aux. functions
  */
 
+
 /** Sleep the specified number of microseconds.
     Portable and ugly. But we don't need more precision version here,
      we will use it only for context switches and avoiding possible CPU load.
@@ -456,7 +459,11 @@ void s_SleepMicroSec(unsigned long mc_sec)
 static char* s_StrDup(const char* str)
 {
     size_t size = strlen(str) + 1;
-    char*  res = (char*) malloc(size);
+    char* res = NULL;
+    if ( !size ) {
+        return NULL;
+    }
+    res = (char*) malloc(size);
     if (res) {
         memcpy(res, str, size);
     }
@@ -530,7 +537,7 @@ const char* NcbiLog_GetHostName(void)
     /* MSWIN - use COMPUTERNAME */
     compname = getenv("COMPUTERNAME");
     if ( compname  &&  *compname ) {
-        host = compname;
+        host = s_StrDup(compname);
     }
 #endif
     return host;
@@ -787,26 +794,34 @@ static int/*bool*/ s_GetTimeStr
 
 
 /** This routine is called during start up and again in NcbiLog_ReqStart(). 
+    The received environment value wil be cached for whole process. 
  */
 static const char* s_GetClient_Env(void)
 {
     static const char* client = NULL;
-    const char* ext = NULL;
-
-    ext = getenv("HTTP_CAF_EXTERNAL");
-    if ( !ext  ||  !ext[0] ) {
+    const char* p = NULL;
+    
+    if ( client ) {
+        return client;
+    }
+    p = getenv("HTTP_CAF_EXTERNAL");
+    if ( !p  ||  !p[0] ) {
         /* !HTTP_CAF_EXTERNAL */
-        if ( (client = getenv("HTTP_CLIENT_HOST")) != NULL  &&  client[0] ) {
+        if ( (p = getenv("HTTP_CLIENT_HOST")) != NULL  &&  *p ) {
+            client = s_StrDup(p);
             return client;
         }
     }
-    if ( (client = getenv("HTTP_CAF_PROXIED_HOST")) != NULL  &&  client[0] ) {
+    if ( (p = getenv("HTTP_CAF_PROXIED_HOST")) != NULL  &&  *p ) {
+        client = s_StrDup(p);
         return client;
     }
-    if ( (client = getenv("PROXIED_IP")) != NULL  &&  client[0] ) {
+    if ( (p = getenv("PROXIED_IP")) != NULL  &&  *p ) {
+        client = s_StrDup(p);
         return client;
     }
-    if ( (client = getenv("REMOTE_ADDR")) != NULL  &&  client[0] ) {
+    if ( (p = getenv("REMOTE_ADDR")) != NULL  &&  *p ) {
+        client = s_StrDup(p);
         return client;
     }
     return NULL;
@@ -814,15 +829,22 @@ static const char* s_GetClient_Env(void)
 
 
 /** This routine is called during start up and again in NcbiLog_ReqStart(). 
+    The received environment value wil be cached for whole process. 
  */
 extern const char* NcbiLogP_GetSessionID_Env(void)
 {
     static const char* session = NULL;
+    const char* p = NULL;
 
-    if ( (session = getenv("HTTP_NCBI_SID")) != NULL  &&  session[0] ) {
+    if ( session ) {
         return session;
     }
-    if ( (session = getenv("NCBI_LOG_SESSION_ID")) != NULL  &&  session[0] ) {
+    if ( (p = getenv("HTTP_NCBI_SID")) != NULL  &&  *p ) {
+        session = s_StrDup(p);
+        return session;
+    }
+    if ( (p = getenv("NCBI_LOG_SESSION_ID")) != NULL  &&  *p ) {
+        session = s_StrDup(p);
         return session;
     }
     return NULL;
@@ -830,15 +852,22 @@ extern const char* NcbiLogP_GetSessionID_Env(void)
 
 
 /** This routine is called during start up and again in NcbiLog_ReqStart(). 
+    The received environment value wil be cached for whole process. 
  */
 extern const char* NcbiLogP_GetHitID_Env(void)
 {
     static const char* phid = NULL;
+    const char* p = NULL;
 
-    if ( (phid = getenv("HTTP_NCBI_PHID")) != NULL  &&  phid[0] ) {
+    if ( phid ) {
         return phid;
     }
-    if ( (phid = getenv("NCBI_LOG_HIT_ID")) != NULL  &&  phid[0] ) {
+    if ( (p = getenv("HTTP_NCBI_PHID")) != NULL  &&  *p ) {
+        phid = s_StrDup(p);
+        return phid;
+    }
+    if ( (p = getenv("NCBI_LOG_HIT_ID")) != NULL  &&  *p ) {
+        phid = s_StrDup(p);
         return phid;
     }
     return NULL;
@@ -1247,20 +1276,37 @@ static void s_CloseLogFiles(int/*bool*/ cleanup)
             TROUBLE_MSG("unknown destination");
     }
     if (sx_Info->file_trace) {
+    
+#if NCBILOG_USE_FILE_DESCRIPTORS
+        close(sx_Info->file_trace);
+#else
         fclose(sx_Info->file_trace);
-        sx_Info->file_trace = NULL;
+#endif
+        sx_Info->file_trace = kInvalidFileHandle;
     }
     if (sx_Info->file_log) {
+#if NCBILOG_USE_FILE_DESCRIPTORS
+        close(sx_Info->file_log);
+#else
         fclose(sx_Info->file_log);
-        sx_Info->file_log = NULL;
+#endif
+        sx_Info->file_log = kInvalidFileHandle;
     }
     if (sx_Info->file_err) {
+#if NCBILOG_USE_FILE_DESCRIPTORS
+        close(sx_Info->file_err);
+#else
         fclose(sx_Info->file_err);
-        sx_Info->file_err = NULL;
+#endif
+        sx_Info->file_err = kInvalidFileHandle;
     }
     if (sx_Info->file_perf) {
+#if NCBILOG_USE_FILE_DESCRIPTORS
+        close(sx_Info->file_perf);
+#else
         fclose(sx_Info->file_perf);
-        sx_Info->file_perf = NULL;
+#endif
+        sx_Info->file_perf = kInvalidFileHandle;
     }
     if (cleanup  &&  sx_Info->file_trace_name) {
         free(sx_Info->file_trace_name);
@@ -1291,6 +1337,10 @@ static int /*bool*/ s_SetLogFiles(const char* path_with_base_name)
 {
     char path[FILENAME_MAX + 1];
     size_t n;
+#if NCBILOG_USE_FILE_DESCRIPTORS
+    int flags = O_CREAT | O_APPEND | O_WRONLY;
+    mode_t mode = 0664;
+#endif    
 
     assert(path_with_base_name);
     /* Check max possible file name (path.trace) */
@@ -1301,34 +1351,50 @@ static int /*bool*/ s_SetLogFiles(const char* path_with_base_name)
 
     /* Trace */
     strcpy(path + n, ".trace");
+#if NCBILOG_USE_FILE_DESCRIPTORS
+    sx_Info->file_trace = open(path, flags, mode);
+#else
     sx_Info->file_trace = fopen(path, "a");
+#endif    
     sx_Info->file_trace_name = s_StrDup(path);
 
     /* Log */
     if (sx_Info->file_trace) {
         strcpy(path + n, ".log");
+#if NCBILOG_USE_FILE_DESCRIPTORS
+        sx_Info->file_log = open(path, flags, mode);
+#else
         sx_Info->file_log = fopen(path, "a");
+#endif        
         sx_Info->file_log_name = s_StrDup(path);
     }
 
     /* Err */
     if (sx_Info->file_log) {
         strcpy(path + n, ".err");
+#if NCBILOG_USE_FILE_DESCRIPTORS
+        sx_Info->file_err = open(path, flags, mode);
+#else
         sx_Info->file_err = fopen(path, "a");
+#endif        
         sx_Info->file_err_name = s_StrDup(path);
     }
 
     /* Perf */
     if (sx_Info->file_err) {
         strcpy(path + n, ".perf");
+#if NCBILOG_USE_FILE_DESCRIPTORS
+        sx_Info->file_perf = open(path, flags, mode);
+#else
         sx_Info->file_perf = fopen(path, "a");
+#endif        
         sx_Info->file_perf_name = s_StrDup(path);
     }
 
-    if (sx_Info->file_trace &&
-        sx_Info->file_log   &&
-        sx_Info->file_err   &&
-        sx_Info->file_perf) {
+    if ((sx_Info->file_trace != kInvalidFileHandle)  &&
+        (sx_Info->file_log   != kInvalidFileHandle)  &&
+        (sx_Info->file_err   != kInvalidFileHandle)  &&
+        (sx_Info->file_perf  != kInvalidFileHandle) ) {
         return 1 /*true*/;
     }
     s_CloseLogFiles(1);
@@ -1362,12 +1428,25 @@ static int /*bool*/ s_SetLogFilesDir(const char* dir)
  */
 static void s_InitDestination(const char* logfile_path) 
 {
+#if NCBILOG_USE_FILE_DESCRIPTORS
+    int flags = O_CREAT | O_APPEND | O_WRONLY;
+    mode_t mode = 0664;
+#endif    
     time_t now;
     assert(sx_Info->destination != eNcbiLog_Disable);
-    if (sx_Info->file_log == stdin  ||  sx_Info->file_log == stdout) {
+    
+#if NCBILOG_USE_FILE_DESCRIPTORS
+    if (sx_Info->file_log == STDOUT_FILENO  ||  sx_Info->file_log == STDERR_FILENO) {
         /* We already have destination set to stdout/stderr -- don't need to reopen it */
         return;
     }
+#else
+    if (sx_Info->file_log == stdout  ||  sx_Info->file_log == stderr) {
+        /* We already have destination set to stdout/stderr -- don't need to reopen it */
+        return;
+    }
+#endif
+
     /* Reopen files every 1 minute */
     time(&now);
     if (now - sx_Info->last_reopen_time < 60) {
@@ -1397,19 +1476,27 @@ static void s_InitDestination(const char* logfile_path)
 
         /* Destination and file names didn't changed, just reopen files */
         if (sx_Info->reuse_file_names) {
-            assert(sx_Info->file_trace_name &&
-                   sx_Info->file_log_name   &&
-                   sx_Info->file_err_name   &&
-                   sx_Info->file_perf_name);
+        
+            assert((sx_Info->file_trace != kInvalidFileHandle)  &&
+                   (sx_Info->file_log   != kInvalidFileHandle)  &&
+                   (sx_Info->file_err   != kInvalidFileHandle)  &&
+                   (sx_Info->file_perf  != kInvalidFileHandle));
+
+#if NCBILOG_USE_FILE_DESCRIPTORS
+            sx_Info->file_trace = open(sx_Info->file_trace_name, flags, mode);
+            sx_Info->file_log   = open(sx_Info->file_log_name,   flags, mode);
+            sx_Info->file_err   = open(sx_Info->file_err_name,   flags, mode);
+            sx_Info->file_perf  = open(sx_Info->file_perf_name,  flags, mode);
+#else
             sx_Info->file_trace = fopen(sx_Info->file_trace_name, "a");
             sx_Info->file_log   = fopen(sx_Info->file_log_name,   "a");
             sx_Info->file_err   = fopen(sx_Info->file_err_name,   "a");
             sx_Info->file_perf  = fopen(sx_Info->file_perf_name,  "a");
-
-            if (sx_Info->file_trace &&
-                sx_Info->file_log   &&
-                sx_Info->file_err   &&
-                sx_Info->file_perf) {
+#endif
+            if ((sx_Info->file_trace != kInvalidFileHandle)  &&
+                (sx_Info->file_log   != kInvalidFileHandle)  &&
+                (sx_Info->file_err   != kInvalidFileHandle)  &&
+                (sx_Info->file_perf  != kInvalidFileHandle) ) {
                 return;
             }
             /* Failed to reopen, try again from scratch */
@@ -1481,16 +1568,30 @@ static void s_InitDestination(const char* logfile_path)
     /* Use stdout/stderr */
     switch (sx_Info->destination) {
         case eNcbiLog_Stdout:
+#if NCBILOG_USE_FILE_DESCRIPTORS
+            sx_Info->file_trace = STDOUT_FILENO;
+            sx_Info->file_log   = STDOUT_FILENO;
+            sx_Info->file_err   = STDOUT_FILENO;
+            sx_Info->file_perf  = STDOUT_FILENO;
+#else
             sx_Info->file_trace = stdout;
             sx_Info->file_log   = stdout;
             sx_Info->file_err   = stdout;
             sx_Info->file_perf  = stdout;
+#endif
             break;
         case eNcbiLog_Stderr:
+#if NCBILOG_USE_FILE_DESCRIPTORS
+            sx_Info->file_trace = STDERR_FILENO;
+            sx_Info->file_log   = STDERR_FILENO;
+            sx_Info->file_err   = STDERR_FILENO;
+            sx_Info->file_perf  = STDERR_FILENO;
+#else
             sx_Info->file_trace = stderr;
             sx_Info->file_log   = stderr;
             sx_Info->file_err   = stderr;
             sx_Info->file_perf  = stderr;
+#endif
             break;
         default:
             TROUBLE;
@@ -1634,12 +1735,49 @@ static char* s_GenerateHitID_Str(char* dst)
  *  Print 
  */
 
+#if NCBILOG_USE_FILE_DESCRIPTORS
+
+static size_t s_Write(int fd, const void *buf, size_t count)
+{
+    const char* ptr = (const char*) buf;
+    size_t  n = count;
+    ssize_t n_written;
+    
+    if (count == 0) {
+        return 0;
+    }
+    do {
+        n_written = write(fd, ptr, n);
+        if (n_written == 0) {
+            return count - n;
+        }
+        if ( n_written < 0 ) {
+            if (errno == EINTR) {
+                continue;
+            }
+            return count - n;
+        }
+        n   -= n_written;
+        ptr += n_written;
+    }
+    while (n > 0);
+    return count;
+}
+
+#endif
+
+
 /** Post prepared message into the log.
  *  The severity parameter is necessary to choose correct logging file.
  */
 static void s_Post(TNcbiLog_Context ctx, ENcbiLog_DiagFile diag)
 {
-    FILE* f = NULL;
+    TFileHandle f = kInvalidFileHandle;
+#if NCBILOG_USE_FILE_DESCRIPTORS
+    size_t n_write;
+#endif
+    int n;
+   
     if (sx_Info->destination == eNcbiLog_Disable) {
         return;
     }
@@ -1661,11 +1799,23 @@ static void s_Post(TNcbiLog_Context ctx, ENcbiLog_DiagFile diag)
         default:
             TROUBLE;
     }
-    assert(f);
-
+    
     /* Write */
-    fprintf(f, "%s\n", sx_Info->message);
+    assert(f != kInvalidFileHandle);
+
+#if NCBILOG_USE_FILE_DESCRIPTORS
+    n_write = strlen(sx_Info->message);
+    VERIFY(n_write <= NCBILOG_ENTRY_MAX);
+    sx_Info->message[n_write] = '\n';
+    n_write++;
+    sx_Info->message[n_write] = '\0';
+    n = s_Write(f, sx_Info->message, n_write);
+    VERIFY(n == n_write);
+#else
+    n = fprintf(f, "%s\n", sx_Info->message);
     fflush(f);
+    VERIFY(n > 0);
+#endif
 
     /* Increase posting serial numbers */
     sx_Info->psn++;
@@ -1977,7 +2127,7 @@ static void s_Init(const char* appname)
     sx_Info->appname[w_len] = '\0';
 
     /* Allocate memory for message buffer */
-    sx_Info->message = (char*) malloc(NCBILOG_ENTRY_MAX + 1 /* '\0' */);
+    sx_Info->message = (char*) malloc(NCBILOG_ENTRY_MAX_ALLOC);
     assert(sx_Info->message);
 
     /* Logging is initialized now and can be used */
@@ -3102,14 +3252,20 @@ extern void NcbiLog_Fatal(const char* msg)
     s_PrintMessage(eNcbiLog_Fatal, msg);
 }
 
-
 extern void NcbiLogP_Raw(const char* line)
 {
-    FILE* f = NULL;
+    assert(line);
+    NcbiLogP_Raw2(line, strlen(line));
+}
+
+extern void NcbiLogP_Raw2(const char* line, size_t len)
+{
+    TFileHandle f = kInvalidFileHandle;
     int n;
 
     assert(line);
-    assert(strlen(line) > 127);  /* minimal applog line length (?) */
+    assert(line[len] == '\0');
+    assert(len > 127);  /* minimal applog line length (?) */
 
     MT_LOCK_API;
     if (sx_Info->destination == eNcbiLog_Disable) {
@@ -3126,7 +3282,7 @@ extern void NcbiLogP_Raw(const char* line)
             /* Try to get type of the line to redirect output into correct log file */
             {
                 const char* ptr = line + 127 + strlen((char*)sx_Info->appname);
-                assert(strlen(line) > (size_t)(ptr - line));
+                assert(len > (size_t)(ptr - line));
 
                 if (strncmp(ptr, "perf", 4) == 0) {
                     f = sx_Info->file_perf;
@@ -3149,10 +3305,21 @@ extern void NcbiLogP_Raw(const char* line)
             /* Nothing to do here -- all logging going to the same stream sx_Info->file_log */
             break;
     }
-    VERIFY(f);
+    
+    assert(f != kInvalidFileHandle);
+    
+#if NCBILOG_USE_FILE_DESCRIPTORS
+    VERIFY(len <= NCBILOG_ENTRY_MAX);
+    n = s_Write(f, line, len);
+    VERIFY(n == len);
+    n = s_Write(f, "\n", 1);
+    VERIFY(n == 1);
+#else
     n = fprintf(f, "%s\n", line);
     fflush(f);
     VERIFY(n > 0);
+#endif
+
     MT_UNLOCK;
 }
 
