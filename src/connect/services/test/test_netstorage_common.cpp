@@ -312,19 +312,10 @@ struct IExtWriter : public IWriter
     virtual void Close() = 0;
 };
 
-// An extended IExtReader interface for expected data
-struct IExpected : public IExtReader
-{
-    virtual size_t Size() = 0;
-};
-
 // A reader that is used to read from a string
-template <class TReader>
-class CStrReader : public TReader
+class CStrReader : public IExtReader
 {
 public:
-    typedef CStrReader TStrReader; // Self
-
     CStrReader() : m_Ptr(NULL) {}
     CStrReader(const string& str) : m_Str(str), m_Ptr(NULL) {}
 
@@ -369,29 +360,29 @@ private:
 
 
 // Empty data to test APIs
-class CEmpData : public CStrReader<IExpected>
+class CEmpData : public CStrReader
 {
 public:
     CEmpData(CNetStorageObject)
-        : TStrReader(string())
+        : CStrReader(string())
     {}
 
     size_t Size() { return 0; }
 };
 
 // String data to test APIs
-class CStrData : public CStrReader<IExpected>
+class CStrData : public CStrReader
 {
 public:
     CStrData(CNetStorageObject)
-        : TStrReader("The quick brown fox jumps over the lazy dog")
+        : CStrReader("The quick brown fox jumps over the lazy dog")
     {}
 
     size_t Size() { return m_Str.size(); }
 };
 
 // Large volume data to test APIs
-class CRndData : public IExpected
+class CRndData : public IExtReader
 {
 public:
     struct SSource
@@ -438,7 +429,7 @@ private:
 };
 
 // NetStorage data as a source to test APIs (simultaneous access to NetStorage)
-class CNstData : public IExpected
+class CNstData : public IExtReader
 {
 public:
     CNstData(CNetStorageObject object)
@@ -504,7 +495,7 @@ private:
 // String reading/writing interface
 struct SStrApiImpl
 {
-    class CReader : public CNetStorageRW<CStrReader<IExtReader> >
+    class CReader : public CNetStorageRW<CStrReader>
     {
     public:
         CReader(CNetStorageObject o) : TNetStorageRW(o) {}
