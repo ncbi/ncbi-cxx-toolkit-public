@@ -191,8 +191,8 @@ DEFINE_STATIC_ARRAY_MAP_WITH_COPY(TNameValPairMap, sc_HIVRuleStrsMap, sc_HIVRule
 #define AUTODEFGETENUM(Fieldname, Map, Default) \
 string CAutoDefOptions::x_Get##Fieldname(unsigned int value) const \
 { \
-    TNameValPairMap::const_iterator it = ##Map.begin(); \
-        while (it != ##Map.end()) { \
+    TNameValPairMap::const_iterator it = Map.begin(); \
+        while (it != Map.end()) { \
         if (value == it->second) { \
             return it->first; \
         } \
@@ -202,8 +202,8 @@ string CAutoDefOptions::x_Get##Fieldname(unsigned int value) const \
 } \
 CAutoDefOptions::T##Fieldname CAutoDefOptions::x_Get##Fieldname(const string& value) const \
 { \
-    TNameValPairMap::const_iterator it = ##Map.find(value.c_str()); \
-    if (it != ##Map.end()) { \
+    TNameValPairMap::const_iterator it = Map.find(value.c_str()); \
+    if (it != Map.end()) { \
         return it->second; \
         } \
     return Default; \
