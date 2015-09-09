@@ -295,6 +295,7 @@ CObjectOStream::CObjectOStream(ESerialDataFormat format,
       m_ParseDelayBuffers(eDelayBufferPolicyNotSet),
       m_FastWriteDouble(s_FastWriteDouble->Get()),
       m_SpecialCaseWrite(eWriteAsNormal),
+      m_EnforceWritingDefaults(false),
       m_FixMethod(x_GetFixCharsMethodDefault()),
       m_VerifyData(x_GetVerifyDataDefault())
 {

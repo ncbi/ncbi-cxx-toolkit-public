@@ -966,9 +966,10 @@ void CMemberInfoFunctions::WriteWithDefaultMember(CObjectOStream& out,
     _ASSERT(memberInfo->GetDefault());
     TTypeInfo memberType = memberInfo->GetTypeInfo();
     TConstObjectPtr memberPtr = memberInfo->GetItemPtr(classPtr);
-    if ( memberType->Equals(memberPtr, memberInfo->GetDefault()) )
+    if (!out.IsWritingDefaultValuesEnforced() &&
+        memberType->Equals(memberPtr, memberInfo->GetDefault()) ) {
         return;
-
+    }
     out.WriteClassMember(memberInfo->GetId(), memberType, memberPtr);
 }
 
@@ -981,6 +982,9 @@ void CMemberInfoFunctions::WriteWithDefaultMemberX(
     TTypeInfo memberType = memberInfo->GetTypeInfo();
     TConstObjectPtr memberPtr = memberInfo->GetItemPtr(classPtr);
     CMemberInfo::ESetFlag flag = memberInfo->GetSetFlag(classPtr);
+    if (out.IsWritingDefaultValuesEnforced() &&  memberInfo->GetDefault()) {
+        goto do_write;
+    }
     if (flag == CMemberInfo::eSetNo) {
         if (memberInfo->Optional()) {
             return;
@@ -1004,6 +1008,7 @@ void CMemberInfoFunctions::WriteWithDefaultMemberX(
             return;
         }
     }
+do_write:
     out.WriteClassMember(memberInfo->GetId(), memberType, memberPtr);
 }
 
@@ -1013,6 +1018,9 @@ void CMemberInfoFunctions::WriteWithSetFlagMember(CObjectOStream& out,
 {
     _ASSERT(!memberInfo->CanBeDelayed());
     _ASSERT(memberInfo->HaveSetFlag());
+    if (out.IsWritingDefaultValuesEnforced() &&  memberInfo->GetDefault()) {
+        goto do_write;
+    }
     if ( memberInfo->GetSetFlagNo(classPtr) ) {
         if (memberInfo->Optional()) {
             return;
@@ -1064,6 +1072,7 @@ void CMemberInfoFunctions::WriteWithSetFlagMember(CObjectOStream& out,
         }
     }
 #endif
+do_write:
     out.WriteClassMember(memberInfo->GetId(),
                          memberInfo->GetTypeInfo(),
                          memberInfo->GetItemPtr(classPtr));

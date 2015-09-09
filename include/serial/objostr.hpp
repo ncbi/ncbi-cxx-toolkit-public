@@ -207,6 +207,17 @@ public:
         return tmp;
     }
 
+    // Enforce explicit writing of values with default,
+    // even when they were never set
+    //
+    // This is dangerous, and contradicts specification
+    // but might be useful to make sure defaults are properly reported to recipient
+    // Use at your own risk
+    void EnforceWritingDefaultValues(bool enforce = true);
+
+    // Is explicit writing of values with default enforced
+    bool IsWritingDefaultValuesEnforced() const;
+
 //---------------------------------------------------------------------------
 // Formatting of the output
 
@@ -787,6 +798,7 @@ protected:
     EDelayBufferParsing  m_ParseDelayBuffers;
     bool  m_FastWriteDouble;
     ESpecialCaseWrite m_SpecialCaseWrite;
+    bool  m_EnforceWritingDefaults;
 
 private:
     static CObjectOStream* OpenObjectOStreamAsn(CNcbiOstream& out,
@@ -813,6 +825,15 @@ public:
 
     friend class CObjectStreamCopier;
 };
+
+inline void
+CObjectOStream::EnforceWritingDefaultValues(bool enforce) {
+    m_EnforceWritingDefaults = enforce;
+}
+inline bool
+CObjectOStream::IsWritingDefaultValuesEnforced() const {
+    return m_EnforceWritingDefaults;
+}
 
 
 /* @} */
