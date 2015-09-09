@@ -363,7 +363,7 @@ private:
 class CEmpData : public CStrReader
 {
 public:
-    CEmpData(CNetStorageObject)
+    CEmpData()
         : CStrReader(string())
     {}
 
@@ -374,7 +374,7 @@ public:
 class CStrData : public CStrReader
 {
 public:
-    CStrData(CNetStorageObject)
+    CStrData()
         : CStrReader("The quick brown fox jumps over the lazy dog")
     {}
 
@@ -397,7 +397,7 @@ public:
         }
     };
 
-    CRndData(CNetStorageObject)
+    CRndData()
         : m_Begin(0),
           m_Length(m_Source.data.size())
     {}
@@ -456,6 +456,37 @@ public:
 private:
     CNetStorageObject m_Object;
 };
+
+
+// Convenience function to generate a unique key for CNetStorageByKey
+string GetUniqueKey()
+{
+    return NStr::NumericToString(time(NULL)) + "t" +
+        NStr::NumericToString(CRandomSingleton::instance().GetRandUint8());
+}
+
+
+// Template for source data creation
+
+template <class TExpected, class TNetStorage>
+TExpected* Create(TNetStorage&, TNetStorageFlags)
+{
+    return new TExpected();
+}
+
+template <>
+CNstData* Create<CNstData, CNetStorage>(CNetStorage& netstorage,
+        TNetStorageFlags flags)
+{
+    return new CNstData(netstorage.Create(flags));
+}
+
+template <>
+CNstData* Create<CNstData, CNetStorageByKey>(CNetStorageByKey& netstorage,
+        TNetStorageFlags flags)
+{
+    return new CNstData(netstorage.Open(GetUniqueKey(), flags));
+}
 
 
 // NetStorage reader/writer base class
@@ -1331,7 +1362,7 @@ void SFixture<TPolicy>::ExistsAndRemoveTests(const TId& id)
 template <class TPolicy>
 void SFixture<TPolicy>::Test(CNetStorage&)
 {
-    data.reset(new TExpected(netstorage.Create(TLoc::source)));
+    data.reset(Create<TExpected>(netstorage, TLoc::source));
 
     ReadAndCompare<TLocationNotFound>("Trying to read non-existent object",
         netstorage.Open(TLoc::not_found()));
@@ -1371,17 +1402,10 @@ void SFixture<TPolicy>::Test(CNetStorage&)
 template <class TPolicy>
 void SFixture<TPolicy>::Test(CNetStorageByKey&)
 {
-    string prefix = NStr::NumericToString(time(NULL)) + "t";
+    string unique_key2 = GetUniqueKey();
+    string unique_key3 = GetUniqueKey();
 
-    CRandom& random_gen(CRandomSingleton::instance());
-    string unique_key1 = prefix + NStr::NumericToString(
-            random_gen.GetRandUint8());
-    string unique_key2 = prefix + NStr::NumericToString(
-            random_gen.GetRandUint8());
-    string unique_key3 = prefix + NStr::NumericToString(
-            random_gen.GetRandUint8());
-
-    data.reset(new TExpected(netstorage.Open(unique_key1, TLoc::source)));
+    data.reset(Create<TExpected>(netstorage, TLoc::source));
 
     ReadAndCompare<TLocationNotFound>("Trying to read non-existent object",
         netstorage.Open(unique_key2, TLoc::non_existent));
