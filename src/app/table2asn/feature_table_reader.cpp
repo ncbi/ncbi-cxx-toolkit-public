@@ -261,17 +261,17 @@ namespace
 
     CRef<CSeq_id> GetNewProteinId(CSeq_entry_Handle seh, const string& id_base)
     {
-        int offset = 1;
+        static int offset = 1;
         string id_label = id_base + "_" + NStr::NumericToString(offset);
         CRef<CSeq_id> id(new CSeq_id());
         id->SetLocal().SetStr(id_label);
         CBioseq_Handle b_found = seh.GetBioseqHandle(*id);
         while (b_found) {
-            offset++;
             id_label = id_base + "_" + NStr::NumericToString(offset);
             id->SetLocal().SetStr(id_label);
             b_found = seh.GetBioseqHandle(*id);
         }
+        offset++;
         return id;
     }
 
@@ -484,6 +484,10 @@ CRef<CSeq_entry> CFeatureTableReader::TranslateProtein(CScope& scope, CSeq_entry
                 protein->SetId().push_back(newid);
             }
 #endif
+        }
+        else
+        {
+            base_name = "gen";
         }
     }
     else
@@ -699,13 +703,6 @@ void CFeatureTableReader::ParseCdregions(CSeq_entry& entry)
 
             // sort and number ids
             PostProcessFeatureTable(entry, seq_annot->SetData().SetFtable(), m_local_id_counter);
-            if (false)
-            {
-                CNcbiOfstream debug_annot("annot.sqn");
-                debug_annot << MSerial_AsnText
-                            << MSerial_VerifyNo
-                            << *seq_annot;
-            }
             CTempString locustag;
             for (CSeq_annot::TData::TFtable::iterator feat_it = seq_ftable.begin(); seq_ftable.end() != feat_it;)
             {

@@ -1001,14 +1001,13 @@ void CMultiReader::xDumpErrors(CNcbiOstream& ostr)
 
 CRef<CSeq_entry> CMultiReader::xReadGFF3(CNcbiIstream& instream)
 {
-    CRef<CSeq_entry> entry(new CSeq_entry);
-    typedef vector<CRef<CSeq_annot> > ANNOTS;
-    ANNOTS annots;
     int flags = 0;
     flags |= CGff3Reader::fAllIdsAsLocal;
+    flags |= CGff3Reader::fNewCode;
+
     CGff3Reader reader(flags, m_AnnotName, m_AnnotTitle);
-    reader.ReadSeqAnnots(annots, instream, m_context.m_logger);
-    entry->SetSeq().SetAnnot().insert(entry->SetSeq().SetAnnot().end(), annots.begin(), annots.end());
+    CRef<CSeq_entry> entry(new CSeq_entry);
+    reader.ReadSeqAnnots(entry->SetSeq().SetAnnot(), instream, m_context.m_logger);   
 
     return entry;
 }
@@ -1053,10 +1052,21 @@ CMultiReader::~CMultiReader()
 
 bool CMultiReader::LoadAnnot(objects::CSeq_entry& obj, CNcbiIstream& in)
 {
+    /*
     CRef<CSeq_entry> entry;
     CRef<CSeq_submit> submit;
     if (xReadFile(in, entry, submit)
         && entry->IsSetAnnot() && !entry->GetAnnot().empty())
+    {
+        obj.SetAnnot().insert(obj.SetAnnot().end(),
+            entry->SetAnnot().begin(), entry->SetAnnot().end());
+
+        return true;
+    }
+    return false;
+    */
+    CRef<CSeq_entry> entry = xReadGFF3(in);
+    if (entry->IsSetAnnot() && !entry->GetAnnot().empty())
     {
         obj.SetAnnot().insert(obj.SetAnnot().end(),
             entry->SetAnnot().begin(), entry->SetAnnot().end());
