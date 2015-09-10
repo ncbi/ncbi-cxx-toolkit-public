@@ -37,7 +37,7 @@ namespace intr = boost::intrusive;
 BEGIN_NCBI_SCOPE
 
 // adds task statistics
-#define __NC_TASKS_MONITOR  1
+#define __NC_TASKS_MONITOR  0
 // uses Boost intrusive set to hold task stat (versus std::set)
 // uses member_hook, because base_hook caused conflicts on linking
 #define __NC_TASKS_INTR_SET 1
