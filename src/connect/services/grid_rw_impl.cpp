@@ -112,6 +112,21 @@ CStringOrBlobStorageReader::CStringOrBlobStorageReader(const string& data_or_key
 {
     if (NStr::CompareCase(data_or_key, 0, JOB_OUTPUT_PREFIX_LEN,
             s_JobOutputPrefixNetCache) == 0) {
+
+        // If NetCache API is not provided, initialize it using info from key
+        if (!m_Storage) {
+            CNetCacheKey key(data_or_key.substr(JOB_OUTPUT_PREFIX_LEN));
+            string service(key.GetServiceName());
+
+            if (service.empty()) {
+                service = key.GetHost() + ":" + NStr::UIntToString(key.GetPort());
+            }
+
+            m_Storage = CNetCacheAPI(service, kEmptyStr);
+            m_Storage.GetService().GetServerPool().StickToServer(
+                    key.GetHost(), key.GetPort());
+        }
+
         m_NetCacheReader.reset(m_Storage.GetReader(
             data_or_key.data() + JOB_OUTPUT_PREFIX_LEN, data_size));
     } else if (NStr::CompareCase(data_or_key, 0,
