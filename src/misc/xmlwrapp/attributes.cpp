@@ -52,6 +52,7 @@
 #include <string.h>
 #include <new>
 #include <algorithm>
+#include <string.h>
 
 // libxml2 includes
 #include <libxml/tree.h>
@@ -173,6 +174,19 @@ void xml::attributes::insert (const char *name, const char *value,
                              "insert must not be NULL");
     if (name[0] == '\0')
         throw xml::exception("name cannot be empty");
+
+    bool            only_whitespaces = true;
+    const char *    current = name;
+    while (*current != '\0') {
+        if (memchr(" \t\n\r", *current, 4) == NULL) {
+            only_whitespaces = false;
+            break;
+        }
+    }
+    if (only_whitespaces)
+        throw xml::exception("name may not consist "
+                             "of only whitespace characters");
+
 
     const char *  column = strchr(name, ':');
 
