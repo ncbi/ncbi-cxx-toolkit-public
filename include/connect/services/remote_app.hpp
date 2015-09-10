@@ -155,7 +155,7 @@ public:
     /// Serialize a request to a given stream. After call to this method the instance
     /// cleans itself an it can be reused.
     void Send(CNcbiOstream& os);
-    void Deserialize(CNcbiIstream& is);
+    void Deserialize(CNcbiIstream& is) { x_Deserialize(is); }
 
     void Reset();
 
@@ -167,6 +167,9 @@ protected:
 
     void x_CreateWDir();
     void x_RemoveWDir();
+
+    typedef map<string, string> TStoredFiles;
+    void x_Deserialize(CNcbiIstream& is, TStoredFiles* files = NULL);
 
 private:
     static CAtomicCounter sm_DirCounter;

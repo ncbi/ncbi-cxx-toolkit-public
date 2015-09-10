@@ -235,8 +235,15 @@ static void s_ReplaceArg( vector<string>& args, const string& old_fname,
     }
 }
 
-void CRemoteAppRequest::Deserialize(CNcbiIstream& is)
+void CRemoteAppRequest::x_Deserialize(CNcbiIstream& is, TStoredFiles* files)
 {
+    // Partial deserialization doesn't create working dir and deserialize files,
+    // but fills the "files" map with deserialized filenames and blob IDs.
+    const bool partial_deserialization = files;
+
+    if (partial_deserialization)
+        files->clear();
+
     Reset();
 
     string cmdline;
@@ -248,19 +255,19 @@ void CRemoteAppRequest::Deserialize(CNcbiIstream& is)
     vector<string> args;
     if (!is.good()) return;
     is >> fcount;
-    if ( fcount > 0 )
+    if ( fcount > 0 && !partial_deserialization) {
         TokenizeCmdLine(GetCmdLine(), args);
-
+        x_CreateWDir();
+    }
 
     for( int i = 0; i < fcount; ++i) {
-        if ( i == 0 )
-            x_CreateWDir();
-
         string blobid, fname;
         ReadStrWithLen(is, fname);
         ReadStrWithLen(is, blobid);
         if (!is.good()) return;
-        if (blobid != kLocalFSSign) {
+        if (partial_deserialization) {
+            files->insert(make_pair(fname, blobid));
+        } else if (blobid != kLocalFSSign) {
             string nfname = GetWorkingDir() + CDirEntry::GetPathSeparator()
                 + blobid;
             CNcbiOfstream of(nfname.c_str());
@@ -272,7 +279,7 @@ void CRemoteAppRequest::Deserialize(CNcbiIstream& is)
             }
         }
     }
-    if ( fcount > 0 ) {
+    if ( fcount > 0 && !partial_deserialization) {
         SetCmdLine(JoinCmdLine(args));
     }
 
