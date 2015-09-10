@@ -171,6 +171,8 @@ void xml::attributes::insert (const char *name, const char *value,
     if ( (!name) || (!value))
         throw xml::exception("name and value of an attribute to "
                              "insert must not be NULL");
+    if (name[0] == '\0')
+        throw xml::exception("name cannot be empty");
 
     const char *  column = strchr(name, ':');
 
