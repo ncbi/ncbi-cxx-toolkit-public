@@ -56,15 +56,16 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(blast)
 
 CLocalDbAdapter::CLocalDbAdapter(const CSearchDatabase& dbinfo)
-    : m_SeqSrc(0), m_SeqInfoSrc(0), m_DbName(dbinfo.GetDatabaseName())
+    : m_SeqSrc(0), m_SeqInfoSrc(0), m_DbName(dbinfo.GetDatabaseName()), m_DbScanMode(false)
 {
     m_DbInfo.Reset(new CSearchDatabase(dbinfo));
 }
 
 CLocalDbAdapter::CLocalDbAdapter(CRef<IQueryFactory> subject_sequences,
-                                 CConstRef<CBlastOptionsHandle> opts_handle)
+                                 CConstRef<CBlastOptionsHandle> opts_handle,
+                                 bool dbscan_mode)
     : m_SeqSrc(0), m_SeqInfoSrc(0), m_SubjectFactory(subject_sequences),
-    m_OptsHandle(opts_handle), m_DbName(kEmptyStr)
+    m_OptsHandle(opts_handle), m_DbName(kEmptyStr), m_DbScanMode(dbscan_mode)
 {
     if (subject_sequences.Empty()) {
         NCBI_THROW(CBlastException, eInvalidArgument, 
@@ -88,7 +89,7 @@ CLocalDbAdapter::CLocalDbAdapter(CRef<IQueryFactory> subject_sequences,
 
 CLocalDbAdapter::CLocalDbAdapter(BlastSeqSrc* seqSrc,
                                  CRef<IBlastSeqInfoSrc> seqInfoSrc)
-    : m_SeqSrc(seqSrc), m_SeqInfoSrc(seqInfoSrc), m_DbName(kEmptyStr)
+    : m_SeqSrc(seqSrc), m_SeqInfoSrc(seqInfoSrc), m_DbName(kEmptyStr), m_DbScanMode(false)
 {
 }
 
@@ -135,7 +136,7 @@ CLocalDbAdapter::MakeSeqSrc()
                                m_OptsHandle->GetOptions().GetProgramType();
             if ( !m_Subjects.empty() ) {
                 //m_SeqSrc = QueryFactoryBlastSeqSrcInit(m_Subjects, program);
-                m_SeqSrc = MultiSeqBlastSeqSrcInit(m_Subjects, program);
+                m_SeqSrc = MultiSeqBlastSeqSrcInit(m_Subjects, program, m_DbScanMode);
             } else {
                 m_SeqSrc = QueryFactoryBlastSeqSrcInit(m_SubjectFactory,
                                                        program);

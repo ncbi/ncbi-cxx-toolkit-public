@@ -3112,6 +3112,8 @@ BOOST_AUTO_TEST_CASE(BlastpMultipleQueries_MultipleSubjs_CLocalBlast) {
     CRef<CLocalDbAdapter> subjects(new CLocalDbAdapter(subj_qf,
                                                        opts_handle));
 
+    BOOST_REQUIRE(subjects->IsDbScanMode() == false);
+    
     size_t num_queries = query_vec.size();
     size_t num_subjects = subj_vec.size();
 
@@ -3146,6 +3148,83 @@ BOOST_AUTO_TEST_CASE(BlastpMultipleQueries_MultipleSubjs_CLocalBlast) {
 
     // test the order of queries and subjects:
     testResultAlignments(num_queries, num_subjects, sas_v);
+}
+
+BOOST_AUTO_TEST_CASE(Blastp_MultipleSubjs_SearchAsSet) {
+    vector<TIntId> q_gis, s_gis;
+
+    // Setup the queries
+    q_gis.push_back(816838863);
+
+    // setup the subjects
+    s_gis.push_back(16130156);
+    s_gis.push_back(15644111);
+    s_gis.push_back(126699345);
+    s_gis.push_back(504220075);
+    s_gis.push_back(21222553);
+    s_gis.push_back(24376189);
+    s_gis.push_back(15598078);
+    s_gis.push_back(15599919);
+    s_gis.push_back(15597767);
+    s_gis.push_back(16131833);
+    s_gis.push_back(15599742);
+    s_gis.push_back(15598387);
+    s_gis.push_back(15600358);
+    s_gis.push_back(24375949);
+    s_gis.push_back(126698248);
+    s_gis.push_back(24375956);
+    s_gis.push_back(24375382);
+    s_gis.push_back(126698598);
+
+    TSeqLocVector query_vec;
+    ITERATE(vector<TIntId>, itr, q_gis) {
+        CRef<CSeq_loc> loc(new CSeq_loc());
+        loc->SetWhole().SetGi(GI_FROM(TIntId, *itr));
+
+        CScope* scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
+        scope->AddDefaults();
+        query_vec.push_back(SSeqLoc(loc, scope));
+    }
+    CRef<IQueryFactory> queries(new CObjMgr_QueryFactory(query_vec));
+
+    CRef<CBlastOptionsHandle>
+        opts_handle(CBlastOptionsFactory::Create(eBlastp));
+
+    TSeqLocVector subj_vec;
+    ITERATE(vector<TIntId>, itr, s_gis) {
+        CRef<CSeq_loc> loc(new CSeq_loc());
+        loc->SetWhole().SetGi(GI_FROM(TIntId, *itr));
+
+        CScope* scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
+        scope->AddDefaults();
+        subj_vec.push_back(SSeqLoc(loc, scope));
+    }
+    CRef<IQueryFactory> subj_qf(new CObjMgr_QueryFactory(subj_vec));
+    CRef<CLocalDbAdapter> subjects(new CLocalDbAdapter(subj_qf,
+                                                       opts_handle, true));
+
+    BOOST_REQUIRE(subjects->IsDbScanMode() == true);
+    
+    size_t num_queries = query_vec.size();
+    size_t num_subjects = subj_vec.size();
+
+    // BLAST by concatenating all queries
+    CLocalBlast blaster(queries, opts_handle, subjects);
+    CRef<CSearchResultSet> results = blaster.Run();
+    BOOST_REQUIRE(results->GetResultType() == eDatabaseSearch);
+    BOOST_REQUIRE_EQUAL(num_queries,
+                        results->GetNumResults());
+    BOOST_REQUIRE_EQUAL(num_queries, results->size());
+    BOOST_REQUIRE_EQUAL(num_queries, results->GetNumQueries());
+
+    // build the seqalign vector from the result set
+    CRef<CSeq_align_set> aln_set;
+    CSearchResults& res = (*results)[0];
+    aln_set.Reset(const_cast<CSeq_align_set*> 
+	(res.GetSeqAlign().GetPointer()));
+    // gi|15599742|ref|NP_253236.1|  has two alignments, all others have one.
+    BOOST_REQUIRE_EQUAL(num_subjects+1, aln_set->Size());
+    
 }
 
 BOOST_AUTO_TEST_CASE(BlastOptionsEquality) {

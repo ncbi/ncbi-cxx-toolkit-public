@@ -69,8 +69,10 @@ public:
     ///     Set of sequences which should be used as subjects
     /// @param opts_handle
     ///     Options to be used (needed to create the ILocalQueryData)
+    /// @param dbscan_mode Database search mode (as opposed to pairwise)
     CLocalDbAdapter(CRef<IQueryFactory> subject_sequences,
-                    CConstRef<CBlastOptionsHandle> opts_handle);
+                    CConstRef<CBlastOptionsHandle> opts_handle,
+		    bool dbscan_mode=false);
 
     /// Constructor taking custom BlastSeqSrc and IBlastSeqInfoSrc objects
     /// @param seqSrc 
@@ -121,6 +123,9 @@ public:
     /// Returns true if this object represents a BLAST database
     bool IsBlastDb() const { return m_DbName != kEmptyStr; }
 
+    /// Returns true if this is not a database but is database scanning mode
+    bool IsDbScanMode() const { return m_DbScanMode; }
+
 private:
     /// Pointer to the BlastSeqSrc this object owns and manages
     BlastSeqSrc* m_SeqSrc;
@@ -144,6 +149,9 @@ private:
 
     /// This is initialized ONLY if this object represents a BLAST database
     const string m_DbName;
+
+    /// Specifies that bl2seq search run in database scan mode (not pairwise)
+    bool m_DbScanMode;
     
     /// Prohibit copy-constructor
     CLocalDbAdapter(const CLocalDbAdapter&);

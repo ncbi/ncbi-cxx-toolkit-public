@@ -184,7 +184,7 @@ CLocalBlast::Run()
          size_t index;
          EResultType res_type = eDatabaseSearch;
          unsigned int num_subjects = 0;
-         if (m_LocalDbAdapter.NotEmpty() && !m_LocalDbAdapter->IsBlastDb()) {
+         if (m_LocalDbAdapter.NotEmpty() && !m_LocalDbAdapter->IsBlastDb() && !m_LocalDbAdapter->IsDbScanMode()) {
         	 res_type = eSequenceComparison;
              IBlastSeqInfoSrc *  subject_infosrc = m_LocalDbAdapter->MakeSeqInfoSrc();
              if(subject_infosrc != NULL) {
@@ -262,7 +262,8 @@ CLocalBlast::Run()
                                                   m_Opts,
                                                   seqinfo_src,
                                                   search_msgs));
-    if (m_LocalDbAdapter.NotEmpty() && !m_LocalDbAdapter->IsBlastDb()) {
+    if (m_LocalDbAdapter.NotEmpty() && !m_LocalDbAdapter->IsBlastDb() 
+	&& !m_LocalDbAdapter->IsDbScanMode()) {
         m_TbackSearch->SetResultType(eSequenceComparison);
     }
     m_TbackSearch->SetNumberOfThreads(GetNumberOfThreads());

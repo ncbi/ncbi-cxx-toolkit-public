@@ -50,10 +50,12 @@ BEGIN_SCOPE(blast)
 /** Initialize the sequence source structure.
  * @param seq_vector Vector of sequence locations [in]
  * @param program Type of BLAST to be performed [in]
+ * @param dbscanmode Database search mode (not pairwise) [in]
  */
 NCBI_XBLAST_EXPORT BlastSeqSrc* 
 MultiSeqBlastSeqSrcInit(TSeqLocVector& seq_vector, 
-                        EBlastProgramType program);
+                        EBlastProgramType program,
+			bool dbscan_mode=false);
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

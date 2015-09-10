@@ -54,13 +54,14 @@ class CMultiSeqInfo : public CObject
 public: 
     /// Constructor from a vector of sequence location/scope pairs and a 
     /// BLAST program type.
-    CMultiSeqInfo(TSeqLocVector& seq_vector, EBlastProgramType program);
+    CMultiSeqInfo(TSeqLocVector& seq_vector, EBlastProgramType program, bool dbscan_mode);
     ~CMultiSeqInfo();
     /// Setter and getter functions for the private fields
     Uint4 GetMaxLength();
     void SetMaxLength(Uint4 val);
     Uint4 GetAvgLength();
     void SetAvgLength(Uint4 val);
+    Int8 GetTotLength();
     bool GetIsProtein();
     Uint4 GetNumSeqs();
     BLAST_SequenceBlk* GetSeqBlk(int index);
@@ -70,6 +71,8 @@ private:
     vector<BLAST_SequenceBlk*> m_ivSeqBlkVec; ///< Vector of sequence blocks
     unsigned int m_iMaxLength; ///< Length of the longest sequence in this set
     unsigned int m_iAvgLength; ///< Average length of sequences in this set
+    Int8 m_iTotalLength; ///< Total length of sequences in this set
+    bool m_DbScanMode; ///< Database scanning mode (not pairwise)
 };
 
 /// Returns maximal length of a set of sequences
@@ -96,6 +99,12 @@ inline void CMultiSeqInfo::SetAvgLength(Uint4 length)
     m_iAvgLength = length;
 }
 
+/// Returns total length
+inline Int8 CMultiSeqInfo::GetTotLength()
+{
+    return m_iTotalLength;
+}
+
 /// Answers whether sequences in this object are protein or nucleotide
 inline bool CMultiSeqInfo::GetIsProtein()
 {
@@ -120,9 +129,12 @@ inline BLAST_SequenceBlk* CMultiSeqInfo::GetSeqBlk(int index)
 
 /// Constructor
 CMultiSeqInfo::CMultiSeqInfo(TSeqLocVector& seq_vector, 
-                             EBlastProgramType program)
+                             EBlastProgramType program,
+                             bool dbscan_mode)
 {
     m_ibIsProt = Blast_SubjectIsProtein(program) ? true : false;
+    m_DbScanMode = dbscan_mode;
+    m_iTotalLength=0;
     
     // Fix subject location for tblast[nx].  
     if (Blast_SubjectIsTranslated(program))
@@ -160,6 +172,13 @@ CMultiSeqInfo::CMultiSeqInfo(TSeqLocVector& seq_vector,
     else
     	SetupSubjects(seq_vector, program, &m_ivSeqBlkVec, &m_iMaxLength);
 
+    if(dbscan_mode)
+    {
+	ITERATE(vector<BLAST_SequenceBlk*>, iter, m_ivSeqBlkVec)
+	{
+            m_iTotalLength += (Int8) (*iter)->length;
+	}
+    }
     // Do not set right away
     m_iAvgLength = 0;
 }
@@ -265,11 +284,14 @@ s_MultiSeqGetNumSeqsStats(void* /*multiseq_handle*/, void*)
     return 0;
 }
 
-/// Returns 0 as total length, indicating that this is NOT a database!
+/// Returns total length in db scan mode.
+/// Returns 0 as total length, indicating that this is not a database search.
 static Int8 
-s_MultiSeqGetTotLen(void* /*multiseq_handle*/, void*)
+s_MultiSeqGetTotLen(void* multiseq_handle, void*)
 {
-    return 0;
+    CRef<CMultiSeqInfo>* seq_info =
+        static_cast<CRef<CMultiSeqInfo>*>(multiseq_handle);
+    return (*seq_info)->GetTotLength();
 }
 
 /// Returns 0 as this implementation does not use alias files.
@@ -437,9 +459,10 @@ s_MultiSeqIteratorNext(void* multiseq_handle, BlastSeqSrcIterator* itr)
 struct SMultiSeqSrcNewArgs {
     TSeqLocVector seq_vector;  ///< Vector of sequences
     EBlastProgramType program; ///< BLAST program
+    bool dbscan_mode; ///< Database mode (not pairwise)
     /// Constructor
-    SMultiSeqSrcNewArgs(TSeqLocVector sv, EBlastProgramType p)
-        : seq_vector(sv), program(p) {}
+    SMultiSeqSrcNewArgs(TSeqLocVector sv, EBlastProgramType p, bool db)
+        : seq_vector(sv), program(p), dbscan_mode(db) {}
 };
 
 /// Multi sequence source destructor: frees its internal data structure
@@ -489,7 +512,8 @@ s_MultiSeqSrcNew(BlastSeqSrc* retval, void* args)
     CRef<CMultiSeqInfo>* seq_info = new CRef<CMultiSeqInfo>(0);
     try {
         seq_info->Reset(new CMultiSeqInfo(seqsrc_args->seq_vector, 
-                                          seqsrc_args->program));
+                                          seqsrc_args->program,
+                                          seqsrc_args->dbscan_mode));
     } catch (const ncbi::CException& e) {
         _BlastSeqSrcImpl_SetInitErrorStr(retval, strdup(e.ReportAll().c_str()));
     } catch (const std::exception& e) {
@@ -526,14 +550,15 @@ s_MultiSeqSrcNew(BlastSeqSrc* retval, void* args)
 
 BlastSeqSrc*
 MultiSeqBlastSeqSrcInit(TSeqLocVector& seq_vector, 
-                        EBlastProgramType program)
+                        EBlastProgramType program,
+			bool dbscan_mode)
 {
     BlastSeqSrc* seq_src = NULL;
     BlastSeqSrcNewInfo bssn_info;
 
     auto_ptr<SMultiSeqSrcNewArgs> args
         (new SMultiSeqSrcNewArgs(const_cast<TSeqLocVector&>(seq_vector),
-                                 program));
+                                 program, dbscan_mode));
 
     bssn_info.constructor = &s_MultiSeqSrcNew;
     bssn_info.ctor_argument = (void*) args.get();
