@@ -1042,9 +1042,8 @@ sybtcl64 needs3party $(ORIG_LIBS)
 sybtcl64 needs3party comn64
 sybtcl64 needs3party intl64
 tables needs3party $(ORIG_LIBS)
-tax_xml needs $(SEQ_LIBS)
-tax_xml needs pub
 tax_xml needs xmlwrapp
+tax_xml needs xncbi
 taxon needs xser
 taxon1 needs $(SEQ_LIBS)
 taxon1 needs pub
