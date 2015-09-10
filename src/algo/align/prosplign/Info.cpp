@@ -380,6 +380,7 @@ bool TrimNegativeTail(CNPiece& pc, const CProteinAlignText& alignment_text, cons
         if( ( state == 1 && nuc[n] != GAP_CHAR ) || 
             ( state == 2 && prot[n] != GAP_CHAR ) ) {
             score -= scoring.sm_Ig;
+            state = 0;
         }
         if(score < 0) {//trim at the beg. of the gap
             pc.end = n+1;
