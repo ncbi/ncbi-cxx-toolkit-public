@@ -4713,6 +4713,7 @@ void x_SubNoSort(CSeq_loc& dst,
     bool have_range = false;
     for (CSeq_loc_CI it(src, CSeq_loc_CI::eEmpty_Allow); it; ++it) {
         CSeq_id_Handle idh = syn_mapper.GetBestSynonym(it.GetSeq_id());
+        bool rev = IsReverse(it.GetStrand());
         TRangeWithFuzz it_range = TRangeWithFuzz(it);
         if ( it_range.IsWhole() ) {
             it_range.SetOpen(0, len_getter.GetLength(it.GetSeq_id()));
@@ -4721,6 +4722,7 @@ void x_SubNoSort(CSeq_loc& dst,
         TIdToRangeColl& rg_coll = IsReverse(it.GetStrand()) ?
             rg_coll_minus : rg_coll_plus;
         TIdToRangeColl::const_iterator id_it = rg_coll.find(idh);
+        list<TRangeWithFuzz> result_ranges;
         bool modified = false;
         if (id_it != rg_coll.end()) {
             // Check if there's anything to subtract
@@ -4728,12 +4730,20 @@ void x_SubNoSort(CSeq_loc& dst,
                 if ( it_rg_coll.IntersectingWith(*check_it) ) {
                     it_rg_coll -= id_it->second;
                     modified = true;
+                    ITERATE(TRangeColl, result_it, it_rg_coll) {
+                        if ( rev ) {
+                            result_ranges.push_front(*result_it);
+                        }
+                        else {
+                            result_ranges.push_back(*result_it);
+                        }
+                    }
                     break;
                 }
             }
         }
         if ( modified ) {
-            ITERATE(TRangeColl, rg_it, it_rg_coll) {
+            ITERATE(list<TRangeWithFuzz>, rg_it, result_ranges) {
                 TRangeWithFuzz curr_rg(*rg_it);
                 if (curr_rg.GetFrom() == it_range.GetFrom()) {
                     curr_rg.AddFuzzFrom(it_range);
