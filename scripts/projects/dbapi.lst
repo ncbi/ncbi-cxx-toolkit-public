@@ -3,6 +3,7 @@ util$
 util/bitset$
 util/compress
 util/regexp$
+util/xregexp$
 util/cache$
 connect$
 connect/ext$
