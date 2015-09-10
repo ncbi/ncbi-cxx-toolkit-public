@@ -308,6 +308,7 @@ private:
     Uint2       m_Slot;
     ESyncResult m_Result;
     int         m_Hint;
+    Uint4       m_Progress;
     CMiniMutex  m_Lock;
     Uint4       m_StartedCmds;
 

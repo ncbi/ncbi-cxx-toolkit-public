@@ -109,9 +109,11 @@ s_StartSync(SSyncSlotData* slot_data, SSyncSlotSrv* slot_srv, bool is_passive)
         return eServerBusy;
     }
     // there is a feeling (not knowledge) that more than one sync per slot is not good
+#if 1
     if (slot_data->cnt_sync_started != 0) {
         return eServerBusy;
     }
+#endif
 
     CMiniMutexGuard g_srv(slot_srv->lock);
     if (slot_srv->sync_started) {
@@ -763,6 +765,7 @@ CNCActiveSyncControl::x_DoPeriodicSync(void)
     m_Slot = m_SlotData->slot;
     m_Result = eSynOK;
     m_Hint = NC_SYNC_HINT;
+    m_Progress = 0;
     m_SlotSrv->is_by_blobs = false;
     m_StartedCmds = 0;
     m_FinishSyncCalled = false;
@@ -964,7 +967,7 @@ CNCActiveSyncControl::x_FinishSync(void)
     if (m_Result == eSynOK) {
         s_CommitSync(m_SlotData, m_SlotSrv, NC_SYNC_HINT);
     } else {
-        m_SlotSrv->peer->RemoveSyncControl(this);
+//        m_SlotSrv->peer->RemoveSyncControl(this);
         s_CancelSync(m_SlotData, m_SlotSrv, CNCDistributionConf::GetFailedSyncRetryDelay(), m_Result, m_Hint);
     }
     m_DidSync = m_Result == eSynOK;
@@ -1110,12 +1113,15 @@ CNCActiveSyncControl::x_CalcNextTask(void)
     if (m_Result == eSynNetworkError  ||  m_Result == eSynAborted)
         m_NextTask = eSynNeedFinalize;
     else if (!m_SlotSrv->is_by_blobs) {
-        if (m_CurSendEvent != m_Events2Send.end())
+        if (m_CurSendEvent != m_Events2Send.end()) {
             m_NextTask = eSynEventSend;
-        else if (m_CurGetEvent != m_Events2Get.end())
+            ++m_Progress;
+        } else if (m_CurGetEvent != m_Events2Get.end()) {
             m_NextTask = eSynEventGet;
-        else
+            ++m_Progress;
+        } else {
             m_NextTask = eSynNeedFinalize;
+        }
     }
     else {
 sync_next_key:
@@ -1127,14 +1133,18 @@ sync_next_key:
                     // Equivalent blobs, skip them.
                     ++m_CurLocalBlob;
                     ++m_CurRemoteBlob;
+                    ++m_Progress;
                     goto sync_next_key;
                 }
 
                 // The same blob key. Test which one is newer.
-                if (m_CurLocalBlob->second->isOlder(*m_CurRemoteBlob->second))
+                if (m_CurLocalBlob->second->isOlder(*m_CurRemoteBlob->second)) {
                     m_NextTask = eSynBlobUpdateOur;
-                else
+                    ++m_Progress;
+                } else {
                     m_NextTask = eSynBlobUpdatePeer;
+                    ++m_Progress;
+                }
             }
             else if (m_CurLocalBlob->first < m_CurRemoteBlob->first) {
                 if (m_CurLocalBlob->second->isExpired()) {
@@ -1142,9 +1152,11 @@ sync_next_key:
                     goto sync_next_key;
                 }
                 m_NextTask = eSynBlobSend;
+                ++m_Progress;
             }
             else {
                 m_NextTask = eSynBlobGet;
+                ++m_Progress;
             }
         }
         // Process the tails of the lists
@@ -1154,8 +1166,10 @@ sync_next_key:
                 goto sync_next_key;
             }
             m_NextTask = eSynBlobSend;
+            ++m_Progress;
         } else if (m_CurRemoteBlob != m_RemoteBlobs.end()) {
             m_NextTask = eSynBlobGet;
+            ++m_Progress;
         } else {
             m_NextTask = eSynNeedFinalize;
         }
@@ -1432,6 +1446,7 @@ void CNCActiveSyncControl::PrintState(CSrvSocketTask& task, Uint2 slot, bool one
         task.WriteText(eol).WriteText("NextTask").WriteText(is ).WriteNumber( (int)(*c)->m_NextTask);
         task.WriteText(eol).WriteText("Result").WriteText(is ).WriteNumber( (int)(*c)->m_Result);
         task.WriteText(eol).WriteText("Hint").WriteText(is ).WriteNumber( (int)(*c)->m_Hint);
+        task.WriteText(eol).WriteText("Progress").WriteText(is ).WriteNumber( (int)(*c)->m_Progress);
         task.WriteText(eol).WriteText("FinishSyncCalled").WriteText(is ).WriteBool( (*c)->m_FinishSyncCalled);
         task.WriteText(eol).WriteText("NeedReply").WriteText(is ).WriteBool( (*c)->m_NeedReply);
         task.WriteText("\n}");
