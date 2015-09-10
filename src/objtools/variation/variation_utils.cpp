@@ -309,6 +309,12 @@ bool CVariationUtilities::x_SetReference(CVariation_ref& vr, const string& ref_a
 {
     string asserted_ref;
 
+    if (!vr.IsSetData() || !vr.GetData().IsSet() ||
+        !vr.GetData().GetSet().IsSetVariations() ||
+         vr.GetData().GetSet().GetVariations().empty()) {
+           NCBI_THROW(CException, eUnknown, "var ref passed to x_SetReference either does not have variations or is not a set");
+    }
+
     NON_CONST_ITERATE(CVariation_ref::TData::TSet::TVariations, vref_it, vr.SetData().SetSet().SetVariations()) {
         CVariation_ref& vref = **vref_it;
         if(!vref.IsSetData() || !vref.GetData().IsInstance())
@@ -584,6 +590,8 @@ bool CVariationUtilities::IsReferenceCorrect(const CSeq_feat& feature, string& a
 
     const CSeq_loc& loc = feat->GetLocation(); 
     ref_at_location = x_GetAlleleFromLoc(loc,scope); 
+    if (ref_at_location.empty())
+        NCBI_THROW(CException, eUnknown, "Cannot access correct reference allele at given location");
 
     const CVariation_ref& vr = feat->GetData().GetVariation();
 
@@ -608,26 +616,20 @@ bool CVariationUtilities::IsReferenceCorrect(const CSeq_feat& feature, string& a
         }
     }
 
+    if (found_allele_from_identity) {
+        if (type == CVariation_inst::eType_del) {
+            return (asserted_ref.empty() ||  //VAR-1562 - Large deletions do not have reference allele present
+                asserted_ref == ref_at_location);
+        }
+        else if (asserted_ref.empty()) {
+            NCBI_THROW(CException, eUnknown, "Old reference allele not found in input Seq-feat");
+        }
 
-    if (ref_at_location.empty())
-        NCBI_THROW(CException, eUnknown, "Cannot access correct reference allele at given location");
-
-    if (found_allele_from_identity
-        && asserted_ref.empty()
-        && type == CVariation_inst::eType_del) { //VAR-1562 - Large deletions do not have reference allele present
-        return false;
-    }
-
-    if (found_allele_from_identity
-        && asserted_ref.empty()) {
-        NCBI_THROW(CException, eUnknown, "Old reference allele not found in input Seq-feat");
+        return (asserted_ref == ref_at_location);
     }
 
     // No identity -- may be insertion which has 'no reference'.
-    if (!found_allele_from_identity)
-        return true;
-    else
-        return (asserted_ref == ref_at_location);
+    return true;
 }
 
 CVariation_inst::TType
@@ -838,7 +840,7 @@ string CVariationUtilities::RepeatedSubstring(const string &str)
         if( str.length() % ii != 0 ) continue;
         string candidate = str.substr(0,ii);
 
-        //If this canddate is a base repeating unit of the target str,
+        //If this candidate is a base repeating unit of the target str,
         //then this is what we are looking for
         if(x_isBaseRepeatingUnit(candidate, str))
             return candidate;
@@ -1086,6 +1088,10 @@ void CVariationNormalization_base<T>::x_Shift(CVariation& variation, CScope &sco
             }
 
         } else if(type == CVariation_inst::eType_del) {
+            if (!var.GetData().IsSet()) {
+                NCBI_THROW(CException, eUnknown, "Variation passed to x_Shift is not a set");
+            }
+
             //Should be exactly two variation objects for deletions:
             //  the ref and the alt.
             if(var.GetData().GetSet().GetVariations().size() != 2) {
@@ -1304,9 +1310,13 @@ void CVariationNormalization_base<T>::x_Shift(CSeq_feat& feat, CScope &scope)
         default: break;
         }
     } else if(type == CVariation_inst::eType_del) {
+        if (!vref.GetData().IsSet()) {
+            NCBI_THROW(CException, eUnknown, "Variation Ref passed to x_Shift is not a set");
+        }
+
         //Should be exactly two variation objects for deletions:
         //  the ref and the alt.
-        if(vref.GetData().GetSet().GetVariations().size() != 2) {
+        if (vref.GetData().GetSet().GetVariations().size() != 2) {
             ERR_POST(Error << "Malformed deletion Variation Ref with more than 2 'alleles'");
             return;
         }
