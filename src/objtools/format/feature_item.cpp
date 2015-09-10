@@ -5741,7 +5741,7 @@ void CSourceFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
             DO_NOTE(frequency);
         }
 
-        x_FormatNoteQual(eSQ_metagenome_source, "derived from metagenome", qvec);
+        x_FormatNoteQual(eSQ_metagenome_source, "metagenomic; derived from metagenome", qvec);
         
         DO_NOTE(genotype);
         x_FormatNoteQual(eSQ_plastid_name, "plastid", qvec);
