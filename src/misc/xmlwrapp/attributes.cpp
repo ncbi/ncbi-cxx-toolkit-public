@@ -182,6 +182,7 @@ void xml::attributes::insert (const char *name, const char *value,
             only_whitespaces = false;
             break;
         }
+        ++current;
     }
     if (only_whitespaces)
         throw xml::exception("name may not consist "
