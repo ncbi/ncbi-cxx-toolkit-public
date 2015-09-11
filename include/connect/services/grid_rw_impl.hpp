@@ -93,10 +93,14 @@ public:
 
     virtual ERW_Result PendingCount(size_t* count);
 
+protected:
+    enum EType { eNetCache, eEmbedded, eEmpty, eRaw };
+    static EType x_GetDataType(string& data);
+
 private:
     CNetCacheAPI m_Storage;
     auto_ptr<IReader> m_NetCacheReader;
-    const string& m_Data;
+    string m_Data;
     size_t m_BytesToRead;
 };
 

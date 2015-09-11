@@ -106,16 +106,33 @@ void CStringOrBlobStorageWriter::Abort()
 ////////////////////////////////////////////////////////////////////////////
 //
 
+CStringOrBlobStorageReader::EType CStringOrBlobStorageReader::x_GetDataType(
+        string& data)
+{
+    if (NStr::CompareCase(data, 0, JOB_OUTPUT_PREFIX_LEN,
+                s_JobOutputPrefixNetCache) == 0) {
+        data.erase(0, JOB_OUTPUT_PREFIX_LEN);
+        return eNetCache;
+    }
+
+    if (NStr::CompareCase(data, 0, JOB_OUTPUT_PREFIX_LEN,
+                s_JobOutputPrefixEmbedded) == 0) {
+        data.erase(0, JOB_OUTPUT_PREFIX_LEN);
+        return eEmbedded;
+    }
+
+    return data.empty() ? eEmpty : eRaw;
+}
+
 CStringOrBlobStorageReader::CStringOrBlobStorageReader(const string& data_or_key,
         SNetCacheAPIImpl* storage, size_t* data_size) :
     m_Storage(storage), m_Data(data_or_key)
 {
-    if (NStr::CompareCase(data_or_key, 0, JOB_OUTPUT_PREFIX_LEN,
-            s_JobOutputPrefixNetCache) == 0) {
-
+    switch (x_GetDataType(m_Data)) {
+    case eNetCache:
         // If NetCache API is not provided, initialize it using info from key
         if (!m_Storage) {
-            CNetCacheKey key(data_or_key.substr(JOB_OUTPUT_PREFIX_LEN));
+            CNetCacheKey key(m_Data);
             string service(key.GetServiceName());
 
             if (service.empty()) {
@@ -127,23 +144,20 @@ CStringOrBlobStorageReader::CStringOrBlobStorageReader(const string& data_or_key
                     key.GetHost(), key.GetPort());
         }
 
-        m_NetCacheReader.reset(m_Storage.GetReader(
-            data_or_key.data() + JOB_OUTPUT_PREFIX_LEN, data_size));
-    } else if (NStr::CompareCase(data_or_key, 0,
-            JOB_OUTPUT_PREFIX_LEN, s_JobOutputPrefixEmbedded) == 0) {
-        m_BytesToRead = data_or_key.size() - JOB_OUTPUT_PREFIX_LEN;
+        m_NetCacheReader.reset(m_Storage.GetReader(m_Data, data_size));
+        return;
+
+    case eEmbedded:
+    case eEmpty:
+        m_BytesToRead = m_Data.size();
         if (data_size != NULL)
             *data_size = m_BytesToRead;
-    } else if (data_or_key.empty()) {
-        m_BytesToRead = 0;
-        if (data_size != NULL)
-            *data_size = 0;
-    } else {
+        return;
+
+    default:
         NCBI_THROW_FMT(CStringOrBlobStorageRWException, eInvalidFlag,
-            "Unknown data type \"" <<
-                string(data_or_key.begin(), data_or_key.begin() +
-                    (data_or_key.size() < JOB_OUTPUT_PREFIX_LEN ?
-                    data_or_key.size() : JOB_OUTPUT_PREFIX_LEN)) << '"');
+                "Unknown data type \"" <<
+                m_Data.substr(0, JOB_OUTPUT_PREFIX_LEN) << '"');
     }
 }
 
