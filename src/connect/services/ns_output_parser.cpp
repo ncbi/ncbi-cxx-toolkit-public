@@ -669,8 +669,7 @@ void CJobInfoToJSON::ProcessJobEventField(const CTempString& attr_name)
     m_CurrentEvent.SetNull(attr_name);
 }
 
-void CJobInfoToJSON::ProcessInputOutput(const string& data,
-        const CTempString& input_or_output)
+CJsonNode CJobInfoToJSON::CreateDataNode(const string& data)
 {
     CJsonNode node(CJsonNode::NewObjectNode());
 
@@ -685,7 +684,17 @@ void CJobInfoToJSON::ProcessInputOutput(const string& data,
         node.SetString("raw_data", data);
     }
 
-    m_JobInfo.SetByKey(input_or_output, node);
+    return node;
+}
+
+void CJobInfoToJSON::ProcessInput(const string& data)
+{
+    m_JobInfo.SetByKey("input", CreateDataNode(data));
+}
+
+void CJobInfoToJSON::ProcessOutput(const string& data)
+{
+    m_JobInfo.SetByKey("output", CreateDataNode(data));
 }
 
 void CJobInfoToJSON::ProcessJobInfoField(const CTempString& field_name,
@@ -722,10 +731,10 @@ void g_ProcessJobInfo(CNetScheduleAPI ns_api, const string& job_key,
                 if (!NStr::SplitInTwo(line, TEMP_STRING_CTOR(": "),
                         field_name, field_value, NStr::eMergeDelims))
                     processor->ProcessRawLine(line);
-                else if (field_name == TEMP_STRING_CTOR("input") ||
-                        field_name == TEMP_STRING_CTOR("output"))
-                    processor->ProcessInputOutput(
-                            NStr::ParseQuoted(field_value), field_name);
+                else if (field_name == TEMP_STRING_CTOR("input"))
+                    processor->ProcessInput(NStr::ParseQuoted(field_value));
+                else if (field_name == TEMP_STRING_CTOR("output"))
+                    processor->ProcessOutput(NStr::ParseQuoted(field_value));
                 else if (NStr::StartsWith(field_name,
                         TEMP_STRING_CTOR("event"))) {
                     processor->BeginJobEvent(field_name);
@@ -767,7 +776,7 @@ void g_ProcessJobInfo(CNetScheduleAPI ns_api, const string& job_key,
         if (status == CNetScheduleAPI::eJobNotFound)
             return;
 
-        processor->ProcessInputOutput(job.input, TEMP_STRING_CTOR("input"));
+        processor->ProcessInput(job.input);
 
         switch (status) {
         default:
@@ -779,8 +788,7 @@ void g_ProcessJobInfo(CNetScheduleAPI ns_api, const string& job_key,
         case CNetScheduleAPI::eReading:
         case CNetScheduleAPI::eConfirmed:
         case CNetScheduleAPI::eReadFailed:
-            processor->ProcessInputOutput(job.output,
-                    TEMP_STRING_CTOR("output"));
+            processor->ProcessOutput(job.output);
             break;
         }
 

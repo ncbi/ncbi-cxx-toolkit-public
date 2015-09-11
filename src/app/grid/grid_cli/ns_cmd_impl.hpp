@@ -48,14 +48,16 @@ public:
     virtual void ProcessJobEventField(const CTempString& attr_name,
             const string& attr_value);
     virtual void ProcessJobEventField(const CTempString& attr_name);
-
-    virtual void ProcessInputOutput(const string& data,
-            const CTempString& input_or_output);
+    virtual void ProcessInput(const string& data) { PrintXput(data, "input"); }
+    virtual void ProcessOutput(const string& data) { PrintXput(data, "output"); }
 
     virtual void ProcessJobInfoField(const CTempString& field_name,
         const CTempString& field_value);
 
     virtual void ProcessRawLine(const string& line);
+
+private:
+    void PrintXput(const string& data, const char* prefix);
 };
 
 END_NCBI_SCOPE

@@ -179,13 +179,12 @@ void CPrintJobInfo::ProcessJobEventField(const CTempString& attr_name)
     printf("    %.*s\n", int(attr_name.length()), attr_name.data());
 }
 
-void CPrintJobInfo::ProcessInputOutput(const string& data,
-        const CTempString& input_or_output)
+void CPrintJobInfo::PrintXput(const string& data, const char* prefix)
 {
+    _ASSERT(prefix);
+
     if (NStr::StartsWith(data, "K "))
-        printf("%.*s_storage: netcache, key=%s\n",
-                (int) input_or_output.length(), input_or_output.data(),
-                data.c_str() + 2);
+        printf("%s_storage: netcache, key=%s\n", prefix, data.c_str() + 2);
     else {
         const char* format;
         CTempString raw_data;
@@ -198,17 +197,14 @@ void CPrintJobInfo::ProcessInputOutput(const string& data,
             raw_data = data;
         }
 
-        printf("%.*s_storage: %s, size=%lu\n",
-            (int) input_or_output.length(), input_or_output.data(),
+        printf("%s_storage: %s, size=%lu\n", prefix,
             format, (unsigned long) raw_data.length());
 
         if (data.length() <= MAX_VISIBLE_DATA_LENGTH)
-            printf("%s_%.*s_data: \"%s\"\n", format,
-                    (int) input_or_output.length(), input_or_output.data(),
+            printf("%s_%s_data: \"%s\"\n", format, prefix,
                     NStr::PrintableString(raw_data).c_str());
         else
-            printf("%s_%.*s_data_preview: \"%s\"...\n", format,
-                    (int) input_or_output.length(), input_or_output.data(),
+            printf("%s_%s_data_preview: \"%s\"...\n", format, prefix,
                     NStr::PrintableString(CTempString(raw_data.data(),
                             MAX_VISIBLE_DATA_LENGTH)).c_str());
     }

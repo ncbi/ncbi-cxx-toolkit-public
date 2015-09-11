@@ -153,9 +153,8 @@ public:
     virtual void ProcessJobEventField(const CTempString& attr_name,
             const string& attr_value) = 0;
     virtual void ProcessJobEventField(const CTempString& attr_name) = 0;
-
-    virtual void ProcessInputOutput(const string& data,
-            const CTempString& input_or_output) = 0;
+    virtual void ProcessInput(const string& data) = 0;
+    virtual void ProcessOutput(const string& data) = 0;
 
     virtual void ProcessJobInfoField(const CTempString& field_name,
             const CTempString& field_value) = 0;
@@ -176,9 +175,8 @@ public:
     virtual void ProcessJobEventField(const CTempString& attr_name,
             const string& attr_value);
     virtual void ProcessJobEventField(const CTempString& attr_name);
-
-    virtual void ProcessInputOutput(const string& data,
-            const CTempString& input_or_output);
+    virtual void ProcessInput(const string& data);
+    virtual void ProcessOutput(const string& data);
 
     virtual void ProcessJobInfoField(const CTempString& field_name,
         const CTempString& field_value);
@@ -188,6 +186,8 @@ public:
     CJsonNode GetRootNode() const {return m_JobInfo;}
 
 private:
+    CJsonNode CreateDataNode(const string& data);
+
     CJsonNode m_JobInfo;
     CJsonNode m_JobEvents;
     CJsonNode m_CurrentEvent;
