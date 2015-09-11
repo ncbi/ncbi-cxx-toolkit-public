@@ -46,7 +46,7 @@ USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
 CBl2Seq::CBl2Seq(const SSeqLoc& query, const SSeqLoc& subject, EProgram p)
-    : m_InterruptFnx(0), m_InterruptUserData(0)
+    : m_DbScanMode(false), m_InterruptFnx(0), m_InterruptUserData(0)
 {
     TSeqLocVector queries;
     TSeqLocVector subjects;
@@ -64,7 +64,7 @@ void CBl2Seq::x_InitCLocalBlast()
     _ASSERT( !m_OptsHandle.Empty() );
     CRef<IQueryFactory> query_factory(new CObjMgr_QueryFactory(m_tQueries));
     CRef<IQueryFactory> subject_factory(new CObjMgr_QueryFactory(m_tSubjects));
-    CRef<CLocalDbAdapter> db(new CLocalDbAdapter(subject_factory, m_OptsHandle));
+    CRef<CLocalDbAdapter> db(new CLocalDbAdapter(subject_factory, m_OptsHandle, m_DbScanMode));
     m_Blast.Reset(new CLocalBlast(query_factory, m_OptsHandle, db));
     if (m_InterruptFnx != NULL) {
         m_Blast->SetInterruptCallback(m_InterruptFnx, m_InterruptUserData);
@@ -76,7 +76,7 @@ void CBl2Seq::x_InitCLocalBlast()
 
 CBl2Seq::CBl2Seq(const SSeqLoc& query, const SSeqLoc& subject,
                  CBlastOptionsHandle& opts)
-    : m_InterruptFnx(0), m_InterruptUserData(0)
+    : m_DbScanMode(false), m_InterruptFnx(0), m_InterruptUserData(0)
 {
     TSeqLocVector queries;
     TSeqLocVector subjects;
@@ -88,8 +88,8 @@ CBl2Seq::CBl2Seq(const SSeqLoc& query, const SSeqLoc& subject,
 }
 
 CBl2Seq::CBl2Seq(const SSeqLoc& query, const TSeqLocVector& subjects, 
-                 EProgram p)
-    : m_InterruptFnx(0), m_InterruptUserData(0)
+                 EProgram p, bool dbscan_mode)
+    : m_DbScanMode(dbscan_mode), m_InterruptFnx(0), m_InterruptUserData(0)
 {
     TSeqLocVector queries;
     queries.push_back(query);
@@ -99,8 +99,8 @@ CBl2Seq::CBl2Seq(const SSeqLoc& query, const TSeqLocVector& subjects,
 }
 
 CBl2Seq::CBl2Seq(const SSeqLoc& query, const TSeqLocVector& subjects, 
-                 CBlastOptionsHandle& opts)
-    : m_InterruptFnx(0), m_InterruptUserData(0)
+                 CBlastOptionsHandle& opts, bool dbscan_mode)
+    : m_DbScanMode(dbscan_mode), m_InterruptFnx(0), m_InterruptUserData(0)
 {
     TSeqLocVector queries;
     queries.push_back(query);
@@ -110,16 +110,16 @@ CBl2Seq::CBl2Seq(const SSeqLoc& query, const TSeqLocVector& subjects,
 }
 
 CBl2Seq::CBl2Seq(const TSeqLocVector& queries, const TSeqLocVector& subjects, 
-                 EProgram p)
-    : m_InterruptFnx(0), m_InterruptUserData(0)
+                 EProgram p, bool dbscan_mode)
+    : m_DbScanMode(dbscan_mode), m_InterruptFnx(0), m_InterruptUserData(0)
 {
     x_Init(queries, subjects);
     m_OptsHandle.Reset(CBlastOptionsFactory::Create(p));
 }
 
 CBl2Seq::CBl2Seq(const TSeqLocVector& queries, const TSeqLocVector& subjects, 
-                 CBlastOptionsHandle& opts)
-    : m_InterruptFnx(0), m_InterruptUserData(0)
+                 CBlastOptionsHandle& opts, bool dbscan_mode)
+    : m_DbScanMode(dbscan_mode), m_InterruptFnx(0), m_InterruptUserData(0)
 {
     x_Init(queries, subjects);
     m_OptsHandle.Reset(&opts);

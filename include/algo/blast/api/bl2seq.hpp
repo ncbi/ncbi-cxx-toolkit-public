@@ -63,11 +63,14 @@ public:
 
     /// Constructor to compare query against all subject sequences with 
     /// default options
-    CBl2Seq(const SSeqLoc& query, const TSeqLocVector& subjects, EProgram p);
+    /// @param dbscan_mode Database search mode (as opposed to pairwise)
+    CBl2Seq(const SSeqLoc& query, const TSeqLocVector& subjects, EProgram p,
+	bool dbscan_mode=false);
 
     /// Constructor to allow query concatenation with default options
+    /// @param dbscan_mode Database search mode (as opposed to pairwise)
     CBl2Seq(const TSeqLocVector& queries, const TSeqLocVector& subjects, 
-            EProgram p);
+            EProgram p, bool dbscan_mode=false);
 
     /// Constructor to compare 2 sequences with specified options
     CBl2Seq(const SSeqLoc& query, const SSeqLoc& subject, 
@@ -75,12 +78,14 @@ public:
 
     /// Constructor to compare query against all subject sequences with
     /// specified options
+    /// @param dbscan_mode Database search mode (as opposed to pairwise)
     CBl2Seq(const SSeqLoc& query, const TSeqLocVector& subjects, 
-            CBlastOptionsHandle& opts);
+            CBlastOptionsHandle& opts, bool dbscan_mode=false);
 
     /// Constructor to allow query concatenation with specified options
+    /// @param dbscan_mode Database search mode (as opposed to pairwise)
     CBl2Seq(const TSeqLocVector& queries, const TSeqLocVector& subjects, 
-            CBlastOptionsHandle& opts);
+            CBlastOptionsHandle& opts, bool dbscan_mode=false);
 
     /// Destructor
     virtual ~CBl2Seq();
@@ -177,6 +182,7 @@ private:
     TSeqLocVector        m_tSubjects;        ///< sequence(s) to BLAST against
     CRef<CBlastOptionsHandle>  m_OptsHandle; ///< Blast options
     CRef<CLocalBlast>    m_Blast;            ///< The actual BLAST instance
+    bool		m_DbScanMode;        ///< Scan like a databsase (as opposed to pairwise)
 
     /// Common initialization code for all c-tors
     void x_Init(const TSeqLocVector& queries, const TSeqLocVector& subjs);
