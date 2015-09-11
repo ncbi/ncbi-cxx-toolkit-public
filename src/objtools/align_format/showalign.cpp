@@ -2602,7 +2602,10 @@ void CDisplaySeqalign::x_GetFeatureInfo(TSAlnFeatureInfoList& feature,
                 handle.
                 GetRangeSeq_loc(min(seq_start, seq_stop),
                                 max(seq_start, seq_stop));
-            for (CFeat_CI feat(scope, *loc_ref, choice); feat; ++feat) {
+            SAnnotSelector sel(choice);
+            sel.SetAdaptiveDepth().SetResolveAll();
+            
+            for (CFeat_CI feat(scope, *loc_ref, sel); feat; ++feat) {
                 const CSeq_loc& loc = feat->GetLocation();
                 bool has_id = false;
                 list<CSeq_loc_CI::TRange> isolated_range;
