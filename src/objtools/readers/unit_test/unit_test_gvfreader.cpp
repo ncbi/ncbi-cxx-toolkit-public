@@ -149,7 +149,7 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     CGvfReader reader(0);
     CNcbiIfstream ifstr(input.c_str());
 
-    typedef vector<CRef<CSeq_annot> > ANNOTS;
+    typedef CGff2Reader::TAnnotList ANNOTS;
     ANNOTS annots;
     try {
         reader.ReadSeqAnnots(annots, ifstr, &logger);
@@ -203,7 +203,7 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
     CGvfReader reader(0);
     CNcbiIfstream ifstr(testInfo.mInFile.GetPath().c_str());
 
-    typedef vector<CRef<CSeq_annot> > ANNOTS;
+    typedef CGff2Reader::TAnnotList ANNOTS;
     ANNOTS annots;
     try {
         reader.ReadSeqAnnots(annots, ifstr, &logger);

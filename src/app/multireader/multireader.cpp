@@ -780,7 +780,7 @@ void CMultiReaderApp::xProcessGtf(
     CNcbiOstream& ostr)
 //  ----------------------------------------------------------------------------
 {
-    typedef vector<CRef<CSeq_annot> > ANNOTS;
+    typedef CGff2Reader::TAnnotList ANNOTS;
     ANNOTS annots;
     
     if (args["format"].AsString() == "gff2") { // process as plain GFF2
@@ -806,7 +806,7 @@ void CMultiReaderApp::xProcessGff3(
     CNcbiOstream& ostr)
 //  ----------------------------------------------------------------------------
 {
-    typedef vector<CRef<CSeq_annot> > ANNOTS;
+    typedef CGff2Reader::TAnnotList ANNOTS;
     ANNOTS annots;
     
     if (args["format"].AsString() == "gff2") { // process as plain GFF2
@@ -832,7 +832,7 @@ void CMultiReaderApp::xProcessGff2(
     CNcbiOstream& ostr)
 //  ----------------------------------------------------------------------------
 {
-    typedef vector<CRef<CSeq_annot> > ANNOTS;
+    typedef CGff2Reader::TAnnotList ANNOTS;
     ANNOTS annots;
     
     CGff2Reader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
@@ -866,7 +866,7 @@ void CMultiReaderApp::xProcessGvf(
     CNcbiOstream& ostr)
 //  ----------------------------------------------------------------------------
 {
-    typedef vector<CRef<CSeq_annot> > ANNOTS;
+    typedef CGff2Reader::TAnnotList ANNOTS;
     ANNOTS annots;
     
     if (args["format"].AsString() == "gff2") { // process as plain GFF2
