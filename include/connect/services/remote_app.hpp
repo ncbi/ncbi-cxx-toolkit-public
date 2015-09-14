@@ -70,6 +70,9 @@ public:
         EStdOutErrStorageType* type = NULL);
     void Reset();
 
+protected:
+    static int x_GetTypeAndName(CNcbiIstream& istream, string& name);
+
 private:
     CNetCacheAPI m_Storage;
     auto_ptr<CNcbiIstream> m_IStream;

@@ -31,6 +31,7 @@
 
 #include <ncbi_pch.hpp>
 
+#include <sstream>
 #include <corelib/rwstream.hpp>
 #include <connect/services/ns_output_parser.hpp>
 #include <connect/services/grid_rw_impl.hpp>
@@ -672,16 +673,33 @@ void CJobInfoToJSON::ProcessJobEventField(const CTempString& attr_name)
     m_CurrentEvent.SetNull(attr_name);
 }
 
+struct SEmbeddedDataParser : public CBlobStreamHelper
+{
+    static bool GetFileName(string& data)
+    {
+        istringstream iss(data);
+        string name;
+
+        if (x_GetTypeAndName(iss, name) == eLocalFile) {
+            data.swap(name);
+            return true;
+        }
+
+        data.erase(0, iss.tellg());
+        return false;
+    }
+};
+
 struct SDataDetector : public CStringOrBlobStorageReader
 {
-    static CJsonNode CreateNode(const string& src)
+private:
+    static CJsonNode x_FillNode(CStringOrBlobStorageReader::EType type,
+            const string& data)
     {
         CJsonNode node(CJsonNode::NewObjectNode());
-        string data(src);
 
-        switch (x_GetDataType(data)) {
+        switch (type) {
         case eEmbedded:
-            // TODO: Extract precise input, output and error for remote app jobs
             node.SetString("storage", "embedded");
             node.SetString("embedded_data", data);
             return node;
@@ -696,6 +714,29 @@ struct SDataDetector : public CStringOrBlobStorageReader
             node.SetString("raw_data", data);
             return node;
         }
+    }
+
+public:
+    static CJsonNode CreateNode(string data)
+    {
+        // Do not combine calls to x_GetDataType and x_FillNode,
+        // as x_GetDataType modifies data
+        CStringOrBlobStorageReader::EType type = x_GetDataType(data);
+        return x_FillNode(type, data);
+    }
+
+    static CJsonNode CreateRemoteAppNode(string data)
+    {
+        CStringOrBlobStorageReader::EType type = x_GetDataType(data);
+
+        if (type == eEmbedded && SEmbeddedDataParser::GetFileName(data)) {
+            CJsonNode node(CJsonNode::NewObjectNode());
+            node.SetString("storage", "localfile");
+            node.SetString("filename", data);
+            return node;
+        }
+
+        return x_FillNode(type, data);
     }
 
     static CJsonNode CreateArgsNode(const string& data, CJsonNode files)
@@ -741,16 +782,13 @@ void CJobInfoToJSON::ProcessInput(const string& data)
 
         SPartialDeserializer request(stream);
 
-        m_JobInfo.SetString("strorage",
-                request.GetStdOutErrStorageType() == eLocalFile ?
-                "local_file" : "blob_storage");
         m_JobInfo.SetInteger("run_timeout", request.GetAppRunTimeout());
         m_JobInfo.SetBoolean("exclusive", request.IsExclusiveMode());
         m_JobInfo.SetByKey("args",
                 SDataDetector::CreateArgsNode(
                     request.GetCmdLine(), request.CreateFilesNode()));
         m_JobInfo.SetByKey("input",
-                SDataDetector::CreateNode(request.GetInBlobIdOrData()));
+                SDataDetector::CreateRemoteAppNode(request.GetInBlobIdOrData()));
     }
     catch (...) {
         m_JobInfo.SetByKey("input", SDataDetector::CreateNode(data));
@@ -768,9 +806,9 @@ void CJobInfoToJSON::ProcessOutput(const string& data)
         result.Receive(stream);
 
         m_JobInfo.SetByKey("output",
-                SDataDetector::CreateNode(result.GetOutBlobIdOrData()));
+                SDataDetector::CreateRemoteAppNode(result.GetOutBlobIdOrData()));
         m_JobInfo.SetByKey("error",
-                SDataDetector::CreateNode(result.GetErrBlobIdOrData()));
+                SDataDetector::CreateRemoteAppNode(result.GetErrBlobIdOrData()));
         m_JobInfo.SetInteger("return_code", result.GetRetCode());
     }
     catch (...) {

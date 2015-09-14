@@ -100,6 +100,15 @@ CNcbiOstream& CBlobStreamHelper::GetOStream(const string& fname /*= ""*/,
     return *m_OStream.get();
 }
 
+int CBlobStreamHelper::x_GetTypeAndName(CNcbiIstream& istream,
+        string& name)
+{
+    int res = eBlobStorage;
+    if (istream.good()) istream >> res;
+    if (istream.good()) ReadStrWithLen(istream, name);
+    return res;
+}
+
 CNcbiIstream& CBlobStreamHelper::GetIStream(string* fname /*= NULL*/,
     EStdOutErrStorageType* type /*= NULL*/)
 {
@@ -114,10 +123,7 @@ CNcbiIstream& CBlobStreamHelper::GetIStream(string* fname /*= NULL*/,
         string name;
         int tmp = (int)eBlobStorage;
         try {
-            if (m_IStream->good())
-                *m_IStream >> tmp;
-            if (m_IStream->good())
-                ReadStrWithLen(*m_IStream, name);
+            tmp = x_GetTypeAndName(*m_IStream, name);
         } catch (...) {
             if (!m_IStream->eof()) {
                 string msg =
