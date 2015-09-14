@@ -461,8 +461,6 @@ string CVariationUtilities::x_GetAlleleFromLoc(const CSeq_loc& loc, CScope& scop
     {
         try {
             CSeqVector v(loc, scope, CBioseq_Handle::eCoding_Iupac);
-            if(v.IsProtein()) 
-                NCBI_THROW(CException, eUnknown, "Not an NA sequence");
             v.GetSeqData(v.begin(), v.end(), ref_at_location);
         } catch(CException& e) {
             string loc_label;   
