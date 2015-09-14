@@ -83,7 +83,7 @@ void LBOS::Announce(const string& service, const string& version,
                     unsigned short port, const string& healthcheck_url)
 {
     char* str = NULL;
-    AutoPtr<char*, Free<char*>> lbos_answer(&str);
+    AutoPtr< char*, Free<char*> > lbos_answer(&str);
     ELBOS_Result result = LBOS_Announce(service.c_str(), version.c_str(),
         port, healthcheck_url.c_str(), &*lbos_answer);
     s_ProcessResult(result, *lbos_answer);
@@ -93,7 +93,7 @@ void LBOS::Announce(const string& service, const string& version,
 void LBOS::AnnounceFromRegistry(const string&  registry_section)
 {
     char* str = NULL;
-    AutoPtr<char*, Free<char*>> lbos_answer(&str);
+    AutoPtr< char*, Free<char*> > lbos_answer(&str);
     ELBOS_Result result = LBOS_AnnounceFromRegistry(registry_section.c_str(),
                                                     &*lbos_answer);
     s_ProcessResult(result, *lbos_answer);
