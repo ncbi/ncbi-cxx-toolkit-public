@@ -688,7 +688,6 @@ struct SDataDetector : public CStringOrBlobStorageReader
             node.SetString("netcache_key", data);
             return node;
 
-        case eEmpty:
         default:
             node.SetString("storage", "raw");
             node.SetString("raw_data", data);
