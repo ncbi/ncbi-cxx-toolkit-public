@@ -42,214 +42,375 @@
 #include    <corelib/test_boost.hpp>
 #endif /* #ifdef LBOS_TEST_MT */
 
+#define COMPOSE_LBOS_ADDRESS_TESTS              0
+#define RESET_ITERATOR_TESTS                    0
+#define CLOSE_ITERATOR_TESTS                    0
+#define DTAB_TESTS                              0
+#define RESOLVE_VIA_LBOS_TESTS                  0
+#define GET_LBOS_ADDRESS_TESTS                  0
+#define GET_CANDIDATES_TESTS                    0
+#define GETNEXTINFO_TESTS                       0
+#define OPEN_TESTS                              0
+#define GENERAL_LBOS_TESTS                      0
+#define INITIALIZATION_TESTS                    0
+#define ANNOUNCEMENT_TESTS                      1
+#define ANNOUNCEMENT_FROM_REGISTRY_TESTS        0
+#define DEANNOUNCEMENT_TESTS                    0
+#define DEANNOUNCE_ALL_TESTS                    0
+#define ANNOUNCEMENT_CXX_TESTS                  0
+#define ANNOUNCEMENT_FROM_REGISTRY_CXX_TESTS    0
+#define DEANNOUNCEMENT_CXX_TESTS                0
+#define DEANNOUNCE_ALL_CXX_TESTS                0
+#define STABILITY_TESTS                         0
+#define PERFORMANCE_TESTS                       0
+#define MULTITHREADING_TESTS                    0
+
 USING_NCBI_SCOPE;
 
 
 NCBITEST_INIT_TREE()
 {
-/* Template to skip tests (and for easy navigation with "go to definition"
- * function of your IDE). Commenting all lines is usually
- * necessary. If something is uncommented for unknown reason, please 
- * comment it now!         
- * It is aligned to the left edge because function names are very long and it 
- * allows to save some lines                                                 */
 ///////////////////////////////////////////////////////////////////////////////
 //                      Compose lbos address                                 //
 ///////////////////////////////////////////////////////////////////////////////
-//NCBITEST_DISABLE(g_LBOS_ComposeLBOSAddress__LBOSExists__ShouldReturnLbos);
-//NCBITEST_DISABLE(g_LBOS_ComposeLBOSAddress__RoleFail__ShouldReturnNULL);
-//NCBITEST_DISABLE(g_LBOS_ComposeLBOSAddress__DomainFail__ShouldReturnNULL);
+#if !COMPOSE_LBOS_ADDRESS_TESTS
+NCBITEST_DISABLE(g_LBOS_ComposeLBOSAddress__LBOSExists__ShouldReturnLbos);
+NCBITEST_DISABLE(g_LBOS_ComposeLBOSAddress__RoleFail__ShouldReturnNULL);
+NCBITEST_DISABLE(g_LBOS_ComposeLBOSAddress__DomainFail__ShouldReturnNULL);
+#endif
 ///////////////////////////////////////////////////////////////////////////////
 //                          Reset iterator                                   //
 ///////////////////////////////////////////////////////////////////////////////
-//NCBITEST_DISABLE(SERV_Reset__NoConditions__IterContainsZeroCandidates);
-//NCBITEST_DISABLE(SERV_Reset__MultipleReset__ShouldNotCrash);
-//NCBITEST_DISABLE(SERV_Reset__Multiple_AfterGetNextInfo__ShouldNotCrash);
+#if !RESET_ITERATOR_TESTS
+NCBITEST_DISABLE(SERV_Reset__NoConditions__IterContainsZeroCandidates);
+NCBITEST_DISABLE(SERV_Reset__MultipleReset__ShouldNotCrash);
+NCBITEST_DISABLE(SERV_Reset__Multiple_AfterGetNextInfo__ShouldNotCrash);
+#endif
 ///////////////////////////////////////////////////////////////////////////////
 //                          Close iterator                                   //
 ///////////////////////////////////////////////////////////////////////////////
-//NCBITEST_DISABLE(SERV_CloseIter__AfterOpen__ShouldWork);
-//NCBITEST_DISABLE(SERV_CloseIter__AfterReset__ShouldWork);
-//NCBITEST_DISABLE(SERV_CloseIter__AfterGetNextInfo__ShouldWork);
-//NCBITEST_DISABLE(SERV_CloseIter__FullCycle__ShouldWork);
+#if !CLOSE_ITERATOR_TESTS
+NCBITEST_DISABLE(SERV_CloseIter__AfterOpen__ShouldWork);
+NCBITEST_DISABLE(SERV_CloseIter__AfterReset__ShouldWork);
+NCBITEST_DISABLE(SERV_CloseIter__AfterGetNextInfo__ShouldWork);
+NCBITEST_DISABLE(SERV_CloseIter__FullCycle__ShouldWork);
+#endif
 ///////////////////////////////////////////////////////////////////////////////
 //                                DTab                                       //
 ///////////////////////////////////////////////////////////////////////////////
-//NCBITEST_DISABLE(DTab::DTabRegistryAndHttp__RegistryGoesFirst);
+#if !DTAB_TESTS
+NCBITEST_DISABLE(DTab__DTabRegistryAndHttp__RegistryGoesFirst);
+NCBITEST_DISABLE(DTab__NonStandardVersion__FoundWithDTab);
+#endif
 ///////////////////////////////////////////////////////////////////////////////
 //                        Resolve via lbos                                   //
 ///////////////////////////////////////////////////////////////////////////////
-//NCBITEST_DISABLE(s_LBOS_ResolveIPPort__ServiceExists__ReturnHostIP);
-//NCBITEST_DISABLE(s_LBOS_ResolveIPPort__ServiceDoesNotExist__ReturnNULL);
-//NCBITEST_DISABLE(s_LBOS_ResolveIPPort__NoLBOS__ReturnNULL);
-//NCBITEST_DISABLE(s_LBOS_ResolveIPPort__FakeMassiveInput__ShouldProcess);
-//NCBITEST_DISABLE(s_LBOS_ResolveIPPort__FakeErrorInput__ShouldNotCrash);
+#if !RESOLVE_VIA_LBOS_TESTS
+NCBITEST_DISABLE(s_LBOS_ResolveIPPort__ServiceExists__ReturnHostIP);
+NCBITEST_DISABLE(s_LBOS_ResolveIPPort__ServiceDoesNotExist__ReturnNULL);
+NCBITEST_DISABLE(s_LBOS_ResolveIPPort__NoLBOS__ReturnNULL);
+NCBITEST_DISABLE(s_LBOS_ResolveIPPort__FakeMassiveInput__ShouldProcess);
+NCBITEST_DISABLE(s_LBOS_ResolveIPPort__FakeErrorInput__ShouldNotCrash);
+#endif
 ///////////////////////////////////////////////////////////////////////////////
 //                         Get lbos address                                  //
 ///////////////////////////////////////////////////////////////////////////////
-//NCBITEST_DISABLE(g_LBOS_GetLBOSAddresses__SpecificMethod__FirstInResult);
-//NCBITEST_DISABLE(
-//          g_LBOS_GetLBOSAddresses__CustomHostNotProvided__SkipCustomHost);
-//NCBITEST_DISABLE(g_LBOS_GetLBOSAddresses__NoConditions__AddressDefOrder);
+#if !GET_LBOS_ADDRESS_TESTS
+NCBITEST_DISABLE(g_LBOS_GetLBOSAddresses__SpecificMethod__FirstInResult);
+NCBITEST_DISABLE(
+            g_LBOS_GetLBOSAddresses__CustomHostNotProvided__SkipCustomHost);
+NCBITEST_DISABLE(g_LBOS_GetLBOSAddresses__NoConditions__AddressDefOrder);
+#endif
 ///////////////////////////////////////////////////////////////////////////////
 //                           Get candidates                                  //
 ///////////////////////////////////////////////////////////////////////////////
-//NCBITEST_DISABLE(s_LBOS_FillCandidates__LBOSNoResponse__SkipLBOS);
-//NCBITEST_DISABLE(s_LBOS_FillCandidates__LBOSResponse__Finish);
-//NCBITEST_DISABLE(s_LBOS_FillCandidates__NetInfoProvided__UseNetInfo);
+#if !GET_CANDIDATES_TESTS
+NCBITEST_DISABLE(s_LBOS_FillCandidates__LBOSNoResponse__SkipLBOS);
+NCBITEST_DISABLE(s_LBOS_FillCandidates__LBOSResponse__Finish);
+NCBITEST_DISABLE(s_LBOS_FillCandidates__NetInfoProvided__UseNetInfo);
+#endif
 ///////////////////////////////////////////////////////////////////////////////
 //                          GetNextInfo                                      //
 ///////////////////////////////////////////////////////////////////////////////
-//NCBITEST_DISABLE(SERV_GetNextInfoEx__EmptyCands__RunGetCandidates);
-//NCBITEST_DISABLE(SERV_GetNextInfoEx__ErrorUpdating__ReturnNull);
-//NCBITEST_DISABLE(SERV_GetNextInfoEx__HaveCands__ReturnNext);
-//NCBITEST_DISABLE(SERV_GetNextInfoEx__LastCandReturned__ReturnNull);
-//NCBITEST_DISABLE(SERV_GetNextInfoEx__DataIsNull__ReconstructData);
-//NCBITEST_DISABLE(SERV_GetNextInfoEx__IterIsNull__ReturnNull);
-//NCBITEST_DISABLE(SERV_GetNextInfoEx__WrongMapper__ReturnNull);
+#if !GETNEXTINFO_TESTS
+NCBITEST_DISABLE(SERV_GetNextInfoEx__EmptyCands__RunGetCandidates);
+NCBITEST_DISABLE(SERV_GetNextInfoEx__ErrorUpdating__ReturnNull);
+NCBITEST_DISABLE(SERV_GetNextInfoEx__HaveCands__ReturnNext);
+NCBITEST_DISABLE(SERV_GetNextInfoEx__LastCandReturned__ReturnNull);
+NCBITEST_DISABLE(SERV_GetNextInfoEx__DataIsNull__ReconstructData);
+NCBITEST_DISABLE(SERV_GetNextInfoEx__IterIsNull__ReturnNull);
+NCBITEST_DISABLE(SERV_GetNextInfoEx__WrongMapper__ReturnNull);
+#endif
 ///////////////////////////////////////////////////////////////////////////////
 //                               Open                                        //
 ///////////////////////////////////////////////////////////////////////////////
-//NCBITEST_DISABLE(SERV_LBOS_Open__IterIsNull__ReturnNull);
-//NCBITEST_DISABLE(SERV_LBOS_Open__NetInfoNull__ConstructNetInfo);
-//NCBITEST_DISABLE(SERV_LBOS_Open__ServerExists__ReturnLbosOperations);
-//NCBITEST_DISABLE(SERV_LBOS_Open__InfoPointerProvided__WriteNull);
-//NCBITEST_DISABLE(SERV_LBOS_Open__NoSuchService__ReturnNull);
+#if !OPEN_TESTS
+NCBITEST_DISABLE(SERV_LBOS_Open__IterIsNull__ReturnNull);
+NCBITEST_DISABLE(SERV_LBOS_Open__NetInfoNull__ConstructNetInfo);
+NCBITEST_DISABLE(SERV_LBOS_Open__ServerExists__ReturnLbosOperations);
+NCBITEST_DISABLE(SERV_LBOS_Open__InfoPointerProvided__WriteNull);
+NCBITEST_DISABLE(SERV_LBOS_Open__NoSuchService__ReturnNull);
+#endif
 ///////////////////////////////////////////////////////////////////////////////
 //                           General lbos                                    //
 ///////////////////////////////////////////////////////////////////////////////
-//NCBITEST_DISABLE(SERV_OpenP__ServerExists__ShouldReturnLbosOperations);
-//NCBITEST_DISABLE(TestLbos_OpenP__ServerDoesNotExist__ShouldReturnNull);
-//NCBITEST_DISABLE(TestLbos_FindMethod__LbosExist__ShouldWork);
+#if !GENERAL_LBOS_TESTS
+NCBITEST_DISABLE(SERV_OpenP__ServerExists__ShouldReturnLbosOperations);
+NCBITEST_DISABLE(TestLbos_OpenP__ServerDoesNotExist__ShouldReturnNull);
+NCBITEST_DISABLE(TestLbos_FindMethod__LbosExist__ShouldWork);
+#endif
 ///////////////////////////////////////////////////////////////////////////////
 //                           Initialization                                  //
 ///////////////////////////////////////////////////////////////////////////////
-//NCBITEST_DISABLE(Initialization__MultithreadInitialization__ShouldNotCrash);
-//NCBITEST_DISABLE(Initialization__InitializationFail__TurnOff);
-//NCBITEST_DISABLE(Initialization__InitializationSuccess__StayOn);
-//NCBITEST_DISABLE(Initialization__OpenNotInitialized__ShouldInitialize);
-//NCBITEST_DISABLE(Initialization__OpenWhenTurnedOff__ReturnNull);
-//NCBITEST_DISABLE(
-//            Initialization__s_LBOS_Initialize__s_LBOS_InstancesListNotNULL);
-//NCBITEST_DISABLE(
-//       Initialization__s_LBOS_FillCandidates__s_LBOS_InstancesListNotNULL);
-//NCBITEST_DISABLE(Initialization__PrimaryLBOSInactive__SwapAddresses);
+#if !INITIALIZATION_TESTS
+NCBITEST_DISABLE(Initialization__MultithreadInitialization__ShouldNotCrash);
+NCBITEST_DISABLE(Initialization__InitializationFail__TurnOff);
+NCBITEST_DISABLE(Initialization__InitializationSuccess__StayOn);
+NCBITEST_DISABLE(Initialization__OpenNotInitialized__ShouldInitialize);
+NCBITEST_DISABLE(Initialization__OpenWhenTurnedOff__ReturnNull);
+NCBITEST_DISABLE(
+            Initialization__s_LBOS_Initialize__s_LBOS_InstancesListNotNULL);
+NCBITEST_DISABLE(
+        Initialization__s_LBOS_FillCandidates__s_LBOS_InstancesListNotNULL);
+NCBITEST_DISABLE(Initialization__PrimaryLBOSInactive__SwapAddresses);
+#endif
 ///////////////////////////////////////////////////////////////////////////////
 //                           Announcement                                    //
 ///////////////////////////////////////////////////////////////////////////////
-//NCBITEST_DISABLE(Announcement__AllOK__ReturnSuccess);
-//NCBITEST_DISABLE(Announcement__AllOK__LBOSAnswerProvided);
-//NCBITEST_DISABLE(Announcement__AllOK__AnnouncedServerSaved);
-//NCBITEST_DISABLE(Announcement__NoLBOS__ReturnNoLBOSAndNotFind);
-//NCBITEST_DISABLE(Announcement__NoLBOS__LBOSAnswerNull);
-//NCBITEST_DISABLE(Announcement__LBOSError__ReturnServerError);
-//NCBITEST_DISABLE(Announcement__LBOSError__LBOSAnswerProvided);
-//NCBITEST_DISABLE(
-//           Announcement__AlreadyAnnouncedInTheSameZone__ReplaceInStorage);
-//NCBITEST_DISABLE(Announcement__AnotherRegion__NoAnnounce);
-//NCBITEST_DISABLE(Announcement__IncorrectURL__ReturnInvalidArgs);
-//NCBITEST_DISABLE(Announcement__IncorrectPort__ReturnInvalidArgs);
-//NCBITEST_DISABLE(Announcement__IncorrectVersion__ReturnInvalidArgs);
-//NCBITEST_DISABLE(Announcement__IncorrectServiceName__ReturnInvalidArgs);
-//NCBITEST_DISABLE(Announcement__RealLife__VisibleAfterAnnounce);
-//NCBITEST_DISABLE(
-//             Announcement__ResolveLocalIPError__Return_DNS_RESOLVE_ERROR);
-//NCBITEST_DISABLE(Announcement__IP0000__ReplaceWithLocalIP);
-//NCBITEST_DISABLE(Announcement__ResolveLocalIPError__Return_DNS_RESOLVE_ERROR);
-//NCBITEST_DISABLE(Announcement__LBOSOff__ReturnELBOS_Off);
-//NCBITEST_DISABLE(Announcement__LBOSAnnounceCorruptOutput__ReturnServerError);
+#if !ANNOUNCEMENT_TESTS
+NCBITEST_DISABLE(Announcement__AllOK__ReturnSuccess);
+NCBITEST_DISABLE(Announcement__AllOK__LBOSAnswerProvided);
+NCBITEST_DISABLE(Announcement__AllOK__AnnouncedServerSaved);
+NCBITEST_DISABLE(Announcement__NoLBOS__ReturnNoLBOSAndNotFind);
+NCBITEST_DISABLE(Announcement__NoLBOS__LBOSAnswerNull);
+NCBITEST_DISABLE(Announcement__LBOSError__ReturnServerError);
+NCBITEST_DISABLE(Announcement__LBOSError__LBOSAnswerProvided);
+NCBITEST_DISABLE(
+             Announcement__AlreadyAnnouncedInTheSameZone__ReplaceInStorage);
+NCBITEST_DISABLE(Announcement__AnotherRegion__NoAnnounce);
+NCBITEST_DISABLE(Announcement__IncorrectURL__ReturnInvalidArgs);
+NCBITEST_DISABLE(Announcement__IncorrectPort__ReturnInvalidArgs);
+NCBITEST_DISABLE(Announcement__IncorrectVersion__ReturnInvalidArgs);
+NCBITEST_DISABLE(Announcement__IncorrectServiceName__ReturnInvalidArgs);
+NCBITEST_DISABLE(Announcement__RealLife__VisibleAfterAnnounce);
+NCBITEST_DISABLE(
+               Announcement__ResolveLocalIPError__Return_DNS_RESOLVE_ERROR);
+NCBITEST_DISABLE(Announcement__IP0000__ReplaceWithLocalIP);
+NCBITEST_DISABLE(Announcement__ResolveLocalIPError__Return_DNS_RESOLVE_ERROR);
+NCBITEST_DISABLE(Announcement__LBOSOff__ReturnELBOS_Off);
+NCBITEST_DISABLE(Announcement__LBOSAnnounceCorruptOutput__ReturnServerError);
+NCBITEST_DISABLE(Announcement__HealthcheckDead__ReturnELBOS_NotFound);
+NCBITEST_DISABLE(Announcement__HealthcheckDead__NoAnnouncement);
+#endif
 ///////////////////////////////////////////////////////////////////////////////
 //                     Announcement from Registry                            //
 ///////////////////////////////////////////////////////////////////////////////
-//NCBITEST_DISABLE(AnnouncementRegistry__ParamsGood__ReturnSuccess);
-//NCBITEST_DISABLE(
-//             AnnouncementRegistry__CustomSectionNoVars__ReturnInvalidArgs);
-//NCBITEST_DISABLE(
-//AnnouncementRegistry__CustomSectionEmptyOrNullAndSectionIsOk__ReturnSuccess);
-//NCBITEST_DISABLE(
-//              AnnouncementRegistry__ServiceEmptyOrNull__ReturnInvalidArgs);
-//NCBITEST_DISABLE(
-//              AnnouncementRegistry__VersionEmptyOrNull__ReturnInvalidArgs);
-//NCBITEST_DISABLE(AnnouncementRegistry__PortEmptyOrNull__ReturnInvalidArgs);
-//NCBITEST_DISABLE(AnnouncementRegistry__PortOutOfRange__ReturnInvalidArgs);
-//NCBITEST_DISABLE(
-//               AnnouncementRegistry__PortContainsLetters__ReturnInvalidArgs);
-//NCBITEST_DISABLE(
-//           AnnouncementRegistry__HealthchecktEmptyOrNull__ReturnInvalidArgs);
-//NCBITEST_DISABLE(
-//   AnnouncementRegistry__HealthcheckDoesNotStartWithHttp__ReturnInvalidArgs);
+#if !ANNOUNCEMENT_FROM_REGISTRY_TESTS
+NCBITEST_DISABLE(AnnouncementRegistry__ParamsGood__ReturnSuccess);
+NCBITEST_DISABLE(
+               AnnouncementRegistry__CustomSectionNoVars__ReturnInvalidArgs);
+NCBITEST_DISABLE(
+AnnouncementRegistry__CustomSectionEmptyOrNullAndSectionIsOk__ReturnSuccess);
+NCBITEST_DISABLE(
+                AnnouncementRegistry__ServiceEmptyOrNull__ReturnInvalidArgs);
+NCBITEST_DISABLE(
+                AnnouncementRegistry__VersionEmptyOrNull__ReturnInvalidArgs);
+NCBITEST_DISABLE(AnnouncementRegistry__PortEmptyOrNull__ReturnInvalidArgs);
+NCBITEST_DISABLE(AnnouncementRegistry__PortOutOfRange__ReturnInvalidArgs);
+NCBITEST_DISABLE(
+               AnnouncementRegistry__PortContainsLetters__ReturnInvalidArgs);
+NCBITEST_DISABLE(
+           AnnouncementRegistry__HealthchecktEmptyOrNull__ReturnInvalidArgs);
+NCBITEST_DISABLE(
+    AnnouncementRegistry__HealthcheckDoesNotStartWithHttp__ReturnInvalidArgs);
+NCBITEST_DISABLE(AnnouncementRegistry__HealthcheckDead__ReturnELBOS_NotFound);
+#endif
 ///////////////////////////////////////////////////////////////////////////////
 //                            Deannouncement                                 //
 ///////////////////////////////////////////////////////////////////////////////
-//NCBITEST_DISABLE(Deannouncement__Deannounced__Return1);
-//NCBITEST_DISABLE(Deannouncement__Deannounced__AnnouncedServerRemoved);
-//NCBITEST_DISABLE(Deannouncement__NoLBOS__Return0);
-//NCBITEST_DISABLE(Deannouncement__LBOSExistsDeannounceError__Return0);
-//NCBITEST_DISABLE(Deannouncement__RealLife__InvisibleAfterDeannounce);
-//NCBITEST_DISABLE(Deannouncement__AnotherDomain__DoNothing);
-/* This test does not work yet; Vladimir has to fix lbos so it announces 
- * servers with dead health checks.                                          */
-//NCBITEST_DISABLE(Deannouncement__NoHostProvided__LocalAddress);
+#if !DEANNOUNCEMENT_TESTS
+NCBITEST_DISABLE(Deannouncement__Deannounced__Return1);
+NCBITEST_DISABLE(Deannouncement__Deannounced__AnnouncedServerRemoved);
+NCBITEST_DISABLE(Deannouncement__NoLBOS__Return0);
+NCBITEST_DISABLE(Deannouncement__LBOSExistsDeannounceError__Return0);
+NCBITEST_DISABLE(Deannouncement__RealLife__InvisibleAfterDeannounce);
+NCBITEST_DISABLE(Deannouncement__AnotherDomain__DoNothing);
+NCBITEST_DISABLE(Deannouncement__NoHostProvided__LocalAddress);
+NCBITEST_DISABLE(Deannouncement__NotExists__ReturnELBOS_NotFound);
+#endif
 ///////////////////////////////////////////////////////////////////////////////
 //                          Deannounce all                                   //
 ///////////////////////////////////////////////////////////////////////////////
-//NCBITEST_DISABLE(DeannouceAll__AllDeannounced__NoSavedLeft);
+#if !DEANNOUNCE_ALL_TESTS
+NCBITEST_DISABLE(DeannounceAll__AllDeannounced__NoSavedLeft);
+#endif
+///////////////////////////////////////////////////////////////////////////////
+//                           Announcement CXX                                //
+///////////////////////////////////////////////////////////////////////////////
+#if !ANNOUNCEMENT_CXX_TESTS
+#ifdef NCBI_OS_MSWIN
+NCBITEST_DISABLE(Announcement_CXX__AllOK__ReturnSuccess);
+#endif
+NCBITEST_DISABLE(Announcement_CXX__AllOK__AnnouncedServerSaved);
+NCBITEST_DISABLE(Announcement_CXX__NoLBOS__ThrowNoLBOSAndNotFind);
+NCBITEST_DISABLE(Announcement_CXX__NoLBOS__LBOSAnswerNull);
+NCBITEST_DISABLE(Announcement_CXX__LBOSError__ThrowServerError);
+NCBITEST_DISABLE(Announcement_CXX__LBOSError__LBOSAnswerProvided);
+NCBITEST_DISABLE(
+    Announcement_CXX__AlreadyAnnouncedInTheSameZone__ReplaceInStorage);
+NCBITEST_DISABLE(
+             Announcement_CXX__AnotherRegion__NoAnnounce);
+NCBITEST_DISABLE(Announcement_CXX__IncorrectURL__ThrowInvalidArgs);
+NCBITEST_DISABLE(Announcement_CXX__IncorrectPort__ThrowInvalidArgs);
+NCBITEST_DISABLE(Announcement_CXX__IncorrectVersion__ThrowInvalidArgs);
+NCBITEST_DISABLE(Announcement_CXX__IncorrectServiceName__ThrowInvalidArgs);
+NCBITEST_DISABLE(Announcement_CXX__RealLife__VisibleAfterAnnounce);
+NCBITEST_DISABLE(Announcement_CXX__IP0000__ReplaceWithLocalIP);
+NCBITEST_DISABLE(
+    Announcement_CXX__ResolveLocalIPError__Throw_DNS_RESOLVE_ERROR);
+NCBITEST_DISABLE(Announcement_CXX__LBOSOff__ThrowELBOS_Off);
+NCBITEST_DISABLE(
+    Announcement_CXX__LBOSAnnounceCorruptOutput__ThrowServerError);
+NCBITEST_DISABLE(Announcement_CXX__HealthcheckDead__ThrowE_NotFound);
+NCBITEST_DISABLE(Announcement_CXX__HealthcheckDead__NoAnnouncement);
+#endif
+///////////////////////////////////////////////////////////////////////////////
+//                     Announcement from Registry CXX                        //
+///////////////////////////////////////////////////////////////////////////////
+#if !ANNOUNCEMENT_FROM_REGISTRY_CXX_TESTS
+NCBITEST_DISABLE(AnnouncementRegistry_CXX__ParamsGood__ReturnSuccess);
+NCBITEST_DISABLE(
+    AnnouncementRegistry_CXX__CustomSectionNoVars__ThrowInvalidArgs);
+NCBITEST_DISABLE(
+AnnouncementRegistry_CXX__CustomSectionEmptyOrNullAndSectionIsOk__ThrowSuccess
+                                                                             );
+NCBITEST_DISABLE(
+              AnnouncementRegistry_CXX__ServiceEmptyOrNull__ThrowInvalidArgs);
+NCBITEST_DISABLE(
+    AnnouncementRegistry_CXX__VersionEmptyOrNull__ThrowInvalidArgs);
+NCBITEST_DISABLE(AnnouncementRegistry_CXX__PortEmptyOrNull__ThrowInvalidArgs);
+NCBITEST_DISABLE(AnnouncementRegistry_CXX__PortOutOfRange__ThrowInvalidArgs);
+NCBITEST_DISABLE(
+    AnnouncementRegistry_CXX__PortContainsLetters__ThrowInvalidArgs);
+NCBITEST_DISABLE(
+    AnnouncementRegistry_CXX__HealthchecktEmptyOrNull__ThrowInvalidArgs);
+NCBITEST_DISABLE(
+ AnnouncementRegistry_CXX__HealthcheckDoesNotStartWithHttp__ThrowInvalidArgs);
+NCBITEST_DISABLE(
+    AnnouncementRegistry_CXX__HealthcheckDead__ThrowE_NotFound);
+#endif
+///////////////////////////////////////////////////////////////////////////////
+//                            Deannouncement CXX                             //
+///////////////////////////////////////////////////////////////////////////////
+#if !DEANNOUNCEMENT_CXX_TESTS
+NCBITEST_DISABLE(Deannouncement_CXX__Deannounced__Return1);
+NCBITEST_DISABLE(Deannouncement_CXX__Deannounced__AnnouncedServerRemoved);
+NCBITEST_DISABLE(Deannouncement_CXX__NoLBOS__Return0);
+NCBITEST_DISABLE(Deannouncement_CXX__LBOSExistsDeannounceError__Return0);
+NCBITEST_DISABLE(Deannouncement_CXX__RealLife__InvisibleAfterDeannounce);
+NCBITEST_DISABLE(Deannouncement_CXX__AnotherDomain__DoNothing);
+NCBITEST_DISABLE(Deannouncement_CXX__NoHostProvided__LocalAddress);
+NCBITEST_DISABLE(Deannouncement_CXX__LBOSOff__ThrowELBOS_Off);
+NCBITEST_DISABLE(Deannouncement_CXX__NotExists__ThrowE_NotFound);
+#endif
+///////////////////////////////////////////////////////////////////////////////
+//                          Deannounce all CXX                               //
+///////////////////////////////////////////////////////////////////////////////
+#if !DEANNOUNCE_ALL_CXX_TESTS
+NCBITEST_DISABLE(DeannounceAll__AllDeannounced__NoSavedLeft);
+#endif
 ///////////////////////////////////////////////////////////////////////////////
 //                             Stability                                     //
 ///////////////////////////////////////////////////////////////////////////////
-//NCBITEST_DISABLE(Stability__GetNext_Reset__ShouldNotCrash);
-//NCBITEST_DISABLE(Stability__FullCycle__ShouldNotCrash);
+#if !STABILITY_TESTS
+NCBITEST_DISABLE(Stability__GetNext_Reset__ShouldNotCrash);
+NCBITEST_DISABLE(Stability__FullCycle__ShouldNotCrash);
+#endif
 ///////////////////////////////////////////////////////////////////////////////
 //                            Performance                                    //
 ///////////////////////////////////////////////////////////////////////////////
-//NCBITEST_DISABLE(Performance__FullCycle__ShouldNotCrash);
+#if !PERFORMANCE_TESTS
+NCBITEST_DISABLE(Performance__FullCycle__ShouldNotCrash);
+#endif
 ///////////////////////////////////////////////////////////////////////////////
 //                          Multi-threading                                  //
 ///////////////////////////////////////////////////////////////////////////////
-//NCBITEST_DISABLE(MultiThreading_test1);
+#if !MULTITHREADING_TESTS
+NCBITEST_DISABLE(MultiThreading_test1);
+#endif
 }
 
+#define LBOS_BROKEN 0
 NCBITEST_AUTO_INIT()
 {
     CConnNetInfo net_info;
     boost::unit_test::framework::master_test_suite().p_name->assign(
-                                                    "lbos mapper Unit Test");
+        "lbos mapper Unit Test");
     CNcbiRegistry& config = CNcbiApplication::Instance()->GetConfig();
-    CONNECT_Init(dynamic_cast<ncbi::IRWRegistry*>(&config));
+    CONNECT_Init(&config);
+
+    CHealthcheckThread* thread = new CHealthcheckThread;
+    thread->Run();
+    /*
+     * Deannounce all lbostest servers (they are left if previous 
+     * launch of test crashed)
+     */
     size_t start = 0, end = 0;
-    char *lbos_ouput_orig = g_LBOS_UnitTesting_GetLBOSFuncs()->
-            UrlReadAll(*net_info, "http://lbos.dev.be-md.ncbi.nlm.nih.gov:8080"
-            "/lbos/text/service", NULL);
-    string lbos_output = string(lbos_ouput_orig);
-    free(lbos_ouput_orig);
     LBOS_Deannounce("/lbostest", /* for initialization */
-                    "1.0.0",
-                    "lbos.dev.be-md.ncbi.nlm.nih.gov",
-                    5000);        
-    while (start != string::npos) {
-        string to_find = "/lbostest\t";
-        start = lbos_output.find(to_find, start);
-        if (start == string::npos)
-            break;
-        start = lbos_output.find("\t", start); //skip service name
-        start = lbos_output.find("\t", start); //skip service name
-        start = lbos_output.find(":", start); //skip ip
-        start += 1; //skip ":"
-        end = lbos_output.find("\t", start);
-        unsigned short port = 
-                       NStr::StringToInt(lbos_output.substr(start, end-start));
-        
-        LBOS_Deannounce("/lbostest",
-                        "1.0.0",
-                        "lbos.dev.be-md.ncbi.nlm.nih.gov",
-                        port);        
+        "1.0.0",
+        "lbos.dev.be-md.ncbi.nlm.nih.gov",
+        5000);        
+#if !LBOS_BROKEN
+    CCObjHolder<char> lbos_output_orig(g_LBOS_UnitTesting_GetLBOSFuncs()->
+            UrlReadAll(*net_info, "http://lbos.dev.be-md.ncbi.nlm.nih.gov:8080"
+            "/lbos/text/service", NULL));
+    if (*lbos_output_orig == NULL) 
+        lbos_output_orig = strdup("");
+    string lbos_output = *lbos_output_orig;
+    
+    vector<string> to_find = {"/lbostest", "/lbostest1"};
+
+    unsigned int i = 0;
+    for (i = 0;  i < to_find.size();  ++i) {
+        while (start != string::npos) {
+            start = lbos_output.find(to_find[i] + "\t", start);
+            if (start == string::npos)
+                break;
+            // We already know service name since we searched for it.
+            start = lbos_output.find("\t", start); //skip service name
+            start += 1; //skip \t
+            // Next, we extract version.
+            end = lbos_output.find("\t", start); //version
+            string version = lbos_output.substr(start, end-start);
+            // Now we extract ip
+            start = end + 1; //skip \t
+            end = lbos_output.find(":", start); //skip ip
+            string ip = lbos_output.substr(start, end-start);
+            // Now we extract port
+            start = end + 1; //skip ":"
+            end = lbos_output.find("\t", start);
+            unsigned short port =
+                    NStr::StringToInt(lbos_output.substr(start, end-start));
+            // We skip healthcheck
+            start = end + 1; //skip \t
+            end = lbos_output.find("\t", start);
+            // Check if service is announced are just hangs until being deleted
+            start = end + 1; //skip \t
+            end = lbos_output.find("\t", start);
+            string is_announced = lbos_output.substr(start, end-start);
+            if (is_announced == "true") {
+                try {
+                    LBOS::Deannounce(to_find[i], version, ip, port);
+                }
+                catch (const CLBOSException&) {
+                }
+            }
+        }
+        start = 0; // reset search for the next service
     }
+#endif
 }
 
-BOOST_AUTO_TEST_CASE(SERV_CloseIter__FullCycle__ShouldWork)
-{
-    Close_iterator::FullCycle__ShouldWork();
-}
 ///////////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_SUITE( Compose_LBOS_address )//////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -357,6 +518,12 @@ BOOST_AUTO_TEST_CASE(DTab__DTabRegistryAndHttp__RegistryGoesFirst)
     DTab::DTabRegistryAndHttp__RegistryGoesFirst();
 }
 
+/** 2. Announce server with non-standard version and server with no standard 
+    version at all. Both should be found via DTab                            */
+BOOST_AUTO_TEST_CASE(DTab__NonStandardVersion__FoundWithDTab)
+{
+    DTab::NonStandardVersion__FoundWithDTab();
+}
 BOOST_AUTO_TEST_SUITE_END()
 
 
@@ -397,10 +564,6 @@ BOOST_AUTO_TEST_CASE(s_LBOS_ResolveIPPort__FakeMassiveInput__ShouldProcess)
 }
 
 
-BOOST_AUTO_TEST_CASE(s_LBOS_ResolveIPPort__FakeErrorInput__ShouldNotCrash)
-{
-    Resolve_via_LBOS::FakeErrorInput__ShouldNotCrash();
-}
 
 BOOST_AUTO_TEST_SUITE_END()
 
@@ -806,25 +969,39 @@ BOOST_AUTO_TEST_CASE(
 {
     Announcement::LBOSAnnounceCorruptOutput__ReturnServerError();
 }
+/*22. Trying to announce server and providing dead healthcheck URL - 
+      return eLBOS_NotFound                                                  */
+BOOST_AUTO_TEST_CASE(Announcement__HealthcheckDead__ReturnELBOS_NotFound)
+{
+    Announcement::HealthcheckDead__ReturnELBOS_NotFound();
+}
+/*23. Trying to announce server and providing dead healthcheck URL -
+      server should not be announced                                         */
+BOOST_AUTO_TEST_CASE(Announcement__HealthcheckDead__NoAnnouncement)
+{
+    Announcement::HealthcheckDead__NoAnnouncement();
+}
 BOOST_AUTO_TEST_SUITE_END()
 
 
 ///////////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_SUITE( AnnounceRegistryTest )//////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-/*  1.  All parameters good (Custom section has all parameters correct in 
-        config) - return eLBOS_Success
-    2.  Custom section has nothing in config - return eLBOS_InvalidArgs
-    3.  Section empty or NULL (should use default section and return 
-        eLBOS_Success)
-    4.  Service is empty or NULL - return eLBOS_InvalidArgs
-    5.  Version is empty or NULL - return eLBOS_InvalidArgs
-    6.  port is empty or NULL - return eLBOS_InvalidArgs
-    7.  port is out of range - return eLBOS_InvalidArgs
-    8.  port contains letters - return eLBOS_InvalidArgs
-    9.  healthcheck is empty or NULL - return eLBOS_InvalidArgs
-    10. healthcheck does not start with http:// or https:// - return 
-        eLBOS_InvalidArgs                                                    */
+/*   1. All parameters good (Custom section has all parameters correct in 
+ *      config) - return eLBOS_Success
+ *   2. Custom section has nothing in config - return eLBOS_InvalidArgs
+ *   3. Section empty or NULL (should use default section and return 
+ *      eLBOS_Success)
+ *   4. Service is empty or NULL - return eLBOS_InvalidArgs
+ *   5. Version is empty or NULL - return eLBOS_InvalidArgs
+ *   6. port is empty or NULL - return eLBOS_InvalidArgs
+ *   7. port is out of range - return eLBOS_InvalidArgs
+ *   8. port contains letters - return eLBOS_InvalidArgs
+ *   9. healthcheck is empty or NULL - return eLBOS_InvalidArgs
+ *  10. healthcheck does not start with http:// or https:// - return 
+ *      eLBOS_InvalidArgs                                                    
+ *  11. Trying to announce server and providing dead healthcheck URL -
+ *      return eLBOS_NotFound                                                */
 
 /*  1.  All parameters good (Custom section has all parameters correct in 
         config) - return eLBOS_Success                                       */
@@ -887,7 +1064,15 @@ BOOST_AUTO_TEST_CASE(
 {
     return AnnouncementRegistry::
                           HealthcheckDoesNotStartWithHttp__ReturnInvalidArgs();
-}      
+}
+/*  11. Trying to announce server and providing dead healthcheck URL -
+        return eLBOS_NotFound                                                */
+BOOST_AUTO_TEST_CASE(
+                   AnnouncementRegistry__HealthcheckDead__ReturnELBOS_NotFound)
+{
+    return AnnouncementRegistry::HealthcheckDead__ReturnELBOS_NotFound();
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -949,6 +1134,11 @@ BOOST_AUTO_TEST_CASE(Deannouncement__LBOSOff__ReturnELBOS_Off)
 {
     Deannouncement::LBOSOff__ReturnELBOS_Off();
 }
+/* 9. Trying to deannounce non-existent service - return eLBOS_NotFound      */
+BOOST_AUTO_TEST_CASE(Deannouncement__NotExists__ReturnELBOS_NotFound)
+{
+    Deannouncement::NotExists__ReturnELBOS_NotFound();
+}
 
 BOOST_AUTO_TEST_SUITE_END()
 
@@ -963,6 +1153,338 @@ BOOST_AUTO_TEST_CASE(DeannounceAll__AllDeannounced__NoSavedLeft)
 BOOST_AUTO_TEST_SUITE_END()
 
 
+///////////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_SUITE( AnnounceTest_CXX )//////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+/*  1. Successfully announced: return SUCCESS
+ *  2. Successfully announced: SLBOS_AnnounceHandle deannounce_handle 
+ *     contains info needed to later deannounce announced server
+ *  3. Successfully announced: char* lbos_answer contains answer of lbos
+ *  4. Successfully announced: information about announcement is saved to 
+ *     hidden lbos mapper's storage
+ *  5. Could not find lbos: return NO_LBOS
+ *  6. Could not find lbos: char* lbos_answer is set to NULL
+ *  7. Could not find lbos: SLBOS_AnnounceHandle deannounce_handle is set to
+ *     NULL
+ *  8. lbos returned error: return LBOS_ERROR
+ *  9. lbos returned error: char* lbos_answer contains answer of lbos
+ * 10. lbos returned error: SLBOS_AnnounceHandle deannounce_handle is set to 
+ *     NULL
+ * 11. Server announced again (service name, IP and port coincide) and 
+ *     announcement in the same zone, replace old info about announced 
+ *     server in internal storage with new one.
+ * 12. Server announced again and trying to announce in another 
+ *     zone - return MULTIZONE_ANNOUNCE_PROHIBITED
+ * 13. Was passed incorrect healthcheck URL (NULL or empty not starting with 
+ *     "http(s)://"): do not announce and return INVALID_ARGS
+ * 14. Was passed incorrect port (zero): do not announce and return 
+ *     INVALID_ARGS
+ * 15. Was passed incorrect version(NULL or empty): do not announce and 
+ *     return INVALID_ARGS
+ * 16. Was passed incorrect service nameNULL or empty): do not announce and 
+ *     return INVALID_ARGS
+ * 17. Real-life test: after announcement server should be visible to 
+ *     resolve
+ * 18. If was passed "0.0.0.0" as IP, should replace it with local IP or 
+ *     hostname
+ * 19. Was passed "0.0.0.0" as IP and could not manage to resolve local host 
+ *     IP: do not announce and return DNS_RESOLVE_ERROR
+ * 20. lbos is OFF - return eLBOS_Off                                        
+ * 21. Announced successfully, but LBOS return corrupted answer - 
+ *     return SERVER_ERROR                                                   */
+
+/*  1. Successfully announced : return SUCCESS                               */
+BOOST_AUTO_TEST_CASE(Announcement_CXX__AllOK__ReturnSuccess)
+{
+    Announcement_CXX::AllOK__ReturnSuccess();
+}
+
+/*  4. Successfully announced: information about announcement is saved to
+ *     hidden lbos mapper's storage                                          */
+BOOST_AUTO_TEST_CASE(Announcement_CXX__AllOK__AnnouncedServerSaved)
+{
+    Announcement_CXX::AllOK__AnnouncedServerSaved();
+}
+
+/*  5. Could not find lbos: return NO_LBOS                                   */
+BOOST_AUTO_TEST_CASE(Announcement_CXX__NoLBOS__ThrowNoLBOSAndNotFind)
+{
+    Announcement_CXX::NoLBOS__ThrowNoLBOSAndNotFind();
+}
+
+/*  6. Could not find lbos : char* lbos_answer is set to NULL                */
+BOOST_AUTO_TEST_CASE(Announcement_CXX__NoLBOS__LBOSAnswerNull)
+{
+    Announcement_CXX::NoLBOS__LBOSAnswerNull();
+}
+
+/*  8. lbos returned error: return eLBOS_ServerError                         */
+BOOST_AUTO_TEST_CASE(Announcement_CXX__LBOSError__ThrowServerError)
+{
+    Announcement_CXX::LBOSError__ThrowServerError();
+}
+
+/*  9. lbos returned error : char* lbos_answer contains answer of lbos       */
+BOOST_AUTO_TEST_CASE(Announcement_CXX__LBOSError__LBOSAnswerProvided)
+{
+    Announcement_CXX::LBOSError__LBOSAnswerProvided();
+}
+
+/* 11. Server announced again(service name, IP and port coincide) and
+ *     announcement in the same zone, replace old info about announced
+ *     server in internal storage with new one.                              */
+BOOST_AUTO_TEST_CASE(
+                 Announcement_CXX__AlreadyAnnouncedInTheSameZone__ReplaceInStorage)
+{
+    Announcement_CXX::AlreadyAnnouncedInTheSameZone__ReplaceInStorage();
+}
+
+/* 12. Trying to announce in another domain - do nothing                     */
+BOOST_AUTO_TEST_CASE(
+        Announcement_CXX__AnotherRegion__NoAnnounce)
+{
+    Announcement_CXX::AnotherRegion__NoAnnounce();
+}
+/* 13. Was passed incorrect healthcheck URL(NULL or empty not starting with
+ *     "http(s)://") : do not announce and return INVALID_ARGS               */
+BOOST_AUTO_TEST_CASE(Announcement_CXX__IncorrectURL__ThrowInvalidArgs)
+{
+    Announcement_CXX::IncorrectURL__ThrowInvalidArgs();
+}
+/* 14. Was passed incorrect port(zero) : do not announce and return
+ *     INVALID_ARGS                                                          */
+BOOST_AUTO_TEST_CASE(Announcement_CXX__IncorrectPort__ThrowInvalidArgs)
+{
+    Announcement_CXX::IncorrectPort__ThrowInvalidArgs();
+}
+/* 15. Was passed incorrect version(NULL or empty) : do not announce and
+ *     return INVALID_ARGS                                                   */
+BOOST_AUTO_TEST_CASE(Announcement_CXX__IncorrectVersion__ThrowInvalidArgs)
+{
+    Announcement_CXX::IncorrectVersion__ThrowInvalidArgs();
+}
+/* 16. Was passed incorrect service name (NULL or empty): do not announce and
+ *     return INVALID_ARGS                                                   */
+BOOST_AUTO_TEST_CASE(Announcement_CXX__IncorrectServiceName__ThrowInvalidArgs)
+{
+    Announcement_CXX::IncorrectServiceName__ThrowInvalidArgs();
+}
+/* 17. Real - life test : after announcement server should be visible to
+ *     resolve                                                               */
+BOOST_AUTO_TEST_CASE(Announcement_CXX__RealLife__VisibleAfterAnnounce)
+{
+    Announcement_CXX::RealLife__VisibleAfterAnnounce();
+}
+/* 18. If was passed "0.0.0.0" as IP, should replace it with local IP or
+ *     hostname                                                              */
+BOOST_AUTO_TEST_CASE(Announcement_CXX__IP0000__ReplaceWithLocalIP)
+{
+    Announcement_CXX::IP0000__ReplaceWithLocalIP();
+}
+/* 19. Was passed "0.0.0.0" as IP and could not manage to resolve local host
+ *     IP : do not announce and return DNS_RESOLVE_ERROR                     */
+BOOST_AUTO_TEST_CASE(
+                   Announcement_CXX__ResolveLocalIPError__Throw_DNS_RESOLVE_ERROR)
+{
+    Announcement_CXX::ResolveLocalIPError__Throw_DNS_RESOLVE_ERROR();
+}
+/* 20. lbos is OFF - return eLBOS_Off                                        */
+BOOST_AUTO_TEST_CASE(Announcement_CXX__LBOSOff__ThrowELBOS_Off)
+{
+    Announcement_CXX::LBOSOff__ThrowELBOS_Off();
+}
+/*21. Announced successfully, but LBOS return corrupted answer -
+      return SERVER_ERROR                                                    */
+BOOST_AUTO_TEST_CASE(
+                    Announcement_CXX__LBOSAnnounceCorruptOutput__ThrowServerError)
+{
+    Announcement_CXX::LBOSAnnounceCorruptOutput__ThrowServerError();
+}
+/*22. Trying to announce server and providing dead healthcheck URL - 
+      throw e_NotFound                                                  */
+BOOST_AUTO_TEST_CASE(Announcement_CXX__HealthcheckDead__ThrowE_NotFound)
+{
+    Announcement_CXX::HealthcheckDead__ThrowE_NotFound();
+}
+/*23. Trying to announce server and providing dead healthcheck URL -
+      server should not be announced                                         */
+BOOST_AUTO_TEST_CASE(Announcement_CXX__HealthcheckDead__NoAnnouncement)
+{
+    Announcement_CXX::HealthcheckDead__NoAnnouncement();
+}
+BOOST_AUTO_TEST_SUITE_END()
+
+
+///////////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_SUITE( AnnounceRegistryTest_CXX )//////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+/*  1.  All parameters good (Custom section has all parameters correct in 
+ *      config) - return eLBOS_Success
+ *  2.  Custom section has nothing in config - return eLBOS_InvalidArgs
+ *  3.  Section empty or NULL (should use default section and return 
+ *      eLBOS_Success)
+ *  4.  Service is empty or NULL - return eLBOS_InvalidArgs
+ *  5.  Version is empty or NULL - return eLBOS_InvalidArgs
+ *  6.  port is empty or NULL - return eLBOS_InvalidArgs
+ *  7.  port is out of range - return eLBOS_InvalidArgs
+ *  8.  port contains letters - return eLBOS_InvalidArgs
+ *  9.  healthcheck is empty or NULL - return eLBOS_InvalidArgs
+ *  10. healthcheck does not start with http:// or https:// - return 
+ *      eLBOS_InvalidArgs                                                    
+ *  11. Trying to announce server and providing dead healthcheck URL -
+ *      return eLBOS_NotFound                                                */
+
+/*  1.  All parameters good (Custom section has all parameters correct in 
+        config) - return eLBOS_Success                                       */
+BOOST_AUTO_TEST_CASE(AnnouncementRegistry_CXX__ParamsGood__ReturnSuccess) 
+{
+    return AnnouncementRegistry_CXX::ParamsGood__ReturnSuccess();
+}
+/*  2.  Custom section has nothing in config - return eLBOS_InvalidArgs      */
+BOOST_AUTO_TEST_CASE(
+    AnnouncementRegistry_CXX__CustomSectionNoVars__ThrowInvalidArgs)
+{
+    return AnnouncementRegistry_CXX::CustomSectionNoVars__ThrowInvalidArgs();
+}
+/*  3.  Section empty or NULL (should use default section and return 
+        eLBOS_Success)                                                       */
+BOOST_AUTO_TEST_CASE(
+AnnouncementRegistry_CXX__CustomSectionEmptyOrNullAndSectionIsOk__ThrowSuccess
+                                                                              )
+{
+    return AnnouncementRegistry_CXX::
+                       CustomSectionEmptyOrNullAndSectionIsOk__ThrowSuccess();
+}
+/*  4.  Service is empty or NULL - return eLBOS_InvalidArgs                  */
+BOOST_AUTO_TEST_CASE(
+    AnnouncementRegistry_CXX__ServiceEmptyOrNull__ThrowInvalidArgs)
+{
+    return AnnouncementRegistry_CXX::ServiceEmptyOrNull__ThrowInvalidArgs();
+}
+/*  5.  Version is empty or NULL - return eLBOS_InvalidArgs                  */
+BOOST_AUTO_TEST_CASE(
+    AnnouncementRegistry_CXX__VersionEmptyOrNull__ThrowInvalidArgs)
+{
+    return AnnouncementRegistry_CXX::VersionEmptyOrNull__ThrowInvalidArgs();
+}
+/*  6.  port is empty or NULL - return eLBOS_InvalidArgs                     */
+BOOST_AUTO_TEST_CASE(
+    AnnouncementRegistry_CXX__PortEmptyOrNull__ThrowInvalidArgs)
+{
+    return AnnouncementRegistry_CXX::PortEmptyOrNull__ThrowInvalidArgs();
+}
+/*  7.  port is out of range - return eLBOS_InvalidArgs                      */
+BOOST_AUTO_TEST_CASE(
+    AnnouncementRegistry_CXX__PortOutOfRange__ThrowInvalidArgs)
+{
+    return AnnouncementRegistry_CXX::PortOutOfRange__ThrowInvalidArgs();
+}
+/*  8.  port contains letters - return eLBOS_InvalidArgs                     */
+BOOST_AUTO_TEST_CASE(
+              AnnouncementRegistry_CXX__PortContainsLetters__ThrowInvalidArgs)
+{
+    return AnnouncementRegistry_CXX::PortContainsLetters__ThrowInvalidArgs();
+}
+/*  9.  healthcheck is empty or NULL - return eLBOS_InvalidArgs              */
+BOOST_AUTO_TEST_CASE(
+          AnnouncementRegistry_CXX__HealthchecktEmptyOrNull__ThrowInvalidArgs)
+{
+    return AnnouncementRegistry_CXX::
+        HealthchecktEmptyOrNull__ThrowInvalidArgs();
+}
+/*  10. healthcheck does not start with http:// or https:// - return         
+        eLBOS_InvalidArgs                                                    */  
+BOOST_AUTO_TEST_CASE(
+  AnnouncementRegistry_CXX__HealthcheckDoesNotStartWithHttp__ThrowInvalidArgs)
+{
+    return AnnouncementRegistry_CXX::
+                          HealthcheckDoesNotStartWithHttp__ThrowInvalidArgs();
+}      
+/*  11. Trying to announce server and providing dead healthcheck URL -
+        return eLBOS_NotFound                                                */
+BOOST_AUTO_TEST_CASE(
+    AnnouncementRegistry_CXX__HealthcheckDead__ThrowE_NotFound)
+{
+    return AnnouncementRegistry_CXX::HealthcheckDead__ThrowE_NotFound();
+}      
+BOOST_AUTO_TEST_SUITE_END()
+
+///////////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_SUITE( Deannounce_CXX )////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+/* 1. Successfully deannounced : return 1
+ * 2. Successfully deannounced : if announcement was saved in local storage, 
+ *    remove it
+ * 3. Could not connect to provided lbos : fail and return 0
+ * 4. Successfully connected to lbos, but deannounce returned error : return 0
+ * 5. Real - life test : after deannouncement server should be invisible 
+ *    to resolve                                                            
+ * 6. Another domain - do not deannounce 
+ * 7. Deannounce without IP specified - deannounce from local host 
+ * 8. lbos is OFF - return eLBOS_Off                                         */
+ /* 1. Successfully deannounced: return 1                                    */
+BOOST_AUTO_TEST_CASE(Deannouncement_CXX__Deannounced__Return1)
+{
+    /* Here we specifiy port (specify that we do not intend to use specific 
+     * port), because this function is used inside one another test 
+     * (Deannouncement_CXX__RealLife__InvisibleAfterDeannounce)    */
+    Deannouncement_CXX::Deannounced__Return1(0);
+}
+/* 2. Successfully deannounced : if announcement was saved in local storage, 
+ *    remove it                                                              */
+BOOST_AUTO_TEST_CASE(Deannouncement_CXX__Deannounced__AnnouncedServerRemoved)
+{
+    Deannouncement_CXX::Deannounced__AnnouncedServerRemoved();
+}
+/* 3. Could not connect to provided lbos : fail and return 0                 */
+BOOST_AUTO_TEST_CASE(Deannouncement_CXX__NoLBOS__Return0)
+{
+    Deannouncement_CXX::NoLBOS__Return0();
+}
+/* 4. Successfully connected to lbos, but deannounce returned error: 
+ *    return 0                                                               */
+BOOST_AUTO_TEST_CASE(Deannouncement_CXX__LBOSExistsDeannounceError__Return0)
+{
+    Deannouncement_CXX::LBOSExistsDeannounceError__Return0();
+}
+/* 5. Real - life test : after deannouncement server should be invisible 
+ *    to resolve                                                             */
+BOOST_AUTO_TEST_CASE(Deannouncement_CXX__RealLife__InvisibleAfterDeannounce)
+{
+    Deannouncement_CXX::RealLife__InvisibleAfterDeannounce();
+}
+/*6. If trying to deannounce in another domain - do not deannounce           */
+BOOST_AUTO_TEST_CASE(Deannouncement_CXX__AnotherDomain__DoNothing)
+{
+    Deannouncement_CXX::AnotherDomain__DoNothing();
+}
+/* 7. Deannounce without IP specified - deannounce from local host           */
+BOOST_AUTO_TEST_CASE(Deannouncement_CXX__NoHostProvided__LocalAddress)
+{
+    Deannouncement_CXX::NoHostProvided__LocalAddress();
+}
+/* 8. lbos is OFF - return eLBOS_Off                                         */
+BOOST_AUTO_TEST_CASE(Deannouncement_CXX__LBOSOff__ThrowELBOS_Off)
+{
+    Deannouncement_CXX::LBOSOff__ReturnELBOS_Off();
+}
+/* 9. Trying to deannounce non-existent service - throw e_NotFound           */
+BOOST_AUTO_TEST_CASE(Deannouncement_CXX__NotExists__ThrowE_NotFound)
+{
+    Deannouncement_CXX::NotExists__ThrowE_NotFound();
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+
+///////////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_SUITE( DeannounceAll_CXX )/////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_CASE(DeannounceAll_CXX__AllDeannounced__NoSavedLeft)
+{
+    DeannouncementAll_CXX::AllDeannounced__NoSavedLeft();
+}
+BOOST_AUTO_TEST_SUITE_END()
 
 ///////////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_SUITE( Stability )/////////////////////////////////////////////
@@ -1013,3 +1535,9 @@ BOOST_AUTO_TEST_CASE(MultiThreading_test1)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+/* Moved to be last because not very important and very long                 */
+BOOST_AUTO_TEST_CASE(s_LBOS_ResolveIPPort__FakeErrorInput__ShouldNotCrash)
+{
+    Resolve_via_LBOS::FakeErrorInput__ShouldNotCrash();
+}
