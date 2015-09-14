@@ -196,13 +196,13 @@ void CGff2Record::ResetId()
     m_nextId = 0;
 }
 
-void CGff2Record::TokenizeGFF(vector<CTempString>& columns, const CTempString& in_line)
+void CGff2Record::TokenizeGFF(vector<CTempStringEx>& columns, const CTempStringEx& in_line)
 {
     columns.clear();
     columns.reserve(9);
     size_t index;
     // first try to split just using tabs
-    NStr::Tokenize(in_line, "\t", columns, NStr::eMergeDelims);
+    NStr::Tokenize(in_line, "\t", columns, NStr::fSplit_MergeDelims);
     if (columns.size() == 9)
         return;
     columns.clear();
@@ -212,17 +212,17 @@ void CGff2Record::TokenizeGFF(vector<CTempString>& columns, const CTempString& i
     const CTempString digits("0123456789");
 
     size_t current = 0;
-    while (current != CTempString::npos && columns.size()<8 && 
-            (index = in_line.find_first_of(space_tab_delim, current)) != CTempString::npos) {
-        CTempString next = in_line.substr(current, index-current);
+    while (current != CTempStringEx::npos && columns.size()<8 && 
+            (index = in_line.find_first_of(space_tab_delim, current)) != CTempStringEx::npos) {
+        CTempStringEx next = in_line.substr(current, index-current);
         current = in_line.find_first_not_of(space_tab_delim, index);
         if (columns.size() == 5) {
             // reminder:
             // columns [3] and [4] are positions and must always be numeric
             // column [5] is a score (floating point or "." if absent)
-            bool isNumericCol3 = columns[3].find_first_not_of(digits) == CTempString::npos;
-            bool isNumericCol4 = columns[4].find_first_not_of(digits) == CTempString::npos;
-            bool isNumericNext = next.find_first_not_of(digits) == CTempString::npos;
+            bool isNumericCol3 = columns[3].find_first_not_of(digits) == CTempStringEx::npos;
+            bool isNumericCol4 = columns[4].find_first_not_of(digits) == CTempStringEx::npos;
+            bool isNumericNext = next.find_first_not_of(digits) == CTempStringEx::npos;
 
             if (!isNumericCol3  &&  isNumericCol4  &&  isNumericNext) {
                 // merge col2 with col3 and shift subsequent columns
@@ -238,7 +238,7 @@ void CGff2Record::TokenizeGFF(vector<CTempString>& columns, const CTempString& i
         }
         columns.push_back(next); 
     }
-    if (current != CTempString::npos)
+    if (current != CTempStringEx::npos)
         columns.push_back(in_line.substr(current));
 }
 //  ----------------------------------------------------------------------------
@@ -246,7 +246,7 @@ bool CGff2Record::AssignFromGff(
     const string& strRawInput )
 //  ----------------------------------------------------------------------------
 {
-    vector< CTempString > columns;
+    vector< CTempStringEx > columns;
     
     TokenizeGFF(columns, strRawInput);
     if ( columns.size() < 9 ) {
@@ -260,9 +260,10 @@ bool CGff2Record::AssignFromGff(
     }
     //  to do: more sanity checks
 
-    m_strId = columns[0];
-    m_strSource = columns[1];
-    m_strType = columns[2];
+    columns[0].Copy(m_strId, 0, CTempString::npos);
+    columns[1].Copy(m_strSource, 0, CTempString::npos);
+    columns[2].Copy(m_strType, 0, CTempString::npos);
+
     try {
         m_uSeqStart = NStr::StringToUInt( columns[3] ) - 1;
         m_uSeqStop = NStr::StringToUInt( columns[4] ) - 1;
@@ -291,37 +292,44 @@ bool CGff2Record::AssignFromGff(
         m_pdScore = new double( NStr::StringToDouble( columns[5] ) );
     }
 
-    char strand = columns[6][0];
-    switch (strand) {
+    enum ENa_strand strand;
+    switch (columns[6][0]) {
     default: 
-        m_peStrand = new ENa_strand(objects::eNa_strand_unknown);
+        strand = objects::eNa_strand_unknown;
         break;
     case '+':
-        m_peStrand = new ENa_strand(objects::eNa_strand_plus);
+        strand = objects::eNa_strand_plus;
         break;
     case '-':
-        m_peStrand = new ENa_strand(objects::eNa_strand_minus);
+        strand = objects::eNa_strand_minus;
         break;
     case '.':
-        m_peStrand = new ENa_strand(objects::eNa_strand_both);
+        strand = objects::eNa_strand_both;
         break;
     }
+    m_peStrand = new ENa_strand(strand);
+
+
+    enum CCdregion::EFrame frame = CCdregion::eFrame_not_set;
 
     if ( columns[7] == "0" ) {
-        m_pePhase = new TFrame( CCdregion::eFrame_one );
+        frame = CCdregion::eFrame_one;
     }
     else
     if ( columns[7] == "1" ) {
-        m_pePhase = new TFrame( CCdregion::eFrame_two );
+        frame = CCdregion::eFrame_two;
     }
     else
     if ( columns[7] == "2" ) {
-        m_pePhase = new TFrame( CCdregion::eFrame_three );
+        frame = CCdregion::eFrame_three;
     }
 
-    m_strAttributes = columns[8];
+    if (frame != CCdregion::eFrame_not_set)
+        m_pePhase = new TFrame(frame);
+
+    columns[8].Copy(m_strAttributes, 0, CTempString::npos);
     
-    return x_AssignAttributesFromGff( m_strAttributes );
+    return x_AssignAttributesFromGff(columns[8]);
 }
 
 //  ----------------------------------------------------------------------------
@@ -345,11 +353,12 @@ bool CGff2Record::GetAttribute(
     list<string>& values ) const
 //  ----------------------------------------------------------------------------
 {
-    string strValues;
-    if (!GetAttribute(strKey, strValues)) {
+    values.clear();
+    TAttrCit it = m_Attributes.find(strKey);
+    if (it == m_Attributes.end()) {
         return false;
     }
-    NStr::Split(strValues, ",", values);
+    NStr::Split(it->second, ",", values);
     return !values.empty();
 }
 
@@ -370,11 +379,11 @@ CRef<CSeq_loc> CGff2Record::GetSeqLoc(
     pLocation->SetInt().SetId(*GetSeqId(flags));
     pLocation->SetInt().SetFrom(SeqStart());
     pLocation->SetInt().SetTo(SeqStop());
-    if (IsSetStrand()) {
+        if (IsSetStrand()) {
         pLocation->SetInt().SetStrand(Strand());
-    }
+        }
     return pLocation;
-}
+    }
 
 //  ----------------------------------------------------------------------------
 string CGff2Record::xNormalizedAttributeKey(
@@ -402,28 +411,108 @@ string CGff2Record::xNormalizedAttributeValue(
 
 
 //  ----------------------------------------------------------------------------
+CTempString x_GetNextAttribute(CTempString& input)
+{
+    CTempString result;
+    bool inQuotes = false;
+    size_t i = 0;
+    for (; i < input.length(); i++)
+    {
+        if (inQuotes) {
+            if (input[i] == '\"') {
+                inQuotes = false;
+            }
+        }
+        else { // not in quotes
+            if (input[i] == ';') {
+                result = NStr::TruncateSpaces_Unsafe(input.substr(0, i));
+                if (!result.empty())
+                {
+                    input = input.substr(i+1);
+                    return result;
+                }
+            }
+            else {
+                if (input[i] == '\"') {
+                    inQuotes = true;
+                }
+            }
+        }
+    }
+    result = NStr::TruncateSpaces_Unsafe(input);
+    input.clear();
+    return result;
+}
+
+bool x_GetNextAttribute(CTempString& input, CTempString& key, CTempString& value)
+{
+    size_t semicolon = CTempString::npos;
+    size_t space = CTempString::npos;
+    size_t equal = CTempString::npos;
+
+    key.clear();
+    value.clear();
+
+    bool inQuotes = false;
+    size_t i = 0;
+    for (; i < input.length(); i++)
+    {
+        if (inQuotes) {
+            if (input[i] == '\"') {
+                inQuotes = false;
+            }
+        }
+        else { // not in quotes
+            switch (input[i])
+            {
+            case ';':
+                semicolon = i;
+                break;
+            case ' ':
+                if (space == CTempString::npos && equal == CTempString::npos)
+                    space = i;
+                continue;
+            case '"':
+                inQuotes = true;
+                continue;
+            case '=':
+                if (equal == CTempString::npos)
+                    equal = i;
+                continue;
+            default:
+                continue;
+            }
+            break;
+        }
+    }
+    
+    if (semicolon == CTempString::npos)
+        semicolon = input.length();
+
+    if (equal == CTempString::npos)
+        equal = min(space, semicolon);
+
+    key = NStr::TruncateSpaces_Unsafe(input.substr(0, equal));
+    value = NStr::TruncateSpaces_Unsafe(input.substr(equal + 1, semicolon - equal - 1));
+
+    input = NStr::TruncateSpaces_Unsafe(input.substr(semicolon+1));
+
+    return !key.empty();
+}
+
 bool CGff2Record::x_AssignAttributesFromGff(
     const string& strRawAttributes )
 //  ----------------------------------------------------------------------------
 {
     m_Attributes.clear();
-    vector< string > attributes;
-    x_SplitGffAttributes(strRawAttributes, attributes);
-	for ( size_t u=0; u < attributes.size(); ++u ) {
-        string strKey;
-        string strValue;
-        if ( ! NStr::SplitInTwo( attributes[u], "=", strKey, strValue ) ) {
-            if ( ! NStr::SplitInTwo( attributes[u], " ", strKey, strValue ) ) {
-                m_Attributes[attributes[u]] = "";
-                continue;
-            }
-        }
-		if ( strKey.empty() && strValue.empty() ) {
-            // Probably due to trailing "; ". Sequence Ontology generates such
-            // things. 
-            continue;
-        }
-        m_Attributes[ strKey ] = strValue;        
+    CTempString input(strRawAttributes);
+    CTempString next;
+    CTempString strKey;
+    CTempString strValue;
+
+    while (!input.empty() && x_GetNextAttribute(input, strKey, strValue))
+    {
+        m_Attributes[strKey] = strValue;
     }
     return true;
 }
@@ -506,7 +595,7 @@ bool CGff2Record::UpdateFeature(
             pOld->Assign(pFeature->GetLocation());
             pFeature->SetLocation().SetMix().AddSeqLoc(*pOld);
         }
-    }        
+        }
     return true;
 }
 

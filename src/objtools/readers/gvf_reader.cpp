@@ -254,7 +254,7 @@ CRef<CSeq_annot> CGvfReader::x_GetAnnotById(
         }
     }
     CRef<CSeq_annot> pNewAnnot( new CSeq_annot );
-    annots.push_back( pNewAnnot );
+    annots.insert(annots.begin(), pNewAnnot);
 
     CRef< CAnnot_id > pAnnotId( new CAnnot_id );
     pAnnotId->SetLocal().SetStr( strId );

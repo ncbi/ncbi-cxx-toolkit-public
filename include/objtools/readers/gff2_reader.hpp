@@ -64,10 +64,11 @@ public:
         fRetainLocusIds = 0x4000,
     } TFlags;
 
-    typedef map< string, CRef< CSeq_feat > > IdToFeatureMap;
-   
+    typedef map<string, CRef<CSeq_feat> > IdToFeatureMap;
+
 public:
-    typedef vector< CRef< CSeq_annot > > TAnnots;
+    typedef list< CRef< CSeq_annot > > TAnnotList;
+    typedef TAnnotList TAnnots;
     typedef TAnnots::iterator TAnnotIt;
     typedef TAnnots::const_iterator TAnnotCit;
 
@@ -101,13 +102,13 @@ public:
                 
     virtual void
     ReadSeqAnnots(
-        TAnnots&,
+        TAnnotList&,
         CNcbiIstream&,
         ILineErrorListener* =0 );
                         
     virtual void
     ReadSeqAnnots(
-        TAnnots&,
+        TAnnotList&,
         ILineReader&,
         ILineErrorListener* =0 );
 
@@ -151,7 +152,7 @@ public:
 
     virtual bool x_ParseAlignmentGff(
         const string&,
-        TAnnots& );
+        TAnnots&);
 
     virtual bool x_InitAnnot(
         const CGff2Record&,
@@ -291,9 +292,8 @@ protected:
         CSeq_feat& feat, 
         const SRecord& );
 
-    static bool s_GetAnnotId(
-        const CSeq_annot&,
-        string& );
+    static const string* s_GetAnnotId(
+        const CSeq_annot&);
 
     void xSetAncestryLine(
         CSeq_feat&,

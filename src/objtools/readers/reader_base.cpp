@@ -677,11 +677,13 @@ bool CReaderBase::xGetLine(
     string& line)
 //  ----------------------------------------------------------------------------
 {
+    CTempString temp;
     while (!lr.AtEOF()) {
-        line = *++lr;
+        temp = *++lr;
         ++m_uLineNumber;
-        NStr::TruncateSpacesInPlace(line);
-        if (!xIsCommentLine(line)) {
+        temp = NStr::TruncateSpaces_Unsafe(temp);
+        if (!xIsCommentLine(temp)) {
+            line = temp;
             return true;
         }
     }

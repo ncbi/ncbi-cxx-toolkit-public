@@ -1001,14 +1001,16 @@ void CMultiReader::xDumpErrors(CNcbiOstream& ostr)
 
 CRef<CSeq_entry> CMultiReader::xReadGFF3(CNcbiIstream& instream)
 {
-    CRef<CSeq_entry> entry(new CSeq_entry);
-    typedef vector<CRef<CSeq_annot> > ANNOTS;
-    ANNOTS annots;
     int flags = 0;
     flags |= CGff3Reader::fAllIdsAsLocal;
+    flags |= CGff3Reader::fNewCode;
+    flags |= CGff3Reader::fGenbankMode;
+
     CGff3Reader reader(flags, m_AnnotName, m_AnnotTitle);
-    reader.ReadSeqAnnots(annots, instream, m_context.m_logger);
-    entry->SetSeq().SetAnnot().insert(entry->SetSeq().SetAnnot().end(), annots.begin(), annots.end());
+    CStreamLineReader lr(instream);
+    CRef<CSeq_entry> entry(new CSeq_entry);
+    entry->SetSeq();
+    reader.ReadSeqAnnotsNew(entry->SetAnnot(), lr, m_context.m_logger);
 
     return entry;
 }
@@ -1064,7 +1066,7 @@ bool CMultiReader::LoadAnnot(objects::CSeq_entry& obj, CNcbiIstream& in)
         return true;
     }
     return false;
-}
+    }
 
 CRef<CSeq_entry> CMultiReader::xReadBed(CNcbiIstream& instream)
 {

@@ -201,7 +201,7 @@ CGtfReader::~CGtfReader()
 //  ---------------------------------------------------------------------------                       
 void
 CGtfReader::ReadSeqAnnots(
-    vector< CRef<CSeq_annot> >& annots,
+    TAnnots& annots,
     ILineReader& lr,
     ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
@@ -242,7 +242,7 @@ CGtfReader::ReadSeqAnnots(
 //  --------------------------------------------------------------------------- 
 void
 CGtfReader::ReadSeqAnnots(
-    vector< CRef<CSeq_annot> >& annots,
+    TAnnots& annots,
     CNcbiIstream& istr,
     ILineErrorListener* pMessageListener )
 //  ---------------------------------------------------------------------------

@@ -62,7 +62,7 @@ public:
     //
     // Accessors:
     //        
-    string Id() const { 
+    const string& Id() const { 
         return m_strId; 
     };
     size_t SeqStart() const { 
@@ -71,10 +71,10 @@ public:
     size_t SeqStop() const { 
         return m_uSeqStop; 
     };
-    string Source() const { 
+    const string& Source() const {
         return m_strSource; 
     };
-    string Type() const { 
+    const string& Type() const {
         return m_strType; 
     };
     double Score() const { 
@@ -86,7 +86,7 @@ public:
     TFrame Phase() const {
         return IsSetPhase() ? *m_pePhase : CCdregion::eFrame_not_set; 
     };
-    string AttributesLiteral() const { 
+    const string& AttributesLiteral() const { 
         return m_strAttributes; 
     };
 
@@ -130,7 +130,7 @@ public:
         int,
         CRef<CSeq_feat> ) const;
 
-    static void TokenizeGFF(vector<CTempString>& columns, const CTempString& line);
+    static void TokenizeGFF(vector<CTempStringEx>& columns, const CTempStringEx& line);
 protected:
     virtual bool x_AssignAttributesFromGff(
         const string& );

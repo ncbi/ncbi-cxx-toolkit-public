@@ -107,23 +107,21 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
-bool CGff2Reader::s_GetAnnotId(
-    const CSeq_annot& annot,
-    string& strId )
+const string* CGff2Reader::s_GetAnnotId(
+    const CSeq_annot& annot)
 //  ----------------------------------------------------------------------------
 {
     if ( ! annot.CanGetId() || annot.GetId().size() != 1 ) {
         // internal error
-        return false;
+        return 0;
     }
     
     CRef< CAnnot_id > pId = *( annot.GetId().begin() );
     if ( ! pId->IsLocal() ) {
         // internal error
-        return false;
+        return 0;
     }
-    strId = pId->GetLocal().GetStr();
-    return true;
+    return &pId->GetLocal().GetStr();
 }
 
 //  ----------------------------------------------------------------------------
@@ -146,7 +144,7 @@ CGff2Reader::~CGff2Reader()
 //  --------------------------------------------------------------------------- 
 void
 CGff2Reader::ReadSeqAnnots(
-    vector< CRef<CSeq_annot> >& annots,
+    TAnnotList& annots,
     CNcbiIstream& istr,
     ILineErrorListener* pMessageListener )
 //  ---------------------------------------------------------------------------
@@ -159,7 +157,7 @@ CGff2Reader::ReadSeqAnnots(
 //  ---------------------------------------------------------------------------                       
 void
 CGff2Reader::ReadSeqAnnots(
-    vector< CRef<CSeq_annot> >& annots,
+    TAnnotList& annots,
     ILineReader& lr,
     ILineErrorListener* pMessageListener )
 //  ----------------------------------------------------------------------------
@@ -167,19 +165,21 @@ CGff2Reader::ReadSeqAnnots(
     xProgressInit(lr);
 
     if ( m_iFlags & fNewCode ) {
-        return ReadSeqAnnotsNew( annots, lr, pMessageListener );
+        ReadSeqAnnotsNew(annots, lr, pMessageListener);
     }
-    CRef< CSeq_entry > entry = ReadSeqEntry( lr, pMessageListener );
-    CTypeIterator<CSeq_annot> annot_iter( *entry );
-    for ( ;  annot_iter;  ++annot_iter) {
-        annots.push_back( CRef<CSeq_annot>( annot_iter.operator->() ) );
+    else {
+        CRef< CSeq_entry > entry = ReadSeqEntry(lr, pMessageListener);
+        CTypeIterator<CSeq_annot> annot_iter( *entry );
+        for (; annot_iter; ++annot_iter) {
+            annots.push_back(CRef<CSeq_annot>(annot_iter.operator->()));
+        }
     }
 }
 
 //  ---------------------------------------------------------------------------                       
 void
 CGff2Reader::ReadSeqAnnotsNew(
-    vector< CRef<CSeq_annot> >& annots,
+    TAnnots& annots,
     ILineReader& lr,
     ILineErrorListener* pEC )
 //  ----------------------------------------------------------------------------
@@ -218,8 +218,7 @@ CGff2Reader::ReadSeqAnnotsNew(
             ProcessError(err, pEC);
         }
     }
-    typedef vector< CRef<CSeq_annot> >::iterator ANNOTIT;
-    for (ANNOTIT it = annots.begin(); it != annots.end(); ++it) {
+    for (TAnnots::iterator it = annots.begin(); it != annots.end(); ++it) {
         try {
             xAnnotPostProcess(*it);
         }
@@ -239,13 +238,13 @@ CGff2Reader::ReadSeqEntry(
 { 
     xProgressInit(lr);
 
-    vector<CRef<CSeq_annot> > annots;
+    TAnnots annots;
     ReadSeqAnnotsNew( annots, lr, pMessageListener );
     
     CRef<CSeq_entry> pSeqEntry(new CSeq_entry());
     pSeqEntry->SetSet();
 
-    for (vector<CRef<CSeq_annot> >::iterator it = annots.begin(); 
+    for (TAnnots::iterator it = annots.begin();
             it != annots.end(); ++it) {
         CRef<CBioseq> pSeq( new CBioseq() );
         pSeq->SetAnnot().push_back(*it);
@@ -372,11 +371,11 @@ bool CGff2Reader::x_ParseFeatureGff(
     TAnnotIt it = annots.begin();
     for ( /*NOOP*/; it != annots.end(); ++it ) {
         if (!(**it).IsFtable()) continue;
-        string strAnnotId;
-        if ( ! s_GetAnnotId( **it, strAnnotId ) ) {
+        const string* strAnnotId = s_GetAnnotId(**it);
+        if (strAnnotId == 0) {
             return false;
         }
-        if ( pRecord->Id() == strAnnotId ) {
+        if ( pRecord->Id() == *strAnnotId ) {
             break;
         }
     }
@@ -400,9 +399,9 @@ bool CGff2Reader::x_ParseFeatureGff(
         if ( ! x_InitAnnot( *pRecord, pAnnot, pEC ) ) {
             return false;
         }
-        annots.push_back( pAnnot );      
+        annots.insert(annots.begin(), pAnnot );      
     }
- 
+
     return true; 
 };
 
@@ -427,11 +426,11 @@ bool CGff2Reader::x_ParseAlignmentGff(
     TAnnotIt it = annots.begin();
     for ( /*NOOP*/; it != annots.end(); ++it ) {
         if (!(**it).IsAlign()) continue;
-        string strAnnotId;
-        if ( ! s_GetAnnotId( **it, strAnnotId ) ) {
+        const string* strAnnotId = s_GetAnnotId(**it);
+        if (!strAnnotId) {
             return false;
         }
-        if ( pRecord->Id() == strAnnotId ) {
+        if ( pRecord->Id() == *strAnnotId ) {
             break;
         }
     }
@@ -455,9 +454,9 @@ bool CGff2Reader::x_ParseAlignmentGff(
         if ( ! x_InitAnnot( *pRecord, pAnnot ) ) {
             return false;
         }
-        annots.push_back( pAnnot );      
+        annots.insert(annots.begin(), pAnnot );      
     }
- 
+
     return true; 
 };
 
@@ -1349,7 +1348,7 @@ bool CGff2Reader::IsAlignmentData(
     const string& line)
 //  ============================================================================
 {
-    vector<CTempString> columns;
+    vector<CTempStringEx> columns;
     CGff2Record::TokenizeGFF(columns, line);
     if (columns.size() < 9) {
         return false;

@@ -360,16 +360,16 @@ bool CFormatGuessEx::x_TryGtf()
     CGtfReader Reader(CGtfReader::fNewCode);
     CStreamLineReader LineReader(m_LocalBuffer);
 		
-    vector<CRef<CSeq_annot> > LocalAnnots;
+    CGtfReader::TAnnots LocalAnnots;
     try {
         Reader.ReadSeqAnnotsNew(LocalAnnots, LineReader);
     } catch(CException&) {
     } catch(...) {
     }
 
-    ITERATE(vector<CRef<CSeq_annot> >, AnnotIter, LocalAnnots) {
-        if(!AnnotIter->IsNull() && (*AnnotIter)->CanGetData() && 
-           (*AnnotIter)->GetData().IsFtable())
+    ITERATE(CGtfReader::TAnnots, AnnotIter, LocalAnnots) {
+        if(!AnnotIter->IsNull() && (**AnnotIter).CanGetData() && 
+            (**AnnotIter).GetData().IsFtable())
             GtfCount++;
     }
 
@@ -386,16 +386,16 @@ bool CFormatGuessEx::x_TryGff3()
     CGff3Reader Reader(CGff3Reader::fNewCode);
     CStreamLineReader LineReader(m_LocalBuffer);
 		
-    vector<CRef<CSeq_annot> > LocalAnnots;
+    CGff3Reader::TAnnots LocalAnnots;
     try {
         Reader.ReadSeqAnnotsNew(LocalAnnots, LineReader);
     } catch(CException&) {
     } catch(...) {
     }
 
-    ITERATE(vector<CRef<CSeq_annot> >, AnnotIter, LocalAnnots) {
-        if(!AnnotIter->IsNull() && (*AnnotIter)->CanGetData() && 
-           (*AnnotIter)->GetData().IsFtable())
+    ITERATE(CGff3Reader::TAnnots, AnnotIter, LocalAnnots) {
+        if (!AnnotIter->IsNull() && (**AnnotIter).CanGetData() &&
+            (**AnnotIter).GetData().IsFtable())
             Gff3Count++;
     }
 
@@ -412,16 +412,16 @@ bool CFormatGuessEx::x_TryGff2()
     CGff2Reader Reader(CGff2Reader::fNewCode);
     CStreamLineReader LineReader(m_LocalBuffer);
 		
-    vector<CRef<CSeq_annot> > LocalAnnots;
+    CGff2Reader::TAnnots LocalAnnots;
     try {
         Reader.ReadSeqAnnotsNew(LocalAnnots, LineReader);
     } catch(CException&) {
     } catch(...) {
     }
 
-    ITERATE(vector<CRef<CSeq_annot> >, AnnotIter, LocalAnnots) {
-        if(!AnnotIter->IsNull() && (*AnnotIter)->CanGetData() && 
-           (*AnnotIter)->GetData().IsFtable())
+    ITERATE(CGff2Reader::TAnnots, AnnotIter, LocalAnnots) {
+        if (!AnnotIter->IsNull() && (**AnnotIter).CanGetData() &&
+            (**AnnotIter).IsFtable())
             Gff2Count++;
     }
 
