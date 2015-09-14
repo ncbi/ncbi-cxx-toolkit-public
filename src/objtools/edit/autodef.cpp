@@ -293,7 +293,7 @@ string CAutoDef::GetOneSourceDescription(CBioseq_Handle bh)
 }
 
 
-bool CAutoDef::x_AddIntergenicSpacerFeatures(CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, CAutoDefFeatureClause_Base &main_clause, bool suppress_locus_tags)
+bool CAutoDef::x_AddIntergenicSpacerFeatures(CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, CAutoDefFeatureClause_Base &main_clause)
 {
     CSeqFeatData::ESubtype subtype = cf.GetData().GetSubtype();
     if ((subtype != CSeqFeatData::eSubtype_misc_feature && subtype != CSeqFeatData::eSubtype_otherRNA)
@@ -321,7 +321,8 @@ bool CAutoDef::x_AddIntergenicSpacerFeatures(CBioseq_Handle bh, const CSeq_feat&
         is_region = true;
     }
     
-    vector<CAutoDefFeatureClause *> clause_list = GetIntergenicSpacerClauseList (comment, bh, cf, mapped_loc, suppress_locus_tags);
+    vector<CAutoDefFeatureClause *> clause_list = 
+        GetIntergenicSpacerClauseList (comment, bh, cf, mapped_loc);
 
     if (clause_list.size() > 0) {
         if (is_region) {
@@ -362,7 +363,7 @@ typedef enum {
 } MiscWord;
 
 
-bool CAutoDef::x_AddMiscRNAFeatures(CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, CAutoDefFeatureClause_Base &main_clause, bool suppress_locus_tags)
+bool CAutoDef::x_AddMiscRNAFeatures(CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, CAutoDefFeatureClause_Base &main_clause)
 {
     string comment = "";
     string::size_type pos;
@@ -473,7 +474,6 @@ bool CAutoDef::x_AddMiscRNAFeatures(CBioseq_Handle bh, const CSeq_feat& cf, cons
                 NStr::TruncateSpacesInPlace(description);
                 new_clause->SetDescription(description);
         
-                new_clause->SetSuppressLocusTag(suppress_locus_tags);
                 clause_list.push_back (new_clause);
             }
         }
@@ -490,7 +490,7 @@ bool CAutoDef::x_AddMiscRNAFeatures(CBioseq_Handle bh, const CSeq_feat& cf, cons
 }
 
 
-bool CAutoDef::x_AddtRNAAndOther(CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, CAutoDefFeatureClause_Base &main_clause, bool suppress_locus_tags)
+bool CAutoDef::x_AddtRNAAndOther(CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, CAutoDefFeatureClause_Base &main_clause)
 {
     if (cf.GetData().GetSubtype() != CSeqFeatData::eSubtype_misc_feature ||
         !cf.IsSetComment()) {
@@ -601,6 +601,11 @@ void CAutoDef::x_RemoveOptionalFeatures(CAutoDefFeatureClause_Base *main_clause,
     // only keep bioseq precursor RNAs if lonely
     if (!main_clause->IsBioseqPrecursorRNA()) {
         main_clause->RemoveBioseqPrecursorRNAs();
+    }
+
+    // keep uORFs if lonely or requested
+    if (!m_Options.GetKeepuORFs() && main_clause->GetNumSubclauses() > 1) {
+        main_clause->RemoveuORFs();
     }
     
     // delete subclauses at end, so that loneliness calculations will be correct
@@ -739,7 +744,7 @@ bool s_HasPromoter(CBioseq_Handle bh)
 
 string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
 {
-    CAutoDefFeatureClause_Base main_clause(m_Options.GetSuppressLocusTags());
+    CAutoDefFeatureClause_Base main_clause;
     CAutoDefFeatureClause *new_clause;
     CRange<TSeqPos> range;
     CBioseq_Handle master_bh = bh;
@@ -786,7 +791,9 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
             && !x_IsFeatureSuppressed(cf.GetData().GetSubtype())) {
 
 			// some clauses can be created differently just knowing the subtype
-		    if (subtype == CSeqFeatData::eSubtype_ncRNA) {
+            if (subtype == CSeqFeatData::eSubtype_gene) {
+                new_clause = new CAutoDefGeneClause(bh, cf, mapped_loc, m_Options.GetSuppressLocusTags());
+            } else if (subtype == CSeqFeatData::eSubtype_ncRNA) {
 				new_clause = new CAutoDefNcRNAClause(bh, cf, mapped_loc, m_Options.GetUseNcRNAComment());
             } else if (subtype == CSeqFeatData::eSubtype_mobile_element) {
                 new_clause = new CAutoDefMobileElementClause(bh, cf, mapped_loc);
@@ -795,13 +802,13 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
             } else if (subtype == CSeqFeatData::eSubtype_otherRNA
 						   || subtype == CSeqFeatData::eSubtype_misc_RNA
 						   || subtype == CSeqFeatData::eSubtype_rRNA) {
-                if (!x_AddMiscRNAFeatures(bh, cf, mapped_loc, main_clause, m_Options.GetSuppressLocusTags())) {
+                if (!x_AddMiscRNAFeatures(bh, cf, mapped_loc, main_clause)) {
                     new_clause = new CAutoDefFeatureClause(bh, cf, mapped_loc);
                 }
             } else if (CAutoDefFeatureClause::IsPromoter(cf)) {
                 new_clause = new CAutoDefPromoterClause(bh, cf, mapped_loc);
             } else if (CAutoDefFeatureClause::IsIntergenicSpacer(cf)) {
-                x_AddIntergenicSpacerFeatures(bh, cf, mapped_loc, main_clause, m_Options.GetSuppressLocusTags());
+                x_AddIntergenicSpacerFeatures(bh, cf, mapped_loc, main_clause);
             } else if (CAutoDefFeatureClause::IsGeneCluster(cf)) {
                 new_clause = new CAutoDefGeneClusterClause(bh, cf, mapped_loc);
             } else if (CAutoDefFeatureClause::IsControlRegion(cf)) {
@@ -809,8 +816,8 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
 			} else {
 				// misc-features may require more parsing
                 if (subtype == CSeqFeatData::eSubtype_misc_feature) {
-                    if (!x_AddMiscRNAFeatures(bh, cf, mapped_loc, main_clause, m_Options.GetSuppressLocusTags()) &&
-                        !x_AddtRNAAndOther(bh, cf, mapped_loc, main_clause, m_Options.GetSuppressLocusTags())) {
+                    if (!x_AddMiscRNAFeatures(bh, cf, mapped_loc, main_clause) &&
+                        !x_AddtRNAAndOther(bh, cf, mapped_loc, main_clause)) {
                         new_clause = new CAutoDefFeatureClause(bh, cf, mapped_loc);
 					    if (m_Options.GetMiscFeatRule() == CAutoDefOptions::eDelete
                             || (m_Options.GetMiscFeatRule() == CAutoDefOptions::eNoncodingProductFeat && !new_clause->IsNoncodingProductFeat())) {
@@ -830,9 +837,8 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
 			}
         
             if (new_clause != NULL && new_clause->IsRecognizedFeature()) {
-                new_clause->SetSuppressLocusTag(m_Options.GetSuppressLocusTags());
                 if (new_clause->GetMainFeatureSubtype() == CSeqFeatData::eSubtype_exon) {
-                    new_clause->Label();
+                    new_clause->Label(m_Options.GetSuppressAlleles());
                 }
                 main_clause.AddSubclause(new_clause);
             } else if (new_clause != NULL) {            
@@ -847,13 +853,13 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
     main_clause.RemoveDeletedSubclauses();
     
     // Add mRNAs to other clauses
-    main_clause.GroupmRNAs();
+    main_clause.GroupmRNAs(m_Options.GetSuppressAlleles());
     main_clause.RemoveDeletedSubclauses();
    
     // Add genes to clauses that need them for descriptions/products
-    main_clause.GroupGenes();
+    main_clause.GroupGenes(m_Options.GetSuppressAlleles());
         
-    main_clause.GroupSegmentedCDSs();
+    main_clause.GroupSegmentedCDSs(m_Options.GetSuppressAlleles());
     main_clause.RemoveDeletedSubclauses();
         
     // Group all features
@@ -864,12 +870,12 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
     main_clause.ExpandExonLists();
     
     // assign product names for features associated with genes that have products
-    main_clause.AssignGeneProductNames(&main_clause);
+    main_clause.AssignGeneProductNames(&main_clause, m_Options.GetSuppressAlleles());
     
     // reverse the order of clauses for minus-strand CDSfeatures
     main_clause.ReverseCDSClauseLists();
     
-    main_clause.Label();
+    main_clause.Label(m_Options.GetSuppressAlleles());
     main_clause.CountUnknownGenes();
     main_clause.RemoveDeletedSubclauses();
     
@@ -893,22 +899,22 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
     // information
     main_clause.RemoveNonSegmentClauses(range);
     
-    main_clause.Label();
+    main_clause.Label(m_Options.GetSuppressAlleles());
 
     if (!m_Options.GetSuppressFeatureAltSplice()) {
-        main_clause.FindAltSplices();
+        main_clause.FindAltSplices(m_Options.GetSuppressAlleles());
         main_clause.RemoveDeletedSubclauses();
     } 
     
-    main_clause.ConsolidateRepeatedClauses();
+    main_clause.ConsolidateRepeatedClauses(m_Options.GetSuppressAlleles());
     main_clause.RemoveDeletedSubclauses();
     
     main_clause.GroupConsecutiveExons(bh);
     main_clause.RemoveDeletedSubclauses();
     
-    main_clause.Label();
+    main_clause.Label(m_Options.GetSuppressAlleles());
 
-    return main_clause.ListClauses(true, false);
+    return main_clause.ListClauses(true, false, m_Options.GetSuppressAlleles());
 }
 
 

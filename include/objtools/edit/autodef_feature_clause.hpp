@@ -46,7 +46,7 @@ public:
     CAutoDefFeatureClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc);
     ~CAutoDefFeatureClause();
     
-    virtual void Label();
+    virtual void Label(bool suppress_allele);
     virtual CSeqFeatData::ESubtype  GetMainFeatureSubtype() const;
     
     virtual bool IsRecognizedFeature();
@@ -76,7 +76,7 @@ public:
 
     // functions for grouping
     virtual bool AddmRNA (CAutoDefFeatureClause_Base *mRNAClause);
-    virtual bool AddGene (CAutoDefFeatureClause_Base *gene_clause);
+    virtual bool AddGene (CAutoDefFeatureClause_Base *gene_clause, bool suppress_allele);
 
     virtual bool OkToGroupUnderByType(CAutoDefFeatureClause_Base *parent_clause);
     virtual bool OkToGroupUnderByLocation(CAutoDefFeatureClause_Base *parent_clause, bool gene_cluster_opp_strand);
@@ -90,8 +90,8 @@ public:
 protected:
     CAutoDefFeatureClause();
 
-    bool x_GetGenericInterval (string &interval);
-    bool x_IsPseudo();
+    bool x_GetGenericInterval (string &interval, bool suppress_allele);
+    virtual bool x_IsPseudo();
    
     const CSeq_feat& m_MainFeat;
     CRef<CSeq_loc> m_ClauseLocation;
@@ -108,12 +108,22 @@ protected:
     
     bool x_GetNoncodingProductFeatProduct (string &product);
     bool x_FindNoncodingFeatureKeywordProduct (string comment, string keyword, string &product_name);
-    string x_GetGeneName(const CGene_ref& gref);
-    bool x_MatchGene(const CGene_ref& gref);
+    string x_GetGeneName(const CGene_ref& gref, bool suppress_locus_tag) const;
     bool x_GetExonDescription(string &description);
        
 };
 
+
+class NCBI_XOBJEDIT_EXPORT CAutoDefGeneClause : public CAutoDefFeatureClause
+{
+public:
+    CAutoDefGeneClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc, bool suppress_locus_tag);
+    ~CAutoDefGeneClause() {}
+
+protected:
+    virtual bool x_IsPseudo();
+    virtual bool x_GetProductName(string &product_name);
+};
 
 class NCBI_XOBJEDIT_EXPORT CAutoDefNcRNAClause : public CAutoDefFeatureClause
 {
@@ -133,7 +143,7 @@ public:
     CAutoDefMobileElementClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc);
     ~CAutoDefMobileElementClause();
   
-    virtual void Label();  
+    virtual void Label(bool suppress_allele);
     virtual bool IsMobileElement() { return true; }
 };
 
@@ -144,7 +154,7 @@ public:
     CAutoDefSatelliteClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc);
     ~CAutoDefSatelliteClause();
   
-    virtual void Label();  
+    virtual void Label(bool suppress_allele);
     virtual bool IsSatelliteClause() { return true; }
 };
 
@@ -155,7 +165,7 @@ public:
     CAutoDefPromoterClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc);
     ~CAutoDefPromoterClause();
   
-    virtual void Label();  
+    virtual void Label(bool suppress_allele);
     virtual bool IsPromoter() { return true; }
 };
 
@@ -167,10 +177,10 @@ public:
     CAutoDefIntergenicSpacerClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc, string comment);
     ~CAutoDefIntergenicSpacerClause();
   
-    virtual void Label();
+    virtual void Label(bool suppress_allele);
     virtual bool IsIntergenicSpacer() { return true; }
 protected:
-    void InitWithString (string comment);
+    void InitWithString (string comment, bool suppress_allele);
 };
 
 class NCBI_XOBJEDIT_EXPORT CAutoDefParsedClause : public CAutoDefFeatureClause
@@ -213,7 +223,7 @@ public:
     CAutoDefGeneClusterClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc);
     ~CAutoDefGeneClusterClause();
   
-    virtual void Label();
+    virtual void Label(bool suppress_allele);
     virtual bool IsGeneCluster() { return true; }
 };
 
@@ -224,7 +234,7 @@ public:
     CAutoDefMiscCommentClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc);
     ~CAutoDefMiscCommentClause();
   
-    virtual void Label();
+    virtual void Label(bool suppress_allele);
     virtual bool IsRecognizedFeature() { return true; }
 };
 
@@ -235,7 +245,7 @@ public:
     CAutoDefParsedRegionClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc, string product);
     ~CAutoDefParsedRegionClause();
 
-    virtual void Label();
+    virtual void Label(bool suppress_allele);
     virtual bool IsRecognizedFeature() { return true; }
 };
 
@@ -246,7 +256,7 @@ public:
     CAutoDefFakePromoterClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc);
     ~CAutoDefFakePromoterClause();
 
-    virtual void Label();
+    virtual void Label(bool suppress_allele);
     virtual bool IsPromoter() { return true; }
     virtual CSeqFeatData::ESubtype  GetMainFeatureSubtype() const { return CSeqFeatData::eSubtype_promoter; };
     
@@ -267,7 +277,7 @@ public:
 };
 
 
-vector<CAutoDefFeatureClause *> GetIntergenicSpacerClauseList (string comment, CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, bool suppress_locus_tags);
+vector<CAutoDefFeatureClause *> GetIntergenicSpacerClauseList (string comment, CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc);
 CAutoDefParsedtRNAClause *s_tRNAClauseFromNote(CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, string comment, bool is_first, bool is_last);
 
 

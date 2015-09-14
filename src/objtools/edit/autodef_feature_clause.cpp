@@ -70,37 +70,20 @@ CAutoDefFeatureClause::CAutoDefFeatureClause(CBioseq_Handle bh, const CSeq_feat&
     m_DescriptionChosen = false;
     m_ProductName = "";
     m_ProductNameChosen = false;
-    
+
     CSeqFeatData::ESubtype subtype = m_MainFeat.GetData().GetSubtype();
-    
-    if (subtype == CSeqFeatData::eSubtype_gene) {
-        m_GeneName = x_GetGeneName(m_MainFeat.GetData().GetGene());
-        if (m_MainFeat.GetData().GetGene().CanGetAllele()) {
-            m_AlleleName = m_MainFeat.GetData().GetGene().GetAllele();
-            if (!NStr::StartsWith(m_AlleleName, m_GeneName, NStr::eNocase)) {
-                if (!NStr::StartsWith(m_AlleleName, "-")) {
-                    m_AlleleName = "-" + m_AlleleName;
-                }
-                m_AlleleName = m_GeneName + m_AlleleName;
-            }
-        }
-        if (m_MainFeat.CanGetPseudo() && m_MainFeat.GetPseudo()) {
-            m_GeneIsPseudo = true;
-        }
-        m_HasGene = true;
-    }
-    
+
     m_ClauseLocation = new CSeq_loc();
     m_ClauseLocation->Add(mapped_loc);
-    
+
     if (subtype == CSeqFeatData::eSubtype_operon || IsGeneCluster()) {
         m_SuppressSubfeatures = true;
     }
-    
+
     if (m_MainFeat.CanGetComment() && NStr::Find(m_MainFeat.GetComment(), "alternatively spliced") != NCBI_NS_STD::string::npos
         && (subtype == CSeqFeatData::eSubtype_cdregion
-            || subtype == CSeqFeatData::eSubtype_exon
-            || IsNoncodingProductFeat())) {
+        || subtype == CSeqFeatData::eSubtype_exon
+        || IsNoncodingProductFeat())) {
         m_IsAltSpliced = true;
     }
 }
@@ -228,7 +211,6 @@ bool CAutoDefFeatureClause::IsRecognizedFeature()
 }
 
 
-
 void CAutoDefFeatureClause::x_SetBiomol()
 {
     CSeqdesc_CI desc_iter(m_BH, CSeqdesc::e_Molinfo);
@@ -245,15 +227,8 @@ bool CAutoDefFeatureClause::x_IsPseudo()
     if (m_MainFeat.CanGetPseudo() && m_MainFeat.IsSetPseudo()) {
         return true;
     } else {
-        CSeqFeatData::ESubtype subtype = m_MainFeat.GetData().GetSubtype();
-        if (subtype == CSeqFeatData::eSubtype_gene) {
-            const CGene_ref& gene =  m_MainFeat.GetData().GetGene();
-            if (gene.CanGetPseudo() && gene.IsSetPseudo()) {
-                return true;
-            }
-        }
+        return false;
     }
-    return false;
 }
 
 
@@ -452,6 +427,55 @@ bool CAutoDefFeatureClause::IsNoncodingProductFeat()
 {
     string product_name;
     return x_GetNoncodingProductFeatProduct(product_name);
+}
+
+CAutoDefGeneClause::CAutoDefGeneClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc, bool suppress_locus_tag)
+    : CAutoDefFeatureClause(bh, main_feat, mapped_loc)
+{
+    m_GeneName = x_GetGeneName(m_MainFeat.GetData().GetGene(), suppress_locus_tag);
+    if (m_MainFeat.GetData().GetGene().CanGetAllele()) {
+        m_AlleleName = m_MainFeat.GetData().GetGene().GetAllele();
+        if (!NStr::StartsWith(m_AlleleName, m_GeneName, NStr::eNocase)) {
+            if (!NStr::StartsWith(m_AlleleName, "-")) {
+                m_AlleleName = "-" + m_AlleleName;
+            }
+            m_AlleleName = m_GeneName + m_AlleleName;
+        }
+    }
+    if (m_MainFeat.CanGetPseudo() && m_MainFeat.GetPseudo()) {
+        m_GeneIsPseudo = true;
+    }
+    m_HasGene = true;
+}
+
+
+bool CAutoDefGeneClause::x_IsPseudo()
+{
+    if (CAutoDefFeatureClause::x_IsPseudo()) {
+        return true;
+    }
+    const CGene_ref& gene = m_MainFeat.GetData().GetGene();
+    if (gene.CanGetPseudo() && gene.IsSetPseudo()) {
+        return true;
+    }
+    return false;
+}
+
+/*
+*If the feature is a gene and has different strings in the description than
+* in the locus or locus tag, the description will be used as the product for
+* the gene.
+*/
+bool CAutoDefGeneClause::x_GetProductName(string &product_name)
+{
+    if (m_MainFeat.GetData().GetGene().CanGetDesc()
+        && !NStr::Equal(m_MainFeat.GetData().GetGene().GetDesc(),
+        m_GeneName)) {
+        product_name = m_MainFeat.GetData().GetGene().GetDesc();
+        return true;
+    } else {
+        return false;
+    }
 }
 
 
@@ -687,7 +711,7 @@ vector<string> GetIntergenicSpacerClausePhrases(string comment)
 }
 
 
-vector<CAutoDefFeatureClause *> GetIntergenicSpacerClauseList (string comment, CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, bool suppress_locus_tags)
+vector<CAutoDefFeatureClause *> GetIntergenicSpacerClauseList (string comment, CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc)
 {
     vector<CAutoDefFeatureClause *> clause_list;
 
@@ -764,7 +788,7 @@ bool CAutoDefFeatureClause::IsIntergenicSpacer()
     }
 
 
-    vector<CAutoDefFeatureClause *> clause_list = GetIntergenicSpacerClauseList (comment, m_BH, m_MainFeat, m_MainFeat.GetLocation(), true);
+    vector<CAutoDefFeatureClause *> clause_list = GetIntergenicSpacerClauseList (comment, m_BH, m_MainFeat, m_MainFeat.GetLocation());
 
     if (clause_list.size() == 0) {
         return false;
@@ -777,12 +801,14 @@ bool CAutoDefFeatureClause::IsIntergenicSpacer()
 }
 
 
-string CAutoDefFeatureClause::x_GetGeneName(const CGene_ref& gref)
+string CAutoDefFeatureClause::x_GetGeneName(const CGene_ref& gref, bool suppress_locus_tag) const
 {
     if (gref.IsSuppressed()) {
         return "";
     } else if (gref.CanGetLocus() && !NStr::IsBlank(gref.GetLocus())) {
         return gref.GetLocus();
+    } else if (!suppress_locus_tag && gref.IsSetLocus_tag() && !NStr::IsBlank(gref.GetLocus_tag())) {
+        return gref.GetLocus_tag();
     } else {
         return "";
     }
@@ -823,15 +849,6 @@ bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
             }
             product_name = comment;
             return true;
-        }
-    } else if (subtype == CSeqFeatData::eSubtype_gene) {
-        if (m_MainFeat.GetData().GetGene().CanGetDesc()
-            && !NStr::Equal(m_MainFeat.GetData().GetGene().GetDesc(),
-                            m_GeneName)) {
-            product_name = m_MainFeat.GetData().GetGene().GetDesc();
-            return true;
-        } else {
-            return false;
         }
     } else if (m_MainFeat.GetData().Which() == CSeqFeatData::e_Rna) {
         if (subtype == CSeqFeatData::eSubtype_tRNA) {
@@ -1068,7 +1085,7 @@ bool CAutoDefFeatureClause::IsPromoter(const CSeq_feat& feat)
  * subfeatures of the clause, or the interval could be a combination of the
  * last two items if the feature is a CDS.
  */
-bool CAutoDefFeatureClause::x_GetGenericInterval (string &interval)
+bool CAutoDefFeatureClause::x_GetGenericInterval (string &interval, bool suppress_allele)
 {
     unsigned int k;
     
@@ -1098,7 +1115,7 @@ bool CAutoDefFeatureClause::x_GetGenericInterval (string &interval)
         // label subclauses
         // check to see if 3'UTR is present, and whether there are any other features
         for (k = 0; k < m_ClauseList.size(); k++) {
-            m_ClauseList[k]->Label();
+            m_ClauseList[k]->Label(suppress_allele);
             if (m_ClauseList[k]->GetMainFeatureSubtype() == CSeqFeatData::eSubtype_3UTR && subtype == CSeqFeatData::eSubtype_cdregion) {
                 utr3 = m_ClauseList[k];
                 for (unsigned int j = k + 1; j < m_ClauseList.size(); j++) {
@@ -1117,7 +1134,7 @@ bool CAutoDefFeatureClause::x_GetGenericInterval (string &interval)
             }
         
             // create subclause list for interval
-            interval += ListClauses(false, suppress_final_and);
+            interval += ListClauses(false, suppress_final_and, suppress_allele);
             
             if (subtype == CSeqFeatData::eSubtype_cdregion && !m_ClauseInfoOnly) {
                 if (utr3 != NULL) {
@@ -1167,7 +1184,7 @@ bool CAutoDefFeatureClause::x_GetGenericInterval (string &interval)
 } 
 
 
-void CAutoDefFeatureClause::Label()
+void CAutoDefFeatureClause::Label(bool suppress_allele)
 {
     if (!m_TypewordChosen) {
         m_TypewordChosen = x_GetFeatureTypeWord(m_Typeword);
@@ -1181,7 +1198,7 @@ void CAutoDefFeatureClause::Label()
         m_DescriptionChosen = x_GetDescription(m_Description);
     }
     
-    x_GetGenericInterval (m_Interval);
+    x_GetGenericInterval (m_Interval, suppress_allele);
 
 }
 
@@ -1297,29 +1314,6 @@ bool CAutoDefFeatureClause::AddmRNA (CAutoDefFeatureClause_Base *mRNAClause)
 }
 
 
-bool CAutoDefFeatureClause::x_MatchGene(const CGene_ref& gref)
-{
-    if (!m_HasGene 
-        || !NStr::Equal(x_GetGeneName(gref), m_GeneName)) {
-        return false;
-    }
-    
-    if (NStr::IsBlank(m_AlleleName)) {
-        if (gref.CanGetAllele() && !NStr::IsBlank(gref.GetAllele())) {
-            return false;
-        } else {
-            return true;
-        }
-    } else {
-        if (!gref.CanGetAllele() || !NStr::Equal(m_AlleleName, gref.GetAllele())) {
-            return false;
-        } else {
-            return true;
-        }
-    }          
-}
-
-
 /* This function searches this list for clauses to which this gene should
  * apply.  This is not taken care of by the GroupAllClauses function
  * because genes are added to clauses as a GeneRefPtr instead of as an
@@ -1327,7 +1321,7 @@ bool CAutoDefFeatureClause::x_MatchGene(const CGene_ref& gref)
  * than one clause, while other features should really only belong to
  * one clause.
  */
-bool CAutoDefFeatureClause::AddGene (CAutoDefFeatureClause_Base *gene_clause) 
+bool CAutoDefFeatureClause::AddGene (CAutoDefFeatureClause_Base *gene_clause, bool suppress_allele) 
 {
     bool used_gene = false;
     
@@ -1362,7 +1356,7 @@ bool CAutoDefFeatureClause::AddGene (CAutoDefFeatureClause_Base *gene_clause)
     } else {
         // find overlapping gene for this feature    
         CConstRef <CSeq_feat> gene_for_feat = edit::GetGeneForFeature(m_MainFeat, m_BH.GetScope());
-        if (gene_for_feat && NStr::Equal(x_GetGeneName(gene_for_feat->GetData().GetGene()), gene_clause->GetGeneName())) {
+        if (gene_for_feat && NStr::Equal(x_GetGeneName(gene_for_feat->GetData().GetGene(), true), gene_clause->GetGeneName())) {
             used_gene = true;
             m_HasGene = true;
             m_GeneName = gene_clause->GetGeneName();
@@ -1372,7 +1366,7 @@ bool CAutoDefFeatureClause::AddGene (CAutoDefFeatureClause_Base *gene_clause)
     }
     
     if (used_gene && ! m_ProductNameChosen) {
-        Label();
+        Label(suppress_allele);
         if (!m_ProductNameChosen) {
             m_ProductNameChosen = true;
             m_ProductName = gene_clause->GetProductName();
@@ -1380,7 +1374,7 @@ bool CAutoDefFeatureClause::AddGene (CAutoDefFeatureClause_Base *gene_clause)
     }
     if (used_gene) {
         m_DescriptionChosen = false;
-        Label();
+        Label(suppress_allele);
     }
     
     return used_gene;
@@ -1760,10 +1754,10 @@ CAutoDefMobileElementClause::~CAutoDefMobileElementClause()
 }
 
 
-void CAutoDefMobileElementClause::Label()
+void CAutoDefMobileElementClause::Label(bool suppress_allele)
 {
     m_DescriptionChosen = true;
-    x_GetGenericInterval (m_Interval);
+    x_GetGenericInterval (m_Interval, suppress_allele);
 }
 
 
@@ -1788,7 +1782,11 @@ CAutoDefSatelliteClause::CAutoDefSatelliteClause(CBioseq_Handle bh, const CSeq_f
 		len = strlen (kMicrosatellite);
 	} else if (NStr::StartsWith (comment, kSatellite)) {
 		len = strlen (kSatellite);
-	}
+    } else {
+        // use default label satellite
+        string prefix = kSatellite;
+        comment = prefix + " " + comment;
+    }
 	if (len > 0 && NStr::Equal(comment.substr(len, 1), ":")) {
 	    comment = comment.substr (0, len) + " " + comment.substr (len + 1);
 	}
@@ -1805,10 +1803,10 @@ CAutoDefSatelliteClause::~CAutoDefSatelliteClause()
 }
 
 
-void CAutoDefSatelliteClause::Label()
+void CAutoDefSatelliteClause::Label(bool suppress_allele)
 {
     m_DescriptionChosen = true;
-    x_GetGenericInterval(m_Interval);
+    x_GetGenericInterval(m_Interval, suppress_allele);
 }
 
 
@@ -1828,7 +1826,7 @@ CAutoDefPromoterClause::~CAutoDefPromoterClause()
 }
 
 
-void CAutoDefPromoterClause::Label()
+void CAutoDefPromoterClause::Label(bool suppress_allele)
 {
     m_DescriptionChosen = true;
 }
@@ -1845,7 +1843,7 @@ void CAutoDefPromoterClause::Label()
  * "intergenic spacer".
  */
 
-void CAutoDefIntergenicSpacerClause::InitWithString (string comment)
+void CAutoDefIntergenicSpacerClause::InitWithString (string comment, bool suppress_allele)
 {
     m_Typeword = "intergenic spacer";
     m_TypewordChosen = true;
@@ -1891,7 +1889,7 @@ void CAutoDefIntergenicSpacerClause::InitWithString (string comment)
                 m_ShowTypewordFirst = false;
             }
         }
-        x_GetGenericInterval(m_Interval);        
+        x_GetGenericInterval(m_Interval, suppress_allele);        
     }
 }
 
@@ -1899,7 +1897,7 @@ void CAutoDefIntergenicSpacerClause::InitWithString (string comment)
 CAutoDefIntergenicSpacerClause::CAutoDefIntergenicSpacerClause(CBioseq_Handle bh, const CSeq_feat& main_feat, const CSeq_loc &mapped_loc, string comment)
                   : CAutoDefFeatureClause(bh, main_feat, mapped_loc)
 {
-    InitWithString (comment);
+    InitWithString (comment, true);
 }
 
 
@@ -1915,7 +1913,7 @@ CAutoDefIntergenicSpacerClause::CAutoDefIntergenicSpacerClause(CBioseq_Handle bh
         comment = comment.substr(0, pos);
     }
 
-    InitWithString (comment);
+    InitWithString (comment, true);
 }
 
 
@@ -1924,7 +1922,7 @@ CAutoDefIntergenicSpacerClause::~CAutoDefIntergenicSpacerClause()
 }
 
 
-void CAutoDefIntergenicSpacerClause::Label()
+void CAutoDefIntergenicSpacerClause::Label(bool suppress_allele)
 {
     m_DescriptionChosen = true;
 }
@@ -1943,7 +1941,7 @@ CAutoDefParsedIntergenicSpacerClause::CAutoDefParsedIntergenicSpacerClause(CBios
     bool partial3 = m_ClauseLocation->IsPartialStop(eExtreme_Biological) && is_last;
     m_ClauseLocation->SetPartialStart(partial5, eExtreme_Biological);
     m_ClauseLocation->SetPartialStop(partial3, eExtreme_Biological);
-    x_GetGenericInterval(m_Interval);        
+    x_GetGenericInterval(m_Interval, true);        
 }
 
 
@@ -2020,9 +2018,9 @@ CAutoDefGeneClusterClause::~CAutoDefGeneClusterClause()
 }
 
 
-void CAutoDefGeneClusterClause::Label()
+void CAutoDefGeneClusterClause::Label(bool suppress_allele)
 {
-    x_GetGenericInterval(m_Interval);
+    x_GetGenericInterval(m_Interval, suppress_allele);
     m_DescriptionChosen = true;        
 }
 
@@ -2055,7 +2053,7 @@ CAutoDefMiscCommentClause::~CAutoDefMiscCommentClause()
 }
 
 
-void CAutoDefMiscCommentClause::Label()
+void CAutoDefMiscCommentClause::Label(bool suppress_allele)
 {
     m_DescriptionChosen = true;
 }
@@ -2079,7 +2077,7 @@ CAutoDefParsedRegionClause::~CAutoDefParsedRegionClause()
 }
 
 
-void CAutoDefParsedRegionClause::Label()
+void CAutoDefParsedRegionClause::Label(bool suppress_allele)
 {
 }
 
@@ -2110,7 +2108,7 @@ CAutoDefFakePromoterClause::~CAutoDefFakePromoterClause()
 }
 
 
-void CAutoDefFakePromoterClause::Label()
+void CAutoDefFakePromoterClause::Label(bool suppress_allele)
 {
 }
 

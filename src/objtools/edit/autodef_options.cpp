@@ -52,6 +52,7 @@ CRef<CUser_object> CAutoDefOptions::MakeUserObject() const
     CRef<CUser_object> user(new CUser_object());
 
     user->SetObjectType(CUser_object::eObjectType_AutodefOptions);
+    user->SetClass("1.0");
 
     for (unsigned int i = 0; i < eOptionFieldMax; i++) {
         if (x_IsBoolean(i) && m_BooleanFlags[i]) {
@@ -128,6 +129,7 @@ void CAutoDefOptions::x_Reset()
 
 typedef SStaticPair<const char *, unsigned int> TNameValPair;
 const TNameValPair sc_FieldTypes[] = {
+        { "AllowModAtEndOfTaxname", CAutoDefOptions::eOptionFieldType_AllowModAtEndOfTaxname },
         { "AltSpliceFlag", CAutoDefOptions::eOptionFieldType_AltSpliceFlag },
         { "DoNotApplyToAff", CAutoDefOptions::eOptionFieldType_DoNotApplyToAff },
         { "DoNotApplyToCf", CAutoDefOptions::eOptionFieldType_DoNotApplyToCf },
@@ -144,12 +146,14 @@ const TNameValPair sc_FieldTypes[] = {
         { "KeepIntrons", CAutoDefOptions::eOptionFieldType_KeepIntrons },
         { "KeepLTRs", CAutoDefOptions::eOptionFieldType_KeepLTRs },
         { "KeepPromoters", CAutoDefOptions::eOptionFieldType_KeepPromoters },
+        { "KeepuORFs", CAutoDefOptions::eOptionFieldType_KeepuORFs },
         { "LeaveParenthetical", CAutoDefOptions::eOptionFieldType_LeaveParenthetical },
         { "MaxMods", CAutoDefOptions::eOptionFieldType_MaxMods },
         { "MiscFeatRule", CAutoDefOptions::eOptionFieldType_MiscFeatRule },
         { "ModifierList", CAutoDefOptions::eOptionFieldType_ModifierList },
         { "ProductFlag", CAutoDefOptions::eOptionFieldType_ProductFlag },
         { "SpecifyNuclearProduct", CAutoDefOptions::eOptionFieldType_SpecifyNuclearProduct },
+        { "SuppressAlleles", CAutoDefOptions::eOptionFieldType_SuppressAlleles },
         { "SuppressedFeatures", CAutoDefOptions::eOptionFieldType_SuppressedFeatures },
         { "SuppressFeatureAltSplice", CAutoDefOptions::eOptionFieldType_SuppressFeatureAltSplice },
         { "SuppressLocusTags", CAutoDefOptions::eOptionFieldType_SuppressLocusTags },

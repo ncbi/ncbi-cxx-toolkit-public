@@ -88,6 +88,8 @@ public:
     bool GetUseModifierLabels();
     void SetMaxModifiers(unsigned int max_mods);
     unsigned int GetMaxModifiers();
+    void SetAllowModAtEndOfTaxname(bool keep);
+    bool GetAllowModAtEndOfTaxname();
     void SetKeepCountryText(bool keep);
     bool GetKeepCountryText();
     void SetExcludeSpOrgs(bool exclude);
@@ -142,6 +144,7 @@ private:
    
     bool         m_UseModifierLabels;
     unsigned int m_MaxModifiers;
+    bool         m_AllowModAtEndOfTaxname;
     bool         m_KeepCountryText;
     bool         m_ExcludeSpOrgs;
     // NOTE - after the wxWidgets conversion is complete, need to add controls for the following three
@@ -190,6 +193,20 @@ inline
 unsigned int CAutoDefModifierCombo::GetMaxModifiers()
 {
     return m_MaxModifiers;
+}
+
+
+inline
+void CAutoDefModifierCombo::SetAllowModAtEndOfTaxname(bool keep)
+{
+    m_AllowModAtEndOfTaxname = keep;
+}
+
+
+inline
+bool CAutoDefModifierCombo::GetAllowModAtEndOfTaxname()
+{
+    return m_AllowModAtEndOfTaxname;
 }
 
 

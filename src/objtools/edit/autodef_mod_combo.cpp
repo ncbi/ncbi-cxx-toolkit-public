@@ -50,6 +50,7 @@ BEGIN_SCOPE(objects)
 
 CAutoDefModifierCombo::CAutoDefModifierCombo() : m_UseModifierLabels(false),
                                                  m_MaxModifiers(0),
+                                                 m_AllowModAtEndOfTaxname(false),
                                                  m_KeepCountryText(false),
                                                  m_ExcludeSpOrgs(false),
                                                  m_ExcludeCfOrgs(false),
@@ -119,6 +120,7 @@ void CAutoDefModifierCombo::SetOptions(const CAutoDefOptions& options)
 {
     m_UseModifierLabels = options.GetUseLabels();
     m_MaxModifiers = options.GetMaxMods();
+    m_AllowModAtEndOfTaxname = options.GetAllowModAtEndOfTaxname();
     m_KeepCountryText = options.GetIncludeCountryText();
     m_ExcludeSpOrgs = options.GetDoNotApplyToSp();
     m_ExcludeCfOrgs = options.GetDoNotApplyToCf();
@@ -143,6 +145,7 @@ void CAutoDefModifierCombo::InitOptions(CAutoDefOptions& options) const
 {
     options.SetUseLabels(m_UseModifierLabels);
     options.SetMaxMods(m_MaxModifiers);
+    options.SetAllowModAtEndOfTaxname(m_AllowModAtEndOfTaxname);
     options.SetIncludeCountryText(m_KeepCountryText);
     options.SetDoNotApplyToSp(m_ExcludeSpOrgs);
     options.SetDoNotApplyToCf(m_ExcludeCfOrgs);
@@ -462,7 +465,8 @@ bool CAutoDefModifierCombo::x_AddOrgModString (string &source_description, const
             }
             // If modifier is one of the following types and the value already appears in the tax Name,
             // don't use in the organism description
-            if ((st == COrgMod::eSubtype_strain
+            if (!m_AllowModAtEndOfTaxname &&
+                (st == COrgMod::eSubtype_strain
                  || st == COrgMod::eSubtype_variety
                  || st == COrgMod::eSubtype_sub_species
                  || st == COrgMod::eSubtype_forma

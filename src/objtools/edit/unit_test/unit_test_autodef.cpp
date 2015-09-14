@@ -1271,6 +1271,34 @@ BOOST_AUTO_TEST_CASE(Test_GB_4242)
     orgmods.push_back(COrgMod::eSubtype_isolate);
 
     CheckDeflineMatches(seq, subsrcs, orgmods);
+
+    // Try again, but deliberately allow modifier that includes taxname to be included
+    AddTitle(seq, "Trichoderma sp. FPZSP372 isolate FPZSP37.");
+    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+
+    CRef<CScope> scope(new CScope(*object_manager));
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*seq);
+
+    objects::CAutoDef autodef;
+
+    // add to autodef 
+    autodef.AddSources(seh);
+
+    CRef<CAutoDefModifierCombo> mod_combo;
+    mod_combo = new CAutoDefModifierCombo();
+    mod_combo->SetUseModifierLabels(true);
+    mod_combo->SetAllowModAtEndOfTaxname(true);
+    ITERATE(vector<CSubSource::ESubtype>, it, subsrcs) {
+        mod_combo->AddSubsource(*it, true);
+    }
+    ITERATE(vector<COrgMod::ESubtype>, it, orgmods) {
+        mod_combo->AddOrgMod(*it, true);
+    }
+
+    autodef.SetFeatureListType(CAutoDefOptions::eListAllFeatures);
+    autodef.SetMiscFeatRule(CAutoDefOptions::eDelete);
+
+    CheckDeflineMatches(seh, autodef, mod_combo);
 }
 
 BOOST_AUTO_TEST_CASE(Test_SQD_3440)
@@ -1286,6 +1314,46 @@ BOOST_AUTO_TEST_CASE(Test_SQD_3440)
 
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_RemovableuORF)
+{
+    CRef<CSeq_entry> entry = BuildNucProtSet("uORF");
+    CRef<CSeqdesc> desc = AddSource(entry, "Alcanivorax sp. HA03");
+    CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
+    AddTitle(nuc, "Alcanivorax sp. HA03 uORF gene, complete cds.");
+
+    CheckDeflineMatches(entry);
+
+    // try again, with another feature present, so uORF isn't lonely
+    CRef<objects::CSeq_feat> misc = unit_test_util::AddMiscFeature(nuc);
+    misc->SetData().SetImp().SetKey("repeat_region");
+    CRef<CGb_qual> q(new CGb_qual("satellite", "x"));
+    misc->SetQual().push_back(q);
+    AddTitle(nuc, "Alcanivorax sp. HA03 satellite x sequence.");
+    CheckDeflineMatches(entry);
+
+    // try again, but set keepORFs flag
+    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+
+    CRef<CScope> scope(new CScope(*object_manager));
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+    objects::CAutoDef autodef;
+
+    // add to autodef 
+    autodef.AddSources(seh);
+
+    CRef<CAutoDefModifierCombo> mod_combo;
+    mod_combo = new CAutoDefModifierCombo();
+
+    autodef.SetFeatureListType(CAutoDefOptions::eListAllFeatures);
+    autodef.SetMiscFeatRule(CAutoDefOptions::eDelete);
+    autodef.SetKeepuORFs(true);
+
+    AddTitle(nuc, "Alcanivorax sp. HA03 uORF gene, complete cds; and satellite x sequence.");
+    CheckDeflineMatches(seh, autodef, mod_combo);
+
+}
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

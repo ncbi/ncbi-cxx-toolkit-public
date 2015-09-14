@@ -90,6 +90,7 @@ public:
 	void SetSpecifyNuclearProduct (bool specify_nuclear_product);
     void SetAltSpliceFlag (bool alt_splice_flag);
     void SetSuppressLocusTags(bool suppress_locus_tags);
+    void SetSuppressAllele(bool suppress_allele);
     void SetGeneClusterOppStrand(bool gene_opp_strand);
     void SetSuppressFeatureAltSplice (bool suppress_alt_splice);
     void SuppressMobileElementAndInsertionSequenceSubfeatures(bool suppress);
@@ -99,6 +100,7 @@ public:
     void SetKeepLTRs(bool keep);
     void SetKeep3UTRs(bool keep);
     void SetKeep5UTRs(bool keep);
+    void SetKeepuORFs(bool keep);
 	void SetUseNcRNAComment (bool use_comment);
     void SetUseFakePromoters (bool use_fake);
     
@@ -136,18 +138,15 @@ private:
     bool x_AddIntergenicSpacerFeatures(CBioseq_Handle bh,
                                        const CSeq_feat& cf,
                                        const CSeq_loc& mapped_loc,
-                                       CAutoDefFeatureClause_Base& main_clause,
-                                       bool suppress_locus_tags);
+                                       CAutoDefFeatureClause_Base& main_clause);
     bool x_AddMiscRNAFeatures(CBioseq_Handle bh,
                               const CSeq_feat& cf,
                               const CSeq_loc& mapped_loc,
-                              CAutoDefFeatureClause_Base& main_clause,
-                              bool suppress_locus_tags);
+                              CAutoDefFeatureClause_Base& main_clause);
     bool x_AddtRNAAndOther(CBioseq_Handle bh,
                               const CSeq_feat& cf,
                               const CSeq_loc& mapped_loc,
-                              CAutoDefFeatureClause_Base& main_clause,
-                              bool suppress_locus_tags);
+                              CAutoDefFeatureClause_Base& main_clause);
                               
     void x_RemoveOptionalFeatures(CAutoDefFeatureClause_Base *main_clause, CBioseq_Handle bh);
                                   
@@ -266,6 +265,13 @@ inline
 void CAutoDef::SetKeep5UTRs(bool keep)
 {
     m_Options.SetKeep5UTRs(keep);
+}
+
+
+inline
+void CAutoDef::SetKeepuORFs(bool keep)
+{
+    m_Options.SetKeepuORFs(keep);
 }
 
 

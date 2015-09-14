@@ -59,22 +59,7 @@ CAutoDefFeatureClause_Base::CAutoDefFeatureClause_Base() :
                               m_MakePlural(false),
                               m_IsUnknown(false),
                               m_ClauseInfoOnly(false),
-                              m_SuppressLocusTag(false),
                               m_SuppressSubfeatures(false),
-                              m_DeleteMe(false)
-{
-}
-
-
-CAutoDefFeatureClause_Base::CAutoDefFeatureClause_Base(bool suppress_locus_tag) :
-                              m_GeneIsPseudo(false),
-                              m_IsAltSpliced(false),
-                              m_HasmRNA(false),
-                              m_HasGene(false),
-                              m_MakePlural(false),
-                              m_IsUnknown(false),
-                              m_ClauseInfoOnly(false),
-                              m_SuppressLocusTag(suppress_locus_tag),
                               m_DeleteMe(false)
 {
 }
@@ -92,6 +77,22 @@ CSeqFeatData::ESubtype CAutoDefFeatureClause_Base::GetMainFeatureSubtype() const
     } else {
         return CSeqFeatData::eSubtype_bad;
     }    
+}
+
+
+bool CAutoDefFeatureClause_Base::IsuORF(const string& product)
+{
+    // find uORF as whole word in product name
+    size_t pos = NStr::Find(product, "uORF");
+    if (pos != string::npos &&
+        (pos == 0 || isspace(product.c_str()[pos - 1])) &&
+        (pos == product.length() - 4 || isspace(product.c_str()[pos + 4]))) {
+        return true;
+    } else if (NStr::EndsWith(product, "leader peptide")) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 
@@ -128,7 +129,7 @@ void CAutoDefFeatureClause_Base::SetAltSpliced(string splice_name)
 }
 
 
-string CAutoDefFeatureClause_Base::PrintClause(bool print_typeword, bool typeword_is_plural)
+string CAutoDefFeatureClause_Base::PrintClause(bool print_typeword, bool typeword_is_plural, bool suppress_allele)
 {
     bool   print_comma_between_description_and_typeword = false;
     string clause_text;
@@ -245,25 +246,25 @@ bool CAutoDefFeatureClause_Base::AddmRNA (CAutoDefFeatureClause_Base *mRNAClause
 }
  
  
-bool CAutoDefFeatureClause_Base::AddGene (CAutoDefFeatureClause_Base *gene_clause)
+bool CAutoDefFeatureClause_Base::AddGene (CAutoDefFeatureClause_Base *gene_clause, bool suppress_allele)
 {
     bool retval = false;
     for (unsigned int k = 0; k < m_ClauseList.size(); k++) {
-        retval |= m_ClauseList[k]->AddGene(gene_clause);
+        retval |= m_ClauseList[k]->AddGene(gene_clause, suppress_allele);
     }
     return retval;
 }
 
 
-void CAutoDefFeatureClause_Base::Label()
+void CAutoDefFeatureClause_Base::Label(bool suppress_allele)
 {
     for (unsigned int k = 0; k < m_ClauseList.size(); k++) {
-        m_ClauseList[k]->Label();
+        m_ClauseList[k]->Label(suppress_allele);
     }
 }
 
 // Grouping functions
-void CAutoDefFeatureClause_Base::GroupmRNAs()
+void CAutoDefFeatureClause_Base::GroupmRNAs(bool suppress_allele)
 {
     unsigned int k, j;
     
@@ -273,7 +274,7 @@ void CAutoDefFeatureClause_Base::GroupmRNAs()
             || m_ClauseList[k]->GetMainFeatureSubtype() != CSeqFeatData::eSubtype_mRNA) {
             continue;
         }
-        m_ClauseList[k]->Label();
+        m_ClauseList[k]->Label(suppress_allele);
         bool mRNA_used = false;
         for (j = 0; j < m_ClauseList.size() && !mRNA_used; j++) {
             if (m_ClauseList[j]->IsMarkedForDeletion()
@@ -281,7 +282,7 @@ void CAutoDefFeatureClause_Base::GroupmRNAs()
                 || m_ClauseList[j]->GetMainFeatureSubtype() != CSeqFeatData::eSubtype_cdregion) {
                 continue;
             } else {
-                m_ClauseList[j]->Label();
+                m_ClauseList[j]->Label(suppress_allele);
                 mRNA_used |= m_ClauseList[j]->AddmRNA (m_ClauseList[k]);
             }
         }
@@ -292,7 +293,7 @@ void CAutoDefFeatureClause_Base::GroupmRNAs()
 }
 
 
-void CAutoDefFeatureClause_Base::GroupGenes()
+void CAutoDefFeatureClause_Base::GroupGenes(bool suppress_allele)
 {
     unsigned int k, j;
     
@@ -308,7 +309,7 @@ void CAutoDefFeatureClause_Base::GroupGenes()
             if (j == k || m_ClauseList[j]->GetMainFeatureSubtype() == CSeqFeatData::eSubtype_gene) {
                 continue;
             }
-            used_gene |= m_ClauseList[j]->AddGene(m_ClauseList[k]);
+            used_gene |= m_ClauseList[j]->AddGene(m_ClauseList[k], suppress_allele);
         }
     }
 }
@@ -337,7 +338,7 @@ void CAutoDefFeatureClause_Base::RemoveGenesMentionedElsewhere()
 }
 
 
-string CAutoDefFeatureClause_Base::ListClauses(bool allow_semicolons, bool suppress_final_and)
+string CAutoDefFeatureClause_Base::ListClauses(bool allow_semicolons, bool suppress_final_and, bool suppress_allele)
 {
     if (m_ClauseList.size() < 1) {
         return "";
@@ -551,7 +552,7 @@ string CAutoDefFeatureClause_Base::ListClauses(bool allow_semicolons, bool suppr
             }
         }
     
-        string clause_text = m_ClauseList[k]->PrintClause(print_typeword, typeword_is_plural);
+        string clause_text = m_ClauseList[k]->PrintClause(print_typeword, typeword_is_plural, suppress_allele);
 
         if (!NStr::IsBlank(clause_text)) {    
             if (!NStr::IsBlank(full_clause_list)) {
@@ -739,7 +740,7 @@ bool CAutoDefFeatureClause_Base::x_OkToConsolidate (unsigned int clause1, unsign
 }
 
 
-void CAutoDefFeatureClause_Base::Consolidate(CAutoDefFeatureClause_Base& other)
+void CAutoDefFeatureClause_Base::Consolidate(CAutoDefFeatureClause_Base& other, bool suppress_allele)
 {
     // Add subfeatures from new clause to last clause
     TClauseList new_subfeatures;
@@ -760,7 +761,7 @@ void CAutoDefFeatureClause_Base::Consolidate(CAutoDefFeatureClause_Base& other)
     }
             
     // this will regenerate the interval
-    Label();
+    Label(suppress_allele);
             
     // mark other clause for deletion
     other.MarkForDeletion();
@@ -780,7 +781,7 @@ void CAutoDefFeatureClause_Base::x_RemoveNullClauses()
 }
 
 
-void CAutoDefFeatureClause_Base::ConsolidateRepeatedClauses ()
+void CAutoDefFeatureClause_Base::ConsolidateRepeatedClauses (bool suppress_allele)
 {
     if (m_ClauseList.size() < 2) {
         return;
@@ -790,7 +791,7 @@ void CAutoDefFeatureClause_Base::ConsolidateRepeatedClauses ()
         if (!m_ClauseList[k] || m_ClauseList[k]->IsMarkedForDeletion()) {
             continue;
         }
-        m_ClauseList[k]->ConsolidateRepeatedClauses();
+        m_ClauseList[k]->ConsolidateRepeatedClauses(suppress_allele);
         for (unsigned int n = k + 1; n < m_ClauseList.size(); n++) {
             if (!m_ClauseList[n] || m_ClauseList[n]->IsMarkedForDeletion()) {
                 continue;
@@ -800,9 +801,9 @@ void CAutoDefFeatureClause_Base::ConsolidateRepeatedClauses ()
                 CSeqFeatData::ESubtype subtypen = m_ClauseList[n]->GetMainFeatureSubtype();
 
                 if (subtypek == CSeqFeatData::eSubtype_gene) {
-                    m_ClauseList[n]->Consolidate(*m_ClauseList[k]);
+                    m_ClauseList[n]->Consolidate(*m_ClauseList[k], suppress_allele);
                 } else if (subtypen == CSeqFeatData::eSubtype_gene) {
-                    m_ClauseList[k]->Consolidate(*m_ClauseList[n]);
+                    m_ClauseList[k]->Consolidate(*m_ClauseList[n], suppress_allele);
                 } else {
                     m_ClauseList[k]->AddSubclause(m_ClauseList[n]);
                     m_ClauseList[n] = NULL;
@@ -812,7 +813,7 @@ void CAutoDefFeatureClause_Base::ConsolidateRepeatedClauses ()
    
     }
     x_RemoveNullClauses();
-    Label();
+    Label(suppress_allele);
 } 
 
 // These are words that are used to introduced the part of the protein
@@ -959,7 +960,7 @@ bool CAutoDefFeatureClause_Base::x_MeetAltSpliceRules (unsigned int clause1, uns
 }
 
 
-void CAutoDefFeatureClause_Base::FindAltSplices()
+void CAutoDefFeatureClause_Base::FindAltSplices(bool suppress_allele)
 {
     unsigned int last_cds = m_ClauseList.size();
     string splice_name;
@@ -968,7 +969,7 @@ void CAutoDefFeatureClause_Base::FindAltSplices()
         if (m_ClauseList[k]->IsMarkedForDeletion()) {
             continue;
         }
-        m_ClauseList[k]->FindAltSplices();
+        m_ClauseList[k]->FindAltSplices(suppress_allele);
         if (m_ClauseList[k]->GetMainFeatureSubtype() == CSeqFeatData::eSubtype_cdregion) {
             if (x_MeetAltSpliceRules(last_cds, k, splice_name)) {
                 // set splice flag and product name for last cds
@@ -988,7 +989,7 @@ void CAutoDefFeatureClause_Base::FindAltSplices()
                 m_ClauseList[k]->MarkForDeletion();
                 
                 //Label original
-                m_ClauseList[last_cds]->Label();
+                m_ClauseList[last_cds]->Label(suppress_allele);
             } else {
                 last_cds = k;
             }
@@ -1108,7 +1109,7 @@ string CAutoDefFeatureClause_Base::FindGeneProductName(CAutoDefFeatureClause_Bas
 }
 
 
-void CAutoDefFeatureClause_Base::AssignGeneProductNames(CAutoDefFeatureClause_Base *main_clause)
+void CAutoDefFeatureClause_Base::AssignGeneProductNames(CAutoDefFeatureClause_Base *main_clause, bool suppress_allele)
 {
     if (main_clause == NULL) {
         return;
@@ -1118,7 +1119,7 @@ void CAutoDefFeatureClause_Base::AssignGeneProductNames(CAutoDefFeatureClause_Ba
             string product_name = main_clause->FindGeneProductName(m_ClauseList[k]);
             if (!NStr::IsBlank(product_name)) {
                 m_ClauseList[k]->SetProductName(product_name);
-                m_ClauseList[k]->Label();
+                m_ClauseList[k]->Label(suppress_allele);
             }
         }
     }
@@ -1134,7 +1135,7 @@ void CAutoDefFeatureClause_Base::SetProductName(string product_name)
 
 void CAutoDefFeatureClause_Base::CountUnknownGenes()
 {
-    CAutoDefUnknownGeneList *unknown_list = new CAutoDefUnknownGeneList(m_SuppressLocusTag);
+    CAutoDefUnknownGeneList *unknown_list = new CAutoDefUnknownGeneList();
     bool any_found = false;
     
     for (unsigned int k = 0; k < m_ClauseList.size(); k++) {
@@ -1195,7 +1196,7 @@ void CAutoDefFeatureClause_Base::GroupAltSplicedExons(CBioseq_Handle bh)
         if (!found_any) {
             continue;
         }
-        CAutoDefExonListClause *new_clause = new CAutoDefExonListClause (bh, m_SuppressLocusTag);
+        CAutoDefExonListClause *new_clause = new CAutoDefExonListClause (bh);
         
         new_clause->AddSubclause(m_ClauseList[k]);
         new_clause->AddSubclause(m_ClauseList[j]);
@@ -1277,7 +1278,7 @@ void CAutoDefFeatureClause_Base::GroupConsecutiveExons(CBioseq_Handle bh)
                 || m_ClauseList[k]->GetMainFeatureSubtype() != CSeqFeatData::eSubtype_exon) {
                 continue;
             }
-            m_ClauseList[k]->Label();
+            m_ClauseList[k]->Label(false);
             string sequence = m_ClauseList[k]->GetDescription();
             unsigned int seq_num = 0, next_num;
             try {
@@ -1291,7 +1292,7 @@ void CAutoDefFeatureClause_Base::GroupConsecutiveExons(CBioseq_Handle bh)
             while (j < m_ClauseList.size()) {
                 if (m_ClauseList[j] != NULL && !m_ClauseList[j]->IsMarkedForDeletion()) {
                     if (m_ClauseList[j]->GetMainFeatureSubtype() == CSeqFeatData::eSubtype_exon) {
-                        m_ClauseList[j]->Label();
+                        m_ClauseList[j]->Label(false);
                         sequence = m_ClauseList[j]->GetDescription();
                         try {
                             next_num = NStr::StringToUInt (sequence);
@@ -1306,7 +1307,7 @@ void CAutoDefFeatureClause_Base::GroupConsecutiveExons(CBioseq_Handle bh)
                         }
                         if (next_num == seq_num + 1) {
                             if (new_clause == NULL) {
-                                new_clause = new CAutoDefExonListClause(bh, m_SuppressLocusTag);
+                                new_clause = new CAutoDefExonListClause(bh);
                                 new_clause->AddSubclause(m_ClauseList[k]);
                                 last_new_clause = new_clause;
                                 last_new_clause_position = k;
@@ -1332,7 +1333,7 @@ void CAutoDefFeatureClause_Base::GroupConsecutiveExons(CBioseq_Handle bh)
             }
             if (new_clause != NULL) {
                 m_ClauseList[k] = new_clause;
-                new_clause->Label();
+                new_clause->Label(false);
             }
         }
         if (last_new_clause != NULL) {
@@ -1363,7 +1364,7 @@ void CAutoDefFeatureClause_Base::GroupConsecutiveExons(CBioseq_Handle bh)
 
 // This function should combine CDSs on a segmented set that do not have a joined location
 // but are part of the same gene and have the same protein name.
-void CAutoDefFeatureClause_Base::GroupSegmentedCDSs ()
+void CAutoDefFeatureClause_Base::GroupSegmentedCDSs (bool suppress_allele)
 {
     if (m_ClauseList.size() > 1) {
         for (unsigned int k = 0; k < m_ClauseList.size() - 1; k++) {
@@ -1372,14 +1373,14 @@ void CAutoDefFeatureClause_Base::GroupSegmentedCDSs ()
                 || m_ClauseList[k]->GetMainFeatureSubtype() != CSeqFeatData::eSubtype_cdregion) {
                 continue;
             }
-            m_ClauseList[k]->Label();
+            m_ClauseList[k]->Label(suppress_allele);
             for (unsigned int j = k + 1; j < m_ClauseList.size(); j++) {
                 if (m_ClauseList[j] == NULL 
                     || m_ClauseList[j]->IsMarkedForDeletion()
                     || m_ClauseList[j]->GetMainFeatureSubtype() != CSeqFeatData::eSubtype_cdregion) {
                     continue;
                 }
-                m_ClauseList[j]->Label();
+                m_ClauseList[j]->Label(suppress_allele);
                 if (NStr::Equal(m_ClauseList[k]->GetProductName(), m_ClauseList[j]->GetProductName())
                     && !NStr::IsBlank(m_ClauseList[k]->GetGeneName())
                     && NStr::Equal(m_ClauseList[k]->GetGeneName(), m_ClauseList[j]->GetGeneName())
@@ -1408,7 +1409,7 @@ void CAutoDefFeatureClause_Base::GroupSegmentedCDSs ()
     }
     for (unsigned int k = 0; k < m_ClauseList.size(); k++) {
         if (m_ClauseList[k] != NULL && !m_ClauseList[k]->IsMarkedForDeletion()) {
-            m_ClauseList[k]->GroupSegmentedCDSs();
+            m_ClauseList[k]->GroupSegmentedCDSs(suppress_allele);
         }
     }
 }
@@ -1514,8 +1515,22 @@ void CAutoDefFeatureClause_Base::RemoveTransSplicedLeaders()
 }
 
 
-CAutoDefUnknownGeneList::CAutoDefUnknownGeneList(bool suppress_locus_tags)
-                  : CAutoDefFeatureClause_Base(suppress_locus_tags)
+void CAutoDefFeatureClause_Base::RemoveuORFs()
+{
+    for (unsigned int k = 0; k < m_ClauseList.size(); k++) {
+        unsigned int subtype = m_ClauseList[k]->GetMainFeatureSubtype();
+        if (subtype == CSeqFeatData::eSubtype_cdregion &&
+            IsuORF(m_ClauseList[k]->GetProductName())) {
+            m_ClauseList[k]->MarkForDeletion();
+        } else {
+            m_ClauseList[k]->RemoveuORFs();
+        }
+    }
+}
+
+
+CAutoDefUnknownGeneList::CAutoDefUnknownGeneList()
+                  : CAutoDefFeatureClause_Base()
 {
     m_Description = "unknown";
     m_DescriptionChosen = true;
@@ -1530,7 +1545,7 @@ CAutoDefUnknownGeneList::~CAutoDefUnknownGeneList()
 }
 
 
-void CAutoDefUnknownGeneList::Label()
+void CAutoDefUnknownGeneList::Label(bool suppress_allele)
 {
     if (m_ClauseList.size() > 1) {
         m_MakePlural = true;
@@ -1540,8 +1555,8 @@ void CAutoDefUnknownGeneList::Label()
 }
 
 
-CAutoDefExonListClause::CAutoDefExonListClause(CBioseq_Handle bh, bool suppress_locus_tags)
-                  : CAutoDefFeatureClause_Base(suppress_locus_tags),
+CAutoDefExonListClause::CAutoDefExonListClause(CBioseq_Handle bh)
+                  : CAutoDefFeatureClause_Base(),
                     m_SuppressFinalAnd(false),
                     m_BH(bh)
 {
@@ -1613,12 +1628,12 @@ void CAutoDefExonListClause::AddSubclause (CAutoDefFeatureClause_Base *subclause
 }
     
 
-void CAutoDefExonListClause::Label()
+void CAutoDefExonListClause::Label(bool suppress_allele)
 {
     if (m_ClauseList.size() > 2) {
         m_Description = m_ClauseList[0]->GetDescription() + " through " + m_ClauseList[m_ClauseList.size() - 1]->GetDescription();
     } else {
-        m_Description = ListClauses(false, m_SuppressFinalAnd);
+        m_Description = ListClauses(false, m_SuppressFinalAnd, suppress_allele);
         if (NStr::StartsWith(m_Description, "exons")) {
             m_Description = m_Description.substr(5);
         } else if (NStr::StartsWith(m_Description, "exon")) {
@@ -1673,6 +1688,7 @@ bool CAutoDefExonListClause::OkToGroupUnderByType(CAutoDefFeatureClause_Base *pa
     }
     return ok_to_group;
 }
+
 
 
 END_SCOPE(objects)

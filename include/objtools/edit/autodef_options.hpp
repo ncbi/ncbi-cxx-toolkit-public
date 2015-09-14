@@ -57,6 +57,7 @@ public:
         eOptionFieldType_Unknown = 0,
         eOptionFieldType_MaxMods,
         eOptionFieldType_UseLabels,
+        eOptionFieldType_AllowModAtEndOfTaxname,
         eOptionFieldType_LeaveParenthetical,
         eOptionFieldType_DoNotApplyToSp,
         eOptionFieldType_DoNotApplyToNr,
@@ -71,6 +72,7 @@ public:
         eOptionFieldType_SpecifyNuclearProduct,
         eOptionFieldType_AltSpliceFlag,
         eOptionFieldType_SuppressLocusTags,
+        eOptionFieldType_SuppressAlleles,
         eOptionFieldType_GeneClusterOppStrand,
         eOptionFieldType_SuppressFeatureAltSplice,
         eOptionFieldType_SuppressMobileElementSubfeatures,
@@ -81,6 +83,7 @@ public:
         eOptionFieldType_KeepLTRs,
         eOptionFieldType_Keep3UTRs,
         eOptionFieldType_Keep5UTRs,
+        eOptionFieldType_KeepuORFs,
         eOptionFieldType_UseNcRNAComment,
         eOptionFieldType_SuppressedFeatures,
         eOptionFieldType_ModifierList,
@@ -148,6 +151,7 @@ public:
 
     AUTODEFBOOLFIELD(UseLabels)
     AUTODEFBOOLFIELD(LeaveParenthetical)
+    AUTODEFBOOLFIELD(AllowModAtEndOfTaxname)
     AUTODEFBOOLFIELD(DoNotApplyToSp)
     AUTODEFBOOLFIELD(DoNotApplyToNr)
     AUTODEFBOOLFIELD(DoNotApplyToCf)
@@ -156,6 +160,7 @@ public:
     AUTODEFBOOLFIELD(KeepAfterSemicolon)
     AUTODEFBOOLFIELD(AltSpliceFlag)
     AUTODEFBOOLFIELD(SuppressLocusTags)
+    AUTODEFBOOLFIELD(SuppressAlleles)
     AUTODEFBOOLFIELD(GeneClusterOppStrand)
     AUTODEFBOOLFIELD(SuppressFeatureAltSplice)
     AUTODEFBOOLFIELD(SuppressMobileElementSubfeatures)
@@ -165,6 +170,7 @@ public:
     AUTODEFBOOLFIELD(KeepLTRs)
     AUTODEFBOOLFIELD(Keep3UTRs)
     AUTODEFBOOLFIELD(Keep5UTRs)
+    AUTODEFBOOLFIELD(KeepuORFs)
     AUTODEFBOOLFIELD(UseNcRNAComment)
 
     bool IsFeatureSuppressed(CSeqFeatData::ESubtype subtype) const;

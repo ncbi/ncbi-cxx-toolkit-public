@@ -47,18 +47,18 @@ class NCBI_XOBJEDIT_EXPORT CAutoDefFeatureClause_Base
 public:
     typedef vector<CAutoDefFeatureClause_Base *> TClauseList;
 
-    CAutoDefFeatureClause_Base(bool suppress_locus_tags);
+    CAutoDefFeatureClause_Base();
     virtual ~CAutoDefFeatureClause_Base();
     
     virtual void AddSubclause (CAutoDefFeatureClause_Base *subclause);
 
-    string PrintClause(bool print_typeword, bool typeword_is_plural);
+    string PrintClause(bool print_typeword, bool typeword_is_plural, bool suppress_allele);
     
     virtual CSeqFeatData::ESubtype  GetMainFeatureSubtype() const;
     size_t GetNumSubclauses() { return m_ClauseList.size(); }
-    virtual void Label();
+    virtual void Label(bool suppress_allele);
     virtual bool AddmRNA (CAutoDefFeatureClause_Base *mRNAClause);
-    virtual bool AddGene (CAutoDefFeatureClause_Base *gene_clause);
+    virtual bool AddGene (CAutoDefFeatureClause_Base *gene_clause, bool suppress_allele);
     
     virtual sequence::ECompare CompareLocation(const CSeq_loc& loc);
     virtual void AddToOtherLocation(CRef<CSeq_loc> loc);
@@ -74,6 +74,9 @@ public:
     virtual bool IsIntergenicSpacer() { return false; }
     virtual bool IsSatelliteClause() { return false; }    
     virtual bool IsExonList() { return false; }
+
+    static bool IsuORF(const string& product);
+
     virtual CAutoDefFeatureClause_Base *FindBestParentClause(CAutoDefFeatureClause_Base * subclause, bool gene_cluster_opp_strand);
     
     void GroupClauses(bool gene_cluster_opp_strand);
@@ -82,7 +85,7 @@ public:
 
     virtual CRef<CSeq_loc> GetLocation();
     
-    string ListClauses(bool allow_semicolons, bool suppress_final_and);
+    string ListClauses(bool allow_semicolons, bool suppress_final_and, bool suppress_allele);
 
     bool IsGeneMentioned(CAutoDefFeatureClause_Base *gene_clause);
     bool IsUnattachedGene() const;
@@ -104,7 +107,6 @@ public:
     void MarkForDeletion() { m_DeleteMe = true; }
     void SetMakePlural() { m_MakePlural = true; }
     bool HasmRNA() { return m_HasmRNA; }
-    void SetSuppressLocusTag(bool do_suppress) { m_SuppressLocusTag = do_suppress; }
     void SetInfoOnly (bool info_only) { m_ClauseInfoOnly = info_only; }
     void PluralizeInterval();
     void PluralizeDescription();
@@ -114,14 +116,15 @@ public:
     // Grouping functions
     void RemoveDeletedSubclauses();
    
-    void GroupmRNAs();
-    void GroupGenes();
+    void GroupmRNAs(bool suppress_allele);
+    void GroupGenes(bool suppress_allele);
     void GroupConsecutiveExons(CBioseq_Handle bh);
-    void GroupSegmentedCDSs();
+    void GroupSegmentedCDSs(bool suppress_allele);
     void RemoveGenesMentionedElsewhere();
     void RemoveTransSplicedLeaders();
-    void ConsolidateRepeatedClauses();
-    void FindAltSplices();
+    void RemoveuORFs();
+    void ConsolidateRepeatedClauses(bool suppress_allele);
+    void FindAltSplices(bool suppress_allele);
     void TransferSubclauses(TClauseList &other_clause_list);
     void CountUnknownGenes();
     void ExpandExonLists();
@@ -135,7 +138,7 @@ public:
     void SuppressSubfeatures() { m_SuppressSubfeatures = true; }
     
     string FindGeneProductName(CAutoDefFeatureClause_Base *gene_clause);
-    void AssignGeneProductNames(CAutoDefFeatureClause_Base *main_clause);
+    void AssignGeneProductNames(CAutoDefFeatureClause_Base *main_clause, bool suppress_allele);
     
     void RemoveFeaturesByType(unsigned int feature_type);
     bool IsFeatureTypeLonely(unsigned int feature_type);
@@ -148,11 +151,10 @@ public:
     virtual bool IsBioseqPrecursorRNA();
     void RemoveBioseqPrecursorRNAs();
 
-    void Consolidate(CAutoDefFeatureClause_Base& other);
+    void Consolidate(CAutoDefFeatureClause_Base& other, bool suppress_allele);
     void TakeSubclauses(CAutoDefFeatureClause_Base& other);
    
 protected:
-    CAutoDefFeatureClause_Base();
     TClauseList  m_ClauseList;
 
     string       m_GeneName;
@@ -173,7 +175,6 @@ protected:
     bool   m_DescriptionChosen;
     string m_ProductName;
     bool   m_ProductNameChosen;
-    bool m_SuppressLocusTag;
     
     bool   m_SuppressSubfeatures;
     
@@ -190,10 +191,10 @@ protected:
 class NCBI_XOBJEDIT_EXPORT CAutoDefUnknownGeneList : public CAutoDefFeatureClause_Base
 {
 public:    
-    CAutoDefUnknownGeneList(bool suppress_locus_tags);
+    CAutoDefUnknownGeneList();
     ~CAutoDefUnknownGeneList();
   
-    virtual void Label();
+    virtual void Label(bool suppress_allele);
     virtual bool IsRecognizedFeature() { return true; }
 };
 
@@ -201,10 +202,10 @@ public:
 class NCBI_XOBJEDIT_EXPORT CAutoDefExonListClause : public CAutoDefFeatureClause_Base
 {
 public:
-    CAutoDefExonListClause(CBioseq_Handle bh, bool suppress_locus_tags);
+    CAutoDefExonListClause(CBioseq_Handle bh);
     
     virtual void AddSubclause (CAutoDefFeatureClause_Base *subclause);
-    virtual void Label();
+    virtual void Label(bool suppress_allele);
     virtual bool IsRecognizedFeature() { return true; }
     virtual bool IsExonList() { return true; }
     virtual bool OkToGroupUnderByLocation(CAutoDefFeatureClause_Base *parent_clause, bool gene_cluster_opp_strand);    
