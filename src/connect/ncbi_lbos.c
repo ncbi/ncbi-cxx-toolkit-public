@@ -1608,7 +1608,7 @@ static void s_LBOS_Reset(SERV_ITER iter)
                 data->n_cand = 0;
                 data->pos_cand = 0;
             }
-#ifdef _DEBUG
+#if defined(_DEBUG)  &&  !defined(NDEBUG)
             /** We check both that it returns zero and does not crash accessing
              * allocated memory  */
             for (i = 0;  i < data->n_cand;  i++) {
