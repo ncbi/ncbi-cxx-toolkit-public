@@ -106,35 +106,29 @@ static bool s_ContainsOffset(const CVariation_inst& inst)
     return false;
 }
 
-static bool s_IsIntronicVariation(const CVariation_inst& inst) {
+bool CVariationUtilities::IsIntronicVariation(const CVariation_inst& inst) {
     return s_ContainsOffset(inst);
 }
 
-template<class T>
-static bool s_IsIntronicVariation(const T& var, const CVariation_inst::TType type) {
-    if( type != CVariation_inst::eType_ins 
-        && type != CVariation_inst::eType_del) {
-            return false;
-    }
+bool CVariationUtilities::IsIntronicVariation(const CVariation_ref& var)
+{
 
     if (!var.IsSetData()) {
         return false;
     }
 
     switch(var.GetData().Which()) {
-    case T::C_Data::e_Instance:
+    case CVariation_ref::TData::e_Instance:
         {
-            return s_IsIntronicVariation(var.GetData().GetInstance());
+            return IsIntronicVariation(var.GetData().GetInstance());
         }
         break;
-    case T::C_Data::e_Set:
+    case CVariation_ref::TData::e_Set:
         {
-            ITERATE(typename T::TData::TSet::TVariations, v_it, var.GetData().GetSet().GetVariations())
+            ITERATE(CVariation_ref::TData::TSet::TVariations, v_it, var.GetData().GetSet().GetVariations())
             {
-                const T& var2 = **v_it;
-
-                if (var2.IsSetData() && var2.GetData().IsInstance() &&
-                    s_IsIntronicVariation(var2.GetData().GetInstance())) {
+                const CVariation_ref& var2 = **v_it;
+                if(IsIntronicVariation(var2)) {
                     return true;
                 }
             }
@@ -147,16 +141,24 @@ static bool s_IsIntronicVariation(const T& var, const CVariation_inst::TType typ
     return false;
 }
 
-template<class T>
-static bool s_IsIntronicVariation(const T& var) {
-    if (!var.IsSetData()) {
+bool CVariationUtilities::IsIntronicVariation(const CVariation& var)
+{
+    if(!var.IsSetPlacements()) {
         return false;
     }
-    CVariation_inst::TType type = 
-        CVariationUtilities::GetVariationType(var);
 
-    return s_IsIntronicVariation<T>(var, type);
+    if(var.GetPlacements().size() != 1) {
+        NCBI_USER_THROW_FMT("Expected Variation object with single placement: " << MSerial_AsnText << var);
+    }
+
+    if(var.GetPlacements().front()->IsSetStart_offset() ||
+        var.GetPlacements().front()->IsSetStop_offset()) {
+        return true;
+    }
+
+    return false;
 }
+
 
 void CVariationUtilities::CorrectRefAllele(CVariation& variation, CScope& scope)
 {
@@ -960,8 +962,9 @@ void CVariationNormalization_base<T>::x_Shift(CVariation& variation, CScope &sco
                 continue;
         }
 
-        if (s_IsIntronicVariation<CVariation>(var, type)) {
-            return;
+        //Do not shift intronic variants.
+        if(CVariationUtilities::IsIntronicVariation(var)) {
+            continue;
         }
 
         //Correct SeqLoc interval *around* the insertion
@@ -1174,7 +1177,8 @@ void CVariationNormalization_base<T>::x_Shift(CSeq_feat& feat, CScope &scope)
             return;
     }
 
-    if (s_IsIntronicVariation<CVariation_ref>(vref, type)) {
+    //Do not shift intronic variants either.
+    if (CVariationUtilities::IsIntronicVariation(vref)) {
         return;
     }
 

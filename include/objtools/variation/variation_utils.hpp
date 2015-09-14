@@ -71,6 +71,12 @@ public:
     static string GetCommonRepeatUnit(const CVariation& vr);
     static string RepeatedSubstring(const string &str) ;
 
+    //intronic detection
+    static bool IsIntronicVariation(const CVariation_inst& inst);
+    static bool IsIntronicVariation(const CVariation_ref& var);
+    static bool IsIntronicVariation(const CVariation& var);
+
+
 
 private:
     static string x_GetAlleleFromLoc(const CSeq_loc& loc, CScope& scope);
