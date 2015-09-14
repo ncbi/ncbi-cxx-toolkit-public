@@ -263,8 +263,19 @@ bool CGff2Record::AssignFromGff(
     m_strId = columns[0];
     m_strSource = columns[1];
     m_strType = columns[2];
-    m_uSeqStart = NStr::StringToUInt( columns[3] ) - 1;
-    m_uSeqStop = NStr::StringToUInt( columns[4] ) - 1;
+    try {
+        m_uSeqStart = NStr::StringToUInt( columns[3] ) - 1;
+        m_uSeqStop = NStr::StringToUInt( columns[4] ) - 1;
+    }
+    catch (const CException&) {
+        AutoPtr<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
+            eDiag_Error,
+            0,
+            "Bad data line: Both \"start\" and \"stop\" must be positive integers.",
+            ILineError::eProblem_FeatureBadStartAndOrStop));
+        pErr->Throw();
+    }
     if (m_uSeqStop < m_uSeqStart) {
         AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
