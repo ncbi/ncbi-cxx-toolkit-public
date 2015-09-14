@@ -367,8 +367,11 @@ NCBITEST_AUTO_INIT()
     if (*lbos_output_orig == NULL) 
         lbos_output_orig = strdup("");
     string lbos_output = *lbos_output_orig;
-    
-    vector<string> to_find = {"/lbostest", "/lbostest1"};
+    const char* str1 = "/lbostest";
+    const char* str2 = "/lbostest1";
+    vector<string> to_find;
+    to_find.push_back(str1);
+    to_find.push_back(str2);
 
     unsigned int i = 0;
     for (i = 0;  i < to_find.size();  ++i) {
