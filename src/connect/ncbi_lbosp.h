@@ -90,6 +90,15 @@ typedef struct {
                                           testing                            */
 } SLBOS_Data;
 
+
+/** Data structure to use as user_data in HTTP Connector (header is used 
+ *  only for unit testing)                                                   */
+typedef struct {
+    int http_response_code;
+    const char* header;
+} SLBOS_UserData;
+
+
 struct SLBOS_AnnounceHandle_Tag
 {
     char*            service;       /**< service name of announced server    */
@@ -98,6 +107,7 @@ struct SLBOS_AnnounceHandle_Tag
     char*            lbos_hostport; /**< lbos that processed announcement    */
     unsigned short   port;          /**< port of announced server            */
 };
+
 
 /** Possible values of parameter for g_LBOS_CheckIterator().
 *  @see
@@ -111,7 +121,6 @@ typedef enum {
                                                 returned                     */
     ELBOSIteratorCheckType_NoCheck         /**< No check of 'data'           */
 } ELBOSIteratorCheckType;
-
 
 ///////////////////////////////////////////////////////////////////////////////
 //                        MOCK FUNCTION TYPEDEFS                             //

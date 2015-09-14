@@ -31,107 +31,26 @@
  */
 #include "../ncbi_lbosp.h"
 
-/* Connection state
- */
-typedef enum {
-    eCONN_Unusable = -1,         /* iff !conn->meta.list                     */
-    eCONN_Closed   =  0,         /* "Open" can be attempted                  */
-    eCONN_Open     =  1,         /* operational state (I/O allowed)          */
-    eCONN_Bad      =  2,         /* non-operational (I/O not allowed)        */
-    eCONN_Cancel   =  3          /* NB: |= eCONN_Open (user-canceled)        */
-} ECONN_State;
-
-/* Connection internal data:  meta *must* come first
- */
-typedef struct SConnectionTag {
-    SMetaConnector  meta;        /* VTable of operations and list            */
-
-    ECONN_State     state;       /* connection state                         */
-    TCONN_Flags     flags;       /* connection flags                         */
-    EIO_Status      r_status;    /* I/O status of last read                  */
-    EIO_Status      w_status;    /* I/O status of last write                 */
-
-    BUF             buf;         /* storage for peek data                    */
-
-    void*           data;        /* user data pointer                        */
-
-    /* "[o|r|w|c]_timeout" is either 0 (kInfiniteTimeout), kDefaultTimeout
-       (to use connector-specific one), or points to "[oo|rr|ww|cc]_timeout" */
-    const STimeout* o_timeout;   /* timeout on open                          */
-    const STimeout* r_timeout;   /* timeout on read                          */
-    const STimeout* w_timeout;   /* timeout on write                         */
-    const STimeout* c_timeout;   /* timeout on close                         */
-    STimeout        oo_timeout;  /* storage for "o_timeout"                  */
-    STimeout        rr_timeout;  /* storage for "r_timeout"                  */
-    STimeout        ww_timeout;  /* storage for "w_timeout"                  */
-    STimeout        cc_timeout;  /* storage for "c_timeout"                  */
-
-    TNCBI_BigCount  r_pos;       /* read and ...                             */
-    TNCBI_BigCount  w_pos;       /*          ... write positions             */
-
-    SCONN_Callback  cb[CONN_N_CALLBACKS];
-
-    unsigned int    magic;       /* magic cookie for integrity checks        */
-} SConnection;
-
-typedef unsigned       EBReadState;  /* packed EReadState */
-typedef unsigned short TBHTTP_Flags;  /* packed THTTP_Flags */
-typedef unsigned       EBCanConnect;  /* packed ECanConnect */
-
-typedef struct {
-    SConnNetInfo*     net_info;       /* network configuration parameters    */
-    void*             user_data;      /* user data handle for callbacks (CB) */
-    FHTTP_Adjust      adjust;         /* on-the-fly net_info adjustment CB   */
-    FHTTP_Cleanup     cleanup;        /* cleanup callback                    */
-    FHTTP_ParseHeader parse_header;   /* callback to parse HTTP reply header */
-
-    TBHTTP_Flags      flags;          /* as passed to constructor            */
-    unsigned          error_header:1; /* only err.HTTP header on SOME debug  */
-    EBCanConnect      can_connect:2;  /* whether more connections permitted  */
-    EBReadState       read_state:3;   /* "READ" mode state per table above   */
-    unsigned          auth_done:1;    /* website authorization sent          */
-    unsigned    proxy_auth_done:1;    /* proxy authorization sent            */
-    unsigned          skip_host:1;    /* do *not* add the "Host:" header tag */
-    unsigned          reserved:4;     /* MBZ                                 */
-    unsigned          minor_fault:3;  /* incr each minor failure since majo  */
-    unsigned short    major_fault;    /* incr each major failure since open  */
-    unsigned short    http_code;      /* last http code response             */
-
-    SOCK              sock;           /* socket;  NULL if not in "READ" mode */
-    const STimeout*   o_timeout;      /* NULL(infinite), dflt or ptr to next */
-    STimeout          oo_timeout;     /* storage for (finite) open timeout   */
-    const STimeout*   w_timeout;      /* NULL(infinite), dflt or ptr to next */
-    STimeout          ww_timeout;     /* storage for a (finite) write tmo    */
-
-    BUF               http;           /* storage for HTTP reply              */
-    BUF               r_buf;          /* storage to accumulate input data    */
-    BUF               w_buf;          /* storage to accumulate output data   */
-    size_t            w_len;          /* pending message body size           */
-
-    TNCBI_BigCount    expected;       /* expected to receive before EOF      */
-    TNCBI_BigCount    received;       /* actually received so far            */
-} SHttpConnector;
-
-
 /** Get number of servers with specified IP announced in ZK  */
 int                     s_CountServers(string    service,
-                                       unsigned short port);
+                                       unsigned short port,
+                                       string dtab);
 
 /** Intercept call and get healthcheck URL*/
 static
 ELBOS_Result s_FakeAnnounceEx(const char*     service,
-                                    const char*      version,
-                                    unsigned short   port,
-                                    const char*      healthcheck_url,
-                                    char**           LBOS_answer);
+                              const char*      version,
+                              unsigned short   port,
+                              const char*      healthcheck_url,
+                              char**           LBOS_answer);
 
                                                                
 template <unsigned int lines>
-static EIO_Status    s_FakeReadAnnouncement                 (CONN conn,
-                                                             void* line,
-                                                             size_t size,
-                                                             size_t* n_read,
-                                                           EIO_ReadMethod how);
+static EIO_Status    s_FakeReadAnnouncement(CONN conn,
+                                            void* line,
+                                            size_t size,
+                                            size_t* n_read,
+                                            EIO_ReadMethod how);
 static
 EIO_Status s_FakeReadAnnouncementWithErrorFromLBOS(CONN             conn,
                                                     void*            line,
@@ -148,7 +67,7 @@ ELBOS_Result s_FakeAnnounceEx(const char*      service,
                               unsigned short   port,
                               const char*      healthcheck_url,
                               char**           LBOS_answer)  {
-    s_LBOS_hostport = strdup(healthcheck_url);
+    s_LBOS_hostport = healthcheck_url;
     return eLBOS_DNSResolveError;
 }
 
@@ -332,7 +251,7 @@ private:
 
 
 /** Hold non-const C-style (malloc, free) array terminating with NULL element. 
- *  Assignment free()'s current C-string */
+ *  Assignment free()'s current C-array */
 template<class T>
 class CCObjArrayHolder
 {
@@ -434,9 +353,8 @@ EIO_Status s_FakeReadAnnouncementWithErrorFromLBOS(CONN             conn,
                                                    size_t*          n_read,
                                                    EIO_ReadMethod   how)
 {
-    *static_cast<int*>(
-        static_cast<SHttpConnector*>(conn->meta.c_read->handle)
-                                                            ->user_data) = 500;
+    static_cast<SLBOS_UserData*>(CONN_GetUserData(conn))
+        ->http_response_code = 500;
     const char* error = "Those lbos errors are scaaary";
     strncpy(static_cast<char*>(line), error, size - 1);
     *n_read = strlen(error);
@@ -452,9 +370,8 @@ EIO_Status s_FakeReadAnnouncementSuccessWithCorruptOutputFromLBOS
  size_t*        n_read,
  EIO_ReadMethod how)
 {
-    *static_cast<int*>(
-        static_cast<SHttpConnector*>(conn->meta.c_read->handle)
-        ->user_data) = 200;
+    static_cast<SLBOS_UserData*>(CONN_GetUserData(conn))
+        ->http_response_code = 200;
     const char* error = "Corrupt output";
     strncpy(static_cast<char*>(line), error, size - 1);
     *n_read = strlen(error);
@@ -469,25 +386,25 @@ EIO_Status s_FakeReadWithErrorFromLBOSCheckDTab(CONN conn,
                                                 size_t* n_read,
                                                 EIO_ReadMethod how)
 {
-    *static_cast<int*>(static_cast<SHttpConnector*>(conn->meta.c_read->handle)
-        ->user_data) = 400;
-    s_LBOS_header = string(static_cast<SHttpConnector*>
-        (conn->meta.c_read->handle)->net_info->http_user_header);
+    SLBOS_UserData * user_data = 
+        static_cast<SLBOS_UserData*>(CONN_GetUserData(conn));
+    user_data->http_response_code = 400;
+    s_LBOS_header = 
+        string(static_cast<SLBOS_UserData*>(CONN_GetUserData(conn))->header);
     return eIO_Closed;
 }
 
 
 template <unsigned int lines>
 static
-EIO_Status s_FakeReadAnnouncement(CONN conn,
-                                  void* line,
-                                  size_t size,
-                                  size_t* n_read,
+EIO_Status s_FakeReadAnnouncement(CONN           conn,
+                                  void*          line,
+                                  size_t         size,
+                                  size_t*        n_read,
                                   EIO_ReadMethod how)
 {
-    *static_cast<int*>(
-        static_cast<SHttpConnector*>(conn->meta.c_read->handle)
-                                                            ->user_data) = 200;
+    static_cast<SLBOS_UserData*>(CONN_GetUserData(conn))
+        ->http_response_code = 200;
     int localscope_lines = lines; /* static analysis and compiler react 
                                 strangely to template parameter in equations */
     if (s_call_counter++ < localscope_lines) {
@@ -502,12 +419,43 @@ EIO_Status s_FakeReadAnnouncement(CONN conn,
 }
 
 
-int s_CountServers(string service, unsigned short port)
+template<CLBOSException::EErrCode kErrCode>
+class ExceptionComparator
+{
+public:
+    ExceptionComparator (string expected_message = "") 
+        : m_ExpectedMessage(expected_message) 
+    {
+    }
+
+    bool operator()(const CLBOSException& ex)
+    {
+        if (ex.GetErrCode() != kErrCode) {
+            return false;
+        }
+        if (!m_ExpectedMessage.empty()) {
+            const char* ex_message =
+                strstr(ex.what(), " Error: ") + strlen(" Error: ");
+            string message;
+            message.append(ex_message);
+            return (message == m_ExpectedMessage);
+             
+        }
+        return true;
+    }
+
+    string m_ExpectedMessage;
+};
+
+
+int s_CountServers(string service, unsigned short port, string dtab = "")
 {
     int servers = 0;
     const SSERV_Info* info;
     CConnNetInfo net_info(service);
-
+    if (dtab.length() > 1) {
+        ConnNetInfo_SetUserHeader(*net_info, dtab.c_str());
+    }
     CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,
         SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
         *net_info, 0/*skip*/, 0/*n_skip*/,
@@ -519,6 +467,7 @@ int s_CountServers(string service, unsigned short port)
     } while (info != NULL);
     return servers;
 }
+
 
 
 template <unsigned int lines>
@@ -595,7 +544,7 @@ static unsigned short s_GeneratePort(int thread_num = -1)
         port = abs(cur % (65534 / kThreadsNum)) + 
                   (65534 / kThreadsNum) * thread_num + 1;
     }
-    CORE_LOGF(eLOG_Warning, ("Port %hu for thread %d", port, thread_num));
+    CORE_LOGF(eLOG_Trace, ("Port %hu for thread %d", port, thread_num));
     return port;
 }
 
@@ -605,11 +554,11 @@ static unsigned short s_GeneratePort(int thread_num = -1)
  * IPs with digits more than 7 invalid */
 template <unsigned int lines> 
 static
-EIO_Status s_FakeReadDiscoveryCorrupt(CONN conn,
-                                      void* line,
-                                      size_t size,
-                                      size_t* n_read,
-                                      EIO_ReadMethod how)
+EIO_Status s_FakeReadDiscoveryCorrupt(CONN              conn,
+                                      void*             line,
+                                      size_t            size,
+                                      size_t*           n_read,
+                                      EIO_ReadMethod    how)
 {
     static unsigned int bytesSent = 0;
     /* Generate string */
@@ -628,9 +577,8 @@ EIO_Status s_FakeReadDiscoveryCorrupt(CONN conn,
     }
     unsigned int len = buf.length();
     if (bytesSent < len) {
-        *static_cast<int*>(
-            static_cast<SHttpConnector*>(conn->meta.c_read->handle)
-                                                            ->user_data) = 200;
+        static_cast<SLBOS_UserData*>(CONN_GetUserData(conn))
+            ->http_response_code = 200;
         int length_before = strlen(static_cast<char*>(line));
         strncat(static_cast<char*>(line), buf.c_str() + bytesSent, size - 1);
         int length_after = strlen(static_cast<char*>(line));
@@ -671,9 +619,8 @@ EIO_Status s_FakeReadDiscovery(CONN            conn,
     }
     unsigned int len = buf.length();
     if (bytesSent < len) {
-        *static_cast<int*>(
-            static_cast<SHttpConnector*>(conn->meta.c_read->handle)
-                                                            ->user_data) = 200;
+        static_cast<SLBOS_UserData*>(CONN_GetUserData(conn))
+            ->http_response_code = 200;
         int length_before = strlen(static_cast<char*>(line));
         strncat(static_cast<char*>(line), buf.c_str() + bytesSent, size-1);
         int length_after = strlen(static_cast<char*>(line));
