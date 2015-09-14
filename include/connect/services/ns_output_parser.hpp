@@ -186,8 +186,6 @@ public:
     CJsonNode GetRootNode() const {return m_JobInfo;}
 
 private:
-    CJsonNode CreateDataNode(const string& data);
-
     CJsonNode m_JobInfo;
     CJsonNode m_JobEvents;
     CJsonNode m_CurrentEvent;

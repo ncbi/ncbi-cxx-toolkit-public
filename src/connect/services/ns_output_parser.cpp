@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 
 #include <connect/services/ns_output_parser.hpp>
+#include <connect/services/grid_rw_impl.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -669,32 +670,41 @@ void CJobInfoToJSON::ProcessJobEventField(const CTempString& attr_name)
     m_CurrentEvent.SetNull(attr_name);
 }
 
-CJsonNode CJobInfoToJSON::CreateDataNode(const string& data)
+struct SDataDetector : public CStringOrBlobStorageReader
 {
-    CJsonNode node(CJsonNode::NewObjectNode());
+    static CJsonNode CreateNode(const string& src)
+    {
+        CJsonNode node(CJsonNode::NewObjectNode());
+        string data(src);
 
-    if (NStr::StartsWith(data, "D ")) {
-        node.SetString("storage", "embedded");
-        node.SetString("embedded_data", data.substr(2));
-    } else if (NStr::StartsWith(data, "K ")) {
-        node.SetString("storage", "netcache");
-        node.SetString("netcache_key", data.substr(2));
-    } else {
-        node.SetString("storage", "raw");
-        node.SetString("raw_data", data);
+        switch (x_GetDataType(data)) {
+        case eEmbedded:
+            node.SetString("storage", "embedded");
+            node.SetString("embedded_data", data);
+            return node;
+
+        case eNetCache:
+            node.SetString("storage", "netcache");
+            node.SetString("netcache_key", data);
+            return node;
+
+        case eEmpty:
+        default:
+            node.SetString("storage", "raw");
+            node.SetString("raw_data", data);
+            return node;
+        }
     }
-
-    return node;
-}
+};
 
 void CJobInfoToJSON::ProcessInput(const string& data)
 {
-    m_JobInfo.SetByKey("input", CreateDataNode(data));
+    m_JobInfo.SetByKey("input", SDataDetector::CreateNode(data));
 }
 
 void CJobInfoToJSON::ProcessOutput(const string& data)
 {
-    m_JobInfo.SetByKey("output", CreateDataNode(data));
+    m_JobInfo.SetByKey("output", SDataDetector::CreateNode(data));
 }
 
 void CJobInfoToJSON::ProcessJobInfoField(const CTempString& field_name,
