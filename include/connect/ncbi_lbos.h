@@ -41,12 +41,14 @@ extern "C" {
 /** Result of calling function g_LBOS_Announce() */
 typedef enum {
 eLBOS_Success,              /**< Success                           */
-eLBOS_NoLBOS,             /**< lbos was not found                */
+eLBOS_NoLBOS,               /**< lbos was not found                */
 eLBOS_DNSResolveError,      /**< Local address not resolved        */
 eLBOS_InvalidArgs,          /**< Arguments not valid               */
 eLBOS_ServerError,          /**< lbos failed on server side
                                  and returned error code
                                  and error message (possibly)      */
+eLBOS_NotFound,             /**< For deannouncement only. Did not 
+                                 find such server to deannounce    */
 eLBOS_Off,                  /**< lbos turned OFF on this machine   */
 } ELBOS_Result;
 
