@@ -31,8 +31,10 @@
 
 #include <ncbi_pch.hpp>
 
+#include <corelib/rwstream.hpp>
 #include <connect/services/ns_output_parser.hpp>
 #include <connect/services/grid_rw_impl.hpp>
+#include <connect/services/remote_app.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -679,6 +681,7 @@ struct SDataDetector : public CStringOrBlobStorageReader
 
         switch (x_GetDataType(data)) {
         case eEmbedded:
+            // TODO: Extract precise input, output and error for remote app jobs
             node.SetString("storage", "embedded");
             node.SetString("embedded_data", data);
             return node;
@@ -694,16 +697,85 @@ struct SDataDetector : public CStringOrBlobStorageReader
             return node;
         }
     }
+
+    static CJsonNode CreateArgsNode(const string& data, CJsonNode files)
+    {
+        CJsonNode node(CJsonNode::NewObjectNode());
+        node.SetString("storage", "embedded");
+        node.SetString("embedded_data", data);
+        if (files) node.SetByKey("files", files);
+        return node;
+    }
+};
+
+struct SPartialDeserializer : public CRemoteAppRequest
+{
+    SPartialDeserializer(CNcbiIstream& is)
+        : CRemoteAppRequest(NULL)
+    {
+        x_Deserialize(is, &m_Files);
+    }
+
+    CJsonNode CreateFilesNode() const
+    {
+        if (m_Files.empty()) return NULL;
+
+        CJsonNode node(CJsonNode::NewObjectNode());
+        for (TStoredFiles::const_iterator i = m_Files.begin();
+                i != m_Files.end(); ++i) {
+            node.SetString(i->first, i->second);
+        }
+        return node;
+    }
+
+private:
+    TStoredFiles m_Files;
 };
 
 void CJobInfoToJSON::ProcessInput(const string& data)
 {
-    m_JobInfo.SetByKey("input", SDataDetector::CreateNode(data));
+    try {
+        CStringOrBlobStorageReader reader(data, NULL);
+        CRStream stream(&reader, 0, 0, CRWStreambuf::fLeakExceptions);
+        stream.exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
+
+        SPartialDeserializer request(stream);
+
+        m_JobInfo.SetString("strorage",
+                request.GetStdOutErrStorageType() == eLocalFile ?
+                "local_file" : "blob_storage");
+        m_JobInfo.SetInteger("run_timeout", request.GetAppRunTimeout());
+        m_JobInfo.SetBoolean("exclusive", request.IsExclusiveMode());
+        m_JobInfo.SetByKey("args",
+                SDataDetector::CreateArgsNode(
+                    request.GetCmdLine(), request.CreateFilesNode()));
+        m_JobInfo.SetByKey("input",
+                SDataDetector::CreateNode(request.GetInBlobIdOrData()));
+    }
+    catch (...) {
+        m_JobInfo.SetByKey("input", SDataDetector::CreateNode(data));
+    }
 }
 
 void CJobInfoToJSON::ProcessOutput(const string& data)
 {
-    m_JobInfo.SetByKey("output", SDataDetector::CreateNode(data));
+    try {
+        CStringOrBlobStorageReader reader(data, NULL);
+        CRStream stream(&reader, 0, 0, CRWStreambuf::fLeakExceptions);
+        stream.exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
+
+        CRemoteAppResult result(NULL);
+        result.Receive(stream);
+
+        m_JobInfo.SetByKey("output",
+                SDataDetector::CreateNode(result.GetOutBlobIdOrData()));
+        m_JobInfo.SetByKey("error",
+                SDataDetector::CreateNode(result.GetErrBlobIdOrData()));
+        m_JobInfo.SetInteger("return_code", result.GetRetCode());
+    }
+    catch (...) {
+        m_JobInfo.SetByKey("output", SDataDetector::CreateNode(data));
+    }
 }
 
 void CJobInfoToJSON::ProcessJobInfoField(const CTempString& field_name,
