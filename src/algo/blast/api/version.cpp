@@ -86,24 +86,24 @@ accelerated BLAST\", Biology Direct 7:12.",
 /// Pubmed URLs to retrieve the references defined above
 static const string kPubMedUrls[(int)CReference::eMaxPublications+1] = {
     // eGappedBlast
-    "http://www.ncbi.nlm.nih.gov/\
+    "//www.ncbi.nlm.nih.gov/\
 entrez/query.fcgi?db=PubMed&cmd=Retrieve&list_uids=9254694&dopt=Citation",
     // ePhiBlast
-    "http://www.ncbi.nlm.nih.gov/\
+    "//www.ncbi.nlm.nih.gov/\
 entrez/query.fcgi?db=PubMed&cmd=Retrieve&list_uids=9705509&dopt=Citation",
     // eMegaBlast
-    "http://www.ncbi.nlm.nih.gov/\
+    "//www.ncbi.nlm.nih.gov/\
 entrez/query.fcgi?db=PubMed&cmd=Retrieve&list_uids=10890397&dopt=Citation",
     // eCompBasedStats
-    "http://www.ncbi.nlm.nih.gov/\
+    "//www.ncbi.nlm.nih.gov/\
 entrez/query.fcgi?db=PubMed&cmd=Retrieve&list_uids=11452024&dopt=Citation",
     // eCompAdjustedMatrices
-    "http://www.ncbi.nlm.nih.gov/\
+    "//www.ncbi.nlm.nih.gov/\
 entrez/query.fcgi?db=PubMed&cmd=Retrieve&list_uids=16218944&dopt=Citation",
     // eIndexedMegablast
-    "http://www.ncbi.nlm.nih.gov/pubmed/18567917",
+    "//www.ncbi.nlm.nih.gov/pubmed/18567917",
     // eDeltaBlast
-    "http://www.ncbi.nlm.nih.gov/pubmed/22510480",
+    "//www.ncbi.nlm.nih.gov/pubmed/22510480",
     // eMaxPublications
     kEmptyStr
 };
