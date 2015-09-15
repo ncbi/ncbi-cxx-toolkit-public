@@ -503,9 +503,10 @@ int/*bool*/ g_LBOS_CheckIterator(SERV_ITER              iter,
         if (iter->data == NULL) {
             return 0;
         }
-        SLBOS_Data* data = (SLBOS_Data*)iter->data;
-        assert(data->a_cand >= data->n_cand);
-        assert(data->pos_cand <= data->n_cand);
+        assert(((SLBOS_Data*)iter->data)->a_cand >= 
+            ((SLBOS_Data*)iter->data)->n_cand);
+        assert(((SLBOS_Data*)iter->data)->pos_cand <=
+            ((SLBOS_Data*)iter->data)->n_cand);
     }
     if (should_have_data == ELBOSIteratorCheckType_DataMustBeNULL 
         && iter->data != NULL) {
