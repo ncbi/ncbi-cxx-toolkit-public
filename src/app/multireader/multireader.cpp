@@ -691,7 +691,7 @@ void CMultiReaderApp::xProcessWiggle(
     CNcbiOstream& ostr)
 //  ----------------------------------------------------------------------------
 {
-    typedef vector<CRef<CSeq_annot> > ANNOTS;
+    typedef list<CRef<CSeq_annot> > ANNOTS;
     ANNOTS annots;
     
     CWiggleReader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
@@ -894,7 +894,7 @@ void CMultiReaderApp::xProcessVcf(
     CNcbiOstream& ostr)
 //  ----------------------------------------------------------------------------
 {
-    typedef vector<CRef<CSeq_annot> > ANNOTS;
+    typedef list<CRef<CSeq_annot> > ANNOTS;
     ANNOTS annots;
 
     CVcfReader reader( m_iFlags );

@@ -291,14 +291,14 @@ bool CFormatGuessEx::x_TryBed()
     CBedReader Reader;
     CStreamLineReader LineReader(m_LocalBuffer);
 	
-    vector<CRef<CSeq_annot> > LocalAnnots;
+    list<CRef<CSeq_annot> > LocalAnnots;
     try {
         Reader.ReadSeqAnnots(LocalAnnots, LineReader);
     } catch(CException&) {
     } catch(...) {
     }
 
-    ITERATE(vector<CRef<CSeq_annot> >, AnnotIter, LocalAnnots) {
+    ITERATE(list<CRef<CSeq_annot> >, AnnotIter, LocalAnnots) {
         if(!AnnotIter->IsNull() && (*AnnotIter)->CanGetData() && 
            (*AnnotIter)->GetData().IsFtable())
             BedCount++;

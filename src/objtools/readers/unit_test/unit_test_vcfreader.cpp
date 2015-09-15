@@ -147,7 +147,7 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     READERCLASS reader(0);
     CNcbiIfstream ifstr(input.c_str());
 
-    typedef vector<CRef<CSeq_annot> > ANNOTS;
+    typedef list<CRef<CSeq_annot> > ANNOTS;
     ANNOTS annots;
     try {
         reader.ReadSeqAnnots(annots, ifstr, &logger);
@@ -201,7 +201,7 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
     READERCLASS reader(0);
     CNcbiIfstream ifstr(testInfo.mInFile.GetPath().c_str());
 
-    typedef vector<CRef<CSeq_annot> > ANNOTS;
+    typedef list<CRef<CSeq_annot> > ANNOTS;
     ANNOTS annots;
     try {
         reader.ReadSeqAnnots(annots, ifstr, &logger);

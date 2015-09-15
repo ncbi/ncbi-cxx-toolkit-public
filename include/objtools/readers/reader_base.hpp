@@ -162,7 +162,7 @@ public:
     ///  
     virtual void
     ReadSeqAnnots(
-        vector< CRef<CSeq_annot> >& annots,
+        list< CRef<CSeq_annot> >& annots,
         CNcbiIstream& istr,
         ILineErrorListener* pErrors=0 );
                         
@@ -177,7 +177,7 @@ public:
     ///  
     virtual void
     ReadSeqAnnots(
-        vector< CRef<CSeq_annot> >& annots,
+        list< CRef<CSeq_annot> >& annots,
         ILineReader& lr,
         ILineErrorListener* pErrors=0 );
                         

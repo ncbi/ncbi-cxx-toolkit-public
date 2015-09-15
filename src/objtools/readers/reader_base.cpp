@@ -204,7 +204,7 @@ CReaderBase::ReadSeqAnnot(
 //  --------------------------------------------------------------------------- 
 void
 CReaderBase::ReadSeqAnnots(
-    vector< CRef<CSeq_annot> >& annots,
+    list< CRef<CSeq_annot> >& annots,
     CNcbiIstream& istr,
     ILineErrorListener* pMessageListener )
 //  ---------------------------------------------------------------------------
@@ -216,7 +216,7 @@ CReaderBase::ReadSeqAnnots(
 //  ---------------------------------------------------------------------------                       
 void
 CReaderBase::ReadSeqAnnots(
-    vector< CRef<CSeq_annot> >& annots,
+    list< CRef<CSeq_annot> >& annots,
     ILineReader& lr,
     ILineErrorListener* pMessageListener )
 //  ----------------------------------------------------------------------------
