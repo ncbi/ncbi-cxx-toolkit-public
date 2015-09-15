@@ -983,10 +983,10 @@ void DTabRegistryAndHttp__RegistryGoesFirst()
                    *net_info, 0/*skip*/, 0/*n_skip*/,
                    0/*external*/, 0/*arg*/, 0/*val*/));
     string expected_header = "DTab-local:  /lbostest=>/zk#/lbostest/1.0.0;"
-                            "/lbostest=>/zk#/lbostest/1.0.0\r\n"
-                            "User-Agent: test_ncbi_lbos\r\n";
+                            "/lbostest=>/zk#/lbostest/1.0.0";
     
-    NCBITEST_CHECK_MESSAGE(s_LBOS_header == expected_header, 
+    NCBITEST_CHECK_MESSAGE(s_LBOS_header.substr(0, expected_header.length()) ==
+                                expected_header, 
                            "Header with DTab did not combine as expected");
 }
 
@@ -5345,7 +5345,13 @@ bool s_CheckIfAnnounced(string service,
     string lbos_output(*lbos_output_orig);
     stringstream ss;
     ss << service << "\t" << version << "\t" <<  server_hostport <<
-          "\thttp://" << strlwr(health_hostport) << health_suffix << "\ttrue";
+          "\thttp://" << 
+#ifdef NCBI_COMPILER_MSVC
+          _strlwr(health_hostport) 
+#else 
+          strlwr(health_hostport)
+#endif
+          << health_suffix << "\ttrue";
     /*ConnNetInfo_Destroy(*net_info);*/
     string to_find = ss.str();
     return (lbos_output.find(to_find) != string::npos);

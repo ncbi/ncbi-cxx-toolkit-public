@@ -37,7 +37,7 @@
 
 BEGIN_NCBI_SCOPE
 
-class LBOS
+class NCBI_XNCBI_EXPORT LBOS
 {
 public:
     static void Announce(const string&    service,
