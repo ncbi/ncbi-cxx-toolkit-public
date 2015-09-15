@@ -1207,7 +1207,7 @@ string CAutoDef::GetOneDefLine(CBioseq_Handle bh)
     unsigned int genome_val = CBioSource::eGenome_unknown;
 
     CAutoDefModifierCombo *mod_combo = GetEmptyCombo();
-    mod_combo->SetOptions(m_Options);
+    mod_combo->InitFromOptions(m_Options);
 
     for (CSeqdesc_CI dit(bh, CSeqdesc::e_Source); dit; ++dit) {
         const CBioSource& bsrc = dit->GetSource();

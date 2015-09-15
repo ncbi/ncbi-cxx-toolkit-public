@@ -212,7 +212,117 @@ static void AddTitle (CRef<CSeq_entry> entry, string defline)
 }
 
 
+size_t HasBoolField(const CUser_object& user, const string& field_name)
+{
+    size_t num_found = 0;
+    ITERATE(CUser_object::TData, it, user.GetData()) {
+        if ((*it)->IsSetLabel() && (*it)->GetLabel().IsStr() &&
+            NStr::EqualNocase((*it)->GetLabel().GetStr(), field_name)) {
+            num_found++;
+            if (!(*it)->IsSetData()) {
+                BOOST_CHECK_EQUAL("Data for " + field_name + "should be set", "Data not set");
+            } else {
+                BOOST_CHECK_EQUAL((*it)->GetData().Which(), CUser_field::TData::e_Bool);
+                if ((*it)->GetData().IsBool()) {
+                    BOOST_CHECK_EQUAL((*it)->GetData().GetBool(), true);
+                }
+            }
+        }
+    }
+    return num_found;
+}
 
+size_t HasStringField(const CUser_object& user, const string& field_name, const string& value)
+{
+    size_t num_found = 0;
+    ITERATE(CUser_object::TData, it, user.GetData()) {
+        if ((*it)->IsSetLabel() && (*it)->GetLabel().IsStr() &&
+            NStr::EqualNocase((*it)->GetLabel().GetStr(), field_name)) {
+            num_found++;
+            if (!(*it)->IsSetData()) {
+                BOOST_CHECK_EQUAL("Data for " + field_name + "should be set", "Data not set");
+            } else {
+                BOOST_CHECK_EQUAL((*it)->GetData().Which(), CUser_field::TData::e_Str);
+                if ((*it)->GetData().IsStr()) {
+                    BOOST_CHECK_EQUAL((*it)->GetData().GetStr(), value);
+                }
+            }
+        }
+    }
+    return num_found;
+}
+
+size_t HasIntField(const CUser_object& user, const string& field_name, int value)
+{
+    size_t num_found = 0;
+    ITERATE(CUser_object::TData, it, user.GetData()) {
+        if ((*it)->IsSetLabel() && (*it)->GetLabel().IsStr() &&
+            NStr::EqualNocase((*it)->GetLabel().GetStr(), field_name)) {
+            num_found++;
+            if (!(*it)->IsSetData()) {
+                BOOST_CHECK_EQUAL("Data for " + field_name + "should be set", "Data not set");
+            } else {
+                BOOST_CHECK_EQUAL((*it)->GetData().Which(), CUser_field::TData::e_Int);
+                if ((*it)->GetData().IsInt()) {
+                    BOOST_CHECK_EQUAL((*it)->GetData().GetInt(), value);
+                }
+            }
+        }
+    }
+    return num_found;
+}
+
+
+void CheckAutoDefOptions
+(const CUser_object& user,
+ size_t expected_num_fields,
+ const string& feature_list_type,
+ const string& misc_feat_rule,
+ bool use_fake_promoters,
+ bool keep_introns,
+ bool keep_uorfs,
+ bool use_labels,
+ bool allow_at_end,
+ bool exclude_sp)
+{
+    BOOST_CHECK_EQUAL(user.GetObjectType(), CUser_object::eObjectType_AutodefOptions);
+    BOOST_CHECK_EQUAL(user.GetData().size(), expected_num_fields);
+    BOOST_CHECK_EQUAL(HasBoolField(user, "LeaveParenthetical"), 1);
+    BOOST_CHECK_EQUAL(HasBoolField(user, "SpecifyNuclearProduct"), 1);
+    if (use_labels) {
+        BOOST_CHECK_EQUAL(HasBoolField(user, "UseLabels"), 1);
+    }
+    if (allow_at_end) {
+        BOOST_CHECK_EQUAL(HasBoolField(user, "AllowModAtEndOfTaxname"), 1);
+    }
+    if (exclude_sp) {
+        BOOST_CHECK_EQUAL(HasBoolField(user, "DoNotApplyToSp"), 1);
+    }
+    if (use_fake_promoters) {
+        BOOST_CHECK_EQUAL(HasBoolField(user, "UseFakePromoters"), 1);
+        BOOST_CHECK_EQUAL(HasBoolField(user, "KeepPromoters"), 1);
+    }
+    if (keep_introns) {
+        BOOST_CHECK_EQUAL(HasBoolField(user, "KeepIntrons"), 1);
+    }
+    if (keep_uorfs) {
+        BOOST_CHECK_EQUAL(HasBoolField(user, "KeepuORFs"), 1);
+    }
+    BOOST_CHECK_EQUAL(HasStringField(user, "MiscFeatRule", misc_feat_rule), 1);
+    BOOST_CHECK_EQUAL(HasStringField(user, "FeatureListType", feature_list_type), 1);
+    BOOST_CHECK_EQUAL(HasStringField(user, "HIVRule", "WantBoth"), 1);
+    BOOST_CHECK_EQUAL(HasIntField(user, "MaxMods", -99), 1);
+    if (user.GetData().size() != expected_num_fields) {
+        int field_num = 1;
+        ITERATE(CUser_object::TData, it, user.GetData()) {
+            if (!(*it)->IsSetLabel() || !(*it)->GetLabel().IsStr()) {
+                BOOST_CHECK_EQUAL("Label should be set", "label not set for " + NStr::IntToString(field_num));
+            } else {
+                printf("%s\n", (*it)->GetLabel().GetStr().c_str());
+            }
+        }
+    }
+}
 
 
 static void CheckDeflineMatches(CSeq_entry_Handle seh,
@@ -237,11 +347,46 @@ static void CheckDeflineMatches(CSeq_entry_Handle seh,
 
        BOOST_CHECK_EQUAL(orig_defline, new_defline);
 
-       CRef<CUser_object> user = autodef.GetOptionsObject();
+       CRef<CUser_object> tmp_user = autodef.GetOptionsObject();
+       CAutoDefOptions opts;
+       opts.InitFromUserObject(*tmp_user);
+       mod_combo->InitOptions(opts);
+       CRef<CUser_object> user = opts.MakeUserObject();
        CAutoDef autodef2;
        autodef2.SetOptionsObject(*user);
        new_defline = autodef2.GetOneDefLine(bh);
        BOOST_CHECK_EQUAL(orig_defline, new_defline);
+       size_t expected_num_fields = 7;
+       if (mod_combo->GetNumOrgMods() > 0 || mod_combo->GetNumSubSources() > 0) {
+           expected_num_fields++;
+       }
+       if (!mod_combo->GetExcludeSpOrgs()) {
+           expected_num_fields--;
+       }
+       if (mod_combo->GetUseModifierLabels()) {
+           expected_num_fields++;
+       }
+       if (mod_combo->GetAllowModAtEndOfTaxname()) {
+           expected_num_fields++;
+       }
+       if (opts.GetUseFakePromoters()) {
+           expected_num_fields += 2;
+       }
+       if (opts.GetKeepIntrons()) {
+           expected_num_fields++;
+       }
+       if (opts.GetKeepuORFs()) {
+           expected_num_fields++;
+       }
+       CheckAutoDefOptions(*user, expected_num_fields,
+           opts.GetFeatureListType(opts.GetFeatureListType()),
+           opts.GetMiscFeatRule(opts.GetMiscFeatRule()),
+           opts.GetUseFakePromoters(),
+           opts.GetKeepIntrons(),
+           opts.GetKeepuORFs(),
+           mod_combo->GetUseModifierLabels(),
+           mod_combo->GetAllowModAtEndOfTaxname(),
+                           mod_combo->GetExcludeSpOrgs());
     }
 
     // check popset title if needed
@@ -290,7 +435,7 @@ static void CheckDeflineMatches(CRef<CSeq_entry> entry,
 
 static void CheckDeflineMatches(CRef<CSeq_entry> entry, bool use_best = false,
                                 CAutoDefOptions::EFeatureListType list_type = CAutoDefOptions::eListAllFeatures,
-                                CAutoDefOptions::EMiscFeatRule misc_feat_rule = CAutoDefOptions::eDelete)
+                                CAutoDefOptions::EMiscFeatRule misc_feat_rule = CAutoDefOptions::eNoncodingProductFeat)
 {
     CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
 
@@ -1288,6 +1433,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_4242)
     mod_combo = new CAutoDefModifierCombo();
     mod_combo->SetUseModifierLabels(true);
     mod_combo->SetAllowModAtEndOfTaxname(true);
+    mod_combo->SetExcludeSpOrgs(false);
     ITERATE(vector<CSubSource::ESubtype>, it, subsrcs) {
         mod_combo->AddSubsource(*it, true);
     }
@@ -1304,14 +1450,30 @@ BOOST_AUTO_TEST_CASE(Test_GB_4242)
 BOOST_AUTO_TEST_CASE(Test_SQD_3440)
 {
     CAutoDefOptions options;
+    CAutoDefModifierCombo combo;
+    combo.InitOptions(options);
 
     CRef<CUser_object> user = options.MakeUserObject();
     BOOST_CHECK_EQUAL(user->GetObjectType(), CUser_object::eObjectType_AutodefOptions);
     options.SetUseLabels();
     user = options.MakeUserObject();
-    BOOST_CHECK_EQUAL(user->GetData().front()->GetLabel().GetStr(), "UseLabels");
-
-
+    BOOST_CHECK_EQUAL(user->GetData().size(), 8);
+    BOOST_CHECK_EQUAL(HasBoolField(*user, "UseLabels"), 1);
+    BOOST_CHECK_EQUAL(HasBoolField(*user, "SpecifyNuclearProduct"), 1);
+    BOOST_CHECK_EQUAL(HasBoolField(*user, "DoNotApplyToSp"), 1);
+    BOOST_CHECK_EQUAL(HasBoolField(*user, "LeaveParenthetical"), 1);
+    BOOST_CHECK_EQUAL(HasStringField(*user, "MiscFeatRule", "NoncodingProductFeat"), 1);
+    BOOST_CHECK_EQUAL(HasStringField(*user, "FeatureListType", "List All Features"), 1);
+    BOOST_CHECK_EQUAL(HasStringField(*user, "HIVRule", "WantBoth"), 1);
+    BOOST_CHECK_EQUAL(HasIntField(*user, "MaxMods", -99), 1);
+    int field_num = 1;
+    ITERATE(CUser_object::TData, it, user->GetData()) {
+        if (!(*it)->IsSetLabel() || !(*it)->GetLabel().IsStr()) {
+            BOOST_CHECK_EQUAL("Label should be set", "label not set for " + NStr::IntToString(field_num));
+        } else {
+            printf("%s\n", (*it)->GetLabel().GetStr().c_str());
+        }
+    }
 }
 
 

@@ -65,9 +65,11 @@ CRef<CUser_object> CAutoDefOptions::MakeUserObject() const
     user->SetData().push_back(x_MakeFeatureListType());
     user->SetData().push_back(x_MakeMiscFeatRule());
     user->SetData().push_back(x_MakeHIVRule());
-    user->SetData().push_back(x_MakeProductFlag());
-    user->SetData().push_back(x_MakeSuppressedFeatures());
-    user->SetData().push_back(x_MakeModifierList());
+    if (!GetSpecifyNuclearProduct()) {
+        user->SetData().push_back(x_MakeProductFlag());
+    }
+    x_MakeSuppressedFeatures(*user);
+    x_MakeModifierList(*user);
 
     return user;
 }
@@ -76,7 +78,7 @@ CRef<CUser_object> CAutoDefOptions::MakeUserObject() const
 #define INITENUMFIELD(Fieldname) \
     } else if (field_type == eOptionFieldType_##Fieldname) { \
         if ((*it)->IsSetData() && (*it)->GetData().IsStr()) { \
-            m_##Fieldname = x_Get##Fieldname((*it)->GetData().GetStr()); \
+            m_##Fieldname = Get##Fieldname((*it)->GetData().GetStr()); \
         }
 
 
@@ -86,7 +88,7 @@ void CAutoDefOptions::InitFromUserObject(const CUser_object& obj)
 
     ITERATE(CUser_object::TData, it, obj.GetData()) {
         if ((*it)->IsSetLabel() && (*it)->GetLabel().IsStr()) {}
-        TFieldType field_type = x_GetFieldType((*it)->GetLabel().GetStr());
+        TFieldType field_type = GetFieldType((*it)->GetLabel().GetStr());
         if (field_type != eOptionFieldType_Unknown) {
             if (x_IsBoolean(field_type)) {
                 if ((*it)->IsSetData() && (*it)->GetData().IsBool() && (*it)->GetData().GetBool()) {
@@ -114,9 +116,10 @@ void CAutoDefOptions::InitFromUserObject(const CUser_object& obj)
 void CAutoDefOptions::x_Reset()
 {
     m_FeatureListType = eListAllFeatures;
-    m_MiscFeatRule = eDelete;
+    m_MiscFeatRule = eNoncodingProductFeat;
     m_ProductFlag = CBioSource::eGenome_unknown;
-    m_HIVRule = ePreferClone;
+    m_HIVRule = eWantBoth;
+    m_MaxMods = -99;
 
     ClearSuppressedFeatures();
     ClearModifierList();
@@ -124,6 +127,7 @@ void CAutoDefOptions::x_Reset()
     for (unsigned int i = 0; i < eOptionFieldMax; i++) {
         m_BooleanFlags[i] = false;
     }
+    m_BooleanFlags[eOptionFieldType_SpecifyNuclearProduct] = true;
 }
 
 
@@ -193,7 +197,7 @@ DEFINE_STATIC_ARRAY_MAP_WITH_COPY(TNameValPairMap, sc_HIVRuleStrsMap, sc_HIVRule
 
 
 #define AUTODEFGETENUM(Fieldname, Map, Default) \
-string CAutoDefOptions::x_Get##Fieldname(unsigned int value) const \
+string CAutoDefOptions::Get##Fieldname(unsigned int value) const \
 { \
     TNameValPairMap::const_iterator it = Map.begin(); \
         while (it != Map.end()) { \
@@ -204,7 +208,7 @@ string CAutoDefOptions::x_Get##Fieldname(unsigned int value) const \
     } \
     return kEmptyStr; \
 } \
-CAutoDefOptions::T##Fieldname CAutoDefOptions::x_Get##Fieldname(const string& value) const \
+CAutoDefOptions::T##Fieldname CAutoDefOptions::Get##Fieldname(const string& value) const \
 { \
     TNameValPairMap::const_iterator it = Map.find(value.c_str()); \
     if (it != Map.end()) { \
@@ -215,16 +219,16 @@ CAutoDefOptions::T##Fieldname CAutoDefOptions::x_Get##Fieldname(const string& va
 
 AUTODEFGETENUM(FieldType, sc_FieldTypeStrsMap, eOptionFieldType_Unknown)
 AUTODEFGETENUM(FeatureListType, sc_FeatureListTypeStrsMap, eListAllFeatures)
-AUTODEFGETENUM(MiscFeatRule, sc_MiscFeatRuleStrsMap, eDelete);
-AUTODEFGETENUM(HIVRule, sc_HIVRuleStrsMap, ePreferClone);
+AUTODEFGETENUM(MiscFeatRule, sc_MiscFeatRuleStrsMap, eNoncodingProductFeat);
+AUTODEFGETENUM(HIVRule, sc_HIVRuleStrsMap, eWantBoth);
 
-string CAutoDefOptions::x_GetProductFlag(CBioSource::TGenome value) const
+string CAutoDefOptions::GetProductFlag(CBioSource::TGenome value) const
 {
     return CBioSource::GetOrganelleByGenome(value);
 }
 
 
-CBioSource::TGenome CAutoDefOptions::x_GetProductFlag(const string& value) const
+CBioSource::TGenome CAutoDefOptions::GetProductFlag(const string& value) const
 {
     return CBioSource::GetGenomeByOrganelle(value);
 }
@@ -241,6 +245,7 @@ bool CAutoDefOptions::x_IsBoolean(TFieldType field_type) const
         case eOptionFieldType_ProductFlag:
         case eOptionFieldType_SuppressedFeatures:
         case eOptionFieldType_ModifierList:
+        case eOptionFieldType_MaxMods:
             rval = false;
             break;
         default:
@@ -254,7 +259,7 @@ bool CAutoDefOptions::x_IsBoolean(TFieldType field_type) const
 CRef<CUser_field> CAutoDefOptions::x_MakeBooleanField(TFieldType field_type) const
 {
     CRef<CUser_field> field(new CUser_field());
-    field->SetLabel().SetStr(x_GetFieldType(field_type));
+    field->SetLabel().SetStr(GetFieldType(field_type));
     field->SetData().SetBool(true);
     return field;
 }
@@ -289,20 +294,23 @@ void CAutoDefOptions::ClearSuppressedFeatures()
 }
 
 
-CRef<CUser_field> CAutoDefOptions::x_MakeSuppressedFeatures() const
+void CAutoDefOptions::x_MakeSuppressedFeatures(CUser_object& user) const
 {
+    if (m_SuppressedFeatureSubtypes.empty()) {
+        return;
+    }
     CRef<CUser_field> field(new CUser_field());
-    field->SetLabel().SetStr(x_GetFieldType(eOptionFieldType_SuppressedFeatures));
+    field->SetLabel().SetStr(GetFieldType(eOptionFieldType_SuppressedFeatures));
 
     ITERATE(TSuppressedFeatureSubtypes, it, m_SuppressedFeatureSubtypes) {
         if (*it == CSeqFeatData::eSubtype_any) {
             field->SetData().SetStr("All");
-            return field;
+            user.SetData().push_back(field);
+            return;
         }
         field->SetData().SetStrs().push_back(CSeqFeatData::SubtypeValueToName(*it));
     }
-
-    return field;
+    user.SetData().push_back(field);
 }
 
 
@@ -353,11 +361,11 @@ void CAutoDefOptions::ClearModifierList()
 const string kSubSources = "SubSources";
 const string kOrgMods = "OrgMods";
 
-CRef<CUser_field> CAutoDefOptions::x_MakeModifierList() const
+void CAutoDefOptions::x_MakeModifierList(CUser_object& user) const
 {
     CRef<CUser_field> field(new CUser_field());
-    field->SetLabel().SetStr(x_GetFieldType(eOptionFieldType_ModifierList));
-    
+    field->SetLabel().SetStr(GetFieldType(eOptionFieldType_ModifierList));
+
     if (!m_SubSources.empty()) {
         CRef<CUser_field> subsources(new CUser_field());
         subsources->SetLabel().SetStr(kSubSources);
@@ -378,7 +386,9 @@ CRef<CUser_field> CAutoDefOptions::x_MakeModifierList() const
         field->SetData().SetFields().push_back(orgmods);
     }
 
-    return field;
+    if (field->IsSetData() && field->GetData().IsFields() && field->GetData().GetFields().size() > 0) {
+        user.SetData().push_back(field);
+    }
 }
 
 
@@ -412,7 +422,7 @@ void CAutoDefOptions::x_SetModifierList(const CUser_field& field)
 CRef<CUser_field> CAutoDefOptions::x_MakeMaxMods() const
 {
     CRef<CUser_field> field(new CUser_field());
-    field->SetLabel().SetStr(x_GetFieldType(eOptionFieldType_MaxMods));
+    field->SetLabel().SetStr(GetFieldType(eOptionFieldType_MaxMods));
     field->SetData().SetInt(m_MaxMods);
     return field;
 }

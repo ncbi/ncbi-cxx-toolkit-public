@@ -63,7 +63,7 @@ public:
     CAutoDefModifierCombo(CAutoDefModifierCombo *orig);
     ~CAutoDefModifierCombo();
 
-    void SetOptions(const CAutoDefOptions& options);
+    void InitFromOptions(const CAutoDefOptions& options);
     void InitOptions(CAutoDefOptions& options) const;
     
     unsigned int GetNumGroups();
@@ -86,8 +86,8 @@ public:
     
     void SetUseModifierLabels(bool use);
     bool GetUseModifierLabels();
-    void SetMaxModifiers(unsigned int max_mods);
-    unsigned int GetMaxModifiers();
+    void SetMaxModifiers(int max_mods);
+    int GetMaxModifiers();
     void SetAllowModAtEndOfTaxname(bool keep);
     bool GetAllowModAtEndOfTaxname();
     void SetKeepCountryText(bool keep);
@@ -143,7 +143,7 @@ private:
     CAutoDefSourceDescription::TModifierVector m_Modifiers;
    
     bool         m_UseModifierLabels;
-    unsigned int m_MaxModifiers;
+    int          m_MaxModifiers;
     bool         m_AllowModAtEndOfTaxname;
     bool         m_KeepCountryText;
     bool         m_ExcludeSpOrgs;
@@ -183,14 +183,14 @@ bool CAutoDefModifierCombo::GetUseModifierLabels()
 
 
 inline
-void CAutoDefModifierCombo::SetMaxModifiers(unsigned int max_mods)
+void CAutoDefModifierCombo::SetMaxModifiers(int max_mods)
 {
     m_MaxModifiers = max_mods;
 }
 
 
 inline
-unsigned int CAutoDefModifierCombo::GetMaxModifiers()
+int CAutoDefModifierCombo::GetMaxModifiers()
 {
     return m_MaxModifiers;
 }

@@ -142,8 +142,8 @@ public:
         m_ProductFlag = CBioSource::eGenome_unknown;
     }
 
-    unsigned int GetMaxMods() const { return m_MaxMods; }
-    void SetMaxMods(unsigned int val) { m_MaxMods = val; }
+    int GetMaxMods() const { return m_MaxMods; }
+    void SetMaxMods(int val) { m_MaxMods = val; }
 
 #define AUTODEFBOOLFIELD(Fieldname) \
     bool Get##Fieldname() const { return m_BooleanFlags[eOptionFieldType_##Fieldname]; }; \
@@ -186,10 +186,22 @@ public:
     const TSubSources& GetSubSources() const { return m_SubSources; }
     void ClearModifierList();
 
+    string GetFeatureListType(TFeatureListType list_type) const;
+    TFeatureListType GetFeatureListType(const string& list_type) const;
+
+    string GetMiscFeatRule(TMiscFeatRule list_type) const;
+    TMiscFeatRule GetMiscFeatRule(const string& list_type) const;
+
+    string GetHIVRule(TMiscFeatRule list_type) const;
+    TMiscFeatRule GetHIVRule(const string& list_type) const;
+
+    string GetProductFlag(CBioSource::TGenome value) const;
+    CBioSource::TGenome GetProductFlag(const string& value) const;
+
 private:
 
     bool m_BooleanFlags[eOptionFieldMax];
-    unsigned int m_MaxMods;
+    int m_MaxMods;
     THIVRule m_HIVRule;
     TFeatureListType m_FeatureListType;
     TMiscFeatRule m_MiscFeatRule;
@@ -201,29 +213,18 @@ private:
     TSubSources m_SubSources;
     
     typedef unsigned int TFieldType;
-    string x_GetFieldType(TFieldType field_type) const;
-    TFieldType x_GetFieldType(const string& field_name) const;
+    string GetFieldType(TFieldType field_type) const;
+    TFieldType GetFieldType(const string& field_name) const;
 
-    string x_GetFeatureListType(TFeatureListType list_type) const;
-    TFeatureListType x_GetFeatureListType(const string& list_type) const;
-
-    string x_GetMiscFeatRule(TMiscFeatRule list_type) const;
-    TMiscFeatRule x_GetMiscFeatRule(const string& list_type) const;
-
-    string x_GetHIVRule(TMiscFeatRule list_type) const;
-    TMiscFeatRule x_GetHIVRule(const string& list_type) const;
-
-    string x_GetProductFlag(CBioSource::TGenome value) const;
-    CBioSource::TGenome x_GetProductFlag(const string& value) const;
 
 
     bool x_IsBoolean(TFieldType field_type) const;
     CRef<CUser_field> x_MakeBooleanField(TFieldType field_type) const;
 
-    CRef<CUser_field> x_MakeSuppressedFeatures() const;
+    void x_MakeSuppressedFeatures(CUser_object& user) const;
     void x_SetSuppressedFeatures(const CUser_field& field);
 
-    CRef<CUser_field> x_MakeModifierList() const;
+    void x_MakeModifierList(CUser_object& user) const;
     void x_SetModifierList(const CUser_field& field);
 
     CRef<CUser_field> x_MakeMaxMods() const;
@@ -231,8 +232,8 @@ private:
 #define AUTODEFENUMFIELD(Fieldname) \
     CRef<CUser_field> x_Make##Fieldname() const { \
         CRef<CUser_field> field(new CUser_field()); \
-        field->SetLabel().SetStr(x_GetFieldType(eOptionFieldType_##Fieldname)); \
-        field->SetData().SetStr(x_Get##Fieldname(m_##Fieldname)); \
+        field->SetLabel().SetStr(GetFieldType(eOptionFieldType_##Fieldname)); \
+        field->SetData().SetStr(Get##Fieldname(m_##Fieldname)); \
         return field; \
     } 
 

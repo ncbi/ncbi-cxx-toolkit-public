@@ -49,16 +49,16 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 CAutoDefModifierCombo::CAutoDefModifierCombo() : m_UseModifierLabels(false),
-                                                 m_MaxModifiers(0),
+                                                 m_MaxModifiers(-99),
                                                  m_AllowModAtEndOfTaxname(false),
                                                  m_KeepCountryText(false),
-                                                 m_ExcludeSpOrgs(false),
+                                                 m_ExcludeSpOrgs(true),
                                                  m_ExcludeCfOrgs(false),
                                                  m_ExcludeNrOrgs(false),
                                                  m_ExcludeAffOrgs(false),
                                                  m_KeepParen(true),
                                                  m_KeepAfterSemicolon(false),
-                                                 m_HIVCloneIsolateRule(CAutoDefOptions::ePreferClone)
+                                                 m_HIVCloneIsolateRule(CAutoDefOptions::eWantBoth)
 
 {
     m_SubSources.clear();
@@ -104,6 +104,7 @@ CAutoDefModifierCombo::CAutoDefModifierCombo(CAutoDefModifierCombo *orig)
     m_KeepParen = orig->GetKeepParen();
     m_KeepAfterSemicolon = orig->GetKeepAfterSemicolon();
     m_HIVCloneIsolateRule = orig->GetHIVCloneIsolateRule();
+    m_AllowModAtEndOfTaxname = orig->GetAllowModAtEndOfTaxname();
     m_MaxModifiers = orig->GetMaxModifiers();
 }
 
@@ -116,7 +117,7 @@ CAutoDefModifierCombo::~CAutoDefModifierCombo()
 }
 
 
-void CAutoDefModifierCombo::SetOptions(const CAutoDefOptions& options)
+void CAutoDefModifierCombo::InitFromOptions(const CAutoDefOptions& options)
 {
     m_UseModifierLabels = options.GetUseLabels();
     m_MaxModifiers = options.GetMaxMods();
@@ -669,6 +670,9 @@ string CAutoDefModifierCombo::GetSourceDescriptionString (const CBioSource& bsrc
     source_description += bsrc.GetOrg().GetTaxname();
     x_CleanUpTaxName(source_description);
 
+    mods_used += x_AddRequiredSubSourceModifiers(source_description, bsrc);
+    mods_used += x_AddHIVModifiers(source_description, bsrc);
+
     /* should this organism be excluded? */
     if (m_ExcludeSpOrgs) {
         string::size_type pos = NStr::Find(source_description, " sp. ");
@@ -696,9 +700,6 @@ string CAutoDefModifierCombo::GetSourceDescriptionString (const CBioSource& bsrc
         }
     }
     
-    mods_used += x_AddRequiredSubSourceModifiers(source_description, bsrc);
-    mods_used += x_AddHIVModifiers (source_description, bsrc);
-
     if (bsrc.CanGetOrigin() && bsrc.GetOrigin() == CBioSource::eOrigin_mut) {
         source_description = "Mutant " + source_description;
     }
