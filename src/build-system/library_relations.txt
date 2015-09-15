@@ -1069,6 +1069,8 @@ test_stat_ext needs dbapi
 test_stat_ext needs ncbi_xdbapi_ftds
 test_stat_ext needs xconnect
 test_stat_ext needs xutil
+third_party needs xmlwrapp
+third_party needs xncbi
 tiff needs $(Z_LIB)
 tiff needs3party $(JPEG_LIBS)
 tiff needs3party $(ORIG_LIBS)
