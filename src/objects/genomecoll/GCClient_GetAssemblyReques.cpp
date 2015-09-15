@@ -109,7 +109,6 @@ bool CGCClient_GetAssemblyRequest::SRequestParam::SetMode(EAssemblyMode mode)
         assembly_flags   = eGCClient_AttributeFlags_none;
         chromosome_flags = eGCClient_AttributeFlags_exclude_aligndb;
         scaffold_flags   = eGCClient_AttributeFlags_include_UCSC_pseudo_scaffolds |
-                           eGCClient_AttributeFlags_include_unordered_scaffolds |
                            eGCClient_AttributeFlags_get_wgs_contigs;
         component_flags  = eGCClient_AttributeFlags_none;
         break;
