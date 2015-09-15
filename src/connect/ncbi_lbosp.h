@@ -104,7 +104,6 @@ struct SLBOS_AnnounceHandle_Tag
     char*            service;       /**< service name of announced server    */
     char*            version;       /**< service version of announced server */
     char*            host;          /**< host of announced server            */
-    char*            lbos_hostport; /**< lbos that processed announcement    */
     unsigned short   port;          /**< port of announced server            */
 };
 
