@@ -29,6 +29,8 @@
  * File Description:
  *   Common functions needed for conducting unit tests
  */
+
+#include <corelib/ncbimtx.hpp>
 #include "../ncbi_lbosp.h"
 
 /** Get number of servers with specified IP announced in ZK  */
@@ -120,19 +122,24 @@ private:
 class CConnNetInfo 
 {
 public:
-    CConnNetInfo() {
+    CConnNetInfo() 
+    {
         m_NetInfo = ConnNetInfo_Create(NULL);
     }
-    explicit CConnNetInfo(const string& service) {
+    explicit CConnNetInfo(const string& service) 
+    {
         m_NetInfo = ConnNetInfo_Create(service.c_str());
     }
-    ~CConnNetInfo() {
+    ~CConnNetInfo() 
+    {
         ConnNetInfo_Destroy(m_NetInfo);
     }
-    SConnNetInfo*& operator*() {
+    SConnNetInfo*& operator*() 
+    {
         return m_NetInfo;
     }
-    SConnNetInfo*& operator->() {
+    SConnNetInfo*& operator->() 
+    {
         return m_NetInfo;
     }
 private:
@@ -526,6 +533,7 @@ static string s_GenerateNodeName(void)
     return string("/lbostest");
 }
 
+DEFINE_STATIC_FAST_MUTEX(s_GlobalLock);
 
 /** Given number of thread, it divides port range in 34 pieces (as we know,
  * there can be maximum of 34 threads) and gives ports only from corresponding
@@ -534,9 +542,11 @@ static string s_GenerateNodeName(void)
 static unsigned short s_GeneratePort(int thread_num = -1)
 {
     static int cur = static_cast<int>(time(0));
-    CORE_LOCK_WRITE;
-    cur = cur * 1049 + 3571;
-    CORE_UNLOCK;
+
+    {{
+        CFastMutexGuard spawn_guard(s_GlobalLock);
+        cur = cur * 1049 + 3571;
+    }}
     unsigned short port;
     if (thread_num == -1) {
         port = abs(cur % 65534) + 1;
