@@ -70,6 +70,7 @@
 #include <libxml/tree.h>
 #include <libxml/xinclude.h>
 #include <libxml/xmlsave.h>
+#include <libxml/c14n.h>
 
 
 // Workshop compiler define
@@ -90,6 +91,37 @@ using namespace xml::impl;
 #   include <libxml/SAX2.h>
 #endif
 
+static int  c14n_op_to_libxml2_op(xml::canonicalization_option  op)
+{
+    switch (op) {
+        case xml::c14n_1_0:
+            return XML_C14N_1_0;
+        case xml::c14n_exclusive_1_0:
+            return XML_C14N_EXCLUSIVE_1_0;
+        case xml::c14n_1_1:
+            return XML_C14N_1_1;
+    }
+
+    throw xml::exception("Unknown canonicalization option");
+}
+
+
+struct cmp
+{
+    bool operator() (const xml::node &lhs, const xml::node &rhs)
+    {
+        if ( lhs.get_type() != xml::node::type_element ) return true;
+        if ( rhs.get_type() != xml::node::type_element ) return false;
+        return strcmp( lhs.get_name(), rhs.get_name() ) < 0;
+    }
+};
+static void sort_node_recursively(xml::node &  n)
+{
+    n.sort(cmp());
+    for (xml::node::iterator  k = n.begin(); k != n.end(); ++k)
+        if (k->get_type() == xml::node::type_element)
+            sort_node_recursively(*k);
+}
 
 //####################################################################
 namespace {
@@ -597,7 +629,87 @@ void xml::document::save_to_string (std::string &s,
         std::swap(pimpl_->doc_->compression, compression_level);
         xmlSaveClose(ctxt);     // xmlSaveFlush() is called in xmlSaveClose()
     }
-    return;
+}
+//####################################################################
+void xml::document::save_to_string_canonical (
+                    std::string &                      str,
+                    canonicalization_option            c14n_option,
+                    canonicalization_comments_option   comments_option,
+                    canonicalization_format_option     format_option,
+                    canonicalization_node_sort_option  node_sort_option) const
+{
+    if (pimpl_->xslt_stylesheet_ != 0)
+        if (!xslt::impl::is_xml_output_method(pimpl_->xslt_stylesheet_))
+            throw xml::exception("cannot canonicalize the document: "
+                                 "it holds xslt transformation results "
+                                 "which are not an xml");
+
+    int     libxml2_mode = c14n_op_to_libxml2_op(c14n_option);
+    int     libxml2_with_comments = 0;
+    if (comments_option == keep_comments)
+        libxml2_with_comments = 1;
+
+    // Here: the document format could be a mess. A part of it could come from
+    //       a nicely formatted file and then some nodes could be added
+    //       programmatically without formatting.
+    //       The libxml2 library allows to skip the formatting text nodes only
+    //       at the time of initial parsing. So if the formatting is required
+    //       the document we have at hand has to be saved and loaded again with
+    //       stripping formatting nodes.
+
+    // Serialize and deserialize: this covers the XSLT results processing
+    // and checks if the document is well formed
+    int             old_remove_whitespaces = xmlKeepBlanksDefaultValue;
+    std::string     serialized_doc;
+
+    save_to_string(serialized_doc, save_op_no_format);
+    if (format_option == with_formatting)
+        xmlKeepBlanksDefaultValue = 0;
+    else
+        xmlKeepBlanksDefaultValue = 1;
+
+    document    tmp_doc;
+    try {
+        tmp_doc = document(serialized_doc.c_str(), serialized_doc.size(), NULL,
+                           type_warnings_not_errors);
+    } catch (...) {
+        xmlKeepBlanksDefaultValue = old_remove_whitespaces;
+        throw;
+    }
+
+    // Now, recursively sort the nodes in the document
+    // The sorting must be done on a copy of the document to avoid any changes
+    // in the original document
+    if (node_sort_option == with_node_sorting)
+        sort_node_recursively(tmp_doc.get_root_node());
+
+    if (format_option == with_formatting) {
+        // It was loaded with stripped formatting whitespaces.
+        // Now we save and load keeping whitespaces
+        xmlKeepBlanksDefaultValue = 1;
+        // save_op_default makes libxml2 to insert the formatting
+        tmp_doc.save_to_string(serialized_doc, save_op_default);
+        // Load the document with saved formatting nodes
+        tmp_doc = document(serialized_doc.c_str(), serialized_doc.size(), NULL,
+                           type_warnings_not_errors);
+    }
+
+    // Restore the previous value of the xmlKeepBlanksDefaultValue
+    xmlKeepBlanksDefaultValue = old_remove_whitespaces;
+
+    // Finally, canonicalize the temporary document
+    xmlChar *   result = NULL;
+    int         size = xmlC14NDocDumpMemory(tmp_doc.pimpl_->doc_,
+                                            NULL, libxml2_mode,
+                                            NULL, libxml2_with_comments,
+                                            &result);
+    if (size < 0)
+        throw xml::exception("xml::document::save_to_string_canonical "
+                             "failed to canonicalize");
+
+    str.assign(reinterpret_cast<const char *>(result), size);
+    if (result != NULL)
+        xmlFree(result);
 }
 //####################################################################
 void xml::document::save_to_stream (std::ostream &stream,

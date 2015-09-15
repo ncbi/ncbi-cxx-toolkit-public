@@ -77,6 +77,30 @@ namespace xml {
 
     typedef int save_option_flags;  ///< Bitwise save options mask type and a compression level
 
+
+    /// Canonicalization mode. See "Canonical XML" (http://www.w3.org/TR/xml-c14n)
+    /// or "Exclusive XML Canonicalization" (http://www.w3.org/TR/xml-exc-c14n)
+    enum canonicalization_option {
+        c14n_1_0,               ///< Origianal C14N 1.0 spec
+        c14n_exclusive_1_0,     ///< Exclusive C14N 1.0 spec
+        c14n_1_1                ///< C14N 1.1 spec
+    };
+
+    enum canonicalization_comments_option {
+        keep_comments,
+        strip_comments
+    };
+
+    enum canonicalization_format_option {
+        with_formatting,
+        without_formatting
+    };
+
+    enum canonicalization_node_sort_option {
+        with_node_sorting,
+        without_node_sorting
+    };
+
 } // xml namespace
 
 #endif

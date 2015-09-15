@@ -1298,6 +1298,28 @@ public:
      * Convert the node and all its children into XML text and set the given
      * string to that text.
      *
+     * @param str The string to place the XML text data (the string is cleared)
+     * @param c14n_option Canonicalization mode
+     * @param comments_option Comments option (strip or keep)
+     * @param format_option Format option (let libxml2 format the document or
+     *                      not)
+     * @param node_sort_option To sort or not the nodes before the
+     *                         canonicalization
+     * @exception throws xml::exception in case of problems
+     * @note: the member has a significant memory and CPU footprint.
+    **/
+    void save_to_string_canonical (
+                    std::string &                      str,
+                    canonicalization_option            c14n_option,
+                    canonicalization_comments_option   comments_option,
+                    canonicalization_format_option     format_option,
+                    canonicalization_node_sort_option  node_sort_option) const;
+
+    //####################################################################
+    /**
+     * Convert the node and all its children into XML text and set the given
+     * string to that text.
+     *
      * @param xml The string to set the node's XML data to (the string is not
      *          cleared; the content is appended to the string).
      * @param flags

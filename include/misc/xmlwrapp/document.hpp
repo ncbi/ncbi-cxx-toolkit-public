@@ -659,6 +659,29 @@ public:
     void save_to_string (std::string &s,
                          save_option_flags flags=save_op_default) const;
 
+
+    //####################################################################
+    /**
+     * Convert the XML document tree into XML text data and place it into
+     * the given string.
+     *
+     * @param str The string to place the XML text data (the string is cleared)
+     * @param c14n_option Canonicalization mode
+     * @param comments_option Comments option (strip or keep)
+     * @param format_option Format option (let libxml2 format the document or
+     *                      not)
+     * @param node_sort_option To sort or not the nodes before the
+     *                         canonicalization
+     * @exception throws xml::exception in case of problems
+     * @note: the member has a significant memory and CPU footprint.
+    **/
+    void save_to_string_canonical (
+                    std::string &                      str,
+                    canonicalization_option            c14n_option,
+                    canonicalization_comments_option   comments_option,
+                    canonicalization_format_option     format_option,
+                    canonicalization_node_sort_option  node_sort_option) const;
+
     //####################################################################
     /**
      * Convert the XML document tree into XML text data and place it into
@@ -748,6 +771,7 @@ private:
     friend class schema;
     friend class dtd;
     friend class libxml2_document;
+    friend class node;
     friend void ::xslt_ext_func_cb(void *, int);
     friend void ::xslt_ext_element_cb(void*, void*, void*, void*);
 }; // end xml::document class

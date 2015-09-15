@@ -49,6 +49,7 @@
 #include <misc/xmlwrapp/attributes.hpp>
 #include <misc/xmlwrapp/node_set.hpp>
 #include <misc/xmlwrapp/exception.hpp>
+#include <misc/xmlwrapp/document.hpp>
 #include "utility.hpp"
 #include "ait_impl.hpp"
 #include "node_manip.hpp"
@@ -1441,9 +1442,36 @@ void xml::node::append_to_string (std::string &xml,
 }
 //####################################################################
 void xml::node::save_to_string (std::string &xml,
-                                save_option_flags flags) const {
+                                save_option_flags flags) const
+{
     xml.clear();
     append_to_string(xml, flags);
+}
+//####################################################################
+void xml::node::save_to_string_canonical (
+                    std::string &                      str,
+                    canonicalization_option            c14n_option,
+                    canonicalization_comments_option   comments_option,
+                    canonicalization_format_option     format_option,
+                    canonicalization_node_sort_option  node_sort_option) const
+{
+    node2doc    n2d(pimpl_->xmlnode_);
+    xmlDocPtr   raw_doc = n2d.get_doc();
+
+    document    doc;
+    doc.set_doc_data(raw_doc);
+
+    try {
+        doc.save_to_string_canonical(str, c14n_option, comments_option,
+                                     format_option, node_sort_option);
+    } catch (...) {
+        // Avoid double document destruction
+        doc.release_doc_data();
+        throw;
+    }
+
+    // Avoid double document destruction
+    doc.release_doc_data();
 }
 //####################################################################
 void xml::node::node_to_string (std::string &xml,
