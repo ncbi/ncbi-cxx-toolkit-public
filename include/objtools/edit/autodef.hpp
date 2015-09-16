@@ -79,7 +79,7 @@ public:
     string GetDocsumDefLine(CSeq_entry_Handle se);
     static bool NeedsDocsumDefline(const CBioseq_set& set);
 
-    void DoAutoDef();
+    static bool RegenerateDefLines(CSeq_entry_Handle se);
     
     void SetOptionsObject(const CUser_object& user);
     CRef<CUser_object> GetOptionsObject() const { return m_Options.MakeUserObject(); }

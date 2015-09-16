@@ -64,6 +64,7 @@ public:
     ~CAutoDefModifierCombo();
 
     void InitFromOptions(const CAutoDefOptions& options);
+    void SetOptions(const CAutoDefOptions& options) { InitFromOptions(options); }
     void InitOptions(CAutoDefOptions& options) const;
     
     unsigned int GetNumGroups();

@@ -61,6 +61,7 @@
 #include <objects/entrez2/entrez2_client.hpp>
 
 #include <objtools/cleanup/cleanup.hpp>
+#include <objtools/edit/autodef.hpp>
 
 #include <util/compress/zlib.hpp>
 #include <util/compress/stream.hpp>
@@ -259,7 +260,7 @@ void CCleanupApp::x_XOptionsValid(const string& opt)
     string::const_iterator s = opt.begin();
     while (s != opt.end()) {
         if (!isspace(*s)) {
-            if (*s != 'w') {
+            if (*s != 'w' && *s != 'r') {
                 unrecognized += *s;
             }
         }
@@ -617,6 +618,9 @@ bool CCleanupApp::x_ProcessXOptions(const string& opt, CSeq_entry_Handle seh)
     bool any_changes = false;
     if (NStr::Find(opt, "w") != string::npos) {
         any_changes = CCleanup::WGSCleanup(seh);
+    }
+    if (NStr::Find(opt, "r") != string::npos) {
+        any_changes = CAutoDef::RegenerateDefLines(seh);
     }
     return any_changes;
 }
