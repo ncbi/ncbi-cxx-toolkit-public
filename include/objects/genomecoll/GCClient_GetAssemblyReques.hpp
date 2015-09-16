@@ -64,6 +64,7 @@ public:
         eAssemblyMode_eukaryotic_annotation  = 2,  ///<- use to retrive eukaryotic assemblies for annotation
         eAssemblyMode_prokaryotic_annotation = 3,  ///<- use to retrive prokaryotic assemblies for annotation
         eAssemblyMode_entrez_indexing        = 4,  ///<- used when building the Entrez index for assembly and gencoll
+        eAssemblyMode_gbench                 = 4,  ///<- used in gbench
         eAssemblyMode_assembly_backend       = 5,  ///<- used in the CGI to provide data to the Entrez Assembly detail page.
         eAssemblyMode_sequence_names         = 6,  ///<- used in retrieving sequences synonyms
         eAssemblyMode_ftp_export             = 7   ///<- used in export to public FTP site
