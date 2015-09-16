@@ -39,6 +39,7 @@
 
 // generated includes
 #include <objects/genomecoll/GC_Sequence.hpp>
+#include <objects/genomecoll/GC_SequenceStats.hpp>
 #include <objects/genomecoll/GC_AssemblyUnit.hpp>
 #include <objects/genomecoll/GC_Assembly.hpp>
 #include <objects/genomecoll/GC_Replicon.hpp>
@@ -58,6 +59,8 @@ CGC_Sequence::CGC_Sequence(void)
     , m_Replicon(NULL)
     , m_ParentSequence(NULL)
     , m_ParentRel(CGC_TaggedSequences::eState_not_set)
+    , m_SeqLength(0)
+    , m_SeqLengthRetrieved(false)
 {
 }
 
@@ -197,6 +200,51 @@ bool CGC_Sequence::HasRole(int Role) const
 
 	return false;
 }
+
+
+bool CGC_Sequence::CanGetLength() const
+{
+    return ( x_GetLength() != 0);
+}
+
+TSeqPos CGC_Sequence::GetLength() const
+{
+    TSeqPos result = x_GetLength();
+    if (result == 0) {
+         NCBI_THROW(CUnassignedMember, eGet, "CGC_Sequence::GetLength(): Sequence length not set.");
+    }
+    return result;
+}
+
+TSeqPos CGC_Sequence::x_GetLength() const
+{
+    if ( ! m_SeqLengthRetrieved) {
+        if (HasRole(eGC_SequenceRole_chromosome)) {
+            if (CanGetStats() && GetStats().CanGetOrdered_scaf()) {
+                ITERATE(list< CRef< CGC_Scaf_stats > >, stat_it, GetStats().GetOrdered_scaf()) {
+                    if ( (*stat_it)->GetStats_category() == CGC_Scaf_stats::eStats_category_total_length)
+                    {
+                        m_SeqLength = static_cast<TSeqPos>((*stat_it)->GetValue());
+                        break;
+                    }
+                }
+            }
+        } else {
+            if (CanGetStats() && GetStats().CanGetAll_scaf()) {
+                ITERATE(list< CRef< CGC_Scaf_stats > >, stat_it, GetStats().GetAll_scaf()) {
+                    if ( (*stat_it)->GetStats_category() == CGC_Scaf_stats::eStats_category_total_length)
+                    {
+                        m_SeqLength = static_cast<TSeqPos>((*stat_it)->GetValue());
+                        break;
+                    }
+                }
+            }
+        }
+        m_SeqLengthRetrieved = true;
+    }
+    return m_SeqLength;
+}
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 

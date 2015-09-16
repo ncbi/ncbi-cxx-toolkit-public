@@ -95,12 +95,23 @@ public:
 	
 	bool HasRole(int Role) const;
 
+    /// Is the length statistic available?
+    bool  CanGetLength() const;
+    /// return the length of this sequence.
+    /// if not available throws CUnassignedMember exception.
+    TSeqPos GetLength() const;
+
 protected:
     CGC_Assembly*     m_Assembly;
     CGC_AssemblyUnit* m_AssemblyUnit;
     CGC_Replicon*     m_Replicon;
     CGC_Sequence*     m_ParentSequence;
     CGC_TaggedSequences::TState m_ParentRel;
+
+    TSeqPos          x_GetLength() const;
+    mutable TSeqPos  m_SeqLength;
+    mutable bool     m_SeqLengthRetrieved;
+    
 
 private:
     // Prohibit copy constructor and assignment operator
