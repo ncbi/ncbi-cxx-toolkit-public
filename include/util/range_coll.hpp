@@ -51,8 +51,9 @@ struct PRangeLessPos
     
 ///////////////////////////////////////////////////////////////////////////////
 // class CRangeCollection<Position> represent a sorted collection of 
-// CRange<Position>. It is guaranteed that ranges in collection do not overlap
-// and aren't adjacent so that there is no gap beween them.
+// CRange<Position>. It is guaranteed that ranges in collection do not overlap.
+// Unless DivideAt() was explicitly called, it is also guarantees that they
+// aren't adjacent so that there is no gap beween them.
 // Adding an interval to the collection leads to possible merging it with 
 // existing intervals.
 
@@ -244,6 +245,14 @@ public:
        return *this;
     }    
 
+    /// If position is in middle of range, divide into two consecutive ranges
+    /// after this position
+    TThisType & DivideAfter(const position_type &p)
+    {
+       x_Divide(p);
+       return *this;
+    }
+
 protected:
     typedef typename TRangeVector::iterator    iterator;
     typedef typename TRangeVector::reverse_iterator    reverse_iterator;
@@ -385,6 +394,18 @@ protected:
         }
         m_vRanges = intersection_ranges;
     }
+
+    void    x_Divide(const position_type& p)
+    {
+        PRangeLessPos<TRange, position_type>    P;
+        iterator it = lower_bound(begin_nc(), end_nc(), p, P);
+        if (it != end_nc() && it->GetFrom() <= p && it->GetTo() > p) {
+            position_type end_pos = it->GetTo();
+            it->SetTo(p);
+            m_vRanges.insert(++it, TRange(p+1, end_pos));
+        }
+    }
+
     void    x_CombineWith(const TThisType &c)
     {
         ITERATE(typename TThisType, it, c)   {
