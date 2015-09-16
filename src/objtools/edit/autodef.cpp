@@ -1321,5 +1321,51 @@ void CAutoDef::SetOptionsObject(const CUser_object& user)
     m_Options.InitFromUserObject(user);
 }
 
+
+bool CAutoDef::RegenerateDefLines(CSeq_entry_Handle se)
+{
+    bool any = false;
+    CBioseq_CI b_iter(se);
+    for (; b_iter; ++b_iter) {
+        if (b_iter->IsAa()) {
+            continue;
+        }
+        CSeqdesc_CI desc(*b_iter, CSeqdesc::e_User);
+        while (desc && desc->GetUser().GetObjectType() != CUser_object::eObjectType_AutodefOptions) {
+            ++desc;
+        }
+        if (desc) {
+            CAutoDef autodef;
+            autodef.SetOptionsObject(desc->GetUser());
+            CAutoDefModifierCombo mod_combo;
+            CAutoDefOptions options;
+            options.InitFromUserObject(desc->GetUser());
+            mod_combo.SetOptions(options);
+            string defline = autodef.GetOneDefLine(&mod_combo, *b_iter);
+
+            bool found_existing = false;
+            CBioseq_EditHandle beh(*b_iter);
+            NON_CONST_ITERATE(CBioseq_EditHandle::TDescr::Tdata, it, beh.SetDescr().Set()) {
+                if ((*it)->IsTitle()) {
+                    if (!NStr::Equal((*it)->GetTitle(), defline)) {
+                        (*it)->SetTitle(defline);
+                        any = true;
+                    }
+                    found_existing = true;
+                    break;
+                }
+            }
+            if (!found_existing) {
+                CRef<CSeqdesc> new_desc(new CSeqdesc());
+                new_desc->SetTitle(defline);
+                beh.SetDescr().Set().push_back(new_desc);
+                any = true;
+            }                   
+        }
+    }
+    return any;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
