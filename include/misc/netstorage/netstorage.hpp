@@ -168,49 +168,6 @@ public:
 };
 
 
-/** @deprecated Use classes above instead.
- *
- * @{
- */
-
-NCBI_DEPRECATED
-CDirectNetStorage g_CreateNetStorage(
-        CNetICacheClient::TInstance icache_client,
-        const string&               app_domain,
-        TNetStorageFlags            default_flags = 0);
-
-NCBI_DEPRECATED
-CNetStorage g_CreateNetStorage(
-        const string&               app_domain,
-        TNetStorageFlags            default_flags = 0);
-
-
-NCBI_DEPRECATED
-CDirectNetStorageByKey g_CreateNetStorageByKey(
-        CNetICacheClient::TInstance icache_client,
-        const string&               app_domain,
-        TNetStorageFlags            default_flags = 0);
-
-NCBI_DEPRECATED
-CNetStorageByKey g_CreateNetStorageByKey(
-        const string&               app_domain,
-        TNetStorageFlags            default_flags = 0);
-
-NCBI_DEPRECATED
-CNetStorageObject g_CreateNetStorageObject(
-        CNetStorage netstorage_api,
-        const string& service_name,
-        Int8 object_id,
-        TNetStorageFlags flags);
-
-NCBI_DEPRECATED
-CNetStorageObject g_CreateNetStorageObject(
-        CNetStorage netstorage_api,
-        const string& service_name,
-        TNetStorageFlags flags);
-
-/* @} */
-
 /* @} */
 
 
