@@ -352,6 +352,39 @@ CCachedAssembly::CCachedAssembly(const string& blob)
         : m_blob(blob)
 {}
 
+static
+CRef<CGC_Assembly> UncomressAndCreate(const string& blob, CCompressStream::EMethod method) {
+    CStopWatch sw(CStopWatch::eStart);
+
+    CNcbiIstrstream in(blob.data(), blob.size());
+    CDecompressIStream decompress(in, method);
+
+    CRef<CGC_Assembly> m_assembly(new CGC_Assembly);
+    decompress >> MSerial_AsnBinary
+                >> MSerial_SkipUnknownMembers(eSerialSkipUnknown_Yes)   // Make reading cache backward compatible
+                >> MSerial_SkipUnknownVariants(eSerialSkipUnknown_Yes)
+                >> (*m_assembly);
+
+    LOG_POST(Info << "Assebmly uncomressed and created in (sec): " << sw.Elapsed());
+    return m_assembly;
+}
+
+//static
+//void Uncomress(const string& blob, CCompressStream::EMethod m) {
+//    CStopWatch g(CStopWatch::eStart);
+//
+//    CNcbiIstrstream in(blob.data(), blob.size());
+//    CDecompressIStream lzip(in, m);
+//
+//    size_t n = 1024*1024;
+//    char* buf = new char[n];
+//    while (!lzip.eof()) lzip.read(buf, n);
+//    delete [] buf;
+//
+//    LOG_POST(Info << "processed: " << lzip.GetProcessedSize() << ", out: " << lzip.GetOutputSize());
+//    LOG_POST(Info << "Assebmly uncomressed in (sec): " << g.Elapsed());
+//}
+
 CRef<CGC_Assembly> CCachedAssembly::Assembly()
 {
     if (m_assembly.NotNull()) {
@@ -359,39 +392,66 @@ CRef<CGC_Assembly> CCachedAssembly::Assembly()
     }
 
     if (ValidBlob(m_blob.size())) {
-        CNcbiIstrstream istr(m_blob.data(), m_blob.size());
-        CDecompressIStream decmp_strm(istr, CCompressStream::eBZip2);
-        m_assembly.Reset(new CGC_Assembly);
-        decmp_strm >> MSerial_AsnBinary
-        >> MSerial_SkipUnknownMembers(eSerialSkipUnknown_Yes)   // Make reading cache backward compatible
-        >> MSerial_SkipUnknownVariants(eSerialSkipUnknown_Yes)
-        >> (*m_assembly);
+        m_assembly = UncomressAndCreate(m_blob, BZip2Compression(m_blob) ?
+                                                CCompressStream::eBZip2 :
+                                                CCompressStream::eZip);
     }
     return m_assembly;
 }
 
+static
+void CompressAssembly(string& blob, CRef<CGC_Assembly> assembly, CCompressStream::EMethod method)
+{
+    _ASSERT(assembly.NotNull());
+    CNcbiOstrstream out;
+    CCompressOStream compress(out, method);
+
+    compress << MSerial_AsnBinary << (*assembly);
+    compress.Finalize();
+
+    blob = CNcbiOstrstreamToString(out);
+}
+
 const string& CCachedAssembly::Blob()
 {
-    if (!m_blob.empty()) {
-        return m_blob;
+    if (m_blob.empty()) {
+        //TODO: change compression to lzip here once all be switched to new gc_access (affects newly created caches)
+        //leave BZip2 for DB compression now
+        CompressAssembly(m_blob, m_assembly, CCompressStream::eBZip2);
     }
-
-    CNcbiOstrstream sstrm;
-    CCompressOStream cmpstrm(sstrm, CCompressStream::eBZip2);
-
-    cmpstrm << MSerial_AsnBinary << (*m_assembly);
-    cmpstrm.Finalize();
-
-    m_blob = CNcbiOstrstreamToString( sstrm );
+    else if (BZip2Compression(m_blob)) {
+        //TODO: remove it once all be switched to new gc_access (conversion will be done inside CGencollCache)
+        m_blob = ChangeCompressionBZip2ToZip(m_blob);
+    }
 
     return m_blob;
 }
 
 bool CCachedAssembly::ValidBlob(int blobSize) {
-    const int kSmallestZip(200); // No assembly, let alone a compressed one, will be smaller than this.
+    const int kSmallestZip = 200; // No assembly, let alone a compressed one, will be smaller than this.
     return blobSize >= kSmallestZip;
 }
 
-END_NCBI_SCOPE
+bool CCachedAssembly::BZip2Compression(const string& blob) {
+    const char bzip2Header[] = {0x42, 0x5a, 0x68};
+    return ValidBlob(blob.size()) &&
+            NStr::StartsWith(blob, CTempString(bzip2Header, sizeof(bzip2Header)));
+}
 
-/* Original file checksum: lines: 57, chars: 1793, CRC32: a9ae6ff4 */
+string CCachedAssembly::ChangeCompressionBZip2ToZip(const string& blob) {
+    LOG_POST(Info << "Old bzip2 compression method detected. Changing to zip...");
+    _ASSERT(BZip2Compression(blob));
+
+    CNcbiIstrstream in(blob.data(), blob.size());
+    CDecompressIStream bzip2(in, CCompressStream::eBZip2);
+    CNcbiOstrstream out;
+    CCompressOStream lzip(out, CCompressStream::eZip);
+
+    lzip << bzip2.rdbuf();
+    lzip.Finalize();
+    LOG_POST(Info << "Compression done - processed: " << lzip.GetProcessedSize() << ", old bzip2 size:" << blob.size() << ", new zip size: " << lzip.GetOutputSize());
+
+    return CNcbiOstrstreamToString(out);
+}
+
+END_NCBI_SCOPE

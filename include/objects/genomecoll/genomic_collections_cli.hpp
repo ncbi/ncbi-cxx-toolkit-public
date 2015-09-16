@@ -145,6 +145,8 @@ public:
 
 public:
     static bool ValidBlob(int blobSize);
+    static bool BZip2Compression(const string& blob);
+    static string ChangeCompressionBZip2ToZip(const string& blob);
 
 private:
     CRef<objects::CGC_Assembly> m_assembly;
