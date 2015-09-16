@@ -12,6 +12,7 @@ LIB = xconnect test_boost xncbi
 LIBS = $(NETWORK_LIBS) $(ORIG_LIBS)
 
 REQUIRES = Boost.Test.Included
+CHECK_REQUIRES = in-house-resources
 
 # Comment out if you do not want it to run automatically as part of
 # "make check".
