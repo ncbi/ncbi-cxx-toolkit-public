@@ -97,6 +97,9 @@ public:
     CRef<CGC_Assembly> GetAssembly(const string& acc, CGCClient_GetAssemblyRequest::EAssemblyMode mode);
     CRef<CGC_Assembly> GetAssembly(int releaseId,     CGCClient_GetAssemblyRequest::EAssemblyMode mode);
 
+    CRef<CGC_Assembly> GetAssembly(const string& acc, const string& mode);
+    CRef<CGC_Assembly> GetAssembly(int releaseId,     const string& mode);
+
     string ValidateChrType(const string& chrType, const string& chrLoc);
 
     CRef<CGCClient_AssemblyInfo> FindBestAssembly

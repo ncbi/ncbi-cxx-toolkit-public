@@ -198,6 +198,34 @@ CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(int releaseId, CGCCli
                        params.component_flags);
 }
 
+CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(const string& acc, const string& mode)
+{
+    CGCClient_GetAssemblyRequest::SRequestParam params;
+    if(!params.SetMode(mode))
+        NCBI_THROW(CException, eUnknown, "GetAssembly: Illegal mode passed.");
+
+    return GetAssembly(acc,
+                       params.level,
+                       params.assembly_flags,
+                       params.chromosome_flags,
+                       params.scaffold_flags,
+                       params.component_flags);
+}
+
+CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(int releaseId, const string& mode)
+{
+    CGCClient_GetAssemblyRequest::SRequestParam params;
+    if(!params.SetMode(mode))
+        NCBI_THROW(CException, eUnknown, "GetAssembly: Illegal mode passed.");
+
+    return GetAssembly(releaseId,
+                       params.level,
+                       params.assembly_flags,
+                       params.chromosome_flags,
+                       params.scaffold_flags,
+                       params.component_flags);
+}
+
 string CGenomicCollectionsService::ValidateChrType(const string& chrType, const string& chrLoc)
 {
     CGCClient_ValidateChrTypeLocRequest req;
