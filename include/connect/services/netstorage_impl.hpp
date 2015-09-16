@@ -72,6 +72,7 @@ struct NCBI_XCONNECT_EXPORT SNetStorageObjectImpl :
     virtual void SetAttribute(const string& attr_name,
             const string& attr_value) = 0;
     virtual CNetStorageObjectInfo GetInfo() = 0;
+    virtual void SetExpiration(const CTimeout&) = 0;
 };
 
 struct NCBI_XCONNECT_EXPORT SNetStorageObjectRWStream : public CRWStream
@@ -159,6 +160,11 @@ inline void CNetStorageObject::SetAttribute(const string& attr_name,
 inline CNetStorageObjectInfo CNetStorageObject::GetInfo()
 {
     return m_Impl->GetInfo();
+}
+
+inline void CNetStorageObject::SetExpiration(const CTimeout& ttl)
+{
+    m_Impl->SetExpiration(ttl);
 }
 
 inline void CNetStorageObject::Close()

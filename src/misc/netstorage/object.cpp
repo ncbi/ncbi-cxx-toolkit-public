@@ -99,6 +99,13 @@ CNetStorageObjectInfo CObj::GetInfo()
 }
 
 
+void CObj::SetExpiration(const CTimeout&)
+{
+    NCBI_THROW(CNetStorageException, eInvalidArg,
+        "Expiration support is only implemented in NetStorage server.");
+}
+
+
 const TObjLoc& CObj::Locator() const
 {
     return m_Selector->Locator();

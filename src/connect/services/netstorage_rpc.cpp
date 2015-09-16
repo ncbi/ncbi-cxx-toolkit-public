@@ -423,6 +423,7 @@ struct SNetStorageObjectRPC : public SNetStorageObjectImpl
     virtual void SetAttribute(const string& attr_name,
             const string& attr_value);
     virtual CNetStorageObjectInfo GetInfo();
+    virtual void SetExpiration(const CTimeout&);
 
     CJsonNode x_MkRequest(const string& request_type) const;
 
@@ -1151,6 +1152,24 @@ CNetStorageObjectInfo SNetStorageObjectRPC::GetInfo()
 
     return g_CreateNetStorageObjectInfo(m_Locator,
             ExchangeUsingOwnService(request));
+}
+
+void SNetStorageObjectRPC::SetExpiration(const CTimeout& ttl)
+{
+    if (m_State != eReady) {
+        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
+                "Cannot set expiration while reading or writing");
+    }
+
+    CJsonNode request(x_MkRequest("SETEXPTIME"));
+
+    if (ttl.IsFinite()) {
+        request.SetString("TTL", ttl.GetAsTimeSpan().AsString("dTh:m:s"));
+    } else {
+        request.SetString("TTL", "infinity");
+    }
+
+    ExchangeUsingOwnService(request);
 }
 
 void SNetStorageObjectRPC::Close()

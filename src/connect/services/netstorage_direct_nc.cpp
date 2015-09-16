@@ -252,6 +252,16 @@ CNetStorageObjectInfo SNetStorage_NetCacheBlob::GetInfo()
             eNFL_NotFound, NULL, 0, NULL);
 }
 
+void SNetStorage_NetCacheBlob::SetExpiration(const CTimeout& ttl)
+{
+    if (!ttl.IsFinite()) {
+        NCBI_THROW_FMT(CNetStorageException, eInvalidArg, m_BlobKey <<
+            ": infinite ttl for NetCache blobs is not implemented");
+    }
+
+    m_NetCacheAPI.ProlongBlobLifetime(m_BlobKey, ttl.GetAsDouble());
+}
+
 void SNetStorage_NetCacheBlob::Close()
 {
     switch (m_State) {

@@ -317,6 +317,16 @@ class NCBI_XCONNECT_EXPORT CNetStorageObject
     /// @see CNetStorageObjectInfo
     ///
     CNetStorageObjectInfo GetInfo(void);
+
+    /// Updates expiration on the object.
+    ///
+    /// @param ttl
+    ///  Expiration timeout, may be infinite
+    /// 
+    /// @throw If the underlying storage does not support expiration,
+    /// a CNetStorageException will be thrown.
+    ///
+    void SetExpiration(const CTimeout& ttl);
 };
 
 

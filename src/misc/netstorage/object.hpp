@@ -65,6 +65,7 @@ public:
     string GetAttribute(const string&) const;
     void SetAttribute(const string&, const string&);
     CNetStorageObjectInfo GetInfo();
+    void SetExpiration(const CTimeout&);
 
     const TObjLoc& Locator() const;
     string Relocate(TNetStorageFlags);
