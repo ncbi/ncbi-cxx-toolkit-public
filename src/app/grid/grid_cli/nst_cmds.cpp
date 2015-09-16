@@ -237,8 +237,6 @@ int CGridCommandLineInterfaceApp::ReconfigureNetStorageServer()
 
 int CGridCommandLineInterfaceApp::Cmd_Upload()
 {
-    x_WarnAboutTTL("upload");
-
     SetUp_NetStorageCmd(eNetStorageAPI);
 
     CNetStorageObject netstorage_object(IsOptionSet(eOptionalObjectLoc) ?
@@ -264,6 +262,10 @@ int CGridCommandLineInterfaceApp::Cmd_Upload()
     }
 
     netstorage_object.Close();
+
+    if (m_Opts.ttl) {
+        netstorage_object.SetExpiration(CTimeout(m_Opts.ttl, 0));
+    }
 
     if (!IsOptionSet(eOptionalObjectLoc))
         PrintLine(netstorage_object.GetLoc());
@@ -292,8 +294,6 @@ int CGridCommandLineInterfaceApp::Cmd_Download()
 
 int CGridCommandLineInterfaceApp::Cmd_Relocate()
 {
-    x_WarnAboutTTL("relocate");
-
     SetUp_NetStorageCmd(eNetStorageAPI);
 
     PrintLine(m_NetStorage.Relocate(m_Opts.id, m_Opts.netstorage_flags));
@@ -303,8 +303,6 @@ int CGridCommandLineInterfaceApp::Cmd_Relocate()
 
 int CGridCommandLineInterfaceApp::Cmd_MkObjectLoc()
 {
-    x_WarnAboutTTL("mkobjectloc");
-
     SetUp_NetStorageCmd(eNetStorageAPI);
 
     CNetStorageObject netstorage_object;

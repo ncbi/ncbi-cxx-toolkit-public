@@ -583,15 +583,6 @@ private:
 
     int Automation_PipeServer();
     int Automation_DebugConsole();
-
-    // eTTL is not supported yet (depends on yet to be done CXX-5485),
-    // let's give a warning at least
-    void x_WarnAboutTTL(const char* cmd) const
-    {
-        if (IsOptionSet(eTTL)) {
-            fprintf(stderr, GRID_APP_NAME " %s: '--ttl' has no effect yet.\n", cmd);
-        }
-    }
 };
 
 END_NCBI_SCOPE

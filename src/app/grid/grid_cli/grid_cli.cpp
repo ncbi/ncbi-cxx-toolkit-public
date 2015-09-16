@@ -636,7 +636,7 @@ struct SCommandDefinition {
         "one for faster object access."
         ABOUT_NETSTORAGE_OPTION,
         {eID, eNetStorage, ePersistent, eFastStorage, eNetCache, eNamespace,
-            eTTL, eMovable, eCacheable, eNoMetaData, eLoginToken, eAuth,
+            eMovable, eCacheable, eNoMetaData, eLoginToken, eAuth,
             eFileTrackSite, eFileTrackAPIKey,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
@@ -648,7 +648,7 @@ struct SCommandDefinition {
         "specified by the '--" PERSISTENT_OPTION "', '--" FAST_STORAGE_OPTION
         "', '--" MOVABLE_OPTION "', and '--" CACHEABLE_OPTION "' options.",
         {eOptionalObjectLoc, eObjectKey, eNamespace, ePersistent, eFastStorage,
-            eNetStorage, eNetCache, eNamespace, eTTL,
+            eNetStorage, eNetCache, eNamespace,
             eMovable, eCacheable, eNoMetaData,
             eLoginToken, eAuth, eFileTrackSite,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
