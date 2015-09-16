@@ -38,7 +38,9 @@
 #include <objtools/format/items/gene_finder.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
 #include <objects/seqfeat/Feat_id.hpp>
+#include <objmgr/blob_id.hpp>
 #include <objmgr/object_manager.hpp>
+#include <objmgr/seq_map_ci.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -460,6 +462,14 @@ CSeq_feat_Handle CGeneFinder::ResolveGeneXref(
     const CGene_ref *xref_g_ref, 
     const CSeq_entry_Handle &top_level_seq_entry )
 {
+    // Allow locus to match locus-tag or vice versa, but favor proper
+    // locus-to-locus or tag-to-tag matches.
+    enum ERGX_MatchQuality {
+        eRGX_NoMatch,
+        eRGX_MatchedTagForLocus,
+        eRGX_MatchedLocusForTag,
+        eRGX_MatchedAsIs
+    };
     CSeq_feat_Handle feat;
 
     if( xref_g_ref == NULL ) {
@@ -467,16 +477,67 @@ CSeq_feat_Handle CGeneFinder::ResolveGeneXref(
     }
 
     if( top_level_seq_entry ) {
-        const CTSE_Handle &tse_handle = top_level_seq_entry.GetTSE_Handle();
-        if( tse_handle ) {
-            CTSE_Handle::TSeq_feat_Handles possible_feats = tse_handle.GetGenesByRef(*xref_g_ref);
-            if( possible_feats.empty() && xref_g_ref->IsSetLocus_tag() ) {
-                possible_feats = tse_handle.GetGenesWithLocus(  xref_g_ref->GetLocus_tag(), false );
-            }
-            if( possible_feats.empty() && xref_g_ref->IsSetLocus() ) {
-                possible_feats = tse_handle.GetGenesWithLocus(  xref_g_ref->GetLocus(), true );
-            }
+        CTSE_Handle::TSeq_feat_Handles possible_feats;
+        set<CTSE_Handle> tried;
+        SSeqMapSelector sel(CSeqMap::fFindAny, kMax_Auto);
+        ERGX_MatchQuality match_quality = eRGX_NoMatch;
+        bool found_near_match = false;
+        for (CBioseq_CI bs(top_level_seq_entry);
+             !found_near_match  &&  bs;
+             ++bs) {
+            for (CSeqMap_CI it(*bs, sel);  it;  ++it) {
+                const CTSE_Handle& tse_handle = it.GetUsingTSE();
+                if (tried.find(tse_handle) != tried.end()) {
+                    continue;
+                }
+                tried.insert(tse_handle);
 
+                ERGX_MatchQuality new_quality = eRGX_NoMatch;
+                
+                CTSE_Handle::TSeq_feat_Handles new_possibilities
+                    = tse_handle.GetGenesByRef(*xref_g_ref);
+                if ( !new_possibilities.empty() ) {
+                    new_quality = eRGX_MatchedAsIs;
+                }
+                if (new_quality == eRGX_NoMatch
+                    &&  match_quality <= eRGX_MatchedLocusForTag
+                    &&  xref_g_ref->IsSetLocus_tag()) {
+                    new_possibilities = tse_handle.GetGenesWithLocus
+                        (xref_g_ref->GetLocus_tag(), false);
+                    if ( !new_possibilities.empty() ) {
+                        new_quality = eRGX_MatchedLocusForTag;
+                    }
+                }
+                if (new_quality == eRGX_NoMatch
+                    &&  match_quality <= eRGX_MatchedTagForLocus
+                    &&  xref_g_ref->IsSetLocus()) {
+                    new_possibilities = tse_handle.GetGenesWithLocus
+                        (xref_g_ref->GetLocus(), true);
+                    if ( !new_possibilities.empty() ) {
+                        new_quality = eRGX_MatchedTagForLocus;
+                    }
+                }
+
+                if (new_quality > match_quality) {
+                    possible_feats = new_possibilities;
+                    match_quality  = new_quality;
+                } else if (new_quality == match_quality) {
+                    possible_feats.insert(possible_feats.end(),
+                                          new_possibilities.begin(),
+                                          new_possibilities.end());
+                } else {
+                    _ASSERT(new_quality == eRGX_NoMatch);
+                }
+
+                if (match_quality != eRGX_NoMatch
+                    &&  tse_handle == top_level_seq_entry.GetTSE_Handle()) {
+                    found_near_match = true;
+                    break;
+                }
+            }
+        }
+
+        if (match_quality != eRGX_NoMatch) {
             int best_score = INT_MAX;
             NON_CONST_ITERATE( CTSE_Handle::TSeq_feat_Handles, feat_iter, possible_feats) {
                 CSeq_feat_Handle a_possible_feat = *feat_iter;
