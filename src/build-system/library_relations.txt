@@ -911,6 +911,7 @@ pn_ctl needs gpipe_prok_clean_prot_names
 pn_ctl needs hmm_file
 pn_ctl needs hmm_hit_handle
 pn_ctl needs idload_utils
+pn_ctl needs third_party
 pn_ctl needs xid_utils
 png needs $(Z_LIB)
 png needs3party $(ORIG_LIBS)
@@ -1070,7 +1071,7 @@ test_stat_ext needs ncbi_xdbapi_ftds
 test_stat_ext needs xconnect
 test_stat_ext needs xutil
 third_party needs xmlwrapp
-third_party needs xncbi
+third_party needs xregexp
 tiff needs $(Z_LIB)
 tiff needs3party $(JPEG_LIBS)
 tiff needs3party $(ORIG_LIBS)
