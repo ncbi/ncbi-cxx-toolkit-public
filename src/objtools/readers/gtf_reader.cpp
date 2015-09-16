@@ -368,6 +368,9 @@ bool CGtfReader::x_UpdateAnnotCds(
         if ( ! x_MergeFeatureLocationMultiInterval( gff, pCds ) ) {
             return false;
         }
+        if (!x_FeatureTrimQualifiers(gff, pCds)) {
+            return false;
+        }
     }
 
     if ( x_CdsIsPartial( gff ) ) {
@@ -429,7 +432,45 @@ bool CGtfReader::x_UpdateAnnotStopCodon(
     //  coding regions. Hence, we will treat (pieces of) the stop codon just
     //  like (pieces of) CDS.
     //
-    return x_UpdateAnnotCds( gff, pAnnot );
+    //
+    // If there is no gene feature to go with this CDS then make one. Otherwise,
+    //  make sure the existing gene feature includes the location of the CDS.
+    //
+    CRef<CSeq_feat> pGene;
+    if (!x_FindParentGene(gff, pGene)) {
+        if (!x_CreateParentGene(gff, pAnnot)) {
+            return false;
+        }
+    }
+    else {
+        if (!x_MergeParentGene(gff, pGene)) {
+            return false;
+        }
+    }
+
+    //
+    // If there is no CDS feature with this gene_id|transcript_id then make one.
+    //  Otherwise, fix up the location of the existing one.
+    //
+    CRef<CSeq_feat> pCds;
+    if (!x_FindParentCds(gff, pCds)) {
+        //
+        // Create a brand new CDS feature:
+        //
+        if (!x_CreateParentCds(gff, pAnnot)) {
+            return false;
+        }
+        x_FindParentCds(gff, pCds);
+    }
+    else {
+        //
+        // Update an already existing CDS features:
+        //
+        if (!x_MergeFeatureLocationMultiInterval(gff, pCds)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
@@ -474,6 +515,9 @@ bool CGtfReader::x_UpdateAnnot5utr(
         if ( ! x_MergeFeatureLocationMultiInterval( gff, pMrna ) ) {
             return false;
         }
+        //if (!x_FeatureTrimQualifiers(gff, pMrna)) {
+        //    return false;
+        //}
     }
 
     return true;
@@ -521,6 +565,9 @@ bool CGtfReader::x_UpdateAnnot3utr(
         if ( ! x_MergeFeatureLocationMultiInterval( gff, pMrna ) ) {
             return false;
         }
+        //if (!x_FeatureTrimQualifiers(gff, pMrna)) {
+        //    return false;
+        //}
     }
 
     return true;
@@ -743,8 +790,7 @@ bool CGtfReader::x_MergeFeatureLocationMultiInterval(
     pLocation = pLocation->Add( 
         pFeature->SetLocation(), CSeq_loc::fSortAndMerge_All, 0 );
     pFeature->SetLocation( *pLocation );
-
-    return x_FeatureTrimQualifiers(record, pFeature);
+    return true;
 }
 
 //  -----------------------------------------------------------------------------
