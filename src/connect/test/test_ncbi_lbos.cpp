@@ -42,28 +42,6 @@
 #include    <corelib/test_boost.hpp>
 #endif /* #ifdef LBOS_TEST_MT */
 
-#define COMPOSE_LBOS_ADDRESS_TESTS              0
-#define RESET_ITERATOR_TESTS                    0
-#define CLOSE_ITERATOR_TESTS                    0
-#define DTAB_TESTS                              0
-#define RESOLVE_VIA_LBOS_TESTS                  0
-#define GET_LBOS_ADDRESS_TESTS                  0
-#define GET_CANDIDATES_TESTS                    0
-#define GETNEXTINFO_TESTS                       0
-#define OPEN_TESTS                              0
-#define GENERAL_LBOS_TESTS                      0
-#define INITIALIZATION_TESTS                    0
-#define ANNOUNCEMENT_TESTS                      1
-#define ANNOUNCEMENT_FROM_REGISTRY_TESTS        0
-#define DEANNOUNCEMENT_TESTS                    0
-#define DEANNOUNCE_ALL_TESTS                    0
-#define ANNOUNCEMENT_CXX_TESTS                  0
-#define ANNOUNCEMENT_FROM_REGISTRY_CXX_TESTS    0
-#define DEANNOUNCEMENT_CXX_TESTS                0
-#define DEANNOUNCE_ALL_CXX_TESTS                0
-#define STABILITY_TESTS                         0
-#define PERFORMANCE_TESTS                       0
-#define MULTITHREADING_TESTS                    0
 
 USING_NCBI_SCOPE;
 
@@ -303,7 +281,7 @@ BOOST_AUTO_TEST_SUITE_END()
 
 
 ///////////////////////////////////////////////////////////////////////////////
-BOOST_AUTO_TEST_SUITE( Get_LBOS_address )//////////////////////////////////
+BOOST_AUTO_TEST_SUITE( Get_LBOS_address_suite )//////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 /*
  * 1. Should try only one current zone
