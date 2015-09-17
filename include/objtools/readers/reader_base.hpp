@@ -77,6 +77,10 @@ public:
         OT_SEQANNOT,
         OT_SEQENTRY
     };
+    typedef list< CRef< CSeq_annot > > TAnnotList;
+    typedef TAnnotList TAnnots;
+    typedef TAnnots::iterator TAnnotIt;
+    typedef TAnnots::const_iterator TAnnotCit;
 
 protected:
     /// Protected constructor. Use GetReader() to get an actual reader object.
@@ -162,7 +166,7 @@ public:
     ///  
     virtual void
     ReadSeqAnnots(
-        list< CRef<CSeq_annot> >& annots,
+        TAnnots& annots,
         CNcbiIstream& istr,
         ILineErrorListener* pErrors=0 );
                         
@@ -177,7 +181,7 @@ public:
     ///  
     virtual void
     ReadSeqAnnots(
-        list< CRef<CSeq_annot> >& annots,
+        TAnnots& annots,
         ILineReader& lr,
         ILineErrorListener* pErrors=0 );
                         

@@ -67,10 +67,6 @@ public:
     typedef map<string, CRef<CSeq_feat> > IdToFeatureMap;
 
 public:
-    typedef list< CRef< CSeq_annot > > TAnnotList;
-    typedef TAnnotList TAnnots;
-    typedef TAnnots::iterator TAnnotIt;
-    typedef TAnnots::const_iterator TAnnotCit;
 
     //
     //  object management:
