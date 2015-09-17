@@ -566,10 +566,12 @@ namespace Compose_LBOS_address
 void LBOSExists__ShouldReturnLbos()
 {
     CLBOSStatus lbos_status(true, true);
+#ifndef NCBI_COMPILER_MSVC 
     char* result = g_LBOS_ComposeLBOSAddress();
     NCBITEST_CHECK_MESSAGE(!g_LBOS_StringIsNullOrEmpty(result),
                              "lbos address was not constructed appropriately");
     free(result);
+#endif
 }
 
 /* Thread-unsafe because of g_LBOS_UnitTesting_SetLBOSRoleAndDomainFiles().
@@ -2431,10 +2433,8 @@ void AlreadyAnnouncedInTheSameZone__ReplaceInStorage(int thread_num = -1)
     NCBITEST_CHECK_MESSAGE(result == eLBOS_Success,
                            "Announcement function did not return "
                            "SUCCESS as expected");
-    NCBITEST_CHECK_MESSAGE(s_FindAnnouncedServer(node_name, "1.0.0", port,
-                           "lbos.dev.be-md.ncbi.nlm.nih.gov") == 1,
-                           "Wrong number of stored announced servers! "
-                           "Should be 1");
+    NCBITEST_CHECK_EQUAL(s_FindAnnouncedServer(node_name, "1.0.0", port,
+                                     "lbos.dev.be-md.ncbi.nlm.nih.gov"), 1);
     lbos_answer = NULL;
     /*
      * Second time
@@ -3100,7 +3100,7 @@ void HealthcheckDead__ReturnELBOS_NotFound()
                                        &*lbos_answer);
     NCBITEST_CHECK_MESSAGE(result == eLBOS_NotFound,
                            "Announcement function did not return "
-                           "eLBOS_InvalidArgs as expected");
+                           "eLBOS_NotFound as expected");
     SleepMilliSec(1500); //ZK is not that fast
     /* Cleanup */
     LBOS_DeannounceAll();
@@ -3406,7 +3406,7 @@ void LBOSOff__ReturnELBOS_Off(int thread_num = -1)
 /*    Test is thread-safe. */
 void NotExists__ReturnELBOS_NotFound(int thread_num = -1)
 {
-    CLBOSStatus lbos_status(true, false);
+    CLBOSStatus lbos_status(true, true);
     ELBOS_Result result = 
         LBOS_Deannounce("notexists", "1.0.0", 
                         "lbos.dev.be-md.ncbi.nlm.nih.gov", 8080);
@@ -3632,8 +3632,6 @@ void NoLBOS__LBOSAnswerNull(int thread_num = -1)
             "http://lbos.dev.be-md.ncbi.nlm.nih.gov:8080/health"),
         CLBOSException, 
         comparator);
-    
-    NCBITEST_CHECK_MESSAGE(false, "No exception was thrown when no LBOS");
 }
 
 
@@ -4412,17 +4410,17 @@ void NoHostProvided__LocalAddress(int thread_num = -1)
     try {
         // We get random answers of lbos in this test, so try-catch
         // Service always get announced, though
-        LBOS::Announce(node_name, "1.0.0", port, "http://0.0.0.0:8080/health");
+        LBOS::Announce(node_name, "1.0.0", port, "http://0.0.0.0:4096/health");
     } 
     catch (...) {
     }
     NCBITEST_CHECK_MESSAGE(s_CheckIfAnnounced(node_name, "1.0.0", port, 
-                                              ":8080/health"), 
+                                              ":4096/health"),
                            "Service was not announced");
     BOOST_CHECK_NO_THROW(
         LBOS::Deannounce(node_name, "1.0.0", "", port));
     NCBITEST_CHECK_MESSAGE(!s_CheckIfAnnounced(node_name, "1.0.0", port, 
-                                               ":8080/health"), 
+                                               ":4096/health"),
                            "Service was not deannounced");
 }
 
@@ -4444,7 +4442,7 @@ void LBOSOff__ReturnELBOS_Off(int thread_num = -1)
 void NotExists__ThrowE_NotFound(int thread_num = -1)
 {
     ExceptionComparator<CLBOSException::e_NotFound> comparator;
-    CLBOSStatus lbos_status(true, false);
+    CLBOSStatus lbos_status(true, true);
     BOOST_CHECK_EXCEPTION(
         LBOS::Deannounce("notexists", "1.0.0",
         "lbos.dev.be-md.ncbi.nlm.nih.gov", 8080),
@@ -5054,22 +5052,21 @@ CMainLoopThread* thread3;
 void TryMultiThread()
 {
 #define LIST_OF_FUNCS                                                         \
-    X(01,Compose_LBOS_address::LBOSExists__ShouldReturnLbos)                 \
-    X(04,Reset_iterator::NoConditions__IterContainsZeroCandidates)                \
-    X(05,Reset_iterator::MultipleReset__ShouldNotCrash)                           \
-    X(06,Reset_iterator::Multiple_AfterGetNextInfo__ShouldNotCrash)               \
-    X(07,Close_iterator::AfterOpen__ShouldWork)                                   \
-    X(08,Close_iterator::AfterReset__ShouldWork)                                  \
-    X(09,Close_iterator::AfterGetNextInfo__ShouldWork)                            \
-    X(10,Close_iterator::FullCycle__ShouldWork)                                   \
-    X(11,Resolve_via_LBOS::ServiceExists__ReturnHostIP)                           \
-    X(12,Resolve_via_LBOS::ServiceDoesNotExist__ReturnNULL)                       \
-    X(13,Resolve_via_LBOS::NoLBOS__ReturnNULL)                                    \
-    X(17,Get_LBOS_address::                                                       \
-                   CustomHostNotProvided__SkipCustomHost)                         \
-    X(27,GetNextInfo::IterIsNull__ReturnNull)                                \
-    X(28,GetNextInfo::WrongMapper__ReturnNull)                                    \
-    X(29,Stability::GetNext_Reset__ShouldNotCrash)                                \
+    X(01,Compose_LBOS_address::LBOSExists__ShouldReturnLbos)                  \
+    X(04,Reset_iterator::NoConditions__IterContainsZeroCandidates)            \
+    X(05,Reset_iterator::MultipleReset__ShouldNotCrash)                       \
+    X(06,Reset_iterator::Multiple_AfterGetNextInfo__ShouldNotCrash)           \
+    X(07,Close_iterator::AfterOpen__ShouldWork)                               \
+    X(08,Close_iterator::AfterReset__ShouldWork)                              \
+    X(09,Close_iterator::AfterGetNextInfo__ShouldWork)                        \
+    X(10,Close_iterator::FullCycle__ShouldWork)                               \
+    X(11,Resolve_via_LBOS::ServiceExists__ReturnHostIP)                       \
+    X(12,Resolve_via_LBOS::ServiceDoesNotExist__ReturnNULL)                   \
+    X(13,Resolve_via_LBOS::NoLBOS__ReturnNULL)                                \
+    X(17,Get_LBOS_address::CustomHostNotProvided__SkipCustomHost)             \
+    X(27,GetNextInfo::IterIsNull__ReturnNull)                                 \
+    X(28,GetNextInfo::WrongMapper__ReturnNull)                                \
+    X(29,Stability::GetNext_Reset__ShouldNotCrash)                            \
     X(30,Stability::FullCycle__ShouldNotCrash)
     
 #define X(num,name) CMainLoopThread* thread##num = new CMainLoopThread(name);
