@@ -5700,6 +5700,25 @@ void CSourceFeatureItem::x_FormatGBNoteQuals(CFlatFeature& ff) const
 }
 
 
+static bool s_IsPresentOnNoteQuals(CFlatFeature::TQuals& qvec, const string& str)
+{
+    if (qvec.empty()) {
+        return false;
+    }
+
+    CFlatFeature::TQuals::iterator it = qvec.begin();
+    while (it != qvec.end()) {
+        const string& val = (*it)->GetValue();
+        SIZE_TYPE pos = NStr::Find(val, str);
+        if (pos != NPOS) return true;
+        ++it;
+    }
+
+    return false;
+}
+
+
+
 void CSourceFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
 {
     CFlatFeature::TQuals qvec;
@@ -5741,7 +5760,11 @@ void CSourceFeatureItem::x_FormatNoteQuals(CFlatFeature& ff) const
             DO_NOTE(frequency);
         }
 
-        x_FormatNoteQual(eSQ_metagenome_source, "metagenomic; derived from metagenome", qvec);
+        if (s_IsPresentOnNoteQuals(qvec, "metagenomic")) {
+            x_FormatNoteQual(eSQ_metagenome_source, "derived from metagenome", qvec);
+        } else {
+            x_FormatNoteQual(eSQ_metagenome_source, "metagenomic; derived from metagenome", qvec);
+        }
         
         DO_NOTE(genotype);
         x_FormatNoteQual(eSQ_plastid_name, "plastid", qvec);

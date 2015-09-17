@@ -865,7 +865,7 @@ static void s_FormatCitGen
                 if (gen.IsSetDate()) {
                     const CDate& date = gen.GetDate();
                     if (date.IsStr()  ||
-                        date.IsStd()  &&  date.GetStd().IsSetYear()  &&  date.GetStd().GetYear() != 0) {
+                        (date.IsStd()  &&  date.GetStd().IsSetYear()  &&  date.GetStd().GetYear() != 0)) {
                         gen.GetDate().GetDate(&year, "(%Y)");
                     }
                 }
