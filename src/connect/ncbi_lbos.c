@@ -1915,7 +1915,6 @@ ELBOS_Result s_LBOS_Announce(const char*             service,
     if (!g_LBOS_StringIsNullOrEmpty(buf)) {
         *lbos_answer = strdup(buf);
     }
-
     /* If no lbos found */
     if (last_code == 0) {
         CORE_LOG(eLOG_Warning, "g_LBOS_Announce: could not announce! "
@@ -1924,7 +1923,7 @@ ELBOS_Result s_LBOS_Announce(const char*             service,
         goto clear_and_exit;
     }
     /* If announced server has broken healthcheck */
-    if (last_code == 404) {
+    if (last_code == 404 || last_code == 400) {
         return_code = eLBOS_NotFound;
         goto clear_and_exit;
     }
