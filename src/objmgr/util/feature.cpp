@@ -66,6 +66,8 @@
 #include <objects/seq/NCBI8aa.hpp>
 #include <objects/seq/Pubdesc.hpp>
 #include <objects/seq/Heterogen.hpp>
+#include <objects/seq/Seqdesc.hpp>
+#include <objects/seq/Seq_descr.hpp>
 
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_loc_mix.hpp>
@@ -3379,6 +3381,176 @@ bool PromoteCDSToNucProtSet(objects::CSeq_feat_Handle& orig_feat)
         }
     }    
     return rval;
+}
+
+// A function to ensure that Seq-feat.partial is set if either end of the
+// feature is partial, and clear if neither end of the feature is partial
+bool AdjustFeaturePartialFlagForLocation(CSeq_feat& new_feat)
+{
+    bool any_change = false;
+    bool partial5 = new_feat.GetLocation().IsPartialStart(eExtreme_Biological);
+    bool partial3 = new_feat.GetLocation().IsPartialStop(eExtreme_Biological);
+    bool should_be_partial = partial5 || partial3;
+    bool is_partial = false;
+    if (new_feat.IsSetPartial() && new_feat.GetPartial()) {
+        is_partial = true;
+    }
+    if (should_be_partial && !is_partial) {
+        new_feat.SetPartial(true);
+        any_change = true;
+    }
+    else if (!should_be_partial && is_partial) {
+        new_feat.ResetPartial();
+        any_change = true;
+    }
+    return any_change;
+}
+
+
+// A function to change an existing MolInfo to match a coding region
+bool AdjustProteinFeaturePartialsToMatchCDS(CSeq_feat& new_prot, const CSeq_feat& cds)
+{
+    bool any_change = false;
+    bool partial5 = cds.GetLocation().IsPartialStart(eExtreme_Biological);
+    bool partial3 = cds.GetLocation().IsPartialStop(eExtreme_Biological);
+    bool prot_5 = new_prot.GetLocation().IsPartialStart(eExtreme_Biological);
+    bool prot_3 = new_prot.GetLocation().IsPartialStop(eExtreme_Biological);
+    if ((partial5 && !prot_5) || (!partial5 && prot_5)
+        || (partial3 && !prot_3) || (!partial3 && prot_3)) {
+        new_prot.SetLocation().SetPartialStart(partial5, eExtreme_Biological);
+        new_prot.SetLocation().SetPartialStop(partial3, eExtreme_Biological);
+        any_change = true;
+    }
+    any_change |= AdjustFeaturePartialFlagForLocation(new_prot);
+    return any_change;
+}
+
+// A function to change an existing MolInfo to match a coding region
+bool AdjustProteinMolInfoToMatchCDS(CMolInfo& molinfo, const CSeq_feat& cds)
+{
+    bool rval = false;
+    if (!molinfo.IsSetBiomol() || molinfo.GetBiomol() != CMolInfo::eBiomol_peptide) {
+        molinfo.SetBiomol(CMolInfo::eBiomol_peptide);
+        rval = true;
+    }
+
+    bool partial5 = cds.GetLocation().IsPartialStart(eExtreme_Biological);
+    bool partial3 = cds.GetLocation().IsPartialStop(eExtreme_Biological);
+    CMolInfo::ECompleteness completeness = CMolInfo::eCompleteness_complete;
+    if (partial5 && partial3) {
+        completeness = CMolInfo::eCompleteness_no_ends;
+    }
+    else if (partial5) {
+        completeness = CMolInfo::eCompleteness_no_left;
+    }
+    else if (partial3) {
+        completeness = CMolInfo::eCompleteness_no_right;
+    }
+    if (!molinfo.IsSetCompleteness() || molinfo.GetCompleteness() != completeness) {
+        molinfo.SetCompleteness(completeness);
+        rval = true;
+    }
+    return rval;
+}
+
+// A function to make all of the necessary related changes to
+// a Seq-entry after the partialness of a coding region has been
+// changed.
+bool AdjustForCDSPartials(const CSeq_feat& cds, CSeq_entry_Handle seh)
+{
+    bool any_change = false;
+
+    if (!cds.IsSetProduct() || !seh) {
+        return any_change;
+    }
+
+    // find Bioseq for product
+    CBioseq_Handle product = seh.GetScope().GetBioseqHandle(cds.GetProduct());
+    if (!product) {
+        return any_change;
+    }
+
+    // adjust protein feature
+    CFeat_CI f(product, SAnnotSelector(CSeqFeatData::eSubtype_prot));
+    if (f) {
+        // This is necessary, to make sure that we are in "editing mode"
+        const CSeq_annot_Handle& annot_handle = f->GetAnnot();
+        CSeq_entry_EditHandle eh = annot_handle.GetParentEntry().GetEditHandle();
+        CSeq_feat_EditHandle feh(*f);
+        CRef<CSeq_feat> new_feat(new CSeq_feat());
+        new_feat->Assign(*(f->GetSeq_feat()));
+        if (AdjustProteinFeaturePartialsToMatchCDS(*new_feat, cds)) {
+            feh.Replace(*new_feat);
+            any_change = true;
+        }
+    }
+
+    // change or create molinfo on protein bioseq
+    bool found = false;
+    CBioseq_EditHandle beh = product.GetEditHandle();
+
+    NON_CONST_ITERATE(CBioseq::TDescr::Tdata, it, beh.SetDescr().Set()) {
+        if ((*it)->IsMolinfo()) {
+            any_change |= AdjustProteinMolInfoToMatchCDS((*it)->SetMolinfo(), cds);
+            found = true;
+        }
+    }
+    if (!found) {
+        CRef<objects::CSeqdesc> new_molinfo_desc(new CSeqdesc);
+        AdjustProteinMolInfoToMatchCDS(new_molinfo_desc->SetMolinfo(), cds);
+        beh.SetDescr().Set().push_back(new_molinfo_desc);
+        any_change = true;
+    }
+
+    return any_change;
+}
+
+
+bool RetranslateCDS(const CSeq_feat& cds, CScope& scope)
+{
+    // feature must be cds and already have product
+    if (!cds.IsSetData() || !cds.GetData().IsCdregion() || !cds.IsSetProduct()) {
+        return false;
+    }
+
+    // Use Cdregion.Product to get handle to protein bioseq 
+    CBioseq_Handle prot_bsh = scope.GetBioseqHandle(cds.GetProduct());
+
+    // Should be a protein!
+    if (!prot_bsh || !prot_bsh.IsProtein())
+    {
+        return false;
+    }
+
+    CBioseq_EditHandle peh = prot_bsh.GetEditHandle();
+    CRef<CBioseq> new_protein = CSeqTranslator::TranslateToProtein(cds, scope);
+    if (new_protein && new_protein->IsSetInst()) {
+        CRef<CSeq_inst> new_inst(new CSeq_inst());
+        new_inst->Assign(new_protein->GetInst());
+        peh.SetInst(*new_inst);
+    }
+
+    // If protein feature exists, update location
+    CFeat_CI f(prot_bsh, SAnnotSelector(CSeqFeatData::eSubtype_prot));
+    if (f) {
+        // This is necessary, to make sure that we are in "editing mode"
+        const CSeq_annot_Handle& annot_handle = f->GetAnnot();
+        CSeq_entry_EditHandle eh = annot_handle.GetParentEntry().GetEditHandle();
+        CSeq_feat_EditHandle feh(*f);
+        CRef<CSeq_feat> new_feat(new CSeq_feat());
+        new_feat->Assign(*(f->GetSeq_feat()));
+        if (new_feat->CanGetLocation() &&
+            new_feat->GetLocation().IsInt() &&
+            new_feat->GetLocation().GetInt().CanGetTo())
+        {
+            new_feat->SetLocation().SetInt().SetTo(
+                new_protein->GetLength() - 1);
+            feh.Replace(*new_feat);
+        }
+    }
+
+    AdjustForCDSPartials(cds, peh.GetSeq_entry_Handle());
+    return true;
 }
 
 

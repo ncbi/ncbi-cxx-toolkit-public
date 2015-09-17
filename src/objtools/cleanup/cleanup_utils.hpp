@@ -71,14 +71,9 @@ bool ConvertDoubleQuotes(string& str)
 }
 
 
-/// truncate spaces and other trailing characters.
-bool CleanString(string& str, bool rm_trailing_period = false);
-
 bool CleanVisString( string &str );
 
 bool CleanVisStringJunk( string &str, bool allow_ellipses = false );
-
-bool CleanStringList(list< string >& string_list);
 
 /// remove a trailing period, 
 bool RemoveTrailingPeriod(string& str);
@@ -110,26 +105,6 @@ bool RemoveSpaces(string& str);
 
 /// convert medline names to standard names
 CRef<CAuthor> ConvertMltoSTD(const string& token);
-
-/// clean a container of strings, remove blanks and repeats.
-template<typename C>
-bool CleanStringContainer(C& str_cont, bool rm_trailing_junk = false)
-{
-    bool changed = false;
-    typename C::iterator it = str_cont.begin();
-    while (it != str_cont.end()) {
-        if (CleanString(*it, rm_trailing_junk)) {
-            changed = true;
-        }
-        if (NStr::IsBlank(*it)) {
-            it = str_cont.erase(it);
-            changed = true;
-        } else {
-            ++it;
-        }
-    }
-    return changed;
-}
 
 template<typename C>
 bool CleanVisStringContainer(C& str_cont)

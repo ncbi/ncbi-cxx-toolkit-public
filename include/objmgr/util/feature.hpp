@@ -517,6 +517,48 @@ ELocationInFrame NCBI_XOBJUTIL_EXPORT IsLocationInFrame (const CSeq_feat_Handle&
 /// @return enumerated return value indicates whether a change was made
 NCBI_XOBJUTIL_EXPORT bool PromoteCDSToNucProtSet(objects::CSeq_feat_Handle& orig_feat);
 
+/// AdjustFeaturePartialFlagForLocation
+/// A function to ensure that Seq-feat.partial is set if either end of the
+/// feature is partial, and clear if neither end of the feature is partial
+/// @param new_feat   The feature to be adjusted (if necessary)
+///
+/// @return           Boolean to indicate whether the feature was changed
+bool AdjustFeaturePartialFlagForLocation(CSeq_feat& new_feat);
+
+/// AdjustProteinFeaturePartialsToMatchCDS
+/// A function to change an existing MolInfo to match a coding region
+/// @param new_prot  The protein feature to be adjusted (if necessary)
+/// @param cds       The CDS to match
+///
+/// @return          Boolean to indicate whether the protein feature was changed
+bool AdjustProteinFeaturePartialsToMatchCDS(CSeq_feat& new_prot, const CSeq_feat& cds);
+
+/// AdjustProteinMolInfoToMatchCDS
+/// A function to change an existing MolInfo to match a coding region
+/// @param molinfo  The MolInfo to be adjusted (if necessary)
+/// @param cds      The CDS to match
+///
+/// @return         Boolean to indicate whether molinfo was changed
+bool AdjustProteinMolInfoToMatchCDS(CMolInfo& molinfo, const CSeq_feat& cds);
+
+/// AdjustForCDSPartials
+/// A function to make all of the necessary related changes to
+/// a Seq-entry after the partialness of a coding region has been
+/// changed.
+/// @param cds        The feature for which adjustments are to be made
+/// @param seh        The Seq-entry-handle to be adjusted (if necessary)
+///
+/// @return           Boolean to indicate whether the Seq-entry-handle was changed
+bool AdjustForCDSPartials(const CSeq_feat& cds, CSeq_entry_Handle seh);
+
+/// RetranslateCDS
+/// A function to replace the protein Bioseq pointed to by cds.product
+/// with the current translation of the coding region cds.
+/// @param cds        The feature for which adjustments are to be made
+///
+/// @return           Boolean to indicate whether the coding region was retranslated.
+bool RetranslateCDS(const CSeq_feat& cds, CScope& scope);
+
 END_SCOPE(feature)
 END_SCOPE(objects)
 END_NCBI_SCOPE

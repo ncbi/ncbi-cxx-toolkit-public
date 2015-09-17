@@ -184,26 +184,6 @@ void s_SplitMLAuthorName(string name, string& last, string& initials, string& su
     //  ------------------------------------------------------------------------
 }
 
-bool CleanString(string& str, bool rm_trailing_period)
-{
-    size_t orig_slen = str.size();
-    NStr::TruncateSpacesInPlace(str, NStr::eTrunc_Begin);
-    size_t slen = 0;
-    while (!str.empty()  &&  slen != str.size()) {
-        slen = str.size();
-        NStr::TruncateSpacesInPlace(str, NStr::eTrunc_End);
-        RemoveTrailingJunk(str);
-        if (rm_trailing_period) {
-            RemoveTrailingPeriod(str);
-        }
-    }
-    TrimInternalSemicolons(str);
-    if (orig_slen != str.size()) {
-        return true;
-    }
-    return false;
-}
-
 bool CleanVisString( string &str )
 {
     bool changed = false;
@@ -359,77 +339,6 @@ bool CleanVisStringJunk( string &str, bool allow_ellipses )
     }
 
     return changed;
-}
-
-bool CleanStringList(list< string >& string_list)
-{
-    bool rval = false;
-    list< string >::iterator it = string_list.begin();
-
-    while (it != string_list.end()) {
-        // trim leading spaces/unprintable characters, semicolons, and commas
-        size_t start_junk_len = 0;
-        const char *start = (*it).c_str();
-        while (*start != 0 && (*start <= ' ' || *start == ';' || *start == ',')) {
-            start_junk_len++;
-            start++;
-        }
-        if (start_junk_len > 0) {
-            (*it) = (*it).substr(start_junk_len);
-            rval = true;
-        }
-
-        // trim trailing spaces/unprintable characters, commas.
-        // trim trailing semicolons if they are not preceded by an ampersand
-        // followed by characters greater than space
-        size_t len_good = 0;
-        size_t pos = 0;
-        bool in_amp_phrase = false;
-        const char *cp = (*it).c_str();
-        while (*cp != 0) {
-            if (*cp <= ' ' || *cp == ',') {
-                // not ok for end
-                in_amp_phrase = false;
-            } else if (*cp == '&') {
-                in_amp_phrase = true;
-            } else if (*cp == ';') {
-                // keep only if in ampersand phrase
-                if (in_amp_phrase) {
-                    len_good = pos + 1;
-                }
-                in_amp_phrase = false;
-            } else {
-                len_good = pos + 1;
-            }
-            pos++;
-            cp++;
-        }
-        if (len_good < (*it).length()) {
-            (*it) = (*it).substr(0, len_good);
-            rval = true;
-        }
-
-        if (NStr::IsBlank (*it)) {
-            it = string_list.erase(it);
-        } else {
-            // keep in list if not a duplicate of previous item
-            list< string >::iterator it2 = string_list.begin();
-            bool found = false;
-            while (it2 != it && !found) {
-                if (NStr::EqualCase (*it, *it2)) {
-                    found = true;
-                }
-                ++it2;
-            }
-            if (found) {
-                it = string_list.erase(it);
-                rval = true;
-            } else {
-                ++it;
-            }
-        }
-    }
-    return rval;
 }
 
 
