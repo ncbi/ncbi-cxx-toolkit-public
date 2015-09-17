@@ -13,7 +13,10 @@ LIB = xvalidate xcleanup $(XFORMAT_LIBS) xalnmgr xobjutil \
       tables xregexp $(PCRE_LIB) $(OBJMGR_LIBS) \
       $(OBJEDIT_LIBS)
 
-LIBS = $(PCRE_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS) $(LIBXML_LIBS)
+#LIBS = $(PCRE_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS) $(LIBXML_LIBS)
+LIBS = $(LIBXSLT_LIBS) $(LIBXML_LIBS) $(PCRE_LIBS) \
+       $(CMPRS_LIBS) $(DL_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
+
 
 REQUIRES = objects LIBXML LIBXSLT -Cygwin
 
