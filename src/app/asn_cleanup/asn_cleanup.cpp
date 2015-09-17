@@ -620,7 +620,12 @@ bool CCleanupApp::x_ProcessXOptions(const string& opt, CSeq_entry_Handle seh)
         any_changes = CCleanup::WGSCleanup(seh);
     }
     if (NStr::Find(opt, "r") != string::npos) {
-        any_changes = CAutoDef::RegenerateDefLines(seh);
+        bool change_defline = CAutoDef::RegenerateDefLines(seh);
+        if (change_defline) {
+            any_changes = true;
+            CCleanup::NormalizeDescriptorOrder(seh);
+        }
+        
     }
     return any_changes;
 }

@@ -195,14 +195,25 @@ public:
     static bool RemoveNcbiCleanupObject(CSeq_entry &seq_entry);
 
 /// Looks up Org-refs in the Seq-entry
-/// @param seq_entry Seq-entry to edit
+/// @param seh Seq-entry to edit
 /// @return Boolean return value indicates whether object was updated
     static bool TaxonomyLookup(CSeq_entry_Handle seh);
 
 /// Performs WGS specific cleanup
-/// @param seq_entry Seq-entry to edit
+/// @param entry Seq-entry to edit
 /// @return Boolean return value indicates whether object was updated
     static bool WGSCleanup(CSeq_entry_Handle entry);
+
+/// Normalize Descriptor Order on a specific Seq-entry
+/// @param entry Seq-entry to edit
+/// @return Boolean return value indicates whether object was updated
+    static bool NormalizeDescriptorOrder(CSeq_descr& descr);
+
+/// Normalize Descriptor Order on a specific Seq-entry
+/// @param entry Seq-entry to edit
+/// @return Boolean return value indicates whether object was updated
+    static bool NormalizeDescriptorOrder(CSeq_entry_Handle seh);
+
 
 private:
     // Prohibit copy constructor & assignment operator

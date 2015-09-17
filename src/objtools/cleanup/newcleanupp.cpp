@@ -10256,64 +10256,11 @@ void CNewCleanup_imp::x_DecodeXMLMarkChanged( std::string & str )
     }
 }
 
-// maps the type of seqdesc to the order it should be in 
-// (lowest to highest)
-typedef SStaticPair<CSeqdesc::E_Choice, int>  TSeqdescOrderElem;
-static const TSeqdescOrderElem sc_seqdesc_order_map[] = {
-    // Note that ordering must match ordering
-    // in CSeqdesc::E_Choice
-    { CSeqdesc::e_Mol_type,    13 },
-    { CSeqdesc::e_Modif,       14 },
-    { CSeqdesc::e_Method,      15 },
-    { CSeqdesc::e_Name,         7 },
-    { CSeqdesc::e_Title,        1 },
-    { CSeqdesc::e_Org,         16 },
-    { CSeqdesc::e_Comment,      6 },
-    { CSeqdesc::e_Num,         11 },
-    { CSeqdesc::e_Maploc,       9 },
-    { CSeqdesc::e_Pir,         18 },
-    { CSeqdesc::e_Genbank,     22 },
-    { CSeqdesc::e_Pub,          5 },
-    { CSeqdesc::e_Region,      10 },
-    { CSeqdesc::e_User,         8 },
-    { CSeqdesc::e_Sp,          17 },
-    { CSeqdesc::e_Dbxref,      12 },
-    { CSeqdesc::e_Embl,        21 },
-    { CSeqdesc::e_Create_date, 24 },
-    { CSeqdesc::e_Update_date, 25 },
-    { CSeqdesc::e_Prf,         19 },
-    { CSeqdesc::e_Pdb,         20 },
-    { CSeqdesc::e_Het,          4 },
-    { CSeqdesc::e_Source,       2 },
-    { CSeqdesc::e_Molinfo,      3 },
-    { CSeqdesc::e_Modelev,     23 }
-};
-typedef CStaticPairArrayMap<CSeqdesc::E_Choice, int> TSeqdescOrderMap;
-DEFINE_STATIC_ARRAY_MAP(TSeqdescOrderMap, sc_SeqdescOrderMap, sc_seqdesc_order_map);
-
-static
-int s_SeqDescToOrdering( const CRef<CSeqdesc> &desc ) {
-    // ordering assigned to unknown
-    const int unknown_seqdesc = (1 + sc_SeqdescOrderMap.size());
-
-    TSeqdescOrderMap::const_iterator find_iter = sc_SeqdescOrderMap.find(desc->Which());
-    if( find_iter == sc_SeqdescOrderMap.end() ) {
-        return unknown_seqdesc;
-    }
-
-    return find_iter->second;
-}
-
-static
-bool s_SeqDescLessThan( const CRef<CSeqdesc> &desc1, const CRef<CSeqdesc> &desc2 )
-{
-    return ( s_SeqDescToOrdering(desc1) < s_SeqDescToOrdering(desc2) );
-}
 
 void CNewCleanup_imp::x_SortSeqDescs( CSeq_entry & seq_entry )
 {
-    if( ! SEQDESC_ON_SEQENTRY_IS_SORTED(seq_entry, s_SeqDescLessThan) ) {
-        SORT_SEQDESC_ON_SEQENTRY(seq_entry, s_SeqDescLessThan);
+    if (seq_entry.IsSetDescr() &&
+        CCleanup::NormalizeDescriptorOrder(seq_entry.SetDescr())) {
         ChangeMade( CCleanupChange::eMoveDescriptor );
     }
 }
