@@ -1476,11 +1476,16 @@ static void s_InitDestination(const char* logfile_path)
 
         /* Destination and file names didn't changed, just reopen files */
         if (sx_Info->reuse_file_names) {
-        
-            assert((sx_Info->file_trace != kInvalidFileHandle)  &&
-                   (sx_Info->file_log   != kInvalidFileHandle)  &&
-                   (sx_Info->file_err   != kInvalidFileHandle)  &&
-                   (sx_Info->file_perf  != kInvalidFileHandle));
+
+            assert(sx_Info->file_trace_name &&
+                   sx_Info->file_log_name   &&
+                   sx_Info->file_err_name   &&
+                   sx_Info->file_perf_name);
+
+            assert((sx_Info->file_trace == kInvalidFileHandle)  &&
+                   (sx_Info->file_log   == kInvalidFileHandle)  &&
+                   (sx_Info->file_err   == kInvalidFileHandle)  &&
+                   (sx_Info->file_perf  == kInvalidFileHandle));
 
 #if NCBILOG_USE_FILE_DESCRIPTORS
             sx_Info->file_trace = open(sx_Info->file_trace_name, flags, mode);
