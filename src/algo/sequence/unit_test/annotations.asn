@@ -10527,7 +10527,7 @@ Seq-annot ::= {
     {
       data gene {
         locus "IGF2",
-        desc "insulin-like growth factor 2 (somatomedin A)",
+        desc "insulin-like growth factor 2",
         syn {
           "IGF-II"
         }
@@ -10551,7 +10551,7 @@ Seq-annot ::= {
     {
       data rna {
         type mRNA,
-        ext name "insulin-like growth factor 2 (somatomedin A)"
+        ext name "insulin-like growth factor 2"
       },
       partial TRUE,
       except TRUE,
