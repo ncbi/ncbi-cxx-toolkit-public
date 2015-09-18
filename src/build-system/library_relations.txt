@@ -551,10 +551,9 @@ gui_glmesa needs ximage
 gui_glmesa needs3party $(OSMESA_LIBS)
 gui_graph needs gui_opengl
 gui_objects needs gui_objutils
-gui_objutils needs $(EUTILS_LIBS)
 gui_objutils needs biotree
-gui_objutils needs entrez2cli
 gui_objutils needs entrezgene
+gui_objutils needs eutils_client
 gui_objutils needs gbproj
 gui_objutils needs gencoll_client
 gui_objutils needs gui_utils
@@ -562,7 +561,6 @@ gui_objutils needs macro
 gui_objutils needs snputil
 gui_objutils needs xalgoalignutil
 gui_objutils needs xcgi
-gui_objutils needs xmlwrapp
 gui_objutils needs xobjwrite
 gui_objutils needs xvalidate
 gui_opengl needs gui_utils
@@ -1150,7 +1148,6 @@ w_aln_score needs w_wx
 w_aln_table needs w_wx
 w_data needs w_wx
 w_edit needs align_format
-w_edit needs ncbi_xloader_blastdb
 w_edit needs prosplign
 w_edit needs w_loaders
 w_feat_table needs w_wx
@@ -1163,6 +1160,7 @@ w_loaders needs $(SRAREAD_LIBS)
 w_loaders needs bamread
 w_loaders needs gui_objects
 w_loaders needs hgvs
+w_loaders needs ncbi_xloader_blastdb
 w_loaders needs w_wx
 w_loaders needs xalgophytree
 w_loaders needs xobjreadex
@@ -1178,6 +1176,7 @@ w_seq_graphic needs gui_config
 w_seq_graphic needs gui_graph
 w_seq_graphic needs gui_objects
 w_seq_graphic needs hgvs
+w_seq_graphic needs ncbi_xcache_netcache
 w_seq_graphic needs w_aln_score
 w_seq_graphic needs w_gl
 w_seq_graphic needs w_seq
@@ -1397,7 +1396,6 @@ xgpsubmit needs grid_wrapper
 xgpsubmit needs xasmcompare
 xgraphiccgi needs gui_glmesa
 xgraphiccgi needs gui_opengl
-xgraphiccgi needs ncbi_xloader_csra
 xgraphiccgi needs xsvcgi
 xgridcgi needs xcgi
 xgridcgi needs xconnserv
@@ -1502,6 +1500,7 @@ xsvcgi needs $(OBJMGR_LIBS)
 xsvcgi needs $(ncbi_xreader_pubseqos2)
 xsvcgi needs gui_objutils
 xsvcgi needs ncbi_xcache_netcache
+xsvcgi needs ncbi_xloader_csra
 xsvcgi needs ncbi_xloader_vdbgraph
 xsvcgi needs ncbi_xloader_wgs
 xsvcgi needs uudutil
