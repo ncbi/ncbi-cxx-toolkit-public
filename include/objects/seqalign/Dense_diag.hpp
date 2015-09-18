@@ -110,7 +110,7 @@ TSeqPos CDense_diag::GetSeqStart(TDim row) const
 inline
 TSeqPos CDense_diag::GetSeqStop(TDim row) const
 {
-    return GetSeqStart(row) + GetLen();
+    return GetSeqStart(row) + GetLen() - 1;
 }
 
 
