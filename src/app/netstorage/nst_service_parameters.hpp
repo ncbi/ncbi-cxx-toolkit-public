@@ -34,6 +34,7 @@
  */
 
 #include <corelib/ncbimtx.hpp>
+#include <corelib/ncbistr.hpp>
 #include <connect/services/json_over_uttp.hpp>
 
 #include "nst_database.hpp"
@@ -42,8 +43,10 @@
 BEGIN_NCBI_SCOPE
 
 
+// The latest requirement is to make the service name case insensitive.
+// So this constant can use any letters - the test statements are case
+// insensitive throughout the code
 const string    k_LBSMDNSTTestService = "LBSMDNSTTestService";
-
 
 
 
@@ -124,8 +127,12 @@ class CNSTServiceRegistry
     private:
         CNSTServiceProperties           m_LBSMDTestServiceProperties;
         CNSTServiceProperties           m_DefaultProperties;
-        map< string,
-             CNSTServiceProperties >    m_Services; // All the services
+
+        // The latest requirement is to make the service case insensitive
+        typedef map< string,
+                     CNSTServiceProperties,
+                     PNocase >          TServiceProperties;
+        TServiceProperties              m_Services; // All the services
                                                     // netstorage knows about
         mutable CMutex                  m_Lock;     // Lock for the map
 };

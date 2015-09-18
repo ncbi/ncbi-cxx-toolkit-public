@@ -113,8 +113,7 @@ CNSTServiceRegistry::ReadConfiguration(const IRegistry &  reg)
             x_ReadServiceProperties(reg, "metadata_conf",
                                     CNSTServiceProperties());
 
-    map< string,
-         CNSTServiceProperties >    new_service_conf;
+    TServiceProperties              new_service_conf;
 
     for (list<string>::const_iterator   k = new_services.begin();
          k != new_services.end(); ++k) {
@@ -134,8 +133,7 @@ CNSTServiceRegistry::ReadConfiguration(const IRegistry &  reg)
     vector<string>      deleted;
     vector<string>      modified;
 
-    for (map< string,
-              CNSTServiceProperties >::const_iterator  k = m_Services.begin();
+    for (TServiceProperties::const_iterator  k = m_Services.begin();
             k != m_Services.end(); ++k) {
         if (new_service_conf.find(k->first) == new_service_conf.end()) {
             deleted.push_back(k->first);
@@ -145,9 +143,8 @@ CNSTServiceRegistry::ReadConfiguration(const IRegistry &  reg)
         }
     }
 
-    for (map< string,
-              CNSTServiceProperties >::const_iterator
-                k = new_service_conf.begin(); k != new_service_conf.end(); ++k)
+    for (TServiceProperties::const_iterator  k = new_service_conf.begin();
+            k != new_service_conf.end(); ++k)
         if (m_Services.find(k->first) == m_Services.end())
             added.push_back(k->first);
 
@@ -285,8 +282,8 @@ CNSTServiceRegistry::Serialize(void) const
                                         m_DefaultProperties.Serialize());
     services.Append(default_service_properties);
 
-    for (map<string, CNSTServiceProperties>::const_iterator
-            k = m_Services.begin(); k != m_Services.end(); ++k) {
+    for (TServiceProperties::const_iterator  k = m_Services.begin();
+            k != m_Services.end(); ++k) {
         CJsonNode   single_service(k->second.Serialize());
 
         single_service.SetString("Name", k->first);
@@ -307,7 +304,7 @@ CNSTServiceRegistry::IsKnown(const string &  service) const
         return true;
 
     // Hardcoded service for LBSMD health check
-    return service == k_LBSMDNSTTestService;
+    return NStr::EqualNocase(service, k_LBSMDNSTTestService);
 }
 
 
@@ -316,13 +313,12 @@ bool
 CNSTServiceRegistry::GetTTL(const string &            service,
                             TNSTDBValue<CTimeSpan> &  ttl) const
 {
-    CMutexGuard                                   guard(m_Lock);
-    map< string,
-         CNSTServiceProperties >::const_iterator  s = m_Services.find(service);
+    CMutexGuard                         guard(m_Lock);
+    TServiceProperties::const_iterator  s = m_Services.find(service);
 
     if (s == m_Services.end()) {
         // It might be the LBSMD test service
-        if (service == k_LBSMDNSTTestService) {
+        if (NStr::EqualNocase(service, k_LBSMDNSTTestService)) {
             ttl = m_LBSMDTestServiceProperties.GetTTL();
             return true;
         }
@@ -339,13 +335,12 @@ bool
 CNSTServiceRegistry::GetProlongOnRead(const string &  service,
                                       CTimeSpan &     prolong_on_read) const
 {
-    CMutexGuard                                   guard(m_Lock);
-    map< string,
-         CNSTServiceProperties >::const_iterator  s = m_Services.find(service);
+    CMutexGuard                         guard(m_Lock);
+    TServiceProperties::const_iterator  s = m_Services.find(service);
 
     if (s == m_Services.end()) {
         // It might be the LBSMD test service
-        if (service == k_LBSMDNSTTestService) {
+        if (NStr::EqualNocase(service, k_LBSMDNSTTestService)) {
             prolong_on_read = m_LBSMDTestServiceProperties.GetProlongOnRead();
             return true;
         }
@@ -362,13 +357,12 @@ bool
 CNSTServiceRegistry::GetProlongOnWrite(const string &  service,
                                        CTimeSpan &     prolong_on_write) const
 {
-    CMutexGuard                                   guard(m_Lock);
-    map< string,
-         CNSTServiceProperties >::const_iterator  s = m_Services.find(service);
+    CMutexGuard                         guard(m_Lock);
+    TServiceProperties::const_iterator  s = m_Services.find(service);
 
     if (s == m_Services.end()) {
         // It might be the LBSMD test service
-        if (service == k_LBSMDNSTTestService) {
+        if (NStr::EqualNocase(service, k_LBSMDNSTTestService)) {
             prolong_on_write = m_LBSMDTestServiceProperties.GetProlongOnWrite();
             return true;
         }
@@ -385,13 +379,12 @@ bool
 CNSTServiceRegistry::GetServiceProperties(const string &  service,
                                           CNSTServiceProperties &  props) const
 {
-    CMutexGuard                                   guard(m_Lock);
-    map< string,
-         CNSTServiceProperties >::const_iterator  s = m_Services.find(service);
+    CMutexGuard                         guard(m_Lock);
+    TServiceProperties::const_iterator  s = m_Services.find(service);
 
     if (s == m_Services.end()) {
         // It might be the LBSMD test service
-        if (service == k_LBSMDNSTTestService) {
+        if (NStr::EqualNocase(service, k_LBSMDNSTTestService)) {
             props = m_LBSMDTestServiceProperties;
             return true;
         }
