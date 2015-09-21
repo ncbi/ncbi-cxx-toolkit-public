@@ -323,6 +323,30 @@ string& NStr::ToUpper(string& str)
 }
 
 
+bool NStr::IsLower(const CTempString& str)
+{
+    SIZE_TYPE len = str.length();
+    for (SIZE_TYPE i = 0; i < len; ++i) {
+        if (isalpha((unsigned char)str[i])  &&  !islower((unsigned char)str[i])) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+bool NStr::IsUpper(const CTempString& str)
+{
+    SIZE_TYPE len = str.length();
+    for (SIZE_TYPE i = 0; i < len; ++i) {
+        if (isalpha((unsigned char)str[i])  &&  !isupper((unsigned char)str[i])) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
 int NStr::StringToNonNegativeInt(const string& str)
 {
     int& errno_ref = errno;
@@ -2745,13 +2769,15 @@ SIZE_TYPE NStr::FindNoCase(const CTempString& str, const CTempString& pattern,
     } else if (islower((unsigned char) pat[0])) {
         pat += (char) toupper((unsigned char) pat[0]);
     }
+
     if (where == eFirst) {
         SIZE_TYPE pos = str.find_first_of(pat, start);
-        while (pos != NPOS  &&  pos <= end
+        while (pos != NPOS  &&  (pos + l) <= end
                &&  CompareNocase(str, pos, l, pattern) != 0) {
             pos = str.find_first_of(pat, pos + 1);
         }
         return pos > end ? NPOS : pos;
+
     } else { // eLast
         SIZE_TYPE pos = str.find_last_of(pat, end);
         while (pos != NPOS  &&  pos >= start
@@ -2788,6 +2814,50 @@ const string* NStr::Find(const vector <string>& vec, const CTempString& val,
        }
    }
    return NULL;
+}
+
+
+/// @internal
+// Check that symbol 'ch' is a word boundary character (don't matches [a-zA-Z0-9_]).
+static inline
+bool s_IsWordBoundaryChar(char ch)
+{
+    return !(ch == '_'  ||  isalnum((unsigned char)ch));
+}
+
+
+SIZE_TYPE NStr::FindWord(const CTempString& str, const CTempString& pattern,
+                         EOccurrence where, ECase use_case)
+{
+    const SIZE_TYPE slen = str.length();
+    const SIZE_TYPE plen = pattern.length();
+
+    SIZE_TYPE start = 0;
+    SIZE_TYPE end   = slen;
+
+    SIZE_TYPE pos = Find(str, pattern, start, end, where, use_case);
+
+    while (pos != NPOS) {
+        // Check word boundaries
+        if ( ((pos == 0)           ||  s_IsWordBoundaryChar(str[pos-1]))  &&
+             ((pos + plen == slen) ||  s_IsWordBoundaryChar(str[pos+plen])) ) {
+            return pos;
+        }
+        // Find next occurrence
+        if (where == eFirst) {
+            if (pos + plen == slen) {
+                return NPOS;
+            }
+            ++start;
+        } else { // eLast
+            if (pos == 0) {
+                return NPOS;
+            }
+            --end;
+        }
+        pos = Find(str, pattern, start, end, where, use_case);
+    }
+    return pos;
 }
 
 
@@ -2940,6 +3010,54 @@ void NStr::TruncateSpacesInPlace(string& str, ETrunc where)
         str.replace(0, length, str, beg, end - beg);
     }
 #endif
+}
+
+
+void NStr::TrimPrefixInPlace(string& str, const CTempString& prefix,
+                             ECase use_case)
+{
+    if (!str.length()  ||
+        !prefix.length()  ||
+        !Equal(str, 0, prefix.length(), prefix, use_case)) {
+        return;
+    }
+    str.erase(0, prefix.length());
+}
+
+
+void NStr::TrimPrefixInPlace(CTempString& str, const CTempString& prefix,
+                             ECase use_case)
+{
+    if (!str.length() ||
+        !prefix.length() ||
+        !Equal(str, 0, prefix.length(), prefix, use_case)) {
+        return;
+    }
+    str.assign(str.data() + prefix.length(), str.length() - prefix.length());
+}
+
+
+void NStr::TrimSuffixInPlace(string& str, const CTempString& suffix,
+                             ECase use_case)
+{
+    if (!str.length() ||
+        !suffix.length() ||
+        !Equal(str, str.length() - suffix.length(), suffix.length(), suffix, use_case)) {
+        return;
+    }
+    str.erase(str.length() - suffix.length());
+}
+
+
+void NStr::TrimSuffixInPlace(CTempString& str, const CTempString& suffix,
+                             ECase use_case)
+{
+    if (!str.length() ||
+        !suffix.length() ||
+        !Equal(str, str.length() - suffix.length(), suffix.length(),  suffix, use_case)) {
+        return;
+    }
+    str.erase(str.length() - suffix.length());
 }
 
 

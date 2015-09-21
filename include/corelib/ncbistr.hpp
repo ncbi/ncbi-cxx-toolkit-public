@@ -1801,6 +1801,37 @@ public:
     static bool MatchesMask(CTempString str, 
                             CTempString mask, ECase use_case = eCase);
 
+    /// Check if a string is blank (has no text).
+    ///
+    /// @param str
+    ///   String to check.
+    /// @param pos
+    ///   starting position (default 0)
+    static bool IsBlank(const CTempString& str, SIZE_TYPE pos = 0);
+
+    /// Checks if all letters in the given string have a lower case.
+    ///
+    /// @param str
+    ///   String to be checked.
+    /// @return
+    ///   TRUE if all letter characters in the string are lowercase
+    ///   according to the current C locale (std::islower()).
+    ///   All non-letter characters will be ignored.
+    ///   TRUE if empty or no letters.
+    static bool IsLower(const CTempString& str);
+
+    /// Checks if all letters in the given string have a upper case.
+    ///
+    /// @param str
+    ///   String to be checked.
+    /// @return
+    ///   TRUE if all letter characters in the string are uppercase
+    ///   according to the current C locale (std::isupper()).
+    ///   All non-letter characters will be skipped.
+    ///   TRUE if empty or no letters.
+    static bool IsUpper(const CTempString& str);
+
+
     // The following 4 methods change the passed string, then return it
 
     /// Convert string to lower case -- string& version.
@@ -1845,6 +1876,7 @@ private:
     static void/*dummy*/ ToUpper(const char* /*dummy*/);
 
 public:
+
     /// Check if a string starts with a specified prefix value.
     ///
     /// @param str
@@ -1924,13 +1956,6 @@ public:
     ///   and the start of the second string.
     static SIZE_TYPE CommonOverlapSize(const CTempString& s1, const CTempString& s2);
 
-    /// Check if a string is blank (has no text).
-    ///
-    /// @param str
-    ///   String to check.
-    /// @param pos
-    ///   starting position (default 0)
-    static bool IsBlank(const CTempString& str, SIZE_TYPE pos = 0);
 
     /// Whether it is the first or last occurrence.
     enum EOccurrence {
@@ -1955,18 +1980,19 @@ public:
     ///   "pattern" in "str". When set to eLast, this means to find the last
     ///    occurrence of "pattern" in "str".
     /// @param use_case
-    ///   Whether to do a case sensitive compare(default is eCase), or a
+    ///   Whether to do a case sensitive compare (default is eCase), or a
     ///   case-insensitive compare (eNocase) while searching for the pattern.
     /// @return
     ///   - The start of the first or last (depending on "which" parameter)
     ///   occurrence of "pattern" in "str", within the string interval
     ///   ["start", "end"], or
     ///   - NPOS if there is no occurrence of the pattern.
+    /// @sa FindCase, FindNoCase, FindWord
     static SIZE_TYPE Find(const CTempString& str,
                           const CTempString& pattern,
-                          SIZE_TYPE start = 0, SIZE_TYPE end = NPOS,
+                          SIZE_TYPE   start = 0, SIZE_TYPE end = NPOS,
                           EOccurrence which = eFirst,
-                          ECase use_case = eCase);
+                          ECase       use_case = eCase);
 
     /// Find the pattern in the specified range of a string using a case
     /// sensitive search.
@@ -1990,9 +2016,10 @@ public:
     ///   occurrence of "pattern" in "str", within the string interval
     ///   ["start", "end"], or
     ///   - NPOS if there is no occurrence of the pattern.
+    /// @sa Find
     static SIZE_TYPE FindCase  (const CTempString& str, 
                                 const CTempString& pattern,
-                                SIZE_TYPE start = 0, SIZE_TYPE end = NPOS,
+                                SIZE_TYPE   start = 0, SIZE_TYPE end = NPOS,
                                 EOccurrence which = eFirst);
 
     /// Find the pattern in the specified range of a string using a case
@@ -2017,9 +2044,10 @@ public:
     ///   occurrence of "pattern" in "str", within the string interval
     ///   ["start", "end"], or
     ///   - NPOS if there is no occurrence of the pattern.
+    /// @sa Find
     static SIZE_TYPE FindNoCase(const CTempString& str,
                                 const CTempString& pattern,
-                                SIZE_TYPE start = 0, SIZE_TYPE end = NPOS,
+                                SIZE_TYPE   start = 0, SIZE_TYPE end = NPOS,
                                 EOccurrence which = eFirst);
 
     /// Test for presence of a given string in a list or vector of strings
@@ -2043,6 +2071,37 @@ public:
 
     static const string* FindNoCase(const vector<string>& vec,
                                     const CTempString& val);
+
+
+    /// Find given word in the string.
+    ///
+    /// This function honors word boundaries:
+    ///   - starting or ending of the string,
+    ///   - any non-word character, all except [a-zA-Z0-9_]. 
+    ///
+    /// @param str
+    ///   String to search.
+    /// @param word
+    ///   Pattern to search for in "str". The "word" can have any symbols,
+    ///   not letters only. Function treat it as a pattern, even it have
+    ///   any non-word characters.
+    /// @param which
+    ///   When set to eFirst, this means to find the first occurrence of 
+    ///   "word" in "str". When set to eLast, this means to find the last
+    ///    occurrence of "word" in "str".
+    /// @param use_case
+    ///   Whether to do a case sensitive compare (default is eCase), or a
+    ///   case-insensitive compare (eNocase) while searching for the word.
+    /// @return
+    ///   - The start of the first or last (depending on "which" parameter)
+    ///   occurrence of "word" in "str", within the string interval
+    ///   ["start", "end"], or
+    ///   - NPOS if there is no occurrence of the word.
+    /// @sa Find
+    static SIZE_TYPE FindWord(const CTempString& str,
+                              const CTempString& word,
+                              EOccurrence which = eFirst,
+                              ECase       use_case = eCase);
 
 
     /// Which end to truncate a string.
@@ -2122,6 +2181,37 @@ public:
     static void TruncateSpacesInPlace(string& str,  ETrunc where = eTrunc_Both);
     static void TruncateSpacesInPlace(CTempString&, ETrunc where = eTrunc_Both);
     
+
+    /// Trim prefix from a string (in-place)
+    ///
+    /// @param str
+    ///   String to trim from.
+    /// @param prefix
+    ///   Prefix to remove. 
+    ///   If string doesn't have specified prefix, it doesn't changes.
+    /// @param use_case
+    ///   Whether to do a case sensitive compare (default is eCase), or a
+    ///   case-insensitive compare (eNocase) while checking for a prefix.
+    static void TrimPrefixInPlace(string& str, const CTempString& prefix,
+                                  ECase use_case = eCase);
+    static void TrimPrefixInPlace(CTempString& str, const CTempString& prefix,
+                                  ECase use_case = eCase);
+
+    /// Trim suffix from a string (in-place)
+    ///
+    /// @param str
+    ///   String to trim from.
+    /// @param suffix
+    ///   Suffix to remove. 
+    ///   If string doesn't have specified suffix, it doesn't changes.
+    /// @param use_case
+    ///   Whether to do a case sensitive compare (default is eCase), or a
+    ///   case-insensitive compare (eNocase) while checking for a prefix.
+    static void TrimSuffixInPlace(string& str, const CTempString& suffix,
+                                  ECase use_case = eCase);
+    static void TrimSuffixInPlace(CTempString& str, const CTempString& suffix,
+                                  ECase use_case = eCase);
+
     /// Replace occurrences of a substring within a string.
     ///
     /// @param src
@@ -5271,11 +5361,11 @@ SIZE_TYPE NStr::FindCase(const CTempString& str, const CTempString& pattern,
                          SIZE_TYPE start, SIZE_TYPE end, EOccurrence where)
 {
     if (where == eFirst) {
-        SIZE_TYPE result = str.find(pattern, start);
-        return (result == NPOS  ||  result > end) ? NPOS : result;
+        SIZE_TYPE pos = str.find(pattern, start);
+        return (pos == NPOS  ||  (pos + pattern.length()) > end) ? NPOS : pos;
     } else {
-        SIZE_TYPE result = str.rfind(pattern, end);
-        return (result == NPOS  ||  result < start) ? NPOS : result;
+        SIZE_TYPE pos = str.rfind(pattern, end);
+        return (pos == NPOS  ||  pos < start) ? NPOS : pos;
     }
 }
 

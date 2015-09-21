@@ -1054,7 +1054,6 @@ static const SRadixTest s_RadixTests[] = {
     { "012",        2, kBad }
 };
 
-
 BOOST_AUTO_TEST_CASE(s_StringToNumRadix)
 {
     const size_t count = sizeof(s_RadixTests)/sizeof(s_RadixTests[0]);
@@ -3049,22 +3048,39 @@ BOOST_AUTO_TEST_CASE(s_Case)
         "#@+_)(*&^%/?\"':;~`'\\!\v|=-0123456789.,><{}[]\t\n\r";
 
     {{
+        BOOST_CHECK( NStr::IsLower(""));
+        BOOST_CHECK( NStr::IsUpper(""));
+        BOOST_CHECK( NStr::IsLower("123 .,-"));
+        BOOST_CHECK( NStr::IsUpper("123 .,-"));
+        BOOST_CHECK( NStr::IsLower("123 a.,-"));
+        BOOST_CHECK(!NStr::IsUpper("123 a.,-"));
+        BOOST_CHECK(!NStr::IsLower("123 A.,-"));
+        BOOST_CHECK( NStr::IsUpper("123 A.,-"));
+     }}
+
+    {{
         char indiff[sizeof(s_Indiff) + 1];
         ::strcpy(indiff, s_Indiff);
         BOOST_CHECK_EQUAL(NStr::Compare(s_Indiff, indiff), 0);
         BOOST_CHECK_EQUAL(NStr::Compare(s_Indiff, NStr::ToLower(indiff)), 0);
+        BOOST_CHECK(NStr::IsLower(indiff));
         ::strcpy(indiff, s_Indiff);
         BOOST_CHECK_EQUAL(NStr::Compare(s_Indiff, NStr::ToUpper(indiff)), 0);
+        BOOST_CHECK(NStr::IsUpper(indiff));
         BOOST_CHECK_EQUAL(NStr::Compare(s_Indiff, NStr::ToLower(indiff)), 0);
+        BOOST_CHECK(NStr::IsLower(indiff));
     }}
     {{
         string indiff;
         indiff = s_Indiff;
         BOOST_CHECK_EQUAL(NStr::Compare(s_Indiff, indiff), 0);
         BOOST_CHECK_EQUAL(NStr::Compare(s_Indiff, NStr::ToLower(indiff)), 0);
+        BOOST_CHECK(NStr::IsLower(indiff));
         indiff = s_Indiff;
         BOOST_CHECK_EQUAL(NStr::Compare(s_Indiff, NStr::ToUpper(indiff)), 0);
+        BOOST_CHECK(NStr::IsUpper(indiff));
         BOOST_CHECK_EQUAL(NStr::Compare(s_Indiff, NStr::ToLower(indiff)), 0);
+        BOOST_CHECK(NStr::IsLower(indiff));
     }}
 
     for (size_t i = 0;  i < sizeof(s_Tri) / sizeof(s_Tri[0]);  i++) {
@@ -3079,18 +3095,24 @@ BOOST_AUTO_TEST_CASE(s_Case)
             ::strcpy(x_str, s_Tri[i].orig);
             BOOST_CHECK(::strlen(x_str) < sizeof(x_str));
             BOOST_CHECK_EQUAL(NStr::Compare(NStr::ToLower(x_str), x_lower), 0);
+            BOOST_CHECK(NStr::IsLower(x_str));
             ::strcpy(x_str, s_Tri[i].orig);
             BOOST_CHECK_EQUAL(NStr::Compare(NStr::ToUpper(x_str), s_Tri[i].x_upper),0);
+            BOOST_CHECK(NStr::IsUpper(x_str));
             BOOST_CHECK_EQUAL(NStr::Compare(x_lower, NStr::ToLower(x_str)), 0);
+            BOOST_CHECK(NStr::IsLower(x_str));
         }}
         {{
             string x_str;
             x_lower = s_Tri[i].x_lower;
             x_str = s_Tri[i].orig;
             BOOST_CHECK_EQUAL(NStr::Compare(NStr::ToLower(x_str), x_lower), 0);
+            BOOST_CHECK(NStr::IsLower(x_str));
             x_str = s_Tri[i].orig;
             BOOST_CHECK_EQUAL(NStr::Compare(NStr::ToUpper(x_str), s_Tri[i].x_upper),0);
+            BOOST_CHECK(NStr::IsUpper(x_str));
             BOOST_CHECK_EQUAL(NStr::Compare(x_lower, NStr::ToLower(x_str)), 0);
+            BOOST_CHECK(NStr::IsLower(x_str));
         }}
     }
 }
@@ -3207,14 +3229,72 @@ BOOST_AUTO_TEST_CASE(s_ReferenceCounting)
 
 
 //----------------------------------------------------------------------------
-// NStr::FindNoCase()
+// NStr::Find*()
 //----------------------------------------------------------------------------
 
-BOOST_AUTO_TEST_CASE(s_FindNoCase)
+BOOST_AUTO_TEST_CASE(s_Find)
 {
-    BOOST_CHECK_EQUAL(NStr::FindNoCase(" abcd", " xyz"), NPOS);
-    BOOST_CHECK_EQUAL(NStr::FindNoCase(" abcd", " xyz", 0, NPOS, NStr::eLast), NPOS);
-    BOOST_CHECK(NStr::FindNoCase(" abcd", " aBc", 0, NPOS, NStr::eLast) == 0);
+    BOOST_CHECK_EQUAL(NStr::FindCase  ("abcd", "xyz"),                           NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindCase  ("abcd", "xyz", 0, NPOS, NStr::eLast),     NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindNoCase("abcd", "xyz"),                           NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindNoCase("abcd", "xyz", 0, NPOS, NStr::eLast),     NPOS);
+
+    BOOST_CHECK_EQUAL(NStr::FindCase  ("abcd", "aBc", 0, NPOS, NStr::eLast),     NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindNoCase("abcd", "aBc", 0, NPOS, NStr::eLast),     0);
+
+    BOOST_CHECK_EQUAL(NStr::FindCase  ("abc abc abc", "bc", 2, 8, NStr::eFirst), 5);
+    BOOST_CHECK_EQUAL(NStr::FindCase  ("abc abc abc", "bc", 2, 8, NStr::eLast),  5);
+}
+
+
+BOOST_AUTO_TEST_CASE(s_FindWord)
+{
+    // NStr::eFirst
+    BOOST_CHECK_EQUAL(NStr::FindWord("abcd",    "xyz"),  NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindWord("abcd",    "abc"),  NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindWord("xabc",    "abc"),  NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindWord("abc d",   "abc"),  0);
+    BOOST_CHECK_EQUAL(NStr::FindWord("xabc d",  "abc"),  NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindWord("x,abc:d", "abc"),  2);
+    BOOST_CHECK_EQUAL(NStr::FindWord("x,abc",   "abc"),  2);
+    BOOST_CHECK_EQUAL(NStr::FindWord("xabcx abc\ny abc,z", "abc"), 6);
+
+    // NStr::eLast
+    BOOST_CHECK_EQUAL(NStr::FindWord("abcd",    "xyz", NStr::eLast),  NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindWord("abcd",    "abc", NStr::eLast),  NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindWord("xabc",    "abc", NStr::eLast),  NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindWord("ab abc",  "abc", NStr::eLast),  3);
+    BOOST_CHECK_EQUAL(NStr::FindWord("x abcd",  "abc", NStr::eLast),  NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindWord("x,abc:d", "abc", NStr::eLast),  2);
+    BOOST_CHECK_EQUAL(NStr::FindWord("x,abc",   "abc", NStr::eLast),  2);
+    BOOST_CHECK_EQUAL(NStr::FindWord("xabcx abc\ny abc,z", "abc", NStr::eLast), 12);
+
+    // NStr::eNocase
+    BOOST_CHECK_EQUAL(NStr::FindWord("abcd",    "xyz", NStr::eFirst, NStr::eNocase),  NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindWord("abcd",    "ABC", NStr::eFirst, NStr::eNocase),  NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindWord("xabc",    "ABC", NStr::eFirst, NStr::eNocase),  NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindWord("abc d",   "ABC", NStr::eFirst, NStr::eNocase),  0);
+    BOOST_CHECK_EQUAL(NStr::FindWord("xabc d",  "ABC", NStr::eFirst, NStr::eNocase),  NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindWord("x,abc:d", "ABC", NStr::eFirst, NStr::eNocase),  2);
+    BOOST_CHECK_EQUAL(NStr::FindWord("x,abc",   "ABC", NStr::eFirst, NStr::eNocase),  2);
+    BOOST_CHECK_EQUAL(NStr::FindWord("xabcx abc\ny abc,z", "ABC", NStr::eFirst, NStr::eNocase), 6);
+
+    BOOST_CHECK_EQUAL(NStr::FindWord("abcd",    "xyz", NStr::eLast, NStr::eNocase),  NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindWord("abcd",    "ABC", NStr::eLast, NStr::eNocase),  NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindWord("xabc",    "ABC", NStr::eLast, NStr::eNocase),  NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindWord("ab abc",  "ABC", NStr::eLast, NStr::eNocase),  3);
+    BOOST_CHECK_EQUAL(NStr::FindWord("x abcd",  "ABC", NStr::eLast, NStr::eNocase),  NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindWord("x,abc:d", "ABC", NStr::eLast, NStr::eNocase),  2);
+    BOOST_CHECK_EQUAL(NStr::FindWord("x,abc",   "ABC", NStr::eLast, NStr::eNocase),  2);
+    BOOST_CHECK_EQUAL(NStr::FindWord("xabcx abc\ny abc,z", "ABC", NStr::eLast, NStr::eNocase), 12);
+
+    // "Word" with non-word characters
+    BOOST_CHECK_EQUAL(NStr::FindWord("a b c",         "a b c"),  0);
+    BOOST_CHECK_EQUAL(NStr::FindWord(" a b c ",       "a b c"),  1);
+    BOOST_CHECK_EQUAL(NStr::FindWord("  a b c  ",     "a b c"),  2);
+    BOOST_CHECK_EQUAL(NStr::FindWord("x a b c y",     "a b c"),  2);
+    BOOST_CHECK_EQUAL(NStr::FindWord("a b a a b c d", "a b c"),  6);
+    BOOST_CHECK_EQUAL(NStr::FindWord("a b 1a b c d",  "a b c"),  NPOS);
 }
 
 
@@ -3537,6 +3617,10 @@ BOOST_AUTO_TEST_CASE(s_CUtf8)
 }
 
 
+//----------------------------------------------------------------------------
+// NStr::TruncateSpaves()
+//----------------------------------------------------------------------------
+
 BOOST_AUTO_TEST_CASE(s_TruncateSpaces)
 {
     const char* szEmpty     = "";
@@ -3672,6 +3756,78 @@ BOOST_AUTO_TEST_CASE(s_TruncateSpaces)
     BOOST_CHECK_EQUAL( CUtf8::TruncateSpaces(u8), "ab" );
 }
 
+
+//----------------------------------------------------------------------------
+// NStr::Trim[Pre|Suf]fix*()
+//----------------------------------------------------------------------------
+
+BOOST_AUTO_TEST_CASE(s_TrimPrefixSuffix)
+{
+    const char*       cStr = "some long string";
+    const string      sStr = cStr;
+    const CTempString tStr(cStr);
+
+    string str;
+    CTempString tstr;
+
+    // NStr::Case
+
+    str = cStr;
+    {{
+        NStr::TrimPrefixInPlace(str, "Some");
+        BOOST_CHECK_EQUAL(str, string(cStr));
+        NStr::TrimPrefixInPlace(str, "SOME");
+        BOOST_CHECK_EQUAL(str, string(cStr));
+        NStr::TrimSuffixInPlace(str, "STRING");
+        BOOST_CHECK_EQUAL(str, string(cStr));
+    }}
+    {{
+        NStr::TrimPrefixInPlace(str, "some ");
+        BOOST_CHECK_EQUAL(str, string("long string"));
+        NStr::TrimSuffixInPlace(str, " string");
+        BOOST_CHECK_EQUAL(str, string("long"));
+    }}
+
+    tstr = cStr;
+    {{
+        NStr::TrimPrefixInPlace(tstr, "Some");
+        BOOST_CHECK_EQUAL(tstr, string(cStr));
+        NStr::TrimPrefixInPlace(tstr, "SOME");
+        BOOST_CHECK_EQUAL(tstr, string(cStr));
+        NStr::TrimSuffixInPlace(str, "STRING");
+        BOOST_CHECK_EQUAL(tstr, string(cStr));
+    }}
+    {{
+        NStr::TrimPrefixInPlace(tstr, "some ");
+        BOOST_CHECK_EQUAL(tstr, string("long string"));
+        NStr::TrimSuffixInPlace(tstr, " string");
+        BOOST_CHECK_EQUAL(tstr, string("long"));
+    }}
+
+    // NStr::eNocase
+
+    str = cStr;
+    {{
+        NStr::TrimPrefixInPlace(str, "Some ", NStr::eNocase);
+        BOOST_CHECK_EQUAL(str, string("long string"));
+        NStr::TrimSuffixInPlace(str, " STRING", NStr::eNocase);
+        BOOST_CHECK_EQUAL(str, string("long"));
+    }}
+
+    tstr = cStr;
+    {{
+        NStr::TrimPrefixInPlace(tstr, "Some ", NStr::eNocase);
+        BOOST_CHECK_EQUAL(tstr, string("long string"));
+        NStr::TrimSuffixInPlace(tstr, " STRING", NStr::eNocase);
+        BOOST_CHECK_EQUAL(tstr, string("long"));
+    }}
+}
+
+
+//----------------------------------------------------------------------------
+// NStr::GetField()
+//----------------------------------------------------------------------------
+
 BOOST_AUTO_TEST_CASE(s_GetField)
 {
     BOOST_CHECK_EQUAL( NStr::GetField(NULL, 17, "not important"), string() );
@@ -3777,6 +3933,11 @@ BOOST_AUTO_TEST_CASE(s_GetFieldSingleDilimiter_Unsafe)
     BOOST_CHECK_EQUAL( NStr::GetField_Unsafe("one::two", 176, ':', NStr::eMergeDelims), string() );
 }
 
+
+//----------------------------------------------------------------------------
+// NStr::SQLEncode()
+//----------------------------------------------------------------------------
+
 BOOST_AUTO_TEST_CASE(s_SQLEncode)
 {
     BOOST_CHECK_EQUAL( NStr::SQLEncode(
@@ -3823,6 +3984,11 @@ BOOST_AUTO_TEST_CASE(s_SQLEncode)
 
     BOOST_CHECK_EQUAL( NStr::SQLEncode(upperHalf), expected );
 }
+
+
+//----------------------------------------------------------------------------
+// NStr::StrigToNum() speed test
+//----------------------------------------------------------------------------
 
 BOOST_AUTO_TEST_CASE(s_StringToIntSpeed)
 {
