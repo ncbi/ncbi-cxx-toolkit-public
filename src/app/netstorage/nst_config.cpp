@@ -245,6 +245,18 @@ void NSTValidateMetadataSection(const IRegistry &  reg,
 }
 
 
+// Case insensitive unary predicate for a list
+struct SCaseInsensitivePredicate
+{
+    SCaseInsensitivePredicate(const string &  pattern) : p(pattern)
+    {}
+    bool operator()(const string & m)
+    { return NStr::CompareNocase(m, p) == 0; }
+
+    string p;
+};
+
+
 // Checks that the configuration file does not refer to any of the
 // not configured service
 void NSTValidateServiceReferences(const IRegistry &  reg,
@@ -257,7 +269,7 @@ void NSTValidateServiceReferences(const IRegistry &  reg,
     const string    prefix = "service_";
     for (list<string>::const_iterator  k = sections.begin();
          k != sections.end(); ++k) {
-        if (!NStr::StartsWith(*k, prefix))
+        if (!NStr::StartsWith(*k, prefix, NStr::eNocase))
             continue;
 
         string      service(k->c_str() + prefix.size());
@@ -267,8 +279,8 @@ void NSTValidateServiceReferences(const IRegistry &  reg,
             continue;
         }
 
-        if (find(services.begin(),
-                 services.end(), service) == services.end()) {
+        if (find_if(services.begin(), services.end(),
+                    SCaseInsensitivePredicate(service)) == services.end()) {
             warnings.push_back("Section [service_" + service +
                                "] refers to a not configured service.");
             continue;
