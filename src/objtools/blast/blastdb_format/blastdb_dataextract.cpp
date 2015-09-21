@@ -44,6 +44,8 @@ static char const rcsid[] = "$Id$";
 #include <corelib/ncbiutil.hpp>
 #include <util/sequtil/sequtil_manip.hpp>
 #include <util/checksum.hpp>
+#include <objmgr/object_manager.hpp>
+#include <objmgr/scope.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -615,6 +617,16 @@ static void s_ReplaceCtrlAsInTitle(CRef<CBioseq> bioseq)
     }
 }
 
+static string s_GetTitle(CConstRef<CBioseq> bioseq)
+{
+    ITERATE(CSeq_descr::Tdata, desc, bioseq->GetDescr().Get()) {
+        if ((*desc)->Which() == CSeqdesc::e_Title) {
+            return (*desc)->GetTitle();
+        }
+    }
+    return string();
+}
+
 string CBlastDBExtractor::ExtractFasta(const CBlastDBSeqId &id) {
     stringstream out("");
 
@@ -643,7 +655,6 @@ string CBlastDBExtractor::ExtractFasta(const CBlastDBSeqId &id) {
             fasta.SetFlag(CFastaOstream::fSuppressRange);
         }
     }
-
     // Handle any requests for masked FASTA
     static const CFastaOstream::EMaskType kMaskType = CFastaOstream::eSoftMask;
     CSeqDB::TSequenceRanges masked_ranges;
@@ -657,7 +668,18 @@ string CBlastDBExtractor::ExtractFasta(const CBlastDBSeqId &id) {
         fasta.SetMask(kMaskType, masks);
     }
 
-    try { fasta.Write(*m_Bioseq, range); }
+    try { 
+	if (seqid->IsLocal())
+	{
+		string lcl_tmp = seqid->AsFastaString();
+		lcl_tmp = lcl_tmp.erase(0, 4);
+		out << ">" << lcl_tmp << " " << s_GetTitle(m_Bioseq) << '\n';
+		CScope scope(*CObjectManager::GetInstance());
+		fasta.WriteSequence(scope.AddBioseq(*m_Bioseq), range); 
+	}
+	else
+		fasta.Write(*m_Bioseq, range); 
+    }
     catch (const CObjmgrUtilException& e) {
         if (e.GetErrCode() == CObjmgrUtilException::eBadLocation) {
             NCBI_THROW(CInvalidDataException, eInvalidRange,
