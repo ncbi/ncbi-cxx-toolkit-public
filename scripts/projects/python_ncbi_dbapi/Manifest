@@ -17,7 +17,7 @@ COPY: $srcdir/src/dbapi/lang_bind/python/tests/python_dbapi_test.py $installdir/
 # Use stable components (per components.link) rather than the trunk.
 USE_COMPONENTS
 
-POSTBUILD: $srcdir/scripts/projects/python_ncbi_dbapi/post_build/post_build.py $bindir $libdir $installdir $version
+POSTBUILD: $srcdir/scripts/projects/python_ncbi_dbapi/post_build/post_build.py $bindir $libdir $installdir $srcdir
 
 
 # Each line describes a single configuration
