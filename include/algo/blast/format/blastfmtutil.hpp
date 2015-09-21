@@ -177,9 +177,15 @@ public:
      *
      */
 
+    enum ESubjectScores  {
+    	eNoQuerySubjCov = 0,
+    	eQueryCovPerSubj = 0x01,
+    	eQueryCovPerUniqSubj = 0x02,
+    	eBothQuerySubjCov = eQueryCovPerSubj | eQueryCovPerUniqSubj
+    };
     static void InsertSubjectScores (objects::CSeq_align_set & org_align_set,
     					      const objects::CBioseq_Handle & query_handle,
-    					      TSeqRange query_range = TSeqRange());
+    					      TSeqRange query_range = TSeqRange(), ESubjectScores score_type=eQueryCovPerSubj);
 };
 
 

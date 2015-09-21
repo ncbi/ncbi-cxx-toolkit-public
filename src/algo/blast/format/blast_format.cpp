@@ -731,8 +731,17 @@ CBlastFormat::x_PrintTabularReport(const blast::CSearchResults& results,
     	    CSeq_align_set copy_aln_set;
             CBlastFormatUtil::PruneSeqalign(*aln_set, copy_aln_set, m_HitlistSize);
 
-            if(string::npos != m_CustomOutputFormatSpec.find("qcovs"))
-            		CBlastFormatUtil::InsertSubjectScores (copy_aln_set, bhandle, m_QueryRange);
+            {
+            	unsigned int scores = CBlastFormatUtil::eNoQuerySubjCov;
+            	if(string::npos != m_CustomOutputFormatSpec.find("qcovs"))
+            		scores |= CBlastFormatUtil::eQueryCovPerSubj ;
+            	if(string::npos != m_CustomOutputFormatSpec.find("qcovus") &&
+            			ncbi::NStr::ToLower(m_Program) == string("blastn"))
+            		scores |= CBlastFormatUtil::eQueryCovPerUniqSubj ;
+
+            	if(scores != CBlastFormatUtil::eNoQuerySubjCov)
+            		CBlastFormatUtil::InsertSubjectScores (copy_aln_set, bhandle, m_QueryRange, (CBlastFormatUtil::ESubjectScores) scores);
+           	}
             tabinfo.SetQueryGeneticCode(m_QueryGenCode);
             tabinfo.SetDbGeneticCode(m_DbGenCode);
             ITERATE(CSeq_align_set::Tdata, itr, copy_aln_set.Get()) {

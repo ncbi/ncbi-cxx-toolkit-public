@@ -124,6 +124,7 @@ enum ETabularField {
     eSubjectStrand,        ///< Subject Strand
     eQueryCovSubject,      ///< Query Coverage per Subject
     eQueryCovSeqalign,     ///< Query Coverage per Seqalign
+    eQueryCovUniqSubject,      ///< Query Coverage per Subject
     eMaxTabularField       ///< Sentinel value
 };
 

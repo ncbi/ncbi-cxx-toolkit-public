@@ -3767,5 +3767,77 @@ CRef<CSeq_id> CAlignFormatUtil::GetDisplayIds(const CBioseq_Handle& handle,
     return wid;
 }
 
+static inline CRange<TSeqPos> & s_FixMinusStrandRange(CRange<TSeqPos> & rng)
+{
+	if(rng.GetFrom() > rng.GetTo()){
+		rng.Set(rng.GetTo(), rng.GetFrom());
+	}
+	//cerr << "Query Rng: " << rng.GetFrom() << "-" << rng.GetTo() << endl;
+	return rng;
+}
+
+int CAlignFormatUtil::GetUniqSeqCoverage(CSeq_align_set & alnset)
+{
+	if(alnset.IsEmpty())
+		return 0;
+
+	bool isDenDiag = (alnset.Get().front()->GetSegs().Which() == CSeq_align::C_Segs::e_Dendiag) ?
+			          true : false;
+
+	list<CRef<CSeq_align> >::iterator mItr=alnset.Set().begin();
+	CRangeCollection<TSeqPos> subj_rng_coll((*mItr)->GetSeqRange(1));
+	CRange<TSeqPos> q_rng((*mItr)->GetSeqRange(0));
+	/*
+	cerr << MSerial_AsnText << **mItr;
+	cerr << (*mItr)->GetSeqRange(0).GetFrom() << endl;
+	cerr << (*mItr)->GetSeqRange(0).GetTo() << endl;
+	cerr << (*mItr)->GetSeqRange(0).GetToOpen() << endl;
+	cerr << (*mItr)->GetSeqRange(1).GetFrom() << endl;
+	cerr << (*mItr)->GetSeqRange(1).GetTo() << endl;
+	cerr << (*mItr)->GetSeqRange(1).GetToOpen() << endl;
+	*/
+	CRangeCollection<TSeqPos> query_rng_coll(s_FixMinusStrandRange(q_rng));
+	++mItr;
+	for(;mItr != alnset.Set().end(); ++mItr) {
+		const CRange<TSeqPos> align_subj_rng((*mItr)->GetSeqRange(1));
+		// subject range should always be on the positive strand
+		ASSERT(align_subj_rng.GetTo() > align_subj_rng.GetFrom());
+		CRangeCollection<TSeqPos> coll(align_subj_rng);
+		coll.Subtract(subj_rng_coll);
+
+		if (coll.empty())
+			continue;
+
+		if(coll[0] == align_subj_rng) {
+			CRange<TSeqPos> query_rng ((*mItr)->GetSeqRange(0));
+			//cerr << "Subj Rng :" << align_subj_rng.GetFrom() << "-" << align_subj_rng.GetTo() << endl;
+			query_rng_coll += s_FixMinusStrandRange(query_rng);
+			subj_rng_coll += align_subj_rng;
+		}
+		else {
+			ITERATE (CRangeCollection<TSeqPos>, uItr, coll) {
+				CRange<TSeqPos> query_rng;
+				const CRange<TSeqPos> & subj_rng = (*uItr);
+				CRef<CSeq_align> densegAln
+						= isDenDiag ? CAlignFormatUtil::CreateDensegFromDendiag(**mItr) : (*mItr);
+
+				CAlnMap map(densegAln->GetSegs().GetDenseg());
+				TSignedSeqPos subj_aln_start =  map.GetAlnPosFromSeqPos(1,subj_rng.GetFrom());
+				TSignedSeqPos subj_aln_end =  map.GetAlnPosFromSeqPos(1,subj_rng.GetTo());
+				query_rng.SetFrom(map.GetSeqPosFromAlnPos(0,subj_aln_start));
+				query_rng.SetTo(map.GetSeqPosFromAlnPos(0,subj_aln_end));
+
+				//cerr << "Subj Rng :" << subj_rng.GetFrom() << "-" << subj_rng.GetTo() << endl;
+				query_rng_coll += s_FixMinusStrandRange(query_rng);
+				subj_rng_coll += subj_rng;
+			}
+		}
+	}
+
+	return query_rng_coll.GetCoveredLength();
+}
+
+
+
 END_SCOPE(align_format)
 END_NCBI_SCOPE

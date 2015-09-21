@@ -1208,6 +1208,9 @@ public:
     static bool   m_geturl_debug_flag;
     static auto_ptr<CGeneInfoFileReader> m_GeneInfoReader;
 
+    /// Calculate the uniq subject query coverage range (blastn only)
+    static int GetUniqSeqCoverage(objects::CSeq_align_set & alnset);
+
 protected:
 
     ///Wrap a string to specified length.  If break happens to be in

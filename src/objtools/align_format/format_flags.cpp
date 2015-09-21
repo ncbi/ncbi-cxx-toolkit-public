@@ -40,7 +40,7 @@ string kDfltArgTabularOutputFmt =
     "evalue bitscore";
 const string kDfltArgTabularOutputFmtTag("std");
 
-const size_t kNumTabularOutputFormatSpecifiers = 44;
+const size_t kNumTabularOutputFormatSpecifiers = 45;
 const SFormatSpec sc_FormatSpecifiers[kNumTabularOutputFormatSpecifiers] = {
     SFormatSpec("qseqid",   
                 "Query Seq-id",
@@ -173,7 +173,10 @@ const SFormatSpec sc_FormatSpecifiers[kNumTabularOutputFormatSpecifiers] = {
                 eQueryCovSubject),
     SFormatSpec("qcovhsp",
                 "Query Coverage Per HSP",
-                eQueryCovSeqalign)
+                eQueryCovSeqalign),
+    SFormatSpec("qcovus",
+                "Query Coverage Per Unique Subject (blastn only)",
+                eQueryCovUniqSubject),
 };
 
 string DescribeTabularOutputFormatSpecifiers(bool is_igblast)

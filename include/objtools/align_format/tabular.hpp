@@ -288,9 +288,11 @@ protected:
     void x_PrintSubjectStrand();
     void x_PrintSeqalignCoverage();
     void x_PrintSubjectCoverage();
+    void x_PrintUniqSubjectCoverage();
     void x_SetTaxInfo(const objects::CBioseq_Handle & handle, const CRef<objects::CBlast_def_line_set> & bdlRef);
     void x_SetSubjectIds(const objects::CBioseq_Handle& bh, const CRef<objects::CBlast_def_line_set> & bdlRef);
     void x_SetQueryCovSubject(const objects::CSeq_align & align);
+    void x_SetQueryCovUniqSubject(const objects::CSeq_align & align);
     void x_SetQueryCovSeqalign(const CSeq_align & align, int query_len);
     void x_CheckTaxDB();
 
@@ -341,6 +343,7 @@ private:
 
     string m_SubjectStrand;
     pair<string, int>  m_QueryCovSubject;
+    pair<string, int>  m_QueryCovUniqSubject;
     int m_QueryCovSeqalign;
 
     int m_QueryGeneticCode;

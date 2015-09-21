@@ -154,6 +154,8 @@ CBlastTabularInfo::CBlastTabularInfo(CNcbiOstream& ostr, const string& format,
     SetNoFetch(false);
     m_QueryCovSubject.first = NA;
     m_QueryCovSubject.second = -1;
+    m_QueryCovUniqSubject.first = NA;
+    m_QueryCovUniqSubject.second = -1;
     m_QueryGeneticCode = 1;
     m_DbGeneticCode = 1;
 
@@ -407,6 +409,14 @@ void CBlastTabularInfo::x_PrintSubjectCoverage(void)
 		m_Ostream << NStr::IntToString(m_QueryCovSubject.second);
 }
 
+void CBlastTabularInfo::x_PrintUniqSubjectCoverage(void)
+{
+	if(m_QueryCovUniqSubject.second < 0)
+		m_Ostream << NA;
+	else
+		m_Ostream << NStr::IntToString(m_QueryCovUniqSubject.second);
+}
+
 void CBlastTabularInfo::x_PrintSeqalignCoverage(void)
 {
 	if(m_QueryCovSeqalign < 0)
@@ -614,7 +624,21 @@ void CBlastTabularInfo::x_SetQueryCovSubject(const CSeq_align & align)
 		m_QueryCovSubject.first = NA;
 		m_QueryCovSubject.second = pct;
 	}
+}
 
+void CBlastTabularInfo::x_SetQueryCovUniqSubject(const CSeq_align & align)
+{
+	int pct=-1;
+	if(align.GetNamedScore("uniq_seq_percent_coverage", pct))
+	{
+		m_QueryCovUniqSubject.first = align.GetSeq_id(1).AsFastaString();
+		m_QueryCovUniqSubject.second = pct;
+	}
+	else if(align.GetSeq_id(1).AsFastaString() != m_QueryCovUniqSubject.first)
+	{
+		m_QueryCovUniqSubject.first = NA;
+		m_QueryCovUniqSubject.second = pct;
+	}
 }
 
 void CBlastTabularInfo::x_SetQueryCovSeqalign(const CSeq_align & align, int query_len)
@@ -686,6 +710,9 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
 
     if (x_IsFieldRequested(eQueryCovSubject))
     	x_SetQueryCovSubject(align);
+
+    if (x_IsFieldRequested(eQueryCovUniqSubject))
+    	x_SetQueryCovUniqSubject(align);
 
     // Extract the full list of subject ids
     bool setSubjectIds = (x_IsFieldRequested(eSubjectAllSeqIds) ||
@@ -1068,6 +1095,8 @@ void CBlastTabularInfo::x_PrintFieldNames()
         	m_Ostream << "subject strand"; break;
         case eQueryCovSubject:
         	m_Ostream << "% query coverage per subject"; break;
+        case eQueryCovUniqSubject:
+        	m_Ostream << "% query coverage per uniq subject"; break;
         case eQueryCovSeqalign:
         	m_Ostream << "% query coverage per hsp"; break;
         default:
@@ -1314,6 +1343,8 @@ CBlastTabularInfo::x_PrintField(ETabularField field)
     	x_PrintSubjectStrand(); break;
     case eQueryCovSubject:
     	x_PrintSubjectCoverage(); break;
+    case eQueryCovUniqSubject:
+    	x_PrintUniqSubjectCoverage(); break;
     case eQueryCovSeqalign:
     	x_PrintSeqalignCoverage(); break;
     default:

@@ -55,6 +55,8 @@ static char const rcsid[] = "$Id$";
 #include <objtools/blast/seqdb_reader/seqdb.hpp>
 #include <util/range.hpp>
 
+
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(ncbi);
 USING_SCOPE(objects);
@@ -565,18 +567,26 @@ CBlastFormatUtil::GetWholeAlnSeqStrings(string & query,
 
 void CBlastFormatUtil::InsertSubjectScores (CSeq_align_set & org_align_set,
 										    const CBioseq_Handle & query_handle,
-										    TSeqRange  query_range)
+										    TSeqRange  query_range,
+										    ESubjectScores score_type)
 {
-	if(!org_align_set.IsSet() || org_align_set.Get().empty())
-	{
+
+	if(!org_align_set.IsSet() || org_align_set.Get().empty()) {
 		_TRACE("Empty seq_align_set");
 		return;
 	}
-
 	// Seq align set from
 	int dont_care = 0;
-	if(org_align_set.Get().front()->GetNamedScore("seq_percent_coverage", dont_care))
+	unsigned int check_type = score_type;
+	if(org_align_set.Get().front()->GetNamedScore("seq_percent_coverage", dont_care)) {
+		check_type &= (~eQueryCovPerSubj);
+	}
+	if (org_align_set.Get().front()->GetNamedScore("uniq_seq_percent_coverage", dont_care)) {
+		check_type &= (~eQueryCovPerUniqSubj);
+	}
+	if(check_type == eNoQuerySubjCov){
 		return;
+	}
 
     CConstRef<CBioseq> query_bioseq = query_handle.GetCompleteBioseq();
     int query_len = 0;
@@ -615,16 +625,33 @@ void CBlastFormatUtil::InsertSubjectScores (CSeq_align_set & org_align_set,
         }
 
        	tmp_align_list.assign(left_it, right_it);
-       	int master_coverage = align_format::CAlignFormatUtil::GetMasterCoverage(tmp_align_set);
+       	if((check_type & eQueryCovPerSubj)) {
+       		int master_coverage = align_format::CAlignFormatUtil::GetMasterCoverage(tmp_align_set);
 
-        if (master_coverage)
-        {
-           	double subj_coverage = 100.0 * (double) master_coverage/ (double) query_len;
-           	if(subj_coverage < 99)
-           		subj_coverage +=0.5;
+       		if (master_coverage)
+        	{
+           		double subj_coverage = 100.0 * (double) master_coverage/ (double) query_len;
+           		//cerr << "Query Length: " << query_len << endl;
+           		//cerr << "Query coverage Length: " << master_coverage << endl;
+           		if(subj_coverage < 99)
+           			subj_coverage +=0.5;
 
-           	(*left_it)->SetNamedScore ("seq_percent_coverage", (int) subj_coverage);
-        }
+           		(*left_it)->SetNamedScore ("seq_percent_coverage", (int) subj_coverage);
+        	}
+       	}
+       	if((check_type & eQueryCovPerUniqSubj)) {
+       		int uniq_coverage = align_format::CAlignFormatUtil::GetUniqSeqCoverage(tmp_align_set);
+       		if (uniq_coverage)
+       	    {
+       	    	double uniq_subj_coverage = 100.0 * (double) uniq_coverage/ (double) query_len;
+           		//cerr << "Query Uniq coverage Length: " << uniq_coverage << endl;
+           		//cerr << uniq_coverage << endl;
+       	    	if(uniq_subj_coverage < 99)
+       	        	uniq_subj_coverage +=0.5;
+
+       	         (*left_it)->SetNamedScore ("uniq_seq_percent_coverage", (int) uniq_subj_coverage);
+       	    }
+       	}
         left_it = right_it;
     }
 }
