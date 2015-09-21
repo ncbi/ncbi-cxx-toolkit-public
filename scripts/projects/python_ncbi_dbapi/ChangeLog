@@ -1,3 +1,7 @@
+Version 1.15.2 (2015-09-21):
+* Produce wheels for decentralized installation, not tarballs for
+  centralized installation.
+
 Version 1.15.1 (2013-02-06):
 * Rework exception translation to follow PEP 249 more closely.
 
