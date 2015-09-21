@@ -1021,7 +1021,7 @@ const size_t s_ProteinProteinDescCount = 13;
 const size_t s_ProteinProteinPubCount = 2;
 #endif
 
-BOOST_AUTO_TEST_CASE(FetchSeq21)
+BOOST_AUTO_TEST_CASE(FetchProt1)
 {
     // WGS VDB with proteins: access contig
     if ( !CDirEntry(s_ProteinFile).Exists() ) {
@@ -1044,7 +1044,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq21)
 }
 
 
-BOOST_AUTO_TEST_CASE(FetchSeq22)
+BOOST_AUTO_TEST_CASE(FetchProt2)
 {
     // WGS VDB with proteins: check non-existend scaffold
     if ( !CDirEntry(s_ProteinFile).Exists() ) {
@@ -1062,7 +1062,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq22)
 }
 
 
-BOOST_AUTO_TEST_CASE(FetchSeq23)
+BOOST_AUTO_TEST_CASE(FetchProt3)
 {
     // WGS VDB with proteins: access protein by name
     if ( !CDirEntry(s_ProteinFile).Exists() ) {
@@ -1086,7 +1086,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq23)
 }
 
 
-BOOST_AUTO_TEST_CASE(FetchSeq24)
+BOOST_AUTO_TEST_CASE(FetchProt4)
 {
     // WGS VDB with proteins: access protein by GB accession
     if ( !CDirEntry(s_ProteinFile).Exists() ) {
@@ -1109,7 +1109,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq24)
 }
 
 
-BOOST_AUTO_TEST_CASE(FetchSeq25)
+BOOST_AUTO_TEST_CASE(FetchProt5)
 {
     // WGS VDB with proteins: access protein by GB accession with wrong version
     if ( !CDirEntry(s_ProteinFile).Exists() ) {
@@ -1127,7 +1127,128 @@ BOOST_AUTO_TEST_CASE(FetchSeq25)
 }
 
 
-BOOST_AUTO_TEST_CASE(FetchSeq26)
+BOOST_AUTO_TEST_CASE(FetchProt6)
+{
+    // WGS VDB with proteins: access protein by wrong GB accession with
+    if ( !CDirEntry(s_ProteinFile).Exists() ) {
+        return;
+    }
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr, s_ProteinFile);
+
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+
+    string acc = s_ProteinProteinAcc;
+    acc[3] += 1;
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(acc);
+    CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
+    sx_ReportState(bsh, idh);
+    BOOST_REQUIRE(!bsh);
+}
+
+
+BOOST_AUTO_TEST_CASE(FetchProt11)
+{
+    // WGS VDB with proteins: access contig
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
+
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle("KMU40310");
+    CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
+    sx_ReportState(bsh, idh);
+    BOOST_REQUIRE(bsh);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_not_set), 9u);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_Pub), 1u);
+    //BOOST_CHECK(sx_EqualToGB(bsh));
+}
+
+
+BOOST_AUTO_TEST_CASE(FetchProt12)
+{
+    // WGS VDB with proteins: check non-existend scaffold
+    if ( !CDirEntry(s_ProteinFile).Exists() ) {
+        return;
+    }
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr, s_ProteinFile);
+
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(s_ProteinScaffoldId);
+    CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
+    sx_ReportState(bsh, idh);
+    BOOST_REQUIRE(!bsh);
+}
+
+
+BOOST_AUTO_TEST_CASE(FetchProt13)
+{
+    // WGS VDB with proteins: access protein by name
+    if ( !CDirEntry(s_ProteinFile).Exists() ) {
+        return;
+    }
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr, s_ProteinFile);
+
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+
+    string name_id = "gb||"+s_ProteinProteinId;
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(name_id);
+    CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
+    sx_ReportState(bsh, idh);
+    BOOST_REQUIRE(bsh);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_not_set),
+                      s_ProteinProteinDescCount);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_Pub),
+                      s_ProteinProteinPubCount);
+    BOOST_CHECK_EQUAL(CFeat_CI(bsh.GetParentEntry()).GetSize(), 1);
+}
+
+
+BOOST_AUTO_TEST_CASE(FetchProt14)
+{
+    // WGS VDB with proteins: access protein by GB accession
+    if ( !CDirEntry(s_ProteinFile).Exists() ) {
+        return;
+    }
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr, s_ProteinFile);
+
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(s_ProteinProteinAcc);
+    CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
+    sx_ReportState(bsh, idh);
+    BOOST_REQUIRE(bsh);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_not_set),
+                      s_ProteinProteinDescCount);
+    BOOST_CHECK_EQUAL(sx_GetDescCount(bsh, CSeqdesc::e_Pub),
+                      s_ProteinProteinPubCount);
+    BOOST_CHECK_EQUAL(CFeat_CI(bsh.GetParentEntry()).GetSize(), 1);
+}
+
+
+BOOST_AUTO_TEST_CASE(FetchProt15)
+{
+    // WGS VDB with proteins: access protein by GB accession with wrong version
+    if ( !CDirEntry(s_ProteinFile).Exists() ) {
+        return;
+    }
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr, s_ProteinFile);
+
+    CRef<CScope> scope(new CScope(*om));
+    scope->AddDefaults();
+
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(s_ProteinProteinAcc+"1");
+    CBioseq_Handle bsh = scope->GetBioseqHandle(idh);
+    sx_ReportState(bsh, idh);
+    BOOST_REQUIRE(!bsh);
+}
+
+
+BOOST_AUTO_TEST_CASE(FetchProt16)
 {
     // WGS VDB with proteins: access protein by wrong GB accession with
     if ( !CDirEntry(s_ProteinFile).Exists() ) {
@@ -1381,11 +1502,11 @@ BOOST_AUTO_TEST_CASE(GITest)
 
     bh = scope.GetBioseqHandle(CSeq_id_Handle::GetGiHandle(25725721));
     BOOST_CHECK(bh);
-    BOOST_CHECK(sx_Equal(bh, sx_LoadFromGB(bh)));
+    BOOST_CHECK(bh && sx_Equal(bh, sx_LoadFromGB(bh)));
 
     bh = scope.GetBioseqHandle(CSeq_id_Handle::GetGiHandle(25561849));
     BOOST_CHECK(bh);
-    BOOST_CHECK(sx_Equal(bh, sx_LoadFromGB(bh)));
+    BOOST_CHECK(bh && sx_Equal(bh, sx_LoadFromGB(bh)));
 
     // zero value in gi index
     bh = scope.GetBioseqHandle(CSeq_id_Handle::GetGiHandle(25561850));

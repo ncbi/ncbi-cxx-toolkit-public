@@ -9,7 +9,7 @@ REQUIRES = Boost.Test.Included
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(SRA_INCLUDE) $(BOOST_INCLUDE)
 
-LIB = ncbi_xloader_wgs $(SRAREAD_LIBS) xobjreadex $(OBJREAD_LIBS) xobjutil \
+LIB = ncbi_xloader_wgs id2cli id2 $(SRAREAD_LIBS) xobjreadex $(OBJREAD_LIBS) xobjutil \
       test_boost $(OBJMGR_LIBS)
 
 LIBS = $(SRA_SDK_SYSLIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)

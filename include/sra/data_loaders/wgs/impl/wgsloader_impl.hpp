@@ -138,7 +138,9 @@ public:
 
     CConstRef<CWGSFileInfo> GetFileInfo(const CWGSBlobId& blob_id);
     typedef CWGSFileInfo::SAccFileInfo SAccFileInfo;
-    SAccFileInfo GetFileInfo(const string& acc);
+    SAccFileInfo GetFileInfoByGi(TGi gi);
+    SAccFileInfo GetFileInfoByProtAcc(const string& acc);
+    SAccFileInfo GetFileInfoByAcc(const string& acc);
     SAccFileInfo GetFileInfo(const CSeq_id_Handle& idh);
 
     CDataLoader::TTSE_LockSet GetRecords(CDataSource* data_source,
@@ -170,6 +172,28 @@ public:
         {
             m_AddWGSMasterDescr = flag;
         }
+    
+    typedef vector<string> TWGSPrefixes;
+    
+    class IGiResolver
+    {
+    public:
+        virtual ~IGiResolver(void);
+    
+        typedef CWGSDataLoader_Impl::TWGSPrefixes TWGSPrefixes;
+
+        virtual void Resolve(TWGSPrefixes& prefixes, TGi gi) = 0;
+    };
+
+    class IAccResolver
+    {
+    public:
+        virtual ~IAccResolver(void);
+    
+        typedef CWGSDataLoader_Impl::TWGSPrefixes TWGSPrefixes;
+
+        virtual void Resolve(TWGSPrefixes& prefixes, const string& acc) = 0;
+    };
 
 protected:
     friend class CWGSFileInfo;
@@ -188,8 +212,8 @@ private:
     CMutex  m_Mutex;
     CVDBMgr m_Mgr;
     string  m_WGSVolPath;
-    CWGSGiResolver m_GiResolver;
-    CWGSProtAccResolver m_ProtAccResolver;
+    CIRef<IGiResolver> m_GiResolver;
+    CIRef<IAccResolver> m_AccResolver;
     TFixedFiles m_FixedFiles;
     TFoundFiles m_FoundFiles;
     bool m_AddWGSMasterDescr;

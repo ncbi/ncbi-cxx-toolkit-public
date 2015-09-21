@@ -267,6 +267,20 @@ public:
     // get protein row_id (PROTEIN) for GB accession or 0 if there is no acc
     uint64_t GetProtAccRowId(const string& acc);
 
+    typedef COpenRange<TIntId> TGiRange;
+    typedef vector<TGiRange> TGiRanges;
+    // return sorted non-overlapping ranges of nucleotide GIs in the VDB
+    TGiRanges GetNucGiRanges(void);
+    // return sorted non-overlapping ranges of protein GIs in the VDB
+    TGiRanges GetProtGiRanges(void);
+
+    typedef string TAccPattern;
+    typedef COpenRange<TIntId> TIdRange;
+    typedef map<TAccPattern, TIdRange> TAccRanges;
+    // return map of 3+5 accession ranges
+    // Key of each element is accession pattern, digital part zeroed.
+    TAccRanges GetProtAccRanges(void);
+
 protected:
     friend class CWGSSeqIterator;
     friend class CWGSScaffoldIterator;
@@ -439,6 +453,8 @@ protected:
     void x_InitIdParams(void);
     void x_LoadMasterDescr(int filter);
 
+    void x_SortGiRanges(TGiRanges& ranges);
+
 private:
     CVDBMgr m_Mgr;
     string m_WGSPath;
@@ -528,6 +544,26 @@ public:
     pair<TGi, TGi> GetProtGiRange(void) const {
         return GetNCObject().GetProtGiRange();
     }
+    typedef CWGSDb_Impl::TGiRange TGiRange;
+    typedef CWGSDb_Impl::TGiRanges TGiRanges;
+    // return sorted non-overlapping ranges of nucleotide GIs in the VDB
+    TGiRanges GetNucGiRanges(void) const {
+        return GetNCObject().GetNucGiRanges();
+    }
+    // return sorted non-overlapping ranges of protein GIs in the VDB
+    TGiRanges GetProtGiRanges(void) {
+        return GetNCObject().GetProtGiRanges();
+    }
+
+    typedef CWGSDb_Impl::TAccPattern TAccPattern;
+    typedef CWGSDb_Impl::TIdRange TIdRange;
+    typedef CWGSDb_Impl::TAccRanges TAccRanges;
+    // return map of 3+5 accession ranges
+    // Key of each element is accession pattern, digital part zeroed.
+    TAccRanges GetProtAccRanges(void) {
+        return GetNCObject().GetProtAccRanges();
+    }
+
     // get row_id for a given GI or 0 if there is no GI
     // the second value in returned value is true if the sequence is protein
     pair<uint64_t, bool> GetGiRowId(TGi gi) const {
@@ -966,6 +1002,8 @@ public:
     void GetIds(CBioseq::TId& ids) const;
     bool HasRefAcc(void) const;
     CTempString GetRefAcc(void) const;
+
+    NCBI_gb_state GetGBState(void) const;
 
     TSeqPos GetSeqLength(void) const;
 

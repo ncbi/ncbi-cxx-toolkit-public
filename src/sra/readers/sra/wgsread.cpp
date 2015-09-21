@@ -56,6 +56,9 @@ NCBI_DEFINE_ERR_SUBCODE_X(1);
 BEGIN_NAMESPACE(objects);
 
 
+static const bool kMasterDescrOnProteins = true;
+
+
 NCBI_PARAM_DECL(bool, WGS, MASTER_DESCR);
 NCBI_PARAM_DEF(bool, WGS, MASTER_DESCR, true);
 
@@ -71,8 +74,8 @@ NCBI_PARAM_DEF(string, WGS, PROT_ACC_INDEX, "");
 #define DEGAULT_GI_INDEX_PATH                                   \
     NCBI_TRACES04_PATH "/wgs01/wgs_aux/list.wgs_gi_ranges"
 
-#define DEGAULT_PROT_ACC_INDEX_PATH                                     \
-    NCBI_TRACES04_PATH "/wgs01/wgs_aux/list.wgs_prot_acc_ranges"
+#define DEGAULT_PROT_ACC_INDEX_PATH                             \
+    NCBI_TRACES04_PATH "/wgs01/wgs_aux/list.wgs_acc_ranges"
 
 
 NCBI_PARAM_DECL(bool, WGS, CLIP_BY_QUALITY);
@@ -98,7 +101,9 @@ CWGSGiResolver::CWGSGiResolver(void)
     if ( path.empty() ) {
         path = DEGAULT_GI_INDEX_PATH;
     }
+    CStopWatch sw(CStopWatch::eStart);
     x_Load(path);
+    LOG_POST("Loaded GI index in "<<sw.Elapsed());
 }
 
 
@@ -271,7 +276,7 @@ CWGSProtAccResolver::SAccInfo::SAccInfo(const string& acc)
         return;
     }
     m_Id = NStr::StringToNumeric<uint64_t>(acc.substr(prefix), NStr::fConvErr_NoThrow);
-    if ( m_Id ) {
+    if ( m_Id || errno == 0 ) {
         m_Prefix = acc.substr(0, prefix);
         m_Length = acc.size();
     }
@@ -470,7 +475,7 @@ string CWGSDb_Impl::NormalizePathOrAccession(CTempString path_or_acc,
             // add default version 1
             return string(path_or_acc) + "01";
         }
-        if ( path_or_acc.size() > start + 6 ) {
+        if ( 0 && path_or_acc.size() > start + 6 ) {
             // remove contig/scaffold id
             return path_or_acc.substr(0, start+6);
         }
@@ -950,6 +955,126 @@ pair<TGi, TGi> CWGSDb_Impl::GetProtGiRange(void)
         Put(idx);
     }
     return ret;
+}
+
+
+void CWGSDb_Impl::x_SortGiRanges(TGiRanges& ranges)
+{
+    if ( ranges.empty() ) {
+        return;
+    }
+    sort(ranges.begin(), ranges.end());
+    TGiRanges::iterator dst = ranges.begin();
+    for ( TGiRanges::iterator i = dst+1; i != ranges.end(); ++i ) {
+        if ( i->GetFrom() == dst->GetToOpen() ) {
+            dst->SetToOpen(i->GetToOpen());
+        }
+        else {
+            *++dst = *i;
+        }
+    }
+    ranges.erase(dst+1, ranges.end());
+}
+
+
+CWGSDb_Impl::TGiRanges CWGSDb_Impl::GetNucGiRanges(void)
+{
+    TGiRanges ranges;
+    CRef<SSeqTableCursor> seq = Seq();
+    if ( seq->m_GI ) {
+        TIntId gi_start = -1, gi_end = -1;
+        pair<int64_t, uint64_t> row_range = seq->m_Cursor.GetRowIdRange();
+        for ( uint64_t i = 0; i < row_range.second; ++i ) {
+            TIntId gi = s_ToGi(*seq->GI(row_range.first+i),
+                               "CWGSDb::GetNucGiRanges()");
+            if ( !gi ) {
+                continue;
+            }
+            if ( gi != gi_end ) {
+                if ( gi_end != gi_start ) {
+                    ranges.push_back(TGiRange(gi_start, gi_end));
+                }
+                gi_start = gi;
+            }
+            gi_end = gi+1;
+        }
+        if ( gi_end != gi_start ) {
+            ranges.push_back(TGiRange(gi_start, gi_end));
+        }
+        x_SortGiRanges(ranges);
+    }
+    Put(seq);
+    return ranges;
+}
+
+
+CWGSDb_Impl::TGiRanges CWGSDb_Impl::GetProtGiRanges(void)
+{
+    TGiRanges ranges;
+    if ( ProtTable() ) {
+        CRef<SProtTableCursor> seq = Prot();
+        /*
+        if ( seq->m_GI ) {
+            TIntId gi_start = -1, gi_end = -1;
+            pair<int64_t, uint64_t> row_range = seq->m_Cursor.GetRowIdRange();
+            for ( uint64_t i = 0; i < row_range.second; ++i ) {
+                TIntId gi = s_ToGi(*seq->GI(row_range.first+i),
+                                   "CWGSDb::GetProtGiRanges()");
+                if ( gi != gi_end ) {
+                    if ( gi_end != gi_start ) {
+                        ranges.push_back(TGiRange(gi_start, gi_end));
+                    }
+                    gi_start = gi;
+                }
+                gi_end = gi+1;
+            }
+            if ( gi_end != gi_start ) {
+                ranges.push_back(TGiRange(gi_start, gi_end));
+            }
+            x_SortGiRanges(ranges);
+        }
+        */
+        Put(seq);
+    }
+    return ranges;
+}
+
+
+CWGSDb_Impl::TAccRanges CWGSDb_Impl::GetProtAccRanges(void)
+{
+    TAccRanges ranges;
+    if ( CRef<SProtTableCursor> seq = Prot() ) {
+        pair<int64_t, uint64_t> row_range = seq->m_Cursor.GetRowIdRange();
+        for ( uint64_t i = 0; i < row_range.second; ++i ) {
+            string acc = *seq->GB_ACCESSION(row_range.first+i);
+            if ( acc.empty() ) {
+                continue;
+            }
+            TIntId id = 0, d_mul = 1;
+            for ( size_t i = acc.size();
+                  i > 0 && isdigit(Uint1(acc[i-1])); --i ) {
+                int d = acc[i-1]-'0';
+                acc[i-1] = '0';
+                id += d*d_mul;
+                d_mul *= 10;
+            }
+            TAccRanges::iterator it = ranges.lower_bound(acc);
+            if ( it == ranges.end() || it->first != acc ) {
+                TIdRange range(id, id+1);
+                ranges.insert(it, TAccRanges::value_type(acc, range));
+            }
+            else {
+                if ( id < it->second.GetFrom() ) {
+                    it->second.SetFrom(id);
+                }
+                else if ( id >= it->second.GetToOpen() ) {
+                    it->second.SetTo(id);
+                }
+            }
+        }
+        Put(seq);
+    }
+    return ranges;
 }
 
 
@@ -2968,6 +3093,14 @@ CTempString CWGSProteinIterator::GetRefAcc(void) const
 }
 
 
+NCBI_gb_state CWGSProteinIterator::GetGBState(void) const
+{
+    x_CheckValid("CWGSProteinIterator::GetGBState");
+
+    return m_Prot->m_GB_STATE? *m_Prot->GB_STATE(m_CurrId): 0;
+}
+
+
 bool CWGSProteinIterator::HasTitle(void) const
 {
     x_CheckValid("CWGSProteinIterator::HasTitle");
@@ -2992,7 +3125,7 @@ bool CWGSProteinIterator::HasSeq_descr(void) const
     x_CheckValid("CWGSProteinIterator::HasSeq_descr");
 
     return (m_Prot->m_DESCR && !m_Prot->DESCR(m_CurrId).empty()) ||
-        !GetDb().GetMasterDescr().empty();
+        (kMasterDescrOnProteins && !GetDb().GetMasterDescr().empty());
 }
 
 
@@ -3018,7 +3151,7 @@ CRef<CSeq_descr> CWGSProteinIterator::GetSeq_descr(void) const
             }
         }
     }
-    if ( !GetDb().GetMasterDescr().empty() ) {
+    if ( (kMasterDescrOnProteins && !GetDb().GetMasterDescr().empty()) ) {
         unsigned type_mask = 0;
         ITERATE ( CSeq_descr::Tdata, it, ret->Set() ) {
             const CSeqdesc& desc = **it;

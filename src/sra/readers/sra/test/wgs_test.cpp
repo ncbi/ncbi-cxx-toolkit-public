@@ -89,13 +89,19 @@ void CWGSTestApp::Init(void)
                             "AAAA");
 
     arg_desc->AddOptionalKey("limit_count", "LimitCount",
-                             "Number of entries to read (0 - unlimited)",
+                             "Number of entries to read (-1 : unlimited)",
                              CArgDescriptions::eInteger);
     arg_desc->AddFlag("verbose", "Print info about found data");
 
     arg_desc->AddFlag("withdrawn", "Include withdrawn sequences");
     arg_desc->AddFlag("master", "Include master descriptors if any");
-    arg_desc->AddFlag("master-no-filter", " Do not filter master descriptors");
+    arg_desc->AddFlag("master-no-filter", "Do not filter master descriptors");
+
+    arg_desc->AddFlag("gi-check", "Check GI index");
+    arg_desc->AddFlag("gi-range", "Print GI range if any");
+    arg_desc->AddFlag("gi-ranges", "Print GI ranges");
+    arg_desc->AddFlag("acc-ranges", "Print protein accession ranges");
+    arg_desc->AddFlag("make-all-ranges", "Scan all WGS files and make two files with GI/acc ranges");
 
     arg_desc->AddFlag("print_seq", "Print loader Bioseq objects");
 
@@ -109,8 +115,6 @@ void CWGSTestApp::Init(void)
                              "protein row to fetch",
                              CArgDescriptions::eInt8);
 
-    arg_desc->AddFlag("gi_range", "Print GI range if any");
-    arg_desc->AddFlag("gi_check", "Check GI index");
     arg_desc->AddFlag("check_non_empty_lookup",
                       "Check that lookup produce non-empty result");
     arg_desc->AddOptionalKey("gi", "GI",
@@ -325,6 +329,56 @@ int LowLevelTest(void)
 }
 #endif
 
+
+static const TIntId kMaxGiGap = 100000;
+
+static CWGSDb::TGiRanges PackRanges(CWGSDb::TGiRanges ranges)
+{
+    CWGSDb::TGiRanges::iterator dst = ranges.begin();
+    for ( CWGSDb::TGiRanges::iterator i = dst+1; i != ranges.end(); ++i ) {
+        if ( i->GetFrom() <= dst->GetToOpen() + kMaxGiGap ) {
+            dst->SetToOpen(i->GetToOpen());
+        }
+        else {
+            *++dst = *i;
+        }
+    }
+    ranges.erase(dst+1, ranges.end());
+    return ranges;
+}
+
+static CWGSDb::TGiRanges GetNucGiRanges(CWGSDb wgs_db)
+{
+    pair<TGi, TGi> range = wgs_db.GetNucGiRange();
+    if ( !range.second ) {
+        return CWGSDb::TGiRanges();
+    }
+
+    size_t gi_count = TIntId(range.second) - TIntId(range.first) + 1;
+    size_t seq_count = CWGSSeqIterator(wgs_db).GetLastRowId();
+    if ( gi_count <= seq_count + kMaxGiGap ) {
+        return CWGSDb::TGiRanges(1, CRange<TIntId>(range.first, range.second));
+    }
+    
+    return PackRanges(wgs_db.GetNucGiRanges());
+}
+
+static CWGSDb::TGiRanges GetProtGiRanges(CWGSDb wgs_db)
+{
+    pair<TGi, TGi> range = wgs_db.GetProtGiRange();
+    if ( !range.second ) {
+        return CWGSDb::TGiRanges();
+    }
+
+    size_t gi_count = TIntId(range.second) - TIntId(range.first) + 1;
+    size_t seq_count = CWGSProteinIterator(wgs_db).GetLastRowId();
+    if ( gi_count <= seq_count + kMaxGiGap ) {
+        return CWGSDb::TGiRanges(1, CRange<TIntId>(range.first, range.second));
+    }
+    
+    return PackRanges(wgs_db.GetProtGiRanges());
+}
+
 int CWGSTestApp::Run(void)
 {
 #ifdef CALL
@@ -339,7 +393,7 @@ int CWGSTestApp::Run(void)
     bool print_seq = args["print_seq"];
     size_t limit_count = 100;
     if ( args["limit_count"] ) {
-        limit_count = args["limit_count"].AsInteger();
+        limit_count = size_t(args["limit_count"].AsInteger());
     }
 
     CNcbiOstream& out = cout;
@@ -348,6 +402,80 @@ int CWGSTestApp::Run(void)
     CStopWatch sw;
     
     sw.Restart();
+
+    if ( args["make-all-ranges"] ) {
+        CNcbiOfstream gi_ranges("list.wgs_gi_ranges");
+        CNcbiOfstream pgi_ranges("list.wgs_pgi_ranges");
+        CNcbiOfstream acc_ranges("list.wgs_acc_ranges");
+        const string wgs_root = NCBI_TRACES04_PATH "/wgs01/WGS";
+        CDir dir0(wgs_root);
+        out << "Scanning "<<dir0.GetPath()<<endl;
+        CDir::TEntries dirs1 = dir0.GetEntries("??");
+        ITERATE ( CDir::TEntries, it1, dirs1 ) {
+            CDir dir1(**it1);
+            if ( !isupper(Uint1(dir1.GetName()[0])) ||
+                 !isupper(Uint1(dir1.GetName()[1])) ) {
+                continue;
+            }
+            out << "Scanning "<<dir1.GetPath()<<endl;
+            CDir::TEntries dirs2 = dir1.GetEntries("??");
+            ITERATE ( CDir::TEntries, it2, dirs2 ) {
+                CDir dir2(**it2);
+                if ( !isupper(Uint1(dir2.GetName()[0])) ||
+                     !isupper(Uint1(dir2.GetName()[1])) ) {
+                    continue;
+                }
+                string prefix4 = dir1.GetName()+dir2.GetName();
+                out << "Scanning "<<dir2.GetPath()<<endl;
+                CDir::TEntries files = dir2.GetEntries(prefix4+"??");
+                ITERATE ( CDir::TEntries, it, files ) {
+                    const CDirEntry& file = **it;
+                    if ( !isdigit(Uint1(file.GetName()[4])) ||
+                         !isdigit(Uint1(file.GetName()[5])) ) {
+                        continue;
+                    }
+                    //out << "Scanning "<<file.GetPath()<<endl;
+                    try {
+                        CWGSDb wgs_db(mgr, file.GetPath());
+                        {
+                            CWGSDb::TGiRanges ranges = GetNucGiRanges(wgs_db);
+                            ITERATE ( CWGSDb::TGiRanges, it, ranges ) {
+                                gi_ranges << file.GetName()
+                                          << ' ' << it->GetFrom()
+                                          << ' ' << it->GetTo()
+                                          << NcbiEndl;
+                            }
+                        }
+                        {
+                            CWGSDb::TGiRanges ranges = GetProtGiRanges(wgs_db);
+                            ITERATE ( CWGSDb::TGiRanges, it, ranges ) {
+                                pgi_ranges << file.GetName()
+                                           << ' ' << it->GetFrom()
+                                           << ' ' << it->GetTo()
+                                           << NcbiEndl;
+                            }
+                        }
+                        {
+                            CWGSDb::TAccRanges ranges = wgs_db.GetProtAccRanges();
+                            ITERATE ( CWGSDb::TAccRanges, it, ranges ) {
+                                acc_ranges << file.GetName();
+                                CWGSProtAccResolver::SAccInfo info(it->first);
+                                info.m_Id = it->second.GetFrom();
+                                acc_ranges << ' ' << info.GetAcc();
+                                info.m_Id = it->second.GetTo();
+                                acc_ranges << ' ' << info.GetAcc();
+                                acc_ranges << NcbiEndl;
+                            }
+                        }
+                    }
+                    catch ( CException& exc ) {
+                        ERR_POST("Exception while processing "<<file.GetPath()<<": "<<exc);
+                    }
+                }
+            }
+        }
+        return 0;
+    }
 
     if ( verbose ) {
         try {
@@ -375,7 +503,7 @@ int CWGSTestApp::Run(void)
             ERR_POST("No master descriptors found");
         }
     }
-    
+
     bool is_component = false, is_scaffold = false, is_protein = false;
     uint64_t row = 0;
     if ( args["contig_row"] || args["scaffold_row"] || args["protein_row"] ) {
@@ -429,7 +557,7 @@ int CWGSTestApp::Run(void)
                 if ( !args["limit_count"] ) {
                     it = CWGSSeqIterator(wgs_db, row, withdrawn);
                 }
-                else if ( limit_count == 0 ) {
+                else if ( row + limit_count < row ) {
                     it = CWGSSeqIterator(wgs_db, row, kMax_UI8, withdrawn);
                 }
                 else {
@@ -445,8 +573,7 @@ int CWGSTestApp::Run(void)
             // otherwise scan all sequences
             it = CWGSSeqIterator(wgs_db, withdrawn);
         }
-        size_t count = 0;
-        for ( ; it; ++it ) {
+        for ( size_t count = 0; it && count < limit_count; ++it, ++count ) {
             out << it.GetAccession()<<'.'<<it.GetAccVersion();
             if ( it.HasGi() ) {
                 out << " gi: "<<it.GetGi();
@@ -475,33 +602,10 @@ int CWGSTestApp::Run(void)
                 ERR_POST(Fatal<<"Different Seq-data at " << pos << ": " <<
                          MSerial_AsnText << *seq1 << MSerial_AsnText << *seq2);
             }
-            if ( limit_count && ++count >= limit_count ) {
-                break;
-            }
         }
     }
 
-    if ( args["gi_range"] ) {
-        pair<TGi, TGi> gi_range = wgs_db.GetNucGiRange();
-        if ( gi_range.second ) {
-            out << "Nucleotide GI range: "
-                << gi_range.first << " - " << gi_range.second
-                << NcbiEndl;
-        }
-        else {
-            out << "Nucleotide GI range is empty" << NcbiEndl;
-        }
-        gi_range = wgs_db.GetProtGiRange();
-        if ( gi_range.second ) {
-            out << "Protein GI range: "
-                << gi_range.first << " - " << gi_range.second
-                << NcbiEndl;
-        }
-        else {
-            out << "Protein GI range is empty" << NcbiEndl;
-        }
-    }
-    if ( args["gi_check"] ) {
+    if ( args["gi-check"] ) {
         typedef map<TGi, uint64_t> TGiIdx;
         TGiIdx nuc_idx;
         for ( CWGSGiIterator it(wgs_db, CWGSGiIterator::eNuc); it; ++it ) {
@@ -531,6 +635,56 @@ int CWGSTestApp::Run(void)
             ++error_count;
         }
     }
+    if ( args["gi-range"] ) {
+        pair<TGi, TGi> gi_range = wgs_db.GetNucGiRange();
+        if ( gi_range.second ) {
+            out << "Nucleotide GI range: "
+                << gi_range.first << " - " << gi_range.second
+                << NcbiEndl;
+        }
+        else {
+            out << "Nucleotide GI range is empty" << NcbiEndl;
+        }
+        gi_range = wgs_db.GetProtGiRange();
+        if ( gi_range.second ) {
+            out << "Protein GI range: "
+                << gi_range.first << " - " << gi_range.second
+                << NcbiEndl;
+        }
+        else {
+            out << "Protein GI range is empty" << NcbiEndl;
+        }
+    }
+    if ( args["gi-ranges"] ) {
+        CWGSDb::TGiRanges ranges;
+        sw.Restart();
+        ranges = wgs_db.GetNucGiRanges();
+        out << "Got "<<ranges.size()<<" nuc GI ranges in "<<sw.Elapsed()<<"s:"
+            << NcbiEndl;
+        ITERATE ( CWGSDb::TGiRanges, it, ranges ) {
+            out << " nuc GIs: "<<it->GetFrom()<<"-"<<it->GetTo()
+                << NcbiEndl;
+        }
+        sw.Restart();
+        ranges = wgs_db.GetProtGiRanges();
+        out << "Got "<<ranges.size()<<" prot GI ranges in "<<sw.Elapsed()<<"s:"
+            << NcbiEndl;
+        ITERATE ( CWGSDb::TGiRanges, it, ranges ) {
+            out << " prot GIs: "<<it->GetFrom()<<"-"<<it->GetTo()
+                << NcbiEndl;
+        }
+    }
+    if ( args["acc-ranges"] ) {
+        sw.Restart();
+        CWGSDb::TAccRanges ranges = wgs_db.GetProtAccRanges();
+        out << "Got "<<ranges.size()<<" protein accession ranges in "<<sw.Elapsed()<<"s:"
+            << NcbiEndl;
+        ITERATE ( CWGSDb::TAccRanges, it, ranges ) {
+            out << "  Accs: "<<it->first<<": "<<it->second
+                << NcbiEndl;
+        }
+    }
+
     bool check_non_empty_lookup = args["check_non_empty_lookup"];
     if ( args["gi"] ) {
         TGi gi = TIntId(args["gi"].AsInt8());
@@ -696,14 +850,10 @@ int CWGSTestApp::Run(void)
         else {
             it = CWGSScaffoldIterator(wgs_db);
         }
-        size_t count = 0;
-        for ( ; it; ++it ) {
+        for ( size_t count = 0; it && count < limit_count; ++it, ++count ) {
             out << it.GetScaffoldName() << '\n';
             if ( print_seq ) {
                 out << MSerial_AsnText << *it.GetBioseq();
-            }
-            if ( limit_count && ++count >= limit_count ) {
-                break;
             }
         }
     }
@@ -722,14 +872,10 @@ int CWGSTestApp::Run(void)
         else {
             it = CWGSProteinIterator(wgs_db);
         }
-        size_t count = 0;
-        for ( ; it; ++it ) {
+        for ( size_t count = 0; it && count < limit_count; ++it, ++count ) {
             out << it.GetProteinName() << '\n';
             if ( print_seq ) {
                 out << MSerial_AsnText << *it.GetBioseq();
-            }
-            if ( limit_count && ++count >= limit_count ) {
-                break;
             }
         }
     }
