@@ -263,14 +263,14 @@ BOOST_AUTO_TEST_CASE(COUNT_RRNAS)
           seq-set {\
             seq {\
               id {\
-                genbank {\
-                  accession \"KP793690\" } } ,\
+                local\
+                  str \"nuc_1\" } ,\
               inst {\
-                repr raw,\
-                mol dna,\
-                length 5,\
-                seq-data iupacna \"AAAAA\"\
-              },\
+                repr raw ,\
+                mol dna ,\
+                length 1 ,\
+                seq-data\
+                  ncbi2na '0E'H } ,\
               annot {\
                 {\
                   data\
@@ -302,7 +302,7 @@ BOOST_AUTO_TEST_CASE(COUNT_RRNAS)
                             strand minus ,\
                             id\
                               local\
-                                str \"nuc_1\" } } } } } } } } } } }";
+                                str \"nuc_1\" } } } } } } } } } }";
     CNcbiIstrstream istr(inp);
     CRef<CSeq_entry> entry (new CSeq_entry);
     istr >> MSerial_AsnText >> *entry;
@@ -317,8 +317,8 @@ BOOST_AUTO_TEST_CASE(COUNT_RRNAS)
     BOOST_REQUIRE_EQUAL(tst.size(), 1);
     TReportItemList rep = tst[0]->GetReport();
     BOOST_REQUIRE_EQUAL(rep.size(), 2);
-    BOOST_REQUIRE_EQUAL(rep[0]->GetMsg(), "sequence KP793690 has 2 rRNA features");
-    BOOST_REQUIRE_EQUAL(rep[1]->GetMsg(), "2 rRNA features on KP793690 have the same name (16S ribosomal RNA)");
+    BOOST_REQUIRE_EQUAL(rep[0]->GetMsg(), "sequence nuc_1 has 2 rRNA features");
+    BOOST_REQUIRE_EQUAL(rep[1]->GetMsg(), "2 rRNA features on nuc_1 have the same name (16S ribosomal RNA)");
 }
 
 

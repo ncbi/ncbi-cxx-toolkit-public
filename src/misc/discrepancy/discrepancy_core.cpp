@@ -207,6 +207,7 @@ bool CDiscrepancyContext::AddTest(const string& name)
     }
     REGISTER_DISCREPANCY_TYPE(CSeq_inst)
     REGISTER_DISCREPANCY_TYPE(CSeqFeatData)
+    REGISTER_DISCREPANCY_TYPE(CSeq_feat_BY_BIOSEQ)
     REGISTER_DISCREPANCY_TYPE(CBioSource)
     REGISTER_DISCREPANCY_TYPE(COrgName)
     REGISTER_DISCREPANCY_TYPE(CRNA_ref)
@@ -223,15 +224,27 @@ void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
 #define ENABLE_DISCREPANCY_TYPE(type) if (m_Enable_##type) CType<type>::AddTo(i);
     ENABLE_DISCREPANCY_TYPE(CSeq_inst)
     ENABLE_DISCREPANCY_TYPE(CSeqFeatData)
+    // Don't ENABLE_DISCREPANCY_TYPE(CSeq_feat_BY_BIOSEQ), it is handled separately!
     ENABLE_DISCREPANCY_TYPE(CBioSource)
     ENABLE_DISCREPANCY_TYPE(COrgName)
     ENABLE_DISCREPANCY_TYPE(CRNA_ref)
     
     for (i = Begin(*handle.GetCompleteSeq_entry()); i; ++i) {
+        CTypesConstIterator::TIteratorContext ctx = i.GetContextData();
         if (CType<CBioseq>::Match(i)) {
-            m_Current_Bioseq.Reset(m_Scope->GetBioseqHandle(*CType<CBioseq>::Get(i)).GetCompleteBioseq());
+            CBioseq_Handle bsh = m_Scope->GetBioseqHandle(*CType<CBioseq>::Get(i));
+            m_Current_Bioseq.Reset(bsh.GetCompleteBioseq());
             m_Count_Bioseq++;
             m_Current_Bioseq_set.Reset();
+            // CSeq_feat_BY_BIOSEQ cycle
+            if (m_Enable_CSeq_feat_BY_BIOSEQ) {
+                for (CFeat_CI feat_ci(bsh); feat_ci; ++feat_ci) {
+                    const CSeq_feat_BY_BIOSEQ& obj = (const CSeq_feat_BY_BIOSEQ&)*feat_ci->GetSeq_feat();
+                    NON_CONST_ITERATE(vector<CDiscrepancyVisitor<CSeq_feat_BY_BIOSEQ>* >, it, m_All_CSeq_feat_BY_BIOSEQ) {
+                        Call(**it, obj);
+                    }
+                }
+            }
         }
         else if (CType<CBioseq_set>::Match(i)) {
             m_Current_Bioseq.Reset();

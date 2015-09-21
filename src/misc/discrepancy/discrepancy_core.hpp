@@ -211,6 +211,8 @@ public:
 };
 
 
+class CSeq_feat_BY_BIOSEQ : public CSeq_feat {};
+
 /// CDiscrepancyContext - manage and run the list of tests
 
 class CDiscrepancyContext : public CDiscrepancySet
@@ -223,6 +225,7 @@ public:
 #define INIT_DISCREPANCY_TYPE(type) m_Enable_##type(false)
             INIT_DISCREPANCY_TYPE(CSeq_inst),
             INIT_DISCREPANCY_TYPE(CSeqFeatData),
+            INIT_DISCREPANCY_TYPE(CSeq_feat_BY_BIOSEQ),
             INIT_DISCREPANCY_TYPE(CBioSource),
             INIT_DISCREPANCY_TYPE(CRNA_ref),
             INIT_DISCREPANCY_TYPE(COrgName)
@@ -265,6 +268,7 @@ protected:
 #define ADD_DISCREPANCY_TYPE(type) bool m_Enable_##type; vector<CDiscrepancyVisitor<type>* > m_All_##type;
     ADD_DISCREPANCY_TYPE(CSeq_inst)
     ADD_DISCREPANCY_TYPE(CSeqFeatData)
+    ADD_DISCREPANCY_TYPE(CSeq_feat_BY_BIOSEQ)
     ADD_DISCREPANCY_TYPE(CBioSource)
     ADD_DISCREPANCY_TYPE(CRNA_ref)
     ADD_DISCREPANCY_TYPE(COrgName)
