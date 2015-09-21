@@ -111,7 +111,7 @@ public:
         return !m_ProtAccIndex.empty();
     }
 
-    struct SAccInfo {
+    struct NCBI_SRAREAD_EXPORT SAccInfo {
         SAccInfo(void);
         explicit SAccInfo(const string& acc);
 
