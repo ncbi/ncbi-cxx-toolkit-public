@@ -5126,29 +5126,7 @@ void CValidError_feat::ValidateImpGbquals
 
             case CSeqFeatData::eQual_mobile_element_type:
                 {{
-                    bool found = false;
-                    for (size_t i = 0; 
-                         i < sizeof(s_LegalMobileElementStrings) / sizeof(string);
-                         ++i) {
-                         if ( NStr::StartsWith (val, s_LegalMobileElementStrings[i], NStr::eNocase)) {
-                             string rest = val.substr (s_LegalMobileElementStrings[i].length());
-                             if (!NStr::IsBlank (rest) 
-                                 && (!NStr::StartsWith (rest, ":") || NStr::Equal(rest, ":"))) {
-                                 PostErr (eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
-                                          val + " is not a legal value for qualifier " + qual_str,
-                                          feat);
-                             } else if (NStr::StartsWith(val, "other") 
-                                        && (!NStr::StartsWith(rest, ":") || NStr::Equal(rest, ":"))) {
-                                 // if other, must have additional text after colon
-                                 PostErr (eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
-                                          val + " is not a legal value for qualifier " + qual_str,
-                                          feat);
-                             }                                                                  
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (!found) {
+                    if (!CGb_qual::IsLegalMobileElementValue(val)) {
                          PostErr (eDiag_Warning, eErr_SEQ_FEAT_InvalidQualifierValue,
                                   val + " is not a legal value for qualifier " + qual_str,
                                   feat);

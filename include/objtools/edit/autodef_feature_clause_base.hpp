@@ -123,6 +123,7 @@ public:
     void RemoveGenesMentionedElsewhere();
     void RemoveTransSplicedLeaders();
     void RemoveuORFs();
+    void RemoveOptionalMobileElements();
     void ConsolidateRepeatedClauses(bool suppress_allele);
     void FindAltSplices(bool suppress_allele);
     void TransferSubclauses(TClauseList &other_clause_list);

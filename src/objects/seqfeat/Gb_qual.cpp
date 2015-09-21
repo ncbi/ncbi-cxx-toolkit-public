@@ -216,6 +216,57 @@ void CInferencePrefixList::GetPrefixAndRemainder (const string& inference, strin
 }
 
 
+static string s_LegalMobileElementStrings[] = {
+    "transposon",
+    "retrotransposon",
+    "integron",
+    "superintegron",
+    "insertion sequence",
+    "non-LTR retrotransposon",
+    "P-element",
+    "transposable element",
+    "SINE",
+    "MITE",
+    "LINE",
+    "other"
+};
+
+
+void CGb_qual::GetMobileElementValueElements(const string& val, string& element_type, string& element_name)
+{
+    element_type = "";
+    element_name = "";
+    for (size_t i = 0;
+        i < sizeof(s_LegalMobileElementStrings) / sizeof(string);
+        ++i) {
+        if (NStr::StartsWith(val, s_LegalMobileElementStrings[i], NStr::eNocase)) {
+            element_name = val.substr(s_LegalMobileElementStrings[i].length());
+            if (!NStr::IsBlank(element_name) &&
+                (!NStr::StartsWith(element_name, ":") || NStr::Equal(element_name, ":"))) {
+                element_name = "";
+            } else {
+                element_type = s_LegalMobileElementStrings[i];
+            }
+            break;
+        }
+    }
+}
+
+
+bool CGb_qual::IsLegalMobileElementValue(const string& val)
+{
+    string element_type;
+    string element_name;
+    GetMobileElementValueElements(val, element_type, element_name);
+    if (NStr::IsBlank(element_type)) {
+        return false;
+    } else if (NStr::Equal(element_type, "other") && NStr::IsBlank(element_name)) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

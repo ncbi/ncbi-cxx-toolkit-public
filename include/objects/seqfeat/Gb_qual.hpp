@@ -74,6 +74,9 @@ public:
     static bool CleanupRptUnitSeq(string& val);
     static bool CleanupReplace(string& val);
     static bool CleanupRptUnitRange(string& val);
+    
+    static bool IsLegalMobileElementValue(const string& val);
+    static void GetMobileElementValueElements(const string& val, string& element_type, string& element_name);
 
 private:
     // Prohibit copy constructor and assignment operator

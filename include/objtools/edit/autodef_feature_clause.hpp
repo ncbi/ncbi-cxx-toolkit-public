@@ -145,6 +145,7 @@ public:
   
     virtual void Label(bool suppress_allele);
     virtual bool IsMobileElement() { return true; }
+    bool IsOptional();
 };
 
 

@@ -607,6 +607,11 @@ void CAutoDef::x_RemoveOptionalFeatures(CAutoDefFeatureClause_Base *main_clause,
     if (!m_Options.GetKeepuORFs() && main_clause->GetNumSubclauses() > 1) {
         main_clause->RemoveuORFs();
     }
+
+    // remove "optional" mobile element features unless lonely or requested
+    if (!m_Options.GetKeepMobileElements() && main_clause->GetNumSubclauses() > 1) {
+        main_clause->RemoveOptionalMobileElements();
+    }
     
     // delete subclauses at end, so that loneliness calculations will be correct
     main_clause->RemoveDeletedSubclauses();

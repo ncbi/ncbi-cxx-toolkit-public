@@ -1528,6 +1528,18 @@ void CAutoDefFeatureClause_Base::RemoveuORFs()
     }
 }
 
+void CAutoDefFeatureClause_Base::RemoveOptionalMobileElements()
+{
+    for (unsigned int k = 0; k < m_ClauseList.size(); k++) {
+        CAutoDefMobileElementClause* clause = dynamic_cast<CAutoDefMobileElementClause *>(m_ClauseList[k]);        
+        if (clause && clause->IsOptional()) {
+            m_ClauseList[k]->MarkForDeletion();
+        } else {
+            m_ClauseList[k]->RemoveOptionalMobileElements();
+        }
+    }
+}
+
 
 CAutoDefUnknownGeneList::CAutoDefUnknownGeneList()
                   : CAutoDefFeatureClause_Base()

@@ -275,41 +275,59 @@ size_t HasIntField(const CUser_object& user, const string& field_name, int value
 
 void CheckAutoDefOptions
 (const CUser_object& user,
- size_t expected_num_fields,
- const string& feature_list_type,
- const string& misc_feat_rule,
- bool use_fake_promoters,
- bool keep_introns,
- bool keep_uorfs,
- bool use_labels,
- bool allow_at_end,
- bool exclude_sp)
+ CAutoDefOptions& opts)
 {
+    size_t expected_num_fields = 7;
+    if (opts.GetOrgMods().size() > 0 || opts.GetSubSources().size() > 0) {
+        expected_num_fields++;
+    }
+    if (!opts.GetDoNotApplyToSp()) {
+        expected_num_fields--;
+    }
+    if (opts.GetUseLabels()) {
+        expected_num_fields++;
+    }
+    if (opts.GetAllowModAtEndOfTaxname()) {
+        expected_num_fields++;
+    }
+    if (opts.GetUseFakePromoters()) {
+        expected_num_fields += 2;
+    }
+    if (opts.GetKeepIntrons()) {
+        expected_num_fields++;
+    }
+    if (opts.GetKeepuORFs()) {
+        expected_num_fields++;
+    }
+    if (opts.GetKeepMobileElements()) {
+        expected_num_fields++;
+    }
+
     BOOST_CHECK_EQUAL(user.GetObjectType(), CUser_object::eObjectType_AutodefOptions);
     BOOST_CHECK_EQUAL(user.GetData().size(), expected_num_fields);
     BOOST_CHECK_EQUAL(HasBoolField(user, "LeaveParenthetical"), 1);
     BOOST_CHECK_EQUAL(HasBoolField(user, "SpecifyNuclearProduct"), 1);
-    if (use_labels) {
+    if (opts.GetUseLabels()) {
         BOOST_CHECK_EQUAL(HasBoolField(user, "UseLabels"), 1);
     }
-    if (allow_at_end) {
+    if (opts.GetAllowModAtEndOfTaxname()) {
         BOOST_CHECK_EQUAL(HasBoolField(user, "AllowModAtEndOfTaxname"), 1);
     }
-    if (exclude_sp) {
+    if (opts.GetDoNotApplyToSp()) {
         BOOST_CHECK_EQUAL(HasBoolField(user, "DoNotApplyToSp"), 1);
     }
-    if (use_fake_promoters) {
+    if (opts.GetUseFakePromoters()) {
         BOOST_CHECK_EQUAL(HasBoolField(user, "UseFakePromoters"), 1);
         BOOST_CHECK_EQUAL(HasBoolField(user, "KeepPromoters"), 1);
     }
-    if (keep_introns) {
+    if (opts.GetKeepIntrons()) {
         BOOST_CHECK_EQUAL(HasBoolField(user, "KeepIntrons"), 1);
     }
-    if (keep_uorfs) {
+    if (opts.GetKeepuORFs()) {
         BOOST_CHECK_EQUAL(HasBoolField(user, "KeepuORFs"), 1);
     }
-    BOOST_CHECK_EQUAL(HasStringField(user, "MiscFeatRule", misc_feat_rule), 1);
-    BOOST_CHECK_EQUAL(HasStringField(user, "FeatureListType", feature_list_type), 1);
+    BOOST_CHECK_EQUAL(HasStringField(user, "MiscFeatRule", opts.GetMiscFeatRule(opts.GetMiscFeatRule())) , 1);
+    BOOST_CHECK_EQUAL(HasStringField(user, "FeatureListType", opts.GetFeatureListType(opts.GetFeatureListType())), 1);
     BOOST_CHECK_EQUAL(HasStringField(user, "HIVRule", "WantBoth"), 1);
     BOOST_CHECK_EQUAL(HasIntField(user, "MaxMods", -99), 1);
     if (user.GetData().size() != expected_num_fields) {
@@ -356,37 +374,7 @@ static void CheckDeflineMatches(CSeq_entry_Handle seh,
        autodef2.SetOptionsObject(*user);
        new_defline = autodef2.GetOneDefLine(bh);
        BOOST_CHECK_EQUAL(orig_defline, new_defline);
-       size_t expected_num_fields = 7;
-       if (mod_combo->GetNumOrgMods() > 0 || mod_combo->GetNumSubSources() > 0) {
-           expected_num_fields++;
-       }
-       if (!mod_combo->GetExcludeSpOrgs()) {
-           expected_num_fields--;
-       }
-       if (mod_combo->GetUseModifierLabels()) {
-           expected_num_fields++;
-       }
-       if (mod_combo->GetAllowModAtEndOfTaxname()) {
-           expected_num_fields++;
-       }
-       if (opts.GetUseFakePromoters()) {
-           expected_num_fields += 2;
-       }
-       if (opts.GetKeepIntrons()) {
-           expected_num_fields++;
-       }
-       if (opts.GetKeepuORFs()) {
-           expected_num_fields++;
-       }
-       CheckAutoDefOptions(*user, expected_num_fields,
-           opts.GetFeatureListType(opts.GetFeatureListType()),
-           opts.GetMiscFeatRule(opts.GetMiscFeatRule()),
-           opts.GetUseFakePromoters(),
-           opts.GetKeepIntrons(),
-           opts.GetKeepuORFs(),
-           mod_combo->GetUseModifierLabels(),
-           mod_combo->GetAllowModAtEndOfTaxname(),
-                           mod_combo->GetExcludeSpOrgs());
+       CheckAutoDefOptions(*user, opts);
     }
 
     // check popset title if needed
@@ -1457,23 +1445,7 @@ BOOST_AUTO_TEST_CASE(Test_SQD_3440)
     BOOST_CHECK_EQUAL(user->GetObjectType(), CUser_object::eObjectType_AutodefOptions);
     options.SetUseLabels();
     user = options.MakeUserObject();
-    BOOST_CHECK_EQUAL(user->GetData().size(), 8);
-    BOOST_CHECK_EQUAL(HasBoolField(*user, "UseLabels"), 1);
-    BOOST_CHECK_EQUAL(HasBoolField(*user, "SpecifyNuclearProduct"), 1);
-    BOOST_CHECK_EQUAL(HasBoolField(*user, "DoNotApplyToSp"), 1);
-    BOOST_CHECK_EQUAL(HasBoolField(*user, "LeaveParenthetical"), 1);
-    BOOST_CHECK_EQUAL(HasStringField(*user, "MiscFeatRule", "NoncodingProductFeat"), 1);
-    BOOST_CHECK_EQUAL(HasStringField(*user, "FeatureListType", "List All Features"), 1);
-    BOOST_CHECK_EQUAL(HasStringField(*user, "HIVRule", "WantBoth"), 1);
-    BOOST_CHECK_EQUAL(HasIntField(*user, "MaxMods", -99), 1);
-    int field_num = 1;
-    ITERATE(CUser_object::TData, it, user->GetData()) {
-        if (!(*it)->IsSetLabel() || !(*it)->GetLabel().IsStr()) {
-            BOOST_CHECK_EQUAL("Label should be set", "label not set for " + NStr::IntToString(field_num));
-        } else {
-            printf("%s\n", (*it)->GetLabel().GetStr().c_str());
-        }
-    }
+    CheckAutoDefOptions(*user, options);
 }
 
 
@@ -1513,6 +1485,55 @@ BOOST_AUTO_TEST_CASE(Test_RemovableuORF)
     autodef.SetKeepuORFs(true);
 
     AddTitle(nuc, "Alcanivorax sp. HA03 uORF gene, complete cds; and satellite x sequence.");
+    CheckDeflineMatches(seh, autodef, mod_combo);
+
+}
+
+BOOST_AUTO_TEST_CASE(Test_RemovableMobileElement)
+{
+    // first, try with lonely optional
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<objects::CSeq_feat> mob_el = unit_test_util::AddMiscFeature(entry);
+    mob_el->SetData().SetImp().SetKey("mobile_element");
+    CRef<CGb_qual> met(new CGb_qual("mobile_element_type", "SINE:x"));
+    mob_el->SetQual().push_back(met);
+    AddTitle(entry, "Sebaea microphylla SINE x, complete sequence.");
+
+    CheckDeflineMatches(entry);
+
+    // try again, with another feature present, so element isn't lonely
+    CRef<objects::CSeq_feat> misc = unit_test_util::AddMiscFeature(entry);
+    misc->SetData().SetImp().SetKey("repeat_region");
+    CRef<CGb_qual> q(new CGb_qual("satellite", "y"));
+    misc->SetQual().push_back(q);
+    AddTitle(entry, "Sebaea microphylla satellite y sequence.");
+    CheckDeflineMatches(entry);
+
+    // try again, but set keepMobileElements flag
+    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+
+    CRef<CScope> scope(new CScope(*object_manager));
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+    objects::CAutoDef autodef;
+
+    // add to autodef 
+    autodef.AddSources(seh);
+
+    CRef<CAutoDefModifierCombo> mod_combo;
+    mod_combo = new CAutoDefModifierCombo();
+
+    autodef.SetFeatureListType(CAutoDefOptions::eListAllFeatures);
+    autodef.SetMiscFeatRule(CAutoDefOptions::eDelete);
+    autodef.SetKeepOptionalMobileElements(true);
+
+    AddTitle(entry, "Sebaea microphylla satellite y sequence; and SINE x, complete sequence.");
+    CheckDeflineMatches(seh, autodef, mod_combo);
+
+    // keep non-optional mobile element when not lonely and flag not set
+    met->SetVal("transposon:z");
+    autodef.SetKeepOptionalMobileElements(false);
+    AddTitle(entry, "Sebaea microphylla satellite y sequence; and transposon z, complete sequence.");
     CheckDeflineMatches(seh, autodef, mod_combo);
 
 }

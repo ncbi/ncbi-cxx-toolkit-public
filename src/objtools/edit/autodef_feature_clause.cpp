@@ -1761,6 +1761,19 @@ void CAutoDefMobileElementClause::Label(bool suppress_allele)
 }
 
 
+bool CAutoDefMobileElementClause::IsOptional()
+{
+    if (NStr::Equal(m_Typeword, "SINE") ||
+        NStr::Equal(m_Typeword, "LINE") ||
+        NStr::Equal(m_Typeword, "MITE")) {
+        return true;
+    } else {
+        return false;
+    }
+
+}
+
+
 const char *kMinisatellite = "minisatellite";
 const char *kMicrosatellite = "microsatellite";
 const char *kSatellite = "satellite";

@@ -101,6 +101,7 @@ public:
     void SetKeep3UTRs(bool keep);
     void SetKeep5UTRs(bool keep);
     void SetKeepuORFs(bool keep);
+    void SetKeepOptionalMobileElements(bool keep);
 	void SetUseNcRNAComment (bool use_comment);
     void SetUseFakePromoters (bool use_fake);
     
@@ -274,6 +275,12 @@ void CAutoDef::SetKeepuORFs(bool keep)
     m_Options.SetKeepuORFs(keep);
 }
 
+
+inline
+void CAutoDef::SetKeepOptionalMobileElements(bool keep)
+{
+    m_Options.SetKeepMobileElements(keep);
+}
 
 inline
 void CAutoDef::SetUseNcRNAComment(bool use_comment)

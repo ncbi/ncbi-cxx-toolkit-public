@@ -84,6 +84,7 @@ public:
         eOptionFieldType_Keep3UTRs,
         eOptionFieldType_Keep5UTRs,
         eOptionFieldType_KeepuORFs,
+        eOptionFieldType_KeepMobileElements,
         eOptionFieldType_UseNcRNAComment,
         eOptionFieldType_SuppressedFeatures,
         eOptionFieldType_ModifierList,
@@ -171,6 +172,7 @@ public:
     AUTODEFBOOLFIELD(Keep3UTRs)
     AUTODEFBOOLFIELD(Keep5UTRs)
     AUTODEFBOOLFIELD(KeepuORFs)
+    AUTODEFBOOLFIELD(KeepMobileElements)
     AUTODEFBOOLFIELD(UseNcRNAComment)
 
     bool IsFeatureSuppressed(CSeqFeatData::ESubtype subtype) const;
