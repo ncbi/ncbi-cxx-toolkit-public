@@ -197,14 +197,13 @@ protected:
 };
 
 
+//template<class T>
 class CESearchParser : public CEUtilsParser
 {
 public:
-    CESearchParser(vector<int>& uids,
-                   CEutilsClient::CMessageHandler& message_handler)
+    CESearchParser(CEutilsClient::CMessageHandler& message_handler)
         : m_MessageHandler(message_handler)
         , m_Count(0)
-        , m_Uids(uids)
     {
     }
 
@@ -259,9 +258,6 @@ protected:
         if (m_Path == "eSearchResult/Count") {
             m_Count = NStr::StringToUInt8(contents);
         }
-        else if (x_IsSuffix(m_Path, "/IdList/Id")) {
-            m_Uids.push_back(NStr::StringToInt(contents));
-        }
         else if (x_IsSuffix(m_Path, "/ErrorList/PhraseNotFound")) {
             TMessage message(CEUtilsException::ePhraseNotFound, contents);
             m_ResultErrors.push_back(message);
@@ -293,7 +289,6 @@ protected:
 private:
     CEutilsClient::CMessageHandler& m_MessageHandler;
     Uint8 m_Count;
-    vector<int>& m_Uids;
 
     /// List of error messages from the E-Utils request.
     /// These are distinct from errors in parsing the
@@ -307,12 +302,33 @@ private:
 };
 
 
+namespace {
 
+template<class T> T FromString(const string& str);
+
+#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)    
+template<> CStrictGi FromString<CStrictGi>(const string& str)
+{
+    return FromString<TIntId>(str);
+}
+#endif
+    
+template<class T> T FromString(const string& str)
+{
+    T value;
+    NStr::StringToNumeric(str, &value);
+    return value;
+}
+
+} //end of anonymous namespace
+
+
+template<class T>
 class CELinkParser : public CEUtilsParser
 {
 public:
     CELinkParser(const string& dbfrom, const string& dbto,
-                 vector<int>& uids)
+                 vector<T>& uids)
         : m_LinkName(dbfrom + "_" + dbto)
         , m_Uids(uids)
         , m_InLinkSet(false)
@@ -345,14 +361,14 @@ protected:
             }
         }
         else if (m_InLinkSet && NStr::EndsWith(m_Path, "/Link/Id") ) {
-            m_Uids.push_back(NStr::StringToInt( GetText() ));
+            m_Uids.push_back(FromString<T>( GetText() ));
         }
         return true;
     }
 
 private:
     string m_LinkName;
-    vector<int>& m_Uids;
+    vector<T>& m_Uids;
     bool m_InLinkSet;
 };
 
@@ -465,7 +481,7 @@ Uint8 CEutilsClient::Count(const string& db,
             istr << params;
             m_Time.push_back(CTime(CTime::eCurrent));
             vector<int> uids;
-            CESearchParser parser(uids, *m_MessageHandler);
+            CESearchParser parser(/*uids,*/ *m_MessageHandler);
 
             xml::error_messages msgs;
             parser.parse_stream(istr, &msgs);
@@ -504,7 +520,22 @@ Uint8 CEutilsClient::Count(const string& db,
 Uint8 CEutilsClient::ParseSearchResults(CNcbiIstream& istr,
                                         vector<int>& uids)
 {
-    CESearchParser parser(uids, *m_MessageHandler);
+    return x_ParseSearchResults(istr, uids);
+}
+
+#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
+Uint8 CEutilsClient::ParseSearchResults(CNcbiIstream& istr,
+                                        vector<TGi>& uids)
+{
+    return x_ParseSearchResults(istr, uids);
+}
+#endif
+
+template<class T>
+Uint8 CEutilsClient::x_ParseSearchResults(CNcbiIstream& istr,
+                                          vector<T>& uids)
+{
+    CESearchParser parser(/*uids,*/ *m_MessageHandler);
     xml::error_messages msgs;
     parser.parse_stream(istr, &msgs);
 
@@ -530,6 +561,22 @@ Uint8 CEutilsClient::ParseSearchResults(CNcbiIstream& istr,
 Uint8 CEutilsClient::ParseSearchResults(const string& xml_file,
                                         vector<int>& uids)
 {
+    return x_ParseSearchResults(xml_file, uids);
+}
+
+
+#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
+Uint8 CEutilsClient::ParseSearchResults(const string& xml_file,
+                                        vector<TGi>& uids)
+{
+    return x_ParseSearchResults(xml_file, uids);
+}
+#endif
+
+template<class T>
+Uint8 CEutilsClient::x_ParseSearchResults(const string& xml_file,
+                                          vector<T>& uids)
+{
     CNcbiIfstream istr(xml_file.c_str());
     if ( !istr ) {
         NCBI_THROW(CException, eUnknown,
@@ -543,6 +590,25 @@ Uint8 CEutilsClient::Search(const string& db,
                            const string& term,
                            vector<int>& uids,
                            string xml_path)
+{
+    return x_Search(db, term, uids, xml_path);
+}
+
+#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
+Uint8 CEutilsClient::Search(const string& db,
+                            const string& term,
+                            vector<TGi>& uids,
+                            string xml_path)
+{
+    return x_Search(db, term, uids, xml_path);
+}
+#endif
+
+template<class T>
+Uint8 CEutilsClient::x_Search(const string& db,
+                              const string& term,
+                              vector<T>& uids,
+                              string xml_path)
 {
     string params;
     params += "db=" + NStr::URLEncode(db);
@@ -639,7 +705,7 @@ void CEutilsClient::Search(const string& db,
 void CEutilsClient::SearchHistory(const string& db,
                                   const string& term,
                                   const string& web_env,
-                                  int query_key,
+                                  Int8 query_key,
                                   int retstart,
                                   CNcbiOstream& ostr)
 {
@@ -717,6 +783,30 @@ void CEutilsClient::Link(const string& db_from,
                          vector<int>& uids_to,
                          string xml_path,
                          const string command)
+
+{
+    x_Link(db_from, db_to, uids_from, uids_to, xml_path, command);
+}
+
+#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
+void CEutilsClient::Link(const string& db_from,
+                         const string& db_to,
+                         const vector<TGi>& uids_from,
+                         vector<TGi>& uids_to,
+                         string xml_path,
+                         const string command)
+{
+    x_Link(db_from, db_to, uids_from, uids_to, xml_path, command);
+}
+#endif
+
+template<class T1, class T2>
+void CEutilsClient::x_Link(const string& db_from,
+                           const string& db_to,
+                           const vector<T1>& uids_from,
+                           vector<T2>& uids_to,
+                           string xml_path,
+                           const string command)
 {
     std::ostringstream oss;
     
@@ -725,7 +815,7 @@ void CEutilsClient::Link(const string& db_from,
         << "&retmode=xml"
         << "&cmd=" + NStr::URLEncode(command)
         << "&id=";
-    std::copy(uids_from.begin(), uids_from.end(), std::ostream_iterator<int>(oss, ",") );
+    std::copy(uids_from.begin(), uids_from.end(), std::ostream_iterator<T1>(oss, ",") );
     string params = oss.str();
     // remove trailing comma
     params.resize(params.size() - 1);
@@ -742,7 +832,7 @@ void CEutilsClient::Link(const string& db_from,
             m_Url.push_back(x_BuildUrl(m_HostName, path, params));
             istr << params;
             m_Time.push_back(CTime(CTime::eCurrent));
-            CELinkParser parser(db_from, db_to, uids_to);
+            CELinkParser<T2> parser(db_from, db_to, uids_to);
             if ( !m_LinkName.empty() ) {
                 parser.SetLinkName(m_LinkName);
             }
@@ -798,6 +888,27 @@ void CEutilsClient::Link(const string& db_from,
                          CNcbiOstream& ostr,
                          const string command)
 {
+    x_Link(db_from, db_to, uids_from, ostr, command);
+}
+
+#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
+void CEutilsClient::Link(const string& db_from,
+                         const string& db_to,
+                         const vector<TGi>& uids_from,
+                         CNcbiOstream& ostr,
+                         const string command)
+{
+    x_Link(db_from, db_to, uids_from, ostr, command);
+}
+#endif
+
+template<class T>
+void CEutilsClient::x_Link(const string& db_from,
+                           const string& db_to,
+                           const vector<T>& uids_from,
+                           CNcbiOstream& ostr,
+                           const string command)
+{
     std::ostringstream oss;
     
     oss << "db=" << NStr::URLEncode(db_to)
@@ -805,7 +916,7 @@ void CEutilsClient::Link(const string& db_from,
         << "&retmode=xml"
         << "&cmd=" + NStr::URLEncode(command)
         << "&id=";
-    std::copy(uids_from.begin(), uids_from.end(), std::ostream_iterator<int>(oss, ",") );
+    std::copy(uids_from.begin(), uids_from.end(), std::ostream_iterator<T>(oss, ",") );
     string params = oss.str();
     // remove trailing comma
     params.resize(params.size() - 1);
@@ -846,7 +957,7 @@ void CEutilsClient::Link(const string& db_from,
 void CEutilsClient::LinkHistory(const string& db_from,
                                 const string& db_to,
                                 const string& web_env,
-                                int query_key,
+                                Int8 query_key,
                                 CNcbiOstream& ostr)
 {
     std::ostringstream oss;
@@ -865,6 +976,25 @@ void CEutilsClient::Summary(const string& db,
                             xml::document& docsums,
                             const string version)
 {
+    x_Summary(db, uids, docsums, version);
+}
+
+#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
+void CEutilsClient::Summary(const string& db,
+                            const vector<TGi>& uids,
+                            xml::document& docsums,
+                            const string version)
+{
+    x_Summary(db, uids, docsums, version);
+}
+#endif
+
+template<class T>
+void CEutilsClient::x_Summary(const string& db,
+                              const vector<T>& uids,
+                              xml::document& docsums,
+                              const string version)
+{
     ostringstream oss;
     oss << "db=" << NStr::URLEncode(db)
         << "&retmode=xml";
@@ -873,7 +1003,7 @@ void CEutilsClient::Summary(const string& db,
             << version;
     } 
     oss << "&id=";
-    std::copy(uids.begin(), uids.end(), std::ostream_iterator<int>(oss, ",") );
+    std::copy(uids.begin(), uids.end(), std::ostream_iterator<T>(oss, ",") );
     string params = oss.str();
     // remove trailing comma
     params.resize(params.size() - 1);
@@ -928,7 +1058,7 @@ void CEutilsClient::Summary(const string& db,
 
 void CEutilsClient::SummaryHistory(const string& db,
                                    const string& web_env,
-                                   int query_key,
+                                   Int8 query_key,
                                    int retstart,
                                    const string version,
                                    CNcbiOstream& ostr)
@@ -961,12 +1091,31 @@ void CEutilsClient::Fetch(const string& db,
                           CNcbiOstream& ostr,
                           const string& retmode)
 {
+    x_Fetch(db, uids, ostr, retmode);
+}
+
+#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
+void CEutilsClient::Fetch(const string& db,
+                          const vector<TGi>& uids,
+                          CNcbiOstream& ostr,
+                          const string& retmode)
+{
+    x_Fetch(db, uids, ostr, retmode);
+}
+#endif
+
+template<class T>
+void CEutilsClient::x_Fetch(const string& db,
+                            const vector<T>& uids,
+                            CNcbiOstream& ostr,
+                            const string& retmode)
+{
     string params;
     params += "db=" + NStr::URLEncode(db);
     params += "&retmode=" + NStr::URLEncode(retmode);
 
     string s;
-    ITERATE (vector<int>, it, uids) {
+    ITERATE (typename vector<T>, it, uids) {
         if ( !s.empty() ) {
             s += ",";
         }
@@ -1009,7 +1158,7 @@ void CEutilsClient::Fetch(const string& db,
 
 void CEutilsClient::FetchHistory(const string& db,
                                  const string& web_env,
-                                 int query_key,
+                                 Int8 query_key,
                                  int retstart,
                                  EContentType content_type,
                                  CNcbiOstream& ostr)

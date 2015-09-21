@@ -34,6 +34,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiobj.hpp>
+#include <corelib/ncbimisc.hpp>
 #include <sstream>
 #include <misc/xmlwrapp/xmlwrapp.hpp>
 
@@ -120,6 +121,13 @@ public:
                 vector<int>& uids,
                 string xml_path=kEmptyStr);
 
+#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
+    Uint8 Search(const string& db,
+                const string& term,
+                vector<TGi>& uids,
+                string xml_path=kEmptyStr);
+#endif
+
     void Search(const string& db,
                 const string& term,
                 CNcbiOstream& ostr,
@@ -128,10 +136,9 @@ public:
     void SearchHistory(const string& db,
                        const string& term,
                        string const& web_env,
-                       int query_key,
+                       Int8 query_key,
                        int retstart,
                        CNcbiOstream& ostr);
-
 
 
     void Link(const string& db_from,
@@ -141,16 +148,34 @@ public:
               string xml_path=kEmptyStr,
               const string command="neighbor");
 
+#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
+    void Link(const string& db_from,
+              const string& db_to,
+              const vector<TGi>& uids_from,
+              vector<TGi>& uids_to,
+              string xml_path=kEmptyStr,
+              const string command="neighbor");
+#endif
+
     void Link(const string& db_from,
               const string& db_to,
               const vector<int>& uids_from,
               CNcbiOstream& ostr,
               const string command="neighbor");
 
+#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
+    void Link(const string& db_from,
+              const string& db_to,
+              const vector<TGi>& uids_from,
+              CNcbiOstream& ostr,
+              const string command="neighbor");
+
+#endif
+
     void LinkHistory(const string& db_from,
                      const string& db_to,
                      const string& web_env,
-                     int query_key,
+                     Int8 query_key,
                      CNcbiOstream& ostr);
 
 
@@ -160,9 +185,16 @@ public:
                 xml::document& docsums,
                 const string version="");
 
+#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
+    void Summary(const string& db,
+                const vector<TGi>& uids,
+                xml::document& docsums,
+                const string version="");
+#endif
+
     void SummaryHistory(const string& db,
                         const string& web_env,
-                        int query_key,
+                        Int8 query_key,
                         int retstart,           // Position within the result set
                         const string version,   // Version: "" or "2.0" 
                         CNcbiOstream& ostr);
@@ -172,9 +204,16 @@ public:
                CNcbiOstream& ostr,
                const string& retmode="xml");
 
+#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
+    void Fetch(const string& db,
+               const vector<TGi>& uids,
+               CNcbiOstream& ostr,
+               const string& retmode="xml");
+#endif
+
     void FetchHistory(const string& db,
                       const string& web_env,
-                      int query_key,
+                      Int8 query_key,
                       int retstart,
                       EContentType content_type,
                       CNcbiOstream& ostr);
@@ -186,8 +225,19 @@ public:
 protected:
     Uint8 ParseSearchResults(CNcbiIstream& istr,
                              vector<int>& uids);
+    
+#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
+    Uint8 ParseSearchResults(CNcbiIstream& istr,
+                             vector<TGi>& uids);
+#endif
+    
     Uint8 ParseSearchResults(const string& xml_file,
                              vector<int>& uids);
+
+#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
+    Uint8 ParseSearchResults(const string& xml_file,
+                             vector<TGi>& uids);
+#endif
 
 private:
     CRef<CMessageHandler> m_MessageHandler;
@@ -210,6 +260,43 @@ private:
     string x_GetContentType(EContentType content_type);
 
     static string x_BuildUrl(const string& host, const string &path, const string &params);
+
+    template<class T> Uint8 x_Search(const string& db,
+                                   const string& term,
+                                   vector<T>& uids,
+                                   string xml_path=kEmptyStr);
+    
+
+    template<class T1, class T2> void x_Link(const string& db_from,
+                                             const string& db_to,
+                                             const vector<T1>& uids_from,
+                                             vector<T2>& uids_to,
+                                             string xml_path,
+                                             const string command);
+
+    template<class T> void x_Link(const string& db_from,
+                                  const string& db_to,
+                                  const vector<T>& uids_from,
+                                  CNcbiOstream& ostr,
+                                  const string command);
+
+    template<class T> void x_Summary(const string& db,
+                                     const vector<T>& uids,
+                                     xml::document& docsums,
+                                     const string version="");
+    
+
+    template<class T> void x_Fetch(const string& db,
+                                   const vector<T>& uids,
+                                   CNcbiOstream& ostr,
+                                   const string& retmode="xml");
+
+    template<class T> Uint8 x_ParseSearchResults(const string& xml_file,
+                                                 vector<T>& uids);
+
+    template<class T> Uint8 x_ParseSearchResults(CNcbiIstream& istr,
+                                                 vector<T>& uids);
+
 };
 
 
