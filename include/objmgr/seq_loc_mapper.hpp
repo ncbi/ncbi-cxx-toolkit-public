@@ -283,8 +283,8 @@ private:
     // Creates and adds to the scope a virtual bioseq. If delta is not null,
     // the bioseq uses it for the instance. Otherwise a virtual bioseq without
     // length/data is created.
-    CBioseq_Handle x_AddVirtualBioseq(const TSynonyms&  synonyms,
-                                      const CDelta_ext* delta = 0);
+    CBioseq_Handle x_AddVirtualBioseq(const TSynonyms&    synonyms,
+                                      const CGC_Sequence& gc_seq);
 
     // Helper function to check for UCSC random chromosomes and populate
     // the set of synonyms.

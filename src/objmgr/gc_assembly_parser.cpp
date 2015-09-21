@@ -289,13 +289,7 @@ void CGC_Assembly_Parser::x_ParseGCSequence(const CGC_Sequence& gc_seq,
     }
 
     // Create virtual bioseq and use it to initialize the mapper
-    if ( gc_seq.IsSetStructure() ) {
-        x_AddBioseq(entry, synonyms, &gc_seq.GetStructure());
-    }
-    else {
-        // Create literal sequence
-        x_AddBioseq(entry, synonyms, NULL);
-    }
+    x_AddBioseq(entry, synonyms, gc_seq);
     if ( !parent_seq ) {
         // Save top-level sequences.
         m_TopSeqs.insert(CSeq_id_Handle::GetHandle(*id));
@@ -323,9 +317,9 @@ void CGC_Assembly_Parser::x_ParseGCSequence(const CGC_Sequence& gc_seq,
 }
 
 
-void CGC_Assembly_Parser::x_AddBioseq(CRef<CSeq_entry>  parent_entry,
-                                      const TSeqIds&    synonyms,
-                                      const CDelta_ext* delta)
+void CGC_Assembly_Parser::x_AddBioseq(CRef<CSeq_entry>    parent_entry,
+                                      const TSeqIds&      synonyms,
+                                      const CGC_Sequence& gc_seq)
 {
     CRef<CBioseq> bioseq(new CBioseq);
     ITERATE(TSeqIds, syn, synonyms) {
@@ -341,12 +335,15 @@ void CGC_Assembly_Parser::x_AddBioseq(CRef<CSeq_entry>  parent_entry,
     }
 
     bioseq->SetInst().SetMol(CSeq_inst::eMol_na);
-    if ( delta ) {
+    if ( gc_seq.CanGetLength() ) {
+        bioseq->SetInst().SetLength(gc_seq.GetLength());
+    }
+    if ( gc_seq.IsSetStructure() ) {
         // Create delta sequence
         bioseq->SetInst().SetRepr(CSeq_inst::eRepr_delta);
         // const_cast should be safe here - we are not going to modify data
         bioseq->SetInst().SetExt().SetDelta(
-            const_cast<CDelta_ext&>(*delta));
+            const_cast<CDelta_ext&>(gc_seq.GetStructure()));
     }
     else {
         // Create virtual bioseq without length/data.

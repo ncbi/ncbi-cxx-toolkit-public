@@ -104,13 +104,13 @@ private:
                            const CGC_Sequence* parent_seq,
                            CRef<CSeq_entry>    parent_entry,
                            CRef<CSeq_id>       override_id);
-    void x_AddBioseq(CRef<CSeq_entry>  parent_entry,
-                     const TSeqIds&    synonyms,
-                     const CDelta_ext* delta);
+    void x_AddBioseq(CRef<CSeq_entry>    parent_entry,
+                     const TSeqIds&      synonyms,
+                     const CGC_Sequence& gc_seq);
     void x_InitSeq_entry(CRef<CSeq_entry> entry,
                          CRef<CSeq_entry> parent);
     void x_CopyData(const CGC_AssemblyDesc& assm_desc,
-                      CSeq_entry&              entry);
+                    CSeq_entry&             entry);
 
     TParserFlags     m_Flags;
     CRef<CSeq_entry> m_TSE;

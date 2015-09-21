@@ -718,16 +718,14 @@ void CSeq_loc_Mapper::x_InitializeSeqMapSingleLevel(CSeqMap_CI       seg_it,
 
 
 CBioseq_Handle
-CSeq_loc_Mapper::x_AddVirtualBioseq(const TSynonyms&  synonyms,
-                                    const CDelta_ext* delta)
+CSeq_loc_Mapper::x_AddVirtualBioseq(const TSynonyms&    synonyms,
+                                    const CGC_Sequence& gc_seq)
 {
     CRef<CBioseq> bioseq(new CBioseq);
     ITERATE(IMapper_Sequence_Info::TSynonyms, syn, synonyms) {
-        if (!delta ) {
-            CBioseq_Handle h = m_Scope.GetScope().GetBioseqHandle(*syn);
-            if ( h ) {
-                return h;
-            }
+        CBioseq_Handle h = m_Scope.GetScope().GetBioseqHandle(*syn);
+        if ( h ) {
+            return h;
         }
         CRef<CSeq_id> syn_id(new CSeq_id);
         syn_id->Assign(*syn->GetSeqId());
@@ -735,17 +733,12 @@ CSeq_loc_Mapper::x_AddVirtualBioseq(const TSynonyms&  synonyms,
     }
 
     bioseq->SetInst().SetMol(CSeq_inst::eMol_na);
-    if ( delta ) {
-        // Create delta sequence
-        bioseq->SetInst().SetRepr(CSeq_inst::eRepr_delta);
-        // const_cast should be safe here - we are not going to modify data
-        bioseq->SetInst().SetExt().SetDelta(
-            const_cast<CDelta_ext&>(*delta));
+    if ( gc_seq.CanGetLength() ) {
+        bioseq->SetInst().SetLength(gc_seq.GetLength());
     }
-    else {
-        // Create virtual bioseq without length/data.
-        bioseq->SetInst().SetRepr(CSeq_inst::eRepr_virtual);
-    }
+
+    // Create virtual bioseq without length/data.
+    bioseq->SetInst().SetRepr(CSeq_inst::eRepr_virtual);
     return m_Scope.GetScope().AddBioseq(*bioseq);
 }
 
@@ -951,10 +944,15 @@ void CSeq_loc_Mapper::x_InitGCSequence(const CGC_Sequence& gc_seq,
                     break;
                 }
             }
-            x_AddVirtualBioseq(synonyms);
+            CBioseq_Handle h = x_AddVirtualBioseq(synonyms, gc_seq);
+            TSeqPos hlen = kInvalidSeqPos;
+            if (h && h.CanGetInst_Length()) {
+                hlen = h.GetInst_Length();
+            }
             x_AddConversion(gc_seq.GetSeq_id(), 0, eNa_strand_unknown,
-                *dst_id, 0, eNa_strand_unknown, TRange::GetWholeLength(),
-                false, 0, kInvalidSeqPos, kInvalidSeqPos, kInvalidSeqPos );
+                *dst_id, 0, eNa_strand_unknown,
+                hlen != kInvalidSeqPos ? hlen : TRange::GetWholeLength(),
+                false, 0, hlen, hlen, hlen);
         }
         else if (to_alias == eGCA_UCSC  ||  to_alias == eGCA_Refseq) {
             TSynonyms synonyms;
@@ -963,7 +961,6 @@ void CSeq_loc_Mapper::x_InitGCSequence(const CGC_Sequence& gc_seq,
             // check for UCSC random chromosomes.
             if ( x_IsUCSCRandomChr(gc_seq, chr_id, synonyms) ) {
                 _ASSERT(chr_id);
-                x_AddVirtualBioseq(synonyms);
 
                 // Use structure (delta-seq) to initialize the mapper.
                 // Here we use just one level of the delta and parse it
@@ -1005,6 +1002,7 @@ void CSeq_loc_Mapper::x_InitGCSequence(const CGC_Sequence& gc_seq,
                         }
                     }
                 }
+                x_AddVirtualBioseq(synonyms, gc_seq);
             }
         }
     }
