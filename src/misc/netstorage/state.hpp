@@ -88,6 +88,7 @@ public:
     virtual CNetStorageObjectInfo GetInfoImpl() = 0;
     virtual bool ExistsImpl() = 0;
     virtual void RemoveImpl() = 0;
+    virtual void SetExpirationImpl(const CTimeout&) = 0;
 };
 
 class ISelector

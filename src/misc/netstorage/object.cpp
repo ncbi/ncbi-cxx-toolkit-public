@@ -99,10 +99,9 @@ CNetStorageObjectInfo CObj::GetInfo()
 }
 
 
-void CObj::SetExpiration(const CTimeout&)
+void CObj::SetExpiration(const CTimeout& ttl)
 {
-    NCBI_THROW(CNetStorageException, eInvalidArg,
-        "Expiration support is only implemented in NetStorage server.");
+    m_Location->SetExpirationImpl(ttl);
 }
 
 
@@ -237,36 +236,77 @@ IState* CObj::StartWrite(const void*, size_t, size_t*, ERW_Result*)
 }
 
 
-// TODO: Redo this with a functor?
-#define DEFINE_COBJ_METHOD(type, method)                        \
-    type CObj::method()                                         \
-    {                                                           \
-        if (ILocation* l = m_Selector->First()) {               \
-            for (;;) {                                          \
-                m_Location = l;                                 \
-                                                                \
-                try {                                           \
-                    return m_Location->method();                \
-                }                                               \
-                catch (CException& e) {                         \
-                    l = m_Selector->Next();                     \
-                                                                \
-                    if (!l) {                                   \
-                        throw;                                  \
-                    }                                           \
-                                                                \
-                    LOG_POST(Trace << "Exception: " << e);      \
-                }                                               \
-            }                                                   \
-        } else {                                                \
-            return m_Location->method();                        \
-        }                                                       \
-    }                                                                    
+template <class TCaller>
+inline typename TCaller::TReturn CObj::MetaMethod(const TCaller& caller)
+{
+    if (ILocation* l = m_Selector->First()) {
+        for (;;) {
+            m_Location = l;
 
-DEFINE_COBJ_METHOD(Uint8, GetSizeImpl)
-DEFINE_COBJ_METHOD(CNetStorageObjectInfo, GetInfoImpl)
-DEFINE_COBJ_METHOD(bool, ExistsImpl)
-DEFINE_COBJ_METHOD(void, RemoveImpl)
+            try {
+                return caller(m_Location);
+            }
+            catch (CException& e) {
+                l = m_Selector->Next();
+
+                if (!l) {
+                    throw;
+                }
+
+                LOG_POST(Trace << "Exception: " << e);
+            }
+        }
+    } else {
+        return caller(m_Location);
+    }
+}                                                                    
+
+
+template <class TR, TR (ILocation::*TMethod)()>
+struct TCaller
+{
+    typedef TR TReturn;
+    TR operator()(ILocation* l) const { return (l->*TMethod)(); }
+};
+
+
+Uint8 CObj::GetSizeImpl() {
+    return MetaMethod(TCaller<Uint8, &ILocation::GetSizeImpl>());
+}
+
+
+CNetStorageObjectInfo CObj::GetInfoImpl()
+{
+    return MetaMethod(TCaller<CNetStorageObjectInfo, &ILocation::GetInfoImpl>());
+}
+
+
+bool CObj::ExistsImpl()
+{
+    return MetaMethod(TCaller<bool, &ILocation::ExistsImpl>());
+}
+
+
+void CObj::RemoveImpl()
+{
+    return MetaMethod(TCaller<void, &ILocation::RemoveImpl>());
+}
+
+
+struct TSetExpirationCaller
+{
+    typedef void TReturn;
+    const CTimeout& ttl;
+    TSetExpirationCaller(const CTimeout& t) : ttl(t) {}
+    void operator()(ILocation* l) const { return l->SetExpirationImpl(ttl); }
+};
+
+
+void CObj::SetExpirationImpl(const CTimeout& ttl)
+{
+    return MetaMethod(TSetExpirationCaller(ttl));
+}
+
 
 }
 

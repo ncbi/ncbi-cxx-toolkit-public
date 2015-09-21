@@ -79,12 +79,16 @@ private:
     void CloseImpl() {}
     void AbortImpl() {}
 
+    template <class TCaller>
+    typename TCaller::TReturn MetaMethod(const TCaller& caller);
+
     IState* StartRead(void*, size_t, size_t*, ERW_Result*);
     IState* StartWrite(const void*, size_t, size_t*, ERW_Result*);
     Uint8 GetSizeImpl();
     CNetStorageObjectInfo GetInfoImpl();
     bool ExistsImpl();
     void RemoveImpl();
+    void SetExpirationImpl(const CTimeout&);
 
     ISelector::Ptr m_Selector;
     IState* m_State;

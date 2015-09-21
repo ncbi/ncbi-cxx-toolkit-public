@@ -1010,6 +1010,19 @@ void CNetICacheClient::SetEventHandler(INetEventHandler* event_handler)
     m_Impl->GetListener()->m_EventHandler = event_handler;
 }
 
+void CNetICacheClient::x_ProlongBlobLifetime(const string& key, unsigned ttl)
+{
+    string cmd("PROLONG \"");
+    cmd += GetCacheName();
+    cmd += "\" \"";
+    cmd += key;
+    cmd += "\" \"\" ttl=";
+    cmd += NStr::NumericToString(ttl);
+
+    m_Impl->AppendClientIPSessionID(&cmd);
+    m_Impl->ChooseServerAndExec(cmd, key, false, &m_Impl->m_DefaultParameters);
+}
+
 
 /// Class factory for NetCache implementation of ICache
 ///

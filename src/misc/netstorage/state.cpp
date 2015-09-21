@@ -181,6 +181,7 @@ public:
     CNetStorageObjectInfo GetInfoImpl();
     bool ExistsImpl();
     void RemoveImpl();
+    void SetExpirationImpl(const CTimeout&);
 
 private:
     CRWNotFound m_RW;
@@ -205,6 +206,7 @@ public:
     CNetStorageObjectInfo GetInfoImpl();
     bool ExistsImpl();
     void RemoveImpl();
+    void SetExpirationImpl(const CTimeout&);
 
 private:
     CRef<SContext> m_Context;
@@ -230,6 +232,7 @@ public:
     CNetStorageObjectInfo GetInfoImpl();
     bool ExistsImpl();
     void RemoveImpl();
+    void SetExpirationImpl(const CTimeout&);
 
 private:
     CRef<SContext> m_Context;
@@ -412,6 +415,12 @@ void CNotFound::RemoveImpl()
 }
 
 
+void CNotFound::SetExpirationImpl(const CTimeout&)
+{
+    GetSizeImpl();
+}
+
+
 bool CNetCache::Init()
 {
     if (!m_Client) {
@@ -545,6 +554,27 @@ void CNetCache::RemoveImpl()
 }
 
 
+struct SIClient : public CNetICacheClient
+{
+    SIClient(CNetICacheClient::TInstance impl) : CNetICacheClient(impl) {}
+
+    void ProlongBlobLifetime(const string& key, const CTimeout& ttl)
+    {
+        x_ProlongBlobLifetime(key, ttl.GetAsDouble());
+    }
+};
+
+void CNetCache::SetExpirationImpl(const CTimeout& ttl)
+{
+    if (!ttl.IsFinite()) {
+        NCBI_THROW_FMT(CNetStorageException, eInvalidArg, m_ObjectLoc.GetICacheKey() <<
+            ": infinite ttl for NetCache blobs is not implemented");
+    }
+
+    SIClient(m_Client).ProlongBlobLifetime(m_ObjectLoc.GetICacheKey(), ttl);
+}
+
+
 void CFileTrack::SetLocator()
 {
     m_ObjectLoc.SetLocation_FileTrack(m_Context->filetrack_api.site.c_str());
@@ -631,6 +661,18 @@ void CFileTrack::RemoveImpl()
 {
     LOG_POST(Trace << "Trying to remove from FileTrack " << m_ObjectLoc.GetLocator());
     m_Context->filetrack_api.Remove(m_ObjectLoc);
+}
+
+
+void CFileTrack::SetExpirationImpl(const CTimeout&)
+{
+    // By default objects in FileTrack do not have expiration,
+    // so checking only object existence
+    if (!ExistsImpl()) {
+        NCBI_THROW_FMT(CNetStorageException, eNotExists,
+                "NetStorageObject \"" << m_ObjectLoc.GetLocator() <<
+                "\" could not be found in FileTrack.");
+    }
 }
 
 
