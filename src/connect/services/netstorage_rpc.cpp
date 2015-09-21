@@ -653,7 +653,7 @@ string SNetStorageRPC::Relocate(const string& object_loc,
         TNetStorageFlags flags)
 {
     if (x_NetCacheMode(object_loc))
-        NCBI_THROW_FMT(CNetStorageException, eInvalidArg, object_loc <<
+        NCBI_THROW_FMT(CNetStorageException, eNotSupported, object_loc <<
                 ": Relocate for NetCache blobs is not implemented");
 
     CJsonNode request(MkObjectRequest("RELOCATE", object_loc));

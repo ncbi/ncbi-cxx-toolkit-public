@@ -201,20 +201,20 @@ Uint8 SNetStorage_NetCacheBlob::GetSize()
 
 list<string> SNetStorage_NetCacheBlob::GetAttributeList() const
 {
-    NCBI_THROW_FMT(CNetStorageException, eInvalidArg, m_BlobKey <<
+    NCBI_THROW_FMT(CNetStorageException, eNotSupported, m_BlobKey <<
             ": attribute retrieval is not implemented for NetCache blobs");
 }
 
 string SNetStorage_NetCacheBlob::GetAttribute(const string& /*attr_name*/) const
 {
-    NCBI_THROW_FMT(CNetStorageException, eInvalidArg, m_BlobKey <<
+    NCBI_THROW_FMT(CNetStorageException, eNotSupported, m_BlobKey <<
             ": attribute retrieval is not implemented for NetCache blobs");
 }
 
 void SNetStorage_NetCacheBlob::SetAttribute(const string& /*attr_name*/,
         const string& /*attr_value*/)
 {
-    NCBI_THROW_FMT(CNetStorageException, eInvalidArg, m_BlobKey <<
+    NCBI_THROW_FMT(CNetStorageException, eNotSupported, m_BlobKey <<
             ": attribute setting for NetCache blobs is not implemented");
 }
 
@@ -255,7 +255,7 @@ CNetStorageObjectInfo SNetStorage_NetCacheBlob::GetInfo()
 void SNetStorage_NetCacheBlob::SetExpiration(const CTimeout& ttl)
 {
     if (!ttl.IsFinite()) {
-        NCBI_THROW_FMT(CNetStorageException, eInvalidArg, m_BlobKey <<
+        NCBI_THROW_FMT(CNetStorageException, eNotSupported, m_BlobKey <<
             ": infinite ttl for NetCache blobs is not implemented");
     }
 

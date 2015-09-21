@@ -567,7 +567,7 @@ struct SIClient : public CNetICacheClient
 void CNetCache::SetExpirationImpl(const CTimeout& ttl)
 {
     if (!ttl.IsFinite()) {
-        NCBI_THROW_FMT(CNetStorageException, eInvalidArg, m_ObjectLoc.GetICacheKey() <<
+        NCBI_THROW_FMT(CNetStorageException, eNotSupported, m_ObjectLoc.GetICacheKey() <<
             ": infinite ttl for NetCache blobs is not implemented");
     }
 
@@ -673,6 +673,9 @@ void CFileTrack::SetExpirationImpl(const CTimeout&)
                 "NetStorageObject \"" << m_ObjectLoc.GetLocator() <<
                 "\" could not be found in FileTrack.");
     }
+
+    NCBI_THROW_FMT(CNetStorageException, eNotSupported,
+            "SetExpiration() is not supported for FileTrack");
 }
 
 

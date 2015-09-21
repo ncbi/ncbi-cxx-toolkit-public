@@ -70,7 +70,8 @@ public:
         eIOError,       ///< I/O error encountered while performing an op
         eServerError,   ///< NetStorage server error
         eTimeout,       ///< Timeout encountered while performing an op
-        eExpired        ///< Object has expired on server
+        eExpired,       ///< Object has expired on server
+        eNotSupported   ///< Feature is not supported
     };
     virtual const char* GetErrCodeString() const;
     NCBI_EXCEPTION_DEFAULT(CNetStorageException, CException);
