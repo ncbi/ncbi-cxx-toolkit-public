@@ -68,6 +68,9 @@
 #  define PYDBAPI_MODINIT_FUNC(name)         DL_EXPORT(void) name(void)
 #endif
 
+#ifndef PYDBAPI_SUPPORT_DIR
+#  define PYDBAPI_SUPPORT_DIR "python_ncbi_dbapi/" NCBI_PACKAGE_VERSION
+#endif
 
 #define NCBI_USE_ERRCODE_X   Dbapi_Python
 
@@ -4348,8 +4351,7 @@ void init_common(const string& module_name)
 
     // Fix plugin manager ...
     CFile file(python::RetrieveModuleFileName());
-    string module_dir = file.GetDir()
-                        + "python_ncbi_dbapi/" NCBI_PACKAGE_VERSION;
+    string module_dir = file.GetDir() + PYDBAPI_SUPPORT_DIR;
     CDriverManager::GetInstance().AddDllSearchPath(module_dir);
 
 
