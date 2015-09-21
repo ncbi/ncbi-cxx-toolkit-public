@@ -5911,6 +5911,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "TJDC	s	Tianjin Municipal Institute for Drug Control, Department of Traditional Chinese Medicine",
 "TJMP	s	Tianjin Institute of Medical and Pharmaceutical Sciences",
 "TK	s	Tomsk State University",
+"TK<MEX>	s	Coleccion de mamiferos del Centro Interdisciplinario de Investigacion para el Desarrollo Integral Regional Unidad Durango",
 "TKB	s	University of Tsukuba",
 "TKNM	s	Twickenham Girls' School",
 "TKPM	s	Tokushima Prefectural Museum",
