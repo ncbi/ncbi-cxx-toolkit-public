@@ -171,12 +171,14 @@ CBlastPrelimSearch::x_LaunchMultiThreadedSearch(SInternalData& internal_data)
     }
 
     // ... and wait for the threads to finish
-    long retv(0);
+    Uint8 retv(0);
     NON_CONST_ITERATE(TBlastThreads, thread, the_threads) {
-        long result(0);
-        (*thread)->Join(reinterpret_cast<void**>(&result));
+        void * result(0);
+        (*thread)->Join(&result);
         if (result) {
-            retv = result;
+        	// Thread is not really returning a pointer, it's actually
+        	//  retruning an int
+            retv = reinterpret_cast<Uint8> (result);
         }
     }
 
