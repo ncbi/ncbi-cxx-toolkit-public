@@ -102,9 +102,10 @@ unsigned int       s_LBOS_AnnouncedServersAlloc = 0;
 static SSERV_Info**   s_LBOS_ResolveIPPort (const char*   lbos_address,
                                             const char*   serviceName,
                                             SConnNetInfo* net_info);
-static char *         s_LBOS_UrlReadAll    (SConnNetInfo* net_info,
-                                            const char*   url,
-                                            int* response);
+static char *         s_LBOS_UrlReadAll    (SConnNetInfo* net_info, 
+                                            const char*   url, 
+                                            int*          status_code,
+                                            char**        status_message);
 static void           s_LBOS_FillCandidates(SLBOS_Data*   data,
                                             const char*   service);
 static SLBOS_Data*    s_LBOS_ConstructData (size_t        candidatesCapacity);
@@ -141,7 +142,9 @@ ELBOS_Result s_LBOS_Announce(const char*             service,
                              const char*             version,
                              unsigned short          port,
                              const char*             healthcheck_url,
-                             char**                  lbos_answer);
+                             char**                  lbos_answer,
+                             int*                    http_status_code,
+                             char**                  http_status_message);
 
 
 /*/////////////////////////////////////////////////////////////////////////////
@@ -874,7 +877,8 @@ static CONN s_LBOS_ConnectURL(SConnNetInfo* net_info, const char* url,
  */
 static char * s_LBOS_UrlReadAll(SConnNetInfo*   net_info, 
                                 const char*     url, 
-                                int*            response_code)
+                                int*            status_code,
+                                char**          status_message)
 {
     SLBOS_UserData user_data; /* used to store HTTP response code and 
                                  HTTP header, HTTP header only for unit 
@@ -893,8 +897,11 @@ static char * s_LBOS_UrlReadAll(SConnNetInfo*   net_info,
     size_t        totalBufSize;
     char*         realloc_result;
 
-    /*Not to handle case when response_code is NULL */
+    /* Not to handle case when status_code is NULL, we use internal variable,
+       and only try to set status_code in the end of this function */
     user_data.http_response_code = 0;
+    /* The same for status_message */
+    user_data.http_status_mesage = NULL;
     /* Set HTTP header for unit testing. Pointer to already existing string. */
     user_data.header = net_info->http_user_header;
     connection      = s_LBOS_ConnectURL(net_info, url, &user_data);
@@ -903,7 +910,7 @@ static char * s_LBOS_UrlReadAll(SConnNetInfo*   net_info,
     }
     CONN_SetUserData(connection, &user_data);
     buf              = (char*)calloc(oneLineSize, sizeof(char));
-    /* Total length of buffer. We already add one line because of calloc */
+    /* Total length of buffer. We already have oneLineSize because of calloc */
     totalBufSize     = oneLineSize;    
     if (buf == NULL)
     {
@@ -918,9 +925,14 @@ static char * s_LBOS_UrlReadAll(SConnNetInfo*   net_info,
                           Read(connection, buf + strlen(buf),
                                totalBufSize - totalRead - 1 /* for \0 */,
                                &bytesRead, eIO_ReadPlain);
-        if (response_code != NULL) {
-            *response_code = user_data.http_response_code;
+        if (status_code != NULL) {
+            *status_code = user_data.http_response_code;
         }
+        if (status_message != NULL && user_data.http_status_mesage != NULL) {
+            *status_message = strdup(user_data.http_status_mesage);
+        }
+        free(user_data.http_status_mesage); /* not needed anymore*/
+        user_data.http_status_mesage = NULL;
         /* If could not connect, fail now */
         if (user_data.http_response_code == 0) {
             free(buf);
@@ -949,7 +961,7 @@ static char * s_LBOS_UrlReadAll(SConnNetInfo*   net_info,
             }
         }
     } while (status == eIO_Success);
-    /*In the end we cut buffer to the minimal needed size*/
+    /*In the end we shrink buffer to the minimal needed size*/
     if (!(realloc_result = (char*) realloc(buf,
                                           sizeof(char) * (strlen(buf) + 1)))) {
         CORE_LOG(eLOG_Warning, "s_LBOS_UrlReadAll: Buffer shrink error, using "
@@ -972,11 +984,11 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
     SSERV_Info** infos;
     size_t infos_count;
     size_t infos_capacity;
-    char* servicename_url_encoded;
+    char* servicename_url_encoded = NULL;
     size_t url_length;
     char * url;
     char * lbos_answer; /*to write down lbos's answer*/
-    const char* user_dtab; 
+    const char* user_dtab = NULL; 
     size_t length;
     size_t user_dtab_length;
     char* new_dtab = NULL;
@@ -1050,7 +1062,7 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
     }
     sprintf(url, "%s%s%s%s", "http://", lbos_address, kLBOSQuery,
             servicename_url_encoded);
-    lbos_answer = s_LBOS_UrlReadAll(net_info, url, NULL);
+    lbos_answer = s_LBOS_UrlReadAll(net_info, url, NULL, NULL);
     free(url);
     free(servicename_url_encoded);
 
@@ -1293,11 +1305,10 @@ static int s_LBOS_CheckAnnounceArgs(const char* service,
 }
 
 
-static int s_LBOS_CheckDeannounceArgs(
-    const char* service,
-    const char* version,
-    const char* host,
-    unsigned short port)
+static int s_LBOS_CheckDeannounceArgs(const char* service,
+                                      const char* version,
+                                      const char* host,
+                                      unsigned short port)
 {
     if (!g_LBOS_StringIsNullOrEmpty(host) && strstr(host, ":") != NULL) {
         CORE_LOG(eLOG_Critical, "Invalid argument passed for deannouncement, "
@@ -1611,14 +1622,12 @@ static EHTTP_HeaderParse s_LBOS_ParseHeader(const char*      header,
                                             int              server_error)
 {
     SLBOS_UserData* response_output = (SLBOS_UserData*)response;
-    int code = 0/*success code if any*/;
-    if (server_error) {
-        if (response != NULL) {
-            response_output->http_response_code = server_error;
-        }
-        return eHTTP_HeaderError;
-    }
-    if (sscanf(header, "%*s %d", &code) < 1) {
+    int status_code = 0/*success code if any*/;
+    /* For all we know, status message ends before \r\n */
+    char* header_end = strstr(header, "\r\n");
+    char* status_message = (char*)calloc(header_end-header, sizeof(char));
+    if (sscanf(header, "%*s %d %[^\r]\r\n", &status_code, status_message) < 1) 
+    {
         if (response != NULL) {
             response_output->http_response_code = 503; /* server error */
         }
@@ -1626,7 +1635,8 @@ static EHTTP_HeaderParse s_LBOS_ParseHeader(const char*      header,
     }
     /* check for empty document */
     if (response != NULL) {
-        response_output->http_response_code = code;
+        response_output->http_response_code = status_code;
+        response_output->http_status_mesage = status_message;
     }
     return eHTTP_HeaderSuccess;
 }
@@ -1850,16 +1860,19 @@ ELBOS_Result s_LBOS_Announce(const char*             service,
                              const char*             version,
                              unsigned short          port,
                              const char*             healthcheck_url,
-                             char**                  lbos_answer)
+                             char**                  lbos_answer,
+                             int*                    http_status_code,
+                             char**                  http_status_message)
 {
     char** lbos_addresses;
-    int response_code;
+    int status_code;
+    char* status_message = NULL;
     SConnNetInfo* net_info;
     ELBOS_Result return_code;
-    const char* query_format;
-    char* buf;
+    const char* query_format = NULL;
+    char* buf = NULL; /* for answer from lbos */
     int last_code;
-    char* lbos_addr;
+    char* lbos_addr = NULL;
     int parsed_symbols;
     int i;
 
@@ -1870,13 +1883,13 @@ ELBOS_Result s_LBOS_Announce(const char*             service,
         return eLBOS_Off;
     }
     lbos_addresses = s_LBOS_InstancesList;
-    response_code = 0;
+    status_code = 0;
+    status_message = NULL;
     net_info = ConnNetInfo_Create(service);
     net_info->req_method = eReqMethod_Post;
     return_code = eLBOS_Success;
     query_format = "http://%s/lbos/json/announce?name=%s&"
                                "version=%s&port=%hu&check=%s";
-    buf = NULL; /* for answer from lbos */
     last_code = 0; /* remember last non-zero http response code to analyze 
                          it (we do not give up on first fail, but it is 
                          better to know error code than "no connection" 
@@ -1900,21 +1913,29 @@ ELBOS_Result s_LBOS_Announce(const char*             service,
             continue;
         }
         query = (char*)calloc(strlen(query_format) + 
-                                      strlen(lbos_addresses[i]) + 
-                                      strlen(service) + strlen(version) +
-                                      5/* port */ + strlen(healthcheck_url),
-                                    sizeof(char));
+                                  strlen(lbos_addresses[i]) + 
+                                  strlen(service) + strlen(version) +
+                                  5/* port */ + strlen(healthcheck_url),
+                              sizeof(char));
         sprintf(query,
                 query_format,
                 lbos_addresses[i], service, version, port, healthcheck_url);
-        buf = s_LBOS_UrlReadAll(net_info, query, &response_code);
-        if (response_code != 0) 
-            last_code = response_code;
+        buf = s_LBOS_UrlReadAll(net_info, query, &status_code, 
+                                &status_message);
+        if (status_code != 0)
+            last_code = status_code;
         free(query);      
     }
     if (!g_LBOS_StringIsNullOrEmpty(buf)) {
         *lbos_answer = strdup(buf);
     }
+    if (http_status_code != NULL) {
+        *http_status_code = last_code;
+    }
+    if (http_status_message != NULL && status_message != NULL) {
+        *http_status_message = strdup(status_message);
+    }
+    free(status_message);
     /* If no lbos found */
     if (last_code == 0) {
         CORE_LOG(eLOG_Warning, "g_LBOS_Announce: could not announce! "
@@ -1935,7 +1956,7 @@ ELBOS_Result s_LBOS_Announce(const char*             service,
         return_code = eLBOS_ServerError;
         goto clear_and_exit;
     }
-    /* If we announced successfully and response_code is 200,
+    /* If we announced successfully and status_code is 200,
      * let's extract lbos address */
     lbos_addr = (char*)calloc(kMaxLineSize, sizeof(char)); /* will not be 
                                                             * free()'d */
@@ -1971,7 +1992,9 @@ ELBOS_Result LBOS_Announce(const char*             service,
                            const char*             version,
                            unsigned short          port,
                            const char*             healthcheck_url,
-                           char**                  lbos_answer)
+                           char**                  lbos_answer,
+                           int*                    htp_status_code,
+                           char**                  http_status_message)
 {
     char* my_healthcheck_url;
     char* healthcheck_encoded;
@@ -2006,7 +2029,9 @@ ELBOS_Result LBOS_Announce(const char*             service,
                                                           version_encoded, 
                                                           port,
                                                           healthcheck_encoded, 
-                                                          lbos_answer);     
+                                                          lbos_answer,
+                                                          htp_status_code,
+                                                          http_status_message);     
     if (result == eLBOS_Success) {
         s_LBOS_AddAnnouncedServer(service, version, port, healthcheck_url);
     }
@@ -2021,7 +2046,9 @@ ELBOS_Result LBOS_Announce(const char*             service,
 
 
 ELBOS_Result LBOS_AnnounceFromRegistry(const char*  registry_section,
-                                       char**       lbos_answer)
+                                       char**       lbos_answer,
+                                       int*         htp_status_code,
+                                       char**       http_status_messag)
 {
     ELBOS_Result result = eLBOS_Success;
     unsigned int port;
@@ -2056,7 +2083,7 @@ ELBOS_Result LBOS_AnnounceFromRegistry(const char*  registry_section,
 
     /* Announce */    
     result = LBOS_Announce(srvc, vers, (unsigned short)port, hlth, 
-                           lbos_answer);    
+                           lbos_answer, htp_status_code, http_status_messag);    
     if (result == eLBOS_Success) {
         s_LBOS_AddAnnouncedServer(srvc, vers, port, hlth);
     }
@@ -2074,7 +2101,10 @@ clean_and_exit:
 ELBOS_Result LBOS_Deannounce(const char*       service,
                             const char*        version,
                             const char*        host,
-                            unsigned short     port)
+                            unsigned short     port,
+                            char**             lbos_answer,
+                            int*               http_status_code,
+                            char**             http_status_message)
 { 
     SConnNetInfo* net_info;
     char* buf;
@@ -2085,6 +2115,7 @@ ELBOS_Result LBOS_Deannounce(const char*       service,
     char** lbos_addresses;
     ELBOS_Result retval;
     int last_code;
+    char* status_message = NULL;
     unsigned int i;
 
     /*
@@ -2112,8 +2143,7 @@ ELBOS_Result LBOS_Deannounce(const char*       service,
     service_encoded = s_LBOS_URLEncode(service);
     version_encoded = s_LBOS_URLEncode(version);
     response_code = 0;
-    query_format = 
-                     "http://%s/lbos/json/conceal?name=%s&version=%s&port=%hu";
+    query_format = "http://%s/lbos/json/conceal?name=%s&version=%s&port=%hu";
     lbos_addresses = s_LBOS_InstancesList;
     retval = eLBOS_Success;
     last_code = 0; /* remember last non-zero http response code to analyze 
@@ -2128,6 +2158,7 @@ ELBOS_Result LBOS_Deannounce(const char*       service,
     for (i = 0;  lbos_addresses[i] != NULL && last_code != 200;  ++i) {
         char* query;
         size_t length;
+        free(buf); /* clear from previous request. No-op first time */
         if (!g_LBOS_CheckDomain(lbos_addresses[i])) {
             CORE_LOGF_X(1, eLOG_Warning, ("[%s] is not from local domain "
                                           "[%s]. Deannouncement in foreign "
@@ -2152,12 +2183,24 @@ ELBOS_Result LBOS_Deannounce(const char*       service,
                                                     query,  "&ip=", &length),
                                                             host,   &length);
         }
-        buf = s_LBOS_UrlReadAll(net_info, query, &response_code);
+        buf = s_LBOS_UrlReadAll(net_info, query, &response_code, 
+                                &status_message);
         free(query);
-        free(buf); /* buf is of no interest */
         if (response_code != 0)
             last_code = response_code;
     }
+    if (!g_LBOS_StringIsNullOrEmpty(buf)) {
+        *lbos_answer = strdup(buf);
+    }
+    free(buf); 
+    if (http_status_code != NULL) {
+        *http_status_code = last_code;
+    }
+    if (http_status_message != NULL && status_message != NULL) {
+        *http_status_message = strdup(status_message);
+    }
+    free(status_message);
+
     switch (last_code) {
     case 0:  /* could not read. try next lbos*/
         retval = eLBOS_NoLBOS;
@@ -2226,11 +2269,13 @@ void LBOS_DeannounceAll()
     CORE_UNLOCK;
     for (i = 0;  i < servers;  i++) {
         /* Deannounce */
-        LBOS_Deannounce(
-                   local_arr[i].service,
-                   local_arr[i].version,
-                   local_arr[i].host,
-                   local_arr[i].port);
+        LBOS_Deannounce(local_arr[i].service,
+                        local_arr[i].version,
+                        local_arr[i].host,
+                        local_arr[i].port,
+                        NULL,
+                        NULL, 
+                        NULL);
         /* Cleanup */
         free(local_arr[i].version);
         free(local_arr[i].host);

@@ -247,14 +247,14 @@ bool CTestLBOSApp::TestApp_Init(void)
     CONNECT_Init(dynamic_cast<ncbi::IRWRegistry*>(&config));
     char *lbos_ouput_orig = g_LBOS_UnitTesting_GetLBOSFuncs()->
         UrlReadAll(*net_info, "http://lbos.dev.be-md.ncbi.nlm.nih.gov:8080"
-        "/lbos/text/service", NULL);
+        "/lbos/text/service", NULL, NULL);
     string lbos_output = string(lbos_ouput_orig);
     free(lbos_ouput_orig);
     size_t start = 0, end = 0;
     LBOS_Deannounce("/lbostest", /* for initialization */
                     "1.0.0",
                     "lbos.dev.be-md.ncbi.nlm.nih.gov",
-                    5000);
+                    5000, NULL, NULL, NULL);
     while (start != string::npos) {
         string to_find = "/lbostest\t";
         start = lbos_output.find(to_find, start);
@@ -271,7 +271,7 @@ bool CTestLBOSApp::TestApp_Init(void)
         LBOS_Deannounce("/lbostest",
             "1.0.0",
             "lbos.dev.be-md.ncbi.nlm.nih.gov",
-            port);
+            port, NULL, NULL, NULL);
     }
     return true;
 }

@@ -87,11 +87,13 @@ typedef enum {
 * @sa LBOS_Deannounce(), LBOS_DeannounceAll()
 */
 NCBI_XCONNECT_EXPORT
-ELBOS_Result LBOS_Announce(const char*       service,
-                           const char*       version,
-                           unsigned short    port,
-                           const char*       healthcheck_url,
-                           char**            lbos_answer);
+ELBOS_Result LBOS_Announce(const char*             service,
+                           const char*             version,
+                           unsigned short          port,
+                           const char*             healthcheck_url,
+                           char**                  lbos_answer,
+                           int*                    htp_status_code,
+                           char**                  http_status_message);
 
 /** Modification of LBOS_Announce() that gets all needed parameters from 
  * registry.                                                                
@@ -109,7 +111,9 @@ ELBOS_Result LBOS_Announce(const char*       service,
  *  --------------                                                           */
 NCBI_XCONNECT_EXPORT
 ELBOS_Result LBOS_AnnounceFromRegistry(const char*  registry_section,
-                                   char**       lbos_answer);
+                                       char**       lbos_answer,
+                                       int*         http_status_code,
+                                       char**       http_status_message);
 
 /** Deannounce all servers that were announced during runtime.
 *
@@ -141,10 +145,13 @@ void LBOS_DeannounceAll(void);
 * @sa LBOS_Announce(), LBOS_DeannounceAll()
 */
 NCBI_XCONNECT_EXPORT
-ELBOS_Result LBOS_Deannounce(const char*    service,
-                             const char*    version,
-                             const char*    host,
-                             unsigned short port);
+ELBOS_Result LBOS_Deannounce(const char*       service,
+                            const char*        version,
+                            const char*        host,
+                            unsigned short     port,
+                            char**             lbos_answer,
+                            int*               http_status_code,
+                            char**             http_status_message);
 
 
 #ifdef __cplusplus

@@ -38,14 +38,6 @@ int                     s_CountServers(string    service,
                                        unsigned short port,
                                        string dtab);
 
-/** Intercept call and get healthcheck URL*/
-static
-ELBOS_Result s_FakeAnnounceEx(const char*     service,
-                              const char*      version,
-                              unsigned short   port,
-                              const char*      healthcheck_url,
-                              char**           LBOS_answer);
-
                                                                
 template <unsigned int lines>
 static EIO_Status    s_FakeReadAnnouncement(CONN conn,
@@ -54,7 +46,7 @@ static EIO_Status    s_FakeReadAnnouncement(CONN conn,
                                             size_t* n_read,
                                             EIO_ReadMethod how);
 static
-EIO_Status s_FakeReadAnnouncementWithErrorFromLBOS(CONN             conn,
+EIO_Status s_FakeReadAnnouncementWithErrorFromLBOS(CONN              conn,
                                                     void*            line,
                                                     size_t           size,
                                                     size_t*          n_read,
@@ -68,7 +60,9 @@ ELBOS_Result s_FakeAnnounceEx(const char*      service,
                               const char*      version,
                               unsigned short   port,
                               const char*      healthcheck_url,
-                              char**           LBOS_answer)  {
+                              char**           LBOS_answer,
+                              int*             htp_status_code,
+                              char**           http_status_message)  {
     s_LBOS_hostport = healthcheck_url;
     return eLBOS_DNSResolveError;
 }

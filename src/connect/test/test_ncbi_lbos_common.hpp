@@ -1016,7 +1016,7 @@ void NonStandardVersion__FoundWithDTab()
     }
     LBOS_Announce(service.c_str(), "1.1.0", port,
                   "http://lbos.dev.be-md.ncbi.nlm.nih.gov:8080/health",
-                  &*lbos_answer);
+                  &*lbos_answer, NULL, NULL);
     SleepMilliSec(1500); //ZK is not that fast
     ConnNetInfo_SetUserHeader(*net_info, 
                               "DTab-local: /lbostest=>/zk#/lbostest/1.1.0");
@@ -1042,7 +1042,7 @@ void NonStandardVersion__FoundWithDTab()
                            "version with DTab");
     /* Cleanup */
     LBOS_Deannounce(service.c_str(), "1.1.0", 
-                    "lbos.dev.be-md.ncbi.nlm.nih.gov", port);
+                    "lbos.dev.be-md.ncbi.nlm.nih.gov", port, NULL, NULL, NULL);
     lbos_answer = NULL;
     
     /*
@@ -1059,7 +1059,7 @@ void NonStandardVersion__FoundWithDTab()
     }
     LBOS_Announce(service.c_str(), "1.1.0", port,
                   "http://lbos.dev.be-md.ncbi.nlm.nih.gov:8080/health",
-                  &*lbos_answer);
+                  &*lbos_answer, NULL, NULL);
     SleepMilliSec(1500); //ZK is not that fast
     ConnNetInfo_SetUserHeader(*net_info, 
                               "DTab-local: /lbostest1=>/zk#/lbostest1/1.1.0");
@@ -1086,7 +1086,7 @@ void NonStandardVersion__FoundWithDTab()
 
     /* Cleanup */
     LBOS_Deannounce(service.c_str(), "1.1.0", 
-                    "lbos.dev.be-md.ncbi.nlm.nih.gov", port);
+                    "lbos.dev.be-md.ncbi.nlm.nih.gov", port, NULL, NULL, NULL);
     lbos_answer = NULL;
 }
 }
@@ -2095,7 +2095,7 @@ void AllOK__ReturnSuccess(int thread_num = -1)
                            port,
                            "http://lbos.dev.be-md.ncbi.nlm.nih.gov"
                                                                 ":8080/health",
-                           &*lbos_answer);
+                           &*lbos_answer, NULL, NULL);
     SleepMilliSec(1500); //ZK is not that fast
     /* Count how many servers there are */
     NCBITEST_CHECK_MESSAGE(result == eLBOS_Success,
@@ -2105,7 +2105,7 @@ void AllOK__ReturnSuccess(int thread_num = -1)
     ELBOS_Result deannounce_result = LBOS_Deannounce(node_name.c_str(),
                                             "1.0.0",
                                             "lbos.dev.be-md.ncbi.nlm.nih.gov", 
-                                             port);
+                                             port, NULL, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(deannounce_result == eLBOS_Success,
                            "Deannouncement function did not return "
                            "SUCCESS as expected");
@@ -2123,7 +2123,7 @@ void AllOK__ReturnSuccess(int thread_num = -1)
                             "1.0.0",
                             port,
                             "http://130.14.25.27:8080/health",
-                            &*lbos_answer);
+                            &*lbos_answer, NULL, NULL);
     SleepMilliSec(1500); //ZK is not that fast
     /* Count how many servers there are */
     NCBITEST_CHECK_MESSAGE(result == eLBOS_Success,
@@ -2133,7 +2133,7 @@ void AllOK__ReturnSuccess(int thread_num = -1)
     deannounce_result = LBOS_Deannounce(node_name.c_str(), 
                                         "1.0.0",
                                         "lbos.dev.be-md.ncbi.nlm.nih.gov", 
-                                        port);
+                                        port, NULL, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(deannounce_result == eLBOS_Success,
                            "Deannouncement function did not return "
                            "SUCCESS as expected");
@@ -2168,7 +2168,7 @@ void AllOK__LBOSAnswerProvided(int thread_num = -1)
                            port,
                            "http://lbos.dev.be-md.ncbi.nlm.nih.gov"
                                                                 ":8080/health",
-                           &*lbos_answer);
+                           &*lbos_answer, NULL, NULL);
     SleepMilliSec(1500); //ZK is not that fast
     /* Count how many servers there are */
     NCBITEST_CHECK_MESSAGE(result == eLBOS_Success,
@@ -2178,7 +2178,7 @@ void AllOK__LBOSAnswerProvided(int thread_num = -1)
     LBOS_Deannounce(node_name.c_str(), 
                     "1.0.0",
                     "lbos.dev.be-md.ncbi.nlm.nih.gov", 
-                    port);
+                    port, NULL, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(!g_LBOS_StringIsNullOrEmpty(*lbos_answer),
                            "Announcement function did not return "
                            "lbos answer as expected");
@@ -2199,7 +2199,7 @@ void AllOK__LBOSAnswerProvided(int thread_num = -1)
                            "1.0.0",
                            port,
                            "http://130.14.25.27:8080/health",
-                           &*lbos_answer);
+                           &*lbos_answer, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(!g_LBOS_StringIsNullOrEmpty(*lbos_answer),
                            "Announcement function did not return "
                            "lbos answer as expected");
@@ -2212,7 +2212,7 @@ void AllOK__LBOSAnswerProvided(int thread_num = -1)
     LBOS_Deannounce(node_name.c_str(), 
                     "1.0.0",
                     "lbos.dev.be-md.ncbi.nlm.nih.gov", 
-                    port);
+                    port, NULL, NULL, NULL);
 }
 
 
@@ -2242,7 +2242,7 @@ void AllOK__AnnouncedServerSaved(int thread_num = -1)
     result = 
         LBOS_Announce(node_name.c_str(), "1.0.0", port,
                       "http://lbos.dev.be-md.ncbi.nlm.nih.gov:8080/health",
-                      &*lbos_answer);
+                      &*lbos_answer, NULL, NULL);
     lbos_answer = NULL;
     NCBITEST_CHECK_MESSAGE(
         g_LBOS_UnitTesting_FindAnnouncedServer(
@@ -2258,7 +2258,7 @@ void AllOK__AnnouncedServerSaved(int thread_num = -1)
     int deannounce_result = LBOS_Deannounce(node_name.c_str(), 
                                             "1.0.0",
                                             "lbos.dev.be-md.ncbi.nlm.nih.gov", 
-                                            port);
+                                            port, NULL, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(deannounce_result == eLBOS_Success,
                            "Deannouncement function did not return "
                            "SUCCESS as expected");
@@ -2275,7 +2275,7 @@ void AllOK__AnnouncedServerSaved(int thread_num = -1)
                   "1.0.0",
                   port,
                   "http://130.14.25.27:8080/health",
-                  &*lbos_answer);
+                  &*lbos_answer, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(g_LBOS_UnitTesting_FindAnnouncedServer(
                            node_name.c_str(), 
                            "1.0.0", port, "130.14.25.27") != -1,
@@ -2285,7 +2285,7 @@ void AllOK__AnnouncedServerSaved(int thread_num = -1)
     deannounce_result = LBOS_Deannounce(node_name.c_str(), 
                                           "1.0.0",
                                           "lbos.dev.be-md.ncbi.nlm.nih.gov", 
-                                          port);
+                                          port, NULL, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(deannounce_result == eLBOS_Success,
                            "Deannouncement function did not return "
                            "SUCCESS as expected");
@@ -2309,7 +2309,7 @@ void NoLBOS__ReturnNoLBOSAndNotFind(int thread_num = -1)
                            port,
                            "http://lbos.dev.be-md.ncbi.nlm.nih.gov"
                                                            ":8080/health",
-                           &*lbos_answer);
+                           &*lbos_answer, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(result == eLBOS_NoLBOS,
                            "Announcement did not return "
                            "eLBOS_NoLBOS as expected");
@@ -2331,7 +2331,7 @@ void NoLBOS__LBOSAnswerNull(int thread_num = -1)
                   "1.0.0",
                   port,
                   "http://lbos.dev.be-md.ncbi.nlm.nih.gov:8080/health",
-                  &*lbos_answer);
+                  &*lbos_answer, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(*lbos_answer == NULL,
                            "lbos answer was not NULL as should be in case "
                            "when lbos not found");
@@ -2355,7 +2355,7 @@ void LBOSError__ReturnServerError(int thread_num = -1)
                            port,
                            "http://lbos.dev.be-md.ncbi.nlm.nih.gov"
                                                                 ":8080/health",
-                           &*lbos_answer);
+                           &*lbos_answer, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(result == eLBOS_ServerError, 
                            "Announcement did not return "
                            "eLBOS_DNSResolveError as expected");
@@ -2377,7 +2377,7 @@ void LBOSError__LBOSAnswerProvided(int thread_num = -1)
                   "1.0.0",
                   port,
                   "http://lbos.dev.be-md.ncbi.nlm.nih.gov:8080/health",
-                  &*lbos_answer);
+                  &*lbos_answer, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(strcmp
                            (*lbos_answer, "Those lbos errors are scaaary") == 0, 
                            "Message from lbos did not coincide with what "
@@ -2414,7 +2414,7 @@ void AlreadyAnnouncedInTheSameZone__ReplaceInStorage(int thread_num = -1)
     result = 
         LBOS_Announce(node_name.c_str(), "1.0.0", port,
                       "http://lbos.dev.be-md.ncbi.nlm.nih.gov:8080/health",
-                      &*lbos_answer);
+                      &*lbos_answer, NULL, NULL);
     if (g_LBOS_StringIsNullOrEmpty(*lbos_answer)) {
         NCBITEST_CHECK_MESSAGE(!g_LBOS_StringIsNullOrEmpty(*lbos_answer),
                                 "Did not gert answer after announcement");
@@ -2444,7 +2444,7 @@ void AlreadyAnnouncedInTheSameZone__ReplaceInStorage(int thread_num = -1)
                            port,
                            "http://lbos.dev.be-md.ncbi.nlm.nih.gov"
                                                                 ":8080/health",
-                           &*lbos_answer);
+                           &*lbos_answer, NULL, NULL);
     convert_result = SOCK_StringToHostPort(*lbos_answer,
                                            &lbos_addr,
                                            &lbos_port);
@@ -2470,7 +2470,7 @@ void AlreadyAnnouncedInTheSameZone__ReplaceInStorage(int thread_num = -1)
     int deannounce_result = LBOS_Deannounce(node_name.c_str(), 
                                             "1.0.0",
                                             "lbos.dev.be-md.ncbi.nlm.nih.gov", 
-                                            port);
+                                            port, NULL, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(deannounce_result == eLBOS_Success,
                            "Deannouncement function did not return "
                            "SUCCESS as expected");
@@ -2492,7 +2492,7 @@ void AnotherRegion__NoAnnounce(int thread_num = -1)
                            port, 
                            "http://lbos.dev.be-md.ncbi.nlm.nih.gov"
                                                                 ":8080/health",
-                           &*lbos_answer);
+                           &*lbos_answer, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(result == eLBOS_NoLBOS,
                            "Announcement did not return NULL lbos "
                            "answer as it should");
@@ -2522,7 +2522,7 @@ void IncorrectURL__ReturnInvalidArgs(int thread_num = -1)
                            "1.0.0",
                            port,
                            NULL,
-                           &*lbos_answer);
+                           &*lbos_answer, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(result == eLBOS_InvalidArgs,
                            "Announcement result did not match expected "
                            "eLBOS_InvalidArgs");
@@ -2539,7 +2539,7 @@ void IncorrectURL__ReturnInvalidArgs(int thread_num = -1)
                            "1.0.0",
                            port,
                            "",
-                           &*lbos_answer);
+                           &*lbos_answer, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(result == eLBOS_InvalidArgs,
                            "Announcement result did not match expected "
                            "eLBOS_InvalidArgs");
@@ -2576,7 +2576,7 @@ void IncorrectPort__ReturnInvalidArgs(int thread_num = -1)
                              0,
                              "http://lbos.dev.be-md.ncbi.nlm.nih.gov"
                                                                 ":8080/health",
-                             &*lbos_answer);
+                             &*lbos_answer, NULL, NULL);
     /* Count how many servers there are */
     NCBITEST_CHECK_MESSAGE(result == eLBOS_InvalidArgs,
                            "Announcement result did not match expected "
@@ -2608,7 +2608,7 @@ void IncorrectVersion__ReturnInvalidArgs(int thread_num = -1)
                            port,
                            "http://lbos.dev.be-md.ncbi.nlm.nih.gov"
                            ":8080/health",
-                           &*lbos_answer);
+                           &*lbos_answer, NULL, NULL);
     /* Count how many servers there are */
     NCBITEST_CHECK_MESSAGE(result == eLBOS_InvalidArgs,
                            "Announcement result did not match expected "
@@ -2626,7 +2626,7 @@ void IncorrectVersion__ReturnInvalidArgs(int thread_num = -1)
                              port,
                              "http://lbos.dev.be-md.ncbi.nlm.nih.gov"
                                                                 ":8080/health",
-                             &*lbos_answer);
+                             &*lbos_answer, NULL, NULL);
     /* Count how many servers there are */
     NCBITEST_CHECK_MESSAGE(result == eLBOS_InvalidArgs,
                            "Announcement result did not match expected "
@@ -2658,7 +2658,7 @@ void IncorrectServiceName__ReturnInvalidArgs(int thread_num = -1)
                            port,
                            "http://lbos.dev.be-md.ncbi.nlm.nih.gov"
                                                                 ":8080/health",
-                           &*lbos_answer);
+                           &*lbos_answer, NULL, NULL);
     /* Count how many servers there are */
     NCBITEST_CHECK_MESSAGE(result == eLBOS_InvalidArgs,
                            "Announcement result did not match expected "
@@ -2679,7 +2679,7 @@ void IncorrectServiceName__ReturnInvalidArgs(int thread_num = -1)
                            port,
                            "http://lbos.dev.be-md.ncbi.nlm.nih.gov"
                                                                 ":8080/health",
-                           &*lbos_answer);
+                           &*lbos_answer, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(result == eLBOS_InvalidArgs,
                            "Announcement result did not match expected "
                            "eLBOS_InvalidArgs");
@@ -2713,7 +2713,7 @@ void RealLife__VisibleAfterAnnounce(int thread_num = -1)
                                port,
                                "http://lbos.dev.be-md.ncbi.nlm.nih.gov"
                                                                 ":8080/health",
-                                &*lbos_answer);
+                                &*lbos_answer, NULL, NULL);
     SleepMilliSec(1500); //ZK is not that fast
     int count_after = s_CountServers(node_name, port);
     NCBITEST_CHECK_MESSAGE(result == eLBOS_Success,
@@ -2724,7 +2724,7 @@ void RealLife__VisibleAfterAnnounce(int thread_num = -1)
                            "increase by 1 after announcement");
     /* Cleanup */
     LBOS_Deannounce(node_name.c_str(), "1.0.0",
-                   "lbos.dev.be-md.ncbi.nlm.nih.gov", port);
+                   "lbos.dev.be-md.ncbi.nlm.nih.gov", port, NULL, NULL, NULL);
 }
 
 
@@ -2755,7 +2755,8 @@ void IP0000__ReplaceWithLocalIP(int thread_num = -1)
                                 s_FakeAnnounceEx);
     ELBOS_Result result = 
         LBOS_Announce(node_name.c_str(), "1.0.0", port, 
-                      "http://0.0.0.0:8080/health", &*lbos_answer);
+                      "http://0.0.0.0:8080/health", 
+                      &*lbos_answer, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(result == eLBOS_DNSResolveError, 
                            "Self announcement did not finish with expected "
                            "result eLBOS_DNSResolveError. Maybe mock "
@@ -2766,7 +2767,8 @@ void IP0000__ReplaceWithLocalIP(int thread_num = -1)
     
     mock1 = s_FakeGetHostByAddrEx<true, 251,252,253,147>;
     result = LBOS_Announce(node_name.c_str(), "1.0.0", port, 
-                           "http://0.0.0.0:8080/health", &*lbos_answer);
+                           "http://0.0.0.0:8080/health",
+                           &*lbos_answer, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(result == eLBOS_DNSResolveError, 
                            "Self announcement did not finish with expected "
                            "result eLBOS_DNSResolveError. Maybe mock "
@@ -2795,7 +2797,7 @@ void ResolveLocalIPError__Return_DNS_RESOLVE_ERROR(int thread_num = -1)
                                         "1.0.0",
                                         port,
                                         "http://0.0.0.0:8080/health",
-                                        &*lbos_answer);
+                                        &*lbos_answer, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(result == eLBOS_DNSResolveError, 
                            "Announcement did not finish with "
                            "eLBOS_DNSResolveError as expected");
@@ -2811,7 +2813,7 @@ void LBOSOff__ReturnELBOS_Off(int thread_num = -1)
                                         "1.0.0",
                                         8080,
                                         "http://0.0.0.0:8080/health",
-                                        &*lbos_answer);
+                                        &*lbos_answer, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(result == eLBOS_Off, 
                            "Announcement did not finish with "
                            "eLBOS_Off as expected");
@@ -2839,7 +2841,7 @@ void LBOSAnnounceCorruptOutput__ReturnServerError(int thread_num = -1)
                            port,
                            "http://lbos.dev.be-md.ncbi.nlm.nih.gov"
                                 ":8080/health",
-                           &*lbos_answer);
+                           &*lbos_answer, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(result == eLBOS_ServerError,
                            "Announcement did not return "
                            "eLBOS_DNSResolveError as expected");
@@ -2860,7 +2862,7 @@ void HealthcheckDead__ReturnELBOS_NotFound(int thread_num = -1)
      * I. Healthcheck is dead completely 
      */
     result = LBOS_Announce(node_name.c_str(), "1.0.0", port, 
-                           "http://badhealth.gov", &*lbos_answer);
+                           "http://badhealth.gov", &*lbos_answer, NULL, NULL);
     NCBITEST_CHECK_EQUAL(result, eLBOS_NotFound);
     /*
      * II. Healthcheck returns 404
@@ -2868,7 +2870,7 @@ void HealthcheckDead__ReturnELBOS_NotFound(int thread_num = -1)
     result =                                             //       missing 'h'
         LBOS_Announce(node_name.c_str(), "1.0.0", port,  //            v
                       "http://lbos.dev.be-md.ncbi.nlm.nih.gov:8080/healt", 
-                      &*lbos_answer);
+                      &*lbos_answer, NULL, NULL);
     NCBITEST_CHECK_EQUAL(result, eLBOS_NotFound);
 }
 
@@ -2883,7 +2885,8 @@ void HealthcheckDead__NoAnnouncement(int thread_num = -1)
     string node_name = s_GenerateNodeName();
     unsigned short port = s_GeneratePort(thread_num);
     LBOS_Announce(node_name.c_str(), "1.0.0", port, 
-                  "http://badhealth.gov:4096/health", &*lbos_answer);
+                  "http://badhealth.gov:4096/health", 
+                  &*lbos_answer, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(!s_CheckIfAnnounced(node_name, "1.0.0", port, 
                                               ":4096/health"), 
                            "Service was announced");
@@ -2902,7 +2905,7 @@ void ParamsGood__ReturnSuccess()
     CLBOSStatus lbos_status(true, true);
     CCObjHolder<char> lbos_answer(NULL);
     ELBOS_Result result;
-    result = LBOS_AnnounceFromRegistry(NULL, &*lbos_answer);
+    result = LBOS_AnnounceFromRegistry(NULL, &*lbos_answer, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(result == eLBOS_Success,
                                "Announcement function did not return "
                                "SUCCESS as expected");
@@ -2916,7 +2919,8 @@ void CustomSectionNoVars__ReturnInvalidArgs()
     CLBOSStatus lbos_status(true, true);
     CCObjHolder<char> lbos_answer(NULL);
     ELBOS_Result result;
-    result = LBOS_AnnounceFromRegistry("EMPTY_SECTION", &*lbos_answer);
+    result = LBOS_AnnounceFromRegistry("EMPTY_SECTION", 
+                                        &*lbos_answer, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(result == eLBOS_InvalidArgs,
                                "Announcement function did not return "
                                "eLBOS_InvalidArgs as expected");
@@ -2934,7 +2938,7 @@ void CustomSectionEmptyOrNullAndSectionIsOk__ReturnSuccess()
     /* 
      * I. NULL section 
      */
-    result = LBOS_AnnounceFromRegistry(NULL, &*lbos_answer);
+    result = LBOS_AnnounceFromRegistry(NULL, &*lbos_answer, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(result == eLBOS_Success,
                                "Announcement function did not return "
                                "SUCCESS as expected");
@@ -2945,7 +2949,7 @@ void CustomSectionEmptyOrNullAndSectionIsOk__ReturnSuccess()
     /* 
      * II. Empty section 
      */
-    result = LBOS_AnnounceFromRegistry("", &*lbos_answer);
+    result = LBOS_AnnounceFromRegistry("", &*lbos_answer, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(result == eLBOS_Success,
                            "Announcement function did not return "
                            "SUCCESS as expected");
@@ -2968,7 +2972,7 @@ void TestNullOrEmptyField(const char* field_tested)
      * I. NULL section 
      */
     result = LBOS_AnnounceFromRegistry((null_section + field_name).c_str(),
-                                   &*lbos_answer);
+                                   &*lbos_answer, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(result == eLBOS_InvalidArgs,
                                "Announcement function did not return "
                                "eLBOS_InvalidArgs as expected");
@@ -2980,7 +2984,7 @@ void TestNullOrEmptyField(const char* field_tested)
      * II. Empty section 
      */
     result = LBOS_AnnounceFromRegistry((empty_section + field_name).c_str(), 
-                                   &*lbos_answer);
+                                   &*lbos_answer, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(result == eLBOS_InvalidArgs,
                            "Announcement function did not return "
                            "eLBOS_InvalidArgs as expected");
@@ -3018,7 +3022,7 @@ void PortOutOfRange__ReturnInvalidArgs()
      * I. port = 0 
      */
     result = LBOS_AnnounceFromRegistry("SECTION_WITH_PORT_OUT_OF_RANGE1",
-                                   &*lbos_answer);
+                                   &*lbos_answer, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(result == eLBOS_InvalidArgs,
                                "Announcement function did not return "
                                "eLBOS_InvalidArgs as expected");
@@ -3030,7 +3034,7 @@ void PortOutOfRange__ReturnInvalidArgs()
      * II. port = 100000 
      */
     result = LBOS_AnnounceFromRegistry("SECTION_WITH_PORT_OUT_OF_RANGE2",
-                                   &*lbos_answer);
+                                   &*lbos_answer, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(result == eLBOS_InvalidArgs,
                                "Announcement function did not return "
                                "eLBOS_InvalidArgs as expected");
@@ -3042,7 +3046,7 @@ void PortOutOfRange__ReturnInvalidArgs()
      * III. port = 65536 
      */
     result = LBOS_AnnounceFromRegistry("SECTION_WITH_PORT_OUT_OF_RANGE3",
-                                   &*lbos_answer);
+                                   &*lbos_answer, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(result == eLBOS_InvalidArgs,
                                "Announcement function did not return "
                                "eLBOS_InvalidArgs as expected");
@@ -3058,7 +3062,7 @@ void PortContainsLetters__ReturnInvalidArgs()
     CCObjHolder<char> lbos_answer(NULL);
     ELBOS_Result result;
     result = LBOS_AnnounceFromRegistry("SECTION_WITH_CORRUPTED_PORT",
-                                   &*lbos_answer);
+                                   &*lbos_answer, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(result == eLBOS_InvalidArgs,
                            "Announcement function did not return "
                            "eLBOS_InvalidArgs as expected");
@@ -3080,7 +3084,7 @@ void HealthcheckDoesNotStartWithHttp__ReturnInvalidArgs()
     CCObjHolder<char> lbos_answer(NULL);
     ELBOS_Result result;
     result = LBOS_AnnounceFromRegistry("SECTION_WITH_CORRUPTED_HEALTHCHECK",
-                                   &*lbos_answer);
+                                   &*lbos_answer, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(result == eLBOS_InvalidArgs,
                            "Announcement function did not return "
                            "eLBOS_InvalidArgs as expected");
@@ -3097,7 +3101,7 @@ void HealthcheckDead__ReturnELBOS_NotFound()
     CCObjHolder<char> lbos_answer(NULL);
     ELBOS_Result result;
     result = LBOS_AnnounceFromRegistry("SECTION_WITH_DEAD_HEALTHCHECK",
-                                       &*lbos_answer);
+                                       &*lbos_answer, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(result == eLBOS_NotFound,
                            "Announcement function did not return "
                            "eLBOS_NotFound as expected");
@@ -3138,7 +3142,7 @@ void Deannounced__Return1(unsigned short port, int thread_num = -1)
                              port,
                              "http://lbos.dev.be-md.ncbi.nlm.nih.gov"
                                                                 ":8080/health",
-                             &*lbos_answer);
+                             &*lbos_answer, NULL, NULL);
     SleepMilliSec(1500); //ZK is not that fast
     /* Count how many servers there are */
     int count_after = s_CountServers(node_name, port);
@@ -3150,7 +3154,8 @@ void Deannounced__Return1(unsigned short port, int thread_num = -1)
                             "SUCCESS as expected");
     /* Cleanup */
     LBOS_Deannounce(node_name.c_str(), "1.0.0",
-                        "lbos.dev.be-md.ncbi.nlm.nih.gov", port);
+                    "lbos.dev.be-md.ncbi.nlm.nih.gov", port, 
+                    NULL, NULL, NULL);
     lbos_answer = NULL;
     /* Now check with IP instead of host name */
     node_name = s_GenerateNodeName();
@@ -3164,7 +3169,7 @@ void Deannounced__Return1(unsigned short port, int thread_num = -1)
                              "1.0.0",
                              port,
                              "http://130.14.25.27:8080/health",
-                             &*lbos_answer);
+                             &*lbos_answer, NULL, NULL);
 
     SleepMilliSec(1500); //ZK is not that fast
     /* Count how many servers there are */
@@ -3177,7 +3182,8 @@ void Deannounced__Return1(unsigned short port, int thread_num = -1)
                            "SUCCESS as expected");
 
     int deannounce_result = LBOS_Deannounce(node_name.c_str(), 
-                                                "1.0.0", "130.14.25.27", port);
+                                            "1.0.0", "130.14.25.27", port,
+                                            NULL, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(deannounce_result == eLBOS_Success,
                            "Deannounce did not work as expected");
 }
@@ -3209,7 +3215,7 @@ void Deannounced__AnnouncedServerRemoved(int thread_num = -1)
     result = 
         LBOS_Announce(node_name.c_str(), "1.0.0", port,
                       "http://lbos.dev.be-md.ncbi.nlm.nih.gov:8080/health",
-                      &*lbos_answer);
+                      &*lbos_answer, NULL, NULL);
     SleepMilliSec(1500); //ZK is not that fast
     NCBITEST_CHECK_MESSAGE(result == eLBOS_Success,
                                "Announcement function did not return "
@@ -3218,7 +3224,7 @@ void Deannounced__AnnouncedServerRemoved(int thread_num = -1)
     int deannounce_result = LBOS_Deannounce(node_name.c_str(), 
                                             "1.0.0",
                                             "lbos.dev.be-md.ncbi.nlm.nih.gov", 
-                                             port);
+                                             port, NULL, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(deannounce_result == eLBOS_Success,
                            "Deannouncement function did not return "
                            "SUCCESS as expected");
@@ -3239,7 +3245,8 @@ void Deannounced__AnnouncedServerRemoved(int thread_num = -1)
     }
     result = 
         LBOS_Announce(node_name.c_str(), "1.0.0", port,
-                      "http://130.14.25.27:8080/health", &*lbos_answer);
+                      "http://130.14.25.27:8080/health", 
+                      &*lbos_answer, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(result == eLBOS_Success,
                            "Announcement function did not return "
                            "SUCCESS as expected");
@@ -3252,7 +3259,8 @@ void Deannounced__AnnouncedServerRemoved(int thread_num = -1)
     /* Cleanup */
     deannounce_result = 
         LBOS_Deannounce(node_name.c_str(), "1.0.0",
-                        "lbos.dev.be-md.ncbi.nlm.nih.gov", port);
+                        "lbos.dev.be-md.ncbi.nlm.nih.gov", port, 
+                        NULL, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(
         g_LBOS_UnitTesting_FindAnnouncedServer(
            node_name.c_str(), "1.0.0", port, 
@@ -3278,7 +3286,7 @@ void NoLBOS__Return0(int thread_num = -1)
     deannounce_result = LBOS_Deannounce(node_name.c_str(), 
                                         "1.0.0", 
                                         "lbos.dev.be-md.ncbi.nlm.nih.gov", 
-                                        port);
+                                        port, NULL, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(deannounce_result == eLBOS_NoLBOS, 
                            "deannounce_result does not equal zero as expected "
                            "when lbos is not found");
@@ -3298,7 +3306,7 @@ void LBOSExistsDeannounceError__Return0(int thread_num = -1)
     deannounce_result =  LBOS_Deannounce("no such service", 
                                           "no such version",
                                           "127.0.0.1", 
-                                          port);
+                                          port, NULL, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(deannounce_result == eLBOS_ServerError,
                            "LBOS_Deannounce did not return 0 as expected on "
                            "lbos error");
@@ -3348,7 +3356,7 @@ void AnotherDomain__DoNothing(int thread_num = -1)
                                         "1.0.0", 
                                         "lbos.dev.be-md.ncbi."
                                         "nlm.nih.gov", 
-                                        port);
+                                        port, NULL, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(deannounce_result == eLBOS_NoLBOS, 
                            "deannounce_result does not equal zero as expected"
                            "when lbos is not found");
@@ -3374,12 +3382,13 @@ void NoHostProvided__LocalAddress(int thread_num = -1)
         count_before = s_CountServers(node_name, port);
     }
     LBOS_Announce(node_name.c_str(), "1.0.0", port, 
-        "http://0.0.0.0:4096/health", &*lbos_answer);
+        "http://0.0.0.0:4096/health", &*lbos_answer, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(s_CheckIfAnnounced(node_name, "1.0.0", port, 
                                               ":4096/health"), 
                            "Service was not announced");
     deannounce_result = 
-        LBOS_Deannounce(node_name.c_str(), "1.0.0", NULL, port);
+        LBOS_Deannounce(node_name.c_str(), "1.0.0", NULL, port, 
+                        NULL, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(!s_CheckIfAnnounced(node_name, "1.0.0", port, 
                                                ":4096/health"), 
                            "Service was not deannounced");
@@ -3397,7 +3406,7 @@ void LBOSOff__ReturnELBOS_Off(int thread_num = -1)
     ELBOS_Result result = LBOS_Deannounce("lbostest",
                                            "1.0.0",
                                            "lbos.dev.be-md.ncbi.nlm.nih.gov",
-                                           8080);
+                                           8080, NULL, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(result == eLBOS_Off,
                            "Dennouncement did not finish with "
                            "eLBOS_Off as expected");
@@ -3409,7 +3418,8 @@ void NotExists__ReturnELBOS_NotFound(int thread_num = -1)
     CLBOSStatus lbos_status(true, true);
     ELBOS_Result result = 
         LBOS_Deannounce("notexists", "1.0.0", 
-                        "lbos.dev.be-md.ncbi.nlm.nih.gov", 8080);
+                        "lbos.dev.be-md.ncbi.nlm.nih.gov", 8080, 
+                        NULL, NULL, NULL);
     NCBITEST_CHECK_MESSAGE(result == eLBOS_NotFound,
         "Dennouncement did not finish with "
         "eLBOS_Off as expected");
@@ -3441,7 +3451,7 @@ void AllDeannounced__NoSavedLeft(int thread_num = -1)
         counts_before.push_back(count_before);
         LBOS_Announce(node_name.c_str(), "1.0.0", ports[i],
                       "http://lbos.dev.be-md.ncbi.nlm.nih.gov:8080/health",
-                      &*lbos_answer);
+                      &*lbos_answer, NULL, NULL);
     }
     LBOS_DeannounceAll();
     SleepMilliSec(10000); //We need lbos to clear cache
@@ -5336,7 +5346,7 @@ bool s_CheckIfAnnounced(string service,
     SOCK_gethostbyaddrEx(0, health_hostport, 1023 - 1, eOn);
     CCObjHolder<char> lbos_output_orig(g_LBOS_UnitTesting_GetLBOSFuncs()->
             UrlReadAll(*net_info, "http://lbos.dev.be-md.ncbi.nlm.nih.gov:8080"
-                                 "/lbos/text/service", NULL));
+                                 "/lbos/text/service", NULL, NULL));
     if (*lbos_output_orig == NULL) 
         lbos_output_orig = strdup("");
     string lbos_output(*lbos_output_orig);

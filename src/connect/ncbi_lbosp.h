@@ -35,7 +35,7 @@
 */
 #include "ncbi_servicep.h"
 #include <connect/ncbi_http_connector.h>
-#include <connect/ncbi_lbos.h>
+#include "ncbi_lbos.h"
 
 
 #ifdef __cplusplus
@@ -95,6 +95,7 @@ typedef struct {
  *  only for unit testing)                                                   */
 typedef struct {
     int http_response_code;
+    char* http_status_mesage;
     const char* header;
 } SLBOS_UserData;
 
@@ -229,13 +230,15 @@ SSERV_Info* FLBOS_GetNextInfoMethod(SERV_ITER  iter,
  * @return
  *  Code of success or some error.
  * @see
- *  ELBOS_Result                                                      */
+ *  ELBOS_Result                                                             */
 typedef
 ELBOS_Result FLBOS_AnnounceMethod(const char*      service,
-                                           const char*      version,
-                                           unsigned short   port,
-                                           const char*      healthcheck_url,
-                                           char**           LBOS_answer);
+                                  const char*      version,
+                                  unsigned short   port,
+                                  const char*      healthcheck_url,
+                                  char**           LBOS_answer,
+                                  int*             http_status_code,
+                                  char**           http_status_message);
 
 
 /** Deannounce previously announced service.
@@ -253,12 +256,16 @@ ELBOS_Result FLBOS_AnnounceMethod(const char*      service,
  * @return               
  *  false - any error, no deannounce was made;
  *  true - success, deannounce was made.                                     */
+
 typedef
 int/*bool*/ FLBOS_DeannounceMethod(const char*       lbos_hostport,
                                    const char*       service,
                                    const char*       version,
                                    const char*       host,
-                                   unsigned short    port);
+                                   unsigned short    port,
+                                   char**            lbos_answer,
+                                   int*              http_status_code,
+                                   char**            http_status_message);
 
 
 /** This function test existence of the application that should always be 
@@ -269,7 +276,8 @@ void FLBOS_InitializeMethod(void);
 
 typedef char* FLBOS_UrlReadAllMethod(SConnNetInfo* net_info, 
                                      const char*   url,
-                                     int* response_code);
+                                     int*          status_code,
+                                     char**        status_message);
 
 
 /** Standard parse header function. The only thing considered is that
