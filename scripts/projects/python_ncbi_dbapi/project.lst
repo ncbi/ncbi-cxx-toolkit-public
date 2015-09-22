@@ -1,5 +1,6 @@
 corelib$
 util$
+util/bitset$
 connect$
 connect/ext$
 dll
