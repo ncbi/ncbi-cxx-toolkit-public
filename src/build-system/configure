@@ -38521,7 +38521,7 @@ if test "$with_vdb" != "no" ; then
    if test "$with_downloaded_vdb" != "no"; then
       { echo "$as_me:$LINENO: trying to build the NCBI SRA/VDB Toolkit from GitHub." >&5
 echo "$as_me: trying to build the NCBI SRA/VDB Toolkit from GitHub." >&6;}
-      VDB_PATH=`$srcdir/scripts/common/add_vdb.sh 2>&5`
+      VDB_PATH=`$real_srcdir/scripts/common/add_vdb.sh 2>&5`
       status=$?
       if test $status != 0; then
          message="SRA/VDB build failed with status $status"

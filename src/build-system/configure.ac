@@ -6703,7 +6703,7 @@ if test "$with_vdb" != "no" ; then
    fi
    if test "$with_downloaded_vdb" != "no"; then
       AC_MSG_NOTICE([trying to build the NCBI SRA/VDB Toolkit from GitHub.])
-      VDB_PATH=`$srcdir/scripts/common/add_vdb.sh 2>&AS_MESSAGE_LOG_FD`
+      VDB_PATH=`$real_srcdir/scripts/common/add_vdb.sh 2>&AS_MESSAGE_LOG_FD`
       status=$?
       if test $status != 0; then
          message="SRA/VDB build failed with status $status"
