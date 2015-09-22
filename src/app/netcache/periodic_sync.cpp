@@ -1058,11 +1058,13 @@ CNCActiveSyncControl::x_CleanSyncObjects(void)
     m_RemoteBlobs.clear();
     m_CurRemoteBlob = m_RemoteBlobs.begin();
 
+#if 0
     ITERATE(TNCBlobSumList, it, m_LocalBlobs) {
         delete it->second;
     }
     m_LocalBlobs.clear();
     m_CurLocalBlob = m_LocalBlobs.begin();
+#endif
 
     ITERATE(TReducedSyncEvents, it, m_RemoteEvents) {
         delete it->second.wr_or_rm_event;
@@ -1070,10 +1072,12 @@ CNCActiveSyncControl::x_CleanSyncObjects(void)
     }
     m_RemoteEvents.clear();
 
+#if 0
     m_Events2Get.clear();
     m_Events2Send.clear();
     m_CurGetEvent = m_Events2Get.begin();
     m_CurSendEvent = m_Events2Send.begin();
+#endif
 }
 
 void

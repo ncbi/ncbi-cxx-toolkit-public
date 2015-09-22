@@ -1061,7 +1061,7 @@ CNCPeerControl::RemoveSyncControl(CNCActiveSyncControl* sync_ctrl)
     m_ObjLock.Lock();
     ERASE_ITERATE(TNCActiveSyncList, it_sync, m_SyncList) {
         CNCActiveSyncControl* ctrl = *it_sync;
-        if (sync_ctrl == *it_sync) {
+        if (sync_ctrl == ctrl) {
             m_SyncList.erase(it_sync);
         }
     }
