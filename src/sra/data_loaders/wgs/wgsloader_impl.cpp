@@ -37,8 +37,12 @@
 #include <objects/seqloc/seqloc__.hpp>
 #include <objects/seq/seq__.hpp>
 #include <objects/seqres/seqres__.hpp>
-#include <objects/id2/id2__.hpp>
-#include <objects/id2/id2_client.hpp>
+
+//#define USE_ID2_CLIENT
+#ifdef USE_ID2_CLIENT
+# include <objects/id2/id2__.hpp>
+# include <objects/id2/id2_client.hpp>
+#endif
 
 #include <objmgr/impl/data_source.hpp>
 #include <objmgr/impl/tse_loadlock.hpp>
@@ -285,6 +289,8 @@ class CWGSID2Resolver : public CObject,
                         public CWGSDataLoader_Impl::IAccResolver
 {
 public:
+    CWGSID2Resolver(void) : m_Initialized(false) {}
+
     typedef CWGSDataLoader_Impl::TWGSPrefixes TWGSPrefixes;
 
     virtual void Resolve(TWGSPrefixes& prefixes, TGi gi);
@@ -293,12 +299,15 @@ public:
     void Resolve(TWGSPrefixes& prefixes, const CSeq_id& id);
 
     string ParseWGSPrefix(const CSeq_id& id) const;
-    string ParseWGSPrefix(const CID2_Reply& reply) const;
 
 private:
     CMutex m_Mutex;
+    bool m_Initialized;
     CRef<CDataLoader> m_GBLoader;
+#ifdef USE_ID2_CLIENT
+    string ParseWGSPrefix(const CID2_Reply& reply) const;
     CRef<CID2Client> m_ID2Client;
+#endif
 };
 
 
@@ -331,6 +340,7 @@ string CWGSID2Resolver::ParseWGSPrefix(const CSeq_id& id) const
 }
 
 
+#ifdef USE_ID2_CLIENT
 string CWGSID2Resolver::ParseWGSPrefix(const CID2_Reply& reply) const
 {
     if ( !reply.GetReply().IsGet_seq_id() ) {
@@ -349,14 +359,16 @@ string CWGSID2Resolver::ParseWGSPrefix(const CID2_Reply& reply) const
     }
     return string();
 }
+#endif
 
 
 void CWGSID2Resolver::Resolve(TWGSPrefixes& prefixes, const CSeq_id& id)
 {
     prefixes.clear();
-    if ( !m_ID2Client && !m_GBLoader ) {
+    if ( !m_Initialized ) {
         CMutexGuard guard(m_Mutex);
-        if ( !m_ID2Client && !m_GBLoader ) {
+        if ( !m_Initialized ) {
+            m_Initialized = true;
             m_GBLoader =
                 CObjectManager::GetInstance()->FindDataLoader(kGBLoaderName);
             if ( m_GBLoader ) {
@@ -366,11 +378,13 @@ void CWGSID2Resolver::Resolve(TWGSPrefixes& prefixes, const CSeq_id& id)
                 }
             }
             else {
+#ifdef USE_ID2_CLIENT
                 if ( GetDebugLevel() >= 1 ) {
                     ERR_POST_X(16, "CWGSDataLoader: "
                                "Using CID2Client to resolve ids");
                 }
                 m_ID2Client = new CID2Client();
+#endif
             }
         }
     }
@@ -393,7 +407,8 @@ void CWGSID2Resolver::Resolve(TWGSPrefixes& prefixes, const CSeq_id& id)
             }
         }
     }
-    else if ( m_ID2Client ) {
+#ifdef USE_ID2_CLIENT
+    if ( m_ID2Client ) {
         CID2_Request_Get_Seq_id req;
         req.SetSeq_id().SetSeq_id(const_cast<CSeq_id&>(id));
         req.SetSeq_id_type(req.eSeq_id_type_general);
@@ -415,6 +430,7 @@ void CWGSID2Resolver::Resolve(TWGSPrefixes& prefixes, const CSeq_id& id)
             }
         }
     }
+#endif
 }
 
 
