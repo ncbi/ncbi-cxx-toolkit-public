@@ -161,11 +161,11 @@ int s_SoftSocketLimit = 0;
 int s_HardSocketLimit = 0;
 static int s_SocketTimeout = 0;
 static Uint1 s_OldSocksDelBatch = 0;
-static Uint4 s_ConnTimeout = 10;
+static Uint8 s_ConnTimeout = 10;
 static string s_HostName;
 
 
-extern Uint4 s_CurJiffies;
+extern Uint8 s_CurJiffies;
 extern CSrvTime s_JiffyTime;
 extern SSrvThread** s_Threads;
 
@@ -177,8 +177,8 @@ ConfigureSockets(CNcbiRegistry* reg, CTempString section)
 {
     s_SoftSocketLimit = reg->GetInt(section, "soft_sockets_limit", 1000);
     s_HardSocketLimit = reg->GetInt(section, "hard_sockets_limit", 2000);
-    s_ConnTimeout = Uint4(Uint8(reg->GetInt(section, "connection_timeout", 100))
-                            * kNSecsPerMSec / s_JiffyTime.NSec());
+    s_ConnTimeout = Uint8(reg->GetInt(section, "connection_timeout", 100))
+                            * kNSecsPerMSec / s_JiffyTime.NSec();
     s_SocketTimeout = reg->GetInt(section, "min_socket_inactivity", 300);
     s_OldSocksDelBatch = Uint1(reg->GetInt(section, "sockets_cleaning_batch", 10));
     if (s_OldSocksDelBatch < 10)

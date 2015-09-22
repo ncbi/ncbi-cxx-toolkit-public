@@ -41,6 +41,7 @@ BEGIN_NCBI_SCOPE
 // uses Boost intrusive set to hold task stat (versus std::set)
 // uses member_hook, because base_hook caused conflicts on linking
 #define __NC_TASKS_INTR_SET 1
+extern Uint8 s_CurJiffies;
 
 
 class CRequestContext;
@@ -314,6 +315,7 @@ protected:
     /// state-implementing functions until no state change is requested.
     virtual void ExecuteSlice(TSrvThreadNum /* thr_num */)
     {
+#if 0
         for (;;) {
             FStateFunc next_state = (((Me*)this)->*m_CurState)().func;
             if (next_state == NULL)
@@ -324,6 +326,22 @@ protected:
             return;
 #endif
         }
+#else
+// attempt to make NC more responsive
+        Uint8 start = s_CurJiffies;
+        for (;;) {
+            FStateFunc next_state = (((Me*)this)->*m_CurState)().func;
+            if (next_state == NULL)
+                return;
+            m_CurState = next_state;
+#ifndef _DEBUG
+            if (s_CurJiffies - start > 1) {
+                SetRunnable();
+                return;
+            }
+#endif
+        }
+#endif
     }
 
 private:

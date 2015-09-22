@@ -108,7 +108,7 @@ static int s_IdleStopTimeout = 300;
 
 
 extern SSrvThread** s_Threads;
-extern Uint4 s_CurJiffies;
+extern Uint8 s_CurJiffies;
 extern CSrvTime s_JiffyTime;
 
 

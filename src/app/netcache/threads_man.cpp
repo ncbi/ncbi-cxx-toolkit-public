@@ -71,7 +71,7 @@ static CFutex s_SvcSignal;
 TSrvThreadNum s_MaxRunningThreads = 20;
 
 
-extern Uint4 s_CurJiffies;
+extern Uint8 s_CurJiffies;
 extern CSrvTime s_JiffyTime;
 extern string s_AppBaseName;
 

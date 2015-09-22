@@ -50,7 +50,7 @@ private:
 
 CSrvTime s_SrvStartTime;
 CSrvTime s_LastJiffyTime;
-Uint4 s_CurJiffies = 0;
+Uint8 s_CurJiffies = 0;
 CSrvTime s_JiffyTime;
 static time_t s_TZAdjustment = 0;
 static CTZAdjuster* s_Adjuster = NULL;

@@ -75,7 +75,7 @@ enum EThreadState {
 struct SSrvThread : public CSrvRCUUser
 {
     TSrvThreadNum thread_num;
-    Uint4 seen_jiffy;
+    Uint8 seen_jiffy;
     int seen_secs;
     EThreadState thread_state;
     EServerState seen_srv_state;

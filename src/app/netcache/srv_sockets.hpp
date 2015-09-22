@@ -278,7 +278,7 @@ public:
     char* m_WrBuf;
     /// Jiffy number when Connect() method was called. Variable is used to
     /// track connection timeouts.
-    Uint4 m_ConnStartJfy;
+    Uint8 m_ConnStartJfy;
     /// File descriptor for the socket.
     int m_Fd;
     /// Size of data available for reading in the read buffer.
