@@ -3015,6 +3015,10 @@ bool CAlignFormatUtil::IsWGSPattern(string &wgsAccession)
     const unsigned int kWgsProjIDLengthMax = 10;
     bool isWGS = true;
 
+    if (wgsAccession.size() < 6) {
+        return false;
+    }
+
     if(NStr::Find(wgsAccession, ".") != NPOS) { //Accession has version AUXO013124042.1 
 	    string version;
 		NStr::SplitInTwo(wgsAccession,".",wgsAccession,version);                
