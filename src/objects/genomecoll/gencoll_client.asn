@@ -20,7 +20,7 @@ GCClientRequest ::= CHOICE {
     get-chrtype-valid  GCClient-ValidateChrTypeLocRequest,
     get-best-assembly GCClient-FindBestAssemblyRequest,
     get-equivalent-assemblies GCClient-GetEquivalentAssembliesRequest,
-    get-assembly-blob GCClient-GetAssemblyRequest
+    get-assembly-blob GCClient-GetAssemblyBlobRequest
 }
 
 
@@ -112,6 +112,20 @@ GCClient-GetAssemblyRequest ::= SEQUENCE {
     scaf-flags GCClient-AttributeFlags DEFAULT none,
     
     component-flags GCClient-AttributeFlags DEFAULT none
+}
+
+GCClient-GetAssemblyBlobRequest ::= SEQUENCE {
+
+    -- One of accession or release id MUST BE SUPPLIED
+
+    -- Assembly accession or accession.version
+    -- (versionless accession is answered with most recent version)
+    accession VisibleString OPTIONAL,
+
+    -- release ID
+    release-id INTEGER OPTIONAL,
+
+    mode VisibleString
 }
 
 GCClient-ValidateChrTypeLocRequest ::= SEQUENCE {

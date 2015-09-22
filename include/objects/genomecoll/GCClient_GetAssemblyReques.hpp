@@ -79,6 +79,7 @@ public:
         int component_flags;
 
         SRequestParam();
+        SRequestParam(int level_, int assembly_flags_, int chromosome_flags_, int scaffold_flags_, int component_flags_);
 
         bool SetMode(EAssemblyMode mode);
         bool SetMode(const string& mode);

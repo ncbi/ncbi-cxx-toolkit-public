@@ -60,6 +60,16 @@ CGCClient_GetAssemblyRequest::SRequestParam::SRequestParam()
 {
 }
 
+CGCClient_GetAssemblyRequest::SRequestParam::SRequestParam(int level_, int assembly_flags_, int chromosome_flags_,
+                                                           int scaffold_flags_, int component_flags_)
+    : level(level_)
+    , assembly_flags(assembly_flags_)
+    , chromosome_flags(chromosome_flags_)
+    , scaffold_flags(scaffold_flags_)
+    , component_flags(component_flags_)
+{
+}
+
 bool CGCClient_GetAssemblyRequest::SRequestParam::SetMode(EAssemblyMode mode)
 {
     level            = CGCClient_GetAssemblyRequest::eLevel_component;

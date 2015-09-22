@@ -47,6 +47,7 @@
 #include <objects/genomecoll/GCClient_AssembliesForSequ.hpp>
 #include <objects/genomecoll/GCClient_EquivalentAssembl.hpp>
 #include <objects/genomecoll/GCClient_GetEquivalentAsse.hpp>
+#include <objects/genomecoll/GCClient_GetAssemblyBlobRe.hpp>
 #include <sstream>
 
 USING_NCBI_SCOPE;
@@ -85,7 +86,7 @@ void CTestGenomicCollectionsSvcApplication::Init(void)
 
     argDesc->AddKey("request", "request",
                             "Type of request", CArgDescriptions::eString);
-    argDesc->SetConstraint("request", &(*new CArgAllow_Strings,"get-chrtype-valid","get-assembly","get-best-assembly","get-all-assemblies","get-equivalent-assemblies"));
+    argDesc->SetConstraint("request", &(*new CArgAllow_Strings,"get-chrtype-valid","get-assembly","get-assembly-blob","get-best-assembly","get-all-assemblies","get-equivalent-assemblies"));
     
     argDesc->AddOptionalKey("url", "Url",
                             "URL to genemic collections service.cgi", CArgDescriptions::eString);
@@ -112,7 +113,10 @@ void CTestGenomicCollectionsSvcApplication::Init(void)
     argDesc->AddOptionalKey("-mode", "mode",
                             "mode",
                             CArgDescriptions::eInteger);
-    
+    argDesc->AddOptionalKey("-smode", "mode",
+                            "string mode",
+                            CArgDescriptions::eString);
+
     argDesc->AddOptionalKey("-level", "level",
                             "level",
                             CArgDescriptions::eInteger);
@@ -202,6 +206,15 @@ int CTestGenomicCollectionsSvcApplication::Run(void)
     return retVal;
 }
 
+template <typename TReq> void SetRequestId(TReq& req, const CArgs& args)
+{
+    if(args["acc"]) {
+        req.SetAccession(args["acc"].AsString());
+    } else {
+        req.SetRelease_id(args["rel_id"].AsInteger());
+    }
+}
+
 void CTestGenomicCollectionsSvcApplication::PrepareRequest(CGCClientRequest& gc_request, const CArgs& args)
 {
     string request = args["request"].AsString();
@@ -214,12 +227,8 @@ void CTestGenomicCollectionsSvcApplication::PrepareRequest(CGCClientRequest& gc_
     }
     else if(request == "get-assembly")
     {
-        CGCClient_GetAssemblyRequest& req = gc_request.SetGet_assembly_blob();
-        if(args["acc"]) {
-            req.SetAccession(args["acc"].AsString());
-        } else {
-            req.SetRelease_id(args["rel_id"].AsInteger());
-        }
+        CGCClient_GetAssemblyRequest& req = gc_request.SetGet_assembly();
+        SetRequestId(req, args);
 
         if(args["-mode"])
         {
@@ -241,6 +250,16 @@ void CTestGenomicCollectionsSvcApplication::PrepareRequest(CGCClientRequest& gc_
             req.SetScaf_flags(args["-scf_flags"] ? args["-scf_flags"].AsInteger():eGCClient_AttributeFlags_none);
             req.SetComponent_flags(args["-comp_flags"] ? args["-comp_flags"].AsInteger():eGCClient_AttributeFlags_none);
         }
+    }
+    else if(request == "get-assembly-blob")
+    {
+        CGCClient_GetAssemblyBlobRequest& req = gc_request.SetGet_assembly_blob();
+        SetRequestId(req, args);
+
+        if(!args["-smode"] || args["-smode"].AsString().empty()) {
+            ERR_POST(Error << "Invalid get-assembly-blob string mode");
+        }
+        req.SetMode(args["-smode"].AsString());
     }
     else if(request == "get-best-assembly" || request == "get-all-assemblies")
     {
@@ -276,10 +295,7 @@ int CTestGenomicCollectionsSvcApplication::RunServerDirect(const CArgs& args, CN
     ostringstream outStr(ios::out|ios::binary);
     ostringstream errStr;
     int exitCode = -1;
-    char* env[2];
-    env[0] = "REQUEST_METHOD=POST";
-    env[1] = 0;
-    
+    const char* env[] = {"REQUEST_METHOD=POST", 0};
 
     vector<string> emptyArgs;
     CPipe::EFinish retVal = CPipe::ExecWait (cmd, emptyArgs, inStr, outStr, errStr, exitCode, kEmptyStr, env);
@@ -379,6 +395,21 @@ int CTestGenomicCollectionsSvcApplication::RunUsingClient(const CArgs& args, CNc
                     reply.Reset(cli->GetAssembly(args["rel_id"].AsInteger(), levelFlag, asmFlags, chrAttrFlags, scafAttrFlags, compAttrFlags));
             }
 
+            ostr << *reply;
+        }
+        else if(request == "get-assembly-blob")
+        {
+            if(!args["-smode"] || args["-smode"].AsString().empty()) {
+                ERR_POST(Error << "Invalid get-assembly-blob string mode");
+            }
+
+            CRef<CGC_Assembly> reply;
+            if (args["acc"])
+                reply.Reset(cli->GetAssembly(args["acc"].AsString(), args["-smode"].AsString()));
+            else if (args["rel_id"])
+                reply.Reset(cli->GetAssembly(args["rel_id"].AsInteger(), args["-smode"].AsString()));
+            else
+                ERR_POST(Error << "Either accession or release id should be provided");
             ostr << *reply;
         }
         else if(request == "get-best-assembly")

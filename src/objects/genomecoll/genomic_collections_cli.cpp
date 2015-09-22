@@ -47,6 +47,7 @@
 #include <objects/genomecoll/GCClient_ValidateChrTypeLo.hpp>
 #include <objects/genomecoll/GCClient_EquivalentAssembl.hpp>
 #include <objects/genomecoll/GCClient_GetEquivalentAsse.hpp>
+#include <objects/genomecoll/GCClient_GetAssemblyBlobRe.hpp>
 #include <sstream>
 #include <util/compress/stream_util.hpp>
 
@@ -82,23 +83,25 @@ void CGenomicCollectionsService::x_Connect()
 #ifdef _DEBUG
     LOG_POST(Info << "Connecting to url:" << x_GetURL().c_str());
 #endif
-    STimeout to5Min;
-    to5Min.sec=600;
-    to5Min.usec=0;
-    SetTimeout(&to5Min);
+    STimeout to10Min;
+    to10Min.sec=600;
+    to10Min.usec=0;
+    SetTimeout(&to10Min);
 
-    string url = x_GetURL();
-    if(url.empty())
+    if(x_GetURL().empty())
         CGenomicCollectionsService_Base::x_Connect();
     else
-        x_ConnectURL(url);
+        x_ConnectURL(x_GetURL());
 }
 
-static
-CRef<CGC_Assembly> AssemblyFromBlob(const vector<char>& blob)
+template<typename TReq>
+void LogRequest(const TReq& req)
 {
-    const string blobStr(blob.begin(), blob.end());
-    return CCachedAssembly(blobStr).Assembly();
+#ifdef _DEBUG
+    ostringstream ostrstrm;
+    ostrstrm << "Making request -" << MSerial_AsnText << req;
+    LOG_POST(Info << ostrstrm.str());
+#endif
 }
 
 CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(const string& acc, 
@@ -118,17 +121,12 @@ CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(const string& acc,
     req.SetScaf_flags(scafAttrFlags);
     req.SetComponent_flags(compAttrFlags);
 
-#ifdef _DEBUG
-    ostringstream ostrstrm;
-    ostrstrm << "Making request -" << MSerial_AsnText << req;
-    LOG_POST(Info << ostrstrm.str());
-#endif
+    LogRequest(req);
 
     try {
-        //return AssemblyFromBlob(AskGet_assembly_blob(req, &reply));
         return AskGet_assembly(req, &reply);
     } catch (CException& ex) {
-        if(reply.Which() == CGCClientResponse::e_Srvr_error) {
+        if(reply.IsSrvr_error()) {
             NCBI_THROW(CException, eUnknown, reply.GetSrvr_error().GetDescription());
         }
         throw;
@@ -153,17 +151,12 @@ CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(int releaseId,
     req.SetScaf_flags(scafAttrFlags);
     req.SetComponent_flags(compAttrFlags);
 
-#ifdef _DEBUG
-    ostringstream ostrstrm;
-    ostrstrm << "Making request -" << MSerial_AsnText << req;
-    LOG_POST(Info << ostrstrm.str());
-#endif
-    
+    LogRequest(req);
+
     try {
-        //return AssemblyFromBlob(AskGet_assembly_blob(req, &reply));
         return AskGet_assembly(req, &reply);
     } catch (CException& ex) {
-        if(reply.Which() == CGCClientResponse::e_Srvr_error) {
+        if(reply.IsSrvr_error()) {
             NCBI_THROW(CException, eUnknown, reply.GetSrvr_error().GetDescription());
         }
         throw;
@@ -198,32 +191,51 @@ CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(int releaseId, CGCCli
                        params.component_flags);
 }
 
+static
+CRef<CGC_Assembly> AssemblyFromBlob(const vector<char>& blob)
+{
+    const string blobStr(blob.begin(), blob.end());
+    return CCachedAssembly(blobStr).Assembly();
+}
+
 CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(const string& acc, const string& mode)
 {
-    CGCClient_GetAssemblyRequest::SRequestParam params;
-    if(!params.SetMode(mode))
-        NCBI_THROW(CException, eUnknown, "GetAssembly: Illegal mode passed.");
+    CGCClient_GetAssemblyBlobRequest req;
+    CGCClientResponse reply;
 
-    return GetAssembly(acc,
-                       params.level,
-                       params.assembly_flags,
-                       params.chromosome_flags,
-                       params.scaffold_flags,
-                       params.component_flags);
+    req.SetAccession(acc);
+    req.SetMode(mode);
+
+    LogRequest(req);
+
+    try {
+        return AssemblyFromBlob(AskGet_assembly_blob(req, &reply));
+    } catch (CException& ex) {
+        if(reply.IsSrvr_error()) {
+            NCBI_THROW(CException, eUnknown, reply.GetSrvr_error().GetDescription());
+        }
+        throw;
+    }
 }
 
 CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(int releaseId, const string& mode)
 {
-    CGCClient_GetAssemblyRequest::SRequestParam params;
-    if(!params.SetMode(mode))
-        NCBI_THROW(CException, eUnknown, "GetAssembly: Illegal mode passed.");
+    CGCClient_GetAssemblyBlobRequest req;
+    CGCClientResponse reply;
 
-    return GetAssembly(releaseId,
-                       params.level,
-                       params.assembly_flags,
-                       params.chromosome_flags,
-                       params.scaffold_flags,
-                       params.component_flags);
+    req.SetRelease_id(releaseId);
+    req.SetMode(mode);
+
+    LogRequest(req);
+
+    try {
+        return AssemblyFromBlob(AskGet_assembly_blob(req, &reply));
+    } catch (CException& ex) {
+        if(reply.IsSrvr_error()) {
+            NCBI_THROW(CException, eUnknown, reply.GetSrvr_error().GetDescription());
+        }
+        throw;
+    }
 }
 
 string CGenomicCollectionsService::ValidateChrType(const string& chrType, const string& chrLoc)
@@ -233,17 +245,13 @@ string CGenomicCollectionsService::ValidateChrType(const string& chrType, const 
     
     req.SetType(chrType);
     req.SetLocation(chrLoc);
-    
-#ifdef _DEBUG
-    ostringstream ostrstrm;
-    ostrstrm << "Making request -" << MSerial_AsnText << req;
-    LOG_POST(Info << ostrstrm.str());
-#endif
-    
+
+    LogRequest(req);
+
     try {
         return AskGet_chrtype_valid(req, &reply);
     } catch (CException& ex) {
-        if(reply.Which() == CGCClientResponse::e_Srvr_error) {
+        if(reply.IsSrvr_error()) {
             NCBI_THROW(CException, eUnknown, reply.GetSrvr_error().GetDescription());
         }
         throw;
@@ -261,11 +269,7 @@ CRef<CGCClient_AssemblyInfo> CGenomicCollectionsService::FindBestAssembly(const 
     req.SetSort(sort_type);
     req.SetAssembly_return_limit(1);
 
-#ifdef _DEBUG
-    ostringstream ostrstrm;
-    ostrstrm << "Making request -" << MSerial_AsnText << req;
-    LOG_POST(Info << ostrstrm.str());
-#endif
+    LogRequest(req);
 
     try {
         CRef<CGCClient_AssembliesForSequences> assm = AskGet_best_assembly(req, &reply);
@@ -292,11 +296,7 @@ CRef<CGCClient_AssemblySequenceInfo> CGenomicCollectionsService::FindBestAssembl
     req.SetSort(sort_type);
     req.SetAssembly_return_limit(1);
 
-#ifdef _DEBUG
-    ostringstream ostrstrm;
-    ostrstrm << "Making request -" << MSerial_AsnText << req;
-    LOG_POST(Info << ostrstrm.str());
-#endif
+    LogRequest(req);
 
     try {
         CRef<CGCClient_AssembliesForSequences> assm = AskGet_best_assembly(req, &reply);
@@ -306,7 +306,7 @@ CRef<CGCClient_AssemblySequenceInfo> CGenomicCollectionsService::FindBestAssembl
                CRef<CGCClient_AssemblySequenceInfo>();
     } catch (const CException& ex) {
         if(reply.IsSrvr_error()) {
-            NCBI_REPORT_EXCEPTION(reply.GetSrvr_error().GetDescription(), ex);
+            NCBI_REPORT_EXCEPTION(reply.GetSrvr_error().GetDescription().c_str(), ex);
         }
         throw;
     }
@@ -322,11 +322,7 @@ CRef<CGCClient_AssembliesForSequences> CGenomicCollectionsService::FindAllAssemb
     req.SetFilter(filter_type);
     req.SetSort(sort_type);
 
-#ifdef _DEBUG
-    ostringstream ostrstrm;
-    ostrstrm << "Making request -" << MSerial_AsnText << req;
-    LOG_POST(Info << ostrstrm.str());
-#endif
+    LogRequest(req);
 
     try {
         CRef<CGCClient_AssembliesForSequences> assm = AskGet_best_assembly(req, &reply);
@@ -349,11 +345,7 @@ CRef<CGCClient_EquivalentAssemblies> CGenomicCollectionsService::GetEquivalentAs
     req.SetAccession(acc);
     req.SetEquivalency(equivalency);
 
-#ifdef _DEBUG
-    ostringstream ostrstrm;
-    ostrstrm << "Making request -" << MSerial_AsnText << req;
-    LOG_POST(Info << ostrstrm.str());
-#endif
+    LogRequest(req);
 
     try {
         CRef<CGCClient_EquivalentAssemblies> assm = AskGet_equivalent_assemblies(req, &reply);
@@ -372,6 +364,7 @@ END_objects_SCOPE // namespace ncbi::objects::
 
 USING_SCOPE(objects);
 
+/////////////////////////////////////////////////////////////
 CCachedAssembly::CCachedAssembly(CRef<CGC_Assembly> assembly)
         : m_assembly(assembly)
 {}
