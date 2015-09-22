@@ -693,7 +693,7 @@ struct SEmbeddedDataParser : public CBlobStreamHelper
 struct SDataDetector : public CStringOrBlobStorageReader
 {
 private:
-    static CJsonNode x_FillNode(CStringOrBlobStorageReader::EType type,
+    static CJsonNode x_FillNode(EType type,
             const string& data)
     {
         CJsonNode node(CJsonNode::NewObjectNode());
@@ -717,17 +717,22 @@ private:
     }
 
 public:
-    static CJsonNode CreateNode(string data)
+    static void AddNodes(CJsonNode parent, const string& name, const string& src)
     {
         // Do not combine calls to x_GetDataType and x_FillNode,
         // as x_GetDataType modifies data
-        CStringOrBlobStorageReader::EType type = x_GetDataType(data);
-        return x_FillNode(type, data);
+        string data(src);
+        EType type = x_GetDataType(data);
+        parent.SetByKey(name, x_FillNode(type, data));
+
+        if (type != eRaw && type != eEmpty) {
+            parent.SetString("raw_" + name, src);
+        }
     }
 
     static CJsonNode CreateRemoteAppNode(string data)
     {
-        CStringOrBlobStorageReader::EType type = x_GetDataType(data);
+        EType type = x_GetDataType(data);
 
         if (type == eEmbedded && SEmbeddedDataParser::GetFileName(data)) {
             CJsonNode node(CJsonNode::NewObjectNode());
@@ -783,8 +788,35 @@ private:
     TStoredFiles m_Files;
 };
 
+struct CJsonNodeUpdater
+{
+    CJsonNode node;
+
+    CJsonNodeUpdater(const string& name, CJsonNode parent)
+        : node(parent.GetByKeyOrNull(name)),
+          m_Name(name),
+          m_Parent(parent),
+          m_NewNode(!node)
+    {
+        if (m_NewNode) node = CJsonNode::NewObjectNode();
+    }
+
+
+    ~CJsonNodeUpdater()
+    {
+        if (m_NewNode) m_Parent.SetByKey(m_Name, node);
+    }
+
+private:
+    const string m_Name;
+    CJsonNode m_Parent;
+    const bool m_NewNode;
+};
+
 void CJobInfoToJSON::ProcessInput(const string& data)
 {
+    SDataDetector::AddNodes(m_JobInfo, "input", data);
+
     try {
         CStringOrBlobStorageReader reader(data, NULL);
         CRStream stream(&reader, 0, 0, CRWStreambuf::fLeakExceptions);
@@ -792,23 +824,25 @@ void CJobInfoToJSON::ProcessInput(const string& data)
 
         SPartialDeserializer request(stream);
 
-        m_JobInfo.SetInteger("run_timeout", request.GetAppRunTimeout());
-        m_JobInfo.SetBoolean("exclusive", request.IsExclusiveMode());
-        m_JobInfo.SetByKey("args",
+        CJsonNodeUpdater updater("remote_app", m_JobInfo);
+        updater.node.SetInteger("run_timeout", request.GetAppRunTimeout());
+        updater.node.SetBoolean("exclusive", request.IsExclusiveMode());
+        updater.node.SetByKey("args",
                 SDataDetector::CreateArgsNode(
                     request.GetCmdLine(), request.CreateFilesNode()));
-        m_JobInfo.SetByKey("input",
+        updater.node.SetByKey("stdin",
                 SDataDetector::CreateRemoteAppNode(request.GetInBlobIdOrData()));
-        m_JobInfo.SetString("wn_type", "remote_app");
+        m_JobInfo.SetString("job_type", "remote_app");
     }
     catch (...) {
-        m_JobInfo.SetByKey("input", SDataDetector::CreateNode(data));
-        m_JobInfo.SetString("wn_type", "generic");
+        m_JobInfo.SetString("job_type", "generic");
     }
 }
 
 void CJobInfoToJSON::ProcessOutput(const string& data)
 {
+    SDataDetector::AddNodes(m_JobInfo, "output", data);
+
     try {
         CStringOrBlobStorageReader reader(data, NULL);
         CRStream stream(&reader, 0, 0, CRWStreambuf::fLeakExceptions);
@@ -817,14 +851,14 @@ void CJobInfoToJSON::ProcessOutput(const string& data)
         CRemoteAppResult result(NULL);
         result.Receive(stream);
 
-        m_JobInfo.SetByKey("output",
+        CJsonNodeUpdater updater("remote_app", m_JobInfo);
+        updater.node.SetByKey("stdout",
                 SDataDetector::CreateRemoteAppNode(result.GetOutBlobIdOrData()));
-        m_JobInfo.SetByKey("error",
+        updater.node.SetByKey("stderr",
                 SDataDetector::CreateRemoteAppNode(result.GetErrBlobIdOrData()));
-        m_JobInfo.SetInteger("exit_code", result.GetRetCode());
+        updater.node.SetInteger("exit_code", result.GetRetCode());
     }
     catch (...) {
-        m_JobInfo.SetByKey("output", SDataDetector::CreateNode(data));
     }
 }
 
