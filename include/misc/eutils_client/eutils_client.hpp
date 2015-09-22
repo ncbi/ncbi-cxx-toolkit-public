@@ -118,15 +118,13 @@ public:
     //return the total count
     Uint8 Search(const string& db,
                 const string& term,
-                vector<int>& uids,
+                vector<Int4>& uids,
                 string xml_path=kEmptyStr);
 
-#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
     Uint8 Search(const string& db,
                 const string& term,
-                vector<TGi>& uids,
+                vector<Int8>& uids,
                 string xml_path=kEmptyStr);
-#endif
 
     void Search(const string& db,
                 const string& term,
@@ -143,34 +141,30 @@ public:
 
     void Link(const string& db_from,
               const string& db_to,
-              const vector<int>& uids_from,
-              vector<int>& uids_to,
+              const vector<Int4>& uids_from,
+              vector<Int4>& uids_to,
               string xml_path=kEmptyStr,
               const string command="neighbor");
 
-#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
     void Link(const string& db_from,
               const string& db_to,
-              const vector<TGi>& uids_from,
-              vector<TGi>& uids_to,
+              const vector<Int8>& uids_from,
+              vector<Int8>& uids_to,
               string xml_path=kEmptyStr,
               const string command="neighbor");
-#endif
 
     void Link(const string& db_from,
               const string& db_to,
-              const vector<int>& uids_from,
+              const vector<Int4>& uids_from,
               CNcbiOstream& ostr,
               const string command="neighbor");
 
-#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
     void Link(const string& db_from,
               const string& db_to,
-              const vector<TGi>& uids_from,
+              const vector<Int8>& uids_from,
               CNcbiOstream& ostr,
               const string command="neighbor");
 
-#endif
 
     void LinkHistory(const string& db_from,
                      const string& db_to,
@@ -181,16 +175,14 @@ public:
 
 
     void Summary(const string& db,
-                const vector<int>& uids,
+                const vector<Int4>& uids,
                 xml::document& docsums,
                 const string version="");
 
-#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
     void Summary(const string& db,
-                const vector<TGi>& uids,
+                const vector<Int8>& uids,
                 xml::document& docsums,
                 const string version="");
-#endif
 
     void SummaryHistory(const string& db,
                         const string& web_env,
@@ -200,16 +192,14 @@ public:
                         CNcbiOstream& ostr);
 
     void Fetch(const string& db,
-               const vector<int>& uids,
+               const vector<Int4>& uids,
                CNcbiOstream& ostr,
                const string& retmode="xml");
 
-#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
     void Fetch(const string& db,
-               const vector<TGi>& uids,
+               const vector<Int8>& uids,
                CNcbiOstream& ostr,
                const string& retmode="xml");
-#endif
 
     void FetchHistory(const string& db,
                       const string& web_env,
@@ -224,20 +214,16 @@ public:
 
 protected:
     Uint8 ParseSearchResults(CNcbiIstream& istr,
-                             vector<int>& uids);
+                             vector<Int4>& uids);
     
-#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
     Uint8 ParseSearchResults(CNcbiIstream& istr,
-                             vector<TGi>& uids);
-#endif
+                             vector<Int8>& uids);
     
     Uint8 ParseSearchResults(const string& xml_file,
-                             vector<int>& uids);
+                             vector<Int4>& uids);
 
-#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
     Uint8 ParseSearchResults(const string& xml_file,
-                             vector<TGi>& uids);
-#endif
+                             vector<Int8>& uids);
 
 private:
     CRef<CMessageHandler> m_MessageHandler;

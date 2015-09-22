@@ -197,13 +197,15 @@ protected:
 };
 
 
-//template<class T>
+template<class T>
 class CESearchParser : public CEUtilsParser
 {
 public:
-    CESearchParser(CEutilsClient::CMessageHandler& message_handler)
+    CESearchParser(vector<T>& uids,
+                   CEutilsClient::CMessageHandler& message_handler)
         : m_MessageHandler(message_handler)
         , m_Count(0)
+        , m_Uids(uids)
     {
     }
 
@@ -258,6 +260,9 @@ protected:
         if (m_Path == "eSearchResult/Count") {
             m_Count = NStr::StringToUInt8(contents);
         }
+        else if (x_IsSuffix(m_Path, "/IdList/Id")) {
+            m_Uids.push_back(NStr::StringToNumeric<Int8>(contents));
+        }
         else if (x_IsSuffix(m_Path, "/ErrorList/PhraseNotFound")) {
             TMessage message(CEUtilsException::ePhraseNotFound, contents);
             m_ResultErrors.push_back(message);
@@ -289,6 +294,7 @@ protected:
 private:
     CEutilsClient::CMessageHandler& m_MessageHandler;
     Uint8 m_Count;
+    vector<T>& m_Uids;
 
     /// List of error messages from the E-Utils request.
     /// These are distinct from errors in parsing the
@@ -300,27 +306,6 @@ private:
     /// E-Utils reply.
     list<TMessage> m_ResultWarnings;
 };
-
-
-namespace {
-
-template<class T> T FromString(const string& str);
-
-#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)    
-template<> CStrictGi FromString<CStrictGi>(const string& str)
-{
-    return FromString<TIntId>(str);
-}
-#endif
-    
-template<class T> T FromString(const string& str)
-{
-    T value;
-    NStr::StringToNumeric(str, &value);
-    return value;
-}
-
-} //end of anonymous namespace
 
 
 template<class T>
@@ -361,7 +346,7 @@ protected:
             }
         }
         else if (m_InLinkSet && NStr::EndsWith(m_Path, "/Link/Id") ) {
-            m_Uids.push_back(FromString<T>( GetText() ));
+            m_Uids.push_back(NStr::StringToNumeric<T>( GetText() ));
         }
         return true;
     }
@@ -480,8 +465,8 @@ Uint8 CEutilsClient::Count(const string& db,
 
             istr << params;
             m_Time.push_back(CTime(CTime::eCurrent));
-            vector<int> uids;
-            CESearchParser parser(/*uids,*/ *m_MessageHandler);
+            vector<Int8> uids;
+            CESearchParser<Int8> parser(uids, *m_MessageHandler);
 
             xml::error_messages msgs;
             parser.parse_stream(istr, &msgs);
@@ -535,7 +520,7 @@ template<class T>
 Uint8 CEutilsClient::x_ParseSearchResults(CNcbiIstream& istr,
                                           vector<T>& uids)
 {
-    CESearchParser parser(/*uids,*/ *m_MessageHandler);
+    CESearchParser<T> parser(uids, *m_MessageHandler);
     xml::error_messages msgs;
     parser.parse_stream(istr, &msgs);
 
