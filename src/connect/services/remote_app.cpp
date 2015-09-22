@@ -271,9 +271,11 @@ void CRemoteAppRequest::x_Deserialize(CNcbiIstream& is, TStoredFiles* files)
         ReadStrWithLen(is, fname);
         ReadStrWithLen(is, blobid);
         if (!is.good()) return;
+
+        const bool is_blob = blobid != kLocalFSSign;
         if (partial_deserialization) {
-            files->insert(make_pair(fname, blobid));
-        } else if (blobid != kLocalFSSign) {
+            files->insert(make_pair(fname, is_blob ? blobid : kEmptyStr));
+        } else if (is_blob) {
             string nfname = GetWorkingDir() + CDirEntry::GetPathSeparator()
                 + blobid;
             CNcbiOfstream of(nfname.c_str());

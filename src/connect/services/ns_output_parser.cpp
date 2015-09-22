@@ -761,12 +761,22 @@ struct SPartialDeserializer : public CRemoteAppRequest
     {
         if (m_Files.empty()) return NULL;
 
-        CJsonNode node(CJsonNode::NewObjectNode());
+        CJsonNode array(CJsonNode::NewArrayNode());
         for (TStoredFiles::const_iterator i = m_Files.begin();
                 i != m_Files.end(); ++i) {
-            node.SetString(i->first, i->second);
+            CJsonNode file(CJsonNode::NewObjectNode());
+            file.SetString("filename", i->first);
+
+            if (i->second.empty()) {
+                file.SetString("storage", "localfile");
+            } else {
+                file.SetString("storage", "netcache");
+                file.SetString("netcache_key", i->second);
+            }
+
+            array.Append(file);
         }
-        return node;
+        return array;
     }
 
 private:
@@ -789,9 +799,11 @@ void CJobInfoToJSON::ProcessInput(const string& data)
                     request.GetCmdLine(), request.CreateFilesNode()));
         m_JobInfo.SetByKey("input",
                 SDataDetector::CreateRemoteAppNode(request.GetInBlobIdOrData()));
+        m_JobInfo.SetString("wn_type", "remote_app");
     }
     catch (...) {
         m_JobInfo.SetByKey("input", SDataDetector::CreateNode(data));
+        m_JobInfo.SetString("wn_type", "generic");
     }
 }
 
@@ -809,7 +821,7 @@ void CJobInfoToJSON::ProcessOutput(const string& data)
                 SDataDetector::CreateRemoteAppNode(result.GetOutBlobIdOrData()));
         m_JobInfo.SetByKey("error",
                 SDataDetector::CreateRemoteAppNode(result.GetErrBlobIdOrData()));
-        m_JobInfo.SetInteger("return_code", result.GetRetCode());
+        m_JobInfo.SetInteger("exit_code", result.GetRetCode());
     }
     catch (...) {
         m_JobInfo.SetByKey("output", SDataDetector::CreateNode(data));
