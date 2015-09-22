@@ -68,11 +68,11 @@ NCBITEST_AUTO_INIT()
     LBOS_Deannounce("/lbostest", /* for initialization */
         "1.0.0",
         "lbos.dev.be-md.ncbi.nlm.nih.gov",
-        5000);        
+        5000, NULL, NULL, NULL);        
 #if !LBOS_BROKEN
     CCObjHolder<char> lbos_output_orig(g_LBOS_UnitTesting_GetLBOSFuncs()->
             UrlReadAll(*net_info, "http://lbos.dev.be-md.ncbi.nlm.nih.gov:8080"
-            "/lbos/text/service", NULL));
+            "/lbos/text/service", NULL, NULL));
     if (*lbos_output_orig == NULL) 
         lbos_output_orig = strdup("");
     string lbos_output = *lbos_output_orig;
