@@ -102,6 +102,9 @@ void CWGSTestApp::Init(void)
     arg_desc->AddFlag("gi-ranges", "Print GI ranges");
     arg_desc->AddFlag("acc-ranges", "Print protein accession ranges");
     arg_desc->AddFlag("make-all-ranges", "Scan all WGS files and make two files with GI/acc ranges");
+    arg_desc->AddDefaultKey("max-gap", "MaxGap",
+                            "max gap in a single gi range",
+                            CArgDescriptions::eInteger, "100000");
 
     arg_desc->AddFlag("print_seq", "Print loader Bioseq objects");
 
@@ -329,55 +332,372 @@ int LowLevelTest(void)
 }
 #endif
 
+static const size_t kMinAccessionLength = 6;
+static const size_t kMaxAccessionLength = 8;
+typedef pair<TIntId, TIntId> TGiRange;
+typedef pair<string, string> TAccRange;
+typedef vector<TGiRange> TGiRanges;
+typedef vector<TAccRange> TAccRanges;
+typedef map<string, TGiRanges> TGiRangeIndex;
+typedef map<string, TAccRanges> TAccRangeIndex;
 
-static const TIntId kMaxGiGap = 100000;
-
-static CWGSDb::TGiRanges PackRanges(CWGSDb::TGiRanges ranges)
+static TGiRanges PackRanges(const CWGSDb::TGiRanges& src, TIntId max_gap)
 {
-    CWGSDb::TGiRanges::iterator dst = ranges.begin();
-    for ( CWGSDb::TGiRanges::iterator i = dst+1; i != ranges.end(); ++i ) {
-        if ( i->GetFrom() <= dst->GetToOpen() + kMaxGiGap ) {
-            dst->SetToOpen(i->GetToOpen());
+    TGiRanges dst;
+    ITERATE ( CWGSDb::TGiRanges, it, src ) {
+        TIntId gi_from = it->GetFrom();
+        TIntId gi_to = it->GetTo();
+        if ( !dst.empty() && gi_from <= dst.back().second + 1 + max_gap ) {
+            dst.back().second = gi_to;
         }
         else {
-            *++dst = *i;
+            dst.push_back(TGiRange(gi_from, gi_to));
         }
     }
-    ranges.erase(dst+1, ranges.end());
-    return ranges;
+    return dst;
 }
 
-static CWGSDb::TGiRanges GetNucGiRanges(CWGSDb wgs_db)
+static TGiRanges GetNucGiRanges(CWGSDb wgs_db, TIntId max_gap)
 {
-    pair<TGi, TGi> range = wgs_db.GetNucGiRange();
+    pair<TIntId, TIntId> range = wgs_db.GetNucGiRange();
     if ( !range.second ) {
-        return CWGSDb::TGiRanges();
+        return TGiRanges();
     }
 
-    size_t gi_count = TIntId(range.second) - TIntId(range.first) + 1;
+    size_t gi_count = range.second - range.first + 1;
     size_t seq_count = CWGSSeqIterator(wgs_db).GetLastRowId();
-    if ( gi_count <= seq_count + kMaxGiGap ) {
-        return CWGSDb::TGiRanges(1, CRange<TIntId>(range.first, range.second));
+    if ( gi_count <= seq_count + max_gap ) {
+        return TGiRanges(1, range);
     }
     
-    return PackRanges(wgs_db.GetNucGiRanges());
+    return PackRanges(wgs_db.GetNucGiRanges(), max_gap);
 }
 
-static CWGSDb::TGiRanges GetProtGiRanges(CWGSDb wgs_db)
+static TGiRanges GetProtGiRanges(CWGSDb wgs_db, TIntId max_gap)
 {
-    pair<TGi, TGi> range = wgs_db.GetProtGiRange();
+    pair<TIntId, TIntId> range = wgs_db.GetProtGiRange();
     if ( !range.second ) {
-        return CWGSDb::TGiRanges();
+        return TGiRanges();
     }
 
-    size_t gi_count = TIntId(range.second) - TIntId(range.first) + 1;
+    size_t gi_count = range.second - range.first + 1;
     size_t seq_count = CWGSProteinIterator(wgs_db).GetLastRowId();
-    if ( gi_count <= seq_count + kMaxGiGap ) {
-        return CWGSDb::TGiRanges(1, CRange<TIntId>(range.first, range.second));
+    if ( gi_count <= seq_count + max_gap ) {
+        return TGiRanges(1, range);
     }
     
-    return PackRanges(wgs_db.GetProtGiRanges());
+    return PackRanges(wgs_db.GetProtGiRanges(), max_gap);
 }
+
+static TAccRanges GetProtAccRanges(CWGSDb wgs_db)
+{
+    TAccRanges ret;
+    TAccRange range;
+    CWGSDb::TAccRanges ranges = wgs_db.GetProtAccRanges();
+    ITERATE ( CWGSDb::TAccRanges, it, ranges ) {
+        CWGSProtAccResolver::SAccInfo info(it->first);
+        info.m_Id = it->second.GetFrom();
+        range.first = info.GetAcc();
+        info.m_Id = it->second.GetTo();
+        range.second = info.GetAcc();
+        ret.push_back(range);
+    }
+    return ret;
+}
+
+static bool LoadGiIndex(TGiRangeIndex& index,
+                        CTime& time,
+                        const string& file_name)
+{
+    CNcbiIfstream in(file_name.c_str());
+    if ( !in ) {
+        // allow missing file
+        time = CTime(CTime::eCurrent);
+        return false;
+    }
+    if ( !CDirEntry(file_name).GetTime(&time) ) {
+        time = CTime(CTime::eCurrent);
+    }
+
+    int line = 0;
+    string wgs_acc;
+    TGiRange range;
+    char eol[128];
+    for ( ;; ) {
+        ++line;
+        if ( !(in >> wgs_acc) ) {
+            if ( in.eof() ) {
+                // end of data
+                return true;
+            }
+        }
+        size_t length = wgs_acc.size();
+        if ( length < kMinAccessionLength || length > kMaxAccessionLength ) {
+            break; // error
+        }
+        in >> range.first >> range.second;
+        if ( !in ) {
+            break; // error
+        }
+        if ( !in.getline(eol, sizeof(eol)) ) {
+            // incomplete line
+            break; // error
+        }
+        if ( TIntId(range.first) <= 0 ||
+             TIntId(range.first) > TIntId(range.second) ) {
+            break; // error
+        }
+        index[wgs_acc].push_back(range);
+    }
+    ERR_POST("LoadGiIndex: bad index file format: "<<file_name<<":"<<line);
+    return false;
+}
+
+static bool LoadAccIndex(TAccRangeIndex& index,
+                         CTime& time,
+                         const string& file_name)
+{
+    CNcbiIfstream in(file_name.c_str());
+    if ( !in ) {
+        // allow missing file
+        time = CTime(CTime::eCurrent);
+        return false;
+    }
+    if ( !CDirEntry(file_name).GetTime(&time) ) {
+        time = CTime(CTime::eCurrent);
+    }
+
+    int line = 0;
+    string wgs_acc;
+    TAccRange range;
+    char eol[128];
+    for ( ;; ) {
+        ++line;
+        if ( !(in >> wgs_acc) ) {
+            if ( in.eof() ) {
+                // end of data
+                return true;
+            }
+        }
+        size_t length = wgs_acc.size();
+        if ( length < kMinAccessionLength || length > kMaxAccessionLength ) {
+            break; // error
+        }
+        in >> range.first >> range.second;
+        if ( !in ) {
+            break; // error
+        }
+        if ( !in.getline(eol, sizeof(eol)) ) {
+            // incomplete line
+            break; // error
+        }
+        if ( range.first > range.second ) {
+            break; // error
+        }
+        index[wgs_acc].push_back(range);
+    }
+    ERR_POST("LoadAccIndex: bad index file format: "<<file_name<<":"<<line);
+    return false;
+}
+
+static void SaveGiIndex(const TGiRangeIndex& index, const string& file_name)
+{
+    CNcbiOfstream out(file_name.c_str());
+    ITERATE ( TGiRangeIndex, it, index ) {
+        ITERATE ( TGiRanges, it2, it->second ) {
+            out << it->first << ' ' << it2->first << ' ' << it2->second
+                << '\n';
+        }
+    }
+}
+
+static void SaveAccIndex(const TAccRangeIndex& index, const string& file_name)
+{
+    CNcbiOfstream out(file_name.c_str());
+    ITERATE ( TAccRangeIndex, it, index ) {
+        ITERATE ( TAccRanges, it2, it->second ) {
+            out << it->first << ' ' << it2->first << ' ' << it2->second
+                << '\n';
+        }
+    }
+}
+
+static void MakeAllRanges(TIntId max_gap)
+{
+    CStopWatch sw;
+
+    const string gi_file_name = "list.wgs_gi_ranges";
+    const string acc_file_name = "list.wgs_acc_ranges";
+
+    const string wgs_root = CDirEntry::MakePath(NCBI_TRACES04_PATH, "wgs01");
+    const string vdb_root = CDirEntry::MakePath(wgs_root, "WGS");
+    const string idx_dir = CDirEntry::MakePath(wgs_root, "wgs_aux");
+
+    map<string, TGiRanges> gi_index;
+    map<string, TAccRanges> acc_index;
+
+    CTime gi_time, acc_time;
+    // load old index files
+    LoadGiIndex(gi_index, gi_time,
+                CDirEntry::MakePath(idx_dir, gi_file_name));
+    LoadAccIndex(acc_index, acc_time,
+                 CDirEntry::MakePath(idx_dir, acc_file_name));
+
+    // make the threshold modification time from files
+    CTime rescan_time = gi_time < acc_time? gi_time: acc_time;
+    rescan_time += CTimeSpan(-1, 0, 0, 0); // one day overlap
+
+    // collecting VDB directories
+    typedef pair<CDir, CTime> TVDBDir;
+    typedef map<string, TVDBDir> TVDBDirs;
+    TVDBDirs vdb_dirs;
+    sw.Restart();
+    {
+        CDir dir0(vdb_root);
+        NcbiCout << "Scanning "<<dir0.GetPath()<<NcbiEndl;
+        CDir::TEntries dirs1 = dir0.GetEntries("??");
+        ITERATE ( CDir::TEntries, it1, dirs1 ) {
+            CDir dir1(**it1);
+            if ( !isupper(Uint1(dir1.GetName()[0])) ||
+                 !isupper(Uint1(dir1.GetName()[1])) ) {
+                continue;
+            }
+            NcbiCout << "Scanning "<<dir1.GetPath()<<NcbiEndl;
+            CDir::TEntries dirs2 = dir1.GetEntries("??");
+            ITERATE ( CDir::TEntries, it2, dirs2 ) {
+                CDir dir2(**it2);
+                if ( !isupper(Uint1(dir2.GetName()[0])) ||
+                     !isupper(Uint1(dir2.GetName()[1])) ) {
+                    continue;
+                }
+                string prefix4 = dir1.GetName()+dir2.GetName();
+                TVDBDir& slot = vdb_dirs[prefix4];
+                slot.first = dir2;
+                dir2.GetTime(&slot.second);
+            }
+        }
+    }
+    NcbiCout << "Found " << vdb_dirs.size() << " VDB directories in "
+             << fixed << setprecision(3) << sw.Elapsed() << "s" << NcbiEndl;
+
+    // collecting VDB directories
+    typedef pair<CDirEntry, CTime> TVDBFile;
+    typedef map<string, TVDBFile> TVDBFiles;
+    TVDBFiles vdb_files;
+    sw.Restart();
+    size_t dir_count = 0;
+    {
+        ITERATE ( TVDBDirs, it, vdb_dirs ) {
+            if ( it->second.second < rescan_time ) {
+                continue;
+            }
+            ++dir_count;
+            const string& prefix4 = it->first;
+            const CDir dir2 = it->second.first;
+            //NcbiCout << "Scanning "<<dir2.GetPath()<<NcbiEndl;
+            CDir::TEntries files = dir2.GetEntries(prefix4+"??");
+            ITERATE ( CDir::TEntries, it, files ) {
+                const CDirEntry& file = **it;
+                if ( !isdigit(Uint1(file.GetName()[4])) ||
+                     !isdigit(Uint1(file.GetName()[5])) ) {
+                    continue;
+                }
+                string wgs_acc = file.GetName();
+                TVDBFile& slot = vdb_files[wgs_acc];
+                slot.first = file;
+                file.GetTime(&slot.second);
+            }
+        }
+    }
+    NcbiCout << "Found " << vdb_files.size() << " recent VDB files in "
+             << fixed << setprecision(3) << sw.Elapsed() << "s" << NcbiEndl;
+
+    // remove obsolete entries
+    ERASE_ITERATE ( TGiRangeIndex, it, gi_index ) {
+        const string& wgs_acc = it->first;
+        string prefix4 = wgs_acc.substr(0, 4);
+        TVDBDirs::const_iterator dir_it = vdb_dirs.find(prefix4);
+        if ( dir_it == vdb_dirs.end() ) {
+            NcbiCout << "Erasing old gi VDB dir: " << it->first
+                     << NcbiEndl;
+            gi_index.erase(it);
+            continue;
+        }
+        if ( dir_it->second.second < rescan_time ) {
+            // old directory
+            continue;
+        }
+        TVDBFiles::const_iterator file_it = vdb_files.find(wgs_acc);
+        if ( file_it == vdb_files.end() ) {
+            NcbiCout << "Erasing old gi VDB file: " << it->first
+                     << NcbiEndl;
+            gi_index.erase(it);
+            continue;
+        }
+    }
+    ERASE_ITERATE ( TAccRangeIndex, it, acc_index ) {
+        const string& wgs_acc = it->first;
+        string prefix4 = wgs_acc.substr(0, 4);
+        TVDBDirs::const_iterator dir_it = vdb_dirs.find(prefix4);
+        if ( dir_it == vdb_dirs.end() ) {
+            NcbiCout << "Erasing old prot acc VDB dir: " << it->first
+                     << NcbiEndl;
+            acc_index.erase(it);
+            continue;
+        }
+        if ( dir_it->second.second < rescan_time ) {
+            // old directory
+            continue;
+        }
+        TVDBFiles::const_iterator file_it = vdb_files.find(wgs_acc);
+        if ( file_it == vdb_files.end() ) {
+            NcbiCout << "Erasing old prot acc VDB file: " << it->first
+                     << NcbiEndl;
+            acc_index.erase(it);
+            continue;
+        }
+    }
+
+    // update index for modified VDB files
+    CVDBMgr mgr;
+    ITERATE ( TVDBFiles, it, vdb_files ) {
+        if ( it->second.second < rescan_time ) {
+            continue;
+        }
+        const string& wgs_acc = it->first;
+        const CDirEntry& file = it->second.first;
+        NcbiCout << "Scanning "<<file.GetPath()<<NcbiEndl;
+        gi_index.erase(wgs_acc);
+        acc_index.erase(wgs_acc);
+        try {
+            CWGSDb wgs_db(mgr, file.GetPath());
+            {
+                TGiRanges ranges = GetNucGiRanges(wgs_db, max_gap);
+                TGiRanges ranges2 = GetProtGiRanges(wgs_db, max_gap);
+                ranges.insert(ranges.end(),
+                              ranges2.begin(),
+                              ranges2.end());
+                if ( !ranges.empty() ) {
+                    gi_index[wgs_acc] = ranges;
+                }
+            }
+            {
+                TAccRanges ranges = GetProtAccRanges(wgs_db);
+                if ( !ranges.empty() ) {
+                    acc_index[wgs_acc] = ranges;
+                }
+            }
+        }
+        catch ( CException& exc ) {
+            ERR_POST("Exception while processing "<<file.GetPath()
+                     <<": "<<exc);
+        }
+    }
+
+    SaveGiIndex(gi_index, gi_file_name);
+    SaveAccIndex(acc_index, acc_file_name);
+}
+
 
 int CWGSTestApp::Run(void)
 {
@@ -398,84 +718,15 @@ int CWGSTestApp::Run(void)
 
     CNcbiOstream& out = cout;
 
+    if ( args["make-all-ranges"] ) {
+        MakeAllRanges(args["max-gap"].AsInteger());
+        return 0;
+    }
+
     CVDBMgr mgr;
     CStopWatch sw;
     
     sw.Restart();
-
-    if ( args["make-all-ranges"] ) {
-        CNcbiOfstream gi_ranges("list.wgs_gi_ranges");
-        CNcbiOfstream pgi_ranges("list.wgs_pgi_ranges");
-        CNcbiOfstream acc_ranges("list.wgs_acc_ranges");
-        const string wgs_root = NCBI_TRACES04_PATH "/wgs01/WGS";
-        CDir dir0(wgs_root);
-        out << "Scanning "<<dir0.GetPath()<<endl;
-        CDir::TEntries dirs1 = dir0.GetEntries("??");
-        ITERATE ( CDir::TEntries, it1, dirs1 ) {
-            CDir dir1(**it1);
-            if ( !isupper(Uint1(dir1.GetName()[0])) ||
-                 !isupper(Uint1(dir1.GetName()[1])) ) {
-                continue;
-            }
-            out << "Scanning "<<dir1.GetPath()<<endl;
-            CDir::TEntries dirs2 = dir1.GetEntries("??");
-            ITERATE ( CDir::TEntries, it2, dirs2 ) {
-                CDir dir2(**it2);
-                if ( !isupper(Uint1(dir2.GetName()[0])) ||
-                     !isupper(Uint1(dir2.GetName()[1])) ) {
-                    continue;
-                }
-                string prefix4 = dir1.GetName()+dir2.GetName();
-                out << "Scanning "<<dir2.GetPath()<<endl;
-                CDir::TEntries files = dir2.GetEntries(prefix4+"??");
-                ITERATE ( CDir::TEntries, it, files ) {
-                    const CDirEntry& file = **it;
-                    if ( !isdigit(Uint1(file.GetName()[4])) ||
-                         !isdigit(Uint1(file.GetName()[5])) ) {
-                        continue;
-                    }
-                    //out << "Scanning "<<file.GetPath()<<endl;
-                    try {
-                        CWGSDb wgs_db(mgr, file.GetPath());
-                        {
-                            CWGSDb::TGiRanges ranges = GetNucGiRanges(wgs_db);
-                            ITERATE ( CWGSDb::TGiRanges, it, ranges ) {
-                                gi_ranges << file.GetName()
-                                          << ' ' << it->GetFrom()
-                                          << ' ' << it->GetTo()
-                                          << NcbiEndl;
-                            }
-                        }
-                        {
-                            CWGSDb::TGiRanges ranges = GetProtGiRanges(wgs_db);
-                            ITERATE ( CWGSDb::TGiRanges, it, ranges ) {
-                                pgi_ranges << file.GetName()
-                                           << ' ' << it->GetFrom()
-                                           << ' ' << it->GetTo()
-                                           << NcbiEndl;
-                            }
-                        }
-                        {
-                            CWGSDb::TAccRanges ranges = wgs_db.GetProtAccRanges();
-                            ITERATE ( CWGSDb::TAccRanges, it, ranges ) {
-                                acc_ranges << file.GetName();
-                                CWGSProtAccResolver::SAccInfo info(it->first);
-                                info.m_Id = it->second.GetFrom();
-                                acc_ranges << ' ' << info.GetAcc();
-                                info.m_Id = it->second.GetTo();
-                                acc_ranges << ' ' << info.GetAcc();
-                                acc_ranges << NcbiEndl;
-                            }
-                        }
-                    }
-                    catch ( CException& exc ) {
-                        ERR_POST("Exception while processing "<<file.GetPath()<<": "<<exc);
-                    }
-                }
-            }
-        }
-        return 0;
-    }
 
     if ( verbose ) {
         try {
