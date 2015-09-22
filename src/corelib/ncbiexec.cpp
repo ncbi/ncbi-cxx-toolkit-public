@@ -253,27 +253,52 @@ string CExec::QuoteArg(const string& arg)
 }
 
 
+// More advanced quoting function for MS Windows.
+// Produce string argument accepted by ::CreateProcess() and CExec::Spawn*().
+//
+// Used code by Daniel Colascione, Microsoft Corporation:
+// http://blogs.msdn.com/b/twistylittlepassagesallalike/archive/2011/04/23/everyone-quotes-arguments-the-wrong-way.aspx
+
 string s_QuoteSpawnArg(const string& arg)
 {
 #if defined(NCBI_OS_MSWIN)
 
-    if ( arg.empty() ) {
-        return '"' + arg + '"';
-    }
-    bool have_space = (arg.find(' ') != NPOS);
-    bool have_quote = (arg.find('"') != NPOS);
-
-    if (!have_space  &&  !have_quote) {
+    if (!arg.empty()  &&  arg.find_first_of(" \t\n\v\"") == NPOS) {
         return arg;
     }
-    string s = arg;
-    if ( have_quote ) {
-        s = NStr::Replace(s, "\"", "\"\"");
+    string s;
+    s.push_back('"');
+
+    ITERATE(string, it, arg) {
+        unsigned int n_backslashes = 0;
+
+        while (it != arg.end()  &&  *it == '\\') {
+            ++it;
+            ++n_backslashes;
+        }
+        if (it == arg.end()) {
+            // Escape all backslashes, but let the terminating
+            // double quotation mark we add below be interpreted
+            // as a meta-character.
+            //
+            s.append(n_backslashes * 2, '\\');
+            break;
+
+        } else if (*it == '"') {
+            // Escape all backslashes and the following
+            // double quotation mark.
+            //
+            s.append(n_backslashes * 2 + 1, '\\');
+            s.push_back(*it);
+        } else {
+            // Backslashes aren't special here.
+            //
+            s.append(n_backslashes, '\\');
+            s.push_back(*it);
+        }
     }
-    if ( NStr::EndsWith(s, '\\') ) {
-        return '"' + s + "\\\"";
-    }
-    return '"' + s + '"';
+    s.push_back('"');
+    return s;
 #else
     return arg;
 #endif
@@ -747,7 +772,7 @@ CExec::CResult CExec::RunSilent(EMode mode, const char *cmdname,
         const char* p = NULL;
         while ( (p = va_arg(vargs, const char*)) ) {
             cmdline += _TX(" "); 
-            cmdline += _T_XSTRING(CExec::QuoteArg(p));
+            cmdline += _T_XSTRING(s_QuoteSpawnArg(p));
         }
         va_end(vargs);
     }

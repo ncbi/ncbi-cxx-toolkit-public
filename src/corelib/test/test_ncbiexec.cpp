@@ -54,25 +54,31 @@ USING_NCBI_SCOPE;
 // Array of arguments to test argument quoting in SpawnL/SpawnV
 const char* s_QuoteArgsTest[] =
 {
-    "",              // Will be overwritten with application name
-    "SpawnV_Quote",  // Test name  
+    "",             // reserved:  Will be overwritten with application name
+    "SpawnV_Quote", // reserved:  Test name  
     "", 
     " ", 
-    "\\", 
-    " \\", 
-    "\\ ", 
-    "dir\\", 
-    "dir\\path", 
-    "d i r\\p a t h", 
-    "d i r\\p a t h\\", 
-    "a b", 
-    "\"a", 
-    "a\"b", 
-    "\"a b\"",
-    "\"",
-    "\"\"",
-    "\"\"\"",
-    "\"\"\"\"",
+    "\\",
+    " \\",
+    "\\ ",
+    "dir\\",
+    "dir\\path",
+    "d i r\\p a t h",
+    "d i r\\p a t h\\",
+    "a b",
+    "\"a",          // "a
+    "a\"b",         // a"b
+    "\"a b\"",      // "a b"
+    "a\\\\b",       // a\\b
+    "a\\\\\\b",     // a\\\b
+    "a\\\"b",       // a\"b
+    "a\\\\\"b",     // a\\"b
+    "a\\\\\\\"b",   // a\\\"b
+    "a\\\\\\\\\"b", // a\\\\"b
+    "\"",           // "
+    "\"\"",         // ""
+    "\"\"\"",       // """
+    "\"\"\"\"",     // """"
     "!{} \t\r\n[|&;<>()$`'*?#~=%",
     NULL
 };
@@ -176,7 +182,6 @@ int CTest::Run(void)
     cmd = string(app_p) + " " + app_pp;
     assert( CExec::System(cmd.c_str()) == TEST_RESULT_P );
 
-
     // Spawn with eWait
     {{
         code = CExec::SpawnL  (CExec::eWait, app_c, "SpawnL_eWait", NULL).GetExitCode(); 
@@ -237,14 +242,14 @@ int CTest::Run(void)
     {{
         code = CExec::SpawnL(CExec::eWait, app_c, 
                              "SpawnL_Quote", 
-                             s_QuoteArgsTest[2],
-                             s_QuoteArgsTest[3], 
-                             s_QuoteArgsTest[4],
-                             s_QuoteArgsTest[5],
-                             s_QuoteArgsTest[6], 
-                             s_QuoteArgsTest[7],
-                             s_QuoteArgsTest[8],
-                             s_QuoteArgsTest[9], 
+                             s_QuoteArgsTest[ 2],
+                             s_QuoteArgsTest[ 3], 
+                             s_QuoteArgsTest[ 4],
+                             s_QuoteArgsTest[ 5],
+                             s_QuoteArgsTest[ 6],
+                             s_QuoteArgsTest[ 7],
+                             s_QuoteArgsTest[ 8],
+                             s_QuoteArgsTest[ 9], 
                              s_QuoteArgsTest[10],
                              s_QuoteArgsTest[11],
                              s_QuoteArgsTest[12], 
@@ -255,6 +260,12 @@ int CTest::Run(void)
                              s_QuoteArgsTest[17], 
                              s_QuoteArgsTest[18], 
                              s_QuoteArgsTest[19], 
+                             s_QuoteArgsTest[20],
+                             s_QuoteArgsTest[21],
+                             s_QuoteArgsTest[22],
+                             s_QuoteArgsTest[23],
+                             s_QuoteArgsTest[24],
+                             s_QuoteArgsTest[25],
                              NULL).GetExitCode(); 
         assert( code == TEST_RESULT_C );
         code = CExec::SpawnV(CExec::eWait, app_c, s_QuoteArgsTest).GetExitCode();
@@ -294,7 +305,7 @@ int main(int argc, const char* argv[], const char* envp[])
                 //cout << i << " = '" << s_QuoteArgsTest[i] << "'" << endl;
                 //cout << i << " = '" << NStr::PrintableString(argv[i]) << "'" << endl;
                 //cout << i << " = '" << NStr::PrintableString(s_QuoteArgsTest[i]) << "'" << endl;
-                //cout.flush();
+                cout.flush();
                 assert( NStr::CompareCase(s_QuoteArgsTest[i], argv[i]) == 0 );
             }
 

@@ -47,6 +47,11 @@ Location: include/corelib/hash_impl
 Authors:  HP, SGI, Moscow Center for SPARC Technology, and Boris Fomitchev
 License:  MITish [as in include/corlib/hash_impl/_hashtable.h]
 
+Location: src/corelib/ncbiexec.cpp
+Authors:  Daniel Colascione, Microsoft Corporation
+License:  Microsoft Limited Public License
+          [https://msdn.microsoft.com/en-US/cc300389]
+
 Location: {src,include}/dbapi/driver/ftds*/freetds
 Authors:  See src/dbapi/driver/ftds*/freetds/AUTHORS
 License:  GNU Library/Lesser General Public License
