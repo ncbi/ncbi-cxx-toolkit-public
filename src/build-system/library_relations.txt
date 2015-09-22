@@ -793,6 +793,7 @@ ncbi_xloader_vdbgraph needs $(SOBJMGR_LIBS)
 ncbi_xloader_vdbgraph needs $(SRAREAD_LIBS)
 ncbi_xloader_wgs needs $(SOBJMGR_LIBS)
 ncbi_xloader_wgs needs $(SRAREAD_LIBS)
+ncbi_xloader_wgs needs id2cli
 ncbi_xreader needs $(COMPRESS_LIBS)
 ncbi_xreader needs $(SOBJMGR_LIBS)
 ncbi_xreader needs id1
