@@ -197,7 +197,7 @@ public:
         for (int i = 0; i < gilist->GetNumGis(); i++) {
             const CSeqDBGiList::SGiOid& elem = gilist->GetGiOid(i);
             int oid = 0;
-            if ( !blastdb->GiToOid(elem.gi, oid)) {
+            if ( !blastdb->GiToOid(GI_FROM(int, elem.gi), oid)) {
                 // not found on source BLASTDB, skip
                 continue;
             }

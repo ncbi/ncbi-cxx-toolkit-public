@@ -182,7 +182,7 @@ CBlastDBCmdApp::x_AddOid(CBlastDBCmdApp::TQueries& retval,
     }
 
     // Not a NR database, add oid instead
-    vector<int> gis;
+    vector<TGi> gis;
     m_BlastDb->GetGis(oid, gis);
     if (gis.empty()) {
 	list< CRef<CSeq_id> > ids = m_BlastDb->GetSeqIDs(oid);
@@ -196,7 +196,7 @@ CBlastDBCmdApp::x_AddOid(CBlastDBCmdApp::TQueries& retval,
     // Default:  add all possible ids
     ITERATE(vector<TGi>, gi, gis) {
         retval.push_back(CRef<CBlastDBSeqId>
-                         (new CBlastDBSeqId(NStr::IntToString(*gi))));
+                         (new CBlastDBSeqId(NStr::IntToString(GI_TO(TIntId, *gi)))));
     }
 }
 
