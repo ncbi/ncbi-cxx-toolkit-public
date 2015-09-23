@@ -46,7 +46,8 @@ enum EWarningCode {
     eAttributeValueNotFoundWarning        = 6,
     eObjectNotFoundWarning                = 7,
     eConfigNotChangedWarning              = 8,
-    eRemoteObjectInfoWarning              = 9
+    eRemoteObjectInfoWarning              = 9,
+    eRemoteObjectSetExpirationWarning     = 10
 };
 
 string GetWarningCodeString(EWarningCode  code);

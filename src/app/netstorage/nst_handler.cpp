@@ -2445,33 +2445,108 @@ CNetStorageHandler::x_ProcessSetExpTime(
                    "SETEXPTIME message must have ObjectLoc or UserKey. "
                    "None of them was found.");
 
-    if (m_MetadataOption == eMetadataDisabled ||
-        m_MetadataOption == eMetadataMonitoring)
-        NCBI_THROW(CNetStorageServerException, eInvalidMetaInfoRequest,
-                   "State changing operations are restricted in HELLO");
 
-    // The only options left are NotSpecified and Required
-    x_ValidateWriteMetaDBAccess(message);
+    // The complicated logic of what and how should be done is described in the
+    // ticket CXX-7361 (see the attached pdf)
+
+    if (m_MetadataOption == eMetadataMonitoring)
+        NCBI_THROW(CNetStorageServerException, eInvalidMetaInfoRequest,
+                   "SETEXPTIME could not be used when the HELLO metadata "
+                   "option is set to Monitoring");
+
+    // Detect if the MS SQL update is required
+    bool        db_update = true;
+    if (m_MetadataOption == eMetadataDisabled)
+        db_update = false;
+    else {
+        CNSTServiceProperties       props;  // not used here
+        db_update = x_DetectMetaDBNeedUpdate(message, props);
+    }
 
     CJsonNode   reply = CreateResponseMessage(common_args.m_SerialNumber);
     CDirectNetStorageObject     direct_object = x_GetObject(message);
-    string                      object_key =
-                                        direct_object.Locator().GetUniqueKey();
-    x_CheckObjectExpiration(object_key, true, reply);
+    // Part I. Update MS SQL if needed
+    bool        db_error = false;
+    if (db_update) {
+        string  object_key = direct_object.Locator().GetUniqueKey();
 
-    x_CreateClient();
+        // true => there will be an exception, no filling of the reply message
+        x_CheckObjectExpiration(object_key, true, reply);
+        int         status = 0;
+        try {
+            x_CreateClient();
 
-    // The SP will throw an exception if an error occured
-    int         status = m_Server->GetDb().ExecSP_SetExpiration(
-                                                object_key, ttl, m_Timing);
-    if (status == -1) {
-        // Object is not found
-        NCBI_THROW(CNetStorageServerException, eNetStorageObjectNotFound,
-                   "NetStorage object is not found");
-    } else if (status != 0) {
-        // Unknown status
-        NCBI_THROW(CNetStorageServerException, eInternalError,
-                   "Unknown AddAttribute status");
+            // The SP will throw an exception if an error occured
+            status = m_Server->GetDb().ExecSP_SetExpiration(object_key, ttl,
+                                                            m_Timing);
+        } catch (const exception &  ex) {
+            AppendError(reply, CNetStorageServerException::eDatabaseError,
+                        ex.what());
+            db_error = true;
+        } catch (...) {
+            AppendError(reply, CNetStorageServerException::eDatabaseError,
+                        "Unknown metainfo DB update error");
+            db_error = true;
+        }
+
+        // It was decided that we do not continue in case of logical errors in
+        // the meta info db
+        if (db_error == false ) {
+            if (status == -1) {
+                // Object is not found
+                NCBI_THROW(CNetStorageServerException,
+                           eNetStorageObjectNotFound,
+                           "NetStorage object is not found");
+            } else if (status != 0) {
+                // Unknown status
+                NCBI_THROW(CNetStorageServerException, eInternalError,
+                           "Unknown SetExpiration status");
+            }
+        }
+
+    }
+
+    // Part II. Call the remote object SetExpiration(...)
+    try {
+        CTimeout    timeout;
+        if (ttl.m_IsNull)
+            timeout.Set(CTimeout::eInfinite);
+        else
+            timeout.Set(ttl.m_Value);
+
+        direct_object.SetExpiration(timeout);
+    } catch (const CNetStorageException &  ex) {
+        if (ex.GetErrCode() == CNetStorageException::eNotSupported) {
+            // Thanks to the CNetStorageException interface: there is no way
+            // to test if the SetExpiration() is supported. Here it is not an
+            // error, it is just that it makes no sense to call SetExpiration()
+            // for the storage.
+            if (db_error)
+                AppendWarning(reply, eRemoteObjectSetExpirationWarning,
+                              ex.what());
+        } else {
+            // That's a real problem of setting the object expiration
+            if (db_update && db_error)
+                AppendWarning(reply, eRemoteObjectSetExpirationWarning,
+                              ex.what());
+            else
+                AppendError(reply, CNetStorageServerException::eStorageError,
+                            ex.what());
+        }
+    } catch (const exception &  ex) {
+        if (db_update && db_error)
+            AppendWarning(reply, eRemoteObjectSetExpirationWarning,
+                          ex.what());
+        else
+            AppendError(reply, CNetStorageServerException::eStorageError,
+                        ex.what());
+    } catch (...) {
+        if (db_update && db_error)
+            AppendWarning(reply, eRemoteObjectSetExpirationWarning,
+                          "Unknown remote storage SetExpiration error");
+        else
+            AppendError(reply, CNetStorageServerException::eStorageError,
+                          "Unknown remote storage SetExpiration error");
     }
 
     x_SendSyncMessage(reply);
@@ -2735,40 +2810,33 @@ CNetStorageHandler::x_ValidateWriteMetaDBAccess(
                        "DB access requested for an object which was created "
                        "with no metadata flag");
 
-        string  service = object_loc_struct.GetServiceName();
+        string      service = object_loc_struct.GetServiceName();
         if (service.empty())
             service = m_Service;
         if (!m_Server->InMetadataServices(service))
             NCBI_THROW(CNetStorageServerException, eInvalidArgument,
-                       "Service (" + service +
-                       ") from the object locator is not in the list of "
-                       "configured services anymore. DB access declined.");
-    } else {
-        // This is user key identification
-        TNetStorageFlags    flags = ExtractStorageFlags(message);
-        if (flags & fNST_NoMetaData) {
-            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
-                       "Storage flags forbid access to the metainfo database. "
-                       "DB access declined.");
-        }
-    }
-
-    // Here: it is a user key, so there is no knowledge of the service and
-    // metadata request from the object identifier
-    if (m_MetadataOption == eMetadataRequired) {
-        // The service list could be reconfigured on the fly
-        if (!m_Server->InMetadataServices(m_Service))
-            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
-                       "Service provided in HELLO is not in the list of "
-                       "configured services anymore. DB access declined.");
+                       "Effective object service (" + service +
+                       ") is not in the list of "
+                       "configured services. Metainfo DB access declined.");
         return;
     }
 
+    // This is user key identification
+    TNetStorageFlags    flags = ExtractStorageFlags(message);
+    if (flags & fNST_NoMetaData) {
+        NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                   "Storage flags forbid access to the metainfo DB. "
+                   "Metainfo DB access declined.");
+    }
+
+    // There is no knowledge of the service and metadata request from the
+    // object identifier, so the HELLO service is used
     if (!m_Server->InMetadataServices(m_Service))
         NCBI_THROW(CNetStorageServerException, eInvalidArgument,
-                   "DB access requested for a not configured service");
+                   "Service provided in HELLO ("+ m_Service +
+                   ") is not in the list of "
+                   "configured services. Metainfo DB access declined.");
 }
-
 
 
 // Detects if the meta information DB should be updated
@@ -2803,29 +2871,29 @@ CNetStorageHandler::x_DetectMetaDBNeedUpdate(
         // because the list of services could be reconfigured on the fly
         if (!service_configured)
             NCBI_THROW(CNetStorageServerException, eInvalidArgument,
-                       "Service from the object locator is not in the list of "
-                       "configured services anymore. DB access declined.");
+                       "Effective object service (" + service +
+                       ") is not in the list of "
+                       "configured services. Metainfo DB access declined.");
         return true;
-    } else {
-        // This is user key identification
-        TNetStorageFlags    flags = ExtractStorageFlags(message);
-        if (flags & fNST_NoMetaData)
-            return false;
     }
 
-    // Here: it is a user key, so there is no knowledge of the service and
-    // metadata request from the object identifier
+    // This is user key identification
+    TNetStorageFlags    flags = ExtractStorageFlags(message);
+    if (flags & fNST_NoMetaData)
+        return false;
+
+    // There is no knowledge of the service and metadata request from the
+    // object identifier
     bool    service_configured = m_Server->GetServiceProperties(m_Service,
                                                                 props);
     if (m_MetadataOption == eMetadataRequired) {
         // The service list could be reconfigured on the fly
         if (!service_configured)
             NCBI_THROW(CNetStorageServerException, eInvalidArgument,
-                       "Service provided in HELLO is not in the list of "
-                       "configured services anymore. DB access declined.");
-        return true;
+                       "Service provided in HELLO (" + m_Service +
+                       ") is not in the list of "
+                       "configured services. Metainfo DB access declined.");
     }
-
     return service_configured;
 }
 
@@ -2847,14 +2915,13 @@ CNetStorageHandler::x_DetectMetaDBNeedOnCreate(TNetStorageFlags  flags)
             NCBI_THROW(CNetStorageServerException, eInvalidArgument,
                        "Service provided in HELLO (" + m_Service +
                        ") is not in the list of "
-                       "configured services anymore. DB access declined.");
-        return true;
+                       "configured services. Metainfo DB access declined.");
     }
     return service_configured;
 }
 
 
-// true if DB should be accessed
+// Returns true if the metainfo DB should be accessed
 bool
 CNetStorageHandler::x_DetectMetaDBNeedOnGetObjectInfo(
                                     const CJsonNode & message) const
@@ -2884,7 +2951,6 @@ CNetStorageHandler::x_DetectMetaDBNeedOnGetObjectInfo(
         if (flags & fNST_NoMetaData)
             return false;
     }
-
 
     // In all the other cases the access depends on if the HELLO service is
     // configured for the metadata option
