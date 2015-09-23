@@ -113,7 +113,7 @@ class NetStorageConsole:
              'junk':           [ self.sendJunk,
                                  "sends an unterminated malformed message" ],
              'setexp':         [ self.sendSetexp,
-                                 "sends SETEXPTIME message; <object locator> <ttl in secs or infinity>" ],
+                                 "sends SETEXPTIME message; <object locator> <ttl as dTh:m:s or infinity>" ],
            }
 
         self.__commandSN = 0
