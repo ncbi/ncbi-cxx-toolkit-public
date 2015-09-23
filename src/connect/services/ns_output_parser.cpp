@@ -33,6 +33,7 @@
 
 #include <sstream>
 #include <corelib/rwstream.hpp>
+#include <cgi/ncbicgi.hpp>
 #include <connect/services/ns_output_parser.hpp>
 #include <connect/services/grid_rw_impl.hpp>
 #include <connect/services/remote_app.hpp>
@@ -717,15 +718,18 @@ private:
     }
 
 public:
-    static void AddNodes(CJsonNode parent, const string& name, const string& src)
+    static bool AddNode(CJsonNode parent, const string& name, string data)
     {
         // Do not combine calls to x_GetDataType and x_FillNode,
         // as x_GetDataType modifies data
-        string data(src);
         EType type = x_GetDataType(data);
         parent.SetByKey(name, x_FillNode(type, data));
+        return type != eRaw && type != eEmpty;
+    }
 
-        if (type != eRaw && type != eEmpty) {
+    static void AddNodes(CJsonNode parent, const string& name, const string& src)
+    {
+        if (AddNode(parent, name, src)) {
             parent.SetString("raw_" + name, src);
         }
     }
@@ -813,18 +817,29 @@ private:
     const bool m_NewNode;
 };
 
+struct SStringStream : private CStringOrBlobStorageReader, public CRStream
+{
+    SStringStream(const string& data)
+        : CStringOrBlobStorageReader(data, NULL),
+          CRStream(this, 0, 0, CRWStreambuf::fLeakExceptions)
+    {
+        exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
+    }
+};
+
+static const char* s_JobType = "job_type";
+static const char* s_RemoteApp = "remote_app";
+static const char* s_RemoteCgi = "remote_cgi";
+
 void CJobInfoToJSON::ProcessInput(const string& data)
 {
     SDataDetector::AddNodes(m_JobInfo, "input", data);
 
     try {
-        CStringOrBlobStorageReader reader(data, NULL);
-        CRStream stream(&reader, 0, 0, CRWStreambuf::fLeakExceptions);
-        stream.exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
-
+        SStringStream stream(data);
         SPartialDeserializer request(stream);
 
-        CJsonNodeUpdater updater("remote_app", m_JobInfo);
+        CJsonNodeUpdater updater(s_RemoteApp, m_JobInfo);
         updater.node.SetInteger("run_timeout", request.GetAppRunTimeout());
         updater.node.SetBoolean("exclusive", request.IsExclusiveMode());
         updater.node.SetByKey("args",
@@ -832,10 +847,34 @@ void CJobInfoToJSON::ProcessInput(const string& data)
                     request.GetCmdLine(), request.CreateFilesNode()));
         updater.node.SetByKey("stdin",
                 SDataDetector::CreateRemoteAppNode(request.GetInBlobIdOrData()));
-        m_JobInfo.SetString("job_type", "remote_app");
+        m_JobInfo.SetString(s_JobType, s_RemoteApp);
+        return;
     }
     catch (...) {
-        m_JobInfo.SetString("job_type", "generic");
+    }
+    
+    try {
+        SStringStream stream(data);
+        CCgiRequest request(stream,
+                CCgiRequest::fIgnoreQueryString |
+                CCgiRequest::fDoNotParseContent);
+
+        CJsonNodeUpdater updater(s_RemoteCgi, m_JobInfo);
+        updater.node.SetString("method", request.GetRequestMethodName());
+
+        const CNcbiEnvironment& env(request.GetEnvironment());
+        list<string> names;
+        env.Enumerate(names);
+        CJsonNodeUpdater env_updater("env", updater.node);
+
+        for (list<string>::iterator i = names.begin(); i != names.end(); ++i) {
+            env_updater.node.SetString(*i, env.Get(*i));
+        }
+
+        m_JobInfo.SetString(s_JobType, s_RemoteCgi);
+    }
+    catch (...) {
+        m_JobInfo.SetString(s_JobType, "generic");
     }
 }
 
@@ -844,19 +883,30 @@ void CJobInfoToJSON::ProcessOutput(const string& data)
     SDataDetector::AddNodes(m_JobInfo, "output", data);
 
     try {
-        CStringOrBlobStorageReader reader(data, NULL);
-        CRStream stream(&reader, 0, 0, CRWStreambuf::fLeakExceptions);
-        stream.exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
+        SStringStream stream(data);
+        const string job_type(m_JobInfo.GetString(s_JobType));
 
-        CRemoteAppResult result(NULL);
-        result.Receive(stream);
+        if (job_type == s_RemoteApp) {
+            CRemoteAppResult result(NULL);
+            result.Receive(stream);
 
-        CJsonNodeUpdater updater("remote_app", m_JobInfo);
-        updater.node.SetByKey("stdout",
-                SDataDetector::CreateRemoteAppNode(result.GetOutBlobIdOrData()));
-        updater.node.SetByKey("stderr",
-                SDataDetector::CreateRemoteAppNode(result.GetErrBlobIdOrData()));
-        updater.node.SetInteger("exit_code", result.GetRetCode());
+            CJsonNodeUpdater updater(s_RemoteApp, m_JobInfo);
+            updater.node.SetByKey("stdout",
+                    SDataDetector::CreateRemoteAppNode(result.GetOutBlobIdOrData()));
+            updater.node.SetByKey("stderr",
+                    SDataDetector::CreateRemoteAppNode(result.GetErrBlobIdOrData()));
+            updater.node.SetInteger("exit_code", result.GetRetCode());
+        } else if (job_type == s_RemoteCgi) {
+            string field;
+            getline(stream, field);
+            stream >> field;
+            int status = 200;
+            if (field == "Status:") stream >> status;
+
+            CJsonNodeUpdater updater(s_RemoteCgi, m_JobInfo);
+            updater.node.SetInteger("status", status);
+            SDataDetector::AddNode(updater.node, "stdout", data);
+        }
     }
     catch (...) {
     }
