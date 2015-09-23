@@ -395,11 +395,8 @@ static TAccRanges GetProtAccRanges(CWGSDb wgs_db)
     TAccRange range;
     CWGSDb::TAccRanges ranges = wgs_db.GetProtAccRanges();
     ITERATE ( CWGSDb::TAccRanges, it, ranges ) {
-        CWGSProtAccResolver::SAccInfo info(it->first);
-        info.m_Id = it->second.GetFrom();
-        range.first = info.GetAcc();
-        info.m_Id = it->second.GetTo();
-        range.second = info.GetAcc();
+        range.first = it->first.GetAcc(it->second.GetFrom());
+        range.second = it->first.GetAcc(it->second.GetTo());
         ret.push_back(range);
     }
     return ret;
@@ -409,95 +406,40 @@ static bool LoadGiIndex(TGiRangeIndex& index,
                         CTime& time,
                         const string& file_name)
 {
-    CNcbiIfstream in(file_name.c_str());
-    if ( !in ) {
+    CWGSGiResolver resolver(file_name);
+    if ( !resolver.IsValid() ) {
         // allow missing file
         time = CTime(CTime::eCurrent);
         return false;
     }
-    if ( !CDirEntry(file_name).GetTime(&time) ) {
-        time = CTime(CTime::eCurrent);
-    }
+    time = resolver.GetTimestamp();
 
-    int line = 0;
-    string wgs_acc;
-    TGiRange range;
-    char eol[128];
-    for ( ;; ) {
-        ++line;
-        if ( !(in >> wgs_acc) ) {
-            if ( in.eof() ) {
-                // end of data
-                return true;
-            }
-        }
-        size_t length = wgs_acc.size();
-        if ( length < kMinAccessionLength || length > kMaxAccessionLength ) {
-            break; // error
-        }
-        in >> range.first >> range.second;
-        if ( !in ) {
-            break; // error
-        }
-        if ( !in.getline(eol, sizeof(eol)) ) {
-            // incomplete line
-            break; // error
-        }
-        if ( TIntId(range.first) <= 0 ||
-             TIntId(range.first) > TIntId(range.second) ) {
-            break; // error
-        }
-        index[wgs_acc].push_back(range);
+    CWGSGiResolver::TIdRanges ranges = resolver.GetIdRanges();
+    sort(ranges.begin(), ranges.end());
+    ITERATE ( CWGSGiResolver::TIdRanges, it, ranges ) {
+        index[it->first].push_back(it->second);
     }
-    ERR_POST("LoadGiIndex: bad index file format: "<<file_name<<":"<<line);
-    return false;
+    return true;
 }
 
 static bool LoadAccIndex(TAccRangeIndex& index,
                          CTime& time,
                          const string& file_name)
 {
-    CNcbiIfstream in(file_name.c_str());
-    if ( !in ) {
+    CWGSProtAccResolver resolver(file_name);
+    if ( !resolver.IsValid() ) {
         // allow missing file
         time = CTime(CTime::eCurrent);
         return false;
     }
-    if ( !CDirEntry(file_name).GetTime(&time) ) {
-        time = CTime(CTime::eCurrent);
-    }
+    time = resolver.GetTimestamp();
 
-    int line = 0;
-    string wgs_acc;
-    TAccRange range;
-    char eol[128];
-    for ( ;; ) {
-        ++line;
-        if ( !(in >> wgs_acc) ) {
-            if ( in.eof() ) {
-                // end of data
-                return true;
-            }
-        }
-        size_t length = wgs_acc.size();
-        if ( length < kMinAccessionLength || length > kMaxAccessionLength ) {
-            break; // error
-        }
-        in >> range.first >> range.second;
-        if ( !in ) {
-            break; // error
-        }
-        if ( !in.getline(eol, sizeof(eol)) ) {
-            // incomplete line
-            break; // error
-        }
-        if ( range.first > range.second ) {
-            break; // error
-        }
-        index[wgs_acc].push_back(range);
+    CWGSProtAccResolver::TIdRanges ranges = resolver.GetIdRanges();
+    sort(ranges.begin(), ranges.end());
+    ITERATE ( CWGSProtAccResolver::TIdRanges, it, ranges ) {
+        index[it->first].push_back(it->second);
     }
-    ERR_POST("LoadAccIndex: bad index file format: "<<file_name<<":"<<line);
-    return false;
+    return true;
 }
 
 static void SaveGiIndex(const TGiRangeIndex& index, const string& file_name)
@@ -545,7 +487,7 @@ static void MakeAllRanges(TIntId max_gap)
 
     // make the threshold modification time from files
     CTime rescan_time = gi_time < acc_time? gi_time: acc_time;
-    rescan_time += CTimeSpan(-1, 0, 0, 0); // one day overlap
+    rescan_time -= CTimeSpan(1, 0, 0, 0); // one day overlap
 
     // collecting VDB directories
     typedef pair<CDir, CTime> TVDBDir;
@@ -594,7 +536,7 @@ static void MakeAllRanges(TIntId max_gap)
             ++dir_count;
             const string& prefix4 = it->first;
             const CDir dir2 = it->second.first;
-            //NcbiCout << "Scanning "<<dir2.GetPath()<<NcbiEndl;
+            NcbiCout << "Scanning "<<dir2.GetPath()<<NcbiEndl;
             CDir::TEntries files = dir2.GetEntries(prefix4+"??");
             ITERATE ( CDir::TEntries, it, files ) {
                 const CDirEntry& file = **it;

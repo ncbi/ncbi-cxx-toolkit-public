@@ -36,6 +36,7 @@
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_param.hpp>
+#include <util/line_reader.hpp>
 #include <objects/general/general__.hpp>
 #include <objects/seq/seq__.hpp>
 #include <objects/seqset/seqset__.hpp>
@@ -51,7 +52,7 @@
 BEGIN_NCBI_NAMESPACE;
 
 #define NCBI_USE_ERRCODE_X   WGSReader
-NCBI_DEFINE_ERR_SUBCODE_X(1);
+NCBI_DEFINE_ERR_SUBCODE_X(8);
 
 BEGIN_NAMESPACE(objects);
 
@@ -63,19 +64,19 @@ NCBI_PARAM_DECL(bool, WGS, MASTER_DESCR);
 NCBI_PARAM_DEF(bool, WGS, MASTER_DESCR, true);
 
 
-NCBI_PARAM_DECL(string, WGS, GI_INDEX);
-NCBI_PARAM_DEF(string, WGS, GI_INDEX, "");
-
-
-NCBI_PARAM_DECL(string, WGS, PROT_ACC_INDEX);
-NCBI_PARAM_DEF(string, WGS, PROT_ACC_INDEX, "");
-
-
 #define DEGAULT_GI_INDEX_PATH                                   \
     NCBI_TRACES04_PATH "/wgs01/wgs_aux/list.wgs_gi_ranges"
 
 #define DEGAULT_PROT_ACC_INDEX_PATH                             \
     NCBI_TRACES04_PATH "/wgs01/wgs_aux/list.wgs_acc_ranges"
+
+
+NCBI_PARAM_DECL(string, WGS, GI_INDEX);
+NCBI_PARAM_DEF(string, WGS, GI_INDEX, DEGAULT_GI_INDEX_PATH);
+
+
+NCBI_PARAM_DECL(string, WGS, PROT_ACC_INDEX);
+NCBI_PARAM_DEF(string, WGS, PROT_ACC_INDEX, DEGAULT_PROT_ACC_INDEX_PATH);
 
 
 NCBI_PARAM_DECL(bool, WGS, CLIP_BY_QUALITY);
@@ -95,15 +96,21 @@ static bool s_GetClipByQuality(void)
 /////////////////////////////////////////////////////////////////////////////
 
 
+string CWGSGiResolver::GetDefaultIndexPath(void)
+{
+    return NCBI_PARAM_TYPE(WGS, GI_INDEX)::GetDefault();
+}
+
+
 CWGSGiResolver::CWGSGiResolver(void)
 {
-    string path = NCBI_PARAM_TYPE(WGS, GI_INDEX)::GetDefault();
-    if ( path.empty() ) {
-        path = DEGAULT_GI_INDEX_PATH;
-    }
-    CStopWatch sw(CStopWatch::eStart);
-    x_Load(path);
-    LOG_POST("Loaded GI index in "<<sw.Elapsed());
+    LoadFirst(GetDefaultIndexPath());
+}
+
+
+CWGSGiResolver::CWGSGiResolver(const string& index_path)
+{
+    LoadFirst(index_path);
 }
 
 
@@ -112,80 +119,132 @@ CWGSGiResolver::~CWGSGiResolver(void)
 }
 
 
-void CWGSGiResolver::x_Load(const string& file_name)
+bool CWGSGiResolver::IsValid(void) const
 {
-    m_GiIndex.clear();
-    CNcbiIfstream in(file_name.c_str());
-    if ( !in ) {
-        // no index file
-        return;
-    }
-    int line = 0;
-    TIntId gi_from, gi_to;
-    SAccession acc;
-    char eol[128];
-    for ( ;; ) {
-        ++line;
-        if ( !in.get(acc.accession, sizeof(acc.accession)) ) {
-            if ( in.eof() ) {
-                // end of data
-                return;
-            }
-        }
-        acc.accession[kMaxAccessionLength] = '\0';
-        size_t length = strlen(acc.accession);
-        if ( length < kMinAccessionLength ) {
-            break; // error
-        }
-        in >> gi_from >> gi_to;
-        if ( !in ) {
-            break; // error
-        }
-        if ( !in.getline(eol, sizeof(eol)) ) {
-            // incomplete line
-            break; // error
-        }
-        if ( gi_from == 0 && gi_to == 0 ) {
-            continue;
-        }
-        if ( gi_from <= 0 || gi_from > gi_to ) {
-            break; // error
-        }
-        m_GiIndex.insert
-            (TGiIndex::value_type(CRange<TIntId>(gi_from, gi_to), acc));
-    }
-    ERR_POST_X(1, "CWGSGiResolver: "
-               "bad index file format: "<<file_name<<":"<<line);
-    m_GiIndex.clear();
+    CMutexGuard guard(m_Mutex);
+    return !m_Index.m_Index.empty();
 }
 
 
-CWGSGiResolver::TAccessionList
-CWGSGiResolver::FindAll(TGi gi) const
+void CWGSGiResolver::LoadFirst(const string& index_path)
+{
+    CMutexGuard guard(m_Mutex);
+    m_IndexPath = index_path;
+    if ( !x_Load(m_Index) ) {
+        m_Index.m_Index.clear();
+    }
+}
+
+
+bool CWGSGiResolver::Update(void)
+{
+    SIndexInfo index;
+    if ( !x_Load(index, &m_Index.m_Timestamp) ) {
+        return false;
+    }
+    CMutexGuard guard(m_Mutex);
+    index.m_Index.swap(m_Index.m_Index);
+    swap(index.m_Timestamp, m_Index.m_Timestamp);
+    return true;
+}
+
+
+bool CWGSGiResolver::x_Load(SIndexInfo& index,
+                            const CTime* old_timestamp) const
+{
+    if ( !CDirEntry(m_IndexPath).GetTime(&index.m_Timestamp) ) {
+        // failed to get timestamp
+        return false;
+    }
+    if ( old_timestamp && index.m_Timestamp == *old_timestamp ) {
+        // same timestamp
+        return false;
+    }
+
+    CNcbiIfstream stream(m_IndexPath.c_str());
+    if ( !stream ) {
+        // no index file
+        return false;
+    }
+
+    index.m_Index.clear();
+    CStopWatch sw(CStopWatch::eStart);
+    vector<CTempString> tokens;
+    size_t count = 0;
+    for ( CBufferedLineReader line(stream); !line.AtEOF(); ) {
+        tokens.clear();
+        NStr::Tokenize(*++line, " ", tokens);
+        if ( tokens.size() != 3 ) {
+            if ( tokens.empty() || tokens[0][0] == '#' ) {
+                // allow empty lines and comments starting with #
+                continue;
+            }
+            ERR_POST_X(1, "CWGSGiResolver: bad index file format: "<<
+                       m_IndexPath<<":"<<line.GetLineNumber()<<": "<<*line);
+            return false;
+        }
+        CTempString wgs_acc = tokens[0];
+        if ( wgs_acc.size() < SWGSAccession::kMinWGSAccessionLength ||
+             wgs_acc.size() > SWGSAccession::kMaxWGSAccessionLength ) {
+            ERR_POST_X(2, "CWGSGiResolver: bad wgs accession length: "<<
+                       m_IndexPath<<":"<<line.GetLineNumber()<<": "<<*line);
+            return false;
+        }
+        TIntId id1 =
+            NStr::StringToNumeric<TIntId>(tokens[1], NStr::fConvErr_NoThrow);
+        TIntId id2 =
+            NStr::StringToNumeric<TIntId>(tokens[2], NStr::fConvErr_NoThrow);
+        if ( id1 <= 0 || id1 > id2 ) {
+            ERR_POST_X(3, "CWGSGiResolver: bad gi range: "<<
+                       m_IndexPath<<":"<<line.GetLineNumber()<<": "<<*line);
+            return false;
+        }
+        index.m_Index
+            .insert(TIndex::value_type(CRange<TIntId>(id1, id2),
+                                       SWGSAccession(wgs_acc)));
+        ++count;
+    }
+    //LOG_POST_X(4, "CWGSGiResolver: loaded "<<count<<" entries in "<<sw.Elapsed()<<" s");
+    return true;
+}
+
+
+CWGSGiResolver::TAccessionList CWGSGiResolver::FindAll(TGi gi) const
 {
     TAccessionList ret;
-    for ( TGiIndex::const_iterator it(m_GiIndex.begin(CRange<TIntId>(gi, gi)));
-          it; ++it ) {
-        ret.push_back(it->second.accession);
+    CMutexGuard guard(m_Mutex);
+    for ( TIndex::const_iterator it(m_Index.m_Index.begin(CRange<TIntId>(gi, gi))); it; ++it ) {
+        ret.push_back(it->second.acc);
     }
     return ret;
 }
 
 
-CTempString CWGSGiResolver::Find(TGi gi) const
+string CWGSGiResolver::Find(TGi gi) const
 {
-    CTempString ret;
-    for ( TGiIndex::const_iterator it(m_GiIndex.begin(CRange<TIntId>(gi, gi)));
-          it; ++it ) {
+    string ret;
+    CMutexGuard guard(m_Mutex);
+    for ( TIndex::const_iterator it(m_Index.m_Index.begin(CRange<TIntId>(gi, gi))); it; ++it ) {
         if ( !ret.empty() ) {
             NCBI_THROW_FMT(CSraException, eOtherError,
                            "more than one WGS accession can contain gi "<<gi);
         }
-        ret = it->second.accession;
+        ret = it->second.acc;
     }
     return ret;
 }
 
+
+CWGSGiResolver::TIdRanges CWGSGiResolver::GetIdRanges(void) const
+{
+    TIdRanges ret;
+    CMutexGuard guard(m_Mutex);
+    ITERATE ( TIndex, it, m_Index.m_Index ) {
+        TIdRange range(it->first.GetFrom(), it->first.GetTo());
+        ret.push_back(TIdRangePair(it->second.acc, range));
+    }
+    return ret;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -193,13 +252,21 @@ CTempString CWGSGiResolver::Find(TGi gi) const
 /////////////////////////////////////////////////////////////////////////////
 
 
+string CWGSProtAccResolver::GetDefaultIndexPath(void)
+{
+    return NCBI_PARAM_TYPE(WGS, PROT_ACC_INDEX)::GetDefault();
+}
+
+
 CWGSProtAccResolver::CWGSProtAccResolver(void)
 {
-    string path = NCBI_PARAM_TYPE(WGS, PROT_ACC_INDEX)::GetDefault();
-    if ( path.empty() ) {
-        path = DEGAULT_PROT_ACC_INDEX_PATH;
-    }
-    x_Load(path);
+    LoadFirst(GetDefaultIndexPath());
+}
+
+
+CWGSProtAccResolver::CWGSProtAccResolver(const string& index_path)
+{
+    LoadFirst(index_path);
 }
 
 
@@ -208,88 +275,128 @@ CWGSProtAccResolver::~CWGSProtAccResolver(void)
 }
 
 
-void CWGSProtAccResolver::x_Load(const string& file_name)
+bool CWGSProtAccResolver::IsValid(void) const
 {
-    m_ProtAccIndex.clear();
-    CNcbiIfstream in(file_name.c_str());
-    if ( !in ) {
+    CMutexGuard guard(m_Mutex);
+    return !m_Index.m_Index.empty();
+}
+
+
+void CWGSProtAccResolver::LoadFirst(const string& index_path)
+{
+    CMutexGuard guard(m_Mutex);
+    m_IndexPath = index_path;
+    if ( !x_Load(m_Index) ) {
+        m_Index.m_Index.clear();
+    }
+}
+
+
+bool CWGSProtAccResolver::Update(void)
+{
+    SIndexInfo index;
+    if ( !x_Load(index, &m_Index.m_Timestamp) ) {
+        return false;
+    }
+    CMutexGuard guard(m_Mutex);
+    index.m_Index.swap(m_Index.m_Index);
+    swap(index.m_Timestamp, m_Index.m_Timestamp);
+    return true;
+}
+
+
+bool CWGSProtAccResolver::x_Load(SIndexInfo& index,
+                                 const CTime* old_timestamp) const
+{
+    if ( !CDirEntry(m_IndexPath).GetTime(&index.m_Timestamp) ) {
+        // failed to get timestamp
+        return false;
+    }
+    if ( old_timestamp && index.m_Timestamp == *old_timestamp ) {
+        // same timestamp
+        return false;
+    }
+
+    CNcbiIfstream stream(m_IndexPath.c_str());
+    if ( !stream ) {
         // no index file
-        return;
+        return false;
     }
-    int line = 0;
-    string acc1, acc2;
-    SAccession acc;
-    char eol[128];
-    for ( ;; ) {
-        ++line;
-        if ( !in.get(acc.accession, sizeof(acc.accession)) ) {
-            if ( in.eof() ) {
-                // end of data
-                return;
+
+    CStopWatch sw(CStopWatch::eStart);
+    vector<CTempString> tokens;
+    size_t count = 0;
+    for ( CBufferedLineReader line(stream); !line.AtEOF(); ) {
+        tokens.clear();
+        NStr::Tokenize(*++line, " ", tokens);
+        if ( tokens.size() != 3 ) {
+            if ( tokens.empty() || tokens[0][0] == '#' ) {
+                // allow empty lines and comments starting with #
+                continue;
             }
+            ERR_POST_X(5, "CWGSProtAccResolver: bad index file format: "<<
+                       m_IndexPath<<":"<<line.GetLineNumber()<<": "<<*line);
+            return false;
         }
-        acc.accession[kMaxAccessionLength] = '\0';
-        size_t length = strlen(acc.accession);
-        if ( length < kMinAccessionLength ) {
-            break; // error
+        CTempString wgs_acc = tokens[0];
+        if ( wgs_acc.size() < SWGSAccession::kMinWGSAccessionLength ||
+             wgs_acc.size() > SWGSAccession::kMaxWGSAccessionLength ) {
+            ERR_POST_X(6, "CWGSProtAccResolver: bad wgs accession length: "<<
+                       m_IndexPath<<":"<<line.GetLineNumber()<<": "<<*line);
+            return false;
         }
-        in >> acc1 >> acc2;
-        if ( !in ) {
-            break; // error
+        Uint4 id1;
+        SAccInfo info1(tokens[1], id1);
+        Uint4 id2;
+        SAccInfo info2(tokens[2], id2);
+        if ( !info1 || info1 != info2 ||
+             id1 < 0 || id1 > id2 ) {
+            ERR_POST_X(7, "CWGSProtAccResolver: bad accession range: "<<
+                       m_IndexPath<<":"<<line.GetLineNumber()<<": "<<*line);
+            return false;
         }
-        if ( !in.getline(eol, sizeof(eol)) ) {
-            // incomplete line
-            break; // error
-        }
-        SAccInfo info1(acc1);
-        SAccInfo info2(acc2);
-        if ( info1.m_Id <= 0 || info1.m_Id > info2.m_Id ||
-             info1.m_Prefix != info2.m_Prefix ||
-             info1.m_Length != info2.m_Length ) {
-            break; // error
-        }
-        m_ProtAccIndex[info1.m_Prefix].insert
-            (TProtAccIndex2::value_type(CRange<uint64_t>(info1.m_Id, info2.m_Id), acc));
+        index.m_Index[info1]
+            .insert(TRangeIndex::value_type(CRange<Uint4>(id1, id2),
+                                            SWGSAccession(wgs_acc)));
+        ++count;
     }
-    ERR_POST_X(1, "CWGSProtAccResolver: "
-               "bad index file format: "<<file_name<<":"<<line);
-    m_ProtAccIndex.clear();
+    //LOG_POST_X(8, "CWGSProtAccResolver: loaded "<<count<<" entries in "<<sw.Elapsed()<<" s");
+    return true;
 }
 
 
-CWGSProtAccResolver::SAccInfo::SAccInfo(void)
-    : m_Id(0),
-      m_Length(0)
-{
-}
-
-
-CWGSProtAccResolver::SAccInfo::SAccInfo(const string& acc)
-    : m_Id(0),
-      m_Length(0)
+CWGSProtAccResolver::SAccInfo::SAccInfo(CTempString acc, Uint4& id)
+    : m_IdLength(0)
 {
     SIZE_TYPE prefix = 0;
-    while ( prefix < acc.size() && isalpha((unsigned char)(acc[prefix])) ) {
+    while ( prefix < acc.size() && isalpha(acc[prefix]&0xff) ) {
         ++prefix;
     }
-    if ( prefix == acc.size() || prefix == 0 ) {
+    if ( prefix == acc.size() || prefix == 0 || acc.size()-prefix > 9 ) {
         return;
     }
-    m_Id = NStr::StringToNumeric<uint64_t>(acc.substr(prefix), NStr::fConvErr_NoThrow);
-    if ( m_Id || errno == 0 ) {
-        m_Prefix = acc.substr(0, prefix);
-        m_Length = acc.size();
+    Uint4 v = 0;
+    for ( SIZE_TYPE i = prefix; i < acc.size(); ++i ) {
+        char c = acc[i];
+        if ( c < '0' || c > '9' ) {
+            return;
+        }
+        v = v*10 + (c-'0');
     }
+    id = v;
+    m_AccPrefix = acc.substr(0, prefix);
+    m_IdLength = acc.size();
 }
 
 
-string CWGSProtAccResolver::SAccInfo::GetAcc(void) const
+string CWGSProtAccResolver::SAccInfo::GetAcc(Uint4 id) const
 {
-    string acc = m_Prefix;
-    string suffix = NStr::NumericToString(m_Id);
-    _ASSERT(acc.size() + suffix.size() <= m_Length);
-    acc.resize(m_Length-suffix.size(), '0');
-    return acc + suffix;
+    string acc = m_AccPrefix;
+    acc.resize(m_IdLength, '0');
+    for ( SIZE_TYPE i = m_IdLength; id; id /= 10 ) {
+        acc[--i] += id % 10;
+    }
+    return acc;
 }
 
 
@@ -297,13 +404,14 @@ CWGSProtAccResolver::TAccessionList
 CWGSProtAccResolver::FindAll(const string& acc) const
 {
     TAccessionList ret;
-    SAccInfo info(acc);
-    if ( info.m_Id ) {
-        TProtAccIndex::const_iterator it(m_ProtAccIndex.find(info.m_Prefix));
-        if ( it != m_ProtAccIndex.end() ) {
-            for ( TProtAccIndex2::const_iterator it2(it->second.begin(CRange<uint64_t>(info.m_Id, info.m_Id)));
-                  it2; ++it2 ) {
-                ret.push_back(it2->second.accession);
+    Uint4 id;
+    SAccInfo info(acc, id);
+    if ( info ) {
+        CMutexGuard guard(m_Mutex);
+        TIndex::const_iterator it = m_Index.m_Index.find(info);
+        if ( it != m_Index.m_Index.end() ) {
+            for ( TRangeIndex::const_iterator it2(it->second.begin(CRange<Uint4>(id, id))); it2; ++it2 ) {
+                ret.push_back(it2->second.acc);
             }
         }
     }
@@ -311,9 +419,9 @@ CWGSProtAccResolver::FindAll(const string& acc) const
 }
 
 
-CTempString CWGSProtAccResolver::Find(const string& acc) const
+string CWGSProtAccResolver::Find(const string& acc) const
 {
-    CTempString ret;
+    string ret;
     CWGSProtAccResolver::TAccessionList accs = FindAll(acc);
     if ( !accs.empty() ) {
         if ( accs.size() > 1 ) {
@@ -325,6 +433,20 @@ CTempString CWGSProtAccResolver::Find(const string& acc) const
     return ret;
 }
 
+
+CWGSProtAccResolver::TIdRanges CWGSProtAccResolver::GetIdRanges(void) const
+{
+    TIdRanges ret;
+    CMutexGuard guard(m_Mutex);
+    ITERATE ( TIndex, it, m_Index.m_Index ) {
+        ITERATE ( TRangeIndex, it2, it->second ) {
+            TIdRange range(it->first.GetAcc(it2->first.GetFrom()),
+                           it->first.GetAcc(it2->first.GetTo()));
+            ret.push_back(TIdRangePair(it2->second.acc, range));
+        }
+    }
+    return ret;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1046,22 +1168,19 @@ CWGSDb_Impl::TAccRanges CWGSDb_Impl::GetProtAccRanges(void)
     if ( CRef<SProtTableCursor> seq = Prot() ) {
         pair<int64_t, uint64_t> row_range = seq->m_Cursor.GetRowIdRange();
         for ( uint64_t i = 0; i < row_range.second; ++i ) {
-            string acc = *seq->GB_ACCESSION(row_range.first+i);
+            CTempString acc = *seq->GB_ACCESSION(row_range.first+i);
             if ( acc.empty() ) {
                 continue;
             }
-            TIntId id = 0, d_mul = 1;
-            for ( size_t i = acc.size();
-                  i > 0 && isdigit(Uint1(acc[i-1])); --i ) {
-                int d = acc[i-1]-'0';
-                acc[i-1] = '0';
-                id += d*d_mul;
-                d_mul *= 10;
+            Uint4 id;
+            SAccInfo info(acc, id);
+            if ( !info ) {
+                continue;
             }
-            TAccRanges::iterator it = ranges.lower_bound(acc);
-            if ( it == ranges.end() || it->first != acc ) {
+            TAccRanges::iterator it = ranges.lower_bound(info);
+            if ( it == ranges.end() || it->first != info ) {
                 TIdRange range(id, id+1);
-                ranges.insert(it, TAccRanges::value_type(acc, range));
+                ranges.insert(it, TAccRanges::value_type(info, range));
             }
             else {
                 if ( id < it->second.GetFrom() ) {

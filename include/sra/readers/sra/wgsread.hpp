@@ -71,33 +71,72 @@ class NCBI_SRAREAD_EXPORT CWGSGiResolver
 {
 public:
     CWGSGiResolver(void);
+    explicit CWGSGiResolver(const string& index_path);
     ~CWGSGiResolver(void);
 
-    bool IsValid(void) const {
-        return !m_GiIndex.empty();
+    static string GetDefaultIndexPath(void);
+
+    const string& GetIndexPath(void) const {
+        return m_IndexPath;
+    }
+
+    bool IsValid(void) const;
+
+    const CTime& GetTimestamp(void) const {
+        return m_Index.m_Timestamp;
     }
 
     // return all WGS accessions that could contain gi
-    typedef vector<CTempString> TAccessionList;
+    typedef vector<string> TAccessionList;
     TAccessionList FindAll(TGi gi) const;
 
     // return single WGS accession that could contain gi
     // return empty string if there are no accession candidates
     // throw an exception if there are more than one candidate
-    CTempString Find(TGi gi) const;
+    string Find(TGi gi) const;
+
+    // return unordered list of WGS accessions and GI ranges
+    typedef pair<TIntId, TIntId> TIdRange;
+    typedef pair<string, TIdRange> TIdRangePair;
+    typedef vector<TIdRangePair> TIdRanges;
+    TIdRanges GetIdRanges(void) const;
+
+    struct SWGSAccession {
+        enum {
+            kMinWGSAccessionLength = 6, // AAAA01
+            kMaxWGSAccessionLength = 9  // AAAA01.11
+        };
+
+        SWGSAccession(void) {
+            acc[0] = '\0';
+        }
+        explicit SWGSAccession(CTempString str) {
+            size_t len = str.size();
+            for ( size_t i = 0; i < len; ++i ) {
+                acc[i] = str[i];
+            }
+            acc[len] = '\0';
+        }
+
+        char acc[kMaxWGSAccessionLength+1];
+    };
+
+    void LoadFirst(const string& index_path);
+    bool Update(void);
 
 private:
-    void x_Load(const string& file_name);
+    typedef CRangeMultimap<SWGSAccession, TIntId> TIndex;
+    struct SIndexInfo
+    {
+        TIndex m_Index;
+        CTime  m_Timestamp;
+    };
 
-    enum {
-        kMinAccessionLength = 6,
-        kMaxAccessionLength = 6
-    };
-    struct SAccession {
-        char accession[kMaxAccessionLength+1];
-    };
-    typedef CRangeMultimap<SAccession, TIntId> TGiIndex;
-    TGiIndex m_GiIndex;
+    bool x_Load(SIndexInfo& index, const CTime* old_timestamp = 0) const;
+
+    string m_IndexPath;
+    mutable CMutex m_Mutex;
+    SIndexInfo m_Index;
 };
 
 
@@ -105,45 +144,86 @@ class NCBI_SRAREAD_EXPORT CWGSProtAccResolver
 {
 public:
     CWGSProtAccResolver(void);
+    explicit CWGSProtAccResolver(const string& index_path);
     ~CWGSProtAccResolver(void);
 
-    bool IsValid(void) const {
-        return !m_ProtAccIndex.empty();
+    static string GetDefaultIndexPath(void);
+
+    const string& GetIndexPath(void) const {
+        return m_IndexPath;
     }
 
-    struct NCBI_SRAREAD_EXPORT SAccInfo {
-        SAccInfo(void);
-        explicit SAccInfo(const string& acc);
+    bool IsValid(void) const;
 
-        string GetAcc(void) const;
+    const CTime& GetTimestamp(void) const {
+        return m_Index.m_Timestamp;
+    }
 
-        string m_Prefix;
-        uint64_t m_Id;
-        size_t m_Length;
+    struct NCBI_SRAREAD_EXPORT SAccInfo
+    {
+        SAccInfo(void)
+            : m_IdLength(0)
+            {
+            }
+        SAccInfo(CTempString acc, Uint4& id);
+        
+        string GetAcc(Uint4 id) const;
+
+        DECLARE_OPERATOR_BOOL(m_IdLength != 0);
+
+        bool operator<(const SAccInfo& b) const {
+            if ( m_IdLength != b.m_IdLength ) {
+                return m_IdLength < b.m_IdLength;
+            }
+            return m_AccPrefix < b.m_AccPrefix;
+        }
+
+        bool operator==(const SAccInfo& b) const {
+            return m_IdLength == b.m_IdLength &&
+                m_AccPrefix == b.m_AccPrefix;
+        }
+        bool operator!=(const SAccInfo& b) const {
+            return !(*this == b);
+        }
+
+        string m_AccPrefix;
+        Uint4  m_IdLength;
     };
 
     // return all WGS accessions that could contain protein accession
-    typedef vector<CTempString> TAccessionList;
+    typedef vector<string> TAccessionList;
     TAccessionList FindAll(const string& acc) const;
 
     // return single WGS accession that could contain protein accession
     // return empty string if there are no accession candidates
     // throw an exception if there are more than one candidate
-    CTempString Find(const string& acc) const;
+    string Find(const string& acc) const;
+
+    // return unordered list of WGS accessions and GI ranges
+    typedef pair<string, string> TIdRange;
+    typedef pair<string, TIdRange> TIdRangePair;
+    typedef vector<TIdRangePair> TIdRanges;
+    TIdRanges GetIdRanges(void) const;
+
+    typedef CWGSGiResolver::SWGSAccession SWGSAccession;
+
+    void LoadFirst(const string& index_path);
+    bool Update(void);
 
 private:
-    void x_Load(const string& file_name);
+    typedef CRangeMultimap<SWGSAccession, Uint4> TRangeIndex;
+    typedef map<SAccInfo, TRangeIndex> TIndex; // by acc prefix
+    struct SIndexInfo
+    {
+        TIndex m_Index;
+        CTime  m_Timestamp;
+    };
 
-    enum {
-        kMinAccessionLength = 6,
-        kMaxAccessionLength = 6
-    };
-    struct SAccession {
-        char accession[kMaxAccessionLength+1];
-    };
-    typedef CRangeMultimap<SAccession, uint64_t> TProtAccIndex2;
-    typedef map<string, TProtAccIndex2> TProtAccIndex;
-    TProtAccIndex m_ProtAccIndex;
+    bool x_Load(SIndexInfo& index, const CTime* old_timestamp = 0) const;
+
+    string m_IndexPath;
+    mutable CMutex m_Mutex;
+    SIndexInfo m_Index;
 };
 
 
@@ -274,11 +354,11 @@ public:
     // return sorted non-overlapping ranges of protein GIs in the VDB
     TGiRanges GetProtGiRanges(void);
 
-    typedef string TAccPattern;
-    typedef COpenRange<TIntId> TIdRange;
-    typedef map<TAccPattern, TIdRange> TAccRanges;
+    typedef CWGSProtAccResolver::SAccInfo SAccInfo;
+    typedef COpenRange<Uint4> TIdRange;
+    typedef map<SAccInfo, TIdRange> TAccRanges;
     // return map of 3+5 accession ranges
-    // Key of each element is accession pattern, digital part zeroed.
+    // Key of each element is accession prefix/length pair
     TAccRanges GetProtAccRanges(void);
 
 protected:
@@ -555,7 +635,7 @@ public:
         return GetNCObject().GetProtGiRanges();
     }
 
-    typedef CWGSDb_Impl::TAccPattern TAccPattern;
+    typedef CWGSDb_Impl::SAccInfo SAccInfo;
     typedef CWGSDb_Impl::TIdRange TIdRange;
     typedef CWGSDb_Impl::TAccRanges TAccRanges;
     // return map of 3+5 accession ranges
