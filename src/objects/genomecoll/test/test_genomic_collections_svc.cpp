@@ -405,9 +405,9 @@ int CTestGenomicCollectionsSvcApplication::RunUsingClient(const CArgs& args, CNc
 
             CRef<CGC_Assembly> reply;
             if (args["acc"])
-                reply.Reset(cli->GetAssembly(args["acc"].AsString(), args["-smode"].AsString()));
+                reply.Reset(cli->_GetAssemblyNew(args["acc"].AsString(), args["-smode"].AsString()));
             else if (args["rel_id"])
-                reply.Reset(cli->GetAssembly(args["rel_id"].AsInteger(), args["-smode"].AsString()));
+                reply.Reset(cli->_GetAssemblyNew(args["rel_id"].AsInteger(), args["-smode"].AsString()));
             else
                 ERR_POST(Error << "Either accession or release id should be provided");
             ostr << *reply;

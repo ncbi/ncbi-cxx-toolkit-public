@@ -100,6 +100,16 @@ public:
     CRef<CGC_Assembly> GetAssembly(const string& acc, const string& mode);
     CRef<CGC_Assembly> GetAssembly(int releaseId,     const string& mode);
 
+    //Some general modes
+    struct SAssemblyMode
+    {
+        static const string kAssemblyOnly;
+        static const string kFtpContents;
+    };
+
+    CRef<CGC_Assembly> _GetAssemblyNew(const string& acc, const string& mode);
+    CRef<CGC_Assembly> _GetAssemblyNew(int releaseId,     const string& mode);
+
     string ValidateChrType(const string& chrType, const string& chrLoc);
 
     CRef<CGCClient_AssemblyInfo> FindBestAssembly
@@ -128,36 +138,6 @@ private:
 
 };
 
-/////////////////// CGenomicCollectionsService inline methods
-
-
-
-/////////////////// end of CGenomicCollectionsService inline methods
-
-
-END_objects_SCOPE // namespace ncbi::objects::
-
-class CCachedAssembly : public CObject
-{
-public:
-    CCachedAssembly(CRef<objects::CGC_Assembly> assembly);
-    CCachedAssembly(const string& blob);
-
-    CRef<objects::CGC_Assembly> Assembly();
-    const string& Blob();
-
-public:
-    static bool ValidBlob(int blobSize);
-    static bool BZip2Compression(const string& blob);
-    static string ChangeCompressionBZip2ToZip(const string& blob);
-
-private:
-    CRef<objects::CGC_Assembly> m_assembly;
-    string m_blob;
-};
-
+END_objects_SCOPE
 END_NCBI_SCOPE
-
-
-#endif // INTERNAL_GPIPE_OBJECTS_GENOMECOLL_GENOMIC_COLLECTIONS_CLI_HPP
-/* Original file checksum: lines: 86, chars: 2754, CRC32: 2b52f173 */
+#endif
