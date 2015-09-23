@@ -3,6 +3,8 @@
 LIB = eutils_client
 SRC = eutils_client
 
+CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
+
 DLL_LIB = xmlwrapp
 
 WATCHERS = grichenk
