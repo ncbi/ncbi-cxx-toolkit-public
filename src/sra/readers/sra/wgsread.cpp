@@ -349,8 +349,7 @@ bool CWGSProtAccResolver::x_Load(SIndexInfo& index,
         SAccInfo info1(tokens[1], id1);
         Uint4 id2;
         SAccInfo info2(tokens[2], id2);
-        if ( !info1 || info1 != info2 ||
-             id1 < 0 || id1 > id2 ) {
+        if ( !info1 || info1 != info2 || id1 > id2 ) {
             ERR_POST_X(7, "CWGSProtAccResolver: bad accession range: "<<
                        m_IndexPath<<":"<<line.GetLineNumber()<<": "<<*line);
             return false;
@@ -385,7 +384,7 @@ CWGSProtAccResolver::SAccInfo::SAccInfo(CTempString acc, Uint4& id)
     }
     id = v;
     m_AccPrefix = acc.substr(0, prefix);
-    m_IdLength = acc.size();
+    m_IdLength = Uint4(acc.size());
 }
 
 
