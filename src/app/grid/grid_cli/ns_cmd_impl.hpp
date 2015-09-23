@@ -35,8 +35,6 @@
 
 #include "grid_cli.hpp"
 
-#include <connect/services/ns_output_parser.hpp>
-
 BEGIN_NCBI_SCOPE
 
 class CPrintJobInfo : public IJobInfoProcessor

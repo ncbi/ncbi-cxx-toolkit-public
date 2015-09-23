@@ -80,40 +80,6 @@ private:
     const char* m_Ch;
 };
 
-enum ENetScheduleStatTopic {
-    eNetScheduleStatJobGroups,
-    eNetScheduleStatClients,
-    eNetScheduleStatNotifications,
-    eNetScheduleStatAffinities,
-    eNumberOfNetStheduleStatTopics
-};
-
-extern NCBI_XCONNECT_EXPORT
-string g_GetNetScheduleStatCommand(ENetScheduleStatTopic topic);
-
-extern NCBI_XCONNECT_EXPORT
-CJsonNode g_GenericStatToJson(CNetServer server,
-        ENetScheduleStatTopic topic, bool verbose);
-
-extern NCBI_XCONNECT_EXPORT
-bool g_FixMisplacedPID(CJsonNode& stat_info, CTempString& executable_path,
-        const char* pid_key);
-
-extern NCBI_XCONNECT_EXPORT
-CJsonNode g_LegacyStatToJson(CNetServer server, bool verbose);
-
-extern NCBI_XCONNECT_EXPORT
-CJsonNode g_QueueInfoToJson(CNetScheduleAPI ns_api,
-        const string& queue_name, CNetService::EServiceType service_type);
-
-extern NCBI_XCONNECT_EXPORT
-CJsonNode g_QueueClassInfoToJson(CNetScheduleAPI ns_api,
-        CNetService::EServiceType service_type);
-
-extern NCBI_XCONNECT_EXPORT
-CJsonNode g_ReconfAndReturnJson(CNetScheduleAPI ns_api,
-        CNetService::EServiceType service_type);
-
 class NCBI_XCONNECT_EXPORT CAttrListParser
 {
 public:
@@ -143,31 +109,6 @@ private:
     const char* m_Position;
     const char* m_EOL;
 };
-
-class NCBI_XCONNECT_EXPORT IJobInfoProcessor
-{
-public:
-    virtual void ProcessJobMeta(const CNetScheduleKey& key) = 0;
-
-    virtual void BeginJobEvent(const CTempString& event_header) = 0;
-    virtual void ProcessJobEventField(const CTempString& attr_name,
-            const string& attr_value) = 0;
-    virtual void ProcessJobEventField(const CTempString& attr_name) = 0;
-    virtual void ProcessInput(const string& data) = 0;
-    virtual void ProcessOutput(const string& data) = 0;
-
-    virtual void ProcessJobInfoField(const CTempString& field_name,
-            const CTempString& field_value) = 0;
-
-    virtual void ProcessRawLine(const string& line) = 0;
-
-    virtual ~IJobInfoProcessor() {}
-};
-
-extern NCBI_XCONNECT_EXPORT
-void g_ProcessJobInfo(CNetScheduleAPI ns_api, const string& job_key,
-        IJobInfoProcessor* processor, bool verbose,
-        CCompoundIDPool::TInstance id_pool = NULL);
 
 END_NCBI_SCOPE
 

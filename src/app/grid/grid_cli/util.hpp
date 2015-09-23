@@ -37,6 +37,53 @@
 
 BEGIN_NCBI_SCOPE
 
+enum ENetScheduleStatTopic {
+    eNetScheduleStatJobGroups,
+    eNetScheduleStatClients,
+    eNetScheduleStatNotifications,
+    eNetScheduleStatAffinities,
+    eNumberOfNetStheduleStatTopics
+};
+
+string g_GetNetScheduleStatCommand(ENetScheduleStatTopic topic);
+
+CJsonNode g_GenericStatToJson(CNetServer server,
+        ENetScheduleStatTopic topic, bool verbose);
+
+bool g_FixMisplacedPID(CJsonNode& stat_info, CTempString& executable_path,
+        const char* pid_key);
+
+CJsonNode g_LegacyStatToJson(CNetServer server, bool verbose);
+
+CJsonNode g_QueueInfoToJson(CNetScheduleAPI ns_api,
+        const string& queue_name, CNetService::EServiceType service_type);
+
+CJsonNode g_QueueClassInfoToJson(CNetScheduleAPI ns_api,
+        CNetService::EServiceType service_type);
+
+CJsonNode g_ReconfAndReturnJson(CNetScheduleAPI ns_api,
+        CNetService::EServiceType service_type);
+
+class IJobInfoProcessor
+{
+public:
+    virtual void ProcessJobMeta(const CNetScheduleKey& key) = 0;
+
+    virtual void BeginJobEvent(const CTempString& event_header) = 0;
+    virtual void ProcessJobEventField(const CTempString& attr_name,
+            const string& attr_value) = 0;
+    virtual void ProcessJobEventField(const CTempString& attr_name) = 0;
+    virtual void ProcessInput(const string& data) = 0;
+    virtual void ProcessOutput(const string& data) = 0;
+
+    virtual void ProcessJobInfoField(const CTempString& field_name,
+            const CTempString& field_value) = 0;
+
+    virtual void ProcessRawLine(const string& line) = 0;
+
+    virtual ~IJobInfoProcessor() {}
+};
+
 class CJobInfoToJSON : public IJobInfoProcessor
 {
 public:
@@ -64,6 +111,10 @@ private:
     CJsonNode m_CurrentEvent;
     CJsonNode m_UnparsableLines;
 };
+
+void g_ProcessJobInfo(CNetScheduleAPI ns_api, const string& job_key,
+        IJobInfoProcessor* processor, bool verbose,
+        CCompoundIDPool::TInstance id_pool = NULL);
 
 void g_PrintJSON(FILE* output_stream, CJsonNode node,
         const char* indent = "\t");
