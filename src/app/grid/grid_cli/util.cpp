@@ -33,11 +33,311 @@
 
 #include "util.hpp"
 
+#include <sstream>
+#include <corelib/rwstream.hpp>
+#include <cgi/ncbicgi.hpp>
 #include <connect/services/ns_output_parser.hpp>
+#include <connect/services/grid_rw_impl.hpp>
+#include <connect/services/remote_app.hpp>
 
 #include <connect/ncbi_util.h>
 
 BEGIN_NCBI_SCOPE
+
+// XXX: Copy-paste!
+static inline string UnquoteIfQuoted(const CTempString& str)
+{
+    switch (str[0]) {
+    case '"':
+    case '\'':
+        return NStr::ParseQuoted(str);
+    default:
+        return str;
+    }
+}
+
+void CJobInfoToJSON::ProcessJobMeta(const CNetScheduleKey& key)
+{
+    m_JobInfo.SetString("server_host", g_NetService_TryResolveHost(key.host));
+    m_JobInfo.SetInteger("server_port", key.port);
+
+    m_JobInfo.SetInteger("job_id", key.id);
+
+    if (!key.queue.empty())
+        m_JobInfo.SetString("queue_name", UnquoteIfQuoted(key.queue));
+}
+
+void CJobInfoToJSON::BeginJobEvent(const CTempString& event_header)
+{
+    if (!m_JobEvents)
+        m_JobInfo.SetByKey("events", m_JobEvents = CJsonNode::NewArrayNode());
+
+    m_JobEvents.Append(m_CurrentEvent = CJsonNode::NewObjectNode());
+}
+
+void CJobInfoToJSON::ProcessJobEventField(const CTempString& attr_name,
+        const string& attr_value)
+{
+    m_CurrentEvent.SetByKey(attr_name, CJsonNode::GuessType(attr_value));
+}
+
+void CJobInfoToJSON::ProcessJobEventField(const CTempString& attr_name)
+{
+    m_CurrentEvent.SetNull(attr_name);
+}
+
+struct SEmbeddedDataParser : public CBlobStreamHelper
+{
+    static bool GetFileName(string& data)
+    {
+        istringstream iss(data);
+        string name;
+
+        if (x_GetTypeAndName(iss, name) == eLocalFile) {
+            data.swap(name);
+            return true;
+        }
+
+        data.erase(0, iss.tellg());
+        return false;
+    }
+};
+
+struct SDataDetector : public CStringOrBlobStorageReader
+{
+private:
+    static CJsonNode x_FillNode(EType type,
+            const string& data)
+    {
+        CJsonNode node(CJsonNode::NewObjectNode());
+
+        switch (type) {
+        case eEmbedded:
+            node.SetString("storage", "embedded");
+            node.SetString("embedded_data", data);
+            return node;
+
+        case eNetCache:
+            node.SetString("storage", "netcache");
+            node.SetString("netcache_key", data);
+            return node;
+
+        default:
+            node.SetString("storage", "raw");
+            node.SetString("raw_data", data);
+            return node;
+        }
+    }
+
+public:
+    static bool AddNode(CJsonNode parent, const string& name, string data)
+    {
+        // Do not combine calls to x_GetDataType and x_FillNode,
+        // as x_GetDataType modifies data
+        EType type = x_GetDataType(data);
+        parent.SetByKey(name, x_FillNode(type, data));
+        return type != eRaw && type != eEmpty;
+    }
+
+    static void AddNodes(CJsonNode parent, const string& name, const string& src)
+    {
+        if (AddNode(parent, name, src)) {
+            parent.SetString("raw_" + name, src);
+        }
+    }
+
+    static CJsonNode CreateRemoteAppNode(string data)
+    {
+        EType type = x_GetDataType(data);
+
+        if (type == eEmbedded && SEmbeddedDataParser::GetFileName(data)) {
+            CJsonNode node(CJsonNode::NewObjectNode());
+            node.SetString("storage", "localfile");
+            node.SetString("filename", data);
+            return node;
+        }
+
+        return x_FillNode(type, data);
+    }
+
+    static CJsonNode CreateArgsNode(const string& data, CJsonNode files)
+    {
+        CJsonNode node(CJsonNode::NewObjectNode());
+        node.SetString("storage", "embedded");
+        node.SetString("embedded_data", data);
+        if (files) node.SetByKey("files", files);
+        return node;
+    }
+};
+
+struct SPartialDeserializer : public CRemoteAppRequest
+{
+    SPartialDeserializer(CNcbiIstream& is)
+        : CRemoteAppRequest(NULL)
+    {
+        x_Deserialize(is, &m_Files);
+    }
+
+    CJsonNode CreateFilesNode() const
+    {
+        if (m_Files.empty()) return NULL;
+
+        CJsonNode array(CJsonNode::NewArrayNode());
+        for (TStoredFiles::const_iterator i = m_Files.begin();
+                i != m_Files.end(); ++i) {
+            CJsonNode file(CJsonNode::NewObjectNode());
+            file.SetString("filename", i->first);
+
+            if (i->second.empty()) {
+                file.SetString("storage", "localfile");
+            } else {
+                file.SetString("storage", "netcache");
+                file.SetString("netcache_key", i->second);
+            }
+
+            array.Append(file);
+        }
+        return array;
+    }
+
+private:
+    TStoredFiles m_Files;
+};
+
+struct CJsonNodeUpdater
+{
+    CJsonNode node;
+
+    CJsonNodeUpdater(const string& name, CJsonNode parent)
+        : node(parent.GetByKeyOrNull(name)),
+          m_Name(name),
+          m_Parent(parent),
+          m_NewNode(!node)
+    {
+        if (m_NewNode) node = CJsonNode::NewObjectNode();
+    }
+
+
+    ~CJsonNodeUpdater()
+    {
+        if (m_NewNode) m_Parent.SetByKey(m_Name, node);
+    }
+
+private:
+    const string m_Name;
+    CJsonNode m_Parent;
+    const bool m_NewNode;
+};
+
+struct SStringStream : private CStringOrBlobStorageReader, public CRStream
+{
+    SStringStream(const string& data)
+        : CStringOrBlobStorageReader(data, NULL),
+          CRStream(this, 0, 0, CRWStreambuf::fLeakExceptions)
+    {
+        exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
+    }
+};
+
+static const char* s_JobType = "job_type";
+static const char* s_RemoteApp = "remote_app";
+static const char* s_RemoteCgi = "remote_cgi";
+
+void CJobInfoToJSON::ProcessInput(const string& data)
+{
+    SDataDetector::AddNodes(m_JobInfo, "input", data);
+
+    try {
+        SStringStream stream(data);
+        SPartialDeserializer request(stream);
+
+        CJsonNodeUpdater updater(s_RemoteApp, m_JobInfo);
+        updater.node.SetInteger("run_timeout", request.GetAppRunTimeout());
+        updater.node.SetBoolean("exclusive", request.IsExclusiveMode());
+        updater.node.SetByKey("args",
+                SDataDetector::CreateArgsNode(
+                    request.GetCmdLine(), request.CreateFilesNode()));
+        updater.node.SetByKey("stdin",
+                SDataDetector::CreateRemoteAppNode(request.GetInBlobIdOrData()));
+        m_JobInfo.SetString(s_JobType, s_RemoteApp);
+        return;
+    }
+    catch (...) {
+    }
+    
+    try {
+        SStringStream stream(data);
+        CCgiRequest request(stream,
+                CCgiRequest::fIgnoreQueryString |
+                CCgiRequest::fDoNotParseContent);
+
+        CJsonNodeUpdater updater(s_RemoteCgi, m_JobInfo);
+        updater.node.SetString("method", request.GetRequestMethodName());
+
+        const CNcbiEnvironment& env(request.GetEnvironment());
+        list<string> names;
+        env.Enumerate(names);
+        CJsonNodeUpdater env_updater("env", updater.node);
+
+        for (list<string>::iterator i = names.begin(); i != names.end(); ++i) {
+            env_updater.node.SetString(*i, env.Get(*i));
+        }
+
+        m_JobInfo.SetString(s_JobType, s_RemoteCgi);
+    }
+    catch (...) {
+        m_JobInfo.SetString(s_JobType, "generic");
+    }
+}
+
+void CJobInfoToJSON::ProcessOutput(const string& data)
+{
+    SDataDetector::AddNodes(m_JobInfo, "output", data);
+
+    try {
+        SStringStream stream(data);
+        const string job_type(m_JobInfo.GetString(s_JobType));
+
+        if (job_type == s_RemoteApp) {
+            CRemoteAppResult result(NULL);
+            result.Receive(stream);
+
+            CJsonNodeUpdater updater(s_RemoteApp, m_JobInfo);
+            updater.node.SetByKey("stdout",
+                    SDataDetector::CreateRemoteAppNode(result.GetOutBlobIdOrData()));
+            updater.node.SetByKey("stderr",
+                    SDataDetector::CreateRemoteAppNode(result.GetErrBlobIdOrData()));
+            updater.node.SetInteger("exit_code", result.GetRetCode());
+        } else if (job_type == s_RemoteCgi) {
+            string field;
+            getline(stream, field);
+            stream >> field;
+            int status = 200;
+            if (field == "Status:") stream >> status;
+
+            CJsonNodeUpdater updater(s_RemoteCgi, m_JobInfo);
+            updater.node.SetInteger("status", status);
+            SDataDetector::AddNode(updater.node, "stdout", data);
+        }
+    }
+    catch (...) {
+    }
+}
+
+void CJobInfoToJSON::ProcessJobInfoField(const CTempString& field_name,
+        const CTempString& field_value)
+{
+    m_JobInfo.SetByKey(field_name, CJsonNode::GuessType(field_value));
+}
+
+void CJobInfoToJSON::ProcessRawLine(const string& line)
+{
+    if (!m_UnparsableLines)
+        m_JobInfo.SetByKey("unparsable_lines",
+                m_UnparsableLines = CJsonNode::NewArrayNode());
+
+    m_UnparsableLines.AppendString(line);
+}
 
 static void Indent(FILE* output_stream, int indent_depth, const char* indent)
 {

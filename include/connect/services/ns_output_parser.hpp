@@ -164,34 +164,6 @@ public:
     virtual ~IJobInfoProcessor() {}
 };
 
-class NCBI_XCONNECT_EXPORT CJobInfoToJSON : public IJobInfoProcessor
-{
-public:
-    CJobInfoToJSON() : m_JobInfo(CJsonNode::NewObjectNode()) {}
-
-    virtual void ProcessJobMeta(const CNetScheduleKey& key);
-
-    virtual void BeginJobEvent(const CTempString& event_header);
-    virtual void ProcessJobEventField(const CTempString& attr_name,
-            const string& attr_value);
-    virtual void ProcessJobEventField(const CTempString& attr_name);
-    virtual void ProcessInput(const string& data);
-    virtual void ProcessOutput(const string& data);
-
-    virtual void ProcessJobInfoField(const CTempString& field_name,
-        const CTempString& field_value);
-
-    virtual void ProcessRawLine(const string& line);
-
-    CJsonNode GetRootNode() const {return m_JobInfo;}
-
-private:
-    CJsonNode m_JobInfo;
-    CJsonNode m_JobEvents;
-    CJsonNode m_CurrentEvent;
-    CJsonNode m_UnparsableLines;
-};
-
 extern NCBI_XCONNECT_EXPORT
 void g_ProcessJobInfo(CNetScheduleAPI ns_api, const string& job_key,
         IJobInfoProcessor* processor, bool verbose,

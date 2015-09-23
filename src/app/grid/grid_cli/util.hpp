@@ -33,8 +33,37 @@
 #define UTIL__HPP
 
 #include <connect/services/netschedule_api.hpp>
+#include <connect/services/ns_output_parser.hpp>
 
 BEGIN_NCBI_SCOPE
+
+class CJobInfoToJSON : public IJobInfoProcessor
+{
+public:
+    CJobInfoToJSON() : m_JobInfo(CJsonNode::NewObjectNode()) {}
+
+    virtual void ProcessJobMeta(const CNetScheduleKey& key);
+
+    virtual void BeginJobEvent(const CTempString& event_header);
+    virtual void ProcessJobEventField(const CTempString& attr_name,
+            const string& attr_value);
+    virtual void ProcessJobEventField(const CTempString& attr_name);
+    virtual void ProcessInput(const string& data);
+    virtual void ProcessOutput(const string& data);
+
+    virtual void ProcessJobInfoField(const CTempString& field_name,
+        const CTempString& field_value);
+
+    virtual void ProcessRawLine(const string& line);
+
+    CJsonNode GetRootNode() const {return m_JobInfo;}
+
+private:
+    CJsonNode m_JobInfo;
+    CJsonNode m_JobEvents;
+    CJsonNode m_CurrentEvent;
+    CJsonNode m_UnparsableLines;
+};
 
 void g_PrintJSON(FILE* output_stream, CJsonNode node,
         const char* indent = "\t");
