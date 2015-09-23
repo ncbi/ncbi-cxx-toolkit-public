@@ -22,7 +22,7 @@ LIB     = xconnserv
 PROJ_TAG = core
 LIBS    = $(NETWORK_LIBS)
 
-DLL_LIB = xthrserv xconnect xutil xncbi
+DLL_LIB = xthrserv xconnect xutil xncbi xcgi
 
 WATCHERS = sadyrovr
 
