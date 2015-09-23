@@ -38,9 +38,6 @@
 #include <sstream>
 #include <misc/xmlwrapp/xmlwrapp.hpp>
 
-#include <boost/type_traits.hpp>
-#include <boost/utility/enable_if.hpp>
-
 BEGIN_NCBI_SCOPE
 
 
@@ -121,14 +118,13 @@ public:
     //return the total count
     Uint8 Search(const string& db,
                 const string& term,
-                vector<int>& uids,
+                vector<Int4>& uids,
                 string xml_path=kEmptyStr);
 
-    typename boost::enable_if_c<!boost::is_same<int, TGi>::value, Uint8>::type
-        Search(const string& db,
-               const string& term,
-               vector<TGi>& uids,
-               string xml_path=kEmptyStr);
+    Uint8 Search(const string& db,
+                const string& term,
+                vector<Int8>& uids,
+                string xml_path=kEmptyStr);
 
     void Search(const string& db,
                 const string& term,
@@ -143,34 +139,31 @@ public:
                        CNcbiOstream& ostr);
 
 
-
     void Link(const string& db_from,
               const string& db_to,
-              const vector<int>& uids_from,
-              vector<int>& uids_to,
+              const vector<Int4>& uids_from,
+              vector<Int4>& uids_to,
               string xml_path=kEmptyStr,
               const string command="neighbor");
 
-    typename boost::enable_if_c<!boost::is_same<int, TGi>::value, void>::type
-        Link(const string& db_from,
-             const string& db_to,
-             const vector<TGi>& uids_from,
-             vector<TGi>& uids_to,
-             string xml_path=kEmptyStr,
-             const string command="neighbor");
+    void Link(const string& db_from,
+              const string& db_to,
+              const vector<Int8>& uids_from,
+              vector<Int8>& uids_to,
+              string xml_path=kEmptyStr,
+              const string command="neighbor");
 
     void Link(const string& db_from,
               const string& db_to,
-              const vector<int>& uids_from,
+              const vector<Int4>& uids_from,
               CNcbiOstream& ostr,
               const string command="neighbor");
 
-    typename boost::enable_if_c<!boost::is_same<int, TGi>::value, void>::type
-        Link(const string& db_from,
-             const string& db_to,
-             const vector<TGi>& uids_from,
-             CNcbiOstream& ostr,
-             const string command="neighbor");
+    void Link(const string& db_from,
+              const string& db_to,
+              const vector<Int8>& uids_from,
+              CNcbiOstream& ostr,
+              const string command="neighbor");
 
 
     void LinkHistory(const string& db_from,
@@ -182,13 +175,12 @@ public:
 
 
     void Summary(const string& db,
-                const vector<int>& uids,
+                const vector<Int4>& uids,
                 xml::document& docsums,
                 const string version="");
 
-    typename boost::enable_if_c<!boost::is_same<int, TGi>::value, void>::type
-        Summary(const string& db,
-                const vector<TGi>& uids,
+    void Summary(const string& db,
+                const vector<Int8>& uids,
                 xml::document& docsums,
                 const string version="");
 
@@ -200,15 +192,14 @@ public:
                         CNcbiOstream& ostr);
 
     void Fetch(const string& db,
-               const vector<int>& uids,
+               const vector<Int4>& uids,
                CNcbiOstream& ostr,
                const string& retmode="xml");
 
-    typename boost::enable_if_c<!boost::is_same<int, TGi>::value, void>::type
-        Fetch(const string& db,
-              const vector<TGi>& uids,
-              CNcbiOstream& ostr,
-              const string& retmode="xml");
+    void Fetch(const string& db,
+               const vector<Int8>& uids,
+               CNcbiOstream& ostr,
+               const string& retmode="xml");
 
     void FetchHistory(const string& db,
                       const string& web_env,
@@ -223,18 +214,16 @@ public:
 
 protected:
     Uint8 ParseSearchResults(CNcbiIstream& istr,
-                             vector<int>& uids);
-
-    typename boost::enable_if_c<!boost::is_same<int, TGi>::value, Uint8>::type
-        ParseSearchResults(CNcbiIstream& istr,
-                           vector<TGi>& uids);
+                             vector<Int4>& uids);
+    
+    Uint8 ParseSearchResults(CNcbiIstream& istr,
+                             vector<Int8>& uids);
     
     Uint8 ParseSearchResults(const string& xml_file,
-                             vector<int>& uids);
+                             vector<Int4>& uids);
 
-    typename boost::enable_if_c<!boost::is_same<int, TGi>::value, Uint8>::type
-        ParseSearchResults(const string& xml_file,
-                           vector<TGi>& uids);
+    Uint8 ParseSearchResults(const string& xml_file,
+                             vector<Int8>& uids);
 
 private:
     CRef<CMessageHandler> m_MessageHandler;

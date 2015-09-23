@@ -508,12 +508,13 @@ Uint8 CEutilsClient::ParseSearchResults(CNcbiIstream& istr,
     return x_ParseSearchResults(istr, uids);
 }
 
-typename boost::enable_if_c<!boost::is_same<int, TGi>::value, Uint8>::type
-CEutilsClient::ParseSearchResults(CNcbiIstream& istr,
-                                  vector<TGi>& uids)
+#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
+Uint8 CEutilsClient::ParseSearchResults(CNcbiIstream& istr,
+                                        vector<TGi>& uids)
 {
     return x_ParseSearchResults(istr, uids);
 }
+#endif
 
 template<class T>
 Uint8 CEutilsClient::x_ParseSearchResults(CNcbiIstream& istr,
@@ -549,12 +550,13 @@ Uint8 CEutilsClient::ParseSearchResults(const string& xml_file,
 }
 
 
-typename boost::enable_if_c<!boost::is_same<int, TGi>::value, Uint8>::type
-CEutilsClient::ParseSearchResults(const string& xml_file,
-                                  vector<TGi>& uids)
+#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
+Uint8 CEutilsClient::ParseSearchResults(const string& xml_file,
+                                        vector<TGi>& uids)
 {
     return x_ParseSearchResults(xml_file, uids);
 }
+#endif
 
 template<class T>
 Uint8 CEutilsClient::x_ParseSearchResults(const string& xml_file,
@@ -577,14 +579,15 @@ Uint8 CEutilsClient::Search(const string& db,
     return x_Search(db, term, uids, xml_path);
 }
 
-typename boost::enable_if_c<!boost::is_same<int, TGi>::value, Uint8>::type
-CEutilsClient::Search(const string& db,
-                      const string& term,
-                      vector<TGi>& uids,
-                      string xml_path)
+#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
+Uint8 CEutilsClient::Search(const string& db,
+                            const string& term,
+                            vector<TGi>& uids,
+                            string xml_path)
 {
     return x_Search(db, term, uids, xml_path);
 }
+#endif
 
 template<class T>
 Uint8 CEutilsClient::x_Search(const string& db,
@@ -770,16 +773,17 @@ void CEutilsClient::Link(const string& db_from,
     x_Link(db_from, db_to, uids_from, uids_to, xml_path, command);
 }
 
-typename boost::enable_if_c<!boost::is_same<int, TGi>::value, void>::type
-CEutilsClient::Link(const string& db_from,
-                    const string& db_to,
-                    const vector<TGi>& uids_from,
-                    vector<TGi>& uids_to,
-                    string xml_path,
-                    const string command)
+#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
+void CEutilsClient::Link(const string& db_from,
+                         const string& db_to,
+                         const vector<TGi>& uids_from,
+                         vector<TGi>& uids_to,
+                         string xml_path,
+                         const string command)
 {
     x_Link(db_from, db_to, uids_from, uids_to, xml_path, command);
 }
+#endif
 
 template<class T1, class T2>
 void CEutilsClient::x_Link(const string& db_from,
@@ -872,15 +876,16 @@ void CEutilsClient::Link(const string& db_from,
     x_Link(db_from, db_to, uids_from, ostr, command);
 }
 
-typename boost::enable_if_c<!boost::is_same<int, TGi>::value, void>::type
-CEutilsClient::Link(const string& db_from,
-                    const string& db_to,
-                    const vector<TGi>& uids_from,
-                    CNcbiOstream& ostr,
-                    const string command)
+#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
+void CEutilsClient::Link(const string& db_from,
+                         const string& db_to,
+                         const vector<TGi>& uids_from,
+                         CNcbiOstream& ostr,
+                         const string command)
 {
     x_Link(db_from, db_to, uids_from, ostr, command);
 }
+#endif
 
 template<class T>
 void CEutilsClient::x_Link(const string& db_from,
@@ -951,23 +956,23 @@ void CEutilsClient::LinkHistory(const string& db_from,
     x_Get("/entrez/eutils/elink.fcgi", oss.str(), ostr);
 }
 
-typename boost::enable_if_c<!boost::is_same<int, TGi>::value, void>::type
-CEutilsClient::Summary(const string& db,
-                       const vector<int>& uids,
-                       xml::document& docsums,
-                       const string version)
+void CEutilsClient::Summary(const string& db,
+                            const vector<int>& uids,
+                            xml::document& docsums,
+                            const string version)
 {
     x_Summary(db, uids, docsums, version);
 }
 
-typename boost::enable_if_c<!boost::is_same<int, TGi>::value, void>::type
-CEutilsClient::Summary(const string& db,
-                       const vector<TGi>& uids,
-                       xml::document& docsums,
-                       const string version)
+#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
+void CEutilsClient::Summary(const string& db,
+                            const vector<TGi>& uids,
+                            xml::document& docsums,
+                            const string version)
 {
     x_Summary(db, uids, docsums, version);
 }
+#endif
 
 template<class T>
 void CEutilsClient::x_Summary(const string& db,
@@ -1074,14 +1079,15 @@ void CEutilsClient::Fetch(const string& db,
     x_Fetch(db, uids, ostr, retmode);
 }
 
-typename boost::enable_if_c<!boost::is_same<int, TGi>::value, void>::type
-   CEutilsClient::Fetch(const string& db,
-                        const vector<TGi>& uids,
-                        CNcbiOstream& ostr,
-                        const string& retmode)
+#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
+void CEutilsClient::Fetch(const string& db,
+                          const vector<TGi>& uids,
+                          CNcbiOstream& ostr,
+                          const string& retmode)
 {
     x_Fetch(db, uids, ostr, retmode);
 }
+#endif
 
 template<class T>
 void CEutilsClient::x_Fetch(const string& db,
