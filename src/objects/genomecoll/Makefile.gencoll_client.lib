@@ -4,7 +4,7 @@ ASN = gencoll_client
 
 # SRC = $(ASN:%=%__) $(ASN:%=%___)
 
-SRC = gencoll_client__ gencoll_client___ genomic_collections_cli genomic_collections_cli_
+SRC = gencoll_client__ gencoll_client___ genomic_collections_cli genomic_collections_cli_ cached_assembly
 
 LIB = gencoll_client
 
