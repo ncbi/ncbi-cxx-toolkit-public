@@ -2015,7 +2015,7 @@ GO	s	Philosophical Society
 GOD	s	Charterhouse School Museum
 GOE<DEU>	s	Institut und Museum fuer Geologie und Palaeontologie
 GOE<GBR>	s	Goole Scientific Society
-GOET	s	Universitaet Goettingen, Abteilung Systematische Botanik
+GOET	s	Herbarium Universitat Gottingen
 GOFS	s	Free State National Botanical Garden
 GOW	s	Clydebank High School
 GP	s	Instituto de Geociencias, Universidade de Sao Paulo
@@ -2834,7 +2834,7 @@ JCE	s	Jiangxi College of Education, Biology Department
 JCM	c	Japan Collection of Microorganisms
 JCRB	c	Japanese Collection of Research Bioresources Cell Bank
 JCT	c	James Cook Townsville
-JE	s	Friedrich-Schiller-Universitaet Jena
+JE	s	Herbarium Haussknecht, Jena
 JEF	s	Indiana University Southeast, Biology Department
 JEL	c	Joyce E. Longcore Chytrid Collection at the University of Maine
 JEL<LVA>	s	Latvian Agricultural Academy, Plant Protection Department
