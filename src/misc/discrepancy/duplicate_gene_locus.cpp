@@ -41,45 +41,6 @@ DISCREPANCY_MODULE(duplicate_gene_locus);
 
 // DUPLICATE_GENE_LOCUS
 
-DISCREPANCY_CASE(DUPLICATE_GENE_LOCUS_1, CBioseq, eNormal, "Duplicate Gene Locus")
-{
-// TODO Skip any Bioseqs that are an mRNA sequence in a GenProdSet
-    CScope &scope =  context.GetScope();
-    CBioseq_Handle bsh = scope.GetBioseqHandle(obj);
-    map<string,int> count;
-
-    for (CFeat_CI feat_ci(bsh, SAnnotSelector(CSeqFeatData::e_Gene)); feat_ci; ++feat_ci)
-    {
-
-        if (feat_ci->GetData().GetGene().IsSetLocus())
-        {
-            string locus = feat_ci->GetData().GetGene().GetLocus();
-
-            count[locus]++;
-        }
-    }
-    for (map<string,int>::const_iterator i = count.begin(); i != count.end(); ++i)
-    {
-        if (i->second > 1)
-        {
-            string str = "[n] genes have the same locus ";
-            str += i->first;
-            str += " as another gene";
-            m_Objs["[n] genes have the same locus as another gene on the same Bioseq."][str].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
-        }
-    }
-}
-
-
-DISCREPANCY_SUMMARIZE(DUPLICATE_GENE_LOCUS_1)
-{
-    if (!m_Objs.empty())
-    {
-        m_ReportItems = m_Objs.Export(*this)->GetSubitems();
-    }
-    m_Objs.clear();
-}
-
 
 DISCREPANCY_CASE(DUPLICATE_GENE_LOCUS, CSeq_feat_BY_BIOSEQ, eNormal, "Duplicate Gene Locus")
 {
