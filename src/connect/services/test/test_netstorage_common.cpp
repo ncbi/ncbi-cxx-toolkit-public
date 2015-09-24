@@ -1385,7 +1385,7 @@ void SFixture<TPolicy>::ExistsAndRemoveTests(const TId& id)
     LOG_POST(Trace << "Removing existent object");
     Remove(netstorage, id);
 
-    Ctx("Checking non-existent object").Line(__LINE__);
+    Ctx("Checking removed object").Line(__LINE__);
     BOOST_CHECK_CTX(!Exists(netstorage, id), ctx);
 
     ReadAndCompare<TLocationNotFound>("Trying to read removed object",
