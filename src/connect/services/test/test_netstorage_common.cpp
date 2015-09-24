@@ -1470,8 +1470,8 @@ void SFixture<TPolicy>::Test(CNetStorageByKey&)
     ReadAndCompare<typename TLoc::TRelocate>("Reading using new flags",
             netstorage.Open(unique_key2, TLoc::relocate));
 
-    const int relocate = TLoc::relocate;
-    ExistsAndRemoveTests<typename TLoc::TRelocate>(TKey(unique_key2, relocate));
+    const int create = TLoc::create;
+    ExistsAndRemoveTests<typename TLoc::TRelocate>(TKey(unique_key2, create));
 }
 
 NCBITEST_AUTO_INIT()
