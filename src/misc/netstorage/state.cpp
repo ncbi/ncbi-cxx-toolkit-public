@@ -412,12 +412,17 @@ bool CNotFound::ExistsImpl()
 
 void CNotFound::RemoveImpl()
 {
+    NCBI_THROW_FMT(CNetStorageException, eNotExists,
+            "NetStorageObject \"" << m_ObjectLoc.GetLocator() <<
+            "\" could not be found in any of the designated locations.");
 }
 
 
 void CNotFound::SetExpirationImpl(const CTimeout&)
 {
-    GetSizeImpl();
+    NCBI_THROW_FMT(CNetStorageException, eNotExists,
+            "NetStorageObject \"" << m_ObjectLoc.GetLocator() <<
+            "\" could not be found in any of the designated locations.");
 }
 
 
@@ -504,16 +509,24 @@ Uint8 CNetCache::GetSizeImpl()
 
 CNetStorageObjectInfo CNetCache::GetInfoImpl()
 {
-    CNetServerMultilineCmdOutput output = m_Client.GetBlobInfo(
-            m_ObjectLoc.GetICacheKey(), 0, kEmptyStr,
-            nc_cache_name = m_ObjectLoc.GetAppDomain());
-
     CJsonNode blob_info = CJsonNode::NewObjectNode();
-    string line, key, val;
 
-    while (output.ReadLine(line))
-        if (NStr::SplitInTwo(line, ": ", key, val, NStr::fSplit_ByPattern))
-            blob_info.SetByKey(key, CJsonNode::GuessType(val));
+    try {
+        CNetServerMultilineCmdOutput output = m_Client.GetBlobInfo(
+                m_ObjectLoc.GetICacheKey(), 0, kEmptyStr,
+                nc_cache_name = m_ObjectLoc.GetAppDomain());
+
+        string line, key, val;
+
+        while (output.ReadLine(line))
+            if (NStr::SplitInTwo(line, ": ", key, val, NStr::fSplit_ByPattern))
+                blob_info.SetByKey(key, CJsonNode::GuessType(val));
+    }
+    catch (CNetCacheException& e) {
+        if (e.GetErrCode() == CNetCacheException::eBlobNotFound) {
+            NCBI_RETHROW_FMT(e, CNetStorageException, eNotExists, e.GetMsg());
+        }
+    }
 
     CJsonNode size_node(blob_info.GetByKeyOrNull("Size"));
 
@@ -525,18 +538,23 @@ CNetStorageObjectInfo CNetCache::GetInfoImpl()
 }
 
 
+// Cannot use ExistsImpl() directly from other methods,
+// as otherwise it would get into thrown exception instead of those methods
+#define NC_EXISTS_IMPL                                                      \
+    if (!m_Client.HasBlob(m_ObjectLoc.GetICacheKey(),                       \
+                kEmptyStr, nc_cache_name = m_ObjectLoc.GetAppDomain())) {   \
+        /* Have to throw to let other locations try */                      \
+        NCBI_THROW_FMT(CNetStorageException, eNotExists,                    \
+            "NetStorageObject \"" << m_ObjectLoc.GetLocator() <<            \
+            "\" does not exist in NetCache.");                              \
+    }
+
+
 bool CNetCache::ExistsImpl()
 {
     LOG_POST(Trace << "Checking existence in NetCache " << m_ObjectLoc.GetLocator());
-
-    if (m_Client.HasBlob(m_ObjectLoc.GetICacheKey(),
-            kEmptyStr, nc_cache_name = m_ObjectLoc.GetAppDomain())) {
-        return true;
-    } else {
-        // Have to throw to let other locations do this check
-        NCBI_THROW_FMT(CNetCacheException, eBlobNotFound, "Not found");
-        return false; // Not reached
-    }
+    NC_EXISTS_IMPL;
+    return true;
 }
 
 
@@ -544,13 +562,11 @@ void CNetCache::RemoveImpl()
 {
     LOG_POST(Trace << "Trying to remove from NetCache " << m_ObjectLoc.GetLocator());
 
-    if (ExistsImpl()) {
-        m_Client.RemoveBlob(m_ObjectLoc.GetICacheKey(), 0, kEmptyStr,
-                nc_cache_name = m_ObjectLoc.GetAppDomain());
-    } else {
-        // Have to throw to let other locations try to remove
-        NCBI_THROW_FMT(CNetCacheException, eBlobNotFound, "Not found");
-    }
+    // NetCache returns OK on removing already-removed/non-existent blobs,
+    // so have to check for existence first and throw if not
+    NC_EXISTS_IMPL;
+    m_Client.RemoveBlob(m_ObjectLoc.GetICacheKey(), 0, kEmptyStr,
+            nc_cache_name = m_ObjectLoc.GetAppDomain());
 }
 
 
@@ -566,11 +582,7 @@ struct SIClient : public CNetICacheClient
 
 void CNetCache::SetExpirationImpl(const CTimeout& ttl)
 {
-    if (!ttl.IsFinite()) {
-        NCBI_THROW_FMT(CNetStorageException, eNotSupported, m_ObjectLoc.GetICacheKey() <<
-            ": infinite ttl for NetCache blobs is not implemented");
-    }
-
+    NC_EXISTS_IMPL;
     SIClient(m_Client).ProlongBlobLifetime(m_ObjectLoc.GetICacheKey(), ttl);
 }
 
@@ -650,10 +662,23 @@ CNetStorageObjectInfo CFileTrack::GetInfoImpl()
 }
 
 
+// Cannot use ExistsImpl() directly from other methods,
+// as otherwise it would get into thrown exception instead of those methods
+#define FT_EXISTS_IMPL                                              \
+    if (m_Context->filetrack_api.GetFileInfo(m_ObjectLoc).          \
+            GetBoolean("deleted")) {                                \
+        /* Have to throw to let other locations try */              \
+        NCBI_THROW_FMT(CNetStorageException, eNotExists,            \
+            "NetStorageObject \"" << m_ObjectLoc.GetLocator() <<    \
+            "\" does not exist in FileTrack.");                     \
+    }
+
+
 bool CFileTrack::ExistsImpl()
 {
     LOG_POST(Trace << "Checking existence in FileTrack " << m_ObjectLoc.GetLocator());
-    return !m_Context->filetrack_api.GetFileInfo(m_ObjectLoc).GetBoolean("deleted");
+    FT_EXISTS_IMPL;
+    return true;
 }
 
 
@@ -668,12 +693,7 @@ void CFileTrack::SetExpirationImpl(const CTimeout&)
 {
     // By default objects in FileTrack do not have expiration,
     // so checking only object existence
-    if (!ExistsImpl()) {
-        NCBI_THROW_FMT(CNetStorageException, eNotExists,
-                "NetStorageObject \"" << m_ObjectLoc.GetLocator() <<
-                "\" could not be found in FileTrack.");
-    }
-
+    FT_EXISTS_IMPL;
     NCBI_THROW_FMT(CNetStorageException, eNotSupported,
             "SetExpiration() is not supported for FileTrack");
 }

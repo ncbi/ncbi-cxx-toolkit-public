@@ -246,12 +246,12 @@ inline typename TCaller::TReturn CObj::MetaMethod(const TCaller& caller)
             try {
                 return caller(m_Location);
             }
-            catch (CException& e) {
+            catch (CNetStorageException& e) {
+                if (e.GetErrCode() != CNetStorageException::eNotExists) throw;
+
                 l = m_Selector->Next();
 
-                if (!l) {
-                    throw;
-                }
+                if (!l) throw;
 
                 LOG_POST(Trace << "Exception: " << e);
             }

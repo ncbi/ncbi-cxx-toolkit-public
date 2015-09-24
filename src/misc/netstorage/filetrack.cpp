@@ -319,6 +319,12 @@ CJsonNode SFileTrackRequest::ReadJsonResponse()
                 "\"); HTTP status " << m_HTTPStatus);
     }
 
+    if (m_HTTPStatus == CRequestStatus::e404_NotFound) {
+        NCBI_THROW_FMT(CNetStorageException, eNotExists,
+                "Error while accessing \"" << m_ObjectLoc.GetLocator() <<
+                "\" (storage key \"" << m_ObjectLoc.GetUniqueKey() << "\")");
+    }
+
     CJsonNode root;
 
     try {
@@ -385,7 +391,14 @@ ERW_Result SFileTrackRequest::Read(void* buf, size_t count, size_t* bytes_read)
 
     if (m_FirstRead) {
         if (m_HTTPStatus >= 400) {
-            NCBI_THROW_FMT(CNetStorageException, eNotExists,
+            // Cannot use anything except EErrCode value as the second argument
+            // (as exception is added to it inside macro), so had to copy-paste
+            if (m_HTTPStatus == CRequestStatus::e404_NotFound) {
+                NCBI_THROW_FMT(CNetStorageException, eNotExists,
+                        "Cannot open \"" << m_ObjectLoc.GetLocator() <<
+                        "\" for reading (HTTP status " << m_HTTPStatus << ").");
+            }
+            NCBI_THROW_FMT(CNetStorageException, eIOError,
                     "Cannot open \"" << m_ObjectLoc.GetLocator() <<
                     "\" for reading (HTTP status " << m_HTTPStatus << ").");
         }
@@ -517,7 +530,17 @@ string SFileTrackAPI::GetFileAttribute(const CNetStorageObjectLoc& object_loc,
 
     if (request.m_HTTPStatus > 0 &&
             request.m_HTTPStatus != CRequestStatus::e200_Ok) {
-        NCBI_THROW_FMT(CNetStorageException, eNotExists,
+        // Cannot use anything except EErrCode value as the second argument
+        // (as exception is added to it inside macro), so had to copy-paste
+        if (request.m_HTTPStatus == CRequestStatus::e404_NotFound) {
+            NCBI_THROW_FMT(CNetStorageException, eNotExists,
+                    "Error while reading attribute \"" << attr_name <<
+                    "\" of \"" << object_loc.GetLocator() <<
+                    "\" (storage key \"" << object_loc.GetUniqueKey() <<
+                    "\"); HTTP status " << request.m_HTTPStatus <<
+                    ": " << s_RemoveHTMLTags(http_response.c_str()));
+        }
+        NCBI_THROW_FMT(CNetStorageException, eIOError,
                 "Error while reading attribute \"" << attr_name <<
                 "\" of \"" << object_loc.GetLocator() <<
                 "\" (storage key \"" << object_loc.GetUniqueKey() <<
