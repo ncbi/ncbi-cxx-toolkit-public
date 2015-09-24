@@ -176,6 +176,7 @@ public:
     AUTODEFBOOLFIELD(UseNcRNAComment)
 
     bool IsFeatureSuppressed(CSeqFeatData::ESubtype subtype) const;
+    bool AreAnyFeaturesSuppressed() const { return !m_SuppressedFeatureSubtypes.empty(); }
     void SuppressFeature(CSeqFeatData::ESubtype subtype);
     void SuppressAllFeatures();
     void ClearSuppressedFeatures();

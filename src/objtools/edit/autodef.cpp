@@ -634,6 +634,12 @@ void CAutoDef::SuppressFeature(objects::CFeatListItem feat)
 }
 
 
+void CAutoDef::SuppressFeature(objects::CSeqFeatData::ESubtype subtype)
+{
+    m_Options.SuppressFeature(subtype);
+}
+
+
 bool CAutoDef::IsSegment(CBioseq_Handle bh)
 {
     CSeq_entry_Handle seh = bh.GetParentEntry();

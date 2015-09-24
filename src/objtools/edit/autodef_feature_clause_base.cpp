@@ -806,6 +806,8 @@ void CAutoDefFeatureClause_Base::ConsolidateRepeatedClauses (bool suppress_allel
                     m_ClauseList[k]->Consolidate(*m_ClauseList[n], suppress_allele);
                 } else {
                     m_ClauseList[k]->AddSubclause(m_ClauseList[n]);
+                    m_ClauseList[k]->SuppressSubfeatures();
+                    m_ClauseList[k]->SetMakePlural();
                     m_ClauseList[n] = NULL;
                 } 
             }

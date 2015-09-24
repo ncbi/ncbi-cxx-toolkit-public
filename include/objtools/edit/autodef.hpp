@@ -105,7 +105,8 @@ public:
 	void SetUseNcRNAComment (bool use_comment);
     void SetUseFakePromoters (bool use_fake);
     
-    void SuppressFeature(objects::CFeatListItem feat);    
+    void SuppressFeature(objects::CFeatListItem feat); 
+    void SuppressFeature(objects::CSeqFeatData::ESubtype subtype);
     
     typedef vector<CAutoDefModifierCombo *> TModifierComboVector;
     

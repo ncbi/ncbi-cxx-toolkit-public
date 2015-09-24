@@ -302,6 +302,9 @@ void CheckAutoDefOptions
     if (opts.GetKeepMobileElements()) {
         expected_num_fields++;
     }
+    if (opts.AreAnyFeaturesSuppressed()) {
+        expected_num_fields++;
+    }
 
     BOOST_CHECK_EQUAL(user.GetObjectType(), CUser_object::eObjectType_AutodefOptions);
     BOOST_CHECK_EQUAL(user.GetData().size(), expected_num_fields);
@@ -1551,6 +1554,51 @@ BOOST_AUTO_TEST_CASE(GB_5272)
     gene->SetLocation().SetPartialStart(true, eExtreme_Biological);
     AddTitle(nuc, "Coxiella burnetii rhodanese-related sulfurtransferase (CBU_0065) gene, partial cds.");
     CheckDeflineMatches(entry);
+}
+
+BOOST_AUTO_TEST_CASE(GB_5272a)
+{
+    CRef<CSeq_entry> entry = BuildNucProtSet("hypothetical protein");
+    CRef<CSeqdesc> desc = AddSource(entry, "Coxiella burnetii");
+    CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> gene(new CSeq_feat());
+    gene->SetData().SetGene().SetLocus_tag("CBU_0067");
+    AddFeat(gene, nuc);
+    gene->SetLocation().Assign(cds->GetLocation());
+
+    CRef<CSeq_feat> cds2 = unit_test_util::MakeCDSForGoodNucProtSet("nuc", "prot2");
+    cds2->SetLocation().SetInt().SetFrom(5);
+    unit_test_util::AddFeat(cds2, entry);
+    CRef<CSeq_entry> pentry = unit_test_util::MakeProteinForGoodNucProtSet("prot2");
+    entry->SetSet().SetSeq_set().push_back(pentry);
+    pentry->SetSeq().SetAnnot().front()->SetData().SetFtable().front()->SetData().SetProt().SetName().front() = "hypothetical protein";
+    CRef<CSeq_feat> gene2(new CSeq_feat());
+    gene2->SetData().SetGene().SetLocus_tag("CBU_0068");
+    AddFeat(gene2, nuc);
+    gene2->SetLocation().Assign(cds2->GetLocation());
+
+    AddTitle(nuc, "Coxiella burnetii hypothetical protein (CBU_0067) and hypothetical protein (CBU_0068) genes, complete cds.");
+    CheckDeflineMatches(entry);
+
+    // try again, but suppress genes
+    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+
+    CRef<CScope> scope(new CScope(*object_manager));
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+    objects::CAutoDef autodef;
+
+    // add to autodef 
+    autodef.AddSources(seh);
+
+    CRef<CAutoDefModifierCombo> mod_combo;
+    mod_combo = new CAutoDefModifierCombo();
+
+    autodef.SuppressFeature(CSeqFeatData::eSubtype_gene);
+
+    AddTitle(nuc, "Coxiella burnetii hypothetical protein genes, complete cds.");
+    CheckDeflineMatches(seh, autodef, mod_combo);
 }
 
 
