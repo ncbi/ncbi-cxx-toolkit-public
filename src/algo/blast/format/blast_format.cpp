@@ -1765,7 +1765,9 @@ void CBlastFormat::x_GenerateXML2MasterFile(void)
 
 	m_Outfile << "<?xml version=\"1.0\"?>\n<BlastXML2\n"
 			"xmlns=\"http://www.ncbi.nlm.nih.gov\"\n"
-			"xmlns:xi=\"http://www.w3.org/2003/XInclude\">\n";
+			"xmlns:xi=\"http://www.w3.org/2003/XInclude\"\n"
+			"xmlns:xs=\"http://www.w3.org/2001/XMLSchema-instance\"\n"
+			"xs:schemaLocation=\"http://www.ncbi.nlm.nih.gov http://www.ncbi.nlm.nih.gov/data_specs/schema_alt/NCBI_BlastOutput2.xsd\">\n";
 
 	string base = s_GetBaseName(m_BaseFile, true, false);
 	for(int i = 1; i <= m_XMLFileCount; i ++) {
