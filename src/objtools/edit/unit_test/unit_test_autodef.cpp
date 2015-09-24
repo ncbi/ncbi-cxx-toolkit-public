@@ -1602,5 +1602,35 @@ BOOST_AUTO_TEST_CASE(GB_5272a)
 }
 
 
+BOOST_AUTO_TEST_CASE(GB_5272b)
+{
+    CRef<CSeq_entry> entry = BuildNucProtSet("hypothetical protein");
+    CRef<CSeqdesc> desc = AddSource(entry, "Coxiella burnetii");
+    CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
+
+    CRef<CSeq_feat> cds3 = unit_test_util::MakeCDSForGoodNucProtSet("nuc", "prot3");
+    cds3->SetLocation().SetInt().SetFrom(5);
+    unit_test_util::AddFeat(cds3, entry);
+    CRef<CSeq_entry> pentry = unit_test_util::MakeProteinForGoodNucProtSet("prot3");
+    entry->SetSet().SetSeq_set().push_back(pentry);
+    pentry->SetSeq().SetAnnot().front()->SetData().SetFtable().front()->SetData().SetProt().SetName().front() = "hypothetical protein";
+
+    AddTitle(nuc, "Coxiella burnetii hypothetical protein genes, complete cds.");
+    CheckDeflineMatches(entry);
+
+    // try again, but with intervening non-hypothetical protein gene
+    CRef<CSeq_feat> cds2 = unit_test_util::MakeCDSForGoodNucProtSet("nuc", "prot2");
+    cds2->SetLocation().SetInt().SetFrom(3);
+    unit_test_util::AddFeat(cds2, entry);
+    CRef<CSeq_entry> pentry2 = unit_test_util::MakeProteinForGoodNucProtSet("prot2");
+    entry->SetSet().SetSeq_set().push_back(pentry2);
+    pentry2->SetSeq().SetAnnot().front()->SetData().SetFtable().front()->SetData().SetProt().SetName().front() = "fake protein";
+
+    AddTitle(nuc, "Coxiella burnetii hypothetical protein, fake protein, and hypothetical protein genes, complete cds.");
+    CheckDeflineMatches(entry);
+
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

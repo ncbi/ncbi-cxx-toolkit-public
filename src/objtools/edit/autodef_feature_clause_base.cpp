@@ -810,6 +810,9 @@ void CAutoDefFeatureClause_Base::ConsolidateRepeatedClauses (bool suppress_allel
                     m_ClauseList[k]->SetMakePlural();
                     m_ClauseList[n] = NULL;
                 } 
+            } else {
+                // do not consolidate with non-consecutive clauses
+                break;
             }
         }
    
