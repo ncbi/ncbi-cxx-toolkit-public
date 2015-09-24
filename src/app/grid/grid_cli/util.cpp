@@ -455,8 +455,7 @@ public:
     static CJsonNode CreateArgsNode(const string& data, CJsonNode files)
     {
         CJsonNode node(CJsonNode::NewObjectNode());
-        node.SetString("storage", "embedded");
-        node.SetString("embedded_data", data);
+        node.SetString("cmdline_args", data);
         if (files) node.SetByKey("files", files);
         return node;
     }
