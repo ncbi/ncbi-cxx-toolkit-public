@@ -1538,5 +1538,21 @@ BOOST_AUTO_TEST_CASE(Test_RemovableMobileElement)
 
 }
 
+BOOST_AUTO_TEST_CASE(GB_5272)
+{
+    CRef<CSeq_entry> entry = BuildNucProtSet("rhodanese-related sulfurtransferase");
+    CRef<CSeqdesc> desc = AddSource(entry, "Coxiella burnetii");
+    CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> gene(new CSeq_feat());
+    gene->SetData().SetGene().SetLocus_tag("CBU_0065");
+    AddFeat(gene, nuc);
+    CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
+    cds->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    gene->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    AddTitle(nuc, "Coxiella burnetii rhodanese-related sulfurtransferase (CBU_0065) gene, partial cds.");
+    CheckDeflineMatches(entry);
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

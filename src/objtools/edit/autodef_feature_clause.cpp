@@ -432,6 +432,7 @@ bool CAutoDefFeatureClause::IsNoncodingProductFeat()
 CAutoDefGeneClause::CAutoDefGeneClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc, bool suppress_locus_tag)
     : CAutoDefFeatureClause(bh, main_feat, mapped_loc)
 {
+    m_SuppressLocusTag = suppress_locus_tag;
     m_GeneName = x_GetGeneName(m_MainFeat.GetData().GetGene(), suppress_locus_tag);
     if (m_MainFeat.GetData().GetGene().CanGetAllele()) {
         m_AlleleName = m_MainFeat.GetData().GetGene().GetAllele();
@@ -1355,8 +1356,10 @@ bool CAutoDefFeatureClause::AddGene (CAutoDefFeatureClause_Base *gene_clause, bo
         // already assigned
     } else {
         // find overlapping gene for this feature    
+        CAutoDefGeneClause *gene = dynamic_cast<CAutoDefGeneClause *>(gene_clause);
+        bool suppress_locus_tag = gene ? gene->GetSuppressLocusTag() : false;
         CConstRef <CSeq_feat> gene_for_feat = edit::GetGeneForFeature(m_MainFeat, m_BH.GetScope());
-        if (gene_for_feat && NStr::Equal(x_GetGeneName(gene_for_feat->GetData().GetGene(), true), gene_clause->GetGeneName())) {
+        if (gene_for_feat && NStr::Equal(x_GetGeneName(gene_for_feat->GetData().GetGene(), suppress_locus_tag), gene_clause->GetGeneName())) {
             used_gene = true;
             m_HasGene = true;
             m_GeneName = gene_clause->GetGeneName();

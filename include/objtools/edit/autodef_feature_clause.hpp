@@ -119,10 +119,12 @@ class NCBI_XOBJEDIT_EXPORT CAutoDefGeneClause : public CAutoDefFeatureClause
 public:
     CAutoDefGeneClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc, bool suppress_locus_tag);
     ~CAutoDefGeneClause() {}
+    bool GetSuppressLocusTag() { return m_SuppressLocusTag; }
 
 protected:
     virtual bool x_IsPseudo();
     virtual bool x_GetProductName(string &product_name);
+    bool m_SuppressLocusTag;
 };
 
 class NCBI_XOBJEDIT_EXPORT CAutoDefNcRNAClause : public CAutoDefFeatureClause
