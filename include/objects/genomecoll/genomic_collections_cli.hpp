@@ -45,6 +45,7 @@
 #include <objects/genomecoll/GCClient_AttributeFlags.hpp>
 #include <objects/genomecoll/GCClient_GetAssemblyReques.hpp>
 #include <objects/genomecoll/GCClient_FindBestAssemblyR.hpp>
+#include <objects/genomecoll/cached_assembly.hpp>
 // generated classes
 
 BEGIN_NCBI_SCOPE
