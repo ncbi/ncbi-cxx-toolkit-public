@@ -251,6 +251,7 @@ public:
     // Lazy
     const CBioSource* GetCurrentBiosource(void);
     CBioSource::TGenome GetCurrentGenome(void);
+    bool IsEukaryotic(void);
 
 protected:
     CRef<objects::CScope> m_Scope;

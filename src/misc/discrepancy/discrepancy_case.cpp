@@ -317,7 +317,7 @@ DISCREPANCY_AUTOFIX(OVERLAPPING_CDS)
 
 
 // CONTAINED_CDS
-
+/*
 static bool HasLineage(const CBioSource& biosrc, const string& def_lineage, const string& type)
 {
     return NStr::FindNoCase(def_lineage, type) != string::npos
@@ -339,7 +339,7 @@ static bool IsEukaryotic(const CBioSource* biosrc, const string& def_lineage)
     }
     return false;
 }
-
+*/
 
 static bool HasContainedNote(const CSeq_feat& feat)
 {
@@ -421,7 +421,7 @@ DISCREPANCY_CASE(CONTAINED_CDS, CSeqFeatData, eNormal, "Contained CDs")
     if (obj.Which() != CSeqFeatData::e_Cdregion) {
         return;
     }
-    if (!context.GetCurrentBioseq()->CanGetInst() || !context.GetCurrentBioseq()->GetInst().IsNa() || !IsEukaryotic(context.GetCurrentBiosource(), context.GetLineage())) {
+    if (!context.GetCurrentBioseq()->CanGetInst() || !context.GetCurrentBioseq()->GetInst().IsNa() || !context.IsEukaryotic()) {
         return;
     }
 

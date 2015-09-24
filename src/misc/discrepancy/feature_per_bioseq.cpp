@@ -23,7 +23,7 @@
  *
  * =========================================================================
  *
- * Authors: Igor Filippov based on Sema Kachalo's template
+ * Authors: Igor Filippov, Sema Kachalo
  *
  */
 
@@ -36,7 +36,7 @@ BEGIN_NCBI_SCOPE;
 BEGIN_SCOPE(NDiscrepancy)
 USING_SCOPE(objects);
 
-DISCREPANCY_MODULE(duplicate_gene_locus);
+DISCREPANCY_MODULE(feature_per_bioseq);
 
 
 // DUPLICATE_GENE_LOCUS

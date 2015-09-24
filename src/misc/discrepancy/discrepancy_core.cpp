@@ -348,6 +348,30 @@ const CBioSource* CDiscrepancyContext::GetCurrentBiosource()
 }
 
 
+static bool HasLineage(const CBioSource& biosrc, const string& def_lineage, const string& type)
+{
+    return NStr::FindNoCase(def_lineage, type) != string::npos || def_lineage.empty() && biosrc.IsSetLineage() && NStr::FindNoCase(biosrc.GetLineage(), type) != string::npos;
+}
+
+
+bool CDiscrepancyContext::IsEukaryotic()//context.GetCurrentBiosource(), context.GetLineage())
+//static bool IsEukaryotic(const CBioSource* biosrc, const string& def_lineage)
+{
+    const CBioSource* biosrc = GetCurrentBiosource();
+    if (biosrc) {
+        CBioSource::EGenome genome = (CBioSource::EGenome) biosrc->GetGenome();
+        if (genome != CBioSource::eGenome_mitochondrion
+            && genome != CBioSource::eGenome_chloroplast
+            && genome != CBioSource::eGenome_plastid
+            && genome != CBioSource::eGenome_apicoplast
+            && HasLineage(*biosrc, GetLineage(), "Eukaryota")) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 CBioSource::TGenome CDiscrepancyContext::GetCurrentGenome()
 {
     static CBioSource::TGenome genome;
@@ -364,7 +388,8 @@ CBioSource::TGenome CDiscrepancyContext::GetCurrentGenome()
 DISCREPANCY_LINK_MODULE(discrepancy_case);
 DISCREPANCY_LINK_MODULE(suspect_product_names);
 DISCREPANCY_LINK_MODULE(division_code_conflicts);
-DISCREPANCY_LINK_MODULE(duplicate_gene_locus);
+DISCREPANCY_LINK_MODULE(feature_per_bioseq);
+DISCREPANCY_LINK_MODULE(gene_names);
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
