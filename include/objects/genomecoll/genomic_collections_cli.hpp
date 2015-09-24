@@ -101,6 +101,7 @@ public:
     CRef<CGC_Assembly> GetAssembly(int releaseId,     const string& mode);
 
     //Some general modes
+    //please contact NCBI if you have other needs
     struct SAssemblyMode
     {
         static const string kAssemblyOnly;
