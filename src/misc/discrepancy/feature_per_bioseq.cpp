@@ -29,6 +29,7 @@
 
 #include <ncbi_pch.hpp>
 #include "discrepancy_core.hpp"
+#include "utils.hpp"
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/util/feature.hpp>
 
@@ -52,7 +53,10 @@ DISCREPANCY_CASE(DUPLICATE_GENE_LOCUS, CSeq_feat_BY_BIOSEQ, eNormal, "Duplicate 
         Summarize();
     }
     // TODO Skip any Bioseqs that are an mRNA sequence in a GenProdSet
-    m_Objs[obj.GetData().GetGene().GetLocus()].Add(*new CDiscrepancyObject(CConstRef<CSeq_feat>(&obj), context.GetScope(), context.GetFile(), context.GetKeepRef()), false);
+    CConstRef<CBioseq> bioseq = context.GetCurrentBioseq();
+    CConstRef<CBioseq_set> bioseq_set = context.GetCurrentBioseq_set();
+    if (!IsmRNASequenceInGenProdSet(bioseq, bioseq_set))
+        m_Objs[obj.GetData().GetGene().GetLocus()].Add(*new CDiscrepancyObject(CConstRef<CSeq_feat>(&obj), context.GetScope(), context.GetFile(), context.GetKeepRef()), false);
 }
 
 

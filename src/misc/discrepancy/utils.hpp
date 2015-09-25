@@ -30,7 +30,10 @@
 #ifndef _MISC_DISCREPANCY_UTILS_H_
 #define _MISC_DISCREPANCY_UTILS_H_
 
+#include <corelib/ncbistd.hpp>
 #include <serial/iterator.hpp>
+#include <objects/seq/Bioseq.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(NDiscrepancy)
@@ -43,7 +46,7 @@ bool IsAllCaps(const string& str);
 bool IsAllLowerCase(const string& str);
 bool IsAllPunctuation(const string& str);
 string GetTwoFieldSubfield(const string& str, unsigned subfield);
-
+bool IsmRNASequenceInGenProdSet(CConstRef<objects::CBioseq> bioseq, CConstRef<objects::CBioseq_set> bioseq_set);
 
 template <class T> void GetStringsFromObject(const T& obj, vector <string>& strs)
 {

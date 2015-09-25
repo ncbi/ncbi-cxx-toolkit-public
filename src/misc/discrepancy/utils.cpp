@@ -28,10 +28,14 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <objects/seq/MolInfo.hpp>
+#include <objects/seq/Seq_inst.hpp>
+#include <objects/seq/seq_macros.hpp>
 #include "utils.hpp"
 
 BEGIN_NCBI_SCOPE;
 BEGIN_SCOPE(NDiscrepancy)
+USING_SCOPE(objects);
 
 const string alpha_str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const string digit_str = "0123456789";
@@ -99,6 +103,34 @@ string GetTwoFieldSubfield(const string& str, unsigned subfield)
     }
 }
 
+static bool IsProdBiomol(int biomol)
+{
+    if (biomol == objects::CMolInfo::eBiomol_pre_RNA || 
+        biomol == objects::CMolInfo::eBiomol_mRNA  || 
+        biomol == objects::CMolInfo::eBiomol_rRNA  || 
+        biomol == objects::CMolInfo::eBiomol_tRNA  || 
+        biomol == objects::CMolInfo::eBiomol_ncRNA )
+        return true;
+    return false;
+}
+
+bool IsmRNASequenceInGenProdSet(CConstRef<objects::CBioseq> bioseq, CConstRef<objects::CBioseq_set> bioseq_set)
+{
+    bool res = false;
+    if (bioseq && bioseq->IsSetInst() && bioseq->GetInst().IsSetMol() && bioseq->GetInst().GetMol() == objects::CSeq_inst::eMol_rna
+        && bioseq_set && bioseq_set->IsSetClass() && bioseq_set->GetClass() == objects::CBioseq_set::eClass_gen_prod_set)
+    {
+        FOR_EACH_SEQDESC_ON_BIOSEQ(desc,*bioseq)
+        {
+            if ((*desc)->IsMolinfo() && (*desc)->GetMolinfo().IsSetBiomol())
+            {
+                res = IsProdBiomol((*desc)->GetMolinfo().GetBiomol());
+            }
+        }
+    }
+// TODO check grandparent bioseq-set    
+    return res;
+}
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
