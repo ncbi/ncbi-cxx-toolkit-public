@@ -91,6 +91,7 @@ void CClusterer::x_Init(void)
     m_MaxDiameter = 0.8;
     m_LinkMethod = eClique;
     m_MakeTrees = false;
+    m_ReportSingletons = true;
 }
 
 void CClusterer::SetDistMatrix(const TDistMatrix& dmat)
@@ -627,6 +628,20 @@ void CClusterer::ComputeClustersFromLinks(void)
     // initialize table of cluster ids for elements to unassigned
     m_ClusterId.resize(m_Links->GetNumElements(), -1);
 
+    // if there are any pre-computed clusters, set their ids to elements
+    if (!m_Clusters.empty()) {
+        for (size_t i=0;i < m_Clusters.size();i++) {
+            ITERATE (TSingleCluster, elem, m_Clusters[i]) {
+                if (*elem >= (int)m_Links->GetNumElements()) {
+                    NCBI_THROW(CClustererException, eInvalidInput,
+                               "Element index in pre-set cluster larger than "
+                               "number of elements provided with links");
+                }
+                m_ClusterId[*elem] = i;
+            }
+        }
+    }
+
     // sort links
     if (!m_Links->IsSorted()) {
         m_Links->Sort();
@@ -699,13 +714,15 @@ void CClusterer::ComputeClustersFromLinks(void)
 
     // find elements that were not assigned to any clusters and create
     // one-element clusters for them
-    for (int i=0;i < (int)m_ClusterId.size();i++) {
-        if (m_ClusterId[i] < 0) {
-            x_CreateCluster(i);
+    if (m_ReportSingletons) {
+        for (int i=0;i < (int)m_ClusterId.size();i++) {
+            if (m_ClusterId[i] < 0) {
+                x_CreateCluster(i);
+            }
         }
     }
 
-    // TO DO: m_Clusters needs to be chenched to vector of pointers or list
+    // TO DO: m_Clusters needs to be chenged to vector of pointers or list
     // so that the operations below are more efficient
 
     // remove empty clusters from the back of the list of clusters
@@ -724,7 +741,7 @@ void CClusterer::ComputeClustersFromLinks(void)
                 m_Clusters[i].AddElement(*it);
                 m_ClusterId[*it] = i;
                 m_Clusters[i].m_Tree = cluster.m_Tree;
-                _ASSERT(m_Clusters[i].m_Tree);
+                _ASSERT(!m_MakeTrees || m_Clusters[i].m_Tree);
             }
             m_Clusters.pop_back();
 

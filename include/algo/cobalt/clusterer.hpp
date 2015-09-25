@@ -229,6 +229,16 @@ public:
     ///
     void SetMakeTrees(bool trees) {m_MakeTrees = trees;}
 
+    /// Set reporting of single element clusters
+    /// @param b If true, single element clusters will be reported [in]
+    ///
+    void SetReportSingletons(bool b) {m_ReportSingletons = b;}
+
+    /// Get reporting mode for single element clusters
+    /// @return If true, single element clusters are reported
+    ///
+    bool GetReportSingletons(void) const {return m_ReportSingletons;}
+
     /// Compute clusters
     ///
     /// Computes complete linkage distance-based clustering with constrainted 
@@ -376,6 +386,7 @@ protected:
     list<int> m_UnusedEntries;
 
     bool m_MakeTrees;
+    bool m_ReportSingletons;
 };
 
 

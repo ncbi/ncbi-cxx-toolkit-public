@@ -442,6 +442,130 @@ BOOST_AUTO_TEST_CASE(TestMoreElements)
     s_TestClustersAndTrees(num_elements, clusterer, "data/ref_clusters.txt");
 }
 
+// Test clustering using pre-computed clusters as another input
+BOOST_AUTO_TEST_CASE(TestPrecomputedClusters)
+{
+    // create two pre-computed clusters with elements (0, 1, 2), (3)
+    CClusterer::TClusters pre_clusters(2);
+    pre_clusters[0].AddElement(0);
+    pre_clusters[0].AddElement(1);
+    pre_clusters[0].AddElement(2);
+    pre_clusters[1].AddElement(3);
+    
+    // create links for clustering
+    CRef<CLinks> links(new CLinks(6));
+    links->AddLink(0, 4, 0.5);
+    links->AddLink(1, 4, 1.5);
+    links->AddLink(4, 2, 2.0);
+    
+    // set pre-computed clusters
+    CClusterer clusterer(links);
+    ITERATE (CClusterer::TClusters, it, pre_clusters) {
+        clusterer.SetClusters().push_back(*it);
+    }
+
+    // run clustering
+    clusterer.Run();
+    CClusterer::TClusters& clusters = clusterer.SetClusters();
+    BOOST_REQUIRE_EQUAL(clusters.size(), 3u);
+
+    // make sure that all elements are present once and assigned to correct
+    // clusters
+    vector<bool> presence(links->GetNumElements(), false);
+    NON_CONST_ITERATE(CClusterer::TClusters, clust, clusters) {
+        int elem = *clust->begin();
+        if (elem == 5 || elem == 3) {
+            BOOST_REQUIRE_EQUAL(clust->size(), 1u);
+            BOOST_REQUIRE(!presence[elem]);
+            presence[elem] = true;
+        }
+        else {
+            BOOST_REQUIRE_EQUAL(clust->size(), 4u);
+            ITERATE (CClusterer::TSingleCluster, it, *clust) {
+                BOOST_REQUIRE(!presence[*it]);
+                presence[*it] = true;
+            }
+        }
+    }
+
+    ITERATE (vector<bool>, it, presence) {
+        BOOST_REQUIRE(*it);
+    }
+}
+
+// Test incremental clustering: first cluster a set of links, then cluster
+// new set of links using the clusters as a staring point
+BOOST_AUTO_TEST_CASE(TestIncremental)
+{
+    const int kNumElements = 10;
+
+    // create links
+    CRef<CLinks> links(new CLinks(kNumElements));
+    links->AddLink(0, 1, 0.0);
+    links->AddLink(5, 6, 0.0);
+
+    // run first clustering
+    auto_ptr<CClusterer> clusterer(new CClusterer(links));
+    clusterer->SetReportSingletons(false);
+    clusterer->Run();
+
+    // save clusters from the first round
+    CClusterer::TClusters clusters;
+    clusters.swap(clusterer->SetClusters());
+
+    // create new set of links
+    links.Reset(new CLinks(kNumElements));
+    links->AddLink(0, 2, 0.0);
+    links->AddLink(1, 2, 0.0);
+    links->AddLink(5, 8, 0.0);
+
+    // reset clusterer, set new links, pre-computed clusters and run clustering
+    clusterer.reset(new CClusterer(links));
+    clusterer->SetClusters().swap(clusters);
+    clusterer->Run();
+
+    CClusterer::TClusters& result = clusterer->SetClusters();
+
+    // these should be sizes of resulting clusters, indexed by the smalles
+    // element of each cluster
+    vector<size_t> sizes(kNumElements, 0);
+    sizes[0] = 3;
+    sizes[3] = 1;
+    sizes[4] = 1;
+    sizes[5] = 2;
+    sizes[7] = 1;
+    sizes[8] = 1;
+    sizes[9] = 1;
+    
+    // the sets must correspond to clusters
+    vector< set<int> > reference(kNumElements);
+    reference[0].insert(0);
+    reference[0].insert(1);
+    reference[0].insert(2);
+
+    reference[3].insert(3);
+    reference[4].insert(4);
+
+    reference[5].insert(5);
+    reference[5].insert(6);
+
+    reference[7].insert(7);
+    reference[8].insert(8);
+    reference[9].insert(9);
+
+    // check the size and elements of the resulting clusters
+    NON_CONST_ITERATE (CClusterer::TClusters, cluster, result) {
+        sort(cluster->begin(), cluster->end());
+        int cl_index = *cluster->begin();
+        BOOST_REQUIRE_EQUAL(cluster->size(), sizes[cl_index]);
+        ITERATE (CClusterer::TSingleCluster, elem, *cluster) {
+            set<int>::iterator it = reference[cl_index].find(*elem);
+            BOOST_REQUIRE(it != reference[cl_index].end());
+        }
+    }
+}
+
+
 BOOST_AUTO_TEST_SUITE_END()
 
 #endif /* SKIP_DOXYGEN_PROCESSING */
