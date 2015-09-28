@@ -387,12 +387,15 @@ void SNetScheduleAPIImpl::x_ClearNode()
 }
 
 // The purpose of this class is to suppress possible errors
-// when config loading is not enabled/disabled explicitly.
+// when config loading is not enabled explicitly.
 //
 // Errors would happen when we try to load config from servers that either
 // do not support "GETP2" command (introduced in 4.16.9)
 // or, do not support "QINF2 service=name" command (introduced in 4.17.0)
 // or, do not have "service to queue" mapping set
+// or, are not actually NetSchedule servers but worker nodes
+// or, are currently not reachable (behind some firewall)
+// and need cross connectivity which is usually enabled later
 //
 // This class is turned off (becomes noop, by providing NULL as api_impl)
 // when config loading is enabled explicitly
@@ -403,16 +406,7 @@ private:
 
     struct SHandler : public INetEventHandler
     {
-        bool OnError(CException::TErrCode err_code)
-        {
-            switch (err_code) {
-            case CNetScheduleException::eProtocolSyntaxError:
-            case CNetScheduleException::eUnknownService:
-                return true;
-            default:
-                return false;
-            }
-        }
+        bool OnError(CException::TErrCode err_code) { return true; }
     };
 public:
     CErrorSuppressor(SNetScheduleAPIImpl* api_impl) :
@@ -422,6 +416,8 @@ public:
             THandlerRef& handler = m_ApiImpl->GetListener()->m_EventHandler;
             m_OriginalHandler = handler;
             handler = new SHandler;
+            m_MaxRetries = TServConn_ConnMaxRetries::GetDefault();
+            TServConn_ConnMaxRetries::SetDefault(0);
         }
     }
 
@@ -429,12 +425,14 @@ public:
     {
         if (m_ApiImpl) {
             m_ApiImpl->GetListener()->m_EventHandler = m_OriginalHandler;
+            TServConn_ConnMaxRetries::SetDefault(m_MaxRetries);
         }
     }
 
 private:
     SNetScheduleAPIImpl* m_ApiImpl;
     THandlerRef m_OriginalHandler;
+    unsigned m_MaxRetries;
 };
 
 CNetScheduleConfigLoader::CNetScheduleConfigLoader(
@@ -499,7 +497,13 @@ CConfig* CNetScheduleConfigLoader::Get(SNetScheduleAPIImpl* impl,
     CErrorSuppressor suppressor(set_explicitly ? NULL : impl);
     TParams queue_params;
 
-    impl->GetQueueParams(kEmptyStr, queue_params);
+    try {
+        impl->GetQueueParams(kEmptyStr, queue_params);
+    }
+    catch (...) {
+        if (set_explicitly) throw;
+        return NULL;
+    }
 
     if (CConfig* result = Parse(queue_params, m_Prefix)) {
         section = m_Section;
