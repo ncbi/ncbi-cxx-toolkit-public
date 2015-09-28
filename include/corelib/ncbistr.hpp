@@ -326,9 +326,9 @@ public:
     ///   - Otherwise, if fConvErr_NoThrow is not set, throw an exception.
     ///   - Otherwise, set errno to non-zero and return zero.
     template <typename TNumeric>
-    static TNumeric StringToNumeric(const CTempString& str,
-                                    TStringToNumFlags  flags = 0,
-                                    int                base  = 10);
+    static TNumeric StringToNumeric(const CTempString str,
+                                    TStringToNumFlags flags = 0,
+                                    int               base  = 10);
 
     /// Convert string to a numeric value.
     ///
@@ -349,10 +349,10 @@ public:
     ///   - Otherwise, set errno to non-zero, set the value to zero, and
     ///     return false.
     template <typename TNumeric>
-    static bool StringToNumeric(const CTempString& str,
-                                TNumeric*          value, /*[out]*/ 
-                                TStringToNumFlags  flags = 0,
-                                int                base  = 10);
+    static bool StringToNumeric(const CTempString str,
+                                TNumeric*         value, /*[out]*/ 
+                                TStringToNumFlags flags = 0,
+                                int               base  = 10);
 
     /// Convert string to int.
     ///
@@ -369,9 +369,9 @@ public:
     ///     converted value.
     ///   - Otherwise, if fConvErr_NoThrow is not set, throw an exception.
     ///   - Otherwise, set errno to non-zero and return zero.
-    static int StringToInt(const CTempString& str,
-                           TStringToNumFlags  flags = 0,
-                           int                base  = 10);
+    static int StringToInt(const CTempString str,
+                           TStringToNumFlags flags = 0,
+                           int               base  = 10);
 
     /// Convert string to unsigned int.
     ///
@@ -388,9 +388,9 @@ public:
     ///     converted value.
     ///   - Otherwise, if fConvErr_NoThrow is not set, throw an exception.
     ///   - Otherwise, set errno to non-zero and return zero.
-    static unsigned int StringToUInt(const CTempString& str,
-                                     TStringToNumFlags  flags = 0,
-                                     int                base  = 10);
+    static unsigned int StringToUInt(const CTempString str,
+                                     TStringToNumFlags flags = 0,
+                                     int               base  = 10);
 
     /// Convert string to long.
     ///
@@ -407,9 +407,9 @@ public:
     ///     converted value.
     ///   - Otherwise, if fConvErr_NoThrow is not set, throw an exception.
     ///   - Otherwise, set errno to non-zero and return zero.
-    static long StringToLong(const CTempString& str,
-                             TStringToNumFlags  flags = 0,
-                             int                base  = 10);
+    static long StringToLong(const CTempString str,
+                             TStringToNumFlags flags = 0,
+                             int               base  = 10);
 
     /// Convert string to unsigned long.
     ///
@@ -426,9 +426,9 @@ public:
     ///     converted value.
     ///   - Otherwise, if fConvErr_NoThrow is not set, throw an exception.
     ///   - Otherwise, set errno to non-zero and return zero.
-    static unsigned long StringToULong(const CTempString& str,
-                                       TStringToNumFlags  flags = 0,
-                                       int                base  = 10);
+    static unsigned long StringToULong(const CTempString str,
+                                       TStringToNumFlags flags = 0,
+                                       int               base  = 10);
 
     /// Convert string to double-precision value (analog of strtod function)
     ///
@@ -479,8 +479,8 @@ public:
     /// @note
     ///   - Denormal or infinite results are considered successful conversion.
     ///   - To enforce finite and normalized result, use fDecimalPosixFinite flag.
-    static double StringToDouble(const CTempStringEx& str,
-                                 TStringToNumFlags    flags = 0);
+    static double StringToDouble(const CTempStringEx str,
+                                 TStringToNumFlags   flags = 0);
 
     /// This version accepts zero-terminated string
     /// @deprecated
@@ -505,9 +505,9 @@ public:
     ///     converted value.
     ///   - Otherwise, if fConvErr_NoThrow is not set, throw an exception.
     ///   - Otherwise, set errno to non-zero and return zero.
-    static Int8 StringToInt8(const CTempString& str,
-                             TStringToNumFlags  flags = 0,
-                             int                base  = 10);
+    static Int8 StringToInt8(const CTempString str,
+                             TStringToNumFlags flags = 0,
+                             int               base  = 10);
 
     /// Convert string to Uint8.
     ///
@@ -524,9 +524,9 @@ public:
     ///     converted value.
     ///   - Otherwise, if fConvErr_NoThrow is not set, throw an exception.
     ///   - Otherwise, set errno to non-zero and return zero.
-    static Uint8 StringToUInt8(const CTempString& str,
-                               TStringToNumFlags  flags = 0,
-                               int                base  = 10);
+    static Uint8 StringToUInt8(const CTempString str,
+                               TStringToNumFlags flags = 0,
+                               int               base  = 10);
 
     /// Convert string that can contain "software" qualifiers to Uint8. 
     ///
@@ -551,8 +551,8 @@ public:
     ///   - If conversion succeeds, return the converted value.
     ///   - Otherwise, if fConvErr_NoThrow is not set, throw an exception.
     ///   - Otherwise, set errno to non-zero and return zero.
-    static Uint8 StringToUInt8_DataSize(const CTempString& str,
-                                        TStringToNumFlags  flags = 0);
+    static Uint8 StringToUInt8_DataSize(const CTempString str,
+                                        TStringToNumFlags flags = 0);
 
     /// Convert string to number of bytes. 
     ///
@@ -579,9 +579,9 @@ public:
     ///   - Otherwise, set errno to non-zero and return zero.
     /// @deprecated  Use StringToUInt8_DataSize(str,flags) instead.
     NCBI_DEPRECATED
-    static Uint8 StringToUInt8_DataSize(const CTempString& str,
-                                        TStringToNumFlags  flags,
-                                        int                base);
+    static Uint8 StringToUInt8_DataSize(const CTempString str,
+                                        TStringToNumFlags flags,
+                                        int               base);
 
     /// Convert string to size_t.
     ///
@@ -598,9 +598,9 @@ public:
     ///     converted value.
     ///   - Otherwise, if fConvErr_NoThrow is not set, throw an exception.
     ///   - Otherwise, set errno to non-zero and return zero.
-    static size_t StringToSizet(const CTempString& str,
-                                TStringToNumFlags  flags = 0,
-                                int                base  = 10);
+    static size_t StringToSizet(const CTempString str,
+                                TStringToNumFlags flags = 0,
+                                int               base  = 10);
 
     /// Convert string to pointer.
     ///
@@ -611,7 +611,7 @@ public:
     ///   - If conversion succeeds, set errno to zero and return the
     ///     converted value.
     ///   - Otherwise, set errno to non-zero and return NULL.
-    static const void* StringToPtr(const CTempStringEx& str);
+    static const void* StringToPtr(const CTempStringEx str);
 
     /// Convert character to integer.
     ///
@@ -1247,7 +1247,7 @@ public:
     ///   - If conversion succeeds, set errno to zero and return
     ///     TRUE or FALSE.
     ///   - Otherwise, set errno to non-zero and throw an exception.
-    static bool StringToBool(const CTempString& str);
+    static bool StringToBool(const CTempString str);
 
 
     /// Handle an arbitrary printf-style format string.
@@ -1296,7 +1296,7 @@ public:
     /// @sa
     ///   Other forms of overloaded CompareCase() with differences in argument
     ///   types: char* vs. CTempString[Ex]&
-    static int CompareCase(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
+    static int CompareCase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
                            const char* pattern);
 
     /// Case-sensitive compare of a substring with a pattern.
@@ -1316,8 +1316,8 @@ public:
     /// @sa
     ///   Other forms of overloaded CompareCase() with differences in argument
     ///   types: char* vs. CTempString[Ex]&
-    static int CompareCase(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
-                           const CTempString& pattern);
+    static int CompareCase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
+                           const CTempString pattern);
 
     /// Case-sensitive compare of two strings -- char* version.
     ///
@@ -1333,7 +1333,7 @@ public:
     ///   CompareNocase(), Compare() versions with same argument types.
     static int CompareCase(const char* s1, const char* s2);
 
-    /// Case-sensitive compare of two strings -- CTempStringEx& version.
+    /// Case-sensitive compare of two strings -- CTempStringEx version.
     ///
     /// @param s1
     ///   String to be compared -- operand 1.
@@ -1345,7 +1345,7 @@ public:
     ///   - Positive integer, if s1 > s2.   
     /// @sa
     ///   CompareNocase(), Compare() versions with same argument types.
-    static int CompareCase(const CTempStringEx& s1, const CTempStringEx& s2);
+    static int CompareCase(const CTempStringEx s1, const CTempStringEx s2);
 
     /// Case-insensitive compare of a substring with a pattern.
     ///
@@ -1366,7 +1366,7 @@ public:
     /// @sa
     ///   Other forms of overloaded CompareNocase() with differences in
     ///   argument types: char* vs. CTempString[Ex]&
-    static int CompareNocase(const CTempString& str, 
+    static int CompareNocase(const CTempString str, 
                              SIZE_TYPE pos, SIZE_TYPE n, const char* pattern);
 
     /// Case-insensitive compare of a substring with a pattern.
@@ -1388,9 +1388,9 @@ public:
     /// @sa
     ///   Other forms of overloaded CompareNocase() with differences in
     ///   argument types: char* vs. CTempString[Ex]&
-    static int CompareNocase(const CTempString& str, 
+    static int CompareNocase(const CTempString str, 
                              SIZE_TYPE pos, SIZE_TYPE n,
-                             const CTempString& pattern);
+                             const CTempString pattern);
 
     /// Case-insensitive compare of two strings -- char* version.
     ///
@@ -1406,7 +1406,7 @@ public:
     ///   CompareCase(), Compare() versions with same argument types.
     static int CompareNocase(const char* s1, const char* s2);
 
-    /// Case-insensitive compare of two strings -- CTempStringEx& version.
+    /// Case-insensitive compare of two strings -- CTempStringEx version.
     ///
     /// @param s1
     ///   String to be compared -- operand 1.
@@ -1418,7 +1418,7 @@ public:
     ///   - Positive integer, if s1 > s2 (case-insensitive compare).    
     /// @sa
     ///   CompareCase(), Compare() versions with same argument types.
-    static int CompareNocase(const CTempStringEx& s1, const CTempStringEx& s2);
+    static int CompareNocase(const CTempStringEx s1, const CTempStringEx s2);
 
     /// Compare of a substring with a pattern.
     ///
@@ -1440,7 +1440,7 @@ public:
     /// @sa
     ///   Other forms of overloaded Compare() with differences in argument
     ///   types: char* vs. CTempString[Ex]&
-    static int Compare(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
+    static int Compare(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
                        const char* pattern, ECase use_case = eCase);
 
     /// Compare of a substring with a pattern.
@@ -1463,8 +1463,8 @@ public:
     /// @sa
     ///   Other forms of overloaded Compare() with differences in argument
     ///   types: char* vs. CTempString[Ex]&
-    static int Compare(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
-                       const CTempString& pattern, ECase use_case = eCase);
+    static int Compare(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
+                       const CTempString pattern, ECase use_case = eCase);
 
     /// Compare two strings -- char* version.
     ///
@@ -1486,7 +1486,7 @@ public:
                        ECase use_case = eCase);
 
 
-    /// Compare two strings -- CTempStringEx& version.
+    /// Compare two strings -- CTempStringEx version.
     ///
     /// @param s1
     ///   String to be compared -- operand 1.
@@ -1502,7 +1502,7 @@ public:
     /// @sa
     ///   Other forms of overloaded Compare() with differences in argument
     ///   types: char* vs. CTempString[Ex]&
-    static int Compare(const CTempStringEx& s1, const CTempStringEx& s2,
+    static int Compare(const CTempStringEx s1, const CTempStringEx s2,
                        ECase use_case = eCase);
 
     /// Case-sensitive equality of a substring with a pattern.
@@ -1521,7 +1521,7 @@ public:
     /// @sa
     ///   Other forms of overloaded EqualCase() with differences in argument
     ///   types: char* vs. CTempString[Ex]&
-    static bool EqualCase(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
+    static bool EqualCase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
                           const char* pattern);
 
     /// Case-sensitive equality of a substring with a pattern.
@@ -1540,8 +1540,8 @@ public:
     /// @sa
     ///   Other forms of overloaded EqualCase() with differences in argument
     ///   types: char* vs. CTempString[Ex]&
-    static bool EqualCase(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
-                          const CTempString& pattern);
+    static bool EqualCase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
+                          const CTempString pattern);
 
     /// Case-sensitive equality of two strings -- char* version.
     ///
@@ -1567,7 +1567,7 @@ public:
     ///   - false, otherwise
     /// @sa
     ///   EqualCase(), Equal() versions with same argument types.
-    static bool EqualCase(const CTempStringEx& s1, const CTempStringEx& s2);
+    static bool EqualCase(const CTempStringEx s1, const CTempStringEx s2);
 
     /// Case-insensitive equality of a substring with a pattern.
     ///
@@ -1585,7 +1585,7 @@ public:
     /// @sa
     ///   Other forms of overloaded EqualNocase() with differences in
     ///   argument types: char* vs. CTempString[Ex]&
-    static bool EqualNocase(const CTempString& str,
+    static bool EqualNocase(const CTempString str,
                             SIZE_TYPE pos, SIZE_TYPE n,
                             const char* pattern);
 
@@ -1605,8 +1605,8 @@ public:
     /// @sa
     ///   Other forms of overloaded EqualNocase() with differences in
     ///   argument types: char* vs. CTempString[Ex]&
-    static bool EqualNocase(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
-                            const CTempString& pattern);
+    static bool EqualNocase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
+                            const CTempString pattern);
 
     /// Case-insensitive equality of two strings -- char* version.
     ///
@@ -1632,7 +1632,7 @@ public:
     ///   - false, otherwise.
     /// @sa
     ///   EqualCase(), Equal() versions with same argument types.
-    static bool EqualNocase(const CTempStringEx& s1, const CTempStringEx& s2);
+    static bool EqualNocase(const CTempStringEx s1, const CTempStringEx s2);
 
     /// Test for equality of a substring with a pattern.
     ///
@@ -1653,7 +1653,7 @@ public:
     /// @sa
     ///   Other forms of overloaded Equal() with differences in argument
     ///   types: char* vs. CTempString[Ex]&
-    static bool Equal(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
+    static bool Equal(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
                       const char* pattern, ECase use_case = eCase);
 
     /// Test for equality of a substring with a pattern.
@@ -1676,8 +1676,8 @@ public:
     /// @sa
     ///   Other forms of overloaded Equal() with differences in argument
     ///   types: char* vs. CTempString[Ex]&
-    static bool Equal(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
-                      const CTempString& pattern, ECase use_case = eCase);
+    static bool Equal(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
+                      const CTempString pattern, ECase use_case = eCase);
 
     /// Test for equality of two strings -- char* version.
     ///
@@ -1711,7 +1711,7 @@ public:
     ///   - false, otherwise.
     /// @sa
     ///   EqualNocase(), Equal() versions with similar argument types.
-    static bool Equal(const CTempStringEx& s1, const CTempStringEx& s2,
+    static bool Equal(const CTempStringEx s1, const CTempStringEx s2,
                       ECase use_case = eCase);
 
     // NOTE.  On some platforms, "strn[case]cmp()" can work faster than their
@@ -1807,7 +1807,7 @@ public:
     ///   String to check.
     /// @param pos
     ///   starting position (default 0)
-    static bool IsBlank(const CTempString& str, SIZE_TYPE pos = 0);
+    static bool IsBlank(const CTempString str, SIZE_TYPE pos = 0);
 
     /// Checks if all letters in the given string have a lower case.
     ///
@@ -1818,7 +1818,7 @@ public:
     ///   according to the current C locale (std::islower()).
     ///   All non-letter characters will be ignored.
     ///   TRUE if empty or no letters.
-    static bool IsLower(const CTempString& str);
+    static bool IsLower(const CTempString str);
 
     /// Checks if all letters in the given string have a upper case.
     ///
@@ -1829,7 +1829,7 @@ public:
     ///   according to the current C locale (std::isupper()).
     ///   All non-letter characters will be skipped.
     ///   TRUE if empty or no letters.
-    static bool IsUpper(const CTempString& str);
+    static bool IsUpper(const CTempString str);
 
 
     // The following 4 methods change the passed string, then return it
@@ -1886,7 +1886,7 @@ public:
     /// @param use_case
     ///   Whether to do a case sensitive compare(default is eCase), or a
     ///   case-insensitive compare (eNocase) while checking.
-    static bool StartsWith(const CTempString& str, const CTempString& start,
+    static bool StartsWith(const CTempString str, const CTempString start,
                            ECase use_case = eCase);
 
     /// Check if a string starts with a specified character value.
@@ -1898,7 +1898,7 @@ public:
     /// @param use_case
     ///   Whether to do a case sensitive compare(default is eCase), or a
     ///   case-insensitive compare (eNocase) while checking.
-    static bool StartsWith(const CTempString& str, char start,
+    static bool StartsWith(const CTempString str, char start,
                            ECase use_case = eCase);
 
     /// Check if a string ends with a specified suffix value.
@@ -1910,7 +1910,7 @@ public:
     /// @param use_case
     ///   Whether to do a case sensitive compare(default is eCase), or a
     ///   case-insensitive compare (eNocase) while checking.
-    static bool EndsWith(const CTempString& str, const CTempString& end,
+    static bool EndsWith(const CTempString str, const CTempString end,
                          ECase use_case = eCase);
 
     /// Check if a string ends with a specified character value.
@@ -1922,7 +1922,7 @@ public:
     /// @param use_case
     ///   Whether to do a case sensitive compare(default is eCase), or a
     ///   case-insensitive compare (eNocase) while checking.
-    static bool EndsWith(const CTempString& str, char end,
+    static bool EndsWith(const CTempString str, char end,
                          ECase use_case = eCase);
 
     /// Determine the common prefix of two strings.
@@ -1933,7 +1933,7 @@ public:
     ///   String to be compared -- operand 2.
     /// @return
     ///   The number of characters common to the start of each string.
-    static SIZE_TYPE CommonPrefixSize(const CTempString& s1, const CTempString& s2);
+    static SIZE_TYPE CommonPrefixSize(const CTempString s1, const CTempString s2);
 
     /// Determine the common suffix of two strings.
     ///
@@ -1943,7 +1943,7 @@ public:
     ///   String to be compared -- operand 2.
     /// @return
     ///   The number of characters common to the end of each string.
-    static SIZE_TYPE CommonSuffixSize(const CTempString& s1, const CTempString& s2);
+    static SIZE_TYPE CommonSuffixSize(const CTempString s1, const CTempString s2);
 
     /// Determine if the suffix of one string is the prefix of another.
     ///
@@ -1954,7 +1954,7 @@ public:
     /// @return
     ///   The number of characters common to the end of the first string
     ///   and the start of the second string.
-    static SIZE_TYPE CommonOverlapSize(const CTempString& s1, const CTempString& s2);
+    static SIZE_TYPE CommonOverlapSize(const CTempString s1, const CTempString s2);
 
 
     /// Whether it is the first or last occurrence.
@@ -1988,8 +1988,8 @@ public:
     ///   ["start", "end"], or
     ///   - NPOS if there is no occurrence of the pattern.
     /// @sa FindCase, FindNoCase, FindWord
-    static SIZE_TYPE Find(const CTempString& str,
-                          const CTempString& pattern,
+    static SIZE_TYPE Find(const CTempString str,
+                          const CTempString pattern,
                           SIZE_TYPE   start = 0, SIZE_TYPE end = NPOS,
                           EOccurrence which = eFirst,
                           ECase       use_case = eCase);
@@ -2017,8 +2017,8 @@ public:
     ///   ["start", "end"], or
     ///   - NPOS if there is no occurrence of the pattern.
     /// @sa Find
-    static SIZE_TYPE FindCase  (const CTempString& str, 
-                                const CTempString& pattern,
+    static SIZE_TYPE FindCase  (const CTempString str, 
+                                const CTempString pattern,
                                 SIZE_TYPE   start = 0, SIZE_TYPE end = NPOS,
                                 EOccurrence which = eFirst);
 
@@ -2045,32 +2045,32 @@ public:
     ///   ["start", "end"], or
     ///   - NPOS if there is no occurrence of the pattern.
     /// @sa Find
-    static SIZE_TYPE FindNoCase(const CTempString& str,
-                                const CTempString& pattern,
+    static SIZE_TYPE FindNoCase(const CTempString str,
+                                const CTempString pattern,
                                 SIZE_TYPE   start = 0, SIZE_TYPE end = NPOS,
                                 EOccurrence which = eFirst);
 
     /// Test for presence of a given string in a list or vector of strings
 
     static const string* Find      (const list<string>& lst,
-                                    const CTempString& val,
+                                    const CTempString val,
                                     ECase use_case = eCase);
 
     static const string* FindCase  (const list<string>& lst,
-                                    const CTempString& val);
+                                    const CTempString val);
 
     static const string* FindNoCase(const list<string>& lst, 
-                                    const CTempString& val);
+                                    const CTempString val);
 
     static const string* Find      (const vector<string>& vec, 
-                                    const CTempString& val,
+                                    const CTempString val,
                                     ECase use_case = eCase);
 
     static const string* FindCase  (const vector<string>& vec,
-                                    const CTempString& val);
+                                    const CTempString val);
 
     static const string* FindNoCase(const vector<string>& vec,
-                                    const CTempString& val);
+                                    const CTempString val);
 
 
     /// Find given word in the string.
@@ -2098,8 +2098,8 @@ public:
     ///   ["start", "end"], or
     ///   - NPOS if there is no occurrence of the word.
     /// @sa Find
-    static SIZE_TYPE FindWord(const CTempString& str,
-                              const CTempString& word,
+    static SIZE_TYPE FindWord(const CTempString str,
+                              const CTempString word,
                               EOccurrence which = eFirst,
                               ECase       use_case = eCase);
 
@@ -2135,14 +2135,14 @@ public:
     ///   So, for example, if the source is temporary string, then the result
     ///   will be invalid right away (will point to already released memory).
     /// @sa TruncateSpaces
-    static CTempString TruncateSpaces_Unsafe(const CTempString& str,
+    static CTempString TruncateSpaces_Unsafe(const CTempString str,
                                              ETrunc where = eTrunc_Both);
 
 
     /// @deprecated  Use TruncateSpaces_Unsafe() instead -- AND, do make sure
     ///              that you indeed use that in a safe manner!
     NCBI_DEPRECATED
-    static CTempString TruncateSpaces(const CTempString& str,
+    static CTempString TruncateSpaces(const CTempString str,
                                       ETrunc where = eTrunc_Both) {
         return TruncateSpaces_Unsafe(str, where);
     }
@@ -2192,9 +2192,9 @@ public:
     /// @param use_case
     ///   Whether to do a case sensitive compare (default is eCase), or a
     ///   case-insensitive compare (eNocase) while checking for a prefix.
-    static void TrimPrefixInPlace(string& str, const CTempString& prefix,
+    static void TrimPrefixInPlace(string& str, const CTempString prefix,
                                   ECase use_case = eCase);
-    static void TrimPrefixInPlace(CTempString& str, const CTempString& prefix,
+    static void TrimPrefixInPlace(CTempString& str, const CTempString prefix,
                                   ECase use_case = eCase);
 
     /// Trim suffix from a string (in-place)
@@ -2207,9 +2207,9 @@ public:
     /// @param use_case
     ///   Whether to do a case sensitive compare (default is eCase), or a
     ///   case-insensitive compare (eNocase) while checking for a prefix.
-    static void TrimSuffixInPlace(string& str, const CTempString& suffix,
+    static void TrimSuffixInPlace(string& str, const CTempString suffix,
                                   ECase use_case = eCase);
-    static void TrimSuffixInPlace(CTempString& str, const CTempString& suffix,
+    static void TrimSuffixInPlace(CTempString& str, const CTempString suffix,
                                   ECase use_case = eCase);
 
     /// Replace occurrences of a substring within a string.
@@ -2342,27 +2342,27 @@ public:
     ///   The list "arr" is also returned.
     /// @sa
     ///   ESplitFlags, Tokenize, SplitInTwo
-    static list<string>& Split(const CTempString& str,
-                               const CTempString& delim,
+    static list<string>& Split(const CTempString str,
+                               const CTempString delim,
                                list<string>& arr,
                                TSplitFlags   flags = fSplit_MergeDelims,
                                vector<SIZE_TYPE>* token_pos = NULL);
 
-    static list<string>& Split(const CTempString& str,
-                               const CTempString& delim,
+    static list<string>& Split(const CTempString str,
+                               const CTempString delim,
                                list<string>& arr,
                                EMergeDelims  merge,
                                vector<SIZE_TYPE>* token_pos = NULL);
 
-    static list<CTempStringEx>& Split(const CTempString&   str,
-                                      const CTempString&   delim,
+    static list<CTempStringEx>& Split(const CTempString str,
+                                      const CTempString delim,
                                       list<CTempStringEx>& arr,
                                       TSplitFlags flags = fSplit_MergeDelims,
                                       vector<SIZE_TYPE>*   token_pos = NULL,
                                       CTempString_Storage* storage = NULL);
 
-    static list<CTempString>& Split(const CTempString& str,
-                                    const CTempString& delim,
+    static list<CTempString>& Split(const CTempString  str,
+                                    const CTempString  delim,
                                     list<CTempString>& arr,
                                     EMergeDelims       merge = eMergeDelims,
                                     vector<SIZE_TYPE>* token_pos = NULL);
@@ -2390,43 +2390,43 @@ public:
     ///   The vector "arr" is also returned.
     /// @sa
     ///   ESplitFlags, Split, SplitInTwo
-    static vector<string>& Tokenize(const CTempString& str,
-                                    const CTempString& delim,
+    static vector<string>& Tokenize(const CTempString  str,
+                                    const CTempString  delim,
                                     vector<string>&    arr,
                                     TSplitFlags        flags = 0,
                                     vector<SIZE_TYPE>* token_pos = NULL);
 
-    static vector<string>& Tokenize(const CTempString& str,
-                                    const CTempString& delim,
+    static vector<string>& Tokenize(const CTempString  str,
+                                    const CTempString  delim,
                                     vector<string>&    arr,
                                     EMergeDelims       merge,
                                     vector<SIZE_TYPE>* token_pos = NULL);
 
     static
-    vector<CTempStringEx>& Tokenize(const CTempString&     str,
-                                    const CTempString&     delim,
+    vector<CTempStringEx>& Tokenize(const CTempString      str,
+                                    const CTempString      delim,
                                     vector<CTempStringEx>& arr,
                                     TSplitFlags            flags = 0,
                                     vector<SIZE_TYPE>*     token_pos = NULL,
                                     CTempString_Storage*   storage = NULL);
 
     static
-    vector<CTempString>& Tokenize(const CTempString&   str,
-                                  const CTempString&   delim,
+    vector<CTempString>& Tokenize(const CTempString    str,
+                                  const CTempString    delim,
                                   vector<CTempString>& arr,
                                   EMergeDelims         merge = eNoMergeDelims,
                                   vector<SIZE_TYPE>*   token_pos = NULL);
 
     static
-    vector<string>& TokenizePattern(const CTempString& str,
-                                    const CTempString& delim,
+    vector<string>& TokenizePattern(const CTempString  str,
+                                    const CTempString  delim,
                                     vector<string>&    arr,
                                     EMergeDelims       merge = eNoMergeDelims,
                                     vector<SIZE_TYPE>* token_pos = NULL);
 
     static
-    vector<CTempString>& TokenizePattern(const CTempString&   str,
-                                         const CTempString&   delim,
+    vector<CTempString>& TokenizePattern(const CTempString    str,
+                                         const CTempString    delim,
                                          vector<CTempString>& arr,
                                          EMergeDelims merge = eNoMergeDelims,
                                          vector<SIZE_TYPE>* token_pos = NULL);
@@ -2458,27 +2458,27 @@ public:
     ///   the very last character was the first delimiter.
     /// @sa
     ///   ESplitFlags, Split, Tokenize
-    static bool SplitInTwo(const CTempString& str, 
-                           const CTempString& delim,
+    static bool SplitInTwo(const CTempString  str, 
+                           const CTempString  delim,
                            string&            str1,
                            string&            str2,
                            TSplitFlags        flags = 0);
 
-    static bool SplitInTwo(const CTempString& str, 
-                           const CTempString& delim,
+    static bool SplitInTwo(const CTempString  str, 
+                           const CTempString  delim,
                            string&            str1,
                            string&            str2,
                            EMergeDelims       merge);
 
-    static bool SplitInTwo(const CTempString& str, 
-                           const CTempString& delim,
+    static bool SplitInTwo(const CTempString  str, 
+                           const CTempString  delim,
                            CTempStringEx&     str1,
                            CTempStringEx&     str2,
                            TSplitFlags        flags = 0,
                            CTempString_Storage* storage = NULL);
 
-    static bool SplitInTwo(const CTempString& str, 
-                           const CTempString& delim,
+    static bool SplitInTwo(const CTempString  str, 
+                           const CTempString  delim,
                            CTempString&       str1,
                            CTempString&       str2,
                            EMergeDelims       merge = eNoMergeDelims);
@@ -2493,13 +2493,12 @@ public:
     /// @return 
     ///   The strings in "arr" are joined into a single string, separated
     ///   with "delim".
-    static string Join(const list<string>& arr,        const CTempString& delim);
-    static string Join(const list<CTempString>& arr,   const CTempString& delim);
-    static string Join(const vector<string>& arr,      const CTempString& delim);
-    static string Join(const vector<CTempString>& arr, const CTempString& delim);
-    static string Join(const set<string>& arr,         const CTempString& delim);
-    static string Join(const set<CTempString>& arr,    const CTempString& delim);
-
+    static string Join(const list<string>& arr,        const CTempString delim);
+    static string Join(const list<CTempString>& arr,   const CTempString delim);
+    static string Join(const vector<string>& arr,      const CTempString delim);
+    static string Join(const vector<CTempString>& arr, const CTempString delim);
+    static string Join(const set<string>& arr,         const CTempString delim);
+    static string Join(const set<CTempString>& arr,    const CTempString delim);
 
     /// How to display printable strings.
     ///
@@ -2537,8 +2536,8 @@ public:
     ///   Return a printable version of "str".
     /// @sa
     ///   ParseEscapes, CEncode, CParse, Sanitize
-    static string PrintableString(const CTempString& str,
-                                  TPrintableMode     mode =
+    static string PrintableString(const CTempString str,
+                                  TPrintableMode    mode =
                                   fNewLine_Quote | fNonAscii_Passthru);
 
     /// Flags for Sanitize().
@@ -2624,7 +2623,7 @@ public:
     ///     see eEscSeqRange* modes for behavior. 
     /// @sa 
     ///   EEscSeqFlags, PrintableString, CEncode, CParse
-    static string ParseEscapes(const CTempString& str, 
+    static string ParseEscapes(const CTempString str, 
                                EEscSeqRange mode = eEscSeqRange_Standard,
                                char user_char = '?');
 
@@ -2638,7 +2637,7 @@ public:
     /// @return
     ///   The extracted string, un-escaped and with the quotes removed.
     ///   Throw an exception on format error.
-    static string ParseQuoted(const CTempString& str, size_t* n_read = NULL);
+    static string ParseQuoted(const CTempString str, size_t* n_read = NULL);
 
     /// Define that string is quoted or not.
     enum EQuoted {
@@ -2654,7 +2653,7 @@ public:
     ///   Define, to 
     /// @sa
     ///   CParse, PrintableString
-    static string CEncode(const CTempString& str, EQuoted quoted = eQuoted);
+    static string CEncode(const CTempString str, EQuoted quoted = eQuoted);
 
     /// Discard C-style backslash escapes.
     ///
@@ -2669,14 +2668,14 @@ public:
     ///   String with parsed C-style escape sequences.
     /// @sa
     ///   CEncode
-    static string CParse(const CTempString& str, EQuoted quoted = eQuoted);
+    static string CParse(const CTempString str, EQuoted quoted = eQuoted);
 
     /// Encode a string for JavaScript.
     ///
     /// Replace relevant characters by predefined entities.
     /// Like to PrintableString(), but process some symbols in different way.
     /// @sa PrintableString
-    static string JavaScriptEncode(const CTempString& str);
+    static string JavaScriptEncode(const CTempString str);
 
     /// XML-encode flags
     enum EXmlEncode {
@@ -2690,7 +2689,7 @@ public:
     /// Encode a string for XML.
     ///
     /// Replace relevant characters by predefined entities.
-    static string XmlEncode(const CTempString& str,
+    static string XmlEncode(const CTempString str,
                             EXmlEncode flags = eXmlEnc_Contents);
 
 
@@ -2708,7 +2707,7 @@ public:
     /// Encode a string for HTML.
     ///
     /// Replace relevant characters by predefined entities.
-    static string HtmlEncode(const CTempString& str,
+    static string HtmlEncode(const CTempString str,
                              THtmlEncode flags = fHtmlEnc_EncodeAll);
 
     /// HTML-decode flags
@@ -2720,7 +2719,7 @@ public:
     typedef int THtmlDecode;   //<  bitwise OR of "EHtmlDecode"
 
     /// Decode HTML entities and character references.
-    static string HtmlDecode(const CTempString& str,
+    static string HtmlDecode(const CTempString str,
                              EEncoding encoding = eEncoding_Unknown,
                              THtmlDecode* result_flags = NULL);
 
@@ -2730,7 +2729,7 @@ public:
     static string HtmlEntity(TUnicodeSymbol uch);
 
     /// Encode a string for JSON.
-    static string JsonEncode(const CTempString& str);
+    static string JsonEncode(const CTempString str);
 
     /// Quotes a string in Bourne Again Shell (BASH) syntax, in a way
     /// that disallows non-printable characters in the result.
@@ -2772,7 +2771,7 @@ public:
         eUrlDec_Percent           ///< Decode only %XX
     };
     /// URL-encode string
-    static string URLEncode(const CTempString& str,
+    static string URLEncode(const CTempString str,
                             EUrlEncode flag = eUrlEnc_SkipMarkChars);
 
     /// SQL-encode string
@@ -2793,23 +2792,23 @@ public:
     static CStringUTF8 SQLEncode(const CStringUTF8& str);
 
     /// URL-decode string
-    static string URLDecode(const CTempString& str,
+    static string URLDecode(const CTempString str,
                             EUrlDecode flag = eUrlDec_All);
     /// URL-decode string to itself
     static void URLDecodeInPlace(string& str,
                                  EUrlDecode flag = eUrlDec_All);
     /// Check if the string needs the requested URL-encoding
-    static bool NeedsURLEncoding(const CTempString& str,
+    static bool NeedsURLEncoding(const CTempString str,
                                 EUrlEncode flag = eUrlEnc_SkipMarkChars);
 
     /// Check if the string contains a valid IP address
-    static bool IsIPAddress(const CTempStringEx& str);
+    static bool IsIPAddress(const CTempStringEx str);
 
 
     /// How to wrap the words in a string to a new line.
     enum EWrapFlags {
         fWrap_Hyphenate  = 0x1, ///< Add a hyphen when breaking words?
-        fWrap_HTMLPre    = 0x2, ///< Wrap as preformatted HTML?
+        fWrap_HTMLPre    = 0x2, ///< Wrap as pre-formatted HTML?
         fWrap_FlatFile   = 0x4  ///< Wrap for flat file use.
     };
     typedef int TWrapFlags;     ///< Bitwise OR of "EWrapFlags"
@@ -2852,7 +2851,7 @@ public:
 	{
 	public:
 		virtual void Append(const string& s) = 0;
-		virtual void Append(const CTempString& s) = 0;
+		virtual void Append(const CTempString s) = 0;
 	};
 
 	class CWrapDestStringList : public IWrapDest
@@ -2865,7 +2864,7 @@ public:
 		{
 			m_list.push_back(s);
 		}
-		virtual void Append(const CTempString& s)
+		virtual void Append(const CTempString s)
 		{
             m_list.push_back(NcbiEmptyString);
             m_list.back().assign(s.data(), s.length());
@@ -2966,23 +2965,23 @@ public:
     ///   The prefix string for the first line, if non-NULL.
     /// @return
     ///   Return "par", the list of justified lines (a paragraph).
-    static list<string>& Justify(const CTempString& str,
+    static list<string>& Justify(const CTempString  str,
                                  SIZE_TYPE          width,
                                  list<string>&      par,
                                  const CTempString* pfx  = 0,
                                  const CTempString* pfx1 = 0);
 
-    static list<string>& Justify(const CTempString& str,
+    static list<string>& Justify(const CTempString  str,
                                  SIZE_TYPE          width,
                                  list<string>&      par,
-                                 const CTempString& pfx,
+                                 const CTempString  pfx,
                                  const CTempString* pfx1 = 0);
 
-    static list<string>& Justify(const CTempString& str,
+    static list<string>& Justify(const CTempString  str,
                                  SIZE_TYPE          width,
                                  list<string>&      par,
-                                 const CTempString& pfx,
-                                 const CTempString& pfx1);
+                                 const CTempString  pfx,
+                                 const CTempString  pfx1);
 
 
     /// Search for a field.
@@ -2999,10 +2998,10 @@ public:
     ///   Found field; or empty string if the required field is not found.
     /// @note
     ///   Field 0 spans up to the first-found delimiter or the end-of-string.
-    static string GetField(const CTempString& str,
-                           size_t             field_no,
-                           const CTempString& delimiters,
-                           EMergeDelims       merge = eNoMergeDelims);
+    static string GetField(const CTempString str,
+                           size_t            field_no,
+                           const CTempString delimiters,
+                           EMergeDelims      merge = eNoMergeDelims);
 
     /// Search for a field.
     ///
@@ -3018,10 +3017,10 @@ public:
     ///   Found field; or empty string if the required field is not found.
     /// @note
     ///   Field 0 spans up to the delimiter or the end-of-string.
-    static string GetField(const CTempString& str,
-                           size_t             field_no,
-                           char               delimiter,
-                           EMergeDelims       merge = eNoMergeDelims);
+    static string GetField(const CTempString str,
+                           size_t            field_no,
+                           char              delimiter,
+                           EMergeDelims      merge = eNoMergeDelims);
 
     /// Search for a field.
     /// Avoid memory allocation at the expense of some usage safety.
@@ -3042,10 +3041,10 @@ public:
     ///   The return value stores a pointer to the input string 'str' so
     ///   the return object validity time matches lifetime of the input 'str'.
     static
-    CTempString GetField_Unsafe(const CTempString& str,
-                                size_t             field_no,
-                                const CTempString& delimiters,
-                                EMergeDelims       merge = eNoMergeDelims);
+    CTempString GetField_Unsafe(const CTempString str,
+                                size_t            field_no,
+                                const CTempString delimiters,
+                                EMergeDelims      merge = eNoMergeDelims);
 
     /// Search for a field.
     /// Avoid memory allocation at the expense of some usage safety.
@@ -3066,10 +3065,10 @@ public:
     ///   The return value stores a pointer to the input string 'str' so
     ///   the return object validity time matches lifetime of the input 'str'.
     static
-    CTempString GetField_Unsafe(const CTempString& str,
-                                size_t             field_no,
-                                char               delimiter,
-                                EMergeDelims       merge = eNoMergeDelims);
+    CTempString GetField_Unsafe(const CTempString str,
+                                size_t            field_no,
+                                char              delimiter,
+                                EMergeDelims      merge = eNoMergeDelims);
 
     // Template class for better error messages
     // from unimplemented template methods
@@ -3139,9 +3138,9 @@ public:
     ///   Character encoding of the source string
     /// @param validate
     ///   Verify the character encoding of the source
-    static CStringUTF8 AsUTF8(const CTempString& src,
-                              EEncoding          encoding,
-                              EValidate          validate = eNoValidate);
+    static CStringUTF8 AsUTF8(const CTempString src,
+                              EEncoding         encoding,
+                              EValidate         validate = eNoValidate);
 
     /// Convert into UTF8 from a Unicode C++ string
     ///
@@ -3223,10 +3222,10 @@ public:
     ///   Verify the character encoding of the source
     /// return
     ///   reference to modified dest string
-    static CStringUTF8& AppendAsUTF8(CStringUTF8&       dest,
-                                     const CTempString& src,
-                                     EEncoding          encoding, 
-                                     EValidate          validate = eNoValidate);
+    static CStringUTF8& AppendAsUTF8(CStringUTF8&      dest,
+                                     const CTempString src,
+                                     EEncoding         encoding, 
+                                     EValidate         validate = eNoValidate);
 
     /// Convert non-Unicode character into UTF8 and append it to existing string
     ///
@@ -3262,8 +3261,8 @@ public:
     /// @return
     ///   C++ string
     static string AsSingleByteString
-    (const CTempString& src, EEncoding encoding,
-     const char* substitute_on_error = 0, EValidate validate = eNoValidate);
+        (const CTempString src, EEncoding encoding,
+         const char* substitute_on_error = 0, EValidate validate = eNoValidate);
 
     /// Convert UTF8 string into Unicode
     ///
@@ -3281,10 +3280,10 @@ public:
     ///   Only for TStringUnicode, TStringUCS4, TStringUCS2, wstring types
     template <typename TChar>
     static basic_string<TChar> AsBasicString
-        (const CTempString& src,
+        (const CTempString src,
          const TChar* substitute_on_error, EValidate validate = eNoValidate);
     template <typename TChar>
-    static basic_string<TChar> AsBasicString(const CTempString& src);
+    static basic_string<TChar> AsBasicString(const CTempString src);
 
     /// Get the number of symbols (code points) in UTF8 string
     ///
@@ -3292,7 +3291,7 @@ public:
     ///   Source UTF8 string   
     /// @return
     ///   Number of symbols (code points)
-    static SIZE_TYPE GetSymbolCount(const CTempString& src);
+    static SIZE_TYPE GetSymbolCount(const CTempString src);
 
     /// Get the number of valid UTF-8 symbols (code points) in buffer
     ///
@@ -3300,7 +3299,7 @@ public:
     ///   Character buffer
     /// @return
     ///   Number of valid symbols (no exception thrown)
-    static SIZE_TYPE GetValidSymbolCount(const CTempString& src);
+    static SIZE_TYPE GetValidSymbolCount(const CTempString src);
 
     /// Get the number of valid UTF-8 bytes (code units) in buffer
     ///
@@ -3308,7 +3307,7 @@ public:
     ///   Character buffer
     /// @return
     ///   Number of valid bytes (no exception thrown)
-    static SIZE_TYPE GetValidBytesCount(const CTempString& src);
+    static SIZE_TYPE GetValidBytesCount(const CTempString src);
 
     /// Check the encoding of the C/C++ string
     ///
@@ -3320,7 +3319,7 @@ public:
     ///   Character encoding form to check against
     /// @return
     ///   Boolean result: encoding is same or compatible
-    static bool MatchEncoding(const CTempString& src, EEncoding encoding);
+    static bool MatchEncoding(const CTempString src, EEncoding encoding);
     
     /// Guess the encoding of the C/C++ string
     ///
@@ -3329,7 +3328,7 @@ public:
     ///   Character buffer
     /// @return
     ///   Encoding as guessed;  eEncoding_Unknown if cannot guess
-    static EEncoding GuessEncoding(const CTempString& src);
+    static EEncoding GuessEncoding(const CTempString src);
 
     /// Give Encoding name as string
     ///
@@ -3346,7 +3345,7 @@ public:
     ///   Name of the encoding
     /// @return
     ///   EEncoding enum;  eEncoding_Unknown for unsupported encodings
-    static EEncoding StringToEncoding(const CTempString& encoding_name);
+    static EEncoding StringToEncoding(const CTempString encoding_name);
 
     /// Convert encoded character into Unicode
     ///
@@ -3401,7 +3400,7 @@ public:
     /// @sa
     ///   IsWhiteSpace, TruncateSpacesInPlace, TruncateSpaces_Unsafe
     static CStringUTF8 TruncateSpaces
-    (const CTempString& str, NStr::ETrunc side = NStr::eTrunc_Both);
+        (const CTempString str, NStr::ETrunc side = NStr::eTrunc_Both);
 
     /// Truncate spaces in the string
     ///
@@ -3417,7 +3416,7 @@ public:
     /// @sa
     ///   IsWhiteSpace, TruncateSpacesInPlace, TruncateSpaces
     static CTempString TruncateSpaces_Unsafe
-    (const CTempString& str, NStr::ETrunc side = NStr::eTrunc_Both);
+        (const CTempString str, NStr::ETrunc side = NStr::eTrunc_Both);
 
     /// Convert sequence of UTF8 code units into Unicode code point
     ///
@@ -3458,13 +3457,13 @@ public:
     static TUnicodeSymbol DecodeNext(TUnicodeSymbol chU, char ch);
 
 private:
-    static void x_Validate(const CTempString& str);
+    static void x_Validate(const CTempString str);
     static SIZE_TYPE x_GetValidSymbolCount
-    (const CTempString& src, CTempString::const_iterator& err);
+        (const CTempString src, CTempString::const_iterator& err);
 
     static CStringUTF8& x_AppendChar(CStringUTF8& u8str, TUnicodeSymbol ch);
 
-    static CStringUTF8& x_Append(CStringUTF8& u8str, const CTempString& src,
+    static CStringUTF8& x_Append(CStringUTF8& u8str, const CTempString src,
                                  EEncoding encoding, EValidate validate);
 
     template <typename TIterator>
@@ -3477,8 +3476,8 @@ private:
 
     template <typename TChar>
     static basic_string<TChar> x_AsBasicString
-    (const CTempString& src,
-     const TChar* substitute_on_error, EValidate validate);
+        (const CTempString src,
+         const TChar* substitute_on_error, EValidate validate);
     
     template <typename TIterator>
     static TUnicodeSymbol x_Decode(TIterator& src);
@@ -3488,7 +3487,7 @@ private:
     static bool   x_EvalNext(char ch);
 
     // returns part of the string around an error in Utf8 encoding
-    static CTempString x_GetErrorFragment(const CTempString& src);
+    static CTempString x_GetErrorFragment(const CTempString src);
 
     template<class Type> class CNotImplemented {};
     friend class CStringUTF8_DEPRECATED;
@@ -3655,7 +3654,7 @@ public:
     };
     /// Decode the string. Must throw CStringException if the source string
     /// is not valid.
-    virtual string Decode(const CTempString& src, EStringType stype) const = 0;
+    virtual string Decode(const CTempString src, EStringType stype) const = 0;
     virtual ~IStringDecoder(void) {}
 };
 
@@ -3670,7 +3669,7 @@ public:
         eValue
     };
     /// Encode the string.
-    virtual string Encode(const CTempString& src, EStringType stype) const = 0;
+    virtual string Encode(const CTempString src, EStringType stype) const = 0;
     virtual ~IStringEncoder(void) {}
 };
 
@@ -3681,7 +3680,7 @@ class NCBI_XNCBI_EXPORT CStringDecoder_Url : public IStringDecoder
 public:
     CStringDecoder_Url(NStr::EUrlDecode flag = NStr::eUrlDec_All);
 
-    virtual string Decode(const CTempString& src, EStringType stype) const;
+    virtual string Decode(const CTempString src, EStringType stype) const;
 
 private:
     NStr::EUrlDecode m_Flag;
@@ -3694,7 +3693,7 @@ class NCBI_XNCBI_EXPORT CStringEncoder_Url : public IStringEncoder
 public:
     CStringEncoder_Url(NStr::EUrlEncode flag = NStr::eUrlEnc_SkipMarkChars);
 
-    virtual string Encode(const CTempString& src, EStringType stype) const;
+    virtual string Encode(const CTempString src, EStringType stype) const;
 
 private:
     NStr::EUrlEncode m_Flag;
@@ -3748,12 +3747,12 @@ public:
     ///   String encoder (Url, Xml etc.)
     /// @param own_encoder
     ///   Encoder ownership flag
-    CStringPairs(const CTempString& arg_sep,
-                 const CTempString& val_sep,
-                 IStringDecoder*    decoder = NULL,
-                 EOwnership         own_decoder = eTakeOwnership,
-                 IStringEncoder*    encoder = NULL,
-                 EOwnership         own_encoder = eTakeOwnership)
+    CStringPairs(const CTempString arg_sep,
+                 const CTempString val_sep,
+                 IStringDecoder*   decoder = NULL,
+                 EOwnership        own_decoder = eTakeOwnership,
+                 IStringEncoder*   encoder = NULL,
+                 EOwnership        own_encoder = eTakeOwnership)
         : m_ArgSep(arg_sep),
           m_ValSep(val_sep),
           m_Decoder(decoder, own_decoder),
@@ -3810,7 +3809,7 @@ public:
     /// @param merge_argsep
     ///   Flag for merging separators between pairs. By default the separators
     ///   are merged to prevent pairs where both name and value are empty.
-    void Parse(const CTempString& str,
+    void Parse(const CTempString str,
                NStr::EMergeDelims merge_argsep = NStr::eMergeDelims)
     {
         Parse(m_Data, str, m_ArgSep, m_ValSep,
@@ -3834,9 +3833,9 @@ public:
     ///   Flag for merging separators between pairs. By default the separators
     ///   are merged to prevent pairs where both name and value are empty.
     static void Parse(TStrPairs&         pairs,
-                      const CTempString& str,
-                      const CTempString& arg_sep,
-                      const CTempString& val_sep,
+                      const CTempString  str,
+                      const CTempString  arg_sep,
+                      const CTempString  val_sep,
                       IStringDecoder*    decoder = NULL,
                       EOwnership         own = eTakeOwnership,
                       NStr::EMergeDelims merge_argsep = NStr::eMergeDelims)
@@ -3938,11 +3937,11 @@ class NCBI_XNCBI_EXPORT CEncodedString
 {
 public:
     CEncodedString(void) {}
-    CEncodedString(const CTempString& s,
+    CEncodedString(const CTempString s,
                    NStr::EUrlEncode flag = NStr::eUrlEnc_SkipMarkChars);
 
     /// Set new original string
-    void SetString(const CTempString& s,
+    void SetString(const CTempString s,
                    NStr::EUrlEncode flag = NStr::eUrlEnc_SkipMarkChars);
 
     /// Check if the original string was encoded.
@@ -4077,7 +4076,7 @@ typedef PNocase_Conditional_Generic<const char *> PNocase_Conditional_CStr;
 ///
 struct PQuickStringLess
 {
-    bool operator()(const CTempString& s1, const CTempString& s2) const {
+    bool operator()(const CTempString s1, const CTempString s2) const {
         size_t len1 = s1.size(), len2 = s2.size();
         return len1 < len2 ||
             (len1 == len2 && ::memcmp(s1.data(), s2.data(), len1) < 0);
@@ -4155,14 +4154,14 @@ void NStr::NumericToString(string& /*out_str*/, TNumeric /*value*/,
 }
 
 template <typename TNumeric> inline
-TNumeric NStr::StringToNumeric(const CTempString& /*str*/, 
+TNumeric NStr::StringToNumeric(const CTempString /*str*/, 
                                TStringToNumFlags /*flags*/, int /*base*/)
 {
     return CNotImplemented<TNumeric>::StringToNumeric_is_not_implemented_for_non_numeric_types();
 }
 
 template <typename TNumeric> inline
-bool NStr::StringToNumeric(const CTempString& /*str*/, TNumeric* /*value*/,
+bool NStr::StringToNumeric(const CTempString /*str*/, TNumeric* /*value*/,
                            TStringToNumFlags /*flags*/, int /*base*/)
 {
     return CNotImplemented<TNumeric>::StringToNumeric_is_not_implemented_for_non_numeric_types();
@@ -4199,7 +4198,7 @@ void NStr::NumericToString(string& out_str, unsigned char value,
 }
 
 template<> inline
-char NStr::StringToNumeric(const CTempString& str,
+char NStr::StringToNumeric(const CTempString str,
                            TStringToNumFlags flags, int base)
 {
     int n = StringToInt(str, flags, base);
@@ -4216,7 +4215,7 @@ char NStr::StringToNumeric(const CTempString& str,
 }
 
 template<> inline
-unsigned char NStr::StringToNumeric(const CTempString& str,
+unsigned char NStr::StringToNumeric(const CTempString str,
                                     TStringToNumFlags flags, int base)
 {
     unsigned int n = StringToUInt(str, flags, base);
@@ -4233,7 +4232,7 @@ unsigned char NStr::StringToNumeric(const CTempString& str,
 }
 
 template<> inline
-bool NStr::StringToNumeric(const CTempString& str,
+bool NStr::StringToNumeric(const CTempString str,
                            char* value, TStringToNumFlags flags, int base)
 {
     int n = StringToInt(str, flags, base);
@@ -4255,7 +4254,7 @@ bool NStr::StringToNumeric(const CTempString& str,
 }
 
 template<> inline
-bool NStr::StringToNumeric(const CTempString& str,
+bool NStr::StringToNumeric(const CTempString str,
                            unsigned char* value, TStringToNumFlags flags, int base)
 {
     unsigned int n = StringToUInt(str, flags, base);
@@ -4293,7 +4292,7 @@ void NStr::NumericToString(string& out_str, wchar_t value,
 }
 
 template<> inline
-wchar_t NStr::StringToNumeric(const CTempString& str,
+wchar_t NStr::StringToNumeric(const CTempString str,
                               TStringToNumFlags flags, int base)
 {
     int n = StringToInt(str, flags, base);
@@ -4310,7 +4309,7 @@ wchar_t NStr::StringToNumeric(const CTempString& str,
 }
 
 template<> inline
-bool NStr::StringToNumeric(const CTempString& str,
+bool NStr::StringToNumeric(const CTempString str,
                            wchar_t* value, TStringToNumFlags flags, int base)
 {
     int n = StringToInt(str, flags, base);
@@ -4362,7 +4361,7 @@ void NStr::NumericToString(string& out_str, unsigned short value,
 }
 
 template<> inline
-short NStr::StringToNumeric(const CTempString& str,
+short NStr::StringToNumeric(const CTempString str,
                             TStringToNumFlags flags, int base)
 {
     int n = StringToInt(str, flags, base);
@@ -4379,7 +4378,7 @@ short NStr::StringToNumeric(const CTempString& str,
 }
 
 template<> inline
-unsigned short NStr::StringToNumeric(const CTempString& str,
+unsigned short NStr::StringToNumeric(const CTempString str,
                                      TStringToNumFlags flags, int base)
 {
     unsigned int n = StringToUInt(str, flags, base);
@@ -4396,7 +4395,7 @@ unsigned short NStr::StringToNumeric(const CTempString& str,
 }
 
 template<> inline
-bool NStr::StringToNumeric(const CTempString& str,
+bool NStr::StringToNumeric(const CTempString str,
                            short* value, TStringToNumFlags flags, int base)
 {
     int n = StringToInt(str, flags, base);
@@ -4418,7 +4417,7 @@ bool NStr::StringToNumeric(const CTempString& str,
 }
 
 template<> inline
-bool NStr::StringToNumeric(const CTempString& str,
+bool NStr::StringToNumeric(const CTempString str,
                            unsigned short* value, TStringToNumFlags flags, int base)
 {
     unsigned int n = StringToUInt(str, flags, base);
@@ -4470,21 +4469,21 @@ void NStr::NumericToString(string& out_str, unsigned int value,
 }
 
 template<> inline
-int NStr::StringToNumeric(const CTempString& str,
+int NStr::StringToNumeric(const CTempString str,
                           TStringToNumFlags flags, int base)
 {
     return StringToInt(str, flags, base);
 }
 
 template<> inline
-unsigned int NStr::StringToNumeric(const CTempString& str,
+unsigned int NStr::StringToNumeric(const CTempString str,
                                    TStringToNumFlags flags, int base)
 {
     return StringToUInt(str, flags, base);
 }
 
 template<> inline
-bool NStr::StringToNumeric(const CTempString& str,
+bool NStr::StringToNumeric(const CTempString str,
                            int* value, TStringToNumFlags flags, int base)
 {
     *value = StringToInt(str, flags, base);
@@ -4492,7 +4491,7 @@ bool NStr::StringToNumeric(const CTempString& str,
 }
 
 template<> inline
-bool NStr::StringToNumeric(const CTempString& str,
+bool NStr::StringToNumeric(const CTempString str,
                            unsigned int* value, TStringToNumFlags flags, int base)
 {
     *value = StringToUInt(str, flags, base);
@@ -4530,21 +4529,21 @@ void NStr::NumericToString(string& out_str, unsigned long value,
 }
 
 template<> inline
-long NStr::StringToNumeric(const CTempString& str,
+long NStr::StringToNumeric(const CTempString str,
                            TStringToNumFlags flags, int base)
 {
     return StringToLong(str, flags, base);
 }
 
 template<> inline
-unsigned long NStr::StringToNumeric(const CTempString& str,
+unsigned long NStr::StringToNumeric(const CTempString str,
                                     TStringToNumFlags flags, int base)
 {
     return StringToULong(str, flags, base);
 }
 
 template<> inline
-bool NStr::StringToNumeric(const CTempString& str,
+bool NStr::StringToNumeric(const CTempString str,
                            long* value, TStringToNumFlags flags, int base)
 {
     *value = StringToLong(str, flags, base);
@@ -4552,7 +4551,7 @@ bool NStr::StringToNumeric(const CTempString& str,
 }
 
 template<> inline
-bool NStr::StringToNumeric(const CTempString& str,
+bool NStr::StringToNumeric(const CTempString str,
                            unsigned long* value, TStringToNumFlags flags, int base)
 {
     *value = StringToULong(str, flags, base);
@@ -4591,21 +4590,21 @@ void NStr::NumericToString(string& out_str, Uint8 value,
 }
 
 template<> inline
-Int8 NStr::StringToNumeric(const CTempString& str,
+Int8 NStr::StringToNumeric(const CTempString str,
                            TStringToNumFlags flags, int base)
 {
     return StringToInt8(str, flags, base);
 }
 
 template<> inline
-Uint8 NStr::StringToNumeric(const CTempString& str,
+Uint8 NStr::StringToNumeric(const CTempString str,
                             TStringToNumFlags flags, int base)
 {
     return StringToUInt8(str, flags, base);
 }
 
 template<> inline
-bool NStr::StringToNumeric(const CTempString& str,
+bool NStr::StringToNumeric(const CTempString str,
                            Int8* value, TStringToNumFlags flags, int base)
 {
     *value = StringToInt8(str, flags, base);
@@ -4613,7 +4612,7 @@ bool NStr::StringToNumeric(const CTempString& str,
 }
 
 template<> inline
-bool NStr::StringToNumeric(const CTempString& str,
+bool NStr::StringToNumeric(const CTempString str,
                            Uint8* value, TStringToNumFlags flags, int base)
 {
     *value = StringToUInt8(str, flags, base);
@@ -4651,21 +4650,21 @@ void NStr::NumericToString(string& out_str, unsigned long long value,
 }
 
 template<> inline
-long long NStr::StringToNumeric(const CTempString& str,
+long long NStr::StringToNumeric(const CTempString str,
                                 TStringToNumFlags flags, int base)
 {
     return StringToInt8(str, flags, base);
 }
 
 template<> inline
-unsigned long long NStr::StringToNumeric(const CTempString& str,
+unsigned long long NStr::StringToNumeric(const CTempString str,
                                          TStringToNumFlags flags, int base)
 {
     return StringToUInt8(str, flags, base);
 }
 
 template<> inline
-bool NStr::StringToNumeric(const CTempString& str,
+bool NStr::StringToNumeric(const CTempString str,
                            long long* value, TStringToNumFlags flags, int base)
 {
     *value = StringToInt8(str, flags, base);
@@ -4673,7 +4672,7 @@ bool NStr::StringToNumeric(const CTempString& str,
 }
 
 template<> inline
-bool NStr::StringToNumeric(const CTempString& str,
+bool NStr::StringToNumeric(const CTempString str,
                            unsigned long long* value, TStringToNumFlags flags, int base)
 {
     *value = StringToUInt8(str, flags, base);
@@ -4698,7 +4697,7 @@ void NStr::NumericToString(string& out_str, float value,
 }
 
 template<> inline
-float NStr::StringToNumeric(const CTempString& str,
+float NStr::StringToNumeric(const CTempString str,
                             TStringToNumFlags flags, int /*base*/)
 {
     double n = StringToDouble(str, flags);
@@ -4716,7 +4715,7 @@ float NStr::StringToNumeric(const CTempString& str,
 }
 
 template<> inline
-bool NStr::StringToNumeric(const CTempString& str,
+bool NStr::StringToNumeric(const CTempString str,
                            float* value, TStringToNumFlags flags, int /*base*/)
 {
     double n = StringToDouble(str, flags);
@@ -4755,14 +4754,14 @@ void NStr::NumericToString(string& out_str, double value,
 }
 
 template<> inline
-double NStr::StringToNumeric(const CTempString& str,
+double NStr::StringToNumeric(const CTempString str,
                              TStringToNumFlags flags, int /*base*/)
 {
     return StringToDouble(str, flags);
 }
 
 template<> inline
-bool NStr::StringToNumeric(const CTempString& str,
+bool NStr::StringToNumeric(const CTempString str,
                            double* value, TStringToNumFlags flags, int /*base*/)
 {
     *value = StringToDouble(str, flags);
@@ -4788,14 +4787,14 @@ void NStr::NumericToString(string& out_str, TGi value,
 }
 
 template <> inline
-TGi NStr::StringToNumeric(const CTempString& str, 
+TGi NStr::StringToNumeric(const CTempString str, 
                           TStringToNumFlags flags, int base)
 {
     return StringToNumeric<TIntId>(str, flags, base);
 }
 
 template <> inline
-bool NStr::StringToNumeric(const CTempString& str, TGi* value,
+bool NStr::StringToNumeric(const CTempString str, TGi* value,
                            TStringToNumFlags flags, int base)
 {
     return StringToNumeric(str, reinterpret_cast<TIntId*>(value), flags, base);
@@ -5155,7 +5154,7 @@ int NStr::CompareNocase(const char* s1, const char* s2)
 }
 
 inline
-int NStr::CompareCase(const CTempStringEx& s1, const CTempStringEx& s2)
+int NStr::CompareCase(const CTempStringEx s1, const CTempStringEx s2)
 {
     if (s1.HasZeroAtEnd()  &&  s2.HasZeroAtEnd()) {
         return CompareCase(s1.data(), s2.data());
@@ -5164,7 +5163,7 @@ int NStr::CompareCase(const CTempStringEx& s1, const CTempStringEx& s2)
 }
 
 inline
-int NStr::CompareNocase(const CTempStringEx& s1, const CTempStringEx& s2)
+int NStr::CompareNocase(const CTempStringEx s1, const CTempStringEx s2)
 {
     if (s1.HasZeroAtEnd()  &&  s2.HasZeroAtEnd()) {
         return CompareNocase(s1.data(), s2.data());
@@ -5173,7 +5172,7 @@ int NStr::CompareNocase(const CTempStringEx& s1, const CTempStringEx& s2)
 }
 
 inline
-int NStr::Compare(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
+int NStr::Compare(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
                   const char* pattern, ECase use_case)
 {
     return use_case == eCase ?
@@ -5181,8 +5180,8 @@ int NStr::Compare(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
 }
 
 inline
-int NStr::Compare(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
-                  const CTempString& pattern, ECase use_case)
+int NStr::Compare(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
+                  const CTempString pattern, ECase use_case)
 {
     return use_case == eCase ?
         CompareCase(str, pos, n, pattern): CompareNocase(str, pos, n, pattern);
@@ -5195,21 +5194,21 @@ int NStr::Compare(const char* s1, const char* s2, ECase use_case)
 }
 
 inline
-int NStr::Compare(const CTempStringEx& s1, const CTempStringEx& s2, ECase use_case)
+int NStr::Compare(const CTempStringEx s1, const CTempStringEx s2, ECase use_case)
 {
     return use_case == eCase ? CompareCase(s1, s2): CompareNocase(s1, s2);
 }
 
 inline
-bool NStr::EqualCase(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
+bool NStr::EqualCase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
                      const char* pattern)
 {
     return NStr::CompareCase(str, pos, n, pattern) == 0;
 }
 
 inline
-bool NStr::EqualCase(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
-                     const CTempString& pattern)
+bool NStr::EqualCase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
+                     const CTempString pattern)
 {
     return NStr::CompareCase(str, pos, n, pattern) == 0;
 }
@@ -5221,7 +5220,7 @@ bool NStr::EqualCase(const char* s1, const char* s2)
 }
 
 inline
-bool NStr::EqualCase(const CTempStringEx& s1, const CTempStringEx& s2)
+bool NStr::EqualCase(const CTempStringEx s1, const CTempStringEx s2)
 {
     if (s1.HasZeroAtEnd()  &&  s2.HasZeroAtEnd()) {
         return EqualCase(s1.data(), s2.data());
@@ -5230,15 +5229,15 @@ bool NStr::EqualCase(const CTempStringEx& s1, const CTempStringEx& s2)
 }
 
 inline
-bool NStr::EqualNocase(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
+bool NStr::EqualNocase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
                        const char* pattern)
 {
     return CompareNocase(str, pos, n, pattern) == 0;
 }
 
 inline
-bool NStr::EqualNocase(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
-                       const CTempString& pattern)
+bool NStr::EqualNocase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
+                       const CTempString pattern)
 {
     return CompareNocase(str, pos, n, pattern) == 0;
 }
@@ -5250,7 +5249,7 @@ bool NStr::EqualNocase(const char* s1, const char* s2)
 }
 
 inline
-bool NStr::EqualNocase(const CTempStringEx& s1, const CTempStringEx& s2)
+bool NStr::EqualNocase(const CTempStringEx s1, const CTempStringEx s2)
 {
     if (s1.HasZeroAtEnd()  &&  s2.HasZeroAtEnd()) {
         return EqualNocase(s1.data(), s2.data());
@@ -5259,7 +5258,7 @@ bool NStr::EqualNocase(const CTempStringEx& s1, const CTempStringEx& s2)
 }
 
 inline
-bool NStr::Equal(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
+bool NStr::Equal(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
                  const char* pattern, ECase use_case)
 {
     return use_case == eCase ?
@@ -5267,8 +5266,8 @@ bool NStr::Equal(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
 }
 
 inline
-bool NStr::Equal(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
-                 const CTempString& pattern, ECase use_case)
+bool NStr::Equal(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
+                 const CTempString pattern, ECase use_case)
 {
     return use_case == eCase ?
         EqualCase(str, pos, n, pattern) : EqualNocase(str, pos, n, pattern);
@@ -5281,20 +5280,20 @@ bool NStr::Equal(const char* s1, const char* s2, ECase use_case)
 }
 
 inline
-bool NStr::Equal(const CTempStringEx& s1, const CTempStringEx& s2, ECase use_case)
+bool NStr::Equal(const CTempStringEx s1, const CTempStringEx s2, ECase use_case)
 {
     return use_case == eCase ? EqualCase(s1, s2) : EqualNocase(s1, s2);
 }
 
 inline
-bool NStr::StartsWith(const CTempString& str, const CTempString& start, ECase use_case)
+bool NStr::StartsWith(const CTempString str, const CTempString start, ECase use_case)
 {
     return str.size() >= start.size()  &&
         Compare(str, 0, start.size(), start, use_case) == 0;
 }
 
 inline
-bool NStr::StartsWith(const CTempString& str, char start, ECase use_case)
+bool NStr::StartsWith(const CTempString str, char start, ECase use_case)
 {
     return !str.empty()  &&
         ((use_case == eCase) ? (str[0] == start) :
@@ -5303,14 +5302,14 @@ bool NStr::StartsWith(const CTempString& str, char start, ECase use_case)
 }
 
 inline
-bool NStr::EndsWith(const CTempString& str, const CTempString& end, ECase use_case)
+bool NStr::EndsWith(const CTempString str, const CTempString end, ECase use_case)
 {
     return str.size() >= end.size()  &&
         Compare(str, str.size() - end.size(), end.size(), end, use_case) == 0;
 }
 
 inline
-bool NStr::EndsWith(const CTempString& str, char end, ECase use_case)
+bool NStr::EndsWith(const CTempString str, char end, ECase use_case)
 {
     if (!str.empty()) {
         char last = str[str.length() - 1];
@@ -5322,7 +5321,7 @@ bool NStr::EndsWith(const CTempString& str, char end, ECase use_case)
 }
 
 inline
-SIZE_TYPE NStr::CommonPrefixSize(const CTempString& s1, const CTempString& s2)
+SIZE_TYPE NStr::CommonPrefixSize(const CTempString s1, const CTempString s2)
 {
     const SIZE_TYPE n = min(s1.length(), s2.length());
     for (SIZE_TYPE i = 0;  i < n;  i++) {
@@ -5334,7 +5333,7 @@ SIZE_TYPE NStr::CommonPrefixSize(const CTempString& s1, const CTempString& s2)
 }
 
 inline
-SIZE_TYPE NStr::CommonSuffixSize(const CTempString& s1, const CTempString& s2)
+SIZE_TYPE NStr::CommonSuffixSize(const CTempString s1, const CTempString s2)
 {
     const SIZE_TYPE len1 = s1.length();
     const SIZE_TYPE len2 = s2.length();
@@ -5348,7 +5347,7 @@ SIZE_TYPE NStr::CommonSuffixSize(const CTempString& s1, const CTempString& s2)
 }
 
 inline
-SIZE_TYPE NStr::Find(const CTempString& str, const CTempString& pattern,
+SIZE_TYPE NStr::Find(const CTempString str, const CTempString pattern,
                      SIZE_TYPE start, SIZE_TYPE end, EOccurrence where,
                      ECase use_case)
 {
@@ -5357,7 +5356,7 @@ SIZE_TYPE NStr::Find(const CTempString& str, const CTempString& pattern,
 }
 
 inline
-SIZE_TYPE NStr::FindCase(const CTempString& str, const CTempString& pattern,
+SIZE_TYPE NStr::FindCase(const CTempString str, const CTempString pattern,
                          SIZE_TYPE start, SIZE_TYPE end, EOccurrence where)
 {
     if (where == eFirst) {
@@ -5370,31 +5369,31 @@ SIZE_TYPE NStr::FindCase(const CTempString& str, const CTempString& pattern,
 }
 
 inline
-const string* NStr::FindCase(const list<string>& lst, const CTempString& val)
+const string* NStr::FindCase(const list<string>& lst, const CTempString val)
 {
     return Find(lst, val, eCase);
 }
 
 inline
-const string* NStr::FindNoCase(const list <string>& lst, const CTempString& val)
+const string* NStr::FindNoCase(const list <string>& lst, const CTempString val)
 {
     return Find(lst, val, eNocase);
 }
 
 inline
-const string* NStr::FindCase(const vector <string>& vec, const CTempString& val)
+const string* NStr::FindCase(const vector <string>& vec, const CTempString val)
 {
     return Find(vec, val, eCase);
 }
 
 inline
-const string* NStr::FindNoCase(const vector <string>& vec, const CTempString& val)
+const string* NStr::FindNoCase(const vector <string>& vec, const CTempString val)
 {
     return Find(vec, val, eNocase);
 }
 
 inline
-list<string>& NStr::Split(const CTempString& str, const CTempString& delim,
+list<string>& NStr::Split(const CTempString str, const CTempString delim,
                           list<string>& arr, EMergeDelims merge,
                           vector<SIZE_TYPE>* token_pos)
 {
@@ -5403,7 +5402,7 @@ list<string>& NStr::Split(const CTempString& str, const CTempString& delim,
 }
 
 inline
-vector<string>& NStr::Tokenize(const CTempString& str, const CTempString& delim,
+vector<string>& NStr::Tokenize(const CTempString str, const CTempString delim,
                                vector<string>& arr, EMergeDelims merge,
                                vector<SIZE_TYPE>* token_pos)
 {
@@ -5413,8 +5412,8 @@ vector<string>& NStr::Tokenize(const CTempString& str, const CTempString& delim,
 }
 
 inline
-vector<string>& NStr::TokenizePattern(const CTempString& str,
-                                      const CTempString& delim,
+vector<string>& NStr::TokenizePattern(const CTempString str,
+                                      const CTempString delim,
                                       vector<string>& arr, EMergeDelims merge,
                                       vector<SIZE_TYPE>* token_pos)
 {
@@ -5425,7 +5424,7 @@ vector<string>& NStr::TokenizePattern(const CTempString& str,
 }
 
 inline
-bool NStr::SplitInTwo(const CTempString& str, const CTempString& delim,
+bool NStr::SplitInTwo(const CTempString str, const CTempString delim,
                       string& str1, string& str2, EMergeDelims merge)
 {
     return SplitInTwo(str, delim, str1, str2,
@@ -5467,17 +5466,17 @@ list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
 }
 
 inline
-list<string>& NStr::Justify(const CTempString& str, SIZE_TYPE width,
-                            list<string>& par, const CTempString& pfx,
+list<string>& NStr::Justify(const CTempString str, SIZE_TYPE width,
+                            list<string>& par, const CTempString pfx,
                             const CTempString* pfx1)
 {
     return Justify(str, width, par, &pfx, pfx1);
 }
 
 inline
-list<string>& NStr::Justify(const CTempString& str, SIZE_TYPE width,
-                            list<string>& par, const CTempString& pfx,
-                            const CTempString& pfx1)
+list<string>& NStr::Justify(const CTempString str, SIZE_TYPE width,
+                            list<string>& par, const CTempString pfx,
+                            const CTempString pfx1)
 {
     return Justify(str, width, par, &pfx, &pfx1);
 }
@@ -5489,7 +5488,7 @@ list<string>& NStr::Justify(const CTempString& str, SIZE_TYPE width,
 //
 
 inline CStringUTF8
-CUtf8::AsUTF8(const CTempString& src, EEncoding encoding, EValidate validate) {
+CUtf8::AsUTF8(const CTempString src, EEncoding encoding, EValidate validate) {
     CStringUTF8 u8;
     return  x_Append(u8,src,encoding,validate);
 }
@@ -5578,7 +5577,7 @@ CUtf8::AppendAsUTF8(CStringUTF8& u8, TChar src) {
 }
 
 inline CStringUTF8&
-CUtf8::AppendAsUTF8(CStringUTF8& u8, const CTempString& src,
+CUtf8::AppendAsUTF8(CStringUTF8& u8, const CTempString src,
               EEncoding   encoding, EValidate validate) {
     return  x_Append(u8,src,encoding,validate);
 }
@@ -5589,45 +5588,45 @@ CUtf8::AppendAsUTF8(CStringUTF8& u8, char src,
 }
 
 template <typename TChar> inline basic_string<TChar>
-CUtf8::AsBasicString(const CTempString& str) {
+CUtf8::AsBasicString(const CTempString str) {
     return CUtf8::AsBasicString<TChar>(str,nullptr,eNoValidate);
 }
 template <typename TChar> inline basic_string<TChar>
-CUtf8::AsBasicString(const CTempString& str,
+CUtf8::AsBasicString(const CTempString str,
     const TChar* on_error, EValidate validate) {
     return CNotImplemented<TChar>::Cannot_convert_to_nonUnicode_string();
 }
 template <> inline basic_string<TUnicodeSymbol>
-CUtf8::AsBasicString(const CTempString& str,
+CUtf8::AsBasicString(const CTempString str,
     const TUnicodeSymbol* on_error, EValidate validate) {
     return CUtf8::x_AsBasicString<TUnicodeSymbol>(str,on_error,validate);
 }
 #if NCBITOOLKIT_USE_LONG_UCS4
 template <> inline basic_string<TCharUCS4>
-CUtf8::AsBasicString(const CTempString& str,
+CUtf8::AsBasicString(const CTempString str,
     const TCharUCS4* on_error, EValidate validate) {
     return CUtf8::x_AsBasicString<TCharUCS4>(str,on_error,validate);
 }
 #endif
 template <> inline basic_string<TCharUCS2>
-CUtf8::AsBasicString(const CTempString& str,
+CUtf8::AsBasicString(const CTempString str,
     const TCharUCS2* on_error, EValidate validate) {
     return CUtf8::x_AsBasicString<TCharUCS2>(str,on_error,validate);
 }
 #if defined(HAVE_WSTRING)
 template <> inline basic_string<wchar_t>
-CUtf8::AsBasicString(const CTempString& str,
+CUtf8::AsBasicString(const CTempString str,
     const wchar_t* on_error, EValidate validate) {
     return CUtf8::x_AsBasicString<wchar_t>(str,on_error,validate);
 }
 #endif
 
-inline SIZE_TYPE CUtf8::GetValidSymbolCount(const CTempString& src) {
+inline SIZE_TYPE CUtf8::GetValidSymbolCount(const CTempString src) {
     CTempString::const_iterator err;
     return x_GetValidSymbolCount(src, err);
 }
 
-inline SIZE_TYPE CUtf8::GetValidBytesCount(const CTempString& src) {
+inline SIZE_TYPE CUtf8::GetValidBytesCount(const CTempString src) {
     CTempString::const_iterator err;
     x_GetValidSymbolCount(src,err);
     return (err-src.begin());
@@ -5653,7 +5652,7 @@ CUtf8::x_Decode(TIterator& src)
 }
 
 template <typename TChar> basic_string<TChar>
-CUtf8::x_AsBasicString(const CTempString& str,
+CUtf8::x_AsBasicString(const CTempString str,
     const TChar* substitute_on_error, EValidate validate)
 {
     if (validate == eValidate) {
@@ -5728,7 +5727,7 @@ CUtf8::x_Append(CStringUTF8& u8str, const TChar* src, SIZE_TYPE to)
 }
 
 inline  CStringUTF8
-CUtf8::TruncateSpaces(const CTempString& str, NStr::ETrunc side) {
+CUtf8::TruncateSpaces(const CTempString str, NStr::ETrunc side) {
     CStringUTF8 u8;
     return x_Append(u8, TruncateSpaces_Unsafe(str,side),
                     eEncoding_UTF8, eNoValidate);

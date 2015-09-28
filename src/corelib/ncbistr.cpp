@@ -99,7 +99,7 @@ const wstring& CNcbiEmptyWString::FirstGet(void) {
 #endif
 
 
-bool NStr::IsBlank(const CTempString& str, SIZE_TYPE pos)
+bool NStr::IsBlank(const CTempString str, SIZE_TYPE pos)
 {
     SIZE_TYPE len = str.length();
     for (SIZE_TYPE idx = pos; idx < len; ++idx) {
@@ -111,7 +111,7 @@ bool NStr::IsBlank(const CTempString& str, SIZE_TYPE pos)
 }
 
 
-int NStr::CompareCase(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
+int NStr::CompareCase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
                       const char* pattern)
 {
     if (pos == NPOS  ||  !n  ||  str.length() <= pos) {
@@ -135,8 +135,8 @@ int NStr::CompareCase(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
 
 
 
-int NStr::CompareCase(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
-                      const CTempString& pattern)
+int NStr::CompareCase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
+                      const CTempString pattern)
 {
     if (pos == NPOS  ||  !n  ||  str.length() <= pos) {
         return pattern.empty() ? 0 : -1;
@@ -167,7 +167,7 @@ int NStr::CompareCase(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
 }
 
 
-int NStr::CompareNocase(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
+int NStr::CompareNocase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
                         const char* pattern)
 {
     if (pos == NPOS  ||  !n  ||  str.length() <= pos) {
@@ -196,8 +196,8 @@ int NStr::CompareNocase(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
 }
 
 
-int NStr::CompareNocase(const CTempString& str, SIZE_TYPE pos, SIZE_TYPE n,
-                        const CTempString& pattern)
+int NStr::CompareNocase(const CTempString str, SIZE_TYPE pos, SIZE_TYPE n,
+                        const CTempString pattern)
 {
     if (pos == NPOS  ||  !n  ||  str.length() <= pos) {
         return pattern.empty() ? 0 : -1;
@@ -323,7 +323,7 @@ string& NStr::ToUpper(string& str)
 }
 
 
-bool NStr::IsLower(const CTempString& str)
+bool NStr::IsLower(const CTempString str)
 {
     SIZE_TYPE len = str.length();
     for (SIZE_TYPE i = 0; i < len; ++i) {
@@ -335,7 +335,7 @@ bool NStr::IsLower(const CTempString& str)
 }
 
 
-bool NStr::IsUpper(const CTempString& str)
+bool NStr::IsUpper(const CTempString str)
 {
     SIZE_TYPE len = str.length();
     for (SIZE_TYPE i = 0; i < len; ++i) {
@@ -407,7 +407,7 @@ public:
     // Auxiliary function to create a message about conversion error 
     // to specified type. It doesn't have any relation to the guard itself,
     // but can help to save on the amount of code in calling macro.
-    string Message(const CTempString& str, const char* to_type, const CTempString& msg);
+    string Message(const CTempString str, const char* to_type, const CTempString msg);
 
 private:
     bool m_NoThrow;    // do not throw an exception if TRUE
@@ -415,7 +415,7 @@ private:
     int  m_Errno;      // errno value to set
 };
 
-string CS2N_Guard::Message(const CTempString& str, const char* to_type, const CTempString& msg)
+string CS2N_Guard::Message(const CTempString str, const char* to_type, const CTempString msg)
 {
     string s;
     s.reserve(str.length() + msg.length() + 50);
@@ -495,7 +495,7 @@ string CS2N_Guard::Message(const CTempString& str, const char* to_type, const CT
     }
 
 
-int NStr::StringToInt(const CTempString& str, TStringToNumFlags flags,int base)
+int NStr::StringToInt(const CTempString str, TStringToNumFlags flags,int base)
 {
     S2N_CONVERT_GUARD_EX(flags);
     Int8 value = StringToInt8(str, flags, base);
@@ -507,7 +507,7 @@ int NStr::StringToInt(const CTempString& str, TStringToNumFlags flags,int base)
 
 
 unsigned int
-NStr::StringToUInt(const CTempString& str, TStringToNumFlags flags, int base)
+NStr::StringToUInt(const CTempString str, TStringToNumFlags flags, int base)
 {
     S2N_CONVERT_GUARD_EX(flags);
     Uint8 value = StringToUInt8(str, flags, base);
@@ -518,7 +518,7 @@ NStr::StringToUInt(const CTempString& str, TStringToNumFlags flags, int base)
 }
 
 
-long NStr::StringToLong(const CTempString& str, TStringToNumFlags flags,
+long NStr::StringToLong(const CTempString str, TStringToNumFlags flags,
                         int base)
 {
     S2N_CONVERT_GUARD_EX(flags);
@@ -531,7 +531,7 @@ long NStr::StringToLong(const CTempString& str, TStringToNumFlags flags,
 
 
 unsigned long
-NStr::StringToULong(const CTempString& str, TStringToNumFlags flags, int base)
+NStr::StringToULong(const CTempString str, TStringToNumFlags flags, int base)
 {
     S2N_CONVERT_GUARD_EX(flags);
     Uint8 value = StringToUInt8(str, flags, base);
@@ -601,7 +601,7 @@ bool s_IsDecimalPoint(unsigned char ch, NStr::TStringToNumFlags  flags)
 }
 
 static inline
-void s_SkipAllowedSymbols(const CTempString& str,
+void s_SkipAllowedSymbols(const CTempString  str,
                           SIZE_TYPE&         pos,
                           ESkipMode          skip_mode,
                           NStr::TStringToNumFlags  flags)
@@ -628,7 +628,7 @@ void s_SkipAllowedSymbols(const CTempString& str,
 // Update 'ptr' to current position in the string.
 
 static inline
-bool s_CheckRadix(const CTempString& str, SIZE_TYPE& pos, int& base)
+bool s_CheckRadix(const CTempString str, SIZE_TYPE& pos, int& base)
 {
     if ( base == 10 || base == 8 ) {
         // shortcut for most frequent case
@@ -660,7 +660,7 @@ bool s_CheckRadix(const CTempString& str, SIZE_TYPE& pos, int& base)
 }
 
 
-Int8 NStr::StringToInt8(const CTempString& str, TStringToNumFlags flags,
+Int8 NStr::StringToInt8(const CTempString str, TStringToNumFlags flags,
                         int base)
 {
     _ASSERT(flags == 0  ||  flags > 32);
@@ -741,7 +741,7 @@ Int8 NStr::StringToInt8(const CTempString& str, TStringToNumFlags flags,
 }
 
 
-Uint8 NStr::StringToUInt8(const CTempString& str,
+Uint8 NStr::StringToUInt8(const CTempString str,
                           TStringToNumFlags flags, int base)
 {
     _ASSERT(flags == 0  ||  flags > 32);
@@ -1257,7 +1257,7 @@ double NStr::StringToDoubleEx(const char* str, size_t size,
 }
 
 
-double NStr::StringToDouble(const CTempStringEx& str, TStringToNumFlags flags)
+double NStr::StringToDouble(const CTempStringEx str, TStringToNumFlags flags)
 {
     size_t size = str.size();
     if ( str.HasZeroAtEnd() ) {
@@ -1277,7 +1277,7 @@ double NStr::StringToDouble(const CTempStringEx& str, TStringToNumFlags flags)
 }
 
 /// @internal
-static Uint8 s_DataSizeConvertQual(const CTempString&      str,
+static Uint8 s_DataSizeConvertQual(const CTempString       str,
                                    SIZE_TYPE&              pos, 
                                    Uint8                   value,
                                    NStr::TStringToNumFlags flags)
@@ -1331,9 +1331,9 @@ static Uint8 s_DataSizeConvertQual(const CTempString&      str,
 }
 
 
-Uint8 NStr::StringToUInt8_DataSize(const CTempString& str, 
-                                   TStringToNumFlags  flags, 
-                                   int                base)
+Uint8 NStr::StringToUInt8_DataSize(const CTempString str, 
+                                   TStringToNumFlags flags, 
+                                   int               base)
 {
     // We have a limited base range here
     _ASSERT(flags == 0  ||  flags > 20);
@@ -1410,7 +1410,7 @@ Uint8 NStr::StringToUInt8_DataSize(const CTempString& str,
 }
 
 
-Uint8 NStr::StringToUInt8_DataSize(const CTempString& str,
+Uint8 NStr::StringToUInt8_DataSize(const CTempString str,
                                    TStringToNumFlags flags /* = 0 */)
 {
     TStringToNumFlags allowed_flags = fConvErr_NoThrow +
@@ -1640,7 +1640,7 @@ Uint8 NStr::StringToUInt8_DataSize(const CTempString& str,
 }
 
 
-size_t NStr::StringToSizet(const CTempString& str,
+size_t NStr::StringToSizet(const CTempString str,
                            TStringToNumFlags flags, int base)
 {
 #if (SIZEOF_SIZE_T > 4)
@@ -2653,7 +2653,7 @@ void NStr::PtrToString(string& out_str, const void* value)
 }
 
 
-const void* NStr::StringToPtr(const CTempStringEx& str)
+const void* NStr::StringToPtr(const CTempStringEx str)
 {
     int& errno_ref = errno;
     errno_ref = 0;
@@ -2688,7 +2688,7 @@ const string NStr::BoolToString(bool value)
 }
 
 
-bool NStr::StringToBool(const CTempString& str)
+bool NStr::StringToBool(const CTempString str)
 {
     if ( AStrEquiv(str, s_kTrueString,  PNocase())  ||
          AStrEquiv(str, s_kTString,     PNocase())  ||
@@ -2759,7 +2759,7 @@ string NStr::FormatVarargs(const char* format, va_list args)
 }
 
 
-SIZE_TYPE NStr::FindNoCase(const CTempString& str, const CTempString& pattern,
+SIZE_TYPE NStr::FindNoCase(const CTempString str, const CTempString pattern,
                            SIZE_TYPE start, SIZE_TYPE end, EOccurrence where)
 {
     string    pat(pattern, 0, 1);
@@ -2792,7 +2792,7 @@ SIZE_TYPE NStr::FindNoCase(const CTempString& str, const CTempString& pattern,
 }
 
 
-const string* NStr::Find(const list <string>& lst, const CTempString& val,
+const string* NStr::Find(const list <string>& lst, const CTempString val,
                          ECase use_case)
 {
    if (lst.empty()) return NULL;
@@ -2804,7 +2804,7 @@ const string* NStr::Find(const list <string>& lst, const CTempString& val,
    return NULL;
 }
 
-const string* NStr::Find(const vector <string>& vec, const CTempString& val,
+const string* NStr::Find(const vector <string>& vec, const CTempString val,
                          ECase use_case)
 {
    if (vec.empty()) return NULL;
@@ -2826,7 +2826,7 @@ bool s_IsWordBoundaryChar(char ch)
 }
 
 
-SIZE_TYPE NStr::FindWord(const CTempString& str, const CTempString& pattern,
+SIZE_TYPE NStr::FindWord(const CTempString str, const CTempString pattern,
                          EOccurrence where, ECase use_case)
 {
     const SIZE_TYPE slen = str.length();
@@ -2861,7 +2861,7 @@ SIZE_TYPE NStr::FindWord(const CTempString& str, const CTempString& pattern,
 }
 
 
-SIZE_TYPE NStr::CommonOverlapSize(const CTempString& s1, const CTempString& s2)
+SIZE_TYPE NStr::CommonOverlapSize(const CTempString s1, const CTempString s2)
 {
     const SIZE_TYPE len1 = s1.length();
     const SIZE_TYPE len2 = s2.length();
@@ -2951,15 +2951,10 @@ string NStr::TruncateSpaces(const string& str, ETrunc where)
     return s_TruncateSpaces(str, where, kEmptyStr);
 }
 
-CTempString NStr::TruncateSpaces_Unsafe(const CTempString& str, ETrunc where)
+CTempString NStr::TruncateSpaces_Unsafe(const CTempString str, ETrunc where)
 {
     return s_TruncateSpaces(str, where, CTempString());
 }
-
-//CTempString NStr::TruncateSpaces_Unsafe(const char* str, ETrunc where)
-//{
-//    return s_TruncateSpaces(CTempString(str), where, CTempString());
-//}
 
 void NStr::TruncateSpacesInPlace(CTempString& str, ETrunc where)
 {
@@ -3013,7 +3008,7 @@ void NStr::TruncateSpacesInPlace(string& str, ETrunc where)
 }
 
 
-void NStr::TrimPrefixInPlace(string& str, const CTempString& prefix,
+void NStr::TrimPrefixInPlace(string& str, const CTempString prefix,
                              ECase use_case)
 {
     if (!str.length()  ||
@@ -3025,7 +3020,7 @@ void NStr::TrimPrefixInPlace(string& str, const CTempString& prefix,
 }
 
 
-void NStr::TrimPrefixInPlace(CTempString& str, const CTempString& prefix,
+void NStr::TrimPrefixInPlace(CTempString& str, const CTempString prefix,
                              ECase use_case)
 {
     if (!str.length() ||
@@ -3037,7 +3032,7 @@ void NStr::TrimPrefixInPlace(CTempString& str, const CTempString& prefix,
 }
 
 
-void NStr::TrimSuffixInPlace(string& str, const CTempString& suffix,
+void NStr::TrimSuffixInPlace(string& str, const CTempString suffix,
                              ECase use_case)
 {
     if (!str.length() ||
@@ -3049,7 +3044,7 @@ void NStr::TrimSuffixInPlace(string& str, const CTempString& suffix,
 }
 
 
-void NStr::TrimSuffixInPlace(CTempString& str, const CTempString& suffix,
+void NStr::TrimSuffixInPlace(CTempString& str, const CTempString suffix,
                              ECase use_case)
 {
     if (!str.length() ||
@@ -3261,15 +3256,15 @@ TContainer& s_Split(const TString& str, const TString& delim,
 }
 
 
-list<string>& NStr::Split(const CTempString& str, const CTempString& delim,
+list<string>& NStr::Split(const CTempString str, const CTempString delim,
                           list<string>& arr, TSplitFlags flags,
                           vector<SIZE_TYPE>* token_pos)
 {
     return s_Split(str, delim, arr, flags, token_pos);
 }
 
-list<CTempStringEx>& NStr::Split(const CTempString& str,
-                                 const CTempString& delim,
+list<CTempStringEx>& NStr::Split(const CTempString str,
+                                 const CTempString delim,
                                  list<CTempStringEx>& arr, TSplitFlags flags,
                                  vector<SIZE_TYPE>* token_pos,
                                  CTempString_Storage* storage)
@@ -3277,8 +3272,8 @@ list<CTempStringEx>& NStr::Split(const CTempString& str,
     return s_Split(str, delim, arr, flags, token_pos, storage);
 }
 
-list<CTempString>& NStr::Split(const CTempString& str,
-                               const CTempString& delim,
+list<CTempString>& NStr::Split(const CTempString  str,
+                               const CTempString  delim,
                                list<CTempString>& arr, EMergeDelims merge,
                                vector<SIZE_TYPE>* token_pos)
 {
@@ -3292,15 +3287,15 @@ list<CTempString>& NStr::Split(const CTempString& str,
 }
 
 
-vector<string>& NStr::Tokenize(const CTempString& str, const CTempString& delim,
+vector<string>& NStr::Tokenize(const CTempString str, const CTempString delim,
                                vector<string>& arr, TSplitFlags flags,
                                vector<SIZE_TYPE>* token_pos)
 {
     return s_Split(str, delim, arr, flags, token_pos);
 }
 
-vector<CTempStringEx>& NStr::Tokenize(const CTempString& str,
-                                      const CTempString& delim,
+vector<CTempStringEx>& NStr::Tokenize(const CTempString  str,
+                                      const CTempString  delim,
                                       vector<CTempStringEx>& arr,
                                       TSplitFlags        flags,
                                       vector<SIZE_TYPE>* token_pos,
@@ -3309,8 +3304,8 @@ vector<CTempStringEx>& NStr::Tokenize(const CTempString& str,
     return s_Split(str, delim, arr, flags, token_pos, storage);
 }
 
-vector<CTempString>& NStr::Tokenize(const CTempString& str,
-                                    const CTempString& delim,
+vector<CTempString>& NStr::Tokenize(const CTempString  str,
+                                    const CTempString  delim,
                                     vector<CTempString>& arr,
                                     EMergeDelims merge,
                                     vector<SIZE_TYPE>* token_pos)
@@ -3326,8 +3321,8 @@ vector<CTempString>& NStr::Tokenize(const CTempString& str,
 }
 
 
-vector<CTempString>& NStr::TokenizePattern(const CTempString& str,
-                                           const CTempString& delim,
+vector<CTempString>& NStr::TokenizePattern(const CTempString  str,
+                                           const CTempString  delim,
                                            vector<CTempString>& arr,
                                            EMergeDelims merge,
                                            vector<SIZE_TYPE>* token_pos)
@@ -3345,8 +3340,8 @@ vector<CTempString>& NStr::TokenizePattern(const CTempString& str,
 }
 
 
-bool NStr::SplitInTwo(const CTempString& str, 
-                      const CTempString& delim,
+bool NStr::SplitInTwo(const CTempString str, 
+                      const CTempString delim,
                       string& str1, string& str2, TSplitFlags flags)
 {
     CTempStringEx ts1, ts2;
@@ -3356,7 +3351,7 @@ bool NStr::SplitInTwo(const CTempString& str,
     return result;
 }
 
-bool NStr::SplitInTwo(const CTempString& str, const CTempString& delim,
+bool NStr::SplitInTwo(const CTempString str, const CTempString delim,
                       CTempString& str1, CTempString& str2, EMergeDelims merge)
 {
     CTempStringEx tsx1, tsx2;
@@ -3367,7 +3362,7 @@ bool NStr::SplitInTwo(const CTempString& str, const CTempString& delim,
     return result;
 }
 
-bool NStr::SplitInTwo(const CTempString& str, const CTempString& delim,
+bool NStr::SplitInTwo(const CTempString str, const CTempString delim,
                       CTempStringEx& str1, CTempStringEx& str2,
                       TSplitFlags flags,
                       CTempString_Storage* storage)
@@ -3424,7 +3419,7 @@ bool NStr::SplitInTwo(const CTempString& str, const CTempString& delim,
 
 
 template <typename T>
-string s_NStr_Join(const T& arr, const CTempString& delim)
+string s_NStr_Join(const T& arr, const CTempString delim)
 {
     if (arr.empty()) {
         return kEmptyStr;
@@ -3447,37 +3442,37 @@ string s_NStr_Join(const T& arr, const CTempString& delim)
 }
 
 
-string NStr::Join(const list<string>& arr, const CTempString& delim)
+string NStr::Join(const list<string>& arr, const CTempString delim)
 {
     return s_NStr_Join(arr, delim);
 }
 
 
-string NStr::Join(const list<CTempString>& arr, const CTempString& delim)
+string NStr::Join(const list<CTempString>& arr, const CTempString delim)
 {
     return s_NStr_Join(arr, delim);
 }
 
 
-string NStr::Join(const vector<string>& arr, const CTempString& delim)
+string NStr::Join(const vector<string>& arr, const CTempString delim)
 {
     return s_NStr_Join(arr, delim);
 }
 
 
-string NStr::Join(const vector<CTempString>& arr, const CTempString& delim)
+string NStr::Join(const vector<CTempString>& arr, const CTempString delim)
 {
     return s_NStr_Join(arr, delim);
 }
 
 
-string NStr::Join(const set<string>& arr, const CTempString& delim)
+string NStr::Join(const set<string>& arr, const CTempString delim)
 {
     return s_NStr_Join(arr, delim);
 }
 
 
-string NStr::Join(const set<CTempString>& arr, const CTempString& delim)
+string NStr::Join(const set<CTempString>& arr, const CTempString delim)
 {
     return s_NStr_Join(arr, delim);
 }
@@ -3639,7 +3634,7 @@ enum ELanguage {
 };
 
 
-static string s_PrintableString(const CTempString&   str,
+static string s_PrintableString(const CTempString    str,
                                 NStr::TPrintableMode mode,
                                 ELanguage            lang)
 {
@@ -3744,14 +3739,14 @@ static string s_PrintableString(const CTempString&   str,
 }
 
         
-string NStr::PrintableString(const CTempString&   str,
+string NStr::PrintableString(const CTempString    str,
                              NStr::TPrintableMode mode)
 {
     return s_PrintableString(str, mode, eLanguage_C);
 }
 
 
-string NStr::JavaScriptEncode(const CTempString& str)
+string NStr::JavaScriptEncode(const CTempString str)
 {
     return s_PrintableString(str,
                              fNewLine_Quote | fNonAscii_Passthru,
@@ -3759,7 +3754,7 @@ string NStr::JavaScriptEncode(const CTempString& str)
 }
 
 
-string NStr::CEncode(const CTempString& str, EQuoted quoted)
+string NStr::CEncode(const CTempString str, EQuoted quoted)
 {
     switch (quoted) {
     case eNotQuoted:
@@ -3773,7 +3768,7 @@ string NStr::CEncode(const CTempString& str, EQuoted quoted)
 }
 
 
-string NStr::CParse(const CTempString& str, EQuoted quoted)
+string NStr::CParse(const CTempString str, EQuoted quoted)
 {
     if (quoted == eNotQuoted) {
         return ParseEscapes(str);
@@ -3828,7 +3823,7 @@ string NStr::CParse(const CTempString& str, EQuoted quoted)
 }
 
 
-string NStr::XmlEncode(const CTempString& str, EXmlEncode flags)
+string NStr::XmlEncode(const CTempString str, EXmlEncode flags)
 // http://www.w3.org/TR/2000/REC-xml-20001006#sec-predefined-ent
 {
     string result;
@@ -3891,7 +3886,7 @@ string NStr::XmlEncode(const CTempString& str, EXmlEncode flags)
 }
 
 
-string NStr::HtmlEncode(const CTempString& str, THtmlEncode flags)
+string NStr::HtmlEncode(const CTempString str, THtmlEncode flags)
 {
     string result;
     SIZE_TYPE i;
@@ -4291,7 +4286,7 @@ string NStr::HtmlEntity(TUnicodeSymbol uch)
     return kEmptyStr;
 }
 
-string NStr::HtmlDecode(const CTempString& str, EEncoding encoding, THtmlDecode* result_flags)
+string NStr::HtmlDecode(const CTempString str, EEncoding encoding, THtmlDecode* result_flags)
 {
     string ustr;
     THtmlDecode result = 0;
@@ -4396,7 +4391,7 @@ string NStr::HtmlDecode(const CTempString& str, EEncoding encoding, THtmlDecode*
 }
 
 
-string NStr::JsonEncode(const CTempString& str)
+string NStr::JsonEncode(const CTempString str)
 // http://www.json.org/
 {
     string result;
@@ -4545,7 +4540,7 @@ string NStr::ShellEncode(const string& str)
 }
 
 
-string NStr::ParseEscapes(const CTempString& str, EEscSeqRange mode, char user_char)
+string NStr::ParseEscapes(const CTempString str, EEscSeqRange mode, char user_char)
 {
     string out;
     out.reserve(str.size());  // result string can only be smaller
@@ -4651,7 +4646,7 @@ string NStr::ParseEscapes(const CTempString& str, EEscSeqRange mode, char user_c
 }
 
 
-string NStr::ParseQuoted(const CTempString& str, size_t* n_read /*= NULL*/)
+string NStr::ParseQuoted(const CTempString str, size_t* n_read /*= NULL*/)
 {
     const char* str_pos = str.data();
     char quote_char;
@@ -5096,7 +5091,7 @@ list<string>& NStr::WrapList(const list<string>& l, SIZE_TYPE width,
 }
 
 
-list<string>& NStr::Justify(const CTempString& str,
+list<string>& NStr::Justify(const CTempString  str,
                             SIZE_TYPE          width,
                             list<string>&      par,
                             const CTempString* pfx,
@@ -5642,7 +5637,7 @@ static const char s_EncodeCookie[256][4] = {
     "%F8", "%F9", "%FA", "%FB", "%FC", "%FD", "%FE", "%FF"
 };
 
-string NStr::URLEncode(const CTempString& str, EUrlEncode flag)
+string NStr::URLEncode(const CTempString str, EUrlEncode flag)
 {
     SIZE_TYPE len = str.length();
     if ( !len ) {
@@ -5739,7 +5734,7 @@ CStringUTF8 NStr::SQLEncode(const CStringUTF8& str) {
 
 
 static
-void s_URLDecode(const CTempString& src, string& dst, NStr::EUrlDecode flag)
+void s_URLDecode(const CTempString src, string& dst, NStr::EUrlDecode flag)
 {
     SIZE_TYPE len = src.length();
     if ( !len ) {
@@ -5786,7 +5781,7 @@ void s_URLDecode(const CTempString& src, string& dst, NStr::EUrlDecode flag)
 }
 
 
-string NStr::URLDecode(const CTempString& str, EUrlDecode flag)
+string NStr::URLDecode(const CTempString str, EUrlDecode flag)
 {
     string dst;
     s_URLDecode(str, dst, flag);
@@ -5800,7 +5795,7 @@ void NStr::URLDecodeInPlace(string& str, EUrlDecode flag)
 }
 
 
-bool NStr::NeedsURLEncoding(const CTempString& str, EUrlEncode flag)
+bool NStr::NeedsURLEncoding(const CTempString str, EUrlEncode flag)
 {
     SIZE_TYPE len = str.length();
     if ( !len ) {
@@ -5932,7 +5927,7 @@ bool s_IsIPAddress(const char* str, size_t size)
 }
 
 
-bool NStr::IsIPAddress(const CTempStringEx& str)
+bool NStr::IsIPAddress(const CTempStringEx str)
 {
     size_t size = str.size();
     if ( str.HasZeroAtEnd() ) {
@@ -5981,7 +5976,7 @@ namespace {
     // @return
     //   Found field; or empty string if the required field is not found.
     template <typename TComparator, typename TResult>
-    TResult s_GetField(const CTempString& str,
+    TResult s_GetField(const CTempString  str,
                        size_t             field_no,
                        const TComparator& delimiter,
                        NStr::EMergeDelims merge)
@@ -6033,10 +6028,10 @@ namespace {
 }
 
 
-string NStr::GetField(const CTempString& str,
-                      size_t             field_no,
-                      const CTempString& delimiters,
-                      EMergeDelims       merge)
+string NStr::GetField(const CTempString str,
+                      size_t            field_no,
+                      const CTempString delimiters,
+                      EMergeDelims      merge)
 {
     return s_GetField<PDelimiter<CTempString>, string>
         (str,
@@ -6046,10 +6041,10 @@ string NStr::GetField(const CTempString& str,
 }
 
 
-string NStr::GetField(const CTempString& str,
-                      size_t             field_no,
-                      char               delimiter,
-                      EMergeDelims       merge)
+string NStr::GetField(const CTempString str,
+                      size_t            field_no,
+                      char              delimiter,
+                      EMergeDelims      merge)
 {
     return s_GetField<PDelimiter<char>, string>
         (str,
@@ -6059,10 +6054,10 @@ string NStr::GetField(const CTempString& str,
 }
 
 
-CTempString NStr::GetField_Unsafe(const CTempString& str,
-                                  size_t             field_no,
-                                  const CTempString& delimiters,
-                                  EMergeDelims       merge)
+CTempString NStr::GetField_Unsafe(const CTempString str,
+                                  size_t            field_no,
+                                  const CTempString delimiters,
+                                  EMergeDelims      merge)
 {
     return s_GetField<PDelimiter<CTempString>, CTempString>
         (str,
@@ -6072,10 +6067,10 @@ CTempString NStr::GetField_Unsafe(const CTempString& str,
 }
 
 
-CTempString NStr::GetField_Unsafe(const CTempString& str,
-                                  size_t             field_no,
-                                  char               delimiter,
-                                  EMergeDelims       merge)
+CTempString NStr::GetField_Unsafe(const CTempString str,
+                                  size_t            field_no,
+                                  char              delimiter,
+                                  EMergeDelims      merge)
 {
     return s_GetField<PDelimiter<char>, CTempString>
         (str,
@@ -6091,7 +6086,7 @@ CTempString NStr::GetField_Unsafe(const CTempString& str,
 
 #if defined(__EXPORT_CTOR_STRINGUTF8__)
 
-CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(const CTempString& src) {
+CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(const CTempString src) {
     assign( CUtf8::AsUTF8(src, eEncoding_ISO8859_1, CUtf8::eNoValidate));
 }
 CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(const char* src ) {
@@ -6103,7 +6098,7 @@ CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(const string& src) {
 
 
 CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(
-    const CTempString& src, EEncoding encoding,EValidate validate) {
+    const CTempString src, EEncoding encoding,EValidate validate) {
     assign( CUtf8::AsUTF8(src, encoding, validate == CStringUTF8_DEPRECATED::eValidate ? CUtf8::eValidate : CUtf8::eNoValidate));
 }
 CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(
@@ -6170,7 +6165,7 @@ CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(
 //#ifndef __NO_EXPORT_STRINGUTF8__
 #if 0
 
-CStringUTF8::CStringUTF8(const CTempString& src) {
+CStringUTF8::CStringUTF8(const CTempString src) {
     assign( CUtf8::AsUTF8(src, eEncoding_ISO8859_1, CUtf8::eNoValidate));
 } // NCBI_FAKE_WARNING
 CStringUTF8::CStringUTF8(const char* src ) {
@@ -6193,15 +6188,14 @@ TStringUCS2 CStringUTF8::AsUCS2(const TCharUCS2* substitute_on_error) const
     return CUtf8::AsBasicString<TCharUCS2>(*this,substitute_on_error,CUtf8::eNoValidate);
 }
 
-CStringUTF8 CStringUTF8::TruncateSpaces(const CTempString& str,
-                                    NStr::ETrunc side)
+CStringUTF8 CStringUTF8::TruncateSpaces(const CTempString str, NStr::ETrunc side)
 {
     return CUtf8::TruncateSpaces(str,side);
 }
 
 
 CStringUTF8::CStringUTF8(
-    const CTempString& src, EEncoding encoding,EValidate validate) {
+    const CTempString src, EEncoding encoding,EValidate validate) {
     assign( CUtf8::AsUTF8(src, encoding, validate == CStringUTF8::eValidate ? CUtf8::eValidate : CUtf8::eNoValidate));
 }
 
@@ -6349,7 +6343,7 @@ CStringUTF8& CStringUTF8::operator+= (const wchar_t* src) {
 }
 #endif
 CStringUTF8& CStringUTF8::Assign(
-    const CTempString& src, EEncoding encoding, EValidate validate) {
+    const CTempString src, EEncoding encoding, EValidate validate) {
     assign( CUtf8::AsUTF8(src, encoding, validate == CStringUTF8::eValidate ? CUtf8::eValidate : CUtf8::eNoValidate));
     return *this;
 }
@@ -6423,7 +6417,7 @@ CStringUTF8& CStringUTF8::Assign(char ch, EEncoding encoding) {
     return *this;
 }
 CStringUTF8& CStringUTF8::Append(
-    const CTempString& src, EEncoding encoding, EValidate validate) {
+    const CTempString src, EEncoding encoding, EValidate validate) {
     append( CUtf8::AsUTF8( src, encoding, validate == CStringUTF8::eValidate ? CUtf8::eValidate : CUtf8::eNoValidate));
     return *this;
 }
@@ -6515,7 +6509,7 @@ TUnicodeSymbol CStringUTF8::Decode(string::const_iterator& src) {
 #endif
 
 
-SIZE_TYPE CStringUTF8::GetSymbolCount(const CTempString& src)
+SIZE_TYPE CStringUTF8::GetSymbolCount(const CTempString src)
 {
     return CUtf8::GetSymbolCount(src);
 }
@@ -6525,7 +6519,7 @@ SIZE_TYPE CStringUTF8::GetValidSymbolCount(const char* src, SIZE_TYPE buf_size)
     return CUtf8::GetValidSymbolCount(CTempString(src, buf_size));
 }
 
-SIZE_TYPE CStringUTF8::GetValidSymbolCount(const CTempString& src)
+SIZE_TYPE CStringUTF8::GetValidSymbolCount(const CTempString src)
 {
     return CUtf8::GetValidSymbolCount(src);
 }
@@ -6535,7 +6529,7 @@ SIZE_TYPE CStringUTF8::GetValidBytesCount(const char* src, SIZE_TYPE buf_size)
     return CUtf8::GetValidBytesCount(CTempString(src,buf_size));
 }
 
-SIZE_TYPE CStringUTF8::GetValidBytesCount(const CTempString& src)
+SIZE_TYPE CStringUTF8::GetValidBytesCount(const CTempString src)
 {
     return CUtf8::GetValidBytesCount(src);
 }
@@ -6546,12 +6540,12 @@ string CStringUTF8::AsSingleByteString(EEncoding encoding,
     return CUtf8::AsSingleByteString(*this,encoding,substitute_on_error);
 }
 
-EEncoding CStringUTF8::GuessEncoding( const CTempString& src)
+EEncoding CStringUTF8::GuessEncoding(const CTempString src)
 {
     return CUtf8::GuessEncoding(src);
 }
 
-bool CStringUTF8::MatchEncoding( const CTempString& src, EEncoding encoding)
+bool CStringUTF8::MatchEncoding(const CTempString src, EEncoding encoding)
 {
     return CUtf8::MatchEncoding(src,encoding);
 }
@@ -6561,7 +6555,7 @@ string CStringUTF8::EncodingToString(EEncoding encoding)
     return CUtf8::EncodingToString(encoding);
 }
 
-EEncoding CStringUTF8::StringToEncoding(const CTempString& str)
+EEncoding CStringUTF8::StringToEncoding(const CTempString str)
 {
     return CUtf8::StringToEncoding(str);
 }
@@ -6597,7 +6591,7 @@ CStringUTF8& CStringUTF8::TruncateSpacesInPlace(NStr::ETrunc side)
     return CUtf8::TruncateSpacesInPlace(*this,side);
 }
 
-CTempString CStringUTF8::TruncateSpaces_Unsafe(const CTempString& str, NStr::ETrunc side)
+CTempString CStringUTF8::TruncateSpaces_Unsafe(const CTempString str, NStr::ETrunc side)
 {
     return CUtf8::TruncateSpaces_Unsafe(str,side);
 }
@@ -6612,7 +6606,7 @@ void   CStringUTF8::x_AppendChar(TUnicodeSymbol ch)
     CUtf8::x_AppendChar(*this, ch);
 }
 
-void   CStringUTF8::x_Append(const CTempString& src,
+void   CStringUTF8::x_Append(const CTempString src,
                 EEncoding encoding, EValidate validate)
 {
     CUtf8::x_Append(*this, src, encoding, (CUtf8::EValidate)validate);
@@ -6634,7 +6628,7 @@ bool   CStringUTF8::x_EvalNext(char ch)
 }
 #endif // __NO_EXPORT_STRINGUTF8__
 
-SIZE_TYPE CUtf8::x_GetValidSymbolCount(const CTempString& str,
+SIZE_TYPE CUtf8::x_GetValidSymbolCount(const CTempString str,
      CTempString::const_iterator& src)
 {
     SIZE_TYPE count = 0;
@@ -6653,7 +6647,7 @@ SIZE_TYPE CUtf8::x_GetValidSymbolCount(const CTempString& str,
     return count;
 }
 
-CTempString CUtf8::x_GetErrorFragment(const CTempString& src)
+CTempString CUtf8::x_GetErrorFragment(const CTempString src)
 {
     CTempString::const_iterator err;
     x_GetValidSymbolCount(src,err);
@@ -6665,7 +6659,7 @@ CTempString CUtf8::x_GetErrorFragment(const CTempString& src)
     return CTempString(from, to - from);
 }
 
-SIZE_TYPE CUtf8::GetSymbolCount( const CTempString& str)
+SIZE_TYPE CUtf8::GetSymbolCount(const CTempString str)
 {
     CTempString::const_iterator err;
     SIZE_TYPE count = x_GetValidSymbolCount(str,err);
@@ -6678,7 +6672,7 @@ SIZE_TYPE CUtf8::GetSymbolCount( const CTempString& str)
     return count;
 }
 
-string CUtf8::AsSingleByteString( const CTempString& str,
+string CUtf8::AsSingleByteString(const CTempString str,
     EEncoding encoding, const char* substitute_on_error, EValidate validate)
 {
     if (validate == eValidate) {
@@ -6712,7 +6706,7 @@ string CUtf8::AsSingleByteString( const CTempString& str,
     return result;
 }
 
-EEncoding CUtf8::GuessEncoding( const CTempString& src)
+EEncoding CUtf8::GuessEncoding(const CTempString src)
 {
     SIZE_TYPE more = 0;
     CTempString::const_iterator i = src.begin();
@@ -6765,7 +6759,7 @@ EEncoding CUtf8::GuessEncoding( const CTempString& src)
 }
 
 
-bool CUtf8::MatchEncoding( const CTempString& src, EEncoding encoding)
+bool CUtf8::MatchEncoding(const CTempString src, EEncoding encoding)
 {
     bool matches = false;
     EEncoding enc_src = GuessEncoding(src);
@@ -6804,7 +6798,7 @@ string  CUtf8::EncodingToString(EEncoding encoding)
 }
 
 // see http://www.iana.org/assignments/character-sets
-EEncoding CUtf8::StringToEncoding(const CTempString& str)
+EEncoding CUtf8::StringToEncoding(const CTempString str)
 {
     if (NStr::CompareNocase(str,"UTF-8")==0) {
         return eEncoding_UTF8;
@@ -6889,7 +6883,7 @@ char CUtf8::SymbolToChar(TUnicodeSymbol cp, EEncoding encoding)
     return (char)cp;
 }
 
-void CUtf8::x_Validate(const CTempString& str)
+void CUtf8::x_Validate(const CTempString str)
 {
     if ( !MatchEncoding( str,eEncoding_UTF8 ) ) {
         NCBI_THROW2(CStringException, eBadArgs,
@@ -6921,7 +6915,7 @@ CStringUTF8& CUtf8::x_AppendChar( CStringUTF8& self, TUnicodeSymbol c)
     return self;
 }
 
-CStringUTF8& CUtf8::x_Append( CStringUTF8& self, const CTempString& src,
+CStringUTF8& CUtf8::x_Append( CStringUTF8& self, const CTempString src,
     EEncoding encoding, EValidate validate)
 {
     if (encoding == eEncoding_Unknown) {
@@ -7068,7 +7062,7 @@ CStringUTF8& CUtf8::TruncateSpacesInPlace( CStringUTF8& str, NStr::ETrunc side)
 }
 
 CTempString CUtf8::TruncateSpaces_Unsafe(
-    const CTempString& str, NStr::ETrunc side)
+    const CTempString str, NStr::ETrunc side)
 {
     if (str.empty()) {
         return str;
@@ -7125,7 +7119,7 @@ CStringDecoder_Url::CStringDecoder_Url(NStr::EUrlDecode flag)
 }
 
 
-string CStringDecoder_Url::Decode(const CTempString& src,
+string CStringDecoder_Url::Decode(const CTempString src,
                                   EStringType ) const
 {
     return NStr::URLDecode(src, m_Flag);
@@ -7138,7 +7132,7 @@ CStringEncoder_Url::CStringEncoder_Url(NStr::EUrlEncode flag)
 }
 
 
-string CStringEncoder_Url::Encode(const CTempString& src,
+string CStringEncoder_Url::Encode(const CTempString src,
                                   EStringType ) const
 {
     return NStr::URLEncode(src, m_Flag);
@@ -7148,14 +7142,14 @@ string CStringEncoder_Url::Encode(const CTempString& src,
 /////////////////////////////////////////////////////////////////////////////
 // CEncodedString --
 
-CEncodedString::CEncodedString(const CTempString& s,
+CEncodedString::CEncodedString(const CTempString s,
                                NStr::EUrlEncode flag)
 {
     SetString(s, flag);
 }
 
 
-void CEncodedString::SetString(const CTempString& s,
+void CEncodedString::SetString(const CTempString s,
                                NStr::EUrlEncode flag)
 {
     m_Original = s;

@@ -2954,9 +2954,9 @@ bool SetApplogFile(const string& file_name)
 
 
 // Load string value from config if not null, or from the environment.
-static string s_GetLogConfigString(const CTempString& name,
-                                   const CTempString& defval,
-                                   CNcbiRegistry*     config)
+static string s_GetLogConfigString(const CTempString name,
+                                   const CTempString defval,
+                                   CNcbiRegistry*    config)
 {
     if ( config ) {
         return config->GetString("LOG", name, defval);
@@ -2969,9 +2969,9 @@ static string s_GetLogConfigString(const CTempString& name,
 
 
 // Load bool value from config if not null, or from the environment.
-static bool s_GetLogConfigBool(const CTempString& name,
-                               bool               defval,
-                               CNcbiRegistry*     config)
+static bool s_GetLogConfigBool(const CTempString name,
+                               bool              defval,
+                               CNcbiRegistry*    config)
 {
     if ( config ) {
         return config->GetBool("LOG", name, defval);
@@ -4054,11 +4054,11 @@ bool x_IsEncodableChar(char c)
 class CExtraDecoder : public IStringDecoder
 {
 public:
-    virtual string Decode(const CTempString& src, EStringType stype) const;
+    virtual string Decode(const CTempString src, EStringType stype) const;
 };
 
 
-string CExtraDecoder::Decode(const CTempString& src, EStringType stype) const
+string CExtraDecoder::Decode(const CTempString src, EStringType stype) const
 {
     string str = src; // NStr::TruncateSpaces(src);
     size_t len = str.length();
@@ -4700,14 +4700,14 @@ class CExtraEncoder : public IStringEncoder
 public:
     CExtraEncoder(bool allow_bad_names = false) : m_AllowBadNames(allow_bad_names) {}
 
-    virtual string Encode(const CTempString& src, EStringType stype) const;
+    virtual string Encode(const CTempString src, EStringType stype) const;
 
 private:
     bool m_AllowBadNames;
 };
 
 
-string CExtraEncoder::Encode(const CTempString& src, EStringType stype) const
+string CExtraEncoder::Encode(const CTempString src, EStringType stype) const
 {
     string dst;
     ITERATE(CTempString, c, src) {
