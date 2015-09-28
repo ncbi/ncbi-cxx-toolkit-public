@@ -103,8 +103,7 @@ CConfig* CNetCacheServerListener::OnPreInit(CObject* api_impl,
         }
 
         CNetScheduleConfigLoader loader(
-                "nc.",  "netcache_conf_from_netschedule",
-                "nc::", "netcache_conf_from_netschedule_GETP2");
+                "nc.",  "netcache_conf_from_netschedule");
         return loader.Get(api, config, *config_section);
     }
 

@@ -438,10 +438,8 @@ private:
 };
 
 CNetScheduleConfigLoader::CNetScheduleConfigLoader(
-        const CTempString& qinf2_prefix, const CTempString& qinf2_section,
-        const CTempString& getp2_prefix, const CTempString& getp2_section) :
-    m_Qinf2Prefix(qinf2_prefix), m_Qinf2Section(qinf2_section),
-    m_Getp2Prefix(getp2_prefix), m_Getp2Section(getp2_section)
+        const CTempString& prefix, const CTempString& section) :
+    m_Prefix(prefix), m_Section(section)
 {
 }
 
@@ -503,8 +501,8 @@ CConfig* CNetScheduleConfigLoader::Get(SNetScheduleAPIImpl* impl,
 
     impl->GetQueueParams(kEmptyStr, queue_params);
 
-    if (CConfig* result = Parse(queue_params, m_Qinf2Prefix)) {
-        section = m_Qinf2Section;
+    if (CConfig* result = Parse(queue_params, m_Prefix)) {
+        section = m_Section;
         return result;
     }
 
@@ -513,8 +511,7 @@ CConfig* CNetScheduleConfigLoader::Get(SNetScheduleAPIImpl* impl,
 
 CNetScheduleOwnConfigLoader::CNetScheduleOwnConfigLoader() :
     CNetScheduleConfigLoader(
-            "ns.",  "netschedule_conf_from_netschedule",
-            "ns::", "netschedule_conf_from_netschedule_GETP2")
+            "ns.",  "netschedule_conf_from_netschedule")
 {
 }
 

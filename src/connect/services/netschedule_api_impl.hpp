@@ -87,10 +87,8 @@ class CNetScheduleConfigLoader
 
 public:
     CNetScheduleConfigLoader(
-            const CTempString& qinf2_prefix,
-            const CTempString& qinf2_section,
-            const CTempString& getp2_prefix,
-            const CTempString& getp2_section);
+            const CTempString& prefix,
+            const CTempString& section);
 
     CConfig* Get(SNetScheduleAPIImpl* impl, CConfig* config, string& section);
 
@@ -101,10 +99,8 @@ private:
     typedef CNetScheduleAPI::TQueueParams TParams;
     CConfig* Parse(const TParams& params, const CTempString& prefix);
 
-    const CTempString m_Qinf2Prefix;
-    const CTempString m_Qinf2Section;
-    const CTempString m_Getp2Prefix;
-    const CTempString m_Getp2Section;
+    const CTempString m_Prefix;
+    const CTempString m_Section;
 };
 
 class CNetScheduleOwnConfigLoader : public CNetScheduleConfigLoader
