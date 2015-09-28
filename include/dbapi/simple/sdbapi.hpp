@@ -856,6 +856,9 @@ public:
     ///   - use_conn_pool
     ///   - conn_pool_minsize
     ///   - conn_pool_maxsize
+    ///   - conn_pool_idle_time
+    ///   - conn_pool_wait_time
+    ///   - allow_temp_connection
     ///   - password_file
     ///   - password_key
     ///
@@ -904,6 +907,9 @@ public:
         eUseConnPool,
         eConnPoolMinSize,
         eConnPoolMaxSize,
+        eConnPoolIdleTime,
+        eConnPoolWaitTime,
+        eAllowTempConnection,
         eArgsString
     };
  
@@ -1302,6 +1308,9 @@ CSDB_ConnectionParam::x_GetName(EParam param)
     case eUseConnPool:      return "use_conn_pool";
     case eConnPoolMinSize:  return "conn_pool_minsize"; 
     case eConnPoolMaxSize:  return "conn_pool_maxsize";
+    case eConnPoolIdleTime: return "conn_pool_idle_time";
+    case eConnPoolWaitTime: return "conn_pool_wait_time";
+    case eAllowTempConnection: return "allow_temp_connection";
     case eArgsString:       return "args_string";
     }
     _TROUBLE;
@@ -1359,6 +1368,9 @@ CSDB_ConnectionParam::Get(EParam param, EWithOverrides with_overrides) const
     case eUseConnPool:
     case eConnPoolMinSize:
     case eConnPoolMaxSize:
+    case eConnPoolIdleTime:
+    case eConnPoolWaitTime:
+    case eAllowTempConnection:
     {
         bool found_dummy = false;
         return m_Url.GetArgs().GetValue(x_GetName(param), &found_dummy);
@@ -1423,6 +1435,9 @@ CSDB_ConnectionParam::Set(EParam param, const string& value, TSetFlags flags)
     case eUseConnPool:
     case eConnPoolMinSize:
     case eConnPoolMaxSize:
+    case eConnPoolIdleTime:
+    case eConnPoolWaitTime:
+    case eAllowTempConnection:
     {
         string name = x_GetName(param);
         if ( !value.empty()  ||  m_Url.GetArgs().IsSetValue(name)) {

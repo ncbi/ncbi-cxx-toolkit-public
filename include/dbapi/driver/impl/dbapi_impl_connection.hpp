@@ -36,6 +36,7 @@
 #include <dbapi/driver/impl/dbapi_driver_utils.hpp>
 #include <dbapi/driver/impl/handle_stack.hpp>
 
+#include <corelib/ncbitime.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -314,6 +315,9 @@ private:
     const Uint2    m_Port;
     const string   m_Passwd;
     const string   m_Pool;
+    unsigned int   m_PoolMinSize;
+    CTimeSpan      m_PoolIdleTimeParam;
+    CTime          m_CleanupTime;
     unsigned int   m_ReuseCount;
     const bool     m_Reusable;
     bool           m_OpenFinished;

@@ -63,6 +63,9 @@ namespace impl
 //
 
 CDriverContext::CDriverContext(void) :
+#ifdef NCBI_THREADS
+    m_PoolSem(0, 1),
+#endif
     m_LoginTimeout(0),
     m_Timeout(0),
     m_CancelTimeout(0),
@@ -271,11 +274,33 @@ void CDriverContext::x_Recycle(CConnection* conn, bool conn_reusable)
         m_InUse.erase(it);
     }
 
+#ifdef NCBI_THREADS
+    bool for_sem = false;
+    if ( !m_PoolSemSubject.empty()  &&  conn->PoolName() == m_PoolSemSubject) {
+        for_sem = true;
+        m_PoolSemSubject.erase();
+        m_PoolSemConn = NULL;
+        m_PoolSem.TryWait(); // probably redundant, but ensures Post will work
+        m_PoolSem.Post();
+    }
+#endif
+
     if (conn_reusable  &&  conn->IsOpeningFinished()  &&  conn->IsValid()) {
+        if (conn->m_PoolIdleTimeParam.GetSign() != eNegative) {
+            CTime now(CTime::eCurrent);
+            conn->m_CleanupTime = now + conn->m_PoolIdleTimeParam;
+        }
         m_NotInUse.push_back(conn);
+#ifdef NCBI_THREADS
+        if (for_sem) {
+            m_PoolSemConn = conn;
+        }
+#endif
     } else {
         delete conn;
     }
+
+    CloseOldIdleConns(1);
 }
 
 void CDriverContext::CloseUnusedConnections(const string&   srv_name,
@@ -347,11 +372,29 @@ unsigned int CDriverContext::NofConnections(const string& srv_name,
 
 CDB_Connection* CDriverContext::MakeCDBConnection(CConnection* connection)
 {
+    connection->m_CleanupTime.Clear();
     m_InUse.push_back(connection);
 
     return new CDB_Connection(connection);
 }
 
+class CDBConnParams_Unpooled : public CDBConnParamsDelegate
+{
+public:
+    CDBConnParams_Unpooled(const CDBConnParams& other)
+        : CDBConnParamsDelegate(other)
+        { }
+
+    string GetParam(const string& key)
+        {
+            if (key == "is_pooled") {
+                return "false";
+            } else {
+                return CDBConnParamsDelegate::GetParam(key);
+            }
+        }
+};
+    
 CDB_Connection*
 CDriverContext::MakePooledConnection(const CDBConnParams& params)
 {
@@ -429,8 +472,38 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
                     if (pool_name == t_con->PoolName())
                         ++total_cnt;
                 }
-                if (total_cnt >= pool_max)
-                    return NULL;
+                if (total_cnt >= pool_max) {
+#ifdef NCBI_THREADS
+                    string timeout_str(params.GetParam("pool_wait_time"));
+                    double timeout_val = 0.0;
+                    if ( !timeout_str.empty()  &&  timeout_str != "default") {
+                        timeout_val = NStr::StringToDouble(timeout_str);
+                    }
+                    CTimeout timeout(timeout_val);
+                    m_PoolSemSubject = pool_name;
+                    mg.Release();
+                    if (m_PoolSem.TryWait(timeout)) {
+                        mg.Guard(x_GetCtxMtx());
+                        CConnection* t_con = NULL;
+                        NON_CONST_REVERSE_ITERATE(TConnPool, it, m_NotInUse) {
+                            if (*it == m_PoolSemConn) {
+                                t_con = m_PoolSemConn;
+                                m_PoolSemConn = NULL;
+                                m_NotInUse.erase((++it).base());
+                            }
+                        }
+                        if (t_con != NULL) {
+                            return MakeCDBConnection(t_con);
+                        }
+                    } else
+#endif
+                    if (params.GetParam("allow_temp_connection") == "true") {
+                        return MakePooledConnection
+                            (CDBConnParams_Unpooled(params));
+                    } else {
+                        return NULL;
+                    }
+                }
             }
         }
     }
@@ -677,6 +750,9 @@ SDBConfParams::Clear(void)
     is_pooled.clear();
     pool_name.clear();
     pool_maxsize.clear();
+    pool_idle_time.clear();
+    pool_wait_time.clear();
+    allow_temp_connection.clear();
     args.clear();
 }
 
@@ -761,6 +837,22 @@ CDriverContext::ReadDBConfParams(const string&  service_name,
     if (reg.HasEntry(section_name, "conn_pool_maxsize", IRegistry::fCountCleared)) {
         params->flags += SDBConfParams::fPoolMaxSizeSet;
         params->pool_maxsize = reg.Get(section_name, "conn_pool_maxsize");
+    }
+    if (reg.HasEntry(section_name, "conn_pool_idle_time",
+                     IRegistry::fCountCleared)) {
+        params->flags += SDBConfParams::fPoolIdleTimeSet;
+        params->pool_idle_time = reg.Get(section_name, "conn_pool_idle_time");
+    }
+    if (reg.HasEntry(section_name, "conn_pool_wait_time",
+                     IRegistry::fCountCleared)) {
+        params->flags += SDBConfParams::fPoolWaitTimeSet;
+        params->pool_wait_time = reg.Get(section_name, "conn_pool_wait_time");
+    }
+    if (reg.HasEntry(section_name, "allow_temp_connection",
+                     IRegistry::fCountCleared)) {
+        params->flags += SDBConfParams::fAllowTempConnSet;
+        params->allow_temp_connection
+            = reg.Get(section_name, "allow_temp_connection");
     }
     if (reg.HasEntry(section_name, "args", IRegistry::fCountCleared)) {
         params->flags += SDBConfParams::fArgsSet;
@@ -980,6 +1072,39 @@ void CDriverContext::CloseConnsForPool(const string& pool_name)
         }
     }
 }
+
+
+void CDriverContext::CloseOldIdleConns(unsigned int max_closings,
+                                       const string& pool_name)
+{
+    if (max_closings == 0) {
+        return;
+    }
+
+    set<string> at_min;
+    CTime now(CTime::eCurrent);
+    ERASE_ITERATE (TConnPool, it, m_NotInUse) {
+        const string& pool_name_2 = (*it)->PoolName();
+        if (pool_name_2.empty()
+            ||  ( !pool_name.empty()  &&  pool_name != pool_name_2)
+            ||  at_min.find(pool_name_2) != at_min.end()
+            ||  (*it)->m_CleanupTime.IsEmpty()
+            ||  (*it)->m_CleanupTime > now) {
+            continue;
+        }
+        unsigned int n = NofConnections(TSvrRef(), pool_name_2);
+        if (n > (*it)->m_PoolMinSize) {
+            delete *it;
+            m_NotInUse.erase(it);
+            if (--max_closings == 0) {
+                break;
+            }
+        } else {
+            at_min.insert(pool_name_2);
+        }
+    }
+}
+
 
 void CDriverContext::DestroyConnImpl(CConnection* impl)
 {

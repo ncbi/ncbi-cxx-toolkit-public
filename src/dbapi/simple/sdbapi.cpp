@@ -971,6 +971,10 @@ void CSDB_ConnectionParam::x_FillParamMap(void)
     COPY_BOOL_PARAM(UseConnPool,     Pooled,       is_pooled);
     COPY_NUM_PARAM (ConnPoolMinSize, PoolMinSize,  pool_minsize);
     COPY_NUM_PARAM (ConnPoolMaxSize, PoolMaxSize,  pool_maxsize);
+    COPY_NUM_PARAM (ConnPoolIdleTime, PoolIdleTime, pool_idle_time);
+    COPY_NUM_PARAM (ConnPoolWaitTime, PoolWaitTime, pool_wait_time);
+    COPY_BOOL_PARAM(AllowTempConnection, AllowTempConnection,
+                    allow_temp_connection);
 
 #undef COPY_PARAM_EX
 #undef COPY_PARAM
@@ -1065,6 +1069,10 @@ CSDB_ConnectionParam::x_FillLowerParams(CDBConnParamsBase* params) const
     params->SetParam("is_pooled",     Get(eUseConnPool,     eWithOverrides));
     params->SetParam("pool_minsize",  Get(eConnPoolMinSize, eWithOverrides));
     params->SetParam("pool_maxsize",  Get(eConnPoolMaxSize, eWithOverrides));
+    params->SetParam("pool_idle_time", Get(eConnPoolIdleTime, eWithOverrides));
+    params->SetParam("pool_wait_time", Get(eConnPoolWaitTime, eWithOverrides));
+    params->SetParam("allow_temp_connection",
+                     Get(eAllowTempConnection, eWithOverrides));
 
     // Generic named parameters.  The historic version of this logic
     // had two quirks, which I [AMU] have not carried over:

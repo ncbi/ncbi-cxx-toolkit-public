@@ -73,7 +73,10 @@ struct NCBI_DBAPIDRIVER_EXPORT SDBConfParams
         fPoolMaxSizeSet  = 0x0800,
         fArgsSet         = 0x1000,
         fPasswordFileSet = 0x2000,
-        fPasswordKeySet  = 0x4000
+        fPasswordKeySet  = 0x4000,
+        fPoolIdleTimeSet = 0x8000,
+        fPoolWaitTimeSet = 0x10000,
+        fAllowTempConnSet= 0x20000
     };
     typedef unsigned int  TFlags;
 
@@ -93,6 +96,9 @@ struct NCBI_DBAPIDRIVER_EXPORT SDBConfParams
     string  pool_name;
     string  pool_minsize;
     string  pool_maxsize;
+    string  pool_idle_time;
+    string  pool_wait_time;
+    string  allow_temp_connection;
     string  args;
 
 
@@ -112,6 +118,10 @@ struct NCBI_DBAPIDRIVER_EXPORT SDBConfParams
     bool IsPooledSet(void)       { return IsFlagSet(fIsPooledSet);      }
     bool IsPoolMinSizeSet(void)  { return IsFlagSet(fPoolMinSizeSet);   }
     bool IsPoolMaxSizeSet(void)  { return IsFlagSet(fPoolMaxSizeSet);   }
+    bool IsPoolIdleTimeSet(void) { return IsFlagSet(fPoolIdleTimeSet);   }
+    bool IsPoolWaitTimeSet(void) { return IsFlagSet(fPoolWaitTimeSet);   }
+    bool IsAllowTempConnectionSet(void)
+                                 { return IsFlagSet(fAllowTempConnSet); }
     bool IsArgsSet(void)         { return IsFlagSet(fArgsSet);          }
 
     void Clear(void);
@@ -214,6 +224,8 @@ public:
     void ReadDBConfParams  (const string& service_name, SDBConfParams* params);
     bool SatisfyPoolMinimum(const CDBConnParams& params);
     void CloseConnsForPool (const string& pool_name);
+    void CloseOldIdleConns (unsigned int max_closings,
+                            const string& pool_name = kEmptyStr);
 
 protected:
     typedef list<CConnection*> TConnPool;
@@ -252,6 +264,11 @@ protected:
 
 private:
     mutable CMutex  m_DefaultCtxMtx;
+#ifdef NCBI_THREADS
+    CSemaphore      m_PoolSem;
+    string          m_PoolSemSubject;
+    CConnection*    m_PoolSemConn;
+#endif
 
     unsigned int    m_LoginTimeout; //< Login timeout.
     unsigned int    m_Timeout;      //< Connection timeout.
