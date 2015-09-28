@@ -104,10 +104,10 @@ public:
     /// @param validate
     ///   Verify the character encoding of the source
     /// @deprecated  Use utility class CUtf8 instead
-    CStringUTF8_DEPRECATED(const CTempString& src);
+    CStringUTF8_DEPRECATED(const CTempString src);
     CStringUTF8_DEPRECATED(const char* src );
     CStringUTF8_DEPRECATED(const string& src);
-    CStringUTF8_DEPRECATED(const CTempString& src,
+    CStringUTF8_DEPRECATED(const CTempString src,
                   EEncoding encoding,
                   EValidate validate = eNoValidate);
     CStringUTF8_DEPRECATED(const char* src,
@@ -239,9 +239,9 @@ public:
     /// @param validate
     ///   Verify the character encoding of the source
     /// @deprecated  Use utility class CUtf8 instead
-    CStringUTF8_DEPRECATED& Assign(const CTempString& src,
-                        EEncoding          encoding,
-                        EValidate          validate = eNoValidate);
+    CStringUTF8_DEPRECATED& Assign(const CTempString src,
+                        EEncoding        encoding,
+                        EValidate        validate = eNoValidate);
 
     /// Assign Unicode C++ string
     ///
@@ -312,7 +312,7 @@ public:
     /// @param validate
     ///   Verify the character encoding of the source
     /// @deprecated  Use utility class CUtf8 instead
-    CStringUTF8_DEPRECATED& Append(const CTempString& src,
+    CStringUTF8_DEPRECATED& Append(const CTempString src,
                         EEncoding encoding,
                         EValidate validate = eNoValidate);
 
@@ -396,7 +396,7 @@ public:
     ///   Number of symbols (code points)
     /// @deprecated  Use utility class CUtf8 instead
 #if  STRINGUTF8_OBSOLETE_STATIC
-    static SIZE_TYPE GetSymbolCount(const CTempString& src);
+    static SIZE_TYPE GetSymbolCount(const CTempString src);
 #endif
 
     /// Get the number of valid UTF-8 symbols (code points) in the buffer
@@ -420,7 +420,7 @@ public:
     ///   Number of valid symbols (no exception thrown)
     /// @deprecated  Use utility class CUtf8 instead
 #if  STRINGUTF8_OBSOLETE_STATIC
-    static SIZE_TYPE GetValidSymbolCount(const CTempString& src);
+    static SIZE_TYPE GetValidSymbolCount(const CTempString src);
 #endif
     
     /// Get the number of valid UTF-8 bytes (code units) in the buffer
@@ -444,7 +444,7 @@ public:
     ///   Number of valid bytes (no exception thrown)
     /// @deprecated  Use utility class CUtf8 instead
 #if  STRINGUTF8_OBSOLETE_STATIC
-    static SIZE_TYPE GetValidBytesCount(const CTempString& src);
+    static SIZE_TYPE GetValidBytesCount(const CTempString src);
 #endif
 
     /// Check that the character encoding of the string is valid UTF-8
@@ -516,14 +516,14 @@ public:
     template <typename TChar> 
     static  
     basic_string<TChar> AsBasicString(
-        const CTempString& src,
+        const CTempString src,
         const TChar* substitute_on_error,
         EValidate validate = eNoValidate);
 
     /// Conversion to Unicode string with any base type we need
     /// @deprecated  Use utility class CUtf8 instead
     template <typename TChar> 
-    static basic_string<TChar> AsBasicString(const CTempString& src);
+    static basic_string<TChar> AsBasicString(const CTempString src);
 
     /// Guess the encoding of the C/C++ string
     ///
@@ -534,7 +534,7 @@ public:
     ///   Encoding
     /// @deprecated  Use utility class CUtf8 instead
 #if  STRINGUTF8_OBSOLETE_STATIC
-    static EEncoding GuessEncoding(const CTempString& src);
+    static EEncoding GuessEncoding(const CTempString src);
 #endif
     /// Check the encoding of the C/C++ string
     ///
@@ -548,7 +548,7 @@ public:
     ///   Boolean result: encoding is same or compatible
     /// @deprecated  Use utility class CUtf8 instead
 #if  STRINGUTF8_OBSOLETE_STATIC
-    static bool MatchEncoding(const CTempString& src, EEncoding encoding);
+    static bool MatchEncoding(const CTempString src, EEncoding encoding);
 #endif
 
     /// Give Encoding name as string
@@ -577,7 +577,7 @@ public:
     ///   EEncoding enum
     /// @deprecated  Use utility class CUtf8 instead
 #if  STRINGUTF8_OBSOLETE_STATIC
-    static EEncoding StringToEncoding(const CTempString& str);
+    static EEncoding StringToEncoding(const CTempString str);
 #endif
     
     /// Convert encoded character into UTF16
@@ -661,7 +661,7 @@ public:
     /// @deprecated  Use utility class CUtf8 instead
 #if  STRINGUTF8_OBSOLETE_STATIC
     static CTempString TruncateSpaces_Unsafe
-    (const CTempString& str, NStr::ETrunc side = NStr::eTrunc_Both);
+    (const CTempString str, NStr::ETrunc side = NStr::eTrunc_Both);
 #endif
 
     /// Truncate spaces in the string
@@ -675,7 +675,7 @@ public:
     ///   IsWhiteSpace, TruncateSpacesInPlace, TruncateSpaces_Unsafe
     /// @deprecated  Use utility class CUtf8 instead
 #if  STRINGUTF8_OBSOLETE_STATIC
-    static CStringUTF8_DEPRECATED TruncateSpaces(const CTempString& str,
+    static CStringUTF8_DEPRECATED TruncateSpaces(const CTempString str,
                                       NStr::ETrunc side = NStr::eTrunc_Both);
 #endif
 
@@ -712,7 +712,7 @@ private:
     /// Convert Unicode code point into UTF8 and append
     void   x_AppendChar(TUnicodeSymbol ch);
     /// Convert coded character sequence into UTF8 and append
-    void   x_Append(const CTempString& src,
+    void   x_Append(const CTempString src,
                     EEncoding encoding,
                     EValidate validate = eNoValidate);
 
@@ -728,7 +728,7 @@ private:
 
     template <typename TChar> static
     basic_string<TChar> x_AsBasicString
-    (const CTempString& src,
+    (const CTempString src,
      const TChar* substitute_on_error, EValidate validate);
 
     template <typename TIterator> static

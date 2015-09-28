@@ -69,13 +69,13 @@ inline CStringUTF8_DEPRECATED& CStringUTF8_DEPRECATED::operator+= (const CString
 }
 
 template <typename TChar> inline
-basic_string<TChar> CStringUTF8_DEPRECATED::AsBasicString(const CTempString& src) {
+basic_string<TChar> CStringUTF8_DEPRECATED::AsBasicString(const CTempString src) {
     return CUtf8::AsBasicString<TChar>(src,nullptr,CUtf8::eNoValidate);
 }
 
 #if !defined(__EXPORT_CTOR_STRINGUTF8__)
 
-inline CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(const CTempString& src) {
+inline CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(const CTempString src) {
     assign( CUtf8::AsUTF8(src, eEncoding_ISO8859_1, CUtf8::eNoValidate));
 }
 inline CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(const char* src ) {
@@ -88,7 +88,7 @@ inline CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(const string& src) {
 
 inline
 CStringUTF8_DEPRECATED::CStringUTF8_DEPRECATED(
-    const CTempString& src, EEncoding encoding,EValidate validate) {
+    const CTempString src, EEncoding encoding,EValidate validate) {
     assign( CUtf8::AsUTF8(src, encoding, validate == CStringUTF8_DEPRECATED::eValidate ? CUtf8::eValidate : CUtf8::eNoValidate));
 }
 inline
@@ -174,7 +174,7 @@ inline TStringUCS2 CStringUTF8_DEPRECATED::AsUCS2(const TCharUCS2* substitute_on
 }
 #if  STRINGUTF8_OBSOLETE_STATIC
 inline
-CStringUTF8_DEPRECATED CStringUTF8_DEPRECATED::TruncateSpaces(const CTempString& str,
+CStringUTF8_DEPRECATED CStringUTF8_DEPRECATED::TruncateSpaces(const CTempString str,
                                     NStr::ETrunc side)
 {
     CStringUTF8_DEPRECATED res;
@@ -263,7 +263,7 @@ inline CStringUTF8_DEPRECATED& CStringUTF8_DEPRECATED::operator+= (const wchar_t
 }
 #endif
 inline CStringUTF8_DEPRECATED& CStringUTF8_DEPRECATED::Assign(
-    const CTempString& src, EEncoding encoding, EValidate validate) {
+    const CTempString src, EEncoding encoding, EValidate validate) {
     assign( CUtf8::AsUTF8(src, encoding, validate == CStringUTF8_DEPRECATED::eValidate ? CUtf8::eValidate : CUtf8::eNoValidate));
     return *this;
 }
@@ -337,7 +337,7 @@ inline CStringUTF8_DEPRECATED& CStringUTF8_DEPRECATED::Assign(char ch, EEncoding
     return *this;
 }
 inline  CStringUTF8_DEPRECATED& CStringUTF8_DEPRECATED::Append(
-    const CTempString& src, EEncoding encoding, EValidate validate) {
+    const CTempString src, EEncoding encoding, EValidate validate) {
     append( CUtf8::AsUTF8( src, encoding, validate == CStringUTF8_DEPRECATED::eValidate ? CUtf8::eValidate : CUtf8::eNoValidate));
     return *this;
 }
@@ -434,7 +434,7 @@ inline TUnicodeSymbol CStringUTF8_DEPRECATED::Decode(string::const_iterator& src
 
 #if  STRINGUTF8_OBSOLETE_STATIC
 inline
-SIZE_TYPE CStringUTF8_DEPRECATED::GetSymbolCount(const CTempString& src)
+SIZE_TYPE CStringUTF8_DEPRECATED::GetSymbolCount(const CTempString src)
 {
     return CUtf8::GetSymbolCount(src);
 }
@@ -446,7 +446,7 @@ SIZE_TYPE CStringUTF8_DEPRECATED::GetValidSymbolCount(const char* src, SIZE_TYPE
     return CUtf8::GetValidSymbolCount(CTempString(src, buf_size));
 }
 inline
-SIZE_TYPE CStringUTF8_DEPRECATED::GetValidSymbolCount(const CTempString& src)
+SIZE_TYPE CStringUTF8_DEPRECATED::GetValidSymbolCount(const CTempString src)
 {
     return CUtf8::GetValidSymbolCount(src);
 }
@@ -458,7 +458,7 @@ SIZE_TYPE CStringUTF8_DEPRECATED::GetValidBytesCount(const char* src, SIZE_TYPE 
     return CUtf8::GetValidBytesCount(CTempString(src,buf_size));
 }
 inline
-SIZE_TYPE CStringUTF8_DEPRECATED::GetValidBytesCount(const CTempString& src)
+SIZE_TYPE CStringUTF8_DEPRECATED::GetValidBytesCount(const CTempString src)
 {
     return CUtf8::GetValidBytesCount(src);
 }
@@ -471,14 +471,14 @@ string CStringUTF8_DEPRECATED::AsSingleByteString(EEncoding encoding,
 }
 #if  STRINGUTF8_OBSOLETE_STATIC
 inline
-EEncoding CStringUTF8_DEPRECATED::GuessEncoding( const CTempString& src)
+EEncoding CStringUTF8_DEPRECATED::GuessEncoding(const CTempString src)
 {
     return CUtf8::GuessEncoding(src);
 }
 #endif
 #if  STRINGUTF8_OBSOLETE_STATIC
 inline
-bool CStringUTF8_DEPRECATED::MatchEncoding( const CTempString& src, EEncoding encoding)
+bool CStringUTF8_DEPRECATED::MatchEncoding(const CTempString src, EEncoding encoding)
 {
     return CUtf8::MatchEncoding(src,encoding);
 }
@@ -488,7 +488,7 @@ string CStringUTF8_DEPRECATED::EncodingToString(EEncoding encoding)
     return CUtf8::EncodingToString(encoding);
 }
 inline
-EEncoding CStringUTF8_DEPRECATED::StringToEncoding(const CTempString& str)
+EEncoding CStringUTF8_DEPRECATED::StringToEncoding(const CTempString str)
 {
     return CUtf8::StringToEncoding(str);
 }
@@ -532,7 +532,7 @@ CStringUTF8_DEPRECATED& CStringUTF8_DEPRECATED::TruncateSpacesInPlace(NStr::ETru
 }
 #if  STRINGUTF8_OBSOLETE_STATIC
 inline
-CTempString CStringUTF8_DEPRECATED::TruncateSpaces_Unsafe(const CTempString& str, NStr::ETrunc side)
+CTempString CStringUTF8_DEPRECATED::TruncateSpaces_Unsafe(const CTempString str, NStr::ETrunc side)
 {
     return CUtf8::TruncateSpaces_Unsafe(str,side);
 }
@@ -548,7 +548,7 @@ void   CStringUTF8_DEPRECATED::x_AppendChar(TUnicodeSymbol ch)
     CUtf8::x_AppendChar(*this, ch);
 }
 inline
-void   CStringUTF8_DEPRECATED::x_Append(const CTempString& src,
+void   CStringUTF8_DEPRECATED::x_Append(const CTempString src,
                 EEncoding encoding, EValidate validate)
 {
     CUtf8::x_Append(*this, src, encoding, (CUtf8::EValidate)validate);
@@ -578,34 +578,34 @@ basic_string<TChar> CStringUTF8_DEPRECATED::AsBasicString(
 }
 template <typename TChar> inline
 basic_string<TChar> CStringUTF8_DEPRECATED::AsBasicString(
-    const CTempString& str, const TChar* substitute_on_error, EValidate validate)
+    const CTempString str, const TChar* substitute_on_error, EValidate validate)
 {
     return CNotImplemented<TChar>::Cannot_convert_to_nonUnicode_string();
 }
 template <> inline
 basic_string<TUnicodeSymbol> CStringUTF8_DEPRECATED::AsBasicString(
-    const CTempString& str, const TUnicodeSymbol* substitute_on_error, EValidate validate)
+    const CTempString str, const TUnicodeSymbol* substitute_on_error, EValidate validate)
 {
     return CUtf8::x_AsBasicString(str,substitute_on_error, (CUtf8::EValidate)validate);
 }
 #if NCBITOOLKIT_USE_LONG_UCS4
 template <> inline
 basic_string<TCharUCS4> CStringUTF8_DEPRECATED::AsBasicString(
-    const CTempString& str, const TCharUCS4* substitute_on_error, EValidate validate)
+    const CTempString str, const TCharUCS4* substitute_on_error, EValidate validate)
 {
     return CUtf8::x_AsBasicString(str,substitute_on_error, (CUtf8::EValidate)validate);
 }
 #endif
 template <> inline
 basic_string<TCharUCS2> CStringUTF8_DEPRECATED::AsBasicString(
-    const CTempString& str, const TCharUCS2* substitute_on_error, EValidate validate)
+    const CTempString str, const TCharUCS2* substitute_on_error, EValidate validate)
 {
     return CUtf8::x_AsBasicString(str,substitute_on_error, (CUtf8::EValidate)validate);
 }
 #if defined(HAVE_WSTRING)
 template <> inline
 basic_string<wchar_t> CStringUTF8_DEPRECATED::AsBasicString(
-    const CTempString& str, const wchar_t* substitute_on_error, EValidate validate)
+    const CTempString str, const wchar_t* substitute_on_error, EValidate validate)
 {
     return CUtf8::x_AsBasicString(str,substitute_on_error, (CUtf8::EValidate)validate);
 }
