@@ -2851,7 +2851,7 @@ public:
 	{
 	public:
 		virtual void Append(const string& s) = 0;
-		virtual void Append(const CTempString s) = 0;
+		virtual void Append(const CTempString& s) = 0;
 	};
 
 	class CWrapDestStringList : public IWrapDest
@@ -2864,7 +2864,7 @@ public:
 		{
 			m_list.push_back(s);
 		}
-		virtual void Append(const CTempString s)
+		virtual void Append(const CTempString& s)
 		{
             m_list.push_back(NcbiEmptyString);
             m_list.back().assign(s.data(), s.length());
