@@ -57,10 +57,6 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-//as defined in GenomeColl_Master.dbo.CodeServiceModeAlias
-const string CGenomicCollectionsService::SAssemblyMode::kAssemblyOnly = "AssemblyOnly";
-const string CGenomicCollectionsService::SAssemblyMode::kFtpContents = "FtpContents";
-
 // constructor
 CGenomicCollectionsService::CGenomicCollectionsService(void)
 {

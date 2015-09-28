@@ -105,8 +105,9 @@ public:
     //please contact NCBI if you have other needs
     struct SAssemblyMode
     {
-        static const string kAssemblyOnly;
-        static const string kFtpContents;
+        //as defined in GenomeColl_Master.dbo.CodeServiceModeAlias
+        static string kAssemblyOnly() {return "AssemblyOnly";};
+        static string kFtpContents()  {return "FtpContents";};
     };
 
     CRef<CGC_Assembly> _GetAssemblyNew(const string& acc, const string& mode);
