@@ -35,6 +35,7 @@
 
 #include <cgi/ncbicgi.hpp>
 #include <corelib/ncbitime.hpp>
+#include <util/retry_ctx.hpp>
 #include <map>
 
 
@@ -203,6 +204,9 @@ public:
     /// @attention
     ///  Do not call it directly from the user code!
     void Finalize(void) const;
+
+    /// Set retry headers from the context.
+    void SetRetryContext(const CRetryContext& ctx);
 
 public:
     void x_SetSession(const CCgiSession& session);

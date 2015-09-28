@@ -40,6 +40,7 @@
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <serial/serial.hpp>
+#include <util/retry_ctx.hpp>
 
 
 /** @addtogroup GenClassSupport
@@ -49,49 +50,6 @@
 
 
 BEGIN_NCBI_SCOPE
-
-
-/// Retry related values.
-struct SRPC_RetryData
-{
-    /// Content override flags
-    enum EContentOverride {
-        eNot_set,       ///< Send the original request data
-        eNoContent,     ///< Do not send any content on retry
-        eFromResponse,  ///< On retry send content from the current response
-        eData           ///< Send data from m_Content
-    };
-
-    /// Stop retries if not empty.
-    string           m_StopReason;
-    /// Delay before retries.
-    CTimeSpan        m_Delay;
-    /// Arguments to be sent on retries.
-    string           m_Args;
-    /// URL to be used for retries.
-    string           m_URL;
-    /// Content override flag.
-    EContentOverride m_ContentOverride;
-    /// Content for the next retry.
-    string           m_Content;
-    /// If true, force connection reset.
-    bool             m_Reconnect;
-
-    SRPC_RetryData(void) : m_ContentOverride(eNot_set), m_Reconnect(false) {}
-
-    void Reset(void) {
-        m_StopReason.clear();
-        m_Delay.Clear();
-        m_Args.clear();
-        m_URL.clear();
-        m_ContentOverride = eNot_set;
-        m_Content.clear();
-        m_Reconnect = false;
-    }
-
-    void ParseHeader(const char* http_header);
-};
-
 
 /// Base class for CRPCClient template - defines methods
 /// independent of request and response types.
@@ -138,19 +96,19 @@ private:
     CRPCClient_Base(const CRPCClient_Base&);
     bool operator= (const CRPCClient_Base&);
 
-    auto_ptr<CObjectIStream> m_In;
-    auto_ptr<CObjectOStream> m_Out;
     ESerialDataFormat        m_Format;
     CMutex                   m_Mutex;   ///< To allow sharing across threads.
     CTimeSpan                m_RetryDelay;
 
 protected:
     string                   m_Service; ///< Used by default Connect().
-    auto_ptr<CNcbiIostream>  m_Stream;
+    auto_ptr<CNcbiIostream>  m_Stream; // This must be destroyed after m_In/m_Out.
+    auto_ptr<CObjectIStream> m_In;
+    auto_ptr<CObjectOStream> m_Out;
     string                   m_Affinity;
     const STimeout*          m_Timeout; ///< Cloned if not special.
     unsigned int             m_RetryLimit;
-    SRPC_RetryData           m_RetryData;
+    CHttpRetryContext        m_RetryCtx;
 
     // Retry policy; by default, just _TRACEs the event and returns
     // true.  May reset the connection (or do anything else, really),
@@ -159,7 +117,7 @@ protected:
     // m_RetryLimit.)
     virtual bool x_ShouldRetry(unsigned int tries);
 
-    // Calculate effective retry delay. Returns value from m_RetryData
+    // Calculate effective retry delay. Returns value from CRetryContext
     // if any, or the value set by SetRetryDelay. The returned value never
     // exceeds max_delay.
     CTimeSpan x_GetRetryDelay(double max_delay) const;
@@ -244,15 +202,16 @@ public:
 
     virtual const char* GetErrCodeString(void) const;
 
+    bool IsSetRetryContext(void) const { return m_RetryCtx; }
     /// Read retry related data.
-    const SRPC_RetryData& GetRetryData(void) const { return m_RetryData; }
-    /// Modify retry related data.
-    SRPC_RetryData& SetRetryData(void) { return m_RetryData; }
+    CRetryContext& GetRetryContext(void) { return *m_RetryCtx; }
+    /// Set new retry context.
+    void SetRetryContext(CRetryContext& ctx) { m_RetryCtx.Reset(&ctx); }
 
     NCBI_EXCEPTION_DEFAULT(CRPCClientException, CException);
 
 private:
-    SRPC_RetryData m_RetryData;
+    CRef<CRetryContext> m_RetryCtx;
 };
 
 
@@ -263,14 +222,14 @@ template<class TRequest, class TReply>
 inline
 void CRPCClient<TRequest, TReply>::x_Connect(void)
 {
-    if ( !m_RetryData.m_URL.empty() ) {
-        x_ConnectURL(m_RetryData.m_URL);
+    if ( m_RetryCtx.IsSetUrl() ) {
+        x_ConnectURL(m_RetryCtx.GetUrl());
         return;
     }
     _ASSERT( !m_Service.empty() );
     SConnNetInfo* net_info = ConnNetInfo_Create(m_Service.c_str());
-    if ( !m_RetryData.m_Args.empty() ) {
-        ConnNetInfo_AppendArg(net_info, m_RetryData.m_Args.c_str(), 0);
+    if ( m_RetryCtx.IsSetArgs() ) {
+        ConnNetInfo_AppendArg(net_info, m_RetryCtx.GetArgs().c_str(), 0);
     }
     else if (!m_Affinity.empty()) {
         ConnNetInfo_PostOverrideArg(net_info, m_Affinity.c_str(), 0);
@@ -279,7 +238,7 @@ void CRPCClient<TRequest, TReply>::x_Connect(void)
     // Install callback for parsing headers.
     SSERVICE_Extra x_extra;
     memset(&x_extra, 0, sizeof(x_extra));
-    x_extra.data = &m_RetryData;
+    x_extra.data = &m_RetryCtx;
     x_extra.parse_header = sx_ParseHeader;
 
     x_SetStream(new CConn_ServiceStream(m_Service, fSERV_Any, net_info,
@@ -294,13 +253,13 @@ void CRPCClient<TRequest, TReply>::x_ConnectURL(const string& url)
 {
     SConnNetInfo* net_info = ConnNetInfo_Create(0);
     ConnNetInfo_ParseURL(net_info, url.c_str());
-    if ( !m_RetryData.m_Args.empty() ) {
-        ConnNetInfo_PostOverrideArg(net_info, m_RetryData.m_Args.c_str(), 0);
+    if ( m_RetryCtx.IsSetArgs() ) {
+        ConnNetInfo_PostOverrideArg(net_info, m_RetryCtx.GetArgs().c_str(), 0);
     }
     x_SetStream(new CConn_HttpStream(net_info,
         kEmptyStr, // user_header
         sx_ParseHeader, // callback
-        &m_RetryData, // user data for the callback
+        &m_RetryCtx,    // user data for the callback
         0, // adjust callback
         0, // cleanup callback
         fHTTP_AutoReconnect,

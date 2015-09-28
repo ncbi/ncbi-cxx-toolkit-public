@@ -88,7 +88,7 @@ void CRPCClient_Base::Connect(void)
         return; // already connected
     }
     x_Connect();
-    m_RetryData.m_Reconnect = false;
+    m_RetryCtx.ResetNeedReconnect();
 }
 
 
@@ -145,42 +145,52 @@ void CRPCClient_Base::x_Ask(const CSerialObject& request, CSerialObject& reply)
 {
     CMutexGuard LOCK(m_Mutex);
     // Reset headers from previous requests if any.
-    m_RetryData.Reset();
+    m_RetryCtx.Reset();
     unsigned int tries = 0;
     double max_span = m_RetryDelay.GetAsDouble()*m_RetryLimit;
     double span = max_span;
     bool limit_by_time = !m_RetryDelay.IsEmpty();
+    // Retry context can be either the default one (m_RetryCtx), or provided
+    // through an exception.
     for (;;) {
         try {
             SetAffinity(x_GetAffinity(request));
             Connect(); // No-op if already connected
-            if (m_RetryData.m_ContentOverride != SRPC_RetryData::eNoContent) {
-                if ( !m_RetryData.m_Content.empty() ) {
-                    *m_Stream << m_RetryData.m_Content;
+            if ( m_RetryCtx.IsSetContentOverride() ) {
+                if (m_RetryCtx.GetContentOverride() != CHttpRetryContext::eNoContent  &&
+                    m_RetryCtx.IsSetContent() ) {
+                    *m_Stream << m_RetryCtx.GetContent();
                 }
-                else {
-                    // by default re-send the original request
-                    x_WriteRequest(*m_Out, request);
-                }
-            }
-            m_Stream->peek(); // send data, read response headers
-            if (m_RetryData.m_ContentOverride != SRPC_RetryData::eFromResponse) {
-                // read normal response
-                x_ReadReply(*m_In, reply);
             }
             else {
+                // by default re-send the original request
+                x_WriteRequest(*m_Out, request);
+            }
+            m_Stream->peek(); // send data, read response headers
+            if (m_RetryCtx.IsSetContentOverride()  &&
+                m_RetryCtx.GetContentOverride() == CHttpRetryContext::eFromResponse) {
                 // store response content to send it with the next retry
                 CNcbiOstrstream buf;
                 NcbiStreamCopy(buf, *m_Stream);
-                m_RetryData.m_Content = CNcbiOstrstreamToString(buf);
+                m_RetryCtx.SetContent(CNcbiOstrstreamToString(buf));
             }
-            break;
+            else {
+                // read normal response
+                x_ReadReply(*m_In, reply);
+            }
+            // If reading reply succeeded and no retry was requested by the server, break.
+            if ( !m_RetryCtx.GetNeedRetry() ) {
+                break;
+            }
         } catch (CException& e) {
             // Some exceptions tend to correspond to transient glitches;
             // the remainder, however, may as well get propagated immediately.
             CRPCClientException* rpc_ex = dynamic_cast<CRPCClientException*>(&e);
             if (rpc_ex  &&  rpc_ex->GetErrCode() == CRPCClientException::eRetry) {
-                m_RetryData = rpc_ex->GetRetryData();
+                if ( rpc_ex->IsSetRetryContext() ) {
+                    // Save information to the local retry context and proceed.
+                    m_RetryCtx = rpc_ex->GetRetryContext();
+                }
                 // proceed to retry
             }
             else if ( !dynamic_cast<CSerialException*>(&e)
@@ -188,40 +198,42 @@ void CRPCClient_Base::x_Ask(const CSerialObject& request, CSerialObject& reply)
                 // Not a retry related exception, abort.
                 throw;
             }
-            // If using time limit, allow to make more than m_RetryLimit attempts
-            // if the server has set shorter delay.
-            if ((!limit_by_time  &&  ++tries >= m_RetryLimit)  ||
-                !x_ShouldRetry(tries)) {
+        }
+        // Retry request on exception or on explicit retry request from the server.
+
+        // If using time limit, allow to make more than m_RetryLimit attempts
+        // if the server has set shorter delay.
+        if ((!limit_by_time  &&  ++tries >= m_RetryLimit)  ||
+            !x_ShouldRetry(tries)) {
+            NCBI_THROW(CRPCClientException, eFailed,
+                "Failed to receive reply after " +
+                NStr::NumericToString(tries) + " tries");
+        }
+        if ( m_RetryCtx.IsSetStop() ) {
+            NCBI_THROW(CRPCClientException, eFailed,
+                "Retrying request stopped by the server: " +
+                m_RetryCtx.GetStopReason());
+        }
+        CTimeSpan delay = x_GetRetryDelay(span);
+        if ( !delay.IsEmpty() ) {
+            SleepSec(delay.GetCompleteSeconds());
+            SleepMicroSec(delay.GetNanoSecondsAfterSecond() / 1000);
+            span -= delay.GetAsDouble();
+            if (limit_by_time  &&  span <= 0) {
                 NCBI_THROW(CRPCClientException, eFailed,
-                    "Failed to receive reply after " +
-                    NStr::NumericToString(tries) + " tries");
-            }
-            if (!m_RetryData.m_StopReason.empty()) {
-                NCBI_THROW(CRPCClientException, eFailed,
-                    "Retrying request stopped by the server: " +
-                    m_RetryData.m_StopReason);
-            }
-            CTimeSpan delay = x_GetRetryDelay(span);
-            if ( !delay.IsEmpty() ) {
-                SleepSec(delay.GetCompleteSeconds());
-                SleepMicroSec(delay.GetNanoSecondsAfterSecond() / 1000);
-                span -= delay.GetAsDouble();
-                if (limit_by_time  &&  span <= 0) {
-                    NCBI_THROW(CRPCClientException, eFailed,
-                        "Failed to receive reply in " +
-                        CTimeSpan(max_span).AsSmartString());
-                }
-            }
-            if ( !(tries & 1)  ||  m_RetryData.m_Reconnect ) {
-                // reset on every other attempt in case we're out of sync
-                try {
-                    Reset();
-                } STD_CATCH_ALL_XX(Serial_RPCClient, 1 ,"CRPCClient_Base::Reset()");
+                    "Failed to receive reply in " +
+                    CTimeSpan(max_span).AsSmartString());
             }
         }
+        if ( !(tries & 1)  ||  m_RetryCtx.NeedReconnect() ) {
+            // reset on every other attempt in case we're out of sync
+            try {
+                Reset();
+            } STD_CATCH_ALL_XX(Serial_RPCClient, 1 ,"CRPCClient_Base::Reset()");
+        }
     }
-    // Reset headers when done.
-    m_RetryData.Reset();
+    // Reset retry context when done.
+    m_RetryCtx.Reset();
 }
 
 
@@ -236,69 +248,15 @@ bool CRPCClient_Base::x_ShouldRetry(unsigned int tries)
 CTimeSpan CRPCClient_Base::x_GetRetryDelay(double max_delay) const
 {
     // If not set by the server, use local delay.
-    if (m_RetryData.m_Delay.IsEmpty()) {
+    if ( !m_RetryCtx.IsSetDelay() ) {
         return m_RetryDelay;
     }
     // If local delay is not zero, we have to limit total retries time to max_delay.
-    if (!m_RetryDelay.IsEmpty()  &&  m_RetryData.m_Delay.GetAsDouble() > max_delay) {
+    if (!m_RetryDelay.IsEmpty()  &&
+        m_RetryCtx.GetDelay().GetAsDouble() > max_delay) {
         return CTimeSpan(max_delay);
     }
-    return m_RetryData.m_Delay;
-}
-
-
-void SRPC_RetryData::ParseHeader(const char* http_header)
-{
-    list<string> lines;
-    NStr::Split(http_header, HTTP_EOL, lines);
-
-    m_ContentOverride = eNot_set;
-    m_Content.clear();
-
-    string name, value;
-    ITERATE(list<string>, line, lines) {
-        size_t delim = line->find(':');
-        if (delim == NPOS  ||  delim < 1) {
-            // skip lines without delimiter - can be HTTP status or
-            // something else.
-            continue;
-        }
-        name = line->substr(0, delim);
-        value = line->substr(delim + 1);
-        NStr::TruncateSpacesInPlace(value, NStr::eTrunc_Both);
-
-        if ( NStr::EqualNocase(name, kRetryStop) ) {
-            m_StopReason = value;
-        }
-        if ( NStr::EqualNocase(name, kRetryDelay) ) {
-            double val = NStr::StringToDouble(value);
-            if (errno == 0) {
-                m_Delay.Set(val);
-            }
-        }
-        if ( NStr::EqualNocase(name, kRetryArgs) ) {
-            m_Args = value;
-            m_Reconnect = true;
-        }
-        if ( NStr::EqualNocase(name, kRetryURL) ) {
-            m_URL = value;
-            m_Reconnect = true;
-        }
-        if ( NStr::EqualNocase(name, kRetryContent) ) {
-            string content = value;
-            if ( NStr::EqualNocase(content, kRetryContent_no_content) ) {
-                m_ContentOverride = SRPC_RetryData::eNoContent;
-            }
-            else if ( NStr::EqualNocase(content, kRetryContent_from_response) ) {
-                m_ContentOverride = SRPC_RetryData::eFromResponse;
-            }
-            else if ( NStr::StartsWith(content, kRetryContent_content, NStr::eNocase) ) {
-                m_ContentOverride = SRPC_RetryData::eData;
-                m_Content = NStr::URLDecode(
-                    content.substr(strlen(kRetryContent_content)));
-            }
-        }
-    }
+    return m_RetryCtx.GetDelay();
 }
 
 
@@ -308,9 +266,9 @@ CRPCClient_Base::sx_ParseHeader(const char* http_header,
                                 int         server_error)
 {
     if ( !user_data ) return eHTTP_HeaderContinue;
-    SRPC_RetryData* rpc_data = reinterpret_cast<SRPC_RetryData*>(user_data);
-    _ASSERT(rpc_data);
-    rpc_data->ParseHeader(http_header);
+    CHttpRetryContext* retry_ctx = reinterpret_cast<CHttpRetryContext*>(user_data);
+    _ASSERT(retry_ctx);
+    retry_ctx->ParseHeader(http_header);
 
     // Always read response body - normal content or error.
     return eHTTP_HeaderContinue;

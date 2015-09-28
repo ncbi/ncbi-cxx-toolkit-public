@@ -635,4 +635,14 @@ void CCgiResponse::InitCORSHeaders(const string& /*origin*/,
 }
 
 
+void CCgiResponse::SetRetryContext(const CRetryContext& ctx)
+{
+    CRetryContext::TValues values;
+    ctx.GetValues(values);
+    ITERATE(CRetryContext::TValues, it, values) {
+        SetHeaderValue(it->first, it->second);
+    }
+}
+
+
 END_NCBI_SCOPE
