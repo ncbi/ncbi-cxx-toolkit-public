@@ -730,8 +730,8 @@ void CNetScheduleServerListener::OnInit(
         SetAuthString(ns_impl);
 
         // If we should load config from NetSchedule server
-        // and have not done it already
-        if (!phase) {
+        // and have not done it already and not working in WN compatible mode
+        if (!phase && !m_WorkerNodeCompatMode) {
             if (CConfig* alt = loader.Get(ns_impl, config, config_section)) {
                 config_holder.reset(alt);
                 config = alt;
@@ -843,9 +843,9 @@ static const char* const s_NetScheduleConfigSections[] = {
 SNetScheduleAPIImpl::SNetScheduleAPIImpl(
         CConfig* config, const string& section,
         const string& service_name, const string& client_name,
-        const string& queue_name) :
-    m_Service(new SNetServiceImpl("NetScheduleAPI",
-        client_name, new CNetScheduleServerListener)),
+        const string& queue_name, bool wn_compatible) :
+    m_Service(new SNetServiceImpl("NetScheduleAPI", client_name,
+                new CNetScheduleServerListener(wn_compatible), wn_compatible)),
     m_Queue(queue_name),
     m_JobTtl(0)
 {
@@ -891,6 +891,14 @@ CNetScheduleAPI::CNetScheduleAPI(const string& service_name,
         const string& client_name, const string& queue_name) :
     m_Impl(new SNetScheduleAPIImpl(NULL, kEmptyStr,
         service_name, client_name, queue_name))
+{
+}
+
+// WorkerNode compatible API constructor
+CNetScheduleAPI::CNetScheduleAPI(const string& service_name,
+        const string& client_name) :
+    m_Impl(new SNetScheduleAPIImpl(NULL, kEmptyStr,
+        service_name, client_name, kEmptyStr, true))
 {
 }
 
@@ -1336,13 +1344,6 @@ void CNetScheduleAPI::UpdateAuthString()
 void CNetScheduleAPI::SetClientType(CNetScheduleAPI::EClientType client_type)
 {
     m_Impl->GetListener()->m_ClientType = client_type;
-
-    UpdateAuthString();
-}
-
-void CNetScheduleAPI::EnableWorkerNodeCompatMode()
-{
-    m_Impl->GetListener()->m_WorkerNodeCompatMode = true;
 
     UpdateAuthString();
 }

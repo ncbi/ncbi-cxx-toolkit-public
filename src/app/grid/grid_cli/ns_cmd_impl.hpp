@@ -37,6 +37,13 @@
 
 BEGIN_NCBI_SCOPE
 
+struct SWnCompatibleNsAPI : public CNetScheduleAPI
+{
+    SWnCompatibleNsAPI(const string& service, const string& name)
+        : CNetScheduleAPI(service, name)
+    {}
+};
+
 class CPrintJobInfo : public IJobInfoProcessor
 {
 public:

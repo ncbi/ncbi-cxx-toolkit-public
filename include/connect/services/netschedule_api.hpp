@@ -306,10 +306,6 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
 
     /// This method is for use by the grid_cli utility only.
     /// @internal
-    void EnableWorkerNodeCompatMode();
-
-    /// This method is for use by the grid_cli utility only.
-    /// @internal
     void UseOldStyleAuth();
 
     /// Extract one of the servers comprising this service
@@ -328,6 +324,9 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
 
     /// @internal
     CCompoundIDPool GetCompoundIDPool();
+
+protected:
+    CNetScheduleAPI(const string&, const string&);
 };
 
 

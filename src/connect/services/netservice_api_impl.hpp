@@ -84,7 +84,7 @@ struct NCBI_XCONNECT_EXPORT SNetServerPoolImpl : public CObject
 {
     // Construct a new object.
     SNetServerPoolImpl(const string& api_name, const string& client_name,
-            INetServerConnectionListener* listener);
+            INetServerConnectionListener* listener, bool old_style_auth);
 
     void Init(CConfig* config, const string& section,
             INetServerConnectionListener* listener);
@@ -246,9 +246,10 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
 {
     // Construct a new object.
     SNetServiceImpl(const string& api_name, const string& client_name,
-            INetServerConnectionListener* listener) :
+            INetServerConnectionListener* listener, bool old_style_auth = false) :
         m_Listener(listener),
-        m_ServerPool(new SNetServerPoolImpl(api_name, client_name, listener)),
+        m_ServerPool(new SNetServerPoolImpl(api_name, client_name, listener,
+                    old_style_auth)),
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
         m_ColoNetwork(0),
         m_AllowXSiteConnections(false),

@@ -53,35 +53,41 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
 
     m_APIClass = api_class;
 
+    string service = m_Opts.ns_service;
     string queue = m_Opts.queue;
 
-    if (!IsOptionSet(eID) && !IsOptionSet(eJobId))
-        m_NetScheduleAPI = CNetScheduleAPI(m_Opts.ns_service,
-            m_Opts.auth, queue);
-    else {
+    const bool job_provided = IsOptionSet(eID) || IsOptionSet(eJobId);
+    const bool service_provided = IsOptionExplicitlySet(eNetSchedule);
+
+    if (job_provided) {
         CNetScheduleKey key(m_Opts.id, m_CompoundIDPool);
 
         if (queue.empty())
             queue = key.queue;
 
-        if (IsOptionExplicitlySet(eNetSchedule)) {
-            string host, port;
-
-            if (!NStr::SplitInTwo(m_Opts.ns_service, ":", host, port)) {
-                NCBI_THROW(CArgException, eInvalidArg,
-                        "When job ID is given, '--" NETSCHEDULE_OPTION "' "
-                        "must be a host:port server address.");
-            }
-
-            m_NetScheduleAPI = CNetScheduleAPI(m_Opts.ns_service,
-                m_Opts.auth, queue);
-            m_NetScheduleAPI.GetService().GetServerPool().StickToServer(host,
-                (unsigned short) NStr::StringToInt(port));
-        } else {
+        if (!service_provided) {
             key.host.push_back(':');
             key.host.append(NStr::NumericToString(key.port));
-            m_NetScheduleAPI = CNetScheduleAPI(key.host, m_Opts.auth, queue);
+            service = key.host;
         }
+    }
+
+    if (IsOptionSet(eCompatMode) && IsOptionSet(eWorkerNode))
+        m_NetScheduleAPI = SWnCompatibleNsAPI(service, m_Opts.auth);
+    else
+        m_NetScheduleAPI = CNetScheduleAPI(service, m_Opts.auth, queue);
+
+    if (job_provided && service_provided) {
+        string host, port;
+
+        if (!NStr::SplitInTwo(m_Opts.ns_service, ":", host, port)) {
+            NCBI_THROW(CArgException, eInvalidArg,
+                    "When job ID is given, '--" NETSCHEDULE_OPTION "' "
+                    "must be a host:port server address.");
+        }
+
+        m_NetScheduleAPI.GetService().GetServerPool().StickToServer(host,
+                (unsigned short) NStr::StringToInt(port));
     }
 
     if (m_AdminMode)
@@ -96,8 +102,6 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
 
     if (IsOptionSet(eCompatMode)) {
         m_NetScheduleAPI.UseOldStyleAuth();
-        if (IsOptionSet(eWorkerNode))
-            m_NetScheduleAPI.EnableWorkerNodeCompatMode();
     }
 
     // Specialize NetSchedule API.
@@ -106,7 +110,7 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
         break;
     case eNetScheduleAdmin:
         if (cmd_severity != eReadOnlyAdminCmd) {
-            if (!IsOptionExplicitlySet(eNetSchedule)) {
+            if (!service_provided) {
                 NCBI_THROW(CArgException, eNoValue, "'--" NETSCHEDULE_OPTION
                         "' must be explicitly specified.");
             }

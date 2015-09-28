@@ -277,15 +277,15 @@ bool SNetServiceIterator_Weighted::Prev()
 }
 
 SNetServerPoolImpl::SNetServerPoolImpl(const string& api_name,
-        const string& client_name,
-        INetServerConnectionListener* listener) :
+        const string& client_name, INetServerConnectionListener* listener,
+        bool old_style_auth) :
     m_APIName(api_name),
     m_ClientName(client_name),
     m_Listener(listener),
     m_EnforcedServer(0, 0),
     m_LBSMAffinityName(kEmptyStr),
     m_LBSMAffinityValue(NULL),
-    m_UseOldStyleAuth(false)
+    m_UseOldStyleAuth(old_style_auth)
 {
 }
 

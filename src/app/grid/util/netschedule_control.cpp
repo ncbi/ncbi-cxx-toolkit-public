@@ -58,6 +58,13 @@ public:
     int Run(void);
 
 private:
+    struct SWnCompatibleNsAPI : public CNetScheduleAPI
+    {
+        SWnCompatibleNsAPI(const string& service, const string& name)
+            : CNetScheduleAPI(service, name)
+        {}
+    };
+
     void x_GetConnectionArgs(string& service, string& queue, int& retry,
                              bool queue_required);
     CNetScheduleAPI x_CreateNewClient(bool queue_required);
@@ -88,9 +95,12 @@ CNetScheduleAPI CNetScheduleControl::x_CreateNewClient(bool queue_required)
     string service,queue;
     int retry;
     x_GetConnectionArgs(service, queue, retry, queue_required);
-    CNetScheduleAPI ns_api(service, "netschedule_admin", queue);
-    ns_api.EnableWorkerNodeCompatMode();
-    return ns_api;
+
+    if (queue_required) {
+        return CNetScheduleAPI(service, "netschedule_admin", queue);
+    }
+
+    return SWnCompatibleNsAPI(service, "netschedule_admin");
 }
 
 void CNetScheduleControl::Init(void)

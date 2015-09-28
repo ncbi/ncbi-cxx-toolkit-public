@@ -119,9 +119,9 @@ protected:
 class CNetScheduleServerListener : public INetServerConnectionListener
 {
 public:
-    CNetScheduleServerListener() :
+    CNetScheduleServerListener(bool wn_compatible) :
         m_ClientType(CNetScheduleAPI::eCT_Auto),
-        m_WorkerNodeCompatMode(false)
+        m_WorkerNodeCompatMode(wn_compatible)
     {
     }
 
@@ -237,7 +237,7 @@ struct SNetScheduleAPIImpl : public CObject
 {
     SNetScheduleAPIImpl(CConfig* config, const string& section,
         const string& service_name, const string& client_name,
-        const string& queue_name);
+        const string& queue_name, bool wn_compatible = false);
 
     // Special constructor for CNetScheduleAPI::GetServer().
     SNetScheduleAPIImpl(SNetServerInPool* server, SNetScheduleAPIImpl* parent);
