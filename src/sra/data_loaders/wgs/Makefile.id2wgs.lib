@@ -1,18 +1,26 @@
 # $Id$
 
+# Build plug-in library "ncbi_id2proc_wgs", implementation of CID2Processor.
+###############################
+
+PROJ_TAG = gbench,lib,public
+
 LIB = ncbi_id2proc_wgs
 SRC = id2wgs id2wgs_impl
 
-ASN_DEP = id2 seq seqset
-
 REQUIRES = objects
 
-DLL_LIB = $(SOBJMGR_LIBS) sraread $(SRAREAD_LDEP) $(CMPRS_LIB)
+ASN_DEP = id2 seqset seq
+
+LIB_OR_DLL = both
+
+DLL_LIB = $(SOBJMGR_LIBS) sraread$(STATIC) $(SRAREAD_LDEP) $(CMPRS_LIB)
 LIBS = $(SRA_SDK_SYSLIBS) $(ORIG_LIBS)
+POST_LINK = $(VDB_POST_LINK)
 
 CPPFLAGS = $(SRA_INCLUDE) $(ORIG_CPPFLAGS) -DNCBI_ID2PROC_WGS_EXPORTS
 
 WATCHERS = vasilche
 
 USES_LIBRARIES =  \
-    $(SRA_LIBS) $(SRA_SDK_SYSLIBS) id2 seqset
+    $(SRAREAD_LIBS) $(SRA_SDK_SYSLIBS) id2 seqset
