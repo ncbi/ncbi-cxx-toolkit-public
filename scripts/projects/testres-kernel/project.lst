@@ -5,6 +5,7 @@ util/bitset$ update-only
 util/cache$
 util/regexp$
 util/xregexp$
+util/compress
 objects$
 objects/misc$
 objects/general

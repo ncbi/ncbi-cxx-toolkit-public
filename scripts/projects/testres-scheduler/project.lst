@@ -5,6 +5,8 @@ util/bitset$ update-only
 util/cache$
 util/regexp$
 util/xregexp$
+util/compress
+common
 connect$
 connect/ext$
 connect/impl$

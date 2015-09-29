@@ -1,6 +1,6 @@
 [components]
-infrastructure  15.0
-core            15.0
-web             15.0
-misc            15.0
-app             15.0
+#infrastructure  16.1
+core            16.1
+web             16.1
+misc            16.1
+app             16.1
