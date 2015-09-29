@@ -52,7 +52,7 @@ class CID2_Request_Get_Blob_Id;
 class CID2_Request_Get_Blob_Info;
 class CID2_Blob_Id;
 
-class NCBI_SRAREAD_EXPORT CID2WGSProcessor_Impl : public CObject
+class NCBI_ID2PROC_WGS_EXPORT CID2WGSProcessor_Impl : public CObject
 {
 public:
     CID2WGSProcessor_Impl(void);
