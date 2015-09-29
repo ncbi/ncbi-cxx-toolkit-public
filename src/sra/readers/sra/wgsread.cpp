@@ -152,26 +152,27 @@ bool CWGSGiResolver::Update(void)
 bool CWGSGiResolver::x_Load(SIndexInfo& index,
                             const CTime* old_timestamp) const
 {
-    if ( !CDirEntry(m_IndexPath).GetTime(&index.m_Timestamp) ) {
+    //CStopWatch sw(CStopWatch::eStart);
+    if (!CDirEntry(m_IndexPath).GetTime(&index.m_Timestamp)) {
         // failed to get timestamp
         return false;
     }
-    if ( old_timestamp && index.m_Timestamp == *old_timestamp ) {
+    //LOG_POST_X(4, "CWGSGiResolver: got time in " << sw.Elapsed() << " s");
+    if (old_timestamp && index.m_Timestamp == *old_timestamp) {
         // same timestamp
         return false;
     }
 
-    CNcbiIfstream stream(m_IndexPath.c_str());
-    if ( !stream ) {
+    CMemoryFile stream(m_IndexPath);
+    if ( !stream.GetPtr() ) {
         // no index file
         return false;
     }
 
     index.m_Index.clear();
-    CStopWatch sw(CStopWatch::eStart);
     vector<CTempString> tokens;
     size_t count = 0;
-    for ( CBufferedLineReader line(stream); !line.AtEOF(); ) {
+    for ( CMemoryLineReader line(&stream); !line.AtEOF(); ) {
         tokens.clear();
         NStr::Tokenize(*++line, " ", tokens);
         if ( tokens.size() != 3 ) {
@@ -308,7 +309,8 @@ bool CWGSProtAccResolver::Update(void)
 bool CWGSProtAccResolver::x_Load(SIndexInfo& index,
                                  const CTime* old_timestamp) const
 {
-    if ( !CDirEntry(m_IndexPath).GetTime(&index.m_Timestamp) ) {
+    //CStopWatch sw(CStopWatch::eStart);
+    if (!CDirEntry(m_IndexPath).GetTime(&index.m_Timestamp)) {
         // failed to get timestamp
         return false;
     }
@@ -317,16 +319,15 @@ bool CWGSProtAccResolver::x_Load(SIndexInfo& index,
         return false;
     }
 
-    CNcbiIfstream stream(m_IndexPath.c_str());
-    if ( !stream ) {
+    CMemoryFile stream(m_IndexPath);
+    if ( !stream.GetPtr() ) {
         // no index file
         return false;
     }
 
-    CStopWatch sw(CStopWatch::eStart);
     vector<CTempString> tokens;
     size_t count = 0;
-    for ( CBufferedLineReader line(stream); !line.AtEOF(); ) {
+    for ( CMemoryLineReader line(&stream); !line.AtEOF(); ) {
         tokens.clear();
         NStr::Tokenize(*++line, " ", tokens);
         if ( tokens.size() != 3 ) {
