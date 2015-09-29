@@ -251,7 +251,7 @@ sources.nonusr:
 	$(call make_each_lib_proj,export-headers)
 	$(MAKE_LOCK_MAP)
 
-all.nonusr: $(sources:%=%.nonusr) $(wildcard Makefile.*.libdep)
+all.nonusr: $(sources:%=%.nonusr) # $(wildcard Makefile.*.libdep)
 	@-$(RM) -f .built .built_r
 	@-echo "`$(DATE)`: starting to build in $(CURDIR)" > .building
 	$(call make_each_lib_proj,all)
@@ -266,7 +266,7 @@ clean.nonusr purge.nonusr: %.nonusr: # %_sources
 clean_sources purge_sources:
 	$(call make_each_spec,$@)
 
-libs_l.real: $(sources) $(wildcard Makefile.*.libdep)
+libs_l.real: $(sources) # $(wildcard Makefile.*.libdep)
 	$(call make_each_lib_proj,all)
 
 mark-as-disabled%: ign = -
