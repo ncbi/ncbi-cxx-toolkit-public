@@ -172,7 +172,32 @@ public:
         eDatabaseTooLarge,      ///< Database is too large (warning)
         eDatabaseOverLimit,     ///< Database size exceeded its limit (error, stop write)
         eDiskSpaceLow,          ///< Free disk space is below threshold
-        eDiskSpaceCritical      ///< Free disk space is below critical threshold
+        eDiskSpaceCritical,     ///< Free disk space is below critical threshold
+#ifdef _DEBUG
+// it is convenient way to keep track of some events
+        eDebugOrphanRecordFound,
+        eDebugOrphanRecordFound2,
+        eDebugWriteBlobInfoFailed,
+        eDebugWriteBlobCancelled,
+        eDebugReadBlobInfoFailed1,
+        eDebugReadBlobInfoFailed2,
+        eDebugUpdateUpCoords1,
+        eDebugUpdateUpCoords2,
+        eDebugWriteBlobInfo1,
+        eDebugWriteBlobInfo2,
+        eDebugWriteBlobInfo3,
+        eDebugWriteBlobInfo4,
+        eDebugMoveDataToGarbage,
+        eDebugReadMapInfo1,
+        eDebugReadMapInfo2,
+        eDebugReadChunkData1,
+        eDebugReadChunkData2,
+        eDebugReadChunkData3,
+        eDebugReadChunkData4,
+        eDebugDeleteNextData1,
+        eDebugDeleteNextData2,
+#endif
+        eLastAlert
     };
 
     enum EAlertAckResult {

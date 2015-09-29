@@ -91,6 +91,7 @@ public:
     static bool ReConfig(const CNcbiRegistry& new_reg, string& err_message);
     static void WriteSetup(CSrvSocketTask& task);
     static void WriteEnvInfo(CSrvSocketTask& task);
+    static void WriteBlobStat(CSrvSocketTask& task);
     static void WriteDbInfo(CSrvSocketTask& task, const CTempString& mask);
 
     static bool IsCleanStart(void);

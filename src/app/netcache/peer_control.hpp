@@ -294,7 +294,7 @@ CNCPeerControl::AcceptsBlobKey(const CNCBlobKeyLight& key) const
 inline bool 
 CNCPeerControl::AcceptsBList(void) const
 {
-    return m_HostProtocol >= 60812;
+    return m_HostProtocol >= 60900;
 }
 
 inline void

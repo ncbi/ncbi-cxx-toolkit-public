@@ -914,7 +914,7 @@ CCurVerReader::ExecuteSlice(TSrvThreadNum thr_num)
     ver_data->meta_mem += kVerManagerSize;
     m_VerMgr->m_CurVersion = ver_data;
     if (!CNCBlobStorage::ReadBlobInfo(ver_data)) {
-        SRV_LOG(Critical, "Problem reading meta-information about blob "
+        SRV_LOG(Error, "Problem reading meta-information about blob "
                           << CNCBlobKeyLight(m_VerMgr->m_Key).KeyForLogs());
         CSrvRef<SNCBlobVerData> cur_ver(ver_data);
         m_VerMgr->DeleteVersion(ver_data);
@@ -1157,14 +1157,20 @@ SNCBlobVerData::x_WriteBlobInfo(void)
     bool new_write = coord.empty();
     if (!CNCBlobStorage::WriteBlobInfo(manager->GetKey(), this, chunk_maps, cnt_chunks, mgr->GetCacheData()))
     {
+#ifdef _DEBUG
+CNCAlerts::Register(CNCAlerts::eDebugWriteBlobInfoFailed,"x_WriteBlobInfo");
+#endif
+//CNCBlobStorage::DeleteBlobInfo(this, chunk_maps);
+
         meta_has_changed = true;
         move_or_rewrite = false;
         need_write_all = true;
         RunAfter(s_WBFailedWriteDelay);
         return false;
     }
-    if (new_write)
+    if (new_write) {
         CNCStat::DiskBlobWrite(size);
+    }
     x_FreeChunkMaps();
 
     move_or_rewrite = false;
@@ -1226,6 +1232,17 @@ bool
 SNCBlobVerData::x_ExecuteWriteAll(void)
 {
     wb_mem_lock.Lock();
+
+#if 0
+    if (dead_time < CSrvTime::CurSecs()) {
+#ifdef _DEBUG
+CNCAlerts::Register(CNCAlerts::eDebugWriteBlobCancelled,"x_ExecuteWriteAll");
+#endif
+        need_write_all = false;
+        wb_mem_lock.Unlock();
+        return true;
+    }
+#endif
 
     if (need_stop_write) {
         need_write_all = false;

@@ -3673,9 +3673,11 @@ CNCMessageHandler::x_DoCmd_GetConfig(void)
         } else if (section == "db") {
             CTempString mask = params.find("port") != params.end() ? params.at("port") : CTempString(kEmptyStr);
             CNCBlobStorage::WriteDbInfo(*this, mask);
+        } else if (section == "blob") {
+            CNCBlobStorage::WriteBlobStat(*this);
         } else {
             WriteText(",\n\"error\": \"Unknown section name, valid names: ");
-            WriteText("netcache, storage, mirror, alerts, allalerts, env, stat, sync, task, db\"");
+            WriteText("netcache, storage, mirror, alerts, allalerts, env, stat, sync, task, blob, db\"");
         }
         WriteText("\n}}");
     } else {

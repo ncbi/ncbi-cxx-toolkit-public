@@ -342,6 +342,15 @@ public:
     virtual ~CSpaceShrinker(void);
 
 private:
+#if 0
+    State x_PrepareToVerify(void);
+    State x_VerifyNextFile(void);
+    State x_CleanNextFile(void);
+
+    State x_PrepareToVerifyData(void);
+    State x_VerifyNextData(void);
+#endif
+
     State x_PrepareToShrink(void);
     State x_DeleteNextFile(void);
     State x_StartMoves(void);
@@ -373,6 +382,7 @@ private:
     Uint4 m_SizeMoved;
     bool m_Failed;
     bool m_MovingMeta;
+    TFileRecsMap m_RecsMap;
 };
 
 

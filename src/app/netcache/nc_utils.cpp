@@ -212,12 +212,35 @@ CNCAlerts::EAlertAckResult CNCAlerts::Acknowledge(const string&  alert_id,
 
 struct AlertToId
 {
-    CNCAlerts::EAlertType     type;
-    string              id;
+    CNCAlerts::EAlertType type;
+    string                id;
 };
 
 static const AlertToId  s_alertToIdMap[] = {
     {CNCAlerts::eUnknown,              "Unknown"},
+#ifdef _DEBUG
+    {CNCAlerts::eDebugOrphanRecordFound, "eDebugOrphanRecordFound"},
+    {CNCAlerts::eDebugOrphanRecordFound2, "eDebugOrphanRecordFound2"},
+    {CNCAlerts::eDebugWriteBlobInfoFailed, "eDebugWriteBlobInfoFailed"},
+    {CNCAlerts::eDebugWriteBlobCancelled, "eDebugWriteBlobCancelled"},
+    {CNCAlerts::eDebugReadBlobInfoFailed1, "eDebugReadBlobInfoFailed1"},
+    {CNCAlerts::eDebugReadBlobInfoFailed2, "eDebugReadBlobInfoFailed2"},
+    {CNCAlerts::eDebugUpdateUpCoords1, "eDebugUpdateUpCoords1"},
+    {CNCAlerts::eDebugUpdateUpCoords2, "eDebugUpdateUpCoords2"},
+    {CNCAlerts::eDebugWriteBlobInfo1, "eDebugWriteBlobInfo1"},
+    {CNCAlerts::eDebugWriteBlobInfo2, "eDebugWriteBlobInfo2"},
+    {CNCAlerts::eDebugWriteBlobInfo3, "eDebugWriteBlobInfo3"},
+    {CNCAlerts::eDebugWriteBlobInfo4, "eDebugWriteBlobInfo4"},
+    {CNCAlerts::eDebugMoveDataToGarbage, "eDebugMoveDataToGarbage"},
+    {CNCAlerts::eDebugReadMapInfo1, "eDebugReadMapInfo1"},
+    {CNCAlerts::eDebugReadMapInfo2, "eDebugReadMapInfo2"},
+    {CNCAlerts::eDebugReadChunkData1, "eDebugReadChunkData1"},
+    {CNCAlerts::eDebugReadChunkData2, "eDebugReadChunkData2"},
+    {CNCAlerts::eDebugReadChunkData3, "eDebugReadChunkData3"},
+    {CNCAlerts::eDebugReadChunkData4, "eDebugReadChunkData4"},
+    {CNCAlerts::eDebugDeleteNextData1, "eDebugDeleteNextData1"},
+    {CNCAlerts::eDebugDeleteNextData2, "eDebugDeleteNextData2"},
+#endif
     {CNCAlerts::eStartupConfigChanged, "StartupConfigChanged"},
     {CNCAlerts::ePidFileFailed,        "PidFileFailed"},
     {CNCAlerts::eStartAfterCrash,      "StartAfterCrash"},
