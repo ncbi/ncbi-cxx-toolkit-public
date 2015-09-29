@@ -609,7 +609,7 @@ CVcfReader::xAssignVariationAlleleSet(
 
     bool no_alt = true;
     for (unsigned int i=0; i < data.m_Alt.size(); ++i) {
-        if (data.m_Alt[i] != ".") {
+        if (!NStr::Equal(data.m_Alt[i],".")) {
             no_alt = false;
         }
     }
@@ -621,7 +621,7 @@ CVcfReader::xAssignVariationAlleleSet(
 
     //add additional variations, one for each alternative
     for (unsigned int i=0; i < data.m_Alt.size(); ++i) {
-        if (data.m_Alt[i] == ".") {
+        if (NStr::Equal(data.m_Alt[i],".")) {
             continue;
         }
         switch(data.m_SetType) {
