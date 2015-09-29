@@ -72,8 +72,8 @@ BEGIN_NCBI_SCOPE
 
 static const char* s_ClassNames[eCIC_NumberOfClasses] = {
     /* eCIC_GenericID             */  CIC_GENERICID_CLASS_NAME,
-    /* eCIC_NetCacheKey           */  CIC_NETCACHEBLOBKEY_CLASS_NAME,
-    /* eCIC_NetScheduleKey        */  CIC_NETSCHEDULEJOBKEY_CLASS_NAME,
+    /* eCIC_NetCacheBlobKey       */  CIC_NETCACHEBLOBKEY_CLASS_NAME,
+    /* eCIC_NetScheduleJobKey     */  CIC_NETSCHEDULEJOBKEY_CLASS_NAME,
     /* eCIC_NetStorageObjectLocV1 */  CIC_NETSTORAGEOBJECTLOC_CLASS_NAME_V1,
     /* eCIC_NetStorageObjectLoc   */  CIC_NETSTORAGEOBJECTLOC_CLASS_NAME
 };
