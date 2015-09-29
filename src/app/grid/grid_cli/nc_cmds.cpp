@@ -110,33 +110,6 @@ void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(
     }
 }
 
-void CGridCommandLineInterfaceApp::AddBlobMeta(CJsonNode& node,
-        const CNetCacheKey& key)
-{
-    if (key.GetVersion() != 3) {
-        const string server_host(g_NetService_TryResolveHost(key.GetHost()));
-        node.SetString("server_host", server_host);
-        node.SetInteger("server_port", key.GetPort());
-    } else {
-        node.SetInteger("server_address_crc32", key.GetHostPortCRC32());
-    }
-
-    node.SetInteger("id", key.GetId());
-
-    CTime generation_time;
-    generation_time.SetTimeT(key.GetCreationTime());
-    node.SetString("key_generation_time", generation_time.AsString());
-    node.SetInteger("random", key.GetRandomPart());
-
-    const string service(key.GetServiceName());
-
-    if (!service.empty()) {
-        node.SetString("service_name", service);
-    } else {
-        node.SetNull("service_name");
-    }
-}
-
 void CGridCommandLineInterfaceApp::PrintBlobMeta(const CNetCacheKey& key)
 {
     CTime generation_time;

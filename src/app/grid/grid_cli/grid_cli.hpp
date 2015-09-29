@@ -546,7 +546,6 @@ private:
         SetUp_NetCacheCmd(IsOptionSet(eCache) ?
                 eNetICacheClient : eNetCacheAPI);
     }
-    static void AddBlobMeta(CJsonNode& node, const CNetCacheKey& key);
     static void PrintBlobMeta(const CNetCacheKey& key);
     void ParseICacheKey(bool permit_empty_version = false,
         bool* version_is_defined = NULL);
