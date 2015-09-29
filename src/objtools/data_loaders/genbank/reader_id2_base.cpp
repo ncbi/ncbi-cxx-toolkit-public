@@ -55,6 +55,8 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/id2/id2__.hpp>
+#include <objects/id2/id2processor.hpp>
+#include <objects/id2/id2processor_interface.hpp>
 #include <objects/seqsplit/seqsplit__.hpp>
 
 #include <serial/iterator.hpp>
@@ -70,11 +72,15 @@
 #define NCBI_USE_ERRCODE_X   Objtools_Rd_Id2Base
 
 BEGIN_NCBI_SCOPE
+
+NCBI_DEFINE_ERR_SUBCODE_X(15);
+
 BEGIN_SCOPE(objects)
 
 NCBI_PARAM_DECL(int, GENBANK, ID2_DEBUG);
 NCBI_PARAM_DECL(int, GENBANK, ID2_MAX_CHUNKS_REQUEST_SIZE);
 NCBI_PARAM_DECL(int, GENBANK, ID2_MAX_IDS_REQUEST_SIZE);
+NCBI_PARAM_DECL(string, GENBANK, ID2_PROCESSOR);
 
 #ifdef _DEBUG
 # define DEFAULT_DEBUG_LEVEL CId2ReaderBase::eTraceError
@@ -88,6 +94,8 @@ NCBI_PARAM_DEF_EX(int, GENBANK, ID2_MAX_CHUNKS_REQUEST_SIZE, 100,
                   eParam_NoThread, GENBANK_ID2_MAX_CHUNKS_REQUEST_SIZE);
 NCBI_PARAM_DEF_EX(int, GENBANK, ID2_MAX_IDS_REQUEST_SIZE, 100,
                   eParam_NoThread, GENBANK_ID2_MAX_IDS_REQUEST_SIZE);
+NCBI_PARAM_DEF_EX(string, GENBANK, ID2_PROCESSOR, "",
+                  eParam_NoThread, GENBANK_ID2_PROCESSOR);
 
 int CId2ReaderBase::GetDebugLevel(void)
 {
@@ -160,6 +168,24 @@ CId2ReaderBase::CId2ReaderBase(void)
     : m_RequestSerialNumber(1),
       m_AvoidRequest(0)
 {
+    vector<string> proc_list;
+    string proc_param = NCBI_PARAM_TYPE(GENBANK, ID2_PROCESSOR)::GetDefault();
+    NStr::Tokenize(proc_param, ";", proc_list, NStr::eNoMergeDelims);
+    ITERATE ( vector<string>, it, proc_list ) {
+        const string& proc_name = *it;
+        CRef<CID2Processor> proc;
+        try {
+            proc = CPluginManagerGetter<CID2Processor>::Get()->
+                CreateInstance(proc_name);
+        }
+        catch ( CException& exc ) {
+            ERR_POST_X(15, "CId2ReaderBase: "
+                       "cannot load ID2 processor "<<proc_name<<": "<<exc);
+        }
+        if ( proc ) {
+            m_Processors.push_back(proc);
+        }
+    }
 }
 
 
@@ -874,8 +900,7 @@ bool CId2ReaderBase::LoadBlobState(CReaderRequestResult& result,
     CID2_Request_Get_Blob_Info& req2 = req.SetRequest().SetGet_blob_info();
     x_SetResolve(req2.SetBlob_id().SetBlob_id(), blob_id);
     x_ProcessRequest(result, req, 0);
-    if ( blob_id.GetSat() == CProcessor_ExtAnnot::eSat_ANNOT &&
-         blob_id.GetSubSat() != CID2_Blob_Id::eSub_sat_main ) {
+    if ( CProcessor_ExtAnnot::IsExtAnnot(blob_id) ) {
         // workaround for possible incorrect reply on request for non-existent
         // external annotations
         if ( !lock.IsLoadedBlobState() ) {
@@ -898,8 +923,7 @@ bool CId2ReaderBase::LoadBlobVersion(CReaderRequestResult& result,
     CID2_Request_Get_Blob_Info& req2 = req.SetRequest().SetGet_blob_info();
     x_SetResolve(req2.SetBlob_id().SetBlob_id(), blob_id);
     x_ProcessRequest(result, req, 0);
-    if ( blob_id.GetSat() == CProcessor_ExtAnnot::eSat_ANNOT &&
-         blob_id.GetSubSat() != CID2_Blob_Id::eSub_sat_main ) {
+    if ( CProcessor_ExtAnnot::IsExtAnnot(blob_id) ) {
         // workaround for possible incorrect reply on request for non-existent
         // external annotations
         if ( !lock.IsLoadedBlobVersion() ) {
@@ -1360,6 +1384,40 @@ void CId2ReaderBase::x_ProcessPacket(CReaderRequestResult& result,
     }}
     vector<char> done(request_count);
     vector<SId2LoadedSet> loaded_sets(request_count);
+    
+    int remaining_count = request_count;
+    NON_CONST_ITERATE ( TProcessors, it, m_Processors ) {
+        CID2Processor::TReplies replies = (*it)->ProcessSomeRequests(packet);
+        ITERATE ( CID2Processor::TReplies, it, replies ) {
+            CRef<CID2_Reply> reply = *it;
+            int num = reply->GetSerial_number() - start_serial_num;
+            if ( reply->IsSetDiscard() ||
+                 num < 0 || num >= request_count || done[num] ) {
+                // unknown serial num - bad reply
+                NCBI_THROW_FMT(CLoaderException, eOtherError,
+                               "CId2ReaderBase: bad reply serial number");
+            }
+            try {
+                x_ProcessReply(result, loaded_sets[num], *reply);
+            }
+            catch ( CException& exc ) {
+                NCBI_RETHROW(exc, CLoaderException, eOtherError,
+                             "CId2ReaderBase: failed to process reply");
+            }
+            if ( reply->IsSetEnd_of_reply() ) {
+                done[num] = true;
+                x_UpdateLoadedSet(result, loaded_sets[num], sel);
+                --remaining_count;
+            }
+        }
+        if ( size_t(remaining_count) != packet.Get().size() ) {
+            NCBI_THROW(CLoaderException, eOtherError,
+                       "CId2ReaderBase: processor discrepancy");
+        }
+        if ( packet.Get().empty() ) {
+            return;
+        }
+    }
 
     CConn conn(result, this);
     CRef<CID2_Reply> reply;
@@ -1394,7 +1452,6 @@ void CId2ReaderBase::x_ProcessPacket(CReaderRequestResult& result,
         }}
 
         // process replies
-        int remaining_count = request_count;
         while ( remaining_count > 0 ) {
             reply.Reset(new CID2_Reply);
             if ( GetDebugLevel() >= eTraceConn ) {
@@ -2142,7 +2199,7 @@ void CId2ReaderBase::x_ProcessGetBlobId(
     }
     TContentsMask mask = 0;
     {{ // TODO: temporary logic, this info should be returned by server
-        if ( blob_id.GetSubSat() == CID2_Blob_Id::eSub_sat_main ) {
+        if ( !CProcessor_ExtAnnot::IsExtAnnot(blob_id) ) {
             mask |= fBlobHasAllLocal;
         }
         else {

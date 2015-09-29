@@ -51,7 +51,7 @@ NCBI_DEFINE_ERRCODE_X(Objtools_LDS_Loader,  1407,  3);
 NCBI_DEFINE_ERRCODE_X(Objtools_GBLoader,    1408,  2);
 NCBI_DEFINE_ERRCODE_X(Objtools_GB_Util,     1409, 14);
 NCBI_DEFINE_ERRCODE_X(Objtools_Reader,      1410,  0);
-NCBI_DEFINE_ERRCODE_X(Objtools_Rd_Id2Base,  1411, 14);
+NCBI_DEFINE_ERRCODE_X(Objtools_Rd_Id2Base,  1411,  0);
 NCBI_DEFINE_ERRCODE_X(Objtools_Rd_Split,    1412,  1);
 NCBI_DEFINE_ERRCODE_X(Objtools_Rd_Disp,     1413,  0);
 NCBI_DEFINE_ERRCODE_X(Objtools_Rd_Process,  1414,  7);

@@ -64,6 +64,7 @@ class CID2S_Split_Info;
 class CID2S_Reply_Get_Chunk;
 class CID2S_Chunk_Id;
 class CID2S_Chunk;
+class CID2Processor;
 
 class CReaderRequestResult;
 struct SId2LoadedSet;
@@ -265,6 +266,9 @@ private:
     };
     typedef int TAvoidRequests;
     TAvoidRequests m_AvoidRequest;
+
+    typedef vector< CRef<CID2Processor> > TProcessors;
+    TProcessors m_Processors;
 };
 
 

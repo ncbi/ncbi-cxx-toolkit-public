@@ -598,6 +598,14 @@ void CProcessor::OffsetAllGisToOM(CBeginInfo obj, CTSE_SetObjectInfo* set_info)
 BEGIN_LOCAL_NAMESPACE;
 
 
+inline
+bool s_CanBeWGSBlob(const CBlob_id& blob_id)
+{
+    return blob_id.IsMainBlob();
+    // || blob_id.GetSat() == 1000
+}
+
+
 bool s_GoodLetters(CTempString s) {
     ITERATE ( CTempString, it, s ) {
         if ( !isalpha(*it & 0xff) ) {
@@ -1269,6 +1277,7 @@ void CProcessor_SE::ProcessObjStream(CReaderRequestResult& result,
         OffsetAllGisToOM(*seq_entry);
         setter.SetSeq_entry(*seq_entry);
         if ( chunk_id == kMain_ChunkId &&
+             s_CanBeWGSBlob(blob_id) &&
              result.GetAddWGSMasterDescr() ) {
             AddWGSMaster(setter);
         }
@@ -1801,7 +1810,8 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
         if ( !setter.IsLoaded() ) {
             OffsetAllGisToOM(*entry);
             setter.SetSeq_entry(*entry);
-            if ( result.GetAddWGSMasterDescr() ) {
+            if ( s_CanBeWGSBlob(blob_id) &&
+                 result.GetAddWGSMasterDescr() ) {
                 AddWGSMaster(setter);
             }
             setter.SetLoaded();
@@ -1875,7 +1885,8 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
             lock->GetSplitInfo().SetSplitVersion(split_version);
             OffsetAllGisToOM(*split_info);
             CSplitParser::Attach(*lock, *split_info);
-            if ( result.GetAddWGSMasterDescr() ) {
+            if ( s_CanBeWGSBlob(blob_id) &&
+                 result.GetAddWGSMasterDescr() ) {
                 AddWGSMaster(setter);
             }
             setter.SetLoaded();
