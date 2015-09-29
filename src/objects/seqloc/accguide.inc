@@ -50,6 +50,8 @@ static const char* const kBuiltInGuide[] = {
     "3+5  J??  gb_tsa_prot",
     "3+5  K??  gb_wgs_prot",
     "3+5  L??  ddbj_tsa_prot",
+    "3+5  M??  gb_wgs_prot",
+    "3+5  N??  gb_wgs_prot",
     "3+5  ???  unreserved_prot",
     "",
     "# Genome pipeline accessions",
