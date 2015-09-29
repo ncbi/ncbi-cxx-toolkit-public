@@ -208,6 +208,15 @@ CJsonNode CAutomationProc::ProcessMessage(const CJsonNode& message)
                 (TObjectID) arg_array.NextInteger()));
         m_ObjectByPointer.erase(object->GetImplPtr());
         object = NULL;
+    } else if (command == "whatis") {
+        CJsonNode result(g_WhatIs(arg_array.NextString()));
+
+        if (result) {
+            reply.Append(result);
+        } else {
+            NCBI_THROW_FMT(CAutomationException, eCommandProcessingError,
+                    "Unable to recognize the specified token.");
+        }
     } else if (command == "echo") {
         CJsonNode reply(message);
         reply.SetAt(0, CJsonNode::NewBooleanNode(true));

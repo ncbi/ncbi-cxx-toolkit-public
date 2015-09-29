@@ -1186,7 +1186,7 @@ void s_AddBlobMeta(CJsonNode& node, const CNetCacheKey& key)
     }
 }
 
-CJsonNode g_WhatIs(const string& id, CCompoundIDPool::TInstance id_pool)
+CJsonNode g_WhatIs(const string& id, CCompoundIDPool id_pool)
 {
     try {
         CNetStorageObjectLoc object_loc(id_pool, id);
