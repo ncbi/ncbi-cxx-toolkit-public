@@ -1436,6 +1436,15 @@
 #endif
 
 
+/* Export specifier for library ncbi_id2proc_wgs
+ */
+#ifdef NCBI_ID2PROC_WGS_EXPORTS
+#  define NCBI_ID2PROC_WGS_EXPORT NCBI_DLL_EXPORT
+#else
+#  define NCBI_ID2PROC_WGS_EXPORT NCBI_DLL_IMPORT
+#endif
+
+
 
 /* STATIC LIBRARIES SECTION */
 /* This section is for static-only libraries */
