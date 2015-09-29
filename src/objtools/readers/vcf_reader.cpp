@@ -607,8 +607,23 @@ CVcfReader::xAssignVariationAlleleSet(
         variants.push_back(pIdentity);
     }
 
+    bool no_alt = true;
+    for (unsigned int i=0; i < data.m_Alt.size(); ++i) {
+        if (data.m_Alt[i] != ".") {
+            no_alt = false;
+        }
+    }
+    if (no_alt) {
+        instance.SetObservation() |= CVariation_inst::eObservation_variant;
+        return true;
+    }
+
+
     //add additional variations, one for each alternative
     for (unsigned int i=0; i < data.m_Alt.size(); ++i) {
+        if (data.m_Alt[i] == ".") {
+            continue;
+        }
         switch(data.m_SetType) {
         default:
             if (!xAssignVariantDelins(data, i, pFeature)) {
