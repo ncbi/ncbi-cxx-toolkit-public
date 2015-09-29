@@ -1,0 +1,58 @@
+Seq-annot ::= {
+  desc {
+    user {
+      type str "vcf-meta-info",
+      data {
+        {
+          label str "meta-information",
+          num 1,
+          data strs {
+            "fileformat=VCFv4.1"
+          }
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      data variation {
+        variant-prop {
+          version 5,
+          resource-link 0,
+          gene-location 0,
+          effect no-change,
+          mapping 0,
+          frequency-based-validation 0,
+          genotype 0,
+          quality-check 0
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "G"
+                    }
+                  }
+                },
+                observation 6
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 18400805,
+        id other {
+          accession "NC_000008",
+          version 11
+        }
+      }
+    }
+  }
+}
