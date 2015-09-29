@@ -497,7 +497,8 @@ CDriverContext::MakePooledConnection(const CDBConnParams& params)
                         }
                     } else
 #endif
-                    if (params.GetParam("allow_temp_connection") == "true") {
+                    if (params.GetParam("pool_allow_temp_overflow")
+                        == "true") {
                         return MakePooledConnection
                             (CDBConnParams_Unpooled(params));
                     } else {
@@ -752,7 +753,7 @@ SDBConfParams::Clear(void)
     pool_maxsize.clear();
     pool_idle_time.clear();
     pool_wait_time.clear();
-    allow_temp_connection.clear();
+    pool_allow_temp_overflow.clear();
     args.clear();
 }
 
@@ -848,11 +849,11 @@ CDriverContext::ReadDBConfParams(const string&  service_name,
         params->flags += SDBConfParams::fPoolWaitTimeSet;
         params->pool_wait_time = reg.Get(section_name, "conn_pool_wait_time");
     }
-    if (reg.HasEntry(section_name, "allow_temp_connection",
+    if (reg.HasEntry(section_name, "conn_pool_allow_temp_overflow",
                      IRegistry::fCountCleared)) {
-        params->flags += SDBConfParams::fAllowTempConnSet;
-        params->allow_temp_connection
-            = reg.Get(section_name, "allow_temp_connection");
+        params->flags += SDBConfParams::fPoolAllowTempSet;
+        params->pool_allow_temp_overflow
+            = reg.Get(section_name, "conn_pool_allow_temp_overflow");
     }
     if (reg.HasEntry(section_name, "args", IRegistry::fCountCleared)) {
         params->flags += SDBConfParams::fArgsSet;
@@ -1005,10 +1006,40 @@ CDriverContext::MakeConnection(const CDBConnParams& params)
         else if (params.GetParam("is_pooled") == "default") {
             act_params.SetParam("is_pooled", "false");
         }
+        if (conf_params.IsPoolMinSizeSet())
+            act_params.SetParam("pool_minsize", conf_params.pool_minsize);
+        else if (params.GetParam("pool_minsize") == "default") {
+            act_params.SetParam("pool_minsize", "0");
+        }
         if (conf_params.IsPoolMaxSizeSet())
             act_params.SetParam("pool_maxsize", conf_params.pool_maxsize);
         else if (params.GetParam("pool_maxsize") == "default") {
             act_params.SetParam("pool_maxsize", "");
+        }
+        if (conf_params.IsPoolIdleTimeSet())
+            act_params.SetParam("pool_idle_time", conf_params.pool_idle_time);
+        else if (params.GetParam("pool_idle_time") == "default") {
+            act_params.SetParam("pool_idle_time", "");
+        }
+        if (conf_params.IsPoolWaitTimeSet())
+            act_params.SetParam("pool_wait_time", conf_params.pool_wait_time);
+        else if (params.GetParam("pool_wait_time") == "default") {
+            act_params.SetParam("pool_wait_time", "0");
+        }
+        if (conf_params.IsPoolAllowTempOverflowSet()) {
+            if (conf_params.pool_allow_temp_overflow.empty()) {
+                act_params.SetParam("pool_allow_temp_overflow", "false");
+            }
+            else {
+                act_params.SetParam
+                    ("pool_allow_temp_overflow", 
+                     NStr::BoolToString(
+                         NStr::StringToBool(
+                             conf_params.pool_allow_temp_overflow)));
+            }
+        }
+        else if (params.GetParam("pool_allow_temp_overflow") == "default") {
+            act_params.SetParam("pool_allow_temp_overflow", "false");
         }
 
         s_TransformLoginData(server_name, user_name, db_name, password);

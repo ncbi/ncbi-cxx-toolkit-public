@@ -76,7 +76,7 @@ struct NCBI_DBAPIDRIVER_EXPORT SDBConfParams
         fPasswordKeySet  = 0x4000,
         fPoolIdleTimeSet = 0x8000,
         fPoolWaitTimeSet = 0x10000,
-        fAllowTempConnSet= 0x20000
+        fPoolAllowTempSet= 0x20000
     };
     typedef unsigned int  TFlags;
 
@@ -98,7 +98,7 @@ struct NCBI_DBAPIDRIVER_EXPORT SDBConfParams
     string  pool_maxsize;
     string  pool_idle_time;
     string  pool_wait_time;
-    string  allow_temp_connection;
+    string  pool_allow_temp_overflow;
     string  args;
 
 
@@ -118,10 +118,10 @@ struct NCBI_DBAPIDRIVER_EXPORT SDBConfParams
     bool IsPooledSet(void)       { return IsFlagSet(fIsPooledSet);      }
     bool IsPoolMinSizeSet(void)  { return IsFlagSet(fPoolMinSizeSet);   }
     bool IsPoolMaxSizeSet(void)  { return IsFlagSet(fPoolMaxSizeSet);   }
-    bool IsPoolIdleTimeSet(void) { return IsFlagSet(fPoolIdleTimeSet);   }
-    bool IsPoolWaitTimeSet(void) { return IsFlagSet(fPoolWaitTimeSet);   }
-    bool IsAllowTempConnectionSet(void)
-                                 { return IsFlagSet(fAllowTempConnSet); }
+    bool IsPoolIdleTimeSet(void) { return IsFlagSet(fPoolIdleTimeSet);  }
+    bool IsPoolWaitTimeSet(void) { return IsFlagSet(fPoolWaitTimeSet);  }
+    bool IsPoolAllowTempOverflowSet(void)
+                                 { return IsFlagSet(fPoolAllowTempSet); }
     bool IsArgsSet(void)         { return IsFlagSet(fArgsSet);          }
 
     void Clear(void);

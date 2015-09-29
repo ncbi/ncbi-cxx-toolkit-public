@@ -858,7 +858,7 @@ public:
     ///   - conn_pool_maxsize
     ///   - conn_pool_idle_time
     ///   - conn_pool_wait_time
-    ///   - allow_temp_connection
+    ///   - conn_pool_allow_temp_overflow
     ///   - password_file
     ///   - password_key
     ///
@@ -909,7 +909,7 @@ public:
         eConnPoolMaxSize,
         eConnPoolIdleTime,
         eConnPoolWaitTime,
-        eAllowTempConnection,
+        eConnPoolAllowTempOverflow,
         eArgsString
     };
  
@@ -1310,7 +1310,8 @@ CSDB_ConnectionParam::x_GetName(EParam param)
     case eConnPoolMaxSize:  return "conn_pool_maxsize";
     case eConnPoolIdleTime: return "conn_pool_idle_time";
     case eConnPoolWaitTime: return "conn_pool_wait_time";
-    case eAllowTempConnection: return "allow_temp_connection";
+    case eConnPoolAllowTempOverflow:
+                            return "allow_temp_overflow";
     case eArgsString:       return "args_string";
     }
     _TROUBLE;
@@ -1370,7 +1371,7 @@ CSDB_ConnectionParam::Get(EParam param, EWithOverrides with_overrides) const
     case eConnPoolMaxSize:
     case eConnPoolIdleTime:
     case eConnPoolWaitTime:
-    case eAllowTempConnection:
+    case eConnPoolAllowTempOverflow:
     {
         bool found_dummy = false;
         return m_Url.GetArgs().GetValue(x_GetName(param), &found_dummy);
@@ -1437,7 +1438,7 @@ CSDB_ConnectionParam::Set(EParam param, const string& value, TSetFlags flags)
     case eConnPoolMaxSize:
     case eConnPoolIdleTime:
     case eConnPoolWaitTime:
-    case eAllowTempConnection:
+    case eConnPoolAllowTempOverflow:
     {
         string name = x_GetName(param);
         if ( !value.empty()  ||  m_Url.GetArgs().IsSetValue(name)) {
