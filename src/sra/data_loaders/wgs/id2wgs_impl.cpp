@@ -167,7 +167,7 @@ CWGSDb& CID2WGSProcessor_Impl::GetWGSDb(SWGSSeqInfo& seq)
         seq.m_WGSDb = GetWGSDb(seq.m_WGSAcc);
         if ( seq.m_WGSDb ) {
             seq.m_IsWGS = true;
-            seq.m_RowDigits = seq.m_WGSDb->GetIdRowDigits();
+            seq.m_RowDigits = Uint1(seq.m_WGSDb->GetIdRowDigits());
         }
     }
     return seq.m_WGSDb;
@@ -318,8 +318,9 @@ CID2WGSProcessor_Impl::ResolveBlobId(const CID2_Blob_Id& id)
             bit += 4;
         }
     }
-    if ( bad ) {
+    if ( !bad ) {
         if ( CWGSDb wgs_db = GetWGSDb(seq) ) {
+            seq.m_ValidWGS = true;
             seq.m_RowId = id.GetSat_key();
         }
     }
@@ -455,6 +456,7 @@ CID2WGSProcessor_Impl::ResolveGeneral(const CDbtag& dbtag)
     if ( CWGSDb wgs_db = GetWGSDb(seq) ) {
         if ( wgs_db->IsTSA() == is_tsa ) {
             if ( uint64_t row = wgs_db.GetContigNameRowId(tag) ) {
+                seq.m_ValidWGS = true;
                 seq.m_SeqType = '\0';
                 seq.m_RowId = row;
             }
@@ -475,6 +477,7 @@ CID2WGSProcessor_Impl::ResolveGi(TGi gi)
                 SWGSSeqInfo seq;
                 seq.m_WGSAcc = *acc_it;
                 seq.m_IsWGS = true;
+                seq.m_ValidWGS = true;
                 seq.m_WGSDb = wgs_db;
                 seq.m_SeqType = it.GetSeqType() == it.eProt? 'P': '\0';
                 seq.m_RowDigits = Uint1(wgs_db->GetIdRowDigits());
@@ -497,6 +500,7 @@ CID2WGSProcessor_Impl::ResolveProtAcc(const string& acc, int version)
                 SWGSSeqInfo seq;
                 seq.m_WGSAcc = *acc_it;
                 seq.m_IsWGS = true;
+                seq.m_ValidWGS = true;
                 seq.m_WGSDb = wgs_db;
                 seq.m_SeqType = 'P';
                 seq.m_RowDigits = Uint1(wgs_db->GetIdRowDigits());
@@ -512,7 +516,7 @@ CID2WGSProcessor_Impl::ResolveProtAcc(const string& acc, int version)
 CID2WGSProcessor_Impl::SWGSSeqInfo
 CID2WGSProcessor_Impl::ResolveWGSAcc(const string& acc, int version)
 {
-    SIZE_TYPE prefix_len = NStr::StartsWith(acc, "NZ_")? 9: 6;
+    SIZE_TYPE prefix_len = 6; //NStr::StartsWith(acc, "NZ_")? 9: 6;
     if ( acc.size() <= prefix_len ) {
         return SWGSSeqInfo();
     }
@@ -540,6 +544,9 @@ CID2WGSProcessor_Impl::ResolveWGSAcc(const string& acc, int version)
         if ( errno ) {
             return seq;
         }
+        else {
+            // TODO: zero row might be master WGS sequence
+        }
     }
     if ( !GetWGSDb(seq) ) {
         return seq;
@@ -549,8 +556,9 @@ CID2WGSProcessor_Impl::ResolveWGSAcc(const string& acc, int version)
         return seq;
     }
     if ( !IsValidRowId(seq) ) {
-        seq.m_RowId = 0;
+        return seq;
     }
+    seq.m_ValidWGS = true;
     return seq;
 }
 
@@ -627,8 +635,9 @@ CID2WGSProcessor_Impl::Resolve(const CSeq_id& id)
     SWGSSeqInfo seq = ResolveAcc(text_id->GetAccession(), version);
     if ( seq && text_id->IsSetVersion() &&
          !IsCorrectVersion(seq, text_id->GetVersion()) ) {
-        seq.m_RowId = 0;
+        return seq;
     }
+    seq.m_ValidWGS = true;
     return seq;
 }
 
@@ -758,7 +767,9 @@ CID2WGSProcessor_Impl::x_Process(TReplies& replies,
     CID2_Reply_Get_Blob_Id& reply = main_reply->SetReply().SetGet_blob_id();
     reply.SetSeq_id(request.SetSeq_id().SetSeq_id().SetSeq_id());
     reply.SetBlob_id(*GetBlobId(seq));
-    reply.SetBlob_state(GetID2BlobState(seq));
+    if ( int blob_state = GetID2BlobState(seq) ) {
+        reply.SetBlob_state(blob_state);
+    }
     reply.SetEnd_of_reply();
     replies.push_back(main_reply);
     TRACE("GetBlobId: "<<MSerial_AsnText<<*main_reply);

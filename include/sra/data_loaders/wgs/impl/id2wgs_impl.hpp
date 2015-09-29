@@ -63,13 +63,14 @@ public:
     struct SWGSSeqInfo {
         SWGSSeqInfo(void)
             : m_IsWGS(false),
+              m_ValidWGS(false),
               m_SeqType(0),
               m_RowDigits(0),
               m_RowId(0)
             {
             }
 
-        DECLARE_OPERATOR_BOOL(m_RowId != 0);
+        DECLARE_OPERATOR_BOOL(m_ValidWGS);
 
         bool IsContig(void) const {
             return m_SeqType == '\0';
@@ -83,9 +84,10 @@ public:
 
         string m_WGSAcc;
         bool m_IsWGS;
+        bool m_ValidWGS;
         char m_SeqType;
         Uint1 m_RowDigits;
-        Uint4 m_RowId;
+        Uint8 m_RowId;
         CWGSDb m_WGSDb;
         CWGSSeqIterator m_ContigIter;
         CWGSScaffoldIterator m_ScaffoldIter;
