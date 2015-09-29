@@ -110,6 +110,33 @@ void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(
     }
 }
 
+void CGridCommandLineInterfaceApp::AddBlobMeta(CJsonNode& node,
+        const CNetCacheKey& key)
+{
+    if (key.GetVersion() != 3) {
+        const string server_host(g_NetService_TryResolveHost(key.GetHost()));
+        node.SetString("server_host", server_host);
+        node.SetInteger("server_port", key.GetPort());
+    } else {
+        node.SetInteger("server_address_crc32", key.GetHostPortCRC32());
+    }
+
+    node.SetInteger("id", key.GetId());
+
+    CTime generation_time;
+    generation_time.SetTimeT(key.GetCreationTime());
+    node.SetString("key_generation_time", generation_time.AsString());
+    node.SetInteger("random", key.GetRandomPart());
+
+    const string service(key.GetServiceName());
+
+    if (!service.empty()) {
+        node.SetString("service_name", service);
+    } else {
+        node.SetNull("service_name");
+    }
+}
+
 void CGridCommandLineInterfaceApp::PrintBlobMeta(const CNetCacheKey& key)
 {
     CTime generation_time;
@@ -117,25 +144,12 @@ void CGridCommandLineInterfaceApp::PrintBlobMeta(const CNetCacheKey& key)
     generation_time.SetTimeT((time_t) key.GetCreationTime());
 
     if (key.GetVersion() != 3)
-        printf(m_Opts.output_format == eJSON ?
-            "\t\"server_host\": \"%s\",\n\t\"server_port\": %hu,\n" :
-            "server_address: %s:%hu\n",
+        printf("server_address: %s:%hu\n",
             g_NetService_TryResolveHost(key.GetHost()).c_str(), key.GetPort());
     else
-        printf(m_Opts.output_format == eJSON ?
-            "\t\"server_address_crc32\": %u,\n" :
-            "server_address_crc32: 0x%08X\n",
-            key.GetHostPortCRC32());
+        printf("server_address_crc32: 0x%08X\n", key.GetHostPortCRC32());
 
-    printf(m_Opts.output_format == eJSON ?
-        "\t\"id\": %u,\n"
-        "\t\"key_generation_time\": \"%s\",\n"
-        "\t\"random\": %u,\n" :
-
-        "id: %u\n"
-        "key_generation_time: %s\n"
-        "random: %u\n",
-
+    printf("id: %u\nkey_generation_time: %s\nrandom: %u\n",
         key.GetId(),
         generation_time.AsString().c_str(),
         (unsigned) key.GetRandomPart());
@@ -143,11 +157,7 @@ void CGridCommandLineInterfaceApp::PrintBlobMeta(const CNetCacheKey& key)
     string service(key.GetServiceName());
 
     if (!service.empty())
-        printf(m_Opts.output_format == eJSON ?
-                "\t\"service_name\": \"%s\"\n" : "service_name: %s\n",
-                service.c_str());
-    else if (m_Opts.output_format == eJSON)
-        printf("\t\"service_name\": null\n");
+        printf("service_name: %s\n", service.c_str());
 }
 
 void CGridCommandLineInterfaceApp::ParseICacheKey(

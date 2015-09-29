@@ -69,24 +69,21 @@ int CGridCommandLineInterfaceApp::Cmd_WhatIs()
 
     if (CNetCacheKey::ParseBlobKey(m_Opts.id.c_str(),
             m_Opts.id.length(), &nc_key, m_CompoundIDPool)) {
-        printf(m_Opts.output_format == eJSON ?
-
-                "{\n"
-                "\t\"type\": \"" TOKEN_TYPE__NETCACHE_BLOB_KEY "\",\n"
-                "\t\"key_version\": %u,\n" :
-
-                "type: " TOKEN_TYPE__NETCACHE_BLOB_KEY "\n"
-                "key_version: %u\n",
-
-                nc_key.GetVersion());
-
-        PrintBlobMeta(nc_key);
+        if (m_Opts.output_format == eJSON) {
+            CJsonNode result(CJsonNode::NewObjectNode());
+            result.SetString("type", TOKEN_TYPE__NETCACHE_BLOB_KEY);
+            result.SetInteger("key_version", nc_key.GetVersion());
+            AddBlobMeta(result, nc_key);
+            g_PrintJSON(stdout, result);
+        } else {
+            printf("type: " TOKEN_TYPE__NETCACHE_BLOB_KEY "\nkey_version: %u\n",
+                    nc_key.GetVersion());
+            PrintBlobMeta(nc_key);
+        }
 
         if (m_Opts.output_format == eHumanReadable)
             printf("\nTo retrieve blob attributes from the server, use\n"
                     GRID_APP_NAME " blobinfo %s\n", m_Opts.id.c_str());
-        else if (m_Opts.output_format == eJSON)
-            printf("}\n");
     } else if (ns_key.ParseJobKey(m_Opts.id, m_CompoundIDPool)) {
         if (m_Opts.output_format == eJSON) {
             CJobInfoToJSON job_info_to_json;
