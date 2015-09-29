@@ -751,7 +751,10 @@ int CGridCommandLineInterfaceApp::DumpJobInputOutput(
             if (std_stream.fail() && !std_stream.eof())
                 goto Error;
             bytes_read = (size_t) std_stream.gcount();
-            if (fwrite(buffer, bytes_read, 1, m_Opts.output_stream) != 1)
+
+            // bytes_read could be zero due to EoF reported after read
+            if (bytes_read &&
+                    fwrite(buffer, bytes_read, 1, m_Opts.output_stream) != 1)
                 goto Error;
         }
 
