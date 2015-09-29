@@ -46,57 +46,84 @@ USING_NCBI_SCOPE;
 
 int CGridCommandLineInterfaceApp::Cmd_WhatIs()
 {
-    try {
-        CNetStorageObjectLoc object_loc(m_CompoundIDPool, m_Opts.id);
+    if (m_Opts.output_format == eJSON) {
+        try {
+            CNetStorageObjectLoc object_loc(m_CompoundIDPool, m_Opts.id);
 
-        CJsonNode object_loc_info(CJsonNode::NewObjectNode());
+            CJsonNode object_loc_info(CJsonNode::NewObjectNode());
 
-        object_loc_info.SetString("type", TOKEN_TYPE__NETSTORAGEOBJECT_LOC);
+            object_loc_info.SetString("type", TOKEN_TYPE__NETSTORAGEOBJECT_LOC);
 
-        object_loc.ToJSON(object_loc_info);
+            object_loc.ToJSON(object_loc_info);
 
-        g_PrintJSON(stdout, object_loc_info);
+            g_PrintJSON(stdout, object_loc_info);
+
+            return 0;
+        }
+        catch (CCompoundIDException&) {
+        }
+        catch (CNetStorageException&) {
+        }
+
+        CNetCacheKey nc_key;
+        CNetScheduleKey ns_key;
+
+        if (CNetCacheKey::ParseBlobKey(m_Opts.id.c_str(),
+                m_Opts.id.length(), &nc_key, m_CompoundIDPool)) {
+                CJsonNode result(CJsonNode::NewObjectNode());
+                result.SetString("type", TOKEN_TYPE__NETCACHE_BLOB_KEY);
+                result.SetInteger("key_version", nc_key.GetVersion());
+                AddBlobMeta(result, nc_key);
+                g_PrintJSON(stdout, result);
+        } else if (ns_key.ParseJobKey(m_Opts.id, m_CompoundIDPool)) {
+                CJobInfoToJSON job_info_to_json;
+
+                CJsonNode job_info_node(job_info_to_json.GetRootNode());
+
+                job_info_node.SetString("type", TOKEN_TYPE__NETSCHEDULE_JOB_KEY);
+                job_info_node.SetInteger("key_version", ns_key.version);
+
+                job_info_to_json.ProcessJobMeta(ns_key);
+
+                g_PrintJSON(stdout, job_info_node);
+        } else {
+            fprintf(stderr, "Unable to recognize the specified token.\n");
+            return 3;
+        }
 
         return 0;
-    }
-    catch (CCompoundIDException&) {
-    }
-    catch (CNetStorageException&) {
-    }
+    } else {
+        try {
+            CNetStorageObjectLoc object_loc(m_CompoundIDPool, m_Opts.id);
 
-    CNetCacheKey nc_key;
-    CNetScheduleKey ns_key;
+            CJsonNode object_loc_info(CJsonNode::NewObjectNode());
 
-    if (CNetCacheKey::ParseBlobKey(m_Opts.id.c_str(),
+            object_loc_info.SetString("type", TOKEN_TYPE__NETSTORAGEOBJECT_LOC);
+
+            object_loc.ToJSON(object_loc_info);
+
+            g_PrintJSON(stdout, object_loc_info);
+
+            return 0;
+        }
+        catch (CCompoundIDException&) {
+        }
+        catch (CNetStorageException&) {
+        }
+
+        CNetCacheKey nc_key;
+        CNetScheduleKey ns_key;
+
+        if (CNetCacheKey::ParseBlobKey(m_Opts.id.c_str(),
             m_Opts.id.length(), &nc_key, m_CompoundIDPool)) {
-        if (m_Opts.output_format == eJSON) {
-            CJsonNode result(CJsonNode::NewObjectNode());
-            result.SetString("type", TOKEN_TYPE__NETCACHE_BLOB_KEY);
-            result.SetInteger("key_version", nc_key.GetVersion());
-            AddBlobMeta(result, nc_key);
-            g_PrintJSON(stdout, result);
-        } else {
             printf("type: " TOKEN_TYPE__NETCACHE_BLOB_KEY "\nkey_version: %u\n",
                     nc_key.GetVersion());
             PrintBlobMeta(nc_key);
-        }
 
-        if (m_Opts.output_format == eHumanReadable)
-            printf("\nTo retrieve blob attributes from the server, use\n"
-                    GRID_APP_NAME " blobinfo %s\n", m_Opts.id.c_str());
-    } else if (ns_key.ParseJobKey(m_Opts.id, m_CompoundIDPool)) {
-        if (m_Opts.output_format == eJSON) {
-            CJobInfoToJSON job_info_to_json;
-
-            CJsonNode job_info_node(job_info_to_json.GetRootNode());
-
-            job_info_node.SetString("type", TOKEN_TYPE__NETSCHEDULE_JOB_KEY);
-            job_info_node.SetInteger("key_version", ns_key.version);
-
-            job_info_to_json.ProcessJobMeta(ns_key);
-
-            g_PrintJSON(stdout, job_info_node);
-        } else {
+            if (m_Opts.output_format == eHumanReadable)
+                printf("\nTo retrieve blob attributes from the server, use\n"
+                        GRID_APP_NAME " blobinfo %s\n", m_Opts.id.c_str());
+        } else if (ns_key.ParseJobKey(m_Opts.id, m_CompoundIDPool)) {
             printf("type: " TOKEN_TYPE__NETSCHEDULE_JOB_KEY "\n"
                     "key_version: %u\n",
                     ns_key.version);
@@ -107,13 +134,13 @@ int CGridCommandLineInterfaceApp::Cmd_WhatIs()
 
             printf("\nTo retrieve job attributes from the server, use\n"
                     GRID_APP_NAME " jobinfo %s\n", m_Opts.id.c_str());
+        } else {
+            fprintf(stderr, "Unable to recognize the specified token.\n");
+            return 3;
         }
-    } else {
-        fprintf(stderr, "Unable to recognize the specified token.\n");
-        return 3;
-    }
 
-    return 0;
+        return 0;
+    }
 }
 
 int CGridCommandLineInterfaceApp::Cmd_Login()
