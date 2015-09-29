@@ -1160,43 +1160,47 @@ void g_GetUserAndHost(string* user, string* host)
     *host = CSocketAPI::gethostname();
 }
 
-void s_AddBlobMeta(CJsonNode& node, const CNetCacheKey& key)
+CJsonNode s_GetBlobMeta(const CNetCacheKey& key)
 {
+    CJsonNode result(CJsonNode::NewObjectNode());
+    result.SetString("type", TOKEN_TYPE__NETCACHE_BLOB_KEY);
+    result.SetInteger("key_version", key.GetVersion());
+
     if (key.GetVersion() != 3) {
         const string server_host(g_NetService_TryResolveHost(key.GetHost()));
-        node.SetString("server_host", server_host);
-        node.SetInteger("server_port", key.GetPort());
+        result.SetString("server_host", server_host);
+        result.SetInteger("server_port", key.GetPort());
     } else {
-        node.SetInteger("server_address_crc32", key.GetHostPortCRC32());
+        result.SetInteger("server_address_crc32", key.GetHostPortCRC32());
     }
 
-    node.SetInteger("id", key.GetId());
+    result.SetInteger("id", key.GetId());
 
     CTime generation_time;
     generation_time.SetTimeT(key.GetCreationTime());
-    node.SetString("key_generation_time", generation_time.AsString());
-    node.SetInteger("random", key.GetRandomPart());
+    result.SetString("key_generation_time", generation_time.AsString());
+    result.SetInteger("random", key.GetRandomPart());
 
     const string service(key.GetServiceName());
 
     if (!service.empty()) {
-        node.SetString("service_name", service);
+        result.SetString("service_name", service);
     } else {
-        node.SetNull("service_name");
+        result.SetNull("service_name");
     }
+
+    return result;
 }
 
 CJsonNode g_WhatIs(const string& id, CCompoundIDPool id_pool)
 {
     try {
         CNetStorageObjectLoc object_loc(id_pool, id);
+        CJsonNode result(CJsonNode::NewObjectNode());
 
-        CJsonNode object_loc_info(CJsonNode::NewObjectNode());
-
-        object_loc_info.SetString("type", TOKEN_TYPE__NETSTORAGEOBJECT_LOC);
-
-        object_loc.ToJSON(object_loc_info);
-        return object_loc_info;
+        result.SetString("type", TOKEN_TYPE__NETSTORAGEOBJECT_LOC);
+        object_loc.ToJSON(result);
+        return result;
     }
     catch (CCompoundIDException&) {
     }
@@ -1206,25 +1210,19 @@ CJsonNode g_WhatIs(const string& id, CCompoundIDPool id_pool)
     CNetCacheKey nc_key;
 
     if (CNetCacheKey::ParseBlobKey(id.c_str(), id.length(), &nc_key, id_pool)) {
-        CJsonNode result(CJsonNode::NewObjectNode());
-        result.SetString("type", TOKEN_TYPE__NETCACHE_BLOB_KEY);
-        result.SetInteger("key_version", nc_key.GetVersion());
-        s_AddBlobMeta(result, nc_key);
-        return result;
+        return s_GetBlobMeta(nc_key);
     }
     
     CNetScheduleKey ns_key;
 
     if (ns_key.ParseJobKey(id, id_pool)) {
         CJobInfoToJSON job_info_to_json;
+        CJsonNode result(job_info_to_json.GetRootNode());
 
-        CJsonNode job_info_node(job_info_to_json.GetRootNode());
-
-        job_info_node.SetString("type", TOKEN_TYPE__NETSCHEDULE_JOB_KEY);
-        job_info_node.SetInteger("key_version", ns_key.version);
-
+        result.SetString("type", TOKEN_TYPE__NETSCHEDULE_JOB_KEY);
+        result.SetInteger("key_version", ns_key.version);
         job_info_to_json.ProcessJobMeta(ns_key);
-        return job_info_node;
+        return result;
     }
 
     return NULL;
