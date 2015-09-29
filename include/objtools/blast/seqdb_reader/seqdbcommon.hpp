@@ -965,7 +965,8 @@ void SeqDB_CombineAndQuote(const vector<string> & dbs,
 
 NCBI_XOBJREAD_EXPORT
 void SeqDB_SplitQuoted(const string        & dbname,
-                       vector<CTempString> & dbs);
+                       vector<CTempString> & dbs,
+                       bool					 keep_quote = false);
 
 /// Read a text or binary GI list from a file.
 ///

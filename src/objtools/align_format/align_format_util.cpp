@@ -323,11 +323,11 @@ CAlignFormatUtil::GetBlastDbInfo(vector<CAlignFormatUtil::SDbInfo>& retval,
 	return;	
     }
     else{
-    vector<string> dbs;
-    NStr::Tokenize(blastdb_names, " \n\t", dbs);
+    vector<CTempString> dbs;
+    SeqDB_SplitQuoted(blastdb_names, dbs, true);
     retval.reserve(dbs.size());
 
-    ITERATE(vector<string>, i, dbs) {
+    ITERATE(vector<CTempString>, i, dbs) {
         CAlignFormatUtil::SDbInfo info;
         info.is_protein = is_protein;
         bool success = false;

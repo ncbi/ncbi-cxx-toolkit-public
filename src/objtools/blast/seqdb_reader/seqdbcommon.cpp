@@ -1560,11 +1560,12 @@ void SeqDB_CombineAndQuote(const vector<string> & dbs,
 
 
 void SeqDB_SplitQuoted(const string        & dbname,
-                       vector<CTempString> & dbs)
+                       vector<CTempString> & dbs,
+                       bool keep_quote)
 {
     vector<CSeqDB_Substring> subs;
 
-    SeqDB_SplitQuoted(dbname, subs);
+    SeqDB_SplitQuoted(dbname, subs, keep_quote);
 
     dbs.resize(0);
     dbs.reserve(subs.size());
@@ -1577,7 +1578,8 @@ void SeqDB_SplitQuoted(const string        & dbname,
 
 
 void SeqDB_SplitQuoted(const string             & dbname,
-                       vector<CSeqDB_Substring> & dbs)
+                       vector<CSeqDB_Substring> & dbs,
+                       bool keep_quote)
 {
     // split names
 
@@ -1593,6 +1595,7 @@ void SeqDB_SplitQuoted(const string             & dbname,
             // Quoted mode sees '"' as the only actionable token.
             if (ch == '"') {
                 if (begin < i) {
+                	if(keep_quote) i++;
                     dbs.push_back(CSeqDB_Substring(sp + begin, sp + i));
                 }
                 begin = i + 1;
@@ -1610,7 +1613,7 @@ void SeqDB_SplitQuoted(const string             & dbname,
                 if (begin < i) {
                     dbs.push_back(CSeqDB_Substring(sp + begin, sp + i));
                 }
-                begin = i + 1;
+                begin = keep_quote ? i : i + 1;
                 quoted = true;
             }
         }

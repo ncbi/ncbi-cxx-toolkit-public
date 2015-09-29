@@ -1208,7 +1208,8 @@ void SeqDB_CombineAndQuote(const vector<string> & dbs,
 /// @param dbname Combined database name.
 /// @param dbs Database names to combine.
 void SeqDB_SplitQuoted(const string             & dbname,
-                       vector<CSeqDB_Substring> & dbs);
+                       vector<CSeqDB_Substring> & dbs,
+                       bool keep_quote = false);
 
 /// Fence Sentry value, which is placed at either end of ranges of
 /// data that are included in partially fetched sequences; this only
