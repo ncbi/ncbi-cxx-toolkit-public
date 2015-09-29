@@ -232,6 +232,7 @@ private:
     bool m_FileHeader;
     bool m_BlockStart;
     bool m_ExpectValue;
+    bool m_GotNameless;
     char m_Closing;
     EEncoding m_StringEncoding;
     string m_LastTag;

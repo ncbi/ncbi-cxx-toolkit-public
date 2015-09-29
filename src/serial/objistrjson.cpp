@@ -51,6 +51,7 @@ CObjectIStreamJson::CObjectIStreamJson(void)
     m_FileHeader(false),
     m_BlockStart(false),
     m_ExpectValue(false),
+    m_GotNameless(false),
     m_Closing(0),
     m_StringEncoding( eEncoding_Unknown ),
     m_BinaryFormat(eDefault)
@@ -62,6 +63,7 @@ CObjectIStreamJson::CObjectIStreamJson(CNcbiIstream& in, EOwnership deleteIn)
     m_FileHeader(false),
     m_BlockStart(false),
     m_ExpectValue(false),
+    m_GotNameless(false),
     m_Closing(0),
     m_StringEncoding( eEncoding_Unknown ),
     m_BinaryFormat(eDefault)
@@ -692,6 +694,7 @@ void CObjectIStreamJson::BeginClass(const CClassTypeInfo* classInfo)
 
 void CObjectIStreamJson::EndClass(void)
 {
+    m_GotNameless = false;
     EndBlock((GetStackDepth() > 1 && FetchFrameFromTop(1).GetNotag()) ? 0 : '}');
 }
 
@@ -744,9 +747,38 @@ TMemberIndex CObjectIStreamJson::FindDeep(
 
 TMemberIndex CObjectIStreamJson::BeginClassMember(const CClassTypeInfo* classType)
 {
-    if ( !NextElement() )
+    TMemberIndex first = classType->GetMembers().FirstIndex();
+    TMemberIndex last = classType->GetMembers().LastIndex();
+
+    if ( !NextElement() ) {
+        if (!m_GotNameless &&
+            classType->GetMemberInfo(last)->GetId().HasNotag() &&
+            classType->GetMemberInfo(last)->GetTypeInfo()->GetTypeFamily() == eTypeFamilyPrimitive) {
+            TopFrame().SetNotag();
+            m_GotNameless = true;
+            return last;
+        }
         return kInvalidMember;
+    }
+    m_GotNameless = false;
+
+    char c = PeekChar();
+    if (m_RejectedTag.empty() && (c == '[' || c == '{')) {
+        for (TMemberIndex i = first; i <= last; ++i) {
+            if (classType->GetMemberInfo(i)->GetId().HasNotag()) {
+                TopFrame().SetNotag();
+                return i;
+            }
+        }
+    }
     string tagName = ReadKey();
+
+    if (tagName[0] == '#') {
+        tagName = tagName.substr(1);
+        TopFrame().SetNotag();
+        m_GotNameless = true;
+    }
+
     bool deep = false;
     TMemberIndex ind = FindDeep(classType->GetMembers(), tagName, deep);
 /*

@@ -298,7 +298,7 @@ const CTypeInfo* CItemsInfo::FindRealTypeInfo(const CTypeInfo* info)
 
 const CItemInfo* CItemsInfo::FindNextMandatory(const CItemInfo* info)
 {
-    if (!info->GetId().HasNotag()) {
+    if (!info->GetId().HasNotag() && !info->GetId().IsAttlist()) {
 #if 0
         const CMemberInfo* mem = dynamic_cast<const CMemberInfo*>(info);
         if (mem && mem->Optional()) {
