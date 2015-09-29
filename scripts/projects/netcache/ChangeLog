@@ -133,3 +133,9 @@ Corrected synchronization of access to database configuration data, blob synchro
 Added error checks during synchronization. 
 Added database state report. 
 Added option of reloading some storage configuration parameters.
+
+September 29, 2015
+version 6.9.0 (CXX-7396)
+Modified periodic sync logic to avoid deadlocks and enhance speed, corrected error handling.
+Added blob enumeration command.
+Reviewed and corrected configuration defaults.
