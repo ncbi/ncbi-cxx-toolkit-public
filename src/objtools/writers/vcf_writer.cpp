@@ -324,8 +324,9 @@ bool CVcfWriter::x_WriteFeature(
     default: break;            
     }
 
-    if ( type != CVariation_inst::eType_ins && type != CVariation_inst::eType_del  && type != CVariation_inst::eType_delins &&
-        type != CVariation_inst::eType_snv  && type != CVariation_inst::eType_mnp )
+    if ( type != CVariation_inst::eType_identity && type != CVariation_inst::eType_ins && 
+         type != CVariation_inst::eType_del  && type != CVariation_inst::eType_delins &&
+         type != CVariation_inst::eType_snv  && type != CVariation_inst::eType_mnp )
     {
         LOG_POST(Warning << "Cannot process type: " << type << Endm);
         return false;
