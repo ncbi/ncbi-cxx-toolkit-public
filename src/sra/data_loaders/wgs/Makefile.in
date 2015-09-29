@@ -11,7 +11,7 @@
 ## Libraries to be built as usual.
 # ASN_PROJ =
 # DTD_PROJ =
-EXPENDABLE_LIB_PROJ = ncbi_xloader_wgs
+EXPENDABLE_LIB_PROJ = ncbi_xloader_wgs id2wgs
 # EXPENDABLE_LIB_PROJ =
 
 ## Applications to be built as usual.

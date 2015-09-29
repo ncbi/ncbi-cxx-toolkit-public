@@ -1,6 +1,5 @@
-#ifndef INTERNAL_SRA___ERROR_CODES__HPP
-#define INTERNAL_SRA___ERROR_CODES__HPP
-
+#ifndef SRA__LOADER__WGS__ID2WGS__HPP
+#define SRA__LOADER__WGS__ID2WGS__HPP
 /*  $Id$
  * ===========================================================================
  *
@@ -28,37 +27,38 @@
  *
  * Authors:  Eugene Vasilchenko
  *
+ * File Description:
+ *   Processor of ID2 requests for WGS data
+ *
  */
 
-/// @file error_codes.hpp
-/// Definition of all error codes used in SRA C++ support libraries
-///
+#include <corelib/ncbistd.hpp>
+#include <corelib/ncbi_config.hpp>
+#include <objects/id2/id2processor.hpp>
+
+BEGIN_NCBI_NAMESPACE;
+BEGIN_NAMESPACE(objects);
+
+class CID2WGSProcessor_Impl;
+
+class NCBI_ID2PROC_WGS_EXPORT CID2WGSProcessor : public CID2Processor
+{
+public:
+    CID2WGSProcessor(void);
+    CID2WGSProcessor(const CConfig::TParamTree* params,
+                     const string& driver_name);
+    virtual ~CID2WGSProcessor(void);
+
+    virtual TReplies ProcessSomeRequests(CID2_Request_Packet& packet);
+
+    virtual bool ProcessRequest(TReplies& replies, CID2_Request& request);
+
+private:
+    CRef<CID2WGSProcessor_Impl> m_Impl;
+};
 
 
-#include <corelib/ncbidiag.hpp>
+END_NAMESPACE(objects);
+END_NCBI_NAMESPACE;
 
-
-BEGIN_NCBI_SCOPE
-
-
-NCBI_DEFINE_ERRCODE_X(SRAReader,            2101,  0);
-NCBI_DEFINE_ERRCODE_X(BAMReader,            2102,  0);
-NCBI_DEFINE_ERRCODE_X(SRALoader,            2103,  0);
-NCBI_DEFINE_ERRCODE_X(BAMLoader,            2104,  0);
-NCBI_DEFINE_ERRCODE_X(BAM2Graph,            2105,  0);
-NCBI_DEFINE_ERRCODE_X(VDBReader,            2108,  0);
-NCBI_DEFINE_ERRCODE_X(cSRAReader,           2109,  0);
-NCBI_DEFINE_ERRCODE_X(cSRALoader,           2110,  0);
-NCBI_DEFINE_ERRCODE_X(WGSReader,            2111,  0);
-NCBI_DEFINE_ERRCODE_X(WGSLoader,            2112,  0);
-NCBI_DEFINE_ERRCODE_X(VDBGraphReader,       2113,  0);
-NCBI_DEFINE_ERRCODE_X(VDBGraphLoader,       2114,  0);
-NCBI_DEFINE_ERRCODE_X(SNPReader,            2115,  0);
-NCBI_DEFINE_ERRCODE_X(SNPLoader,            2116,  0);
-NCBI_DEFINE_ERRCODE_X(ID2WGSProcessor,      2117,  0);
-
-
-END_NCBI_SCOPE
-
-
-#endif  /* INTERNAL_SRA___ERROR_CODES__HPP */
+#endif // SRA__LOADER__WGS__ID2WGS__HPP
