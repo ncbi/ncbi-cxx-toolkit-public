@@ -223,6 +223,7 @@ private:
     void x_WriteString(const string& value,
                        EStringType type = eStringTypeVisible);
     void WriteKey(const string& key);
+    void BeginValue(void);
     void WriteValue(const string& value,
                     EStringType type = eStringTypeVisible);
     void WriteKeywordValue(const string& value);

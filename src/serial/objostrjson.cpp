@@ -270,6 +270,9 @@ void CObjectOStreamJson::WriteOther(TConstObjectPtr /*object*/, TTypeInfo /*type
 
 void CObjectOStreamJson::WriteNull(void)
 {
+    if (!m_ExpectValue && !m_SkippedMemberId.empty()) {
+        m_SkippedMemberId.erase();
+    }
     if (m_ExpectValue) {
         WriteKeywordValue("null");
     }
@@ -722,26 +725,30 @@ void CObjectOStreamJson::WriteKey(const string& key)
     NameSeparator();
 }
 
-void CObjectOStreamJson::WriteValue(const string& value, EStringType type)
+void CObjectOStreamJson::BeginValue(void)
 {
     if (!m_ExpectValue && !m_SkippedMemberId.empty()) {
         WriteSkippedMember();
     }
+}
+
+void CObjectOStreamJson::WriteValue(const string& value, EStringType type)
+{
+    BeginValue();
     x_WriteString(value,type);
     m_ExpectValue = false;
 }
 
 void CObjectOStreamJson::WriteKeywordValue(const string& value)
 {
+    BeginValue();
     m_Output.PutString(value);
     m_ExpectValue = false;
 }
 
 void CObjectOStreamJson::StartBlock(void)
 {
-    if (!m_ExpectValue && !m_SkippedMemberId.empty()) {
-        WriteSkippedMember();
-    }
+    BeginValue();
     m_Output.PutChar('{');
     m_Output.IncIndentLevel();
     m_BlockStart = true;
@@ -770,9 +777,7 @@ void CObjectOStreamJson::NextElement(void)
 
 void CObjectOStreamJson::BeginArray(void)
 {
-    if (!m_ExpectValue && !m_SkippedMemberId.empty()) {
-        WriteSkippedMember();
-    }
+    BeginValue();
     m_Output.PutChar('[');
     m_Output.IncIndentLevel();
     m_BlockStart = true;
