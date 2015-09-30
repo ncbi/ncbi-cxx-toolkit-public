@@ -48,7 +48,7 @@ BEGIN_SCOPE(objects)
 // the CDD server
 //
 
-class NCBI_XLOADER_CDD_EXPORT CCddDataLoader : public CDataLoader
+class NCBI_DEPRECATED NCBI_XLOADER_CDD_EXPORT CCddDataLoader : public CDataLoader
 {
 public:
     typedef SRegisterLoaderInfo<CCddDataLoader> TRegisterLoaderInfo;

@@ -42,7 +42,7 @@ BEGIN_SCOPE(objects)
 
 class CID1Client;
 
-class NCBI_XLOADER_TRACE_EXPORT CTraceChromatogramLoader : public CDataLoader
+class NCBI_DEPRECATED NCBI_XLOADER_TRACE_EXPORT CTraceChromatogramLoader : public CDataLoader
 {
 public:
     typedef SRegisterLoaderInfo<CTraceChromatogramLoader> TRegisterLoaderInfo;
