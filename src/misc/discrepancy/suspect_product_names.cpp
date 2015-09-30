@@ -5372,6 +5372,26 @@ DISCREPANCY_SUMMARIZE(SUSPECT_PRODUCT_NAMES)
 }
 
 
+static string ReplaceNoCase(const string& input, const string& search, const string& replace)
+{
+    string find = search;
+    NStr::TruncateSpacesInPlace(find);
+    if (!find.length()) {
+        return input;
+    }
+    string output = input;
+    size_t p;
+    while ((p = NStr::FindNoCase(output, find)) != string::npos) {
+        string found = output.substr(p, find.length());
+        if (found == replace) {
+            break;  // avoid infinite cycles
+        }
+        output = NStr::Replace(output, found, replace);
+    }
+    return output;
+}
+
+
 static void AutofixProductNames(const CDiscrepancyItem* item, CScope& scope) // Same autofix used in 2 tests
 {
     TReportObjectList list = item->GetDetails();
@@ -5398,12 +5418,11 @@ static void AutofixProductNames(const CDiscrepancyItem* item, CScope& scope) // 
             else {
                 string find = rule->GetFind().GetString_constraint().GetMatch_text();
                 string subst = repl.GetReplace();
-                newtext = NStr::Replace(prot_name, find, subst);
+                newtext = ReplaceNoCase(prot_name, find, subst);
             }
         }
         else if (rf.IsHaem_replace()) {
-            string subst = rf.GetHaem_replace();
-            newtext = NStr::Replace(prot_name, "haem", subst);
+            newtext = ReplaceNoCase(prot_name, "haem", "hem");
         }
 
         CRef<CSeq_feat> new_feat(new CSeq_feat());
