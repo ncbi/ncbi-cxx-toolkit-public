@@ -873,12 +873,15 @@ void CArgDesc::VerifyDefault(void) const
 }
 
 
-void CArgDesc::SetConstraint(CArgAllow*   constraint,
+void CArgDesc::SetConstraint(const CArgAllow* constraint,
                              CArgDescriptions::EConstraintNegate)
 {
-    NCBI_THROW(CArgException, eConstraint, s_ArgExptMsg(GetName(),
-        "No-value arguments may not be constrained",
-        constraint ? constraint->GetUsage() : kEmptyStr));
+    CConstRef<CArgAllow> safe_delete(constraint);
+
+    NCBI_THROW(CArgException, eConstraint,
+               s_ArgExptMsg(GetName(),
+                            "No-value arguments may not be constrained",
+                            constraint ? constraint->GetUsage() : kEmptyStr));
 }
 
 
@@ -1201,7 +1204,7 @@ CArgValue* CArgDescMandatory::ProcessDefault(void) const
 
 
 void CArgDescMandatory::SetConstraint
-(CArgAllow*                          constraint,
+(const CArgAllow*                    constraint,
  CArgDescriptions::EConstraintNegate negate)
 {
     m_Constraint       = constraint;
@@ -2353,8 +2356,8 @@ void CArgDescriptions::AddExtra(
 void CArgDescriptions::AddAlias(const string& alias,
                                 const string& arg_name)
 {
-    auto_ptr<CArgDesc_Alias> arg(
-        new CArgDesc_Alias(alias, arg_name, kEmptyStr));
+    auto_ptr<CArgDesc_Alias>arg
+        (new CArgDesc_Alias(alias, arg_name, kEmptyStr));
 
     x_AddDesc(*arg);
     arg.release();
@@ -2369,7 +2372,7 @@ void CArgDescriptions::AddNegatedFlagAlias(const string& alias,
     TArgsCI orig = x_Find(arg_name);
     if (orig == m_Args.end()  ||  !s_IsFlag(**orig)) {
         NCBI_THROW(CArgException, eArgType,
-            "Attempt to negate a non-flag argument: "+ arg_name);
+            "Attempt to negate a non-flag argument: " + arg_name);
     }
 
     auto_ptr<CArgDesc_Alias> arg(new CArgDesc_Alias(alias, arg_name, comment));
@@ -2381,26 +2384,27 @@ void CArgDescriptions::AddNegatedFlagAlias(const string& alias,
 
 
 void CArgDescriptions::SetConstraint(const string&      name, 
-                                     CArgAllow*         constraint,
+                                     const CArgAllow*   constraint,
                                      EConstraintNegate  negate)
 {
-    CRef<CArgAllow> safe_delete(constraint);
-
     TArgsI it = x_Find(name);
     if (it == m_Args.end()) {
+        CConstRef<CArgAllow> safe_delete(constraint);  // delete, if last ref
         NCBI_THROW(CArgException, eConstraint,
-            "Attempt to set constraint for undescribed argument: "+ name);
+            "Attempt to set constraint for undescribed argument: " + name);
     }
     (*it)->SetConstraint(constraint, negate);
 }
+
+
 void CArgDescriptions::SetConstraint(const string&      name,
                                      const CArgAllow&   constraint,
                                      EConstraintNegate  negate)
 {
     CArgAllow* onheap = constraint.Clone();
-    if (!onheap) {
+    if ( !onheap ) {
         NCBI_THROW(CArgException, eConstraint,
-            "Clone method not implemented for: "+ name);
+                   "Clone method not implemented for: " + name);
     }
     SetConstraint(name, onheap, negate);
 }

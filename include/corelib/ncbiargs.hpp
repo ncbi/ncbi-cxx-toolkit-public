@@ -883,14 +883,16 @@ public:
     /// @param name
     ///    Name of the parameter(flag) to check
     /// @param constraint
-    ///    Constraint object
+    ///    The constraint object.
+    ///    NOTE: A CRef will always be taken on the object, and its lifetime
+    ///    will be controlled by the CObject's smart-pointer mechanism.
     /// @param negate
     ///    Flag indicates if this is inverted(NOT) constaint
     /// 
     /// @sa
     ///   See "CArgAllow_***" classes for some pre-defined constraints
     void SetConstraint(const string&      name,
-                       CArgAllow*         constraint,
+                       const CArgAllow*   constraint,
                        EConstraintNegate  negate = eConstraint);
 
     /// This version of SetConstraint doesn't take the ownership of object
@@ -1755,8 +1757,12 @@ public:
     virtual void VerifyDefault (void) const;
 
     /// Set argument constraint.
+    /// @param constraint
+    ///    The constraint object.
+    ///    ATTN: A CRef must always be taken on the object by the
+    ///          derived class's implementation of this method!
     virtual 
-    void SetConstraint(CArgAllow*                           constraint,
+    void SetConstraint(const CArgAllow*                     constraint,
                        CArgDescriptions::EConstraintNegate  negate 
                                     = CArgDescriptions::eConstraint);
 
