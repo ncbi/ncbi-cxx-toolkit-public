@@ -111,7 +111,8 @@ CNSTServiceRegistry::ReadConfiguration(const IRegistry &  reg)
                                                       CNSTServiceProperties());
     TServiceProperties      new_service_conf;
 
-    for (auto  k = new_services.begin(); k != new_services.end(); ++k) {
+    for (list<string>::const_iterator  k = new_services.begin();
+            k != new_services.end(); ++k) {
         new_service_conf[ *k ] = x_ReadServiceProperties(reg, "service_" + *k,
                                                 new_default_service_props);
     }
@@ -454,7 +455,8 @@ CNSTServiceRegistry::x_GetMetadataServices(const IRegistry &  reg)
     const string    prefix = "service_";
 
     reg.EnumerateSections(&sections);
-    for (auto k = sections.begin(); k != sections.end(); ++k) {
+    for (list<string>::const_iterator  k = sections.begin();
+            k != sections.end(); ++k) {
         if (NStr::StartsWith(*k, prefix, NStr::eNocase)) {
             if (reg.HasEntry(*k, "metadata")) {
                 try {

@@ -254,7 +254,8 @@ void NSTValidateServices(const IRegistry &  reg, vector<string> &  warnings)
     reg.EnumerateSections(&sections);
 
     const string    prefix = "service_";
-    for (auto  k = sections.begin(); k != sections.end(); ++k) {
+    for (list<string>::const_iterator  k = sections.begin();
+            k != sections.end(); ++k) {
         if (!NStr::StartsWith(*k, prefix, NStr::eNocase))
             continue;
 
