@@ -302,9 +302,12 @@ public:
                                uint64_t row_id,
                                int version) const;
     CRef<CSeq_id> GetMasterSeq_id(void) const;
+    TGi GetMasterGi(void) const;
     CRef<CSeq_id> GetContigSeq_id(uint64_t row_id) const;
     CRef<CSeq_id> GetScaffoldSeq_id(uint64_t row_id) const;
     CRef<CSeq_id> GetProteinSeq_id(uint64_t row_id) const;
+
+    CRef<CBioseq> GetMasterBioseq(void) const;
 
     typedef list< CRef<CSeqdesc> > TMasterDescr;
 
@@ -567,6 +570,7 @@ private:
     CVDBTableIndex m_ProteinNameIndex;
 
     bool m_IsSetMasterDescr;
+    CRef<CSeq_entry> m_MasterEntry;
     TMasterDescr m_MasterDescr;
 };
 
@@ -849,18 +853,30 @@ public:
         fMaskInst     = fInst_ncbi4na|fInst_delta,
         fDefaultInst  = fInst_delta,
 
-        fDefaultFlags = fDefaultIds|fDefaultInst
+        fSeqDescr     = 1<<4,
+        fMasterDescr  = 1<<5,
+        fMaskDescr    = fSeqDescr|fMasterDescr,
+        fDefaultDescr = fSeqDescr|fMasterDescr,
+
+        fSeqAnnot     = 1<<5,
+        fQualityGraph = 1<<6,
+        fMaskAnnot    = fSeqAnnot|fQualityGraph,
+        fDefaultAnnot = fSeqAnnot|fQualityGraph,
+
+        fDefaultFlags = fDefaultIds|fDefaultDescr|fDefaultAnnot|fDefaultInst
     };
     typedef int TFlags;
 
     CRef<CSeq_id> GetRefId(TFlags flags = fDefaultFlags) const;
     void GetIds(CBioseq::TId& ids, TFlags flags = fDefaultFlags) const;
 
-    bool HasSeq_descr(void) const;
     // Return descr binary byte sequence as is
+    bool HasSeqDescrBytes(void) const;
     CTempString GetSeqDescrBytes(void) const;
+    // return effective descr
+    bool HasSeq_descr(TFlags flags = fDefaultFlags) const;
     // Parse the binary byte sequence and instantiate ASN.1 object
-    CRef<CSeq_descr> GetSeq_descr(void) const;
+    CRef<CSeq_descr> GetSeq_descr(TFlags flags = fDefaultFlags) const;
 
     bool HasAnnotSet(void) const;
     // Return annot binary byte sequence as is
@@ -949,23 +965,50 @@ public:
 
     CTempString GetAccession(void) const;
     int GetAccVersion(void) const;
+
     CRef<CSeq_id> GetAccSeq_id(void) const;
+    CRef<CSeq_id> GetGiSeq_id(void) const;
     CRef<CSeq_id> GetGeneralSeq_id(void) const;
 
     CTempString GetScaffoldName(void) const;
 
-    void GetIds(CBioseq::TId& ids) const;
+    enum EFlags {
+        fIds_gi       = 1<<0,
+        fIds_acc      = 1<<1,
+        fIds_gnl      = 1<<2,
+        fMaskIds      = fIds_gi|fIds_acc|fIds_gnl,
+        fDefaultIds   = fIds_gi|fIds_acc|fIds_gnl,
 
-    bool HasSeq_descr(void) const;
-    CRef<CSeq_descr> GetSeq_descr(void) const;
+        fInst_ncbi4na = 0<<3,
+        fInst_delta   = 1<<3,
+        fMaskInst     = fInst_ncbi4na|fInst_delta,
+        fDefaultInst  = fInst_delta,
+
+        fSeqDescr     = 1<<4,
+        fMasterDescr  = 1<<5,
+        fMaskDescr    = fSeqDescr|fMasterDescr,
+        fDefaultDescr = fSeqDescr|fMasterDescr,
+
+        fSeqAnnot     = 1<<5,
+        fMaskAnnot    = fSeqAnnot,
+        fDefaultAnnot = fSeqAnnot,
+
+        fDefaultFlags = fDefaultIds|fDefaultDescr|fDefaultAnnot|fDefaultInst
+    };
+    typedef int TFlags;
+
+    void GetIds(CBioseq::TId& ids, TFlags flags = fDefaultFlags) const;
+
+    bool HasSeq_descr(TFlags flags = fDefaultFlags) const;
+    CRef<CSeq_descr> GetSeq_descr(TFlags flags = fDefaultFlags) const;
 
     TSeqPos GetSeqLength(void) const;
 
     bool IsCircular(void) const;
 
-    CRef<CSeq_inst> GetSeq_inst(void) const;
+    CRef<CSeq_inst> GetSeq_inst(TFlags flags = fDefaultFlags) const;
 
-    CRef<CBioseq> GetBioseq(void) const;
+    CRef<CBioseq> GetBioseq(TFlags flags = fDefaultFlags) const;
 
 protected:
     void x_Init(const CWGSDb& wgs_db);
@@ -1075,11 +1118,35 @@ public:
     CTempString GetAccName(void) const;
 
     CRef<CSeq_id> GetAccSeq_id(void) const;
+    CRef<CSeq_id> GetGiSeq_id(void) const;
     CRef<CSeq_id> GetGeneralSeq_id(void) const;
 
     CTempString GetProteinName(void) const;
 
-    void GetIds(CBioseq::TId& ids) const;
+    enum EFlags {
+        fIds_gi       = 1<<0,
+        fIds_acc      = 1<<1,
+        fIds_gnl      = 1<<2,
+        fMaskIds      = fIds_gi|fIds_acc|fIds_gnl,
+        fDefaultIds   = fIds_gi|fIds_acc|fIds_gnl,
+
+        fMaskInst     = 1<<3,
+        fDefaultInst  = 0,
+
+        fSeqDescr     = 1<<4,
+        fMasterDescr  = 1<<5,
+        fMaskDescr    = fSeqDescr|fMasterDescr,
+        fDefaultDescr = fSeqDescr|fMasterDescr,
+
+        fSeqAnnot     = 1<<5,
+        fMaskAnnot    = fSeqAnnot,
+        fDefaultAnnot = fSeqAnnot,
+
+        fDefaultFlags = fDefaultIds|fDefaultDescr|fDefaultAnnot|fDefaultInst
+    };
+    typedef int TFlags;
+
+    void GetIds(CBioseq::TId& ids, TFlags flags = fDefaultFlags) const;
     bool HasRefAcc(void) const;
     CTempString GetRefAcc(void) const;
 
@@ -1087,8 +1154,8 @@ public:
 
     TSeqPos GetSeqLength(void) const;
 
-    bool HasSeq_descr(void) const;
-    CRef<CSeq_descr> GetSeq_descr(void) const;
+    bool HasSeq_descr(TFlags flags = fDefaultFlags) const;
+    CRef<CSeq_descr> GetSeq_descr(TFlags flags = fDefaultFlags) const;
 
     bool HasTitle(void) const;
     CTempString GetTitle(void) const;
@@ -1097,9 +1164,9 @@ public:
     typedef CBioseq::TAnnot TAnnotSet;
     void GetAnnotSet(TAnnotSet& annot_set) const;
 
-    CRef<CSeq_inst> GetSeq_inst(void) const;
+    CRef<CSeq_inst> GetSeq_inst(TFlags flags = fDefaultFlags) const;
 
-    CRef<CBioseq> GetBioseq(void) const;
+    CRef<CBioseq> GetBioseq(TFlags flags = fDefaultFlags) const;
 
 protected:
     void x_Init(const CWGSDb& wgs_db);
