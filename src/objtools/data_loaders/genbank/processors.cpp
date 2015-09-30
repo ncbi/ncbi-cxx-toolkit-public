@@ -601,8 +601,7 @@ BEGIN_LOCAL_NAMESPACE;
 inline
 bool s_CanBeWGSBlob(const CBlob_id& blob_id)
 {
-    return blob_id.IsMainBlob();
-    // || blob_id.GetSat() == 1000
+    return !CProcessor_ExtAnnot::IsExtAnnot(blob_id);
 }
 
 
