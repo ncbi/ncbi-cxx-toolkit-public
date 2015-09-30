@@ -99,7 +99,7 @@ static inline bool s_FilterAll(void)
 
 static CStopWatch sw;
 
-# define START_TRACE() if(s_DebugLevel()<=0);else sw.Restart()
+# define START_TRACE() if(s_DebugLevel()<1);else sw.Restart()
 
 static CNcbiOstream& operator<<(CNcbiOstream& out,
                                 const CID2WGSProcessor_Impl::SWGSSeqInfo& seq)
@@ -111,11 +111,11 @@ static CNcbiOstream& operator<<(CNcbiOstream& out,
     out << setfill('0')<<setw(seq.m_RowDigits)<<seq.m_RowId<<setfill(' ');
     return out;
 }
-# define TRACE(m)                                                       \
-    if(s_DebugLevel()<=0);else LOG_POST(Info<<sw.Elapsed()<<": ID2WGS: "<<m)
+# define TRACE(l,m)                                                     \
+    if(s_DebugLevel()<(l));else LOG_POST(Info<<sw.Elapsed()<<": ID2WGS: "<<m)
 #else
 # define START_TRACE() do{}while(0)
-# define TRACE(m) do{}while(0)
+# define TRACE(l,m) do{}while(0)
 #endif
 
 CID2WGSProcessor_Impl::CID2WGSProcessor_Impl(void)
@@ -147,7 +147,7 @@ CWGSDb CID2WGSProcessor_Impl::GetWGSDb(const string& prefix)
         CWGSDb wgs_db(m_Mgr, prefix);
         wgs_db.LoadMasterDescr();
         m_WGSDbCache[prefix] = wgs_db;
-        TRACE("GetWGSDb: "<<prefix);
+        TRACE(1,"GetWGSDb: "<<prefix);
         return wgs_db;
     }
     catch ( CSraException& exc ) {
@@ -206,18 +206,17 @@ CID2WGSProcessor_Impl::GetProteinIterator(SWGSSeqInfo& seq)
 
 bool CID2WGSProcessor_Impl::IsValidRowId(SWGSSeqInfo& seq)
 {
-    if ( !seq ) {
-        return false;
+    if ( seq.IsContig() ) {
+        return GetContigIterator(seq);
+    }
+    if ( seq.IsScaffold() ) {
+        return GetScaffoldIterator(seq);
     }
     if ( seq.IsProtein() ) {
         return GetProteinIterator(seq);
     }
-    else if ( seq.IsScaffold() ) {
-        return GetScaffoldIterator(seq);
-    }
-    else {
-        return GetContigIterator(seq);
-    }
+    // master
+    return true;
 }
 
 
@@ -230,11 +229,22 @@ bool CID2WGSProcessor_Impl::IsCorrectVersion(SWGSSeqInfo& seq, int version)
         CWGSSeqIterator& it = GetContigIterator(seq);
         return it && version == it.GetAccVersion();
     }
+    else if ( seq.IsMaster() ) {
+        // master version is already checked
+        return true;
+    }
     else {
         // scaffolds and proteins can have only version 1
         return version == 1;
     }
 }
+
+
+static const size_t kNumLetters = 4;
+static const size_t kVersionDigits = 2;
+static const size_t kPrefixLen = kNumLetters + kVersionDigits;
+static const size_t kMinRowDigits = 6;
+static const size_t kMaxRowDigits = 8;
 
 
 // Blob id
@@ -254,17 +264,17 @@ CRef<CID2_Blob_Id> CID2WGSProcessor_Impl::GetBlobId(SWGSSeqInfo& seq)
     CRef<CID2_Blob_Id> id(new CID2_Blob_Id);
     id->SetSat(1000);
     int subsat;
-    if ( seq.IsContig() ) {
-        subsat = 1;
-    }
-    else if ( seq.IsScaffold() ) {
+    if ( seq.IsScaffold() ) {
         subsat = 2;
     }
-    else {
+    else if ( seq.IsProtein() ) {
         subsat = 3;
     }
+    else { // contig or master
+        subsat = 1;
+    }
     for ( size_t i = 0, bit = 2; i < seq.m_WGSAcc.size(); ++i ) {
-        if ( i < 4 ) {
+        if ( i < kNumLetters ) {
             subsat |= (seq.m_WGSAcc[i]-'A') << bit;
             bit += 5;
         }
@@ -291,11 +301,11 @@ CID2WGSProcessor_Impl::ResolveBlobId(const CID2_Blob_Id& id)
     switch ( subsat & 3 ) {
     case 2: seq.m_SeqType = 'S'; break;
     case 3: seq.m_SeqType = 'P'; break;
-    default: seq.m_SeqType = 0; break;
+    default: seq.m_SeqType = '\0'; break;
     }
     bool bad = false;
-    for ( size_t i = 0, bit = 2; i < 6; ++i ) {
-        if ( i < 4 ) {
+    for ( size_t i = 0, bit = 2; i < kPrefixLen; ++i ) {
+        if ( i < kNumLetters ) {
             int v = (subsat>>bit)&31;
             if ( v < 26 ) {
                 seq.m_WGSAcc += char('A'+v);
@@ -325,100 +335,6 @@ CID2WGSProcessor_Impl::ResolveBlobId(const CID2_Blob_Id& id)
         }
     }
     return seq;
-}
-
-
-void CID2WGSProcessor_Impl::GetSeqIds(SWGSSeqInfo& seq,
-                                      list<CRef<CSeq_id> >& ids)
-{
-    ids.push_back(GetAccVer(seq));
-    if ( CRef<CSeq_id> id = GetGeneral(seq) ) {
-        ids.push_back(id);
-    }
-    if ( TGi gi = GetGi(seq) ) {
-        CRef<CSeq_id> gi_id(new CSeq_id);
-        gi_id->SetGi(gi);
-        ids.push_back(gi_id);
-    }
-}
-
-
-CRef<CSeq_id> CID2WGSProcessor_Impl::GetAccVer(SWGSSeqInfo& seq)
-{
-    if ( seq.IsProtein() ) {
-        return GetProteinIterator(seq).GetAccSeq_id();
-    }
-    else if ( seq.IsScaffold() ) {
-        return GetScaffoldIterator(seq).GetAccSeq_id();
-    }
-    else {
-        return GetContigIterator(seq).GetAccSeq_id();
-    }
-}
-
-
-CRef<CSeq_id> CID2WGSProcessor_Impl::GetGeneral(SWGSSeqInfo& seq)
-{
-    if ( seq.IsProtein() ) {
-        return GetProteinIterator(seq).GetGeneralSeq_id();
-    }
-    else if ( seq.IsScaffold() ) {
-        return GetScaffoldIterator(seq).GetGeneralSeq_id();
-    }
-    else {
-        return GetContigIterator(seq).GetGeneralSeq_id();
-    }
-}
-
-
-TGi CID2WGSProcessor_Impl::GetGi(SWGSSeqInfo& seq)
-{
-    if ( seq.IsProtein() ) {
-        return ZERO_GI;
-    }
-    else if ( seq.IsScaffold() ) {
-        // scaffolds have no GIs
-        return ZERO_GI;
-    }
-    else {
-        CWGSSeqIterator it = GetContigIterator(seq);
-        return it.HasGi()? it.GetGi(): ZERO_GI;
-    }
-}
-
-
-string CID2WGSProcessor_Impl::GetLabel(SWGSSeqInfo& seq)
-{
-    return objects::GetLabel(*GetAccVer(seq));
-}
-
-
-int CID2WGSProcessor_Impl::GetTaxId(SWGSSeqInfo& seq)
-{
-    if ( !seq ) {
-        return -1;
-    }
-    if ( seq.IsContig() ) {
-        CWGSSeqIterator it = GetContigIterator(seq);
-        return it.HasTaxId()? it.GetTaxId(): 0;
-    }
-    else {
-        return 0; // taxid is not defined
-    }
-}
-
-
-int CID2WGSProcessor_Impl::GetHash(SWGSSeqInfo& seq)
-{
-    if ( !seq ) {
-        return 0;
-    }
-    if ( seq.IsContig() ) {
-        return GetContigIterator(seq).GetSeqHash();
-    }
-    else {
-        return 0;
-    }
 }
 
 
@@ -516,36 +432,54 @@ CID2WGSProcessor_Impl::ResolveProtAcc(const string& acc, int version)
 CID2WGSProcessor_Impl::SWGSSeqInfo
 CID2WGSProcessor_Impl::ResolveWGSAcc(const string& acc, int version)
 {
-    SIZE_TYPE prefix_len = 6; //NStr::StartsWith(acc, "NZ_")? 9: 6;
-    if ( acc.size() <= prefix_len ) {
+    if ( acc.size() < kPrefixLen + kMinRowDigits ||
+         acc.size() > kPrefixLen + kMaxRowDigits + 1 ) { // one for type letter
         return SWGSSeqInfo();
     }
-    string prefix = acc.substr(0, prefix_len);
-    for ( SIZE_TYPE i = prefix_len-6; i < prefix_len-2; ++i ) {
+    for ( size_t i = 0; i < kNumLetters; ++i ) {
         if ( !isalpha(acc[i]&0xff) ) {
             return SWGSSeqInfo();
         }
     }
-    for ( SIZE_TYPE i = prefix_len-2; i < prefix_len; ++i ) {
+    for ( size_t i = kNumLetters; i < kPrefixLen; ++i ) {
         if ( !isdigit(acc[i]&0xff) ) {
             return SWGSSeqInfo();
         }
     }
     SWGSSeqInfo seq;
-    seq.m_WGSAcc = prefix;
+    seq.m_WGSAcc = acc.substr(0, kPrefixLen);
     seq.m_IsWGS = true;
-    SIZE_TYPE row_pos = prefix_len;
-    if ( acc[row_pos] == 'S' || acc[row_pos] == 'P' ) {
+    SIZE_TYPE row_pos = kPrefixLen;
+    if ( acc[row_pos] == 'S' || acc[row_pos] == 'P' ) { // type letter
         seq.m_SeqType = acc[row_pos++];
     }
-    seq.m_RowId = NStr::StringToNumeric<Uint8>(acc.substr(row_pos),
-                                               NStr::fConvErr_NoThrow);
-    if ( !seq.m_RowId ) {
-        if ( errno ) {
-            return seq;
+    Uint8 row = 0;
+    for ( size_t i = row_pos; i < acc.size(); ++i ) {
+        char c = acc[i];
+        if ( c < '0' || c > '9' ) {
+            return SWGSSeqInfo();
         }
-        else {
-            // TODO: zero row might be master WGS sequence
+        row = row*10+(c-'0');
+    }
+    seq.m_RowId = row;
+    if ( !row ) {
+        // zero row might be master WGS sequence
+        // it mustn't have type letter, version digits and row must be zero
+        // version must be positive
+        if ( seq.m_SeqType || version < 0 ) {
+            return SWGSSeqInfo();
+        }
+        // now, move version into version digits of the accession
+        int t = version;
+        for ( size_t i = kVersionDigits; i--; t /= 10) {
+            if ( acc[kNumLetters+i] != '0' ) {
+                return SWGSSeqInfo();
+            }
+            seq.m_WGSAcc[kNumLetters+i] = char('0'+t%10);
+        }
+        if ( t ) {
+            // doesn't fit
+            return SWGSSeqInfo();
         }
     }
     if ( !GetWGSDb(seq) ) {
@@ -555,7 +489,14 @@ CID2WGSProcessor_Impl::ResolveWGSAcc(const string& acc, int version)
     if ( seq.m_WGSDb->GetIdRowDigits() != row_digits ) {
         return seq;
     }
-    if ( !IsValidRowId(seq) ) {
+    if ( !row ) {
+        if ( false && GetWGSDb(seq)->GetMasterGi() ) {
+            // Let master sequences with GI to be processed by ID
+            seq.m_IsWGS = false;
+            return seq;
+        }
+    }
+    else if ( !IsValidRowId(seq) ) {
         return seq;
     }
     seq.m_ValidWGS = true;
@@ -585,17 +526,6 @@ CID2WGSProcessor_Impl::ResolveAcc(const string& acc, int version)
         // non-WGS accessions
         return SWGSSeqInfo();
     }
-}
-
-
-static CObject_id& s_AddSpecialId(CID2_Reply_Get_Seq_id::TSeq_id& ids,
-                                  const char* name)
-{
-    CRef<CSeq_id> ret_id(new CSeq_id);
-    ids.push_back(ret_id);
-    CDbtag& dbtag = ret_id->SetGeneral();
-    dbtag.SetDb(name);
-    return dbtag.SetTag();
 }
 
 
@@ -633,12 +563,122 @@ CID2WGSProcessor_Impl::Resolve(const CSeq_id& id)
         version = text_id->GetVersion();
     }
     SWGSSeqInfo seq = ResolveAcc(text_id->GetAccession(), version);
-    if ( seq && text_id->IsSetVersion() &&
-         !IsCorrectVersion(seq, text_id->GetVersion()) ) {
+    if ( !seq ) {
+        return seq;
+    }
+    if ( text_id->IsSetVersion() && !IsCorrectVersion(seq, version) ) {
         return seq;
     }
     seq.m_ValidWGS = true;
     return seq;
+}
+
+
+CRef<CSeq_id> CID2WGSProcessor_Impl::GetAccVer(SWGSSeqInfo& seq)
+{
+    if ( seq.IsContig() ) {
+        return GetContigIterator(seq).GetAccSeq_id();
+    }
+    if ( seq.IsScaffold() ) {
+        return GetScaffoldIterator(seq).GetAccSeq_id();
+    }
+    if ( seq.IsProtein() ) {
+        return GetProteinIterator(seq).GetAccSeq_id();
+    }
+    // master
+    return GetWGSDb(seq)->GetMasterSeq_id();
+}
+
+
+CRef<CSeq_id> CID2WGSProcessor_Impl::GetGeneral(SWGSSeqInfo& seq)
+{
+    if ( seq.IsContig() ) {
+        return GetContigIterator(seq).GetGeneralSeq_id();
+    }
+    if ( seq.IsScaffold() ) {
+        return GetScaffoldIterator(seq).GetGeneralSeq_id();
+    }
+    if ( seq.IsProtein() ) {
+        return GetProteinIterator(seq).GetGeneralSeq_id();
+    }
+    // master
+    return null;
+}
+
+
+TGi CID2WGSProcessor_Impl::GetGi(SWGSSeqInfo& seq)
+{
+    if ( seq.IsContig() ) {
+        CWGSSeqIterator it = GetContigIterator(seq);
+        return it.HasGi()? it.GetGi(): ZERO_GI;
+    }
+    if ( seq.IsScaffold() ) {
+        // scaffolds have no GIs
+        return ZERO_GI;
+    }
+    if ( seq.IsProtein() ) {
+        // proteins have no GIs
+        return ZERO_GI;
+    }
+    // master
+    return ZERO_GI;
+}
+
+
+void CID2WGSProcessor_Impl::GetSeqIds(SWGSSeqInfo& seq,
+                                      list<CRef<CSeq_id> >& ids)
+{
+    ids.push_back(GetAccVer(seq));
+    if ( CRef<CSeq_id> id = GetGeneral(seq) ) {
+        ids.push_back(id);
+    }
+    if ( TGi gi = GetGi(seq) ) {
+        CRef<CSeq_id> gi_id(new CSeq_id);
+        gi_id->SetGi(gi);
+        ids.push_back(gi_id);
+    }
+}
+
+
+string CID2WGSProcessor_Impl::GetLabel(SWGSSeqInfo& seq)
+{
+    return objects::GetLabel(*GetAccVer(seq));
+}
+
+
+int CID2WGSProcessor_Impl::GetTaxId(SWGSSeqInfo& seq)
+{
+    if ( !seq ) {
+        return -1;
+    }
+    if ( seq.IsContig() ) {
+        CWGSSeqIterator it = GetContigIterator(seq);
+        return it.HasTaxId()? it.GetTaxId(): 0;
+    }
+    return 0; // taxid is not defined
+}
+
+
+int CID2WGSProcessor_Impl::GetHash(SWGSSeqInfo& seq)
+{
+    if ( !seq ) {
+        return 0;
+    }
+    if ( seq.IsContig() ) {
+        return GetContigIterator(seq).GetSeqHash();
+    }
+    return 0;
+}
+
+
+static CObject_id& s_AddSpecialId(CID2_Reply_Get_Seq_id::TSeq_id& ids,
+                                  const char* name)
+{
+    CRef<CSeq_id> ret_id(new CSeq_id);
+    ids.push_back(ret_id);
+    CDbtag& dbtag = ret_id->SetGeneral();
+    dbtag.SetDb(name);
+    return dbtag.SetTag();
 }
 
 
@@ -685,7 +725,7 @@ CID2WGSProcessor_Impl::x_Process(TReplies& replies,
             error->SetSeverity(CID2_Error::eSeverity_no_data);
             main_reply->SetError().push_back(error);
             replies.push_back(main_reply);
-            TRACE("GetSeqId: "<<MSerial_AsnText<<*main_reply);
+            TRACE(2,"GetSeqId: "<<MSerial_AsnText<<*main_reply);
         }
         return seq;
     }
@@ -733,7 +773,7 @@ CID2WGSProcessor_Impl::x_Process(TReplies& replies,
     }
     reply.SetEnd_of_reply();
     replies.push_back(main_reply);
-    TRACE("GetSeqId: "<<MSerial_AsnText<<*main_reply);
+    TRACE(2,"GetSeqId: "<<MSerial_AsnText<<*main_reply);
     return seq;
 }
 
@@ -743,9 +783,9 @@ bool CID2WGSProcessor_Impl::ProcessGetSeqId(TReplies& replies,
                                             CID2_Request_Get_Seq_id& request)
 {
     START_TRACE();
-    TRACE("GetSeqId: "<<MSerial_AsnText<<main_request);
+    TRACE(2,"GetSeqId: "<<MSerial_AsnText<<main_request);
     SWGSSeqInfo seq = x_Process(replies, main_request, request);
-    TRACE("GetSeqId: done");
+    TRACE(2,"GetSeqId: done");
     return seq || seq.m_IsWGS;
 }
 
@@ -772,7 +812,7 @@ CID2WGSProcessor_Impl::x_Process(TReplies& replies,
     }
     reply.SetEnd_of_reply();
     replies.push_back(main_reply);
-    TRACE("GetBlobId: "<<MSerial_AsnText<<*main_reply);
+    TRACE(2,"GetBlobId: "<<MSerial_AsnText<<*main_reply);
     return seq;
 }
 
@@ -782,9 +822,9 @@ bool CID2WGSProcessor_Impl::ProcessGetBlobId(TReplies& replies,
                                         CID2_Request_Get_Blob_Id& request)
 {
     START_TRACE();
-    TRACE("GetBlobId: "<<MSerial_AsnText<<main_request);
+    TRACE(2,"GetBlobId: "<<MSerial_AsnText<<main_request);
     SWGSSeqInfo seq = x_Process(replies, main_request, request);
-    TRACE("GetBlobId: done");
+    TRACE(2,"GetBlobId: done");
     return seq || seq.m_IsWGS;
 }
 
@@ -825,15 +865,17 @@ namespace {
 
 NCBI_gb_state CID2WGSProcessor_Impl::GetGBState(SWGSSeqInfo& seq)
 {
+    if ( seq.IsContig() ) {
+        return GetContigIterator(seq).GetGBState();
+    }
+    if ( seq.IsScaffold() ) {
+        return 0;
+    }
     if ( seq.IsProtein() ) {
         return GetProteinIterator(seq).GetGBState();
     }
-    else if ( seq.IsScaffold() ) {
-        return 0;
-    }
-    else {
-        return GetContigIterator(seq).GetGBState();
-    }
+    // master
+    return 0;
 }
 
 
@@ -879,12 +921,37 @@ int CID2WGSProcessor_Impl::GetID2BlobState(SWGSSeqInfo& seq)
 }
 
 
+CRef<CBioseq> CID2WGSProcessor_Impl::GetBioseq(SWGSSeqInfo& seq)
+{
+    if ( seq.IsContig() ) {
+        CWGSSeqIterator& it = GetContigIterator(seq);
+        CWGSSeqIterator::TFlags flags =
+            (it.fDefaultFlags & ~it.fMaskDescr) | it.fSeqDescr;
+        return it.GetBioseq(flags);
+    }
+    if ( seq.IsScaffold() ) {
+        CWGSScaffoldIterator& it = GetScaffoldIterator(seq);
+        CWGSScaffoldIterator::TFlags flags =
+            (it.fDefaultFlags & ~it.fMaskDescr) | it.fSeqDescr;
+        return it.GetBioseq(flags);
+    }
+    if ( seq.IsProtein() ) {
+        CWGSProteinIterator& it = GetProteinIterator(seq);
+        CWGSProteinIterator::TFlags flags =
+            (it.fDefaultFlags & ~it.fMaskDescr) | it.fSeqDescr;
+        return it.GetBioseq(flags);
+    }
+    // master
+    return GetWGSDb(seq)->GetMasterBioseq();
+}
+
+
 bool CID2WGSProcessor_Impl::ProcessGetBlobInfo(TReplies& replies,
                                                CID2_Request& main_request,
                                                CID2_Request_Get_Blob_Info& request)
 {
     START_TRACE();
-    TRACE("GetBlobInfo: "<<MSerial_AsnText<<main_request);
+    TRACE(2,"GetBlobInfo: "<<MSerial_AsnText<<main_request);
     SWGSSeqInfo seq;
     if ( request.GetBlob_id().IsBlob_id() ) {
         seq = ResolveBlobId(request.GetBlob_id().GetBlob_id());
@@ -894,22 +961,13 @@ bool CID2WGSProcessor_Impl::ProcessGetBlobInfo(TReplies& replies,
                         request.SetBlob_id().SetResolve().SetRequest());
     }
     if ( !seq ) {
-        TRACE("GetBlobInfo: null");
+        TRACE(2,"GetBlobInfo: null");
         return seq.m_IsWGS;
     }
 
     if ( request.IsSetGet_data() ) {
-        CRef<CBioseq> bioseq;
-        if ( seq.IsProtein() ) {
-            bioseq = GetProteinIterator(seq).GetBioseq();
-        }
-        else if ( seq.IsScaffold() ) {
-            bioseq = GetScaffoldIterator(seq).GetBioseq();
-        }
-        else {
-            bioseq = GetContigIterator(seq).GetBioseq();
-        }
-        TRACE("GetBioseq: "<<seq);
+        CRef<CBioseq> bioseq = GetBioseq(seq);
+        TRACE(8,"GetBioseq: "<<seq);
         CRef<CSeq_entry> entry(new CSeq_entry);
         entry->SetSeq(*bioseq);
 
@@ -928,11 +986,11 @@ bool CID2WGSProcessor_Impl::ProcessGetBlobInfo(TReplies& replies,
         CWStream wstream(&writer);
         CObjectOStreamAsnBinary objstr(wstream);
         objstr << *entry;
-        TRACE("SetData: "<<seq);
+        TRACE(2,"SetData: "<<seq);
         replies.push_back(main_reply);
-        //TRACE("ProcessBlobId: "<<MSerial_AsnText<<*main_reply);
+        TRACE(9,"ProcessBlobId: "<<MSerial_AsnText<<*main_reply);
     }
-    TRACE("GetBlobInfo: done");
+    TRACE(2,"GetBlobInfo: done");
     return true;
 }
 
@@ -968,6 +1026,10 @@ CID2WGSProcessor_Impl::ProcessSomeRequests(CID2_Request_Packet& packet)
             replies.back()->SetEnd_of_reply();
             packet.Set().erase(it);
         }
+    }
+    if ( !packet.Set().empty() ) {
+        START_TRACE();
+        TRACE(3,"Unprocessed: "<<MSerial_AsnText<<packet);
     }
     return replies;
 }

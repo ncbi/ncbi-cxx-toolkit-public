@@ -73,7 +73,10 @@ public:
         DECLARE_OPERATOR_BOOL(m_ValidWGS);
 
         bool IsContig(void) const {
-            return m_SeqType == '\0';
+            return m_SeqType == '\0' && m_RowId != 0;
+        }
+        bool IsMaster(void) const {
+            return m_SeqType == '\0' && m_RowId == 0;
         }
         bool IsScaffold(void) const {
             return m_SeqType == 'S';
@@ -143,6 +146,7 @@ protected:
     NCBI_gb_state GetGBState(SWGSSeqInfo& seq);
     int GetID2BlobState(SWGSSeqInfo& seq);
     int GetBioseqState(SWGSSeqInfo& seq);
+    CRef<CBioseq> GetBioseq(SWGSSeqInfo& seq);
 
     // conversion to/from blob id
     SWGSSeqInfo ResolveBlobId(const CID2_Blob_Id& id);
