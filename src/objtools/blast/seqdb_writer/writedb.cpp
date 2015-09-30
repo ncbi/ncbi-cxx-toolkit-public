@@ -106,7 +106,7 @@ void CWriteDB::AddSequence(const CTempString & sequence,
 {
     string s(sequence.data(), sequence.length());
     string a(ambig.data(), ambig.length());
-    
+
     m_Impl->AddSequence(s, a);
 }
 
@@ -144,7 +144,7 @@ void CWriteDB::ListFiles(vector<string> & files)
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
 int CWriteDB::
-RegisterMaskAlgorithm(EBlast_filter_program   program, 
+RegisterMaskAlgorithm(EBlast_filter_program   program,
                       const string          & options,
                       const string          & name)
 {
@@ -159,8 +159,17 @@ RegisterMaskAlgorithm(const string & id,
     return m_Impl->RegisterMaskAlgorithm(id, description, options);
 }
 
+//#ifdef NCBI_INT8_GI
+#if 0
 void CWriteDB::SetMaskData(const CMaskedRangesVector & ranges,
                            const vector<int>         & gis)
+{
+    m_Impl->SetMaskData(ranges, gis);
+}
+#endif
+
+void CWriteDB::SetMaskData(const CMaskedRangesVector & ranges,
+                           const vector<TGi>         & gis)
 {
     m_Impl->SetMaskData(ranges, gis);
 }
@@ -199,43 +208,43 @@ void CBinaryListBuilder::Write(const string & fname)
 }
 
 void CBinaryListBuilder::Write(CNcbiOstream& outp)
-{ 
+{
     // Header; first check for 8 byte ids.
-    
+
     bool eight = false;
-    
+
     ITERATE(vector<Int8>, iter, m_Ids) {
         Int8 id = *iter;
         _ASSERT(id > 0);
-        
+
         if ((id >> 32) != 0) {
             eight = true;
             break;
         }
     }
-    
+
     Int4 magic = 0;
-    
+
     switch(m_IdType) {
     case eGi:
         magic = eight ? -2 : -1;
         break;
-        
+
     case eTi:
         magic = eight ? -4 : -3;
         break;
-        
+
     default:
         NCBI_THROW(CWriteDBException,
                    eArgErr,
                    "Error: Unsupported ID type specified.");
     }
-    
+
     s_WriteInt4(outp, magic);
     s_WriteInt4(outp, (int)m_Ids.size());
-    
+
     sort(m_Ids.begin(), m_Ids.end());
-    
+
     if (eight) {
         ITERATE(vector<Int8>, iter, m_Ids) {
             s_WriteInt8BE(outp, *iter);
@@ -250,7 +259,7 @@ void CBinaryListBuilder::Write(CNcbiOstream& outp)
 /// Returns true if the BLAST DB exists, otherwise throws a CSeqDBException
 /// @param dbname name of BLAST DB [in]
 /// @param is_prot is the BLAST DB protein? [in]
-static bool 
+static bool
 s_DoesBlastDbExist(const string& dbname, bool is_protein)
 {
     char dbtype(is_protein ? 'p' : 'n');
@@ -309,13 +318,13 @@ s_PrintAliasFileCreationLog(const string& dbname,
         num_seqs_in_gifile = gilist->Size();
         } */
         LOG_POST("Created " << (is_protein ? "protein " : "nucleotide ") <<
-            dbname << " BLAST (alias) database with " << num_seqs_found 
-            << " sequences (out of " << num_seqs_in_gifile << " in " 
-            << gi_file_name << ", " << setprecision(0) << fixed << 
+            dbname << " BLAST (alias) database with " << num_seqs_found
+            << " sequences (out of " << num_seqs_in_gifile << " in "
+            << gi_file_name << ", " << setprecision(0) << fixed <<
             (num_seqs_found*100.0/num_seqs_in_gifile) << "% found)");
     } else {
         LOG_POST("Created " << (is_protein ? "protein " : "nucleotide ") <<
-            "BLAST (alias) database " << dbname << " with " << 
+            "BLAST (alias) database " << dbname << " with " <<
             num_seqs_found << " sequences");
     }
 }
@@ -363,7 +372,7 @@ s_CreateAliasFilePriv(const string& file_name,
     string fname = CNcbiOstrstreamToString(fnamestr);
 
     ofstream out(fname.c_str());
-    out << "#\n# Alias file created " << CTime(CTime::eCurrent).AsString() 
+    out << "#\n# Alias file created " << CTime(CTime::eCurrent).AsString()
         << "\n#\n";
 
     if ( !title.empty() ) {
@@ -376,7 +385,7 @@ s_CreateAliasFilePriv(const string& file_name,
     out << "\n";
     if ( !gi_file_name.empty() ) {
         _ASSERT(alias_type != eNoAliasFilterType);
-        out << s_AliasFileFilterTypeToString(alias_type) << " " 
+        out << s_AliasFileFilterTypeToString(alias_type) << " "
             << gi_file_name << "\n";
     } else if (oid_range) {
         out << "FIRST_OID " << oid_range->GetFrom() << "\n"
@@ -433,7 +442,7 @@ void CWriteDB_CreateAliasFile(const string& file_name,
     fname << file_name << (is_prot ? ".pal" : ".nal");
 
     ofstream out(((string)CNcbiOstrstreamToString(fname)).c_str());
-    out << "#\n# Alias file created " << CTime(CTime::eCurrent).AsString() 
+    out << "#\n# Alias file created " << CTime(CTime::eCurrent).AsString()
         << "\n#\n";
 
     if ( !title.empty() ) {
@@ -471,8 +480,8 @@ void CWriteDB_CreateAliasFile(const string& file_name,
                           eNoAliasFilterType, &oid_range);
 }
 
-void 
-CWriteDB_ConsolidateAliasFiles(const list<string>& alias_files, 
+void
+CWriteDB_ConsolidateAliasFiles(const list<string>& alias_files,
                                bool delete_source_alias_files /* = false */)
 {
     if (alias_files.empty()) {
@@ -483,7 +492,7 @@ CWriteDB_ConsolidateAliasFiles(const list<string>& alias_files,
 
     ofstream out(kSeqDBGroupAliasFileName.c_str());
     out << "# Alias file index for " << CDir::GetCwd() << endl;
-    out << "# Generated on " << CTime(CTime::eCurrent).AsString() << " by " 
+    out << "# Generated on " << CTime(CTime::eCurrent).AsString() << " by "
         << NCBI_CURRENT_FUNCTION << endl;
     out << "#" << endl;
 
@@ -513,7 +522,7 @@ CWriteDB_ConsolidateAliasFiles(const list<string>& alias_files,
     }
 }
 
-void 
+void
 CWriteDB_ConsolidateAliasFiles(bool delete_source_alias_files /* = false */)
 {
     list<string> alias_files;

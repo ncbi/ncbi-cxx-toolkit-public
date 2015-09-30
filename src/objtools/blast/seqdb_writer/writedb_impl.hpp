@@ -56,16 +56,16 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 /// CWriteDB_Impl class
-/// 
+///
 /// This manufactures blast database header files from input data.
 
 class CWriteDB_Impl {
 public:
     /// Whether and what kind of indices to build.
     typedef CWriteDB::EIndexType EIndexType;
-    
+
     // Setup and control
-    
+
     /// Constructor.
     /// @param dbname Name of the database to create.
     /// @param protein True for protein, false for nucleotide.
@@ -79,17 +79,17 @@ public:
                   EIndexType         indices,
                   bool               parse_ids,
                   bool               use_gi_mask);
-    
+
     /// Destructor.
     ~CWriteDB_Impl();
-    
+
     /// Close the file and flush any remaining data to disk.
     void Close();
-    
+
     // Sequence Data
-    
+
     /// Add a new sequence as raw sequence and ambiguity data.
-    /// 
+    ///
     /// A new sequence record is started, and data from any previous
     /// sequence is combined and written to disk.  Each sequence needs
     /// sequence data and header data.  This method takes sequence
@@ -105,9 +105,9 @@ public:
     /// @param ambiguities Ambiguity data in blast db disk format.
     void AddSequence(const CTempString & sequence,
                      const CTempString & ambiguities);
-    
+
     /// Add a new sequence as a CBioseq.
-    /// 
+    ///
     /// A new sequence record is started, and data from any previous
     /// sequence is combined and written to disk.  Each sequence needs
     /// sequence data and header data.  This method can extract both
@@ -123,9 +123,9 @@ public:
     ///
     /// @param bs Bioseq containing sequence and header data.
     void AddSequence(const CBioseq & bs);
-    
+
     /// Add a new sequence as a CBioseq_Handle.
-    /// 
+    ///
     /// A new sequence record is started, and data from any previous
     /// sequence is combined and written to disk.  Each sequence needs
     /// sequence data and header data.  This method can extract both
@@ -134,12 +134,12 @@ public:
     /// replace the header data from the CBioseq.  (Note: objects
     /// provided to WriteDB will be kept alive until the next
     /// AddSequence call.)
-    /// 
+    ///
     /// @param bsh Bioseq_Handle for sequence to add.
     void AddSequence(const CBioseq_Handle & bsh);
-    
+
     /// Add a new sequence as a CBioseq_Handle.
-    /// 
+    ///
     /// A new sequence record is started, and data from any previous
     /// sequence is combined and written to disk.  Each sequence needs
     /// sequence data and header data.  This method will extract
@@ -149,11 +149,11 @@ public:
     /// header data is preferred, SetDeflines() can be called after
     /// this method.  (Note: objects provided to WriteDB will be kept
     /// alive until the next AddSequence call.)
-    /// 
+    ///
     /// @param bs Bioseq_Handle for header and sequence data.
     /// @param sv CSeqVector for sequence data.
     void AddSequence(const CBioseq & bs, CSeqVector & sv);
-    
+
     /// This method replaces any stored header data for the current
     /// sequence with the provided CBlast_def_line_set.  Header data
     /// can be constructed directly by the caller, or extracted from
@@ -164,30 +164,30 @@ public:
     ///
     /// @param deflines Header data for the most recent sequence.
     void SetDeflines(const CBlast_def_line_set & deflines);
-    
+
     /// Set the PIG identifier of this sequence.
-    /// 
+    ///
     /// For protein sequences, this sets the PIG identifier.  PIG ids
     /// are per-sequence, so it will only be attached to the first
     /// defline in the set.
-    /// 
+    ///
     /// @param pig PIG identifier as an integer.
     void SetPig(int pig);
-    
+
     // Options
-    
+
     /// Set the maximum size for any file in the database.
-    /// 
+    ///
     /// This method sets the maximum size for any file in a database
     /// volume.  If adding a sequence would cause any file in the
     /// generated database to exceed this size, the current volume is
     /// ended and a new volume is started.  This is not a strict
     /// limit, inasmuch as it always puts at least one sequence in
     /// each volume regardless of that sequence's size.
-    /// 
+    ///
     /// @param sz Maximum file size (in bytes).
     void SetMaxFileSize(Uint8 sz);
-    
+
     /// Set the maximum letters in one volume.
     ///
     /// This method sets the maximum number of sequence letters per
@@ -199,7 +199,7 @@ public:
     ///
     /// @param sz Maximum sequence letters per volume.
     void SetMaxVolumeLetters(Uint8 sz);
-    
+
     /// Extract deflines from a CBioseq.
     ///
     /// Given a CBioseq, this method extracts and returns header info
@@ -216,18 +216,18 @@ public:
     /// @return The blast defline set.
     static CRef<CBlast_def_line_set>
     ExtractBioseqDeflines(const CBioseq & bs, bool parse_ids);
-    
+
     /// Set bases that should not be used in sequences.
-    /// 
+    ///
     /// This method specifies nucelotide or protein bases that should
     /// not be used in the resulting database.  The bases in question
     /// will be replaced with N (for nucleotide) or X (for protein).
     /// The input data is expected to be specified in the appropriate
     /// 'alphabetic' encoding (either IUPACAA and IUPACNA).
-    /// 
+    ///
     /// @param masked
     void SetMaskedLetters(const string & masked);
-    
+
     /// List Volumes
     ///
     /// Returns the base names of all volumes constructed by this
@@ -237,7 +237,7 @@ public:
     /// @param vols
     ///   The set of volumes produced by this class.
     void ListVolumes(vector<string> & vols);
-    
+
     /// List Filenames
     ///
     /// Returns a list of the files constructed by this class; the
@@ -247,7 +247,7 @@ public:
     /// @param files
     ///   The set of resolved database path names.
     void ListFiles(vector<string> & files);
-    
+
     /// Register a type of filtering data found in this database.
     ///
     /// The BlastDb format supports storage of masking data (lists of
@@ -268,7 +268,7 @@ public:
     int RegisterMaskAlgorithm(EBlast_filter_program   program,
                              const string           & options,
                              const string           & name = "");
-    
+
     /// Register a type of filtering data found in this database.
     ///
     /// The BlastDb format supports storage of masking data (lists of
@@ -289,17 +289,22 @@ public:
     int RegisterMaskAlgorithm(const string          & id,
                              const string           & description,
                              const string           & options);
-    
+
     /// Set filtering data for a sequence.
-    /// 
+    ///
     /// This method specifies filtered regions for the sequence.  Each
     /// sequence can have filtering data from various algorithms.
-    /// 
+    ///
     /// @param ranges Filtered ranges for this sequence and algorithm.
     /// @param gis The GIs associated with this sequence
+//#ifdef NCBI_INT8_GI
+#if 0
     void SetMaskData(const CMaskedRangesVector & ranges,
                      const vector <int>        & gis);
-    
+#endif
+    void SetMaskData(const CMaskedRangesVector & ranges,
+                     const vector <TGi>        & gis);
+
     /// Set up a generic CWriteDB metadata column.
     ///
     /// This method creates a column with the specified name (title).
@@ -314,7 +319,7 @@ public:
     /// @param title   Name identifying this column.
     /// @return Column identifier (a positive integer).
     int CreateColumn(const string & title, bool mbo=false);
-    
+
     /// Find an existing column.
     ///
     /// This looks for an existing column with the specified title and
@@ -323,7 +328,7 @@ public:
     /// @param title The column title to look for.
     /// @return The column ID if this column title is already defined.
     int FindColumn(const string & title) const;
-    
+
     /// Add meta data to a column.
     ///
     /// In addition to normal blob data, database columns can store a
@@ -339,7 +344,7 @@ public:
     void AddColumnMetaData(int            col_id,
                            const string & key,
                            const string & value);
-    
+
     /// Get a blob to use for a given column letter.
     ///
     /// To add data for a `blob' type column, this method should be
@@ -354,10 +359,10 @@ public:
     /// @param col_id Indicates the column receiving the blob data.
     /// @return The user data should be stored in this blob.
     CBlastDbBlob & SetBlobData(int col_id);
-    
+
 private:
     // Configuration
-    
+
     string        m_Dbname;           ///< Database base name.
     bool          m_Protein;          ///< True if DB is protein.
     string        m_Title;            ///< Title field of database.
@@ -373,57 +378,57 @@ private:
     map<int, int> m_MaskAlgoMap;      ///< Mapping from algo_id to gi-mask id
     bool          m_ParseIDs;         ///< Generate ISAM files
     bool          m_UseGiMask;        ///< Generate GI-based mask files
-    
+
     /// Column titles.
     vector<string> m_ColumnTitles;
-    
+
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
     /// Per-column metadata.
     typedef CWriteDB_Column::TColumnMeta TColumnMeta;
-    
+
     /// Meta data for all columns.
     vector< TColumnMeta > m_ColumnMetas;
 
     /// Gi-based masks
     vector< CRef<CWriteDB_GiMask> > m_GiMasks;
 #endif
-    
+
     // Functions
-    
+
     /// Flush accumulated sequence data to volume.
     void x_Publish();
-    
+
     /// Compute name of alias file produced.
     string x_MakeAliasName();
-    
+
     /// Flush accumulated sequence data to volume.
     void x_MakeAlias();
-    
+
     /// Clear sequence data from last sequence.
     void x_ResetSequenceData();
-    
+
     /// Convert and compute final data formats.
     void x_CookData();
-    
+
     /// Convert header data into usable forms.
     void x_CookHeader();
-    
+
     /// Collect ids for ISAM files.
     void x_CookIds();
-    
+
     /// Compute the length of the current sequence.
     int x_ComputeSeqLength();
-    
+
     /// Convert sequence data into usable forms.
     void x_CookSequence();
-    
+
     /// Prepare column data to be appended to disk.
     void x_CookColumns();
-    
+
     /// Replace masked input letters with m_MaskByte value.
     void x_MaskSequence();
-    
+
     /// Get binary version of deflines from 'user' data in Bioseq.
     ///
     /// Some CBioseq objects (e.g. those from CSeqDB) have an ASN.1
@@ -436,7 +441,7 @@ private:
     /// @param binhdr Header data as binary ASN.1. [out]
     static void x_GetBioseqBinaryHeader(const CBioseq & bioseq,
                                         string        & binhdr);
-    
+
     /// Construct deflines from a CBioseq and other meta-data.
     ///
     /// This method builds deflines from various data found in the
@@ -450,11 +455,11 @@ private:
     /// @param pig PIG to attach to a protein sequence. [in]
     static void
     x_BuildDeflinesFromBioseq(const CBioseq                  & bioseq,
-                              CConstRef<CBlast_def_line_set> & deflines, 
+                              CConstRef<CBlast_def_line_set> & deflines,
                               const vector< vector<int> >    & membits,
                               const vector< vector<int> >    & linkout,
                               int                              pig);
-    
+
     /// Extract a defline set from a binary ASN.1 blob.
     /// @param bin_hdr Binary ASN.1 encoding of defline set. [in]
     /// @param deflines Defline set. [out]
@@ -486,16 +491,16 @@ private:
                              int                              pig,
                              bool                             accept_gt,
                              bool                             parse_ids);
-    
+
     /// Returns true if we have unwritten sequence data.
     bool x_HaveSequence() const;
-    
+
     /// Records that we now have unwritten sequence data.
     void x_SetHaveSequence();
-    
+
     /// Records that we no longer have unwritten sequence data.
     void x_ClearHaveSequence();
-    
+
     /// Get deflines from a CBioseq and other meta-data.
     ///
     /// This method extracts binary ASN.1 deflines from a CBioseq if
@@ -521,7 +526,7 @@ private:
                                   int                              pig,
                                   int                              OID=-1,
                                   bool                             parse_ids=true);
-    
+
     /// Compute the hash of a (raw) sequence.
     ///
     /// The hash of the provided sequence will be computed and
@@ -533,7 +538,7 @@ private:
     /// @param ambiguities Nucleotide ambiguities are provided here. [in]
     void x_ComputeHash(const CTempString & sequence,
                        const CTempString & ambiguities);
-    
+
     /// Compute the hash of a (Bioseq) sequence.
     ///
     /// The hash of the provided sequence will be computed and
@@ -542,7 +547,7 @@ private:
     ///
     /// @param sequence The sequence as a CBioseq. [in]
     void x_ComputeHash(const CBioseq & sequence);
-    
+
     /// Get the mask data column id.
     ///
     /// The mask data column is created if it does not exist, and its
@@ -550,66 +555,66 @@ private:
     ///
     /// @return The column ID for the mask data column.
     int x_GetMaskDataColumnId();
-    
+
     //
     // Accumulated sequence data.
     //
-    
+
     /// Bioseq object for next sequence to write.
     CConstRef<CBioseq> m_Bioseq;
-    
+
     /// SeqVector for next sequence to write.
     CSeqVector m_SeqVector;
-    
+
     /// Deflines to write as header.
     CConstRef<CBlast_def_line_set> m_Deflines;
-    
+
     /// Ids for next sequence to write, for use during ISAM construction.
     vector< CRef<CSeq_id> > m_Ids;
-    
+
     /// Linkout bits - outer vector is per-defline, inner is bits.
     vector< vector<int> > m_Linkouts;
-    
+
     /// Membership bits - outer vector is per-defline, inner is bits.
     vector< vector<int> > m_Memberships;
-    
+
     /// PIG to attach to headers for protein sequences.
     int m_Pig;
-    
+
     /// Sequence hash for this sequence.
     int m_Hash;
-    
+
     /// When a sequence is added, this will be populated with the length of that sequence.
     int m_SeqLength;
-    
+
     /// True if we have a sequence to write.
     bool m_HaveSequence;
-    
+
     // Cooked
-    
+
     /// Sequence data in format that will be written to disk.
     string m_Sequence;
-    
+
     /// Ambiguities in format that will be written to disk.
     string m_Ambig;
-    
+
     /// Binary header in format that will be written to disk.
     string m_BinHdr;
-    
+
     // Volumes
-    
+
     /// This volume is currently accepting sequences.
     CRef<CWriteDB_Volume> m_Volume;
-    
+
     /// List of all volumes so far, up to and including m_Volume.
     vector< CRef<CWriteDB_Volume> > m_VolumeList;
-    
+
     /// Blob data for the current sequence, indexed by letter.
     vector< CRef<CBlastDbBlob> > m_Blobs;
-    
+
     /// List of blob columns that are active for this sequence.
     vector<int> m_HaveBlob;
-    
+
     /// Registry for masking algorithms in this database.
     CMaskInfoRegistry m_MaskAlgoRegistry;
 };

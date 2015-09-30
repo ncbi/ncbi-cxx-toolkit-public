@@ -27,7 +27,7 @@
 *
 */
 
-/** @file build_db.cpp 
+/** @file build_db.cpp
   Code to build a database given various sources of sequence data.
 */
 #ifndef SKIP_DOXYGEN_PROCESSING
@@ -68,18 +68,18 @@ int debug_mode = 0;
 void CBuildDatabase::x_ResolveRemoteId(CRef<objects::CSeq_id> & seqid, int & gi)
 {
     CScope::TIds ids = x_GetScope().GetIds(*seqid);
-    
+
     bool have_seqid = false;
     bool have_gi = false;
-    
+
     gi = 0;
-    
+
     ITERATE(CScope::TIds, iter, ids) {
         CConstRef<CSeq_id> id = iter->GetSeqId();
         if (debug_mode > 5)
             m_LogFile << "Seq-id " << seqid->AsFastaString()
                       << " contains id " << id->AsFastaString() << endl;
-        
+
         if (id->IsGi()) {
             if (gi > 0) {
                 if (debug_mode > 5)
@@ -96,10 +96,10 @@ void CBuildDatabase::x_ResolveRemoteId(CRef<objects::CSeq_id> & seqid, int & gi)
         } else if ((! have_seqid) && (id->Which() == seqid->Which())) {
             m_LogFile << "Remote: Resolving <" << seqid->AsFastaString()
                       << "> to <" << id->AsFastaString() << ">" << endl;
-            
+
             if (id->GetTextseq_Id() == NULL ||
                 id->GetTextseq_Id()->IsSetVersion() == false) {
-                
+
                 m_LogFile
                     << "Warning: Resolution still does not provide version."
                     << endl;
@@ -108,7 +108,7 @@ void CBuildDatabase::x_ResolveRemoteId(CRef<objects::CSeq_id> & seqid, int & gi)
                 have_seqid = true;
             }
         }
-        
+
         if (have_gi)
             break;
     }
@@ -119,7 +119,7 @@ void CBuildDatabase::x_ResolveRemoteId(CRef<objects::CSeq_id> & seqid, int & gi)
 CRef<CInputGiList> CBuildDatabase::x_ResolveGis(const vector<string> & ids)
 {
     CRef<CInputGiList> gi_list(new CInputGiList);
-    
+
     ITERATE(vector<string>, id, ids) {
         // There are three possibilities:
         //
@@ -133,55 +133,55 @@ CRef<CInputGiList> CBuildDatabase::x_ResolveGis(const vector<string> & ids)
         // A. Remote services are enabled.
         // B. The Seq-id can have a version (only CTextseq_id types.)
         // C. The version is not present.
-        
+
         int gi(0);
         bool specific = false;
         CRef<CSeq_id> seqid;
-        
+
         bool worked = CheckAccession(*id, gi, seqid, specific);
-        
+
         // If a source database is specified, try that as a backup
         // resolution mechanism.
-        
+
         if (! worked) {
             if (m_SourceDb.NotEmpty()) {
                 worked = x_ResolveFromSource(*id, seqid);
             }
         }
-        
+
         if (! worked) {
             m_LogFile << "Did not recognize id: \"" << *id << "\"" << endl;
             continue;
         }
-        
+
         // 1. Numeric GI
-        
+
         if (gi != 0) {
             if (debug_mode > 5)
                 m_LogFile << "Found numerical GI:" << gi << endl;
-            
+
             gi_list->AppendGi(gi);
             continue;
         }
-        
+
         // 2. Possible remote resolution.  We look for a GI and if
         // that is not found, try to find a Seq-id of the same type
         // (but with a version).
-        
+
         if (m_UseRemote && (! specific)) {
             x_ResolveRemoteId(seqid, gi);
-            
+
             if (gi != 0) {
                 gi_list->AppendGi(gi);
                 continue;
             }
         }
-        
+
         // 3. Just add the Seq-id as a Seq-id.
-        
+
         gi_list->AppendSi(*id);
     }
-    
+
     return gi_list;
 }
 
@@ -191,98 +191,98 @@ bool CBuildDatabase::x_ResolveFromSource(const string  & acc,
     if (m_SourceDb.Empty()) {
         return false;
     }
-    
+
     vector<int> oids;
     m_SourceDb->AccessionToOids(acc, oids);
-    
+
     bool found(false), done(false);
-    
+
     ITERATE(vector<int>, oid, oids) {
         list< CRef<CSeq_id> > ids = m_SourceDb->GetSeqIDs(*oid);
-        
+
         ITERATE(list< CRef<CSeq_id> >, seqid, ids) {
             CRef<CSeq_id> s = *seqid;
-            
+
             string S = s->AsFastaString();
             size_t pos = S.find(acc);
-            
+
             if (pos != string::npos) {
                 size_t endpos = pos + acc.size();
-                
+
                 bool start_okay = (pos == 0 || S[pos-1] == '|');
                 bool end_okay = ((endpos == S.size()) ||
                                  (S[endpos] == '.' ||
                                   S[endpos] == '|'));
-                
+
                 if (start_okay && end_okay) {
                     done = true;
                 }
-                
+
                 if (done || (! found)) {
                     found = true;
                     id = s;
                 }
             }
-            
+
             if (done)
                 break;
         }
-        
+
         if (done)
             break;
     }
-    
+
     return found;
 }
 
 void CBuildDatabase::x_DupLocal()
 {
     TIdToBits bitset;
-    
+
     // Get sequence, deflines, ambiguities, and sometimes pigs.  The
     // simplest route (for WriteDB) is raw data + asn deflines, so we
     // use that when possible.
-    
+
     CStopWatch sw(CStopWatch::eStart);
     int count = 0;
-    
+
     for(int oid = 0; m_SourceDb->CheckOrFindOID(oid); oid++) {
         // Raw data.
-        
+
         const char * buffer (0);
         int          slength(0);
         int          alength(0);
-        
+
         m_SourceDb->GetRawSeqAndAmbig(oid, & buffer, & slength, & alength);
-        
+
         CSequenceReturn seqret(*m_SourceDb, buffer);
-        
+
         CTempString sequence(buffer, slength);
         CTempString ambig(buffer + slength, alength);
-        
+
         // Deflines
-        
+
         CRef<CBlast_def_line_set> headers = m_SourceDb->GetHdr(oid);
         m_DeflineCount += headers->Get().size();
         m_OIDCount ++;
-        
+
         x_SetLinkAndMbit(headers);
-        
+
         // Always include the taxid; although OPTIONAL, some programs
         // expect it, since the C ASN.1 loaders always emit integers.
-        
+
         m_Taxids->FixTaxId(headers);
-        
+
         // Now, add the sequence to the WriteDB database.
-        
+
         m_OutputDb->AddSequence(sequence, ambig);
         m_OutputDb->SetDeflines(*headers);
         count ++;
     }
-    
+
     if (count) {
         double t = sw.Elapsed();
-        
+
         m_LogFile << "Duplication from source DB; duplicated "
                   << count << " sequences in " << t << " seconds." << endl;
     }
@@ -296,7 +296,7 @@ static CConstRef<CBioseq> s_FixBioseqDeltas(CConstRef<objects::CBioseq> bs)
     	 ! bs->GetInst().CanGetExt() || ! bs->GetInst().GetExt().IsDelta()) {
         return bs;
     }
-    
+
     if (bs->GetInst().CanGetMol() &&
         !CSeq_inst::IsNa(bs->GetInst().GetMol())) {
         CConstRef<CSeq_id> id = FindBestChoice(bs->GetId(), CSeq_id::BestRank);
@@ -308,23 +308,23 @@ static CConstRef<CBioseq> s_FixBioseqDeltas(CConstRef<objects::CBioseq> bs)
 
     try {
         const CDelta_ext & dext = bs->GetInst().GetExt().GetDelta();
-        
+
         if(dext.Get().front()->Which() != CDelta_seq::e_Literal)
         	return bs;
 
         typedef list< CRef< CDelta_seq > > TItems;
-        
+
         // Don't really want to use na4, because a half byte at the
         // end of a string would require that string to be manually
         // adjusted before appending.
-        
+
         string seq8na;
         if (bs->GetInst().CanGetLength()) {
             seq8na.reserve(bs->GetInst().GetLength());
         }
-        
+
         string na8;
-        
+
         ITERATE(TItems, item, dext.Get()) {
         	if(((**item).IsLoc()) && ((**item).GetLoc().IsNull())) {
                 seq8na.append(1, 0x0f);
@@ -342,7 +342,7 @@ static CConstRef<CBioseq> s_FixBioseqDeltas(CConstRef<objects::CBioseq> bs)
                       "Part of the delta sequence, including its length, is un-available.");
                 }
             }
-            
+
             if (L.GetSeq_data().IsNcbi2na()) {
                 CSeqConvert::Convert(L.GetSeq_data().GetNcbi2na(),
                                      CSeqUtil::e_Ncbi2na,
@@ -363,14 +363,14 @@ static CConstRef<CBioseq> s_FixBioseqDeltas(CConstRef<objects::CBioseq> bs)
                 NCBI_THROW(CMultisourceException, eArg,
                            "Unhandled type of sequence data encountered.");
             }
-            
+
             seq8na += na8;
             na8.resize(0);
         }
-        
+
         // Now convert back to 4na, since WriteDB does not yet handle
         // 8na sequences.
-        
+
         int length = seq8na.size();
         vector<char> seq4na;
         CSeqConvert::Convert(seq8na,
@@ -379,33 +379,33 @@ static CConstRef<CBioseq> s_FixBioseqDeltas(CConstRef<objects::CBioseq> bs)
                              length,
                              seq4na,
                              CSeqUtil::e_Ncbi4na);
-        
+
         // Copy the needed fields of the CBioseq (but remove the delta
         // sequence) and add a Seq-data.
-        
+
         CRef<CBioseq> bs2(new CBioseq);
-        
+
         if (bs->IsSetId()) {
             bs2->SetId() = bs->GetId();
         }
-        
+
         if (bs->IsSetDescr()) {
             bs2->SetDescr(const_cast<CSeq_descr&>(bs->GetDescr()));
         }
-        
+
         CRef<CSeq_inst> inst(new CSeq_inst);
-        
+
         inst->SetSeq_data().SetNcbi4na().Set().swap(seq4na);
         inst->SetMol(CSeq_inst::eMol_na);
         inst->SetLength(length);
         inst->SetRepr(CSeq_inst::eRepr_raw);
-        
+
         bs2->SetInst(*inst);
-        
+
         if (bs->IsSetAnnot()) {
             bs2->SetAnnot() = bs->GetAnnot();
         }
-        
+
         bs = bs2;
     }
     catch(CInvalidChoiceSelection &) {
@@ -413,7 +413,7 @@ static CConstRef<CBioseq> s_FixBioseqDeltas(CConstRef<objects::CBioseq> bs)
                    "Bioseq must have Seq-data or "
                    "Delta containing only literals.");
     }
-    
+
     return bs;
 }
 
@@ -432,32 +432,33 @@ void CBuildDatabase::x_EditHeaders(CRef<objects::CBlast_def_line_set> headers)
 {
     // Always include the taxid; although OPTIONAL, some programs
     // expect it, since the C ASN.1 loaders always emit integers.
-    
+
     m_Taxids->FixTaxId(headers);
-    
+
     // Edit the linkouts
-    
+
     x_SetLinkAndMbit(headers);
 }
 
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
 void
-CBuildDatabase::x_AddMasksForSeqId(const list< CRef<CSeq_id> >& ids) 
+CBuildDatabase::x_AddMasksForSeqId(const list< CRef<CSeq_id> >& ids)
 {
     if (m_MaskData.Empty()) {
         return;
     }
-    
+
     const CMaskedRangesVector& rng = m_MaskData->GetRanges(ids);
     if (rng.empty()) {
         return;
     }
 
-    vector <int> gis;
+    vector <TGi> gis;
     ITERATE(list< CRef<CSeq_id> >, id, ids) {
         if ((*id)->IsGi()) {
-            gis.push_back(GI_TO(int, (*id)->GetGi()));
+//            gis.push_back(GI_TO(int, (*id)->GetGi()));
+            gis.push_back((*id)->GetGi());
         }
     }
     m_OutputDb->SetMaskData(rng, gis);
@@ -471,9 +472,9 @@ bool CBuildDatabase::x_EditAndAddBioseq(CConstRef<objects::CBioseq>   bs,
 {
     CRef<CBlast_def_line_set> headers =
         CWriteDB::ExtractBioseqDeflines(*bs, m_ParseIDs);
-    
+
     x_EditHeaders(headers);
-    
+
     // Add the sequence
     if (sv) {
         m_OutputDb->AddSequence(*bs, *sv);
@@ -491,9 +492,9 @@ bool CBuildDatabase::x_EditAndAddBioseq(CConstRef<objects::CBioseq>   bs,
     if(add_pig) {
     	x_AddPig(headers);
     }
-    
+
     m_OutputDb->SetDeflines(*headers);
-    
+
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
     const list< CRef<CSeq_id> > & ids = bs->GetId();
@@ -507,14 +508,14 @@ void CBuildDatabase::x_AddOneRemoteSequence(const objects::CSeq_id & seqid,
                                             bool          & error)
 {
     // Get handle and bioseq
-    
+
     CConstRef<CBioseq> bs;
     CBioseq_Handle bsh;
-    
+
     try {
         bsh = x_GetScope().GetBioseqHandle(seqid);
         bs = bsh.GetCompleteBioseq();
-        
+
         if (debug_mode > 5) m_LogFile << MSerial_AsnText << *bs << endl;
     }
     catch (const CException & e) {
@@ -524,15 +525,15 @@ void CBuildDatabase::x_AddOneRemoteSequence(const objects::CSeq_id & seqid,
         found_all = false;
         error = true;
     }
-    
+
     if (bsh.GetState() & CBioseq_Handle::fState_not_found) {
         error = true;
     }
-    
-    
+
+
 
     CSeqVector sv(bsh);
-    
+
     if(!x_EditAndAddBioseq(bs, & sv))
     	error = true;
 
@@ -544,7 +545,7 @@ void CBuildDatabase::x_AddOneRemoteSequence(const objects::CSeq_id & seqid,
             found_all = false;
             return;
     }
-    
+
     if (debug_mode > 5)
         m_LogFile << "-- REMOTE: Found sequence "
                   << seqid.AsFastaString() << endl;
@@ -554,28 +555,28 @@ bool CBuildDatabase::x_AddRemoteSequences(CInputGiList & gi_list)
 {
     CStopWatch sw(CStopWatch::eStart);
     int count = 0;
-    
+
     bool found_all = true;
-    
+
     int num_gis = gi_list.GetNumGis();
     int i = 0;
-    
+
     for(i = 0; i < num_gis; i++) {
         if (m_Verbose)
             m_LogFile << "GI " << gi_list.GetKey<int>(i);
-        
+
         // We only need to fetch here for those cases where the SeqDB
         // attempt could not translate the GI.
-        
+
         if (gi_list.GetGiOid(i).oid == -1) {
             if (m_Verbose)
                 m_LogFile << " not found locally; adding remotely." << endl;
-            
+
             CRef<CSeq_id> id(new CSeq_id);
             id->SetGi(GI_FROM(int, gi_list.GetKey<int>(i)));
-            
+
             bool error = false;
-            
+
             x_AddOneRemoteSequence(*id, found_all, error);
             count++;
         } else {
@@ -583,23 +584,23 @@ bool CBuildDatabase::x_AddRemoteSequences(CInputGiList & gi_list)
                 m_LogFile << " found locally; not adding remotely." << endl;
         }
     }
-    
+
     int num_seqids = gi_list.GetNumSis();
-    
+
     for(i = 0; i < num_seqids; i++) {
         if (m_Verbose)
             m_LogFile << "Seq-id "
                       << gi_list.GetKey<string>(i);
-        
+
         // We only need to fetch here for those cases where the SeqDB
         // attempt could not translate the GI.
-        
+
         if (gi_list.GetSiOid(i).oid == -1) {
             if (m_Verbose)
                 m_LogFile << " not found locally; adding remotely." << endl;
-            
+
             bool error = false;
-            
+
             string acc = gi_list.GetKey<string>(i);
             CRef<CSeq_id> id(new CSeq_id(acc));
             x_AddOneRemoteSequence(*id, found_all, error);
@@ -609,14 +610,14 @@ bool CBuildDatabase::x_AddRemoteSequences(CInputGiList & gi_list)
                 m_LogFile << " found locally; not adding remotely." << endl;
         }
     }
-    
+
     if (count) {
         double t = sw.Elapsed();
-        
+
         m_LogFile << "Adding sequences from remote source; added "
                   << count << " sequences in " << t << " seconds." << endl;
     }
-    
+
     return found_all;
 }
 
@@ -624,21 +625,21 @@ bool
 CBuildDatabase::x_ReportUnresolvedIds(const CInputGiList & gi_list) const
 {
     bool success = true;
-    
+
     int num_gis = gi_list.GetNumGis();
-    
+
     int unresolved = 0;
-    
+
     int i;
     for(i = 0; i < num_gis; i++) {
         // We only need to fetch here for those cases where the SeqDB
         // attempt could not translate the GI.
-        
+
         if (gi_list.GetGiOid(i).oid == -1) {
             if (m_Verbose)
                 m_LogFile << "GI " << gi_list.GetKey<int>(i)
                           << " was not resolvable." << endl;
-            
+
             success = false;
             unresolved ++;
         } else {
@@ -647,19 +648,19 @@ CBuildDatabase::x_ReportUnresolvedIds(const CInputGiList & gi_list) const
                           << " found locally." << endl;
         }
     }
-    
+
     int num_seqids = gi_list.GetNumSis();
-    
+
     for(i = 0; i < num_seqids; i++) {
         // We only need to fetch here for those cases where the SeqDB
         // attempt could not translate the GI.
-        
+
         if (gi_list.GetSiOid(i).oid == -1) {
             if (m_Verbose)
                 m_LogFile << "Seq-id "
                           << gi_list.GetKey<string>(i)
                           << " was not resolvable." << endl;
-            
+
             unresolved ++;
             success = false;
         } else {
@@ -669,14 +670,14 @@ CBuildDatabase::x_ReportUnresolvedIds(const CInputGiList & gi_list) const
                           << " found locally." << endl;
         }
     }
-    
+
     if (unresolved) {
         m_LogFile << "Could not resolve " << unresolved << " IDs." << endl;
     }
-    
+
     success = false;
     unresolved ++;
-    
+
     return success;
 }
 
@@ -685,11 +686,11 @@ public:
     CFastaBioseqSource(CNcbiIstream & fasta_file,
                        bool is_protein,
                        bool parse_ids);
-    
+
     ~CFastaBioseqSource();
-    
+
     virtual CConstRef<CBioseq> GetNext();
-    
+
 private:
     CRef<ILineReader> m_LineReader;
     CFastaReader* m_FastaReader;
@@ -701,19 +702,19 @@ CFastaBioseqSource::CFastaBioseqSource(CNcbiIstream & fasta_file,
     : m_FastaReader(NULL)
 {
     m_LineReader.Reset(new CBufferedLineReader(fasta_file));
-    
+
     typedef CFastaReader::EFlags TFlags;
-    
+
     int iflags = CFastaReader::fAllSeqIds |
                  CFastaReader::fForceType;
-    
+
     if (is_protein) {
         iflags |= CFastaReader::fAssumeProt;
     } else {
         iflags |= CFastaReader::fAssumeNuc;
         iflags |=  CFastaReader::fParseGaps;
     }
-    
+
     if (parse_ids) {
         iflags |= CFastaReader::fAllSeqIds | CFastaReader::fRequireID;
     } else {
@@ -721,14 +722,14 @@ CFastaBioseqSource::CFastaBioseqSource(CNcbiIstream & fasta_file,
     }
 
     iflags |= CFastaReader::fQuickIDCheck;
-    
+
     TFlags flags = (TFlags) iflags;
-    
+
     m_FastaReader = new CFastaReader(*m_LineReader, flags);
     m_FastaReader->IgnoreProblem(ILineError::eProblem_ModifierFoundButNoneExpected);
     m_FastaReader->IgnoreProblem(ILineError::eProblem_TooManyAmbiguousResidues);
     m_FastaReader->IgnoreProblem(ILineError::eProblem_TooLong);
-    
+
 }
 
 CFastaBioseqSource::~CFastaBioseqSource()
@@ -739,11 +740,11 @@ CFastaBioseqSource::~CFastaBioseqSource()
 CConstRef<CBioseq> CFastaBioseqSource::GetNext()
 {
     CConstRef<CBioseq> rv;
-    
+
     if (m_LineReader.NotEmpty() && ! m_LineReader->AtEOF()) {
         CRef<CSeq_entry> entry;
         try { entry = m_FastaReader->ReadOneSeq(); }
-        catch (const CObjReaderParseException& e) { 
+        catch (const CObjReaderParseException& e) {
             static const string kKeyword("m_Pos = ");
             SIZE_TYPE start = NStr::Find(e.what(), kKeyword);
             SIZE_TYPE end = NStr::Find(e.what(), ")", start);
@@ -759,31 +760,31 @@ CConstRef<CBioseq> CFastaBioseqSource::GetNext()
             }
             NCBI_THROW(CWriteDBException, eFileErr, msg);
         }
-        
+
         if (entry.NotEmpty()) {
             _ASSERT(entry->IsSeq());
             rv.Reset(& entry->GetSeq());
         }
     }
-    
+
     // Any failure to read a Bioseq is considered an EOF.
-    
+
     if (rv.Empty()) {
         m_LineReader.Reset();
     }
-    
+
     return rv;
 }
 
 bool CBuildDatabase::AddSequences(IBioseqSource & src, bool add_pig)
 {
     bool found = false;
-    
+
     CStopWatch sw(CStopWatch::eStart);
     int count = 0;
-    
+
     CConstRef<CBioseq> bs = src.GetNext();
-    
+
     while(bs.NotEmpty()) {
         string bioseq_id("Unknown");
 
@@ -810,45 +811,45 @@ bool CBuildDatabase::AddSequences(IBioseqSource & src, bool add_pig)
             m_LogFile << "Adding bioseq from fasta; first id is: '" << bioseq_id
                 << "'" << endl;
         }
-        
+
         // No linkouts or memberships here (yet).
 
         found = true;
-        
+
         count++;
-        
+
         if (debug_mode > 5) m_LogFile << "-- FASTA: Found sequence." << endl;
-        
+
         bs = src.GetNext();
     }
-    
+
     if (count) {
         double t = sw.Elapsed();
-        
+
         m_LogFile << "Adding sequences from FASTA; added "
                   << count << " sequences in " << t << " seconds." << endl;
     }
-    
+
     return found;
 }
 
 bool CBuildDatabase::AddSequences(IRawSequenceSource & src)
 {
     CStopWatch sw(CStopWatch::eStart);
-    
+
     bool done = false;
     bool rv = false;
-    
+
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
     // Get all column names.
-    
+
     vector<string> all_names;
     map<int, int> in2out;
     int mask_id = -1;
-    
+
     src.GetColumnNames(all_names);
-    
+
     for(int i = 0; i < (int) all_names.size(); i++) {
         string name = all_names[i];
         int in_id = src.GetColumnId(name);
@@ -859,99 +860,100 @@ bool CBuildDatabase::AddSequences(IRawSequenceSource & src)
             continue;
         }
         int out_id = m_OutputDb->FindColumn(name);
-        
+
         if (out_id < 0) {
             out_id = m_OutputDb->CreateUserColumn(name);
         }
-        
+
         typedef map<string,string> StringPairMap;
         const StringPairMap & meta = src.GetColumnMetaData(in_id);
-        
+
         ITERATE(StringPairMap, iter, meta) {
             m_OutputDb->AddColumnMetaData(out_id, iter->first, iter->second);
         }
-        
+
         in2out[in_id] = out_id;
     }
-#endif    
+#endif
     // Copy all data.
-    
+
     vector<CTempString> column_blobs;
     vector<int> column_ids;
-    
+
     int count = 0;
-    
+
     while(! done) {
         CTempString sequence, ambiguities;
         CRef<CBlast_def_line_set> deflines;
         CMaskedRangesVector  mask_data;
-        
+
         if (src.GetNext(sequence,
                         ambiguities,
                         deflines,
                         mask_data,
                         column_ids,
                         column_blobs)) {
-            
+
             // Copy data
-            
+
             _ASSERT(column_blobs.size() == column_ids.size());
-            
+
             if (sequence.empty()) {
                 NCBI_THROW(CMultisourceException, eArg,
                            "Error in raw data: no sequence");
             }
-            
+
             if ((! ambiguities.empty()) && m_IsProtein) {
                 NCBI_THROW(CMultisourceException, eArg,
                            "Error in raw data: "
                            "protein db cannot with ambiguities");
             }
-            
+
             if (deflines.Empty()) {
                 NCBI_THROW(CMultisourceException, eArg,
                            "Error in raw data: no headers provided");
             }
-            
+
             x_EditHeaders(deflines);
-            
+
             m_OutputDb->AddSequence(sequence, ambiguities);
             x_AddPig(deflines);
             m_OutputDb->SetDeflines(*deflines);
-            
+
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
             for(int i = 0; i < (int)column_ids.size(); i++) {
                 int in_id = column_ids[i];
                 if (in_id == mask_id) continue;
-                
+
                 if (column_blobs[i].size() == 0)
                     continue;
-                
+
                 _ASSERT(in2out.find(in_id) != in2out.end());
-                
+
                 int out_id = in2out[in_id];
-                
+
                 CTempString blob_in = column_blobs[i];
                 CBlastDbBlob & blob_out = m_OutputDb->SetBlobData(out_id);
-                
+
                 blob_out.Clear();
                 blob_out.WriteRaw(& blob_in.data()[0], blob_in.size());
             }
             // Don't forget about the IMaskDataSource!
-            vector <int> gis;  // GIs associated with this sequence
+            vector <TGi> gis;  // GIs associated with this sequence
             if (!mask_data.empty() || !m_MaskData.Empty()) {
                 ITERATE(CBlast_def_line_set::Tdata, defline, deflines->Get()) {
                     const list< CRef<CSeq_id> > & ids = (*defline)->GetSeqid();
                     ITERATE(list< CRef<CSeq_id> >, id, ids) {
                         if ((*id)->IsGi()) {
-                            gis.push_back(GI_TO(int, (*id)->GetGi()));
+//                            gis.push_back(GI_TO(int, (*id)->GetGi()));
+                            gis.push_back((*id)->GetGi());
                         }
                     }
                     if (!m_MaskData.Empty()) {
                         const CMaskedRangesVector rng = m_MaskData->GetRanges(ids);
                         if (!rng.empty()) {
-                            mask_data.insert(mask_data.end(), rng.begin(), rng.end());  
+                            mask_data.insert(mask_data.end(), rng.begin(), rng.end());
                             m_FoundMatchingMasks = true;
                         }
                     }
@@ -961,21 +963,21 @@ bool CBuildDatabase::AddSequences(IRawSequenceSource & src)
                 m_OutputDb->SetMaskData(mask_data, gis);
             }
 #endif
-            
+
             rv = true;
             count ++;
         } else {
             done = true;
         }
     }
-    
+
     if (count) {
         double t = sw.Elapsed();
-        
+
         m_LogFile << "Adding sequences from raw db source; added "
                   << count << " sequences in " << t << " seconds." << endl;
     }
-    
+
     return rv;
 }
 
@@ -995,7 +997,7 @@ static void s_CreateDirectories(const string& dbname)
         }
     }
     if (!d.CheckAccess(CDirEntry::fWrite)) {
-        string msg("You do not have write permissions on '" + 
+        string msg("You do not have write permissions on '" +
                    d.GetName() + "'");
         NCBI_THROW(CMultisourceException, eOutputFileError, msg);
     }
@@ -1023,28 +1025,28 @@ CBuildDatabase::CBuildDatabase(const string         & dbname,
     const string output_dbname = CDirEntry::CreateAbsolutePath(dbname);
     m_LogFile << "\n\nBuilding a new DB, current time: "
               << CTime(CTime::eCurrent).AsString() << endl;
-    
+
     m_LogFile << "New DB name:   " << output_dbname << endl;
     m_LogFile << "New DB title:  " << title << endl;
     const string mol_type(is_protein ? "Protein" : "Nucleotide");
     m_LogFile << "Sequence type: " << mol_type << endl;
     if (DeleteBlastDb(output_dbname, ParseMoleculeTypeString(mol_type))) {
-        m_LogFile << "Deleted existing " << mol_type 
+        m_LogFile << "Deleted existing " << mol_type
             << " BLAST database named " << output_dbname << endl;
     }
-    
+
     CWriteDB::ESeqType seqtype =
         (is_protein ? CWriteDB::eProtein : CWriteDB::eNucleotide);
-    
+
     m_OutputDb.Reset(new CWriteDB(output_dbname,
                                   seqtype,
                                   title,
                                   indexing,
                                   m_ParseIDs,
                                   use_gi_mask));
-    
+
     // Standard 1 GB limit
-    
+
     m_OutputDb->SetMaxFileSize(1000*1000*1000);
 }
 
@@ -1071,23 +1073,23 @@ CBuildDatabase::CBuildDatabase(const string & dbname,
     const string output_dbname = CDirEntry::CreateAbsolutePath(dbname);
     m_LogFile << "\n\nBuilding a new DB, current time: "
               << CTime(CTime::eCurrent).AsString() << endl;
-    
+
     m_LogFile << "New DB name:   " << output_dbname << endl;
     m_LogFile << "New DB title:  " << title << endl;
     const string mol_type(is_protein ? "Protein" : "Nucleotide");
     m_LogFile << "Sequence type: " << mol_type << endl;
     if (DeleteBlastDb(output_dbname, ParseMoleculeTypeString(mol_type))) {
-        m_LogFile << "Deleted existing " << mol_type 
+        m_LogFile << "Deleted existing " << mol_type
             << " BLAST database named " << output_dbname << endl;
     }
-    
+
     CWriteDB::ESeqType seqtype =
         (is_protein ? CWriteDB::eProtein : CWriteDB::eNucleotide);
-    
+
     CWriteDB::EIndexType ix = (sparse
                                ? CWriteDB::eSparseIndex
                                : CWriteDB::eDefault);
-    
+
     m_OutputDb.Reset(new CWriteDB(output_dbname,
                                   seqtype,
                                   title,
@@ -1096,7 +1098,7 @@ CBuildDatabase::CBuildDatabase(const string & dbname,
                                   use_gi_mask));
 
     // Standard 1 GB limit
-    
+
     m_OutputDb->SetMaxFileSize(1000*1000*1000);
 }
 
@@ -1128,13 +1130,13 @@ CScope & CBuildDatabase::x_GetScope()
         if (m_ObjMgr.Empty()) {
             m_ObjMgr.Reset(CObjectManager::GetInstance());
         }
-        
+
         m_Scope.Reset(new CScope(*m_ObjMgr));
-        
+
         // Add default loaders (GB loader in this demo) to the scope.
         m_Scope->AddDefaults();
     }
-    
+
     return *m_Scope;
 }
 
@@ -1153,7 +1155,7 @@ void CBuildDatabase::SetSourceDb(const string & src_db_name)
                                                m_IsProtein
                                                ? CSeqDB::eProtein
                                                : CSeqDB::eNucleotide));
-    
+
     SetSourceDb(src_db);
 }
 
@@ -1178,27 +1180,27 @@ CBuildDatabase::Build(const vector<string> & ids,
                       CNcbiIstream         * fasta_file)
 {
     CStopWatch sw(CStopWatch::eStart);
-    
+
     StartBuild();
-    
+
     bool success = AddIds(ids);
-    
+
     if (success) {
         success = AddFasta(*fasta_file);
     }
-    
+
     bool success2 = EndBuild();
-    
+
     success = success || success2;
-    
+
     double t = sw.Elapsed();
-    
+
     m_LogFile << "Total sequences stored: " << m_OIDCount << endl;
     m_LogFile << "Total deflines stored: " << m_DeflineCount << endl;
-    
+
     m_LogFile << "Total time to build database: "
               << t << " seconds.\n" << endl;
-    
+
     return success;
 }
 
@@ -1208,22 +1210,22 @@ void CBuildDatabase::StartBuild()
 
 bool CBuildDatabase::AddIds(const vector<string> & ids)
 {
-    
+
     bool success = true;
-    
+
     // Resolve all ids to GIs, storing them in a GI list.
-    
+
     CRef<CInputGiList> gi_list;
-    
+
     if (m_SourceDb.NotEmpty() && ! ids.empty()) {
         gi_list = x_ResolveGis(ids);
     }
-    
+
     // Translate the GI list.
-    
+
     if (gi_list.NotEmpty() &&
         (gi_list->GetNumGis() || gi_list->GetNumSis())) {
-        
+
         // The process of constructing a SeqDB object with a user GI
         // list causes translation of the User GI list, and is the
         // fastest way of performing such a translation in bulk.  It
@@ -1236,28 +1238,28 @@ bool CBuildDatabase::AddIds(const vector<string> & ids)
         // found using OID iteration over SeqDB, which produces a
         // better ordering inasmuch as the reads from the source
         // sequence data will be sequential on disk.
-        
+
         _ASSERT(m_SourceDb.NotEmpty());
-        
+
         CRef<CSeqDBExpert> filtered
             (new CSeqDBExpert(m_SourceDb->GetDBNameList(),
                               m_SourceDb->GetSequenceType(),
                               &* gi_list));
-        
+
         m_SourceDb = filtered;
-        
+
         // Add all local database sequences to the output DB.
-        
+
         x_DupLocal();
-        
+
         if (m_Verbose) {
             // Map oid to gi.
             map<int,int> seen_it;
-            
+
             for(int i = 0; i < gi_list->GetNumGis(); i++) {
                 int this_oid = gi_list->GetGiOid(i).oid;
                 int this_gi = gi_list->GetGiOid(i).gi;
-            
+
                 if (this_oid != -1) {
                     if (seen_it.find(this_oid) == seen_it.end()) {
                         seen_it[this_oid] = this_gi;
@@ -1271,7 +1273,7 @@ bool CBuildDatabase::AddIds(const vector<string> & ids)
             }
         }
     }
-    
+
     if (gi_list.NotEmpty()) {
         if (m_UseRemote) {
             success = x_AddRemoteSequences(*gi_list);
@@ -1279,7 +1281,7 @@ bool CBuildDatabase::AddIds(const vector<string> & ids)
             success = x_ReportUnresolvedIds(*gi_list);
         }
     }
-    
+
     return success;
 }
 
@@ -1287,12 +1289,12 @@ bool CBuildDatabase::AddFasta(CNcbiIstream & fasta_file)
 {
     // Add any fasta sequences as well.
     bool success = true;
-    
+
     if (fasta_file) {
         CFastaBioseqSource fbs(fasta_file,
                                m_IsProtein,
                                m_ParseIDs);
-        
+
         try {
             success = AddSequences(fbs);
         }
@@ -1326,24 +1328,24 @@ bool CBuildDatabase::x_EndBuild(bool erase, const CException * close_exception)
 
     vector<string> vols;
     vector<string> files;
-    
+
     m_OutputDb->ListVolumes(vols);
     m_OutputDb->ListFiles(files);
-    
+
     m_LogFile << endl;
-    
+
     _ASSERT(vols.empty() == files.empty());
-    
+
     if (vols.empty()) {
         m_LogFile << "No volumes were created because no sequences were found."
                   << endl;
-        
+
         success = false;
     } else {
         ITERATE(vector<string>, iterv, vols) {
             m_LogFile << "volume: " << *iterv << endl;
         }
-        
+
         m_LogFile << endl;
         ITERATE(vector<string>, iterf, files) {
             m_LogFile << "file: " << *iterf << endl;
@@ -1353,14 +1355,14 @@ bool CBuildDatabase::x_EndBuild(bool erase, const CException * close_exception)
             }
         }
     }
-    
+
     m_LogFile << endl;
 
     if (close_exception) {
         NCBI_RETHROW(*close_exception, CWriteDBException, eArgErr,
                      "Can not close files.");
     }
-    
+
     return success;
 }
 
@@ -1374,28 +1376,28 @@ s_SetDeflineBits(objects::CBlast_def_line & defline,
 {
     bool found = false;
     int value = 0;
-    
+
     ITERATE(vector<string>, key, keys) {
         if (! key->size())
             continue;
-        
+
         TIdToBits::iterator item = bitmap.find(*key);
-        
+
         if (item != bitmap.end()) {
             found = true;
             value |= item->second;
         }
     }
-    
+
     if (found) {
         list<int> & linkv = (is_memb
                              ? defline.SetMemberships()
                              : defline.SetLinks());
-            
+
         if (! keep_old) {
             linkv.clear();
         }
-            
+
         if (linkv.empty()) {
             linkv.push_back(value);
         } else {
@@ -1412,15 +1414,15 @@ s_SetDeflineBits(objects::CBlast_def_line & defline,
     }
 }
 
-void 
+void
 CBuildDatabase::x_SetLinkAndMbit(CRef<objects::CBlast_def_line_set> headers)
 {
     vector<string> keys;
-    
+
     NON_CONST_ITERATE(CBlast_def_line_set::Tdata, iter, headers->Set()) {
         CBlast_def_line & defline = **iter;
         GetDeflineKeys(defline, keys);
-        
+
         s_SetDeflineBits(defline, m_Id2Links, m_KeepLinks, false, keys);
         s_SetDeflineBits(defline, m_Id2Mbits, m_KeepMbits, true, keys);
     }
@@ -1432,7 +1434,7 @@ void CBuildDatabase::SetMaxFileSize(Uint8 max_file_size)
 }
 
 int
-CBuildDatabase::RegisterMaskingAlgorithm(EBlast_filter_program program, 
+CBuildDatabase::RegisterMaskingAlgorithm(EBlast_filter_program program,
                                          const string        & options,
                                          const string        & name)
 {
@@ -1445,7 +1447,7 @@ CBuildDatabase::RegisterMaskingAlgorithm(EBlast_filter_program program,
 }
 
 int
-CBuildDatabase::RegisterMaskingAlgorithm(const string        & program, 
+CBuildDatabase::RegisterMaskingAlgorithm(const string        & program,
                                          const string        & description,
                                          const string        & options)
 {
