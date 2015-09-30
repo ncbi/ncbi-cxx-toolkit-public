@@ -18,6 +18,7 @@ misc/xmlwrapp$
 misc/xmlwrapp/impl$
 serial$
 serial/datatool$
+serial/impl$
 boost
 internal$
 internal/cppcore$
