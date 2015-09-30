@@ -128,7 +128,8 @@ BEGIN_SCOPE(objects)
 
 
 extern const char* sc_TestEntry;
-
+extern const char* sc_TestEntry2;
+extern const char* sc_mrna_loc;
 
 NCBITEST_INIT_TREE()
 {
@@ -372,6 +373,28 @@ BOOST_AUTO_TEST_CASE(Test_MakemRNAforCDS)
         &scope, sequence::fCompareOverlapping), sequence::eSame);
 
 }
+
+BOOST_AUTO_TEST_CASE(Test_MakemRNAforCDS_with_complex_UTR)
+{
+    CSeq_entry entry;
+    {
+        CNcbiIstrstream istr(sc_TestEntry2);
+        istr >> MSerial_AsnText >> entry;
+    }
+       
+    CScope scope(*CObjectManager::GetInstance());
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(entry);
+    CRef<CSeq_feat> cds = entry.SetSet().SetSeq_set().front()->SetSet().SetAnnot().front()->SetData().SetFtable().front();
+    CRef<CSeq_feat> mrna = edit::MakemRNAforCDS(*cds, scope);
+    BOOST_REQUIRE(mrna);
+    CSeq_loc mrna_loc;
+    {
+        CNcbiIstrstream istr(sc_mrna_loc);
+        istr >> MSerial_AsnText >> mrna_loc;
+    }
+    BOOST_CHECK_EQUAL(sequence::Compare(mrna->GetLocation(), mrna_loc, &scope, sequence::fCompareOverlapping), sequence::eSame);
+}
+
 
 BOOST_AUTO_TEST_CASE(Test_GetmRNAforCDS)
 {
@@ -953,6 +976,614 @@ LSGWSQTPDLR\"\
     }\
   }\
 }";
+
+
+//////////////////////////////////////////////////////////////////////////////////
+const char* sc_TestEntry2 ="\
+Seq-entry ::= set {\
+  class genbank,\
+  descr {\
+    user {\
+      type str \"NcbiCleanup\",\
+      data {\
+        {\
+          label str \"method\",\
+          data str \"ExtendedSeqEntryCleanup\"\
+        },\
+        {\
+          label str \"version\",\
+          data int 1\
+        },\
+        {\
+          label str \"month\",\
+          data int 9\
+        },\
+        {\
+          label str \"day\",\
+          data int 15\
+        },\
+        {\
+          label str \"year\",\
+          data int 2015\
+        }\
+      }\
+    }\
+  },\
+  seq-set {\
+    set {\
+      class nuc-prot,\
+      descr {\
+        source {\
+          genome genomic,\
+          org {\
+            taxname \"Erythranthe lewisii\",\
+            db {\
+              {\
+                db \"taxon\",\
+                tag id 69919\
+              }\
+            },\
+            orgname {\
+              name binomial {\
+                genus \"Erythranthe\",\
+                species \"lewisii\"\
+              },\
+              mod {\
+                {\
+                  subtype other,\
+                  subname \"inbred line LF10\"\
+                },\
+                {\
+                  subtype gb-synonym,\
+                  subname \"Mimulus lewisii\"\
+                }\
+              },\
+              lineage \"Eukaryota; Viridiplantae; Streptophyta; Embryophyta;\
+ Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons; Gunneridae;\
+ Pentapetalae; asterids; lamiids; Lamiales; Phrymaceae; Erythranthe\",\
+              gcode 1,\
+              mgcode 1,\
+              div \"PLN\",\
+              pgcode 11\
+            }\
+          },\
+          subtype {\
+            {\
+              subtype country,\
+              name \"USA\"\
+            },\
+            {\
+              subtype collection-date,\
+              name \"2000\"\
+            },\
+            {\
+              subtype collected-by,\
+              name \"A. Angert\"\
+            }\
+          }\
+        },\
+        pub {\
+          pub {\
+            gen {\
+              cit \"Unpublished\",\
+              authors {\
+                names std {\
+                  {\
+                    name name {\
+                      last \"Sagawa\",\
+                      first \"Janelle\",\
+                      initials \"J.M.\"\
+                    }\
+                  },\
+                  {\
+                    name name {\
+                      last \"Stanley\",\
+                      first \"Lauren\",\
+                      initials \"L.E.\"\
+                    }\
+                  },\
+                  {\
+                    name name {\
+                      last \"LaFountain\",\
+                      first \"Amy\",\
+                      initials \"A.M.\"\
+                    }\
+                  },\
+                  {\
+                    name name {\
+                      last \"Frank\",\
+                      first \"Harry\",\
+                      initials \"H.A.\"\
+                    }\
+                  },\
+                  {\
+                    name name {\
+                      last \"Liu\",\
+                      first \"Chang\",\
+                      initials \"C.\"\
+                    }\
+                  },\
+                  {\
+                    name name {\
+                      last \"Yuan\",\
+                      first \"Yao-Wu\",\
+                      initials \"Y.-W.\"\
+                    }\
+                  }\
+                }\
+              },\
+              title \"Transcriptional control of floral carotenoid pigmentation\"\
+            }\
+          }\
+        },\
+        pub {\
+          pub {\
+            sub {\
+              authors {\
+                names std {\
+                  {\
+                    name name {\
+                      last \"Sagawa\",\
+                      first \"Janelle\",\
+                      initials \"J.M.\"\
+                    }\
+                  },\
+                  {\
+                    name name {\
+                      last \"Stanley\",\
+                      first \"Lauren\",\
+                      initials \"L.E.\"\
+                    }\
+                  },\
+                  {\
+                    name name {\
+                      last \"LaFountain\",\
+                      first \"Amy\",\
+                      initials \"A.M.\"\
+                    }\
+                  },\
+                  {\
+                    name name {\
+                      last \"Frank\",\
+                      first \"Harry\",\
+                      initials \"H.A.\"\
+                    }\
+                  },\
+                  {\
+                    name name {\
+                      last \"Liu\",\
+                      first \"Chang\",\
+                      initials \"C.\"\
+                    }\
+                  },\
+                  {\
+                    name name {\
+                      last \"Yuan\",\
+                      first \"Yao-Wu\",\
+                      initials \"Y.-W.\"\
+                    }\
+                  }\
+                },\
+                affil std {\
+                  affil \"University of Connecticut\",\
+                  div \"Department of Ecology and Evolutionary Biology\",\
+                  city \"Storrs\",\
+                  sub \"CT\",\
+                  country \"USA\",\
+                  street \"75 N. Eagleville Road, Unit 3043\",\
+                  postal-code \"06269-3043\"\
+                }\
+              },\
+              medium email,\
+              date std {\
+                year 2015,\
+                month 4,\
+                day 1\
+              }\
+            }\
+          }\
+        },\
+        user {\
+          class \"SMART_V1.0\",\
+          type id 1,\
+          data {\
+            {\
+              label id 1,\
+              num 1,\
+              data int 9436144\
+            }\
+          }\
+        },\
+        user {\
+          type str \"Submission\",\
+          data {\
+            {\
+              label str \"SmartComment\",\
+              data str \"ALT EMAIL:yaowu.yuan@uconn.edu\"\
+            },\
+            {\
+              label str \"AdditionalComment\",\
+              data str \"BankIt1812495\"\
+            }\
+          }\
+        },\
+        user {\
+          type str \"StructuredComment\",\
+          data {\
+            {\
+              label str \"StructuredCommentPrefix\",\
+              data str \"##Assembly-Data-START##\"\
+            },\
+            {\
+              label str \"Assembly Method\",\
+              data str \"CLC Genomics Workbench v. v. 6\"\
+            },\
+            {\
+              label str \"Sequencing Technology\",\
+              data str \"Illumina\"\
+            },\
+            {\
+              label str \"StructuredCommentSuffix\",\
+              data str \"##Assembly-Data-END##\"\
+            }\
+          }\
+        },\
+        user {\
+          type str \"Submission\",\
+          data {\
+            {\
+              label str \"SmartComment\",\
+              data str \"TOTAL # OF SEQS:17\"\
+            }\
+          }\
+        },\
+        user {\
+          type str \"Submission\",\
+          data {\
+            {\
+              label str \"AdditionalComment\",\
+              data str \"GAP: unknown length: introns\"\
+            }\
+          }\
+        },\
+        update-date std {\
+          year 2015,\
+          month 9,\
+          day 15\
+        }\
+      },\
+      seq-set {\
+        seq {\
+          id {\
+            local str \"Seq2\",\
+            general {\
+              db \"BankIt\",\
+              tag str \"1812495/Seq2\"\
+            },\
+            general {\
+              db \"TMSMART\",\
+              tag id 53779088\
+            },\
+            genbank {\
+              accession \"KR053166\"\
+            }\
+          },\
+          descr {\
+            title \"Erythranthe lewisii phytoene synthase 1 (PSY1) gene,\
+ complete cds.\",\
+            molinfo {\
+              biomol genomic\
+            },\
+            user {\
+              type str \"Submission\",\
+              data {\
+                {\
+                  label str \"AdditionalComment\",\
+                  data str \"LocalID:Seq2\"\
+                }\
+              }\
+            },\
+            user {\
+              type str \"OriginalID\",\
+              data {\
+                {\
+                  label str \"LocalId\",\
+                  data str \"Seq2\"\
+                }\
+              }\
+            }\
+          },\
+          inst {\
+            repr delta,\
+            mol dna,\
+            length 4644,\
+            strand ds,\
+            ext delta {\
+              literal {\
+                length 4644,\
+                seq-data ncbi2na '5145D47243BA80CEC080F1884947E9069464C6FFF451\
+E6977753F8C29CD7FE53EAC3F6C46EDF7C777DC70FC1FC3C73FFF3DCED40DCA4E35C7EAB6B4313\
+FCC45D41C2C76FEBE473DD35CFFFFFFFF3FE03DAFFBFA0EC7C1CFCCF7F01D3E0E7106FF30C0733\
+5DF43F113FFB7E7AC7F123407ED3138F3783F2FCCDD5B14FE4173FCD00ECBF170ECFF62E1ECF74\
+0200000070E24BBFEC3361E23BC3C3172CFF4300CD0FAFC86C140FD034BEDD03E3D31D98AF72D6\
+BCD703FA53FF7620018C593087CC60F00D1C37D3710334B4F77D3F888EED1F3FF44113B03E0B93\
+FCCFD8333CBCF3EC0FC3F3FFF7F0F43803D8FF6FFFBFFFC000200803849CE2C4018E83782F4802\
+082316CA09406AD3C9002BA8543620375352C00BA00AB3C0FF512E803AFB123D527040CE0D1D0F\
+72D34DB6DB78108088800ED2D33033CBD8100200200074B0982002245DF7F910A2402A18BABFF7\
+DBE8FFF7908B3104B88417DD7D050D02BFFFCB3FFFDFBF38FCEF4FFEFCEC0DEF9ED53037AFEF1A\
+2F3CC00F803BF9733008C9F706EECFE4530900AE23F3D3CFB3D4BE1F0FCC0B9D0154FD170ACC8F\
+61870FBEFD2F4FFFF300F7092FDF2AA1FFF5EF3FFAA3FFCBA0F4BDEC8FCCCFFFFF3EBFCFEF9209\
+D4404AD43E7B9081E28F7E0F407E96F7D8FFF5BF287BF6040DF733D0152FC028A28480D730F7F3\
+0A3F0D3B7BE7FBEEAEB77547D62F7406A16CF5D8F5F4896FD42C420DE3490C904A7010EB44008A\
+603F653BE88300923DDEE24324EF271D49EB88D97CDF58900AFC63BEDF024A49DEBC22123800B6\
+2628FE82E0168CFBDF5AA1EC17EF8B827CE367B6E0BBB9A0CE4086FF176B0F107BFE3C4F2FCEFF\
+038420D300EEE2B0F4FFBEE08102BC3CFAFFADBFFF1281BE78E11588A6089CDEA63B3AC21DEDFF\
+3B133B843FF347DA3FF3FFFED0C0F2ED9D03ABD017783F4A0FBAF3340FFFEDDBF7F06200203ACF\
+A48E0E8E2CF0FFEB3A4BC3300EA34D13D13538F94070F4F3E51C5022CAC08FA053BCB7634EF2DD\
+8F000100E00024534ED0A02014F87B710EEFF3BF4FFBF70B60003E75CFF7C2D0C7D1FF7EECDFDF\
+BE7F3E34CFFBC0D4FEEF3404BBAECA2048E27EF8EA5039344CF1D7127FA32BA8A729F8633FD26A\
+657FE339D8E79FCD631EF18AFD7BE3352BC8FB9B7EFFB53F78EFB0C3E9030C8F0F82D3333D7FDA\
+8B8BFF6B87F17360FD3D5FFD7249F40DFEE72FBA683FB2EC7E7F7E0DC3CC1C71E66EEEEFFECFEC\
+0E738D3E333F411060C7F3B9253F02338F86A3883A17BA0B76B1081F638BECDCC7BC73B27AC7BA\
+8F8E2EE5CF3A9324560D109441E22ECC439E7FA4F2B7660D2F840CF7488EFA208B0BFBDBFFFF01\
+C049E3DE73EC93CCF6F3C67BB9F33FB6803FB83FFB3CB90A62822ECDC592860FA64A6A1CD63823\
+33D9EA02E12303A283F4E08240F98A98A03DF638E4889AED1A27499E72C8E96B0B3F40283CFD21\
+8BFC0F48600A48CC7343D3604FF3BC8822F31CEE31802E007F2B4792E183CE202F13830083809D\
+20C0DBFFFFDB75B7DF9CEDADA7C0202F8D5BBFF92BBA936F9F7B361031E862320901871041F462\
+8A9B3BC90160823DF91E51F933902DDFBD7534D40534DC77EC084E2C81034D0D33330373DBC783\
+CC4BDE0A80000000'H\
+              }\
+            }\
+          },\
+          annot {\
+            {\
+              data ftable {\
+                {\
+                  data gene {\
+                    locus \"PSY1\"\
+                  },\
+                  comment \"MlPSY1\",\
+                  location int {\
+                    from 0,\
+                    to 4643,\
+                    strand plus,\
+                    id local str \"Seq2\"\
+                  }\
+                },\
+                {\
+                  data imp {\
+                    key \"5'UTR\"\
+                  },\
+                  location mix {\
+                    int {\
+                      from 0,\
+                      to 130,\
+                      strand plus,\
+                      id local str \"Seq2\"\
+                    },\
+                    int {\
+                      from 970,\
+                      to 1399,\
+                      strand plus,\
+                      id local str \"Seq2\"\
+                    },\
+                    int {\
+                      from 1800,\
+                      to 1971,\
+                      strand plus,\
+                      id local str \"Seq2\"\
+                    }\
+                  }\
+                },\
+                {\
+                  data imp {\
+                    key \"3'UTR\"\
+                  },\
+                  location int {\
+                    from 4565,\
+                    to 4643,\
+                    strand plus,\
+                    id genbank {\
+                      accession \"KR053166\"\
+                    }\
+                  }\
+                }\
+              }\
+            }\
+          }\
+        },\
+        seq {\
+          id {\
+            local str \"Seq2_prot_2\",\
+            general {\
+              db \"TMSMART\",\
+              tag id 53779089\
+            }\
+          },\
+          descr {\
+            title \"phytoene synthase 1 [Erythranthe lewisii]\",\
+            molinfo {\
+              biomol peptide,\
+              completeness complete\
+            },\
+            user {\
+              type str \"OriginalID\",\
+              data {\
+                {\
+                  label str \"LocalId\",\
+                  data str \"Seq2_prot_2\"\
+                }\
+              }\
+            }\
+          },\
+          inst {\
+            repr raw,\
+            mol aa,\
+            length 417,\
+            seq-data ncbieaa \"MSVALLWVVSPTSEFSNGTVFLDSFRAVSKYKNLISNSNRLNNGHKKR\
+RNFAMLENKSRFSVSNSMLATPAGEIALSSEQKVYDVVLKQAALVKRQMKKSSEDLEVKPDIVLPGTVTLLSEAYDRC\
+REVCAEYAKTFYLGTLLMTPERRRAIWAMYVWCRRTDELVDGPNASHITPTALDRWEARLDDIFSGRPFDMLDAALSD\
+TVTRFPVDIQPFKDMIDGMRMDLWKSRYKNFDELYLYCYYVAGTVGLMSVPIMGIAPESQATTESVYNAALALGLANQ\
+LTNILRDVGEDARRGRVYLPQDELAQAGLSDEDIFAGKVTDKWRNFMKKQIARARKFFDDAESGVTELSAASRWPVWA\
+SLLLYRQILDEIEANDYNNFTRRAYVSKPKKILALPLAYAKSLVPPSSKPSSTLVKT\"\
+          },\
+          annot {\
+            {\
+              data ftable {\
+                {\
+                  data prot {\
+                    name {\
+                      \"phytoene synthase 1\"\
+                    }\
+                  },\
+                  location int {\
+                    from 0,\
+                    to 416,\
+                    id local str \"Seq2_prot_2\"\
+                  }\
+                }\
+              }\
+            }\
+          }\
+        }\
+      },\
+      annot {\
+        {\
+          data ftable {\
+            {\
+              data cdregion {\
+                frame one,\
+                code {\
+                  id 1\
+                }\
+              },\
+              product whole local str \"Seq2_prot_2\",\
+              location packed-int {\
+                {\
+                  from 1972,\
+                  to 2389,\
+                  strand plus,\
+                  id genbank {\
+                    accession \"KR053166\"\
+                  }\
+                },\
+                {\
+                  from 2516,\
+                  to 2566,\
+                  strand plus,\
+                  id genbank {\
+                    accession \"KR053166\"\
+                  }\
+                },\
+                {\
+                  from 3101,\
+                  to 3273,\
+                  strand plus,\
+                  id genbank {\
+                    accession \"KR053166\"\
+                  }\
+                },\
+                {\
+                  from 3570,\
+                  to 3805,\
+                  strand plus,\
+                  id genbank {\
+                    accession \"KR053166\"\
+                  }\
+                },\
+                {\
+                  from 3921,\
+                  to 4113,\
+                  strand plus,\
+                  id genbank {\
+                    accession \"KR053166\"\
+                  }\
+                },\
+                {\
+                  from 4382,\
+                  to 4564,\
+                  strand plus,\
+                  id genbank {\
+                    accession \"KR053166\"\
+                  }\
+                }\
+              }\
+            }\
+          }\
+        }\
+      }\
+    }\
+  }\
+}";
+
+
+const char* sc_mrna_loc = "\
+Seq-loc ::= packed-int {\
+  {\
+    from 0,\
+    to 130,\
+    strand plus,\
+    id genbank {\
+      accession \"KR053166\"\
+    }\
+  },\
+  {\
+    from 970,\
+    to 1399,\
+    strand plus,\
+    id genbank {\
+      accession \"KR053166\"\
+    }\
+  },\
+  {\
+    from 1800,\
+    to 2389,\
+    strand plus,\
+    id genbank {\
+      accession \"KR053166\"\
+    }\
+  },\
+  {\
+    from 2516,\
+    to 2566,\
+    strand plus,\
+    id genbank {\
+      accession \"KR053166\"\
+    }\
+  },\
+  {\
+    from 3101,\
+    to 3273,\
+    strand plus,\
+    id genbank {\
+      accession \"KR053166\"\
+    }\
+  },\
+  {\
+    from 3570,\
+    to 3805,\
+    strand plus,\
+    id genbank {\
+      accession \"KR053166\"\
+    }\
+  },\
+  {\
+    from 3921,\
+    to 4113,\
+    strand plus,\
+    id genbank {\
+      accession \"KR053166\"\
+    }\
+  },\
+  {\
+    from 4382,\
+    to 4643,\
+    strand plus,\
+    id genbank {\
+      accession \"KR053166\"\
+    }\
+  }\
+}";
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
-

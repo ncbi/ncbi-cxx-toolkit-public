@@ -595,28 +595,64 @@ string s_GetmRNAName (const CSeq_feat& mrna)
     }
 }
 
+void s_AdjustForUTR_SingleSide(CSeq_loc& mrna_loc, const CSeq_loc &utr_loc, const CSeq_id &id)
+{
+    CRef<CSeq_loc> new_loc(new CSeq_loc);
+    new_loc->Assign(utr_loc);
+    new_loc->SetId(id);
+    CSeq_loc_I loc_it(*new_loc); 
+    while(loc_it)   
+    {
+        ++loc_it;
+    }
+    size_t pos = loc_it.GetPos();
+    if (pos > 0)
+        loc_it.SetPos(pos-1);
+    int utr_stop = loc_it.GetRange().GetTo();
+    CSeq_loc_CI old_loc_it(mrna_loc, CSeq_loc_CI::eEmpty_Skip, CSeq_loc_CI::eOrder_Positional);
+    int cds_start = old_loc_it.GetRange().GetFrom();
+    int cds_stop = old_loc_it.GetRange().GetTo();
+    while (old_loc_it && cds_stop < utr_stop)
+    {
+        ++old_loc_it;
+        if (old_loc_it)
+        {
+            cds_start = old_loc_it.GetRange().GetFrom();
+            cds_stop = old_loc_it.GetRange().GetTo();            
+        }
+    }
+    
+    if (cds_start - utr_stop <= 2 && cds_stop >= utr_stop)
+    {
+        loc_it.SetTo(cds_stop);
+        if (old_loc_it)
+            ++old_loc_it;
+    }
+    ++loc_it;
+    while (old_loc_it)
+    {
+        loc_it.InsertInterval(id, old_loc_it.GetRange(), old_loc_it.GetStrand());
+        ++old_loc_it;
+    }
+    mrna_loc.Assign(*loc_it.MakeSeq_loc());
+}
 
 void s_AdjustForUTR(const CSeq_feat& utr, int cd_start, int cd_stop, CSeq_loc& mrna_loc, bool& found5, bool& found3, CScope& scope)
 {
-    int utr_start = utr.GetLocation().GetStart(eExtreme_Positional);
-    int utr_stop = utr.GetLocation().GetStop(eExtreme_Positional);
     if ( utr.GetData().GetSubtype() == CSeqFeatData::eSubtype_5UTR )
     {
         found5 = true;
-        if (abs(utr_stop - cd_start) <= 2)
-        {
-            mrna_loc.Assign(*SeqLocExtend(mrna_loc, utr_start, &scope));
-            mrna_loc.SetPartialStart( utr.GetLocation().IsPartialStart(eExtreme_Positional), eExtreme_Positional );
-        }
+        s_AdjustForUTR_SingleSide(mrna_loc, utr.GetLocation(), *mrna_loc.GetId());
+        mrna_loc.SetPartialStart( utr.GetLocation().IsPartialStart(eExtreme_Positional), eExtreme_Positional );        
     }
     else if ( utr.GetData().GetSubtype() == CSeqFeatData::eSubtype_3UTR )
     {
         found3 = true;
-        if ( abs(utr_start - cd_stop) <= 2)
-        {
-            mrna_loc.Assign(*SeqLocExtend(mrna_loc, utr_stop, &scope));
-            mrna_loc.SetPartialStop( utr.GetLocation().IsPartialStop(eExtreme_Positional), eExtreme_Positional );
-        }
+        CRef<CSeq_loc> new_loc(new CSeq_loc);
+        new_loc->Assign(utr.GetLocation());
+        s_AdjustForUTR_SingleSide(*new_loc, mrna_loc, *mrna_loc.GetId());        
+        mrna_loc.Assign(*new_loc);
+        mrna_loc.SetPartialStop( utr.GetLocation().IsPartialStop(eExtreme_Positional), eExtreme_Positional );
     }
 }
 
