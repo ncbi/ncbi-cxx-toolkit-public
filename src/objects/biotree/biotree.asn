@@ -11,7 +11,7 @@
 NCBI-BioTree DEFINITIONS ::=
 BEGIN
 
-EXPORTS BioTreeContainer, DistanceMatrix;
+EXPORTS BioTreeContainer, FeatureDictSet, DistanceMatrix;
 
 IMPORTS User-object, User-field FROM NCBI-General;
 
