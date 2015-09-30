@@ -123,6 +123,7 @@ class CNSTServiceRegistry
         CTimeSpan  x_ReadProlongProperty(const IRegistry &  reg,
                                          const string &  section,
                                          const string &  entry);
+        list<string>  x_GetMetadataServices(const IRegistry &  reg);
 
     private:
         CNSTServiceProperties           m_LBSMDTestServiceProperties;

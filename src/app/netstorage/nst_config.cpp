@@ -46,11 +46,9 @@ static void NSTValidateServerSection(const IRegistry &  reg,
 static void NSTValidateDatabaseSection(const IRegistry &  reg,
                                        vector<string> &  warnings);
 static void NSTValidateMetadataSection(const IRegistry &  reg,
-                                       vector<string> &  warnings,
-                                       list<string> &  services);
-static void NSTValidateServiceReferences(const IRegistry &  reg,
-                                         const list<string> &  services,
-                                         vector<string> &  warnings);
+                                       vector<string> &  warnings);
+static void NSTValidateServices(const IRegistry &  reg,
+                                vector<string> &  warnings);
 static void NSTValidateProlongValue(const IRegistry &  reg,
                                     const string &  section,
                                     const string &  entry,
@@ -84,10 +82,8 @@ void NSTValidateConfigFile(const IRegistry &  reg,
 {
     NSTValidateServerSection(reg, warnings, throw_port_exception);
     NSTValidateDatabaseSection(reg, warnings);
-
-    list<string>    services;
-    NSTValidateMetadataSection(reg, warnings, services);
-    NSTValidateServiceReferences(reg, services, warnings);
+    NSTValidateMetadataSection(reg, warnings);
+    NSTValidateServices(reg, warnings);
 }
 
 
@@ -229,15 +225,9 @@ void NSTValidateDatabaseSection(const IRegistry &  reg,
 
 
 void NSTValidateMetadataSection(const IRegistry &  reg,
-                                vector<string> &  warnings,
-                                list<string> &  services)
+                                vector<string> &  warnings)
 {
     const string    section = "metadata_conf";
-    bool            ok = NSTValidateString(reg, section, "services", warnings);
-
-    if (ok)
-        NStr::Split(reg.GetString(section, "services", ""), " \t\r\n\v\f,",
-                    services);
 
     NSTValidateTTLValue(reg, section, "ttl", warnings);
     NSTValidateProlongValue(reg, section, "prolong_on_read", warnings);
@@ -257,39 +247,36 @@ struct SCaseInsensitivePredicate
 };
 
 
-// Checks that the configuration file does not refer to any of the
-// not configured service
-void NSTValidateServiceReferences(const IRegistry &  reg,
-                                  const list<string> &  services,
-                                  vector<string> &  warnings)
+// Checks the service_ZZZ sections
+void NSTValidateServices(const IRegistry &  reg, vector<string> &  warnings)
 {
     list<string>    sections;
     reg.EnumerateSections(&sections);
 
     const string    prefix = "service_";
-    for (list<string>::const_iterator  k = sections.begin();
-         k != sections.end(); ++k) {
+    for (auto  k = sections.begin(); k != sections.end(); ++k) {
         if (!NStr::StartsWith(*k, prefix, NStr::eNocase))
             continue;
 
         string      service(k->c_str() + prefix.size());
         if (service.empty()) {
-            warnings.push_back("Section [service_] does not have "
+            warnings.push_back("Section [" + *k + "] does not have "
                                "a service name.");
             continue;
         }
 
-        if (find_if(services.begin(), services.end(),
-                    SCaseInsensitivePredicate(service)) == services.end()) {
-            warnings.push_back("Section [service_" + service +
-                               "] refers to a not configured service.");
+        if (!reg.HasEntry(*k, "metadata"))
             continue;
-        }
 
-        string  section = "service_" + service;
-        NSTValidateTTLValue(reg, section, "ttl", warnings);
-        NSTValidateProlongValue(reg, section, "prolong_on_read", warnings);
-        NSTValidateProlongValue(reg, section, "prolong_on_write", warnings);
+        if (!NSTValidateBool(reg, *k, "metadata", warnings))
+            continue;   // Warning has been added
+
+        if (!reg.GetBool(*k, "metadata", false))
+            continue;
+
+        NSTValidateTTLValue(reg, *k, "ttl", warnings);
+        NSTValidateProlongValue(reg, *k, "prolong_on_read", warnings);
+        NSTValidateProlongValue(reg, *k, "prolong_on_write", warnings);
     }
 }
 
@@ -373,7 +360,7 @@ bool NSTValidateBool(const IRegistry &  reg,
         reg.GetBool(section, entry, false);
     }
     catch (...) {
-        warnings.push_back(g_LogPrefix + "unexpected value of [" +
+        warnings.push_back(g_LogPrefix + "unexpected value of " +
                            NSTRegValName(section, entry) +
                            ". Expected boolean value.");
         return false;
@@ -391,7 +378,7 @@ bool NSTValidateInt(const IRegistry &  reg,
         reg.GetInt(section, entry, 0);
     }
     catch (...) {
-        warnings.push_back(g_LogPrefix + "unexpected value of [" +
+        warnings.push_back(g_LogPrefix + "unexpected value of " +
                            NSTRegValName(section, entry) +
                            ". Expected integer value.");
         return false;

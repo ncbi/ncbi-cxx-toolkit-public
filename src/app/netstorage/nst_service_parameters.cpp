@@ -105,25 +105,15 @@ CJsonNode
 CNSTServiceRegistry::ReadConfiguration(const IRegistry &  reg)
 {
     // Read the new configuration first
-    list<string>                    new_services;
-    NStr::Split(reg.GetString("metadata_conf", "services", ""),
-                " \t\r\n\v\f,", new_services);
+    list<string>            new_services = x_GetMetadataServices(reg);
+    CNSTServiceProperties   new_default_service_props =
+                              x_ReadServiceProperties(reg, "metadata_conf",
+                                                      CNSTServiceProperties());
+    TServiceProperties      new_service_conf;
 
-    CNSTServiceProperties           new_default_service_props =
-            x_ReadServiceProperties(reg, "metadata_conf",
-                                    CNSTServiceProperties());
-
-    TServiceProperties              new_service_conf;
-
-    for (list<string>::const_iterator   k = new_services.begin();
-         k != new_services.end(); ++k) {
-        string      section = "service_" + *k;
-        if (reg.HasEntry(section))
-            new_service_conf[ *k ] = x_ReadServiceProperties(
-                                                reg, section,
+    for (auto  k = new_services.begin(); k != new_services.end(); ++k) {
+        new_service_conf[ *k ] = x_ReadServiceProperties(reg, "service_" + *k,
                                                 new_default_service_props);
-        else
-            new_service_conf[ *k ] = new_default_service_props;
     }
 
     // Here: we have new service defaults and new services. Calculate
@@ -456,4 +446,31 @@ CNSTServiceRegistry::x_ReadProlongProperty(const IRegistry &  reg,
 }
 
 
+list<string>
+CNSTServiceRegistry::x_GetMetadataServices(const IRegistry &  reg)
+{
+    list<string>    metadata_services;
+    list<string>    sections;
+    const string    prefix = "service_";
+
+    reg.EnumerateSections(&sections);
+    for (auto k = sections.begin(); k != sections.end(); ++k) {
+        if (NStr::StartsWith(*k, prefix, NStr::eNocase)) {
+            if (reg.HasEntry(*k, "metadata")) {
+                try {
+                    if (reg.GetBool(*k, "metadata", false)) {
+                        string      service_name = string(k->c_str() +
+                                                          prefix.size());
+                        if (!service_name.empty())
+                            metadata_services.push_back(service_name);
+                    }
+                } catch (...) {
+                    ;
+                }
+            }
+        }
+    }
+
+    return metadata_services;
+}
 
