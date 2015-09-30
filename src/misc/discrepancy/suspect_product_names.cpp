@@ -67,11 +67,13 @@
 #include <objects/macro/Pub_field_special_constrai.hpp>
 #include <objects/macro/Publication_constraint.hpp>
 #include <objects/macro/Quantity_constraint.hpp>
+#include <objects/macro/Replace_func.hpp>
 #include <objects/macro/Rna_feat_type.hpp>
 #include <objects/macro/Rna_qual.hpp>
 #include <objects/macro/Search_func.hpp>
 #include <objects/macro/Seque_const_mol_type_const.hpp>
 #include <objects/macro/Sequence_constraint.hpp>
+#include <objects/macro/Simple_replace.hpp>
 #include <objects/macro/Source_constraint.hpp>
 #include <objects/macro/Source_qual.hpp>
 #include <objects/macro/Source_qual_choice.hpp>
@@ -5340,7 +5342,7 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eNormal, "Suspect Product 
     }
     CConstRef<CSuspect_rule_set> rules = context.GetProductRules();
     const CProt_ref& prot = obj.GetProt();
-    string prot_name = *(prot.GetName().begin()); 
+    string prot_name = *prot.GetName().begin();
 
     ITERATE (list<CRef<CSuspect_rule> >, rule, rules->Get()) {
         const CSearch_func& find = (*rule)->GetFind();
@@ -5358,7 +5360,7 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eNormal, "Suspect Product 
             if (!DoesObjectMatchConstraintChoiceSet(context, constr)) continue;
         }
         CReportNode& node = m_Objs["[n] product name[s] contain[S] suspect phrase[s] or character[s]"][GetRuleText(**rule)][GetRuleMatch(**rule)];
-        node.Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+        node.Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef(), (*rule)->CanGetReplace(), (CObject*)&**rule));
         node.SetFatal((*rule)->GetFatal());
     }
 }
@@ -5370,10 +5372,62 @@ DISCREPANCY_SUMMARIZE(SUSPECT_PRODUCT_NAMES)
 }
 
 
-DISCREPANCY_AUTOFIX(SUSPECT_PRODUCT_NAMES)
+static void AutofixProductNames(const CDiscrepancyItem* item, CScope& scope) // Same autofix used in 2 tests
 {
+    TReportObjectList list = item->GetDetails();
+    NON_CONST_ITERATE(TReportObjectList, it, list) {
+        CDiscrepancyObject& obj = *dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer());
+        const CSuspect_rule* rule = dynamic_cast<const CSuspect_rule*>(obj.GetMoreInfo().GetPointer());
+        const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(obj.GetObject().GetPointer());
+        if (!sf || !rule || !rule->CanGetReplace()) {
+            continue;
+        }
+        string newtext;
+        string newnote;
+        string prot_name = *sf->GetData().GetProt().GetName().begin();
+        const CReplace_rule& rr = rule->GetReplace();
+        const CReplace_func& rf = rr.GetReplace_func();
+        if (rr.GetMove_to_note()) {
+            newnote = prot_name;
+        }
+        if (rf.IsSimple_replace()) {
+            const CSimple_replace& repl = rf.GetSimple_replace();
+            if (repl.GetWhole_string()) {
+                newtext = repl.GetReplace();
+            }
+            else {
+                string find = rule->GetFind().GetString_constraint().GetMatch_text();
+                string subst = repl.GetReplace();
+                newtext = NStr::Replace(prot_name, find, subst);
+            }
+        }
+        else if (rf.IsHaem_replace()) {
+            string subst = rf.GetHaem_replace();
+            newtext = NStr::Replace(prot_name, "haem", subst);
+        }
+
+        CRef<CSeq_feat> new_feat(new CSeq_feat());
+        new_feat->Assign(*sf);
+        if (!newnote.empty()) {
+            if (new_feat->IsSetComment() && !NStr::EndsWith(new_feat->GetComment(), ";")) {
+                new_feat->SetComment() += "; ";
+            }
+            new_feat->SetComment() += newnote;
+        }
+        if (!newtext.empty()) {
+            *new_feat->SetData().SetProt().SetName().begin() = newtext;
+        }
+
+        CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(*sf));
+        feh.Replace(*new_feat);
+    }
 }
 
+
+DISCREPANCY_AUTOFIX(SUSPECT_PRODUCT_NAMES)
+{
+    AutofixProductNames(item, scope);
+}
 
 ///////////////////////////////////// TEST_ORGANELLE_PRODUCTS
 
@@ -5403,7 +5457,7 @@ DISCREPANCY_CASE(TEST_ORGANELLE_PRODUCTS, CSeqFeatData, eNormal, "Organelle prod
             if (!DoesObjectMatchConstraintChoiceSet(context, constr)) continue;
         }
         CReportNode& node = m_Objs["[n] organelle product name[s] contain[S] suspect phrase[s] or character[s]"][GetRuleText(**rule)][GetRuleMatch(**rule)];
-        node.Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+        node.Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef(), (*rule)->CanGetReplace(), (CObject*)&**rule));
         node.SetFatal((*rule)->GetFatal());
     }
 }
@@ -5417,6 +5471,7 @@ DISCREPANCY_SUMMARIZE(TEST_ORGANELLE_PRODUCTS)
 
 DISCREPANCY_AUTOFIX(TEST_ORGANELLE_PRODUCTS)
 {
+    AutofixProductNames(item, scope);
 }
 
 

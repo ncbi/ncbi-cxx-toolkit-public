@@ -104,7 +104,7 @@ protected:
 class CDiscrepancyObject : public CReportObject
 {
 public:
-    CDiscrepancyObject(CConstRef<CBioseq> obj, CScope& scope, const string& filename, bool keep_ref, bool autofix = false) : CReportObject(obj, scope), m_Autofix(autofix)
+    CDiscrepancyObject(CConstRef<CBioseq> obj, CScope& scope, const string& filename, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(obj, scope), m_Autofix(autofix), m_More(more)
     {
         SetFilename(filename);
         SetText(scope);
@@ -112,7 +112,7 @@ public:
             DropReference();
         }
     }
-    CDiscrepancyObject(CConstRef<CSeq_feat> obj, CScope& scope, const string& filename, bool keep_ref, bool autofix = false) : CReportObject(obj, scope), m_Autofix(autofix)
+    CDiscrepancyObject(CConstRef<CSeq_feat> obj, CScope& scope, const string& filename, bool keep_ref, bool autofix = false, CObject* more = 0) : CReportObject(obj, scope), m_Autofix(autofix), m_More(more)
     {
         SetFilename(filename);
         SetText(scope);
@@ -121,9 +121,11 @@ public:
         }
     }
     bool CanAutofix(void) const { return m_Autofix; }
+    CConstRef<CObject> GetMoreInfo() { return m_More; }
 protected:
     bool m_Autofix;
     CRef<CDiscrepancyCase> m_Case;
+    CConstRef<CObject> m_More;
 };
 
 

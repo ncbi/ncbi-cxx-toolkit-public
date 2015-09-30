@@ -304,10 +304,6 @@ DISCREPANCY_AUTOFIX(OVERLAPPING_CDS)
             new_feat->Assign(*sf);
             if (SetOverlapNote(*new_feat)) {
                 CSeq_feat_Handle fh = scope.GetSeq_featHandle(*sf);
-                // This is necessary, to make sure that we are in "editing mode"
-                const CSeq_annot_Handle& annot_handle = fh.GetAnnot();
-                CSeq_entry_EditHandle eh = annot_handle.GetParentEntry().GetEditHandle();
-                // now actually edit feature
                 CSeq_feat_EditHandle feh(fh);
                 feh.Replace(*new_feat);
             }

@@ -312,7 +312,7 @@ string CReportObject::GetTextObjectDescription(const CSeq_feat& seq_feat, CScope
     string location = GetSeqLocDescription(seq_feat.GetLocation(), scope);
     string label = seq_feat.GetData().GetKey();
     string locus_tag = GetLocusTagForFeature (seq_feat, scope);
-    string rval = label + "\t" + product + "\t" + location + "\t" + locus_tag + "\n";
+    string rval = label + "\t" + product + "\t" + location + "\t" + locus_tag; // + "\n";
     return rval;
 }
 

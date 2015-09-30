@@ -98,5 +98,27 @@ DISCREPANCY_SUMMARIZE(BAD_BACTERIAL_GENE_NAME)
 }
 
 
+// EC_NUMBER_ON_UNKNOWN_PROTEIN
+DISCREPANCY_CASE(EC_NUMBER_ON_UNKNOWN_PROTEIN, CSeqFeatData, eAll, "EC number on unknown protein")
+{
+    if (!obj.IsProt() || !obj.GetProt().CanGetName() || !obj.GetProt().CanGetEc() || !obj.GetProt().GetEc().empty()) {
+        return;
+    }
+    const list <string>& names = obj.GetProt().GetName();
+    if (names.empty()) {
+        return;
+    }
+    if (NStr::FindNoCase(*names.begin(), "hypothetical protein") != string::npos || NStr::FindNoCase(*names.begin(), "unknown protein") != string::npos) {
+        m_Objs["[n] protein feature[s] [has] an EC number and a protein name of 'unknown/hypothetical protein'"].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef(), true));
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(EC_NUMBER_ON_UNKNOWN_PROTEIN)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
