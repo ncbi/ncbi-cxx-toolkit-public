@@ -392,8 +392,8 @@ geomyncbi needs xmlwrapp
 geostat needs xncbi
 gif needs3party $(ORIG_LIBS)
 gif needs3party X11
-gmap needs xlinear_prog
 gmap needs xmlwrapp
+gmap needs xncbi
 gmp needs3party $(ORIG_LIBS)
 gnomon_access needs sqlitewrapp
 gnomon_access needs xalgognomon
@@ -452,9 +452,8 @@ gpipe_best_placement needs xalgoalignutil
 gpipe_clean_prot_names needs $(SDBAPI_LIB)
 gpipe_clean_prot_names needs xdiscrepancy_report
 gpipe_common needs $(SDBAPI_LIB)
+gpipe_common needs eutils_client
 gpipe_common needs xcgi
-gpipe_common needs xconnect
-gpipe_common needs xmlwrapp
 gpipe_common needs xregexp
 gpipe_dateutil needs xregexp
 gpipe_ftp needs gc_utils
@@ -752,6 +751,8 @@ ncbiCacc includes3party ncbiacc
 ncbiCacc needs3party netentr
 ncbiNacc includes3party ncbiacc
 ncbiNacc needs3party netentr
+ncbi_id2proc_wgs needs $(SRAREAD_LIBS)
+ncbi_id2proc_wgs needs id2
 ncbi_xblobstorage_netcache needs xconnserv
 ncbi_xcache_bdb needs bdb
 ncbi_xcache_dbapi needs dbapi
@@ -1423,7 +1424,6 @@ xid_utils_noncorelib needs xid_utils
 xid_wgsdb needs xid_utils
 ximage needs xncbi
 ximage needs3party $(IMAGE_LIBS)
-xlinear_prog needs xncbi
 xmergetree needs $(SOBJMGR_LIBS)
 xml2 needs3party $(ORIG_LIBS)
 xmlreaders needs xmlwrapp
