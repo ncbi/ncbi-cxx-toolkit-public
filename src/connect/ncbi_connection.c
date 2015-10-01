@@ -443,7 +443,7 @@ extern EIO_Status CONN_ReInit
 {
     CONN_NOT_NULL(1, ReInit);
 
-    return x_ReInit(conn, connector, 0);
+    return x_ReInit(conn, connector, 0/*reinit*/);
 }
 
 
@@ -1107,9 +1107,10 @@ extern EIO_Status CONN_Close(CONN conn)
 
     CONN_NOT_NULL(27, Close);
 
-    status = x_ReInit(conn, 0, 1);
+    status = x_ReInit(conn, 0, 1/*close*/);
     BUF_Destroy(conn->buf);
     conn->magic = 0;
+    conn->data = 0;
     conn->buf = 0;
     free(conn);
     return status == eIO_Closed ? eIO_Success : status;
