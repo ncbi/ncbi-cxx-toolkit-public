@@ -40,6 +40,9 @@
 #include <vector>
 
 BEGIN_NCBI_NAMESPACE;
+
+class CThreadNonStop;
+
 BEGIN_NAMESPACE(objects);
 
 class CSeq_id;
@@ -55,9 +58,9 @@ class CID2_Blob_Id;
 class NCBI_ID2PROC_WGS_EXPORT CID2WGSProcessor_Impl : public CObject
 {
 public:
-    CID2WGSProcessor_Impl(void);
-    CID2WGSProcessor_Impl(const CConfig::TParamTree* params,
-                          const string& driver_name);
+    explicit
+    CID2WGSProcessor_Impl(const CConfig::TParamTree* params = 0,
+                          const string& driver_name = kEmptyStr);
     ~CID2WGSProcessor_Impl(void);
 
     struct SWGSSeqInfo {
@@ -166,9 +169,10 @@ protected:
 private:
     CMutex m_Mutex;
     CVDBMgr m_Mgr;
-    CWGSGiResolver m_GiResolver;
-    CWGSProtAccResolver m_AccResolver;
+    CRef<CWGSGiResolver> m_GiResolver;
+    CRef<CWGSProtAccResolver> m_AccResolver;
     TWGSDbCache m_WGSDbCache;
+    CRef<CThreadNonStop> m_UpdateThread;
 };
 
 

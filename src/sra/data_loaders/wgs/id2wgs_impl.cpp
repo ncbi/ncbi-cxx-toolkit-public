@@ -36,6 +36,7 @@
 #include <sra/error_codes.hpp>
 #include <corelib/reader_writer.hpp>
 #include <corelib/rwstream.hpp>
+#include <util/thread_nonstop.hpp>
 #include <serial/objostrasnb.hpp>
 #include <serial/serial.hpp>
 #include <objects/id2/id2__.hpp>
@@ -48,9 +49,26 @@
 BEGIN_NCBI_NAMESPACE;
 
 #define NCBI_USE_ERRCODE_X   ID2WGSProcessor
-NCBI_DEFINE_ERR_SUBCODE_X(8);
+NCBI_DEFINE_ERR_SUBCODE_X(24);
 
 BEGIN_NAMESPACE(objects);
+
+
+#define DEFAULT_VDB_CACHE_SIZE 10
+#define DEFAULT_INDEX_UPDATE_TIME 600
+
+
+// debug levels
+enum EDebugLevel {
+    eDebug_none     = 0,
+    eDebug_error    = 1,
+    eDebug_open     = 2,
+    eDebug_request  = 5,
+    eDebug_replies  = 6,
+    eDebug_resolve  = 7,
+    eDebug_data     = 8,
+    eDebug_all      = 9
+};
 
 
 NCBI_PARAM_DECL(bool, ID2WGS, ENABLE);
@@ -59,7 +77,7 @@ NCBI_PARAM_DEF_EX(bool, ID2WGS, ENABLE, true,
 
 
 NCBI_PARAM_DECL(int, ID2WGS, DEBUG);
-NCBI_PARAM_DEF_EX(int, ID2WGS, DEBUG, 0,
+NCBI_PARAM_DEF_EX(int, ID2WGS, DEBUG, eDebug_error,
                   eParam_NoThread, ID2WGS_DEBUG);
 
 
@@ -82,6 +100,12 @@ static inline int s_DebugLevel(void)
 }
 
 
+static inline bool s_DebugEnabled(EDebugLevel level)
+{
+    return s_DebugLevel() >= level;
+}
+
+
 static inline bool s_FilterAll(void)
 {
     static CSafeStatic<NCBI_PARAM_TYPE(ID2WGS, FILTER_ALL)> s_Value;
@@ -99,7 +123,7 @@ static inline bool s_FilterAll(void)
 
 static CStopWatch sw;
 
-# define START_TRACE() if(s_DebugLevel()<1);else sw.Restart()
+# define START_TRACE() do { if(s_DebugLevel()>0)sw.Restart(); } while(0)
 
 static CNcbiOstream& operator<<(CNcbiOstream& out,
                                 const CID2WGSProcessor_Impl::SWGSSeqInfo& seq)
@@ -111,28 +135,157 @@ static CNcbiOstream& operator<<(CNcbiOstream& out,
     out << setfill('0')<<setw(seq.m_RowDigits)<<seq.m_RowId<<setfill(' ');
     return out;
 }
-# define TRACE(l,m)                                                     \
-    if(s_DebugLevel()<(l));else LOG_POST(Info<<sw.Elapsed()<<": ID2WGS: "<<m)
+# define TRACE_X(t,l,m)                                                 \
+    do {                                                                \
+        if ( s_DebugEnabled(l) ) {                                      \
+            LOG_POST_X(t, Info<<sw.Elapsed()<<": ID2WGS: "<<m);         \
+        }                                                               \
+    } while(0)
 #else
 # define START_TRACE() do{}while(0)
-# define TRACE(l,m) do{}while(0)
+# define TRACE_X(t,l,m) do{}while(0)
 #endif
 
-CID2WGSProcessor_Impl::CID2WGSProcessor_Impl(void)
-    : m_WGSDbCache(10)
+
+BEGIN_LOCAL_NAMESPACE;
+
+
+class CIndexUpdateThread : public CThreadNonStop
 {
-}
+public:
+    CIndexUpdateThread(unsigned update_delay,
+                       CRef<CWGSGiResolver> gi_resolver,
+                       CRef<CWGSProtAccResolver> acc_resolver)
+        : CThreadNonStop(update_delay),
+          m_GiResolver(gi_resolver),
+          m_AccResolver(acc_resolver)
+        {
+        }
+
+protected:
+    virtual void DoJob(void) {
+        try {
+            if ( m_GiResolver->Update() ) {
+                if ( s_DebugEnabled(eDebug_open) ) {
+                    LOG_POST_X(18, Info<<"ID2WGS: updated GI index");
+                }
+            }
+        }
+        catch ( CException& exc ) {
+            if ( s_DebugEnabled(eDebug_error) ) {
+                ERR_POST_X(20, "ID2WGS: "
+                           "Exception while updating GI index: "<<exc);
+            }
+        }
+        catch ( exception& exc ) {
+            if ( s_DebugEnabled(eDebug_error) ) {
+                ERR_POST_X(20, "ID2WGS: "
+                           "Exception while updating GI index: "<<exc.what());
+            }
+        }
+        try {
+            if ( m_AccResolver->Update() ) {
+                if ( s_DebugEnabled(eDebug_open) ) {
+                    LOG_POST_X(19, Info<<"ID2WGS: updated ACC index");
+                }
+            }
+        }
+        catch ( CException& exc ) {
+            if ( s_DebugEnabled(eDebug_error) ) {
+                ERR_POST_X(21, "ID2WGS: "
+                           "Exception while updating ACC index: "<<exc);
+            }
+        }
+        catch ( exception& exc ) {
+            if ( s_DebugEnabled(eDebug_error) ) {
+                ERR_POST_X(21, "ID2WGS: "
+                           "Exception while updating ACC index: "<<exc.what());
+            }
+        }
+    }
+
+private:
+    CRef<CWGSGiResolver> m_GiResolver;
+    CRef<CWGSProtAccResolver> m_AccResolver;
+};
+
+
+class COSSWriter : public IWriter
+{
+public:
+    typedef vector<char> TOctetString;
+    typedef list<TOctetString*> TOctetStringSequence;
+
+    COSSWriter(TOctetStringSequence& out)
+        : m_Output(out)
+        {
+        }
+    
+    virtual ERW_Result Write(const void* buffer,
+                             size_t  count,
+                             size_t* written)
+        {
+            const char* data = static_cast<const char*>(buffer);
+            m_Output.push_back(new TOctetString(data, data+count));
+            if ( written ) {
+                *written = count;
+            }
+            return eRW_Success;
+        }
+    virtual ERW_Result Flush(void)
+        {
+            return eRW_Success;
+        }
+
+private:
+    TOctetStringSequence& m_Output;
+};
+
+
+END_LOCAL_NAMESPACE;
 
 
 CID2WGSProcessor_Impl::CID2WGSProcessor_Impl(const CConfig::TParamTree* params,
                                              const string& driver_name)
-    : m_WGSDbCache(10)
+    : m_GiResolver(new CWGSGiResolver),
+      m_AccResolver(new CWGSProtAccResolver)
 {
+    auto_ptr<CConfig::TParamTree> app_params;
+    if ( !params ) {
+        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
+        if ( CNcbiApplication* app = CNcbiApplication::Instance() ) {
+            app_params.reset(CConfig::ConvertRegToTree(app->GetConfig()));
+            params = app_params.get();
+        }
+    }
+    if ( params ) {
+        params = params->FindSubNode("id2proc");
+    }
+    if ( params ) {
+        params = params->FindSubNode(driver_name);
+    }
+    CConfig conf(params);
+    size_t cache_size = conf.GetInt(driver_name,
+                                    "vdb_cache_size",
+                                    CConfig::eErr_NoThrow,
+                                    DEFAULT_VDB_CACHE_SIZE);
+    unsigned update_delay = conf.GetInt(driver_name,
+                                        "index_update_time",
+                                        CConfig::eErr_NoThrow,
+                                        DEFAULT_INDEX_UPDATE_TIME);
+    TRACE_X(23, eDebug_open, "ID2WGS: cache_size = "<<cache_size);
+    TRACE_X(24, eDebug_open, "ID2WGS: index_update_time = "<<update_delay);
+    m_WGSDbCache.set_size_limit(cache_size);
+    m_UpdateThread = new CIndexUpdateThread(update_delay,
+                                            m_GiResolver, m_AccResolver);
+    m_UpdateThread->Run();
 }
 
 
 CID2WGSProcessor_Impl::~CID2WGSProcessor_Impl(void)
 {
+    m_UpdateThread->RequestStop();
+    m_UpdateThread->Join();
 }
 
 
@@ -147,17 +300,28 @@ CWGSDb CID2WGSProcessor_Impl::GetWGSDb(const string& prefix)
         CWGSDb wgs_db(m_Mgr, prefix);
         wgs_db.LoadMasterDescr();
         m_WGSDbCache[prefix] = wgs_db;
-        TRACE(1,"GetWGSDb: "<<prefix);
+        TRACE_X(1, eDebug_open, "GetWGSDb: "<<prefix);
         return wgs_db;
     }
     catch ( CSraException& exc ) {
         if ( exc.GetErrCode() == exc.eNotFoundDb ||
              exc.GetErrCode() == exc.eProtectedDb ) {
             // no such WGS table
-            return CWGSDb();
         }
-        throw;
+        else {
+            TRACE_X(22, eDebug_error, "ID2WGS: "
+                    "Exception while opening WGS DB "<<prefix<<": "<<exc);
+        }
     }
+    catch ( CException& exc ) {
+        TRACE_X(22, eDebug_error, "ID2WGS: "
+                "Exception while opening WGS DB "<<prefix<<": "<<exc);
+    }
+    catch ( exception& exc ) {
+        TRACE_X(22, eDebug_error, "ID2WGS: "
+                "Exception while opening WGS DB "<<prefix<<": "<<exc.what());
+    }
+    return CWGSDb();
 }
 
 
@@ -385,7 +549,7 @@ CID2WGSProcessor_Impl::ResolveGeneral(const CDbtag& dbtag)
 CID2WGSProcessor_Impl::SWGSSeqInfo
 CID2WGSProcessor_Impl::ResolveGi(TGi gi)
 {
-    CWGSGiResolver::TAccessionList accs = m_GiResolver.FindAll(gi);
+    CWGSGiResolver::TAccessionList accs = m_GiResolver->FindAll(gi);
     ITERATE ( CWGSGiResolver::TAccessionList, acc_it, accs ) {
         if ( CWGSDb wgs_db = GetWGSDb(*acc_it) ) {
             CWGSGiIterator it(wgs_db, gi);
@@ -409,7 +573,7 @@ CID2WGSProcessor_Impl::ResolveGi(TGi gi)
 CID2WGSProcessor_Impl::SWGSSeqInfo
 CID2WGSProcessor_Impl::ResolveProtAcc(const string& acc, int version)
 {
-    CWGSProtAccResolver::TAccessionList accs = m_AccResolver.FindAll(acc);
+    CWGSProtAccResolver::TAccessionList accs = m_AccResolver->FindAll(acc);
     ITERATE ( CWGSProtAccResolver::TAccessionList, acc_it, accs ) {
         if ( CWGSDb wgs_db = GetWGSDb(*acc_it) ) {
             if ( uint64_t row = wgs_db.GetProtAccRowId(acc) ) {
@@ -725,7 +889,8 @@ CID2WGSProcessor_Impl::x_Process(TReplies& replies,
             error->SetSeverity(CID2_Error::eSeverity_no_data);
             main_reply->SetError().push_back(error);
             replies.push_back(main_reply);
-            TRACE(2,"GetSeqId: "<<MSerial_AsnText<<*main_reply);
+            TRACE_X(2, eDebug_replies,
+                    "GetSeqId: "<<MSerial_AsnText<<*main_reply);
         }
         return seq;
     }
@@ -773,7 +938,7 @@ CID2WGSProcessor_Impl::x_Process(TReplies& replies,
     }
     reply.SetEnd_of_reply();
     replies.push_back(main_reply);
-    TRACE(2,"GetSeqId: "<<MSerial_AsnText<<*main_reply);
+    TRACE_X(3, eDebug_replies, "GetSeqId: "<<MSerial_AsnText<<*main_reply);
     return seq;
 }
 
@@ -783,9 +948,9 @@ bool CID2WGSProcessor_Impl::ProcessGetSeqId(TReplies& replies,
                                             CID2_Request_Get_Seq_id& request)
 {
     START_TRACE();
-    TRACE(2,"GetSeqId: "<<MSerial_AsnText<<main_request);
+    TRACE_X(4, eDebug_request, "GetSeqId: "<<MSerial_AsnText<<main_request);
     SWGSSeqInfo seq = x_Process(replies, main_request, request);
-    TRACE(2,"GetSeqId: done");
+    TRACE_X(5, eDebug_resolve, "GetSeqId: done");
     return seq || seq.m_IsWGS;
 }
 
@@ -812,7 +977,7 @@ CID2WGSProcessor_Impl::x_Process(TReplies& replies,
     }
     reply.SetEnd_of_reply();
     replies.push_back(main_reply);
-    TRACE(2,"GetBlobId: "<<MSerial_AsnText<<*main_reply);
+    TRACE_X(6, eDebug_replies, "GetBlobId: "<<MSerial_AsnText<<*main_reply);
     return seq;
 }
 
@@ -822,44 +987,14 @@ bool CID2WGSProcessor_Impl::ProcessGetBlobId(TReplies& replies,
                                         CID2_Request_Get_Blob_Id& request)
 {
     START_TRACE();
-    TRACE(2,"GetBlobId: "<<MSerial_AsnText<<main_request);
+    TRACE_X(7, eDebug_request, "GetBlobId: "<<MSerial_AsnText<<main_request);
     SWGSSeqInfo seq = x_Process(replies, main_request, request);
-    TRACE(2,"GetBlobId: done");
+    TRACE_X(8, eDebug_resolve, "GetBlobId: done");
     return seq || seq.m_IsWGS;
 }
 
 
 namespace {
-    class COSSWriter : public IWriter
-    {
-    public:
-        typedef vector<char> TOctetString;
-        typedef list<TOctetString*> TOctetStringSequence;
-
-        COSSWriter(TOctetStringSequence& out)
-            : m_Output(out)
-            {
-            }
-        
-        virtual ERW_Result Write(const void* buffer,
-                                 size_t  count,
-                                 size_t* written)
-            {
-                const char* data = static_cast<const char*>(buffer);
-                m_Output.push_back(new TOctetString(data, data+count));
-                if ( written ) {
-                    *written = count;
-                }
-                return eRW_Success;
-            }
-        virtual ERW_Result Flush(void)
-            {
-                return eRW_Success;
-            }
-
-    private:
-        TOctetStringSequence& m_Output;
-    };
 };
 
 
@@ -951,7 +1086,7 @@ bool CID2WGSProcessor_Impl::ProcessGetBlobInfo(TReplies& replies,
                                                CID2_Request_Get_Blob_Info& request)
 {
     START_TRACE();
-    TRACE(2,"GetBlobInfo: "<<MSerial_AsnText<<main_request);
+    TRACE_X(9, eDebug_request, "GetBlobInfo: "<<MSerial_AsnText<<main_request);
     SWGSSeqInfo seq;
     if ( request.GetBlob_id().IsBlob_id() ) {
         seq = ResolveBlobId(request.GetBlob_id().GetBlob_id());
@@ -961,13 +1096,17 @@ bool CID2WGSProcessor_Impl::ProcessGetBlobInfo(TReplies& replies,
                         request.SetBlob_id().SetResolve().SetRequest());
     }
     if ( !seq ) {
-        TRACE(2,"GetBlobInfo: null");
+        TRACE_X(10, eDebug_resolve, "GetBlobInfo: null");
         return seq.m_IsWGS;
     }
 
     if ( request.IsSetGet_data() ) {
         CRef<CBioseq> bioseq = GetBioseq(seq);
-        TRACE(8,"GetBioseq: "<<seq);
+        TRACE_X(11, eDebug_resolve, "GetBioseq: "<<seq);
+        if ( bioseq ) {
+            TRACE_X(13, eDebug_data, "Seq("<<seq<<"): "<<
+                    MSerial_AsnText<<*bioseq);
+        }
         CRef<CSeq_entry> entry(new CSeq_entry);
         entry->SetSeq(*bioseq);
 
@@ -986,11 +1125,10 @@ bool CID2WGSProcessor_Impl::ProcessGetBlobInfo(TReplies& replies,
         CWStream wstream(&writer);
         CObjectOStreamAsnBinary objstr(wstream);
         objstr << *entry;
-        TRACE(2,"SetData: "<<seq);
+        TRACE_X(12, eDebug_resolve, "SetData: "<<seq);
         replies.push_back(main_reply);
-        TRACE(9,"ProcessBlobId: "<<MSerial_AsnText<<*main_reply);
     }
-    TRACE(2,"GetBlobInfo: done");
+    TRACE_X(14, eDebug_resolve,"GetBlobInfo: done");
     return true;
 }
 
@@ -1001,19 +1139,57 @@ bool CID2WGSProcessor_Impl::ProcessRequest(TReplies& replies,
     if ( !s_Enabled() ) {
         return false;
     }
-    switch ( request.GetRequest().Which() ) {
-    case CID2_Request::TRequest::e_Get_seq_id:
-        return ProcessGetSeqId(replies, request,
-                               request.SetRequest().SetGet_seq_id());
-    case CID2_Request::TRequest::e_Get_blob_id:
-        return ProcessGetBlobId(replies, request,
-                                request.SetRequest().SetGet_blob_id());
-    case CID2_Request::TRequest::e_Get_blob_info:
-        return ProcessGetBlobInfo(replies, request,
-                                  request.SetRequest().SetGet_blob_info());
-    default:
+    size_t old_size = replies.size();
+    bool done;
+    try {
+        switch ( request.GetRequest().Which() ) {
+        case CID2_Request::TRequest::e_Get_seq_id:
+            done = ProcessGetSeqId(replies, request,
+                                   request.SetRequest().SetGet_seq_id());
+            break;
+        case CID2_Request::TRequest::e_Get_blob_id:
+            done = ProcessGetBlobId(replies, request,
+                                    request.SetRequest().SetGet_blob_id());
+            break;
+        case CID2_Request::TRequest::e_Get_blob_info:
+            done = ProcessGetBlobInfo(replies, request,
+                                      request.SetRequest().SetGet_blob_info());
+            break;
+        default:
+            return false;
+        }
+    }
+    catch ( CException& exc ) {
+        if ( s_DebugEnabled(eDebug_error) ) {
+            ERR_POST_X(16, "ID2WGS: Exception while processing request "<<
+                       MSerial_AsnText<<request<<": "<<exc);
+        }
+    }
+    catch ( exception& exc ) {
+        if ( s_DebugEnabled(eDebug_error) ) {
+            ERR_POST_X(16, "ID2WGS: Exception while processing request "<<
+                       MSerial_AsnText<<request<<": "<<exc.what());
+        }
+    }
+    if ( !done ) {
+        if ( replies.size() != old_size ) {
+            if ( s_DebugEnabled(eDebug_error) ) {
+                ERR_POST_X(17, "ID2WGS: bad replies for request "<<
+                           MSerial_AsnText<<request);
+            }
+            replies.resize(old_size);
+        }
         return false;
     }
+    if ( replies.size() == old_size ) {
+        if ( s_DebugEnabled(eDebug_error) ) {
+            ERR_POST_X(17, "ID2WGS: no replies for request "<<
+                       MSerial_AsnText<<request);
+        }
+        return false;
+    }
+    replies.back()->SetEnd_of_reply();
+    return true;
 }
 
 
@@ -1023,13 +1199,12 @@ CID2WGSProcessor_Impl::ProcessSomeRequests(CID2_Request_Packet& packet)
     TReplies replies;
     ERASE_ITERATE ( CID2_Request_Packet::Tdata, it, packet.Set() ) {
         if ( ProcessRequest(replies, **it) ) {
-            replies.back()->SetEnd_of_reply();
             packet.Set().erase(it);
         }
     }
     if ( !packet.Set().empty() ) {
         START_TRACE();
-        TRACE(3,"Unprocessed: "<<MSerial_AsnText<<packet);
+        TRACE_X(15, eDebug_request, "Unprocessed: "<<MSerial_AsnText<<packet);
     }
     return replies;
 }
