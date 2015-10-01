@@ -306,11 +306,6 @@ eutilsapp includes eueid
 eutilsapp needs ncqhst
 eutilsapp needs3party $(FASTCGI_LIBS)
 event_g needs generic_db_utils
-expasy_ec needs $(SDBAPI_LIB)
-expasy_ec needs xconnect
-expasy_ec needs xmlwrapp
-expasy_ec needs xregexp
-expasy_ec needs xutil
 expat needs3party $(ORIG_LIBS)
 exslt needs3party $(GCRYPT_LIBS)
 exslt needs3party $(LIBXML_LIBS)
@@ -911,7 +906,6 @@ pepXML needs xser
 phytree_format needs taxon1
 phytree_format needs xalgophytree
 pn_ctl needs $(GPIPE_GENCOLL_LIBS)
-pn_ctl needs expasy_ec
 pn_ctl needs gpipe_prok_clean_prot_names
 pn_ctl needs hmm_file
 pn_ctl needs hmm_hit_handle
