@@ -793,6 +793,11 @@ void CAlignShadow::Modify(Uint1 point, TCoord new_pos)
     }
     else {
 
+        //note that with the following logic calculated delta might exceed hit length
+        //example query [0-6] subj [307-288] new_pos=307 point=2
+        //leads to a disaster.  The hit becomes
+        // 0	4294967295	307	307
+        // In the situation like that delta must be adjusted
         TCoord qlen = 1 + qmax - qmin, slen = 1 + smax - smin;
         double k = double(qlen) / slen;
         Int4 delta_q, delta_s;
@@ -802,6 +807,9 @@ void CAlignShadow::Modify(Uint1 point, TCoord new_pos)
 
             delta_q = new_pos - qmin;
             delta_s = Int4(round(delta_q / k));
+            if( smin + delta_s > smax ) {
+                delta_s = smax - smin;
+            }
 
             SetQueryMin(qmin + delta_q);
             if(same_strands) {
@@ -815,15 +823,18 @@ void CAlignShadow::Modify(Uint1 point, TCoord new_pos)
 
         case 1: // query max
 
-            delta_q = new_pos - qmax;
+            delta_q = qmax - new_pos;
             delta_s = Int4(round(delta_q / k));
+            if( smin + delta_s > smax ) {
+                delta_s = smax - smin;
+            }
 
-            SetQueryMax(qmax + delta_q);
+            SetQueryMax(qmax - delta_q);
             if(same_strands) {
-                SetSubjMax(smax + delta_s);
+                SetSubjMax(smax - delta_s);
             }
             else {
-                SetSubjMin(smin - delta_s);
+                SetSubjMin(smin + delta_s);
             }
 
             break;
@@ -832,6 +843,9 @@ void CAlignShadow::Modify(Uint1 point, TCoord new_pos)
 
             delta_s = new_pos - smin;
             delta_q = Int4(round(delta_s * k));
+            if( qmin + delta_q > qmax ) {
+                delta_q = qmax - qmin;
+            }
 
             SetSubjMin(smin + delta_s);
             if(same_strands) {
@@ -845,15 +859,18 @@ void CAlignShadow::Modify(Uint1 point, TCoord new_pos)
 
         case 3: // subj max
 
-            delta_s = new_pos - smax;
+            delta_s = smax - new_pos;
             delta_q = Int4(round(delta_s * k));
+            if( qmin + delta_q > qmax ) {
+                delta_q = qmax - qmin;
+            }
 
-            SetSubjMax(smax + delta_s);
+            SetSubjMax(smax - delta_s);
             if(same_strands) {
-                SetQueryMax(qmax + delta_q);
+                SetQueryMax(qmax - delta_q);
             }
             else {
-                SetQueryMin(qmin - delta_q);
+                SetQueryMin(qmin + delta_q);
             }
 
             break;
