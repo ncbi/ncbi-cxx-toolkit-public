@@ -439,9 +439,9 @@ BOOST_AUTO_TEST_CASE(testGreedyAlignment) {
 
 // Test for SB-666 fix
 BOOST_AUTO_TEST_CASE(testGreedyAlignmentWithBadStart) {
-    const int query_start = 2667;
+    const int query_start = 2612;
     const int query_end = 2754;
-    const int subject_start = 350;
+    const int subject_start = 291;
     const int subject_end = 438;
     const int q_offset = 2754;
     const int s_offset = 438;

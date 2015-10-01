@@ -624,7 +624,7 @@ Int4 BLAST_GreedyAlign(const Uint1* seq1, Int4 len1,
         /* if this is the best score seen so far, update the
            statistics of the best alignment */
 
-        if (curr_score > max_score[d - 1]) {
+        if (curr_score >= max_score[d - 1]) {
             max_score[d] = curr_score;
             best_dist = d;
             best_diag = curr_diag;
