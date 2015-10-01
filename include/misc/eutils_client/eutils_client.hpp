@@ -155,6 +155,20 @@ public:
               vector<TGi>& uids_to,
               string xml_path=kEmptyStr,
               const string command="neighbor");
+
+    void Link(const string& db_from,
+              const string& db_to,
+              const vector<int>& uids_from,
+              vector<TGi>& uids_to,
+              string xml_path=kEmptyStr,
+              const string command="neighbor");
+
+    void Link(const string& db_from,
+              const string& db_to,
+              const vector<TGi>& uids_from,
+              vector<int>& uids_to,
+              string xml_path=kEmptyStr,
+              const string command="neighbor");
 #endif
 
     void Link(const string& db_from,

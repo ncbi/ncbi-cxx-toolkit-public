@@ -261,7 +261,7 @@ protected:
             m_Count = NStr::StringToUInt8(contents);
         }
         else if (x_IsSuffix(m_Path, "/IdList/Id")) {
-            m_Uids.push_back(NStr::StringToNumeric<Int8>(contents));
+            m_Uids.push_back(NStr::StringToNumeric<T>(contents));
         }
         else if (x_IsSuffix(m_Path, "/ErrorList/PhraseNotFound")) {
             TMessage message(CEUtilsException::ePhraseNotFound, contents);
@@ -778,6 +778,26 @@ void CEutilsClient::Link(const string& db_from,
                          const string& db_to,
                          const vector<TGi>& uids_from,
                          vector<TGi>& uids_to,
+                         string xml_path,
+                         const string command)
+{
+    x_Link(db_from, db_to, uids_from, uids_to, xml_path, command);
+}
+
+void CEutilsClient::Link(const string& db_from,
+                         const string& db_to,
+                         const vector<int>& uids_from,
+                         vector<TGi>& uids_to,
+                         string xml_path,
+                         const string command)
+{
+    x_Link(db_from, db_to, uids_from, uids_to, xml_path, command);
+}
+
+void CEutilsClient::Link(const string& db_from,
+                         const string& db_to,
+                         const vector<TGi>& uids_from,
+                         vector<int>& uids_to,
                          string xml_path,
                          const string command)
 {
