@@ -270,11 +270,6 @@ public:
     ///
     /// @param ranges Filtered ranges for this sequence and algorithm.
     /// @param gis GIs associated with this sequence.
-//#ifdef NCBI_INT8_GI
-#if 0
-    void SetMaskData(const CMaskedRangesVector & ranges,
-                     const vector<int>         & gis);
-#endif
     void SetMaskData(const CMaskedRangesVector & ranges,
                      const vector<TGi>         & gis);
 

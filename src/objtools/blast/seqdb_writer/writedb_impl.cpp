@@ -1177,19 +1177,6 @@ void s_WriteRanges(CBlastDbBlob  & blob,
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
 
-//#ifdef NCBI_INT8_GI
-#if 0
-void CWriteDB_Impl::SetMaskData(const CMaskedRangesVector & ranges,
-                                const vector <int>        & gis)
-{
-    vector<TGi> real_gis;
-    ITERATE(vector<int>, gi, gis) {
-        real_gis.push_back(GI_FROM(int, *gi));
-    }
-    SetMaskData(ranges, real_gis);
-}
-#endif
-
 void CWriteDB_Impl::SetMaskData(const CMaskedRangesVector & ranges,
                                 const vector <TGi>        & gis)
 {

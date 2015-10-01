@@ -457,7 +457,6 @@ CBuildDatabase::x_AddMasksForSeqId(const list< CRef<CSeq_id> >& ids)
     vector <TGi> gis;
     ITERATE(list< CRef<CSeq_id> >, id, ids) {
         if ((*id)->IsGi()) {
-//            gis.push_back(GI_TO(int, (*id)->GetGi()));
             gis.push_back((*id)->GetGi());
         }
     }
@@ -946,7 +945,6 @@ bool CBuildDatabase::AddSequences(IRawSequenceSource & src)
                     const list< CRef<CSeq_id> > & ids = (*defline)->GetSeqid();
                     ITERATE(list< CRef<CSeq_id> >, id, ids) {
                         if ((*id)->IsGi()) {
-//                            gis.push_back(GI_TO(int, (*id)->GetGi()));
                             gis.push_back((*id)->GetGi());
                         }
                     }

@@ -159,15 +159,6 @@ RegisterMaskAlgorithm(const string & id,
     return m_Impl->RegisterMaskAlgorithm(id, description, options);
 }
 
-//#ifdef NCBI_INT8_GI
-#if 0
-void CWriteDB::SetMaskData(const CMaskedRangesVector & ranges,
-                           const vector<int>         & gis)
-{
-    m_Impl->SetMaskData(ranges, gis);
-}
-#endif
-
 void CWriteDB::SetMaskData(const CMaskedRangesVector & ranges,
                            const vector<TGi>         & gis)
 {
