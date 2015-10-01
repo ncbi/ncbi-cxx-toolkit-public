@@ -32,10 +32,10 @@
 
 /// @file seqdbcommon.hpp
 /// Defines exception class and several constants for SeqDB.
-///
+/// 
 /// Defines classes:
 ///     CSeqDBException
-///
+/// 
 /// Implemented for: UNIX, MS-Windows
 
 #include <ncbiconf.h>
@@ -49,7 +49,7 @@ USING_SCOPE(objects);
 
 
 /// CSeqDBException
-///
+/// 
 /// This exception class is thrown for SeqDB related errors such as
 /// corrupted blast database or alias files, incorrect arguments to
 /// SeqDB methods, and failures of SeqDB to accomplish tasks for other
@@ -66,14 +66,14 @@ public:
     enum EErrCode {
         /// Argument validation failed.
         eArgErr,
-
+        
         /// Files were missing or contents were incorrect.
         eFileErr,
-
+        
         /// Memory allocation failed.
         eMemErr
     };
-
+    
     /// Get a message describing the situation leading to the throw.
     virtual const char* GetErrCodeString() const
     {
@@ -83,7 +83,7 @@ public:
         default:       return CException::GetErrCodeString();
         }
     }
-
+    
     /// Include standard NCBI exception behavior.
     NCBI_EXCEPTION_DEFAULT(CSeqDBException,CException);
 };
@@ -113,7 +113,7 @@ enum ESeqDBAllocType {
 
 
 /// CSeqDBGiList
-///
+/// 
 /// This class defines an interface to a list of GI,OID pairs.  It is
 /// used by the CSeqDB class for user specified GI lists.  This class
 /// should not be instantiated directly, instead use a subclass of
@@ -127,18 +127,18 @@ public:
         /// Constuct an SGiOid element from the given gi and oid.
         /// @param gi_in A GI, or 0 if none is available.
         /// @param oid_in An OID, or -1 if none is available.
-        SGiOid(TGi gi_in = 0, int oid_in = -1)
+        SGiOid(int gi_in = 0, int oid_in = -1)
             : gi(gi_in), oid(oid_in)
         {
         }
-
+        
         /// The GI or 0 if unknown.
-        TGi gi;
-
+        int gi;
+        
         /// The OID or -1 if unknown.
         int oid;
     };
-
+    
     /// Structure that holds TI,OID pairs.
     struct STiOid {
         /// Constuct an STiOid element from the given TI (trace ID,
@@ -150,14 +150,14 @@ public:
             : ti(ti_in), oid(oid_in)
         {
         }
-
+        
         /// The TI or 0 if unknown.
         Int8 ti;
-
+        
         /// The OID or -1 if unknown.
         int oid;
     };
-
+    
     /// Structure that holds Seq-id,OID pairs.
     struct SSiOid {
         /// Constuct a SSiOid element from the given Seq-id and oid.
@@ -169,61 +169,61 @@ public:
             // make sure to lower case as this is what's indexed in ISAM
             NStr::ToLower(si);
         }
-
+        
         /// The String-id or "" if unknown.
         string si;
-
+        
         /// The OID or -1 if unknown.
         int oid;
     };
-
+    
     /// Possible sorting states
     enum ESortOrder {
         /// The array is unsorted or the sortedness is unknown.
         eNone,
-
+        
         /// The array is sorted by GI.
         eGi
 
         /// TODO should we define eTi and eSi?
     };
-
+    
     /// Constructor
     CSeqDBGiList();
-
+    
     /// Destructor
     virtual ~CSeqDBGiList()
     {
     }
-
+    
     /// Sort if necessary to insure order of elements.
     void InsureOrder(ESortOrder order);
-
+    
     /// Test for existence of a GI.
-    bool FindGi(TGi gi) const;
-
+    bool FindGi(int gi) const;
+    
     /// Try to find a GI and return the associated OID.
     /// @param gi The gi for which to search. [in]
     /// @param oid The resulting oid if found. [out]
     /// @return True if the GI was found.
-    bool GiToOid(TGi gi, int & oid);
-
+    bool GiToOid(int gi, int & oid);
+    
     /// Find a GI, returning the index and the associated OID.
     /// @param gi The gi for which to search. [in]
     /// @param oid The resulting oid if found. [out]
     /// @param index The index of this GI (if found). [out]
     /// @return True if the GI was found.
-    bool GiToOid(TGi gi, int & oid, int & index);
-
+    bool GiToOid(int gi, int & oid, int & index);
+    
     /// Test for existence of a TI.
     bool FindTi(Int8 ti) const;
-
+    
     /// Try to find a TI and return the associated OID.
     /// @param ti The ti for which to search. [in]
     /// @param oid The resulting oid if found. [out]
     /// @return True if the TI was found.
     bool TiToOid(Int8 ti, int & oid);
-
+    
     /// Find a TI, returning the index and the associated OID.
     /// @param ti The ti for which to search. [in]
     /// @param oid The resulting oid if found. [out]
@@ -231,13 +231,13 @@ public:
     /// @return True if the TI was found.
     bool TiToOid(Int8 ti, int & oid, int & index);
 
-
+    
     bool FindSi(const string & si) const;
     bool SiToOid(const string &si, int & oid);
     bool SiToOid(const string &si, int & oid, int & index);
-
+    
     /// Test for existence of a Seq-id by type.
-    ///
+    /// 
     /// This method uses FindGi or FindTi if the input ID is a GI or
     /// TI.  If not, or if not found, it falls back to a Seq-id lookup
     /// to find the ID.  It returns true iff ID was found, otherwise
@@ -247,7 +247,7 @@ public:
     /// @param id The identifier to find.
     /// @return true iff the id is found in the list.
     bool FindId(const CSeq_id & id);
-
+    
     /// Access an element of the array.
     /// @param index The index of the element to access. [in]
     /// @return A reference to the GI/OID pair.
@@ -255,7 +255,7 @@ public:
     {
         return m_GisOids[index];
     }
-
+    
     /// Access an element of the array.
     /// @param index The index of the element to access. [in]
     /// @return A reference to the TI/OID pair.
@@ -263,7 +263,7 @@ public:
     {
         return m_TisOids[index];
     }
-
+    
     /// Access an element of the array.
     /// @param index The index of the element to access. [in]
     /// @return A reference to the Seq-id/OID pair.
@@ -271,37 +271,37 @@ public:
     {
         return m_SisOids[index];
     }
-
+    
     /// Get the number of GIs in the array.
     int GetNumGis() const
     {
         return (int) m_GisOids.size();
     }
-
+    
     /// Get the number of TIs in the array.
     int GetNumTis() const
     {
         return (int) m_TisOids.size();
     }
-
+    
     /// Get the number of Seq-ids in the array.
     int GetNumSis() const
     {
         return (int) m_SisOids.size();
     }
-
+    
     /// Return false if there are elements present.
     bool Empty() const
     {
         return ! (GetNumGis() || GetNumSis() || GetNumTis());
     }
-
+    
     /// Return true if there are elements present.
     bool NotEmpty() const
     {
         return ! Empty();
     }
-
+    
     /// Specify the correct OID for a GI.
     ///
     /// When SeqDB translates a GI into an OID, this method is called
@@ -315,7 +315,7 @@ public:
     {
         m_GisOids[index].oid = oid;
     }
-
+    
     /// Specify the correct OID for a TI.
     ///
     /// When SeqDB translates a TI into an OID, this method is called
@@ -329,7 +329,7 @@ public:
     {
         m_TisOids[index].oid = oid;
     }
-
+    
     /// Specify the correct OID for a Seq-id.
     ///
     /// When SeqDB translates a Seq-id into an OID, this method is
@@ -343,7 +343,7 @@ public:
     {
         m_SisOids[index].oid = oid;
     }
-
+    
     int Size() const
     {
         return (int) m_GisOids.size();
@@ -368,31 +368,31 @@ public:
     }
 
     template <class T>
-    void SetValue(int index, int oid)
+    void SetValue(int index, int oid) 
     {
         m_GisOids[index].oid = oid;
     }
 
     /// Get the gi list
-    void GetGiList(vector<TGi>& gis) const;
-
+    void GetGiList(vector<int>& gis) const;
+    
     /// Get the ti list
     void GetTiList(vector<Int8>& tis) const;
 
     /// TODO Get the seqid list?
-
+    
     /// Add a new GI to the list.
-    void AddGi(TGi gi)
+    void AddGi(int gi)
     {
         m_GisOids.push_back(gi);
     }
-
+    
     /// Add a new TI to the list.
     void AddTi(Int8 ti)
     {
         m_TisOids.push_back(ti);
     }
-
+    
     /// Add a new SeqId to the list.
     void AddSi(const string &si)
     {
@@ -404,27 +404,27 @@ public:
     {
         m_GisOids.reserve(n);
     }
-
+    
     /// Reserve space for TIs.
     void ReserveTis(size_t n)
     {
         m_TisOids.reserve(n);
     }
-
+    
     /// TODO Reserve space for seqids?
 protected:
     /// Indicates the current sort order, if any, of this container.
     ESortOrder m_CurrentOrder;
-
+    
     /// Pairs of GIs and OIDs.
     vector<SGiOid> m_GisOids;
-
+    
     /// Pairs of GIs and OIDs.
     vector<STiOid> m_TisOids;
-
+    
     /// Pairs of Seq-ids and OIDs.
     vector<SSiOid> m_SisOids;
-
+    
 private:
     // The following disabled methods are reasonable things to do in
     // some cases.  But I suspect they are more likely to happen
@@ -432,10 +432,10 @@ private:
     // cost, I have prevented them.  If this kind of deep copy is
     // desireable, it can easily be enabled for a subclass by
     // assigning each of the data fields in the protected section.
-
+    
     /// Prevent copy constructor.
     CSeqDBGiList(const CSeqDBGiList & other);
-
+    
     /// Prevent assignment.
     CSeqDBGiList & operator=(const CSeqDBGiList & other);
 };
@@ -489,7 +489,7 @@ inline void CSeqDBGiList::SetValue<string>(int index, int oid)
 }
 
 /// CSeqDBBitVector
-///
+/// 
 /// This class defines a bit vector that is similar to vector<bool>,
 /// but with a differently designed API that performs better on at
 /// least some platforms, and slightly altered semantics.
@@ -501,12 +501,12 @@ public:
         : m_Size(0)
     {
     }
-
+    
     /// Destructor
     virtual ~CSeqDBBitVector()
     {
     }
-
+    
     /// Set the inclusion of an OID.
     ///
     /// @param oid The OID in question. [in]
@@ -517,7 +517,7 @@ public:
         }
         x_SetBit(oid);
     }
-
+    
     /// Set the inclusion of an OID.
     ///
     /// @param oid The OID in question. [in]
@@ -528,7 +528,7 @@ public:
         }
         x_ClearBit(oid);
     }
-
+    
     /// Get the inclusion status of an OID.
     ///
     /// @param oid The OID in question. [in]
@@ -540,76 +540,76 @@ public:
         }
         return x_GetBit(oid);
     }
-
+    
     /// Get the size of the OID array.
     int Size() const
     {
         return m_Size;
     }
-
+    
 private:
     /// Prevent copy constructor.
     CSeqDBBitVector(const CSeqDBBitVector & other);
-
+    
     /// Prevent assignment.
     CSeqDBBitVector & operator=(const CSeqDBBitVector & other);
-
+    
     /// Bit vector element.
     typedef int TBits;
-
+    
     /// Bit vector.
     vector<TBits> m_Bitmap;
-
+    
     /// Maximum enabled OID plus one.
     int m_Size;
-
+    
     /// Resize the OID list.
     void x_Resize(int num)
     {
         int bits = 8*sizeof(TBits);
         int need = (num + bits - 1)/bits;
-
+        
         if ((int)m_Bitmap.size() < need) {
             int new_size = 1024;
-
+            
             while (new_size < need) {
                 new_size *= 2;
             }
-
+            
             m_Bitmap.resize(new_size);
         }
-
+        
         m_Size = num;
     }
-
+    
     /// Set a specific bit (to 1).
     void x_SetBit(int num)
     {
         int bits = 8*sizeof(TBits);
-
+        
         m_Bitmap[num/bits] |= (1 << (num % bits));
     }
-
+    
     /// Set a specific bit (to 1).
     bool x_GetBit(int num)
     {
         int bits = 8*sizeof(TBits);
-
+        
         return !! (m_Bitmap[num/bits] & (1 << (num % bits)));
     }
-
+    
     /// Clear a specific bit (to 0).
     void x_ClearBit(int num)
     {
         int bits = 8*sizeof(TBits);
-
+        
         m_Bitmap[num/bits] &= ~(1 << (num % bits));
     }
 };
 
 
 /// CSeqDBNegativeList
-///
+/// 
 /// This class defines a list of GIs or TIs of sequences that should
 /// not be included in a SeqDB instance.  It is used by CSeqDB for
 /// user specified negative ID lists.  This class can be subclassed to
@@ -622,12 +622,12 @@ public:
         : m_LastSortSize (0)
     {
     }
-
+    
     /// Destructor
     virtual ~CSeqDBNegativeList()
     {
     }
-
+    
     /// Sort list if not already sorted.
     void InsureOrder()
     {
@@ -635,23 +635,23 @@ public:
             std::sort(m_Gis.begin(), m_Gis.end());
             std::sort(m_Tis.begin(), m_Tis.end());
             std::sort(m_Sis.begin(), m_Sis.end());
-
+            
             m_LastSortSize = m_Gis.size() + m_Tis.size() + m_Sis.size();
         }
     }
-
+    
     /// Add a new GI to the list.
-    void AddGi(TGi gi)
+    void AddGi(int gi)
     {
         m_Gis.push_back(gi);
     }
-
+    
     /// Add a new TI to the list.
     void AddTi(Int8 ti)
     {
         m_Tis.push_back(ti);
     }
-
+    
     /// Add a new SeqId to the list.
     void AddSi(const string &si)
     {
@@ -659,14 +659,14 @@ public:
     }
 
     /// Test for existence of a GI.
-    bool FindGi(TGi gi);
-
+    bool FindGi(int gi);
+    
     /// Test for existence of a TI.
     bool FindTi(Int8 ti);
-
+    
     /// Test for existence of a TI or GI here and report whether the
     /// ID was one of those types.
-    ///
+    /// 
     /// If the input ID is a GI or TI, this method sets match_type to
     /// true and returns the output of FindGi or FindTi.  If it is
     /// neither of those types, it sets match_type to false and
@@ -677,18 +677,18 @@ public:
     /// @param match_type The identifier is either a TI or GI.
     /// @return true iff the id is found in the list.
     bool FindId(const CSeq_id & id, bool & match_type);
-
+    
     /// Test for existence of a TI or GI included here.
     bool FindId(const CSeq_id & id);
-
+    
     /// Access an element of the GI array.
     /// @param index The index of the element to access. [in]
     /// @return The GI for that index.
-    TGi GetGi(int index) const
+    int GetGi(int index) const
     {
         return m_Gis[index];
     }
-
+    
     /// Access an element of the TI array.
     /// @param index The index of the element to access. [in]
     /// @return The TI for that index.
@@ -696,7 +696,7 @@ public:
     {
         return m_Tis[index];
     }
-
+    
     /// Access an element of the SeqId array.
     /// @param index The index of the element to access. [in]
     /// @return The TI for that index.
@@ -710,31 +710,31 @@ public:
     {
         return (int) m_Gis.size();
     }
-
+    
     /// Get the number of TIs in the array.
     int GetNumTis() const
     {
         return (int) m_Tis.size();
     }
-
+    
     /// Get the number of SeqIds in the array.
     int GetNumSis() const
     {
         return (int) m_Sis.size();
     }
-
+    
     /// Return false if there are elements present.
     bool Empty() const
     {
         return ! (GetNumGis() || GetNumTis() || GetNumSis());
     }
-
+    
     /// Return true if there are elements present.
     bool NotEmpty() const
     {
         return ! Empty();
     }
-
+    
     /// Include an OID in the iteration.
     ///
     /// The OID will be included by SeqDB in the set returned to users
@@ -745,7 +745,7 @@ public:
     {
         m_Included.SetBit(oid);
     }
-
+    
     /// Indicate a visible OID.
     ///
     /// The OID will be marked as having been found in a GI or TI
@@ -756,7 +756,7 @@ public:
     {
         m_Visible.SetBit(oid);
     }
-
+    
     /// Get the inclusion status of an OID.
     ///
     /// This returns true for OIDs that were in the included set and
@@ -768,33 +768,33 @@ public:
     {
         return m_Included.GetBit(oid) || (! m_Visible.GetBit(oid));
     }
-
+    
     /// Get the size of the OID array.
     int GetNumOids()
     {
         return max(m_Visible.Size(), m_Included.Size());
     }
-
+    
     /// Reserve space for GIs.
     void ReserveGis(size_t n)
     {
         m_Gis.reserve(n);
     }
-
+    
     /// Reserve space for TIs.
     void ReserveTis(size_t n)
     {
         m_Tis.reserve(n);
     }
-
+    
     /// Build ID set for this negative list.
-    const vector<TGi> & GetGiList()
+    const vector<int> & GetGiList()
     {
         return m_Gis;
     }
-
+    
     /// Set ID set for this negative list.
-    void SetGiList( const vector<TGi> & new_list )
+    void SetGiList( const vector<int> & new_list ) 
     {
 	m_Gis.clear();
 	m_Gis.reserve( new_list.size() );
@@ -812,27 +812,27 @@ public:
     }
 protected:
     /// GIs to exclude from the SeqDB instance.
-    vector<TGi> m_Gis;
-
+    vector<int> m_Gis;
+    
     /// TIs to exclude from the SeqDB instance.
     vector<Int8> m_Tis;
-
+    
     /// SeqIds to exclude from the SeqDB instance.
     vector<string> m_Sis;
-
+    
 private:
     /// Prevent copy constructor.
     CSeqDBNegativeList(const CSeqDBNegativeList & other);
-
+    
     /// Prevent assignment.
     CSeqDBNegativeList & operator=(const CSeqDBNegativeList & other);
-
+    
     /// Included OID bitmap.
     CSeqDBBitVector m_Included;
-
+    
     /// OIDs visible to the ISAM file.
     CSeqDBBitVector m_Visible;
-
+    
     /// Zero if unsorted, or the size it had after the last sort.
     size_t m_LastSortSize;
 };
@@ -843,7 +843,7 @@ private:
 /// @param name The name of the file containing GIs. [in]
 /// @param gis The GIs returned by this function. [out]
 NCBI_XOBJREAD_EXPORT
-void SeqDB_ReadBinaryGiList(const string & name, vector<TGi> & gis);
+void SeqDB_ReadBinaryGiList(const string & name, vector<int> & gis);
 
 /// Read a text or binary GI list from an area of memory.
 ///
@@ -1053,7 +1053,7 @@ void SeqDB_ReadMixList(const string & fname,
 
 NCBI_XOBJREAD_EXPORT
 void SeqDB_ReadGiList(const string  & fname,
-                      vector<TGi>   & gis,
+                      vector<int>   & gis,
                       bool          * in_order = 0);
 
 /// Read a text or binary SeqId list from a file.
@@ -1087,7 +1087,7 @@ NCBI_XOBJREAD_EXPORT
 bool SeqDB_IsBinaryTiList(const string  & fname);
 
 /// CSeqDBFileGiList
-///
+/// 
 /// This class defines a CSeqDBGiList subclass which reads a GI list
 /// file given a filename.  It can read text or binary GI list files,
 /// and will automatically distinguish between them.
@@ -1122,14 +1122,14 @@ public:
     /// The two lists of GIs are sorted and this class is computed as
     /// an intersection of them.  Note that both arguments to this
     /// function are potentially modified (sorted in place).
-    CIntersectionGiList(CSeqDBGiList & gilist, vector<TGi> & gis);
+    CIntersectionGiList(CSeqDBGiList & gilist, vector<int> & gis);
 
     /// The two lists of GIs are sorted and this class is computed as
     /// an intersection of them. Since gilist is negative this means
     /// all gi's in the vector that are NOT in the negative list.
     /// Note that both arguments to this
     /// function are potentially modified (sorted in place).
-    CIntersectionGiList(CSeqDBNegativeList & gilist, vector<TGi> & gis);
+    CIntersectionGiList(CSeqDBNegativeList & gilist, vector<int> & gis);
 };
 
 
@@ -1143,7 +1143,7 @@ public:
     CSeqDBIdSet_Vector()
     {
     }
-
+    
     /// Construct from an 'int' set.
     CSeqDBIdSet_Vector(const vector<int> & ids)
     {
@@ -1151,38 +1151,38 @@ public:
             m_Ids.push_back(*iter);
         }
     }
-
+    
     /// Construct from an 'Int8' set.
     CSeqDBIdSet_Vector(const vector<Int8> & ids)
     {
         m_Ids = ids;
     }
-
+    
     /// Access the Int8 set.
     vector<Int8> & Set()
     {
         return m_Ids;
     }
-
+    
     /// Access the Int8 set.
     const vector<Int8> & Get() const
     {
         return m_Ids;
     }
-
+    
     /// Get the number of elements stored here.
     size_t Size() const
     {
         return m_Ids.size();
     }
-
+    
 private:
     /// The actual list elements.
     vector<Int8> m_Ids;
-
+    
     /// Prevent copy construction.
     CSeqDBIdSet_Vector(CSeqDBIdSet_Vector &);
-
+    
     /// Prevent copy assignment.
     CSeqDBIdSet_Vector & operator=(CSeqDBIdSet_Vector &);
 };
@@ -1205,13 +1205,13 @@ public:
         eXor, // Found in X or Y, but not both
         eOr   // Found in either X or Y
     };
-
+    
     /// Type of IDs stored here.
     enum EIdType {
         eGi,  // Found in both X and Y
         eTi   // Found in X or Y, but not both
     };
-
+    
     /// Construct a 'blank' CSeqDBIdSet object.
     ///
     /// This produces a blank ID set object, which (if applied) would
@@ -1219,7 +1219,7 @@ public:
     /// a negative ID list with no elements.
     ///
     CSeqDBIdSet();
-
+    
     /// Build a computed ID list given an initial set of IDs.
     ///
     /// This initializes a list with an initial set of IDs of the
@@ -1231,7 +1231,7 @@ public:
     /// @param t The IDs are assumed to be of this type.
     /// @param positive True for a positive ID list, false for negative.
     CSeqDBIdSet(const vector<int> & ids, EIdType t, bool positive = true);
-
+    
     /// Build a computed ID list given an initial set of IDs.
     ///
     /// This initializes a list with an initial set of IDs of the
@@ -1243,76 +1243,76 @@ public:
     /// @param t The IDs are assumed to be of this type.
     /// @param positive True for a positive ID list, false for negative.
     CSeqDBIdSet(const vector<Int8> & ids, EIdType t, bool positive = true);
-
+    
     /// Virtual destructor.
     virtual ~CSeqDBIdSet()
     {
     }
-
+    
     /// Invert the current list.
     void Negate();
-
+    
     /// Perform a logical operation on a list.
-    ///
+    /// 
     /// The logical operation is performed between the current list
     /// and the ids parameter, and the 'positive' flag is used to
     /// determine if the new input list should be treated as a
     /// positive or negative list.  For example, using op == eOr and
     /// positive == false would perform the operation (X OR NOT Y).
-    ///
+    /// 
     /// @param op Logical operation to perform.
     /// @param ids List of ids for the second argument.
     /// @param positive True for positive lists, false for negative.
     void Compute(EOperation          op,
                  const vector<int> & ids,
                  bool                positive = true);
-
+    
     /// Perform a logical operation on a list.
-    ///
+    /// 
     /// The logical operation is performed between the current list
     /// and the ids parameter, and the 'positive' flag is used to
     /// determine if the new input list should be treated as a
     /// positive or negative list.  For example, using op == eOr and
     /// positive == false would perform the operation (X OR NOT Y).
-    ///
+    /// 
     /// @param op Logical operation to perform.
     /// @param ids List of ids for the second argument.
     /// @param positive If true, ids represent 'negative' ids.
     void Compute(EOperation           op,
                  const vector<Int8> & ids,
                  bool                 positive = true);
-
+    
     /// Perform a logical operation on a list.
-    ///
+    /// 
     /// The logical operation is performed between the current list
     /// and the ids parameter.  For example if 'eOr' is specified, the
     /// operation performed will be 'X OR Y'.  The 'ids' list will not
     /// be modified by this operation.
-    ///
+    /// 
     /// @param op Logical operation to perform.
     /// @param ids List of ids for the second argument.
     void Compute(EOperation op, const CSeqDBIdSet & ids);
-
+    
     /// Checks whether a positive GI list was produced.
     ///
     /// If this method returns true, a positive list was produced, and
     /// can be retrieved with GetPositiveList().  If it returns false,
     /// a negative list was produced and can be retrieved with
     /// GetNegativeList().
-    ///
+    /// 
     /// @return true If the produced GI list is positive.
     bool IsPositive()
     {
         return m_Positive;
     }
-
+    
     /// Retrieve a positive GI list.
     ///
     /// If IsPositive() returned true, this method should be used to
     /// retrieve a positive GI list.  If IsPositive() returned false,
     /// this method will throw an exception.
     CRef<CSeqDBGiList> GetPositiveList();
-
+    
     /// Retrieve a negative GI list.
     ///
     /// If IsPositive() returned false, this method should be used to
@@ -1321,9 +1321,9 @@ public:
     ///
     /// @return A negative GI list.
     CRef<CSeqDBNegativeList> GetNegativeList();
-
+    
     /// Check if an ID list is blank.
-    ///
+    /// 
     /// An ID list is considered 'blank' iff it is a negative list
     /// with no elements.  Constructing a database with such a list is
     /// equivalent to not specifying a list.  Blank lists are produced
@@ -1334,11 +1334,11 @@ public:
     ///
     /// @return True if this list is blank.
     bool Blank() const;
-
+    
 private:
     /// Sort and unique the internal set.
     static void x_SortAndUnique(vector<Int8> & ids);
-
+    
     /// Compute inclusion flags for a boolean operation.
     ///
     /// This takes a logical operator (AND, OR, or XOR) and a flag
@@ -1361,7 +1361,7 @@ private:
                                      bool     & incl_A,
                                      bool     & incl_B,
                                      bool     & incl_AB);
-
+    
     /// Compute boolean operation on two vectors.
     ///
     /// This takes a logical operator (AND, OR, or XOR) and two
@@ -1383,19 +1383,19 @@ private:
                                bool                 B_pos,
                                vector<Int8>       & result,
                                bool               & result_pos);
-
+    
     /// True if the current list is positive.
     bool m_Positive;
-
+    
     /// Id type.
     EIdType m_IdType;
-
+    
     /// Ids stored here.
     CRef<CSeqDBIdSet_Vector> m_Ids;
-
+    
     /// Cached positive list.
     CRef<CSeqDBGiList> m_CachedPositive;
-
+    
     /// Cached negative list.
     CRef<CSeqDBNegativeList> m_CachedNegative;
 };
@@ -1427,19 +1427,19 @@ struct SSeqDBTaxInfo {
         : taxid(t)
     {
     }
-
+    
     /// An identifier for this species or taxonomic group.
     int taxid;
-
+    
     /// Scientific name, such as "Aotus vociferans".
     string scientific_name;
-
+    
     /// Common name, such as "noisy night monkey".
     string common_name;
-
+    
     /// A simple category name, such as "birds".
     string blast_name;
-
+    
     /// A string of length 1 indicating the "Super Kingdom".
     string s_kingdom;
 
@@ -1472,23 +1472,23 @@ string SeqDB_ResolveDbPath(const string & filename);
 ///
 /// Identical to SeqDB_ResolveDbPath with the exception that this function does
 /// not require the extension to be provided. This is intended to check whether
-/// a BLAST DB exists or not.
+/// a BLAST DB exists or not. 
 ///
 /// @param filename Name of file to find.
 /// @param dbtype Determines whether the BLAST DB is protein ('p'), nucleotide
 /// ('n'), or whether the algorithm should guess it ('-')
 /// @return Resolved path or empty string if not found.
 NCBI_XOBJREAD_EXPORT
-string SeqDB_ResolveDbPathNoExtension(const string & filename,
+string SeqDB_ResolveDbPathNoExtension(const string & filename, 
                                       char dbtype = '-');
 
 /// Resolve a file path using SeqDB's path algorithms.
 ///
 /// Identical to SeqDB_ResolveDbPathNoExtension with the exception that this
-/// function searches for ISAM files, specifically those storing numeric and
+/// function searches for ISAM files, specifically those storing numeric and 
 /// string data (for LinkoutDB; i.e.: p[ns][id]).
 /// This is intended to check whether a pair of ISAM files used in LinkoutDB
-/// exists or not.
+/// exists or not. 
 ///
 /// @param filename Name of file to find.
 /// @return Resolved path or empty string if not found.
@@ -1497,11 +1497,11 @@ string SeqDB_ResolveDbPathForLinkoutDB(const string & filename);
 
 /// Compares two volume file names and determine the volume order
 ///
-/// @param volpath1 The 1st volume path
-/// @param volpath2 The 2nd volume path
+/// @param volpath1 The 1st volume path 
+/// @param volpath2 The 2nd volume path 
 /// @return true if vol1 should appear before vol2
 NCBI_XOBJREAD_EXPORT
-bool SeqDB_CompareVolume(const string & volpath1,
+bool SeqDB_CompareVolume(const string & volpath1, 
                          const string & volpath2);
 
 /// Returns a path minus filename.
@@ -1541,7 +1541,7 @@ enum ESeqDBIdType {
 };
 
 /// Seq-id simplification.
-///
+/// 
 /// Given a Seq-id, this routine devolves it to a GI or PIG if
 /// possible.  If not, it formats the Seq-id into a canonical form
 /// for lookup in the string ISAM files.  If the Seq-id was parsed
@@ -1550,12 +1550,12 @@ enum ESeqDBIdType {
 /// can recognize.  In the case that new Seq-id types are added,
 /// support for which has not been added to this code, this
 /// mechanism will try to use the original string.
-///
+/// 
 /// @param bestid
 ///   The Seq-id to look up. [in]
 /// @param acc
 ///   The original string the Seq-id was created from (or NULL). [in]
-/// @param num_id
+/// @param num_id                                                                                      
 ///   The returned identifier, if numeric. [out]
 /// @param str_id
 ///   The returned identifier, if a string. [out]
@@ -1563,21 +1563,21 @@ enum ESeqDBIdType {
 ///   Whether an adjustment was done at all. [out]
 /// @return
 ///   The resulting identifier type.
-NCBI_XOBJREAD_EXPORT ESeqDBIdType
+NCBI_XOBJREAD_EXPORT ESeqDBIdType 
 SeqDB_SimplifySeqid(CSeq_id       & bestid,
-                    const string  * acc,
-                    Int8          & num_id,
-                    string        & str_id,
-                    bool          & simpler);
-
+                    const string  * acc,                                                                     
+                    Int8          & num_id,                                                                  
+                    string        & str_id,                                                                  
+                    bool          & simpler);       
+    
 /// String id simplification.
-///
+/// 
 /// This routine tries to produce a numerical type from a string
 /// identifier.  SeqDB can use faster lookup mechanisms if a PIG,
 /// GI, or OID type can be recognized in the string, for example.
 /// Even when the output is a string, it may be better formed for
 /// the purpose of lookup in the string ISAM file.
-///
+/// 
 /// @param acc
 ///   The string to look up. [in]
 /// @param num_id
@@ -1588,7 +1588,7 @@ SeqDB_SimplifySeqid(CSeq_id       & bestid,
 ///   Whether an adjustment was done at all. [out]
 /// @return
 ///   The resulting identifier type.
-NCBI_XOBJREAD_EXPORT ESeqDBIdType
+NCBI_XOBJREAD_EXPORT ESeqDBIdType 
 SeqDB_SimplifyAccession(const string & acc,
                         Int8         & num_id,
                         string       & str_id,
@@ -1609,7 +1609,7 @@ SeqDB_SimplifyAccession(const string &acc);
 /// Retrieves a list of all supported file extensions for BLAST databases
 /// @param db_is_protein set to true if the database is protein else false [in]
 /// @param extensions where the return value will be stored [in|out]
-NCBI_XOBJREAD_EXPORT
+NCBI_XOBJREAD_EXPORT 
 void SeqDB_GetFileExtensions(bool db_is_protein,
                              vector<string>& extensions);
 
