@@ -79,6 +79,33 @@ DISCREPANCY_SUMMARIZE(BAD_GENE_NAME)
 }
 
 
+static void MoveLocusToNote(const CDiscrepancyItem* item, CScope& scope) // Same autofix used in 2 tests
+{
+    TReportObjectList list = item->GetDetails();
+    NON_CONST_ITERATE(TReportObjectList, it, list) {
+        const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+        if (!sf) {
+            continue;
+        }
+        CRef<CSeq_feat> new_feat(new CSeq_feat());
+        new_feat->Assign(*sf);
+        if (new_feat->IsSetComment() && !NStr::EndsWith(new_feat->GetComment(), ";")) {
+            new_feat->SetComment() += "; ";
+        }
+        new_feat->SetComment() += sf->GetData().GetGene().GetLocus();
+        new_feat->SetData().SetGene().ResetLocus();
+        CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(*sf));
+        feh.Replace(*new_feat);
+    }
+}
+
+
+DISCREPANCY_AUTOFIX(BAD_GENE_NAME)
+{
+    MoveLocusToNote(item, scope);
+}
+
+
 // BAD_BACTERIAL_GENE_NAME
 DISCREPANCY_CASE(BAD_BACTERIAL_GENE_NAME, CSeqFeatData, eAll, "Bad bacterial gene name")
 {
@@ -95,6 +122,12 @@ DISCREPANCY_CASE(BAD_BACTERIAL_GENE_NAME, CSeqFeatData, eAll, "Bad bacterial gen
 DISCREPANCY_SUMMARIZE(BAD_BACTERIAL_GENE_NAME)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+DISCREPANCY_AUTOFIX(BAD_BACTERIAL_GENE_NAME)
+{
+    MoveLocusToNote(item, scope);
 }
 
 
