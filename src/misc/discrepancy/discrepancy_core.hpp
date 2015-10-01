@@ -240,8 +240,9 @@ public:
     template<typename T> void Call(CDiscrepancyVisitor<T>& disc, const T& obj){ disc.Call(obj, *this);}
 
     CConstRef<CBioseq> GetCurrentBioseq(void) const;
-    CConstRef<CBioseq_set> GetCurrentBioseq_set(void) const { return m_Current_Bioseq_set;}
-    CConstRef<CSeq_feat> GetCurrentSeq_feat(void) const { return m_Current_Seq_feat;}
+    CConstRef<CBioseq_set> GetCurrentBioseq_set(void) const { return m_Bioseq_set_Stack.size() ? m_Bioseq_set_Stack[m_Bioseq_set_Stack.size() - 1] : CConstRef<CBioseq_set>(0); }
+    vector<CConstRef<CBioseq_set> > Get_Bioseq_set_Stack(void) const { return m_Bioseq_set_Stack; }
+    CConstRef<CSeq_feat> GetCurrentSeq_feat(void) const { return m_Current_Seq_feat; }
     size_t GetCountBioseq(void) const { return m_Count_Bioseq;}
     size_t GetCountSeq_feat(void) const { return m_Count_Seq_feat;}
     objects::CScope& GetScope(void) const { return const_cast<objects::CScope&>(*m_Scope);}
@@ -256,11 +257,12 @@ public:
     bool IsEukaryotic(void);
 
 protected:
+    void Update_Bioseq_set_Stack(CTypesConstIterator& it);
     CRef<objects::CScope> m_Scope;
     set<string> m_Names;
     vector<CRef<CDiscrepancyCase> > m_Tests;
+    vector<CConstRef<CBioseq_set> > m_Bioseq_set_Stack;
     CConstRef<CBioseq> m_Current_Bioseq;
-    CConstRef<CBioseq_set> m_Current_Bioseq_set;
     CConstRef<CSeq_feat> m_Current_Seq_feat;
     CConstRef<CSuspect_rule_set> m_ProductRules;
     CConstRef<CSuspect_rule_set> m_OrganelleProductRules;

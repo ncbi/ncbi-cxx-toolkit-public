@@ -215,6 +215,26 @@ bool CDiscrepancyContext::AddTest(const string& name)
 }
 
 
+void CDiscrepancyContext::Update_Bioseq_set_Stack(CTypesConstIterator& it)
+{
+    size_t n = 0;
+    CTypesConstIterator::TIteratorContext ctx = it.GetContextData();
+    ITERATE(CTypesConstIterator::TIteratorContext, p, ctx) {
+        if (p->first.GetName() == "Bioseq-set") {
+            n++;
+        }
+    }
+    if (CType<CBioseq_set>::Match(it)) {
+        m_Bioseq_set_Stack.resize(n - 1);
+        m_Bioseq_set_Stack.push_back(m_Scope->GetBioseq_setHandle(*CType<CBioseq_set>::Get(it)).GetCompleteBioseq_set());
+    }
+    else {
+        m_Bioseq_set_Stack.resize(n);
+    }
+
+}
+
+
 void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
 {
     CTypesConstIterator i;
@@ -235,7 +255,7 @@ void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
             CBioseq_Handle bsh = m_Scope->GetBioseqHandle(*CType<CBioseq>::Get(i));
             m_Current_Bioseq.Reset(bsh.GetCompleteBioseq());
             m_Count_Bioseq++;
-            m_Current_Bioseq_set.Reset();
+            Update_Bioseq_set_Stack(i);
             // CSeq_feat_BY_BIOSEQ cycle
             if (m_Enable_CSeq_feat_BY_BIOSEQ) {
                 for (CFeat_CI feat_ci(bsh); feat_ci; ++feat_ci) {
@@ -248,7 +268,7 @@ void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
         }
         else if (CType<CBioseq_set>::Match(i)) {
             m_Current_Bioseq.Reset();
-            m_Current_Bioseq_set.Reset(m_Scope->GetBioseq_setHandle(*CType<CBioseq_set>::Get(i)).GetCompleteBioseq_set());
+            Update_Bioseq_set_Stack(i);
         }
         else if (CType<CSeq_feat>::Match(i)) {
             m_Current_Seq_feat.Reset(m_Scope->GetSeq_featHandle(*CType<CSeq_feat>::Get(i)).GetSeq_feat());
@@ -271,31 +291,33 @@ void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
 
 
 CConstRef<CBioseq> CDiscrepancyContext::GetCurrentBioseq(void) const 
-{ 
+{
     if (m_Current_Bioseq)
     {
         return m_Current_Bioseq;
     }
-    else if (m_Current_Bioseq_set && m_Current_Bioseq_set->IsSetClass())
-    {
-        CConstRef<CBioseq> bioseq;
-        CScope &scope = GetScope();
-        if (m_Current_Bioseq_set->GetClass() == CBioseq_set::eClass_nuc_prot)
+    else {
+        CConstRef<CBioseq_set> BS = GetCurrentBioseq_set();
+        if (BS && BS->IsSetClass())
         {
-            bioseq.Reset(scope.GetBioseqHandle(m_Current_Bioseq_set->GetNucFromNucProtSet()).GetCompleteBioseq());
-            return bioseq;
+            CConstRef<CBioseq> bioseq;
+            CScope &scope = GetScope();
+            if (BS->GetClass() == CBioseq_set::eClass_nuc_prot)
+            {
+                bioseq.Reset(scope.GetBioseqHandle(BS->GetNucFromNucProtSet()).GetCompleteBioseq());
+                return bioseq;
+            }
+            if (BS->GetClass() == CBioseq_set::eClass_gen_prod_set)
+            {
+                bioseq.Reset(scope.GetBioseqHandle(BS->GetGenomicFromGenProdSet()).GetCompleteBioseq());
+                return bioseq;
+            }
+            if (BS->GetClass() == CBioseq_set::eClass_segset)
+            {
+                bioseq.Reset(scope.GetBioseqHandle(BS->GetMasterFromSegSet()).GetCompleteBioseq());
+                return bioseq;
+            }
         }
-        if (m_Current_Bioseq_set->GetClass() == CBioseq_set::eClass_gen_prod_set)
-        {
-            bioseq.Reset(scope.GetBioseqHandle(m_Current_Bioseq_set->GetGenomicFromGenProdSet()).GetCompleteBioseq());
-            return bioseq;
-        }
-        if (m_Current_Bioseq_set->GetClass() == CBioseq_set::eClass_segset)
-        {
-            bioseq.Reset(scope.GetBioseqHandle(m_Current_Bioseq_set->GetMasterFromSegSet()).GetCompleteBioseq());
-            return bioseq;
-        }
-
     }
     return m_Current_Bioseq;
 }
