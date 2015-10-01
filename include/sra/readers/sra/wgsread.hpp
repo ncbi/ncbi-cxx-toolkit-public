@@ -67,7 +67,7 @@ class CWGSGiIterator;
 class CWGSProteinIterator;
 
 
-class NCBI_SRAREAD_EXPORT CWGSGiResolver
+class NCBI_SRAREAD_EXPORT CWGSGiResolver : public CObject
 {
 public:
     CWGSGiResolver(void);
@@ -140,7 +140,7 @@ private:
 };
 
 
-class NCBI_SRAREAD_EXPORT CWGSProtAccResolver
+class NCBI_SRAREAD_EXPORT CWGSProtAccResolver : public CObject
 {
 public:
     CWGSProtAccResolver(void);

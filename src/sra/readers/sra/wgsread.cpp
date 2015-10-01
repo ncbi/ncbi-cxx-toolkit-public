@@ -150,12 +150,12 @@ bool CWGSGiResolver::x_Load(SIndexInfo& index,
                             const CTime* old_timestamp) const
 {
     //CStopWatch sw(CStopWatch::eStart);
-    if (!CDirEntry(m_IndexPath).GetTime(&index.m_Timestamp)) {
+    if ( !CDirEntry(m_IndexPath).GetTime(&index.m_Timestamp) ) {
         // failed to get timestamp
         return false;
     }
     //LOG_POST_X(4, "CWGSGiResolver: got time in " << sw.Elapsed() << " s");
-    if (old_timestamp && index.m_Timestamp == *old_timestamp) {
+    if ( old_timestamp && index.m_Timestamp == *old_timestamp ) {
         // same timestamp
         return false;
     }
@@ -307,7 +307,7 @@ bool CWGSProtAccResolver::x_Load(SIndexInfo& index,
                                  const CTime* old_timestamp) const
 {
     //CStopWatch sw(CStopWatch::eStart);
-    if (!CDirEntry(m_IndexPath).GetTime(&index.m_Timestamp)) {
+    if ( !CDirEntry(m_IndexPath).GetTime(&index.m_Timestamp) ) {
         // failed to get timestamp
         return false;
     }
