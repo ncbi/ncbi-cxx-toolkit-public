@@ -3232,16 +3232,94 @@ BOOST_AUTO_TEST_CASE(s_ReferenceCounting)
 // NStr::Find*()
 //----------------------------------------------------------------------------
 
+struct SFindStr {
+    const char*  str;
+    const char*  pattern;
+    NStr::ECase  use_case;
+    NStr::EDirection direction;
+    SIZE_TYPE    occurence;
+    SIZE_TYPE    result;
+};
+
+// Abbreviations to shorten tests description
+#define f_CF  NStr::eCase,   NStr::eForwardSearch
+#define f_CR  NStr::eCase,   NStr::eReverseSearch
+#define f_NF  NStr::eNocase, NStr::eForwardSearch
+#define f_NR  NStr::eNocase, NStr::eReverseSearch
+
+static const SFindStr s_FindStrTest[] = {
+
+    // eCase + eForwardSearch
+    { "abc",            "abc", f_CF, 0,  0    },
+    { "abc++",          "abc", f_CF, 0,  0    },
+    { "++abc",          "abc", f_CF, 0,  2    },
+    { "ab",             "abc", f_CF, 0,  NPOS },
+    { "+++abc++",       "abc", f_CF, 0,  3    },
+    { "+abc+abc++abc+", "abc", f_CF, 0,  1    },
+    { "+abc+abc++abc+", "abc", f_CF, 1,  5    },
+    { "+abc+abc++abc+", "abc", f_CF, 2,  10   },
+    { "+abc+abc++abc+", "abc", f_CF, 3,  NPOS },
+
+    // eCase + eReverseSearch
+    { "abc",            "abc", f_CR, 0,  0    },
+    { "abc++",          "abc", f_CR, 0,  0    },
+    { "++abc",          "abc", f_CR, 0,  2    },
+    { "ab",             "abc", f_CR, 0,  NPOS },
+    { "+++abc++",       "abc", f_CR, 0,  3    },
+    { "+abc+abc++abc+", "abc", f_CR, 0,  10   },
+    { "+abc+abc++abc+", "abc", f_CR, 1,  5    },
+    { "+abc+abc++abc+", "abc", f_CR, 2,  1    },
+    { "+abc+abc++abc+", "abc", f_CR, 3,  NPOS },
+
+    // eNocase + eForwardSearch
+    { "abc",            "ABC", f_NF, 0,  0    },
+    { "abc++",          "ABC", f_NF, 0,  0    },
+    { "++abc",          "ABC", f_NF, 0,  2    },
+    { "ab",             "ABC", f_NF, 0,  NPOS },
+    { "+++abc++",       "ABC", f_NF, 0,  3    },
+    { "+abc+abc++abc+", "ABC", f_NF, 0,  1    },
+    { "+abc+abc++abc+", "ABC", f_NF, 1,  5    },
+    { "+abc+abc++abc+", "ABC", f_NF, 2,  10   },
+    { "+abc+abc++abc+", "ABC", f_NF, 3,  NPOS },
+
+    // eNocase + eReverseSearch
+    { "abc",            "ABC", f_NR, 0,  0    },
+    { "abc++",          "ABC", f_NR, 0,  0    },
+    { "++abc",          "ABC", f_NR, 0,  2    },
+    { "ab",             "ABC", f_NR, 0,  NPOS },
+    { "+++abc++",       "ABC", f_NR, 0,  3    },
+    { "+abc+abc++abc+", "ABC", f_NR, 0,  10   },
+    { "+abc+abc++abc+", "ABC", f_NR, 1,  5    },
+    { "+abc+abc++abc+", "ABC", f_NR, 2,  1    },
+    { "+abc+abc++abc+", "ABC", f_NR, 3,  NPOS }
+};
+
+
 BOOST_AUTO_TEST_CASE(s_Find)
 {
+    {
+        const size_t count = sizeof(s_FindStrTest) / sizeof(s_FindStrTest[0]);
+        for (size_t i = 0; i < count; i++) {
+            SFindStr t = s_FindStrTest[i];
+            BOOST_CHECK_EQUAL(NStr::Find(t.str, t.pattern, t.use_case, t.direction, t.occurence), t.result);
+            /*
+            if (NStr::Find(t.str, t.pattern, t.use_case, t.direction, t.occurence) != t.result) {
+                cout << "s_FindStrTest [ " << i  << " ]"<< endl;
+            }
+            */
+        }
+    }
+
+    // Backward compatibility test
+    // @deprecated
+    // TODO: change to Find() later.
+    
     BOOST_CHECK_EQUAL(NStr::FindCase  ("abcd", "xyz"),                           NPOS);
     BOOST_CHECK_EQUAL(NStr::FindCase  ("abcd", "xyz", 0, NPOS, NStr::eLast),     NPOS);
     BOOST_CHECK_EQUAL(NStr::FindNoCase("abcd", "xyz"),                           NPOS);
     BOOST_CHECK_EQUAL(NStr::FindNoCase("abcd", "xyz", 0, NPOS, NStr::eLast),     NPOS);
-
     BOOST_CHECK_EQUAL(NStr::FindCase  ("abcd", "aBc", 0, NPOS, NStr::eLast),     NPOS);
     BOOST_CHECK_EQUAL(NStr::FindNoCase("abcd", "aBc", 0, NPOS, NStr::eLast),     0);
-
     BOOST_CHECK_EQUAL(NStr::FindCase  ("abc abc abc", "bc", 2, 8, NStr::eFirst), 5);
     BOOST_CHECK_EQUAL(NStr::FindCase  ("abc abc abc", "bc", 2, 8, NStr::eLast),  5);
 }
@@ -3249,52 +3327,59 @@ BOOST_AUTO_TEST_CASE(s_Find)
 
 BOOST_AUTO_TEST_CASE(s_FindWord)
 {
-    // NStr::eFirst
-    BOOST_CHECK_EQUAL(NStr::FindWord("abcd",    "xyz"),  NPOS);
-    BOOST_CHECK_EQUAL(NStr::FindWord("abcd",    "abc"),  NPOS);
-    BOOST_CHECK_EQUAL(NStr::FindWord("xabc",    "abc"),  NPOS);
-    BOOST_CHECK_EQUAL(NStr::FindWord("abc d",   "abc"),  0);
-    BOOST_CHECK_EQUAL(NStr::FindWord("xabc d",  "abc"),  NPOS);
-    BOOST_CHECK_EQUAL(NStr::FindWord("x,abc:d", "abc"),  2);
-    BOOST_CHECK_EQUAL(NStr::FindWord("x,abc",   "abc"),  2);
+    // NStr::eForwardSearch
+    BOOST_CHECK_EQUAL(NStr::FindWord("abcd",    "xyz"), NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindWord("abcd",    "abc"), NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindWord("xabc",    "abc"), NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindWord("abc d",   "abc"), 0);
+    BOOST_CHECK_EQUAL(NStr::FindWord("xabc d",  "abc"), NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindWord("x,abc:d", "abc"), 2);
+    BOOST_CHECK_EQUAL(NStr::FindWord("x,abc",   "abc"), 2);
     BOOST_CHECK_EQUAL(NStr::FindWord("xabcx abc\ny abc,z", "abc"), 6);
 
-    // NStr::eLast
-    BOOST_CHECK_EQUAL(NStr::FindWord("abcd",    "xyz", NStr::eLast),  NPOS);
-    BOOST_CHECK_EQUAL(NStr::FindWord("abcd",    "abc", NStr::eLast),  NPOS);
-    BOOST_CHECK_EQUAL(NStr::FindWord("xabc",    "abc", NStr::eLast),  NPOS);
-    BOOST_CHECK_EQUAL(NStr::FindWord("ab abc",  "abc", NStr::eLast),  3);
-    BOOST_CHECK_EQUAL(NStr::FindWord("x abcd",  "abc", NStr::eLast),  NPOS);
-    BOOST_CHECK_EQUAL(NStr::FindWord("x,abc:d", "abc", NStr::eLast),  2);
-    BOOST_CHECK_EQUAL(NStr::FindWord("x,abc",   "abc", NStr::eLast),  2);
-    BOOST_CHECK_EQUAL(NStr::FindWord("xabcx abc\ny abc,z", "abc", NStr::eLast), 12);
+    // NStr::eReverseSearch
+    BOOST_CHECK_EQUAL(NStr::FindWord("abcd",    "xyz", f_CR), NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindWord("abcd",    "abc", f_CR), NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindWord("xabc",    "abc", f_CR), NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindWord("ab abc",  "abc", f_CR), 3);
+    BOOST_CHECK_EQUAL(NStr::FindWord("x abcd",  "abc", f_CR), NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindWord("x,abc:d", "abc", f_CR), 2);
+    BOOST_CHECK_EQUAL(NStr::FindWord("x,abc",   "abc", f_CR), 2);
+    BOOST_CHECK_EQUAL(NStr::FindWord("xabcx abc\ny abc,z", "abc", f_CR), 12);
 
     // NStr::eNocase
-    BOOST_CHECK_EQUAL(NStr::FindWord("abcd",    "xyz", NStr::eFirst, NStr::eNocase),  NPOS);
-    BOOST_CHECK_EQUAL(NStr::FindWord("abcd",    "ABC", NStr::eFirst, NStr::eNocase),  NPOS);
-    BOOST_CHECK_EQUAL(NStr::FindWord("xabc",    "ABC", NStr::eFirst, NStr::eNocase),  NPOS);
-    BOOST_CHECK_EQUAL(NStr::FindWord("abc d",   "ABC", NStr::eFirst, NStr::eNocase),  0);
-    BOOST_CHECK_EQUAL(NStr::FindWord("xabc d",  "ABC", NStr::eFirst, NStr::eNocase),  NPOS);
-    BOOST_CHECK_EQUAL(NStr::FindWord("x,abc:d", "ABC", NStr::eFirst, NStr::eNocase),  2);
-    BOOST_CHECK_EQUAL(NStr::FindWord("x,abc",   "ABC", NStr::eFirst, NStr::eNocase),  2);
-    BOOST_CHECK_EQUAL(NStr::FindWord("xabcx abc\ny abc,z", "ABC", NStr::eFirst, NStr::eNocase), 6);
+    BOOST_CHECK_EQUAL(NStr::FindWord("abcd",    "xyz", f_NF), NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindWord("abcd",    "ABC", f_NF), NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindWord("xabc",    "ABC", f_NF), NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindWord("abc d",   "ABC", f_NF), 0);
+    BOOST_CHECK_EQUAL(NStr::FindWord("xabc d",  "ABC", f_NF), NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindWord("x,abc:d", "ABC", f_NF), 2);
+    BOOST_CHECK_EQUAL(NStr::FindWord("x,abc",   "ABC", f_NF), 2);
+    BOOST_CHECK_EQUAL(NStr::FindWord("xabcx abc\ny abc,z", "ABC", f_NF), 6);
 
-    BOOST_CHECK_EQUAL(NStr::FindWord("abcd",    "xyz", NStr::eLast, NStr::eNocase),  NPOS);
-    BOOST_CHECK_EQUAL(NStr::FindWord("abcd",    "ABC", NStr::eLast, NStr::eNocase),  NPOS);
-    BOOST_CHECK_EQUAL(NStr::FindWord("xabc",    "ABC", NStr::eLast, NStr::eNocase),  NPOS);
-    BOOST_CHECK_EQUAL(NStr::FindWord("ab abc",  "ABC", NStr::eLast, NStr::eNocase),  3);
-    BOOST_CHECK_EQUAL(NStr::FindWord("x abcd",  "ABC", NStr::eLast, NStr::eNocase),  NPOS);
-    BOOST_CHECK_EQUAL(NStr::FindWord("x,abc:d", "ABC", NStr::eLast, NStr::eNocase),  2);
-    BOOST_CHECK_EQUAL(NStr::FindWord("x,abc",   "ABC", NStr::eLast, NStr::eNocase),  2);
-    BOOST_CHECK_EQUAL(NStr::FindWord("xabcx abc\ny abc,z", "ABC", NStr::eLast, NStr::eNocase), 12);
+    BOOST_CHECK_EQUAL(NStr::FindWord("abcd",    "xyz", f_NR), NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindWord("abcd",    "ABC", f_NR), NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindWord("xabc",    "ABC", f_NR), NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindWord("ab abc",  "ABC", f_NR), 3);
+    BOOST_CHECK_EQUAL(NStr::FindWord("x abcd",  "ABC", f_NR), NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindWord("x,abc:d", "ABC", f_NR), 2);
+    BOOST_CHECK_EQUAL(NStr::FindWord("x,abc",   "ABC", f_NR), 2);
+    BOOST_CHECK_EQUAL(NStr::FindWord("xabcx abc\ny abc,z", "ABC", f_NR), 12);
 
     // "Word" with non-word characters
-    BOOST_CHECK_EQUAL(NStr::FindWord("a b c",         "a b c"),  0);
-    BOOST_CHECK_EQUAL(NStr::FindWord(" a b c ",       "a b c"),  1);
-    BOOST_CHECK_EQUAL(NStr::FindWord("  a b c  ",     "a b c"),  2);
-    BOOST_CHECK_EQUAL(NStr::FindWord("x a b c y",     "a b c"),  2);
-    BOOST_CHECK_EQUAL(NStr::FindWord("a b a a b c d", "a b c"),  6);
-    BOOST_CHECK_EQUAL(NStr::FindWord("a b 1a b c d",  "a b c"),  NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindWord("a b c",         "a b c"), 0);
+    BOOST_CHECK_EQUAL(NStr::FindWord(" a b c ",       "a b c"), 1);
+    BOOST_CHECK_EQUAL(NStr::FindWord("  a b c  ",     "a b c"), 2);
+    BOOST_CHECK_EQUAL(NStr::FindWord("x a b c y",     "a b c"), 2);
+    BOOST_CHECK_EQUAL(NStr::FindWord("a b a a b c d", "a b c"), 6);
+    BOOST_CHECK_EQUAL(NStr::FindWord("a b 1a b c d",  "a b c"), NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindWord("x abc x",       " abc "), NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindWord("x abc abc x",   " abc "), NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindWord("x abc  abc x",  " abc "), NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindWord("x abc  abc ",   " abc "), 6);
+    BOOST_CHECK_EQUAL(NStr::FindWord("x abc  abc  x", " abc "), 6);
+    BOOST_CHECK_EQUAL(NStr::FindWord("x  abc abc  x", " abc "), NPOS);
+    BOOST_CHECK_EQUAL(NStr::FindWord("x  abc+ abc +", " abc "), 7);
 }
 
 

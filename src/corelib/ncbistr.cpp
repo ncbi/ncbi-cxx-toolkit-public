@@ -2759,6 +2759,102 @@ string NStr::FormatVarargs(const char* format, va_list args)
 }
 
 
+SIZE_TYPE NStr::Find(const CTempString str,
+                     const CTempString pattern,
+                     ECase             use_case,
+                     EDirection        direction,
+                     SIZE_TYPE         occurence)
+{
+    const SIZE_TYPE slen = str.length();
+    const SIZE_TYPE plen = pattern.length();
+    SIZE_TYPE current_occurence = 0;
+    SIZE_TYPE pos = 0;
+    SIZE_TYPE current_pos = 0;  // saved position of last search
+    SIZE_TYPE search_pos = 0;   // next search position
+
+    if (plen > slen) {
+        return NPOS;
+    }
+
+    if (use_case == eCase) {
+
+        if (direction == eForwardSearch) {
+            do {
+                pos = str.find(pattern, search_pos);
+                if (pos == NPOS) {
+                    return NPOS;
+                }
+                current_pos = pos;
+                search_pos  = pos + plen;
+                ++current_occurence;
+            }
+            while (current_occurence <= occurence);
+
+        } else {
+            _ASSERT(direction == eReverseSearch);
+            search_pos = slen - plen;
+            do {
+                pos = str.rfind(pattern, search_pos);
+                if (pos == NPOS) {
+                    return NPOS;
+                }
+                current_pos = pos;
+                search_pos = (pos < plen) ? 0 : pos - plen;
+                ++current_occurence;
+            }
+            while (current_occurence <= occurence);
+        }
+
+    } else {
+        _ASSERT(use_case == eNocase);
+
+        // A set of lower/upper characters for pattern[0].
+        string x_first(pattern, 0, 1);
+        if (isupper((unsigned char)x_first[0])) {
+            x_first += (char)tolower((unsigned char)x_first[0]);
+        } else if (islower((unsigned char)x_first[0])) {
+            x_first += (char)toupper((unsigned char)x_first[0]);
+        }
+
+        if (direction == eForwardSearch) {
+            do {
+                pos = str.find_first_of(x_first, search_pos);
+                while (pos != NPOS  &&  (pos + plen) <= slen
+                       &&  CompareNocase(str, pos, plen, pattern) != 0) {
+                    pos = str.find_first_of(x_first, pos + 1);
+                }
+                if (pos > slen) {
+                    return NPOS;
+                }
+                current_pos = pos;
+                search_pos  = pos + plen;
+                ++current_occurence;
+            }
+            while (current_occurence <= occurence);
+
+        } else {
+            _ASSERT(direction == eReverseSearch);
+            search_pos = slen - plen;
+            do {
+                pos = str.find_last_of(x_first, search_pos);
+                while (pos != NPOS  &&  pos
+                       &&  CompareNocase(str, pos, plen, pattern) != 0) {
+                    if (pos == 0) {
+                        return NPOS;
+                    }
+                    pos = str.find_last_of(x_first, pos - 1);
+                }
+                current_pos = pos;
+                search_pos = (pos < plen) ? 0 : pos - plen;
+                ++current_occurence;
+            }
+            while (current_occurence <= occurence);
+        }
+    }
+    return current_pos;
+}
+    
+
 SIZE_TYPE NStr::FindNoCase(const CTempString str, const CTempString pattern,
                            SIZE_TYPE start, SIZE_TYPE end, EOccurrence where)
 {
@@ -2826,16 +2922,18 @@ bool s_IsWordBoundaryChar(char ch)
 }
 
 
-SIZE_TYPE NStr::FindWord(const CTempString str, const CTempString pattern,
-                         EOccurrence where, ECase use_case)
+SIZE_TYPE NStr::FindWord(const CTempString str,
+                         const CTempString word,
+                         ECase             use_case,
+                         EDirection        direction)
 {
     const SIZE_TYPE slen = str.length();
-    const SIZE_TYPE plen = pattern.length();
+    const SIZE_TYPE plen = word.length();
 
     SIZE_TYPE start = 0;
     SIZE_TYPE end   = slen;
 
-    SIZE_TYPE pos = Find(str, pattern, start, end, where, use_case);
+    SIZE_TYPE pos = Find(str, word, use_case, direction);
 
     while (pos != NPOS) {
         // Check word boundaries
@@ -2844,18 +2942,22 @@ SIZE_TYPE NStr::FindWord(const CTempString str, const CTempString pattern,
             return pos;
         }
         // Find next occurrence
-        if (where == eFirst) {
+        if (direction == eForwardSearch) {
             if (pos + plen == slen) {
                 return NPOS;
             }
             ++start;
-        } else { // eLast
+        } else { 
             if (pos == 0) {
                 return NPOS;
             }
             --end;
         }
-        pos = Find(str, pattern, start, end, where, use_case);
+        pos = Find(CTempString(str, start, end - start), word, use_case, direction);
+        if (pos != NPOS) {
+            // update position: from start of the string "str"
+            pos += start;
+        }
     }
     return pos;
 }

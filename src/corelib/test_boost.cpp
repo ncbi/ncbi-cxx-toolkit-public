@@ -947,8 +947,7 @@ string
 CNcbiTestApplication::x_GetTrimmedTestName(const string& test_name)
 {
     string new_name = test_name;
-    SIZE_TYPE pos = NStr::FindCase(new_name, "::", 0, new_name.size(),
-                                   NStr::eLast);
+    SIZE_TYPE pos = NStr::Find(new_name, "::", NStr::eCase, NStr::eReverseSearch);
     if (pos != NPOS) {
         new_name = new_name.substr(pos + 2);
     }

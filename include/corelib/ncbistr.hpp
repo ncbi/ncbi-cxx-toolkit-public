@@ -1958,10 +1958,42 @@ public:
 
 
     /// Whether it is the first or last occurrence.
+    /// @deprecated
     enum EOccurrence {
         eFirst,             ///< First occurrence
         eLast               ///< Last occurrence
     };
+
+    /// Search direction for Find() methods.
+    enum EDirection {
+        eForwardSearch = 0,  ///< Search in a forward direction
+        eReverseSearch       ///< Search in a backward direction
+    };
+
+
+    /// Find the pattern in the string.
+    ///
+    /// @param str
+    ///   String to search.
+    /// @param pattern
+    ///   Pattern to search for in "str". 
+    /// @param use_case
+    ///   Whether to do a case sensitive compare (default is eCase), or a
+    ///   case-insensitive compare (eNocase) while searching for the pattern.
+    /// @param direction
+    ///   Define a search direction of the "occurence" occurence of "pattern" in "str".
+    /// @param occurrence
+    ///   Which occurrence of the pattern in the string to use (zero-based).
+    ///   NOTE:  When an occurrence is found the next occurrence will be
+    ///          searched for starting right *after* the found pattern.
+    /// @return
+    ///   - Start of the found pattern in the string.
+    ///   - NPOS if there is no occurrence of the pattern in the string.
+    static SIZE_TYPE Find(const CTempString str,
+                          const CTempString pattern,
+                          ECase             use_case  = eCase,
+                          EDirection        direction = eForwardSearch,
+                          SIZE_TYPE         occurence = 0);
 
     /// Find the pattern in the specified range of a string.
     ///
@@ -1988,9 +2020,12 @@ public:
     ///   ["start", "end"], or
     ///   - NPOS if there is no occurrence of the pattern.
     /// @sa FindCase, FindNoCase, FindWord
+    /// @deprecated
+    ///   Use Find() method without [start:end] range.
+    NCBI_DEPRECATED
     static SIZE_TYPE Find(const CTempString str,
                           const CTempString pattern,
-                          SIZE_TYPE   start = 0, SIZE_TYPE end = NPOS,
+                          SIZE_TYPE   start, SIZE_TYPE end = NPOS,
                           EOccurrence which = eFirst,
                           ECase       use_case = eCase);
 
@@ -2017,10 +2052,19 @@ public:
     ///   ["start", "end"], or
     ///   - NPOS if there is no occurrence of the pattern.
     /// @sa Find
+    /// @deprecated
+    ///   Use Find() method without [start:end] range.
+    NCBI_DEPRECATED
     static SIZE_TYPE FindCase  (const CTempString str, 
                                 const CTempString pattern,
-                                SIZE_TYPE   start = 0, SIZE_TYPE end = NPOS,
+                                SIZE_TYPE   start, SIZE_TYPE end = NPOS,
                                 EOccurrence which = eFirst);
+
+    /// Simple wrapper for backward-compatibility
+    inline
+    static SIZE_TYPE FindCase(const CTempString str, const CTempString pattern)
+        { return Find(str, pattern, eCase); }
+
 
     /// Find the pattern in the specified range of a string using a case
     /// insensitive search.
@@ -2045,10 +2089,19 @@ public:
     ///   ["start", "end"], or
     ///   - NPOS if there is no occurrence of the pattern.
     /// @sa Find
+    /// @deprecated
+    ///   Use Find() method without [start:end] range.
+    NCBI_DEPRECATED
     static SIZE_TYPE FindNoCase(const CTempString str,
                                 const CTempString pattern,
-                                SIZE_TYPE   start = 0, SIZE_TYPE end = NPOS,
+                                SIZE_TYPE   start, SIZE_TYPE end = NPOS,
                                 EOccurrence which = eFirst);
+
+    /// Simple wrapper for backward-compatibility
+    inline
+    static SIZE_TYPE FindNoCase(const CTempString str, const CTempString pattern)
+        { return Find(str, pattern, eNocase); }
+
 
     /// Test for presence of a given string in a list or vector of strings
 
@@ -2072,6 +2125,26 @@ public:
     static const string* FindNoCase(const vector<string>& vec,
                                     const CTempString val);
 
+    /// Find given word in the string.
+    ///
+    /// @param str
+    ///   String to search.
+    /// @param word
+    ///   Word to search for in "str". The "word" can have any symbols,
+    ///   not letters only. Function treat it as a pattern, even it have
+    ///   any non-word characters.
+    /// @param use_case
+    ///   Whether to do a case sensitive compare (default is eCase), or a
+    ///   case-insensitive compare (eNocase) while searching for the word.
+    /// @param direction
+    ///   Define a search direction of the "occurence" occurence of "word" in "str".
+    /// @return
+    ///   - Start of the found word in the string.
+    ///   - NPOS if there is no occurrence of the word in the string.
+    static SIZE_TYPE FindWord(const CTempString str,
+                              const CTempString word,
+                              ECase             use_case  = eCase,
+                              EDirection        direction = eForwardSearch);
 
     /// Find given word in the string.
     ///
@@ -2082,7 +2155,7 @@ public:
     /// @param str
     ///   String to search.
     /// @param word
-    ///   Pattern to search for in "str". The "word" can have any symbols,
+    ///   Word to search for in "str". The "word" can have any symbols,
     ///   not letters only. Function treat it as a pattern, even it have
     ///   any non-word characters.
     /// @param which
@@ -2094,14 +2167,19 @@ public:
     ///   case-insensitive compare (eNocase) while searching for the word.
     /// @return
     ///   - The start of the first or last (depending on "which" parameter)
-    ///   occurrence of "word" in "str", within the string interval
-    ///   ["start", "end"], or
+    ///     occurrence of "word" in "str", or
     ///   - NPOS if there is no occurrence of the word.
     /// @sa Find
+    /// @deprecated
+    ///   Use FindWord() variant with EDirection parameter.
+    NCBI_DEPRECATED
     static SIZE_TYPE FindWord(const CTempString str,
                               const CTempString word,
-                              EOccurrence which = eFirst,
-                              ECase       use_case = eCase);
+                              EOccurrence which,
+                              ECase       use_case = eCase)
+        {
+            return FindWord(str, word, use_case, which == eFirst ? eForwardSearch : eReverseSearch);
+        }
 
 
     /// Which end to truncate a string.
@@ -5351,9 +5429,10 @@ SIZE_TYPE NStr::Find(const CTempString str, const CTempString pattern,
                      SIZE_TYPE start, SIZE_TYPE end, EOccurrence where,
                      ECase use_case)
 {
-    return use_case == eCase ? FindCase(str, pattern, start, end, where)
-                             : FindNoCase(str, pattern, start, end, where);
+    return Find(CTempString(str, start, end - start), pattern, use_case,
+                where == eFirst ? eForwardSearch : eReverseSearch, 0);
 }
+
 
 inline
 SIZE_TYPE NStr::FindCase(const CTempString str, const CTempString pattern,
