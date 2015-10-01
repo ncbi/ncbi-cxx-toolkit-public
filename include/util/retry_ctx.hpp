@@ -226,6 +226,7 @@ inline
 CRetryContext::CRetryContext(void)
     : m_Flags(0),
       m_ContentOverride(eNot_set),
+      m_NeedRetry(false),
       m_NeedReconnect(false)
 {
 }
@@ -261,6 +262,7 @@ void CRetryContext::Reset(void)
     ResetUrl();
     ResetContentOverride();
     ResetContent();
+    ResetNeedRetry();
     ResetNeedReconnect();
 }
 
