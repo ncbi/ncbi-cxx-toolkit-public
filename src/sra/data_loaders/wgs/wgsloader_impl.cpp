@@ -233,46 +233,40 @@ CWGSDataLoader_Impl::IAccResolver::~IAccResolver(void)
 /////////////////////////////////////////////////////////////////////////////
 
 
-class CWGSGiFileResolver : public CObject,
+class CWGSGiFileResolver : public CWGSGiResolver,
                            public CWGSDataLoader_Impl::IGiResolver
 {
 public:
     virtual void Resolve(TWGSPrefixes& prefixes, TGi gi);
-
-private:
-    CWGSGiResolver m_WGSResolver;
 };
 
 
 void CWGSGiFileResolver::Resolve(TWGSPrefixes& prefixes, TGi gi)
 {
     prefixes.clear();
-    if ( m_WGSResolver.IsValid() ) {
-        CWGSGiResolver::TAccessionList accs = m_WGSResolver.FindAll(gi);
-        ITERATE ( CWGSGiResolver::TAccessionList, it, accs ) {
+    if ( IsValid() ) {
+        TAccessionList accs = FindAll(gi);
+        ITERATE ( TAccessionList, it, accs ) {
             prefixes.push_back(*it);
         }
     }
 }
 
 
-class CWGSAccFileResolver : public CObject,
+class CWGSAccFileResolver : public CWGSProtAccResolver,
                             public CWGSDataLoader_Impl::IAccResolver
 {
 public:
     virtual void Resolve(TWGSPrefixes& prefixes, const string& acc);
-
-private:
-    CWGSProtAccResolver m_WGSResolver;
 };
 
 
 void CWGSAccFileResolver::Resolve(TWGSPrefixes& prefixes, const string& acc)
 {
     prefixes.clear();
-    if ( m_WGSResolver.IsValid() ) {
-        CWGSProtAccResolver::TAccessionList accs = m_WGSResolver.FindAll(acc);
-        ITERATE ( CWGSProtAccResolver::TAccessionList, it, accs ) {
+    if ( IsValid() ) {
+        TAccessionList accs = FindAll(acc);
+        ITERATE ( TAccessionList, it, accs ) {
             prefixes.push_back(*it);
         }
     }
@@ -649,7 +643,7 @@ CWGSDataLoader_Impl::GetFileInfoByAcc(const string& acc)
         return ret;
     }
 
-    SIZE_TYPE prefix_len = NStr::StartsWith(acc, "NZ_")? 9: 6;
+    const SIZE_TYPE prefix_len = 6;
     if ( acc.size() <= prefix_len ) {
         return ret;
     }
