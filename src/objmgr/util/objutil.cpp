@@ -1864,8 +1864,7 @@ CommentHasSuspiciousHtml( const string &str )
     // load matching fsa if not already done
     static CTextFsa fsa;
     if( ! fsa.IsPrimed() ) {
-        int ii = 0;
-        for( ; ii < sizeof(bad_html_strings)/sizeof(bad_html_strings[0]) ; ++ii ) {
+        for( size_t ii = 0; ii < ArraySize(bad_html_strings); ++ii ) {
             fsa.AddWord( bad_html_strings[ii] );
         }
         fsa.Prime();
