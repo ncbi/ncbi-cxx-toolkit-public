@@ -5429,8 +5429,12 @@ SIZE_TYPE NStr::Find(const CTempString str, const CTempString pattern,
                      SIZE_TYPE start, SIZE_TYPE end, EOccurrence where,
                      ECase use_case)
 {
-    return Find(CTempString(str, start, end - start), pattern, use_case,
-                where == eFirst ? eForwardSearch : eReverseSearch, 0);
+    SIZE_TYPE res = Find(CTempString(str, start, end - start), pattern, use_case,
+                         where == eFirst ? eForwardSearch : eReverseSearch, 0);
+    if (res == NPOS) {
+        return NPOS;
+    }
+    return res + start;
 }
 
 
