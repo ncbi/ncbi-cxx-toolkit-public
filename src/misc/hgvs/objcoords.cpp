@@ -72,7 +72,8 @@ USING_SCOPE(objects);
 static const TSeqPos kSeqFrame = 10;
 
 // Service functions
-static string x_GetSequence(CSeqVector& seq_vec, TSignedSeqPos pos, bool complement=false);
+//static string x_GetSequence(CSeqVector& seq_vec, TSignedSeqPos pos, bool complement=false);
+static string x_GetSequence(CSeqVector& seq_vec, TSignedSeqPos pos, TSignedSeqPos adjustment=0);
 
 static SAnnotSelector x_GetAnnotSelector();
 
@@ -134,7 +135,7 @@ private:
     TSeqPos x_GetCDSOffset() const;
     CRef<CHGVS_Coordinate> x_NewCoordinate(CScope& scope, const CSeq_id* id, TSeqPos pos) const;
     void x_SetSequence(CHGVS_Coordinate& ref, CScope& scope, const CSeq_id* id,
-        TSignedSeqPos pos, bool plus_strand=true) const;
+        TSignedSeqPos pos, TSignedSeqPos adjustment=0, bool plus_strand=true) const;
     void x_SetHgvs(CHGVS_Coordinate& ref, const char* prefix, TSignedSeqPos pos,
                    TSignedSeqPos adjustment = 0, bool utr3_tail = false,
                    bool in_gap = false) const;
@@ -384,14 +385,14 @@ CRef<CHGVS_Coordinate> CReportEntry::x_NewCoordinate(CScope& scope, const CSeq_i
 
 
 void CReportEntry::x_SetSequence(CHGVS_Coordinate& ref, CScope& scope, const CSeq_id* id,
-                                 TSignedSeqPos pos, bool plus_strand) const
+                                 TSignedSeqPos pos, TSignedSeqPos adjustment, bool plus_strand) const
 {
     if (!id) return;
     CBioseq_Handle prod_bsh =
         scope.GetBioseqHandle(*id);
     CSeqVector prod_vec(prod_bsh, CBioseq_Handle::eCoding_Iupac,
         plus_strand ? eNa_strand_plus : eNa_strand_minus);
-    ref.SetSequence( x_GetSequence(prod_vec, plus_strand ? pos : prod_vec.size() - pos - 1) );
+    ref.SetSequence( x_GetSequence(prod_vec, plus_strand ? pos : prod_vec.size() - pos - 1, adjustment) );
 }
 
 
@@ -508,7 +509,7 @@ void CReportEntry::x_GetRCoordinate(CScope& scope, TSeqPos pos,
             // Product-less mRNA feature - we're faking it a bit using
             // original sequence and original, not mapped position and
             // appropriate strand. Same trick works for c. coordinate below
-            x_SetSequence(*ref, scope, m_genomic_id, pos, m_mrna_plus_strand);
+            x_SetSequence(*ref, scope, m_genomic_id, pos, 0, m_mrna_plus_strand);
         }
         coords.Set().push_back(ref);
     }
@@ -543,10 +544,10 @@ void CReportEntry::x_GetCCoordinate(CScope& scope, TSeqPos pos, TSignedSeqPos ad
             TSignedSeqPos utr_adjusted_pos = seq_pos;
             x_CalculateUTRAdjustments(mapped_pos, utr_adjusted_pos, adjustment, utr3_tail);
             if (m_transcript_id) {
-                x_SetSequence(*ref, scope, m_transcript_id, utr_adjusted_pos);
+                x_SetSequence(*ref, scope, m_transcript_id, utr_adjusted_pos, adjustment);
             } else if (m_genomic_id) {
                 // Product-less mRNA feature - see comment for r. coordinate
-                x_SetSequence(*ref, scope, m_genomic_id, pos, m_mrna_plus_strand);
+                x_SetSequence(*ref, scope, m_genomic_id, pos, adjustment, m_mrna_plus_strand);
             }
             mapped = true;
         }
@@ -561,7 +562,7 @@ void CReportEntry::x_GetCCoordinate(CScope& scope, TSeqPos pos, TSignedSeqPos ad
         if (x_MapPos(*mapper, *m_main_id, adjusted_pos, seq_pos)) {
             mapped_pos = seq_pos;
             // Sequence coming from original id, use original pos
-            x_SetSequence(*ref, scope, m_main_id, pos);
+            x_SetSequence(*ref, scope, m_main_id, pos, adjustment);
             mapped = true;
         }
     } else {
@@ -1052,32 +1053,55 @@ void s_ExtendEntriesFromAlignments(
 }
 
 
-static string x_GetSequence(CSeqVector& seq_vec, TSignedSeqPos pos, bool complement)
+//static string x_GetSequence(CSeqVector& seq_vec, TSignedSeqPos pos, bool complement)
+static string x_GetSequence(CSeqVector& seq_vec, TSignedSeqPos pos, TSignedSeqPos adjustment)
 {
     string seq_before, seq_pos, seq_after;
     TSignedSeqPos seq_len = seq_vec.size();
     TSignedSeqPos max_seq_frame = TSignedSeqPos(kSeqFrame);
 
-    // seq_vec.GetSeqData(pos, pos+1, seq_pos);
-    TSeqPos before_from = pos <= max_seq_frame ?
-        0 : max(0, pos - max_seq_frame);
-    seq_vec.GetSeqData(before_from, max(0, pos), seq_before);
-    // This filler takes into account both before and after, so we don't
-    // need to repeat it twice. We need to compensate for very negative
-    // position to not overfill it, so we limit overfill by 2*kSeqFrame+1
-    // which is total length of reported sequence context.
-    if (pos < max_seq_frame) {
-        string filler;
-        int max_filler_len = min(2*max_seq_frame+1, max_seq_frame - pos);
-        for (int i = 0; i < max_filler_len; i++) filler += "&nbsp;";
-        seq_before = filler + seq_before;
+    pos += adjustment;
+
+    if (adjustment >=0) {
+        TSeqPos before_from = pos <= max_seq_frame ?
+            0 : max(0, pos - max_seq_frame);
+        seq_vec.GetSeqData(before_from, max(0, pos), seq_before);
+        // This filler takes into account both before and after, so we don't
+        // need to repeat it twice. We need to compensate for very negative
+        // position to not overfill it, so we limit overfill by 2*kSeqFrame+1
+        // which is total length of reported sequence context.
+        if (pos < max_seq_frame) {
+            string filler;
+            int max_filler_len = min(2*max_seq_frame+1, max_seq_frame - pos);
+            for (int i = 0; i < max_filler_len; i++) filler += "&nbsp;";
+            seq_before = filler + seq_before;
+        }
+        if (adjustment != 0) {
+            int fill_len = min(int(adjustment-1), int(seq_before.size()));
+            seq_before.replace(seq_before.size()-fill_len, fill_len, fill_len, '-');
+        }
+    } else {
+        for (int i = 0; i < max_seq_frame; i++) seq_before += "-";
     }
-    seq_vec.GetSeqData(pos, pos+1, seq_pos);
-    // If pos is less than -1, it starts eating into seq_after. The filler is taken
-    // care of, now we ensure that we're not generating negative positions.
+    if (adjustment == 0) {
+        seq_vec.GetSeqData(pos, pos+1, seq_pos);
+    } else {
+        seq_pos = "-";
+    }
+    if (adjustment <= 0) {
+        // If pos is less than -1, it starts eating into seq_after. The filler is taken
+        // care of, now we ensure that we're not generating negative positions.
     
-    seq_vec.GetSeqData(max(0, pos+1),
-        max(0, min(seq_len, pos+max_seq_frame+1)), seq_after);
+        seq_vec.GetSeqData(max(0, pos+1),
+            max(0, min(seq_len, pos+max_seq_frame+1)), seq_after);
+        if (adjustment != 0) {
+            int fill_len = min(int(-adjustment-1), int(seq_after.size()));
+            seq_after.replace(0, fill_len, fill_len, '-');
+        }
+    } else {
+        for (int i = 0; i < max_seq_frame; i++) seq_after += "-";
+    }
+/*
     if (complement) {
         string comp;
         CSeqManip::Complement(seq_before, CSeqUtil::e_Iupacna, 0, seq_before.size(), comp);
@@ -1085,6 +1109,7 @@ static string x_GetSequence(CSeqVector& seq_vec, TSignedSeqPos pos, bool complem
         seq_before = comp;
         CSeqManip::Complement(seq_pos, CSeqUtil::e_Iupacna, 0, seq_pos.size(), seq_pos);
     }
+*/
 
     return
         seq_before + "<span class='xsv-seq_pos_highlight'>" +
