@@ -1113,6 +1113,9 @@ CSrvDiagMsg::operator<< (const exception& ex) const
 void
 CSrvTask::SetDiagCtx(CRequestContext* ctx)
 {
+    if (!ctx) {
+        return;
+    }
     ctx->AddReference();
     if (!m_DiagCtx) {
         m_DiagCtx = ctx;
