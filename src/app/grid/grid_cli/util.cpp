@@ -1027,8 +1027,9 @@ CJsonNode g_WorkerNodeInfoToJson(CNetServer worker_node)
             continue;
 
         if (running_job_count > 0) {
-            if ((pos = NStr::Find(line, TEMP_STRING_CTOR("running for "),
-                    0, NPOS, NStr::eLast, NStr::eNocase)) != NPOS) {
+            if ((pos = NStr::Find(CTempString(line),
+                            TEMP_STRING_CTOR("running for "),
+                            NStr::eNocase, NStr::eReverseSearch)) != NPOS) {
                 --running_job_count;
 
                 pos += sizeof("running for ") - 1;
