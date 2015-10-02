@@ -18,6 +18,9 @@ loc._type      = vector
 id._type       = vector
 interval._type = vector
 
+[SeqTable-single-data]
+int8._type     = Int8
+
 [CommonString-table]
 strings._type       = vector
 indexes._type       = vector
