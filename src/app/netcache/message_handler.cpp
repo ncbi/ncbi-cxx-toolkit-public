@@ -1376,7 +1376,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           { "cr_time", eNSPT_Int,  eNSPA_Required } } },
 
     // Get list of blobs by mask: "cache,key,*"
-    // Added in 6.8.12, CXX-6246
+    // Added in 6.9.0, CXX-6246
     { "BLIST",
         {&CNCMessageHandler::x_DoCmd_GetBList,
             "BLIST",
@@ -3653,8 +3653,10 @@ CNCMessageHandler::x_DoCmd_GetConfig(void)
                 stat->PrintState(*this);
             }
             CNCPeerControl::PrintState(*this);
-        } else if (section == "task") {
+#if __NC_TASKS_MONITOR
+        } else if (section == "tasks") {
             CSrvTask::PrintState(*this);
+#endif
         } else if (section == "allalerts") {
             CNCAlerts::Report(*this, true);
         } else if (section == "alerts") {
@@ -3673,11 +3675,15 @@ CNCMessageHandler::x_DoCmd_GetConfig(void)
         } else if (section == "db") {
             CTempString mask = params.find("port") != params.end() ? params.at("port") : CTempString(kEmptyStr);
             CNCBlobStorage::WriteDbInfo(*this, mask);
-        } else if (section == "blob") {
+        } else if (section == "blobs") {
             CNCBlobStorage::WriteBlobStat(*this);
         } else {
             WriteText(",\n\"error\": \"Unknown section name, valid names: ");
-            WriteText("netcache, storage, mirror, alerts, allalerts, env, stat, sync, task, blob, db\"");
+#if __NC_TASKS_MONITOR
+            WriteText("netcache, storage, mirror, alerts, allalerts, env, stat, sync, tasks, blobs, db\"");
+#else
+            WriteText("netcache, storage, mirror, alerts, allalerts, env, stat, sync, blobs, db\"");
+#endif
         }
         WriteText("\n}}");
     } else {

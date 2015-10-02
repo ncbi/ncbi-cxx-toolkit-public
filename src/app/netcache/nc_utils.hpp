@@ -178,7 +178,7 @@ public:
         eDebugOrphanRecordFound,
         eDebugOrphanRecordFound2,
         eDebugWriteBlobInfoFailed,
-        eDebugWriteBlobCancelled,
+        eDebugReadBlobInfoFailed0,
         eDebugReadBlobInfoFailed1,
         eDebugReadBlobInfoFailed2,
         eDebugUpdateUpCoords1,
@@ -196,6 +196,16 @@ public:
         eDebugReadChunkData4,
         eDebugDeleteNextData1,
         eDebugDeleteNextData2,
+        eDebugSaveOneMapImpl1,
+        eDebugSaveOneMapImpl2,
+        eDebugWriteChunkData1,
+        eDebugWriteChunkData2,
+        eDebugMoveRecord0,
+        eDebugMoveRecord1,
+        eDebugMoveRecord2,
+        eDebugMoveRecord3,
+        eDebugDeleteFile,
+        eDebugReleaseCacheData,
 #endif
         eLastAlert
     };
