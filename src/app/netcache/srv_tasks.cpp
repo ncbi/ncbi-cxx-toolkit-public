@@ -102,9 +102,9 @@ CSrvTask::InternalRunSlice(TSrvThreadNum thr_num)
     m_LastActive = CSrvTime::CurSecs();
 }
 
+#if __NC_TASKS_MONITOR
 void CSrvTask::PrintState(CSrvSocketTask& task)
 {
-#if __NC_TASKS_MONITOR
     string is("\": "), eol(",\n\"");
     map<string, int> idle_tasks;
     map<string, CSrvStatTerm<int>> busy_tasks;
@@ -142,8 +142,8 @@ void CSrvTask::PrintState(CSrvSocketTask& task)
         task.WriteText(", \"").WriteText("idle").WriteText(is).WriteNumber(idle_tasks.at(t->first));
         task.WriteText("}");
     }
-#endif
 }
+#endif
 
 CSrvTransitionTask::CSrvTransitionTask(void)
     : m_TransState(eState_Initial)

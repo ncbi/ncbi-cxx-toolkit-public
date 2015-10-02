@@ -342,15 +342,6 @@ public:
     virtual ~CSpaceShrinker(void);
 
 private:
-#if 0
-    State x_PrepareToVerify(void);
-    State x_VerifyNextFile(void);
-    State x_CleanNextFile(void);
-
-    State x_PrepareToVerifyData(void);
-    State x_VerifyNextData(void);
-#endif
-
     State x_PrepareToShrink(void);
     State x_DeleteNextFile(void);
     State x_StartMoves(void);
@@ -424,7 +415,7 @@ private:
     int m_NextDead;
     Uint4 m_ExtraGCTime;
     Uint2 m_CurBucket;
-    Uint2 m_CurDelData;
+    size_t m_CurDelData;
     int m_BatchSize;
     bool m_DoExtraGC;
     vector<SNCCacheData*> m_CacheDatas;
