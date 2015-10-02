@@ -509,8 +509,6 @@ struct SNetScheduleAdminImpl : public CObject
     {
     }
 
-    typedef map<pair<string, unsigned int>, string> TIDsMap;
-
     CNetScheduleAPI m_API;
 };
 
