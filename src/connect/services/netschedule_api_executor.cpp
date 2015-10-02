@@ -34,6 +34,8 @@
 
 #include "netschedule_api_impl.hpp"
 
+#include <cmath>
+
 #define NCBI_USE_ERRCODE_X   ConnServ_NetSchedule
 
 BEGIN_NCBI_SCOPE
@@ -521,7 +523,8 @@ void CNetScheduleNotificationHandler::CmdAppendTimeoutGroupAndClientInfo(
         string& cmd, const CDeadline* deadline, const string& job_group)
 {
     if (deadline != NULL) {
-        unsigned remaining_seconds = s_GetRemainingSeconds(*deadline);
+        unsigned remaining_seconds =
+            ceil(deadline->GetRemainingTime().GetAsDouble());
 
         if (remaining_seconds > 0) {
             cmd += " port=";

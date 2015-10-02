@@ -38,6 +38,7 @@
 #include <connect/services/util.hpp>
 
 #include <stdio.h>
+#include <cmath>
 
 BEGIN_NCBI_SCOPE
 
@@ -497,7 +498,8 @@ bool CNetScheduleNotificationHandler::RequestJobWatching(
     cmd += " port=";
     cmd += NStr::NumericToString(GetPort());
     cmd += " timeout=";
-    cmd += NStr::NumericToString(s_GetRemainingSeconds(deadline));
+    unsigned remaining_seconds = ceil(deadline.GetRemainingTime().GetAsDouble());
+    cmd += NStr::NumericToString(remaining_seconds);
 
     g_AppendClientIPSessionIDHitID(cmd);
 

@@ -1109,20 +1109,6 @@ protected:
     string m_Message;
 };
 
-/// @internal
-inline unsigned s_GetRemainingSeconds(const CDeadline& deadline)
-{
-    unsigned sec;
-    unsigned nanosec;
-
-    deadline.GetRemainingTime().GetNano(&sec, &nanosec);
-
-    if (nanosec > 0)
-        ++sec;
-
-    return sec;
-}
-
 /* @} */
 
 
