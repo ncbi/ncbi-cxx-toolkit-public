@@ -611,10 +611,11 @@ CNCBlobVerManager::DeleteVersion(const SNCBlobVerData* ver_data)
 }
 
 void
-CNCBlobVerManager::DeleteDeadVersion(int cut_time)
+CNCBlobVerManager::DeleteDeadVersion(int /*cut_time*/)
 {
     m_CacheData->lock.Lock();
     _ASSERT(m_CacheData->ver_mgr == this);
+#if 0
     CSrvRef<SNCBlobVerData> cur_ver(m_CurVersion);
     if (m_CurVersion) {
         if (m_CurVersion->dead_time <= cut_time)
@@ -623,6 +624,9 @@ CNCBlobVerManager::DeleteDeadVersion(int cut_time)
     else if (!m_CacheData->coord.empty()  &&  m_CacheData->dead_time <= cut_time) {
         x_DeleteCurVersion();
     }
+#else
+    x_DeleteCurVersion();
+#endif
     m_CacheData->lock.Unlock();
 }
 
@@ -1160,8 +1164,6 @@ SNCBlobVerData::x_WriteBlobInfo(void)
 #ifdef _DEBUG
 CNCAlerts::Register(CNCAlerts::eDebugWriteBlobInfoFailed,"x_WriteBlobInfo");
 #endif
-//CNCBlobStorage::DeleteBlobInfo(this, chunk_maps);
-
         meta_has_changed = true;
         move_or_rewrite = false;
         need_write_all = true;
@@ -1232,17 +1234,6 @@ bool
 SNCBlobVerData::x_ExecuteWriteAll(void)
 {
     wb_mem_lock.Lock();
-
-#if 0
-    if (dead_time < CSrvTime::CurSecs()) {
-#ifdef _DEBUG
-CNCAlerts::Register(CNCAlerts::eDebugWriteBlobCancelled,"x_ExecuteWriteAll");
-#endif
-        need_write_all = false;
-        wb_mem_lock.Unlock();
-        return true;
-    }
-#endif
 
     if (need_stop_write) {
         need_write_all = false;
