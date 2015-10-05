@@ -23,6 +23,7 @@ internal/variation/snp/snputils
 internal/variation/snp/hgvstest
 internal/variation/snp/snphgvs
 internal/variation/snp/common
+internal/variation/util
 internal/objects/ads
 internal/aligndb
 internal/refgene/refseq_aln_source
