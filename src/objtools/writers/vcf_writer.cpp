@@ -265,7 +265,8 @@ bool CVcfWriter::x_WriteData(
 {
     CSeq_annot_Handle sah = m_Scope.GetSeq_annotHandle( annot );
     SAnnotSelector sel;
-    sel.SetSortOrder( SAnnotSelector::eSortOrder_Normal );
+    //sel.SetSortOrder( SAnnotSelector::eSortOrder_Normal );
+    sel.SetSortOrder( SAnnotSelector::eSortOrder_None );
 
     CFeat_CI mf(sah, sel);
     CGffFeatureContext fc(mf);
