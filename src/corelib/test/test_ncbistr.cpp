@@ -3250,6 +3250,7 @@ struct SFindStr {
 static const SFindStr s_FindStrTest[] = {
 
     // eCase + eForwardSearch
+    { "bcbab",          "abc", f_CF, 0,  NPOS },
     { "abc",            "abc", f_CF, 0,  0    },
     { "abc++",          "abc", f_CF, 0,  0    },
     { "++abc",          "abc", f_CF, 0,  2    },
@@ -3259,8 +3260,10 @@ static const SFindStr s_FindStrTest[] = {
     { "+abc+abc++abc+", "abc", f_CF, 1,  5    },
     { "+abc+abc++abc+", "abc", f_CF, 2,  10   },
     { "+abc+abc++abc+", "abc", f_CF, 3,  NPOS },
+    { "cabc+abc++abca", "abc", f_CF, 3,  NPOS },
 
     // eCase + eReverseSearch
+    { "bcbab",          "abc", f_CR, 0,  NPOS },
     { "abc",            "abc", f_CR, 0,  0    },
     { "abc++",          "abc", f_CR, 0,  0    },
     { "++abc",          "abc", f_CR, 0,  2    },
@@ -3270,8 +3273,10 @@ static const SFindStr s_FindStrTest[] = {
     { "+abc+abc++abc+", "abc", f_CR, 1,  5    },
     { "+abc+abc++abc+", "abc", f_CR, 2,  1    },
     { "+abc+abc++abc+", "abc", f_CR, 3,  NPOS },
+    { "cabc+abc++abca", "abc", f_CR, 3,  NPOS },
 
     // eNocase + eForwardSearch
+    { "bcbab",          "ABC", f_NF, 0,  NPOS },
     { "abc",            "ABC", f_NF, 0,  0    },
     { "abc++",          "ABC", f_NF, 0,  0    },
     { "++abc",          "ABC", f_NF, 0,  2    },
@@ -3281,8 +3286,10 @@ static const SFindStr s_FindStrTest[] = {
     { "+abc+abc++abc+", "ABC", f_NF, 1,  5    },
     { "+abc+abc++abc+", "ABC", f_NF, 2,  10   },
     { "+abc+abc++abc+", "ABC", f_NF, 3,  NPOS },
+    { "cabc+abc++abca", "ABC", f_NF, 3,  NPOS },
 
     // eNocase + eReverseSearch
+    { "bcbab",          "ABC", f_NR, 0,  NPOS },
     { "abc",            "ABC", f_NR, 0,  0    },
     { "abc++",          "ABC", f_NR, 0,  0    },
     { "++abc",          "ABC", f_NR, 0,  2    },
@@ -3291,7 +3298,8 @@ static const SFindStr s_FindStrTest[] = {
     { "+abc+abc++abc+", "ABC", f_NR, 0,  10   },
     { "+abc+abc++abc+", "ABC", f_NR, 1,  5    },
     { "+abc+abc++abc+", "ABC", f_NR, 2,  1    },
-    { "+abc+abc++abc+", "ABC", f_NR, 3,  NPOS }
+    { "+abc+abc++abc+", "ABC", f_NR, 3,  NPOS },
+    { "cabc+abc++abca", "ABC", f_NR, 3,  NPOS }
 };
 
 

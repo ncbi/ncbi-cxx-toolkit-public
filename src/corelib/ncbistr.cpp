@@ -2819,8 +2819,13 @@ SIZE_TYPE NStr::Find(const CTempString str,
         if (direction == eForwardSearch) {
             do {
                 pos = str.find_first_of(x_first, search_pos);
-                while (pos != NPOS  &&  (pos + plen) <= slen
-                       &&  CompareNocase(str, pos, plen, pattern) != 0) {
+                while (pos != NPOS) {
+                    if ( (pos + plen) > slen ) {
+                        return NPOS;
+                    }
+                    if ( CompareNocase(str, pos, plen, pattern) == 0 ) {
+                        break;
+                    }
                     pos = str.find_first_of(x_first, pos + 1);
                 }
                 if (pos > slen) {
