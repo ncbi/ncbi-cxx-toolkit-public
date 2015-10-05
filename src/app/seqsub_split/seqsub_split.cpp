@@ -58,6 +58,7 @@ public:
 
     CObjectOStream* xInitOutputStream(const string& output_stub, 
                                       const TSeqPos output_index,
+                                      const TSeqPos pad_width,
                                       const bool binary) const;
 
 
@@ -155,9 +156,13 @@ int CSeqSubSplitter::Run()
     int output_index = 0;
     auto_ptr<CObjectOStream> ostr;
     bool binary = false;
+
+
+    const TSeqPos pad_width = log10(output_array.size()) + 1;
+
     NON_CONST_ITERATE(list<CRef<CSeq_submit> >, it, output_array) {
         ++output_index;
-        ostr.reset(xInitOutputStream(output_stub, output_index, binary));
+        ostr.reset(xInitOutputStream(output_stub, output_index, pad_width, binary));
         *ostr << **it;
     }
 
@@ -169,6 +174,7 @@ int CSeqSubSplitter::Run()
 CObjectOStream* CSeqSubSplitter:: xInitOutputStream(
         const string& output_stub,
         const TSeqPos output_index,
+        const TSeqPos pad_width,
         const bool binary) const
 {
     if (output_stub.empty()) {
@@ -177,12 +183,11 @@ CObjectOStream* CSeqSubSplitter:: xInitOutputStream(
 
     string padded_index;
     {
-        const int width = 3;
-        const string padding = string(width, '0');
+        const string padding = string(pad_width, '0');
         padded_index = NStr::IntToString(output_index);
 
-        if (padded_index.size() < width) {
-            padded_index = padding.substr(0, width - padded_index.size()) + padded_index;
+        if (padded_index.size() < pad_width) {
+            padded_index = padding.substr(0, pad_width - padded_index.size()) + padded_index;
         } 
     }
 
@@ -197,7 +202,7 @@ CObjectOStream* CSeqSubSplitter:: xInitOutputStream(
     if (!pOstr) {
         NCBI_THROW(CException, 
                    eUnknown, 
-                   "Unable to open output file");
+                   "Unable to open output file:" + filename);
     }
     return pOstr;
 }
