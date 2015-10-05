@@ -2386,8 +2386,9 @@ void CValidError_bioseq::x_ValidateTitle(const CBioseq& seq)
             if (bsh.GetInst_Topology() == CSeq_inst::eTopology_circular &&
                 (! s_IsConWithGaps (seq)) &&
                 !m_Imp.IsEmbl() && !m_Imp.IsDdbj()) {
+                const CSeq_entry& ctx = *seq.GetParentEntry();
                 PostErr(eDiag_Warning, eErr_SEQ_INST_CompleteCircleProblem,
-                    "Circular topology without complete flag set", seq);
+                    "Circular topology without complete flag set", ctx, *desc);
             }
         }
     }
