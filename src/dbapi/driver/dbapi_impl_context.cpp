@@ -385,7 +385,7 @@ public:
         : CDBConnParamsDelegate(other)
         { }
 
-    string GetParam(const string& key)
+    string GetParam(const string& key) const
         {
             if (key == "is_pooled") {
                 return "false";
