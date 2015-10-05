@@ -61,6 +61,8 @@ CRPCClient_Base::CRPCClient_Base(const string&     service,
                                  ESerialDataFormat format,
                                  unsigned int      retry_limit)
     : m_Format(format),
+      m_RetryCount(0),
+      m_RecursionCount(0),
       m_Service(service),
       m_Timeout(kDefaultTimeout),
       m_RetryLimit(retry_limit)
@@ -79,6 +81,10 @@ CRPCClient_Base::~CRPCClient_Base(void)
 
 void CRPCClient_Base::Connect(void)
 {
+    // Do not connect from recursive requests - this must be done
+    // by the main request only.
+    if (m_RecursionCount > 1) return;
+
     if (m_Stream.get()  &&  m_Stream->good()) {
         return; // already connected
     }
@@ -117,6 +123,10 @@ void CRPCClient_Base::Reset(void)
 void CRPCClient_Base::SetAffinity(const string& affinity)
 {
     if (m_Affinity != affinity) {
+        if (m_RecursionCount > 1) {
+            ERR_POST("Affinity can not be changed on a recursive request");
+            return;
+        }
         Disconnect();
         m_Affinity  = affinity;
     }
@@ -141,12 +151,36 @@ void CRPCClient_Base::x_SetStream(CNcbiIostream* stream)
 }
 
 
+class CCounterGuard
+{
+public:
+    CCounterGuard(int* counter)
+        : m_Counter(*counter)
+    {
+
+        m_Counter++;
+    }
+
+    ~CCounterGuard(void)
+    {
+        m_Counter--;
+    }
+
+private:
+    int& m_Counter;
+};
+
 void CRPCClient_Base::x_Ask(const CSerialObject& request, CSerialObject& reply)
 {
     CMutexGuard LOCK(m_Mutex);
+    if (m_RecursionCount == 0) {
+        m_RetryCount = 0;
+    }
+    // Recursion counter needs to be decremented on both success and failure.
+    CCounterGuard recursion_guard(&m_RecursionCount);
+
     // Reset headers from previous requests if any.
     m_RetryCtx.Reset();
-    unsigned int tries = 0;
     double max_span = m_RetryDelay.GetAsDouble()*m_RetryLimit;
     double span = max_span;
     bool limit_by_time = !m_RetryDelay.IsEmpty();
@@ -199,15 +233,20 @@ void CRPCClient_Base::x_Ask(const CSerialObject& request, CSerialObject& reply)
                 throw;
             }
         }
+        // No retries for recursive requests (e.g. AskInit called by Connect).
+        // Exit immediately, do not reset retry context - it may be used by
+        // the main request's retry loop.
+        if (m_RecursionCount > 1) return;
+
         // Retry request on exception or on explicit retry request from the server.
 
         // If using time limit, allow to make more than m_RetryLimit attempts
         // if the server has set shorter delay.
-        if ((!limit_by_time  &&  ++tries >= m_RetryLimit)  ||
-            !x_ShouldRetry(tries)) {
+        if ((!limit_by_time  &&  ++m_RetryCount >= m_RetryLimit)  ||
+            !x_ShouldRetry(m_RetryCount)) {
             NCBI_THROW(CRPCClientException, eFailed,
                 "Failed to receive reply after " +
-                NStr::NumericToString(tries) + " tries");
+                NStr::NumericToString(m_RetryCount) + " tries");
         }
         if ( m_RetryCtx.IsSetStop() ) {
             NCBI_THROW(CRPCClientException, eFailed,
@@ -225,7 +264,8 @@ void CRPCClient_Base::x_Ask(const CSerialObject& request, CSerialObject& reply)
                     CTimeSpan(max_span).AsSmartString());
             }
         }
-        if ( !(tries & 1)  ||  m_RetryCtx.NeedReconnect() ) {
+        // Do not try to force reconnect in recursive calls.
+        if ( !(m_RetryCount & 1)  ||  m_RetryCtx.NeedReconnect() ) {
             // reset on every other attempt in case we're out of sync
             try {
                 Reset();

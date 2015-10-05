@@ -99,6 +99,8 @@ private:
     ESerialDataFormat        m_Format;
     CMutex                   m_Mutex;   ///< To allow sharing across threads.
     CTimeSpan                m_RetryDelay;
+    int                      m_RetryCount;
+    int                      m_RecursionCount;
 
 protected:
     string                   m_Service; ///< Used by default Connect().
