@@ -127,7 +127,7 @@ private:
 // constructor
 CAsn2FlatApp::CAsn2FlatApp (void)
 {
-    SetVersion(CVersionInfo(0, 9, 11));
+    SetVersion(CVersionInfo(0, 9, 12));
 }
 
 // destructor
@@ -578,7 +578,7 @@ bool CAsn2FlatApp::HandleSeqEntry(const CSeq_entry_Handle& seh )
         } else if ( bsh.IsNa() ) {
             if ( m_On != NULL ) {
                 flatfile_os = m_On;
-            } else if ( is_genomic && m_Og != NULL ) {
+            } else if ( (is_genomic || ! closest_molinfo) && m_Og != NULL ) {
                 flatfile_os = m_Og;
             } else if ( is_RNA && m_Or != NULL ) {
                 flatfile_os = m_Or;

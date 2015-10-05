@@ -69,6 +69,9 @@ class CAsn2FastaApp:
 //  ==========================================================================
 {
 public:
+    CAsn2FastaApp (void);
+    ~CAsn2FastaApp (void);
+
     void Init(void);
     int  Run (void);
 
@@ -112,6 +115,18 @@ private:
     bool                        m_DeflineOnly;
     bool                        m_do_cleanup;
 };
+
+// constructor
+CAsn2FastaApp::CAsn2FastaApp (void)
+{
+    SetVersion(CVersionInfo(0, 9, 1));
+}
+
+// destructor
+CAsn2FastaApp::~CAsn2FastaApp (void)
+
+{
+}
 
 //  --------------------------------------------------------------------------
 void CAsn2FastaApp::Init(void)
@@ -778,7 +793,7 @@ bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
         } else if ( bsh.IsNa() ) {
             if ( m_On.get() != NULL ) {
                 fasta_os = m_On.get();
-            } else if ( is_genomic && m_Og.get() != NULL ) {
+            } else if ( (is_genomic || ! closest_molinfo) && m_Og.get() != NULL ) {
                 fasta_os = m_Og.get();
                 if (! m_OgHead.empty() && ! m_OgTail.empty()) {
                     TSeqPos len = bsr->GetLength();
