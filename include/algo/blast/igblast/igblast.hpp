@@ -77,6 +77,7 @@ public:
     int  m_NumAlign[3];              // number of VDJ alignments to show
     bool m_FocusV;                   // should alignment restrict to V
     bool m_Translate;                // should translation be displayed
+    bool m_ExtendAlign;
 };
 
 class CIgAnnotation : public CObject
@@ -204,14 +205,16 @@ public:
     CIgBlast(CRef<CBlastQueryVector> query_factory,
              CRef<CLocalDbAdapter> blastdb,
              CRef<CBlastOptionsHandle> options,
-             CConstRef<CIgBlastOptions> ig_options)
+             CConstRef<CIgBlastOptions> ig_options,
+             CRef<CScope> scope)
        : m_IsLocal(true),
          m_NumThreads(1),
          m_Query(query_factory),
          m_LocalDb(blastdb),
          m_Options(options),
          m_IgOptions(ig_options),
-         m_AnnotationInfo(ig_options) { }
+         m_AnnotationInfo(ig_options),
+        m_Scope(scope) { }
 
     /// Remote Igblast search API
     /// @param query_factory  Concatenated query sequences [in]
@@ -224,7 +227,8 @@ public:
              CRef<IQueryFactory>   subjects,
              CRef<CBlastOptionsHandle> options,
              CConstRef<CIgBlastOptions> ig_options,
-             string entrez_query)
+             string entrez_query,
+             CRef<CScope> scope)
        : m_IsLocal(false),
          m_NumThreads(1),
          m_Query(query_factory),
@@ -233,7 +237,8 @@ public:
          m_Options(options),
          m_IgOptions(ig_options),
          m_AnnotationInfo(ig_options),
-         m_EntrezQuery(entrez_query){ }
+         m_EntrezQuery(entrez_query),
+         m_Scope(scope){ }
 
     /// Destructor
     ~CIgBlast() {};
@@ -258,6 +263,7 @@ private:
     CConstRef<CIgBlastOptions> m_IgOptions;
     CIgAnnotationInfo m_AnnotationInfo;
     string m_EntrezQuery;
+    CRef<CScope> m_Scope;
 
     /// Prohibit copy constructor
     CIgBlast(const CIgBlast& rhs);
@@ -333,6 +339,8 @@ private:
                      int q_ve,
                      int iq,
                      bool va_or_vd_as_heavy_chain);
+
+    void x_ExtendAlign(CRef<CSearchResultSet> & results);
     
 };
 

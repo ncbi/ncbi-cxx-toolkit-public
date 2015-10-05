@@ -199,12 +199,12 @@ int CIgBlastpApp::Run(void)
                                    db_args->GetSearchDatabase(), 
                                    db_args->GetSubjects(),
                                    opts_hndl, ig_opts,
-                                   NcbiEmptyString);
+                                   NcbiEmptyString, scope);
                 //TODO:          m_CmdLineArgs->ProduceDebugRemoteOutput(),
                 //TODO:          m_CmdLineArgs->GetClientId());
                 results = rmt_blast.Run();
             } else {
-                CIgBlast lcl_blast(query, blastdb, opts_hndl, ig_opts);
+                CIgBlast lcl_blast(query, blastdb, opts_hndl, ig_opts, scope);
                 lcl_blast.SetNumberOfThreads(m_CmdLineArgs->GetNumThreads());
                 results = lcl_blast.Run();
             }

@@ -200,6 +200,13 @@ public:
         return m_Alignment;
     }
 
+    /// Only intended to be used if you need to edit the seqlign. Otherwise
+    ///use GetSeqAlign()
+    CRef<objects::CSeq_align_set> SetSeqAlign() 
+    {
+        return m_Alignment;
+    }
+
     /// Return true if there are any alignments for this query
     bool HasAlignments() const;
 

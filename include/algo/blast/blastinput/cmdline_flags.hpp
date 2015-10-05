@@ -287,6 +287,8 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgGLOrigin;
 NCBI_BLASTINPUT_EXPORT extern const string kArgGLDomainSystem;
 /// Arugment to specify if Igblast alignment should restrict to V seg
 NCBI_BLASTINPUT_EXPORT extern const string kArgGLFocusV;
+/// Arugment to specify if Igblast alignment should be extends at 5' end
+NCBI_BLASTINPUT_EXPORT extern const string kArgExtendAlign;
 /// Arugment to specify if Igblast alignment should be translated to protein
 NCBI_BLASTINPUT_EXPORT extern const string kArgTranslate;
 ///Arugment to specify if Igblast min D gene match

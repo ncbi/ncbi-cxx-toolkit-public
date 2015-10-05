@@ -57,6 +57,7 @@ BEGIN_SCOPE(blast)
 static int max_allowed_VJ_distance_with_D = 90;
 static int max_allowed_VJ_distance_without_D = 40;
 static int max_allowed_VD_distance = 40;
+static int extend_length = 20;
 
 static void s_ReadLinesFromFile(const string& fn, vector<string>& lines)
 {
@@ -129,6 +130,75 @@ CIgAnnotationInfo::CIgAnnotationInfo(CConstRef<CIgBlastOptions> &ig_opt)
     }
 };
 
+
+void CIgBlast::x_ExtendAlign(CRef<CSearchResultSet> & results){
+    
+    NON_CONST_ITERATE(CSearchResultSet, result, *results) {
+
+        if ((*result)->HasAlignments()) {
+            CSeq_align_set::Tdata & align_list = (*result)->SetSeqAlign()->Set();
+            int desired_len = 0; 
+            int actual_len = 0;
+            int count = 0;
+            ENa_strand extend_strand = eNa_strand_plus;
+            int highest_score = 0; 
+
+            NON_CONST_ITERATE(CSeq_align_set::Tdata, align, align_list) {
+
+                // cerr << "before=" << MSerial_AsnText << **align << endl;
+
+                //extend germline match up to some positions at 5' end.  Extend length is 
+                //set by comparing to top hit or top hit equivalents
+
+                int score = 0;
+                (*align)->GetNamedScore(CSeq_align::eScore_Score, score);
+                
+                if (score >= highest_score)  {
+                    highest_score = score;
+                    extend_strand = (*align)->GetSeqStrand(0);
+                    desired_len = min(extend_length, 
+                                      (*align)->GetSegs().GetDenseg().GetStarts()[1]);
+                    
+                    if ((*align)->GetSeqStrand(0) == eNa_strand_minus) {
+                        int query_len = m_Scope->GetBioseqHandle((*align)->GetSeq_id(0)).GetBioseqLength();
+                        int allowed_len = min ((*align)->GetSegs().GetDenseg().GetStarts()[1],
+                                               query_len - ((*align)->GetSegs().GetDenseg().GetStarts()[0] +
+                                                            (int)(*align)->GetSegs().GetDenseg().GetLens()[0]));
+                        actual_len = min(desired_len, allowed_len);
+                        
+                        
+                    } else {
+                        
+                        actual_len = min(desired_len,
+                                         min((*align)->GetSegs().GetDenseg().GetStarts()[0],
+                                             (*align)->GetSegs().GetDenseg().GetStarts()[1]));  
+                    
+                    }
+                }
+            
+                count ++;
+                //only extend if it has the same strand as the top hit
+                if (actual_len > 0 && (*align)->GetSeqStrand(0) == extend_strand) {
+                    if (extend_strand == eNa_strand_minus) {
+                       
+                        (*align)->SetSegs().SetDenseg().SetStarts()[1] -= actual_len;
+                        (*align)->SetSegs().SetDenseg().SetLens()[0] += actual_len; 
+
+                    } else {
+                    
+                        (*align)->SetSegs().SetDenseg().SetStarts()[0] -= actual_len;
+                        (*align)->SetSegs().SetDenseg().SetStarts()[1] -= actual_len;
+                        (*align)->SetSegs().SetDenseg().SetLens()[0] += actual_len;
+                       
+                    } 
+                }
+                // cerr << "after=" << MSerial_AsnText << **align << endl;
+            }
+               
+        }
+    }
+}
+
 CRef<CSearchResultSet>
 CIgBlast::Run()
 {
@@ -144,6 +214,10 @@ CIgBlast::Run()
         x_SetupVSearch(qf, opts_hndl);
         CLocalBlast blast(qf, opts_hndl, m_IgOptions->m_Db[0]);
         results[0] = blast.Run();
+        if (m_IgOptions->m_ExtendAlign){
+            x_ExtendAlign(results[0]);
+        }
+       
         x_ConvertResultType(results[0]);
         s_SortResultsByEvalue(results[0]);
         x_AnnotateV(results[0], annots);
@@ -154,6 +228,9 @@ CIgBlast::Run()
         opts_hndl->SetHitlistSize(20);  // use a larger number to ensure annotation
         CLocalBlast blast(qf, opts_hndl, m_IgOptions->m_Db[3]);
         results[3] = blast.Run();
+        if (m_IgOptions->m_ExtendAlign){
+            x_ExtendAlign(results[3]);
+        }
         s_SortResultsByEvalue(results[3]);
         x_AnnotateDomain(results[0], results[3], annots);
     }

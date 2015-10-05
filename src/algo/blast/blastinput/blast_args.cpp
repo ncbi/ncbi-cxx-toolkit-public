@@ -1439,6 +1439,8 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
     arg_desc.AddFlag(kArgGLFocusV, "Should the search only be for V segment (effective only for non-germline database search using -db option)?", true);
 
+    arg_desc.AddFlag(kArgExtendAlign, "Extend V gene alignment up to 20 positions at 5' end", true);
+
     if (! m_IsProtein) {
         arg_desc.AddFlag(kArgTranslate, "Show translated alignments", true);
     }
@@ -1490,6 +1492,8 @@ CIgBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
     m_IgOptions->m_Origin = args[kArgGLOrigin].AsString();
     m_IgOptions->m_DomainSystem = args[kArgGLDomainSystem].AsString();
     m_IgOptions->m_FocusV = args.Exist(kArgGLFocusV) ? args[kArgGLFocusV] : false;
+    m_IgOptions->m_ExtendAlign = args.Exist(kArgExtendAlign) ? args[kArgExtendAlign] : false;
+
     m_IgOptions->m_Translate = args.Exist(kArgTranslate) ? args[kArgTranslate] : false;
     if (!m_IsProtein) {
         string aux_file = (args.Exist(kArgGLChainType) && args[kArgGLChainType])
