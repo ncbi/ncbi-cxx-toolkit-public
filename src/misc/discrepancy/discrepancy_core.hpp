@@ -240,8 +240,8 @@ public:
     template<typename T> void Call(CDiscrepancyVisitor<T>& disc, const T& obj){ disc.Call(obj, *this);}
 
     CConstRef<CBioseq> GetCurrentBioseq(void) const;
-    CConstRef<CBioseq_set> GetCurrentBioseq_set(void) const { return m_Bioseq_set_Stack.size() ? m_Bioseq_set_Stack[m_Bioseq_set_Stack.size() - 1] : CConstRef<CBioseq_set>(0); }
-    vector<CConstRef<CBioseq_set> > Get_Bioseq_set_Stack(void) const { return m_Bioseq_set_Stack; }
+    CConstRef<CBioseq_set> GetCurrentBioseq_set(void) const { return m_Bioseq_set_Stack.empty() ? CConstRef<CBioseq_set>(0) : m_Bioseq_set_Stack.back(); }
+    const vector<CConstRef<CBioseq_set> > &Get_Bioseq_set_Stack(void) const { return m_Bioseq_set_Stack; }
     CConstRef<CSeq_feat> GetCurrentSeq_feat(void) const { return m_Current_Seq_feat; }
     size_t GetCountBioseq(void) const { return m_Count_Bioseq;}
     size_t GetCountSeq_feat(void) const { return m_Count_Seq_feat;}

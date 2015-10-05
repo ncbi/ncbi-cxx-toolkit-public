@@ -114,21 +114,37 @@ static bool IsProdBiomol(int biomol)
     return false;
 }
 
-bool IsmRNASequenceInGenProdSet(CConstRef<objects::CBioseq> bioseq, CConstRef<objects::CBioseq_set> bioseq_set)
+static bool x_IsGenProdSet(CConstRef<objects::CBioseq_set> bioseq_set)
+{
+    return (bioseq_set && bioseq_set->IsSetClass() && bioseq_set->GetClass() == objects::CBioseq_set::eClass_gen_prod_set);
+}
+
+bool IsmRNASequenceInGenProdSet(CConstRef<objects::CBioseq> bioseq, const vector<CConstRef<CBioseq_set> > &bioseq_set_stack)
 {
     bool res = false;
-    if (bioseq && bioseq->IsSetInst() && bioseq->GetInst().IsSetMol() && bioseq->GetInst().GetMol() == objects::CSeq_inst::eMol_rna
-        && bioseq_set && bioseq_set->IsSetClass() && bioseq_set->GetClass() == objects::CBioseq_set::eClass_gen_prod_set)
+    bool prod_mol = false;
+
+    if (bioseq && bioseq->IsSetInst() && bioseq->GetInst().IsSetMol() && bioseq->GetInst().GetMol() == objects::CSeq_inst::eMol_rna)
     {
         FOR_EACH_SEQDESC_ON_BIOSEQ(desc,*bioseq)
         {
             if ((*desc)->IsMolinfo() && (*desc)->GetMolinfo().IsSetBiomol())
             {
-                res = IsProdBiomol((*desc)->GetMolinfo().GetBiomol());
+                prod_mol = IsProdBiomol((*desc)->GetMolinfo().GetBiomol());
             }
         }
     }
-// TODO check grandparent bioseq-set    
+
+    if (!bioseq_set_stack.empty() && prod_mol)
+    {
+        CConstRef<objects::CBioseq_set> bioseq_set = bioseq_set_stack.back();
+        res = x_IsGenProdSet(bioseq_set);
+        if (!res && bioseq_set_stack.size() > 1 && bioseq_set && bioseq_set->IsSetClass() && bioseq_set->GetClass() == objects::CBioseq_set::eClass_nuc_prot)
+        {
+            bioseq_set = bioseq_set_stack[bioseq_set_stack.size() - 2];
+            res = x_IsGenProdSet(bioseq_set);
+        }
+    }
     return res;
 }
 

@@ -52,10 +52,10 @@ DISCREPANCY_CASE(DUPLICATE_GENE_LOCUS, CSeq_feat_BY_BIOSEQ, eNormal, "Duplicate 
         m_Count = context.GetCountBioseq();
         Summarize();
     }
-    // TODO Skip any Bioseqs that are an mRNA sequence in a GenProdSet
+
     CConstRef<CBioseq> bioseq = context.GetCurrentBioseq();
-    CConstRef<CBioseq_set> bioseq_set = context.GetCurrentBioseq_set();
-    if (!IsmRNASequenceInGenProdSet(bioseq, bioseq_set))
+    const vector<CConstRef<CBioseq_set> > &bioseq_set_stack = context.Get_Bioseq_set_Stack();
+    if (!IsmRNASequenceInGenProdSet(bioseq, bioseq_set_stack))
         m_Objs[obj.GetData().GetGene().GetLocus()].Add(*new CDiscrepancyObject(CConstRef<CSeq_feat>(&obj), context.GetScope(), context.GetFile(), context.GetKeepRef()), false);
 }
 
