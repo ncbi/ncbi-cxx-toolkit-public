@@ -335,11 +335,12 @@ public:
     ~CVDBObjectCacheBase(void);
 
 protected:
-    CRef<CObject> Get(void);
-    void Put(CRef<CObject>& curs);
+    CObject* Get(uint64_t row);
+    void Put(CObject* curs, uint64_t row);
 
 private:
-    typedef vector< CRef<CObject> > TObjects;
+    typedef pair<uint64_t, CRef<CObject> > TSlot;
+    typedef vector<TSlot> TObjects;
     TObjects m_Objects;
 
 private:
@@ -352,15 +353,13 @@ template<class Object>
 class CVDBObjectCache : public CVDBObjectCacheBase
 {
 public:
-    CRef<Object> Get(void) {
-        CRef<Object> obj;
-        CRef<CObject> obj2 = CVDBObjectCacheBase::Get();
-        obj = static_cast<Object*>(obj2.GetPointerOrNull());
-        return obj;
+    CRef<Object> Get(uint64_t row = 0) {
+        Object* obj = static_cast<Object*>(CVDBObjectCacheBase::Get(row));
+        return CRef<Object>(obj);
     }
-    void Put(CRef<Object>& obj) {
-        CRef<CObject> obj2(obj.GetPointer());
-        CVDBObjectCacheBase::Put(obj2);
+    void Put(CRef<Object>& ref, uint64_t row = 0) {
+        Object* obj = ref.ReleaseOrNull();
+        CVDBObjectCacheBase::Put(obj, row);
     }
 };
 

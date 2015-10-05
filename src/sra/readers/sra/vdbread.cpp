@@ -683,23 +683,52 @@ CVDBObjectCacheBase::~CVDBObjectCacheBase(void)
 DEFINE_STATIC_FAST_MUTEX(sm_CacheMutex);
 
 
-CRef<CObject> CVDBObjectCacheBase::Get(void)
+CObject* CVDBObjectCacheBase::Get(uint64_t row)
 {
-    CRef<CObject> obj;
     CFastMutexGuard guard(sm_CacheMutex);
-    if ( !m_Objects.empty() ) {
-        obj.Swap(m_Objects.back());
-        m_Objects.pop_back();
+    if ( m_Objects.empty() ) {
+        return 0;
     }
+    TObjects::iterator best_it;
+    uint64_t best_d = numeric_limits<uint64_t>::max();
+    NON_CONST_ITERATE ( TObjects, it, m_Objects ) {
+        uint64_t slot_row = it->first;
+        if ( slot_row >= row ) {
+            uint64_t d = slot_row - row;
+            if ( d <= best_d ) {
+                best_d = d;
+                best_it = it;
+            }
+        }
+        else {
+            uint64_t d = row - slot_row;
+            if ( d < best_d ) {
+                best_d = d;
+                best_it = it;
+            }
+        }
+    }
+    swap(*best_it, m_Objects.back());
+    CObject* obj = m_Objects.back().second.Release();
+    m_Objects.pop_back();
+    _ASSERT(!obj->Referenced());
     return obj;
 }
 
 
-void CVDBObjectCacheBase::Put(CRef<CObject>& obj)
+void CVDBObjectCacheBase::Put(CObject* obj, uint64_t row)
 {
+    if ( !obj || obj->Referenced() ) {
+        return;
+    }
     CFastMutexGuard guard(sm_CacheMutex);
     if ( m_Objects.size() < kCacheSize ) {
-        m_Objects.push_back(obj);
+        m_Objects.push_back(TSlot());
+        m_Objects.back().first = row;
+        m_Objects.back().second = obj;
+    }
+    else {
+        CRef<CObject> ref(obj); // delete the object
     }
 }
 
