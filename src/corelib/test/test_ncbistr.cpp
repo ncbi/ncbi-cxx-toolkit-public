@@ -3328,6 +3328,7 @@ BOOST_AUTO_TEST_CASE(s_Find)
     BOOST_CHECK_EQUAL(NStr::FindNoCase("abcd", "xyz", 0, NPOS, NStr::eLast),     NPOS);
     BOOST_CHECK_EQUAL(NStr::FindCase  ("abcd", "aBc", 0, NPOS, NStr::eLast),     NPOS);
     BOOST_CHECK_EQUAL(NStr::FindNoCase("abcd", "aBc", 0, NPOS, NStr::eLast),     0);
+    BOOST_CHECK_EQUAL(NStr::Find("abc abc abc", "bc", 2, 8, NStr::eFirst, NStr::eCase), 5);
     BOOST_CHECK_EQUAL(NStr::FindCase  ("abc abc abc", "bc", 2, 8, NStr::eFirst), 5);
     BOOST_CHECK_EQUAL(NStr::FindCase  ("abc abc abc", "bc", 2, 8, NStr::eLast),  5);
 }
