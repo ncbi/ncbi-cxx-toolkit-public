@@ -139,6 +139,7 @@ void CIgBlast::x_ExtendAlign(CRef<CSearchResultSet> & results){
             CSeq_align_set::Tdata & align_list = (*result)->SetSeqAlign()->Set();
             int desired_len = 0; 
             int actual_len = 0;
+            int top_hit_actual_len = 0;
             int count = 0;
             ENa_strand extend_strand = eNa_strand_plus;
             int highest_score = 0; 
@@ -153,7 +154,7 @@ void CIgBlast::x_ExtendAlign(CRef<CSearchResultSet> & results){
                 int score = 0;
                 (*align)->GetNamedScore(CSeq_align::eScore_Score, score);
                 
-                if (score >= highest_score)  {
+                if (score >= highest_score)  { //top hits
                     highest_score = score;
                     extend_strand = (*align)->GetSeqStrand(0);
                     desired_len = min(extend_length, 
@@ -164,16 +165,32 @@ void CIgBlast::x_ExtendAlign(CRef<CSearchResultSet> & results){
                         int allowed_len = min ((*align)->GetSegs().GetDenseg().GetStarts()[1],
                                                query_len - ((*align)->GetSegs().GetDenseg().GetStarts()[0] +
                                                             (int)(*align)->GetSegs().GetDenseg().GetLens()[0]));
-                        actual_len = min(desired_len, allowed_len);
+                        top_hit_actual_len = min(desired_len, allowed_len);
                         
                         
                     } else {
                         
-                        actual_len = min(desired_len,
+                        top_hit_actual_len = min(desired_len,
                                          min((*align)->GetSegs().GetDenseg().GetStarts()[0],
                                              (*align)->GetSegs().GetDenseg().GetStarts()[1]));  
                     
                     }
+                } 
+                    
+                if ((*align)->GetSeqStrand(0) == eNa_strand_minus) {
+                    int query_len = m_Scope->GetBioseqHandle((*align)->GetSeq_id(0)).GetBioseqLength();
+                    int allowed_len = min ((*align)->GetSegs().GetDenseg().GetStarts()[1],
+                                           query_len - ((*align)->GetSegs().GetDenseg().GetStarts()[0] +
+                                                        (int)(*align)->GetSegs().GetDenseg().GetLens()[0]));
+                    actual_len = min(top_hit_actual_len, min(desired_len, allowed_len));
+                    
+                    
+                } else {
+                    
+                    actual_len = min(top_hit_actual_len, min(desired_len,
+                                                             min((*align)->GetSegs().GetDenseg().GetStarts()[0],
+                                                                 (*align)->GetSegs().GetDenseg().GetStarts()[1])));  
+                                     
                 }
             
                 count ++;
