@@ -324,6 +324,7 @@ public:
     size_t GetMasterDescrBytes(TMasterDescrBytes& buffer);
     // return entry or null if absent
     CRef<CSeq_entry> GetMasterDescrEntry(void);
+    void AddMasterDescr(CSeq_descr& descr);
 
     void ResetMasterDescr(void);
     void SetMasterDescr(const TMasterDescr& descr, int filter);
@@ -375,7 +376,6 @@ protected:
     struct SSeqTableCursor : public CObject {
         explicit SSeqTableCursor(const CVDBTable& table);
 
-        CVDBTable m_Table;
         CVDBCursor m_Cursor;
 
         DECLARE_VDB_COLUMN_AS(NCBI_gi, GI);
@@ -403,11 +403,10 @@ protected:
         DECLARE_VDB_COLUMN_AS(Uint4 /*NCBI_WGS_hash*/, HASH);
     };
 
-    // SSeqTableCursor is helper accessor structure for SCAFFOLD table
+    // SScfTableCursor is helper accessor structure for SCAFFOLD table
     struct SScfTableCursor : public CObject {
         SScfTableCursor(const CVDBTable& table);
 
-        CVDBTable m_Table;
         CVDBCursor m_Cursor;
 
         DECLARE_VDB_COLUMN_AS_STRING(SCAFFOLD_NAME);
@@ -420,22 +419,20 @@ protected:
         DECLARE_VDB_COLUMN_AS(bool, CIRCULAR);
     };
 
-    // SSeqTableCursor is helper accessor structure for SEQUENCE table
+    // SIdsTableCursor is helper accessor structure for SEQUENCE table
     struct SIdxTableCursor : public CObject {
         explicit SIdxTableCursor(const CVDBTable& table);
 
-        CVDBTable m_Table;
         CVDBCursor m_Cursor;
 
-        DECLARE_VDB_COLUMN_AS(uint64_t, NUC_ROW_ID);
-        DECLARE_VDB_COLUMN_AS(uint64_t, PROT_ROW_ID);
+        DECLARE_VDB_COLUMN_AS(int64_t, NUC_ROW_ID);
+        DECLARE_VDB_COLUMN_AS(int64_t, PROT_ROW_ID);
     };
 
     // SProtTableCursor is helper accessor structure for optional PROTEIN table
     struct SProtTableCursor : public CObject {
         explicit SProtTableCursor(const CVDBTable& table);
 
-        CVDBTable m_Table;
         CVDBCursor m_Cursor;
 
         DECLARE_VDB_COLUMN_AS_STRING(ACCESSION);
@@ -450,6 +447,8 @@ protected:
         DECLARE_VDB_COLUMN_AS_STRING(REF_ACC);
     };
 
+    struct SFeatTableCursor;
+
     // open tables
     void OpenTable(CVDBTable& table,
                    const char* table_name,
@@ -461,6 +460,7 @@ protected:
 
     void OpenScfTable(void);
     void OpenProtTable(void);
+    void OpenFeatTable(void);
     void OpenGiIdxTable(void);
     void OpenProtAccIndex(void);
     void OpenContigNameIndex(void);
@@ -481,6 +481,12 @@ protected:
             OpenProtTable();
         }
         return m_ProtTable;
+    }
+    const CVDBTable& FeatTable(void) {
+        if ( !m_FeatTableIsOpened ) {
+            OpenFeatTable();
+        }
+        return m_FeatTable;
     }
     const CVDBTable& GiIdxTable(void) {
         if ( !m_GiIdxTableIsOpened ) {
@@ -514,23 +520,17 @@ protected:
     }
     
     // get table accessor object for exclusive access
-    CRef<SSeqTableCursor> Seq(void);
-    CRef<SScfTableCursor> Scf(void);
-    CRef<SIdxTableCursor> Idx(void);
-    CRef<SProtTableCursor> Prot(void);
+    CRef<SSeqTableCursor> Seq(uint64_t row = 0);
+    CRef<SScfTableCursor> Scf(uint64_t row = 0);
+    CRef<SIdxTableCursor> Idx(uint64_t row = 0);
+    CRef<SProtTableCursor> Prot(uint64_t row = 0);
+    CRef<SFeatTableCursor> Feat(uint64_t row = 0);
     // return table accessor object for reuse
-    void Put(CRef<SSeqTableCursor>& curs) {
-        m_Seq.Put(curs);
-    }
-    void Put(CRef<SScfTableCursor>& curs) {
-        m_Scf.Put(curs);
-    }
-    void Put(CRef<SIdxTableCursor>& curs) {
-        m_GiIdx.Put(curs);
-    }
-    void Put(CRef<SProtTableCursor>& curs) {
-        m_Prot.Put(curs);
-    }
+    void Put(CRef<SSeqTableCursor>& curs, uint64_t row = 0);
+    void Put(CRef<SScfTableCursor>& curs, uint64_t row = 0);
+    void Put(CRef<SIdxTableCursor>& curs, uint64_t row = 0);
+    void Put(CRef<SProtTableCursor>& curs, uint64_t row = 0);
+    void Put(CRef<SFeatTableCursor>& curs, uint64_t row = 0);
 
 protected:
     void x_InitIdParams(void);
@@ -551,6 +551,7 @@ private:
     CFastMutex m_TableMutex;
     volatile bool m_ScfTableIsOpened;
     volatile bool m_ProtTableIsOpened;
+    volatile bool m_FeatTableIsOpened;
     volatile bool m_GiIdxTableIsOpened;
     volatile bool m_ProtAccIndexIsOpened;
     volatile bool m_ContigNameIndexIsOpened;
@@ -558,11 +559,13 @@ private:
     volatile bool m_ProteinNameIndexIsOpened;
     CVDBTable m_ScfTable;
     CVDBTable m_ProtTable;
+    CVDBTable m_FeatTable;
     CVDBTable m_GiIdxTable;
 
     CVDBObjectCache<SSeqTableCursor> m_Seq;
     CVDBObjectCache<SScfTableCursor> m_Scf;
     CVDBObjectCache<SProtTableCursor> m_Prot;
+    CVDBObjectCache<SFeatTableCursor> m_Feat;
     CVDBObjectCache<SIdxTableCursor> m_GiIdx;
     CVDBTableIndex m_ProtAccIndex;
     CVDBTableIndex m_ContigNameIndex;
@@ -825,7 +828,7 @@ public:
 
     typedef struct SWGSContigGapInfo {
         size_t gaps_count;
-        const INSDC_coord_one* gaps_start;
+        const INSDC_coord_zero* gaps_start;
         const INSDC_coord_len* gaps_len;
         const NCBI_WGS_component_props* gaps_props;
         const NCBI_WGS_gap_linkage* gaps_linkage;
@@ -882,7 +885,7 @@ public:
     // Return annot binary byte sequence as is
     CTempString GetAnnotBytes(void) const;
     typedef CBioseq::TAnnot TAnnotSet;
-    void GetAnnotSet(TAnnotSet& annot_set) const;
+    void GetAnnotSet(TAnnotSet& annot_set, TFlags flags = fDefaultFlags) const;
 
     bool HasQualityGraph(void) const;
     void GetQualityVec(vector<INSDC_quality_phred>& quality_vec) const;
@@ -1162,7 +1165,7 @@ public:
 
     bool HasAnnotSet(void) const;
     typedef CBioseq::TAnnot TAnnotSet;
-    void GetAnnotSet(TAnnotSet& annot_set) const;
+    void GetAnnotSet(TAnnotSet& annot_set, TFlags flags = fDefaultFlags) const;
 
     CRef<CSeq_inst> GetSeq_inst(TFlags flags = fDefaultFlags) const;
 

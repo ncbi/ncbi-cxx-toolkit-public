@@ -517,6 +517,43 @@ CWGSDb_Impl::SProtTableCursor::SProtTableCursor(const CVDBTable& table)
 {
 }
 
+/*
+typedef U8 NCBI:WGS:seqtype;
+const NCBI:WGS:seqtype:contig = 0;
+const NCBI:WGS:seqtype:scaffold = 1;
+const NCBI:WGS:seqtype:protein = 2;
+const NCBI:WGS:seqtype:mrna = 3;
+
+typedef U8 NCBI:WGS:feattype;
+
+typedef U8 NCBI:WGS:loc:strand;
+const NCBI:WGS:loc:strand:unknown = 0;
+const NCBI:WGS:loc:strand:plus = 1;
+const NCBI:WGS:loc:strand:minus = 2;
+const NCBI:WGS:loc:strand:both = 3;
+*/
+
+// SFeatTableCursor is helper accessor structure for optional PROTEIN table
+struct CWGSDb_Impl::SFeatTableCursor : public CObject {
+    explicit SFeatTableCursor(const CVDBTable& table);
+    
+    CVDBCursor m_Cursor;
+/*    
+    DECLARE_VDB_COLUMN_AS(NCBI_WGS_feattype, FEAT_TYPE);
+    DECLARE_VDB_COLUMN_AS(NCBI_WGS_seqtype, SEQ_TYPE);
+    DECLARE_VDB_COLUMN_AS_STRING(LOC_ACCESSION);
+    DECLARE_VDB_COLUMN_AS(int64_t, LOC_ROW_ID);
+    DECLARE_VDB_COLUMN_AS(INSDC_coord_zero, LOC_START);
+    DECLARE_VDB_COLUMN_AS(INSDC_coord_len, LOC_LEN);
+    DECLARE_VDB_COLUMN_AS(NCBI_WGS_loc_strand, LOC_STRAND);
+    DECLARE_VDB_COLUMN_AS_STRING(PRODUCT_ACCESSION);
+    DECLARE_VDB_COLUMN_AS(int64_t, PRODUCT_ROW_ID);
+    DECLARE_VDB_COLUMN_AS(INSDC_coord_zero, PRODUCT_START);
+    DECLARE_VDB_COLUMN_AS(INSDC_coord_len, PRODUCT_LEN);
+    DECLARE_VDB_COLUMN_AS_STRING(SEQ_FEAT);
+*/
+};
+
 
 CWGSDb_Impl::CWGSDb_Impl(CVDBMgr& mgr,
                          CTempString path_or_acc,
@@ -541,6 +578,91 @@ CWGSDb_Impl::CWGSDb_Impl(CVDBMgr& mgr,
 
 CWGSDb_Impl::~CWGSDb_Impl(void)
 {
+}
+
+
+inline
+CRef<CWGSDb_Impl::SSeqTableCursor> CWGSDb_Impl::Seq(uint64_t row)
+{
+    CRef<SSeqTableCursor> curs = m_Seq.Get(row);
+    if ( !curs ) {
+        curs = new SSeqTableCursor(SeqTable());
+    }
+    return curs;
+}
+
+
+inline
+CRef<CWGSDb_Impl::SScfTableCursor> CWGSDb_Impl::Scf(uint64_t row)
+{
+    CRef<SScfTableCursor> curs = m_Scf.Get(row);
+    if ( !curs ) {
+        if ( const CVDBTable& table = ScfTable() ) {
+            curs = new SScfTableCursor(table);
+        }
+    }
+    return curs;
+}
+
+
+inline
+CRef<CWGSDb_Impl::SProtTableCursor> CWGSDb_Impl::Prot(uint64_t row)
+{
+    CRef<SProtTableCursor> curs = m_Prot.Get(row);
+    if ( !curs ) {
+        if ( const CVDBTable& table = ProtTable() ) {
+            curs = new SProtTableCursor(table);
+        }
+    }
+    return curs;
+}
+
+
+inline
+CRef<CWGSDb_Impl::SIdxTableCursor> CWGSDb_Impl::Idx(uint64_t row)
+{
+    CRef<SIdxTableCursor> curs = m_GiIdx.Get(row);
+    if ( !curs ) {
+        if ( const CVDBTable& table = GiIdxTable() ) {
+            curs = new SIdxTableCursor(table);
+        }
+    }
+    return curs;
+}
+
+
+inline
+void CWGSDb_Impl::Put(CRef<SSeqTableCursor>& curs, uint64_t row)
+{
+    m_Seq.Put(curs, row);
+}
+
+
+inline
+void CWGSDb_Impl::Put(CRef<SScfTableCursor>& curs, uint64_t row)
+{
+    m_Scf.Put(curs, row);
+}
+
+
+inline
+void CWGSDb_Impl::Put(CRef<SIdxTableCursor>& curs, uint64_t row)
+{
+    m_GiIdx.Put(curs, row);
+}
+
+
+inline
+void CWGSDb_Impl::Put(CRef<SProtTableCursor>& curs, uint64_t row)
+{
+    m_Prot.Put(curs, row);
+}
+
+
+inline
+void CWGSDb_Impl::Put(CRef<SFeatTableCursor>& curs, uint64_t row)
+{
+    m_Feat.Put(curs, row);
 }
 
 
@@ -648,6 +770,12 @@ void CWGSDb_Impl::OpenProtTable(void)
 }
 
 
+void CWGSDb_Impl::OpenFeatTable(void)
+{
+    OpenTable(m_FeatTable, "FEATURE", m_FeatTableIsOpened);
+}
+
+
 void CWGSDb_Impl::OpenGiIdxTable(void)
 {
     OpenTable(m_GiIdxTable, "GI_IDX", m_GiIdxTableIsOpened);
@@ -675,52 +803,6 @@ void CWGSDb_Impl::OpenProteinNameIndex(void)
 void CWGSDb_Impl::OpenProtAccIndex(void)
 {
     OpenIndex(ProtTable(), m_ProtAccIndex, "gb_accession", m_ProtAccIndexIsOpened);
-}
-
-
-CRef<CWGSDb_Impl::SSeqTableCursor> CWGSDb_Impl::Seq(void)
-{
-    CRef<SSeqTableCursor> curs = m_Seq.Get();
-    if ( !curs ) {
-        curs = new SSeqTableCursor(SeqTable());
-    }
-    return curs;
-}
-
-
-CRef<CWGSDb_Impl::SScfTableCursor> CWGSDb_Impl::Scf(void)
-{
-    CRef<SScfTableCursor> curs = m_Scf.Get();
-    if ( !curs ) {
-        if ( const CVDBTable& table = ScfTable() ) {
-            curs = new SScfTableCursor(table);
-        }
-    }
-    return curs;
-}
-
-
-CRef<CWGSDb_Impl::SProtTableCursor> CWGSDb_Impl::Prot(void)
-{
-    CRef<SProtTableCursor> curs = m_Prot.Get();
-    if ( !curs ) {
-        if ( const CVDBTable& table = ProtTable() ) {
-            curs = new SProtTableCursor(table);
-        }
-    }
-    return curs;
-}
-
-
-CRef<CWGSDb_Impl::SIdxTableCursor> CWGSDb_Impl::Idx(void)
-{
-    CRef<SIdxTableCursor> curs = m_GiIdx.Get();
-    if ( !curs ) {
-        if ( const CVDBTable& table = GiIdxTable() ) {
-            curs = new SIdxTableCursor(table);
-        }
-    }
-    return curs;
 }
 
 
@@ -799,6 +881,38 @@ void sx_SetTag(CDbtag& tag, CTempString str)
     }
     else {
         oid.SetStr(str);
+    }
+}
+
+
+void sx_AddDescrBytes(CSeq_descr& descr, CTempString bytes)
+{
+    if ( !bytes.empty() ) {
+        CObjectIStreamAsnBinary in(bytes.data(), bytes.size());
+        // hack to determine if the data
+        // is of type Seq-descr (starts with byte 49)
+        // or of type Seqdesc (starts with byte >= 160)
+        if ( bytes[0] == 49 ) {
+            in >> descr;
+        }
+        else {
+            CRef<CSeqdesc> desc(new CSeqdesc);
+            in >> *desc;
+            descr.Set().push_back(desc);
+        }
+    }
+}
+
+
+void sx_AddAnnotBytes(CBioseq::TAnnot& annot_set, CTempString bytes)
+{
+    if ( !bytes.empty() ) {
+        CObjectIStreamAsnBinary in(bytes.data(), bytes.size());
+        while ( in.HaveMoreData() ) {
+            CRef<CSeq_annot> annot(new CSeq_annot);
+            in >> *annot;
+            annot_set.push_back(annot);
+        }
     }
 }
 
@@ -1023,6 +1137,27 @@ void CWGSDb_Impl::SetMasterDescr(const TMasterDescr& descr,
 }
 
 
+void CWGSDb_Impl::AddMasterDescr(CSeq_descr& descr)
+{
+    if ( !GetMasterDescr().empty() ) {
+        unsigned type_mask = 0;
+        ITERATE ( CSeq_descr::Tdata, it, descr.Get() ) {
+            const CSeqdesc& desc = **it;
+            type_mask |= 1 << desc.Which();
+        }
+        ITERATE ( TMasterDescr, it, GetMasterDescr() ) {
+            const CSeqdesc& desc = **it;
+            if ( CWGSDb::GetMasterDescrType(desc) == CWGSDb::eDescr_default &&
+                 (type_mask & (1 << desc.Which())) ) {
+                // omit master descr if contig already has one of that type
+                continue;
+            }
+            descr.Set().push_back(*it);
+        }
+    }
+}
+
+
 CRef<CBioseq> CWGSDb_Impl::GetMasterBioseq(void) const
 {
     if ( m_MasterEntry ) {
@@ -1239,17 +1374,17 @@ pair<uint64_t, bool> CWGSDb_Impl::GetGiRowId(TGi gi)
     pair<uint64_t, bool> ret;
     if ( CRef<SIdxTableCursor> idx = Idx() ) {
         if ( idx->m_NUC_ROW_ID ) {
-            CVDBValueFor<uint64_t> value =
+            CVDBValueFor<int64_t> value =
                 idx->NUC_ROW_ID(TIntId(gi), CVDBValue::eMissing_Allow);
             if ( value.data() ) {
-                ret.first = value;
+                ret.first = static_cast<uint64_t>(*value);
             }
         }
         if ( !ret.first && idx->m_PROT_ROW_ID ) {
-            CVDBValueFor<uint64_t> value =
+            CVDBValueFor<int64_t> value =
                 idx->PROT_ROW_ID(TIntId(gi), CVDBValue::eMissing_Allow);
             if ( value.data() ) {
-                ret.first = value;
+                ret.first = static_cast<uint64_t>(*value);
             }
         }
         Put(idx);
@@ -1263,10 +1398,10 @@ uint64_t CWGSDb_Impl::GetNucGiRowId(TGi gi)
     uint64_t ret = 0;
     if ( CRef<SIdxTableCursor> idx = Idx() ) {
         if ( idx->m_NUC_ROW_ID ) {
-            CVDBValueFor<uint64_t> value =
+            CVDBValueFor<int64_t> value =
                 idx->NUC_ROW_ID(TIntId(gi), CVDBValue::eMissing_Allow);
             if ( value.data() ) {
-                ret = value;
+                ret = static_cast<uint64_t>(*value);
             }
         }
         Put(idx);
@@ -1280,10 +1415,10 @@ uint64_t CWGSDb_Impl::GetProtGiRowId(TGi gi)
     uint64_t ret = 0;
     if ( CRef<SIdxTableCursor> idx = Idx() ) {
         if ( idx->m_PROT_ROW_ID ) {
-            CVDBValueFor<uint64_t> value =
+            CVDBValueFor<int64_t> value =
                 idx->PROT_ROW_ID(TIntId(gi), CVDBValue::eMissing_Allow);
             if ( value.data() ) {
-                ret = value;
+                ret = static_cast<uint64_t>(*value);
             }
         }
         Put(idx);
@@ -1678,15 +1813,16 @@ CTempString CWGSSeqIterator::GetSeqDescrBytes(void) const
 {
     x_CheckValid("CWGSSeqIterator::GetSeqDescrBytes");
     CTempString descr_bytes;
-    if ( m_Seq->m_DESCR )
+    if ( m_Seq->m_DESCR ) {
         descr_bytes = m_Seq->DESCR(m_CurrId);
+    }
     return descr_bytes;
 }
 
 bool CWGSSeqIterator::HasSeq_descr(TFlags flags) const
 {
     x_CheckValid("CWGSSeqIterator::HasSeq_descr");
-    if ( HasSeqDescrBytes() ) {
+    if ( (flags & fSeqDescr) && HasSeqDescrBytes() ) {
         return true;
     }
     if ( (flags & fMasterDescr) && !GetDb().GetMasterDescr().empty() ) {
@@ -1695,42 +1831,21 @@ bool CWGSSeqIterator::HasSeq_descr(TFlags flags) const
     return false;
 }
 
+
 CRef<CSeq_descr> CWGSSeqIterator::GetSeq_descr(TFlags flags) const
 {
     x_CheckValid("CWGSSeqIterator::GetSeq_descr");
     CRef<CSeq_descr> ret(new CSeq_descr);
-    if ( m_Seq->m_DESCR ) {
-        CTempString descr_bytes = *m_Seq->DESCR(m_CurrId);
-        if ( !descr_bytes.empty() ) {
-            CObjectIStreamAsnBinary in(descr_bytes.data(), descr_bytes.size());
-            // hack to determine if the data
-            // is of type Seq-descr (starts with byte 49)
-            // or of type Seqdesc (starts with byte >= 160)
-            if ( descr_bytes[0] == 49 ) {
-                in >> *ret;
-            }
-            else {
-                CRef<CSeqdesc> desc(new CSeqdesc);
-                in >> *desc;
-                ret->Set().push_back(desc);
-            }
+    if ( flags & fSeqDescr ) {
+        if( m_Seq->m_DESCR ) {
+            sx_AddDescrBytes(*ret, *m_Seq->DESCR(m_CurrId));
         }
     }
-    if ( (flags & fMasterDescr) && !GetDb().GetMasterDescr().empty() ) {
-        unsigned type_mask = 0;
-        ITERATE ( CSeq_descr::Tdata, it, ret->Set() ) {
-            const CSeqdesc& desc = **it;
-            type_mask |= 1 << desc.Which();
-        }
-        ITERATE ( CWGSDb_Impl::TMasterDescr, it, GetDb().GetMasterDescr() ) {
-            const CSeqdesc& desc = **it;
-            if ( CWGSDb::GetMasterDescrType(desc) == CWGSDb::eDescr_default &&
-                 (type_mask & (1 << desc.Which())) ) {
-                // omit master descr if contig already has one of that type
-                continue;
-            }
-            ret->Set().push_back(*it);
-        }
+    if ( flags & fMasterDescr ) {
+        GetDb().AddMasterDescr(*ret);
+    }
+    if ( ret->Get().empty() ) {
+        ret.Reset();
     }
     return ret;
 }
@@ -1748,15 +1863,11 @@ CTempString CWGSSeqIterator::GetAnnotBytes() const
     return *m_Seq->ANNOT(m_CurrId);
 }
 
-void CWGSSeqIterator::GetAnnotSet(TAnnotSet& annot_set) const
+void CWGSSeqIterator::GetAnnotSet(TAnnotSet& annot_set, TFlags flags) const
 {
     x_CheckValid("CWGSSeqIterator::GetAnnotSet");
-    CTempString annot_bytes = *m_Seq->ANNOT(m_CurrId);
-    CObjectIStreamAsnBinary in(annot_bytes.data(), annot_bytes.size());
-    while ( in.HaveMoreData() ) {
-        CRef<CSeq_annot> annot(new CSeq_annot);
-        in >> *annot;
-        annot_set.push_back(annot);
+    if ( (flags & fSeqAnnot) && m_Seq->m_ANNOT ) {
+        sx_AddAnnotBytes(annot_set, *m_Seq->ANNOT(m_CurrId));
     }
 }
 
@@ -1783,9 +1894,14 @@ void CWGSSeqIterator::GetQualityAnnot(TAnnotSet& annot_set,
                                       TFlags flags) const
 {
     x_CheckValid("CWGSSeqIterator::GetQualityAnnot");
-
+    if ( !(flags & fQualityGraph) || !m_Seq->m_QUALITY ) {
+        return;
+    }
     CVDBValueFor<INSDC_quality_phred> quality(m_Seq->QUALITY(m_CurrId));
     size_t size = quality.size();
+    if ( size == 0 ) {
+        return;
+    }
     CByte_graph::TValues values(size);
     INSDC_quality_phred min_q = 0xff, max_q = 0;
     for ( size_t i = 0; i < size; ++i ) {
@@ -1857,7 +1973,7 @@ enum
 void CWGSSeqIterator::GetGapInfo(TWGSContigGapInfo& gap_info) const
 {
     if ( m_Seq->m_GAP_START ) {
-        CVDBValueFor<INSDC_coord_one> start = m_Seq->GAP_START(m_CurrId);
+        CVDBValueFor<INSDC_coord_zero> start = m_Seq->GAP_START(m_CurrId);
         gap_info.gaps_start = start.data();
         size_t gaps_count = gap_info.gaps_count = start.size();
         if ( !start.empty() ) {
@@ -2476,7 +2592,7 @@ void sx_AddDelta(const CSeq_id& id,
                  TSeqPos pos,
                  TSeqPos len,
                  size_t gaps_count,
-                 const INSDC_coord_one* gaps_start,
+                 const INSDC_coord_zero* gaps_start,
                  const INSDC_coord_len* gaps_len,
                  const NCBI_WGS_component_props* gaps_props,
                  const NCBI_WGS_gap_linkage* gaps_linkage)
@@ -2654,12 +2770,12 @@ CRef<CSeq_inst> CWGSSeqIterator::GetSeq_inst(TFlags flags) const
         inst->SetStrand(CSeq_inst::eStrand_ds);
         CRef<CSeq_id> id = GetAccSeq_id();
         size_t gaps_count = 0;
-        const INSDC_coord_one* gaps_start = 0;
+        const INSDC_coord_zero* gaps_start = 0;
         const INSDC_coord_len* gaps_len = 0;
         const NCBI_WGS_component_props* gaps_props = 0;
         const NCBI_WGS_gap_linkage* gaps_linkage = 0;
         if ( m_Seq->m_GAP_START ) {
-            CVDBValueFor<INSDC_coord_one> start = m_Seq->GAP_START(m_CurrId);
+            CVDBValueFor<INSDC_coord_zero> start = m_Seq->GAP_START(m_CurrId);
             gaps_start = start.data();
             if ( !start.empty() ) {
                 gaps_count = start.size();
@@ -2713,17 +2829,17 @@ CRef<CBioseq> CWGSSeqIterator::GetBioseq(TFlags flags) const
 
     CRef<CBioseq> ret(new CBioseq());
     GetIds(ret->SetId(), flags);
-    if ( HasSeq_descr(flags) ) {
-        ret->SetDescr(*GetSeq_descr(flags));
+    if ( flags & fMaskDescr ) {
+        if ( CRef<CSeq_descr> descr = GetSeq_descr(flags) ) {
+            ret->SetDescr(*descr);
+        }
     }
-    if ( (flags & fQualityGraph) && HasQualityGraph() ) {
+    if ( flags & fMaskAnnot ) {
+        GetAnnotSet(ret->SetAnnot(), flags);
         GetQualityAnnot(ret->SetAnnot(), flags);
-    }
-    if ( (flags & fSeqAnnot) && HasAnnotSet() ) {
-        GetAnnotSet(ret->SetAnnot());
-    }
-    if ( ret->GetAnnot().empty() ) {
-        ret->ResetAnnot();
+        if ( ret->GetAnnot().empty() ) {
+            ret->ResetAnnot();
+        }
     }
     ret->SetInst(*GetSeq_inst(flags));
     return ret;
@@ -2893,17 +3009,11 @@ CRef<CSeq_descr> CWGSScaffoldIterator::GetSeq_descr(TFlags flags) const
     x_CheckValid("CWGSScaffoldIterator::GetSeq_descr");
 
     CRef<CSeq_descr> ret(new CSeq_descr);
-    if ( (flags & fMasterDescr) && !GetDb().GetMasterDescr().empty() ) {
-        unsigned type_mask = 0;
-        ITERATE ( CWGSDb_Impl::TMasterDescr, it, GetDb().GetMasterDescr() ) {
-            const CSeqdesc& desc = **it;
-            if ( CWGSDb::GetMasterDescrType(desc) == CWGSDb::eDescr_default &&
-                 (type_mask & (1 << desc.Which())) ) {
-                // omit master descr if contig already has one of that type
-                continue;
-            }
-            ret->Set().push_back(*it);
-        }
+    if ( flags & fMasterDescr ) {
+        GetDb().AddMasterDescr(*ret);
+    }
+    if ( ret->Get().empty() ) {
+        ret.Reset();
     }
     return ret;
 }
@@ -2999,8 +3109,10 @@ CRef<CBioseq> CWGSScaffoldIterator::GetBioseq(TFlags flags) const
 
     CRef<CBioseq> ret(new CBioseq());
     GetIds(ret->SetId(), flags);
-    if ( HasSeq_descr(flags) ) {
-        ret->SetDescr(*GetSeq_descr(flags));
+    if ( flags & fMaskDescr ) {
+        if ( CRef<CSeq_descr> descr = GetSeq_descr(flags) ) {
+            ret->SetDescr(*descr);
+        }
     }
     ret->SetInst(*GetSeq_inst(flags));
     return ret;
@@ -3084,10 +3196,10 @@ void CWGSGiIterator::x_Init(const CWGSDb& wgs_db, ESeqType seq_type)
 bool CWGSGiIterator::x_Excluded(void)
 {
     if ( m_FilterSeqType != eProt && m_Idx->m_NUC_ROW_ID ) {
-        CVDBValueFor<uint64_t> value =
+        CVDBValueFor<int64_t> value =
             m_Idx->NUC_ROW_ID(TIntId(m_CurrGi), CVDBValue::eMissing_Allow);
         if ( value.data() ) {
-            m_CurrRowId = value;
+            m_CurrRowId = static_cast<uint64_t>(*value);
             if ( m_CurrRowId ) {
                 m_CurrSeqType = eNuc;
                 return false;
@@ -3095,10 +3207,10 @@ bool CWGSGiIterator::x_Excluded(void)
         }
     }
     if ( m_FilterSeqType != eNuc && m_Idx->m_PROT_ROW_ID ) {
-        CVDBValueFor<uint64_t> value =
+        CVDBValueFor<int64_t> value =
             m_Idx->PROT_ROW_ID(TIntId(m_CurrGi), CVDBValue::eMissing_Allow);
         if ( value.data() ) {
-            m_CurrRowId = value;
+            m_CurrRowId = static_cast<uint64_t>(*value);
             if ( m_CurrRowId ) {
                 m_CurrSeqType = eProt;
                 return false;
@@ -3326,9 +3438,13 @@ bool CWGSProteinIterator::HasSeq_descr(TFlags flags) const
 {
     x_CheckValid("CWGSProteinIterator::HasSeq_descr");
 
-    if ( (flags & fSeqDescr) &&
-         m_Prot->m_DESCR && !m_Prot->DESCR(m_CurrId).empty() ) {
-        return true;
+    if ( flags & fSeqDescr ) {
+        if ( m_Prot->m_DESCR && !m_Prot->DESCR(m_CurrId).empty() ) {
+            return true;
+        }
+        if ( !GetTitle().empty() ) {
+            return true;
+        }
     }
     if ( (flags & fMasterDescr) && !GetDb().GetMasterDescr().empty() ) {
         return true;
@@ -3342,38 +3458,24 @@ CRef<CSeq_descr> CWGSProteinIterator::GetSeq_descr(TFlags flags) const
     x_CheckValid("CWGSProteinIterator::GetSeq_descr");
 
     CRef<CSeq_descr> ret(new CSeq_descr);
-    if ( (flags & fSeqDescr) && m_Prot->m_DESCR ) {
-        CTempString descr_bytes = *CVDBStringValue(m_Prot->DESCR(m_CurrId));
-        if ( !descr_bytes.empty() ) {
-            CObjectIStreamAsnBinary in(descr_bytes.data(), descr_bytes.size());
-            // hack to determine if the data
-            // is of type Seq-descr (starts with byte 49)
-            // or of type Seqdesc (starts with byte >= 160)
-            if ( descr_bytes[0] == 49 ) {
-                in >> *ret;
-            }
-            else {
+    if ( flags & fSeqDescr ) {
+        if ( m_Prot->m_DESCR ) {
+            sx_AddDescrBytes(*ret, *m_Prot->DESCR(m_CurrId));
+        }
+        else {
+            CTempString title = GetTitle();
+            if ( !title.empty() ) {
                 CRef<CSeqdesc> desc(new CSeqdesc);
-                in >> *desc;
+                desc->SetTitle(title);
                 ret->Set().push_back(desc);
             }
         }
     }
-    if ( (flags & fMasterDescr) && !GetDb().GetMasterDescr().empty() ) {
-        unsigned type_mask = 0;
-        ITERATE ( CSeq_descr::Tdata, it, ret->Set() ) {
-            const CSeqdesc& desc = **it;
-            type_mask |= 1 << desc.Which();
-        }
-        ITERATE ( CWGSDb_Impl::TMasterDescr, it, GetDb().GetMasterDescr() ) {
-            const CSeqdesc& desc = **it;
-            if ( CWGSDb::GetMasterDescrType(desc) == CWGSDb::eDescr_default &&
-                 (type_mask & (1 << desc.Which())) ) {
-                // omit master descr if contig already has one of that type
-                continue;
-            }
-            ret->Set().push_back(*it);
-        }
+    if ( flags & fMasterDescr ) {
+        GetDb().AddMasterDescr(*ret);
+    }
+    if ( ret->Get().empty() ) {
+        ret.Reset();
     }
     return ret;
 }
@@ -3387,16 +3489,12 @@ bool CWGSProteinIterator::HasAnnotSet(void) const
 }
 
 
-void CWGSProteinIterator::GetAnnotSet(TAnnotSet& annot_set) const
+void CWGSProteinIterator::GetAnnotSet(TAnnotSet& annot_set, TFlags flags) const
 {
     x_CheckValid("CWGSProteinIterator::GetAnnotSet");
 
-    CTempString annot_bytes = *CVDBStringValue(m_Prot->ANNOT(m_CurrId));
-    CObjectIStreamAsnBinary in(annot_bytes.data(), annot_bytes.size());
-    while ( in.HaveMoreData() ) {
-        CRef<CSeq_annot> annot(new CSeq_annot);
-        in >> *annot;
-        annot_set.push_back(annot);
+    if ( (flags & fSeqAnnot) && m_Prot->m_ANNOT ) {
+        sx_AddAnnotBytes(annot_set, *m_Prot->ANNOT(m_CurrId));
     }
 }
 
@@ -3427,22 +3525,16 @@ CRef<CBioseq> CWGSProteinIterator::GetBioseq(TFlags flags) const
 
     CRef<CBioseq> ret(new CBioseq());
     GetIds(ret->SetId(), flags);
-    if ( HasSeq_descr(flags) ) {
-        ret->SetDescr(*GetSeq_descr(flags));
-    }
-    else if ( flags & fSeqDescr ) {
-        CTempString title = GetTitle();
-        if ( !title.empty() ) {
-            CRef<CSeqdesc> desc(new CSeqdesc);
-            desc->SetTitle(title);
-            ret->SetDescr().Set().push_back(desc);
+    if ( flags & fMaskDescr ) {
+        if ( CRef<CSeq_descr> descr = GetSeq_descr(flags) ) {
+            ret->SetDescr(*descr);
         }
     }
-    if ( (flags & fSeqAnnot) && HasAnnotSet() ) {
+    if ( flags & fMaskAnnot ) {
         GetAnnotSet(ret->SetAnnot());
-    }
-    if ( ret->GetAnnot().empty() ) {
-        ret->ResetAnnot();
+        if ( ret->GetAnnot().empty() ) {
+            ret->ResetAnnot();
+        }
     }
     ret->SetInst(*GetSeq_inst(flags));
     return ret;
