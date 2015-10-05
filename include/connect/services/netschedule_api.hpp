@@ -506,6 +506,23 @@ class NCBI_XCONNECT_EXPORT CNetScheduleSubmitter
     CNetScheduleAPI:: EJobStatus SubmitJobAndWait(CNetScheduleJob& job,
                                                   unsigned       wait_time);
 
+    /// Wait for job to finish its execution (done/failed/canceled).
+    /// This function should be used if we expect that job execution
+    /// infrastructure is capable of finishing job in the specified
+    /// time frame. This method can save a lot of round trips with the
+    /// NetSchedule server (comparing to series of GetStatus calls).
+    ///
+    /// @param job_id
+    ///    NetSchedule job key.
+    /// @param wait_time
+    ///    Time in seconds function waits for the job to finish.
+    /// @return job status
+    ///    Returns current job status,
+    ///    could be any status (e.g. if job does not finish in wait_time).
+    ///
+    CNetScheduleAPI::EJobStatus WaitForJob(const string& job_id,
+            unsigned wait_time);
+
     /// Cancel job
     ///
     /// @param job_key

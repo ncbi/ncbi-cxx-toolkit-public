@@ -417,6 +417,19 @@ SNetScheduleSubmitterImpl::SubmitJobAndWait(CNetScheduleJob& job,
 }
 
 CNetScheduleAPI::EJobStatus
+CNetScheduleSubmitter::WaitForJob(const string& job_id, unsigned wait_time)
+{
+    const CNetScheduleNotificationHandler::TJobStatusMask wait_for_statuses =
+        CNetScheduleNotificationHandler::fJSM_Canceled |
+        CNetScheduleNotificationHandler::fJSM_Failed |
+        CNetScheduleNotificationHandler::fJSM_Done;
+
+    CDeadline deadline(wait_time);
+    return CNetScheduleNotificationHandler().WaitForJobEvent(job_id,
+            deadline, m_Impl->m_API, wait_for_statuses);
+}
+
+CNetScheduleAPI::EJobStatus
 CNetScheduleNotificationHandler::WaitForJobCompletion(
         CNetScheduleJob& job,
         CDeadline& deadline,
