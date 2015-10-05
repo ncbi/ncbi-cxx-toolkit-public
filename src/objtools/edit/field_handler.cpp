@@ -52,11 +52,12 @@ BEGIN_SCOPE(edit)
 bool CFieldHandler::QualifierNamesAreEquivalent (string name1, string name2)
 {
     // ignore protein at beginning
-    if (NStr::StartsWith(name1, "protein ")) {
-        name1 = name1.substr(8);
+    const string protein("protein");
+    if (NStr::StartsWith(name1, protein)) {
+        name1 = name1.substr(protein.length());
     }
-    if (NStr::StartsWith(name2, "protein ")) {
-        name2 = name2.substr(8);
+    if (NStr::StartsWith(name2, protein)) {
+        name2 = name2.substr(protein.length());
     }
 
     // spaces, dashes, and underscores do not count

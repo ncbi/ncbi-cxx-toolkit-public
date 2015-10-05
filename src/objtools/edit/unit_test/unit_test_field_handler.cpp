@@ -415,18 +415,27 @@ BOOST_AUTO_TEST_CASE(Test_EquivalentQualifierNames)
     BOOST_CHECK_EQUAL(edit::CFieldHandler::QualifierNamesAreEquivalent(name2, name1), true);
 
     name1.assign("codonstart");
+    name2.assign("codon-start");
     BOOST_CHECK_EQUAL(edit::CFieldHandler::QualifierNamesAreEquivalent(name1, name2), true);
 
+    name1.assign("codonstart");
     name2.assign("coDONstart");
     BOOST_CHECK_EQUAL(edit::CFieldHandler::QualifierNamesAreEquivalent(name1, name2), true);
 
     name1.assign("codon start");
+    name2.assign("codon-start");
+    BOOST_CHECK_EQUAL(edit::CFieldHandler::QualifierNamesAreEquivalent(name1, name2), true);
+
+    name1.assign("codon start");
+    name2.assign("coDONstart");
     BOOST_CHECK_EQUAL(edit::CFieldHandler::QualifierNamesAreEquivalent(name1, name2), true);
     
+    name1.assign("codon start");
     name2.assign("   codonstart ");
     BOOST_CHECK_EQUAL(edit::CFieldHandler::QualifierNamesAreEquivalent(name1, name2), true);
 
     name1.assign("codonstart cds");
+    name2.assign("   codonstart ");
     BOOST_CHECK_EQUAL(edit::CFieldHandler::QualifierNamesAreEquivalent(name1, name2), false);
 
     name1.assign("protein activity");
@@ -436,6 +445,15 @@ BOOST_AUTO_TEST_CASE(Test_EquivalentQualifierNames)
 
     name1.assign("protein co-mment");
     name2.assign("comment");
+    BOOST_CHECK_EQUAL(edit::CFieldHandler::QualifierNamesAreEquivalent(name1, name2), true);
+
+    name1.assign("protein-name");
+    name2.assign("protein name");
+    BOOST_CHECK_EQUAL(edit::CFieldHandler::QualifierNamesAreEquivalent(name1, name2), true);
+    BOOST_CHECK_EQUAL(edit::CFieldHandler::QualifierNamesAreEquivalent(name2, name1), true);
+
+    name1.assign("protein-name");
+    name2.assign("name");
     BOOST_CHECK_EQUAL(edit::CFieldHandler::QualifierNamesAreEquivalent(name1, name2), true);
 }
 
