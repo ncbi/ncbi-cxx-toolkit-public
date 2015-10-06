@@ -277,6 +277,10 @@ int main(int argc, char* argv[])
     if (!ConnNetInfo_ParseURL(net_info, argv[1]))
         CORE_LOG(eLOG_Fatal, "Cannot parse URL");
 
+    ConnNetInfo_GetValue(0, "HTTP11", blk, 32, 0);
+    if (ConnNetInfo_Boolean(blk))
+        net_info->version = 1;
+
     cred = 0;
     ConnNetInfo_GetValue(0, "USESSL", blk, 32, 0);
     if (net_info->scheme == eURL_Https  &&  ConnNetInfo_Boolean(blk)) {
@@ -386,12 +390,14 @@ int main(int argc, char* argv[])
             status  = CONN_ReadLine(conn, blk, sizeof(blk), &n);
         else
             n = 0;
-        if (n) {
+        if (n  ||  status == eIO_Success) {
             connector = 0/*as bool, visited*/;
-            fwrite(blk, 1, n, stdout);
+            if (n)
+                fwrite(blk, 1, n, stdout);
             if (status != eIO_Timeout)
                 fputc('\n', stdout);
-            fflush(stdout);
+            if (status != eIO_Timeout  ||  n)
+                fflush(stdout);
             if (n == sizeof(blk)  &&  status != eIO_Closed)
                 CORE_LOGF(eLOG_Warning, ("Line too long, continuing..."));
         }
