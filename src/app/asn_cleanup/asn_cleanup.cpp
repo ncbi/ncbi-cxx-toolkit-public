@@ -96,7 +96,7 @@ private:
     CObjectIStream* x_OpenIStream(const CArgs& args);
     bool x_ProcessSeqSubmit(auto_ptr<CObjectIStream>& is);
 
-    int x_SeqIdToGiNumber( const string& seq_id, const string database );
+    TGi x_SeqIdToGiNumber( const string& seq_id, const string database );
 
     void x_FeatureOptionsValid(const string& opt);
     void x_KOptionsValid(const string& opt);
@@ -514,7 +514,7 @@ bool CCleanupApp::ObtainSeqEntryFromBioseqSet(
     }
 }
 
-int CCleanupApp::x_SeqIdToGiNumber( 
+TGi CCleanupApp::x_SeqIdToGiNumber( 
     const string& seq_id,
     const string database_name )
 {
@@ -535,15 +535,15 @@ int CCleanupApp::x_SeqIdToGiNumber(
     
     case 0:
         // no hits whatever:
-        return 0;
+        return ZERO_GI;
         
     case 1: {
         //  one hit; the expected outcome:
         //
         //  "it" declared here to keep the WorkShop compiler from whining.
         CEntrez2_id_list::TConstUidIterator it 
-            = reply->GetUids().GetConstUidIterator();
-        return ( *it );
+            = reply->GetUids().GetConstUidIterator();        
+        return GI_FROM(TIntGi, (*it));
     }    
     default:
         // multiple hits? Unexpected and definitely not a good thing...
@@ -551,7 +551,7 @@ int CCleanupApp::x_SeqIdToGiNumber(
                   << " turned up multiple hits." );
     }
 
-    return 0;
+    return ZERO_GI;
 };
 
 
@@ -568,7 +568,7 @@ bool CCleanupApp::HandleSeqID( const string& seq_id )
         ERR_FATAL("The ID " << seq_id.c_str() << " is not a valid seq ID." );
     }
     
-    TGi gi_number = NStr::StringToUInt(seq_id, NStr::fConvErr_NoThrow);
+    TGi gi_number = GI_FROM(TIntGi, NStr::StringToUInt(seq_id, NStr::fConvErr_NoThrow));
  
     //
     //  We need a gi number for the remote fetching. So if seq_id does not come
@@ -577,7 +577,7 @@ bool CCleanupApp::HandleSeqID( const string& seq_id )
     const char* database_names[] = { "Nucleotide", "Protein" };
     const int num_databases = sizeof( database_names ) / sizeof( const char* );
     
-    for ( int i=0; (gi_number == 0) && (i < num_databases); ++ i ) {
+    for (int i = 0; (gi_number == ZERO_GI) && (i < num_databases); ++i) {
         gi_number = x_SeqIdToGiNumber( seq_id, database_names[ i ] );
     }
     if (ZERO_GI == gi_number) {
