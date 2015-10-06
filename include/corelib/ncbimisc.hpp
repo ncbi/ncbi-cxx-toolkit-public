@@ -948,7 +948,7 @@ typedef int TSignedSeqPos;
 ///
 /// Use this typedef rather than its expansion, which may change.
 
-//#define NCBI_STRICT_GI
+#define NCBI_STRICT_GI
 //#define NCBI_INT8_GI
 
 #ifdef NCBI_STRICT_GI
@@ -982,8 +982,15 @@ public:
     CStrictGi& operator--(void) { m_Gi--; return *this; }
     CStrictGi operator--(int) { CStrictGi tmp = *this; m_Gi--; return tmp; }
 
+    TIntId operator+(const CStrictGi& gi) const { return m_Gi + gi.m_Gi; }
+    TIntId operator-(const CStrictGi& gi) const { return m_Gi - gi.m_Gi; }
+
     CStrictGi operator+(TIntId offset) const { return m_Gi + offset; }
     CStrictGi operator-(TIntId offset) const { return m_Gi - offset; }
+#if defined(NCBI_INT8_GI)
+    CStrictGi operator+(Int4 offset) const { return m_Gi + offset; }
+    CStrictGi operator-(Int4 offset) const { return m_Gi - offset; }
+#endif
 
     CStrictGi(TIntId value) : m_Gi(value) {}
     CStrictGi& operator=(TIntId value) { m_Gi = value; return *this; }
