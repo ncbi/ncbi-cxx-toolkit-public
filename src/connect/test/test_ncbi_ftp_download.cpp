@@ -299,7 +299,7 @@ size_t CNullProcessor::Run(void)
 
     Uint8 filesize = 0;
     do {
-        static char buf[10240];
+        static char buf[10000];
         m_Stream->read(buf, sizeof(buf));
         filesize += m_Stream->gcount();
     } while (*m_Stream);
@@ -456,8 +456,6 @@ static EIO_Status x_ConnectionCallback(CONN           conn,
                                        TCONN_Callback type,
                                        void*          data)
 {
-    bool update = type == eCONN_OnClose  ||  s_Signaled ? true : false;
-
     CDownloadCallbackData* dlcbdata
         = reinterpret_cast<CDownloadCallbackData*>(data);
 
@@ -465,6 +463,7 @@ static EIO_Status x_ConnectionCallback(CONN           conn,
 
     EIO_Status status = eIO_Success;
 
+    bool update = false;
     if (type == eCONN_OnClose) {
         // Call back up the chain
         if (dlcbdata->CB()->func) {
@@ -472,9 +471,10 @@ static EIO_Status x_ConnectionCallback(CONN           conn,
         }
         // Finalize the filelist
         dlcbdata->Append();
+        update = true;
     } else if (s_Signaled) {
         status = eIO_Interrupt;
-        _ASSERT(update);
+        update = true;
     } else if (type & eCONN_OnTimeout) {
         status = dlcbdata->Timeout(false);
         update = true;
@@ -529,8 +529,11 @@ static EIO_Status x_ConnectionCallback(CONN           conn,
 
     if (type == eCONN_OnClose) {
         NcbiCerr << NcbiEndl << "Connection closed" << NcbiEndl;
+        _ASSERT(status == eIO_Success);
     } else if (s_Signaled) {
         NcbiCerr << NcbiEndl << "Canceled" << NcbiEndl;
+        if (status == eIO_Success)
+            status  = eIO_Interrupt;
     } else if (status == eIO_Timeout) {
         NcbiCerr << NcbiEndl << "Timed out in "
                  << NcbiFixed << NcbiSetprecision(1)
@@ -773,7 +776,7 @@ int main(int argc, const char* argv[])
     _VERIFY(ftp.Close() == eIO_Success);
     delete processor;
 
-    // Conclude the test and print out summary
+    // Conclude the test and print out the summary
     Uint8 totalsize = 0;
     ITERATE(CTar::TFiles, it, dlcbdata.Filelist()) {
         totalsize += it->second;
