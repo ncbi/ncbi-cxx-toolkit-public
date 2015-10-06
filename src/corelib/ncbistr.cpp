@@ -2860,6 +2860,7 @@ SIZE_TYPE NStr::Find(const CTempString str,
 }
     
 
+// @deprecated
 SIZE_TYPE NStr::FindNoCase(const CTempString str, const CTempString pattern,
                            SIZE_TYPE start, SIZE_TYPE end, EOccurrence where)
 {

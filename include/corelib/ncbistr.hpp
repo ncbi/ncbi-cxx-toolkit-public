@@ -2025,9 +2025,16 @@ public:
     NCBI_DEPRECATED
     static SIZE_TYPE Find(const CTempString str,
                           const CTempString pattern,
-                          SIZE_TYPE   start, SIZE_TYPE end = NPOS,
+                          SIZE_TYPE   start, SIZE_TYPE end,
                           EOccurrence which = eFirst,
                           ECase       use_case = eCase);
+
+    /// Wrapper for backward-compatibility
+    inline
+    static SIZE_TYPE Find(const CTempString str, const CTempString pattern,
+                          SIZE_TYPE start)
+        { return FindCase(str, pattern, start); }
+
 
     /// Find the pattern in the specified range of a string using a case
     /// sensitive search.
@@ -2057,14 +2064,12 @@ public:
     NCBI_DEPRECATED
     static SIZE_TYPE FindCase  (const CTempString str, 
                                 const CTempString pattern,
-                                SIZE_TYPE   start, SIZE_TYPE end = NPOS,
+                                SIZE_TYPE   start, SIZE_TYPE end,
                                 EOccurrence which = eFirst);
 
-    /// Simple wrapper for backward-compatibility
-    inline
-    static SIZE_TYPE FindCase(const CTempString str, const CTempString pattern)
-        { return Find(str, pattern, eCase); }
-
+    /// Wrappers for backward-compatibility
+    static SIZE_TYPE FindCase(const CTempString str, const CTempString pattern,
+                              SIZE_TYPE start = 0);
 
     /// Find the pattern in the specified range of a string using a case
     /// insensitive search.
@@ -2094,14 +2099,12 @@ public:
     NCBI_DEPRECATED
     static SIZE_TYPE FindNoCase(const CTempString str,
                                 const CTempString pattern,
-                                SIZE_TYPE   start, SIZE_TYPE end = NPOS,
+                                SIZE_TYPE   start, SIZE_TYPE end,
                                 EOccurrence which = eFirst);
 
-    /// Simple wrapper for backward-compatibility
-    inline
-    static SIZE_TYPE FindNoCase(const CTempString str, const CTempString pattern)
-        { return Find(str, pattern, eNocase); }
-
+    /// Wrapper for backward-compatibility
+    static SIZE_TYPE FindNoCase(const CTempString str, const CTempString pattern,
+                                SIZE_TYPE start = 0);
 
     /// Test for presence of a given string in a list or vector of strings
 
@@ -5429,15 +5432,15 @@ SIZE_TYPE NStr::Find(const CTempString str, const CTempString pattern,
                      SIZE_TYPE start, SIZE_TYPE end, EOccurrence where,
                      ECase use_case)
 {
-    SIZE_TYPE res = Find(CTempString(str, start, end - start), pattern, use_case,
+    SIZE_TYPE pos = Find(CTempString(str, start, end - start), pattern, use_case,
                          where == eFirst ? eForwardSearch : eReverseSearch, 0);
-    if (res == NPOS) {
+    if (pos == NPOS) {
         return NPOS;
     }
-    return res + start;
+    return pos + start;
 }
 
-
+// @deprecated
 inline
 SIZE_TYPE NStr::FindCase(const CTempString str, const CTempString pattern,
                          SIZE_TYPE start, SIZE_TYPE end, EOccurrence where)
@@ -5449,6 +5452,34 @@ SIZE_TYPE NStr::FindCase(const CTempString str, const CTempString pattern,
         SIZE_TYPE pos = str.rfind(pattern, end);
         return (pos == NPOS  ||  pos < start) ? NPOS : pos;
     }
+}
+
+inline
+SIZE_TYPE NStr::FindCase(const CTempString str, const CTempString pattern,
+                         SIZE_TYPE start)
+{
+    if (start == 0) {
+        return Find(str, pattern, eCase);
+    }
+    SIZE_TYPE pos = Find(CTempString(str, start), pattern, eCase);
+    if (pos == NPOS) {
+        return NPOS;
+    }
+    return pos + start;
+}
+
+inline
+SIZE_TYPE NStr::FindNoCase(const CTempString str, const CTempString pattern,
+                           SIZE_TYPE start)
+{
+    if (start == 0) {
+        return Find(str, pattern, eNocase);
+    }
+    SIZE_TYPE pos = Find(CTempString(str, start), pattern, eNocase);
+    if (pos == NPOS) {
+        return NPOS;
+    }
+    return pos + start;
 }
 
 inline
