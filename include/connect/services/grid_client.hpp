@@ -238,6 +238,12 @@ public:
     ///
     CNetScheduleAPI::EJobStatus SubmitAndWait(unsigned wait_time);
 
+    /// Wait for job to finish its execution (done/failed/canceled).
+    /// @sa CNetScheduleAPI
+    ///
+    CNetScheduleAPI::EJobStatus WaitForJob(const string& job_key,
+            unsigned wait_time);
+
     CNetScheduleJob& GetJob() {return m_Job;}
 
     /// Get a job submitter

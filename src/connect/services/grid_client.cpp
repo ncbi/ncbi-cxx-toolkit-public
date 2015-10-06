@@ -147,6 +147,15 @@ CNetScheduleAPI::EJobStatus CGridClient::SubmitAndWait(unsigned wait_time)
     return x_CheckAllJobBlobs(status, job_exptime);
 }
 
+CNetScheduleAPI::EJobStatus CGridClient::WaitForJob(const string& job_key,
+        unsigned wait_time)
+{
+    CNetScheduleAPI::EJobStatus status =
+        m_NetScheduleSubmitter.WaitForJob(job_key, wait_time);
+
+    return x_CheckAllJobBlobs(status, m_NetScheduleSubmitter->m_API->m_JobTtl);
+}
+
 //////////////////////////////////////////////////////////
 void CGridJobBatchSubmitter::CheckIfBatchAlreadySubmitted()
 {
