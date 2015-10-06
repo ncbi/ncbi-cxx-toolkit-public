@@ -358,8 +358,9 @@ public:
         return CRef<Object>(obj);
     }
     void Put(CRef<Object>& ref, uint64_t row = 0) {
-        Object* obj = ref.ReleaseOrNull();
-        CVDBObjectCacheBase::Put(obj, row);
+        if ( Object* obj = ref.ReleaseOrNull() ) {
+            CVDBObjectCacheBase::Put(obj, row);
+        }
     }
 };
 

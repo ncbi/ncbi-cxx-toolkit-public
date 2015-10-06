@@ -718,7 +718,7 @@ CObject* CVDBObjectCacheBase::Get(uint64_t row)
 
 void CVDBObjectCacheBase::Put(CObject* obj, uint64_t row)
 {
-    if ( !obj || obj->Referenced() ) {
+    if ( obj->Referenced() ) {
         return;
     }
     CFastMutexGuard guard(sm_CacheMutex);
