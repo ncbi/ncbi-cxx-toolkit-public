@@ -1016,9 +1016,8 @@ static EIO_Status s_ReadData(SHttpConnector* uuu,
                              void* buf, size_t size,
                              size_t* n_read, EIO_ReadMethod how)
 {
-    BUF*           xxx;
-    TNCBI_BigCount chunk;
-    EIO_Status     status;
+    BUF*       xxx;
+    EIO_Status status;
 
     assert(buf);
 
