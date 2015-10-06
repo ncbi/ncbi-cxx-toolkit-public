@@ -404,98 +404,15 @@ protected:
     friend class CWGSFeatureIterator;
 
     // SSeqTableCursor is helper accessor structure for SEQUENCE table
-    struct SSeqTableCursor : public CObject {
-        explicit SSeqTableCursor(const CVDBTable& table);
-
-        CVDBCursor m_Cursor;
-
-        DECLARE_VDB_COLUMN_AS(NCBI_gi, GI);
-        DECLARE_VDB_COLUMN_AS_STRING(ACCESSION);
-        DECLARE_VDB_COLUMN_AS(uint32_t, ACC_VERSION);
-        DECLARE_VDB_COLUMN_AS_STRING(CONTIG_NAME);
-        DECLARE_VDB_COLUMN_AS_STRING(NAME);
-        DECLARE_VDB_COLUMN_AS_STRING(TITLE);
-        DECLARE_VDB_COLUMN_AS_STRING(LABEL);
-        DECLARE_VDB_COLUMN_AS(INSDC_coord_zero, READ_START);
-        DECLARE_VDB_COLUMN_AS(INSDC_coord_len, READ_LEN);
-        DECLARE_VDB_COLUMN_AS_4BITS(READ);
-        DECLARE_VDB_COLUMN_AS(INSDC_coord_zero, TRIM_START);
-        DECLARE_VDB_COLUMN_AS(INSDC_coord_len, TRIM_LEN);
-        DECLARE_VDB_COLUMN_AS(NCBI_taxid, TAXID);
-        DECLARE_VDB_COLUMN_AS_STRING(DESCR);
-        DECLARE_VDB_COLUMN_AS_STRING(ANNOT);
-        DECLARE_VDB_COLUMN_AS(NCBI_gb_state, GB_STATE);
-        DECLARE_VDB_COLUMN_AS(INSDC_coord_zero, GAP_START);
-        DECLARE_VDB_COLUMN_AS(INSDC_coord_len, GAP_LEN);
-        DECLARE_VDB_COLUMN_AS(NCBI_WGS_component_props, GAP_PROPS);
-        DECLARE_VDB_COLUMN_AS(NCBI_WGS_gap_linkage, GAP_LINKAGE);
-        DECLARE_VDB_COLUMN_AS(INSDC_quality_phred, QUALITY);
-        DECLARE_VDB_COLUMN_AS(bool, CIRCULAR);
-        DECLARE_VDB_COLUMN_AS(Uint4 /*NCBI_WGS_hash*/, HASH);
-    };
-
+    struct SSeqTableCursor;
     // SScfTableCursor is helper accessor structure for SCAFFOLD table
-    struct SScfTableCursor : public CObject {
-        SScfTableCursor(const CVDBTable& table);
-
-        CVDBCursor m_Cursor;
-
-        DECLARE_VDB_COLUMN_AS_STRING(SCAFFOLD_NAME);
-        DECLARE_VDB_COLUMN_AS_STRING(ACCESSION);
-        DECLARE_VDB_COLUMN_AS(uint64_t, COMPONENT_ID);
-        DECLARE_VDB_COLUMN_AS(INSDC_coord_one, COMPONENT_START);
-        DECLARE_VDB_COLUMN_AS(INSDC_coord_len, COMPONENT_LEN);
-        DECLARE_VDB_COLUMN_AS(NCBI_WGS_component_props, COMPONENT_PROPS);
-        DECLARE_VDB_COLUMN_AS(NCBI_WGS_gap_linkage, COMPONENT_LINKAGE);
-        DECLARE_VDB_COLUMN_AS(bool, CIRCULAR);
-    };
-
+    struct SScfTableCursor;
     // SIdsTableCursor is helper accessor structure for SEQUENCE table
-    struct SIdxTableCursor : public CObject {
-        explicit SIdxTableCursor(const CVDBTable& table);
-
-        CVDBCursor m_Cursor;
-
-        DECLARE_VDB_COLUMN_AS(int64_t, NUC_ROW_ID);
-        DECLARE_VDB_COLUMN_AS(int64_t, PROT_ROW_ID);
-    };
-
+    struct SIdxTableCursor;
     // SProtTableCursor is helper accessor structure for optional PROTEIN table
-    struct SProtTableCursor : public CObject {
-        explicit SProtTableCursor(const CVDBTable& table);
-    
-        CVDBCursor m_Cursor;
-    
-        DECLARE_VDB_COLUMN_AS_STRING(ACCESSION);
-        DECLARE_VDB_COLUMN_AS_STRING(GB_ACCESSION);
-        DECLARE_VDB_COLUMN_AS(uint32_t, ACC_VERSION);
-        DECLARE_VDB_COLUMN_AS_STRING(TITLE);
-        DECLARE_VDB_COLUMN_AS_STRING(DESCR);
-        DECLARE_VDB_COLUMN_AS_STRING(ANNOT);
-        DECLARE_VDB_COLUMN_AS(NCBI_gb_state, GB_STATE);
-        DECLARE_VDB_COLUMN_AS(INSDC_coord_len, PROTEIN_LEN);
-        DECLARE_VDB_COLUMN_AS_STRING(PROTEIN_NAME);
-        DECLARE_VDB_COLUMN_AS_STRING(REF_ACC);
-    };
-
+    struct SProtTableCursor;
     // SFeatTableCursor is helper accessor structure for optional FEATURE table
-    struct SFeatTableCursor : public CObject {
-        explicit SFeatTableCursor(const CVDBTable& table);
-    
-        CVDBCursor m_Cursor;
-        DECLARE_VDB_COLUMN_AS(NCBI_WGS_feattype, FEAT_TYPE);
-        DECLARE_VDB_COLUMN_AS(NCBI_WGS_seqtype, SEQ_TYPE);
-        DECLARE_VDB_COLUMN_AS_STRING(LOC_ACCESSION);
-        DECLARE_VDB_COLUMN_AS(int64_t, LOC_ROW_ID);
-        DECLARE_VDB_COLUMN_AS(INSDC_coord_zero, LOC_START);
-        DECLARE_VDB_COLUMN_AS(INSDC_coord_len, LOC_LEN);
-        DECLARE_VDB_COLUMN_AS(NCBI_WGS_loc_strand, LOC_STRAND);
-        DECLARE_VDB_COLUMN_AS_STRING(PRODUCT_ACCESSION);
-        DECLARE_VDB_COLUMN_AS(int64_t, PRODUCT_ROW_ID);
-        DECLARE_VDB_COLUMN_AS(INSDC_coord_zero, PRODUCT_START);
-        DECLARE_VDB_COLUMN_AS(INSDC_coord_len, PRODUCT_LEN);
-        DECLARE_VDB_COLUMN_AS_STRING(SEQ_FEAT);
-    };
+    struct SFeatTableCursor;
 
     // open tables
     void OpenTable(CVDBTable& table,
