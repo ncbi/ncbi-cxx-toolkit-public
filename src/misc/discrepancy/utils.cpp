@@ -31,6 +31,7 @@
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/seq_macros.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
 #include "utils.hpp"
 
 BEGIN_NCBI_SCOPE;
@@ -147,6 +148,16 @@ bool IsmRNASequenceInGenProdSet(CConstRef<objects::CBioseq> bioseq, const vector
     }
     return res;
 }
+
+
+void AddComment(CSeq_feat& feat, const string& comment)
+{
+    if (feat.IsSetComment() && !NStr::IsBlank(feat.GetComment()) && !NStr::EndsWith(feat.GetComment(), ";")) {
+        feat.SetComment() += "; ";
+    }
+    feat.SetComment() += comment;
+}
+
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

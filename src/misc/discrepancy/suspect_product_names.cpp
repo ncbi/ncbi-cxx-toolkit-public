@@ -5428,10 +5428,7 @@ static void AutofixProductNames(const CDiscrepancyItem* item, CScope& scope) // 
         CRef<CSeq_feat> new_feat(new CSeq_feat());
         new_feat->Assign(*sf);
         if (!newnote.empty()) {
-            if (new_feat->IsSetComment() && !NStr::EndsWith(new_feat->GetComment(), ";")) {
-                new_feat->SetComment() += "; ";
-            }
-            new_feat->SetComment() += newnote;
+            AddComment(*new_feat, newnote);
         }
         if (!newtext.empty()) {
             *new_feat->SetData().SetProt().SetName().begin() = newtext;

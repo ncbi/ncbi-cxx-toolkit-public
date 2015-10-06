@@ -29,7 +29,9 @@
 
 #include <ncbi_pch.hpp>
 #include "discrepancy_core.hpp"
+#include "utils.hpp"
 #include <objmgr/util/feature.hpp>
+#include <objmgr/util/sequence.hpp>
 
 BEGIN_NCBI_SCOPE;
 BEGIN_SCOPE(NDiscrepancy)
@@ -79,30 +81,26 @@ DISCREPANCY_SUMMARIZE(BAD_GENE_NAME)
 }
 
 
-static void MoveLocusToNote(const CDiscrepancyItem* item, CScope& scope) // Same autofix used in 2 tests
+static void MoveLocusToNote(const CSeq_feat* sf, CScope& scope)
 {
-    TReportObjectList list = item->GetDetails();
-    NON_CONST_ITERATE(TReportObjectList, it, list) {
-        const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
-        if (!sf) {
-            continue;
-        }
-        CRef<CSeq_feat> new_feat(new CSeq_feat());
-        new_feat->Assign(*sf);
-        if (new_feat->IsSetComment() && !NStr::EndsWith(new_feat->GetComment(), ";")) {
-            new_feat->SetComment() += "; ";
-        }
-        new_feat->SetComment() += sf->GetData().GetGene().GetLocus();
-        new_feat->SetData().SetGene().ResetLocus();
-        CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(*sf));
-        feh.Replace(*new_feat);
-    }
+    CRef<CSeq_feat> new_feat(new CSeq_feat());
+    new_feat->Assign(*sf);
+    AddComment(*new_feat, sf->GetData().GetGene().GetLocus());
+    new_feat->SetData().SetGene().ResetLocus();
+    CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(*sf));
+    feh.Replace(*new_feat);
 }
 
 
 DISCREPANCY_AUTOFIX(BAD_GENE_NAME)
 {
-    MoveLocusToNote(item, scope);
+    TReportObjectList list = item->GetDetails();
+    NON_CONST_ITERATE(TReportObjectList, it, list) {
+        const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+        if (sf) {
+            MoveLocusToNote(sf, scope);
+        }
+    }
 }
 
 
@@ -127,7 +125,13 @@ DISCREPANCY_SUMMARIZE(BAD_BACTERIAL_GENE_NAME)
 
 DISCREPANCY_AUTOFIX(BAD_BACTERIAL_GENE_NAME)
 {
-    MoveLocusToNote(item, scope);
+    TReportObjectList list = item->GetDetails();
+    NON_CONST_ITERATE(TReportObjectList, it, list) {
+        const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+        if (sf) {
+            MoveLocusToNote(sf, scope);
+        }
+    }
 }
 
 
@@ -150,6 +154,56 @@ DISCREPANCY_CASE(EC_NUMBER_ON_UNKNOWN_PROTEIN, CSeqFeatData, eAll, "EC number on
 DISCREPANCY_SUMMARIZE(EC_NUMBER_ON_UNKNOWN_PROTEIN)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+// SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME
+DISCREPANCY_CASE(SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME, CSeqFeatData, eAll, "Hypothetical CDS with gene names")
+{
+    if (!obj.IsCdregion() || !context.GetCurrentSeq_feat()->CanGetProduct()) {
+        return;
+    }
+    CConstRef<CSeq_feat> gene = sequence::GetBestGeneForCds(*context.GetCurrentSeq_feat(), context.GetScope());
+    if (gene.IsNull() || !gene->GetData().GetGene().CanGetLocus() || gene->GetData().GetGene().GetLocus().empty()) {
+        return;
+    }
+    CBioseq_Handle bioseq = sequence::GetBioseqFromSeqLoc(context.GetCurrentSeq_feat()->GetProduct(), context.GetScope());
+    if (!bioseq) {
+        return;
+    }
+    CFeat_CI feat_it(bioseq, CSeqFeatData :: e_Prot);
+    if (!feat_it) {
+        return;
+    }
+    const CProt_ref& prot = feat_it->GetOriginalFeature().GetData().GetProt();
+    if (!prot.CanGetName()) {
+        return;
+    }
+    ITERATE(list <string>, jt, prot.GetName()) {
+        if (NStr::FindNoCase(*jt, "hypothetical protein") != string::npos) {
+            m_Objs["[n] hypothetical coding region[s] [has] a gene name"].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef(), true, (CObject*)&*gene));
+            break;
+        }
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+DISCREPANCY_AUTOFIX(SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME)
+{
+    TReportObjectList list = item->GetDetails();
+    NON_CONST_ITERATE(TReportObjectList, it, list) {
+        CDiscrepancyObject& obj = *dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer());
+        const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(obj.GetMoreInfo().GetPointer());
+        if (sf) {
+            MoveLocusToNote(sf, scope);
+        }
+    }
 }
 
 

@@ -47,6 +47,7 @@ bool IsAllLowerCase(const string& str);
 bool IsAllPunctuation(const string& str);
 string GetTwoFieldSubfield(const string& str, unsigned subfield);
 bool IsmRNASequenceInGenProdSet(CConstRef<objects::CBioseq> bioseq, const vector<CConstRef<objects::CBioseq_set> > &bioseq_set_stack);
+void AddComment(objects::CSeq_feat& feat, const string& comment);
 
 template <class T> void GetStringsFromObject(const T& obj, vector <string>& strs)
 {

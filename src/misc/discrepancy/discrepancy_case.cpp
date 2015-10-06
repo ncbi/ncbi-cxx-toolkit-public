@@ -29,6 +29,7 @@
 
 #include <ncbi_pch.hpp>
 #include "discrepancy_core.hpp"
+#include "utils.hpp"
 #include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
 #include <objects/macro/String_constraint.hpp>
@@ -228,15 +229,10 @@ static bool HasOverlapNote(const CSeq_feat& feat)
 
 static bool SetOverlapNote(CSeq_feat& feat)
 {
-    if (feat.IsSetComment()) {
-        if (NStr::Find(feat.GetComment(), kOverlappingCDSNoteText) != string::npos) {
-            return false;
-        }
-        if (!NStr::EndsWith(feat.GetComment(), ";")) {
-            feat.SetComment() += "; ";
-        }
+    if (feat.IsSetComment() && NStr::Find(feat.GetComment(), kOverlappingCDSNoteText) != string::npos) {
+        return false;
     }
-    feat.SetComment() += kOverlappingCDSNoteText;
+    AddComment(feat, (string)kOverlappingCDSNoteText);
     return true;
 }
 
@@ -303,8 +299,7 @@ DISCREPANCY_AUTOFIX(OVERLAPPING_CDS)
             CRef<CSeq_feat> new_feat(new CSeq_feat());
             new_feat->Assign(*sf);
             if (SetOverlapNote(*new_feat)) {
-                CSeq_feat_Handle fh = scope.GetSeq_featHandle(*sf);
-                CSeq_feat_EditHandle feh(fh);
+                CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(*sf));
                 feh.Replace(*new_feat);
             }
         }
@@ -371,12 +366,7 @@ static void DeleteProteinSequence(CBioseq_Handle prot)
 
 static bool ConvertCDSToMiscFeat(const CSeq_feat& feat, CScope& scope)
 {
-    if (feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_feature) {
-        // already a misc_feat, don't need to convert
-        return false;
-    }
-    if (!feat.GetData().IsCdregion()) {
-        // for now, only Cdregion conversions are implemented
+    if (!feat.GetData().IsCdregion() || feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_feature) {
         return false;
     }
     CRef<CSeq_feat> replacement(new CSeq_feat());
@@ -385,19 +375,11 @@ static bool ConvertCDSToMiscFeat(const CSeq_feat& feat, CScope& scope)
     if (feat.IsSetProduct()) {
         string product = GetProductName(feat, scope);
         if (!NStr::IsBlank(product)) {
-            if (replacement->IsSetComment() && !NStr::IsBlank(replacement->GetComment())) {
-                replacement->SetComment() += "; ";
-            }
-            replacement->SetComment() += product;
+            AddComment(*replacement, product);
         }
     }
     try {
-        CSeq_feat_Handle fh = scope.GetSeq_featHandle(feat);
-        // This is necessary, to make sure that we are in "editing mode"
-        const CSeq_annot_Handle& annot_handle = fh.GetAnnot();
-        CSeq_entry_EditHandle eh = annot_handle.GetParentEntry().GetEditHandle();
-        // now actually edit feature
-        CSeq_feat_EditHandle feh(fh);
+        CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(feat));
         feh.Replace(*replacement);
     } catch (...) {
         // feature may have already been removed or converted
