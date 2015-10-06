@@ -568,7 +568,7 @@ bool CCleanupApp::HandleSeqID( const string& seq_id )
         ERR_FATAL("The ID " << seq_id.c_str() << " is not a valid seq ID." );
     }
     
-    unsigned int gi_number = NStr::StringToUInt( seq_id, NStr::fConvErr_NoThrow );
+    TGi gi_number = NStr::StringToUInt(seq_id, NStr::fConvErr_NoThrow);
  
     //
     //  We need a gi number for the remote fetching. So if seq_id does not come
@@ -580,7 +580,7 @@ bool CCleanupApp::HandleSeqID( const string& seq_id )
     for ( int i=0; (gi_number == 0) && (i < num_databases); ++ i ) {
         gi_number = x_SeqIdToGiNumber( seq_id, database_names[ i ] );
     }
-    if ( 0 == gi_number ) {
+    if (ZERO_GI == gi_number) {
         ERR_FATAL("Given ID \"" << seq_id.c_str() 
                   << "\" does not resolve to a GI number." );
     }
