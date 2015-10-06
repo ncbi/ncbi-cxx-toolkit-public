@@ -292,8 +292,10 @@ bool CGff2Writer::xWriteFeature(
         for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
             const CSeq_interval& subint = **it;
             CRef<CGffWriteRecord> pChild( new CGffWriteRecord( *pParent ) );
-            pChild->CorrectLocation( *pParent, subint,
-                context.BioseqHandle().GetInst().GetLength() );
+            if(context.BioseqHandle()) {
+                pChild->CorrectLocation( *pParent, subint,
+                    context.BioseqHandle().GetInst().GetLength() );
+            }
             if ( ! x_WriteRecord( pChild ) ) {
                 return false;
             }
