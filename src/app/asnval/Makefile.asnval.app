@@ -9,16 +9,16 @@
 APP = asnvalidate
 SRC = asnval
 LIB = xvalidate xcleanup $(XFORMAT_LIBS) xalnmgr xobjutil \
-      valerr submit gbseq xmlwrapp\
+      xmlwrapp ncbi_xloader_wgs $(SRAREAD_LIBS) valerr submit gbseq \
       tables xregexp $(PCRE_LIB) $(OBJMGR_LIBS) \
       $(OBJEDIT_LIBS)
 
 #LIBS = $(PCRE_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS) $(LIBXML_LIBS)
-LIBS = $(LIBXSLT_LIBS) $(LIBXML_LIBS) $(PCRE_LIBS) \
+LIBS = $(VDB_LIBS) $(LIBXSLT_LIBS) $(LIBXML_LIBS) $(PCRE_LIBS) \
        $(CMPRS_LIBS) $(DL_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
 
-REQUIRES = objects LIBXML LIBXSLT -Cygwin
+REQUIRES = objects LIBXML LIBXSLT $(VDB_REQ)
 
 CXXFLAGS += $(ORIG_CXXFLAGS)
 LDFLAGS  += $(ORIG_LDFLAGS)

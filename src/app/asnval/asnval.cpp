@@ -72,6 +72,8 @@
 #include <objmgr/bioseq_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 
+#include <sra/data_loaders/wgs/wgsloader.hpp>
+
 #include <serial/objostrxml.hpp>
 #include <misc/xmlwrapp/xmlwrapp.hpp>
 #include <util/compress/stream_util.hpp>
@@ -99,6 +101,7 @@ class CAsnvalApp : public CNcbiApplication, CReadClassMemberHook
 {
 public:
     CAsnvalApp(void);
+    ~CAsnvalApp(void);
 
     virtual void Init(void);
     virtual int  Run (void);
@@ -193,11 +196,20 @@ public:
 };
 
 
+// constructor
 CAsnvalApp::CAsnvalApp(void) :
     m_ObjMgr(0), m_In(0), m_Options(0), m_Continue(false), m_OnlyAnnots(false),
     m_Longest(0), m_CurrentId(""), m_LongestId(""), m_NumFiles(0),
     m_Level(0), m_Reported(0), m_verbosity(eVerbosity_min),
     m_ValidErrorStream(0), m_LogStream(0)
+{
+    SetVersion(CVersionInfo(0, 9, 1));
+}
+
+
+// destructor
+CAsnvalApp::~CAsnvalApp (void)
+
 {
 }
 
@@ -882,6 +894,9 @@ void CAsnvalApp::Setup(const CArgs& args)
         // The last argument "eDefault" informs the OM that the loader must
         // be included in scopes during the CScope::AddDefaults() call.
         CGBDataLoader::RegisterInObjectManager(*m_ObjMgr);
+        CWGSDataLoader::RegisterInObjectManager(*m_ObjMgr,
+                                                CObjectManager::eDefault,
+                                                88);
     }
 
     m_OnlyAnnots = args["annot"];

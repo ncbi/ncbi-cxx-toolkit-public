@@ -53,6 +53,8 @@
 #include <objtools/data_loaders/genbank/readers.hpp>
 #include <objtools/readers/fasta.hpp>
 
+#include <sra/data_loaders/wgs/wgsloader.hpp>
+
 #include <objtools/cleanup/cleanup.hpp>
 #include <objtools/format/flat_file_config.hpp>
 #include <objtools/format/flat_file_generator.hpp>
@@ -269,6 +271,9 @@ int CAsn2FlatApp::Run(void)
     }
     if (args["gbload"]  ||  args["id"]  ||  args["ids"]) {
         CGBDataLoader::RegisterInObjectManager(*m_Objmgr);
+        CWGSDataLoader::RegisterInObjectManager(*m_Objmgr,
+                                                CObjectManager::eDefault,
+                                                88);
     }
     m_Scope.Reset(new CScope(*m_Objmgr));
     m_Scope->AddDefaults();
