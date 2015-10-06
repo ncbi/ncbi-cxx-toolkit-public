@@ -347,6 +347,13 @@ bool CValidator::BadCharsInAuthorInitials(const string& str)
     return BadCharsInAuthorName(str, false, true, false);
 }
 
+
+bool CValidator::BadCharsInAuthorSuffix(const string& str)
+{
+    return BadCharsInAuthorName(str, false, true, false);
+}
+
+
 string CValidator::BadCharsInAuthor(const CName_std& author, bool& last_is_bad)
 {
     string badauthor = kEmptyStr;
@@ -360,6 +367,8 @@ string CValidator::BadCharsInAuthor(const CName_std& author, bool& last_is_bad)
     }
     else if (author.IsSetInitials() && BadCharsInAuthorInitials(author.GetInitials())) {
         badauthor = author.GetInitials();
+    } else if (author.IsSetSuffix() && BadCharsInAuthorSuffix(author.GetSuffix())) {
+        badauthor = author.GetSuffix();
     }
     return badauthor;
 }

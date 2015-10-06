@@ -180,6 +180,7 @@ public:
     static bool BadCharsInAuthorLastName(const string& str);
     static bool BadCharsInAuthorFirstName(const string& str);
     static bool BadCharsInAuthorInitials(const string& str);
+    static bool BadCharsInAuthorSuffix(const string& str);
     static string BadCharsInAuthor(const CName_std& author, bool& last_is_bad);
     static string BadCharsInAuthor(const CAuthor& author, bool& last_is_bad);
 
