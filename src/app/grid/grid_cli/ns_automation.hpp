@@ -60,7 +60,7 @@ struct SNetScheduleServiceAutomationObject : public SNetServiceAutomationObject
             const string& client_name) :
         SNetServiceAutomationObject(automation_proc,
                 CNetService::eLoadBalancedService),
-        m_NetScheduleAPI(service_name, client_name, queue_name)
+        m_NetScheduleAPI(SNsAPI(service_name, client_name, queue_name))
     {
         m_Service = m_NetScheduleAPI.GetService();
         m_NetScheduleAPI.SetEventHandler(

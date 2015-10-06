@@ -72,8 +72,11 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
         }
     }
 
-    m_NetScheduleAPI = SNsAPI(service, m_Opts.auth, queue,
-            IsOptionSet(eWorkerNode));
+    if (IsOptionSet(eWorkerNode)) {
+        m_NetScheduleAPI = SNsAPI(service, m_Opts.auth);
+    } else {
+        m_NetScheduleAPI = SNsAPI(service, m_Opts.auth, queue);
+    }
 
     if (job_provided && service_provided) {
         string host, port;

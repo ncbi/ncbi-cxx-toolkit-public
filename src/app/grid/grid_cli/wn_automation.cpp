@@ -40,7 +40,7 @@ SWorkerNodeAutomationObject::SWorkerNodeAutomationObject(
         const string& wn_address, const string& client_name) :
     SNetServiceAutomationObject(automation_proc,
             CNetService::eSingleServerService),
-    m_NetScheduleAPI(wn_address, client_name, kEmptyStr, true)
+    m_NetScheduleAPI(wn_address, client_name)
 {
     m_Service = m_NetScheduleAPI.GetService();
 
