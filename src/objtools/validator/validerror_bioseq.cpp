@@ -3829,12 +3829,8 @@ void CValidError_bioseq::ValidateSeqGap(const CSeq_gap& gap, const CBioseq& seq)
         }
         if (gap.IsSetType()) {
             int gaptype = gap.GetType();
-            if (gaptype == CSeq_gap::eType_short_arm ||
-                gaptype == CSeq_gap::eType_heterochromatin ||
-                gaptype == CSeq_gap::eType_centromere ||
-                gaptype == CSeq_gap::eType_telomere ||
-                gaptype == CSeq_gap::eType_contig ||
-                gaptype == CSeq_gap::eType_other) {
+            if (gaptype != CSeq_gap::eType_repeat &&
+                gaptype != CSeq_gap::eType_scaffold) {
                 PostErr(eDiag_Critical, eErr_SEQ_INST_SeqGapProblem,
                     "Seq-gap of type " + NStr::IntToString(gaptype) +
                     "should not have linkage evidence", seq);
