@@ -37,10 +37,12 @@
 
 BEGIN_NCBI_SCOPE
 
-struct SWnCompatibleNsAPI : public CNetScheduleAPI
+// Just a wrapper to get access to a protected constructor
+struct SNsAPI : public CNetScheduleAPI
 {
-    SWnCompatibleNsAPI(const string& service, const string& name)
-        : CNetScheduleAPI(service, name)
+    SNsAPI(const string& service, const string& name, const string& queue,
+            bool wn_compatible)
+        : CNetScheduleAPI(service, name, queue, wn_compatible)
     {}
 };
 

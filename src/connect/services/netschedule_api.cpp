@@ -601,7 +601,7 @@ void CNetScheduleServerListener::SetAuthString(SNetScheduleAPIImpl* impl)
     // Make the auth token look like a command to be able to
     // check for potential authentication/initialization errors
     // like the "queue not found" error.
-    if (!m_WorkerNodeCompatMode) {
+    if (m_Mode & fNonWnCompatible) {
         auth += "\r\nVERSION";
         g_AppendClientIPSessionIDHitID(auth,
                 impl->m_ClientSession.empty() ? NULL : &impl->m_ClientSession);
@@ -732,7 +732,7 @@ void CNetScheduleServerListener::OnInit(
 
         // If we should load config from NetSchedule server
         // and have not done it already and not working in WN compatible mode
-        if (!phase && !m_WorkerNodeCompatMode) {
+        if (!phase && (m_Mode & fConfigLoading)) {
             if (CConfig* alt = loader.Get(ns_impl, config, config_section)) {
                 config_holder.reset(alt);
                 config = alt;
@@ -746,7 +746,7 @@ void CNetScheduleServerListener::OnInit(
 
 void CNetScheduleServerListener::OnConnected(CNetServerConnection& connection)
 {
-    if (!m_WorkerNodeCompatMode) {
+    if (m_Mode & fNonWnCompatible) {
         string version_info(connection.Exec(m_Auth, false));
 
         CNetServerInfo server_info(new SNetServerInfoImpl(version_info));
@@ -844,6 +844,18 @@ static const char* const s_NetScheduleConfigSections[] = {
 SNetScheduleAPIImpl::SNetScheduleAPIImpl(
         CConfig* config, const string& section,
         const string& service_name, const string& client_name,
+        const string& queue_name) :
+    m_Service(new SNetServiceImpl("NetScheduleAPI", client_name,
+                new CNetScheduleServerListener)),
+    m_Queue(queue_name),
+    m_JobTtl(0)
+{
+    m_Service->Init(this, service_name,
+        config, section, s_NetScheduleConfigSections);
+}
+
+SNetScheduleAPIImpl::SNetScheduleAPIImpl(
+        const string& service_name, const string& client_name,
         const string& queue_name, bool wn_compatible) :
     m_Service(new SNetServiceImpl("NetScheduleAPI", client_name,
                 new CNetScheduleServerListener(wn_compatible), wn_compatible)),
@@ -851,7 +863,7 @@ SNetScheduleAPIImpl::SNetScheduleAPIImpl(
     m_JobTtl(0)
 {
     m_Service->Init(this, service_name,
-        config, section, s_NetScheduleConfigSections);
+        NULL, kEmptyStr, s_NetScheduleConfigSections);
 }
 
 SNetScheduleAPIImpl::SNetScheduleAPIImpl(
@@ -895,11 +907,11 @@ CNetScheduleAPI::CNetScheduleAPI(const string& service_name,
 {
 }
 
-// WorkerNode compatible API constructor
+// This is for our GRID utilities only
 CNetScheduleAPI::CNetScheduleAPI(const string& service_name,
-        const string& client_name) :
-    m_Impl(new SNetScheduleAPIImpl(NULL, kEmptyStr,
-        service_name, client_name, kEmptyStr, true))
+        const string& client_name, const string& queue_name, bool wn_compatible) :
+    m_Impl(new SNetScheduleAPIImpl(service_name, client_name, queue_name,
+            wn_compatible))
 {
 }
 

@@ -114,10 +114,24 @@ protected:
 
 class CNetScheduleServerListener : public INetServerConnectionListener
 {
+private:
+    enum EMode {
+        fWnCompatible       = (0 << 0),
+        fNonWnCompatible    = (1 << 0),
+        fConfigLoading      = (1 << 1) | fNonWnCompatible,
+    };
+    typedef int TMode;
+
 public:
+    CNetScheduleServerListener() :
+        m_ClientType(CNetScheduleAPI::eCT_Auto),
+        m_Mode(fConfigLoading)
+    {
+    }
+
     CNetScheduleServerListener(bool wn_compatible) :
         m_ClientType(CNetScheduleAPI::eCT_Auto),
-        m_WorkerNodeCompatMode(wn_compatible)
+        m_Mode(wn_compatible ? fWnCompatible : fNonWnCompatible)
     {
     }
 
@@ -149,7 +163,9 @@ public:
     CFastMutex m_AffinitySubmissionMutex;
 
     CNetScheduleAPI::EClientType m_ClientType;
-    bool m_WorkerNodeCompatMode;
+
+private:
+    const TMode m_Mode;
 };
 
 // Structure that governs NetSchedule server notifications.
@@ -233,7 +249,10 @@ struct SNetScheduleAPIImpl : public CObject
 {
     SNetScheduleAPIImpl(CConfig* config, const string& section,
         const string& service_name, const string& client_name,
-        const string& queue_name, bool wn_compatible = false);
+        const string& queue_name);
+
+    SNetScheduleAPIImpl(const string& service_name, const string& client_name,
+        const string& queue_name, bool wn_compatible);
 
     // Special constructor for CNetScheduleAPI::GetServer().
     SNetScheduleAPIImpl(SNetServerInPool* server, SNetScheduleAPIImpl* parent);

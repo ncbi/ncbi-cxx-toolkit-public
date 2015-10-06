@@ -53,7 +53,7 @@ SNetScheduleServerAutomationObject::SNetScheduleServerAutomationObject(
         const string& queue_name,
         const string& client_name) :
     SNetScheduleServiceAutomationObject(automation_proc,
-            CNetScheduleAPI(service_name, client_name, queue_name))
+            SNsAPI(service_name, client_name, queue_name, false))
 {
     if (m_Service.IsLoadBalanced()) {
         NCBI_THROW(CAutomationException, eCommandProcessingError,

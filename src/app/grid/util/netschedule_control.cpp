@@ -58,10 +58,11 @@ public:
     int Run(void);
 
 private:
+    // Just a wrapper to get access to a protected constructor
     struct SWnCompatibleNsAPI : public CNetScheduleAPI
     {
-        SWnCompatibleNsAPI(const string& service, const string& name)
-            : CNetScheduleAPI(service, name)
+        SWnCompatibleNsAPI(const string& service, const string& client)
+            : CNetScheduleAPI(service, client, kEmptyStr, true)
         {}
     };
 

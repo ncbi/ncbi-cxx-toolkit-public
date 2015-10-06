@@ -72,10 +72,8 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
         }
     }
 
-    if (IsOptionSet(eCompatMode) && IsOptionSet(eWorkerNode))
-        m_NetScheduleAPI = SWnCompatibleNsAPI(service, m_Opts.auth);
-    else
-        m_NetScheduleAPI = CNetScheduleAPI(service, m_Opts.auth, queue);
+    m_NetScheduleAPI = SNsAPI(service, m_Opts.auth, queue,
+            IsOptionSet(eWorkerNode));
 
     if (job_provided && service_provided) {
         string host, port;
