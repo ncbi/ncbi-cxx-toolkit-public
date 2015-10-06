@@ -131,6 +131,7 @@ protected:
     SWGSSeqInfo ResolveAcc(const string& acc, int version);
     SWGSSeqInfo ResolveWGSAcc(const string& acc, int version);
     SWGSSeqInfo ResolveProtAcc(const string& acc, int version);
+    bool SwitchToMainSeq(SWGSSeqInfo& seq, const string& acc);
     bool IsValidRowId(SWGSSeqInfo& seq);
     bool IsCorrectVersion(SWGSSeqInfo& seq, int version);
 
@@ -160,6 +161,7 @@ protected:
     CWGSDb& GetWGSDb(SWGSSeqInfo& seq);
 
     // WGS iterators
+    void ResetIteratorCache(SWGSSeqInfo& seq);
     CWGSSeqIterator& GetContigIterator(SWGSSeqInfo& seq);
     CWGSScaffoldIterator& GetScaffoldIterator(SWGSSeqInfo& seq);
     CWGSProteinIterator& GetProteinIterator(SWGSSeqInfo& seq);

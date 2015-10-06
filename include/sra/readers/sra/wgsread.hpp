@@ -50,6 +50,28 @@
 #include <ncbi/wgs-contig.h>
 #include <insdc/insdc.h>
 
+// missing wgs-contig.h definitions
+typedef uint8_t NCBI_WGS_seqtype;
+enum
+{
+    NCBI_WGS_seqtype_contig                 = 0,
+    NCBI_WGS_seqtype_scaffold               = 1,
+    NCBI_WGS_seqtype_protein                = 2,
+    NCBI_WGS_seqtype_mrna                   = 3
+};
+
+typedef uint8_t NCBI_WGS_feattype;
+
+typedef uint8_t NCBI_WGS_loc_strand;
+enum
+{
+    NCBI_WGS_loc_strand_unknown             = 0,
+    NCBI_WGS_loc_strand_plus                = 1,
+    NCBI_WGS_loc_strand_minus               = 2,
+    NCBI_WGS_loc_strand_both                = 3
+};
+
+
 BEGIN_NCBI_NAMESPACE;
 BEGIN_NAMESPACE(objects);
 
@@ -57,6 +79,7 @@ class CSeq_entry;
 class CSeq_annot;
 class CSeq_align;
 class CSeq_graph;
+class CSeq_feat;
 class CBioseq;
 class CUser_object;
 class CUser_field;
@@ -65,6 +88,7 @@ class CWGSSeqIterator;
 class CWGSScaffoldIterator;
 class CWGSGiIterator;
 class CWGSProteinIterator;
+class CWGSFeatureIterator;
 
 
 class NCBI_SRAREAD_EXPORT CWGSGiResolver : public CObject
@@ -365,12 +389,19 @@ public:
     // Key of each element is accession prefix/length pair
     TAccRanges GetProtAccRanges(void);
 
+    // return range of row-ids in FEATURE table of features
+    // having specified accession in location
+    pair<int64_t, uint64_t> GetSeqFeatRowIdRange(const string& acc);
+
+    // return FEATURE row_id having specified in product, or 0
+    uint64_t GetProductFeatRowId(const string& acc);
+
 protected:
     friend class CWGSSeqIterator;
     friend class CWGSScaffoldIterator;
     friend class CWGSGiIterator;
-    friend class CWGSProtAccIterator;
     friend class CWGSProteinIterator;
+    friend class CWGSFeatureIterator;
 
     // SSeqTableCursor is helper accessor structure for SEQUENCE table
     struct SSeqTableCursor : public CObject {
@@ -432,9 +463,9 @@ protected:
     // SProtTableCursor is helper accessor structure for optional PROTEIN table
     struct SProtTableCursor : public CObject {
         explicit SProtTableCursor(const CVDBTable& table);
-
+    
         CVDBCursor m_Cursor;
-
+    
         DECLARE_VDB_COLUMN_AS_STRING(ACCESSION);
         DECLARE_VDB_COLUMN_AS_STRING(GB_ACCESSION);
         DECLARE_VDB_COLUMN_AS(uint32_t, ACC_VERSION);
@@ -447,7 +478,24 @@ protected:
         DECLARE_VDB_COLUMN_AS_STRING(REF_ACC);
     };
 
-    struct SFeatTableCursor;
+    // SFeatTableCursor is helper accessor structure for optional FEATURE table
+    struct SFeatTableCursor : public CObject {
+        explicit SFeatTableCursor(const CVDBTable& table);
+    
+        CVDBCursor m_Cursor;
+        DECLARE_VDB_COLUMN_AS(NCBI_WGS_feattype, FEAT_TYPE);
+        DECLARE_VDB_COLUMN_AS(NCBI_WGS_seqtype, SEQ_TYPE);
+        DECLARE_VDB_COLUMN_AS_STRING(LOC_ACCESSION);
+        DECLARE_VDB_COLUMN_AS(int64_t, LOC_ROW_ID);
+        DECLARE_VDB_COLUMN_AS(INSDC_coord_zero, LOC_START);
+        DECLARE_VDB_COLUMN_AS(INSDC_coord_len, LOC_LEN);
+        DECLARE_VDB_COLUMN_AS(NCBI_WGS_loc_strand, LOC_STRAND);
+        DECLARE_VDB_COLUMN_AS_STRING(PRODUCT_ACCESSION);
+        DECLARE_VDB_COLUMN_AS(int64_t, PRODUCT_ROW_ID);
+        DECLARE_VDB_COLUMN_AS(INSDC_coord_zero, PRODUCT_START);
+        DECLARE_VDB_COLUMN_AS(INSDC_coord_len, PRODUCT_LEN);
+        DECLARE_VDB_COLUMN_AS_STRING(SEQ_FEAT);
+    };
 
     // open tables
     void OpenTable(CVDBTable& table,
@@ -466,6 +514,8 @@ protected:
     void OpenContigNameIndex(void);
     void OpenScaffoldNameIndex(void);
     void OpenProteinNameIndex(void);
+    void OpenFeatLocIndex(void);
+    void OpenFeatProductIndex(void);
 
     const CVDBTable& SeqTable(void) {
         return m_SeqTable;
@@ -518,6 +568,18 @@ protected:
         }
         return m_ProteinNameIndex;
     }
+    const CVDBTableIndex& FeatLocIndex(void) {
+        if ( !m_FeatLocIndexIsOpened ) {
+            OpenFeatLocIndex();
+        }
+        return m_FeatLocIndex;
+    }
+    const CVDBTableIndex& FeatProductIndex(void) {
+        if ( !m_FeatProductIndexIsOpened ) {
+            OpenFeatProductIndex();
+        }
+        return m_FeatProductIndex;
+    }
     
     // get table accessor object for exclusive access
     CRef<SSeqTableCursor> Seq(uint64_t row = 0);
@@ -557,6 +619,8 @@ private:
     volatile bool m_ContigNameIndexIsOpened;
     volatile bool m_ScaffoldNameIndexIsOpened;
     volatile bool m_ProteinNameIndexIsOpened;
+    volatile bool m_FeatLocIndexIsOpened;
+    volatile bool m_FeatProductIndexIsOpened;
     CVDBTable m_ScfTable;
     CVDBTable m_ProtTable;
     CVDBTable m_FeatTable;
@@ -571,6 +635,8 @@ private:
     CVDBTableIndex m_ContigNameIndex;
     CVDBTableIndex m_ScaffoldNameIndex;
     CVDBTableIndex m_ProteinNameIndex;
+    CVDBTableIndex m_FeatLocIndex;
+    CVDBTableIndex m_FeatProductIndex;
 
     bool m_IsSetMasterDescr;
     CRef<CSeq_entry> m_MasterEntry;
@@ -747,6 +813,12 @@ public:
                     EClipType clip_type = eDefaultClip);
     ~CWGSSeqIterator(void);
 
+    void Reset(void);
+    CWGSSeqIterator(const CWGSSeqIterator& iter);
+    CWGSSeqIterator& operator=(const CWGSSeqIterator& iter);
+
+    CWGSSeqIterator& SelectRow(uint64_t row);
+
     DECLARE_OPERATOR_BOOL(m_CurrId < m_FirstBadId);
 
     CWGSSeqIterator& operator++(void)
@@ -760,11 +832,17 @@ public:
     uint64_t GetCurrentRowId(void) const {
         return m_CurrId;
     }
+    uint64_t GetFirstGoodRowId(void) const {
+        return m_FirstGoodId;
+    }
     uint64_t GetFirstBadRowId(void) const {
         return m_FirstBadId;
     }
-    uint64_t GetLastRowId(void) const {
-        return GetFirstBadRowId() - 1;
+    uint64_t GetRemainingCount(void) const {
+        return GetFirstBadRowId() - GetCurrentRowId();
+    }
+    uint64_t GetSize(void) const {
+        return GetFirstBadRowId() - GetFirstGoodRowId();
     }
 
     bool HasGi(void) const;
@@ -911,8 +989,12 @@ public:
     CRef<CSeq_inst> GetSeq_inst(TFlags flags = fDefaultFlags) const;
 
     CRef<CBioseq> GetBioseq(TFlags flags = fDefaultFlags) const;
+    // GetSeq_entry may create nuc-prot set if the sequence has products
+    CRef<CSeq_entry> GetSeq_entry(TFlags flags = fDefaultFlags) const;
 
 protected:
+    friend class CWGSFeatureIterator;
+
     void x_Init(const CWGSDb& wgs_db,
                 EWithdrawn withdrawn,
                 EClipType clip_type);
@@ -933,8 +1015,8 @@ protected:
 
 private:
     CWGSDb m_Db;
-    CRef<CWGSDb_Impl::SSeqTableCursor> m_Seq; // VDB seq table accessor
-    uint64_t m_CurrId, m_FirstBadId;
+    CRef<CWGSDb_Impl::SSeqTableCursor> m_Cur; // VDB seq table accessor
+    uint64_t m_CurrId, m_FirstGoodId, m_FirstBadId;
     EWithdrawn m_Withdrawn;
     bool m_ClipByQuality;
 };
@@ -944,10 +1026,17 @@ class NCBI_SRAREAD_EXPORT CWGSScaffoldIterator
 {
 public:
     CWGSScaffoldIterator(void);
-    explicit CWGSScaffoldIterator(const CWGSDb& wgs_db);
+    explicit
+    CWGSScaffoldIterator(const CWGSDb& wgs_db);
     CWGSScaffoldIterator(const CWGSDb& wgs_db, uint64_t row);
     CWGSScaffoldIterator(const CWGSDb& wgs_db, CTempString acc);
     ~CWGSScaffoldIterator(void);
+
+    void Reset(void);
+    CWGSScaffoldIterator(const CWGSScaffoldIterator& iter);
+    CWGSScaffoldIterator& operator=(const CWGSScaffoldIterator& iter);
+
+    CWGSScaffoldIterator& SelectRow(uint64_t row);
 
     DECLARE_OPERATOR_BOOL(m_CurrId < m_FirstBadId);
 
@@ -959,11 +1048,17 @@ public:
     uint64_t GetCurrentRowId(void) const {
         return m_CurrId;
     }
+    uint64_t GetFirstGoodRowId(void) const {
+        return m_FirstGoodId;
+    }
     uint64_t GetFirstBadRowId(void) const {
         return m_FirstBadId;
     }
-    uint64_t GetLastRowId(void) const {
-        return GetFirstBadRowId() - 1;
+    uint64_t GetRemainingCount(void) const {
+        return GetFirstBadRowId() - GetCurrentRowId();
+    }
+    uint64_t GetSize(void) const {
+        return GetFirstBadRowId() - GetFirstGoodRowId();
     }
 
     CTempString GetAccession(void) const;
@@ -1029,8 +1124,8 @@ protected:
 
 private:
     CWGSDb m_Db;
-    CRef<CWGSDb_Impl::SScfTableCursor> m_Scf; // VDB scaffold table accessor
-    uint64_t m_CurrId, m_FirstBadId;
+    CRef<CWGSDb_Impl::SScfTableCursor> m_Cur; // VDB scaffold table accessor
+    uint64_t m_CurrId, m_FirstGoodId, m_FirstBadId;
 };
 
 
@@ -1047,6 +1142,10 @@ public:
     CWGSGiIterator(const CWGSDb& wgs_db, ESeqType seq_type = eAll);
     CWGSGiIterator(const CWGSDb& wgs_db, TGi gi, ESeqType seq_type = eAll);
     ~CWGSGiIterator(void);
+
+    void Reset(void);
+    CWGSGiIterator(const CWGSGiIterator& iter);
+    CWGSGiIterator& operator=(const CWGSGiIterator& iter);
 
     DECLARE_OPERATOR_BOOL(m_CurrGi < m_FirstBadGi);
 
@@ -1083,7 +1182,7 @@ protected:
     
 private:
     CWGSDb m_Db;
-    CRef<CWGSDb_Impl::SIdxTableCursor> m_Idx; // VDB GI index table accessor
+    CRef<CWGSDb_Impl::SIdxTableCursor> m_Cur; // VDB GI index table accessor
     TGi m_CurrGi, m_FirstBadGi;
     uint64_t m_CurrRowId;
     ESeqType m_CurrSeqType, m_FilterSeqType;
@@ -1094,10 +1193,15 @@ class NCBI_SRAREAD_EXPORT CWGSProteinIterator
 {
 public:
     CWGSProteinIterator(void);
-    explicit CWGSProteinIterator(const CWGSDb& wgs_db);
+    explicit
+    CWGSProteinIterator(const CWGSDb& wgs_db);
     CWGSProteinIterator(const CWGSDb& wgs_db, uint64_t row);
     CWGSProteinIterator(const CWGSDb& wgs_db, CTempString acc);
     ~CWGSProteinIterator(void);
+
+    void Reset(void);
+    CWGSProteinIterator(const CWGSProteinIterator& iter);
+    CWGSProteinIterator& operator=(const CWGSProteinIterator& iter);
 
     DECLARE_OPERATOR_BOOL(m_CurrId < m_FirstBadId);
 
@@ -1109,12 +1213,20 @@ public:
     uint64_t GetCurrentRowId(void) const {
         return m_CurrId;
     }
+    uint64_t GetFirstGoodRowId(void) const {
+        return m_FirstGoodId;
+    }
     uint64_t GetFirstBadRowId(void) const {
         return m_FirstBadId;
     }
-    uint64_t GetLastRowId(void) const {
-        return GetFirstBadRowId() - 1;
+    uint64_t GetRemainingCount(void) const {
+        return GetFirstBadRowId() - GetCurrentRowId();
     }
+    uint64_t GetSize(void) const {
+        return GetFirstBadRowId() - GetFirstGoodRowId();
+    }
+
+    CWGSProteinIterator& SelectRow(uint64_t row);
 
     CTempString GetAccession(void) const;
     int GetAccVersion(void) const;
@@ -1187,8 +1299,76 @@ protected:
 
 private:
     CWGSDb m_Db;
-    CRef<CWGSDb_Impl::SProtTableCursor> m_Prot; // VDB scaffold table accessor
-    uint64_t m_CurrId, m_FirstBadId;
+    CRef<CWGSDb_Impl::SProtTableCursor> m_Cur; // VDB protein table accessor
+    uint64_t m_CurrId, m_FirstGoodId, m_FirstBadId;
+};
+
+
+class NCBI_SRAREAD_EXPORT CWGSFeatureIterator
+{
+public:
+    CWGSFeatureIterator(void);
+    explicit
+    CWGSFeatureIterator(const CWGSSeqIterator& seq_it);
+    explicit
+    CWGSFeatureIterator(const CWGSDb& wgs);
+    CWGSFeatureIterator(const CWGSDb& wgs, uint64_t row);
+    ~CWGSFeatureIterator(void);
+
+    void Reset(void);
+    CWGSFeatureIterator(const CWGSFeatureIterator& iter);
+    CWGSFeatureIterator& operator=(const CWGSFeatureIterator& iter);
+
+    DECLARE_OPERATOR_BOOL(m_CurrId < m_FirstBadId);
+
+    CWGSFeatureIterator& operator++(void) {
+        ++m_CurrId;
+        return *this;
+    }
+
+    uint64_t GetCurrentRowId(void) const {
+        return m_CurrId;
+    }
+    uint64_t GetFirstGoodRowId(void) const {
+        return m_FirstGoodId;
+    }
+    uint64_t GetFirstBadRowId(void) const {
+        return m_FirstBadId;
+    }
+    uint64_t GetRemainingCount(void) const {
+        return GetFirstBadRowId() - GetCurrentRowId();
+    }
+    uint64_t GetSize(void) const {
+        return GetFirstBadRowId() - GetFirstGoodRowId();
+    }
+
+    CWGSFeatureIterator& SelectRow(uint64_t row);
+    
+    NCBI_WGS_seqtype GetSeqType(void) const;
+
+    uint64_t GetLocRowId(void) const;
+    uint64_t GetProductRowId(void) const;
+
+    CRef<CSeq_feat> GetSeq_feat() const;
+
+protected:
+    CWGSDb_Impl& GetDb(void) const {
+        return m_Db.GetNCObject();
+    }
+    
+    void x_Init(const CWGSDb& wgs_db);
+
+    void x_ReportInvalid(const char* method) const;
+    void x_CheckValid(const char* method) const {
+        if ( !*this ) {
+            x_ReportInvalid(method);
+        }
+    }
+
+private:
+    CWGSDb m_Db;
+    CRef<CWGSDb_Impl::SFeatTableCursor> m_Cur; // VDB feature table accessor
+    uint64_t m_CurrId, m_FirstGoodId, m_FirstBadId;
 };
 
 

@@ -338,6 +338,14 @@ CWGSDb& CID2WGSProcessor_Impl::GetWGSDb(SWGSSeqInfo& seq)
 }
 
 
+void CID2WGSProcessor_Impl::ResetIteratorCache(SWGSSeqInfo& seq)
+{
+    seq.m_ContigIter = CWGSSeqIterator();
+    seq.m_ScaffoldIter = CWGSScaffoldIterator();
+    seq.m_ProteinIter = CWGSProteinIterator();
+}
+
+
 CWGSSeqIterator& CID2WGSProcessor_Impl::GetContigIterator(SWGSSeqInfo& seq)
 {
     if ( !seq.m_ContigIter ) {
@@ -693,6 +701,30 @@ CID2WGSProcessor_Impl::ResolveAcc(const string& acc, int version)
 }
 
 
+bool CID2WGSProcessor_Impl::SwitchToMainSeq(SWGSSeqInfo& seq,
+                                            const string& acc)
+{
+    CWGSDb db = GetWGSDb(seq);
+    // proteins can be located in nuc-prot set
+    uint64_t cds_row_id = db->GetProductFeatRowId(acc);
+    if ( !cds_row_id ) {
+        return false;
+    }
+    CWGSFeatureIterator cds_it(db, cds_row_id);
+    if ( !cds_it ) {
+        return false;
+    }
+    if ( cds_it.GetSeqType() != NCBI_WGS_seqtype_contig ) {
+        return false;
+    }
+    // switch to contig
+    seq.m_RowId = cds_it.GetLocRowId();
+    seq.m_SeqType = '\0';
+    ResetIteratorCache(seq);
+    return true;
+}
+
+
 CID2WGSProcessor_Impl::SWGSSeqInfo
 CID2WGSProcessor_Impl::Resolve(const CSeq_id& id)
 {
@@ -734,6 +766,9 @@ CID2WGSProcessor_Impl::Resolve(const CSeq_id& id)
         return seq;
     }
     seq.m_ValidWGS = true;
+    if ( seq.m_SeqType == 'P' ) {
+        SwitchToMainSeq(seq, text_id->GetAccession());
+    }
     return seq;
 }
 
