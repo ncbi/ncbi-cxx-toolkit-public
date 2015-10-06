@@ -2068,8 +2068,8 @@ public:
                                 EOccurrence which = eFirst);
 
     /// Wrappers for backward-compatibility
-    static SIZE_TYPE FindCase(const CTempString str, const CTempString pattern,
-                              SIZE_TYPE start = 0);
+    static SIZE_TYPE FindCase(const CTempString str, const CTempString pattern);
+    static SIZE_TYPE FindCase(const CTempString str, const CTempString pattern, SIZE_TYPE start);
 
     /// Find the pattern in the specified range of a string using a case
     /// insensitive search.
@@ -2103,8 +2103,8 @@ public:
                                 EOccurrence which = eFirst);
 
     /// Wrapper for backward-compatibility
-    static SIZE_TYPE FindNoCase(const CTempString str, const CTempString pattern,
-                                SIZE_TYPE start = 0);
+    static SIZE_TYPE FindNoCase(const CTempString str, const CTempString pattern);
+    static SIZE_TYPE FindNoCase(const CTempString str, const CTempString pattern, SIZE_TYPE start);
 
     /// Test for presence of a given string in a list or vector of strings
 
@@ -5455,12 +5455,14 @@ SIZE_TYPE NStr::FindCase(const CTempString str, const CTempString pattern,
 }
 
 inline
-SIZE_TYPE NStr::FindCase(const CTempString str, const CTempString pattern,
-                         SIZE_TYPE start)
+SIZE_TYPE NStr::FindCase(const CTempString str, const CTempString pattern)
 {
-    if (start == 0) {
-        return Find(str, pattern, eCase);
-    }
+    return Find(str, pattern, eCase);
+}
+
+inline
+SIZE_TYPE NStr::FindCase(const CTempString str, const CTempString pattern, SIZE_TYPE start)
+{
     SIZE_TYPE pos = Find(CTempString(str, start), pattern, eCase);
     if (pos == NPOS) {
         return NPOS;
@@ -5469,12 +5471,14 @@ SIZE_TYPE NStr::FindCase(const CTempString str, const CTempString pattern,
 }
 
 inline
-SIZE_TYPE NStr::FindNoCase(const CTempString str, const CTempString pattern,
-                           SIZE_TYPE start)
+SIZE_TYPE NStr::FindNoCase(const CTempString str, const CTempString pattern)
 {
-    if (start == 0) {
-        return Find(str, pattern, eNocase);
-    }
+    return Find(str, pattern, eNocase);
+}
+
+inline
+SIZE_TYPE NStr::FindNoCase(const CTempString str, const CTempString pattern, SIZE_TYPE start)
+{
     SIZE_TYPE pos = Find(CTempString(str, start), pattern, eNocase);
     if (pos == NPOS) {
         return NPOS;
