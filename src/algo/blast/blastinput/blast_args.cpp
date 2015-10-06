@@ -1439,7 +1439,7 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
     arg_desc.AddFlag(kArgGLFocusV, "Should the search only be for V segment (effective only for non-germline database search using -db option)?", true);
 
-    arg_desc.AddFlag(kArgExtendAlign, "Extend V gene alignment up to 20 positions at 5' end", true);
+    arg_desc.AddFlag(kArgExtendAlign, "Extend V gene alignment at 5' end", true);
 
     if (! m_IsProtein) {
         arg_desc.AddFlag(kArgTranslate, "Show translated alignments", true);
