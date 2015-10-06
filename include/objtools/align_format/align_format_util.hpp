@@ -482,6 +482,16 @@ public:
     static void PrintTildeSepLines(string str, size_t line_len, 
                                    CNcbiOstream& out);
 
+    /// Fills one BLAST dbinfo structure.
+    /// Intended for use in bl2seq mode with multiple subject sequences.
+    /// database title set to "User specified sequence set"
+    /// @param retval return vector [in/out]
+    /// @param is_protein are these databases protein? [in]
+    /// @param numSeqs number of sequecnes in set [in]
+    /// @param numLetters size of the set [in]
+    static void FillScanModeBlastDbInfo(vector<SDbInfo>& retval,
+                           bool is_protein, int numSeqs, Int8 numLetters);
+
     /// Retrieve BLAST database information for presentation in BLAST report
     /// @param dbname space-separated list of BLAST database names [in]
     /// @param is_protein are these databases protein? [in]

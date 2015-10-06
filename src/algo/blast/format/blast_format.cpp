@@ -98,6 +98,7 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
           m_MatrixName(matrix_name),
           m_Scope(& scope),
           m_IsBl2Seq(false),
+          m_IsDbScan(false),
           m_IsRemoteSearch(is_remote_search),
           m_QueriesFormatted(0),
           m_Megablast(is_megablast),
@@ -116,8 +117,14 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
     m_Outfile.exceptions(NcbiBadbit);
     m_DbName = db_adapter.GetDatabaseName();
     m_IsBl2Seq = (m_DbName == kEmptyStr ? true : false);
+    m_IsDbScan = db_adapter.IsDbScanMode();
     if (m_IsBl2Seq) {
         m_SeqInfoSrc.Reset(db_adapter.MakeSeqInfoSrc());
+    }
+    if(m_IsDbScan) {
+	BlastSeqSrc* seqsrc = db_adapter.MakeSeqSrc();
+	CBlastFormatUtil::FillScanModeBlastDbInfo(m_DbInfo, m_DbIsAA,
+		BlastSeqSrcGetNumSeqs(seqsrc), BlastSeqSrcGetTotLen(seqsrc));
     } else {
         CBlastFormatUtil::GetBlastDbInfo(m_DbInfo, m_DbName, m_DbIsAA,
                                    dbfilt_algorithm, is_remote_search);
@@ -330,7 +337,7 @@ CBlastFormat::PrintProlog()
                                               m_Outfile);
     }
 
-    if (m_IsBl2Seq) {
+    if (m_IsBl2Seq && !m_IsDbScan) {
         return;
     }
 
@@ -378,7 +385,8 @@ CBlastFormat::PrintProlog()
     else {
         m_Outfile << "\n\n";
     }
-    CBlastFormatUtil::PrintDbReport(m_DbInfo, kFormatLineLength, 
+    if (!m_IsBl2Seq || m_IsDbScan)
+        CBlastFormatUtil::PrintDbReport(m_DbInfo, kFormatLineLength, 
                                     m_Outfile, true);
 }
 
@@ -722,8 +730,13 @@ CBlastFormat::x_PrintTabularReport(const blast::CSearchResults& results,
             string strProgVersion =
                 NStr::ToUpper(m_Program) + " " + blast::CBlastVersion().Print();
             CConstRef<CBioseq> subject_bioseq = x_CreateSubjectBioseq();
+	    string dbname;
+	    if (m_IsDbScan)
+		dbname = string("User specified sequence set.");
+	    else 
+		dbname = m_DbName;
             tabinfo.PrintHeader(strProgVersion, *(bhandle.GetBioseqCore()),
-                                m_DbName, results.GetRID(), itr_num, aln_set,
+                                dbname, results.GetRID(), itr_num, aln_set,
                                 subject_bioseq);
         }
 
@@ -825,7 +838,7 @@ CBlastFormat::x_PrintIgTabularReport(const blast::CIgBlastResults& results)
 
 CConstRef<objects::CBioseq> CBlastFormat::x_CreateSubjectBioseq()
 {
-    if ( !m_IsBl2Seq ) {
+    if ( !m_IsBl2Seq && !m_IsDbScan) {
         return CConstRef<CBioseq>();
     }
 
@@ -987,7 +1000,7 @@ CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
                                             m_Outfile, m_BelieveQuery,
                                             m_IsHTML, kIsTabularOutput,
                                             results.GetRID());
-    if (m_IsBl2Seq) {
+    if (m_IsBl2Seq && !m_IsDbScan) {
         m_Outfile << "\n";
         // FIXME: this might be configurable in the future
         const bool kBelieveSubject = false; 
@@ -1020,7 +1033,7 @@ CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
     // Also disable when program is rmblastn.  At this time
     // we do not want summary bit scores/evalues for this 
     // program. -RMH-
-    if ( !m_IsBl2Seq && !(m_DisableKAStats || kIsGlobal) ) {
+    if ( (!m_IsBl2Seq || m_IsDbScan) && !(m_DisableKAStats || kIsGlobal) ) {
         x_DisplayDeflines(aln_set, itr_num, prev_seqids);
     }
 
@@ -1035,7 +1048,7 @@ CBlastFormat::PrintOneResultSet(const blast::CSearchResults& results,
     CBlastFormatUtil::PruneSeqalign(*aln_set, copy_aln_set, m_NumAlignments);
 
     int flags = s_SetFlags(m_Program, m_FormatType, m_IsHTML, m_ShowGi,
-                           m_IsBl2Seq, (m_DisableKAStats || kIsGlobal));
+                           (m_IsBl2Seq && !m_IsDbScan), (m_DisableKAStats || kIsGlobal));
 
     CDisplaySeqalign display(copy_aln_set, *m_Scope, &masklocs, NULL, m_MatrixName);
     display.SetDbName(m_DbName);
@@ -1471,7 +1484,7 @@ CBlastFormat::PrintPhiResult(const blast::CSearchResultSet& result_set,
 
 
     int flags = s_SetFlags(m_Program, m_FormatType, m_IsHTML, m_ShowGi,
-                           m_IsBl2Seq, false);
+                           (m_IsBl2Seq && !m_IsDbScan), false);
 
     if (phi_query_info)
     {
@@ -1565,10 +1578,6 @@ CBlastFormat::PrintEpilog(const blast::CBlastOptions& options)
 
     if (m_FormatType == CFormattingArgs::eTabularWithComments) {
         CBlastTabularInfo tabinfo(m_Outfile, m_CustomOutputFormatSpec);
-        if (m_IsBl2Seq) {
-            _ASSERT(m_SeqInfoSrc);
-            m_QueriesFormatted /= m_SeqInfoSrc->Size();
-        }
         tabinfo.PrintNumProcessed(m_QueriesFormatted);
         return;
     } else if (m_FormatType >= CFormattingArgs::eTabular) 
@@ -1590,7 +1599,7 @@ CBlastFormat::PrintEpilog(const blast::CBlastOptions& options)
                                         m_Outfile, false);
     }
 
-    if ( !m_IsBl2Seq ) {
+    if ( !m_IsBl2Seq || m_IsDbScan) {
         CBlastFormatUtil::PrintDbReport(m_DbInfo, kFormatLineLength, 
                                         m_Outfile, false);
     }

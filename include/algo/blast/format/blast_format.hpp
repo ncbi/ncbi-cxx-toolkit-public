@@ -297,6 +297,8 @@ private:
     CRef<CScope> m_Scope;       
     /** True if we are formatting for BLAST2Sequences */
     bool m_IsBl2Seq;            
+    /// True if it is m_IsBl2Seq in dbscan mode
+    bool m_IsDbScan;
     /// True if this object is formatting the results of a remote search
     bool m_IsRemoteSearch;
     /// Used to count number of searches formatted. 

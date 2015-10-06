@@ -277,6 +277,19 @@ s_FillDbInfoLocally(const string& dbname,
     return true;
 }
 
+void 
+CAlignFormatUtil::FillScanModeBlastDbInfo(vector<CAlignFormatUtil::SDbInfo>& retval,
+                           bool is_protein, int numSeqs, Int8 numLetters)
+{
+	retval.clear();
+	CAlignFormatUtil::SDbInfo info;
+	info.is_protein = is_protein;
+	info.definition = string("User specified sequence set.");
+	info.number_seqs = numSeqs;
+	info.total_length = numLetters;
+	retval.push_back(info);
+}
+
 void
 CAlignFormatUtil::GetBlastDbInfo(vector<CAlignFormatUtil::SDbInfo>& retval,
                            const string& blastdb_names, bool is_protein,
