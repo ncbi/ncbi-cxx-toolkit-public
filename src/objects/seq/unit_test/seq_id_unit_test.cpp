@@ -98,7 +98,7 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromGIString)
 #ifdef NCBI_INT8_GI
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("9876543210")));
     BOOST_CHECK(id->IsGi());
-    BOOST_CHECK(id->GetGi() == 9876543210);
+    BOOST_CHECK(id->GetGi() == NCBI_CONST_INT8(9876543210));
 #else
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("9876543210")));
 #endif
