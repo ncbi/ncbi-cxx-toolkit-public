@@ -81,7 +81,9 @@ struct SNetStorageRPC : public SNetStorageImpl
                         m_ServiceMap.GetServiceByName(service_name, m_Service);
     }
 
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     void AllowXSiteConnections() { m_Service.AllowXSiteConnections(); }
+#endif
 
     EDefaultStorage m_DefaultStorage;
 

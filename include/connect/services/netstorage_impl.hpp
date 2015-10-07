@@ -181,7 +181,9 @@ struct NCBI_XCONNECT_EXPORT SNetStorageImpl : public CObject
             TNetStorageFlags flags) = 0;
     virtual bool Exists(const string& object_loc) = 0;
     virtual void Remove(const string& object_loc) = 0;
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     virtual void AllowXSiteConnections() {}
+#endif
 };
 
 inline CNetStorageObject CNetStorage::Create(TNetStorageFlags flags)
