@@ -801,22 +801,22 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,
             off = 0;
 
         if (status == eIO_Success) {
-            if (uuu->read_state == eRS_WriteRequest) {
-                /* "flush */
-                assert(uuu->w_len == 0);
-                status = SOCK_Write(uuu->sock, 0, 0, 0, eIO_WritePlain);
-                if (status == eIO_Success) {
-                    uuu->read_state = eRS_ReadHeader;
-                    uuu->keepalive
-                        = uuu->net_info->req_method < eReqMethod_v1 ? 0 : 1;
-                    uuu->expected = (TNCBI_BigCount)(-1L);
-                    uuu->received = 0;
-                    uuu->chunked  = 0;
-                    BUF_Erase(uuu->http);
-                    break;
-                }
-            } else
+            if (uuu->w_len)
+                continue;
+            if (uuu->read_state != eRS_WriteRequest)
                 break;
+            /* "flush" */
+            status = SOCK_Write(uuu->sock, 0, 0, 0, eIO_WritePlain);
+            if (status == eIO_Success) {
+                uuu->read_state = eRS_ReadHeader;
+                uuu->keepalive
+                    = uuu->net_info->req_method < eReqMethod_v1 ? 0 : 1;
+                uuu->expected = (TNCBI_BigCount)(-1L);
+                uuu->received = 0;
+                uuu->chunked  = 0;
+                BUF_Erase(uuu->http);
+                break;
+            }
         }
 
         if (status == eIO_Timeout
