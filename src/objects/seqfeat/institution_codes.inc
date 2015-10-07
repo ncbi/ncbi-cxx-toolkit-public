@@ -5562,6 +5562,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "SMN	s	Simao District National Medical and Pharmaceutical Institute",
 "SMNG	s	Senckenberg Museum fuer Naturkunde Goerlitz",
 "SMNH<CAN>	s	Saskatchewan Museum of Natural History",
+"SMNH<ISR>	s	Steinhardt Museum of Natural History",
 "SMNH<SWE>	s	Swedish Museum of Natural History",
 "SMNH<UKR>	s	State Museum of Natural History",
 "SMNH<USA-KS>	s	Schmidt Museum of Natural History, Emporia State University",
