@@ -138,7 +138,7 @@ DISCREPANCY_AUTOFIX(BAD_BACTERIAL_GENE_NAME)
 // EC_NUMBER_ON_UNKNOWN_PROTEIN
 DISCREPANCY_CASE(EC_NUMBER_ON_UNKNOWN_PROTEIN, CSeqFeatData, eAll, "EC number on unknown protein")
 {
-    if (!obj.IsProt() || !obj.GetProt().CanGetName() || !obj.GetProt().CanGetEc() || !obj.GetProt().GetEc().empty()) {
+    if (!obj.IsProt() || !obj.GetProt().CanGetName() || !obj.GetProt().CanGetEc() || obj.GetProt().GetEc().empty()) {
         return;
     }
     const list <string>& names = obj.GetProt().GetName();
@@ -154,6 +154,22 @@ DISCREPANCY_CASE(EC_NUMBER_ON_UNKNOWN_PROTEIN, CSeqFeatData, eAll, "EC number on
 DISCREPANCY_SUMMARIZE(EC_NUMBER_ON_UNKNOWN_PROTEIN)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+DISCREPANCY_AUTOFIX(EC_NUMBER_ON_UNKNOWN_PROTEIN)
+{
+    TReportObjectList list = item->GetDetails();
+    NON_CONST_ITERATE(TReportObjectList, it, list) {
+        const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
+        if (sf) {
+            CRef<CSeq_feat> new_feat(new CSeq_feat());
+            new_feat->Assign(*sf);
+            new_feat->SetData().SetProt().ResetEc();
+            CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(*sf));
+            feh.Replace(*new_feat);
+        }
+    }
 }
 
 
