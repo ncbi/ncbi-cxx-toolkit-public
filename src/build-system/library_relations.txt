@@ -96,8 +96,6 @@ an_prok_pipeline needs $(GPIPE_COMMON_LIBS)
 an_prok_pipeline needs gpipe_an_base
 an_prok_pipeline needs pathogen_connection
 an_prok_pipeline needs xobjwrite
-an_rnaseq needs gpipe_an_base
-an_rnaseq needs matchhits
 an_worker_nodes needs gpipe_an_base
 asn_cache includes id_dump
 asn_config needs build_config_base
@@ -679,8 +677,6 @@ mapview needs mv_entrez
 mapview needs mvobjutil
 mapview needs seqset
 mapviewcli needs mapview
-matchhits needs $(COMPRESS_LIBS)
-matchhits needs seqdb
 medlars needs biblio
 medline needs biblio
 mghbn needs connect
