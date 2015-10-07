@@ -287,7 +287,7 @@ void CValidator::SetProgressCallback(TProgressCallback callback, void* user_data
 }
 
 
-bool CValidator::BadCharsInAuthorName(const string& str, bool allowcomma, bool allowperiod, bool last, bool allow_numbers)
+bool CValidator::BadCharsInAuthorName(const string& str, bool allowcomma, bool allowperiod, bool last)
 {
     if (NStr::IsBlank(str)) {
         return false;
@@ -308,14 +308,7 @@ bool CValidator::BadCharsInAuthorName(const string& str, bool allowcomma, bool a
     const char *ptr = str.c_str();
 
     while (*ptr != 0) {
-        if (isdigit(*ptr)) {
-            if (allow_numbers) {
-                ptr++;
-                pos++;
-            } else {
-                return true;
-            }
-        } else if (isalpha(*ptr)
+        if (isalpha(*ptr)
             || *ptr == '-'
             || *ptr == '\''
             || *ptr == ' '
@@ -324,8 +317,15 @@ bool CValidator::BadCharsInAuthorName(const string& str, bool allowcomma, bool a
             // all these are ok
             ptr++;
             pos++;
-        }
-        else {
+        } else {
+            string tail = str.substr(pos);
+            if (NStr::Equal(tail, "2nd") ||
+                NStr::Equal(tail, "3rd") ||
+                NStr::Equal(tail, "4th") ||
+                NStr::Equal(tail, "5th") ||
+                NStr::Equal(tail, "6th")) {
+                return false;
+            }
             return true;
         }
     }
@@ -357,7 +357,7 @@ bool CValidator::BadCharsInAuthorInitials(const string& str)
 
 bool CValidator::BadCharsInAuthorSuffix(const string& str)
 {
-    return BadCharsInAuthorName(str, false, true, false, true);
+    return BadCharsInAuthorName(str, false, true, false);
 }
 
 

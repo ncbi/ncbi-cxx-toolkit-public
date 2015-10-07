@@ -176,7 +176,7 @@ public:
     CConstRef<CValidError> GetTSACDSOnMinusStrandErrors (const CSeq_feat& f, const CBioseq& seq);
     CConstRef<CValidError> GetTSAConflictingBiomolTechErrors (const CBioseq& seq);
 
-    static bool BadCharsInAuthorName(const string& str, bool allowcomma, bool allowperiod, bool last, bool allow_numbers = false);
+    static bool BadCharsInAuthorName(const string& str, bool allowcomma, bool allowperiod, bool last);
     static bool BadCharsInAuthorLastName(const string& str);
     static bool BadCharsInAuthorFirstName(const string& str);
     static bool BadCharsInAuthorInitials(const string& str);
