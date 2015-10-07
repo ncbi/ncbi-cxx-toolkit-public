@@ -296,6 +296,9 @@ void CheckAutoDefOptions
     if (opts.GetKeepIntrons()) {
         expected_num_fields++;
     }
+    if (opts.GetKeepExons()) {
+        expected_num_fields++;
+    }
     if (opts.GetKeepuORFs()) {
         expected_num_fields++;
     }
@@ -325,6 +328,9 @@ void CheckAutoDefOptions
     }
     if (opts.GetKeepIntrons()) {
         BOOST_CHECK_EQUAL(HasBoolField(user, "KeepIntrons"), 1);
+    }
+    if (opts.GetKeepExons()) {
+        BOOST_CHECK_EQUAL(HasBoolField(user, "KeepExons"), 1);
     }
     if (opts.GetKeepuORFs()) {
         BOOST_CHECK_EQUAL(HasBoolField(user, "KeepuORFs"), 1);
@@ -1628,6 +1634,56 @@ BOOST_AUTO_TEST_CASE(GB_5272b)
 
     AddTitle(nuc, "Coxiella burnetii hypothetical protein, fake protein, and hypothetical protein genes, complete cds.");
     CheckDeflineMatches(entry);
+
+}
+
+
+BOOST_AUTO_TEST_CASE(SQD_3462)
+{
+    CRef<CSeq_entry> entry = BuildNucProtSet("brahma protein");
+    CRef<CSeqdesc> desc = AddSource(entry, "Anas castanea");
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_isolate, "DPIWECT127");
+    CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
+    cds->SetLocation().SetInt().SetTo(8);
+    cds->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    cds->SetLocation().SetPartialStop(true, eExtreme_Biological);
+    CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> exon = unit_test_util::AddMiscFeature(nuc);
+    exon->ResetComment();
+    exon->SetData().SetImp().SetKey("exon");
+    exon->SetLocation().SetInt().SetFrom(0);
+    exon->SetLocation().SetInt().SetTo(8);
+    CRef<CGb_qual> exon_number(new CGb_qual("number", "15"));
+    exon->SetQual().push_back(exon_number);
+    CRef<CSeq_feat> intron = unit_test_util::AddMiscFeature(nuc);
+    intron->ResetComment();
+    intron->SetData().SetImp().SetKey("intron");
+    intron->SetLocation().SetInt().SetFrom(9);
+    intron->SetLocation().SetInt().SetTo(nuc->GetSeq().GetLength() - 1);
+    CRef<CGb_qual> intron_number(new CGb_qual("number", "15"));
+    intron->SetQual().push_back(intron_number);
+
+    CRef<CSeq_feat> gene = unit_test_util::AddMiscFeature(nuc);
+    gene->ResetComment();
+    gene->SetData().SetGene().SetLocus("BRM");
+    gene->SetLocation().SetInt().SetTo(nuc->GetSeq().GetLength() - 1);
+
+    objects::CAutoDef autodef;
+
+    CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
+
+    CRef<CScope> scope(new CScope(*object_manager));
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+    autodef.AddSources(seh);
+    autodef.SetKeepExons(true);
+    autodef.SetKeepIntrons(true);
+
+    CRef<CAutoDefModifierCombo> mod_combo(new CAutoDefModifierCombo());
+    mod_combo->AddOrgMod(COrgMod::eSubtype_isolate, true);
+    mod_combo->SetUseModifierLabels(true);
+
+    AddTitle(nuc, "Anas castanea isolate DPIWECT127 brahma protein (BRM) gene, exon 15, intron 15, and partial cds.");
+    CheckDeflineMatches(seh, autodef, mod_combo);
 
 }
 

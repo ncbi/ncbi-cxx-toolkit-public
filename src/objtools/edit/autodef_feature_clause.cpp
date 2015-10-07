@@ -1519,6 +1519,12 @@ bool CAutoDefFeatureClause::OkToGroupUnderByLocation(CAutoDefFeatureClause_Base 
                 prev_stop = cds_stop;
                 ++seq_loc_it;
             }
+            // intron could also group with coding region if coding region is adjacent
+            if (intron_start > prev_stop && intron_start - 1 == prev_stop) {
+                return true;
+            } else if (prev_start > intron_stop && prev_start - 1 == intron_stop) {
+                return true;
+            }
         }                              
     }
                
