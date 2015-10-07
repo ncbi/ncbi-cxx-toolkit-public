@@ -221,7 +221,7 @@ bool CMappingRange::CanMap(TSeqPos    from,
                            ENa_strand strand) const
 {
     // The callers set is_set_strand to true only if the mapper's
-    // m_CheckStrand is enabled. Only in this case CanMap() checks
+    // fCheckStrand is enabled. Only in this case CanMap() checks
     // if the location's strand is the same as the mapping's one.
     if ( is_set_strand  &&  (IsReverse(strand) != IsReverse(m_Src_strand)) ) {
         return false;
@@ -643,11 +643,7 @@ ENa_strand s_IndexToStrand(size_t idx)
 CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(IMapper_Sequence_Info* seqinfo)
     : m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
-      m_TrimSplicedSegs(true),
-      m_KeepNonmapping(false),
-      m_CheckStrand(false),
-      m_IncludeSrcLocs(false),
-      m_MixedAlignsAsSpliced(false),
+      m_MiscFlags(fTrimSplicedSegs),
       m_Partial(false),
       m_LastTruncated(false),
       m_Mappings(new CMappingRanges),
@@ -663,11 +659,7 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(CMappingRanges* mapping_ranges,
                                            IMapper_Sequence_Info* seq_info)
     : m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
-      m_TrimSplicedSegs(true),
-      m_KeepNonmapping(false),
-      m_CheckStrand(false),
-      m_IncludeSrcLocs(false),
-      m_MixedAlignsAsSpliced(false),
+      m_MiscFlags(fTrimSplicedSegs),
       m_Partial(false),
       m_LastTruncated(false),
       m_Mappings(mapping_ranges),
@@ -684,11 +676,7 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_feat&  map_feat,
                                            IMapper_Sequence_Info* seq_info)
     : m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
-      m_TrimSplicedSegs(true),
-      m_KeepNonmapping(false),
-      m_CheckStrand(false),
-      m_IncludeSrcLocs(false),
-      m_MixedAlignsAsSpliced(false),
+      m_MiscFlags(fTrimSplicedSegs),
       m_Partial(false),
       m_LastTruncated(false),
       m_Mappings(new CMappingRanges),
@@ -706,11 +694,7 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_loc& source,
                                            IMapper_Sequence_Info* seq_info)
     : m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
-      m_TrimSplicedSegs(true),
-      m_KeepNonmapping(false),
-      m_CheckStrand(false),
-      m_IncludeSrcLocs(false),
-      m_MixedAlignsAsSpliced(false),
+      m_MiscFlags(fTrimSplicedSegs),
       m_Partial(false),
       m_LastTruncated(false),
       m_Mappings(new CMappingRanges),
@@ -729,11 +713,7 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_align& map_align,
                                            IMapper_Sequence_Info* seq_info)
     : m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
-      m_TrimSplicedSegs(true),
-      m_KeepNonmapping(false),
-      m_CheckStrand(false),
-      m_IncludeSrcLocs(false),
-      m_MixedAlignsAsSpliced(false),
+      m_MiscFlags(fTrimSplicedSegs),
       m_Partial(false),
       m_LastTruncated(false),
       m_Mappings(new CMappingRanges),
@@ -752,11 +732,7 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_align& map_align,
                                            IMapper_Sequence_Info* seq_info)
     : m_MergeFlag(eMergeNone),
       m_GapFlag(eGapPreserve),
-      m_TrimSplicedSegs(true),
-      m_KeepNonmapping(false),
-      m_CheckStrand(false),
-      m_IncludeSrcLocs(false),
-      m_MixedAlignsAsSpliced(false),
+      m_MiscFlags(fTrimSplicedSegs),
       m_Partial(false),
       m_LastTruncated(false),
       m_Mappings(new CMappingRanges),
@@ -2714,7 +2690,7 @@ bool CSeq_loc_Mapper_Base::x_MapNextRange(const TRange&     src_rg,
 {
     const CMappingRange& cvt = *mappings[cvt_idx];
     if ( !cvt.CanMap(src_rg.GetFrom(), src_rg.GetTo(),
-        is_set_strand && m_CheckStrand, src_strand) ) {
+        is_set_strand && x_IsSetMiscFlag(fCheckStrand), src_strand) ) {
         // Can not map the range through this mapping.
         return false;
     }
@@ -2730,8 +2706,11 @@ bool CSeq_loc_Mapper_Base::x_MapNextRange(const TRange&     src_rg,
 
     bool reverse = IsReverse(src_strand);
 
+    // Have to save trimmed parts for error reporting (see below).
+    TRange trimmed_left, trimmed_right;
     // Check if the source range is truncated by the mapping.
     if (left < cvt.m_Src_from) {
+        trimmed_left.SetOpen(left, cvt.m_Src_from);
         used_rg.SetFrom(cvt.m_Src_from - left);
         left = cvt.m_Src_from;
         if ( !reverse ) {
@@ -2746,6 +2725,7 @@ bool CSeq_loc_Mapper_Base::x_MapNextRange(const TRange&     src_rg,
         }
     }
     if (right > cvt.m_Src_to) {
+        trimmed_right.Set(cvt.m_Src_to + 1, right);
         used_rg.SetLength(cvt.m_Src_to - left + 1);
         right = cvt.m_Src_to;
         if ( !reverse ) {
@@ -2758,6 +2738,20 @@ bool CSeq_loc_Mapper_Base::x_MapNextRange(const TRange&     src_rg,
             partial_right = (*last_src_to == kInvalidSeqPos)  ||
                 (right + 1 != *last_src_to);
         }
+    }
+    if ((partial_left  ||  partial_right)  &&  x_IsSetMiscFlag(fErrorOnPartial)) {
+        string err_msg = "Unmapped sequence: " + cvt.m_Src_id_Handle.AsString();
+        if ( partial_left ) {
+            err_msg += " " + NStr::NumericToString(trimmed_left.GetFrom()) + ".." +
+                NStr::NumericToString(trimmed_left.GetTo());
+        }
+        if ( partial_right ) {
+            if ( partial_left ) err_msg += ",";
+            err_msg += " " + NStr::NumericToString(trimmed_right.GetFrom()) + ".." +
+                NStr::NumericToString(trimmed_right.GetTo());
+        }
+        err_msg += " not mapped to " + cvt.m_Dst_id_Handle.AsString();
+        NCBI_THROW(CAnnotMapperException, eCanNotMap, err_msg);
     }
     if (right < left) {
         // Empty range - ignore it.
@@ -2862,7 +2856,7 @@ void CSeq_loc_Mapper_Base::x_SetLastTruncated(void)
 {
     // The flag indicates if the last range could not be mapped
     // or preserved and was dropped.
-    if ( m_LastTruncated  ||  m_KeepNonmapping ) {
+    if ( m_LastTruncated  ||  x_IsSetMiscFlag(fKeepNonmapping) ) {
         return;
     }
     m_LastTruncated = true;
@@ -2997,7 +2991,7 @@ void CSeq_loc_Mapper_Base::x_Map_PackedInt_Element(const CSeq_interval& si)
     if ( !res ) {
         // If the interval could not be mapped, we may need to keep
         // the original one.
-        if ( m_KeepNonmapping ) {
+        if ( x_IsSetMiscFlag(fKeepNonmapping) ) {
             // Propagate collected mapped ranges to the destination seq-loc.
             x_PushRangesToDstMix();
             // Add a copy of the original interval.
@@ -3034,7 +3028,7 @@ void CSeq_loc_Mapper_Base::x_Map_PackedPnt_Element(const CPacked_seqpnt& pp,
     if ( !res ) {
         // If the point could not be mapped, we may need to keep
         // the original one.
-        if ( m_KeepNonmapping ) {
+        if ( x_IsSetMiscFlag(fKeepNonmapping) ) {
             // Propagate collected mapped ranges to the destination seq-loc.
             x_PushRangesToDstMix();
             // Add a copy of the original point.
@@ -3102,7 +3096,7 @@ void CSeq_loc_Mapper_Base::x_MapSeq_loc(const CSeq_loc& src_loc)
         if ( !res ) {
             // If we don't have any mappings for this seq-id we may
             // still need to keep the original.
-            if ( m_KeepNonmapping ) {
+            if ( x_IsSetMiscFlag(fKeepNonmapping) ) {
                 x_PushRangesToDstMix();
                 CRef<CSeq_loc> loc(new CSeq_loc);
                 loc->Assign(src_loc);
@@ -3133,7 +3127,7 @@ void CSeq_loc_Mapper_Base::x_MapSeq_loc(const CSeq_loc& src_loc)
         if ( !res ) {
             // If nothing could be mapped, we may still need to keep
             // the original.
-            if ( m_KeepNonmapping ) {
+            if ( x_IsSetMiscFlag(fKeepNonmapping) ) {
                 x_PushRangesToDstMix();
                 CRef<CSeq_loc> loc(new CSeq_loc);
                 loc->Assign(src_loc);
@@ -3168,7 +3162,7 @@ void CSeq_loc_Mapper_Base::x_MapSeq_loc(const CSeq_loc& src_loc)
         if ( !res ) {
             // If nothing could be mapped, we may still need to keep
             // the original.
-            if ( m_KeepNonmapping ) {
+            if ( x_IsSetMiscFlag(fKeepNonmapping) ) {
                 x_PushRangesToDstMix();
                 CRef<CSeq_loc> loc(new CSeq_loc);
                 loc->Assign(src_loc);
@@ -3210,7 +3204,7 @@ void CSeq_loc_Mapper_Base::x_MapSeq_loc(const CSeq_loc& src_loc)
         if ( !res ) {
             // If nothing could be mapped, we may still need to keep
             // the original.
-            if ( m_KeepNonmapping ) {
+            if ( x_IsSetMiscFlag(fKeepNonmapping) ) {
                 x_PushRangesToDstMix();
                 CRef<CSeq_loc> loc(new CSeq_loc);
                 loc->Assign(src_loc);
@@ -3345,7 +3339,7 @@ void CSeq_loc_Mapper_Base::x_MapSeq_loc(const CSeq_loc& src_loc)
         m_Dst_loc = prev;
         // Now we check the non-mapping flag. Only if both A and B
         // failed to map and the flag is not set, we can discard the bond.
-        if ( resA  ||  resB  ||  m_KeepNonmapping ) {
+        if ( resA  ||  resB  ||  x_IsSetMiscFlag(fKeepNonmapping) ) {
             if (pntA->IsPnt()  &&  pntB->IsPnt()) {
                 // Mapped locations are points - pack into bond
                 CSeq_bond& dst_bond = dst_loc->SetBond();
@@ -3529,7 +3523,7 @@ void CSeq_loc_Mapper_Base::x_PushMappedRange(const CSeq_id_Handle& id,
 {
     // It is impossible to collect source locations and do merging
     // at the same time.
-    if (m_IncludeSrcLocs  &&  m_MergeFlag != eMergeNone) {
+    if (x_IsSetMiscFlag(fIncludeSrcLocs)  &&  m_MergeFlag != eMergeNone) {
         NCBI_THROW(CAnnotMapperException, eOtherError,
                    "Merging ranges is incompatible with "
                    "including source locations.");
@@ -3640,7 +3634,7 @@ void CSeq_loc_Mapper_Base::x_PushSourceRange(const CSeq_id_Handle& idh,
                                              const TRange&         range,
                                              bool                  push_reverse)
 {
-    if ( !m_IncludeSrcLocs ) return; // No need to store source ranges.
+    if ( !x_IsSetMiscFlag(fIncludeSrcLocs) ) return; // No need to store source ranges.
     if ( !m_SrcLocs ) {
         m_SrcLocs.Reset(new CSeq_loc);
     }
@@ -4034,31 +4028,42 @@ CSeq_loc_Mapper_Base::Map(CSeq_annot& annot, TAnnotMapFlags flags)
     case CSeq_annot::C_Data::e_Ftable:
         {
             CSeq_annot::C_Data::TFtable& ftable = annot.SetData().SetFtable();
+            string error;
+            bool mapped = false;
             ERASE_ITERATE(CSeq_annot::C_Data::TFtable, it, ftable) {
-                bool mapped = false;
-                // For error reporting we may need the original feature.
-                CSeq_feat& feat = **it;
-                CRef<CSeq_loc> loc;
-                if (flags & fAnnotMap_Location) {
-                    loc = Map(feat.GetLocation());
-                    if ( loc  &&  !loc->IsNull() ) {
-                        feat.SetLocation(*loc);
-                        mapped = true;
+                error.clear();
+                mapped = false;
+                try {
+                    // For error reporting we may need the original feature.
+                    CSeq_feat& feat = **it;
+                    CRef<CSeq_loc> loc;
+                    if (flags & fAnnotMap_Location) {
+                        loc = Map(feat.GetLocation());
+                        if ( loc  &&  !loc->IsNull() ) {
+                            feat.SetLocation(*loc);
+                            mapped = true;
+                        }
+                    }
+                    if ((flags & fAnnotMap_Product)  &&  feat.IsSetProduct() ) {
+                        loc = Map(feat.GetProduct());
+                        if ( loc  &&  !loc->IsNull() ) {
+                            feat.SetProduct(*loc);
+                            mapped = true;
+                        }
                     }
                 }
-                if ((flags & fAnnotMap_Product)  &&  feat.IsSetProduct() ) {
-                    loc = Map(feat.GetProduct());
-                    if ( loc  &&  !loc->IsNull() ) {
-                        feat.SetProduct(*loc);
-                        mapped = true;
-                    }
+                catch (CAnnotMapperException& e) {
+                    error = e.GetMsg();
+                    mapped = false;
                 }
                 if ( mapped ) {
                     mapped_count++;
                 }
                 else {
                     if ( IMessageListener::HaveListeners() ) {
-                        CSeq_loc_Mapper_Message msg("Failed to map seq-feat", eDiag_Error);
+                        CSeq_loc_Mapper_Message msg(
+                            error.empty() ? "Failed to map seq-feat" : error,
+                            eDiag_Error);
                         msg.SetFeat(**it);
                         IMessageListener::Post(msg);
                     }
@@ -4068,7 +4073,7 @@ CSeq_loc_Mapper_Base::Map(CSeq_annot& annot, TAnnotMapFlags flags)
                     }
                     if (flags & fAnnotMap_ThrowOnFailure) {
                         NCBI_THROW(CAnnotMapperException, eCanNotMap,
-                                   "Can not map seq-feat.");
+                            error.empty() ? string("Failed to map seq-feat.") : error);
                     }
                 }
             }
@@ -4077,15 +4082,28 @@ CSeq_loc_Mapper_Base::Map(CSeq_annot& annot, TAnnotMapFlags flags)
     case CSeq_annot::C_Data::e_Align:
         {
             CSeq_annot::C_Data::TAlign& aligns = annot.SetData().SetAlign();
+            string error;
+            bool mapped = false;
             ERASE_ITERATE(CSeq_annot::C_Data::TAlign, it, aligns) {
-                CRef<CSeq_align> align = Map(**it);
+                error.clear();
+                mapped = false;
+                CRef<CSeq_align> align;
+                try {
+                    align = Map(**it);
+                }
+                catch (CAnnotMapperException& e) {
+                    error = e.GetMsg();
+                    mapped = false;
+                }
                 if ( align ) {
                     *it = align;
                     mapped_count++;
                 }
                 else {
                     if ( IMessageListener::HaveListeners() ) {
-                        CSeq_loc_Mapper_Message msg("Failed to map seq-align", eDiag_Error);
+                        CSeq_loc_Mapper_Message msg(
+                            error.empty() ? "Failed to map seq-align" : error,
+                            eDiag_Error);
                         msg.SetAlign(**it);
                         IMessageListener::Post(msg);
                     }
@@ -4095,7 +4113,7 @@ CSeq_loc_Mapper_Base::Map(CSeq_annot& annot, TAnnotMapFlags flags)
                     }
                     if (flags & fAnnotMap_ThrowOnFailure) {
                         NCBI_THROW(CAnnotMapperException, eCanNotMap,
-                                   "Can not map seq-align.");
+                            error.empty() ? string("Failed to map seq-align") : error);
                     }
                 }
             }
@@ -4104,15 +4122,28 @@ CSeq_loc_Mapper_Base::Map(CSeq_annot& annot, TAnnotMapFlags flags)
     case CSeq_annot::C_Data::e_Graph:
         {
             CSeq_annot::C_Data::TGraph& graphs = annot.SetData().SetGraph();
+            string error;
+            bool mapped = false;
             ERASE_ITERATE(CSeq_annot::C_Data::TGraph, it, graphs) {
-                CRef<CSeq_graph> graph = Map(**it);
+                error.clear();
+                mapped = false;
+                CRef<CSeq_graph> graph;
+                try {
+                    graph = Map(**it);
+                }
+                catch (CAnnotMapperException& e) {
+                    error = e.GetMsg();
+                    mapped = false;
+                }
                 if ( graph ) {
                     *it = graph;
                     mapped_count++;
                 }
                 else {
                     if ( IMessageListener::HaveListeners() ) {
-                        CSeq_loc_Mapper_Message msg("Failed to map seq-graph", eDiag_Error);
+                        CSeq_loc_Mapper_Message msg(
+                            error.empty() ? "Failed to map seq-graph" : error,
+                            eDiag_Error);
                         msg.SetGraph(**it);
                         IMessageListener::Post(msg);
                     }
@@ -4122,7 +4153,7 @@ CSeq_loc_Mapper_Base::Map(CSeq_annot& annot, TAnnotMapFlags flags)
                     }
                     if (flags & fAnnotMap_ThrowOnFailure) {
                         NCBI_THROW(CAnnotMapperException, eCanNotMap,
-                                   "Can not map seq-graph.");
+                            error.empty() ? string("Failed to map seq-graph") : error);
                     }
                 }
             }
@@ -4142,6 +4173,17 @@ CSeq_loc_Mapper_Base::Map(CSeq_annot& annot, TAnnotMapFlags flags)
         ret = non_mapped_count ? eMapped_Some : eMapped_All;
     }
     return ret;
+}
+
+
+void CSeq_loc_Mapper_Base::x_SetMiscFlag(EMiscFlags flag, bool value)
+{
+    if ( value ) {
+        m_MiscFlags |= flag;
+    }
+    else {
+        m_MiscFlags &= ~flag;
+    }
 }
 
 

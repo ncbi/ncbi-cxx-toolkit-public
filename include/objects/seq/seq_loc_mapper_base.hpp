@@ -433,6 +433,11 @@ public:
     /// Merging mode must be set to MergeNone.
     CSeq_loc_Mapper_Base& IncludeSourceLocs(bool value = true);
 
+    /// Report source range trimming as an error. If the flag is set,
+    /// any trimming will result in throwing CAnnotMapperException.
+    /// Intended to be used when mapping GC-Assembly aliases.
+    CSeq_loc_Mapper_Base& SetErrorOnPartial(bool value = true);
+
     /// Map seq-loc
     CRef<CSeq_loc>   Map(const CSeq_loc& src_loc);
     /// Map the whole alignment. Searches all rows for ranges
@@ -807,18 +812,30 @@ private:
     EMergeFlags          m_MergeFlag;
     // How to treat gaps (Null sub-locations) if any.
     EGapFlags            m_GapFlag;
-    // Trim leading/trailing indels (gaps) from mapped spliced-seg alignments.
-    bool                 m_TrimSplicedSegs;
 
-    // Wether to keep or discard ranges which can not be mapped.
-    bool                 m_KeepNonmapping;
-    // Wether to check or not if the original location is on the same strand
-    // as the mapping source.
-    bool                 m_CheckStrand;
-    // Wether to include a source of each mapped range to the mapped seq-loc.
-    bool                 m_IncludeSrcLocs;
-    // Prefer spliced-seg for mixed alignments.
-    bool                 m_MixedAlignsAsSpliced;
+    // Other mapping options.
+    enum EMiscFlags {
+        // Trim leading/trailing indels (gaps) from mapped spliced-seg alignments.
+        fTrimSplicedSegs        = 1 << 0,
+        // Wether to keep or discard ranges which can not be mapped.
+        fKeepNonmapping         = 1 << 1,
+        // Wether to check or not if the original location is on the same strand
+        // as the mapping source.
+        fCheckStrand            = 1 << 2,
+        // Wether to include a source of each mapped range to the mapped seq-loc.
+        fIncludeSrcLocs         = 1 << 3,
+        // Prefer spliced-seg for mixed alignments.
+        fMixedAlignsAsSpliced   = 1 << 4,
+        // Treat any range truncation as an error (added for mapping to GC-Assembly
+        // aliases).
+        fErrorOnPartial         = 1 << 5
+    };
+    typedef int TMiscFlags;
+
+    bool x_IsSetMiscFlag(EMiscFlags flag) const { return m_MiscFlags & flag; }
+    void x_SetMiscFlag(EMiscFlags flag, bool value);
+
+    TMiscFlags m_MiscFlags;
 
     // Mapped ranges collected from the currently parsed sub-location.
     mutable TRangesById  m_MappedLocs;
@@ -1099,7 +1116,7 @@ CSeq_loc_Mapper_Base& CSeq_loc_Mapper_Base::SetGapRemove(void)
 inline
 CSeq_loc_Mapper_Base& CSeq_loc_Mapper_Base::SetTrimSplicedSeg(bool trim)
 {
-    m_TrimSplicedSegs = trim;
+    x_SetMiscFlag(fTrimSplicedSegs, trim);
     return *this;
 }
 
@@ -1107,7 +1124,7 @@ CSeq_loc_Mapper_Base& CSeq_loc_Mapper_Base::SetTrimSplicedSeg(bool trim)
 inline
 CSeq_loc_Mapper_Base& CSeq_loc_Mapper_Base::SetCheckStrand(bool value)
 {
-    m_CheckStrand = value;
+    x_SetMiscFlag(fCheckStrand, value);
     return *this;
 }
 
@@ -1122,7 +1139,7 @@ bool CSeq_loc_Mapper_Base::LastIsPartial(void)
 inline
 CSeq_loc_Mapper_Base& CSeq_loc_Mapper_Base::KeepNonmappingRanges(void)
 {
-    m_KeepNonmapping = true;
+    x_SetMiscFlag(fKeepNonmapping, true);
     return *this;
 }
 
@@ -1130,7 +1147,7 @@ CSeq_loc_Mapper_Base& CSeq_loc_Mapper_Base::KeepNonmappingRanges(void)
 inline
 CSeq_loc_Mapper_Base& CSeq_loc_Mapper_Base::TruncateNonmappingRanges(void)
 {
-    m_KeepNonmapping = false;
+    x_SetMiscFlag(fKeepNonmapping, false);
     return *this;
 }
 
@@ -1138,7 +1155,7 @@ CSeq_loc_Mapper_Base& CSeq_loc_Mapper_Base::TruncateNonmappingRanges(void)
 inline
 CSeq_loc_Mapper_Base& CSeq_loc_Mapper_Base::MixedAlignsAsSpliced(bool value)
 {
-    m_MixedAlignsAsSpliced = value;
+    x_SetMiscFlag(fMixedAlignsAsSpliced, value);
     return *this;
 }
 
@@ -1146,7 +1163,15 @@ CSeq_loc_Mapper_Base& CSeq_loc_Mapper_Base::MixedAlignsAsSpliced(bool value)
 inline
 CSeq_loc_Mapper_Base& CSeq_loc_Mapper_Base::IncludeSourceLocs(bool value)
 {
-    m_IncludeSrcLocs = value;
+    x_SetMiscFlag(fIncludeSrcLocs, value);
+    return *this;
+}
+
+
+inline
+CSeq_loc_Mapper_Base& CSeq_loc_Mapper_Base::SetErrorOnPartial(bool value)
+{
+    x_SetMiscFlag(fErrorOnPartial, value);
     return *this;
 }
 

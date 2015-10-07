@@ -1056,7 +1056,8 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator& seg_it,
     for (size_t map_idx = 0; map_idx < mappings.size(); ++map_idx) {
         CRef<CMappingRange> mapping(mappings[map_idx]);
         if (!mapping->CanMap(start, stop,
-            aln_row.m_IsSetStrand  &&  m_LocMapper.m_CheckStrand,
+            aln_row.m_IsSetStrand  &&
+            m_LocMapper.x_IsSetMiscFlag(CSeq_loc_Mapper_Base::fCheckStrand),
             aln_row.m_Strand)) {
             // Mapping does not apply to this segment/row, leave it unchanged.
             continue;
@@ -1081,6 +1082,11 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator& seg_it,
             0 : mapping->m_Src_from - start;
         TSeqPos dr = mapping->m_Src_to >= stop ?
             0 : stop - mapping->m_Src_to;
+        if ((dl  ||  dr)  &&
+            m_LocMapper.x_IsSetMiscFlag(CSeq_loc_Mapper_Base::fErrorOnPartial)) {
+            NCBI_THROW(CAnnotMapperException, eCanNotMap,
+                "Alignment segment can not be mapped without trimming.");
+        }
         if (dl > 0) {
             // Add segment for the skipped range on the left.
             // Copy the original segment.
@@ -2254,7 +2260,7 @@ void CSeq_align_Mapper_Base::x_GetDstSpliced(CRef<CSeq_align>& dst) const
         }
     }
 
-    if ( m_LocMapper.m_TrimSplicedSegs ) {
+    if ( m_LocMapper.x_IsSetMiscFlag(CSeq_loc_Mapper_Base::fTrimSplicedSegs) ) {
         // Make sure the first and the last parts are not gaps. By now there should
         // be no exons with only gaps in them, so no trimming should result in an
         // empty exon.
@@ -2943,7 +2949,8 @@ CRef<CSeq_align> CSeq_align_Mapper_Base::GetDstAlign(void) const
         // Since spliced-segs are mapped in a different way (through
         // sub-mappers which return mapped exons rather than whole alignments),
         // here we should always use std-seg.
-        if (m_LocMapper.m_MixedAlignsAsSpliced  &&  row_ids.size() == 2  &&
+        if (m_LocMapper.x_IsSetMiscFlag(CSeq_loc_Mapper_Base::fMixedAlignsAsSpliced)  &&
+            row_ids.size() == 2  &&
             m_LocMapper.GetSeqTypeById(row_ids[0]) != m_LocMapper.GetSeqTypeById(row_ids[1])) {
             // Try to use spliced-seg for mixed-type pairwise alignments.
             x_GetDstSpliced(dst);
