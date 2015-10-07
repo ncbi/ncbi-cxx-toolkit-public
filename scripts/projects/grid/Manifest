@@ -49,7 +49,7 @@ FreeBSD32 : Release : Clang.sh --without-debug --with-optimization --with-symbol
 FreeBSD32 : Debug : Clang.sh --with-debug --with-mt --without-bdb
 IntelMAC : Release : GCC.sh --without-debug --with-optimization --with-symbols --with-mt --without-bdb
 IntelMAC : Debug : GCC.sh --with-debug --with-mt --without-bdb
-Win32_10 : Release : static 32 ReleaseDLL
-Win32_10 : Debug : static 32 DebugDLL
+Win32_13 : Release : static 32 ReleaseDLL
+Win32_13 : Debug : static 32 DebugDLL
 
 #USE_COMPONENTS

@@ -31,7 +31,7 @@ Linux64-Centos : plain  : GCC.sh   --without-debug --without-mt --with-static --
 Linux64-Ubuntu : plain  : GCC.sh   --without-debug --with-mt    --with-static --without-runpath --with-flat-makefile
 FreeBSD32      : plain  : Clang.sh --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 IntelMAC       : plain  : GCC.sh   --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
-Win32_10       : 1000   : static 32 ReleaseMT
+Win32_13       : plain  : static 32 ReleaseMT
 
 #XCode      : plain  : Xcode.sh 30 --without-debug --with-universal=i386,x86_64
 
