@@ -104,6 +104,11 @@ void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
             m_NetStorageByKey = CNetStorageByKey(init_string,
                     m_Opts.netstorage_flags);
         }
+
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+        if (IsOptionExplicitlySet(eAllowXSiteConn))
+            m_NetStorage->AllowXSiteConnections();
+#endif
     }
 }
 

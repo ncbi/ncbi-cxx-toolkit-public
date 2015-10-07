@@ -81,6 +81,8 @@ struct SNetStorageRPC : public SNetStorageImpl
                         m_ServiceMap.GetServiceByName(service_name, m_Service);
     }
 
+    void AllowXSiteConnections() { m_Service.AllowXSiteConnections(); }
+
     EDefaultStorage m_DefaultStorage;
 
     TNetStorageFlags m_DefaultFlags;
