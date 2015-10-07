@@ -140,6 +140,16 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
                               int            version,
                               const string&  subkey,
                               string*        owner);
+
+    /// @warning
+    ///    This method DOES NOT follow ICache::Read() interface
+    ///    on returning values/throwing exceptions.
+    ///
+    /// @return
+    ///    FALSE if BLOB has not been fully read
+    ///
+    /// @throw
+    ///    If any error occurs (e.g. BLOB doesn't exist or expired).
     virtual bool Read(const string& key,
                       int           version,
                       const string& subkey,
