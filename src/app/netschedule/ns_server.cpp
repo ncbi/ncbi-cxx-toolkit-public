@@ -36,6 +36,7 @@
 #include "queue_database.hpp"
 #include "ns_types.hpp"
 
+#include <corelib/request_ctx.hpp>
 
 USING_NCBI_SCOPE;
 
@@ -622,6 +623,36 @@ CNetScheduleServer*  CNetScheduleServer::GetInstance(void)
 
 void CNetScheduleServer::Exit()
 {
+    // This method is called by the CServer::Run() when all the threads are
+    // shut down but the port is still posessed
+
+    // If it was a signal initiated shutdown then it is a good idea to log it.
+    // The signal number is set to non-zero value only in case of an OS signal
+    if (m_SigNum != 0) {
+        if (IsLog()) {
+            // Imitate the SHUTDOWN command logging with an extra information
+            // about the signal number
+            CRef<CRequestContext>   ctx;
+            ctx.Reset(new CRequestContext());
+            ctx->SetRequestID();
+
+            CDiagContext &      diag_context = GetDiagContext();
+            diag_context.SetRequestContext(ctx);
+            CDiagContext_Extra      extra = diag_context.PrintRequestStart();
+
+            extra.Print("_type", "cmd")
+                 .Print("_queue", "")
+                 .Print("cmd", "SHUTDOWN")
+                 .Print("signum", m_SigNum);
+            extra.Flush();
+
+            ctx->SetRequestStatus(200);
+            diag_context.PrintRequestStop();
+            ctx.Reset();
+            diag_context.SetRequestContext(NULL);
+        }
+    }
+
     m_QueueDB->Close();
 }
 
