@@ -1514,7 +1514,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
         const char* err = status != eIO_Closed ? IO_StatusStr(status) : 0;
         if (!url)
             url = ConnNetInfo_URL(uuu->net_info);
-        assert(status != eIO_Success);
+        /*assert(status != eIO_Success);*/
         assert(!err  ||  *err);
         if (header_parse == eHTTP_HeaderContinue) {
             assert(err/*status != eIO_Closed*/);
