@@ -70,7 +70,7 @@
 #define LOGIN_TOKEN_OPTION "login-token"
 #define NETCACHE_OPTION "netcache"
 #define CACHE_OPTION "cache"
-#define SINGLE_SERVER_OPTION "single-server"
+#define TRY_ALL_SERVERS_OPTION "try-all-servers"
 #define NETSTORAGE_OPTION "netstorage"
 #define OBJECT_KEY_OPTION "object-key"
 #define NAMESPACE_OPTION "namespace"
@@ -169,7 +169,7 @@ enum EOption {
     eSize,
     eTTL,
     eEnableMirroring,
-    eSingleServer,
+    eTryAllServers,
     eUseCompoundID,
     eNetStorage,
     eObjectKey,

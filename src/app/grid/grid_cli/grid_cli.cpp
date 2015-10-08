@@ -161,10 +161,9 @@ struct SOptionDefinition {
     {OPT_DEF(eSwitch, eEnableMirroring),
         "enable-mirroring", "Enable NetCache mirroring functionality.", {-1}},
 
-    {OPT_DEF(eSwitch, eSingleServer),
-        SINGLE_SERVER_OPTION, "In ICache mode, use only the most "
-            "likely server to hold the key. Do not try other servers "
-            "in the service.", {-1}},
+    {OPT_DEF(eSwitch, eTryAllServers),
+        TRY_ALL_SERVERS_OPTION, "Try all servers in the service "
+            "to find the blob.", {-1}},
 
     {OPT_DEF(eSwitch, eUseCompoundID),
         "use-compound-id", "Return key in CompoundID format.", {-1}},
@@ -564,7 +563,7 @@ struct SCommandDefinition {
         "Print vital information about the specified blob. "
         "Expired blobs will be reported as not found."
         ICACHE_KEY_FORMAT_EXPLANATION,
-        {eID, eNetCache, eCache, eSingleServer, eLoginToken, eAuth,
+        {eID, eNetCache, eCache, eTryAllServers, eLoginToken, eAuth,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetCacheCommand, &CGridCommandLineInterfaceApp::Cmd_GetBlob,
@@ -574,7 +573,7 @@ struct SCommandDefinition {
         "file). Expired blobs will be reported as not found."
         ICACHE_KEY_FORMAT_EXPLANATION,
         {eID, eNetCache, eCache, ePassword, eOffset, eSize,
-            eSingleServer, eOutputFile, eLoginToken, eAuth,
+            eTryAllServers, eOutputFile, eLoginToken, eAuth,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetCacheCommand, &CGridCommandLineInterfaceApp::Cmd_PutBlob,

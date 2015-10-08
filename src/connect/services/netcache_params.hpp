@@ -62,7 +62,7 @@ public:
         eDP_MaxBlobAge = 1 << 8,
         eDP_ActualBlobAgePtr = 1 << 9,
         eDP_UseCompoundID = 1 << 10,
-        eDP_SingleServer = 1 << 11,
+        eDP_TryAllServers = 1 << 11,
         eDP_CacheName = 1 << 12,
     };
     typedef unsigned TDefinedParameters;
@@ -85,7 +85,7 @@ public:
         m_MaxBlobAge(0),
         m_ActualBlobAgePtr(NULL),
         m_UseCompoundID(false),
-        m_SingleServer(false)
+        m_TryAllServers(false)
     {
     }
 
@@ -157,10 +157,10 @@ public:
         m_UseCompoundID = use_compound_id;
     }
 
-    void SetSingleServer(bool single_server)
+    void SetTryAllServers(bool try_all_servers)
     {
-        m_DefinedParameters |= eDP_SingleServer;
-        m_SingleServer = single_server;
+        m_DefinedParameters |= eDP_TryAllServers;
+        m_TryAllServers = try_all_servers;
     }
 
     void SetCacheName(const string& cache_name)
@@ -180,7 +180,7 @@ public:
     unsigned GetMaxBlobAge() const;
     unsigned* GetActualBlobAgePtr() const;
     bool GetUseCompoundID() const;
-    bool GetSingleServer() const;
+    bool GetTryAllServers() const;
     string GetCacheName() const;
 
     static bool StringToBool(const string& bool_str,
@@ -201,7 +201,7 @@ private:
     unsigned m_MaxBlobAge;
     unsigned* m_ActualBlobAgePtr;
     bool m_UseCompoundID;
-    bool m_SingleServer;
+    bool m_TryAllServers;
     string m_CacheName;
 };
 

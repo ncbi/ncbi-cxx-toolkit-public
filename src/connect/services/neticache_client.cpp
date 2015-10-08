@@ -214,9 +214,9 @@ void CNetICacheServerListener::OnInit(CObject* api_impl,
     }
 
     if (config != NULL)
-        icache_impl->m_DefaultParameters.SetSingleServer(
+        icache_impl->m_DefaultParameters.SetTryAllServers(
                 config->GetBool(config_section,
-                        "single_server", CConfig::eErr_NoThrow, false));
+                        "try_all_servers", CConfig::eErr_NoThrow, false));
 }
 
 CNetServerConnection SNetICacheClientImpl::InitiateWriteCmd(
@@ -319,7 +319,7 @@ CNetServer::SExecResult SNetICacheClientImpl::ChooseServerAndExec(
     CNetServer selected_server(parameters->GetServerToUse());
     CNetServer* server_last_used_ptr(parameters->GetServerLastUsedPtr());
 
-    if (parameters->GetSingleServer()) {
+    if (!parameters->GetTryAllServers()) {
         if (!selected_server)
             selected_server = m_Service.IterateByWeight(key).GetServer();
 
