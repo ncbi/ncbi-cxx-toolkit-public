@@ -1495,7 +1495,7 @@ bool CDUpdater::reformatBioseq(CRef< CBioseq > bioseq, CRef< CSeq_entry > seqEnt
 	if (isPdb)
 	{
 		//CEntrez2Client client;
-		vector<int> uids;
+		vector<TIntId> uids;
 		string pdb = (*cit)->GetPdb().GetMol().Get();
 		pdb += "[ACCN]";
 		try {

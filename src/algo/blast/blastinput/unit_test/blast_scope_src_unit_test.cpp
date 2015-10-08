@@ -29,6 +29,7 @@
 
 /** @file blast_scope_src_unit_test.cpp
  */
+#define NCBI_TEST_APPLICATION
 #include <ncbi_pch.hpp>
 #define NCBI_BOOST_NO_AUTO_TEST_MAIN
 #include <corelib/test_boost.hpp>
@@ -303,7 +304,7 @@ BOOST_AUTO_TEST_CASE(ConfigFileTest_UseNoDataLoaders)
 }
 
 static 
-void s_RetrieveSequenceLength(int gi, 
+void s_RetrieveSequenceLength(TGi gi, 
                               const string& dbname,
                               bool is_prot,
                               TSeqPos kExpectedLength) 
@@ -342,7 +343,7 @@ BOOST_AUTO_TEST_CASE(RetrieveFromGenbank_NewlyAddedSequenceToGenbank) {
 
     // Search sequences publishe recently
     CEntrez2Client entrez;
-    vector<int> results;
+    vector<TGi> results;
     entrez.Query(query_str, "nucleotide", results);
     if (results.empty()) {
         // No newly added sequences today :(

@@ -80,12 +80,12 @@ void CEntrez2_id_list::Resize(size_t size)
 }
 
 
-void CEntrez2_id_list::AssignUids(const vector<int>& uids)
+void CEntrez2_id_list::AssignUids(const vector<TUid>& uids)
 {
     Resize(uids.size());
 
     TUidIterator it = GetUidIterator();
-    ITERATE (vector<int>, iter, uids) {
+    ITERATE (vector<TUid>, iter, uids) {
         *it++ = *iter;
     }
 }

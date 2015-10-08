@@ -55,6 +55,7 @@ class NCBI_ENTREZ2_EXPORT CEntrez2_id_list : public CEntrez2_id_list_Base
 public:
     typedef CConstResizingIterator<TUids> TConstUidIterator;
     typedef CResizingIterator<TUids>      TUidIterator;
+    typedef TIntId TUid;
 
     // constructor
     CEntrez2_id_list(void);
@@ -69,7 +70,7 @@ public:
     void Resize(size_t size);
 
     // set the container to a set of integer UIDs
-    void AssignUids(const vector<int>& uids);
+    void AssignUids(const vector<TUid>& uids);
 
     static const size_t sm_UidSize; // bytes
 

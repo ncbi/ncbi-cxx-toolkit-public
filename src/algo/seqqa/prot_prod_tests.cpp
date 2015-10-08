@@ -201,10 +201,10 @@ CTestProtProd_EntrezNeighbors::RunTest(const CSerialObject& obj,
     }
     const unsigned int kChunkSize = 50;
     CEntrez2Client e2c;
-    vector<int> neigh;
-    e2c.GetNeighbors(GI_TO(int, gi), "protein", "protein", neigh);
-    vector<int> sp_neigh;
-    vector<int> neigh_subset;
+    vector<TGi> neigh;
+    e2c.GetNeighbors(gi, "protein", "protein", neigh);
+    vector<TGi> sp_neigh;
+    vector<TGi> neigh_subset;
     neigh_subset.reserve(kChunkSize);
     for (unsigned int start = 0; start < neigh.size(); start += kChunkSize) {
         neigh_subset.clear();
@@ -215,7 +215,7 @@ CTestProtProd_EntrezNeighbors::RunTest(const CSerialObject& obj,
             neigh_subset.push_back(neigh[start + i]);
         }
         e2c.FilterIds(neigh_subset, "protein", "srcdb_swiss-prot[PROP] NOT txid"
-                      + NStr::IntToString(taxid) + "[ORGN]", sp_neigh);
+                      + NStr::NumericToString(taxid) + "[ORGN]", sp_neigh);
         if (!sp_neigh.empty()) {
             break;
         }
@@ -225,7 +225,7 @@ CTestProtProd_EntrezNeighbors::RunTest(const CSerialObject& obj,
     if (!sp_neigh.empty()) {
         // Order not necessarily preserved by FilterIds, so figure out
         // which element of sp_neigh comes first in neigh
-        map<int, unsigned int> index;
+        map<TGi, unsigned int> index;
         for (unsigned int i = 0;  i < neigh_subset.size();  ++i) {
             index[neigh_subset[i]] = i;
         }

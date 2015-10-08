@@ -57,6 +57,8 @@ class NCBI_ENTREZ2_EXPORT CEntrez2Client : public CEntrez2Client_Base
 {
     typedef CEntrez2Client_Base Tparent;
 public:
+    typedef TIntId TUid;
+
     // constructor
     CEntrez2Client(void);
     // destructor
@@ -69,38 +71,41 @@ public:
     /// link_type is, for example, "nucleotide_nucleotide".
 
     /// This form just yields a vector of UIDs
-    void GetNeighbors(int query_uid, const string& db_from,
+    void GetNeighbors(TUid query_uid,
+                      const string& db_from,
                       const string& db_to,
-                      vector<int>& neighbor_uids);
+                      vector<TUid>& neighbor_uids);
 
     /// This form just yields a vector of UIDs, taking a vector of UIDs
-    void GetNeighbors(const vector<int>& db_from,
-                      const string& db_to,
+    void GetNeighbors(const vector<TUid>& query_uids,
+                      const string& db,
                       const string& link_type,
-                      vector<int>& neighbor_uids);
+                      vector<TUid>& neighbor_uids);
 
     /// This form returns the entire CEntrez2_link_set object,
     /// which includes scores.
-    CRef<CEntrez2_link_set> GetNeighbors(int query_uid,
+    CRef<CEntrez2_link_set> GetNeighbors(TUid query_uid,
                                          const string& db_from,
                                          const string& db_to);
 
     /// This form returns the entire CEntrez2_link_set object,
     /// which includes scores.
-    CRef<CEntrez2_link_set> GetNeighbors(const vector<int>& query_uids,
+    CRef<CEntrez2_link_set> GetNeighbors(const vector<TUid>& query_uids,
                                          const string& db_from,
                                          const string& db_to);
 
     /// Retrieve counts of the various types of neighbors available
-    CRef<CEntrez2_link_count_list> GetNeighborCounts(int query_uid,
+    CRef<CEntrez2_link_count_list> GetNeighborCounts(TUid query_uid,
                                                      const string& db);
     
     /// Some other simplified interfaces
 
     /// Query a db with a string, returning uids as integers
-    void Query(const string& query, const string& db,
-               vector<int>& result_uids,
-               size_t start_offs = 0, size_t count = 0,
+    void Query(const string& query,
+               const string& db,
+               vector<TUid>& result_uids,
+               size_t start_offs = 0,
+               size_t count = 0,
                TReply* reply = 0);
 
     /// Given some uids, a database, and an entrez query string,
@@ -109,17 +114,47 @@ public:
     /// Note: If a uid appears more than once in query_uids and
     /// matches the query string, it may or may not appear more
     /// more than once in the result.
-    void FilterIds(const vector<int>& query_uids, const string& db,
+    void FilterIds(const vector<TUid>& query_uids,
+                   const string& db,
                    const string& query_string,
-                   vector<int>& result_uids);
+                   vector<TUid>& result_uids);
 
     /// Retrieve the docsums for a set of UIDs
-    CRef<CEntrez2_docsum_list> GetDocsums(const vector<int>& uids,
+    CRef<CEntrez2_docsum_list> GetDocsums(const vector<TUid>& uids,
                                           const string& db);
 
     /// Retrieve the docsums for a single UID
-    CRef<CEntrez2_docsum_list> GetDocsums(int uid,
+    CRef<CEntrez2_docsum_list> GetDocsums(TUid uid,
                                           const string& db);
+
+#ifdef NCBI_STRICT_GI
+    void GetNeighbors(TGi query_uid, const string& db_from,
+                      const string& db_to,
+                      vector<TGi>& neighbor_uids);
+    void GetNeighbors(const vector<TGi>& query_uids,
+                      const string& db,
+                      const string& link_type,
+                      vector<TGi>& neighbor_uids);
+    CRef<CEntrez2_link_set> GetNeighbors(TGi query_uid,
+                                         const string& db_from,
+                                         const string& db_to);
+    CRef<CEntrez2_link_set> GetNeighbors(const vector<TGi>& query_uids,
+                                         const string& db_from,
+                                         const string& db_to);
+    CRef<CEntrez2_link_count_list> GetNeighborCounts(TGi query_uid,
+                                                     const string& db);
+    void Query(const string& query, const string& db,
+               vector<TGi>& result_uids,
+               size_t start_offs = 0, size_t count = 0,
+               TReply* reply = 0);
+    void FilterIds(const vector<TGi>& query_uids, const string& db,
+                   const string& query_string,
+                   vector<TGi>& result_uids);
+    CRef<CEntrez2_docsum_list> GetDocsums(const vector<TGi>& uids,
+                                          const string& db);
+    CRef<CEntrez2_docsum_list> GetDocsums(TGi uid,
+                                          const string& db);
+#endif
 
 protected:
     /// Get DB affinity of the request

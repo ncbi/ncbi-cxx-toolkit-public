@@ -71,21 +71,22 @@ CEntrez2Client::~CEntrez2Client(void)
 /// A simplified interface for getting neighbors (links)
 
 /// This form just yields a vector of UIDs
-void CEntrez2Client::GetNeighbors(int query_uid, const string& db,
+void CEntrez2Client::GetNeighbors(TUid query_uid,
+                                  const string& db,
                                   const string& link_type,
-                                  vector<int>& neighbor_uids)
+                                  vector<TUid>& neighbor_uids)
 {
-    vector<int> uids;
+    vector<TUid> uids;
     uids.push_back(query_uid);
     GetNeighbors(uids, db, link_type, neighbor_uids);
 }
 
 
 /// This form just yields a vector of UIDs
-void CEntrez2Client::GetNeighbors(const vector<int>& query_uids,
+void CEntrez2Client::GetNeighbors(const vector<TUid>& query_uids,
                                   const string& db,
                                   const string& link_type,
-                                  vector<int>& neighbor_uids)
+                                  vector<TUid>& neighbor_uids)
 {
     // first retrieve the link_set
     CRef<CEntrez2_link_set> link_set;
@@ -105,11 +106,11 @@ void CEntrez2Client::GetNeighbors(const vector<int>& query_uids,
 
 /// This form returns the entire CEntrez2_link_set object,
 /// which includes scores.
-CRef<CEntrez2_link_set> CEntrez2Client::GetNeighbors(int query_uid,
+CRef<CEntrez2_link_set> CEntrez2Client::GetNeighbors(TUid query_uid,
                                                      const string& db,
                                                      const string& link_type)
 {
-    vector<int> uids;
+    vector<TUid> uids;
     uids.push_back(query_uid);
     return GetNeighbors(uids, db, link_type);
 }
@@ -118,7 +119,7 @@ CRef<CEntrez2_link_set> CEntrez2Client::GetNeighbors(int query_uid,
 /// This form returns the entire CEntrez2_link_set object,
 /// which includes scores.
 CRef<CEntrez2_link_set>
-CEntrez2Client::GetNeighbors(const vector<int>& query_uids,
+CEntrez2Client::GetNeighbors(const vector<TUid>& query_uids,
                              const string& db,
                              const string& link_type)
 {
@@ -137,7 +138,7 @@ CEntrez2Client::GetNeighbors(const vector<int>& query_uids,
 
 /// Retrieve counts of the various types of neighbors available
 CRef<CEntrez2_link_count_list>
-CEntrez2Client::GetNeighborCounts(int query_uid,
+CEntrez2Client::GetNeighborCounts(TUid query_uid,
                                   const string& db)
 {
     CEntrez2_id uid;
@@ -148,9 +149,11 @@ CEntrez2Client::GetNeighborCounts(int query_uid,
 
 
 /// Query a db with a string, returning uids as integers
-void CEntrez2Client::Query(const string& query, const string& db,
-                           vector<int>& result_uids,
-                           size_t start, size_t count,
+void CEntrez2Client::Query(const string& query,
+                           const string& db,
+                           vector<TUid>& result_uids,
+                           size_t start,
+                           size_t count,
                            TReply* reply)
 {
     CRef<CEntrez2_boolean_element> bel(new CEntrez2_boolean_element);
@@ -193,9 +196,10 @@ void CEntrez2Client::Query(const string& query, const string& db,
 /// Note: If a uid appears more than once in query_uids and
 /// matches the query string, it may or may not appear more
 /// more than once in the result.
-void CEntrez2Client::FilterIds(const vector<int>& query_uids, const string& db,
+void CEntrez2Client::FilterIds(const vector<TUid>& query_uids,
+                               const string& db,
                                const string& query_string,
-                               vector<int>& result_uids)
+                               vector<TUid>& result_uids)
 {
     const unsigned int kMaxIdsInQueryString = 2500;
 
@@ -207,18 +211,18 @@ void CEntrez2Client::FilterIds(const vector<int>& query_uids, const string& db,
         // Query with a big query string that includes
         // all the query_uids OR'd together
         string uids;
-        ITERATE (vector<int>, uid, query_uids) {
+        ITERATE (vector<TUid>, uid, query_uids) {
             if ( !uids.empty() ) {
                 uids += " OR ";
             }
-            uids += NStr::IntToString(*uid) + "[UID]";
+            uids += NStr::NumericToString(*uid) + "[UID]";
         }
 
         string whole_query = "(" + query_string + ") AND (" + uids + ")";
         Query(whole_query, db, result_uids);
     } else {
         // Break query_uids into chunks <= kMaxIdsInQueryString
-        vector<int> subset_query_uids;
+        vector<TUid> subset_query_uids;
         subset_query_uids.reserve(kMaxIdsInQueryString);
         for (size_t start = 0;  start < query_uids.size();
              start += kMaxIdsInQueryString) {
@@ -237,7 +241,7 @@ void CEntrez2Client::FilterIds(const vector<int>& query_uids, const string& db,
 
 
 CRef<CEntrez2_docsum_list>
-CEntrez2Client::GetDocsums(const vector<int>& uids,
+CEntrez2Client::GetDocsums(const vector<TUid>& uids,
                            const string& db)
 {
     CEntrez2_id_list ids;
@@ -249,9 +253,9 @@ CEntrez2Client::GetDocsums(const vector<int>& uids,
 
 /// Retrieve the docsums for a single UID
 CRef<CEntrez2_docsum_list>
-CEntrez2Client::GetDocsums(int uid, const string& db)
+CEntrez2Client::GetDocsums(TUid uid, const string& db)
 {
-    vector<int> uids;
+    vector<TUid> uids;
     uids.push_back(uid);
     return GetDocsums(uids, db);
 }
@@ -299,6 +303,108 @@ CEntrez2Client::GetAffinity(const CEntrez2_request& request) const
     }
 }
 
+
+#ifdef NCBI_STRICT_GI
+
+void CEntrez2Client::GetNeighbors(TGi query_uid,
+                                  const string& db_from,
+                                  const string& db_to,
+                                  vector<TGi>& neighbor_uids)
+{
+    vector<TUid> vi_neighbor_uids;
+    GetNeighbors(GI_TO(TUid, query_uid), db_from, db_to, vi_neighbor_uids);
+    ITERATE(vector<TUid>, it, vi_neighbor_uids) {
+        neighbor_uids.push_back(GI_FROM(TUid, *it));
+    }
+}
+
+void CEntrez2Client::GetNeighbors(const vector<TGi>& query_uids,
+                                  const string& db,
+                                  const string& link_type,
+                                  vector<TGi>& neighbor_uids)
+{
+    vector<TUid> vi_query_uids;
+    ITERATE(vector<TGi>, it, query_uids) {
+        vi_query_uids.push_back(GI_TO(TUid, *it));
+    }
+    vector<TUid> vi_neighbor_uids;
+    GetNeighbors(vi_query_uids, db, link_type, vi_neighbor_uids);
+    ITERATE(vector<TUid>, it, vi_neighbor_uids) {
+        neighbor_uids.push_back(GI_FROM(TUid, *it));
+    }
+}
+
+CRef<CEntrez2_link_set> CEntrez2Client::GetNeighbors(TGi query_uid,
+                                                     const string& db_from,
+                                                     const string& db_to)
+{
+    return GetNeighbors(GI_TO(TUid, query_uid), db_from, db_to);
+}
+
+CRef<CEntrez2_link_set> CEntrez2Client::GetNeighbors(const vector<TGi>& query_uids,
+                                                     const string& db_from,
+                                                     const string& db_to)
+{
+    vector<TUid> vi_query_uids;
+    ITERATE(vector<TGi>, it, query_uids) {
+        vi_query_uids.push_back(GI_TO(TUid, *it));
+    }
+    return GetNeighbors(vi_query_uids, db_from, db_to);
+}
+
+CRef<CEntrez2_link_count_list> CEntrez2Client::GetNeighborCounts(TGi query_uid,
+                                                                 const string& db)
+{
+    return GetNeighborCounts(GI_TO(TUid, query_uid), db);
+}
+
+void CEntrez2Client::Query(const string& query,
+                           const string& db,
+                           vector<TGi>& result_uids,
+                           size_t start_offs,
+                           size_t count,
+                           TReply* reply)
+{
+    vector<TUid> vi_result_uids;
+    Query(query, db, vi_result_uids, start_offs, count, reply);
+    ITERATE(vector<TUid>, it, vi_result_uids) {
+        result_uids.push_back(GI_FROM(TUid, *it));
+    }
+}
+
+void CEntrez2Client::FilterIds(const vector<TGi>& query_uids,
+                               const string& db,
+                               const string& query_string,
+                               vector<TGi>& result_uids)
+{
+    vector<TUid> vi_query_uids;
+    ITERATE(vector<TGi>, it, query_uids) {
+        vi_query_uids.push_back(GI_TO(TUid, *it));
+    }
+    vector<TUid> vi_result_uids;
+    FilterIds(vi_query_uids, db, query_string, vi_result_uids);
+    ITERATE(vector<TUid>, it, vi_result_uids) {
+        result_uids.push_back(GI_FROM(TUid, *it));
+    }
+}
+
+CRef<CEntrez2_docsum_list> CEntrez2Client::GetDocsums(const vector<TGi>& uids,
+                                                      const string& db)
+{
+    vector<TUid> vi_uids;
+    ITERATE(vector<TGi>, it, uids) {
+        vi_uids.push_back(GI_TO(TUid, *it));
+    }
+    return GetDocsums(vi_uids, db);
+}
+
+CRef<CEntrez2_docsum_list> CEntrez2Client::GetDocsums(TGi uid,
+                                                      const string& db)
+{
+    return GetDocsums(GI_TO(TUid, uid), db);
+}
+
+#endif
 
 END_objects_SCOPE // namespace ncbi::objects::
 

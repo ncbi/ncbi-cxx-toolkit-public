@@ -410,7 +410,7 @@ void CAltValidator::QueryAccessions()
 
   try{
     CEntrez2Client entrez;
-    vector<int> gis;
+    vector<TGi> gis;
     entrez.Query(query, "Nucleotide", gis);
 
     CRef<CEntrez2_docsum_list> cref_docsums = entrez.GetDocsums(gis, "Nucleotide");
