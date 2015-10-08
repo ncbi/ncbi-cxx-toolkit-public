@@ -32,11 +32,14 @@
 
 #include <ncbi_pch.hpp>
 #include <sra/data_loaders/wgs/id2wgs.hpp>
-#include <sra/data_loaders/wgs/id2wgs_entry.hpp>
 #include <sra/data_loaders/wgs/impl/id2wgs_impl.hpp>
 #include <corelib/plugin_manager_store.hpp>
 #include <corelib/plugin_manager_impl.hpp>
-#include <objects/id2/id2__.hpp>
+#include <objects/id2/ID2_Request_Packet.hpp>
+#include <objects/id2/ID2_Reply.hpp>
+#include <objects/id2/id2processor_interface.hpp>
+#include <sra/data_loaders/wgs/id2wgs_entry.hpp>
+#include <sra/data_loaders/wgs/id2wgs_params.h>
 
 BEGIN_NCBI_NAMESPACE;
 BEGIN_NAMESPACE(objects);
@@ -100,7 +103,7 @@ public:
                                     objects::CID2WGSProcessor> TParent;
 public:
     CID2WGSProcessorCF()
-        : TParent("wgs", 0)
+        : TParent(NCBI_ID2PROC_WGS_DRIVER_NAME, 0)
         {
         }
 

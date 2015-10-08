@@ -32,6 +32,8 @@
 
 #include <ncbi_pch.hpp>
 #include <sra/data_loaders/wgs/impl/id2wgs_impl.hpp>
+#include <objects/id2/id2processor_interface.hpp>
+#include <sra/data_loaders/wgs/id2wgs_params.h>
 #include <sra/readers/sra/wgsread.hpp>
 #include <sra/error_codes.hpp>
 #include <corelib/reader_writer.hpp>
@@ -287,33 +289,36 @@ CID2WGSProcessor_Impl::CID2WGSProcessor_Impl(const CConfig::TParamTree* params,
         }
     }
     if ( params ) {
-        params = params->FindSubNode("id2proc");
+        params = params->FindSubNode(CInterfaceVersion<CID2Processor>::GetName());
     }
     if ( params ) {
         params = params->FindSubNode(driver_name);
     }
     CConfig conf(params);
 
-    size_t cache_size = conf.GetInt(driver_name,
-                                    "vdb_cache_size",
-                                    CConfig::eErr_NoThrow,
-                                    DEFAULT_VDB_CACHE_SIZE);
+    size_t cache_size =
+        conf.GetInt(driver_name,
+                    NCBI_ID2PROC_WGS_PARAM_VDB_CACHE_SIZE,
+                    CConfig::eErr_NoThrow,
+                    DEFAULT_VDB_CACHE_SIZE);
     TRACE_X(23, eDebug_open, "ID2WGS: cache_size = "<<cache_size);
     m_WGSDbCache.set_size_limit(cache_size);
 
-    unsigned update_delay = conf.GetInt(driver_name,
-                                        "index_update_time",
-                                        CConfig::eErr_NoThrow,
-                                        DEFAULT_INDEX_UPDATE_TIME);
+    unsigned update_delay =
+        conf.GetInt(driver_name,
+                    NCBI_ID2PROC_WGS_PARAM_INDEX_UPDATE_TIME,
+                    CConfig::eErr_NoThrow,
+                    DEFAULT_INDEX_UPDATE_TIME);
     TRACE_X(24, eDebug_open, "ID2WGS: index_update_time = "<<update_delay);
     m_UpdateThread = new CIndexUpdateThread(update_delay,
                                             m_GiResolver, m_AccResolver);
     m_UpdateThread->Run();
 
-    m_CompressData = conf.GetBool(driver_name,
-                                  "compress_data",
-                                  CConfig::eErr_NoThrow,
-                                  DEFAULT_COMPRESS_DATA);
+    m_CompressData =
+        conf.GetBool(driver_name,
+                     NCBI_ID2PROC_WGS_PARAM_COMPRESS_DATA,
+                     CConfig::eErr_NoThrow,
+                     DEFAULT_COMPRESS_DATA);
     TRACE_X(23, eDebug_open, "ID2WGS: compress_data = "<<m_CompressData);
 }
 
