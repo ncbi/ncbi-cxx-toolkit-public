@@ -188,9 +188,10 @@ CShowBlastDefline::GetSeqIdList(const objects::CBioseq_Handle& bh,
         CRef<CSeq_id> next_seqid(new CSeq_id());
         string id_token = NcbiEmptyString;
         
-        if ((*itr)->IsGeneral() &&
+        if (((*itr)->IsGeneral() &&
             (*itr)->AsFastaString().find("gnl|BL_ORD_ID") 
-            != string::npos) {
+            != string::npos) ||
+		(*itr)->AsFastaString().find("lcl|Subject_") != string::npos) {
             vector<string> title_tokens;
             id_token = 
                 NStr::Tokenize(sequence::CDeflineGenerator().GenerateDefline(bh), " ", title_tokens)[0];
@@ -735,7 +736,8 @@ void CShowBlastDefline::x_DisplayDefline(CNcbiOstream & out)
             }
         }
         if(!sdl->id.Empty()){
-            if(!(sdl->id->AsFastaString().find("gnl|BL_ORD_ID") != string::npos)){
+            if(!(sdl->id->AsFastaString().find("gnl|BL_ORD_ID") != string::npos || 
+		sdl->id->AsFastaString().find("lcl|Subject_") != string::npos)){
             	string idStr = sdl->id->AsFastaString();
             	if (strncmp(idStr.c_str(), "lcl|", 4) == 0) {
             		idStr = sdl->id->AsFastaString().substr(4);
@@ -1160,8 +1162,8 @@ void CShowBlastDefline::x_DisplayDeflineTableBody(CNcbiOstream & out)
             }
         }
         if(!sdl->id.Empty()){
-            if(!(sdl->id->AsFastaString().find("gnl|BL_ORD_ID") 
-                 != string::npos)){
+            if(!(sdl->id->AsFastaString().find("gnl|BL_ORD_ID") != string::npos || 
+		sdl->id->AsFastaString().find("lcl|Subject_") != string::npos)){
                 string id_str;
                 sdl->id->GetLabel(&id_str, CSeq_id::eContent);
                 out << id_str;
@@ -1488,7 +1490,8 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
     string dflGi = (m_Option & eShowGi) && (sdl->gi > ZERO_GI) ? "gi|" + NStr::NumericToString(sdl->gi) + "|" : "";
     string seqid;
     if(!sdl->id.Empty()){
-        if(!(sdl->id->AsFastaString().find("gnl|BL_ORD_ID") != string::npos)){
+        if(!(sdl->id->AsFastaString().find("gnl|BL_ORD_ID") != string::npos ||
+		sdl->id->AsFastaString().find("lcl|Subject_") != string::npos)) {
             sdl->id->GetLabel(&seqid, CSeq_id::eContent);            
         }
     }	

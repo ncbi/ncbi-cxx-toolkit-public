@@ -2345,8 +2345,8 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_
             if(m_AlignOption&eShowGi && alnDispParams->gi > ZERO_GI){
                 out<<"gi|"<<alnDispParams->gi<<"|";
                     }     
-            if(!(alnDispParams->seqID->AsFastaString().find("gnl|BL_ORD_ID") 
-                 != string::npos)){
+            if(!((alnDispParams->seqID->AsFastaString().find("gnl|BL_ORD_ID") != string::npos) ||
+		alnDispParams->seqID->AsFastaString().find("lcl|Subject_") != string::npos)){
                 alnDispParams->seqID->WriteAsFasta(out);
             }
             if(m_AlignOption&eHtml){
@@ -2417,8 +2417,8 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_
                     if(m_AlignOption&eShowGi && alnDispParams->gi > ZERO_GI){
                         out<<"gi|"<<alnDispParams->gi<<"|";
                     }     
-                    if(!(alnDispParams->seqID->AsFastaString().find("gnl|BL_ORD_ID") 
-                         != string::npos)){
+                    if(!(alnDispParams->seqID->AsFastaString().find("gnl|BL_ORD_ID") != string::npos) ||
+			alnDispParams->seqID->AsFastaString().find("lcl|Subject_") != string::npos){
                     	if (strncmp(alnDispParams->seqID->AsFastaString().c_str(), "lcl|", 4) == 0) {
                             out << alnDispParams->label;
                     	}
@@ -3697,7 +3697,8 @@ CDisplaySeqalign::x_MapDefLine(SAlnDispParams *alnDispParams,bool isFirst, bool 
 	string alnGi = (m_AlignOption&eShowGi && alnDispParams->gi > ZERO_GI) ?
         "gi|" + NStr::NumericToString(alnDispParams->gi) + "|" : "";
 	string seqid;					
-    if(!(alnDispParams->seqID->AsFastaString().find("gnl|BL_ORD_ID") != string::npos)){							 
+    if(!(alnDispParams->seqID->AsFastaString().find("gnl|BL_ORD_ID") != string::npos) || 
+	alnDispParams->seqID->AsFastaString().find("lcl|Subject_") != string::npos){							 
 		seqid = alnDispParams->seqID->AsFastaString();        
     }
 	
@@ -3799,7 +3800,8 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
 						
                         //This should probably change on dispId
                         m_CurrAlnAccession = alnDispParams->seqID->AsFastaString();
-                        if(m_CurrAlnAccession.find("gnl|BL_ORD_ID") != string::npos){ 
+                        if(m_CurrAlnAccession.find("gnl|BL_ORD_ID") != string::npos ||
+				m_CurrAlnAccession.find("lcl|Subject_") != string::npos){ 
 							///Get first token of the title
                             vector <string> parts;
                             NStr::Tokenize(alnDispParams->title," ",parts);
