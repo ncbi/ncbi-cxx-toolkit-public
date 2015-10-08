@@ -81,10 +81,6 @@ struct SNetStorageRPC : public SNetStorageImpl
                         m_ServiceMap.GetServiceByName(service_name, m_Service);
     }
 
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-    void AllowXSiteConnections() { m_Service.AllowXSiteConnections(); }
-#endif
-
     EDefaultStorage m_DefaultStorage;
 
     TNetStorageFlags m_DefaultFlags;
@@ -102,6 +98,18 @@ struct SNetStorageRPC : public SNetStorageImpl
     CCompoundIDPool m_CompoundIDPool;
 
     CNetCacheAPI m_NetCacheAPI;
+
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+private:
+    void AllowXSiteConnections()
+    {
+        m_AllowXSiteConnections = true;
+        m_Service.AllowXSiteConnections();
+        if (m_NetCacheAPI) m_NetCacheAPI.GetService().AllowXSiteConnections();
+    }
+
+    bool m_AllowXSiteConnections;
+#endif
 };
 
 END_NCBI_SCOPE

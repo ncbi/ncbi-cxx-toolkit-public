@@ -489,6 +489,9 @@ SNetStorageRPC::SNetStorageRPC(const string& init_string,
         TNetStorageFlags default_flags) :
     m_DefaultStorage(eDefaultStorage_Undefined),
     m_DefaultFlags(default_flags)
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+    , m_AllowXSiteConnections(false)
+#endif
 {
     CUrlArgs url_parser(init_string);
 
@@ -830,6 +833,13 @@ void SNetStorageRPC::x_InitNetCacheAPI()
         CNetCacheAPI nc_api(m_NetCacheServiceName, m_ClientName);
         nc_api.SetCompoundIDPool(m_CompoundIDPool);
         nc_api.SetDefaultParameters(nc_use_compound_id = true);
+
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+        if (m_AllowXSiteConnections) {
+            nc_api.GetService().AllowXSiteConnections();
+        }
+#endif
+
         m_NetCacheAPI = nc_api;
     }
 }
