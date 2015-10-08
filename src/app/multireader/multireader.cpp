@@ -456,9 +456,9 @@ void CMultiReaderApp::Init(void)
         true);
 
     arg_desc->AddDefaultKey(
-        "locus-tag-prefix", 
+        "locus-tag", 
         "STRING",
-        "Prefix for auto generated locus tags",
+        "Prefix or starting tag for auto generated locus tags",
         CArgDescriptions::eString,
         "" );
         
@@ -1151,7 +1151,7 @@ void CMultiReaderApp::xSetFlags(
         if ( args["genbank"] ) {
             m_iFlags |= CGff3Reader::fGeneXrefs;
             m_iFlags |= CGff3Reader::fGenbankMode;
-            if (args["locus-tag-prefix"]) {
+            if (args["locus-tag"]) {
                 m_iFlags |= CGff3Reader::fRetainLocusIds;
             }
         }
@@ -1177,8 +1177,22 @@ void CMultiReaderApp::xPostProcessAnnot(
     if (!args["genbank"].AsBoolean()) {
 		return;
 	}
-    edit::CFeatTableEdit fte(annot, args["locus-tag-prefix"].AsString(),
-        startingLocusTagNumber, m_pErrors);
+
+    string prefix, offset;
+    if (NStr::SplitInTwo(args["locus-tag"].AsString(), "_", prefix, offset)) {
+        int tail = NStr::StringToNonNegativeInt(offset);
+        if (tail != -1) {
+            startingLocusTagNumber = tail;
+        }
+        else {
+            prefix = args["locus-tag"].AsString();
+        }
+    }
+    else {
+        prefix = args["locus-tag"].AsString();
+    }
+
+    edit::CFeatTableEdit fte(annot, prefix, startingLocusTagNumber, m_pErrors);
     fte.InferPartials();
     fte.InferParentMrnas();
     fte.InferParentGenes();
