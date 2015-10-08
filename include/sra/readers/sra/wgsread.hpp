@@ -331,7 +331,7 @@ public:
     CRef<CSeq_id> GetScaffoldSeq_id(uint64_t row_id) const;
     CRef<CSeq_id> GetProteinSeq_id(uint64_t row_id) const;
 
-    CRef<CBioseq> GetMasterBioseq(void) const;
+    CRef<CSeq_entry> GetMasterSeq_entry(void) const;
 
     typedef list< CRef<CSeqdesc> > TMasterDescr;
 
@@ -914,7 +914,8 @@ protected:
 
     void x_Init(const CWGSDb& wgs_db,
                 EWithdrawn withdrawn,
-                EClipType clip_type);
+                EClipType clip_type,
+                uint64_t get_row);
 
     CWGSDb_Impl& GetDb(void) const {
         return m_Db.GetNCObject();

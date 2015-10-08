@@ -1268,22 +1268,23 @@ void CWGSDb_Impl::AddMasterDescr(CSeq_descr& descr)
 }
 
 
-CRef<CBioseq> CWGSDb_Impl::GetMasterBioseq(void) const
+CRef<CSeq_entry> CWGSDb_Impl::GetMasterSeq_entry(void) const
 {
     if ( m_MasterEntry ) {
-        return Ref(&m_MasterEntry.GetNCObject().SetSeq());
+        return m_MasterEntry;
     }
 
     // generate one
-    CRef<CBioseq> seq(new CBioseq());
-    seq->SetId().push_back(GetMasterSeq_id());
+    CRef<CSeq_entry> entry(new CSeq_entry);
+    CBioseq& seq = entry->SetSeq();
+    seq.SetId().push_back(GetMasterSeq_id());
     if ( !m_MasterDescr.empty() ) {
-        seq->SetDescr().Set() = m_MasterDescr;
+        seq.SetDescr().Set() = m_MasterDescr;
     }
-    CSeq_inst& inst = seq->SetInst();
+    CSeq_inst& inst = seq.SetInst();
     inst.SetRepr(CSeq_inst::eRepr_virtual);
     inst.SetMol(CSeq_inst::eMol_dna);
-    return seq;
+    return entry;
 }
 
 
@@ -1384,13 +1385,14 @@ void CWGSDb_Impl::x_SortGiRanges(TGiRanges& ranges)
 CWGSDb_Impl::TGiRanges CWGSDb_Impl::GetNucGiRanges(void)
 {
     TGiRanges ranges;
+    uint64_t row_id = 0;
     CRef<SSeqTableCursor> seq = Seq();
     if ( seq->m_GI ) {
         TIntId gi_start = -1, gi_end = -1;
         pair<int64_t, uint64_t> row_range = seq->m_Cursor.GetRowIdRange();
         for ( uint64_t i = 0; i < row_range.second; ++i ) {
-            TIntId gi = s_ToGi(*seq->GI(row_range.first+i),
-                               "CWGSDb::GetNucGiRanges()");
+            row_id = row_range.first+i;
+            TIntId gi = s_ToGi(*seq->GI(row_id), "CWGSDb::GetNucGiRanges()");
             if ( !gi ) {
                 continue;
             }
@@ -1407,7 +1409,7 @@ CWGSDb_Impl::TGiRanges CWGSDb_Impl::GetNucGiRanges(void)
         }
         x_SortGiRanges(ranges);
     }
-    Put(seq);
+    Put(seq, row_id);
     return ranges;
 }
 
@@ -1448,9 +1450,11 @@ CWGSDb_Impl::TAccRanges CWGSDb_Impl::GetProtAccRanges(void)
 {
     TAccRanges ranges;
     if ( CRef<SProtTableCursor> seq = Prot() ) {
+        uint64_t row_id = 0;
         pair<int64_t, uint64_t> row_range = seq->m_Cursor.GetRowIdRange();
         for ( uint64_t i = 0; i < row_range.second; ++i ) {
-            CTempString acc = *seq->GB_ACCESSION(row_range.first+i);
+            row_id = row_range.first+i;
+            CTempString acc = *seq->GB_ACCESSION(row_id);
             if ( acc.empty() ) {
                 continue;
             }
@@ -1473,7 +1477,7 @@ CWGSDb_Impl::TAccRanges CWGSDb_Impl::GetProtAccRanges(void)
                 }
             }
         }
-        Put(seq);
+        Put(seq, row_id);
     }
     return ranges;
 }
@@ -1482,22 +1486,23 @@ CWGSDb_Impl::TAccRanges CWGSDb_Impl::GetProtAccRanges(void)
 pair<uint64_t, bool> CWGSDb_Impl::GetGiRowId(TGi gi)
 {
     pair<uint64_t, bool> ret;
-    if ( CRef<SIdxTableCursor> idx = Idx() ) {
+    TIntId row_id = gi;
+    if ( CRef<SIdxTableCursor> idx = Idx(row_id) ) {
         if ( idx->m_NUC_ROW_ID ) {
             CVDBValueFor<int64_t> value =
-                idx->NUC_ROW_ID(TIntId(gi), CVDBValue::eMissing_Allow);
+                idx->NUC_ROW_ID(row_id, CVDBValue::eMissing_Allow);
             if ( value.data() ) {
                 ret.first = static_cast<uint64_t>(*value);
             }
         }
         if ( !ret.first && idx->m_PROT_ROW_ID ) {
             CVDBValueFor<int64_t> value =
-                idx->PROT_ROW_ID(TIntId(gi), CVDBValue::eMissing_Allow);
+                idx->PROT_ROW_ID(row_id, CVDBValue::eMissing_Allow);
             if ( value.data() ) {
                 ret.first = static_cast<uint64_t>(*value);
             }
         }
-        Put(idx);
+        Put(idx, row_id);
     }
     return ret;
 }
@@ -1506,15 +1511,16 @@ pair<uint64_t, bool> CWGSDb_Impl::GetGiRowId(TGi gi)
 uint64_t CWGSDb_Impl::GetNucGiRowId(TGi gi)
 {
     uint64_t ret = 0;
-    if ( CRef<SIdxTableCursor> idx = Idx() ) {
+    TIntId row_id = gi;
+    if ( CRef<SIdxTableCursor> idx = Idx(row_id) ) {
         if ( idx->m_NUC_ROW_ID ) {
             CVDBValueFor<int64_t> value =
-                idx->NUC_ROW_ID(TIntId(gi), CVDBValue::eMissing_Allow);
+                idx->NUC_ROW_ID(row_id, CVDBValue::eMissing_Allow);
             if ( value.data() ) {
                 ret = static_cast<uint64_t>(*value);
             }
         }
-        Put(idx);
+        Put(idx, row_id);
     }
     return ret;
 }
@@ -1523,15 +1529,16 @@ uint64_t CWGSDb_Impl::GetNucGiRowId(TGi gi)
 uint64_t CWGSDb_Impl::GetProtGiRowId(TGi gi)
 {
     uint64_t ret = 0;
-    if ( CRef<SIdxTableCursor> idx = Idx() ) {
+    TIntId row_id = gi;
+    if ( CRef<SIdxTableCursor> idx = Idx(row_id) ) {
         if ( idx->m_PROT_ROW_ID ) {
             CVDBValueFor<int64_t> value =
-                idx->PROT_ROW_ID(TIntId(gi), CVDBValue::eMissing_Allow);
+                idx->PROT_ROW_ID(row_id, CVDBValue::eMissing_Allow);
             if ( value.data() ) {
                 ret = static_cast<uint64_t>(*value);
             }
         }
-        Put(idx);
+        Put(idx, row_id);
     }
     return ret;
 }
@@ -1622,7 +1629,7 @@ void CWGSSeqIterator::Reset(void)
 {
     if ( m_Cur ) {
         if ( m_Db ) {
-            GetDb().Put(m_Cur);
+            GetDb().Put(m_Cur, m_CurrId);
         }
         else {
             m_Cur.Reset();
@@ -1669,7 +1676,7 @@ CWGSSeqIterator::CWGSSeqIterator(const CWGSDb& wgs_db,
                                  EWithdrawn withdrawn,
                                  EClipType clip_type)
 {
-    x_Init(wgs_db, withdrawn, clip_type);
+    x_Init(wgs_db, withdrawn, clip_type, 0);
     x_Settle();
 }
 
@@ -1679,7 +1686,7 @@ CWGSSeqIterator::CWGSSeqIterator(const CWGSDb& wgs_db,
                                  EWithdrawn withdrawn,
                                  EClipType clip_type)
 {
-    x_Init(wgs_db, withdrawn, clip_type);
+    x_Init(wgs_db, withdrawn, clip_type, row);
     SelectRow(row);
 }
 
@@ -1690,7 +1697,7 @@ CWGSSeqIterator::CWGSSeqIterator(const CWGSDb& wgs_db,
                                  EWithdrawn withdrawn,
                                  EClipType clip_type)
 {
-    x_Init(wgs_db, withdrawn, clip_type);
+    x_Init(wgs_db, withdrawn, clip_type, first_row);
     if ( m_FirstBadId == 0 ) {
         return;
     }
@@ -1710,7 +1717,7 @@ CWGSSeqIterator::CWGSSeqIterator(const CWGSDb& wgs_db,
                                  EClipType clip_type)
 {
     if ( uint64_t row = wgs_db.ParseContigRow(acc) ) {
-        x_Init(wgs_db, withdrawn, clip_type);
+        x_Init(wgs_db, withdrawn, clip_type, row);
         SelectRow(row);
     }
     else {
@@ -1728,13 +1735,14 @@ CWGSSeqIterator::~CWGSSeqIterator(void)
 
 void CWGSSeqIterator::x_Init(const CWGSDb& wgs_db,
                              EWithdrawn withdrawn,
-                             EClipType clip_type)
+                             EClipType clip_type,
+                             uint64_t get_row)
 {
     m_CurrId = m_FirstGoodId = m_FirstBadId = 0;
     if ( !wgs_db ) {
         return;
     }
-    m_Cur = wgs_db.GetNCObject().Seq();
+    m_Cur = wgs_db.GetNCObject().Seq(get_row);
     if ( !m_Cur ) {
         return;
     }
@@ -3397,7 +3405,7 @@ void CWGSGiIterator::Reset(void)
 {
     if ( m_Cur ) {
         if ( m_Db ) {
-            GetDb().Put(m_Cur);
+            GetDb().Put(m_Cur, TIntId(m_CurrGi));
         }
         else {
             m_Cur.Reset();

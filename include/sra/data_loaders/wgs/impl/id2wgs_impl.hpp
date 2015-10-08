@@ -49,11 +49,12 @@ class CSeq_id;
 class CDbtag;
 class CID2_Request;
 class CID2_Request_Packet;
-class CID2_Reply;
 class CID2_Request_Get_Seq_id;
 class CID2_Request_Get_Blob_Id;
 class CID2_Request_Get_Blob_Info;
 class CID2_Blob_Id;
+class CID2_Reply;
+class CID2_Reply_Data;
 
 class NCBI_ID2PROC_WGS_EXPORT CID2WGSProcessor_Impl : public CObject
 {
@@ -117,12 +118,12 @@ public:
                             CID2_Request_Get_Blob_Info& request);
 
 protected:
-    SWGSSeqInfo x_Process(TReplies& replies,
-                          CID2_Request& main_request,
-                          CID2_Request_Get_Seq_id& request);
-    SWGSSeqInfo x_Process(TReplies& replies,
-                          CID2_Request& main_request,
-                          CID2_Request_Get_Blob_Id& request);
+    SWGSSeqInfo Resolve(TReplies& replies,
+                        CID2_Request& main_request,
+                        CID2_Request_Get_Seq_id& request);
+    SWGSSeqInfo Resolve(TReplies& replies,
+                        CID2_Request& main_request,
+                        CID2_Request_Get_Blob_Id& request);
 
     // lookup
     SWGSSeqInfo Resolve(const CSeq_id& id);
@@ -150,7 +151,7 @@ protected:
     NCBI_gb_state GetGBState(SWGSSeqInfo& seq);
     int GetID2BlobState(SWGSSeqInfo& seq);
     int GetBioseqState(SWGSSeqInfo& seq);
-    CRef<CBioseq> GetBioseq(SWGSSeqInfo& seq);
+    CRef<CSeq_entry> GetSeq_entry(SWGSSeqInfo& seq);
 
     // conversion to/from blob id
     SWGSSeqInfo ResolveBlobId(const CID2_Blob_Id& id);
@@ -166,6 +167,9 @@ protected:
     CWGSScaffoldIterator& GetScaffoldIterator(SWGSSeqInfo& seq);
     CWGSProteinIterator& GetProteinIterator(SWGSSeqInfo& seq);
     
+    void WriteData(CID2_Reply_Data& data,
+                   const CSerialObject& obj) const;
+    
     typedef limited_size_map<string, CWGSDb> TWGSDbCache;
 
 private:
@@ -175,6 +179,7 @@ private:
     CRef<CWGSProtAccResolver> m_AccResolver;
     TWGSDbCache m_WGSDbCache;
     CRef<CThreadNonStop> m_UpdateThread;
+    bool m_CompressData;
 };
 
 

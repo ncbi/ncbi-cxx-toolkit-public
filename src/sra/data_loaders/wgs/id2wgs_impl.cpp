@@ -37,6 +37,7 @@
 #include <corelib/reader_writer.hpp>
 #include <corelib/rwstream.hpp>
 #include <util/thread_nonstop.hpp>
+#include <util/compress/zlib.hpp>
 #include <serial/objostrasnb.hpp>
 #include <serial/serial.hpp>
 #include <objects/id2/id2__.hpp>
@@ -56,6 +57,7 @@ BEGIN_NAMESPACE(objects);
 
 #define DEFAULT_VDB_CACHE_SIZE 10
 #define DEFAULT_INDEX_UPDATE_TIME 600
+#define DEFAULT_COMPRESS_DATA false
 
 
 // debug levels
@@ -69,6 +71,13 @@ enum EDebugLevel {
     eDebug_data     = 8,
     eDebug_all      = 9
 };
+
+
+static const size_t kNumLetters = 4;
+static const size_t kVersionDigits = 2;
+static const size_t kPrefixLen = kNumLetters + kVersionDigits;
+static const size_t kMinRowDigits = 6;
+static const size_t kMaxRowDigits = 8;
 
 
 NCBI_PARAM_DECL(bool, ID2WGS, ENABLE);
@@ -128,11 +137,19 @@ static CStopWatch sw;
 static CNcbiOstream& operator<<(CNcbiOstream& out,
                                 const CID2WGSProcessor_Impl::SWGSSeqInfo& seq)
 {
-    out << seq.m_WGSAcc;
-    if ( seq.m_SeqType ) {
-        out << seq.m_SeqType;
+    if ( seq.IsMaster() ) {
+        out << seq.m_WGSAcc.substr(0, kNumLetters)<<"00";
+    }
+    else {
+        out << seq.m_WGSAcc;
+        if ( !seq.IsContig() ) {
+            out << seq.m_SeqType;
+        }
     }
     out << setfill('0')<<setw(seq.m_RowDigits)<<seq.m_RowId<<setfill(' ');
+    if ( seq.IsMaster() ) {
+        out << '.' << NStr::StringToInt(seq.m_WGSAcc.substr(kNumLetters));
+    }
     return out;
 }
 # define TRACE_X(t,l,m)                                                 \
@@ -242,13 +259,24 @@ private:
 };
 
 
+size_t sx_GetSize(const CID2_Reply_Data& data)
+{
+    size_t size = 0;
+    ITERATE ( CID2_Reply_Data::TData, it, data.GetData() ) {
+        size += (*it)->size();
+    }
+    return size;
+}
+
+
 END_LOCAL_NAMESPACE;
 
 
 CID2WGSProcessor_Impl::CID2WGSProcessor_Impl(const CConfig::TParamTree* params,
                                              const string& driver_name)
     : m_GiResolver(new CWGSGiResolver),
-      m_AccResolver(new CWGSProtAccResolver)
+      m_AccResolver(new CWGSProtAccResolver),
+      m_CompressData(false)
 {
     auto_ptr<CConfig::TParamTree> app_params;
     if ( !params ) {
@@ -265,20 +293,28 @@ CID2WGSProcessor_Impl::CID2WGSProcessor_Impl(const CConfig::TParamTree* params,
         params = params->FindSubNode(driver_name);
     }
     CConfig conf(params);
+
     size_t cache_size = conf.GetInt(driver_name,
                                     "vdb_cache_size",
                                     CConfig::eErr_NoThrow,
                                     DEFAULT_VDB_CACHE_SIZE);
+    TRACE_X(23, eDebug_open, "ID2WGS: cache_size = "<<cache_size);
+    m_WGSDbCache.set_size_limit(cache_size);
+
     unsigned update_delay = conf.GetInt(driver_name,
                                         "index_update_time",
                                         CConfig::eErr_NoThrow,
                                         DEFAULT_INDEX_UPDATE_TIME);
-    TRACE_X(23, eDebug_open, "ID2WGS: cache_size = "<<cache_size);
     TRACE_X(24, eDebug_open, "ID2WGS: index_update_time = "<<update_delay);
-    m_WGSDbCache.set_size_limit(cache_size);
     m_UpdateThread = new CIndexUpdateThread(update_delay,
                                             m_GiResolver, m_AccResolver);
     m_UpdateThread->Run();
+
+    m_CompressData = conf.GetBool(driver_name,
+                                  "compress_data",
+                                  CConfig::eErr_NoThrow,
+                                  DEFAULT_COMPRESS_DATA);
+    TRACE_X(23, eDebug_open, "ID2WGS: compress_data = "<<m_CompressData);
 }
 
 
@@ -410,13 +446,6 @@ bool CID2WGSProcessor_Impl::IsCorrectVersion(SWGSSeqInfo& seq, int version)
         return version == 1;
     }
 }
-
-
-static const size_t kNumLetters = 4;
-static const size_t kVersionDigits = 2;
-static const size_t kPrefixLen = kNumLetters + kVersionDigits;
-static const size_t kMinRowDigits = 6;
-static const size_t kMaxRowDigits = 8;
 
 
 // Blob id
@@ -898,9 +927,9 @@ static void s_AddSpecialId(CID2_Reply_Get_Seq_id::TSeq_id& ids,
 
 
 CID2WGSProcessor_Impl::SWGSSeqInfo
-CID2WGSProcessor_Impl::x_Process(TReplies& replies,
-                                 CID2_Request& main_request,
-                                 CID2_Request_Get_Seq_id& request)
+CID2WGSProcessor_Impl::Resolve(TReplies& replies,
+                               CID2_Request& main_request,
+                               CID2_Request_Get_Seq_id& request)
 {
     if ( !request.GetSeq_id().IsSeq_id() ) {
         return SWGSSeqInfo();
@@ -984,19 +1013,18 @@ bool CID2WGSProcessor_Impl::ProcessGetSeqId(TReplies& replies,
 {
     START_TRACE();
     TRACE_X(4, eDebug_request, "GetSeqId: "<<MSerial_AsnText<<main_request);
-    SWGSSeqInfo seq = x_Process(replies, main_request, request);
+    SWGSSeqInfo seq = Resolve(replies, main_request, request);
     TRACE_X(5, eDebug_resolve, "GetSeqId: done");
     return seq || seq.m_IsWGS;
 }
 
 
 CID2WGSProcessor_Impl::SWGSSeqInfo
-CID2WGSProcessor_Impl::x_Process(TReplies& replies,
-                                 CID2_Request& main_request,
-                                 CID2_Request_Get_Blob_Id& request)
+CID2WGSProcessor_Impl::Resolve(TReplies& replies,
+                               CID2_Request& main_request,
+                               CID2_Request_Get_Blob_Id& request)
 {
-    SWGSSeqInfo seq = x_Process(replies, main_request,
-                                request.SetSeq_id());
+    SWGSSeqInfo seq = Resolve(replies, main_request, request.SetSeq_id());
     if ( !seq ) {
         return seq;
     }
@@ -1023,7 +1051,7 @@ bool CID2WGSProcessor_Impl::ProcessGetBlobId(TReplies& replies,
 {
     START_TRACE();
     TRACE_X(7, eDebug_request, "GetBlobId: "<<MSerial_AsnText<<main_request);
-    SWGSSeqInfo seq = x_Process(replies, main_request, request);
+    SWGSSeqInfo seq = Resolve(replies, main_request, request);
     TRACE_X(8, eDebug_resolve, "GetBlobId: done");
     return seq || seq.m_IsWGS;
 }
@@ -1091,28 +1119,56 @@ int CID2WGSProcessor_Impl::GetID2BlobState(SWGSSeqInfo& seq)
 }
 
 
-CRef<CBioseq> CID2WGSProcessor_Impl::GetBioseq(SWGSSeqInfo& seq)
+CRef<CSeq_entry> CID2WGSProcessor_Impl::GetSeq_entry(SWGSSeqInfo& seq)
 {
     if ( seq.IsContig() ) {
         CWGSSeqIterator& it = GetContigIterator(seq);
         CWGSSeqIterator::TFlags flags =
             (it.fDefaultFlags & ~it.fMaskDescr) | it.fSeqDescr;
-        return it.GetBioseq(flags);
+        return it.GetSeq_entry(flags);
+    }
+    if ( seq.IsMaster() ) {
+        return GetWGSDb(seq)->GetMasterSeq_entry();
     }
     if ( seq.IsScaffold() ) {
         CWGSScaffoldIterator& it = GetScaffoldIterator(seq);
         CWGSScaffoldIterator::TFlags flags =
             (it.fDefaultFlags & ~it.fMaskDescr) | it.fSeqDescr;
-        return it.GetBioseq(flags);
+        CRef<CSeq_entry> entry(new CSeq_entry);
+        entry->SetSeq(*it.GetBioseq(flags));
+        return entry;
     }
     if ( seq.IsProtein() ) {
         CWGSProteinIterator& it = GetProteinIterator(seq);
         CWGSProteinIterator::TFlags flags =
             (it.fDefaultFlags & ~it.fMaskDescr) | it.fSeqDescr;
-        return it.GetBioseq(flags);
+        CRef<CSeq_entry> entry(new CSeq_entry);
+        entry->SetSeq(*it.GetBioseq(flags));
+        return entry;
     }
-    // master
-    return GetWGSDb(seq)->GetMasterBioseq();
+    return null;
+}
+
+
+void CID2WGSProcessor_Impl::WriteData(CID2_Reply_Data& data,
+                                      const CSerialObject& obj) const
+{
+    data.SetData_format(CID2_Reply_Data::eData_format_asn_binary);
+    COSSWriter writer(data.SetData());
+    CWStream writer_stream(&writer);
+    AutoPtr<CNcbiOstream> str;
+    if ( !m_CompressData ) {
+        data.SetData_compression(CID2_Reply_Data::eData_compression_none);
+        str.reset(&writer_stream, eNoOwnership);
+    }
+    else {
+        data.SetData_compression(CID2_Reply_Data::eData_compression_gzip);
+        str.reset(new CCompressionOStream(writer_stream,
+                                          new CZipStreamCompressor,
+                                          CCompressionIStream::fOwnProcessor));
+    }
+    CObjectOStreamAsnBinary objstr(*str);
+    objstr << obj;
 }
 
 
@@ -1123,12 +1179,12 @@ bool CID2WGSProcessor_Impl::ProcessGetBlobInfo(TReplies& replies,
     START_TRACE();
     TRACE_X(9, eDebug_request, "GetBlobInfo: "<<MSerial_AsnText<<main_request);
     SWGSSeqInfo seq;
-    if ( request.GetBlob_id().IsBlob_id() ) {
-        seq = ResolveBlobId(request.GetBlob_id().GetBlob_id());
+    CID2_Request_Get_Blob_Info::TBlob_id& req_id = request.SetBlob_id();
+    if ( req_id.IsBlob_id() ) {
+        seq = ResolveBlobId(req_id.GetBlob_id());
     }
     else {
-        seq = x_Process(replies, main_request,
-                        request.SetBlob_id().SetResolve().SetRequest());
+        seq = Resolve(replies, main_request, req_id.SetResolve().SetRequest());
     }
     if ( !seq ) {
         TRACE_X(10, eDebug_resolve, "GetBlobInfo: null");
@@ -1136,15 +1192,12 @@ bool CID2WGSProcessor_Impl::ProcessGetBlobInfo(TReplies& replies,
     }
 
     if ( request.IsSetGet_data() ) {
-        CRef<CBioseq> bioseq = GetBioseq(seq);
-        TRACE_X(11, eDebug_resolve, "GetBioseq: "<<seq);
-        if ( bioseq ) {
+        CRef<CSeq_entry> entry = GetSeq_entry(seq);
+        TRACE_X(11, eDebug_resolve, "GetSeq_entry: "<<seq);
+        if ( entry ) {
             TRACE_X(13, eDebug_data, "Seq("<<seq<<"): "<<
-                    MSerial_AsnText<<*bioseq);
+                    MSerial_AsnText<<*entry);
         }
-        CRef<CSeq_entry> entry(new CSeq_entry);
-        entry->SetSeq(*bioseq);
-
         CRef<CID2_Reply> main_reply(new CID2_Reply);
         if ( main_request.IsSetSerial_number() ) {
             main_reply->SetSerial_number(main_request.GetSerial_number());
@@ -1154,13 +1207,8 @@ bool CID2WGSProcessor_Impl::ProcessGetBlobInfo(TReplies& replies,
         reply.SetBlob_state(GetID2BlobState(seq));
         CID2_Reply_Data& data = reply.SetData();
         data.SetData_type(CID2_Reply_Data::eData_type_seq_entry);
-        data.SetData_format(CID2_Reply_Data::eData_format_asn_binary);
-
-        COSSWriter writer(data.SetData());
-        CWStream wstream(&writer);
-        CObjectOStreamAsnBinary objstr(wstream);
-        objstr << *entry;
-        TRACE_X(12, eDebug_resolve, "SetData: "<<seq);
+        WriteData(data, *entry);
+        TRACE_X(12, eDebug_resolve, ""<<seq<<" data size: "<<sx_GetSize(data));
         replies.push_back(main_reply);
     }
     TRACE_X(14, eDebug_resolve,"GetBlobInfo: done");
