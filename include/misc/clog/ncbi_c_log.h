@@ -596,6 +596,23 @@ extern void NcbiLog_SetClient(const char* client);
 extern void NcbiLog_AppSetSession(const char* session);
 
 
+/** Get session ID (SID) for the whole application.
+ *
+ *  @return
+ *    - a copy of string containing current application-wide SID (URL-encoded);
+ *    - empty string ([0] == '\0'), if SID is unknown or not set yet; 
+ *    - NULL, on error.
+ *  @attention
+ *    This function should be called after NcbiLog_AppRun().
+ *  @attention
+ *    The caller is responsible for freeing the returned SID string!
+ *    (if not empty only). Use free() or NcbiLog_FreeMemory().
+ *  @sa
+ *    NcbiLog_AppSetSession, NcbiLog_AppStart, NcbiLog_FreeMemory
+ */
+extern char* NcbiLog_AppGetSession(void);
+
+
 /** Auto-generate and then set brand-new application-wide session ID (SID).
  *
  *  @sa NcbiLog_AppSetSession
@@ -690,10 +707,10 @@ extern void NcbiLog_SetHitID(const char* hit_id);
 /** Generate a sub-hit ID based on the currently effective
  *  (whether it's request-specific or application-wide) hit ID.
  *
- *  @attention
- *    This function should be called after NcbiLog_AppRun().
  *  @return
  *    Generated sub-hit ID.
+ *  @attention
+ *    This function should be called after NcbiLog_AppRun().
  *  @attention
  *    The caller is responsible for freeing the returned sub-hit ID string!
  *    Use free() or NcbiLog_FreeMemory().

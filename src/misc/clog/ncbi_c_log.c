@@ -2536,6 +2536,24 @@ extern void NcbiLog_AppSetSession(const char* session)
 }
 
 
+extern char* NcbiLog_AppGetSession(void)
+{
+    static const char* kEmptySID = "";
+    char* sid;
+
+    MT_LOCK_API;
+    /* Enforce calling this method after NcbiLog_AppStart() */
+    if (sx_Info->state == eNcbiLog_NotSet ||
+        sx_Info->state == eNcbiLog_AppBegin) {
+        TROUBLE_MSG("NcbiLog_AppGetSession() can be used after NcbiLog_AppStart() only");
+    }
+    sid = sx_Info->session[0] ? s_StrDup(sx_Info->session) : kEmptySID;
+    MT_UNLOCK;
+
+    return sid;
+}
+
+
 extern void NcbiLog_SetSession(const char* session)
 {
     TNcbiLog_Context ctx = NULL;

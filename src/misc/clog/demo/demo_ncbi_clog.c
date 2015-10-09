@@ -57,7 +57,7 @@ static int Test_MT_Handler(void* user_data, ENcbiLog_MTLock_Action action)
 int main(int argc, const char* argv[] /*, const char* envp[]*/)
 {
     TNcbiLog_MTLock mt_lock = NcbiLog_MTLock_Create(NULL, Test_MT_Handler); 
-    
+
     /* Initialize logging API 
     */
     NcbiLog_Init(argv[0], mt_lock, eNcbiLog_MT_TakeOwnership);
@@ -97,7 +97,7 @@ int main(int argc, const char* argv[] /*, const char* envp[]*/)
 
     /* Set app-wide session
        Use value from environment variables or "UNK_SESSION" by default.
-       NcbiLog_AppSession("APP-WIDE-SESSION"); -- set from string, or
+       NcbiLog_AppSetSession("APP-WIDE-SESSION"); -- set from string, or
        NcbiLog_AppNewSession(); -- generate new one
     */
 
