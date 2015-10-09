@@ -372,17 +372,10 @@ protected:
     template <class TReply>
     CNetScheduleJob x_GetJobById(const string job_id, TReply& reply) const
     {
-        CNetScheduleNotificationHandler job_handler;
         CNetScheduleJob job;
         job.job_id = job_id;
 
-        CDeadline deadline(m_Timeout, 0);
-        const int status_mask(
-            CNetScheduleNotificationHandler::fJSM_Done |
-            CNetScheduleNotificationHandler::fJSM_Canceled |
-            CNetScheduleNotificationHandler::fJSM_Failed
-        );
-        const CNetScheduleAPI::EJobStatus evt = job_handler.WaitForJobEvent(job.job_id, deadline, m_NS_api, status_mask);
+        const CNetScheduleAPI::EJobStatus evt = m_Grid_cli.WaitForJobEvent(job.job_id, m_Timeout);
         switch (evt) {
         case CNetScheduleAPI::eDone:
         {
