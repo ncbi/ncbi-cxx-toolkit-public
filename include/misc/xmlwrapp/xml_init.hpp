@@ -83,12 +83,26 @@ public:
      * This member function controls whether or not the XML parser should
      * remove ignorable whitespace around XML elements. The default
      * is false.
+     * The setting is per thread.
      *
      * @param flag True to remove whitespace, false to leave alone.
+     * @sa xml::init::get_remove_whitespace()
      * @author Peter Jones
     **/
     //####################################################################
     static void remove_whitespace (bool flag);
+
+    //####################################################################
+    /**
+     * This member function provides the current setting of the XML parser
+     * which tells whether it should remove ignorable whitespace around XML
+     * elements.
+     *
+     * @return True if the parser will remove whitespace, false to leave alone.
+     * @sa xml::init::remove_whitespace()
+    **/
+    //####################################################################
+    static bool get_remove_whitespace (void);
 
     //####################################################################
     /**

@@ -100,6 +100,10 @@ void xml::init::remove_whitespace (bool flag) {
     xmlKeepBlanksDefaultValue = flag ? 0 : 1;
 }
 //####################################################################
+bool xml::init::get_remove_whitespace (void) {
+    return xmlKeepBlanksDefaultValue == 0;
+}
+//####################################################################
 void xml::init::substitute_entities (bool flag) {
     xmlSubstituteEntitiesDefaultValue = flag ? 1 : 0;
 }
