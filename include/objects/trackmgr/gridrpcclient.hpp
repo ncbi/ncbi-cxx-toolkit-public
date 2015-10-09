@@ -375,7 +375,8 @@ protected:
         CNetScheduleJob job;
         job.job_id = job_id;
 
-        const CNetScheduleAPI::EJobStatus evt = m_Grid_cli.WaitForJobEvent(job.job_id, m_Timeout);
+        CNetScheduleSubmitter job_submitter = m_NS_api.GetSubmitter();
+        const CNetScheduleAPI::EJobStatus evt = job_submitter.WaitForJob(job.job_id, m_Timeout);
         switch (evt) {
         case CNetScheduleAPI::eDone:
         {
