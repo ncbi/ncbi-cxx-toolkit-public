@@ -54,7 +54,6 @@ void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
             !IsOptionSet(eNetStorage)) {
         m_NetICacheClient = CNetICacheClient(m_Opts.nc_service,
                 m_Opts.app_domain, m_Opts.auth);
-        m_NetICacheClient.SetEventHandler(new CNetCacheWarningLogger);
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
         if (IsOptionExplicitlySet(eAllowXSiteConn))
             m_NetICacheClient.GetService().AllowXSiteConnections();

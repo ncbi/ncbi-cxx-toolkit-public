@@ -1664,13 +1664,6 @@ int CGridCommandLineInterfaceApp::Run()
     }
 }
 
-void CGridCommandLineInterfaceApp::CNetCacheWarningLogger::OnWarning(
-        const string& warn_msg, CNetServer server)
-{
-    fprintf(stderr, "NetCache server at %s: WARNING: %s\n",
-            server.GetServerAddress().c_str(), warn_msg.c_str());
-}
-
 void CGridCommandLineInterfaceApp::CNetScheduleWarningLogger::OnWarning(
         const string& warn_msg, CNetServer server)
 {

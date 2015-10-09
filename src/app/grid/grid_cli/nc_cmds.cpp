@@ -64,8 +64,6 @@ void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(
                     (unsigned short) NStr::StringToInt(port));
         }
 
-        m_NetCacheAPI.SetEventHandler(new CNetCacheWarningLogger);
-
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
         if (IsOptionSet(eAllowXSiteConn))
             m_NetCacheAPI.GetService().AllowXSiteConnections();
@@ -80,8 +78,6 @@ void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(
             NCBI_THROW(CArgException, eNoValue, "'--" NETCACHE_OPTION "' "
                 "option is required in icache mode.");
         }
-
-        m_NetICacheClient.SetEventHandler(new CNetCacheWarningLogger);
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
         if (IsOptionSet(eAllowXSiteConn))
@@ -100,8 +96,6 @@ void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(
         }
         m_NetCacheAPI = CNetCacheAPI(m_Opts.nc_service, m_Opts.auth);
         m_NetCacheAdmin = m_NetCacheAPI.GetAdmin();
-
-        m_NetCacheAPI.SetEventHandler(new CNetCacheWarningLogger);
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
         if (IsOptionSet(eAllowXSiteConn))
