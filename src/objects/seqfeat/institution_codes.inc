@@ -2106,6 +2106,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "GUBIOTJT	c	Freshwater microalgae collection and culture laboratory",
 "GUH	s	HNB Garhwal University, Botany Department",
 "GUM	s	Glasgow University Museum (Hunter Museum)",
+"GUM<IRN>	s	Mycological herbarium of University of Guilan",
 "GUMACC	c	Gotheburg University Marine Algal Culture Collection",
 "GUYN	s	Fundacion Jardin Botanico del Orinoco",
 "GVF	s	George Vanderbilt Foundation",
