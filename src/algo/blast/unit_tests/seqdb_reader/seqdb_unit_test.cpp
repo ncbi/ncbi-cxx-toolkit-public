@@ -1745,7 +1745,7 @@ BOOST_AUTO_TEST_CASE(CSeqDBFileGiList_GetGis)
 
     // Read using CSeqDBFileGiList
     CSeqDBFileGiList seqdbgifile(kFileName);
-    vector<int> gis;
+    vector<TGi> gis;
     seqdbgifile.GetGiList(gis);
     BOOST_REQUIRE_EQUAL((size_t) seqdbgifile.GetNumGis(), gis.size());
     sort(gis.begin(), gis.end());
@@ -1755,13 +1755,13 @@ BOOST_AUTO_TEST_CASE(CSeqDBFileGiList_GetGis)
     ifstream gifile(fn.c_str());
     BOOST_REQUIRE(gifile);
 
-    vector<int> reference;
+    vector<TGi> reference;
     reference.reserve(gis.size());
     while ( !gifile.eof() ) {
-        int gi(-1);     // gis can't be negative
-        gifile >> gi;
-        if (gi == -1) break;
-        reference.push_back(gi);
+        Int8 tgi = -1;     // gis can't be negative
+        gifile >> tgi;
+        if (tgi == -1) break;
+        reference.push_back(GI_FROM(Int8, tgi));
     }
     sort(reference.begin(), reference.end());
     BOOST_REQUIRE_EQUAL(reference.size(), gis.size());
@@ -2362,7 +2362,9 @@ BOOST_AUTO_TEST_CASE(ExpertIdBounds)
 
     // Tests ID bound functions.
     {
-        int low(0), high(0), count(0);
+        TGi low(ZERO_GI);
+        TGi high(ZERO_GI);
+        int count(0);
 
         nr.GetGiBounds(& low, & high, & count);
 
@@ -2482,7 +2484,7 @@ BOOST_AUTO_TEST_CASE(GlobalMemoryBound)
 
 class CSimpleGiList : public CSeqDBGiList {
 public:
-    CSimpleGiList(const vector<int> & gis)
+    CSimpleGiList(const vector<TGi> & gis)
     {
         for(size_t i = 0; i < gis.size(); i++) {
             m_GisOids.push_back(gis[i]);
@@ -2493,23 +2495,23 @@ public:
 BOOST_AUTO_TEST_CASE(IntersectionGiList)
 {
 
-    vector<int> a3; // multiples of 3 from 0..500
-    vector<int> a5; // multiples of 5 from 0..500
+    vector<TGi> a3; // multiples of 3 from 0..500
+    vector<TGi> a5; // multiples of 5 from 0..500
 
     // The number 41 is added to the front of one set and the end of
     // the other to verify that the code computing the intersection
     // correctly sorts its inputs.
 
-    int special = 41;
+    TGi special = GI_FROM(int, 41);
 
     // Add to start of a3
     a3.push_back(special);
 
     for(int i = 0; (i*3) < 500; i++) {
-        a3.push_back(i*3);
+        a3.push_back(GI_FROM(int, i*3));
 
         if (i*5 < 500) {
-            a5.push_back(i*5);
+            a5.push_back(GI_FROM(int, i*5));
         }
     }
 
@@ -2522,10 +2524,11 @@ BOOST_AUTO_TEST_CASE(IntersectionGiList)
     CIntersectionGiList both(gi3, a5);
 
     for(int i = 0; i < 500; i++) {
-        if (((i % 15) == 0) || (i == special)) {
-            BOOST_REQUIRE(true == both.FindGi(i));
+        TGi gi = GI_FROM(int, i);
+        if (((i % 15) == 0) || (gi == special)) {
+            BOOST_REQUIRE(true == both.FindGi(gi));
         } else {
-            BOOST_REQUIRE(false == both.FindGi(i));
+            BOOST_REQUIRE(false == both.FindGi(gi));
         }
     }
 }
@@ -2533,29 +2536,29 @@ BOOST_AUTO_TEST_CASE(IntersectionGiList)
 BOOST_AUTO_TEST_CASE(IntersectionNegGiList)
 {
 
-    vector<int> a3; // multiples of 3 from 0..500
-    vector<int> a5; // multiples of 5 from 0..500
+    vector<TGi> a3; // multiples of 3 from 0..500
+    vector<TGi> a5; // multiples of 5 from 0..500
 
     // The number 41 is added to the front of one set and the end of
     // the other to verify that the code computing the intersection
     // correctly sorts its inputs.
 
-    int special = 41;
+    TGi special = GI_FROM(int, 41);
 
     // Add to start of a3
     a3.push_back(special);
 
     for(int i = 0; (i*3) < 500; i++) {
-        a3.push_back(i*3);
+        a3.push_back(GI_FROM(int, i*3));
 
         if (i*5 < 500) {
-            a5.push_back(i*5);
+            a5.push_back(GI_FROM(int, i*5));
         }
     }
 
     // Add to end of a5
     a5.push_back(special);
-    a5.push_back(1000);
+    a5.push_back(GI_FROM(int, 1000));
 
     CSeqDBNegativeList gi3;
     gi3.SetGiList(a3);
@@ -2575,7 +2578,7 @@ BOOST_AUTO_TEST_CASE(IntersectionNegGiList)
 
     // all elements in the intersect list have to be found in a5
     for(int i = 0; i < both.GetNumGis(); i++) {
-        const int gi = both.GetKey<int>(i);
+        const TGi gi = both.GetKey<TGi>(i);
         BOOST_REQUIRE(std::find(a5.begin(), a5.end(), gi) != a5.end());
     }
 }
@@ -2867,7 +2870,7 @@ public:
     {
         for(const char ** p = str; *p; p++) {
             if ((*p)[0] == '#') {
-                m_GisOids.push_back(atoi((*p) + 1));
+                m_GisOids.push_back(GI_FROM(int, atoi((*p) + 1)));
             } else {
                 string acc(*p);
                 string str_id = SeqDB_SimplifyAccession(acc);
@@ -4261,13 +4264,13 @@ BOOST_AUTO_TEST_CASE(CWgsTrimmerShortExampleNoRemove)
 {
     const string wgs_dbs = "WGS/AB/D/wgs.ABDC WGS/AA/D/wgs.AADN";
     const string gis_in_wgs_results = "data/wb1206.gis.txt";
-    vector<int> gis;
+    vector<TGi> gis;
     SeqDB_ReadGiList(gis_in_wgs_results, gis);
 
     CAutoEnvironmentVariable env_var("WGS_GILIST_DIR", "data");
     CWgsDbTrimmer trimmer(wgs_dbs);
-    ITERATE(vector<int>, gi, gis) {
-        trimmer.AddGi(GI_FROM(int, *gi));
+    ITERATE(vector<TGi>, gi, gis) {
+        trimmer.AddGi(*gi);
     }
     const string kExpectedResult = "WGS/AA/D/wgs.AADN WGS/AB/D/wgs.ABDC";
     const string kActualResult = trimmer.GetDbList();
@@ -4279,14 +4282,14 @@ BOOST_AUTO_TEST_CASE(CWgsTrimmerShortExampleRemove)
 {
     const string wgs_dbs = "WGS/AB/D/wgs.ABDC WGS/AA/D/wgs.AADN";
     const string gis_in_wgs_results = "data/wb1206.gis.txt";
-    vector<int> gis;
+    vector<TGi> gis;
     SeqDB_ReadGiList(gis_in_wgs_results, gis);
     gis.erase(gis.begin()+10, gis.end());
 
     CAutoEnvironmentVariable env_var("WGS_GILIST_DIR", "data");
     CWgsDbTrimmer trimmer(wgs_dbs);
-    ITERATE(vector<int>, gi, gis) {
-        trimmer.AddGi(GI_FROM(int, *gi));
+    ITERATE(vector<TGi>, gi, gis) {
+        trimmer.AddGi(*gi);
     }
     const string kExpectedResult = "WGS/AB/D/wgs.ABDC";
     const string kActualResult = trimmer.GetDbList();
@@ -4300,14 +4303,14 @@ BOOST_AUTO_TEST_CASE(CWgsTrimmerShortExampleWithNtRemove)
 {
     const string wgs_dbs = "nt WGS/AB/D/wgs.ABDC WGS/AA/D/wgs.AADN";
     const string gis_in_wgs_results = "data/wb1206.gis.txt";
-    vector<int> gis;
+    vector<TGi> gis;
     SeqDB_ReadGiList(gis_in_wgs_results, gis);
     gis.erase(gis.begin()+10, gis.end());
 
     CAutoEnvironmentVariable env_var("WGS_GILIST_DIR", "data");
     CWgsDbTrimmer trimmer(wgs_dbs);
-    ITERATE(vector<int>, gi, gis) {
-        trimmer.AddGi(GI_FROM(int, *gi));
+    ITERATE(vector<TGi>, gi, gis) {
+        trimmer.AddGi(*gi);
     }
     const string kExpectedResult = "WGS/AB/D/wgs.ABDC nt";
     const string kActualResult = trimmer.GetDbList();
@@ -4340,13 +4343,13 @@ BOOST_AUTO_TEST_CASE(CWgsTrimmerLongExample)
     const int orig_num_dbs = tokens.size();
     tokens.clear();
 
-    vector<int> gis;
+    vector<TGi> gis;
     SeqDB_ReadGiList(gis_in_wgs_results, gis);
 
     CAutoEnvironmentVariable env_var("WGS_GILIST_DIR", "data");
     CWgsDbTrimmer trimmer(wgs_dbs);
-    ITERATE(vector<int>, gi, gis) {
-        trimmer.AddGi(GI_FROM(int, *gi));
+    ITERATE(vector<TGi>, gi, gis) {
+        trimmer.AddGi(*gi);
     }
 
     const int kExpectedNumDbs = 7511;

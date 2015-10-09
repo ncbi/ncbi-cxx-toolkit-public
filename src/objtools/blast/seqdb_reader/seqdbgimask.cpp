@@ -50,15 +50,15 @@ CSeqDBGiMask::CSeqDBGiMask(CSeqDBAtlas           & atlas,
                            const vector <string> & mask_name)
     : m_Atlas            (atlas),
       m_MaskNames        (mask_name),
-      m_AlgoId           (-1),     
+      m_AlgoId           (-1),
       m_IndexFile        (m_Atlas),
       m_IndexLease       (m_Atlas),
       m_OffsetFile       (m_Atlas),
       m_OffsetLease      (m_Atlas)
 { }
 
-const string & 
-CSeqDBGiMask::GetDesc(int               algo_id, 
+const string &
+CSeqDBGiMask::GetDesc(int               algo_id,
                       CSeqDBLockHold  & locked)
 {
     m_Atlas.Lock(locked);
@@ -66,19 +66,19 @@ CSeqDBGiMask::GetDesc(int               algo_id,
     return m_Desc;
 }
 
-void 
+void
 CSeqDBGiMask::GetMaskData(int                     algo_id,
-                          int                     gi,
+                          TGi                     gi,
                           CSeqDB::TSequenceRanges &ranges,
                           CSeqDBLockHold          &locked)
 {
-    m_Atlas.Lock(locked); 
+    m_Atlas.Lock(locked);
 
     x_Open(algo_id, locked);
 
     int page, vol, off;
 
-    if (s_BinarySearch(m_GiIndex, m_NumIndex, gi, page)) {
+    if (s_BinarySearch(m_GiIndex, m_NumIndex, GI_TO(int, gi), page)) {
         vol = m_GiIndex[m_NumIndex + page * 2];
         off = m_GiIndex[m_NumIndex + page * 2 + 1];
     } else {
@@ -94,8 +94,8 @@ CSeqDBGiMask::GetMaskData(int                     algo_id,
         const Int4 * offset = (const Int4 *)
               m_OffsetFile.GetRegion(m_OffsetLease, begin, end, locked);
 
-        if (!s_BinarySearch(offset, pagesize, gi, page))  return;
-            
+        if (!s_BinarySearch(offset, pagesize, GI_TO(int, gi), page))  return;
+
         vol = offset[pagesize + page * 2];
         off = offset[pagesize + page * 2 + 1];
     }
@@ -117,7 +117,7 @@ CSeqDBGiMask::GetMaskData(int                     algo_id,
 }
 
 void CSeqDBGiMask::x_Open(Int4              algo_id,
-                          CSeqDBLockHold  & locked) 
+                          CSeqDBLockHold  & locked)
 {
     if (algo_id == m_AlgoId) {
         return;
@@ -137,14 +137,14 @@ void CSeqDBGiMask::x_Open(Int4              algo_id,
     }
 
     m_Atlas.Lock(locked);
-    
+
     try {
         CSeqDB_Path fn_i(SeqDB_ResolveDbPath(m_MaskNames[algo_id] + ext_i));
         CSeqDB_Path fn_o(SeqDB_ResolveDbPath(m_MaskNames[algo_id] + ext_o));
 
         bool found_i = m_IndexFile.Open(fn_i, locked);
         bool found_o = m_OffsetFile.Open(fn_o, locked);
-        
+
         if (! (found_i && found_o)) {
             NCBI_THROW(CSeqDBException, eFileErr,
                        "Could not open gi-mask index files.");
@@ -176,7 +176,7 @@ void CSeqDBGiMask::x_Open(Int4              algo_id,
                 }
             }
         }
-            
+
     }
     catch(...) {
         m_AlgoId = -1;
@@ -200,22 +200,22 @@ void CSeqDBGiMask::s_GetFileRange(TIndx            begin,
 void CSeqDBGiMask::x_ReadFields(CSeqDBLockHold & locked)
 {
     const int kFixedFieldBytes = 32;
-    
+
     m_Atlas.Lock(locked);
-    
+
     // First, get the 32 bytes of fields that we know exist.
-    
+
     CBlastDbBlob header;
     s_GetFileRange(0, kFixedFieldBytes, m_IndexFile, m_IndexLease, header, locked);
-    
+
     int fmt_version = header.ReadInt4();
-    
+
     if (fmt_version != 1) {
         NCBI_THROW(CSeqDBException,
                    eFileErr,
                    "Gi-mask file uses unknown format_version.");
     }
-    
+
     m_NumVols    = header.ReadInt4();
     m_GiSize     = header.ReadInt4();
     m_OffsetSize = header.ReadInt4();
@@ -225,32 +225,32 @@ void CSeqDBGiMask::x_ReadFields(CSeqDBLockHold & locked)
     m_NumGi      = header.ReadInt4();
 
     m_IndexStart = header.ReadInt4();
-    
+
     SEQDB_FILE_ASSERT(m_IndexStart >= 0);
     SEQDB_FILE_ASSERT(m_IndexFile.GetFileLength() >= m_IndexStart);
-    
+
     // Now we know how long the header actually is, so expand the blob
     // to reference the whole thing.  (The memory lease should already
     // hold the data, so this will just adjust a few integer fields.)
-    
+
     s_GetFileRange(0, m_IndexStart, m_IndexFile, m_IndexLease, header, locked);
-    
+
     // Get string type header fields.
-    
+
     m_Desc  = header.ReadString (kStringFmt);
     m_Date  = header.ReadString (kStringFmt);
 
     SEQDB_FILE_ASSERT(m_Desc.size());
     SEQDB_FILE_ASSERT(m_Date.size());
-    
+
     // Map the index file
     TIndx begin = m_IndexStart;
     TIndx end = begin + m_NumIndex * (m_GiSize + m_OffsetSize);
-    m_GiIndex = (const Int4 *) 
+    m_GiIndex = (const Int4 *)
               m_IndexFile.GetRegion(m_IndexLease, begin, end, locked);
 }
 
-// TODO: if gi becomes 8-bytes long, this may better be implemented as 
+// TODO: if gi becomes 8-bytes long, this may better be implemented as
 // a template function
 bool
 CSeqDBGiMask::s_BinarySearch(const int *keys,

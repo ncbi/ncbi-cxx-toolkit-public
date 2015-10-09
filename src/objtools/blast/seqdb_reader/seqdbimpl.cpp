@@ -455,7 +455,7 @@ int CSeqDBImpl::GetSeqLengthApprox(int oid) const
 }
 
 void CSeqDBImpl::GetTaxIDs(int             oid,
-                           map<int, int> & gi_to_taxid,
+                           map<TGi, int> & gi_to_taxid,
                            bool            persist)
 {
     CSeqDBLockHold locked(m_Atlas);
@@ -484,7 +484,7 @@ void CSeqDBImpl::GetTaxIDs(int             oid,
                     continue;
                 }
 
-                gi_to_taxid[GI_TO(int, (**seqid).GetGi())] = (*defline)->GetTaxid();
+                gi_to_taxid[(**seqid).GetGi()] = (*defline)->GetTaxid();
             }
         }
     }
@@ -517,7 +517,7 @@ void CSeqDBImpl::GetTaxIDs(int           oid,
 
 void CSeqDBImpl::GetLeafTaxIDs(
         int                  oid,
-        map<int, set<int> >& gi_to_taxid_set,
+        map<TGi, set<int> >& gi_to_taxid_set,
         bool                 persist
 )
 {
@@ -544,7 +544,7 @@ void CSeqDBImpl::GetLeafTaxIDs(
                 }
 
                 CBlast_def_line::TTaxIds taxids = (*defline)->GetLeafTaxIds();
-                gi_to_taxid_set[GI_TO(int, (**seqid).GetGi())].insert(
+                gi_to_taxid_set[(**seqid).GetGi()].insert(
                         taxids.begin(), taxids.end()
                 );
             }
@@ -596,7 +596,7 @@ void CSeqDBImpl::GetLeafTaxIDs(
 }
 
 CRef<CBioseq>
-CSeqDBImpl::GetBioseq(int oid, int target_gi, const CSeq_id * target_seq_id, bool seqdata)
+CSeqDBImpl::GetBioseq(int oid, TGi target_gi, const CSeq_id * target_seq_id, bool seqdata)
 {
     CHECK_MARKER();
 
@@ -817,7 +817,7 @@ list< CRef<CSeq_id> > CSeqDBImpl::GetSeqIDs(int oid)
     NCBI_THROW(CSeqDBException, eArgErr, CSeqDB::kOidNotFound);
 }
 
-int CSeqDBImpl::GetSeqGI(int oid)
+TGi CSeqDBImpl::GetSeqGI(int oid)
 {
     CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
@@ -891,7 +891,7 @@ int CSeqDBImpl::x_GetNumSeqs() const
     return (int) rv;
 }
 
-int CSeqDBImpl::x_GetSeqGI(int oid, CSeqDBLockHold & locked)
+TGi CSeqDBImpl::x_GetSeqGI(int oid, CSeqDBLockHold & locked)
 {
     CHECK_MARKER();
 
@@ -904,18 +904,18 @@ int CSeqDBImpl::x_GetSeqGI(int oid, CSeqDBLockHold & locked)
     int vol_oid = 0;
     if (const CSeqDBVol * vol = m_VolSet.FindVol(oid, vol_oid)) {
         // Try lookup *.nxg first
-        int gi = vol->GetSeqGI(vol_oid, locked);
-        if (gi>=0) return gi;
+        TGi gi = vol->GetSeqGI(vol_oid, locked);
+        if (gi>=ZERO_GI) return gi;
         // Fall back to parsing deflines
         list< CRef<CSeq_id> > ids =
             vol->GetSeqIDs(vol_oid, locked);
         ITERATE(list< CRef<CSeq_id> >, id, ids) {
             if ((**id).IsGi()) {
-                return GI_TO(int, (**id).GetGi());
+                return (**id).GetGi();
             }
         }
         // No GI found
-        return -1;
+        return INVALID_GI;
     }
 
     NCBI_THROW(CSeqDBException, eArgErr, CSeqDB::kOidNotFound);
@@ -1170,7 +1170,7 @@ bool CSeqDBImpl::TiToOid(Int8 ti, int & oid)
     return false;
 }
 
-bool CSeqDBImpl::GiToOid(int gi, int & oid) const
+bool CSeqDBImpl::GiToOid(TGi gi, int & oid) const
 {
     CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
@@ -1201,7 +1201,7 @@ bool CSeqDBImpl::GiToOid(int gi, int & oid) const
     return false;
 }
 
-bool CSeqDBImpl::GiToOidwFilterCheck(int gi, int & oid)
+bool CSeqDBImpl::GiToOidwFilterCheck(TGi gi, int & oid)
 {
     CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
@@ -1219,7 +1219,7 @@ bool CSeqDBImpl::GiToOidwFilterCheck(int gi, int & oid)
     return false;
 }
 
-bool CSeqDBImpl::OidToGi(int oid, int & gi)
+bool CSeqDBImpl::OidToGi(int oid, TGi & gi)
 {
     CHECK_MARKER();
     CSeqDBLockHold locked(m_Atlas);
@@ -1612,8 +1612,8 @@ inline void s_AccumulateMinMaxCount(TId   low_in,
     }
 }
 
-void CSeqDBImpl::GetGiBounds(int * low_id,
-                             int * high_id,
+void CSeqDBImpl::GetGiBounds(TGi * low_id,
+                             TGi * high_id,
                              int * count)
 {
     CSeqDBLockHold locked(m_Atlas);
@@ -1621,7 +1621,8 @@ void CSeqDBImpl::GetGiBounds(int * low_id,
     bool found = false;
 
     for(int i = 0; i < m_VolSet.GetNumVols(); i++) {
-        int vlow(0), vhigh(0), vcount(0);
+        TGi vlow(ZERO_GI), vhigh(ZERO_GI);
+        int vcount(0);
 
         m_VolSet.GetVol(i)->GetGiBounds(vlow, vhigh, vcount, locked);
 
@@ -1806,7 +1807,7 @@ CSeqDBIdSet CSeqDBImpl::GetIdSet()
             // lists that specify filtering using CSeq-id objects.
 
             if (m_UserGiList->GetNumGis()) {
-                vector<int> gis;
+                vector<TGi> gis;
                 m_UserGiList->GetGiList(gis);
 
                 CSeqDBIdSet new_ids(gis, CSeqDBIdSet::eGi);
@@ -1819,7 +1820,7 @@ CSeqDBIdSet CSeqDBImpl::GetIdSet()
                 m_IdSet = new_ids;
             }
         } else if (! m_NegativeList.Empty()) {
-            const vector<int> & ngis = m_NegativeList->GetGiList();
+            const vector<TGi> & ngis = m_NegativeList->GetGiList();
             const vector<Int8> & ntis = m_NegativeList->GetTiList();
 
             if (! ngis.empty()) {

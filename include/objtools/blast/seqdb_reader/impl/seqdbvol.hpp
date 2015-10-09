@@ -50,13 +50,13 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 /// CSeqDBGiIndex
-/// 
-/// This class maintains the OID->GI translation 
+///
+/// This class maintains the OID->GI translation
 class CSeqDBGiIndex : public CObject {
 public:
     typedef CSeqDBAtlas::TIndx   TIndx;
     typedef int TOid;
-    typedef int TGi;
+//    typedef int TGi;
 
     CSeqDBGiIndex(CSeqDBAtlas  & atlas,
                   const string & dbname,
@@ -77,7 +77,7 @@ public:
         string fn(name + '.' + prot_nucl + "og");
         return CFile(fn).Exists();
     }
- 
+
     TGi GetSeqGI(TOid oid, CSeqDBLockHold & locked);
 
 private:
@@ -87,7 +87,7 @@ private:
     Int4           m_Size;
     Int4           m_NumOIDs;
 };
-    
+
 
 /// CSeqDBRangeList
 ///
@@ -112,22 +112,22 @@ public:
         // performance further, but requires some consideration of the
         // design with respect to locking and correctness.
     }
-    
+
     /// Destructor.
     ~CSeqDBRangeList()
     {
         FlushSequence();
     }
-    
+
     /// Returns true if the sequence data is cached.
     bool IsCached()
     {
         return false;
     }
-    
+
     /// List of sequence offset ranges.
     typedef set< pair<int, int> > TRangeList;
-    
+
     /// Set ranges of the sequence that will be used.
     /// @param ranges Offset ranges of the sequence that are needed. [in]
     /// @param append_ranges If true, combine new ranges with old. [in]
@@ -135,46 +135,46 @@ public:
     void SetRanges(const TRangeList & ranges,
                    bool               append_ranges,
                    bool               cache_data);
-    
+
     /// Get ranges of sequence offsets that will be used.
     const TRangeList & GetRanges()
     {
         return m_Ranges;
     }
-    
+
     /// Flush cached sequence data (if any).
     void FlushSequence()
     {
     }
-    
+
     /// Sequences shorter than this will not use ranges in any case.
     static int ImmediateLength()
     {
         return 10240;
     }
-    
+
 private:
     /// Memory management layer.
     CSeqDBAtlas & m_Atlas;
-    
+
     /// Range of offsets needed for this sequence.
     TRangeList m_Ranges;
-    
+
     /// True if caching of sequence data is required for this sequence.
     bool m_CacheData;
-    
+
     /// Pointer to cached sequence data.
     const char * m_Sequence;
-    
+
     /// Length of sequence.
     int m_Length;
-    
+
     /// Number of user-held references to this sequence.
     int m_RefCount;
 };
 
 /// CSeqDBVol class.
-/// 
+///
 /// This object defines access to one database volume.  It aggregates
 /// file objects associated with the sequence and header data, and
 /// ISAM objects used for translation of GIs and PIGs for data in this
@@ -186,7 +186,7 @@ class CSeqDBVol {
 public:
     /// Import TIndx definition from the CSeqDBAtlas class.
     typedef CSeqDBAtlas::TIndx   TIndx;
-    
+
     /// Constructor.
     ///
     /// All files connected with the database volume will be opened,
@@ -194,7 +194,7 @@ public:
     /// and identifier translation indices will be opened.  The name
     /// of these files is the specified name of the volume plus an
     /// extension.
-    /// 
+    ///
     /// @param atlas
     ///   The memory management layer object. [in]
     /// @param name
@@ -218,7 +218,7 @@ public:
               CSeqDBLockHold     & locked);
 
     /// Open sequence file
-    /// 
+    ///
     /// By default, sequence file is opened on a "lazy" schedule.
     /// This method will force the sequence file to be opened.
     ///
@@ -227,11 +227,11 @@ public:
     void OpenSeqFile(CSeqDBLockHold &locked) const;
 
     /// Sequence length for protein databases.
-    /// 
+    ///
     /// This method returns the length of the sequence in bases, and
     /// should only be called for protein sequences.  It does not
     /// require synchronization via the atlas object's lock.
-    /// 
+    ///
     /// @param oid
     ///   The OID of the sequence. [in]
     /// @param locked
@@ -239,16 +239,16 @@ public:
     /// @return
     ///   The length in bases of the sequence.
     int GetSeqLengthProt(int oid, CSeqDBLockHold & locked) const;
-    
+
     /// Approximate sequence length for nucleotide databases.
-    /// 
+    ///
     /// This method returns the length of the sequence using a fast
     /// method that may be off by as much as 4 bases.  The method is
     /// designed to be unbiased, meaning that the total length of
     /// large numbers of sequences will approximate what the exact
     /// length would be.  The approximate lengths will change if the
     /// database is regenerated.  It does not require synchronization.
-    /// 
+    ///
     /// @param oid
     ///   The OID of the sequence. [in]
     /// @param locked
@@ -256,14 +256,14 @@ public:
     /// @return
     ///   The approximate length in bases of the sequence.
     int GetSeqLengthApprox(int oid, CSeqDBLockHold & locked) const;
-    
+
     /// Exact sequence length for nucleotide databases.
-    /// 
+    ///
     /// This method returns the length of the sequence in bases, and
     /// should only be called for nucleotide sequences.  It requires
     /// synchronization via the atlas object's lock, which must be
     /// done in the calling code.
-    /// 
+    ///
     /// @param oid
     ///   The OID of the sequence. [in]
     /// @param locked
@@ -271,9 +271,9 @@ public:
     /// @return
     ///   The length in bases of the sequence.
     int GetSeqLengthExact(int oid, CSeqDBLockHold & locked) const;
-    
+
     /// Get filtered sequence header information.
-    /// 
+    ///
     /// This method returns the set of Blast-def-line objects stored
     /// for each sequence.  These contain descriptive information
     /// related to the sequence.  If OID filtering is enabled and a
@@ -282,7 +282,7 @@ public:
     /// bit are contained in filt_info.  This field may be NULL, in
     /// which case OID list bit filtering is not done (in this case
     /// the deflines are not cached).
-    /// 
+    ///
     /// @param oid
     ///   The OID of the sequence. [in]
     /// @param locked
@@ -292,19 +292,19 @@ public:
     CRef<CBlast_def_line_set>
     GetFilteredHeader(int                    oid,
                       CSeqDBLockHold       & locked) const;
-    
+
     /// Get the sequence type stored in this database.
-    /// 
+    ///
     /// This method returns the type of sequences stored in this
     /// database, either kSeqTypeProt for protein, or kSeqTypeNucl for
     /// nucleotide.
-    /// 
+    ///
     /// @return
     ///   Either kSeqTypeProt for protein, or kSeqTypeNucl for nucleotide.
     char GetSeqType() const;
-    
+
     /// Get a CBioseq object for this sequence.
-    /// 
+    ///
     /// This method builds and returns a Bioseq for this sequence.
     /// The taxonomy information is cached in this volume, so it
     /// should not be modified directly, or other Bioseqs from this
@@ -320,7 +320,7 @@ public:
     /// used to allow Bioseq summary data to be provided without the
     /// performance penalty of loading (possibly very large) sequence
     /// data from disk.
-    /// 
+    ///
     /// @param oid
     ///   The OID of the sequence. [in]
     /// @param pref_gi
@@ -337,14 +337,14 @@ public:
     ///   A CBioseq describing this sequence.
     CRef<CBioseq>
     GetBioseq(int                    oid,
-              int                    pref_gi,
+              TGi                    pref_gi,
               const CSeq_id        * pref_seq_id,
               CRef<CSeqDBTaxInfo>    tax_info,
               bool                   seqdata,
               CSeqDBLockHold       & locked);
-    
+
     /// Get the sequence data.
-    /// 
+    ///
     /// This method gets the sequence data, returning a pointer and
     /// the length of the sequence.  The atlas will be locked, but the
     /// lock may also be returned during this method.  The computation
@@ -356,7 +356,7 @@ public:
     /// the reference count we have acquired to return to the user.
     /// The returned sequence data is intended for blast searches, and
     /// will contain random values in any ambiguous regions.
-    /// 
+    ///
     /// @param oid
     ///   The OID of the sequence. [in]
     /// @param buffer
@@ -364,19 +364,19 @@ public:
     /// @param locked
     ///   The lock holder object for this thread. [in]
     /// @param in_lease
-    ///   Only perform sequence retrieval if the requested oid is 
+    ///   Only perform sequence retrieval if the requested oid is
     ///   within the previous lease [in]
     /// @return
     ///   The length of this sequence in bases.
-    int GetSequence(int oid, const char ** buffer, 
+    int GetSequence(int oid, const char ** buffer,
                     CSeqDBLockHold & locked,
                     bool in_lease = false) const
     {
         return x_GetSequence(oid, buffer, true, locked, false, in_lease);
     }
-    
+
     /// Get a sequence with ambiguous regions.
-    /// 
+    ///
     /// This method gets the sequence data, returning a pointer and
     /// the length of the sequence.  For nucleotide sequences, the
     /// data can be returned in one of two encodings.  Specify either
@@ -385,7 +385,7 @@ public:
     /// ways, enumerated in ESeqDBAllocType.  Specify eAtlas to use
     /// the Atlas code, eMalloc to use the malloc() function, or eNew
     /// to use the new operator.
-    /// 
+    ///
     /// @param oid
     ///   The OID of the sequence. [in]
     /// @param buffer
@@ -407,12 +407,12 @@ public:
                     SSeqDBSlice     * region,
                     CSeqDB::TSequenceRanges * masks,
                     CSeqDBLockHold  & locked) const;
-    
+
     /// Get the Seq-ids associated with a sequence.
-    /// 
+    ///
     /// This method returns a list containing all the CSeq_id objects
     /// associated with a sequence.
-    /// 
+    ///
     /// @param oid
     ///   The OID of the sequence. [in]
     /// @param locked
@@ -421,7 +421,7 @@ public:
     ///   The list of Seq-id objects for this sequences.
     list< CRef<CSeq_id> > GetSeqIDs(int                    oid,
                                     CSeqDBLockHold       & locked) const;
-    
+
     /// Get the GI of a sequence
     /// This method returns the gi of the sequence
     ///
@@ -429,24 +429,24 @@ public:
     ///   The OID of the sequence. [in]
     /// @return
     ///   The oid of the sequence
-    int GetSeqGI(int oid, CSeqDBLockHold & locked) const;
+    TGi GetSeqGI(int oid, CSeqDBLockHold & locked) const;
 
     /// Get the volume title.
     /// @return The volume's title.
     string GetTitle() const;
-    
+
     /// Get the formatting date of the volume.
     /// @return The create-date of the volume.
     string GetDate() const;
-    
+
     /// Get the number of OIDs for this volume.
     /// @return The number of OIDs.
     int GetNumOIDs() const;
-    
+
     /// Get the total length of this volume (in bases).
     /// @return The total volume length.
     Uint8 GetVolumeLength() const;
-    
+
     /// Get the length of the largest sequence in this volume.
     /// @return The largest sequence's length.
     int GetMaxLength() const;
@@ -454,21 +454,21 @@ public:
     /// Get the length of the smallest sequence in this volume.
     /// @return The smallest sequence's length.
     int GetMinLength() const;
-    
+
     /// Get the volume name.
     /// @return The volume name.
     const string & GetVolName() const
     {
         return m_VolName;
     }
-    
+
     /// Return expendable resources held by this volume.
-    /// 
+    ///
     /// This volume holds resources acquired via the atlas.  This
     /// method returns all such resources which can be automatically
     /// reacquired (but not, for example, the index file data).
     void UnLease();
-    
+
     /// Find the OID given a PIG.
     ///
     /// A lookup is done for the PIG, and if found, the corresponding
@@ -483,11 +483,11 @@ public:
     /// @return
     ///   True if the PIG was found.
     bool PigToOid(int pig, int & oid, CSeqDBLockHold & locked) const;
-    
+
     /// Find the PIG given an OID.
-    /// 
+    ///
     /// If this OID is associated with a PIG, the PIG is returned.
-    /// 
+    ///
     /// @param oid
     ///   The oid of the sequence. [in]
     /// @param pig
@@ -497,7 +497,7 @@ public:
     /// @return
     ///   True if a PIG was returned.
     bool GetPig(int oid, int & pig, CSeqDBLockHold & locked) const;
-    
+
     /// Find the OID given a TI.
     ///
     /// A lookup is done for the TI, and if found, the corresponding
@@ -514,7 +514,7 @@ public:
     bool TiToOid(Int8                   ti,
                  int                  & oid,
                  CSeqDBLockHold       & locked) const;
-    
+
     /// Find the OID given a GI.
     ///
     /// A lookup is done for the GI, and if found, the corresponding
@@ -528,8 +528,8 @@ public:
     ///   The lock holder object for this thread. [in]
     /// @return
     ///   True if an OID was returned.
-    bool GiToOid(int gi, int & oid, CSeqDBLockHold & locked) const;
-    
+    bool GiToOid(TGi gi, int & oid, CSeqDBLockHold & locked) const;
+
     /// Find the GI given an OID.
     ///
     /// If this OID is associated with a GI, the GI is returned.
@@ -543,9 +543,9 @@ public:
     /// @return
     ///   True if a GI was returned.
     bool GetGi(int                    oid,
-               int                  & gi,
+               TGi                  & gi,
                CSeqDBLockHold       & locked) const;
-    
+
     /// Find OIDs for the specified accession or formatted Seq-id.
     ///
     /// An attempt will be made to simplify the string by parsing it
@@ -564,7 +564,7 @@ public:
     void AccessionToOids(const string         & acc,
                          vector<int>          & oids,
                          CSeqDBLockHold       & locked) const;
-    
+
     /// Find OIDs for the specified Seq-id.
     ///
     /// The Seq-id will be formatted and the resulting string will be
@@ -581,7 +581,7 @@ public:
     void SeqidToOids(CSeq_id              & seqid,
                      vector<int>          & oids,
                      CSeqDBLockHold       & locked) const;
-    
+
     /// Find the OID at a given index into the database.
     ///
     /// This method considers the database as one long array of bases,
@@ -604,7 +604,7 @@ public:
     int GetOidAtOffset(int              first_seq,
                        Uint8            residue,
                        CSeqDBLockHold & locked) const;
-    
+
     /// Translate Gis to Oids for the given vector of Gi/Oid pairs.
     ///
     /// This method iterates over a vector of Gi/Oid pairs.  For each
@@ -619,7 +619,7 @@ public:
     ///   The lock holder object for this thread. [in]
     void IdsToOids(CSeqDBGiList   & gis,
                    CSeqDBLockHold & locked) const;
-    
+
     /// Add OIDs for this volume, filtered by negative ID lists.
     ///
     /// This method iterates over a vector of Gis or Tis.  For each
@@ -634,7 +634,7 @@ public:
     ///   The lock holder object for this thread. [in]
     void IdsToOids(CSeqDBNegativeList & gis,
                    CSeqDBLockHold     & locked) const;
-    
+
     /// Filter this volume using the specified GI list.
     ///
     /// A volume can be filtered by a GI list.  This method attaches a
@@ -647,14 +647,14 @@ public:
     {
         m_VolumeGiLists.push_back(gilist);
     }
-    
+
     /// Simplify the GI list configuration.
     ///
     /// When all user and volume GI lists have been attached, the user
     /// GI list may be removed; this is only possible if neither the
     /// user nor volume GI lists contain Seq-id data.
     void OptimizeGiLists() const;
-    
+
     /// Fetch data as a CSeq_data object.
     ///
     /// All or part of the sequence is fetched in a CSeq_data object.
@@ -674,7 +674,7 @@ public:
                                TSeqPos          begin,
                                TSeqPos          end,
                                CSeqDBLockHold & locked) const;
-    
+
     /// Get Raw Sequence and Ambiguity Data.
     ///
     /// Get a pointer to the raw sequence and ambiguity data, and the
@@ -697,26 +697,26 @@ public:
                            int            * seq_length,
                            int            * ambig_length,
                            CSeqDBLockHold & locked) const;
-    
+
     /// Get GI Bounds.
-    /// 
+    ///
     /// Fetch the lowest, highest, and total number of GIs.  If the
     /// operation fails, zero will be returned for count.
-    /// 
+    ///
     /// @param low_id Lowest GI value in database. [out]
     /// @param high_id Highest GI value in database. [out]
     /// @param count Number of GI values in database. [out]
     /// @param locked Lock holder object for this thread. [in]
-    void GetGiBounds(int            & low_id,
-                     int            & high_id,
+    void GetGiBounds(TGi            & low_id,
+                     TGi            & high_id,
                      int            & count,
                      CSeqDBLockHold & locked) const;
-    
+
     /// Get PIG Bounds.
-    /// 
+    ///
     /// Fetch the lowest, highest, and total number of PIGs.  If the
     /// operation fails, zero will be returned for count.
-    /// 
+    ///
     /// @param low_id Lowest PIG value in database. [out]
     /// @param high_id Highest PIG value in database. [out]
     /// @param count Number of PIG values in database. [out]
@@ -725,13 +725,13 @@ public:
                       int            & high_id,
                       int            & count,
                       CSeqDBLockHold & locked) const;
-    
+
     /// Get String Bounds.
-    /// 
+    ///
     /// Fetch the lowest, highest, and total number of string keys in
     /// the database index.  If the operation fails, zero will be
     /// returned for count.
-    /// 
+    ///
     /// @param low_id Lowest string value in database. [out]
     /// @param high_id Highest string value in database. [out]
     /// @param count Number of string values in database. [out]
@@ -740,10 +740,10 @@ public:
                          string         & high_id,
                          int            & count,
                          CSeqDBLockHold & locked) const;
-    
+
     /// List of sequence offset ranges.
     typedef set< pair<int, int> > TRangeList;
-    
+
     /// Apply a range of offsets to a database sequence.
     ///
     /// The GetAmbigSeq() method requires an amount of work (and I/O)
@@ -780,7 +780,7 @@ public:
                          bool               append_ranges,
                          bool               cache_data,
                          CSeqDBLockHold   & locked) const;
-    
+
     /// Flush all offset ranges cached
     /// @param locked        Lock holder object for this thread. [in]
     void FlushOffsetRangeCache(CSeqDBLockHold& locked);
@@ -793,7 +793,7 @@ public:
     /// @param oid The sequence to compute the hash of. [in]
     /// @return The sequence hash.
     unsigned GetSequenceHash(int oid);
-    
+
     /// Get the OIDs for a given sequence hash.
     ///
     /// The OIDs corresponding to a hash value (if any) are found and
@@ -808,11 +808,11 @@ public:
     void HashToOids(unsigned         hash,
                     vector<int>    & oids,
                     CSeqDBLockHold & locked) const;
-    
+
     /// List the titles of all columns for this volume.
     void ListColumns(set<string>    & titles,
                      CSeqDBLockHold & locked);
-    
+
     /// Get an ID number for a given column title.
     ///
     /// For a given column title, this returns an ID that can be used
@@ -825,7 +825,7 @@ public:
     /// @return Column ID number for this column, or -1. [in]
     int GetColumnId(const string   & title,
                     CSeqDBLockHold & locked);
-    
+
     /// Get all metadata for the specified column.
     ///
     /// Columns may contain user-defined metadata as a list of
@@ -837,14 +837,14 @@ public:
     /// If this is unsatisfactory, the two-argument version of this
     /// method may be used to get more precise values for specific
     /// volumes.
-    /// 
+    ///
     /// @param col_id The column id from GetColumnId. [in]
     /// @param locked The lock holder object for this thread. [in]
     /// @return The map of metadata for this column. [out]
     const map<string,string> &
     GetColumnMetaData(int              col_id,
                       CSeqDBLockHold & locked);
-    
+
     /// Fetch the data blob for the given column and oid.
     ///
     /// This method finds the blob data for this OID and column, and
@@ -873,11 +873,11 @@ public:
                        CBlastDbBlob   & blob,
                        bool             keep,
                        CSeqDBLockHold & locked);
-    
+
     /// Set the MEMB_BIT fitlering for this volume.
     ///
     /// This method sets the MEMB_BIT for the volume.  If the
-    /// MEMB_BIT has already been set, and the new bit is different, 
+    /// MEMB_BIT has already been set, and the new bit is different,
     /// exception will be thrown.   This prevents conflicting MEMB_BIT
     /// settings within an alias tree; nevertheless, it also prevents
     /// aggregating the same volume with different MEMB_BIT settings,
@@ -905,25 +905,25 @@ private:
 
     /// A set of GI lists.
     typedef vector< CRef<CSeqDBGiList> > TGiLists;
-    
+
     /// Returns true if this volume has a positive ID list.
     bool x_HaveGiList() const
     {
         return ! (m_UserGiList.Empty() && m_VolumeGiLists.empty());
     }
-    
+
     /// Returns true if this volume has a negative ID list.
     bool x_HaveNegativeList() const
     {
         return m_NegativeList.NotEmpty();
     }
-    
+
     /// Returns true if this volume has an ID list.
     bool x_HaveIdFilter() const
     {
         return x_HaveGiList() || x_HaveNegativeList();
     }
-    
+
     /// Determine if a user ID list affects this ID, and how.
     ///
     /// This is used to accumulate information about a Seq-id in two
@@ -956,7 +956,7 @@ private:
                 have_user = true;
             }
         }
-        
+
         if (! have_vol) {
             if (m_VolumeGiLists.empty()) {
                 have_vol = true;
@@ -970,7 +970,7 @@ private:
             }
         }
     }
-    
+
     /// Returns true if this volume's ID list has this Seq-id.
     /// @param L A GI list to test against. [in]
     /// @param id A Seq-id to test against L. [in]
@@ -979,7 +979,7 @@ private:
     {
         return L.FindId(id);
     }
-    
+
     /// Returns true if this ID is not found in the negative ID list.
     ///
     /// This checks whether an ID is found in the negative ID list,
@@ -1001,26 +1001,26 @@ private:
     {
         // A defline is included IFF either a GI or TI is found, and
         // that ID is not on the list.
-        
+
         // I use the terms 'included' and 'mentioned' to describe the
         // negative list processing as follows: "A negative list
         // INCLUDES a TI or GI if that ID is not MENTIONED in the
         // negative list."
-        
+
         bool match_type = false;
         bool found = L.FindId(id, match_type);
-        
+
         return (! found) && match_type;
     }
-    
+
     /// Get sequence header object.
-    /// 
+    ///
     /// This method returns the sequence header information as an
     /// ASN.1 object.  Seq-ids of type "gnl|BL_ORD_ID|#" are stored as
     /// values relative to this volume.  If they will be returned to
     /// the user in any way, specify true for adjust_oids to adjust
     /// them to the global OID range.
-    /// 
+    ///
     /// @param oid
     ///   The OID of the sequence. [in]
     /// @param adjust_oids
@@ -1036,14 +1036,14 @@ private:
                  bool             adjust_oids,
                  bool           * changed,
                  CSeqDBLockHold & locked) const;
-    
+
     /// Get sequence header binary data.
-    /// 
+    ///
     /// This method returns the sequence header information as a
     /// reference to raw ASN.1 binary data.  This reference can be
     /// used until the next access to the Atlas layer or the header
     /// data memory lease.
-    /// 
+    ///
     /// @param oid
     ///   The OID of the sequence. [in]
     /// @param locked
@@ -1051,12 +1051,12 @@ private:
     /// @return
     ///   The Blast-def-line-set describing this sequence.
     CTempString x_GetHdrAsn1Binary(int oid, CSeqDBLockHold & locked) const;
-    
+
     /// Get binary sequence header information.
-    /// 
+    ///
     /// This method reads the sequence header information (as binary
     /// encoded ASN.1) into a supplied char vector.
-    /// 
+    ///
     /// @param oid
     ///   The OID of the sequence. [in]
     /// @param hdr_data
@@ -1067,15 +1067,15 @@ private:
     x_GetFilteredBinaryHeader(int                    oid,
                               vector<char>         & hdr_data,
                               CSeqDBLockHold       & locked) const;
-    
+
     /// Get sequence header information.
-    /// 
+    ///
     /// This method returns the set of Blast-def-line objects stored
     /// for each sequence.  These contain descriptive information
     /// related to the sequence.  If OID filtering is enabled and a
     /// membership bit is used, only deflines with that membership bit
     /// set will be returned.
-    /// 
+    ///
     /// @param oid
     ///   The OID of the sequence. [in]
     /// @param changed
@@ -1088,14 +1088,14 @@ private:
     x_GetFilteredHeader(int                    oid,
                         bool                 * changed,
                         CSeqDBLockHold       & locked) const;
-    
+
     /// Get sequence header information structures.
-    /// 
+    ///
     /// This method reads the sequence header information and returns
     /// a Seqdesc suitable for inclusion in a CBioseq.  This object
     /// will contain an opaque type, storing the sequence headers as
     /// binary ASN.1, wrapped in a C++ ASN.1 structure (CSeqdesc).
-    /// 
+    ///
     /// @param oid
     ///   The OID of the sequence. [in]
     /// @param locked
@@ -1104,12 +1104,12 @@ private:
     ///   The CSeqdesc to include in the CBioseq.
     CRef<CSeqdesc> x_GetAsnDefline(int                    oid,
                                    CSeqDBLockHold       & locked) const;
-    
+
     /// Returns 'p' for protein databases, or 'n' for nucleotide.
     char x_GetSeqType() const;
-    
+
     /// Get ambiguity information.
-    /// 
+    ///
     /// This method is used to fetch the ambiguity data for sequences
     /// in a nucleotide database.  The ambiguity data describes
     /// sections of the nucleotide sequence for which more than one of
@@ -1118,7 +1118,7 @@ private:
     /// the sequence which have such data.  This method only returns
     /// the array of integers, and does not interpret them, except for
     /// byte swapping.
-    /// 
+    ///
     /// @param oid
     ///   The OID of the sequence. [in]
     /// @param ambchars
@@ -1128,9 +1128,9 @@ private:
     void x_GetAmbChar(int              oid,
                       vector<Int4>   & ambchars,
                       CSeqDBLockHold & locked) const;
-    
+
     /// Get a sequence with ambiguous regions.
-    /// 
+    ///
     /// This method gets the sequence data, returning a pointer and
     /// the length of the sequence.  For nucleotide sequences, the
     /// data can be returned in one of two encodings.  Specify either
@@ -1139,7 +1139,7 @@ private:
     /// ways, enumerated in ESeqDBAllocType.  Specify eAtlas to use
     /// the Atlas code, eMalloc to use the malloc() function, or eNew
     /// to use the new operator.
-    /// 
+    ///
     /// @param oid
     ///   The OID of the sequence. [in]
     /// @param buffer
@@ -1161,7 +1161,7 @@ private:
                       SSeqDBSlice      * region,
                       CSeqDB::TSequenceRanges *masks,
                       CSeqDBLockHold   & locked) const;
-    
+
     /// Allocate memory in one of several ways.
     ///
     /// This method provides functionality to allocate memory with the
@@ -1180,7 +1180,7 @@ private:
     char * x_AllocType(size_t            length,
                        ESeqDBAllocType   alloc_type,
                        CSeqDBLockHold  & locked) const;
-    
+
     /// Get sequence data.
     ///
     /// The sequence data is found and returned for the specified
@@ -1191,7 +1191,7 @@ private:
     /// flags are true, this code may return the lock holder object
     /// before that point to reduce lock contention in multithreaded
     /// code.
-    /// 
+    ///
     /// @param oid
     ///     The ordinal ID of the sequence to get. [in]
     /// @param buffer
@@ -1212,9 +1212,9 @@ private:
                       CSeqDBLockHold & locked,
                       bool             can_release,
                       bool             in_lease = false) const;
-    
+
     /// Get partial sequence data.
-    /// 
+    ///
     /// The sequence data is found and returned for the specified oid
     /// and offset range.  If the region argument is non-null, the
     /// region endpoints are verified against the sequence endpoints.
@@ -1222,7 +1222,7 @@ private:
     /// that the code returns the length of the region in bases, but
     /// buffer is set to a pointer to the beginning of the sequence,
     /// not the beginning of the region.
-    /// 
+    ///
     /// @param oid
     ///   The ordinal ID of the sequence to get. [in]
     /// @param buffer
@@ -1243,7 +1243,7 @@ private:
                       CSeqDBLockHold & locked,
                       bool             can_release,
                       SSeqDBSlice    * region) const;
-    
+
     /// Get defline filtered by several criteria.
     ///
     /// This method returns the set of deflines for a sequence.  If
@@ -1251,7 +1251,7 @@ private:
     /// filtered by membership bit.  If there is a preferred GI is
     /// specified, the defline matching that GI (if found) will be
     /// moved to the front of the set.
-    /// 
+    ///
     /// @param oid
     ///     The ordinal ID of the sequence to get. [in]
     /// @param preferred_gi
@@ -1264,10 +1264,10 @@ private:
     ///     The defline set for the specified oid.
     CRef<CBlast_def_line_set>
     x_GetTaxDefline(int                    oid,
-                    int                    preferred_gi,
+                    TGi                    preferred_gi,
                     const CSeq_id        * preferred_seq_id,
                     CSeqDBLockHold       & locked);
-    
+
     /// Get taxonomic descriptions of a sequence.
     ///
     /// This method builds a set of CSeqdesc objects from taxonomic
@@ -1277,7 +1277,7 @@ private:
     /// matching that GI (if found) will be moved to the front of the
     /// set.  This method is called as part of the processing for
     /// building a CBioseq object.
-    /// 
+    ///
     /// @param oid
     ///     The ordinal ID of the sequence to get. [in]
     /// @param preferred_gi
@@ -1292,11 +1292,11 @@ private:
     ///     A list of CSeqdesc objects for the specified oid.
     list< CRef<CSeqdesc> >
     x_GetTaxonomy(int                    oid,
-                  int                    preferred_gi,
+                  TGi                    preferred_gi,
                   const CSeq_id        * preferred_seq_id,
                   CRef<CSeqDBTaxInfo>    tax_info,
                   CSeqDBLockHold       & locked);
-    
+
     /// Returns the base-offset of the specified oid.
     ///
     /// This method finds the starting offset of the OID relative to
@@ -1314,7 +1314,7 @@ private:
     /// @return
     ///     The offset in the volume of that sequence in bytes.
     Uint8 x_GetSeqResidueOffset(int oid, CSeqDBLockHold & locked) const;
-    
+
     /// Find all columns for this volume.
     ///
     /// This method looks for and opens any columns that might be
@@ -1323,7 +1323,7 @@ private:
     /// @param locked
     ///     The lock holder object for this thread. [in]
     void x_OpenAllColumns(CSeqDBLockHold & locked);
-    
+
     /// Check Seq-id versions for special sparse-id support case.
     ///
     /// The BlastDB `sparse indexing' feature omits versions when
@@ -1354,54 +1354,54 @@ private:
     void x_OpenTiFile(CSeqDBLockHold &locked) const;
     void x_OpenHashFile(CSeqDBLockHold &locked) const;
     void x_OpenOidFile(CSeqDBLockHold &locked) const;
-    
+
     /// The memory management layer.
     CSeqDBAtlas & m_Atlas;
-    
+
     /// True if the volume is protein, false for nucleotide.
     bool m_IsAA;
-    
+
     /// The name of this volume.
     string m_VolName;
-    
+
     /// Metadata plus offsets into the sequence, header, and ambiguity data.
     CRef<CSeqDBIdxFile> m_Idx;
-    
+
     /// Contains sequence data for this volume.
     mutable CRef<CSeqDBSeqFile> m_Seq;
-    
+
     /// Contains header (defline) information for this volume.
     mutable CRef<CSeqDBHdrFile> m_Hdr;
-    
+
     // These are mutable because they defer initialization.
-    
+
     /// Handles translation of GIs to OIDs.
     mutable CRef<CSeqDBIsam> m_IsamPig;
-    
+
     /// Handles translation of GIs to OIDs.
     mutable CRef<CSeqDBIsam> m_IsamGi;
-    
+
     /// Handles translation of strings (accessions) to OIDs.
     mutable CRef<CSeqDBIsam> m_IsamStr;
-    
+
     /// Handles translation of TI (trace ids) to OIDs.
     mutable CRef<CSeqDBIsam> m_IsamTi;
-    
+
     /// Handles translation of sequence hash value to OIDs.
     mutable CRef<CSeqDBIsam> m_IsamHash;
-    
+
     /// The GI index file (for fast oid->gi conversion)
     mutable CRef<CSeqDBGiIndex> m_GiIndex;
 
     /// This cache allows CBioseqs to share taxonomic objects.
     mutable CSeqDBIntCache< CRef<CSeqdesc> > m_TaxCache;
-    
+
     /// The user ID list, if one exists.
     mutable CRef<CSeqDBGiList> m_UserGiList;
-    
+
     /// The negative ID list, if one exists.
     mutable CRef<CSeqDBNegativeList> m_NegativeList;
-    
+
     /// The volume GI lists, if any exist.
     mutable TGiLists m_VolumeGiLists;
 
@@ -1410,22 +1410,22 @@ private:
 
     /// Cached/ranged sequence info type.
     typedef map<int, CRef<CSeqDBRangeList> > TRangeCache;
-    
+
     /// Cached/ranged sequence info.
     mutable TRangeCache m_RangeCache;
-    
+
     /// Starting OID of this volume.
     int m_VolStart;
-    
+
     /// First OID past end of this volume.
     int m_VolEnd;
-    
+
     /// Filtered defline plus whether binary data needed changes.
     typedef pair<CRef<CBlast_def_line_set>, bool> TDeflineCacheItem;
-    
+
     /// Cache of filtered deflines.
     mutable CSeqDBIntCache<TDeflineCacheItem> m_DeflineCache;
-    
+
     /// True if we have opened the columns for this volume.
     bool m_HaveColumns;
 
@@ -1438,7 +1438,7 @@ private:
     mutable bool m_TiFileOpened;
     mutable bool m_HashFileOpened;
     mutable bool m_OidFileOpened;
-    
+
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
     /// Set of columns defined for this volume.

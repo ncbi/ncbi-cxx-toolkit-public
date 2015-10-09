@@ -85,7 +85,7 @@ public:
     /// in the column_blob vector.  If this OID does not have a data
     /// object for this column, either the column may be missing from
     /// the list, or the blob data string should be empty.
-    /// 
+    ///
     /// @param sequence Sequence data packed in BlastDB disk format. [out]
     /// @param ambiguities Ambiguities packed in BlastDB disk format. [out]
     /// @param deflines This OID's headers as a Blast-def-line-set. [out]
@@ -97,23 +97,23 @@ public:
                          vector<SBlastDbMaskData>  & mask_ranges,
                          vector<int>               & column_ids,
                          vector<CTempString>       & column_blobs) = 0;
-    
+
 #if ((!defined(NCBI_COMPILER_WORKSHOP) || (NCBI_COMPILER_VERSION  > 550)) && \
      (!defined(NCBI_COMPILER_MIPSPRO)) )
     /// Get the names of all columns defined by this sequence source.
     /// @param names A list of column names. [out]
     virtual void GetColumnNames(vector<string> & names) = 0;
-    
+
     /// Get the column ID for a column mentioned by name.
     /// @param name The name (column title) of the column. [in]
     /// @return The corresponding Column-ID.
     virtual int GetColumnId(const string & name) = 0;
-    
+
     /// Get metadata for the column with the specified Column ID.
     /// @param id The column-id for which to get meta-data. [in]
     /// @return All meta-data for this column-id.
     virtual const map<string,string> & GetColumnMetaData(int id) = 0;
-#endif    
+#endif
 };
 
 /// An interface providing lookups of mask-data by Seq-id.
@@ -122,12 +122,12 @@ public:
     /// Get ranges of masking data for the given Seq-ids.
     /// @param id Seq-ids for which to get masking data.
     /// @return Masking data for these Seq-ids.
-    virtual CMaskedRangesVector & 
+    virtual CMaskedRangesVector &
         GetRanges(const list< CRef<CSeq_id> > & id) = 0;
 };
 
 /// Build BlastDB format databases from various data sources.
-/// 
+///
 /// This class provides an API for building BlastDB format databases.
 /// The WriteDB library is used internally to produce the actual
 /// database; the functionality provided by this class helps to bridge
@@ -156,11 +156,11 @@ public:
                    CWriteDB::TIndexType   indexing,
                    bool                   use_gi_mask,
                    ostream              * logfile);
-    
+
     // Note -- should deprecate (or just remove) the following one:
     // - sparse does nothing
     // - parse_seqids is always true
-    
+
     /// Constructor.
     ///
     /// Create a database with the specified name, type, and other
@@ -185,7 +185,7 @@ public:
                    ostream              * logfile);
 
     ~CBuildDatabase();
-    
+
     /// Specify a mapping of sequence ids to taxonomic ids.
     ///
     /// When adding sequences CBuildDatabase will use the object
@@ -194,7 +194,7 @@ public:
     ///
     /// @param taxids An object providing defline-to-TaxID lookups. [in]
     void SetTaxids(CTaxIdSet & taxids);
-    
+
     /// Specify letters to mask out of protein sequence data.
     ///
     /// Protein sequences sometimes contain rare (or recently defined)
@@ -205,7 +205,7 @@ public:
     ///
     /// @param taxids An object providing defline-to-TaxID lookups. [in]
     void SetMaskLetters(const string & mask_letters);
-    
+
     /// Specify source database(s) via the database name(s).
     ///
     /// The provided name will be used to find a source database (or
@@ -214,7 +214,7 @@ public:
     ///
     /// @param src_db_name Database name of the source database. [in]
     void SetSourceDb(const string & src_db_name);
-    
+
     /// Specify source database.
     ///
     /// The provided source database will be used to look up sequence
@@ -222,7 +222,7 @@ public:
     ///
     /// @param src_db The source database. [in]
     void SetSourceDb(CRef<CSeqDBExpert> src_db);
-    
+
     /// Specify a linkout bit lookup object.
     ///
     /// The provided mapping will be used to look up linkout bits for
@@ -231,7 +231,7 @@ public:
     /// @param src_db The source database. [in]
     void SetLinkouts(const TLinkoutMap & linkouts,
                      bool                keep_links);
-    
+
     /// Specify a membership bit lookup object.
     ///
     /// The provided mapping will be used to look up membership bit
@@ -240,7 +240,7 @@ public:
     /// @param src_db The source database. [in]
     void SetMembBits(const TLinkoutMap & membbits,
                      bool                keep_mbits);
-    
+
     /// Build the database.
     ///
     /// This method builds a database from the given list of Sequence
@@ -250,17 +250,17 @@ public:
     /// additional logging is done with summary information.).
     ///
     /// @param ids List of identifiers to add to the database.
-    /// @param fasta_file FASTA format data for 
+    /// @param fasta_file FASTA format data for
     bool Build(const vector<string> & ids,
                CNcbiIstream         * fasta_file);
-    
+
     /// Start building a new database.
     ///
     /// This method sets up a new database to begin receiving
     /// sequences.  It should be called before AddIds, AddFasta,
     /// AddSequences, or AddRawSequences is called.
     void StartBuild();
-    
+
     /// Add the specified sequences from the source database.
     ///
     /// The list of strings are interpreted as GIs if they're composed
@@ -279,7 +279,7 @@ public:
     /// @param ids List of sequence IDs as strings.
     /// @return true if all sequences were found locally or remotely.
     bool AddIds(const vector<string> & ids);
-    
+
     /// Add sequences from a file containing FASTA data.
     ///
     /// The provided file is expected to contain FASTA data for one or
@@ -289,7 +289,7 @@ public:
     /// @param fasta_file A file containing FASTA data.
     /// @return True if at least one sequence was added.
     bool AddFasta(CNcbiIstream & fasta_file);
-    
+
     /// Add sequences from an IBioseqSource object.
     ///
     /// The provided `src' object is queried using GetNext() to get a
@@ -302,7 +302,7 @@ public:
     /// @param add_pig true if PIG should be added if available
     /// @return True if at least one sequence was added.
     bool AddSequences(IBioseqSource & src, bool add_pig = false);
-    
+
     /// Add sequences from an IRawSequenceSource object.
     ///
     /// The provided `src' object is queried using GetNext() to get
@@ -315,7 +315,7 @@ public:
     /// @param src An object providing one or more "raw" sequences.
     /// @return True if at least one sequence was added.
     bool AddSequences(IRawSequenceSource & src);
-    
+
     /// Finish building a new database.
     ///
     /// This method closes the newly constructed database, flushing
@@ -323,7 +323,7 @@ public:
     /// volumes together, and so on.
     /// @param erase Will erase all files created if true.
     bool EndBuild(bool erase = false);
-    
+
     /// Specify whether to use remote fetching for locally absent IDs.
     ///
     /// If identifiers in the list provided to Build or to AddIds is
@@ -355,14 +355,14 @@ public:
     {
         m_UseRemote = use_remote;
     }
-    
+
     /// Specify level of output verbosity.
     /// @param v Specify true if output should be more detailed.
     void SetVerbosity(bool v)
     {
         m_Verbose = v;
     }
-    
+
     /// Set the maximum size of database component files.
     ///
     /// This will specify the maximum size of file that will be
@@ -372,7 +372,7 @@ public:
     ///
     /// @param max_file_size Maximum file size in bytes.
     void SetMaxFileSize(Uint8 max_file_size);
-    
+
     /// Define a masking algorithm.
     ///
     /// The returned integer ID will be defined as corresponding to the
@@ -388,10 +388,10 @@ public:
     /// The empty string should be used to indicate default parameters. [in]
     /// @param name Name of the GI-base mask file [in]
     int
-    RegisterMaskingAlgorithm(EBlast_filter_program program, 
+    RegisterMaskingAlgorithm(EBlast_filter_program program,
                              const string        & options,
                              const string        & name = "");
-    
+
     /// Define a masking algorithm.
     ///
     /// The returned integer ID will be defined as corresponding to the
@@ -409,7 +409,7 @@ public:
     RegisterMaskingAlgorithm(const string        & program,
                              const string        & description,
                              const string        & options);
-    
+
     /// Specify an object mapping Seq-id to subject masking data.
     ///
     /// Masking data is provided to CBuildDatabase by implementing an
@@ -421,17 +421,17 @@ public:
     ///
     /// @param ranges An object mapping Seq-ids to their masking data.
     void SetMaskDataSource(IMaskDataSource & ranges);
-    
+
 private:
     /// Get a scope for remote loading of objects.
     objects::CScope & x_GetScope();
-    
+
     /// Duplicate IDs from local databases.
-    /// 
+    ///
     /// This method iterates over the list of IDs, copying sequences
     /// found in the source databases to the output database.
     void x_DupLocal();
-    
+
     /// Resolve an ID remotely.
     ///
     /// This method looks up the given ID via remote services in order
@@ -444,8 +444,8 @@ private:
     ///
     /// @param seqid Sequence identifier to look up remotely. [in|out]
     /// @param gi Genomic ID if one is found, otherwise 0. [out]
-    void x_ResolveRemoteId(CRef<objects::CSeq_id> & seqid, int & gi);
-    
+    void x_ResolveRemoteId(CRef<objects::CSeq_id> & seqid, TGi & gi);
+
     /// Resolve various input IDs (as strings) to GIs.
     ///
     /// The input IDs are examined, the type of each is determined as
@@ -456,7 +456,7 @@ private:
     /// @param ids List of strings representing IDs to resolve.
     /// @return GI list produced from the input ids.
     CRef<CInputGiList> x_ResolveGis(const vector<string> & ids);
-    
+
     /// Modify deflines with linkout and membership bits and taxids.
     ///
     /// The provided deflines are modified: the taxid is set (0 is
@@ -469,7 +469,7 @@ private:
     /// Add pig if id can be extracted from the deflines
     /// @param headers Headers to extract the id if available.
     void x_AddPig(CRef<objects::CBlast_def_line_set> headers);
-    
+
     /// Modify a Bioseq as needed and add it to the database.
     ///
     /// The provided Bioseq is added to the database.  Modifications
@@ -484,14 +484,14 @@ private:
     bool x_EditAndAddBioseq(CConstRef<objects::CBioseq>   bs,
                             objects::CSeqVector         * sv,
                             bool 						  add_pig = false);
-    
+
     /// Add the masks for the Seq-id(s) (usually just one) to the database
     /// being created
     /// @param ids Seq-id(s) of the sequence to which masks should be added [in]
     void x_AddMasksForSeqId(const list< CRef<CSeq_id> >& ids);
 
     /// Duplicate IDs from local databases.
-    /// 
+    ///
     /// This method iterates over the list of IDs; any IDs that were
     /// not found in the source database are added by fetching the
     /// sequence from remote services.  (Whether an ID was found
@@ -501,12 +501,12 @@ private:
     /// @param gi_list A list of GIs and Seq-ids.
     /// @return True if all IDs could be added.
     bool x_AddRemoteSequences(CInputGiList & gi_list);
-    
+
     /// Write log messages for any unresolved IDs.
     /// @param gi_list List of GIs and Seq-ids.
     /// @return True if all sequences were resolved.
     bool x_ReportUnresolvedIds(const CInputGiList & gi_list) const;
-    
+
     /// Store linkout and membership bits in provided headers.
     ///
     /// Each Seq-id found in each defline in the provided headers will
@@ -516,11 +516,11 @@ private:
     ///
     /// @param headers These deflines will be modified. [in|out]
     void x_SetLinkAndMbit(CRef<objects::CBlast_def_line_set> headers);
-    
+
     /// Fetch a sequence from the remote service and add it to the db.
     ///
     /// The provided Seq-id will be used to fetch a Bioseq remotely,
-    /// and this Bioseq will be added to this database.  If 
+    /// and this Bioseq will be added to this database.  If
     ///
     /// @param seqid Identifies the sequence to fetch. [in]
     /// @param found Will be set to true if a sequence was found. [out]
@@ -528,7 +528,7 @@ private:
     void x_AddOneRemoteSequence(const objects::CSeq_id & seqid,
                                 bool          & found,
                                 bool          & error);
-    
+
     /// Determine if this string ID can be found in the source database.
     ///
     /// The provided string will be looked up as an accession in the
@@ -546,55 +546,55 @@ private:
     bool x_ResolveFromSource(const string & acc, CRef<objects::CSeq_id> & id);
 
     bool x_EndBuild(bool erase, const CException * close_exception);
-    
+
     /// True for a protein database, false for nucleotide.
     bool m_IsProtein;
-    
+
     /// True to keep linkout bits from source dbs, false to discard.
     bool m_KeepLinks;
-    
+
     /// Table of linkout bits to apply to sequences.
     TIdToBits m_Id2Links;
-    
+
     /// True to keep membership bits from source dbs, false to discard.
     bool m_KeepMbits;
-    
+
     /// Table of membership bits to apply to sequences.
     TIdToBits m_Id2Mbits;
-    
+
     /// Object manager, used for remote fetching.
     CRef<objects::CObjectManager>  m_ObjMgr;
-    
+
     /// Sequence scope, used for remote fetching.
     CRef<objects::CScope>          m_Scope;
-    
+
     /// Set of TaxIDs configured to apply to sequences.
     CRef<CTaxIdSet>       m_Taxids;
-    
+
     /// Database being produced here.
     CRef<CWriteDB>        m_OutputDb;
-    
+
     /// Database for duplicating sequences locally (-sourcedb option.)
     CRef<CSeqDBExpert>    m_SourceDb;
-    
+
     /// Subject masking data.
     CRef<IMaskDataSource> m_MaskData;
-    
+
     /// Logfile.
     ostream & m_LogFile;
-    
+
     /// Whether to use remote resolution and sequence fetching.
     bool m_UseRemote;
-    
+
     /// Define count.
     int m_DeflineCount;
-    
+
     /// Number of OIDs stored in this database.
     int m_OIDCount;
-    
+
     /// If true, more detailed log messages will be produced.
     bool m_Verbose;
-    
+
     /// If true, string IDs found in FASTA input will be parsed as Seq-ids.
     bool m_ParseIDs;
 

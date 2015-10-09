@@ -392,14 +392,14 @@ void CSeqDB::GetTaxIDs(int             oid,
                        bool            persist) const
 {
     m_Impl->Verify();
-    typedef map<int, int> TmpMap;
+    typedef map<TGi, int> TmpMap;
     TmpMap gi_to_taxid_tmp;
     m_Impl->GetTaxIDs(oid, gi_to_taxid_tmp, persist);
     if ( !persist ) {
         gi_to_taxid.clear();
     }
     ITERATE ( TmpMap, it, gi_to_taxid_tmp ) {
-        gi_to_taxid[GI_FROM(int, it->first)] = it->second;
+        gi_to_taxid[it->first] = it->second;
     }
     m_Impl->Verify();
 }
@@ -420,14 +420,14 @@ void CSeqDB::GetLeafTaxIDs(
 ) const
 {
     m_Impl->Verify();
-    typedef map<int, set<int> > TmpMap;
+    typedef map<TGi, set<int> > TmpMap;
     TmpMap gi_to_taxid_set_tmp;
     m_Impl->GetLeafTaxIDs(oid, gi_to_taxid_set_tmp, persist);
     if ( !persist ) {
         gi_to_taxid_set.clear();
     }
     ITERATE ( TmpMap, it, gi_to_taxid_set_tmp ) {
-        gi_to_taxid_set[GI_FROM(int, it->first)] = it->second;
+        gi_to_taxid_set[it->first] = it->second;
     }
     m_Impl->Verify();
 }
@@ -447,7 +447,7 @@ CRef<CBioseq>
 CSeqDB::GetBioseq(int oid, TGi target_gi, const CSeq_id * target_id) const
 {
     m_Impl->Verify();
-    CRef<CBioseq> rv = m_Impl->GetBioseq(oid, GI_TO(int, target_gi), target_id, true);
+    CRef<CBioseq> rv = m_Impl->GetBioseq(oid, target_gi, target_id, true);
     m_Impl->Verify();
 
     return rv;
@@ -457,7 +457,7 @@ CRef<CBioseq>
 CSeqDB::GetBioseqNoData(int oid, TGi target_gi, const CSeq_id * target_id) const
 {
     m_Impl->Verify();
-    CRef<CBioseq> rv = m_Impl->GetBioseq(oid, GI_TO(int, target_gi), target_id, false);
+    CRef<CBioseq> rv = m_Impl->GetBioseq(oid, target_gi, target_id, false);
     m_Impl->Verify();
 
     return rv;
@@ -700,7 +700,7 @@ list< CRef<CSeq_id> > CSeqDB::GetSeqIDs(int oid) const
 
 TGi CSeqDB::GetSeqGI(int oid) const
 {
-    return GI_FROM(int, m_Impl->GetSeqGI(oid));
+    return m_Impl->GetSeqGI(oid);
 }
 
 bool CSeqDB::PigToOid(int pig, int & oid) const
@@ -733,7 +733,7 @@ bool CSeqDB::TiToOid(Int8 ti, int & oid) const
 bool CSeqDB::GiToOid(TGi gi, int & oid) const
 {
     m_Impl->Verify();
-    bool rv = m_Impl->GiToOid(GI_TO(int, gi), oid);
+    bool rv = m_Impl->GiToOid(gi, oid);
     m_Impl->Verify();
 
     return rv;
@@ -742,9 +742,9 @@ bool CSeqDB::GiToOid(TGi gi, int & oid) const
 bool CSeqDB::OidToGi(int oid, TGi & gi) const
 {
     m_Impl->Verify();
-    int gi_tmp;
+    TGi gi_tmp;
     bool rv = m_Impl->OidToGi(oid, gi_tmp);
-    gi = GI_FROM(int, gi_tmp);
+    gi = gi_tmp;
     m_Impl->Verify();
 
     return rv;
@@ -758,9 +758,9 @@ bool CSeqDB::PigToGi(int pig, TGi & gi) const
     int oid(0);
 
     if (m_Impl->PigToOid(pig, oid)) {
-        int gi_tmp;
+        TGi gi_tmp;
         rv = m_Impl->OidToGi(oid, gi_tmp);
-        gi = GI_FROM(int, gi_tmp);
+        gi = gi_tmp;
     }
     m_Impl->Verify();
 
@@ -774,7 +774,7 @@ bool CSeqDB::GiToPig(TGi gi, int & pig) const
 
     int oid(0);
 
-    if (m_Impl->GiToOid(GI_TO(int, gi), oid)) {
+    if (m_Impl->GiToOid(gi, oid)) {
         rv = m_Impl->OidToPig(oid, pig);
     }
 
@@ -795,10 +795,13 @@ void CSeqDB::AccessionToOids(const string & acc, vector<int> & oids) const
 
     if (oids.empty()) {
         try {
-            TIntId gi = NStr::StringToNumeric<TIntId>(acc, NStr::fConvErr_NoThrow);
+            TGi gi = GI_FROM(
+                    TIntId,
+                    NStr::StringToNumeric<TIntId>(acc, NStr::fConvErr_NoThrow)
+            );
             int oid(-1);
 
-            if (gi > 0 && m_Impl->GiToOidwFilterCheck(gi, oid)) {
+            if (gi > ZERO_GI  &&  m_Impl->GiToOidwFilterCheck(gi, oid)) {
                     oids.push_back(oid);
             }
         }
@@ -912,8 +915,8 @@ CSeqDB::GiToBioseq(TGi gi) const
     CRef<CBioseq> bs;
     int oid(0);
 
-    if (m_Impl->GiToOid(GI_TO(int, gi), oid)) {
-        bs = m_Impl->GetBioseq(oid, GI_TO(int, gi), NULL, true);
+    if (m_Impl->GiToOid(gi, oid)) {
+        bs = m_Impl->GetBioseq(oid, gi, NULL, true);
     }
 
     m_Impl->Verify();
@@ -930,7 +933,7 @@ CSeqDB::PigToBioseq(int pig) const
     CRef<CBioseq> bs;
 
     if (m_Impl->PigToOid(pig, oid)) {
-        bs = m_Impl->GetBioseq(oid, 0, NULL, true);
+        bs = m_Impl->GetBioseq(oid, ZERO_GI, NULL, true);
     }
 
     m_Impl->Verify();
@@ -949,7 +952,7 @@ CSeqDB::SeqidToBioseq(const CSeq_id & seqid) const
     m_Impl->SeqidToOids(seqid, oids, false);
 
     if (! oids.empty()) {
-        bs = m_Impl->GetBioseq(oids[0], 0, &seqid, true);
+        bs = m_Impl->GetBioseq(oids[0], ZERO_GI, &seqid, true);
     }
 
     m_Impl->Verify();
@@ -1512,7 +1515,7 @@ CWgsDbTrimmer::x_ReadGiListsForDbs()
             CNcbiOstrstream oss;
             oss << m_Path << "/" << CDirEntry(*wgs_db_name).GetName() << kExtn;
             string fname = CNcbiOstrstreamToString(oss);
-            vector<int> gis;
+            vector<TGi> gis;
             try {
                 bool in_order = false;
                 SeqDB_ReadGiList(fname, gis, &in_order);
@@ -1522,8 +1525,8 @@ CWgsDbTrimmer::x_ReadGiListsForDbs()
             } catch (...) {} // if there's no GI list, save it
             vector<TGi>& dst = retval[*wgs_db_name];
             dst.clear();
-            ITERATE ( vector<int>, it, gis ) {
-                dst.push_back(GI_FROM(int, *it));
+            ITERATE ( vector<TGi>, it, gis ) {
+                dst.push_back(*it);
             }
             _TRACE("Read " << gis.size() << " from " << fname);
         }

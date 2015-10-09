@@ -55,10 +55,10 @@ USING_SCOPE(objects);
 class NCBI_XOBJREAD_EXPORT CSeqDBExpert : public CSeqDB {
 public:
     /// Short Constructor
-    /// 
+    ///
     /// This version of the constructor assumes memory mapping and
     /// that the entire possible OID range will be included.
-    /// 
+    ///
     /// @param dbname
     ///   A list of database or alias names, seperated by spaces
     /// @param seqtype
@@ -68,7 +68,7 @@ public:
     CSeqDBExpert(const string & dbname,
                  ESeqType seqtype,
                  CSeqDBGiList * gilist = 0);
-    
+
     /// Constructor with MMap Flag and OID Range.
     ///
     /// If the oid_end value is specified as zero, or as a value
@@ -78,7 +78,7 @@ public:
     /// version of the constructor is obsolete because the sequence
     /// type is specified as a character (eventually only the ESeqType
     /// version will exist).
-    /// 
+    ///
     /// @param dbname
     ///   A list of database or alias names, seperated by spaces.
     /// @param seqtype
@@ -101,21 +101,21 @@ public:
                  int            oid_end,
                  bool           use_mmap,
                  CSeqDBGiList * gi_list = 0);
-    
+
     /// Null Constructor
-    /// 
+    ///
     /// This version of the constructor does not open a specific blast
     /// database.  This is provided for cases where the application
     /// only needs 'global' resources like the taxonomy database.
     CSeqDBExpert();
-    
+
     /// Destructor.
     ///
     /// This will return resources acquired by this object, including
     /// any gotten by the GetSequence() call, whether or not they have
     /// been returned by RetSequence().
     ~CSeqDBExpert();
-    
+
     /// Raw Sequence and Ambiguity Data
     ///
     /// Get a pointer to the raw sequence and ambiguity data, and the
@@ -136,45 +136,45 @@ public:
                            const char ** buffer,
                            int         * seq_length,
                            int         * ambig_length) const;
-    
+
     /// Get GI Bounds.
-    /// 
+    ///
     /// Fetch the lowest, highest, and total number of GIs.  A value
     /// is returned for each non-null argument.  If the operation
     /// fails, an exception will be thrown, which probably indicates a
     /// missing index file.
-    /// 
+    ///
     /// @param low_id Lowest GI value in database. [out]
     /// @param high_id Highest GI value in database. [out]
     /// @param count Number of GI values in database. [out]
-    void GetGiBounds(int * low_id, int * high_id, int * count);
-    
+    void GetGiBounds(TGi * low_id, TGi * high_id, int * count);
+
     /// Get PIG Bounds.
-    /// 
+    ///
     /// Fetch the lowest, highest, and total number of PIGs.  A value
     /// is returned for each non-null argument.  If the operation
     /// fails, an exception will be thrown, which probably indicates a
     /// missing index file.
-    /// 
+    ///
     /// @param low_id Lowest PIG value in database. [out]
     /// @param high_id Highest PIG value in database. [out]
     /// @param count Number of PIG values in database. [out]
     void GetPigBounds(int * low_id, int * high_id, int * count);
-    
+
     /// Get String Bounds.
-    /// 
+    ///
     /// Fetch the lowest, highest, and total number of string keys in
     /// the database index.  A value is returned for each non-null
     /// argument.  If the operation fails, an exception will be
     /// thrown, which probably indicates a missing index file.  Note
     /// that the number of string keys does not directly correspond to
     /// the number of deflines, Seq-ids, or accessions.
-    /// 
+    ///
     /// @param low_id Lowest string value in database. [out]
     /// @param high_id Highest string value in database. [out]
     /// @param count Number of string values in database. [out]
     void GetStringBounds(string * low_id, string * high_id, int * count);
-    
+
     /// Get the sequence hash for a given OID.
     ///
     /// The sequence data is fetched and the sequence hash is
@@ -183,7 +183,7 @@ public:
     /// @param oid The sequence to compute the hash of. [in]
     /// @return The sequence hash.
     unsigned GetSequenceHash(int oid);
-    
+
     /// Get the OIDs for a given sequence hash.
     ///
     /// The OIDs corresponding to a hash value are found and returned.
@@ -192,7 +192,7 @@ public:
     /// @param oids OIDs of sequences with this hash. [out]
     /// @return True if the hash value was found, false otherwise.
     void HashToOids(unsigned hash, vector<int> & oids);
-    
+
     /// Verify internal SeqDB data structures for consistency.
     void Verify();
 };

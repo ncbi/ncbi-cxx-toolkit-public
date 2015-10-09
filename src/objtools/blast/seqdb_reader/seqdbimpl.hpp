@@ -294,7 +294,7 @@ public:
     /// @param persist
     ///   If false, the map will be cleared before adding new entries.
     void GetTaxIDs(int             oid,
-                   map<int, int> & gi_to_taxid,
+                   map<TGi, int> & gi_to_taxid,
                    bool            persist);
 
     /// Get taxids for an OID.
@@ -334,7 +334,7 @@ public:
     ///   If false, the map will be cleared before adding new entries.
     void GetLeafTaxIDs(
             int                  oid,
-            map<int, set<int> >& gi_to_taxid_set,
+            map<TGi, set<int> >& gi_to_taxid_set,
             bool                 persist
     );
 
@@ -378,7 +378,7 @@ public:
     /// @return
     ///   A CBioseq object corresponding to the sequence.
     CRef<CBioseq> GetBioseq(int oid,
-                            int target_gi,
+                            TGi target_gi,
                             const CSeq_id * target_seq_id,
                             bool seqdata);
 
@@ -478,7 +478,7 @@ public:
     ///   The oid of the sequence.
     /// @return
     ///   GI or -1.
-    int GetSeqGI(int oid);
+    TGi GetSeqGI(int oid);
 
     /// Returns the database title.
     ///
@@ -669,14 +669,14 @@ public:
     bool TiToOid(Int8 ti, int & oid);
 
     /// Translate a GI to an OID.
-    bool GiToOid(int gi, int & oid) const;
+    bool GiToOid(TGi gi, int & oid) const;
 
     /// GiToOis is meant to simply return oid for a gi if one exisits
     /// This method finds the oid and checks if the oid is being filtered or not.
-    bool GiToOidwFilterCheck(int gi, int & oid);
+    bool GiToOidwFilterCheck(TGi gi, int & oid);
 
     /// Translate a GI to an OID.
-    bool OidToGi(int oid, int & gi);
+    bool OidToGi(int oid, TGi & gi);
 
     /// Find OIDs matching the specified string.
     void AccessionToOids(const string & acc,
@@ -863,7 +863,7 @@ public:
     /// @param low_id Lowest GI value in database. [out]
     /// @param high_id Highest GI value in database. [out]
     /// @param count Number of GI values in database. [out]
-    void GetGiBounds(int * low_id, int * high_id, int * count);
+    void GetGiBounds(TGi * low_id, TGi * high_id, int * count);
 
     /// Get PIG Bounds.
     ///
@@ -1224,7 +1224,7 @@ private:
     ///   The lock hold object for this thread.
     /// @return
     ///   GI or -1.
-    int x_GetSeqGI(int oid, CSeqDBLockHold & locked);
+    TGi x_GetSeqGI(int oid, CSeqDBLockHold & locked);
 
     /// Compute totals via iteration
     ///

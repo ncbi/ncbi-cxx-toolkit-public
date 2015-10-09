@@ -64,39 +64,39 @@ s_IsamExtension(EWriteDBIsamType itype,
                 bool             is_index)
 {
     char type_ch = '?';
-    
+
     switch(itype) {
     case ePig:
         type_ch = 'p';
         break;
-        
+
     case eGi:
         type_ch = 'n';
         break;
-        
+
     case eAcc:
         type_ch = 's';
         break;
-        
+
     case eTrace:
         type_ch = 't';
         break;
-        
+
     case eHash:
         type_ch = 'h';
         break;
-        
+
     default:
         NCBI_THROW(CWriteDBException,
                    eArgErr,
                    "Not implemented.");
     }
-    
+
     string extn("???");
     extn[0] = protein ? 'p' : 'n';
     extn[1] = type_ch;
     extn[2] = is_index ? 'i' : 'd';
-    
+
     return extn;
 }
 
@@ -112,7 +112,7 @@ CWriteDB_Isam::CWriteDB_Isam(EIsamType      itype,
                                         protein,
                                         index,
                                         max_file_size));
-    
+
     m_IFile.Reset(new CWriteDB_IsamIndex(itype,
                                          dbname,
                                          protein,
@@ -150,7 +150,7 @@ void CWriteDB_Isam::Close()
     // Index must be closed first, because ISAM indices are built in
     // memory until the volume is closed, and only then is anything
     // written to disk.
-    
+
     m_IFile->Close();
     m_DFile->Close();
 }
@@ -186,7 +186,7 @@ CWriteDB_IsamIndex::CWriteDB_IsamIndex(EWriteDBIsamType        itype,
     // too.  The index file can be larger than the data file, but only
     // if there are less than (about) 9 entries; at that size I'm not
     // concerned about the byte limits.
-    
+
     if (itype == eAcc || itype == eHash) {
         // If there is a maximum string size it's something large like
         // 4k per table line.  In practice, string table rows tend to
@@ -200,7 +200,7 @@ CWriteDB_IsamIndex::CWriteDB_IsamIndex(EWriteDBIsamType        itype,
         // This is far more than any current sequence currently uses.
         // If this is not enough, the max size limit may be violated
         // (but see the last sentence of paragraph 1).
-        
+
         m_BytesPerElem = 1024;
         m_PageSize = 64;
     } else {
@@ -220,7 +220,7 @@ void CWriteDB_IsamIndex::x_WriteHeader()
     int isam_type     = 0;
     int num_terms     = 0;
     int max_line_size = 0;
-    
+
     switch(m_Type) {
     case eGi:
     case ePig:
@@ -230,33 +230,33 @@ void CWriteDB_IsamIndex::x_WriteHeader()
         num_terms = (int) m_NumberTable.size();
         max_line_size = 0;
         break;
-        
+
     case eAcc:
     case eHash:
         isam_type = eIsamStringType; // string w/ data
         max_line_size = eMaxStringLine;
         num_terms = m_StringSort.Size();
         break;
-        
+
     default:
         NCBI_THROW(CWriteDBException,
                    eArgErr,
                    "Unknown id type specified.");
     }
-    
+
     int samples = s_DivideRoundUp(num_terms, m_PageSize);
-    
+
     // These should probably use be a WriteInt4 method which should be
     // added to the CWriteDB_File class.
-    
+
     WriteInt4(isam_version);
     WriteInt4(isam_type);
     WriteInt4((int)m_DataFileSize);
-    
+
     WriteInt4(num_terms);
     WriteInt4(samples);
     WriteInt4(m_PageSize);
-    
+
     WriteInt4(max_line_size);
     WriteInt4(m_Sparse ? 1 : 0);
     WriteInt4(0);
@@ -265,128 +265,128 @@ void CWriteDB_IsamIndex::x_WriteHeader()
 void CWriteDB_IsamIndex::x_FlushStringIndex()
 {
     _ASSERT(m_StringSort.Size());
-    
+
     // Note: This function can take a noticeable portion of the
     // database dumping time.  For some databases, the length of the
     // data file for the string index competes with the sequence file
     // to determine volumes seperation points.
-    
+
     // String ISAM files have four parts.  First, the standard
     // meta-data header.  Then (at address 36), we have a table of
     // page offsets.  After this is a table of key offsets in the
     // index file, then finally the list of keys.
-    
+
     int data_pos = 0;
     unsigned count = m_StringSort.Size();
-    
+
     unsigned nsamples = s_DivideRoundUp(count, m_PageSize);
-    
+
     string key_buffer;
     vector<int> key_off;
-    
+
     // Reserve enough room, throwing in some extra.  Since we excerpt
     // every 64th entry, dividing by 64 would be exactly balanced.  To
     // make reallocation rare, I divide by 63 instead, and throw in an
     // extra 16 bytes.
-    
+
     key_buffer.reserve((int)(m_DataFileSize/63 + 16));
     key_off.reserve(nsamples);
-    
+
     unsigned i(0);
-    
+
     string NUL("x");
     NUL[0] = (char) 0;
-    
+
     int output_count = 0;
     int index = 0;
-    
+
     m_StringSort.Sort();
 
     CWriteDB_PackedSemiTree::Iterator iter = m_StringSort.Begin();
     CWriteDB_PackedSemiTree::Iterator end_iter = m_StringSort.End();
-    
+
     string element, prev_elem;
-    
+
     // A string containing a NUL cannot possibly be valid, so I'm
     // using one as the "not set yet" value.
-    
+
     element.resize(1);
     element[0] = char(0);
-    
+
     while(iter != end_iter) {
         prev_elem.swap(element);
         iter.Get(element);
-        
+
         if (prev_elem == element) {
             ++iter;
             continue;
         }
-        
+
         // For each element whose index is a multiple of m_PageSize
         // (starting with element zero), we add the record to the
         // index file.
-        
+
         // The page offset table can be written as it comes in, but
         // the key offsets and keys are not written until all the page
         // offsets have been written, so they are accumulated in a
         // vector (key_off) and string (key_buffer) respectively.
-        
+
         if ((output_count & (m_PageSize-1)) == 0) {
             // Write the data file position to the index file.
-            
+
             WriteInt4(data_pos);
-            
+
             // Store the overall index file position where the key
             // will be written.
-            
+
             key_off.push_back((int) key_buffer.size());
-            
+
             // Store the string record for the index file (but this
             // string is NUL terminated, whereas the data file rows
             // are line feed (aka newline) terminated.
-            
+
             key_buffer.append(element.data(), element.length()-1);
             key_buffer.append(NUL);
         }
         output_count ++;
-        
+
         data_pos = m_DataFile->Write(element);
         index ++;
-        
+
         ++iter;
     }
-    
+
     // Write the final data position.
-    
+
     WriteInt4(data_pos);
-    
+
     // Push back the final buffer offset.
-    
+
     key_off.push_back((int) key_buffer.size());
-    
+
     int key_off_start = eKeyOffset + (nsamples + 1) * 8;
-    
+
     // Write index file offsets of keys.
-    
+
     for(i = 0; i < key_off.size(); i++) {
         WriteInt4(key_off[i] + key_off_start);
     }
-    
+
     // Write buffer of keys.
-    
+
     Write(key_buffer);
 }
 
 void CWriteDB_IsamIndex::x_FlushNumericIndex()
 {
     _ASSERT(m_NumberTable.size());
-    
+
     int row_index = 0;
-    
+
     sort(m_NumberTable.begin(), m_NumberTable.end());
-    
+
     int count = (int) m_NumberTable.size();
-    
+
     const SIdOid * prevp = 0;
 
     // Note: could strip out code for 8/4 detection; then reorder this
@@ -399,53 +399,53 @@ void CWriteDB_IsamIndex::x_FlushNumericIndex()
     // at least TIs) are probably guaranteed not to exceed the limit;
     // in any case a conservative estimate of 12 bytes per ID could be
     // used for numeric or just for TI indices.
-    
+
     if (m_UseInt8) {
         for(int i = 0; i < count; i++) {
             const SIdOid & elem = m_NumberTable[i];
-            
+
             if (prevp && (*prevp == elem)) {
                 continue;
             } else {
                 prevp = & elem;
             }
-            
+
             if ((row_index & (m_PageSize-1)) == 0) {
                 WriteInt8(elem.id());
                 WriteInt4(elem.oid());
             }
-            
+
             m_DataFile->WriteInt8(elem.id());
             m_DataFile->WriteInt4(elem.oid());
             row_index ++;
         }
-        
+
         // 64 bit numeric files end in (max-uint8, 0).
-        
+
         WriteInt8(-1);
         WriteInt4(0);
     } else {
         for(int i = 0; i < count; i++) {
             const SIdOid & elem = m_NumberTable[i];
-            
+
             if (prevp && (*prevp == elem)) {
                 continue;
             } else {
                 prevp = & elem;
             }
-            
+
             if ((row_index & (m_PageSize-1)) == 0) {
                 WriteInt4(elem.id());
                 WriteInt4(elem.oid());
             }
-            
+
             m_DataFile->WriteInt4(elem.id());
             m_DataFile->WriteInt4(elem.oid());
             row_index ++;
         }
-        
+
         // 32 bit numeric files end in (max-uint4, 0).
-        
+
         WriteInt4(-1);
         WriteInt4(0);
     }
@@ -456,22 +456,22 @@ void CWriteDB_IsamIndex::x_Flush()
     if (m_NumberTable.size() || m_StringSort.Size()) {
         Create();
         m_DataFile->Create();
-        
+
         // Step 1: Write header data.
         x_WriteHeader();
-        
+
         // Step 2: Flush all data to the data file.
         //  A. Sort all entries up front with sort.
         //  B. Pick out periodic samples for the index, every 256 elements
         //     for numeric and every 64 for string.
-        
+
         if (m_Type == eAcc || m_Type == eHash) {
             x_FlushStringIndex();
         } else {
             x_FlushNumericIndex();
         }
     }
-    
+
     x_Free();
 }
 
@@ -501,7 +501,7 @@ void CWriteDB_IsamIndex::AddHash(int oid, int hash)
 {
     char buf[256];
     int sz = sprintf(buf, "%u", (unsigned)hash);
-    
+
     x_AddStringData(oid, buf, sz);
 }
 
@@ -509,9 +509,9 @@ void CWriteDB_IsamIndex::x_AddGis(int oid, const TIdList & idlist)
 {
     ITERATE(TIdList, iter, idlist) {
         const CSeq_id & seqid = **iter;
-        
+
         if (seqid.IsGi()) {
-            SIdOid row(seqid.GetGi(), oid);
+            SIdOid row(GI_TO(Int8, seqid.GetGi()), oid);
             m_NumberTable.push_back(row);
             m_DataFileSize += 8;
         }
@@ -522,23 +522,23 @@ void CWriteDB_IsamIndex::x_AddTraceIds(int oid, const TIdList & idlist)
 {
     ITERATE(TIdList, iter, idlist) {
         const CSeq_id & seqid = **iter;
-        
+
         if (seqid.IsGeneral() && seqid.GetGeneral().GetDb() == "ti") {
             const CObject_id & obj = seqid.GetGeneral().GetTag();
-            
+
             Int8 id = (obj.IsId()
                        ? obj.GetId()
                        : NStr::StringToInt8(obj.GetStr()));
-            
+
             SIdOid row(id, oid);
             m_NumberTable.push_back(row);
-            
+
             if (m_UseInt8) {
                 m_DataFileSize += 12;
             } else if (id >= kMax_Int) {
                 // Adjust the data file size to account for the
                 // already-stored IDs.
-                
+
                 m_UseInt8 = true;
                 m_DataFileSize /= 8;
                 m_DataFileSize *= 12;
@@ -553,7 +553,7 @@ void CWriteDB_IsamIndex::x_AddTraceIds(int oid, const TIdList & idlist)
 void CWriteDB_IsamIndex::x_AddStringIds(int oid, const TIdList & idlist)
 {
     // Build all sub-string objects and add those.
-    
+
     ITERATE(TIdList, iter, idlist) {
         const CSeq_id & seqid = **iter;
 
@@ -561,19 +561,19 @@ void CWriteDB_IsamIndex::x_AddStringIds(int oid, const TIdList & idlist)
 
         case CSeq_id::e_Gi:
             break;
-            
+
         case CSeq_id::e_Pdb:
             x_AddPdb(oid, seqid);
             break;
-            
+
         case CSeq_id::e_Local:
             x_AddLocal(oid, seqid);
             break;
-            
+
         case CSeq_id::e_Patent:
             x_AddPatent(oid, seqid);
             break;
-            
+
         case CSeq_id::e_General:
             if (! m_Sparse) {
                 x_AddStdString(oid, seqid.AsFastaString());
@@ -585,14 +585,14 @@ void CWriteDB_IsamIndex::x_AddStringIds(int oid, const TIdList & idlist)
             break;
 
         // default processing:
-        default: 
+        default:
             {
                 const CTextseq_id * textid  = seqid.GetTextseq_Id();
                 if (textid) {
                     x_AddTextId(oid, *textid);
                 } else {
                     string acc = seqid.AsFastaString();
-                    x_AddStringData(oid, acc.data(), acc.size()); 
+                    x_AddStringData(oid, acc.data(), acc.size());
                 }
             }
         }
@@ -603,7 +603,7 @@ void CWriteDB_IsamIndex::x_AddLocal(int             oid,
                                     const CSeq_id & seqid)
 {
     const CObject_id & objid = seqid.GetLocal();
-    
+
     if (! m_Sparse) {
         x_AddStdString(oid, seqid.AsFastaString());
     }
@@ -624,7 +624,7 @@ void CWriteDB_IsamIndex::x_AddPdb(int             oid,
                                   const CSeq_id & seqid)
 {
     const CPDB_seq_id & pdb = seqid.GetPdb();
-    
+
     // Sparse mode:
     //
     // "102l"
@@ -636,7 +636,7 @@ void CWriteDB_IsamIndex::x_AddPdb(int             oid,
     // "102l  "
     // "102l| "
     // "pdb|102l| "
-    
+
     CTempString mol;
     if (pdb.CanGetMol()) {
         mol = pdb.GetMol().Get();
@@ -653,19 +653,19 @@ void CWriteDB_IsamIndex::x_AddPdb(int             oid,
     if (! m_Sparse) {
         x_AddStdString(oid, full_id);
     }
-    
+
     string short_id(full_id, 4);
     x_AddStdString(oid, short_id);
-   
+
     int len = short_id.size();
     if (short_id[len-2] == '|') {
         short_id[len-2] = ' ';
-    } else { 
+    } else {
         // This is lower case chain encoding, i.e., xxxx|a -> xxxx|AA
         _ASSERT(short_id[len-1] == short_id[len-2]);
         _ASSERT(short_id[len-3] == '|');
         short_id[len-3] = ' ';
-    } 
+    }
     x_AddStdString(oid, short_id);
 }
 
@@ -676,7 +676,7 @@ bool s_NoCaseEqual(CTempString & a, CTempString & b)
 {
     if (a.size() != b.size())
         return false;
-    
+
     return 0 == NStr::strncasecmp(a.data(), b.data(), a.size());
 }
 
@@ -684,32 +684,32 @@ void CWriteDB_IsamIndex::x_AddTextId(int                 oid,
                                      const CTextseq_id & id)
 {
     CTempString acc, nm;
-    
+
     // Note: if there is no accession, the id will not be added to a
     // sparse databases (even if there is a name).
-    
+
     if (id.CanGetAccession()) {
         acc = id.GetAccession();
     }
-    
+
     if (id.CanGetName()) {
         nm = id.GetName();
     }
-    
+
     if (! acc.empty()) {
         x_AddStringData(oid, acc);
     }
-    
+
     if (! m_Sparse) {
         // Skip name if it is empty or if it is the same as 'acc' when
         // case is ignored.
-        
+
         if (! (nm.empty() || s_NoCaseEqual(acc, nm))) {
             x_AddStringData(oid, nm);
         }
-        
+
         int ver = id.CanGetVersion() ? id.GetVersion() : 0;
-        
+
         if (ver && acc.size()) {
             x_AddString(oid, acc, ver);
         }
@@ -738,18 +738,18 @@ void CWriteDB_IsamIndex::x_AddStringData(int oid, const char * sbuf, int ssize)
     //    be used.
     //
     // 5. User would need to return strings they were done with.
-    
+
     char buf[256];
-    
+
     int sz = ssize;
     memcpy(buf, sbuf, sz);
     _ASSERT(sz);
-    
+
     // lowercase the 'key' portion
     for(int i = 0; i < sz; i++) {
         buf[i] = tolower(buf[i]);
     }
-    
+
     buf[sz++] = (char) eKeyDelim;
     sz += sprintf(buf + sz, "%d", oid);
     buf[sz++] = (char) eRecordDelim;
@@ -759,7 +759,7 @@ void CWriteDB_IsamIndex::x_AddStringData(int oid, const char * sbuf, int ssize)
         m_Oid = oid;
         m_OidStringData.clear();
     }
-    
+
     string tmp(buf, sz);
     pair< set<string>::iterator, bool> rv = m_OidStringData.insert(tmp);
     if (rv.second) {
@@ -771,14 +771,14 @@ void CWriteDB_IsamIndex::x_AddStringData(int oid, const char * sbuf, int ssize)
 void CWriteDB_IsamIndex::x_AddString(int oid, const CTempString & acc, int ver)
 {
     _ASSERT(! m_Sparse);
-    
+
     if (acc.size() && ver) {
         char buf[256];
         memcpy(buf, acc.data(), acc.size());
-        
+
         int sz = acc.size();
         sz += sprintf(buf + sz, ".%d", ver);
-        
+
         x_AddStringData(oid, buf, sz);
     }
 }
@@ -828,7 +828,7 @@ bool CWriteDB_IsamIndex::Empty() const
 {
     // Also test 'created' bit in case the file data has already
     // been dumped and cleared.
-    
+
     return ! (m_StringSort.Size() ||
               m_NumberTable.size() ||
               m_Created);

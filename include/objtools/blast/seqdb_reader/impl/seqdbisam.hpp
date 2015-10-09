@@ -32,10 +32,10 @@
 
 /// @file seqdbisam.hpp
 /// ISAM index database access object.
-/// 
+///
 /// Defines classes:
 ///     CSeqDBIsam
-/// 
+///
 /// Implemented for: UNIX, MS-Windows
 
 
@@ -55,12 +55,12 @@ s_AdvanceGiList(CSeqDBGiList & gis,
                 int            gis_size,
                 const T      & key)
 {
-    while( (gi_index < gis_size) 
+    while( (gi_index < gis_size)
        &&  (gis.GetKey<T>(gi_index) < key)) {
 
         ++gi_index;
         int jump = 2;
-        
+
         while( (gi_index + jump < gis_size)
            &&  (gis.GetKey<T>(gi_index + jump) < key)) {
 
@@ -68,9 +68,9 @@ s_AdvanceGiList(CSeqDBGiList & gis,
             jump *= 2;
         }
     }
-    
+
     // skipping translated elements
-    while( (gi_index < gis_size) 
+    while( (gi_index < gis_size)
        &&  (gis.IsValueSet<T>(gi_index) )) ++gi_index;
 }
 
@@ -82,20 +82,20 @@ s_AdvanceKeyList(const vector<T> & keys,
                  int               num_keys,
                  const T         & target)
 {
-    while( (index < num_keys) 
+    while( (index < num_keys)
        &&  (keys[index] <= target)) {
-        
+
         ++index;
         int jump = 2;
-        
-        while( (index + jump < num_keys) 
+
+        while( (index + jump < num_keys)
            &&  (keys[index + jump] <= target)) {
 
             index += jump;
             jump *= 2;
         }
     }
-    --index;    
+    --index;
 }
 
 // apply the translation (if we have it) for those GIs.
@@ -106,16 +106,16 @@ s_SetTranslation(CSeqDBGiList & gis,
                  const T      & key,
                  int            value)
 {
-    while( (gi_index < gis_size) 
+    while( (gi_index < gis_size)
        &&  (gis.GetKey<T>(gi_index) == key)) {
 
         gis.SetValue<T>(gi_index, value);
         ++gi_index;
     }
 }
-    
+
 /// CSeqDBIsam
-/// 
+///
 /// Manages one ISAM file, which will translate either PIGs, GIs, or
 /// Accessions to OIDs.  Translation in the other direction is done in
 /// the CSeqDBVol code.  Files managed by this class include those
@@ -128,7 +128,7 @@ class CSeqDBIsam : public CObject {
 public:
     /// Import the type representing one GI, OID association.
     typedef CSeqDBGiList::SGiOid TGiOid;
-    
+
     /// Types of database this class can access.
     enum EIsamDbType {
         eNumeric         = 0, /// Numeric database with Key/Value pairs in the index file.
@@ -138,31 +138,31 @@ public:
         eStringBin       = 4, /// This type is not supported.
         eNumericLongId   = 5  /// Like eNumeric but with 8 bytes of Key data per record.
     };
-    
+
     /// Type which is large enough to span the bytes of an ISAM file.
     typedef CSeqDBAtlas::TIndx TIndx;
-    
+
     /// This class works with OIDs relative to a specific volume.
     typedef int TOid;
-    
+
     /// PIG identifiers for numeric indices over protein volumes.
     typedef int TPig;
-    
+
     /// Genomic IDs, the most common numerical identifier.
-    typedef int TGi;
-    
+//    typedef int TGi;
+
     /// Identifier type for trace databases.
     typedef Int8 TTi;
-    
+
     /// Type large enough to hold any numerical ID.
     typedef Int8 TId;
-    
+
     /// Constructor
-    /// 
+    ///
     /// An ISAM file object corresponds to an index file and a data
     /// file, and converts identifiers (string, GI, or PIG) into OIDs
     /// relative to a particular database volume.
-    /// 
+    ///
     /// @param atlas
     ///   The memory management object. [in]
     /// @param dbname
@@ -178,20 +178,20 @@ public:
                char           prot_nucl,
                char           file_ext_char,
                ESeqDBIdType   ident_type);
-    
+
     /// Destructor
     ///
     /// Releases all resources associated with this object.
     ~CSeqDBIsam();
-    
+
     /// PIG translation
-    /// 
+    ///
     /// A PIG identifier is translated to an OID.  PIG identifiers are
     /// used exclusively for protein sequences.  One PIG corresponds
     /// to exactly one sequences of amino acids, and vice versa.  They
     /// are also stable; the sequence a PIG points to will never be
     /// changed.
-    /// 
+    ///
     /// @param pig
     ///   The PIG to look up. [in]
     /// @param oid
@@ -205,15 +205,15 @@ public:
         _ASSERT(m_IdentType == ePigId);
         return x_IdentToOid(pig, oid, locked);
     }
-    
+
     /// GI or TI translation
-    /// 
+    ///
     /// A GI or TI identifier is translated to an OID.  GI identifiers
     /// are used for all types of sequences.  TI identifiers are used
     /// primarily for nucleotide data in the Trace DBs.  Multiple GIs
     /// may indicate the same sequence of bases and the same OID, but
     /// TIs are usually unique.
-    /// 
+    ///
     /// @param id
     ///   The GI or TI to look up. [in]
     /// @param oid
@@ -227,7 +227,7 @@ public:
         _ASSERT(m_IdentType == eGiId || m_IdentType == eTiId);
         return x_IdentToOid(id, oid, locked);
     }
-    
+
     /// Translate Gis and Tis to Oids for the given ID list.
     ///
     /// This method iterates over a vector of Gi/OID and/or Ti/OID
@@ -248,7 +248,7 @@ public:
                    int              vol_end,
                    CSeqDBGiList   & ids,
                    CSeqDBLockHold & locked);
-    
+
     /// Compute list of included OIDs based on a negative ID list.
     ///
     /// This method iterates over a vector of Gis or Tis, along with
@@ -278,9 +278,9 @@ public:
                    int                  vol_end,
                    CSeqDBNegativeList & ids,
                    CSeqDBLockHold     & locked);
-    
+
     /// String translation
-    /// 
+    ///
     /// A string id is translated to one or more OIDs.  String ids are
     /// used by some groups which produce sequence data.  In some
     /// cases, the string may correspond to more than one OID.  For
@@ -298,7 +298,7 @@ public:
     /// succeeded.  CSeqDBVol::x_CheckVersions() can then be called to
     /// verify the OIDs; see that method for more information about
     /// this scenario.
-    /// 
+    ///
     /// @param acc
     ///   The string to look up. [in]
     /// @param oids
@@ -314,14 +314,14 @@ public:
                       bool             adjusted,
                       bool           & version_check,
                       CSeqDBLockHold & locked);
-    
+
     /// Seq-id translation
-    /// 
+    ///
     /// A Seq-id identifier (serialized to a string) is translated
     /// into an OID.  This routine will attempt to simplify the seqid
     /// so as to use the faster numeric lookup techniques whenever
     /// possible.
-    /// 
+    ///
     /// @param acc
     ///   A string containing the Seq-id. [in]
     /// @param oid
@@ -329,16 +329,16 @@ public:
     /// @param locked
     ///   The lock hold object for this thread. [in|out]
     bool SeqidToOid(const string & acc, TOid & oid, CSeqDBLockHold & locked);
-    
+
     /// Sequence hash lookup
-    /// 
+    ///
     /// This methods tries to find sequences associated with a given
     /// sequence hash value.  The provided value is numeric but the
     /// ISAM file uses a string format, because string searches can
     /// return multiple results per key, and there may be multiple
     /// OIDs for a given hash value due to identical sequences and
     /// collisions.
-    /// 
+    ///
     /// @param hash
     ///   The sequence hash value to look up. [in]
     /// @param oids
@@ -348,16 +348,16 @@ public:
     void HashToOids(unsigned         hash,
                     vector<TOid>   & oids,
                     CSeqDBLockHold & locked);
-    
+
     /// Return any memory held by this object to the atlas.
     void UnLease();
-    
+
     /// Get Numeric Bounds.
-    /// 
+    ///
     /// Fetch the lowest, highest, and total number of numeric keys in
     /// the database index.  If the operation fails, zero will be
     /// returned for count.
-    /// 
+    ///
     /// @param low_id Lowest numeric id value in database. [out]
     /// @param high_id Highest numeric id value in database. [out]
     /// @param count Number of numeric id values in database. [out]
@@ -366,13 +366,13 @@ public:
                      Int8           & high_id,
                      int            & count,
                      CSeqDBLockHold & locked);
-    
+
     /// Get String Bounds.
-    /// 
+    ///
     /// Fetch the lowest, highest, and total number of string keys in
     /// the database index.  If the operation fails, zero will be
     /// returned for count.
-    /// 
+    ///
     /// @param low_id Lowest string id value in database. [out]
     /// @param high_id Highest string id value in database. [out]
     /// @param count Number of string id values in database. [out]
@@ -381,7 +381,7 @@ public:
                      string         & high_id,
                      int            & count,
                      CSeqDBLockHold & locked);
-    
+
     /// Check if a given ISAM index exists.
     ///
     /// @param dbname Base name of the database volume.
@@ -390,96 +390,96 @@ public:
     static bool IndexExists(const string & dbname,
                             char           prot_nucl,
                             char           file_ext_char);
-    
+
 private:
     /// Stores a key for an ISAM file.
     ///
     /// This class stores a key of either of the types used by ISAM
     /// files.  It provides functionality for ordering comparisons of
     /// keys.
-    
+
     class SIsamKey {
     public:
         // If case insensitive string comparisons are desired, the
         // keys should be upcased before calling these methods.
-        
+
         /// Constructor.
         SIsamKey()
             : m_IsSet(false), m_NKey(-1)
         {
         }
-        
+
         /// Returns true if this object has an assigned value.
         bool IsSet()
         {
             return m_IsSet;
         }
-        
+
         /// Assign a numeric value to this object.
         void SetNumeric(Int8 ident)
         {
             m_IsSet = true;
             m_NKey = ident;
         }
-        
+
         /// Fetch the numeric value of this object.
         Int8 GetNumeric() const
         {
             return m_NKey;
         }
-        
+
         /// Fetch the string value of this object.
         void SetString(const string & ident)
         {
             m_IsSet = true;
             m_SKey = ident;
         }
-        
+
         /// Fetch the numeric value of this object.
         string GetString() const
         {
             return m_SKey;
         }
-        
+
         /// Returns true if the provided integer compares as lower
         /// than the assigned lower boundary for this ISAM file.
         bool OutsideFirstBound(Int8 ident)
         {
             return (m_IsSet && (ident < m_NKey));
         }
-        
+
         /// Returns true if the provided string compares as lower than
         /// the assigned lower boundary for this ISAM file.
         bool OutsideFirstBound(const string & ident)
         {
             return (m_IsSet && (ident < m_SKey));
         }
-        
+
         /// Returns true if the provided integer compares as higher
         /// than the assigned upper boundary for this ISAM file.
         bool OutsideLastBound(Int8 ident)
         {
             return (m_IsSet && (ident > m_NKey));
         }
-        
+
         /// Returns true if the provided string compares as lower than
         /// the assigned upper boundary for this ISAM file.
         bool OutsideLastBound(const string & ident)
         {
             return (m_IsSet && (ident > m_SKey));
         }
-        
+
     private:
         /// True if this object has an assigned value.
         bool   m_IsSet;
-        
+
         /// The key, if it is a number.
         Int8   m_NKey;
-        
+
         /// The key, if it is a string.
         string m_SKey;
     };
-    
+
     /// Exit conditions occurring in this code.
     enum EErrorCode {
         eNotFound        =  1,   /// The key was not found
@@ -488,7 +488,7 @@ private:
         eBadType         =  -11, /// The requested ISAM type did not match the file.
         eWrongFile       =  -12  /// The file was not found, or was the wrong length.
     };
-    
+
     /// Load and extract all index samples into array at once
     template <class T>
     void x_LoadIndex(CSeqDBMemLease & lease,
@@ -496,17 +496,17 @@ private:
                      vector<TIndx>  & offs)
     {
         const char * keydatap = lease.GetPtr(m_KeySampleOffset);
-    
+
         for (int index=0; index < m_NumSamples; ++index) {
             keys.push_back(x_GetNumericKey(keydatap));
             // vals.push_back(x_GetNumericData(keydatap));
             offs.push_back(index * m_PageSize * m_TermSize);
             keydatap += m_TermSize;
-        } 
+        }
 
         offs.push_back(m_NumTerms * m_TermSize);
     }
-    
+
     /// Load and extract a data page into array at once
     template <class T>
     void x_LoadData(CSeqDBMemLease & lease,
@@ -521,14 +521,14 @@ private:
             keys.push_back(x_GetNumericKey(keydatap));
             vals.push_back(x_GetNumericData(keydatap));
             keydatap += m_TermSize;
-        } 
+        }
     }
-    
+
     /// GiList Translation
-    /// 
+    ///
     /// Given a GI list, this routine finds the OID for each ID in the
     /// list not already having a translation.
-    /// 
+    ///
     /// @param vol_start
     ///   The starting OID for this ISAM file's database volume.
     /// @param gis
@@ -548,18 +548,18 @@ private:
 
         if(m_Initialized == false) {
             EErrorCode error = x_InitSearch(locked);
-        
+
             if(error != eNoError) {
                 // Most ordinary errors (missing GIs for example) are
                 // ignored for "multi" mode searches.  But if a GI list is
                 // specified, and cannot be interpreted, it is an error.
-            
+
                 NCBI_THROW(CSeqDBException,
                        eArgErr,
                        "Error: Unable to use ISAM index in batch mode.");
             }
         }
-    
+
         CSeqDBMemLease lease(m_Atlas);
 
         vector<T> sample_keys;
@@ -571,7 +571,7 @@ private:
         page_offs.reserve(m_NumSamples + 1);
         keys.reserve(m_PageSize);
         vals.reserve(m_PageSize);
-        
+
         m_Atlas.GetRegion(lease, m_IndexFname, 0, m_IndexFileLength);
         x_LoadIndex(lease, sample_keys, page_offs);
         m_Atlas.RetRegion(lease);
@@ -580,15 +580,15 @@ private:
         int sample_index = 0;
 
         while((gilist_index < gilist_size) && (sample_index < m_NumSamples)) {
-        
-            s_AdvanceGiList<T>(gis, gilist_index, gilist_size, 
-                               sample_keys[sample_index]); 
+
+            s_AdvanceGiList<T>(gis, gilist_index, gilist_size,
+                               sample_keys[sample_index]);
 
             if (gilist_index >= gilist_size) break;
 
-            s_AdvanceKeyList<T>(sample_keys, sample_index, m_NumSamples, 
+            s_AdvanceKeyList<T>(sample_keys, sample_index, m_NumSamples,
                                 gis.GetKey<T>(gilist_index));
-        
+
             // Now we should be ready to search a data block.
             keys.clear();
             vals.clear();
@@ -598,7 +598,7 @@ private:
                 num_keys = m_NumTerms - sample_index * m_PageSize;
             }
 
-            m_Atlas.GetRegion(lease, 
+            m_Atlas.GetRegion(lease,
                               m_DataFname,
                               page_offs[sample_index],
                               page_offs[sample_index + 1]);
@@ -618,23 +618,23 @@ private:
                 ++index;
                 if (index >= num_keys) break;
 
-                s_AdvanceGiList<T>(gis, gilist_index, gilist_size, keys[index]); 
+                s_AdvanceGiList<T>(gis, gilist_index, gilist_size, keys[index]);
 
                 s_SetTranslation<T>(gis, gilist_index, gilist_size,
                                     keys[index], vals[index] + vol_start);
 
             }
-                                     
+
             // We could be finished here because we exhausted the GI list
             // We must be done with that one by now..
             ++sample_index;
         }
     }
-    
+
     /// Numeric identifier lookup
-    /// 
+    ///
     /// Given a numeric identifier, this routine finds the OID.
-    /// 
+    ///
     /// @param id
     ///   The GI or PIG identifier to look up.
     /// @param oid
@@ -646,12 +646,12 @@ private:
     bool x_IdentToOid(Int8             id,
                       TOid           & oid,
                       CSeqDBLockHold & locked);
-    
+
     /// Index file search
-    /// 
+    ///
     /// Given a numeric identifier, this routine finds the OID or the
     /// page in the data file where the OID can be found.
-    /// 
+    ///
     /// @param Number
     ///   The GI or PIG identifier to look up.
     /// @param Data
@@ -673,12 +673,12 @@ private:
                          Int4           & SampleNum,
                          bool           & done,
                          CSeqDBLockHold & locked);
-    
+
     /// Negative ID List Translation
-    /// 
+    ///
     /// Given a Negative ID list, this routine turns on the bits for
     /// the OIDs found in the volume but not in the negated ID list.
-    /// 
+    ///
     /// @param vol_start
     ///   The starting OID for this ISAM file's database volume.
     /// @param vol_end
@@ -695,12 +695,12 @@ private:
                           CSeqDBNegativeList & gis,
                           bool                 use_tis,
                           CSeqDBLockHold     & locked);
-    
+
     /// Data file search
-    /// 
+    ///
     /// Given a numeric identifier, this routine finds the OID in the
     /// data file.
-    /// 
+    ///
     /// @param Number
     ///   The GI or PIG identifier to look up.
     /// @param Data
@@ -719,11 +719,11 @@ private:
                         Uint4          * Index,
                         Int4             SampleNum,
                         CSeqDBLockHold & locked);
-    
+
     /// Numeric identifier lookup
-    /// 
+    ///
     /// Given a numeric identifier, this routine finds the OID.
-    /// 
+    ///
     /// @param Number
     ///   The GI or PIG identifier to look up.
     /// @param Data
@@ -739,11 +739,11 @@ private:
                     int            * Data,
                     Uint4          * Index,
                     CSeqDBLockHold & locked);
-    
+
     /// String identifier lookup
-    /// 
+    ///
     /// Given a string identifier, this routine finds the OID(s).
-    /// 
+    ///
     /// @param term_in
     ///   The string identifier to look up.
     /// @param term_out
@@ -762,25 +762,25 @@ private:
                    vector<string> & value_out,
                    vector<TIndx>  & index_out,
                    CSeqDBLockHold & locked);
-    
+
     /// Initialize the search object
-    /// 
+    ///
     /// The first identifier search sets up the object by calling this
     /// function, which reads the metadata from the index file and
     /// sets all the fields needed for ISAM lookups.
-    /// 
+    ///
     /// @param locked
     ///   The lock holder object for this thread.
     /// @return
     ///   A non-zero error on failure, or eNoError on success.
     EErrorCode
     x_InitSearch(CSeqDBLockHold & locked);
-    
+
     /// Determine the number of elements in the data page.
-    /// 
+    ///
     /// The number of elements is determined based on whether this is
     /// the last page and the configured page size.
-    /// 
+    ///
     /// @param SampleNum
     ///   Which data page will be searched.
     /// @param Start
@@ -789,13 +789,13 @@ private:
     ///   The number of elements in this data page.
     int x_GetPageNumElements(Int4   SampleNum,
                              Int4 * Start);
-    
+
     /// Lookup a string in a sparse table
-    /// 
+    ///
     /// This does string lookup in a sparse string table.  There is no
     /// support (code) for this since there are currently no examples
     /// of this kind of table to test against.
-    /// 
+    ///
     /// @param acc
     ///   The string to look up.
     /// @param oids
@@ -810,14 +810,14 @@ private:
                               vector<int>    & oids,
                               bool             adjusted,
                               CSeqDBLockHold & locked);
-    
+
     /// Find the first character to differ in two strings
-    /// 
+    ///
     /// This finds the index of the first character to differ in
     /// meaningful way between two strings.  One of the strings is a
     /// term that is passed in; the other is assumed to be located in
     /// the ISAM table, a lease to which is passed to this function.
-    /// 
+    ///
     /// @param term_in
     ///   The key string to compare against.
     /// @param lease
@@ -845,14 +845,14 @@ private:
                     TIndx            KeyOffset,
                     bool             ignore_case,
                     CSeqDBLockHold & locked);
-    
+
     /// Find the first character to differ in two strings
-    /// 
+    ///
     /// This finds the index of the first character to differ in
     /// meaningful way between two strings.  One of the strings is a
     /// term that is passed in; the other is a range of memory
     /// represented by two pointers.
-    /// 
+    ///
     /// @param term_in
     ///   The key string to compare against.
     /// @param begin
@@ -868,13 +868,13 @@ private:
                const char   * begin,
                const char   * end,
                bool           ignore_case);
-    
+
     /// Extract the data from a key-value pair in memory.
-    /// 
+    ///
     /// Given pointers to a location in mapped memory, and the end of
     /// the mapped data, this finds the key and data values for the
     /// object at that location.
-    /// 
+    ///
     /// @param key_start
     ///   A pointer to the beginning of the key-value pair in memory.
     /// @param entry_end
@@ -887,13 +887,13 @@ private:
                        const char     * entry_end,
                        vector<string> & key_out,
                        vector<string> & data_out);
-    
+
     /// Get the offset of the specified sample.
-    /// 
+    ///
     /// For string ISAM indices, the index file contains a table of
     /// offsets of the index file samples.  This function gets the
     /// offset of the specified sample in the index file's table.
-    /// 
+    ///
     /// @param sample_offset
     ///   The offset into the file of the set of samples.
     /// @param sample_num
@@ -905,12 +905,12 @@ private:
     TIndx x_GetIndexKeyOffset(TIndx            sample_offset,
                               Uint4            sample_num,
                               CSeqDBLockHold & locked);
-    
+
     /// Read a string from the index file.
-    /// 
+    ///
     /// Given an offset into the index file, and a maximum length,
     /// this function returns the bytes in a string object.
-    /// 
+    ///
     /// @param key_offset
     ///   The offset into the file of the first byte.
     /// @param length
@@ -926,14 +926,14 @@ private:
                           string         & prefix,
                           bool             trim_to_null,
                           CSeqDBLockHold & locked);
-    
+
     /// Find the first character to differ in two strings
-    /// 
+    ///
     /// This finds the index of the first character to differ between
     /// two strings.  The first string is provided, the second is one
     /// of the sample strings, indicated by the index of that sample
     /// value.
-    /// 
+    ///
     /// @param term_in
     ///   The key string to compare against.
     /// @param SampleNum
@@ -946,13 +946,13 @@ private:
                      Uint4            SampleNum,
                      TIndx          & KeyOffset,
                      CSeqDBLockHold & locked);
-    
+
     /// Find matches in the given page of a string ISAM file.
-    /// 
+    ///
     /// This searches the area around a specific page of the data file
     /// to find all matches to term_in.  The results are returned in
     /// vectors.  This method may search multiple pages.
-    /// 
+    ///
     /// @param term_in
     ///   The key string to compare against.
     /// @param sample_index
@@ -971,12 +971,12 @@ private:
                           vector<string> & keys_out,
                           vector<string> & data_out,
                           CSeqDBLockHold & locked);
-    
+
     /// Find matches in the given memory area of a string ISAM file.
-    /// 
+    ///
     /// This searches the specified section of memory to find all
     /// matches to term_in.  The results are returned in vectors.
-    /// 
+    ///
     /// @param term_in
     ///   The key string to compare against.
     /// @param page_index
@@ -998,14 +998,14 @@ private:
                            vector<TIndx>  & indices_out,
                            vector<string> & keys_out,
                            vector<string> & data_out);
-    
+
     /// Map a page into memory
-    /// 
+    ///
     /// Given two indices, this method maps into memory the area
     /// starting at the beginning of the first index and extending to
     /// the end of the other.  (If the indices are equal, only one
     /// page would be mapped.)
-    /// 
+    ///
     /// @param SampleNum1
     ///   The first page index.
     /// @param SampleNum2
@@ -1021,7 +1021,7 @@ private:
                     const char     ** beginp,
                     const char     ** endp,
                     CSeqDBLockHold &  locked);
-    
+
     /// Test a sample key value from a numeric index.
     ///
     /// This method reads the key value of an index file sample
@@ -1049,7 +1049,7 @@ private:
                             Int8             key_in,
                             Int8           & key_out,
                             int            & data_out);
-    
+
     /// Get a sample key value from a numeric index.
     ///
     /// Given the index of a sample value, this code will get the key.
@@ -1069,7 +1069,7 @@ private:
                             int              index,
                             Int8           & key_out,
                             int            & data_out);
-    
+
     /// Find ID in the negative GI list using PBS.
     ///
     /// Use parabolic binary search to find the specified ID in the
@@ -1089,7 +1089,7 @@ private:
                          int                & index,
                          Int8                 key,
                          bool                 use_tis);
-    
+
     /// Map a data page.
     ///
     /// The caller provides an index into the sample file.  The page
@@ -1107,7 +1107,7 @@ private:
                        int               & num_elements,
                        const void       ** data_page_begin,
                        CSeqDBLockHold    & locked);
-    
+
     /// Get a particular data element from a data page.
     /// @param dpage A pointer to that page in memory.  [in]
     /// @param index The index of the element to fetch. [in]
@@ -1117,20 +1117,20 @@ private:
                           int               index,
                           Int8            & key,
                           int             & data);
-    
+
     /// Find the least and greatest keys in this ISAM file.
     void x_FindIndexBounds(CSeqDBLockHold & locked);
-    
+
     /// Check whether a numeric key is within this volume's bounds.
     /// @param key The key for which to do the check.
     /// @param locked The lock holder object for this thread.
     bool x_OutOfBounds(Int8 key, CSeqDBLockHold & locked);
-    
+
     /// Check whether a string key is within this volume's bounds.
     /// @param key The key for which to do the check.
     /// @param locked The lock holder object for this thread.
     bool x_OutOfBounds(string key, CSeqDBLockHold & locked);
-    
+
     /// Converts a string to lower case.
     static void x_Lower(string & s)
     {
@@ -1138,15 +1138,15 @@ private:
             s[i] = tolower(s[i]);
         }
     }
-    
+
     /// Fetch a GI or TI from a GI list.
     static Int8 x_GetId(CSeqDBNegativeList & ids, int index, bool use_tis)
     {
         return (use_tis
                 ? ids.GetTi(index)
-                : ids.GetGi(index));
+                : GI_TO(Int8, ids.GetGi(index)));
     }
-    
+
     /// Make filenames for ISAM file.
     ///
     /// @param dbname Base name of the database volume. [in]
@@ -1159,72 +1159,72 @@ private:
                                 char           file_ext_char,
                                 string       & index_name,
                                 string       & data_name);
-    
+
     // Data
-    
+
     /// The memory management layer
     CSeqDBAtlas & m_Atlas;
-    
+
     /// The type of identifier this class uses
     ESeqDBIdType m_IdentType;
-    
+
     /// A persistent lease on the ISAM index file.
     CSeqDBMemLease m_IndexLease;
-    
+
     /// A persistent lease on the ISAM data file.
     CSeqDBMemLease m_DataLease;
-    
+
     /// The format type of database files found (eNumeric or eString).
     int m_Type;
-    
+
     /// The filename of the ISAM data file.
     string m_DataFname;
-    
+
     /// The filename of the ISAM index file.
     string m_IndexFname;
-    
+
     /// The length of the ISAM data file.
     TIndx m_DataFileLength;
-    
+
     /// The length of the ISAM index file.
     TIndx m_IndexFileLength;
-    
+
     /// Number of terms in database
     Int4 m_NumTerms;
-    
+
     /// Number of terms in ISAM index
     Int4 m_NumSamples;
-    
+
     /// Page size of ISAM index
     Int4 m_PageSize;
-    
+
     /// Maximum string length in the database
     Int4 m_MaxLineSize;
-    
+
     /// Options set by upper layer
     Int4 m_IdxOption;
-    
+
     /// Flag indicating whether initialization has been done.
     bool m_Initialized;
-    
+
     /// Offset of samples in index file.
     TIndx m_KeySampleOffset;
-    
+
     /// Check if data for String ISAM sorted
     bool m_TestNonUnique;
-    
+
     /// Pointer to index file if no memmap.
     char * m_FileStart;
-    
+
     /// First and last offset's of last page.
     Int4 m_FirstOffset;
-    
+
     /// First and last offset's of last page.
     Int4 m_LastOffset;
-    
+
     /// First volume key
     SIsamKey m_FirstKey;
-    
+
     /// Last volume key
     SIsamKey m_LastKey;
 
@@ -1256,16 +1256,16 @@ CSeqDBIsam::x_TestNumericSample(CSeqDBMemLease & index_lease,
                                 Int8           & key_out,
                                 int            & data_out)
 {
-    
+
     const void * keydatap = 0;
 
     TIndx offset_begin = m_KeySampleOffset + (m_TermSize * index);
-    
+
     keydatap = index_lease.GetPtr(offset_begin);
     key_out = x_GetNumericKey(keydatap);
-         
+
     int rv = 0;
-    
+
     if (key_in < key_out) {
         rv = -1;
     } else if (key_in > key_out) {
@@ -1274,7 +1274,7 @@ CSeqDBIsam::x_TestNumericSample(CSeqDBMemLease & index_lease,
         rv = 0;
         data_out = x_GetNumericData(keydatap);
     }
-    
+
     return rv;
 }
 
@@ -1285,12 +1285,51 @@ CSeqDBIsam::x_GetNumericSample(CSeqDBMemLease & index_lease,
                                int            & data_out)
 {
     const void * keydatap = 0;
-    
+
     TIndx offset_begin = m_KeySampleOffset + (m_TermSize * index);
-    
+
     keydatap = index_lease.GetPtr(offset_begin);
     key_out = x_GetNumericKey(keydatap);
     data_out = x_GetNumericData(keydatap);
+}
+
+/// Load and extract all index samples into array at once
+template <>
+inline void CSeqDBIsam::x_LoadIndex<TGi>(
+        CSeqDBMemLease & lease,
+        vector<TGi>    & keys,
+        vector<TIndx>  & offs
+)
+{
+    const char * keydatap = lease.GetPtr(m_KeySampleOffset);
+
+    for (int index=0; index < m_NumSamples; ++index) {
+        keys.push_back(GI_FROM(Uint8, x_GetNumericKey(keydatap)));
+        // vals.push_back(x_GetNumericData(keydatap));
+        offs.push_back(index * m_PageSize * m_TermSize);
+        keydatap += m_TermSize;
+    }
+
+    offs.push_back(m_NumTerms * m_TermSize);
+}
+
+/// Load and extract a data page into array at once
+template <>
+inline void CSeqDBIsam::x_LoadData<TGi>(
+        CSeqDBMemLease & lease,
+        vector<TGi>    & keys,
+        vector<int>    & vals,
+        int              num_keys,
+        TIndx            begin
+)
+{
+    const char * keydatap = lease.GetPtr(begin);
+
+    for (int index=0; index < num_keys; ++index) {
+        keys.push_back(GI_FROM(Uint8, x_GetNumericKey(keydatap)));
+        vals.push_back(x_GetNumericData(keydatap));
+        keydatap += m_TermSize;
+    }
 }
 
 template <> inline void
@@ -1300,7 +1339,7 @@ CSeqDBIsam::x_LoadIndex<string>(CSeqDBMemLease & lease,
 {
     TIndx offset_begin = m_KeySampleOffset;
     TIndx sample_begin = offset_begin + sizeof(Uint4) * (m_NumSamples + 1);
-   
+
     // load offset array
     const Uint4 * offset = (const Uint4 *) lease.GetPtr(offset_begin);
     for (int index=0; index <= m_NumSamples; ++index, ++offset) {
@@ -1308,7 +1347,7 @@ CSeqDBIsam::x_LoadIndex<string>(CSeqDBMemLease & lease,
         offs.push_back(SeqDB_GetStdOrd((Uint4*) offset));
     }
 
-    // load sample array 
+    // load sample array
     offset = (const Uint4 *) lease.GetPtr(sample_begin);
     for (int index=0; index < m_NumSamples; ++index, ++offset) {
         // Get the index_offsets
@@ -1324,10 +1363,10 @@ CSeqDBIsam::x_LoadIndex<string>(CSeqDBMemLease & lease,
         /* key_begin = ++keydatap;
         while (*keydatap != 0x00) ++keydatap;
         vals.push_back(NStr::StringToUInt(string(key_begin, keydatap))); */
-    } 
+    }
 }
-    
-template <> inline void 
+
+template <> inline void
 CSeqDBIsam::x_LoadData<string>(CSeqDBMemLease & lease,
                                vector<string> & keys,
                                vector<int>    & vals,
@@ -1355,29 +1394,29 @@ CSeqDBIsam::x_FindInNegativeList(CSeqDBNegativeList & ids,
                                  bool                 use_tis)
 {
     bool found = false;
-    
+
     // Skip any that are less than key.
-    
+
     int ids_size = use_tis ? ids.GetNumTis() : ids.GetNumGis();
-    
+
     while((index < ids_size) && (x_GetId(ids, index, use_tis) < key)) {
         index++;
-        
+
         int jump = 2;
-        
+
         while((index + jump) < ids_size &&
               x_GetId(ids, index + jump, use_tis) < key) {
             index += jump;
             jump += jump;
         }
     }
-    
+
     // Check whether the GI or TI was found.
-    
+
     if ((index < ids_size) && (x_GetId(ids,index,use_tis) == key)) {
         found = true;
     }
-    
+
     return found;
 }
 
@@ -1391,19 +1430,19 @@ CSeqDBIsam::x_MapDataPage(int                sample_index,
 {
     num_elements =
         x_GetPageNumElements(sample_index, & start);
-    
+
     TIndx offset_begin = start * m_TermSize;
     TIndx offset_end = offset_begin + m_TermSize * num_elements;
-    
+
     m_Atlas.Lock(locked);
-    
+
     if (! m_DataLease.Contains(offset_begin, offset_end)) {
         m_Atlas.GetRegion(m_DataLease,
                           m_DataFname,
                           offset_begin,
                           offset_end);
     }
-    
+
     *data_page_begin =  m_DataLease.GetPtr(offset_begin);
 }
 

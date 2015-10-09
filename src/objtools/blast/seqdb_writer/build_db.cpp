@@ -65,14 +65,14 @@ USING_SCOPE(objects);
 
 int debug_mode = 0;
 
-void CBuildDatabase::x_ResolveRemoteId(CRef<objects::CSeq_id> & seqid, int & gi)
+void CBuildDatabase::x_ResolveRemoteId(CRef<objects::CSeq_id> & seqid, TGi & gi)
 {
     CScope::TIds ids = x_GetScope().GetIds(*seqid);
 
     bool have_seqid = false;
     bool have_gi = false;
 
-    gi = 0;
+    gi = ZERO_GI;
 
     ITERATE(CScope::TIds, iter, ids) {
         CConstRef<CSeq_id> id = iter->GetSeqId();
@@ -81,7 +81,7 @@ void CBuildDatabase::x_ResolveRemoteId(CRef<objects::CSeq_id> & seqid, int & gi)
                       << " contains id " << id->AsFastaString() << endl;
 
         if (id->IsGi()) {
-            if (gi > 0) {
+            if (gi > ZERO_GI) {
                 if (debug_mode > 5)
                     m_LogFile << "WARNING: multiple GIs discovered; gi[0] = "
                               << gi << endl;
@@ -90,7 +90,7 @@ void CBuildDatabase::x_ResolveRemoteId(CRef<objects::CSeq_id> & seqid, int & gi)
                     m_LogFile << "Seq-id " << seqid->AsFastaString()
                               << " resolved to "
                               << id->GetGi() << endl;
-                gi = GI_TO(int, id->GetGi());
+                gi = id->GetGi();
                 have_gi = true;
             }
         } else if ((! have_seqid) && (id->Which() == seqid->Which())) {
@@ -134,7 +134,7 @@ CRef<CInputGiList> CBuildDatabase::x_ResolveGis(const vector<string> & ids)
         // B. The Seq-id can have a version (only CTextseq_id types.)
         // C. The version is not present.
 
-        int gi(0);
+        TGi gi(ZERO_GI);
         bool specific = false;
         CRef<CSeq_id> seqid;
 
@@ -156,7 +156,7 @@ CRef<CInputGiList> CBuildDatabase::x_ResolveGis(const vector<string> & ids)
 
         // 1. Numeric GI
 
-        if (gi != 0) {
+        if (gi != ZERO_GI) {
             if (debug_mode > 5)
                 m_LogFile << "Found numerical GI:" << gi << endl;
 
@@ -171,7 +171,7 @@ CRef<CInputGiList> CBuildDatabase::x_ResolveGis(const vector<string> & ids)
         if (m_UseRemote && (! specific)) {
             x_ResolveRemoteId(seqid, gi);
 
-            if (gi != 0) {
+            if (gi != ZERO_GI) {
                 gi_list->AppendGi(gi);
                 continue;
             }
@@ -562,7 +562,7 @@ bool CBuildDatabase::x_AddRemoteSequences(CInputGiList & gi_list)
 
     for(i = 0; i < num_gis; i++) {
         if (m_Verbose)
-            m_LogFile << "GI " << gi_list.GetKey<int>(i);
+            m_LogFile << "GI " << gi_list.GetKey<TGi>(i);
 
         // We only need to fetch here for those cases where the SeqDB
         // attempt could not translate the GI.
@@ -572,7 +572,7 @@ bool CBuildDatabase::x_AddRemoteSequences(CInputGiList & gi_list)
                 m_LogFile << " not found locally; adding remotely." << endl;
 
             CRef<CSeq_id> id(new CSeq_id);
-            id->SetGi(GI_FROM(int, gi_list.GetKey<int>(i)));
+            id->SetGi(gi_list.GetKey<TGi>(i));
 
             bool error = false;
 
@@ -636,14 +636,14 @@ CBuildDatabase::x_ReportUnresolvedIds(const CInputGiList & gi_list) const
 
         if (gi_list.GetGiOid(i).oid == -1) {
             if (m_Verbose)
-                m_LogFile << "GI " << gi_list.GetKey<int>(i)
+                m_LogFile << "GI " << gi_list.GetKey<TGi>(i)
                           << " was not resolvable." << endl;
 
             success = false;
             unresolved ++;
         } else {
             if (m_Verbose)
-                m_LogFile << "GI " << gi_list.GetKey<int>(i)
+                m_LogFile << "GI " << gi_list.GetKey<TGi>(i)
                           << " found locally." << endl;
         }
     }
@@ -1252,11 +1252,11 @@ bool CBuildDatabase::AddIds(const vector<string> & ids)
 
         if (m_Verbose) {
             // Map oid to gi.
-            map<int,int> seen_it;
+            map<int,TGi> seen_it;
 
             for(int i = 0; i < gi_list->GetNumGis(); i++) {
                 int this_oid = gi_list->GetGiOid(i).oid;
-                int this_gi = gi_list->GetGiOid(i).gi;
+                TGi this_gi = gi_list->GetGiOid(i).gi;
 
                 if (this_oid != -1) {
                     if (seen_it.find(this_oid) == seen_it.end()) {

@@ -51,20 +51,20 @@ USING_SCOPE(objects);
      (!defined(NCBI_COMPILER_MIPSPRO)) )
 
 /// CSeqDBGiMask class.
-/// 
+///
 /// This code supports Gi-based database masks
 
 class CSeqDBGiMask : public CObject {
 public:
     /// Constructor.
-    /// 
+    ///
     /// @param atlas
     ///   The atlas layer managing memory lease [in]
     /// @param mask_name
     ///   The names of the mask files. [in]
     CSeqDBGiMask(CSeqDBAtlas           & atlas,
                  const vector <string> & mask_name);
-    
+
     /// Destructor.
     ~CSeqDBGiMask() {
         m_IndexLease.Clear();
@@ -75,7 +75,7 @@ public:
             delete m_DataLease[i];
         }
     };
-    
+
     /// Get the mask description for algo id
     /// @param algo_id The chosen algo id [in]
     /// @param locked
@@ -90,7 +90,7 @@ public:
     /// @param locked
     ///   The lock holder object for this thread (or NULL). [in]
     void GetMaskData(int                     algo_id,
-                     int                     gi,
+                     TGi                     gi,
                      CSeqDB::TSequenceRanges &ranges,
                      CSeqDBLockHold          &locked);
 
@@ -121,12 +121,12 @@ public:
 
     /// Get the mask algorithsm name for a numeric id
     /// @param algo_id The algorithm id [in]
-    /// @return the algorithm name 
+    /// @return the algorithm name
     const string & GetAlgorithmName(int algo_id) const {
         x_VerifyAlgorithmId(algo_id);
         return m_MaskNames[algo_id];
     }
-   
+
     /// Get the names of available mask algorithms as string
     string GetAvailableAlgorithmNames() const {
         CNcbiOstrstream retval;
@@ -140,7 +140,7 @@ public:
                    << setw(40) << left << m_MaskNames[id] << endl;
         }
         return CNcbiOstrstreamToString(retval);
-    } 
+    }
 
 private:
     /// Sgring format used by gi mask files
@@ -149,13 +149,13 @@ private:
 
     /// File offset type.
     typedef CSeqDBAtlas::TIndx TIndx;
-    
+
     /// Prevent copy construction.
     CSeqDBGiMask(const CSeqDBGiMask&);
-    
+
     /// Prevent copy assignment.
     CSeqDBGiMask& operator=(CSeqDBGiMask&);
-    
+
     /// Open file for a chosen algo_id
     /// @param algo_id The chosen algo_id [in]
     /// @param locked The lock holder object for this thread. [in]
@@ -176,7 +176,7 @@ private:
                        CNcbiOstrstreamToString(oss));
         }
     }
-    
+
     /// Get a range of the index or data file.
     ///
     /// A range of file is acquired and returned in the provided blob.
@@ -193,14 +193,14 @@ private:
                                CSeqDBMemLease & lease,
                                CBlastDbBlob   & blob,
                                CSeqDBLockHold & locked);
-    
+
     /// Binary search for value associated with a key
     ///
     /// @param keys  The (sorted) key array [in]
     /// @param n  Number of keys [in]
     /// @param key The key to search for [in]
     /// @param idx The index to the key array where key is found. [out]
-    /// @return TRUE if the key is found 
+    /// @return TRUE if the key is found
     static bool s_BinarySearch(const int *keys,
                                const int  n,
                                const int  key,
@@ -208,13 +208,13 @@ private:
 
     /// Reference to the atlas.
     CSeqDBAtlas & m_Atlas;
-    
+
     /// The set of gi masks found in alias description
     const vector<string> m_MaskNames;
 
     /// The current used mask id
     Int4 m_AlgoId;
-    
+
     /// Index file.
     CSeqDBRawFile m_IndexFile;
 
@@ -229,13 +229,13 @@ private:
 
     /// Number of data volumes
     Int4 m_NumVols;
-    
+
     /// Data file.
     vector<CSeqDBRawFile *> m_DataFile;
-    
+
     /// Data file lease.
     vector<CSeqDBMemLease *> m_DataLease;
-    
+
     /// GI size
     Int4 m_GiSize;
 
@@ -244,25 +244,25 @@ private:
 
     /// Page size
     Int4 m_PageSize;
-    
+
     /// Number of Gi indices
     Int4 m_NumIndex;
 
     /// Number of Gis
     Int4 m_NumGi;
-    
+
     /// Mapped Gi index
-    const Int4 *m_GiIndex;    
+    const Int4 *m_GiIndex;
 
     /// Start offset (in the index file) of the offset array.
     Int4 m_IndexStart;
-    
+
     /// The description about the masking algo
     string m_Desc;
-    
+
     /// The create date of the GI mask
     string m_Date;
-    
+
 };
 
 #endif

@@ -52,13 +52,13 @@ void ReadTextFile(CNcbiIstream   & f,
     // version might use string::swap() to avoid copying strings, but
     // in the case of gcc, strings should be reference counted, so
     // copying is already cheap.
-    
+
     lines.reserve(128);
-    
+
     while(f && (! f.eof())) {
         string s;
         NcbiGetlineEOL(f, s);
-        
+
         if (s.size()) {
             lines.push_back(s);
         }
@@ -73,10 +73,10 @@ void MapToLMBits(const TLinkoutMap & gilist, TIdToBits & id2links)
     ITERATE(TLinkoutMap, iter1, gilist) {
         int bitnum = iter1->first;
         const vector<string> & v = iter1->second;
-        
+
         ITERATE(vector<string>, iter2, v) {
             string key = AccessionToKey(*iter2);
-            
+
             if (key.size()) {
                 id2links[key] |= bitnum;
             }
@@ -86,72 +86,72 @@ void MapToLMBits(const TLinkoutMap & gilist, TIdToBits & id2links)
 
 string AccessionToKey(const string & acc)
 {
-    int gi(0);
+    TGi gi(ZERO_GI);
     CRef<CSeq_id> seqid;
     bool specific(false);
-    
+
     string str;
-    
+
     if (CheckAccession(acc, gi, seqid, specific)) {
         if (seqid.Empty()) {
-            if (gi != 0) {
+            if (gi != ZERO_GI) {
                 str = "gi|";
-                str += NStr::IntToString(gi);
+                str += NStr::IntToString(GI_TO(int, gi));
             }
         } else {
             GetSeqIdKey(*seqid, str);
         }
     }
-    
+
     return str;
 }
 
 bool CheckAccession(const string  & acc,
-                    int           & gi,
+                    TGi           & gi,
                     CRef<objects::CSeq_id> & seqid,
                     bool          & specific)
 {
     specific = true;
-    gi = 0;
+    gi = ZERO_GI;
     seqid.Reset();
-    
+
     // Case 1: Numeric GI
-    
+
     bool digits = !! acc.size();
-    
+
     for(unsigned i = 0; i < acc.size(); i++) {
         if (! isdigit(acc[i])) {
             digits = false;
             break;
         }
     }
-    
+
     if (digits) {
-        gi = NStr::StringToInt(acc);
+        gi = GI_FROM(int, NStr::StringToInt(acc));
         return true;
     }
-    
+
     try {
         seqid.Reset(new CSeq_id(acc));
     }
     catch(CException &) {
         return false;
     }
-    
+
     if (seqid->IsGi()) {
-        gi = GI_TO(int, seqid->GetGi());
+        gi = seqid->GetGi();
         seqid.Reset();
         return true;
     }
-    
+
     // Case 2: Other Seq-ids.
-    
+
     const CTextseq_id * tsi = seqid->GetTextseq_Id();
-    
+
     if (tsi != NULL) {
         specific = tsi->IsSetVersion();
     }
-    
+
     return true;
 }
 
@@ -164,7 +164,7 @@ void GetDeflineKeys(const objects::CBlast_def_line & defline,
                     vector<string>        & keys)
 {
     keys.clear();
-    
+
     ITERATE(CBlast_def_line::TSeqid, iter, defline.GetSeqid()) {
         string key;
         GetSeqIdKey(**iter, key);

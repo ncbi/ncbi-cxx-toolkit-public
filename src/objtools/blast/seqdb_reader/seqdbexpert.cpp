@@ -76,8 +76,8 @@ void CSeqDBExpert::GetRawSeqAndAmbig(int           oid,
     m_Impl->Verify();
 }
 
-void CSeqDBExpert::GetGiBounds(int * low_id,
-                               int * high_id,
+void CSeqDBExpert::GetGiBounds(TGi * low_id,
+                               TGi * high_id,
                                int * count)
 {
     m_Impl->Verify();
@@ -113,7 +113,7 @@ unsigned CSeqDBExpert::GetSequenceHash(int oid)
     m_Impl->Verify();
     unsigned h = m_Impl->GetSequenceHash(oid);
     m_Impl->Verify();
-    
+
     return h;
 }
 

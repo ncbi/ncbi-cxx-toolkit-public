@@ -48,7 +48,7 @@ void GetDeflineKeys(const objects::CBlast_def_line & defline,
                     vector<string>        & keys);
 
 /// CMultisourceException
-/// 
+///
 /// This exception class is thrown for errors occurring during
 /// traceback.
 
@@ -59,9 +59,9 @@ public:
         /// Argument validation failed.
         eArg,
         /// Failed to create the output file(s)/directory
-        eOutputFileError   
+        eOutputFileError
     };
-    
+
     /// Get a message describing the exception.
     virtual const char* GetErrCodeString() const
     {
@@ -70,7 +70,7 @@ public:
         default:   return CException::GetErrCodeString();
         }
     }
-    
+
     /// Include standard NCBI exception behavior.
     NCBI_EXCEPTION_DEFAULT(CMultisourceException, CException);
 };
@@ -86,22 +86,22 @@ class NCBI_XOBJWRITE_EXPORT CInputGiList : public CSeqDBGiList {
 public:
     /// Construct an empty GI list.
     CInputGiList(int capacity = 1024)
-        : m_Last(0)
+        : m_Last(ZERO_GI)
     {
         if (capacity > 0) {
             m_GisOids.reserve(capacity);
         }
-        
+
         // An empty vector is always sorted, right?
         m_CurrentOrder = eGi;
     }
-    
+
     /// Append a GI.
-    /// 
+    ///
     /// This method adds a GI to the list.
-    /// 
+    ///
     /// @param gi A sequence identifier.
-    void AppendGi(int gi, int oid = -1)
+    void AppendGi(TGi gi, int oid = -1)
     {
         if (m_CurrentOrder == eGi) {
             if (m_Last > gi) {
@@ -110,15 +110,15 @@ public:
                 return;
             }
         }
-        
+
         m_GisOids.push_back(SGiOid(gi, oid));
         m_Last = gi;
     }
-    
+
     /// Append a Seq-id
-    /// 
+    ///
     /// This method adds a Seq-id to the list.
-    /// 
+    ///
     /// @param seqid A sequence identifier.
     void AppendSi(const string &si, int oid = -1)
     {
@@ -127,14 +127,14 @@ public:
         // assume that Seq-ids are out-of order.  This also fits the
         // basic practice of not making tiny optimizations in code
         // paths that are slow.
-        
+
         m_CurrentOrder = eNone;
         string str_id = SeqDB_SimplifyAccession(si);
         if (str_id != "") m_SisOids.push_back(SSiOid(str_id, oid));
     }
-    
+
 private:
-    int m_Last;
+    TGi m_Last;
 };
 
 
@@ -148,15 +148,15 @@ public:
         : m_SeqDB(seqdb), m_Buffer(buffer)
     {
     }
-    
+
     ~CSequenceReturn()
     {
         m_SeqDB.RetSequence(& m_Buffer);
     }
-    
+
 private:
     CSequenceReturn & operator=(CSequenceReturn &);
-    
+
     CSeqDB     & m_SeqDB;
     const char * m_Buffer;
 };
@@ -172,7 +172,7 @@ void MapToLMBits(const TLinkoutMap & gilist, TIdToBits & gi2links);
 
 NCBI_XOBJWRITE_EXPORT
 bool CheckAccession(const string  & acc,
-                    int           & gi,
+                    TGi           & gi,
                     CRef<objects::CSeq_id> & seqid,
                     bool          & specific);
 

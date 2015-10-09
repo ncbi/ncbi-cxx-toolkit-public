@@ -645,21 +645,21 @@ void CSeqDBGiList::InsureOrder(ESortOrder order)
 }
 
 
-bool CSeqDBGiList::FindGi(int gi) const
+bool CSeqDBGiList::FindGi(TGi gi) const
 {
     int oid(0), index(0);
     return (const_cast<CSeqDBGiList *>(this))->GiToOid(gi, oid, index);
 }
 
 
-bool CSeqDBGiList::GiToOid(int gi, int & oid)
+bool CSeqDBGiList::GiToOid(TGi gi, int & oid)
 {
     int index(0);
     return GiToOid(gi, oid, index);
 }
 
 
-bool CSeqDBGiList::GiToOid(int gi, int & oid, int & index)
+bool CSeqDBGiList::GiToOid(TGi gi, int & oid, int & index)
 {
     InsureOrder(eGi);  // would assert be better?
 
@@ -667,7 +667,7 @@ bool CSeqDBGiList::GiToOid(int gi, int & oid, int & index)
 
     while(b < e) {
         int m = (b + e)/2;
-        int m_gi = m_GisOids[m].gi;
+        TGi m_gi = m_GisOids[m].gi;
 
         if (m_gi < gi) {
             b = m + 1;
@@ -762,7 +762,7 @@ bool CSeqDBGiList::SiToOid(const string &si, int & oid, int & index)
 }
 
 void
-CSeqDBGiList::GetGiList(vector<int>& gis) const
+CSeqDBGiList::GetGiList(vector<TGi>& gis) const
 {
     gis.clear();
     gis.reserve(GetNumGis());
@@ -785,7 +785,7 @@ CSeqDBGiList::GetTiList(vector<Int8>& tis) const
 }
 
 
-void SeqDB_ReadBinaryGiList(const string & fname, vector<int> & gis)
+void SeqDB_ReadBinaryGiList(const string & fname, vector<TGi> & gis)
 {
     CMemoryFile mfile(SeqDB_MakeOSPath(fname));
 
@@ -807,7 +807,7 @@ void SeqDB_ReadBinaryGiList(const string & fname, vector<int> & gis)
     gis.reserve(num_gis);
 
     for(Int4 * elem = beginp + 2; elem < endp; elem ++) {
-        gis.push_back((int) SeqDB_GetStdOrd(elem));
+        gis.push_back(GI_FROM(Int4, SeqDB_GetStdOrd(elem)));
     }
 }
 
@@ -884,12 +884,12 @@ void SeqDB_ReadMemoryGiList(const char * fbeginp,
         gis.reserve(num_gis);
 
         if (in_order) {
-            int prev_gi =0;
+            TGi prev_gi = ZERO_GI;
             bool in_gi_order = true;
 
             Int4 * elem = bbeginp + 2;
             while(elem < bendp) {
-                int this_gi = (int) SeqDB_GetStdOrd(elem);
+                TGi this_gi = GI_FROM(Int4, SeqDB_GetStdOrd(elem));
                 gis.push_back(this_gi);
 
                 if (prev_gi > this_gi) {
@@ -901,13 +901,13 @@ void SeqDB_ReadMemoryGiList(const char * fbeginp,
             }
 
             while(elem < bendp) {
-                gis.push_back((int) SeqDB_GetStdOrd(elem++));
+                gis.push_back(GI_FROM(Int4, SeqDB_GetStdOrd(elem++)));
             }
 
             *in_order = in_gi_order;
         } else {
             for(Int4 * elem = bbeginp + 2; elem < bendp; elem ++) {
-                gis.push_back((int) SeqDB_GetStdOrd(elem));
+                gis.push_back(GI_FROM(Int4, SeqDB_GetStdOrd(elem)));
             }
         }
     } else {
@@ -970,7 +970,7 @@ void SeqDB_ReadMemoryGiList(const char * fbeginp,
             case '\r':
                 // Skip blank lines or comments by ignoring zero.
                 if (elem != 0) {
-                    gis.push_back(elem);
+                    gis.push_back(GI_FROM(Uint4, elem));
                 }
                 elem = 0;
                 continue;
@@ -1286,7 +1286,7 @@ void SeqDB_ReadMemoryMixList(const char * fbeginp,
             	tis.push_back(num_id);
             }
             else if (eGiId == id_type) {
-            	gis.push_back(num_id);
+            	gis.push_back(GI_FROM(Int8, num_id));
             }
             else {
                 cerr << "WARNING:  " << acc
@@ -1361,7 +1361,7 @@ void SeqDB_ReadMixList(const string & fname, vector<CSeqDBGiList::SGiOid> & gis,
     SeqDB_ReadMemoryMixList(fbeginp, fendp, gis, tis, sis, in_order);
 }
 
-void SeqDB_ReadGiList(const string & fname, vector<int> & gis, bool * in_order)
+void SeqDB_ReadGiList(const string & fname, vector<TGi> & gis, bool * in_order)
 {
     typedef vector<CSeqDBGiList::SGiOid> TPairList;
 
@@ -1386,7 +1386,7 @@ void SeqDB_ReadSiList(const string & fname, vector<CSeqDBGiList::SSiOid> & sis, 
     SeqDB_ReadMemorySiList(fbeginp, fendp, sis, in_order);
 }
 
-bool CSeqDBNegativeList::FindGi(int gi)
+bool CSeqDBNegativeList::FindGi(TGi gi)
 {
     InsureOrder();
 
@@ -1394,7 +1394,7 @@ bool CSeqDBNegativeList::FindGi(int gi)
 
     while(b < e) {
         int m = (b + e)/2;
-        int m_gi = m_Gis[m];
+        TGi m_gi = m_Gis[m];
 
         if (m_gi < gi) {
             b = m + 1;
@@ -1442,7 +1442,7 @@ bool CSeqDBNegativeList::FindId(const CSeq_id & id, bool & match_type)
 {
     if (id.IsGi()) {
         match_type = true;
-        return FindGi(GI_TO(int, id.GetGi()));
+        return FindGi(id.GetGi());
     } else if (id.IsGeneral() && id.GetGeneral().GetDb() == "ti") {
         match_type = true;
         const CObject_id & obj = id.GetGeneral().GetTag();
@@ -1462,7 +1462,7 @@ bool CSeqDBNegativeList::FindId(const CSeq_id & id, bool & match_type)
 bool CSeqDBGiList::FindId(const CSeq_id & id)
 {
     if (id.IsGi()) {
-        return FindGi(GI_TO(int, id.GetGi()));
+        return FindGi(id.GetGi());
     } else if (id.IsGeneral() && id.GetGeneral().GetDb() == "ti") {
         const CObject_id & obj = id.GetGeneral().GetTag();
 
@@ -1625,7 +1625,7 @@ void SeqDB_SplitQuoted(const string             & dbname,
 }
 
 
-CIntersectionGiList::CIntersectionGiList(CSeqDBGiList & gilist, vector<int> & gis)
+CIntersectionGiList::CIntersectionGiList(CSeqDBGiList & gilist, vector<TGi> & gis)
 {
     _ASSERT(this != & gilist);
 
@@ -1638,8 +1638,8 @@ CIntersectionGiList::CIntersectionGiList(CSeqDBGiList & gilist, vector<int> & gi
     int gis_n = (int) gis.size();
 
     while(list_i < list_n && gis_i < gis_n) {
-        int L = gilist.GetGiOid(list_i).gi;
-        int G = gis[gis_i];
+        TGi L = gilist.GetGiOid(list_i).gi;
+        TGi G = gis[gis_i];
 
         if (L < G) {
             list_i ++;
@@ -1661,7 +1661,7 @@ CIntersectionGiList::CIntersectionGiList(CSeqDBGiList & gilist, vector<int> & gi
 }
 
 
-CIntersectionGiList::CIntersectionGiList(CSeqDBNegativeList & neg_gilist, vector<int> & gis)
+CIntersectionGiList::CIntersectionGiList(CSeqDBNegativeList & neg_gilist, vector<TGi> & gis)
 {
     neg_gilist.InsureOrder();
     sort(gis.begin(), gis.end());
@@ -1672,8 +1672,8 @@ CIntersectionGiList::CIntersectionGiList(CSeqDBNegativeList & neg_gilist, vector
     int gis_n = (int) gis.size();
 
     while(list_i < list_n && gis_i < gis_n) {
-        int L = neg_gilist.GetGi(list_i);
-        int G = gis[gis_i];
+        TGi L = neg_gilist.GetGi(list_i);
+        TGi G = gis[gis_i];
 
         if (L < G) {
             list_i ++;
@@ -1688,7 +1688,7 @@ CIntersectionGiList::CIntersectionGiList(CSeqDBNegativeList & neg_gilist, vector
 
         list_i++;
 
-        int last_gi = gis[gis_i];
+        TGi last_gi = gis[gis_i];
         do { gis_i++; } while (gis_i < gis_n && gis[gis_i] == last_gi);
     }
 
@@ -1712,6 +1712,14 @@ CSeqDBIdSet::CSeqDBIdSet(const vector<Int8> & ids, EIdType t, bool positive)
 {
     x_SortAndUnique(m_Ids->Set());
 }
+
+#ifdef NCBI_STRICT_GI
+CSeqDBIdSet::CSeqDBIdSet(const vector<TGi> & ids, EIdType t, bool positive)
+    : m_Positive(positive), m_IdType(t), m_Ids(new CSeqDBIdSet_Vector(ids))
+{
+    x_SortAndUnique(m_Ids->Set());
+}
+#endif
 
 void CSeqDBIdSet::x_SortAndUnique(vector<Int8> & ids)
 {
@@ -1966,7 +1974,7 @@ CRef<CSeqDBGiList> CSeqDBIdSet::GetPositiveList()
 
         ITERATE(vector<Int8>, iter, m_Ids->Set()) {
             _ASSERT(((*iter) >> 32) == 0);
-            ids->AddGi((int)*iter);
+            ids->AddGi(GI_FROM(Int8, *iter));
         }
     }
 
@@ -1994,7 +2002,7 @@ CRef<CSeqDBNegativeList> CSeqDBIdSet::GetNegativeList()
 
         ITERATE(vector<Int8>, iter, m_Ids->Set()) {
             _ASSERT(((*iter) >> 32) == 0);
-            ids->AddGi((int)*iter);
+            ids->AddGi(GI_FROM(Int8, *iter));
         }
     }
 
@@ -2037,7 +2045,7 @@ ESeqDBIdType SeqDB_SimplifySeqid(CSeq_id       & bestid,
     switch(bestid.Which()) {
     case CSeq_id::e_Gi:
         simpler = true;
-        num_id = bestid.GetGi();
+        num_id = GI_TO(Int8, bestid.GetGi());
         result = eGiId;
         break;
 

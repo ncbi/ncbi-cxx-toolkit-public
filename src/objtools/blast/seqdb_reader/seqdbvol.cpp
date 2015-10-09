@@ -53,8 +53,8 @@ static char const rcsid[] = "$Id$";
 
 BEGIN_NCBI_SCOPE
 
-int CSeqDBGiIndex::GetSeqGI(TOid             oid,
-                            CSeqDBLockHold & locked) 
+TGi CSeqDBGiIndex::GetSeqGI(TOid             oid,
+                            CSeqDBLockHold & locked)
 {
     const char* data(0);
 
@@ -68,11 +68,11 @@ int CSeqDBGiIndex::GetSeqGI(TOid             oid,
         m_NumOIDs = (Int4) SeqDB_GetStdOrd((Int4 *) (data+12));
     }
 
-    if (oid >= m_NumOIDs || oid < 0) return -1;
-    
+    if (oid >= m_NumOIDs || oid < 0) return INVALID_GI;
+
     TIndx offset = oid * m_Size + 32;
     data = m_Lease.GetPtr(offset);
-    return (TGi) SeqDB_GetStdOrd((TGi *) data);
+    return GI_FROM(Int4, SeqDB_GetStdOrd((Int4 *) data));
 }
 
 CSeqDBVol::CSeqDBVol(CSeqDBAtlas        & atlas,
@@ -106,11 +106,11 @@ CSeqDBVol::CSeqDBVol(CSeqDBAtlas        & atlas,
     if (neg_list) {
         m_NegativeList.Reset(neg_list);
     }
-    
+
     m_Idx.Reset(new CSeqDBIdxFile(atlas, name, prot_nucl, locked));
-    
+
     m_VolEnd = m_VolStart + m_Idx->GetNumOIDs();
-    
+
     // To allow for empty volumes, we must tolerate the absence of all
     // files other than the index file.
 }
@@ -119,7 +119,7 @@ void
 CSeqDBVol::OpenSeqFile(CSeqDBLockHold & locked) const{
     if (!m_SeqFileOpened) x_OpenSeqFile(locked);
 }
-    
+
 void
 CSeqDBVol::x_OpenSeqFile(CSeqDBLockHold & locked) const {
     m_Atlas.Lock(locked);
@@ -128,8 +128,8 @@ CSeqDBVol::x_OpenSeqFile(CSeqDBLockHold & locked) const {
     }
     m_SeqFileOpened = true;
 }
-    
-void    
+
+void
 CSeqDBVol::x_OpenHdrFile(CSeqDBLockHold & locked) const {
     m_Atlas.Lock(locked);
     if (!m_HdrFileOpened && m_Idx->GetNumOIDs() != 0) {
@@ -141,7 +141,7 @@ CSeqDBVol::x_OpenHdrFile(CSeqDBLockHold & locked) const {
 void
 CSeqDBVol::x_OpenPigFile(CSeqDBLockHold & locked) const{
     m_Atlas.Lock(locked);
-    if (!m_PigFileOpened && 
+    if (!m_PigFileOpened &&
          CSeqDBIsam::IndexExists(m_VolName, (m_IsAA?'p':'n'), 'p') &&
          m_Idx->GetNumOIDs() != 0) {
         m_IsamPig =
@@ -153,11 +153,11 @@ CSeqDBVol::x_OpenPigFile(CSeqDBLockHold & locked) const{
     }
     m_PigFileOpened = true;
 }
-    
-void    
+
+void
 CSeqDBVol::x_OpenGiFile(CSeqDBLockHold & locked) const{
     m_Atlas.Lock(locked);
-    if (!m_GiFileOpened && 
+    if (!m_GiFileOpened &&
          CSeqDBIsam::IndexExists(m_VolName, (m_IsAA?'p':'n'), 'n') &&
          m_Idx->GetNumOIDs() != 0) {
         m_IsamGi =
@@ -169,11 +169,11 @@ CSeqDBVol::x_OpenGiFile(CSeqDBLockHold & locked) const{
     }
     m_GiFileOpened = true;
 }
-    
+
 void
 CSeqDBVol::x_OpenStrFile(CSeqDBLockHold & locked) const{
     m_Atlas.Lock(locked);
-    if (!m_StrFileOpened && 
+    if (!m_StrFileOpened &&
          CSeqDBIsam::IndexExists(m_VolName, (m_IsAA?'p':'n'), 's') &&
          m_Idx->GetNumOIDs() != 0) {
         m_IsamStr =
@@ -185,11 +185,11 @@ CSeqDBVol::x_OpenStrFile(CSeqDBLockHold & locked) const{
     }
     m_StrFileOpened = true;
 }
-    
+
 void
 CSeqDBVol::x_OpenTiFile(CSeqDBLockHold & locked) const{
     m_Atlas.Lock(locked);
-    if (!m_TiFileOpened && 
+    if (!m_TiFileOpened &&
          CSeqDBIsam::IndexExists(m_VolName, (m_IsAA?'p':'n'), 't') &&
          m_Idx->GetNumOIDs() != 0) {
         m_IsamTi =
@@ -201,11 +201,11 @@ CSeqDBVol::x_OpenTiFile(CSeqDBLockHold & locked) const{
     }
     m_TiFileOpened = true;
 }
-    
+
 void
 CSeqDBVol::x_OpenHashFile(CSeqDBLockHold & locked) const{
     m_Atlas.Lock(locked);
-    if (!m_HashFileOpened && 
+    if (!m_HashFileOpened &&
          CSeqDBIsam::IndexExists(m_VolName, (m_IsAA?'p':'n'), 'h') &&
          m_Idx->GetNumOIDs() != 0) {
         m_IsamHash =
@@ -217,11 +217,11 @@ CSeqDBVol::x_OpenHashFile(CSeqDBLockHold & locked) const{
     }
     m_HashFileOpened = true;
 }
-    
+
 void
 CSeqDBVol::x_OpenOidFile(CSeqDBLockHold & locked) const{
     m_Atlas.Lock(locked);
-    if (!m_OidFileOpened && 
+    if (!m_OidFileOpened &&
          CSeqDBGiIndex::IndexExists(m_VolName, (m_IsAA?'p':'n')) &&
          m_Idx->GetNumOIDs() != 0) {
         m_GiIndex =
@@ -231,7 +231,7 @@ CSeqDBVol::x_OpenOidFile(CSeqDBLockHold & locked) const{
     }
     m_OidFileOpened = true;
 }
-    
+
 char CSeqDBVol::GetSeqType() const
 {
     return x_GetSeqType();
@@ -246,12 +246,12 @@ int CSeqDBVol::GetSeqLengthProt(int oid, CSeqDBLockHold & locked) const
 {
     TIndx start_offset = 0;
     TIndx end_offset   = 0;
-    
+
     m_Atlas.Lock(locked);
     m_Idx->GetSeqStartEnd(oid, start_offset, end_offset);
-    
+
     _ASSERT('p' == m_Idx->GetSeqType());
-    
+
     // Subtract one, for the inter-sequence null.
     return int(end_offset - start_offset - 1);
 }
@@ -262,23 +262,23 @@ int CSeqDBVol::GetSeqLengthExact(int oid, CSeqDBLockHold & locked) const
 {
     TIndx start_offset = 0;
     TIndx end_offset   = 0;
-    
+
     m_Atlas.Lock(locked);
     if (!m_SeqFileOpened) x_OpenSeqFile(locked);
     m_Idx->GetSeqStartEnd(oid, start_offset, end_offset);
-    
+
     _ASSERT(m_Idx->GetSeqType() == 'n');
-    
+
     int whole_bytes = int(end_offset - start_offset - 1);
-    
+
     // The last byte is partially full; the last two bits of
     // the last byte store the number of nucleotides in the
     // last byte (0 to 3).
-    
+
     char amb_char = 0;
-    
+
     m_Seq->ReadBytes(& amb_char, end_offset - 1, end_offset);
-    
+
     int remainder = amb_char & 3;
     return (whole_bytes * 4) + remainder;
 }
@@ -287,20 +287,20 @@ int CSeqDBVol::GetSeqLengthApprox(int oid, CSeqDBLockHold & locked) const
 {
     TIndx start_offset = 0;
     TIndx end_offset   = 0;
-    
+
     m_Atlas.Lock(locked);
     m_Idx->GetSeqStartEnd(oid, start_offset, end_offset);
-    
+
     _ASSERT(m_Idx->GetSeqType() == 'n');
-    
+
     int whole_bytes = int(end_offset - start_offset - 1);
-    
+
     // Same principle as below - but use lower bits of oid
     // instead of fetching the actual last byte.  this should
     // correct for bias, unless sequence length modulo 4 has a
     // significant statistical bias, which seems unlikely to
     // me.
-    
+
     return (whole_bytes * 4) + (oid & 0x03);
 }
 
@@ -319,24 +319,24 @@ s_SeqDBMapNA2ToNA4Setup()
 {
     vector<Uint1> translated;
     translated.resize(512);
-    
+
     Uint1 convert[16] = { 0x11,  0x12, 0x14, 0x18,
                           0x21,  0x22, 0x24, 0x28,
                           0x41,  0x42, 0x44, 0x48,
                           0x81,  0x82, 0x84, 0x88 };
-    
+
     Int2 pair1 = 0;
     Int2 pair2 = 0;
-    
+
     for(pair1 = 0; pair1 < 16; pair1++) {
         for(pair2 = 0; pair2 < 16; pair2++) {
             Int2 index = (pair1 * 16 + pair2) * 2;
-            
+
             translated[index]   = convert[pair1];
             translated[index+1] = convert[pair2];
         }
     }
-    
+
     return translated;
 }
 
@@ -358,38 +358,38 @@ s_SeqDBMapNA2ToNA4(const char   * buf2bit,
                    int            base_length)
 {
     static vector<Uint1> expanded = s_SeqDBMapNA2ToNA4Setup();
-    
+
     int estimated_length = (base_length + 1)/2;
     int bytes = 0;
-    
+
     buf4bit.resize(estimated_length);
-    
+
     int inp_chars = base_length/4;
-    
+
     for(int i=0; i<inp_chars; i++) {
         Uint4 inp_char = (buf2bit[i] & 0xFF);
-        
+
         buf4bit[bytes]   = expanded[ (inp_char*2)     ];
         buf4bit[bytes+1] = expanded[ (inp_char*2) + 1 ];
         bytes += 2;
     }
-    
+
     int bases_remain = base_length - (inp_chars*4);
-    
+
     if (bases_remain) {
         Uint1 remainder_bits = 2 * bases_remain;
         Uint1 remainder_mask = (0xFF << (8 - remainder_bits)) & 0xFF;
         Uint4 last_masked = buf2bit[inp_chars] & remainder_mask;
-        
+
         buf4bit[bytes++] = expanded[ (last_masked*2) ];
-        
+
         if (bases_remain > 2) {
             buf4bit[bytes ++] = expanded[ (last_masked*2)+1 ];
         }
     }
-    
+
     buf4bit.resize(bytes);
-    
+
     _ASSERT(estimated_length == (int)buf4bit.size());
 }
 
@@ -408,22 +408,22 @@ s_SeqDBMapNA2ToNA8Setup()
 {
     // Builds a table; each two bit slice holds 0,1,2 or 3.  These are
     // converted to whole bytes containing 1,2,4, or 8, respectively.
-    
+
     vector<Uint1> translated;
     translated.reserve(1024);
-    
+
     for(int i = 0; i<256; i++) {
         int p1 = (i >> 6) & 0x3;
         int p2 = (i >> 4) & 0x3;
         int p3 = (i >> 2) & 0x3;
         int p4 = i & 0x3;
-        
+
         translated.push_back(1 << p1);
         translated.push_back(1 << p2);
         translated.push_back(1 << p3);
         translated.push_back(1 << p4);
     }
-    
+
     return translated;
 }
 
@@ -453,81 +453,81 @@ s_SeqDBMapNA2ToNA8(const char        * buf2bit,
     // to write correctly.  It represents a pointer into the input
     // data and is maintained to point at the next unused byte of
     // input data.
-    
+
     static vector<Uint1> expanded = s_SeqDBMapNA2ToNA8Setup();
-    
+
     int pos = range.begin;
-    
+
     int input_chars_begin = range.begin     / 4;
     int input_chars_end   = (range.end + 3) / 4;
-    
+
     int whole_chars_begin = (range.begin + 3) / 4;
     int whole_chars_end   = range.end         / 4;
-    
+
     int p = input_chars_begin;
-    
+
     if (p < whole_chars_begin) {
         Int4 table_offset = (buf2bit[input_chars_begin] & 0xFF) * 4;
-        
+
         int endpt = (input_chars_begin + 1) * 4;
-        
+
         if (endpt > range.end) {
             endpt = range.end;
         }
-        
+
         for(int k = range.begin; k < endpt; k++) {
             switch(k & 0x3) {
             case 0:
                 _ASSERT(0);
                 break;
-                
+
             case 1:
                 buf8bit[pos++] = expanded[ table_offset + 1 ];
                 break;
-                
+
             case 2:
                 buf8bit[pos++] = expanded[ table_offset + 2 ];
                 break;
-                
+
             case 3:
                 buf8bit[pos++] = expanded[ table_offset + 3 ];
                 break;
             }
         }
-        
+
         p ++;
     }
-    
+
     // In a nucleotide search, this loop is probably a noticeable time
     // consumer, at least relative to the CSeqDB universe.  Each input
     // byte is used to look up a 4 byte output translation.  That four
     // byte section is copied to the output vector.  By pre-processing
     // the arithmetic in the ~Setup() function, we can just pull bytes
     // from a vector.
-    
+
     p = whole_chars_begin;
-    
+
     while(p < whole_chars_end) {
         Int4 table_offset = (buf2bit[p] & 0xFF) * 4;
-        
+
         buf8bit[pos++] = expanded[ table_offset ];
         buf8bit[pos++] = expanded[ table_offset + 1 ];
         buf8bit[pos++] = expanded[ table_offset + 2 ];
         buf8bit[pos++] = expanded[ table_offset + 3 ];
         p++;
     }
-    
+
     if (p < input_chars_end) {
         Int4 table_offset = (buf2bit[p] & 0xFF) * 4;
-        
+
         int remains = (range.end & 0x3);
         _ASSERT(remains);
-        
+
         buf8bit[pos++] = expanded[ table_offset ];
-        
+
         if (remains > 1) {
             buf8bit[pos++] = expanded[ table_offset + 1 ];
-            
+
             if (remains > 2) {
                 buf8bit[pos++] = expanded[ table_offset + 2 ];
             }
@@ -565,10 +565,10 @@ unsigned SeqDB_ncbina8_to_blastna8[] = {
 /// @param range
 ///    The range of opearation. [in]
 static void
-s_SeqDBMapNcbiNA8ToBlastNA8(char              * buf, 
+s_SeqDBMapNcbiNA8ToBlastNA8(char              * buf,
                             const SSeqDBSlice & range)
 {
-    for(int i = range.begin; i < range.end; i++)  
+    for(int i = range.begin; i < range.end; i++)
         buf[i] = SeqDB_ncbina8_to_blastna8[ buf[i] & 0xF ];
 }
 
@@ -677,46 +677,46 @@ static void
 s_SeqDBRebuildDNA_NA4(vector<char>       & buf4bit,
                       const vector<Int4> & amb_chars)
 {
-    if (amb_chars.empty()) 
+    if (amb_chars.empty())
         return;
-    
+
     // Number of ambiguities.
     Uint4 amb_num = amb_chars[0];
-    
+
     // The new format is indicated by setting the highest order bit in
     // the LENGTH field.  Either all ambiguities for this sequence
     // will use the new format, or all will use the old format.
-    
+
     bool new_format = (amb_num & 0x80000000) != 0;
-    
+
     if (new_format) {
 	amb_num &= 0x7FFFFFFF;
     }
-    
+
     for(Uint4 i=1; i < amb_num+1; i++) {
         Int4  row_len  = 0;
         Int4  position = 0;
         Uint1 char_r   = 0;
-        
+
 	if (new_format) {
             char_r    = s_ResVal   (amb_chars, i);
-            row_len   = s_ResLenNew(amb_chars, i); 
+            row_len   = s_ResLenNew(amb_chars, i);
             position  = s_ResPosNew(amb_chars, i);
 	} else {
             char_r    = s_ResVal   (amb_chars, i);
-            row_len   = s_ResLenOld(amb_chars, i); 
+            row_len   = s_ResLenOld(amb_chars, i);
             position  = s_ResPosOld(amb_chars, i);
 	}
-        
+
         Int4  pos = position / 2;
         Int4  rem = position & 1;  /* 0 or 1 */
         Uint1 char_l = char_r << 4;
-        
+
         Int4 j;
         Int4 index = pos;
-        
+
         // This could be made slightly faster for long runs.
-        
+
         for(j = 0; j <= row_len; j++) {
             if (!rem) {
            	buf4bit[index] = (buf4bit[index] & 0x0F) + char_l;
@@ -727,7 +727,7 @@ s_SeqDBRebuildDNA_NA4(vector<char>       & buf4bit,
                 index++;
             }
     	}
-        
+
 	if (new_format) // for new format we have 8 bytes for each element.
             i++;
     }
@@ -754,36 +754,36 @@ s_SeqDBRebuildDNA_NA8(char               * seq,
                       const SSeqDBSlice  & region)
 {
     if (amb_chars.empty() || !seq ) return;
-    
+
     Uint4 amb_num = amb_chars[0];
-    
+
     /* Check if highest order bit set. */
     bool new_format = (amb_num & 0x80000000) != 0;
-    
+
     if (new_format)  amb_num &= 0x7FFFFFFF;
-    
+
     for(Uint4 i = 1; i < amb_num+1; i++) {
         Int4  row_len  = 0;
         Int4  position = 0;
         Uint1 trans_ch = 0;
-        
+
 	if (new_format) {
             trans_ch  = s_ResVal   (amb_chars, i);
-            row_len   = s_ResLenNew(amb_chars, i) + 1; 
+            row_len   = s_ResLenNew(amb_chars, i) + 1;
             position  = s_ResPosNew(amb_chars, i);
 	} else {
             trans_ch  = s_ResVal   (amb_chars, i);
-            row_len   = s_ResLenOld(amb_chars, i) + 1; 
+            row_len   = s_ResLenOld(amb_chars, i) + 1;
             position  = s_ResPosOld(amb_chars, i);
 	}
-        
+
         if (new_format) ++i;
-        
+
         if (position + row_len <= region.begin || position >= region.end)
             continue;
 
-        for (int j = 0; j < row_len; ++j, ++position) 
-            if ( position >= region.begin  && position < region.end) 
+        for (int j = 0; j < row_len; ++j, ++position)
+            if ( position >= region.begin  && position < region.end)
                 seq[position] = trans_ch;
     }
 }
@@ -807,19 +807,19 @@ s_SeqDBWriteSeqDataProt(CSeq_inst  & seqinst,
 {
     // stuff - ncbistdaa
     // mol = aa
-        
+
     // This possibly/probably copies several times.
     // 1. One copy into stdaa_data.
     // 2. Second copy into NCBIstdaa.
     // 3. Third copy into seqdata.
-    
+
     vector<char> aa_data;
     aa_data.resize(length);
-    
+
     for(int i = 0; i < length; i++) {
         aa_data[i] = seq_buffer[i];
     }
-    
+
     seqinst.SetSeq_data().SetNcbistdaa().Set().swap(aa_data);
     seqinst.SetMol(CSeq_inst::eMol_aa);
 }
@@ -844,18 +844,18 @@ s_SeqDBWriteSeqDataNucl(CSeq_inst    & seqinst,
 {
     int whole_bytes  = length / 4;
     int partial_byte = ((length & 0x3) != 0) ? 1 : 0;
-    
+
     vector<char> na_data;
     na_data.resize(whole_bytes + partial_byte);
-    
+
     for(int i = 0; i<whole_bytes; i++) {
         na_data[i] = seq_buffer[i];
     }
-    
+
     if (partial_byte) {
         na_data[whole_bytes] = seq_buffer[whole_bytes] & (0xFF - 0x03);
     }
-    
+
     seqinst.SetSeq_data().SetNcbi2na().Set().swap(na_data);
     seqinst.SetMol(CSeq_inst::eMol_na);
 }
@@ -884,7 +884,7 @@ s_SeqDBWriteSeqDataNucl(CSeq_inst    & seqinst,
     vector<char> buffer_4na;
     s_SeqDBMapNA2ToNA4(seq_buffer, buffer_4na, length); // length is not /4 here
     s_SeqDBRebuildDNA_NA4(buffer_4na, amb_chars);
-    
+
     seqinst.SetSeq_data().SetNcbi4na().Set().swap(buffer_4na);
     seqinst.SetMol(CSeq_inst::eMol_na);
 }
@@ -902,36 +902,36 @@ static void
 s_GetBioseqTitle(CRef<CBlast_def_line_set> deflines, string & title)
 {
     title.erase();
-    
+
     string seqid_str;
-    
-    typedef list< CRef<CBlast_def_line> >::const_iterator TDefIt; 
+
+    typedef list< CRef<CBlast_def_line> >::const_iterator TDefIt;
     typedef list< CRef<CSeq_id        > >::const_iterator TSeqIt;
-    
+
     const list< CRef<CBlast_def_line> > & dl = deflines->Get();
-    
+
     bool first_defline(true);
-    
+
     for(TDefIt iter = dl.begin(); iter != dl.end(); iter++) {
         ostringstream oss;
-        
+
         const CBlast_def_line & defline = **iter;
-        
+
         if (! title.empty()) {
             //oss << "\1";
             oss << " ";
         }
-        
+
         bool wrote_seqids(false);
-        
+
         if ((!first_defline) && defline.CanGetSeqid()) {
             const list< CRef<CSeq_id > > & sl = defline.GetSeqid();
-            
+
             bool first_seqid(true);
-            
+
             // First should look like: "<title>"
             // Others should look like: " ><seqid>|<seqid>|<seqid><title>"
-            
+
             // Should this be two sections not one loop?
 
             for (TSeqIt seqit = sl.begin(); seqit != sl.end(); seqit++) {
@@ -940,24 +940,24 @@ s_GetBioseqTitle(CRef<CBlast_def_line_set> deflines, string & title)
                 } else {
                     oss << "|";
                 }
-                
+
                 (*seqit)->WriteAsFasta(oss);
-                
+
                 first_seqid = false;
                 wrote_seqids = true;
             }
         }
-        
+
         // Omit seqids from first defline
         first_defline = false;
-        
+
         if (defline.CanGetTitle()) {
             if (wrote_seqids) {
                 oss << " ";
             }
             oss << defline.GetTitle();
         }
-        
+
         title += oss.str();
     }
 }
@@ -977,54 +977,54 @@ static bool
 s_SeqDB_SeqIdIn(const list< CRef< CSeq_id > > & seqids, const CSeq_id & target)
 {
     typedef list< CRef<CSeq_id> > TSeqidList;
-    
+
     ITERATE(TSeqidList, iter, seqids) {
         CSeq_id::E_SIC rv = (**iter).Compare(target);
-        
+
         switch(rv) {
         case CSeq_id::e_YES:
             return true;
-            
+
         case CSeq_id::e_NO:
             return false;
-            
+
         default:
             break;
         }
     }
-    
+
     return false;
 }
 
 CRef<CBlast_def_line_set>
 CSeqDBVol::x_GetTaxDefline(int                    oid,
-                           int                    preferred_gi,
+                           TGi                    preferred_gi,
                            const CSeq_id        * preferred_seqid,
                            CSeqDBLockHold       & locked)
 {
     typedef list< CRef<CBlast_def_line> > TBDLL;
     typedef TBDLL::iterator               TBDLLIter;
     typedef TBDLL::const_iterator         TBDLLConstIter;
-    
+
     // 1. read a defline set w/ gethdr, filtering by membership bit.
-    
+
     CRef<CBlast_def_line_set> BDLS =
         x_GetFilteredHeader(oid, NULL, locked);
-    
+
     // 2. if there is a preferred gi, bump it to the top.
-    
+
     if (preferred_gi || preferred_seqid) {
         CRef<CBlast_def_line_set> new_bdls(new CBlast_def_line_set);
-        
+
         CRef<const CSeq_id> seqid;
         if (preferred_gi) {
-            seqid.Reset(new CSeq_id(CSeq_id::e_Gi, preferred_gi));
+            seqid.Reset(new CSeq_id(CSeq_id::e_Gi, GI_TO(TIntId, preferred_gi)));
         } else {
             seqid.Reset(preferred_seqid);
         }
-        
+
         bool found = false;
-        
+
         ITERATE(list< CRef<CBlast_def_line> >, iter, BDLS->Get()) {
             if ((! found) && s_SeqDB_SeqIdIn((**iter).GetSeqid(), *seqid)) {
                 found = true;
@@ -1033,76 +1033,76 @@ CSeqDBVol::x_GetTaxDefline(int                    oid,
                 new_bdls->Set().push_back(*iter);
             }
         }
-        
+
         return new_bdls;
     }
-    
+
     return BDLS;
 }
 
 list< CRef<CSeqdesc> >
 CSeqDBVol::x_GetTaxonomy(int                    oid,
-                         int                    preferred_gi,
+                         TGi                    preferred_gi,
                          const CSeq_id        * preferred_seqid,
                          CRef<CSeqDBTaxInfo>    tax_info,
                          CSeqDBLockHold       & locked)
 {
     const bool provide_new_taxonomy_info = true;
     const bool use_taxinfo_cache         = true;
-    
+
     const char * TAX_ORGREF_DB_NAME = "taxon";
-    
+
     list< CRef<CSeqdesc> > taxonomy;
-    
+
     CRef<CBlast_def_line_set> bdls =
         x_GetTaxDefline(oid, preferred_gi, preferred_seqid, locked);
-    
+
     if (bdls.Empty()) {
         return taxonomy;
     }
-    
+
     typedef list< CRef<CBlast_def_line> > TBDLL;
     typedef TBDLL::iterator               TBDLLIter;
     typedef TBDLL::const_iterator         TBDLLConstIter;
-    
+
     const TBDLL & dl = bdls->Get();
-    
+
     // Lock for sake of tax cache
-    
+
     m_Atlas.Lock(locked);
-    
+
     for(TBDLLConstIter iter = dl.begin(); iter != dl.end(); iter ++) {
         int taxid = 0;
-        
+
         if ((*iter)->CanGetTaxid()) {
             taxid = (*iter)->GetTaxid();
         }
         if (taxid <= 0) {
             continue;
         }
-        
+
         bool have_org_desc = false;
-        
+
         if (use_taxinfo_cache && m_TaxCache.Lookup(taxid).NotEmpty()) {
             have_org_desc = true;
         }
-        
+
         SSeqDBTaxInfo tnames(taxid);
-        
+
         if (tax_info.Empty()) {
             continue;
         }
-        
+
         bool found_taxid_in_taxonomy_blastdb = true;
-        
+
         if ((! have_org_desc) && provide_new_taxonomy_info) {
             try {
                 found_taxid_in_taxonomy_blastdb = tax_info->GetTaxNames(taxid, tnames, locked);
             } catch (CSeqDBException &) {
                 found_taxid_in_taxonomy_blastdb = false;
-            } 
+            }
         }
-        
+
         if (provide_new_taxonomy_info) {
             if (have_org_desc) {
                 taxonomy.push_back(m_TaxCache.Lookup(taxid));
@@ -1110,33 +1110,33 @@ CSeqDBVol::x_GetTaxonomy(int                    oid,
                 CRef<CDbtag> org_tag(new CDbtag);
                 org_tag->SetDb(TAX_ORGREF_DB_NAME);
                 org_tag->SetTag().SetId(taxid);
-                
+
                 CRef<COrg_ref> org(new COrg_ref);
                 if (found_taxid_in_taxonomy_blastdb) {
                     org->SetTaxname().swap(tnames.scientific_name);
                     org->SetCommon().swap(tnames.common_name);
                 }
                 org->SetDb().push_back(org_tag);
-                
+
                 CRef<CBioSource>   source;
                 source.Reset(new CBioSource);
                 source->SetOrg(*org);
-                
+
                 CRef<CSeqdesc> desc(new CSeqdesc);
                 desc->SetSource(*source);
-                
+
                 taxonomy.push_back(desc);
-                
+
                 if (use_taxinfo_cache) {
                     m_TaxCache.Lookup(taxid) = desc;
                 }
             }
         }
     }
-    
+
     return taxonomy;
 }
-                                    
+
 /// Efficiently decode a Blast-def-line-set from binary ASN.1.
 /// @param oss Octet string sequence of binary ASN.1 data.
 /// @param bdls Blast def line set decoded from oss.
@@ -1144,34 +1144,34 @@ static CRef<CBlast_def_line_set>
 s_OssToDefline(const CUser_field::TData::TOss & oss)
 {
     typedef const CUser_field::TData::TOss TOss;
-    
+
     const char * data = NULL;
     size_t size = 0;
     string temp;
-    
+
     if (oss.size() == 1) {
         // In the single-element case, no copies are needed.
-        
+
         const vector<char> & v = *oss.front();
         data = & v[0];
         size = v.size();
     } else {
         // Determine the octet string length and do one allocation.
-        
+
         ITERATE (TOss, iter1, oss) {
             size += (**iter1).size();
         }
-        
+
         temp.reserve(size);
-        
+
         ITERATE (TOss, iter3, oss) {
             // 23.2.4[1] "The elements of a vector are stored contiguously".
             temp.append(& (**iter3)[0], (*iter3)->size());
         }
-        
+
         data = & temp[0];
     }
-    
+
     CObjectIStreamAsnBinary inpstr(data, size);
     CRef<CBlast_def_line_set> retval(new CBlast_def_line_set);
     inpstr >> *retval;
@@ -1207,11 +1207,11 @@ s_ExtractBlastDefline(const T& bioseq)
     return failure;
 }
 
-CRef<CBlast_def_line_set> 
+CRef<CBlast_def_line_set>
 CSeqDB::ExtractBlastDefline(const CBioseq_Handle & handle)
 { return s_ExtractBlastDefline(handle); }
 
-CRef<CBlast_def_line_set> 
+CRef<CBlast_def_line_set>
 CSeqDB::ExtractBlastDefline(const CBioseq & bioseq)
 { return s_ExtractBlastDefline(bioseq); }
 
@@ -1220,41 +1220,41 @@ CSeqDBVol::x_GetAsnDefline(int                    oid,
                            CSeqDBLockHold       & locked) const
 {
     CRef<CSeqdesc> asndef;
-    
+
     vector<char> hdr_data;
     x_GetFilteredBinaryHeader(oid, hdr_data, locked);
-    
+
     if (! hdr_data.empty()) {
         CRef<CUser_object> uobj(new CUser_object);
-        
+
         CRef<CObject_id> uo_oi(new CObject_id);
         uo_oi->SetStr(kAsnDeflineObjLabel);
         uobj->SetType(*uo_oi);
-        
+
         CRef<CUser_field> uf(new CUser_field);
-        
+
         CRef<CObject_id> uf_oi(new CObject_id);
         uf_oi->SetStr(kAsnDeflineObjLabel);
         uf->SetLabel(*uf_oi);
-        
+
         vector< vector<char>* > & strs = uf->SetData().SetOss();
         uf->SetNum(1);
-        
+
         strs.push_back(new vector<char>);
         strs[0]->swap(hdr_data);
-        
+
         uobj->SetData().push_back(uf);
-        
+
         asndef = new CSeqdesc;
         asndef->SetUser(*uobj);
     }
-    
+
     return asndef;
 }
 
 CRef<CBioseq>
 CSeqDBVol::GetBioseq(int                    oid,
-                     int                    target_gi,
+                     TGi                    target_gi,
                      const CSeq_id        * target_seq_id,
                      CRef<CSeqDBTaxInfo>    tax_info,
                      bool                   seqdata,
@@ -1262,39 +1262,39 @@ CSeqDBVol::GetBioseq(int                    oid,
 {
     typedef list< CRef<CBlast_def_line> > TDeflines;
     CRef<CBioseq> null_result;
-    
+
     CRef<CBlast_def_line>     defline;
     list< CRef< CSeq_id > >   seqids;
-    
+
     if (!m_SeqFileOpened) x_OpenSeqFile(locked);
 
     // Get the defline set; but do not modify the object returned by
     // GetFilteredHeader, since that object lives in the cache.
-    
+
     CRef<CBlast_def_line_set> orig_deflines =
         x_GetFilteredHeader(oid,  NULL, locked);
-    
+
     CRef<CBlast_def_line_set> defline_set;
-    
-    if (target_gi || target_seq_id) {
+
+    if ((target_gi != ZERO_GI) || target_seq_id) {
         defline_set.Reset(new CBlast_def_line_set);
-        
+
         CRef<const CSeq_id > seqid;
-        if (target_gi) {
-            seqid.Reset(new CSeq_id(CSeq_id::e_Gi, target_gi));
+        if (target_gi != ZERO_GI) {
+            seqid.Reset(new CSeq_id(CSeq_id::e_Gi, GI_TO(TIntId, target_gi)));
         } else {
             seqid.Reset(target_seq_id);
         }
-        
+
         CRef<CBlast_def_line> filt_dl;
-        
+
         ITERATE(TDeflines, iter, orig_deflines->Get()) {
             if (s_SeqDB_SeqIdIn((**iter).GetSeqid(), *seqid)) {
                 filt_dl = *iter;
                 break;
             }
         }
-        
+
         if (filt_dl.Empty()) {
             NCBI_THROW(CSeqDBException, eArgErr,
                        "Error: oid headers do not contain target gi/seq_id.");
@@ -1303,34 +1303,34 @@ CSeqDBVol::GetBioseq(int                    oid,
         }
     } else {
         defline_set = orig_deflines;
-    } 
-    
+    }
+
     if (defline_set.Empty() ||
         (! defline_set->CanGet()) ||
         (0 == defline_set->Get().size())) {
         return null_result;
     }
-    
+
     defline = defline_set->Get().front();
     if (! defline->CanGetSeqid()) {
         return null_result;
     }
     seqids = defline->GetSeqid();
-    
+
     // Get length & sequence.
-    
+
     CRef<CBioseq> bioseq(new CBioseq);
-    
+
     bool is_prot = (x_GetSeqType() == 'p');
-    
+
     if (seqdata) {
         const char * seq_buffer = 0;
         int length = x_GetSequence(oid, & seq_buffer, false, locked, false);
-        
+
         if (length < 1) {
             return null_result;
         }
-        
+
         // If protein, we set bsp->mol = Seq_mol_aa, seq_data_type =
         // Seq_code_ncbistdaa; then we write the buffer into the byte
         // store (or equivalent).
@@ -1340,17 +1340,17 @@ CSeqDBVol::GetBioseq(int                    oid,
         // b. If there are any, convert sequence to 4 byte rep.
         // c. Otherwise write to a byte store.
         // d. Set mol = Seq_mol_na;
-        
+
         CSeq_inst & seqinst = bioseq->SetInst();
-        
+
         if (is_prot) {
             s_SeqDBWriteSeqDataProt(seqinst, seq_buffer, length);
         } else {
             // nucl
             vector<Int4> ambchars;
-            
+
             x_GetAmbChar(oid, ambchars, locked);
-            
+
             if (ambchars.empty()) {
                 // keep as 2 bit
                 s_SeqDBWriteSeqDataNucl(seqinst, seq_buffer, length);
@@ -1358,63 +1358,63 @@ CSeqDBVol::GetBioseq(int                    oid,
                 // translate to 4 bit
                 s_SeqDBWriteSeqDataNucl(seqinst, seq_buffer, length, ambchars);
             }
-            
+
             // mol = na
             seqinst.SetMol(CSeq_inst::eMol_na);
         }
-        
+
         if (seq_buffer) {
             seq_buffer = 0;
         }
-        
+
         // Set the length and repr (== raw).
-        
+
         seqinst.SetLength(length);
         seqinst.SetRepr(CSeq_inst::eRepr_raw);
     } else {
         CSeq_inst & seqinst = bioseq->SetInst();
         seqinst.SetRepr(CSeq_inst::eRepr_not_set);
-        
+
         bioseq->SetInst().SetMol(is_prot
                                  ? CSeq_inst::eMol_aa
                                  : CSeq_inst::eMol_na);
     }
-    
+
     // Set the id (Seq_id)
-    
+
     bioseq->SetId().swap(seqids);
-    
+
     // If the format is binary, we get the defline and chain it onto
     // the bsp->desc list; then we read and append taxonomy names to
     // the list (x_GetTaxonomy()).
-    
+
     if (defline_set.NotEmpty()) {
         // Convert defline to string.
-        
+
         string description;
-        
+
         s_GetBioseqTitle(defline_set, description);
-        
+
         CRef<CSeqdesc> desc1(new CSeqdesc);
         desc1->SetTitle().swap(description);
-        
+
         CRef<CSeqdesc> desc2( x_GetAsnDefline(oid, locked) );
-        
+
         CSeq_descr & seq_desc_set = bioseq->SetDescr();
         seq_desc_set.Set().push_back(desc1);
-        
+
         if (! desc2.Empty()) {
             seq_desc_set.Set().push_back(desc2);
         }
     }
-    
+
     list< CRef<CSeqdesc> > tax =
         x_GetTaxonomy(oid, target_gi, target_seq_id, tax_info, locked);
-    
+
     ITERATE(list< CRef<CSeqdesc> >, iter, tax) {
         bioseq->SetDescr().Set().push_back(*iter);
     }
-    
+
     return bioseq;
 }
 
@@ -1425,25 +1425,25 @@ char * CSeqDBVol::x_AllocType(size_t           length,
     // Allocation using the atlas is not intended for the end user.
     // 16 bytes are added as insurance against potential off-by-one or
     // off-by-a-few errors.
-    
+
     length += 16;
-    
+
     char * retval = 0;
-    
+
     switch(alloc_type) {
     case eMalloc:
         retval = (char*) malloc(length);
         break;
-        
+
     case eNew:
         retval = new char[length];
         break;
-        
+
     case eAtlas:
     default:
         retval = m_Atlas.Alloc(length + 16, locked, false);
     }
-    
+
     return retval;
 }
 
@@ -1458,7 +1458,7 @@ int CSeqDBVol::GetAmbigSeq(int                oid,
     char * buf1 = 0;
     int baselen =
         x_GetAmbigSeq(oid, & buf1, nucl_code, alloc_type, region, masks, locked);
-    
+
     *buffer = buf1;
     return baselen;
 }
@@ -1500,7 +1500,7 @@ int CSeqDBVol::x_GetAmbigSeq(int                oid,
     // Note the use of the third argument of x_GetSequence() to manage
     // the lifetime of the acquired region.  Specifying false for that
     // argument ties the lifetime to the CSeqDBSeqFile's memory lease.
-    
+
     const char * tmp(0);
     int base_length = x_GetSequence(oid,
                                     &tmp,
@@ -1510,7 +1510,7 @@ int CSeqDBVol::x_GetAmbigSeq(int                oid,
 
     if (region && region->end > base_length )
         NCBI_THROW(CSeqDBException, eFileErr, "Error: region beyond sequence range.");
-   
+
     SSeqDBSlice range = region ? (*region) : SSeqDBSlice(0, base_length);
 
     base_length = range.end - range.begin;
@@ -1530,28 +1530,28 @@ int CSeqDBVol::x_GetAmbigSeq(int                oid,
         bool sentinel = (nucl_code == kSeqDBNuclBlastNA8);
         *buffer = x_AllocType(base_length + (sentinel ? 2 : 0), alloc_type, locked);
         char *seq = *buffer - range.begin + (sentinel ? 1 : 0);
-            
+
         // Get ambiguity characters.
-            
+
         vector<Int4> ambchars;
         x_GetAmbChar(oid, ambchars, locked);
-            
+
         // Determine if we want to filter by offset ranges.  This
         // is only done if:
         //
         // 1. No range is specified by the user.
         // 2. We have cached ranges.
-            
+
         TRangeCache::iterator rciter = m_RangeCache.find(oid);
         bool use_range_set = true;
-        if (region 
-         || rciter == m_RangeCache.end() 
-         || rciter->second->GetRanges().empty() 
-         || CSeqDBRangeList::ImmediateLength() >= base_length) 
+        if (region
+         || rciter == m_RangeCache.end()
+         || rciter->second->GetRanges().empty()
+         || CSeqDBRangeList::ImmediateLength() >= base_length)
             use_range_set = false;
 
         if (! use_range_set) {
-                
+
             s_SeqDBMapNA2ToNA8(tmp, seq, range);
             s_SeqDBRebuildDNA_NA8(seq, ambchars, range);
             s_SeqDBMaskSequence(seq, masks, (char)14, range);
@@ -1561,32 +1561,32 @@ int CSeqDBVol::x_GetAmbigSeq(int                oid,
 
             _ASSERT (!region);
             const TRangeList & range_set = rciter->second->GetRanges();
-    
+
             // Place 'fence' sentinel bytes around each range; this is done
             // before any of the range data is mapped so that the range data
             // is free to replace the sentinel bytes if needed; that would
             // only happen if range_set are adjacent or overlapping.
-    
+
             ITERATE(TRangeVector, riter, range_set) {
                 int begin(riter->first);
                 int end(riter->second);
-        
+
                 if (begin) seq[begin - 1] = (char) FENCE_SENTRY;
                 if (end < base_length) seq[end] = (char) FENCE_SENTRY;
             }
-    
+
             ITERATE(TRangeVector, riter, range_set) {
 
-                SSeqDBSlice slice(max(0, riter->first), 
+                SSeqDBSlice slice(max(0, riter->first),
                                   min(range.end, riter->second));
-        
+
                 s_SeqDBMapNA2ToNA8(tmp, seq, slice);
                 s_SeqDBRebuildDNA_NA8(seq, ambchars, slice);
                 s_SeqDBMaskSequence(seq, masks, (char)14, slice);
                 if (sentinel) s_SeqDBMapNcbiNA8ToBlastNA8(seq, slice);
             }
         }
-        
+
         // Put back the sentinel at last
         if (sentinel) {
             (*buffer)[0] = (char)15;
@@ -1596,7 +1596,7 @@ int CSeqDBVol::x_GetAmbigSeq(int                oid,
 
     // Clear the masks after consumption
     if (masks) masks->clear();
-    
+
     return base_length;
 }
 
@@ -1605,55 +1605,55 @@ void SeqDB_UnpackAmbiguities(const CTempString & sequence,
                              string            & result)
 {
     result.resize(0);
-    
+
     // The code in this block is derived from GetBioseq() and
     // s_SeqDBWriteSeqDataNucl().
-    
+
     // Get the length and the (probably mmapped) data.
-    
+
     if (sequence.length() == 0) {
         NCBI_THROW(CSeqDBException, eFileErr,
                    "Error: packed sequence data is not valid.");
     }
-    
+
     const char * seq_buffer = sequence.data();
-    
+
     int whole_bytes = sequence.length() - 1;
     int remainder = sequence[whole_bytes] & 3;
     int base_length = (whole_bytes * 4) + remainder;
-    
+
     if (base_length == 0) {
         return;
     }
-    
+
     // Get ambiguity characters.
-    
+
     vector<Int4> ambchars;
     ambchars.reserve(ambiguities.length()/4);
-    
+
     for(size_t i = 0; i < ambiguities.length(); i+=4) {
         Int4 A = SeqDB_GetStdOrd((int*) (ambiguities.data() + i));
         ambchars.push_back(A);
     }
-    
+
     // Combine and translate to 4 bits-per-character encoding.
-    
+
     char * buffer_na8 = (char*) malloc(base_length);
-    
+
     try {
         SSeqDBSlice range(0, base_length);
-        
+
         s_SeqDBMapNA2ToNA8(seq_buffer, buffer_na8, range);
-        
+
         s_SeqDBRebuildDNA_NA8(buffer_na8, ambchars, range);
     }
     catch(...) {
         free(buffer_na8);
         throw;
     }
-    
+
     result.assign(buffer_na8, base_length);
-    
+
     free(buffer_na8);
 }
 
@@ -1667,30 +1667,30 @@ int CSeqDBVol::x_GetSequence(int              oid,
 {
     TIndx start_offset = 0;
     TIndx end_offset   = 0;
-    
+
     int length = -1;
-    
+
     m_Atlas.Lock(locked);
     if (!m_SeqFileOpened) x_OpenSeqFile(locked);
-    
+
     if (oid >= m_Idx->GetNumOIDs()) return -1;
 
     m_Idx->GetSeqStartEnd(oid, start_offset, end_offset);
 
     char seqtype = m_Idx->GetSeqType();
-    
+
     if ('p' == seqtype) {
         // Subtract one, for the inter-sequence null.
-        
+
         end_offset --;
-        
+
         length = int(end_offset - start_offset);
-        
+
         // Although we subtracted one above to get the correct length,
         // we expand the range here by one byte in both directions.
         // The normal consumer of this data relies on them, and can
         // walk off memory if a sequence ends on a slice boundary.
-        
+
         *buffer = m_Seq->GetRegion(start_offset-1,
                                    end_offset+1,
                                    keep,
@@ -1703,22 +1703,22 @@ int CSeqDBVol::x_GetSequence(int              oid,
         // The last byte is partially full; the last two bits of the
         // last byte store the number of nucleotides in the last byte
         // (0 to 3).
-        
+
         // 'Hold' is used if we are going to fetch another kind of
         // data after this data, but before we are done actually using
         // this data.  If can_release is true, we will return after
         // this.  If keep is true, we don't need hold because keep
         // will already have preserved the region.
-        
+
         bool hold = ! (keep || can_release);
-        
+
         *buffer = m_Seq->GetRegion(start_offset,
                                    end_offset,
                                    keep,
                                    hold,
                                    locked,
                                    in_lease);
-        
+
         if (! (*buffer))  return -1;
 
         // If we are returning a hold on the sequence (keep), and the
@@ -1727,20 +1727,20 @@ int CSeqDBVol::x_GetSequence(int              oid,
         // the underlying data).  This will allow the following data
         // access to occur outside of the locked duration - lowering
         // contention in the nucleotide case.
-        
+
         /* do not release the lock since we may be getting more...
         if (keep && can_release) {
             m_Atlas.Unlock(locked);
         }*/
-        
+
         int whole_bytes = int(end_offset - start_offset - 1);
-        
+
         char last_char = (*buffer)[whole_bytes];
-        
+
         int remainder = last_char & 3;
         length = (whole_bytes * 4) + remainder;
     }
-    
+
     return length;
 }
 
@@ -1748,33 +1748,33 @@ list< CRef<CSeq_id> > CSeqDBVol::GetSeqIDs(int                    oid,
                                            CSeqDBLockHold       & locked) const
 {
     list< CRef< CSeq_id > > seqids;
-    
+
     CRef<CBlast_def_line_set> defline_set =
         x_GetFilteredHeader(oid, NULL, locked);
-    
+
     if ((! defline_set.Empty()) && defline_set->CanGet()) {
         ITERATE(list< CRef<CBlast_def_line> >, defline, defline_set->Get()) {
             if (! (*defline)->CanGetSeqid()) {
                 continue;
             }
-            
+
             ITERATE(list< CRef<CSeq_id> >, seqid, (*defline)->GetSeqid()) {
                 seqids.push_back(*seqid);
             }
         }
     }
-    
+
     return seqids;
 }
 
-int CSeqDBVol::GetSeqGI(int              oid, 
-                        CSeqDBLockHold & locked) const 
+TGi CSeqDBVol::GetSeqGI(int              oid,
+                        CSeqDBLockHold & locked) const
 {
     if (!m_OidFileOpened) x_OpenOidFile(locked);
     if (!m_GiIndex.Empty()) {
          return m_GiIndex->GetSeqGI(oid, locked);
     }
-    return -1;
+    return INVALID_GI;
 }
 
 Uint8 CSeqDBVol::GetVolumeLength() const
@@ -1796,71 +1796,71 @@ CSeqDBVol::x_GetFilteredHeader(int                    oid,
 {
     typedef list< CRef<CBlast_def_line> > TBDLL;
     typedef TBDLL::iterator               TBDLLIter;
-    
+
     m_Atlas.Lock(locked);
-    
+
     TDeflineCacheItem & cached = m_DeflineCache.Lookup(oid);
-    
+
     if (cached.first.NotEmpty()) {
         if (changed) {
             *changed = cached.second;
         }
-        
+
         return cached.first;
     }
-    
+
     bool asn_changed = false;
-    
+
     CRef<CBlast_def_line_set> BDLS =
         x_GetHdrAsn1(oid, true, & asn_changed, locked);
-    
+
     bool id_filter = x_HaveIdFilter();
-    
+
     if (id_filter || m_MemBit) {
         // Create the memberships mask (should this be fixed to allow
         // membership bits greater than 32?)
-        
+
         TBDLL & dl = BDLS->Set();
-        
+
         for(TBDLLIter iter = dl.begin(); iter != dl.end(); ) {
             const CBlast_def_line & defline = **iter;
-            
+
             bool have_memb = true;
-            
+
             if (m_MemBit) {
                 have_memb =
                     defline.CanGetMemberships() &&
                     defline.IsSetMemberships() &&
                     (! defline.GetMemberships().empty());
-                
+
                 if (have_memb) {
                     int bits = defline.GetMemberships().front();
                     int memb_mask = 0x1 << (m_MemBit-1);
-                    
+
                     if ((bits & memb_mask) == 0) {
                         have_memb = false;
                     }
                 }
             }
-            
+
             // Here we must pass both the user-gi and volume-gi test,
             // for each defline, but not necessarily for each Seq-id.
-            
+
             if (have_memb && id_filter && defline.CanGetSeqid()) {
                 have_memb = false;
-                
+
                 bool have_user = false, have_volume = false;
-                
+
                 ITERATE(list< CRef<CSeq_id> >, seqid, defline.GetSeqid()) {
                     x_FilterHasId(**seqid, have_user, have_volume);
-                    
+
                     if (have_user && have_volume)
                         break;
                 }
-                
+
                 have_memb = have_user && have_volume;
             }
-            
+
             if (! have_memb) {
                 TBDLLIter eraseme = iter++;
                 dl.erase(eraseme);
@@ -1878,7 +1878,7 @@ CSeqDBVol::x_GetFilteredHeader(int                    oid,
         cached.first = BDLS;
         cached.second = asn_changed;
     }
-    
+
     return BDLS;
 }
 
@@ -1889,33 +1889,33 @@ CSeqDBVol::x_GetHdrAsn1(int              oid,
                         CSeqDBLockHold & locked) const
 {
     CRef<CBlast_def_line_set> bdls;
-    
+
     CTempString raw_data = x_GetHdrAsn1Binary(oid, locked);
-    
+
     if (! raw_data.size()) {
         return bdls;
     }
-    
+
     // Now create an ASN.1 object from the memory chunk provided here.
-    
+
     CObjectIStreamAsnBinary inpstr(raw_data.data(), raw_data.size());
-    
+
     bdls.Reset(new objects::CBlast_def_line_set);
-    
+
     inpstr >> *bdls;
-    
+
     if (adjust_oids && bdls.NotEmpty() && m_VolStart) {
         NON_CONST_ITERATE(list< CRef<CBlast_def_line> >, dl, bdls->Set()) {
             if (! (**dl).CanGetSeqid()) {
                 continue;
             }
-            
+
             NON_CONST_ITERATE(list< CRef<CSeq_id> >, id, (*dl)->SetSeqid()) {
                 CSeq_id & seqid = **id;
-                
+
                 if (seqid.Which() == CSeq_id::e_General) {
                     CDbtag & dbt = seqid.SetGeneral();
-                    
+
                     if (dbt.GetDb() == "BL_ORD_ID") {
                         int vol_oid = dbt.GetTag().GetId();
                         dbt.SetTag().SetId(m_VolStart + vol_oid);
@@ -1927,7 +1927,7 @@ CSeqDBVol::x_GetHdrAsn1(int              oid,
             }
         }
     }
-    
+
     return bdls;
 }
 
@@ -1936,15 +1936,15 @@ CSeqDBVol::x_GetHdrAsn1Binary(int oid, CSeqDBLockHold & locked) const
 {
     TIndx hdr_start = 0;
     TIndx hdr_end   = 0;
-    
+
     m_Atlas.Lock(locked);
-    
+
     if (!m_HdrFileOpened) x_OpenHdrFile(locked);
 
     m_Idx->GetHdrStartEnd(oid, hdr_start, hdr_end);
-    
+
     const char * asn_region = m_Hdr->GetRegion(hdr_start, hdr_end, locked);
-    
+
     return CTempString(asn_region, hdr_end - hdr_start);
 }
 
@@ -1956,19 +1956,19 @@ CSeqDBVol::x_GetFilteredBinaryHeader(int                    oid,
     // This method's client is GetBioseq() and related methods.  That
     // code needs filtered ASN.1 headers; eliminating the fetching of
     // filtered data here is not necessary (the cache will hit.)
-    
+
     // If the data changed after deserialization, we need to serialize
     // the modified version.  If not, we can just copy the binary data
     // from disk.
-    
+
     bool changed = false;
-    
+
     CRef<CBlast_def_line_set> dls =
         x_GetFilteredHeader(oid,  & changed, locked);
-    
+
     if (changed) {
         CNcbiOstrstream asndata;
-        
+
         {{
             CObjectOStreamAsnBinary outpstr(asndata);
             outpstr << *dls;
@@ -1987,36 +1987,36 @@ void CSeqDBVol::x_GetAmbChar(int              oid,
 {
     TIndx start_offset = 0;
     TIndx end_offset   = 0;
-    
+
     m_Atlas.Lock(locked);
-    
+
     bool ok = m_Idx->GetAmbStartEnd(oid, start_offset, end_offset);
-    
+
     if (! ok) {
         NCBI_THROW(CSeqDBException, eFileErr,
                    "File error: could not get ambiguity data.");
     }
-    
+
     int length = int(end_offset - start_offset);
-    
+
     if (length) {
         int total = length / 4;
-        
+
         // 'hold' should be false here because we only need the data
         // for the duration of this function.
-        
+
         Int4 * buffer =
             (Int4*) m_Seq->GetRegion(start_offset,
                                      start_offset + (total * 4),
                                      false,
                                      false,
                                      locked);
-        
+
         // This is probably unnecessary
         total &= 0x7FFFFFFF;
-        
+
         ambchars.resize(total);
-        
+
         for(int i = 0; i<total; i++) {
             ambchars[i] = SeqDB_GetStdOrd((const int *)(& buffer[i]));
         }
@@ -2056,30 +2056,30 @@ bool CSeqDBVol::PigToOid(int pig, int & oid, CSeqDBLockHold & locked) const
     if (m_IsamPig.Empty()) {
         return false;
     }
-    
+
     return m_IsamPig->PigToOid(pig, oid, locked);
 }
 
 bool CSeqDBVol::GetPig(int oid, int & pig, CSeqDBLockHold & locked) const
 {
     pig = -1;
-    
+
     CRef<CBlast_def_line_set> BDLS = x_GetHdrAsn1(oid, false, NULL, locked);
-    
+
     if (BDLS.Empty() || (! BDLS->IsSet())) {
         return false;
     }
-    
+
     typedef list< CRef< CBlast_def_line > >::const_iterator TI1;
     typedef list< int >::const_iterator TI2;
-    
+
     TI1 it1 = BDLS->Get().begin();
-    
+
     for(; it1 != BDLS->Get().end();  it1++) {
         if ((*it1)->IsSetOther_info()) {
             TI2 it2 = (*it1)->GetOther_info().begin();
             TI2 it2end = (*it1)->GetOther_info().end();
-            
+
             for(; it2 != it2end;  it2++) {
                 if (*it2 != -1) {
                     pig = *it2;
@@ -2088,7 +2088,7 @@ bool CSeqDBVol::GetPig(int oid, int & pig, CSeqDBLockHold & locked) const
             }
         }
     }
-    
+
     return false;
 }
 
@@ -2099,37 +2099,37 @@ bool CSeqDBVol::TiToOid(Int8                   ti,
     // Note: this is the (Int8 to int) interface layer; code below
     // this point (in the call stack) uses int; code above this level,
     // up to the user level, uses Int8.
-    
+
     if (!m_TiFileOpened) x_OpenTiFile(locked);
     if (m_IsamTi.Empty()) {
         // If the "nti/ntd" files become ubiquitous, this could be
         // removed.  For now, I will look up trace IDs in the string
         // DB if the database in question does not have the Trace ID
         // ISAM files.  (The following could be made more efficient.)
-        
+
         CSeq_id seqid(string("gnl|ti|") + NStr::Int8ToString(ti));
         vector<int> oids;
-        
+
         SeqidToOids(seqid, oids,  locked);
-        
+
         if (oids.size()) {
             oid = oids[0];
         }
-        
+
         return ! oids.empty();
     }
-    
+
     return m_IsamTi->IdToOid(ti, oid, locked);
 }
 
-bool CSeqDBVol::GiToOid(int gi, int & oid, CSeqDBLockHold & locked) const
+bool CSeqDBVol::GiToOid(TGi gi, int & oid, CSeqDBLockHold & locked) const
 {
     if (!m_GiFileOpened) x_OpenGiFile(locked);
     if (m_IsamGi.Empty()) {
         return false;
     }
-    
-    return m_IsamGi->IdToOid(gi, oid, locked);
+
+    return m_IsamGi->IdToOid(GI_TO(Int8, gi), oid, locked);
 }
 
 void CSeqDBVol::IdsToOids(CSeqDBGiList   & ids,
@@ -2145,7 +2145,7 @@ void CSeqDBVol::IdsToOids(CSeqDBGiList   & ids,
                        "GI list specified but no ISAM file found for GI in " + m_VolName);
         }
     }
-    
+
     if (ids.GetNumTis()) {
         if (!m_TiFileOpened) x_OpenTiFile(locked);
         if (m_IsamTi.NotEmpty()) {
@@ -2156,7 +2156,7 @@ void CSeqDBVol::IdsToOids(CSeqDBGiList   & ids,
                        "TI list specified but no ISAM file found for TI in " + m_VolName);
         }
     }
-    
+
     if (ids.GetNumSis()) {
         if (!m_StrFileOpened) x_OpenStrFile(locked);
         if (m_IsamStr.NotEmpty()) {
@@ -2173,7 +2173,7 @@ void CSeqDBVol::IdsToOids(CSeqDBNegativeList & ids,
                           CSeqDBLockHold     & locked) const
 {
     // Numeric translation is done in batch mode.
-    
+
     if (ids.GetNumGis()) {
         if (!m_GiFileOpened) x_OpenGiFile(locked);
         if (m_IsamGi.NotEmpty()) {
@@ -2184,7 +2184,7 @@ void CSeqDBVol::IdsToOids(CSeqDBNegativeList & ids,
                        "GI list specified but no ISAM file found for GI in " + m_VolName);
         }
     }
-    
+
     if (ids.GetNumTis()) {
         if (!m_TiFileOpened) x_OpenTiFile(locked);
         if (m_IsamTi.NotEmpty()) {
@@ -2198,46 +2198,46 @@ void CSeqDBVol::IdsToOids(CSeqDBNegativeList & ids,
 }
 
 bool CSeqDBVol::GetGi(int                    oid,
-                      int                  & gi,
+                      TGi                  & gi,
                       CSeqDBLockHold       & locked) const
 {
-    gi = -1;
-    
+    gi = INVALID_GI;
+
     if (!m_GiFileOpened) x_OpenGiFile(locked);
     if (m_IsamGi.Empty()) {
         return false;
     }
-    
+
     CRef<CBlast_def_line_set> BDLS =
         x_GetFilteredHeader(oid,  NULL, locked);
-    
+
     if (BDLS.Empty() || (! BDLS->IsSet())) {
         return false;
     }
-    
+
     typedef list< CRef< CBlast_def_line > >::const_iterator TI1;
     typedef list< CRef< CSeq_id > >::const_iterator TI2;
-    
+
     TI1 it1 = BDLS->Get().begin();
-    
+
     // Iterate over all blast def lines in the set
-    
+
     for(; it1 != BDLS->Get().end();  it1++) {
         if ((*it1)->CanGetSeqid()) {
             TI2 it2 = (*it1)->GetSeqid().begin();
             TI2 it2end = (*it1)->GetSeqid().end();
-            
+
             // Iterate within each defline
-            
+
             for(; it2 != it2end;  it2++) {
                 if ((*it2)->IsGi()) {
-                    gi = GI_TO(int, (*it2)->GetGi());
+                    gi = (*it2)->GetGi();
                     return true;
                 }
             }
         }
     }
-    
+
     return false;
 }
 
@@ -2252,7 +2252,7 @@ void CSeqDBVol::x_StringToOids(const string          & acc,
     bool vcheck (false);
     bool fits_in_four = (ident == -1) || ! (ident >> 32);
     bool needs_four = true;
-    
+
     switch(id_type) {
     case eStringId:
         if (!m_StrFileOpened) x_OpenStrFile(locked);
@@ -2262,71 +2262,71 @@ void CSeqDBVol::x_StringToOids(const string          & acc,
             m_IsamStr->StringToOids(str_id, oids, simpler, vcheck, locked);
         }
         break;
-        
+
     case ePigId:
         // Converted to PIG type.
         if (!m_PigFileOpened) x_OpenPigFile(locked);
         if (! m_IsamPig.Empty()) {
             int oid(-1);
-            
+
             if (m_IsamPig->PigToOid((int) ident, oid, locked)) {
                 oids.push_back(oid);
             }
         }
         break;
-        
+
     case eGiId:
         // Converted to GI type.
         if (!m_GiFileOpened) x_OpenGiFile(locked);
         if (! m_IsamGi.Empty()) {
             int oid(-1);
-            
+
             if (m_IsamGi->IdToOid(ident, oid, locked)) {
                 oids.push_back(oid);
             }
         }
         break;
-        
+
     case eTiId:
         // Converted to TI type.
         if (!m_TiFileOpened) x_OpenTiFile(locked);
         if (!m_StrFileOpened) x_OpenStrFile(locked);
         if (! m_IsamTi.Empty()) {
             int oid(-1);
-            
+
             if (m_IsamTi->IdToOid(ident, oid, locked)) {
                 oids.push_back(oid);
             }
         } else if (m_IsamStr) {
             // Not every database with TIs has a TI index, so fall
             // back to a string comparison if the first attempt fails.
-            // 
+            //
             // 1. TI's don't have versions.
             // 2. Specify "adjusted" as true, because lookup of
             //    "gb|.." and similar tricks are not needed for TIs.
-            
+
             m_IsamStr->StringToOids(acc, oids, true, vcheck, locked);
         }
         break;
-        
+
     case eOID:
         // Converted to OID directly.
         oids.push_back((int) ident);
         break;
-        
+
     case eHashId:
         _ASSERT(0);
         NCBI_THROW(CSeqDBException,
                    eArgErr,
                    "Internal error: hashes are not Seq-ids.");
     }
-    
+
     if ((! fits_in_four) && needs_four) {
         NCBI_THROW(CSeqDBException,
                    eArgErr,
                    "ID overflows range of specified type.");
     }
-    
+
     if (vcheck) {
         x_CheckVersions(acc, oids,  locked);
     }
@@ -2339,53 +2339,53 @@ void CSeqDBVol::x_CheckVersions(const string         & acc,
     // If we resolved a string id by stripping the version off of the
     // string, we need to check (for each OID) if the real ID had a
     // matching version.
-    
+
     // This condition happens in two cases: where the database has a
     // different version of the same ID, and in the case of sparse
     // databases (which do not store the version).  In the latter
     // case, we may get a list of OIDs where some of the OIDs pass
     // this test, and others fail.
-    
+
     size_t pos = acc.find(".");
     _ASSERT(pos != acc.npos);
-    
+
     string ver_str(acc, pos+1, acc.size()-(pos+1));
     int vernum = NStr::StringToInt(ver_str,
                                    NStr::fConvErr_NoThrow |
                                    NStr::fAllowTrailingSymbols);
-    
+
     string nover(acc, 0, pos);
-    
+
     size_t pos2(0);
     while((pos2 = nover.find("|")) != nover.npos) {
         nover.erase(0, pos2+1);
     }
-        
+
     NON_CONST_ITERATE(vector<int>, iter, oids) {
         list< CRef<CSeq_id> > ids =
             GetSeqIDs(*iter,  locked);
-        
+
         bool found = false;
-        
+
         ITERATE(list< CRef<CSeq_id> >, seqid, ids) {
             const CTextseq_id * id = (*seqid)->GetTextseq_Id();
-            
+
             if (id &&
                 id->CanGetAccession() &&
                 id->GetAccession() == nover &&
                 id->CanGetVersion() &&
                 id->GetVersion() == vernum) {
-                
+
                 found = true;
                 break;
             }
         }
-        
+
         if (! found) {
             *iter = -1;
         }
     }
-    
+
     oids.erase(remove(oids.begin(), oids.end(), -1), oids.end());
 }
 
@@ -2396,13 +2396,13 @@ void CSeqDBVol::AccessionToOids(const string         & acc,
     Int8   ident   (-1);
     string str_id;
     bool   simpler (false);
-    
+
     ESeqDBIdType id_type = SeqDB_SimplifyAccession(acc, ident, str_id, simpler);
 
     x_StringToOids(acc, id_type, ident, str_id, simpler, oids, locked);
 
 }
-    
+
 void CSeqDBVol::SeqidToOids(CSeq_id              & seqid,
                             vector<int>          & oids,
                             CSeqDBLockHold       & locked) const
@@ -2410,9 +2410,9 @@ void CSeqDBVol::SeqidToOids(CSeq_id              & seqid,
     Int8   ident   (-1);
     string str_id;
     bool   simpler (false);
-    
+
     ESeqDBIdType id_type = SeqDB_SimplifySeqid(seqid, 0, ident, str_id, simpler);
-    
+
     x_StringToOids(seqid.AsFastaString(), id_type, ident, str_id, simpler, oids, locked);
 
 }
@@ -2420,7 +2420,7 @@ void CSeqDBVol::SeqidToOids(CSeq_id              & seqid,
 void CSeqDBVol::UnLease()
 {
     m_Idx->UnLease();
-    
+
     if (m_Seq.NotEmpty()) {
         m_Seq->UnLease();
     }
@@ -2446,77 +2446,77 @@ int CSeqDBVol::GetOidAtOffset(int              first_seq,
     //
     // 1. For protein, we subtract the oid to compensate for
     // inter-sequence nulls.
-    // 
+    //
     // 2. For nucleotide, the input value is 0..(num residues).  We
     // scale this value to the length of the byte data.
-    
+
     int   vol_cnt = GetNumOIDs();
     Uint8 vol_len = GetVolumeLength();
-    
+
     if (first_seq >= vol_cnt) {
         NCBI_THROW(CSeqDBException,
                    eArgErr,
                    "OID not in valid range.");
     }
-    
+
     if (residue >= vol_len) {
         NCBI_THROW(CSeqDBException,
                    eArgErr,
                    "Residue offset not in valid range.");
     }
-    
+
     if ('n' == m_Idx->GetSeqType()) {
         // Input range is from 0 .. total_length
         // Require range from  0 .. byte_length
-        
+
         Uint8 end_of_bytes = x_GetSeqResidueOffset(vol_cnt, locked);
-        
+
         double dresidue = (double(residue) * end_of_bytes) / vol_len;
-        
+
         if (dresidue < 0) {
             residue = 0;
-        } else { 
+        } else {
             residue = Uint8(dresidue);
-            
+
             if (residue > (end_of_bytes-1)) {
                 residue = end_of_bytes - 1;
             }
         }
     }
-    
+
     // First seq limit handled right here.
     // oid_end refers to first disincluded oid.
-    
+
     int oid_beg = first_seq;
     int oid_end = vol_cnt-1;
-    
+
     // Residue limit we need to search for.
-    
+
     int oid_mid = (oid_beg + oid_end)/2;
-    
+
     while(oid_beg < oid_end) {
         Uint8 offset = x_GetSeqResidueOffset(oid_mid, locked);
-        
+
         if ('p' == m_Idx->GetSeqType()) {
             offset -= oid_mid;
         }
-        
+
         if (offset >= residue) {
             oid_end = oid_mid;
         } else {
             oid_beg = oid_mid + 1;
         }
-        
+
         oid_mid = (oid_beg + oid_end)/2;
     }
-    
+
     return oid_mid;
 }
 
 Uint8 CSeqDBVol::x_GetSeqResidueOffset(int oid, CSeqDBLockHold & locked) const
 {
     m_Atlas.Lock(locked);
-    
+
     TIndx start_offset = 0;
     m_Idx->GetSeqStart(oid, start_offset);
     return start_offset;
@@ -2529,38 +2529,38 @@ CSeqDBVol::GetSeqData(int              oid,
                       CSeqDBLockHold & locked) const
 {
     // This design was part of the BlastDbDataLoader code.
-    
+
     m_Atlas.Lock(locked);
-    
+
     if (!m_SeqFileOpened) x_OpenSeqFile(locked);
 
     CRef<CSeq_data> seq_data(new CSeq_data);
-    
+
     if (m_IsAA) {
         const char * buffer(0);
         TSeqPos      length(0);
-        
+
         length = x_GetSequence(oid, & buffer, false, locked, false);
-        
+
         if ((begin >= end) || (end > length)) {
             NCBI_THROW(CSeqDBException,
                        eArgErr,
                        "Begin and end offsets are not valid.");
         }
-        
+
         seq_data->SetNcbistdaa().Set().assign(buffer + begin, buffer + end);
     } else {
         // This code builds an array and packs the output in 4 bit
         // format for NA.  No attempt is made to find an optimal
         // packing for the data.
-        
+
         int nucl_code(kSeqDBNuclNcbiNA8);
-        
+
         SSeqDBSlice slice(begin, end);
-        
+
         char    * buffer(0);
         TSeqPos   length(0);
-        
+
         length = x_GetAmbigSeq(oid,
                                & buffer,
                                nucl_code,
@@ -2568,30 +2568,30 @@ CSeqDBVol::GetSeqData(int              oid,
                                & slice,
                                NULL,
                                locked);
-        
-        // validity of begin, end, and length has already been checked by 
+
+        // validity of begin, end, and length has already been checked by
         // overloaded x_GetSequence()
         // note: length has been redefined to be end - begin
 
         vector<char> v4;
         v4.reserve((length+1)/2);
-        
+
         // (this is an attempt to stop a warning message.)
         TSeqPos length_whole = TSeqPos(length & (TSeqPos(0)-TSeqPos(2)));
-        
+
         for(TSeqPos i = 0; i < length_whole; i += 2) {
             v4.push_back((buffer[i] << 4) | buffer[i+1]);
         }
-        
+
         if (length_whole != length) {
             _ASSERT((length_whole) == (length-1));
             v4.push_back(buffer[length_whole] << 4);
         }
-        
+
         seq_data->SetNcbi4na().Set().swap(v4);
         delete [] buffer;
     }
-    
+
     return seq_data;
 }
 
@@ -2604,64 +2604,64 @@ CSeqDBVol::GetRawSeqAndAmbig(int              oid,
 {
     if (seq_length)
         *seq_length = 0;
-    
+
     if (amb_length)
         *amb_length = 0;
-    
+
     if (buffer)
         *buffer = 0;
-    
+
     TIndx start_S   = 0;
     TIndx end_S     = 0;
     TIndx start_A   = 0;
     TIndx end_A     = 0;
     TIndx map_begin = 0;
     TIndx map_end   = 0;
-    
+
     m_Atlas.Lock(locked);
     if (!m_SeqFileOpened) x_OpenSeqFile(locked);
-    
+
     m_Idx->GetSeqStartEnd(oid, start_S, end_S);
     bool amb_ok = true;
-    
+
     if (m_IsAA) {
         // No ambiguities in protein dbs, but there is a NUL between
         // sequences, so we subtract one to remove that.
-        
+
         end_A = start_A = --end_S;
-        
+
         _ASSERT(start_S > 0);
-        
+
         map_begin = start_S - 1;
         map_end   = end_A + 1;
     } else {
         amb_ok = m_Idx->GetAmbStartEnd(oid, start_A, end_A);
-        
+
         map_begin = start_S;
         map_end   = end_A;
     }
-    
+
     int s_len = int(end_S - start_S);
     int a_len = int(end_A - start_A);
-    
+
     if (! (s_len && amb_ok)) {
         NCBI_THROW(CSeqDBException, eFileErr,
                    "File error: could not get sequence data.");
     }
-    
+
     if (amb_length) {
         *amb_length = a_len;
     }
-    
+
     if (seq_length) {
         *seq_length = s_len;
     }
-    
+
     if (buffer) {
         *buffer = m_Seq->GetRegion(map_begin, map_end, true, false, locked);
         *buffer += (start_S - map_begin);
     }
-    
+
     if (buffer && *buffer) {
         if (! *seq_length) {
             NCBI_THROW(CSeqDBException,
@@ -2685,23 +2685,25 @@ s_SeqDBFitsInFour(Int8 id)
     }
 }
 
-void CSeqDBVol::GetGiBounds(int            & low_id,
-                            int            & high_id,
+void CSeqDBVol::GetGiBounds(TGi            & low_id,
+                            TGi            & high_id,
                             int            & count,
                             CSeqDBLockHold & locked) const
 {
     m_Atlas.Lock(locked);
     if (!m_GiFileOpened) x_OpenGiFile(locked);
-    low_id = high_id = count = 0;
-    
+    low_id = ZERO_GI;
+    high_id = ZERO_GI;
+    count = 0;
+
     if (m_IsamGi.NotEmpty()) {
         Int8 L(0), H(0);
-        
+
         m_IsamGi->GetIdBounds(L, H, count, locked);
-        
-        low_id = (int) L;
-        high_id = (int) H;
-        
+
+        low_id = GI_FROM(Int8, L);
+        high_id = GI_FROM(Int8, H);
+
         s_SeqDBFitsInFour(L);
         s_SeqDBFitsInFour(H);
     }
@@ -2715,15 +2717,15 @@ void CSeqDBVol::GetPigBounds(int            & low_id,
     m_Atlas.Lock(locked);
     if (!m_PigFileOpened) x_OpenPigFile(locked);
     low_id = high_id = count = 0;
-    
+
     if (m_IsamPig.NotEmpty()) {
         Int8 L(0), H(0);
-        
+
         m_IsamPig->GetIdBounds(L, H, count, locked);
-        
+
         low_id = (int) L;
         high_id = (int) H;
-        
+
         s_SeqDBFitsInFour(L);
         s_SeqDBFitsInFour(H);
     }
@@ -2739,7 +2741,7 @@ void CSeqDBVol::GetStringBounds(string         & low_id,
     count = 0;
     low_id.erase();
     high_id.erase();
-    
+
     if (m_IsamStr.NotEmpty()) {
         m_IsamStr->GetIdBounds(low_id, high_id, count, locked);
     }
@@ -2752,49 +2754,49 @@ void CSeqDBVol::SetOffsetRanges(int                oid,
                                 CSeqDBLockHold   & locked) const
 {
     m_Atlas.Lock(locked);
-    
+
     if (offset_ranges.empty() && (! cache_data) && (! append_ranges)) {
         // Specifying no-cache plus an empty offset range list, means
         // that we are clearing out this sequence.  In this case, just
         // free the relevant element and be done.
-        
+
         m_RangeCache.erase(oid);
         return;
     }
-    
+
     // This adds the range cache object to the map.
-    
+
     CRef<CSeqDBRangeList> & R = m_RangeCache[oid];
-    
+
     if (R.Empty() || R->GetRanges().empty()) {
         // In this case, we are disabling caching, and no ranges
         // exist.  There is nothing to do, and no need to keep the
         // element around, so once again we erase + exit.
-        
+
         if (offset_ranges.empty() && (! cache_data)) {
             m_RangeCache.erase(oid);
             return;
         }
-        
+
         if (R.Empty()) {
             R.Reset(new CSeqDBRangeList(m_Atlas));
         }
     }
-    
+
     // We should flush the sequence if:
     //
     // 1. We are not keeping the old ranges (1).
     // 2. There are new ranges to add (2).
     // 3. We are clearing the 'cache data' flag.
-    
+
     bool flush_sequence = ((! append_ranges) ||         // (1)
                            (! offset_ranges.empty()) || // (2)
                            (! cache_data));             // (3)
-    
+
     if (flush_sequence) {
         R->FlushSequence();
     }
-    
+
     R->SetRanges(offset_ranges, append_ranges, cache_data);
 }
 
@@ -2813,7 +2815,7 @@ void CSeqDBRangeList::SetRanges(const TRangeList & offset_ranges,
     } else {
         m_Ranges = offset_ranges;
     }
-    
+
     // Note that actual caching is not currently done.
     m_CacheData = cache_data;
 }
@@ -2824,18 +2826,18 @@ void CSeqDBVol::OptimizeGiLists() const
         m_VolumeGiLists.empty() ||
         m_UserGiList->GetNumSis() ||
         m_UserGiList->GetNumTis()) {
-        
+
         return;
     }
-    
+
     NON_CONST_ITERATE(TGiLists, gilist, m_VolumeGiLists) {
         if ((**gilist).GetNumSis() != 0)
             return;
-        
+
         if ((**gilist).GetNumTis() != 0)
             return;
     }
-    
+
     // If we have volume GI lists, and a user gi list, and neither of
     // these uses Seq-ids, then we can detach the user gi list (from
     // the volume) because it is redundant with the volume GI lists.
@@ -2844,7 +2846,7 @@ void CSeqDBVol::OptimizeGiLists() const
     // each volume GI list is translated in terms of the user GI list,
     // which means that only the intersection of the two lists is left
     // in the volume GI list.
-    
+
     m_UserGiList.Reset();
 }
 
@@ -2856,18 +2858,18 @@ void CSeqDBVol::HashToOids(unsigned         hash,
     // long term interest or whether standard databases will be built
     // with these indices, but it should not cause any harm to support
     // them for databases where the files do exist.
-    
+
     // Since it is normal for a hash lookup to fail (the user of this
     // feature generally does not know if the sequence will be found),
     // the lack of hash indexing is reported by throwing an exception.
-    
+
     if (!m_HashFileOpened) x_OpenHashFile(locked);
     if (m_IsamHash.Empty()) {
         NCBI_THROW(CSeqDBException,
                    eArgErr,
                    "Hash lookup requested but no hash ISAM file found.");
     }
-    
+
     m_IsamHash->HashToOids(hash, oids, locked);
 }
 
@@ -2880,15 +2882,15 @@ void CSeqDBVol::GetColumnBlob(int              col_id,
                               CSeqDBLockHold & locked)
 {
     m_Atlas.Lock(locked);
-    
+
     if (! m_HaveColumns) {
         x_OpenAllColumns(locked);
     }
-    
+
     _ASSERT(col_id >= 0);
     _ASSERT(col_id < (int)m_Columns.size());
     _ASSERT(m_Columns[col_id].NotEmpty());
-    
+
     m_Columns[col_id]->GetBlob(oid, blob, keep, & locked);
 }
 
@@ -2897,15 +2899,15 @@ CSeqDBVol::GetColumnMetaData(int              col_id,
                              CSeqDBLockHold & locked)
 {
     m_Atlas.Lock(locked);
-    
+
     if (! m_HaveColumns) {
         x_OpenAllColumns(locked);
     }
-    
+
     _ASSERT(col_id >= 0);
     _ASSERT(col_id < (int)m_Columns.size());
     _ASSERT(m_Columns[col_id].NotEmpty());
-    
+
     return m_Columns[col_id]->GetMetaData();
 }
 
@@ -2913,11 +2915,11 @@ void CSeqDBVol::ListColumns(set<string>    & titles,
                             CSeqDBLockHold & locked)
 {
     m_Atlas.Lock(locked);
-    
+
     if (! m_HaveColumns) {
         x_OpenAllColumns(locked);
     }
-    
+
     ITERATE(vector< CRef<CSeqDBColumn> >, iter, m_Columns) {
         titles.insert((**iter).GetTitle());
     }
@@ -2926,28 +2928,28 @@ void CSeqDBVol::ListColumns(set<string>    & titles,
 void CSeqDBVol::x_OpenAllColumns(CSeqDBLockHold & locked)
 {
     m_Atlas.Lock(locked);
-    
+
     if (m_HaveColumns) {
         return;
     }
-    
+
     string alpha("abcdefghijklmnopqrstuvwxyz");
     string ei("??a"), ed("??b"), ed2("??c");
-    
+
     ei[0] = ed[0] = ed2[0] = (m_IsAA ? 'p' : 'n');
-    
+
     map<string,int> unique_titles;
-    
+
     for(size_t i = 0; i < alpha.size(); i++) {
         ei[1] = ed[1] = ed2[1] = alpha[i];
-        
+
         if (CSeqDBColumn::ColumnExists(m_VolName, ei, m_Atlas, locked)) {
 
             bool big   = CSeqDBColumn::ColumnExists(m_VolName, ed, m_Atlas, locked);
             bool small = CSeqDBColumn::ColumnExists(m_VolName, ed2, m_Atlas, locked);
 
             if ( ! (big || small)) continue;
-            
+
             CRef<CSeqDBColumn> col;
 
             const Int2 bytetest = 0x0011;
@@ -2957,26 +2959,26 @@ void CSeqDBVol::x_OpenAllColumns(CSeqDBLockHold & locked)
             } else {
                 col.Reset(new CSeqDBColumn(m_VolName, ei, ed, & locked));
             }
-            
+
             string errmsg, errarg;
-            
+
             string title = col->GetTitle();
-            
+
             if (unique_titles[title]) {
                 errmsg = "duplicate column title";
                 errarg = title;
             } else {
                 unique_titles[title] = 1;
             }
-            
+
             int noidc(col->GetNumOIDs()), noidv(m_Idx->GetNumOIDs());
-            
+
             if (noidc != noidv) {
                 errmsg = "column has wrong #oids";
                 errarg = NStr::IntToString(noidc) + " vs "
                     + NStr::IntToString(noidv);
             }
-            
+
             if (errmsg.size()) {
                 if (errarg.size()) {
                     errmsg += string(" [") + errarg + "].";
@@ -2984,11 +2986,11 @@ void CSeqDBVol::x_OpenAllColumns(CSeqDBLockHold & locked)
                 NCBI_THROW(CSeqDBException, eFileErr,
                            string("Error: ") + errmsg);
             }
-            
+
             m_Columns.push_back(col);
-        } 
+        }
     }
-    
+
     m_HaveColumns = true;
 }
 
@@ -2996,17 +2998,17 @@ int CSeqDBVol::GetColumnId(const string   & title,
                            CSeqDBLockHold & locked)
 {
     m_Atlas.Lock(locked);
-    
+
     if (! m_HaveColumns) {
         x_OpenAllColumns(locked);
     }
-    
+
     for(size_t i = 0; i < m_Columns.size(); i++) {
         if (m_Columns[i]->GetTitle() == title) {
             return i;
         }
     }
-    
+
     return -1;
 }
 #endif
