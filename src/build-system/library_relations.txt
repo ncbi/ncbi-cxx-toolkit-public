@@ -742,6 +742,7 @@ ncbiCacc includes3party ncbiacc
 ncbiCacc needs3party netentr
 ncbiNacc includes3party ncbiacc
 ncbiNacc needs3party netentr
+ncbi_id2proc_wgs needs $(COMPRESS_LIBS)
 ncbi_id2proc_wgs needs $(SRAREAD_LIBS)
 ncbi_id2proc_wgs needs id2
 ncbi_xblobstorage_netcache needs xconnserv
