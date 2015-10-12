@@ -295,12 +295,6 @@ public:
     void x_Init(const string& NC_registry_section)
     {
         m_NC_api = CNetCacheAPI(CNetCacheAPI::eAppRegistry, NC_registry_section);
-        m_Grid_cli.reset(new CGridClient(m_NS_api.GetSubmitter(),
-                                         m_NC_api,
-                                         CGridClient::eManualCleanup,
-                                         CGridClient::eProgressMsgOn
-                                        )
-                        );
     }
 
     virtual ~CGridRPCBaseClient()
@@ -310,21 +304,26 @@ public:
     template <class TRequest, class TReply>
     pair<CNetScheduleJob, bool> Ask(const TRequest& request, TReply& reply) const
     {
-        CNcbiOstream& job_in = m_Grid_cli->GetOStream(); // job input stream
+        CGridClient grid_cli(m_NS_api.GetSubmitter(),
+                             m_NC_api,
+                             CGridClient::eManualCleanup,
+                             CGridClient::eProgressMsgOn
+                            );
+        CNcbiOstream& job_in = grid_cli.GetOStream(); // job input stream
         auto_ptr<CObjectOStream> outstr(TConnectTraits::GetOStream(job_in));
         *outstr << request;
         if (job_in.bad()) {
             NCBI_THROW(CIOException, eWrite, "Error while writing request");
         }
         outstr.reset();
-        m_Grid_cli->CloseStream();
+        grid_cli.CloseStream();
 
-        CNetScheduleJob& job = m_Grid_cli->GetJob();
+        CNetScheduleJob& job = grid_cli.GetJob();
         bool timed_out = false;
         x_PrepareJob(job);
 
         try {
-            const CNetScheduleAPI::EJobStatus evt = m_Grid_cli->SubmitAndWait(m_Timeout);
+            const CNetScheduleAPI::EJobStatus evt = grid_cli.SubmitAndWait(m_Timeout);
             switch (evt) {
             case CNetScheduleAPI::eDone:
             {
@@ -406,7 +405,6 @@ protected:
 private:
     mutable CNetScheduleAPI m_NS_api;
     mutable CNetCacheAPI m_NC_api;
-    mutable auto_ptr<CGridClient> m_Grid_cli;
     Uint4 m_Timeout;
 };
 
