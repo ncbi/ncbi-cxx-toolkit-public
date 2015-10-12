@@ -4919,6 +4919,7 @@ void CFeatureItem::x_AddFTableRnaQuals(
     if ( !feat.GetData().IsRna() ) {
         return;
     }
+    const CFlatFileConfig& cfg = GetContext()->Config();
     const CSeqFeatData::TRna& rna = feat.GetData().GetRna();
     if (rna.IsSetExt()) {
         const CRNA_ref::TExt& ext = rna.GetExt();
@@ -4947,7 +4948,9 @@ void CFeatureItem::x_AddFTableRnaQuals(
             } else if ( id->IsGeneral() ) {
                 id_str = id->AsFastaString();
             }
-            x_AddFTableQual("transcript_id", id_str);
+            if (! cfg.HideProteinID()) {
+                x_AddFTableQual("transcript_id", id_str);
+            }
         }
     }
 }
@@ -4959,6 +4962,7 @@ void CFeatureItem::x_AddFTableCdregionQuals(
 //  ----------------------------------------------------------------------------
 {
     CBioseq_Handle prod;
+    const CFlatFileConfig& cfg = GetContext()->Config();
     if ( feat.IsSetProduct() ) {
         prod = ctx.GetScope().GetBioseqHandle(feat.GetProductId());
     }
@@ -5014,7 +5018,9 @@ void CFeatureItem::x_AddFTableCdregionQuals(
         } else if ( id->IsGi() ) {
             id_str = id->AsFastaString();
         }
-        x_AddFTableQual("protein_id", id_str);
+        if (! cfg.HideProteinID()) {
+            x_AddFTableQual("protein_id", id_str);
+        }
     }
 }
 

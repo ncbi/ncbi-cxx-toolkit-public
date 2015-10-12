@@ -89,6 +89,21 @@ CFlatFileGenerator::CFlatFileGenerator
 }
 
 
+CFlatFileGenerator::CFlatFileGenerator
+(CFlatFileConfig::TFormat format,
+ CFlatFileConfig::TMode   mode,
+ CFlatFileConfig::TStyle  style,
+ CFlatFileConfig::TFlags  flags,
+ CFlatFileConfig::TView   view,
+ CFlatFileConfig::TCustom custom) :
+    m_Ctx(new CFlatFileContext(CFlatFileConfig(format, mode, style, flags, view, custom)))
+{
+    if ( !m_Ctx ) {
+       NCBI_THROW(CFlatException, eInternal, "Unable to initialize context");
+    }
+}
+
+
 // destructor
 
 CFlatFileGenerator::~CFlatFileGenerator(void)

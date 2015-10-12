@@ -143,6 +143,11 @@ public:
         fShowSeqSpans          = 1 << 30
     };
 
+    enum ECustom {
+        // additional customization flags
+        fHideProteinID         = 1
+    };
+
     enum EView {
         // determines which Bioseqs in an entry to view
         fViewNucleotides  = 0x1,
@@ -210,10 +215,11 @@ public:
     typedef EFormat         TFormat;
     typedef EMode           TMode;
     typedef EStyle          TStyle;
-    typedef unsigned int    TFlags; // binary OR of "EFlatFileFlags"
+    typedef unsigned int    TFlags; // binary OR of "EFlags"
     typedef unsigned int    TView;
     typedef unsigned int    TGffOptions;
     typedef unsigned int    TGenbankBlocks;
+    typedef unsigned int    TCustom; // binary OR of "ECustom"
     
     class NCBI_FORMAT_EXPORT CGenbankBlockCallback : public CObject {
     public:
@@ -328,7 +334,7 @@ public:
             FGenbankBlocks which_block ) { return eAction_Default; }
     };
 
-    // constructors
+    // constructor
     CFlatFileConfig(TFormat format = eFormat_GenBank,
                     TMode   mode = eMode_GBench,
                     TStyle  style = eStyle_Normal,
@@ -338,7 +344,8 @@ public:
                     TGenbankBlocks genbank_blocks = fGenbankBlocks_All,
                     CGenbankBlockCallback* pGenbankBlockCallback = NULL,
                     const ICanceled * pCanceledCallback = NULL,
-                    bool basicCleanup = false );
+                    bool basicCleanup = false,
+                    TCustom custom = 0 );
     // destructor
     ~CFlatFileConfig(void);
 
@@ -488,9 +495,6 @@ public:
     bool ShowOutOfBoundsFeats(void) const;
     bool HideSpecificGeneMaps(void) const;
     
-    // adjust mode dependant flags for RefSeq
-    void SetRefSeqConventions(void);
-
     // setters (for customization flags)
     void SetFlags(const TFlags& flags) { m_Flags = flags; }
     CFlatFileConfig& SetDoHTML               (bool val = true);
@@ -524,7 +528,19 @@ public:
     CFlatFileConfig& SetHideGapFeatures      (bool val = true);
     CFlatFileConfig& SetNeverTranslateCDS    (bool val = true);
     CFlatFileConfig& SetShowSeqSpans         (bool val = true);
-    
+
+    // -- Custom
+    // getters
+    const TCustom& GetCustom(void) const { return m_Custom; }
+    bool HideProteinID         (void) const;
+
+    // setters
+    void SetCustom(const TCustom& custom) { m_Custom = custom; }
+    CFlatFileConfig& SetHideProteinID        (bool val = true);
+
+    // adjust mode dependant flags for RefSeq
+    void SetRefSeqConventions(void);
+
     // -- GffOptions
     // getters
     bool GffGenerateIdTags   (void) const 
@@ -657,6 +673,7 @@ private:
     CRef<CGenbankBlockCallback> m_GenbankBlockCallback;
     const ICanceled * m_pCanceledCallback; // instance does NOT own it
     bool        m_BasicCleanup;
+    TCustom     m_Custom;
 };
 
 
@@ -664,14 +681,14 @@ private:
 // inilne methods
 
 // custom flags
-#define CUSTOM_FLAG_GET(x) \
+#define FLAG_ARG_GET(x) \
 inline \
 bool CFlatFileConfig::x(void) const \
 { \
     return (m_Flags & f##x) != 0; \
 }
 
-#define CUSTOM_FLAG_SET(x) inline \
+#define FLAG_ARG_SET(x) inline \
 CFlatFileConfig& CFlatFileConfig::Set##x(bool val) \
 { \
     if ( val ) { \
@@ -682,45 +699,74 @@ CFlatFileConfig& CFlatFileConfig::Set##x(bool val) \
     return *this; \
 }
 
-#define CUSTOM_FLAG_IMP(x) \
-CUSTOM_FLAG_GET(x) \
-CUSTOM_FLAG_SET(x)
+#define FLAG_ARG_IMP(x) \
+FLAG_ARG_GET(x) \
+FLAG_ARG_SET(x)
 
-CUSTOM_FLAG_IMP(DoHTML)
-CUSTOM_FLAG_IMP(HideImpFeatures)
-CUSTOM_FLAG_IMP(HideSNPFeatures)
-CUSTOM_FLAG_IMP(HideExonFeatures)
-CUSTOM_FLAG_IMP(HideIntronFeatures)
-CUSTOM_FLAG_IMP(HideMiscFeatures)
-CUSTOM_FLAG_IMP(HideRemoteImpFeatures)
-CUSTOM_FLAG_IMP(HideGeneRIFs)
-CUSTOM_FLAG_IMP(OnlyGeneRIFs)
-CUSTOM_FLAG_IMP(HideCDSProdFeatures)
-CUSTOM_FLAG_IMP(HideCDDFeatures)
-CUSTOM_FLAG_IMP(LatestGeneRIFs)
-CUSTOM_FLAG_IMP(ShowContigFeatures)
-CUSTOM_FLAG_IMP(ShowContigSources)
-CUSTOM_FLAG_IMP(ShowContigAndSeq)
-CUSTOM_FLAG_IMP(CopyGeneToCDNA)
-CUSTOM_FLAG_IMP(ShowContigInMaster)
-CUSTOM_FLAG_IMP(CopyCDSFromCDNA)
-CUSTOM_FLAG_IMP(HideSourceFeatures)
-CUSTOM_FLAG_IMP(AlwaysTranslateCDS)
-CUSTOM_FLAG_IMP(OnlyNearFeatures)
-CUSTOM_FLAG_IMP(FavorFarFeatures)
-CUSTOM_FLAG_IMP(ShowFarTranslations)
-CUSTOM_FLAG_IMP(TranslateIfNoProduct)
-CUSTOM_FLAG_IMP(ShowTranscript)
-CUSTOM_FLAG_IMP(ShowPeptides)
-CUSTOM_FLAG_IMP(ShowFtableRefs)
-CUSTOM_FLAG_IMP(OldFeaturesOrder)
-CUSTOM_FLAG_IMP(HideGapFeatures)
-CUSTOM_FLAG_IMP(NeverTranslateCDS)
-CUSTOM_FLAG_IMP(ShowSeqSpans)
+FLAG_ARG_IMP(DoHTML)
+FLAG_ARG_IMP(HideImpFeatures)
+FLAG_ARG_IMP(HideSNPFeatures)
+FLAG_ARG_IMP(HideExonFeatures)
+FLAG_ARG_IMP(HideIntronFeatures)
+FLAG_ARG_IMP(HideMiscFeatures)
+FLAG_ARG_IMP(HideRemoteImpFeatures)
+FLAG_ARG_IMP(HideGeneRIFs)
+FLAG_ARG_IMP(OnlyGeneRIFs)
+FLAG_ARG_IMP(HideCDSProdFeatures)
+FLAG_ARG_IMP(HideCDDFeatures)
+FLAG_ARG_IMP(LatestGeneRIFs)
+FLAG_ARG_IMP(ShowContigFeatures)
+FLAG_ARG_IMP(ShowContigSources)
+FLAG_ARG_IMP(ShowContigAndSeq)
+FLAG_ARG_IMP(CopyGeneToCDNA)
+FLAG_ARG_IMP(ShowContigInMaster)
+FLAG_ARG_IMP(CopyCDSFromCDNA)
+FLAG_ARG_IMP(HideSourceFeatures)
+FLAG_ARG_IMP(AlwaysTranslateCDS)
+FLAG_ARG_IMP(OnlyNearFeatures)
+FLAG_ARG_IMP(FavorFarFeatures)
+FLAG_ARG_IMP(ShowFarTranslations)
+FLAG_ARG_IMP(TranslateIfNoProduct)
+FLAG_ARG_IMP(ShowTranscript)
+FLAG_ARG_IMP(ShowPeptides)
+FLAG_ARG_IMP(ShowFtableRefs)
+FLAG_ARG_IMP(OldFeaturesOrder)
+FLAG_ARG_IMP(HideGapFeatures)
+FLAG_ARG_IMP(NeverTranslateCDS)
+FLAG_ARG_IMP(ShowSeqSpans)
 
-#undef CUSTOM_FLAG_IMP
-#undef CUSTOM_FLAG_GET
-#undef CUSTOM_FLAG_SET
+// custom flags
+#define CUSTOM_ARG_GET(x) \
+inline \
+bool CFlatFileConfig::x(void) const \
+{ \
+    return (m_Custom & f##x) != 0; \
+}
+
+#define CUSTOM_ARG_SET(x) inline \
+CFlatFileConfig& CFlatFileConfig::Set##x(bool val) \
+{ \
+    if ( val ) { \
+        m_Custom |= f##x; \
+    } else { \
+        m_Custom &= ~f##x; \
+    } \
+    return *this; \
+}
+
+#define CUSTOM_ARG_IMP(x) \
+CUSTOM_ARG_GET(x) \
+CUSTOM_ARG_SET(x)
+
+CUSTOM_ARG_IMP(HideProteinID)
+
+#undef FLAG_ARG_IMP
+#undef FLAG_ARG_GET
+#undef FLAG_ARG_SET
+
+#undef CUSTOM_ARG_IMP
+#undef CUSTOM_ARG_GET
+#undef CUSTOM_ARG_SET
 
 inline
 void CFlatFileConfig::SetRefSeqConventions(void)

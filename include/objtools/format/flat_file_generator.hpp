@@ -69,6 +69,13 @@ public:
         CFlatFileConfig::TStyle    style  = CFlatFileConfig::eStyle_Normal,
         CFlatFileConfig::TFlags    flags  = 0,
         CFlatFileConfig::TView     view   = CFlatFileConfig::fViewNucleotides);
+    CFlatFileGenerator(
+        CFlatFileConfig::TFormat   format = CFlatFileConfig::eFormat_GenBank,
+        CFlatFileConfig::TMode     mode   = CFlatFileConfig::eMode_GBench,
+        CFlatFileConfig::TStyle    style  = CFlatFileConfig::eStyle_Normal,
+        CFlatFileConfig::TFlags    flags  = 0,
+        CFlatFileConfig::TView     view   = CFlatFileConfig::fViewNucleotides,
+        CFlatFileConfig::TCustom   custom = 0);
     
     // destructor
     ~CFlatFileGenerator(void);

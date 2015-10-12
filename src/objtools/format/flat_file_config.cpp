@@ -305,13 +305,13 @@ CFlatFileConfig::CFlatFileConfig(
     TGenbankBlocks genbank_blocks,
     CGenbankBlockCallback* pGenbankBlockCallback,
     const ICanceled * pCanceledCallback,
-    bool basicCleanup ) :
+    bool basicCleanup, TCustom custom ) :
     m_Format(format), m_Mode(mode), m_Style(style), m_View(view),
     m_Flags(flags), m_RefSeqConventions(false), m_GffOptions(gff_options),
     m_fGenbankBlocks(genbank_blocks),
     m_GenbankBlockCallback(pGenbankBlockCallback),
     m_pCanceledCallback(pCanceledCallback),
-    m_BasicCleanup(basicCleanup)
+    m_BasicCleanup(basicCleanup), m_Custom(custom)
 {
     // GFF/GFF3 and FTable always require master style
     if (m_Format == eFormat_GFF  ||  m_Format == eFormat_GFF3  ||
@@ -554,6 +554,13 @@ void CFlatFileConfig::AddArgumentDescriptions(CArgDescriptions& args)
 
                                  CArgDescriptions::eInteger, "0");
 
+         // custom (default: 0)
+         arg_desc->AddDefaultKey("custom", "Custom",
+                                 "Custom flat file output bits.  The value is the bitwise OR (logical addition) of:\n"
+                                 "         1 - hide protein_id and transcript_id",
+
+                                 CArgDescriptions::eInteger, "0");
+
          arg_desc->AddOptionalKey("showblocks", "COMMA_SEPARATED_BLOCK_LIST", 
              "Use this to only show certain parts of the flatfile (e.g. '-showblocks locus,defline').  "
              "These are all possible values for block names: " + NStr::Join(CFlatFileConfig::GetAllGenbankStrings(), ", "),
@@ -777,6 +784,14 @@ CFlatFileConfig::EFlags x_GetFlags(const CArgs& args)
 }
 
 
+CFlatFileConfig::ECustom x_GetCustom(const CArgs& args)
+{
+    int custom = args["custom"].AsInteger();
+
+    return (CFlatFileConfig::ECustom)custom;
+}
+
+
 CFlatFileConfig::EView x_GetView(const CArgs& args)
 {
     const string& view = args["view"].AsString();
@@ -835,6 +850,7 @@ void CFlatFileConfig::FromArguments(const CArgs& args)
     CFlatFileConfig::EView          view           = x_GetView(args);
     CFlatFileConfig::EGffOptions    gff_options    = CFlatFileConfig::fGffGTFCompat;
     CFlatFileConfig::TGenbankBlocks genbank_blocks = x_GetGenbankBlocks(args);
+    CFlatFileConfig::ECustom        custom         = x_GetCustom(args);
 
     SetFormat(format);
     SetMode(mode);
@@ -844,6 +860,7 @@ void CFlatFileConfig::FromArguments(const CArgs& args)
     m_GffOptions = gff_options;
     m_fGenbankBlocks = genbank_blocks;
     m_BasicCleanup = args["cleanup"];
+    SetCustom(custom);
 }
 
 END_SCOPE(objects)
