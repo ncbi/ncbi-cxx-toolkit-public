@@ -2547,7 +2547,7 @@ extern char* NcbiLog_AppGetSession(void)
         sx_Info->state == eNcbiLog_AppBegin) {
         TROUBLE_MSG("NcbiLog_AppGetSession() can be used after NcbiLog_AppStart() only");
     }
-    sid = sx_Info->session[0] ? s_StrDup(sx_Info->session) : kEmptySID;
+    sid = sx_Info->session[0] ? s_StrDup((char*)sx_Info->session) : (char*)kEmptySID;
     MT_UNLOCK;
 
     return sid;
