@@ -328,7 +328,9 @@ protected:
         }
 #else
 // attempt to make NC more responsive
+#ifndef _DEBUG
         Uint8 start = s_CurJiffies;
+#endif
         for (;;) {
             FStateFunc next_state = (((Me*)this)->*m_CurState)().func;
             if (next_state == NULL)

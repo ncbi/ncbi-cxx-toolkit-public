@@ -1213,7 +1213,9 @@ void CNCBlobStorage::WriteDbInfo(CSrvSocketTask& task, const CTempString& mask)
     string is("\": "),iss("\": \""), eol(",\n\""), str("_str"), eos("\"");
     task.WriteText(eol).WriteText("storagepath"  ).WriteText(iss).WriteText(   s_Path).WriteText(eos);
     task.WriteText(eol).WriteText("DBfiles\": [\n");
+#ifdef _DEBUG
     int now = CSrvTime::CurSecs();
+#endif
     s_DBFilesLock.Lock();
     bool is_first = true;
     for (TNCDBFilesMap::iterator it = s_DBFiles->begin();  it != s_DBFiles->end(); ++it) {
@@ -1239,7 +1241,7 @@ void CNCBlobStorage::WriteDbInfo(CSrvSocketTask& task, const CTempString& mask)
 
 #ifdef _DEBUG
         CSrvRef<SNCDBFileInfo>& file_info = it->second;
-        Uint4 expired_count = 0, used_size = 0, null_cache_count = 0, wrong_cache_count = 0;
+        Uint4 expired_count = 0, null_cache_count = 0, wrong_cache_count = 0;
         map<int, int> rec_alerts;
         map<int, int> rec_count;
         set<int> file_ref;
