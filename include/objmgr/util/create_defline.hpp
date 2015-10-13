@@ -204,9 +204,9 @@ private:
     bool m_TSAMaster;
 
     string m_MainTitle;
-    CTempString m_GeneralStr;
-    CTempString m_PatentCountry;
-    CTempString m_PatentNumber;
+    string m_GeneralStr;
+    string m_PatentCountry;
+    string m_PatentNumber;
 
     int m_PatentSequence;
 

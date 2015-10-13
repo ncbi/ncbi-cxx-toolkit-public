@@ -2431,6 +2431,7 @@ string CDeflineGenerator::GenerateDefline (
 
     string prefix; // from a small set of compile-time constants
     string suffix;
+    string final;
 
     // set flags from record components
     x_SetFlags (bsh, flags);
@@ -2509,11 +2510,13 @@ string CDeflineGenerator::GenerateDefline (
     // strip leading spaces remaining after removal of old TPA or TSA prefixes
     m_MainTitle.erase (0, m_MainTitle.find_first_not_of (' '));
 
+    CStringUTF8 decoded = NStr::HtmlDecode (m_MainTitle);
+
     // strip trailing commas, semicolons, and spaces (period may be an sp.
     // species)
-    size_t pos = m_MainTitle.find_last_not_of (",;~ ");
+    size_t pos = decoded.find_last_not_of (",;~ ");
     if (pos != NPOS) {
-        m_MainTitle.erase (pos + 1);
+        decoded.erase (pos + 1);
     }
 
     // calculate prefix
@@ -2523,29 +2526,9 @@ string CDeflineGenerator::GenerateDefline (
     x_SetSuffix (suffix, bsh);
 
     // produce final result
-    string final = prefix + m_MainTitle + suffix;
+    string penult = prefix + decoded + suffix;
 
-    /*
-    pos = final.find (" ,");
-    if (pos != NPOS) {
-        final [pos] = ',';
-        final [pos+1] = ' ';
-    }
-    pos = final.find (",,");
-    if (pos != NPOS) {
-        final [pos+1] = ' ';
-    }
-    pos = final.find (" ;");
-    if (pos != NPOS) {
-        final [pos] = ';';
-        final [pos+1] = ' ';
-    }
-
-    x_CompressRunsOfSpaces (final);
-    */
-
-    CStringUTF8 x = NStr::HtmlDecode (final);
-    x_CleanAndCompress (final, x);
+    x_CleanAndCompress (final, penult);
 
     if (! m_IsPDB && ! m_IsPatent && ! m_IsAA && ! m_IsSeg) {
         if (!final.empty() && islower ((unsigned char) final[0]) && capitalize) {
