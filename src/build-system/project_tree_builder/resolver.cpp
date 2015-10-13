@@ -422,7 +422,7 @@ string CExpansionRule::ApplyRule( const string& value) const
     } else if (m_Rule == eReplace && !m_Lvalue.empty()) {
         if (NStr::EndsWith(value, m_Lvalue)) {
             return NStr::Replace(value, m_Lvalue, m_Rvalue,
-                NStr::Find(value, m_Lvalue, 0, NPOS, NStr::eLast));
+                NStr::Find(value, m_Lvalue, NStr::eCase, NStr::eReverseSearch));
         }
         return value;
     }
