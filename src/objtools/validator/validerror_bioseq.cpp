@@ -3831,9 +3831,13 @@ void CValidError_bioseq::ValidateSeqGap(const CSeq_gap& gap, const CBioseq& seq)
             int gaptype = gap.GetType();
             if (gaptype != CSeq_gap::eType_repeat &&
                 gaptype != CSeq_gap::eType_scaffold) {
-                PostErr(eDiag_Critical, eErr_SEQ_INST_SeqGapProblem,
+                EDiagSev sev = eDiag_Critical;
+                if (m_Imp.IsRefSeq()) {
+                    sev = eDiag_Warning;
+                }
+                PostErr(sev, eErr_SEQ_INST_SeqGapProblem,
                     "Seq-gap of type " + NStr::IntToString(gaptype) +
-                    "should not have linkage evidence", seq);
+                    " should not have linkage evidence", seq);
             }
 
         }
