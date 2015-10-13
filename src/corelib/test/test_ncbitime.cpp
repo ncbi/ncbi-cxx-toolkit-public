@@ -1054,7 +1054,9 @@ static void s_TestUTC(void)
         // Check for underlying implementations not based on time_t (MSWIN)
         t.GetCurrentTimeT(&timer);
         time_t now = time(0);
-        assert(timer <= now  &&  now - timer < 5);
+        ERR_POST(Note << NStr::Int8ToString(now) + " - " +
+                         NStr::Int8ToString(timer) + "\n");
+        assert((timer <= now)  &&  (now - timer < 5));
     }}
 
     //------------------------------------------------------------------------
