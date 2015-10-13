@@ -2538,8 +2538,7 @@ extern void NcbiLog_AppSetSession(const char* session)
 
 extern char* NcbiLog_AppGetSession(void)
 {
-    static const char* kEmptySID = "";
-    char* sid;
+    char* sid = NULL;
 
     MT_LOCK_API;
     /* Enforce calling this method after NcbiLog_AppStart() */
@@ -2547,7 +2546,9 @@ extern char* NcbiLog_AppGetSession(void)
         sx_Info->state == eNcbiLog_AppBegin) {
         TROUBLE_MSG("NcbiLog_AppGetSession() can be used after NcbiLog_AppStart() only");
     }
-    sid = sx_Info->session[0] ? s_StrDup((char*)sx_Info->session) : (char*)kEmptySID;
+    if (sx_Info->session[0]) {
+        sid = s_StrDup((char*)sx_Info->session);
+    }
     MT_UNLOCK;
 
     return sid;

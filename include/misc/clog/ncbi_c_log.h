@@ -599,14 +599,13 @@ extern void NcbiLog_AppSetSession(const char* session);
 /** Get session ID (SID) for the whole application.
  *
  *  @return
- *    - a copy of string containing current application-wide SID (URL-encoded);
- *    - empty string ([0] == '\0'), if SID is unknown or not set yet; 
- *    - NULL, on error.
+ *    - copy of the current application-wide SID (URL-encoded);
+ *    - NULL, if SID is unknown or not set yet.
  *  @attention
  *    This function should be called after NcbiLog_AppRun().
  *  @attention
  *    The caller is responsible for freeing the returned SID string!
- *    (if not empty only). Use free() or NcbiLog_FreeMemory().
+ *    Use free() or NcbiLog_FreeMemory().
  *  @sa
  *    NcbiLog_AppSetSession, NcbiLog_AppStart, NcbiLog_FreeMemory
  */
