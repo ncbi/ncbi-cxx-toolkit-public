@@ -427,6 +427,7 @@ COMMON_DetectPlatform()
 	Darwin\ i386    ) echo IntelMAC   ;;
 	Darwin\ x86_64  ) echo IntelMAC   ;; # split into IntelMac64?
 	Darwin\ powerpc ) echo PowerMAC   ;;
+	FreeBSD\ amd64  ) echo FreeBSD64  ;;
 	FreeBSD\ i386   ) echo FreeBSD32  ;;
 	IRIX64\ *       ) echo IRIX64     ;;
 	Linux\ i?86     ) echo Linux32    ;;
