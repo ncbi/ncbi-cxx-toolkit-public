@@ -70,12 +70,12 @@ Seq-annot ::= {
             },
             {
               data instance {
-                type del,       
-                delta { 
+                type del,
+                delta {
                   {
                     seq this NULL,
                     action del-at
-                  } 
+                  }
                 }
               }
             },
