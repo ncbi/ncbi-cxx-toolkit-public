@@ -72,7 +72,7 @@ private:
     int m_IterCount, m_IterSize;
     int m_ErrorCount;
     vector<string> m_Accession;
-    vector<Uint8> m_MaxSpotId;
+    vector<TVDBRowId> m_MaxSpotId;
     
     CVDBMgr m_Mgr;
 };
@@ -181,9 +181,12 @@ bool CCSRATestApp::Thread_Run(int idx)
             }
             _ASSERT(m_MaxSpotId[index] > 0);
         }
-        Uint8 count = min(m_MaxSpotId[index], Uint8(m_IterSize));
-        Uint8 start_id = random.GetRandIndexUint8(m_MaxSpotId[index]-count)+1;
-        Uint8 stop_id = start_id+count;
+        TVDBRowId count = min(m_MaxSpotId[index], TVDBRowId(m_IterSize));
+        if ( count <= 0 ) {
+            continue;
+        }
+        TVDBRowId start_id = random.GetRandUint8(1, m_MaxSpotId[index]-count);
+        TVDBRowId stop_id = start_id+count;
         if ( m_Verbose ) {
             LOG_POST(Info<<"T"<<idx<<"."<<ti<<": acc["<<index<<"] "<<acc
                      <<": scan " << start_id<<" - "<<(stop_id-1));

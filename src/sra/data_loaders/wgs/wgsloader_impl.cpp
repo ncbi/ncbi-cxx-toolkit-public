@@ -1135,7 +1135,7 @@ bool CWGSFileInfo::FindGi(SAccFileInfo& info, TGi gi) const
 
 bool CWGSFileInfo::FindProtAcc(SAccFileInfo& info, const string& acc) const
 {
-    if ( uint64_t row_id = m_WGSDb.GetProtAccRowId(acc) ) {
+    if ( TVDBRowId row_id = m_WGSDb.GetProtAccRowId(acc) ) {
         info.file = this;
         info.row_id = row_id;
         info.seq_type = 'P';

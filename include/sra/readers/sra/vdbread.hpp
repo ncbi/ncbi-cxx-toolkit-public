@@ -81,6 +81,11 @@ class CVDBColumn;
 class CVDBCursor;
 class CVDBStringValue;
 
+typedef int64_t TVDBRowId;
+typedef uint64_t TVDBRowCount;
+typedef pair<TVDBRowId, TVDBRowCount> TVDBRowIdRange;
+typedef uint32_t TVDBColumnIdx;
+
 class NCBI_SRAREAD_EXPORT CKConfig
     : public CSraRef<const KConfig>
 {
@@ -287,7 +292,7 @@ public:
                    const char* index_name,
                    EMissing missing = eMissing_Throw);
     
-    pair<int64_t, uint64_t> Find(const string& value) const;
+    TVDBRowIdRange Find(const string& value) const;
 };
 
 
@@ -305,18 +310,18 @@ public:
         {
             return m_RowOpened;
         }
-    rc_t OpenRowRc(uint64_t row_id);
-    void OpenRow(uint64_t row_id);
-    bool TryOpenRow(uint64_t row_id)
+    rc_t OpenRowRc(TVDBRowId row_id);
+    void OpenRow(TVDBRowId row_id);
+    bool TryOpenRow(TVDBRowId row_id)
         {
             return OpenRowRc(row_id) == 0;
         }
     void CloseRow(void);
 
     // returns first id, and count of ids in the range
-    pair<int64_t, uint64_t> GetRowIdRange(uint32_t index = 0) const;
+    TVDBRowIdRange GetRowIdRange(TVDBColumnIdx column = 0) const;
 
-    uint64_t GetMaxRowId(void) const;
+    TVDBRowId GetMaxRowId(void) const;
 
     void SetParam(const char* name, const CTempString& value) const;
 
@@ -335,11 +340,11 @@ public:
     ~CVDBObjectCacheBase(void);
 
 protected:
-    CObject* Get(uint64_t row);
-    void Put(CObject* curs, uint64_t row);
+    CObject* Get(TVDBRowId row);
+    void Put(CObject* curs, TVDBRowId row);
 
 private:
-    typedef pair<uint64_t, CRef<CObject> > TSlot;
+    typedef pair<TVDBRowId, CRef<CObject> > TSlot;
     typedef vector<TSlot> TObjects;
     TObjects m_Objects;
 
@@ -353,11 +358,11 @@ template<class Object>
 class CVDBObjectCache : public CVDBObjectCacheBase
 {
 public:
-    CRef<Object> Get(uint64_t row = 0) {
+    CRef<Object> Get(TVDBRowId row = 0) {
         Object* obj = static_cast<Object*>(CVDBObjectCacheBase::Get(row));
         return CRef<Object>(obj);
     }
-    void Put(CRef<Object>& ref, uint64_t row = 0) {
+    void Put(CRef<Object>& ref, TVDBRowId row = 0) {
         if ( Object* obj = ref.ReleaseOrNull() ) {
             CVDBObjectCacheBase::Put(obj, row);
         }
@@ -396,17 +401,17 @@ public:
         }
     
     enum {
-        kInvalidIndex = uint32_t(~0)
+        kInvalidIndex = TVDBColumnIdx(~0)
     };
     DECLARE_OPERATOR_BOOL(m_Index != kInvalidIndex);
 
-    uint32_t GetIndex(void) const
+    TVDBColumnIdx GetIndex(void) const
         {
             return m_Index;
         }
 
     // returns first id, and count of ids in the range
-    pair<int64_t, uint64_t> GetRowIdRange(CVDBCursor& cursor) const
+    TVDBRowIdRange GetRowIdRange(CVDBCursor& cursor) const
         {
             return cursor.GetRowIdRange(GetIndex());
         }
@@ -419,7 +424,7 @@ protected:
               EMissing missing);
 
 private:
-    uint32_t m_Index;
+    TVDBColumnIdx m_Index;
 };
 
 
@@ -439,28 +444,28 @@ public:
 
 // DECLARE_VDB_COLUMN is helper macro to declare accessor to VDB column
 #define DECLARE_VDB_COLUMN(name)                                        \
-    CVDBValue::SValueIndex name(uint64_t row) const {                   \
+    CVDBValue::SValueIndex name(TVDBRowId row) const {                  \
         return CVDBValue::SValueIndex(m_Cursor, row, NCBI_NAME2(m_,name)); \
     }                                                                   \
     CVDBColumn NCBI_NAME2(m_, name)
 
 // DECLARE_VDB_COLUMN is helper macro to declare accessor to VDB column
 #define DECLARE_VDB_COLUMN_AS(type, name)                               \
-    CVDBValueFor<type> name(uint64_t row, CVDBValue::EMissing missing = CVDBValue::eMissing_Throw) const { \
+    CVDBValueFor<type> name(TVDBRowId row, CVDBValue::EMissing missing = CVDBValue::eMissing_Throw) const { \
         return CVDBValueFor<type>(m_Cursor, row, NCBI_NAME2(m_,name), missing); \
     }                                                                   \
     CVDBColumnBits<sizeof(type)*8> NCBI_NAME2(m_, name)
 
 // DECLARE_VDB_COLUMN is helper macro to declare accessor to VDB column
 #define DECLARE_VDB_COLUMN_AS_STRING(name)                              \
-    CVDBStringValue name(uint64_t row) const {                          \
+    CVDBStringValue name(TVDBRowId row) const {                         \
         return CVDBStringValue(m_Cursor, row, NCBI_NAME2(m_,name));     \
     }                                                                   \
     CVDBColumnBits<8> NCBI_NAME2(m_, name)
 
 // DECLARE_VDB_COLUMN is helper macro to declare accessor to VDB column
 #define DECLARE_VDB_COLUMN_AS_4BITS(name)                               \
-    CVDBValueFor4Bits name(uint64_t row) const {                        \
+    CVDBValueFor4Bits name(TVDBRowId row) const {                       \
         return CVDBValueFor4Bits(m_Cursor, row, NCBI_NAME2(m_,name));   \
     }                                                                   \
     CVDBColumnBits<4> NCBI_NAME2(m_, name)
@@ -490,15 +495,15 @@ public:
 
     struct SValueIndex {
         SValueIndex(const CVDBCursor& cursor,
-                    uint64_t row,
+                    TVDBRowId row,
                     const CVDBColumn& column)
             : cursor(cursor), row(row), column(column.GetIndex())
             {
             }
         
         const VCursor* cursor;
-        uint64_t row;
-        uint32_t column;
+        TVDBRowId row;
+        TVDBColumnIdx column;
     };
     CVDBValue(const CVDBCursor& cursor, const CVDBColumn& column)
         : m_Data(0),
@@ -506,7 +511,7 @@ public:
         {
             x_Get(cursor, column.GetIndex());
         }
-    CVDBValue(const CVDBCursor& cursor, uint64_t row,
+    CVDBValue(const CVDBCursor& cursor, TVDBRowId row,
               const CVDBColumn& column, EMissing missing = eMissing_Throw)
         : m_Data(0),
           m_ElemCount(0)
@@ -540,10 +545,10 @@ public:
 
 protected:
     void x_Get(const VCursor* cursor,
-               uint32_t column);
+               TVDBColumnIdx column);
     void x_Get(const VCursor* cursor,
-               uint64_t row,
-               uint32_t column,
+               TVDBRowId row,
+               TVDBColumnIdx column,
                EMissing missing = eMissing_Throw);
 
     void x_ReportIndexOutOfBounds(size_t index) const;
@@ -561,7 +566,7 @@ protected:
         }
 
     const void* m_Data;
-    uint32_t m_ElemCount;
+    TVDBColumnIdx m_ElemCount;
 };
 
 
@@ -577,7 +582,7 @@ public:
         {
             x_Get(value_index.cursor, value_index.row, value_index.column);
         }
-    CVDBValueFor4Bits(const CVDBCursor& cursor, uint64_t row,
+    CVDBValueFor4Bits(const CVDBCursor& cursor, TVDBRowId row,
                       const CVDBColumn& column)
         : m_RawData(0),
           m_ElemOffset(0),
@@ -616,7 +621,7 @@ public:
     CVDBValueFor4Bits substr(size_t pos, size_t len) const;
 
 protected:
-    void x_Get(const VCursor* cursor, uint64_t row, uint32_t column);
+    void x_Get(const VCursor* cursor, TVDBRowId row, TVDBColumnIdx column);
     static TValue sub_value(uint8_t v, size_t sub_index)
         {
             return sub_index? (v&0xf): (v>>4);
@@ -656,7 +661,7 @@ public:
         : CVDBValue(cursor, column)
         {
         }
-    CVDBValueFor(const CVDBCursor& cursor, uint64_t row,
+    CVDBValueFor(const CVDBCursor& cursor, TVDBRowId row,
                  const CVDBColumn& column, EMissing missing = eMissing_Throw)
         : CVDBValue(cursor, row, column, missing)
         {
@@ -713,7 +718,7 @@ public:
         : CVDBValueFor<char>(cursor, column)
         {
         }
-    CVDBStringValue(const CVDBCursor& cursor, uint64_t row,
+    CVDBStringValue(const CVDBCursor& cursor, TVDBRowId row,
                     const CVDBColumn& column)
         : CVDBValueFor<char>(cursor, row, column)
         {

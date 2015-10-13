@@ -97,7 +97,7 @@ public:
         const CSeq_id_Handle& GetMainSeq_id_Handle(void) const {
             return m_Seq_id_Handle;
         }
-        uint64_t m_RowFirst, m_RowLast;
+        TVDBRowId m_RowFirst, m_RowLast;
         bool m_Circular;
         vector<TSeqPos> m_AlnOverStarts; // relative to m_RowFirst
     };
@@ -133,8 +133,8 @@ public:
         m_SraIdPart = s;
     }
 
-    CRef<CSeq_id> MakeShortReadId(uint64_t id1, INSDC_coord_one id2) const;
-    void SetShortReadId(string& str, uint64_t id1, INSDC_coord_one id2) const;
+    CRef<CSeq_id> MakeShortReadId(TVDBRowId id1, INSDC_coord_one id2) const;
+    void SetShortReadId(string& str, TVDBRowId id1, INSDC_coord_one id2) const;
 
 protected:
     friend class CCSraRefSeqIterator;
@@ -150,10 +150,10 @@ protected:
         CVDBCursor m_Cursor;
 
         DECLARE_VDB_COLUMN_AS(Uint1, CGRAPH_HIGH);
-        DECLARE_VDB_COLUMN_AS(uint64_t, PRIMARY_ALIGNMENT_IDS);
-        DECLARE_VDB_COLUMN_AS(uint64_t, SECONDARY_ALIGNMENT_IDS);
+        DECLARE_VDB_COLUMN_AS(TVDBRowId, PRIMARY_ALIGNMENT_IDS);
+        DECLARE_VDB_COLUMN_AS(TVDBRowId, SECONDARY_ALIGNMENT_IDS);
         DECLARE_VDB_COLUMN_AS_STRING(NAME);
-        typedef pair<uint64_t, uint64_t> row_range_t;
+        typedef pair<TVDBRowId, TVDBRowId> row_range_t;
         DECLARE_VDB_COLUMN_AS(row_range_t, NAME_RANGE);
         DECLARE_VDB_COLUMN_AS_STRING(SEQ_ID);
         DECLARE_VDB_COLUMN_AS(INSDC_coord_len, SEQ_LEN);
@@ -185,10 +185,10 @@ protected:
         DECLARE_VDB_COLUMN_AS_STRING(MISMATCH_READ);
         DECLARE_VDB_COLUMN_AS_STRING(MISMATCH);
         DECLARE_VDB_COLUMN_AS(INSDC_coord_len, SPOT_LEN);
-        DECLARE_VDB_COLUMN_AS(uint64_t, SEQ_SPOT_ID);
+        DECLARE_VDB_COLUMN_AS(TVDBRowId, SEQ_SPOT_ID);
         DECLARE_VDB_COLUMN_AS(INSDC_coord_one, SEQ_READ_ID);
         DECLARE_VDB_COLUMN_AS(int32_t, MAPQ);
-        DECLARE_VDB_COLUMN_AS(uint64_t, MATE_ALIGN_ID);
+        DECLARE_VDB_COLUMN_AS(TVDBRowId, MATE_ALIGN_ID);
         DECLARE_VDB_COLUMN_AS(INSDC_quality_phred, QUALITY);
         DECLARE_VDB_COLUMN_AS_STRING(SPOT_GROUP);
         DECLARE_VDB_COLUMN_AS_STRING(NAME);
@@ -207,7 +207,7 @@ protected:
         DECLARE_VDB_COLUMN_AS(INSDC_coord_zero, READ_START);
         DECLARE_VDB_COLUMN_AS_STRING(READ);
         DECLARE_VDB_COLUMN_AS(INSDC_quality_phred, QUALITY);
-        DECLARE_VDB_COLUMN_AS(uint64_t, PRIMARY_ALIGNMENT_ID);
+        DECLARE_VDB_COLUMN_AS(TVDBRowId, PRIMARY_ALIGNMENT_ID);
         DECLARE_VDB_COLUMN_AS(INSDC_coord_len, TRIM_LEN);
         DECLARE_VDB_COLUMN_AS(INSDC_coord_zero, TRIM_START);
         DECLARE_VDB_COLUMN_AS_STRING(NAME);
@@ -381,7 +381,7 @@ public:
     TSeqPos GetSeqLength(void) const;
 
     NCBI_DEPRECATED
-    size_t GetRowAlignCount(int64_t row) const;
+    size_t GetRowAlignCount(TVDBRowId row) const;
 
     enum EAlignType {
         fPrimaryAlign   = 1<<0,
@@ -475,7 +475,7 @@ public:
         return *this;
     }
 
-    uint64_t GetAlignmentId(void) const;
+    TVDBRowId GetAlignmentId(void) const;
 
     bool IsSecondary(void) const {
         return m_AlnRowIsSecondary;
@@ -492,7 +492,7 @@ public:
 
     int GetMapQuality(void) const;
 
-    uint64_t GetShortId1(void) const;
+    TVDBRowId GetShortId1(void) const;
     INSDC_coord_one GetShortId2(void) const;
     TSeqPos GetShortPos(void) const;
     TSeqPos GetShortLen(void) const;
@@ -582,12 +582,12 @@ private:
     TSeqPos m_ArgRefPos, m_ArgRefLast; // requested refseq range
     TSeqPos m_CurRefPos, m_CurRefLen; // current alignment refseq range
 
-    uint64_t m_RefRowNext; // refseq row range
-    uint64_t m_RefRowLast;
+    TVDBRowId m_RefRowNext; // refseq row range
+    TVDBRowId m_RefRowLast;
     bool m_AlnRowIsSecondary;
     ESearchMode m_SearchMode;
-    const uint64_t* m_AlnRowCur; // current refseq row alignments ids
-    const uint64_t* m_AlnRowEnd;
+    const TVDBRowId* m_AlnRowCur; // current refseq row alignments ids
+    const TVDBRowId* m_AlnRowEnd;
 
     struct SCreateCache {
         CRef<CAnnotdesc> m_MatchAnnotIndicator;
@@ -627,16 +627,16 @@ public:
     // to one-based read_id to reflect standardization of short read ids
     // in form gnl|SRA|<SRA accesion>.<Spot id>.<Read id>.
     CCSraShortReadIterator(const CCSraDb& csra_db,
-                           uint64_t spot_id,
+                           TVDBRowId spot_id,
                            EClipType clip_type = eDefaultClip);
     CCSraShortReadIterator(const CCSraDb& csra_db,
-                           uint64_t spot_id,
+                           TVDBRowId spot_id,
                            uint32_t read_id,
                            EClipType clip_type = eDefaultClip);
     ~CCSraShortReadIterator(void);
 
-    bool Select(uint64_t spot_id);
-    bool Select(uint64_t spot_id, uint32_t read_id);
+    bool Select(TVDBRowId spot_id);
+    bool Select(TVDBRowId spot_id, uint32_t read_id);
     
     operator const void*(void) const {
         return m_Error? 0: this;
@@ -650,10 +650,10 @@ public:
         return *this;
     }
 
-    uint64_t GetSpotId(void) const {
+    TVDBRowId GetSpotId(void) const {
         return m_SpotId;
     }
-    uint64_t GetMaxSpotId(void) const {
+    TVDBRowId GetMaxSpotId(void) const {
         return m_MaxSpotId;
     }
     uint32_t GetReadId(void) const {
@@ -696,7 +696,7 @@ public:
 
     CTempString GetReadData(EClipType clip_type = eDefaultClip) const;
 
-    uint64_t GetShortId1(void) const {
+    TVDBRowId GetShortId1(void) const {
         return GetSpotId();
     }
     uint32_t GetShortId2(void) const {
@@ -766,8 +766,8 @@ private:
     CCSraDb m_Db; // refseq selector
     CRef<CCSraDb_Impl::SSeqTableCursor> m_Seq; // VDB sequence table accessor
 
-    uint64_t m_SpotId;
-    uint64_t m_MaxSpotId;
+    TVDBRowId m_SpotId;
+    TVDBRowId m_MaxSpotId;
     uint32_t m_ReadId;
     uint32_t m_MaxReadId;
     bool m_IncludeTechnicalReads;

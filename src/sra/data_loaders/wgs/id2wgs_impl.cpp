@@ -56,11 +56,14 @@ NCBI_DEFINE_ERR_SUBCODE_X(24);
 
 BEGIN_NAMESPACE(objects);
 
+// behavior options
+#define RESOLVE_MASTER 2 // 0 - none, 1 - w/o GI only, 2 - all
+#define TRACE_PROCESSING
 
+// default configuration parameters
 #define DEFAULT_VDB_CACHE_SIZE 10
 #define DEFAULT_INDEX_UPDATE_TIME 600
 #define DEFAULT_COMPRESS_DATA false
-
 
 // debug levels
 enum EDebugLevel {
@@ -74,7 +77,8 @@ enum EDebugLevel {
     eDebug_all      = 9
 };
 
-
+// WGS accession parameters
+static const size_t kTypePrefixLen = 4; // "WGS:" or "TSA:"
 static const size_t kNumLetters = 4;
 static const size_t kVersionDigits = 2;
 static const size_t kPrefixLen = kNumLetters + kVersionDigits;
@@ -82,6 +86,7 @@ static const size_t kMinRowDigits = 6;
 static const size_t kMaxRowDigits = 8;
 
 
+// parameters reading
 NCBI_PARAM_DECL(bool, ID2WGS, ENABLE);
 NCBI_PARAM_DEF_EX(bool, ID2WGS, ENABLE, true,
                   eParam_NoThread, ID2WGS_ENABLE);
@@ -128,8 +133,6 @@ static inline bool s_FilterAll(void)
 // CID2WGSProcessor_Impl
 /////////////////////////////////////////////////////////////////////////////
 
-#define TRACE_PROCESSING
-
 #ifdef TRACE_PROCESSING
 
 static CStopWatch sw;
@@ -144,8 +147,11 @@ static CNcbiOstream& operator<<(CNcbiOstream& out,
     }
     else {
         out << seq.m_WGSAcc;
-        if ( !seq.IsContig() ) {
-            out << seq.m_SeqType;
+        if ( seq.IsScaffold() ) {
+            out << 'S';
+        }
+        else if ( seq.IsProtein() ) {
+            out << 'P';
         }
     }
     out << setfill('0')<<setw(seq.m_RowDigits)<<seq.m_RowId<<setfill(' ');
@@ -463,30 +469,42 @@ bool CID2WGSProcessor_Impl::IsCorrectVersion(SWGSSeqInfo& seq, int version)
 // subsat bits 22-25: ASCII(digit 4) - '0'
 // subsat bits 26-29: ASCII(digit 5) - '0'
 // satkey: row-id
+static const int kBlobIdSat = 1000;
+enum EBlobType {
+    eBlobType_contig = 1,
+    eBlobType_scaffold = 2,
+    eBlobType_protein = 3
+};
+enum EBlobIdBits {
+    eBlobIdBits_type = 2,
+    eBlobIdBits_letter = 5,
+    eBlobIdBits_digit = 4
+};
 
-
-CRef<CID2_Blob_Id> CID2WGSProcessor_Impl::GetBlobId(SWGSSeqInfo& seq)
+CRef<CID2_Blob_Id> CID2WGSProcessor_Impl::GetBlobId(const SWGSSeqInfo& seq0)
 {
+    SWGSSeqInfo seq = GetRootSeq(seq0);
     CRef<CID2_Blob_Id> id(new CID2_Blob_Id);
-    id->SetSat(1000);
+    id->SetSat(kBlobIdSat);
     int subsat;
     if ( seq.IsScaffold() ) {
-        subsat = 2;
+        subsat = eBlobType_scaffold;
     }
     else if ( seq.IsProtein() ) {
-        subsat = 3;
+        subsat = eBlobType_protein;
     }
     else { // contig or master
-        subsat = 1;
+        subsat = eBlobType_contig;
     }
-    for ( size_t i = 0, bit = 2; i < seq.m_WGSAcc.size(); ++i ) {
+    int bit = eBlobIdBits_type;
+    for ( size_t i = 0; i < seq.m_WGSAcc.size(); ++i ) {
         if ( i < kNumLetters ) {
             subsat |= (seq.m_WGSAcc[i]-'A') << bit;
-            bit += 5;
+            bit += eBlobIdBits_letter;
         }
         else {
             subsat |= (seq.m_WGSAcc[i]-'0') << bit;
-            bit += 4;
+            bit += eBlobIdBits_digit;
         }
     }
     id->SetSub_sat(subsat);
@@ -498,21 +516,22 @@ CRef<CID2_Blob_Id> CID2WGSProcessor_Impl::GetBlobId(SWGSSeqInfo& seq)
 CID2WGSProcessor_Impl::SWGSSeqInfo
 CID2WGSProcessor_Impl::ResolveBlobId(const CID2_Blob_Id& id)
 {
-    if ( id.GetSat() != 1000 ) {
+    if ( id.GetSat() != kBlobIdSat ) {
         return SWGSSeqInfo();
     }
     SWGSSeqInfo seq;
     seq.m_IsWGS = true;
     int subsat = id.GetSub_sat();
-    switch ( subsat & 3 ) {
-    case 2: seq.m_SeqType = 'S'; break;
-    case 3: seq.m_SeqType = 'P'; break;
-    default: seq.m_SeqType = '\0'; break;
+    switch ( subsat & ((1<<eBlobIdBits_type)-1) ) {
+    case eBlobType_scaffold: seq.SetScaffold(); break;
+    case eBlobType_protein: seq.SetProtein(); break;
+    default: seq.SetContig(); break;
     }
     bool bad = false;
-    for ( size_t i = 0, bit = 2; i < kPrefixLen; ++i ) {
+    int bit = eBlobIdBits_type;
+    for ( size_t i = 0; i < kPrefixLen; ++i ) {
         if ( i < kNumLetters ) {
-            int v = (subsat>>bit)&31;
+            int v = (subsat>>bit)&((1<<eBlobIdBits_letter)-1);
             if ( v < 26 ) {
                 seq.m_WGSAcc += char('A'+v);
             }
@@ -520,10 +539,10 @@ CID2WGSProcessor_Impl::ResolveBlobId(const CID2_Blob_Id& id)
                 bad = true;
                 break;
             }
-            bit += 5;
+            bit += eBlobIdBits_letter;
         }
         else {
-            int v = (subsat>>bit)&15;
+            int v = (subsat>>bit)&((1<<eBlobIdBits_digit)-1);
             if ( v < 10 ) {
                 seq.m_WGSAcc += char('0'+v);
             }
@@ -531,7 +550,7 @@ CID2WGSProcessor_Impl::ResolveBlobId(const CID2_Blob_Id& id)
                 bad = true;
                 break;
             }
-            bit += 4;
+            bit += eBlobIdBits_digit;
         }
     }
     if ( !bad ) {
@@ -554,8 +573,8 @@ CID2WGSProcessor_Impl::ResolveGeneral(const CDbtag& dbtag)
     const string& db = dbtag.GetDb();
     const string& tag = object_id.GetStr();
     if ( tag.empty() ||
-         (db.size() != 4+4 /* WGS:AAAA */ &&
-          db.size() != 4+6 /* WGS:AAAA01 */) ) {
+         (db.size() != kTypePrefixLen+kNumLetters /* WGS:AAAA */ &&
+          db.size() != kTypePrefixLen+kPrefixLen  /* WGS:AAAA01 */) ) {
         return SWGSSeqInfo();
     }
     bool is_tsa = false;
@@ -567,19 +586,20 @@ CID2WGSProcessor_Impl::ResolveGeneral(const CDbtag& dbtag)
     else {
         return SWGSSeqInfo();
     }
-    string wgs_acc = db.substr(4);
+    string wgs_acc = db.substr(kTypePrefixLen); // remove "WGS:" or "TSA:"
+
     NStr::ToUpper(wgs_acc);
-    if ( wgs_acc.size() == 4 ) {
-        wgs_acc += "01";
+    if ( wgs_acc.size() == kNumLetters ) {
+        wgs_acc += "01"; // add default version digits
     }
     SWGSSeqInfo seq;
     seq.m_WGSAcc = wgs_acc;
     seq.m_IsWGS = true;
     if ( CWGSDb wgs_db = GetWGSDb(seq) ) {
-        if ( wgs_db->IsTSA() == is_tsa ) {
-            if ( uint64_t row = wgs_db.GetContigNameRowId(tag) ) {
+        if ( wgs_db->IsTSA() == is_tsa ) { // TSA or WGS type must match
+            if ( TVDBRowId row = wgs_db.GetContigNameRowId(tag) ) {
                 seq.m_ValidWGS = true;
-                seq.m_SeqType = '\0';
+                seq.SetContig();
                 seq.m_RowId = row;
             }
         }
@@ -601,7 +621,12 @@ CID2WGSProcessor_Impl::ResolveGi(TGi gi)
                 seq.m_IsWGS = true;
                 seq.m_ValidWGS = true;
                 seq.m_WGSDb = wgs_db;
-                seq.m_SeqType = it.GetSeqType() == it.eProt? 'P': '\0';
+                if ( it.GetSeqType() == it.eProt ) {
+                    seq.SetProtein();
+                }
+                else {
+                    seq.SetContig();
+                }
                 seq.m_RowDigits = Uint1(wgs_db->GetIdRowDigits());
                 seq.m_RowId = it.GetRowId();
                 return seq;
@@ -618,13 +643,13 @@ CID2WGSProcessor_Impl::ResolveProtAcc(const string& acc, int version)
     CWGSProtAccResolver::TAccessionList accs = m_AccResolver->FindAll(acc);
     ITERATE ( CWGSProtAccResolver::TAccessionList, acc_it, accs ) {
         if ( CWGSDb wgs_db = GetWGSDb(*acc_it) ) {
-            if ( uint64_t row = wgs_db.GetProtAccRowId(acc) ) {
+            if ( TVDBRowId row = wgs_db.GetProtAccRowId(acc) ) {
                 SWGSSeqInfo seq;
                 seq.m_WGSAcc = *acc_it;
                 seq.m_IsWGS = true;
                 seq.m_ValidWGS = true;
                 seq.m_WGSDb = wgs_db;
-                seq.m_SeqType = 'P';
+                seq.SetProtein();
                 seq.m_RowDigits = Uint1(wgs_db->GetIdRowDigits());
                 seq.m_RowId = row;
                 return seq;
@@ -656,8 +681,17 @@ CID2WGSProcessor_Impl::ResolveWGSAcc(const string& acc, int version)
     seq.m_WGSAcc = acc.substr(0, kPrefixLen);
     seq.m_IsWGS = true;
     SIZE_TYPE row_pos = kPrefixLen;
-    if ( acc[row_pos] == 'S' || acc[row_pos] == 'P' ) { // type letter
-        seq.m_SeqType = acc[row_pos++];
+    switch ( acc[row_pos] ) { // optional type letter
+    case 'S':
+        seq.SetScaffold();
+        ++row_pos;
+        break;
+    case 'P':
+        seq.SetProtein();
+        ++row_pos;
+        break;
+    default:
+        break;
     }
     Uint8 row = 0;
     for ( size_t i = row_pos; i < acc.size(); ++i ) {
@@ -672,7 +706,7 @@ CID2WGSProcessor_Impl::ResolveWGSAcc(const string& acc, int version)
         // zero row might be master WGS sequence
         // it mustn't have type letter, version digits and row must be zero
         // version must be positive
-        if ( seq.m_SeqType || version < 0 ) {
+        if ( !seq.IsMaster() || version < 0 ) {
             return SWGSSeqInfo();
         }
         // now, move version into version digits of the accession
@@ -696,11 +730,16 @@ CID2WGSProcessor_Impl::ResolveWGSAcc(const string& acc, int version)
         return seq;
     }
     if ( !row ) {
-        if ( false && GetWGSDb(seq)->GetMasterGi() ) {
+#if RESOLVE_MASTER == 0 // no master resolution
+        seq.m_IsWGS = false;
+        return seq;
+#elif RESOLVE_MASTER == 1 // only master sequences w/o GI are resolved
+        if ( GetWGSDb(seq)->GetMasterGi() ) {
             // Let master sequences with GI to be processed by ID
             seq.m_IsWGS = false;
             return seq;
         }
+#endif
     }
     else if ( !IsValidRowId(seq) ) {
         return seq;
@@ -735,27 +774,38 @@ CID2WGSProcessor_Impl::ResolveAcc(const string& acc, int version)
 }
 
 
-bool CID2WGSProcessor_Impl::SwitchToMainSeq(SWGSSeqInfo& seq,
-                                            const string& acc)
+CID2WGSProcessor_Impl::SWGSSeqInfo
+CID2WGSProcessor_Impl::GetRootSeq(const SWGSSeqInfo& seq0)
 {
-    CWGSDb db = GetWGSDb(seq);
+    SWGSSeqInfo seq = seq0;
+    if ( !seq.IsProtein() ) {
+        return seq;
+    }
     // proteins can be located in nuc-prot set
-    uint64_t cds_row_id = db->GetProductFeatRowId(acc);
+    TVDBRowId cds_row_id = GetProteinIterator(seq).GetProductFeatRowId();
     if ( !cds_row_id ) {
-        return false;
+        return seq;
     }
-    CWGSFeatureIterator cds_it(db, cds_row_id);
+    CWGSFeatureIterator cds_it(GetWGSDb(seq), cds_row_id);
     if ( !cds_it ) {
-        return false;
+        return seq;
     }
-    if ( cds_it.GetSeqType() != NCBI_WGS_seqtype_contig ) {
-        return false;
+    switch ( cds_it.GetLocSeqType() ) {
+    case NCBI_WGS_seqtype_contig:
+        // switch to contig
+        seq.SetContig();
+        seq.m_RowId = cds_it.GetLocRowId();
+        ResetIteratorCache(seq);
+        return seq;
+    case NCBI_WGS_seqtype_scaffold:
+        // switch to scaffold
+        seq.SetScaffold();
+        seq.m_RowId = cds_it.GetLocRowId();
+        ResetIteratorCache(seq);
+        return seq;
+    default:
+        return seq;
     }
-    // switch to contig
-    seq.m_RowId = cds_it.GetLocRowId();
-    seq.m_SeqType = '\0';
-    ResetIteratorCache(seq);
-    return true;
 }
 
 
@@ -800,9 +850,6 @@ CID2WGSProcessor_Impl::Resolve(const CSeq_id& id)
         return seq;
     }
     seq.m_ValidWGS = true;
-    if ( seq.m_SeqType == 'P' ) {
-        SwitchToMainSeq(seq, text_id->GetAccession());
-    }
     return seq;
 }
 
@@ -1126,30 +1173,26 @@ int CID2WGSProcessor_Impl::GetID2BlobState(SWGSSeqInfo& seq)
 
 CRef<CSeq_entry> CID2WGSProcessor_Impl::GetSeq_entry(SWGSSeqInfo& seq)
 {
+    if ( seq.IsMaster() ) {
+        return GetWGSDb(seq)->GetMasterSeq_entry();
+    }
     if ( seq.IsContig() ) {
         CWGSSeqIterator& it = GetContigIterator(seq);
         CWGSSeqIterator::TFlags flags =
             (it.fDefaultFlags & ~it.fMaskDescr) | it.fSeqDescr;
         return it.GetSeq_entry(flags);
     }
-    if ( seq.IsMaster() ) {
-        return GetWGSDb(seq)->GetMasterSeq_entry();
-    }
     if ( seq.IsScaffold() ) {
         CWGSScaffoldIterator& it = GetScaffoldIterator(seq);
         CWGSScaffoldIterator::TFlags flags =
             (it.fDefaultFlags & ~it.fMaskDescr) | it.fSeqDescr;
-        CRef<CSeq_entry> entry(new CSeq_entry);
-        entry->SetSeq(*it.GetBioseq(flags));
-        return entry;
+        return it.GetSeq_entry(flags);
     }
     if ( seq.IsProtein() ) {
         CWGSProteinIterator& it = GetProteinIterator(seq);
         CWGSProteinIterator::TFlags flags =
             (it.fDefaultFlags & ~it.fMaskDescr) | it.fSeqDescr;
-        CRef<CSeq_entry> entry(new CSeq_entry);
-        entry->SetSeq(*it.GetBioseq(flags));
-        return entry;
+        return it.GetSeq_entry(flags);
     }
     return null;
 }
@@ -1252,12 +1295,14 @@ bool CID2WGSProcessor_Impl::ProcessRequest(TReplies& replies,
             ERR_POST_X(16, "ID2WGS: Exception while processing request "<<
                        MSerial_AsnText<<request<<": "<<exc);
         }
+        done = false;
     }
     catch ( exception& exc ) {
         if ( s_DebugEnabled(eDebug_error) ) {
             ERR_POST_X(16, "ID2WGS: Exception while processing request "<<
                        MSerial_AsnText<<request<<": "<<exc.what());
         }
+        done = false;
     }
     if ( !done ) {
         if ( replies.size() != old_size ) {

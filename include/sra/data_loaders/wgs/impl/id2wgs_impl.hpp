@@ -68,7 +68,7 @@ public:
         SWGSSeqInfo(void)
             : m_IsWGS(false),
               m_ValidWGS(false),
-              m_SeqType(0),
+              m_SeqType('\0'),
               m_RowDigits(0),
               m_RowId(0)
             {
@@ -89,12 +89,22 @@ public:
             return m_SeqType == 'P';
         }
 
+        void SetContig(void) {
+            m_SeqType = '\0';
+        }
+        void SetScaffold(void) {
+            m_SeqType = 'S';
+        }
+        void SetProtein(void) {
+            m_SeqType = 'P';
+        }
+
         string m_WGSAcc;
         bool m_IsWGS;
         bool m_ValidWGS;
         char m_SeqType;
         Uint1 m_RowDigits;
-        Uint8 m_RowId;
+        TVDBRowId m_RowId;
         CWGSDb m_WGSDb;
         CWGSSeqIterator m_ContigIter;
         CWGSScaffoldIterator m_ScaffoldIter;
@@ -132,7 +142,7 @@ protected:
     SWGSSeqInfo ResolveAcc(const string& acc, int version);
     SWGSSeqInfo ResolveWGSAcc(const string& acc, int version);
     SWGSSeqInfo ResolveProtAcc(const string& acc, int version);
-    bool SwitchToMainSeq(SWGSSeqInfo& seq, const string& acc);
+    SWGSSeqInfo GetRootSeq(const SWGSSeqInfo& seq);
     bool IsValidRowId(SWGSSeqInfo& seq);
     bool IsCorrectVersion(SWGSSeqInfo& seq, int version);
 
@@ -155,7 +165,7 @@ protected:
 
     // conversion to/from blob id
     SWGSSeqInfo ResolveBlobId(const CID2_Blob_Id& id);
-    CRef<CID2_Blob_Id> GetBlobId(SWGSSeqInfo& id);
+    CRef<CID2_Blob_Id> GetBlobId(const SWGSSeqInfo& id);
 
     // opening WGS files (with caching)
     CWGSDb GetWGSDb(const string& prefix);

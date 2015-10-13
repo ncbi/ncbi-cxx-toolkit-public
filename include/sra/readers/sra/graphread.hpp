@@ -100,8 +100,8 @@ protected:
         CSeq_id_Handle m_Seq_id_Handle;
         TSeqPos m_SeqLength;
         TSeqPos m_RowSize;
-        uint64_t m_RowFirst, m_RowLast;
-        uint64_t m_StartBase;
+        TVDBRowId m_RowFirst, m_RowLast;
+        int64_t m_StartBase;
     };
     typedef list<SSeqInfo> TSeqInfoList;
     typedef map<string, TSeqInfoList::iterator, PNocase> TSeqInfoMapByName;

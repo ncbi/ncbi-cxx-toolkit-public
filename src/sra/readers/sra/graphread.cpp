@@ -90,12 +90,12 @@ CVDBGraphDb_Impl::CVDBGraphDb_Impl(CVDBMgr& mgr, CTempString path)
 {
     CRef<SGraphTableCursor> curs = Graph();
 
-    uint64_t last_row = curs->m_Cursor.GetMaxRowId();
+    TVDBRowId last_row = curs->m_Cursor.GetMaxRowId();
     SSeqInfo info;
     CVDBTableIndex idx(GraphTable(), "sid", CVDBTableIndex::eMissing_Allow);
     if ( !idx ) {
         LOG_POST(Warning<<"CVDBGraphDb: sid index not found. Scanning sequentially.");
-        for ( uint64_t row = 1; row <= last_row; ++row ) {
+        for ( TVDBRowId row = 1; row <= last_row; ++row ) {
             // read range and names
             TSeqPos len = *curs->LEN(row), row_size = *curs->LEN(row);
             CVDBStringValue seq_id = curs->SID(row);
@@ -120,15 +120,15 @@ CVDBGraphDb_Impl::CVDBGraphDb_Impl(CVDBMgr& mgr, CTempString path)
         }
     }
     else {
-        for ( uint64_t row = 1; row <= last_row; ++row ) {
+        for ( TVDBRowId row = 1; row <= last_row; ++row ) {
             CVDBStringValue seq_id = curs->SID(row);
             info.m_SeqId = *seq_id;
             info.m_Seq_id_Handle = CSeq_id_Handle::GetHandle(info.m_SeqId);
             info.m_RowSize = *curs->LEN(row);
             info.m_StartBase = *curs->START(row);
             info.m_RowFirst = row;
-            pair<int64_t, uint64_t> range = idx.Find(info.m_SeqId.c_str());
-            _ASSERT(row == uint64_t(range.first));
+            TVDBRowIdRange range = idx.Find(info.m_SeqId.c_str());
+            _ASSERT(row == range.first);
             _ASSERT(range.second);
             info.m_RowLast = row += range.second-1;
             info.m_SeqLength =
@@ -250,7 +250,7 @@ CVDBGraphSeqIterator::x_MakeGraph(const string& annot_name,
     CReal_graph::TValues* real_vv = 0;
     TSeqPos row_size = info.m_RowSize;
     TSeqPos pos = range.GetFrom();
-    for ( uint64_t row = info.m_RowFirst + pos/row_size;
+    for ( TVDBRowId row = info.m_RowFirst + pos/row_size;
           pos < range.GetToOpen();
           ++row ) {
         CVDBValueFor<TValue> values(cursor.m_Cursor, row, column);
@@ -349,7 +349,7 @@ CVDBGraphSeqIterator::x_MakeTable(const string& annot_name,
     vector<TValue> vv;
     vv.reserve(size);
     TSeqPos pos = range.GetFrom();
-    uint64_t row = pos/row_size;
+    TVDBRowId row = pos/row_size;
     for ( ; pos < range.GetToOpen(); ++row, pos += row_size ) {
         CVDBValueFor<TValue> vv_arr(cursor.GRAPH(info.m_RowFirst+row));
         TSeqPos off = TSeqPos(pos - row*row_size);
@@ -467,7 +467,7 @@ bool CVDBGraphSeqIterator::x_SeqTableIsSmaller(COpenRange<TSeqPos> range,
     TSeqPos pos = range.GetFrom();
     const SSeqInfo& info = GetInfo();
     TSeqPos row_size = info.m_RowSize;
-    uint64_t row = pos/row_size;
+    TVDBRowId row = pos/row_size;
     for ( ; pos < range.GetToOpen(); ++row, pos += row_size ) {
         values += row_size;
         switches += *cursor.NUM_SWITCHES(info.m_RowFirst+row);

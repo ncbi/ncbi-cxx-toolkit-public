@@ -559,9 +559,9 @@ CVDBTableIndex::CVDBTableIndex(const CVDBTable& table,
 }
 
 
-pair<int64_t, uint64_t> CVDBTableIndex::Find(const string& value) const
+TVDBRowIdRange CVDBTableIndex::Find(const string& value) const
 {
-    pair<int64_t, uint64_t> range;
+    TVDBRowIdRange range;
     if ( rc_t rc = KIndexFindText(*this, value.c_str(),
                                   &range.first, &range.second, 0, 0) ) {
         if ( GetRCObject(rc) == RCObject(rcString) &&
@@ -614,7 +614,7 @@ void CVDBCursor::CloseRow(void)
 }
 
 
-rc_t CVDBCursor::OpenRowRc(uint64_t row_id)
+rc_t CVDBCursor::OpenRowRc(TVDBRowId row_id)
 {
     CloseRow();
     if ( rc_t rc = VCursorSetRowId(*this, row_id) ) {
@@ -628,7 +628,7 @@ rc_t CVDBCursor::OpenRowRc(uint64_t row_id)
 }
 
 
-void CVDBCursor::OpenRow(uint64_t row_id)
+void CVDBCursor::OpenRow(TVDBRowId row_id)
 {
     if ( rc_t rc = OpenRowRc(row_id) ) {
         NCBI_THROW3(CSraException, eInitFailed,
@@ -637,20 +637,20 @@ void CVDBCursor::OpenRow(uint64_t row_id)
 }
 
 
-pair<int64_t, uint64_t> CVDBCursor::GetRowIdRange(uint32_t index) const
+TVDBRowIdRange CVDBCursor::GetRowIdRange(TVDBColumnIdx column) const
 {
-    pair<int64_t, uint64_t> ret;
-    if ( rc_t rc = VCursorIdRange(*this, index, &ret.first, &ret.second) ) {
+    TVDBRowIdRange ret;
+    if ( rc_t rc = VCursorIdRange(*this, column, &ret.first, &ret.second) ) {
         NCBI_THROW3(CSraException, eInitFailed,
-                    "Cannot get VDB cursor row range", rc, index);
+                    "Cannot get VDB cursor row range", rc, column);
     }
     return ret;
 }
 
 
-uint64_t CVDBCursor::GetMaxRowId(void) const
+TVDBRowId CVDBCursor::GetMaxRowId(void) const
 {
-    pair<int64_t, uint64_t> range = GetRowIdRange();
+    TVDBRowIdRange range = GetRowIdRange();
     return range.first+range.second-1;
 }
 
@@ -683,44 +683,45 @@ CVDBObjectCacheBase::~CVDBObjectCacheBase(void)
 DEFINE_STATIC_FAST_MUTEX(sm_CacheMutex);
 
 
-CObject* CVDBObjectCacheBase::Get(uint64_t row)
+CObject* CVDBObjectCacheBase::Get(TVDBRowId row)
 {
     CFastMutexGuard guard(sm_CacheMutex);
     if ( m_Objects.empty() ) {
         return 0;
     }
     TObjects::iterator best_it;
-    uint64_t best_d = numeric_limits<uint64_t>::max();
+    TVDBRowId best_d = numeric_limits<TVDBRowId>::max();
     NON_CONST_ITERATE ( TObjects, it, m_Objects ) {
-        uint64_t slot_row = it->first;
+        TVDBRowId slot_row = it->first;
         if ( slot_row >= row ) {
-            uint64_t d = slot_row - row;
+            TVDBRowId d = slot_row - row;
             if ( d <= best_d ) {
                 best_d = d;
                 best_it = it;
             }
         }
         else {
-            uint64_t d = row - slot_row;
+            TVDBRowId d = row - slot_row;
             if ( d < best_d ) {
                 best_d = d;
                 best_it = it;
             }
         }
     }
-    swap(*best_it, m_Objects.back());
-    CObject* obj = m_Objects.back().second.Release();
+    CObject* obj = best_it->second.Release();
+    *best_it = m_Objects.back();
     m_Objects.pop_back();
     _ASSERT(!obj->Referenced());
     return obj;
 }
 
 
-void CVDBObjectCacheBase::Put(CObject* obj, uint64_t row)
+void CVDBObjectCacheBase::Put(CObject* obj, TVDBRowId row)
 {
     if ( obj->Referenced() ) {
         return;
     }
+    //row = 0;
     CFastMutexGuard guard(sm_CacheMutex);
     if ( m_Objects.size() < kCacheSize ) {
         m_Objects.push_back(TSlot());
@@ -774,7 +775,7 @@ void CVDBColumn::Init(const CVDBCursor& cursor,
 }
 
 
-void CVDBValue::x_Get(const VCursor* cursor, uint32_t column)
+void CVDBValue::x_Get(const VCursor* cursor, TVDBColumnIdx column)
 {
     DECLARE_SDK_GET_GUARD();
     uint32_t bit_offset, bit_length;
@@ -794,8 +795,8 @@ void CVDBValue::x_Get(const VCursor* cursor, uint32_t column)
 
 
 void CVDBValue::x_Get(const VCursor* cursor,
-                      uint64_t row,
-                      uint32_t column,
+                      TVDBRowId row,
+                      TVDBColumnIdx column,
                       EMissing missing)
 {
     DECLARE_SDK_GET_GUARD();
@@ -832,8 +833,8 @@ void CVDBValue::x_ReportIndexOutOfBounds(size_t index) const
 
 
 void CVDBValueFor4Bits::x_Get(const VCursor* cursor,
-                              uint64_t row,
-                              uint32_t column)
+                              TVDBRowId row,
+                              TVDBColumnIdx column)
 {
     DECLARE_SDK_GET_GUARD();
     uint32_t bit_offset, bit_length, elem_count;

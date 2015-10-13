@@ -87,7 +87,7 @@ public:
         bool IsValidRowId(void) const;
 
         CConstRef<CWGSFileInfo> file;
-        Uint8 row_id;
+        TVDBRowId row_id;
         char seq_type; // '\0' - regular nuc, 'S' - scaffold, 'P' - protein
         bool has_version;
         int version;
@@ -232,7 +232,7 @@ public:
     // wgs file name or SRR accession
     string m_WGSPrefix;
     char m_SeqType;
-    Uint8 m_RowId;
+    TVDBRowId m_RowId;
 
     // string blob id representation:
     // eBlobType_annot_plain_id

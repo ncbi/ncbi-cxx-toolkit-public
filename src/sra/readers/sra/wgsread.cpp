@@ -53,7 +53,7 @@
 BEGIN_NCBI_NAMESPACE;
 
 #define NCBI_USE_ERRCODE_X   WGSReader
-NCBI_DEFINE_ERR_SUBCODE_X(9);
+NCBI_DEFINE_ERR_SUBCODE_X(11);
 
 BEGIN_NAMESPACE(objects);
 
@@ -481,6 +481,9 @@ struct CWGSDb_Impl::SSeqTableCursor : public CObject {
     DECLARE_VDB_COLUMN_AS(INSDC_quality_phred, QUALITY);
     DECLARE_VDB_COLUMN_AS(bool, CIRCULAR);
     DECLARE_VDB_COLUMN_AS(Uint4 /*NCBI_WGS_hash*/, HASH);
+    DECLARE_VDB_COLUMN_AS(TVDBRowId, FEAT_ROW_START);
+    DECLARE_VDB_COLUMN_AS(TVDBRowId, FEAT_ROW_END);
+    DECLARE_VDB_COLUMN_AS(TVDBRowId, FEAT_PRODUCT_ROW_ID);
 };
 
 
@@ -508,7 +511,10 @@ CWGSDb_Impl::SSeqTableCursor::SSeqTableCursor(const CVDBTable& table)
       INIT_OPTIONAL_VDB_COLUMN(GAP_LINKAGE),
       INIT_OPTIONAL_VDB_COLUMN(QUALITY),
       INIT_OPTIONAL_VDB_COLUMN(CIRCULAR),
-      INIT_OPTIONAL_VDB_COLUMN(HASH)
+      INIT_OPTIONAL_VDB_COLUMN(HASH),
+      INIT_OPTIONAL_VDB_COLUMN(FEAT_ROW_START),
+      INIT_OPTIONAL_VDB_COLUMN(FEAT_ROW_END),
+      INIT_OPTIONAL_VDB_COLUMN(FEAT_PRODUCT_ROW_ID)
 {
 }
 
@@ -521,12 +527,15 @@ struct CWGSDb_Impl::SScfTableCursor : public CObject {
 
     DECLARE_VDB_COLUMN_AS_STRING(SCAFFOLD_NAME);
     DECLARE_VDB_COLUMN_AS_STRING(ACCESSION);
-    DECLARE_VDB_COLUMN_AS(uint64_t, COMPONENT_ID);
+    DECLARE_VDB_COLUMN_AS(TVDBRowId, COMPONENT_ID);
     DECLARE_VDB_COLUMN_AS(INSDC_coord_one, COMPONENT_START);
     DECLARE_VDB_COLUMN_AS(INSDC_coord_len, COMPONENT_LEN);
     DECLARE_VDB_COLUMN_AS(NCBI_WGS_component_props, COMPONENT_PROPS);
     DECLARE_VDB_COLUMN_AS(NCBI_WGS_gap_linkage, COMPONENT_LINKAGE);
     DECLARE_VDB_COLUMN_AS(bool, CIRCULAR);
+    DECLARE_VDB_COLUMN_AS(TVDBRowId, FEAT_ROW_START);
+    DECLARE_VDB_COLUMN_AS(TVDBRowId, FEAT_ROW_END);
+    DECLARE_VDB_COLUMN_AS(TVDBRowId, FEAT_PRODUCT_ROW_ID);
 };
 
 
@@ -539,26 +548,10 @@ CWGSDb_Impl::SScfTableCursor::SScfTableCursor(const CVDBTable& table)
       INIT_VDB_COLUMN(COMPONENT_LEN),
       INIT_VDB_COLUMN(COMPONENT_PROPS),
       INIT_OPTIONAL_VDB_COLUMN(COMPONENT_LINKAGE),
-      INIT_OPTIONAL_VDB_COLUMN(CIRCULAR)
-{
-}
-
-
-// SIdxTableCursor is helper accessor structure for optional GI_IDX table
-struct CWGSDb_Impl::SIdxTableCursor : public CObject {
-    explicit SIdxTableCursor(const CVDBTable& table);
-
-    CVDBCursor m_Cursor;
-
-    DECLARE_VDB_COLUMN_AS(int64_t, NUC_ROW_ID);
-    DECLARE_VDB_COLUMN_AS(int64_t, PROT_ROW_ID);
-};
-
-
-CWGSDb_Impl::SIdxTableCursor::SIdxTableCursor(const CVDBTable& table)
-    : m_Cursor(table),
-      INIT_OPTIONAL_VDB_COLUMN(NUC_ROW_ID),
-      INIT_OPTIONAL_VDB_COLUMN(PROT_ROW_ID)
+      INIT_OPTIONAL_VDB_COLUMN(CIRCULAR),
+      INIT_OPTIONAL_VDB_COLUMN(FEAT_ROW_START),
+      INIT_OPTIONAL_VDB_COLUMN(FEAT_ROW_END),
+      INIT_OPTIONAL_VDB_COLUMN(FEAT_PRODUCT_ROW_ID)
 {
 }
 
@@ -579,6 +572,9 @@ struct CWGSDb_Impl::SProtTableCursor : public CObject {
     DECLARE_VDB_COLUMN_AS(INSDC_coord_len, PROTEIN_LEN);
     DECLARE_VDB_COLUMN_AS_STRING(PROTEIN_NAME);
     DECLARE_VDB_COLUMN_AS_STRING(REF_ACC);
+    DECLARE_VDB_COLUMN_AS(TVDBRowId, FEAT_ROW_START);
+    DECLARE_VDB_COLUMN_AS(TVDBRowId, FEAT_ROW_END);
+    DECLARE_VDB_COLUMN_AS(TVDBRowId, FEAT_PRODUCT_ROW_ID);
 };
 
 
@@ -593,7 +589,10 @@ CWGSDb_Impl::SProtTableCursor::SProtTableCursor(const CVDBTable& table)
       INIT_VDB_COLUMN(GB_STATE),
       INIT_VDB_COLUMN(PROTEIN_LEN),
       INIT_VDB_COLUMN(PROTEIN_NAME),
-      INIT_OPTIONAL_VDB_COLUMN(REF_ACC)
+      INIT_OPTIONAL_VDB_COLUMN(REF_ACC),
+      INIT_OPTIONAL_VDB_COLUMN(FEAT_ROW_START),
+      INIT_OPTIONAL_VDB_COLUMN(FEAT_ROW_END),
+      INIT_OPTIONAL_VDB_COLUMN(FEAT_PRODUCT_ROW_ID)
 {
 }
 
@@ -604,14 +603,15 @@ struct CWGSDb_Impl::SFeatTableCursor : public CObject {
     
     CVDBCursor m_Cursor;
     DECLARE_VDB_COLUMN_AS(NCBI_WGS_feattype, FEAT_TYPE);
-    DECLARE_VDB_COLUMN_AS(NCBI_WGS_seqtype, SEQ_TYPE);
+    DECLARE_VDB_COLUMN_AS(NCBI_WGS_seqtype, LOC_SEQ_TYPE);
     DECLARE_VDB_COLUMN_AS_STRING(LOC_ACCESSION);
-    DECLARE_VDB_COLUMN_AS(int64_t, LOC_ROW_ID);
+    DECLARE_VDB_COLUMN_AS(TVDBRowId, LOC_ROW_ID);
     DECLARE_VDB_COLUMN_AS(INSDC_coord_zero, LOC_START);
     DECLARE_VDB_COLUMN_AS(INSDC_coord_len, LOC_LEN);
     DECLARE_VDB_COLUMN_AS(NCBI_WGS_loc_strand, LOC_STRAND);
+    DECLARE_VDB_COLUMN_AS(NCBI_WGS_seqtype, PRODUCT_SEQ_TYPE);
     DECLARE_VDB_COLUMN_AS_STRING(PRODUCT_ACCESSION);
-    DECLARE_VDB_COLUMN_AS(int64_t, PRODUCT_ROW_ID);
+    DECLARE_VDB_COLUMN_AS(TVDBRowId, PRODUCT_ROW_ID);
     DECLARE_VDB_COLUMN_AS(INSDC_coord_zero, PRODUCT_START);
     DECLARE_VDB_COLUMN_AS(INSDC_coord_len, PRODUCT_LEN);
     DECLARE_VDB_COLUMN_AS_STRING(SEQ_FEAT);
@@ -621,17 +621,37 @@ struct CWGSDb_Impl::SFeatTableCursor : public CObject {
 CWGSDb_Impl::SFeatTableCursor::SFeatTableCursor(const CVDBTable& table)
     : m_Cursor(table),
       INIT_VDB_COLUMN(FEAT_TYPE),
-      INIT_VDB_COLUMN(SEQ_TYPE),
+      INIT_VDB_COLUMN(LOC_SEQ_TYPE),
       INIT_VDB_COLUMN(LOC_ACCESSION),
       INIT_VDB_COLUMN(LOC_ROW_ID),
       INIT_VDB_COLUMN(LOC_START),
       INIT_VDB_COLUMN(LOC_LEN),
       INIT_VDB_COLUMN(LOC_STRAND),
+      INIT_VDB_COLUMN(PRODUCT_SEQ_TYPE),
       INIT_VDB_COLUMN(PRODUCT_ACCESSION),
       INIT_VDB_COLUMN(PRODUCT_ROW_ID),
       INIT_VDB_COLUMN(PRODUCT_START),
       INIT_VDB_COLUMN(PRODUCT_LEN),
       INIT_VDB_COLUMN(SEQ_FEAT)
+{
+}
+
+
+// SIdxTableCursor is helper accessor structure for optional GI_IDX table
+struct CWGSDb_Impl::SIdxTableCursor : public CObject {
+    explicit SIdxTableCursor(const CVDBTable& table);
+
+    CVDBCursor m_Cursor;
+
+    DECLARE_VDB_COLUMN_AS(TVDBRowId, NUC_ROW_ID);
+    DECLARE_VDB_COLUMN_AS(TVDBRowId, PROT_ROW_ID);
+};
+
+
+CWGSDb_Impl::SIdxTableCursor::SIdxTableCursor(const CVDBTable& table)
+    : m_Cursor(table),
+      INIT_OPTIONAL_VDB_COLUMN(NUC_ROW_ID),
+      INIT_OPTIONAL_VDB_COLUMN(PROT_ROW_ID)
 {
 }
 
@@ -668,7 +688,7 @@ CWGSDb_Impl::~CWGSDb_Impl(void)
 
 
 inline
-CRef<CWGSDb_Impl::SSeqTableCursor> CWGSDb_Impl::Seq(uint64_t row)
+CRef<CWGSDb_Impl::SSeqTableCursor> CWGSDb_Impl::Seq(TVDBRowId row)
 {
     CRef<SSeqTableCursor> curs = m_Seq.Get(row);
     if ( !curs ) {
@@ -679,7 +699,7 @@ CRef<CWGSDb_Impl::SSeqTableCursor> CWGSDb_Impl::Seq(uint64_t row)
 
 
 inline
-CRef<CWGSDb_Impl::SScfTableCursor> CWGSDb_Impl::Scf(uint64_t row)
+CRef<CWGSDb_Impl::SScfTableCursor> CWGSDb_Impl::Scf(TVDBRowId row)
 {
     CRef<SScfTableCursor> curs = m_Scf.Get(row);
     if ( !curs ) {
@@ -692,7 +712,7 @@ CRef<CWGSDb_Impl::SScfTableCursor> CWGSDb_Impl::Scf(uint64_t row)
 
 
 inline
-CRef<CWGSDb_Impl::SProtTableCursor> CWGSDb_Impl::Prot(uint64_t row)
+CRef<CWGSDb_Impl::SProtTableCursor> CWGSDb_Impl::Prot(TVDBRowId row)
 {
     CRef<SProtTableCursor> curs = m_Prot.Get(row);
     if ( !curs ) {
@@ -705,7 +725,7 @@ CRef<CWGSDb_Impl::SProtTableCursor> CWGSDb_Impl::Prot(uint64_t row)
 
 
 inline
-CRef<CWGSDb_Impl::SFeatTableCursor> CWGSDb_Impl::Feat(uint64_t row)
+CRef<CWGSDb_Impl::SFeatTableCursor> CWGSDb_Impl::Feat(TVDBRowId row)
 {
     CRef<SFeatTableCursor> curs = m_Feat.Get(row);
     if ( !curs ) {
@@ -718,7 +738,7 @@ CRef<CWGSDb_Impl::SFeatTableCursor> CWGSDb_Impl::Feat(uint64_t row)
 
 
 inline
-CRef<CWGSDb_Impl::SIdxTableCursor> CWGSDb_Impl::Idx(uint64_t row)
+CRef<CWGSDb_Impl::SIdxTableCursor> CWGSDb_Impl::Idx(TVDBRowId row)
 {
     CRef<SIdxTableCursor> curs = m_GiIdx.Get(row);
     if ( !curs ) {
@@ -731,35 +751,35 @@ CRef<CWGSDb_Impl::SIdxTableCursor> CWGSDb_Impl::Idx(uint64_t row)
 
 
 inline
-void CWGSDb_Impl::Put(CRef<SSeqTableCursor>& curs, uint64_t row)
+void CWGSDb_Impl::Put(CRef<SSeqTableCursor>& curs, TVDBRowId row)
 {
     m_Seq.Put(curs, row);
 }
 
 
 inline
-void CWGSDb_Impl::Put(CRef<SScfTableCursor>& curs, uint64_t row)
+void CWGSDb_Impl::Put(CRef<SScfTableCursor>& curs, TVDBRowId row)
 {
     m_Scf.Put(curs, row);
 }
 
 
 inline
-void CWGSDb_Impl::Put(CRef<SProtTableCursor>& curs, uint64_t row)
+void CWGSDb_Impl::Put(CRef<SProtTableCursor>& curs, TVDBRowId row)
 {
     m_Prot.Put(curs, row);
 }
 
 
 inline
-void CWGSDb_Impl::Put(CRef<SFeatTableCursor>& curs, uint64_t row)
+void CWGSDb_Impl::Put(CRef<SFeatTableCursor>& curs, TVDBRowId row)
 {
     m_Feat.Put(curs, row);
 }
 
 
 inline
-void CWGSDb_Impl::Put(CRef<SIdxTableCursor>& curs, uint64_t row)
+void CWGSDb_Impl::Put(CRef<SIdxTableCursor>& curs, TVDBRowId row)
 {
     m_GiIdx.Put(curs, row);
 }
@@ -903,7 +923,7 @@ void CWGSDb_Impl::OpenProtAccIndex(void)
     OpenIndex(ProtTable(), m_ProtAccIndex, "gb_accession", m_ProtAccIndexIsOpened);
 }
 
-
+/*
 void CWGSDb_Impl::OpenFeatLocIndex(void)
 {
     OpenIndex(FeatTable(), m_FeatLocIndex, "loc_accession", m_FeatLocIndexIsOpened);
@@ -914,12 +934,12 @@ void CWGSDb_Impl::OpenFeatProductIndex(void)
 {
     OpenIndex(FeatTable(), m_FeatProductIndex, "product_accession", m_FeatProductIndexIsOpened);
 }
+*/
 
-
-pair<uint64_t, char> CWGSDb_Impl::ParseRowType(CTempString acc,
-                                               TAllowRowType allow_type) const
+pair<TVDBRowId, char> CWGSDb_Impl::ParseRowType(CTempString acc,
+                                                TAllowRowType allow_type) const
 {
-    pair<uint64_t, TAllowRowType> ret(0, eRowType_contig);
+    pair<TVDBRowId, TAllowRowType> ret(0, eRowType_contig);
     const SIZE_TYPE start = 0;
     CTempString row = acc.substr(start+6);
     if ( row[0] == 'S' ) {
@@ -941,18 +961,21 @@ pair<uint64_t, char> CWGSDb_Impl::ParseRowType(CTempString acc,
             return ret;
         }
     }
-    ret.first = NStr::StringToNumeric<uint64_t>(row, NStr::fConvErr_NoThrow);
+    ret.first = NStr::StringToNumeric<TVDBRowId>(row, NStr::fConvErr_NoThrow);
+    if ( ret.first < 0 ) {
+        ret.first = 0;
+    }
     return ret;
 }
 
 
-uint64_t CWGSDb_Impl::ParseRow(CTempString acc, bool* is_scaffold) const
+TVDBRowId CWGSDb_Impl::ParseRow(CTempString acc, bool* is_scaffold) const
 {
     TAllowRowType allow_type = fAllowRowType_contig;
     if ( is_scaffold ) {
         allow_type |= fAllowRowType_scaffold;
     }
-    pair<uint64_t, TRowType> rt = ParseRowType(acc, allow_type);
+    pair<TVDBRowId, TRowType> rt = ParseRowType(acc, allow_type);
     if ( is_scaffold ) {
         *is_scaffold = rt.second == eRowType_scaffold;
     }
@@ -1077,7 +1100,7 @@ CRef<CSeq_id> CWGSDb_Impl::GetAccSeq_id(CTempString acc, int version) const
 
 
 CRef<CSeq_id> CWGSDb_Impl::GetAccSeq_id(ERowType type,
-                                        uint64_t row_id,
+                                        TVDBRowId row_id,
                                         int version) const
 {
     CRef<CSeq_id> id;
@@ -1113,19 +1136,19 @@ CRef<CSeq_id> CWGSDb_Impl::GetMasterSeq_id(void) const
 }
 
 
-CRef<CSeq_id> CWGSDb_Impl::GetContigSeq_id(uint64_t row_id) const
+CRef<CSeq_id> CWGSDb_Impl::GetContigSeq_id(TVDBRowId row_id) const
 {
     return GetAccSeq_id(eRowType_contig, row_id, 1);
 }
 
 
-CRef<CSeq_id> CWGSDb_Impl::GetScaffoldSeq_id(uint64_t row_id) const
+CRef<CSeq_id> CWGSDb_Impl::GetScaffoldSeq_id(TVDBRowId row_id) const
 {
     return GetAccSeq_id(eRowType_scaffold, row_id, 1);
 }
 
 
-CRef<CSeq_id> CWGSDb_Impl::GetProteinSeq_id(uint64_t row_id) const
+CRef<CSeq_id> CWGSDb_Impl::GetProteinSeq_id(TVDBRowId row_id) const
 {
     return GetAccSeq_id(eRowType_protein, row_id, 1);
 }
@@ -1303,19 +1326,10 @@ TGi CWGSDb_Impl::GetMasterGi(void) const
 }
 
 
-static inline TGi s_ToGi(uint64_t gi, const char* method)
+static inline TGi s_ToGi(TVDBRowId gi, const char* method)
 {
-    if ( sizeof(TIntId) != sizeof(gi) && uint64_t(TIntId(gi)) != gi ) {
-        NCBI_THROW_FMT(CSraException, eDataError,
-                       method<<": GI is too big: "<<gi);
-    }
-    return TIntId(gi);
-}
-
-
-static inline TGi s_ToGi(int64_t gi, const char* method)
-{
-    if ( sizeof(TIntId) != sizeof(gi) && int64_t(TIntId(gi)) != gi ) {
+    if ( gi < 0 ||
+         (sizeof(TIntId) != sizeof(gi) && TVDBRowId(TIntId(gi)) != gi) ) {
         NCBI_THROW_FMT(CSraException, eDataError,
                        method<<": GI is too big: "<<gi);
     }
@@ -1328,7 +1342,7 @@ pair<TGi, TGi> CWGSDb_Impl::GetNucGiRange(void)
     pair<TGi, TGi> ret;
     if ( CRef<SIdxTableCursor> idx = Idx() ) {
         if ( idx->m_NUC_ROW_ID ) {
-            pair<int64_t, uint64_t> row_range =
+            TVDBRowIdRange row_range =
                 idx->m_NUC_ROW_ID.GetRowIdRange(idx->m_Cursor);
             if ( row_range.second ) {
                 ret.first = s_ToGi(row_range.first,
@@ -1348,7 +1362,7 @@ pair<TGi, TGi> CWGSDb_Impl::GetProtGiRange(void)
     pair<TGi, TGi> ret;
     if ( CRef<SIdxTableCursor> idx = Idx() ) {
         if ( idx->m_PROT_ROW_ID ) {
-            pair<int64_t, uint64_t> row_range =
+            TVDBRowIdRange row_range =
                 idx->m_PROT_ROW_ID.GetRowIdRange(idx->m_Cursor);
             if ( row_range.second ) {
                 ret.first = s_ToGi(row_range.first,
@@ -1385,12 +1399,12 @@ void CWGSDb_Impl::x_SortGiRanges(TGiRanges& ranges)
 CWGSDb_Impl::TGiRanges CWGSDb_Impl::GetNucGiRanges(void)
 {
     TGiRanges ranges;
-    uint64_t row_id = 0;
+    TVDBRowId row_id = 0;
     CRef<SSeqTableCursor> seq = Seq();
     if ( seq->m_GI ) {
         TIntId gi_start = -1, gi_end = -1;
-        pair<int64_t, uint64_t> row_range = seq->m_Cursor.GetRowIdRange();
-        for ( uint64_t i = 0; i < row_range.second; ++i ) {
+        TVDBRowIdRange row_range = seq->m_Cursor.GetRowIdRange();
+        for ( TVDBRowCount i = 0; i < row_range.second; ++i ) {
             row_id = row_range.first+i;
             TIntId gi = s_ToGi(*seq->GI(row_id), "CWGSDb::GetNucGiRanges()");
             if ( !gi ) {
@@ -1417,31 +1431,6 @@ CWGSDb_Impl::TGiRanges CWGSDb_Impl::GetNucGiRanges(void)
 CWGSDb_Impl::TGiRanges CWGSDb_Impl::GetProtGiRanges(void)
 {
     TGiRanges ranges;
-    if ( ProtTable() ) {
-        CRef<SProtTableCursor> seq = Prot();
-        /*
-        if ( seq->m_GI ) {
-            TIntId gi_start = -1, gi_end = -1;
-            pair<int64_t, uint64_t> row_range = seq->m_Cursor.GetRowIdRange();
-            for ( uint64_t i = 0; i < row_range.second; ++i ) {
-                TIntId gi = s_ToGi(*seq->GI(row_range.first+i),
-                                   "CWGSDb::GetProtGiRanges()");
-                if ( gi != gi_end ) {
-                    if ( gi_end != gi_start ) {
-                        ranges.push_back(TGiRange(gi_start, gi_end));
-                    }
-                    gi_start = gi;
-                }
-                gi_end = gi+1;
-            }
-            if ( gi_end != gi_start ) {
-                ranges.push_back(TGiRange(gi_start, gi_end));
-            }
-            x_SortGiRanges(ranges);
-        }
-        */
-        Put(seq);
-    }
     return ranges;
 }
 
@@ -1450,9 +1439,9 @@ CWGSDb_Impl::TAccRanges CWGSDb_Impl::GetProtAccRanges(void)
 {
     TAccRanges ranges;
     if ( CRef<SProtTableCursor> seq = Prot() ) {
-        uint64_t row_id = 0;
-        pair<int64_t, uint64_t> row_range = seq->m_Cursor.GetRowIdRange();
-        for ( uint64_t i = 0; i < row_range.second; ++i ) {
+        TVDBRowId row_id = 0;
+        TVDBRowIdRange row_range = seq->m_Cursor.GetRowIdRange();
+        for ( TVDBRowCount i = 0; i < row_range.second; ++i ) {
             row_id = row_range.first+i;
             CTempString acc = *seq->GB_ACCESSION(row_id);
             if ( acc.empty() ) {
@@ -1483,23 +1472,23 @@ CWGSDb_Impl::TAccRanges CWGSDb_Impl::GetProtAccRanges(void)
 }
 
 
-pair<uint64_t, bool> CWGSDb_Impl::GetGiRowId(TGi gi)
+pair<TVDBRowId, bool> CWGSDb_Impl::GetGiRowId(TGi gi)
 {
-    pair<uint64_t, bool> ret;
+    pair<TVDBRowId, bool> ret;
     TIntId row_id = gi;
     if ( CRef<SIdxTableCursor> idx = Idx(row_id) ) {
         if ( idx->m_NUC_ROW_ID ) {
-            CVDBValueFor<int64_t> value =
+            CVDBValueFor<TVDBRowId> value =
                 idx->NUC_ROW_ID(row_id, CVDBValue::eMissing_Allow);
             if ( value.data() ) {
-                ret.first = static_cast<uint64_t>(*value);
+                ret.first = *value;
             }
         }
         if ( !ret.first && idx->m_PROT_ROW_ID ) {
-            CVDBValueFor<int64_t> value =
+            CVDBValueFor<TVDBRowId> value =
                 idx->PROT_ROW_ID(row_id, CVDBValue::eMissing_Allow);
             if ( value.data() ) {
-                ret.first = static_cast<uint64_t>(*value);
+                ret.first = *value;
             }
         }
         Put(idx, row_id);
@@ -1508,16 +1497,16 @@ pair<uint64_t, bool> CWGSDb_Impl::GetGiRowId(TGi gi)
 }
 
 
-uint64_t CWGSDb_Impl::GetNucGiRowId(TGi gi)
+TVDBRowId CWGSDb_Impl::GetNucGiRowId(TGi gi)
 {
-    uint64_t ret = 0;
+    TVDBRowId ret = 0;
     TIntId row_id = gi;
     if ( CRef<SIdxTableCursor> idx = Idx(row_id) ) {
         if ( idx->m_NUC_ROW_ID ) {
-            CVDBValueFor<int64_t> value =
+            CVDBValueFor<TVDBRowId> value =
                 idx->NUC_ROW_ID(row_id, CVDBValue::eMissing_Allow);
             if ( value.data() ) {
-                ret = static_cast<uint64_t>(*value);
+                ret = *value;
             }
         }
         Put(idx, row_id);
@@ -1526,16 +1515,16 @@ uint64_t CWGSDb_Impl::GetNucGiRowId(TGi gi)
 }
 
 
-uint64_t CWGSDb_Impl::GetProtGiRowId(TGi gi)
+TVDBRowId CWGSDb_Impl::GetProtGiRowId(TGi gi)
 {
-    uint64_t ret = 0;
+    TVDBRowId ret = 0;
     TIntId row_id = gi;
     if ( CRef<SIdxTableCursor> idx = Idx(row_id) ) {
         if ( idx->m_PROT_ROW_ID ) {
-            CVDBValueFor<int64_t> value =
+            CVDBValueFor<TVDBRowId> value =
                 idx->PROT_ROW_ID(row_id, CVDBValue::eMissing_Allow);
             if ( value.data() ) {
-                ret = static_cast<uint64_t>(*value);
+                ret = *value;
             }
         }
         Put(idx, row_id);
@@ -1544,59 +1533,40 @@ uint64_t CWGSDb_Impl::GetProtGiRowId(TGi gi)
 }
 
 
-uint64_t CWGSDb_Impl::GetContigNameRowId(const string& name)
+TVDBRowId CWGSDb_Impl::GetContigNameRowId(const string& name)
 {
     if ( const CVDBTableIndex& index = ContigNameIndex() ) {
-        pair<int64_t, uint64_t> range = index.Find(name);
+        TVDBRowIdRange range = index.Find(name);
         return range.second? range.first: 0;
     }
     return 0;
 }
 
 
-uint64_t CWGSDb_Impl::GetScaffoldNameRowId(const string& name)
+TVDBRowId CWGSDb_Impl::GetScaffoldNameRowId(const string& name)
 {
     if ( const CVDBTableIndex& index = ScaffoldNameIndex() ) {
-        pair<int64_t, uint64_t> range = index.Find(name);
+        TVDBRowIdRange range = index.Find(name);
         return range.second? range.first: 0;
     }
     return 0;
 }
 
 
-uint64_t CWGSDb_Impl::GetProteinNameRowId(const string& name)
+TVDBRowId CWGSDb_Impl::GetProteinNameRowId(const string& name)
 {
     if ( const CVDBTableIndex& index = ProteinNameIndex() ) {
-        pair<int64_t, uint64_t> range = index.Find(name);
+        TVDBRowIdRange range = index.Find(name);
         return range.second? range.first: 0;
     }
     return 0;
 }
 
 
-uint64_t CWGSDb_Impl::GetProtAccRowId(const string& acc)
+TVDBRowId CWGSDb_Impl::GetProtAccRowId(const string& acc)
 {
     if ( const CVDBTableIndex& index = ProtAccIndex() ) {
-        pair<int64_t, uint64_t> range = index.Find(acc);
-        return range.second? range.first: 0;
-    }
-    return 0;
-}
-
-
-pair<int64_t, uint64_t> CWGSDb_Impl::GetSeqFeatRowIdRange(const string& acc)
-{
-    if ( const CVDBTableIndex& index = FeatLocIndex() ) {
-        return index.Find(acc);
-    }
-    return pair<int64_t, uint64_t>(0, 0);
-}
-
-
-uint64_t CWGSDb_Impl::GetProductFeatRowId(const string& acc)
-{
-    if ( const CVDBTableIndex& index = FeatProductIndex() ) {
-        pair<int64_t, uint64_t> range = index.Find(acc);
+        TVDBRowIdRange range = index.Find(acc);
         return range.second? range.first: 0;
     }
     return 0;
@@ -1682,7 +1652,7 @@ CWGSSeqIterator::CWGSSeqIterator(const CWGSDb& wgs_db,
 
 
 CWGSSeqIterator::CWGSSeqIterator(const CWGSDb& wgs_db,
-                                 uint64_t row,
+                                 TVDBRowId row,
                                  EWithdrawn withdrawn,
                                  EClipType clip_type)
 {
@@ -1692,8 +1662,8 @@ CWGSSeqIterator::CWGSSeqIterator(const CWGSDb& wgs_db,
 
 
 CWGSSeqIterator::CWGSSeqIterator(const CWGSDb& wgs_db,
-                                 uint64_t first_row,
-                                 uint64_t last_row,
+                                 TVDBRowId first_row,
+                                 TVDBRowId last_row,
                                  EWithdrawn withdrawn,
                                  EClipType clip_type)
 {
@@ -1716,7 +1686,7 @@ CWGSSeqIterator::CWGSSeqIterator(const CWGSDb& wgs_db,
                                  EWithdrawn withdrawn,
                                  EClipType clip_type)
 {
-    if ( uint64_t row = wgs_db.ParseContigRow(acc) ) {
+    if ( TVDBRowId row = wgs_db.ParseContigRow(acc) ) {
         x_Init(wgs_db, withdrawn, clip_type, row);
         SelectRow(row);
     }
@@ -1736,7 +1706,7 @@ CWGSSeqIterator::~CWGSSeqIterator(void)
 void CWGSSeqIterator::x_Init(const CWGSDb& wgs_db,
                              EWithdrawn withdrawn,
                              EClipType clip_type,
-                             uint64_t get_row)
+                             TVDBRowId get_row)
 {
     m_CurrId = m_FirstGoodId = m_FirstBadId = 0;
     if ( !wgs_db ) {
@@ -1759,13 +1729,13 @@ void CWGSSeqIterator::x_Init(const CWGSDb& wgs_db,
         m_ClipByQuality = s_GetClipByQuality();
         break;
     }
-    pair<int64_t, uint64_t> range = m_Cur->m_Cursor.GetRowIdRange();
+    TVDBRowIdRange range = m_Cur->m_Cursor.GetRowIdRange();
     m_FirstGoodId = m_CurrId = range.first;
     m_FirstBadId = range.first+range.second;
 }
 
 
-CWGSSeqIterator& CWGSSeqIterator::SelectRow(uint64_t row)
+CWGSSeqIterator& CWGSSeqIterator::SelectRow(TVDBRowId row)
 {
     if ( row < m_FirstGoodId ) {
         // before the first id
@@ -2030,6 +2000,24 @@ CRef<CSeq_descr> CWGSSeqIterator::GetSeq_descr(TFlags flags) const
         ret.Reset();
     }
     return ret;
+}
+
+
+TVDBRowIdRange CWGSSeqIterator::GetLocFeatRowIdRange(void) const
+{
+    x_CheckValid("CWGSSeqIterator::GetLocFeatRowIdRange");
+    
+    if ( !m_Cur->m_FEAT_ROW_START ) {
+        return TVDBRowIdRange(0, 0);
+    }
+    TVDBRowId start = *m_Cur->FEAT_ROW_START(m_CurrId);
+    TVDBRowId end = *m_Cur->FEAT_ROW_END(m_CurrId);
+    if ( end < start ) {
+        NCBI_THROW_FMT(CSraException, eDataError,
+                       "CWGSSeqIterator::GetLocFeatRowIdRange: "
+                       "feature row range is invalid: "<<start<<","<<end);
+    }
+    return TVDBRowIdRange(start, end-start+1);
 }
 
 
@@ -3013,6 +3001,48 @@ CRef<CBioseq> CWGSSeqIterator::GetBioseq(TFlags flags) const
 }
 
 
+static
+void sx_AddFeatures(const CWGSDb& db, TVDBRowIdRange range,
+                    CSeq_entry& main_entry,
+                    vector<TVDBRowId>* product_row_ids = 0)
+{
+    _ASSERT(main_entry.IsSeq());
+    CBioseq& main_seq = main_entry.SetSeq();
+    CSeq_annot::TData::TFtable* main_features = 0;
+    CSeq_annot::TData::TFtable* product_features = 0;
+    for ( CWGSFeatureIterator feat_it(db, range); feat_it; ++feat_it ) {
+        CRef<CSeq_feat> feat = feat_it.GetSeq_feat();
+        TVDBRowId product_row_id =
+            product_row_ids? feat_it.GetProductRowId(): 0;
+        if ( product_row_id ) {
+            // product feature
+            if ( !product_features ) {
+                CRef<CBioseq_set> seqset(new CBioseq_set);
+                seqset->SetClass(CBioseq_set::eClass_nuc_prot);
+                CRef<CSeq_entry> entry(new CSeq_entry);
+                entry->SetSeq(main_seq);
+                seqset->SetSeq_set().push_back(entry);
+                main_entry.SetSet(*seqset);
+                CRef<CSeq_annot> annot(new CSeq_annot);
+                seqset->SetAnnot().push_back(annot);
+                product_features = &annot->SetData().SetFtable();
+            }
+            product_features->push_back(feat);
+            product_row_ids->push_back(product_row_id);
+        }
+        else {
+            // plain feature
+            if ( !main_features ) {
+                CRef<CSeq_annot> annot(new CSeq_annot);
+                main_seq.SetAnnot().push_back(annot);
+                main_features = &annot->SetData().SetFtable();
+            }
+            main_features->push_back(feat);
+        }
+    }
+}
+
+
 CRef<CSeq_entry> CWGSSeqIterator::GetSeq_entry(TFlags flags) const
 {
     x_CheckValid("CWGSSeqIterator::GetSeq_entry");
@@ -3024,51 +3054,22 @@ CRef<CSeq_entry> CWGSSeqIterator::GetSeq_entry(TFlags flags) const
     }
     else {
         CRef<CBioseq> main_seq = GetBioseq(flags & ~fSeqAnnot);
-        CSeq_annot::TData::TFtable* main_features = 0;
-        CSeq_annot::TData::TFtable* product_features = 0;
         ret->SetSeq(*main_seq);
-        vector<uint64_t> product_row_ids;
-        for ( CWGSFeatureIterator feat_it(*this); feat_it; ++feat_it ) {
-            CRef<CSeq_feat> feat = feat_it.GetSeq_feat();
-            if ( uint64_t product_row_id = feat_it.GetProductRowId() ) {
-                // product feature
-                if ( !product_features ) {
-                    CRef<CBioseq_set> seqset(new CBioseq_set);
-                    seqset->SetClass(CBioseq_set::eClass_nuc_prot);
-                    seqset->SetSeq_set().push_back(ret);
-                    ret->SetSet(*seqset);
-                    CRef<CSeq_annot> annot(new CSeq_annot);
-                    seqset->SetAnnot().push_back(annot);
-                    product_features = &annot->SetData().SetFtable();
-                }
-                product_features->push_back(feat);
-                product_row_ids.push_back(product_row_id);
-            }
-            else {
-                // plain feature
-                if ( !main_features ) {
-                    CRef<CSeq_annot> annot(new CSeq_annot);
-                    main_seq->SetAnnot().push_back(annot);
-                    main_features = &annot->SetData().SetFtable();
-                }
-                main_features->push_back(feat);
-            }
-        }
+        vector<TVDBRowId> product_row_ids;
+        sx_AddFeatures(m_Db, GetLocFeatRowIdRange(), *ret, &product_row_ids);
         if ( !product_row_ids.empty() ) {
             CWGSProteinIterator prot_it(m_Db);
             CWGSProteinIterator::TFlags prot_flags =
                 prot_it.fDefaultFlags & ~prot_it.fMasterDescr;
-            ITERATE ( vector<uint64_t>, it, product_row_ids ) {
+            CBioseq_set::TSeq_set& entries = ret->SetSet().SetSeq_set();
+            ITERATE ( vector<TVDBRowId>, it, product_row_ids ) {
                 if ( !prot_it.SelectRow(*it) ) {
                     ERR_POST_X(9, "CWGSSeqIterator::GetSeq_entry: "
                                "invalid protein row id: "<<*it);
                     continue;
                 }
-                CRef<CSeq_entry> entry(new CSeq_entry);
-                entry->SetSeq(*prot_it.GetBioseq(prot_flags));
-                ret->SetSet().SetSeq_set().push_back(entry);
+                entries.push_back(prot_it.GetSeq_entry(prot_flags));
             }
-            CRef<CWGSDb_Impl::SProtTableCursor> prot;
         }
     }
     return ret;
@@ -3134,7 +3135,7 @@ CWGSScaffoldIterator::CWGSScaffoldIterator(const CWGSDb& wgs_db)
 
 
 CWGSScaffoldIterator::CWGSScaffoldIterator(const CWGSDb& wgs_db,
-                                           uint64_t row)
+                                           TVDBRowId row)
 {
     x_Init(wgs_db);
     SelectRow(row);
@@ -3144,7 +3145,7 @@ CWGSScaffoldIterator::CWGSScaffoldIterator(const CWGSDb& wgs_db,
 CWGSScaffoldIterator::CWGSScaffoldIterator(const CWGSDb& wgs_db,
                                            CTempString acc)
 {
-    if ( uint64_t row = wgs_db.ParseScaffoldRow(acc) ) {
+    if ( TVDBRowId row = wgs_db.ParseScaffoldRow(acc) ) {
         x_Init(wgs_db);
         SelectRow(row);
     }
@@ -3172,13 +3173,13 @@ void CWGSScaffoldIterator::x_Init(const CWGSDb& wgs_db)
         return;
     }
     m_Db = wgs_db;
-    pair<int64_t, uint64_t> range = m_Cur->m_Cursor.GetRowIdRange();
+    TVDBRowIdRange range = m_Cur->m_Cursor.GetRowIdRange();
     m_FirstGoodId = m_CurrId = range.first;
     m_FirstBadId = range.first+range.second;
 }
 
 
-CWGSScaffoldIterator& CWGSScaffoldIterator::SelectRow(uint64_t row)
+CWGSScaffoldIterator& CWGSScaffoldIterator::SelectRow(TVDBRowId row)
 {
     if ( row < m_FirstGoodId ) {
         m_CurrId = m_FirstBadId;
@@ -3318,6 +3319,24 @@ bool CWGSScaffoldIterator::IsCircular(void) const
 }
 
 
+TVDBRowIdRange CWGSScaffoldIterator::GetLocFeatRowIdRange(void) const
+{
+    x_CheckValid("CWGSScaffoldIterator::GetLocFeatRowIdRange");
+    
+    if ( !m_Cur->m_FEAT_ROW_START ) {
+        return TVDBRowIdRange(0, 0);
+    }
+    TVDBRowId start = *m_Cur->FEAT_ROW_START(m_CurrId);
+    TVDBRowId end = *m_Cur->FEAT_ROW_END(m_CurrId);
+    if ( end < start ) {
+        NCBI_THROW_FMT(CSraException, eDataError,
+                       "CWGSScaffoldIterator::GetLocFeatRowIdRange: "
+                       "feature row range is invalid: "<<start<<","<<end);
+    }
+    return TVDBRowIdRange(start, end-start+1);
+}
+
+
 CRef<CSeq_inst> CWGSScaffoldIterator::GetSeq_inst(TFlags flags) const
 {
     x_CheckValid("CWGSScaffoldIterator::GetSeq_inst");
@@ -3331,7 +3350,7 @@ CRef<CSeq_inst> CWGSScaffoldIterator::GetSeq_inst(TFlags flags) const
     inst->SetStrand(CSeq_inst::eStrand_ds);
     inst->SetRepr(CSeq_inst::eRepr_delta);
     int id_ind = 0;
-    CVDBValueFor<uint64_t> ids = m_Cur->COMPONENT_ID(m_CurrId);
+    CVDBValueFor<TVDBRowId> ids = m_Cur->COMPONENT_ID(m_CurrId);
     CVDBValueFor<INSDC_coord_len> lens = m_Cur->COMPONENT_LEN(m_CurrId);
     CVDBValueFor<INSDC_coord_one> starts = m_Cur->COMPONENT_START(m_CurrId);
     CVDBValueFor<NCBI_WGS_component_props> propss = m_Cur->COMPONENT_PROPS(m_CurrId);
@@ -3357,7 +3376,7 @@ CRef<CSeq_inst> CWGSScaffoldIterator::GetSeq_inst(TFlags flags) const
                                GetAccSeq_id()->AsFastaString());
             }
             --start; // make start zero-based
-            uint64_t row_id = ids[id_ind++];
+            TVDBRowId row_id = ids[id_ind++];
             CSeq_interval& interval = seg->SetLoc().SetInt();
             interval.SetFrom(start);
             interval.SetTo(start+len-1);
@@ -3392,6 +3411,39 @@ CRef<CBioseq> CWGSScaffoldIterator::GetBioseq(TFlags flags) const
         }
     }
     ret->SetInst(*GetSeq_inst(flags));
+    return ret;
+}
+
+
+CRef<CSeq_entry> CWGSScaffoldIterator::GetSeq_entry(TFlags flags) const
+{
+    x_CheckValid("CWGSScaffoldIterator::GetSeq_entry");
+
+    CRef<CSeq_entry> ret(new CSeq_entry());
+    if ( !(flags & fSeqAnnot) || !GetDb().FeatTable() ) {
+        // plain sequence only without FEATURE table
+        ret->SetSeq(*GetBioseq(flags));
+    }
+    else {
+        CRef<CBioseq> main_seq = GetBioseq(flags & ~fSeqAnnot);
+        ret->SetSeq(*main_seq);
+        vector<TVDBRowId> product_row_ids;
+        sx_AddFeatures(m_Db, GetLocFeatRowIdRange(), *ret, &product_row_ids);
+        if ( !product_row_ids.empty() ) {
+            CWGSProteinIterator prot_it(m_Db);
+            CWGSProteinIterator::TFlags prot_flags =
+                prot_it.fDefaultFlags & ~prot_it.fMasterDescr;
+            CBioseq_set::TSeq_set& entries = ret->SetSet().SetSeq_set();
+            ITERATE ( vector<TVDBRowId>, it, product_row_ids ) {
+                if ( !prot_it.SelectRow(*it) ) {
+                    ERR_POST_X(10, "CWGSScaffoldIterator::GetSeq_entry: "
+                               "invalid protein row id: "<<*it);
+                    continue;
+                }
+                entries.push_back(prot_it.GetSeq_entry(prot_flags));
+            }
+        }
+    }
     return ret;
 }
 
@@ -3498,7 +3550,7 @@ void CWGSGiIterator::x_Init(const CWGSDb& wgs_db, ESeqType seq_type)
         Reset();
         return;
     }
-    pair<int64_t, uint64_t> range = m_Cur->m_Cursor.GetRowIdRange();
+    TVDBRowIdRange range = m_Cur->m_Cursor.GetRowIdRange();
     m_FirstBadGi = TIntId(range.first+range.second);
     m_CurrGi = TIntId(range.first);
 }
@@ -3507,10 +3559,10 @@ void CWGSGiIterator::x_Init(const CWGSDb& wgs_db, ESeqType seq_type)
 bool CWGSGiIterator::x_Excluded(void)
 {
     if ( m_FilterSeqType != eProt && m_Cur->m_NUC_ROW_ID ) {
-        CVDBValueFor<int64_t> value =
+        CVDBValueFor<TVDBRowId> value =
             m_Cur->NUC_ROW_ID(TIntId(m_CurrGi), CVDBValue::eMissing_Allow);
         if ( value.data() ) {
-            m_CurrRowId = static_cast<uint64_t>(*value);
+            m_CurrRowId = *value;
             if ( m_CurrRowId ) {
                 m_CurrSeqType = eNuc;
                 return false;
@@ -3518,10 +3570,10 @@ bool CWGSGiIterator::x_Excluded(void)
         }
     }
     if ( m_FilterSeqType != eNuc && m_Cur->m_PROT_ROW_ID ) {
-        CVDBValueFor<int64_t> value =
+        CVDBValueFor<TVDBRowId> value =
             m_Cur->PROT_ROW_ID(TIntId(m_CurrGi), CVDBValue::eMissing_Allow);
         if ( value.data() ) {
-            m_CurrRowId = static_cast<uint64_t>(*value);
+            m_CurrRowId = *value;
             if ( m_CurrRowId ) {
                 m_CurrSeqType = eProt;
                 return false;
@@ -3596,7 +3648,7 @@ CWGSProteinIterator::CWGSProteinIterator(const CWGSDb& wgs_db)
 }
 
 
-CWGSProteinIterator::CWGSProteinIterator(const CWGSDb& wgs_db, uint64_t row)
+CWGSProteinIterator::CWGSProteinIterator(const CWGSDb& wgs_db, TVDBRowId row)
 {
     x_Init(wgs_db);
     SelectRow(row);
@@ -3605,7 +3657,7 @@ CWGSProteinIterator::CWGSProteinIterator(const CWGSDb& wgs_db, uint64_t row)
 
 CWGSProteinIterator::CWGSProteinIterator(const CWGSDb& wgs_db, CTempString acc)
 {
-    if ( uint64_t row = wgs_db.ParseProteinRow(acc) ) {
+    if ( TVDBRowId row = wgs_db.ParseProteinRow(acc) ) {
         x_Init(wgs_db);
         SelectRow(row);
     }
@@ -3633,13 +3685,13 @@ void CWGSProteinIterator::x_Init(const CWGSDb& wgs_db)
         return;
     }
     m_Db = wgs_db;
-    pair<int64_t, uint64_t> range = m_Cur->m_Cursor.GetRowIdRange();
+    TVDBRowIdRange range = m_Cur->m_Cursor.GetRowIdRange();
     m_FirstGoodId = m_CurrId = range.first;
     m_FirstBadId = range.first+range.second;
 }
 
 
-CWGSProteinIterator& CWGSProteinIterator::SelectRow(uint64_t row)
+CWGSProteinIterator& CWGSProteinIterator::SelectRow(TVDBRowId row)
 {
     if ( row < m_FirstGoodId ) {
         m_CurrId = m_FirstBadId;
@@ -3787,6 +3839,36 @@ CTempString CWGSProteinIterator::GetTitle(void) const
 }
 
 
+TVDBRowIdRange CWGSProteinIterator::GetLocFeatRowIdRange(void) const
+{
+    x_CheckValid("CWGSProteinIterator::GetLocFeatRowIdRange");
+    
+    if ( !m_Cur->m_FEAT_ROW_START ) {
+        return TVDBRowIdRange(0, 0);
+    }
+    TVDBRowId start = *m_Cur->FEAT_ROW_START(m_CurrId);
+    TVDBRowId end = *m_Cur->FEAT_ROW_END(m_CurrId);
+    if ( end < start ) {
+        NCBI_THROW_FMT(CSraException, eDataError,
+                       "CWGSProteinIterator::GetLocFeatRowIdRange: "
+                       "feature row range is invalid: "<<start<<","<<end);
+    }
+    return TVDBRowIdRange(start, end-start+1);
+}
+
+
+TVDBRowId CWGSProteinIterator::GetProductFeatRowId(void) const
+{
+    x_CheckValid("CWGSProteinIterator::GetProductFeatRowId");
+    
+    if ( !m_Cur->m_FEAT_PRODUCT_ROW_ID ) {
+        return 0;
+    }
+
+    return *m_Cur->FEAT_PRODUCT_ROW_ID(m_CurrId);
+}
+
+
 bool CWGSProteinIterator::HasSeq_descr(TFlags flags) const
 {
     x_CheckValid("CWGSProteinIterator::HasSeq_descr");
@@ -3894,6 +3976,24 @@ CRef<CBioseq> CWGSProteinIterator::GetBioseq(TFlags flags) const
 }
 
 
+CRef<CSeq_entry> CWGSProteinIterator::GetSeq_entry(TFlags flags) const
+{
+    x_CheckValid("CWGSProteinIterator::GetSeq_entry");
+
+    CRef<CSeq_entry> ret(new CSeq_entry());
+    if ( !(flags & fSeqAnnot) || !GetDb().FeatTable() ) {
+        // plain sequence only without FEATURE table
+        ret->SetSeq(*GetBioseq(flags));
+    }
+    else {
+        CRef<CBioseq> main_seq = GetBioseq(flags & ~fSeqAnnot);
+        ret->SetSeq(*main_seq);
+        sx_AddFeatures(m_Db, GetLocFeatRowIdRange(), *ret);
+    }
+    return ret;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CWGSFeatureIterator
 /////////////////////////////////////////////////////////////////////////////
@@ -3946,29 +4046,28 @@ CWGSFeatureIterator::operator=(const CWGSFeatureIterator& iter)
 }
 
 
-CWGSFeatureIterator::CWGSFeatureIterator(const CWGSSeqIterator& seq_it)
-{
-    x_Init(seq_it.m_Db);
-    if ( !m_Db ) {
-        return;
-    }
-    pair<int64_t, uint64_t> range =
-        GetDb().GetSeqFeatRowIdRange(seq_it.GetAccession());
-    m_FirstGoodId = m_CurrId = range.first;
-    m_FirstBadId = range.first+range.second;
-}
-
-
 CWGSFeatureIterator::CWGSFeatureIterator(const CWGSDb& wgs)
 {
     x_Init(wgs);
 }
 
 
-CWGSFeatureIterator::CWGSFeatureIterator(const CWGSDb& wgs, uint64_t row)
+CWGSFeatureIterator::CWGSFeatureIterator(const CWGSDb& wgs, TVDBRowId row)
 {
     x_Init(wgs);
     SelectRow(row);
+}
+
+
+CWGSFeatureIterator::CWGSFeatureIterator(const CWGSDb& db,
+                                         TVDBRowIdRange row_range)
+{
+    x_Init(db);
+    if ( !m_Db ) {
+        return;
+    }
+    m_FirstGoodId = m_CurrId = max(m_FirstGoodId, row_range.first);
+    m_FirstBadId = min(m_FirstBadId, TVDBRowId(row_range.first+row_range.second));
 }
 
 
@@ -3978,7 +4077,7 @@ CWGSFeatureIterator::~CWGSFeatureIterator(void)
 }
 
 
-CWGSFeatureIterator& CWGSFeatureIterator::SelectRow(uint64_t row)
+CWGSFeatureIterator& CWGSFeatureIterator::SelectRow(TVDBRowId row)
 {
     if ( row < m_FirstGoodId ) {
         m_CurrId = m_FirstBadId;
@@ -4001,7 +4100,7 @@ void CWGSFeatureIterator::x_Init(const CWGSDb& wgs)
         return;
     }
     m_Db = wgs;
-    pair<int64_t, uint64_t> range = m_Cur->m_Cursor.GetRowIdRange();
+    TVDBRowIdRange range = m_Cur->m_Cursor.GetRowIdRange();
     m_FirstGoodId = m_CurrId = range.first;
     m_FirstBadId = range.first+range.second;
 }
@@ -4015,21 +4114,28 @@ void CWGSFeatureIterator::x_ReportInvalid(const char* method) const
 }
 
 
-NCBI_WGS_seqtype CWGSFeatureIterator::GetSeqType(void) const
+NCBI_WGS_seqtype CWGSFeatureIterator::GetLocSeqType(void) const
 {
-    x_CheckValid("CWGSFeatureIterator::GetSeqType");
-    return *m_Cur->SEQ_TYPE(m_CurrId);
+    x_CheckValid("CWGSFeatureIterator::GetLocSeqType");
+    return *m_Cur->LOC_SEQ_TYPE(m_CurrId);
 }
 
 
-uint64_t CWGSFeatureIterator::GetLocRowId(void) const
+NCBI_WGS_seqtype CWGSFeatureIterator::GetProductSeqType(void) const
+{
+    x_CheckValid("CWGSFeatureIterator::GetProductSeqType");
+    return *m_Cur->PRODUCT_SEQ_TYPE(m_CurrId);
+}
+
+
+TVDBRowId CWGSFeatureIterator::GetLocRowId(void) const
 {
     x_CheckValid("CWGSFeatureIterator::GetLocRowId");
     return *m_Cur->LOC_ROW_ID(m_CurrId);
 }
 
 
-uint64_t CWGSFeatureIterator::GetProductRowId(void) const
+TVDBRowId CWGSFeatureIterator::GetProductRowId(void) const
 {
     x_CheckValid("CWGSFeatureIterator::GetProductRowId");
     return *m_Cur->PRODUCT_ROW_ID(m_CurrId);

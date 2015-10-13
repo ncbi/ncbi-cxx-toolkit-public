@@ -291,26 +291,26 @@ public:
     // parse row id from accession
     // returns (row, accession_type) pair
     // row will be 0 if accession is in wrong format
-    pair<uint64_t, TRowType> ParseRowType(CTempString acc,
-                                          TAllowRowType allow) const;
+    pair<TVDBRowId, char> ParseRowType(CTempString acc,
+                                       TAllowRowType allow) const;
     // parse row id from accession
     // returns 0 if accession is in wrong format
     // if is_scaffold flag pointer is not null, then scaffold ids are also
     // accepted and the flag is set appropriately
-    uint64_t ParseRow(CTempString acc, bool* is_scaffold) const;
+    TVDBRowId ParseRow(CTempString acc, bool* is_scaffold) const;
     // parse contig row id from accession
     // returns 0 if accession is in wrong format
-    uint64_t ParseContigRow(CTempString acc) const {
+    TVDBRowId ParseContigRow(CTempString acc) const {
         return ParseRowType(acc, fAllowRowType_contig).first;
     }
     // parse scaffold row id from accession
     // returns 0 if accession is in wrong format
-    uint64_t ParseScaffoldRow(CTempString acc) const {
+    TVDBRowId ParseScaffoldRow(CTempString acc) const {
         return ParseRowType(acc, fAllowRowType_scaffold).first;
     }
     // parse protein row id from accession
     // returns 0 if accession is in wrong format
-    uint64_t ParseProteinRow(CTempString acc) const {
+    TVDBRowId ParseProteinRow(CTempString acc) const {
         return ParseRowType(acc, fAllowRowType_protein).first;
     }
     SIZE_TYPE GetIdRowDigits(void) const {
@@ -323,13 +323,13 @@ public:
     CRef<CSeq_id> GetAccSeq_id(CTempString acc,
                                int version) const;
     CRef<CSeq_id> GetAccSeq_id(ERowType type,
-                               uint64_t row_id,
+                               TVDBRowId row_id,
                                int version) const;
     CRef<CSeq_id> GetMasterSeq_id(void) const;
     TGi GetMasterGi(void) const;
-    CRef<CSeq_id> GetContigSeq_id(uint64_t row_id) const;
-    CRef<CSeq_id> GetScaffoldSeq_id(uint64_t row_id) const;
-    CRef<CSeq_id> GetProteinSeq_id(uint64_t row_id) const;
+    CRef<CSeq_id> GetContigSeq_id(TVDBRowId row_id) const;
+    CRef<CSeq_id> GetScaffoldSeq_id(TVDBRowId row_id) const;
+    CRef<CSeq_id> GetProteinSeq_id(TVDBRowId row_id) const;
 
     CRef<CSeq_entry> GetMasterSeq_entry(void) const;
 
@@ -360,20 +360,20 @@ public:
     pair<TGi, TGi> GetProtGiRange(void);
     // get row_id for a given GI or 0 if there is no GI
     // the second value in returned value is true if the sequence is protein
-    pair<uint64_t, bool> GetGiRowId(TGi gi);
+    pair<TVDBRowId, bool> GetGiRowId(TGi gi);
     // get nucleotide row_id (SEQUENCE) for a given GI or 0 if there is no GI
-    uint64_t GetNucGiRowId(TGi gi);
+    TVDBRowId GetNucGiRowId(TGi gi);
     // get protein row_id (PROTEIN) for a given GI or 0 if there is no GI
-    uint64_t GetProtGiRowId(TGi gi);
+    TVDBRowId GetProtGiRowId(TGi gi);
 
     // get contig row_id (SEQUENCE) for contig name or 0 if there is none
-    uint64_t GetContigNameRowId(const string& name);
+    TVDBRowId GetContigNameRowId(const string& name);
     // get scaffold row_id (SCAFFOLD) for scaffold name or 0 if there is none
-    uint64_t GetScaffoldNameRowId(const string& name);
+    TVDBRowId GetScaffoldNameRowId(const string& name);
     // get protein row_id (PROTEIN) for protein name or 0 if there is none
-    uint64_t GetProteinNameRowId(const string& name);
+    TVDBRowId GetProteinNameRowId(const string& name);
     // get protein row_id (PROTEIN) for GB accession or 0 if there is no acc
-    uint64_t GetProtAccRowId(const string& acc);
+    TVDBRowId GetProtAccRowId(const string& acc);
 
     typedef COpenRange<TIntId> TGiRange;
     typedef vector<TGiRange> TGiRanges;
@@ -389,13 +389,6 @@ public:
     // Key of each element is accession prefix/length pair
     TAccRanges GetProtAccRanges(void);
 
-    // return range of row-ids in FEATURE table of features
-    // having specified accession in location
-    pair<int64_t, uint64_t> GetSeqFeatRowIdRange(const string& acc);
-
-    // return FEATURE row_id having specified in product, or 0
-    uint64_t GetProductFeatRowId(const string& acc);
-
 protected:
     friend class CWGSSeqIterator;
     friend class CWGSScaffoldIterator;
@@ -407,12 +400,12 @@ protected:
     struct SSeqTableCursor;
     // SScfTableCursor is helper accessor structure for SCAFFOLD table
     struct SScfTableCursor;
-    // SIdsTableCursor is helper accessor structure for SEQUENCE table
-    struct SIdxTableCursor;
     // SProtTableCursor is helper accessor structure for optional PROTEIN table
     struct SProtTableCursor;
     // SFeatTableCursor is helper accessor structure for optional FEATURE table
     struct SFeatTableCursor;
+    // SIdsTableCursor is helper accessor structure for SEQUENCE table
+    struct SIdxTableCursor;
 
     // open tables
     void OpenTable(CVDBTable& table,
@@ -431,8 +424,6 @@ protected:
     void OpenContigNameIndex(void);
     void OpenScaffoldNameIndex(void);
     void OpenProteinNameIndex(void);
-    void OpenFeatLocIndex(void);
-    void OpenFeatProductIndex(void);
 
     const CVDBTable& SeqTable(void) {
         return m_SeqTable;
@@ -485,31 +476,19 @@ protected:
         }
         return m_ProteinNameIndex;
     }
-    const CVDBTableIndex& FeatLocIndex(void) {
-        if ( !m_FeatLocIndexIsOpened ) {
-            OpenFeatLocIndex();
-        }
-        return m_FeatLocIndex;
-    }
-    const CVDBTableIndex& FeatProductIndex(void) {
-        if ( !m_FeatProductIndexIsOpened ) {
-            OpenFeatProductIndex();
-        }
-        return m_FeatProductIndex;
-    }
     
     // get table accessor object for exclusive access
-    CRef<SSeqTableCursor> Seq(uint64_t row = 0);
-    CRef<SScfTableCursor> Scf(uint64_t row = 0);
-    CRef<SIdxTableCursor> Idx(uint64_t row = 0);
-    CRef<SProtTableCursor> Prot(uint64_t row = 0);
-    CRef<SFeatTableCursor> Feat(uint64_t row = 0);
+    CRef<SSeqTableCursor> Seq(TVDBRowId row = 0);
+    CRef<SScfTableCursor> Scf(TVDBRowId row = 0);
+    CRef<SProtTableCursor> Prot(TVDBRowId row = 0);
+    CRef<SFeatTableCursor> Feat(TVDBRowId row = 0);
+    CRef<SIdxTableCursor> Idx(TVDBRowId row = 0);
     // return table accessor object for reuse
-    void Put(CRef<SSeqTableCursor>& curs, uint64_t row = 0);
-    void Put(CRef<SScfTableCursor>& curs, uint64_t row = 0);
-    void Put(CRef<SIdxTableCursor>& curs, uint64_t row = 0);
-    void Put(CRef<SProtTableCursor>& curs, uint64_t row = 0);
-    void Put(CRef<SFeatTableCursor>& curs, uint64_t row = 0);
+    void Put(CRef<SSeqTableCursor>& curs, TVDBRowId row = 0);
+    void Put(CRef<SScfTableCursor>& curs, TVDBRowId row = 0);
+    void Put(CRef<SProtTableCursor>& curs, TVDBRowId row = 0);
+    void Put(CRef<SFeatTableCursor>& curs, TVDBRowId row = 0);
+    void Put(CRef<SIdxTableCursor>& curs, TVDBRowId row = 0);
 
 protected:
     void x_InitIdParams(void);
@@ -536,8 +515,6 @@ private:
     volatile bool m_ContigNameIndexIsOpened;
     volatile bool m_ScaffoldNameIndexIsOpened;
     volatile bool m_ProteinNameIndexIsOpened;
-    volatile bool m_FeatLocIndexIsOpened;
-    volatile bool m_FeatProductIndexIsOpened;
     CVDBTable m_ScfTable;
     CVDBTable m_ProtTable;
     CVDBTable m_FeatTable;
@@ -552,8 +529,6 @@ private:
     CVDBTableIndex m_ContigNameIndex;
     CVDBTableIndex m_ScaffoldNameIndex;
     CVDBTableIndex m_ProteinNameIndex;
-    CVDBTableIndex m_FeatLocIndex;
-    CVDBTableIndex m_FeatProductIndex;
 
     bool m_IsSetMasterDescr;
     CRef<CSeq_entry> m_MasterEntry;
@@ -587,22 +562,22 @@ public:
     // if is_scaffold flag pointer is not null, then scaffold ids are also
     // accepted and the flag is set appropriately
     NCBI_DEPRECATED
-    uint64_t ParseRow(CTempString acc, bool* is_scaffold = NULL) const {
+    TVDBRowId ParseRow(CTempString acc, bool* is_scaffold = NULL) const {
         return GetObject().ParseRow(acc, is_scaffold);
     }
     // parse contig row id from accession
     // returns 0 if accession is in wrong format
-    uint64_t ParseContigRow(CTempString acc) const {
+    TVDBRowId ParseContigRow(CTempString acc) const {
         return GetObject().ParseContigRow(acc);
     }
     // parse scaffold row id from accession
     // returns 0 if accession is in wrong format
-    uint64_t ParseScaffoldRow(CTempString acc) const {
+    TVDBRowId ParseScaffoldRow(CTempString acc) const {
         return GetObject().ParseScaffoldRow(acc);
     }
     // parse protein row id from accession
     // returns 0 if accession is in wrong format
-    uint64_t ParseProteinRow(CTempString acc) const {
+    TVDBRowId ParseProteinRow(CTempString acc) const {
         return GetObject().ParseProteinRow(acc);
     }
 
@@ -636,38 +611,38 @@ public:
 
     // get row_id for a given GI or 0 if there is no GI
     // the second value in returned value is true if the sequence is protein
-    pair<uint64_t, bool> GetGiRowId(TGi gi) const {
+    pair<TVDBRowId, bool> GetGiRowId(TGi gi) const {
         return GetNCObject().GetGiRowId(gi);
     }
     // get nucleotide row_id (SEQUENCE) for a given GI or 0 if there is no GI
-    uint64_t GetNucGiRowId(TGi gi) const {
+    TVDBRowId GetNucGiRowId(TGi gi) const {
         return GetNCObject().GetNucGiRowId(gi);
     }
     // get protein row_id (PROTEIN) for a given GI or 0 if there is no GI
-    uint64_t GetProtGiRowId(TGi gi) const {
+    TVDBRowId GetProtGiRowId(TGi gi) const {
         return GetNCObject().GetProtGiRowId(gi);
     }
 
     // get nucleotide row_id (SEQUENCE) for a given contig name or 0 if
     // name not found.
-    uint64_t GetContigNameRowId(const string& name) const {
+    TVDBRowId GetContigNameRowId(const string& name) const {
         return GetNCObject().GetContigNameRowId(name);
     }
 
     // get scaffold row_id (SCAFFOLD) for a given scaffold name or 0 if
     // name not found.
-    uint64_t GetScaffoldNameRowId(const string& name) const {
+    TVDBRowId GetScaffoldNameRowId(const string& name) const {
         return GetNCObject().GetScaffoldNameRowId(name);
     }
 
     // get protein row_id (PROTEIN) for a protein name or 0 if
     // name not found.
-    uint64_t GetProteinNameRowId(const string& name) const {
+    TVDBRowId GetProteinNameRowId(const string& name) const {
         return GetNCObject().GetProteinNameRowId(name);
     }
 
     // get protein row_id (PROTEIN) for GB accession or 0 if there is no acc
-    uint64_t GetProtAccRowId(const string& acc) const {
+    TVDBRowId GetProtAccRowId(const string& acc) const {
         return GetNCObject().GetProtAccRowId(acc);
     }
 
@@ -717,11 +692,11 @@ public:
                     EWithdrawn withdrawn = eExcludeWithdrawn,
                     EClipType clip_type = eDefaultClip);
     CWGSSeqIterator(const CWGSDb& wgs_db,
-                    uint64_t row,
+                    TVDBRowId row,
                     EWithdrawn withdrawn = eExcludeWithdrawn,
                     EClipType clip_type = eDefaultClip);
     CWGSSeqIterator(const CWGSDb& wgs_db,
-                    uint64_t first_row, uint64_t last_row,
+                    TVDBRowId first_row, TVDBRowId last_row,
                     EWithdrawn withdrawn = eExcludeWithdrawn,
                     EClipType clip_type = eDefaultClip);
     CWGSSeqIterator(const CWGSDb& wgs_db,
@@ -734,7 +709,7 @@ public:
     CWGSSeqIterator(const CWGSSeqIterator& iter);
     CWGSSeqIterator& operator=(const CWGSSeqIterator& iter);
 
-    CWGSSeqIterator& SelectRow(uint64_t row);
+    CWGSSeqIterator& SelectRow(TVDBRowId row);
 
     DECLARE_OPERATOR_BOOL(m_CurrId < m_FirstBadId);
 
@@ -746,19 +721,19 @@ public:
             return *this;
         }
 
-    uint64_t GetCurrentRowId(void) const {
+    TVDBRowId GetCurrentRowId(void) const {
         return m_CurrId;
     }
-    uint64_t GetFirstGoodRowId(void) const {
+    TVDBRowId GetFirstGoodRowId(void) const {
         return m_FirstGoodId;
     }
-    uint64_t GetFirstBadRowId(void) const {
+    TVDBRowId GetFirstBadRowId(void) const {
         return m_FirstBadId;
     }
-    uint64_t GetRemainingCount(void) const {
+    TVDBRowId GetRemainingCount(void) const {
         return GetFirstBadRowId() - GetCurrentRowId();
     }
-    uint64_t GetSize(void) const {
+    TVDBRowId GetSize(void) const {
         return GetFirstBadRowId() - GetFirstGoodRowId();
     }
 
@@ -820,6 +795,8 @@ public:
 
     bool HasSeqHash(void) const;
     int GetSeqHash(void) const;
+
+    TVDBRowIdRange GetLocFeatRowIdRange(void) const;
 
     typedef struct SWGSContigGapInfo {
         size_t gaps_count;
@@ -910,12 +887,10 @@ public:
     CRef<CSeq_entry> GetSeq_entry(TFlags flags = fDefaultFlags) const;
 
 protected:
-    friend class CWGSFeatureIterator;
-
     void x_Init(const CWGSDb& wgs_db,
                 EWithdrawn withdrawn,
                 EClipType clip_type,
-                uint64_t get_row);
+                TVDBRowId get_row);
 
     CWGSDb_Impl& GetDb(void) const {
         return m_Db.GetNCObject();
@@ -934,7 +909,7 @@ protected:
 private:
     CWGSDb m_Db;
     CRef<CWGSDb_Impl::SSeqTableCursor> m_Cur; // VDB seq table accessor
-    uint64_t m_CurrId, m_FirstGoodId, m_FirstBadId;
+    TVDBRowId m_CurrId, m_FirstGoodId, m_FirstBadId;
     EWithdrawn m_Withdrawn;
     bool m_ClipByQuality;
 };
@@ -946,7 +921,7 @@ public:
     CWGSScaffoldIterator(void);
     explicit
     CWGSScaffoldIterator(const CWGSDb& wgs_db);
-    CWGSScaffoldIterator(const CWGSDb& wgs_db, uint64_t row);
+    CWGSScaffoldIterator(const CWGSDb& wgs_db, TVDBRowId row);
     CWGSScaffoldIterator(const CWGSDb& wgs_db, CTempString acc);
     ~CWGSScaffoldIterator(void);
 
@@ -954,7 +929,7 @@ public:
     CWGSScaffoldIterator(const CWGSScaffoldIterator& iter);
     CWGSScaffoldIterator& operator=(const CWGSScaffoldIterator& iter);
 
-    CWGSScaffoldIterator& SelectRow(uint64_t row);
+    CWGSScaffoldIterator& SelectRow(TVDBRowId row);
 
     DECLARE_OPERATOR_BOOL(m_CurrId < m_FirstBadId);
 
@@ -963,19 +938,19 @@ public:
         return *this;
     }
 
-    uint64_t GetCurrentRowId(void) const {
+    TVDBRowId GetCurrentRowId(void) const {
         return m_CurrId;
     }
-    uint64_t GetFirstGoodRowId(void) const {
+    TVDBRowId GetFirstGoodRowId(void) const {
         return m_FirstGoodId;
     }
-    uint64_t GetFirstBadRowId(void) const {
+    TVDBRowId GetFirstBadRowId(void) const {
         return m_FirstBadId;
     }
-    uint64_t GetRemainingCount(void) const {
+    TVDBRowCount GetRemainingCount(void) const {
         return GetFirstBadRowId() - GetCurrentRowId();
     }
-    uint64_t GetSize(void) const {
+    TVDBRowCount GetSize(void) const {
         return GetFirstBadRowId() - GetFirstGoodRowId();
     }
 
@@ -987,6 +962,8 @@ public:
     CRef<CSeq_id> GetGeneralSeq_id(void) const;
 
     CTempString GetScaffoldName(void) const;
+
+    TVDBRowIdRange GetLocFeatRowIdRange(void) const;
 
     enum EFlags {
         fIds_gi       = 1<<0,
@@ -1025,6 +1002,8 @@ public:
     CRef<CSeq_inst> GetSeq_inst(TFlags flags = fDefaultFlags) const;
 
     CRef<CBioseq> GetBioseq(TFlags flags = fDefaultFlags) const;
+    // GetSeq_entry may create nuc-prot set if the sequence has products
+    CRef<CSeq_entry> GetSeq_entry(TFlags flags = fDefaultFlags) const;
 
 protected:
     void x_Init(const CWGSDb& wgs_db);
@@ -1043,7 +1022,7 @@ protected:
 private:
     CWGSDb m_Db;
     CRef<CWGSDb_Impl::SScfTableCursor> m_Cur; // VDB scaffold table accessor
-    uint64_t m_CurrId, m_FirstGoodId, m_FirstBadId;
+    TVDBRowId m_CurrId, m_FirstGoodId, m_FirstBadId;
 };
 
 
@@ -1084,7 +1063,7 @@ public:
     }
 
     // get currently selected gi row id in corresponding nuc or prot table
-    uint64_t GetRowId(void) const {
+    TVDBRowId GetRowId(void) const {
         return m_CurrRowId;
     }
 
@@ -1102,7 +1081,7 @@ private:
     CWGSDb m_Db;
     CRef<CWGSDb_Impl::SIdxTableCursor> m_Cur; // VDB GI index table accessor
     TGi m_CurrGi, m_FirstBadGi;
-    uint64_t m_CurrRowId;
+    TVDBRowId m_CurrRowId;
     ESeqType m_CurrSeqType, m_FilterSeqType;
 };
 
@@ -1113,7 +1092,7 @@ public:
     CWGSProteinIterator(void);
     explicit
     CWGSProteinIterator(const CWGSDb& wgs_db);
-    CWGSProteinIterator(const CWGSDb& wgs_db, uint64_t row);
+    CWGSProteinIterator(const CWGSDb& wgs_db, TVDBRowId row);
     CWGSProteinIterator(const CWGSDb& wgs_db, CTempString acc);
     ~CWGSProteinIterator(void);
 
@@ -1128,23 +1107,23 @@ public:
         return *this;
     }
 
-    uint64_t GetCurrentRowId(void) const {
+    TVDBRowId GetCurrentRowId(void) const {
         return m_CurrId;
     }
-    uint64_t GetFirstGoodRowId(void) const {
+    TVDBRowId GetFirstGoodRowId(void) const {
         return m_FirstGoodId;
     }
-    uint64_t GetFirstBadRowId(void) const {
+    TVDBRowId GetFirstBadRowId(void) const {
         return m_FirstBadId;
     }
-    uint64_t GetRemainingCount(void) const {
+    TVDBRowCount GetRemainingCount(void) const {
         return GetFirstBadRowId() - GetCurrentRowId();
     }
-    uint64_t GetSize(void) const {
+    TVDBRowCount GetSize(void) const {
         return GetFirstBadRowId() - GetFirstGoodRowId();
     }
 
-    CWGSProteinIterator& SelectRow(uint64_t row);
+    CWGSProteinIterator& SelectRow(TVDBRowId row);
 
     CTempString GetAccession(void) const;
     int GetAccVersion(void) const;
@@ -1155,6 +1134,9 @@ public:
     CRef<CSeq_id> GetGeneralSeq_id(void) const;
 
     CTempString GetProteinName(void) const;
+
+    TVDBRowIdRange GetLocFeatRowIdRange(void) const;
+    TVDBRowId GetProductFeatRowId(void) const;
 
     enum EFlags {
         fIds_gi       = 1<<0,
@@ -1200,6 +1182,8 @@ public:
     CRef<CSeq_inst> GetSeq_inst(TFlags flags = fDefaultFlags) const;
 
     CRef<CBioseq> GetBioseq(TFlags flags = fDefaultFlags) const;
+    // GetSeq_entry will always return seq entry
+    CRef<CSeq_entry> GetSeq_entry(TFlags flags = fDefaultFlags) const;
 
 protected:
     void x_Init(const CWGSDb& wgs_db);
@@ -1218,7 +1202,7 @@ protected:
 private:
     CWGSDb m_Db;
     CRef<CWGSDb_Impl::SProtTableCursor> m_Cur; // VDB protein table accessor
-    uint64_t m_CurrId, m_FirstGoodId, m_FirstBadId;
+    TVDBRowId m_CurrId, m_FirstGoodId, m_FirstBadId;
 };
 
 
@@ -1227,10 +1211,9 @@ class NCBI_SRAREAD_EXPORT CWGSFeatureIterator
 public:
     CWGSFeatureIterator(void);
     explicit
-    CWGSFeatureIterator(const CWGSSeqIterator& seq_it);
-    explicit
     CWGSFeatureIterator(const CWGSDb& wgs);
-    CWGSFeatureIterator(const CWGSDb& wgs, uint64_t row);
+    CWGSFeatureIterator(const CWGSDb& wgs, TVDBRowId row);
+    CWGSFeatureIterator(const CWGSDb& wgs, TVDBRowIdRange row_range);
     ~CWGSFeatureIterator(void);
 
     void Reset(void);
@@ -1244,28 +1227,29 @@ public:
         return *this;
     }
 
-    uint64_t GetCurrentRowId(void) const {
+    TVDBRowId GetCurrentRowId(void) const {
         return m_CurrId;
     }
-    uint64_t GetFirstGoodRowId(void) const {
+    TVDBRowId GetFirstGoodRowId(void) const {
         return m_FirstGoodId;
     }
-    uint64_t GetFirstBadRowId(void) const {
+    TVDBRowId GetFirstBadRowId(void) const {
         return m_FirstBadId;
     }
-    uint64_t GetRemainingCount(void) const {
+    TVDBRowCount GetRemainingCount(void) const {
         return GetFirstBadRowId() - GetCurrentRowId();
     }
-    uint64_t GetSize(void) const {
+    TVDBRowCount GetSize(void) const {
         return GetFirstBadRowId() - GetFirstGoodRowId();
     }
 
-    CWGSFeatureIterator& SelectRow(uint64_t row);
+    CWGSFeatureIterator& SelectRow(TVDBRowId row);
     
-    NCBI_WGS_seqtype GetSeqType(void) const;
+    NCBI_WGS_seqtype GetLocSeqType(void) const;
+    NCBI_WGS_seqtype GetProductSeqType(void) const;
 
-    uint64_t GetLocRowId(void) const;
-    uint64_t GetProductRowId(void) const;
+    TVDBRowId GetLocRowId(void) const;
+    TVDBRowId GetProductRowId(void) const;
 
     CRef<CSeq_feat> GetSeq_feat() const;
 
@@ -1286,7 +1270,7 @@ protected:
 private:
     CWGSDb m_Db;
     CRef<CWGSDb_Impl::SFeatTableCursor> m_Cur; // VDB feature table accessor
-    uint64_t m_CurrId, m_FirstGoodId, m_FirstBadId;
+    TVDBRowId m_CurrId, m_FirstGoodId, m_FirstBadId;
 };
 
 

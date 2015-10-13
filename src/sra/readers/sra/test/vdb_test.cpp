@@ -721,7 +721,7 @@ int CCSRATestApp::Run(void)
                     << NcbiEndl;
                 Uint8 total_count_a = 0, max_a = 0;
                 double k_min = 0, k_max = 1e9;
-                for ( uint64_t row = it.GetInfo().m_RowFirst; row <= it.GetInfo().m_RowLast; ++row ) {
+                for ( TVDBRowId row = it.GetInfo().m_RowFirst; row <= it.GetInfo().m_RowLast; ++row ) {
                     Uint1 b = graph->GetGraph().GetByte().GetValues()[size_t(row-it.GetInfo().m_RowFirst)];
                     size_t a = it.GetAlignCountAtPos(row*csra_db.GetRowSize());
                     total_count_a += a;

@@ -139,7 +139,7 @@ CCSRABlobId::CCSRABlobId(EBlobType blob_type,
 
 
 CCSRABlobId::CCSRABlobId(const CCSRAFileInfo& file,
-                         Uint8 first_spot_id)
+                         TVDBRowId first_spot_id)
     : m_BlobType(eBlobType_reads),
       m_RefIdType(file.GetRefIdType()),
       m_File(file.GetCSRAName()),
@@ -154,7 +154,7 @@ CCSRABlobId::~CCSRABlobId(void)
 
 
 SIZE_TYPE CCSRABlobId::ParseReadId(CTempString str,
-                                   Uint8* spot_id_ptr,
+                                   TVDBRowId* spot_id_ptr,
                                    Uint4* read_id_ptr)
 {
     const char* begin = str.data();
@@ -193,7 +193,7 @@ SIZE_TYPE CCSRABlobId::ParseReadId(CTempString str,
                 // got both spot_id and read_id
                 if ( spot_id_ptr ) {
                     *spot_id_ptr =
-                        NStr::StringToUInt8(CTempString(ptr+1, end-ptr-1));
+                        NStr::StringToNumeric<TVDBRowId>(CTempString(ptr+1, end-ptr-1));
                 }
                 break;
             }
@@ -290,7 +290,7 @@ bool CCSRABlobId::GetGeneralSRAAccLabel(const CSeq_id_Handle& idh,
 
 bool CCSRABlobId::GetGeneralSRAAccReadId(const CSeq_id_Handle& idh,
                                          string* srr_acc_ptr,
-                                         Uint8* spot_id_ptr,
+                                         TVDBRowId* spot_id_ptr,
                                          Uint4* read_id_ptr)
 {
     // id is of type gnl|SRA|srr/label
@@ -381,7 +381,7 @@ void CCSRABlobId::FromString(CTempString str0)
     }
     else {
         m_SeqId.Reset();
-        m_FirstSpotId = NStr::StringToUInt8(str);
+        m_FirstSpotId = NStr::StringToNumeric<TVDBRowId>(str);
     }
 }
 
@@ -520,13 +520,13 @@ CCSRADataLoader_Impl::GetRefSeqInfo(const CSeq_id_Handle& idh)
 
 CRef<CCSRAFileInfo>
 CCSRADataLoader_Impl::GetReadsFileInfo(const CSeq_id_Handle& idh,
-                                       Uint8* spot_id_ptr,
+                                       TVDBRowId* spot_id_ptr,
                                        Uint4* read_id_ptr,
                                        CRef<CCSRARefSeqInfo>* ref_ptr,
                                        TSeqPos *ref_pos_ptr)
 {
     string acc;
-    Uint8 spot_id;
+    TVDBRowId spot_id;
     Uint4 read_id;
     if ( ref_ptr ) {
         *ref_ptr = 0;
@@ -590,7 +590,7 @@ CRef<CCSRABlobId> CCSRADataLoader_Impl::GetBlobId(const CSeq_id_Handle& idh)
     if ( CRef<CCSRARefSeqInfo> info = GetRefSeqInfo(idh) ) {
         return info->GetBlobId(CCSRABlobId::eBlobType_refseq);
     }
-    Uint8 spot_id;
+    TVDBRowId spot_id;
     if ( CRef<CCSRAFileInfo> info = GetReadsFileInfo(idh, &spot_id) ) {
         return info->GetReadsBlobId(spot_id);
     }
@@ -685,7 +685,7 @@ CCSRADataLoader_Impl::GetRecords(CDataSource* data_source,
         return locks;
     }
 
-    Uint8 spot_id;
+    TVDBRowId spot_id;
     CRef<CCSRARefSeqInfo> ref_info;
     TSeqPos ref_pos;
     CRef<CCSRAFileInfo> info;
@@ -781,7 +781,7 @@ CCSRADataLoader_Impl::GetRefSeqIterator(const CSeq_id_Handle& idh)
 CCSraShortReadIterator
 CCSRADataLoader_Impl::GetShortReadIterator(const CSeq_id_Handle& idh)
 {
-    Uint8 spot_id;
+    TVDBRowId spot_id;
     Uint4 read_id;
     if ( CRef<CCSRAFileInfo> info = GetReadsFileInfo(idh, &spot_id, &read_id) ) {
         return CCSraShortReadIterator(info->m_CSRADb, spot_id, read_id);
@@ -1046,7 +1046,7 @@ CCSRAFileInfo::GetRefSeqInfo(const CSeq_id_Handle& seq_id)
 }
 
 
-bool CCSRAFileInfo::IsValidReadId(Uint8 spot_id, Uint4 read_id,
+bool CCSRAFileInfo::IsValidReadId(TVDBRowId spot_id, Uint4 read_id,
                                   CRef<CCSRARefSeqInfo>* ref_ptr,
                                   TSeqPos* ref_pos_ptr)
 {
@@ -1073,9 +1073,9 @@ bool CCSRAFileInfo::IsValidReadId(Uint8 spot_id, Uint4 read_id,
 }
 
 
-CRef<CCSRABlobId> CCSRAFileInfo::GetReadsBlobId(Uint8 spot_id) const
+CRef<CCSRABlobId> CCSRAFileInfo::GetReadsBlobId(TVDBRowId spot_id) const
 {
-    Uint8 first_spot_id = (spot_id-1)/kReadsPerBlob*kReadsPerBlob+1;
+    TVDBRowId first_spot_id = (spot_id-1)/kReadsPerBlob*kReadsPerBlob+1;
     return Ref(new CCSRABlobId(*this, first_spot_id));
 }
 
@@ -1099,8 +1099,8 @@ void CCSRAFileInfo::LoadReadsMainEntry(const CCSRABlobId& blob_id,
 {
     //CMutexGuard guard(GetMutex());
     CRef<CSeq_entry> entry(new CSeq_entry);
-    Uint8 first_spot_id = blob_id.m_FirstSpotId;
-    Uint8 stop_spot_id = first_spot_id + kReadsPerBlob;
+    TVDBRowId first_spot_id = blob_id.m_FirstSpotId;
+    TVDBRowId stop_spot_id = first_spot_id + kReadsPerBlob;
     if ( GetDebugLevel() >= 5 ) {
         LOG_POST_X(12, Info<<
                    "CCSRADataLoader:LoadReads("<<blob_id.ToString()<<", "<<

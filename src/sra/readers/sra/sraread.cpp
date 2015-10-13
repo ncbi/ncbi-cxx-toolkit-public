@@ -122,11 +122,11 @@ CSraException::CSraException(const CDiagCompileInfo& info,
                              EErrCode err_code,
                              const string& message,
                              rc_t rc,
-                             uint64_t param,
+                             int64_t param,
                              EDiagSev severity)
     : CException(info, prev_exc, CException::EErrCode(err_code), message),
       m_RC(rc),
-      m_Param(NStr::UInt8ToString(param))
+      m_Param(NStr::Int8ToString(param))
 {
     this->x_Init(info, message, prev_exc, severity);
     this->x_InitErrCode(CException::EErrCode(err_code));

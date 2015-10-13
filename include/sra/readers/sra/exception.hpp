@@ -120,7 +120,7 @@ public:
                   EErrCode err_code,
                   const string& message,
                   rc_t rc,
-                  uint64_t param,
+                  int64_t param,
                   EDiagSev severity = eDiag_Error);
     CSraException(const CSraException& other);
 

@@ -64,7 +64,7 @@ public:
                 const CCSRAFileInfo& file,
                 const CSeq_id_Handle& seq_id);
     CCSRABlobId(const CCSRAFileInfo& file,
-                Uint8 first_spot_id);
+                TVDBRowId first_spot_id);
     ~CCSRABlobId(void);
 
     EBlobType m_BlobType;
@@ -74,18 +74,18 @@ public:
     // Ref Seq-id for annot blobs
     // First short read Seq-id for reads' blobs
     CSeq_id_Handle m_SeqId;
-    Uint8 m_FirstSpotId;
+    TVDBRowId m_FirstSpotId;
 
     // returns length of accession part or NPOS
     static SIZE_TYPE ParseReadId(CTempString str,
-                                 Uint8* spot_id_ptr = 0,
+                                 TVDBRowId* spot_id_ptr = 0,
                                  Uint4* read_id_ptr = 0);
     static bool GetGeneralSRAAccLabel(const CSeq_id_Handle& idh,
                                       string* srr_acc_ptr = 0,
                                       string* label_ptr = 0);
     static bool GetGeneralSRAAccReadId(const CSeq_id_Handle& idh,
                                        string* srr_acc_ptr = 0,
-                                       Uint8* spot_id_ptr = 0,
+                                       TVDBRowId* spot_id_ptr = 0,
                                        Uint4* read_id_ptr = 0);
 
     enum EGeneralIdType {
@@ -236,10 +236,10 @@ public:
             return m_QualityGraphs;
         }
 
-    bool IsValidReadId(Uint8 spot_id, Uint4 read_id,
+    bool IsValidReadId(TVDBRowId spot_id, Uint4 read_id,
                        CRef<CCSRARefSeqInfo>* ref_ptr = 0,
                        TSeqPos* ref_pos_ptr = 0);
-    CRef<CCSRABlobId> GetReadsBlobId(Uint8 spot_id) const;
+    CRef<CCSRABlobId> GetReadsBlobId(TVDBRowId spot_id) const;
 
     void GetAnnotBlobId(CRef<CCSRABlobId>& ret,
                         const CSeq_id_Handle& idh);
@@ -342,7 +342,7 @@ public:
 
     CRef<CCSRARefSeqInfo> GetRefSeqInfo(const CSeq_id_Handle& idh);
     CRef<CCSRAFileInfo> GetReadsFileInfo(const CSeq_id_Handle& idh,
-                                         Uint8* spot_id_ptr = 0,
+                                         TVDBRowId* spot_id_ptr = 0,
                                          Uint4* read_id_ptr = 0,
                                          CRef<CCSRARefSeqInfo>* ref_ptr = 0,
                                          TSeqPos* ref_pos_ptr = 0);
