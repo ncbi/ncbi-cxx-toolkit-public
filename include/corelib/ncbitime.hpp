@@ -191,7 +191,7 @@ public:
         eISO8601_Date         = 2,  ///< Y-M-D       (eg 1997-07-16)
         eISO8601_DateTimeMin  = 3,  ///< Y-M-DTh:m   (eg 1997-07-16T19:20)
         eISO8601_DateTimeSec  = 4,  ///< Y-M-DTh:m:s (eg 1997-07-16T19:20:30)
-        eISO8601_DateTimeFrac = 5   ///< Y-M-DTh:m:g (eg 1997-07-16T19:20:30.123)
+        eISO8601_DateTimeFrac = 5   ///< Y-M-DTh:m:g (eg 1997-07-16T19:20:30.1234)
     };
 
     /// Default constructor.
@@ -514,6 +514,9 @@ public:
     ///   midnight (00:00:00), January 1, 1970 UTC.
     /// @param nanosec
     ///   Number of nanoseconds (0, if not possible to get).
+    /// @attention
+    ///   Result can differs from time(NULL) due different implementation
+    ///   and taking into account nanosecond part on some platforms (rounding).
     static void GetCurrentTimeT(time_t* sec, long* nanosec = 0);
 
     /// Set time using "struct tm" time value.
