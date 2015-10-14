@@ -555,8 +555,89 @@ string CSubSource::FixDateFormat (const string& orig_date)
     return fix;
 }
 
+// ISO Format for time is one of these:
+// HH:MM:SS
+// HH:MM
+// HH
+// Followed by either Z or +hh:mm to indicate an offset from Zulu
+bool CSubSource::IsISOFormatTime(const string& orig_time, int& hour, int& min, int& sec)
+{
+    int offset_hour = 0;
+    int offset_min = 0;
+    unsigned int suffix = NStr::Find(orig_time, "Z");
+    if (suffix == string::npos) {
+        suffix = NStr::Find(orig_time, "+");
+        if (suffix == string::npos ||
+            orig_time.substr(suffix).length() != 6 ||
+            !isdigit(orig_time.c_str()[suffix + 1]) ||
+            !isdigit(orig_time.c_str()[suffix + 2]) ||
+            orig_time.c_str()[suffix + 3] != ':' ||
+            !isdigit(orig_time.c_str()[suffix + 4]) ||
+            !isdigit(orig_time.c_str()[suffix + 5])) {
+            return false;
+        }
+        try {
+            offset_hour = NStr::StringToInt(orig_time.substr(suffix + 1, 2));
+            offset_min = NStr::StringToInt(orig_time.substr(suffix + 4, 2));
+        } catch (...) {
+            return false;
+        }
+    }
+    if (suffix != 2 && suffix != 5 && suffix != 8) {
+        return false;
+    }
 
-// ISO Formate for date is exactly 10 characters long OR exactly 7 characters long.
+    if (!isdigit(orig_time.c_str()[0]) || !isdigit(orig_time.c_str()[1])) {
+        return false;
+    }
+    hour = 0;
+    min = 0;
+    sec = 0;
+    try {
+        hour = NStr::StringToInt(orig_time.substr(0, 2));
+        if (hour < 0 || hour > 23) {
+            return false;
+        }
+        hour -= offset_hour;
+    } catch (...) {
+        return false;
+    }
+    if (suffix > 2) {
+        if (!isdigit(orig_time.c_str()[3]) || !isdigit(orig_time.c_str()[4])) {
+            return false;
+        }
+        try {
+            min = NStr::StringToInt(orig_time.substr(3, 2));
+            if (min < 0 || min > 59) {
+                return false;
+            }
+        } catch (...) {
+            return false;
+        }
+        min -= offset_min;
+    }
+    if (suffix == 8) {
+        if (!isdigit(orig_time.c_str()[6]) || !isdigit(orig_time.c_str()[7])) {
+            return false;
+        }
+        try {
+            sec = NStr::StringToInt(orig_time.substr(6, 2));
+            if (sec < 0) {
+                // negative number bad
+                return false;
+            } else if (sec > 59) {
+                // too big
+                return false;
+            }
+        } catch (...) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+// ISO Format for date is exactly 10 characters long OR exactly 7 characters long.
 // For ten characters:
 // First four characters must be digits, represent year.
 // Fifth character must be dash.
@@ -567,16 +648,14 @@ string CSubSource::FixDateFormat (const string& orig_date)
 // First four characters must be digits, represent year.
 // Fifth character must be dash.
 // Sixth and seventh characters must be digits, represent month, use zero padding.
-bool CSubSource::IsISOFormatDate (const string& orig_date)
+bool CSubSource::IsISOFormatDateOnly (const string& cpy)
 {
-    string cpy = orig_date;
-    NStr::TruncateSpacesInPlace(cpy);
     if (cpy.length() != 10 && cpy.length() != 7) {
         return false;
     }
     bool rval = true;
     size_t pos = 0;
-    string::iterator it = cpy.begin();
+    string::const_iterator it = cpy.begin();
     while (it != cpy.end() && rval) {
         if (pos == 4 || pos == 7) {
             if (*it != '-') {
@@ -608,6 +687,20 @@ bool CSubSource::IsISOFormatDate (const string& orig_date)
     return rval;
 }
 
+bool CSubSource::IsISOFormatDate(const string& orig_date)
+{
+    string cpy = orig_date;
+    NStr::TruncateSpacesInPlace(cpy);
+    size_t time_pos = NStr::Find(cpy, "T");
+    if (time_pos == string::npos) {
+        return IsISOFormatDateOnly(cpy);
+    } else {
+        int h, m, s;
+        return (IsISOFormatDateOnly(cpy.substr(0, time_pos)) &&
+            IsISOFormatTime(cpy.substr(time_pos + 1), h, m, s));
+    }
+
+}
 
 CRef<CDate> CSubSource::GetDateFromISODate(const string& orig_date)
 {

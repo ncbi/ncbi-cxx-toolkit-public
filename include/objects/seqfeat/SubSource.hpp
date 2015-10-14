@@ -108,6 +108,8 @@ public:
     static bool IsCollectionDateAfterTime(const CDate& collection_date, time_t t);
     static bool IsCollectionDateAfterTime(const CDate& collection_date, CTime& ctime);
 
+    static bool IsISOFormatTime(const string& orig_time, int& hour, int& min, int& sec);
+    static bool IsISOFormatDateOnly(const string& date);
     static bool IsISOFormatDate (const string& orig_date);
     static CRef<CDate> GetDateFromISODate(const string& orig_date);
 

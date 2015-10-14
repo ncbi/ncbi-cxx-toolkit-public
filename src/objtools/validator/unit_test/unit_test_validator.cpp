@@ -18127,6 +18127,12 @@ BOOST_AUTO_TEST_CASE(Test_FixFormatDate)
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("1000"), "");
     BOOST_CHECK_EQUAL(CSubSource::GetCollectionDateProblem("1000"), "Collection_date format is not in DD-Mmm-YYYY format");
 
+    //ISO dates are fine as they are
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("2014-08-10T12:23:30Z"), "2014-08-10T12:23:30Z");
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("2014-08-10T12:23Z"), "2014-08-10T12:23Z");
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("2014-08-10T12Z"), "2014-08-10T12Z");
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("2014-08-10T12+00:00"), "2014-08-10T12+00:00");
+
     bool bad_format = false;
     bool in_future = false;
     CSubSource::IsCorrectDateFormat("collection date: Nov-2010 and Dec-2012", bad_format, in_future);
