@@ -43,16 +43,16 @@
 
 #include <db.h>
 
-// Adaptation to 4.7 flags convention
-#ifndef DB_LOG_INMEMORY
-#define DB_LOG_INMEMORY DB_LOG_IN_MEMORY
+
+// Berkeley DB sometimes changes the inteface so some calls have to be adjusted
+// depending on the version
+#ifdef BDB_FULL_VERSION
+    #undef BDB_FULL_VERSION
 #endif
-#ifndef DB_LOG_AUTOREMOVE
-#define DB_LOG_AUTOREMOVE DB_LOG_AUTO_REMOVE
-#endif
-#ifndef DB_DIRECT_LOG
-#define DB_DIRECT_LOG DB_LOG_DIRECT
-#endif
+#define BDB_FULL_VERSION    DB_VERSION_PATCH + \
+                            1000 * DB_VERSION_MINOR + \
+                            1000 * 1000 * DB_VERSION_MAJOR
+
 
 
 // Berkeley DB 4.4.x reworked and extended the mutex API.
@@ -89,7 +89,7 @@ CBDB_Env::CBDB_Env()
       m_Monitor(0)
 {
     int ret = db_env_create(&m_Env, 0);
-    BDB_CHECK(ret, "DB_ENV");
+    BDB_CHECK(ret, "DB_ENV::create");
 }
 
 
@@ -152,25 +152,25 @@ void CBDB_Env::SetCacheSize(Uint8 cache_size,
     unsigned ncache = max(num_caches, 1);
     int ret =
         m_Env->set_cachesize(m_Env, cache_g, (unsigned)cache_size, ncache);
-    BDB_CHECK(ret, 0);
+    BDB_CHECK(ret, "DB_ENV::set_cachesize");
 }
 
 void CBDB_Env::SetLogRegionMax(unsigned size)
 {
     int ret = m_Env->set_lg_regionmax(m_Env, size);
-    BDB_CHECK(ret, 0);
+    BDB_CHECK(ret, "DB_ENV::set_lg_regionmax");
 }
 
 void CBDB_Env::SetLogBSize(unsigned lg_bsize)
 {
     int ret = m_Env->set_lg_bsize(m_Env, lg_bsize);
-    BDB_CHECK(ret, 0);
+    BDB_CHECK(ret, "DB_ENV::set_lg_bsize");
 }
 
 void CBDB_Env::Open(const string& db_home, int flags)
 {
     int ret = x_Open(db_home.c_str(), flags);
-    BDB_CHECK(ret, "DB_ENV");
+    BDB_CHECK(ret, "DB_ENV::open");
 
     SetDirectDB(m_DirectDB);
     SetDirectLog(m_DirectLOG);
@@ -227,14 +227,14 @@ void CBDB_Env::OpenPrivate(const string& db_home)
 {
     int ret = x_Open(db_home.c_str(),
                      DB_CREATE|DB_THREAD|DB_PRIVATE|DB_INIT_MPOOL);
-    BDB_CHECK(ret, "DB_ENV");
+    BDB_CHECK(ret, "DB_ENV::open_private");
 }
 
 
 void CBDB_Env::OpenWithTrans(const string& db_home, TEnvOpenFlags opt)
 {
     int ret = m_Env->set_lk_detect(m_Env, DB_LOCK_DEFAULT);
-    BDB_CHECK(ret, "DB_ENV");
+    BDB_CHECK(ret, "DB_ENV::set_lk_detect");
 
     if (m_MaxLockObjects) {
         this->SetMaxLockObjects(m_MaxLockObjects);
@@ -273,7 +273,7 @@ void CBDB_Env::OpenWithTrans(const string& db_home, TEnvOpenFlags opt)
         }
 
         ret = x_Open(db_home.c_str(), recover_flag);
-        BDB_CHECK(ret, "DB_ENV");
+        BDB_CHECK(ret, "DB_ENV::open");
 
         // non-private recovery
         if (!(recover_flag & DB_PRIVATE)) {
@@ -285,10 +285,10 @@ void CBDB_Env::OpenWithTrans(const string& db_home, TEnvOpenFlags opt)
         // it available for other programs
 
         ret = m_Env->close(m_Env, 0);
-        BDB_CHECK(ret, "DB_ENV");
+        BDB_CHECK(ret, "DB_ENV::close");
 
         ret = db_env_create(&m_Env, 0);
-        BDB_CHECK(ret, "DB_ENV");
+        BDB_CHECK(ret, "DB_ENV::create");
     } else
     if (opt & eRunRecoveryFatal) {
         // use private environment as prescribed by "db_recover" utility
@@ -299,7 +299,7 @@ void CBDB_Env::OpenWithTrans(const string& db_home, TEnvOpenFlags opt)
         }
 
         ret = x_Open(db_home.c_str(), recover_flag);
-        BDB_CHECK(ret, "DB_ENV");
+        BDB_CHECK(ret, "DB_ENV::open");
 
         // non-private recovery
         if (!(recover_flag & DB_PRIVATE)) {
@@ -311,10 +311,10 @@ void CBDB_Env::OpenWithTrans(const string& db_home, TEnvOpenFlags opt)
         // it available for other programs
 
         ret = m_Env->close(m_Env, 0);
-        BDB_CHECK(ret, "DB_ENV");
+        BDB_CHECK(ret, "DB_ENV::close");
 
         ret = db_env_create(&m_Env, 0);
-        BDB_CHECK(ret, "DB_ENV");
+        BDB_CHECK(ret, "DB_ENV::create");
     }
 
     Open(db_home,  flag);
@@ -324,7 +324,7 @@ void CBDB_Env::OpenWithTrans(const string& db_home, TEnvOpenFlags opt)
 void CBDB_Env::OpenConcurrentDB(const string& db_home)
 {
     int ret = m_Env->set_flags(m_Env, DB_CDB_ALLDB, 1);
-    BDB_CHECK(ret, "DB_ENV::set_flags");
+    BDB_CHECK(ret, "DB_ENV::set_flags(DB_CDB_ALLDB)");
 
     Open(db_home, DB_CREATE | DB_THREAD | DB_INIT_CDB | DB_INIT_MPOOL);
 }
@@ -410,7 +410,7 @@ bool CBDB_Env::Remove()
     Close();
 
     int ret = db_env_create(&m_Env, 0);
-    BDB_CHECK(ret, "DB_ENV");
+    BDB_CHECK(ret, "DB_ENV::create");
 
     ret = m_Env->remove(m_Env, m_HomePath.c_str(), 0);
     m_Env = 0;
@@ -428,7 +428,7 @@ void CBDB_Env::ForceRemove()
     Close();
 
     int ret = db_env_create(&m_Env, 0);
-    BDB_CHECK(ret, "DB_ENV");
+    BDB_CHECK(ret, "DB_ENV::create");
 
     ret = m_Env->remove(m_Env, m_HomePath.c_str(), DB_FORCE);
     m_Env = 0;
@@ -561,20 +561,25 @@ void CBDB_Env::SetMaxLockers(unsigned max_lockers)
 
 void CBDB_Env::SetLogInMemory(bool on_off)
 {
-    int ret = m_Env->set_flags(m_Env, DB_LOG_INMEMORY, on_off);
-    BDB_CHECK(ret, "DB_ENV::set_flags");
+    #if BDB_FULL_VERSION < 4700000
+        int ret = m_Env->set_flags(m_Env, DB_LOG_INMEMORY, int(on_off));
+        BDB_CHECK(ret, "DB_ENV::set_flags(DB_LOG_INMEMORY)");
+    #else
+        int ret = m_Env->log_set_config(m_Env, DB_LOG_IN_MEMORY, (int)on_off);
+        BDB_CHECK(ret, "DB_ENV::log_set_config(DB_LOG_IN_MEMORY)");
+    #endif
     m_LogInMemory = on_off;
 }
 
 void CBDB_Env::SetTasSpins(unsigned tas_spins)
 {
-#ifdef BDB_NEW_MUTEX_API
-    int ret = m_Env->mutex_set_tas_spins(m_Env, tas_spins);
-    BDB_CHECK(ret, "DB_ENV::mutex_set_tas_spins");
-#else
-    int ret = m_Env->set_tas_spins(m_Env, tas_spins);
-    BDB_CHECK(ret, "DB_ENV::set_tas_spins");
-#endif
+    #ifdef BDB_NEW_MUTEX_API
+        int ret = m_Env->mutex_set_tas_spins(m_Env, tas_spins);
+        BDB_CHECK(ret, "DB_ENV::mutex_set_tas_spins");
+    #else
+        int ret = m_Env->set_tas_spins(m_Env, tas_spins);
+        BDB_CHECK(ret, "DB_ENV::set_tas_spins");
+    #endif
 }
 
 void CBDB_Env::OpenErrFile(const string& file_name)
@@ -614,15 +619,25 @@ void CBDB_Env::SetDirectLog(bool on_off)
     m_DirectLOG = on_off;
     if (m_Env) {
         // error checking commented (not all platforms support direct IO)
+        #if BDB_FULL_VERSION < 4700000
         /*int ret = */ m_Env->set_flags(m_Env, DB_DIRECT_LOG, (int)on_off);
         // BDB_CHECK(ret, "DB_ENV::set_flags(DB_DIRECT_LOG)");
+        #else
+        /*int ret = */ m_Env->log_set_config(m_Env, DB_LOG_DIRECT, (int)on_off);
+        // BDB_CHECK(ret, "DB_ENV::log_set_config(DB_LOG_DIRECT)");
+        #endif
     }
 }
 
 void CBDB_Env::SetLogAutoRemove(bool on_off)
 {
-    int ret = m_Env->set_flags(m_Env, DB_LOG_AUTOREMOVE, (int)on_off);
-    BDB_CHECK(ret, "DB_ENV::set_flags(DB_LOG_AUTOREMOVE)");
+    #if BDB_FULL_VERSION < 4700000
+        int ret = m_Env->set_flags(m_Env, DB_LOG_AUTOREMOVE, (int)on_off);
+        BDB_CHECK(ret, "DB_ENV::set_flags(DB_LOG_AUTOREMOVE)");
+    #else
+        int ret = m_Env->log_set_config(m_Env, DB_LOG_AUTO_REMOVE, (int)on_off);
+        BDB_CHECK(ret, "DB_ENV::log_set_config(DB_LOG_AUTO_REMOVE)");
+    #endif
 }
 
 
