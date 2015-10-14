@@ -80,14 +80,14 @@ static
 CCompressStream::EMethod Compression(const string& blob)
 {
     if (!CCachedAssembly::ValidBlob(blob.size()))
-        NCBI_THROW(CCoreException, CCoreException::eCore, "Invalid blob size detected: " + blob.size());
+        NCBI_THROW(CCoreException, eCore, "Invalid blob size detected: " + blob.size());
     const char bzip2Header[] = {0x42, 0x5a, 0x68};
     const char zlibHeader[] = {0x78};
     if (NStr::StartsWith(blob, CTempString(bzip2Header, sizeof(bzip2Header))))
         return CCompressStream::eBZip2;
     if (NStr::StartsWith(blob, CTempString(zlibHeader, sizeof(zlibHeader))))
         return CCompressStream::eZip;
-    NCBI_THROW(CCoreException, CCoreException::eInvalidArg, "Cant determine compression method: " + blob.substr(0, 10));
+    NCBI_THROW(CCoreException, eInvalidArg, "Cant determine compression method: " + blob.substr(0, 10));
 }
 
 CRef<CGC_Assembly> CCachedAssembly::Assembly()
