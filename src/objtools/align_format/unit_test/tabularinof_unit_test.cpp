@@ -302,7 +302,7 @@ BOOST_AUTO_TEST_CASE(SubjectTitlesOutput) {
     	string output = CNcbiOstrstreamToString(output_stream);
         const string ref[8] = {
             "PREDICTED: interleukin-1 alpha isoform X1 [Ovis aries]",
-	    "interleukin-1 alpha precursor [Bos taurus]<>RecName: Full=Interleukin-1 alpha; Short=IL-1 alpha; Flags: Precursor [Bos taurus]<>pre-interleukin-1 alpha [Bos taurus]<>interleukin 1-alpha [Bos taurus]<>interleukin-1 alpha precursor [Bos taurus]<>TPA: interleukin-1 alpha precursor [Bos taurus]",
+	    "interleukin-1 alpha precursor [Bos taurus]<>RecName: Full=Interleukin-1 alpha; Short=IL-1 alpha; Flags: Precursor<>pre-interleukin-1 alpha [Bos taurus]<>interleukin 1-alpha [Bos taurus]<>interleukin-1 alpha precursor [Bos taurus]<>TPA: interleukin-1 alpha precursor [Bos taurus]",
 	    "PREDICTED: interleukin-1 alpha [Bos mutus]<>Interleukin-1 alpha [Bos mutus]",
 	    "interleukin 1 alpha [Syncerus caffer]",
             "PREDICTED: interleukin-1 alpha [Bison bison bison]",
