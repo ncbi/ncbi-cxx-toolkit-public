@@ -3,6 +3,7 @@ import os
 import shutil
 import sys
 import re
+import traceback
 
 MODULES_PATH = "src/internal/cppcore/testres/modules"
 MODULES_DEST_PATH = "modules"
@@ -74,17 +75,44 @@ try:
                                     f.writelines(result)
 
             if gen_conf_path and def_run_path:
+                module_dest_dir = os.path.join(modules_dest_dir, dir_entry)
+
+                #print "copying module %s from '%s' to '%s'" % (dir_entry, mod_dir_path, module_dest_dir)
+
                 if mod_dir_path:
                     re_fileskip = re.compile(r"(Makefile)|\.((cpp)|(hpp)|(in)|(app)|(lib))$")
                     # filtered shutil.copytree
                     for root, dirs, files in os.walk(mod_dir_path):
-                        for directory in dir:
-                            os.makedirs(os.path.join(root, directory))
-                        file_pathes = [x for x in files if not re_fileskip.match(x)]
-                    shutil.copytree(mod_dir_path, module_dest_dir)
+                        rel_root_path = root[len(mod_dir_path):].lstrip('/')
 
-                module_dest_dir = os.path.join(modules_dest_dir, dir_entry)
-                os.makedirs(module_dest_dir)
+                        try:
+                            os.makedirs(os.path.join(module_dest_dir, rel_root_path))
+                        except OSError:
+                            pass
+
+
+                        for directory in dirs:
+                            if directory != "test":     # skip module tests
+                                new_dir = os.path.join(module_dest_dir, rel_root_path,  directory)
+                                print "creating " + new_dir
+                                try:
+                                    os.makedirs(new_dir)
+                                except OSError:
+                                    pass
+                        print "filtering %s" % str(files)
+                        file_names = [x for x in files if not re_fileskip.search(x)]
+                        print "getting %s" % str(file_names)
+
+                        for file_name in file_names:
+                            src_path = os.path.join(root, file_name)
+                            dst_path = os.path.join(module_dest_dir, rel_root_path, file_name)
+                            # generate config and default run are copied
+                            # independently
+                            if src_path not in [gen_conf_path, def_run_path]:
+                                shutil.copy(src_path, dst_path)
+
+                    #shutil.copytree(mod_dir_path, module_dest_dir)
+
                 gen_conf_dest_path = os.path.join(
                     module_dest_dir,
                     GENERATE_CONFIG)
@@ -92,7 +120,7 @@ try:
                 shutil.copy(gen_conf_path, gen_conf_dest_path)
                 shutil.copy(def_run_path, def_run_dest_path)
 except Exception as excpt:
-    print excpt
+    traceback.print_exc()
     exit(1)
 
 exit(0)
