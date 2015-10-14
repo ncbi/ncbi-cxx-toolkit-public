@@ -864,10 +864,10 @@ SContext::SContext(const string& domain, CNetICacheClient client,
       filetrack_api(ft_config),
       compound_id_pool(id_pool ? CCompoundIDPool(id_pool) : CCompoundIDPool()),
       default_flags(flags),
-      valid_flags_mask(0),
       app_domain(domain)
 {
     string backend_storage(TNetStorageAPI_BackendStorage::GetDefault());
+    TNetStorageFlags valid_flags_mask = 0;
 
     if (strstr(backend_storage.c_str(), "netcache"))
         valid_flags_mask |= fNST_NetCache;
@@ -884,8 +884,6 @@ SContext::SContext(const string& domain, CNetICacheClient client,
     }
 
     if (TNetStorageLocFlags(default_flags)) {
-        valid_flags_mask |= fNST_AnyAttr;
-
         if (app_domain.empty() && icache_client) {
             app_domain = icache_client.GetCacheName();
         }

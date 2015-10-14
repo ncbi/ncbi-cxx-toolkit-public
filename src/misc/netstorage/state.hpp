@@ -50,7 +50,6 @@ struct SContext : CObject
     SFileTrackAPI filetrack_api;
     CCompoundIDPool compound_id_pool;
     TNetStorageFlags default_flags;
-    TNetStorageFlags valid_flags_mask;
     string app_domain;
 
     SContext(const string&, CNetICacheClient, TNetStorageFlags,
