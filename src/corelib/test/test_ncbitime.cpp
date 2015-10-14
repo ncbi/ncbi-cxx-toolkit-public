@@ -1051,12 +1051,19 @@ static void s_TestUTC(void)
         CTime t22(2013, 11, 3, 2,  0, 0, 0, CTime::eLocal, CTime::eHour);
         assert(t22.GetTimeT()/3600 - t21.GetTimeT()/3600 == 3);
 
-        // Check for underlying implementations not based on time_t (MSWIN)
+        // Check for underlying implementations not based on time_t (Win/Unix).
+        // Results should be close, but not necessary equal, 
+        // and even 'timer' can be greater than 'now'.
+        // On Linux this behavior is due to the implementation of timekeeping
+        // in the kernel. Note: time() is called after gettimeofday()
+        // (GetCurrentTimeT()) on Unix.
         t.GetCurrentTimeT(&timer);
         time_t now = time(0);
-        ERR_POST(Note << NStr::Int8ToString(now) + " - " +
-                         NStr::Int8ToString(timer) + "\n");
-        assert((timer <= now)  &&  (now - timer < 5));
+        if (timer < now) {
+            assert(now - timer < 3);
+        } else {
+            assert(timer - now < 3);
+        }
     }}
 
     //------------------------------------------------------------------------
