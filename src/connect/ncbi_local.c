@@ -376,7 +376,6 @@ const SSERV_VTable* SERV_LOCAL_Open(SERV_ITER iter,
 
     if (!(data = (struct SLOCAL_Data*) calloc(1, sizeof(*data))))
         return 0;
-
     iter->data = data;
 
     if (g_NCBI_ConnectRandomSeed == 0) {
@@ -389,6 +388,7 @@ const SSERV_VTable* SERV_LOCAL_Open(SERV_ITER iter,
         s_Close(iter);
         return 0;
     }
+    assert(data->n_cand);
     if (data->n_cand > 1)
         qsort(data->cand, data->n_cand, sizeof(*data->cand), s_Sort);
 
