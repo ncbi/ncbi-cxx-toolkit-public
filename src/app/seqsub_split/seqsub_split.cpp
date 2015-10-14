@@ -44,6 +44,7 @@
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <objects/seq/Seq_descr.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -54,6 +55,8 @@ class CSeqSubSplitter : public CNcbiApplication
 public:
     void Init();
     int Run();
+
+private:
     CObjectIStream* xInitInputStream(const CArgs& args) const; // Why CObjectIStream instead of NcbiIstream here?
 
     CObjectOStream* xInitOutputStream(const string& output_stub, 
@@ -65,16 +68,23 @@ public:
     bool xTryReadInputFile(const CArgs& args, 
                            CRef<CSeq_submit>& seq_sub) const;
     
-    bool xTryProcessSeqSubmit(CRef<CSeq_submit>& seq_sub,
+    bool xTryProcessSeqSubmit(CRef<CSeq_submit>& seq_sub, // Deprecated
                               TSeqPos sort_order,
                               TSeqPos bundle_size,
                               list<CRef<CSeq_submit> >& output_array) const;
-    
-    void xFlattenSeqEntrys(CSeq_submit::TData::TEntrys& entries,
-                           vector<CRef<CBioseq> >& seq_array) const;
+   
+    bool xTryProcessSeqSubmit(CRef<CSeq_submit>& seq_sub,
+                              TSeqPos bundle_size,
+                              list<CRef<CSeq_submit> >& output_array) const;
 
-    void xFlattenBioseqSet(CBioseq_set& bss, 
-                           vector<CRef<CBioseq> >& seq_array) const;
+    void xFlattenSeqEntrys(CSeq_submit::TData::TEntrys& entries,
+                           vector<CRef<CSeq_entry> >& seq_entry_array) const;
+
+    void xFlattenSeqEntry(CSeq_entry& seq_entry, 
+                          const CSeq_descr& seq_descr,
+                          vector<CRef<CSeq_entry> >& seq_entry_array) const;
+
+    void xMergeSeqDescr(const CSeq_descr& src, CSeq_descr& dst) const; 
 };
 
 
@@ -146,8 +156,9 @@ int CSeqSubSplitter::Run()
     xTryReadInputFile(args, input_sub);
 
     list<CRef<CSeq_submit> > output_array;
+
     xTryProcessSeqSubmit(input_sub, 
-                         sort_order, 
+   //                      sort_order, 
                          bundle_size,
                          output_array);
 
@@ -285,15 +296,41 @@ static bool s_LocalIdCompare(const CRef<CBioseq>& b1, const CRef<CBioseq>& b2)
 }
 
 
-
 bool CSeqSubSplitter::xTryProcessSeqSubmit(CRef<CSeq_submit>& input_sub,
+                                           const TSeqPos bundle_size,
+                                           list<CRef<CSeq_submit> >& output_array) const
+{
+    vector<CRef<CSeq_entry> > seq_entry_array;
+
+    CRef<CSeq_descr> seq_descr = Ref(new CSeq_descr());
+    xFlattenSeqEntrys(input_sub->SetData().SetEntrys(), seq_entry_array);
+
+    // Need to figure out how the sort is implemented?
+
+    vector<CRef<CSeq_entry> >::iterator seq_entry_it = seq_entry_array.begin();
+    while (seq_entry_it != seq_entry_array.end()) {
+        CRef<CSeq_submit> seqsub = Ref(new CSeq_submit());
+        seqsub->SetSub(input_sub->SetSub());
+        for(TSeqPos i=0; i<bundle_size; ++i) {
+            seqsub->SetData().SetEntrys().push_back(*seq_entry_it);
+            ++seq_entry_it;
+            if (seq_entry_it == seq_entry_array.end()) {
+                break;
+            }
+        }
+        output_array.push_back(seqsub);
+    }
+    return true;
+}
+
+
+bool CSeqSubSplitter::xTryProcessSeqSubmit(CRef<CSeq_submit>& input_sub, // Deprecated
                                            const TSeqPos sort_order,
                                            const TSeqPos bundle_size,
                                            list<CRef<CSeq_submit> >& output_array) const
 {
-
     vector<CRef<CBioseq> > seq_array;
-    xFlattenSeqEntrys(input_sub->SetData().SetEntrys(), seq_array);
+    //xFlattenSeqEntrys(input_sub->SetData().SetEntrys(), seq_array);
 
     switch(sort_order) {
         default:
@@ -363,40 +400,83 @@ CObjectIStream* CSeqSubSplitter::xInitInputStream(const CArgs& args) const
 }
 
 
+void CSeqSubSplitter::xMergeSeqDescr(const CSeq_descr& src, CSeq_descr& dst) const
+{
+    if (!src.IsSet()) {
+        return;
+    }
+
+    ITERATE(CSeq_descr::Tdata, it, src.Get()) 
+    {
+        // Need to insert a check to make sure there aren't conflicting entries in the 
+        // src and destination.
+        CRef<CSeqdesc> desc = CAutoAddDesc::LocateDesc(dst, (**it).Which());
+        if (desc.Empty()) { 
+            desc.Reset(new CSeqdesc());
+            desc->Assign(**it);
+            dst.Set().push_back(desc);
+        }
+    }
+
+    return;
+}
+
 
 void CSeqSubSplitter::xFlattenSeqEntrys(CSeq_submit::TData::TEntrys& entries,
-                                        vector< CRef<CBioseq> >& seq_array) const
+                                       vector<CRef<CSeq_entry> >& seq_entry_array) const 
 {
     NON_CONST_ITERATE(CSeq_submit::TData::TEntrys, it, entries) {
         CSeq_entry& seq_entry = **it;
-        if (seq_entry.IsSet()) {
-            xFlattenBioseqSet(seq_entry.SetSet(), seq_array); // Copied from blast
-        } else {
-            _ASSERT(seq_entry.IsSeq());
-            CRef<CBioseq> bioseq = Ref(&(seq_entry.SetSeq()));
-            seq_array.push_back(bioseq);
-        }
+        CSeq_descr seq_descr;
+        xFlattenSeqEntry(seq_entry, seq_descr, seq_entry_array);     
     }
 }
 
 
-void CSeqSubSplitter::xFlattenBioseqSet(CBioseq_set& bss, vector< CRef<CBioseq> >& seq_array) const 
-{ // Copied from src/algo/blast/api/remote_blast.cpp
-    if (bss.IsSetSeq_set()) {
-        NON_CONST_ITERATE(CBioseq_set::TSeq_set, it, bss.SetSeq_set()) {
-            CSeq_entry& seq_entry = **it;
+void CSeqSubSplitter::xFlattenSeqEntry(CSeq_entry& entry,
+                                       const CSeq_descr& seq_descr,
+                                       vector<CRef<CSeq_entry> >& seq_entry_array) const 
+{
+    if (entry.IsSeq() ||
+        (entry.IsSet() &&
+         (!entry.GetSet().IsSetClass() ||
+          (entry.GetSet().IsSetClass() && 
+           (entry.GetSet().GetClass() != CBioseq_set::eClass_genbank))))) {
 
-            if (seq_entry.IsSeq()) {
-                CRef<CBioseq> bioseq = Ref(&(seq_entry.SetSeq()));
-                seq_array.push_back(bioseq);
-            }
-            else {
-                _ASSERT(seq_entry.IsSet());
-                xFlattenBioseqSet(seq_entry.SetSet(), seq_array);
-            }
+        CRef<CSeq_entry> new_entry = Ref(&entry);
+
+        if (seq_descr.IsSet()) {
+            CSeq_descr&  entry_descr = (entry.IsSeq()) 
+                                ? entry.SetSeq().SetDescr() 
+                                : entry.SetSet().SetDescr();
+
+
+            xMergeSeqDescr(seq_descr, entry_descr);
         }
+
+
+        seq_entry_array.push_back(new_entry);
+        return;
+    }
+
+    _ASSERT(entry.GetSet().GetClass() == CBioseq_set::eClass_genbank);
+
+    CSeq_descr new_descr;
+    ITERATE(CSeq_descr::Tdata, it, seq_descr.Get()) {
+        new_descr.Set().push_back(*it);
+    }
+
+    if (entry.GetSet().IsSetDescr()) {
+        xMergeSeqDescr(entry.GetSet().GetDescr(), new_descr); 
+    }
+
+    NON_CONST_ITERATE(CBioseq_set::TSeq_set, it, entry.SetSet().SetSeq_set()) {
+        xFlattenSeqEntry(**it, new_descr, seq_entry_array);
     }
 }
+
+
+
 
 
 END_NCBI_SCOPE
