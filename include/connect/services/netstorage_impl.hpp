@@ -502,7 +502,8 @@ NCBI_XCONNECT_EXPORT
 CNetStorageObjectInfo g_CreateNetStorageObjectInfo(const string& object_loc,
         const CJsonNode& object_info_node);
 
-class CDirectNetStorageObject : public CNetStorageObject
+/// @internal
+class NCBI_XCONNECT_EXPORT CDirectNetStorageObject : public CNetStorageObject
 {
 public:
     CDirectNetStorageObject(EVoid);
@@ -517,7 +518,8 @@ private:
     friend class CDirectNetStorageByKey;
 };
 
-struct SFileTrackConfig
+/// @internal
+struct NCBI_XCONNECT_EXPORT SFileTrackConfig
 {
     const string site;
     const string key;
@@ -528,7 +530,8 @@ struct SFileTrackConfig
     SFileTrackConfig(const string& site, const string& key);
 };
 
-class CDirectNetStorage : public CNetStorage
+/// @internal
+class NCBI_XCONNECT_EXPORT CDirectNetStorage : public CNetStorage
 {
 public:
     CDirectNetStorage(
@@ -551,7 +554,8 @@ public:
     CDirectNetStorageObject Open(const string& object_loc);
 };
 
-class CDirectNetStorageByKey : public CNetStorageByKey
+/// @internal
+class NCBI_XCONNECT_EXPORT CDirectNetStorageByKey : public CNetStorageByKey
 {
 public:
     CDirectNetStorageByKey(
