@@ -61,6 +61,13 @@ struct SContext : CObject
     {
         return flags ? flags : default_flags;
     }
+
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+    void AllowXSiteConnections()
+    {
+        if (icache_client) icache_client.GetService().AllowXSiteConnections();
+    }
+#endif
 };
 
 // TODO: Add constness to methods where applicable

@@ -106,6 +106,10 @@ struct SNetStorageAPIImpl : public SNetStorageImpl
     CObj* Create(TNetStorageFlags, const string&, Int8 = 0);
 
 private:
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+    void AllowXSiteConnections() { m_Context->AllowXSiteConnections(); }
+#endif
+
     CRef<SContext> m_Context;
 };
 

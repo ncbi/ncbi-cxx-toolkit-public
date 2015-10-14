@@ -54,10 +54,6 @@ void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
             !IsOptionSet(eNetStorage)) {
         m_NetICacheClient = CNetICacheClient(m_Opts.nc_service,
                 m_Opts.app_domain, m_Opts.auth);
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-        if (IsOptionExplicitlySet(eAllowXSiteConn))
-            m_NetICacheClient.GetService().AllowXSiteConnections();
-#endif
     }
 
     if (!IsOptionSet(eNetStorage)) {
@@ -103,12 +99,12 @@ void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
             m_NetStorageByKey = CNetStorageByKey(init_string,
                     m_Opts.netstorage_flags);
         }
+    }
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-        if (IsOptionExplicitlySet(eAllowXSiteConn))
-            m_NetStorage->AllowXSiteConnections();
+    if (IsOptionExplicitlySet(eAllowXSiteConn))
+        m_NetStorage->AllowXSiteConnections();
 #endif
-    }
 }
 
 static void s_NetStorage_RemoveStdReplyFields(CJsonNode& server_reply)
