@@ -441,7 +441,10 @@ void CSeqSubSplitter::xFlattenSeqEntry(CSeq_entry& entry,
         (entry.IsSet() &&
          (!entry.GetSet().IsSetClass() ||
           (entry.GetSet().IsSetClass() && 
-           (entry.GetSet().GetClass() != CBioseq_set::eClass_genbank))))) {
+           (entry.GetSet().GetClass() != CBioseq_set::eClass_genbank) &&
+           (entry.GetSet().GetClass() != CBioseq_set::eClass_pub_set))
+          ))) 
+    {
 
         CRef<CSeq_entry> new_entry = Ref(&entry);
 
