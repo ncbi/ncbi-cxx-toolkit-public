@@ -62,6 +62,7 @@ private:
     CObjectOStream* xInitOutputStream(const string& output_stub, 
                                       const TSeqPos output_index,
                                       const TSeqPos pad_width,
+                                      const string& output_extension,
                                       const bool binary) const;
 
 
@@ -85,6 +86,9 @@ private:
                           vector<CRef<CSeq_entry> >& seq_entry_array) const;
 
     void xMergeSeqDescr(const CSeq_descr& src, CSeq_descr& dst) const; 
+
+
+    string xGetFileExtension(const string& filename) const;
 };
 
 
@@ -162,8 +166,15 @@ int CSeqSubSplitter::Run()
                          bundle_size,
                          output_array);
 
-
     const string output_stub = args["o"].AsString();
+
+
+    // Output files should have the same extension as the input file
+    string output_extension = "";
+    if (args["i"]) {
+        output_extension = xGetFileExtension(args["i"].AsString());
+    }
+
     int output_index = 0;
     auto_ptr<CObjectOStream> ostr;
     bool binary = false;
@@ -173,7 +184,12 @@ int CSeqSubSplitter::Run()
 
     NON_CONST_ITERATE(list<CRef<CSeq_submit> >, it, output_array) {
         ++output_index;
-        ostr.reset(xInitOutputStream(output_stub, output_index, pad_width, binary));
+        ostr.reset(xInitOutputStream(output_stub, 
+                    output_index, 
+                    pad_width, 
+                    output_extension,
+                    binary
+                    ));
         *ostr << **it;
     }
 
@@ -181,11 +197,24 @@ int CSeqSubSplitter::Run()
 }
 
 
+string CSeqSubSplitter::xGetFileExtension(const string& filename) const
+{
+   string extension = "";
+   vector<string> arr;
+   NStr::Tokenize(filename,".",arr);
+   if (arr.size() > 1) {
+       extension = arr.back();
+   }
+
+   return extension; 
+}
+
 
 CObjectOStream* CSeqSubSplitter:: xInitOutputStream(
         const string& output_stub,
         const TSeqPos output_index,
         const TSeqPos pad_width,
+        const string& output_extension,
         const bool binary) const
 {
     if (output_stub.empty()) {
@@ -202,7 +231,7 @@ CObjectOStream* CSeqSubSplitter:: xInitOutputStream(
         } 
     }
 
-    string filename = output_stub + "_" + padded_index;
+    string filename = output_stub + "_" + padded_index + "." + output_extension;
 
     ESerialDataFormat serial = eSerial_AsnText;
     if (binary) {
