@@ -1048,7 +1048,7 @@ static EIO_Status s_ReadData(SHttpConnector* uuu,
         } else
             xxx = 0;
         status = SOCK_Read(uuu->sock, buf, size, n_read, how);
-        if (xxx  &&  !BUF_AppendEx(xxx, buf, 0, buf, *n_read)) {
+        if (xxx  &&  !BUF_AppendEx(xxx, buf, size, buf, *n_read)) {
             int error = errno;
             char* url = ConnNetInfo_URL(uuu->net_info);
             CORE_LOGF_ERRNO_X(25, eLOG_Error, error,
@@ -1059,8 +1059,6 @@ static EIO_Status s_ReadData(SHttpConnector* uuu,
                 free(url);
             status = eIO_Unknown;
         }
-        if (xxx)
-            free(buf);
         return status;
     }
 
@@ -1641,6 +1639,16 @@ static EIO_Status s_PreRead(SHttpConnector* uuu,
 }
 
 
+/* NB: Sets the EOM read state */
+static void x_Close(SHttpConnector* uuu)
+{
+    /* since this is merely an acknowledgement, it will be "instant" */
+    SOCK_SetTimeout(uuu->sock, eIO_Close, &kZeroTimeout);
+    SOCK_CloseEx(uuu->sock, 0/*retain SOCK*/);
+    uuu->read_state = eRS_Eom;
+}
+
+
 /* Read non-header data from connection */
 static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
                          size_t size, size_t* n_read)
@@ -1652,9 +1660,12 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
 
     if ((uuu->read_state & eRS_DoneBody) == eRS_DoneBody) {
         *n_read = 0;
-        return uuu->chunked ? x_ReadChunkTail(uuu) : eIO_Closed;
+        if (!uuu->chunked)
+            return eIO_Closed;
+        if (uuu->read_state == eRS_Discard)
+            x_Close(uuu);
+        return uuu->read_state != eRS_Eom ? x_ReadChunkTail(uuu) : eIO_Closed;
     }
-
     assert(uuu->received <= uuu->expected);
 
     if ((uuu->net_info->req_method & ~eReqMethod_v1) == eReqMethod_Head
@@ -1711,12 +1722,8 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
         uuu->received += *n_read;
     }
 
-    if (status == eIO_Closed  &&  !uuu->keepalive) {
-        /* since this is merely an acknowledgement, it will be "instant" */
-        SOCK_SetTimeout(uuu->sock, eIO_Close, &kZeroTimeout);
-        SOCK_CloseEx(uuu->sock, 0/*retain SOCK*/);
-        uuu->read_state = eRS_Eom;
-    }
+    if (status == eIO_Closed  &&  !uuu->keepalive)
+        x_Close(uuu);
 
     if (uuu->expected != (TNCBI_BigCount)(-1L)) {
         const char* how = 0;
