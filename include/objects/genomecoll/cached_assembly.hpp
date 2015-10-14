@@ -29,6 +29,7 @@
 #define INTERNAL_GPIPE_OBJECTS_GENOMECOLL_CACHED_ASSEMBLY_HPP
 
 #include <objects/genomecoll/GC_Assembly.hpp>
+#include <util/compress/stream_util.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -37,17 +38,17 @@ class CCachedAssembly : public CObject
 public:
     CCachedAssembly(CRef<objects::CGC_Assembly> assembly);
     CCachedAssembly(const string& blob);
+    CCachedAssembly(const vector<char>& blob);
 
     CRef<objects::CGC_Assembly> Assembly();
-    const string& Blob();
+    const string& Blob(CCompressStream::EMethod neededCompression);
 
 public:
     static bool ValidBlob(int blobSize);
-    static bool BZip2Compression(const string& blob);
-    static string ChangeCompressionBZip2ToZip(const string& blob);
 
 private:
     CRef<objects::CGC_Assembly> m_assembly;
+    //TODO: replace with vector<char> after migration to NetCache
     string m_blob;
 };
 

@@ -219,13 +219,6 @@ CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(int releaseId, const 
                        params.component_flags);
 }
 
-static
-CRef<CGC_Assembly> AssemblyFromBlob(const vector<char>& blob)
-{
-    const string blobStr(blob.begin(), blob.end());
-    return CCachedAssembly(blobStr).Assembly();
-}
-
 CRef<CGC_Assembly> CGenomicCollectionsService::_GetAssemblyNew(const string& acc, const string& mode)
 {
     CGCClient_GetAssemblyBlobRequest req;
@@ -237,7 +230,7 @@ CRef<CGC_Assembly> CGenomicCollectionsService::_GetAssemblyNew(const string& acc
     LogRequest(req);
 
     try {
-        return AssemblyFromBlob(AskGet_assembly_blob(req, &reply));
+        return CCachedAssembly(AskGet_assembly_blob(req, &reply)).Assembly();
     } catch (CException& ex) {
         if(reply.IsSrvr_error()) {
             NCBI_THROW(CException, eUnknown, reply.GetSrvr_error().GetDescription());
@@ -257,7 +250,7 @@ CRef<CGC_Assembly> CGenomicCollectionsService::_GetAssemblyNew(int releaseId, co
     LogRequest(req);
 
     try {
-        return AssemblyFromBlob(AskGet_assembly_blob(req, &reply));
+        return CCachedAssembly(AskGet_assembly_blob(req, &reply)).Assembly();
     } catch (CException& ex) {
         if(reply.IsSrvr_error()) {
             NCBI_THROW(CException, eUnknown, reply.GetSrvr_error().GetDescription());
