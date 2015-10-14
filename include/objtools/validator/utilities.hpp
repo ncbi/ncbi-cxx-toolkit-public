@@ -211,7 +211,7 @@ bool NCBI_VALIDATOR_EXPORT IsCommonName (const CT3Data& data);
 bool NCBI_VALIDATOR_EXPORT HasMisSpellFlag (const CT3Data& data);
 bool NCBI_VALIDATOR_EXPORT FindMatchInOrgRef (string str, const COrg_ref& org);
 string NCBI_VALIDATOR_EXPORT SpecificHostValueToCheck(const string& val);
-string InterpretSpecificHostResult(const string& host, const CT3Reply& reply);
+string InterpretSpecificHostResult(const string& host, const CT3Reply& reply, const string& orig_host = kEmptyStr);
 void NCBI_VALIDATOR_EXPORT AdjustSpecificHostForTaxServer (string& spec_host);
 
 END_SCOPE(validator)

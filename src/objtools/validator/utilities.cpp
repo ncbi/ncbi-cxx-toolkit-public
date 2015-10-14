@@ -2013,7 +2013,7 @@ string SpecificHostValueToCheck(const string& val)
 }
 
 
-string InterpretSpecificHostResult(const string& host, const CT3Reply& reply)
+string InterpretSpecificHostResult(const string& host, const CT3Reply& reply, const string& orig_host)
 {
     string err_str = "";
     if (reply.IsError()) {
@@ -2022,19 +2022,24 @@ string InterpretSpecificHostResult(const string& host, const CT3Reply& reply)
             err_str = reply.GetError().GetMessage();
         }
         if(NStr::Find(err_str, "ambiguous") != string::npos) {
-            err_str = "Specific host value is ambiguous: " + host;
+            err_str = "Specific host value is ambiguous: " + 
+                (NStr::IsBlank(orig_host) ? host : orig_host);
         } else {
-            err_str = "Invalid value for specific host: " + host;
+            err_str = "Invalid value for specific host: " + 
+                (NStr::IsBlank(orig_host) ? host : orig_host);
         }
     } else if (reply.IsData()) {
         if (HasMisSpellFlag(reply.GetData())) {
-            err_str = "Specific host value is misspelled: " + host;
+            err_str = "Specific host value is misspelled: " + 
+                (NStr::IsBlank(orig_host) ? host : orig_host);
         } else if (reply.GetData().IsSetOrg()) {
             if ( ! FindMatchInOrgRef (host, reply.GetData().GetOrg()) && ! IsCommonName(reply.GetData())) {
-                err_str = "Specific host value is incorrectly capitalized: " + host;
+                err_str = "Specific host value is incorrectly capitalized: " + 
+                    (NStr::IsBlank(orig_host) ? host : orig_host);
             }
         } else {
-            err_str = "Invalid value for specific host: " + host;
+            err_str = "Invalid value for specific host: " + 
+                (NStr::IsBlank(orig_host) ? host : orig_host);
         }
     }
     return err_str;
