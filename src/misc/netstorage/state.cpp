@@ -589,7 +589,7 @@ void CNetCache::SetExpirationImpl(const CTimeout& ttl)
 
 void CFileTrack::SetLocator()
 {
-    m_ObjectLoc.SetLocation_FileTrack(m_Context->filetrack_api.site.c_str());
+    m_ObjectLoc.SetLocation_FileTrack(m_Context->filetrack_api.config.site.c_str());
 }
 
 
@@ -859,9 +859,9 @@ namespace NImpl
 
 SContext::SContext(const string& domain, CNetICacheClient client,
         TNetStorageFlags flags, CCompoundIDPool::TInstance id_pool,
-        const IRegistry& registry)
+        const SFileTrackConfig& ft_config)
     : icache_client(client),
-      filetrack_api(registry),
+      filetrack_api(ft_config),
       compound_id_pool(id_pool ? CCompoundIDPool(id_pool) : CCompoundIDPool()),
       default_flags(flags),
       valid_flags_mask(0),
@@ -908,7 +908,7 @@ ISelector::Ptr ISelector::Create(SContext* context, TNetStorageFlags flags)
     flags = context->DefaultFlags(flags);
     return Ptr(new CSelector(TObjLoc(context->compound_id_pool,
                     flags, context->app_domain, context->GetRandomNumber(),
-                    context->filetrack_api.site.c_str()), context, flags));
+                    context->filetrack_api.config.site.c_str()), context, flags));
 }
 
 
@@ -926,7 +926,7 @@ ISelector::Ptr ISelector::Create(SContext* context, TNetStorageFlags flags,
     _ASSERT(context);
     flags = context->DefaultFlags(flags);
     TObjLoc loc(context->compound_id_pool, flags, context->app_domain,
-            context->GetRandomNumber(), context->filetrack_api.site.c_str());
+            context->GetRandomNumber(), context->filetrack_api.config.site.c_str());
     loc.SetServiceName(service);
     if (id) loc.SetObjectID(id);
     return Ptr(new CSelector(loc, context, flags));
@@ -940,7 +940,7 @@ ISelector::Ptr ISelector::Create(SContext* context, TNetStorageFlags flags,
     flags = context->DefaultFlags(flags);
     return Ptr(new CSelector(TObjLoc(context->compound_id_pool,
                     flags, context->app_domain, key,
-                    context->filetrack_api.site.c_str()), context, flags));
+                    context->filetrack_api.config.site.c_str()), context, flags));
 }
 
 

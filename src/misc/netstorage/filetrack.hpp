@@ -35,6 +35,8 @@
 
 #include <connect/services/netstorage_impl.hpp>
 
+#include <misc/netstorage/netstorage.hpp>
+
 #include <connect/ncbi_conn_stream.hpp>
 
 #include <corelib/reader_writer.hpp>
@@ -89,7 +91,7 @@ struct SFileTrackPostRequest : public SFileTrackRequest
 
 struct SFileTrackAPI
 {
-    SFileTrackAPI(const IRegistry&);
+    SFileTrackAPI(const SFileTrackConfig&);
 
     string LoginAndGetSessionKey(const CNetStorageObjectLoc& object_loc);
 
@@ -110,17 +112,7 @@ struct SFileTrackAPI
 
     Uint8 GetRandUint8(void) { return m_Random.GetRandUint8(); }
 
-    static string GetSite(const IRegistry&);
-    static bool SetSite(IRWRegistry&, const string&);
-
-    static string GetKey(const IRegistry&);
-    static bool SetKey(IRWRegistry&, const string&);
-
-    const STimeout write_timeout;
-    const STimeout read_timeout;
-
-    const string site;
-    const string key;
+    const SFileTrackConfig config;
 
 private:
     const STimeout GetTimeout();

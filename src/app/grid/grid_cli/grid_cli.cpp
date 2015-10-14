@@ -1564,12 +1564,10 @@ int CGridCommandLineInterfaceApp::Run()
                         output_file_helper.CreateTemporaryFile(opt_value);
                 break;
             case eFileTrackSite:
-                CDirectNetStorageRegistry::CFileTrack::SetSite(
-                        GetConfig(), opt_value);
+                m_Opts.ft_site = opt_value;
                 break;
             case eFileTrackAPIKey:
-                CDirectNetStorageRegistry::CFileTrack::SetKey(
-                        GetConfig(), opt_value);
+                m_Opts.ft_key = opt_value;
                 break;
             case eServiceName:
                 m_Opts.service_name = opt_value;
@@ -1770,12 +1768,10 @@ bool CGridCommandLineInterfaceApp::ParseLoginToken(const string& token)
             if (value_field.GetBoolean())
                 MarkOptionAsSet(eNoConnRetries);
         } else if (label == LOGIN_TOKEN_FILETRACK_SITE) {
-            CDirectNetStorageRegistry::CFileTrack::SetSite(
-                    GetConfig(), value_field.GetString());
+            m_Opts.ft_site = value_field.GetString();
             MarkOptionAsSet(eFileTrackSite);
         } else if (label == LOGIN_TOKEN_FILETRACK_API_KEY) {
-            CDirectNetStorageRegistry::CFileTrack::SetKey(
-                    GetConfig(), value_field.GetString());
+            m_Opts.ft_key = value_field.GetString();
             MarkOptionAsSet(eFileTrackAPIKey);
         }
 

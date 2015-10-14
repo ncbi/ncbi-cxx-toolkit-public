@@ -81,6 +81,17 @@ private:
     friend class CDirectNetStorageByKey;
 };
 
+struct SFileTrackConfig
+{
+    const string site;
+    const string key;
+    const STimeout read_timeout;
+    const STimeout write_timeout;
+
+    SFileTrackConfig(const IRegistry& registry, const string& section = kEmptyStr);
+    SFileTrackConfig(const string& site, const string& key);
+};
+
 /// Direct serverless BLOB storage API
 /// @see CNetStorage
 class CDirectNetStorage : public CNetStorage
@@ -96,7 +107,7 @@ public:
     ///  Default storage preferences for files created by this object.
     ///
     CDirectNetStorage(
-        const IRegistry&            registry,
+        const SFileTrackConfig&     filetrack_config,
         CNetICacheClient::TInstance icache_client,
         CCompoundIDPool::TInstance  compound_id_pool,
         const string&               app_domain,
@@ -138,7 +149,7 @@ public:
     ///  Default storage preferences for files created by this object.
     ///
     CDirectNetStorageByKey(
-        const IRegistry&            registry,
+        const SFileTrackConfig&     filetrack_config,
         CNetICacheClient::TInstance icache_client,
         CCompoundIDPool::TInstance  compound_id_pool,
         const string&               app_domain,
@@ -148,23 +159,6 @@ public:
     ///
     CDirectNetStorageObject Open(const string& unique_key,
             TNetStorageFlags flags = 0);
-};
-
-
-/// NetStorage registry related methods
-///
-class CDirectNetStorageRegistry
-{
-public:
-    class CFileTrack
-    {
-    public:
-        static string GetSite(const IRegistry&);
-        static bool SetSite(IRWRegistry&, const string&);
-
-        static string GetKey(const IRegistry&);
-        static bool SetKey(IRWRegistry&, const string&);
-    };
 };
 
 

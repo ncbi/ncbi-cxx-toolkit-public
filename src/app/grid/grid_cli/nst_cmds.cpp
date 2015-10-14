@@ -57,11 +57,13 @@ void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
     }
 
     if (!IsOptionSet(eNetStorage)) {
-        m_NetStorage = CDirectNetStorage(GetConfig(),
+        SFileTrackConfig ft_config(m_Opts.ft_site, m_Opts.ft_key);
+
+        m_NetStorage = CDirectNetStorage(ft_config,
                 m_NetICacheClient, m_CompoundIDPool,
                 m_Opts.app_domain, m_Opts.netstorage_flags);
         if (IsOptionSet(eNamespace))
-            m_NetStorageByKey = CDirectNetStorageByKey(GetConfig(),
+            m_NetStorageByKey = CDirectNetStorageByKey(ft_config,
                     m_NetICacheClient, m_CompoundIDPool,
                     m_Opts.app_domain, m_Opts.netstorage_flags);
     } else {

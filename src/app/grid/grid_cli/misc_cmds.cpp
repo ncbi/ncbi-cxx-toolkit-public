@@ -172,13 +172,11 @@ int CGridCommandLineInterfaceApp::Cmd_Login()
 
     if (IsOptionSet(eFileTrackSite)) {
         cid.AppendLabel(LOGIN_TOKEN_FILETRACK_SITE);
-        cid.AppendString(
-                CDirectNetStorageRegistry::CFileTrack::GetSite(GetConfig()));
+        cid.AppendString(m_Opts.ft_site);
     }
     if (IsOptionSet(eFileTrackAPIKey)) {
         cid.AppendLabel(LOGIN_TOKEN_FILETRACK_API_KEY);
-        cid.AppendString(
-                CDirectNetStorageRegistry::CFileTrack::GetKey(GetConfig()));
+        cid.AppendString(m_Opts.ft_key);
     }
 
     PrintLine(cid.ToString());

@@ -123,12 +123,12 @@ SFileTrackRequest::SFileTrackRequest(
     m_URL(url),
     m_HTTPStream(url, NULL, user_header, parse_header, this, NULL,
             NULL, fHTTP_AutoReconnect | fHTTP_SuppressMessages | fHTTP_Flushable,
-            &storage_impl->write_timeout),
+            &storage_impl->config.write_timeout),
     m_HTTPStatus(0),
     m_ContentLength((size_t) -1)
 {
-    m_HTTPStream.SetTimeout(eIO_Close, &storage_impl->read_timeout);
-    m_HTTPStream.SetTimeout(eIO_Read, &storage_impl->read_timeout);
+    m_HTTPStream.SetTimeout(eIO_Close, &storage_impl->config.read_timeout);
+    m_HTTPStream.SetTimeout(eIO_Read, &storage_impl->config.read_timeout);
 }
 
 SFileTrackPostRequest::SFileTrackPostRequest(
@@ -416,11 +416,8 @@ void SFileTrackRequest::FinishDownload()
     CheckIOStatus();
 }
 
-SFileTrackAPI::SFileTrackAPI(const IRegistry& registry)
-    : write_timeout(GetTimeout()),
-      read_timeout(GetTimeout()),
-      site(GetSite(registry)),
-      key(GetKey(registry))
+SFileTrackAPI::SFileTrackAPI(const SFileTrackConfig& c)
+    : config(c)
 {
     m_Random.Randomize();
 
@@ -462,13 +459,13 @@ static EHTTP_HeaderParse s_HTTPParseHeader_GetSID(const char* http_header,
 
 string SFileTrackAPI::LoginAndGetSessionKey(const CNetStorageObjectLoc& object_loc)
 {
-    string api_key(key);
+    string api_key(config.key);
     string url(object_loc.GetFileTrackURL());
     string session_key;
 
     CConn_HttpStream http_stream(url + "/accounts/api_login?key=" + api_key,
             NULL, kEmptyStr, s_HTTPParseHeader_GetSID, &session_key, NULL, NULL,
-            fHTTP_AutoReconnect, &write_timeout);
+            fHTTP_AutoReconnect, &config.write_timeout);
 
     string dummy;
     http_stream >> dummy;
@@ -629,35 +626,6 @@ string SFileTrackAPI::MakeMutipartFormDataHeader(const string& boundary)
     header.append("\r\n", 2);
 
     return header;
-}
-
-const STimeout SFileTrackAPI::GetTimeout()
-{
-    STimeout result;
-    result.sec = 30;
-    result.usec = 0;
-    return result;
-}
-
-string SFileTrackAPI::GetSite(const IRegistry& registry)
-{
-    return registry.GetString("filetrack", "site", "prod");
-}
-
-bool SFileTrackAPI::SetSite(IRWRegistry& registry, const string& value)
-{
-    return registry.Set("filetrack", "site", value);
-}
-
-string SFileTrackAPI::GetKey(const IRegistry& registry)
-{
-    return registry.GetEncryptedString("filetrack", "api_key",
-            IRegistry::fPlaintextAllowed);
-}
-
-bool SFileTrackAPI::SetKey(IRWRegistry& registry, const string& value)
-{
-    return registry.Set("filetrack", "api_key", value);
 }
 
 END_NCBI_SCOPE

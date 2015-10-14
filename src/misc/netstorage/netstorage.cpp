@@ -31,6 +31,7 @@
  */
 
 #include <ncbi_pch.hpp>
+#include <corelib/resource_info.hpp>
 #include <misc/netstorage/netstorage.hpp>
 #include "object.hpp"
 
@@ -89,9 +90,9 @@ struct SNetStorageAPIImpl : public SNetStorageImpl
             TNetStorageFlags default_flags,
             CNetICacheClient::TInstance icache_client,
             CCompoundIDPool::TInstance compound_id_pool,
-            const IRegistry& registry)
+            const SFileTrackConfig& ft_config)
         : m_Context(new SContext(app_domain, icache_client, default_flags,
-                    compound_id_pool, registry))
+                    compound_id_pool, ft_config))
     {
     }
 
@@ -178,9 +179,9 @@ struct SNetStorageByKeyAPIImpl : public SNetStorageByKeyImpl
             TNetStorageFlags default_flags,
             CNetICacheClient::TInstance icache_client,
             CCompoundIDPool::TInstance compound_id_pool,
-            const IRegistry& registry)
+            const SFileTrackConfig& ft_config)
         : m_Context(new SContext(app_domain, icache_client, default_flags,
-                    compound_id_pool, registry))
+                    compound_id_pool, ft_config))
     {
         if (app_domain.empty()) {
             NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
@@ -240,14 +241,14 @@ void SNetStorageByKeyAPIImpl::Remove(const string& key, TNetStorageFlags flags)
 }
 
 CDirectNetStorage::CDirectNetStorage(
-        const IRegistry& registry,
+        const SFileTrackConfig& ft_config,
         CNetICacheClient::TInstance icache_client,
         CCompoundIDPool::TInstance compound_id_pool,
         const string& app_domain,
         TNetStorageFlags default_flags)
     : CNetStorage(
             new SNetStorageAPIImpl(app_domain, default_flags, icache_client,
-                compound_id_pool, registry))
+                compound_id_pool, ft_config))
 {}
 
 
@@ -267,14 +268,14 @@ CDirectNetStorageObject CDirectNetStorage::Open(const string& object_loc)
 
 
 CDirectNetStorageByKey::CDirectNetStorageByKey(
-        const IRegistry& registry,
+        const SFileTrackConfig& ft_config,
         CNetICacheClient::TInstance icache_client,
         CCompoundIDPool::TInstance compound_id_pool,
         const string& app_domain,
         TNetStorageFlags default_flags)
     : CNetStorageByKey(
             new SNetStorageByKeyAPIImpl(app_domain, default_flags, icache_client,
-                compound_id_pool, registry))
+                compound_id_pool, ft_config))
 {
 }
 
@@ -286,27 +287,52 @@ CDirectNetStorageObject CDirectNetStorageByKey::Open(const string& key,
 }
 
 
-string CDirectNetStorageRegistry::CFileTrack::GetSite(const IRegistry& registry)
+const string s_GetSection(const string& section)
 {
-    return SFileTrackAPI::GetSite(registry);
+    return section.empty() ? "filetrack" : section;
 }
 
 
-bool CDirectNetStorageRegistry::CFileTrack::SetSite(IRWRegistry& registry, const string& value)
+const STimeout s_GetDefaultTimeout()
 {
-    return SFileTrackAPI::SetSite(registry, value);
+    STimeout result;
+    result.sec = 30;
+    result.usec = 0;
+    return result;
 }
 
 
-string CDirectNetStorageRegistry::CFileTrack::GetKey(const IRegistry& registry)
+const string s_GetDecryptedKey(const string& key)
 {
-    return SFileTrackAPI::GetKey(registry);
+    if (CNcbiEncrypt::IsEncrypted(key)) {
+        try {
+            return CNcbiEncrypt::Decrypt(key);
+        } catch (CException& e) {
+            NCBI_RETHROW2(e, CRegistryException, eDecryptionFailed,
+                    "Decryption failed for configuration value '" + key + "'.", 0);
+        }
+    }
+
+    return key;
 }
 
 
-bool CDirectNetStorageRegistry::CFileTrack::SetKey(IRWRegistry& registry, const string& value)
+SFileTrackConfig::SFileTrackConfig(const IRegistry& reg, const string& section) :
+    site(reg.GetString(s_GetSection(section), "site", "prod")),
+    key(reg.GetEncryptedString(s_GetSection(section), "api_key",
+                IRegistry::fPlaintextAllowed)),
+    read_timeout(s_GetDefaultTimeout()),
+    write_timeout(s_GetDefaultTimeout())
 {
-    return SFileTrackAPI::SetKey(registry, value);
+}
+
+
+SFileTrackConfig::SFileTrackConfig(const string& s, const string& k) :
+    site(s),
+    key(s_GetDecryptedKey(k)),
+    read_timeout(s_GetDefaultTimeout()),
+    write_timeout(s_GetDefaultTimeout())
+{
 }
 
 

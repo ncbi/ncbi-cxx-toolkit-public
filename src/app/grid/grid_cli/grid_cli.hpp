@@ -339,6 +339,8 @@ private:
         string attr_name;
         string attr_value;
         string service_name;
+        string ft_site;
+        string ft_key;
 
         struct SICacheBlobKey {
             string key;
