@@ -3913,7 +3913,7 @@ bool CSeqFeatData::ShouldRepresentAsGbqual (CSeqFeatData::ESubtype feat_subtype,
             || qual_type == CSeqFeatData::eQual_gdb_xref
             || qual_type == CSeqFeatData::eQual_number
             || qual_type == CSeqFeatData::eQual_protein_id
-            || qual_type == CSeqFeatData::eQual_transl_except
+            //|| qual_type == CSeqFeatData::eQual_transl_except
             || qual_type == CSeqFeatData::eQual_transl_table
             || qual_type == CSeqFeatData::eQual_translation
             || qual_type == CSeqFeatData::eQual_allele
