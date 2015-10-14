@@ -288,9 +288,9 @@ static SERV_ITER x_Open(const char*         service,
 #ifdef NCBI_CXX_TOOLKIT
                                 &&
                                 !(do_lbos = s_IsMapperConfigured
-                                  (service, REG_CONN_LBOS_ENABLE))))
+                                  (service, REG_CONN_LBOS_ENABLE))
 #endif /*NCBI_CXX_TOOLKIT*/
-         )
+                                )))
 
 #ifdef NCBI_CXX_TOOLKIT
         &&
