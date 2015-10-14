@@ -233,6 +233,9 @@ s_MultiSeqGetMinLength(void* multiseq_handle, void*)
     for (index=0; index<(*seq_info)->GetNumSeqs(); ++index)
         retval = MIN(retval, (*seq_info)->GetSeqBlk(index)->length);
 
+    if(retval < BLAST_SEQSRC_MINLENGTH)
+	retval = BLAST_SEQSRC_MINLENGTH;
+
     return retval;
 }
 
