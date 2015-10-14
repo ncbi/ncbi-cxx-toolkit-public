@@ -255,8 +255,10 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
         case CSeq_id::e_Tpe:
         case CSeq_id::e_Tpd:
             if ( IsHistAssemblyMissing(ctx)  &&  ctx.IsNa() ) {
+                CConstRef<CSeq_id> labelid = sequence::GetId(bsh, sequence::eGetId_Best).GetSeqId();
+                string label = labelid ? labelid->AsFastaString() : id.AsFastaString();
                 PostErr(eDiag_Info, eErr_SEQ_INST_HistAssemblyMissing,
-                    "TPA record " + id.AsFastaString() +
+                    "TPA record " + label +
                     " should have Seq-hist.assembly for PRIMARY block", 
                     ctx);
             }

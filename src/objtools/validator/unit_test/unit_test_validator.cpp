@@ -2562,7 +2562,7 @@ BOOST_AUTO_TEST_CASE(Test_MultipleAccessions)
 
     CLEAR_ERRORS
     expected_errors.push_back(new CExpectedError("AY123456.1", eDiag_Error, "ConflictingIdsOnBioseq", "Conflicting ids on a Bioseq: (gb|AY123456.1| - tpg|AY123457.1|)"));
-    expected_errors.push_back (new CExpectedError("AY123456.1", eDiag_Info, "HistAssemblyMissing", "TPA record tpg|AY123457.1| should have Seq-hist.assembly for PRIMARY block"));
+    expected_errors.push_back (new CExpectedError("AY123456.1", eDiag_Info, "HistAssemblyMissing", "TPA record gb|AY123456.1| should have Seq-hist.assembly for PRIMARY block"));
     expected_errors.push_back(new CExpectedError("AY123456.1", eDiag_Error, "MultipleAccessions", "Multiple accessions on sequence with gi number"));
 
     eval = validator.Validate(seh, options);
@@ -2574,7 +2574,7 @@ BOOST_AUTO_TEST_CASE(Test_MultipleAccessions)
     other_acc->SetTpe().SetVersion(1);
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors[0]->SetErrMsg("Conflicting ids on a Bioseq: (gb|AY123456.1| - tpe|AY123457.1|)");
-    expected_errors[1]->SetErrMsg("TPA record tpe|AY123457.1| should have Seq-hist.assembly for PRIMARY block");
+    expected_errors[1]->SetErrMsg("TPA record gb|AY123456.1| should have Seq-hist.assembly for PRIMARY block");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -2584,7 +2584,7 @@ BOOST_AUTO_TEST_CASE(Test_MultipleAccessions)
     other_acc->SetTpd().SetVersion(1);
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors[0]->SetErrMsg("Conflicting ids on a Bioseq: (gb|AY123456.1| - tpd|AY123457.1|)");
-    expected_errors[1]->SetErrMsg("TPA record tpd|AY123457.1| should have Seq-hist.assembly for PRIMARY block");
+    expected_errors[1]->SetErrMsg("TPA record gb|AY123456.1| should have Seq-hist.assembly for PRIMARY block");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
