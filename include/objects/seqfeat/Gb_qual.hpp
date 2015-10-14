@@ -78,6 +78,8 @@ public:
     static bool IsLegalMobileElementValue(const string& val);
     static void GetMobileElementValueElements(const string& val, string& element_type, string& element_name);
 
+    static bool IsIllegalQualName(const string& val);
+
 private:
     // Prohibit copy constructor and assignment operator
     CGb_qual(const CGb_qual& value);

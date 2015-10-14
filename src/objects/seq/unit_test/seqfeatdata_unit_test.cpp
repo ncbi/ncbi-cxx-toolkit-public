@@ -44,6 +44,7 @@
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/OrgName.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
+#include <objects/seqfeat/Gb_qual.hpp>
 #include <objects/pub/Pub.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/biblio/Cit_art.hpp>
@@ -1179,4 +1180,11 @@ BOOST_AUTO_TEST_CASE(Test_SetRnaProductName)
     BOOST_CHECK_EQUAL(rna->GetExt().IsTRNA(), true);
     BOOST_CHECK_EQUAL(rna->GetExt().GetTRNA().GetAa().GetNcbieaa(), 83);
     BOOST_CHECK_EQUAL(remainder, kEmptyStr);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_IsIllegalQualName)
+{
+    BOOST_CHECK_EQUAL(CGb_qual::IsIllegalQualName("exception"), true);
+    BOOST_CHECK_EQUAL(CGb_qual::IsIllegalQualName("number"), false);
 }

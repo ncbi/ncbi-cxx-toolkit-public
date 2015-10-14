@@ -267,6 +267,36 @@ bool CGb_qual::IsLegalMobileElementValue(const string& val)
     }
 }
 
+
+static string s_IllegalQualNameStrings[] = {
+    "anticodon",
+    "citation",
+    "codon_start",
+    "db_xref",
+    "evidence",
+    "exception",
+    "gene",
+    "note",
+    "protein_id",
+    "pseudo",
+    "transcript_id",
+    "translation",
+    "transl_except",
+    "transl_table"
+};
+
+bool CGb_qual::IsIllegalQualName(const string& val)
+{
+    for (size_t i = 0;
+        i < sizeof(s_IllegalQualNameStrings) / sizeof(string);
+        ++i) {
+        if (NStr::EqualNocase(val, s_IllegalQualNameStrings[i])) {
+            return true;
+        }
+    }
+    return false;
+}
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
