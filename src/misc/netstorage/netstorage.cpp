@@ -32,7 +32,6 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/resource_info.hpp>
-#include <misc/netstorage/netstorage.hpp>
 #include "object.hpp"
 
 

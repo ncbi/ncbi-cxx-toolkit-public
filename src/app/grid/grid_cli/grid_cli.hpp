@@ -41,8 +41,6 @@
 #include <connect/services/netstorage_admin.hpp>
 #include <connect/services/compound_id.hpp>
 
-#include <misc/netstorage/netstorage.hpp>
-
 #include "util.hpp"
 
 #define GRID_APP_NAME "grid_cli"

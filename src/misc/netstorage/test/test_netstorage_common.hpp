@@ -35,7 +35,7 @@
 #include <boost/type_traits/integral_constant.hpp>
 
 #include <corelib/ncbi_system.hpp>
-#include <misc/netstorage/netstorage.hpp>
+#include <connect/services/netstorage_impl.hpp>
 
 BEGIN_NCBI_SCOPE
 

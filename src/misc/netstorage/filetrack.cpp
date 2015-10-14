@@ -37,8 +37,6 @@
 #include <connect/services/netstorage.hpp>
 #include <connect/services/ns_output_parser.hpp>
 
-#include <misc/netstorage/netstorage.hpp>
-
 #include <connect/ncbi_gnutls.h>
 
 #include <util/random_gen.hpp>

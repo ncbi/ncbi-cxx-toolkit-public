@@ -33,8 +33,6 @@
 
 #include <connect/services/netstorage_impl.hpp>
 
-#include <misc/netstorage/netstorage.hpp>
-
 #include "grid_cli.hpp"
 #include "util.hpp"
 

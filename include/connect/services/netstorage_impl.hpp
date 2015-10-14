@@ -502,6 +502,69 @@ NCBI_XCONNECT_EXPORT
 CNetStorageObjectInfo g_CreateNetStorageObjectInfo(const string& object_loc,
         const CJsonNode& object_info_node);
 
+class CDirectNetStorageObject : public CNetStorageObject
+{
+public:
+    CDirectNetStorageObject(EVoid);
+    string Relocate(TNetStorageFlags flags);
+    bool Exists();
+    void Remove();
+    const CNetStorageObjectLoc& Locator();
+
+private:
+    CDirectNetStorageObject(SNetStorageObjectImpl* impl);
+    friend class CDirectNetStorage;
+    friend class CDirectNetStorageByKey;
+};
+
+struct SFileTrackConfig
+{
+    const string site;
+    const string key;
+    const STimeout read_timeout;
+    const STimeout write_timeout;
+
+    SFileTrackConfig(const IRegistry& registry, const string& section = kEmptyStr);
+    SFileTrackConfig(const string& site, const string& key);
+};
+
+class CDirectNetStorage : public CNetStorage
+{
+public:
+    CDirectNetStorage(
+        const SFileTrackConfig&     filetrack_config,
+        CNetICacheClient::TInstance icache_client,
+        CCompoundIDPool::TInstance  compound_id_pool,
+        const string&               app_domain,
+        TNetStorageFlags            default_flags = 0);
+
+    CDirectNetStorageObject Create(
+        const string& service_name,
+        Int8 object_id,
+        TNetStorageFlags flags);
+
+    CNetStorageObject Create(TNetStorageFlags flags = 0)
+    {
+        return CNetStorage::Create(flags);
+    }
+
+    CDirectNetStorageObject Open(const string& object_loc);
+};
+
+class CDirectNetStorageByKey : public CNetStorageByKey
+{
+public:
+    CDirectNetStorageByKey(
+        const SFileTrackConfig&     filetrack_config,
+        CNetICacheClient::TInstance icache_client,
+        CCompoundIDPool::TInstance  compound_id_pool,
+        const string&               app_domain,
+        TNetStorageFlags            default_flags = 0);
+
+    CDirectNetStorageObject Open(const string& unique_key,
+            TNetStorageFlags flags = 0);
+};
+
 END_NCBI_SCOPE
 
 #endif  /* CONNECT_SERVICES___NETSTORAGE_IMPL__HPP */
