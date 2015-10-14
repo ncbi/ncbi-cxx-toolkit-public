@@ -114,6 +114,9 @@
 #include <objtools/edit/struc_comm_field.hpp>
 #include <objtools/edit/gb_block_field.hpp>
 
+#include <common/test_assert.h>  /* This header must go last */
+
+
 // for writing out tmp files
 
 BEGIN_NCBI_SCOPE

@@ -61,6 +61,8 @@
 #include <objtools/edit/source_edit.hpp>
 #include <objtools/edit/capitalization_string.hpp>
 
+#include <common/test_assert.h>  /* This header must go last */
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)

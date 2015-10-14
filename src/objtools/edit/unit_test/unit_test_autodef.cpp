@@ -114,6 +114,10 @@
 #include <serial/objostrasn.hpp>
 #include <serial/objostrasnb.hpp>
 
+
+#include <common/test_assert.h>  /* This header must go last */
+
+
 extern const char* sc_TestEntryCollidingLocusTags;
 
 BEGIN_NCBI_SCOPE

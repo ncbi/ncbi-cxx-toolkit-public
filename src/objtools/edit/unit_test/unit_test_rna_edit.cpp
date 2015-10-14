@@ -46,6 +46,8 @@
 // This header must be included before all Boost.Test headers if there are any
 #include <corelib/test_boost.hpp>
 
+#include <common/test_assert.h>  /* This header must go last */
+
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);

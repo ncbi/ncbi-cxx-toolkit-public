@@ -123,6 +123,10 @@
 #include <objtools/edit/cds_fix.hpp>
 
 
+#include <common/test_assert.h>  /* This header must go last */
+
+
+
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
