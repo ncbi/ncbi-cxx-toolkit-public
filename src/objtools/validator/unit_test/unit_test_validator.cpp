@@ -6582,7 +6582,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadSpecificHost)
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_nat_host, "Aedes sp.");
     expected_errors[0]->SetErrCode("AmbiguousSpecificHost");
     expected_errors[0]->SetSeverity(eDiag_Info);
-    expected_errors[0]->SetErrMsg("Specific host value is ambiguous: Aedes");
+    expected_errors[0]->SetErrMsg("Specific host value is ambiguous: Aedes sp.");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 

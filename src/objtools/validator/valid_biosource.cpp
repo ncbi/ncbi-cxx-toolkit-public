@@ -2379,6 +2379,27 @@ TSpecificHostWithParentList& host_list)
 }
 
 
+string s_GetNthSpecificHost(const CBioSource& src, size_t n)
+{
+    size_t found = 0;
+    FOR_EACH_ORGMOD_ON_BIOSOURCE(mod_it, src)
+    {
+        if ((*mod_it)->IsSetSubtype()
+            && (*mod_it)->GetSubtype() == COrgMod::eSubtype_nat_host
+            && (*mod_it)->IsSetSubname()) {
+            string host = SpecificHostValueToCheck((*mod_it)->GetSubname());
+            if (!NStr::IsBlank(host)) {
+                if (found == n) {
+                    return (*mod_it)->GetSubname();
+                } else {
+                    found++;
+                }
+            }
+        }
+    }
+    return kEmptyStr;
+}
+
 void CValidError_imp::ValidateSpecificHost
 (const vector<CConstRef<CSeqdesc> > & src_descs,
 const vector<CConstRef<CSeq_entry> > & desc_ctxs,
@@ -2390,11 +2411,21 @@ const vector<CConstRef<CSeq_feat> > & src_feats)
     if (reply && reply->IsSetReply()) {
         CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
         TSpecificHostWithParentList::iterator org_it = host_list.begin();
+        size_t list_pos = 0;
+        size_t multi_host = 0; // multi_host is used to calculate when multiple hosts
+                               // are present on the same source
 
         // process descriptor and feature responses
         while (reply_it != reply->GetReply().end() && org_it != host_list.end()) {
             string host = (*org_it).GetOrgref().GetTaxname();
-            string err_str = InterpretSpecificHostResult(host, **reply_it);
+            string orig_host = kEmptyStr;
+            if (org_it->HasParentSeqdesc()) {
+                orig_host = s_GetNthSpecificHost(org_it->GetSeqdescParent().GetSource(), multi_host);
+            } else {
+                orig_host = s_GetNthSpecificHost(org_it->GetSeqfeatParent().GetData().GetBiosrc(), multi_host);
+            }
+
+            string err_str = InterpretSpecificHostResult(host, **reply_it, orig_host);
             if (!NStr::IsBlank(err_str)) {
                 EErrType et = eErr_SEQ_DESCR_BadSpecificHost;
                 EDiagSev sev = eDiag_Warning;
@@ -2412,6 +2443,7 @@ const vector<CConstRef<CSeq_feat> > & src_feats)
             }
             ++reply_it;
             ++org_it;
+            ++list_pos;
         }
     }
 }
