@@ -134,12 +134,12 @@ public:
     /// This restricts the subject database to this list of GIs (this is not
     /// supported yet on the server end).
     /// @param gi_list list of GIs to restrict the search to [in]
-    void SetGIList(const list<Int4> & gi_list);
+    void SetGIList(const list<TGi> & gi_list);
 
     /// This excludes the provided GIs from the subject database (this is not
     /// supported yet on the server end).
     /// @param gi_list list of GIs to exclude [in]
-    void SetNegativeGIList(const list<Int4> & gi_list);
+    void SetNegativeGIList(const list<TGi> & gi_list);
     
     /// Sets the filtering algorithm ID to be applied to the BLAST database
     /// (not supported by server yet)
@@ -588,6 +588,11 @@ private:
     /// @param value Pointer to list of integers to use.
     void x_SetOneParam(objects::CBlast4Field & field, const list<int> * value);
     
+    /// Set a list of 8 byte integers.
+    /// @param field CBlast4Field object corresponding to option.
+    /// @param value Pointer to list of integers to use.
+    void x_SetOneParam(objects::CBlast4Field & field, const list<Int8> * value);
+
     /// Set a string parameter.
     /// @param field CBlast4Field object corresponding to option.
     /// @param value Pointer to pointer to null delimited string.
@@ -802,10 +807,10 @@ private:
     string m_FinalDbSeq;
     
     /// GI list.
-    list<Int4> m_GiList;
+    list<TGi> m_GiList;
 
     /// Negative GI list.
-    list<Int4> m_NegativeGiList;
+    list<TGi> m_NegativeGiList;
 
     /// filtering algorithm to use in the database
     int m_DbFilteringAlgorithmId;

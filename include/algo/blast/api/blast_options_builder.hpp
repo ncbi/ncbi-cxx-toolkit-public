@@ -111,13 +111,13 @@ public:
     bool HaveGiList();
     
     /// Get the GI list.
-    list<int> GetGiList();
+    list<TGi> GetGiList();
     
     /// Check whether a negative GI list is specified.
     bool HaveNegativeGiList();
     
     /// Get the negative GI list.
-    list<int> GetNegativeGiList();
+    list<TGi> GetNegativeGiList();
 
     /// Check whether a database filtering algorithm ID is specified
     bool HasDbFilteringAlgorithmId();
@@ -282,10 +282,10 @@ private:
     SOptional<int>         m_FinalDbSeq;
     
     /// The GI list (or none).
-    SOptional< list<int> > m_GiList;
+    SOptional< list<TGi> > m_GiList;
     
     /// The negative GI list (or none).
-    SOptional< list<int> > m_NegativeGiList;
+    SOptional< list<TGi> > m_NegativeGiList;
 
     /// The GI list (or none).
     SOptional<int> m_DbFilteringAlgorithmId;

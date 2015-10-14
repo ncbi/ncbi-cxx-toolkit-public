@@ -250,7 +250,16 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
         } else if (CBlast4Field::Get(eBlastOpt_GapOpeningCost).Match(p)) {
             bo.SetGapOpeningCost(v.GetInteger());
         } else if (CBlast4Field::Get(eBlastOpt_GiList).Match(p)) {
+			#ifdef NCBI_STRICT_GI
+        	const list<int>& int_list = v.GetInteger_list();
+        	list<TGi> gi_list;
+        	ITERATE ( list<int>, it, int_list ) {
+        		gi_list.push_back(GI_FROM(int, *it));
+        	}
+        	m_GiList = gi_list;
+			#else
             m_GiList = v.GetInteger_list();
+			#endif
         } else if (CBlast4Field::Get(eBlastOpt_GapTracebackAlgorithm).Match(p)) {
             bo.SetGapTracebackAlgorithm((EBlastTbackExt) v.GetInteger());
         } else if (CBlast4Field::Get(eBlastOpt_GapTrigger).Match(p)) {
@@ -345,7 +354,16 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
 
     case 'N':
         if (CBlast4Field::Get(eBlastOpt_NegativeGiList).Match(p)) {
+			#ifdef NCBI_STRICT_GI
+        	const list<int>& int_list = v.GetInteger_list();
+        	list<TGi> gi_list;
+        	ITERATE ( list<int>, it, int_list ) {
+        		gi_list.push_back(GI_FROM(int, *it));
+        	}
+        	m_NegativeGiList = gi_list;
+			#else
             m_NegativeGiList = v.GetInteger_list();
+			#endif
         } else {
             found = false;
         }
@@ -646,7 +664,7 @@ bool CBlastOptionsBuilder::HaveGiList()
     return m_GiList.Have();
 }
 
-list<int> CBlastOptionsBuilder::GetGiList()
+list<TGi> CBlastOptionsBuilder::GetGiList()
 {
     return m_GiList.Get();
 }
@@ -687,7 +705,7 @@ bool CBlastOptionsBuilder::HaveNegativeGiList()
     return m_NegativeGiList.Have();
 }
 
-list<int> CBlastOptionsBuilder::GetNegativeGiList()
+list<TGi> CBlastOptionsBuilder::GetNegativeGiList()
 {
     return m_NegativeGiList.Get();
 }

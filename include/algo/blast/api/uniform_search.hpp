@@ -109,7 +109,7 @@ public:
 class NCBI_XBLAST_EXPORT CSearchDatabase : public CObject {
 public:
     /// Define a list of gis
-    typedef vector<int> TGiList;
+    typedef vector<TGi> TGiList;
 
     /// Molecule of the BLAST database
     enum EMoleculeType {

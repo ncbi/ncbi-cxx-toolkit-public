@@ -948,6 +948,21 @@ void CRemoteBlast::x_SetOneParam(objects::CBlast4Field & field,
 }
 
 void CRemoteBlast::x_SetOneParam(objects::CBlast4Field & field,
+                                 const list<Int8> * x)
+{
+    CRef<CBlast4_value> v(new CBlast4_value);
+    v->SetBig_integer_list() = *x;
+
+    CRef<CBlast4_parameter> p(new CBlast4_parameter);
+    p->SetName(field.GetName());
+    p->SetValue(*v);
+    _ASSERT(field.Match(*p));
+
+    m_QSR->SetProgram_options().Set().push_back(p);
+}
+
+
+void CRemoteBlast::x_SetOneParam(objects::CBlast4Field & field,
                                  const char ** x)
 {
     CRef<CBlast4_value> v(new CBlast4_value);
@@ -1392,7 +1407,7 @@ void CRemoteBlast::x_Init(CRef<CBlastOptionsHandle>   opts_handle,
     {{
         const CSearchDatabase::TGiList& tmplist = db.GetGiListLimitation();
         if ( !tmplist.empty() ) {
-            list<Int4> gilist;
+            list<TGi> gilist;
             copy(tmplist.begin(), tmplist.end(), back_inserter(gilist));
             SetGIList(gilist);
         }
@@ -1403,7 +1418,7 @@ void CRemoteBlast::x_Init(CRef<CBlastOptionsHandle>   opts_handle,
         const CSearchDatabase::TGiList& tmplist = 
             db.GetNegativeGiListLimitation();
         if ( !tmplist.empty() ) {
-            list<Int4> gilist;
+            list<TGi> gilist;
             copy(tmplist.begin(), tmplist.end(), back_inserter(gilist));
             SetNegativeGIList(gilist);
         }
@@ -1435,7 +1450,7 @@ CRemoteBlast::~CRemoteBlast()
 {
 }
 
-void CRemoteBlast::SetGIList(const list<Int4> & gi_list)
+void CRemoteBlast::SetGIList(const list<TGi> & gi_list)
 {
     if (gi_list.empty()) {
         return;
@@ -1443,8 +1458,16 @@ void CRemoteBlast::SetGIList(const list<Int4> & gi_list)
         NCBI_THROW(CBlastException, eNotSupported, 
            "Submitting gi lists remotely is currently not supported");
     }
-    x_SetOneParam(CBlast4Field::Get(eBlastOpt_GiList), & gi_list);
     
+	#ifdef NCBI_STRICT_GI
+        	list<int> int_gi_list;
+        	ITERATE ( list<TGi>, it, gi_list ) {
+        		int_gi_list.push_back(GI_TO( int, *it));
+        	}
+        x_SetOneParam(CBlast4Field::Get(eBlastOpt_GiList), & int_gi_list);
+	#else
+        x_SetOneParam(CBlast4Field::Get(eBlastOpt_GiList), & gi_list);
+	#endif
     m_GiList.clear();
     copy(gi_list.begin(), gi_list.end(), back_inserter(m_GiList));
 }
@@ -1480,7 +1503,7 @@ CRemoteBlast::GetSubjectMaskingType() const
     return m_SubjectMaskingType;
 }
 
-void CRemoteBlast::SetNegativeGIList(const list<Int4> & gi_list)
+void CRemoteBlast::SetNegativeGIList(const list<TGi> & gi_list)
 {
     if (gi_list.empty()) {
         return;
@@ -1488,7 +1511,15 @@ void CRemoteBlast::SetNegativeGIList(const list<Int4> & gi_list)
         NCBI_THROW(CBlastException, eNotSupported, 
            "Submitting negative gi lists remotely is currently not supported");
     }
-    x_SetOneParam(CBlast4Field::Get(eBlastOpt_NegativeGiList), & gi_list);
+	#ifdef NCBI_STRICT_GI
+       	list<int> int_gi_list;
+       	ITERATE ( list<TGi>, it, gi_list ) {
+       		int_gi_list.push_back(GI_TO( int, *it));
+       	}
+        x_SetOneParam(CBlast4Field::Get(eBlastOpt_GiList), & int_gi_list);
+	#else
+        x_SetOneParam(CBlast4Field::Get(eBlastOpt_NegativeGiList), & gi_list);
+	#endif
     
     m_NegativeGiList.clear();
     copy(gi_list.begin(), gi_list.end(), back_inserter(m_NegativeGiList));

@@ -406,14 +406,30 @@ void CExportStrategy::x_Process_SearchDb(CRef<CSearchDatabase> & db)
     const CSearchDatabase::TGiList& gi_list_limit = db->GetGiListLimitation();
     if (!gi_list_limit.empty())
     {
-    	x_AddParameterToProgramOptions(CBlast4Field::Get(eBlastOpt_GiList), gi_list_limit);
+		#ifdef NCBI_STRICT_GI
+       		vector<int> int_gi_list;
+       		ITERATE ( vector<TGi>, it, gi_list_limit ) {
+       			int_gi_list.push_back(GI_TO( int, *it));
+       		}
+       		x_AddParameterToProgramOptions(CBlast4Field::Get(eBlastOpt_GiList), int_gi_list);
+		#else
+    		x_AddParameterToProgramOptions(CBlast4Field::Get(eBlastOpt_GiList), gi_list_limit);
+		#endif
     }
 
     // Set the negative GI list
     const CSearchDatabase::TGiList& neg_gi_list = db->GetNegativeGiListLimitation();
     if (!neg_gi_list.empty())
     {
-    	x_AddParameterToProgramOptions(CBlast4Field::Get(eBlastOpt_NegativeGiList), neg_gi_list);
+		#ifdef NCBI_STRICT_GI
+       		vector<int> int_gi_list;
+       		ITERATE ( vector<TGi>, it, neg_gi_list) {
+       			int_gi_list.push_back(GI_TO( int, *it));
+       		}
+       		x_AddParameterToProgramOptions(CBlast4Field::Get(eBlastOpt_NegativeGiList), int_gi_list);
+		#else
+       		x_AddParameterToProgramOptions(CBlast4Field::Get(eBlastOpt_NegativeGiList), neg_gi_list);
+		#endif
     }
 
     // Set the filtering algorithms
@@ -628,6 +644,24 @@ void CExportStrategy::x_AddParameterToProgramOptions(objects::CBlast4Field & fie
 
     m_QueueSearchRequest->SetProgram_options().Set().push_back(p);
 }
+
+void CExportStrategy::x_AddParameterToProgramOptions(objects::CBlast4Field & field,
+                                 	 	    		 const vector<Int8> & int_list)
+{
+	list<Int8> tmp_list;
+    copy(int_list.begin(), int_list.end(), back_inserter(tmp_list));
+
+    CRef<CBlast4_parameter> p(new CBlast4_parameter);
+    p->SetName(field.GetName());
+
+    CRef<CBlast4_value> v(new CBlast4_value);
+    v->SetBig_integer_list() = tmp_list;
+    p->SetValue(*v);
+    _ASSERT(field.Match(*p));
+
+    m_QueueSearchRequest->SetProgram_options().Set().push_back(p);
+}
+
 
 void CExportStrategy::x_AddParameterToProgramOptions(objects::CBlast4Field & field,
                                  	 	    		 const string & str)

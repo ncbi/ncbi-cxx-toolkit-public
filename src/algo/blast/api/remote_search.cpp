@@ -112,7 +112,7 @@ CRemoteBlast & CRemoteSeqSearch::x_RemoteBlast()
         const CSearchDatabase::TGiList& kGiList = 
             m_Subject->GetGiListLimitation();
         if ( !kGiList.empty() ) {
-            list<Int4> temp(kGiList.begin(), kGiList.end());
+            list<TGi> temp(kGiList.begin(), kGiList.end());
             m_RemoteBlast->SetGIList(temp);
         }
         
@@ -333,7 +333,7 @@ CRemoteBlast & CRemotePssmSearch::x_RemoteBlast()
         const CSearchDatabase::TGiList& kGiList = 
             m_Subject->GetGiListLimitation();
         if ( !kGiList.empty() ) {
-            list<Int4> temp(kGiList.begin(), kGiList.end());
+            list<TGi> temp(kGiList.begin(), kGiList.end());
             m_RemoteBlast->SetGIList(temp);
         }
     }

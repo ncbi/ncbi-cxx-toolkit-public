@@ -255,7 +255,7 @@ CSearchDatabase::x_InitializeDb() const
         m_SeqDb.Reset(new CSeqDB(m_DbName, seq_type, m_GiList));
 
     } else if (! m_NegativeGiList.Empty() && ! m_NegativeGiList->Empty()) {
-        vector<int> gis;
+        vector<TGi> gis;
         m_NegativeGiList->GetGiList(gis);
         CSeqDBIdSet idset(gis, CSeqDBIdSet::eGi, false);
         m_SeqDb.Reset(new CSeqDB(m_DbName, seq_type, idset));

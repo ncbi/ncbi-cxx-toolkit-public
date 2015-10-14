@@ -117,7 +117,7 @@ s_SeqDbGetGiList(void* seqdb_handle, void* args)
     if (!datap || !oid)
        return NULL;
 
-    vector<int> gis;
+    vector<TGi> gis;
     datap->GetGis(*oid, gis);
 
     Blast_GiList* retval = Blast_GiListNewEx(gis.size());

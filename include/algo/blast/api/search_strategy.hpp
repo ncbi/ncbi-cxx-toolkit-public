@@ -244,7 +244,8 @@ private:
 	                   	 	    		const int int_value);
 	void x_AddParameterToProgramOptions(objects::CBlast4Field & field,
 										const vector<int> & int_list);
-
+	void x_AddParameterToProgramOptions(objects::CBlast4Field & field,
+										const vector<Int8> & int_list);
 	void x_AddParameterToProgramOptions(objects::CBlast4Field & field,
                                         const string & str);
 
