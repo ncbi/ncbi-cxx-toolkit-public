@@ -173,26 +173,7 @@ static int/*bool*/ s_IsMapperConfigured(const char* service, const char* key)
 }
 
 
-/** @brief Based on service name, find hosts and return first found host
- *
- * Parameters info and host_info are optional and can be zeroes
- *
- * @param[in]  service         The name of service of which to look servers for
- * @param[in]  ismask          If service name is a wildcard (can be zero)
- * @param[in]  types           Types of server that will be accepted
- * @param[in]  preferred_host  Optional (can be zero)
- * @param[in]  preferred_port  Optional (can be zero)
- * @param[in]  preference      Optional (can be zero)
- * @param[in]  net_info        Connection information of the  current host
- * @param[in]  skip            Optional (can be zero)
- * @param[in]  n_skip          Optional (can be zero)
- * @param[in]  external        Optional (can be zero)
- * @param[in]  arg             Optional (can be zero)
- * @param[in]  val             Optional (can be zero)
- * @param[in]  info            Optional (can be zero)
- * @param[in]  host_info       Optional (can be zero)
- */
-static SERV_ITER s_Open(const char*         service,
+static SERV_ITER x_Open(const char*         service,
                         unsigned/*bool*/    ismask,
                         TSERV_Type          types,
                         unsigned int        preferred_host,
@@ -207,23 +188,12 @@ static SERV_ITER s_Open(const char*         service,
                         SSERV_Info**        info,
                         HOST_INFO*          host_info)
 {
-    int/*bool*/   do_lbsmd = -1/*-1 means unassigned, 0 means disabled*/,
-                  do_dispd = -1/*-1 means unassigned, 0 means disabled*/,
-                  do_lbos  = -1/*-1 means unassigned, 0 means disabled*/;
-
-    /* We consider changes in code in "do_xxx" more important, since
-     * corresponding variables are for debugging purposes mostly.
-     */
-    if (do_dispd == -1) {
-        do_dispd = !s_IsMapperConfigured(service, REG_CONN_DISPD_DISABLE);
-    }
-    if (do_lbsmd == -1) {
-        do_lbsmd = !s_IsMapperConfigured(service, REG_CONN_LBSMD_DISABLE);
-    }
-    if (do_lbos == -1) {
-        do_lbos  =  s_IsMapperConfigured(service, REG_CONN_LBOS_ENABLE);
-    }
-
+    int/*bool*/
+        do_lbsmd = -1/*unassigned*/,
+#ifdef NCBI_CXX_TOOLKIT
+        do_lbos  = -1/*unassigned*/,
+#endif /*NCBI_CXX_TOOLKIT*/
+        do_dispd = -1/*unassigned*/;
     const SSERV_VTable* op;
     SERV_ITER iter;
     const char* s;
@@ -251,6 +221,8 @@ static SERV_ITER s_Open(const char*         service,
         iter->ismask        = 1;
     if (types & fSERV_IncludeDown)
         iter->ok_down       = 1;
+    if (types & fSERV_IncludeReserved)
+        iter->ok_reserved   = 1;
     if (types & fSERV_IncludeSuppressed)
         iter->ok_suppressed = 1;
     if (types & fSERV_ReverseDns)
@@ -290,6 +262,7 @@ static SERV_ITER s_Open(const char*         service,
         }
     }
     assert(n_skip == iter->n_skip);
+    iter->o_skip = iter->n_skip;
 
     if (net_info) {
         if (net_info->firewall)
@@ -301,39 +274,37 @@ static SERV_ITER s_Open(const char*         service,
     } else
         do_dispd = 0/*false*/;
     /* Ugly optimization not to access the registry more than necessary */
-    if (
-            /*Search locally*/
-    	    (
-                !s_IsMapperConfigured(service, REG_CONN_LOCAL_ENABLE)       ||
-                !(op = SERV_LOCAL_Open(iter, info, host_info))
-    	    )
-    	    &&
-		    /*Search in shared memory*/
-    	    (
-                !do_lbsmd
-                ||
-                !(
-                      op = SERV_LBSMD_Open(iter, info, host_info,
-                                                        !(do_lbos || do_dispd))
-                 )
-    	    )
+    if ((!s_IsMapperConfigured(service, REG_CONN_LOCAL_ENABLE)               ||
+         !(op = SERV_LOCAL_Open(iter, info, host_info)))
+
+        &&
+        (!do_lbsmd                                                           ||
+         !(do_lbsmd = !s_IsMapperConfigured
+           (service, REG_CONN_LBSMD_DISABLE))                                ||
+         !(op = SERV_LBSMD_Open(iter, info, host_info,
+                                (!do_dispd                                   ||
+                                 !(do_dispd = !s_IsMapperConfigured
+                                   (service, REG_CONN_DISPD_DISABLE)))
 #ifdef NCBI_CXX_TOOLKIT
-    	    &&
-    	    /*  Search in lbos */
-    	    (
-    	        !do_lbos
-    	        ||
-		        !(op = SERV_LBOS_Open(iter, net_info, info))
-    	    )
-#endif
-    	    &&
-    	    /*Search in dispd */
-    	    (
-                !do_dispd                                                    ||
-                !(op = SERV_DISPD_Open(iter, net_info, info, host_info))
-    	    )
-    	)
-    {
+                                &&
+                                !(do_lbos = s_IsMapperConfigured
+                                  (service, REG_CONN_LBOS_ENABLE))))
+#endif /*NCBI_CXX_TOOLKIT*/
+         )
+
+#ifdef NCBI_CXX_TOOLKIT
+        &&
+        (!do_lbos                                                            ||
+         (do_lbos < 0  &&  !(do_lbos = s_IsMapperConfigured
+                             (service, REG_CONN_LBOS_ENABLE)))               ||
+         !(op = SERV_LBOS_Open(iter, net_info, info)))
+#endif /*NCBI_CXX_TOOLKIT*/
+
+        && 
+        (!do_dispd                                                           ||
+         (do_dispd < 0  &&  !(do_dispd = !s_IsMapperConfigured
+                              (service, REG_CONN_DISPD_DISABLE)))            ||
+         !(op = SERV_DISPD_Open(iter, net_info, info, host_info)))) {
         if (!do_lbsmd  &&  !do_dispd) {
             CORE_LOGF_X(1, eLOG_Error,
                         ("[%s]  No service mappers available", service));
@@ -345,64 +316,6 @@ static SERV_ITER s_Open(const char*         service,
     assert(op != 0);
     iter->op = op;
     return iter;
-}
-
-
-extern SERV_ITER SERV_OpenSimple(const char* service)
-{
-    SConnNetInfo* net_info = ConnNetInfo_Create(service);
-    SERV_ITER iter = SERV_Open(service, fSERV_Any, SERV_ANYHOST, net_info);
-    ConnNetInfo_Destroy(net_info);
-    return iter;
-}
-
-
-extern SERV_ITER SERV_Open(const char*         service,
-                           TSERV_Type          types,
-                           unsigned int        preferred_host,
-                           const SConnNetInfo* net_info)
-{
-    return s_Open(service, 0/*not mask*/, types,
-                  preferred_host, 0/*preferred_port*/, 0.0/*preference*/,
-                  net_info, 0/*skip*/, 0/*n_skip*/,
-                  0/*not external*/, 0/*arg*/, 0/*val*/,
-                  0/*info*/, 0/*host_info*/);
-}
-
-
-extern SERV_ITER SERV_OpenEx(const char*         service,
-                             TSERV_Type          types,
-                             unsigned int        preferred_host,
-                             const SConnNetInfo* net_info,
-                             SSERV_InfoCPtr      skip[],
-                             size_t              n_skip)
-{
-    return s_Open(service, 0/*not mask*/, types,
-                  preferred_host, 0/*preferred_port*/, 0.0/*preference*/,
-                  net_info, skip, n_skip,
-                  0/*not external*/, 0/*arg*/, 0/*val*/,
-                  0/*info*/, 0/*host_info*/);
-}
-
-
-SERV_ITER SERV_OpenP(const char*         service,
-                     TSERV_Type          types,
-                     unsigned int        preferred_host,
-                     unsigned short      preferred_port,
-                     double              preference,
-                     const SConnNetInfo* net_info,
-                     SSERV_InfoCPtr      skip[],
-                     size_t              n_skip,
-                     int/*bool*/         external,
-                     const char*         arg,
-                     const char*         val)
-{
-    return s_Open(service,
-                  service  &&  (!*service  ||  strpbrk(service, "?*")), types,
-                  preferred_host, preferred_port, preference,
-                  net_info, skip, n_skip,
-                  external, arg, val,
-                  0/*info*/, 0/*host_info*/);
 }
 
 
@@ -467,47 +380,117 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER   iter,
 }
 
 
-static SSERV_Info* s_GetInfo(const char*         service,
-                             TSERV_Type          types,
-                             unsigned int        preferred_host,
-                             unsigned short      preferred_port,
-                             double              preference,
-                             const SConnNetInfo* net_info,
-                             SSERV_InfoCPtr      skip[],
-                             size_t              n_skip,
-                             int /*bool*/        external,
-                             const char*         arg,
-                             const char*         val,
-                             HOST_INFO*          host_info)
+static SERV_ITER s_Open(const char*         service,
+                        unsigned/*bool*/    ismask,
+                        TSERV_Type          types,
+                        unsigned int        preferred_host,
+                        unsigned short      preferred_port,
+                        double              preference,
+                        const SConnNetInfo* net_info,
+                        SSERV_InfoCPtr      skip[],
+                        size_t              n_skip,
+                        int /*bool*/        external,
+                        const char*         arg,
+                        const char*         val,
+                        SSERV_Info**        info,
+                        HOST_INFO*          host_info)
 {
-    SSERV_Info* info;
-    SERV_ITER iter = s_Open(service, 0/*not mask*/, types,
+    SSERV_Info* x_info;
+    SERV_ITER iter = x_Open(service, ismask, types,
                             preferred_host, preferred_port, preference,
                             net_info, skip, n_skip,
                             external, arg, val,
-                            &info, host_info);
+                            &x_info, host_info);
     assert(!iter  ||  iter->op);
     if (!iter)
-        info = 0;
-    else if (!info) /* If info is empty after s_Open, we do not know the real
-                       reason, so just call search once again */
-        info = s_GetNextInfo(iter, host_info, 1/*internal*/);
-    else if (info == (SSERV_Info*)(-1L)) /* This is error 404 */
-        info = 0;
-    SERV_Close(iter);
-    return info;
+        x_info = 0;
+    else if (!x_info)
+        x_info = info ? s_GetNextInfo(iter, host_info, 1/*internal*/) : 0;
+    else if (x_info == (SSERV_Info*)(-1L)) {
+        SERV_Close(iter);
+        x_info = 0;
+        iter = 0;
+    }
+    if (info)
+        *info = x_info;
+    else if (x_info)
+        free(x_info);
+    return iter;
+}
+
+
+extern SERV_ITER SERV_OpenSimple(const char* service)
+{
+    SConnNetInfo* net_info = ConnNetInfo_Create(service);
+    SERV_ITER iter = s_Open(service, 0/*not mask*/, fSERV_Any,
+                            SERV_ANYHOST,
+                            0/*preferred_port*/, 0.0/*preference*/,
+                            net_info, 0/*skip*/, 0/*n_skip*/,
+                            0/*not external*/, 0/*arg*/, 0/*val*/,
+                            0/*info*/, 0/*host_info*/);
+    ConnNetInfo_Destroy(net_info);
+    return iter;
+}
+
+
+extern SERV_ITER SERV_Open(const char*         service,
+                           TSERV_Type          types,
+                           unsigned int        preferred_host,
+                           const SConnNetInfo* net_info)
+{
+    return s_Open(service, 0/*not mask*/, types,
+                  preferred_host, 0/*preferred_port*/, 0.0/*preference*/,
+                  net_info, 0/*skip*/, 0/*n_skip*/,
+                  0/*not external*/, 0/*arg*/, 0/*val*/,
+                  0/*info*/, 0/*host_info*/);
+}
+
+
+extern SERV_ITER SERV_OpenEx(const char*         service,
+                             TSERV_Type          types,
+                             unsigned int        preferred_host,
+                             const SConnNetInfo* net_info,
+                             SSERV_InfoCPtr      skip[],
+                             size_t              n_skip)
+{
+    return s_Open(service, 0/*not mask*/, types,
+                  preferred_host, 0/*preferred_port*/, 0.0/*preference*/,
+                  net_info, skip, n_skip,
+                  0/*not external*/, 0/*arg*/, 0/*val*/,
+                  0/*info*/, 0/*host_info*/);
+}
+
+
+SERV_ITER SERV_OpenP(const char*         service,
+                     TSERV_Type          types,
+                     unsigned int        preferred_host,
+                     unsigned short      preferred_port,
+                     double              preference,
+                     const SConnNetInfo* net_info,
+                     SSERV_InfoCPtr      skip[],
+                     size_t              n_skip,
+                     int/*bool*/         external,
+                     const char*         arg,
+                     const char*         val)
+{
+    return s_Open(service,
+                  service  &&  (!*service  ||  strpbrk(service, "?*")), types,
+                  preferred_host, preferred_port, preference,
+                  net_info, skip, n_skip,
+                  external, arg, val,
+                  0/*info*/, 0/*host_info*/);
 }
 
 
 extern SSERV_Info* SERV_GetInfoSimple(const char* service)
 {
     SConnNetInfo* net_info = ConnNetInfo_Create(service);
-    SSERV_Info* info = s_GetInfo(service, fSERV_Any,
-                                 SERV_ANYHOST/*preferred_host*/,
-                                 0/*preferred_port*/, 0.0/*preference*/,
-                                 net_info, 0/*skip*/, 0/*n_skip*/,
-                                 0/*not external*/, 0/*arg*/, 0/*val*/,
-                                 0/*host_info*/);
+    SSERV_Info* info = SERV_GetInfoP(service, fSERV_Any,
+                                     SERV_ANYHOST/*preferred_host*/,
+                                     0/*preferred_port*/, 0.0/*preference*/,
+                                     net_info, 0/*skip*/, 0/*n_skip*/,
+                                     0/*not external*/, 0/*arg*/, 0/*val*/,
+                                     0/*host_info*/);
     ConnNetInfo_Destroy(net_info);
     return info;
 }
@@ -518,11 +501,12 @@ extern SSERV_Info* SERV_GetInfo(const char*         service,
                                 unsigned int        preferred_host,
                                 const SConnNetInfo* net_info)
 {
-    return s_GetInfo(service, types,
-                     preferred_host, 0/*preferred_port*/, 0.0/*preference*/,
-                     net_info, 0/*skip*/, 0/*n_skip*/,
-                     0/*not external*/, 0/*arg*/, 0/*val*/,
-                     0/*host_info*/);
+    return SERV_GetInfoP(service, types,
+                         preferred_host,
+                         0/*preferred_port*/, 0.0/*preference*/,
+                         net_info, 0/*skip*/, 0/*n_skip*/,
+                         0/*not external*/, 0/*arg*/, 0/*val*/,
+                         0/*host_info*/);
 }
 
 
@@ -534,11 +518,12 @@ extern SSERV_Info* SERV_GetInfoEx(const char*         service,
                                   size_t              n_skip,
                                   HOST_INFO*          host_info)
 {
-    return s_GetInfo(service, types,
-                     preferred_host, 0/*preferred_port*/, 0.0/*preference*/,
-                     net_info, skip, n_skip,
-                     0/*not external*/, 0/*arg*/, 0/*val*/,
-                     host_info);
+    return SERV_GetInfoP(service, types,
+                         preferred_host,
+                         0/*preferred_port*/, 0.0/*preference*/,
+                         net_info, skip, n_skip,
+                         0/*not external*/, 0/*arg*/, 0/*val*/,
+                         host_info);
 }
 
 
@@ -555,11 +540,15 @@ SSERV_Info* SERV_GetInfoP(const char*         service,
                           const char*         val,
                           HOST_INFO*          host_info)
 {
-    return s_GetInfo(service, types,
-                     preferred_host, preferred_port, preference,
-                     net_info, skip, n_skip,
-                     external, arg, val,
-                     host_info);
+    SSERV_Info* info;
+    SERV_ITER iter = s_Open(service, 0/*not mask*/, types,
+                            preferred_host, preferred_port, preference,
+                            net_info, skip, n_skip,
+                            external, arg, val,
+                            &info, host_info);
+    assert(!info  ||  iter);
+    SERV_Close(iter);
+    return info;
 }
 
 
@@ -886,11 +875,11 @@ extern unsigned short SERV_ServerPort(const char*  name,
      */
     if (!host  ||  host == SERV_LOCALHOST)
         host = SOCK_GetLocalHostAddress(eDefault);
-    if (!(info = s_GetInfo(name, fSERV_Standalone | fSERV_Promiscuous,
-                           host, 0/*pref. port*/, -1.0/*latch host*/,
-                           0/*net_info*/, 0/*skip*/, 0/*n_skip*/,
-                           0/*not external*/, 0/*arg*/, 0/*val*/,
-                           0/*host_info*/))) {
+    if (!(info = SERV_GetInfoP(name, fSERV_Standalone | fSERV_Promiscuous,
+                               host, 0/*pref. port*/, -1.0/*latch host*/,
+                               0/*net_info*/, 0/*skip*/, 0/*n_skip*/,
+                               0/*not external*/, 0/*arg*/, 0/*val*/,
+                               0/*host_info*/))) {
         return 0;
     }
     assert(info->host == host);
