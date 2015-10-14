@@ -4300,7 +4300,7 @@ BOOST_AUTO_TEST_CASE(s_ShellEncode)
 
     {{
         CNcbiOfstream out(cmd_file.c_str());
-        out << "#! /bin/bash" << endl;
+        out << "#! /usr/bin/env bash" << endl;
 
         for (size_t i = 0;  i < sizeof(s_ShellStr) / sizeof(s_ShellStr[0]);  i++) {
             string cmd = "echo -E ";
