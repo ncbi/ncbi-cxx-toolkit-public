@@ -16,7 +16,7 @@ APP: testres_kernel
 COPY: $srcdir/src/internal/cppcore/testres/tool/templates/ $installdir
 
 #copy modules
-POSTBUILD: $srcdir/scripts/projects/testres-kernel/copy_modules.py $srcdir $bindir $installdir
+POSTBUILD: $packagedir/copy_modules.py $srcdir $bindir $installdir
 
 #ini file
 COPY: $srcdir/src/internal/cppcore/testres/kernel/testres_kernel.ini $installdir/bin
