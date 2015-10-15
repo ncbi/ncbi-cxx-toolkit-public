@@ -37,7 +37,7 @@ BEGIN_NCBI_SCOPE
 namespace
 {
 
-using namespace NImpl;
+using namespace NDirectNetStorageImpl;
 
 
 class CROState : public IState
@@ -625,7 +625,7 @@ IState* CFileTrack::StartWrite(const void* buf, size_t count,
     // If exists, delete the file first
     // TODO: Replace this with post upload file replacement
     // in SFileTrackPostRequest::FinishUpload (filetrack_file_id != unique_key)
-    // after FileTrack implements that feature.
+    // after FileTrack implements that feature (FT-85).
     bool exists = false;
     try { exists = ExistsImpl(); } catch (...) { }
     if (exists) RemoveImpl();
@@ -854,7 +854,7 @@ ISelector::Ptr CSelector::Clone(TNetStorageFlags flags)
 }
 
 
-namespace NImpl
+namespace NDirectNetStorageImpl
 {
 
 SContext::SContext(const string& domain, CNetICacheClient client,

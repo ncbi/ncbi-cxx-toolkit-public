@@ -38,7 +38,7 @@
 BEGIN_NCBI_SCOPE
 
 
-using namespace NImpl;
+using namespace NDirectNetStorageImpl;
 
 
 template <class Derived, class Base>
@@ -83,9 +83,9 @@ CDirectNetStorageObject::CDirectNetStorageObject(SNetStorageObjectImpl* impl)
 {}
 
 
-struct SNetStorageAPIImpl : public SNetStorageImpl
+struct SDirectNetStorageImpl : public SNetStorageImpl
 {
-    SNetStorageAPIImpl(const string& app_domain,
+    SDirectNetStorageImpl(const string& app_domain,
             TNetStorageFlags default_flags,
             CNetICacheClient::TInstance icache_client,
             CCompoundIDPool::TInstance compound_id_pool,
@@ -114,27 +114,27 @@ private:
 };
 
 
-CObj* SNetStorageAPIImpl::OpenImpl(const string& object_loc)
+CObj* SDirectNetStorageImpl::OpenImpl(const string& object_loc)
 {
     ISelector::Ptr selector(ISelector::Create(m_Context, object_loc));
     return new CObj(selector);
 }
 
 
-CNetStorageObject SNetStorageAPIImpl::Create(TNetStorageFlags flags)
+CNetStorageObject SDirectNetStorageImpl::Create(TNetStorageFlags flags)
 {
     ISelector::Ptr selector(ISelector::Create(m_Context, flags));
     return new CObj(selector);
 }
 
 
-CNetStorageObject SNetStorageAPIImpl::Open(const string& object_loc)
+CNetStorageObject SDirectNetStorageImpl::Open(const string& object_loc)
 {
     return OpenImpl(object_loc);
 }
 
 
-string SNetStorageAPIImpl::Relocate(const string& object_loc,
+string SDirectNetStorageImpl::Relocate(const string& object_loc,
         TNetStorageFlags flags)
 {
     ISelector::Ptr selector(ISelector::Create(m_Context, object_loc));
@@ -143,7 +143,7 @@ string SNetStorageAPIImpl::Relocate(const string& object_loc,
 }
 
 
-bool SNetStorageAPIImpl::Exists(const string& object_loc)
+bool SDirectNetStorageImpl::Exists(const string& object_loc)
 {
     ISelector::Ptr selector(ISelector::Create(m_Context, object_loc));
     CRef<CObj> net_file(new CObj(selector));
@@ -151,7 +151,7 @@ bool SNetStorageAPIImpl::Exists(const string& object_loc)
 }
 
 
-void SNetStorageAPIImpl::Remove(const string& object_loc)
+void SDirectNetStorageImpl::Remove(const string& object_loc)
 {
     ISelector::Ptr selector(ISelector::Create(m_Context, object_loc));
     CRef<CObj> net_file(new CObj(selector));
@@ -159,7 +159,7 @@ void SNetStorageAPIImpl::Remove(const string& object_loc)
 }
 
 
-CObj* SNetStorageAPIImpl::Create(TNetStorageFlags flags,
+CObj* SDirectNetStorageImpl::Create(TNetStorageFlags flags,
         const string& service, Int8 id)
 {
     ISelector::Ptr selector(ISelector::Create(m_Context, flags, service, id));
@@ -172,9 +172,9 @@ CObj* SNetStorageAPIImpl::Create(TNetStorageFlags flags,
 }
 
 
-struct SNetStorageByKeyAPIImpl : public SNetStorageByKeyImpl
+struct SDirectNetStorageByKeyImpl : public SNetStorageByKeyImpl
 {
-    SNetStorageByKeyAPIImpl(const string& app_domain,
+    SDirectNetStorageByKeyImpl(const string& app_domain,
             TNetStorageFlags default_flags,
             CNetICacheClient::TInstance icache_client,
             CCompoundIDPool::TInstance compound_id_pool,
@@ -200,14 +200,14 @@ private:
 };
 
 
-CNetStorageObject SNetStorageByKeyAPIImpl::Open(const string& key,
+CNetStorageObject SDirectNetStorageByKeyImpl::Open(const string& key,
         TNetStorageFlags flags)
 {
     return OpenImpl(key, flags);
 }
 
 
-CObj* SNetStorageByKeyAPIImpl::OpenImpl(const string& key,
+CObj* SDirectNetStorageByKeyImpl::OpenImpl(const string& key,
         TNetStorageFlags flags)
 {
     ISelector::Ptr selector(ISelector::Create(m_Context, flags, key));
@@ -215,7 +215,7 @@ CObj* SNetStorageByKeyAPIImpl::OpenImpl(const string& key,
 }
 
 
-string SNetStorageByKeyAPIImpl::Relocate(const string& key,
+string SDirectNetStorageByKeyImpl::Relocate(const string& key,
         TNetStorageFlags flags, TNetStorageFlags old_flags)
 {
     ISelector::Ptr selector(ISelector::Create(m_Context, old_flags, key));
@@ -224,7 +224,7 @@ string SNetStorageByKeyAPIImpl::Relocate(const string& key,
 }
 
 
-bool SNetStorageByKeyAPIImpl::Exists(const string& key, TNetStorageFlags flags)
+bool SDirectNetStorageByKeyImpl::Exists(const string& key, TNetStorageFlags flags)
 {
     ISelector::Ptr selector(ISelector::Create(m_Context, flags, key));
     CRef<CObj> net_file(new CObj(selector));
@@ -232,7 +232,7 @@ bool SNetStorageByKeyAPIImpl::Exists(const string& key, TNetStorageFlags flags)
 }
 
 
-void SNetStorageByKeyAPIImpl::Remove(const string& key, TNetStorageFlags flags)
+void SDirectNetStorageByKeyImpl::Remove(const string& key, TNetStorageFlags flags)
 {
     ISelector::Ptr selector(ISelector::Create(m_Context, flags, key));
     CRef<CObj> net_file(new CObj(selector));
@@ -246,7 +246,7 @@ CDirectNetStorage::CDirectNetStorage(
         const string& app_domain,
         TNetStorageFlags default_flags)
     : CNetStorage(
-            new SNetStorageAPIImpl(app_domain, default_flags, icache_client,
+            new SDirectNetStorageImpl(app_domain, default_flags, icache_client,
                 compound_id_pool, ft_config))
 {}
 
@@ -256,13 +256,13 @@ CDirectNetStorageObject CDirectNetStorage::Create(
         Int8 object_id,
         TNetStorageFlags flags)
 {
-    return Impl<SNetStorageAPIImpl>(m_Impl)->Create(flags, service_name, object_id);
+    return Impl<SDirectNetStorageImpl>(m_Impl)->Create(flags, service_name, object_id);
 }
 
 
 CDirectNetStorageObject CDirectNetStorage::Open(const string& object_loc)
 {
-    return Impl<SNetStorageAPIImpl>(m_Impl)->OpenImpl(object_loc);
+    return Impl<SDirectNetStorageImpl>(m_Impl)->OpenImpl(object_loc);
 }
 
 
@@ -273,7 +273,7 @@ CDirectNetStorageByKey::CDirectNetStorageByKey(
         const string& app_domain,
         TNetStorageFlags default_flags)
     : CNetStorageByKey(
-            new SNetStorageByKeyAPIImpl(app_domain, default_flags, icache_client,
+            new SDirectNetStorageByKeyImpl(app_domain, default_flags, icache_client,
                 compound_id_pool, ft_config))
 {
 }
@@ -282,7 +282,7 @@ CDirectNetStorageByKey::CDirectNetStorageByKey(
 CDirectNetStorageObject CDirectNetStorageByKey::Open(const string& key,
         TNetStorageFlags flags)
 {
-    return Impl<SNetStorageByKeyAPIImpl>(m_Impl)->OpenImpl(key, flags);
+    return Impl<SDirectNetStorageByKeyImpl>(m_Impl)->OpenImpl(key, flags);
 }
 
 

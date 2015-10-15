@@ -37,7 +37,7 @@
 BEGIN_NCBI_SCOPE
 
 
-namespace NImpl
+namespace NDirectNetStorageImpl
 {
 
 class CObj : public SNetStorageObjectImpl, private IState, private ILocation

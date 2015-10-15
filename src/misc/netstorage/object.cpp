@@ -34,7 +34,7 @@
 BEGIN_NCBI_SCOPE
 
 
-namespace NImpl
+namespace NDirectNetStorageImpl
 {
 
 #define RELOCATION_BUFFER_SIZE (128 * 1024)

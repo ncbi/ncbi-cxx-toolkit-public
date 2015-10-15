@@ -39,7 +39,7 @@
 BEGIN_NCBI_SCOPE
 
 
-namespace NImpl
+namespace NDirectNetStorageImpl
 {
 
 typedef CNetStorageObjectLoc TObjLoc;
@@ -68,8 +68,6 @@ struct SContext : CObject
     }
 #endif
 };
-
-// TODO: Add constness to methods where applicable
 
 class IState
 {
