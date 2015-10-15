@@ -45,6 +45,7 @@
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seq/Seq_descr.hpp>
+#include "splitter_exception.hpp"
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -178,7 +179,6 @@ int CSeqSubSplitter::Run()
     int output_index = 0;
     auto_ptr<CObjectOStream> ostr;
     bool binary = false;
-
 
     const TSeqPos pad_width = log10(output_array.size()) + 1;
 
@@ -491,7 +491,19 @@ void CSeqSubSplitter::xFlattenSeqEntry(CSeq_entry& entry,
         return;
     }
 
-    _ASSERT(entry.GetSet().GetClass() == CBioseq_set::eClass_genbank);
+    // Class has to be either genbank or pub_set
+    // These sets should not have annotations
+    const CBioseq_set& seq_set = entry.GetSet();
+
+    if (seq_set.IsSetAnnot()) {
+
+        string class_string = (seq_set.GetClass() == CBioseq_set::eClass_genbank) 
+                            ? "Genbank set" : "Pub-set";
+
+        string err_msg = "Wrapper " + class_string + "has non-empty annotation.";
+
+        NCBI_THROW(CSeqSubSplitException, eInvalidAnnot, err_msg);
+    }
 
     CSeq_descr new_descr;
     ITERATE(CSeq_descr::Tdata, it, seq_descr.Get()) {
