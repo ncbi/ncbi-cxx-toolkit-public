@@ -183,6 +183,12 @@ CId2ReaderBase::CId2ReaderBase(void)
                        "cannot load ID2 processor "<<proc_name<<": "<<exc);
         }
         if ( proc ) {
+            CID2_Request req;
+            req.SetRequest().SetInit();
+            x_SetContextData(req);
+            CID2_Request_Packet packet;
+            packet.Set().push_back(Ref(&req));
+            proc->ProcessSomeRequests(packet);
             m_Processors.push_back(proc);
         }
     }
@@ -1334,6 +1340,13 @@ void CId2ReaderBase::x_SetContextData(CID2_Request& request)
         param->SetName("log:client_name");
         param->SetValue().push_back(GetDiagContext().GetAppName());
         request.SetParams().Set().push_back(param);
+        if ( 1 ) {
+            // allow new blob-state field in several ID2 replies
+            CRef<CID2_Param> param(new CID2_Param);
+            param->SetName("id2:allow");
+            param->SetValue().push_back("*.blob-state");
+            request.SetParams().Set().push_back(param);
+        }
     }
     CRequestContext& rctx = CDiagContext::GetRequestContext();
     if ( rctx.IsSetSessionID() ) {
