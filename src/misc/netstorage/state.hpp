@@ -118,10 +118,6 @@ public:
 
 }
 
-NCBI_PARAM_DECL(string, netstorage_api, backend_storage);
-typedef NCBI_PARAM_TYPE(netstorage_api, \
-        backend_storage) TNetStorageAPI_BackendStorage;
-
 END_NCBI_SCOPE
 
 #endif

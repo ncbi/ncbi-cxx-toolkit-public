@@ -866,21 +866,17 @@ SContext::SContext(const string& domain, CNetICacheClient client,
       default_flags(flags),
       app_domain(domain)
 {
-    string backend_storage(TNetStorageAPI_BackendStorage::GetDefault());
-    TNetStorageFlags valid_flags_mask = 0;
-
-    if (strstr(backend_storage.c_str(), "netcache"))
-        valid_flags_mask |= fNST_NetCache;
-    if (strstr(backend_storage.c_str(), "filetrack"))
-        valid_flags_mask |= fNST_FileTrack;
+    const TNetStorageFlags backend_storage =
+        (icache_client          ? fNST_NetCache  : 0) |
+        (!ft_config.key.empty() ? fNST_FileTrack : 0);
 
     // If there were specific underlying storages requested
     if (TNetStorageLocFlags(default_flags)) {
         // Reduce storages to the ones that are available
-        default_flags &= valid_flags_mask;
+        default_flags &= (backend_storage | fNST_AnyAttr);
     } else {
         // Use all available underlying storages
-        default_flags |= valid_flags_mask;
+        default_flags |= backend_storage;
     }
 
     if (TNetStorageLocFlags(default_flags)) {
@@ -943,9 +939,6 @@ ISelector::Ptr ISelector::Create(SContext* context, TNetStorageFlags flags,
 
 
 }
-
-
-NCBI_PARAM_DEF(string, netstorage_api, backend_storage, "netcache, filetrack");
 
 
 END_NCBI_SCOPE

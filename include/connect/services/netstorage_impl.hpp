@@ -526,6 +526,7 @@ struct SFileTrackConfig
     const STimeout read_timeout;
     const STimeout write_timeout;
 
+    SFileTrackConfig(EVoid); // Means no FileTrack as a backend storage
     SFileTrackConfig(const IRegistry& registry, const string& section = kEmptyStr);
     SFileTrackConfig(const string& site, const string& key);
 };

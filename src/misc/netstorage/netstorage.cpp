@@ -316,6 +316,13 @@ const string s_GetDecryptedKey(const string& key)
 }
 
 
+SFileTrackConfig::SFileTrackConfig(EVoid) :
+    read_timeout(s_GetDefaultTimeout()),
+    write_timeout(s_GetDefaultTimeout())
+{
+}
+
+
 SFileTrackConfig::SFileTrackConfig(const IRegistry& reg, const string& section) :
     site(reg.GetString(s_GetSection(section), "site", "prod")),
     key(reg.GetEncryptedString(s_GetSection(section), "api_key",
