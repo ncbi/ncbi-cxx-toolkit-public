@@ -415,6 +415,14 @@ CRemoteAppLauncher::CRemoteAppLauncher(const string& sec_name,
     m_Version.reset(new CRemoteAppVersion(cmd, NStr::Tokenize(args, " ", v)));
 }
 
+// We need this explicit empty destructor,
+// so it could destruct CRemoteAppReaper and CRemoteAppVersion instances.
+// Otherwise, there would be implicit inline destructor
+// that could be placed where these classes are incomplete.
+CRemoteAppLauncher::~CRemoteAppLauncher()
+{
+}
+
 //////////////////////////////////////////////////////////////////////////////
 ///
 bool CRemoteAppLauncher::CanExec(const CFile& file)

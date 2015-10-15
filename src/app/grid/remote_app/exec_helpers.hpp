@@ -54,6 +54,7 @@ public:
     };
 
     CRemoteAppLauncher(const string& sec_name, const IRegistry&);
+    ~CRemoteAppLauncher();
 
     bool ExecRemoteApp(const vector<string>& args,
         CNcbiIstream& in, CNcbiOstream& out, CNcbiOstream& err,
