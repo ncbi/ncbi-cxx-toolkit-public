@@ -3829,7 +3829,9 @@ void CValidError_bioseq::ValidateSeqGap(const CSeq_gap& gap, const CBioseq& seq)
         }
         if (gap.IsSetType()) {
             int gaptype = gap.GetType();
-            if (gaptype != CSeq_gap::eType_repeat &&
+            if (gaptype != CSeq_gap::eType_fragment &&
+                gaptype != CSeq_gap::eType_clone &&
+                gaptype != CSeq_gap::eType_repeat &&
                 gaptype != CSeq_gap::eType_scaffold) {
                 EDiagSev sev = eDiag_Critical;
                 if (m_Imp.IsRefSeq()) {
