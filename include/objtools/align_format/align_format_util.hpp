@@ -489,8 +489,9 @@ public:
     /// @param is_protein are these databases protein? [in]
     /// @param numSeqs number of sequecnes in set [in]
     /// @param numLetters size of the set [in]
+    /// @param tag Hint to user about subject sequences [in]
     static void FillScanModeBlastDbInfo(vector<SDbInfo>& retval,
-                           bool is_protein, int numSeqs, Int8 numLetters);
+                           bool is_protein, int numSeqs, Int8 numLetters, string& tag);
 
     /// Retrieve BLAST database information for presentation in BLAST report
     /// @param dbname space-separated list of BLAST database names [in]

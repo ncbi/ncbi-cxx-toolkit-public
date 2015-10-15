@@ -156,7 +156,8 @@ int CBlastnApp::Run(void)
                                m_CmdLineArgs->GetTask() == "megablast",
                                opt.GetMBIndexLoaded(),
                                NULL, NULL,
-                               GetCmdlineArgs(GetArguments()));
+                               GetCmdlineArgs(GetArguments()),
+			       GetSubjectFile(args));
                                
         formatter.SetQueryRange(query_opts->GetRange());
         formatter.SetLineLength(fmt_args->GetLineLength());

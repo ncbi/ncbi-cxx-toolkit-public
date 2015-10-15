@@ -105,6 +105,8 @@ public:
     /// tabular/comma-separated value output format. An empty string implies to
     /// use the default value when applicable. [in]
     /// @param domain_db_adapter Domain database for Delta-blast [in]
+    /// @param cmdline Actual command-line for SAM [in]
+    /// @param subjectTag Identifier for set of subjects [in]
     CBlastFormat(const blast::CBlastOptions& opts, 
                  blast::CLocalDbAdapter& db_adapter,
                  blast::CFormattingArgs::EOutputFormat format_type, 
@@ -125,7 +127,8 @@ public:
                  bool is_indexed = false,
                  const blast::CIgBlastOptions * ig_opts = NULL,
                  const blast::CLocalDbAdapter* domain_db_adapter = NULL,
-                 const string & cmdline = kEmptyStr);
+                 const string & cmdline = kEmptyStr,
+		 const string& subjectTag = kEmptyStr);
 
     /// Constructor
     /// @param opts BLAST options used in the search [in]
@@ -299,6 +302,8 @@ private:
     bool m_IsBl2Seq;            
     /// True if it is m_IsBl2Seq in dbscan mode
     bool m_IsDbScan;
+    /// Tag for subject sequences (e.g., name of input file)
+    string m_SubjectTag;
     /// True if this object is formatting the results of a remote search
     bool m_IsRemoteSearch;
     /// Used to count number of searches formatted. 

@@ -150,7 +150,8 @@ int CBlastpApp::Run(void)
                                db_adapter->GetFilteringAlgorithm(),
                                fmt_args->GetCustomOutputFormatSpec(),
                                false, false, NULL, NULL,
-                               GetCmdlineArgs(GetArguments()));
+                               GetCmdlineArgs(GetArguments()),
+			       GetSubjectFile(args));
         
         formatter.SetQueryRange(query_opts->GetRange());
         formatter.SetLineLength(fmt_args->GetLineLength());

@@ -883,4 +883,18 @@ UseXInclude(const CFormattingArgs & f, const string & s)
 	return xin;
 }
 
+string 
+GetSubjectFile(const CArgs& args)
+{
+	string filename="";
+	
+	if (args.Exist(kArgSubject) && args[kArgSubject].HasValue())
+		filename = args[kArgSubject].AsString();
+
+	return filename;
+}
+
+
+
+
 END_NCBI_SCOPE

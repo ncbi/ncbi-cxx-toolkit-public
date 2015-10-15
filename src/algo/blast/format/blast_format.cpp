@@ -85,7 +85,8 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
                  bool is_indexed /* = false */,
                  const blast::CIgBlastOptions *ig_opts /* = NULL */,
                  const blast::CLocalDbAdapter* domain_db_adapter /* = NULL*/,
-                 const string & cmdline /* =kEMptyStr*/)
+                 const string & cmdline /* =kEMptyStr*/,
+		 const string& subjectTag /* =kEmptyStr */)
         : m_FormatType(format_type), m_IsHTML(is_html), 
           m_DbIsAA(db_adapter.IsProtein()), m_BelieveQuery(believe_query),
           m_Outfile(outfile), m_NumSummary(num_summary),
@@ -99,6 +100,7 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
           m_Scope(& scope),
           m_IsBl2Seq(false),
           m_IsDbScan(false),
+          m_SubjectTag(subjectTag),
           m_IsRemoteSearch(is_remote_search),
           m_QueriesFormatted(0),
           m_Megablast(is_megablast),
@@ -124,7 +126,8 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
     if(m_IsDbScan) {
 	BlastSeqSrc* seqsrc = db_adapter.MakeSeqSrc();
 	CBlastFormatUtil::FillScanModeBlastDbInfo(m_DbInfo, m_DbIsAA,
-		BlastSeqSrcGetNumSeqs(seqsrc), BlastSeqSrcGetTotLen(seqsrc));
+		BlastSeqSrcGetNumSeqs(seqsrc), BlastSeqSrcGetTotLen(seqsrc),
+		m_SubjectTag);
     } else {
         CBlastFormatUtil::GetBlastDbInfo(m_DbInfo, m_DbName, m_DbIsAA,
                                    dbfilt_algorithm, is_remote_search);
@@ -732,7 +735,7 @@ CBlastFormat::x_PrintTabularReport(const blast::CSearchResults& results,
             CConstRef<CBioseq> subject_bioseq = x_CreateSubjectBioseq();
 	    string dbname;
 	    if (m_IsDbScan)
-		dbname = string("User specified sequence set.");
+		dbname = string("User specified sequence set (Input: ") + m_SubjectTag + string(")");
 	    else 
 		dbname = m_DbName;
             tabinfo.PrintHeader(strProgVersion, *(bhandle.GetBioseqCore()),

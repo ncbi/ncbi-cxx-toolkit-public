@@ -296,6 +296,12 @@ GetCmdlineArgs(const CNcbiArguments & a);
 bool
 UseXInclude(const blast::CFormattingArgs & f, const string & s);
 
+/// Get name of subject file
+/// @parameter args arguments class [in]
+/// @return Name of subject file.
+string
+GetSubjectFile(const CArgs& args);
+
 END_NCBI_SCOPE
 
 #endif /* APP__BLAST_APP_UTIL__HPP */
