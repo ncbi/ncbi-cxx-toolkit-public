@@ -148,7 +148,8 @@ esac
 : ${FTDS_PATH:="/netopt/Sybase/clients-mssql/current"}
 
 case "$ncbi_platform" in
-    FreeBSD*   ) : ${FTGL_PATH=$NCBI/ftgl-2.1.3-rc5-ncbi1} ;;
+    FreeBSD32  ) : ${FTGL_PATH=$NCBI/ftgl-2.1.3-rc5-ncbi1} ;;
+    FreeBSD64  ) : ${FTGL_PATH=$NCBI/ftgl-2.1.3-rc5-ncbi2} ;;
     SunOS*     ) : ${FTGL_PATH=$NCBI/ftgl-2.1.3-rc5-ncbi1} ;;
     *          ) : ${FTGL_PATH=$NCBI/ftgl-2.1.3-rc5}       ;;
 esac
