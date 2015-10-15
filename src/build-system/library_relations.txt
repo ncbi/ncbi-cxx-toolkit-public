@@ -613,6 +613,7 @@ ideocoord needs ideocli
 idgen needs dbassist
 idload needs3party ctutils
 idload_utils needs gpipe_common
+idload_utils needs xid_utils
 idload_utils needs xobjutil
 idx needs $(CONNEXT)
 idx needs dbapi_driver
@@ -907,7 +908,6 @@ pn_ctl needs hmm_file
 pn_ctl needs hmm_hit_handle
 pn_ctl needs idload_utils
 pn_ctl needs third_party
-pn_ctl needs xid_utils
 png needs $(Z_LIB)
 png needs3party $(ORIG_LIBS)
 png needs3party $(Z_LIBS)
