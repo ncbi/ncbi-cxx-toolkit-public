@@ -3647,7 +3647,19 @@ string CQueue::PrintJobDbStat(const CNSClientId &  client,
             return "";
     }}
 
-    return job.Print(*this, m_AffinityRegistry, m_GroupRegistry);
+    string  job_dump;
+    try {
+        // GC can remove the job from its registry while the
+        // DUMP is in process. If so the job should not be dumped
+        // and the exception from m_GCRegistry.GetLifetime() should
+        // be suppressed.
+        job_dump = job.Print(*this, m_AffinityRegistry, m_GroupRegistry) +
+                   "OK:GC erase time: " +
+                   NS_FormatPreciseTime(m_GCRegistry.GetLifetime(job.GetId())) +
+                   "\n";
+        return job_dump;
+    } catch (...) {}
+    return job_dump;
 }
 
 
@@ -3760,14 +3772,22 @@ string CQueue::x_DumpJobs(const TNSBitVector &    jobs_to_dump,
 
             // Print what was read
             for (size_t  index = 0; index < read_jobs; ++index) {
-                result += "\n" + buffer[index].Print(*this,
-                                                     m_AffinityRegistry,
-                                                     m_GroupRegistry) +
-                          "OK:GC erase time: " +
-                          NS_FormatPreciseTime(
+                string  one_job;
+                try {
+                    // GC can remove the job from its registry while the
+                    // DUMP is in process. If so the job should not be dumped
+                    // and the exception from m_GCRegistry.GetLifetime() should
+                    // be suppressed.
+                    one_job = "\n" + buffer[index].Print(*this,
+                                                         m_AffinityRegistry,
+                                                         m_GroupRegistry) +
+                              "OK:GC erase time: " +
+                              NS_FormatPreciseTime(
                                   m_GCRegistry.GetLifetime(
                                                 buffer[index].GetId())) +
-                          "\n";
+                              "\n";
+                   result += one_job;
+                } catch (...) {}
             }
 
             if (count != 0)
