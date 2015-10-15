@@ -63,7 +63,7 @@ BEGIN_NAMESPACE(objects);
 // default configuration parameters
 #define DEFAULT_VDB_CACHE_SIZE 10
 #define DEFAULT_INDEX_UPDATE_TIME 600
-#define DEFAULT_COMPRESS_DATA false
+#define DEFAULT_COMPRESS_DATA eCompressData_some
 
 // debug levels
 enum EDebugLevel {
@@ -284,7 +284,8 @@ CID2WGSProcessor_Impl::CID2WGSProcessor_Impl(const CConfig::TParamTree* params,
                                              const string& driver_name)
     : m_GiResolver(new CWGSGiResolver),
       m_AccResolver(new CWGSProtAccResolver),
-      m_CompressData(false)
+      m_CompressData(eCompressData_never),
+      m_ExplicitBlobState(false)
 {
     auto_ptr<CConfig::TParamTree> app_params;
     if ( !params ) {
@@ -320,11 +321,15 @@ CID2WGSProcessor_Impl::CID2WGSProcessor_Impl(const CConfig::TParamTree* params,
                                             m_GiResolver, m_AccResolver);
     m_UpdateThread->Run();
 
-    m_CompressData =
-        conf.GetBool(driver_name,
-                     NCBI_ID2PROC_WGS_PARAM_COMPRESS_DATA,
-                     CConfig::eErr_NoThrow,
-                     DEFAULT_COMPRESS_DATA);
+    int compress_data =
+        conf.GetInt(driver_name,
+                    NCBI_ID2PROC_WGS_PARAM_COMPRESS_DATA,
+                    CConfig::eErr_NoThrow,
+                    DEFAULT_COMPRESS_DATA);
+    if ( compress_data >= eCompressData_never &&
+         compress_data <= eCompressData_always ) {
+        m_CompressData = ECompressData(compress_data);
+    }
     TRACE_X(23, eDebug_open, "ID2WGS: compress_data = "<<m_CompressData);
 }
 
@@ -333,6 +338,25 @@ CID2WGSProcessor_Impl::~CID2WGSProcessor_Impl(void)
 {
     m_UpdateThread->RequestStop();
     m_UpdateThread->Join();
+}
+
+
+void CID2WGSProcessor_Impl::ProcessInit(const CID2_Request& request)
+{
+    if ( !request.IsSetParams() ) {
+        return;
+    }
+    // check if blob-state field is allowed
+    ITERATE ( CID2_Request::TParams::Tdata, it, request.GetParams().Get() ) {
+        const CID2_Param& param = **it;
+        if ( param.GetName() == "id2:allow" && param.IsSetValue() ) {
+            ITERATE ( CID2_Param::TValue, it2, param.GetValue() ) {
+                if ( *it2 == "*.blob-state" ) {
+                    m_ExplicitBlobState = true;
+                }
+            }
+        }
+    }
 }
 
 
@@ -387,9 +411,10 @@ CWGSDb& CID2WGSProcessor_Impl::GetWGSDb(SWGSSeqInfo& seq)
 
 void CID2WGSProcessor_Impl::ResetIteratorCache(SWGSSeqInfo& seq)
 {
-    seq.m_ContigIter = CWGSSeqIterator();
-    seq.m_ScaffoldIter = CWGSScaffoldIterator();
-    seq.m_ProteinIter = CWGSProteinIterator();
+    seq.m_ContigIter.Reset();
+    seq.m_ScaffoldIter.Reset();
+    seq.m_ProteinIter.Reset();
+    seq.m_BlobId.Reset();
 }
 
 
@@ -481,8 +506,11 @@ enum EBlobIdBits {
     eBlobIdBits_digit = 4
 };
 
-CRef<CID2_Blob_Id> CID2WGSProcessor_Impl::GetBlobId(const SWGSSeqInfo& seq0)
+CID2_Blob_Id& CID2WGSProcessor_Impl::GetBlobId(SWGSSeqInfo& seq0)
 {
+    if ( seq0.m_BlobId ) {
+        return *seq0.m_BlobId;
+    }
     SWGSSeqInfo seq = GetRootSeq(seq0);
     CRef<CID2_Blob_Id> id(new CID2_Blob_Id);
     id->SetSat(kBlobIdSat);
@@ -509,7 +537,8 @@ CRef<CID2_Blob_Id> CID2WGSProcessor_Impl::GetBlobId(const SWGSSeqInfo& seq0)
     }
     id->SetSub_sat(subsat);
     id->SetSat_key(seq.m_RowId);
-    return id;
+    seq0.m_BlobId = id;
+    return *id;
 }
 
 
@@ -567,14 +596,9 @@ CID2WGSProcessor_Impl::SWGSSeqInfo
 CID2WGSProcessor_Impl::ResolveGeneral(const CDbtag& dbtag)
 {
     const CObject_id& object_id = dbtag.GetTag();
-    if ( !object_id.IsStr() ) {
-        return SWGSSeqInfo();
-    }
     const string& db = dbtag.GetDb();
-    const string& tag = object_id.GetStr();
-    if ( tag.empty() ||
-         (db.size() != kTypePrefixLen+kNumLetters /* WGS:AAAA */ &&
-          db.size() != kTypePrefixLen+kPrefixLen  /* WGS:AAAA01 */) ) {
+    if ( db.size() != kTypePrefixLen+kNumLetters /* WGS:AAAA */ &&
+         db.size() != kTypePrefixLen+kPrefixLen  /* WGS:AAAA01 */ ) {
         return SWGSSeqInfo();
     }
     bool is_tsa = false;
@@ -597,6 +621,13 @@ CID2WGSProcessor_Impl::ResolveGeneral(const CDbtag& dbtag)
     seq.m_IsWGS = true;
     if ( CWGSDb wgs_db = GetWGSDb(seq) ) {
         if ( wgs_db->IsTSA() == is_tsa ) { // TSA or WGS type must match
+            string tag;
+            if ( object_id.IsStr() ) {
+                tag = object_id.GetStr();
+            }
+            else {
+                tag = NStr::NumericToString(object_id.GetId());
+            }
             if ( TVDBRowId row = wgs_db.GetContigNameRowId(tag) ) {
                 seq.m_ValidWGS = true;
                 seq.SetContig();
@@ -1086,9 +1117,9 @@ CID2WGSProcessor_Impl::Resolve(TReplies& replies,
     }
     CID2_Reply_Get_Blob_Id& reply = main_reply->SetReply().SetGet_blob_id();
     reply.SetSeq_id(request.SetSeq_id().SetSeq_id().SetSeq_id());
-    reply.SetBlob_id(*GetBlobId(seq));
+    reply.SetBlob_id(GetBlobId(seq));
     if ( int blob_state = GetID2BlobState(seq) ) {
-        reply.SetBlob_state(blob_state);
+        SetBlobState(*main_reply, blob_state);
     }
     reply.SetEnd_of_reply();
     replies.push_back(main_reply);
@@ -1171,6 +1202,57 @@ int CID2WGSProcessor_Impl::GetID2BlobState(SWGSSeqInfo& seq)
 }
 
 
+void CID2WGSProcessor_Impl::SetBlobState(CID2_Reply& main_reply,
+                                         int blob_state)
+{
+    if ( !blob_state ) {
+        return;
+    }
+    if ( m_ExplicitBlobState ) {
+        CID2_Reply::TReply& reply = main_reply.SetReply();
+        switch ( reply.Which() ) {
+        case CID2_Reply::TReply::e_Get_blob_id:
+            reply.SetGet_blob_id().SetBlob_state(blob_state);
+            return;
+        case CID2_Reply::TReply::e_Get_blob:
+            reply.SetGet_blob().SetBlob_state(blob_state);
+            return;
+        case CID2_Reply::TReply::e_Get_split_info:
+            reply.SetGet_split_info().SetBlob_state(blob_state);
+            return;
+        default:
+            break;
+        }
+    }
+    // set blob state in warning string
+    string warning;
+    if ( blob_state & (1<<eID2_Blob_State_dead) ) {
+        if ( !warning.empty() ) {
+            warning += ", ";
+        }
+        warning += "obsolete";
+    }
+    if ( blob_state & (1<<eID2_Blob_State_suppressed) ) {
+        if ( !warning.empty() ) {
+            warning += ", ";
+        }
+        warning += "suppressed";
+    }
+    if ( !warning.empty() ) {
+        CRef<CID2_Error> error(new CID2_Error);
+        error->SetSeverity(CID2_Error::eSeverity_warning);
+        error->SetMessage(warning);
+        main_reply.SetError().push_back(error);
+    }
+    if ( blob_state & (1<<eID2_Blob_State_withdrawn) ) {
+        CRef<CID2_Error> error(new CID2_Error);
+        error->SetSeverity(CID2_Error::eSeverity_restricted_data);
+        error->SetMessage("withdrawn");
+        main_reply.SetError().push_back(error);
+    }
+}
+
+
 CRef<CSeq_entry> CID2WGSProcessor_Impl::GetSeq_entry(SWGSSeqInfo& seq)
 {
     if ( seq.IsMaster() ) {
@@ -1198,25 +1280,57 @@ CRef<CSeq_entry> CID2WGSProcessor_Impl::GetSeq_entry(SWGSSeqInfo& seq)
 }
 
 
-void CID2WGSProcessor_Impl::WriteData(CID2_Reply_Data& data,
-                                      const CSerialObject& obj) const
+bool CID2WGSProcessor_Impl::WorthCompressing(const SWGSSeqInfo& seq)
+{
+    if ( seq.IsMaster() ) {
+        return true;
+    }
+    return false;
+}
+
+
+void CID2WGSProcessor_Impl::WriteData(const SWGSSeqInfo& seq,
+                                      CID2_Reply_Data& data,
+                                      const CSerialObject& obj)
 {
     data.SetData_format(CID2_Reply_Data::eData_format_asn_binary);
     COSSWriter writer(data.SetData());
     CWStream writer_stream(&writer);
     AutoPtr<CNcbiOstream> str;
-    if ( !m_CompressData ) {
-        data.SetData_compression(CID2_Reply_Data::eData_compression_none);
-        str.reset(&writer_stream, eNoOwnership);
-    }
-    else {
+    if ( (m_CompressData == eCompressData_always) ||
+         (m_CompressData == eCompressData_some && WorthCompressing(seq)) ) {
         data.SetData_compression(CID2_Reply_Data::eData_compression_gzip);
         str.reset(new CCompressionOStream(writer_stream,
                                           new CZipStreamCompressor,
                                           CCompressionIStream::fOwnProcessor));
     }
+    else {
+        data.SetData_compression(CID2_Reply_Data::eData_compression_none);
+        str.reset(&writer_stream, eNoOwnership);
+    }
     CObjectOStreamAsnBinary objstr(*str);
     objstr << obj;
+}
+
+
+bool CID2WGSProcessor_Impl::ExcludedBlob(SWGSSeqInfo& seq,
+                                         const CID2_Request_Get_Blob_Info& request)
+{
+    const CID2_Request_Get_Blob_Info::TBlob_id& req_id = request.GetBlob_id();
+    if ( !req_id.IsResolve() ) {
+        return false;
+    }
+    const CID2_Request_Get_Blob_Info::TBlob_id::TResolve& resolve = req_id.GetResolve();
+    if ( !resolve.IsSetExclude_blobs() ) {
+        return false;
+    }
+    CID2_Blob_Id& blob_id = GetBlobId(seq);
+    ITERATE ( CID2_Request_Get_Blob_Info::TBlob_id::TResolve::TExclude_blobs, it, resolve.GetExclude_blobs() ) {
+        if ( blob_id.Equals(**it) ) {
+            return true;
+        }
+    }
+    return false;
 }
 
 
@@ -1239,7 +1353,7 @@ bool CID2WGSProcessor_Impl::ProcessGetBlobInfo(TReplies& replies,
         return seq.m_IsWGS;
     }
 
-    if ( request.IsSetGet_data() ) {
+    if ( request.IsSetGet_data() && !ExcludedBlob(seq, request) ) {
         CRef<CSeq_entry> entry = GetSeq_entry(seq);
         TRACE_X(11, eDebug_resolve, "GetSeq_entry: "<<seq);
         if ( entry ) {
@@ -1251,12 +1365,15 @@ bool CID2WGSProcessor_Impl::ProcessGetBlobInfo(TReplies& replies,
             main_reply->SetSerial_number(main_request.GetSerial_number());
         }
         CID2_Reply_Get_Blob& reply = main_reply->SetReply().SetGet_blob();
-        reply.SetBlob_id(*GetBlobId(seq));
-        reply.SetBlob_state(GetID2BlobState(seq));
+        reply.SetBlob_id(GetBlobId(seq));
+        if ( int blob_state = GetID2BlobState(seq) ) {
+            SetBlobState(*main_reply, blob_state);
+        }
         CID2_Reply_Data& data = reply.SetData();
         data.SetData_type(CID2_Reply_Data::eData_type_seq_entry);
-        WriteData(data, *entry);
-        TRACE_X(12, eDebug_resolve, ""<<seq<<" data size: "<<sx_GetSize(data));
+        WriteData(seq, data, *entry);
+        TRACE_X(12, eDebug_resolve, "Seq("<<seq<<"): "<<
+                " data size: "<<sx_GetSize(data));
         replies.push_back(main_reply);
     }
     TRACE_X(14, eDebug_resolve,"GetBlobInfo: done");
@@ -1274,6 +1391,9 @@ bool CID2WGSProcessor_Impl::ProcessRequest(TReplies& replies,
     bool done;
     try {
         switch ( request.GetRequest().Which() ) {
+        case CID2_Request::TRequest::e_Init:
+            ProcessInit(request);
+            return false;
         case CID2_Request::TRequest::e_Get_seq_id:
             done = ProcessGetSeqId(replies, request,
                                    request.SetRequest().SetGet_seq_id());

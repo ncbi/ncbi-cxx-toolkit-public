@@ -49,7 +49,7 @@
 /* Time in seconds between background updates of GI/accession indexes */
 #define NCBI_ID2PROC_WGS_PARAM_INDEX_UPDATE_TIME "index_update_time"
 
-/* Compress Seq-entries in replies */
+/* Compress Seq-entries in replies (0-never,1-some,2-always) */
 #define NCBI_ID2PROC_WGS_PARAM_COMPRESS_DATA "compress_data"
 
 #endif//SRA__LOADER__WGS__ID2WGS_PARAMS__H

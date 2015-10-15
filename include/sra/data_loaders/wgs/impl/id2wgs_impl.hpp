@@ -37,6 +37,7 @@
 #include <corelib/ncbi_config.hpp>
 #include <sra/readers/sra/wgsread.hpp>
 #include <util/limited_size_map.hpp>
+#include <objects/id2/ID2_Blob_Id.hpp>
 #include <vector>
 
 BEGIN_NCBI_NAMESPACE;
@@ -99,16 +100,19 @@ public:
             m_SeqType = 'P';
         }
 
+        // parameters
         string m_WGSAcc;
         bool m_IsWGS;
         bool m_ValidWGS;
         char m_SeqType;
         Uint1 m_RowDigits;
         TVDBRowId m_RowId;
+        // cached objects
         CWGSDb m_WGSDb;
         CWGSSeqIterator m_ContigIter;
         CWGSScaffoldIterator m_ScaffoldIter;
         CWGSProteinIterator m_ProteinIter;
+        CRef<CID2_Blob_Id> m_BlobId;
     };
 
     typedef vector<CRef<CID2_Reply> > TReplies;
@@ -117,6 +121,7 @@ public:
     bool ProcessRequest(TReplies& replies,
                         CID2_Request& request);
 
+    void ProcessInit(const CID2_Request& main_request);
     bool ProcessGetSeqId(TReplies& replies,
                          CID2_Request& main_request,
                          CID2_Request_Get_Seq_id& request);
@@ -165,7 +170,7 @@ protected:
 
     // conversion to/from blob id
     SWGSSeqInfo ResolveBlobId(const CID2_Blob_Id& id);
-    CRef<CID2_Blob_Id> GetBlobId(const SWGSSeqInfo& id);
+    CID2_Blob_Id& GetBlobId(SWGSSeqInfo& id);
 
     // opening WGS files (with caching)
     CWGSDb GetWGSDb(const string& prefix);
@@ -177,10 +182,23 @@ protected:
     CWGSScaffoldIterator& GetScaffoldIterator(SWGSSeqInfo& seq);
     CWGSProteinIterator& GetProteinIterator(SWGSSeqInfo& seq);
     
-    void WriteData(CID2_Reply_Data& data,
-                   const CSerialObject& obj) const;
+    void SetBlobState(CID2_Reply& main_reply,
+                      int blob_state);
+
+    bool ExcludedBlob(SWGSSeqInfo& seq,
+                      const CID2_Request_Get_Blob_Info& request);
+    void WriteData(const SWGSSeqInfo& seq,
+                   CID2_Reply_Data& data,
+                   const CSerialObject& obj);
+    bool WorthCompressing(const SWGSSeqInfo& seq);
     
     typedef limited_size_map<string, CWGSDb> TWGSDbCache;
+
+    enum ECompressData {
+        eCompressData_never,
+        eCompressData_some, // if it's benefitial
+        eCompressData_always
+    };
 
 private:
     CMutex m_Mutex;
@@ -189,7 +207,8 @@ private:
     CRef<CWGSProtAccResolver> m_AccResolver;
     TWGSDbCache m_WGSDbCache;
     CRef<CThreadNonStop> m_UpdateThread;
-    bool m_CompressData;
+    ECompressData m_CompressData;
+    bool m_ExplicitBlobState;
 };
 
 
