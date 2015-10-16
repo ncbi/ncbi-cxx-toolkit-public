@@ -1214,6 +1214,7 @@ bool CObjectIStreamAsn::BeginContainerElement(TTypeInfo /*elementType*/)
 void CObjectIStreamAsn::ReadContainer(const CContainerTypeInfo* contType,
                                       TObjectPtr contPtr)
 {
+    BEGIN_OBJECT_FRAME2(eFrameArray, contType);
     StartBlock();
     
     BEGIN_OBJECT_FRAME(eFrameArrayElement);
@@ -1237,10 +1238,12 @@ void CObjectIStreamAsn::ReadContainer(const CContainerTypeInfo* contType,
     END_OBJECT_FRAME();
 
     EndBlock();
+    END_OBJECT_FRAME();
 }
 
 void CObjectIStreamAsn::SkipContainer(const CContainerTypeInfo* contType)
 {
+    BEGIN_OBJECT_FRAME2(eFrameArray, contType);
     StartBlock();
 
     TTypeInfo elementType = contType->GetElementType();
@@ -1253,6 +1256,7 @@ void CObjectIStreamAsn::SkipContainer(const CContainerTypeInfo* contType)
     END_OBJECT_FRAME();
 
     EndBlock();
+    END_OBJECT_FRAME();
 }
 #endif
 

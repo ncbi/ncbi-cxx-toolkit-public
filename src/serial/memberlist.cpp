@@ -248,7 +248,8 @@ TMemberIndex CItemsInfo::Find(const CTempString& name) const
     return i->second;
 }
 
-TMemberIndex CItemsInfo::FindDeep(const CTempString& name, bool search_attlist) const
+TMemberIndex CItemsInfo::FindDeep(const CTempString& name, bool search_attlist,
+    const CClassTypeInfoBase** pclassInfo) const
 {
     TMemberIndex ind = Find(name);
     if (ind != kInvalidMember) {
@@ -265,6 +266,9 @@ TMemberIndex CItemsInfo::FindDeep(const CTempString& name, bool search_attlist) 
             if (classType) {
                 if (classType->GetItems().FindDeep(name, search_attlist)
                     != kInvalidMember) {
+                    if (pclassInfo) {
+                        *pclassInfo = classType;
+                    }
                     return *item;
                 }
             }

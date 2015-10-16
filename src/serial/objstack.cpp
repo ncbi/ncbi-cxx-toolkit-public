@@ -198,6 +198,8 @@ void CObjectStack::x_PushStackPath(void)
         return;
     }
     if (!m_PathValid) {
+        GetStackPath();
+#if 0
         for ( size_t i = 1; i < GetStackDepth(); ++i ) {
             const TFrame& frame = FetchFrameFromTop(i);
             if (frame.HasTypeInfo()) {
@@ -206,6 +208,7 @@ void CObjectStack::x_PushStackPath(void)
                 break;
             }
         }
+#endif
     }
     const CMemberId& mem_id = TopFrame().GetMemberId();
     if (mem_id.HasNotag() || mem_id.IsAttlist()) {

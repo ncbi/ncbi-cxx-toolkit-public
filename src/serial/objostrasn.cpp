@@ -615,6 +615,7 @@ void CObjectOStreamAsn::BeginClassMember(const CMemberId& id)
 void CObjectOStreamAsn::WriteClass(const CClassTypeInfo* classType,
                                    TConstObjectPtr classPtr)
 {
+    BEGIN_OBJECT_FRAME2(eFrameClass, classType);
     StartBlock();
     
     for ( CClassTypeInfo::CIterator i(classType); i.Valid(); ++i ) {
@@ -622,6 +623,7 @@ void CObjectOStreamAsn::WriteClass(const CClassTypeInfo* classType,
     }
     
     EndBlock();
+    END_OBJECT_FRAME();
 }
 
 void CObjectOStreamAsn::WriteClassMember(const CMemberId& memberId,
