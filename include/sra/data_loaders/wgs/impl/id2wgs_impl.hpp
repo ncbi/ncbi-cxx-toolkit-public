@@ -90,6 +90,10 @@ public:
             return m_SeqType == 'P';
         }
 
+        void SetMaster(void) {
+            m_SeqType = '\0';
+            m_RowId = 0;
+        }
         void SetContig(void) {
             m_SeqType = '\0';
         }

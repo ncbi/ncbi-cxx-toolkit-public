@@ -57,8 +57,14 @@ NCBI_DEFINE_ERR_SUBCODE_X(24);
 BEGIN_NAMESPACE(objects);
 
 // behavior options
-#define RESOLVE_MASTER 2 // 0 - none, 1 - w/o GI only, 2 - all
 #define TRACE_PROCESSING
+
+enum EResolveMaster {
+    eResolveMaster_never,
+    eResolveMaster_without_gi,
+    eResolveMaster_always
+};
+static const EResolveMaster kResolveMaster = eResolveMaster_never;
 
 // default configuration parameters
 #define DEFAULT_VDB_CACHE_SIZE 10
@@ -645,6 +651,18 @@ CID2WGSProcessor_Impl::ResolveGi(TGi gi)
     CWGSGiResolver::TAccessionList accs = m_GiResolver->FindAll(gi);
     ITERATE ( CWGSGiResolver::TAccessionList, acc_it, accs ) {
         if ( CWGSDb wgs_db = GetWGSDb(*acc_it) ) {
+            if ( kResolveMaster == eResolveMaster_always &&
+                 gi == wgs_db->GetMasterGi() ) {
+                // resolve master sequence with GI from VDB
+                SWGSSeqInfo seq;
+                seq.m_WGSAcc = *acc_it;
+                seq.m_IsWGS = true;
+                seq.m_ValidWGS = true;
+                seq.m_WGSDb = wgs_db;
+                seq.m_RowDigits = Uint1(wgs_db->GetIdRowDigits());
+                seq.SetMaster();
+                return seq;
+            }
             CWGSGiIterator it(wgs_db, gi);
             if ( it ) {
                 SWGSSeqInfo seq;
@@ -761,16 +779,19 @@ CID2WGSProcessor_Impl::ResolveWGSAcc(const string& acc, int version)
         return seq;
     }
     if ( !row ) {
-#if RESOLVE_MASTER == 0 // no master resolution
-        seq.m_IsWGS = false;
-        return seq;
-#elif RESOLVE_MASTER == 1 // only master sequences w/o GI are resolved
-        if ( GetWGSDb(seq)->GetMasterGi() ) {
-            // Let master sequences with GI to be processed by ID
+        if ( kResolveMaster == eResolveMaster_never ) {
+            // no master resolution
             seq.m_IsWGS = false;
             return seq;
         }
-#endif
+        else if ( kResolveMaster == eResolveMaster_without_gi ) {
+            // only master sequences w/o GI are resolved
+            if ( GetWGSDb(seq)->GetMasterGi() ) {
+                // Let master sequences with GI to be processed by ID
+                seq.m_IsWGS = false;
+                return seq;
+            }
+        }
     }
     else if ( !IsValidRowId(seq) ) {
         return seq;
