@@ -9641,8 +9641,12 @@ BOOST_AUTO_TEST_CASE(Test_PKG_GenomicProductPackagingProblem)
     expected_errors[0]->SetSeverity(eDiag_Critical);
     expected_errors[0]->SetAccession("good");
     expected_errors[0]->SetErrMsg("Seq-annot packaged directly on genomic product set");
+    expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "FeaturePackagingProblem",
+        "There is 1 mispackaged feature in this record."));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+    delete expected_errors[1];
+    expected_errors.pop_back();
 
     scope.RemoveTopLevelSeqEntry(seh);
     entry->SetSet().ResetAnnot();
@@ -11255,7 +11259,8 @@ BOOST_AUTO_TEST_CASE(Test_FEAT_OrfCdsHasProduct)
 BOOST_AUTO_TEST_CASE(Test_FEAT_GeneRefHasNoData)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
-    CRef<CSeq_feat> gene = unit_test_util::AddMiscFeature (entry);
+    CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
+    CRef<CSeq_feat> gene = unit_test_util::AddMiscFeature (nuc);
     gene->SetData().SetGene();
     gene->SetLocation().SetInt().SetTo(26);
 
@@ -11530,9 +11535,10 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_PseudoCdsHasProduct)
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
     CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
     cds->SetPseudo(true);
+    CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
     CRef<CSeq_feat> gene = unit_test_util::MakeGeneForFeature(cds);
     gene->SetPseudo(true);
-    unit_test_util::AddFeat (gene, entry);
+    unit_test_util::AddFeat (gene, nuc);
 
     STANDARD_SETUP
 
@@ -12521,6 +12527,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CDSproductPackagingProblem)
 
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "CDSproductPackagingProblem",
                       "Protein product not packaged in nuc-prot set with nucleotide"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Critical, "FeaturePackagingProblem",
+        "There is 1 mispackaged feature in this record."));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -16239,7 +16247,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadInternalCharacter)
     gene->SetData().SetGene().SetLocus("gene?something");
     unit_test_util::AddFeat(gene, nuc);
 
-    CRef<CSeq_feat> rrna = unit_test_util::AddMiscFeature(entry);
+    CRef<CSeq_feat> rrna = unit_test_util::AddMiscFeature(nuc);
     rrna->SetData().SetRna().SetType(CRNA_ref::eType_rRNA);
     rrna->SetData().SetRna().SetExt().SetName("rna!something");
 
@@ -16248,10 +16256,10 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadInternalCharacter)
                               "mRNA name contains undesired character"));
     expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "BadInternalCharacter", 
                               "Gene locus contains undesired character"));
-    expected_errors.push_back (new CExpectedError("prot", eDiag_Warning, "BadInternalCharacter", 
-                              "Protein name contains undesired character"));
-    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "BadInternalCharacter", 
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "BadInternalCharacter",
                               "rRNA name contains undesired character"));
+    expected_errors.push_back(new CExpectedError("prot", eDiag_Warning, "BadInternalCharacter",
+                              "Protein name contains undesired character"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -16275,7 +16283,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadTrailingCharacter)
     gene->SetData().SetGene().SetLocus("gene something;");
     unit_test_util::AddFeat(gene, nuc);
 
-    CRef<CSeq_feat> rrna = unit_test_util::AddMiscFeature(entry);
+    CRef<CSeq_feat> rrna = unit_test_util::AddMiscFeature(nuc);
     rrna->SetData().SetRna().SetType(CRNA_ref::eType_rRNA);
     rrna->SetData().SetRna().SetExt().SetName("rna something:");
 
@@ -16284,10 +16292,10 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadTrailingCharacter)
                               "mRNA name ends with undesired character"));
     expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "BadTrailingCharacter", 
                               "Gene locus ends with undesired character"));
-    expected_errors.push_back (new CExpectedError("prot", eDiag_Warning, "BadTrailingCharacter", 
-                              "Protein name ends with undesired character"));
-    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "BadTrailingCharacter", 
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "BadTrailingCharacter",
                               "rRNA name ends with undesired character"));
+    expected_errors.push_back(new CExpectedError("prot", eDiag_Warning, "BadTrailingCharacter",
+                              "Protein name ends with undesired character"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -16311,7 +16319,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadTrailingHyphen)
     gene->SetData().SetGene().SetLocus("gene something-");
     unit_test_util::AddFeat(gene, nuc);
 
-    CRef<CSeq_feat> rrna = unit_test_util::AddMiscFeature(entry);
+    CRef<CSeq_feat> rrna = unit_test_util::AddMiscFeature(nuc);
     rrna->SetData().SetRna().SetType(CRNA_ref::eType_rRNA);
     rrna->SetData().SetRna().SetExt().SetName("rna something-");
 
@@ -16320,10 +16328,10 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadTrailingHyphen)
                               "mRNA name ends with hyphen"));
     expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "BadTrailingHyphen", 
                               "Gene locus ends with hyphen"));
-    expected_errors.push_back (new CExpectedError("prot", eDiag_Warning, "BadTrailingHyphen", 
-                              "Protein name ends with hyphen"));
-    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "BadTrailingHyphen", 
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "BadTrailingHyphen",
                               "rRNA name ends with hyphen"));
+    expected_errors.push_back(new CExpectedError("prot", eDiag_Warning, "BadTrailingHyphen",
+                              "Protein name ends with hyphen"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -18899,7 +18907,7 @@ BOOST_AUTO_TEST_CASE(Test_ValidError_Format)
     CRef<CSeq_feat> intron = unit_test_util::MakeIntronForMixLoc(nuc->SetSeq().SetId().front());
     unit_test_util::AddFeat(intron, nuc);
 
-    CRef<CSeq_feat> other_intron = unit_test_util::AddMiscFeature(entry);
+    CRef<CSeq_feat> other_intron = unit_test_util::AddMiscFeature(nuc);
     other_intron->SetData().SetImp().SetKey("intron");
 
     // create EC number problems
@@ -18930,14 +18938,14 @@ BOOST_AUTO_TEST_CASE(Test_ValidError_Format)
 
     vector<string> expected;
     expected.push_back("intron\tlcl|nuc\tGT at 17");
+    expected.push_back("intron\tlcl|nuc\tGT at 1");
+    expected.push_back("intron\tlcl|nuc\tAG at 11");
     expected.push_back("prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
     expected.push_back("prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
     expected.push_back("prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
     expected.push_back("prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
     expected.push_back("prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
     expected.push_back("CDS\tlcl|nuc\tGT at 16");
-    expected.push_back("intron\tlcl|nuc\tGT at 1");
-    expected.push_back("intron\tlcl|nuc\tAG at 11");
     expected.push_back("nuc:Lat_lon '30 N 30 E' maps to 'Egypt' instead of 'Panama'");
     expected.push_back("nuc\tXXX;YYY;ZZZ");
     expected.push_back("nuc\tXXX;YYY;ZZZ");
@@ -18956,14 +18964,14 @@ BOOST_AUTO_TEST_CASE(Test_ValidError_Format)
         seen.push_back(vit->GetErrCode());
     }
     expected.push_back("NotSpliceConsensusDonor");
+    expected.push_back("NotSpliceConsensusDonor");
+    expected.push_back("NotSpliceConsensusAcceptor");
     expected.push_back("BadEcNumberValue");
     expected.push_back("BadEcNumberValue");
     expected.push_back("BadEcNumberValue");
     expected.push_back("BadEcNumberFormat");
     expected.push_back("BadEcNumberValue");
     expected.push_back("NotSpliceConsensusDonor");
-    expected.push_back("NotSpliceConsensusDonor");
-    expected.push_back("NotSpliceConsensusAcceptor");
     expected.push_back("LatLonCountry");
     expected.push_back("BadInstitutionCode");
     expected.push_back("BadInstitutionCode");
@@ -18991,8 +18999,8 @@ BOOST_AUTO_TEST_CASE(Test_ValidError_Format)
     NStr::Tokenize(rval, "\n", seen);
     expected.push_back("Not Splice Consensus");
     expected.push_back("intron\tlcl|nuc\tGT at 17");
-    expected.push_back("CDS\tlcl|nuc\tGT at 16");
     expected.push_back("intron\tlcl|nuc\tGT at 1");
+    expected.push_back("CDS\tlcl|nuc\tGT at 16");
     expected.push_back("");
     CheckStrings(seen, expected);
 
@@ -19002,9 +19010,9 @@ BOOST_AUTO_TEST_CASE(Test_ValidError_Format)
     NStr::Tokenize(rval, "\n", seen);
     expected.push_back("Not Splice Consensus");
     expected.push_back("intron\tlcl|nuc\tGT at 17");
-    expected.push_back("CDS\tlcl|nuc\tGT at 16");
     expected.push_back("intron\tlcl|nuc\tGT at 1");
     expected.push_back("intron\tlcl|nuc\tAG at 11");
+    expected.push_back("CDS\tlcl|nuc\tGT at 16");
     expected.push_back("");
     CheckStrings(seen, expected);
 
@@ -19020,9 +19028,9 @@ BOOST_AUTO_TEST_CASE(Test_ValidError_Format)
     }
     expected.push_back("Not Splice Consensus");
     expected.push_back("intron\tlcl|nuc\tGT at 17");
-    expected.push_back("CDS\tlcl|nuc\tGT at 16");
     expected.push_back("intron\tlcl|nuc\tGT at 1");
     expected.push_back("intron\tlcl|nuc\tAG at 11");
+    expected.push_back("CDS\tlcl|nuc\tGT at 16");
     expected.push_back("");
     expected.push_back("EC Number Format");
     expected.push_back("prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");

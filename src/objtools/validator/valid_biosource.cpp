@@ -332,6 +332,7 @@ bool CValidError_imp::IsOrganelle(int genome)
     case CBioSource::eGenome_proplastid:
     case CBioSource::eGenome_hydrogenosome:
     case CBioSource::eGenome_chromatophore:
+    case CBioSource::eGenome_plastid:
         rval = true;
         break;
     default:

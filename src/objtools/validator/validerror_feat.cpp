@@ -2764,8 +2764,16 @@ void CValidError_feat::ValidateSpliceMrna(const CSeq_feat& feat, const CBioseq_H
                 start = range.GetFrom();
             }
             if (part.IsPartialStart(eExtreme_Biological) && !ignore_mrna_partial5) {
+                bool is_sequence_end = false;
+                if (part.IsSetStrand() && part.GetStrand() == eNa_strand_minus) {
+                    if (part.GetStart(eExtreme_Biological) == bsh_head.GetInst_Length() - 1) {
+                        is_sequence_end = true;
+                    }
+                } else if (part.GetStart(eExtreme_Biological) == 0) {
+                    is_sequence_end = true;
+                }
                 ValidateAcceptor (strand, start, vec, bsh_head.GetInst_Length(), rare_consensus_not_expected,
-                                    label, report_errors, relax_to_warning, has_errors, feat, true);
+                    label, report_errors, relax_to_warning, has_errors, feat, is_sequence_end);
             }
         }
 
@@ -2840,15 +2848,21 @@ void CValidError_feat::ValidateSpliceCdregion(const CSeq_feat& feat, const CBios
         if (bsh_head) {
                 CSeqVector vec = bsh_head.GetSeqVector (CBioseq_Handle::eCoding_Iupac);
                 string label = GetBioseqIdLabel (*(bsh_head.GetCompleteBioseq()), true);
-
+                bool is_sequence_end = false;
                 if (strand == eNa_strand_minus) {
                     start = range.GetTo();
+                    if (start == bsh_head.GetInst_Length() - 1) {
+                        is_sequence_end = true;
+                    }
                 } else {
                     start = range.GetFrom();
+                    if (start == 0) {
+                        is_sequence_end = true;
+                    }
                 }
                 if (part.IsPartialStart(eExtreme_Biological)) {
                     ValidateAcceptor (strand, start, vec, bsh_head.GetInst_Length(), rare_consensus_not_expected,
-                                      label, report_errors, relax_to_warning, has_errors, feat, true);
+                        label, report_errors, relax_to_warning, has_errors, feat, is_sequence_end);
                 }
         }
 
@@ -7914,19 +7928,23 @@ void CValidError_feat::ValidateGeneXRef(const CSeq_feat& feat)
         // find gene on bioseq to match genexref
         bool found = false;
         if (gene_xref->IsSetLocus() && !NStr::IsBlank (gene_xref->GetLocus())) {
-            CTempString locus = gene_xref->GetLocus();
+            const string& locus = gene_xref->GetLocus();
             CCacheImpl::SFeatStrKey label_key(CCacheImpl::eFeatKeyStr_Label, bsh, locus);
-            const CCacheImpl::TFeatValue & feats =
-                GetCache().GetFeatStrKeyToFeats(label_key, m_Imp.GetTSE_Handle());
-            if( ! feats.empty() ) {
-                found = true;
-                const CMappedFeat & gene = feats[0];  // only look at first
-                if (s_LocationStrandsIncompatible(
+            try {
+                const CCacheImpl::TFeatValue & feats =
+                    GetCache().GetFeatStrKeyToFeats(label_key, m_Imp.GetTSE_Handle());
+                if (!feats.empty()) {
+                    found = true;
+                    const CMappedFeat & gene = feats[0];  // only look at first
+                    if (s_LocationStrandsIncompatible(
                         gene.GetLocation(), feat.GetLocation(), m_Scope))
-                {
-                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_GeneXrefStrandProblem,
-                             "Gene cross-reference is not on expected strand", feat);
+                    {
+                        PostErr(eDiag_Warning, eErr_SEQ_FEAT_GeneXrefStrandProblem,
+                            "Gene cross-reference is not on expected strand", feat);
+                    }
                 }
+            } catch (CException& e) {
+                PostErr(eDiag_Info, eErr_INTERNAL_Exception, e.GetMsg(), feat);
             }
 
             if (!found && bsh.IsAa()) {
