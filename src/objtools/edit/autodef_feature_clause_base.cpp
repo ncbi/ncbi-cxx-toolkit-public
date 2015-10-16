@@ -954,6 +954,7 @@ bool CAutoDefFeatureClause_Base::x_MeetAltSpliceRules (unsigned int clause1, uns
                 if (pos < splice_name.length()) {
                     temp_name += splice_name.substr(pos + unwanted_words[k].length());
                 }
+                splice_name = temp_name;
             }
         }
         
