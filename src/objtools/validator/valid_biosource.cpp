@@ -1349,7 +1349,7 @@ const CSeq_entry *ctx)
             else
                 sev = eDiag_Warning;
             PostObjErr(sev, eErr_SEQ_DESCR_OrganismIsUndefinedSpecies,
-                "Organism \"" + taxname + "\" is undefined species and does not have a specific identifier.",
+                "Organism '" + taxname + "' is undefined species and does not have a specific identifier.",
                 obj, ctx);
         }
         if (s_UnbalancedParentheses(taxname)) {
