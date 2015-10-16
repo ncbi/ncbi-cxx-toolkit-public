@@ -53,7 +53,7 @@ CBlast_SAM_Formatter::CBlast_SAM_Formatter(CNcbiOstream& out, CScope& scope,
 	x_ProcessCustomSpec(custom_spec, info);
 }
 
-void CBlast_SAM_Formatter::Print(const CSeq_align_set &  aln)
+void CBlast_SAM_Formatter::x_Print(const CSeq_align_set & aln)
 {
 	if(m_refRow == 1) {
 		CSeq_align_set sorted;
@@ -63,6 +63,23 @@ void CBlast_SAM_Formatter::Print(const CSeq_align_set &  aln)
 	}
 	else {
 		CSAM_Formatter::Print(aln, m_refRow);
+	}
+}
+
+void CBlast_SAM_Formatter::Print(const CSeq_align_set &  aln)
+{
+	if (aln.Get().front()->GetSegs().Which() == CSeq_align::C_Segs::e_Dendiag){
+		CSeq_align_set d_aln;
+		ITERATE(CSeq_align_set::Tdata, itr, aln.Get()){
+			CRef<CSeq_align> dense_seg = align_format::CAlignFormatUtil::CreateDensegFromDendiag(**itr);
+			CDense_seg::TScores & scores = dense_seg->SetSegs().SetDenseg().SetScores();
+			dense_seg->SetScore().swap(scores);
+			d_aln.Set().push_back(dense_seg);
+		}
+		x_Print(d_aln);
+	}
+	else {
+		x_Print(aln);
 	}
 }
 
