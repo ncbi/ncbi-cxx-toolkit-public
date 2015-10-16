@@ -262,9 +262,6 @@ public:
                                 CJob &            job,
                                 CNSPreciseTime *  lifetime);
 
-    // Remove all jobs
-    void Truncate(bool  logging);
-
     // Cancel job execution (job stays in special Canceled state)
     // Returns the previous job status
     TJobStatus  Cancel(const CNSClientId &  client,

@@ -2379,7 +2379,13 @@ void CNetScheduleHandler::x_ProcessPutFailure(CQueue* q)
 
 void CNetScheduleHandler::x_ProcessDropQueue(CQueue* q)
 {
-    q->Truncate(x_NeedCmdLogging());
+    // The DROPQ implementation has been changed in NS 4.23.2
+    // Earlier it was removing jobs from the queue
+    // Starting from NS 4.23.2 it is cancelling all the jobs, i.e
+    // DROPQ became an equivalent of the CANCELQ command except of the
+    // output. DROPQ provides OK: while CANCELQ provides OK:N where N is
+    // the number of the canceled jobs.
+    q->CancelAllJobs(m_ClientId, x_NeedCmdLogging());
     x_WriteMessage("OK:");
     x_PrintCmdRequestStop();
 }

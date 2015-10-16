@@ -197,7 +197,6 @@ public:
     }
 private:
     SQueueDbBlock* m_QueueDbBlock;
-
 };
 
 
@@ -1626,101 +1625,6 @@ TJobStatus  CQueue::ReadAndTouchJob(unsigned int      job_id,
                                                       curr));
     *lifetime = x_GetEstimatedJobLifetime(job_id, status);
     return status;
-}
-
-
-// Deletes all the jobs from the queue
-void CQueue::Truncate(bool  logging)
-{
-    CJob                                job;
-    vector<CNetScheduleAPI::EJobStatus> statuses;
-    TNSBitVector                        jobs_to_notify;
-    CNSPreciseTime                      current_time =
-                                                CNSPreciseTime::Current();
-
-    // Jobs in certain states
-    TNSBitVector                        bvPending;
-    TNSBitVector                        bvRunning;
-    TNSBitVector                        bvCanceled;
-    TNSBitVector                        bvFailed;
-    TNSBitVector                        bvDone;
-    TNSBitVector                        bvReading;
-    TNSBitVector                        bvConfirmed;
-    TNSBitVector                        bvReadFailed;
-
-
-    // Pending and running jobs should be notified if requested
-    statuses.push_back(CNetScheduleAPI::ePending);
-    statuses.push_back(CNetScheduleAPI::eRunning);
-
-    {{
-        CFastMutexGuard     guard(m_OperationLock);
-
-        jobs_to_notify = m_StatusTracker.GetJobs(statuses);
-
-        // Make a decision if the jobs should really be notified
-        {{
-            CNSTransaction              transaction(this);
-            TNSBitVector::enumerator    en(jobs_to_notify.first());
-            for (; en.valid(); ++en) {
-                unsigned int    job_id = *en;
-
-                if (job.Fetch(this, job_id) != CJob::eJF_Ok) {
-                    ERR_POST("Cannot fetch job " << DecorateJob(job_id) <<
-                             " while dropping all jobs in the queue");
-                    continue;
-                }
-
-                if (job.ShouldNotifySubmitter(current_time))
-                    m_NotificationsList.NotifyJobStatus(
-                                                job.GetSubmAddr(),
-                                                job.GetSubmNotifPort(),
-                                                MakeJobKey(job_id),
-                                                job.GetStatus(),
-                                                job.GetLastEventIndex());
-
-                if (logging)
-                    GetDiagContext().Extra().Print("job_key",
-                                                   MakeJobKey(job_id))
-                                            .Print("job_phid",
-                                                   job.GetNCBIPHID());
-            }
-
-            // There is no need to commit transaction - there were no changes
-        }}
-
-        m_StatusTracker.ClearStatus(CNetScheduleAPI::ePending, &bvPending);
-        m_StatusTracker.ClearStatus(CNetScheduleAPI::eRunning, &bvRunning);
-        m_StatusTracker.ClearStatus(CNetScheduleAPI::eCanceled, &bvCanceled);
-        m_StatusTracker.ClearStatus(CNetScheduleAPI::eFailed, &bvFailed);
-        m_StatusTracker.ClearStatus(CNetScheduleAPI::eDone, &bvDone);
-        m_StatusTracker.ClearStatus(CNetScheduleAPI::eReading, &bvReading);
-        m_StatusTracker.ClearStatus(CNetScheduleAPI::eConfirmed, &bvConfirmed);
-        m_StatusTracker.ClearStatus(CNetScheduleAPI::eReadFailed, &bvReadFailed);
-
-        m_AffinityRegistry.Clear();
-        m_GroupRegistry.Clear();
-
-        CWriteLockGuard     rtl_guard(m_RunTimeLineLock);
-        m_RunTimeLine->ReInit(0);
-    }}
-
-    if (bvPending.count() > 0)
-        x_Erase(bvPending, CNetScheduleAPI::ePending);
-    if (bvRunning.count() > 0)
-        x_Erase(bvRunning, CNetScheduleAPI::eRunning);
-    if (bvCanceled.count() > 0)
-        x_Erase(bvCanceled, CNetScheduleAPI::eCanceled);
-    if (bvDone.count() > 0)
-        x_Erase(bvFailed, CNetScheduleAPI::eFailed);
-    if (bvDone.count() > 0)
-        x_Erase(bvDone, CNetScheduleAPI::eDone);
-    if (bvReading.count() > 0)
-        x_Erase(bvReading, CNetScheduleAPI::eReading);
-    if (bvConfirmed.count() > 0)
-        x_Erase(bvConfirmed, CNetScheduleAPI::eConfirmed);
-    if (bvReadFailed.count() > 0)
-        x_Erase(bvReadFailed, CNetScheduleAPI::eReadFailed);
 }
 
 
