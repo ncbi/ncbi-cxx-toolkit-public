@@ -42,7 +42,6 @@ BEGIN_NCBI_SCOPE
 
 
 typedef boost::integral_constant<bool, true> TAttrTesting;
-typedef pair<string, TNetStorageFlags> TKey;
 
 
 #define APP_NAME                    "test_netstorage_rpc"

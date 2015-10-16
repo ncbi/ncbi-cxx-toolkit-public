@@ -1353,6 +1353,8 @@ inline string Relocate(TNetStorageByKey& netstorage, const string& unique_key,
     return netstorage.Relocate(unique_key, flags, old_flags);
 }
 
+typedef pair<string, TNetStorageFlags> TKey;
+
 template <class TNetStorageByKey>
 inline bool Exists(TNetStorageByKey& netstorage, const TKey& key)
 {
