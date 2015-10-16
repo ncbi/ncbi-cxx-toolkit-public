@@ -2287,7 +2287,11 @@ CBioseq_Handle GetNucleotideParent(const CBioseq_Handle& bsh)
 
     CBioseq_Handle ret;
     if ( sfp ) {
-        ret = bsh.GetScope().GetBioseqHandle(sfp->GetLocation());
+        try {
+            ret = bsh.GetScope().GetBioseqHandle(sfp->GetLocation());
+        } catch(...) {
+            // may fail due to trans-splicing, e.g., on small-genome set
+        }
     }
     return ret;
 }
