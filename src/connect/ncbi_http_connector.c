@@ -1498,7 +1498,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
             SOCK_SetTimeout(uuu->sock, eIO_Read, kInfiniteTimeout);
         do {
             status = s_ReadData(uuu, &uuu->http, 0, &n, eIO_ReadPlain);
-        } while (status != eIO_Success);
+        } while (status == eIO_Success);
         if (header_parse == eHTTP_HeaderContinue  &&  status == eIO_Closed) {
             if (url)
                 free(url);
