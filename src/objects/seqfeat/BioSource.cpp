@@ -161,31 +161,43 @@ CBioSource::EGenome CBioSource::GetGenomeByOrganelle (const string& organelle, N
 {
     CBioSource::EGenome gtype = CBioSource::eGenome_unknown;
 
-    if (use_case == NStr::eCase && !starts_with) {
+    if (use_case == NStr::eCase && !starts_with) {       
         TGenomeMap::const_iterator g_iter = sm_GenomeKeys.find (organelle.c_str ());
-        if (g_iter != sm_GenomeKeys.end ()) {
+        if (g_iter == sm_GenomeKeys.end()) {
+            if (NStr::Equal(organelle, "mitochondrial")) {
+                gtype = CBioSource::eGenome_mitochondrion;
+            }
+        } else {
             gtype = g_iter->second;
         }
     } else {
         TGenomeMap::const_iterator g_iter = sm_GenomeKeys.begin();
         if (starts_with) {
-            string match;
-            while (g_iter != sm_GenomeKeys.end() && gtype == CBioSource::eGenome_unknown) {
-                match = g_iter->first;
-                if (NStr::StartsWith(organelle, match.c_str(), use_case)) {
-                    if (organelle.length() == match.length()
-                        || (match.length() < organelle.length() && isspace (organelle[match.length()]))) {
-                        gtype = g_iter->second;
+            if (NStr::StartsWith(organelle, "mitochondrial", use_case)){
+                gtype = CBioSource::eGenome_mitochondrion;
+            } else {
+                string match;
+                while (g_iter != sm_GenomeKeys.end() && gtype == CBioSource::eGenome_unknown) {
+                    match = g_iter->first;
+                    if (NStr::StartsWith(organelle, match.c_str(), use_case)) {
+                        if (organelle.length() == match.length()
+                            || (match.length() < organelle.length() && isspace(organelle[match.length()]))) {
+                            gtype = g_iter->second;
+                        }
                     }
+                    ++g_iter;
                 }
-                ++g_iter;
             }
         } else {
-            while (g_iter != sm_GenomeKeys.end() && gtype == CBioSource::eGenome_unknown) {
-                if (NStr::Equal(organelle, g_iter->first, use_case)) {
-                    gtype = g_iter->second;
+            if (NStr::Equal(organelle, "mitochondrial", use_case)) {
+                gtype = CBioSource::eGenome_mitochondrion;
+            } else {
+                while (g_iter != sm_GenomeKeys.end() && gtype == CBioSource::eGenome_unknown) {
+                    if (NStr::Equal(organelle, g_iter->first, use_case)) {
+                        gtype = g_iter->second;
+                    }
+                    ++g_iter;
                 }
-                ++g_iter;
             }
         }
     }

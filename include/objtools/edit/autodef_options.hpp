@@ -140,7 +140,9 @@ public:
     bool GetSpecifyNuclearProduct() const { return m_BooleanFlags[eOptionFieldType_SpecifyNuclearProduct]; }
     void SetSpecifyNuclearProduct(bool val) {
         m_BooleanFlags[eOptionFieldType_SpecifyNuclearProduct] = val;
-        m_ProductFlag = CBioSource::eGenome_unknown;
+        if (val) {
+            m_ProductFlag = CBioSource::eGenome_unknown;
+        }
     }
 
     int GetMaxMods() const { return m_MaxMods; }

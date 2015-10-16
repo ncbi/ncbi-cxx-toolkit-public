@@ -94,10 +94,14 @@ void CAutoDefOptions::InitFromUserObject(const CUser_object& obj)
                 if ((*it)->IsSetData() && (*it)->GetData().IsBool() && (*it)->GetData().GetBool()) {
                     m_BooleanFlags[field_type] = true;
                 }
+            } else if (field_type == eOptionFieldType_ProductFlag) {
+                if ((*it)->IsSetData() && (*it)->GetData().IsStr()) { 
+                    m_ProductFlag = GetProductFlag((*it)->GetData().GetStr());
+                    m_BooleanFlags[eOptionFieldType_SpecifyNuclearProduct] = false;
+                }
             INITENUMFIELD(FeatureListType)
             INITENUMFIELD(MiscFeatRule)
             INITENUMFIELD(HIVRule)
-            INITENUMFIELD(ProductFlag)
             }
             else if (field_type == eOptionFieldType_SuppressedFeatures) {
                 x_SetSuppressedFeatures(**it);
