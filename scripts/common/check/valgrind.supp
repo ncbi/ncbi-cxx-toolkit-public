@@ -42,6 +42,22 @@
 
 
 {
+   GnuTLS/Nettle -- apparent optimization shortcut
+   Memcheck:Addr8
+   fun:__gmpn_copyi_core2
+   fun:__gmpn_powm
+   fun:__gmpz_powm
+   fun:nettle_rsa_compute_root
+   fun:nettle_rsa_pkcs1_sign_tr
+   fun:_wrap_nettle_pk_sign
+   fun:gnutls_privkey_sign_data
+   fun:_gnutls_check_key_cert_match
+   fun:gnutls_certificate_set_x509_key
+   fun:gnutls_certificate_set_x509_simple_pkcs12_mem
+   fun:gnutls_certificate_set_x509_simple_pkcs12_file
+}
+
+{
    NCBI VDB ver 2.5.0 -- uninit value created on stack in string_vprintf (printf.c:3374)
    Memcheck:Cond
    ...
