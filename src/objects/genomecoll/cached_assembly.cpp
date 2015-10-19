@@ -56,7 +56,11 @@ CRef<CGC_Assembly> UncomressAndCreate(const string& blob, CCompressStream::EMeth
                 >> MSerial_SkipUnknownVariants(eSerialSkipUnknown_Yes)
                 >> (*m_assembly);
 
+    sw.Stop();
     LOG_POST(Info << "Assebmly uncomressed and created in (sec): " << sw.Elapsed());
+    GetDiagContext().Extra().Print("Create-assembly-from-blob", sw.Elapsed() * 1000) // need millisecond
+                            .Print("compress-method", method)
+                            .Print("blob-size", blob.size());
     return m_assembly;
 }
 
@@ -105,6 +109,8 @@ CRef<CGC_Assembly> CCachedAssembly::Assembly()
 static
 void CompressAssembly(string& blob, CRef<CGC_Assembly> assembly, CCompressStream::EMethod method)
 {
+    CStopWatch sw(CStopWatch::eStart);
+
     LOG_POST(Info << "Creating blob with compression: " << method);
     _ASSERT(blob.empty());
 
@@ -115,12 +121,19 @@ void CompressAssembly(string& blob, CRef<CGC_Assembly> assembly, CCompressStream
     compress.Finalize();
 
     blob = CNcbiOstrstreamToString(out);
+
+    sw.Stop();
+    GetDiagContext().Extra().Print("Compress-assembly-to-blob", sw.Elapsed() * 1000) // need millisecond
+                            .Print("compress-method", method)
+                            .Print("blob-size", blob.size());
 }
 
 static
 string ChangeCompression(const string& blob,
                          CCompressStream::EMethod from, CCompressStream::EMethod to)
 {
+    CStopWatch sw(CStopWatch::eStart);
+
     LOG_POST(Info << "Changing compression from " << from << " to " << to);
     _ASSERT(from != to);
 
@@ -131,9 +144,19 @@ string ChangeCompression(const string& blob,
 
     to_stream << from_stream.rdbuf();
     to_stream.Finalize();
+
+    string new_blob = CNcbiOstrstreamToString(out);
+
+    sw.Stop();
     LOG_POST(Info << "Compression done - processed: " << to_stream.GetProcessedSize() << ", old size:" << blob.size() << ", new size: " << to_stream.GetOutputSize());
 
-    return CNcbiOstrstreamToString(out);
+    GetDiagContext().Extra().Print("Change-assembly-compression", sw.Elapsed() * 1000) // need millisecond
+                            .Print("compress-method-old", from)
+                            .Print("compress-method-new", to)
+                            .Print("blob-size-old",       blob.size())
+                            .Print("blob-size-new",   new_blob.size());
+
+    return new_blob;
 }
 
 const string& CCachedAssembly::Blob(CCompressStream::EMethod neededCompression)
