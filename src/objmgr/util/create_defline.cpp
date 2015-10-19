@@ -140,6 +140,111 @@ CFeat_CI Itr(Var, Sel)
 #define FOR_SELECTED_SEQFEAT_ON_BIOSEQ_HANDLE(Itr, Var, Sel) \
 for (SELECTED_SEQFEAT_ON_BIOSEQ_HANDLE_ITERATOR(Itr, Var, Sel); Itr;  ++Itr)
 
+// Copied from CleanAndCompress in objtools/format/utils.cpp
+
+// two-bytes combinations we're looking to clean
+#define twochars(a,b) Uint2((a) << 8 | (b))
+#define twocommas twochars(',',',')
+#define twospaces twochars(' ',' ')
+#define space_comma twochars(' ',',')
+#define space_bracket twochars(' ',')')
+#define bracket_space twochars('(',' ')
+#define space_semicolon twochars(' ',';')
+#define comma_space twochars(',',' ')
+#define semicolon_space twochars(';',' ')
+
+void x_CleanAndCompress(string& dest, const CTempString& instr)
+{
+    size_t left = instr.size();
+    // this is the input stream
+    const char* in = instr.data();
+
+    // skip front white spaces
+    while (left && *in == ' ')
+    {
+        in++;
+        left--;
+    }
+    // forget end white spaces
+    while (left && in[left - 1] == ' ')
+    {
+        left--;
+    }
+
+    dest.resize(left);
+
+    if (left < 1) return;
+
+    // this is where we write result
+    char* out = (char*)dest.c_str();
+
+    char curr = *in++; // initialize with first character
+    left--;
+
+    char next = 0;
+    Uint2 two_chars = curr; // this is two bytes storage where we see current and previous symbols
+
+    while (left > 0) {
+        next = *in++;
+
+        two_chars = (two_chars << 8) | next;
+
+        switch (two_chars)
+        {
+        case twocommas: // replace double commas with comma+space
+            *out++ = curr;
+            next = ' ';
+            break;
+        case twospaces: // skip multispaces (only print last one)
+            break;
+        case bracket_space: // skip space after bracket
+            next = curr;
+            two_chars = curr;
+            break;
+        case space_bracket: // skip space before bracket
+            break;
+        case space_comma:
+        case space_semicolon: // swap characters
+            *out++ = next;
+            next = curr;
+            two_chars = curr;
+            break;
+        case comma_space:
+            *out++ = curr;
+            *out++ = ' ';
+            while (next == ' ' || next == ',') {
+                next = *in;
+                in++;
+                left--;
+            }
+            two_chars = next;
+            break;
+        case semicolon_space:
+            *out++ = curr;
+            *out++ = ' ';
+            while (next == ' ' || next == ';') {
+                next = *in;
+                in++;
+                left--;
+            }
+            two_chars = next;
+            break;
+        default:
+            *out++ = curr;
+            break;
+        }
+
+        curr = next;
+        left--;
+    }
+
+    if (curr > 0 && curr != ' ') {
+        *out++ = curr;
+    }
+
+    dest.resize(out - dest.c_str());
+}
+
 static const char* x_OrganelleName (
     TBIOSOURCE_GENOME genome,
     bool has_plasmid,
@@ -1518,6 +1623,29 @@ static const char* s_proteinOrganellePrefix [] = {
   "chromatophore"
 };
 
+static string s_RemoveBracketedOrgFromEnd (string str, string taxname)
+
+{
+    string final;
+    if (str.empty()) return str;
+    if (taxname.empty()) return str;
+    SIZE_TYPE taxlen = taxname.length();
+    int len = str.length();
+    if (len < 5) return str;
+    if (str [len - 1] != ']') return str;
+    SIZE_TYPE cp = NStr::Find(str, "[", 0, NPOS, NStr::eLast);
+    if (cp == NPOS) return str;
+    string suffix = str.substr(cp+1);
+    if (NStr::StartsWith(suffix, "NAD")) return str;
+    if (suffix.length() != taxlen + 1) return str;
+    if (NStr::StartsWith(suffix, taxname)) {
+        str.erase (cp);
+        x_CleanAndCompress(final, str);
+
+    }
+    return final;
+}
+
 void CDeflineGenerator::x_SetTitleFromProtein (
     const CBioseq_Handle& bsh
 )
@@ -1558,8 +1686,9 @@ void CDeflineGenerator::x_SetTitleFromProtein (
         const char* prefix = "";
         FOR_EACH_NAME_ON_PROT (prp_itr, prp) {
             const string& str = *prp_itr;
+            string trimmed = s_RemoveBracketedOrgFromEnd (str, m_Taxname);
             m_MainTitle += prefix;
-            m_MainTitle += str;
+            m_MainTitle += trimmed;
             if (! m_AllProtNames) {
                 break;
             }
@@ -2096,111 +2225,6 @@ static inline void s_TrimMainTitle (string& str)
     if (pos != NPOS) {
         str.erase (pos + 1);
     }
-}
-
-// Copied from CleanAndCompress in objtools/format/utils.cpp
-
-// two-bytes combinations we're looking to clean
-#define twochars(a,b) Uint2((a) << 8 | (b))
-#define twocommas twochars(',',',')
-#define twospaces twochars(' ',' ')
-#define space_comma twochars(' ',',')
-#define space_bracket twochars(' ',')')
-#define bracket_space twochars('(',' ')
-#define space_semicolon twochars(' ',';')
-#define comma_space twochars(',',' ')
-#define semicolon_space twochars(';',' ')
-
-void x_CleanAndCompress(string& dest, const CTempString& instr)
-{
-    size_t left = instr.size();
-    // this is the input stream
-    const char* in = instr.data();
-
-    // skip front white spaces
-    while (left && *in == ' ')
-    {
-        in++;
-        left--;
-    }
-    // forget end white spaces
-    while (left && in[left - 1] == ' ')
-    {
-        left--;
-    }
-
-    dest.resize(left);
-
-    if (left < 1) return;
-
-    // this is where we write result
-    char* out = (char*)dest.c_str();
-
-    char curr = *in++; // initialize with first character
-    left--;
-
-    char next = 0;
-    Uint2 two_chars = curr; // this is two bytes storage where we see current and previous symbols
-
-    while (left > 0) {
-        next = *in++;
-
-        two_chars = (two_chars << 8) | next;
-
-        switch (two_chars)
-        {
-        case twocommas: // replace double commas with comma+space
-            *out++ = curr;
-            next = ' ';
-            break;
-        case twospaces: // skip multispaces (only print last one)
-            break;
-        case bracket_space: // skip space after bracket
-            next = curr;
-            two_chars = curr;
-            break;
-        case space_bracket: // skip space before bracket
-            break;
-        case space_comma:
-        case space_semicolon: // swap characters
-            *out++ = next;
-            next = curr;
-            two_chars = curr;
-            break;
-        case comma_space:
-            *out++ = curr;
-            *out++ = ' ';
-            while (next == ' ' || next == ',') {
-                next = *in;
-                in++;
-                left--;
-            }
-            two_chars = next;
-            break;
-        case semicolon_space:
-            *out++ = curr;
-            *out++ = ' ';
-            while (next == ' ' || next == ';') {
-                next = *in;
-                in++;
-                left--;
-            }
-            two_chars = next;
-            break;
-        default:
-            *out++ = curr;
-            break;
-        }
-
-        curr = next;
-        left--;
-    }
-
-    if (curr > 0 && curr != ' ') {
-        *out++ = curr;
-    }
-
-    dest.resize(out - dest.c_str());
 }
 
 /*
