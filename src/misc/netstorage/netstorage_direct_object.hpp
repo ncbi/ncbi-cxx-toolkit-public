@@ -31,7 +31,7 @@
  */
 
 #include <connect/services/netstorage.hpp>
-#include "state.hpp"
+#include "netstorage_direct_state.hpp"
 
 
 BEGIN_NCBI_SCOPE
