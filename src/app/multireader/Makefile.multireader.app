@@ -7,7 +7,7 @@
 #################################
 
 APP =  multireader
-SRC =  multireader
+SRC =  multireader multifile_source multifile_destination
 LIB =  $(OBJEDIT_LIBS) $(XFORMAT_LIBS) \
        xalgophytree biotree fastme xalnmgr tables xobjreadex \
        xobjutil xconnect xregexp xcleanup $(PCRE_LIB) $(SOBJMGR_LIBS) 

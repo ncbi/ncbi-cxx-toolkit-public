@@ -69,7 +69,7 @@
 #include <objtools/readers/fasta.hpp>
 #include <objtools/readers/ucscregion_reader.hpp>
 #include <objtools/readers/read_util.hpp>
-#include <misc/hgvs/hgvs_reader.hpp>
+//#include <misc/hgvs/hgvs_reader.hpp>
 
 #include <objtools/edit/feattable_edit.hpp>
 
@@ -78,6 +78,9 @@
 #include <objects/biotree/BioTreeContainer.hpp>
 
 #include <objtools/cleanup/cleanup.hpp>
+
+#include "multifile_source.hpp"
+#include "multifile_destination.hpp"
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -117,7 +120,7 @@ class CMultiReaderApp
      : public CNcbiApplication
 {
 public:
-    CMultiReaderApp(): m_pErrors( 0 ) 
+    CMultiReaderApp(): m_pErrors( 0 ), m_uFormat(CFormatGuess::eUnknown)
     {
         SetVersion(CVersionInfo(1, 0, 2));
     };
@@ -134,6 +137,7 @@ private:
     virtual void Init(void);
     virtual int  Run(void);
 
+    void xProcessSingleFile(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessDefault(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessWiggle(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessWiggleRaw(const CArgs&, CNcbiIstream&, CNcbiOstream&);
@@ -273,12 +277,12 @@ void CMultiReaderApp::Init(void)
 
     arg_desc->SetCurrentGroup("INPUT / OUTPUT");
 
-    arg_desc->AddKey(
+    arg_desc->AddDefaultKey(
         "input", 
         "File_In",
         "Input filename",
-        CArgDescriptions::eInputFile);
-
+        CArgDescriptions::eInputFile,
+        "-");
     arg_desc->AddAlias("i", "input");
 
     arg_desc->AddDefaultKey(
@@ -286,8 +290,28 @@ void CMultiReaderApp::Init(void)
         "File_Out",
         "Output filename",
         CArgDescriptions::eOutputFile, "-"); 
-
     arg_desc->AddAlias("o", "output");
+
+    arg_desc->AddDefaultKey(
+        "indir",
+        "Dir_In",
+        "Input directory",
+        CArgDescriptions::eDirectory,
+        "");
+    arg_desc->AddAlias("p", "indir");
+
+    arg_desc->AddDefaultKey(
+        "outdir",
+        "Dir_Out",
+        "Output directory",
+        CArgDescriptions::eDirectory,
+        "");
+    arg_desc->AddAlias("r", "outdir");
+
+    //arg_desc->SetDependency("input", CArgDescriptions::eExcludes, "indir");
+    //arg_desc->SetDependency("indir", CArgDescriptions::eExcludes, "input");
+    //arg_desc->SetDependency("output", CArgDescriptions::eExcludes, "outdir");
+    //arg_desc->SetDependency("outdir", CArgDescriptions::eExcludes, "output");
 
     arg_desc->AddDefaultKey(
         "format", 
@@ -573,17 +597,75 @@ int
 CMultiReaderApp::Run(void)
 //  ----------------------------------------------------------------------------
 {   
-    const CArgs& args = GetArgs();
-    CNcbiIstream& istr = args["input"].AsInputFile(CArgValue::fBinary);
-    CNcbiOstream& ostr = args["output"].AsOutputFile();
+    const CArgs& args = GetArgs(); 
+    string argInFile = args["input"].AsString();
+    string argOutFile = args["output"].AsString();
+    string argInDir = args["indir"].AsString();
+    string argOutDir = args["outdir"].AsString();
+    if ((argInFile != "-")  &&  !argInDir.empty()) {
+        cerr << "multireader: command line args -input and -indir are incompatible." 
+             << endl;
+        return 1;
+    }
+    if ((argOutFile != "-") && !argOutDir.empty()) {
+        cerr << "multireader: command line args -output and -outdir are incompatible." 
+             << endl;
+        return 1;
+    }
+    if (argInDir.empty()  &&  !argOutDir.empty()) {
+        cerr << "multireader: command line arg -outdir requires -indir."
+             << endl;
+        return 1;
+    }
+    if (argOutDir.empty()  && !argInDir.empty()) {
+        cerr << "multireader: command line arg -indir requires -outdir."
+            << endl;
+        return 1;
+    }
 
-    xSetFormat(args ,istr);    
-    xSetFlags(args, istr);
     xSetMapper(args);
     xSetMessageListener(args);
 
+    if (!argInDir.empty()) {
+        // with tests above, establishes multifile operation
+        string inFilePattern = CDirEntry::MakePath(argInDir, "*", "gff3");
+        string inFile, outFile;
+        CMultiFileSource fileSource(inFilePattern);
+        CMultiFileDestination fileDestination(argOutDir);
+        bool retIn = fileSource.Next(inFile);
+        while (retIn) {
+            if (!fileDestination.Next(inFile, outFile)) {
+                cerr << "multireader: unable to create output file "
+                     << outFile << "." << endl;
+                return 1;
+            }
+            CNcbiIfstream istr(inFile.c_str(), CArgValue::fBinary);
+            CNcbiOfstream ostr(outFile.c_str());
+            xProcessSingleFile(args, istr, ostr);
+            retIn = fileSource.Next(inFile);
+        }
+    }
+    else {
+        // at this point, implies single file operation
+        CNcbiIstream& istr = args["input"].AsInputFile(CArgValue::fBinary);
+        CNcbiOstream& ostr = args["output"].AsOutputFile();
+        xProcessSingleFile(args, istr, ostr);
+    }
+    return 0;
+}
+
+//  -----------------------------------------------------------------------------
+void
+CMultiReaderApp::xProcessSingleFile(
+    const CArgs& args,
+    CNcbiIstream& istr,
+    CNcbiOstream& ostr)
+//  -----------------------------------------------------------------------------
+{
+    xSetFlags(args, istr);
     CRef< CSerialObject> object;
     vector< CRef< CSeq_annot > > annots;
+
     try {
         switch( m_uFormat ) {
             default: 
@@ -665,7 +747,6 @@ CMultiReaderApp::Run(void)
         m_pErrors->PutError(*line_error_p);
     }
     xDumpErrors( cerr );
-    return 0;
 }
 
 //  ----------------------------------------------------------------------------
