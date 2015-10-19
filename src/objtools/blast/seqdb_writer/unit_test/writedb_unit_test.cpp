@@ -2696,7 +2696,7 @@ BOOST_AUTO_TEST_CASE(CSeqDBIsam_32bit_GI)
     // with big_gi above.
 
     CWriteDB_Isam wdb(
-            EWriteDBIsamType::eGi,
+            eGi,
             "big_gi",
             true,       // is protein?
             0,          // volume index
