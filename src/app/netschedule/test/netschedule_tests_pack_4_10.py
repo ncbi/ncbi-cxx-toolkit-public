@@ -2419,20 +2419,20 @@ class Scenario162( TestBase ):
         " Checks the last event fields "
         info = self.ns.getJobInfo( 'TEST', self.jobID )
         if info[ 'client' ] != client:
-            raise Exception( "Unexpected client. Expected: " + client + \
-                             " Received: " + info[ 'client' ] )
+            raise Exception( "Unexpected client. Expected: " + client +
+                             " Received: " + str( info ) )
         if info[ 'event' ] != event:
-            raise Exception( "Unexpected event. Expected: " + event + \
-                             " Received: " + info[ 'event' ] )
+            raise Exception( "Unexpected event. Expected: " + event +
+                             " Received: " + str( info ) )
         if info[ 'status' ] != status:
-            raise Exception( "Unexpected status. Expected: " + status + \
-                             " Received: " + info[ 'status' ] )
+            raise Exception( "Unexpected status. Expected: " + status +
+                             " Received: " + str( info ) )
         if info[ 'node' ] != node:
-            raise Exception( "Unexpected node. Expected: " + node + \
-                             " Received: " + info[ 'node' ] )
+            raise Exception( "Unexpected node. Expected: " + node +
+                             " Received: " + str( info ) )
         if info[ 'session' ] != session:
-            raise Exception( "Unexpected node. Expected: " + session + \
-                             " Received: " + info[ 'session' ] )
+            raise Exception( "Unexpected node. Expected: " + session +
+                             " Received: " + str( info ) )
         return
 
     def execute( self ):
