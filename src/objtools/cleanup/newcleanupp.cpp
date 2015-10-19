@@ -6582,6 +6582,41 @@ static SIZE_TYPE s_TitleEndsInOrganism (
     return answer;
 }
 
+static void s_RemoveOrgFromEndOfProtein (CBioseq& seq, string taxname)
+
+{
+    if (taxname.empty()) return;
+    SIZE_TYPE taxlen = taxname.length();
+
+    EDIT_EACH_SEQANNOT_ON_BIOSEQ (annot_it, seq) {
+        CSeq_annot& annot = **annot_it;
+        if (! annot.IsFtable()) continue;
+        EDIT_EACH_FEATURE_ON_ANNOT (feat_it, annot) {
+            CSeq_feat& feat = **feat_it;
+            CSeqFeatData& data = feat.SetData();
+            if (! data.IsProt()) continue;
+            CProt_ref& prot_ref = data.SetProt();
+            EDIT_EACH_NAME_ON_PROTREF (it, prot_ref) {
+                string str = *it;
+                if (str.empty()) continue;
+                int len = str.length();
+                if (len < 5) continue;
+                if (str [len - 1] != ']') continue;
+                SIZE_TYPE cp = NStr::Find(str, "[", 0, NPOS, NStr::eLast);
+                if (cp == NPOS) continue;
+                string suffix = str.substr(cp+1);
+                if (NStr::StartsWith(suffix, "NAD")) continue;
+                if (suffix.length() != taxlen + 1) continue;
+                if (NStr::StartsWith(suffix, taxname)) {
+                    str.erase (cp);
+                    Asn2gnbkCompressSpaces(str);
+                    *it = str;
+                }
+            }
+        }
+    }
+}
+
 void CNewCleanup_imp::x_AddPartialToProteinTitle( CBioseq &bioseq )
 {
     // Bail if not protein
@@ -6639,10 +6674,6 @@ void CNewCleanup_imp::x_AddPartialToProteinTitle( CBioseq &bioseq )
         if( descr.IsTitle() ) {
             psTitle = & GET_MUTABLE(descr, Title);
         }
-    }
-    // bail if no title
-    if( (NULL == psTitle) || psTitle->empty() ) {
-        return;
     }
 
     // iterate Seqdescs from bottom to top
@@ -6712,7 +6743,14 @@ void CNewCleanup_imp::x_AddPartialToProteinTitle( CBioseq &bioseq )
         }
     }
 
-    // put title into a reference, 
+    s_RemoveOrgFromEndOfProtein(bioseq, sTaxname);
+
+    // bail if no title
+    if( (NULL == psTitle) || psTitle->empty() ) {
+        return;
+    }
+
+    // put title into a reference,
     // just because it's more convenient than a pointer
     string & sTitle = *psTitle;
     // remember original so we can see if we changed it
