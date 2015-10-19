@@ -35,7 +35,7 @@
 #include <boost/type_traits/integral_constant.hpp>
 
 #include <corelib/ncbi_system.hpp>
-#include <connect/services/netstorage_impl.hpp>
+#include <connect/services/netstorage.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -44,8 +44,8 @@ typedef boost::integral_constant<bool, false> TAttrTesting;
 
 
 #define APP_NAME                "test_netstorage"
-#define ST_ST_LIST      (DirectNetStorage, (DirectNetStorageByKey, BOOST_PP_NIL))
-#define LOC_LOC_LIST    BOOST_PP_NIL
+#define ST_LIST1    (NetStorage, (NetStorageByKey, BOOST_PP_NIL))
+#define ST_LIST2    BOOST_PP_NIL
 
 // NB: This parameter is not used here, but required for compilation
 NCBI_PARAM_DECL(string, netstorage, service_name);

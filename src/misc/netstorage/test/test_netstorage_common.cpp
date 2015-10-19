@@ -1094,6 +1094,37 @@ struct SFT2NC : SLocBase
     static const TNetStorageFlags relocate = fNST_Fast;
 };
 
+struct SDirectNC
+{
+    typedef boost::integral_constant<ENetStorageObjectLocation, eNFL_NetCache>
+        TSource;
+    static const TNetStorageFlags source = 0;
+
+    static const TNetStorageFlags non_existent = 0;
+
+    typedef TSource TCreate;
+    static const TNetStorageFlags create = 0;
+
+    static const TNetStorageFlags immovable = 0;
+
+    static const TNetStorageFlags readable = 0;
+
+    typedef TCreate TRelocate;
+    static const TNetStorageFlags relocate = 0;
+
+    typedef boost::integral_constant<bool, false> TAttrTesting;
+
+    static const bool check_relocate = false;
+    static const bool loc_info = false;
+
+    static const char* init_string() { return "&default_storage=nc"; }
+
+    static const char* not_found()
+    {
+        return "o-c8TRwX3VuFSZnf5BuKLelYjHcUK5xKpizKXbIX8EmNDNle";
+    }
+};
+
 
 // Just a convenience wrapper
 template <
@@ -1493,34 +1524,15 @@ BOOST_FIXTURE_TEST_CASE(Test##ST##SRC##API##LOC, \
 
 #define DEFINE_TEST_CASE(r, p) TEST_CASE p
 
-
-// Generic tests
-
-#define ST_LIST     (NetStorage, (NetStorageByKey, BOOST_PP_NIL))
+//      ST_LIST1    defined in the header
+//      ST_LIST2    defined in the header
 #define SRC_LIST    (Emp, (Str, (Rnd, (Nst, BOOST_PP_NIL))))
 #define API_LIST    (Str, (Buf, (Irw, (Ios, BOOST_PP_NIL))))
-#define LOC_LIST    (NC2FT, (FT2NC, BOOST_PP_NIL))
+#define LOC_LIST1   (NC2FT, (FT2NC, BOOST_PP_NIL))
+#define LOC_LIST2   (DirectNC, LOC_LIST1)
 
 BOOST_PP_LIST_FOR_EACH_PRODUCT(DEFINE_TEST_CASE, 4, \
-        (ST_LIST, SRC_LIST, API_LIST, LOC_LIST));
-
-
-// API specific tests
-
-// Storage specific tests
-//      ST_ST_LIST      defined in the header
-#define ST_SRC_LIST     (Str, BOOST_PP_NIL)
-#define ST_API_LIST     (Str, BOOST_PP_NIL)
-#define ST_LOC_LIST     LOC_LIST
+        (ST_LIST2, SRC_LIST, API_LIST, LOC_LIST2))
 
 BOOST_PP_LIST_FOR_EACH_PRODUCT(DEFINE_TEST_CASE, 4, \
-        (ST_ST_LIST, ST_SRC_LIST, ST_API_LIST, ST_LOC_LIST));
-
-// Location specific tests
-#define LOC_ST_LIST     (NetStorage, BOOST_PP_NIL)
-#define LOC_SRC_LIST    SRC_LIST
-#define LOC_API_LIST    API_LIST
-//      LOC_LOC_LIST    defined in the header
-
-BOOST_PP_LIST_FOR_EACH_PRODUCT(DEFINE_TEST_CASE, 4, \
-        (LOC_ST_LIST, LOC_SRC_LIST, LOC_API_LIST, LOC_LOC_LIST));
+        (ST_LIST1, SRC_LIST, API_LIST, LOC_LIST1))

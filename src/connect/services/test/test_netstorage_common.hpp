@@ -45,8 +45,8 @@ typedef boost::integral_constant<bool, true> TAttrTesting;
 
 
 #define APP_NAME                    "test_netstorage_rpc"
-#define ST_ST_LIST      BOOST_PP_NIL
-#define LOC_LOC_LIST    (DirectNC, BOOST_PP_NIL)
+#define ST_LIST1    (NetStorageByKey, BOOST_PP_NIL)
+#define ST_LIST2    (NetStorage, BOOST_PP_NIL)
 
 NCBI_PARAM_DECL(string, netstorage, service_name);
 typedef NCBI_PARAM_TYPE(netstorage, service_name) TNetStorage_ServiceName;
@@ -56,38 +56,6 @@ typedef NCBI_PARAM_TYPE(netcache, service_name) TNetCache_ServiceName;
 
 NCBI_PARAM_DECL(string, netstorage, app_domain);
 typedef NCBI_PARAM_TYPE(netstorage, app_domain) TNetStorage_AppDomain;
-
-struct SDirectNC
-{
-    typedef boost::integral_constant<ENetStorageObjectLocation, eNFL_NetCache>
-        TSource;
-    static const TNetStorageFlags source = 0;
-
-    static const TNetStorageFlags non_existent = 0;
-
-    typedef TSource TCreate;
-    static const TNetStorageFlags create = 0;
-
-    static const TNetStorageFlags immovable = 0;
-
-    static const TNetStorageFlags readable = 0;
-
-    typedef TCreate TRelocate;
-    static const TNetStorageFlags relocate = 0;
-
-    typedef boost::integral_constant<bool, false> TAttrTesting;
-
-    static const bool check_relocate = false;
-    static const bool loc_info = false;
-
-    static const char* init_string() { return "&default_storage=nc"; }
-
-    static const char* not_found()
-    {
-        return "o-c8TRwX3VuFSZnf5BuKLelYjHcUK5xKpizKXbIX8EmNDNle";
-    }
-};
-
 
 template <class TNetStorage>
 inline TNetStorage g_GetNetStorage(const char* mode)
