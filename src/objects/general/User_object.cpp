@@ -224,6 +224,7 @@ CUser_object& CUser_object::AddField(const string& label,
 }
 
 
+#ifdef NCBI_STRICT_GI
 CUser_object& CUser_object::AddField(const string& label,
                                      TGi           value)
 {
@@ -234,6 +235,7 @@ CUser_object& CUser_object::AddField(const string& label,
     SetData().push_back(field);
     return *this;
 }
+#endif
 
 
 CUser_object& CUser_object::AddField(const string& label,
