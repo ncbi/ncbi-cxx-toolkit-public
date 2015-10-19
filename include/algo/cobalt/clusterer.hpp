@@ -80,7 +80,7 @@ public:
     public:
         /// Create empty cluster
         ///
-        CSingleCluster(void) : m_Prototype(-1), m_Tree(NULL) {}
+        CSingleCluster(void) : m_Prototype(-1), m_Diameter(0.0), m_Tree(NULL) {}
 
         /// Add element to the cluster
         /// @param el Index of an element
