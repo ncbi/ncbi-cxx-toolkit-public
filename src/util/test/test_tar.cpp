@@ -428,7 +428,7 @@ int CTarTest::Run(void)
 #ifdef TEST_CONN_TAR
     CCanceled canceled;
     auto_ptr<CConn_IOStream> conn;
-    if (NStr::Find(CTempString(file, 3/*pos*/, 4/*len*/), "://") != NPOS) {
+    if (NStr::Find(CTempString(file, 3/*pos*/, 5/*len*/), "://") != NPOS) {
 #  ifdef HAVE_LIBGNUTLS
         SOCK_SetupSSL(NcbiSetupGnuTls);
 #  endif // HAVE_LIBGNUTLS
