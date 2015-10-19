@@ -1494,10 +1494,19 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
 
     if (uuu->net_info->debug_printout
         ||  header_parse == eHTTP_HeaderContinue) {
-        if (http_code > 0/*real error, w/only a very short body expected*/)
-            SOCK_SetTimeout(uuu->sock, eIO_Read, kInfiniteTimeout);
+        if (http_code > 0/*real error, w/only a very short body expected*/) {
+            static const STimeout kDefConnTimeout = {
+                (unsigned int)
+                  DEF_CONN_TIMEOUT,
+                (unsigned int)
+                ((DEF_CONN_TIMEOUT - (unsigned int) DEF_CONN_TIMEOUT)
+                 * 1000000.0)
+            };
+            SOCK_SetTimeout(uuu->sock, eIO_Read, &kDefConnTimeout);
+        }
         do {
             status = s_ReadData(uuu, &uuu->http, 0, &n, eIO_ReadPlain);
+            uuu->received += n;
         } while (status == eIO_Success);
         if (header_parse == eHTTP_HeaderContinue  &&  status == eIO_Closed) {
             if (url)
@@ -1505,14 +1514,14 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
             return retry->mode ? status : eIO_Success;
         }
     } else
-        status = eIO_Success/*NB: not really necessary*/;
+        status = eIO_Success/*NB: irrelevant*/;
 
     if (uuu->net_info->debug_printout == eDebugPrintout_Some
         ||  header_parse == eHTTP_HeaderContinue) {
         const char* err = status != eIO_Closed ? IO_StatusStr(status) : 0;
         if (!url)
             url = ConnNetInfo_URL(uuu->net_info);
-        /*assert(status != eIO_Success);*/
+        assert(status != eIO_Success);
         assert(!err  ||  *err);
         if (header_parse == eHTTP_HeaderContinue) {
             assert(err/*status != eIO_Closed*/);
@@ -1520,7 +1529,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
                         ("[HTTP%s%s]  Server error message incomplete (%s)",
                          url ? "; " : "",
                          url ? url  : "", err));
-        } else if (!size) {
+        } else if (!(size = BUF_Size(uuu->http))) {
             CORE_LOGF_X(12, err  &&  !(uuu->flags & fHTTP_SuppressMessages)
                         ? eLOG_Warning : eLOG_Trace,
                         ("[HTTP%s%s]  No error message received from server"
@@ -2237,8 +2246,8 @@ static EIO_Status s_CreateHttpConnector
     uuu->error_header = ConnNetInfo_Boolean(val);
 
     uuu->sock         = 0;
-    uuu->o_timeout    = kDefaultTimeout;  /* deliberately bad values..    */
-    uuu->w_timeout    = kDefaultTimeout;  /* ..must be reset prior to use */
+    uuu->o_timeout    = kDefaultTimeout;  /* deliberately bad values here... */
+    uuu->w_timeout    = kDefaultTimeout;  /* ...must be reset prior to use   */
     uuu->http         = 0;
     uuu->r_buf        = 0;
     uuu->w_buf        = 0;
