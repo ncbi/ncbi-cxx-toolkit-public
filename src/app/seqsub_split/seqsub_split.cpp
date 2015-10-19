@@ -70,15 +70,11 @@ private:
     bool xTryReadInputFile(const CArgs& args, 
                            CRef<CSeq_submit>& seq_sub) const;
     
-    bool xTryProcessSeqSubmit(CRef<CSeq_submit>& seq_sub, // Deprecated
+    bool xTryProcessSeqSubmit(CRef<CSeq_submit>& seq_sub,
                               TSeqPos sort_order,
                               TSeqPos bundle_size,
                               list<CRef<CSeq_submit> >& output_array) const;
    
-    bool xTryProcessSeqSubmit(CRef<CSeq_submit>& seq_sub,
-                              TSeqPos bundle_size,
-                              list<CRef<CSeq_submit> >& output_array) const;
-
     void xFlattenSeqEntrys(CSeq_submit::TData::TEntrys& entries,
                            vector<CRef<CSeq_entry> >& seq_entry_array) const;
 
@@ -163,7 +159,7 @@ int CSeqSubSplitter::Run()
     list<CRef<CSeq_submit> > output_array;
 
     xTryProcessSeqSubmit(input_sub, 
-   //                      sort_order, 
+                         sort_order, 
                          bundle_size,
                          output_array);
 
@@ -269,63 +265,90 @@ bool CSeqSubSplitter::xTryReadInputFile(const CArgs& args,
 }
 
 
-static bool s_ShortestFirstCompare(const CRef<CBioseq>& b1, const CRef<CBioseq>& b2)
+// Need to rewrite the comparators. 
+// Probably use a function object
+// Template the CSeq_entry compare function
+static bool s_ShortestFirstSeqCompare(const CBioseq& b1, const CBioseq& b2) 
 {
-    if (b1.IsNull() || b2.IsNull() ||
-        !b1->IsSetInst() || !b2->IsSetInst())
+    if (!b1.IsSetInst() || !b2.IsSetInst()) {
+        NCBI_THROW(CSeqSubSplitException, eInvalidSeqinst, "Bioseq inst not set");
+    }
+
+
+    if (!b1.GetInst().IsSetLength() || // Length must be set
+        !b2.GetInst().IsSetLength())
     {
         return true;
     }
-
-    if (!b1->GetInst().IsSetLength() ||
-        !b2->GetInst().IsSetLength()) 
-    {
-        return true;
-    }
-
-   return (b1->GetInst().GetLength() < b2->GetInst().GetLength());
+    return (b1.GetInst().GetLength() < b2.GetInst().GetLength());
 }
 
 
-static bool s_LongestFirstCompare(const CRef<CBioseq>& b1, const CRef<CBioseq>& b2)
+static bool s_LongestFirstSeqCompare(const CBioseq& b1, const CBioseq& b2)
 {
-    if (b1.IsNull() || b2.IsNull() ||
-        !b1->IsSetInst() || !b2->IsSetInst())
+
+    if (!b1.IsSetInst() || !b2.IsSetInst()) {
+        NCBI_THROW(CSeqSubSplitException, eInvalidSeqinst, "Bioseq inst not set");
+    }
+
+
+    if (!b1.GetInst().IsSetLength() || // Length must be set
+        !b2.GetInst().IsSetLength())
     {
         return true;
     }
 
-    if (!b1->GetInst().IsSetLength() ||
-        !b2->GetInst().IsSetLength()) 
-    {
-        return true;
-    }
-
-    return (b1->GetInst().GetLength() > b2->GetInst().GetLength());
+    return (b1.GetInst().GetLength() > b2.GetInst().GetLength());
 }
 
 
-static bool s_LocalIdCompare(const CRef<CBioseq>& b1, const CRef<CBioseq>& b2) 
+static bool s_LocalIdSeqCompare(const CBioseq& b1, const CBioseq& b2)
 {
-    if (b1.IsNull() || b2.IsNull() ||
-        !b1->IsSetId() || !b2->IsSetId()) 
-    {
-        return true;
+
+    if (!b1.IsSetId() || !b2.IsSetId()) {
+         NCBI_THROW(CSeqSubSplitException, eInvalidSeqid, "Bioseq id not set");
     }
 
-    const CSeq_id* id1 = b1->GetLocalId();
-    const CSeq_id* id2 = b2->GetLocalId();
-
-    if (!id1 || !id2)
-    {
-        return true;
-    }
-
+    const CSeq_id* id1 = b1.GetLocalId(); // Must this be a local id?
+    const CSeq_id* id2 = b2.GetLocalId();
     return (id1->CompareOrdered(*id2) < 0);
 }
 
 
+static bool s_ShortestFirstCompare(const CRef<CSeq_entry>& e1, const CRef<CSeq_entry>& e2)
+{
+    // Need to add error checking here
+    const CBioseq& b1 = e1->IsSeq() ? e1->GetSeq() : e1->GetSet().GetNucFromNucProtSet();
+
+    const CBioseq& b2 = e2->IsSeq() ? e2->GetSeq() : e2->GetSet().GetNucFromNucProtSet();
+
+    return s_ShortestFirstSeqCompare(b1, b2);
+}
+
+
+static bool s_LongestFirstCompare(const CRef<CSeq_entry>& e1, const CRef<CSeq_entry>& e2)
+{
+   // Need to add error checking here
+    const CBioseq& b1 = e1->IsSeq() ? e1->GetSeq() : e1->GetSet().GetNucFromNucProtSet();
+
+    const CBioseq& b2 = e2->IsSeq() ? e2->GetSeq() : e2->GetSet().GetNucFromNucProtSet();
+
+    return s_LongestFirstSeqCompare(b1, b2);
+}
+
+static bool s_LocalIdCompare(const CRef<CSeq_entry>& e1, const CRef<CSeq_entry>& e2) 
+{
+    // Need to add error checking here
+    const CBioseq& b1 = e1->IsSeq() ? e1->GetSeq() : e1->GetSet().GetNucFromNucProtSet();
+
+    const CBioseq& b2 = e2->IsSeq() ? e2->GetSeq() : e2->GetSet().GetNucFromNucProtSet();
+
+    return s_LocalIdSeqCompare(b1, b2);
+}
+
+
 bool CSeqSubSplitter::xTryProcessSeqSubmit(CRef<CSeq_submit>& input_sub,
+                                           const TSeqPos sort_order,
                                            const TSeqPos bundle_size,
                                            list<CRef<CSeq_submit> >& output_array) const
 {
@@ -334,7 +357,22 @@ bool CSeqSubSplitter::xTryProcessSeqSubmit(CRef<CSeq_submit>& input_sub,
     CRef<CSeq_descr> seq_descr = Ref(new CSeq_descr());
     xFlattenSeqEntrys(input_sub->SetData().SetEntrys(), seq_entry_array);
 
-    // Need to figure out how the sort is implemented?
+    switch(sort_order) {
+        default:
+            NCBI_THROW(CException, eUnknown, 
+                    "Unrecognized sort order: " + NStr::IntToString(sort_order));
+        case 0:
+            break;
+        case 1:
+            stable_sort(seq_entry_array.begin(), seq_entry_array.end(), s_LongestFirstCompare);
+            break;
+        case 2:
+            stable_sort(seq_entry_array.begin(), seq_entry_array.end(), s_ShortestFirstCompare);
+            break;
+        case 3:
+            stable_sort(seq_entry_array.begin(), seq_entry_array.end(), s_LocalIdCompare);
+            break;
+    } 
 
     vector<CRef<CSeq_entry> >::iterator seq_entry_it = seq_entry_array.begin();
     while (seq_entry_it != seq_entry_array.end()) {
@@ -351,56 +389,6 @@ bool CSeqSubSplitter::xTryProcessSeqSubmit(CRef<CSeq_submit>& input_sub,
     }
     return true;
 }
-
-
-bool CSeqSubSplitter::xTryProcessSeqSubmit(CRef<CSeq_submit>& input_sub, // Deprecated
-                                           const TSeqPos sort_order,
-                                           const TSeqPos bundle_size,
-                                           list<CRef<CSeq_submit> >& output_array) const
-{
-    vector<CRef<CBioseq> > seq_array;
-    //xFlattenSeqEntrys(input_sub->SetData().SetEntrys(), seq_array);
-
-    switch(sort_order) {
-        default:
-            NCBI_THROW(CException, eUnknown, "Unrecognized sequence ordering");
-        case 0:
-            break;
-        case 1:
-            stable_sort(seq_array.begin(), seq_array.end(), s_LongestFirstCompare);
-            break;
-        case 2:
-            stable_sort(seq_array.begin(), seq_array.end(), s_ShortestFirstCompare);
-            break;
-        case 3:
-            stable_sort(seq_array.begin(), seq_array.end(), s_LocalIdCompare);
-            break;
-    } 
-
-    if (seq_array.size() <= bundle_size) {
-        output_array.push_back(input_sub);
-        return true;
-    }
-
-    vector<CRef<CBioseq> >::iterator seq_it = seq_array.begin();
-    while (seq_it != seq_array.end()) {
-        CRef<CSeq_submit> seqsub = Ref(new CSeq_submit());
-        seqsub->SetSub(input_sub->SetSub()); // Not sure if this is the best thing to do
-        for(TSeqPos i=0; i<bundle_size; ++i) {
-            CRef<CSeq_entry> seq_entry(new CSeq_entry());
-            seq_entry->SetSeq(**seq_it);
-            seqsub->SetData().SetEntrys().push_back(seq_entry);
-            ++seq_it;
-            if (seq_it == seq_array.end()) {
-                break;
-            }
-        }
-        output_array.push_back(seqsub);
-    }
-
-    return true;
-}
-
 
 
 
@@ -485,7 +473,6 @@ void CSeqSubSplitter::xFlattenSeqEntry(CSeq_entry& entry,
 
             xMergeSeqDescr(seq_descr, entry_descr);
         }
-
 
         seq_entry_array.push_back(new_entry);
         return;
