@@ -213,6 +213,7 @@ bool CAutoDefFeatureClause::IsRecognizedFeature()
 
 void CAutoDefFeatureClause::x_SetBiomol()
 {
+    m_Biomol = CMolInfo::eBiomol_genomic;
     CSeqdesc_CI desc_iter(m_BH, CSeqdesc::e_Molinfo);
     for ( ;  desc_iter;  ++desc_iter) {
         if (desc_iter->GetMolinfo().IsSetBiomol()) {
