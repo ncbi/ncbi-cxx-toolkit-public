@@ -1981,7 +1981,8 @@ public:
     ///   Whether to do a case sensitive compare (default is eCase), or a
     ///   case-insensitive compare (eNocase) while searching for the pattern.
     /// @param direction
-    ///   Define a search direction of the "occurence" occurence of "pattern" in "str".
+    ///   Define a search direction of the requested "occurrence"
+    ///   of "pattern" in "str".
     /// @param occurrence
     ///   Which occurrence of the pattern in the string to use (zero-based).
     ///   NOTE:  When an occurrence is found the next occurrence will be
@@ -1991,9 +1992,9 @@ public:
     ///   - NPOS if there is no occurrence of the pattern in the string.
     static SIZE_TYPE Find(const CTempString str,
                           const CTempString pattern,
-                          ECase             use_case  = eCase,
-                          EDirection        direction = eForwardSearch,
-                          SIZE_TYPE         occurence = 0);
+                          ECase             use_case   = eCase,
+                          EDirection        direction  = eForwardSearch,
+                          SIZE_TYPE         occurrence = 0);
 
     /// Find the pattern in the specified range of a string.
     ///
@@ -2062,10 +2063,10 @@ public:
     /// @deprecated
     ///   Use Find() method without [start:end] range.
     NCBI_DEPRECATED
-    static SIZE_TYPE FindCase  (const CTempString str, 
-                                const CTempString pattern,
-                                SIZE_TYPE   start, SIZE_TYPE end,
-                                EOccurrence which = eFirst);
+    static SIZE_TYPE FindCase(const CTempString str, 
+                              const CTempString pattern,
+                              SIZE_TYPE   start, SIZE_TYPE end,
+                              EOccurrence which = eFirst);
 
     /// Wrappers for backward-compatibility
     static SIZE_TYPE FindCase(const CTempString str, const CTempString pattern);
@@ -2140,7 +2141,7 @@ public:
     ///   Whether to do a case sensitive compare (default is eCase), or a
     ///   case-insensitive compare (eNocase) while searching for the word.
     /// @param direction
-    ///   Define a search direction of the "occurence" occurence of "word" in "str".
+    ///   Define a search direction of the occurrence of "word" in "str".
     /// @return
     ///   - Start of the found word in the string.
     ///   - NPOS if there is no occurrence of the word in the string.
