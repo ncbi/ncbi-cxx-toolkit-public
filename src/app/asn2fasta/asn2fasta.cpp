@@ -777,6 +777,24 @@ bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
                 case NCBI_BIOMOL(tmRNA):
                     is_RNA = true;
                     break;
+                case NCBI_BIOMOL(other):
+                    {
+                        CBioseq_Handle::TMol mol = bsh.GetSequenceType();
+                        switch (mol) {
+                             case CSeq_inst::eMol_dna:
+                                is_genomic = true;
+                                break;
+                            case CSeq_inst::eMol_rna:
+                                is_RNA = true;
+                                break;
+                            case CSeq_inst::eMol_na:
+                                is_genomic = true;
+                                break;
+                            default:
+                                break;
+                       }
+                   }
+                   break;
                 default:
                     break;
             }
