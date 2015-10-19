@@ -2,7 +2,7 @@
 
 SUB_PROJ            = third_party third_party_static clog grid_cgi xmlwrapp \
                       eutils_client discrepancy_report discrepancy xmlreaders \
-                      hgvs jsonwrapp biosample_util
+                      hgvs netstorage jsonwrapp biosample_util
 EXPENDABLE_SUB_PROJ = cgi_redirect
 
 srcdir = @srcdir@

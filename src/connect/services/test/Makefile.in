@@ -7,7 +7,7 @@
 LIB_PROJ =
 
 APP_PROJ = test_nsstorage test_ic_client test_netcache_api \
-           test_netstorage test_json_over_uttp test_compound_id
+           test_json_over_uttp test_compound_id
 PROJ_TAG = test
 
 srcdir = @srcdir@

@@ -1,0 +1,8 @@
+# $Id$
+# Author:  Dmitry Kazimirov
+
+LIB_PROJ = netstorage
+SUB_PROJ = test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

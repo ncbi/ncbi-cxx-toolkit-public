@@ -1,0 +1,12 @@
+# $Id$
+# Author: Dmitry Kazimirov
+
+# Test suite for "netstorage" library.
+
+LIB_PROJ =
+
+APP_PROJ = test_netstorage
+PROJ_TAG = test
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
