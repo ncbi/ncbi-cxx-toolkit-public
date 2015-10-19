@@ -56,13 +56,67 @@ public:
     // destructor
     ~CUser_field(void);
 
+    enum EParseField {
+        eParse_String,    ///< Add string even if all numbers
+        eParse_Number     ///< Parse a real or integer number, otherwise string
+    };
+
+    /// set value
+    CUser_field& SetInt(int value);
+    CUser_field& SetInt8(Int8 value);
+    CUser_field& SetGi(TGi gi);
+    CUser_field& SetDouble(double value);
+    CUser_field& SetBool(bool value);
+    CUser_field& SetString(const char* value);
+    CUser_field& SetString(const string& value);
+
+    /// set a data field to a given value
+    /// Int8 and TGi values can be stored into 'real' or 'str' fields if
+    /// the value doesn't fit into 'int' field
+    CUser_field& SetValue(int           value);
+    CUser_field& SetValue(Int8          value);
+#ifdef NCBI_STRICT_GI
+    CUser_field& SetValue(TGi           value);
+#endif
+    CUser_field& SetValue(double        value);
+    CUser_field& SetValue(bool          value);
+    CUser_field& SetValue(const char* value);
+    CUser_field& SetValue(const string& value);
+    CUser_field& SetValue(const char* value, EParseField parse);
+    CUser_field& SetValue(const string& value, EParseField parse);
+    CUser_field& SetValue(const vector<int>&    value);
+    CUser_field& SetValue(const vector<double>& value);
+    CUser_field& SetValue(const vector<string>& value);
+    CUser_field& SetValue(CUser_object& value);
+    CUser_field& SetValue(const vector< CRef<CUser_object> >& value);
+    CUser_field& SetValue(const vector< CRef<CUser_field> >& value);
+
+    /// get value
+    int GetInt(void) const;
+    Int8 GetInt8(void) const;
+    TGi GetGi(void) const;
+    bool GetBool(void) const;
+    double GetDouble(void) const;
+    const string& GetString(void) const;
+
+    template<class Type> Type GetValue(void) const;
+
     /// add fields to the current user field
     CUser_field& AddField(const string& label, int           value);
+    CUser_field& AddField(const string& label, Int8          value);
+#ifdef NCBI_STRICT_GI
+    CUser_field& AddField(const string& label, TGi           value);
+#endif
     CUser_field& AddField(const string& label, double        value);
     CUser_field& AddField(const string& label, bool          value);
 
-    CUser_field& AddField(const string& label, const CUser_field_Base::TData::TStr& value);
-    CUser_field& AddField(const string& label, const CUser_field_Base::TData::TStrs& value);
+    CUser_field& AddField(const string& label, const char* value);
+    CUser_field& AddField(const string& label, const string& value);
+    CUser_field& AddField(const string& label, const char* value,
+                          EParseField field);
+    CUser_field& AddField(const string& label, const string& value,
+                          EParseField field);
+    CUser_field& AddField(const string& label, const vector<string>& value);
 
     CUser_field& AddField(const string& label, const vector<int>&    value);
     CUser_field& AddField(const string& label, const vector<double>& value);
@@ -148,13 +202,13 @@ public:
     /// Delete the named field.
     /// return true if successful. false if field doesn't exist.
     bool DeleteField(const string& str,
-                  const string& delim = ".");
+                     const string& delim = ".");
+
 
 private:
     // Prohibit copy constructor and assignment operator
     CUser_field(const CUser_field& value);
     CUser_field& operator=(const CUser_field& value);
-
 };
 
 
@@ -168,6 +222,181 @@ CUser_field::CUser_field(void)
 }
 
 
+inline
+CUser_field& CUser_field::SetString(const string& value)
+{
+    SetData().SetStr(value);
+    return *this;
+}
+
+
+inline
+CUser_field& CUser_field::SetInt(int value)
+{
+    SetData().SetInt(value);
+    return *this;
+}
+
+
+inline
+CUser_field& CUser_field::SetBool(bool value)
+{
+    SetData().SetBool(value);
+    return *this;
+}
+
+
+inline
+CUser_field& CUser_field::SetDouble(double value)
+{
+    SetData().SetReal(value);
+    return *this;
+}
+
+
+inline
+CUser_field& CUser_field::SetValue(const char* value)
+{
+    return SetString(value);
+}
+
+
+inline
+CUser_field& CUser_field::SetValue(const string& value)
+{
+    return SetString(value);
+}
+
+
+inline
+CUser_field& CUser_field::SetValue(int value)
+{
+    return SetInt(value);
+}
+
+
+inline
+CUser_field& CUser_field::SetValue(bool value)
+{
+    return SetBool(value);
+}
+
+
+inline
+CUser_field& CUser_field::SetValue(double value)
+{
+    return SetDouble(value);
+}
+
+
+inline
+CUser_field& CUser_field::SetValue(Int8 value)
+{
+    return SetInt8(value);
+}
+
+
+inline
+CUser_field& CUser_field::SetGi(TGi value)
+{
+    return SetValue(TIntId(value));
+}
+
+
+#ifdef NCBI_STRICT_GI
+inline
+CUser_field& CUser_field::SetValue(TGi value)
+{
+    return SetGi(value);
+}
+#endif
+
+
+inline
+int CUser_field::GetInt(void) const
+{
+    return GetData().GetInt();
+}
+
+
+inline
+double CUser_field::GetDouble(void) const
+{
+    return GetData().GetReal();
+}
+
+
+inline
+bool CUser_field::GetBool(void) const
+{
+    return GetData().GetBool();
+}
+
+
+inline
+const string& CUser_field::GetString(void) const
+{
+    return GetData().GetStr();
+}
+
+
+template<>
+inline
+int CUser_field::GetValue<int>(void) const
+{
+    return GetInt();
+}
+
+
+template<>
+inline
+Int8 CUser_field::GetValue<Int8>(void) const
+{
+    return GetInt8();
+}
+
+
+template<>
+inline
+double CUser_field::GetValue<double>(void) const
+{
+    return GetDouble();
+}
+
+
+template<>
+inline
+bool CUser_field::GetValue<bool>(void) const
+{
+    return GetBool();
+}
+
+
+template<>
+inline
+string CUser_field::GetValue<string>(void) const
+{
+    return GetString();
+}
+
+
+inline
+TGi CUser_field::GetGi(void) const
+{
+    return GetValue<TIntId>();
+}
+
+
+#ifdef NCBI_STRICT_GI
+template<>
+inline
+TGi CUser_field::GetValue<TGi>(void) const
+{
+    return GetGi();
+}
+#endif
+
+
 /////////////////// end of CUser_field inline methods
 
 
@@ -176,4 +405,3 @@ END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 
 #endif // OBJECTS_GENERAL_USER_FIELD_HPP
-/* Original file checksum: lines: 93, chars: 2437, CRC32: 222a2c32 */

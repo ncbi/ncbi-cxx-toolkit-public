@@ -185,42 +185,51 @@ CUser_object& CUser_object::AddField(const string& label,
 {
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
-    switch (parse) {
-    case eParse_Number:
-        try {
-            int i = NStr::StringToInt(value);
-            field->SetData().SetInt(i);
-            break;
-        }
-        catch (...) {
-        }
-
-        try {
-            double d = NStr::StringToDouble(value);
-            field->SetData().SetReal(d);
-            break;
-        }
-        catch (...) {
-        }
-        field->SetData().SetStr(CUtf8::AsUTF8(value,eEncoding_UTF8));
-        break;
-
-    default:
-    case eParse_String:
-        field->SetData().SetStr(CUtf8::AsUTF8(value,eEncoding_UTF8));
-        break;
-    }
+    field->SetValue(value, CUser_field::EParseField(parse));
 
     SetData().push_back(field);
     return *this;
 }
+
+
+CUser_object& CUser_object::AddField(const string& label,
+                                     const char* value,
+                                     EParseField parse)
+{
+    return AddField(label, string(value), parse);
+}
+
+
+CUser_object& CUser_object::AddField(const string& label,
+                                     Int8          value)
+{
+    CRef<CUser_field> field(new CUser_field());
+    field->SetLabel().SetStr(label);
+    field->SetValue(value);
+
+    SetData().push_back(field);
+    return *this;
+}
+
 
 CUser_object& CUser_object::AddField(const string& label,
                                      int           value)
 {
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
-    field->SetData().SetInt(value);
+    field->SetValue(value);
+
+    SetData().push_back(field);
+    return *this;
+}
+
+
+CUser_object& CUser_object::AddField(const string& label,
+                                     TGi           value)
+{
+    CRef<CUser_field> field(new CUser_field());
+    field->SetLabel().SetStr(label);
+    field->SetValue(value);
 
     SetData().push_back(field);
     return *this;
@@ -232,7 +241,7 @@ CUser_object& CUser_object::AddField(const string& label,
 {
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
-    field->SetData().SetReal(value);
+    field->SetValue(value);
 
     SetData().push_back(field);
     return *this;
@@ -244,7 +253,7 @@ CUser_object& CUser_object::AddField(const string& label,
 {
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
-    field->SetData().SetBool(value);
+    field->SetValue(value);
 
     SetData().push_back(field);
     return *this;
@@ -257,7 +266,7 @@ CUser_object& CUser_object::AddField(const string& label,
 {
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
-    field->SetData().SetObject(object);
+    field->SetValue(object);
 
     SetData().push_back(field);
     return *this;
@@ -269,13 +278,7 @@ CUser_object& CUser_object::AddField(const string& label,
 {
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
-    field->SetNum(value.size());
-
-    CUser_field_Base::C_Data::TStrs& dest = field->SetData().SetStrs();
-    dest.clear();
-    ITERATE(vector<string>, v, value) {
-        dest.push_back( CUtf8::AsUTF8( *v,eEncoding_UTF8));
-    }
+    field->SetValue(value);
 
     SetData().push_back(field);
     return *this;
@@ -287,8 +290,7 @@ CUser_object& CUser_object::AddField(const string& label,
 {
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
-    field->SetNum(value.size());
-    field->SetData().SetInts() = value;
+    field->SetValue(value);
 
     SetData().push_back(field);
     return *this;
@@ -300,8 +302,7 @@ CUser_object& CUser_object::AddField(const string& label,
 {
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
-    field->SetNum(value.size());
-    field->SetData().SetReals() = value;
+    field->SetValue(value);
 
     SetData().push_back(field);
     return *this;
@@ -314,8 +315,7 @@ CUser_object::AddField(const string& label,
 {
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
-    field->SetNum(objects.size());
-    field->SetData().SetObjects() = objects;
+    field->SetValue(objects);
 
     SetData().push_back(field);
     return *this;
@@ -327,8 +327,7 @@ CUser_object& CUser_object::AddField(const string& label,
 {
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
-    field->SetNum(objects.size());
-    field->SetData().SetFields() = objects;
+    field->SetValue(objects);
 
     SetData().push_back(field);
     return *this;
@@ -490,7 +489,7 @@ static string s_GetUserObjectContent(const CUser_object& obj)
                         label += " ";
                     }
                     label += string(s_count) + "=" +
-                        NStr::IntToString(count->GetData().GetInt());
+                        NStr::NumericToString(count->GetData().GetInt());
                 }
 
                 return label;
@@ -685,10 +684,7 @@ void CUser_object::x_AddUnverifiedType(const string& val)
         // value already set, nothing to do
         return;
     }
-    CRef<CUser_field> f(new CUser_field());
-    f->SetLabel().SetStr("Type");
-    f->SetData().SetStr(val);
-    SetData().push_back(f);
+    AddField("Type", val);
 }
 
 
@@ -758,9 +754,9 @@ void CUser_object::UpdateNcbiCleanup(int version)
 {
     SetObjectType(eObjectType_Cleanup);
     CRef<CUser_field> method = SetFieldRef("method");
-    method->SetData().SetStr(CUtf8::AsUTF8("ExtendedSeqEntryCleanup", eEncoding_Ascii));
+    method->SetValue("ExtendedSeqEntryCleanup");
     CRef<CUser_field> version_field = SetFieldRef("version");
-    version_field->SetData().SetInt(version);
+    version_field->SetValue(version);
 
     // get current time
     CTime curr_time(CTime::eCurrent);
@@ -776,5 +772,3 @@ void CUser_object::UpdateNcbiCleanup(int version)
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
-
-/* Original file checksum: lines: 64, chars: 1893, CRC32: f7a70d1d */

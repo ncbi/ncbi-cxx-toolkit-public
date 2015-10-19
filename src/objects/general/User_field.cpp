@@ -56,33 +56,77 @@ CUser_field::~CUser_field(void)
 
 
 /// add fields to the current user field
+CUser_field& CUser_field::AddField(const string& label,
+                                   const string& value,
+                                   EParseField parse)
+{
+    CRef<CUser_field> field(new CUser_field());
+    field->SetLabel().SetStr(label);
+    field->SetValue(value, parse);
+    SetData().SetFields().push_back(field);
+    return *this;
+}
+
+
+CUser_field& CUser_field::AddField(const string& label,
+                                   const string& value)
+{
+    return AddField(label, value, eParse_String);
+}
+
+
+CUser_field& CUser_field::AddField(const string& label,
+                                   const char* value)
+{
+    return AddField(label, string(value), eParse_String);
+}
+
+
+CUser_field& CUser_field::AddField(const string& label,
+                                   const char* value,
+                                   EParseField parse)
+{
+    return AddField(label, string(value), parse);
+}
+
+
 CUser_field& CUser_field::AddField(const string& label, int value)
 {
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
-    field->SetData().SetInt(value);
+    field->SetValue(value);
     SetData().SetFields().push_back(field);
     return *this;
 }
 
 
-/// add fields to the current user field
-CUser_field& CUser_field::AddField(const string& label,
-                                   const CUser_field_Base::TData::TStr& value)
+CUser_field& CUser_field::AddField(const string& label, Int8 value)
 {
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
-    field->SetData().SetStr(value);
+    field->SetValue(value);
     SetData().SetFields().push_back(field);
     return *this;
 }
+
+
+#ifdef NCBI_STRICT_GI
+CUser_field& CUser_field::AddField(const string& label, TGi value)
+{
+    CRef<CUser_field> field(new CUser_field());
+    field->SetLabel().SetStr(label);
+    field->SetValue(value);
+    SetData().SetFields().push_back(field);
+    return *this;
+}
+#endif
 
 
 CUser_field& CUser_field::AddField(const string& label, double value)
 {
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
-    field->SetData().SetReal(value);
+    field->SetValue(value);
     SetData().SetFields().push_back(field);
     return *this;
 }
@@ -92,7 +136,7 @@ CUser_field& CUser_field::AddField(const string& label, bool value)
 {
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
-    field->SetData().SetBool(value);
+    field->SetValue(value);
     SetData().SetFields().push_back(field);
     return *this;
 }
@@ -102,8 +146,7 @@ CUser_field& CUser_field::AddField(const string& label,
 {
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
-    field->SetNum(value.size());
-    field->SetData().SetStrs() = value;
+    field->SetValue(value);
     SetData().SetFields().push_back(field);
     return *this;
 }
@@ -113,8 +156,7 @@ CUser_field& CUser_field::AddField(const string& label,
 {
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
-    field->SetNum(value.size());
-    field->SetData().SetInts() = value;
+    field->SetValue(value);
     SetData().SetFields().push_back(field);
     return *this;
 }
@@ -125,8 +167,7 @@ CUser_field& CUser_field::AddField(const string& label,
 {
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
-    field->SetNum(value.size());
-    field->SetData().SetReals() = value;
+    field->SetValue(value);
     SetData().SetFields().push_back(field);
     return *this;
 }
@@ -137,7 +178,7 @@ CUser_field& CUser_field::AddField(const string& label,
 {
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
-    field->SetData().SetObject(value);
+    field->SetValue(value);
     SetData().SetFields().push_back(field);
     return *this;
 }
@@ -148,8 +189,7 @@ CUser_field& CUser_field::AddField(const string& label,
 {
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
-    field->SetNum(value.size());
-    field->SetData().SetObjects() = value;
+    field->SetValue(value);
     SetData().SetFields().push_back(field);
     return *this;
 }
@@ -160,8 +200,7 @@ CUser_field& CUser_field::AddField(const string& label,
 {
     CRef<CUser_field> field(new CUser_field());
     field->SetLabel().SetStr(label);
-    field->SetNum(value.size());
-    field->SetData().SetFields() = value;
+    field->SetValue(value);
     SetData().SetFields().push_back(field);
     return *this;
 }
@@ -389,8 +428,119 @@ bool CUser_field::DeleteField(const string& str,
 }
 
 
+CUser_field& CUser_field::SetString(const char* value)
+{
+    return SetValue(string(value));
+}
+
+
+CUser_field& CUser_field::SetValue(const string& value, EParseField parse)
+{
+    if ( parse == eParse_Number ) {
+        try {
+            return SetValue(NStr::StringToNumeric<TData::TInt>(value));
+        }
+        catch (...) {
+        }
+
+        try {
+            return SetValue(NStr::StringToDouble(value));
+        }
+        catch (...) {
+        }
+    }
+    return SetValue(value);
+}
+
+
+CUser_field& CUser_field::SetValue(const char* value, EParseField parse)
+{
+    return SetValue(string(value), parse);
+}
+
+
+// 15 digits of REAL numbers are preserved in serialization roundtrip
+// so if the value has 15 digits or less we'll store it in 'real' field
+static const Int8 kMaxAsReal = NCBI_CONST_INT8(999999999999999);
+
+
+CUser_field& CUser_field::SetInt8(Int8 value)
+{
+    if ( value == int(value) ) {
+        // value fits in 'int' field
+        return SetInt(int(value));
+    }
+    if ( value >= -kMaxAsReal && value <= kMaxAsReal ) {
+        return SetDouble(double(value));
+    }
+    // otherwise the value is stored into 'str' field
+    return SetString(NStr::NumericToString(value));
+}
+
+
+CUser_field& CUser_field::SetValue(const vector<int>&    value)
+{
+    SetNum(value.size());
+    SetData().SetInts() = value;
+    return *this;
+}
+
+
+CUser_field& CUser_field::SetValue(const vector<double>& value)
+{
+    SetNum(value.size());
+    SetData().SetReals() = value;
+    return *this;
+}
+
+
+CUser_field& CUser_field::SetValue(const vector<string>& value)
+{
+    SetNum(value.size());
+    SetData().SetStrs() = value;
+    return *this;
+}
+
+
+CUser_field& CUser_field::SetValue(CUser_object& value)
+{
+    SetData().SetObject(value);
+    return *this;
+}
+
+
+CUser_field& CUser_field::SetValue(const vector< CRef<CUser_object> >& value)
+{
+    SetNum(value.size());
+    SetData().SetObjects() = value;
+    return *this;
+}
+
+
+CUser_field& CUser_field::SetValue(const vector< CRef<CUser_field> >& value)
+{
+    SetNum(value.size());
+    SetData().SetFields() = value;
+    return *this;
+}
+
+
+Int8 CUser_field::GetInt8(void) const
+{
+    const C_Data& data = GetData();
+    if ( data.IsInt() ) {
+        return data.GetInt();
+    }
+    if ( data.IsReal() ) {
+        double v = data.GetReal();
+        if ( v >= -kMaxAsReal && v <= kMaxAsReal ) {
+            return Int8(v);
+        }
+    }
+    return NStr::StringToNumeric<Int8>(data.GetStr());
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
-
-/* Original file checksum: lines: 64, chars: 1886, CRC32: 5dc82940 */

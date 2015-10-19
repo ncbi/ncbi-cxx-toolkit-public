@@ -68,8 +68,12 @@ public:
     CUser_object& AddField(const string& label, const char* value,
                            EParseField parse = eParse_String);
     CUser_object& AddField(const string& label, int           value);
+    CUser_object& AddField(const string& label, Int8          value);
     CUser_object& AddField(const string& label, double        value);
     CUser_object& AddField(const string& label, bool          value);
+#ifdef NCBI_STRICT_GI
+    CUser_object& AddField(const string& label, TGi           value);
+#endif
 
     CUser_object& AddField(const string& label, const vector<string>& value);
     CUser_object& AddField(const string& label, const vector<int>&    value);
@@ -195,14 +199,6 @@ CUser_object::CUser_object(void)
 }
 
 
-inline
-CUser_object& CUser_object::AddField(const string& label,
-                                     const char* value,
-                                     EParseField parse)
-{
-    return AddField(label, string(value), parse);
-}
-
 /////////////////// end of CUser_object inline methods
 
 
@@ -211,4 +207,3 @@ END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 
 #endif // OBJECTS_GENERAL_USER_OBJECT_HPP
-/* Original file checksum: lines: 93, chars: 2438, CRC32: 8ba203fc */

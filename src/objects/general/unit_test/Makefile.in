@@ -1,6 +1,6 @@
 # $Id$
 
-APP_PROJ = unit_test_field_collection
+APP_PROJ = unit_test_field_collection unit_test_field
 PROJ_TAG = test
 
 REQUIRES = Boost.Test.Included objects
