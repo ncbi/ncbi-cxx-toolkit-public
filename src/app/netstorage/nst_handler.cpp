@@ -929,7 +929,8 @@ CNetStorageHandler::x_PrintMessageRequestStart(const CJsonNode &  message)
 
         CDiagContext_Extra    ctxt_extra =
             GetDiagContext().PrintRequestStart()
-                            .Print("_type", "message");
+                            .Print("_type", "message")
+                            .Print("conn", m_ConnContext->GetRequestID());
 
         for (CJsonIterator it = message.Iterate(); it; ++it) {
             string      key = it.GetKey();
