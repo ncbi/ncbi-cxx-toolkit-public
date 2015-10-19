@@ -27,6 +27,7 @@ DEFAULT_CONFIGURE_FLAGS: --without-debug --with-mt
 # --with-distcc, --with-action etc.
 
 FreeBSD32         : plain          : Clang.sh         --without-debug --with-mt    --without-runpath --with-flat-makefile
+FreeBSD64         : plain          : Clang.sh         --without-debug --with-mt    --without-runpath --with-flat-makefile
 
 Linux64-Centos    : plain-GCC      : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
 Linux64-Centos    : GCC-nomt       : GCC.sh           --without-debug --without-mt --without-runpath --with-flat-makefile
