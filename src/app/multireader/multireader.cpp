@@ -120,10 +120,10 @@ class CMultiReaderApp
      : public CNcbiApplication
 {
 public:
-    CMultiReaderApp(): m_pErrors( 0 ), m_uFormat(CFormatGuess::eUnknown)
+    CMultiReaderApp(): m_uFormat(CFormatGuess::eUnknown), m_pErrors( 0 )
     {
         SetVersion(CVersionInfo(1, 0, 2));
-    };
+    }
 
     // Create quick simple messages
     static AutoPtr<ILineError> sCreateSimpleMessage(
@@ -639,7 +639,7 @@ CMultiReaderApp::Run(void)
                      << outFile << "." << endl;
                 return 1;
             }
-            CNcbiIfstream istr(inFile.c_str(), CArgValue::fBinary);
+            CNcbiIfstream istr(inFile.c_str(), IOS_BASE::binary);
             CNcbiOfstream ostr(outFile.c_str());
             xProcessSingleFile(args, istr, ostr);
             retIn = fileSource.Next(inFile);
