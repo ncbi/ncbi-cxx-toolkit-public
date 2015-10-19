@@ -47,6 +47,7 @@
 #include <boost/current_function.hpp>
 #include <objtools/blast/seqdb_writer/build_db.hpp>
 #include <objtools/blast/seqdb_writer/writedb_isam.hpp>
+#include <objtools/blast/seqdb_reader/impl/seqdbisam.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 
 #ifndef SKIP_DOXYGEN_PROCESSING
@@ -80,7 +81,7 @@ s_FetchRawData(CSeqDBExpert & seqdb,
 
 CRef<CSeq_id> s_GiToSeqId(TGi gi)
 {
-    CRef<CSeq_id> seqid(new CSeq_id(CSeq_id::e_Gi, gi));
+    CRef<CSeq_id> seqid(new CSeq_id(CSeq_id::e_Gi, GI_TO(TIntId, gi)));
 
     return seqid;
 }
@@ -2661,29 +2662,119 @@ private:
 BOOST_AUTO_TEST_CASE(CBuildDatabase_WGS_gap)
 {
 
-	CTmpFile tmpfile;
-	CNcbiOstream& log = tmpfile.AsOutputFile(CTmpFile::eIfExists_Reset);
-	const string kOutput("x");
-	CFileDeleteAtExit::Add("x.nin");
-	CFileDeleteAtExit::Add("x.nhr");
-	CFileDeleteAtExit::Add("x.nsq");
+    CTmpFile tmpfile;
+    CNcbiOstream& log = tmpfile.AsOutputFile(CTmpFile::eIfExists_Reset);
+    const string kOutput("x");
+    CFileDeleteAtExit::Add("x.nin");
+    CFileDeleteAtExit::Add("x.nhr");
+    CFileDeleteAtExit::Add("x.nsq");
 
-	CRef<CBuildDatabase> bd;
-	bd.Reset(new CBuildDatabase(kOutput, "foo", false,
-                            CWriteDB::eNoIndex, false, &log));
-	bd->StartBuild();
+    CRef<CBuildDatabase> bd;
+    bd.Reset(new CBuildDatabase(kOutput, "foo", false,
+            CWriteDB::eNoIndex, false, &log));
+    bd->StartBuild();
 
-    	auto_ptr<CObjectIStream> ois
-       	 (CObjectIStream::Open(eSerial_AsnText, "data/AXBT01000003.asn"));
-    	CRef<CSeq_entry> entry(new CSeq_entry);
-    	*ois >> *entry;
-	CSeqEntryGetSource seqentry_source(entry);
+    auto_ptr<CObjectIStream> ois
+    (CObjectIStream::Open(eSerial_AsnText, "data/AXBT01000003.asn"));
+    CRef<CSeq_entry> entry(new CSeq_entry);
+    *ois >> *entry;
+    CSeqEntryGetSource seqentry_source(entry);
 
-	bool status = bd->AddSequences(seqentry_source);
-	BOOST_REQUIRE(status == true);
-	bd->EndBuild();
-    	CFile f1(kOutput + ".nin");
-    	BOOST_REQUIRE(f1.Exists() == true);
+    bool status = bd->AddSequences(seqentry_source);
+    BOOST_REQUIRE(status == true);
+    bd->EndBuild();
+    CFile f1(kOutput + ".nin");
+    BOOST_REQUIRE(f1.Exists() == true);
+}
+
+BOOST_AUTO_TEST_CASE(CSeqDBIsam_32bit_GI)
+{
+    // Define a value that's too large to fit in a signed int without rollover.
+    const Uint4 big_gi = 3L * 1024L * 1024L * 1024L;    // 3 "billion"
+
+    // Write a numeric ISAM DB containing GI/OID records using GIs starting
+    // with big_gi above.
+
+    CWriteDB_Isam wdb(
+            EWriteDBIsamType::eGi,
+            "big_gi",
+            true,       // is protein?
+            0,          // volume index
+            1024L,      // 1 kiB
+            false       // use sparse mode?
+    );
+
+    // Seed for random number generator (RNG).
+    const int seed = 1776;
+
+    // Set number of records to be written/read
+    const Uint4 nrecs = 10;
+
+    // Seed RNG.
+    srand(seed);
+
+    // Write some records, all with too-large-for-31-bits GIs.
+    // If NCBI_INT8_GI is NOT defined, this should throw immediately.
+    // Otherwise, this should succeed without exception.
+    for (Uint4 i = 0; i < nrecs; ++i) {
+        TGi gi = GI_FROM(Uint4, (big_gi + i));
+#ifndef NCBI_INT8_GI
+        BOOST_REQUIRE_THROW(
+                CSeq_id(CSeq_id::e_Gi, GI_TO(TIntId, gi)),
+                CException
+        );
+        return;
+#else
+        // (Try to) create seqid reference from GI.
+        // If we succeed, add seqid and random OID value to DB.
+        CWriteDB_Isam::TIdList tidlist;
+        try {
+            CRef<CSeq_id> seqid(
+                    new CSeq_id(CSeq_id::e_Gi, GI_TO(TIntId, gi))
+            );
+            tidlist.push_back(seqid);
+            wdb.AddIds(rand(), tidlist);
+        } catch (...) {
+            BOOST_FAIL("CSeq_id constructor threw exception");
+            return;
+        }
+#endif
+    }
+
+    // Close database.
+    wdb.Close();
+
+    // Reopen DB for reading.
+    CSeqDBAtlas atlas(true);
+    CSeqDBLockHold lock(atlas);
+    CRef<CSeqDBIsam> rdb(
+            new CSeqDBIsam(
+                    atlas,
+                    "big_gi.00",
+                    'p',
+                    'n',
+                    eGiId
+            )
+    );
+
+    // Reseed RNG to original seed.
+    srand(seed);
+
+    // Read back records and verify.
+    for (Uint4 i = 0; i < nrecs; ++i) {
+        TGi gi = GI_FROM(Uint4, (big_gi + i));
+        try {
+            CRef<CSeq_id> seqid(
+                    new CSeq_id(CSeq_id::e_Gi, GI_TO(TIntId, gi))
+            );
+            int oid;
+            rdb->IdToOid(GI_TO(long, seqid->GetGi()), oid, lock);
+            BOOST_REQUIRE(oid == rand());
+        } catch (...) {
+            BOOST_FAIL("CSeq_id constructor threw exception");
+            return;
+        }
+    }
 }
 
 BOOST_AUTO_TEST_SUITE_END()
