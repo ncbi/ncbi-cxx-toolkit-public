@@ -40,6 +40,7 @@
 #include <corelib/ncbifile.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objtools/blast/seqdb_reader/impl/seqdbisam.hpp>
 #include <math.h>
 
 #include <util/sequtil/sequtil_convert.hpp>
@@ -4415,6 +4416,58 @@ BOOST_AUTO_TEST_CASE(SingleTaxidBlastDefLine)
     BOOST_REQUIRE(bdl.IsSetTaxid() == true);
     BOOST_CHECK(bdl.IsSetLinks() == true);
     BOOST_CHECK(bdl.GetLeafTaxIds().size() == 2);
+}
+
+BOOST_AUTO_TEST_CASE(CSeqDBIsam_32bit_GI)
+{
+    // OIDs stored in database.
+    const int oids[] = {
+            0x7acee466, 0x4cbc1ab0,
+            0x7d219922, 0x7e096431,
+            0x276283ea, 0x13cee382,
+            0x51f8b267, 0x37183674,
+            0x03559cd6, 0x6bdcfbb7
+    };
+    const Uint4 nrecs = (Uint4) (sizeof oids / sizeof oids[0]);
+
+    // Open database for reading.
+    CSeqDBAtlas atlas(true);
+    CSeqDBLockHold lock(atlas);
+    CRef<CSeqDBIsam> rdb(
+            new CSeqDBIsam(
+                    atlas,
+                    "data/big_gi",
+                    'p',
+                    'n',
+                    eGiId
+            )
+    );
+
+    // Define a value that's too large to fit in a signed int without rollover.
+    const Uint4 big_gi = 3L * 1024L * 1024L * 1024L;    // 3 "billion"
+
+    for (Uint4 i = 0; i < nrecs; ++i) {
+        TGi gi = GI_FROM(Uint4, (big_gi + i));
+#ifndef NCBI_INT8_GI
+        BOOST_REQUIRE_THROW(
+                CSeq_id(CSeq_id::e_Gi, GI_TO(TIntId, gi)),
+                CException
+        );
+        return;
+#else
+        try {
+            CRef<CSeq_id> seqid(
+                    new CSeq_id(CSeq_id::e_Gi, GI_TO(TIntId, gi))
+            );
+            int oid;
+            rdb->IdToOid(GI_TO(long, seqid->GetGi()), oid, lock);
+            BOOST_REQUIRE(oid == oids[i]);
+        } catch (...) {
+            BOOST_FAIL("CSeq_id constructor threw exception");
+            return;
+        }
+#endif
+    }
 }
 
 BOOST_AUTO_TEST_SUITE_END()
