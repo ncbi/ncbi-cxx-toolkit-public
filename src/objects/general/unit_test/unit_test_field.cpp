@@ -163,79 +163,79 @@ BOOST_AUTO_TEST_CASE(s_TestInt8_2)
     obj->SetType().SetId(1);
 
     obj->ResetData();
-    obj->AddField("string", "12345678901234", CUser_object::eParse_Number);
+    obj->AddField("string", "12345678901235", CUser_object::eParse_Number);
     BOOST_CHECK_EQUAL(ToASNString(*obj),
                       "User-object ::= {\n"
                       "  type id 1,\n"
                       "  data {\n"
                       "    {\n"
                       "      label str \"string\",\n"
-                      "      data real { 12345678901234, 10, 0 }\n"
+                      "      data real { 12345678901235, 10, 0 }\n"
                       "    }\n"
                       "  }\n"
                       "}\n");
 
     obj->ResetData();
-    obj->AddField("string", "-12345678901234", CUser_object::eParse_Number);
+    obj->AddField("string", "-12345678901235", CUser_object::eParse_Number);
     BOOST_CHECK_EQUAL(ToASNString(*obj),
                       "User-object ::= {\n"
                       "  type id 1,\n"
                       "  data {\n"
                       "    {\n"
                       "      label str \"string\",\n"
-                      "      data real { -12345678901234, 10, 0 }\n"
+                      "      data real { -12345678901235, 10, 0 }\n"
                       "    }\n"
                       "  }\n"
                       "}\n");
 
     obj->ResetData();
-    obj->AddField("double", 12345678901234.);
+    obj->AddField("double", 12345678901235.);
     BOOST_CHECK_EQUAL(ToASNString(*obj),
                       "User-object ::= {\n"
                       "  type id 1,\n"
                       "  data {\n"
                       "    {\n"
                       "      label str \"double\",\n"
-                      "      data real { 12345678901234, 10, 0 }\n"
+                      "      data real { 12345678901235, 10, 0 }\n"
                       "    }\n"
                       "  }\n"
                       "}\n");
 
     obj->ResetData();
-    obj->AddField("double", -12345678901234.);
+    obj->AddField("double", -12345678901235.);
     BOOST_CHECK_EQUAL(ToASNString(*obj),
                       "User-object ::= {\n"
                       "  type id 1,\n"
                       "  data {\n"
                       "    {\n"
                       "      label str \"double\",\n"
-                      "      data real { -12345678901234, 10, 0 }\n"
+                      "      data real { -12345678901235, 10, 0 }\n"
                       "    }\n"
                       "  }\n"
                       "}\n");
 
     obj->ResetData();
-    obj->AddField("Int8", Int8(12345678901234));
+    obj->AddField("Int8", Int8(12345678901235));
     BOOST_CHECK_EQUAL(ToASNString(*obj),
                       "User-object ::= {\n"
                       "  type id 1,\n"
                       "  data {\n"
                       "    {\n"
                       "      label str \"Int8\",\n"
-                      "      data real { 12345678901234, 10, 0 }\n"
+                      "      data real { 12345678901235, 10, 0 }\n"
                       "    }\n"
                       "  }\n"
                       "}\n");
 
     obj->ResetData();
-    obj->AddField("Int8", Int8(-12345678901234));
+    obj->AddField("Int8", Int8(-12345678901235));
     BOOST_CHECK_EQUAL(ToASNString(*obj),
                       "User-object ::= {\n"
                       "  type id 1,\n"
                       "  data {\n"
                       "    {\n"
                       "      label str \"Int8\",\n"
-                      "      data real { -12345678901234, 10, 0 }\n"
+                      "      data real { -12345678901235, 10, 0 }\n"
                       "    }\n"
                       "  }\n"
                       "}\n");
@@ -248,7 +248,7 @@ BOOST_AUTO_TEST_CASE(s_TestInt8_3)
     obj->SetType().SetId(1);
 
     obj->ResetData();
-    obj->AddField("string", "123456789012345678", CUser_object::eParse_Number);
+    obj->AddField("string", "123456789012345679", CUser_object::eParse_Number);
     TestAllFormats(*obj,
                    "User-object ::= {\n"
                    "  type id 1,\n"
@@ -261,7 +261,7 @@ BOOST_AUTO_TEST_CASE(s_TestInt8_3)
                    "}\n");
 
     obj->ResetData();
-    obj->AddField("string", "-123456789012345678", CUser_object::eParse_Number);
+    obj->AddField("string", "-123456789012345679", CUser_object::eParse_Number);
     TestAllFormats(*obj,
                    "User-object ::= {\n"
                    "  type id 1,\n"
@@ -274,7 +274,7 @@ BOOST_AUTO_TEST_CASE(s_TestInt8_3)
                    "}\n");
 
     obj->ResetData();
-    obj->AddField("double", 123456789012345678.);
+    obj->AddField("double", 123456789012345679.);
     TestAllFormats(*obj,
                    "User-object ::= {\n"
                    "  type id 1,\n"
@@ -287,7 +287,7 @@ BOOST_AUTO_TEST_CASE(s_TestInt8_3)
                    "}\n");
 
     obj->ResetData();
-    obj->AddField("double", -123456789012345678.);
+    obj->AddField("double", -123456789012345679.);
     TestAllFormats(*obj,
                    "User-object ::= {\n"
                    "  type id 1,\n"
@@ -300,27 +300,27 @@ BOOST_AUTO_TEST_CASE(s_TestInt8_3)
                    "}\n");
 
     obj->ResetData();
-    obj->AddField("Int8", Int8(123456789012345678));
+    obj->AddField("Int8", Int8(123456789012345679));
     TestAllFormats(*obj,
                    "User-object ::= {\n"
                    "  type id 1,\n"
                    "  data {\n"
                    "    {\n"
                    "      label str \"Int8\",\n"
-                   "      data str \"123456789012345678\"\n"
+                   "      data str \"123456789012345679\"\n"
                    "    }\n"
                    "  }\n"
                    "}\n");
 
     obj->ResetData();
-    obj->AddField("Int8", Int8(-123456789012345678));
+    obj->AddField("Int8", Int8(-123456789012345679));
     TestAllFormats(*obj,
                    "User-object ::= {\n"
                    "  type id 1,\n"
                    "  data {\n"
                    "    {\n"
                    "      label str \"Int8\",\n"
-                   "      data str \"-123456789012345678\"\n"
+                   "      data str \"-123456789012345679\"\n"
                    "    }\n"
                    "  }\n"
                    "}\n");
@@ -367,27 +367,27 @@ BOOST_AUTO_TEST_CASE(s_TestGi_2)
     obj->SetType().SetId(1);
 
     obj->ResetData();
-    obj->AddField("GI", GI_CONST(12345678901234));
+    obj->AddField("GI", GI_CONST(12345678901235));
     BOOST_CHECK_EQUAL(ToASNString(*obj),
                       "User-object ::= {\n"
                       "  type id 1,\n"
                       "  data {\n"
                       "    {\n"
                       "      label str \"GI\",\n"
-                      "      data real { 12345678901234, 10, 0 }\n"
+                      "      data real { 12345678901235, 10, 0 }\n"
                       "    }\n"
                       "  }\n"
                       "}\n");
 
     obj->ResetData();
-    obj->AddField("GI", GI_CONST(-12345678901234));
+    obj->AddField("GI", GI_CONST(-12345678901235));
     BOOST_CHECK_EQUAL(ToASNString(*obj),
                       "User-object ::= {\n"
                       "  type id 1,\n"
                       "  data {\n"
                       "    {\n"
                       "      label str \"GI\",\n"
-                      "      data real { -12345678901234, 10, 0 }\n"
+                      "      data real { -12345678901235, 10, 0 }\n"
                       "    }\n"
                       "  }\n"
                       "}\n");
@@ -400,27 +400,27 @@ BOOST_AUTO_TEST_CASE(s_TestGi_3)
     obj->SetType().SetId(1);
 
     obj->ResetData();
-    obj->AddField("GI", GI_CONST(123456789012345678));
+    obj->AddField("GI", GI_CONST(123456789012345679));
     TestAllFormats(*obj,
                    "User-object ::= {\n"
                    "  type id 1,\n"
                    "  data {\n"
                    "    {\n"
                    "      label str \"GI\",\n"
-                   "      data str \"123456789012345678\"\n"
+                   "      data str \"123456789012345679\"\n"
                    "    }\n"
                    "  }\n"
                    "}\n");
 
     obj->ResetData();
-    obj->AddField("GI", GI_CONST(-123456789012345678));
+    obj->AddField("GI", GI_CONST(-123456789012345679));
     TestAllFormats(*obj,
                    "User-object ::= {\n"
                    "  type id 1,\n"
                    "  data {\n"
                    "    {\n"
                    "      label str \"GI\",\n"
-                   "      data str \"-123456789012345678\"\n"
+                   "      data str \"-123456789012345679\"\n"
                    "    }\n"
                    "  }\n"
                    "}\n");
