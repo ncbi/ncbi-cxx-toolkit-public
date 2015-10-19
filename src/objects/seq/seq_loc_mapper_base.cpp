@@ -4083,17 +4083,14 @@ CSeq_loc_Mapper_Base::Map(CSeq_annot& annot, TAnnotMapFlags flags)
         {
             CSeq_annot::C_Data::TAlign& aligns = annot.SetData().SetAlign();
             string error;
-            bool mapped = false;
             ERASE_ITERATE(CSeq_annot::C_Data::TAlign, it, aligns) {
                 error.clear();
-                mapped = false;
                 CRef<CSeq_align> align;
                 try {
                     align = Map(**it);
                 }
                 catch (CAnnotMapperException& e) {
                     error = e.GetMsg();
-                    mapped = false;
                 }
                 if ( align ) {
                     *it = align;
@@ -4123,17 +4120,14 @@ CSeq_loc_Mapper_Base::Map(CSeq_annot& annot, TAnnotMapFlags flags)
         {
             CSeq_annot::C_Data::TGraph& graphs = annot.SetData().SetGraph();
             string error;
-            bool mapped = false;
             ERASE_ITERATE(CSeq_annot::C_Data::TGraph, it, graphs) {
                 error.clear();
-                mapped = false;
                 CRef<CSeq_graph> graph;
                 try {
                     graph = Map(**it);
                 }
                 catch (CAnnotMapperException& e) {
                     error = e.GetMsg();
-                    mapped = false;
                 }
                 if ( graph ) {
                     *it = graph;
