@@ -3071,6 +3071,10 @@ CRef<CSeq_entry> CWGSSeqIterator::GetSeq_entry(TFlags flags) const
                 entries.push_back(prot_it.GetSeq_entry(prot_flags));
             }
         }
+        GetQualityAnnot(main_seq->SetAnnot(), flags);
+        if ( main_seq->GetAnnot().empty() ) {
+            main_seq->ResetAnnot();
+        }
     }
     return ret;
 }

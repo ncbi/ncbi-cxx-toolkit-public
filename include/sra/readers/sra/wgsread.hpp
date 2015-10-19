@@ -833,8 +833,8 @@ public:
         fMaskDescr    = fSeqDescr|fMasterDescr,
         fDefaultDescr = fSeqDescr|fMasterDescr,
 
-        fSeqAnnot     = 1<<5,
-        fQualityGraph = 1<<6,
+        fSeqAnnot     = 1<<6,
+        fQualityGraph = 1<<7,
         fMaskAnnot    = fSeqAnnot|fQualityGraph,
         fDefaultAnnot = fSeqAnnot|fQualityGraph,
 
