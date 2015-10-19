@@ -32,7 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/resource_info.hpp>
-#include "object.hpp"
+#include "netstorage_direct_object.hpp"
 
 
 BEGIN_NCBI_SCOPE
