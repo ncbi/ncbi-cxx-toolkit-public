@@ -40,18 +40,28 @@
 #include <util/random_gen.hpp>
 
 #include <boost/preprocessor.hpp>
-
-#include "test_netstorage_common.hpp"
+#include <boost/type_traits/integral_constant.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
 
 
+#define APP_NAME                "test_netstorage"
+
 // Configuration parameters
+NCBI_PARAM_DECL(string, netstorage, service_name);
 NCBI_PARAM_DEF(string, netstorage, service_name, "ST_Test");
+typedef NCBI_PARAM_TYPE(netstorage, service_name) TNetStorage_ServiceName;
+
+NCBI_PARAM_DECL(string, netcache, service_name);
 NCBI_PARAM_DEF(string, netcache, service_name, "NC_UnitTest");
+typedef NCBI_PARAM_TYPE(netcache, service_name) TNetCache_ServiceName;
+
+NCBI_PARAM_DECL(string, netstorage, app_domain);
 NCBI_PARAM_DEF(string, netstorage, app_domain, "nst_test");
+typedef NCBI_PARAM_TYPE(netstorage, app_domain) TNetStorage_AppDomain;
+
 
 
 // ENetStorageObjectLocation to type mapping
@@ -519,6 +529,24 @@ CNstData* Create<CNstData, CNetStorageByKey>(CNetStorageByKey& netstorage,
     const string key(GetUniqueKey());
     CNetStorageObject object(netstorage.Open(key, flags));
     return new CNstDataGuard<CNetStorageByKey>(object, netstorage, key);
+}
+
+template <>
+CNstData* Create<CNstData, CDirectNetStorage>(CDirectNetStorage& netstorage,
+        TNetStorageFlags flags)
+{
+    CNetStorageObject object(netstorage.Create(flags));
+    const string key(object.GetLoc());
+    return new CNstDataGuard<CDirectNetStorage>(object, netstorage, key);
+}
+
+template <>
+CNstData* Create<CNstData, CDirectNetStorageByKey>(CDirectNetStorageByKey& netstorage,
+        TNetStorageFlags flags)
+{
+    const string key(GetUniqueKey());
+    CDirectNetStorageObject object(netstorage.Open(key, flags));
+    return new CNstDataGuard<CDirectNetStorageByKey>(object, netstorage, key);
 }
 
 
@@ -989,6 +1017,16 @@ struct SAttrApiBase
 
 typedef TLocationNotFound TShouldThrow;
 
+template <class TNetStorage>
+struct TAttrTesting : boost::true_type {};
+
+template <>
+struct TAttrTesting<CDirectNetStorage> : boost::false_type {};
+
+template <>
+struct TAttrTesting<CDirectNetStorageByKey> : boost::false_type {};
+
+
 // Default implementation (attribute reading/writing always throws)
 template <class TAttrTesting>
 struct SAttrApi : SAttrApiBase
@@ -1008,11 +1046,9 @@ struct SAttrApi : SAttrApiBase
     }
 };
 
-typedef boost::integral_constant<bool, true> TAttrTestingEnabled;
-
 // Attribute testing is enabled
 template <>
-struct SAttrApi<TAttrTestingEnabled> : SAttrApiBase
+struct SAttrApi<boost::true_type> : SAttrApiBase
 {
     template <class TLocation>
     void Read(TLocation, const SCtx& ctx, CNetStorageObject& object)
@@ -1044,7 +1080,7 @@ struct SAttrApi<TAttrTestingEnabled> : SAttrApiBase
 
 struct SLocBase
 {
-    typedef ::TAttrTesting TAttrTesting;
+    typedef boost::true_type TAttrTesting;
 
     static const bool check_relocate = true;
     static const bool loc_info = true;
@@ -1112,7 +1148,7 @@ struct SDirectNC
     typedef TCreate TRelocate;
     static const TNetStorageFlags relocate = 0;
 
-    typedef boost::integral_constant<bool, false> TAttrTesting;
+    typedef boost::false_type TAttrTesting;
 
     static const bool check_relocate = false;
     static const bool loc_info = false;
@@ -1124,6 +1160,62 @@ struct SDirectNC
         return "o-c8TRwX3VuFSZnf5BuKLelYjHcUK5xKpizKXbIX8EmNDNle";
     }
 };
+
+
+template <class TNetStorage>
+inline TNetStorage g_GetNetStorage(const char* mode)
+{
+    string nst_service(TNetStorage_ServiceName::GetDefault());
+    string nc_service(TNetCache_ServiceName::GetDefault());
+    string nst_app_domain(TNetStorage_AppDomain::GetDefault());
+    string init_string(
+            "nst="     + nst_service +
+            "&nc="     + nc_service +
+            "&domain=" + nst_app_domain +
+            "&client="   APP_NAME +
+            mode);
+    return CNetStorage(init_string);
+}
+
+template <>
+inline CNetStorageByKey g_GetNetStorage<CNetStorageByKey>(const char* mode)
+{
+    string nst_service(TNetStorage_ServiceName::GetDefault());
+    string nc_service(TNetCache_ServiceName::GetDefault());
+    string nst_app_domain(TNetStorage_AppDomain::GetDefault());
+    string init_string(
+            "nst="     + nst_service +
+            "&nc="     + nc_service +
+            "&domain=" + nst_app_domain +
+            "&client="   APP_NAME +
+            mode);
+    return CNetStorageByKey(init_string);
+}
+
+
+template <>
+inline CDirectNetStorage g_GetNetStorage<CDirectNetStorage>(const char*)
+{
+    string nc_service(TNetCache_ServiceName::GetDefault());
+    string nst_app_domain(TNetStorage_AppDomain::GetDefault());
+    return CDirectNetStorage(
+            CNcbiApplication::Instance()->GetConfig(),
+            CNetICacheClient(nc_service.c_str(),
+                    nst_app_domain.c_str(), APP_NAME),
+            NULL, nst_app_domain);
+}
+
+template <>
+inline CDirectNetStorageByKey g_GetNetStorage<CDirectNetStorageByKey>(const char*)
+{
+    string nc_service(TNetCache_ServiceName::GetDefault());
+    string nst_app_domain(TNetStorage_AppDomain::GetDefault());
+    return CDirectNetStorageByKey(
+            CNcbiApplication::Instance()->GetConfig(),
+            CNetICacheClient(nc_service.c_str(),
+                    nst_app_domain.c_str(), APP_NAME),
+            NULL, nst_app_domain);
+}
 
 
 // Just a convenience wrapper
@@ -1152,7 +1244,11 @@ struct SFixture
 
     TNetStorage netstorage;
     auto_ptr<TExpected> data;
-    SAttrApi<typename TLoc::TAttrTesting> attr_tester;
+
+    typedef boost::integral_constant<bool, (TLoc::TAttrTesting::value &&
+            TAttrTesting<TNetStorage>::value)> TAttrTesting;
+    SAttrApi<TAttrTesting> attr_tester;
+
     SCtx ctx;
 
     SFixture()
@@ -1524,8 +1620,8 @@ BOOST_FIXTURE_TEST_CASE(Test##ST##SRC##API##LOC, \
 
 #define DEFINE_TEST_CASE(r, p) TEST_CASE p
 
-//      ST_LIST1    defined in the header
-//      ST_LIST2    defined in the header
+#define ST_LIST1    (NetStorageByKey, (DirectNetStorage, (DirectNetStorageByKey, BOOST_PP_NIL)))
+#define ST_LIST2    (NetStorage, BOOST_PP_NIL)
 #define SRC_LIST    (Emp, (Str, (Rnd, (Nst, BOOST_PP_NIL))))
 #define API_LIST    (Str, (Buf, (Irw, (Ios, BOOST_PP_NIL))))
 #define LOC_LIST1   (NC2FT, (FT2NC, BOOST_PP_NIL))
