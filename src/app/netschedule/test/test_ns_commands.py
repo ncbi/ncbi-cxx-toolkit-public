@@ -650,7 +650,10 @@ def main():
     nsConnect.connect( COMMUNICATION_TIMEOUT )
     nsConnect.login()
 
+    l = 1
     while count > 0:
+        printVerbose( "Loop #" + str( l ) + "..." )
+        l += 1
         commandsSender = NSCommandsSender( nsConnect, True )
         commandsSender.visitAll()
         count -= 1
