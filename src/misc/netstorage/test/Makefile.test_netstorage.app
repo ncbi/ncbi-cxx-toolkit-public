@@ -14,6 +14,6 @@ REQUIRES = Boost.Test.Included
 CHECK_REQUIRES = in-house-resources GNUTLS
 CHECK_CMD = test_netstorage
 CHECK_COPY = test_netstorage.ini
-CHECK_TIMEOUT = 1000
+CHECK_TIMEOUT = 3000
 
 WATCHERS = sadyrovr
