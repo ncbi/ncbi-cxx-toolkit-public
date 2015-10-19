@@ -50,7 +50,7 @@ CCmdLineBlastXML2ReportData::CCmdLineBlastXML2ReportData (
     const vector<align_format::CAlignFormatUtil::SDbInfo> & dbsInfo) :
     	m_Query(query), m_Options (opts), m_Scope(scope),
     	m_DbName(kEmptyStr), m_NumSequences(0), m_NumBases(0),
-    	m_TaxDBFound(false), m_isBl2seq(false), m_isIterative(false)
+    	m_TaxDBFound(false), m_isBl2seq(false), m_isIterative(false), m_Matrix(NULL)
 {
 	x_InitCommon(results, opts);
 	x_InitDB(dbsInfo);
@@ -66,7 +66,7 @@ CCmdLineBlastXML2ReportData::CCmdLineBlastXML2ReportData(
     CConstRef<IBlastSeqInfoSrc> subjectsInfo) :
     	m_Query(query), m_Options (opts), m_Scope(scope),
     	m_DbName(kEmptyStr), m_NumSequences(0), m_NumBases(0),
-    	m_TaxDBFound(false), m_isBl2seq(true), m_isIterative(false)
+    	m_TaxDBFound(false), m_isBl2seq(true), m_isIterative(false), m_Matrix(NULL)
 {
 	x_InitCommon(results, opts);
 	x_InitSubjects(subjectsInfo);
@@ -82,7 +82,7 @@ CCmdLineBlastXML2ReportData::CCmdLineBlastXML2ReportData(
     const vector<CAlignFormatUtil::SDbInfo> & dbsInfo) :
     	m_Query(query), m_Options (opts), m_Scope(scope),
     	m_DbName(kEmptyStr), m_NumSequences(0), m_NumBases(0),
-    	m_TaxDBFound(false), m_isBl2seq(false), m_isIterative(true)
+    	m_TaxDBFound(false), m_isBl2seq(false), m_isIterative(true), m_Matrix(NULL)
 {
 	x_InitCommon(resultSet[0], opts);
 	x_InitDB(dbsInfo);
@@ -100,7 +100,7 @@ CCmdLineBlastXML2ReportData::CCmdLineBlastXML2ReportData(
     CConstRef<IBlastSeqInfoSrc> subjectsInfo) :
     	m_Query(query), m_Options (opts), m_Scope(scope),
     	m_DbName(kEmptyStr), m_NumSequences(0), m_NumBases(0),
-    	m_TaxDBFound(false), m_isBl2seq(true), m_isIterative(true)
+    	m_TaxDBFound(false), m_isBl2seq(true), m_isIterative(true), m_Matrix(NULL)
 {
 	x_InitCommon(resultSet[0], opts);
 	x_InitSubjects(subjectsInfo);
@@ -185,19 +185,19 @@ CCmdLineBlastXML2ReportData::x_InitSubjects(CConstRef<IBlastSeqInfoSrc> subjects
 
 CCmdLineBlastXML2ReportData::~CCmdLineBlastXML2ReportData()
 {
-    for (unsigned int i = 0; i < kMatrixCols; i++)
-        delete [] m_Matrix[i];
+	if(m_Matrix) {
+		delete m_Matrix;
+	}
 }
 
 void
 CCmdLineBlastXML2ReportData::x_FillScoreMatrix(const char *matrix_name)
 {
-    for (unsigned int i = 0; i < kMatrixCols; i++)
-        m_Matrix[i] = new int[kMatrixCols];
-
     if (matrix_name == NULL)
         return;
 
+    int matrix[kMatrixCols][kMatrixCols];
+    int * tmp[kMatrixCols];
     const SNCBIPackedScoreMatrix *packed_matrix = 0;
 
     if (strcmp(matrix_name, "BLOSUM45") == 0)
@@ -231,11 +231,14 @@ CCmdLineBlastXML2ReportData::x_FillScoreMatrix(const char *matrix_name)
         NCBISM_Unpack(packed_matrix, &m);
 
         for (unsigned int i = 0; i < kMatrixCols; i++) {
+        	tmp[i] = matrix[i];
             for (unsigned int j = 0; j < kMatrixCols; j++) {
-                m_Matrix[i][j] = m.s[i][j];
+                matrix[i][j] = m.s[i][j];
             }
         }
     }
+
+    m_Matrix = (new CBlastFormattingMatrix(tmp, kMatrixCols, kMatrixCols));
 }
 
 string
@@ -306,8 +309,7 @@ CCmdLineBlastXML2ReportData::GetEntropy(int num) const
 CBlastFormattingMatrix*
 CCmdLineBlastXML2ReportData::GetMatrix(void) const
 {
-    return new CBlastFormattingMatrix((int **)m_Matrix,
-                                      kMatrixCols, kMatrixCols); 
+    return m_Matrix;
 }
 
 int

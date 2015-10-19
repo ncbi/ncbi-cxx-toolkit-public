@@ -231,7 +231,7 @@ private:
     static const unsigned int kMatrixCols = 28;
 
     /// Score matrix used to determine neighboring protein residues
-    int *m_Matrix[kMatrixCols];
+    CBlastFormattingMatrix * m_Matrix;
 
     list<string> m_SubjectIds;
 
