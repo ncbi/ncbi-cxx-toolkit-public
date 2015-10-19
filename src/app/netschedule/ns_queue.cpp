@@ -2958,6 +2958,7 @@ CNSPreciseTime CQueue::NotifyExactListeners(void)
 
 string CQueue::PrintClientsList(bool verbose) const
 {
+    CFastMutexGuard     guard(m_OperationLock);
     return m_ClientsRegistry.PrintClientsList(this,
                                               m_DumpClientBufferSize, verbose);
 }
@@ -2965,6 +2966,7 @@ string CQueue::PrintClientsList(bool verbose) const
 
 string CQueue::PrintNotificationsList(bool verbose) const
 {
+    CFastMutexGuard     guard(m_OperationLock);
     return m_NotificationsList.Print(m_ClientsRegistry, m_AffinityRegistry,
                                      m_GroupRegistry, verbose);
 }
@@ -2972,6 +2974,7 @@ string CQueue::PrintNotificationsList(bool verbose) const
 
 string CQueue::PrintAffinitiesList(bool verbose) const
 {
+    CFastMutexGuard     guard(m_OperationLock);
     return m_AffinityRegistry.Print(this, m_ClientsRegistry,
                                     m_DumpAffBufferSize, verbose);
 }
@@ -2979,6 +2982,7 @@ string CQueue::PrintAffinitiesList(bool verbose) const
 
 string CQueue::PrintGroupsList(bool verbose) const
 {
+    CFastMutexGuard     guard(m_OperationLock);
     return m_GroupRegistry.Print(this, m_DumpGroupBufferSize, verbose);
 }
 
