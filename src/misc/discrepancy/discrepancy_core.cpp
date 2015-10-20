@@ -412,6 +412,7 @@ DISCREPANCY_LINK_MODULE(suspect_product_names);
 DISCREPANCY_LINK_MODULE(division_code_conflicts);
 DISCREPANCY_LINK_MODULE(feature_per_bioseq);
 DISCREPANCY_LINK_MODULE(gene_names);
+DISCREPANCY_LINK_MODULE(spell_check);
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
