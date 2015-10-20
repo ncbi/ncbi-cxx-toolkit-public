@@ -184,7 +184,15 @@ struct NCBI_XCONNECT_EXPORT SNetStorageImpl : public CObject
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     virtual void AllowXSiteConnections() {}
 #endif
+
+    static SNetStorageImpl* Create(const string&, TNetStorageFlags);
 };
+
+inline CNetStorage::CNetStorage(const string& init_string,
+        TNetStorageFlags default_flags) :
+    m_Impl(SNetStorageImpl::Create(init_string, default_flags))
+{
+}
 
 inline CNetStorageObject CNetStorage::Create(TNetStorageFlags flags)
 {
@@ -227,7 +235,15 @@ struct NCBI_XCONNECT_EXPORT SNetStorageByKeyImpl : public CObject
             TNetStorageFlags flags, TNetStorageFlags old_flags = 0) = 0;
     virtual bool Exists(const string& key, TNetStorageFlags flags = 0) = 0;
     virtual void Remove(const string& key, TNetStorageFlags flags = 0) = 0;
+
+    static SNetStorageByKeyImpl* Create(const string&, TNetStorageFlags);
 };
+
+inline CNetStorageByKey::CNetStorageByKey(const string& init_string,
+        TNetStorageFlags default_flags) :
+    m_Impl(SNetStorageByKeyImpl::Create(init_string, default_flags))
+{
+}
 
 inline CNetStorageObject CNetStorageByKey::Open(const string& unique_key,
         TNetStorageFlags flags)
