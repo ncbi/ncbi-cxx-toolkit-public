@@ -214,7 +214,9 @@ CObjectOStream* CSeqSubSplitter:: xInitOutputStream(
         const bool binary) const
 {
     if (output_stub.empty()) {
-        NCBI_THROW(CException, eUnknown, "Output stub not specified");
+        NCBI_THROW(CSeqSubSplitException, 
+                   eEmptyOutputStub, 
+                   "Output stub not specified");
     }
 
     string padded_index;
@@ -236,8 +238,8 @@ CObjectOStream* CSeqSubSplitter:: xInitOutputStream(
     CObjectOStream* pOstr = CObjectOStream::Open(filename, serial);
 
     if (!pOstr) {
-        NCBI_THROW(CException, 
-                   eUnknown, 
+        NCBI_THROW(CSeqSubSplitException, 
+                   eOutputError, 
                    "Unable to open output file:" + filename);
     }
     return pOstr;
@@ -265,86 +267,78 @@ bool CSeqSubSplitter::xTryReadInputFile(const CArgs& args,
 }
 
 
-// Need to rewrite the comparators. 
-// Probably use a function object
-// Template the CSeq_entry compare function
-static bool s_ShortestFirstSeqCompare(const CBioseq& b1, const CBioseq& b2) 
+// I guess that I could make Comparison classes subclasses of CSeqSubSplitter 
+template<class Derived>
+struct SCompare
 {
-    if (!b1.IsSetInst() || !b2.IsSetInst()) {
-        NCBI_THROW(CSeqSubSplitException, eInvalidSeqinst, "Bioseq inst not set");
+    bool operator()(const CRef<CSeq_entry>& e1, const CRef<CSeq_entry>& e2) const
+    {
+        const CBioseq& b1 = e1->IsSeq() ? e1->GetSeq() : e1->GetSet().GetNucFromNucProtSet();
+
+        const CBioseq& b2 = e2->IsSeq() ? e2->GetSeq() : e2->GetSet().GetNucFromNucProtSet();
+
+        return static_cast<const Derived*>(this)->compare_seq(b1, b2);
     }
 
-
-    if (!b1.GetInst().IsSetLength() || // Length must be set
-        !b2.GetInst().IsSetLength())
+    bool compare_seq(const CBioseq& b1, const CBioseq& b2) const
     {
         return true;
     }
-    return (b1.GetInst().GetLength() < b2.GetInst().GetLength());
-}
+};
 
 
-static bool s_LongestFirstSeqCompare(const CBioseq& b1, const CBioseq& b2)
+struct SLongestFirstCompare : public SCompare<SLongestFirstCompare>
 {
-
-    if (!b1.IsSetInst() || !b2.IsSetInst()) {
-        NCBI_THROW(CSeqSubSplitException, eInvalidSeqinst, "Bioseq inst not set");
-    }
-
-
-    if (!b1.GetInst().IsSetLength() || // Length must be set
-        !b2.GetInst().IsSetLength())
+    bool compare_seq(const CBioseq& b1, const CBioseq& b2) const
     {
-        return true;
+        if (!b1.IsSetInst() || !b2.IsSetInst()) {
+            NCBI_THROW(CSeqSubSplitException, eInvalidSeqinst, "Bioseq inst not set");
+        }
+
+        if (!b1.GetInst().IsSetLength() || // Length must be set
+            !b2.GetInst().IsSetLength())
+        {
+            return true;
+        }
+
+        return (b1.GetInst().GetLength() > b2.GetInst().GetLength());
     }
-
-    return (b1.GetInst().GetLength() > b2.GetInst().GetLength());
-}
+};
 
 
-static bool s_LocalIdSeqCompare(const CBioseq& b1, const CBioseq& b2)
+struct SShortestFirstCompare : public SCompare<SShortestFirstCompare>
 {
+    bool compare_seq(const CBioseq& b1, const CBioseq& b2) const 
+    {
+        if (!b1.IsSetInst() || !b2.IsSetInst()) {
+            NCBI_THROW(CSeqSubSplitException, eInvalidSeqinst, "Bioseq inst not set");
+        }
 
-    if (!b1.IsSetId() || !b2.IsSetId()) {
-         NCBI_THROW(CSeqSubSplitException, eInvalidSeqid, "Bioseq id not set");
+        if (!b1.GetInst().IsSetLength() || // Length must be set
+            !b2.GetInst().IsSetLength())
+        {
+            return true;
+        }
+        return (b1.GetInst().GetLength() < b2.GetInst().GetLength());
     }
-
-    const CSeq_id* id1 = b1.GetLocalId(); // Must this be a local id?
-    const CSeq_id* id2 = b2.GetLocalId();
-    return (id1->CompareOrdered(*id2) < 0);
-}
+};
 
 
-static bool s_ShortestFirstCompare(const CRef<CSeq_entry>& e1, const CRef<CSeq_entry>& e2)
+struct SLocalIdCompare : public SCompare<SLocalIdCompare>
 {
-    // Need to add error checking here
-    const CBioseq& b1 = e1->IsSeq() ? e1->GetSeq() : e1->GetSet().GetNucFromNucProtSet();
+    bool compare_seq(const CBioseq& b1, const CBioseq& b2) const 
+    {
+        if (!b1.IsSetId() || !b2.IsSetId()) {
+            NCBI_THROW(CSeqSubSplitException, eInvalidSeqid, "Bioseq id not set");
+        }
 
-    const CBioseq& b2 = e2->IsSeq() ? e2->GetSeq() : e2->GetSet().GetNucFromNucProtSet();
+        const CSeq_id* id1 = b1.GetLocalId(); // Must this be a local id?
+        const CSeq_id* id2 = b2.GetLocalId();
+        return (id1->CompareOrdered(*id2) < 0);
+    }
+};
 
-    return s_ShortestFirstSeqCompare(b1, b2);
-}
 
-
-static bool s_LongestFirstCompare(const CRef<CSeq_entry>& e1, const CRef<CSeq_entry>& e2)
-{
-   // Need to add error checking here
-    const CBioseq& b1 = e1->IsSeq() ? e1->GetSeq() : e1->GetSet().GetNucFromNucProtSet();
-
-    const CBioseq& b2 = e2->IsSeq() ? e2->GetSeq() : e2->GetSet().GetNucFromNucProtSet();
-
-    return s_LongestFirstSeqCompare(b1, b2);
-}
-
-static bool s_LocalIdCompare(const CRef<CSeq_entry>& e1, const CRef<CSeq_entry>& e2) 
-{
-    // Need to add error checking here
-    const CBioseq& b1 = e1->IsSeq() ? e1->GetSeq() : e1->GetSet().GetNucFromNucProtSet();
-
-    const CBioseq& b2 = e2->IsSeq() ? e2->GetSeq() : e2->GetSet().GetNucFromNucProtSet();
-
-    return s_LocalIdSeqCompare(b1, b2);
-}
 
 
 bool CSeqSubSplitter::xTryProcessSeqSubmit(CRef<CSeq_submit>& input_sub,
@@ -359,18 +353,19 @@ bool CSeqSubSplitter::xTryProcessSeqSubmit(CRef<CSeq_submit>& input_sub,
 
     switch(sort_order) {
         default:
-            NCBI_THROW(CException, eUnknown, 
-                    "Unrecognized sort order: " + NStr::IntToString(sort_order));
+            NCBI_THROW(CSeqSubSplitException, 
+                       eInvalidSortOrder, 
+                       "Unrecognized sort order: " + NStr::IntToString(sort_order));
         case 0:
             break;
         case 1:
-            stable_sort(seq_entry_array.begin(), seq_entry_array.end(), s_LongestFirstCompare);
+            stable_sort(seq_entry_array.begin(), seq_entry_array.end(), SLongestFirstCompare());
             break;
         case 2:
-            stable_sort(seq_entry_array.begin(), seq_entry_array.end(), s_ShortestFirstCompare);
+            stable_sort(seq_entry_array.begin(), seq_entry_array.end(), SShortestFirstCompare());
             break;
         case 3:
-            stable_sort(seq_entry_array.begin(), seq_entry_array.end(), s_LocalIdCompare);
+            stable_sort(seq_entry_array.begin(), seq_entry_array.end(), SLocalIdCompare());
             break;
     } 
 
@@ -410,8 +405,9 @@ CObjectIStream* CSeqSubSplitter::xInitInputStream(const CArgs& args) const
             serial, *pInputStream, (bDeleteOnClose ? eTakeOwnership : eNoOwnership));
 
     if (!p_istream) {
-        NCBI_THROW(CException, eUnknown,
-                "seqsub_split: Unable to open input file");
+        NCBI_THROW(CSeqSubSplitException, 
+                   eInputError,
+                   "seqsub_split: Unable to open input file");
     }
     return p_istream;
 }
@@ -505,8 +501,6 @@ void CSeqSubSplitter::xFlattenSeqEntry(CSeq_entry& entry,
         xFlattenSeqEntry(**it, new_descr, seq_entry_array);
     }
 }
-
-
 
 
 

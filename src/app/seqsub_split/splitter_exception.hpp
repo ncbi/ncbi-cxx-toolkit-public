@@ -41,6 +41,13 @@ class CSeqSubSplitException : public CException {
 public:
     enum EErrCode {
         eInvalidAnnot,
+        eInvalidSeqinst,
+        eInvalidSeqid,
+        eInvalidBioseq,
+        eInvalidSortOrder,
+        eEmptyOutputStub,
+        eInputError,
+        eOutputError
     };
 
     virtual const char* GetErrCodeString() const
@@ -48,6 +55,20 @@ public:
         switch (GetErrCode()) {
             case eInvalidAnnot:
                 return "eInvalidAnnot";
+            case eInvalidSeqinst:
+                return "eInvalidSeqinst";
+            case eInvalidSeqid:
+                return "eInvalidSeqid";
+            case eInvalidBioseq:
+                return "eInvalidBioseq";
+            case eInvalidSortOrder:
+                return "eInvalidSortOrder";
+            case eEmptyOutputStub:
+                return "eEmptyOutputStub";
+            case eInputError:
+                return "eInputError";
+            case eOutputError:
+                return "eOutputError";
             default:
                 return CException::GetErrCodeString();
         }
