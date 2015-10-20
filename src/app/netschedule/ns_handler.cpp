@@ -4259,8 +4259,6 @@ string CNetScheduleHandler::x_GetServerSection(void) const
     m_Server->GetParameters(&server_params);
 
     return "[server]\n"
-           "reinit=\"" +
-                NStr::BoolToString(app->GetEffectiveReinit()) + "\"\n"
            "max_connections=\"" +
                 NStr::NumericToString(server_params.max_connections) + "\"\n"
            "max_threads=\"" +

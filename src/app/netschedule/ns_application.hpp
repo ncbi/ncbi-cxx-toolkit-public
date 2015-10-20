@@ -42,7 +42,7 @@ public:
     CNetScheduleDApp();
     void Init(void);
     int Run(void);
-    bool GetEffectiveReinit(void) const { return m_EffectiveReinit; }
+    bool GetReinit(void) const { return m_Reinit; }
     map<string, string>
     GetOrigLogSection(void) const { return m_OrigLogSection; }
     map<string, string>
@@ -52,7 +52,7 @@ public:
 
 private:
     STimeout                m_ServerAcceptTimeout;
-    bool                    m_EffectiveReinit;
+    bool                    m_Reinit;
 
     void x_SaveSection(const CNcbiRegistry &  reg,
                        const string &  section,

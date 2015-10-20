@@ -217,8 +217,6 @@ void NS_ValidateServerSection(const IRegistry &  reg,
                        " parameter.");
     }
 
-    NS_ValidateBool(reg, section, "reinit", warnings);
-
     ok = NS_ValidateInt(reg, section, "max_connections", warnings);
     if (ok) {
         int     val = reg.GetInt(section, "max_connections",

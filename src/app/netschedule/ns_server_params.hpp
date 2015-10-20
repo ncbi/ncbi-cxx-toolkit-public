@@ -90,7 +90,6 @@ struct SErrorEmulatorParameter
 // Parameters for server
 struct SNS_Parameters : SServer_Parameters
 {
-    bool            reinit;
     unsigned short  port;
 
     bool            use_hostname;

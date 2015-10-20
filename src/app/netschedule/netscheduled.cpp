@@ -87,7 +87,7 @@ extern "C" void Threaded_Server_SignalHandler(int signum)
 
 
 CNetScheduleDApp:: CNetScheduleDApp()
-    : CNcbiApplication(), m_EffectiveReinit(false)
+    : CNcbiApplication(), m_Reinit(false)
 {
     CVersionInfo        version(NCBI_PACKAGE_VERSION_MAJOR,
                                 NCBI_PACKAGE_VERSION_MINOR,
@@ -204,10 +204,9 @@ int CNetScheduleDApp::Run(void)
     // two transactions per thread should be enough
     bdb_params.max_trans = params.max_threads * 2;
 
-    m_EffectiveReinit = params.reinit || args[kReinitArgName];
+    m_Reinit = args[kReinitArgName];
     auto_ptr<CQueueDataBase>    qdb(new CQueueDataBase(server.get(),
-                                                       bdb_params,
-                                                       m_EffectiveReinit));
+                                                       bdb_params, m_Reinit));
 
     if (!args[kNodaemonArgName]) {
         GetDiagContext().Extra()

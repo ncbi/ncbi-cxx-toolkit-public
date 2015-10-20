@@ -2456,11 +2456,10 @@ bool CQueueDataBase::x_CheckOpenPreconditions(bool  reinit)
     }
 
     if (reinit) {
-        LOG_POST(Note << "Reinitialization due to a command line option or "
-                         "a .ini file option. " << m_DataPath << " removed.");
+        LOG_POST(Note << "Reinitialization due to a command line option. "
+                      << m_DataPath << " removed.");
         m_Server->RegisterAlert(eReinit, "Database has been reinitialized due "
-                                         "to a command line option or a .ini "
-                                         "file option");
+                                         "to a command line option");
         return true;
     }
 

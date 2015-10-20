@@ -150,7 +150,6 @@ void SNS_Parameters::Read(const IRegistry &  reg)
 {
     const string    sname = "server";
 
-    reinit          = GetBoolNoErr("reinit", false);
     max_connections = GetIntNoErr("max_connections", default_max_connections);
     if (max_connections < max_connections_low_limit)
         max_connections = (max_connections_low_limit +
