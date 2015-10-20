@@ -98,7 +98,7 @@ void CSeqSubSplitter::Init()
             false);
     // input
     {
-        arg_desc->AddOptionalKey("i", "InputFile",
+        arg_desc->AddKey("i", "InputFile",
                                  "Filename for asn.1 input", 
                                  CArgDescriptions::eInputFile);
     }
@@ -389,26 +389,39 @@ bool CSeqSubSplitter::xTryProcessSeqSubmit(CRef<CSeq_submit>& input_sub,
 
 CObjectIStream* CSeqSubSplitter::xInitInputStream(const CArgs& args) const
 {
+    if (!args["i"]) {
+        NCBI_THROW(CSeqSubSplitException, 
+                   eInputError,
+                   "Input file unspecified");
+    }
+
     ESerialDataFormat serial = eSerial_AsnText;
     if (args["b"]) {
         serial = eSerial_AsnBinary;
     }
-    CNcbiIstream* pInputStream = &NcbiCin;
- 
-    bool bDeleteOnClose = false;
-    if (args["i"]) {
-        const char* infile = args["i"].AsString().c_str();
-        pInputStream = new CNcbiIfstream(infile, ios::binary);
-        bDeleteOnClose = true;
-    }
-    CObjectIStream* p_istream = CObjectIStream::Open(
-            serial, *pInputStream, (bDeleteOnClose ? eTakeOwnership : eNoOwnership));
 
+    string infile_str = args["i"].AsString();
+    CNcbiIstream* pInputStream = new CNcbiIfstream(infile_str.c_str(), ios::in | ios::binary);
+
+    if (pInputStream->fail()) 
+    {
+       NCBI_THROW(CSeqSubSplitException,
+                  eInputError,
+                  "Could not create input stream for \"" + infile_str + "\"");
+    }
+
+
+    CObjectIStream* p_istream = CObjectIStream::Open(serial, 
+                                                     *pInputStream, 
+                                                     eTakeOwnership);
+    
     if (!p_istream) {
         NCBI_THROW(CSeqSubSplitException, 
                    eInputError,
-                   "seqsub_split: Unable to open input file");
+                   "Unable to open input file \"" + infile_str + "\"");
+
     }
+
     return p_istream;
 }
 
