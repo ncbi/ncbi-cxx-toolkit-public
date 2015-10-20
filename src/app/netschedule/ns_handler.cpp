@@ -4253,8 +4253,6 @@ CNetScheduleHandler::x_StatisticsNew(CQueue *                q,
 
 string CNetScheduleHandler::x_GetServerSection(void) const
 {
-    CNetScheduleDApp *      app = dynamic_cast<CNetScheduleDApp*>
-                                                (CNcbiApplication::Instance());
     SServer_Parameters      server_params;
     m_Server->GetParameters(&server_params);
 
