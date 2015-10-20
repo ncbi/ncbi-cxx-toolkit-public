@@ -959,25 +959,14 @@ bool CWriteUtil::GetStringForModelEvidence(
 
     //gi
     uf.Reset();
-    int meContigGi(0);
     if (me->HasField("Contig Gi")) {
         uf = &(me->GetField("Contig Gi"));
-        if (uf.NotEmpty()  &&  uf->IsSetData()  &&  uf->GetData().IsInt()) {
-            meContigGi = uf->GetData().GetInt();
-        }
     }
 
     //contig span
     uf.Reset();
-    int meSpanFirst(0), meSpanSecond(0);
     if (me->HasField("Contig Span")) {
         uf = &(me->GetField("Contig Span"));
-        if (uf.NotEmpty() && uf->IsSetData() && uf->GetData().IsInts()) {
-            if (uf->IsSetNum()  &&  uf->GetNum() == 2) {
-                meSpanFirst = uf->GetData().GetInts()[0];
-                meSpanSecond = uf->GetData().GetInts()[1];
-            }
-        }
     }
 
     CNcbiOstrstream ostrstr;
