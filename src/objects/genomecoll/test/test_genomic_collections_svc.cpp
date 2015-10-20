@@ -349,6 +349,15 @@ int CTestGenomicCollectionsSvcApplication::RunServerDirect(const CArgs& args, CN
 }
 
 static
+bool isVersionsObject(CRef<CSeqdesc> desc)
+{
+    return desc->IsUser() &&
+           desc->GetUser().IsSetType() &&
+           desc->GetUser().GetType().IsStr() &&
+           desc->GetUser().GetType().GetStr() == "versions";
+}
+
+static
 void RemoveVersions(CRef<CGC_Assembly>& reply)
 {
     if (reply->IsAssembly_set() &&
@@ -357,13 +366,8 @@ void RemoveVersions(CRef<CGC_Assembly>& reply)
     {
         list< CRef<CSeqdesc> >& l = reply->SetAssembly_set().SetDesc().SetDescr().Set();
 
-        l.erase(remove_if(begin(l), end(l),
-                          [](CRef<CSeqdesc> desc){
-                              return desc->IsUser() &&
-                                     desc->GetUser().IsSetType() &&
-                                     desc->GetUser().GetType().IsStr() &&
-                                     desc->GetUser().GetType().GetStr() == "versions";
-                          }),
+        l.erase(remove_if(l.begin(), l.end(),
+                          isVersionsObject),
                 l.end());
     }
 }
