@@ -2689,6 +2689,10 @@ BOOST_AUTO_TEST_CASE(CBuildDatabase_WGS_gap)
 
 BOOST_AUTO_TEST_CASE(CSeqDBIsam_32bit_GI)
 {
+    // When process exits, clean up these files if they still exist.
+    CFileDeleteAtExit::Add("big_gi.00.pni");
+    CFileDeleteAtExit::Add("big_gi.00.pnd");
+
     // Define a value that's too large to fit in a signed int without rollover.
     const Uint4 big_gi = 3L * 1024L * 1024L * 1024L;    // 3 "billion"
 

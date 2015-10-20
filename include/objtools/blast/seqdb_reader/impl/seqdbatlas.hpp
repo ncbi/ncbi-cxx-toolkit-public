@@ -205,7 +205,7 @@ class CSeqDBMemLease;
 /// destructor of this object will call Unlock() on the atlas if this
 /// thread has it locked.
 
-class CSeqDBLockHold {
+class NCBI_XOBJREAD_EXPORT CSeqDBLockHold {
 public:
     /// Constructor
     ///
@@ -1191,9 +1191,9 @@ private:
 /// various SeqDB critical regions, some of which are outside of this
 /// class.  ["Atlas: n. 1. A book or bound collection of maps..."; The
 /// American Heritage Dictionary of the English Language, 4th Edition.
-/// Copyright � 2000 by Houghton Mifflin Company.]
+/// Copyright (c) 2000 by Houghton Mifflin Company.]
 
-class CSeqDBAtlas {
+class NCBI_XOBJREAD_EXPORT CSeqDBAtlas {
 public:
     /// The type used for file offsets.
     typedef CRegionMap::TIndx TIndx;
