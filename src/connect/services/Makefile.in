@@ -9,7 +9,7 @@
 #  - tests:      "test/*.*"
 #################################
 
-LIB_PROJ = ncbi_xcache_netcache xconnserv ncbi_xblobstorage_netcache
+LIB_PROJ = xconnserv ncbi_xcache_netcache ncbi_xblobstorage_netcache
 SUB_PROJ = test
 
 srcdir = @srcdir@
