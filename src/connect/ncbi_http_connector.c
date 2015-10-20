@@ -1026,6 +1026,12 @@ static EIO_Status s_ReadData(SHttpConnector* uuu,
             size = uuu->expected != (TNCBI_BigCount)(-1L)
                 ? uuu->expected - uuu->received
                 : 4096;
+            if (!size) {
+                assert(!uuu->chunked);
+                return eIO_Closed;
+            }
+            if (size > 2 * 4096)
+                size = 2 * 4096;
             xxx = (BUF*) buf;
             if (!(buf = (void*) malloc(size))) {
                 int error = errno;
@@ -1057,6 +1063,7 @@ static EIO_Status s_ReadData(SHttpConnector* uuu,
                                url ? url  : ""));
             if (url)
                 free(url);
+            free(buf);
             status = eIO_Unknown;
         }
         return status;
