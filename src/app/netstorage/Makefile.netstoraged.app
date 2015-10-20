@@ -14,7 +14,7 @@ SRC = netstoraged nst_server_parameters nst_exception nst_connection_factory \
 REQUIRES = MT Linux
 
 
-LIB =  ncbi_xcache_netcache netstorage xconnserv xthrserv \
+LIB =  ncbi_xcache_netcache xconnserv xthrserv \
        $(SDBAPI_LIB) xconnect connssl xutil xncbi
 LIBS = $(SDBAPI_LIBS) $(NETWORK_LIBS) $(GNUTLS_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 

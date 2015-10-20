@@ -15,6 +15,8 @@ SRC     = grid_worker ns_client_factory grid_worker_app \
           netservice_protocol_parser util clparser \
           json_over_uttp netstorage_rpc \
           netstorageobjectloc netstorageobjectinfo netstorage_direct_nc \
+          netstorage_direct_state netstorage_direct_object \
+          netstorage_direct filetrack \
           pack_int ns_output_parser \
           ns_job_serializer compound_id compound_id_v0
 
@@ -22,7 +24,7 @@ LIB     = xconnserv
 PROJ_TAG = core
 LIBS    = $(NETWORK_LIBS)
 
-DLL_LIB = xthrserv xconnect xutil xncbi
+DLL_LIB = ncbi_xcache_netcache xthrserv connssl xconnect xutil xncbi
 
 WATCHERS = sadyrovr
 

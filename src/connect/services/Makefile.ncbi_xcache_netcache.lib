@@ -6,13 +6,9 @@ SRC = neticache_client
 LIB = ncbi_xcache_netcache
 
 LIB_OR_DLL = both
-DLL_LIB = xconnserv xconnect xutil
+DLL_LIB = xconnect xutil
 
 CPPFLAGS = $(ORIG_CPPFLAGS)
 LIBS = $(ORIG_LIBS)
 
 WATCHERS = sadyrovr
-
-
-USES_LIBRARIES =  \
-    xconnserv
