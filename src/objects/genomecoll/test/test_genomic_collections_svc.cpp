@@ -172,6 +172,8 @@ void CTestGenomicCollectionsSvcApplication::Init(void)
                             "Get equivalent assemblies - equivalency type",
                             CArgDescriptions::eInteger);
 
+    argDesc->AddFlag("nocache", "Do not use database cache; force fresh data");
+
     // Setup arg.descriptions for this application
     SetupArgDescriptions(argDesc.release());
 }
@@ -289,8 +291,13 @@ int CTestGenomicCollectionsSvcApplication::RunServerDirect(const CArgs& args, CN
     int exitCode = -1;
     const char* env[] = {"REQUEST_METHOD=POST", 0};
 
-    vector<string> emptyArgs;
-    CPipe::EFinish retVal = CPipe::ExecWait (cmd, emptyArgs, inStr, outStr, errStr, exitCode, kEmptyStr, env);
+    vector<string> cgiArgs;
+    if(args["nocache"])
+    {
+        cgiArgs.push_back("-nocache");
+        cgiArgs.push_back("true");
+    }
+    CPipe::EFinish retVal = CPipe::ExecWait (cmd,cgiArgs, inStr, outStr, errStr, exitCode, kEmptyStr, env);
     
     string output;
     char buffer[1000];
@@ -331,6 +338,8 @@ int CTestGenomicCollectionsSvcApplication::RunServerDirect(const CArgs& args, CN
         }
         else if(reply.IsGet_chrtype_valid())
             ostr << reply.GetGet_chrtype_valid();
+        else if(reply.IsGet_assembly_blob())
+            ostr << *CCachedAssembly(string(reply.GetGet_assembly_blob().begin(), reply.GetGet_assembly_blob().end())).Assembly();
         else
             ostr << reply;
     }
@@ -367,8 +376,14 @@ int CTestGenomicCollectionsSvcApplication::RunUsingClient(const CArgs& args, CNc
     CConstRef< IRegistry > r2(GetConfig().FindByContents("genomic_collections_cli"));
 
     CRef<CGenomicCollectionsService> cli(args["url"] ?
-                    new CGenomicCollectionsService(args["url"].AsString()) : 
+                    new CGenomicCollectionsService(args["url"].AsString() + (args["nocache"] ? "?nocache=true" :"")) : 
                     new CGenomicCollectionsService());
+
+    if(args["nocache"] && !args["url"])
+    {
+        string service(cli->GetService());
+        setenv((NStr::ToUpper(service) + "_CONN_ARGS").c_str(), "nocache=true", 1);
+    }
 
     LOG_POST("testing genomic collections cgi.");
 
