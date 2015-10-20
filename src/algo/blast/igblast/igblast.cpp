@@ -57,7 +57,7 @@ BEGIN_SCOPE(blast)
 static int max_allowed_VJ_distance_with_D = 90;
 static int max_allowed_VJ_distance_without_D = 40;
 static int max_allowed_VD_distance = 40;
-static int extend_length = 60;
+static int extend_length = 30;
 
 static void s_ReadLinesFromFile(const string& fn, vector<string>& lines)
 {
