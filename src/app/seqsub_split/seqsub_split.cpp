@@ -154,7 +154,11 @@ int CSeqSubSplitter::Run()
     const TSeqPos sort_order = args["r"].AsInteger();
 
     CRef<CSeq_submit> input_sub;
-    xTryReadInputFile(args, input_sub);
+    if (!xTryReadInputFile(args, input_sub)) {
+        string err_msg = "Could not read input Seq-submit";
+        ERR_POST(err_msg);
+        return 0;
+    }
 
     list<CRef<CSeq_submit> > output_array;
 
@@ -262,7 +266,6 @@ bool CSeqSubSplitter::xTryReadInputFile(const CArgs& args,
     }
 
     seq_sub = input_sub;
- 
     return true;
 }
 
