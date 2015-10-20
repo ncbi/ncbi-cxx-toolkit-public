@@ -14,6 +14,7 @@ APP: event_parsing test_attributes test_document test_event test_namespace test_
 APP: test_xslt tree_parsing xml_generation xslt_transformation
 
 LIB: libxmlwrapp.a
+SRC: src/misc/xmlwrapp/dtd.cpp
 
 DEFAULT_CONFIGURATIONS: Linux64-Centos:plain-GCC
 DEFAULT_CONFIGURE_FLAGS: --without-debug --with-mt
