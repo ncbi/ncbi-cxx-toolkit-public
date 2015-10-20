@@ -485,6 +485,22 @@ static const char* const s_NetStorageConfigSections[] = {
     NULL
 };
 
+SNetStorageConfig::EDefaultStorage s_GetDefaultStorage(const string& value)
+{
+    if (NStr::CompareNocase(value, "nst") == 0)
+        return SNetStorageConfig::eNetStorage;
+    else if (NStr::CompareNocase(value, "nc") == 0)
+        return SNetStorageConfig::eNetCache;
+    else if (NStr::CompareNocase(value, "nocreate") == 0 ||
+            NStr::CompareNocase(value, "no_create") == 0)
+        return SNetStorageConfig::eNoCreate;
+    else {
+        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
+                "Invalid default_storage value '" << value << '\'');
+        return SNetStorageConfig::eUndefined;
+    }
+}
+
 SNetStorageConfig::SNetStorageConfig(const string& init_string)
 {
     default_storage = eUndefined;
@@ -492,41 +508,20 @@ SNetStorageConfig::SNetStorageConfig(const string& init_string)
     CUrlArgs url_parser(init_string);
 
     ITERATE(CUrlArgs::TArgs, field, url_parser.GetArgs()) {
-        if (field->name.empty())
-            continue;
-        switch (field->name[0]) {
-        case 'd':
+        if (!field->name.empty()) {
             if (field->name == "domain")
                 app_domain = field->value;
-            else if (field->name == "default_storage") {
-                if (NStr::CompareNocase(field->value, "nst") == 0)
-                    default_storage = eNetStorage;
-                else if (NStr::CompareNocase(field->value, "nc") == 0)
-                    default_storage = eNetCache;
-                else if (NStr::CompareNocase(field->value, "nocreate") == 0 ||
-                        NStr::CompareNocase(field->value, "no_create") == 0)
-                    default_storage = eNoCreate;
-                else {
-                    NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-                            "Invalid default_storage value '" <<
-                                    field->value << '\'');
-                }
-            }
-            break;
-        case 'm':
-            if (field->name == "metadata")
+            else if (field->name == "default_storage")
+                default_storage = s_GetDefaultStorage(field->value);
+            else if (field->name == "metadata")
                 metadata = field->value;
-            break;
-        case 'n':
-            if (field->name == "namespace")
+            else if (field->name == "namespace")
                 app_domain = field->value;
             else if (field->name == "nst")
                 service = field->value;
             else if (field->name == "nc")
                 nc_service = field->value;
-            break;
-        case 'c':
-            if (field->name == "cache")
+            else if (field->name == "cache")
                 app_domain = field->value;
             else if (field->name == "client")
                 client_name = field->value;
