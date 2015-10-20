@@ -386,7 +386,7 @@ int CTestGenomicCollectionsSvcApplication::RunUsingClient(const CArgs& args, CNc
     if(args["nocache"] && !args["url"])
     {
         string service(cli->GetService());
-        setenv((NStr::ToUpper(service) + "_CONN_ARGS").c_str(), "nocache=true", 1);
+        SetEnvironment().Set((NStr::ToUpper(service) + "_CONN_ARGS").c_str(), "nocache=true");
     }
 
     LOG_POST("testing genomic collections cgi.");
