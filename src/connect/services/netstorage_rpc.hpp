@@ -39,11 +39,21 @@
 
 BEGIN_NCBI_SCOPE
 
-enum EDefaultStorage {
-    eDefaultStorage_Undefined,
-    eDefaultStorage_NetStorage,
-    eDefaultStorage_NetCache,
-    eDefaultStorage_NoCreate,
+struct SNetStorageConfig
+{
+    enum EDefaultStorage {
+        eUndefined,
+        eNetStorage,
+        eNetCache,
+        eNoCreate,
+    };
+
+    string service;
+    string nc_service;
+    string app_domain;
+    string client_name;
+    string metadata;
+    EDefaultStorage default_storage;
 };
 
 struct SNetStorageRPC : public SNetStorageImpl
@@ -81,17 +91,11 @@ struct SNetStorageRPC : public SNetStorageImpl
                         m_ServiceMap.GetServiceByName(service_name, m_Service);
     }
 
-    EDefaultStorage m_DefaultStorage;
-
     TNetStorageFlags m_DefaultFlags;
     CNetService m_Service;
     SNetServiceMap m_ServiceMap;
 
-    string m_NetStorageServiceName;
-    string m_NetCacheServiceName;
-    string m_ClientName;
-    string m_AppDomain;
-    string m_MetadataOption;
+    SNetStorageConfig m_Config;
 
     mutable CAtomicCounter m_RequestNumber;
 
