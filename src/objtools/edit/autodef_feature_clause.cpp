@@ -194,6 +194,7 @@ bool CAutoDefFeatureClause::IsRecognizedFeature()
         || subtype == CSeqFeatData::eSubtype_otherRNA
         || subtype == CSeqFeatData::eSubtype_misc_RNA
         || subtype == CSeqFeatData::eSubtype_ncRNA
+        || subtype == CSeqFeatData::eSubtype_preRNA
         || subtype == CSeqFeatData::eSubtype_D_loop
         || IsNoncodingProductFeat()
         || IsMobileElement()
@@ -327,9 +328,9 @@ bool CAutoDefFeatureClause::x_GetFeatureTypeWord(string &typeword)
         return true;
     } else if (m_Biomol == CMolInfo::eBiomol_pre_RNA) {
         if (x_IsPseudo()) {
-            typeword = "pseudogene precursor mRNA";
+            typeword = "pseudogene precursor RNA";
         } else {
-            typeword = "precursor mRNA";
+            typeword = "precursor RNA";
         }
         return true;
     } else if (m_Biomol == CMolInfo::eBiomol_other_genetic) {

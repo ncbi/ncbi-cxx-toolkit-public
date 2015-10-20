@@ -154,6 +154,7 @@ const TNameValPair sc_FieldTypes[] = {
         { "KeepIntrons", CAutoDefOptions::eOptionFieldType_KeepIntrons },
         { "KeepLTRs", CAutoDefOptions::eOptionFieldType_KeepLTRs },
         { "KeepMobileElements", CAutoDefOptions::eOptionFieldType_KeepMobileElements },
+        { "KeepPrecursorRNA", CAutoDefOptions::eOptionFieldType_KeepPrecursorRNA },
         { "KeepPromoters", CAutoDefOptions::eOptionFieldType_KeepPromoters },
         { "KeepuORFs", CAutoDefOptions::eOptionFieldType_KeepuORFs },
         { "LeaveParenthetical", CAutoDefOptions::eOptionFieldType_LeaveParenthetical },

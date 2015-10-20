@@ -598,8 +598,8 @@ void CAutoDef::x_RemoveOptionalFeatures(CAutoDefFeatureClause_Base *main_clause,
         }
     }
     
-    // only keep bioseq precursor RNAs if lonely
-    if (!main_clause->IsBioseqPrecursorRNA()) {
+    // only keep bioseq precursor RNAs if lonely or requested
+    if (!main_clause->IsBioseqPrecursorRNA() && !m_Options.GetKeepPrecursorRNA()) {
         main_clause->RemoveBioseqPrecursorRNAs();
     }
 
