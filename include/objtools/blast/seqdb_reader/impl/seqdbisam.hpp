@@ -124,7 +124,7 @@ s_SetTranslation(CSeqDBGiList & gis,
 /// these files, including one whose name ends in 'i' and one whose
 /// name ends in 'd'.
 
-class CSeqDBIsam : public CObject {
+class NCBI_XOBJREAD_EXPORT CSeqDBIsam : public CObject {
 public:
     /// Import the type representing one GI, OID association.
     typedef CSeqDBGiList::SGiOid TGiOid;
