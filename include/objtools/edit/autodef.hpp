@@ -102,6 +102,7 @@ public:
     void SetKeep5UTRs(bool keep);
     void SetKeepuORFs(bool keep);
     void SetKeepOptionalMobileElements(bool keep);
+    void SetKeepPrecursorRNA(bool keep);
 	void SetUseNcRNAComment (bool use_comment);
     void SetUseFakePromoters (bool use_fake);
     
@@ -281,6 +282,12 @@ inline
 void CAutoDef::SetKeepOptionalMobileElements(bool keep)
 {
     m_Options.SetKeepMobileElements(keep);
+}
+
+inline
+void CAutoDef::SetKeepPrecursorRNA(bool keep)
+{
+    m_Options.SetKeepPrecursorRNA(keep);
 }
 
 inline
