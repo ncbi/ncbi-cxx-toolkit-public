@@ -957,10 +957,6 @@ bool CGff3Writer::xAssignAlignmentDensegGap(
 //  ----------------------------------------------------------------------------
 {
     const CDense_seg& denseSeg = alnMap.GetDenseg();
-    int srcWidth = 1; //could be 1 or 3, depending on nuc or prot
-    if (srcRow < denseSeg.GetWidths().size()) {
-        srcWidth = denseSeg.GetWidths()[srcRow];
-    }
 
     int tgtWidth; //could be 1 or 3, depending on nuc or prot
     if (0 < denseSeg.GetWidths().size()) {
