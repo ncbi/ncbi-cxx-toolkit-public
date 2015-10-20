@@ -519,7 +519,6 @@ void CFeatTableEdit::GenerateLocusTags()
     //  to the features that live on them when we generate a flat file,
     //  but we don't want them here in the ASN.1
 	for ( ; itOther; ++itOther) {
-        const CSeq_feat& feat = itOther->GetOriginalFeature();		
         CSeq_feat_EditHandle feh(mpScope->GetObjectHandle(
             (itOther)->GetOriginalFeature()));
 		feh.RemoveQualifier("locus_tag");
