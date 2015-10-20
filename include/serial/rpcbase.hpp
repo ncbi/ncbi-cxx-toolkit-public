@@ -65,6 +65,12 @@ public:
     void Disconnect(void);
     void Reset(void);
 
+    /// Set additional connection arguments.
+    void SetArgs(const string& args) { m_Args = args; }
+    void SetArgs(const CUrlArgs& args) { m_Args = args.GetQueryString(CUrlArgs::eAmp_Char); }
+    /// Get additional connection arguments.
+    const string& GetArgs(void) const { return m_Args; }
+
     const string& GetService(void) const            { return m_Service; }
              void SetService(const string& service) { m_Service = service; }
 
@@ -99,11 +105,12 @@ private:
     ESerialDataFormat        m_Format;
     CMutex                   m_Mutex;   ///< To allow sharing across threads.
     CTimeSpan                m_RetryDelay;
-    int                      m_RetryCount;
+    unsigned int             m_RetryCount;
     int                      m_RecursionCount;
 
 protected:
     string                   m_Service; ///< Used by default Connect().
+    string                   m_Args;
     auto_ptr<CNcbiIostream>  m_Stream; // This must be destroyed after m_In/m_Out.
     auto_ptr<CObjectIStream> m_In;
     auto_ptr<CObjectOStream> m_Out;
@@ -230,6 +237,9 @@ void CRPCClient<TRequest, TReply>::x_Connect(void)
     }
     _ASSERT( !m_Service.empty() );
     SConnNetInfo* net_info = ConnNetInfo_Create(m_Service.c_str());
+    if ( !m_Args.empty() ) {
+        ConnNetInfo_AppendArg(net_info, m_Args.c_str(), 0);
+    }
     if ( m_RetryCtx.IsSetArgs() ) {
         ConnNetInfo_AppendArg(net_info, m_RetryCtx.GetArgs().c_str(), 0);
     }
@@ -255,6 +265,9 @@ void CRPCClient<TRequest, TReply>::x_ConnectURL(const string& url)
 {
     SConnNetInfo* net_info = ConnNetInfo_Create(0);
     ConnNetInfo_ParseURL(net_info, url.c_str());
+    if ( !m_Args.empty() ) {
+        ConnNetInfo_PostOverrideArg(net_info, m_Args.c_str(), 0);
+    }
     if ( m_RetryCtx.IsSetArgs() ) {
         ConnNetInfo_PostOverrideArg(net_info, m_RetryCtx.GetArgs().c_str(), 0);
     }
