@@ -58,7 +58,7 @@ CRef<CGC_Assembly> UncomressAndCreate(const string& blob, CCompressStream::EMeth
 
     sw.Stop();
     LOG_POST(Info << "Assebmly uncomressed and created in (sec): " << sw.Elapsed());
-    GetDiagContext().Extra().Print("Create-assembly-from-blob", sw.Elapsed() * 1000) // need millisecond
+    GetDiagContext().Extra().Print("Create-assembly-from-blob-time", sw.Elapsed() * 1000) // need millisecond
                             .Print("compress-method", method)
                             .Print("blob-size", blob.size());
     return m_assembly;
@@ -123,7 +123,7 @@ void CompressAssembly(string& blob, CRef<CGC_Assembly> assembly, CCompressStream
     blob = CNcbiOstrstreamToString(out);
 
     sw.Stop();
-    GetDiagContext().Extra().Print("Compress-assembly-to-blob", sw.Elapsed() * 1000) // need millisecond
+    GetDiagContext().Extra().Print("Compress-assembly-to-blob-time", sw.Elapsed() * 1000) // need millisecond
                             .Print("compress-method", method)
                             .Print("blob-size", blob.size());
 }
@@ -150,7 +150,7 @@ string ChangeCompression(const string& blob,
     sw.Stop();
     LOG_POST(Info << "Compression done - processed: " << to_stream.GetProcessedSize() << ", old size:" << blob.size() << ", new size: " << to_stream.GetOutputSize());
 
-    GetDiagContext().Extra().Print("Change-assembly-compression", sw.Elapsed() * 1000) // need millisecond
+    GetDiagContext().Extra().Print("Change-assembly-compression-time", sw.Elapsed() * 1000) // need millisecond
                             .Print("compress-method-old", from)
                             .Print("compress-method-new", to)
                             .Print("blob-size-old",       blob.size())
