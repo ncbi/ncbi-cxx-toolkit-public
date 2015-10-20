@@ -485,116 +485,116 @@ static const char* const s_NetStorageConfigSections[] = {
     NULL
 };
 
-SNetStorageConfig::EDefaultStorage s_GetDefaultStorage(const string& value)
+SNetStorageRPC::SNetStorageRPC(const string& init_string,
+        TNetStorageFlags default_flags) :
+    m_DefaultStorage(eDefaultStorage_Undefined),
+    m_DefaultFlags(default_flags)
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+    , m_AllowXSiteConnections(false)
+#endif
 {
-    if (NStr::CompareNocase(value, "nst") == 0)
-        return SNetStorageConfig::eNetStorage;
-    else if (NStr::CompareNocase(value, "nc") == 0)
-        return SNetStorageConfig::eNetCache;
-    else if (NStr::CompareNocase(value, "nocreate") == 0 ||
-            NStr::CompareNocase(value, "no_create") == 0)
-        return SNetStorageConfig::eNoCreate;
-    else {
-        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-                "Invalid default_storage value '" << value << '\'');
-        return SNetStorageConfig::eUndefined;
-    }
-}
-
-SNetStorageConfig::SNetStorageConfig(const string& init_string)
-{
-    default_storage = eUndefined;
-
     CUrlArgs url_parser(init_string);
 
     ITERATE(CUrlArgs::TArgs, field, url_parser.GetArgs()) {
-        if (!field->name.empty()) {
+        if (field->name.empty())
+            continue;
+        switch (field->name[0]) {
+        case 'd':
             if (field->name == "domain")
-                app_domain = field->value;
-            else if (field->name == "default_storage")
-                default_storage = s_GetDefaultStorage(field->value);
-            else if (field->name == "metadata")
-                metadata = field->value;
-            else if (field->name == "namespace")
-                app_domain = field->value;
+                m_AppDomain = field->value;
+            else if (field->name == "default_storage") {
+                if (NStr::CompareNocase(field->value, "nst") == 0)
+                    m_DefaultStorage = eDefaultStorage_NetStorage;
+                else if (NStr::CompareNocase(field->value, "nc") == 0)
+                    m_DefaultStorage = eDefaultStorage_NetCache;
+                else if (NStr::CompareNocase(field->value, "nocreate") == 0 ||
+                        NStr::CompareNocase(field->value, "no_create") == 0)
+                    m_DefaultStorage = eDefaultStorage_NoCreate;
+                else {
+                    NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
+                            "Invalid default_storage value '" <<
+                                    field->value << '\'');
+                }
+            }
+            break;
+        case 'm':
+            if (field->name == "metadata")
+                m_MetadataOption = field->value;
+            break;
+        case 'n':
+            if (field->name == "namespace")
+                m_AppDomain = field->value;
             else if (field->name == "nst")
-                service = field->value;
+                m_NetStorageServiceName = field->value;
             else if (field->name == "nc")
-                nc_service = field->value;
-            else if (field->name == "cache")
-                app_domain = field->value;
+                m_NetCacheServiceName = field->value;
+            break;
+        case 'c':
+            if (field->name == "cache")
+                m_AppDomain = field->value;
             else if (field->name == "client")
-                client_name = field->value;
+                m_ClientName = field->value;
         }
     }
 
-    if (client_name.empty()) {
+    if (m_ClientName.empty()) {
         CNcbiApplication* app = CNcbiApplication::Instance();
         if (app != NULL) {
             string path;
             CDirEntry::SplitPath(app->GetProgramExecutablePath(),
-                    &path, &client_name);
+                    &path, &m_ClientName);
             if (NStr::EndsWith(path, CDirEntry::GetPathSeparator()))
                 path.erase(path.length() - 1);
             string parent_dir;
             CDirEntry::SplitPath(path, NULL, &parent_dir);
             if (!parent_dir.empty()) {
-                client_name += '-';
-                client_name += parent_dir;
+                m_ClientName += '-';
+                m_ClientName += parent_dir;
             }
         }
     }
 
-    if (client_name.empty()) {
+    if (m_ClientName.empty()) {
         NCBI_THROW_FMT(CNetStorageException, eAuthError,
                 "Client name is required.");
     }
 
-    switch (default_storage) {
-    case eUndefined:
-        default_storage =
-                !service.empty() ? eNetStorage :
-                !nc_service.empty() ? eNetCache :
-                eNoCreate;
+    switch (m_DefaultStorage) {
+    case eDefaultStorage_Undefined:
+        m_DefaultStorage =
+                !m_NetStorageServiceName.empty() ? eDefaultStorage_NetStorage :
+                !m_NetCacheServiceName.empty() ? eDefaultStorage_NetCache :
+                eDefaultStorage_NoCreate;
         break;
 
-    case eNetStorage:
-        if (service.empty()) {
+    case eDefaultStorage_NetStorage:
+        if (m_NetStorageServiceName.empty()) {
             NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
                     init_string << ": 'nst=' parameter is required "
                             "when 'default_storage=nst'");
         }
         break;
 
-    case eNetCache:
-        if (nc_service.empty()) {
+    case eDefaultStorage_NetCache:
+        if (m_NetCacheServiceName.empty()) {
             NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
                     init_string << ": 'nc=' parameter is required "
                             "when 'default_storage=nc'");
         }
         break;
 
-    default: /* eNoCreate */
+    default: /* eDefaultStorage_NoCreate */
         break;
     }
-}
 
-SNetStorageRPC::SNetStorageRPC(const SNetStorageConfig& config,
-        TNetStorageFlags default_flags) :
-    m_DefaultFlags(default_flags),
-    m_Config(config)
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-    , m_AllowXSiteConnections(false)
-#endif
-{
     m_RequestNumber.Set(0);
 
     CJsonNode hello(MkStdRequest("HELLO"));
 
-    hello.SetString("Client", m_Config.client_name);
-    hello.SetString("Service", m_Config.service);
-    if (!m_Config.metadata.empty())
-        hello.SetString("Metadata", m_Config.metadata);
+    hello.SetString("Client", m_ClientName);
+    hello.SetString("Service", m_NetStorageServiceName);
+    if (!m_MetadataOption.empty())
+        hello.SetString("Metadata", m_MetadataOption);
     {{
         CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
         CNcbiApplication* app = CNcbiApplication::Instance();
@@ -603,26 +603,26 @@ SNetStorageRPC::SNetStorageRPC(const SNetStorageConfig& config,
     }}
     hello.SetString("ProtocolVersion", NST_PROTOCOL_VERSION);
 
-    m_Service = new SNetServiceImpl("NetStorageAPI", m_Config.client_name,
+    m_Service = new SNetServiceImpl("NetStorageAPI", m_ClientName,
             new CNetStorageServerListener(hello));
 
-    m_Service->Init(this, m_Config.service,
+    m_Service->Init(this, m_NetStorageServiceName,
             NULL, kEmptyStr, s_NetStorageConfigSections);
 }
 
 CNetStorageObject SNetStorageRPC::Create(TNetStorageFlags flags)
 {
-    switch (m_Config.default_storage) {
-    /* SNetStorageConfig::eUndefined is overridden in the constructor */
+    switch (m_DefaultStorage) {
+    /* eDefaultStorage_Undefined is overridden in the constructor */
 
-    case SNetStorageConfig::eNetStorage:
+    case eDefaultStorage_NetStorage:
         break; // This case is handled below the switch.
 
-    case SNetStorageConfig::eNetCache:
+    case eDefaultStorage_NetCache:
         x_InitNetCacheAPI();
         return CDNCNetStorage::Create(m_NetCacheAPI);
 
-    default: /* SNetStorageConfig::eNoCreate */
+    default: /* eDefaultStorage_NoCreate */
         NCBI_THROW_FMT(CNetStorageException, eAuthError,
                 "Object creation is disabled.");
     }
@@ -769,10 +769,10 @@ void SNetStorageRPC::x_SetStorageFlags(CJsonNode& node, TNetStorageFlags flags)
 
 void SNetStorageRPC::x_SetICacheNames(CJsonNode& node) const
 {
-    if (!m_Config.nc_service.empty() && !m_Config.app_domain.empty()) {
+    if (!m_NetCacheServiceName.empty() && !m_AppDomain.empty()) {
         CJsonNode icache(CJsonNode::NewObjectNode());
-        icache.SetString("ServiceName", m_Config.nc_service);
-        icache.SetString("CacheName", m_Config.app_domain);
+        icache.SetString("ServiceName", m_NetCacheServiceName);
+        icache.SetString("CacheName", m_AppDomain);
         node.SetByKey("ICache", icache);
     }
 }
@@ -817,7 +817,7 @@ CJsonNode SNetStorageRPC::MkObjectRequest(const string& request_type,
     CJsonNode new_request(MkStdRequest(request_type));
 
     CJsonNode user_key(CJsonNode::NewObjectNode());
-    user_key.SetString("AppDomain", m_Config.app_domain);
+    user_key.SetString("AppDomain", m_AppDomain);
     user_key.SetString("UniqueID", unique_key);
     new_request.SetByKey("UserKey", user_key);
 
@@ -830,7 +830,7 @@ CJsonNode SNetStorageRPC::MkObjectRequest(const string& request_type,
 void SNetStorageRPC::x_InitNetCacheAPI()
 {
     if (!m_NetCacheAPI) {
-        CNetCacheAPI nc_api(m_Config.nc_service, m_Config.client_name);
+        CNetCacheAPI nc_api(m_NetCacheServiceName, m_ClientName);
         nc_api.SetCompoundIDPool(m_CompoundIDPool);
         nc_api.SetDefaultParameters(nc_use_compound_id = true);
 
@@ -852,6 +852,12 @@ bool SNetStorageRPC::x_NetCacheMode(const string& object_loc)
 
     x_InitNetCacheAPI();
     return true;
+}
+
+CNetStorage::CNetStorage(const string& init_string,
+        TNetStorageFlags default_flags) :
+    m_Impl(new SNetStorageRPC(init_string, default_flags))
+{
 }
 
 string SNetStorageObjectRPC::GetLoc()
@@ -1262,7 +1268,7 @@ void SNetStorageObjectImpl::Read(string* data)
 
 struct SNetStorageByKeyRPC : public SNetStorageByKeyImpl
 {
-    SNetStorageByKeyRPC(const SNetStorageConfig& config,
+    SNetStorageByKeyRPC(const string& init_string,
             TNetStorageFlags default_flags);
 
     virtual CNetStorageObject Open(const string& unique_key,
@@ -1276,11 +1282,11 @@ struct SNetStorageByKeyRPC : public SNetStorageByKeyImpl
             CNetComponentCounterLocker<SNetStorageRPC> > m_NetStorageRPC;
 };
 
-SNetStorageByKeyRPC::SNetStorageByKeyRPC(const SNetStorageConfig& config,
+SNetStorageByKeyRPC::SNetStorageByKeyRPC(const string& init_string,
         TNetStorageFlags default_flags) :
-    m_NetStorageRPC(new SNetStorageRPC(config, default_flags))
+    m_NetStorageRPC(new SNetStorageRPC(init_string, default_flags))
 {
-    if (m_NetStorageRPC->m_Config.app_domain.empty()) {
+    if (m_NetStorageRPC->m_AppDomain.empty()) {
         NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
                 "'domain' parameter is missing from the initialization string");
     }
@@ -1325,6 +1331,12 @@ void SNetStorageByKeyRPC::Remove(const string& key, TNetStorageFlags flags)
     m_NetStorageRPC->Exchange(m_NetStorageRPC->m_Service, request);
 }
 
+CNetStorageByKey::CNetStorageByKey(const string& init_string,
+        TNetStorageFlags default_flags) :
+    m_Impl(new SNetStorageByKeyRPC(init_string, default_flags))
+{
+}
+
 struct SNetStorageAdminImpl : public CObject
 {
     SNetStorageAdminImpl(CNetStorage::TInstance netstorage_impl) :
@@ -1356,18 +1368,6 @@ CJsonNode CNetStorageAdmin::ExchangeJson(const CJsonNode& request,
 {
     return m_Impl->m_NetStorageRPC->Exchange(m_Impl->m_NetStorageRPC->m_Service,
             request, conn, server_to_use);
-}
-
-SNetStorageImpl* SNetStorageImpl::Create(const string& init_string,
-        TNetStorageFlags default_flags)
-{
-    return new SNetStorageRPC(init_string, default_flags);
-}
-
-SNetStorageByKeyImpl* SNetStorageByKeyImpl::Create(const string& init_string,
-        TNetStorageFlags default_flags)
-{
-    return new SNetStorageByKeyRPC(init_string, default_flags);
 }
 
 END_NCBI_SCOPE

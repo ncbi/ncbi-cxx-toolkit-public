@@ -32,7 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/resource_info.hpp>
-#include "netstorage_direct.hpp"
+#include "netstorage_direct_object.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -81,6 +81,37 @@ const CNetStorageObjectLoc& CDirectNetStorageObject::Locator()
 CDirectNetStorageObject::CDirectNetStorageObject(SNetStorageObjectImpl* impl)
     : CNetStorageObject(impl)
 {}
+
+
+struct SDirectNetStorageImpl : public SNetStorageImpl
+{
+    SDirectNetStorageImpl(const string& app_domain,
+            TNetStorageFlags default_flags,
+            CNetICacheClient::TInstance icache_client,
+            CCompoundIDPool::TInstance compound_id_pool,
+            const SFileTrackConfig& ft_config)
+        : m_Context(new SContext(app_domain, icache_client, default_flags,
+                    compound_id_pool, ft_config))
+    {
+    }
+
+    CObj* OpenImpl(const string&);
+
+    CNetStorageObject Create(TNetStorageFlags = 0);
+    CNetStorageObject Open(const string&);
+    string Relocate(const string&, TNetStorageFlags);
+    bool Exists(const string&);
+    void Remove(const string&);
+
+    CObj* Create(TNetStorageFlags, const string&, Int8 = 0);
+
+private:
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+    void AllowXSiteConnections() { m_Context->AllowXSiteConnections(); }
+#endif
+
+    CRef<SContext> m_Context;
+};
 
 
 CObj* SDirectNetStorageImpl::OpenImpl(const string& object_loc)
@@ -139,6 +170,34 @@ CObj* SDirectNetStorageImpl::Create(TNetStorageFlags flags,
 
     return new CObj(selector);
 }
+
+
+struct SDirectNetStorageByKeyImpl : public SNetStorageByKeyImpl
+{
+    SDirectNetStorageByKeyImpl(const string& app_domain,
+            TNetStorageFlags default_flags,
+            CNetICacheClient::TInstance icache_client,
+            CCompoundIDPool::TInstance compound_id_pool,
+            const SFileTrackConfig& ft_config)
+        : m_Context(new SContext(app_domain, icache_client, default_flags,
+                    compound_id_pool, ft_config))
+    {
+        if (app_domain.empty()) {
+            NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
+                    "Domain name cannot be empty.");
+        }
+    }
+
+    CObj* OpenImpl(const string&, TNetStorageFlags = 0);
+
+    CNetStorageObject Open(const string&, TNetStorageFlags = 0);
+    string Relocate(const string&, TNetStorageFlags, TNetStorageFlags = 0);
+    bool Exists(const string&, TNetStorageFlags = 0);
+    void Remove(const string&, TNetStorageFlags = 0);
+
+private:
+    CRef<SContext> m_Context;
+};
 
 
 CNetStorageObject SDirectNetStorageByKeyImpl::Open(const string& key,

@@ -1,5 +1,5 @@
-#ifndef CONNECT_SERVICES__NETSTORAGE_DIRECT_STATE__HPP
-#define CONNECT_SERVICES__NETSTORAGE_DIRECT_STATE__HPP
+#ifndef MISC_NETSTORAGE___NETSTORAGEIMPL__HPP
+#define MISC_NETSTORAGE___NETSTORAGEIMPL__HPP
 
 /*  $Id$
  * ===========================================================================
