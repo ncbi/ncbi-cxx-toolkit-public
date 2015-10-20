@@ -339,7 +339,7 @@ int CTestGenomicCollectionsSvcApplication::RunServerDirect(const CArgs& args, CN
         else if(reply.IsGet_chrtype_valid())
             ostr << reply.GetGet_chrtype_valid();
         else if(reply.IsGet_assembly_blob())
-            ostr << *CCachedAssembly(string(reply.GetGet_assembly_blob().begin(), reply.GetGet_assembly_blob().end())).Assembly();
+            ostr << *CCachedAssembly(reply.GetGet_assembly_blob()).Assembly();
         else
             ostr << reply;
     }
