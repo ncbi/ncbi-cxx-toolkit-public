@@ -125,7 +125,7 @@ void CBlastDemoApplication::Init(void)
 void CBlastDemoApplication::ProcessCommandLineArgs(CRef<CBlastOptionsHandle> opts_handle)
 
 {
-	CArgs args = GetArgs();
+	const CArgs& args = GetArgs();
 
         // Expect value is a supported option for all flavors of BLAST.
         if(args["evalue"].AsDouble())

@@ -117,7 +117,7 @@ void CNmer_repeatsApplication::Init(void)
 int CNmer_repeatsApplication::Run(void)
 {
     // Get arguments
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     vector<int> minima(5);
     minima[2] = args["2"].AsInteger();

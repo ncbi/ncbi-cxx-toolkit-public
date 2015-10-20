@@ -123,7 +123,7 @@ int CTestNetScheduleNode::Run(void)
     m_TimeDistr.InitFromParameter("time_distr",
         TParam_TimeDistr::GetDefault().c_str(), &s_Random);
 
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     string service = args["service"].AsString();
     string queue_name = args["queue"].AsString();

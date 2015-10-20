@@ -158,7 +158,7 @@ void CTestNetScheduleClient::Init(void)
 
 int CTestNetScheduleClient::Run(void)
 {
-    CArgs args = GetArgs();
+    const CArgs&   args = GetArgs();
     const string&  service  = args["service"].AsString();
     const string&  queue_name = args["queue"].AsString();
 

@@ -183,7 +183,7 @@ unsigned CDBAPI_CacheAdmin::GetTimeout(const CArgs& args)
 int CDBAPI_CacheAdmin::Run(void)
 {
     try {
-        CArgs args = GetArgs();
+        const CArgs& args = GetArgs();
 
         int rc = Connect(args);
         if (rc) {

@@ -77,7 +77,7 @@ void CGi2TaxIdApp::Init()
 
 int CGi2TaxIdApp::Run()
 {
-    CArgs args = GetArgs();
+    const CArgs& args = GetArgs();
 
     bool show = args["show_acc"];
 
