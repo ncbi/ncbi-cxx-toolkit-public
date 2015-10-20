@@ -346,7 +346,7 @@ void RemoveVersions(CRef<CGC_Assembly>& reply)
         reply->SetAssembly_set().IsSetDesc() &&
         reply->SetAssembly_set().SetDesc().CanGetDescr())
     {
-        list<CRef<CSeqdesc>>& l = reply->SetAssembly_set().SetDesc().SetDescr().Set();
+        list< CRef<CSeqdesc> >& l = reply->SetAssembly_set().SetDesc().SetDescr().Set();
 
         l.erase(remove_if(begin(l), end(l),
                           [](CRef<CSeqdesc> desc){
