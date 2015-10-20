@@ -40,6 +40,8 @@
 
 #include <objects/genomecoll/genomic_collections_cli.hpp>
 #include <objects/genomecoll/GC_Assembly.hpp>
+#include <objects/genomecoll/GC_AssemblySet.hpp>
+#include <objects/genomecoll/GC_AssemblyDesc.hpp>
 #include <objects/genomecoll/GCClient_ValidateChrTypeLo.hpp>
 #include <objects/genomecoll/GCClient_FindBestAssemblyR.hpp>
 #include <objects/genomecoll/GCClient_AssemblyInfo.hpp>
@@ -48,32 +50,26 @@
 #include <objects/genomecoll/GCClient_EquivalentAssembl.hpp>
 #include <objects/genomecoll/GCClient_GetEquivalentAsse.hpp>
 #include <objects/genomecoll/GCClient_GetAssemblyBlobRe.hpp>
+
+#include <objects/general/User_object.hpp>
+#include <objects/general/Object_id.hpp>
+#include <objects/seq/Seq_descr.hpp>
+
 #include <sstream>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
-
-
-/////////////////////////////////////////////////////////////////////////////
-
 
 class CTestGenomicCollectionsSvcApplication : public CNcbiApplication
 {
 private:
     virtual void Init(void);
     virtual int  Run(void);
-    virtual void Exit(void);
-    
+
     void PrepareRequest(CGCClientRequest& request, const CArgs& args);
-    
     int RunServerDirect(const CArgs& args, CNcbiOstream& ostr);
-    
     int RunUsingClient(const CArgs& args, CNcbiOstream& ostr);
 };
-
-
-/////////////////////////////////////////////////////////////////////////////
-//  Init test for all different types of arguments
 
 void CTestGenomicCollectionsSvcApplication::Init(void)
 {
@@ -180,12 +176,8 @@ void CTestGenomicCollectionsSvcApplication::Init(void)
     SetupArgDescriptions(argDesc.release());
 }
 
-
-
 /////////////////////////////////////////////////////////////////////////////
 //  Run test (printout arguments obtained from command-line)
-
-
 int CTestGenomicCollectionsSvcApplication::Run(void)
 {
     // Get arguments
@@ -347,6 +339,26 @@ int CTestGenomicCollectionsSvcApplication::RunServerDirect(const CArgs& args, CN
     return exitCode;
 }
 
+static
+void RemoveVersions(CRef<CGC_Assembly>& reply)
+{
+    if (reply->IsAssembly_set() &&
+        reply->SetAssembly_set().IsSetDesc() &&
+        reply->SetAssembly_set().SetDesc().CanGetDescr())
+    {
+        list<CRef<CSeqdesc>>& l = reply->SetAssembly_set().SetDesc().SetDescr().Set();
+
+        l.erase(remove_if(begin(l), end(l),
+                          [](CRef<CSeqdesc> desc){
+                              return desc->IsUser() &&
+                                     desc->GetUser().IsSetType() &&
+                                     desc->GetUser().GetType().IsStr() &&
+                                     desc->GetUser().GetType().GetStr() == "versions";
+                          }),
+                l.end());
+    }
+}
+
 int CTestGenomicCollectionsSvcApplication::RunUsingClient(const CArgs& args, CNcbiOstream& ostr)
 {
     string sss = GetConfig().Get("genomic_collections_cli", "service");
@@ -395,6 +407,7 @@ int CTestGenomicCollectionsSvcApplication::RunUsingClient(const CArgs& args, CNc
                     reply.Reset(cli->GetAssembly(args["rel_id"].AsInteger(), levelFlag, asmFlags, chrAttrFlags, scafAttrFlags, compAttrFlags));
             }
 
+            RemoveVersions(reply);
             ostr << *reply;
         }
         else if(request == "get-assembly-blob")
@@ -410,6 +423,8 @@ int CTestGenomicCollectionsSvcApplication::RunUsingClient(const CArgs& args, CNc
                 reply.Reset(cli->_GetAssemblyNew(args["rel_id"].AsInteger(), args["-smode"].AsString()));
             else
                 ERR_POST(Error << "Either accession or release id should be provided");
+
+            RemoveVersions(reply);
             ostr << *reply;
         }
         else if(request == "get-best-assembly")
@@ -458,21 +473,8 @@ int CTestGenomicCollectionsSvcApplication::RunUsingClient(const CArgs& args, CNc
     return 0;
 }
 
-
-/////////////////////////////////////////////////////////////////////////////
-//  Cleanup
-
-void CTestGenomicCollectionsSvcApplication::Exit(void)
-{
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
-//  MAIN
-
 int main(int argc, const char* argv[])
 {
     GetDiagContext().SetOldPostFormat(false);
-    // Execute main application function
     return CTestGenomicCollectionsSvcApplication().AppMain(argc, argv);
 }
