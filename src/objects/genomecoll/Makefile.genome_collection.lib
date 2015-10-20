@@ -3,7 +3,7 @@
 LIB = genome_collection
 SRC = genome_collection__ genome_collection___
 
-WATCHERS = dicuccio shchekot
+WATCHERS = dicuccio shchekot zherikov
 
 
 USES_LIBRARIES =  \
