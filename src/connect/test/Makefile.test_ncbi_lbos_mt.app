@@ -15,7 +15,7 @@ CHECK_REQUIRES = in-house-resources
 
 # Comment out if you do not want it to run automatically as part of
 # "make check".
-CHECK_CMD =
+CHECK_CMD = test_ncbi_lbos.mt -repeats 1
 CHECK_COPY = test_ncbi_lbos_mt.ini
 CHECK_TIMEOUT = 600
 
