@@ -39,7 +39,7 @@
 #include <connect/services/ns_output_parser.hpp>
 #include <connect/services/grid_rw_impl.hpp>
 #include <connect/services/remote_app.hpp>
-#include <connect/services/netstorage_impl.hpp>
+#include <misc/netstorage/netstorage.hpp>
 
 #include <connect/ncbi_util.h>
 

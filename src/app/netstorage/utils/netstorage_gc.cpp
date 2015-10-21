@@ -31,7 +31,7 @@
 
 #include <corelib/ncbidiag.hpp>
 #include <corelib/request_ctx.hpp>
-#include <connect/services/netstorage.hpp>
+#include <misc/netstorage/netstorage.hpp>
 
 #include "netstorage_gc.hpp"
 #include "netstorage_gc_version.hpp"
