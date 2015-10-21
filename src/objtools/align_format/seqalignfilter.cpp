@@ -534,7 +534,7 @@ void CSeqAlignFilter::ReadGiList(const string& fname, list<TGi>& list_gis, bool 
         sort(vec_gis.begin(), vec_gis.end());
 
     list_gis.clear();
-    for (vector<int>::iterator it = vec_gis.begin(); it != vec_gis.end(); it++)
+    for (vector<TGi>::iterator it = vec_gis.begin(); it != vec_gis.end(); it++)
         list_gis.push_back(*it);
 }
 
