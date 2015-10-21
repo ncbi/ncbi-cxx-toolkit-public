@@ -58,6 +58,7 @@ OmitFramePointers=false
 BasicRuntimeChecks=3
 BrowseInformation=0
 EnableFunctionLevelLinking=false
+AdditionalOptions=/bigobj
 
 [Compiler.debug.DebugDLL]
 RuntimeLibrary=3
