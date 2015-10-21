@@ -73,8 +73,13 @@ private:
     bool xTryProcessSeqSubmit(CRef<CSeq_submit>& seq_sub,
                               TSeqPos sort_order,
                               TSeqPos bundle_size,
+                              bool wrap_entries,
                               list<CRef<CSeq_submit> >& output_array) const;
    
+    void xWrapSeqEntries(vector<CRef<CSeq_entry> >& seq_entry_array, 
+                         const TSeqPos& bundle_size,
+                         vector<CRef<CSeq_entry> >& wrapped_entry_array) const;
+
     void xFlattenSeqEntrys(CSeq_submit::TData::TEntrys& entries,
                            vector<CRef<CSeq_entry> >& seq_entry_array) const;
 
@@ -125,6 +130,12 @@ void CSeqSubSplitter::Init()
                           true);
     }
 
+    { 
+        arg_desc->AddFlag("w",
+                          "Wrap output Seq-entries within Seq-submits with Genbank set",
+                          true);
+    }
+
     // parameters 
     {
         arg_desc->AddDefaultKey("n",
@@ -162,10 +173,14 @@ int CSeqSubSplitter::Run()
 
     list<CRef<CSeq_submit> > output_array;
 
+    const bool wrap_entries = (args["w"]) ? true : false; // Wrap the output Seq-entries 
+                                                          // within a Seq-submit in a Genbank set
+
     if(!xTryProcessSeqSubmit(input_sub, 
                              sort_order, 
                              bundle_size,
-                            output_array)) {
+                             wrap_entries,
+                             output_array)) {
         string err_msg = "Could not process input Seq-submit";
         ERR_POST(err_msg);
         return 0;
@@ -390,10 +405,31 @@ struct SIdCompare : public SCompare<SIdCompare>
 
 
 
+void CSeqSubSplitter::xWrapSeqEntries(vector<CRef<CSeq_entry> >& seq_entry_array, 
+                                      const TSeqPos& bundle_size,
+                                      vector<CRef<CSeq_entry> >& wrapped_entry_array) const
+{
+    vector<CRef<CSeq_entry> >::iterator seq_entry_it = seq_entry_array.begin();
+    while (seq_entry_it != seq_entry_array.end()) {
+        CRef<CSeq_entry> seq_entry = Ref(new CSeq_entry());
+        seq_entry->SetSet().SetClass(CBioseq_set::eClass_genbank);
+        for (TSeqPos i=0; i<bundle_size; ++i) {
+           seq_entry->SetSet().SetSeq_set().push_back(*seq_entry_it);   
+           ++seq_entry_it;
+           if (seq_entry_it == seq_entry_array.end()) {
+               break;
+           }
+        }
+        wrapped_entry_array.push_back(seq_entry);
+    }
+}
+
+
 
 bool CSeqSubSplitter::xTryProcessSeqSubmit(CRef<CSeq_submit>& input_sub,
                                            const TSeqPos sort_order,
                                            const TSeqPos bundle_size,
+                                           bool wrap_entries,
                                            list<CRef<CSeq_submit> >& output_array) const
 {
     if (!input_sub->IsEntrys()) {
@@ -424,18 +460,29 @@ bool CSeqSubSplitter::xTryProcessSeqSubmit(CRef<CSeq_submit>& input_sub,
             break;
     } 
 
-    vector<CRef<CSeq_entry> >::iterator seq_entry_it = seq_entry_array.begin();
-    while (seq_entry_it != seq_entry_array.end()) {
-        CRef<CSeq_submit> seqsub = Ref(new CSeq_submit());
-        seqsub->SetSub(input_sub->SetSub());
-        for(TSeqPos i=0; i<bundle_size; ++i) {
-            seqsub->SetData().SetEntrys().push_back(*seq_entry_it);
-            ++seq_entry_it;
-            if (seq_entry_it == seq_entry_array.end()) {
-                break;
-            }
+    if (wrap_entries) { // wrap the entries inside a genbank set
+        vector<CRef<CSeq_entry> > wrapped_entry_array;
+        xWrapSeqEntries(seq_entry_array, bundle_size, wrapped_entry_array);
+        for(int i=0; i<wrapped_entry_array.size(); ++i) {
+            CRef<CSeq_submit> seqsub = Ref(new CSeq_submit());
+            seqsub->SetSub(input_sub->SetSub());
+            seqsub->SetData().SetEntrys().push_back(wrapped_entry_array[i]);
+            output_array.push_back(seqsub);
         }
-        output_array.push_back(seqsub);
+    } else {
+        vector<CRef<CSeq_entry> >::iterator seq_entry_it = seq_entry_array.begin();
+        while (seq_entry_it != seq_entry_array.end()) {
+            CRef<CSeq_submit> seqsub = Ref(new CSeq_submit());
+            seqsub->SetSub(input_sub->SetSub());
+            for(TSeqPos i=0; i<bundle_size; ++i) {
+                seqsub->SetData().SetEntrys().push_back(*seq_entry_it);
+                ++seq_entry_it;
+                if (seq_entry_it == seq_entry_array.end()) {
+                    break;
+                }
+            }
+            output_array.push_back(seqsub);
+        }
     }
     return true;
 }
