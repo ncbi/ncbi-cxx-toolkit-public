@@ -107,10 +107,10 @@ BOOST_AUTO_TEST_CASE(TestTGIConversion)
     ds.SetSeqLocChar(CDisplaySeqalign::eLowerCase);
     CNcbiOstrstream output_stream;
     ds.DisplaySeqalign(output_stream);
-    string output = CNcbiOstrstreamToString(output_stream);
-    BOOST_REQUIRE(output.find("gi|212900|gb|AAA68886.1| ") != NPOS);
-    BOOST_REQUIRE(output.find("gi|385145537|dbj|BAM13277.1|") != NPOS);
-    BOOST_REQUIRE(output.find("gi|385145539|dbj|BAM13278.1|") != NPOS);        
+    string output = CNcbiOstrstreamToString(output_stream);    
+    BOOST_REQUIRE(output.find("gi|212900") != NPOS);
+    BOOST_REQUIRE(output.find("gi|385145537") != NPOS);
+    BOOST_REQUIRE(output.find("gi|385145539") != NPOS);        
 }
 
 bool TestSimpleAlignment(CBlastOM::ELocation location)
