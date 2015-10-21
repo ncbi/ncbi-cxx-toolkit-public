@@ -206,6 +206,7 @@ public:
     enum EErrCode {
         eRetry,   ///< Request failed, should be retried if possible.
         eFailed,  ///< Request (or retry) failed.
+        eArgs,    ///< Failed to send request arguments.
         eOther
     };
 
@@ -238,13 +239,22 @@ void CRPCClient<TRequest, TReply>::x_Connect(void)
     _ASSERT( !m_Service.empty() );
     SConnNetInfo* net_info = ConnNetInfo_Create(m_Service.c_str());
     if ( !m_Args.empty() ) {
-        ConnNetInfo_AppendArg(net_info, m_Args.c_str(), 0);
+        if ( !ConnNetInfo_AppendArg(net_info, m_Args.c_str(), 0) ) {
+            NCBI_THROW(CRPCClientException, eArgs,
+                "Error sending additional request arguments");
+        }
     }
     if ( m_RetryCtx.IsSetArgs() ) {
-        ConnNetInfo_AppendArg(net_info, m_RetryCtx.GetArgs().c_str(), 0);
+        if ( !ConnNetInfo_AppendArg(net_info, m_RetryCtx.GetArgs().c_str(), 0) ) {
+            NCBI_THROW(CRPCClientException, eArgs,
+                "Error sending retry context arguments");
+        }
     }
     else if (!m_Affinity.empty()) {
-        ConnNetInfo_PostOverrideArg(net_info, m_Affinity.c_str(), 0);
+        if ( !ConnNetInfo_PostOverrideArg(net_info, m_Affinity.c_str(), 0) ) {
+            NCBI_THROW(CRPCClientException, eArgs,
+                "Error sending request affinity");
+        }
     }
 
     // Install callback for parsing headers.
@@ -266,10 +276,16 @@ void CRPCClient<TRequest, TReply>::x_ConnectURL(const string& url)
     SConnNetInfo* net_info = ConnNetInfo_Create(0);
     ConnNetInfo_ParseURL(net_info, url.c_str());
     if ( !m_Args.empty() ) {
-        ConnNetInfo_PostOverrideArg(net_info, m_Args.c_str(), 0);
+        if ( !ConnNetInfo_PostOverrideArg(net_info, m_Args.c_str(), 0) ) {
+            NCBI_THROW(CRPCClientException, eArgs,
+                "Error sending additional request arguments");
+        }
     }
     if ( m_RetryCtx.IsSetArgs() ) {
-        ConnNetInfo_PostOverrideArg(net_info, m_RetryCtx.GetArgs().c_str(), 0);
+        if ( !ConnNetInfo_PostOverrideArg(net_info, m_RetryCtx.GetArgs().c_str(), 0) ) {
+            NCBI_THROW(CRPCClientException, eArgs,
+                "Error sending retry context arguments");
+        }
     }
     x_SetStream(new CConn_HttpStream(net_info,
         kEmptyStr, // user_header
@@ -321,7 +337,8 @@ const STimeout* CRPCClient<TRequest, TReply>::GetTimeout(EIO_Event direction)
         = dynamic_cast<CConn_IOStream*>(m_Stream.get());
     if (conn_stream) {
         return conn_stream->GetTimeout(direction);
-    } else {
+    }
+    else {
         return m_Timeout;
     }
 }

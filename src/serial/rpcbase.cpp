@@ -326,6 +326,7 @@ const char* CRPCClientException::GetErrCodeString(void) const
     switch (GetErrCode()) {
     case eRetry:  return "eRetry";
     case eFailed: return "eFailed";
+    case eArgs:   return "eArgs";
     case eOther:  return "eOther";
     default:      return CException::GetErrCodeString();
     }
