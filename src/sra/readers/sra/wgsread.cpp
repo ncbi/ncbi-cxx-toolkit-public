@@ -3053,7 +3053,7 @@ CRef<CSeq_entry> CWGSSeqIterator::GetSeq_entry(TFlags flags) const
         ret->SetSeq(*GetBioseq(flags));
     }
     else {
-        CRef<CBioseq> main_seq = GetBioseq(flags & ~fSeqAnnot);
+        CRef<CBioseq> main_seq = GetBioseq(flags & ~fSeqAnnot & ~fMasterDescr);
         ret->SetSeq(*main_seq);
         vector<TVDBRowId> product_row_ids;
         sx_AddFeatures(m_Db, GetLocFeatRowIdRange(), *ret, &product_row_ids);
@@ -3069,6 +3069,13 @@ CRef<CSeq_entry> CWGSSeqIterator::GetSeq_entry(TFlags flags) const
                     continue;
                 }
                 entries.push_back(prot_it.GetSeq_entry(prot_flags));
+            }
+        }
+        if ( flags & fMasterDescr ) {
+            if ( CRef<CSeq_descr> descr = GetSeq_descr(fMasterDescr) ) {
+                const CSeq_descr::Tdata& src = descr->Get();
+                CSeq_descr::Tdata& dst = ret->SetDescr().Set();
+                dst.insert(dst.end(), src.begin(), src.end());
             }
         }
         GetQualityAnnot(main_seq->SetAnnot(), flags);
