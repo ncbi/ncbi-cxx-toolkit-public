@@ -1,6 +1,6 @@
 # $Id$
 
-APP_PROJ = test_csra_loader test_csra_loader_mt
+APP_PROJ = test_csra_loader test_csra_loader_mt test_sra
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
