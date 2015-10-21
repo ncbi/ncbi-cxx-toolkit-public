@@ -855,12 +855,6 @@ bool SNetStorageRPC::x_NetCacheMode(const string& object_loc)
     return true;
 }
 
-CNetStorage::CNetStorage(const string& init_string,
-        TNetStorageFlags default_flags) :
-    m_Impl(new SNetStorageRPC(init_string, default_flags))
-{
-}
-
 string SNetStorageObjectRPC::GetLoc()
 {
     return m_Locator;
@@ -1332,12 +1326,6 @@ void SNetStorageByKeyRPC::Remove(const string& key, TNetStorageFlags flags)
     m_NetStorageRPC->Exchange(m_NetStorageRPC->m_Service, request);
 }
 
-CNetStorageByKey::CNetStorageByKey(const string& init_string,
-        TNetStorageFlags default_flags) :
-    m_Impl(new SNetStorageByKeyRPC(init_string, default_flags))
-{
-}
-
 struct SNetStorageAdminImpl : public CObject
 {
     SNetStorageAdminImpl(CNetStorage::TInstance netstorage_impl) :
@@ -1369,6 +1357,18 @@ CJsonNode CNetStorageAdmin::ExchangeJson(const CJsonNode& request,
 {
     return m_Impl->m_NetStorageRPC->Exchange(m_Impl->m_NetStorageRPC->m_Service,
             request, conn, server_to_use);
+}
+
+SNetStorageImpl* SNetStorageImpl::Create(const string& init_string,
+        TNetStorageFlags default_flags)
+{
+    return new SNetStorageRPC(init_string, default_flags);
+}
+
+SNetStorageByKeyImpl* SNetStorageByKeyImpl::Create(const string& init_string,
+        TNetStorageFlags default_flags)
+{
+    return new SNetStorageByKeyRPC(init_string, default_flags);
 }
 
 END_NCBI_SCOPE
