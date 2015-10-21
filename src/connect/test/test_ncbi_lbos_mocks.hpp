@@ -34,37 +34,37 @@
 #include "../ncbi_lbosp.h"
 
 /** Get number of servers with specified IP announced in ZK  */
-int                     s_CountServers(string    service,
-                                       unsigned short port,
-                                       string dtab);
+int                  s_CountServers(string         service,
+                                    unsigned short port,
+                                    string         dtab);
 
                                                                
 template <unsigned int lines>
-static EIO_Status    s_FakeReadAnnouncement(CONN conn,
-                                            void* line,
-                                            size_t size,
-                                            size_t* n_read,
+static EIO_Status    s_FakeReadAnnouncement(CONN           conn,
+                                            void*          line,
+                                            size_t         size,
+                                            size_t*        n_read,
                                             EIO_ReadMethod how);
 static
 EIO_Status s_FakeReadAnnouncementWithErrorFromLBOS(CONN              conn,
-                                                    void*            line,
-                                                    size_t           size,
-                                                    size_t*          n_read,
-                                                    EIO_ReadMethod   how);
+                                                   void*             line,
+                                                   size_t            size,
+                                                   size_t*           n_read,
+                                                   EIO_ReadMethod    how);
 
 static string s_LBOS_hostport;
 static string s_LBOS_header;
 
 static
-ELBOS_Result s_FakeAnnounceEx(const char*      service,
-                              const char*      version,
-                              unsigned short   port,
-                              const char*      healthcheck_url,
-                              char**           LBOS_answer,
-                              int*             htp_status_code,
-                              char**           http_status_message)  {
+unsigned short s_FakeAnnounceEx(const char*     service,
+                               const char*      version,
+                               unsigned short   port,
+                               const char*      healthcheck_url,
+                               char**           LBOS_answer,
+                               char**           http_status_message)  
+{
     s_LBOS_hostport = healthcheck_url;
-    return eLBOS_DNSResolveError;
+    return kLBOSDNSResolveError;
 }
 
 
@@ -355,7 +355,9 @@ EIO_Status s_FakeReadAnnouncementWithErrorFromLBOS(CONN             conn,
                                                    EIO_ReadMethod   how)
 {
     static_cast<SLBOS_UserData*>(CONN_GetUserData(conn))
-        ->http_response_code = 500;
+        ->http_response_code = 507;
+    static_cast<SLBOS_UserData*>(CONN_GetUserData(conn))
+        ->http_status_mesage = strdup("LBOS STATUS");
     const char* error = "Those lbos errors are scaaary";
     strncpy(static_cast<char*>(line), error, size - 1);
     *n_read = strlen(error);
@@ -408,7 +410,7 @@ EIO_Status s_FakeReadAnnouncement(CONN           conn,
         ->http_response_code = 200;
     int localscope_lines = lines; /* static analysis and compiler react 
                                 strangely to template parameter in equations */
-    if (s_call_counter++ < localscope_lines) {
+    if (s_CallCounter++ < localscope_lines) {
         char* buf = "1.2.3.4:5";
         strncat(static_cast<char*>(line), buf, size-1);
         *n_read = strlen(buf);
@@ -420,7 +422,7 @@ EIO_Status s_FakeReadAnnouncement(CONN           conn,
 }
 
 
-template<CLBOSException::EErrCode kErrCode>
+template<CLBOSException::EErrCode kErrCode, unsigned short kStatusCode>
 class ExceptionComparator
 {
 public:
@@ -431,20 +433,21 @@ public:
 
     bool operator()(const CLBOSException& ex)
     {
-        if (ex.GetErrCode() != kErrCode) {
+        CLBOSException::EErrCode err_code = kErrCode; /* for debug */
+        if (ex.GetErrCode() != err_code) {
             return false;
         }
-        if (!m_ExpectedMessage.empty()) {
-            const char* ex_message =
-                strstr(ex.what(), " Error: ") + strlen(" Error: ");
-            string message;
-            message.append(ex_message);
-            return (message == m_ExpectedMessage);
-             
+        unsigned short status_code = kStatusCode; /* for debug */
+        if (ex.GetStatusCode() != status_code) {
+            return false;
         }
-        return true;
+        const char* ex_message = ex.what();
+        ex_message = strstr(ex_message, " Error: ") + strlen(" Error: ");
+        string message;
+        message.append(ex_message);
+        return (message == m_ExpectedMessage);
     }
-
+private:
     string m_ExpectedMessage;
 };
 
@@ -655,7 +658,7 @@ template<size_t count>
 void s_FakeFillCandidates (SLBOS_Data* data,
                            const char* service)
 {
-    s_call_counter++;
+    s_CallCounter++;
     size_t localscope_count = count; /* for debugging */
     unsigned int host = 0;
     unsigned short int port = 0;
@@ -699,7 +702,7 @@ void s_FakeFillCandidatesCheckInstances(SLBOS_Data* data,
 
 void s_FakeFillCandidatesWithError (SLBOS_Data* data, const char* service)
 {
-    s_call_counter++;
+    s_CallCounter++;
     return;
 }
 
@@ -715,7 +718,7 @@ SSERV_Info** s_FakeResolveIPPortSwapAddresses(const char*   lbos_address,
                                               SConnNetInfo* net_info)
 {
     int localscope_instance_number = instance_number; /*to debug */
-    s_call_counter++;
+    s_CallCounter++;
     CCObjArrayHolder<char> original_list(g_LBOS_GetLBOSAddresses());
     NCBITEST_CHECK_MESSAGE(*original_list != NULL,
         "Problem with g_LBOS_GetLBOSAddresses, test failed.");
@@ -724,7 +727,7 @@ SSERV_Info** s_FakeResolveIPPortSwapAddresses(const char*   lbos_address,
     if (strcmp(lbos_address, original_list[localscope_instance_number-1]) == 0) 
     {
         if (net_info->http_user_header) {
-            s_last_header = net_info->http_user_header;
+            s_LastHeader = net_info->http_user_header;
         }
         hostports = static_cast<SSERV_Info**>(calloc(sizeof(SSERV_Info*), 2));
         NCBITEST_CHECK_MESSAGE(hostports != NULL,
@@ -767,14 +770,14 @@ static const char*         s_FakeGetHostByAddrEx(unsigned int host,
 
 void s_FakeInitialize()
 {
-    s_call_counter++;
+    s_CallCounter++;
     return;
 }
 
 
 void s_FakeInitializeCheckInstances()
 {
-    s_call_counter++;
+    s_CallCounter++;
     NCBITEST_CHECK_MESSAGE(g_LBOS_UnitTesting_InstancesList() != NULL,
         "s_LBOS_InstancesList is empty at a critical place");
     return;
@@ -786,11 +789,11 @@ SSERV_Info** s_FakeResolveIPPort (const char*   lbos_address,
                                   const char*   serviceName,
                                   SConnNetInfo* net_info)
 {
-    s_call_counter++;
+    s_CallCounter++;
     if (net_info->http_user_header) {
-        s_last_header = net_info->http_user_header;
+        s_LastHeader = net_info->http_user_header;
     }
-    if (s_call_counter < 2) {
+    if (s_CallCounter < 2) {
         return NULL;
     } else {
         SSERV_Info** hostports = static_cast<SSERV_Info**>(

@@ -28,10 +28,14 @@
  * File Description:
  *   C++ Wrapper for the LBOS mapper written in C
  */
+/* C++ */
 #include <ncbi_pch.hpp>
-#include "ncbi_lbosp.h"
+#include <sstream>
 #include <corelib/ncbimisc.hpp>
 #include <connect/ncbi_lbos.hpp>
+/* C */
+#include "ncbi_lbosp.h"
+
 
 BEGIN_NCBI_SCOPE
 
@@ -47,56 +51,53 @@ struct Free
     }
 };
 
-static void s_ProcessResult(ELBOS_Result result, const char* lbos_answer) 
+static void s_ProcessResult(unsigned short result, 
+                            const char* lbos_answer,
+                            const char* status_message)
 {
-    switch (result) {
-    case eLBOS_Success:
+    if (result == kLBOSSuccess)
         return;
-    case eLBOS_ServerError:
-        throw CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-            CLBOSException::e_ServerError, string("LBOS returned error: ")
-            + string(lbos_answer));
-    case eLBOS_NoLBOS:
-        throw CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-            CLBOSException::e_NoLBOS, string("No LBOS was found"));
-    case eLBOS_NotFound:
-        throw CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-            CLBOSException::e_NotFound, string("No LBOS was found"));
-    case eLBOS_Off:
-        throw CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-            CLBOSException::e_Off, string("LBOS mapper is turned OFF. "
-            "It is either because it could not resolve even itself, or "
-            "because config does not have [CONN]LBOS_ENABLE=1"));
-    case eLBOS_InvalidArgs:
-        throw CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-            CLBOSException::e_InvalidArgs, string("Some arguments provided "
-            "are invalid"));
-    case eLBOS_DNSResolveError:
-        throw CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-            CLBOSException::e_DNSResolveError, string("LBOS mapper did not "
-            "manage to resolve IP of current machine to replace \"0.0.0.0\""));
+
+    stringstream message;
+    message << result;
+
+    if (status_message == NULL)
+        status_message = "";
+    else {
+        message << " " << status_message;
     }
+    if (lbos_answer == NULL)
+        lbos_answer = "";
+    else {
+        message << " " << lbos_answer;
+    }
+    throw CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
+            CLBOSException::s_HTTPCodeToEnum(result),
+            message.str(), result);
 }
 
 
-void LBOS::Announce(const string& service, const string& version, 
+void LBOS::Announce(const string& service, const string& version,
                     unsigned short port, const string& healthcheck_url)
 {
-    char* str = NULL;
-    AutoPtr< char*, Free<char*> > lbos_answer(&str);
-    ELBOS_Result result = LBOS_Announce(service.c_str(), version.c_str(),
-        port, healthcheck_url.c_str(), &*lbos_answer, NULL, NULL);
-    s_ProcessResult(result, *lbos_answer);
+    char* body_str = NULL, *status_message_str = NULL;
+    AutoPtr< char*, Free<char*> > body_aptr(&body_str),
+                                  status_message_aptr(&status_message_str);
+    unsigned short result = LBOS_Announce(service.c_str(), version.c_str(),
+        port, healthcheck_url.c_str(), &*body_aptr, &*status_message_aptr);
+    s_ProcessResult(result, *body_aptr, *status_message_aptr);
 }
 
 
 void LBOS::AnnounceFromRegistry(const string&  registry_section)
 {
-    char* str = NULL;
-    AutoPtr< char*, Free<char*> > lbos_answer(&str);
-    ELBOS_Result result = LBOS_AnnounceFromRegistry(registry_section.c_str(),
-                                                    &*lbos_answer, NULL, NULL);
-    s_ProcessResult(result, *lbos_answer);
+    char* body_str = NULL, *status_message_str = NULL;
+    AutoPtr< char*, Free<char*> > body_aptr(&body_str),
+                                  status_message_aptr(&status_message_str);
+    unsigned short result = LBOS_AnnounceFromRegistry(registry_section.c_str(),
+                                                      &*body_aptr,
+                                                      &*status_message_aptr);
+    s_ProcessResult(result, *body_aptr, *status_message_aptr);
 }
 
 
@@ -111,10 +112,44 @@ void LBOS::Deannounce(const string&         service,
                       const string&         host,
                       unsigned short        port)
 {
-    ELBOS_Result result =
-        LBOS_Deannounce(service.c_str(), version.c_str(), host.c_str(), port,
-                        NULL, NULL, NULL);
-    s_ProcessResult(result, "");
+    char* body_str = NULL, *status_message_str = NULL;
+    AutoPtr< char*, Free<char*> > body_aptr(&body_str),
+        status_message_aptr(&status_message_str);
+    unsigned short result = LBOS_Deannounce(service.c_str(), version.c_str(), 
+                                            host.c_str(), port, &*body_aptr, 
+                                            &*status_message_aptr);
+    s_ProcessResult(result, *body_aptr, *status_message_aptr);
+}
+
+
+CLBOSException::EErrCode 
+    CLBOSException::s_HTTPCodeToEnum(unsigned short http_code) 
+{
+    switch (http_code) {
+    case kLBOSNoLBOS:
+        return e_NoLBOS;
+    case kLBOSNotFound:
+        return e_NotFound;
+    case kLBOSBadRequest:
+        return e_BadRequest;
+    case kLBOSOff:
+        return e_Off;
+    case kLBOSInvalidArgs:
+        return e_InvalidArgs;
+    case kLBOSDNSResolveError:
+        return e_DNSResolveError;
+    case kLBOSMemAllocError:
+        return e_MemAllocError;
+    case kLBOSCorruptOutput:
+        return e_LBOSCorruptOutput;
+    default:
+        return e_Unknown;
+    }
+}
+
+
+unsigned short CLBOSException::GetStatusCode(void) const {
+    return m_StatusCode;
 }
 
 
@@ -123,14 +158,19 @@ const char* CLBOSException::GetErrCodeString(void) const
     switch (GetErrCode()) {
     case e_NoLBOS:
         return "LBOS was not found";
+    case e_NotFound:
+        return "Healthcheck URL is not working or lbos could not resolve"
+               "host of healthcheck URL";
     case e_DNSResolveError:
         return "Could not get IP of current machine";
+    case e_MemAllocError:
+        return "Memory allocation error happened while performing request";
+    case e_Off:
+        return "lbos functionality is turned OFF. Check config file.";
     case e_InvalidArgs:
-        return "Some provided arguments are invalid";
-    case e_ServerError:
-        return "LBOS returned error message";
+        return "Invalid arguments were provided. No request to lbos was sent";
     default:
-        return CException::GetErrCodeString();
+        return "Unknown lbos error code";
     }
 }
 

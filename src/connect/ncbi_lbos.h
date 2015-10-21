@@ -37,36 +37,21 @@
 extern "C" {
 #endif /*__cplusplus*/
 
-
-/** Result of calling function g_LBOS_Announce() */
-typedef enum {
-    eLBOS_Success,              /**< Success                           */
-    eLBOS_NoLBOS,               /**< lbos was not found                */
-    eLBOS_DNSResolveError,      /**< Local address not resolved        */
-    eLBOS_InvalidArgs,          /**< Arguments not valid               */
-    eLBOS_ServerError,          /**< lbos failed on server side
-                                     and returned error code
-                                     and error message (possibly)      */
-    eLBOS_NotFound,             /**< For deannouncement only. Did not 
-                                     find such server to deannounce    */
-    eLBOS_Off,                  /**< lbos turned OFF on this machine   */
-} ELBOS_Result;
-
-
+    
 /** Announce server.
 *
 * @attention
 *  IP for the server being announced is taken from healthcheck URL!
-* @param service [in]
+* @param [in] service 
 *  Name of service as it will appear in ZK. For services this means that the
 *  name should start with '/'.
-* @param version [in]
+* @param [in] version
 *  Any non-null non-empty string that will help to identify the version
 *  of service. A good idea is to use [semantic versioning]
 *  (http://semver.org/) like "4.7.2"
-* @param port [in]
+* @param [in] port
 *  Port for the service. Can differ from healthcheck port.
-* @param healthcheck_url [in]
+* @param [in] healthcheck_url
 *  Full absolute URL starting with "http://" or "https://". Should include
 *  hostname or IP (and port, if necessary).
 * @note
@@ -74,29 +59,37 @@ typedef enum {
 *  announces it (i.e., if server announces itself), you can write
 *  "0.0.0.0" for IP (this is convention with lbos). You still have to
 *  provide port, even if you write "0.0.0.0".
-* @param lbos_answer [out]
-*  This variable will be assigned a pointer to char* with exact
-*  answer of lbos (or NULL, if no lbos was reached).
+* @param [out] lbos_answer
+*  This variable will be assigned a pointer to C-string with exact body of
+*  lbos' response (or NULL, if no lbos was reached).
 *  The returned string must be free()'d by the caller.
-*  If eLBOS_Success is returned, then lbos answer will contain
+*  If eLBOS_Success is returned, then lbos_answer will contain
 *  "host:port" of the lbos instance that was used to announce the server.
 *  Otherwise, lbos answer will contain human-readable error message or NULL.
+* @param [out] http_status_message
+*  This variable will be assigned a pointer to C-string with exact 
+*  status message of lbos' response (or NULL, if no lbos was reached).
+*  The returned string must be free()'d by the caller.
 * @return
-*  Code of success or some error.
+*  HTTP status code returned by lbos (or one of additional codes, 
+*  see ncbi_lbosp.h)
 *
 * @sa LBOS_Deannounce(), LBOS_DeannounceAll()
 */
 NCBI_XCONNECT_EXPORT
-ELBOS_Result LBOS_Announce(const char*             service,
-                           const char*             version,
-                           unsigned short          port,
-                           const char*             healthcheck_url,
-                           char**                  lbos_answer,
-                           int*                    htp_status_code,
-                           char**                  http_status_message);
+unsigned short LBOS_Announce(const char*             service,
+                             const char*             version,
+                             unsigned short          port,
+                             const char*             healthcheck_url,
+                             char**                  lbos_answer,
+                             char**                  http_status_message);
+
 
 /** Modification of LBOS_Announce() that gets all needed parameters from 
- * registry.                                                                
+ * registry.
+ *
+ * @attention
+ *  IP for the server being announced is taken from healthcheck URL!
  * @param [in] registry_section
  *  Name of section in registry file where to look for announcement parameters.
  *  Parameters are:
@@ -108,19 +101,23 @@ ELBOS_Result LBOS_Announce(const char*             service,
  *  VERSION=1.0.0
  *  PORT=8080
  *  HEALTH=http://0.0.0.0:8080/health
+ * @param [out] lbos_answer
+ *  This variable will be assigned a pointer to C-string with exact body of
+ *  lbos' response (or NULL, if no lbos was reached).
+ *  The returned string must be free()'d by the caller.
+ * @param [out] http_status_message 
+ *  This variable will be assigned a pointer to C-string with exact
+ *  status message of lbos' response (or NULL, if no lbos was reached).
+ *  The returned string must be free()'d by the caller.
+ * @return
+ *  HTTP status code returned by lbos (or one of additional codes,
+ *  see ncbi_lbosp.h)
+ *  
  *  --------------                                                           */
 NCBI_XCONNECT_EXPORT
-ELBOS_Result LBOS_AnnounceFromRegistry(const char*  registry_section,
-                                       char**       lbos_answer,
-                                       int*         http_status_code,
-                                       char**       http_status_message);
-
-/** Deannounce all servers that were announced during runtime.
-*
-* @sa LBOS_Announce(), LBOS_Deannounce()
-*/
-NCBI_XCONNECT_EXPORT
-void LBOS_DeannounceAll(void);
+unsigned short LBOS_AnnounceFromRegistry(const char*  registry_section,
+                                         char**       lbos_answer,
+                                         char**       http_status_message);
 
 
 /** Deannounce service.
@@ -128,30 +125,43 @@ void LBOS_DeannounceAll(void);
 *  If server was not announced prior to deannounce but
 *  arguments were provided correctly, then still return 'true'.
 *
-* @param lbos_hostport [in]
-*  Host:port of the same lbos that was used for announcement of the service
-*  now being deannounced (see 'lbos_answer' of g_LBOS_Announce()).
-* @param service [in]
+* @param [in] service
 *  Name of service to be deannounced.
-* @param version [in]
+* @param [in] version
 *  Version of service to be deannounced.
-* @param port [in]
+* @param [in] host
+*  IP or hostname of service to be deannounced. NULL to use local host address
+* @param [in] port
 *  Port of service to be deannounced.
-* @param host [in]
-*  IP or hostname of service to be deannounced. 0 to use local host address
+* @param [out] lbos_answer
+*  This variable will be assigned a pointer to C-string with exact body of
+*  lbos' response (or NULL, if no lbos was reached).
+*  The returned string must be free()'d by the caller.
+* @param [out] http_status_message
+*  This variable will be assigned a pointer to C-string with exact
+*  status message of lbos' response (or NULL, if no lbos was reached).
+*  The returned string must be free()'d by the caller.
 * @return
-*  FALSE on any error, no deannounce was made;  TRUE otherwise
+*  HTTP status code returned by lbos (or one of additional codes,
+*  see ncbi_lbosp.h)
 *
 * @sa LBOS_Announce(), LBOS_DeannounceAll()
 */
 NCBI_XCONNECT_EXPORT
-ELBOS_Result LBOS_Deannounce(const char*       service,
-                            const char*        version,
-                            const char*        host,
-                            unsigned short     port,
-                            char**             lbos_answer,
-                            int*               http_status_code,
-                            char**             http_status_message);
+unsigned short LBOS_Deannounce(const char*        service,
+                               const char*        version,
+                               const char*        host,
+                               unsigned short     port,
+                               char**             lbos_answer,
+                               char**             http_status_message);
+
+
+/** Deannounce all servers that were announced during runtime.
+*
+* @sa LBOS_Announce(), LBOS_Deannounce()
+*/
+NCBI_XCONNECT_EXPORT
+void LBOS_DeannounceAll(void);
 
 
 #ifdef __cplusplus

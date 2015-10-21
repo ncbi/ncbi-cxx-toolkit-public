@@ -63,20 +63,70 @@ public:
         e_NoLBOS,               /**< lbos was not found                */
         e_DNSResolveError,      /**< Local address not resolved        */
         e_InvalidArgs,          /**< Arguments not valid               */
-        e_ServerError,          /**< lbos failed on server side
-                                 and returned error code
-                                 and error message (possibly)          */
         e_DeannounceFail,       /**< Error while deannounce/           */
-        e_NotFound,             /**< For deannouncement only. Did not 
+        e_NotFound,             /**< For deannouncement only. Did not
                                      find such server to deannounce    */
-        e_Off,  
+        e_Off,
+        e_MemAllocError,
+        e_LBOSCorruptOutput,
+        e_BadRequest,
+        e_Unknown               /**< No information about this error 
+                                     code meaning                      */
     };
+
+    CLBOSException(const CDiagCompileInfo& info,
+                   const CException* prev_exception, EErrCode err_code,
+                   const string& message, unsigned short status_code,
+                   EDiagSev severity = eDiag_Error)
+               : CException(info, prev_exception, (message), severity, 0)
+    {
+        
+        x_Init(info, message, prev_exception, severity);                
+        x_InitErrCode((CException::EErrCode) err_code);
+        m_StatusCode = status_code;
+    }
+
+    CLBOSException(const CDiagCompileInfo& info, 
+                   const CException* prev_exception, 
+                   const CExceptionArgs<EErrCode>& args, 
+                   const string& message,
+                   unsigned short status_code)
+        : CException(info, prev_exception, (message), 
+        args.GetSeverity(), 0)                                        
+    {                                                                   
+        x_Init(info, message, prev_exception, args.GetSeverity());      
+        x_InitArgs(args);
+        x_InitErrCode((CException::EErrCode) args.GetErrCode());
+        m_StatusCode = status_code;
+    }
+
 
     /// Translate from the error code value to its string representation.   
     virtual const char* GetErrCodeString(void) const;
 
-    // Standard exception boilerplate code.    
-    NCBI_EXCEPTION_DEFAULT(CLBOSException, CException);
+    /**Translate from numerical HTTP status code to lbos-specific
+     * error code */
+    static EErrCode s_HTTPCodeToEnum(unsigned short http_code);
+
+    unsigned short GetStatusCode(void) const;
+    virtual ~CLBOSException(void) throw() {}
+    virtual const char* GetType(void) const { return "CLBOSException"; }
+    typedef int TErrCode;
+    TErrCode GetErrCode(void) const
+    {
+        return typeid(*this) == typeid(CLBOSException) ?
+            (TErrCode) this->x_GetErrCode() :
+            (TErrCode)CException::eInvalid;
+    }
+    NCBI_EXCEPTION_DEFAULT_THROW(CLBOSException)
+protected:
+    CLBOSException(void) {}
+    virtual const CException* x_Clone(void) const
+    {
+        return new CLBOSException(*this);
+    }
+private:
+    unsigned short m_StatusCode;
 };
 
 END_NCBI_SCOPE

@@ -57,9 +57,12 @@ private:
 };
 
 
-/**  We add nothing here                                               */
 bool CTestLBOSApp::TestApp_Args(CArgDescriptions& args)
 {
+    args.AddOptionalPositional("lbos", "Primary address to LBOS",
+                               CArgDescriptions::eString);
+    args.SetUsageContext(GetArguments().GetProgramBasename(),
+                         "LBOS mapper API MT test");
     return true;
 }
 
@@ -226,7 +229,7 @@ bool CTestLBOSApp::Thread_Run(int idx)
     TestApp_IntraGroupSyncPoint();
     Deannouncement::Deannounced__AnnouncedServerRemoved(idx);
     TestApp_IntraGroupSyncPoint();
-    Deannouncement::LBOSExistsDeannounceError__Return0(idx);
+    Deannouncement::LBOSExistsDeannounce400__Return400(idx);
     TestApp_IntraGroupSyncPoint();
     Deannouncement::RealLife__InvisibleAfterDeannounce(idx);
     TestApp_IntraGroupSyncPoint();
@@ -245,6 +248,12 @@ bool CTestLBOSApp::TestApp_Init(void)
     CConnNetInfo net_info;
     CNcbiRegistry& config = CNcbiApplication::Instance()->GetConfig();
     CONNECT_Init(dynamic_cast<ncbi::IRWRegistry*>(&config));
+    if (GetArgs()["lbos"]) {
+        string custom_lbos = GetArgs()["lbos"].AsString();
+        CNcbiApplication::GetConfig().Set("CONN", "LBOS", custom_lbos);
+    }
+    ERR_POST(Info << "LBOS=" <<
+             CNcbiApplication::GetConfig().Get("CONN", "LBOS"));
     char *lbos_ouput_orig = g_LBOS_UnitTesting_GetLBOSFuncs()->
         UrlReadAll(*net_info, "http://lbos.dev.be-md.ncbi.nlm.nih.gov:8080"
         "/lbos/text/service", NULL, NULL);
@@ -254,7 +263,7 @@ bool CTestLBOSApp::TestApp_Init(void)
     LBOS_Deannounce("/lbostest", /* for initialization */
                     "1.0.0",
                     "lbos.dev.be-md.ncbi.nlm.nih.gov",
-                    5000, NULL, NULL, NULL);
+                    5000, NULL, NULL);
     while (start != string::npos) {
         string to_find = "/lbostest\t";
         start = lbos_output.find(to_find, start);
@@ -271,7 +280,7 @@ bool CTestLBOSApp::TestApp_Init(void)
         LBOS_Deannounce("/lbostest",
             "1.0.0",
             "lbos.dev.be-md.ncbi.nlm.nih.gov",
-            port, NULL, NULL, NULL);
+            port, NULL, NULL);
     }
     return true;
 }

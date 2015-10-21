@@ -43,6 +43,25 @@ extern "C" {
 #endif /*__cplusplus*/
 
 
+/*
+ * Additional HTTP codes:
+ *  450 - LBOS not found
+ *  451 - DNS resolve failed for healthcheck URL
+ *  452 - Invalid arguments provided, request was not sent to LBOS
+ *  453 - Memory allocation error encountered
+ *  550 - LBOS mapper is OFF in the current process
+ */
+static const int kLBOSSuccess         = 200;
+static const int kLBOSBadRequest      = 400;
+static const int kLBOSNotFound        = 404;
+static const int kLBOSNoLBOS          = 450;
+static const int kLBOSDNSResolveError = 451;
+static const int kLBOSInvalidArgs     = 452;
+static const int kLBOSMemAllocError   = 453;
+static const int kLBOSCorruptOutput   = 454;
+static const int kLBOSOff             = 550;
+
+
 ///////////////////////////////////////////////////////////////////////////////
 //                             DATA TYPES                                    //
 ///////////////////////////////////////////////////////////////////////////////
@@ -232,12 +251,11 @@ SSERV_Info* FLBOS_GetNextInfoMethod(SERV_ITER  iter,
  * @see
  *  ELBOS_Result                                                             */
 typedef
-ELBOS_Result FLBOS_AnnounceMethod(const char*      service,
+unsigned short FLBOS_AnnounceMethod(const char*      service,
                                   const char*      version,
                                   unsigned short   port,
                                   const char*      healthcheck_url,
                                   char**           LBOS_answer,
-                                  int*             http_status_code,
                                   char**           http_status_message);
 
 
@@ -361,7 +379,7 @@ const SSERV_VTable*  SERV_LBOS_Open(SERV_ITER           iter,
  *  true - string is NULL or empty;
  *  false - string exists and contains elements.                             */
 NCBI_XCONNECT_EXPORT
-int/*bool*/ g_LBOS_StringIsNullOrEmpty(const char* str);
+int/*bool*/ g_LBOS_StringIsNullOrEmpty(const char* const str);
 
 
 /** Compose lbos address from /etc/ncbi/{role, domain}.

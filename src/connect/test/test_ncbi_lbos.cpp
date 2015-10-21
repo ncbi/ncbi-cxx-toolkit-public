@@ -31,23 +31,31 @@
  */
 
 #include <ncbi_pch.hpp>
-#include "test_ncbi_lbos_common.hpp"
-
-#ifdef LBOS_TEST_MT
-#undef     NCBITEST_CHECK_MESSAGE
-#define    NCBITEST_CHECK_MESSAGE( P, M )  NCBI_ALWAYS_ASSERT(P,M)
-#else  /* if LBOS_TEST_MT not defined */
-    /* This header must be included before all Boost.Test headers if there
-       are any                                                               */
+#include "test_ncbi_lbos_common.hpp"                                                        
 #include    <corelib/test_boost.hpp>
-#endif /* #ifdef LBOS_TEST_MT */
-
 
 USING_NCBI_SCOPE;
 
 
 NCBITEST_INIT_TREE()
 {}
+
+
+NCBITEST_INIT_CMDLINE(args)
+{
+    args->AddOptionalPositional("lbos", "Primary address to LBOS",
+                               CArgDescriptions::eString);
+}
+
+#ifdef NCBI_THREADS
+static CHealthcheckThread* s_HealthchecKThread;
+
+NCBITEST_AUTO_FINI()
+{
+    s_HealthchecKThread->Stop(); // Stop listening on the socket
+    s_HealthchecKThread->Join();
+}
+#endif
 
 #define LBOS_BROKEN 0
 NCBITEST_AUTO_INIT()
@@ -57,18 +65,28 @@ NCBITEST_AUTO_INIT()
         "lbos mapper Unit Test");
     CNcbiRegistry& config = CNcbiApplication::Instance()->GetConfig();
     CONNECT_Init(&config);
-
-    CHealthcheckThread* thread = new CHealthcheckThread;
-    thread->Run();
+    if (CNcbiApplication::Instance()->GetArgs()["lbos"]) {
+        string custom_lbos = CNcbiApplication::Instance()->GetArgs()["lbos"].AsString();
+        CNcbiApplication::Instance()->GetConfig().Set("CONN", "LBOS", custom_lbos);
+    }
+    ERR_POST(Info << "LBOS=" <<
+        CNcbiApplication::Instance()->GetConfig().Get("CONN", "LBOS"));
+    /* We do not need healthcheck thread at all */
+#ifdef NCBI_THREADS
+    s_HealthchecKThread = new CHealthcheckThread;
+    s_HealthchecKThread->Run();
+#endif
     /*
      * Deannounce all lbostest servers (they are left if previous 
      * launch of test crashed)
      */
     size_t start = 0, end = 0;
-    LBOS_Deannounce("/lbostest", /* for initialization */
+    LBOS_Deannounce("/lbostest", /* For initialization of LBOS mapper. 
+                                    We actually do not want to deannounce 
+                                    anything! */
         "1.0.0",
         "lbos.dev.be-md.ncbi.nlm.nih.gov",
-        5000, NULL, NULL, NULL);        
+        5000, NULL, NULL);        
 #if !LBOS_BROKEN
     CCObjHolder<char> lbos_output_orig(g_LBOS_UnitTesting_GetLBOSFuncs()->
             UrlReadAll(*net_info, "http://lbos.dev.be-md.ncbi.nlm.nih.gov:8080"
@@ -587,6 +605,12 @@ BOOST_AUTO_TEST_CASE(Announcement__AllOK__LBOSAnswerProvided)
     Announcement::AllOK__LBOSAnswerProvided();
 }
 
+/*  3. Successfully announced : char* lbos_answer contains answer of lbos    */
+BOOST_AUTO_TEST_CASE(Announcement__AllOK__LBOSStatusMessageIsNull)
+{
+    Announcement::AllOK__LBOSStatusMessageIsOK();
+}
+
 /*  4. Successfully announced: information about announcement is saved to
  *     hidden lbos mapper's storage                                          */
 BOOST_AUTO_TEST_CASE(Announcement__AllOK__AnnouncedServerSaved)
@@ -603,11 +627,23 @@ BOOST_AUTO_TEST_CASE(Announcement__NoLBOS__LBOSAnswerNull)
 {
     Announcement::NoLBOS__LBOSAnswerNull();
 }
+
+BOOST_AUTO_TEST_CASE(Announcement__NoLBOS__LBOSStatusMessageNull)
+{
+    Announcement::NoLBOS__LBOSStatusMessageNull();
+}
+
 /*  8. lbos returned error: return eLBOS_ServerError                         */
 BOOST_AUTO_TEST_CASE(Announcement__LBOSError__ReturnServerError)
 {
-    Announcement::LBOSError__ReturnServerError();
+    Announcement::LBOSError__ReturnServerErrorCode();
 }
+
+BOOST_AUTO_TEST_CASE(Announcement__LBOSError__ReturnServerStatusMessage)
+{
+    Announcement::LBOSError__ReturnServerStatusMessage();
+}
+
 /*  9. lbos returned error : char* lbos_answer contains answer of lbos       */
 BOOST_AUTO_TEST_CASE(Announcement__LBOSError__LBOSAnswerProvided)
 {
@@ -671,22 +707,22 @@ BOOST_AUTO_TEST_CASE(
     Announcement::ResolveLocalIPError__Return_DNS_RESOLVE_ERROR();
 }
 /* 20. lbos is OFF - return eLBOS_Off                                        */
-BOOST_AUTO_TEST_CASE(Announcement__LBOSOff__ReturnELBOS_Off)
+BOOST_AUTO_TEST_CASE(Announcement__LBOSOff__ReturnKLBOSOff)
 {
-    Announcement::LBOSOff__ReturnELBOS_Off();
+    Announcement::LBOSOff__ReturnKLBOSOff();
 }
 /*21. Announced successfully, but LBOS return corrupted answer -
       return SERVER_ERROR                                                    */
 BOOST_AUTO_TEST_CASE(
-                    Announcement__LBOSAnnounceCorruptOutput__ReturnServerError)
+                    Announcement__LBOSAnnounceCorruptOutput__Return454)
 {
-    Announcement::LBOSAnnounceCorruptOutput__ReturnServerError();
+    Announcement::LBOSAnnounceCorruptOutput__Return454();
 }
 /*22. Trying to announce server and providing dead healthcheck URL - 
       return eLBOS_NotFound                                                  */
-BOOST_AUTO_TEST_CASE(Announcement__HealthcheckDead__ReturnELBOS_NotFound)
+BOOST_AUTO_TEST_CASE(Announcement__HealthcheckDead__ReturnKLBOSNotFound)
 {
-    Announcement::HealthcheckDead__ReturnELBOS_NotFound();
+    Announcement::HealthcheckDead__ReturnKLBOSNotFound();
 }
 /*23. Trying to announce server and providing dead healthcheck URL -
       server should not be announced                                         */
@@ -731,10 +767,10 @@ BOOST_AUTO_TEST_CASE(
 /*  3.  Section empty or NULL (should use default section and return 
         eLBOS_Success)                                                       */
 BOOST_AUTO_TEST_CASE(
-   AnnouncementRegistry__CustomSectionEmptyOrNullAndSectionIsOk__ReturnSuccess)
+AnnouncementRegistry__CustomSectionEmptyOrNullAndDefaultSectionIsOk__ReturnSuccess)
 {
     return AnnouncementRegistry::
-                       CustomSectionEmptyOrNullAndSectionIsOk__ReturnSuccess();
+                 CustomSectionEmptyOrNullAndDefaultSectionIsOk__ReturnSuccess();
 }
 /*  4.  Service is empty or NULL - return eLBOS_InvalidArgs                  */
 BOOST_AUTO_TEST_CASE(
@@ -781,9 +817,9 @@ BOOST_AUTO_TEST_CASE(
 /*  11. Trying to announce server and providing dead healthcheck URL -
         return eLBOS_NotFound                                                */
 BOOST_AUTO_TEST_CASE(
-                   AnnouncementRegistry__HealthcheckDead__ReturnELBOS_NotFound)
+                   AnnouncementRegistry__HealthcheckDead__ReturnKLBOSNotFound)
 {
-    return AnnouncementRegistry::HealthcheckDead__ReturnELBOS_NotFound();
+    return AnnouncementRegistry::HealthcheckDead__ReturnKLBOSNotFound();
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -822,9 +858,9 @@ BOOST_AUTO_TEST_CASE(Deannouncement__NoLBOS__Return0)
 }
 /* 4. Successfully connected to lbos, but deannounce returned error: 
  *    return 0                                                               */
-BOOST_AUTO_TEST_CASE(Deannouncement__LBOSExistsDeannounceError__Return0)
+BOOST_AUTO_TEST_CASE(Deannouncement__LBOSExistsDeannounce400__Return400)
 {
-    Deannouncement::LBOSExistsDeannounceError__Return0();
+    Deannouncement::LBOSExistsDeannounce400__Return400();
 }
 /* 5. Real - life test : after deannouncement server should be invisible 
  *    to resolve                                                             */
@@ -843,14 +879,14 @@ BOOST_AUTO_TEST_CASE(Deannouncement__NoHostProvided__LocalAddress)
     Deannouncement::NoHostProvided__LocalAddress();
 }
 /* 8. lbos is OFF - return eLBOS_Off                                         */
-BOOST_AUTO_TEST_CASE(Deannouncement__LBOSOff__ReturnELBOS_Off)
+BOOST_AUTO_TEST_CASE(Deannouncement__LBOSOff__ReturnKLBOSOff)
 {
-    Deannouncement::LBOSOff__ReturnELBOS_Off();
+    Deannouncement::LBOSOff__ReturnKLBOSOff();
 }
 /* 9. Trying to deannounce non-existent service - return eLBOS_NotFound      */
-BOOST_AUTO_TEST_CASE(Deannouncement__NotExists__ReturnELBOS_NotFound)
+BOOST_AUTO_TEST_CASE(Deannouncement__NotExists__ReturnKLBOSNotFound)
 {
-    Deannouncement::NotExists__ReturnELBOS_NotFound();
+    Deannouncement::NotExists__ReturnKLBOSNotFound();
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -1002,9 +1038,9 @@ BOOST_AUTO_TEST_CASE(
     Announcement_CXX::ResolveLocalIPError__Throw_DNS_RESOLVE_ERROR();
 }
 /* 20. lbos is OFF - return eLBOS_Off                                        */
-BOOST_AUTO_TEST_CASE(Announcement_CXX__LBOSOff__ThrowELBOS_Off)
+BOOST_AUTO_TEST_CASE(Announcement_CXX__LBOSOff__ThrowKLBOSOff)
 {
-    Announcement_CXX::LBOSOff__ThrowELBOS_Off();
+    Announcement_CXX::LBOSOff__ThrowKLBOSOff();
 }
 /*21. Announced successfully, but LBOS return corrupted answer -
       return SERVER_ERROR                                                    */
@@ -1062,11 +1098,11 @@ BOOST_AUTO_TEST_CASE(
 /*  3.  Section empty or NULL (should use default section and return 
         eLBOS_Success)                                                       */
 BOOST_AUTO_TEST_CASE(
-AnnouncementRegistry_CXX__CustomSectionEmptyOrNullAndSectionIsOk__ThrowSuccess
+AnnouncementRegistry_CXX__CustomSectionEmptyOrNullAndSectionIsOk__AllOK
                                                                               )
 {
     return AnnouncementRegistry_CXX::
-                       CustomSectionEmptyOrNullAndSectionIsOk__ThrowSuccess();
+                       CustomSectionEmptyOrNullAndSectionIsOk__AllOK();
 }
 /*  4.  Service is empty or NULL - return eLBOS_InvalidArgs                  */
 BOOST_AUTO_TEST_CASE(
@@ -1177,9 +1213,9 @@ BOOST_AUTO_TEST_CASE(Deannouncement_CXX__NoHostProvided__LocalAddress)
     Deannouncement_CXX::NoHostProvided__LocalAddress();
 }
 /* 8. lbos is OFF - return eLBOS_Off                                         */
-BOOST_AUTO_TEST_CASE(Deannouncement_CXX__LBOSOff__ThrowELBOS_Off)
+BOOST_AUTO_TEST_CASE(Deannouncement_CXX__LBOSOff__ThrowKLBOSOff)
 {
-    Deannouncement_CXX::LBOSOff__ReturnELBOS_Off();
+    Deannouncement_CXX::LBOSOff__ThrowKLBOSOff();
 }
 /* 9. Trying to deannounce non-existent service - throw e_NotFound           */
 BOOST_AUTO_TEST_CASE(Deannouncement_CXX__NotExists__ThrowE_NotFound)
@@ -1244,10 +1280,13 @@ BOOST_AUTO_TEST_SUITE( MultiThreading )////////////////////////////////////////
  */
 BOOST_AUTO_TEST_CASE(MultiThreading_test1)
 {
+#ifdef NCBI_THREADS
     MultiThreading::TryMultiThread();
+#endif /* NCBI_THREADS */
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
 
 /* Moved to be last because not very important and very long                 */
 BOOST_AUTO_TEST_CASE(s_LBOS_ResolveIPPort__FakeErrorInput__ShouldNotCrash)
