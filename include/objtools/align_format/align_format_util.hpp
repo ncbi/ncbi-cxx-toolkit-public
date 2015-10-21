@@ -1082,8 +1082,8 @@ public:
     ///@return:string containing template data replaced by real data
     ///
     ///<@tmplParamName@> is replaced by templParamVal
-    static string MapTemplate(string inpString,string tmplParamName,int templParamVal);
-
+    static string MapTemplate(string inpString,string tmplParamName,Int8 templParamVal);
+    
     ///Replace template tags by real data
     ///@param inpString: string containing template data
     ///@param tmplParamName:string with template tag name
