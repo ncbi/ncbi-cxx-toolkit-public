@@ -158,11 +158,11 @@ namespace {
                 // we skip numbers just to make it easier to insert things in between.
                 // the exact number used and the amount skipped doesn't matter, as long
                 // as the smallest is first, largest is last, etc.
-                { "Assembly", 20 },
+                { "Assembly", 50 },
                 { "BioProject", 10 },
-                { "BioSample", 30 },
-                { "ProbeDB", 40 },
-                { "Sequence Read Archive", 50 },
+                { "BioSample", 20 },
+                { "ProbeDB", 30 },
+                { "Sequence Read Archive", 40 },
                 { "Trace Assembly Archive", 60 }
             };
             typedef CStaticArrayMap<const char *, int, PNocase_CStr> TPrefixMap;
