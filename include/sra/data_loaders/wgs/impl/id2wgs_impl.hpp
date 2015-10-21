@@ -125,6 +125,7 @@ public:
     bool ProcessRequest(TReplies& replies,
                         CID2_Request& request);
 
+    void ResetParameters(void);
     void ProcessInit(const CID2_Request& main_request);
     bool ProcessGetSeqId(TReplies& replies,
                          CID2_Request& main_request,
@@ -211,6 +212,8 @@ private:
     CRef<CWGSProtAccResolver> m_AccResolver;
     TWGSDbCache m_WGSDbCache;
     CRef<CThreadNonStop> m_UpdateThread;
+    ECompressData m_DefaultCompressData;
+    bool m_DefaultExplicitBlobState;
     ECompressData m_CompressData;
     bool m_ExplicitBlobState;
 };

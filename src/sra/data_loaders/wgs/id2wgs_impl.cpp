@@ -290,8 +290,8 @@ CID2WGSProcessor_Impl::CID2WGSProcessor_Impl(const CConfig::TParamTree* params,
                                              const string& driver_name)
     : m_GiResolver(new CWGSGiResolver),
       m_AccResolver(new CWGSProtAccResolver),
-      m_CompressData(eCompressData_never),
-      m_ExplicitBlobState(false)
+      m_DefaultCompressData(eCompressData_never),
+      m_DefaultExplicitBlobState(false)
 {
     auto_ptr<CConfig::TParamTree> app_params;
     if ( !params ) {
@@ -334,8 +334,9 @@ CID2WGSProcessor_Impl::CID2WGSProcessor_Impl(const CConfig::TParamTree* params,
                     DEFAULT_COMPRESS_DATA);
     if ( compress_data >= eCompressData_never &&
          compress_data <= eCompressData_always ) {
-        m_CompressData = ECompressData(compress_data);
+        m_DefaultCompressData = ECompressData(compress_data);
     }
+    ResetParameters();
     TRACE_X(23, eDebug_open, "ID2WGS: compress_data = "<<m_CompressData);
 }
 
@@ -347,8 +348,16 @@ CID2WGSProcessor_Impl::~CID2WGSProcessor_Impl(void)
 }
 
 
+void CID2WGSProcessor_Impl::ResetParameters(void)
+{
+    m_CompressData = m_DefaultCompressData;
+    m_ExplicitBlobState = m_DefaultExplicitBlobState;
+}
+
+
 void CID2WGSProcessor_Impl::ProcessInit(const CID2_Request& request)
 {
+    ResetParameters();
     if ( !request.IsSetParams() ) {
         return;
     }
