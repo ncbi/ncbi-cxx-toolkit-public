@@ -80,6 +80,39 @@ const int kPerformanceTimeout = 30;
 #endif
 BOOST_AUTO_TEST_CASE_TIMEOUT(TestPerformance, kPerformanceTimeout);
 
+BOOST_AUTO_TEST_CASE(TestTGIConversion)
+{
+    const string seqAlignFileName_in = "data/in_showalign_use_this_gi.asn";
+    CRef<CSeq_annot> san(new CSeq_annot);
+  
+    ifstream in(seqAlignFileName_in.c_str());
+    in >> MSerial_AsnText >> *san;
+    in.close();
+    
+    CRef<CSeq_align_set> fileSeqAlignSet(new CSeq_align_set);  
+    fileSeqAlignSet->Set() = san->GetData().GetAlign();     
+
+    const string kDbName("nr");
+    const CBlastDbDataLoader::EDbType kDbType(CBlastDbDataLoader::eProtein);      
+    TestUtil::CBlastOM tmp_data_loader(kDbName, kDbType, CBlastOM::eLocal);        
+    CRef<CScope> scope = tmp_data_loader.NewScope();
+    
+    CDisplaySeqalign ds(*fileSeqAlignSet, *scope);
+    ds.SetDbName(kDbName);
+    ds.SetDbType((kDbType == CBlastDbDataLoader::eProtein));
+    int flags = CDisplaySeqalign::eShowBlastInfo |
+        CDisplaySeqalign::eShowGi | 
+        CDisplaySeqalign::eShowBlastStyleId;
+    ds.SetAlignOption(flags);
+    ds.SetSeqLocChar(CDisplaySeqalign::eLowerCase);
+    CNcbiOstrstream output_stream;
+    ds.DisplaySeqalign(output_stream);
+    string output = CNcbiOstrstreamToString(output_stream);
+    BOOST_REQUIRE(output.find("gi|212900|gb|AAA68886.1| ") != NPOS);
+    BOOST_REQUIRE(output.find("gi|385145537|dbj|BAM13277.1|") != NPOS);
+    BOOST_REQUIRE(output.find("gi|385145539|dbj|BAM13278.1|") != NPOS);        
+}
+
 bool TestSimpleAlignment(CBlastOM::ELocation location)
 {
     const string seqAlignFileName_in = "data/blastn.vs.ecoli.asn";
@@ -108,10 +141,10 @@ bool TestSimpleAlignment(CBlastOM::ELocation location)
     ds.SetSeqLocChar(CDisplaySeqalign::eLowerCase);
     CNcbiOstrstream output_stream;
     ds.DisplaySeqalign(output_stream);
-    string output = CNcbiOstrstreamToString(output_stream);
+    string output = CNcbiOstrstreamToString(output_stream);    
     BOOST_REQUIRE(output.find(">gi|1788470|gb|AE000304.1|AE000304 ") != NPOS);
-    BOOST_REQUIRE(output.find("Escherichia coli K-12 MG1655 section 1 of 400 of ") != NPOS ||
-                  output.find("Escherichia coli K12 MG1655 section 1 of 400 of ") != NPOS);
+    BOOST_REQUIRE(output.find("Escherichia coli K-12 MG1655 section 9 of 400 of ") != NPOS ||
+                  output.find("Escherichia coli K12 MG1655 section 9 of 400 of ") != NPOS);
     BOOST_REQUIRE(output.find("Sbjct  259   GCCTGATGCGACGCTGGCGCGTCTTATCAGGCCTAC  294") != NPOS);
     BOOST_REQUIRE(output.find("Length=11852") != NPOS);
     BOOST_REQUIRE(output.find("Query  5636  GTAGG-CAGGATAAGGCGTTCACGCCGCATCCGGCA  5670") != NPOS);
@@ -121,6 +154,7 @@ bool TestSimpleAlignment(CBlastOM::ELocation location)
     tmp_data_loader.RevokeBlastDbDataLoader();
     return true;
 }
+
 
 // Note: this essentially disables the performance tests for the automated
 // toolkit builds, which implies that the BLAST team should be running these
