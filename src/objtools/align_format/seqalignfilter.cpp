@@ -109,7 +109,7 @@ void CSeqAlignFilter::FilterByGiListFromFile(const CSeq_align_set& full_aln,
             id_aligned_seq = &((*iter)->GetSeq_id(1));
             TGi gi = id_aligned_seq->GetGi();
 
-            if (seqdb_gis->FindGi(GI_TO(int, gi))) {
+            if (seqdb_gis->FindGi(gi)) {
                 filtered_aln.Set().push_back(*iter);
             }
         }
@@ -527,7 +527,7 @@ void CSeqAlignFilter::ReadGiList(const string& fname, list<TGi>& list_gis, bool 
     CRef<CSeqDBFileGiList> seqdb_gis;
     seqdb_gis = new CSeqDBFileGiList(fname);
 
-    vector<int> vec_gis;
+    vector<TGi> vec_gis;
     seqdb_gis->GetGiList(vec_gis);
 
     if (sorted)
@@ -535,10 +535,10 @@ void CSeqAlignFilter::ReadGiList(const string& fname, list<TGi>& list_gis, bool 
 
     list_gis.clear();
     for (vector<int>::iterator it = vec_gis.begin(); it != vec_gis.end(); it++)
-        list_gis.push_back(GI_FROM(int, *it));
+        list_gis.push_back(*it);
 }
 
-void CSeqAlignFilter::ReadGiVector(const string& fname, vector<int>& vec_gis, bool sorted)
+void CSeqAlignFilter::ReadGiVector(const string& fname, vector<TGi>& vec_gis, bool sorted)
 {
     CRef<CSeqDBFileGiList> seqdb_gis;
     seqdb_gis = new CSeqDBFileGiList(fname);

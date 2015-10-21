@@ -3494,8 +3494,8 @@ void CDisplaySeqalign::x_DisplayBl2SeqLink(CNcbiOstream& out)
     TGi query_gi = FindGi(query_handle.GetBioseqCore()->GetId());   
     TGi subject_gi = FindGi(subject_handle.GetBioseqCore()->GetId());
     
-    string url_link = CAlignFormatUtil::MapTemplate(kBl2seqUrl,"query",GI_TO(int, query_gi));        
-    url_link = CAlignFormatUtil::MapTemplate(url_link,"subject",GI_TO(int, subject_gi));        
+    string url_link = CAlignFormatUtil::MapTemplate(kBl2seqUrl,"query",query_gi);        
+    url_link = CAlignFormatUtil::MapTemplate(url_link,"subject",subject_gi);        
     
     out << url_link << "\n";
 }
@@ -4132,7 +4132,7 @@ static string s_MapFeatureURL(string viewerURL,
                               string rid)
 {    
     string url_link = CAlignFormatUtil::MapTemplate(viewerURL,"db",db);
-    url_link = CAlignFormatUtil::MapTemplate(url_link,"gi",GI_TO(int, subject_gi));    
+    url_link = CAlignFormatUtil::MapTemplate(url_link,"gi",subject_gi);    
     url_link = CAlignFormatUtil::MapTemplate(url_link,"rid",rid); 
     url_link = CAlignFormatUtil::MapTemplate(url_link,"from",fromRange); 
     url_link = CAlignFormatUtil::MapTemplate(url_link,"to",toRange); 

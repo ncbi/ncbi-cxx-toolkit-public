@@ -112,9 +112,10 @@ s_GetBlastScore(const container&  scoreList,
                 list<TGi>& use_this_gi,
                 int& comp_adj_method)
 {
+    const string k_GiPrefix = "gi:";
     bool hasScore = false;
     ITERATE (typename container, iter, scoreList) {
-        const CObject_id& id=(*iter)->GetId();
+        const CObject_id& id=(*iter)->GetId();        
         if (id.IsStr()) {
             if (id.GetStr()=="score"){
                 score = (*iter)->GetValue().GetInt();
@@ -131,8 +132,13 @@ s_GetBlastScore(const container&  scoreList,
                 num_ident = (*iter)->GetValue().GetInt();
             } else if (id.GetStr()=="comp_adjustment_method") {
                 comp_adj_method = (*iter)->GetValue().GetInt();
+            }            
+            else if(NStr::StartsWith(id.GetStr(),k_GiPrefix)) { //will be used when switch to 64bit GIs
+                string strGi = NStr::Replace(id.GetStr(),k_GiPrefix,"");
+                TGi gi = NStr::StringToInt8(strGi);
+                use_this_gi.push_back(gi);
             }
-        }
+        }        
     }
 
     return hasScore;
@@ -2972,7 +2978,7 @@ CAlignFormatUtil::GetAsciiProteinMatrix(const char* matrix_name,
 }
 
 
-string CAlignFormatUtil::MapTemplate(string inpString,string tmplParamName,int templParamVal)
+string CAlignFormatUtil::MapTemplate(string inpString,string tmplParamName,Int8 templParamVal)
 {
     string outString;
     string tmplParam = "<@" + tmplParamName + "@>";
@@ -3000,7 +3006,7 @@ static string s_MapCommonUrlParams(string urlTemplate, CAlignFormatUtil::SSeqURL
     }
     string logstr_location = (seqUrlInfo->isAlignLink) ? "align" : "top";
     string url_link = CAlignFormatUtil::MapTemplate(urlTemplate,"db",db);
-    url_link = CAlignFormatUtil::MapTemplate(url_link,"gi",GI_TO(int, seqUrlInfo->gi));
+    url_link = CAlignFormatUtil::MapTemplate(url_link,"gi",seqUrlInfo->gi);
     url_link = CAlignFormatUtil::MapTemplate(url_link,"log",logstr_moltype + logstr_location);
     url_link = CAlignFormatUtil::MapTemplate(url_link,"blast_rank",seqUrlInfo->blast_rank);
     url_link = CAlignFormatUtil::MapTemplate(url_link,"rid",seqUrlInfo->rid);     
@@ -3238,7 +3244,7 @@ string CAlignFormatUtil::GetFullIDLink(SSeqURLInfo *seqUrlInfo,const CBioseq::TI
         seqLink = CAlignFormatUtil::MapTemplate(linkTmpl,"url",linkURL);
         seqLink = CAlignFormatUtil::MapTemplate(seqLink,"rid",seqUrlInfo->rid);
         seqLink = CAlignFormatUtil::MapTemplate(seqLink,"seqid",seqUrlInfo->accession);
-        seqLink = CAlignFormatUtil::MapTemplate(seqLink,"gi",GI_TO(int, seqUrlInfo->gi)); 
+        seqLink = CAlignFormatUtil::MapTemplate(seqLink,"gi",seqUrlInfo->gi); 
         seqLink = CAlignFormatUtil::MapTemplate(seqLink,"target","EntrezView");    
         if(seqUrlInfo->addCssInfo) {
             seqLink = CAlignFormatUtil::MapTemplate(seqLink,"defline",NStr::JavaScriptEncode(seqUrlInfo->defline));            
@@ -3301,7 +3307,7 @@ string  CAlignFormatUtil::GetGraphiscLink(SSeqURLInfo *seqUrlInfo,
     linkUrl = CAlignFormatUtil::MapTemplate(linkUrl,"seqViewerParams",seqViewerParams);
          
 	linkUrl = CAlignFormatUtil::MapTemplate(linkUrl,"dbtype",dbtype);			
-	linkUrl = CAlignFormatUtil::MapTemplate(linkUrl,"gi",GI_TO(int, seqUrlInfo->gi));
+	linkUrl = CAlignFormatUtil::MapTemplate(linkUrl,"gi",seqUrlInfo->gi);
     string linkTitle = "Show alignment to <@seqid@> in <@custom_report_type@>";	
     string link_loc;
     if(!hspRange) {
@@ -3653,9 +3659,12 @@ s_GetBlastScore(const container&  scoreList,
                 int& sum_n,                
                 list<TGi>& use_this_gi)
 {
+    const string k_GiPrefix = "gi:";
     bool hasScore = false;
+    
+
     ITERATE (typename container, iter, scoreList) {
-        const CObject_id& id=(*iter)->GetId();
+        const CObject_id& id=(*iter)->GetId();        
         if (id.IsStr()) {
             hasScore = true;
             if (id.GetStr()=="seq_evalue") {
@@ -3679,7 +3688,12 @@ s_GetBlastScore(const container&  scoreList,
             } else if (id.GetStr()=="sum_n"){
                 sum_n = (*iter)->GetValue().GetInt();          
             }
-        }
+            else if(NStr::StartsWith(id.GetStr(),k_GiPrefix)) { //will be used when switch to 64bit GIs
+                string strGi = NStr::Replace(id.GetStr(),k_GiPrefix,"");
+                TGi gi = NStr::StringToInt8(strGi);
+                use_this_gi.push_back(gi);
+            }
+        }        
     }
     return hasScore;
 }
