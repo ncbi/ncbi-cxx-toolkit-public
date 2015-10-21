@@ -982,8 +982,9 @@ public:
         fMaskDescr    = fSeqDescr|fMasterDescr,
         fDefaultDescr = fSeqDescr|fMasterDescr,
 
-        fSeqAnnot     = 1<<5,
-        fMaskAnnot    = fSeqAnnot,
+        fSeqAnnot     = 1<<6,
+        fQualityGraph = 1<<7,
+        fMaskAnnot    = fSeqAnnot|fQualityGraph,
         fDefaultAnnot = fSeqAnnot,
 
         fDefaultFlags = fDefaultIds|fDefaultDescr|fDefaultAnnot|fDefaultInst
@@ -1153,9 +1154,10 @@ public:
         fMaskDescr    = fSeqDescr|fMasterDescr,
         fDefaultDescr = fSeqDescr|fMasterDescr,
 
-        fSeqAnnot     = 1<<5,
-        fMaskAnnot    = fSeqAnnot,
-        fDefaultAnnot = fSeqAnnot,
+        fSeqAnnot     = 1<<6,
+        fQualityGraph = 1<<7,
+        fMaskAnnot    = fSeqAnnot|fQualityGraph,
+        fDefaultAnnot = fSeqAnnot|fQualityGraph,
 
         fDefaultFlags = fDefaultIds|fDefaultDescr|fDefaultAnnot|fDefaultInst
     };

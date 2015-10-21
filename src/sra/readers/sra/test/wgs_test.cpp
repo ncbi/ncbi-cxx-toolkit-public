@@ -106,7 +106,8 @@ void CWGSTestApp::Init(void)
                             "max gap in a single gi range",
                             CArgDescriptions::eInteger, "10000");
 
-    arg_desc->AddFlag("print_seq", "Print loader Bioseq objects");
+    arg_desc->AddFlag("print_seq", "Print loaded Bioseq objects");
+    arg_desc->AddFlag("print_entry", "Print loaded Seq-entry objects");
 
     arg_desc->AddOptionalKey("contig_row", "ContigRow",
                              "contig row to fetch",
@@ -360,18 +361,32 @@ static TGiRanges PackRanges(const CWGSDb::TGiRanges& src, TIntId max_gap)
 
 static TGiRanges GetNucGiRanges(CWGSDb wgs_db, TIntId max_gap)
 {
+    CWGSDb::TGiRanges ranges;
     pair<TIntId, TIntId> range = wgs_db.GetNucGiRange();
-    if ( !range.second ) {
-        return TGiRanges();
+    if ( range.second ) {
+        size_t gi_count = range.second - range.first + 1;
+        size_t seq_count = CWGSSeqIterator(wgs_db).GetSize();
+        if ( gi_count <= seq_count + max_gap ) {
+            CWGSDb::TGiRange single_range;
+            single_range.SetFrom(range.first);
+            single_range.SetTo(range.second);
+            ranges.push_back(single_range);
+        }
+        else {
+            ranges = wgs_db.GetNucGiRanges();
+        }
     }
-
-    size_t gi_count = range.second - range.first + 1;
-    size_t seq_count = CWGSSeqIterator(wgs_db).GetRemainingCount();
-    if ( gi_count <= seq_count + max_gap ) {
-        return TGiRanges(1, range);
+    if ( 0 ) {
+        // add master gi
+        wgs_db.LoadMasterDescr();
+        if ( TGi gi = wgs_db->GetMasterGi() ) {
+            CWGSDb::TGiRange single_range;
+            single_range.SetFrom(gi);
+            single_range.SetTo(gi);
+            ranges.push_back(single_range);
+        }
     }
-    
-    return PackRanges(wgs_db.GetNucGiRanges(), max_gap);
+    return PackRanges(ranges, max_gap);
 }
 
 static TGiRanges GetProtGiRanges(CWGSDb wgs_db, TIntId max_gap)
@@ -382,7 +397,7 @@ static TGiRanges GetProtGiRanges(CWGSDb wgs_db, TIntId max_gap)
     }
 
     size_t gi_count = range.second - range.first + 1;
-    size_t seq_count = CWGSProteinIterator(wgs_db).GetRemainingCount();
+    size_t seq_count = CWGSProteinIterator(wgs_db).GetSize();
     if ( gi_count <= seq_count + max_gap ) {
         return TGiRanges(1, range);
     }
@@ -616,10 +631,12 @@ static void MakeAllRanges(TIntId max_gap)
             CWGSDb wgs_db(mgr, file.GetPath());
             {
                 TGiRanges ranges = GetNucGiRanges(wgs_db, max_gap);
-                TGiRanges ranges2 = GetProtGiRanges(wgs_db, max_gap);
-                ranges.insert(ranges.end(),
-                              ranges2.begin(),
-                              ranges2.end());
+                {{
+                    TGiRanges ranges2 = GetProtGiRanges(wgs_db, max_gap);
+                    ranges.insert(ranges.end(),
+                                  ranges2.begin(),
+                                  ranges2.end());
+                }}
                 if ( !ranges.empty() ) {
                     gi_index[wgs_acc] = ranges;
                 }
@@ -654,6 +671,7 @@ int CWGSTestApp::Run(void)
     string path = args["file"].AsString();
     bool verbose = args["verbose"];
     bool print_seq = args["print_seq"];
+    bool print_entry = args["print_entry"];
     size_t limit_count = 100;
     if ( args["limit_count"] ) {
         limit_count = size_t(args["limit_count"].AsInteger());
@@ -784,7 +802,9 @@ int CWGSTestApp::Run(void)
             CRef<CBioseq> seq2 = it.GetBioseq(it.fDefaultIds|it.fInst_ncbi4na);
             if ( print_seq ) {
                 out << MSerial_AsnText << *seq1;
-                //out << MSerial_AsnText << *seq2;
+            }
+            if ( print_entry ) {
+                out << MSerial_AsnText << *it.GetSeq_entry();
             }
             string data1 = sx_GetSeqData(*seq1);
             string data2 = sx_GetSeqData(*seq2);
@@ -910,6 +930,9 @@ int CWGSTestApp::Run(void)
             else {
                 out << "GI "<<gi<<" len: "<<it.GetSeqLength() << NcbiEndl;
                 if ( print_seq ) {
+                    out << MSerial_AsnText << *it.GetBioseq();
+                }
+                if ( print_entry ) {
                     out << MSerial_AsnText << *it.GetSeq_entry();
                 }
             }
@@ -925,6 +948,9 @@ int CWGSTestApp::Run(void)
                 out << "GI "<<gi<<" len: "<<it.GetSeqLength() << NcbiEndl;
                 if ( print_seq ) {
                     out << MSerial_AsnText << *it.GetBioseq();
+                }
+                if ( print_entry ) {
+                    out << MSerial_AsnText << *it.GetSeq_entry();
                 }
             }
         }
@@ -949,6 +975,9 @@ int CWGSTestApp::Run(void)
                 out << "CONTIG["<<row_id<<"] len: "<<it.GetSeqLength()
                     << NcbiEndl;
                 if ( print_seq ) {
+                    out << MSerial_AsnText << *it.GetBioseq();
+                }
+                if ( print_entry ) {
                     out << MSerial_AsnText << *it.GetSeq_entry();
                 }
             }
@@ -976,6 +1005,9 @@ int CWGSTestApp::Run(void)
                 if ( print_seq ) {
                     out << MSerial_AsnText << *it.GetBioseq();
                 }
+                if ( print_entry ) {
+                    out << MSerial_AsnText << *it.GetSeq_entry();
+                }
             }
         }
     }
@@ -1000,6 +1032,9 @@ int CWGSTestApp::Run(void)
                     << NcbiEndl;
                 if ( print_seq ) {
                     out << MSerial_AsnText << *it.GetBioseq();
+                }
+                if ( print_entry ) {
+                    out << MSerial_AsnText << *it.GetSeq_entry();
                 }
             }
         }
@@ -1026,6 +1061,9 @@ int CWGSTestApp::Run(void)
                 if ( print_seq ) {
                     out << MSerial_AsnText << *it.GetBioseq();
                 }
+                if ( print_entry ) {
+                    out << MSerial_AsnText << *it.GetSeq_entry();
+                }
             }
         }
     }
@@ -1049,6 +1087,9 @@ int CWGSTestApp::Run(void)
             if ( print_seq ) {
                 out << MSerial_AsnText << *it.GetBioseq();
             }
+            if ( print_entry ) {
+                out << MSerial_AsnText << *it.GetSeq_entry();
+            }
         }
     }
 
@@ -1070,6 +1111,9 @@ int CWGSTestApp::Run(void)
             out << it.GetProteinName() << '\n';
             if ( print_seq ) {
                 out << MSerial_AsnText << *it.GetBioseq();
+            }
+            if ( print_entry ) {
+                out << MSerial_AsnText << *it.GetSeq_entry();
             }
         }
     }
