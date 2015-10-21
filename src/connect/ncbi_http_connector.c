@@ -913,7 +913,7 @@ static size_t x_PushbackBuf(void* data, const void* buf, size_t size)
 
     assert(buf  &&  size);
     if (ctx->status == eIO_Success)
-        ctx->status  = SOCK_PushBack(ctx->sock, buf, size);
+        ctx->status  = SOCK_Pushback(ctx->sock, buf, size);
     return ctx->status != eIO_Success ? 0 : size;
 }
 
