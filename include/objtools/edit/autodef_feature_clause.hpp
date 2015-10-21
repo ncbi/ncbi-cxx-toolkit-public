@@ -45,6 +45,12 @@ class NCBI_XOBJEDIT_EXPORT CAutoDefFeatureClause : public CAutoDefFeatureClause_
 public:    
     CAutoDefFeatureClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc);
     ~CAutoDefFeatureClause();
+
+    enum EClauseType {
+        eDefault = 0,
+        eEndogenousVirusRepeatRegion
+    };
+    virtual EClauseType GetClauseType();
     
     virtual void Label(bool suppress_allele);
     virtual CSeqFeatData::ESubtype  GetMainFeatureSubtype() const;

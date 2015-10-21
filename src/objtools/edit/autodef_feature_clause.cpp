@@ -204,7 +204,8 @@ bool CAutoDefFeatureClause::IsRecognizedFeature()
         || IsEndogenousVirusSourceFeature()
         || IsSatelliteClause()
         || IsPromoter()
-        || IsGeneCluster()) {
+        || IsGeneCluster()
+        || GetClauseType() != eDefault) {
         return true;
     } else {
         return false;
@@ -283,6 +284,8 @@ bool CAutoDefFeatureClause::x_GetFeatureTypeWord(string &typeword)
                 typeword = "transposon";
                 return true;
             }
+            typeword = "";
+            return true;
             break;
         case CSeqFeatData::eSubtype_misc_feature:
             if (m_MainFeat.CanGetComment()) {
@@ -856,7 +859,7 @@ bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
     } else if (m_MainFeat.GetData().Which() == CSeqFeatData::e_Rna) {
         if (subtype == CSeqFeatData::eSubtype_tRNA) {
             string label;
-            
+
             feature::GetLabel(m_MainFeat, &label, feature::fFGL_Content);
             if (NStr::Equal(label, "tRNA-Xxx")) {
                 label = "tRNA-OTHER";
@@ -868,7 +871,7 @@ bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
         } else {
             product_name = m_MainFeat.GetNamedQual("product");
             if (NStr::IsBlank(product_name)) {
-                if (subtype == CSeqFeatData::eSubtype_otherRNA 
+                if (subtype == CSeqFeatData::eSubtype_otherRNA
                     || subtype == CSeqFeatData::eSubtype_misc_RNA) {
                     if (m_MainFeat.CanGetComment()) {
                         product_name = m_MainFeat.GetComment();
@@ -880,7 +883,7 @@ bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
                         }
                     }
                 } else if (m_MainFeat.GetData().GetRna().IsSetExt()
-                           && m_MainFeat.GetData().GetRna().GetExt().Which() == CRNA_ref::C_Ext::e_Name) {
+                    && m_MainFeat.GetData().GetRna().GetExt().Which() == CRNA_ref::C_Ext::e_Name) {
                     product_name = m_MainFeat.GetData().GetRna().GetExt().GetName();
                 }
             }
@@ -979,14 +982,22 @@ bool CAutoDefFeatureClause::x_GetDescription(string &description)
         } else {
             return true;
         }
-    } else if (subtype == CSeqFeatData::eSubtype_repeat_region
-               && NStr::Equal(m_Typeword, "endogenous virus")) {
-        description = m_MainFeat.GetNamedQual("endogenous_virus");
-        if (NStr::Equal(description, "unnamed")
-            || NStr::IsBlank(description)) {
-            description = "";
-            return false;
+    } else if (subtype == CSeqFeatData::eSubtype_repeat_region) {
+        if (NStr::Equal(m_Typeword, "endogenous virus")) {
+            description = m_MainFeat.GetNamedQual("endogenous_virus");
+            if (NStr::Equal(description, "unnamed")
+                || NStr::IsBlank(description)) {
+                description = "";
+                return false;
+            } else {
+                return true;
+            }
         } else {
+            if (m_MainFeat.IsSetComment()) {
+                description = m_MainFeat.GetComment();
+            } else {
+                description = "";
+            }
             return true;
         }
     } else if (subtype == CSeqFeatData::eSubtype_biosrc
@@ -2166,6 +2177,17 @@ bool CAutoDefFakePromoterClause::OkToGroupUnderByType(CAutoDefFeatureClause_Base
     }
 
     return ok_to_group;
+}
+
+CAutoDefFeatureClause::EClauseType CAutoDefFeatureClause::GetClauseType()
+{
+    CSeqFeatData::ESubtype subtype = GetMainFeatureSubtype();
+    if (subtype == CSeqFeatData::eSubtype_repeat_region) {
+        if (!NStr::IsBlank(m_MainFeat.GetNamedQual("endogenous_virus"))) {
+            return eEndogenousVirusRepeatRegion;
+        }
+    }
+    return eDefault;
 }
 
 

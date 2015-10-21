@@ -847,7 +847,9 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
                 }
 			}
         
-            if (new_clause != NULL && new_clause->IsRecognizedFeature()) {
+            if (new_clause != NULL && 
+                (new_clause->IsRecognizedFeature() ||
+                 (new_clause->GetMainFeatureSubtype() == CSeqFeatData::eSubtype_repeat_region && m_Options.GetKeepRepeatRegion()))) {
                 if (new_clause->GetMainFeatureSubtype() == CSeqFeatData::eSubtype_exon ||
                     new_clause->GetMainFeatureSubtype() == CSeqFeatData::eSubtype_intron) {
                     new_clause->Label(m_Options.GetSuppressAlleles());

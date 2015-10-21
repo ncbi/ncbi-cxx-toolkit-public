@@ -86,6 +86,7 @@ public:
         eOptionFieldType_KeepuORFs,
         eOptionFieldType_KeepMobileElements,
         eOptionFieldType_KeepPrecursorRNA,
+        eOptionFieldType_KeepRepeatRegion,
         eOptionFieldType_UseNcRNAComment,
         eOptionFieldType_SuppressedFeatures,
         eOptionFieldType_ModifierList,
@@ -177,6 +178,7 @@ public:
     AUTODEFBOOLFIELD(KeepuORFs)
     AUTODEFBOOLFIELD(KeepMobileElements)
     AUTODEFBOOLFIELD(KeepPrecursorRNA)
+    AUTODEFBOOLFIELD(KeepRepeatRegion)
     AUTODEFBOOLFIELD(UseNcRNAComment)
 
     bool IsFeatureSuppressed(CSeqFeatData::ESubtype subtype) const;

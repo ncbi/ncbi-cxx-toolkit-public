@@ -103,6 +103,7 @@ public:
     void SetKeepuORFs(bool keep);
     void SetKeepOptionalMobileElements(bool keep);
     void SetKeepPrecursorRNA(bool keep);
+    void SetKeepRepeatRegion(bool keep);
 	void SetUseNcRNAComment (bool use_comment);
     void SetUseFakePromoters (bool use_fake);
     
@@ -288,6 +289,12 @@ inline
 void CAutoDef::SetKeepPrecursorRNA(bool keep)
 {
     m_Options.SetKeepPrecursorRNA(keep);
+}
+
+inline
+void CAutoDef::SetKeepRepeatRegion(bool keep)
+{
+    m_Options.SetKeepRepeatRegion(keep);
 }
 
 inline
