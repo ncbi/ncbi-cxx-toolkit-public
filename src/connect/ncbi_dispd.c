@@ -62,7 +62,7 @@ static void        s_Reset      (SERV_ITER);
 static void        s_Close      (SERV_ITER);
 
 static const SSERV_VTable s_op = {
-        s_GetNextInfo, 0/*Feedback*/, s_Update, s_Reset, s_Close, "DISPD"
+    s_GetNextInfo, 0/*Feedback*/, s_Update, s_Reset, s_Close, "DISPD"
 };
 #ifdef __cplusplus
 } /* extern "C" */
@@ -117,11 +117,6 @@ extern "C" {
 }
 #endif /*__cplusplus*/
 
-
-/** @brief After we receive answer from dispd.cgi, we parse header
- * to get all hosts. This function is run by CONN_Read or CONN_Flush,
- * if it is specified in HTTP_CreateConnectorEx
- */
 static EHTTP_HeaderParse s_ParseHeader(const char* header,
                                        void*       iter,
                                        int         server_error)
@@ -148,7 +143,6 @@ extern "C" {
 }
 #endif /*__cplusplus*/
 
-
 /*ARGSUSED*/
 static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
                             void*         iter,
@@ -159,9 +153,6 @@ static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
 }
 
 
-/** @brief Writes headers to ask dispd.cgi about needed service.
- * The result is read by s_ParseHeader(), which is triggered when
- * CONN_Flush() is executed */
 static void s_Resolve(SERV_ITER iter)
 {
     struct SDISPD_Data* data = (struct SDISPD_Data*) iter->data;
@@ -347,21 +338,11 @@ static SSERV_Info* s_GetNextInfo(SERV_ITER iter, HOST_INFO* host_info)
     n = LB_Select(iter, data, s_GetCandidate, DISPD_LOCAL_BONUS);
     info = (SSERV_Info*) data->cand[n].info;
     info->rate = data->cand[n].status;
-    /*
-     * We take all the elements to the right of the n'th and move them one
-     * cell left
-     */
     if (n < --data->n_cand) {
         memmove(data->cand + n, data->cand + n + 1,
                 (data->n_cand - n) * sizeof(*data->cand));
     }
 
-    /*host_info is used only by lbsmd mapper to help understand if something
-     * was found, so there is no need to launch GetNextInfo. With all
-     * other mappers we cannot know if they found anything after Open() (it
-     * is just how they are implemented, no reason for this), and host_info
-     * is just NULL anyway.
-     */
     if (host_info)
         *host_info = 0;
     data->n_skip++;

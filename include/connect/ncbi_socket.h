@@ -1038,8 +1038,6 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_ReadLine
  );
 
 
-#define SOCK_PushBack  SOCK_Pushback
-
 /** Push the specified data back to the socket input queue (in the socket's
  * internal read buffer). These can be any data, not necessarily the data
  * previously read from the socket.

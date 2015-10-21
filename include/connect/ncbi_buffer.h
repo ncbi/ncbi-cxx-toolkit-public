@@ -159,8 +159,6 @@ extern NCBI_XCONNECT_EXPORT /*bool*/int BUF_Write
  );
 
 
-#define BUF_PushBack  BUF_Pushback
-
 /*!
  * Write the data to the very beginning of "*pBuf" (to be read first).
  * On error (failed memory allocation), return zero value.
