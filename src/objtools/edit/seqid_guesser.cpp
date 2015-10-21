@@ -82,6 +82,16 @@ CSeqIdGuesser::CSeqIdGuesser(CSeq_entry_Handle entry) : m_SeqEntry(entry)
                     // BankIt IDs can be specified with "BankIt" prefix
                     if (NStr::EqualNocase(dbtag.GetDb(), "BankIt")) {
                         x_AddIdString("BankIt" + tag_str, *id);
+                        size_t pos = NStr::Find(tag_str, "/", 0, string::npos, NStr::eLast);
+                        if (pos != string::npos) {
+                            string file = tag_str.substr(0, pos);
+                            x_AddIdString(file, *id);
+                            x_AddIdString("BankIt" + file, *id);
+                            string file_id = tag_str.substr(pos + 1);
+                            if (!NStr::EqualNocase(file_id, local)) {
+                                x_AddIdString(file_id, *id);
+                            }
+                        } 
                     } else if (NStr::EqualNocase(dbtag.GetDb(), "NCBIFILE")) {
                         // File ID are usually a filename plus a slash plus the original local ID
                         // add the filename as its own identifier, but only add the local ID if it hasn't 
@@ -151,6 +161,16 @@ vector<string> CSeqIdGuesser::GetIdStrings(CBioseq_Handle bsh)
                 // BankIt IDs can be specified with "BankIt" prefix
                 if (NStr::EqualNocase(dbtag.GetDb(), "BankIt")) {
                     id_str.push_back("BankIt" + tag_str);
+                    size_t pos = NStr::Find(tag_str, "/", 0, string::npos, NStr::eLast);
+                    if (pos != string::npos) {
+                        string file = tag_str.substr(0, pos);
+                        id_str.push_back(file);
+                        id_str.push_back("BankIt" + file);
+                        string file_id = tag_str.substr(pos + 1);
+                        if (!NStr::EqualNocase(file_id, local)) {
+                            id_str.push_back(file_id);
+                        }
+                    } 
                 } else if (NStr::EqualNocase(dbtag.GetDb(), "NCBIFILE")) {
                     // File ID are usually a filename plus a slash plus the original local ID
                     // add the filename as its own identifier, but only add the local ID if it hasn't 
