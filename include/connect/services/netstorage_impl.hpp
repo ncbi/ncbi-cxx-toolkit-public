@@ -586,6 +586,25 @@ public:
             TNetStorageFlags flags = 0);
 };
 
+/// @internal
+struct SNetStorageAdminImpl;
+
+/// @internal
+class NCBI_XCONNECT_EXPORT CNetStorageAdmin
+{
+    NCBI_NET_COMPONENT(NetStorageAdmin);
+
+    CNetStorageAdmin(CNetStorage::TInstance netstorage_impl);
+
+    CNetService GetService();
+
+    CJsonNode MkNetStorageRequest(const string& request_type);
+
+    CJsonNode ExchangeJson(const CJsonNode& request,
+            CNetServer::TInstance server_to_use = NULL,
+            CNetServerConnection* conn = NULL);
+};
+
 END_NCBI_SCOPE
 
 #endif  /* CONNECT_SERVICES___NETSTORAGE_IMPL__HPP */

@@ -35,7 +35,6 @@
 #include "netstorage_direct_nc.hpp"
 #include "netcache_api_impl.hpp"
 
-#include <connect/services/netstorage_admin.hpp>
 #include <connect/services/error_codes.hpp>
 
 #include <util/ncbi_url.hpp>

@@ -38,7 +38,7 @@
 
 #include <connect/services/grid_client.hpp>
 #include <connect/services/ns_output_parser.hpp>
-#include <connect/services/netstorage_admin.hpp>
+#include <connect/services/netstorage_impl.hpp>
 #include <connect/services/compound_id.hpp>
 
 #include "util.hpp"
