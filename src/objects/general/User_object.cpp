@@ -732,7 +732,7 @@ void CUser_object::RemoveUnverifiedOrganism()
 }
 
 
-static const string kUnverifiedFeature = "Feature";
+static const string kUnverifiedFeature = "Features";
 
 bool CUser_object::IsUnverifiedFeature() const
 {
