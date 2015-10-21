@@ -54,11 +54,13 @@ struct SNetStorageConfig
     string client_name;
     string metadata;
     EDefaultStorage default_storage;
+
+    SNetStorageConfig(const string& init_string);
 };
 
 struct SNetStorageRPC : public SNetStorageImpl
 {
-    SNetStorageRPC(const string& init_string, TNetStorageFlags default_flags);
+    SNetStorageRPC(const SNetStorageConfig& config, TNetStorageFlags default_flags);
 
     virtual CNetStorageObject Create(TNetStorageFlags flags = 0);
     virtual CNetStorageObject Open(const string& object_loc);
@@ -95,7 +97,7 @@ struct SNetStorageRPC : public SNetStorageImpl
     CNetService m_Service;
     SNetServiceMap m_ServiceMap;
 
-    SNetStorageConfig m_Config;
+    const SNetStorageConfig m_Config;
 
     mutable CAtomicCounter m_RequestNumber;
 
