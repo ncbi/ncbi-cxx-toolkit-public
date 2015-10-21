@@ -65,12 +65,12 @@ private:
     virtual bool TestApp_Args(CArgDescriptions& args);
 
     CSeq_id_Handle GetHandle(const string& acc,
-                             Uint8 spot_id,
+                             Int8 spot_id,
                              int read_id) const;
     bool ExistsSpotId(CScope& scope,
                       const string& acc,
-                      Uint8 spot_id);
-    Uint8 FindMaxSpotId(const string& acc);
+                      Int8 spot_id);
+    Int8 FindMaxSpotId(const string& acc);
 
     bool m_Verbose;
     bool m_PreLoad;
@@ -80,7 +80,7 @@ private:
     int m_IterCount, m_IterSize;
     int m_ErrorCount;
     vector<string> m_Accession;
-    vector<Uint8> m_MaxSpotId;
+    vector<Int8> m_MaxSpotId;
     
     CRef<CObjectManager> m_OM;
     CRef<CScope> m_SharedScope;
@@ -194,7 +194,7 @@ string s_AsFASTA(const CBioseq& seq)
 }
 
 CSeq_id_Handle CCSRATestApp::GetHandle(const string& acc,
-                                       Uint8 spot_id,
+                                       Int8 spot_id,
                                        int read_id) const
 {
     CNcbiOstrstream str;
@@ -204,7 +204,7 @@ CSeq_id_Handle CCSRATestApp::GetHandle(const string& acc,
 
 bool CCSRATestApp::ExistsSpotId(CScope& scope,
                                 const string& acc,
-                                Uint8 spot_id)
+                                Int8 spot_id)
 {
     for ( int read_id = 1; read_id <= 4; ++read_id ) {
         if ( !scope.GetIds(GetHandle(acc, spot_id, read_id)).empty() ) {
@@ -214,18 +214,18 @@ bool CCSRATestApp::ExistsSpotId(CScope& scope,
     return false;
 }
 
-Uint8 CCSRATestApp::FindMaxSpotId(const string& acc)
+Int8 CCSRATestApp::FindMaxSpotId(const string& acc)
 {
     CScope scope(*m_OM);
     scope.AddDefaults();
-    Uint8 a = 0;
-    Uint8 b = 0xffff;
+    Int8 a = 0;
+    Int8 b = 0xfffffff;
     while ( ExistsSpotId(scope, acc, b) ) {
         a = b;
         b *= 2;
     }
     while ( b-a > 1 ) {
-        Uint8 m = (a+b)/2;
+        Int8 m = (a+b)/2;
         if ( ExistsSpotId(scope, acc, m) ) {
             a = m;
         }
@@ -254,9 +254,9 @@ bool CCSRATestApp::Thread_Run(int idx)
             }
             _ASSERT(m_MaxSpotId[index] > 0);
         }
-        Uint8 count = min(m_MaxSpotId[index], Uint8(m_IterSize));
-        Uint8 start_id = random.GetRandIndexUint8(m_MaxSpotId[index]-count)+1;
-        Uint8 stop_id = start_id+count;
+        Int8 count = min(m_MaxSpotId[index], Int8(m_IterSize));
+        Int8 start_id = random.GetRandUint8(1, m_MaxSpotId[index]-count);
+        Int8 stop_id = start_id+count;
         if ( m_Verbose ) {
             LOG_POST(Info<<"T"<<idx<<"."<<ti<<": acc["<<index<<"] "<<acc
                      <<": scan " << start_id<<" - "<<(stop_id-1));
@@ -268,7 +268,7 @@ bool CCSRATestApp::Thread_Run(int idx)
         }
         CScope& scope = *scope_ref;
         size_t seq_count = 0;
-        for ( Uint8 spot_id = start_id; spot_id < stop_id; ++spot_id ) {
+        for ( Int8 spot_id = start_id; spot_id < stop_id; ++spot_id ) {
             for ( int read_id = 1; read_id <= 4; ++read_id ) {
                 CSeq_id_Handle id = GetHandle(acc, spot_id, read_id);
                 _ASSERT(!scope.GetAccVer(id));
