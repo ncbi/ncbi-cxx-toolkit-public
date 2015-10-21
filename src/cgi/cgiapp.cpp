@@ -505,7 +505,6 @@ void CCgiApplication::Init(void)
 {
     if ( TMergeLogLines::GetDefault() ) {
         // Convert multi-line diagnostic messages into one-line ones by default.
-        SetDiagPostFlag(eDPF_PreMergeLines);
         SetDiagPostFlag(eDPF_MergeLines);
     }
 

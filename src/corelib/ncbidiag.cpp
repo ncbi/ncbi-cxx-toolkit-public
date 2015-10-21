@@ -3239,7 +3239,6 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
     if ( to_applog ) {
         _ASSERT(s_UsingAutoApplog);
         ctx.SetOldPostFormat(false);
-        SetDiagPostFlag(eDPF_PreMergeLines);
         SetDiagPostFlag(eDPF_MergeLines);
         s_MergeLinesSetBySetupDiag = true;
         TLogSizeLimitParam::SetDefault(0); // No log size limit
@@ -3250,7 +3249,6 @@ void CDiagContext::SetupDiag(EAppDiagStream       ds,
     else {
         s_UsingAutoApplog = old_using_applog;
         if ( s_MergeLinesSetBySetupDiag ) {
-            UnsetDiagPostFlag(eDPF_PreMergeLines);
             UnsetDiagPostFlag(eDPF_MergeLines);
         }
         // Disable throttling
@@ -3630,10 +3628,6 @@ void CDiagBuffer::Flush(void)
     }
 
     if ( m_Diag->CheckFilters() ) {
-        if (IsSetDiagPostFlag(eDPF_PreMergeLines, flags)) {
-            string src = message;
-            NStr::Replace(NStr::Replace(src,"\r",""),"\n",";", message);
-        }
         SDiagMessage mess(sev, message.data(), message.size(),
                           m_Diag->GetFile(),
                           m_Diag->GetLine(),
@@ -4628,30 +4622,6 @@ void SDiagMessage::Write(string& str, TDiagWriteFlags flags) const
 CNcbiOstream& SDiagMessage::Write(CNcbiOstream&   os,
                                   TDiagWriteFlags flags) const
 {
-    if (IsSetDiagPostFlag(eDPF_MergeLines, m_Flags)) {
-        CNcbiOstrstream ostr;
-        string str;
-        x_Write(ostr, fNoEndl);
-        str = CNcbiOstrstreamToString(ostr);
-        if (str.find_first_of("\r\n") != NPOS) {
-            list<string> lines;
-            NStr::Split(str, "\r\n", lines);
-            str = NStr::Join(lines, " ");
-        }
-        os << str;
-        if ((flags & fNoEndl) == 0) {
-            os << NcbiEndl;
-        }
-        return os;
-    } else {
-        return x_Write(os, flags);
-    }
-}
-
-
-CNcbiOstream& SDiagMessage::x_Write(CNcbiOstream& os,
-                                    TDiagWriteFlags flags) const
-{
     CNcbiOstream& res =
         x_IsSetOldFormat() ? x_OldWrite(os, flags) : x_NewWrite(os, flags);
     return res;
@@ -4735,9 +4705,82 @@ string SDiagMessage::FormatExtraMessage(void) const
 }
 
 
-CNcbiOstream& SDiagMessage::x_OldWrite(CNcbiOstream& os,
+// Merge lines in-place:
+// \n -> \v
+// \v -> 0xFF + \v
+// 0xFF -> 0xFF 0xFF
+void SDiagMessage::s_EscapeNewlines(string& buf)
+{
+    if (buf.find_first_of("\n\v\377") == NPOS) return;
+    for (size_t p = 0; p < buf.size(); p++) {
+        switch (buf[p]) {
+        case '\377':
+        case '\v':
+            buf.insert(p, 1, '\377');
+            p++;
+            break;
+        case '\n':
+            buf[p] = '\v';
+            break;
+        }
+    }
+}
+
+
+void SDiagMessage::s_UnescapeNewlines(string& buf)
+{
+    if (buf.find_first_of("\v\377") == NPOS) return;
+    size_t src = 0, dst = 0;
+    for (; src < buf.size(); src++, dst++) {
+        switch (buf[src]) {
+        case '\377':
+            if (src < buf.size() - 1  &&
+                (buf[src + 1] == '\377' || buf[src + 1] == '\v')) {
+                    src++;   // skip escape char
+            }
+            break;
+        case '\v':
+            // non-escaped VT
+            buf[dst] = '\n';
+            continue;
+        }
+        if (dst != src) {
+            buf[dst] = buf[src];
+        }
+    }
+    buf.resize(dst);
+}
+
+
+enum EDiagMergeLines {
+    eDiagMergeLines_Default, // Do not force line merging
+    eDiagMergeLines_Off,     // Force line breaks
+    eDiagMergeLines_On       // Escape line breaks
+};
+
+
+NCBI_PARAM_ENUM_DECL(EDiagMergeLines, Diag, Merge_Lines);
+NCBI_PARAM_ENUM_ARRAY(EDiagMergeLines, Diag, Merge_Lines)
+{
+    {"Default", eDiagMergeLines_Default},
+    {"Off", eDiagMergeLines_Off},
+    {"On", eDiagMergeLines_On}
+};
+
+NCBI_PARAM_ENUM_DEF_EX(EDiagMergeLines, Diag, Merge_Lines,
+                       eDiagMergeLines_Default,
+                       eParam_NoThread, DIAG_MERGE_LINES);
+typedef NCBI_PARAM_TYPE(Diag, Merge_Lines) TDiagMergeLines;
+
+
+CNcbiOstream& SDiagMessage::x_OldWrite(CNcbiOstream& out_str,
                                        TDiagWriteFlags flags) const
 {
+    // Temp stream - the result will be passed to line merging.
+    // Error text, module, prefix etc. can have linebreaks which need to
+    // be escaped.
+    CNcbiOstrstream os;
+
     // Date & time
     if (IsSetDiagPostFlag(eDPF_DateTime, m_Flags)) {
         os << CFastLocalTime().GetLocalTime().AsString("M/D/y h:m:s ");
@@ -4774,7 +4817,7 @@ CNcbiOstream& SDiagMessage::x_OldWrite(CNcbiOstream& os,
     bool have_description = false;
     SDiagErrCodeDescription description;
     if ((m_ErrCode  ||  m_ErrSubCode)  &&
-        (IsSetDiagPostFlag(eDPF_ErrCodeMessage, m_Flags)  || 
+        (IsSetDiagPostFlag(eDPF_ErrCodeMessage, m_Flags)  ||
          IsSetDiagPostFlag(eDPF_ErrCodeExplanation, m_Flags)  ||
          IsSetDiagPostFlag(eDPF_ErrCodeUseSeverity, m_Flags))  &&
          IsSetDiagErrCodeInfo()) {
@@ -4887,18 +4930,40 @@ CNcbiOstream& SDiagMessage::x_OldWrite(CNcbiOstream& os,
             os << NcbiEndl << description.m_Explanation;
     }
 
+    string buf = CNcbiOstrstreamToString(os);
+    bool merge_lines = IsSetDiagPostFlag(eDPF_MergeLines, m_Flags);
+    switch (TDiagMergeLines::GetDefault()) {
+    case eDiagMergeLines_On:
+        merge_lines = true;
+        break;
+    case eDiagMergeLines_Off:
+        merge_lines = false;
+        break;
+    default:
+        break;
+    }
+    if (merge_lines) {
+        NStr::ReplaceInPlace(buf, "\n", ";");
+    }
+    out_str << buf;
+
     // Endl
     if ((flags & fNoEndl) == 0) {
-        os << NcbiEndl;
+        out_str << NcbiEndl;
     }
 
-    return os;
+    return out_str;
 }
 
 
-CNcbiOstream& SDiagMessage::x_NewWrite(CNcbiOstream& os,
+CNcbiOstream& SDiagMessage::x_NewWrite(CNcbiOstream& out_str,
                                        TDiagWriteFlags flags) const
 {
+    // Temp stream - the result will be passed to line merging.
+    // Error text, module, prefix etc. can have linebreaks which need to
+    // be escaped.
+    CNcbiOstrstream os;
+
     if ((flags & fNoPrefix) == 0) {
         GetDiagContext().WriteStdPrefix(os, *this);
     }
@@ -5020,18 +5085,23 @@ CNcbiOstream& SDiagMessage::x_NewWrite(CNcbiOstream& os,
     if (have_description) {
         if (IsSetDiagPostFlag(eDPF_ErrCodeMessage, m_Flags) &&
             !description.m_Message.empty())
-            os << NcbiEndl << description.m_Message << ' ';
+            os << '\n' << description.m_Message << ' ';
         if (IsSetDiagPostFlag(eDPF_ErrCodeExplanation, m_Flags) &&
             !description.m_Explanation.empty())
-            os << NcbiEndl << description.m_Explanation;
+            os << '\n' << description.m_Explanation;
     }
+
+    string buf = CNcbiOstrstreamToString(os);
+    // Line merging in new (applog) format is unconditional.
+    s_EscapeNewlines(buf);
+    out_str << buf;
 
     // Endl
     if ((flags & fNoEndl) == 0) {
-        os << NcbiEndl;
+        // In applog format always use \n only. The stream must be in binary mode.
+        out_str << '\n';
     }
-
-    return os;
+    return out_str;
 }
 
 
@@ -5393,20 +5463,6 @@ void CTeeDiagHandler::Post(const SDiagMessage& mess)
 
     CNcbiOstrstream str_os;
     mess.x_OldWrite(str_os);
-    if (IsSetDiagPostFlag(eDPF_PreMergeLines, mess.m_Flags)) {
-        string str = CNcbiOstrstreamToString(str_os);
-        if (str.find_first_of("\r\n") != NPOS) {
-            list<string> lines;
-            NStr::Split(str, "\r\n", lines);
-            str = NStr::Join(lines, " ");
-        }
-        // Re-use the stream for the merged message.
-        str_os.seekp(0);
-        str_os << str;
-        if ((mess.m_Flags & SDiagMessage::fNoEndl) == 0) {
-            str_os << endl;
-        }
-    }
     CDiagLock lock(CDiagLock::ePost);
     string str = CNcbiOstrstreamToString(str_os);
     cerr.write(str.data(), str.size());
@@ -5575,7 +5631,12 @@ CDiagFileHandleHolder::CDiagFileHandleHolder(const string& fname,
                                              CDiagHandler::TReopenFlags flags)
     : m_Handle(-1)
 {
+#if defined(NCBI_OS_MSWIN)
+    int mode = O_WRONLY | O_APPEND | O_CREAT | O_BINARY;
+#else
     int mode = O_WRONLY | O_APPEND | O_CREAT;
+#endif
+
     if (flags & CDiagHandler::fTruncate) {
         mode |= O_TRUNC;
     }

@@ -732,8 +732,8 @@ enum EDiagPostFlag {
 
     // "Unusual" flags -- not included in "eDPF_All"
     eDPF_ErrCodeMsgInFront  = 1 << 19, ///< Put ErrCode text in front of the message
-    eDPF_PreMergeLines      = 1 << 20, ///< Remove EOLs before calling handler
-    eDPF_MergeLines         = 1 << 21, ///< Ask diag.handlers to remove EOLs
+    eDPF_MergeLines         = 1 << 21, ///< Escape EOLs.
+    eDPF_PreMergeLines      = eDPF_MergeLines, ///< Obsolete. Use eDPF_MergeLines.
     eDPF_OmitInfoSev        = 1 << 22, ///< No sev. indication if eDiag_Info
     eDPF_OmitSeparator      = 1 << 23, ///< No '---' separator before message
 
@@ -757,8 +757,7 @@ enum EDiagPostFlag {
     /// Important bits which should be taken from the globally set flags
     /// even if a user attempts to override (or forgets to set) them
     /// when calling CNcbiDiag().
-    eDPF_ImportantFlagsMask = eDPF_PreMergeLines |
-                              eDPF_MergeLines |
+    eDPF_ImportantFlagsMask = eDPF_MergeLines |
                               eDPF_OmitInfoSev |
                               eDPF_OmitSeparator,
 
@@ -1670,12 +1669,12 @@ struct NCBI_XNCBI_EXPORT SDiagMessage {
     const string& GetAppName(void) const;
     EDiagAppState GetAppState(void) const;
 
-    /// For compatibility x_Write selects old or new message formatting
-    /// depending on DIAG_OLD_POST_FORMAT parameter.
-    CNcbiOstream& x_Write(CNcbiOstream& os, TDiagWriteFlags fl = fNone) const;
     CNcbiOstream& x_OldWrite(CNcbiOstream& os, TDiagWriteFlags fl = fNone) const;
     CNcbiOstream& x_NewWrite(CNcbiOstream& os, TDiagWriteFlags fl = fNone) const;
     string x_GetModule(void) const;
+
+    static void s_EscapeNewlines(string& buf);
+    static void s_UnescapeNewlines(string& buf);
 
 private:
     // Parse extra args formatted as CGI query string. Do not check validity
