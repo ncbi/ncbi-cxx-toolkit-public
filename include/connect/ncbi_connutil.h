@@ -108,7 +108,7 @@ typedef enum {
     eReqMethod_Post,         /*  2 */
     eReqMethod_Head,         /*  3 */
     eReqMethod_Connect,      /*  4 */
-    /* HTTP/1.1, not yet supported */
+    /* HTTP/1.1 */
     eReqMethod_v1  = 8,
     eReqMethod_Put = 16,     /* 16 */
     eReqMethod_Trace,        /* 17 */

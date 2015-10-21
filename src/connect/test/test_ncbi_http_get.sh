@@ -18,6 +18,11 @@ if [ -r $NCBI_TEST_DATA/x.509/test_ncbi_http_get ]; then
   .     $NCBI_TEST_DATA/x.509/test_ncbi_http_get
 fi
 
+if [ "`expr $$ '%' 2`" = "1" ]; then
+  CONN_HTTP11=1
+  export CONN_HTTP11
+fi
+
 ssl="`expr '(' $$ / 10 ')' '%' 2`"
 if [ "$ssl" = "1" -a "`echo $FEATURES | grep -vic '[-]GNUTLS'`" = "1" ]; then
   # for netstat
