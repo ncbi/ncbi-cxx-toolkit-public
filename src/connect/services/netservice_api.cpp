@@ -1319,6 +1319,13 @@ CNetServiceIterator CNetService::FindServer(INetServerFinder* finder,
     return it;
 }
 
+CNetService CNetService::Clone(const string& name)
+{
+    _ASSERT(m_Impl);
+    return name == m_Impl->m_ServiceName ? m_Impl :
+        new SNetServiceImpl(name, m_Impl);
+}
+
 CNetService SNetServiceMap::GetServiceByName(const string& service_name,
         SNetServiceImpl* prototype)
 {

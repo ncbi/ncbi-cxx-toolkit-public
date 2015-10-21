@@ -88,14 +88,19 @@ struct SNetStorageRPC : public SNetStorageImpl
         CNetStorageObjectLoc locator_struct(m_CompoundIDPool, object_loc);
         string service_name = locator_struct.GetServiceName();
 
-        return service_name.empty() ||
-                service_name == m_Service.GetServiceName() ? m_Service :
-                        m_ServiceMap.GetServiceByName(service_name, m_Service);
+        if (service_name.empty())
+            return m_Service;
+
+        // Clone will return itself if it has the same name and
+        // insert would not do anything if such entry already exists,
+        // so no need to check for existence.
+        CNetService service(m_Service.Clone(service_name));
+        m_ServiceMap.insert(make_pair(service_name, service));
+        return service;
     }
 
     TNetStorageFlags m_DefaultFlags;
     CNetService m_Service;
-    SNetServiceMap m_ServiceMap;
 
     const SNetStorageConfig m_Config;
 
@@ -105,8 +110,10 @@ struct SNetStorageRPC : public SNetStorageImpl
 
     CNetCacheAPI m_NetCacheAPI;
 
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
 private:
+    map<string, CNetService> m_ServiceMap;
+
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     void AllowXSiteConnections()
     {
         m_AllowXSiteConnections = true;

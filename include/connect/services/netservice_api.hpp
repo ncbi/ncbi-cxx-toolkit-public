@@ -136,6 +136,8 @@ class NCBI_XCONNECT_EXPORT CNetService
         ECmdOutputStyle output_style,
         CNetService::EIterationMode = CNetService::eSortByLoad);
 
+    CNetService Clone(const string& name);
+
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     void AllowXSiteConnections();
     bool IsUsingXSiteProxy();
