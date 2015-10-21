@@ -2347,7 +2347,10 @@ CDisplaySeqalign::x_PrintDefLine(const CBioseq_Handle& bsp_handle,SAlnInfo* aln_
                     }     
             if(!((alnDispParams->seqID->AsFastaString().find("gnl|BL_ORD_ID") != string::npos) ||
 		alnDispParams->seqID->AsFastaString().find("lcl|Subject_") != string::npos)){
-                alnDispParams->seqID->WriteAsFasta(out);
+                if (strncmp(alnDispParams->seqID->AsFastaString().c_str(), "lcl|", 4) == 0) 
+                         out << alnDispParams->label;
+		else
+                	alnDispParams->seqID->WriteAsFasta(out);
             }
             if(m_AlignOption&eHtml){
                 if(alnDispParams->id_url != NcbiEmptyString){
