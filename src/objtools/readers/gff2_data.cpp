@@ -64,6 +64,21 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
+CCdregion::EFrame FramePlusToMinus(
+    CCdregion::EFrame frame)
+//  ----------------------------------------------------------------------------
+{
+    static map<CCdregion::EFrame, CCdregion::EFrame> mFramePlusToMinus;
+    if (mFramePlusToMinus.empty()) {
+        mFramePlusToMinus[CCdregion::eFrame_not_set] = CCdregion::eFrame_not_set;
+        mFramePlusToMinus[CCdregion::eFrame_one] = CCdregion::eFrame_three;
+        mFramePlusToMinus[CCdregion::eFrame_two] = CCdregion::eFrame_two;
+        mFramePlusToMinus[CCdregion::eFrame_three] = CCdregion::eFrame_one;
+    }
+    return mFramePlusToMinus[frame];
+}
+
+//  ----------------------------------------------------------------------------
 CRef<CCode_break> s_StringToCodeBreak(
     const string& str,
     CSeq_id& id,
@@ -595,7 +610,12 @@ bool CGff2Record::UpdateFeature(
             pOld->Assign(pFeature->GetLocation());
             pFeature->SetLocation().SetMix().AddSeqLoc(*pOld);
         }
+        if (pFeature->GetData().Which() == CSeqFeatData::eSubtype_cdregion) {
+            if (pAddLoc->GetInt().CanGetStrand() && pAddLoc->GetInt().GetStrand() == eNa_strand_minus) {
+                pFeature->SetData().SetCdregion().SetFrame(FramePlusToMinus(Phase()));
+            }
         }
+    }
     return true;
 }
 
@@ -1157,12 +1177,6 @@ bool CGff2Record::x_InitFeatureData(
     CRef<CSeq_feat> pFeature ) const
 //  ----------------------------------------------------------------------------
 {
-    map<CCdregion::EFrame, CCdregion::EFrame> FramePlusToMinus;
-    FramePlusToMinus[CCdregion::eFrame_not_set] = CCdregion::eFrame_not_set;
-    FramePlusToMinus[CCdregion::eFrame_one] = CCdregion::eFrame_three;
-    FramePlusToMinus[CCdregion::eFrame_two] = CCdregion::eFrame_two;
-    FramePlusToMinus[CCdregion::eFrame_three] = CCdregion::eFrame_one;
-
     string gbkey;
     if (GetAttribute("gbkey", gbkey)) {
         if (gbkey == "Src") {
@@ -1187,7 +1201,7 @@ bool CGff2Record::x_InitFeatureData(
                 frame = CCdregion::eFrame_one;
             }
             else if (Strand() == eNa_strand_minus) {
-                frame = FramePlusToMinus[frame];
+                frame = FramePlusToMinus(frame);
             } 
             pFeature->SetData().SetCdregion();
             pFeature->SetData().SetCdregion().SetFrame(frame);
