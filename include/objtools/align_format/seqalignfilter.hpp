@@ -180,7 +180,7 @@ public:
     void ReadGiList(const string& fname, list<TGi>& list_gis, bool sorted = false);
 
     /// Read a gi vector from a file and, optionally, sort it.
-    void ReadGiVector(const string& fname, vector<int>& vec_gis, bool sorted = false);
+    void ReadGiVector(const string& fname, vector<TGi>& vec_gis, bool sorted = false);
 
 private:
     //--- Internal methods ---//
