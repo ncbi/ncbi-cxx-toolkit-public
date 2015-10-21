@@ -33,6 +33,6 @@
  *
  */
 
-#include <misc/netstorage.hpp>
+#include <misc/netstorage/netstorage.hpp>
 
 #endif  /* CONNECT_SERVICES__NETSTORAGE__HPP */
