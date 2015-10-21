@@ -162,10 +162,14 @@ int CSeqSubSplitter::Run()
 
     list<CRef<CSeq_submit> > output_array;
 
-    xTryProcessSeqSubmit(input_sub, 
-                         sort_order, 
-                         bundle_size,
-                         output_array);
+    if(!xTryProcessSeqSubmit(input_sub, 
+                             sort_order, 
+                             bundle_size,
+                            output_array)) {
+        string err_msg = "Could not process input Seq-submit";
+        ERR_POST(err_msg);
+        return 0;
+    }
 
     const string output_stub = args["o"].AsString();
 
@@ -327,16 +331,59 @@ struct SShortestFirstCompare : public SCompare<SShortestFirstCompare>
 };
 
 
-struct SLocalIdCompare : public SCompare<SLocalIdCompare>
+
+
+
+struct SIdCompare : public SCompare<SIdCompare>
 {
+
+    CConstRef<CSeq_id> xGetGeneralId(const CBioseq& bioseq) const 
+    {
+        const CBioseq::TId& ids = bioseq.GetId();
+
+        ITERATE(CBioseq::TId, id_itr, ids) { 
+            CConstRef<CSeq_id> id = *id_itr;
+
+            if (id && id->IsGeneral()) {
+                return id;
+            }
+        }
+
+        return CConstRef<CSeq_id>();
+    }
+
+    CConstRef<CSeq_id> xGetId(const CBioseq& bioseq) const 
+    {
+        if (bioseq.GetLocalId()) {
+           return CConstRef<CSeq_id>(bioseq.GetLocalId());
+        }
+        return xGetGeneralId(bioseq);
+    }
+
+
     bool compare_seq(const CBioseq& b1, const CBioseq& b2) const 
     {
         if (!b1.IsSetId() || !b2.IsSetId()) {
-            NCBI_THROW(CSeqSubSplitException, eInvalidSeqid, "Bioseq id not set");
+            NCBI_THROW(CSeqSubSplitException, 
+                       eInvalidSeqid, 
+                       "Bioseq id not set");
         }
 
-        const CSeq_id* id1 = b1.GetLocalId(); // Must this be a local id?
-        const CSeq_id* id2 = b2.GetLocalId();
+        CConstRef<CSeq_id> id1 = xGetId(b1);
+        CConstRef<CSeq_id> id2 = xGetId(b2);
+
+        if (id1.IsNull() || id2.IsNull()) {
+            NCBI_THROW(CSeqSubSplitException, 
+                       eSeqIdError, 
+                       "Cannot access bioseq id");
+        }
+
+        if (id1->IsGeneral() != id2->IsGeneral()) {
+            NCBI_THROW(CSeqSubSplitException, 
+                       eSeqIdError, 
+                       "Inconsistent bioseq ids");
+        }
+
         return (id1->CompareOrdered(*id2) < 0);
     }
 };
@@ -349,6 +396,11 @@ bool CSeqSubSplitter::xTryProcessSeqSubmit(CRef<CSeq_submit>& input_sub,
                                            const TSeqPos bundle_size,
                                            list<CRef<CSeq_submit> >& output_array) const
 {
+    if (!input_sub->IsEntrys()) {
+        ERR_POST("Seq-submit does not contain any entries");
+        return false;
+    }
+
     vector<CRef<CSeq_entry> > seq_entry_array;
 
     CRef<CSeq_descr> seq_descr = Ref(new CSeq_descr());
@@ -356,8 +408,8 @@ bool CSeqSubSplitter::xTryProcessSeqSubmit(CRef<CSeq_submit>& input_sub,
 
     switch(sort_order) {
         default:
-            NCBI_THROW(CSeqSubSplitException, 
-                       eInvalidSortOrder, 
+            NCBI_THROW(CSeqSubSplitException,  
+                       eInvalidSortOrder,      
                        "Unrecognized sort order: " + NStr::IntToString(sort_order));
         case 0:
             break;
@@ -368,7 +420,7 @@ bool CSeqSubSplitter::xTryProcessSeqSubmit(CRef<CSeq_submit>& input_sub,
             stable_sort(seq_entry_array.begin(), seq_entry_array.end(), SShortestFirstCompare());
             break;
         case 3:
-            stable_sort(seq_entry_array.begin(), seq_entry_array.end(), SLocalIdCompare());
+            stable_sort(seq_entry_array.begin(), seq_entry_array.end(), SIdCompare());
             break;
     } 
 

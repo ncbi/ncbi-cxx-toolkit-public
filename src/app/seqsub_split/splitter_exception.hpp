@@ -47,7 +47,8 @@ public:
         eInvalidSortOrder,
         eEmptyOutputStub,
         eInputError,
-        eOutputError
+        eOutputError,
+        eSeqIdError,
     };
 
     virtual const char* GetErrCodeString() const
@@ -69,6 +70,8 @@ public:
                 return "eInputError";
             case eOutputError:
                 return "eOutputError";
+            case eSeqIdError:
+                return "eSeqIdError";
             default:
                 return CException::GetErrCodeString();
         }
