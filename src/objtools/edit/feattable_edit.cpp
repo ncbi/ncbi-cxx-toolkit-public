@@ -300,7 +300,6 @@ void CFeatTableEdit::xFeatureAddProteinId(
     }
     CMappedFeat associateFeat;
 
-    CSeqFeatData::ESubtype s = mf.GetFeatSubtype();
     switch (mf.GetFeatSubtype()) {
         default:
             // we do this only for select feature types
@@ -338,7 +337,6 @@ void CFeatTableEdit::xFeatureAddTranscriptId(
     }
     CMappedFeat associateFeat;
 
-    CSeqFeatData::ESubtype s = mf.GetFeatSubtype();
     switch (mf.GetFeatSubtype()) {
     default:
         // we do this only for select feature types
@@ -400,23 +398,17 @@ void CFeatTableEdit::xGenerateLocusIdsRegenerate()
     selOthers.ExcludeFeatSubtype(CSeqFeatData::eSubtype_gene);
     for (CFeat_CI it(mHandle, selOthers); it; ++it) {
         CMappedFeat mf = *it;
-        const CSeq_feat& f = mf.GetOriginalFeature();
         CSeq_feat_EditHandle feh(mf);
 
-        //feh.RemoveQualifier("locus_tag");
-        //feh.RemoveQualifier("protein_id");
         feh.RemoveQualifier("orig_protein_id");
-        //feh.RemoveQualifier("transcript_id");
         feh.RemoveQualifier("orig_transcript_id");
 
         CSeqFeatData::ESubtype subtype = mf.GetFeatSubtype();
         switch (subtype) {
             case CSeqFeatData::eSubtype_mRNA: {
                 string proteinId = xNextProteinId(mf);
-                //feh.AddQualifier("protein_id", proteinId);
                 feh.AddQualifier("orig_protein_id", proteinId);
                 string transcriptId = xNextTranscriptId(mf);
-                //feh.AddQualifier("transcript_id", transcriptId);
                 feh.AddQualifier("orig_transcript_id", transcriptId);
                 break;
             }
