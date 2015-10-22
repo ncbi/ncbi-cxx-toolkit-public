@@ -395,9 +395,6 @@ bool CAutoDef::x_AddMiscRNAFeatures(CBioseq_Handle bh, const CSeq_feat& cf, cons
         return false;
     }
 
-    vector<CAutoDefFeatureClause *> clause_list;
-    size_t j;
-    bool bad_phrase = false;
     bool is_region = false;
 
     if (NStr::StartsWith (comment, "contains ")) {
@@ -407,86 +404,21 @@ bool CAutoDef::x_AddMiscRNAFeatures(CBioseq_Handle bh, const CSeq_feat& cf, cons
         is_region = true;
     }
     
- 
-    clause_list.clear();
-    pos = NStr::Find (comment, " and ");
-    // insert comma for parsing
-    if (pos != NCBI_NS_STD::string::npos && pos > 0 && !NStr::StartsWith (comment.substr(pos - 1), ",")) {
-        comment = comment.substr(0, pos) + "," + comment.substr(pos);
-    }
-
-    vector<string> parts;
-    NStr::Tokenize(comment, ",", parts, NStr::eMergeDelims );
-    if ( parts.empty() ) {
+    vector<string> elements = CAutoDefFeatureClause_Base::GetMiscRNAElements(comment);
+    if (elements.empty()) {
         return false;
     }
-
-    vector<unsigned int> types;
-
-    for (j = 0; j < parts.size() && !bad_phrase; j++) {
-        // clean up part name
-        NStr::TruncateSpacesInPlace(parts[j]);
-        if (NStr::StartsWith(parts[j], "and ")) {
-            parts[j] = parts[j].substr(4);
-        }
-        // find first of the recognized words to occur in the string
-        string::size_type first_word = NCBI_NS_STD::string::npos;
-        unsigned int word_id = 0;
-    
-        for (unsigned int i = 0; i < NUM_MISC_RNA_WORDS && first_word == NCBI_NS_STD::string::npos; i++) {
-            first_word = NStr::Find (parts[j], misc_words[i]);
-            if (first_word != NCBI_NS_STD::string::npos) {
-                word_id = i;
-            }
-        }
-        if (first_word == NCBI_NS_STD::string::npos) {
-            bad_phrase = true;
-        } else {
-            types.push_back (word_id);
-        }
-    }
-
-    if (!bad_phrase) {
-        if (is_region) {
-            clause_list.push_back (new CAutoDefParsedRegionClause(bh, cf, mapped_loc, comment));
-        } else {
-            for (j = 0; j < parts.size(); j++) {
-                // create a clause of the appropriate type
-                CAutoDefParsedClause *new_clause = new CAutoDefParsedClause(bh, cf, mapped_loc, j == 0, j == parts.size() - 1);        
-                string description = "";
-                if (types[j] == MISC_RNA_WORD_INTERNAL_SPACER
-                    || types[j] == MISC_RNA_WORD_EXTERNAL_SPACER
-                    || types[j] == MISC_RNA_WORD_RNA_INTERGENIC_SPACER
-                    || types[j] == MISC_RNA_WORD_INTERGENIC_SPACER) {
-                    if (NStr::StartsWith (parts[j], misc_words[types[j]])) {
-                        new_clause->SetTypewordFirst(true);
-                        description = parts[j].substr(misc_words[types[j]].length());
-                    } else {
-                        new_clause->SetTypewordFirst(false);
-                        description = parts[j].substr(0, NStr::Find(parts[j], misc_words[types[j]]));
-                    }
-                    new_clause->SetTypeword(misc_words[types[j]]);
-                } else if (types[j] == MISC_RNA_WORD_RNA) {
-                    description = parts[j];
-                    new_clause->SetTypeword("gene");
-                    new_clause->SetTypewordFirst(false);
-                }
-                NStr::TruncateSpacesInPlace(description);
-                new_clause->SetDescription(description);
-        
-                clause_list.push_back (new_clause);
-            }
-        }
-    }
-
-    if (clause_list.size() > 0) {
-        for (j = 0; j < clause_list.size(); j++) {
-            main_clause.AddSubclause(clause_list[j]);
-        }
-        return true;
+    if (is_region) {
+        main_clause.AddSubclause(new CAutoDefParsedRegionClause(bh, cf, mapped_loc, comment));
     } else {
-        return false;
+        ITERATE(vector<string>, s, elements) {
+            CAutoDefParsedClause *new_clause = new CAutoDefParsedClause(bh, cf, mapped_loc,
+                (*s == elements.front()), (*s == elements.back()));
+            new_clause->SetMiscRNAWord(*s);
+            main_clause.AddSubclause(new_clause);
+        }
     }
+    return true;
 }
 
 

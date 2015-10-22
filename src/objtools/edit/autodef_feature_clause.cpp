@@ -2004,6 +2004,31 @@ CAutoDefParsedClause::~CAutoDefParsedClause()
 {
 }
 
+void CAutoDefParsedClause::SetMiscRNAWord(const string& phrase)
+{
+    ERnaMiscWord word_type = x_GetRnaMiscWordType(phrase);
+    if (word_type == eMiscRnaWordType_InternalSpacer ||
+        word_type == eMiscRnaWordType_ExternalSpacer ||
+        word_type == eMiscRnaWordType_RNAIntergenicSpacer ||
+        word_type == eMiscRnaWordType_IntergenicSpacer) {
+        const string& item_name = x_GetRnaMiscWord(word_type);
+        if (NStr::StartsWith(phrase, item_name)) {
+            SetTypewordFirst(true);
+            m_Description = phrase.substr(item_name.length());
+        } else {
+            SetTypewordFirst(false);
+            m_Description = phrase.substr(0, NStr::Find(phrase, item_name));
+        }
+        SetTypeword(item_name);
+    } else if (word_type == eMiscRnaWordType_RNA) {
+        m_Description = phrase;
+        SetTypeword("gene");
+        SetTypewordFirst(false);
+    }
+    NStr::TruncateSpacesInPlace(m_Description);
+    m_DescriptionChosen = true;
+}
+
 
 CAutoDefParsedtRNAClause::CAutoDefParsedtRNAClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc, 
                                                    string gene_name, string product_name, 
@@ -2096,9 +2121,25 @@ void CAutoDefMiscCommentClause::Label(bool suppress_allele)
 
 CAutoDefParsedRegionClause::CAutoDefParsedRegionClause
 (CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc, string product)
-                       : CAutoDefFeatureClause(bh, main_feat, mapped_loc)
+: CAutoDefFeatureClause(bh, main_feat, mapped_loc)
 {
-    m_Description = product;
+    vector<string> elements = GetMiscRNAElements(product);
+    if (elements.empty()) {
+        m_Description = product;
+    } else {        
+        ITERATE(vector<string>, it, elements) {
+            if (!NStr::IsBlank(m_Description)) {
+                m_Description += ", ";
+                if (*it == elements.back()) {
+                    m_Description += "and ";
+                }
+            }
+            m_Description += *it;
+            if (NStr::Find(*it, "RNA") != string::npos && !NStr::EndsWith(*it, "gene") && !NStr::EndsWith(*it, "genes")) {
+                m_Description += " gene";
+            }
+        }
+    }
     m_DescriptionChosen = true;
 
     m_Typeword = "";

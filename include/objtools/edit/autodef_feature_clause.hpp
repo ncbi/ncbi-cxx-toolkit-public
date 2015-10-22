@@ -201,6 +201,7 @@ public:
     void SetDescription(string description) { m_Description = description; m_DescriptionChosen = true; }
     void SetTypewordFirst(bool typeword_first) { m_ShowTypewordFirst = typeword_first; }
     virtual bool IsRecognizedFeature() { return true; }
+    void SetMiscRNAWord(const string& phrase);
     
 protected:
 };

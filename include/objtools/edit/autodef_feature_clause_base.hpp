@@ -154,6 +154,9 @@ public:
 
     void Consolidate(CAutoDefFeatureClause_Base& other, bool suppress_allele);
     void TakeSubclauses(CAutoDefFeatureClause_Base& other);
+
+    static vector<string> GetMiscRNAElements(const string& product);
+
    
 protected:
     TClauseList  m_ClauseList;
@@ -186,6 +189,18 @@ protected:
     bool x_MeetAltSpliceRules (unsigned int clause1, unsigned int clause2, string &splice_name);
 
     void x_RemoveNullClauses();
+
+    typedef enum {
+        eMiscRnaWordType_InternalSpacer = 0,
+        eMiscRnaWordType_ExternalSpacer,
+        eMiscRnaWordType_RNAIntergenicSpacer,
+        eMiscRnaWordType_RNA,
+        eMiscRnaWordType_IntergenicSpacer,
+        eMiscRnaWordType_Unrecognized
+    } ERnaMiscWord;
+    static bool x_AddOneMiscWordElement(const string& phrase, vector<string>& elements);
+    static ERnaMiscWord x_GetRnaMiscWordType(const string& phrase);
+    static const string& x_GetRnaMiscWord(ERnaMiscWord word_type);
 };
 
 

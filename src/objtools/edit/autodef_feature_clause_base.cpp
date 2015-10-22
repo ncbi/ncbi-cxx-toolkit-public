@@ -1708,6 +1708,80 @@ bool CAutoDefExonListClause::OkToGroupUnderByType(CAutoDefFeatureClause_Base *pa
 }
 
 
+// Some misc_RNA clauses have a comment that actually lists multiple
+// features.  This function creates a list of each element in the
+// comment.
+static string kRNAMiscWords[] = {
+    "internal transcribed spacer",
+    "external transcribed spacer",
+    "ribosomal RNA intergenic spacer",
+    "ribosomal RNA",
+    "intergenic spacer"
+};
+
+CAutoDefFeatureClause_Base::ERnaMiscWord CAutoDefFeatureClause_Base::x_GetRnaMiscWordType(const string& phrase)
+{
+    // find first of the recognized words to occur in the string
+    for (size_t i = eMiscRnaWordType_InternalSpacer; i < eMiscRnaWordType_Unrecognized; i++) {
+        if (NStr::Find(phrase, kRNAMiscWords[i]) != string::npos) {
+            return (ERnaMiscWord)i;
+        }
+    }
+    return eMiscRnaWordType_Unrecognized;
+}
+
+const string& CAutoDefFeatureClause_Base::x_GetRnaMiscWord(ERnaMiscWord word_type)
+{
+    if (word_type == eMiscRnaWordType_Unrecognized) {
+        return kEmptyStr;
+    } else {
+        return kRNAMiscWords[word_type];
+    }
+}
+
+
+bool CAutoDefFeatureClause_Base::x_AddOneMiscWordElement(const string& phrase, vector<string>& elements)
+{
+    string val = phrase;
+    NStr::TruncateSpacesInPlace(val);
+    ERnaMiscWord word_type = x_GetRnaMiscWordType(val);
+    if (word_type == eMiscRnaWordType_Unrecognized) {
+        elements.clear();
+        return false;
+    } else {
+        elements.push_back(val);
+    }
+}
+
+
+vector<string> CAutoDefFeatureClause_Base::GetMiscRNAElements(const string& comment)
+{
+    vector<string> elements;
+    vector<string> parts;
+    NStr::Tokenize(comment, ",", parts, NStr::eMergeDelims);
+    if (parts.empty()) {
+        return elements;
+    }
+    ITERATE(vector<string>, it, parts) {
+        size_t pos = NStr::Find(*it, " and ");
+        if (pos == string::npos) {
+            if (!x_AddOneMiscWordElement(*it, elements)) {
+                break;
+            }
+        } else {
+            if (pos > 0) {
+                if (!x_AddOneMiscWordElement((*it).substr(0, pos), elements)) {
+                    break;
+                }
+            }
+            if (!x_AddOneMiscWordElement((*it).substr(pos + 5), elements)) {
+                break;
+            }
+        }
+    }
+    return elements;
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
