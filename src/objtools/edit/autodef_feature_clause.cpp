@@ -1024,7 +1024,7 @@ bool CAutoDefFeatureClause::x_GetDescription(string &description)
     } else if (subtype == CSeqFeatData::eSubtype_LTR) {
         if (m_MainFeat.CanGetComment()) {
             string comment = m_MainFeat.GetComment();
-            if (NStr::StartsWith(comment,"LTR ")) {
+            if (NStr::StartsWith(comment, "LTR ")) {
                 comment = comment.substr(4);
             } else if (NStr::EndsWith(comment, " LTR")) {
                 comment = comment.substr(0, comment.length() - 4);
@@ -1036,6 +1036,8 @@ bool CAutoDefFeatureClause::x_GetDescription(string &description)
         } else {
             return true;
         }
+    } else if (subtype == CSeqFeatData::eSubtype_operon) {
+        description = m_MainFeat.GetNamedQual("operon");
     } else {
         if (!m_ProductNameChosen) {
             m_ProductNameChosen = x_GetProductName(m_ProductName);
