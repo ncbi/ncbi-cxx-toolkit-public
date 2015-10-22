@@ -1531,6 +1531,54 @@ node_set xml::node::convert_to_nset(void *  object_as_void) const {
 }
 
 
+struct ns_cmp {
+    bool operator() (const xmlNsPtr &  lhs, const xmlNsPtr &  rhs) const {
+        if (lhs->prefix == NULL)
+            return true;
+        if (lhs->prefix[0] == '\0')
+            return true;
+        if (rhs->prefix == NULL)
+            return false;
+        if (rhs->prefix[0] == '\0')
+            return false;
+        return strcmp(reinterpret_cast<const char *>(lhs->prefix),
+                      reinterpret_cast<const char *>(rhs->prefix)) < 0;
+    }
+};
+
+void xml::node::sort_namespace_definitions (void)
+{
+    std::list<xmlNsPtr>     ns_defs;
+    xmlNsPtr                nsd = pimpl_->xmlnode_->nsDef;
+
+    // Collect the pointers to the namespace definitions
+    while (nsd != 0) {
+        ns_defs.push_back(nsd);
+        nsd = nsd->next;
+    }
+
+    // Sort pointers by the namespace prefixes
+    ns_defs.sort(ns_cmp());
+
+    // Modify the list of the namespace definitions
+    xmlNsPtr    cur = NULL;
+    xmlNsPtr    prev = NULL;
+
+    for (std::list<xmlNsPtr>::const_iterator k = ns_defs.begin();
+            k != ns_defs.end(); ++k) {
+        cur = *k;
+
+        if (prev == NULL)
+            pimpl_->xmlnode_->nsDef = cur;
+
+        cur->next = NULL;
+
+        if (prev != NULL)
+            prev->next = cur;
+
+        prev = cur;
+    }
+}
 
 
 

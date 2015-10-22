@@ -94,6 +94,10 @@ using namespace xml::impl;
 static int  c14n_op_to_libxml2_op(xml::canonicalization_option  op)
 {
     switch (op) {
+        case xml::sort_attr_and_ns:
+            return -1;
+        case xml::sort_attr_and_ns_no_decl:
+            return -1;
         case xml::c14n_1_0:
             return XML_C14N_1_0;
         case xml::c14n_exclusive_1_0:
@@ -121,6 +125,34 @@ static void sort_node_recursively(xml::node &  n)
     for (xml::node::iterator  k = n.begin(); k != n.end(); ++k)
         if (k->get_type() == xml::node::type_element)
             sort_node_recursively(*k);
+}
+
+static void remove_comments_recursively(xml::node &  n)
+{
+    xml::node::iterator  k = n.begin();
+    while (k != n.end()) {
+        if (k->get_type() == xml::node::type_comment)
+            k = n.erase(k);
+        else {
+            remove_comments_recursively(*k);
+            ++k;
+        }
+    }
+}
+
+static void sort_attributes_recursively(xml::node &  n)
+{
+    if (n.get_type() == xml::node::type_element)
+        n.get_attributes().sort();
+    for (xml::node::iterator  k = n.begin(); k != n.end(); ++k)
+        sort_attributes_recursively(*k);
+}
+
+static void sort_namespace_definitions_recursively(xml::node &  n)
+{
+    n.sort_namespace_definitions();
+    for (xml::node::iterator  k = n.begin(); k != n.end(); ++k)
+        sort_namespace_definitions_recursively(*k);
 }
 
 //####################################################################
@@ -644,7 +676,10 @@ void xml::document::save_to_string_canonical (
                                  "it holds xslt transformation results "
                                  "which are not an xml");
 
-    int     libxml2_mode = c14n_op_to_libxml2_op(c14n_option);
+    int     libxml2_mode = -1;  // libxml2 options start from 0 and go up
+    if (c14n_option != xml::sort_attr_and_ns &&
+        c14n_option != xml::sort_attr_and_ns_no_decl)
+        libxml2_mode = c14n_op_to_libxml2_op(c14n_option);
     int     libxml2_with_comments = 0;
     if (comments_option == keep_comments)
         libxml2_with_comments = 1;
@@ -697,19 +732,47 @@ void xml::document::save_to_string_canonical (
     // Restore the previous value of the xmlKeepBlanksDefaultValue
     xmlKeepBlanksDefaultValue = old_remove_whitespaces;
 
-    // Finally, canonicalize the temporary document
-    xmlChar *   result = NULL;
-    int         size = xmlC14NDocDumpMemory(tmp_doc.pimpl_->doc_,
-                                            NULL, libxml2_mode,
-                                            NULL, libxml2_with_comments,
-                                            &result);
-    if (size < 0)
-        throw xml::exception("xml::document::save_to_string_canonical "
-                             "failed to canonicalize");
+    if (libxml2_mode != -1) {
+        // Finally, canonicalize the temporary document
+        xmlChar *   result = NULL;
+        int         size = xmlC14NDocDumpMemory(tmp_doc.pimpl_->doc_,
+                                                NULL, libxml2_mode,
+                                                NULL, libxml2_with_comments,
+                                                &result);
+        if (size < 0)
+            throw xml::exception("xml::document::save_to_string_canonical "
+                                 "failed to canonicalize");
 
-    str.assign(reinterpret_cast<const char *>(result), size);
-    if (result != NULL)
-        xmlFree(result);
+        str.assign(reinterpret_cast<const char *>(result), size);
+        if (result != NULL)
+            xmlFree(result);
+    } else {
+        node &      root_node = tmp_doc.get_root_node();
+
+        // No real canonicalization required. The following will be done:
+        // - remove comments if required
+        // - sort attributes
+        // - sort namespace definitions
+        if (comments_option == strip_comments) {
+            if (root_node.get_type() == xml::node::type_comment) {
+                str.assign("");
+                return;
+            }
+            remove_comments_recursively(root_node);
+        }
+
+        sort_attributes_recursively(root_node);
+        sort_namespace_definitions_recursively(root_node);
+
+
+        save_option_flags   flags = 0;
+        if (c14n_option == xml::sort_attr_and_ns_no_decl)
+            flags |= save_op_no_decl;
+        if (format_option == without_formatting)
+            flags |= save_op_no_format;
+
+        tmp_doc.save_to_string(str, flags);
+    }
 }
 //####################################################################
 void xml::document::save_to_stream (std::ostream &stream,

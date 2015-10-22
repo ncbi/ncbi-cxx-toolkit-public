@@ -81,9 +81,23 @@ namespace xml {
     /// Canonicalization mode. See "Canonical XML" (http://www.w3.org/TR/xml-c14n)
     /// or "Exclusive XML Canonicalization" (http://www.w3.org/TR/xml-exc-c14n)
     enum canonicalization_option {
-        c14n_1_0,               ///< Origianal C14N 1.0 spec
-        c14n_exclusive_1_0,     ///< Exclusive C14N 1.0 spec
-        c14n_1_1                ///< C14N 1.1 spec
+        c14n_1_0,                   ///< Origianal C14N 1.0 spec
+        c14n_exclusive_1_0,         ///< Exclusive C14N 1.0 spec
+        c14n_1_1,                   ///< C14N 1.1 spec
+        sort_attr_and_ns,           ///< Essentially it is not a
+                                    ///< canonicalization. It will do only a
+                                    ///< part of what c14n does, namely: sort
+                                    ///< attributes and namespace definitions.
+                                    ///< The xml declaration will appear in the
+                                    ///< output regardless if it was a document
+                                    ///< or a node.
+        sort_attr_and_ns_no_decl    ///< Essentially it is not a
+                                    ///< canonicalization. It will do only a
+                                    ///< part of what c14n does, namely: sort
+                                    ///< attributes and namespace definitions.
+                                    ///< The xml declaration will not appear in
+                                    ///< the output regardless if it was a
+                                    ///< document or a node.
     };
 
     enum canonicalization_comments_option {

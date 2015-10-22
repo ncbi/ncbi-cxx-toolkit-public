@@ -52,6 +52,7 @@
 #include <string.h>
 #include <new>
 #include <algorithm>
+#include <list>
 #include <string.h>
 
 // libxml2 includes
@@ -405,3 +406,44 @@ xml::attributes::size_type xml::attributes::size (void) const {
     return count;
 }
 //####################################################################
+struct attr_cmp {
+    bool operator() (const xmlAttrPtr &  lhs, const xmlAttrPtr &  rhs) const {
+        return strcmp(reinterpret_cast<const char *>(lhs->name),
+                      reinterpret_cast<const char *>(rhs->name)) < 0;
+    }
+};
+void xml::attributes::sort (void) {
+    std::list<xmlAttrPtr>   attrs;
+    xmlAttrPtr              prop = pimpl_->xmlnode_->properties;
+
+    // Collect pointers to the attributes
+    while (prop != 0) {
+        attrs.push_back(prop);
+        prop = prop->next;
+    }
+
+    // Sort pointers by the attribute names
+    attrs.sort(attr_cmp());
+
+    // Modify the list of attributes to have them sorted
+    xmlAttrPtr  cur = NULL;
+    xmlAttrPtr  prev = NULL;
+
+    for (std::list<xmlAttrPtr>::const_iterator k = attrs.begin();
+            k != attrs.end(); ++k) {
+        cur = *k;
+
+        if (prev == NULL)
+            pimpl_->xmlnode_->properties = cur;
+
+        cur->prev = prev;
+        cur->next = NULL;
+
+        if (prev != NULL)
+            prev->next = cur;
+
+        prev = cur;
+    }
+}
+//####################################################################
+
