@@ -54,24 +54,20 @@
 // generated classes
 
 BEGIN_NCBI_SCOPE
+BEGIN_objects_SCOPE
 
-BEGIN_objects_SCOPE // namespace ncbi::objects::
+static const STimeout kTimeout = {600, 0};
 
-// constructor
-CGenomicCollectionsService::CGenomicCollectionsService(void)
+CGenomicCollectionsService::CGenomicCollectionsService()
 {
+    SetTimeout(&kTimeout);
 }
 
 CGenomicCollectionsService::CGenomicCollectionsService(const string& url)
 : m_url(url)
 {
+    SetTimeout(&kTimeout);
 }
-
-// destructor
-CGenomicCollectionsService::~CGenomicCollectionsService(void)
-{
-}
-
 
 string CGenomicCollectionsService::x_GetURL()
 {
@@ -83,11 +79,6 @@ void CGenomicCollectionsService::x_Connect()
 #ifdef _DEBUG
     LOG_POST(Info << "Connecting to url:" << x_GetURL().c_str());
 #endif
-    STimeout to10Min;
-    to10Min.sec=600;
-    to10Min.usec=0;
-    SetTimeout(&to10Min);
-
     if(x_GetURL().empty())
         CGenomicCollectionsService_Base::x_Connect();
     else

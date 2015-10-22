@@ -61,14 +61,9 @@ class CGenomicCollectionsService : public CGenomicCollectionsService_Base
 {
     string m_url;
 
-    typedef CGenomicCollectionsService_Base Tparent;
 public:
-    // constructor
-    CGenomicCollectionsService(void);
+    CGenomicCollectionsService();
     CGenomicCollectionsService(const string& url);
-
-    // destructor
-    ~CGenomicCollectionsService(void);
 
     virtual void x_Connect();
 
