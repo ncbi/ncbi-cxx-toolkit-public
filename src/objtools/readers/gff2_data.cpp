@@ -610,7 +610,7 @@ bool CGff2Record::UpdateFeature(
             pOld->Assign(pFeature->GetLocation());
             pFeature->SetLocation().SetMix().AddSeqLoc(*pOld);
         }
-        if (pFeature->GetData().Which() == CSeqFeatData::eSubtype_cdregion) {
+        if (pFeature->GetData().GetSubtype() == CSeqFeatData::eSubtype_cdregion) {
             if (pAddLoc->GetInt().CanGetStrand() && pAddLoc->GetInt().GetStrand() == eNa_strand_minus) {
                 pFeature->SetData().SetCdregion().SetFrame(FramePlusToMinus(Phase()));
             }
