@@ -1372,6 +1372,8 @@ public:
 class NCBI_DBAPIDRIVER_EXPORT I_ConnectionExtra
 {
 public:
+    virtual ~I_ConnectionExtra(void);
+
 #ifdef NCBI_OS_MSWIN
     typedef SOCKET  TSockHandle;
 #else
@@ -1380,8 +1382,6 @@ public:
 
     /// Get OS handle of the socket represented by the connection
     virtual TSockHandle GetLowLevelHandle(void) const = 0;
-
-    virtual ~I_ConnectionExtra(void);
 };
 
 
