@@ -41,6 +41,7 @@
 #include <objects/genomecoll/genomic_collections_cli.hpp>
 #include <objects/genomecoll/GC_Assembly.hpp>
 #include <objects/genomecoll/GC_AssemblySet.hpp>
+#include <objects/genomecoll/GC_AssemblyUnit.hpp>
 #include <objects/genomecoll/GC_AssemblyDesc.hpp>
 #include <objects/genomecoll/GCClient_ValidateChrTypeLo.hpp>
 #include <objects/genomecoll/GCClient_FindBestAssemblyR.hpp>
@@ -349,6 +350,15 @@ int CTestGenomicCollectionsSvcApplication::RunServerDirect(const CArgs& args, CN
 }
 
 static
+CGC_AssemblyDesc* GetAssebmlyDesc(CRef<CGC_Assembly>& assembly)
+{
+    return assembly->IsAssembly_set() && assembly->SetAssembly_set().IsSetDesc() ? &assembly->SetAssembly_set().SetDesc() :
+           assembly->IsUnit() && assembly->GetUnit().IsSetDesc() ? &assembly->SetUnit().SetDesc() :
+           NULL;
+
+}
+
+static
 bool isVersionsObject(CRef<CSeqdesc> desc)
 {
     return desc->IsUser() &&
@@ -358,14 +368,12 @@ bool isVersionsObject(CRef<CSeqdesc> desc)
 }
 
 static
-void RemoveVersions(CRef<CGC_Assembly>& reply)
+void RemoveVersions(CRef<CGC_Assembly>& assembly)
 {
-    if (reply->IsAssembly_set() &&
-        reply->SetAssembly_set().IsSetDesc() &&
-        reply->SetAssembly_set().SetDesc().CanGetDescr())
+    CGC_AssemblyDesc* desc = GetAssebmlyDesc(assembly);
+    if (desc && desc->CanGetDescr())
     {
-        list< CRef<CSeqdesc> >& l = reply->SetAssembly_set().SetDesc().SetDescr().Set();
-
+        list< CRef<CSeqdesc> >& l = assembly->SetAssembly_set().SetDesc().SetDescr().Set();
         l.erase(remove_if(l.begin(), l.end(),
                           isVersionsObject),
                 l.end());
