@@ -7262,6 +7262,7 @@ Seq-annot ::= {
 Seq-annot ::= {
   data ftable {
     {
+      id local id 25763,
       data gene {
         locus "snoRNA:CG32479-a",
         syn {
@@ -7284,6 +7285,11 @@ Seq-annot ::= {
         {
           qual "cyt_map",
           val "61D4-61D4"
+        }
+      },
+      xref {
+        {
+          id local id 25764
         }
       },
       dbxref {
@@ -7320,10 +7326,19 @@ Seq-annot ::= {
           version 3
         }
       },
+      xref {
+        {
+          id local id 25763
+        }
+      },
       dbxref {
         {
           db "FLYBASE",
           tag str "FBtr0309760"
+        },
+        {
+          db "GeneID",
+          tag id 12798554
         }
       }
     }
@@ -7332,11 +7347,13 @@ Seq-annot ::= {
 Seq-annot ::= {
   data ftable {
     {
+      id local id 24194,
       data gene {
         locus "mir-2279",
         desc "mir-2279 stem loop",
         syn {
           "CR42911",
+          "dme-mir-2279",
           "Dmel\CR42911",
           "miR-2279"
         },
@@ -7349,6 +7366,17 @@ Seq-annot ::= {
         id other {
           accession "NW_001848856",
           version 1
+        }
+      },
+      xref {
+        {
+          id local id 24195
+        },
+        {
+          id local id 24196
+        },
+        {
+          id local id 24197
         }
       },
       dbxref {
@@ -7385,10 +7413,25 @@ Seq-annot ::= {
           version 1
         }
       },
+      xref {
+        {
+          id local id 24194
+        },
+        {
+          id local id 24196
+        },
+        {
+          id local id 24197
+        }
+      },
       dbxref {
         {
           db "FLYBASE",
           tag str "FBtr0304240"
+        },
+        {
+          db "GeneID",
+          tag id 12798493
         }
       }
     },
@@ -7410,6 +7453,14 @@ Seq-annot ::= {
           version 1
         }
       },
+      xref {
+        {
+          id local id 24194
+        },
+        {
+          id local id 24195
+        }
+      },
       dbxref {
         {
           db "FLYBASE",
@@ -7418,6 +7469,10 @@ Seq-annot ::= {
         {
           db "miRBase",
           tag str "MIMAT0011784"
+        },
+        {
+          db "GeneID",
+          tag id 12798493
         }
       }
     },
@@ -7439,6 +7494,14 @@ Seq-annot ::= {
           version 1
         }
       },
+      xref {
+        {
+          id local id 24194
+        },
+        {
+          id local id 24195
+        }
+      },
       dbxref {
         {
           db "FLYBASE",
@@ -7447,6 +7510,10 @@ Seq-annot ::= {
         {
           db "miRBase",
           tag str "MIMAT0011785"
+        },
+        {
+          db "GeneID",
+          tag id 12798493
         }
       }
     }
@@ -9320,7 +9387,7 @@ Seq-annot ::= {
         {
           data prot {
             name {
-              "type III iodothyronine deiodinase"
+              "thyroxine 5-deiodinase"
             }
           }
         }
@@ -10534,12 +10601,11 @@ Seq-annot ::= {
       },
       partial TRUE,
       location int {
-          from 541,
-          to 1048,
-          strand minus,
-          id gi 333778953,
---          fuzz-from lim lt,
-          fuzz-to lim gt
+        from 541,
+        to 1048,
+        strand minus,
+        id gi 333778953,
+        fuzz-to lim gt
       },
       dbxref {
         {
@@ -10564,7 +10630,6 @@ Seq-annot ::= {
         to 1048,
         strand minus,
         id gi 333778953,
---        fuzz-from lim lt,
         fuzz-to lim gt
       },
       qual {
