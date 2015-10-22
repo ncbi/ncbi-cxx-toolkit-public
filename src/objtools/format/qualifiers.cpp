@@ -1573,16 +1573,16 @@ void CFlatModelEvQVal::Format
             }
             prefix = ", ";
         }
-        if (num_prot > 0) {
-            text << prefix << num_prot << " Protein";
-            if (num_prot > 1) {
+        if (num_long_sra > 0) {
+            text << prefix << num_long_sra << " long SRA read";
+            if (num_long_sra > 1) {
                 text << 's';
             }
             prefix = ", ";
         }
-        if (num_long_sra > 0) {
-            text << prefix << num_long_sra << " long SRA read";
-            if (num_long_sra > 1) {
+        if (num_prot > 0) {
+            text << prefix << num_prot << " Protein";
+            if (num_prot > 1) {
                 text << 's';
             }
             prefix = ", ";
