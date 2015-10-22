@@ -18,14 +18,6 @@ LIBS = $(VDB_LIBS) $(CMPRS_LIBS) $(ORIG_LIBS)
 
 POST_LINK = $(VDB_POST_LINK)
 
-# LIB      = xser xhtml xcgi xconnect xutil xncbi
+CHECK_REQUIRES = in-house-resources -Solaris
 
-## If you need the C toolkit...
-# LIBS     = $(NCBI_C_LIBPATH) -lncbi $(NETWORK_LIBS) $(ORIG_LIBS)
-# CPPFLAGS = $(ORIG_CPPFLAGS) $(NCBI_C_INCLUDE)
-
-###  EXAMPLES OF OTHER SETTINGS THAT MIGHT BE OF INTEREST
-# PRE_LIBS = $(NCBI_C_LIBPATH) .....
-# CFLAGS   = $(FAST_CFLAGS)
-# CXXFLAGS = $(FAST_CXXFLAGS)
-# LDFLAGS  = $(FAST_LDFLAGS)
+WATCHERS = vasilche
