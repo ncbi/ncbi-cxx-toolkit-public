@@ -100,6 +100,27 @@ CHttpResponse g_HttpPost(const CUrl&         url,
                          const CTimeout&     timeout = CTimeout(CTimeout::eDefault),
                          THttpRetries        retries = null);
 
+/// Shortcut for PUT request. Each request uses a separate session,
+/// no data like cookies is shared between multiple requests.
+/// @sa CHttpSession::Put()
+NCBI_XCONNECT_EXPORT
+CHttpResponse g_HttpPut(const CUrl&     url,
+                        CTempString     data,
+                        CTempString     content_type = CTempString(),
+                        const CTimeout& timeout = CTimeout(CTimeout::eDefault),
+                        THttpRetries    retries = null);
+
+/// Shortcut for PUT request with custom headers. Each request uses a separate
+/// session, no data like cookies is shared between multiple requests.
+/// @sa CHttpSession::Put()
+NCBI_XCONNECT_EXPORT
+CHttpResponse g_HttpPut(const CUrl&         url,
+                        const CHttpHeaders& headers,
+                        CTempString         data,
+                        CTempString         content_type = CTempString(),
+                        const CTimeout&     timeout = CTimeout(CTimeout::eDefault),
+                        THttpRetries        retries = null);
+
 class CHttpSession;
 
 
@@ -515,7 +536,8 @@ public:
     enum ERequestMethod {
         eHead = eReqMethod_Head,
         eGet  = eReqMethod_Get,
-        ePost = eReqMethod_Post
+        ePost = eReqMethod_Post,
+        ePut = eReqMethod_Put
     };
 
     /// Initialize request. This does not open connection to the server.
@@ -547,6 +569,22 @@ public:
                        CTempString     content_type = CTempString(),
                        const CTimeout& timeout = CTimeout(CTimeout::eDefault),
                        THttpRetries    retries = null);
+
+    /// Shortcut for PUT requests.
+    /// @param url
+    ///   URL to send request to.
+    /// @param data
+    ///   Data to be sent with the request. The data is sent as-is,
+    ///   any required encoding must be performed by the caller.
+    /// @param content_type
+    ///   Content-type. If empty, application/x-www-form-urlencoded
+    ///   is used.
+    /// @sa NewRequest() CHttpRequest
+    CHttpResponse Put(const CUrl&     url,
+                      CTempString     data,
+                      CTempString     content_type = CTempString(),
+                      const CTimeout& timeout = CTimeout(CTimeout::eDefault),
+                      THttpRetries    retries = null);
 
     /// Get all stored cookies.
     const CHttpCookies& Cookies(void) const { return m_Cookies; }

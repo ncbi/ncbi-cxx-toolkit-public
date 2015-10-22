@@ -265,6 +265,17 @@ int CHttpSessionApp::Run(void)
     }}
 
     {{
+        // PUT using a provider
+        cout << "PUT (provider) " << sample_url << endl;
+        CHttpRequest req = session.NewRequest(url, CHttpSession::ePut);
+        SetupRequest(req);
+        CHttpFormData& data = req.FormData();
+        data.AddProvider("message", new CTestDataProvider);
+        PrintResponse(&session, req.Execute());
+        cout << "-------------------------------------" << endl << endl;
+    }}
+
+    {{
         // Bad GET request
         cout << "GET (404) " << bad_url << endl;
         CHttpRequest req = session.NewRequest(bad_url);

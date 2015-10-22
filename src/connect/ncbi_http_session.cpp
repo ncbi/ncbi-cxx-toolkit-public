@@ -559,7 +559,7 @@ CHttpRequest::CHttpRequest(CHttpSession& session,
 CHttpResponse CHttpRequest::Execute(void)
 {
     // Connection not open yet.
-    // Only POST supports sending form data.
+    // Only POST and PUT support sending form data.
     bool have_data = m_FormData  &&  !m_FormData.Empty();
     if ( !m_Response ) {
         x_InitConnection(have_data);
@@ -596,7 +596,7 @@ CNcbiOstream& CHttpRequest::ContentStream(void)
 
 CHttpFormData& CHttpRequest::FormData(void)
 {
-    if (m_Method != eReqMethod_Post) {
+    if ( !x_CanSendData() ) {
         NCBI_THROW(CHttpSessionException, eBadRequest,
             "Request method does not support sending data");
     }
@@ -678,7 +678,7 @@ void CHttpRequest::x_InitConnection(bool use_form_data)
 
 bool CHttpRequest::x_CanSendData(void) const
 {
-    return m_Method == eReqMethod_Post;
+    return m_Method == eReqMethod_Post  ||  m_Method == eReqMethod_Put;
 }
 
 
@@ -808,6 +808,30 @@ CHttpResponse CHttpSession::Post(const CUrl&     url,
         content_type = kContentType_FormUrlEnc;
     }
     req.Headers().SetValue(CHttpHeaders::eContentType, content_type);
+    req.Headers().SetValue(CHttpHeaders::eContentLength,
+        NStr::NumericToString(data.size()));
+    if ( !data.empty() ) {
+        req.ContentStream() << data;
+    }
+    return req.Execute();
+}
+
+
+CHttpResponse CHttpSession::Put(const CUrl&     url,
+                                CTempString     data,
+                                CTempString     content_type,
+                                const CTimeout& timeout,
+                                THttpRetries    retries)
+{
+    CHttpRequest req = NewRequest(url, ePut);
+    req.SetTimeout(timeout);
+    req.SetRetries(retries);
+    if ( content_type.empty() ) {
+        content_type = kContentType_FormUrlEnc;
+    }
+    req.Headers().SetValue(CHttpHeaders::eContentType, content_type);
+    req.Headers().SetValue(CHttpHeaders::eContentLength,
+        NStr::NumericToString(data.size()));
     if ( !data.empty() ) {
         req.ContentStream() << data;
     }
@@ -904,6 +928,56 @@ CHttpResponse g_HttpPost(const CUrl&         url,
     else {
         req.Headers().SetValue(CHttpHeaders::eContentType, content_type);
     }
+    req.Headers().SetValue(CHttpHeaders::eContentLength,
+        NStr::NumericToString(data.size()));
+
+    if ( !data.empty() ) {
+        req.ContentStream() << data;
+    }
+
+    return req.Execute();
+}
+
+
+CHttpResponse g_HttpPut(const CUrl&     url,
+                        CTempString     data,
+                        CTempString     content_type,
+                        const CTimeout& timeout,
+                        THttpRetries    retries)
+{
+    CHttpHeaders hdr;
+    return g_HttpPut(url, hdr, data, content_type, timeout, retries);
+}
+
+
+CHttpResponse g_HttpPut(const CUrl&         url,
+                        const CHttpHeaders& headers,
+                        CTempString         data,
+                        CTempString         content_type,
+                        const CTimeout&     timeout,
+                        THttpRetries        retries)
+{
+    CRef<CHttpSession> session(new CHttpSession);
+    CHttpRequest req = session->NewRequest(url, CHttpSession::ePut);
+    req.SetTimeout(timeout);
+    req.SetRetries(retries);
+    req.Headers().Merge(headers);
+
+    if ( content_type.empty() ) {
+        if ( headers.HasValue(CHttpHeaders::eContentType) ) {
+            req.Headers().SetValue(CHttpHeaders::eContentType,
+                headers.GetValue(CHttpHeaders::eContentType));
+        }
+        else {
+            req.Headers().SetValue(CHttpHeaders::eContentType,
+            kContentType_FormUrlEnc);
+        }
+    }
+    else {
+        req.Headers().SetValue(CHttpHeaders::eContentType, content_type);
+    }
+    req.Headers().SetValue(CHttpHeaders::eContentLength,
+        NStr::NumericToString(data.size()));
 
     if ( !data.empty() ) {
         req.ContentStream() << data;
