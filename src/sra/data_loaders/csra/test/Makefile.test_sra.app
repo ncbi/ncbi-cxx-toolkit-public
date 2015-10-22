@@ -14,8 +14,9 @@ SRC = test_sra
 CPPFLAGS = $(SRA_INCLUDE) $(ORIG_CPPFLAGS)
 
 LIB = ncbi_xloader_csra $(SRAREAD_LIBS) $(OBJMGR_LIBS) $(COMPRESS_LIBS)
-LIBS = $(CMPRS_LIBS)
+LIBS = $(VDB_LIBS) $(CMPRS_LIBS) $(ORIG_LIBS)
 
+POST_LINK = $(VDB_POST_LINK)
 
 # LIB      = xser xhtml xcgi xconnect xutil xncbi
 
