@@ -226,6 +226,11 @@ public:
 
     //
     CDBConnParams::EServerType CalculateServerType(CDBConnParams::EServerType server_type);
+
+    void SetUserData(CObject* data)
+    {
+        m_UserData.Reset(data);
+    }
     
 protected:
     /// These methods to allow the children of CConnection to create
@@ -297,6 +302,11 @@ protected:
         return m_OpeningMsgHandlers;
     }
 
+    CObject* x_GetUserData(void) const
+    {
+        return const_cast<CObject*>(m_UserData.GetPointerOrNull());
+    }
+
 private:
     typedef deque<impl::CCommand*>  TCommandList;
 
@@ -318,6 +328,7 @@ private:
     unsigned int   m_PoolMinSize;
     CTimeSpan      m_PoolIdleTimeParam;
     CTime          m_CleanupTime;
+    CRef<CObject>  m_UserData;
     unsigned int   m_ReuseCount;
     const bool     m_Reusable;
     bool           m_OpenFinished;
