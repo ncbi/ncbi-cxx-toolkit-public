@@ -345,23 +345,6 @@ bool CAutoDef::x_AddIntergenicSpacerFeatures(CBioseq_Handle bh, const CSeq_feat&
 // Some misc_RNA clauses have a comment that actually lists multiple
 // features.  These functions create a clause for each element in the
 // comment.
-static string misc_words [] = {
-  "internal transcribed spacer",
-  "external transcribed spacer",
-  "ribosomal RNA intergenic spacer",
-  "ribosomal RNA",
-  "intergenic spacer"
-};
-
-typedef enum {
-  MISC_RNA_WORD_INTERNAL_SPACER = 0,
-  MISC_RNA_WORD_EXTERNAL_SPACER,
-  MISC_RNA_WORD_RNA_INTERGENIC_SPACER,
-  MISC_RNA_WORD_RNA,
-  MISC_RNA_WORD_INTERGENIC_SPACER,
-  NUM_MISC_RNA_WORDS
-} MiscWord;
-
 
 bool CAutoDef::x_AddMiscRNAFeatures(CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, CAutoDefFeatureClause_Base &main_clause)
 {
