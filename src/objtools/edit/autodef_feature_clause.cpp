@@ -1038,6 +1038,7 @@ bool CAutoDefFeatureClause::x_GetDescription(string &description)
         }
     } else if (subtype == CSeqFeatData::eSubtype_operon) {
         description = m_MainFeat.GetNamedQual("operon");
+        return true;
     } else {
         if (!m_ProductNameChosen) {
             m_ProductNameChosen = x_GetProductName(m_ProductName);
@@ -1705,6 +1706,9 @@ CAutoDefMobileElementClause::CAutoDefMobileElementClause(CBioseq_Handle bh, cons
                   : CAutoDefFeatureClause(bh, main_feat, mapped_loc)
 {
     string mobile_element_name = m_MainFeat.GetNamedQual("mobile_element_type");
+    if (NStr::StartsWith(mobile_element_name, "other:")) {
+        mobile_element_name = mobile_element_name.substr(6);
+    }
     bool   found_keyword = false;
 
     m_Pluralizable = true;
