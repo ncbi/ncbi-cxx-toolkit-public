@@ -2536,11 +2536,9 @@ void AlreadyAnnouncedInTheSameZone__ReplaceInStorage(int thread_num = -1)
         SOCK_StringToHostPort(*lbos_answer, &lbos_addr, &lbos_port);
     NCBITEST_CHECK_MESSAGE(convert_result != NULL,
                             "Host:port conversion unsuccessful");
-    SleepMilliSec(1500); //ZK is not that fast
     /* Count how many servers there are */
-    int count_after = s_CountServers(node_name, port);
-    SleepMilliSec(1500); //ZK is not that fast
-    count_after = s_CountServers(node_name, port);
+    int count_after = 0;
+    count_after = s_CountServersWithExpectation(node_name, port, 1, 10);
     NCBITEST_CHECK_MESSAGE(count_after - count_before == 1,
                            "Number of announced servers did not "
                            "increase by 1 after announcement");
@@ -2561,10 +2559,8 @@ void AlreadyAnnouncedInTheSameZone__ReplaceInStorage(int thread_num = -1)
     convert_result = SOCK_StringToHostPort(*lbos_answer,
                                            &lbos_addr,
                                            &lbos_port);
-    /* Count how many servers there are. Actually, lbos has some lag, so 
-     * we wait a bit */
-    SleepMilliSec(1500);
-    count_after = s_CountServers(node_name, port);
+    /* Count how many servers there are. */
+    count_after = s_CountServersWithExpectation(node_name, port, 1, 10);
     NCBITEST_CHECK_MESSAGE(s_FindAnnouncedServer(node_name, "1.0.0", port,
                            "lbos.dev.be-md.ncbi.nlm.nih.gov") == 1,
                            "Wrong number of stored announced servers! "
@@ -2807,8 +2803,7 @@ void RealLife__VisibleAfterAnnounce(int thread_num = -1)
         LBOS_Announce(node_name.c_str(), "1.0.0", port,
                       "http://lbos.dev.be-md.ncbi.nlm.nih.gov:8080/health",
                       &*lbos_answer, &*lbos_status_message);
-    SleepMilliSec(1500); //ZK is not that fast
-    int count_after = s_CountServers(node_name, port);
+    int count_after = s_CountServersWithExpectation(node_name, port, 1, 10);
     NCBITEST_CHECK_EQUAL(result, kLBOSSuccess);
     NCBITEST_CHECK_EQUAL(count_after - count_before, 1);
     /* Cleanup */
@@ -3281,9 +3276,8 @@ void Deannounced__Return1(unsigned short port, int thread_num = -1)
                   &*lbos_answer, &*lbos_status_message);
     lbos_answer = NULL;
     lbos_status_message = NULL;
-    SleepMilliSec(1500); //ZK is not that fast
     /* Count how many servers there are */
-    int count_after = s_CountServers(node_name, port);
+    int count_after = s_CountServersWithExpectation(node_name, port, 1, 10);
     NCBITEST_CHECK_EQUAL(count_after - count_before, 1);
 
     result = LBOS_Deannounce(node_name.c_str(), "1.0.0",
@@ -3316,9 +3310,8 @@ void Deannounced__Return1(unsigned short port, int thread_num = -1)
     lbos_answer = NULL;
     lbos_status_message = NULL;
 
-    SleepMilliSec(1500); //ZK is not that fast
     /* Count how many servers there are */
-    count_after = s_CountServers(node_name, port);
+    count_after = s_CountServersWithExpectation(node_name, port, 1, 10);
     NCBITEST_CHECK_EQUAL(count_after - count_before, 1);
 
     result = LBOS_Deannounce(node_name.c_str(), 
@@ -3490,7 +3483,7 @@ void RealLife__InvisibleAfterDeannounce(int thread_num = -1)
     //SleepMilliSec(1500); //ZK is not that fast
     Deannounced__Return1(port);
     //SleepMilliSec(1500); //ZK is not that fast
-    int count_after  = s_CountServers(node_name, port);
+    int count_after  = s_CountServersWithExpectation(node_name, port, 0, 10);
     NCBITEST_CHECK_EQUAL(count_after - count_before, 0);
 }
 
@@ -3897,9 +3890,8 @@ void AlreadyAnnouncedInTheSameZone__ReplaceInStorage(int thread_num = -1)
      */
     BOOST_CHECK_NO_THROW(LBOS::Announce(node_name, "1.0.0", port,
             "http://lbos.dev.be-md.ncbi.nlm.nih.gov:8080/health"));
-    SleepMilliSec(1500); //ZK is not that fast
     /* Count how many servers there are */
-    int count_after = s_CountServers(node_name, port);
+    int count_after = s_CountServersWithExpectation(node_name, port, 1, 10);
     NCBITEST_CHECK_EQUAL(count_after - count_before, 1);
     NCBITEST_CHECK_EQUAL(s_FindAnnouncedServer(node_name, "1.0.0", port,
                            "lbos.dev.be-md.ncbi.nlm.nih.gov"), 1);
@@ -3909,10 +3901,8 @@ void AlreadyAnnouncedInTheSameZone__ReplaceInStorage(int thread_num = -1)
     BOOST_CHECK_NO_THROW(
         LBOS::Announce(node_name, "1.0.0", port,
             "http://lbos.dev.be-md.ncbi.nlm.nih.gov:8080/health"));
-    /* Count how many servers there are. Actually, lbos has some lag, so 
-     * we wait a bit */
-    SleepMilliSec(1500);
-    count_after = s_CountServers(node_name, port);
+    /* Count how many servers there are.  */
+    count_after = s_CountServersWithExpectation(node_name, port, 1, 10);
     NCBITEST_CHECK_EQUAL(s_FindAnnouncedServer(node_name, "1.0.0", port,
                            "lbos.dev.be-md.ncbi.nlm.nih.gov"), 1);
     NCBITEST_CHECK_EQUAL(count_after - count_before, 1);
@@ -4054,12 +4044,10 @@ void RealLife__VisibleAfterAnnounce(int thread_num = -1)
         port = s_GeneratePort(thread_num);
         count_before = s_CountServers(node_name, port);
     }
-    SleepMilliSec(1500); //ZK is not that fast
     BOOST_CHECK_NO_THROW(
         LBOS::Announce(node_name, "1.0.0", port, 
                        "http://lbos.dev.be-md.ncbi.nlm.nih.gov:8080/health"));
-    SleepMilliSec(1500); //ZK is not that fast
-    int count_after = s_CountServers(node_name, port);
+    int count_after = s_CountServersWithExpectation(node_name, port, 1, 10);
     NCBITEST_CHECK_EQUAL(count_after - count_before, 1);
     /* Cleanup */
     BOOST_CHECK_NO_THROW(LBOS::Deannounce(node_name, "1.0.0",
@@ -4175,11 +4163,10 @@ void HealthcheckDead__ThrowE_NotFound(int thread_num = -1)
         LBOS::Announce(node_name, "1.0.0", port,
             "http://badhealth.gov"),
         CLBOSException, comparator);
-    SleepMilliSec(1500); //ZK is not that fast
-    int count_after = s_CountServers(node_name, port);
+    int count_after = s_CountServersWithExpectation(node_name, port, 0, 10);
     NCBITEST_CHECK_EQUAL(count_after - count_before, 0);
     BOOST_CHECK_NO_THROW(LBOS::DeannounceAll());
-    count_after = s_CountServers(node_name, port);
+    count_after = s_CountServersWithExpectation(node_name, port, 0, 10);
     NCBITEST_CHECK_EQUAL(count_after - count_before, 0);
     port = s_GeneratePort(thread_num);
 
@@ -4196,11 +4183,10 @@ void HealthcheckDead__ThrowE_NotFound(int thread_num = -1)
     BOOST_CHECK_NO_THROW(                                       //  missing 'h'
         LBOS::Announce(node_name, "1.0.0", port,                //      v
                        "http://lbos.dev.be-md.ncbi.nlm.nih.gov:8080/healt"));
-    SleepMilliSec(1500); //ZK is not that fast
-    count_after = s_CountServers(node_name, port);
+    count_after = s_CountServersWithExpectation(node_name, port, 0, 10);
     NCBITEST_CHECK_EQUAL(count_after - count_before, 0);
     BOOST_CHECK_NO_THROW(LBOS::DeannounceAll());
-    count_after = s_CountServers(node_name, port);
+    count_after = s_CountServersWithExpectation(node_name, port, 0, 10);
     NCBITEST_CHECK_EQUAL(count_after - count_before, 0);
 }
 
@@ -4387,12 +4373,10 @@ void HealthcheckDead__ThrowE_NotFound()
     BOOST_CHECK_NO_THROW(
         LBOS::AnnounceFromRegistry("SECTION_WITH_DEAD_HEALTHCHECK"));
 
-
-    SleepMilliSec(1500); //ZK is not that fast
-    int count_after = s_CountServers(node_name, port);
+    int count_after = s_CountServersWithExpectation(node_name, port, 0, 10);
     NCBITEST_CHECK_EQUAL(count_after - count_before, 0);
     BOOST_CHECK_NO_THROW(LBOS::DeannounceAll());
-    count_after = s_CountServers(node_name, port);
+    count_after = s_CountServersWithExpectation(node_name, port, 0, 10);
     NCBITEST_CHECK_EQUAL(count_after - count_before, 0);
 
     /* Cleanup */
@@ -4426,9 +4410,8 @@ void Deannounced__Return1(unsigned short port, int thread_num = -1)
     BOOST_CHECK_NO_THROW(
         LBOS::Announce(node_name, "1.0.0", port,
                        "http://lbos.dev.be-md.ncbi.nlm.nih.gov:8080/health"));
-    SleepMilliSec(1500); //ZK is not that fast
     /* Count how many servers there are */
-    int count_after = s_CountServers(node_name, port);
+    int count_after = s_CountServersWithExpectation(node_name, port, 1, 10);
     NCBITEST_CHECK_EQUAL(count_after - count_before, 1);
     /* Cleanup */
     BOOST_CHECK_NO_THROW(
@@ -4447,9 +4430,8 @@ void Deannounced__Return1(unsigned short port, int thread_num = -1)
                                  port,
                                  "http://130.14.25.27:8080/health"));
 
-    SleepMilliSec(1500); //ZK is not that fast
     /* Count how many servers there are */
-    count_after = s_CountServers(node_name, port);
+    count_after = s_CountServersWithExpectation(node_name, port, 1, 10);
     NCBITEST_CHECK_EQUAL(count_after - count_before, 1);
 
     BOOST_CHECK_NO_THROW(
@@ -4485,7 +4467,6 @@ void Deannounced__AnnouncedServerRemoved(int thread_num = -1)
     BOOST_CHECK_NO_THROW(
         LBOS::Deannounce(node_name, "1.0.0", 
                          "lbos.dev.be-md.ncbi.nlm.nih.gov", port));
-    SleepMilliSec(1500); //ZK is not that fast
     NCBITEST_CHECK_EQUAL(
         g_LBOS_UnitTesting_FindAnnouncedServer(node_name.c_str(), 
             "1.0.0", port, "lbos.dev.be-md.ncbi.nlm.nih.gov"), -1);
@@ -4501,7 +4482,6 @@ void Deannounced__AnnouncedServerRemoved(int thread_num = -1)
     BOOST_CHECK_NO_THROW(
         LBOS::Announce(node_name, "1.0.0", port,
             "http://130.14.25.27:8080/health"));
-    SleepMilliSec(1500); //ZK is not that fast
     /* Count how many servers there are */
     NCBITEST_CHECK_NE(
         g_LBOS_UnitTesting_FindAnnouncedServer(node_name.c_str(), "1.0.0", 
@@ -4574,7 +4554,7 @@ void RealLife__InvisibleAfterDeannounce(int thread_num = -1)
     //SleepMilliSec(1500); //ZK is not that fast
     Deannounced__Return1(port);
     //SleepMilliSec(1500); //ZK is not that fast
-    int count_after  = s_CountServers(node_name, port);
+    int count_after  = s_CountServersWithExpectation(node_name, port, 0, 10);
     NCBITEST_CHECK_EQUAL(count_after - count_before, 0);
 }
 
