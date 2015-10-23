@@ -152,12 +152,12 @@ static bool s_AreListsEqual(list<TGi>& list1, list<TGi>& list2)
 /////////////////////////////////////////////////////////////////////////////
 // Vector-based static helper functions
 
-static bool s_IsGiInVector(TGi gi, vector<int>& vec_gis)
+static bool s_IsGiInVector(TGi gi, vector<TGi>& vec_gis)
 {
-    return binary_search(vec_gis.begin(), vec_gis.end(), GI_TO(int, gi));
+    return binary_search(vec_gis.begin(), vec_gis.end(), gi);
 }
 
-static bool s_GetFilteredGiList(CRef<CSeq_align> sa, vector<int>& vec_all_gis,
+static bool s_GetFilteredGiList(CRef<CSeq_align> sa, vector<TGi>& vec_all_gis,
                                list<TGi>& list_sa_filtered)
 {
     list<TGi> list_sa_full;
@@ -207,7 +207,7 @@ static void s_Check_GiEquivalenceInDB(TGi gi1, TGi gi2, CRef<CSeqDB> db)
 // Pre-processing and testing individual seqaligns
 
 static void s_DoConsistencyCheck(CRef<CSeq_align> sa_orig, CRef<CSeq_align> sa_new,
-                                        vector<int>& vec_all_gis)
+                                        vector<TGi>& vec_all_gis)
 {
     list<TGi> list_orig_filtered;
     list<TGi> list_new, list_new_filtered;
@@ -308,7 +308,7 @@ BOOST_AUTO_TEST_CASE(s_TestDBBasedFiltering)
     CSeq_align_set aln_filtered;
     s_LoadSeqAlignsFromFile(aln_filtered, fname_out);
 
-    vector<int> vec_gis;    // sorted vector of all available gi's
+    vector<TGi> vec_gis;    // sorted vector of all available gi's
     filter.ReadGiVector(fname_gis, vec_gis, true);
 
     ITERATE(CSeq_align_set::Tdata, iter, aln_all.Get())
