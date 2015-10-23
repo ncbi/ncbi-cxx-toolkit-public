@@ -1,6 +1,6 @@
 # $Id$
 
-SRC      = netstorage_direct_state netstorage_direct_object netstorage_direct filetrack
+SRC      = state object netstorage filetrack
 
 LIB      = netstorage
 LIBS     = $(NETWORK_LIBS)
