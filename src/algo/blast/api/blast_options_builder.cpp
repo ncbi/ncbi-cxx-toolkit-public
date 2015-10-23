@@ -257,7 +257,7 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
         		gi_list.push_back(GI_FROM(int, *it));
         	}
         	m_GiList = gi_list;
-            #elif NCBI_INT8_GI 
+            #elif defined(NCBI_INT8_GI)
                 m_GiList = v.GetBig_integer_list();
 	    #else
             m_GiList = v.GetInteger_list();
@@ -363,7 +363,7 @@ x_ProcessOneOption(CBlastOptionsHandle        & opts,
         		gi_list.push_back(GI_FROM(int, *it));
         	}
         	m_NegativeGiList = gi_list;
-            #elif NCBI_INT8_GI
+            #elif defined(NCBI_INT8_GI)
             	m_NegativeGiList = v.GetBig_integer_list();
 	    #else
             m_NegativeGiList = v.GetInteger_list();
