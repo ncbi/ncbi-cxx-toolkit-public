@@ -200,7 +200,6 @@ bool CAutoDefFeatureClause::IsRecognizedFeature()
         || IsMobileElement()
         || IsInsertionSequence()
         || IsControlRegion()
-        || IsIntergenicSpacer()
         || IsEndogenousVirusSourceFeature()
         || IsSatelliteClause()
         || IsPromoter()
@@ -714,96 +713,6 @@ vector<string> GetIntergenicSpacerClausePhrases(string comment)
         clause_list.clear();
     }
     return clause_list;
-}
-
-
-vector<CAutoDefFeatureClause *> GetIntergenicSpacerClauseList (string comment, CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc)
-{
-    vector<CAutoDefFeatureClause *> clause_list;
-
-    clause_list.clear();
-
-    vector<string> parts = GetIntergenicSpacerClausePhrases(comment);
-    if (parts.empty()) {
-        return clause_list;
-    }
-
-    for (size_t j = 0; j < parts.size(); j++) {
-        size_t pos = NStr::Find(parts[j], "intergenic spacer");
-        if (pos != string::npos) {
-            string spacer_description = parts[j].substr(0, pos);
-            NStr::TruncateSpacesInPlace(spacer_description);
-            CAutoDefParsedIntergenicSpacerClause *spacer =
-                  new CAutoDefParsedIntergenicSpacerClause(bh, 
-                                                           cf,
-                                                           mapped_loc,
-                                                           spacer_description, 
-                                                           j == 0, 
-                                                           j == parts.size() - 1);
-            if (NStr::EndsWith(parts[j], "region")) {
-                // change interval to region
-                spacer->MakeRegion();
-            }
-            clause_list.push_back((CAutoDefFeatureClause*)spacer);
-        } else {
-            CAutoDefFeatureClause *gene = s_tRNAClauseFromNote(bh, cf, mapped_loc, parts[j], j == 0, j == parts.size() - 1);
-            clause_list.push_back(gene);
-        }
-    }
-
-    return clause_list;
-}
-
-
-bool CAutoDefFeatureClause::IsIntergenicSpacer (const CSeq_feat& feat)
-{
-    CSeqFeatData::ESubtype subtype = feat.GetData().GetSubtype();
-    if ((subtype != CSeqFeatData::eSubtype_misc_feature && subtype != CSeqFeatData::eSubtype_otherRNA)
-        || !feat.IsSetComment()) {
-        return false;
-    }
-    string comment = feat.GetComment();
-
-    vector<string> parts = GetIntergenicSpacerClausePhrases(comment);
-    if (parts.size() > 0) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-
-bool CAutoDefFeatureClause::IsIntergenicSpacer()
-{
-    CSeqFeatData::ESubtype subtype = m_MainFeat.GetData().GetSubtype();
-    if ((subtype != CSeqFeatData::eSubtype_misc_feature && subtype != CSeqFeatData::eSubtype_otherRNA)
-        || !m_MainFeat.CanGetComment()) {
-        return false;
-    }
-    string comment = m_MainFeat.GetComment();
-
-    if (NStr::StartsWith (comment, "contains ")) {
-        comment = comment.substr (9);
-    }
-    if (NStr::StartsWith (comment, "may contain ")) {
-        comment = comment.substr (12);
-    }
-    string::size_type pos = NStr::Find(comment, ";");
-    if (pos != NCBI_NS_STD::string::npos) {
-        comment = comment.substr(0, pos);
-    }
-
-
-    vector<CAutoDefFeatureClause *> clause_list = GetIntergenicSpacerClauseList (comment, m_BH, m_MainFeat, m_MainFeat.GetLocation());
-
-    if (clause_list.size() == 0) {
-        return false;
-    } else {
-        for (size_t i = 0; i < clause_list.size(); i++) {
-            delete (clause_list[i]);
-        }
-        return true;
-    }
 }
 
 
@@ -1444,8 +1353,7 @@ bool CAutoDefFeatureClause::OkToGroupUnderByType(CAutoDefFeatureClause_Base *par
                || IsMobileElement()
                || IsNoncodingProductFeat()
                || subtype == CSeqFeatData::eSubtype_operon
-               || IsGeneCluster()
-               || IsIntergenicSpacer()) {
+               || IsGeneCluster()) {
         if (parent_clause->IsMobileElement()
             || parent_clause->IsInsertionSequence()
             || parent_clause->IsEndogenousVirusSourceFeature()
@@ -1970,19 +1878,30 @@ void CAutoDefIntergenicSpacerClause::Label(bool suppress_allele)
 
 
 CAutoDefParsedIntergenicSpacerClause::CAutoDefParsedIntergenicSpacerClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc, 
-                                                                           string description, bool is_first, bool is_last)
+                                                                           const string& description, bool is_first, bool is_last)
                                                                            : CAutoDefIntergenicSpacerClause(bh, main_feat, mapped_loc)
 {
     if (!NStr::IsBlank(description)) {
         m_Description = description;
+        size_t pos = NStr::Find(m_Description, "intergenic spacer");
+        if (pos != string::npos) {
+            m_Description = m_Description.substr(0, pos);
+            NStr::TruncateSpacesInPlace(m_Description);
+        }
+        m_DescriptionChosen = true;
     }
+    m_Typeword = "intergenic spacer";
+    m_TypewordChosen = true;
 
     // adjust partialness of location
     bool partial5 = m_ClauseLocation->IsPartialStart(eExtreme_Biological) && is_first;
     bool partial3 = m_ClauseLocation->IsPartialStop(eExtreme_Biological) && is_last;
     m_ClauseLocation->SetPartialStart(partial5, eExtreme_Biological);
     m_ClauseLocation->SetPartialStop(partial3, eExtreme_Biological);
-    x_GetGenericInterval(m_Interval, true);        
+    x_GetGenericInterval(m_Interval, true);    
+    if (NStr::EndsWith(description, " region")) {
+        MakeRegion();
+    }
 }
 
 
@@ -2025,7 +1944,11 @@ void CAutoDefParsedClause::SetMiscRNAWord(const string& phrase)
             SetTypewordFirst(false);
             m_Description = phrase.substr(0, NStr::Find(phrase, item_name));
         }
-        SetTypeword(item_name);
+        if (NStr::EndsWith(phrase, " region")) {
+            SetTypeword(item_name + " region");
+        } else {
+            SetTypeword(item_name);
+        }
     } else if (word_type == eMiscRnaWordType_RNA) {
         m_Description = phrase;
         SetTypeword("gene");

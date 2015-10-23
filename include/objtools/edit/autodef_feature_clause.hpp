@@ -63,13 +63,11 @@ public:
     virtual bool IsEndogenousVirusSourceFeature();
     virtual bool IsGeneCluster();
     virtual bool IsNoncodingProductFeat();
-    virtual bool IsIntergenicSpacer();
     virtual bool IsSatelliteClause();
     virtual bool IsPromoter();
     static bool IsSatellite(const CSeq_feat& feat);
     static bool IsPromoter(const CSeq_feat& feat);
     static bool IsGeneCluster (const CSeq_feat& feat);
-    static bool IsIntergenicSpacer (const CSeq_feat& feat);
     static bool IsControlRegion (const CSeq_feat& feat);
 
     
@@ -187,7 +185,6 @@ public:
     ~CAutoDefIntergenicSpacerClause();
   
     virtual void Label(bool suppress_allele);
-    virtual bool IsIntergenicSpacer() { return true; }
 protected:
     void InitWithString (string comment, bool suppress_allele);
 };
@@ -213,14 +210,13 @@ public:
     ~CAutoDefParsedtRNAClause();
 
     virtual CSeqFeatData::ESubtype  GetMainFeatureSubtype() const { return CSeqFeatData::eSubtype_tRNA; }
-    virtual bool IsIntergenicSpacer() { return false; }
     static bool ParseString(string comment, string& gene_name, string& product_name);
 };
 
 class NCBI_XOBJEDIT_EXPORT CAutoDefParsedIntergenicSpacerClause : public CAutoDefIntergenicSpacerClause
 {
 public:
-    CAutoDefParsedIntergenicSpacerClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc, string description, bool is_first, bool is_last);
+    CAutoDefParsedIntergenicSpacerClause(CBioseq_Handle bh, const CSeq_feat &main_feat, const CSeq_loc &mapped_loc, const string& description, bool is_first, bool is_last);
     ~CAutoDefParsedIntergenicSpacerClause();
 
     void MakeRegion() { if (!NStr::EndsWith(m_Typeword, "region")) m_Typeword += " region"; }
@@ -278,7 +274,6 @@ public:
     virtual bool IsEndogenousVirusSourceFeature() { return false; };
     virtual bool IsGeneCluster() { return false; };
     virtual bool IsNoncodingProductFeat() { return false; };
-    virtual bool IsIntergenicSpacer() { return false; };
     virtual bool IsSatelliteClause() { return false; };
 
     virtual bool OkToGroupUnderByLocation(CAutoDefFeatureClause_Base *parent_clause, bool gene_cluster_opp_strand);
@@ -287,7 +282,6 @@ public:
 };
 
 
-vector<CAutoDefFeatureClause *> GetIntergenicSpacerClauseList (string comment, CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc);
 CAutoDefParsedtRNAClause *s_tRNAClauseFromNote(CBioseq_Handle bh, const CSeq_feat& cf, const CSeq_loc& mapped_loc, string comment, bool is_first, bool is_last);
 
 

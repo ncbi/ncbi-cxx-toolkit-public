@@ -139,10 +139,6 @@ private:
     string x_GetFeatureClauses(CBioseq_Handle bh);
     string x_GetFeatureClauseProductEnding(const string& feature_clauses,
                                            CBioseq_Handle bh);
-    bool x_AddIntergenicSpacerFeatures(CBioseq_Handle bh,
-                                       const CSeq_feat& cf,
-                                       const CSeq_loc& mapped_loc,
-                                       CAutoDefFeatureClause_Base& main_clause);
     bool x_AddMiscRNAFeatures(CBioseq_Handle bh,
                               const CSeq_feat& cf,
                               const CSeq_loc& mapped_loc,

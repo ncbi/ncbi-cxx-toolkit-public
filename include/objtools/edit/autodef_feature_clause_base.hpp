@@ -71,7 +71,6 @@ public:
     virtual bool IsEndogenousVirusSourceFeature() { return false; }
     virtual bool IsGeneCluster() { return false; }
     virtual bool IsNoncodingProductFeat() { return false; }
-    virtual bool IsIntergenicSpacer() { return false; }
     virtual bool IsSatelliteClause() { return false; }    
     virtual bool IsExonList() { return false; }
 
@@ -156,6 +155,7 @@ public:
     void TakeSubclauses(CAutoDefFeatureClause_Base& other);
 
     static vector<string> GetMiscRNAElements(const string& product);
+    static vector<string> GetTrnaIntergenicSpacerClausePhrases(const string& comment);
 
    
 protected:
@@ -190,6 +190,7 @@ protected:
 
     void x_RemoveNullClauses();
 
+    // for miscRNA elements
     typedef enum {
         eMiscRnaWordType_InternalSpacer = 0,
         eMiscRnaWordType_ExternalSpacer,
@@ -201,6 +202,16 @@ protected:
     static bool x_AddOneMiscWordElement(const string& phrase, vector<string>& elements);
     static ERnaMiscWord x_GetRnaMiscWordType(const string& phrase);
     static const string& x_GetRnaMiscWord(ERnaMiscWord word_type);
+
+    // for tRNA/intergenic spacer elements
+    typedef enum {
+        eTRNAIntergenicSpacerType_Gene = 0,
+        eTRNAIntergenicSpacerType_Spacer = 1,
+        eTRNAIntergenicSpacerType_Unrecognized
+    } ETRNAIntergenicSpacerType;
+    static ETRNAIntergenicSpacerType x_GetTRNAIntergenicSpacerType(const string& phrase);
+    static string CAutoDefFeatureClause_Base::x_tRNAGeneFromProduct(const string& product);
+    static bool x_AddOnetRNAIntergenicSpacerElement(const string& phrase, vector<string>& elements);
 };
 
 
