@@ -85,8 +85,13 @@ public:
     void SetSoftFiltering(int Filter) { m_Filter = NStr::NumericToString<>(Filter); }
     void SetSoftFiltering(const string& Filter) { m_Filter = Filter; }
 
+    void SetNegativeGiList(const vector<TGi>& GiList);
+    void SetPositiveGiList(const vector<TGi>& GiList);
+
+#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
     void SetNegativeGiList(const vector<int>& GiList);
     void SetPositiveGiList(const vector<int>& GiList);
+#endif
 
     CRef<blast::IQueryFactory> CreateQueryFactory(
             objects::CScope& Scope,
@@ -116,8 +121,12 @@ public:
     list<CRef<objects::CSeq_id> >& SetIdList();
     void SetSeqMasker(CSeqMasker* SeqMasker);
 
+    void GetGiList(vector<TGi>& GiList, objects::CScope& Scope,
+                   const CAlignResultsSet& Alignments, int Threshold);
+#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
     void GetGiList(vector<int>& GiList, objects::CScope& Scope,
                    const CAlignResultsSet& Alignments, int Threshold);
+#endif
 
     CRef<blast::IQueryFactory> CreateQueryFactory(
             objects::CScope& Scope, const blast::CBlastOptionsHandle& BlastOpts);
@@ -141,8 +150,13 @@ public:
     list<CRef<objects::CSeq_loc> >& SetLocList();
     void SetSeqMasker(CSeqMasker* SeqMasker);
 
+    void GetGiList(vector<TGi>& GiList, objects::CScope& Scope,
+                   const CAlignResultsSet& Alignments, int Threshold);
+
+#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
     void GetGiList(vector<int>& GiList, objects::CScope& Scope,
                    const CAlignResultsSet& Alignments, int Threshold);
+#endif
 
     CRef<blast::IQueryFactory> CreateQueryFactory(
             objects::CScope& Scope, const blast::CBlastOptionsHandle& BlastOpts);
