@@ -16,8 +16,7 @@ if local:
 fName = os.path.sep.join( [ "c++", "src", "internal", "cppcore", "test_stat_ext", "cgi", "xsl", "package_version.xsl" ] )
 f = open( fName, "w" )
 f.write(
-"""
-<?xml version="1.0" ?>
+"""<?xml version="1.0" ?>
 
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
 
