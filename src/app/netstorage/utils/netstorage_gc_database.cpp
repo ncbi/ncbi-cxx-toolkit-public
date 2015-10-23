@@ -33,6 +33,8 @@
 #include <corelib/resource_info.hpp>
 #include <corelib/request_ctx.hpp>
 #include <corelib/ncbistd.hpp>
+#include <connect/services/netstorage.hpp>
+#include <connect/services/netstorage_impl.hpp>
 
 #include "netstorage_gc_database.hpp"
 #include "netstorage_gc_exception.hpp"

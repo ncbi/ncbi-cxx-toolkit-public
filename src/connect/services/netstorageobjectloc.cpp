@@ -32,7 +32,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include <misc/netstorage/impl.hpp>
+#include <connect/services/netstorage.hpp>
 #include <connect/services/error_codes.hpp>
 
 #include <connect/ncbi_socket.h>

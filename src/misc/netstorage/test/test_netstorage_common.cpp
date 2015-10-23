@@ -33,7 +33,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include <misc/netstorage/netstorage.hpp>
+#include <connect/services/netstorage.hpp>
 
 #include <corelib/test_boost.hpp>
 

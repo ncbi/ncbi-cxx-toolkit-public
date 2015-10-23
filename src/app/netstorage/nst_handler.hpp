@@ -37,7 +37,7 @@
 #include <corelib/ncbitime.hpp>
 #include <corelib/request_ctx.hpp>
 #include <connect/server.hpp>
-#include <misc/netstorage/impl.hpp>
+#include <connect/services/netstorage.hpp>
 
 #include "nst_clients.hpp"
 #include "nst_metadata_options.hpp"

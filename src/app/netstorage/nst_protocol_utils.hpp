@@ -35,7 +35,7 @@
 
 #include <string>
 #include <connect/services/json_over_uttp.hpp>
-#include <misc/netstorage/impl.hpp>
+#include <connect/services/netstorage.hpp>
 
 
 BEGIN_NCBI_SCOPE
