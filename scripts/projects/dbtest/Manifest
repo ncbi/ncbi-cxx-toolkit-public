@@ -17,7 +17,7 @@ COPY: $srcdir/src/internal/cppcore/test_stat_ext/loader/test_stat_load.ini $inst
 COPY: $srcdir/src/internal/cppcore/test_stat_ext/loader/test_stat_load.sh $installdir/bin
 
 POSTBUILD: $srcdir/scripts/projects/dbtest/post_build/copy_cgi.sh $bindir $srcdir $installdir/bin
-
+TAG_PRE_COMMIT: tagprecommit/create_version.py $local $version
 
 # Each line describes a single configuration
 # The format is as follows:
@@ -33,4 +33,4 @@ FreeBSD32      : plain : Clang.sh  --without-debug --without-mt --with-static --
 IntelMAC       : plain : GCC.sh    --without-debug --without-mt --with-static --with-flat-makefile --with-universal=i386,x86_64
 Win32_10       : plain : static 32 ReleaseDLL
 
-USE_COMPONENTS
+#USE_COMPONENTS
