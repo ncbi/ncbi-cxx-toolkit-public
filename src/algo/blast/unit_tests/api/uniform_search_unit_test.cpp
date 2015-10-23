@@ -239,8 +239,8 @@ BOOST_AUTO_TEST_CASE(MultipleProteinSearch) {
 BOOST_AUTO_TEST_CASE(SearchDatabase_RestrictionGiList)
 {
     CSeqDBGiList gis;
-    gis.AddGi(1);
-    gis.AddGi(5);
+    gis.AddGi(GI_CONST(1));
+    gis.AddGi(GI_CONST(5));
     CSearchDatabase db("junk", CSearchDatabase::eBlastDbIsProtein);
     db.SetGiList(&gis);
     BOOST_REQUIRE_THROW(db.SetNegativeGiList(&gis), CBlastException);
@@ -249,8 +249,8 @@ BOOST_AUTO_TEST_CASE(SearchDatabase_RestrictionGiList)
 BOOST_AUTO_TEST_CASE(SearchDatabase_Restriction)
 {
     CSeqDBGiList gis;
-    gis.AddGi(1);
-    gis.AddGi(5);
+    gis.AddGi(GI_CONST(1));
+    gis.AddGi(GI_CONST(5));
     CSearchDatabase db("junk", CSearchDatabase::eBlastDbIsProtein);
     db.SetNegativeGiList(&gis);
     BOOST_REQUIRE_THROW(db.SetGiList(&gis), CBlastException);
