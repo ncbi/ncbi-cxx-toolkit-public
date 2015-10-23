@@ -32,7 +32,7 @@
 
 #include <connect/services/compound_id.hpp>
 #include <connect/services/neticache_client.hpp>
-#include <misc/netstorage/netstorage.hpp>
+#include <connect/services/netstorage.hpp>
 #include "filetrack.hpp"
 
 

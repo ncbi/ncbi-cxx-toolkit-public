@@ -34,7 +34,7 @@
 
 
 #include <corelib/ncbiexpt.hpp>
-#include <misc/netstorage/impl.hpp>
+#include <connect/services/netstorage_impl.hpp>
 
 
 BEGIN_NCBI_SCOPE

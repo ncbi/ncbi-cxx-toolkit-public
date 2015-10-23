@@ -31,7 +31,7 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <misc/netstorage/netstorage.hpp>
+#include <connect/services/netstorage.hpp>
 
 
 BEGIN_NCBI_SCOPE

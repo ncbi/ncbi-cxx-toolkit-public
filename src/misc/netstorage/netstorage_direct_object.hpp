@@ -30,7 +30,7 @@
  *
  */
 
-#include <misc/netstorage/netstorage.hpp>
+#include <connect/services/netstorage.hpp>
 #include "netstorage_direct_state.hpp"
 
 

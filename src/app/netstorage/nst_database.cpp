@@ -32,7 +32,8 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/resource_info.hpp>
 #include <connect/services/json_over_uttp.hpp>
-#include <misc/netstorage/netstorage.hpp>
+#include <connect/services/netstorage.hpp>
+#include <connect/services/netstorage_impl.hpp>
 #include "nst_database.hpp"
 #include "nst_exception.hpp"
 #include "nst_application.hpp"
