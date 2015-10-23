@@ -33,7 +33,7 @@
  *
  */
 
-#include <connect/services/netstorage_impl.hpp>
+#include <misc/netstorage/impl.hpp>
 
 #include <connect/ncbi_conn_stream.hpp>
 

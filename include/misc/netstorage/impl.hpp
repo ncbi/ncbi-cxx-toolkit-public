@@ -1,5 +1,5 @@
-#ifndef CONNECT_SERVICES___NETSTORAGE_IMPL__HPP
-#define CONNECT_SERVICES___NETSTORAGE_IMPL__HPP
+#ifndef MISC_NETSTORAGE__IMPL__HPP
+#define MISC_NETSTORAGE__IMPL__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -34,10 +34,10 @@
  */
 
 #include "netstorage.hpp"
-#include "compound_id.hpp"
-#include "netcache_api.hpp"
 
 #include <corelib/rwstream.hpp>
+#include <connect/services/compound_id.hpp>
+#include <connect/services/netcache_api.hpp>
 #include <connect/services/neticache_client.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -607,4 +607,4 @@ class NCBI_XCONNECT_EXPORT CNetStorageAdmin
 
 END_NCBI_SCOPE
 
-#endif  /* CONNECT_SERVICES___NETSTORAGE_IMPL__HPP */
+#endif

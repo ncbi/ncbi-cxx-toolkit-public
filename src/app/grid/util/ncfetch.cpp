@@ -40,7 +40,7 @@
 #include <cgi/cgictx.hpp>
 #include <cgi/cgi_exception.hpp>
 
-#include <connect/services/netstorage.hpp>
+#include <misc/netstorage/netstorage.hpp>
 #include <connect/services/grid_app_version_info.hpp>
 
 #include <corelib/reader_writer.hpp>

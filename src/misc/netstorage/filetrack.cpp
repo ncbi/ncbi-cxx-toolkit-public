@@ -34,7 +34,7 @@
 
 #include "filetrack.hpp"
 
-#include <connect/services/netstorage.hpp>
+#include <misc/netstorage/netstorage.hpp>
 #include <connect/services/ns_output_parser.hpp>
 
 #include <connect/ncbi_gnutls.h>
