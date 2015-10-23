@@ -252,6 +252,19 @@ public:
         {
         }
     CVDB(const CVDBMgr& mgr, const string& acc_or_path);
+
+    const string& GetName(void) const
+        {
+            return m_Name;
+        }
+    const string& GetFullName(void) const
+        {
+            return m_Name;
+        }
+    CNcbiOstream& PrintFullName(CNcbiOstream& out) const;
+
+private:
+    string m_Name;
 };
 
 
@@ -273,6 +286,21 @@ public:
     CVDBTable(const CVDBMgr& mgr,
               const string& acc_or_path,
               EMissing missing = eMissing_Throw);
+
+    const CVDB& GetDb(void) const
+        {
+            return m_Db;
+        }
+    const string& GetName(void) const
+        {
+            return m_Name;
+        }
+    string GetFullName(void) const;
+    CNcbiOstream& PrintFullName(CNcbiOstream& out) const;
+
+public:
+    CVDB m_Db;
+    string m_Name;
 };
 
 
@@ -292,7 +320,22 @@ public:
                    const char* index_name,
                    EMissing missing = eMissing_Throw);
     
+    const CVDBTable& GetTable(void) const
+        {
+            return m_Table;
+        }
+    const char* GetName(void) const
+        {
+            return m_Name;
+        }
+    string GetFullName(void) const;
+    CNcbiOstream& PrintFullName(CNcbiOstream& out) const;
+
     TVDBRowIdRange Find(const string& value) const;
+
+private:
+    CVDBTable m_Table;
+    const char* m_Name;
 };
 
 
@@ -304,6 +347,11 @@ public:
         : m_RowOpened(false)
         {
             Init(table);
+        }
+
+    const CVDBTable& GetTable(void) const
+        {
+            return m_Table;
         }
 
     bool RowIsOpened(void) const
@@ -329,6 +377,7 @@ protected:
     void Init(const CVDBTable& table);
 
 private:
+    CVDBTable m_Table;
     bool m_RowOpened;
 };
 
@@ -399,6 +448,11 @@ public:
         {
             Init(cursor, element_bit_size, name, backup_name, missing);
         }
+
+    const char* GetName(void) const
+        {
+            return m_Name;
+        }
     
     enum {
         kInvalidIndex = TVDBColumnIdx(~0)
@@ -424,6 +478,7 @@ protected:
               EMissing missing);
 
 private:
+    const char* m_Name;
     TVDBColumnIdx m_Index;
 };
 
@@ -444,8 +499,8 @@ public:
 
 // DECLARE_VDB_COLUMN is helper macro to declare accessor to VDB column
 #define DECLARE_VDB_COLUMN(name)                                        \
-    CVDBValue::SValueIndex name(TVDBRowId row) const {                  \
-        return CVDBValue::SValueIndex(m_Cursor, row, NCBI_NAME2(m_,name)); \
+    CVDBValue::SRef name(TVDBRowId row) const {                         \
+        return CVDBValue::SRef(m_Cursor, row, NCBI_NAME2(m_,name));     \
     }                                                                   \
     CVDBColumn NCBI_NAME2(m_, name)
 
@@ -493,36 +548,36 @@ public:
         eMissing_Allow
     };
 
-    struct SValueIndex {
-        SValueIndex(const CVDBCursor& cursor,
-                    TVDBRowId row,
-                    const CVDBColumn& column)
-            : cursor(cursor), row(row), column(column.GetIndex())
+    struct SRef {
+        SRef(const CVDBCursor& cursor,
+             TVDBRowId row,
+             const CVDBColumn& column)
+            : cursor(cursor), row(row), column(column)
             {
             }
         
-        const VCursor* cursor;
+        const CVDBCursor& cursor;
         TVDBRowId row;
-        TVDBColumnIdx column;
+        const CVDBColumn& column;
     };
     CVDBValue(const CVDBCursor& cursor, const CVDBColumn& column)
         : m_Data(0),
           m_ElemCount(0)
         {
-            x_Get(cursor, column.GetIndex());
+            x_Get(cursor, column);
         }
     CVDBValue(const CVDBCursor& cursor, TVDBRowId row,
               const CVDBColumn& column, EMissing missing = eMissing_Throw)
         : m_Data(0),
           m_ElemCount(0)
         {
-            x_Get(cursor, row, column.GetIndex(), missing);
+            x_Get(cursor, row, column, missing);
         }
-    explicit CVDBValue(const SValueIndex& value_index)
+    explicit CVDBValue(const SRef& ref)
         : m_Data(0),
           m_ElemCount(0)
         {
-            x_Get(value_index.cursor, value_index.row, value_index.column);
+            x_Get(ref.cursor, ref.row, ref.column);
         }
     CVDBValue(const CVDBCursor& cursor,
               const char* param_name, const CTempString& param_value,
@@ -531,7 +586,7 @@ public:
           m_ElemCount(0)
         {
             cursor.SetParam(param_name, param_value);
-            x_Get(cursor, column.GetIndex());
+            x_Get(cursor, column);
         }
 
     bool empty(void) const
@@ -544,14 +599,15 @@ public:
         }
 
 protected:
-    void x_Get(const VCursor* cursor,
-               TVDBColumnIdx column);
-    void x_Get(const VCursor* cursor,
+    void x_Get(const CVDBCursor& cursor,
+               const CVDBColumn& column);
+    void x_Get(const CVDBCursor& cursor,
                TVDBRowId row,
-               TVDBColumnIdx column,
+               const CVDBColumn& column,
                EMissing missing = eMissing_Throw);
 
     void x_ReportIndexOutOfBounds(size_t index) const;
+    void x_ReportNotOneValue(void) const;
     void x_CheckIndex(size_t index) const
         {
             if ( index >= size() ) {
@@ -561,7 +617,7 @@ protected:
     void x_CheckOneValue(void) const
         {
             if ( size() != 1 ) {
-                x_ReportIndexOutOfBounds(0);
+                x_ReportNotOneValue();
             }
         }
 
@@ -575,12 +631,12 @@ class NCBI_SRAREAD_EXPORT CVDBValueFor4Bits
 public:
     typedef unsigned TValue;
 
-    explicit CVDBValueFor4Bits(const CVDBValue::SValueIndex& value_index)
+    explicit CVDBValueFor4Bits(const CVDBValue::SRef& ref)
         : m_RawData(0),
           m_ElemOffset(0),
           m_ElemCount(0)
         {
-            x_Get(value_index.cursor, value_index.row, value_index.column);
+            x_Get(ref.cursor, ref.row, ref.column);
         }
     CVDBValueFor4Bits(const CVDBCursor& cursor, TVDBRowId row,
                       const CVDBColumn& column)
@@ -588,7 +644,7 @@ public:
           m_ElemOffset(0),
           m_ElemCount(0)
         {
-            x_Get(cursor, row, column.GetIndex());
+            x_Get(cursor, row, column);
         }
 
     const char* raw_data(void) const
@@ -621,7 +677,9 @@ public:
     CVDBValueFor4Bits substr(size_t pos, size_t len) const;
 
 protected:
-    void x_Get(const VCursor* cursor, TVDBRowId row, TVDBColumnIdx column);
+    void x_Get(const CVDBCursor& cursor,
+               TVDBRowId row,
+               const CVDBColumn& column);
     static TValue sub_value(uint8_t v, size_t sub_index)
         {
             return sub_index? (v&0xf): (v>>4);
@@ -666,8 +724,8 @@ public:
         : CVDBValue(cursor, row, column, missing)
         {
         }
-    explicit CVDBValueFor(const CVDBValue::SValueIndex& value_index)
-        : CVDBValue(value_index)
+    explicit CVDBValueFor(const CVDBValue::SRef& ref)
+        : CVDBValue(ref)
         {
         }
     CVDBValueFor(CVDBCursor& cursor,
@@ -723,8 +781,8 @@ public:
         : CVDBValueFor<char>(cursor, row, column)
         {
         }
-    explicit CVDBStringValue(const CVDBValue::SValueIndex& value_index)
-        : CVDBValueFor<char>(value_index)
+    explicit CVDBStringValue(const CVDBValue::SRef& ref)
+        : CVDBValueFor<char>(ref)
         {
         }
     CVDBStringValue(CVDBCursor& cursor,

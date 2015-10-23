@@ -167,6 +167,12 @@ private:
 };
 
 
+#ifndef NCBI_THROW2_FMT
+# define NCBI_THROW2_FMT(exception_class, err_code, message, extra)     \
+    throw NCBI_EXCEPTION2(exception_class, err_code, FORMAT(message), extra)
+#endif
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
