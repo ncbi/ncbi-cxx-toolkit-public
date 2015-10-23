@@ -23,26 +23,14 @@
  *
  * ===========================================================================
  *
- * Authors:  Anatoliy Kuznetsov
+ * Authors:  Peter Meric
  *
  * File Description:  ICache client
  *
  */
 
 #include <ncbi_pch.hpp>
-
 #include <connect/services/neticache_client.hpp>
-
-#include <connect/ncbi_socket.hpp>
-#include <connect/ncbi_types.h>
-#include <connect/ncbi_core_cxx.hpp>
-
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbiargs.hpp>
-#include <corelib/ncbienv.hpp>
-#include <corelib/ncbireg.hpp>
-#include <corelib/ncbi_system.hpp>
-#include <corelib/ncbimisc.hpp>
 
 
 USING_NCBI_SCOPE;
@@ -63,14 +51,12 @@ public:
 };
 
 
-
-
 void CTestICClient::Init(void)
 {
     // Setup command line arguments and parameters
 
     // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
+    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions());
 
     // Specify USAGE context
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -126,3 +112,4 @@ int main(int argc, const char* argv[])
 {
     return CTestICClient().AppMain(argc, argv);
 }
+
