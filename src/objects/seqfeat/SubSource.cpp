@@ -564,7 +564,7 @@ bool CSubSource::IsISOFormatTime(const string& orig_time, int& hour, int& min, i
 {
     int offset_hour = 0;
     int offset_min = 0;
-    unsigned int suffix = NStr::Find(orig_time, "Z");
+    size_t suffix = NStr::Find(orig_time, "Z");
     if (suffix == string::npos) {
         suffix = NStr::Find(orig_time, "+");
         if (suffix == string::npos ||
