@@ -175,6 +175,8 @@ inline void CNetStorageObject::Close()
 /// @internal
 struct NCBI_XCONNECT_EXPORT SNetStorageImpl : public CObject
 {
+    struct SConfig;
+
     virtual CNetStorageObject Create(TNetStorageFlags flags = 0) = 0;
     virtual CNetStorageObject Open(const string& object_loc) = 0;
     virtual string Relocate(const string& object_loc,
@@ -186,6 +188,28 @@ struct NCBI_XCONNECT_EXPORT SNetStorageImpl : public CObject
 #endif
 
     static SNetStorageImpl* Create(const string&, TNetStorageFlags);
+};
+
+struct SNetStorageImpl::SConfig
+{
+    enum EDefaultStorage {
+        eUndefined,
+        eNetStorage,
+        eNetCache,
+        eNoCreate,
+    };
+
+    string service;
+    string nc_service;
+    string app_domain;
+    string client_name;
+    string metadata;
+    EDefaultStorage default_storage;
+
+    SConfig(const string& init_string);
+
+protected:
+    EDefaultStorage GetDefaultStorage(const string& value);
 };
 
 inline CNetStorage::CNetStorage(const string& init_string,
@@ -229,6 +253,8 @@ inline void CNetStorage::Remove(const string& object_loc)
 /// @internal
 struct NCBI_XCONNECT_EXPORT SNetStorageByKeyImpl : public CObject
 {
+    typedef SNetStorageImpl::SConfig SConfig;
+
     virtual CNetStorageObject Open(const string& unique_key,
             TNetStorageFlags flags = 0) = 0;
     virtual string Relocate(const string& unique_key,

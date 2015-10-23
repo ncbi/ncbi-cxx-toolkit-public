@@ -39,28 +39,9 @@
 
 BEGIN_NCBI_SCOPE
 
-struct SNetStorageConfig
-{
-    enum EDefaultStorage {
-        eUndefined,
-        eNetStorage,
-        eNetCache,
-        eNoCreate,
-    };
-
-    string service;
-    string nc_service;
-    string app_domain;
-    string client_name;
-    string metadata;
-    EDefaultStorage default_storage;
-
-    SNetStorageConfig(const string& init_string);
-};
-
 struct SNetStorageRPC : public SNetStorageImpl
 {
-    SNetStorageRPC(const SNetStorageConfig& config, TNetStorageFlags default_flags);
+    SNetStorageRPC(const SConfig& config, TNetStorageFlags default_flags);
 
     virtual CNetStorageObject Create(TNetStorageFlags flags = 0);
     virtual CNetStorageObject Open(const string& object_loc);
@@ -102,7 +83,7 @@ struct SNetStorageRPC : public SNetStorageImpl
     TNetStorageFlags m_DefaultFlags;
     CNetService m_Service;
 
-    const SNetStorageConfig m_Config;
+    const SConfig m_Config;
 
     mutable CAtomicCounter m_RequestNumber;
 
