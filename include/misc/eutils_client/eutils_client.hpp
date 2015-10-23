@@ -121,7 +121,7 @@ public:
                 vector<int>& uids,
                 string xml_path=kEmptyStr);
 
-#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
+#ifdef NCBI_INT8_GI
     Uint8 Search(const string& db,
                 const string& term,
                 vector<TGi>& uids,
@@ -148,7 +148,7 @@ public:
               string xml_path=kEmptyStr,
               const string command="neighbor");
 
-#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
+#ifdef NCBI_INT8_GI
     void Link(const string& db_from,
               const string& db_to,
               const vector<TGi>& uids_from,
@@ -177,7 +177,7 @@ public:
               CNcbiOstream& ostr,
               const string command="neighbor");
 
-#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
+#ifdef NCBI_INT8_GI
     void Link(const string& db_from,
               const string& db_to,
               const vector<TGi>& uids_from,
@@ -198,7 +198,7 @@ public:
                 xml::document& docsums,
                 const string version="");
 
-#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
+#ifdef NCBI_INT8_GI
     void Summary(const string& db,
                 const vector<TGi>& uids,
                 xml::document& docsums,
@@ -217,7 +217,7 @@ public:
                CNcbiOstream& ostr,
                const string& retmode="xml");
 
-#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
+#ifdef NCBI_INT8_GI
     void Fetch(const string& db,
                const vector<TGi>& uids,
                CNcbiOstream& ostr,
@@ -239,7 +239,7 @@ protected:
     Uint8 ParseSearchResults(CNcbiIstream& istr,
                              vector<int>& uids);
 
-#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
+#ifdef NCBI_INT8_GI
     Uint8 ParseSearchResults(CNcbiIstream& istr,
                              vector<TGi>& uids);
 #endif
@@ -247,7 +247,7 @@ protected:
     Uint8 ParseSearchResults(const string& xml_file,
                              vector<int>& uids);
 
-#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
+#ifdef NCBI_INT8_GI
     Uint8 ParseSearchResults(const string& xml_file,
                              vector<TGi>& uids);
 #endif

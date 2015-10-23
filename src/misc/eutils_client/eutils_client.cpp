@@ -508,7 +508,7 @@ Uint8 CEutilsClient::ParseSearchResults(CNcbiIstream& istr,
     return x_ParseSearchResults(istr, uids);
 }
 
-#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
+#ifdef NCBI_INT8_GI
 Uint8 CEutilsClient::ParseSearchResults(CNcbiIstream& istr,
                                         vector<TGi>& uids)
 {
@@ -550,7 +550,7 @@ Uint8 CEutilsClient::ParseSearchResults(const string& xml_file,
 }
 
 
-#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
+#ifdef NCBI_INT8_GI
 Uint8 CEutilsClient::ParseSearchResults(const string& xml_file,
                                         vector<TGi>& uids)
 {
@@ -579,7 +579,7 @@ Uint8 CEutilsClient::Search(const string& db,
     return x_Search(db, term, uids, xml_path);
 }
 
-#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
+#ifdef NCBI_INT8_GI
 Uint8 CEutilsClient::Search(const string& db,
                             const string& term,
                             vector<TGi>& uids,
@@ -773,7 +773,7 @@ void CEutilsClient::Link(const string& db_from,
     x_Link(db_from, db_to, uids_from, uids_to, xml_path, command);
 }
 
-#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
+#ifdef NCBI_INT8_GI
 void CEutilsClient::Link(const string& db_from,
                          const string& db_to,
                          const vector<TGi>& uids_from,
@@ -896,7 +896,7 @@ void CEutilsClient::Link(const string& db_from,
     x_Link(db_from, db_to, uids_from, ostr, command);
 }
 
-#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
+#ifdef NCBI_INT8_GI
 void CEutilsClient::Link(const string& db_from,
                          const string& db_to,
                          const vector<TGi>& uids_from,
@@ -984,7 +984,7 @@ void CEutilsClient::Summary(const string& db,
     x_Summary(db, uids, docsums, version);
 }
 
-#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
+#ifdef NCBI_INT8_GI
 void CEutilsClient::Summary(const string& db,
                             const vector<TGi>& uids,
                             xml::document& docsums,
@@ -1099,7 +1099,7 @@ void CEutilsClient::Fetch(const string& db,
     x_Fetch(db, uids, ostr, retmode);
 }
 
-#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
+#ifdef NCBI_INT8_GI
 void CEutilsClient::Fetch(const string& db,
                           const vector<TGi>& uids,
                           CNcbiOstream& ostr,

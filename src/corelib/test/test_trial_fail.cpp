@@ -69,7 +69,7 @@ int CTestApplication::Run(void)
     _ASSERT(std::toupper('A') == 'A');
     _ASSERT(::toupper('A') == 'A');
 #if 1 // should fail
-# if defined(NCBI_STRICT_GI) && defined(NCBI_INT8_GI)
+#ifdef NCBI_INT8_GI
     // test only if CStrictGi is on
     TGi gi;
     //gi = 2;

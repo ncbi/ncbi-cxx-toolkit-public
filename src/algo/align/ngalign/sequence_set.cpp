@@ -94,7 +94,7 @@ void CBlastDbSet::SetPositiveGiList(const vector<TGi>& GiList)
 }
 
 
-#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
+#ifdef NCBI_INT8_GI
 void CBlastDbSet::SetNegativeGiList(const vector<int>& GiList)
 {
     m_NegativeGiList.Reset(new CInputGiList);
@@ -204,7 +204,7 @@ void CSeqIdListSet::GetGiList(vector<TGi>& GiList, CScope& Scope,
 }
 
 
-#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
+#ifdef NCBI_INT8_GI
 void CSeqIdListSet::GetGiList(vector<int>& GiList, CScope& Scope,
                             const CAlignResultsSet& Alignments, int Threshold)
 {
@@ -566,7 +566,7 @@ void CSeqLocListSet::GetGiList(vector<TGi>& GiList, CScope& Scope,
 }
 
 
-#if defined(NCBI_INT8_GI) || defined(NCBI_STRICT_GI)
+#ifdef NCBI_INT8_GI
 void CSeqLocListSet::GetGiList(vector<int>& GiList, CScope& Scope,
                             const CAlignResultsSet& Alignments, int Threshold)
 {
