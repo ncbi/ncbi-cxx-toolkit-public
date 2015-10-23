@@ -210,7 +210,7 @@ protected:
         eTRNAIntergenicSpacerType_Unrecognized
     } ETRNAIntergenicSpacerType;
     static ETRNAIntergenicSpacerType x_GetTRNAIntergenicSpacerType(const string& phrase);
-    static string CAutoDefFeatureClause_Base::x_tRNAGeneFromProduct(const string& product);
+    static string x_tRNAGeneFromProduct(const string& product);
     static bool x_AddOnetRNAIntergenicSpacerElement(const string& phrase, vector<string>& elements);
 };
 
