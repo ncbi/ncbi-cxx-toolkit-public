@@ -12,7 +12,7 @@ LIB_ = $(BLAST_FORMATTER_LIBS) w_hit_matrix gui_glmesa w_gl w_wx w_data \
       gui_graph gui_opengl gui_print gui_objutils gencoll_client gbproj \
       gui_utils snputil \
       xalgoalignutil xalnmgr ximage xcgi xhtml \
-	  entrez2cli entrez2 valerr biotree gbseq entrezgene \
+	  entrez2cli entrez2 eutils_client valerr biotree gbseq entrezgene \
 	  xconnserv xqueryparse $(EUTILS_LIBS) xser xconnect xutil xmlwrapp \
           test_boost $(BLAST_LIBS) $(OBJMGR_LIBS) variation
 
