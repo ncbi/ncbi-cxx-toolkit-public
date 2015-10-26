@@ -1619,7 +1619,7 @@ CPipe::TChildPollMask CPipeHandle::x_Poll(CPipe::TChildPollMask mask,
         };
         int timeout_msec(timeout
                          ? timeout->sec * 1000 + (timeout->usec + 500) / 1000
-                         : 0);
+                         : -1/*infinite*/);
 
         // Negative FDs OK, poll should ignore them
         // Check the mask
