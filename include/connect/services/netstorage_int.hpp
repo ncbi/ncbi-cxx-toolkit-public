@@ -33,7 +33,6 @@
  *
  */
 
-#include "netstorage.hpp"
 #include "compound_id.hpp"
 #include "netservice_api.hpp"
 
