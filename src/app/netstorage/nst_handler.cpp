@@ -2591,16 +2591,10 @@ CNetStorageHandler::x_GetObject(const CJsonNode &  message)
 
     x_GetStorageParams(message, &icache_settings, &user_key, &flags);
 
-    string              client_name(m_Client);
-    if (client_name.empty())
-        client_name = "anonymous";
-    CNetICacheClient    icache_client(icache_settings.m_ServiceName,
-                                      icache_settings.m_CacheName, client_name);
-
     try {
         // There could be a decryption exception so there is this try {}
         m_Server->ResetDecryptCacheIfNeed();
-        CDirectNetStorageByKey    storage(app->GetConfig(), icache_client,
+        CDirectNetStorageByKey    storage(app->GetConfig(), m_Service,
                                           m_Server->GetCompoundIDPool(),
                                           user_key.m_AppDomain);
         m_Server->ReportNetStorageAPIDecryptSuccess();
