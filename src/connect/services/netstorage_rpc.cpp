@@ -1214,11 +1214,6 @@ CJsonNode SNetStorageObjectRPC::x_MkRequest(const string& request_type) const
                 m_UniqueKey, m_Flags);
 }
 
-SNetStorageObjectRWStream::~SNetStorageObjectRWStream()
-{
-    flush();
-}
-
 ERW_Result SNetStorageObjectImpl::PendingCount(size_t* count)
 {
     *count = 0;

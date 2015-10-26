@@ -28,6 +28,9 @@
  */
 
 #include <ncbi_pch.hpp>
+
+#include <connect/services/netstorage_impl.hpp>
+
 #include "state.hpp"
 
 

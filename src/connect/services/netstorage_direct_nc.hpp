@@ -92,6 +92,14 @@ struct SNetStorage_NetCacheBlob : public SNetStorageObjectImpl
     size_t m_BlobSize;
 };
 
+class CDNCNetStorage
+{
+public:
+    static CNetStorageObject Create(CNetCacheAPI::TInstance nc_api);
+    static CNetStorageObject Open(CNetCacheAPI::TInstance nc_api,
+        const string& blob_key);
+};
+
 END_NCBI_SCOPE
 
 #endif  /* CONNECT_SERVICES__NETSTORAGE_DIRECT_NC__HPP */

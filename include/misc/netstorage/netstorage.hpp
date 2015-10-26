@@ -38,6 +38,7 @@
 ///
 
 #include <connect/services/netstorage.hpp>
+#include <connect/services/neticache_client.hpp>
 #include <corelib/ncbi_param.hpp>
 
 BEGIN_NCBI_SCOPE

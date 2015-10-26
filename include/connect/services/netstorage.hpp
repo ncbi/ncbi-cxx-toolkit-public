@@ -526,6 +526,6 @@ class NCBI_XCONNECT_EXPORT CNetStorageByKey
 
 END_NCBI_SCOPE
 
-#include "netstorage_impl.hpp"
+#include "netstorage_int.hpp"
 
 #endif  /* CONNECT_SERVICES__NETSTORAGE__HPP */

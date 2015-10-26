@@ -39,7 +39,6 @@
 
 #include <corelib/resource_info.hpp>
 #include <connect/services/netstorage.hpp>
-#include <connect/services/netstorage_impl.hpp>
 
 #include "nst_handler.hpp"
 #include "nst_server.hpp"
