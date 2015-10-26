@@ -472,43 +472,6 @@ int s_CountServers(string service, unsigned short port, string dtab = "")
     return servers;
 }
 
-/** Check if expected number of specified servers is announced 
- * (usually it is 0 or 1)
-*/
-int s_CountServersWithExpectation(string service, 
-                                  unsigned short port, 
-                                  int expected_count,
-                                  int secs_timeout,
-                                  string dtab = "")
-{
-    const int wait_time = 500; /* msecs */
-    int max_retries = secs_timeout * 1000 / wait_time; /* number of repeats 
-                                                          until timeout */
-    int retries = 0;
-    int servers = 0;
-    while (servers != expected_count && retries < max_retries) {
-        servers = 0;
-        if (retries > 0) { /* for the first cycle we do not sleep */
-            SleepMilliSec(wait_time);
-        }
-        const SSERV_Info* info;
-        CConnNetInfo net_info(service);
-        if (dtab.length() > 1) {
-            ConnNetInfo_SetUserHeader(*net_info, dtab.c_str());
-        }
-        CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,
-            SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-            *net_info, 0/*skip*/, 0/*n_skip*/,
-            0/*external*/, 0/*arg*/, 0/*val*/));
-        do {
-            info = SERV_GetNextInfoEx(*iter, NULL);
-            if (info != NULL && info->port == port)
-                servers++;
-        } while (info != NULL);
-        retries++;
-    }
-    return servers;
-}
 
 
 template <unsigned int lines>
