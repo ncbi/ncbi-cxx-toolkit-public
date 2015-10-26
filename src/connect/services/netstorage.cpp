@@ -199,9 +199,11 @@ void CNetStorageByKey::Remove(const string& key, TNetStorageFlags flags)
     m_Impl->Remove(key, flags);
 }
 
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
 void g_AllowXSiteConnections(CNetStorage& netstorage)
 {
     netstorage->AllowXSiteConnections();
 }
+#endif
 
 END_NCBI_SCOPE

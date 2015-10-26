@@ -289,9 +289,11 @@ class NCBI_XCONNECT_EXPORT CNetStorageAdmin
             CNetServerConnection* conn = NULL);
 };
 
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
 /// @internal
 NCBI_XCONNECT_EXPORT
 void g_AllowXSiteConnections(CNetStorage&);
+#endif
 
 END_NCBI_SCOPE
 
