@@ -634,21 +634,32 @@ CID2WGSProcessor_Impl::ResolveGeneral(const CDbtag& dbtag)
     SWGSSeqInfo seq;
     seq.m_WGSAcc = wgs_acc;
     seq.m_IsWGS = true;
-    if ( CWGSDb wgs_db = GetWGSDb(seq) ) {
-        if ( wgs_db->IsTSA() == is_tsa ) { // TSA or WGS type must match
-            string tag;
-            if ( object_id.IsStr() ) {
-                tag = object_id.GetStr();
-            }
-            else {
-                tag = NStr::NumericToString(object_id.GetId());
-            }
-            if ( TVDBRowId row = wgs_db.GetContigNameRowId(tag) ) {
-                seq.m_ValidWGS = true;
-                seq.SetContig();
-                seq.m_RowId = row;
-            }
-        }
+    CWGSDb wgs_db = GetWGSDb(seq);
+    if ( !wgs_db || wgs_db->IsTSA() != is_tsa ) {
+        // TSA or WGS type must match
+        return seq;
+    }
+    string tag;
+    if ( object_id.IsStr() ) {
+        tag = object_id.GetStr();
+    }
+    else {
+        tag = NStr::NumericToString(object_id.GetId());
+    }
+    if ( TVDBRowId row = wgs_db.GetContigNameRowId(tag) ) {
+        seq.m_ValidWGS = true;
+        seq.SetContig();
+        seq.m_RowId = row;
+    }
+    if ( TVDBRowId row = wgs_db.GetScaffoldNameRowId(tag) ) {
+        seq.m_ValidWGS = true;
+        seq.SetScaffold();
+        seq.m_RowId = row;
+    }
+    if ( TVDBRowId row = wgs_db.GetProteinNameRowId(tag) ) {
+        seq.m_ValidWGS = true;
+        seq.SetProtein();
+        seq.m_RowId = row;
     }
     return seq;
 }
@@ -696,8 +707,9 @@ CID2WGSProcessor_Impl::ResolveGi(TGi gi)
 
 
 CID2WGSProcessor_Impl::SWGSSeqInfo
-CID2WGSProcessor_Impl::ResolveProtAcc(const string& acc, int version)
+CID2WGSProcessor_Impl::ResolveProtAcc(const CTextseq_id& id)
 {
+    const string& acc = id.GetAccession();
     CWGSProtAccResolver::TAccessionList accs = m_AccResolver->FindAll(acc);
     ITERATE ( CWGSProtAccResolver::TAccessionList, acc_it, accs ) {
         if ( CWGSDb wgs_db = GetWGSDb(*acc_it) ) {
@@ -719,7 +731,9 @@ CID2WGSProcessor_Impl::ResolveProtAcc(const string& acc, int version)
 
 
 CID2WGSProcessor_Impl::SWGSSeqInfo
-CID2WGSProcessor_Impl::ResolveWGSAcc(const string& acc, int version)
+CID2WGSProcessor_Impl::ResolveWGSAcc(const string& acc,
+                                     const CTextseq_id& id,
+                                     TAllowSeqType allow_seq_type)
 {
     if ( acc.size() < kPrefixLen + kMinRowDigits ||
          acc.size() > kPrefixLen + kMaxRowDigits + 1 ) { // one for type letter
@@ -742,13 +756,23 @@ CID2WGSProcessor_Impl::ResolveWGSAcc(const string& acc, int version)
     switch ( acc[row_pos] ) { // optional type letter
     case 'S':
         seq.SetScaffold();
+        if ( !(allow_seq_type & fAllow_scaffold) ) {
+            return seq;
+        }
         ++row_pos;
         break;
     case 'P':
         seq.SetProtein();
+        if ( !(allow_seq_type & fAllow_protein) ) {
+            return seq;
+        }
         ++row_pos;
         break;
     default:
+        // it can be either contig or master sequence
+        if ( !(allow_seq_type & (fAllow_master|fAllow_contig)) ) {
+            return seq;
+        }
         break;
     }
     Uint8 row = 0;
@@ -764,20 +788,31 @@ CID2WGSProcessor_Impl::ResolveWGSAcc(const string& acc, int version)
         // zero row might be master WGS sequence
         // it mustn't have type letter, version digits and row must be zero
         // version must be positive
-        if ( !seq.IsMaster() || version < 0 ) {
+        if ( !seq.IsMaster() ) {
             return SWGSSeqInfo();
         }
+        if ( !(allow_seq_type & fAllow_master) ) {
+            return seq;
+        }
         // now, move version into version digits of the accession
-        int t = version;
-        for ( size_t i = kVersionDigits; i--; t /= 10) {
+        int version = id.IsSetVersion()? id.GetVersion(): 1;
+        if ( version <= 0 ) {
+            return SWGSSeqInfo();
+        }
+        for ( size_t i = kVersionDigits; i--; version /= 10) {
             if ( acc[kNumLetters+i] != '0' ) {
                 return SWGSSeqInfo();
             }
-            seq.m_WGSAcc[kNumLetters+i] = char('0'+t%10);
+            seq.m_WGSAcc[kNumLetters+i] = char('0'+version%10);
         }
-        if ( t ) {
+        if ( version ) {
             // doesn't fit
             return SWGSSeqInfo();
+        }
+    }
+    else if ( seq.IsContig() ) {
+        if ( !(allow_seq_type & fAllow_contig) ) {
+            return seq;
         }
     }
     if ( !GetWGSDb(seq) ) {
@@ -811,8 +846,24 @@ CID2WGSProcessor_Impl::ResolveWGSAcc(const string& acc, int version)
 
 
 CID2WGSProcessor_Impl::SWGSSeqInfo
-CID2WGSProcessor_Impl::ResolveAcc(const string& acc, int version)
+CID2WGSProcessor_Impl::ResolveAcc(const CTextseq_id& id)
 {
+    if ( id.IsSetName() ) {
+        // first try name reference if it has WGS format like AAAA01P000001
+        // as it directly contains WGS accession
+        if ( SWGSSeqInfo seq = ResolveWGSAcc(id.GetName(), id, fAllow_aa) ) {
+            _ASSERT(seq.IsProtein());
+            if ( !id.IsSetAccession() ||
+                 NStr::EqualNocase(GetProteinIterator(seq).GetAccession(),
+                                   id.GetAccession()) ) {
+                return seq;
+            }
+        }
+    }
+    if ( !id.IsSetAccession() ) {
+        return SWGSSeqInfo();
+    }
+    const string& acc = id.GetAccession();
     CSeq_id::EAccessionInfo type = CSeq_id::IdentifyAccession(acc);
     switch ( type & CSeq_id::eAcc_division_mask ) {
         // accepted accession types
@@ -820,13 +871,13 @@ CID2WGSProcessor_Impl::ResolveAcc(const string& acc, int version)
     case CSeq_id::eAcc_wgs_intermed:
     case CSeq_id::eAcc_tsa:
         if ( type & CSeq_id::fAcc_prot ) {
-            if ( acc.size() <= 10 ) { // 3+5
-                return ResolveProtAcc(acc, version);
+            if ( acc.size() <= 8 ) { // 3+5
+                return ResolveProtAcc(id);
             }
             return SWGSSeqInfo();
         }
         else {
-            return ResolveWGSAcc(acc, version);
+            return ResolveWGSAcc(acc, id, fAllow_master|fAllow_na);
         }
     default:
         // non-WGS accessions
@@ -896,18 +947,12 @@ CID2WGSProcessor_Impl::Resolve(const CSeq_id& id)
     if ( !text_id ) {
         return SWGSSeqInfo();
     }
-    if ( !text_id->IsSetAccession() ) {
-        return SWGSSeqInfo();
-    }
-    int version = 1;
-    if ( text_id->IsSetVersion() ) {
-        version = text_id->GetVersion();
-    }
-    SWGSSeqInfo seq = ResolveAcc(text_id->GetAccession(), version);
+    SWGSSeqInfo seq = ResolveAcc(*text_id);
     if ( !seq ) {
         return seq;
     }
-    if ( text_id->IsSetVersion() && !IsCorrectVersion(seq, version) ) {
+    if ( text_id->IsSetVersion() &&
+         !IsCorrectVersion(seq, text_id->GetVersion()) ) {
         return seq;
     }
     seq.m_ValidWGS = true;
@@ -1283,8 +1328,9 @@ void CID2WGSProcessor_Impl::SetBlobState(CID2_Reply& main_reply,
 }
 
 
-CRef<CSeq_entry> CID2WGSProcessor_Impl::GetSeq_entry(SWGSSeqInfo& seq)
+CRef<CSeq_entry> CID2WGSProcessor_Impl::GetSeq_entry(SWGSSeqInfo& seq0)
 {
+    SWGSSeqInfo seq = GetRootSeq(seq0);
     if ( seq.IsMaster() ) {
         return GetWGSDb(seq)->GetMasterSeq_entry();
     }

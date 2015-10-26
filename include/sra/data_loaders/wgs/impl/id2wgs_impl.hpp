@@ -149,9 +149,20 @@ protected:
     SWGSSeqInfo Resolve(const CSeq_id& id);
     SWGSSeqInfo ResolveGi(TGi gi);
     SWGSSeqInfo ResolveGeneral(const CDbtag& dbtag);
-    SWGSSeqInfo ResolveAcc(const string& acc, int version);
-    SWGSSeqInfo ResolveWGSAcc(const string& acc, int version);
-    SWGSSeqInfo ResolveProtAcc(const string& acc, int version);
+    SWGSSeqInfo ResolveAcc(const CTextseq_id& id);
+    enum EAllowSeqType {
+        fAllow_master   = 1<<0,
+        fAllow_contig   = 1<<1,
+        fAllow_scaffold = 1<<2,
+        fAllow_protein  = 1<<3,
+        fAllow_na       = fAllow_contig|fAllow_scaffold,
+        fAllow_aa       = fAllow_protein
+    };
+    typedef int TAllowSeqType;
+    SWGSSeqInfo ResolveWGSAcc(const string& acc,
+                              const CTextseq_id& id,
+                              TAllowSeqType allow_seq_type);
+    SWGSSeqInfo ResolveProtAcc(const CTextseq_id& id);
     SWGSSeqInfo GetRootSeq(const SWGSSeqInfo& seq);
     bool IsValidRowId(SWGSSeqInfo& seq);
     bool IsCorrectVersion(SWGSSeqInfo& seq, int version);
