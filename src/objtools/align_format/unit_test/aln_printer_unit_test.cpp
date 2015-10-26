@@ -63,8 +63,8 @@ class CAlnPrinterFixture
 public:
     CRef<CObjectManager> m_Objmgr;
     CRef<CScope> m_Scope;
-    const string kNuclSeqs = "data/nucleotide.fa";
-    const string kProtSeqs = "data/protein.fa";
+    string kNuclSeqs;
+    string kProtSeqs;
 
     void x_InitScope(void)
     {
@@ -102,6 +102,9 @@ public:
 
     CAlnPrinterFixture(void)
     {
+        kNuclSeqs = "data/nucleotide.fa";
+        kProtSeqs = "data/protein.fa";
+
         x_InitScope();
         x_LoadSequences(kNuclSeqs, false);
         x_LoadSequences(kProtSeqs, true);
