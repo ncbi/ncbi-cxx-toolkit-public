@@ -2566,7 +2566,7 @@ CNetStorageHandler::x_GetObject(const CJsonNode &  message)
             m_Server->ResetDecryptCacheIfNeed();
             CDirectNetStorage   storage(
                               app->GetConfig(),
-                              CNetICacheClient(CNetICacheClient::eAppRegistry),
+                              m_Service,
                               m_Server->GetCompoundIDPool(), kEmptyStr);
             m_Server->ReportNetStorageAPIDecryptSuccess();
 
@@ -2694,21 +2694,12 @@ CNetStorageHandler::x_CreateObjectStream(
                     const SICacheSettings &  icache_settings,
                     TNetStorageFlags         flags)
 {
-    CNetICacheClient icache_client;
-
-    if (icache_settings.m_ServiceName.empty())
-        icache_client = CNetICacheClient(CNetICacheClient::eAppRegistry);
-    else {
-        icache_client = CNetICacheClient(icache_settings.m_ServiceName,
-                icache_settings.m_CacheName, m_Client);
-    }
-
     try {
         // There could be a decryption exception so there is this try {}
         CNcbiApplication *  app = CNcbiApplication::Instance();
 
         m_Server->ResetDecryptCacheIfNeed();
-        CDirectNetStorage   net_storage(app->GetConfig(), icache_client,
+        CDirectNetStorage   net_storage(app->GetConfig(), m_Service,
                                         m_Server->GetCompoundIDPool(),
                                         icache_settings.m_CacheName);
         m_Server->ReportNetStorageAPIDecryptSuccess();
