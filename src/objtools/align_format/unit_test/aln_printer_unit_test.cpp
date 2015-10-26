@@ -58,39 +58,91 @@ USING_SCOPE(align_format);
 using namespace TestUtil;
 
 
-// Read sequences from fasta file and add them to scope
-static CRef<CScope> CreateScope(const string& filename);
+class CAlnPrinterFixture
+{
+public:
+    CRef<CObjectManager> m_Objmgr;
+    CRef<CScope> m_Scope;
+    const string kNuclSeqs = "data/nucleotide.fa";
+    const string kProtSeqs = "data/protein.fa";
+
+    void x_InitScope(void)
+    {
+        m_Objmgr = CObjectManager::GetInstance();
+        m_Scope.Reset(new CScope(*m_Objmgr));
+    }
+
+    void x_LoadSequences(const string& filename, bool parse_id)
+    {
+        CNcbiIfstream instream(filename.c_str());
+        BOOST_REQUIRE(instream);
+
+        CStreamLineReader line_reader(instream);
+        CFastaReader::TFlags flags = 0;
+        if (!parse_id) {
+            flags |= CFastaReader::fNoParseID;
+        }
+
+        CFastaReader fasta_reader(line_reader, flags);
+        fasta_reader.IgnoreProblem(
+                          ILineError::eProblem_ModifierFoundButNoneExpected);
+        while (!line_reader.AtEOF()) {
+
+            CRef<CSeq_entry> entry = fasta_reader.ReadOneSeq();
+
+            if (entry == 0) {
+                NCBI_THROW(CObjReaderException, eInvalid, 
+                           "Could not retrieve seq entry");
+            }
+            m_Scope->AddTopLevelSeqEntry(*entry);
+            CTypeConstIterator<CBioseq> itr(ConstBegin(*entry));
+        }
+    }
 
 
-BOOST_AUTO_TEST_SUITE(aln_printer)
+    CAlnPrinterFixture(void)
+    {
+        x_InitScope();
+        x_LoadSequences(kNuclSeqs, false);
+        x_LoadSequences(kProtSeqs, true);
+    }
+
+
+    ~CAlnPrinterFixture()
+    {
+        m_Scope.Reset();
+        m_Objmgr.Reset();
+    }
+
+    // Print alignment for a given Seq-align
+    string PrintAlignment(CMultiAlnPrinter::EFormat format,
+                          const string& seqalign_file,
+                          CMultiAlnPrinter::EAlignType type
+                          = CMultiAlnPrinter::eNotSet)
+    {
+        CSeq_align seqalign;
+        CNcbiIfstream istr(seqalign_file.c_str());
+        istr >> MSerial_AsnText >> seqalign;
+    
+        CMultiAlnPrinter printer(seqalign, *m_Scope, type);
+        printer.SetWidth(80);
+        printer.SetFormat(format);
+
+        CNcbiOstrstream output_stream;
+        printer.Print(output_stream);
+        string output = CNcbiOstrstreamToString(output_stream);
+        
+        return output;
+    }
+
+};
+
+BOOST_FIXTURE_TEST_SUITE(aln_printer, CAlnPrinterFixture)
 
 // input file names
 const string protein_seqalign = "data/multialign.asn";
 const string nucleotide_seqalign = "data/multialign_nucleotide.asn";
-const string nucleotide_seqs = "data/nucleotide.fa";
 
-string PrintAlignment(CMultiAlnPrinter::EFormat format,
-                      const string& seqalign_file,
-                      const string& fasta_file = "",
-                      CMultiAlnPrinter::EAlignType type
-                      = CMultiAlnPrinter::eNotSet)
-{
-    CRef<CScope> scope = CreateScope(fasta_file);
-    
-    CSeq_align seqalign;
-    CNcbiIfstream istr(seqalign_file.c_str());
-    istr >> MSerial_AsnText >> seqalign;
-
-    CMultiAlnPrinter printer(seqalign, *scope, type);
-    printer.SetWidth(80);
-    printer.SetFormat(format);
-
-    CNcbiOstrstream output_stream;
-    printer.Print(output_stream);
-    string output = CNcbiOstrstreamToString(output_stream);
-
-    return output;
-}
 
 BOOST_AUTO_TEST_CASE(TestFastaPlusGaps)
 {
@@ -110,7 +162,7 @@ BOOST_AUTO_TEST_CASE(TestFastaPlusGaps)
 
     // Test nucleotide
     output = PrintAlignment(CMultiAlnPrinter::eFastaPlusGaps,
-                            nucleotide_seqalign, nucleotide_seqs);
+                            nucleotide_seqalign);
 
     BOOST_REQUIRE(output.find(">lcl|1 gi|405832|gb|U00001.1|HSCDC27 Human "
                               "homologue of S. pombe nuc2+ and A. nidulans "
@@ -144,7 +196,7 @@ BOOST_AUTO_TEST_CASE(TestClustalW)
 
     // Test nucleotide
     output = PrintAlignment(CMultiAlnPrinter::eClustal,
-                            nucleotide_seqalign, nucleotide_seqs);
+                            nucleotide_seqalign);
 
     BOOST_REQUIRE(output.find("lcl|2                         ------CCGCTACAGG"
                               "GGGGGCCTGAGGCACTGCAGAAAGTGGGCCTGAGCCTCGAGGATGA"
@@ -179,7 +231,7 @@ BOOST_AUTO_TEST_CASE(TestPhylipSequential)
 
     // Test nucleotide
     output = PrintAlignment(CMultiAlnPrinter::ePhylipSequential,
-                            nucleotide_seqalign, nucleotide_seqs);
+                            nucleotide_seqalign);
 
     BOOST_REQUIRE(output.find("  10   2634") != NPOS);
 
@@ -213,7 +265,7 @@ BOOST_AUTO_TEST_CASE(TestPhylipInterleaved)
 
     // Test nucleotide
     output = PrintAlignment(CMultiAlnPrinter::ePhylipInterleaved,
-                            nucleotide_seqalign, nucleotide_seqs);
+                            nucleotide_seqalign);
 
     BOOST_REQUIRE(output.find("  10   2634") != NPOS);
 
@@ -230,7 +282,7 @@ BOOST_AUTO_TEST_CASE(TestNexus)
 {
     // Test protein
     string output = PrintAlignment(CMultiAlnPrinter::eNexus,
-                                   protein_seqalign, "",
+                                   protein_seqalign,
                                    CMultiAlnPrinter::eProtein);
 
     BOOST_REQUIRE(output.find("#NEXUS") != NPOS);
@@ -262,7 +314,7 @@ BOOST_AUTO_TEST_CASE(TestNexus)
 
     // Test nucleotide
     output = PrintAlignment(CMultiAlnPrinter::eNexus,
-                            nucleotide_seqalign, nucleotide_seqs,
+                            nucleotide_seqalign,
                             CMultiAlnPrinter::eNucleotide);
 
     BOOST_REQUIRE(output.find("#NEXUS") != NPOS);
@@ -292,46 +344,10 @@ BOOST_AUTO_TEST_CASE(TestRejectNexusWithNoAlignType)
     // verify that formatting nexus alignment with m_AlignType == eNotSet
     // throws the exception
     BOOST_REQUIRE_THROW(PrintAlignment(CMultiAlnPrinter::eNexus,
-                                       protein_seqalign, "",
+                                       protein_seqalign,
                                        CMultiAlnPrinter::eNotSet),
                         CException);    
 }
 
 BOOST_AUTO_TEST_SUITE_END()
-
-
-CRef<CScope> CreateScope(const string& filename)
-{
-	const string kDbName("prot_dbs");
-	const CBlastDbDataLoader::EDbType kDbType(CBlastDbDataLoader::eProtein);
-	TestUtil::CBlastOM tmp_data_loader(kDbName, kDbType, CBlastOM::eLocal);
-	CRef<CScope> scope = tmp_data_loader.NewScope();
-
-    if (filename == "") {
-        return scope;
-    }
-
-    CNcbiIfstream instream(filename.c_str());
-    BOOST_REQUIRE(instream);
-
-    CStreamLineReader line_reader(instream);
-    CFastaReader fasta_reader(line_reader, 
-                              CFastaReader::fAssumeProt |
-                              CFastaReader::fForceType |
-                              CFastaReader::fNoParseID);
-
-    while (!line_reader.AtEOF()) {
-
-        CRef<CSeq_entry> entry = fasta_reader.ReadOneSeq();
-
-        if (entry == 0) {
-            NCBI_THROW(CObjReaderException, eInvalid, 
-                        "Could not retrieve seq entry");
-        }
-        scope->AddTopLevelSeqEntry(*entry);
-        CTypeConstIterator<CBioseq> itr(ConstBegin(*entry));
-    }
-
-    return scope;
-}
 
