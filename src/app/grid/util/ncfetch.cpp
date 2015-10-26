@@ -40,6 +40,7 @@
 #include <cgi/cgictx.hpp>
 #include <cgi/cgi_exception.hpp>
 
+#include <connect/services/netcache_api_expt.hpp>
 #include <connect/services/netstorage.hpp>
 #include <connect/services/grid_app_version_info.hpp>
 
