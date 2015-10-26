@@ -3833,11 +3833,7 @@ void CValidError_bioseq::ValidateSeqGap(const CSeq_gap& gap, const CBioseq& seq)
                 gaptype != CSeq_gap::eType_clone &&
                 gaptype != CSeq_gap::eType_repeat &&
                 gaptype != CSeq_gap::eType_scaffold) {
-                EDiagSev sev = eDiag_Critical;
-                if (m_Imp.IsRefSeq()) {
-                    sev = eDiag_Warning;
-                }
-                PostErr(sev, eErr_SEQ_INST_SeqGapProblem,
+                PostErr(eDiag_Critical, eErr_SEQ_INST_SeqGapProblem,
                     "Seq-gap of type " + NStr::IntToString(gaptype) +
                     " should not have linkage evidence", seq);
             }
