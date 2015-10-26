@@ -21,5 +21,5 @@ CHECK_REQUIRES = in-house-resources
 
 REQUIRES = Boost.Test.Included
 
-WATCHERS = zaretska jianye madden camacho
+WATCHERS = zaretska jianye madden camacho boratyng
 CHECK_TIMEOUT = 900
