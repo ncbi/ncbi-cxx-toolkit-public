@@ -433,7 +433,8 @@ CVDB::CVDB(const CVDBMgr& mgr, const string& acc_or_path)
                                         int(path.size()), path.data()) ) {
         *x_InitPtr() = 0;
         if ( (GetRCObject(rc) == RCObject(rcDirectory) ||
-              GetRCObject(rc) == RCObject(rcPath)) &&
+              GetRCObject(rc) == RCObject(rcPath) ||
+              GetRCObject(rc) == RCObject(rcFile)) &&
              GetRCState(rc) == rcNotFound ) {
             // no SRA accession
             NCBI_THROW2_FMT(CSraException, eNotFoundDb,
