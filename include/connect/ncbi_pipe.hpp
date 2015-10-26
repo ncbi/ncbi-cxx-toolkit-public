@@ -79,7 +79,7 @@ public:
     /// @note@  Flags pertaining to the same stdio handle processed in the
     ///         order of their appearance in the definition below.
     ///
-    /// Default is 0 
+    /// Default is 0:
     ///    fStdIn_Open | fStdOut_Open | fStdErr_Close | fCloseOnClose.
     enum ECreateFlag {
         fStdIn_Open      =     0, ///< Do     open child's stdin (default).
@@ -210,11 +210,11 @@ public:
 
     /// Close pipe.
     ///
-    /// Wait for the spawned child process to terminate and then close
-    /// the associated pipe.
+    /// Sever communication channel with the spawned child process, and then
+    /// wait for the process to terminate.
     ///
     /// @note A CPipe opened with OpenSelf() always closes with eIO_Success,
-    /// and *exitcode returned as 0 (yet the current process continues to run).
+    /// and *exitcode returns as 0 (yet the current process continues to run).
     ///
     /// @param exitcode
     ///   Pointer to store the exit code at, if the child process terminated
@@ -222,13 +222,13 @@ public:
     /// @return
     ///   Completion status.
     ///   The returned status eIO_Timeout means that child process is still 
-    ///   running and the pipe was not yet closed.  Any other return status
-    ///   means that the pipe is not suitable for further I/O until reopened.
+    ///   running (yet the communication with it has been severed).  Any other
+    ///   return status means that the pipe is not suitable for further I/O
+    ///   until reopened.
     ///
     ///   eIO_Closed  - pipe was already closed;
-    ///   eIO_Timeout - the eIO_Close timeout expired, child process
-    ///                 is still running and the pipe has not yet closed
-    ///                 (return only if fKeepOnClose create flag was set);
+    ///   eIO_Timeout - the eIO_Close timeout expired, child process is still
+    ///                 running (return only if fKeepOnClose was set);
     ///   eIO_Success - pipe was successfully closed.  The running status of
     ///                 the child process depends on the flags:
     ///       fKeepOnClose  - process has terminated with "exitcode";
@@ -236,7 +236,7 @@ public:
     ///                       or is still running otherwise;
     ///       fKillOnClose  - process has self-terminated if "exitcode" != -1,
     ///                       or has been forcibly terminated otherwise;
-    ///   Otherwise   - an error was detected;
+    ///   Otherwise   - an error was detected.
     /// @sa
     ///   Open, OpenSelf, fKeepOnClose, fCloseOnClose, fKillOnClose, fNewGroup
     EIO_Status Close(int* exitcode = 0);
@@ -260,7 +260,7 @@ public:
     ///   Return eIO_InvalidArg otherwise.
     /// @sa
     ///   Read
-    EIO_Status     SetReadHandle(EChildIOHandle from_handle);
+    EIO_Status SetReadHandle(EChildIOHandle from_handle);
 
     /// Get standard output handle to read data from.
     ///
@@ -383,7 +383,7 @@ public:
     TProcessHandle GetProcessHandle(void) const;
 
 
-    /// Callback interface for ExecWait method
+    /// Callback interface for ExecWait()
     ///
     /// @sa ExecWait
     class NCBI_XCONNECT_EXPORT IProcessWatcher
