@@ -74,6 +74,13 @@ class CDirectNetStorage : public CNetStorage
 {
 public:
     CDirectNetStorage(
+        const IRegistry&            registry,
+        const string&               service_name,
+        CCompoundIDPool::TInstance  compound_id_pool,
+        const string&               app_domain,
+        TNetStorageFlags            default_flags = 0);
+
+    CDirectNetStorage(
         const SFileTrackConfig&     filetrack_config,
         CNetICacheClient::TInstance icache_client,
         CCompoundIDPool::TInstance  compound_id_pool,
@@ -96,6 +103,13 @@ public:
 class CDirectNetStorageByKey : public CNetStorageByKey
 {
 public:
+    CDirectNetStorageByKey(
+        const IRegistry&            registry,
+        const string&               service_name,
+        CCompoundIDPool::TInstance  compound_id_pool,
+        const string&               app_domain,
+        TNetStorageFlags            default_flags = 0);
+
     CDirectNetStorageByKey(
         const SFileTrackConfig&     filetrack_config,
         CNetICacheClient::TInstance icache_client,

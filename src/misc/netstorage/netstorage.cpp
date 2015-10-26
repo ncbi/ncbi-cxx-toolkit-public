@@ -239,6 +239,38 @@ void SDirectNetStorageByKeyImpl::Remove(const string& key, TNetStorageFlags flag
     net_file->Remove();
 }
 
+
+SFileTrackConfig s_GetFTConfig(const IRegistry& registry, const string& service)
+{
+    const string service_section = "service_" + service;
+    const string ft_section = registry.Get(service_section, "filetrack_api");
+    return ft_section.empty() ? eVoid : SFileTrackConfig(registry, ft_section);
+}
+
+
+CNetICacheClient s_GetICClient(const IRegistry& registry, const string& service)
+{
+    const string service_section = "service_" + service;
+    const string nc_section = registry.Get(service_section, "netcache_api");
+    return  nc_section.empty() ? eVoid :
+        CNetICacheClient(CNetICacheClient::eAppRegistry, nc_section);
+}
+
+
+CDirectNetStorage::CDirectNetStorage(
+        const IRegistry& registry,
+        const string& service_name,
+        CCompoundIDPool::TInstance compound_id_pool,
+        const string& app_domain,
+        TNetStorageFlags default_flags)
+    : CNetStorage(
+            new SDirectNetStorageImpl(app_domain, default_flags,
+                s_GetICClient(registry, service_name),
+                compound_id_pool, s_GetFTConfig(registry, service_name)))
+{
+}
+
+
 CDirectNetStorage::CDirectNetStorage(
         const SFileTrackConfig& ft_config,
         CNetICacheClient::TInstance icache_client,
@@ -263,6 +295,20 @@ CDirectNetStorageObject CDirectNetStorage::Create(
 CDirectNetStorageObject CDirectNetStorage::Open(const string& object_loc)
 {
     return Impl<SDirectNetStorageImpl>(m_Impl)->OpenImpl(object_loc);
+}
+
+
+CDirectNetStorageByKey::CDirectNetStorageByKey(
+        const IRegistry& registry,
+        const string& service_name,
+        CCompoundIDPool::TInstance compound_id_pool,
+        const string& app_domain,
+        TNetStorageFlags default_flags)
+    : CNetStorageByKey(
+            new SDirectNetStorageByKeyImpl(app_domain, default_flags,
+                s_GetICClient(registry, service_name),
+                compound_id_pool, s_GetFTConfig(registry, service_name)))
+{
 }
 
 
