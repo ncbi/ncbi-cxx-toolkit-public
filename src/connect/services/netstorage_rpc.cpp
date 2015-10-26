@@ -501,33 +501,32 @@ SNetStorageImpl::SConfig::GetDefaultStorage(const string& value)
     }
 }
 
-SNetStorageImpl::SConfig::SConfig(const string& init_string)
+bool SNetStorageImpl::SConfig::ParseArg(const string& name, const string& value)
 {
-    default_storage = eUndefined;
+    if (name == "domain")
+        app_domain = value;
+    else if (name == "default_storage")
+        default_storage = GetDefaultStorage(value);
+    else if (name == "metadata")
+        metadata = value;
+    else if (name == "namespace")
+        app_domain = value;
+    else if (name == "nst")
+        service = value;
+    else if (name == "nc")
+        nc_service = value;
+    else if (name == "cache")
+        app_domain = value;
+    else if (name == "client")
+        client_name = value;
+    else
+        return false;
 
-    CUrlArgs url_parser(init_string);
-
-    ITERATE(CUrlArgs::TArgs, field, url_parser.GetArgs()) {
-        if (!field->name.empty()) {
-            if (field->name == "domain")
-                app_domain = field->value;
-            else if (field->name == "default_storage")
-                default_storage = GetDefaultStorage(field->value);
-            else if (field->name == "metadata")
-                metadata = field->value;
-            else if (field->name == "namespace")
-                app_domain = field->value;
-            else if (field->name == "nst")
-                service = field->value;
-            else if (field->name == "nc")
-                nc_service = field->value;
-            else if (field->name == "cache")
-                app_domain = field->value;
-            else if (field->name == "client")
-                client_name = field->value;
+    return true;
         }
-    }
 
+void SNetStorageImpl::SConfig::Validate(const string& init_string)
+{
     if (client_name.empty()) {
         CNcbiApplication* app = CNcbiApplication::Instance();
         if (app != NULL) {
@@ -1356,13 +1355,13 @@ CJsonNode CNetStorageAdmin::ExchangeJson(const CJsonNode& request,
 SNetStorageImpl* SNetStorageImpl::Create(const string& init_string,
         TNetStorageFlags default_flags)
 {
-    return new SNetStorageRPC(init_string, default_flags);
+    return new SNetStorageRPC(SConfigBuilder<SConfig>(init_string), default_flags);
 }
 
 SNetStorageByKeyImpl* SNetStorageByKeyImpl::Create(const string& init_string,
         TNetStorageFlags default_flags)
 {
-    return new SNetStorageByKeyRPC(init_string, default_flags);
+    return new SNetStorageByKeyRPC(SConfigBuilder<SConfig>(init_string), default_flags);
 }
 
 END_NCBI_SCOPE

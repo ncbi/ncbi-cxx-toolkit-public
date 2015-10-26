@@ -35,6 +35,8 @@
 
 #include "netstorage.hpp"
 
+#include <corelib/ncbi_url.hpp>
+
 BEGIN_NCBI_SCOPE
 
 /// @internal
@@ -71,6 +73,31 @@ struct NCBI_XCONNECT_EXPORT SNetStorageObjectImpl :
 };
 
 /// @internal
+template <class TConfig>
+struct SConfigBuilder
+{
+    SConfigBuilder(const string& init_string) :
+        m_InitString(init_string)
+    {}
+
+    operator TConfig() const
+    {
+        CUrlArgs url_parser(m_InitString);
+        TConfig cfg;
+
+        ITERATE(CUrlArgs::TArgs, field, url_parser.GetArgs()) {
+            if (!field->name.empty()) cfg.ParseArg(field->name, field->value);
+        }
+
+        cfg.Validate(m_InitString);
+        return cfg;
+    }
+
+private:
+    const string m_InitString;
+};
+
+/// @internal
 struct NCBI_XCONNECT_EXPORT SNetStorageImpl : public CObject
 {
     struct SConfig;
@@ -104,10 +131,12 @@ struct SNetStorageImpl::SConfig
     string metadata;
     EDefaultStorage default_storage;
 
-    SConfig(const string& init_string);
+    SConfig() : default_storage(eUndefined) {}
+    bool ParseArg(const string&, const string&);
+    void Validate(const string&);
 
-protected:
-    EDefaultStorage GetDefaultStorage(const string& value);
+private:
+    static EDefaultStorage GetDefaultStorage(const string&);
 };
 
 /// @internal
