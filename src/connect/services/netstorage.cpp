@@ -36,7 +36,7 @@
 
 BEGIN_NCBI_SCOPE
 
-struct NCBI_XCONNECT_EXPORT SNetStorageObjectRWStream : public CRWStream
+struct SNetStorageObjectRWStream : public CRWStream
 {
     SNetStorageObjectRWStream(SNetStorageObjectImpl* nst_object) :
         CRWStream(nst_object, nst_object, /*buf_size*/ 0, /*buf*/ NULL,
