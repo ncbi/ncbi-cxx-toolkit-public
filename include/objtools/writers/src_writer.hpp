@@ -102,7 +102,7 @@ public:
       * found in the BioSources of a vector of Bioseqs. 
       */
     virtual bool WriteBioseqHandles( 
-        const vector<CBioseq_Handle>&,
+        const vector<pair<string,CBioseq_Handle> >&,
         const FIELDS&,
         CNcbiOstream&,
         ILineErrorListener* = 0);
@@ -132,11 +132,12 @@ public:
 protected:
     void xInit();
 
-    virtual bool xGather(CBioseq_Handle, const FIELDS&, ILineErrorListener* =0);
+    virtual bool xGather(CBioseq_Handle, string id, const FIELDS&, ILineErrorListener* =0);
     virtual bool xGatherId(CBioseq_Handle, ILineErrorListener* =0); 
     virtual bool xGatherGi(CBioseq_Handle, ILineErrorListener* =0);
     virtual bool xGatherLocalId(CBioseq_Handle, ILineErrorListener* = 0);
     virtual bool xGatherDefline(CBioseq_Handle, ILineErrorListener* =0);
+    virtual bool xTryDefaultId(const string& id, ILineErrorListener* =0);
     virtual bool xHandleSourceField(const CBioSource&, const string&, ILineErrorListener* =0);
 
 

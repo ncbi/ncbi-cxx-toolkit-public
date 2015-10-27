@@ -134,7 +134,7 @@ bool CSrcWriter::WriteBioseqHandle(
 {
     FIELDS colNames = xProcessFieldNames(desiredFields);
 
-    if (!xGather(bsh, colNames)) {
+    if (!xGather(bsh, "", colNames)) {
         return false;
     }
     if (!xFormatTabDelimited(colNames, out)) {
@@ -146,17 +146,17 @@ bool CSrcWriter::WriteBioseqHandle(
 
 //  ----------------------------------------------------------------------------
 bool CSrcWriter::WriteBioseqHandles( 
-        const vector<CBioseq_Handle>& vecBsh,
+        const vector<pair<string,CBioseq_Handle> >& vecIdBsh,
         const FIELDS& desiredFields,
         CNcbiOstream& out,
         ILineErrorListener* pEC)
 //  ----------------------------------------------------------------------------
 {
-    typedef vector<CBioseq_Handle> HANDLES;
+    typedef vector<pair<string,CBioseq_Handle> > HANDLES;
     FIELDS colNames = xProcessFieldNames(desiredFields);
 
-    for (HANDLES::const_iterator it = vecBsh.begin(); it != vecBsh.end(); ++it) {
-        if (!xGather(*it, colNames)) {
+    for (HANDLES::const_iterator it = vecIdBsh.begin(); it != vecIdBsh.end(); ++it) {
+        if (!xGather(it->second, it->first, colNames)) {
             return false;
         }
     }
@@ -177,13 +177,13 @@ bool CSrcWriter::WriteSeqEntry(
 //  ----------------------------------------------------------------------------
 {
     CSeq_entry_Handle handle = scope.AddTopLevelSeqEntry(seqEntry);
-    vector<CBioseq_Handle> vecBsh;
+    vector<pair<string,CBioseq_Handle> > vecIdBsh;
     for (CBioseq_CI bci(handle); bci; ++bci) {
         if(!nucsOnly || bci->IsNa()) {
-            vecBsh.push_back(*bci);
+            vecIdBsh.push_back(make_pair("",*bci));
         }
     }
-    WriteBioseqHandles(vecBsh, sAllSeqEntryFields, out, 0);
+    WriteBioseqHandles(vecIdBsh, sAllSeqEntryFields, out, 0);
 
     return true;
 }
@@ -503,8 +503,37 @@ bool CSrcWriter::xHandleSourceField(
 
 
 //  ----------------------------------------------------------------------------
+bool CSrcWriter::xTryDefaultId(
+        const string& id,
+        ILineErrorListener*) 
+//  ----------------------------------------------------------------------------
+{
+    if (id.empty()) {
+        return false;
+    } 
+
+    string displayName;
+    string colName;
+    if ( NStr::StringToNumeric<TIntId>(id, NStr::fConvErr_NoThrow)) {
+        colName = displayName = "gi";
+    } else {
+        colName = "id";
+        displayName = "accession";
+    }
+
+    if (!id.empty()) {
+        const string defaultValue = "";
+        xPrepareTableColumn(colName, displayName, defaultValue);
+        xAppendColumnValue(colName, id);
+    }
+    return true;
+}
+
+
+//  ----------------------------------------------------------------------------
 bool CSrcWriter::xGather(
         CBioseq_Handle bsh,
+        const string default_id,
         const FIELDS& desiredFields,
         ILineErrorListener*)
 //  ----------------------------------------------------------------------------
@@ -515,32 +544,40 @@ bool CSrcWriter::xGather(
     bool wantLocalId = ( find(desiredFields.begin(), desiredFields.end(), "localid") != desiredFields.end() );
     bool wantDef = ( find(desiredFields.begin(), desiredFields.end(), "definition") != desiredFields.end() );
 
-
-
-    for (CSeqdesc_CI sdit(bsh, CSeqdesc::e_Source); sdit; ++sdit) {
-
+    if (bsh) {
         if (!xGatherId(bsh)) {
             return false;
         }
 
-        if (wantGi) {
-            if (!xGatherGi(bsh)) {
-                return false;
-            }
+        if (wantGi && !xGatherGi(bsh)) {
+            return false; 
         }
 
-        if (wantLocalId) {
-            if (!xGatherLocalId(bsh)) {
-                return false;
-            }
+        if (wantLocalId && !xGatherLocalId(bsh)) {
+            return false;
         }
+    } else if (xTryDefaultId(default_id)) {
+        mSrcTable->SetNum_rows(mSrcTable->GetNum_rows()+1);
+        return true;
+    } else {
+        return false;
+    }
 
-        if (wantDef) {
-            if (!xGatherDefline(bsh)) {
-                return false;
-            }
+    if (wantDef) {
+        if (!xGatherDefline(bsh)) {
+            return false;
         }
+    }
 
+    CSeqdesc_CI sdit(bsh, CSeqdesc::e_Source);
+    if (!sdit) {
+        mSrcTable->SetNum_rows(mSrcTable->GetNum_rows()+1);
+    }
+
+
+
+    //for (CSeqdesc_CI sdit(bsh, CSeqdesc::e_Source); sdit; ++sdit) {
+    for (; sdit; ++sdit) {
         const CBioSource& src = sdit->GetSource();
         for (FIELDS::const_iterator cit = desiredFields.begin();
                 cit != desiredFields.end(); ++cit) {
@@ -563,10 +600,16 @@ bool CSrcWriter::xGatherId(
         ILineErrorListener*)
 //  ----------------------------------------------------------------------------
 {
-    static const string colName = "id";
+    if (!bsh) {
+        return false;
+    }
+
+    string label = "";
     CConstRef<CSeq_id> sid = bsh.GetSeqId();
-    string label = sequence::GetAccessionForId(*sid, bsh.GetScope());
+    label = sequence::GetAccessionForId(*sid, bsh.GetScope());
+
     if (!label.empty()) {
+        const string colName = "id";
         const string defaultValue = "";
         xPrepareTableColumn(colName, "accession", defaultValue);
         xAppendColumnValue(colName, label);
@@ -581,18 +624,26 @@ bool CSrcWriter::xGatherGi(
         ILineErrorListener*)
 //  ----------------------------------------------------------------------------
 {
-    static const string colName = "gi";
+
+    if (!bsh) {
+        return false;
+    }
+
+    const string colName = "gi";
+    string label = "";
 
     ITERATE( CBioseq_Handle::TId, it, bsh.GetId() ) {
         if( it->IsGi() ){
-            string label;
             it->GetSeqId()->GetLabel(&label, CSeq_id::eContent);
-            const string displayName = "gi";
-            const string defaultValue = "";
-            xPrepareTableColumn(colName, displayName, defaultValue);
-            xAppendColumnValue(colName, label);
-            return true;
+            break;
         }
+    }
+
+    if (!label.empty()) {
+        const string displayName = "gi";
+        const string defaultValue = "";
+        xPrepareTableColumn(colName, displayName, defaultValue);
+        xAppendColumnValue(colName, label);
     }
     return true;
 }
@@ -634,6 +685,10 @@ bool CSrcWriter::xGatherLocalId(
         ILineErrorListener*)
 //  ----------------------------------------------------------------------------
 {
+    if (!bsh) {
+        return true;
+    }
+
     static const string colName = "localid";
     static const string displayName = colName;
     static const string defaultValue = "";
@@ -660,6 +715,10 @@ bool CSrcWriter::xGatherDefline(
         ILineErrorListener*)
 //  ----------------------------------------------------------------------------
 {
+    if (!bsh) {
+        return true;
+    }
+
     static const string colName = "definition";
     static const string displayName = colName;
     static const string defaultValue = "";

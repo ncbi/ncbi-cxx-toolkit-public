@@ -177,7 +177,7 @@ bool CSrcChkApp::xTryProcessIdFile(
         delete pE;
         return false;
     }
-    vector<CBioseq_Handle> vecBsh;
+    vector<pair<string, CBioseq_Handle> > vecIdBsh;
     while (!pIfstr->eof()) {
         pIfstr->getline(line, maxLineSize);
         if (line[0] == 0  ||  line[0] == '#') {
@@ -188,27 +188,20 @@ bool CSrcChkApp::xTryProcessIdFile(
         try {
             CSeq_id_Handle seqh = CSeq_id_Handle::GetHandle(id);
             CBioseq_Handle bsh = m_pScope->GetBioseqHandle(seqh);
-            if (bsh) {
-                vecBsh.push_back(bsh);
-            }
+            vecIdBsh.push_back(make_pair(id,bsh));
         } catch (const CSeqIdException& e) {
             if (e.GetErrCode() != CSeqIdException::eFormat) {
                 throw;
             }
-
-            ERR_POST(e.GetMsg());
-            /*
-            CSrcError* pE = CSrcError::Create(
-                    ncbi::eDiag_Error,
-                    e.GetMsg());
-            m_pErrors->PutError(*pE);
-            delete pE;
-            */
+            id = NStr::PrintableString(id, NStr::fNonAscii_Quote);
+            string err_msg =  "Malformatted ID \"" + id + "\"";
+            ERR_POST(err_msg);
+            vecIdBsh.push_back(make_pair(id,CBioseq_Handle()));
         }
     }
 
 
-    if (vecBsh.empty() || !m_pWriter->WriteBioseqHandles(vecBsh, desiredFields, *pOs, m_pErrors)) {
+    if (vecIdBsh.empty() || !m_pWriter->WriteBioseqHandles(vecIdBsh, desiredFields, *pOs, m_pErrors)) {
         return false;
     }
     return true;
