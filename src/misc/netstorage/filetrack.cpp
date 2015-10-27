@@ -43,6 +43,7 @@
 
 #include <corelib/rwstream.hpp>
 #include <corelib/request_status.hpp>
+#include <corelib/resource_info.hpp>
 
 #include <time.h>
 
@@ -623,6 +624,56 @@ string SFileTrackAPI::MakeMutipartFormDataHeader(const string& boundary)
     header.append("\r\n", 2);
 
     return header;
+}
+
+const string s_GetSection(const string& section)
+{
+    return section.empty() ? "filetrack" : section;
+}
+
+const STimeout s_GetDefaultTimeout()
+{
+    STimeout result;
+    result.sec = 30;
+    result.usec = 0;
+    return result;
+}
+
+const string s_GetDecryptedKey(const string& key)
+{
+    if (CNcbiEncrypt::IsEncrypted(key)) {
+        try {
+            return CNcbiEncrypt::Decrypt(key);
+        } catch (CException& e) {
+            NCBI_RETHROW2(e, CRegistryException, eDecryptionFailed,
+                    "Decryption failed for configuration value '" + key + "'.", 0);
+        }
+    }
+
+    return key;
+}
+
+SFileTrackConfig::SFileTrackConfig(EVoid) :
+    read_timeout(s_GetDefaultTimeout()),
+    write_timeout(s_GetDefaultTimeout())
+{
+}
+
+SFileTrackConfig::SFileTrackConfig(const IRegistry& reg, const string& section) :
+    site(reg.GetString(s_GetSection(section), "site", "prod")),
+    key(reg.GetEncryptedString(s_GetSection(section), "api_key",
+                IRegistry::fPlaintextAllowed)),
+    read_timeout(s_GetDefaultTimeout()),
+    write_timeout(s_GetDefaultTimeout())
+{
+}
+
+SFileTrackConfig::SFileTrackConfig(const string& s, const string& k) :
+    site(s),
+    key(s_GetDecryptedKey(k)),
+    read_timeout(s_GetDefaultTimeout()),
+    write_timeout(s_GetDefaultTimeout())
+{
 }
 
 END_NCBI_SCOPE
