@@ -1,5 +1,5 @@
-#ifndef MISC_NETSTORAGE__NETSTORAGE__HPP
-#define MISC_NETSTORAGE__NETSTORAGE__HPP
+#ifndef MISC_NETSTORAGE_IMPL__NETSTORAGE_INT__HPP
+#define MISC_NETSTORAGE_IMPL__NETSTORAGE_INT__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -28,14 +28,7 @@
  *
  * Authors:  Dmitry Kazimirov, Rafael Sadyrov
  *
- * File Description:
- *   A generic API for accessing heterogeneous storage services
- *   (direct serverless access to the backeend storage services).
- *
  */
-
-/// @file netstorage_api.hpp
-///
 
 #include <connect/services/netstorage.hpp>
 #include <connect/services/neticache_client.hpp>
@@ -43,6 +36,7 @@
 
 BEGIN_NCBI_SCOPE
 
+/// @internal
 class CDirectNetStorageObject : public CNetStorageObject
 {
 public:
@@ -58,6 +52,7 @@ private:
     friend class CDirectNetStorageByKey;
 };
 
+/// @internal
 struct SFileTrackConfig
 {
     const string site;
@@ -70,6 +65,7 @@ struct SFileTrackConfig
     SFileTrackConfig(const string& site, const string& key);
 };
 
+/// @internal
 class CDirectNetStorage : public CNetStorage
 {
 public:
@@ -100,6 +96,7 @@ public:
     CDirectNetStorageObject Open(const string& object_loc);
 };
 
+/// @internal
 class CDirectNetStorageByKey : public CNetStorageByKey
 {
 public:
@@ -123,4 +120,4 @@ public:
 
 END_NCBI_SCOPE
 
-#endif  /* MISC_NETSTORAGE__NETSTORAGE__HPP */
+#endif
