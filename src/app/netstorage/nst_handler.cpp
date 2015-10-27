@@ -296,10 +296,9 @@ void CNetStorageHandler::OnClose(IServer_ConnectionHandler::EClosePeer peer)
             }
             break;
         case IServer_ConnectionHandler::eClientClose:
-            if (m_CmdContext.NotNull()) {
+            if (m_CmdContext.NotNull())
                 m_CmdContext->SetRequestStatus(eStatus_SocketIOError);
-                m_ConnContext->SetRequestStatus(eStatus_SocketIOError);
-            }
+            m_ConnContext->SetRequestStatus(eStatus_SocketIOError);
             break;
     }
 
