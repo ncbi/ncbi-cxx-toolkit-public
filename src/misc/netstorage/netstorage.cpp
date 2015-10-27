@@ -239,19 +239,34 @@ void SDirectNetStorageByKeyImpl::Remove(const string& key, TNetStorageFlags flag
 }
 
 
+string s_GetSection(const IRegistry& registry, const string& service,
+        const string& name)
+{
+    if (!service.empty()) {
+        const string section = "service_" + service;
+        const string service_specific = registry.Get(section, name);
+
+        if (!service_specific.empty()) {
+            return service_specific;
+        }
+    }
+
+    const string server_wide = registry.Get("netstorage_api", name);
+    return server_wide;
+}
+
+
 SFileTrackConfig s_GetFTConfig(const IRegistry& registry, const string& service)
 {
-    const string service_section = "service_" + service;
-    const string ft_section = registry.Get(service_section, "filetrack_api");
+    const string ft_section = s_GetSection(registry, service, "filetrack");
     return ft_section.empty() ? eVoid : SFileTrackConfig(registry, ft_section);
 }
 
 
 CNetICacheClient s_GetICClient(const IRegistry& registry, const string& service)
 {
-    const string service_section = "service_" + service;
-    const string nc_section = registry.Get(service_section, "netcache_api");
-    return  nc_section.empty() ? eVoid :
+    const string nc_section = s_GetSection(registry, service, "netcache_api");
+    return nc_section.empty() ? eVoid :
         CNetICacheClient(CNetICacheClient::eAppRegistry, nc_section);
 }
 
