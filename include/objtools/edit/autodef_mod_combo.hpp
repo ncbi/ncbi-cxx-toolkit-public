@@ -137,6 +137,8 @@ public:
     vector<CAutoDefModifierCombo *> ExpandByAnyPresent();
     bool AreFeatureClausesUnique();
 
+    static bool IsModifierRequiredByDefault(bool is_orgmod, int subtype);
+
 private:
     TSubSourceTypeVector m_SubSources;
     TOrgModTypeVector    m_OrgMods;

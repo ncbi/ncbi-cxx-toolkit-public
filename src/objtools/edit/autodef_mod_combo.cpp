@@ -562,13 +562,13 @@ unsigned int CAutoDefModifierCombo::x_AddRequiredSubSourceModifiers (string& des
 {
     unsigned int num_added = 0;
 
-    if (x_AddSubsourceString (description, bsrc, CSubSource::eSubtype_endogenous_virus_name)) {
+    if (x_AddSubsourceString(description, bsrc, CSubSource::eSubtype_transgenic)) {
         num_added++;
     }
-    if (x_AddSubsourceString (description, bsrc, CSubSource::eSubtype_plasmid_name)) {
+    if (x_AddSubsourceString(description, bsrc, CSubSource::eSubtype_plasmid_name)) {
         num_added++;
     }
-    if (x_AddSubsourceString (description, bsrc, CSubSource::eSubtype_transgenic)) {
+    if (x_AddSubsourceString(description, bsrc, CSubSource::eSubtype_endogenous_virus_name)) {
         num_added++;
     }
               
@@ -660,6 +660,24 @@ static const SPreferredQual s_PreferredList[] = {
 
 static const size_t kNumPreferred = sizeof(s_PreferredList) / sizeof (SPreferredQual);
 
+bool CAutoDefModifierCombo::IsModifierRequiredByDefault(bool is_orgmod, int subtype)
+{
+    bool rval = false;
+    if (is_orgmod) {
+        rval = false;
+    } else {
+        if (subtype == CSubSource::eSubtype_endogenous_virus_name ||
+            subtype == CSubSource::eSubtype_plasmid_name ||
+            subtype == CSubSource::eSubtype_transgenic) {
+            rval = true;
+        } else {
+            rval = false;
+        }
+    }
+    return rval;
+}
+
+
 string CAutoDefModifierCombo::GetSourceDescriptionString (const CBioSource& bsrc) 
 {
     unsigned int k;
@@ -705,7 +723,10 @@ string CAutoDefModifierCombo::GetSourceDescriptionString (const CBioSource& bsrc
     }
 
     for (k = 0; k < kNumPreferred; k++) {
-        if (s_PreferredList[k].is_orgmod) {
+        if (IsModifierRequiredByDefault(s_PreferredList[k].is_orgmod, s_PreferredList[k].subtype)) {
+            //skip, was added earlier
+            continue;
+        } else if (s_PreferredList[k].is_orgmod) {
             if (HasOrgMod((COrgMod::ESubtype)s_PreferredList[k].subtype) &&
                 x_AddOrgModString (source_description, bsrc, (COrgMod::ESubtype)s_PreferredList[k].subtype)) {
                 mods_used++;
