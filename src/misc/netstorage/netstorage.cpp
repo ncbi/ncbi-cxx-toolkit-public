@@ -110,7 +110,7 @@ struct SCombinedNetStorage::SConfig : SNetStorage::SConfig
 
     static SConfig Build(const string& init_string)
     {
-        return SNetStorage::SConfig::Build<SConfig>(init_string);
+        return BuildImpl<SConfig>(init_string);
     }
 
 private:

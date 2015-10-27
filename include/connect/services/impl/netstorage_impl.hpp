@@ -117,8 +117,14 @@ struct NCBI_XCONNECT_EXPORT SNetStorage::SConfig
     void ParseArg(const string&, const string&);
     void Validate(const string&);
 
-    template <class TConfig = SConfig>
-    static TConfig Build(const string& init_string)
+    static SConfig Build(const string& init_string)
+    {
+        return BuildImpl<SConfig>(init_string);
+    }
+
+protected:
+    template <class TConfig>
+    static TConfig BuildImpl(const string& init_string)
     {
         CUrlArgs url_parser(init_string);
         TConfig cfg;
