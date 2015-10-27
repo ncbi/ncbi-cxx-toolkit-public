@@ -1019,10 +1019,37 @@ string CAutoDef::x_GetNonFeatureListEnding()
 }
 
 
+bool IsBioseqmRNA(CBioseq_Handle bsh)
+{
+    bool is_mRNA = false;
+    for (CSeqdesc_CI desc(bsh, CSeqdesc::e_Molinfo); desc && !is_mRNA; ++desc) {
+        if (desc->GetMolinfo().CanGetBiomol()
+            && desc->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_mRNA) {
+            is_mRNA = true;
+        }
+    }
+    return is_mRNA;
+}
+
+
+bool IsInGenProdSet(CBioseq_Handle bh)
+{
+    CBioseq_set_Handle parent = bh.GetParentBioseq_set();
+    while (parent) {
+        if (parent.IsSetClass() && parent.GetClass() == CBioseq_set::eClass_gen_prod_set) {
+            return true;
+        }
+        parent = parent.GetParentBioseq_set();
+    }
+    return false;
+}
+
+
 string CAutoDef::GetOneFeatureClauseList(CBioseq_Handle bh, unsigned int genome_val)
 {
     string feature_clauses = "";
-    if (m_Options.GetFeatureListType() == CAutoDefOptions::eListAllFeatures) {
+    if (m_Options.GetFeatureListType() == CAutoDefOptions::eListAllFeatures ||
+        (IsBioseqmRNA(bh) && IsInGenProdSet(bh))) {
         feature_clauses = " " + x_GetFeatureClauses(bh);
         string ending = x_GetFeatureClauseProductEnding(feature_clauses, bh);
         if (m_Options.GetAltSpliceFlag()) {
