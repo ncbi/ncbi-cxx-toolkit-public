@@ -484,8 +484,8 @@ static const char* const s_NetStorageConfigSections[] = {
     NULL
 };
 
-SNetStorageImpl::SConfig::EDefaultStorage
-SNetStorageImpl::SConfig::GetDefaultStorage(const string& value)
+SNetStorage::SConfig::EDefaultStorage
+SNetStorage::SConfig::GetDefaultStorage(const string& value)
 {
     if (NStr::CompareNocase(value, "nst") == 0)
         return eNetStorage;
@@ -501,7 +501,7 @@ SNetStorageImpl::SConfig::GetDefaultStorage(const string& value)
     }
 }
 
-bool SNetStorageImpl::SConfig::ParseArg(const string& name, const string& value)
+void SNetStorage::SConfig::ParseArg(const string& name, const string& value)
 {
     if (name == "domain")
         app_domain = value;
@@ -519,13 +519,9 @@ bool SNetStorageImpl::SConfig::ParseArg(const string& name, const string& value)
         app_domain = value;
     else if (name == "client")
         client_name = value;
-    else
-        return false;
+}
 
-    return true;
-        }
-
-void SNetStorageImpl::SConfig::Validate(const string& init_string)
+void SNetStorage::SConfig::Validate(const string& init_string)
 {
     if (client_name.empty()) {
         CNcbiApplication* app = CNcbiApplication::Instance();
@@ -578,7 +574,7 @@ void SNetStorageImpl::SConfig::Validate(const string& init_string)
     }
 }
 
-SNetStorageRPC::SNetStorageRPC(const SConfig& config,
+SNetStorageRPC::SNetStorageRPC(const TConfig& config,
         TNetStorageFlags default_flags) :
     m_DefaultFlags(default_flags),
     m_Config(config)
@@ -612,16 +608,16 @@ SNetStorageRPC::SNetStorageRPC(const SConfig& config,
 CNetStorageObject SNetStorageRPC::Create(TNetStorageFlags flags)
 {
     switch (m_Config.default_storage) {
-    /* SConfig::eUndefined is overridden in the constructor */
+    /* TConfig::eUndefined is overridden in the constructor */
 
-    case SConfig::eNetStorage:
+    case TConfig::eNetStorage:
         break; // This case is handled below the switch.
 
-    case SConfig::eNetCache:
+    case TConfig::eNetCache:
         x_InitNetCacheAPI();
         return CDNCNetStorage::Create(m_NetCacheAPI);
 
-    default: /* SConfig::eNoCreate */
+    default: /* TConfig::eNoCreate */
         NCBI_THROW_FMT(CNetStorageException, eAuthError,
                 "Object creation is disabled.");
     }
@@ -1256,7 +1252,7 @@ void SNetStorageObjectImpl::Read(string* data)
 
 struct SNetStorageByKeyRPC : public SNetStorageByKeyImpl
 {
-    SNetStorageByKeyRPC(const SConfig& config,
+    SNetStorageByKeyRPC(const TConfig& config,
             TNetStorageFlags default_flags);
 
     virtual CNetStorageObject Open(const string& unique_key,
@@ -1270,7 +1266,7 @@ struct SNetStorageByKeyRPC : public SNetStorageByKeyImpl
             CNetComponentCounterLocker<SNetStorageRPC> > m_NetStorageRPC;
 };
 
-SNetStorageByKeyRPC::SNetStorageByKeyRPC(const SConfig& config,
+SNetStorageByKeyRPC::SNetStorageByKeyRPC(const TConfig& config,
         TNetStorageFlags default_flags) :
     m_NetStorageRPC(new SNetStorageRPC(config, default_flags))
 {
@@ -1352,16 +1348,16 @@ CJsonNode CNetStorageAdmin::ExchangeJson(const CJsonNode& request,
             request, conn, server_to_use);
 }
 
-SNetStorageImpl* SNetStorageImpl::Create(const string& init_string,
+SNetStorageImpl* SNetStorage::CreateImpl(const SConfig& config,
         TNetStorageFlags default_flags)
 {
-    return new SNetStorageRPC(SConfigBuilder<SConfig>(init_string), default_flags);
+    return new SNetStorageRPC(config, default_flags);
 }
 
-SNetStorageByKeyImpl* SNetStorageByKeyImpl::Create(const string& init_string,
+SNetStorageByKeyImpl* SNetStorage::CreateByKeyImpl(const SConfig& config,
         TNetStorageFlags default_flags)
 {
-    return new SNetStorageByKeyRPC(SConfigBuilder<SConfig>(init_string), default_flags);
+    return new SNetStorageByKeyRPC(config, default_flags);
 }
 
 END_NCBI_SCOPE

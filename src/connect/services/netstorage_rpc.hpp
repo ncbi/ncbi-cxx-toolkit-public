@@ -42,7 +42,7 @@ BEGIN_NCBI_SCOPE
 
 struct SNetStorageRPC : public SNetStorageImpl
 {
-    SNetStorageRPC(const SConfig& config, TNetStorageFlags default_flags);
+    SNetStorageRPC(const TConfig& config, TNetStorageFlags default_flags);
 
     virtual CNetStorageObject Create(TNetStorageFlags flags = 0);
     virtual CNetStorageObject Open(const string& object_loc);
@@ -84,7 +84,7 @@ struct SNetStorageRPC : public SNetStorageImpl
     TNetStorageFlags m_DefaultFlags;
     CNetService m_Service;
 
-    const SConfig m_Config;
+    const TConfig m_Config;
 
     mutable CAtomicCounter m_RequestNumber;
 

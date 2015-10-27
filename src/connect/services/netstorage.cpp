@@ -135,7 +135,8 @@ void CNetStorageObject::Close()
 
 CNetStorage::CNetStorage(const string& init_string,
         TNetStorageFlags default_flags) :
-    m_Impl(SNetStorageImpl::Create(init_string, default_flags))
+    m_Impl(SNetStorage::CreateImpl(
+                SNetStorage::SConfig::Build(init_string), default_flags))
 {
 }
 
@@ -173,7 +174,8 @@ void CNetStorage::Remove(const string& object_loc)
 
 CNetStorageByKey::CNetStorageByKey(const string& init_string,
         TNetStorageFlags default_flags) :
-    m_Impl(SNetStorageByKeyImpl::Create(init_string, default_flags))
+    m_Impl(SNetStorage::CreateByKeyImpl(
+                SNetStorage::SConfig::Build(init_string), default_flags))
 {
 }
 

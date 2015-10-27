@@ -71,35 +71,18 @@ struct NCBI_XCONNECT_EXPORT SNetStorageObjectImpl :
     virtual void SetExpiration(const CTimeout&) = 0;
 };
 
-/// @internal
-template <class TConfig>
-struct SConfigBuilder
+struct SNetStorage
 {
-    SConfigBuilder(const string& init_string) :
-        m_InitString(init_string)
-    {}
+    struct SConfig;
 
-    operator TConfig() const
-    {
-        CUrlArgs url_parser(m_InitString);
-        TConfig cfg;
-
-        ITERATE(CUrlArgs::TArgs, field, url_parser.GetArgs()) {
-            if (!field->name.empty()) cfg.ParseArg(field->name, field->value);
-        }
-
-        cfg.Validate(m_InitString);
-        return cfg;
-    }
-
-private:
-    const string m_InitString;
+    static SNetStorageImpl* CreateImpl(const SConfig&, TNetStorageFlags);
+    static SNetStorageByKeyImpl* CreateByKeyImpl(const SConfig&, TNetStorageFlags);
 };
 
 /// @internal
 struct NCBI_XCONNECT_EXPORT SNetStorageImpl : public CObject
 {
-    struct SConfig;
+    typedef SNetStorage::SConfig TConfig;
 
     virtual CNetStorageObject Create(TNetStorageFlags flags = 0) = 0;
     virtual CNetStorageObject Open(const string& object_loc) = 0;
@@ -110,11 +93,10 @@ struct NCBI_XCONNECT_EXPORT SNetStorageImpl : public CObject
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     virtual void AllowXSiteConnections() {}
 #endif
-
-    static SNetStorageImpl* Create(const string&, TNetStorageFlags);
 };
 
-struct SNetStorageImpl::SConfig
+/// @internal
+struct SNetStorage::SConfig
 {
     enum EDefaultStorage {
         eUndefined,
@@ -131,8 +113,22 @@ struct SNetStorageImpl::SConfig
     EDefaultStorage default_storage;
 
     SConfig() : default_storage(eUndefined) {}
-    bool ParseArg(const string&, const string&);
+    void ParseArg(const string&, const string&);
     void Validate(const string&);
+
+    template <class TConfig = SConfig>
+    static TConfig Build(const string& init_string)
+    {
+        CUrlArgs url_parser(init_string);
+        TConfig cfg;
+
+        ITERATE(CUrlArgs::TArgs, field, url_parser.GetArgs()) {
+            if (!field->name.empty()) cfg.ParseArg(field->name, field->value);
+        }
+
+        cfg.Validate(init_string);
+        return cfg;
+    }
 
 private:
     static EDefaultStorage GetDefaultStorage(const string&);
@@ -141,7 +137,7 @@ private:
 /// @internal
 struct NCBI_XCONNECT_EXPORT SNetStorageByKeyImpl : public CObject
 {
-    typedef SNetStorageImpl::SConfig SConfig;
+    typedef SNetStorage::SConfig TConfig;
 
     virtual CNetStorageObject Open(const string& unique_key,
             TNetStorageFlags flags = 0) = 0;
@@ -150,7 +146,7 @@ struct NCBI_XCONNECT_EXPORT SNetStorageByKeyImpl : public CObject
     virtual bool Exists(const string& key, TNetStorageFlags flags = 0) = 0;
     virtual void Remove(const string& key, TNetStorageFlags flags = 0) = 0;
 
-    static SNetStorageByKeyImpl* Create(const string&, TNetStorageFlags);
+    static SNetStorageByKeyImpl* Create(const TConfig&, TNetStorageFlags);
 };
 
 NCBI_XCONNECT_EXPORT
