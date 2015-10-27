@@ -1,5 +1,5 @@
-#ifndef CONNECT_SERVICES___NETSTORAGE_INT__HPP
-#define CONNECT_SERVICES___NETSTORAGE_INT__HPP
+#ifndef CONNECT_SERVICES_IMPL__NETSTORAGE_INT__HPP
+#define CONNECT_SERVICES_IMPL__NETSTORAGE_INT__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -33,8 +33,8 @@
  *
  */
 
-#include "compound_id.hpp"
-#include "netservice_api.hpp"
+#include <connect/services/compound_id.hpp>
+#include <connect/services/netservice_api.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -297,4 +297,4 @@ void g_AllowXSiteConnections(CNetStorage&);
 
 END_NCBI_SCOPE
 
-#endif  /* CONNECT_SERVICES___NETSTORAGE_INT__HPP */
+#endif  /* CONNECT_SERVICES_IMPL__NETSTORAGE_INT__HPP */

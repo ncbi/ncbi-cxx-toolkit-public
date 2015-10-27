@@ -1,5 +1,5 @@
-#ifndef CONNECT_SERVICES___NETSTORAGE_IMPL__HPP
-#define CONNECT_SERVICES___NETSTORAGE_IMPL__HPP
+#ifndef CONNECT_SERVICES_IMPL__NETSTORAGE_IMPL__HPP
+#define CONNECT_SERVICES_IMPL__NETSTORAGE_IMPL__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -33,9 +33,8 @@
  *
  */
 
-#include "netstorage.hpp"
-
 #include <corelib/ncbi_url.hpp>
+#include <connect/services/netstorage.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -166,4 +165,4 @@ CNetStorageObjectInfo g_CreateNetStorageObjectInfo(const string& object_loc,
 
 END_NCBI_SCOPE
 
-#endif  /* CONNECT_SERVICES___NETSTORAGE_IMPL__HPP */
+#endif  /* CONNECT_SERVICES_IMPL__NETSTORAGE_IMPL__HPP */
