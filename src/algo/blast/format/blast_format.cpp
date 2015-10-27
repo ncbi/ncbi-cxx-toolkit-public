@@ -209,6 +209,7 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& opts,
           m_MatrixName(opts.GetMatrixName()),
           m_Scope(&scope),
           m_IsBl2Seq(false),
+          m_IsDbScan (false),
           m_IsRemoteSearch(is_remote_search),
           m_QueriesFormatted(0),
           m_Megablast(opts.GetProgram() == eMegablast ||
