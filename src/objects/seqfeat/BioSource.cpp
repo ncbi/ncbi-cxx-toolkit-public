@@ -662,6 +662,9 @@ void CBioSource::UpdateWithBioSample(const CBioSource& biosample, bool force, bo
     ITERATE(TFieldDiffList, it, diffs) {
         if (NStr::EqualNocase((*it)->GetFieldName(), "Organism Name")) {
             SetOrg().SetTaxname((*it)->GetSampleVal());
+            if (GetOrg().IsSetOrgname() && GetOrg().GetOrgname().IsSetName()) {
+                SetOrg().SetOrgname().ResetName();
+            }
         } else if (NStr::EqualNocase((*it)->GetFieldName(), "Tax ID")) {
             try {
                 SetOrg().SetTaxId(atoi((*it)->GetSampleVal().c_str()));
