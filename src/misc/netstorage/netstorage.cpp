@@ -82,8 +82,80 @@ CDirectNetStorageObject::CDirectNetStorageObject(SNetStorageObjectImpl* impl)
 {}
 
 
+struct SCombinedNetStorage
+{
+    struct SConfig;
+
+    static SNetStorageImpl* CreateImpl(const string& init_string,
+        TNetStorageFlags default_flags);
+
+    static SNetStorageByKeyImpl* CreateByKeyImpl(const string& init_string,
+        TNetStorageFlags default_flags);
+};
+
+
+struct SCombinedNetStorage::SConfig : SNetStorage::SConfig
+{
+    enum EMode {
+        eDefault,
+        eServerless,
+    };
+
+    EMode mode;
+    string ft_site;
+    string ft_key;
+
+    SConfig() : mode(eDefault) {}
+    void ParseArg(const string&, const string&);
+
+    static SConfig Build(const string& init_string)
+    {
+        return SNetStorage::SConfig::Build<SConfig>(init_string);
+    }
+
+private:
+    static EMode GetMode(const string&);
+};
+
+
+SCombinedNetStorage::SConfig::EMode
+SCombinedNetStorage::SConfig::GetMode(const string& value)
+{
+    if (NStr::CompareNocase(value, "direct") == 0)
+        return eServerless;
+    else
+        return eDefault;
+}
+
+
+void SCombinedNetStorage::SConfig::ParseArg(const string& name,
+        const string& value)
+{
+    if (name == "mode")
+        mode = GetMode(value);
+    if (name == "ft_site")
+        ft_site = value;
+    else if (name == "ft_key")
+        ft_key = NStr::URLDecode(value);
+    else
+        SConfig::ParseArg(name, value);
+}
+
+
 struct SDirectNetStorageImpl : public SNetStorageImpl
 {
+    typedef SCombinedNetStorage::SConfig TConfig;
+
+    SDirectNetStorageImpl(const TConfig& config,
+            TNetStorageFlags default_flags)
+        : m_Context(new SContext(config.app_domain,
+                    CNetICacheClient(config.nc_service, config.app_domain,
+                        config.client_name),
+                    default_flags, NULL,
+                    SFileTrackConfig(config.ft_site, config.ft_key)))
+    {
+    }
+
     SDirectNetStorageImpl(const string& app_domain,
             TNetStorageFlags default_flags,
             CNetICacheClient::TInstance icache_client,
@@ -173,6 +245,19 @@ CObj* SDirectNetStorageImpl::Create(TNetStorageFlags flags,
 
 struct SDirectNetStorageByKeyImpl : public SNetStorageByKeyImpl
 {
+    typedef SCombinedNetStorage::SConfig TConfig;
+
+    SDirectNetStorageByKeyImpl(const TConfig& config,
+            TNetStorageFlags default_flags)
+        : m_Context(new SContext(config.app_domain,
+                    CNetICacheClient(config.nc_service, config.app_domain,
+                        config.client_name),
+                    default_flags, NULL,
+                    SFileTrackConfig(config.ft_site, config.ft_key)))
+    {
+    }
+
+
     SDirectNetStorageByKeyImpl(const string& app_domain,
             TNetStorageFlags default_flags,
             CNetICacheClient::TInstance icache_client,
@@ -343,6 +428,44 @@ CDirectNetStorageObject CDirectNetStorageByKey::Open(const string& key,
         TNetStorageFlags flags)
 {
     return Impl<SDirectNetStorageByKeyImpl>(m_Impl)->OpenImpl(key, flags);
+}
+
+
+SNetStorageImpl* SCombinedNetStorage::CreateImpl(
+        const string& init_string, TNetStorageFlags default_flags)
+{
+    SConfig config(SConfig::Build(init_string));
+
+    return config.mode == SConfig::eDefault ?
+        SNetStorage::CreateImpl(config, default_flags) :
+        new SDirectNetStorageImpl(config, default_flags);
+}
+
+
+CCombinedNetStorage::CCombinedNetStorage(const string& init_string,
+        TNetStorageFlags default_flags) :
+    CNetStorage(
+            SCombinedNetStorage::CreateImpl(init_string, default_flags))
+{
+}
+
+
+SNetStorageByKeyImpl* SCombinedNetStorage::CreateByKeyImpl(
+        const string& init_string, TNetStorageFlags default_flags)
+{
+    SConfig config(SConfig::Build(init_string));
+
+    return config.mode == SConfig::eDefault ?
+        SNetStorage::CreateByKeyImpl(config, default_flags) :
+        new SDirectNetStorageByKeyImpl(config, default_flags);
+}
+
+
+CCombinedNetStorageByKey::CCombinedNetStorageByKey(const string& init_string,
+        TNetStorageFlags default_flags) :
+    CNetStorageByKey(
+            SCombinedNetStorage::CreateByKeyImpl(init_string, default_flags))
+{
 }
 
 

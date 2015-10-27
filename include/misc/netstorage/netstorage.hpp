@@ -1,5 +1,5 @@
-#ifndef MISC_NETSTORAGE_IMPL__NETSTORAGE_INT__HPP
-#define MISC_NETSTORAGE_IMPL__NETSTORAGE_INT__HPP
+#ifndef MISC_NETSTORAGE__NETSTORAGE__HPP
+#define MISC_NETSTORAGE__NETSTORAGE__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -26,98 +26,34 @@
  *
  * ===========================================================================
  *
- * Authors:  Dmitry Kazimirov, Rafael Sadyrov
+ * Author: Rafael Sadyrov
+ *
+ * File Description:
+ *   A generic API for accessing heterogeneous storage services
+ *   (including direct serverless access to the backeend storages).
  *
  */
 
 #include <connect/services/netstorage.hpp>
-#include <connect/services/neticache_client.hpp>
-#include <corelib/ncbi_param.hpp>
 
 BEGIN_NCBI_SCOPE
 
-/// @internal
-class CDirectNetStorageObject : public CNetStorageObject
+class CCombinedNetStorage : public CNetStorage
 {
 public:
-    CDirectNetStorageObject(EVoid);
-    string Relocate(TNetStorageFlags flags);
-    bool Exists();
-    void Remove();
-    const CNetStorageObjectLoc& Locator();
-
-private:
-    CDirectNetStorageObject(SNetStorageObjectImpl* impl);
-    friend class CDirectNetStorage;
-    friend class CDirectNetStorageByKey;
+    explicit CCombinedNetStorage(const string& init_string,
+            TNetStorageFlags default_flags = 0);
 };
 
-/// @internal
-struct SFileTrackConfig
-{
-    const string site;
-    const string key;
-    const STimeout read_timeout;
-    const STimeout write_timeout;
-
-    SFileTrackConfig(EVoid); // Means no FileTrack as a backend storage
-    SFileTrackConfig(const IRegistry& registry, const string& section = kEmptyStr);
-    SFileTrackConfig(const string& site, const string& key);
-};
-
-/// @internal
-class CDirectNetStorage : public CNetStorage
+class CCombinedNetStorageByKey : public CNetStorageByKey
 {
 public:
-    CDirectNetStorage(
-        const IRegistry&            registry,
-        const string&               service_name,
-        CCompoundIDPool::TInstance  compound_id_pool,
-        const string&               app_domain,
-        TNetStorageFlags            default_flags = 0);
-
-    CDirectNetStorage(
-        const SFileTrackConfig&     filetrack_config,
-        CNetICacheClient::TInstance icache_client,
-        CCompoundIDPool::TInstance  compound_id_pool,
-        const string&               app_domain,
-        TNetStorageFlags            default_flags = 0);
-
-    CDirectNetStorageObject Create(
-        const string& service_name,
-        Int8 object_id,
-        TNetStorageFlags flags);
-
-    CNetStorageObject Create(TNetStorageFlags flags = 0)
-    {
-        return CNetStorage::Create(flags);
-    }
-
-    CDirectNetStorageObject Open(const string& object_loc);
-};
-
-/// @internal
-class CDirectNetStorageByKey : public CNetStorageByKey
-{
-public:
-    CDirectNetStorageByKey(
-        const IRegistry&            registry,
-        const string&               service_name,
-        CCompoundIDPool::TInstance  compound_id_pool,
-        const string&               app_domain,
-        TNetStorageFlags            default_flags = 0);
-
-    CDirectNetStorageByKey(
-        const SFileTrackConfig&     filetrack_config,
-        CNetICacheClient::TInstance icache_client,
-        CCompoundIDPool::TInstance  compound_id_pool,
-        const string&               app_domain,
-        TNetStorageFlags            default_flags = 0);
-
-    CDirectNetStorageObject Open(const string& unique_key,
-            TNetStorageFlags flags = 0);
+    explicit CCombinedNetStorageByKey(const string& init_string,
+            TNetStorageFlags default_flags = 0);
 };
 
 END_NCBI_SCOPE
+
+#include "impl/netstorage_int.hpp"
 
 #endif
