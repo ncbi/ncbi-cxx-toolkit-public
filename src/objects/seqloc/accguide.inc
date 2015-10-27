@@ -9672,6 +9672,7 @@ static const char* const kBuiltInGuide[] = {
     "special  CCD22089-CCD22162  embl_tpa_prot",
     "special  CCE69367-CCE71257  embl_tpa_prot",
     "special  CCH35981-CCH35984  embl_tpa_prot",
+    "special  CCP37863-CCP38020  embl_tpa_prot",
     "special  CCQ18550           embl_tpa_prot",
     "special  CDG31911-CDG32165  embl_tpa_prot",
     "special  CDG58552           embl_tpa_prot",
