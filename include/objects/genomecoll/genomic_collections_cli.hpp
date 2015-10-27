@@ -102,7 +102,7 @@ public:
     {
         //as defined in GenomeColl_Master.dbo.CodeServiceModeAlias
         static string kAssemblyOnly() {return "AssemblyOnly";};
-        static string kFtpContents()  {return "FtpContents";};
+        static string kFTPExport()  {return "FTPExport";};
     };
 
     CRef<CGC_Assembly> _GetAssemblyNew(const string& acc, const string& mode);
