@@ -304,8 +304,8 @@ static bool s_AltitudeIsValid(const string & str )
         }
     }
 
-    // should end with " m."
-    return NStr::Equal(pch, " m.");
+    // should end with " m"
+    return NStr::Equal(pch, " m");
 }
 
 /////////////////////////////////////////////////////////////////////////////
