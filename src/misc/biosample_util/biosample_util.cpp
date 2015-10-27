@@ -99,6 +99,154 @@ GetBiosampleData(string accession, bool use_dev_server)
     return response;
 }
 
+EStatus GetBioSampleStatusFromNode(const node& item)
+{
+    attributes::const_iterator at = item.get_attributes().begin();
+    while (at != item.get_attributes().end()) {
+        if (NStr::Equal(at->get_name(), "status")) {
+            string val = at->get_value();
+            if (NStr::EqualNocase(val, "live")) {
+                return eStatus_Live;
+            } else if (NStr::EqualNocase(val, "hup")) {
+                return eStatus_Hup;
+            } else if (NStr::EqualNocase(val, "withdrawn")) {
+                return eStatus_Withdrawn;
+            } else if (NStr::EqualNocase(val, "suppressed")) {
+                return eStatus_Suppressed;
+            } else if (NStr::EqualNocase(val, "to_be_curated")) {
+                return eStatus_ToBeCurated;
+            } else if (NStr::EqualNocase(val, "replaced")) {
+                return eStatus_Replaced;
+            } else {
+                return eStatus_Unknown;
+            }
+            break;
+        }
+        ++at;
+    }
+    return eStatus_Unknown;
+}
+
+
+TStatus ProcessBiosampleStatusNode(node& item)
+{
+    TStatus response;
+    attributes::iterator at1 = item.get_attributes().begin();
+    while (at1 != item.get_attributes().end() && NStr::IsBlank(response.first)) {
+        if (NStr::Equal(at1->get_name(), "accession")) {
+            response.first = at1->get_value();
+        }
+        ++at1;
+    }
+    node::iterator it = item.begin();
+    while (it != item.end()) {
+        if (NStr::Equal(it->get_name(), "Status")) {
+            response.second = GetBioSampleStatusFromNode(*it);
+            break;
+        }
+        ++it;
+    }
+    return response;
+}
+
+EStatus GetBiosampleStatus(string accession, bool use_dev_server)
+{
+    string host = use_dev_server ? "dev-api-int" : "api-int";
+    string path = "/biosample/fetch/";
+    string args = "accession=" + accession;
+    CConn_HttpStream http_stream(host, path, args);
+    xml::error_messages errors;
+    document response(http_stream, &errors);
+    
+#if 0
+    TStatus status = ProcessBiosampleStatusNode(response.get_root_node());
+    return status.second;
+#else 
+    // get status from XML response
+    node & root = response.get_root_node();
+    node::iterator it = root.begin();
+    while (it != root.end())
+    {
+        if (NStr::Equal(it->get_name(), "Status")) {
+            return GetBioSampleStatusFromNode(*it);
+        }
+        ++it;
+    }
+#endif
+
+    return eStatus_Unknown;
+}
+
+void ProcessBulkBioSample(TStatuses& status, string list, bool use_dev_server)
+{
+    string host = use_dev_server ? "dev-api-int" : "api-int";
+    string path = "/biosample/fetch/";
+    string args = "id=" + list + "&bulk=true";
+
+    CConn_HttpStream http_stream(host, path, args);
+    xml::error_messages errors;
+    document response(http_stream, &errors);
+
+    // get status from XML response
+    node & root = response.get_root_node();
+    node::iterator it = root.begin();
+    while (it != root.end())
+    {
+        if (NStr::EqualNocase(it->get_name(), "BioSample")) {
+            TStatus response = ProcessBiosampleStatusNode(*it);
+            status[response.first] = response.second;
+        }
+        ++it;
+    }
+}
+
+void GetBiosampleStatus(TStatuses& status, bool use_dev_server)
+{
+    size_t count = 0;
+    string list = "";
+    for (TStatuses::iterator it = status.begin(); it != status.end(); ++it) {
+        list += "," + it->first;
+        count++;
+        if (count == 900) {
+            ProcessBulkBioSample(status, list.substr(1), use_dev_server);
+            list = "";
+            count = 0;
+        }
+    }
+    if (!NStr::IsBlank(list)) {
+        ProcessBulkBioSample(status, list.substr(1), use_dev_server);
+    }
+}
+
+
+string GetBiosampleStatusName(EStatus status)
+{
+    switch (status) {
+    case eStatus_Unknown:
+        return "Unknown";
+        break;
+    case eStatus_Live:
+        return "Live";
+        break;
+    case eStatus_Hup:
+        return "HUP";
+        break;
+    case eStatus_Withdrawn:
+        return "Withdrawn";
+        break;
+    case eStatus_Suppressed:
+        return "Suppressed";
+        break;
+    case eStatus_ToBeCurated:
+        return "ToBeCurated";
+        break;
+    case eStatus_Replaced:
+        return "Replaced";
+        break;
+    }
+    return kEmptyStr;
+}
+
 
 vector<string> GetDBLinkIDs(const CUser_object& user, const string& field_name)
 {

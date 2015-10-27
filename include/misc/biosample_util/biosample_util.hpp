@@ -51,6 +51,23 @@ BEGIN_SCOPE(biosample_util)
 
 CRef< CSeq_descr > GetBiosampleData(string accession, bool use_dev_server = false);
 
+enum EStatus {
+    eStatus_Unknown = 0,
+    eStatus_Live,
+    eStatus_Hup,
+    eStatus_Withdrawn,
+    eStatus_Suppressed,
+    eStatus_ToBeCurated,
+    eStatus_Replaced
+};
+
+typedef map<string, EStatus> TStatuses;
+typedef pair<string, biosample_util::EStatus> TStatus;
+EStatus GetBiosampleStatus(string accession, bool use_dev_server = false);
+void GetBiosampleStatus(TStatuses& status, bool use_dev_server = false);
+string GetBiosampleStatusName(EStatus status);
+
+
 vector<string> GetBiosampleIDs(CBioseq_Handle bh);
 vector<string> GetBioProjectIDs(CBioseq_Handle bh);
 

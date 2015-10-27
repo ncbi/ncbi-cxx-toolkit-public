@@ -115,6 +115,74 @@ const char * BIOSAMPLE_CHK_APP_VER = "1.0";
 //
 
 
+class CBiosampleHandler
+{
+public:
+    CBiosampleHandler() : 
+        m_ReportStream(0),
+        m_UseDevServer(false)
+        {}
+
+    virtual ~CBiosampleHandler() {}
+
+    virtual void ProcessBioseq(CBioseq_Handle bh) {}
+    virtual bool NeedsReportStream() { return false; }
+    virtual void AddSummary() {}
+
+    void SetReportStream(CNcbiOstream* stream) { m_ReportStream = stream; }
+
+protected:
+    CNcbiOstream* m_ReportStream;
+    bool m_UseDevServer;
+
+};
+
+
+class CBiosampleStatusReport : public CBiosampleHandler
+{
+public:
+    CBiosampleStatusReport() : CBiosampleHandler() {}
+    virtual ~CBiosampleStatusReport() {}
+    virtual void ProcessBioseq(CBioseq_Handle bh);
+    virtual bool NeedsReportStream() { return true; }
+    virtual void AddSummary();
+
+protected:
+    biosample_util::TStatuses m_Status;
+};
+
+
+void CBiosampleStatusReport::ProcessBioseq(CBioseq_Handle bsh)
+{
+    vector<string> ids = biosample_util::GetBiosampleIDs(bsh);
+    if (ids.empty()) {
+        return;
+    }
+
+    ITERATE(vector<string>, it, ids) {
+        if (m_Status.find(*it) == m_Status.end()) {
+            biosample_util::TStatus new_pair(*it, biosample_util::eStatus_Unknown);
+            m_Status.insert(new_pair);
+        }
+    }
+}
+
+void CBiosampleStatusReport::AddSummary()
+{
+    if (m_Status.size() == 0) {
+        *m_ReportStream << "No BioSample IDs found" << endl;
+    } else {
+        biosample_util::GetBiosampleStatus(m_Status, m_UseDevServer);
+        biosample_util::TStatuses::iterator it = m_Status.begin();
+        while (it != m_Status.end()) {
+            *m_ReportStream << it->first << "\t" << biosample_util::GetBiosampleStatusName(it->second) << endl;
+            ++it;
+        }
+    }
+    m_Status.clear();
+}
+
+
 class CBiosampleChkApp : public CNcbiApplication, CReadClassMemberHook
 {
 public:
@@ -181,7 +249,8 @@ private:
         e_generate_biosample,
         e_push,
         e_take_from_biosample,        // update with qualifiers from BioSample, stop if conflict
-        e_take_from_biosample_force   // update with qualifiers from BioSample, no stop on conflict
+        e_take_from_biosample_force,   // update with qualifiers from BioSample, no stop on conflict
+        e_report_status                // make table with list of BioSample IDs and statuses
     };
 
     enum E_ListType {
@@ -209,6 +278,8 @@ private:
     biosample_util::TBiosampleFieldDiffList m_Diffs;
     CRef<CSeq_table> m_Table;
     vector<CRef<CSeqdesc> > m_Descriptors;
+
+    CBiosampleHandler * m_Handler;
 };
 
 
@@ -220,7 +291,7 @@ CBiosampleChkApp::CBiosampleChkApp(void) :
     m_FirstSeqOnly(false), m_IDPrefix(""), m_HUPDate(""),
     m_BioSampleAccession(""), m_BioProjectAccession(""),
     m_Owner(""), m_Comment(""),
-    m_Processed(0), m_Unprocessed(0)
+    m_Processed(0), m_Unprocessed(0), m_Handler(NULL)
 {
 }
 
@@ -267,7 +338,7 @@ void CBiosampleChkApp::Init(void)
     arg_desc->AddDefaultKey(
         "m", "mode", "Mode:\n\t1 create update file\n\t2 generate file for creating new biosample entries\n\t3 push source info from one file (-i) to others (-p)\n\t4 update with source qualifiers from BioSample unless conflict\n\t5 update with source qualifiers from BioSample (continue with conflict))",
         CArgDescriptions::eInteger, "1");
-    CArgAllow* constraint = new CArgAllow_Integers(e_report_diffs, e_take_from_biosample_force);
+    CArgAllow* constraint = new CArgAllow_Integers(e_report_diffs, e_report_status);
     arg_desc->SetConstraint("m", constraint);
     
 	arg_desc->AddOptionalKey(
@@ -391,7 +462,9 @@ void CBiosampleChkApp::ProcessOneFile(string fname)
     bool need_to_close_report = false;
     bool need_to_close_asn = false;
 
-    if (!m_ReportStream && (m_Mode == e_report_diffs || m_Mode == e_take_from_biosample)) {
+    if (!m_ReportStream && 
+        (m_Mode == e_report_diffs || m_Mode == e_take_from_biosample || m_Mode == e_report_status ||
+         (m_Handler != NULL && m_Handler->NeedsReportStream()))) {
         string path = fname;
         size_t pos = NStr::Find(path, ".", 0, string::npos, NStr::eLast);
         if (pos != string::npos) {
@@ -407,6 +480,9 @@ void CBiosampleChkApp::ProcessOneFile(string fname)
         }
         need_to_close_report = true;
         m_NeedReportHeader = true;
+        if (m_Handler && m_Handler->NeedsReportStream()) {
+            m_Handler->SetReportStream(m_ReportStream);
+        }
     }
     if (!m_AsnOut && (m_Mode == e_push || m_Mode == e_take_from_biosample || m_Mode == e_take_from_biosample_force)) {
         string path = fname;
@@ -444,6 +520,9 @@ void CBiosampleChkApp::ProcessOneFile(string fname)
 
     if (m_Mode == e_report_diffs) {
         PrintResults(m_Diffs);
+    }
+    if (m_Handler != NULL) {
+        m_Handler->AddSummary();
     }
 
     // TODO! Must free diffs
@@ -587,12 +666,21 @@ int CBiosampleChkApp::Run(void)
     m_BioProjectAccession = args["bioproject"] ? args["bioproject"].AsString() : "";
     m_Comment = args["comment"] ? args["comment"].AsString() : "";
 
+    if (m_Mode == e_report_status) {
+        m_Handler = new CBiosampleStatusReport();
+    }
+
     if (args["o"]) {
-        if (m_Mode == e_report_diffs || m_Mode == e_generate_biosample || m_Mode == e_take_from_biosample) {
+        if (m_Mode == e_report_diffs || m_Mode == e_generate_biosample 
+            || m_Mode == e_take_from_biosample ||
+            (m_Handler != NULL && m_Handler->NeedsReportStream())) {
             m_ReportStream = &(args["o"].AsOutputFile());
             if (!m_ReportStream)
             {
                 NCBI_THROW(CException, eUnknown, "Unable to open " + args["o"].AsString());
+            }
+            if (m_Handler) {
+                m_Handler->SetReportStream(m_ReportStream);
             }
             if (m_Mode == e_take_from_biosample) {
                 m_Table.Reset(new CSeq_table());
@@ -640,7 +728,14 @@ int CBiosampleChkApp::Run(void)
         m_ListType = e_none;
     }
 
-    if ( m_Mode == e_push) {
+    if (m_Mode == e_report_status && !NStr::IsBlank(m_BioSampleAccession)) {
+        biosample_util::EStatus status = biosample_util::GetBiosampleStatus(m_BioSampleAccession, m_UseDevServer);
+        if (m_ReportStream) {
+            *m_ReportStream << m_BioSampleAccession << "\t" << biosample_util::GetBiosampleStatusName(status) << endl;
+        } else {
+            NcbiCout << m_BioSampleAccession << "\t" << biosample_util::GetBiosampleStatusName(status) << endl;
+        }
+    } else if ( m_Mode == e_push) {
         if (m_ListType != e_none) {
             // error
             *m_LogStream << "List type (-a l or -a f) is not appropriate for push mode." << endl;
@@ -674,7 +769,7 @@ int CBiosampleChkApp::Run(void)
     if (m_Unprocessed > 0) {
         if (m_Mode != e_report_diffs) {
             *m_LogStream << m_Unprocessed << " results failed" << endl;
-        } 
+        }
         return 1;
     } else {
         return 0;
@@ -930,7 +1025,13 @@ void CBiosampleChkApp::ProcessBioseqHandle(CBioseq_Handle bh)
         case e_take_from_biosample_force:
             ProcessBioseqForUpdate(bh);
             break;
+        default:
+            if (m_Handler != NULL) {
+                m_Handler->ProcessBioseq(bh);
+            }
+            break;
     }
+
 }
 
 
