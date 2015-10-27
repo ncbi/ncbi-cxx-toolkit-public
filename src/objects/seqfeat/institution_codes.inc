@@ -4825,6 +4825,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "PH	s	Academy of Natural Sciences, Botany Department",
 "PHA	s	Pharmaceutical Society of Great Britain",
 "PHBL	c	Philip Harris Biological Ltd.",
+"PHEL	s	Plant Health and Environment Laboratory",
 "PHG	s	Peper Harow",
 "PHIL	s	University of the Sciences in Philadelphia, Biological Sciences Department",
 "PI<DEU>	s	Institut und Museum fuer Geologie und Palaeontologie",
