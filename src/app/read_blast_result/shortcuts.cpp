@@ -116,9 +116,18 @@ string Get3type(const CRNA_ref& rna)
 {
   string type;
 
-  if(!rna.CanGetExt()) throw;
-  if(!rna.GetExt().IsTRNA()) throw;
-  if(!rna.GetExt().GetTRNA().CanGetAa()) throw;
+  if(!rna.CanGetExt()) {
+      ERR_POST(Error<<MSerial_AsnText << rna);
+      NCBI_USER_THROW("!rna.CanGetExt()");
+  }
+  if(!rna.GetExt().IsTRNA()) {
+      ERR_POST(Error<<MSerial_AsnText << rna);
+      NCBI_USER_THROW("!rna.GetExt().IsTRNA()");
+  }
+  if(!rna.GetExt().GetTRNA().CanGetAa()) {
+      ERR_POST(Error<<MSerial_AsnText << rna);
+      NCBI_USER_THROW("!rna.GetExt().GetTRNA().CanGetAa()");
+  }
   CTrna_ext::C_Aa::E_Choice choice = rna.GetExt().GetTRNA().GetAa().Which();
 
   char let1;
