@@ -32,7 +32,7 @@
 
 #include <ncbi_pch.hpp>
 #include <corelib/rwstream.hpp>
-#include <connect/services/netstorage_impl.hpp>
+#include <connect/services/impl/netstorage_impl.hpp>
 
 BEGIN_NCBI_SCOPE
 

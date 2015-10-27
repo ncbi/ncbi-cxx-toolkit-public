@@ -36,7 +36,7 @@
 #include "netservice_api_impl.hpp"
 
 #include <connect/services/netcache_api.hpp>
-#include <connect/services/netstorage_impl.hpp>
+#include <connect/services/impl/netstorage_impl.hpp>
 
 BEGIN_NCBI_SCOPE
 

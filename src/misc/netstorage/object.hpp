@@ -30,7 +30,7 @@
  *
  */
 
-#include <connect/services/netstorage_impl.hpp>
+#include <connect/services/impl/netstorage_impl.hpp>
 #include "state.hpp"
 
 
