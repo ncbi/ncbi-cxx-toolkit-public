@@ -97,7 +97,7 @@ struct NCBI_XCONNECT_EXPORT SNetStorageImpl : public CObject
 };
 
 /// @internal
-struct SNetStorage::SConfig
+struct NCBI_XCONNECT_EXPORT SNetStorage::SConfig
 {
     enum EDefaultStorage {
         eUndefined,
