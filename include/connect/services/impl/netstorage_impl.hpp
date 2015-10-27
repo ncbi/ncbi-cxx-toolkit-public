@@ -71,7 +71,8 @@ struct NCBI_XCONNECT_EXPORT SNetStorageObjectImpl :
     virtual void SetExpiration(const CTimeout&) = 0;
 };
 
-struct SNetStorage
+/// @internal
+struct NCBI_XCONNECT_EXPORT SNetStorage
 {
     struct SConfig;
 
