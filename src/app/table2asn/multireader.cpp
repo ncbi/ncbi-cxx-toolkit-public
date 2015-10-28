@@ -705,9 +705,9 @@ CFormatGuess::EFormat CMultiReader::LoadFile(CNcbiIstream& istream, CRef<CSeq_en
                 entry->SetAnnot().begin(),
                 entry->SetAnnot().end());
             entry = seq;
-            seq.Reset();
-            entry->Parentize();
         }
+        entry->ResetParentEntry();
+        entry->Parentize();
         m_context.MergeWithTemplate(*entry);
     }
     return m_uFormat;
