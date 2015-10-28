@@ -76,27 +76,27 @@ void CSNPTestApp::Init(void)
                      "SNP file name, accession, or prefix",
                      CArgDescriptions::eString);
 
-    arg_desc->AddFlag("refseq_table", "Dump RefSeq table");
+    arg_desc->AddFlag("seq_table", "Dump sequence table");
 
     arg_desc->AddOptionalKey("q", "Query",
                              "Query coordinates in form chr1:100-10000",
                              CArgDescriptions::eString);
-    arg_desc->AddOptionalKey("refseq", "RefSeqId",
-                             "RefSeq id",
+    arg_desc->AddOptionalKey("seq", "SeqId",
+                             "Seq id",
                              CArgDescriptions::eString);
-    arg_desc->AddDefaultKey("refpos", "RefSeqPos",
-                            "RefSeq position",
+    arg_desc->AddDefaultKey("pos", "SeqPos",
+                            "Seq position",
                             CArgDescriptions::eInteger,
                             "0");
-    arg_desc->AddOptionalKey("refposs", "RefSeqPoss",
-                            "RefSeq positions",
+    arg_desc->AddOptionalKey("poss", "SeqPoss",
+                            "Seq positions",
                             CArgDescriptions::eString);
-    arg_desc->AddDefaultKey("refwindow", "RefSeqWindow",
-                            "RefSeq window",
+    arg_desc->AddDefaultKey("window", "SeqWindow",
+                            "Seq window",
                             CArgDescriptions::eInteger,
                             "0");
-    arg_desc->AddOptionalKey("refend", "RefSeqEnd",
-                            "RefSeq end position",
+    arg_desc->AddOptionalKey("end", "SeqEnd",
+                            "Seq end position",
                             CArgDescriptions::eInteger);
 
     arg_desc->AddDefaultKey("limit_count", "LimitCount",
@@ -142,11 +142,11 @@ int CSNPTestApp::Run(void)
     CRange<TSeqPos> query_range = CRange<TSeqPos>::GetWhole();
     CSeq_id_Handle query_idh;
     
-    if ( args["refseq"] ) {
-        query_id = args["refseq"].AsString();
-        query_range.SetFrom(args["refpos"].AsInteger());
-        if ( args["refwindow"] ) {
-            TSeqPos window = args["refwindow"].AsInteger();
+    if ( args["seq"] ) {
+        query_id = args["seq"].AsString();
+        query_range.SetFrom(args["pos"].AsInteger());
+        if ( args["window"] ) {
+            TSeqPos window = args["window"].AsInteger();
             if ( window != 0 ) {
                 query_range.SetLength(window);
             }
@@ -154,8 +154,8 @@ int CSNPTestApp::Run(void)
                 query_range.SetTo(kInvalidSeqPos);
             }
         }
-        if ( args["refend"] ) {
-            query_range.SetTo(args["refend"].AsInteger());
+        if ( args["end"] ) {
+            query_range.SetTo(args["end"].AsInteger());
         }
     }
     if ( args["q"] ) {
@@ -207,12 +207,12 @@ int CSNPTestApp::Run(void)
             << NcbiEndl;
     }
     
-    if ( args["refseq_table"] ) {
+    if ( args["seq_table"] ) {
         sw.Restart();
-        for ( CSNPDbRefSeqIterator it(snp_db); it; ++it ) {
+        for ( CSNPDbSeqIterator it(snp_db); it; ++it ) {
             out << it->m_Name << " " << it->m_SeqId
-                << " len: "<<it.GetSeqLength()
-                << " @(" << it->m_RowFirst << "," << it->m_RowLast << ")"
+                << " range: "<<it.GetSNPRange()
+                << " @(" << it.GetVDBRowRange() << ")"
                 << NcbiEndl;
         }
         out << "Scanned reftable in "<<sw.Elapsed()
@@ -224,11 +224,11 @@ int CSNPTestApp::Run(void)
         sw.Restart();
         
         size_t count = 0;
-        CSNPDbIterator::TFlags flags = CSNPDbIterator::fDefaultFlags;
+        CSNPDbFeatIterator::TFlags flags = CSNPDbFeatIterator::fDefaultFlags;
         if ( args["no_shared_objects"] ) {
-            flags &= ~CSNPDbIterator::fUseSharedObjects;
+            flags &= ~CSNPDbFeatIterator::fUseSharedObjects;
         }
-        for ( CSNPDbIterator it(snp_db, query_idh, query_range); it; ++it ) {
+        for ( CSNPDbFeatIterator it(snp_db, query_idh, query_range); it; ++it ) {
             if ( verbose ) {
                 out << it.GetAccession();
                 out << " pos: "<<it.GetSNPPosition();
