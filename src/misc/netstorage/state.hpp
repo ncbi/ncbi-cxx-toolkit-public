@@ -47,8 +47,7 @@ struct SCombinedNetStorageConfig : SNetStorage::SConfig
     };
 
     EMode mode;
-    string ft_site;
-    string ft_key;
+    SFileTrackConfig ft;
 
     SCombinedNetStorageConfig() : mode(eDefault) {}
     void ParseArg(const string&, const string&);

@@ -55,12 +55,12 @@ private:
 /// @internal
 struct SFileTrackConfig
 {
-    const string site;
-    const string key;
+    string site;
+    string key;
     const STimeout read_timeout;
     const STimeout write_timeout;
 
-    SFileTrackConfig(EVoid); // Means no FileTrack as a backend storage
+    SFileTrackConfig(EVoid = eVoid); // Means no FileTrack as a backend storage
     SFileTrackConfig(const IRegistry& registry, const string& section = kEmptyStr);
     SFileTrackConfig(const string& site, const string& key);
 };

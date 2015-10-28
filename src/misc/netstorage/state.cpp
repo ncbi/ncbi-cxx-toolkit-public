@@ -873,7 +873,7 @@ CNetICacheClient s_GetICClient(const SCombinedNetStorageConfig& c)
 
 SContext::SContext(const SCombinedNetStorageConfig& config, TNetStorageFlags flags)
     : icache_client(s_GetICClient(config)),
-      filetrack_api(SFileTrackConfig(config.ft_site, config.ft_key)),
+      filetrack_api(config.ft),
       default_flags(flags),
       app_domain(config.app_domain)
 {
@@ -987,9 +987,9 @@ void SCombinedNetStorageConfig::ParseArg(const string& name,
     if (name == "mode")
         mode = GetMode(value);
     if (name == "ft_site")
-        ft_site = value;
+        ft.site = value;
     else if (name == "ft_key")
-        ft_key = NStr::URLDecode(value);
+        ft.key = NStr::URLDecode(value);
     else
         SNetStorage::SConfig::ParseArg(name, value);
 }
