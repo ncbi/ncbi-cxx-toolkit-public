@@ -1943,7 +1943,7 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     if(m_FormatFlags & eIsSAM) {
     	kOutputFormatDescription +=
     			"The supported format specifiers for option 15 are:\n" +
-        		DescribeSAMOutputFormatSpecifiers(m_FormatFlags & eIsVDB);
+        		DescribeSAMOutputFormatSpecifiers();
     }
 
     kOutputFormatDescription += "Add specifier 'X' to option 13 and 14 to produce output file per query.\n";

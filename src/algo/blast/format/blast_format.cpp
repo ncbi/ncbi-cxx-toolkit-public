@@ -1815,6 +1815,5 @@ void CBlastFormat::x_InitSAMFormatter()
 	CSAM_Formatter::SProgramInfo  pg("0", blast::CBlastVersion().Print(), m_Cmdline);
    	pg.m_Name = m_Program;
     m_SamFormatter.reset(new CBlast_SAM_Formatter(m_Outfile, *m_Scope,
-        		                                  m_CustomOutputFormatSpec, pg,
-        		                                  m_IsVdb));
+        		                                  m_CustomOutputFormatSpec, pg));
 }

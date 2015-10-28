@@ -43,11 +43,9 @@ USING_SCOPE(objects);
 
 CBlast_SAM_Formatter::CBlast_SAM_Formatter(CNcbiOstream& out, CScope& scope,
 			                               const string & custom_spec,
-			                               const CSAM_Formatter::SProgramInfo & info,
-			                               bool isVDB) :
+			                               const CSAM_Formatter::SProgramInfo & info) :
 			                               CSAM_Formatter(out,scope),
-			                               m_isVDB(isVDB),
-			                               m_refRow(isVDB? 1: 0)
+			                               m_refRow(1)
 {
 	CSAM_Formatter::SetFlag(CSAM_Formatter::fSAM_PlainSeqIds);
 	x_ProcessCustomSpec(custom_spec, info);
@@ -89,11 +87,10 @@ void CBlast_SAM_Formatter::x_ProcessCustomSpec(const string & custom_spec,
 	vector<string> format_tokens;
 	NStr::Tokenize(custom_spec, " ", format_tokens);
 	CSAM_Formatter::SetProgram(info);
+	m_refRow = 1;
 	ITERATE (vector<string>, iter, format_tokens) {
 		if("SR" == *iter){
 			m_refRow = 0;
-		} else if ("QR" == *iter ) {
-			m_refRow = 1;
 		} else if ("FA" == *iter) {
 			CSAM_Formatter::UnsetFlag(CSAM_Formatter::fSAM_PlainSeqIds);
 		}

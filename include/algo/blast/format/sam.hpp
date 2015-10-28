@@ -45,15 +45,13 @@ public:
 	CBlast_SAM_Formatter (CNcbiOstream& out,
 			              CScope& scope,
 			              const string & custom_spec,
-			              const CSAM_Formatter::SProgramInfo & info,
-			              bool isVDB);
+			              const CSAM_Formatter::SProgramInfo & info);
 
 	void Print(const CSeq_align_set &  aln);
 
 private :
 	void x_ProcessCustomSpec(const string & custom_spec, const CSAM_Formatter::SProgramInfo & info);
 	void x_Print(const CSeq_align_set & aln);
-	bool m_isVDB;
 	unsigned int m_refRow;
 
 };

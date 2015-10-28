@@ -208,27 +208,21 @@ const string kArgProduceHtml("html");
 const bool kDfltArgProduceHtml = false;
 const size_t kDfltLineLength = 60;
 
-const size_t kNumSAMOutputFormatSpecifiers = 3;
+const size_t kNumSAMOutputFormatSpecifiers = 2;
 const SSAMFormatSpec sc_SAMFormatSpecifiers[kNumSAMOutputFormatSpecifiers] = {
 	 SSAMFormatSpec("SR",
 	                "Subject as Reference Seq",
 	                eSAM_SubjAsRefSeq),
-    SSAMFormatSpec("QR",
-                   "Query as Reference Seq",
-                   eSAM_QueryAsRefSeq),
     SSAMFormatSpec("FA",
                    "Use NCBI FASTA-ID Format",
                    eSAM_NCBIFastaID)
 
 };
 
-string DescribeSAMOutputFormatSpecifiers(bool is_vdb)
+string DescribeSAMOutputFormatSpecifiers()
 {
     ostringstream os;
-    size_t i = is_vdb ? 0:1;
-    for (; i < kNumSAMOutputFormatSpecifiers; i++) {
-    	if(is_vdb && i == 1)
-    		continue;
+    for (size_t i =0; i < kNumSAMOutputFormatSpecifiers; i++) {
         os << "\t" << setw(10) << sc_SAMFormatSpecifiers[i].name << " means ";
         os << sc_SAMFormatSpecifiers[i].description << "\n";
     }
