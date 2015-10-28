@@ -721,6 +721,7 @@ CFastaBioseqSource::CFastaBioseqSource(CNcbiIstream & fasta_file,
     }
 
     iflags |= CFastaReader::fQuickIDCheck;
+    iflags |= CFastaReader::fDisableNoResidues;
 
     TFlags flags = (TFlags) iflags;
 
@@ -1295,6 +1296,9 @@ bool CBuildDatabase::AddFasta(CNcbiIstream & fasta_file)
 
         try {
             success = AddSequences(fbs);
+	    if (success == false)
+            	NCBI_THROW(CWriteDBException, eFileErr, "No sequences added");
+		
         }
         catch (...) {
             EndBuild(true);
