@@ -1628,7 +1628,9 @@ CRef<CSeq_literal> CVariationUtil::s_CatLiterals(const CSeq_literal& a, const CS
     return c;
 }
 
-CRef<CSeq_literal> CVariationUtil::s_SpliceLiterals(const CSeq_literal& payload, const CSeq_literal& ref, TSeqPos pos)
+CRef<CSeq_literal> CVariationUtil::s_SpliceLiterals(
+        const CSeq_literal& payload, 
+        const CSeq_literal& ref, TSeqPos pos)
 {
     CRef<CSeq_literal> result;
     if(pos == 0) {
@@ -1686,7 +1688,9 @@ void CVariationUtil::ChangeToDelins(CVariation& v)
     v.Index();
 
     if(v.GetData().IsSet()) {
-        NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, it, v.SetData().SetSet().SetVariations()) {
+        NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, it, 
+                          v.SetData().SetSet().SetVariations()) 
+        {
             ChangeToDelins(**it);
         }
     } else if(v.GetData().IsInstance()) {
@@ -2824,7 +2828,9 @@ void CVariationUtil::s_FactorOutPlacements(CVariation& v)
         }
 
         //reset placements at the children level
-        NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, it, v.SetData().SetSet().SetVariations()) {
+        NON_CONST_ITERATE(CVariation::TData::TSet::TVariations, it, 
+                          v.SetData().SetSet().SetVariations()) 
+        {
             CVariation& v2 = **it;
             v2.ResetPlacements();
         }
@@ -2832,16 +2838,23 @@ void CVariationUtil::s_FactorOutPlacements(CVariation& v)
 }
 
 
-CConstRef<CVariation> CVariationUtil::s_FindConsequenceForPlacement(const CVariation& v, const CVariantPlacement& p)
+CConstRef<CVariation> CVariationUtil::s_FindConsequenceForPlacement(
+        const CVariation& v, 
+        const CVariantPlacement& p)
 {
     CConstRef<CVariation> cons_v(NULL);
     if(v.IsSetConsequence() && p.GetLoc().GetId()) {
         ITERATE(CVariation::TConsequence, it, v.GetConsequence()) {
             const CVariation::TConsequence::value_type::TObjectType& cons = **it;
-            if(cons.IsVariation() && cons.GetVariation().IsSetPlacements()) {
+            if(   cons.IsVariation() 
+               && cons.GetVariation().IsSetPlacements()) 
+            {
                 ITERATE(CVariation::TPlacements, it2, cons.GetVariation().GetPlacements()) {
                     const CVariantPlacement& vp = **it2;
-                    if(vp.GetLoc().GetId() && p.GetLoc().GetId() && vp.GetLoc().GetId()->Equals(*p.GetLoc().GetId())) {
+                    if(  vp.GetLoc().GetId() 
+                       && p.GetLoc().GetId() 
+                       && vp.GetLoc().GetId()->Equals(*p.GetLoc().GetId())) 
+                    {
                         cons_v.Reset(&cons.GetVariation());
                         break;
                     }
@@ -2851,7 +2864,9 @@ CConstRef<CVariation> CVariationUtil::s_FindConsequenceForPlacement(const CVaria
     }
 
     if(!cons_v && v.GetData().IsSet()) {
-        ITERATE(CVariation::TData::TSet::TVariations, it, v.GetData().GetSet().GetVariations()) {
+        ITERATE(CVariation::TData::TSet::TVariations, it, 
+                v.GetData().GetSet().GetVariations()) 
+        {
             CConstRef<CVariation> cons_v1 = s_FindConsequenceForPlacement(**it, p);
             if(cons_v1) {
                 cons_v = cons_v1;
@@ -2871,10 +2886,14 @@ void CVariationUtil::s_AttachGeneIDdbxref(CVariantPlacement& p, int gene_id)
 {
     ITERATE(CVariantPlacement::TDbxrefs, it, p.SetDbxrefs()) {
         const CDbtag& dbtag = **it;
-        if(dbtag.GetDb() == "GeneID" && dbtag.GetTag().IsId() && dbtag.GetTag().GetId() == gene_id) {
+        if(   dbtag.GetDb() == "GeneID" 
+           && dbtag.GetTag().IsId() 
+           && dbtag.GetTag().GetId() == gene_id) 
+        {
             return;
         }
     }
+
     CRef<CDbtag> dbtag(new CDbtag());
     dbtag->SetDb("GeneID");
     dbtag->SetTag().SetId(gene_id);
@@ -2884,41 +2903,66 @@ void CVariationUtil::s_AttachGeneIDdbxref(CVariantPlacement& p, int gene_id)
 void CVariationUtil::SetPlacementProperties(CVariantPlacement& placement)
 {
     if(!placement.IsSetGene_location()) {
-        //need to zero-out the bitmask, otherwise in debug mode it will be preset to a magic value,
-        //and then modifying it with "|=" will produce garbage.
+        // need to zero-out the bitmask, 
+        // otherwise in debug mode it will be preset to a magic value,
+        // and then modifying it with "|=" will produce garbage.
         placement.SetGene_location(0);
     }
 
 
-    //for offset-style intronic locations (not genomic and have offset), can infer where we are based on offset
-    if(!placement.IsSetMol() || placement.GetMol() != CVariantPlacement::eMol_genomic) {
-        CBioseq_Handle bsh = m_scope->GetBioseqHandle(sequence::GetId(placement.GetLoc(), NULL));
-        if(placement.IsSetStart_offset() && placement.GetStart_offset() != 0) {
-            x_SetVariantPropertiesForIntronic(placement, placement.GetStart_offset(), placement.GetLoc(), bsh);
+    // for offset-style intronic locations (not genomic and have offset), 
+    // can infer where we are based on offset
+    if(  !placement.IsSetMol() 
+       || placement.GetMol() != CVariantPlacement::eMol_genomic) 
+    {
+        CBioseq_Handle bsh = m_scope->GetBioseqHandle(
+                sequence::GetId(placement.GetLoc(), NULL));
+
+        if(   placement.IsSetStart_offset() 
+           && placement.GetStart_offset() != 0) 
+        {
+            x_SetVariantPropertiesForIntronic(
+                    placement, 
+                    placement.GetStart_offset(), 
+                    placement.GetLoc(), 
+                    bsh);
         }
-        if(placement.IsSetStop_offset() && placement.GetStop_offset() != 0) {
-            x_SetVariantPropertiesForIntronic(placement, placement.GetStop_offset(), placement.GetLoc(), bsh);
+
+        if(   placement.IsSetStop_offset() 
+           && placement.GetStop_offset() != 0) 
+        {
+            x_SetVariantPropertiesForIntronic(
+                    placement, 
+                    placement.GetStop_offset(), 
+                    placement.GetLoc(), 
+                    bsh);
         }
     }
 
     CVariantPropertiesIndex::TGeneIDAndPropVector v;
     m_variant_properties_index.GetLocationProperties(placement.GetLoc(), v);
 
-    //note: this assumes that the offsets are HGVS-spec compliant: anchor locations are at the exon terminals, and the
-    //offset values point into the intron.
+    // note: this assumes that the offsets are HGVS-spec compliant: 
+    // anchor locations are at the exon terminals, and the
+    // offset values point into the intron.
     bool is_completely_intronic = false;
     {{
-        bool is_start_offset = placement.IsSetStart_offset() && placement.GetStart_offset() != 0;
-        bool is_stop_offset = placement.IsSetStop_offset() && placement.GetStop_offset() != 0;
+        bool is_start_offset = placement.IsSetStart_offset() 
+                            && placement.GetStart_offset() != 0;
 
-        //Single anchor point, and have any offset.
-        bool is_case1 = sequence::GetLength(placement.GetLoc(), NULL) == 1 && (is_start_offset || is_stop_offset);
+        bool is_stop_offset = placement.IsSetStop_offset() 
+                           && placement.GetStop_offset() != 0;
 
-        //Other possibility is when start and stop are addressed from different exons:
-        //The location length must be 2 (end of one exon and start of the other), and the offsets point inwards.
+        // Single anchor point, and have any offset.
+        bool is_case1 = sequence::GetLength(placement.GetLoc(), NULL) == 1 
+                     && (is_start_offset || is_stop_offset);
+
+        // Other possibility is when start and stop are addressed from different exons:
+        // The location length must be 2 (end of one exon and start of the other), 
+        // and the offsets point inwards.
         bool is_case2 = sequence::GetLength(placement.GetLoc(), NULL) == 2
-                        && is_start_offset && placement.GetStart_offset() > 0
-                        && is_stop_offset && placement.GetStop_offset() < 0;
+                     && is_start_offset && placement.GetStart_offset() > 0
+                     && is_stop_offset && placement.GetStop_offset() < 0;
 
         is_completely_intronic = is_case1 || is_case2;
     }}
@@ -3223,7 +3267,10 @@ void CVariationUtil::CVariantPropertiesIndex::GetLocationProperties(
     }
 }
 
-void CVariationUtil::CVariantPropertiesIndex::x_Add(const CSeq_loc& loc, int gene_id, CVariantProperties::TGene_location prop)
+void CVariationUtil::CVariantPropertiesIndex::x_Add(
+        const CSeq_loc& loc, 
+        int gene_id, 
+        CVariantProperties::TGene_location prop)
 {
     for(CSeq_loc_CI ci(loc); ci; ++ci) {
         try {
@@ -3291,9 +3338,9 @@ bool IsRefSeqGene(const CBioseq_Handle& bsh)
     return false;
 }
 
-//VAR-239
-//If RefSeqGene NG, Return GeneIDs for loci having alignments to transcripts.
-//Otherwise, return empty set
+// VAR-239
+// If RefSeqGene NG, Return GeneIDs for loci having alignments to transcripts.
+// Otherwise, return empty set
 set<int> GetFocusLocusIDs(const CBioseq_Handle& bsh)
 {
     set<int> gene_ids;
@@ -3318,7 +3365,10 @@ set<int> GetFocusLocusIDs(const CBioseq_Handle& bsh)
         if(!mf.IsSetProduct() || !mf.IsSetDbxref()) {
             continue;
         }
-        CSeq_id_Handle product_id = CSeq_id_Handle::GetHandle(sequence::GetId(mf.GetProduct(), NULL));
+
+        CSeq_id_Handle product_id = CSeq_id_Handle::GetHandle(
+                sequence::GetId(mf.GetProduct(), NULL));
+
         if(transcript_seq_ids.find(product_id) == transcript_seq_ids.end()) {
             continue;
         }
@@ -3338,7 +3388,8 @@ set<int> GetFocusLocusIDs(const CBioseq_Handle& bsh)
 
 
 // There's no GeneID on a protein bioseq.
-// Instead, need to find the corresponding cdregion (which may or may not have GeneID dbxref), and get GeneID based on parent gene feature.
+// Instead, need to find the corresponding cdregion (which may or may not have GeneID dbxref), 
+// and get GeneID based on parent gene feature.
 int CVariationUtil::CVariantPropertiesIndex::s_GetGeneIdForProduct(CBioseq_Handle orig_bsh)
 {
     CBioseq_Handle bsh = orig_bsh.GetInst_Mol() == CSeq_inst::eMol_aa ?
@@ -3357,7 +3408,10 @@ int CVariationUtil::CVariantPropertiesIndex::s_GetGeneIdForProduct(CBioseq_Handl
         const CMappedFeat& mf = *ci;
         if(   mf.IsSetProduct()
            && mf.GetProduct().GetId()
-           && sequence::IsSameBioseq(*orig_bsh.GetSeqId(), *mf.GetProduct().GetId(), &orig_bsh.GetScope()))
+           && sequence::IsSameBioseq(
+               *orig_bsh.GetSeqId(), 
+               *mf.GetProduct().GetId(), 
+               &orig_bsh.GetScope()))
         {
             return s_GetGeneID(mf, ft);
         }
@@ -3396,14 +3450,21 @@ void CVariationUtil::CVariantPropertiesIndex::x_Index(const CSeq_id_Handle& idh)
     CRef<CSeq_loc> non_focus_gene_ranges(new CSeq_loc(CSeq_loc::e_Mix));
     for(ci.Rewind(); ci; ++ci) {
         const CMappedFeat& mf = *ci;
-        if(mf.GetData().IsGene()) {
-
-            int gene_id = s_GetGeneID(mf, ft);
-            bool is_focus_locus = focus_loci.empty() || focus_loci.find(gene_id) != focus_loci.end();
-
-            (is_focus_locus ? focus_gene_ranges : non_focus_gene_ranges)->SetMix().Set().push_back(
-                    sequence::Seq_loc_Merge(mf.GetLocation(), CSeq_loc::fMerge_SingleRange, NULL));
+        if(!mf.GetData().IsGene()) {
+            continue;
         }
+
+        const int gene_id = s_GetGeneID(mf, ft);
+        const bool is_focus_locus = focus_loci.empty() 
+                                 || focus_loci.count(gene_id);
+
+        (is_focus_locus ? focus_gene_ranges 
+                        : non_focus_gene_ranges)
+            ->SetMix().Set().push_back(
+                    sequence::Seq_loc_Merge(
+                        mf.GetLocation(), 
+                        CSeq_loc::fMerge_SingleRange, 
+                        NULL));
     }
     focus_gene_ranges->ResetStrand();
     non_focus_gene_ranges->ResetStrand();
@@ -3421,46 +3482,65 @@ void CVariationUtil::CVariantPropertiesIndex::x_Index(const CSeq_id_Handle& idh)
             continue;
         }
 
-        int gene_id = s_GetGeneID(mf, ft);
-        if(!focus_loci.empty() && focus_loci.find(gene_id) == focus_loci.end()) {
+        const int gene_id = s_GetGeneID(mf, ft);
+        if(  !focus_loci.empty() 
+           && focus_loci.find(gene_id) == focus_loci.end()) 
+        {
             continue; //VAR-239
         }
 
         if(!parent_mf && gene_id) {
-            //Some locations currently may not be covered by any variant-properties values (e.g. in-cds)
-            //and yet we need to index gene_ids at those locations. Since variant-properties is a bitmask,
-            //we can simply use the value 0 for that.
-            //Only need to do that for parent locs.
+            // Some locations currently may not be covered by 
+            // any variant-properties values (e.g. in-cds)
+            // and yet we need to index gene_ids at those locations. 
+            // Since variant-properties is a bitmask,
+            // we can simply use the value 0 for that.
+            // Only need to do that for parent locs.
             x_Add(mf.GetLocation(), gene_id, 0);
             found_some_gene_ids = true;
         }
 
-        //compute neighbborhood locations.
-        //Normally for gene features, or rna features lacking a parent gene feature.
-        //Applicable for dna context only.
-        if((mf.GetData().IsGene() || (!parent_mf && mf.GetData().IsRna()))
-            && bsh.GetBioseqMolType() == CSeq_inst::eMol_dna
-        ) {
+        // compute neighbborhood locations.
+        // Normally for gene features, or rna features lacking a parent gene feature.
+        // Applicable for dna context only.
+        if(    (mf.GetData().IsGene() || (!parent_mf && mf.GetData().IsRna()))
+            && bsh.GetBioseqMolType() == CSeq_inst::eMol_dna )
+        {
             TLocsPair p = s_GetNeighborhoodLocs(mf.GetLocation(), bsh.GetInst_Length() - 1);
 
-            //exclude any gene overlap from neighborhood (i.e. we don't care if location is in
-            //neighborhood of gene-A if it is within gene-B.
+            // exclude any gene overlap from neighborhood 
+            // (i.e. we don't care if location is in
+            // neighborhood of gene-A if it is within gene-B.
 
-            //First, reset strands (as we did with gene_ranges), as we need to do this in strand-agnostic
-            //manner. Note: a reasonable thing to do would be to set all-gene-ranges strand to "both", with an
-            //expectation that subtracting such a loc from either plus or minus loc would work, but unfortunately
-            //it doesn't. Resetting strand, however, is fine, because our indexing is strand-agnostic.
+            // First, reset strands (as we did with gene_ranges), 
+            // as we need to do this in strand-agnostic manner.
+            // Note: a reasonable thing to do would be to set 
+            // all-gene-ranges strand to "both", with an expectation 
+            // that subtracting such a loc from either plus or minus 
+            // loc would work, but unfortunately it doesn't. 
+            // Resetting strand, however, is fine, because our 
+            // indexing is strand-agnostic.
             p.first->ResetStrand();
             p.second->ResetStrand();
 
 #if 0
-  //Note: disabling subtraction of gene ranges because want to report neargene-ness regardless of other loci SNP-5000
+  // Note: disabling subtraction of gene ranges because want to 
+  // report neargene-ness regardless of other loci SNP-5000
 #if
             //all_gene_ranges is a big complex loc, and subtracting with Seq_loc_Subtract
             //for every neighborhood is slow (takes almost 10 seconds for NC_000001),
             //so we'll use fast map-based subtractor instead
-            p.first = sequence::Seq_loc_Subtract(*p.first, *all_gene_ranges, CSeq_loc::fSortAndMerge_All, NULL);
-            p.second = sequence::Seq_loc_Subtract(*p.second, *all_gene_ranges, CSeq_loc::fSortAndMerge_All, NULL);
+            p.first = sequence::Seq_loc_Subtract(
+                    *p.first, 
+                    *all_gene_ranges, 
+                    CSeq_loc::fSortAndMerge_All, 
+                    NULL);
+
+            p.second = sequence::Seq_loc_Subtract(
+                    *p.second, 
+                    *all_gene_ranges, 
+                    CSeq_loc::fSortAndMerge_All, 
+                    NULL);
 #else
             subtract_gene_ranges_from(*p.first);
             subtract_gene_ranges_from(*p.second);
@@ -3475,24 +3555,43 @@ void CVariationUtil::CVariantPropertiesIndex::x_Index(const CSeq_id_Handle& idh)
 
         //VAR-703: need to process both RNAs and CDSes to include IGs.
         if(mf.GetData().IsRna() || mf.GetData().IsCdregion()) {
-            if(mf.GetData().IsRna() && mf.GetData().GetSubtype() != CSeqFeatData::eSubtype_mRNA) {
-                x_Add(mf.GetLocation(), gene_id, CVariantProperties::eGene_location_conserved_noncoding);
+            if(   mf.GetData().IsRna() 
+               && mf.GetData().GetSubtype() != CSeqFeatData::eSubtype_mRNA) 
+            {
+                x_Add(mf.GetLocation(), 
+                      gene_id, 
+                      CVariantProperties::eGene_location_conserved_noncoding);
             }
+
             TLocsPair p = s_GetIntronsAndSpliceSiteLocs(mf.GetLocation());
-            x_Add(*p.first, gene_id, CVariantProperties::eGene_location_intron);
+            x_Add(*p.first, 
+                  gene_id, 
+                  CVariantProperties::eGene_location_intron);
+
             size_t i(0);
-            for(CSeq_loc_CI ci(*p.second, CSeq_loc_CI::eEmpty_Skip, CSeq_loc_CI::eOrder_Biological); ci; ++ci) {
+            for(CSeq_loc_CI ci(*p.second, 
+                               CSeq_loc_CI::eEmpty_Skip, 
+                               CSeq_loc_CI::eOrder_Biological); 
+                            ci; ++ci) 
+            {
                 x_Add(*ci.GetRangeAsSeq_loc(),
                       gene_id,
-                      i%2 ? CVariantProperties::eGene_location_acceptor : CVariantProperties::eGene_location_donor);
+                      i%2 ? CVariantProperties::eGene_location_acceptor 
+                          : CVariantProperties::eGene_location_donor);
                 ++i;
             }
         }
 
         if(mf.GetData().IsCdregion()) {
             TLocsPair p = s_GetStartAndStopCodonsLocs(mf.GetLocation());
-            x_Add(*p.first, gene_id, CVariantProperties::eGene_location_in_start_codon);
-            x_Add(*p.second, gene_id, CVariantProperties::eGene_location_in_stop_codon);
+
+            x_Add(*p.first, 
+                  gene_id, 
+                  CVariantProperties::eGene_location_in_start_codon);
+
+            x_Add(*p.second, 
+                  gene_id, 
+                  CVariantProperties::eGene_location_in_stop_codon);
 
             CRef<CSeq_loc> rna_loc(new CSeq_loc(CSeq_loc::e_Null));
             {{
@@ -3502,13 +3601,23 @@ void CVariationUtil::CVariantPropertiesIndex::x_Index(const CSeq_id_Handle& idh)
                     //refseqs have gene feature annotated on rnas spanning the whole sequence,
                     //but in general there may be free-floating CDS on an rna, in which case
                     //parent loc is the whole seq.
-                    rna_loc = bsh.GetRangeSeq_loc(0, bsh.GetInst_Length() - 1, mf.GetLocation().GetStrand());
+                    rna_loc = bsh.GetRangeSeq_loc(
+                            0, 
+                            bsh.GetInst_Length() - 1, 
+                            mf.GetLocation().GetStrand());
                 }
             }}
 
             p = s_GetUTRLocs(mf.GetLocation(), *rna_loc);
-            x_Add(*p.first, gene_id, CVariantProperties::eGene_location_utr_5);
-            x_Add(*p.second, gene_id, CVariantProperties::eGene_location_utr_3);
+
+            x_Add(*p.first, 
+                  gene_id, 
+                  CVariantProperties::eGene_location_utr_5);
+
+            x_Add(*p.second, 
+                  gene_id, 
+                  CVariantProperties::eGene_location_utr_3);
+
         } else if(mf.GetData().IsGene()) {
             if(ft.GetChildren(mf).size() == 0) {
                 x_Add(mf.GetLocation(),
@@ -3521,26 +3630,47 @@ void CVariationUtil::CVariantPropertiesIndex::x_Index(const CSeq_id_Handle& idh)
     }
 
     if(bsh.GetBioseqMolType() == CSeq_inst::eMol_dna) {
-        CRef<CSeq_loc> range_loc = bsh.GetRangeSeq_loc(0, bsh.GetInst_Length() - 1, eNa_strand_plus);
 
-        CRef<CSeq_loc> genes_and_neighborhoods_loc = sequence::Seq_loc_Add(*all_gene_neighborhoods, *focus_gene_ranges, 0, NULL);
-        genes_and_neighborhoods_loc = sequence::Seq_loc_Add(*genes_and_neighborhoods_loc, *non_focus_gene_ranges, 0, NULL);
+        CRef<CSeq_loc> range_loc = 
+            bsh.GetRangeSeq_loc(0, bsh.GetInst_Length() - 1, eNa_strand_plus);
+
+        CRef<CSeq_loc> genes_and_neighborhoods_loc = 
+            sequence::Seq_loc_Add(*all_gene_neighborhoods, 
+                                  *focus_gene_ranges, 
+                                  0, NULL);
+
+        genes_and_neighborhoods_loc = 
+            sequence::Seq_loc_Add(
+                    *genes_and_neighborhoods_loc, 
+                    *non_focus_gene_ranges, 
+                    0, NULL);
 
         genes_and_neighborhoods_loc->ResetStrand();
-        CRef<CSeq_loc> intergenic_loc = sequence::Seq_loc_Subtract(
+
+        CRef<CSeq_loc> intergenic_loc = 
+            sequence::Seq_loc_Subtract(
                 *range_loc,
                 *genes_and_neighborhoods_loc,
                 CSeq_loc::fSortAndMerge_All,
                 NULL);
-        x_Add(*intergenic_loc, 0, CVariantProperties::eGene_location_intergenic);
+
+        x_Add(*intergenic_loc, 
+              0, 
+              CVariantProperties::eGene_location_intergenic);
     }
 
-    if(bsh.GetBioseqMolType() == CSeq_inst::eMol_aa && !found_some_gene_ids) {
-        //JIRA:SNP-5390
-        //in it's normal configuration the iterator won't find a feature with GeneID on a protein, and so
-        //it would not be reported in the protein placement. If a CDS is annotated directly on a DNA molecule,
-        //there would be no product-specific GeneID at all (
-        CRef<CSeq_loc> whole_range_loc = bsh.GetRangeSeq_loc(0, bsh.GetInst_Length() - 1, eNa_strand_plus);
+    if(bsh.GetBioseqMolType() == CSeq_inst::eMol_aa 
+        && !found_some_gene_ids) 
+    {
+        // JIRA:SNP-5390
+        // in it's normal configuration the iterator won't 
+        // find a feature with GeneID on a protein, and so
+        // it would not be reported in the protein placement. 
+        // If a CDS is annotated directly on a DNA molecule,
+        // there would be no product-specific GeneID at all (
+        CRef<CSeq_loc> whole_range_loc = 
+            bsh.GetRangeSeq_loc(0, bsh.GetInst_Length() - 1, eNa_strand_plus);
+
         int gene_id = s_GetGeneIdForProduct(bsh);
         if(gene_id) {
             x_Add(*whole_range_loc, gene_id, 0);
@@ -3548,7 +3678,9 @@ void CVariationUtil::CVariantPropertiesIndex::x_Index(const CSeq_id_Handle& idh)
     }
 }
 
-int CVariationUtil::CVariantPropertiesIndex::s_GetGeneID(const CMappedFeat& mf, feature::CFeatTree& ft)
+int CVariationUtil::CVariantPropertiesIndex::s_GetGeneID(
+        const CMappedFeat& mf, 
+        feature::CFeatTree& ft)
 {
     int gene_id = 0;
     if(mf.IsSetDbxref()) {
