@@ -533,30 +533,42 @@ void CMultiReader::LoadTemplate(CTable2AsnContext& context, const string& ifname
 
     // The template may contain a set rather than a seq.
     // That's OK if it contains only one na entry, which we'll use.
-    if (context.m_entry_template.NotEmpty() && context.m_entry_template->IsSet()) {
-        unsigned int num_nuc_ents = 0;
-        CRef<CSeq_entry> tmp( new CSeq_entry );
-        ITERATE (CBioseq_set::TSeq_set, ent_iter,
-            context.m_entry_template->GetSet().GetSeq_set()) {
-                if ((*ent_iter)->GetSeq().GetInst().IsNa()) {
-                    ++num_nuc_ents;
-                    tmp->Assign(**ent_iter);
-                    // Copy any descriptors from the set to the sequence
-                    ITERATE (CBioseq_set::TDescr::Tdata, desc_iter,
-                        context.m_entry_template->GetSet().GetDescr().Get()) {
-                            CRef<CSeqdesc> desc(new CSeqdesc);
-                            desc->Assign(**desc_iter);
-                            tmp->SetSeq().SetDescr().Set().push_back(desc);
+    if (context.m_entry_template.NotEmpty() && context.m_entry_template->IsSet()) 
+    {
+        CRef<CSeq_entry> tmp(new CSeq_entry);
+        ITERATE(CBioseq_set::TSeq_set, ent_iter, context.m_entry_template->GetSet().GetSeq_set())
+        {
+            const CSeq_descr* descr = 0;
+            if ((*ent_iter)->IsSetDescr())
+            {
+                descr = &(*ent_iter)->GetDescr();
+            }
+            if (descr)
+            {
+                //tmp->Assign(**ent_iter);
+                tmp->SetSeq().SetInst();
+                // Copy any descriptors from the set to the sequence
+                ITERATE(CBioseq_set::TDescr::Tdata, desc_iter, descr->Get())
+                {
+                    switch ((*desc_iter)->Which())
+                    {
+                    case CSeqdesc::e_Pub:
+                    case CSeqdesc::e_Source:
+                       break;
+                    default:
+                       continue;
                     }
+                    CRef<CSeqdesc> desc(new CSeqdesc);
+                    desc->Assign(**desc_iter);
+                    tmp->SetSeq().SetDescr().Set().push_back(desc);
                 }
+                break;
+            }
         }
-        if (num_nuc_ents == 1) {
-            context.m_entry_template->Assign(*tmp);
-        } else {
-            throw runtime_error("template contains "
-                + NStr::IntToString(num_nuc_ents)
-                + " nuc. Seq-entrys; should contain 1");
-        }
+
+        if (tmp->IsSetDescr() && !tmp->GetDescr().Get().empty())
+            context.m_entry_template = tmp;
+
     }
 
     // incorporate any Seqdesc's that follow in the file
