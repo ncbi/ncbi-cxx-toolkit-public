@@ -139,6 +139,11 @@ void CBDB_Env::SetTransactionSync(CBDB_Transaction::ETransSync sync)
         m_TransSync = CBDB_Transaction::eTransSync;
     else
         m_TransSync = sync;
+
+    if (sync == CBDB_Transaction::eTransSync) {
+        int  ret = m_Env->set_flags(m_Env, DB_DSYNC_DB, 1);
+        BDB_CHECK(ret, "DB_ENV::set_flags(DB_DSYNC_DB)");
+    }
 }
 
 
@@ -561,7 +566,7 @@ void CBDB_Env::SetMaxLockers(unsigned max_lockers)
 
 void CBDB_Env::SetLogInMemory(bool on_off)
 {
-    #if BDB_FULL_VERSION < 4700000
+    #if BDB_FULL_VERSION < 4007000
         int ret = m_Env->set_flags(m_Env, DB_LOG_INMEMORY, int(on_off));
         BDB_CHECK(ret, "DB_ENV::set_flags(DB_LOG_INMEMORY)");
     #else
@@ -619,7 +624,7 @@ void CBDB_Env::SetDirectLog(bool on_off)
     m_DirectLOG = on_off;
     if (m_Env) {
         // error checking commented (not all platforms support direct IO)
-        #if BDB_FULL_VERSION < 4700000
+        #if BDB_FULL_VERSION < 4007000
         /*int ret = */ m_Env->set_flags(m_Env, DB_DIRECT_LOG, (int)on_off);
         // BDB_CHECK(ret, "DB_ENV::set_flags(DB_DIRECT_LOG)");
         #else
@@ -631,7 +636,7 @@ void CBDB_Env::SetDirectLog(bool on_off)
 
 void CBDB_Env::SetLogAutoRemove(bool on_off)
 {
-    #if BDB_FULL_VERSION < 4700000
+    #if BDB_FULL_VERSION < 4007000
         int ret = m_Env->set_flags(m_Env, DB_LOG_AUTOREMOVE, (int)on_off);
         BDB_CHECK(ret, "DB_ENV::set_flags(DB_LOG_AUTOREMOVE)");
     #else
