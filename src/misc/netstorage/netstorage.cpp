@@ -98,11 +98,7 @@ struct SDirectNetStorageImpl : public SNetStorageImpl
 {
     SDirectNetStorageImpl(const SCombinedNetStorageConfig& config,
             TNetStorageFlags default_flags)
-        : m_Context(new SContext(config.app_domain,
-                    CNetICacheClient(config.nc_service, config.app_domain,
-                        config.client_name),
-                    default_flags, NULL,
-                    SFileTrackConfig(config.ft_site, config.ft_key)))
+        : m_Context(new SContext(config, default_flags))
     {
     }
 
@@ -197,11 +193,7 @@ struct SDirectNetStorageByKeyImpl : public SNetStorageByKeyImpl
 {
     SDirectNetStorageByKeyImpl(const SCombinedNetStorageConfig& config,
             TNetStorageFlags default_flags)
-        : m_Context(new SContext(config.app_domain,
-                    CNetICacheClient(config.nc_service, config.app_domain,
-                        config.client_name),
-                    default_flags, NULL,
-                    SFileTrackConfig(config.ft_site, config.ft_key)))
+        : m_Context(new SContext(config, default_flags))
     {
     }
 

@@ -76,6 +76,7 @@ struct SContext : CObject
     TNetStorageFlags default_flags;
     string app_domain;
 
+    SContext(const SCombinedNetStorageConfig&, TNetStorageFlags);
     SContext(const string&, CNetICacheClient, TNetStorageFlags,
             CCompoundIDPool::TInstance, const SFileTrackConfig&);
     Uint8 GetRandomNumber() { return filetrack_api.GetRandUint8(); }
@@ -91,6 +92,9 @@ struct SContext : CObject
         if (icache_client) icache_client.GetService().AllowXSiteConnections();
     }
 #endif
+
+private:
+    void Init();
 };
 
 class IState

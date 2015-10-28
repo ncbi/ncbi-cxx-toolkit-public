@@ -860,6 +860,27 @@ ISelector::Ptr CSelector::Clone(TNetStorageFlags flags)
 namespace NDirectNetStorageImpl
 {
 
+
+CNetICacheClient s_GetICClient(const SCombinedNetStorageConfig& c)
+{
+    if (c.nc_service.empty() || c.app_domain.empty() || c.client_name.empty()) {
+        return eVoid;
+    }
+
+    return CNetICacheClient(c.nc_service, c.app_domain, c.client_name);
+}
+
+
+SContext::SContext(const SCombinedNetStorageConfig& config, TNetStorageFlags flags)
+    : icache_client(s_GetICClient(config)),
+      filetrack_api(SFileTrackConfig(config.ft_site, config.ft_key)),
+      default_flags(flags),
+      app_domain(config.app_domain)
+{
+    Init();
+}
+
+
 SContext::SContext(const string& domain, CNetICacheClient client,
         TNetStorageFlags flags, CCompoundIDPool::TInstance id_pool,
         const SFileTrackConfig& ft_config)
@@ -869,9 +890,15 @@ SContext::SContext(const string& domain, CNetICacheClient client,
       default_flags(flags),
       app_domain(domain)
 {
+    Init();
+}
+
+
+void SContext::Init()
+{
     const TNetStorageFlags backend_storage =
-        (icache_client          ? fNST_NetCache  : 0) |
-        (!ft_config.key.empty() ? fNST_FileTrack : 0);
+        (icache_client                     ? fNST_NetCache  : 0) |
+        (!filetrack_api.config.key.empty() ? fNST_FileTrack : 0);
 
     // If there were specific underlying storages requested
     if (TNetStorageLocFlags(default_flags)) {
