@@ -559,6 +559,9 @@ void CNetStorageHandler::x_OnData(const void* data, size_t data_size)
         start = 0.0;
         m_Server->GetClientRegistry().AddBytesWritten(m_Client, data_size);
         m_ObjectSize += data_size;
+
+        if (m_CmdContext.NotNull())
+            m_CmdContext->SetBytesWr(m_ObjectSize);
     }
     catch (const std::exception &  ex) {
         string  message = "Error writing into " +
