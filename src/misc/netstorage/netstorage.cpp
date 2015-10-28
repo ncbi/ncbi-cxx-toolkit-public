@@ -138,7 +138,7 @@ void SCombinedNetStorage::SConfig::ParseArg(const string& name,
     else if (name == "ft_key")
         ft_key = NStr::URLDecode(value);
     else
-        SConfig::ParseArg(name, value);
+        SNetStorage::SConfig::ParseArg(name, value);
 }
 
 
