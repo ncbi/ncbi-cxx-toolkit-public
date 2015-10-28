@@ -3378,7 +3378,9 @@ set<int> GetFocusLocusIDs(const CBioseq_Handle& bsh)
         const CSeq_feat::TDbxref& dbxrefs = mf.GetDbxref();
         ITERATE(CSeq_feat::TDbxref, it, dbxrefs) {
             const CDbtag& dbtag = **it;
-            if(dbtag.GetDb() == "GeneID" || dbtag.GetDb() == "LocusID") {
+            if(   dbtag.GetDb() == "GeneID"
+               || dbtag.GetDb() == "LocusID") 
+            {
                 gene_ids.insert(dbtag.GetTag().GetId());
             }
         }
@@ -3684,17 +3686,35 @@ int CVariationUtil::CVariantPropertiesIndex::s_GetGeneID(
 {
     int gene_id = 0;
     if(mf.IsSetDbxref()) {
-
         //note: using temporary reference "dbxrefs" is necessary because
         //"ITERATE(CSeq_feat::TDbxref, it, mf.GetDbxref())", assert-fails in stl-safe-iter mode
         const CSeq_feat::TDbxref& dbxrefs = mf.GetDbxref();
         ITERATE(CSeq_feat::TDbxref, it, dbxrefs) {
             const CDbtag& dbtag = **it;
-            if(dbtag.GetDb() == "GeneID" && dbtag.GetTag().IsId()) {
+            if(   dbtag.GetDb() == "GeneID"
+               || dbtag.GetDb() == "LocusID")
+            {
                 gene_id = dbtag.GetTag().GetId();
             }
         }
     }
+
+    // try legacy representation, e.g. NM_000155.1:
+    if(  !gene_id 
+       && mf.GetData().IsGene()
+       && mf.GetData().GetGene().IsSetDb())
+    {
+        const CGene_ref::TDb& dbxrefs = mf.GetData().GetGene().GetDb();
+        ITERATE(CSeq_feat::TDbxref, it, dbxrefs) {
+            const CDbtag& dbtag = **it;
+            if(   dbtag.GetDb() == "GeneID"
+               || dbtag.GetDb() == "LocusID")
+            {
+                gene_id = dbtag.GetTag().GetId();
+            }
+        }
+    }
+
     if(gene_id == 0) {
         CMappedFeat parent = ft.GetParent(mf);
         return parent ? s_GetGeneID(parent, ft) : gene_id;
