@@ -6375,6 +6375,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UNLV	s	University of Nevada, Las Vegas, Department of Biological Sciences",
 "UNM	s	University of New Mexico, Department of Biology",
 "UNMC	s	University of New Mexico",
+"UNMDP	s	Universidad Nacional de Mar del Plata, Mar del Plata, Argentina",
 "UNN	s	University of Nigeria, Botany Department",
 "UNNF	s	Universite de Nancy",
 "UNO	s	University of Nebraska at Omaha",
