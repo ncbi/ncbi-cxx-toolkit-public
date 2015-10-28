@@ -359,20 +359,24 @@ bool CAutoDef::x_AddMiscRNAFeatures(CBioseq_Handle bh, const CSeq_feat& cf, cons
     } else {
         elements = CAutoDefFeatureClause_Base::GetTrnaIntergenicSpacerClausePhrases(comment);
         if (!elements.empty()) {
-            ITERATE(vector<string>, s, elements) {
-                size_t pos = NStr::Find(*s, "intergenic spacer");
-                if (pos != string::npos) {
-                    CAutoDefParsedIntergenicSpacerClause *spacer =
+            if (is_region) {
+                main_clause.AddSubclause(new CAutoDefParsedRegionClause(bh, cf, mapped_loc, comment));
+            } else {
+                ITERATE(vector<string>, s, elements) {
+                    size_t pos = NStr::Find(*s, "intergenic spacer");
+                    if (pos != string::npos) {
+                        CAutoDefParsedIntergenicSpacerClause *spacer =
                             new CAutoDefParsedIntergenicSpacerClause(bh,
                             cf,
                             mapped_loc,
                             (*s),
                             (*s == elements.front()),
                             (*s == elements.back()));
-                    main_clause.AddSubclause(spacer);
-                } else {
-                    CAutoDefFeatureClause *gene = s_tRNAClauseFromNote(bh, cf, mapped_loc, *s, (*s == elements.front()), (*s == elements.back()));
-                    main_clause.AddSubclause(gene);
+                        main_clause.AddSubclause(spacer);
+                    } else {
+                        CAutoDefFeatureClause *gene = s_tRNAClauseFromNote(bh, cf, mapped_loc, *s, (*s == elements.front()), (*s == elements.back()));
+                        main_clause.AddSubclause(gene);
+                    }
                 }
             }
         } else {
