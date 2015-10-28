@@ -109,6 +109,7 @@ public:
     bool    meta_has_changed;
     bool    move_or_rewrite;
     bool    is_releasable;
+    bool    request_data_write;
     bool    need_write_all;
     bool    need_stop_write;
     bool    need_mem_release;

@@ -1200,22 +1200,23 @@ void CNCBlobStorage::WriteBlobStat(CSrvSocketTask& task)
 void CNCBlobStorage::WriteDbInfo(CSrvSocketTask& task, const CTempString& mask)
 {
     Uint4 id = 0;
-    bool use_mask = false, is_id = false;
+    bool use_mask = false, is_id = false, is_audit = false;
     if (!mask.empty()) {
-        use_mask = true;
-        try {
-            id = NStr::StringToUInt(mask);
-            is_id = true;
-        } catch (...) {
+        is_audit = mask == "audit";
+        if (!is_audit) {
+            use_mask = true;
+            try {
+                id = NStr::StringToUInt(mask);
+                is_id = true;
+            } catch (...) {
+            }
         }
     }
 
     string is("\": "),iss("\": \""), eol(",\n\""), str("_str"), eos("\"");
     task.WriteText(eol).WriteText("storagepath"  ).WriteText(iss).WriteText(   s_Path).WriteText(eos);
     task.WriteText(eol).WriteText("DBfiles\": [\n");
-#ifdef _DEBUG
     int now = CSrvTime::CurSecs();
-#endif
     s_DBFilesLock.Lock();
     bool is_first = true;
     for (TNCDBFilesMap::iterator it = s_DBFiles->begin();  it != s_DBFiles->end(); ++it) {
@@ -1239,7 +1240,7 @@ void CNCBlobStorage::WriteDbInfo(CSrvSocketTask& task, const CTempString& mask)
         task.WriteText(eol).WriteText("garb_size").WriteText( is).WriteNumber( it->second->garb_size);
         task.WriteText(eol).WriteText("used_size").WriteText( is).WriteNumber( it->second->used_size);
 
-#ifdef _DEBUG
+if (is_audit) {
         CSrvRef<SNCDBFileInfo>& file_info = it->second;
         Uint4 expired_count = 0, null_cache_count = 0, wrong_cache_count = 0;
         map<int, int> rec_alerts;
@@ -1381,7 +1382,7 @@ void CNCBlobStorage::WriteDbInfo(CSrvSocketTask& task, const CTempString& mask)
             first = false;
         }
         task.WriteText("]");
-#endif
+} // is_audit
 
         task.WriteText(eol).WriteText("is_releasing").WriteText( is).WriteBool( it->second->is_releasing);
         char buf[50];
@@ -2077,7 +2078,7 @@ CNCAlerts::Register(CNCAlerts::eDebugReadChunkData3, "ReadChunkData: data_file")
 #endif
         return false;
     }
-    SFileIndexRec* data_ind = s_GetIndexRec(data_file, chunk_coord.rec_num);
+    SFileIndexRec* data_ind = s_GetIndexRecTry(data_file, chunk_coord.rec_num);
     if (!data_ind) {
 #ifdef _DEBUG
 CNCAlerts::Register(CNCAlerts::eDebugReadChunkData4, "ReadChunkData: data_inf");
@@ -3221,6 +3222,42 @@ CNCAlerts::Register(CNCAlerts::eDebugDeleteNextData1, "DeleteNextData: meta_file
     ++m_CurDelData;
     SetRunnable();
     return NULL;
+}
+
+void CExpiredCleaner::x_DeleteData(SNCCacheData* cache_data)
+{
+// cache_data is locked by caller
+    SNCDataCoord coord = cache_data->coord;
+    Uint8 size = cache_data->size;
+    Uint4 chunk_size = cache_data->chunk_size;
+    Uint2 map_size = cache_data->map_size;
+    if (!coord.empty()) {
+#ifdef _DEBUG
+CNCAlerts::Register(CNCAlerts::eDebugDeleteVersionData, "x_DeleteData");
+#endif
+        CSrvRef<SNCDBFileInfo> meta_file = s_GetDBFileTry(coord.file_id);
+        if (meta_file.NotNull()) {
+            SFileIndexRec* meta_ind = s_GetIndexRecTry(meta_file, coord.rec_num);
+            if (meta_ind) {
+                s_CalcMetaAddress(meta_file, meta_ind);
+                if (!meta_ind->chain_coord.empty()) {
+                    Uint1 map_depth = s_CalcMapDepth(size, chunk_size, map_size);
+                    s_MoveDataToGarbage(meta_ind->chain_coord, map_depth, coord, true);
+                }
+                s_MoveRecToGarbage(meta_file, meta_ind);
+            }
+#ifdef _DEBUG
+            else {
+CNCAlerts::Register(CNCAlerts::eDebugDeleteNextData2, "DeleteNextData: meta_ind");
+            }
+#endif
+        }
+#ifdef _DEBUG
+        else {
+CNCAlerts::Register(CNCAlerts::eDebugDeleteNextData1, "DeleteNextData: meta_file");
+        }
+#endif
+    }
 }
 
 CExpiredCleaner::State

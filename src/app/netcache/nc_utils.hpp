@@ -196,6 +196,7 @@ public:
         eDebugReadChunkData4,
         eDebugDeleteNextData1,
         eDebugDeleteNextData2,
+        eDebugDeleteVersionData,
         eDebugSaveOneMapImpl1,
         eDebugSaveOneMapImpl2,
         eDebugWriteChunkData1,
@@ -206,6 +207,11 @@ public:
         eDebugMoveRecord3,
         eDebugDeleteFile,
         eDebugReleaseCacheData,
+        eDebugDeleteSNCBlobVerData,
+        eDebugDeleteCNCBlobVerManager,
+        eDebugExtraWrite,
+        eDebugCacheDeleted,
+        eDebugCacheDeleted2,
 #endif
         eLastAlert
     };

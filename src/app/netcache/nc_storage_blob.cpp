@@ -31,6 +31,7 @@
 #include "netcached.hpp"
 #include "nc_storage_blob.hpp"
 #include "nc_storage.hpp"
+#include "storage_types.hpp"
 #include "nc_stat.hpp"
 #include <set>
 
@@ -98,6 +99,12 @@ static const size_t kDefChunkMapsSize
                   + (kNCMaxBlobMapsDepth + 1)
                     * (sizeof(SNCChunkMapInfo)
                        + (kNCMaxChunksInMap - 1) * sizeof(SNCDataCoord));
+
+#define __NC_TASKS_VERMNG_MONITOR 0
+#if __NC_TASKS_VERMNG_MONITOR
+CMiniMutex     s_all_ver_lock;
+set<CNCBlobVerManager*> s_all_VerManager;
+#endif
 
 
 
@@ -645,6 +652,11 @@ CNCBlobVerManager::CNCBlobVerManager(Uint2         time_bucket,
 #if __NC_TASKS_MONITOR
     m_TaskName = "CNCBlobVerManager";
 #endif
+#if __NC_TASKS_VERMNG_MONITOR
+    s_all_ver_lock.Lock();
+    s_all_VerManager.insert(this);
+    s_all_ver_lock.Unlock();
+#endif
 }
 
 CNCBlobVerManager::~CNCBlobVerManager(void)
@@ -652,6 +664,11 @@ CNCBlobVerManager::~CNCBlobVerManager(void)
     //AtomicSub(s_CntMgrs, 1);
     //Uint8 cnt = AtomicSub(s_CntMgrs, 1);
     //INFO("~CNCBlobVerManager, cnt=" << cnt);
+#if __NC_TASKS_VERMNG_MONITOR
+    s_all_ver_lock.Lock();
+    s_all_VerManager.erase(this);
+    s_all_ver_lock.Unlock();
+#endif
 }
 
 void
@@ -719,6 +736,14 @@ CNCBlobVerManager::x_ReleaseMgr(void)
     else {
         s_SubCurrentMem(kVerManagerSize);
     }
+
+    if (m_CacheData->dead_time == 0 && !m_CacheData->coord.empty()) {
+#ifdef _DEBUG
+CNCAlerts::Register(CNCAlerts::eDebugCacheDeleted2,"x_ReleaseMgr");
+#endif
+        CExpiredCleaner::x_DeleteData(m_CacheData);
+    }
+
     CNCBlobStorage::ReleaseCacheData(m_CacheData);
     m_CurVerReader->Terminate();
     Terminate();
@@ -745,14 +770,23 @@ CNCBlobVerManager::ExecuteSlice(TSrvThreadNum /* thr_num */)
 
 // initially, blob is in memory
 // check if it is time to be saved onto disk
+    int cur_time = CSrvTime::CurSecs();
     int write_time = ACCESS_ONCE(cur_ver->need_write_time);
+
+#if 0
+    if (cur_time + 60  >= cur_ver->dead_time) {
+        write_time = 0;
+    }
+#endif
+
     if (write_time != 0) {
         m_CacheData->lock.Unlock();
-        int cur_time = CSrvTime::CurSecs();
-        if (write_time <= cur_time  ||  CTaskServer::IsInShutdown())
+        if (write_time <= cur_time  ||  CTaskServer::IsInShutdown()) {
+            CNCBlobStorage::ReferenceCacheData(m_CacheData);
             cur_ver->RequestDataWrite();
-        else
+        } else {
             RunAfter(write_time - cur_time);
+        }
         return;
     }
 
@@ -761,8 +795,27 @@ CNCBlobVerManager::ExecuteSlice(TSrvThreadNum /* thr_num */)
         x_ReleaseMgr();
         return;
     }
+//    m_NeedReleaseMem = false;
 
-    m_NeedReleaseMem = false;
+    m_CacheData->lock.Unlock();
+}
+
+void CNCBlobVerManager::DataWritten(void)
+{
+    m_CacheData->lock.Lock();
+    if (m_CurVersion) {
+        if (!m_CacheData->coord.empty()) {
+            CExpiredCleaner::x_DeleteData(m_CacheData);
+        }
+        m_CacheData->coord = m_CurVersion->coord;
+        if (m_CacheData->dead_time == 0 && !m_CacheData->coord.empty()) {
+#ifdef _DEBUG
+CNCAlerts::Register(CNCAlerts::eDebugCacheDeleted,"DataWritten");
+#endif
+            CExpiredCleaner::x_DeleteData(m_CacheData);
+        }
+        CNCBlobStorage::ReleaseCacheData(m_CacheData);
+    }
     m_CacheData->lock.Unlock();
 }
 
@@ -983,6 +1036,7 @@ SNCBlobVerData::SNCBlobVerData(void)
         meta_has_changed(false),
         move_or_rewrite(false),
         is_releasable(false),
+        request_data_write(false),
         need_write_all(false),
         need_stop_write(false),
         need_mem_release(false),
@@ -1044,6 +1098,7 @@ void
 SNCBlobVerData::RequestDataWrite(void)
 {
     wb_mem_lock.Lock();
+    request_data_write = true;
     need_write_all = true;
     need_write_time = 0;
     size_t mem_size = releasable_mem;
@@ -1076,6 +1131,11 @@ void
 SNCBlobVerData::SetNotCurrent(void)
 {
     wb_mem_lock.Lock();
+#ifdef _DEBUG
+    if (request_data_write) {
+        abort();
+    }
+#endif
     is_cur_version = false;
     need_stop_write = true;
     meta_mem -= kVerManagerSize;
@@ -1300,10 +1360,17 @@ SNCBlobVerData::ExecuteSlice(TSrvThreadNum /* thr_num */)
     wb_mem_lock.Lock();
     CNCBlobVerManager* mgr = ACCESS_ONCE(manager);
     if (mgr) {
+        if (request_data_write) {
+            request_data_write = false;
+            mgr->DataWritten();
+        }
         if (need_mem_release) {
             // if still has something to write, request that
             if (data_mem != 0  ||  (meta_has_changed  &&  is_cur_version)) {
                 need_write_all = true;
+#ifdef _DEBUG
+CNCAlerts::Register(CNCAlerts::eDebugExtraWrite,"SNCBlobVerData::ExecuteSlice");
+#endif
                 wb_mem_lock.Unlock();
                 SetRunnable();
                 return;
@@ -1322,9 +1389,11 @@ SNCBlobVerData::ExecuteSlice(TSrvThreadNum /* thr_num */)
 
         if (!is_cur_version)
             x_DeleteVersion();
+#if 0
         if (releasable_mem != 0  ||  releasing_mem != meta_mem) {
             SRV_FATAL("blob ver data broken");
         }
+#endif
         if (!delete_scheduled)
             s_ScheduleVerDelete(this);
     }

@@ -404,6 +404,8 @@ public:
     CExpiredCleaner(void);
     virtual ~CExpiredCleaner(void);
 
+    static void x_DeleteData(SNCCacheData* cache_data);
+
 private:
     State x_StartSession(void);
     State x_CleanNextBucket(void);
