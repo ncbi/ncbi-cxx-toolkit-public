@@ -349,12 +349,53 @@ CPsiBlastInputClustalW::x_ExtractAlignmentData()
             _ASSERT(isalpha(kCurrentRes) || kCurrentRes == kGapChar);
             m_Msa->data[seq_index][query_idx].letter = 
                 AMINOACID_TO_NCBISTDAA[(int) toupper(kCurrentRes)];
-            if (isupper(kCurrentRes) && kCurrentRes != kGapChar) {
-                m_Msa->data[seq_index][query_idx].is_aligned = true;
-            } else {
-                m_Msa->data[seq_index][query_idx].is_aligned = false;
-            }
+            m_Msa->data[seq_index][query_idx].is_aligned = true;
             query_idx++;
+        }
+    }
+
+    // set flanking gaps and long internal gaps as unaligned
+    seq_index = kQueryIndex + 1;
+    const int kGapResidue = 0;
+    const int kLongGapLen = 10;
+    for (; seq_index < m_Msa->dimensions->num_seqs + 1; seq_index++) {
+        size_t i = 0;
+
+        // find left flanking gaps
+        while (i < m_Msa->dimensions->query_length &&
+               m_Msa->data[seq_index][i].letter == kGapResidue) {
+
+            m_Msa->data[seq_index][i].is_aligned = false;
+            i++;
+        }
+
+        // find long internal gaps
+        while (i < m_Msa->dimensions->query_length) {
+            while (i < m_Msa->dimensions->query_length &&
+                   m_Msa->data[seq_index][i].letter != kGapResidue) {
+                i++;
+            }
+
+            int k = i + 1;
+            while (k < m_Msa->dimensions->query_length &&
+                   m_Msa->data[seq_index][k].letter == kGapResidue) {
+                k++;
+            }
+
+            if (k - i >= kLongGapLen) {
+                for (int j=i;j < k;j++) {
+                    m_Msa->data[seq_index][j].is_aligned = false;
+                }
+            }
+
+            i = k;
+        }
+
+        // find right flanking gaps
+        i = m_Msa->dimensions->query_length - 1;
+        while (i >= 0 && m_Msa->data[seq_index][i].letter == kGapResidue) {
+            m_Msa->data[seq_index][i].is_aligned = false;
+            i--;
         }
     }
 }

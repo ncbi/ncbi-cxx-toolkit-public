@@ -151,14 +151,13 @@ BOOST_AUTO_TEST_CASE(FreqRatiosFromMsa)
     		continue;
     	}
     	else {
-    		double ref_value = NStr::StringToDouble(*ref_pt);
     		BOOST_REQUIRE(ref_pt != ref_data.end());
+    		double ref_value = NStr::StringToDouble(*ref_pt);
     		BOOST_REQUIRE(fabs(ref_value - *pt) < 0.001);
     		ref_pt ++;
     	}
 
     }
-
 
 
 }
