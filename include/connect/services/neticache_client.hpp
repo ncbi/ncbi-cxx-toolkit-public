@@ -90,6 +90,9 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
     CNetICacheClient(CConfig* config = NULL,
                      const string& driver_name = kEmptyStr);
 
+    CNetICacheClient(const IRegistry& reg,
+                     const string& conf_section = kEmptyStr);
+
     CNetICacheClient(const string& host,
                      unsigned short port,
                      const string& cache_name,

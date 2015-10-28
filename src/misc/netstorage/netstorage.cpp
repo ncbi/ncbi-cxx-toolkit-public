@@ -351,8 +351,8 @@ SFileTrackConfig s_GetFTConfig(const IRegistry& registry, const string& service)
 CNetICacheClient s_GetICClient(const IRegistry& registry, const string& service)
 {
     const string nc_section = s_GetSection(registry, service, "netcache_api");
-    return nc_section.empty() ? eVoid :
-        CNetICacheClient(CNetICacheClient::eAppRegistry, nc_section);
+    CConfig config(registry);
+    return nc_section.empty() ? eVoid : CNetICacheClient(registry, nc_section);
 }
 
 

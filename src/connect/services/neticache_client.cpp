@@ -147,6 +147,21 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
             config, section, s_NetICacheConfigSections);
     }
 
+    SNetICacheClientImpl(const IRegistry& reg,
+            const string& section,
+            const string& service_name,
+            const string& client_name,
+            const string& cache_name) :
+        SNetCacheAPIImpl(new SNetServiceImpl(s_NetICacheAPIName,
+                client_name, new CNetICacheServerListener)),
+        m_CacheFlags(ICache::fBestPerformance)
+    {
+        m_DefaultParameters.SetCacheName(cache_name);
+        CConfig config(reg);
+        m_Service->Init(this, service_name,
+            &config, section, s_NetICacheConfigSections);
+    }
+
     CNetServer::SExecResult ChooseServerAndExec(const string& cmd,
             const string& key,
             bool multiline_output,
@@ -265,6 +280,12 @@ CNetICacheClient::CNetICacheClient(
 
 CNetICacheClient::CNetICacheClient(CConfig* config, const string& driver_name) :
     m_Impl(new SNetICacheClientImpl(config, driver_name,
+        kEmptyStr, kEmptyStr, kEmptyStr))
+{
+}
+
+CNetICacheClient::CNetICacheClient(const IRegistry& reg, const string& section) :
+    m_Impl(new SNetICacheClientImpl(reg, section,
         kEmptyStr, kEmptyStr, kEmptyStr))
 {
 }
