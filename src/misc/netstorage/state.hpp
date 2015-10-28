@@ -39,6 +39,30 @@
 BEGIN_NCBI_SCOPE
 
 
+struct SCombinedNetStorageConfig : SNetStorage::SConfig
+{
+    enum EMode {
+        eDefault,
+        eServerless,
+    };
+
+    EMode mode;
+    string ft_site;
+    string ft_key;
+
+    SCombinedNetStorageConfig() : mode(eDefault) {}
+    void ParseArg(const string&, const string&);
+
+    static SCombinedNetStorageConfig Build(const string& init_string)
+    {
+        return BuildImpl<SCombinedNetStorageConfig>(init_string);
+    }
+
+private:
+    static EMode GetMode(const string&);
+};
+
+
 namespace NDirectNetStorageImpl
 {
 

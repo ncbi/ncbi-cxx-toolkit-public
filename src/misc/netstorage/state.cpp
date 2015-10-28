@@ -944,4 +944,28 @@ ISelector::Ptr ISelector::Create(SContext* context, TNetStorageFlags flags,
 }
 
 
+SCombinedNetStorageConfig::EMode
+SCombinedNetStorageConfig::GetMode(const string& value)
+{
+    if (NStr::CompareNocase(value, "direct") == 0)
+        return eServerless;
+    else
+        return eDefault;
+}
+
+
+void SCombinedNetStorageConfig::ParseArg(const string& name,
+        const string& value)
+{
+    if (name == "mode")
+        mode = GetMode(value);
+    if (name == "ft_site")
+        ft_site = value;
+    else if (name == "ft_key")
+        ft_key = NStr::URLDecode(value);
+    else
+        SNetStorage::SConfig::ParseArg(name, value);
+}
+
+
 END_NCBI_SCOPE

@@ -84,7 +84,7 @@ CDirectNetStorageObject::CDirectNetStorageObject(SNetStorageObjectImpl* impl)
 
 struct SCombinedNetStorage
 {
-    struct SConfig;
+    typedef SCombinedNetStorageConfig TConfig;
 
     static SNetStorageImpl* CreateImpl(const string& init_string,
         TNetStorageFlags default_flags);
@@ -94,59 +94,9 @@ struct SCombinedNetStorage
 };
 
 
-struct SCombinedNetStorage::SConfig : SNetStorage::SConfig
-{
-    enum EMode {
-        eDefault,
-        eServerless,
-    };
-
-    EMode mode;
-    string ft_site;
-    string ft_key;
-
-    SConfig() : mode(eDefault) {}
-    void ParseArg(const string&, const string&);
-
-    static SConfig Build(const string& init_string)
-    {
-        return BuildImpl<SConfig>(init_string);
-    }
-
-private:
-    static EMode GetMode(const string&);
-};
-
-
-SCombinedNetStorage::SConfig::EMode
-SCombinedNetStorage::SConfig::GetMode(const string& value)
-{
-    if (NStr::CompareNocase(value, "direct") == 0)
-        return eServerless;
-    else
-        return eDefault;
-}
-
-
-void SCombinedNetStorage::SConfig::ParseArg(const string& name,
-        const string& value)
-{
-    if (name == "mode")
-        mode = GetMode(value);
-    if (name == "ft_site")
-        ft_site = value;
-    else if (name == "ft_key")
-        ft_key = NStr::URLDecode(value);
-    else
-        SNetStorage::SConfig::ParseArg(name, value);
-}
-
-
 struct SDirectNetStorageImpl : public SNetStorageImpl
 {
-    typedef SCombinedNetStorage::SConfig TConfig;
-
-    SDirectNetStorageImpl(const TConfig& config,
+    SDirectNetStorageImpl(const SCombinedNetStorageConfig& config,
             TNetStorageFlags default_flags)
         : m_Context(new SContext(config.app_domain,
                     CNetICacheClient(config.nc_service, config.app_domain,
@@ -245,9 +195,7 @@ CObj* SDirectNetStorageImpl::Create(TNetStorageFlags flags,
 
 struct SDirectNetStorageByKeyImpl : public SNetStorageByKeyImpl
 {
-    typedef SCombinedNetStorage::SConfig TConfig;
-
-    SDirectNetStorageByKeyImpl(const TConfig& config,
+    SDirectNetStorageByKeyImpl(const SCombinedNetStorageConfig& config,
             TNetStorageFlags default_flags)
         : m_Context(new SContext(config.app_domain,
                     CNetICacheClient(config.nc_service, config.app_domain,
@@ -433,9 +381,9 @@ CDirectNetStorageObject CDirectNetStorageByKey::Open(const string& key,
 SNetStorageImpl* SCombinedNetStorage::CreateImpl(
         const string& init_string, TNetStorageFlags default_flags)
 {
-    SConfig config(SConfig::Build(init_string));
+    TConfig config(TConfig::Build(init_string));
 
-    return config.mode == SConfig::eDefault ?
+    return config.mode == TConfig::eDefault ?
         SNetStorage::CreateImpl(config, default_flags) :
         new SDirectNetStorageImpl(config, default_flags);
 }
@@ -452,9 +400,9 @@ CCombinedNetStorage::CCombinedNetStorage(const string& init_string,
 SNetStorageByKeyImpl* SCombinedNetStorage::CreateByKeyImpl(
         const string& init_string, TNetStorageFlags default_flags)
 {
-    SConfig config(SConfig::Build(init_string));
+    TConfig config(TConfig::Build(init_string));
 
-    return config.mode == SConfig::eDefault ?
+    return config.mode == TConfig::eDefault ?
         SNetStorage::CreateByKeyImpl(config, default_flags) :
         new SDirectNetStorageByKeyImpl(config, default_flags);
 }
