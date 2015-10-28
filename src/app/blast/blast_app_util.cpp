@@ -216,7 +216,11 @@ InitializeSubject(CRef<blast::CBlastDatabaseArgs> db_args,
     CRef<IQueryFactory> subjects;
     if ( (subjects = db_args->GetSubjects(scope)) ) {
         _ASSERT(search_db.Empty());
-        db_adapter.Reset(new CLocalDbAdapter(subjects, opts_hndl, false));
+	char* bl2seq_legacy = getenv("BL2SEQ_LEGACY");
+	if (bl2seq_legacy)
+        	db_adapter.Reset(new CLocalDbAdapter(subjects, opts_hndl, false));
+	else
+        	db_adapter.Reset(new CLocalDbAdapter(subjects, opts_hndl, true));
     } else {
         _ASSERT(search_db.NotEmpty());
         try { 
