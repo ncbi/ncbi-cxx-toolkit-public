@@ -471,6 +471,40 @@ bool CAutoDefModifierCombo::x_AddSubsourceString (string &source_description, co
     return used;
 }
 
+bool CAutoDefModifierCombo::IsModifierInString(const string& find_this, const string& find_in, bool ignore_at_end)
+{
+    size_t pos = NStr::Find(find_in, find_this);
+    if (pos == string::npos) {
+        return false;
+    }
+
+    bool keep_looking = false;
+    // need to make sure it's a whole word and not a partial match
+    if (pos != 0 && find_in.c_str()[pos - 1] != '(' && find_in.c_str()[pos - 1] != ' ') {
+        // not whole word
+        keep_looking = true;
+    } else if (find_in.c_str()[pos + find_this.length()] != ')' &&
+               find_in.c_str()[pos + find_this.length()] != ' ' &&
+               find_in.c_str()[pos + find_this.length()] != 0) {
+        // not whole word
+        keep_looking = true;
+    }
+
+    bool at_end = (pos == find_in.length() - find_this.length());
+
+    if (keep_looking) {
+        if (at_end) {
+            return false;
+        } else {
+            return IsModifierInString(find_this, find_in.substr(pos + 1), ignore_at_end);
+        }
+    } else if (at_end && ignore_at_end) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
 
 bool CAutoDefModifierCombo::x_AddOrgModString (string &source_description, const CBioSource& bsrc, COrgMod::ESubtype st)
 {
@@ -494,8 +528,7 @@ bool CAutoDefModifierCombo::x_AddOrgModString (string &source_description, const
             }
             // If modifier is one of the following types and the value already appears in the tax Name,
             // don't use in the organism description
-            if (!m_AllowModAtEndOfTaxname &&
-                (st == COrgMod::eSubtype_strain
+            if ((st == COrgMod::eSubtype_strain
                  || st == COrgMod::eSubtype_variety
                  || st == COrgMod::eSubtype_sub_species
                  || st == COrgMod::eSubtype_forma
@@ -503,7 +536,7 @@ bool CAutoDefModifierCombo::x_AddOrgModString (string &source_description, const
                  || st == COrgMod::eSubtype_pathovar
                  || st == COrgMod::eSubtype_specimen_voucher
                  || st == COrgMod::eSubtype_isolate)
-                && NStr::Find (bsrc.GetOrg().GetTaxname(), " " + val) != NCBI_NS_STD::string::npos) {
+                 && IsModifierInString(val, bsrc.GetOrg().GetTaxname(), m_AllowModAtEndOfTaxname)) {
                 // can't use this
             } else {
                 source_description += x_GetOrgModLabel(st);

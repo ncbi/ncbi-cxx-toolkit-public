@@ -1691,6 +1691,24 @@ BOOST_AUTO_TEST_CASE(SQD_3462)
 
 }
 
+BOOST_AUTO_TEST_CASE(Test_IsModifierInString)
+{
+    // in the string, but ignore because it's at the end
+    BOOST_CHECK_EQUAL(CAutoDefModifierCombo::IsModifierInString("abc", "abc", true), false);
+    // in the string, report even at end
+    BOOST_CHECK_EQUAL(CAutoDefModifierCombo::IsModifierInString("abc", "abc", false), true);
+    // ignore because not whole word
+    BOOST_CHECK_EQUAL(CAutoDefModifierCombo::IsModifierInString("abc", "tabc", false), false);
+    // ignore because not whole word
+    BOOST_CHECK_EQUAL(CAutoDefModifierCombo::IsModifierInString("abc", "abcq", false), false);
+    // skip first match because not whole word, find second match
+    BOOST_CHECK_EQUAL(CAutoDefModifierCombo::IsModifierInString("abc", "abcq abc", false), true);
+
+
+}
+
+
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE

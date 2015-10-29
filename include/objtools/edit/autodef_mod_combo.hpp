@@ -138,6 +138,7 @@ public:
     bool AreFeatureClausesUnique();
 
     static bool IsModifierRequiredByDefault(bool is_orgmod, int subtype);
+    static bool IsModifierInString(const string& find_this, const string& find_in, bool ignore_at_end);
 
 private:
     TSubSourceTypeVector m_SubSources;
