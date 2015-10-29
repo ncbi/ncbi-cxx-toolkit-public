@@ -4526,6 +4526,7 @@ NTM	s	Museum and Art Gallery of the Northern Territory
 NTM<FRA>	s	Museum d'Histoire Naturelle de Nantes
 NTN	s	Central Museum and Art Gallery
 NTNU	s	National Taiwan Normal University
+NTNU-VM	s	Norwegian University of Science and Technology, Museum of Natural History and Archaeology
 NTOU	sc	Institute of Marine Biology, National Taiwan Ocean University
 NTS	s	Nevada Operations Office, U.S. Department of Energy
 NTSC	s	University of North Texas, Biological Sciences Department
@@ -6952,7 +6953,7 @@ ZhM	s	Zhejinag Museum
 ZIA	s	National Academy of Sciences of Armenia
 ZIAN	s	Zoological Institute, Academy of Sciences
 ZICUP	s	Zoological Institute Charles University
-ZIHU	s	Zoological Institute, Hokkaido University
+ZIHU	s	Hiroshima University, Zoological Institute
 ZIK	s	Ukrainian Academy of Sciences, Zoological Institute
 ZIKU	s	Zoological Institute, Kochi University
 ZIL	s	Academy of Sciences, Zoological Institute
