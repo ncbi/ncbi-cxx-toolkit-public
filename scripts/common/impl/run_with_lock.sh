@@ -43,7 +43,7 @@ fi
 
 if "$get_lock" "$base" $$; then
     trap "clean_up; exit $error_status" 1 2 15
-    if [ -n "$logfile" ]; then
+    if [ -n "$logfile" -a -z "$TEAMCITY_PROJECT_NAME" ]; then
         status_file=$base.lock/status
         (PATH=$orig_PATH; export PATH; "$@"; echo $? > "$status_file") 2>&1 \
             | tee "$logfile.new"
