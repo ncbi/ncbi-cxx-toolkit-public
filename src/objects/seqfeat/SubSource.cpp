@@ -3483,11 +3483,8 @@ string CCountries::NewFixCountry (const string& test)
 
 
     string input = test;
-    if (NStr::StartsWith(input, "\"")) {
-        input = input.substr(1);
-    }
-    if (NStr::EndsWith(input, "\"")) {
-        input = input.substr(0, input.length() - 1);
+    if (NStr::StartsWith(input, "\"") && NStr::EndsWith(input, "\"")) {
+        input = input.substr(1, input.length() - 1);
     }
     NStr::TruncateSpacesInPlace(input);
 
