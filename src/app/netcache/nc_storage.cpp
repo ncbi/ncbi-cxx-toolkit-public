@@ -1895,6 +1895,9 @@ s_MoveDataToGarbage(SNCDataCoord coord, Uint1 map_depth, SNCDataCoord up_coord, 
                      << " when should be " << up_coord << ".");
     }
     if (map_depth == 0) {
+        if (ind_rec->rec_type != eFileRecChunkData) {
+            return;
+        }
         s_CalcChunkAddress(file_info, ind_rec);
         s_MoveRecToGarbage(file_info, ind_rec);
     }
@@ -1927,7 +1930,7 @@ CNCBlobStorage::DeleteBlobInfo(const SNCBlobVerData* ver_data,
             }
         }
     }
-    else if (maps) {
+    if (maps) {
         SNCDataCoord empty_coord;
         empty_coord.clear();
         for (Uint1 depth = 0; depth <= kNCMaxBlobMapsDepth; ++depth) {
@@ -3186,7 +3189,6 @@ CExpiredCleaner::x_DeleteNextData(void)
     } else {
         CNCBlobStorage::ChangeCacheDeadTime(cache_data);
     }
-    cache_data->lock.Unlock();
 
     if (!coord.empty()) {
         CSrvRef<SNCDBFileInfo> meta_file = s_GetDBFileTry(coord.file_id);
@@ -3212,6 +3214,7 @@ CNCAlerts::Register(CNCAlerts::eDebugDeleteNextData1, "DeleteNextData: meta_file
         }
 #endif
     }
+    cache_data->lock.Unlock();
 
     if (mgr) {
         mgr->DeleteDeadVersion(m_NextDead);

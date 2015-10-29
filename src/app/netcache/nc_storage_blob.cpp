@@ -795,7 +795,7 @@ CNCBlobVerManager::ExecuteSlice(TSrvThreadNum /* thr_num */)
         x_ReleaseMgr();
         return;
     }
-//    m_NeedReleaseMem = false;
+    m_NeedReleaseMem = false;
 
     m_CacheData->lock.Unlock();
 }
@@ -1133,7 +1133,7 @@ SNCBlobVerData::SetNotCurrent(void)
     wb_mem_lock.Lock();
 #ifdef _DEBUG
     if (request_data_write) {
-        abort();
+CNCAlerts::Register(CNCAlerts::eDebugDeleteSNCBlobVerData,"SetNotCurrent");
     }
 #endif
     is_cur_version = false;
