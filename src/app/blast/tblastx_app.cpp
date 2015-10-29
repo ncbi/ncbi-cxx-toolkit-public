@@ -201,7 +201,7 @@ int CTblastxApp::Run(void)
 }
 
 #ifndef SKIP_DOXYGEN_PROCESSING
-int main(int argc, const char* argv[] /*, const char* envp[]*/)
+int NcbiSys_main(int argc, ncbi::TXChar* argv[])
 {
     return CTblastxApp().AppMain(argc, argv, 0, eDS_Default, "");
 }
