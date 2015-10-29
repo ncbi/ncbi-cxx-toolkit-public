@@ -1289,7 +1289,8 @@ void CCgiRequest::x_ProcessInputStream(TFlags flags, CNcbiIstream* istr, int ifd
 {
     m_Content.reset();
     // POST method?
-    if ( AStrEquiv(GetProperty(eCgi_RequestMethod), "POST", PNocase()) ) {
+    if (AStrEquiv(GetProperty(eCgi_RequestMethod), "POST", PNocase())  ||
+        AStrEquiv(GetProperty(eCgi_RequestMethod), "PUT", PNocase())) {
 
         if ( !istr ) {
             istr = &NcbiCin;  // default input stream
@@ -1325,7 +1326,7 @@ void CCgiRequest::x_ProcessInputStream(TFlags flags, CNcbiIstream* istr, int ifd
                 // or application/x-www-form-urlencoded
                 try {
                     ParseRemainingContent();
-                } NCBI_CATCH_ALL_X(8, "CCgiRequest: POST with no content type");
+                } NCBI_CATCH_ALL_X(8, "CCgiRequest: POST/PUT with no content type");
                 CStreamUtils::Pushback(*istr, pstr->data(), pstr->length());
                 m_Input    = istr;
                 // m_InputFD  = ifd; // would be exhausted
