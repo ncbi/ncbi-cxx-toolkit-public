@@ -56,7 +56,7 @@ BEGIN_NAMESPACE(objects);
 static const TSeqPos kPageSize = 5000;
 static const TSeqPos kMaxSNPLength = kPageSize;
 static const size_t kFlagsSize = 8;
-static const TSeqPos kZoom = 100;
+static const TSeqPos kCoverageZoom = 100;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -338,16 +338,151 @@ CRange<TVDBRowId> CSNPDbSeqIterator::GetVDBRowRange(void) const
 }
 
 
+BEGIN_LOCAL_NAMESPACE;
+
+
+CRef<CSeq_graph> x_NewCoverageGraph(const CSNPDbSeqIterator& it)
+{
+    CRef<CSeq_graph> graph(new CSeq_graph);
+    graph->SetLoc().SetInt().SetId(const_cast<CSeq_id&>(*it.GetSeqId()));
+    graph->SetComp(kCoverageZoom);
+    graph->SetNumval(0);
+    CByte_graph& data = graph->SetGraph().SetByte();
+    data.SetAxis(0);
+    data.SetMin(0);
+    data.SetMax(0);
+    data.SetValues();
+    return graph;
+}
+
+
+void x_ConvertByteToInt(CSeq_graph& graph)
+{
+    CConstRef<CByte_graph> old_data(&graph.GetGraph().GetByte());
+    CInt_graph& data = graph.SetGraph().SetInt();
+    data.SetAxis(0);
+    data.SetMin(0);
+    data.SetMax(old_data->GetMax());
+    const CByte_graph::TValues& old_values = old_data->GetValues();
+    CInt_graph::TValues& values = data.SetValues();
+    values.assign(old_values.begin(), old_values.end());
+}
+
+
+inline TSeqPos x_RoundCoveragePos(TSeqPos pos)
+{
+    return pos - pos%kCoverageZoom;
+}
+
+
+inline TSeqPos x_RoundCoveragePosUp(TSeqPos pos)
+{
+    return x_RoundCoveragePos(pos+kCoverageZoom-1);
+}
+
+
+void x_AdjustCoverageGraphRange(CRange<TSeqPos>& range,
+                                const CSNPDbSeqIterator& it)
+{
+    range = range.IntersectionWith(it.GetSNPRange());
+    range.SetFrom(x_RoundCoveragePos(range.GetFrom()));
+    range.SetToOpen(x_RoundCoveragePosUp(range.GetToOpen()));
+}
+
+
+TSeqPos x_AddCoverageLoc(CSeq_graph& graph, TSeqPos pos, TSeqPos end)
+{
+    _ASSERT(end > pos);
+    _ASSERT((end-pos)%kCoverageZoom == 0);
+    TSeqPos add = (end-pos) / kCoverageZoom;
+    graph.SetNumval() += add;
+    CSeq_interval& interval = graph.SetLoc().SetInt();
+    if ( !interval.IsSetFrom() ) {
+        interval.SetFrom(pos);
+    }
+    else {
+        _ASSERT(interval.GetTo()+1 == pos);
+    }
+    interval.SetTo(end-1);
+    return add;
+}
+
+
+void x_AddCoverageZeroes(CSeq_graph& graph, TSeqPos add)
+{
+    CSeq_graph::TGraph& g = graph.SetGraph();
+    if ( g.IsByte() ) {
+        CByte_graph& data = g.SetByte();
+        CByte_graph::TValues& values = data.SetValues();
+        values.resize(values.size()+add);
+    }
+    else {
+        CInt_graph& data = g.SetInt();
+        CInt_graph::TValues& values = data.SetValues();
+        values.resize(values.size()+add);
+    }
+}
+
+
+void x_AddCoverageValues(CSeq_graph& graph, TSeqPos add, const Uint4* ptr)
+{
+    CSeq_graph::TGraph& g = graph.SetGraph();
+    Uint4 max_value = *max_element(ptr, ptr+add);
+    if ( g.IsByte() ) {
+        if ( max_value <= 255 ) {
+            CByte_graph& data = g.SetByte();
+            data.SetMax(max(data.GetMax(), int(max_value)));
+            CByte_graph::TValues& values = data.SetValues();
+            values.insert(values.end(), ptr, ptr+add);
+            return;
+        }
+        x_ConvertByteToInt(graph);
+    }
+    CInt_graph& data = g.SetInt();
+    data.SetMax(max(data.GetMax(), int(max_value)));
+    CInt_graph::TValues& values = data.SetValues();
+    values.insert(values.end(), ptr, ptr+add);
+}
+
+
+inline
+void x_AddEmptyCoverage(CSeq_graph& graph, TSeqPos pos, TSeqPos end)
+{
+    TSeqPos add = x_AddCoverageLoc(graph, pos, end);
+    x_AddCoverageZeroes(graph, add);
+}
+
+
+inline
+void x_AddCoverage(CSeq_graph& graph,
+                   CRange<TSeqPos> range,
+                   CSNPDbPageIterator& page_it)
+{
+    TSeqPos add = x_AddCoverageLoc(graph, range.GetFrom(), range.GetToOpen());
+    TSeqPos off = (range.GetFrom()-page_it.GetPagePos())/kCoverageZoom;
+    x_AddCoverageValues(graph, add, page_it.GetCoverageValues().data()+off);
+}
+
+
+END_LOCAL_NAMESPACE;
+
+
 CRef<CSeq_graph>
 CSNPDbSeqIterator::GetCoverageGraph(CRange<TSeqPos> range) const
 {
-    CRef<CSeq_graph> graph(new CSeq_graph);
-    TSeqPos pos = range.GetFrom()/kZoom*kZoom;
-    TSeqPos end = (range.GetToOpen()+kZoom-1)/kZoom*kZoom;
-    range.SetFrom(pos);
-    range.SetToOpen(end);
+    CRef<CSeq_graph> graph = x_NewCoverageGraph(*this);
+    x_AdjustCoverageGraphRange(range, *this);
     for ( CSNPDbPageIterator it(*this, range, eSearchByStart); it; ++it ) {
-        
+        CRange<TSeqPos> page_range = range.IntersectionWith(it.GetPageRange());
+        _ASSERT(!page_range.Empty());
+        if ( page_range.GetFrom() != range.GetFrom() ) {
+            x_AddEmptyCoverage(*graph, range.GetFrom(), page_range.GetFrom());
+        }
+        x_AddCoverage(*graph, page_range, it);
+        range.SetFrom(page_range.GetToOpen());
+    }
+    if ( graph->GetNumval() == 0 ) {
+        return null;
     }
     return graph;
 }
@@ -357,12 +492,25 @@ CRef<CSeq_annot>
 CSNPDbSeqIterator::GetCoverageAnnot(CRange<TSeqPos> range, TFlags flags) const
 {
     CRef<CSeq_annot> annot(new CSeq_annot);
-    TSeqPos pos = range.GetFrom()/kZoom*kZoom;
-    TSeqPos end = (range.GetToOpen()+kZoom-1)/kZoom*kZoom;
-    range.SetFrom(pos);
-    range.SetToOpen(end);
+    x_AdjustCoverageGraphRange(range, *this);
+    CRef<CSeq_graph> graph = x_NewCoverageGraph(*this);
+    annot->SetData().SetGraph().push_back(graph);
     for ( CSNPDbPageIterator it(*this, range, eSearchByStart); it; ++it ) {
-        
+        CRange<TSeqPos> page_range = range.IntersectionWith(it.GetPageRange());
+        _ASSERT(!page_range.Empty());
+        if ( page_range.GetFrom() != range.GetFrom() &&
+             graph->GetNumval() != 0) {
+            graph = x_NewCoverageGraph(*this);
+            annot->SetData().SetGraph().push_back(graph);
+        }
+        x_AddCoverage(*graph, page_range, it);
+        range.SetFrom(page_range.GetToOpen());
+    }
+    if ( graph->GetNumval() == 0 ) {
+        annot->SetData().SetGraph().pop_back();
+    }
+    if ( annot->SetData().SetGraph().empty() ) {
+        return null;
     }
     return annot;
 }
@@ -515,6 +663,13 @@ void CSNPDbPageIterator::x_Next(void)
 }
 
 
+CRange<TSeqPos> CSNPDbPageIterator::GetPageRange(void) const
+{
+    TSeqPos pos = GetPagePos();
+    return COpenRange<TSeqPos>(pos, pos+GetPageSize());
+}
+
+
 void CSNPDbPageIterator::x_ReportInvalid(const char* method) const
 {
     NCBI_THROW_FMT(CSraException, eInvalidState,
@@ -534,6 +689,13 @@ CTempString CSNPDbPageIterator::GetFeatType(void) const
 {
     x_CheckValid("CSNPDbPageIterator::GetFeatType");
     return *Cur().FEAT_TYPE(GetPageRowId());
+}
+
+
+CVDBValueFor<Uint4> CSNPDbPageIterator::GetCoverageValues(void) const
+{
+    x_CheckValid("CSNPDbPageIterator::GetCoverageValues");
+    return Cur().FEAT_ZOOM_COUNT(GetPageRowId());
 }
 
 

@@ -369,6 +369,7 @@ public:
     TSeqPos GetPagePos(void) const {
         return m_CurrPagePos;
     }
+    CRange<TSeqPos> GetPageRange(void) const;
 
     TVDBRowId GetPageRowId(void) const {
         return m_CurrPageRowId;
@@ -381,6 +382,8 @@ public:
     Uint4 GetFeatCount(void) const;
 
     CTempString GetFeatType(void) const;
+
+    CVDBValueFor<Uint4> GetCoverageValues(void) const;
 
 protected:
     friend class CSNPDbFeatIterator;

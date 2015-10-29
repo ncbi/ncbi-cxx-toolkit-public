@@ -37,8 +37,9 @@
 #include <sra/readers/sra/snpread.hpp>
 
 #include <objects/general/general__.hpp>
-#include <objects/seqfeat/seqfeat__.hpp>
-#include <objects/seqres/seqres__.hpp>
+#include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seqres/Seq_graph.hpp>
+#include <objects/seq/Seq_annot.hpp>
 
 #include <serial/serial.hpp>
 
@@ -107,6 +108,8 @@ void CSNPTestApp::Init(void)
     arg_desc->AddFlag("verbose", "Print info about found data");
 
     arg_desc->AddFlag("make_feat", "Make feature object");
+    arg_desc->AddFlag("make_cov_graph", "Make coverage graph");
+    arg_desc->AddFlag("make_cov_annot", "Make coverage annot");
     arg_desc->AddFlag("no_shared_objects", "Do not share created objects");
     arg_desc->AddFlag("print_objects", "Print generated objects");
 
@@ -227,6 +230,20 @@ int CSNPTestApp::Run(void)
         CSNPDbFeatIterator::TFlags flags = CSNPDbFeatIterator::fDefaultFlags;
         if ( args["no_shared_objects"] ) {
             flags &= ~CSNPDbFeatIterator::fUseSharedObjects;
+        }
+        if ( args["make_cov_graph"] ) {
+            CSNPDbSeqIterator it(snp_db, query_idh);
+            CRef<CSeq_graph> graph = it.GetCoverageGraph(query_range);
+            if ( graph && print ) {
+                out << MSerial_AsnText << *graph;
+            }
+        }
+        if ( args["make_cov_annot"] ) {
+            CSNPDbSeqIterator it(snp_db, query_idh);
+            CRef<CSeq_annot> annot = it.GetCoverageAnnot(query_range);
+            if ( annot && print ) {
+                out << MSerial_AsnText << *annot;
+            }
         }
         for ( CSNPDbFeatIterator it(snp_db, query_idh, query_range); it; ++it ) {
             if ( verbose ) {
