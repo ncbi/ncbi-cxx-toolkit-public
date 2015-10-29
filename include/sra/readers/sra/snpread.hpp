@@ -207,7 +207,7 @@ public:
 };
 
 
-class NCBI_SRAREAD_EXPORT CSNPDbSeqIterator
+class NCBI_SRAREAD_EXPORT CSNPDbSeqIterator : public SSNPDb_Defs
 {
 public:
     CSNPDbSeqIterator(void)
@@ -265,6 +265,16 @@ public:
     CRange<TSeqPos> GetSNPRange(void) const;
     CRange<TVDBRowId> GetVDBRowRange(void) const;
 
+    enum EFlags {
+        fSingleGraph    = 1<<0,
+        fDefaultFlags   = 0
+    };
+    typedef int TFlags;
+
+    CRef<CSeq_graph> GetCoverageGraph(CRange<TSeqPos> range) const;
+    CRef<CSeq_annot> GetCoverageAnnot(CRange<TSeqPos> range,
+                                      TFlags flags = fDefaultFlags) const;
+
     /*
       CRef<CSeq_graph> GetCoverageGraph(void) const;
       CRef<CSeq_annot> GetCoverageAnnot(void) const;
@@ -316,6 +326,9 @@ public:
                        const CSeq_id_Handle& ref_id,
                        COpenRange<TSeqPos> ref_range,
                        ESearchMode search_mode = eSearchByOverlap);
+    CSNPDbPageIterator(const CSNPDbSeqIterator& seq,
+                       COpenRange<TSeqPos> ref_range,
+                       ESearchMode search_mode = eSearchByOverlap);
     CSNPDbPageIterator(const CSNPDbPageIterator& iter);
     ~CSNPDbPageIterator(void);
 
@@ -365,6 +378,10 @@ public:
         return m_SeqIter;
     }
 
+    Uint4 GetFeatCount(void) const;
+
+    CTempString GetFeatType(void) const;
+
 protected:
     friend class CSNPDbFeatIterator;
 
@@ -410,6 +427,9 @@ public:
                        ESearchMode search_mode = eSearchByOverlap);
     CSNPDbFeatIterator(const CSNPDb& db,
                        const CSeq_id_Handle& ref_id,
+                       COpenRange<TSeqPos> ref_range,
+                       ESearchMode search_mode = eSearchByOverlap);
+    CSNPDbFeatIterator(const CSNPDbSeqIterator& seq,
                        COpenRange<TSeqPos> ref_range,
                        ESearchMode search_mode = eSearchByOverlap);
     CSNPDbFeatIterator(const CSNPDbFeatIterator& iter);

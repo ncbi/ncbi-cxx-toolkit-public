@@ -37,6 +37,8 @@
 #include <objects/general/general__.hpp>
 #include <objects/seqloc/seqloc__.hpp>
 #include <objects/seqfeat/seqfeat__.hpp>
+#include <objects/seqres/seqres__.hpp>
+#include <objects/seq/Seq_annot.hpp>
 #include <sra/error_codes.hpp>
 
 #include <sra/readers/sra/kdbread.hpp>
@@ -54,6 +56,7 @@ BEGIN_NAMESPACE(objects);
 static const TSeqPos kPageSize = 5000;
 static const TSeqPos kMaxSNPLength = kPageSize;
 static const size_t kFlagsSize = 8;
+static const TSeqPos kZoom = 100;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -152,10 +155,39 @@ CSNPDb_Impl::SExtraTableCursor::SExtraTableCursor(const CVDBTable& table)
 CSNPDb_Impl::CSNPDb_Impl(CVDBMgr& mgr,
                          CTempString path_or_acc)
     : m_Mgr(mgr),
-      m_Db(m_Mgr, path_or_acc),
-      m_SNPTable(m_Db, "feature"),
       m_ExtraTableIsOpened(false)
 {
+    // SNP VDB are multi-table VDB objects.
+    // However, there could be other VDBs in the same namespace (NA*)
+    // so we have to check this situation and return normal eNotFoundDb error.
+    try {
+        m_Db = CVDB(m_Mgr, path_or_acc);
+    }
+    catch ( CSraException& exc ) {
+        bool another_vdb_table = false;
+        if ( exc.GetErrCode() != exc.eNotFoundDb ) {
+            // check if the accession refers some other VDB object
+            try {
+                CVDBTable table(mgr, path_or_acc);
+                another_vdb_table = true;
+            }
+            catch ( CSraException& /*exc2*/ ) {
+            }
+        }
+        if ( another_vdb_table ) {
+            // It's some other VDB table object
+            // report eNotFoundDb with original rc
+            NCBI_THROW2_FMT(CSraException, eNotFoundDb,
+                            "Cannot open VDB: "<<path_or_acc,
+                            exc.GetRC());
+        }
+        else {
+            // neither VDB nor another VDB table
+            // report original exception
+            throw;
+        }
+    }
+    m_SNPTable = CVDBTable(m_Db, "feature");
     // only one ref seq
     if ( CRef<SSNPTableCursor> snp = SNP() ) {
         SSeqInfo* info = 0;
@@ -306,6 +338,36 @@ CRange<TVDBRowId> CSNPDbSeqIterator::GetVDBRowRange(void) const
 }
 
 
+CRef<CSeq_graph>
+CSNPDbSeqIterator::GetCoverageGraph(CRange<TSeqPos> range) const
+{
+    CRef<CSeq_graph> graph(new CSeq_graph);
+    TSeqPos pos = range.GetFrom()/kZoom*kZoom;
+    TSeqPos end = (range.GetToOpen()+kZoom-1)/kZoom*kZoom;
+    range.SetFrom(pos);
+    range.SetToOpen(end);
+    for ( CSNPDbPageIterator it(*this, range, eSearchByStart); it; ++it ) {
+        
+    }
+    return graph;
+}
+
+
+CRef<CSeq_annot>
+CSNPDbSeqIterator::GetCoverageAnnot(CRange<TSeqPos> range, TFlags flags) const
+{
+    CRef<CSeq_annot> annot(new CSeq_annot);
+    TSeqPos pos = range.GetFrom()/kZoom*kZoom;
+    TSeqPos end = (range.GetToOpen()+kZoom-1)/kZoom*kZoom;
+    range.SetFrom(pos);
+    range.SetToOpen(end);
+    for ( CSNPDbPageIterator it(*this, range, eSearchByStart); it; ++it ) {
+        
+    }
+    return annot;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CSNPDbPageIterator
 /////////////////////////////////////////////////////////////////////////////
@@ -348,6 +410,15 @@ CSNPDbPageIterator::CSNPDbPageIterator(const CSNPDb& db,
                                        COpenRange<TSeqPos> range,
                                        ESearchMode search_mode)
     : m_SeqIter(db, ref_id)
+{
+    Select(range, search_mode);
+}
+
+
+CSNPDbPageIterator::CSNPDbPageIterator(const CSNPDbSeqIterator& seq,
+                                       COpenRange<TSeqPos> range,
+                                       ESearchMode search_mode)
+    : m_SeqIter(seq)
 {
     Select(range, search_mode);
 }
@@ -452,6 +523,20 @@ void CSNPDbPageIterator::x_ReportInvalid(const char* method) const
 }
 
 
+Uint4 CSNPDbPageIterator::GetFeatCount(void) const
+{
+    x_CheckValid("CSNPDbPageIterator::GetFeatCount");
+    return *Cur().FEAT_COUNT(GetPageRowId());
+}
+
+
+CTempString CSNPDbPageIterator::GetFeatType(void) const
+{
+    x_CheckValid("CSNPDbPageIterator::GetFeatType");
+    return *Cur().FEAT_TYPE(GetPageRowId());
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CSNPDbFeatIterator
 /////////////////////////////////////////////////////////////////////////////
@@ -499,6 +584,16 @@ CSNPDbFeatIterator::CSNPDbFeatIterator(const CSNPDb& db,
                                        COpenRange<TSeqPos> range,
                                        ESearchMode search_mode)
     : m_PageIter(db, ref_id, range, search_mode)
+{
+    x_InitPage();
+    x_Settle();
+}
+
+
+CSNPDbFeatIterator::CSNPDbFeatIterator(const CSNPDbSeqIterator& seq,
+                                       COpenRange<TSeqPos> range,
+                                       ESearchMode search_mode)
+    : m_PageIter(seq, range, search_mode)
 {
     x_InitPage();
     x_Settle();
