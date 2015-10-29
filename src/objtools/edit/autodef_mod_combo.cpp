@@ -403,6 +403,34 @@ void CAutoDefModifierCombo::x_CleanUpTaxName (string &tax_name)
     }
 }
 
+bool CAutoDefModifierCombo::x_BioSourceHasSubSrc(const CBioSource& src, CSubSource::ESubtype subtype)
+{
+    if (!src.IsSetSubtype()) {
+        return false;
+    }
+    ITERATE(CBioSource::TSubtype, it, src.GetSubtype()) {
+        if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == subtype) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+bool CAutoDefModifierCombo::x_BioSourceHasOrgMod(const CBioSource& src, COrgMod::ESubtype subtype)
+{
+    if (!src.IsSetOrg() || !src.GetOrg().IsSetOrgname() || !src.GetOrg().GetOrgname().IsSetMod()) {
+        return false;
+    }
+    ITERATE(COrgName::TMod, it, src.GetOrg().GetOrgname().GetMod()) {
+        if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == subtype) {
+            return true;
+        }
+    }
+    return false;
+
+}
+
 
 bool CAutoDefModifierCombo::x_AddSubsourceString (string &source_description, const CBioSource& bsrc, CSubSource::ESubtype st)
 {
@@ -501,28 +529,26 @@ bool CAutoDefModifierCombo::HasTrickyHIV()
 }
 
 
-unsigned int CAutoDefModifierCombo::x_AddHIVModifiers (string &source_description, const CBioSource& bsrc)
+void CAutoDefModifierCombo::x_AddHIVModifiers(TExtraOrgMods& extra_orgmods, TExtraSubSrcs& extra_subsrcs, const CBioSource& bsrc)
 {
-    unsigned int mods_used = 0;
     string   clone_text = "";
     string   isolate_text = "";
     bool     src_has_clone = false;
     bool     src_has_isolate = false;
     
-    if (!NStr::Equal (source_description, "HIV-1")
-        &&  !NStr::Equal (source_description, "HIV-2")) {
-        return mods_used;
+    if (bsrc.IsSetOrg() || !bsrc.GetOrg().IsSetTaxname() ||
+        (!NStr::Equal(bsrc.GetOrg().GetTaxname(), "HIV-1") &&
+         !NStr::Equal(bsrc.GetOrg().GetTaxname(), "HIV-2"))) {
+        return;
     }
-    
-    if (!HasSubSource (CSubSource::eSubtype_country)) {
-        if (x_AddSubsourceString (source_description, bsrc, CSubSource::eSubtype_country)) {
-            mods_used++;
-        }
+
+    if (extra_subsrcs.find(CSubSource::eSubtype_country) == extra_subsrcs.end()) {
+        extra_subsrcs.insert(TExtraSubSrc(CSubSource::eSubtype_country, true));
     }
-    
-    src_has_clone = x_AddSubsourceString(clone_text, bsrc, CSubSource::eSubtype_clone);
-    src_has_isolate = x_AddOrgModString (isolate_text, bsrc, COrgMod::eSubtype_isolate);
-    
+
+    src_has_clone = x_BioSourceHasSubSrc(bsrc, CSubSource::eSubtype_clone);
+    src_has_isolate = x_BioSourceHasOrgMod(bsrc, COrgMod::eSubtype_isolate);
+        
     if ((HasSubSource (CSubSource::eSubtype_clone) && src_has_clone)
         || (HasOrgMod (COrgMod::eSubtype_isolate) && src_has_isolate)) {
         // no additional changes - isolate and clone rule taken care of
@@ -531,19 +557,19 @@ unsigned int CAutoDefModifierCombo::x_AddHIVModifiers (string &source_descriptio
             && (m_HIVCloneIsolateRule == CAutoDefOptions::ePreferIsolate
             || m_HIVCloneIsolateRule == CAutoDefOptions::eWantBoth
                 || !src_has_clone)) {
-            x_AddOrgModString (source_description, bsrc, COrgMod::eSubtype_isolate);
-            mods_used++;
+            if (extra_orgmods.find(COrgMod::eSubtype_isolate) == extra_orgmods.end()) {
+                extra_orgmods.insert(TExtraOrgMod(COrgMod::eSubtype_isolate, true));
+            }
         }
         if (! HasSubSource(CSubSource::eSubtype_clone) && src_has_clone
             && (m_HIVCloneIsolateRule == CAutoDefOptions::ePreferClone
             || m_HIVCloneIsolateRule == CAutoDefOptions::eWantBoth
                 || !src_has_isolate)) {
-            x_AddSubsourceString (source_description, bsrc, CSubSource::eSubtype_clone);
-            mods_used++;
+            if (extra_subsrcs.find(CSubSource::eSubtype_clone) == extra_subsrcs.end()) {
+                extra_subsrcs.insert(TExtraSubSrc(CSubSource::eSubtype_clone, true));
+            }
         }
     }    
-    
-    return mods_used;
 }
 
 
@@ -558,21 +584,45 @@ bool CAutoDefModifierCombo::GetDefaultExcludeSp ()
 }
 
 
-unsigned int CAutoDefModifierCombo::x_AddRequiredSubSourceModifiers (string& description, const CBioSource& bsrc)
+void CAutoDefModifierCombo::x_AddRequiredSubSourceModifiers(TExtraOrgMods& extra_orgmods, TExtraSubSrcs& extra_subsrcs, const CBioSource& bsrc)
 {
-    unsigned int num_added = 0;
+    if (extra_subsrcs.find(CSubSource::eSubtype_transgenic) == extra_subsrcs.end()) {
+        extra_subsrcs.insert(TExtraSubSrc(CSubSource::eSubtype_transgenic, true));
+    }
 
-    if (x_AddSubsourceString(description, bsrc, CSubSource::eSubtype_transgenic)) {
-        num_added++;
+    if (extra_subsrcs.find(CSubSource::eSubtype_plasmid_name) == extra_subsrcs.end()) {
+        extra_subsrcs.insert(TExtraSubSrc(CSubSource::eSubtype_plasmid_name, true));
     }
-    if (x_AddSubsourceString(description, bsrc, CSubSource::eSubtype_plasmid_name)) {
-        num_added++;
+
+    if (extra_subsrcs.find(CSubSource::eSubtype_endogenous_virus_name) == extra_subsrcs.end()) {
+        extra_subsrcs.insert(TExtraSubSrc(CSubSource::eSubtype_endogenous_virus_name, true));
     }
-    if (x_AddSubsourceString(description, bsrc, CSubSource::eSubtype_endogenous_virus_name)) {
-        num_added++;
+}
+
+
+bool CAutoDefModifierCombo::x_HasTypeStrainComment(const CBioSource& bsrc)
+{
+    if (!bsrc.IsSetOrg() || !bsrc.GetOrg().IsSetOrgname() || !bsrc.GetOrg().GetOrgname().IsSetMod()) {
+        return false;
     }
-              
-    return num_added;            
+
+    ITERATE(COrgName::TMod, it, bsrc.GetOrg().GetOrgname().GetMod()) {
+        if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == COrgMod::eSubtype_other &&
+            (*it)->IsSetSubname() && NStr::FindNoCase((*it)->GetSubname(), "type strain of") != string::npos) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+void CAutoDefModifierCombo::x_AddTypeStrainModifiers(TExtraOrgMods& extra_orgmods, TExtraSubSrcs& extra_subsrcs, const CBioSource& bsrc)
+{
+    if (x_HasTypeStrainComment(bsrc)) {
+        if (extra_orgmods.find(COrgMod::eSubtype_strain) == extra_orgmods.end()) {
+            extra_orgmods.insert(TExtraOrgMod(COrgMod::eSubtype_strain, true));
+        }
+    }    
 }
 
 
@@ -682,59 +732,79 @@ string CAutoDefModifierCombo::GetSourceDescriptionString (const CBioSource& bsrc
 {
     unsigned int k;
     string       source_description = "";
-    unsigned int mods_used = 0;
+    map<COrgMod::ESubtype, bool> orgmods;
+    map<CSubSource::ESubtype, bool> subsrcs;
+    bool no_extras = false;
     
     /* start with tax name */
     source_description += bsrc.GetOrg().GetTaxname();
     x_CleanUpTaxName(source_description);
 
-    mods_used += x_AddRequiredSubSourceModifiers(source_description, bsrc);
-    mods_used += x_AddHIVModifiers(source_description, bsrc);
+    x_AddRequiredSubSourceModifiers(orgmods, subsrcs, bsrc);
+
+    x_AddHIVModifiers(orgmods, subsrcs, bsrc);
+    x_AddTypeStrainModifiers(orgmods, subsrcs, bsrc);
 
     /* should this organism be excluded? */
     if (m_ExcludeSpOrgs) {
         string::size_type pos = NStr::Find(source_description, " sp. ");
         if (pos != NCBI_NS_STD::string::npos
             && (pos < 2 || !NStr::StartsWith(source_description.substr(pos - 2), "f."))) {
-            return source_description;
+            no_extras = true;
+            // but add plasmid name anyway
+            if (subsrcs.find(CSubSource::eSubtype_plasmid_name) == subsrcs.end()) {
+                subsrcs.insert(TExtraSubSrc(CSubSource::eSubtype_plasmid_name, true));
+            }
         }
     }
     if (m_ExcludeCfOrgs) {
         string::size_type pos = NStr::Find(source_description, " cf. ");
         if (pos != NCBI_NS_STD::string::npos) {
-            return source_description;
+            no_extras = true;
         }
     }
     if (m_ExcludeNrOrgs) {
         string::size_type pos = NStr::Find(source_description, " nr. ");
         if (pos != NCBI_NS_STD::string::npos) {
-            return source_description;
+            no_extras = true;
         }
     }
     if (m_ExcludeAffOrgs) {
         string::size_type pos = NStr::Find(source_description, " aff. ");
         if (pos != NCBI_NS_STD::string::npos) {
-            return source_description;
+            no_extras = true;
         }
     }
     
-    if (bsrc.CanGetOrigin() && bsrc.GetOrigin() == CBioSource::eOrigin_mut) {
-        source_description = "Mutant " + source_description;
+    if (!no_extras) {
+        if (bsrc.CanGetOrigin() && bsrc.GetOrigin() == CBioSource::eOrigin_mut) {
+            source_description = "Mutant " + source_description;
+        }
+
+        // add requested orgmods
+        for (unsigned int k = 0; k < m_OrgMods.size(); k++) {
+            if (orgmods.find(m_OrgMods[k]) == orgmods.end()) {
+                orgmods.insert(TExtraOrgMod(m_OrgMods[k], true));
+            }
+        }
+
+        // add requested subsources
+        for (unsigned int k = 0; k < m_SubSources.size(); k++) {
+            if (subsrcs.find(m_SubSources[k]) == subsrcs.end()) {
+                subsrcs.insert(TExtraSubSrc(m_SubSources[k], true));
+            }
+        }
     }
 
+
     for (k = 0; k < kNumPreferred; k++) {
-        if (IsModifierRequiredByDefault(s_PreferredList[k].is_orgmod, s_PreferredList[k].subtype)) {
-            //skip, was added earlier
-            continue;
-        } else if (s_PreferredList[k].is_orgmod) {
-            if (HasOrgMod((COrgMod::ESubtype)s_PreferredList[k].subtype) &&
-                x_AddOrgModString (source_description, bsrc, (COrgMod::ESubtype)s_PreferredList[k].subtype)) {
-                mods_used++;
+        if (s_PreferredList[k].is_orgmod) {
+            if (orgmods.find((COrgMod::ESubtype)s_PreferredList[k].subtype) != orgmods.end()) {
+                x_AddOrgModString(source_description, bsrc, (COrgMod::ESubtype)s_PreferredList[k].subtype);
             }
         } else {
-            if (HasSubSource((CSubSource::ESubtype)s_PreferredList[k].subtype) &&
-                x_AddSubsourceString(source_description, bsrc, (CSubSource::ESubtype)s_PreferredList[k].subtype)) {
-                mods_used++;
+            if (subsrcs.find((CSubSource::ESubtype)s_PreferredList[k].subtype) != subsrcs.end()) { 
+                x_AddSubsourceString(source_description, bsrc, (CSubSource::ESubtype)s_PreferredList[k].subtype);
             }
         }
     }

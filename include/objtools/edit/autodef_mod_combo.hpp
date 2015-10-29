@@ -165,9 +165,18 @@ private:
     void x_CleanUpTaxName (string &tax_name);
     bool x_AddSubsourceString (string &source_description, const CBioSource& bsrc, CSubSource::ESubtype st);
     bool x_AddOrgModString (string &source_description, const CBioSource& bsrc, COrgMod::ESubtype st);
-    unsigned int x_AddHIVModifiers (string &source_description, const CBioSource& bsrc);
-    unsigned int x_AddRequiredSubSourceModifiers (string& description, const CBioSource& bsrc);
+    
+    typedef pair<COrgMod::ESubtype, bool> TExtraOrgMod;
+    typedef map<COrgMod::ESubtype, bool> TExtraOrgMods;
+    typedef pair<CSubSource::ESubtype, bool> TExtraSubSrc;
+    typedef map<CSubSource::ESubtype, bool> TExtraSubSrcs;
+    static bool x_BioSourceHasSubSrc(const CBioSource& src, CSubSource::ESubtype subtype);
+    static bool x_BioSourceHasOrgMod(const CBioSource& src, COrgMod::ESubtype subtype);
 
+    void x_AddHIVModifiers(TExtraOrgMods& extra_orgmods, TExtraSubSrcs& extra_subsrcs, const CBioSource& bsrc);
+    void x_AddRequiredSubSourceModifiers(TExtraOrgMods& extra_orgmods, TExtraSubSrcs& extra_subsrcs, const CBioSource& bsrc);
+    void x_AddTypeStrainModifiers(TExtraOrgMods& extra_orgmods, TExtraSubSrcs& extra_subsrcs, const CBioSource& bsrc);
+    static bool x_HasTypeStrainComment(const CBioSource& bsrc);
 };
 
 
