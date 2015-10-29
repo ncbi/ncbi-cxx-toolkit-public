@@ -81,8 +81,36 @@ DISCREPANCY_SUMMARIZE(COUNT_PROTEINS)
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
+// SHORT_SEQUENCES
+DISCREPANCY_CASE(SHORT_SEQUENCES, CSeq_inst, eAll, "Find Short Sequences")
+{
+    if (obj.IsAa()) {
+        return;
+    }
+    
+    // skip mRNA sequence in a GenProdSet
+    CConstRef<CBioseq> bioseq = context.GetCurrentBioseq();
+    const vector<CConstRef<CBioseq_set> > &bioseq_set_stack = context.Get_Bioseq_set_Stack();
+    if (IsmRNASequenceInGenProdSet(context.GetCurrentBioseq(), bioseq_set_stack)) {
+        return;
+    }
+    
+    if (obj.IsSetLength() && obj.GetLength() < 50) {
+        m_Objs["[n] sequences are shorter than 50 nt"].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+    }
+}
 
-// DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA
+DISCREPANCY_SUMMARIZE(SHORT_SEQUENCES)
+{
+    if (m_Objs.empty()) {
+        return;
+    }
+    
+    m_Objs["[n] sequences are shorter than 50 nt"];
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+// INTERNAL_TRANSCRIBED_SPACER_RRNA
 static const char* kRRNASpacer[] = { "internal", "transcribed", "spacer", "\0" };
 
 DISCREPANCY_CASE(INTERNAL_TRANSCRIBED_SPACER_RRNA, CRNA_ref, eOncaller, "Look for rRNAs that contain either 'internal', 'transcribed' or 'spacer'")

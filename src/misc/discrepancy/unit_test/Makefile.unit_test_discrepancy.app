@@ -29,7 +29,7 @@ REQUIRES = Boost.Test.Included
 CHECK_CMD =
 # If your test application uses config file, then uncomment this line -- and,
 # remember to rename 'unit_test_discrepancy_report.ini' to '<your_app_name>.ini'.
-#CHECK_COPY = unit_test_discrepancy_report.ini
+CHECK_COPY = test_data
 
 ###  EXAMPLES OF OTHER SETTINGS THAT MIGHT BE OF INTEREST
 # PRE_LIBS = $(NCBI_C_LIBPATH) .....
