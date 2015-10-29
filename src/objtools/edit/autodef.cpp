@@ -343,25 +343,20 @@ bool CAutoDef::x_AddMiscRNAFeatures(CBioseq_Handle bh, const CSeq_feat& cf, cons
         comment = comment.substr(0, pos);
     }
 
-    
-    vector<string> elements = CAutoDefFeatureClause_Base::GetMiscRNAElements(comment);
-    if (!elements.empty()) {
-        if (is_region) {
-            main_clause.AddSubclause(new CAutoDefParsedRegionClause(bh, cf, mapped_loc, comment));
-        } else {
+    if (is_region) {
+        main_clause.AddSubclause(new CAutoDefParsedRegionClause(bh, cf, mapped_loc, comment));
+    } else {
+        vector<string> elements = CAutoDefFeatureClause_Base::GetMiscRNAElements(comment);
+        if (!elements.empty()) {
             ITERATE(vector<string>, s, elements) {
                 CAutoDefParsedClause *new_clause = new CAutoDefParsedClause(bh, cf, mapped_loc,
                     (*s == elements.front()), (*s == elements.back()));
                 new_clause->SetMiscRNAWord(*s);
                 main_clause.AddSubclause(new_clause);
             }
-        }
-    } else {
-        elements = CAutoDefFeatureClause_Base::GetTrnaIntergenicSpacerClausePhrases(comment);
-        if (!elements.empty()) {
-            if (is_region) {
-                main_clause.AddSubclause(new CAutoDefParsedRegionClause(bh, cf, mapped_loc, comment));
-            } else {
+        } else {
+            elements = CAutoDefFeatureClause_Base::GetTrnaIntergenicSpacerClausePhrases(comment);
+            if (!elements.empty()) {
                 ITERATE(vector<string>, s, elements) {
                     size_t pos = NStr::Find(*s, "intergenic spacer");
                     if (pos != string::npos) {
@@ -378,16 +373,16 @@ bool CAutoDef::x_AddMiscRNAFeatures(CBioseq_Handle bh, const CSeq_feat& cf, cons
                         main_clause.AddSubclause(gene);
                     }
                 }
+            } else {
+                CAutoDefParsedIntergenicSpacerClause *spacer =
+                    new CAutoDefParsedIntergenicSpacerClause(bh,
+                    cf,
+                    mapped_loc,
+                    comment,
+                    true,
+                    true);
+                main_clause.AddSubclause(spacer);
             }
-        } else {
-            CAutoDefParsedIntergenicSpacerClause *spacer =
-                new CAutoDefParsedIntergenicSpacerClause(bh,
-                cf,
-                mapped_loc,
-                comment,
-                true,
-                true);
-            main_clause.AddSubclause(spacer);
         }
     }
     return true;
