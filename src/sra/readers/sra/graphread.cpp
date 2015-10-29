@@ -85,9 +85,38 @@ CVDBGraphDb_Impl::SGraphTableCursor::SGraphTableCursor(const CVDBTable& table)
 
 CVDBGraphDb_Impl::CVDBGraphDb_Impl(CVDBMgr& mgr, CTempString path)
     : m_Mgr(mgr),
-      m_Path(path),
-      m_GraphTable(mgr, path)
+      m_Path(path)
 {
+    // VDB graph are plain VDB table objects.
+    // However, there could be other VDBs in the same namespace (NA*)
+    // so we have to check this situation and return normal eNotFoundDb error.
+    try {
+        m_GraphTable = CVDBTable(mgr, path);
+    }
+    catch ( CSraException& exc ) {
+        bool another_vdb = false;
+        if ( exc.GetErrCode() != exc.eNotFoundTable ) {
+            // check if the accession refers some other VDB object
+            try {
+                CVDB db(mgr, path);
+                another_vdb = true;
+            }
+            catch ( CSraException& /*exc2*/ ) {
+            }
+        }
+        if ( another_vdb || exc.GetErrCode() == exc.eNotFoundTable ) {
+            // It's either some other VDB object, or not an VDB object at all
+            // report eNotFoundDb with original rc
+            NCBI_THROW2_FMT(CSraException, eNotFoundDb,
+                            "Cannot open VDB graph table: "<<path,
+                            exc.GetRC());
+        }
+        else {
+            // neither vdbgraph table nor another VDB
+            // report original exception
+            throw;
+        }
+    }
     CRef<SGraphTableCursor> curs = Graph();
 
     TVDBRowId last_row = curs->m_Cursor.GetMaxRowId();

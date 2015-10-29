@@ -594,7 +594,7 @@ CVDBGraphDataLoader_Impl::x_GetNAFileInfo(const string& na_acc)
         info->m_VDB = CVDBGraphDb(m_Mgr, na_acc);
     }
     catch ( CSraException& exc ) {
-        if ( exc.GetErrCode() != exc.eNotFoundTable ) {
+        if ( exc.GetErrCode() != exc.eNotFoundDb ) {
             throw;
         }
         if ( GetDebugLevel() >= 2 ) {
