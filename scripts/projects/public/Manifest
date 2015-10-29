@@ -35,15 +35,16 @@ Linux64-Centos : GCC491d   : GCC.sh 4.9.1 --with-debug --with-mt --with-flat-mak
 Linux64-Centos : GCC510    : GCC.sh 5.1.0 --without-debug --with-mt --with-flat-makefile
 Linux64-Centos : ICC130    : ICC.sh 13.0  --without-debug --with-mt --with-dll
 Linux64-Centos : ICC130d   : ICC.sh 13.0  --with-debug --with-mt --with-3psw=system
-Linux64-Centos : Clang     : Clang.sh --with-debug --with-mt
+Linux64-Centos : Clang     : Clang.sh --with-debug --with-mt --with-flat-makefile
 
 Linux64-Ubuntu : plain-GCC : GCC.sh --without-debug --with-mt --with-flat-makefile
 Linux32-Ubuntu : plain-GCC : GCC.sh --without-debug --with-mt --with-flat-makefile
 
 FreeBSD32      : plain     : Clang.sh --without-debug --with-mt --with-flat-makefile
+FreeBSD64      : plain     : Clang.sh --without-debug --with-mt --with-flat-makefile
 
 IntelMAC       : Debug     : GCC.sh --with-debug --with-dll --with-mt --with-universal=i386,x86_64 --with-flat-makefile
 IntelMAC       : Release   : GCC.sh --without-debug --with-dll --with-mt --with-universal=i386,x86_64 --with-flat-makefile
 
-XCode      : plain  : Xcode.sh 30 --without-debug --with-universal=i386,x86_64
+XCode          : plain     : Xcode.sh 30 --without-debug --with-universal=i386,x86_64 --with-flat-makefile
 
