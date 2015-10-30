@@ -46,5 +46,5 @@ FreeBSD64      : plain     : Clang.sh --without-debug --with-mt --with-flat-make
 IntelMAC       : Debug     : GCC.sh --with-debug --with-dll --with-mt --with-universal=i386,x86_64 --with-flat-makefile
 IntelMAC       : Release   : GCC.sh --without-debug --with-dll --with-mt --with-universal=i386,x86_64 --with-flat-makefile
 
-XCode          : plain     : Xcode.sh 30 --without-debug --with-universal=i386,x86_64 --with-flat-makefile
+XCode          : plain     : Xcode.sh 30 --without-debug --with-universal=i386,x86_64
 
