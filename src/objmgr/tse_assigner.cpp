@@ -196,7 +196,7 @@ void CTSE_Default_Assigner::LoadAnnot(CTSE_Info& tse,
         CDataSource::TAnnotLockWriteGuard guard(eEmptyGuard);
         if( tse.HasDataSource() )
             guard.Guard(tse.GetDataSource());
-        tse.UpdateAnnotIndex(*annot_info);
+        //tse.UpdateAnnotIndex(*annot_info);
     }}
 }
 
@@ -221,7 +221,7 @@ void CTSE_Default_Assigner::LoadBioseq(CTSE_Info& tse,
         CDataSource::TAnnotLockWriteGuard guard(eEmptyGuard);
         if( tse.HasDataSource() )
             guard.Guard(tse.GetDataSource());
-        tse.UpdateAnnotIndex(*entry_info);
+        //tse.UpdateAnnotIndex(*entry_info);
     }
 }
 
