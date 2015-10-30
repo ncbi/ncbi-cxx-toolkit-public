@@ -2283,13 +2283,19 @@ void LBOS_DeannounceAll()
      */
     for (i = 0;  i < servers;  i++) {
         local_arr[i].version        = strdup((*arr)[i].version);
+        local_arr[i].service        = strdup((*arr)[i].service);
+        local_arr[i].port           =        (*arr)[i].port;
         if (strcmp((*arr)[i].host, "0.0.0.0") == 0) {
+        /* If host is "0.0.0.0", we do not provide it to LBOS in
+         * HTTP request (because it returns error in this case).
+         * With no host provided, LBOS understands that we want
+         * to deannounce server from local host, which is the same
+         * as 0.0.0.0
+         */
             local_arr[i].host       = NULL;
         } else {
             local_arr[i].host       = strdup((*arr)[i].host);
         }
-        local_arr[i].service        = strdup((*arr)[i].service);
-        local_arr[i].port           =        (*arr)[i].port;
     }
     CORE_UNLOCK;
     for (i = 0;  i < servers;  i++) {

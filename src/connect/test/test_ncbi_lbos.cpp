@@ -66,7 +66,6 @@ NCBITEST_AUTO_FINI()
 
 NCBITEST_AUTO_INIT()
 {
-    CConnNetInfo net_info;
     boost::unit_test::framework::master_test_suite().p_name->assign(
         "lbos mapper Unit Test");
     CNcbiRegistry& config = CNcbiApplication::Instance()->GetConfig();
@@ -89,61 +88,7 @@ NCBITEST_AUTO_INIT()
     s_HealthchecKThread->Run();
 #endif
 #if DEANNOUNCE_ALL_BEFORE_TEST
-    size_t start = 0, end = 0;
-    /*
-     * Deannounce all lbostest servers (they are left if previous
-     * launch of test crashed)
-     */
-    CCObjHolder<char> lbos_output_orig(g_LBOS_UnitTesting_GetLBOSFuncs()->
-            UrlReadAll(*net_info, "http://lbos.dev.be-md.ncbi.nlm.nih.gov:8080"
-            "/lbos/text/service", NULL, NULL));
-    if (*lbos_output_orig == NULL) 
-        lbos_output_orig = strdup("");
-    string lbos_output = *lbos_output_orig;
-    const char* str1 = "/lbostest";
-    const char* str2 = "/lbostest1";
-    vector<string> to_find;
-    to_find.push_back(str1);
-    to_find.push_back(str2);
-
-    unsigned int i = 0;
-    for (i = 0;  i < to_find.size();  ++i) {
-        while (start != string::npos) {
-            start = lbos_output.find(to_find[i] + "\t", start);
-            if (start == string::npos)
-                break;
-            // We already know service name since we searched for it.
-            start = lbos_output.find("\t", start); //skip service name
-            start += 1; //skip \t
-            // Next, we extract version.
-            end = lbos_output.find("\t", start); //version
-            string version = lbos_output.substr(start, end-start);
-            // Now we extract ip
-            start = end + 1; //skip \t
-            end = lbos_output.find(":", start); //skip ip
-            string ip = lbos_output.substr(start, end-start);
-            // Now we extract port
-            start = end + 1; //skip ":"
-            end = lbos_output.find("\t", start);
-            unsigned short port =
-                    NStr::StringToInt(lbos_output.substr(start, end-start));
-            // We skip healthcheck
-            start = end + 1; //skip \t
-            end = lbos_output.find("\t", start);
-            // Check if service is announced are just hangs until being deleted
-            start = end + 1; //skip \t
-            end = lbos_output.find("\t", start);
-            string is_announced = lbos_output.substr(start, end-start);
-            if (is_announced == "true") {
-                try {
-                    LBOS::Deannounce(to_find[i], version, ip, port);
-                }
-                catch (const CLBOSException&) {
-                }
-            }
-        }
-        start = 0; // reset search for the next service
-    }
+    s_ClearZooKeeper();
 #endif /* DEANNOUNCE_ALL_BEFORE_TEST */
 }
 

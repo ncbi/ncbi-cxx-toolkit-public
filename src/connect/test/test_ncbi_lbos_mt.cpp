@@ -29,14 +29,24 @@
  *   Standard test for named service resolution facility. Single-threaded.
  *
  */
-
-/*delete*/#define            NCBI_USE_ERRCODE_X         Connect_LBSM
-
 #include <ncbi_pch.hpp>
 #include "test_ncbi_lbos_common.hpp"
 #include <corelib/test_mt.hpp>
 
+
 USING_NCBI_SCOPE;
+
+#ifdef NCBI_THREADS
+static CHealthcheckThread* s_HealthchecKThread;
+#endif
+
+/* We might want to clear ZooKeeper from nodes before running tests.
+* This is generally not good, because if this test application runs
+* on another host at the same moment, it will miss a lot of nodes and
+* tests will fail.
+*/
+#define DEANNOUNCE_ALL_BEFORE_TEST 0
+
 
 /**  Main class of this program which will be used for testing. Based on the
  *  class from test_mt                                                       */
@@ -259,34 +269,27 @@ bool CTestLBOSApp::TestApp_Init(void)
         "/lbos/text/service", NULL, NULL);
     string lbos_output = string(lbos_ouput_orig);
     free(lbos_ouput_orig);
-    size_t start = 0, end = 0;
     LBOS_Deannounce("/lbostest", /* for initialization */
                     "1.0.0",
                     "lbos.dev.be-md.ncbi.nlm.nih.gov",
                     5000, NULL, NULL);
-    while (start != string::npos) {
-        string to_find = "/lbostest\t";
-        start = lbos_output.find(to_find, start);
-        if (start == string::npos)
-            break;
-        start = lbos_output.find("\t", start); //skip service name
-        start = lbos_output.find("\t", start); //skip service name
-        start = lbos_output.find(":", start); //skip ip
-        start += 1; //skip ":"
-        end = lbos_output.find("\t", start);
-        unsigned short port =
-            NStr::StringToInt(lbos_output.substr(start, end - start));
-
-        LBOS_Deannounce("/lbostest",
-            "1.0.0",
-            "lbos.dev.be-md.ncbi.nlm.nih.gov",
-            port, NULL, NULL);
-    }
+#ifdef NCBI_THREADS
+    s_HealthchecKThread = new CHealthcheckThread;
+    s_HealthchecKThread->Run();
+#endif
+#if DEANNOUNCE_ALL_BEFORE_TEST
+    s_ClearZooKeeper();
+#endif
     return true;
 }
 
+
 bool CTestLBOSApp::TestApp_Exit(void)
 {
+#ifdef NCBI_THREADS
+    s_HealthchecKThread->Stop(); // Stop listening on the socket
+    s_HealthchecKThread->Join();
+#endif /* NCBI_THREADS */
     return true;
 }
 

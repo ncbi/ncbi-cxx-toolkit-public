@@ -174,16 +174,17 @@ private:
         CListeningSocket listening_sock(4096);
         CSocket sock;
         listening_sock.Listen(4096);
-        STimeout sock_timeout = {3, 0};
+        STimeout rw_timeout = { 0, 20000 };
+        STimeout c_timeout = { 0, 0 };
         while (m_RunHealthCheck) {
-            if (listening_sock.Accept(sock, &sock_timeout) != eIO_Success) {
+            if (listening_sock.Accept(sock, &rw_timeout) != eIO_Success) {
                 continue;
             }
             char buf[4096];
             size_t n_read = 0;
             size_t n_written = 0;
-            sock.SetTimeout(eIO_ReadWrite, &sock_timeout);
-            sock.SetTimeout(eIO_Close, &sock_timeout);
+            sock.SetTimeout(eIO_ReadWrite, &rw_timeout);
+            sock.SetTimeout(eIO_Close, &c_timeout);
             sock.Read(buf, sizeof(buf), &n_read);
             const char healthy_answer[] =
                 "HTTP/1.1 200 OK\r\n"
@@ -193,7 +194,7 @@ private:
                 "OK\r\n";
             sock.Write(healthy_answer, sizeof(healthy_answer) - 1, 
                        &n_written);
-            sock.Wait(eIO_Read, &sock_timeout);
+            sock.Wait(eIO_Read, &c_timeout);
             sock.Close();
         }
         return NULL;
@@ -3803,9 +3804,9 @@ void LBOSError__LBOSAnswerProvided(int thread_num = -1)
                                       s_FakeReadAnnouncementWithErrorFromLBOS);
     try {
         LBOS::Announce(node_name,
-                  "1.0.0",
-                  port,
-                  "http://0.0.0.0:4096/health");
+                       "1.0.0",
+                       port,
+                       "http://0.0.0.0:4096/health");
     }
     catch(const CLBOSException& ex) {
         NCBITEST_CHECK_MESSAGE(
@@ -3815,9 +3816,8 @@ void LBOSError__LBOSAnswerProvided(int thread_num = -1)
             strstr(ex.what(), " Error: ") + strlen(" Error: ");
         string message = "";
         message.append(ex_message);
-        NCBITEST_CHECK_MESSAGE(
-            message ==  "507 LBOS STATUS Those lbos errors are scaaary\n", 
-            "Message from lbos did not coincide with what was expected");
+        NCBITEST_CHECK_EQUAL(
+            message, string("507 LBOS STATUS Those lbos errors are scaaary\n"));
         return;
     } 
     catch (...) {
@@ -5436,6 +5436,69 @@ void s_TestFindMethod(ELBOSFindMethod find_method)
         CORE_LOG(eLOG_Trace, "Service mapper has been reset");
         NCBITEST_CHECK_MESSAGE (n_found && (info = SERV_GetNextInfo(*iter)),
                                          "Service not found after reset");
+    }
+}
+
+/** Remove from ZooKeeper only those services which have name specified in
+ * special array (this array is defined inside this function) and are
+ * based on current host. We do not remove servers that are based on another 
+ * host not to interfere with other test applications. And we do not touch 
+ * servers with other names that are not related to our test */
+static void s_ClearZooKeeper()
+{
+    CConnNetInfo net_info;
+    size_t start = 0, end = 0;
+    /*
+    * Deannounce all lbostest servers (they are left if previous
+    * launch of test crashed)
+    */
+    CCObjHolder<char> lbos_output_orig(g_LBOS_UnitTesting_GetLBOSFuncs()->
+        UrlReadAll(*net_info, "http://lbos.dev.be-md.ncbi.nlm.nih.gov:8080"
+        "/lbos/text/service", NULL, NULL));
+    if (*lbos_output_orig == NULL)
+        lbos_output_orig = strdup("");
+    string lbos_output = *lbos_output_orig;
+    vector<string> to_find;
+    to_find.push_back("/lbostest");
+    to_find.push_back("/lbostest1");
+
+    unsigned int i = 0;
+    for (i = 0; i < to_find.size(); ++i) {
+        while (start != string::npos) {
+            start = lbos_output.find(to_find[i] + "\t", start);
+            if (start == string::npos)
+                break;
+            // We already know service name since we searched for it.
+            start = lbos_output.find("\t", start); //skip service name
+            start += 1; //skip \t
+            // Next, we extract version.
+            end = lbos_output.find("\t", start); //version
+            string version = lbos_output.substr(start, end - start);
+            // Now we extract ip
+            start = end + 1; //skip \t
+            end = lbos_output.find(":", start); //skip ip
+            string ip = lbos_output.substr(start, end - start);
+            // Now we extract port
+            start = end + 1; //skip ":"
+            end = lbos_output.find("\t", start);
+            unsigned short port =
+                NStr::StringToInt(lbos_output.substr(start, end - start));
+            // We skip healthcheck
+            start = end + 1; //skip \t
+            end = lbos_output.find("\t", start);
+            // Check if service is announced are just hangs until being deleted
+            start = end + 1; //skip \t
+            end = lbos_output.find("\t", start);
+            string is_announced = lbos_output.substr(start, end - start);
+            if (is_announced == "true" && ip == s_GetMyIP()) {
+                try {
+                    LBOS::Deannounce(to_find[i], version, ip, port);
+                }
+                catch (const CLBOSException&) {
+                }
+            }
+        }
+        start = 0; // reset search for the next service
     }
 }
 
