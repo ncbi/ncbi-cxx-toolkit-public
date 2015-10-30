@@ -569,7 +569,7 @@ void CAutoDefModifierCombo::x_AddHIVModifiers(TExtraOrgMods& extra_orgmods, TExt
     bool     src_has_clone = false;
     bool     src_has_isolate = false;
     
-    if (bsrc.IsSetOrg() || !bsrc.GetOrg().IsSetTaxname() ||
+    if (!bsrc.IsSetOrg() || !bsrc.GetOrg().IsSetTaxname() ||
         (!NStr::Equal(bsrc.GetOrg().GetTaxname(), "HIV-1") &&
          !NStr::Equal(bsrc.GetOrg().GetTaxname(), "HIV-2"))) {
         return;
