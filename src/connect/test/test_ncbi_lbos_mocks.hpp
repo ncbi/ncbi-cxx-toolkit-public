@@ -156,6 +156,9 @@ public:
     ~CMockFunction() {
         m_Original = m_OriginalValue;
     }
+    void Restore() {
+        m_Original = m_OriginalValue;
+    }
     CMockFunction& operator=(const T mock) {
         m_Original = mock;
         return *this;
@@ -452,6 +455,10 @@ private:
 };
 
 
+/** Check how many specified servers are announced 
+ * (usually it is 0 or 1)
+ * This function does not care about host (IP) of server.
+ */
 int s_CountServers(string service, unsigned short port, string dtab = "")
 {
     int servers = 0;
@@ -472,6 +479,44 @@ int s_CountServers(string service, unsigned short port, string dtab = "")
     return servers;
 }
 
+/** Check if expected number of specified servers is announced 
+ * (usually it is 0 or 1)
+ * This function does not care about host (IP) of server.
+ */
+int s_CountServersWithExpectation(string service,
+                                  unsigned short port, 
+                                  int expected_count,
+                                  int secs_timeout,
+                                  string dtab = "")
+{
+    const int wait_time = 500; /* msecs */
+    int max_retries = secs_timeout * 1000 / wait_time; /* number of repeats 
+                                                          until timeout */
+    int retries = 0;
+    int servers = 0;
+    while (servers != expected_count && retries < max_retries) {
+        servers = 0;
+        if (retries > 0) { /* for the first cycle we do not sleep */
+            SleepMilliSec(wait_time);
+        }
+        const SSERV_Info* info;
+        CConnNetInfo net_info(service);
+        if (dtab.length() > 1) {
+            ConnNetInfo_SetUserHeader(*net_info, dtab.c_str());
+        }
+        CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,
+            SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
+            *net_info, 0/*skip*/, 0/*n_skip*/,
+            0/*external*/, 0/*arg*/, 0/*val*/));
+        do {
+            info = SERV_GetNextInfoEx(*iter, NULL);
+            if (info != NULL && info->port == port)
+                servers++;
+        } while (info != NULL);
+        retries++;
+    }
+    return servers;
+}
 
 
 template <unsigned int lines>
@@ -524,7 +569,6 @@ EHTTP_HeaderParse    s_LBOS_FakeParseHeader(const char*     header,
 
 }
 
-
 static string s_GenerateNodeName(void)
 {
     return string("/lbostest");
@@ -532,7 +576,7 @@ static string s_GenerateNodeName(void)
 
 DEFINE_STATIC_FAST_MUTEX(s_GlobalLock);
 
-/** Given number of thread, it divides port range in 34 pieces (as we know,
+/** Given number of threads, it divides port range in 34 pieces (as we know,
  * there can be maximum of 34 threads) and gives ports only from corresponding
  * piece of range. If -1 is provided as thread_num, then full range is used
  * for port generation                                                       */
@@ -553,6 +597,125 @@ static unsigned short s_GeneratePort(int thread_num = -1)
     }
     CORE_LOGF(eLOG_Trace, ("Port %hu for thread %d", port, thread_num));
     return port;
+}
+
+
+
+
+/** Accepts requests on specified socket.
+    Returns result - if managed or not to answer */
+static 
+bool s_AnswerHealthcheck(CListeningSocket& listening_sock, short int port) {
+    CSocket sock;
+    STimeout sock_timeout = { 1, 500 };
+    if (listening_sock.Accept(sock, &sock_timeout) != eIO_Success) {
+        return false;
+    }
+    char buf[4096];
+    size_t n_read = 0;
+    size_t n_written = 0;
+    sock.SetTimeout(eIO_ReadWrite, &sock_timeout);
+    sock.SetTimeout(eIO_Close, &sock_timeout);
+    sock.Read(buf, sizeof(buf), &n_read);
+    const char healthy_answer[] =
+        "HTTP/1.1 200 OK\r\n"
+        "Content-Length: 4\r\n"
+        "Content-Type: text/plain;charset=UTF-8\r\n"
+        "\r\n"
+        "OK\r\n";
+    sock.Write(healthy_answer, sizeof(healthy_answer) - 1, &n_written);
+    sock.Wait(eIO_Read, &sock_timeout);
+    sock.Close();
+    return true;
+}
+
+
+/* Instead of just read, make first flush, then answer healthcheck, and
+   then get answer from LBOS (hopefully, OK) */
+static
+EIO_Status s_RealReadAnnounceSingleThread(CONN              conn,
+                                          void*             line,
+                                          size_t            size,
+                                          size_t*           n_read,
+                                          EIO_ReadMethod    how)
+{
+    CListeningSocket listening_sock(4096);
+    CSocket sock;
+    EIO_Status status = eIO_Timeout;
+    listening_sock.Listen(4096);
+    CONN_Flush(conn);
+    s_AnswerHealthcheck(listening_sock, 4096);
+    size_t total_read = 0;
+    do {
+        status = CONN_Read(conn, (char*) line + total_read,
+                           size - total_read, n_read, how);
+        total_read += *n_read;
+    } while (total_read < size && status == eIO_Success);
+    *n_read = total_read;
+    return status;
+}
+
+
+static
+unsigned short s_LBOS_Announce(const char*             service,
+                               const char*             version,
+                               unsigned short&         port,
+                               const char*             healthcheck_url,
+                               /* lbos_answer is never NULL  */
+                               char**                  lbos_answer,
+                               char**                  http_status_message) 
+{ 
+
+#ifndef NCBI_THREADS
+    CMockFunction<FLBOS_ConnReadMethod*> mock(
+        g_LBOS_UnitTesting_GetLBOSFuncs()->Read,
+        s_RealReadAnnounceSingleThread);
+#endif /* NCBI_THREAD */
+#ifdef QUICK_AND_DIRTY
+    int announce_result = 500;
+    do {
+        announce_result =
+#endif
+        LBOS_Announce(service, version, port, 
+		healthcheck_url, lbos_answer, http_status_message);
+#ifdef QUICK_AND_DIRTY
+        if (announce_result != 200) {
+            port++;
+        }
+    } while (announce_result != 200);
+#endif
+    return 200;
+}
+
+
+static
+void s_LBOS_CPP_Announce(const string& service,
+                         const string& version,
+                         unsigned short& port, 
+                         const string& healthcheck_url)
+{
+
+#ifndef NCBI_THREADS
+    CMockFunction<FLBOS_ConnReadMethod*> mock(
+        g_LBOS_UnitTesting_GetLBOSFuncs()->Read,
+        s_RealReadAnnounceSingleThread);
+#endif /* NCBI_THREAD */
+
+#ifdef QUICK_AND_DIRTY
+    bool success;
+    do {
+#endif
+        try {
+            success = true;
+            LBOS::Announce(service, version, port,
+                healthcheck_url);
+        }
+        catch(...) {
+            success = false;
+        }
+#ifdef QUICK_AND_DIRTY
+    } while (!success);
+#endif
 }
 
 
@@ -598,6 +761,7 @@ EIO_Status s_FakeReadDiscoveryCorrupt(CONN              conn,
         return eIO_Closed;
     }
 }
+
 
 
 /* Emulate a lot of records to be sure that algorithm can take so much */
@@ -655,7 +819,7 @@ EIO_Status s_FakeReadEmpty(CONN conn,
 
 
 template<size_t count>
-void s_FakeFillCandidates (SLBOS_Data* data,
+static void s_FakeFillCandidates (SLBOS_Data* data,
                            const char* service)
 {
     s_CallCounter++;
@@ -691,7 +855,7 @@ void s_FakeFillCandidates (SLBOS_Data* data,
 }
 
 
-void s_FakeFillCandidatesCheckInstances(SLBOS_Data* data,
+static void s_FakeFillCandidatesCheckInstances(SLBOS_Data* data,
     const char* service)
 {
     NCBITEST_CHECK_MESSAGE(g_LBOS_UnitTesting_InstancesList() != NULL,
@@ -700,7 +864,7 @@ void s_FakeFillCandidatesCheckInstances(SLBOS_Data* data,
 }
 
 
-void s_FakeFillCandidatesWithError (SLBOS_Data* data, const char* service)
+static void s_FakeFillCandidatesWithError (SLBOS_Data* data, const char* service)
 {
     s_CallCounter++;
     return;
@@ -713,7 +877,7 @@ void s_FakeFillCandidatesWithError (SLBOS_Data* data, const char* service)
  *  Number of "good" instance.
  *  -1 for all instances OFF                                                 */
 template<int instance_number>
-SSERV_Info** s_FakeResolveIPPortSwapAddresses(const char*   lbos_address,
+static SSERV_Info** s_FakeResolveIPPortSwapAddresses(const char*   lbos_address,
                                               const char*   serviceName,
                                               SConnNetInfo* net_info)
 {
@@ -767,15 +931,29 @@ static const char*         s_FakeGetHostByAddrEx(unsigned int host,
     return NULL;
 }
 
+static string s_GetMyHost() {
+    char hostname[200];
+    SOCK_gethostname(hostname, 200);
+    return hostname; /* will be converted to string */
+}
 
-void s_FakeInitialize()
+static string s_GetMyIP() {
+    unsigned int local_addr_int = SOCK_GetLocalHostAddress(eOn);
+    char local_addr_cstr[25]; 
+    SOCK_HostPortToString(local_addr_int, 1, local_addr_cstr, 25);
+    string local_addr_str(local_addr_cstr);
+    local_addr_str.resize(local_addr_str.find(':')); /* remove port */
+    return local_addr_str; 
+}
+
+static void s_FakeInitialize()
 {
     s_CallCounter++;
     return;
 }
 
 
-void s_FakeInitializeCheckInstances()
+static void s_FakeInitializeCheckInstances()
 {
     s_CallCounter++;
     NCBITEST_CHECK_MESSAGE(g_LBOS_UnitTesting_InstancesList() != NULL,
@@ -785,7 +963,7 @@ void s_FakeInitializeCheckInstances()
 
 
 
-SSERV_Info** s_FakeResolveIPPort (const char*   lbos_address,
+static SSERV_Info** s_FakeResolveIPPort (const char*   lbos_address,
                                   const char*   serviceName,
                                   SConnNetInfo* net_info)
 {
@@ -822,7 +1000,7 @@ SSERV_Info** s_FakeResolveIPPort (const char*   lbos_address,
 /* Because we cannot be sure in which zone the app will be tested, we
  * will return specified lbos address and just check that the function is
  * called. Original function is thoroughly tested in another test module.*/
-char* s_FakeComposeLBOSAddress()
+static char* s_FakeComposeLBOSAddress()
 {
     return strdup("lbos.foo");
 }

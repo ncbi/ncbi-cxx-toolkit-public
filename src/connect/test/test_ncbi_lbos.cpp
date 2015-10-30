@@ -57,7 +57,13 @@ NCBITEST_AUTO_FINI()
 }
 #endif
 
-#define LBOS_BROKEN 0
+/* We might want to clear ZooKeeper from nodes before running tests.
+ * This is generally not good, because if this test application runs
+ * on another host at the same moment, it will miss a lot of nodes and
+ * tests will fail.
+ */
+#define DEANNOUNCE_ALL_BEFORE_TEST 0
+
 NCBITEST_AUTO_INIT()
 {
     CConnNetInfo net_info;
@@ -66,28 +72,28 @@ NCBITEST_AUTO_INIT()
     CNcbiRegistry& config = CNcbiApplication::Instance()->GetConfig();
     CONNECT_Init(&config);
     if (CNcbiApplication::Instance()->GetArgs()["lbos"]) {
-        string custom_lbos = CNcbiApplication::Instance()->GetArgs()["lbos"].AsString();
-        CNcbiApplication::Instance()->GetConfig().Set("CONN", "LBOS", custom_lbos);
+        string custom_lbos = 
+            CNcbiApplication::Instance()->GetArgs()["lbos"].AsString();
+        CNcbiApplication::Instance()->GetConfig().Set("CONN", 
+                                                      "LBOS", 
+                                                      custom_lbos);
     }
     ERR_POST(Info << "LBOS=" <<
         CNcbiApplication::Instance()->GetConfig().Get("CONN", "LBOS"));
-    /* We do not need healthcheck thread at all */
+    LBOS_Deannounce("/lbostest", /* For initialization of LBOS mapper.    */
+                    "1.0.0",     /* We actually do not want to deannounce */
+                    "lbos.dev.be-md.ncbi.nlm.nih.gov", /* anything!       */
+                    5000, NULL, NULL);
 #ifdef NCBI_THREADS
     s_HealthchecKThread = new CHealthcheckThread;
     s_HealthchecKThread->Run();
 #endif
+#if DEANNOUNCE_ALL_BEFORE_TEST
+    size_t start = 0, end = 0;
     /*
-     * Deannounce all lbostest servers (they are left if previous 
+     * Deannounce all lbostest servers (they are left if previous
      * launch of test crashed)
      */
-    size_t start = 0, end = 0;
-    LBOS_Deannounce("/lbostest", /* For initialization of LBOS mapper. 
-                                    We actually do not want to deannounce 
-                                    anything! */
-        "1.0.0",
-        "lbos.dev.be-md.ncbi.nlm.nih.gov",
-        5000, NULL, NULL);        
-#if !LBOS_BROKEN
     CCObjHolder<char> lbos_output_orig(g_LBOS_UnitTesting_GetLBOSFuncs()->
             UrlReadAll(*net_info, "http://lbos.dev.be-md.ncbi.nlm.nih.gov:8080"
             "/lbos/text/service", NULL, NULL));
@@ -138,7 +144,7 @@ NCBITEST_AUTO_INIT()
         }
         start = 0; // reset search for the next service
     }
-#endif
+#endif /* DEANNOUNCE_ALL_BEFORE_TEST */
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -606,7 +612,7 @@ BOOST_AUTO_TEST_CASE(Announcement__AllOK__LBOSAnswerProvided)
 }
 
 /*  3. Successfully announced : char* lbos_answer contains answer of lbos    */
-BOOST_AUTO_TEST_CASE(Announcement__AllOK__LBOSStatusMessageIsNull)
+BOOST_AUTO_TEST_CASE(Announcement__AllOK__LBOSStatusMessageIsOK)
 {
     Announcement::AllOK__LBOSStatusMessageIsOK();
 }
@@ -634,7 +640,7 @@ BOOST_AUTO_TEST_CASE(Announcement__NoLBOS__LBOSStatusMessageNull)
 }
 
 /*  8. lbos returned error: return eLBOS_ServerError                         */
-BOOST_AUTO_TEST_CASE(Announcement__LBOSError__ReturnServerError)
+BOOST_AUTO_TEST_CASE(Announcement__LBOSError__ReturnServerErrorCode)
 {
     Announcement::LBOSError__ReturnServerErrorCode();
 }
@@ -695,16 +701,16 @@ BOOST_AUTO_TEST_CASE(Announcement__RealLife__VisibleAfterAnnounce)
 }
 /* 18. If was passed "0.0.0.0" as IP, should replace it with local IP or
  *     hostname                                                              */
-BOOST_AUTO_TEST_CASE(Announcement__IP0000__ReplaceWithLocalIP)
+BOOST_AUTO_TEST_CASE(Announcement__IP0000__DoNotReplace)
 {
-    Announcement::IP0000__ReplaceWithLocalIP();
+    Announcement::IP0000__DoNotReplace();
 }
 /* 19. Was passed "0.0.0.0" as IP and could not manage to resolve local host
  *     IP : do not announce and return DNS_RESOLVE_ERROR                     */
 BOOST_AUTO_TEST_CASE(
-                   Announcement__ResolveLocalIPError__Return_DNS_RESOLVE_ERROR)
+                   Announcement__ResolveLocalIPError__AllOK)
 {
-    Announcement::ResolveLocalIPError__Return_DNS_RESOLVE_ERROR();
+    Announcement::ResolveLocalIPError__AllOK();
 }
 /* 20. lbos is OFF - return eLBOS_Off                                        */
 BOOST_AUTO_TEST_CASE(Announcement__LBOSOff__ReturnKLBOSOff)
@@ -720,15 +726,15 @@ BOOST_AUTO_TEST_CASE(
 }
 /*22. Trying to announce server and providing dead healthcheck URL - 
       return eLBOS_NotFound                                                  */
-BOOST_AUTO_TEST_CASE(Announcement__HealthcheckDead__ReturnKLBOSNotFound)
+BOOST_AUTO_TEST_CASE(Announcement__HealthcheckDead__ReturnKLBOSSuccess)
 {
-    Announcement::HealthcheckDead__ReturnKLBOSNotFound();
+    Announcement::HealthcheckDead__ReturnKLBOSSuccess();
 }
 /*23. Trying to announce server and providing dead healthcheck URL -
       server should not be announced                                         */
-BOOST_AUTO_TEST_CASE(Announcement__HealthcheckDead__NoAnnouncement)
+BOOST_AUTO_TEST_CASE(Announcement__HealthcheckDead__AnnouncementOK)
 {
-    Announcement::HealthcheckDead__NoAnnouncement();
+    Announcement::HealthcheckDead__AnnouncementOK();
 }
 BOOST_AUTO_TEST_SUITE_END()
 
@@ -817,9 +823,9 @@ BOOST_AUTO_TEST_CASE(
 /*  11. Trying to announce server and providing dead healthcheck URL -
         return eLBOS_NotFound                                                */
 BOOST_AUTO_TEST_CASE(
-                   AnnouncementRegistry__HealthcheckDead__ReturnKLBOSNotFound)
+                   AnnouncementRegistry__HealthcheckDead__ReturnKLBOSSuccess)
 {
-    return AnnouncementRegistry::HealthcheckDead__ReturnKLBOSNotFound();
+    return AnnouncementRegistry::HealthcheckDead__ReturnKLBOSSuccess();
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -983,7 +989,7 @@ BOOST_AUTO_TEST_CASE(Announcement_CXX__LBOSError__LBOSAnswerProvided)
  *     announcement in the same zone, replace old info about announced
  *     server in internal storage with new one.                              */
 BOOST_AUTO_TEST_CASE(
-                 Announcement_CXX__AlreadyAnnouncedInTheSameZone__ReplaceInStorage)
+             Announcement_CXX__AlreadyAnnouncedInTheSameZone__ReplaceInStorage)
 {
     Announcement_CXX::AlreadyAnnouncedInTheSameZone__ReplaceInStorage();
 }
@@ -1026,16 +1032,15 @@ BOOST_AUTO_TEST_CASE(Announcement_CXX__RealLife__VisibleAfterAnnounce)
 }
 /* 18. If was passed "0.0.0.0" as IP, should replace it with local IP or
  *     hostname                                                              */
-BOOST_AUTO_TEST_CASE(Announcement_CXX__IP0000__ReplaceWithLocalIP)
+BOOST_AUTO_TEST_CASE(Announcement_CXX__IP0000__DoNotReplace)
 {
-    Announcement_CXX::IP0000__ReplaceWithLocalIP();
+    Announcement_CXX::IP0000__DoNotReplace();
 }
 /* 19. Was passed "0.0.0.0" as IP and could not manage to resolve local host
  *     IP : do not announce and return DNS_RESOLVE_ERROR                     */
-BOOST_AUTO_TEST_CASE(
-                   Announcement_CXX__ResolveLocalIPError__Throw_DNS_RESOLVE_ERROR)
+BOOST_AUTO_TEST_CASE(Announcement_CXX__ResolveLocalIPError__AllOK)
 {
-    Announcement_CXX::ResolveLocalIPError__Throw_DNS_RESOLVE_ERROR();
+    Announcement_CXX::ResolveLocalIPError__AllOK();
 }
 /* 20. lbos is OFF - return eLBOS_Off                                        */
 BOOST_AUTO_TEST_CASE(Announcement_CXX__LBOSOff__ThrowKLBOSOff)
@@ -1057,9 +1062,9 @@ BOOST_AUTO_TEST_CASE(Announcement_CXX__HealthcheckDead__ThrowE_NotFound)
 }
 /*23. Trying to announce server and providing dead healthcheck URL -
       server should not be announced                                         */
-BOOST_AUTO_TEST_CASE(Announcement_CXX__HealthcheckDead__NoAnnouncement)
+BOOST_AUTO_TEST_CASE(Announcement_CXX__HealthcheckDead__AnnouncementOK)
 {
-    Announcement_CXX::HealthcheckDead__NoAnnouncement();
+    Announcement_CXX::HealthcheckDead__AnnouncementOK();
 }
 BOOST_AUTO_TEST_SUITE_END()
 
@@ -1139,7 +1144,7 @@ BOOST_AUTO_TEST_CASE(
           AnnouncementRegistry_CXX__HealthchecktEmptyOrNull__ThrowInvalidArgs)
 {
     return AnnouncementRegistry_CXX::
-        HealthchecktEmptyOrNull__ThrowInvalidArgs();
+            HealthchecktEmptyOrNull__ThrowInvalidArgs();
 }
 /*  10. healthcheck does not start with http:// or https:// - return         
         eLBOS_InvalidArgs                                                    */  

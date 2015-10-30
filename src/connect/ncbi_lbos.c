@@ -2037,7 +2037,8 @@ unsigned short LBOS_Announce(const char*             service,
      */
     *lbos_answer = NULL;
     /* Check if we need to replace 0.0.0.0 with local IP, and do it if needed*/
-    my_healthcheck_url = s_LBOS_Replace000WithIP(healthcheck_url);
+    /* my_healthcheck_url = s_LBOS_Replace000WithIP(healthcheck_url); */
+	my_healthcheck_url = strdup(healthcheck_url);
     if (my_healthcheck_url == NULL) {
         return kLBOSDNSResolveError;
     }
@@ -2282,7 +2283,11 @@ void LBOS_DeannounceAll()
      */
     for (i = 0;  i < servers;  i++) {
         local_arr[i].version        = strdup((*arr)[i].version);
-        local_arr[i].host           = strdup((*arr)[i].host);
+        if (strcmp((*arr)[i].host, "0.0.0.0") == 0) {
+            local_arr[i].host       = NULL;
+        } else {
+            local_arr[i].host       = strdup((*arr)[i].host);
+        }
         local_arr[i].service        = strdup((*arr)[i].service);
         local_arr[i].port           =        (*arr)[i].port;
     }
