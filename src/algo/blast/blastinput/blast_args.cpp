@@ -1127,6 +1127,12 @@ CPsiBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                                 "File name to store ASCII version of PSSM",
                                 CArgDescriptions::eOutputFile);
 
+        arg_desc.AddFlag(kArgSaveLastPssm, "Save PSSM after the last database "
+                         "search");
+        arg_desc.AddFlag(kArgSaveAllPssms, "Save PSSM after each iteration "
+                         "(file name is given in -save_pssm or "
+                         "-save_ascii_pssm options)");
+
         if (!m_IsDeltaBlast) {
             vector<string> msa_exclusions;
             msa_exclusions.push_back(kArgPSIInputChkPntFile);
@@ -1234,17 +1240,42 @@ CPsiBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
         	if(m_NumIterations == 1)
         		m_NumIterations = args[kArgPSINumIterations].AsInteger();
         }
+
+        if (args.Exist(kArgSaveLastPssm) && args[kArgSaveLastPssm] &&
+            (!args.Exist(kArgPSIOutputChkPntFile) ||
+             !args[kArgPSIOutputChkPntFile]) &&
+            (!args.Exist(kArgAsciiPssmOutputFile) ||
+             !args[kArgAsciiPssmOutputFile])) {
+
+            NCBI_THROW(CInputException, eInvalidInput, kArgSaveLastPssm +
+                       " option requires " + kArgPSIOutputChkPntFile + " or " +
+                       kArgAsciiPssmOutputFile);
+        }
+
+        if (args.Exist(kArgSaveAllPssms) && args[kArgSaveAllPssms] &&
+            (!args.Exist(kArgPSIOutputChkPntFile) ||
+             !args[kArgPSIOutputChkPntFile]) &&
+            (!args.Exist(kArgAsciiPssmOutputFile) ||
+             !args[kArgAsciiPssmOutputFile])) {
+
+            NCBI_THROW(CInputException, eInvalidInput, kArgSaveAllPssms +
+                       " option requires " + kArgPSIOutputChkPntFile + " or " +
+                       kArgAsciiPssmOutputFile);
+        }
+
+        const bool kSaveAllPssms
+            = args.Exist(kArgSaveAllPssms) && args[kArgSaveAllPssms];
         if (args.Exist(kArgPSIOutputChkPntFile) &&
             args[kArgPSIOutputChkPntFile]) {
             m_CheckPointOutput.Reset
                 (new CAutoOutputFileReset
-                 (args[kArgPSIOutputChkPntFile].AsString())); 
+                 (args[kArgPSIOutputChkPntFile].AsString(), kSaveAllPssms)); 
         }
         const bool kSaveAsciiPssm = args[kArgAsciiPssmOutputFile];
         if (kSaveAsciiPssm) {
             m_AsciiMatrixOutput.Reset
                 (new CAutoOutputFileReset
-                 (args[kArgAsciiPssmOutputFile].AsString()));
+                 (args[kArgAsciiPssmOutputFile].AsString(), kSaveAllPssms));
         }
         if (args.Exist(kArgMSAInputFile) && args[kArgMSAInputFile]) {
             CNcbiIstream& in = args[kArgMSAInputFile].AsInputFile();
@@ -1258,6 +1289,10 @@ CPsiBlastArgs::ExtractAlgorithmOptions(const CArgs& args,
         }
         if (!m_IsDeltaBlast) {
             opt.SetIgnoreMsaMaster(args[kArgIgnoreMsaMaster]);
+        }
+
+        if (args.Exist(kArgSaveLastPssm) && args[kArgSaveLastPssm]) {
+            m_SaveLastPssm = true;
         }
     }
 

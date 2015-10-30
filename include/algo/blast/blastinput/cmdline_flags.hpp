@@ -272,6 +272,11 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgPSIPseudocount;
 /// Argument to specify the evalue inclusion threshold for considering
 /// aligned sequences for PSSM constructions
 NCBI_BLASTINPUT_EXPORT extern const string kArgPSIInclusionEThreshold;
+/// Argument to specify whether the PSSM after the last psiblast database
+/// search should be saved
+NCBI_BLASTINPUT_EXPORT extern const string kArgSaveLastPssm;
+/// Argument to specify whether to save PSSM after each psiblast iteration
+NCBI_BLASTINPUT_EXPORT extern const string kArgSaveAllPssms;
 
 /// Argument to specify the germline subject file for igblast
 NCBI_BLASTINPUT_EXPORT extern const string kArgGLSubject;

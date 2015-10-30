@@ -54,12 +54,20 @@ BEGIN_SCOPE(blast)
 CNcbiOstream*
 CAutoOutputFileReset::GetStream()
 {
-    CFile file_deleter(m_FileName);
-    if (file_deleter.Exists()) {
-        _TRACE("Deleting " << m_FileName);
-        file_deleter.Remove();
+    string filename = m_FileName;
+    if (!m_Version) {
+        CFile file_deleter(m_FileName);
+        if (file_deleter.Exists()) {
+            _TRACE("Deleting " << m_FileName);
+            file_deleter.Remove();
+        }
     }
-    m_FileStream.reset(new ofstream(m_FileName.c_str()));
+    else {
+        filename = m_FileName + "." + NStr::IntToString(m_Version);
+        m_Version++;
+    }
+
+    m_FileStream.reset(new ofstream(filename.c_str()));
     return m_FileStream.get();
 }
 

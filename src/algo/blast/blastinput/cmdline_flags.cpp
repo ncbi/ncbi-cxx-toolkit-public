@@ -174,6 +174,8 @@ const string kArgIgnoreMsaMaster("ignore_msa_master");
 const string kArgMSAMasterIndex("msa_master_idx");
 const string kArgPSIPseudocount("pseudocount");
 const string kArgPSIInclusionEThreshold("inclusion_ethresh");
+const string kArgSaveLastPssm("save_pssm_after_last_round");
+const string kArgSaveAllPssms("save_each_pssm");
 const string kArgPHIPatternFile("phi_pattern");
 
 const string kArgGLSubject("germline_sequence_");

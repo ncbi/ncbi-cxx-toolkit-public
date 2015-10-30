@@ -189,6 +189,12 @@ CPsiBlastAppArgs::GetAsciiPssmStream()
     return m_PsiBlastArgs->GetAsciiMatrixOutputStream();
 }
 
+bool
+CPsiBlastAppArgs::GetSaveLastPssm() const
+{
+    return m_PsiBlastArgs->GetSaveLastPssm();
+}
+
 END_SCOPE(blast)
 END_NCBI_SCOPE
 

@@ -512,7 +512,8 @@ public:
                   bool is_deltablast = false) 
         : m_DbTarget(db_target), m_NumIterations(1),
           m_CheckPointOutput(0), m_AsciiMatrixOutput(0),
-          m_IsDeltaBlast(is_deltablast)
+          m_IsDeltaBlast(is_deltablast),
+          m_SaveLastPssm(false)
     {};
 
     /// Our virtual destructor
@@ -562,6 +563,16 @@ public:
         m_Pssm = pssm;
     }
 
+    /// Should the PSSM after the last database search be saved
+    bool GetSaveLastPssm(void) const {
+        return m_SaveLastPssm;
+    }
+
+    /// Set the on/off switch for saving PSSM after the last database search
+    void SetSaveLastPssm(bool b) {
+        m_SaveLastPssm = b;
+    }
+
 private:
     /// Molecule of the database
     ETargetDatabase m_DbTarget;
@@ -576,6 +587,9 @@ private:
 
     /// Are the aruments set up for Delta Blast
     bool m_IsDeltaBlast;
+
+    /// Save PSSM after the last database search
+    bool m_SaveLastPssm;
 
     /// Prohibit copy constructor
     CPsiBlastArgs(const CPsiBlastArgs& rhs);

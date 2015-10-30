@@ -74,6 +74,10 @@ public:
     bool SaveAsciiPssm() const;
     /// Retrieve the stream to write the ASCII PSSM
     CNcbiOstream* GetAsciiPssmStream();
+
+    /// Should the PSSM after the last database search be saved
+    bool GetSaveLastPssm() const;
+
 protected:
     /// Create the options handle based on the command line arguments
     /// @param locality whether the search will be executed locally or remotely

@@ -291,7 +291,7 @@ CPsiBlastApp::x_RunLocalPsiBlastIterations(CRef<CBlastQueryVector> query,
 
                         itr.Advance(ids);
 
-                        if (itr) {
+                        if (itr || m_CmdLineArgs->GetSaveLastPssm()) {
                         CConstRef<CBioseq> seq =
                          s_GetQueryBioseq(query, scope, pssm);
                         pssm = 
@@ -305,6 +305,11 @@ CPsiBlastApp::x_RunLocalPsiBlastIterations(CRef<CBlastQueryVector> query,
             }
             if (itr.HasConverged())
               converged = true;
+
+       if (m_CmdLineArgs->GetSaveLastPssm()) {
+           SavePssmToFile(pssm, &itr);
+       }
+
        return converged;
 }
 
