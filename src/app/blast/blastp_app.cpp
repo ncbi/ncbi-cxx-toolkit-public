@@ -205,6 +205,6 @@ int CBlastpApp::Run(void)
 #ifndef SKIP_DOXYGEN_PROCESSING
 int NcbiSys_main(int argc, ncbi::TXChar* argv[])
 {
-    return CBlastpApp().AppMain(argc, argv, 0, eDS_Default, "");
+    return CBlastpApp().AppMain(argc, argv);
 }
 #endif /* SKIP_DOXYGEN_PROCESSING */
