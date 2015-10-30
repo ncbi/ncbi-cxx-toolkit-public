@@ -42,6 +42,7 @@
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/Bioseq.hpp>
+#include <objects/seqblock/GB_block.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
@@ -1095,6 +1096,33 @@ string CAutoDef::GetOneFeatureClauseList(CBioseq_Handle bh, unsigned int genome_
 }
 
 
+string CAutoDef::GetKeywordPrefix(CBioseq_Handle bh)
+{
+    string keyword = kEmptyStr;
+
+    CSeqdesc_CI gb(bh, CSeqdesc::e_Genbank);
+    if (gb) {
+        if (gb->GetGenbank().IsSetKeywords()) {
+            ITERATE(CGB_block::TKeywords, it, gb->GetGenbank().GetKeywords()) {
+                if (NStr::EqualNocase(*it, "TPA:inferential")) {
+                    keyword = "TPA_inf: ";
+                    break;
+                } else if (NStr::EqualNocase(*it, "TPA:experimental")) {
+                    keyword = "TPA_exp: ";
+                    break;
+                }
+            }
+        }
+    } else {
+        CSeqdesc_CI mi(bh, CSeqdesc::e_Molinfo);
+        if (mi && mi->GetMolinfo().IsSetTech() && mi->GetMolinfo().GetTech() == CMolInfo::eTech_tsa) {
+            keyword = "TSA: ";
+        }
+    }
+    return keyword;
+}
+
+
 string CAutoDef::GetOneDefLine(CAutoDefModifierCombo *mod_combo, CBioseq_Handle bh)
 {
     // for protein sequences, use sequence::GetTitle
@@ -1125,7 +1153,9 @@ string CAutoDef::GetOneDefLine(CAutoDefModifierCombo *mod_combo, CBioseq_Handle 
         org_desc = first_letter + remainder;
     }
 
-    return org_desc + feature_clauses;
+    string keyword = GetKeywordPrefix(bh);
+
+    return keyword + org_desc + feature_clauses;
 }
 
 
@@ -1162,7 +1192,9 @@ string CAutoDef::GetOneDefLine(CBioseq_Handle bh)
         org_desc = first_letter + remainder;
     }
 
-    return org_desc + feature_clauses;
+    string keyword = GetKeywordPrefix(bh);
+
+    return keyword + org_desc + feature_clauses;
 }
 
 

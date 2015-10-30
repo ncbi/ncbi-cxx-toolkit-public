@@ -116,6 +116,8 @@ public:
     
     void Cancel() { m_Cancelled = true; }
     bool Cancelled() { return m_Cancelled; }
+
+    static string GetKeywordPrefix(CBioseq_Handle bh);
     
 private:
     typedef vector<unsigned int> TModifierIndexVector;
