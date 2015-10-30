@@ -544,6 +544,7 @@ bool CAutoDefModifierCombo::x_AddOrgModString (string &source_description, const
                 source_description += " ";
                 source_description += val;
                 used = true;
+                break;
             }
         }
     }
