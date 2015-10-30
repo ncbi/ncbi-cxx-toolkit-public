@@ -61,16 +61,23 @@ typedef CNetStorageFlagsSubset<fNST_AnyAttr> TNetStorageAttrFlags;
 class NCBI_XCONNECT_EXPORT CNetStorageObjectLoc
 {
 public:
+    enum EFileTrackSite {
+        eFileTrack_ProdSite = 0,
+        eFileTrack_DevSite,
+        eFileTrack_QASite,
+        eNumberOfFileTrackSites
+    };
+
     CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
             TNetStorageAttrFlags flags,
             const string& app_domain,
             Uint8 random_number,
-            const char* ft_site_name);
+            EFileTrackSite ft_site);
     CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
             TNetStorageAttrFlags flags,
             const string& app_domain,
             const string& unique_key,
-            const char* ft_site_name);
+            EFileTrackSite ft_site);
     CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
             const string& object_loc);
     CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
@@ -143,9 +150,8 @@ public:
         return (m_NCFlags & fNCF_AllowXSiteConn) != 0;
     }
 
-    void SetLocation_FileTrack(const char* ft_site_name);
-
-    string GetFileTrackURL() const;
+    void SetLocation_FileTrack(EFileTrackSite ft_site);
+    EFileTrackSite GetFileTrackSite() const;
 
     string GetLocator() const
     {
@@ -191,7 +197,6 @@ private:
     typedef unsigned TNetCacheFlags;
 
     void Parse(const string& object_loc);
-    void x_SetFileTrackSite(const char* ft_site_name);
     void x_SetUniqueKeyFromRandom();
     void x_SetUniqueKeyFromUserDefinedKey();
 
@@ -199,8 +204,9 @@ private:
     void SetLocatorFlags(TLocatorFlags flags) {m_LocatorFlags |= flags;}
     void ClearLocatorFlags(TLocatorFlags flags) {m_LocatorFlags &= ~flags;}
 
-    TLocatorFlags x_StorageFlagsToLocatorFlags(
-            TNetStorageAttrFlags storage_flags);
+    static TLocatorFlags x_StorageFlagsToLocatorFlags(
+            TNetStorageAttrFlags storage_flags,
+            EFileTrackSite ft_site = eFileTrack_ProdSite);
 
     mutable CCompoundIDPool m_CompoundIDPool;
 

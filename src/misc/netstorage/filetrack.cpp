@@ -219,6 +219,29 @@ static string s_RemoveHTMLTags(const char* text)
     return result;
 }
 
+static const char* const s_URLs[CNetStorageObjectLoc::eNumberOfFileTrackSites] =
+{
+    "https://submit.ncbi.nlm.nih.gov",
+    "https://dsubmit.ncbi.nlm.nih.gov",
+    "https://qsubmit.ncbi.nlm.nih.gov",
+};
+
+string SFileTrackAPI::GetURL(const CNetStorageObjectLoc& object_loc,
+        const char* path, const char* path_after_key)
+{
+    _ASSERT(path);
+
+    string url = s_URLs[object_loc.GetFileTrackSite()];
+    url += path;
+
+    if (path_after_key) {
+        url += object_loc.GetUniqueKey();
+        url += path_after_key;
+    }
+
+    return url;
+}
+
 CRef<SFileTrackPostRequest> SFileTrackAPI::StartUpload(
         const CNetStorageObjectLoc& object_loc)
 {
@@ -234,7 +257,7 @@ CRef<SFileTrackPostRequest> SFileTrackAPI::StartUpload(
 
     CRef<SFileTrackPostRequest> new_request(
             new SFileTrackPostRequest(this, object_loc,
-            object_loc.GetFileTrackURL() + "/ft/upload/", boundary, user_header,
+            GetURL(object_loc, "/ft/upload/"), boundary, user_header,
             s_HTTPParseHeader_SaveStatus));
 
     new_request->SendContentDisposition("file\"; filename=\"contents");
@@ -345,9 +368,7 @@ CJsonNode SFileTrackRequest::ReadJsonResponse()
 CRef<SFileTrackRequest> SFileTrackAPI::StartDownload(
         const CNetStorageObjectLoc& object_loc)
 {
-    string url(object_loc.GetFileTrackURL() + "/ft/byid/");
-    url += object_loc.GetUniqueKey();
-    url += "/contents";
+    const string url(GetURL(object_loc, "/ft/byid/", "/contents"));
 
     CRef<SFileTrackRequest> new_request(new SFileTrackRequest(this, object_loc,
             url, kEmptyStr, s_HTTPParseHeader_GetContentLength));
@@ -359,9 +380,7 @@ CRef<SFileTrackRequest> SFileTrackAPI::StartDownload(
 
 void SFileTrackAPI::Remove(const CNetStorageObjectLoc& object_loc)
 {
-    string url(object_loc.GetFileTrackURL() + "/ftmeta/files/");
-    url += object_loc.GetUniqueKey();
-    url += "/__delete__";
+    const string url(GetURL(object_loc, "/ftmeta/files/", "/__delete__"));
 
     CRef<SFileTrackRequest> new_request(new SFileTrackRequest(this, object_loc,
             url, kEmptyStr, s_HTTPParseHeader_GetContentLength));
@@ -458,10 +477,10 @@ static EHTTP_HeaderParse s_HTTPParseHeader_GetSID(const char* http_header,
 string SFileTrackAPI::LoginAndGetSessionKey(const CNetStorageObjectLoc& object_loc)
 {
     string api_key(config.key);
-    string url(object_loc.GetFileTrackURL());
+    const string url(GetURL(object_loc, "/accounts/api_login?key=") + api_key);
     string session_key;
 
-    CConn_HttpStream http_stream(url + "/accounts/api_login?key=" + api_key,
+    CConn_HttpStream http_stream(url,
             NULL, kEmptyStr, s_HTTPParseHeader_GetSID, &session_key, NULL, NULL,
             fHTTP_AutoReconnect, &config.write_timeout);
 
@@ -486,9 +505,7 @@ string SFileTrackAPI::LoginAndGetSessionKey(const CNetStorageObjectLoc& object_l
 
 CJsonNode SFileTrackAPI::GetFileInfo(const CNetStorageObjectLoc& object_loc)
 {
-    string url(object_loc.GetFileTrackURL() + "/ftmeta/files/");
-    url += object_loc.GetUniqueKey();
-    url += '/';
+    const string url(GetURL(object_loc, "/ftmeta/files/", "/"));
 
     SFileTrackRequest request(this, object_loc, url,
             kEmptyStr, s_HTTPParseHeader_SaveStatus);
@@ -499,10 +516,7 @@ CJsonNode SFileTrackAPI::GetFileInfo(const CNetStorageObjectLoc& object_loc)
 string SFileTrackAPI::GetFileAttribute(const CNetStorageObjectLoc& object_loc,
         const string& attr_name)
 {
-    string url(object_loc.GetFileTrackURL() + "/ftmeta/files/");
-    url += object_loc.GetUniqueKey();
-    url += "/attribs/";
-    url += attr_name;
+    const string url(GetURL(object_loc, "/ftmeta/files/", "/attribs/") + attr_name);
 
     SFileTrackRequest request(this, object_loc, url,
             kEmptyStr, s_HTTPParseHeader_SaveStatus);
@@ -559,9 +573,7 @@ void SFileTrackAPI::SetFileAttribute(const CNetStorageObjectLoc& object_loc,
     user_header.append(session_key);
     user_header.append("\r\n", 2);
 
-    string url(object_loc.GetFileTrackURL() + "/ftmeta/files/");
-    url += object_loc.GetUniqueKey();
-    url += "/attribs/";
+    const string url(GetURL(object_loc, "/ftmeta/files/", "/attribs/"));
 
     SFileTrackPostRequest request(this, object_loc, url, boundary,
             user_header, s_HTTPParseHeader_SaveStatus);
@@ -660,7 +672,7 @@ SFileTrackConfig::SFileTrackConfig(EVoid) :
 }
 
 SFileTrackConfig::SFileTrackConfig(const IRegistry& reg, const string& section) :
-    site(reg.GetString(s_GetSection(section), "site", "prod")),
+    site(GetSite(reg.GetString(s_GetSection(section), "site", "prod"))),
     key(reg.GetEncryptedString(s_GetSection(section), "api_key",
                 IRegistry::fPlaintextAllowed)),
     read_timeout(s_GetDefaultTimeout()),
@@ -669,11 +681,26 @@ SFileTrackConfig::SFileTrackConfig(const IRegistry& reg, const string& section) 
 }
 
 SFileTrackConfig::SFileTrackConfig(const string& s, const string& k) :
-    site(s),
+    site(GetSite(s)),
     key(s_GetDecryptedKey(k)),
     read_timeout(s_GetDefaultTimeout()),
     write_timeout(s_GetDefaultTimeout())
 {
+}
+
+CNetStorageObjectLoc::EFileTrackSite
+SFileTrackConfig::GetSite(const string& ft_site_name)
+{
+    if (ft_site_name == "submit" || ft_site_name == "prod")
+        return CNetStorageObjectLoc::eFileTrack_ProdSite;
+    else if (ft_site_name == "dsubmit" || ft_site_name == "dev")
+        return CNetStorageObjectLoc::eFileTrack_DevSite;
+    else if (ft_site_name == "qsubmit" || ft_site_name == "qa")
+        return CNetStorageObjectLoc::eFileTrack_QASite;
+    else {
+        NCBI_THROW_FMT(CArgException, eInvalidArg,
+                "unrecognized FileTrack site '" << ft_site_name << '\'');
+    }
 }
 
 END_NCBI_SCOPE

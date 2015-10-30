@@ -114,6 +114,7 @@ struct SFileTrackAPI
 
 private:
     const STimeout GetTimeout();
+    string GetURL(const CNetStorageObjectLoc&, const char*, const char* = 0);
 
     CRandom m_Random;
 };

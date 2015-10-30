@@ -55,39 +55,13 @@
 
 BEGIN_NCBI_SCOPE
 
-/// @internal
-enum EFileTrackSite {
-    eFileTrack_ProdSite,
-    eFileTrack_DevSite,
-    eFileTrack_QASite,
-    eNumberOfFileTrackSites
-};
-
-/// @internal
-static EFileTrackSite s_StringToFileTrackSite(const char* ft_site_name)
-{
-    if (strcmp(ft_site_name, "submit") == 0 ||
-            strcmp(ft_site_name, "prod") == 0)
-        return eFileTrack_ProdSite;
-    else if (strcmp(ft_site_name, "dsubmit") == 0 ||
-            strcmp(ft_site_name, "dev") == 0)
-        return eFileTrack_DevSite;
-    else if (strcmp(ft_site_name, "qsubmit") == 0 ||
-            strcmp(ft_site_name, "qa") == 0)
-        return eFileTrack_QASite;
-    else {
-        NCBI_THROW_FMT(CArgException, eInvalidArg,
-                "unrecognized FileTrack site '" << ft_site_name << '\'');
-    }
-}
-
 CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
         TNetStorageAttrFlags flags,
         const string& app_domain,
         Uint8 random_number,
-        const char* ft_site_name) :
+        EFileTrackSite ft_site) :
     m_CompoundIDPool(cid_pool),
-    m_LocatorFlags(x_StorageFlagsToLocatorFlags(flags)),
+    m_LocatorFlags(x_StorageFlagsToLocatorFlags(flags, ft_site)),
     m_ObjectID(0),
     m_Location(eNFL_Unknown),
     m_AppDomain(app_domain),
@@ -99,7 +73,6 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
     m_NetCachePort(0),
     m_Dirty(true)
 {
-    x_SetFileTrackSite(ft_site_name);
     x_SetUniqueKeyFromRandom();
 }
 
@@ -107,9 +80,9 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
         TNetStorageAttrFlags flags,
         const string& app_domain,
         const string& unique_key,
-        const char* ft_site_name) :
+        EFileTrackSite ft_site) :
     m_CompoundIDPool(cid_pool),
-    m_LocatorFlags(x_StorageFlagsToLocatorFlags(flags) | fLF_HasUserKey),
+    m_LocatorFlags(x_StorageFlagsToLocatorFlags(flags, ft_site) | fLF_HasUserKey),
     m_ObjectID(0),
     m_Location(eNFL_Unknown),
     m_AppDomain(app_domain),
@@ -120,7 +93,6 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
     m_NetCachePort(0),
     m_Dirty(true)
 {
-    x_SetFileTrackSite(ft_site_name);
     x_SetUniqueKeyFromUserDefinedKey();
 }
 
@@ -300,10 +272,8 @@ void CNetStorageObjectLoc::SetLocation_NetCache(
     // NB: FileTrack site must not be reset.
 }
 
-void CNetStorageObjectLoc::SetLocation_FileTrack(const char* ft_site_name)
+void CNetStorageObjectLoc::SetLocation_FileTrack(EFileTrackSite ft_site)
 {
-    EFileTrackSite ft_site = s_StringToFileTrackSite(ft_site_name);
-
     m_Dirty = true;
 
     m_LocationCode = FILETRACK_STORAGE_CODE;
@@ -321,37 +291,11 @@ void CNetStorageObjectLoc::SetLocation_FileTrack(const char* ft_site_name)
         m_LocatorFlags |= fLF_QAEnv;
 }
 
-string CNetStorageObjectLoc::GetFileTrackURL() const
+CNetStorageObjectLoc::EFileTrackSite CNetStorageObjectLoc::GetFileTrackSite() const
 {
-    EFileTrackSite ft_site = m_LocatorFlags & fLF_DevEnv ? eFileTrack_DevSite :
+    return m_LocatorFlags & fLF_DevEnv ? eFileTrack_DevSite :
             m_LocatorFlags & fLF_QAEnv ? eFileTrack_QASite :
                     eFileTrack_ProdSite;
-
-    switch (ft_site) {
-    default:
-        return "https://submit.ncbi.nlm.nih.gov";
-        break;
-    case eFileTrack_DevSite:
-        return "https://dsubmit.ncbi.nlm.nih.gov";
-        break;
-    case eFileTrack_QASite:
-        return "https://qsubmit.ncbi.nlm.nih.gov";
-    }
-}
-
-void CNetStorageObjectLoc::x_SetFileTrackSite(const char* ft_site_name)
-{
-    m_LocatorFlags &= ~(TLocatorFlags) (fLF_DevEnv | fLF_QAEnv);
-
-    switch (s_StringToFileTrackSite(ft_site_name)) {
-    case eFileTrack_DevSite:
-        m_LocatorFlags |= fLF_DevEnv;
-        break;
-    case eFileTrack_QASite:
-        m_LocatorFlags |= fLF_QAEnv;
-    default:
-        break;
-    }
 }
 
 void CNetStorageObjectLoc::x_SetUniqueKeyFromRandom()
@@ -454,8 +398,9 @@ TNetStorageAttrFlags CNetStorageObjectLoc::GetStorageAttrFlags() const
 }
 
 CNetStorageObjectLoc::TLocatorFlags
-        CNetStorageObjectLoc::x_StorageFlagsToLocatorFlags(
-                TNetStorageAttrFlags storage_flags)
+CNetStorageObjectLoc::x_StorageFlagsToLocatorFlags(
+        TNetStorageAttrFlags storage_flags,
+        EFileTrackSite ft_site)
 {
     TLocatorFlags locator_flags = 0;
 
@@ -465,6 +410,11 @@ CNetStorageObjectLoc::TLocatorFlags
         locator_flags |= fLF_Cacheable;
     if (storage_flags & fNST_NoMetaData)
         locator_flags |= fLF_NoMetaData;
+
+    if (ft_site == eFileTrack_DevSite)
+        locator_flags |= fLF_DevEnv;
+    else if (ft_site == eFileTrack_QASite)
+        locator_flags |= fLF_QAEnv;
 
     return locator_flags;
 }
