@@ -254,8 +254,10 @@ static const AlertToId  s_alertToIdMap[] = {
     {CNCAlerts::eDebugDeleteSNCBlobVerData, "eDebugDeleteSNCBlobVerData"},
     {CNCAlerts::eDebugDeleteCNCBlobVerManager, "eDebugDeleteCNCBlobVerManager"},
     {CNCAlerts::eDebugExtraWrite, "eDebugExtraWrite"},
-    {CNCAlerts::eDebugCacheDeleted, "eDebugCacheDeleted"},
+    {CNCAlerts::eDebugCacheDeleted1, "eDebugCacheDeleted1"},
     {CNCAlerts::eDebugCacheDeleted2, "eDebugCacheDeleted2"},
+    {CNCAlerts::eDebugCacheDeleted3, "eDebugCacheDeleted3"},
+    {CNCAlerts::eDebugCacheDeleted4, "eDebugCacheDeleted4"},
 #endif
     {CNCAlerts::eStartupConfigChanged, "StartupConfigChanged"},
     {CNCAlerts::ePidFileFailed,        "PidFileFailed"},

@@ -1467,11 +1467,24 @@ CNCBlobStorage::ReferenceCacheData(SNCCacheData* data)
 void
 CNCBlobStorage::ReleaseCacheData(SNCCacheData* data)
 {
+#ifdef _DEBUG
+    if (data->ref_cnt.Get() == 0) {
+        abort();
+    }
+#endif
+
     if (data->ref_cnt.Add(-1) != 0)
         return;
 
     SBucketCache* cache = s_GetBucketCache(data->time_bucket);
     cache->lock.Lock();
+
+#ifdef _DEBUG
+    if (!data->coord.empty() && data->dead_time == 0) {
+        abort();
+    }
+#endif
+
     if (data->ref_cnt.Get() != 0  ||  !data->coord.empty()
         ||  !((TKeyMapHook*)data)->is_linked())
     {
@@ -3235,6 +3248,7 @@ void CExpiredCleaner::x_DeleteData(SNCCacheData* cache_data)
     Uint8 size = cache_data->size;
     Uint4 chunk_size = cache_data->chunk_size;
     Uint2 map_size = cache_data->map_size;
+    cache_data->coord.clear();
     if (!coord.empty()) {
 #ifdef _DEBUG
 CNCAlerts::Register(CNCAlerts::eDebugDeleteVersionData, "x_DeleteData");

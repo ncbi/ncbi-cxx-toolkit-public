@@ -727,9 +727,14 @@ void
 CNCBlobVerManager::x_ReleaseMgr(void)
 {
     m_CacheData->ver_mgr = NULL;
-    m_CacheData->lock.Unlock();
 
     if (m_CurVersion) {
+        if (!m_CacheData->coord.empty() && m_CacheData->coord != m_CurVersion->coord) {
+#ifdef _DEBUG
+CNCAlerts::Register(CNCAlerts::eDebugCacheDeleted1,"x_ReleaseMgr");
+#endif
+            CExpiredCleaner::x_DeleteData(m_CacheData);
+        }
         m_CacheData->coord = m_CurVersion->coord;
         m_CurVersion.Reset();
     }
@@ -744,8 +749,10 @@ CNCAlerts::Register(CNCAlerts::eDebugCacheDeleted2,"x_ReleaseMgr");
         CExpiredCleaner::x_DeleteData(m_CacheData);
     }
 
+    m_CacheData->lock.Unlock();
     CNCBlobStorage::ReleaseCacheData(m_CacheData);
     m_CurVerReader->Terminate();
+    m_CurVerReader = nullptr;
     Terminate();
 }
 
@@ -773,7 +780,7 @@ CNCBlobVerManager::ExecuteSlice(TSrvThreadNum /* thr_num */)
     int cur_time = CSrvTime::CurSecs();
     int write_time = ACCESS_ONCE(cur_ver->need_write_time);
 
-#if 0
+#if 1
     if (cur_time + 60  >= cur_ver->dead_time) {
         write_time = 0;
     }
@@ -800,23 +807,31 @@ CNCBlobVerManager::ExecuteSlice(TSrvThreadNum /* thr_num */)
     m_CacheData->lock.Unlock();
 }
 
+void CNCBlobVerManager::RevokeDataWrite()
+{
+    CNCBlobStorage::ReleaseCacheData(m_CacheData);
+}
+
 void CNCBlobVerManager::DataWritten(void)
 {
-    m_CacheData->lock.Lock();
     if (m_CurVersion) {
-        if (!m_CacheData->coord.empty()) {
+        m_CacheData->lock.Lock();
+        if (!m_CacheData->coord.empty() && m_CacheData->coord != m_CurVersion->coord) {
+#ifdef _DEBUG
+CNCAlerts::Register(CNCAlerts::eDebugCacheDeleted3,"DataWritten");
+#endif
             CExpiredCleaner::x_DeleteData(m_CacheData);
         }
         m_CacheData->coord = m_CurVersion->coord;
         if (m_CacheData->dead_time == 0 && !m_CacheData->coord.empty()) {
 #ifdef _DEBUG
-CNCAlerts::Register(CNCAlerts::eDebugCacheDeleted,"DataWritten");
+CNCAlerts::Register(CNCAlerts::eDebugCacheDeleted4,"DataWritten");
 #endif
             CExpiredCleaner::x_DeleteData(m_CacheData);
         }
+        m_CacheData->lock.Unlock();
         CNCBlobStorage::ReleaseCacheData(m_CacheData);
     }
-    m_CacheData->lock.Unlock();
 }
 
 void
@@ -1131,11 +1146,13 @@ void
 SNCBlobVerData::SetNotCurrent(void)
 {
     wb_mem_lock.Lock();
-#ifdef _DEBUG
     if (request_data_write) {
+#ifdef _DEBUG
 CNCAlerts::Register(CNCAlerts::eDebugDeleteSNCBlobVerData,"SetNotCurrent");
-    }
 #endif
+        request_data_write = false;
+        manager->RevokeDataWrite();
+    }
     is_cur_version = false;
     need_stop_write = true;
     meta_mem -= kVerManagerSize;

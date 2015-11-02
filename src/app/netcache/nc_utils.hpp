@@ -210,8 +210,10 @@ public:
         eDebugDeleteSNCBlobVerData,
         eDebugDeleteCNCBlobVerManager,
         eDebugExtraWrite,
-        eDebugCacheDeleted,
+        eDebugCacheDeleted1,
         eDebugCacheDeleted2,
+        eDebugCacheDeleted3,
+        eDebugCacheDeleted4,
 #endif
         eLastAlert
     };

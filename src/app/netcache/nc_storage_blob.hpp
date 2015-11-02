@@ -64,6 +64,7 @@ public:
     SNCCacheData* GetCacheData(void);
 
 public:
+    void RevokeDataWrite();
     void DataWritten(void);
     void RequestMemRelease(void);
     const string& GetKey(void);
