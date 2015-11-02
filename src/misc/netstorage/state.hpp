@@ -66,35 +66,7 @@ namespace NDirectNetStorageImpl
 {
 
 typedef CNetStorageObjectLoc TObjLoc;
-
-struct SContext : CObject
-{
-    CNetICacheClient icache_client;
-    SFileTrackAPI filetrack_api;
-    CCompoundIDPool compound_id_pool;
-    TNetStorageFlags default_flags;
-    string app_domain;
-
-    SContext(const SCombinedNetStorageConfig&, TNetStorageFlags);
-    SContext(const string&, CNetICacheClient, TNetStorageFlags,
-            CCompoundIDPool::TInstance, const SFileTrackConfig&);
-    Uint8 GetRandomNumber() { return filetrack_api.GetRandUint8(); }
-
-    TNetStorageFlags DefaultFlags(TNetStorageFlags flags) const
-    {
-        return flags ? flags : default_flags;
-    }
-
-#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-    void AllowXSiteConnections()
-    {
-        if (icache_client) icache_client.GetService().AllowXSiteConnections();
-    }
-#endif
-
-private:
-    void Init();
-};
+struct SContext;
 
 class IState
 {
@@ -139,6 +111,35 @@ public:
     static Ptr Create(SContext*, const string&);
     static Ptr Create(SContext*, TNetStorageFlags, const string&, Int8);
     static Ptr Create(SContext*, TNetStorageFlags, const string&);
+};
+
+struct SContext : CObject
+{
+    CNetICacheClient icache_client;
+    SFileTrackAPI filetrack_api;
+    CCompoundIDPool compound_id_pool;
+    TNetStorageFlags default_flags;
+    string app_domain;
+
+    SContext(const SCombinedNetStorageConfig&, TNetStorageFlags);
+    SContext(const string&, CNetICacheClient, TNetStorageFlags,
+            CCompoundIDPool::TInstance, const SFileTrackConfig&);
+    Uint8 GetRandomNumber() { return filetrack_api.GetRandUint8(); }
+
+    TNetStorageFlags DefaultFlags(TNetStorageFlags flags) const
+    {
+        return flags ? flags : default_flags;
+    }
+
+#ifdef NCBI_GRID_XSITE_CONN_SUPPORT
+    void AllowXSiteConnections()
+    {
+        if (icache_client) icache_client.GetService().AllowXSiteConnections();
+    }
+#endif
+
+private:
+    void Init();
 };
 
 }
