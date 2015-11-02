@@ -46,57 +46,50 @@ void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
             "must be explicitly specified.");
     }
 
-    if (IsOptionExplicitlySet(eNetCache) && IsOptionExplicitlySet(eNamespace) &&
-            !IsOptionSet(eNetStorage)) {
-        m_NetICacheClient = CNetICacheClient(m_Opts.nc_service,
-                m_Opts.app_domain, m_Opts.auth);
+    string init_string = IsOptionSet(eNetStorage) ?
+        "nst=" + NStr::URLEncode(m_Opts.nst_service) : "mode=direct";
+
+    if (IsOptionExplicitlySet(eFileTrackSite)) {
+        init_string += "&ft_site=";
+        init_string += m_Opts.ft_site;
     }
 
-    if (!IsOptionSet(eNetStorage)) {
-        SFileTrackConfig ft_config(m_Opts.ft_site, m_Opts.ft_key);
+    if (IsOptionExplicitlySet(eFileTrackAPIKey)) {
+        init_string += "&ft_key=";
+        init_string += NStr::URLEncode(m_Opts.ft_key);
+    }
 
-        m_NetStorage = CDirectNetStorage(ft_config,
-                m_NetICacheClient, m_CompoundIDPool,
-                m_Opts.app_domain, m_Opts.netstorage_flags);
-        if (IsOptionSet(eNamespace))
-            m_NetStorageByKey = CDirectNetStorageByKey(ft_config,
-                    m_NetICacheClient, m_CompoundIDPool,
-                    m_Opts.app_domain, m_Opts.netstorage_flags);
+    if (IsOptionExplicitlySet(eNetCache)) {
+        init_string += "&nc=";
+        init_string += NStr::URLEncode(m_Opts.nc_service);
+        init_string += "&cache=";
+        init_string += NStr::URLEncode(m_Opts.app_domain);
+    }
+
+    string auth;
+
+    if (IsOptionSet(eAuth)) {
+        auth = m_Opts.auth;
     } else {
-        string init_string = "nst=" + NStr::URLEncode(m_Opts.nst_service);
+        string user, host;
+        g_GetUserAndHost(&user, &host);
+        auth = user + '@';
+        auth += host;
+    }
 
-        if (IsOptionExplicitlySet(eNetCache)) {
-            init_string += "&nc=";
-            init_string += NStr::URLEncode(m_Opts.nc_service);
-            init_string += "&cache=";
-            init_string += NStr::URLEncode(m_Opts.app_domain);
-        }
+    init_string += "&client=";
+    init_string += NStr::URLEncode(auth);
 
-        string auth;
+    m_NetStorage = CCombinedNetStorage(init_string, m_Opts.netstorage_flags);
 
-        if (IsOptionSet(eAuth)) {
-            auth = m_Opts.auth;
-        } else {
-            string user, host;
-            g_GetUserAndHost(&user, &host);
-            auth = user + '@';
-            auth += host;
-        }
+    if (api_class == eNetStorageAdmin)
+        m_NetStorageAdmin = CNetStorageAdmin(m_NetStorage);
 
-        init_string += "&client=";
-        init_string += NStr::URLEncode(auth);
-
-        m_NetStorage = CNetStorage(init_string, m_Opts.netstorage_flags);
-
-        if (api_class == eNetStorageAdmin)
-            m_NetStorageAdmin = CNetStorageAdmin(m_NetStorage);
-
-        if (IsOptionSet(eNamespace)) {
-            init_string += "&namespace=";
-            init_string += NStr::URLEncode(m_Opts.app_domain);
-            m_NetStorageByKey = CNetStorageByKey(init_string,
-                    m_Opts.netstorage_flags);
-        }
+    if (IsOptionSet(eNamespace)) {
+        init_string += "&namespace=";
+        init_string += NStr::URLEncode(m_Opts.app_domain);
+        m_NetStorageByKey = CCombinedNetStorageByKey(init_string,
+                m_Opts.netstorage_flags);
     }
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
