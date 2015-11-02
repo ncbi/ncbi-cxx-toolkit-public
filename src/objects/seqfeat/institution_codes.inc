@@ -2958,6 +2958,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "KCFS	s	King's College",
 "KCK	s	Dick Institute",
 "KCLB	c	Korean Cell Line Bank",
+"KCOM	c	Korean Collection for Oral Microbiology",
 "KCS	s	University of London, King's College, Botany Department",
 "KCTC	c	Korean Collection for Type Cultures",
 "KDL	s	Kendal Museum",
