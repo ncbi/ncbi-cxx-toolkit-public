@@ -385,9 +385,9 @@ IState* CNotFound::StartRead(void* buf, size_t count,
 IState* CNotFound::StartWrite(const void* buf, size_t count,
         size_t* bytes_written, ERW_Result* result)
 {
-    _ASSERT(result);
-    *result = m_RW.WriteImpl(buf, count, bytes_written);
-    return &m_RW;
+    NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
+            "Object creation is disabled (no backend storages were provided)");
+    return NULL;
 }
 
 
@@ -913,11 +913,6 @@ void SContext::Init()
         if (app_domain.empty() && icache_client) {
             app_domain = icache_client.GetCacheName();
         }
-    } else {
-        // If no available underlying storages left
-        NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
-                "No storages available when using backend_storage=\"" <<
-                backend_storage << "\" and flags=" << default_flags);
     }
 
     if (icache_client) {
