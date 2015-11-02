@@ -378,7 +378,9 @@ CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& os) const
     // Default content type (if it's not specified by user already)
     switch (m_IsMultipart) {
     case eMultipart_none:
-        if ( !HaveHeaderValue(sm_ContentTypeName) ) {
+        if (!HaveHeaderValue(sm_ContentTypeName)  &&
+            // Do not set content type if status is '204 No Content'
+            CDiagContext::GetRequestContext().GetRequestStatus() != CRequestStatus::e204_NoContent) {
             os << sm_ContentTypeName << ": " << sm_ContentTypeDefault
                << HTTP_EOL;
         }
