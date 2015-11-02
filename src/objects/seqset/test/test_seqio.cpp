@@ -159,6 +159,7 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerialization)
                 }
                 if (fmt[out_i] == eSerial_Json) {
                     out->SetWriteNamedIntegersByValue(false);
+                    out->EnforceWritingDefaultValues(false);
                 }
 //                CSysWatch sw;
                 *out << *obj;
@@ -284,6 +285,7 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerializationWithHook)
                 }
                 if (fmt[out_i] == eSerial_Json) {
                     out->SetWriteNamedIntegersByValue(false);
+                    out->EnforceWritingDefaultValues(false);
                 }
 //                CSysWatch sw;
                 *out << *obj;
@@ -369,6 +371,7 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerializationCopy)
                 }
                 if (fmt[out_i] == eSerial_Json) {
                     out->SetWriteNamedIntegersByValue(false);
+                    out->EnforceWritingDefaultValues(false);
                 }
 
                 CObjectStreamCopier copier(*in,*out);
