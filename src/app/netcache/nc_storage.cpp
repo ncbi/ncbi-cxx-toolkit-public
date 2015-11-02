@@ -165,8 +165,8 @@ static SWritingInfo s_AllWritings[s_CntAllFiles];
 
 static Uint4 s_NewFileSize = 0;
 static TTimeBuckets s_TimeTables;
-static Uint8 s_CurBlobsCnt = 0;
-static Uint8 s_CurKeysCnt = 0;
+static Int8 s_CurBlobsCnt = 0;
+static Int8 s_CurKeysCnt = 0;
 static bool s_Draining = false;
 /// Current size of storage database. Kept here for printing statistics.
 volatile static Int8 s_CurDBSize = 0;

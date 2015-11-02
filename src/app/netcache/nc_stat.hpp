@@ -52,8 +52,8 @@ struct SNCStateStat
     Uint4 db_files;
     Uint8 db_size;
     Uint8 db_garb;
-    Uint8 cnt_blobs;
-    Uint8 cnt_keys;
+    Int8 cnt_blobs;
+    Int8 cnt_keys;
     int min_dead_time;
     Uint4 peer_active_conns;
     Uint4 peer_bg_conns;
