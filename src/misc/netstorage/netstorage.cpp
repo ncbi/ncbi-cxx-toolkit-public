@@ -309,18 +309,6 @@ CDirectNetStorage::CDirectNetStorage(
 }
 
 
-CDirectNetStorage::CDirectNetStorage(
-        const SFileTrackConfig& ft_config,
-        CNetICacheClient::TInstance icache_client,
-        CCompoundIDPool::TInstance compound_id_pool,
-        const string& app_domain,
-        TNetStorageFlags default_flags)
-    : CNetStorage(
-            new SDirectNetStorageImpl(app_domain, default_flags, icache_client,
-                compound_id_pool, ft_config))
-{}
-
-
 CDirectNetStorageObject CDirectNetStorage::Create(
         const string& service_name,
         Int8 object_id,
@@ -346,19 +334,6 @@ CDirectNetStorageByKey::CDirectNetStorageByKey(
             new SDirectNetStorageByKeyImpl(app_domain, default_flags,
                 s_GetICClient(registry, service_name),
                 compound_id_pool, s_GetFTConfig(registry, service_name)))
-{
-}
-
-
-CDirectNetStorageByKey::CDirectNetStorageByKey(
-        const SFileTrackConfig& ft_config,
-        CNetICacheClient::TInstance icache_client,
-        CCompoundIDPool::TInstance compound_id_pool,
-        const string& app_domain,
-        TNetStorageFlags default_flags)
-    : CNetStorageByKey(
-            new SDirectNetStorageByKeyImpl(app_domain, default_flags, icache_client,
-                compound_id_pool, ft_config))
 {
 }
 

@@ -8,7 +8,7 @@ SRC = grid_cli nc_cmds ns_cmds adm_cmds ns_cmd_impl wn_cmds \
 
 REQUIRES = MT
 
-LIB = ncbi_xcache_netcache netstorage xconnserv xcgi \
+LIB = netstorage ncbi_xcache_netcache xconnserv xcgi \
         xthrserv xconnect connssl xutil xncbi
 LIBS = $(GNUTLS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
