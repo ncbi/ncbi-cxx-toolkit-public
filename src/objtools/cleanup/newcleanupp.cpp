@@ -11046,6 +11046,103 @@ void CNewCleanup_imp::CdRegionEC(CSeq_feat& sf)
 }
 
 
+void CNewCleanup_imp::ResynchPeptidePartials (
+    CBioseq& seq
+)
+
+{
+    if (!seq.IsAa()) {
+        return;
+    }
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+
+#if 0
+    // need to find best protein feature
+    if (!sf.IsSetData() || !sf.GetData().IsProt()) {
+        return;
+    }
+    if (sf.GetData().GetProt().IsSetProcessed() && 
+        sf.GetData().GetProt().GetProcessed() != CProt_ref::eProcessed_not_set) {
+        return;
+    }
+
+    CSeqdesc_CI desc(bsh, CSeqdesc::e_Molinfo);
+    // if we don't have a MolInfo descriptor, need to make one
+#endif
+    
+
+#if 0
+  CheckSeqLocForPartial (sfp->location, &partial5, &partial3);
+  sfp->partial = (Boolean) (sfp->partial || partial5 || partial3);
+  /*
+ *   slp = SeqLocFindNext (sfp->location, NULL);
+ *     if (slp == NULL) return;
+ *       */
+  sip = SeqLocId (sfp->product);
+  if (sip == NULL) return;
+  bsp = BioseqFind (sip);
+  if (bsp != NULL && ISA_aa (bsp->mol) && bsp->repr == Seq_repr_raw) {
+    sep = SeqMgrGetSeqEntryForData (bsp);
+    if (sep == NULL) return;
+    bestprot = SeqMgrGetBestProteinFeature (bsp, NULL);
+    if (bestprot == NULL) {
+      bestprot = GetBestProteinFeatureUnindexed (sfp->product);
+    }
+    if (bestprot != NULL && bestprot->location != NULL) {
+      /* only synchronize and extend best if unprocessed or preprotein, not mature/signal/transit peptide */
+      prp = (ProtRefPtr) bestprot->data.value.ptrvalue;
+      slp = bestprot->location;
+      if (prp != NULL && prp->processed < 2 && (slp->choice == SEQLOC_INT || slp->choice == SEQLOC_WHOLE)) {
+        slp = NULL;
+        sip = SeqLocId (bestprot->location);
+        if (sip != NULL) {
+          slp = WholeIntervalFromSeqId (sip);
+        }
+        if (slp == NULL) {
+          slp = CreateWholeInterval (sep);
+        }
+        if (slp != NULL) {
+          bestprot->location = SeqLocFree (bestprot->location);
+          bestprot->location = slp;
+        }
+        SetSeqLocPartial (bestprot->location, partial5, partial3);
+        bestprot->partial = sfp->partial;
+      }
+    }
+    vnp = SeqEntryGetSeqDescr (sep, Seq_descr_molinfo, NULL);
+    if (vnp == NULL) {
+      vnp = CreateNewDescriptor (sep, Seq_descr_molinfo);
+      if (vnp != NULL) {
+        mip = MolInfoNew ();
+        vnp->data.ptrvalue = (Pointer) mip;
+        if (mip != NULL) {
+          mip->biomol = 8;
+          mip->tech = 13;
+        }
+      }
+    }
+    if (vnp != NULL) {
+      mip = (MolInfoPtr) vnp->data.ptrvalue;
+      if (mip != NULL) {
+        if (partial5 && partial3) {
+          mip->completeness = 5;
+        } else if (partial5) {
+          mip->completeness = 3;
+        } else if (partial3) {
+          mip->completeness = 4;
+        } else if (sfp->partial) {
+          mip->completeness = 2;
+        } else {
+          mip->completeness = 0;
+        }
+      }
+    }
+  }
+#endif
+
+}
+
+
 void CNewCleanup_imp::ExtendedCleanupSeqEntry (
     CSeq_entry& seq_entry
 )

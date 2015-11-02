@@ -303,6 +303,7 @@ private:
     void AddProteinTitles (CBioseq& seq);
     void ProtRefEC( CProt_ref& pr);
     void CdRegionEC( CSeq_feat& sf);
+    void ResynchPeptidePartials( CBioseq& seq );
 
     // void XxxxxxBC (Cxxxxx& xxx);
 

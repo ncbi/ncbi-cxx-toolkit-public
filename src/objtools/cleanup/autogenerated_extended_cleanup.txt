@@ -112,6 +112,8 @@ use m_NewCleanup.CdRegionEC { Seq-feat }
 
 use m_NewCleanup.CreateMissingMolInfo { Bioseq }
 
+use m_NewCleanup.ResynchPeptidePartials { Bioseq }
+
 use m_NewCleanup.AddProteinTitles { Bioseq }
 
 use m_NewCleanup.x_MoveSeqdescOrgToSourceOrg { Seqdesc }
