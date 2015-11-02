@@ -40,6 +40,7 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqres/Seq_graph.hpp>
 #include <objects/seq/Seq_annot.hpp>
+#include <objmgr/impl/snp_annot_info.hpp>
 
 #include <serial/serial.hpp>
 
@@ -108,6 +109,8 @@ void CSNPTestApp::Init(void)
     arg_desc->AddFlag("verbose", "Print info about found data");
 
     arg_desc->AddFlag("make_feat", "Make feature object");
+    arg_desc->AddFlag("make_feat_annot", "Make feature annot");
+    arg_desc->AddFlag("make_packed_feat_annot", "Make packed feature annot");
     arg_desc->AddFlag("make_cov_graph", "Make coverage graph");
     arg_desc->AddFlag("make_cov_annot", "Make coverage annot");
     arg_desc->AddFlag("no_shared_objects", "Do not share created objects");
@@ -243,6 +246,28 @@ int CSNPTestApp::Run(void)
             CRef<CSeq_annot> annot = it.GetCoverageAnnot(query_range);
             if ( annot && print ) {
                 out << MSerial_AsnText << *annot;
+            }
+        }
+        if ( args["make_feat_annot"] ) {
+            CSNPDbSeqIterator it(snp_db, query_idh);
+            CRef<CSeq_annot> annot = it.GetFeatAnnot(query_range);
+            if ( annot && print ) {
+                out << MSerial_AsnText << *annot;
+            }
+        }
+        if ( args["make_packed_feat_annot"] ) {
+            CSNPDbSeqIterator it(snp_db, query_idh);
+            pair<CRef<CSeq_annot>, CRef<CSeq_annot_SNP_Info> > annot =
+                it.GetPackedFeatAnnot(query_range);
+            if ( annot.second ) {
+                CSeq_annot::TData::TFtable& feats =
+                    annot.first->SetData().SetFtable();
+                ITERATE ( CSeq_annot_SNP_Info, it, *annot.second ) {
+                    feats.push_back(it->CreateSeq_feat(*annot.second));
+                }
+            }
+            if ( annot.first && print ) {
+                out << MSerial_AsnText << *annot.first;
             }
         }
         for ( CSNPDbFeatIterator it(snp_db, query_idh, query_range); it; ++it ) {

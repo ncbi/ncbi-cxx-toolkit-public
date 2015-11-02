@@ -62,6 +62,7 @@ class CUser_object;
 class CUser_field;
 class CBioseq;
 class CSeq_literal;
+class CSeq_annot_SNP_Info;
 
 class CSNPDbSeqIterator;
 class CSNPDbPageIterator;
@@ -275,32 +276,14 @@ public:
     CRef<CSeq_annot> GetCoverageAnnot(CRange<TSeqPos> range,
                                       TFlags flags = fDefaultFlags) const;
 
-    /*
-      CRef<CSeq_graph> GetCoverageGraph(void) const;
-      CRef<CSeq_annot> GetCoverageAnnot(void) const;
-      CRef<CSeq_annot> GetCoverageAnnot(const string& annot_name) const;
-
-      CRef<CSeq_annot> GetSeq_annot(void) const;
-      CRef<CSeq_annot> GetSeq_annot(const string& annot_name) const;
-
-      enum ELoadData {
-      eLoadData,
-      eOmitData
-      };
-      CRef<CBioseq> GetRefBioseq(ELoadData load = eLoadData) const;
-      typedef list< CRef<CSeq_literal> > TLiterals;
-      typedef CRange<TSeqPos> TRange;
-      void GetRefLiterals(TLiterals& literals,
-      TRange range,
-      ELoadData load = eLoadData) const;
-    */
+    CRef<CSeq_annot> GetFeatAnnot(CRange<TSeqPos> range,
+                                  TFlags flags = fDefaultFlags) const;
+    typedef pair< CRef<CSeq_annot>, CRef<CSeq_annot_SNP_Info> > TPackedAnnot;
+    TPackedAnnot GetPackedFeatAnnot(CRange<TSeqPos> range,
+                                    TFlags flags = fDefaultFlags) const;
 
 protected:
     friend class CSNPDbPageIterator;
-
-    CRef<CSeq_annot> x_GetSeq_annot(const string* annot_name) const;
-
-    static CRef<CSeq_annot> MakeSeq_annot(const string& annot_name);
 
     CSNPDb_Impl& GetDb(void) const {
         return m_Db.GetNCObject();

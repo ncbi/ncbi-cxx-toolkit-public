@@ -39,7 +39,10 @@
 #include <objects/seqfeat/seqfeat__.hpp>
 #include <objects/seqres/seqres__.hpp>
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/seq/Annot_descr.hpp>
+#include <objects/seq/Annotdesc.hpp>
 #include <sra/error_codes.hpp>
+#include <objmgr/impl/snp_annot_info.hpp>
 
 #include <sra/readers/sra/kdbread.hpp>
 
@@ -57,6 +60,7 @@ static const TSeqPos kPageSize = 5000;
 static const TSeqPos kMaxSNPLength = kPageSize;
 static const size_t kFlagsSize = 8;
 static const TSeqPos kCoverageZoom = 100;
+static const size_t kMax_AlleleLength  = 32;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -341,9 +345,20 @@ CRange<TVDBRowId> CSNPDbSeqIterator::GetVDBRowRange(void) const
 BEGIN_LOCAL_NAMESPACE;
 
 
+CRef<CSeq_annot> x_NewAnnot(void)
+{
+    CRef<CSeq_annot> annot(new CSeq_annot);
+    CRef<CAnnotdesc> desc(new CAnnotdesc);
+    desc->SetName("SNP");
+    annot->SetDesc().Set().push_back(desc);
+    return annot;
+}
+
+
 CRef<CSeq_graph> x_NewCoverageGraph(const CSNPDbSeqIterator& it)
 {
     CRef<CSeq_graph> graph(new CSeq_graph);
+    graph->SetTitle("SNP Density");
     graph->SetLoc().SetInt().SetId(const_cast<CSeq_id&>(*it.GetSeqId()));
     graph->SetComp(kCoverageZoom);
     graph->SetNumval(0);
@@ -381,10 +396,17 @@ inline TSeqPos x_RoundCoveragePosUp(TSeqPos pos)
 }
 
 
-void x_AdjustCoverageGraphRange(CRange<TSeqPos>& range,
-                                const CSNPDbSeqIterator& it)
+inline void x_AdjustRange(CRange<TSeqPos>& range,
+                          const CSNPDbSeqIterator& it)
 {
     range = range.IntersectionWith(it.GetSNPRange());
+}
+
+
+inline void x_AdjustCoverageGraphRange(CRange<TSeqPos>& range,
+                                       const CSNPDbSeqIterator& it)
+{
+    x_AdjustRange(range, it);
     range.SetFrom(x_RoundCoveragePos(range.GetFrom()));
     range.SetToOpen(x_RoundCoveragePosUp(range.GetToOpen()));
 }
@@ -489,30 +511,150 @@ CSNPDbSeqIterator::GetCoverageGraph(CRange<TSeqPos> range) const
 
 
 CRef<CSeq_annot>
-CSNPDbSeqIterator::GetCoverageAnnot(CRange<TSeqPos> range, TFlags flags) const
+CSNPDbSeqIterator::GetCoverageAnnot(CRange<TSeqPos> range,
+                                    TFlags flags) const
 {
-    CRef<CSeq_annot> annot(new CSeq_annot);
+    CRef<CSeq_annot> annot = x_NewAnnot();
     x_AdjustCoverageGraphRange(range, *this);
+    CSeq_annot::TData::TGraph& graphs = annot->SetData().SetGraph();
     CRef<CSeq_graph> graph = x_NewCoverageGraph(*this);
-    annot->SetData().SetGraph().push_back(graph);
+    graphs.push_back(graph);
     for ( CSNPDbPageIterator it(*this, range, eSearchByStart); it; ++it ) {
         CRange<TSeqPos> page_range = range.IntersectionWith(it.GetPageRange());
         _ASSERT(!page_range.Empty());
         if ( page_range.GetFrom() != range.GetFrom() &&
              graph->GetNumval() != 0) {
             graph = x_NewCoverageGraph(*this);
-            annot->SetData().SetGraph().push_back(graph);
+            graphs.push_back(graph);
         }
         x_AddCoverage(*graph, page_range, it);
         range.SetFrom(page_range.GetToOpen());
     }
     if ( graph->GetNumval() == 0 ) {
-        annot->SetData().SetGraph().pop_back();
+        graphs.pop_back();
     }
-    if ( annot->SetData().SetGraph().empty() ) {
+    if ( graphs.empty() ) {
         return null;
     }
     return annot;
+}
+
+
+CRef<CSeq_annot>
+CSNPDbSeqIterator::GetFeatAnnot(CRange<TSeqPos> range,
+                                TFlags flags) const
+{
+    CRef<CSeq_annot> annot = x_NewAnnot();
+    x_AdjustRange(range, *this);
+    CSeq_annot::TData::TFtable& feats = annot->SetData().SetFtable();
+    for ( CSNPDbFeatIterator it(*this, range, eSearchByStart); it; ++it ) {
+        feats.push_back(it.GetSeq_feat());
+    }
+    if ( feats.empty() ) {
+        return null;
+    }
+    return annot;
+}
+
+
+BEGIN_LOCAL_NAMESPACE;
+
+
+inline
+void x_InitSNP_Info(SSNP_Info& info)
+{
+    info.m_Flags = info.fQualityCodesOs | info.fAlleleReplace;
+    info.m_CommentIndex = info.kNo_CommentIndex;
+    info.m_Weight = 0;
+    info.m_ExtraIndex = info.kNo_ExtraIndex;
+}
+
+
+inline
+bool x_ParseSNP_Info(SSNP_Info& info,
+                     const CSNPDbFeatIterator& it,
+                     CSeq_annot_SNP_Info& packed)
+{
+    TSeqPos len = it.GetSNPLength();
+    if ( len > info.kMax_PositionDelta+1 ) {
+        return false;
+    }
+    info.m_PositionDelta = len-1;
+    info.m_ToPosition = it.GetSNPPosition()+len-1;
+
+    CTempString all_alleles = it.GetAlleles();
+    size_t index = 0;
+    for ( ; !all_alleles.empty(); ++index ) {
+        if ( index == info.kMax_AllelesCount ) {
+            return false;
+        }
+
+        CTempString allele;
+        SIZE_TYPE div = all_alleles.find('|');
+        if ( div == NPOS ) {
+            allele = all_alleles;
+            all_alleles.clear();
+        }
+        else {
+            allele = all_alleles.substr(0, div);
+            all_alleles = all_alleles.substr(div+1);
+        }
+        if ( allele.size() > kMax_AlleleLength ) {
+            return false;
+        }
+        SSNP_Info::TAlleleIndex a_index = packed.x_GetAlleleIndex(allele);
+        if ( a_index == info.kNo_AlleleIndex ) {
+            return false;
+        }
+        info.m_AllelesIndices[index] = a_index;
+    }
+    for ( ; index < info.kMax_AllelesCount; ++index ) {
+        info.m_AllelesIndices[index] = info.kNo_AlleleIndex;
+    }
+
+    vector<char> q;
+    it.GetQualityCodes(q);
+    info.m_QualityCodesIndex = packed.x_GetQualityCodesIndex(q);
+    if ( info.m_QualityCodesIndex == info.kNo_QualityCodesIndex ) {
+        return false;
+    }
+
+    info.m_SNP_Id = it.GetRsId();
+
+    packed.x_AddSNP(info);
+    return true;
+}        
+
+
+END_LOCAL_NAMESPACE;
+
+
+CSNPDbSeqIterator::TPackedAnnot
+CSNPDbSeqIterator::GetPackedFeatAnnot(CRange<TSeqPos> range,
+                                      TFlags flags) const
+{
+    x_AdjustRange(range, *this);
+    CRef<CSeq_annot> annot = x_NewAnnot();
+    CRef<CSeq_annot_SNP_Info> packed(new CSeq_annot_SNP_Info);
+    CSeq_annot::TData::TFtable& feats = annot->SetData().SetFtable();
+
+    SSNP_Info info;
+    x_InitSNP_Info(info);
+    for ( CSNPDbFeatIterator it(*this, range, eSearchByStart); it; ++it ) {
+        if ( !x_ParseSNP_Info(info, it, *packed) ) {
+            feats.push_back(it.GetSeq_feat());
+        }
+    }
+    if ( packed->empty() ) {
+        packed = null;
+        if ( feats.empty() ) {
+            annot = null;
+        }
+    }
+    else {
+        packed->SetSeq_id(*GetSeqId());
+    }
+    return TPackedAnnot(annot, packed);
 }
 
 
