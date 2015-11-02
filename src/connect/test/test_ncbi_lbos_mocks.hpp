@@ -438,17 +438,26 @@ public:
     {
         CLBOSException::EErrCode err_code = kErrCode; /* for debug */
         if (ex.GetErrCode() != err_code) {
+            ERR_POST("Exception has code " << ex.GetErrCode() << " and " <<
+                      err_code << " is expected");
             return false;
         }
         unsigned short status_code = kStatusCode; /* for debug */
         if (ex.GetStatusCode() != status_code) {
+            ERR_POST("Exception has status code " << ex.GetStatusCode() << 
+                     " and " << status_code << " is expected");
             return false;
         }
         const char* ex_message = ex.what();
         ex_message = strstr(ex_message, " Error: ") + strlen(" Error: ");
         string message;
         message.append(ex_message);
-        return (message == m_ExpectedMessage);
+        if (message != m_ExpectedMessage) {
+            ERR_POST("Exception has message \"" << ex.GetStatusCode() << 
+                     "\" and \"" << m_ExpectedMessage << "\" is expected");
+            return false;
+        }
+        return true;
     }
 private:
     string m_ExpectedMessage;
