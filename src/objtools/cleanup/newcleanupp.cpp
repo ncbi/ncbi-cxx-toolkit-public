@@ -11069,7 +11069,7 @@ void CNewCleanup_imp::ResynchPeptidePartials (
 )
 
 {
-    if (!seq.IsAa()) {
+    if (!seq.IsSetInst() || !seq.GetInst().IsSetMol() || !seq.IsAa()) {
         return;
     }
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
