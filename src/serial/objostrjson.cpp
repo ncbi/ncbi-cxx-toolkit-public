@@ -74,6 +74,7 @@ CObjectOStreamJson::CObjectOStreamJson(CNcbiOstream& out, bool deleteOut)
     m_WrapAt(0)
 {
     m_WriteNamedIntegersByValue = true;
+    m_EnforceWritingDefaults = true;
 }
 
 CObjectOStreamJson::CObjectOStreamJson(CNcbiOstream& out, EOwnership deleteOut)
@@ -85,6 +86,7 @@ CObjectOStreamJson::CObjectOStreamJson(CNcbiOstream& out, EOwnership deleteOut)
     m_WrapAt(0)
 {
     m_WriteNamedIntegersByValue = true;
+    m_EnforceWritingDefaults = true;
 }
 
 CObjectOStreamJson::~CObjectOStreamJson(void)
