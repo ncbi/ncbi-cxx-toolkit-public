@@ -135,9 +135,6 @@ protected:
     bool IsValid(void) const;
 
 private:
-    typedef vector< CRef<CSeq_entry_Info> > TSeq_set;
-    typedef TSeq_set::const_iterator  TIterator;
-
     void x_Initialize(const CBioseq_set_Handle& set);
     void x_SetCurrentEntry(void);
 
@@ -149,7 +146,7 @@ private:
     void x_Next(void);
 
     CBioseq_set_Handle      m_Parent;
-    TIterator               m_Iterator;
+    size_t                  m_Index;
     CSeq_entry_Handle       m_Current;
     TFlags                  m_Flags;
     CSeq_entry::E_Choice    m_Filter;

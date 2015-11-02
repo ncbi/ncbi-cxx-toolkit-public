@@ -88,7 +88,7 @@ CSeq_entry_CI& CSeq_entry_CI::operator =(const CSeq_entry_CI& iter)
 {
     if (this != &iter) {
         m_Parent = iter.m_Parent;
-        m_Iterator = iter.m_Iterator;
+        m_Index = iter.m_Index;
         m_Current = iter.m_Current;
         m_Flags    = iter.m_Flags;
         m_Filter = iter.m_Filter;
@@ -104,7 +104,7 @@ void CSeq_entry_CI::x_Initialize(const CBioseq_set_Handle& seqset)
 {
     if ( seqset ) {
         m_Parent = seqset;
-        m_Iterator = seqset.x_GetInfo().GetSeq_set().begin();
+        m_Index = 0;
         x_SetCurrentEntry();
         while ((*this)  &&  !x_ValidType()) {
             x_Next();
@@ -115,13 +115,16 @@ void CSeq_entry_CI::x_Initialize(const CBioseq_set_Handle& seqset)
 
 void CSeq_entry_CI::x_SetCurrentEntry(void)
 {
-    if ( m_Parent && m_Iterator != m_Parent.x_GetInfo().GetSeq_set().end() ) {
-        m_Current = CSeq_entry_Handle(**m_Iterator,
-                                      m_Parent.GetTSE_Handle());
+    if ( m_Parent ) {
+        const vector< CRef<CSeq_entry_Info> >& entries =
+            m_Parent.x_GetInfo().GetSeq_set();
+        if ( m_Index < entries.size() ) {
+            m_Current = CSeq_entry_Handle(*entries[m_Index],
+                                          m_Parent.GetTSE_Handle());
+            return;
+        }
     }
-    else {
-        m_Current.Reset();
-    }
+    m_Current.Reset();
 }
 
 
@@ -190,10 +193,10 @@ void CSeq_entry_CI::x_Next(void)
         }
     }
 
-    // "if m_Parent" is really just a proxy for seeing if m_Iterator is valid,
+    // "if m_Parent" is really just a proxy for seeing if m_Index is valid,
     // otherwise incrementing is undefined
     if( m_Parent ) {
-        ++m_Iterator;
+        ++m_Index;
     }
     x_SetCurrentEntry();
 }
