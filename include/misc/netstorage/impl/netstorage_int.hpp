@@ -53,21 +53,6 @@ private:
 };
 
 /// @internal
-struct SFileTrackConfig
-{
-    CNetStorageObjectLoc::EFileTrackSite site;
-    string key;
-    const STimeout read_timeout;
-    const STimeout write_timeout;
-
-    SFileTrackConfig(EVoid = eVoid); // Means no FileTrack as a backend storage
-    SFileTrackConfig(const IRegistry& registry, const string& section = kEmptyStr);
-    SFileTrackConfig(const string& site, const string& key);
-
-    static CNetStorageObjectLoc::EFileTrackSite GetSite(const string&);
-};
-
-/// @internal
 class CDirectNetStorage : public CNetStorage
 {
 public:
