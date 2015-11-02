@@ -446,7 +446,7 @@ public:
             // and it's marked "Unverified", skip ALL of the
             // Bioseq objects it contains.
             if (it_bio_set->GetClass() == CBioseq_set::eClass_nuc_prot) {
-                if (IsUnverified(it_bio_set->GetDescr())) {
+                if (it_bio_set->CanGetDescr() && IsUnverified(it_bio_set->GetDescr())) {
                     for (it_bio = Begin(*it_bio_set); it_bio; ++it_bio) {
                         m_bio_skipped.insert(&(*it_bio));
                     }
@@ -457,7 +457,7 @@ public:
         // Step through Seq-entry, picking out Bioseq objects.
         for (it_bio = Begin(*m_entry); it_bio; ++it_bio) {
             // If Bioseq is marked as "Unverified", skip it.
-            if (IsUnverified(it_bio->GetDescr())) {
+            if (it_bio->CanGetDescr() && IsUnverified(it_bio->GetDescr())) {
                 // Because m_bio_skipped is an STL set container,
                 // inserting an item that's already in the set will leave
                 // the set unaltered (i.e. no duplicate items).
