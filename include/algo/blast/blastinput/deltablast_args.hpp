@@ -79,6 +79,9 @@ public:
     /// Get query batch size
     virtual int GetQueryBatchSize(void) const;
 
+    /// Should PSSM after last database search be saved
+    bool GetSaveLastPssm(void) const;
+
 protected:
     /// Create the options handle based on the command line arguments
     /// @param locality whether the search will be executed locally or remotely

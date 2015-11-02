@@ -144,6 +144,12 @@ CDeltaBlastAppArgs::x_CreateOptionsHandle(CBlastOptions::EAPILocality locality,
     return CRef<CBlastOptionsHandle>(new CDeltaBlastOptionsHandle(locality));
 }
 
+bool
+CDeltaBlastAppArgs::GetSaveLastPssm(void) const
+{
+    return m_PsiBlastArgs->GetSaveLastPssm();
+}
+
 
 END_SCOPE(blast)
 END_NCBI_SCOPE

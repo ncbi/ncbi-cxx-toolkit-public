@@ -370,11 +370,29 @@ int CDeltaBlastApp::Run(void)
                         formatter.PrintOneResultSet(**result, query_batch);
                     }
                 }
+
+                if (m_CmdLineArgs->GetSaveLastPssm()) {
+                    CConstRef<CBioseq> query_bioseq(&pssm->GetQuery().GetSeq());
+                    blast::CSearchResults& res = (*results)[0];
+
+                    CRef<CPSIBlastOptionsHandle> psi_opts(
+                        dynamic_cast<CPSIBlastOptionsHandle*>(&*opts_hndl));
+
+                    pssm = ComputePssmForNextPsiBlastIteration(*query_bioseq,
+                                                     res.GetSeqAlign(),
+                                                     psi_opts,
+                                                     scope,
+                                                     res.GetAncillaryData());
+
+                    SavePssmToFile(pssm);
+                }
             }
             else {
 
                 // if more than 1 iterations are requested, then
                 // do PSI-BLAST iterations, this is not allowed for remote blast
+
+                SavePssmToFile(pssm);
 
                 // print domain search results if requested
                 // query_batch_size == 1 if number of iteratins > 1
@@ -483,7 +501,7 @@ CDeltaBlastApp::DoPsiBlastIterations(CRef<CBlastOptionsHandle> opts_hndl,
             pssm = ComputePssmForNextPsiBlastIteration(*query_bioseq, aln,
                                        psi_opts,
                                        scope,
-                                       results_1st_query.GetAncillaryData());
+                                       (*results)[0].GetAncillaryData());
 
         if (psiblast.Empty()) {
             psiblast.Reset(new CPsiBlast(pssm, db_adapter, psi_opts));
@@ -517,14 +535,24 @@ CDeltaBlastApp::DoPsiBlastIterations(CRef<CBlastOptionsHandle> opts_hndl,
             break;
         }
 
-        CConstRef<CSeq_align_set> aln(results_1st_query.GetSeqAlign());
-        CPsiBlastIterationState::TSeqIds ids;
-        CPsiBlastIterationState::GetSeqIds(aln, psi_opts, ids);
+        aln.Reset(results_1st_query.GetSeqAlign());
+        CPsiBlastIterationState::TSeqIds new_ids;
+        CPsiBlastIterationState::GetSeqIds(aln, psi_opts, new_ids);
 
-        itr.Advance(ids);
+        itr.Advance(new_ids);
     }
     if (itr.HasConverged()) {
         converged = true;
+    }
+
+    if (m_CmdLineArgs->GetSaveLastPssm()) {
+        CRef<CPssmWithParameters>
+            pssm = ComputePssmForNextPsiBlastIteration(*query_bioseq, aln,
+                                       psi_opts,
+                                       scope,
+                                       results_1st_query.GetAncillaryData());
+
+        SavePssmToFile(pssm);
     }
 
     return converged;
