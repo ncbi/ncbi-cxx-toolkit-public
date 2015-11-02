@@ -2056,30 +2056,6 @@ void CNewCleanup_imp::OrgnameBC (
         }
     }
 
-    // special value fixes
-    EDIT_EACH_ORGMOD_ON_ORGNAME (it, onm) {
-        COrgMod& omd = **it;
-        switch (omd.GetSubtype()) {
-            case COrgMod::eSubtype_bio_material:
-                if (COrgMod::FixStructuredVoucher(omd.SetSubname(), "b")) {
-                    ChangeMade (CCleanupChange::eChangeOrgmod);
-                }
-                break;
-            case COrgMod::eSubtype_culture_collection:
-                if (COrgMod::FixStructuredVoucher(omd.SetSubname(), "c")) {
-                    ChangeMade (CCleanupChange::eChangeOrgmod);
-                }
-                break;
-            case COrgMod::eSubtype_specimen_voucher:
-                if (COrgMod::FixStructuredVoucher(omd.SetSubname(), "s")) {
-                    ChangeMade (CCleanupChange::eChangeOrgmod);
-                }
-                break;
-            default:
-                break;
-        }
-    }
-
     // erase structured notes that already match value
     // (Note: This is O(N^2).  Maybe worth converting to a faster algo?)
     EDIT_EACH_ORGMOD_ON_ORGNAME (it, onm) {
@@ -4653,7 +4629,6 @@ char s_ParseSeqFeatTRnaString( const string &comment, bool *out_justTrnaText, st
         }
         if( curraa == 'A' && str.length() == 1 ) {
             is_A = true;
-            curraa = 0;
         } else if (curraa != '\0') {
             if (aa == '\0') {
                 aa = curraa;
@@ -11048,6 +11023,44 @@ void CNewCleanup_imp::CdRegionEC(CSeq_feat& sf)
 
 void CNewCleanup_imp::ResynchProteinPartials ( CSeq_feat& feat )
 {
+    if (!feat.IsSetData() || !feat.GetData().IsProt()) {
+        return;
+    }
+
+    if (feat.GetData().GetProt().IsSetProcessed() &&
+        feat.GetData().GetProt().GetProcessed() != CProt_ref::eProcessed_not_set) {
+        // not a "real" protein feature
+        return;
+    }
+
+    CBioseq_Handle prot = m_Scope->GetBioseqHandle(feat.GetLocation());
+    if (!prot) {
+        return;
+    }
+
+    // set protein feature partial to match coding region partial
+    const CSeq_feat* cds = sequence::GetCDSForProduct(*(prot.GetCompleteBioseq()), m_Scope);
+    if (!cds) {
+        return;
+    }
+
+    bool cds_partial5 = cds->GetLocation().IsPartialStart(eExtreme_Biological);
+    bool cds_partial3 = cds->GetLocation().IsPartialStop(eExtreme_Biological);
+    bool prot_partial = feat.IsSetPartial() && feat.GetPartial();
+    bool new_prot_partial = cds_partial5 || cds_partial3;
+
+    if (cds_partial5 != feat.GetLocation().IsPartialStart(eExtreme_Biological)) {
+        feat.SetLocation().SetPartialStart(cds_partial5, eExtreme_Biological);
+        ChangeMade(CCleanupChange::eChangePartial);
+    }
+    if (cds_partial3 != feat.GetLocation().IsPartialStop(eExtreme_Biological)) {
+        feat.SetLocation().SetPartialStop(cds_partial3, eExtreme_Biological);
+        ChangeMade(CCleanupChange::eChangePartial);
+    }
+    if (prot_partial != new_prot_partial) {
+        feat.SetPartial(new_prot_partial);
+        ChangeMade(CCleanupChange::eChangePartial);
+    }
 }
 
 
@@ -11061,90 +11074,46 @@ void CNewCleanup_imp::ResynchPeptidePartials (
     }
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
 
-#if 0
     // need to find best protein feature
-    if (!sf.IsSetData() || !sf.GetData().IsProt()) {
+    SAnnotSelector sel( CSeqFeatData::eSubtype_prot );
+    CFeat_CI feat_ci( bsh, sel );
+    if (!feat_ci) {
+        // no protein feature;
         return;
     }
-    if (sf.GetData().GetProt().IsSetProcessed() && 
-        sf.GetData().GetProt().GetProcessed() != CProt_ref::eProcessed_not_set) {
+    if (feat_ci->GetData().GetProt().IsSetProcessed() && 
+        feat_ci->GetData().GetProt().GetProcessed() != CProt_ref::eProcessed_not_set) {
+        // not a "real" protein feature
         return;
     }
 
-    CSeqdesc_CI desc(bsh, CSeqdesc::e_Molinfo);
-    // if we don't have a MolInfo descriptor, need to make one
-#endif
-    
+    bool partial5 = feat_ci->GetLocation().IsPartialStart(eExtreme_Biological);
+    bool partial3 = feat_ci->GetLocation().IsPartialStop(eExtreme_Biological);
 
-#if 0
-  CheckSeqLocForPartial (sfp->location, &partial5, &partial3);
-  sfp->partial = (Boolean) (sfp->partial || partial5 || partial3);
-  /*
- *   slp = SeqLocFindNext (sfp->location, NULL);
- *     if (slp == NULL) return;
- *       */
-  sip = SeqLocId (sfp->product);
-  if (sip == NULL) return;
-  bsp = BioseqFind (sip);
-  if (bsp != NULL && ISA_aa (bsp->mol) && bsp->repr == Seq_repr_raw) {
-    sep = SeqMgrGetSeqEntryForData (bsp);
-    if (sep == NULL) return;
-    bestprot = SeqMgrGetBestProteinFeature (bsp, NULL);
-    if (bestprot == NULL) {
-      bestprot = GetBestProteinFeatureUnindexed (sfp->product);
-    }
-    if (bestprot != NULL && bestprot->location != NULL) {
-      /* only synchronize and extend best if unprocessed or preprotein, not mature/signal/transit peptide */
-      prp = (ProtRefPtr) bestprot->data.value.ptrvalue;
-      slp = bestprot->location;
-      if (prp != NULL && prp->processed < 2 && (slp->choice == SEQLOC_INT || slp->choice == SEQLOC_WHOLE)) {
-        slp = NULL;
-        sip = SeqLocId (bestprot->location);
-        if (sip != NULL) {
-          slp = WholeIntervalFromSeqId (sip);
-        }
-        if (slp == NULL) {
-          slp = CreateWholeInterval (sep);
-        }
-        if (slp != NULL) {
-          bestprot->location = SeqLocFree (bestprot->location);
-          bestprot->location = slp;
-        }
-        SetSeqLocPartial (bestprot->location, partial5, partial3);
-        bestprot->partial = sfp->partial;
-      }
-    }
-    vnp = SeqEntryGetSeqDescr (sep, Seq_descr_molinfo, NULL);
-    if (vnp == NULL) {
-      vnp = CreateNewDescriptor (sep, Seq_descr_molinfo);
-      if (vnp != NULL) {
-        mip = MolInfoNew ();
-        vnp->data.ptrvalue = (Pointer) mip;
-        if (mip != NULL) {
-          mip->biomol = 8;
-          mip->tech = 13;
-        }
-      }
-    }
-    if (vnp != NULL) {
-      mip = (MolInfoPtr) vnp->data.ptrvalue;
-      if (mip != NULL) {
-        if (partial5 && partial3) {
-          mip->completeness = 5;
-        } else if (partial5) {
-          mip->completeness = 3;
-        } else if (partial3) {
-          mip->completeness = 4;
-        } else if (sfp->partial) {
-          mip->completeness = 2;
-        } else {
-          mip->completeness = 0;
-        }
-      }
-    }
-  }
-#endif
+    CMolInfo::TCompleteness desired = GetCompletenessFromFlags(partial5, partial3, partial5 || partial3);
 
+    bool found = false;
+    if (seq.IsSetDescr()) {
+        NON_CONST_ITERATE(CBioseq::TDescr::Tdata, it, seq.SetDescr().Set()) {
+            if ((*it)->IsMolinfo()) {
+                if (!(*it)->GetMolinfo().IsSetCompleteness() ||
+                    (*it)->GetMolinfo().GetCompleteness() != desired) {
+                    (*it)->SetMolinfo().SetCompleteness(desired);
+                    ChangeMade(CCleanupChange::eChangeMolInfo);
+                }
+                found = true;
+            }
+        }
+    }
+    if (!found) {
+        // no molinfo descriptor found, need to make new one
+        CRef<CSeqdesc> new_desc(new CSeqdesc());
+        new_desc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_peptide);
+        new_desc->SetMolinfo().SetCompleteness(desired);
+        new_desc->SetMolinfo().SetTech(CMolInfo::eTech_concept_trans_a);
+        seq.SetDescr().Set().push_back(new_desc);
+        ChangeMade(CCleanupChange::eAddDescriptor);
+    }
 }
 
 
