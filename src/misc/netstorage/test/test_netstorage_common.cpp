@@ -62,6 +62,14 @@ NCBI_PARAM_DECL(string, netstorage, app_domain);
 NCBI_PARAM_DEF(string, netstorage, app_domain, "nst_test");
 typedef NCBI_PARAM_TYPE(netstorage, app_domain) TNetStorage_AppDomain;
 
+NCBI_PARAM_DECL(string, filetrack, site);
+NCBI_PARAM_DEF(string, filetrack, site, "dev");
+typedef NCBI_PARAM_TYPE(filetrack, site) TFileTrack_Site;
+
+NCBI_PARAM_DECL(string, filetrack, api_key);
+NCBI_PARAM_DEF(string, filetrack, api_key, \
+        "bqyMqDEHsQ3foORxBO87FMNhXjv9LxuzF9Rbs4HLuiaf2pHOku7D9jDRxxyiCtp2");
+typedef NCBI_PARAM_TYPE(filetrack, api_key) TFileTrack_Key;
 
 
 // ENetStorageObjectLocation to type mapping
@@ -532,21 +540,21 @@ CNstData* Create<CNstData, CNetStorageByKey>(CNetStorageByKey& netstorage,
 }
 
 template <>
-CNstData* Create<CNstData, CDirectNetStorage>(CDirectNetStorage& netstorage,
+CNstData* Create<CNstData, CCombinedNetStorage>(CCombinedNetStorage& netstorage,
         TNetStorageFlags flags)
 {
     CNetStorageObject object(netstorage.Create(flags));
     const string key(object.GetLoc());
-    return new CNstDataGuard<CDirectNetStorage>(object, netstorage, key);
+    return new CNstDataGuard<CCombinedNetStorage>(object, netstorage, key);
 }
 
 template <>
-CNstData* Create<CNstData, CDirectNetStorageByKey>(CDirectNetStorageByKey& netstorage,
+CNstData* Create<CNstData, CCombinedNetStorageByKey>(CCombinedNetStorageByKey& netstorage,
         TNetStorageFlags flags)
 {
     const string key(GetUniqueKey());
-    CDirectNetStorageObject object(netstorage.Open(key, flags));
-    return new CNstDataGuard<CDirectNetStorageByKey>(object, netstorage, key);
+    CNetStorageObject object(netstorage.Open(key, flags));
+    return new CNstDataGuard<CCombinedNetStorageByKey>(object, netstorage, key);
 }
 
 
@@ -1021,10 +1029,10 @@ template <class TNetStorage>
 struct TAttrTesting : boost::true_type {};
 
 template <>
-struct TAttrTesting<CDirectNetStorage> : boost::false_type {};
+struct TAttrTesting<CCombinedNetStorage> : boost::false_type {};
 
 template <>
-struct TAttrTesting<CDirectNetStorageByKey> : boost::false_type {};
+struct TAttrTesting<CCombinedNetStorageByKey> : boost::false_type {};
 
 
 // Default implementation (attribute reading/writing always throws)
@@ -1194,27 +1202,35 @@ inline CNetStorageByKey g_GetNetStorage<CNetStorageByKey>(const char* mode)
 
 
 template <>
-inline CDirectNetStorage g_GetNetStorage<CDirectNetStorage>(const char*)
+inline CCombinedNetStorage g_GetNetStorage<CCombinedNetStorage>(const char*)
 {
     string nc_service(TNetCache_ServiceName::GetDefault());
     string nst_app_domain(TNetStorage_AppDomain::GetDefault());
-    return CDirectNetStorage(
-            CNcbiApplication::Instance()->GetConfig(),
-            CNetICacheClient(nc_service.c_str(),
-                    nst_app_domain.c_str(), APP_NAME),
-            NULL, nst_app_domain);
+    string ft_site(TFileTrack_Site::GetDefault());
+    string ft_key(TFileTrack_Key::GetDefault());
+    string init_string(
+            "mode=direct&nc="     + nc_service +
+            "&domain=" + nst_app_domain +
+            "&client="   APP_NAME +
+            "&ft_site=" + ft_site +
+            "&ft_key=" + ft_key);
+    return CCombinedNetStorage(init_string);
 }
 
 template <>
-inline CDirectNetStorageByKey g_GetNetStorage<CDirectNetStorageByKey>(const char*)
+inline CCombinedNetStorageByKey g_GetNetStorage<CCombinedNetStorageByKey>(const char*)
 {
     string nc_service(TNetCache_ServiceName::GetDefault());
     string nst_app_domain(TNetStorage_AppDomain::GetDefault());
-    return CDirectNetStorageByKey(
-            CNcbiApplication::Instance()->GetConfig(),
-            CNetICacheClient(nc_service.c_str(),
-                    nst_app_domain.c_str(), APP_NAME),
-            NULL, nst_app_domain);
+    string ft_site(TFileTrack_Site::GetDefault());
+    string ft_key(TFileTrack_Key::GetDefault());
+    string init_string(
+            "mode=direct&nc="     + nc_service +
+            "&domain=" + nst_app_domain +
+            "&client="   APP_NAME +
+            "&ft_site=" + ft_site +
+            "&ft_key=" + ft_key);
+    return CCombinedNetStorageByKey(init_string);
 }
 
 
@@ -1620,7 +1636,7 @@ BOOST_FIXTURE_TEST_CASE(Test##ST##SRC##API##LOC, \
 
 #define DEFINE_TEST_CASE(r, p) TEST_CASE p
 
-#define ST_LIST1    (NetStorageByKey, (DirectNetStorage, (DirectNetStorageByKey, BOOST_PP_NIL)))
+#define ST_LIST1    (NetStorageByKey, (CombinedNetStorage, (CombinedNetStorageByKey, BOOST_PP_NIL)))
 #define ST_LIST2    (NetStorage, BOOST_PP_NIL)
 #define SRC_LIST    (Emp, (Str, (Rnd, (Nst, BOOST_PP_NIL))))
 #define API_LIST    (Str, (Buf, (Irw, (Ios, BOOST_PP_NIL))))
