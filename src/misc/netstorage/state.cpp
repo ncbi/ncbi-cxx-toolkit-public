@@ -712,7 +712,7 @@ public:
     ILocation* Next();
     const TObjLoc& Locator();
     void SetLocator();
-    Ptr Clone(TNetStorageFlags);
+    ISelector* Clone(TNetStorageFlags);
 
 private:
     void InitLocations(ENetStorageObjectLocation, TNetStorageFlags);
@@ -846,11 +846,11 @@ void CSelector::SetLocator()
 }
 
 
-ISelector::Ptr CSelector::Clone(TNetStorageFlags flags)
+ISelector* CSelector::Clone(TNetStorageFlags flags)
 {
     flags = m_Context->DefaultFlags(flags);
-    return Ptr(new CSelector(TObjLoc(m_Context->compound_id_pool,
-                    m_ObjectLoc.GetLocator(), flags), m_Context, flags));
+    return new CSelector(TObjLoc(m_Context->compound_id_pool,
+                    m_ObjectLoc.GetLocator(), flags), m_Context, flags);
 }
 
 
@@ -926,45 +926,39 @@ void SContext::Init()
 }
 
 
-ISelector::Ptr ISelector::Create(SContext* context, TNetStorageFlags flags)
+ISelector* SContext::Create(TNetStorageFlags flags)
 {
-    _ASSERT(context);
-    flags = context->DefaultFlags(flags);
-    return Ptr(new CSelector(TObjLoc(context->compound_id_pool,
-                    flags, context->app_domain, context->GetRandomNumber(),
-                    context->filetrack_api.config.site), context, flags));
+    flags = DefaultFlags(flags);
+    return new CSelector(TObjLoc(compound_id_pool,
+                    flags, app_domain, GetRandomNumber(),
+                    filetrack_api.config.site), this, flags);
 }
 
 
-ISelector::Ptr ISelector::Create(SContext* context, const string& object_loc)
+ISelector* SContext::Create(const string& object_loc)
 {
-    _ASSERT(context);
-    return Ptr(new CSelector(TObjLoc(context->compound_id_pool, object_loc),
-                context));
+    return new CSelector(TObjLoc(compound_id_pool, object_loc), this);
 }
 
 
-ISelector::Ptr ISelector::Create(SContext* context, TNetStorageFlags flags,
+ISelector* SContext::Create(TNetStorageFlags flags,
         const string& service, Int8 id)
 {
-    _ASSERT(context);
-    flags = context->DefaultFlags(flags);
-    TObjLoc loc(context->compound_id_pool, flags, context->app_domain,
-            context->GetRandomNumber(), context->filetrack_api.config.site);
+    flags = DefaultFlags(flags);
+    TObjLoc loc(compound_id_pool, flags, app_domain,
+            GetRandomNumber(), filetrack_api.config.site);
     loc.SetServiceName(service);
     if (id) loc.SetObjectID(id);
-    return Ptr(new CSelector(loc, context, flags));
+    return new CSelector(loc, this, flags);
 }
 
 
-ISelector::Ptr ISelector::Create(SContext* context, TNetStorageFlags flags,
-        const string& key)
+ISelector* SContext::Create(TNetStorageFlags flags, const string& key)
 {
-    _ASSERT(context);
-    flags = context->DefaultFlags(flags);
-    return Ptr(new CSelector(TObjLoc(context->compound_id_pool,
-                    flags, context->app_domain, key,
-                    context->filetrack_api.config.site), context, flags));
+    flags = DefaultFlags(flags);
+    return new CSelector(TObjLoc(compound_id_pool,
+                    flags, app_domain, key,
+                    filetrack_api.config.site), this, flags);
 }
 
 

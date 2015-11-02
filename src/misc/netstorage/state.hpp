@@ -66,7 +66,6 @@ namespace NDirectNetStorageImpl
 {
 
 typedef CNetStorageObjectLoc TObjLoc;
-struct SContext;
 
 class IState
 {
@@ -97,6 +96,8 @@ public:
 class ISelector
 {
 public:
+    typedef auto_ptr<ISelector> Ptr;
+
     virtual ~ISelector() {}
 
     virtual ILocation* First() = 0;
@@ -104,13 +105,7 @@ public:
     virtual const TObjLoc& Locator() = 0;
     virtual void SetLocator() = 0;
 
-    typedef auto_ptr<ISelector> Ptr;
-    virtual Ptr Clone(TNetStorageFlags) = 0;
-
-    static Ptr Create(SContext*, TNetStorageFlags);
-    static Ptr Create(SContext*, const string&);
-    static Ptr Create(SContext*, TNetStorageFlags, const string&, Int8);
-    static Ptr Create(SContext*, TNetStorageFlags, const string&);
+    virtual ISelector* Clone(TNetStorageFlags) = 0;
 };
 
 struct SContext : CObject
@@ -130,6 +125,11 @@ struct SContext : CObject
     {
         return flags ? flags : default_flags;
     }
+
+    ISelector* Create(const string&);
+    ISelector* Create(TNetStorageFlags);
+    ISelector* Create(TNetStorageFlags, const string&);
+    ISelector* Create(TNetStorageFlags, const string&, Int8);
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     void AllowXSiteConnections()

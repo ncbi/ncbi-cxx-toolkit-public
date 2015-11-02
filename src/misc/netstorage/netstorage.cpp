@@ -133,14 +133,14 @@ private:
 
 CObj* SDirectNetStorageImpl::OpenImpl(const string& object_loc)
 {
-    ISelector::Ptr selector(ISelector::Create(m_Context, object_loc));
+    ISelector::Ptr selector(m_Context->Create(object_loc));
     return new CObj(selector);
 }
 
 
 CNetStorageObject SDirectNetStorageImpl::Create(TNetStorageFlags flags)
 {
-    ISelector::Ptr selector(ISelector::Create(m_Context, flags));
+    ISelector::Ptr selector(m_Context->Create(flags));
     return new CObj(selector);
 }
 
@@ -154,7 +154,7 @@ CNetStorageObject SDirectNetStorageImpl::Open(const string& object_loc)
 string SDirectNetStorageImpl::Relocate(const string& object_loc,
         TNetStorageFlags flags)
 {
-    ISelector::Ptr selector(ISelector::Create(m_Context, object_loc));
+    ISelector::Ptr selector(m_Context->Create(object_loc));
     CRef<CObj> file(new CObj(selector));
     return file->Relocate(flags);
 }
@@ -162,7 +162,7 @@ string SDirectNetStorageImpl::Relocate(const string& object_loc,
 
 bool SDirectNetStorageImpl::Exists(const string& object_loc)
 {
-    ISelector::Ptr selector(ISelector::Create(m_Context, object_loc));
+    ISelector::Ptr selector(m_Context->Create(object_loc));
     CRef<CObj> net_file(new CObj(selector));
     return net_file->Exists();
 }
@@ -170,7 +170,7 @@ bool SDirectNetStorageImpl::Exists(const string& object_loc)
 
 void SDirectNetStorageImpl::Remove(const string& object_loc)
 {
-    ISelector::Ptr selector(ISelector::Create(m_Context, object_loc));
+    ISelector::Ptr selector(m_Context->Create(object_loc));
     CRef<CObj> net_file(new CObj(selector));
     net_file->Remove();
 }
@@ -179,7 +179,7 @@ void SDirectNetStorageImpl::Remove(const string& object_loc)
 CObj* SDirectNetStorageImpl::Create(TNetStorageFlags flags,
         const string& service, Int8 id)
 {
-    ISelector::Ptr selector(ISelector::Create(m_Context, flags, service, id));
+    ISelector::Ptr selector(m_Context->Create(flags, service, id));
 
     // Server reports locator to the client before writing anything
     // So, object must choose location for writing here to make locator valid
@@ -234,7 +234,7 @@ CNetStorageObject SDirectNetStorageByKeyImpl::Open(const string& key,
 CObj* SDirectNetStorageByKeyImpl::OpenImpl(const string& key,
         TNetStorageFlags flags)
 {
-    ISelector::Ptr selector(ISelector::Create(m_Context, flags, key));
+    ISelector::Ptr selector(m_Context->Create(flags, key));
     return new CObj(selector);
 }
 
@@ -242,7 +242,7 @@ CObj* SDirectNetStorageByKeyImpl::OpenImpl(const string& key,
 string SDirectNetStorageByKeyImpl::Relocate(const string& key,
         TNetStorageFlags flags, TNetStorageFlags old_flags)
 {
-    ISelector::Ptr selector(ISelector::Create(m_Context, old_flags, key));
+    ISelector::Ptr selector(m_Context->Create(old_flags, key));
     CRef<CObj> file(new CObj(selector));
     return file->Relocate(flags);
 }
@@ -250,7 +250,7 @@ string SDirectNetStorageByKeyImpl::Relocate(const string& key,
 
 bool SDirectNetStorageByKeyImpl::Exists(const string& key, TNetStorageFlags flags)
 {
-    ISelector::Ptr selector(ISelector::Create(m_Context, flags, key));
+    ISelector::Ptr selector(m_Context->Create(flags, key));
     CRef<CObj> net_file(new CObj(selector));
     return net_file->Exists();
 }
@@ -258,7 +258,7 @@ bool SDirectNetStorageByKeyImpl::Exists(const string& key, TNetStorageFlags flag
 
 void SDirectNetStorageByKeyImpl::Remove(const string& key, TNetStorageFlags flags)
 {
-    ISelector::Ptr selector(ISelector::Create(m_Context, flags, key));
+    ISelector::Ptr selector(m_Context->Create(flags, key));
     CRef<CObj> net_file(new CObj(selector));
     net_file->Remove();
 }
