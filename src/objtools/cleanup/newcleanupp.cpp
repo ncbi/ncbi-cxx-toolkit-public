@@ -11046,6 +11046,11 @@ void CNewCleanup_imp::CdRegionEC(CSeq_feat& sf)
 }
 
 
+void CNewCleanup_imp::ResynchProteinPartials ( CSeq_feat& feat )
+{
+}
+
+
 void CNewCleanup_imp::ResynchPeptidePartials (
     CBioseq& seq
 )
