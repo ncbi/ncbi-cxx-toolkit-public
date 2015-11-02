@@ -189,9 +189,11 @@ public:
 
     const_iterator FirstIn(const TRange& range) const;
 
-    TGi GetGi(void) const;
     const CSeq_id& GetSeq_id(void) const;
+    void SetSeq_id(const CSeq_id& id);
+    NCBI_DEPRECATED
     void SetGi(TGi gi);
+    void OffsetGi(TIntId gi_offset);
 
     size_t GetSize(void) const;
     const SSNP_Info& GetInfo(size_t index) const;
@@ -204,7 +206,6 @@ public:
     void x_AddSNP(const SSNP_Info& snp_info);
     void x_FinishParsing(void);
 
-protected:
     SSNP_Info::TCommentIndex x_GetCommentIndex(const string& comment);
     const string& x_GetComment(SSNP_Info::TCommentIndex index) const;
     SSNP_Info::TAlleleIndex x_GetAlleleIndex(const string& allele);
@@ -217,8 +218,8 @@ protected:
     SSNP_Info::TExtraIndex x_GetExtraIndex(const string& str);
     const string& x_GetExtra(SSNP_Info::TExtraIndex index) const;
 
-    bool x_CheckGi(TGi gi);
-    void x_SetGi(TGi gi);
+protected:
+    bool x_CheckId(const CSeq_id& id);
 
     void x_DoUpdate(TNeedUpdateFlags flags);
 
@@ -230,7 +231,6 @@ private:
     friend struct SSNP_Info;
     friend class CSeq_feat_Handle;
 
-    TGi                         m_Gi;
     CRef<CSeq_id>               m_Seq_id;
     TSNP_Set                    m_SNP_Set;
     CIndexedStrings             m_Comments;
@@ -285,30 +285,9 @@ CSeq_annot_SNP_Info::FirstIn(const CRange<TSeqPos>& range) const
 
 
 inline
-TGi CSeq_annot_SNP_Info::GetGi(void) const
-{
-    return m_Gi;
-}
-
-
-inline
 const CSeq_id& CSeq_annot_SNP_Info::GetSeq_id(void) const
 {
     return *m_Seq_id;
-}
-
-
-inline
-bool CSeq_annot_SNP_Info::x_CheckGi(TGi gi)
-{
-    if ( gi == m_Gi ) {
-        return true;
-    }
-    if ( m_Gi < ZERO_GI ) {
-        x_SetGi(gi);
-        return true;
-    }
-    return false;
 }
 
 

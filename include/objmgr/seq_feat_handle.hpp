@@ -164,6 +164,8 @@ public:
     typedef SSNP_Info::TWeight TWeight;
 
     TSNPId GetSNPId(void) const;
+    const CSeq_id& GetSNPSeq_id(void) const;
+    NCBI_DEPRECATED
     CSeq_id::TGi GetSNPGi(void) const;
     bool IsSNPMinusStrand(void) const;
     TWeight GetSNPWeight(void) const;

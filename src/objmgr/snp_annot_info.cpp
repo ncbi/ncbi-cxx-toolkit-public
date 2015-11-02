@@ -136,6 +136,20 @@ CUser_field::TData::E_Choice SSNP_Info::GetQualityCodesWhich(void) const
 }
 
 
+inline
+bool CSeq_annot_SNP_Info::x_CheckId(const CSeq_id& id)
+{
+    if ( !m_Seq_id ) {
+        m_Seq_id = SerialClone(id);
+        return true;
+    }
+    if ( m_Seq_id->IsGi() ) {
+        return id.IsGi() && m_Seq_id->GetGi() == id.GetGi();
+    }
+    return m_Seq_id->Equals(id);
+}
+
+
 SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
                                               CSeq_annot_SNP_Info& annot)
 {
@@ -437,10 +451,7 @@ SSNP_Info::ESNP_Type SSNP_Info::ParseSeq_feat(const CSeq_feat& feat,
         }
     }
 
-    if ( !id->IsGi() ) {
-        return eSNP_Complex_LocationIsNotGi;
-    }
-    if ( !annot.x_CheckGi(id->GetGi()) ) {
+    if ( !annot.x_CheckId(*id) ) {
         return eSNP_Complex_LocationGiIsBad;
     }
 
@@ -631,7 +642,7 @@ void SSNP_Info::x_UpdateSeq_feat(CSeq_feat& feat,
     { // location
         TSeqPos to_position = m_ToPosition;
         TPositionDelta position_delta = m_PositionDelta;
-        TGi gi = annot.GetGi();
+        const CSeq_id& id = annot.GetSeq_id();
         if ( position_delta == 0 ) {
             // point
             feat.SetLocation().Reset();
@@ -650,7 +661,7 @@ void SSNP_Info::x_UpdateSeq_feat(CSeq_feat& feat,
             else {
                 point.ResetStrand();
             }
-            point.SetId().SetGi(gi);
+            point.SetId(const_cast<CSeq_id&>(id));
             if ( m_Flags & fFuzzLimTr ) {
                 point.SetFuzz().SetLim(CInt_fuzz::eLim_tr);
             }
@@ -677,7 +688,7 @@ void SSNP_Info::x_UpdateSeq_feat(CSeq_feat& feat,
             else {
                 interval.ResetStrand();
             }
-            interval.SetId().SetGi(gi);
+            interval.SetId(const_cast<CSeq_id&>(id));
         }
     }
 }
@@ -690,7 +701,7 @@ void SSNP_Info::x_UpdateSeq_feat(CSeq_feat& feat,
     { // location
         TSeqPos to_position = m_ToPosition;
         TPositionDelta position_delta = m_PositionDelta;
-        TGi gi = annot.GetGi();
+        const CSeq_id& id = annot.GetSeq_id();
         if ( position_delta == 0 ) {
             // point
             CSeq_point& point = feat.SetLocation().SetPnt();
@@ -704,7 +715,7 @@ void SSNP_Info::x_UpdateSeq_feat(CSeq_feat& feat,
             else {
                 point.ResetStrand();
             }
-            point.SetId().SetGi(gi);
+            point.SetId(const_cast<CSeq_id&>(id));
             if ( m_Flags & fFuzzLimTr ) {
                 point.SetFuzz().SetLim(CInt_fuzz::eLim_tr);
             }
@@ -726,7 +737,7 @@ void SSNP_Info::x_UpdateSeq_feat(CSeq_feat& feat,
             else {
                 interval.ResetStrand();
             }
-            interval.SetId().SetGi(gi);
+            interval.SetId(const_cast<CSeq_id&>(id));
         }
     }
 }
@@ -768,20 +779,18 @@ void SSNP_Info::UpdateSeq_feat(CRef<CSeq_feat>& feat_ref,
 /////////////////////////////////////////////////////////////////////////////
 
 CSeq_annot_SNP_Info::CSeq_annot_SNP_Info(void)
-    : m_Gi(INVALID_GI)
 {
 }
 
 
 CSeq_annot_SNP_Info::CSeq_annot_SNP_Info(CSeq_annot& annot)
-    : m_Gi(INVALID_GI), m_Seq_annot(&annot)
+    : m_Seq_annot(&annot)
 {
 }
 
 
 CSeq_annot_SNP_Info::CSeq_annot_SNP_Info(const CSeq_annot_SNP_Info& info)
-    : m_Gi(info.m_Gi),
-      m_Seq_id(info.m_Seq_id),
+    : m_Seq_id(info.m_Seq_id),
       m_SNP_Set(info.m_SNP_Set),
       m_Comments(info.m_Comments),
       m_Alleles(info.m_Alleles),
@@ -836,7 +845,7 @@ void CSeq_annot_SNP_Info::x_ParentDetach(CSeq_annot_Info& parent)
 
 void CSeq_annot_SNP_Info::x_UpdateAnnotIndexContents(CTSE_Info& tse)
 {
-    CSeq_id_Handle idh = CSeq_id_Handle::GetGiHandle(GetGi());
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(GetSeq_id());
     tse.x_MapSNP_Table(GetParentSeq_annot_Info().GetName(), idh, *this);
     TParent::x_UpdateAnnotIndexContents(tse);
 }
@@ -844,7 +853,7 @@ void CSeq_annot_SNP_Info::x_UpdateAnnotIndexContents(CTSE_Info& tse)
 
 void CSeq_annot_SNP_Info::x_UnmapAnnotObjects(CTSE_Info& tse)
 {
-    CSeq_id_Handle idh = CSeq_id_Handle::GetGiHandle(GetGi());
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(GetSeq_id());
     tse.x_UnmapSNP_Table(GetParentSeq_annot_Info().GetName(), idh, *this);
 }
 
@@ -1018,21 +1027,24 @@ CSeq_annot_SNP_Info::x_GetAlleleIndex(const string& allele)
 }
 
 
-void CSeq_annot_SNP_Info::x_SetGi(TGi gi)
+void CSeq_annot_SNP_Info::SetSeq_id(const CSeq_id& id)
 {
-    _ASSERT(m_Gi == INVALID_GI);
-    m_Gi = gi;
-    _ASSERT(!m_Seq_id);
-    m_Seq_id.Reset(new CSeq_id);
-    m_Seq_id->SetGi(gi);
+    m_Seq_id = SerialClone(id);
 }
 
 
 void CSeq_annot_SNP_Info::SetGi(TGi gi)
 {
-    m_Gi = gi;
-    m_Seq_id.Reset(new CSeq_id);
+    m_Seq_id = new CSeq_id;
     m_Seq_id->SetGi(gi);
+}
+
+
+void CSeq_annot_SNP_Info::OffsetGi(TIntId gi_offset)
+{
+    if ( m_Seq_id->IsGi() ) {
+        m_Seq_id->SetGi(m_Seq_id->GetGi() + gi_offset);
+    }
 }
 
 
@@ -1053,7 +1065,6 @@ void CSeq_annot_SNP_Info::x_FinishParsing(void)
 
 void CSeq_annot_SNP_Info::Reset(void)
 {
-    m_Gi = INVALID_GI;
     m_Seq_id.Reset();
     m_Comments.Clear();
     m_Alleles.Clear();

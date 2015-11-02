@@ -241,7 +241,7 @@ bool CSeq_feat_Handle::IsSetData(void) const
 CSeq_id_Handle CSeq_feat_Handle::GetLocationId(void) const
 {
     if ( IsTableSNP() ) {
-        return CSeq_id_Handle::GetGiHandle(GetSNPGi());
+        return CSeq_id_Handle::GetHandle(GetSNPSeq_id());
     }
     CConstRef<CSeq_loc> loc(&GetLocation());
     const CSeq_id* id = loc->GetId();
@@ -286,9 +286,15 @@ CSeq_feat_Handle::TRange CSeq_feat_Handle::GetProductTotalRange(void) const
 }
 
 
+const CSeq_id& CSeq_feat_Handle::GetSNPSeq_id(void) const
+{
+    return x_GetSNP_annot_Info().GetSeq_id();
+}
+
+
 CSeq_id::TGi CSeq_feat_Handle::GetSNPGi(void) const
 {
-    return x_GetSNP_annot_Info().GetGi();
+    return x_GetSNP_annot_Info().GetSeq_id().GetGi();
 }
 
 

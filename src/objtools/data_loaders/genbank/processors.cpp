@@ -572,8 +572,7 @@ void CProcessor::OffsetAllGis(CTSE_SetObjectInfo& set_info, TIntId gi_offset)
     }
     NON_CONST_ITERATE ( CTSE_SetObjectInfo::TSeq_annot_InfoMap, it,
                         set_info.m_Seq_annot_InfoMap ) {
-        CSeq_annot_SNP_Info& snp_info = *it->second.m_SNP_annot_Info;
-        snp_info.SetGi(TIntId(snp_info.GetGi())+gi_offset);
+        it->second.m_SNP_annot_Info->OffsetGi(gi_offset);
     }
 }
 

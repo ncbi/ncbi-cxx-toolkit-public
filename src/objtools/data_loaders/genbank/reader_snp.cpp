@@ -75,6 +75,13 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+static const size_t kMax_CommentLength = 65536;
+static const size_t kMax_ExtraLength = 256;
+static const size_t kMax_AlleleLength = 256;
+static const size_t kMax_QualityLength = 32;
+static const size_t kMax_StringLength = 256;
+
+
 /////////////////////////////////////////////////////////////////////////////
 // utility function
 
@@ -183,8 +190,11 @@ CSNP_Seq_feat_hook::~CSNP_Seq_feat_hook(void)
         size_t total =
             accumulate(m_Count, m_Count+SSNP_Info::eSNP_Type_last, size_t(0));
         NcbiCout << "CSeq_annot_SNP_Info statistic (gi = " <<
-            m_Seq_annot_SNP_Info.GetGi() << "):\n";
+            m_Seq_annot_SNP_Info.GetSeq_id().AsFastaString() << "):\n";
         for ( size_t i = 0; i < SSNP_Info::eSNP_Type_last; ++i ) {
+            if ( !m_Count[i] ) {
+                continue;
+            }
             NcbiCout <<
                 setw(40) << SSNP_Info::s_SNP_Type_Label[i] << ": " <<
                 setw(6) << m_Count[i] << "  " <<
@@ -197,6 +207,9 @@ CSNP_Seq_feat_hook::~CSNP_Seq_feat_hook(void)
             accumulate(s_TotalCount, s_TotalCount+SSNP_Info::eSNP_Type_last,size_t(0));
         NcbiCout << "cumulative CSeq_annot_SNP_Info statistic:\n";
         for ( size_t i = 0; i < SSNP_Info::eSNP_Type_last; ++i ) {
+            if ( !s_TotalCount[i] ) {
+                continue;
+            }
             NcbiCout <<
                 setw(40) << SSNP_Info::s_SNP_Type_Label[i] << ": " <<
                 setw(6) << s_TotalCount[i] << "  " <<
@@ -296,9 +309,8 @@ void CSeq_annot_SNP_Info_Reader::Parse(CObjectIStream& in,
 /////////////////////////////////////////////////////////////////////////////
 // reading and storing in binary format
 
-static void write_unsigned(CNcbiOstream& stream,
-                           size_t n,
-                           const char* name)
+static inline
+void write_unsigned(CNcbiOstream& stream, size_t n, const char* name)
 {
     if ( sizeof(n) > 4 && Uint4(n) != n ) {
         NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
@@ -314,8 +326,8 @@ static void write_unsigned(CNcbiOstream& stream,
 }
 
 
-static unsigned read_unsigned(CNcbiIstream& stream,
-                              const char* name)
+static inline
+unsigned read_unsigned(CNcbiIstream& stream, const char* name)
 {
     char c[4];
     stream.read(c, sizeof(c));
@@ -332,9 +344,8 @@ static unsigned read_unsigned(CNcbiIstream& stream,
 }
 
 
-static void write_gi(CNcbiOstream& stream,
-                     TGi gi,
-                     const char* name)
+static inline
+void write_gi(CNcbiOstream& stream, TGi gi, const char* name)
 {
     TIntId n = gi;
     char c[8];
@@ -346,8 +357,8 @@ static void write_gi(CNcbiOstream& stream,
 }
 
 
-static TGi read_gi(CNcbiIstream& stream,
-                   const char* name)
+static inline
+TGi read_gi(CNcbiIstream& stream, const char* name)
 {
     char c[8];
     stream.read(c, sizeof(c));
@@ -377,7 +388,8 @@ static TGi read_gi(CNcbiIstream& stream,
 }
 
 
-static void write_size(CNcbiOstream& stream, size_t size)
+static inline
+void write_size(CNcbiOstream& stream, size_t size)
 {
     // use ASN.1 binary like format
     while ( size >= (1<<7) ) {
@@ -388,7 +400,8 @@ static void write_size(CNcbiOstream& stream, size_t size)
 }
 
 
-static size_t read_size(CNcbiIstream& stream, const char* name)
+static inline
+size_t read_size(CNcbiIstream& stream, const char* name)
 {
     size_t size = 0;
     static const int total_bits = sizeof(size)*8;
@@ -412,14 +425,55 @@ static size_t read_size(CNcbiIstream& stream, const char* name)
 }
 
 
+static inline
+void write_string(CNcbiOstream& stream, const string& str)
+{
+    size_t size = str.size();
+    write_size(stream, size);
+    stream.write(str.data(), size);
+}
+
+
+static inline
+void read_string(CNcbiIstream& stream, string& str, size_t max_length)
+{
+    size_t size = read_size(stream, "SNP table string size");
+    if ( size > max_length ) {
+        NCBI_THROW(CLoaderException, eLoaderFailed,
+                   "SNP table string is too long");
+    }
+    char buf[kMax_StringLength];
+    stream.read(buf, size);
+    if ( !stream ) {
+        NCBI_THROW(CLoaderException, eLoaderFailed,
+                   "Cannot read SNP table string");
+    }
+    str.assign(buf, buf+size);
+}
+
+
+static inline
+void write_seq_id(CNcbiOstream& stream, const CSeq_id& id)
+{
+    write_string(stream, id.AsFastaString());
+}
+
+
+static inline
+CRef<CSeq_id> read_seq_id(CNcbiIstream& stream)
+{
+    string str;
+    read_string(stream, str, kMax_StringLength);
+    return Ref(new CSeq_id(str));
+}
+
+
 void StoreIndexedStringsTo(CNcbiOstream& stream,
                            const CIndexedStrings& strings)
 {
     write_size(stream, strings.GetSize());
     for (size_t idx = 0; idx < strings.GetSize(); ++idx) {
-        size_t size = strings.GetString(idx).size();
-        write_size(stream, size);
-        stream.write(strings.GetString(idx).data(), size);
+        write_string(stream, strings.GetString(idx));
     }
 }
 
@@ -436,21 +490,8 @@ void LoadIndexedStringsFrom(CNcbiIstream& stream,
                    "SNP table string count is too big");
     }
     strings.Resize(count);
-    AutoPtr<char, ArrayDeleter<char> > buf(new char[max_length]);
     for (size_t idx = 0; idx < strings.GetSize(); ++idx) {
-        size_t size = read_size(stream, "SNP table string size");
-        if ( size > max_length ) {
-            strings.Clear();
-            NCBI_THROW(CLoaderException, eLoaderFailed,
-                       "SNP table string is too long");
-        }
-        stream.read(buf.get(), size);
-        if ( !stream ) {
-            strings.Clear();
-            NCBI_THROW(CLoaderException, eLoaderFailed,
-                       "Cannot read SNP table string");
-        }
-        strings.SetString(idx).assign(buf.get(), buf.get() + size);
+        read_string(stream, strings.SetString(idx), max_length);
     }
 }
 
@@ -645,7 +686,12 @@ void CSeq_annot_SNP_Info_Reader::x_Write(CNcbiOstream& stream,
 {
     // header
     write_unsigned(stream, MAGIC, "SNP table magic number");
-    write_gi(stream, snp_info.GetGi(), "SNP table GI");
+    const CSeq_id& id = snp_info.GetSeq_id();
+    TGi gi = id.IsGi()? id.GetGi(): ZERO_GI;
+    write_gi(stream, gi, "SNP table GI");
+    if ( !gi ) {
+        write_seq_id(stream, id);
+    }
 
     // strings
     StoreIndexedStringsTo(stream, snp_info.m_Comments);
@@ -662,11 +708,6 @@ void CSeq_annot_SNP_Info_Reader::x_Write(CNcbiOstream& stream,
 }
 
 
-static const size_t kMax_CommentLength = 65536;
-static const size_t kMax_ExtraLength = 256;
-static const size_t kMax_AlleleLength = 256;
-static const size_t kMax_QualityLength = 32;
-
 void CSeq_annot_SNP_Info_Reader::x_Read(CNcbiIstream& stream,
                                         CSeq_annot_SNP_Info& snp_info)
 {
@@ -678,7 +719,13 @@ void CSeq_annot_SNP_Info_Reader::x_Read(CNcbiIstream& stream,
         NCBI_THROW(CLoaderException, eLoaderFailed,
                    "Incompatible version of SNP table");
     }
-    snp_info.x_SetGi(read_gi(stream, "SNP table GI"));
+    TGi gi = read_gi(stream, "SNP table GI");
+    if ( !gi ) {
+        snp_info.SetSeq_id(*read_seq_id(stream));
+    }
+    else {
+        snp_info.SetGi(gi);
+    }
 
     // strings
     LoadIndexedStringsFrom(stream,
