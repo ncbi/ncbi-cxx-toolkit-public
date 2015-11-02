@@ -1098,9 +1098,6 @@ bool CAutoDefFeatureClause::AddGene (CAutoDefFeatureClause_Base *gene_clause, bo
     
     CSeqFeatData::ESubtype subtype = GetMainFeatureSubtype ();
     
-    sequence::ECompare loc_compare = gene_clause->CompareLocation(*m_ClauseLocation);
-    
-
     string noncoding_product_name;
     
     // only add gene to certain other types of clauses

@@ -905,7 +905,7 @@ bool CAutoDefFeatureClause_Base::x_MeetAltSpliceRules (unsigned int clause1, uns
         match_left_len--;
     }
     if (match_left_len == len1 && m_ClauseList[clause1]->IsAltSpliced()) {
-        match_left_token = match_left_len;
+        // no adjustment
     } else {
         match_left_len = match_left_token;
     }
@@ -923,7 +923,7 @@ bool CAutoDefFeatureClause_Base::x_MeetAltSpliceRules (unsigned int clause1, uns
     }
     
     if (match_right_len == len1 && m_ClauseList[clause1]->IsAltSpliced()) {
-        match_right_token = match_right_len;
+        // no adjustment
     } else {
         match_right_len = match_right_token;
     }
