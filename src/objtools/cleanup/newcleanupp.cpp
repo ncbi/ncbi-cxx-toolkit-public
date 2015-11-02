@@ -11096,8 +11096,12 @@ void CNewCleanup_imp::ResynchPeptidePartials (
     if (seq.IsSetDescr()) {
         NON_CONST_ITERATE(CBioseq::TDescr::Tdata, it, seq.SetDescr().Set()) {
             if ((*it)->IsMolinfo()) {
-                if (!(*it)->GetMolinfo().IsSetCompleteness() ||
-                    (*it)->GetMolinfo().GetCompleteness() != desired) {
+                if ((*it)->GetMolinfo().IsSetCompleteness()) {
+                    if ((*it)->GetMolinfo().GetCompleteness() != desired) {
+                        (*it)->SetMolinfo().SetCompleteness(desired);
+                        ChangeMade(CCleanupChange::eChangeMolInfo);
+                    }
+                } else if (desired != CMolInfo::eCompleteness_unknown) {
                     (*it)->SetMolinfo().SetCompleteness(desired);
                     ChangeMade(CCleanupChange::eChangeMolInfo);
                 }
