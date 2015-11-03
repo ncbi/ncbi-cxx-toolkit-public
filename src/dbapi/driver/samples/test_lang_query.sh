@@ -62,8 +62,8 @@ RunSimpleTest()
     # echo
     (
         cd $1 > /dev/null 2>&1
-        # run_sybase_app.sh $cmd > $res_file 2>&1
-        run_sybase_app.sh $cmd > /dev/null 2> $res_file
+        run_sybase_app.sh $cmd > $res_file 2>&1
+        # run_sybase_app.sh $cmd > /dev/null 2> $res_file
     )
 
     if test $? -eq 0 ; then
@@ -113,7 +113,8 @@ RunTest2()
     sql="$1"
 
     # echo
-    run_sybase_app.sh $cmd "$sql" > /dev/null 2> $res_file 
+    run_sybase_app.sh $cmd "$sql" > $res_file 2>&1
+    # run_sybase_app.sh $cmd "$sql" > /dev/null 2> $res_file
 
     if test $? -eq 0 ; then
         # echo "OK:"
