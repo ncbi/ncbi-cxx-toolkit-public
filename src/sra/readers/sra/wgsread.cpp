@@ -219,21 +219,6 @@ CWGSGiResolver::TAccessionList CWGSGiResolver::FindAll(TGi gi) const
 }
 
 
-string CWGSGiResolver::Find(TGi gi) const
-{
-    string ret;
-    CMutexGuard guard(m_Mutex);
-    for ( TIndex::const_iterator it(m_Index.m_Index.begin(CRange<TIntId>(gi, gi))); it; ++it ) {
-        if ( !ret.empty() ) {
-            NCBI_THROW_FMT(CSraException, eOtherError,
-                           "more than one WGS accession can contain gi "<<gi);
-        }
-        ret = it->second.acc;
-    }
-    return ret;
-}
-
-
 CWGSGiResolver::TIdRanges CWGSGiResolver::GetIdRanges(void) const
 {
     TIdRanges ret;
@@ -371,6 +356,7 @@ CWGSProtAccResolver::SAccInfo::SAccInfo(CTempString acc, Uint4& id)
         ++prefix;
     }
     if ( prefix == acc.size() || prefix == 0 || acc.size()-prefix > 9 ) {
+        // no prefix, or no digits, or too many digits
         return;
     }
     Uint4 v = 0;
@@ -383,6 +369,7 @@ CWGSProtAccResolver::SAccInfo::SAccInfo(CTempString acc, Uint4& id)
     }
     id = v;
     m_AccPrefix = acc.substr(0, prefix);
+    NStr::ToUpper(m_AccPrefix);
     m_IdLength = Uint4(acc.size());
 }
 
@@ -412,21 +399,6 @@ CWGSProtAccResolver::FindAll(const string& acc) const
                 ret.push_back(it2->second.acc);
             }
         }
-    }
-    return ret;
-}
-
-
-string CWGSProtAccResolver::Find(const string& acc) const
-{
-    string ret;
-    CWGSProtAccResolver::TAccessionList accs = FindAll(acc);
-    if ( !accs.empty() ) {
-        if ( accs.size() > 1 ) {
-            NCBI_THROW_FMT(CSraException, eOtherError,
-                           "more than one WGS accession can contain protein "<<acc);
-        }
-        ret = *accs.begin();
     }
     return ret;
 }
@@ -484,6 +456,8 @@ struct CWGSDb_Impl::SSeqTableCursor : public CObject {
     DECLARE_VDB_COLUMN_AS(TVDBRowId, FEAT_ROW_START);
     DECLARE_VDB_COLUMN_AS(TVDBRowId, FEAT_ROW_END);
     DECLARE_VDB_COLUMN_AS(TVDBRowId, FEAT_PRODUCT_ROW_ID);
+    typedef pair<TVDBRowId, TVDBRowId> row_range_t;
+    DECLARE_VDB_COLUMN_AS(row_range_t, CONTIG_NAME_ROW_RANGE);
 };
 
 
@@ -514,7 +488,8 @@ CWGSDb_Impl::SSeqTableCursor::SSeqTableCursor(const CVDBTable& table)
       INIT_OPTIONAL_VDB_COLUMN(HASH),
       INIT_OPTIONAL_VDB_COLUMN(FEAT_ROW_START),
       INIT_OPTIONAL_VDB_COLUMN(FEAT_ROW_END),
-      INIT_OPTIONAL_VDB_COLUMN(FEAT_PRODUCT_ROW_ID)
+      INIT_OPTIONAL_VDB_COLUMN(FEAT_PRODUCT_ROW_ID),
+      INIT_OPTIONAL_VDB_COLUMN(CONTIG_NAME_ROW_RANGE)
 {
 }
 
@@ -672,10 +647,10 @@ CWGSDb_Impl::CWGSDb_Impl(CVDBMgr& mgr,
       m_ScfTableIsOpened(false),
       m_ProtTableIsOpened(false),
       m_GiIdxTableIsOpened(false),
-      m_ProtAccIndexIsOpened(false),
-      m_ContigNameIndexIsOpened(false),
-      m_ScaffoldNameIndexIsOpened(false),
-      m_ProteinNameIndexIsOpened(false),
+      m_ProtAccIndexIsOpened(0),
+      m_ContigNameIndexIsOpened(0),
+      m_ScaffoldNameIndexIsOpened(0),
+      m_ProteinNameIndexIsOpened(0),
       m_IsSetMasterDescr(false)
 {
     x_InitIdParams();
@@ -812,6 +787,9 @@ void CWGSDb_Impl::x_InitIdParams(void)
 string CWGSDb_Impl::NormalizePathOrAccession(CTempString path_or_acc,
                                              CTempString vol_path)
 {
+    if ( path_or_acc == "JYIY01" ) {
+        return "/home/dondosha/TEST/JYIY01";
+    }
     if ( !vol_path.empty() ) {
         list<CTempString> dirs;
         NStr::Split(vol_path, ":", dirs);
@@ -845,8 +823,8 @@ string CWGSDb_Impl::NormalizePathOrAccession(CTempString path_or_acc,
 
 inline
 void CWGSDb_Impl::OpenTable(CVDBTable& table,
-                            const char* table_name,
-                            volatile bool& table_is_opened)
+                            volatile bool& table_is_opened,
+                            const char* table_name)
 {
     CFastMutexGuard guard(m_TableMutex);
     if ( !table_is_opened ) {
@@ -859,82 +837,86 @@ void CWGSDb_Impl::OpenTable(CVDBTable& table,
 inline
 void CWGSDb_Impl::OpenIndex(const CVDBTable& table,
                             CVDBTableIndex& index,
+                            volatile Int1& index_is_opened,
                             const char* index_name,
-                            volatile bool& index_is_opened)
+                            const char* backup_index_name)
 {
     if ( table ) {
         CFastMutexGuard guard(m_TableMutex);
         if ( !index_is_opened ) {
+            Int1 type = -1;
             index = CVDBTableIndex(table, index_name,
                                    CVDBTableIndex::eMissing_Allow);
-            index_is_opened = true;
+            if ( index ) {
+                type = 1;
+            }
+            else if ( backup_index_name ) {
+                index = CVDBTableIndex(table, backup_index_name,
+                                       CVDBTableIndex::eMissing_Allow);
+                if ( index ) {
+                    type = 2;
+                }
+            }
+            index_is_opened = type;
         }
     }
     else {
-        index_is_opened = true;
+        index_is_opened = -1;
     }
 }
 
 
 void CWGSDb_Impl::OpenScfTable(void)
 {
-    OpenTable(m_ScfTable, "SCAFFOLD", m_ScfTableIsOpened);
+    OpenTable(m_ScfTable, m_ScfTableIsOpened, "SCAFFOLD");
 }
 
 
 void CWGSDb_Impl::OpenProtTable(void)
 {
-    OpenTable(m_ProtTable, "PROTEIN", m_ProtTableIsOpened);
+    OpenTable(m_ProtTable, m_ProtTableIsOpened, "PROTEIN");
 }
 
 
 void CWGSDb_Impl::OpenFeatTable(void)
 {
-    OpenTable(m_FeatTable, "FEATURE", m_FeatTableIsOpened);
+    OpenTable(m_FeatTable, m_FeatTableIsOpened, "FEATURE");
 }
 
 
 void CWGSDb_Impl::OpenGiIdxTable(void)
 {
-    OpenTable(m_GiIdxTable, "GI_IDX", m_GiIdxTableIsOpened);
+    OpenTable(m_GiIdxTable, m_GiIdxTableIsOpened, "GI_IDX");
 }
 
 
 void CWGSDb_Impl::OpenContigNameIndex(void)
 {
-    OpenIndex(SeqTable(), m_ContigNameIndex, "contig_name", m_ContigNameIndexIsOpened);
+    OpenIndex(SeqTable(), m_ContigNameIndex, m_ContigNameIndexIsOpened,
+              "contig_name_uc", "contig_name");
 }
 
 
 void CWGSDb_Impl::OpenScaffoldNameIndex(void)
 {
-    OpenIndex(ScfTable(), m_ScaffoldNameIndex, "scaffold_name", m_ScaffoldNameIndexIsOpened);
+    OpenIndex(ScfTable(), m_ScaffoldNameIndex, m_ScaffoldNameIndexIsOpened,
+              "scaffold_name_uc", "scaffold_name");
 }
 
 
 void CWGSDb_Impl::OpenProteinNameIndex(void)
 {
-    OpenIndex(ProtTable(), m_ProteinNameIndex, "protein_name", m_ProteinNameIndexIsOpened);
+    OpenIndex(ProtTable(), m_ProteinNameIndex, m_ProteinNameIndexIsOpened,
+              "protein_name_uc", "protein_name");
 }
 
 
 void CWGSDb_Impl::OpenProtAccIndex(void)
 {
-    OpenIndex(ProtTable(), m_ProtAccIndex, "gb_accession", m_ProtAccIndexIsOpened);
+    OpenIndex(ProtTable(), m_ProtAccIndex, m_ProtAccIndexIsOpened,
+              "gb_accession");
 }
 
-/*
-void CWGSDb_Impl::OpenFeatLocIndex(void)
-{
-    OpenIndex(FeatTable(), m_FeatLocIndex, "loc_accession", m_FeatLocIndexIsOpened);
-}
-
-
-void CWGSDb_Impl::OpenFeatProductIndex(void)
-{
-    OpenIndex(FeatTable(), m_FeatProductIndex, "product_accession", m_FeatProductIndexIsOpened);
-}
-*/
 
 pair<TVDBRowId, char> CWGSDb_Impl::ParseRowType(CTempString acc,
                                                 TAllowRowType allow_type) const
@@ -1480,14 +1462,14 @@ pair<TVDBRowId, bool> CWGSDb_Impl::GetGiRowId(TGi gi)
         if ( idx->m_NUC_ROW_ID ) {
             CVDBValueFor<TVDBRowId> value =
                 idx->NUC_ROW_ID(row_id, CVDBValue::eMissing_Allow);
-            if ( value.data() ) {
+            if ( !value.empty() ) {
                 ret.first = *value;
             }
         }
         if ( !ret.first && idx->m_PROT_ROW_ID ) {
             CVDBValueFor<TVDBRowId> value =
                 idx->PROT_ROW_ID(row_id, CVDBValue::eMissing_Allow);
-            if ( value.data() ) {
+            if ( !value.empty() ) {
                 ret.first = *value;
             }
         }
@@ -1505,7 +1487,7 @@ TVDBRowId CWGSDb_Impl::GetNucGiRowId(TGi gi)
         if ( idx->m_NUC_ROW_ID ) {
             CVDBValueFor<TVDBRowId> value =
                 idx->NUC_ROW_ID(row_id, CVDBValue::eMissing_Allow);
-            if ( value.data() ) {
+            if ( !value.empty() ) {
                 ret = *value;
             }
         }
@@ -1523,7 +1505,7 @@ TVDBRowId CWGSDb_Impl::GetProtGiRowId(TGi gi)
         if ( idx->m_PROT_ROW_ID ) {
             CVDBValueFor<TVDBRowId> value =
                 idx->PROT_ROW_ID(row_id, CVDBValue::eMissing_Allow);
-            if ( value.data() ) {
+            if ( !value.empty() ) {
                 ret = *value;
             }
         }
@@ -1533,43 +1515,63 @@ TVDBRowId CWGSDb_Impl::GetProtGiRowId(TGi gi)
 }
 
 
-TVDBRowId CWGSDb_Impl::GetContigNameRowId(const string& name)
+inline
+TVDBRowId CWGSDb_Impl::Lookup(const string& name,
+                              const CVDBTableIndex& index,
+                              bool upcase)
 {
-    if ( const CVDBTableIndex& index = ContigNameIndex() ) {
+    if ( !index ) {
+        return 0;
+    }
+    if ( upcase && !NStr::IsUpper(name) ) {
+        // upcase
+        string tmp = name;
+        TVDBRowIdRange range = index.Find(NStr::ToUpper(tmp));
+        return range.second? range.first: 0;
+    }
+    else {
         TVDBRowIdRange range = index.Find(name);
         return range.second? range.first: 0;
     }
-    return 0;
+}
+
+
+TVDBRowId CWGSDb_Impl::GetContigNameRowId(const string& name)
+{
+    if ( 0 ) {
+        SSeqTableCursor::row_range_t range;
+        CRef<SSeqTableCursor> seq = Seq();
+        if ( seq->m_CONTIG_NAME_ROW_RANGE ) {
+            seq->m_Cursor.SetParam("CONTIG_NAME_QUERY", name);
+            range = *seq->CONTIG_NAME_ROW_RANGE(1);
+            LOG_POST("range("<<name<<"): "<<range.first<<"-"<<range.second);
+        }
+        Put(seq);
+        return 0;
+    }
+    const CVDBTableIndex& index = ContigNameIndex();
+    return Lookup(name, index, m_ContigNameIndexIsOpened == 1);
 }
 
 
 TVDBRowId CWGSDb_Impl::GetScaffoldNameRowId(const string& name)
 {
-    if ( const CVDBTableIndex& index = ScaffoldNameIndex() ) {
-        TVDBRowIdRange range = index.Find(name);
-        return range.second? range.first: 0;
-    }
-    return 0;
+    const CVDBTableIndex& index = ScaffoldNameIndex();
+    return Lookup(name, index, m_ScaffoldNameIndexIsOpened == 1);
 }
 
 
 TVDBRowId CWGSDb_Impl::GetProteinNameRowId(const string& name)
 {
-    if ( const CVDBTableIndex& index = ProteinNameIndex() ) {
-        TVDBRowIdRange range = index.Find(name);
-        return range.second? range.first: 0;
-    }
-    return 0;
+    const CVDBTableIndex& index = ProteinNameIndex();
+    return Lookup(name, index, m_ProteinNameIndexIsOpened == 1);
 }
 
 
 TVDBRowId CWGSDb_Impl::GetProtAccRowId(const string& acc)
 {
-    if ( const CVDBTableIndex& index = ProtAccIndex() ) {
-        TVDBRowIdRange range = index.Find(acc);
-        return range.second? range.first: 0;
-    }
-    return 0;
+    const CVDBTableIndex& index = ProtAccIndex();
+    return Lookup(acc, index, true);
 }
 
 
@@ -1775,7 +1777,8 @@ bool CWGSSeqIterator::HasGi(void) const
 CSeq_id::TGi CWGSSeqIterator::GetGi(void) const
 {
     x_CheckValid("CWGSSeqIterator::GetGi");
-    return s_ToGi(*m_Cur->GI(m_CurrId), "CWGSSeqIterator::GetGi()");
+    CVDBValueFor<NCBI_gi> gi = m_Cur->GI(m_CurrId);
+    return gi.empty()? ZERO_GI: s_ToGi(*gi, "CWGSSeqIterator::GetGi()");
 }
 
 
@@ -1900,7 +1903,7 @@ TSeqPos CWGSSeqIterator::GetSeqLength(EClipType clip_type) const
 }
 
 
-CRef<CSeq_id> CWGSSeqIterator::GetRefId(TFlags flags) const
+CRef<CSeq_id> CWGSSeqIterator::GetId(TFlags flags) const
 {
     if ( flags & fIds_gi ) {
         // gi
@@ -1924,7 +1927,7 @@ CRef<CSeq_id> CWGSSeqIterator::GetRefId(TFlags flags) const
     }
     
     NCBI_THROW_FMT(CSraException, eDataError,
-                   "CWGSSeqIterator::GetRefId("<<flags<<"): "
+                   "CWGSSeqIterator::GetId("<<flags<<"): "
                    "no valid id found: "<<
                    GetDb().m_IdPrefixWithVersion<<"/"<<m_CurrId);
 }
@@ -2095,7 +2098,7 @@ void CWGSSeqIterator::GetQualityAnnot(TAnnotSet& annot_set,
     CRef<CSeq_graph> graph(new CSeq_graph);
     graph->SetTitle("Phrap Quality");
     CSeq_interval& loc = graph->SetLoc().SetInt();
-    loc.SetId(*GetRefId(flags));
+    loc.SetId(*GetId(flags));
     loc.SetFrom(0);
     loc.SetTo(TSeqPos(size-1));
     graph->SetNumval(TSeqPos(size));
@@ -3572,7 +3575,7 @@ bool CWGSGiIterator::x_Excluded(void)
     if ( m_FilterSeqType != eProt && m_Cur->m_NUC_ROW_ID ) {
         CVDBValueFor<TVDBRowId> value =
             m_Cur->NUC_ROW_ID(TIntId(m_CurrGi), CVDBValue::eMissing_Allow);
-        if ( value.data() ) {
+        if ( !value.empty() ) {
             m_CurrRowId = *value;
             if ( m_CurrRowId ) {
                 m_CurrSeqType = eNuc;
@@ -3583,7 +3586,7 @@ bool CWGSGiIterator::x_Excluded(void)
     if ( m_FilterSeqType != eNuc && m_Cur->m_PROT_ROW_ID ) {
         CVDBValueFor<TVDBRowId> value =
             m_Cur->PROT_ROW_ID(TIntId(m_CurrGi), CVDBValue::eMissing_Allow);
-        if ( value.data() ) {
+        if ( !value.empty() ) {
             m_CurrRowId = *value;
             if ( m_CurrRowId ) {
                 m_CurrSeqType = eProt;
@@ -3875,8 +3878,8 @@ TVDBRowId CWGSProteinIterator::GetProductFeatRowId(void) const
     if ( !m_Cur->m_FEAT_PRODUCT_ROW_ID ) {
         return 0;
     }
-
-    return *m_Cur->FEAT_PRODUCT_ROW_ID(m_CurrId);
+    CVDBValueFor<TVDBRowId> row = m_Cur->FEAT_PRODUCT_ROW_ID(m_CurrId);
+    return row.empty()? 0: *row;
 }
 
 
@@ -4149,7 +4152,8 @@ TVDBRowId CWGSFeatureIterator::GetLocRowId(void) const
 TVDBRowId CWGSFeatureIterator::GetProductRowId(void) const
 {
     x_CheckValid("CWGSFeatureIterator::GetProductRowId");
-    return *m_Cur->PRODUCT_ROW_ID(m_CurrId);
+    CVDBValueFor<TVDBRowId> row = m_Cur->PRODUCT_ROW_ID(m_CurrId);
+    return row.empty()? 0: *row;
 }
 
 

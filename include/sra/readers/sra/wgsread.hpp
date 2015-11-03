@@ -114,11 +114,6 @@ public:
     typedef vector<string> TAccessionList;
     TAccessionList FindAll(TGi gi) const;
 
-    // return single WGS accession that could contain gi
-    // return empty string if there are no accession candidates
-    // throw an exception if there are more than one candidate
-    string Find(TGi gi) const;
-
     // return unordered list of WGS accessions and GI ranges
     typedef pair<TIntId, TIntId> TIdRange;
     typedef pair<string, TIdRange> TIdRangePair;
@@ -217,11 +212,6 @@ public:
     // return all WGS accessions that could contain protein accession
     typedef vector<string> TAccessionList;
     TAccessionList FindAll(const string& acc) const;
-
-    // return single WGS accession that could contain protein accession
-    // return empty string if there are no accession candidates
-    // throw an exception if there are more than one candidate
-    string Find(const string& acc) const;
 
     // return unordered list of WGS accessions and GI ranges
     typedef pair<string, string> TIdRange;
@@ -407,24 +397,6 @@ protected:
     // SIdsTableCursor is helper accessor structure for SEQUENCE table
     struct SIdxTableCursor;
 
-    // open tables
-    void OpenTable(CVDBTable& table,
-                   const char* table_name,
-                   volatile bool& table_is_opened);
-    void OpenIndex(const CVDBTable& table,
-                   CVDBTableIndex& index,
-                   const char* index_name,
-                   volatile bool& index_is_opened);
-
-    void OpenScfTable(void);
-    void OpenProtTable(void);
-    void OpenFeatTable(void);
-    void OpenGiIdxTable(void);
-    void OpenProtAccIndex(void);
-    void OpenContigNameIndex(void);
-    void OpenScaffoldNameIndex(void);
-    void OpenProteinNameIndex(void);
-
     const CVDBTable& SeqTable(void) {
         return m_SeqTable;
     }
@@ -476,7 +448,7 @@ protected:
         }
         return m_ProteinNameIndex;
     }
-    
+
     // get table accessor object for exclusive access
     CRef<SSeqTableCursor> Seq(TVDBRowId row = 0);
     CRef<SScfTableCursor> Scf(TVDBRowId row = 0);
@@ -491,6 +463,29 @@ protected:
     void Put(CRef<SIdxTableCursor>& curs, TVDBRowId row = 0);
 
 protected:
+    // open tables
+    void OpenTable(CVDBTable& table,
+                   volatile bool& table_is_opened,
+                   const char* table_name);
+    void OpenIndex(const CVDBTable& table,
+                   CVDBTableIndex& index,
+                   volatile Int1& index_is_opened,
+                   const char* index_name,
+                   const char* backup_index_name = 0);
+
+    void OpenScfTable(void);
+    void OpenProtTable(void);
+    void OpenFeatTable(void);
+    void OpenGiIdxTable(void);
+    void OpenProtAccIndex(void);
+    void OpenContigNameIndex(void);
+    void OpenScaffoldNameIndex(void);
+    void OpenProteinNameIndex(void);
+
+    TVDBRowId Lookup(const string& name,
+                     const CVDBTableIndex& index,
+                     bool upcase);
+
     void x_InitIdParams(void);
     void x_LoadMasterDescr(int filter);
 
@@ -511,10 +506,10 @@ private:
     volatile bool m_ProtTableIsOpened;
     volatile bool m_FeatTableIsOpened;
     volatile bool m_GiIdxTableIsOpened;
-    volatile bool m_ProtAccIndexIsOpened;
-    volatile bool m_ContigNameIndexIsOpened;
-    volatile bool m_ScaffoldNameIndexIsOpened;
-    volatile bool m_ProteinNameIndexIsOpened;
+    volatile Int1 m_ProtAccIndexIsOpened;
+    volatile Int1 m_ContigNameIndexIsOpened;
+    volatile Int1 m_ScaffoldNameIndexIsOpened;
+    volatile Int1 m_ProteinNameIndexIsOpened;
     CVDBTable m_ScfTable;
     CVDBTable m_ProtTable;
     CVDBTable m_FeatTable;
@@ -842,7 +837,7 @@ public:
     };
     typedef int TFlags;
 
-    CRef<CSeq_id> GetRefId(TFlags flags = fDefaultFlags) const;
+    CRef<CSeq_id> GetId(TFlags flags = fDefaultFlags) const;
     void GetIds(CBioseq::TId& ids, TFlags flags = fDefaultFlags) const;
 
     // Return descr binary byte sequence as is
@@ -1128,7 +1123,6 @@ public:
 
     CTempString GetAccession(void) const;
     int GetAccVersion(void) const;
-    CTempString GetAccName(void) const;
 
     CRef<CSeq_id> GetAccSeq_id(void) const;
     CRef<CSeq_id> GetGiSeq_id(void) const;
@@ -1164,6 +1158,8 @@ public:
     typedef int TFlags;
 
     void GetIds(CBioseq::TId& ids, TFlags flags = fDefaultFlags) const;
+
+    // reference protein accession WP_
     bool HasRefAcc(void) const;
     CTempString GetRefAcc(void) const;
 
