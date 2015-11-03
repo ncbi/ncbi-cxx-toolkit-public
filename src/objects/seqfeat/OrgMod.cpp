@@ -41,6 +41,8 @@
 #include <util/line_reader.hpp>
 #include <serial/enumvalues.hpp>
 
+#include <objects/general/general_macros.hpp>
+
 // generated includes
 #include <objects/seqfeat/OrgMod.hpp>
 
@@ -627,7 +629,7 @@ bool s_FixStrainForPrefix(const string& prefix, string& strain)
 }
 
 
-string COrgMod::FixStrain( const string& strain)
+string s_FixOneStrain( const string& strain)
 {
     string new_val = strain;
     if (s_FixStrainForPrefix("ATCC", new_val)) {
@@ -639,6 +641,26 @@ string COrgMod::FixStrain( const string& strain)
         new_val = "";
     }
     return new_val;
+}
+
+
+string COrgMod::FixStrain( const string& strain)
+{
+    string new_val = strain;
+    vector<string> words;
+    vector<string> results;
+    NStr::Tokenize(strain, ";", words);
+    FOR_EACH_STRING_IN_VECTOR(itr, words) {
+        string str = *itr;
+        NStr::TruncateSpacesInPlace(str);
+        string fixed = s_FixOneStrain(str);
+        if (fixed.empty()) {
+            results.push_back (str);
+        } else {
+            results.push_back (fixed);
+        }
+    }
+    return NStr::Join(results,"; ");
 }
 
 
