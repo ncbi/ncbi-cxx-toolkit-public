@@ -11093,6 +11093,7 @@ void CNewCleanup_imp::ResynchPeptidePartials (
     CMolInfo::TCompleteness desired = GetCompletenessFromFlags(partial5, partial3, partial5 || partial3);
 
     bool found = false;
+    bool changed = false;
     if (seq.IsSetDescr()) {
         NON_CONST_ITERATE(CBioseq::TDescr::Tdata, it, seq.SetDescr().Set()) {
             if ((*it)->IsMolinfo()) {
@@ -11100,10 +11101,12 @@ void CNewCleanup_imp::ResynchPeptidePartials (
                     if ((*it)->GetMolinfo().GetCompleteness() != desired) {
                         (*it)->SetMolinfo().SetCompleteness(desired);
                         ChangeMade(CCleanupChange::eChangeMolInfo);
+                        changed = true;
                     }
                 } else if (desired != CMolInfo::eCompleteness_unknown) {
                     (*it)->SetMolinfo().SetCompleteness(desired);
                     ChangeMade(CCleanupChange::eChangeMolInfo);
+                    changed = true;
                 }
                 found = true;
             }
@@ -11117,6 +11120,11 @@ void CNewCleanup_imp::ResynchPeptidePartials (
         new_desc->SetMolinfo().SetTech(CMolInfo::eTech_concept_trans_a);
         seq.SetDescr().Set().push_back(new_desc);
         ChangeMade(CCleanupChange::eAddDescriptor);
+        changed = true;
+    }
+
+    if (changed) {
+        x_AddPartialToProteinTitle(seq);
     }
 }
 
