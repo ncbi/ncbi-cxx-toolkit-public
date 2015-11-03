@@ -92,6 +92,7 @@ public:
         eVal_latlon_check_state      = 0x40000,
         eVal_latlon_ignore_water     = 0x80000,
         eVal_genome_submission       = 0x100000,
+        eVal_do_tax_lookup           = 0x200000,
     };
 
     // Constructor / Destructor

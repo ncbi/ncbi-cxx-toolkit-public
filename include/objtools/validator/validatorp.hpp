@@ -548,6 +548,7 @@ public:
     bool IsIndexerVersion(void)       const { return m_IndexerVersion; }
     bool IsGenomeSubmission(void)     const { return m_genomeSubmission; }
     bool UseEntrez(void)              const { return m_UseEntrez; }
+    bool DoTaxLookup(void)            const { return m_DoTaxLookup; }
     bool ValidateInferenceAccessions(void) const { return m_ValidateInferenceAccessions; }
     bool IgnoreExceptions(void) const { return m_IgnoreExceptions; }
     bool ReportSpliceAsError(void) const { return m_ReportSpliceAsError; }
@@ -785,6 +786,7 @@ private:
     bool m_IgnoreExceptions;             // ignore exceptions when validating translation
     bool m_ValidateInferenceAccessions;  // check that accessions in inferences are valid
     bool m_ReportSpliceAsError;
+    bool m_DoTaxLookup;
 
     // flags calculated by examining data in record
     bool m_IsStandaloneAnnot;

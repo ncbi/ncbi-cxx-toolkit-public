@@ -214,6 +214,7 @@ void CValidError_imp::SetOptions(Uint4 options)
     m_DoRubiscoText = (options & CValidator::eVal_do_rubisco_test) != 0;
     m_IndexerVersion = (options & CValidator::eVal_indexer_version) != 0;
     m_UseEntrez = (options & CValidator::eVal_use_entrez) != 0;
+    m_DoTaxLookup = (options & CValidator::eVal_do_tax_lookup) != 0;
     m_ValidateInferenceAccessions = (options & CValidator::eVal_inference_accns) != 0;
     m_IgnoreExceptions = (options & CValidator::eVal_ignore_exceptions) != 0;
     m_ReportSpliceAsError = (options & CValidator::eVal_report_splice_as_error) != 0;
@@ -1397,7 +1398,7 @@ bool CValidError_imp::Validate
                 *m_TSE);
     }
 
-    if (m_UseEntrez) {
+    if (m_DoTaxLookup) {
         ValidateTaxonomy(*(seh.GetCompleteSeq_entry()));
     }
 

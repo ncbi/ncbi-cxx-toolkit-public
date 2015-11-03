@@ -122,7 +122,7 @@ public:
     unsigned int options = CValidator::eVal_need_isojta \
                           | CValidator::eVal_far_fetch_mrna_products \
 	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version \
-	                      | CValidator::eVal_use_entrez; \
+	                      | CValidator::eVal_do_tax_lookup | CValidator::eVal_use_entrez; \
     vector< CExpectedError *> expected_errors;
 
 #define STANDARD_SETUP_WITH_MOCK_TAXON(replies) \
@@ -136,7 +136,7 @@ public:
     unsigned int options = CValidator::eVal_need_isojta \
                           | CValidator::eVal_far_fetch_mrna_products \
 	                      | CValidator::eVal_validate_id_set | CValidator::eVal_indexer_version \
-	                      | CValidator::eVal_use_entrez; \
+	                      | CValidator::eVal_do_tax_lookup | CValidator::eVal_use_entrez; \
     vector< CExpectedError *> expected_errors;
 
 

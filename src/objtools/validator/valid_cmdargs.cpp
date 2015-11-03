@@ -56,6 +56,7 @@ void CValidatorArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
     argdescr->AddFlag("rubisco", "Look for rubisco abbreviations");
     argdescr->AddFlag("far_fetch_mRNA", "Fetch far mRNA products");
     argdescr->AddFlag("require_taxid", "Require Taxonomy ID on BioSources");
+    argdescr->AddFlag("q", "Taxonomy Lookup");
     argdescr->AddFlag("non_ascii", "Report non-ASCII from reading");
     argdescr->AddFlag("suppress_context", "Suppress context when reporting");
     argdescr->AddFlag("splice_as_error", "Report splice problems as errors");
@@ -114,6 +115,9 @@ int CValidatorArgUtil::ArgsToValidatorOptions(const CArgs& args)
     }
     if (args["require_taxid"]) {
         options |= CValidator::eVal_need_taxid;
+    }
+    if (args["q"]) {
+        options |= CValidator::eVal_do_tax_lookup;
     }
     if (args["non_ascii"]) {
         options |= CValidator::eVal_non_ascii;
