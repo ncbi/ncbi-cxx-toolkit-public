@@ -157,6 +157,8 @@ CTaxon1::Init(const STimeout* timeout, unsigned reconnect_attempts,
 #endif
         pOut.reset( CObjectOStream::Open(m_eDataFormat, *pServer) );
         pIn.reset( CObjectIStream::Open(m_eDataFormat, *pServer) );
+	pOut->FixNonPrint(eFNP_Allow);
+	pIn->FixNonPrint(eFNP_Allow);
 
         req.SetInit();
 
@@ -1621,6 +1623,8 @@ CTaxon1::SendRequest( CTaxon1_req& req, CTaxon1_resp& resp, bool bShouldReconnec
 
                 pOut.reset( CObjectOStream::Open(m_eDataFormat, *pServer) );
                 pIn.reset( CObjectIStream::Open(m_eDataFormat, *pServer) );
+                pOut->FixNonPrint(eFNP_Allow);
+                pIn->FixNonPrint(eFNP_Allow);
                 m_pServer = pServer.release();
                 m_pIn = pIn.release();
                 m_pOut = pOut.release();
