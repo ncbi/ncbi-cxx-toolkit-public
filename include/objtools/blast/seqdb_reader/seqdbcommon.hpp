@@ -112,6 +112,9 @@ enum ESeqDBAllocType {
 };
 
 
+typedef Uint8 TTi;
+
+
 /// CSeqDBGiList
 ///
 /// This class defines an interface to a list of GI,OID pairs.  It is
@@ -146,13 +149,13 @@ public:
         ///
         /// @param ti_in A TI, or 0 if none is available.
         /// @param oid_in An OID, or -1 if none is available.
-        STiOid(Int8 ti_in = 0, int oid_in = -1)
+        STiOid(TTi ti_in = 0, int oid_in = -1)
             : ti(ti_in), oid(oid_in)
         {
         }
 
         /// The TI or 0 if unknown.
-        Int8 ti;
+        TTi ti;
 
         /// The OID or -1 if unknown.
         int oid;
@@ -216,20 +219,20 @@ public:
     bool GiToOid(TGi gi, int & oid, int & index);
 
     /// Test for existence of a TI.
-    bool FindTi(Int8 ti) const;
+    bool FindTi(TTi ti) const;
 
     /// Try to find a TI and return the associated OID.
     /// @param ti The ti for which to search. [in]
     /// @param oid The resulting oid if found. [out]
     /// @return True if the TI was found.
-    bool TiToOid(Int8 ti, int & oid);
+    bool TiToOid(TTi ti, int & oid);
 
     /// Find a TI, returning the index and the associated OID.
     /// @param ti The ti for which to search. [in]
     /// @param oid The resulting oid if found. [out]
     /// @param index The index of this TI (if found). [out]
     /// @return True if the TI was found.
-    bool TiToOid(Int8 ti, int & oid, int & index);
+    bool TiToOid(TTi ti, int & oid, int & index);
 
 
     bool FindSi(const string & si) const;
@@ -377,7 +380,7 @@ public:
     void GetGiList(vector<TGi>& gis) const;
 
     /// Get the ti list
-    void GetTiList(vector<Int8>& tis) const;
+    void GetTiList(vector<TTi>& tis) const;
 
     /// TODO Get the seqid list?
 
@@ -388,7 +391,7 @@ public:
     }
 
     /// Add a new TI to the list.
-    void AddTi(Int8 ti)
+    void AddTi(TTi ti)
     {
         m_TisOids.push_back(ti);
     }
@@ -441,25 +444,25 @@ private:
 };
 
 template < >
-inline int CSeqDBGiList::GetSize<Int8>() const
+inline int CSeqDBGiList::GetSize<TTi>() const
 {
     return (int) m_TisOids.size();
 }
 
 template < >
-inline const Int8 & CSeqDBGiList::GetKey<Int8>(int index) const
+inline const TTi & CSeqDBGiList::GetKey<TTi>(int index) const
 {
     return m_TisOids[index].ti;
 }
 
 template < >
-inline bool CSeqDBGiList::IsValueSet<Int8>(int index) const
+inline bool CSeqDBGiList::IsValueSet<TTi>(int index) const
 {
     return (m_TisOids[index].oid != -1);
 }
 
 template < >
-inline void CSeqDBGiList::SetValue<Int8>(int index, int oid)
+inline void CSeqDBGiList::SetValue<TTi>(int index, int oid)
 {
     m_TisOids[index].oid = oid;
 }
@@ -647,7 +650,7 @@ public:
     }
 
     /// Add a new TI to the list.
-    void AddTi(Int8 ti)
+    void AddTi(TTi ti)
     {
         m_Tis.push_back(ti);
     }
@@ -662,7 +665,7 @@ public:
     bool FindGi(TGi gi);
 
     /// Test for existence of a TI.
-    bool FindTi(Int8 ti);
+    bool FindTi(TTi ti);
 
     /// Test for existence of a TI or GI here and report whether the
     /// ID was one of those types.
@@ -692,7 +695,7 @@ public:
     /// Access an element of the TI array.
     /// @param index The index of the element to access. [in]
     /// @return The TI for that index.
-    Int8 GetTi(int index) const
+    TTi GetTi(int index) const
     {
         return m_Tis[index];
     }
@@ -801,7 +804,7 @@ public:
         m_Gis = new_list;
     }
     /// Build ID set for this negative list.
-    const vector<Int8> & GetTiList()
+    const vector<TTi> & GetTiList()
     {
         return m_Tis;
     }
@@ -815,7 +818,7 @@ protected:
     vector<TGi> m_Gis;
 
     /// TIs to exclude from the SeqDB instance.
-    vector<Int8> m_Tis;
+    vector<TTi> m_Tis;
 
     /// SeqIds to exclude from the SeqDB instance.
     vector<string> m_Sis;
@@ -1145,10 +1148,10 @@ public:
     }
 
     /// Construct from an 'int' set.
-    CSeqDBIdSet_Vector(const vector<int> & ids)
+    CSeqDBIdSet_Vector(const vector<Int4> & ids)
     {
-        ITERATE(vector<int>, iter, ids) {
-            m_Ids.push_back(*iter);
+        ITERATE(vector<Int4>, iter, ids) {
+            m_Ids.push_back((Int8) *iter);
         }
     }
 
@@ -1156,6 +1159,14 @@ public:
     CSeqDBIdSet_Vector(const vector<Int8> & ids)
     {
         m_Ids = ids;
+    }
+
+    /// Construct from an 'Uint8' set.
+    CSeqDBIdSet_Vector(const vector<Uint8> & ids)
+    {
+        ITERATE(vector<Uint8>, iter, ids) {
+            m_Ids.push_back((Int8) *iter);
+        }
     }
 
 #ifdef NCBI_STRICT_GI
@@ -1240,7 +1251,7 @@ public:
     /// @param ids These IDs will be added to the list.
     /// @param t The IDs are assumed to be of this type.
     /// @param positive True for a positive ID list, false for negative.
-    CSeqDBIdSet(const vector<int> & ids, EIdType t, bool positive = true);
+    CSeqDBIdSet(const vector<Int4> & ids, EIdType t, bool positive = true);
 
     /// Build a computed ID list given an initial set of IDs.
     ///
@@ -1253,6 +1264,18 @@ public:
     /// @param t The IDs are assumed to be of this type.
     /// @param positive True for a positive ID list, false for negative.
     CSeqDBIdSet(const vector<Int8> & ids, EIdType t, bool positive = true);
+
+    /// Build a computed ID list given an initial set of IDs.
+    ///
+    /// This initializes a list with an initial set of IDs of the
+    /// specified type.  All further logic operations on the list
+    /// should use vectors of IDs or CSeqDBIdSet objects
+    /// initialized with the same EIdType enumeration.
+    ///
+    /// @param ids These IDs will be added to the list.
+    /// @param t The IDs are assumed to be of this type.
+    /// @param positive True for a positive ID list, false for negative.
+    CSeqDBIdSet(const vector<Uint8> & ids, EIdType t, bool positive = true);
 
 #ifdef NCBI_STRICT_GI
     /// Build a computed ID list given an initial set of IDs.
@@ -1304,6 +1327,21 @@ public:
     /// @param positive If true, ids represent 'negative' ids.
     void Compute(EOperation           op,
                  const vector<Int8> & ids,
+                 bool                 positive = true);
+
+    /// Perform a logical operation on a list.
+    ///
+    /// The logical operation is performed between the current list
+    /// and the ids parameter, and the 'positive' flag is used to
+    /// determine if the new input list should be treated as a
+    /// positive or negative list.  For example, using op == eOr and
+    /// positive == false would perform the operation (X OR NOT Y).
+    ///
+    /// @param op Logical operation to perform.
+    /// @param ids List of ids for the second argument.
+    /// @param positive If true, ids represent 'negative' ids.
+    void Compute(EOperation           op,
+                 const vector<Uint8> & ids,
                  bool                 positive = true);
 
     /// Perform a logical operation on a list.

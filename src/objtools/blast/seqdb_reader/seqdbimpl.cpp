@@ -1813,7 +1813,7 @@ CSeqDBIdSet CSeqDBImpl::GetIdSet()
                 CSeqDBIdSet new_ids(gis, CSeqDBIdSet::eGi);
                 m_IdSet = new_ids;
             } else if (m_UserGiList->GetNumTis()) {
-                vector<Int8> tis;
+                vector<TTi> tis;
                 m_UserGiList->GetTiList(tis);
 
                 CSeqDBIdSet new_ids(tis, CSeqDBIdSet::eTi);
@@ -1821,7 +1821,7 @@ CSeqDBIdSet CSeqDBImpl::GetIdSet()
             }
         } else if (! m_NegativeList.Empty()) {
             const vector<TGi> & ngis = m_NegativeList->GetGiList();
-            const vector<Int8> & ntis = m_NegativeList->GetTiList();
+            const vector<TTi> & ntis = m_NegativeList->GetTiList();
 
             if (! ngis.empty()) {
                 CSeqDBIdSet new_ids(ngis, CSeqDBIdSet::eGi, false);

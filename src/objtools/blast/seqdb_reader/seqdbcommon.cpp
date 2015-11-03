@@ -685,21 +685,21 @@ bool CSeqDBGiList::GiToOid(TGi gi, int & oid, int & index)
 }
 
 
-bool CSeqDBGiList::FindTi(Int8 ti) const
+bool CSeqDBGiList::FindTi(TTi ti) const
 {
     int oid(0), index(0);
     return (const_cast<CSeqDBGiList *>(this))->TiToOid(ti, oid, index);
 }
 
 
-bool CSeqDBGiList::TiToOid(Int8 ti, int & oid)
+bool CSeqDBGiList::TiToOid(TTi ti, int & oid)
 {
     int index(0);
     return TiToOid(ti, oid, index);
 }
 
 
-bool CSeqDBGiList::TiToOid(Int8 ti, int & oid, int & index)
+bool CSeqDBGiList::TiToOid(TTi ti, int & oid, int & index)
 {
     InsureOrder(eGi);  // would assert be better?
 
@@ -707,7 +707,7 @@ bool CSeqDBGiList::TiToOid(Int8 ti, int & oid, int & index)
 
     while(b < e) {
         int m = (b + e)/2;
-        Int8 m_ti = m_TisOids[m].ti;
+        TTi m_ti = m_TisOids[m].ti;
 
         if (m_ti < ti) {
             b = m + 1;
@@ -774,7 +774,7 @@ CSeqDBGiList::GetGiList(vector<TGi>& gis) const
 
 
 void
-CSeqDBGiList::GetTiList(vector<Int8>& tis) const
+CSeqDBGiList::GetTiList(vector<TTi>& tis) const
 {
     tis.clear();
     tis.reserve(GetNumTis());
@@ -1283,7 +1283,7 @@ void SeqDB_ReadMemoryMixList(const char * fbeginp,
                 sis.push_back(NStr::ToLower(str_id));
             }
             else if (eTiId == id_type) {
-            	tis.push_back(num_id);
+            	tis.push_back((TTi) num_id);
             }
             else if (eGiId == id_type) {
             	gis.push_back(GI_FROM(Int8, num_id));
@@ -1409,7 +1409,7 @@ bool CSeqDBNegativeList::FindGi(TGi gi)
 }
 
 
-bool CSeqDBNegativeList::FindTi(Int8 ti)
+bool CSeqDBNegativeList::FindTi(TTi ti)
 {
     InsureOrder();
 
@@ -1417,7 +1417,7 @@ bool CSeqDBNegativeList::FindTi(Int8 ti)
 
     while(b < e) {
         int m = (b + e)/2;
-        Int8 m_ti = m_Tis[m];
+        TTi m_ti = m_Tis[m];
 
         if (m_ti < ti) {
             b = m + 1;
@@ -1466,9 +1466,9 @@ bool CSeqDBGiList::FindId(const CSeq_id & id)
     } else if (id.IsGeneral() && id.GetGeneral().GetDb() == "ti") {
         const CObject_id & obj = id.GetGeneral().GetTag();
 
-        Int8 ti = (obj.IsId()
-                   ? obj.GetId()
-                   : NStr::StringToInt8(obj.GetStr()));
+        TTi ti = (obj.IsId()
+                   ? (TTi) obj.GetId()
+                   : (TTi) NStr::StringToInt8(obj.GetStr()));
 
         return FindTi(ti);
     } else {
@@ -1701,13 +1701,19 @@ CIntersectionGiList::CIntersectionGiList(CSeqDBNegativeList & neg_gilist, vector
 }
 
 
-CSeqDBIdSet::CSeqDBIdSet(const vector<int> & ids, EIdType t, bool positive)
+CSeqDBIdSet::CSeqDBIdSet(const vector<Int4> & ids, EIdType t, bool positive)
     : m_Positive(positive), m_IdType(t), m_Ids(new CSeqDBIdSet_Vector(ids))
 {
     x_SortAndUnique(m_Ids->Set());
 }
 
 CSeqDBIdSet::CSeqDBIdSet(const vector<Int8> & ids, EIdType t, bool positive)
+    : m_Positive(positive), m_IdType(t), m_Ids(new CSeqDBIdSet_Vector(ids))
+{
+    x_SortAndUnique(m_Ids->Set());
+}
+
+CSeqDBIdSet::CSeqDBIdSet(const vector<Uint8> & ids, EIdType t, bool positive)
     : m_Positive(positive), m_IdType(t), m_Ids(new CSeqDBIdSet_Vector(ids))
 {
     x_SortAndUnique(m_Ids->Set());
@@ -1884,7 +1890,7 @@ x_BooleanSetOperation(EOperation           op,
 }
 
 void CSeqDBIdSet::Compute(EOperation          op,
-                          const vector<int> & ids,
+                          const vector<Int4> & ids,
                           bool                positive)
 {
     CRef<CSeqDBIdSet_Vector> result(new CSeqDBIdSet_Vector);
@@ -1909,6 +1915,29 @@ void CSeqDBIdSet::Compute(EOperation          op,
 
 void CSeqDBIdSet::Compute(EOperation           op,
                           const vector<Int8> & ids,
+                          bool                 positive)
+{
+    CRef<CSeqDBIdSet_Vector> result(new CSeqDBIdSet_Vector);
+
+    CRef<CSeqDBIdSet_Vector> B(new CSeqDBIdSet_Vector(ids));
+    x_SortAndUnique(B->Set());
+
+    bool result_pos(true);
+
+    x_BooleanSetOperation(op,
+                          m_Ids->Set(),
+                          m_Positive,
+                          B->Set(),
+                          positive,
+                          result->Set(),
+                          result_pos);
+
+    m_Positive = result_pos;
+    m_Ids = result;
+}
+
+void CSeqDBIdSet::Compute(EOperation           op,
+                          const vector<Uint8> & ids,
                           bool                 positive)
 {
     CRef<CSeqDBIdSet_Vector> result(new CSeqDBIdSet_Vector);
