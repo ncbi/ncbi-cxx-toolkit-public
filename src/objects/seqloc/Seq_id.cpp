@@ -942,20 +942,57 @@ SAccGuide::TAccInfo SAccGuide::Find(TFormatCode fmt,
 }
 
 
+static bool s_IsFileOld(const string& file)
+{
+    static const char vcs_id_start[] = "# $Id: accguide.inc ";
+    if ( !NStr::StartsWith(kBuiltInGuide[0], vcs_id_start) ) {
+        return false;
+    }
+    const char* rev_start = kBuiltInGuide[0] + sizeof(vcs_id_start);
+    const char* date_start = strchr(rev_start, ' ');
+    if (date_start != NULL) {
+        ++date_start;
+    } else {
+        return false;
+    }
+    const char* time_start = strchr(date_start + 1, ' ');
+    if (time_start != NULL) {
+        ++time_start;
+    } else {
+        return false;
+    }
+    const char* time_end = strchr(time_start + 1, ' ');
+    if (time_end == NULL) {
+        return false;
+    }
+    string builtin_timestamp_str(date_start, time_end - date_start);
+    CTime  builtin_timestamp(builtin_timestamp_str, "Y-M-D h:m:sZ");
+    CTime  file_timestamp;
+    CFile(file).GetTime(&file_timestamp);
+    return file_timestamp < builtin_timestamp;
+}
+
+
 SAccGuide::SAccGuide(void)
     : count(0)
 {
+    bool file_is_old = false;
     {{
         string file = g_FindDataFile("accguide.txt");
-        if ( !file.empty() ) {
+        if ( !file.empty()  &&  !(file_is_old = s_IsFileOld(file))) {
             try {
                 x_Load(file);
             } STD_CATCH_ALL_X(1, "SAccGuide::SAccGuide")
         }
     }}
     if (count == 0) {
-        ERR_POST_X(6, Info << "CSeq_id::IdentifyAccession: " // minor lie
-                              "falling back on built-in rules.");
+        if (file_is_old) {
+            ERR_POST_X(12, Info << "CSeq_id::IdentifyAccession: " // minor lie
+                       "using built-in rules because accguide.txt is older.");
+        } else {
+            ERR_POST_X(6, Info << "CSeq_id::IdentifyAccession: "
+                       "falling back on built-in rules.");
+        }
         static const unsigned int kNumBuiltInRules
             = sizeof(kBuiltInGuide) / sizeof(*kBuiltInGuide);
         for (unsigned int i = 0;  i < kNumBuiltInRules;  ++i) {
