@@ -15,4 +15,11 @@ if test -r "$PFILE"; then
     wgs_test -file "$PFILE" -limit_count 1 -scaffold_name scaffold209197004x -contig_name contig209197004_1x -protein_name SEET0368_00020x -protein_acc EDT30481x || err="$?"
     wgs_test -file "$PFILE" -limit_count 1 -check_non_empty_lookup -protein_name SEET0368_00020 -protein_acc EDT30481 || err="$?"
 fi
+PFILE="/home/dondosha/TEST/AAAL02"
+if test -r "$PFILE"; then
+    echo "Testing PROTEIN table in $PFILE"
+    wgs_test -file "$PFILE" -limit_count 1 -contig_name CTG92x -protein_name XFASADRAFT_1728x -protein_acc EAO13866x || err="$?"
+    wgs_test -file "$PFILE" -limit_count 1 -check_non_empty_lookup -contig_name CTG92 -protein_name XFASADRAFT_1728 -protein_acc EAO13866 || err="$?"
+    #wgs_test -file "$PFILE" -limit_count 1 -check_non_empty_lookup -contig_name ctg92 -protein_name XfasaDRAFT_1728 -protein_acc eao13866 || err="$?"
+fi
 exit "$err"
