@@ -4062,7 +4062,20 @@ void CSubSource::FixCapitalization()
         return;
     }
 
-    string new_val = FixCapitalization(GetSubtype(), GetName());
+    TSubtype subtype = GetSubtype();
+
+    if (subtype == CSubSource::eSubtype_sex) {
+        string upr = GetName();
+        string lwr = upr;
+        NStr::ToLower(lwr);
+        if (! NStr::Equal(upr, lwr)) {
+            SetName(lwr);
+        }
+    }
+
+    const string& name = GetName();
+
+    string new_val = FixCapitalization(subtype, name);
 
     if (!NStr::IsBlank(new_val)) {
         SetName(new_val);
@@ -4103,12 +4116,19 @@ void CSubSource::AutoFix()
         return;
     }
 
-    string new_val = AutoFix(GetSubtype(), GetName());
+    TSubtype subtype = GetSubtype();
+    string new_val = AutoFix(subtype, GetName());
 
     if (!NStr::IsBlank(new_val)) {
         SetName(new_val);
+    } else if (subtype == CSubSource::eSubtype_sex) {
+        string upr = GetName();
+        string lwr = upr;
+        NStr::ToLower(lwr);
+        if (! NStr::Equal(upr, lwr)) {
+            SetName(lwr);
+        }
     }
-
 }
    
 
