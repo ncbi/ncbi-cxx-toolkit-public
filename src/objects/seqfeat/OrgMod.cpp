@@ -514,16 +514,12 @@ bool COrgMod::AddStructureToVoucher(string& val, const string& v_type)
 bool 
 COrgMod::FixStructuredVoucher(string& val, const string& v_type)
 {
-    return false;
-#if 0
-    // removed from C Toolkit BasicCleanup
     string inst_code = "";
     string coll_code = "";
     string id = "";
     if (!ParseStructuredVoucher(val, inst_code, coll_code, id)
         || NStr::IsBlank(inst_code)) {
-        //return AddStructureToVoucher(val, v_type);
-        return false;
+        return AddStructureToVoucher(val, v_type);
     }
     bool rval = false;
     bool found = false;
@@ -556,7 +552,6 @@ COrgMod::FixStructuredVoucher(string& val, const string& v_type)
         val = MakeStructuredVoucher(new_inst_code, coll_code, id);
     }
     return rval;
-#endif
 }
 
 
@@ -825,24 +820,6 @@ string COrgMod::AutoFix(TSubtype subtype, const string& value)
 {
     string new_val = "";
     switch (subtype) {
-        case COrgMod::eSubtype_bio_material:
-            new_val = value;
-            if (!FixStructuredVoucher(new_val, "b")) {
-                new_val = "";
-            }
-            break;
-        case COrgMod::eSubtype_culture_collection:
-            new_val = value;
-            if (!FixStructuredVoucher(new_val, "c")) {
-                new_val = "";
-            }
-            break;
-        case COrgMod::eSubtype_specimen_voucher:
-            new_val = value;
-            if (!FixStructuredVoucher(new_val, "s")) {
-                new_val = "";
-            }
-            break;
         case COrgMod::eSubtype_strain:
             new_val = FixStrain(value);
             break;
