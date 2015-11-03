@@ -880,6 +880,39 @@ CConstRef<CUser_object> CWriteUtil::GetModelEvidence(
     return me;
 }
 
+//  -----------------------------------------------------------------------------
+size_t 
+s_CountAccessions(
+    const CUser_field& field)
+//  -----------------------------------------------------------------------------
+{
+    size_t count = 0;
+    if (!field.IsSetData() || !field.GetData().IsFields()) {
+        return 0;
+    }
+
+    //
+    //  Each accession consists of yet another block of "Fields" one of which carries
+    //  a label named "accession":
+    //
+    ITERATE(CUser_field::TData::TFields, it, field.GetData().GetFields()) {
+        const CUser_field& uf = **it;
+        if (uf.CanGetData() && uf.GetData().IsFields()) {
+
+            ITERATE(CUser_field::TData::TFields, it2, uf.GetData().GetFields()) {
+                const CUser_field& inner = **it2;
+                if (inner.IsSetLabel() && inner.GetLabel().IsStr()) {
+                    if (inner.GetLabel().GetStr() == "accession") {
+                        ++count;
+                    }
+                }
+            }
+        }
+    }
+    return count;
+}
+
+
 //  ----------------------------------------------------------------------------
 bool CWriteUtil::GetStringForModelEvidence(
     CMappedFeat mf,
@@ -891,136 +924,148 @@ bool CWriteUtil::GetStringForModelEvidence(
         return false;
     }
 
-    //contig name
-    CConstRef<CUser_field> uf;
-    string meContigName;
-    if (me->HasField("Contig Name")) {
-        uf = &(me->GetField("Contig Name"));
-    }
-    if (uf.NotEmpty()  &&  uf->IsSetData()  &&  uf->GetData().IsStr()) {
-        meContigName = uf->GetData().GetStr();
-    }
-
-    //assembly
-    uf.Reset();
-    list<string> meAssembly;
-    if (me->HasField("Assembly")) {
-        uf = &(me->GetField("Assembly"));
-    }
-    if (uf.NotEmpty() && uf->IsSetData() && uf->GetData().IsFields()) {
-        typedef vector< CRef< CUser_field > > TFIELDS;
-        const TFIELDS& fields = uf->GetData().GetFields();
-        for (TFIELDS::const_iterator cit = fields.begin(); cit != fields.end(); ++cit) {
-            const CUser_field& curField = **cit;
-            if (!curField.IsSetLabel()) {
-                continue;
+    size_t numRna(0), numEst(0), numProtein(0), numLongSra(0), 
+        rnaseqBaseCoverage(0), rnaseqBiosamplesIntronsFull(0);
+    string method;
+    const CUser_object::TData& fields = me->GetData();
+    ITERATE(CUser_object::TData, it, fields) {
+        const CUser_field& field = **it;
+        if (!field.IsSetLabel()  ||  !field.GetLabel().IsStr()) {
+            continue;
+        }
+        if (!field.IsSetData()) {
+            continue;
+        }
+        const string& label = field.GetLabel().GetStr();
+        
+        if (label == "Method") {
+            method = field.GetData().GetStr();
+            continue;
+        }
+        if (label == "Counts") {
+            ITERATE(CUser_field::TData::TFields, inner, field.GetData().GetFields()) {
+                const CUser_field& field = **inner;
+                if (!field.IsSetLabel() || !field.GetLabel().IsStr()) {
+                    continue;
+                }
+                if (!field.IsSetData()) {
+                    continue;
+                }
+                const string& label = field.GetLabel().GetStr();
+                if (label == "mRNA") {
+                    numRna = field.GetData().GetInt();
+                    continue;
+                }
+                if (label == "EST") {
+                    numEst = field.GetData().GetInt();
+                    continue;
+                }
+                if (label == "Protein") {
+                    numProtein = field.GetData().GetInt();
+                    continue;
+                }
+                if (label == "long SRA read") {
+                    numLongSra = field.GetData().GetInt();
+                    continue;
+                }
             }
-            if (!curField.GetLabel().IsStr()) {
-                continue;
+        }
+        if (label == "mRNA") {
+            numRna = s_CountAccessions(field);
+            continue;
+        }
+        if (label == "EST") {
+            numEst = s_CountAccessions(field);
+            continue;
+        }
+        if (label == "Protein") {
+            numProtein = s_CountAccessions(field);
+            continue;
+        }
+        if (label == "long SRA read") {
+            numLongSra = s_CountAccessions(field);
+            continue;
+        }
+        if (label == "rnaseq_base_coverage") {
+            if (field.CanGetData()  &&  field.GetData().IsInt()) {
+                rnaseqBaseCoverage = field.GetData().GetInt();
             }
-            if (curField.GetLabel().GetStr() != "accession") {
-                continue;
+            continue;
+        }
+        if (label == "rnaseq_biosamples_introns_full") {
+            if (field.CanGetData() && field.GetData().IsInt()) {
+                rnaseqBiosamplesIntronsFull = field.GetData().GetInt();
             }
-            if (!curField.GetData().IsStr()) {
-                continue;
-            }
-            meAssembly.push_back(curField.GetData().GetStr());
+            continue;
         }
     }
 
-    //method
-    uf.Reset();
-    string meMethod;
-    if (me->HasField("Method")) {
-        uf = &(me->GetField("Method"));
+    CNcbiOstrstream text;
+    text << "Derived by automated computational analysis";
+    if (!NStr::IsBlank(method)) {
+        text << " using gene prediction method: " << method;
     }
-    if (uf.NotEmpty() && uf->IsSetData() && uf->GetData().IsStr()) {
-        meMethod = uf->GetData().GetStr();
-    }
+    text << ".";
 
-    //mrna, est counts
-    uf.Reset();
-    bool meMrnaEvidence(false), meEstEvidence(false);
-    if (me->HasField("Counts")) {
-        uf = &(me->GetField("Counts"));
-        if (uf->HasField("mRNA")) {
-            meMrnaEvidence = true;
-        }
-        if (uf->HasField("EST")) {
-            meEstEvidence = true;
-        }
+    if (numRna > 0 || numEst > 0 || numProtein > 0 || numLongSra > 0 ||
+        rnaseqBaseCoverage > 0)
+    {
+        text << " Supporting evidence includes similarity to:";
     }
-    if (!meMrnaEvidence  &&  me->HasField("mRNA")) {
-        meMrnaEvidence = true;
-    }
-    if (!meEstEvidence  &&  me->HasField("EST")) {
-        meEstEvidence = true;
-    }
-
-    //gi
-    uf.Reset();
-    if (me->HasField("Contig Gi")) {
-        uf = &(me->GetField("Contig Gi"));
-    }
-
-    //contig span
-    uf.Reset();
-    if (me->HasField("Contig Span")) {
-        uf = &(me->GetField("Contig Span"));
-    }
-
-    CNcbiOstrstream ostrstr;
-    ostrstr << "MODEL REFSEQ:  " << "This record is predicted by "
-        << "automated computational analysis. This record is derived from "
-        << "a genomic sequence (" << meContigName << ")";
-
-    if (!meAssembly.empty()) {
-        //int num_assm = meAssembly.size();
-        ostrstr << " and transcript sequence";
-        if (meAssembly.size() > 1) {
-            ostrstr << "s";
-        }
-        ostrstr << " (";
-        int count = 0;
+    string section_prefix = " ";
+    // The countable section
+    if (numRna > 0 || numEst > 0 || numProtein > 0 || numLongSra > 0)
+    {
+        text << section_prefix;
         string prefix = "";
-        for (list<string>::const_iterator cit = meAssembly.begin(); cit != meAssembly.end(); ++cit) { 
-            ostrstr << prefix << *cit;
-            count++;
-            if (meAssembly.size() == count + 1) {
-                prefix = " and ";
+        if (numRna > 0) {
+            text << prefix << numRna << " mRNA";
+            if (numRna > 1) {
+                text << 's';
             }
-            else {
-                prefix = ", ";
+            prefix = ", ";
+        }
+        if (numEst > 0) {
+            text << prefix << numEst << " EST";
+            if (numEst > 1) {
+                text << 's';
             }
+            prefix = ", ";
         }
-        ostrstr << ")";
+        if (numProtein > 0) {
+            text << prefix << numProtein << " Protein";
+            if (numProtein > 1) {
+                text << 's';
+            }
+            prefix = ", ";
+        }
+        if (numLongSra > 0) {
+            text << prefix << numLongSra << " long SRA read";
+            if (numLongSra > 1) {
+                text << 's';
+            }
+            prefix = ", ";
+        }
+        section_prefix = ", and ";
     }
+    // The RNASeq section
+    if (rnaseqBaseCoverage > 0)
+    {
+        text << section_prefix;
 
-    if (!meMethod.empty()) {
-        ostrstr << " annotated using gene prediction method: " << meMethod;
+        text << rnaseqBaseCoverage << "% coverage of the annotated genomic feature by RNAseq alignments";
+        if (rnaseqBiosamplesIntronsFull > 0) {
+            text << ", including " << rnaseqBiosamplesIntronsFull;
+            text << " sample";
+            if (rnaseqBiosamplesIntronsFull > 1) {
+                text << 's';
+            }
+            text << " with support for all annotated introns";
+        }
+
+        section_prefix = ", and ";
     }
-
-    if (meMrnaEvidence || meEstEvidence) {
-        ostrstr << ", supported by ";
-        if (meMrnaEvidence  &&  meEstEvidence) {
-            ostrstr << "mRNA and EST ";
-        }
-        else if (meMrnaEvidence) {
-            ostrstr << "mRNA ";
-        }
-        else {
-            ostrstr << "EST ";
-        }
-        // !!! for html we need much more !!!
-        ostrstr << "evidence";
-    }
-
-    const char *documentation_str = "Documentation";
-
-    ostrstr << ".~Also see:~"
-        << "    " << documentation_str << " of NCBI's Annotation Process~    ";
-
-    mestr = CNcbiOstrstreamToString(ostrstr);
+    mestr = CNcbiOstrstreamToString(text);
     return true;
 }
 
