@@ -1452,8 +1452,9 @@ s_GetKeyCacheData(Uint2 time_bucket, const string& key, bool need_create)
             data = &*it;
         }
     }
-    if (data)
-        data->ref_cnt.Add(1);
+    if (data) {
+        CNCBlobStorage::ReferenceCacheData(data);
+    }
     cache->lock.Unlock();
     return data;
 }
@@ -2196,7 +2197,7 @@ CNCBlobStorage::ChangeCacheDeadTime(SNCCacheData* cache_data)
     if (cache_data->saved_dead_time != 0) {
         table->time_map.erase(table->time_map.iterator_to(*cache_data));
         AtomicSub(s_CurBlobsCnt, 1);
-        if (CNCBlobStorage::IsDraining() && s_CurBlobsCnt == 0) {
+        if (CNCBlobStorage::IsDraining() && s_CurBlobsCnt <= 0) {
             CTaskServer::RequestShutdown(eSrvSlowShutdown);
         }
     }
@@ -2322,7 +2323,7 @@ CNCBlobStorage::SetDraining(bool draining)
 {
     s_Draining = draining;
     if (draining) {
-        if (s_CurBlobsCnt == 0) {
+        if (s_CurBlobsCnt <= 0) {
             CTaskServer::RequestShutdown(eSrvSlowShutdown);
         }
     }

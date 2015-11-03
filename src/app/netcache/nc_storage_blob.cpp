@@ -657,6 +657,7 @@ CNCBlobVerManager::CNCBlobVerManager(Uint2         time_bucket,
     s_all_VerManager.insert(this);
     s_all_ver_lock.Unlock();
 #endif
+    CNCBlobStorage::ReferenceCacheData(cache_data);
 }
 
 CNCBlobVerManager::~CNCBlobVerManager(void)
@@ -698,7 +699,6 @@ CNCBlobVerManager::Get(Uint2         time_bucket,
         cache_data->ver_mgr = mgr;
         mgr->AddReference();
         s_AddCurrentMem(kVerManagerSize);
-        CNCBlobStorage::ReferenceCacheData(cache_data);
     }
     cache_data->lock.Unlock();
 
@@ -751,6 +751,7 @@ CNCAlerts::Register(CNCAlerts::eDebugCacheDeleted2,"x_ReleaseMgr");
 
     m_CacheData->lock.Unlock();
     CNCBlobStorage::ReleaseCacheData(m_CacheData);
+    m_CacheData = nullptr;
     m_CurVerReader->Terminate();
     m_CurVerReader = nullptr;
     Terminate();
