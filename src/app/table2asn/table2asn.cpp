@@ -353,6 +353,8 @@ void CTbl2AsnApp::Init(void)
     arg_desc->AddFlag("avoid-submit", "Avoid submit block for optical map");
     arg_desc->AddFlag("map-use-loc", "Optical map: use locations instead of lengths of fragments");
     arg_desc->AddFlag("postprocess-pubs", "Postprocess pubs: convert authors to standard");
+    arg_desc->AddFlag("locus-tag-prefix", "Add prefix to locus tags in annotation files");
+
 
     arg_desc->AddOptionalKey("logfile", "LogFile", "Error Log File", CArgDescriptions::eOutputFile);
     arg_desc->AddFlag("split-logs", "Create unique log file for each output file");
@@ -622,6 +624,9 @@ int CTbl2AsnApp::Run(void)
     if (args["V"])
         m_context.m_validate = args["V"].AsString();
 
+    if (args["locus-tag-prefix"])
+        m_context.m_locus_tag_prefix = args["locus-tag-prefix"].AsString();
+
     if (m_context.m_HandleAsSet)
     {
         if (m_context.m_GenomicProductSet)
@@ -828,8 +833,11 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
     fr.m_replacement_protein = m_replacement_proteins;
 
-    fr.MergeCDSFeatures(*entry);
-    entry->Parentize();
+    if (!m_context.m_delay_genprodset)
+    {
+        fr.MergeCDSFeatures(*entry);
+        entry->Parentize();
+    }
     if (m_possible_proteins.NotEmpty())
         fr.AddProteins(*m_possible_proteins, *entry);
 
@@ -860,14 +868,18 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
     if (!m_context.m_genome_center_id.empty())
     {
-        m_context.MakeGenomeCenterId(entry_edit_handle);
+        //m_context.MakeGenomeCenterId(entry_edit_handle);
     }
 
     fr.MakeGapsFromFeatures(entry_edit_handle);
 
     if (m_context.m_delay_genprodset)
     {
-        m_context.VisitAllFeatures(entry_edit_handle, m_context.MakeDelayGenProdSet);
+        m_context.VisitAllFeatures(entry_edit_handle, m_context.RenameProteinIdsQuals);
+    }
+    else
+    {
+        m_context.VisitAllFeatures(entry_edit_handle, m_context.RemoveProteinIdsQuals);
     }
 
     if (m_context.m_RemotePubLookup)
@@ -903,6 +915,31 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     {
         validator.Cleanup(*entry);
     }
+
+#if 0
+#if 0
+    string dir = m_context.m_ResultsDirectory.empty() ? dir : m_context.m_ResultsDirectory;
+    if (to_write->GetThisTypeInfo()->IsType(CSeq_entry::GetTypeInfo()))
+    {
+        const CSeq_entry* se = (const CSeq_entry*)obj.GetPointer();
+        CFastaOstreamEx ofasta(dir, "aaa");
+        ofasta.Write(entry_edit_handle);
+    }
+    else
+        if (to_write->GetThisTypeInfo()->IsType(CSeq_submit::GetTypeInfo()))
+        {
+        const CSeq_submit* submit = (const CSeq_submit*)obj.GetPointer();
+        const CSeq_entry* se = submit->GetData().GetEntrys().front();
+        CFastaOstreamEx ofasta(dir, "aaa");
+        ofasta.Write(entry_edit_handle);
+        }
+#else
+    string dir = m_context.m_ResultsDirectory.empty() ? dir : m_context.m_ResultsDirectory;
+    CFastaOstreamEx ofasta(dir, "aaa");
+    ofasta.Write(entry_edit_handle);
+#endif
+#endif
+
 
 }
 
@@ -1119,7 +1156,7 @@ void CTbl2AsnApp::ProcessTBLFile(const string& pathname, CSeq_entry& result)
 
     CFeatureTableReader feature_reader(m_logger);
 
-    feature_reader.ReadFeatureTable(result, *reader);
+    feature_reader.ReadFeatureTable(result, *reader, m_context.m_genome_center_id);
 }
 
 void CTbl2AsnApp::ProcessSRCFile(const string& pathname, CSeq_entry& result, const string& opt_map_xml)

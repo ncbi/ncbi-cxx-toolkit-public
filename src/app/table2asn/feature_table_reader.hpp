@@ -32,10 +32,10 @@ public:
 //    as well as converting the sequence or a seq-set into nuc-prot-set
    void MergeCDSFeatures(objects::CSeq_entry& obj);
    void ParseCdregions(objects::CSeq_entry& entry);
-// This method reads 5 column table and attaches these features
+   // This method reads 5 column table and attaches these features
 //    to corresponding sequences
 // This method requires certain postprocessing of plain features added
-   void ReadFeatureTable(objects::CSeq_entry& obj, ILineReader& line_reader);
+   void ReadFeatureTable(objects::CSeq_entry& obj, ILineReader& line_reader, const string& genome_center_id);
    void FindOpenReadingFrame(objects::CSeq_entry& entry) const;
    CRef<objects::CSeq_entry> ReadProtein(ILineReader& line_reader);
    void AddProteins(const objects::CSeq_entry& possible_proteins, objects::CSeq_entry& entry);
@@ -52,6 +52,7 @@ private:
    objects::ILineErrorListener* m_logger;
    int m_local_id_counter;
    bool AddProteinToSeqEntry(const objects::CSeq_entry* protein, objects::CSeq_entry_Handle seh);
+   void MoveCdRegions(objects::CSeq_entry_Handle entry_h, objects::CSeq_annot::TData::TFtable& seq_ftable, objects::CSeq_annot::TData::TFtable& set_ftable);
 };
 
 END_NCBI_SCOPE

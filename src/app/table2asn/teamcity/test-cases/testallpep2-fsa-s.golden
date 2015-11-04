@@ -2338,16 +2338,6 @@ Seq-entry ::= set {
                     fuzz-from lim lt,
                     fuzz-to lim gt
                   },
-                  qual {
-                    {
-                      qual "protein_id",
-                      val "gnl|WGS:AAFI|DDB0216437|gb|EAL73826"
-                    },
-                    {
-                      qual "transcript_id",
-                      val "gnl|WGS:AAFI|DDB0216437_mrna"
-                    }
-                  },
                   dbxref {
                     {
                       db "dictyBase",
@@ -2406,16 +2396,6 @@ Seq-entry ::= set {
                     id local str "DDB0232440",
                     fuzz-from lim lt,
                     fuzz-to lim gt
-                  },
-                  qual {
-                    {
-                      qual "protein_id",
-                      val "gnl|WGS:AAFI|DDB0216438|gb|EAL73827"
-                    },
-                    {
-                      qual "transcript_id",
-                      val "gnl|WGS:AAFI|DDB0216438_mrna"
-                    }
                   },
                   dbxref {
                     {
@@ -2554,16 +2534,6 @@ NNTTGNSSNSKSSSGSNGRSNNFNGSPSNVASGSNNTKSANGTNNRFQKNKK"
                 strand plus,
                 id local str "DDB0232440"
               },
-              qual {
-                {
-                  qual "protein_id",
-                  val "gnl|WGS:AAFI|DDB0216437|gb|EAL73826"
-                },
-                {
-                  qual "transcript_id",
-                  val "gnl|WGS:AAFI|DDB0216437_mrna"
-                }
-              },
               xref {
                 {
                   data prot {
@@ -2599,16 +2569,6 @@ NNTTGNSSNSKSSSGSNGRSNNFNGSPSNVASGSNNTKSANGTNNRFQKNKK"
                 to 4754,
                 strand plus,
                 id local str "DDB0232440"
-              },
-              qual {
-                {
-                  qual "protein_id",
-                  val "gnl|WGS:AAFI|DDB0216438|gb|EAL73827"
-                },
-                {
-                  qual "transcript_id",
-                  val "gnl|WGS:AAFI|DDB0216438_mrna"
-                }
               },
               xref {
                 {

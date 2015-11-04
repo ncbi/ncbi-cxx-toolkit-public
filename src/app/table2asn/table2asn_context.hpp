@@ -93,6 +93,7 @@ public:
     bool   m_handle_as_aa;
     bool   m_handle_as_nuc;
     string m_asn1_suffix;
+    string m_locus_tag_prefix;
 
     CRef<objects::CSeq_descr>  m_descriptors;
     auto_ptr<objects::edit::CRemoteUpdater>   m_remote_updater;
@@ -141,7 +142,8 @@ public:
 
     void MakeGenomeCenterId(objects::CSeq_entry_EditHandle& entry);
     static void MakeGenomeCenterId(CTable2AsnContext& context, objects::CBioseq& bioseq);
-    static void MakeDelayGenProdSet(CTable2AsnContext& context, objects::CSeq_feat& feature);
+    static void RenameProteinIdsQuals(CTable2AsnContext& context, objects::CSeq_feat& feature);
+    static void RemoveProteinIdsQuals(CTable2AsnContext& context, objects::CSeq_feat& feature);
 
     CRef<objects::CSeq_submit> m_submit_template;
     CRef<objects::CSeq_entry>  m_entry_template;

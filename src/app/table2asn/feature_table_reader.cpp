@@ -70,6 +70,8 @@
 #include <objects/seqfeat/Imp_feat.hpp>
 #include <objmgr/annot_ci.hpp>
 #include <objtools/edit/gaps_edit.hpp>
+#include <objtools/edit/cds_fix.hpp>
+#include <objtools/edit/feattable_edit.hpp>
 
 #include "feature_table_reader.hpp"
 
@@ -308,7 +310,7 @@ namespace
 
     CConstRef<CSeq_entry> LocateProtein(CConstRef<CSeq_entry> proteins, const CSeq_feat& feature)
     {
-        if (proteins.NotEmpty())
+        if (proteins.NotEmpty() && feature.IsSetProduct())
         {
             const CSeq_id* id = feature.GetProduct().GetId();
             ITERATE(CSeq_entry::TSet::TSeq_set, it, proteins->GetSet().GetSeq_set())
@@ -459,9 +461,14 @@ CRef<CSeq_entry> CFeatureTableReader::TranslateProtein(CScope& scope, CSeq_entry
     title_desc.Set().SetTitle(title);
 
     string base_name;
-    const string& protein_ids = feature.GetNamedQual("protein_id");
+    const string* protein_ids = &feature.GetNamedQual("protein_id");
 
-    if (protein_ids.empty())
+    if (protein_ids == 0 || protein_ids->empty())
+    {
+        protein_ids = &feature.GetNamedQual("orig_protein_id");
+    }
+
+    if (protein_ids->empty())
     {
         if (feature.IsSetProduct())
         {
@@ -493,7 +500,7 @@ CRef<CSeq_entry> CFeatureTableReader::TranslateProtein(CScope& scope, CSeq_entry
     else
     {
         CBioseq::TId new_ids;
-        CSeq_id::ParseIDs(new_ids, protein_ids, CSeq_id::fParse_ValidLocal | CSeq_id::fParse_PartialOK);
+        CSeq_id::ParseIDs(new_ids, *protein_ids, CSeq_id::fParse_ValidLocal | CSeq_id::fParse_PartialOK);
         MergeSeqIds(*protein, new_ids);
     }
 
@@ -562,29 +569,29 @@ void CFeatureTableReader::MergeCDSFeatures(CSeq_entry& entry)
 
 CConstRef<CSeq_id> GetSeqIdWithoutVersion(const CSeq_id& id)
 {
-   const CTextseq_id* text_id = id.GetTextseq_Id();
+    const CTextseq_id* text_id = id.GetTextseq_Id();
 
-   if (text_id && text_id->IsSetVersion())
-   {
-       CRef<CSeq_id> new_id(new CSeq_id);
-       new_id->Assign(id);
-       CTextseq_id* text_id = (CTextseq_id*) new_id->GetTextseq_Id();
-       text_id->ResetVersion();
-       return CConstRef<CSeq_id>(new_id);
-   }
+    if (text_id && text_id->IsSetVersion())
+    {
+        CRef<CSeq_id> new_id(new CSeq_id);
+        new_id->Assign(id);
+        CTextseq_id* text_id = (CTextseq_id*)new_id->GetTextseq_Id();
+        text_id->ResetVersion();
+        return CConstRef<CSeq_id>(new_id);
+    }
 
-   return CConstRef<CSeq_id>(0);
+    return CConstRef<CSeq_id>(0);
 }
 
-void CFeatureTableReader::ReadFeatureTable(CSeq_entry& entry, ILineReader& line_reader)
+void CFeatureTableReader::ReadFeatureTable(CSeq_entry& entry, ILineReader& line_reader, const string& genome_center_id)
 {
     //CFeature_table_reader::ReadSequinFeatureTables(line_reader, entry, CFeature_table_reader::fCreateGenesFromCDSs, m_logger);
 
     // let's use map to speedup matching on very large files, see SQD-1847
     map<CConstRef<CSeq_id>, CRef<CBioseq>, SCSeqidCompare> seq_map;
 
-    for (CTypeIterator<CBioseq> seqit(entry);  seqit;  ++seqit) {
-        ITERATE (CBioseq::TId, seq_id_it, seqit->GetId()) 
+    for (CTypeIterator<CBioseq> seqit(entry); seqit; ++seqit) {
+        ITERATE(CBioseq::TId, seq_id_it, seqit->GetId())
         {
             CConstRef<CSeq_id> seq_id = *seq_id_it;
             seq_map[seq_id].Reset(&*seqit);
@@ -594,16 +601,20 @@ void CFeatureTableReader::ReadFeatureTable(CSeq_entry& entry, ILineReader& line_
             {
                 CRef<CBioseq>& alt_seq = seq_map[alt_id];
                 if (alt_seq.Empty())
-                  alt_seq.Reset(&*seqit);
+                    alt_seq.Reset(&*seqit);
             }
 
             //cout << "Found id: " << seq_id->AsFastaString() << endl;
         }
     }
 
-    while ( !line_reader.AtEOF() ) {
+    string seqid_prefix;
+    if (!genome_center_id.empty())
+        seqid_prefix = "gnl|" + genome_center_id + "|";
+
+    while (!line_reader.AtEOF()) {
         CRef<CSeq_annot> annot = CFeature_table_reader::ReadSequinFeatureTable(
-            line_reader, CFeature_table_reader::fCreateGenesFromCDSs, m_logger, 0/*filter*/);
+            line_reader, CFeature_table_reader::fCreateGenesFromCDSs, m_logger, 0/*filter*/, seqid_prefix);
 
         if (annot.Empty() || !annot->IsSetData() || !annot->GetData().IsFtable() ||
             annot->GetData().GetFtable().empty()) {
@@ -611,7 +622,10 @@ void CFeatureTableReader::ReadFeatureTable(CSeq_entry& entry, ILineReader& line_
         }
 
         // otherwise, take the first feature, which should be representative
-        const CSeq_feat& feat    = *annot->GetData().GetFtable().front();
+        const CSeq_annot::TData::TFtable* ftable = &annot->GetData().GetFtable();
+        const CSeq_feat* feature = ftable->front();
+
+        const CSeq_feat& feat = *annot->GetData().GetFtable().front();
         CConstRef<CSeq_id> feat_id(feat.GetLocation().GetId());
 
         _ASSERT(feat_id); // we expect a uniform sequence ID
@@ -625,8 +639,53 @@ void CFeatureTableReader::ReadFeatureTable(CSeq_entry& entry, ILineReader& line_
             }
         }
 
+#if 0
+        if (seq.Empty() && !genome_center_id.empty())
+        {
+            CRef<CSeq_id> modified_id(new CSeq_id);
+            modified_id->Assign(*feat_id);
+            CTextseq_id* text_id = (CTextseq_id*)modified_id->GetTextseq_Id();
+            if (text_id)
+                text_id->ResetVersion();
+
+            const CObject_id* obj_id;
+            switch (modified_id->Which())
+            {
+            case CSeq_id::e_Local:
+                obj_id = &modified_id->GetLocal();
+                break;
+            case CSeq_id::e_General:
+                obj_id = &modified_id->GetGeneral().GetTag();
+                break;
+            default:
+                obj_id = 0;
+            }
+            if (obj_id != 0)
+            {
+                if (obj_id->IsId())
+                    modified_id->SetGeneral().SetTag().SetId(obj_id->GetId());
+                else
+                {
+                    string id = obj_id->GetStr();
+                    modified_id->SetGeneral().SetTag().SetStr(id);
+                }
+
+                modified_id->SetGeneral().SetDb(genome_center_id);
+                seq = seq_map[modified_id];
+                if (seq.NotEmpty()) // let's upgrade the found feature 
+                {
+                    CSeq_feat& mod_feat = *annot->SetData().SetFtable().front();
+                    mod_feat.SetLocation().SetId(*modified_id);
+                    feat_id = feat.GetLocation().GetId();
+                }
+            }
+        }
+#endif
+
         if (seq.NotEmpty()) { // found a match
             seq->SetAnnot().push_back(annot);
+//            CNcbiOfstream f("seq.asn");
+//            f << MSerial_AsnText << *seq;
         } else { // just package on the set
             //cout << "Not found id: " << feat_id->AsFastaString() << endl;
             /*
@@ -664,6 +723,68 @@ void CFeatureTableReader::FindOpenReadingFrame(CSeq_entry& entry) const
     }
 }
 
+CRef<CSeq_entry> NewTranslateProtein(CScope& scope, CSeq_entry_Handle top_entry_h, const CSeq_feat& cds, CTempString locustag)
+{
+    CRef<CSeq_entry> protein;
+    CConstRef<CSeq_feat> mrna = edit::GetmRNAforCDS(cds, scope);
+    if (mrna.Empty())
+    {
+        mrna = edit::MakemRNAforCDS(cds, scope);
+    }
+    if (!mrna.Empty())
+    {
+        bool done = edit::RetranslateCDS(cds, scope);
+    }
+    CBioseq_Handle prot_bsh = scope.GetBioseqHandle(cds.GetProduct());
+    if (prot_bsh)
+    {
+        CSeq_entry_Handle seh = prot_bsh.GetParentEntry();
+        protein.Reset((CSeq_entry *)seh.GetEditHandle().GetSeq_entryCore().GetPointerOrNull());
+    }
+
+    return protein;
+    
+    //feature::PromoteCDSToNucProtSet(scope.GetObjectHandle(cds));
+}
+
+void CFeatureTableReader::MoveCdRegions(CSeq_entry_Handle entry_h, CSeq_annot::TData::TFtable& seq_ftable, CSeq_annot::TData::TFtable& set_ftable)
+{
+    // sort and number ids
+    CScope& scope = entry_h.GetScope();
+    CSeq_entry& entry = *(CSeq_entry*)entry_h.GetEditHandle().GetSeq_entryCore().GetPointerOrNull();
+    PostProcessFeatureTable(entry, seq_ftable, m_local_id_counter);
+    CTempString locustag;
+    for (CSeq_annot::TData::TFtable::iterator feat_it = seq_ftable.begin(); seq_ftable.end() != feat_it;)
+    {
+        CRef<CSeq_feat> feature = (*feat_it);
+        if (!feature->IsSetData())
+        {
+            ++feat_it;
+            continue;
+        }
+
+        CSeqFeatData& data = feature->SetData();
+        if (data.IsCdregion())
+        {
+            if (!data.GetCdregion().IsSetCode())
+                data.SetCdregion().SetCode().SetId(11); //???
+            if (!data.GetCdregion().IsSetFrame())
+                data.SetCdregion().SetFrame(CCdregion::eFrame_one); //???
+            CRef<CSeq_entry> protein = TranslateProtein(scope, entry_h, *feature, locustag);
+            locustag.clear();
+            if (protein.NotEmpty())
+            {
+                entry.SetSet().SetSeq_set().push_back(protein);
+                // move the cdregion into protein and step iterator to next
+                set_ftable.push_back(feature);
+                seq_ftable.erase(feat_it++);
+                continue; // avoid iterator increment
+            }
+        }
+        ++feat_it;
+    }
+}
+
 void CFeatureTableReader::ParseCdregions(CSeq_entry& entry)
 {
     if (!entry.IsSet() ||
@@ -686,7 +807,7 @@ void CFeatureTableReader::ParseCdregions(CSeq_entry& entry)
         if (!(seq->IsSeq() &&
             seq->GetSeq().IsSetInst() &&
             seq->GetSeq().IsNa() &&
-            seq->GetSeq().IsSetAnnot() ))
+            seq->GetSeq().IsSetAnnot()))
             continue;
 
         for (CBioseq::TAnnot::iterator annot_it = seq->SetSeq().SetAnnot().begin();
@@ -701,47 +822,9 @@ void CFeatureTableReader::ParseCdregions(CSeq_entry& entry)
             }
             CSeq_annot::TData::TFtable& seq_ftable = seq_annot->SetData().SetFtable();
 
-            // sort and number ids
-            PostProcessFeatureTable(entry, seq_annot->SetData().SetFtable(), m_local_id_counter);
-            CTempString locustag;
-            for (CSeq_annot::TData::TFtable::iterator feat_it = seq_ftable.begin(); seq_ftable.end() != feat_it;)
-            {
-                CRef<CSeq_feat> feature = (*feat_it);
-                if (!feature->IsSetData())
-                {
-                    ++feat_it; 
-                    continue;
-                }
+            MoveCdRegions(entry_h, seq_ftable, set_ftable);
 
-                CSeqFeatData& data = feature->SetData();
-#if 0
-                if (data.IsGene())
-                {
-                    if (data.GetGene().IsSetLocus_tag())
-                        locustag = data.GetGene().GetLocus_tag();
-                }
-                else
-#endif
-                if (data.IsCdregion())
-                {
-                    if (!data.GetCdregion().IsSetCode())
-                       data.SetCdregion().SetCode().SetId(11); //???
-                    if (!data.GetCdregion().IsSetFrame())
-                       data.SetCdregion().SetFrame(CCdregion::eFrame_one); //???
-                    CRef<CSeq_entry> protein = TranslateProtein(scope, entry_h, *feature, locustag);
-                    locustag.clear();
-                    if (protein.NotEmpty())
-                    {
-                        entry.SetSet().SetSeq_set().push_back(protein);
-                        // move the cdregion into protein and step iterator to next
-                        set_ftable.push_back(feature);
-                        seq_ftable.erase(feat_it++);
-                        continue; // avoid iterator increment
-                    }
-                }
-                ++feat_it;
-            }
-            if (seq_annot->GetData().GetFtable().empty())
+            if (seq_ftable.empty())
             {
                 seq->SetSeq().SetAnnot().erase(annot_it++);
                 continue;
@@ -760,6 +843,13 @@ void CFeatureTableReader::ParseCdregions(CSeq_entry& entry)
     }
 
     scope.RemoveTopLevelSeqEntry(entry_h);
+    if (false)
+    {
+        CNcbiOfstream debug_annot("annot.sqn");
+        debug_annot << MSerial_AsnText
+            << MSerial_VerifyNo
+            << entry;
+    }
 }
 
 CRef<CSeq_entry> CFeatureTableReader::ReadProtein(ILineReader& line_reader)

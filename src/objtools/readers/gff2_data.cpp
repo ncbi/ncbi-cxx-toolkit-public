@@ -280,8 +280,8 @@ bool CGff2Record::AssignFromGff(
     columns[2].Copy(m_strType, 0, CTempString::npos);
 
     try {
-        m_uSeqStart = NStr::StringToUInt( columns[3] ) - 1;
-        m_uSeqStop = NStr::StringToUInt( columns[4] ) - 1;
+    m_uSeqStart = NStr::StringToUInt( columns[3] ) - 1;
+    m_uSeqStop = NStr::StringToUInt( columns[4] ) - 1;
     }
     catch (const CException&) {
         AutoPtr<CObjReaderLineException> pErr(
@@ -402,25 +402,24 @@ CRef<CSeq_loc> CGff2Record::GetSeqLoc(
 
 //  ----------------------------------------------------------------------------
 string CGff2Record::xNormalizedAttributeKey(
-    const string& strRawKey )
+    const CTempString& strRawKey )
 //  ----------------------------------------------------------------------------
 {
-    string strKey = NStr::TruncateSpaces( strRawKey );
-    return strKey;
+    return NStr::TruncateSpaces_Unsafe(strRawKey);
 }
 
 //  ----------------------------------------------------------------------------
 string CGff2Record::xNormalizedAttributeValue(
-    const string& strRawValue )
+    const CTempString& strRawValue )
 //  ----------------------------------------------------------------------------
 {
-    string strValue = NStr::TruncateSpaces( strRawValue );
+    CTempString strValue = NStr::TruncateSpaces_Unsafe(strRawValue);
     if ( NStr::StartsWith( strValue, "\"" ) ) {
         strValue = strValue.substr( 1, string::npos );
     }
     if ( NStr::EndsWith( strValue, "\"" ) ) {
         strValue = strValue.substr( 0, strValue.length() - 1 );
-    }
+    }   
     return NStr::URLDecode(strValue);
 }
 
@@ -1009,9 +1008,9 @@ bool CGff2Record::xMigrateAttributeDefault(
     if (it == attributes.end()) {
         return true;
     }
-    list<string> values;
+    list<CTempStringEx> values;
     NStr::Split(it->second, ",", values);
-    for (list<string>::const_iterator cit = values.begin(); cit != values.end();
+    for (list<CTempStringEx>::const_iterator cit = values.begin(); cit != values.end();
             cit++) {
         string value = xNormalizedAttributeValue(*cit);
         pFeature->AddQualifier(qualKey, value);

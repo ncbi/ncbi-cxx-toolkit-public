@@ -331,10 +331,11 @@ bool CGff3Reader::xUpdateAnnotCds(
             else {
                 cdsId = xNextGenericId() + ":" + *cit;
                 IdToFeatureMap::iterator it;
+                CTempString sep = ":";
+                CTempStringEx prefix, parent;
                 for (it = m_MapIdToFeature.begin(); it != m_MapIdToFeature.end(); ++it) {
-                    string key = it->first;
-                    string prefix, parent;
-                    NStr::SplitInTwo(key, ":", prefix, parent);
+                    const string& key = it->first;
+                    NStr::SplitInTwo(key, sep, prefix, parent);
                     if (!NStr::StartsWith(prefix, "generic")) {
                         continue;
                     }

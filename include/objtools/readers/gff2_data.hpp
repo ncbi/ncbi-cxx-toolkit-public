@@ -179,10 +179,10 @@ protected:
     //utility helpers:
     //
     static string xNormalizedAttributeKey(
-        const string&);
+        const CTempString&);
 
     static string xNormalizedAttributeValue(
-        const string&);
+        const CTempString&);
 
     static bool xMigrateAttributeDefault(
         TAttributes&,

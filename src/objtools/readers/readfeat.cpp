@@ -2352,7 +2352,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                     }
                     return false;
                 case eQual_protein_id:
-                    // see SQD-1535
+                    // see SQD-1535 and SQD-3496
                     if (typ == CSeqFeatData::e_Cdregion ||
                         (typ == CSeqFeatData::e_Rna &&
                         sfdata.GetRna().GetType() == CRNA_ref::eType_mRNA))
@@ -2361,7 +2361,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                         CSeq_id::ParseIDs(ids, val,                                
                                  CSeq_id::fParse_ValidLocal
                                | CSeq_id::fParse_PartialOK);
-                        if (ids.size()>1)
+//                        if (ids.size()>1)
                         {
                             x_AddGBQualToFeature (sfp, qual, val); // need to store all ids
                         }
@@ -3194,7 +3194,8 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
     ILineReader& reader,
     const TFlags flags,
     ILineErrorListener* pMessageListener,
-    ITableFilter *filter
+    ITableFilter *filter,
+    const string& seqid_prefix
 )
 {
     string fst, scd, seqid, annotname;
@@ -3207,6 +3208,11 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
         if( ParseInitialFeatureLine(line, seqid, annotname) ) {
             FTBL_PROGRESS( seqid, reader.GetLineNumber() );
         }
+    }
+
+    if (!seqid_prefix.empty())
+    {
+        seqid.insert(0, seqid_prefix);
     }
 
     // then read features from 5-column table

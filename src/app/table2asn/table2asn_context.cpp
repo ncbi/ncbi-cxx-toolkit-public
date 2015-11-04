@@ -579,7 +579,7 @@ void CTable2AsnContext::MakeGenomeCenterId(CTable2AsnContext& context, CBioseq& 
     }
 }
 
-void CTable2AsnContext::MakeDelayGenProdSet(CTable2AsnContext& context, CSeq_feat& feature)
+void CTable2AsnContext::RenameProteinIdsQuals(CTable2AsnContext& context, CSeq_feat& feature)
 {
     if (!feature.IsSetQual())
         return;
@@ -592,6 +592,28 @@ void CTable2AsnContext::MakeDelayGenProdSet(CTable2AsnContext& context, CSeq_fea
         if ((**it).GetQual() == "transcript_id")
             (**it).SetQual("orig_transcript_id");
     }
+}
+
+void CTable2AsnContext::RemoveProteinIdsQuals(CTable2AsnContext& context, CSeq_feat& feature)
+{
+    if (!feature.IsSetQual())
+        return;
+
+    CSeq_feat::TQual& quals = feature.SetQual();
+    for (CSeq_feat::TQual::iterator it = quals.begin(); it != quals.end();) // no ++ iterator
+    {
+        if ((**it).GetQual() == "protein_id" ||
+            (**it).GetQual() == "transcript_id")
+        {
+            it = quals.erase(it);
+        }
+        else
+        {
+            it++;
+        }
+    }
+    if (quals.empty())
+        feature.ResetQual();
 }
 
 void CTable2AsnContext::VisitAllFeatures(CSeq_entry_EditHandle& entry_h, FeatureVisitorMethod m)

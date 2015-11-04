@@ -35,7 +35,7 @@
 
 #include <objtools/readers/fasta.hpp>
 #include <objtools/readers/gff3_reader.hpp>
-#include <objtools/readers/bed_reader.hpp>
+#include <objtools/readers/gtf_reader.hpp>
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
@@ -148,8 +148,8 @@ bool CMultiReader::xReadFile(CNcbiIstream& istr, CRef<CSeq_entry>& entry, CRef<C
     case CFormatGuess::eGff3:
         entry = xReadGFF3(istr);
         break;
-    case CFormatGuess::eBed:
-        entry = xReadBed(istr);
+    case CFormatGuess::eGtf:
+        entry = xReadGTF(istr);
         break;
     default:
         entry = xReadFasta(istr);
@@ -341,7 +341,7 @@ void CMultiReader::xSetFormat(CNcbiIstream& istr )
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eTextASN);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eGff3);
     FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eGff2);
-    FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eBed);
+    FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eGtf);
     FG.GetFormatHints().DisableAllNonpreferred();
 
     m_uFormat = FG.GuessFormat();
@@ -1017,6 +1017,7 @@ CRef<CSeq_entry> CMultiReader::xReadGFF3(CNcbiIstream& instream)
     flags |= CGff3Reader::fAllIdsAsLocal;
     flags |= CGff3Reader::fNewCode;
     flags |= CGff3Reader::fGenbankMode;
+    flags |= CGff3Reader::fRetainLocusIds;
 
     CGff3Reader reader(flags, m_AnnotName, m_AnnotTitle);
     CStreamLineReader lr(instream);
@@ -1080,21 +1081,20 @@ bool CMultiReader::LoadAnnot(objects::CSeq_entry& obj, CNcbiIstream& in)
     return false;
     }
 
-CRef<CSeq_entry> CMultiReader::xReadBed(CNcbiIstream& instream)
+CRef<CSeq_entry> CMultiReader::xReadGTF(CNcbiIstream& instream)
 {
-    //  Use ReadSeqAnnot() over ReadSeqAnnots() to keep memory footprint down.
-    CBedReader reader(m_iFlags);
+    int flags = 0;
+    flags |= CGtfReader::fAllIdsAsLocal;
+    flags |= CGtfReader::fNewCode;
+    flags |= CGtfReader::fGenbankMode;
+    flags |= CGtfReader::fRetainLocusIds;
+
+    CGtfReader reader(flags, m_AnnotName, m_AnnotTitle);
     CStreamLineReader lr(instream);
-    CRef<CSeq_annot> pAnnot = reader.ReadSeqAnnot(lr, m_context.m_logger);
     CRef<CSeq_entry> entry(new CSeq_entry);
-    while(pAnnot) {
-        entry->SetSeq().SetAnnot().push_back(pAnnot);
-        pAnnot.Reset();
-        pAnnot = reader.ReadSeqAnnot(lr, m_context.m_logger);
-    }
-    entry->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_virtual);
-    entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_other);
-    //entry->SetSeq().ResetInst();
+    entry->SetSeq();
+    reader.ReadSeqAnnotsNew(entry->SetAnnot(), lr, m_context.m_logger);
+
     return entry;
 }
 

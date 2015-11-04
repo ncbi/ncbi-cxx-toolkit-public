@@ -82,7 +82,8 @@ public:
     static CRef<CSeq_annot> ReadSequinFeatureTable(ILineReader& reader,
                                                    const TFlags flags = 0,
                                                    ILineErrorListener* pMessageListener=0,
-                                                   ITableFilter *filter = 0);
+                                                   ITableFilter *filter = 0,
+                                                   const string& seqid_prefix = kEmptyStr);
 
     static CRef<CSeq_annot> ReadSequinFeatureTable (CNcbiIstream& ifs,
                                                     const TFlags flags = 0,
