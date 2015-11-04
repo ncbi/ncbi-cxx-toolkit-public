@@ -283,7 +283,7 @@ bool CAutoDefFeatureClause::x_GetFeatureTypeWord(string &typeword)
                 typeword = "transposon";
                 return true;
             }
-            typeword = "";
+            typeword = "repeat region";
             return true;
             break;
         case CSeqFeatData::eSubtype_misc_feature:
@@ -743,10 +743,9 @@ bool CAutoDefFeatureClause::x_GetDescription(string &description)
                 return true;
             }
         } else {
-            if (m_MainFeat.IsSetComment()) {
+            description = m_MainFeat.GetNamedQual("rpt_family");
+            if (NStr::IsBlank(description) && m_MainFeat.IsSetComment()) {
                 description = m_MainFeat.GetComment();
-            } else {
-                description = "";
             }
             return true;
         }
@@ -872,7 +871,8 @@ bool CAutoDefFeatureClause::x_GetGenericInterval (string &interval, bool suppres
         || subtype == CSeqFeatData::eSubtype_exon
         || subtype == CSeqFeatData::eSubtype_intron
         || subtype == CSeqFeatData::eSubtype_5UTR
-        || subtype == CSeqFeatData::eSubtype_3UTR) {
+        || subtype == CSeqFeatData::eSubtype_3UTR
+        || subtype == CSeqFeatData::eSubtype_repeat_region) {
         return false;
     } 
     
