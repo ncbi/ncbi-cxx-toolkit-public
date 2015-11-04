@@ -2532,6 +2532,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "IEAU	s	Istituto di Entomologia Agraria dell'Universita",
 "IEB	s	Instituto de Ecologia, A.C.",
 "IEBC	c	International Entomopathogenic Bacillus Centre (WHO)",
+"IEBR	s	Institute of Ecology and Biological Resources",
 "IEC	s	Centre D'Etude sur les Ressources Vegetales",
 "IECA	s	Czech Academy of Science, Institute of Entomology",
 "IEEUACH	s	Universidad Austral de Chile, Instituto de Ecologia y Evolucion",
