@@ -120,11 +120,7 @@ unsigned short LBOS_AnnounceFromRegistry(const char*  registry_section,
                                          char**       http_status_message);
 
 
-/** Deannounce service.
-* @note
-*  If server was not announced prior to deannounce but
-*  arguments were provided correctly, then still return 'true'.
-*
+/** Deannounce service.*
 * @param [in] service
 *  Name of service to be deannounced.
 * @param [in] version

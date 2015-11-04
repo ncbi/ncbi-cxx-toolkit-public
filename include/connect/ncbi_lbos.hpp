@@ -40,38 +40,130 @@ BEGIN_NCBI_SCOPE
 class NCBI_XNCBI_EXPORT LBOS
 {
 public:
-    static void Announce(const string&    service,
-                         const string&    version,
-                         unsigned short   port,
-                         const string&    healthcheck_url);
-                                                          
+    /** Announce server.
+    *
+    * @attention
+    *  IP for the server being announced is taken from healthcheck URL!
+    * @param [in] service
+    *  Name of service as it will appear in ZK. For services this means that the
+    *  name should start with '/'.
+    * @param [in] version
+    *  Any non-null non-empty string that will help to identify the version
+    *  of service. A good idea is to use [semantic versioning]
+    *  (http://semver.org/) like "4.7.2"
+    * @param [in] port
+    *  Port for the service. Can differ from healthcheck port.
+    * @param [in] healthcheck_url
+    *  Full absolute URL starting with "http://" or "https://". Should include
+    *  hostname or IP (and port, if necessary).
+    * @note
+    *  If you want to announce a service that is on the same machine that
+    *  announces it (i.e., if server announces itself), you can write
+    *  "0.0.0.0" for IP (this is convention with lbos). You still have to
+    *  provide port, even if you write "0.0.0.0".
+    * @return
+    *  Returns nothing if announcement was successful. Otherwise, throws an
+    *  exception.
+    * @exception CLBOSException
+    * @sa AnnounceFromRegistry(), Deannounce(), DeannounceAll(), CLBOSException
+    */
+    static void 
+        Announce(const string&   service,
+                 const string&   version,
+                 unsigned short  port,
+                 const string&   healthcheck_url);
+                                  
+
+   /** Modification of Announce() that gets all needed parameters from 
+    * registry.
+    *
+    * @attention
+    *  IP for the server being announced is taken from healthcheck URL!
+    * @param [in] registry_section
+    *  Name of section in registry file where to look for 
+    *  announcement parameters. Please check documentation for Announce() to
+    *  to see requirements for the arguments.
+    *  Parameters are:
+    *  SERVICE, VERSION, PORT, HEALTHCHECK
+    *  Example:
+    *  --------------
+    *  [LBOS_ANNOUNCEMENT]
+    *  SERVICE=MYSERVICE
+    *  VERSION=1.0.0
+    *  PORT=8080
+    *  HEALTH=http://0.0.0.0:8080/health
+    *
+    * @return
+    *  Returns nothing if announcement was successful. Otherwise, throws an
+    *  exception.
+    * @exception CLBOSException
+    * @sa Announce(), Deannounce(), DeannounceAll(), CLBOSException
+    */
     static void AnnounceFromRegistry(const string&  registry_section);
 
-    static void DeannounceAll(void);
 
+    /** Deannounce service.
+    * @param [in] service
+    *  Name of service to be deannounced.
+    * @param [in] version
+    *  Version of service to be deannounced.
+    * @param [in] host
+    *  IP or hostname of service to be deannounced. Provide empty string
+    *  (not "0.0.0.0") to use local host address.
+    * @param [in] port
+    *  Port of service to be deannounced.
+    * @return
+    *  Returns nothing if deannouncement was successful. Otherwise, throws an
+    *  exception.
+    * @exception CLBOSException
+    * @sa Announce(), DeannounceAll(), CLBOSException
+    */
     static void Deannounce(const string&  service,
                            const string&  version,
                            const string&  host,
                            unsigned short port);
+
+
+    /** Deannounce all servers that were announced during runtime.
+    * @note
+    *  There is no guarantee that all servers were deannounced successfully
+    *  after this function returns. There is a guarantee that deannouncement
+    *  request was sent to LBOS for each server that was announced during
+    *  runtime.
+    * @return
+    *  Returns nothing, never throws.
+    * @sa Announce(), Deannounce()
+    */
+    static void DeannounceAll(void);
 };
 
 
+/**  CLBOSException is thrown if annoucement/deannouncement fails for any
+ * reason. CLBOSException has overloaded "what()" method that will return
+ * message from LBOS, which should contain status code and status message.
+ * If announcement failed not because of LBOS, but because of bad arguments,
+ * memory error, etc., you will non-HTTP status code. To understand it, you
+ * can call CLBOSException::GetErrCodeString(void) to see its human language
+ * description.
+*/
 class NCBI_XNCBI_EXPORT CLBOSException : public CException
 {
 public:
     enum EErrCode {
-        e_NoLBOS,               /**< lbos was not found                */
-        e_DNSResolveError,      /**< Local address not resolved        */
-        e_InvalidArgs,          /**< Arguments not valid               */
-        e_DeannounceFail,       /**< Error while deannounce/           */
+        e_NoLBOS,               /**< lbos was not found                       */
+        e_DNSResolveError,      /**< Local address not resolved               */
+        e_InvalidArgs,          /**< Arguments not valid                      */
+        e_DeannounceFail,       /**< Error while deannounce/                  */
         e_NotFound,             /**< For deannouncement only. Did not
-                                     find such server to deannounce    */
-        e_Off,
-        e_MemAllocError,
-        e_LBOSCorruptOutput,
-        e_BadRequest,
+                                     find such server to deannounce           */
+        e_Off,                  /**< LBOS mapper is off for any of two reasons:
+                                     either it is not enalbed in registry, or
+                                     no LBOS was found at initialization      */
+        e_MemAllocError,        /**< A memory allocation error encountered    */
+        e_LBOSCorruptOutput,    /**< LBOS returned unexpected output          */
+        e_BadRequest,           /**< LBOS returned "400 Bad Request"          */
         e_Unknown               /**< No information about this error 
-                                     code meaning                      */
+                                     code meaning                             */
     };
 
     CLBOSException(const CDiagCompileInfo& info,
@@ -80,10 +172,14 @@ public:
                    EDiagSev severity = eDiag_Error)
                : CException(info, prev_exception, (message), severity, 0)
     {
-        
         x_Init(info, message, prev_exception, severity);                
         x_InitErrCode((CException::EErrCode) err_code);
         m_StatusCode = status_code;
+        stringstream message_builder;
+        message_builder << info.GetFile() << ":" << info.GetLine() << "("
+            << info.GetFunction() << ") " << "Error: "
+            << message << endl;
+        m_Message = message_builder.str();
     }
 
     CLBOSException(const CDiagCompileInfo& info, 
@@ -98,13 +194,23 @@ public:
         x_InitArgs(args);
         x_InitErrCode((CException::EErrCode) args.GetErrCode());
         m_StatusCode = status_code;
+        stringstream message_builder;
+        message_builder << info.GetFile() << ":" << info.GetLine() << "(" 
+                        << info.GetFunction() << ") " << "Error: " 
+                        << status_code << " " << GetErrCodeString() << endl;
+        m_Message = message_builder.str();
+    }
+    
+    /** Get original status code and status message from LBOS in a string     */
+    virtual const char* what() const throw()
+    { 
+        return m_Message.c_str();
     }
 
-
-    /// Translate from the error code value to its string representation.   
+    /** Translate from the error code value to its string representation.     */
     virtual const char* GetErrCodeString(void) const;
 
-    /**Translate from numerical HTTP status code to lbos-specific
+    /** Translate from numerical HTTP status code to lbos-specific
      * error code */
     static EErrCode s_HTTPCodeToEnum(unsigned short http_code);
 
@@ -127,6 +233,7 @@ protected:
     }
 private:
     unsigned short m_StatusCode;
+    string m_Message;
 };
 
 END_NCBI_SCOPE

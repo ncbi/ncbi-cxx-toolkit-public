@@ -615,6 +615,7 @@ static unsigned short s_GeneratePort(int thread_num = -1)
     Returns result - if managed or not to answer */
 static 
 bool s_AnswerHealthcheck(CListeningSocket& listening_sock, short int port) {
+#ifndef NCBI_THREADS // If we have to answer healthchech in the same thread
     CSocket sock;
     STimeout sock_timeout = { 1, 500 };
     if (listening_sock.Accept(sock, &sock_timeout) != eIO_Success) {
@@ -635,27 +636,31 @@ bool s_AnswerHealthcheck(CListeningSocket& listening_sock, short int port) {
     sock.Write(healthy_answer, sizeof(healthy_answer) - 1, &n_written);
     sock.Wait(eIO_Read, &sock_timeout);
     sock.Close();
+#endif /* NCBI_THREADS */
     return true;
 }
 
 
-/* Instead of just read, make first flush, then answer healthcheck, and
-   then get answer from LBOS (hopefully, OK) */
+/** If single-threaded mode, instead of just read, make first flush,
+ * then answer healthcheck, and then get answer from LBOS (hopefully,
+ * OK)
+ *  If multi-threaded mode, then just read, and healthcheck will be answered
+ *  in the special thread. */
 static
-EIO_Status s_RealReadAnnounceSingleThread(CONN              conn,
-                                          void*             line,
-                                          size_t            size,
-                                          size_t*           n_read,
-                                          EIO_ReadMethod    how)
+EIO_Status s_RealReadAnnounce(CONN              conn,
+                              void*             line,
+                              size_t            size,
+                              size_t*           n_read,
+                              EIO_ReadMethod    how)
 {
+    EIO_Status status = eIO_Timeout;
+    size_t total_read = 0;
     CListeningSocket listening_sock(4096);
     CSocket sock;
-    EIO_Status status = eIO_Timeout;
     listening_sock.Listen(4096);
-    CONN_Flush(conn);
-    s_AnswerHealthcheck(listening_sock, 4096);
-    size_t total_read = 0;
-    do {
+    CONN_Flush(conn); //Send request for announcement
+    s_AnswerHealthcheck(listening_sock, 4096); // answer the healthcheck
+    do { // Get answer from LBOS after it received response for healthcheck
         status = CONN_Read(conn, (char*) line + total_read,
                            size - total_read, n_read, how);
         total_read += *n_read;
@@ -675,25 +680,24 @@ unsigned short s_LBOS_Announce(const char*             service,
                                char**                  http_status_message) 
 { 
 
-#ifndef NCBI_THREADS
+    int announce_result = 0;
     CMockFunction<FLBOS_ConnReadMethod*> mock(
-        g_LBOS_UnitTesting_GetLBOSFuncs()->Read,
-        s_RealReadAnnounceSingleThread);
-#endif /* NCBI_THREAD */
-#ifdef QUICK_AND_DIRTY
-    int announce_result = 500;
+        g_LBOS_UnitTesting_GetLBOSFuncs()->Read, s_RealReadAnnounce);
+#ifdef QUICK_AND_DIRTY /* If we announce many times on different ports until
+                          success (remove this hack when LBOS is fixed) */
     do {
-        announce_result =
 #endif
-        LBOS_Announce(service, version, port, 
-		healthcheck_url, lbos_answer, http_status_message);
-#ifdef QUICK_AND_DIRTY
+        announce_result =
+            LBOS_Announce(service, version, port, healthcheck_url, 
+                          lbos_answer, http_status_message);
+#ifdef QUICK_AND_DIRTY /* If we announce many times on different ports until
+                          success (remove this hack when LBOS is fixed) */
         if (announce_result != 200) {
             port++;
         }
     } while (announce_result != 200);
 #endif
-    return 200;
+    return announce_result;
 }
 
 
@@ -704,25 +708,25 @@ void s_LBOS_CPP_Announce(const string& service,
                          const string& healthcheck_url)
 {
 
-#ifndef NCBI_THREADS
     CMockFunction<FLBOS_ConnReadMethod*> mock(
         g_LBOS_UnitTesting_GetLBOSFuncs()->Read,
-        s_RealReadAnnounceSingleThread);
-#endif /* NCBI_THREAD */
+        s_RealReadAnnounce);
 
-#ifdef QUICK_AND_DIRTY
+#ifdef QUICK_AND_DIRTY /* If we announce many times on different ports until
+                          success (remove this hack when LBOS is fixed) */
     bool success;
     do {
-#endif
         try {
             success = true;
+#endif
             LBOS::Announce(service, version, port,
                 healthcheck_url);
+#ifdef QUICK_AND_DIRTY /* If we announce many times on different ports until
+                          success (remove this hack when LBOS is fixed) */
         }
         catch(...) {
             success = false;
         }
-#ifdef QUICK_AND_DIRTY
     } while (!success);
 #endif
 }

@@ -99,11 +99,11 @@
            NCBITEST_CHECK_MESSAGE(S != E,                                     \
                                   #S "is not unequal to " #E "as expected")
 #else  /* if LBOS_TEST_MT not defined */
-    // This header must be included before all Boost.Test headers
+//  This header must be included before all Boost.Test headers
 #   include <corelib/test_boost.hpp>
 #endif /* #ifdef LBOS_TEST_MT */
 
-#define QUICK_AND_DIRTY /* LBOS returns 500 on announcement unexpectedly */ 
+//#define QUICK_AND_DIRTY /* LBOS returns 500 on announcement unexpectedly */
 
 /*test*/
 #include "test_assert.h"

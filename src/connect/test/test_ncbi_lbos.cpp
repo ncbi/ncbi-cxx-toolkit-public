@@ -87,9 +87,9 @@ NCBITEST_AUTO_INIT()
     s_HealthchecKThread = new CHealthcheckThread;
     s_HealthchecKThread->Run();
 #endif
-#if DEANNOUNCE_ALL_BEFORE_TEST
-    s_ClearZooKeeper();
-#endif /* DEANNOUNCE_ALL_BEFORE_TEST */
+    if (DEANNOUNCE_ALL_BEFORE_TEST) {
+        s_ClearZooKeeper();
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
