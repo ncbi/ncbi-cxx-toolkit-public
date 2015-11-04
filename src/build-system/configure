@@ -6579,7 +6579,7 @@ case "$host_os:$compiler" in
       fi
       # -flat_namespace is necessary for proper handling of shared libraries
       # that don't themselves link against all their dependencies.
-      LDFLAGS="-flat_namespace $LDFLAGS"
+      LDFLAGS="-flat_namespace -headerpad_max_install_names $LDFLAGS"
 
       if test "$try_old_sdks" = yes; then
          sdks='/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.7.sdk'
@@ -6605,7 +6605,7 @@ case "$host_os:$compiler" in
          CXX="$CXX $TARGET"
       fi
    else
-      LDFLAGS="-Wl,-flat_namespace $LDFLAGS"
+      LDFLAGS="-Wl,-flat_namespace -Wl,-headerpad_max_install_names $LDFLAGS"
    fi
    if test -f /usr/include/dlfcn.h; then
       # may be able to do without /sw, so ignore it by default
