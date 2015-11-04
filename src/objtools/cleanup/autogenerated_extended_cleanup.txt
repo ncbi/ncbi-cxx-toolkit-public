@@ -120,6 +120,7 @@ use m_NewCleanup.CreateMissingMolInfo { Bioseq }
 
 use m_NewCleanup.ResynchProteinPartials { Seq-feat }
 use m_NewCleanup.ResynchPeptidePartials { POST Bioseq }
+use m_NewCleanup.RemoveBadProteinTitle { POST Bioseq }
 
 use m_NewCleanup.AddProteinTitles { Bioseq }
 
