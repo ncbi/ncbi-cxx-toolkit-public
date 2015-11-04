@@ -305,6 +305,7 @@ private:
     void CdRegionEC( CSeq_feat& sf);
     void ResynchProteinPartials ( CSeq_feat& feat );
     void ResynchPeptidePartials( CBioseq& seq );
+    void RemoveBadProteinTitle(CBioseq& seq);
     void KeepLatestDateDesc(CSeq_descr & seq_descr);
 
     // void XxxxxxBC (Cxxxxx& xxx);

@@ -11129,6 +11129,31 @@ void CNewCleanup_imp::ResynchPeptidePartials (
 }
 
 
+void CNewCleanup_imp::RemoveBadProteinTitle(CBioseq& seq)
+{
+    if (!seq.IsSetInst() || !seq.GetInst().IsSetMol() || !seq.IsAa()) {
+        return;
+    }
+
+    // determine if sequence has title - if not, nothing to do here
+    if (!seq.IsSetDescr()) {
+        return;
+    }
+
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+    string new_defline = sequence::CDeflineGenerator().GenerateDefline(bsh, sequence::CDeflineGenerator::fIgnoreExisting);
+    CBioseq::TDescr::Tdata::iterator title_it = seq.SetDescr().Set().begin();
+    while (title_it != seq.SetDescr().Set().end()) {
+        if ((*title_it)->IsTitle() && !NStr::Equal(new_defline, (*title_it)->GetTitle())) {
+            title_it = seq.SetDescr().Set().erase(title_it);
+            ChangeMade(CCleanupChange::eRemoveDescriptor);
+        } else {
+            ++title_it;
+        }
+    } 
+}
+
+
 void CNewCleanup_imp::KeepLatestDateDesc(CSeq_descr & seq_descr)
 {
     const CSeqdesc::TCreate_date * best_create_date = NULL;
