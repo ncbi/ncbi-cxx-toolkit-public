@@ -743,6 +743,7 @@ ncbiCacc needs3party netentr
 ncbiNacc includes3party ncbiacc
 ncbiNacc needs3party netentr
 ncbi_id2proc_wgs needs $(COMPRESS_LIBS)
+ncbi_id2proc_wgs needs $(SOBJMGR_LIBS)
 ncbi_id2proc_wgs needs $(SRAREAD_LIBS)
 ncbi_id2proc_wgs needs id2
 ncbi_xblobstorage_netcache needs xconnserv
@@ -996,8 +997,8 @@ splitdbasncpp_g needs xnetblast
 sqlite3 needs3party $(ORIG_LIBS)
 sqlitewrapp needs xncbi
 sqlitewrapp needs3party $(SQLITE3_LIBS)
+sraread needs $(SOBJMGR_LIBS)
 sraread needs $(VDB_LIB)
-sraread needs seqset
 sraread needs3party $(VDB_LIBS)
 srprism needs srprism_seq
 srprism_common needs $(COMPRESS_LIBS)
@@ -1334,9 +1335,6 @@ xconnect needs xncbi
 xconnext includes $(CONNEXT)
 xconnext needs xconnect
 xconnserv needs xthrserv
-xcontigdb needs dbapi
-xcontigdb needs ncbi_xdbapi_ftds
-xcontigdb needs xalnmgr
 xcser needs xser
 xcser needs3party $(NCBI_C_ncbi)
 xctools needs xncbi
