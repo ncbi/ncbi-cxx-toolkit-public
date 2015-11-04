@@ -787,9 +787,6 @@ void CWGSDb_Impl::x_InitIdParams(void)
 string CWGSDb_Impl::NormalizePathOrAccession(CTempString path_or_acc,
                                              CTempString vol_path)
 {
-    if ( path_or_acc == "JYIY01" ) {
-        return "/home/dondosha/TEST/JYIY01";
-    }
     if ( !vol_path.empty() ) {
         list<CTempString> dirs;
         NStr::Split(vol_path, ":", dirs);
