@@ -2663,6 +2663,7 @@ bool CGff3Writer::xWriteFeatureRna(
             pChild->DropAttributes("Name"); //explicitely not inherited
             pChild->DropAttributes("start_range");
             pChild->DropAttributes("end_range");
+            pChild->DropAttributes("model_evidence");
             pChild->SetAttribute("Parent", rnaId);
             pChild->SetType("exon");
             pChild->SetLocation(subint);

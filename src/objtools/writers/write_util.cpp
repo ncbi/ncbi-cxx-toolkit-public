@@ -1000,12 +1000,13 @@ bool CWriteUtil::GetStringForModelEvidence(
         }
     }
 
+    CSeqFeatData::ESubtype st = mf.GetFeatSubtype();
     CNcbiOstrstream text;
-    text << "Derived by automated computational analysis";
-    if (!NStr::IsBlank(method)) {
-        text << " using gene prediction method: " << method;
-    }
-    text << ".";
+    //text << "Derived by automated computational analysis";
+    //if (!NStr::IsBlank(method)) {
+    //    text << " using gene prediction method: " << method;
+    //}
+    //text << ".";
 
     if (numRna > 0 || numEst > 0 || numProtein > 0 || numLongSra > 0 ||
         rnaseqBaseCoverage > 0)
