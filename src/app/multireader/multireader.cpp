@@ -1219,7 +1219,7 @@ void CMultiReaderApp::xSetFlags(
         }
         if (args["genbank"]) {
             m_iFlags |= CGtfReader::fGenbankMode;
-            if (args["locus-tag-prefix"]) {
+            if (args["locus-tag"]) {
                 m_iFlags |= CGtfReader::fRetainLocusIds;
             }
         }
