@@ -327,6 +327,10 @@ CSeqTable_multi_data::E_Choice CSeqTable_multi_data::GetValueType(void) const
         return GetInt_delta().GetValueType();
     case e_Int_scaled:
         return GetInt_scaled().GetIntSize() <= sizeof(Int4)? e_Int: e_Int8;
+    case e_Common_string:
+        return e_String;
+    case e_Common_bytes:
+        return e_Bytes;
     default:
         return Which();
     }
