@@ -103,7 +103,15 @@
 #   include <corelib/test_boost.hpp>
 #endif /* #ifdef LBOS_TEST_MT */
 
-//#define QUICK_AND_DIRTY /* LBOS returns 500 on announcement unexpectedly */
+/* LBOS returns 500 on announcement unexpectedly */
+//#define QUICK_AND_DIRTY
+
+/* We might want to clear ZooKeeper from nodes before running tests.
+* This is generally not good, because if this test application runs
+* on another host at the same moment, it will miss a lot of nodes and
+* tests will fail.
+*/
+//#define DEANNOUNCE_ALL_BEFORE_TEST
 
 /*test*/
 #include "test_assert.h"
@@ -5439,6 +5447,7 @@ void s_TestFindMethod(ELBOSFindMethod find_method)
     }
 }
 
+#ifdef DEANNOUNCE_ALL_BEFORE_TEST
 /** Remove from ZooKeeper only those services which have name specified in
  * special array (this array is defined inside this function) and are
  * based on current host. We do not remove servers that are based on another 
@@ -5501,7 +5510,7 @@ static void s_ClearZooKeeper()
         start = 0; // reset search for the next service
     }
 }
-
+#endif /* DEANNOUNCE_ALL_BEFORE_TEST */
 
 static
 bool s_CheckIfAnnounced(string service, 

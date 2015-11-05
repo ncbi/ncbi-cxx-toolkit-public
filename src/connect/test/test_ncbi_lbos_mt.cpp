@@ -40,13 +40,6 @@ USING_NCBI_SCOPE;
 static CHealthcheckThread* s_HealthchecKThread;
 #endif
 
-/* We might want to clear ZooKeeper from nodes before running tests.
-* This is generally not good, because if this test application runs
-* on another host at the same moment, it will miss a lot of nodes and
-* tests will fail.
-*/
-#define DEANNOUNCE_ALL_BEFORE_TEST 0
-
 
 /**  Main class of this program which will be used for testing. Based on the
  *  class from test_mt                                                       */
@@ -277,7 +270,7 @@ bool CTestLBOSApp::TestApp_Init(void)
     s_HealthchecKThread = new CHealthcheckThread;
     s_HealthchecKThread->Run();
 #endif
-#if DEANNOUNCE_ALL_BEFORE_TEST
+#ifdef DEANNOUNCE_ALL_BEFORE_TEST
     s_ClearZooKeeper();
 #endif
     return true;

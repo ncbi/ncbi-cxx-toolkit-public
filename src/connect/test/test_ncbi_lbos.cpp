@@ -62,7 +62,6 @@ NCBITEST_AUTO_FINI()
  * on another host at the same moment, it will miss a lot of nodes and
  * tests will fail.
  */
-#define DEANNOUNCE_ALL_BEFORE_TEST 0
 
 NCBITEST_AUTO_INIT()
 {
@@ -87,9 +86,8 @@ NCBITEST_AUTO_INIT()
     s_HealthchecKThread = new CHealthcheckThread;
     s_HealthchecKThread->Run();
 #endif
-    if (DEANNOUNCE_ALL_BEFORE_TEST) {
-        s_ClearZooKeeper();
-    }
+#ifdef DEANNOUNCE_ALL_BEFORE_TEST
+    s_ClearZooKeeper();
 }
 
 ///////////////////////////////////////////////////////////////////////////////

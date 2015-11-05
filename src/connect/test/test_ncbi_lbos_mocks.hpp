@@ -611,11 +611,11 @@ static unsigned short s_GeneratePort(int thread_num = -1)
 
 
 
+#ifndef NCBI_THREADS // If we have to answer healthchech in the same thread
 /** Accepts requests on specified socket.
     Returns result - if managed or not to answer */
 static 
 bool s_AnswerHealthcheck(CListeningSocket& listening_sock, short int port) {
-#ifndef NCBI_THREADS // If we have to answer healthchech in the same thread
     CSocket sock;
     STimeout sock_timeout = { 1, 500 };
     if (listening_sock.Accept(sock, &sock_timeout) != eIO_Success) {
@@ -636,11 +636,12 @@ bool s_AnswerHealthcheck(CListeningSocket& listening_sock, short int port) {
     sock.Write(healthy_answer, sizeof(healthy_answer) - 1, &n_written);
     sock.Wait(eIO_Read, &sock_timeout);
     sock.Close();
-#endif /* NCBI_THREADS */
     return true;
 }
+#endif /* NCBI_THREADS */
 
 
+#ifndef NCBI_THREADS // If we have to answer healthchech in the same thread
 /** If single-threaded mode, instead of just read, make first flush,
  * then answer healthcheck, and then get answer from LBOS (hopefully,
  * OK)
@@ -668,6 +669,7 @@ EIO_Status s_RealReadAnnounce(CONN              conn,
     *n_read = total_read;
     return status;
 }
+#endif /* NCBI_THREADS */
 
 
 static
@@ -681,8 +683,10 @@ unsigned short s_LBOS_Announce(const char*             service,
 { 
 
     int announce_result = 0;
+#ifndef NCBI_THREADS // If we have to answer healthchech in the same thread
     CMockFunction<FLBOS_ConnReadMethod*> mock(
         g_LBOS_UnitTesting_GetLBOSFuncs()->Read, s_RealReadAnnounce);
+#endif /* NCBI_THREADS */
 #ifdef QUICK_AND_DIRTY /* If we announce many times on different ports until
                           success (remove this hack when LBOS is fixed) */
     do {
@@ -708,9 +712,11 @@ void s_LBOS_CPP_Announce(const string& service,
                          const string& healthcheck_url)
 {
 
+#ifndef NCBI_THREADS // If we have to answer healthchech in the same thread
     CMockFunction<FLBOS_ConnReadMethod*> mock(
         g_LBOS_UnitTesting_GetLBOSFuncs()->Read,
         s_RealReadAnnounce);
+#endif /* NCBI_THREADS */
 
 #ifdef QUICK_AND_DIRTY /* If we announce many times on different ports until
                           success (remove this hack when LBOS is fixed) */
