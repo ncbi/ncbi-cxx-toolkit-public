@@ -444,6 +444,46 @@ static bool IsUnexpectedViralOrgModQualifier(COrgMod::TSubtype subtype)
     return rval;
 }
 
+
+static const string sTypeMaterialPrefixes[] = {
+    "type strain",
+    "neotype strain",
+    "holotype", 
+    "paratype",
+    "neotype",
+    "allotype",
+    "hapanotype",
+    "syntype",
+    "lectotype",
+    "paralectotype",
+    "isotype",
+    "epitype",
+    "isosyntype",
+    "ex-type",
+    "reference strain",
+    "type material"
+};
+
+static const int sNumTypeMaterialPrefixes = sizeof(sTypeMaterialPrefixes) / sizeof(string);
+
+static bool IsValidTypeMaterial(const string& type_material) 
+{
+    if (NStr::IsBlank(type_material)) {
+        return false;
+    }
+
+    for (int i=0; i<sNumTypeMaterialPrefixes; ++i) {
+        string prefix = sTypeMaterialPrefixes[i];
+        if (NStr::StartsWith(type_material, prefix)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
+
 CBioSourceKind& CBioSourceKind::operator=(const CBioSource& bsrc)
 {
     SetNotGood();
@@ -1563,6 +1603,14 @@ const CSeq_entry *ctx)
             case COrgMod::eSubtype_specimen_voucher:
                 ValidateOrgModVoucher(omd, obj, ctx);
                 vouchers.push_back(omd.GetSubname());
+                break;
+
+            case COrgMod::eSubtype_type_material:
+                if (!(*omd_itr)->IsSetSubname() || 
+                    !IsValidTypeMaterial((*omd_itr)->GetSubname()))  {
+                    PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrgMod,
+                            "Bad value for type_material", obj, ctx);
+                }
                 break;
 
             default:
