@@ -1621,6 +1621,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "EDNC	s	Raleigh, North Carolina Department of Agriculture",
 "EEBP	s	Estacao Experimental de Biologia e Piscicultura de Pirassununga",
 "EELM	s	Estacion Experimental Agricola de la Molina",
+"EERU	s	Economic Entomology  Research Unit",
 "EFC	s	Escola de Florestas",
 "EFCC	s	Epping Forest Conservation Centre",
 "EFH	s	Forestry Commission",
