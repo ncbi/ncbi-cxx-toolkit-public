@@ -1121,6 +1121,9 @@ public:
 
     CWGSProteinIterator& SelectRow(TVDBRowId row);
 
+    bool HasGi(void) const;
+    CSeq_id::TGi GetGi(void) const;
+
     CTempString GetAccession(void) const;
     int GetAccVersion(void) const;
 

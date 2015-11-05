@@ -537,6 +537,7 @@ struct CWGSDb_Impl::SProtTableCursor : public CObject {
     
     CVDBCursor m_Cursor;
     
+    DECLARE_VDB_COLUMN_AS(NCBI_gi, GI);
     DECLARE_VDB_COLUMN_AS_STRING(ACCESSION);
     DECLARE_VDB_COLUMN_AS_STRING(GB_ACCESSION);
     DECLARE_VDB_COLUMN_AS(uint32_t, ACC_VERSION);
@@ -550,11 +551,13 @@ struct CWGSDb_Impl::SProtTableCursor : public CObject {
     DECLARE_VDB_COLUMN_AS(TVDBRowId, FEAT_ROW_START);
     DECLARE_VDB_COLUMN_AS(TVDBRowId, FEAT_ROW_END);
     DECLARE_VDB_COLUMN_AS(TVDBRowId, FEAT_PRODUCT_ROW_ID);
+    DECLARE_VDB_COLUMN_AS_STRING(PROTEIN);
 };
 
 
 CWGSDb_Impl::SProtTableCursor::SProtTableCursor(const CVDBTable& table)
     : m_Cursor(table),
+      INIT_OPTIONAL_VDB_COLUMN(GI),
       INIT_VDB_COLUMN(ACCESSION),
       INIT_OPTIONAL_VDB_COLUMN(GB_ACCESSION),
       INIT_VDB_COLUMN(ACC_VERSION),
@@ -567,7 +570,8 @@ CWGSDb_Impl::SProtTableCursor::SProtTableCursor(const CVDBTable& table)
       INIT_OPTIONAL_VDB_COLUMN(REF_ACC),
       INIT_OPTIONAL_VDB_COLUMN(FEAT_ROW_START),
       INIT_OPTIONAL_VDB_COLUMN(FEAT_ROW_END),
-      INIT_OPTIONAL_VDB_COLUMN(FEAT_PRODUCT_ROW_ID)
+      INIT_OPTIONAL_VDB_COLUMN(FEAT_PRODUCT_ROW_ID),
+      INIT_OPTIONAL_VDB_COLUMN(PROTEIN)
 {
 }
 
@@ -646,6 +650,7 @@ CWGSDb_Impl::CWGSDb_Impl(CVDBMgr& mgr,
       m_IdVersion(0),
       m_ScfTableIsOpened(false),
       m_ProtTableIsOpened(false),
+      m_FeatTableIsOpened(false),
       m_GiIdxTableIsOpened(false),
       m_ProtAccIndexIsOpened(0),
       m_ContigNameIndexIsOpened(0),
@@ -3722,6 +3727,20 @@ void CWGSProteinIterator::x_ReportInvalid(const char* method) const
 }
 
 
+bool CWGSProteinIterator::HasGi(void) const
+{
+    return m_Cur->m_GI && GetGi() != ZERO_GI;
+}
+
+
+CSeq_id::TGi CWGSProteinIterator::GetGi(void) const
+{
+    x_CheckValid("CWGSProteinIterator::GetGi");
+    CVDBValueFor<NCBI_gi> gi = m_Cur->GI(m_CurrId);
+    return gi.empty()? ZERO_GI: s_ToGi(*gi, "CWGSProteinIterator::GetGi()");
+}
+
+
 CTempString CWGSProteinIterator::GetAccession(void) const
 {
     x_CheckValid("CWGSProteinIterator::GetAccession");
@@ -3766,7 +3785,15 @@ CRef<CSeq_id> CWGSProteinIterator::GetGeneralSeq_id(void) const
 
 CRef<CSeq_id> CWGSProteinIterator::GetGiSeq_id(void) const
 {
-    return null;
+    CRef<CSeq_id> id;
+    if ( m_Cur->m_GI ) {
+        CSeq_id::TGi gi = GetGi();
+        if ( gi != ZERO_GI ) {
+            id = new CSeq_id;
+            id->SetGi(gi);
+        }
+    }
+    return id;
 }
 
 
@@ -3952,15 +3979,27 @@ CRef<CSeq_inst> CWGSProteinIterator::GetSeq_inst(TFlags flags) const
     CRef<CSeq_inst> inst(new CSeq_inst);
     TSeqPos length = GetSeqLength();
     inst->SetMol(CSeq_inst::eMol_aa);
-    inst->SetRepr(CSeq_inst::eRepr_delta);
-    CRef<CDelta_seq> seg(new CDelta_seq);
-    CSeq_interval& interval = seg->SetLoc().SetInt();
-    interval.SetFrom(0);
-    interval.SetTo(length-1);
-    interval.SetStrand(eNa_strand_plus);
-    interval.SetId().Set(GetRefAcc());
-    inst->SetExt().SetDelta().Set().push_back(seg);
     inst->SetLength(length);
+    CTempString ref_acc;
+    if ( HasRefAcc() ) {
+        ref_acc = GetRefAcc();
+    }
+    if ( !m_Cur->m_PROTEIN ||
+         (!ref_acc.empty() && ref_acc != GetAccession()) ) {
+        // WP_ reference
+        inst->SetRepr(CSeq_inst::eRepr_delta);
+        CRef<CDelta_seq> seg(new CDelta_seq);
+        CSeq_interval& interval = seg->SetLoc().SetInt();
+        interval.SetFrom(0);
+        interval.SetTo(length-1);
+        interval.SetStrand(eNa_strand_plus);
+        interval.SetId().Set(GetRefAcc());
+        inst->SetExt().SetDelta().Set().push_back(seg);
+    }
+    else {
+        inst->SetRepr(CSeq_inst::eRepr_raw);
+        inst->SetSeq_data().SetNcbieaa().Set() = *m_Cur->PROTEIN(m_CurrId);
+    }
     return inst;
 }
 
