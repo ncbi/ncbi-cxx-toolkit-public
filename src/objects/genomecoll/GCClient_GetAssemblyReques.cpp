@@ -64,9 +64,9 @@ CGCClient_GetAssemblyRequest::SRequestParam::SRequestParam(int level_, int assem
                                                            int scaffold_flags_, int component_flags_)
     : level(level_)
     , assembly_flags(assembly_flags_)
-    , chromosome_flags(level >= CGCClient_GetAssemblyRequest::eLevel_replicon  ? chromosome_flags_ : 0)
-    , scaffold_flags  (level >= CGCClient_GetAssemblyRequest::eLevel_scaffold  ? scaffold_flags_   : 0)
-    , component_flags (level >= CGCClient_GetAssemblyRequest::eLevel_component ? component_flags_  : 0)
+    , chromosome_flags(chromosome_flags_)
+    , scaffold_flags(scaffold_flags_)
+    , component_flags(component_flags_)
 {
 }
 
