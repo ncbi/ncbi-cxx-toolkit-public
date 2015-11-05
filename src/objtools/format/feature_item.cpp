@@ -1301,11 +1301,12 @@ void CFeatureItem::x_AddQualSeqfeatNote(CBioseqContext &ctx)
                         const string & comment = (*it)->GetComment();
                         // certain comments require special handling
                         const static string ktRNAscanSE = "tRNA features were annotated by tRNAscan-SE";
-                        if( NStr::StartsWith(comment, ktRNAscanSE, NStr::eNocase) && 
-                            ! x_HasMethodtRNAscanSE() ) 
+                        if( NStr::StartsWith(comment, ktRNAscanSE, NStr::eNocase) /* && ! x_HasMethodtRNAscanSE() */ ) 
                         {
-                            // don't propagate tRNAscan-SE comments to irrelevant features
-                            continue;
+                            if ( m_Feat.GetData().GetSubtype() != CSeqFeatData::eSubtype_tRNA ) {
+                                // don't propagate tRNAscan-SE comments to irrelevant features
+                                continue;
+                            }
                         }
                         string comm = comment;
                         TrimSpacesAndJunkFromEnds( comm, false );
