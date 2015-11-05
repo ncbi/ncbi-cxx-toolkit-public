@@ -1266,7 +1266,11 @@ void CMultiReaderApp::xPostProcessAnnot(
             startingLocusTagNumber = tail;
         }
         else {
-            prefix = args["locus-tag"].AsString();
+            if (!offset.empty()) {
+                //bads news
+                NCBI_THROW2(CObjReaderParseException, eFormat,
+                    "Invalid locus tag: Only one \"_\", and suffix must be numeric", 0);
+            }
         }
     }
     else {
