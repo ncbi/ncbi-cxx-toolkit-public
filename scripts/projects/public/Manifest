@@ -19,8 +19,6 @@ USE_COMPONENTS
 # to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
 # --with-distcc, --with-action etc.
 
-Win32_10       : MSVC10-32 : static 32 ReleaseDLL
-Win64_10       : MSVC10-64 : dll    64 ReleaseDLL
 Win32_13       : MSVC13-32 : dll    32 ReleaseDLL
 Win64_13       : MSVC13-64 : static 64 ReleaseDLL
 

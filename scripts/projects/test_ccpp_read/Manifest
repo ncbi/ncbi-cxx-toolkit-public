@@ -24,9 +24,9 @@ Linux32-Centos  : plain : GCC.sh      --without-debug --with-static --without-ru
 Linux64-Centos  : plain : GCC.sh      --without-debug --with-static --without-runpath --with-flat-makefile
 IntelMAC        : plain : GCC.sh      --without-debug --with-static --without-runpath --with-flat-makefile
 
-Win64_9     : 900  : static  64  ReleaseDLL
-Win32_10    : 1000 : static  32  ReleaseDLL
-Win64_10    : 1000 : static  64  ReleaseDLL
+Win32_13    : plain : static  32  ReleaseDLL
+Win64_13    : plain : static  64  ReleaseDLL
 
 
 USE_COMPONENTS
+
