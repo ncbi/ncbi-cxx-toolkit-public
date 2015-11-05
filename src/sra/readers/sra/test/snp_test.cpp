@@ -40,6 +40,7 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqres/Seq_graph.hpp>
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/seqtable/seqtable__.hpp>
 #include <objmgr/impl/snp_annot_info.hpp>
 
 #include <serial/serial.hpp>
@@ -110,6 +111,7 @@ void CSNPTestApp::Init(void)
 
     arg_desc->AddFlag("make_feat", "Make feature object");
     arg_desc->AddFlag("make_feat_annot", "Make feature annot");
+    arg_desc->AddFlag("make_table_feat_annot", "Make feature Seq-table annot");
     arg_desc->AddFlag("make_packed_feat_annot", "Make packed feature annot");
     arg_desc->AddFlag("make_cov_graph", "Make coverage graph");
     arg_desc->AddFlag("make_cov_annot", "Make coverage annot");
@@ -123,6 +125,114 @@ void CSNPTestApp::Init(void)
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
+}
+
+
+CRef<CSeqTable_column> sx_MakeColumn(CSeqTable_column_info::EField_id id,
+                                     const string& name = kEmptyStr)
+{
+    CRef<CSeqTable_column> col(new CSeqTable_column);
+    col->SetHeader().SetField_id(id);
+    if ( !name.empty() ) {
+        col->SetHeader().SetField_name(name);
+    }
+    return col;
+}
+
+
+void sx_SetIndexedValues(CSeqTable_column& col,
+                         const CIndexedStrings& values)
+{
+    size_t size = values.GetSize();
+    CCommonString_table::TStrings& arr =
+        col.SetData().SetCommon_string().SetStrings();
+    arr.resize(size);
+    for ( size_t i = 0; i < size; ++i ) {
+        arr[i] = values.GetString(i);
+    }
+}
+
+
+void sx_SetIndexedValues(CSeqTable_column& col,
+                         const CIndexedOctetStrings& values)
+{
+    size_t size = values.GetSize();
+    CCommonBytes_table::TBytes& arr =
+        col.SetData().SetCommon_bytes().SetBytes();
+    arr.resize(size);
+    for ( size_t i = 0; i < size; ++i ) {
+        arr[i] = new vector<char>;
+        values.GetString(i, *arr[i]);
+    }
+}
+
+
+CRef<CSeq_table> sx_ConvertToTable(const CSeq_annot_SNP_Info& annot)
+{
+    CRef<CSeq_table> table(new CSeq_table);
+    table->SetFeat_type(CSeqFeatData::e_Imp);
+    table->SetFeat_subtype(CSeqFeatData::eSubtype_variation);
+    table->SetNum_rows(annot.size());
+
+    CRef<CSeqTable_column> col_imp =
+        sx_MakeColumn(CSeqTable_column_info::eField_id_data_imp_key);
+    col_imp->SetDefault().SetString("variation");
+    CRef<CSeqTable_column> col_id =
+        sx_MakeColumn(CSeqTable_column_info::eField_id_location_id);
+    col_id->SetDefault().SetId(const_cast<CSeq_id&>(annot.GetSeq_id()));
+
+    CRef<CSeqTable_column> col_from =
+        sx_MakeColumn(CSeqTable_column_info::eField_id_location_from);
+    CRef<CSeqTable_column> col_to = 
+        sx_MakeColumn(CSeqTable_column_info::eField_id_location_to);
+    
+    CRef<CSeqTable_column> col_allele1(new CSeqTable_column);
+    CRef<CSeqTable_column> col_allele2(new CSeqTable_column);
+    CRef<CSeqTable_column> col_allele3(new CSeqTable_column);
+    CRef<CSeqTable_column> col_allele4(new CSeqTable_column);
+
+    CRef<CSeqTable_column> col_qa_type =
+        sx_MakeColumn(CSeqTable_column_info::eField_id_ext_type);
+    col_qa_type->SetDefault().SetString("dbSnpQAdata");
+
+    CRef<CSeqTable_column> col_qa =
+        sx_MakeColumn(CSeqTable_column_info::eField_id_ext,
+                      "E.QualityCodes");
+    sx_SetIndexedValues(*col_qa, annot.x_GetQualityCodesOs());
+    CCommonBytes_table::TIndexes& arr_qa =
+        col_qa->SetData().SetCommon_bytes().SetIndexes();
+
+    CRef<CSeqTable_column> col_dbxref =
+        sx_MakeColumn(CSeqTable_column_info::eField_id_dbxref, "D.dbSNP");
+    CSeqTable_multi_data::TInt& arr_dbxref = col_dbxref->SetData().SetInt();
+
+    CSeqTable_multi_data::TInt& arr_from = col_from->SetData().SetInt();
+    CSeqTable_sparse_index::TIndexes& ind_to = col_to->SetSparse().SetIndexes();
+    CSeqTable_multi_data::TInt& arr_to = col_to->SetData().SetInt();
+    
+    ITERATE ( CSeq_annot_SNP_Info, it, annot ) {
+        TSeqPos from = it->GetFrom();
+        arr_from.push_back(from);
+        TSeqPos to = it->GetTo();
+        if ( to != from ) {
+            ind_to.push_back(arr_to.size());
+            arr_to.push_back(to);
+        }
+        arr_qa.push_back(it->GetQualityCodesOsIndex());
+        arr_dbxref.push_back(it->m_SNP_Id);
+    }
+
+    table->SetColumns().push_back(col_imp);
+    table->SetColumns().push_back(col_id);
+    table->SetColumns().push_back(col_from);
+    if ( !arr_to.empty() ) {
+        table->SetColumns().push_back(col_to);
+    }
+    table->SetColumns().push_back(col_qa_type);
+    table->SetColumns().push_back(col_qa);
+    table->SetColumns().push_back(col_dbxref);
+    
+    return table;
 }
 
 
@@ -253,6 +363,18 @@ int CSNPTestApp::Run(void)
             CRef<CSeq_annot> annot = it.GetFeatAnnot(query_range);
             if ( annot && print ) {
                 out << MSerial_AsnText << *annot;
+            }
+        }
+        if ( args["make_table_feat_annot"] ) {
+            CSNPDbSeqIterator it(snp_db, query_idh);
+            pair<CRef<CSeq_annot>, CRef<CSeq_annot_SNP_Info> > annot =
+                it.GetPackedFeatAnnot(query_range);
+            CRef<CSeq_table> table = sx_ConvertToTable(*annot.second);
+            if ( annot.first && print ) {
+                out << MSerial_AsnText << *annot.first;
+                if ( table ) {
+                    out << MSerial_AsnText << *table;
+                }
             }
         }
         if ( args["make_packed_feat_annot"] ) {
