@@ -236,12 +236,14 @@ bool CSeqTableColumnInfo::UpdateSeq_feat(CSeq_feat& feat,
             return true;
         }
         break;
+    case CSeqTable_multi_data::e_Common_string:
     case CSeqTable_multi_data::e_String:
         if ( const string* ptr = data.GetStringPtr(index) ) {
             setter.SetString(feat, *ptr);
             return true;
         }
         break;
+    case CSeqTable_multi_data::e_Common_bytes:
     case CSeqTable_multi_data::e_Bytes:
         if ( const vector<char>* ptr = data.GetBytesPtr(index) ) {
             setter.SetBytes(feat, *ptr);
