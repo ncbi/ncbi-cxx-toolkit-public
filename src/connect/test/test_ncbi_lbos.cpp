@@ -88,6 +88,7 @@ NCBITEST_AUTO_INIT()
 #endif
 #ifdef DEANNOUNCE_ALL_BEFORE_TEST
     s_ClearZooKeeper();
+#endif
 }
 
 ///////////////////////////////////////////////////////////////////////////////
