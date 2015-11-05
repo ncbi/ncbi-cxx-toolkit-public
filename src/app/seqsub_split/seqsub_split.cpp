@@ -104,36 +104,50 @@ void CSeqSubSplitter::Init()
     // input
     {
         arg_desc->AddKey("i", "InputFile",
-                                 "Filename for asn.1 input", 
-                                 CArgDescriptions::eInputFile);
+                         "Filename for asn.1 input", 
+                         CArgDescriptions::eInputFile);
     }
  
-
     {
-        arg_desc->AddFlag("b",
-                          "Input asn.1 file in binary mode",
-                           true);
+        arg_desc->AddDefaultKey("b",
+                                "BOOLEAN",
+                                "Input asn.1 file in binary mode [T/F]",
+                                CArgDescriptions::eBoolean,
+                                "F");
+
+   //     arg_desc->SetConstraint("b", &(*new CArgAllow_Strings, "T", "F"));
     }
 
     // output
     {
+        string description = "Filename stub for asn.1 outputs.\n";
+        description.append("Will append consecutive numbers and a file-type extension to this stub");
+
         arg_desc->AddKey("o", "OutputFile",
-                         "Filename for asn.1 outputs. \ 
-                         Will append consecutative numbers \"_NNN\" to this name", 
+                         description,
                          CArgDescriptions::eOutputFile);
     }
 
-    // flags
     {
-        arg_desc->AddFlag("s",
-                          "Output asn.1 files in binary mode",
-                          true);
+        arg_desc->AddDefaultKey("s",
+                                "BOOLEAN",
+                                "Output asn.1 files in binary mode [T/F]",
+                                CArgDescriptions::eBoolean,
+                                "F");
+
     }
 
     { 
-        arg_desc->AddFlag("w",
-                          "Wrap output Seq-entries within Seq-submits with Genbank set",
-                          true);
+        arg_desc->AddDefaultKey("w",
+                                "BOOLEAN",
+                                "Wrap output Seq-entries within Seq-submits with Genbank set [T/F]",
+                                CArgDescriptions::eBoolean,
+                                "F");
+    }
+
+    // logfile alias 
+    { 
+        arg_desc->AddAlias("l", "logfile"); 
     }
 
     // parameters 
@@ -144,11 +158,18 @@ void CSeqSubSplitter::Init()
                                 CArgDescriptions::eInteger,
                                 "1");
 
+        string description = "Generate output in sorted order \n";
+        description.append("  0 - unsorted (in order of appearance in input file;\n");
+        description.append("  1 - by sequence length from longest to shortest;\n");
+        description.append("  2 - by sequence length from shortest to longest;\n");
+        description.append("  3 - by contig/scaffold id.");
+
         arg_desc->AddDefaultKey("r",
                                 "INTEGER",
-                                "Sorting order",
+                                description,
                                 CArgDescriptions::eInteger,
                                 "0");
+
         arg_desc->SetConstraint("r",
                                &(*new CArgAllow_Strings,
                                  "0", "1", "2", "3"));
@@ -173,8 +194,8 @@ int CSeqSubSplitter::Run()
 
     list<CRef<CSeq_submit> > output_array;
 
-    const bool wrap_entries = (args["w"]) ? true : false; // Wrap the output Seq-entries 
-                                                          // within a Seq-submit in a Genbank set
+    const bool wrap_entries = args["w"].AsBoolean(); // Wrap the output Seq-entries 
+                                                     // within a Seq-submit in a Genbank set
 
     if(!xTryProcessSeqSubmit(input_sub, 
                              sort_order, 
@@ -197,7 +218,7 @@ int CSeqSubSplitter::Run()
 
     int output_index = 0;
     auto_ptr<CObjectOStream> ostr;
-    bool binary = false;
+    bool binary = args["s"].AsBoolean();
 
     const TSeqPos pad_width = log10(output_array.size()) + 1;
 
@@ -498,7 +519,7 @@ CObjectIStream* CSeqSubSplitter::xInitInputStream(const CArgs& args) const
     }
 
     ESerialDataFormat serial = eSerial_AsnText;
-    if (args["b"]) {
+    if (args["b"].AsBoolean()) {
         serial = eSerial_AsnBinary;
     }
 
