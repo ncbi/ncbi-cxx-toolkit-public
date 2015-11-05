@@ -218,6 +218,19 @@ public:
     SSNP_Info::TExtraIndex x_GetExtraIndex(const string& str);
     const string& x_GetExtra(SSNP_Info::TExtraIndex index) const;
 
+    const CIndexedStrings& x_GetComments(void) const {
+        return m_Comments;
+    }
+    const CIndexedStrings& x_GetAlleles(void) const {
+        return m_Alleles;
+    }
+    const CIndexedStrings& x_GetQualityCodesStr(void) const {
+        return m_QualityCodesStr;
+    }
+    const CIndexedOctetStrings& x_GetQualityCodesOs(void) const {
+        return m_QualityCodesOs;
+    }
+
 protected:
     bool x_CheckId(const CSeq_id& id);
 
