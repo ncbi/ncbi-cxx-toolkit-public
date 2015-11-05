@@ -102,11 +102,6 @@ DISCREPANCY_CASE(SHORT_SEQUENCES, CSeq_inst, eAll, "Find Short Sequences")
 
 DISCREPANCY_SUMMARIZE(SHORT_SEQUENCES)
 {
-    if (m_Objs.empty()) {
-        return;
-    }
-    
-    m_Objs["[n] sequences are shorter than 50 nt"];
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
@@ -132,10 +127,6 @@ DISCREPANCY_CASE(INTERNAL_TRANSCRIBED_SPACER_RRNA, CRNA_ref, eOncaller, "Look fo
 
 DISCREPANCY_SUMMARIZE(INTERNAL_TRANSCRIBED_SPACER_RRNA)
 {
-    if (m_Objs.empty()) {
-        return;
-    }
-    m_Objs["[n] rRNA feature products contain 'internal', 'transcribed' or 'spacer'"];
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
@@ -336,29 +327,6 @@ DISCREPANCY_AUTOFIX(OVERLAPPING_CDS)
 
 
 // CONTAINED_CDS
-/*
-static bool HasLineage(const CBioSource& biosrc, const string& def_lineage, const string& type)
-{
-    return NStr::FindNoCase(def_lineage, type) != string::npos
-        || def_lineage.empty() && biosrc.IsSetLineage() && NStr::FindNoCase(biosrc.GetLineage(), type) != string::npos;
-}
-
-
-static bool IsEukaryotic(const CBioSource* biosrc, const string& def_lineage)
-{
-    if (biosrc) {
-        CBioSource :: EGenome genome = (CBioSource::EGenome) biosrc->GetGenome();
-        if (genome != CBioSource :: eGenome_mitochondrion
-            && genome != CBioSource :: eGenome_chloroplast
-            && genome != CBioSource :: eGenome_plastid
-            && genome != CBioSource :: eGenome_apicoplast
-            && HasLineage(*biosrc, def_lineage, "Eukaryota")) {
-            return true;
-        }
-    }
-    return false;
-}
-*/
 
 static bool HasContainedNote(const CSeq_feat& feat)
 {
@@ -470,58 +438,6 @@ DISCREPANCY_AUTOFIX(CONTAINED_CDS)
         }
     }
 }
-
-
-/*
-{
-    TReportObjectList list_all;
-    list_all.insert(list_all.end(), m_Objs.begin(), m_Objs.end());
-    list_all.insert(list_all.end(), m_ObjsSameStrand.begin(), m_ObjsSameStrand.end());
-    list_all.insert(list_all.end(), m_ObjsDiffStrand.begin(), m_ObjsDiffStrand.end());
-
-    TReportObjectList::iterator it1 = list_all.begin();
-    while (it1 != list_all.end()) {
-        //const CSeq_feat* f1 = dynamic_cast<const CSeq_feat*>((*it1)->GetObject().GetPointer());
-        const CSeq_feat* f1 = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it1).GetNCPointer())->GetObject().GetPointer());
-        TReportObjectList::iterator it2 = it1;
-        ++it2;
-        bool remove_f1 = false;
-        while (it2 != list_all.end()) {
-            bool remove_f2 = false;
-            //const CSeq_feat* f2 = dynamic_cast<const CSeq_feat*>((*it2)->GetObject().GetPointer());
-            const CSeq_feat* f2 = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it2).GetNCPointer())->GetObject().GetPointer());
-            sequence::ECompare compare = 
-                    sequence::Compare(f1->GetLocation(),
-                                        f2->GetLocation(),
-                                        &scope, sequence::fCompareOverlapping);
-            if (compare == sequence::eContains) {
-                // convert f2 to misc_feat
-                if (ConvertCDSToMiscFeat(*f2, scope)) {
-                    remove_f2 = true;
-                }
-            } else if (compare == sequence::eContained) {
-                // convert f1 to misc_feat
-                if (ConvertCDSToMiscFeat(*f1, scope)) {
-                    remove_f1 = true;
-                }
-            }
-            if (remove_f1) {
-                break;
-            }
-            if (remove_f2) {
-                it2 = list_all.erase(it2);
-            } else {
-                ++it2;
-            }
-        }
-        if (remove_f1) {
-            it1 = list_all.erase(it1);
-        } else {
-            ++it1;
-        }
-    }
-}
-*/
 
 
 END_SCOPE(NDiscrepancy)
