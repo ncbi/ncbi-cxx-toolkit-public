@@ -1373,7 +1373,7 @@ void CSeqDBIsam::IdsToOids(int              vol_start,
         break;
 
     case eTiId:
-        x_TranslateGiList<Int8>(vol_start, ids, locked);
+        x_TranslateGiList<TTi>(vol_start, ids, locked);
         break;
 
     case eStringId:

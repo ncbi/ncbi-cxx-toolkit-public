@@ -2675,10 +2675,11 @@ CSeqDBVol::GetRawSeqAndAmbig(int              oid,
     }
 }
 
+template<class T>
 static void
-s_SeqDBFitsInFour(Int8 id)
+s_SeqDBFitsInFour(T id)
 {
-    if (id > (Int8(1) << 31)) {
+    if (id >= (static_cast<T>(1) << 32)) {
         NCBI_THROW(CSeqDBException,
                    eArgErr,
                    "ID overflows range of specified type.");

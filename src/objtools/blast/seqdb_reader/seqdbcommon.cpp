@@ -789,16 +789,16 @@ void SeqDB_ReadBinaryGiList(const string & fname, vector<TGi> & gis)
 {
     CMemoryFile mfile(SeqDB_MakeOSPath(fname));
 
-    Int4 * beginp = (Int4*) mfile.GetPtr();
-    Int4 * endp   = (Int4*) (((char*)mfile.GetPtr()) + mfile.GetSize());
+    Uint4 * beginp = (Uint4*) mfile.GetPtr();
+    Uint4 * endp   = (Uint4*) (((char*)mfile.GetPtr()) + mfile.GetSize());
 
-    Int4 num_gis = (int)(endp-beginp-2);
+    int num_gis = (int) (endp - beginp - 2);
 
     gis.clear();
 
-    if (((endp - beginp) < 2) ||
-        (beginp[0] != -1) ||
-        (SeqDB_GetStdOrd(beginp + 1) != num_gis)) {
+    if (((endp - beginp) < 2)
+            ||  (beginp[0] != -1)
+            ||  (SeqDB_GetStdOrd(beginp + 1) != num_gis)) {
         NCBI_THROW(CSeqDBException,
                    eFileErr,
                    "Specified file is not a valid binary GI file.");
@@ -806,8 +806,8 @@ void SeqDB_ReadBinaryGiList(const string & fname, vector<TGi> & gis)
 
     gis.reserve(num_gis);
 
-    for(Int4 * elem = beginp + 2; elem < endp; elem ++) {
-        gis.push_back(GI_FROM(Int4, SeqDB_GetStdOrd(elem)));
+    for(Uint4 * elem = (beginp + 2); elem < endp; ++elem) {
+        gis.push_back(GI_FROM(Uint4, SeqDB_GetStdOrd(elem)));
     }
 }
 
@@ -866,16 +866,16 @@ void SeqDB_ReadMemoryGiList(const char * fbeginp,
 
     if (s_SeqDB_IsBinaryNumericList(fbeginp, fendp, long_ids)) {
         _ASSERT(long_ids == false);
-        Int4 * bbeginp = (Int4*) fbeginp;
-        Int4 * bendp = (Int4*) fendp;
+        Uint4* bbeginp = (Uint4*) fbeginp;
+        Uint4* bendp = (Uint4*) fendp;
 
-        Int4 num_gis = (int)(bendp-bbeginp-2);
+        int num_gis = (int) (bendp - bbeginp - 2);
 
         gis.clear();
 
-        if (((bendp - bbeginp) < 2) ||
-            (bbeginp[0] != -1) ||
-            (SeqDB_GetStdOrd(bbeginp + 1) != num_gis)) {
+        if (((bendp - bbeginp) < 2)
+                ||  (bbeginp[0] != -1)
+                ||  (SeqDB_GetStdOrd(bbeginp + 1) != num_gis)) {
             NCBI_THROW(CSeqDBException,
                        eFileErr,
                        "Specified file is not a valid binary GI file.");
@@ -887,9 +887,9 @@ void SeqDB_ReadMemoryGiList(const char * fbeginp,
             TGi prev_gi = ZERO_GI;
             bool in_gi_order = true;
 
-            Int4 * elem = bbeginp + 2;
+            Uint4* elem = bbeginp + 2;
             while(elem < bendp) {
-                TGi this_gi = GI_FROM(Int4, SeqDB_GetStdOrd(elem));
+                TGi this_gi = GI_FROM(Uint4, SeqDB_GetStdOrd(elem));
                 gis.push_back(this_gi);
 
                 if (prev_gi > this_gi) {
@@ -897,17 +897,17 @@ void SeqDB_ReadMemoryGiList(const char * fbeginp,
                     break;
                 }
                 prev_gi = this_gi;
-                elem ++;
+                elem++;
             }
 
             while(elem < bendp) {
-                gis.push_back(GI_FROM(Int4, SeqDB_GetStdOrd(elem++)));
+                gis.push_back(GI_FROM(Uint4, SeqDB_GetStdOrd(elem++)));
             }
 
             *in_order = in_gi_order;
         } else {
-            for(Int4 * elem = bbeginp + 2; elem < bendp; elem ++) {
-                gis.push_back(GI_FROM(Int4, SeqDB_GetStdOrd(elem)));
+            for(Uint4 * elem = (bbeginp + 2); elem < bendp; ++elem) {
+                gis.push_back(GI_FROM(Uint4, SeqDB_GetStdOrd(elem)));
             }
         }
     } else {
@@ -917,7 +917,7 @@ void SeqDB_ReadMemoryGiList(const char * fbeginp,
         // allocated, but this is preferable to letting the vector
         // double itself (which it still will do if needed).
 
-        gis.reserve(int(file_size / 7));
+        gis.reserve((int) (file_size / 7));
 
         Uint4 elem(0);
 
