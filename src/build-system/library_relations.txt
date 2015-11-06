@@ -328,6 +328,7 @@ gc_load_utils needs gc_organism
 gc_load_utils needs gc_utils
 gc_organism needs gpipe_attr
 gc_organism needs taxon1
+gc_schedule needs xconnserv
 gc_util_sdbapi needs gencoll_client
 gc_util_sdbapi needs gpipe_common
 gc_utils needs gpipe_objutil
