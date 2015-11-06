@@ -21,6 +21,7 @@ cgi/impl$
 html$
 connect$
 connect/services$
+connect/services/impl$
 connect/ext$
 util$
 util/creaders$

@@ -4,6 +4,7 @@ util/bitset$ update-only
 util/cache$ update-only
 connect$
 connect/services$
+connect/services/impl$
 connect/services/test$
 db$
 db/sqlite$

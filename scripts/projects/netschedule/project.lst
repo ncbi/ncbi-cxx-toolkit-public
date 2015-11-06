@@ -9,6 +9,7 @@ util/cache$ update-only
 util/math$ update-only
 connect$
 connect/services$
+connect/services/impl$
 db$
 db/bdb$
 app$

@@ -11,6 +11,7 @@ connect$
 connect/ext$
 connect/impl$
 connect/services$
+connect/services/impl$
 connect/daemons$
 html$
 misc$
