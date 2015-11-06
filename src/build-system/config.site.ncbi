@@ -312,12 +312,20 @@ case "$ncbi_platform" in
 esac
 
 case "$ncbi_platform" in
-    Linux64 | *MAC )
+    Linux64 )
+        vdb_base=/opt/ncbi/64/trace_software/vdb/vdb-versions
+        if [ "x$with_vdb" = 'xrc' ]; then
+            with_vdb=$vdb_base/cxx_toolkit/2
+        else
+            : ${VDB_PATH=$vdb_base/2.5.4}
+        fi
+        ;;
+    *MAC )
         vdb_base=/net/snowman/vol/projects/trace_software/vdb/vdb-versions
         if [ "x$with_vdb" = 'xrc' ]; then
             with_vdb=$vdb_base/cxx_toolkit/2-rc
         else
-            : ${VDB_PATH=$vdb_base/2.5.2}
+            : ${VDB_PATH=$vdb_base/2.5.4}
         fi
         ;;
 esac
