@@ -792,6 +792,13 @@ void CWGSDb_Impl::x_InitIdParams(void)
 string CWGSDb_Impl::NormalizePathOrAccession(CTempString path_or_acc,
                                              CTempString vol_path)
 {
+    if ( 1 ) {
+        string test_dir = "/home/dondosha/TEST";
+        string path = CDirEntry::MakePath(test_dir, path_or_acc);
+        if ( CDirEntry(path).Exists() ) {
+            return path;
+        }
+    }
     if ( !vol_path.empty() ) {
         list<CTempString> dirs;
         NStr::Split(vol_path, ":", dirs);
@@ -1254,7 +1261,7 @@ void CWGSDb_Impl::SetMasterDescr(const TMasterDescr& descr,
 }
 
 
-void CWGSDb_Impl::AddMasterDescr(CSeq_descr& descr)
+void CWGSDb_Impl::AddMasterDescr(CSeq_descr& descr) const
 {
     if ( !GetMasterDescr().empty() ) {
         unsigned type_mask = 0;
@@ -2785,6 +2792,7 @@ void sx_AddDelta(const CSeq_id& id,
     const TSeqPos kMaxGapSize = 200;
     // size of gap segment if its actual size is unknown
     const TSeqPos kUnknownGapSize = 100;
+    const TSeqPos kMinGapRecoverSize = gaps_start? kInvalidSeqPos: kMinGapSize;
     
     for ( ; len > 0; ) {
         CRef<CDelta_seq> seg(new CDelta_seq);
@@ -2836,7 +2844,7 @@ void sx_AddDelta(const CSeq_id& id,
             TSeqPos seg_len_2na = seg_len;
             seg_len += sx_Get4naLength(read, pos+seg_len,
                                        min(rem_len, kSplit4naSize)-seg_len,
-                                       kMin2naSize, kMinGapSize);
+                                       kMin2naSize, kMinGapRecoverSize);
             if ( kRecoverGaps && seg_len == 0 ) {
                 seg_len = sx_GetGapLength(read, pos, min(rem_len, kMaxGapSize));
                 _ASSERT(seg_len > 0);
@@ -3048,6 +3056,43 @@ void sx_AddFeatures(const CWGSDb& db, TVDBRowIdRange range,
 }
 
 
+static
+void sx_MakeSeqOrSet(const CWGSDb& db, TVDBRowIdRange range,
+                     CSeq_entry& entry, CBioseq& main_seq)
+{
+    entry.SetSeq(main_seq);
+    vector<TVDBRowId> product_row_ids;
+    sx_AddFeatures(db, range, entry, &product_row_ids);
+    if ( !product_row_ids.empty() ) {
+        CWGSProteinIterator prot_it(db);
+        CWGSProteinIterator::TFlags prot_flags =
+            prot_it.fDefaultFlags & ~prot_it.fMasterDescr;
+        CBioseq_set::TSeq_set& entries = entry.SetSet().SetSeq_set();
+        ITERATE ( vector<TVDBRowId>, it, product_row_ids ) {
+            if ( !prot_it.SelectRow(*it) ) {
+                ERR_POST_X(9, "CWGSDb::MakeSeqOrSet: "
+                           "invalid protein row id: "<<*it);
+                continue;
+            }
+            entries.push_back(prot_it.GetSeq_entry(prot_flags));
+        }
+    }
+}
+
+
+static
+void sx_AddMasterDescr(const CWGSDb& db, CSeq_entry& entry)
+{
+    CSeq_descr descr;
+    db->AddMasterDescr(descr);
+    const CSeq_descr::Tdata& src = descr.Get();
+    if ( !src.empty() ) {
+        CSeq_descr::Tdata& dst = entry.SetDescr().Set();
+        dst.insert(dst.end(), src.begin(), src.end());
+    }
+}
+
+
 CRef<CSeq_entry> CWGSSeqIterator::GetSeq_entry(TFlags flags) const
 {
     x_CheckValid("CWGSSeqIterator::GetSeq_entry");
@@ -3059,29 +3104,9 @@ CRef<CSeq_entry> CWGSSeqIterator::GetSeq_entry(TFlags flags) const
     }
     else {
         CRef<CBioseq> main_seq = GetBioseq(flags & ~fSeqAnnot & ~fMasterDescr);
-        ret->SetSeq(*main_seq);
-        vector<TVDBRowId> product_row_ids;
-        sx_AddFeatures(m_Db, GetLocFeatRowIdRange(), *ret, &product_row_ids);
-        if ( !product_row_ids.empty() ) {
-            CWGSProteinIterator prot_it(m_Db);
-            CWGSProteinIterator::TFlags prot_flags =
-                prot_it.fDefaultFlags & ~prot_it.fMasterDescr;
-            CBioseq_set::TSeq_set& entries = ret->SetSet().SetSeq_set();
-            ITERATE ( vector<TVDBRowId>, it, product_row_ids ) {
-                if ( !prot_it.SelectRow(*it) ) {
-                    ERR_POST_X(9, "CWGSSeqIterator::GetSeq_entry: "
-                               "invalid protein row id: "<<*it);
-                    continue;
-                }
-                entries.push_back(prot_it.GetSeq_entry(prot_flags));
-            }
-        }
+        sx_MakeSeqOrSet(m_Db, GetLocFeatRowIdRange(), *ret, *main_seq);
         if ( flags & fMasterDescr ) {
-            if ( CRef<CSeq_descr> descr = GetSeq_descr(fMasterDescr) ) {
-                const CSeq_descr::Tdata& src = descr->Get();
-                CSeq_descr::Tdata& dst = ret->SetDescr().Set();
-                dst.insert(dst.end(), src.begin(), src.end());
-            }
+            sx_AddMasterDescr(m_Db, *ret);
         }
         GetQualityAnnot(main_seq->SetAnnot(), flags);
         if ( main_seq->GetAnnot().empty() ) {
@@ -3441,23 +3466,10 @@ CRef<CSeq_entry> CWGSScaffoldIterator::GetSeq_entry(TFlags flags) const
         ret->SetSeq(*GetBioseq(flags));
     }
     else {
-        CRef<CBioseq> main_seq = GetBioseq(flags & ~fSeqAnnot);
-        ret->SetSeq(*main_seq);
-        vector<TVDBRowId> product_row_ids;
-        sx_AddFeatures(m_Db, GetLocFeatRowIdRange(), *ret, &product_row_ids);
-        if ( !product_row_ids.empty() ) {
-            CWGSProteinIterator prot_it(m_Db);
-            CWGSProteinIterator::TFlags prot_flags =
-                prot_it.fDefaultFlags & ~prot_it.fMasterDescr;
-            CBioseq_set::TSeq_set& entries = ret->SetSet().SetSeq_set();
-            ITERATE ( vector<TVDBRowId>, it, product_row_ids ) {
-                if ( !prot_it.SelectRow(*it) ) {
-                    ERR_POST_X(10, "CWGSScaffoldIterator::GetSeq_entry: "
-                               "invalid protein row id: "<<*it);
-                    continue;
-                }
-                entries.push_back(prot_it.GetSeq_entry(prot_flags));
-            }
+        CRef<CBioseq> main_seq = GetBioseq(flags & ~fSeqAnnot & ~fMasterDescr);
+        sx_MakeSeqOrSet(m_Db, GetLocFeatRowIdRange(), *ret, *main_seq);
+        if ( flags & fMasterDescr ) {
+            sx_AddMasterDescr(m_Db, *ret);
         }
     }
     return ret;
