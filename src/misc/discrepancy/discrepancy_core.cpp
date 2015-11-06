@@ -29,6 +29,7 @@
 
 #include <ncbi_pch.hpp>
 #include "discrepancy_core.hpp"
+#include "utils.hpp"
 #include <sstream>
 #include <objmgr/util/sequence.hpp>
 
@@ -158,8 +159,8 @@ CRef<CReportItem> CReportNode::Export(CDiscrepancyCase& test, bool unique)
     string str = m_Name;
     NStr::TruncateSpacesInPlace(str);
     NStr::ReplaceInPlace(str, "[n]", NStr::Int8ToString(objs.size()));
-    NStr::ReplaceInPlace(str, "[s]", objs.size() == 1 ? "" : "s");
-    NStr::ReplaceInPlace(str, "[S]", objs.size() == 1 ? "s" : "");
+    NStr::ReplaceInPlace(str, "[s]", objs.size() == 1 ? "" : "s");  // nouns
+    NStr::ReplaceInPlace(str, "[S]", objs.size() == 1 ? "s" : "");  // verbs
     NStr::ReplaceInPlace(str, "[is]", objs.size() == 1 ? "is" : "are");
     NStr::ReplaceInPlace(str, "[does]", objs.size() == 1 ? "does" : "do");
     NStr::ReplaceInPlace(str, "[has]", objs.size() == 1 ? "has" : "have");
@@ -391,6 +392,18 @@ bool CDiscrepancyContext::IsEukaryotic()//context.GetCurrentBiosource(), context
         }
     }
     return false;
+}
+
+
+bool CDiscrepancyContext::IsCurrentRnaInGenProdSet()
+{
+    static bool result = false;
+    static size_t count = 0;
+    if (count != m_Count_Bioseq) {
+        count = m_Count_Bioseq;
+        result = IsmRNASequenceInGenProdSet(GetCurrentBioseq(), Get_Bioseq_set_Stack());
+    }
+    return result;
 }
 
 

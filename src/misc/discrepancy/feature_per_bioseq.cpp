@@ -42,7 +42,6 @@ DISCREPANCY_MODULE(feature_per_bioseq);
 
 // DUPLICATE_GENE_LOCUS
 
-
 DISCREPANCY_CASE(DUPLICATE_GENE_LOCUS, CSeq_feat_BY_BIOSEQ, eNormal, "Duplicate Gene Locus")
 {
     if (!obj.GetData().IsGene() || !obj.GetData().GetGene().IsSetLocus()) {
@@ -52,11 +51,9 @@ DISCREPANCY_CASE(DUPLICATE_GENE_LOCUS, CSeq_feat_BY_BIOSEQ, eNormal, "Duplicate 
         m_Count = context.GetCountBioseq();
         Summarize();
     }
-
-    CConstRef<CBioseq> bioseq = context.GetCurrentBioseq();
-    const vector<CConstRef<CBioseq_set> > &bioseq_set_stack = context.Get_Bioseq_set_Stack();
-    if (!IsmRNASequenceInGenProdSet(bioseq, bioseq_set_stack))
+    if (!context.IsCurrentRnaInGenProdSet()) {
         m_Objs[obj.GetData().GetGene().GetLocus()].Add(*new CDiscrepancyObject(CConstRef<CSeq_feat>(&obj), context.GetScope(), context.GetFile(), context.GetKeepRef()), false);
+    }
 }
 
 
@@ -68,7 +65,7 @@ DISCREPANCY_SUMMARIZE(DUPLICATE_GENE_LOCUS)
     NON_CONST_ITERATE(CReportNode::TNodeMap, it, m_Objs.GetMap()) {
         if (!NStr::IsBlank(it->first) && it->second->GetObjects().size() > 1) {
             CReportNode tmpNode;
-            tmpNode["[n] genes have the same locus as another gene on the same Bioseq"].Add(it->second->GetObjects());
+            tmpNode["[n] gene[s] [has] the same locus as another gene on the same Bioseq"].Add(it->second->GetObjects());
             TReportItemList tmpList = tmpNode.Export(*this)->GetSubitems();
             m_ReportItems.insert(m_ReportItems.end(), tmpList.begin(), tmpList.end());
         }

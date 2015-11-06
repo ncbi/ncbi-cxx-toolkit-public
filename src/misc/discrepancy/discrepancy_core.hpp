@@ -255,6 +255,7 @@ public:
     const CBioSource* GetCurrentBiosource(void);
     CBioSource::TGenome GetCurrentGenome(void);
     bool IsEukaryotic(void);
+    bool IsCurrentRnaInGenProdSet(void);
 
 protected:
     void Update_Bioseq_set_Stack(CTypesConstIterator& it);
