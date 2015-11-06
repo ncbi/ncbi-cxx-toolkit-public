@@ -39,7 +39,7 @@ static const string& s_GetSeverityLabel (EDiagSev sev)
 void CTable2AsnValidator::Cleanup(CSeq_entry& entry)
 {
     CCleanup cleanup;
-    cleanup.BasicCleanup(entry, 0);
+    cleanup.BasicCleanup(entry, CCleanup::eClean_SyncGenCodes);
 }
 
 CConstRef<CValidError> CTable2AsnValidator::Validate(const CSerialObject& object, Uint4 opts)

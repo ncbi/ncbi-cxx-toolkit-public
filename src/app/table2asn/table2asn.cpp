@@ -459,8 +459,8 @@ int CTbl2AsnApp::Run(void)
 
     m_context.m_asn1_suffix = args["out-suffix"].AsString();
 
-    //if (m_context.m_delay_genprodset)
-    //    m_context.m_GenomicProductSet = false;
+    if (m_context.m_delay_genprodset)
+        m_context.m_GenomicProductSet = false;
 
     m_context.m_copy_genid_to_note = args["I"].AsBoolean();
     m_context.m_save_bioseq_set = args["K"].AsBoolean();
@@ -831,9 +831,18 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     if (!m_context.m_avoid_orf_lookup && !m_context.m_find_open_read_frame.empty())
         fr.FindOpenReadingFrame(*entry);
 
-    fr.m_replacement_protein = m_replacement_proteins;
+    if (m_context.m_RemoteTaxonomyLookup)
+    {
+#ifdef USE_SCOPE000
+        m_context.VisitAllSeqDesc(entry_edit_handle, m_context.UpdateOrgFromTaxon);
+#else
+        m_context.m_remote_updater->UpdateOrgFromTaxon(m_context.m_logger, *entry);
+#endif
+    }
 
-    if (!m_context.m_delay_genprodset)
+
+    fr.m_replacement_protein = m_replacement_proteins;
+//    if (!m_context.m_delay_genprodset)
     {
         fr.MergeCDSFeatures(*entry);
         entry->Parentize();
@@ -889,15 +898,6 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     if (m_context.m_postprocess_pubs)
     {
         edit::CRemoteUpdater::PostProcessPubs(entry_edit_handle);
-    }
-
-    if (m_context.m_RemoteTaxonomyLookup)
-    {
-#ifdef USE_SCOPE
-        m_context.VisitAllSeqDesc(entry_edit_handle, m_context.UpdateOrgFromTaxon);
-#else
-        m_context.m_remote_updater->UpdateOrgReferences(*entry);
-#endif
     }
 
     if (avoid_submit_block)

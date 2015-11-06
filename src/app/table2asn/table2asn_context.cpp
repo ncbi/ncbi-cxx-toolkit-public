@@ -584,14 +584,32 @@ void CTable2AsnContext::RenameProteinIdsQuals(CTable2AsnContext& context, CSeq_f
     if (!feature.IsSetQual())
         return;
 
-    NON_CONST_ITERATE(CSeq_feat::TQual, it, feature.SetQual())
+    CSeq_feat::TQual& quals = feature.SetQual();
+    for (CSeq_feat::TQual::iterator it = quals.begin(); it != quals.end();) // no ++ iterator
     {
-        if ((**it).GetQual() == "protein_id")
-            (**it).SetQual("orig_protein_id");
-        else
         if ((**it).GetQual() == "transcript_id")
+        {
             (**it).SetQual("orig_transcript_id");
+            it++;
+        }
+        else
+        if ((**it).GetQual() == "protein_id")
+        {
+            if (feature.IsSetData() && feature.GetData().IsCdregion())
+               it = quals.erase(it);
+            else
+            {
+               (**it).SetQual("orig_protein_id");
+               it++;
+            }
+        }
+        else
+        {
+            it++;
+        }
     }
+    if (quals.empty())
+        feature.ResetQual();
 }
 
 void CTable2AsnContext::RemoveProteinIdsQuals(CTable2AsnContext& context, CSeq_feat& feature)

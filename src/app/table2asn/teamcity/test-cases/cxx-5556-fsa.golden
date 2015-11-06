@@ -99,10 +99,7 @@ GFIVVPLSKSLYDFHEGYDLYNLGFTAG"
         {
           id local id 1,
           data cdregion {
-            frame one,
-            code {
-              id 11
-            }
+            frame one
           },
           product whole local str "WS1030",
           location int {

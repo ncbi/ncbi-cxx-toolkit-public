@@ -2519,7 +2519,7 @@ NNTTGNSSNSKSSSGSNGRSNNFNGSPSNVASGSNNTKSANGTNNRFQKNKK"
               data cdregion {
                 frame one,
                 code {
-                  id 11
+                  id 1
                 }
               },
               comment "Slime mold (D.discoideum) transposon DIRS-1, complete,
@@ -2555,7 +2555,7 @@ NNTTGNSSNSKSSSGSNGRSNNFNGSPSNVASGSNNTKSANGTNNRFQKNKK"
               data cdregion {
                 frame one,
                 code {
-                  id 11
+                  id 1
                 }
               },
               comment "Slime mold (D.discoideum) transposon DIRS-1, complete,

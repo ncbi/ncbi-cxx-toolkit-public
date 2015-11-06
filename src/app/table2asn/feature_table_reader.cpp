@@ -416,6 +416,53 @@ namespace
         }
     }
 
+    int GetGenomicCodeOfBioseq(const CBioseq& bioseq)
+    {
+        CConstRef<CSeqdesc> closest_biosource = bioseq.GetClosestDescriptor(CSeqdesc::e_Source);
+        if (closest_biosource.Empty())
+            return 0;
+
+        const CBioSource & bsrc = closest_biosource->GetSource();
+
+        // use "genome" to determine if we're a plastid or what
+        CBioSource::EGenome eGenome = (bsrc.IsSetGenome() ?
+            static_cast<CBioSource::EGenome>(bsrc.GetGenome()) :
+            CBioSource::eGenome_unknown);
+
+        switch (eGenome)
+        {
+        case CBioSource::eGenome_chloroplast:
+        case CBioSource::eGenome_chromoplast:
+        case CBioSource::eGenome_plastid:
+        case CBioSource::eGenome_cyanelle:
+        case CBioSource::eGenome_apicoplast:
+        case CBioSource::eGenome_leucoplast:
+        case CBioSource::eGenome_proplastid:
+        case CBioSource::eGenome_chromatophore: {
+            // plastid
+            const int iPlastidCode = (
+                FIELD_CHAIN_OF_2_IS_SET(bsrc, Org, Pgcode) ?
+                bsrc.GetOrg().GetPgcode() : 0);
+            return (iPlastidCode > 0 ? iPlastidCode : 11);
+            break;
+        }
+        case CBioSource::eGenome_kinetoplast:
+        case CBioSource::eGenome_mitochondrion:
+        case CBioSource::eGenome_hydrogenosome:
+            return (
+                FIELD_CHAIN_OF_2_IS_SET(bsrc, Org, Mgcode) ?
+                bsrc.GetOrg().GetMgcode() : 0);
+            break;
+        default:
+            // usually we want the nuc code
+            return (
+                FIELD_CHAIN_OF_2_IS_SET(bsrc, Org, Gcode) ?
+                bsrc.GetOrg().GetGcode() : 0);
+            break;
+        }
+        return 0;
+    }
+
 }
 
 CFeatureTableReader::CFeatureTableReader(ILineErrorListener* logger): m_logger(logger), m_local_id_counter(0)
@@ -747,7 +794,7 @@ CRef<CSeq_entry> NewTranslateProtein(CScope& scope, CSeq_entry_Handle top_entry_
     //feature::PromoteCDSToNucProtSet(scope.GetObjectHandle(cds));
 }
 
-void CFeatureTableReader::MoveCdRegions(CSeq_entry_Handle entry_h, CSeq_annot::TData::TFtable& seq_ftable, CSeq_annot::TData::TFtable& set_ftable)
+void CFeatureTableReader::MoveCdRegions(CSeq_entry_Handle entry_h, const CBioseq& bioseq, CSeq_annot::TData::TFtable& seq_ftable, CSeq_annot::TData::TFtable& set_ftable)
 {
     // sort and number ids
     CScope& scope = entry_h.GetScope();
@@ -767,9 +814,15 @@ void CFeatureTableReader::MoveCdRegions(CSeq_entry_Handle entry_h, CSeq_annot::T
         if (data.IsCdregion())
         {
             if (!data.GetCdregion().IsSetCode())
-                data.SetCdregion().SetCode().SetId(11); //???
+            {
+                int code = GetGenomicCodeOfBioseq(bioseq);
+                if (code != 0)
+                    data.SetCdregion().SetCode().SetId(code);
+            }
             if (!data.GetCdregion().IsSetFrame())
-                data.SetCdregion().SetFrame(CCdregion::eFrame_one); //???
+            {
+                data.SetCdregion().SetFrame(CSeqTranslator::FindBestFrame(*feature, scope));
+            }
             CRef<CSeq_entry> protein = TranslateProtein(scope, entry_h, *feature, locustag);
             locustag.clear();
             if (protein.NotEmpty())
@@ -822,7 +875,7 @@ void CFeatureTableReader::ParseCdregions(CSeq_entry& entry)
             }
             CSeq_annot::TData::TFtable& seq_ftable = seq_annot->SetData().SetFtable();
 
-            MoveCdRegions(entry_h, seq_ftable, set_ftable);
+            MoveCdRegions(entry_h, seq->GetSeq(), seq_ftable, set_ftable);
 
             if (seq_ftable.empty())
             {
