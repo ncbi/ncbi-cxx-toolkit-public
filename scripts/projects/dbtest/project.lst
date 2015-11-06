@@ -17,6 +17,7 @@ cgi/impl$
 connect$
 connect/ext$
 connect/services$
+connect/services/impl$
 dbapi$
 dbapi/driver$
 dbapi/driver/impl$
