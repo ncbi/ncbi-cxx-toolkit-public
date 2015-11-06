@@ -340,3 +340,4 @@ fi
 ])
 
 m4_include([ax_jni_include_dir.m4])
+m4_include([ax_prog_cc_for_build.m4])

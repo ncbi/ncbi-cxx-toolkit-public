@@ -1,6 +1,6 @@
 # $Id$
 
-SUB_PROJ = helpers project_tree_builder
+APP_PROJ = run_with_lock
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

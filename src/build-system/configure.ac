@@ -819,7 +819,7 @@ esac
 
 #### C and C++ compilers
 AC_LANG(C++)
-AC_PROG_CC
+AX_PROG_CC_FOR_BUILD
 AC_PROG_CXX
 
 
@@ -8092,6 +8092,9 @@ elif test -f "$ncbicfg"; then
 else
    echo "$ncbicfg" is not present
 fi
+
+dnl Try to build simple helpers
+(cd $builddir/build-system/helpers && ${MAKE-make} -k)
 
 dnl Create Makefile.flat if requested
 if test "$with_configure_dialog" = yes; then
