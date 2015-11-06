@@ -39866,20 +39866,22 @@ echo "$as_me: WARNING: $message" >&2;}  ;;
       if test -z "$VDB_PATH"; then
          in_path=
       else
-         ncbi_fix_dir_tmp=`if cd $VDB_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
+                  vdb_parent=`dirname "$VDB_PATH"`
+         ncbi_fix_dir_tmp=`if cd $vdb_parent; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
-    /.*) ncbi_fix_dir_tmp2=`cd $VDB_PATH && $smart_pwd 2>/dev/null`
+    /.*) ncbi_fix_dir_tmp2=`cd $vdb_parent && $smart_pwd 2>/dev/null`
          if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
-            VDB_PATH=$ncbi_fix_dir_tmp2
+            vdb_parent=$ncbi_fix_dir_tmp2
          else
-            case "$VDB_PATH" in
+            case "$vdb_parent" in
                /*) ;;
-               * ) VDB_PATH=$ncbi_fix_dir_tmp ;;
+               * ) vdb_parent=$ncbi_fix_dir_tmp ;;
             esac
          fi
          ;;
-    /*) VDB_PATH=$ncbi_fix_dir_tmp ;;
+    /*) vdb_parent=$ncbi_fix_dir_tmp ;;
  esac
+         VDB_PATH=$vdb_parent/`basename "$VDB_PATH"`
          in_path=" in $VDB_PATH"
          for x in interfaces include; do
             if test -d "$VDB_PATH/$x"; then

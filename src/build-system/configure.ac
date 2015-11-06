@@ -6727,7 +6727,10 @@ if test "$with_vdb" != "no" ; then
       if test -z "$VDB_PATH"; then
          in_path=
       else
-         NCBI_FIX_DIR(VDB_PATH)
+         dnl NCBI_FIX_DIR(VDB_PATH)
+         vdb_parent=`dirname "$VDB_PATH"`
+         NCBI_FIX_DIR(vdb_parent)
+         VDB_PATH=$vdb_parent/`basename "$VDB_PATH"`
          in_path=" in $VDB_PATH"
          for x in interfaces include; do
             if test -d "$VDB_PATH/$x"; then
