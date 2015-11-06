@@ -8,8 +8,8 @@
 ##INFO=<ID=GCF,Number=0,Type=Flag,Description="Has Genotype Conflict Same (rs, ind), different genotype.  N/N is not included.">
 ##FILTER=<ID=NC,Description="Inconsistent Genotype Submission For At Least One Sample">
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
-NC_000001.10	91666	rs1234	GTTT	GTTA,GTAA,GTTTAAA	.	.	.
 NC_000001.10	985955	rs199476396	G	C	.	.	.
 NC_000001.10	2338019	rs61752093	CAG	C	.	.	.
-NC_000001.10	4077315	rs13785321	TG	CA	.	.	.
 NC_000001.10	4339280	rs80359840	A	ACGAT	.	.	.
+NC_000001.10	4077315	rs13785321	TG	CA	.	.	.
+NC_000001.10	91666	rs1234	GTTT	GTTA,GTAA,GTTTAAA	.	.	.
