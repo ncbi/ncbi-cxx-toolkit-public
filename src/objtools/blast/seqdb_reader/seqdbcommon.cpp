@@ -792,12 +792,12 @@ void SeqDB_ReadBinaryGiList(const string & fname, vector<TGi> & gis)
     Uint4 * beginp = (Uint4*) mfile.GetPtr();
     Uint4 * endp   = (Uint4*) (((char*)mfile.GetPtr()) + mfile.GetSize());
 
-    int num_gis = (int) (endp - beginp - 2);
+    Uint4 num_gis = (int) (endp - beginp - 2);
 
     gis.clear();
 
-    if (((endp - beginp) < 2)
-            ||  (beginp[0] != -1)
+    if (((endp - beginp) < 2U)
+            ||  (beginp[0] != 0xFFFFFFFFU)
             ||  (SeqDB_GetStdOrd(beginp + 1) != num_gis)) {
         NCBI_THROW(CSeqDBException,
                    eFileErr,
@@ -869,12 +869,12 @@ void SeqDB_ReadMemoryGiList(const char * fbeginp,
         Uint4* bbeginp = (Uint4*) fbeginp;
         Uint4* bendp = (Uint4*) fendp;
 
-        int num_gis = (int) (bendp - bbeginp - 2);
+        Uint4 num_gis = (int) (bendp - bbeginp - 2);
 
         gis.clear();
 
-        if (((bendp - bbeginp) < 2)
-                ||  (bbeginp[0] != -1)
+        if (((bendp - bbeginp) < 2U)
+                ||  (bbeginp[0] != 0xFFFFFFFFU)
                 ||  (SeqDB_GetStdOrd(bbeginp + 1) != num_gis)) {
             NCBI_THROW(CSeqDBException,
                        eFileErr,
