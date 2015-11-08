@@ -48,6 +48,10 @@
 #  define PATH_MAX 4096
 #endif
 
+#ifndef W_EXITCODE
+#  define W_EXITCODE(x, y) (((x) << 8) | (y))
+#endif
+
 static const char* s_AppName;
 static char        s_LockName[PATH_MAX];
 
