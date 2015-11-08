@@ -32,69 +32,6 @@
 #include <ncbi_pch.hpp>
 #include "read_blast_result.hpp"
 
-int CReadBlastApp::ReadTRNA(const string& file)
-{
-  if(PrintDetails()) NcbiCerr << "ReadTRNA(" << file << "): start" << NcbiEndl;
-  int n=0;
-  ifstream is(file.c_str());
-  if(!is.good()) 
-    {
-    NcbiCerr << "CReadBlastApp::ReadTRNA(" << file << "): ERROR: cannot open " << NcbiEndl;
-    }
-  while(is.good())
-    {
-    char line[0x1000];
-    is.getline(line, 0xFFF); 
-    if(PrintDetails()) NcbiCerr << "ReadTRNA(" << file << "): line: " << line << NcbiEndl;
-    if(!is.good()) break;
-    if(line[0] == '#') continue;
-// gnl|uianeuro|1003       1       19274   19345   Glu     TTC     0       0       0.00
-    char *token = strtok(line, " \t");
-    int icol=1;
-    int from=0, to=0;
-    string type3 = "";
-    double score = 0.0;
-    while(token != 0)
-      {
-      if(PrintDetails()) NcbiCerr << "ReadTRNA(" << file << "): token[" << icol << "]: " << token << NcbiEndl;
-      switch(icol)
-        {
-        case 3: from = atoi(token); break;
-        case 4: to   = atoi(token); break;
-        case 5: type3= token; if(type3=="SeC") type3="Sec"; break;
-        case 9: score = atof(token); break;
-        default: break;
-        }
-      token = strtok(0, " \t");
-      icol++;
-      }
-    if(score<m_trnascan_scoreThreshold) continue;
-    ENa_strand strand = eNa_strand_plus;
-    bool reverse=to<from;
-    if(reverse) {int t=to; to=from;from=t; strand=eNa_strand_minus; }
-
-    TExtRNA ext_rna;
-// lot of tRNAs seems to be having left position just one bp off, assuming that it is a difference in naming
-    ext_rna.from = from-1;
-    ext_rna.to   = to  ;
-    ext_rna.strand   = strand;
-    ext_rna.type3 = type3;
-    ext_rna.present = false;
-    if(PrintDetails()) NcbiCerr << "ReadTRNA(" << file << "): structure: " 
-       << ext_rna.from << ","
-       << ext_rna.to   << ","
-       << int(ext_rna.strand) << ","
-       << ext_rna.type3 << ","
-       << ext_rna.present << ","
-       << NcbiEndl;
-    m_extRNAtable.push_back(ext_rna);
-    n++;
-    }
-
-  if(PrintDetails()) NcbiCerr << "ReadTRNA(" << file << "): end" << NcbiEndl;
-  return n;
-}
-
 int CReadBlastApp::ReadTRNA2(const string& file)
 {
   if(PrintDetails()) NcbiCerr << "ReadTRNA2(" << file << "): start" << NcbiEndl;
@@ -169,9 +106,11 @@ int CReadBlastApp::ReadTRNA2(const string& file)
       }
     else
       {
-      ext_rna.exons[0].to   = to  ;
+      ext_rna.exons[0].to   = to  - 1;
       }
     ext_rna.type = "tRNA";
+    ext_rna.type = "tRNA";
+    ext_rna.type3 = type3;
     ext_rna.key = from;
     ext_rna.name = namestr.str();
     ext_rna.description = descstr.str();

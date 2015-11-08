@@ -244,7 +244,6 @@ typedef struct
   int from;
   int to;
   ENa_strand strand;
-  bool present;
   } TExtRNA;
 
 typedef struct
@@ -264,6 +263,7 @@ typedef struct
   string name;
   string description;
   string type;
+  string type3;
   TSimplePairs exons;
   CRef<CBioseq> seq;
   }
@@ -285,7 +285,6 @@ private:
 
 // Main functions
     int ReadBlast(const char *file, map<string, blastStr>& blastMap );
-    int ReadTRNA(const string& file);
     int ReadTRNA2(const string& file);
     int ReadRRNA2(const string& file);
     int StoreBlast(map<string, blastStr>& blastMap ); 
@@ -507,7 +506,7 @@ private:
 
 
     bool match_na ( const CSeq_feat& f1, const string& type1);
-    int  match_na ( const CSeq_feat& f1, const TExtRNA& ext_rna, 
+    int  match_na ( const CSeq_feat& f1, const TSimpleSeq& ext_rna, 
                     int& left, int& right, bool& strand_match, int& abs_left );
     int overlaps(const TSimpleSeqs::iterator& seq1, const TSimpleSeqs::iterator& seq2, int& overlap);
 
@@ -554,7 +553,7 @@ private:
     // string m_previous_genome;
     list<long> m_previous_genome;
 
-    TExtRNAtable m_extRNAtable;
+//    TExtRNAtable m_extRNAtable;
     TSimpleSeqs m_extRNAtable2; // external rna sequences
     TSimpleSeqs m_simple_seqs;  // internal rna sequences
 
