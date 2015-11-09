@@ -471,9 +471,7 @@ void CValidError_align::x_ValidateDenseg
  const CSeq_align& align)
 {
     // assert dim >= 2
-    if ( !x_ValidateDim(denseg, align) ) {
-        return;
-    }
+    x_ValidateDim(denseg, align);
 
     size_t dim     = denseg.GetDim();
     size_t numseg  = denseg.GetNumseg();
@@ -545,9 +543,7 @@ void CValidError_align::x_ValidatePacked
 {
 
     // assert dim >= 2
-    if ( !x_ValidateDim(packed, align) ) {
-        return;
-    }
+    x_ValidateDim(packed, align);
 
     size_t dim     = packed.GetDim();
     size_t numseg  = packed.GetNumseg();
@@ -636,9 +632,7 @@ void CValidError_align::x_ValidateDendiag
         size_t dim = dendiag.GetDim();
 
         // assert dim >= 2
-        if ( !x_ValidateDim(dendiag, align, num_dendiag) ) {
-            continue;
-        }
+        !x_ValidateDim(dendiag, align, num_dendiag);
 
         string label;
         dendiag.GetIds()[0]->GetLabel (&label);
@@ -696,8 +690,7 @@ void CValidError_align::x_ValidateStd
         size_t dim = stdseg.GetDim();
 
         // assert dim >= 2
-        if ( !x_ValidateDim(stdseg, align, num_stdseg) ) {
-        }
+        x_ValidateDim(stdseg, align, num_stdseg);
 
         // assert dim == Loc.size()
         if ( dim != stdseg.GetLoc().size() ) {
