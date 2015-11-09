@@ -4548,6 +4548,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadOrgMod)
     unit_test_util::SetOrgMod (entry, COrgMod::eSubtype_nat_host, "Sebaea microphylla");
     unit_test_util::SetCommon (entry, "some common name");
     unit_test_util::SetOrgMod (entry, COrgMod::eSubtype_common, "some common name");
+    unit_test_util::SetOrgMod (entry, COrgMod::eSubtype_type_material, "invalid type material name");
 
     STANDARD_SETUP
 
@@ -4557,6 +4558,9 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadOrgMod)
                               "Unknown orgmod subtype 1"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadOrgMod",
                               "Multiple strain qualifiers on the same BioSource"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadOrgMod",
+                              "Bad value for type_material"));
+                               
     /*
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadOrgMod",
                               "Orgmod variety should only be in plants, fungi, or cyanobacteria"));
