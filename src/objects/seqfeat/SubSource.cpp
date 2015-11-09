@@ -1208,6 +1208,20 @@ string s_GetDefaultDir(bool is_negative, string default_dir)
     return dir;
 }
 
+static void s_RemoveLeadingZeros(string& token)
+{
+
+    size_t index = 0;
+    while (index < token.size() &&
+        token[index] == '0' &&
+        (index + 1 < token.size() && isdigit(token[index + 1]))) {
+        ++index;
+    }
+    if (index != 0) {
+        token = token.substr(index);
+    }
+}
+
 
 static string s_GetNumFromLatLonToken (string token, string default_dir)
 {
@@ -1234,6 +1248,7 @@ static string s_GetNumFromLatLonToken (string token, string default_dir)
         is_negative = true;
         token = token.substr(1);
     }
+
     if (NStr::IsBlank(dir)) {
         dir = s_GetDefaultDir(is_negative, default_dir);
     } else if (is_negative) {
@@ -1334,6 +1349,8 @@ static string s_GetNumFromLatLonToken (string token, string default_dir)
             return "";
         }
     }
+
+    s_RemoveLeadingZeros(token);
 
     if (prev_start == 0) {
         if (!NStr::IsBlank(dir)) {
@@ -1550,6 +1567,7 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
     NStr::ReplaceInPlace (cpy, "EAST",      "E");
     NStr::ReplaceInPlace (cpy, "WEST",      "W");
     NStr::ReplaceInPlace (cpy, " AND ",     " "); // treat AND like a space delimiter
+    NStr::ReplaceInPlace (cpy, "_", " ");
     NStr::ReplaceInPlace (cpy, "  ", " "); // double-spaces become single spaces
 
     size_t lat_pos = NStr::Find (cpy, "LAT");

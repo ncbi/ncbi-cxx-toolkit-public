@@ -17998,6 +17998,30 @@ BOOST_AUTO_TEST_CASE(Test_FixLatLonFormat)
     fixed = CSubSource::FixLatLonFormat(to_fix, true);
     BOOST_CHECK_EQUAL(fixed, "");
 
+    to_fix = "0031.02 N 00.01E";
+    fixed = CSubSource::FixLatLonFormat(to_fix, true);
+    BOOST_CHECK_EQUAL(fixed, "31.02 N 0.01 E");
+    
+    to_fix = "000.00 N 0.12 E";
+    fixed = CSubSource::FixLatLonFormat(to_fix, true);
+    BOOST_CHECK_EQUAL(fixed, "0.00 N 0.12 E");
+
+    to_fix = "0.0023 N 0 E";
+    fixed = CSubSource::FixLatLonFormat(to_fix, true);
+    BOOST_CHECK_EQUAL(fixed, "0.0023 N 0 E");
+
+    to_fix = "78.32 -0092.25";
+    fixed = CSubSource::FixLatLonFormat(to_fix, true);
+    BOOST_CHECK_EQUAL(fixed, "78.32 N 92.25 W");
+
+    to_fix = "-0008.34 0.85";
+    fixed = CSubSource::FixLatLonFormat(to_fix, true);
+    BOOST_CHECK_EQUAL(fixed, "8.34 S 0.85 E");
+
+    to_fix = "0.067682S_76.39885W";
+    fixed = CSubSource::FixLatLonFormat(to_fix, true);
+    BOOST_CHECK_EQUAL(fixed, "0.067682 S 76.39885 W");
+
     bool format_correct;
     bool precision_correct;
     bool lat_in_range;
@@ -18008,6 +18032,7 @@ BOOST_AUTO_TEST_CASE(Test_FixLatLonFormat)
     CSubSource::IsCorrectLatLonFormat ("53.43.20 N 7.43.20 E", format_correct, precision_correct,
                                      lat_in_range, lon_in_range,
                                      lat_value, lon_value);
+    BOOST_CHECK(!format_correct);
 
 }
 
