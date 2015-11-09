@@ -2889,7 +2889,7 @@ function_cleanup:
             s_ClearHeap(&redoneMatches[0]);
         }
     }
-    s_FreeBlastCompo_QueryInfoArray(&query_info, numQueries);
+    s_FreeBlastCompo_QueryInfoArray(&query_info, numContexts);
     Blast_RedoAlignParamsFree(&redo_align_params);
     if (redoneMatches != NULL) {
         for (query_index = 0;  query_index < numQueries;  query_index++) {
