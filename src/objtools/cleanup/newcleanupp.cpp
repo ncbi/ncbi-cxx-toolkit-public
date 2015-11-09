@@ -10537,42 +10537,56 @@ void CNewCleanup_imp::x_CleanupGenbankBlock( CSeq_descr & seq_descr )
   
 }
 
-bool CNewCleanup_imp::x_ShouldRemoveEmptyGene(CGene_ref& gene)
+bool CNewCleanup_imp::x_CleanEmptyGene(CGene_ref& gene)
 {
-    bool should_remove = false;
+    bool any_change = false;
     if (gene.IsSetLocus() &&
         NStr::IsBlank(gene.GetLocus())) {
         gene.ResetLocus();
         ChangeMade(CCleanupChange::eChangeOther);
+        any_change = true;
     }
     if (gene.IsSetAllele() &&
         NStr::IsBlank(gene.GetAllele())) {
         gene.ResetAllele();
         ChangeMade(CCleanupChange::eChangeOther);
+        any_change = true;
     }
     if (gene.IsSetDesc() &&
         NStr::IsBlank(gene.GetDesc())) {
         gene.ResetDesc();
         ChangeMade(CCleanupChange::eChangeOther);
+        any_change = true;
     }
     if (gene.IsSetMaploc() &&
         NStr::IsBlank(gene.GetMaploc())) {
         gene.ResetMaploc();
         ChangeMade(CCleanupChange::eChangeOther);
+        any_change = true;
     }
     if (gene.IsSetLocus_tag() &&
         NStr::IsBlank(gene.GetLocus_tag())) {
         gene.ResetLocus_tag();
         ChangeMade(CCleanupChange::eChangeOther);
+        any_change = true;
     }
     if (gene.IsSetDb() && gene.GetDb().empty()) {
         gene.ResetDb();
         ChangeMade(CCleanupChange::eChangeOther);
+        any_change = true;
     }
     if (gene.IsSetSyn() && gene.GetSyn().empty()) {
         gene.ResetSyn();
         ChangeMade(CCleanupChange::eChangeOther);
+        any_change = true;
     }
+    return any_change;
+}
+
+
+bool CNewCleanup_imp::x_ShouldRemoveEmptyGene(const CGene_ref& gene)
+{
+    bool should_remove = false;
     if (!gene.IsSetLocus() &&
         !gene.IsSetAllele() &&
         !gene.IsSetDesc() &&
@@ -10585,38 +10599,50 @@ bool CNewCleanup_imp::x_ShouldRemoveEmptyGene(CGene_ref& gene)
     return should_remove;
 }
 
-            
-bool CNewCleanup_imp::x_ShouldRemoveEmptyProt( CProt_ref& prot )
+   
+bool CNewCleanup_imp::x_CleanEmptyProt(CProt_ref& prot)
 {
     if (prot.IsSetProcessed() &&
         (prot.GetProcessed() == CProt_ref::eProcessed_signal_peptide ||
-         prot.GetProcessed() == CProt_ref::eProcessed_transit_peptide)) {
+        prot.GetProcessed() == CProt_ref::eProcessed_transit_peptide)) {
         return false;
     }
 
-    bool should_remove = false;
-    if (prot.IsSetName() && 
-        (prot.GetName().empty() || 
-         NStr::IsBlank(prot.GetName().front()))) {
+    bool any_change = false;
+    if (prot.IsSetName() &&
+        (prot.GetName().empty() ||
+        NStr::IsBlank(prot.GetName().front()))) {
         prot.ResetName();
         ChangeMade(CCleanupChange::eChangeOther);
+        any_change = true;
     }
     if (prot.IsSetEc() && prot.GetEc().empty()) {
         prot.ResetEc();
         ChangeMade(CCleanupChange::eChangeOther);
+        any_change = true;
     }
     if (prot.IsSetDb() && prot.GetDb().empty()) {
         prot.ResetDb();
         ChangeMade(CCleanupChange::eChangeOther);
+        any_change = true;
     }
     if (prot.IsSetActivity() && prot.GetActivity().empty()) {
         prot.ResetActivity();
         ChangeMade(CCleanupChange::eChangeOther);
+        any_change = true;
     }
     if (prot.IsSetDesc() && NStr::IsBlank(prot.GetDesc())) {
         prot.ResetDesc();
         ChangeMade(CCleanupChange::eChangeOther);
+        any_change = true;
     }
+    return any_change;
+}
+
+
+bool CNewCleanup_imp::x_ShouldRemoveEmptyProt(const CProt_ref& prot )
+{
+    bool should_remove = false;
     if (!prot.IsSetName() &&
         !prot.IsSetDesc() &&
         !prot.IsSetEc() &&
@@ -10627,12 +10653,34 @@ bool CNewCleanup_imp::x_ShouldRemoveEmptyProt( CProt_ref& prot )
     return should_remove;
 }
            
-bool CNewCleanup_imp::x_ShouldRemoveEmptyPub(CPubdesc& pub)
+bool CNewCleanup_imp::x_ShouldRemoveEmptyPub(const CPubdesc& pub)
 {
     return false;
 }
 
-bool CNewCleanup_imp::x_ShouldRemoveEmptyFeature( CSeq_feat& feat)
+
+bool CNewCleanup_imp::x_CleanEmptyFeature(CSeq_feat& feat)
+{
+    bool any_change = false;
+    if (!feat.IsSetData()) {
+        return false;
+    }
+    switch (feat.GetData().Which()) {
+    case CSeqFeatData::e_Gene:
+        any_change = x_CleanEmptyGene(feat.SetData().SetGene());
+        break;
+    case CSeqFeatData::e_Prot:
+        any_change = x_CleanEmptyProt(feat.SetData().SetProt());
+        break;
+    default:
+        break;
+    }
+
+    return any_change;
+}
+
+
+bool CNewCleanup_imp::x_ShouldRemoveEmptyFeature(const CSeq_feat& feat)
 {
     bool is_empty = false;
 
@@ -10641,13 +10689,13 @@ bool CNewCleanup_imp::x_ShouldRemoveEmptyFeature( CSeq_feat& feat)
     }
     switch (feat.GetData().Which()) {
         case CSeqFeatData::e_Gene:
-            is_empty = x_ShouldRemoveEmptyGene(feat.SetData().SetGene());
+            is_empty = x_ShouldRemoveEmptyGene(feat.GetData().GetGene());
             break;
         case CSeqFeatData::e_Prot:
-            is_empty = x_ShouldRemoveEmptyProt(feat.SetData().SetProt());
+            is_empty = x_ShouldRemoveEmptyProt(feat.GetData().GetProt());
             break;
         case CSeqFeatData::e_Pub:
-            is_empty = x_ShouldRemoveEmptyPub(feat.SetData().SetPub());
+            is_empty = x_ShouldRemoveEmptyPub(feat.GetData().GetPub());
             break;
         case CSeqFeatData::e_Comment:
             if (!feat.IsSetComment() || NStr::IsBlank(feat.GetComment())) {
@@ -10663,13 +10711,27 @@ bool CNewCleanup_imp::x_ShouldRemoveEmptyFeature( CSeq_feat& feat)
 void CNewCleanup_imp::x_RemoveEmptyFeatures( CSeq_annot & seq_annot )
 {
     if (seq_annot.IsFtable()) {
-        CSeq_annot::C_Data::TFtable::iterator it = seq_annot.SetData().SetFtable().begin();
-        while (it != seq_annot.SetData().SetFtable().end()) {
-            if (x_ShouldRemoveEmptyFeature(**it)) {
-                it = seq_annot.SetData().SetFtable().erase(it);
-                ChangeMade(CCleanupChange::eRemoveFeat);
-            } else {
-                it++;
+        bool any_erasures = true;
+        while (any_erasures) {
+            any_erasures = false;
+            CSeq_annot::C_Data::TFtable::iterator it = seq_annot.SetData().SetFtable().begin();
+            while (it != seq_annot.SetData().SetFtable().end()) {
+                CRef<CSeq_feat> editable(new CSeq_feat());
+                editable->Assign(**it);
+                bool changed = x_CleanEmptyFeature(*editable);
+                bool should_remove = x_ShouldRemoveEmptyFeature(*editable);
+                if (should_remove) {
+                    CSeq_feat_Handle fh = m_Scope->GetSeq_featHandle(**it);
+                    CSeq_feat_EditHandle eh(fh);
+                    eh.Remove();
+                    any_erasures = true;
+                    break;
+                } else if (changed) {
+                    CSeq_feat_Handle fh = m_Scope->GetSeq_featHandle(**it);
+                    CSeq_feat_EditHandle eh(fh);
+                    eh.Replace(*editable);
+                }
+                ++it;
             }
         }
     }
@@ -10697,10 +10759,30 @@ void CNewCleanup_imp::x_RemoveEmptyFeatureTables( list< CRef< CSeq_annot > >& an
 void CNewCleanup_imp::x_RemoveEmptyFeatureTables( CBioseq & bioseq )
 {
     if (bioseq.IsSetAnnot()) {
+        bool any_erasures = true;
+        while (any_erasures) {
+            any_erasures = false;
+            CBioseq::TAnnot::iterator it = bioseq.SetAnnot().begin();
+            while (it != bioseq.SetAnnot().end()) {
+                if ((*it)->IsFtable()) {
+                    x_RemoveEmptyFeatures(**it);
+                    if ((*it)->GetData().GetFtable().empty()) {
+                        CSeq_annot_Handle ah = m_Scope->GetSeq_annotHandle(**it);
+                        CSeq_annot_EditHandle eh(ah);
+                        eh.Remove();
+                        any_erasures = true;
+                        break;
+                    }
+                }
+                ++it;
+            }
+        }
+#if 0
         x_RemoveEmptyFeatureTables(bioseq.SetAnnot());
         if (bioseq.GetAnnot().empty()) {
             bioseq.ResetAnnot();
         }
+#endif
     }
 }
 

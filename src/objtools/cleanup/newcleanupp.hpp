@@ -514,10 +514,13 @@ private:
     void x_RemoveEmptyFeatureTables( list< CRef< CSeq_annot > > & annot_list);
     void x_RemoveEmptyFeatureTables( CBioseq & bioseq );
     void x_RemoveEmptyFeatureTables( CBioseq_set & bioseq_set );
-    bool x_ShouldRemoveEmptyFeature( CSeq_feat& feat );
-    bool x_ShouldRemoveEmptyGene( CGene_ref& gene );
-    bool x_ShouldRemoveEmptyProt( CProt_ref& prot );
-    bool x_ShouldRemoveEmptyPub( CPubdesc& pubdesc );
+    bool x_CleanEmptyFeature(CSeq_feat& feat);
+    bool x_ShouldRemoveEmptyFeature(const CSeq_feat& feat );
+    bool x_CleanEmptyGene(CGene_ref& gene);
+    bool x_ShouldRemoveEmptyGene(const CGene_ref& gene );
+    bool x_CleanEmptyProt(CProt_ref& prot);
+    bool x_ShouldRemoveEmptyProt(const CProt_ref& prot );
+    bool x_ShouldRemoveEmptyPub(const CPubdesc& pubdesc );
 
     void x_BioseqSetEC( CBioseq_set & bioseq_set );
     void x_BioseqSetNucProtEC( CBioseq_set & bioseq_set );
