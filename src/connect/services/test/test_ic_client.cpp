@@ -23,7 +23,7 @@
  *
  * ===========================================================================
  *
- * Authors:  Anatoliy Kuznetsov
+ * Authors:  Anatoliy Kuznetsov, Rafael Sadyrov
  *
  * File Description:  Network ICache client test
  *
@@ -44,6 +44,10 @@
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbimisc.hpp>
 
+#include <corelib/test_boost.hpp>
+
+#include <util/random_gen.hpp>
+
 #include <common/test_assert.h>  /* This header must go last */
 
 
@@ -53,64 +57,23 @@ USING_NCBI_SCOPE;
 ///////////////////////////////////////////////////////////////////////
 
 
-/// Test application for network ICache client
-///
-/// @internal
-///
-class CTestICClient : public CNcbiApplication
+// Configuration parameters
+NCBI_PARAM_DECL(string, netcache, service_name);
+typedef NCBI_PARAM_TYPE(netcache, service_name) TNetCache_ServiceName;
+NCBI_PARAM_DEF(string, netcache, service_name, "NC_UnitTest");
+
+NCBI_PARAM_DECL(string, netcache, cache_name);
+typedef NCBI_PARAM_TYPE(netcache, cache_name) TNetCache_CacheName;
+NCBI_PARAM_DEF(string, netcache, cache_name, "test");
+
+static const string s_ClientName("test_icache");
+
+static int s_Run()
 {
-public:
-    void Init(void);
-    int Run(void);
-};
+    const string service  = TNetCache_ServiceName::GetDefault();
+    const string cache_name  = TNetCache_CacheName::GetDefault();
 
-
-
-
-void CTestICClient::Init(void)
-{
-    // Setup command line arguments and parameters
-
-    // Create command-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
-
-    // Specify USAGE context
-    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-        "Network ICache client test");
-
-    arg_desc->AddDefaultKey("service", "Service", "NetCache service name.",
-        CArgDescriptions::eString, kEmptyStr);
-
-    arg_desc->AddOptionalKey("hostname", "Host",
-        "NetCache host name.", CArgDescriptions::eString);
-
-    arg_desc->AddOptionalKey("port", "Port",
-        "Port number.", CArgDescriptions::eInteger);
-
-    arg_desc->AddDefaultPositional("cache", "Cache name.",
-        CArgDescriptions::eString, kEmptyStr);
-
-    // Setup arg.descriptions for this application
-    SetupArgDescriptions(arg_desc.release());
-
-    SetDiagPostLevel(eDiag_Info);
-    SetDiagTrace(eDT_Enable);
-}
-
-
-int CTestICClient::Run(void)
-{
-    const CArgs& args = GetArgs();
-
-    string service(args["service"].AsString());
-    string cache_name(args["cache"].AsString());
-
-    CNetICacheClient cl(args["hostname"].HasValue() ?
-        CNetICacheClient(args["hostname"].AsString(),
-            args["port"].AsInteger(),
-            cache_name, "test_icache") :
-        CNetICacheClient(args["service"].AsString(),
-            cache_name, "test_icache"));
+    CNetICacheClient cl(service, cache_name, s_ClientName);
 
     const static char test_data[] =
             "The quick brown fox jumps over the lazy dog.";
@@ -265,7 +228,135 @@ int CTestICClient::Run(void)
 }
 
 
-int main(int argc, const char* argv[])
+// Convenience class for random generator
+struct CRandomSingleton
 {
-    return CTestICClient().AppMain(argc, argv);
+    CRandom r;
+    CRandomSingleton() { r.Randomize(); }
+
+    static CRandom& instance()
+    {
+        static CRandomSingleton rs;
+        return rs.r;
+    }
+};
+
+
+// Convenience function to fill container with random char data
+template <class TContainer>
+void RandomFill(TContainer& container, size_t length, bool printable = true)
+{
+    CRandom& random(CRandomSingleton::instance());
+    const char kMin = printable ? '!' : numeric_limits<char>::min();
+    const char kMax = printable ? '~' : numeric_limits<char>::max();
+    container.clear();
+    container.reserve(length);
+    while (length-- > 0) {
+        container.push_back(kMin + random.GetRandIndex(kMax - kMin + 1));
+    }
 }
+
+
+// Convenience function to generate a unique key
+string GetUniqueKey()
+{
+    return NStr::NumericToString(time(NULL)) + "t" +
+        NStr::NumericToString(CRandomSingleton::instance().GetRandUint8());
+}
+
+
+static void s_SimpleTest()
+{
+    const string service  = TNetCache_ServiceName::GetDefault();
+    const string cache_name  = TNetCache_CacheName::GetDefault();
+
+    CNetICacheClient api(service, cache_name, s_ClientName);
+
+    const size_t kIterations = 50;
+    const size_t kSrcSize = 20 * 1024 * 1024; // 20MB
+    const size_t kBufSize = 100 * 1024; // 100KB
+    vector<char> src;
+    vector<char> buf;
+
+    src.reserve(kSrcSize);
+    buf.reserve(kBufSize);
+
+    const int version = 0;
+
+    for (size_t i = 0; i < kIterations; ++i) {
+        const string key = GetUniqueKey();
+        const string subkey = GetUniqueKey();
+
+        // Creating blob
+        RandomFill(src, kSrcSize, false);
+        api.Store(key, version, subkey, src.data(), src.size());
+        BOOST_REQUIRE_MESSAGE(api.HasBlob(key, subkey),
+                "Blob does not exist (" << i << ")");
+        BOOST_REQUIRE_MESSAGE(api.GetBlobSize(key, version, subkey) == kSrcSize,
+                "Blob size (GetBlobSize) differs from the source (" << i << ")");
+
+        // Checking blob
+        size_t size = 0;
+        auto_ptr<IReader> reader(api.GetReadStream(key, version, subkey, &size));
+
+        BOOST_REQUIRE_MESSAGE(size == kSrcSize,
+                "Blob size (GetData) differs from the source (" << i << ")");
+        BOOST_REQUIRE_MESSAGE(reader.get(),
+                "Failed to get reader (" << i << ")");
+
+        const char* ptr = src.data();
+
+        for (;;) {
+            size_t read = 0;
+
+            switch (reader->Read(buf.data(), kBufSize, &read)) {
+            case eRW_Success:
+                BOOST_REQUIRE_MESSAGE(!memcmp(buf.data(), ptr, read),
+                        "Blob content does not match the source (" << i << ")");
+                BOOST_REQUIRE_MESSAGE(size >= read,
+                        "Blob size is greater than the source (" << i << ")");
+                ptr += read;
+                size -= read;
+                continue;
+
+            case eRW_Eof:
+                BOOST_REQUIRE_MESSAGE(!size,
+                        "Blob size is less than the source (" << i << ")");
+                break;
+
+            default:
+                BOOST_ERROR("Reading blob failed (" << i << ")");
+            }
+
+            break;
+        }
+
+        // Removing blob
+        api.RemoveBlob(key, version, subkey);
+
+        // Checking removed blob
+        BOOST_REQUIRE_MESSAGE(!api.HasBlob(key, subkey),
+                "Removed blob still exists (" << i << ")");
+        auto_ptr<IReader> fail_reader(api.GetReadStream(key, version, subkey, &size));
+        BOOST_REQUIRE_MESSAGE(!fail_reader.get(),
+                "Got reader for removed blob (" << i << ")");
+    }
+}
+
+BOOST_AUTO_TEST_SUITE(NetICacheClient)
+
+BOOST_AUTO_TEST_CASE(OldTest)
+{
+    EDiagSev prev_level = SetDiagPostLevel(eDiag_Info);
+    SetDiagTrace(eDT_Enable);
+    s_Run();
+    SetDiagTrace(eDT_Disable);
+    SetDiagPostLevel(prev_level);
+}
+
+BOOST_AUTO_TEST_CASE(SimpleTest)
+{
+    s_SimpleTest();
+}
+
+BOOST_AUTO_TEST_SUITE_END()
