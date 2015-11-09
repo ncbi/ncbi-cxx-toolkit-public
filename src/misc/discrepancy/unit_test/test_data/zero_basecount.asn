@@ -1,0 +1,124 @@
+Seq-entry ::= set {
+  class genbank ,
+  seq-set {
+      seq {
+          id {
+            local
+              str "good" } ,
+          descr {
+            source {
+              org {
+                taxname "Sebaea microphylla" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 592768 } } ,
+                orgname {
+                  lineage "some lineage" } } ,
+              subtype {
+                {
+                  subtype chromosome ,
+                  name "1" } } } ,
+            molinfo {
+              biomol mRNA } ,
+            pub {
+              pub {
+                pmid 1 } } } ,
+          inst {
+            repr raw ,
+            mol rna ,
+            length 60 ,
+            seq-data
+            iupacna "ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGT" } } ,
+      seq {
+          id {
+            local
+              str "seq_that_is_missing_A" } ,
+          descr {
+            source {
+              org {
+                taxname "Sebaea microphylla" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 592768 } } ,
+                orgname {
+                  lineage "some lineage" } } ,
+              subtype {
+                {
+                  subtype chromosome ,
+                  name "1" } } } ,
+            molinfo {
+              biomol mRNA } ,
+            pub {
+              pub {
+                pmid 1 } } } ,
+          inst {
+            repr raw ,
+            mol rna ,
+            length 60 ,
+            seq-data
+            iupacna "CCGTCCGTCCGTCCGTCCGTCCGTCCGTCCGTCCGTCCGTCCGTCCGTCCGTCCGTCCGTCCGTCCGTCCGTCCGTCCGTCCGTCCGTCCGTCCGTCCGTCCGTCCGTCCGTCCGTCCGTCCGTCCGTCCGTCCGTCCGTCCGT" } },
+      seq {
+          id {
+            local
+              str "seq_that_is_missing_C" } ,
+          descr {
+            source {
+              org {
+                taxname "Sebaea microphylla" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 592768 } } ,
+                orgname {
+                  lineage "some lineage" } } ,
+              subtype {
+                {
+                  subtype chromosome ,
+                  name "1" } } } ,
+            molinfo {
+              biomol mRNA } ,
+            pub {
+              pub {
+                pmid 1 } } } ,
+          inst {
+            repr raw ,
+            mol rna ,
+            length 60 ,
+            seq-data
+            iupacna "AAGTAAGTAAGTAAGTAAGTAAGTAAGTAAGTAAGTAAGTAAGTAAGTAAGTAAGTAAGTAAGTAAGTAAGTAAGTAAGTAAGTAAGTAAGTAAGTAAGTAAGTAAGTAAGTAAGTAAGTAAGTAAGTAAGTAAGTAAGTAAGT" } } ,
+      seq {
+          id {
+            local
+              str "seq_that_is_missing_A_and_T" } ,
+          descr {
+            source {
+              org {
+                taxname "Sebaea microphylla" ,
+                db {
+                  {
+                    db "taxon" ,
+                    tag
+                      id 592768 } } ,
+                orgname {
+                  lineage "some lineage" } } ,
+              subtype {
+                {
+                  subtype chromosome ,
+                  name "1" } } } ,
+            molinfo {
+              biomol mRNA } ,
+            pub {
+              pub {
+                pmid 1 } } } ,
+          inst {
+            repr raw ,
+            mol rna ,
+            length 60 ,
+            seq-data
+              iupacna "CCGGCCGGCCGGCCGGCCGGCCGGCCGGCCGGCCGGCCGGCCGGCCGGCCGGCCGGCCGGCCGGCCGGCCGGCCGGCCGGCCGGCCGGCCGGCCGGCCGGCCGGCCGGCCGGCCGGCCGGCCGGCCGGCCGGCCGGCCGGCCGG" } }
+  } }

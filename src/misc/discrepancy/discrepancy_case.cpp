@@ -33,8 +33,12 @@
 #include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
 #include <objects/macro/String_constraint.hpp>
+#include <objects/misc/sequence_util_macros.hpp>
+#include <objects/seq/Seq_ext.hpp>
+#include <objects/seq/seq_macros.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/feat_ci.hpp>
+#include <objmgr/seq_vector.hpp>
 #include <objmgr/util/feature.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <sstream>
@@ -437,6 +441,68 @@ DISCREPANCY_AUTOFIX(CONTAINED_CDS)
     }
 }
 
+DISCREPANCY_CASE(ZERO_BASECOUNT, CSeq_inst, eAll, "Zero Base Counts")
+{
+    if( obj.IsAa() ) {
+        return;
+    }
+    // skip if delta-seq with any far-pointers
+    if( FIELD_IS_SET_AND_IS(obj, Ext, Delta) ) {
+        FOR_EACH_DELTASEQ_IN_DELTAEXT(delta_seq_ci, obj.GetExt().GetDelta()) {
+            if( (*delta_seq_ci)->IsLoc() ) {
+                return;
+            }
+        }
+    }
+
+    struct SBaseCount {
+        size_t count;
+        char base;  // capitalized
+    };
+    SBaseCount base_counts[] = {
+        { 0, 'A' },
+        { 0, 'C' },
+        { 0, 'G' },
+        { 0, 'T' },
+    };
+    // make sure that a less-optimizing compiler doesn't do an array reference
+    // for every base.
+    size_t & num_a = base_counts[0].count;
+    size_t & num_c = base_counts[1].count;
+    size_t & num_g = base_counts[2].count;
+    size_t & num_t = base_counts[3].count;
+
+    CSeqVector seq_vec(*context.GetCurrentBioseq(), &context.GetScope(),
+                       CBioseq_Handle::eCoding_Iupac);
+    ITERATE(CSeqVector, base_ci, seq_vec) {
+        switch(toupper(*base_ci)) {
+        case 'A': ++num_a; break;
+        case 'C': ++num_c; break;
+        case 'G': ++num_g; break;
+        case 'T': ++num_t; break;
+        default:
+            // ignore others
+            break;
+        }
+    }
+
+    ITERATE_0_IDX(base_idx, ArraySize(base_counts)) {
+        const SBaseCount & base_count = base_counts[base_idx];
+        if( base_count.count < 1 ) {
+            m_Objs["[n] sequence[s] [has] a zero basecount for a nucleotide"][
+                FORMAT("[n] sequence[s] [has] no "
+                       << base_count.base << "s")].Add(
+                           *new CDiscrepancyObject(
+                               context.GetCurrentBioseq(), context.GetScope(),
+                               context.GetFile(), context.GetKeepRef()));
+        }
+    }
+}
+
+DISCREPANCY_SUMMARIZE(ZERO_BASECOUNT)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

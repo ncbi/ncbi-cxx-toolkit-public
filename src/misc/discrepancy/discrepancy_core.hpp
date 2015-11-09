@@ -134,7 +134,7 @@ class CReportNode;
 class CDiscrepancyItem : public CReportItem
 {
 public:
-    CDiscrepancyItem(CDiscrepancyCase& t, const string& s) : m_Test(&t), m_Msg(s), m_Autofix(false) {}
+    CDiscrepancyItem(CDiscrepancyCase& t, const string& s) : m_Msg(s), m_Autofix(false), m_Test(&t) {}
     string GetTitle(void) const { return m_Test->GetName();}
     string GetMsg(void) const { return m_Msg;}
     TReportObjectList GetDetails(void) const { return m_Objs;}

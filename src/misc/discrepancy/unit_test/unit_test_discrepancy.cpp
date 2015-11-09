@@ -736,3 +736,33 @@ A3AA9EC14782E93FA5EBBB904EE248F9E1D5244ADD32923AC90414353C3004E20483AFFA524712\
     BOOST_REQUIRE_EQUAL(rep[0]->GetMsg(), "Division code conflicts found");
 }
 
+BOOST_AUTO_TEST_CASE(ZERO_BASECOUNT)
+{
+    CRef<CSeq_entry> entry = ReadEntryFromFile("test_data/zero_basecount.asn");
+    BOOST_REQUIRE(entry);
+    CScope scope(*CObjectManager::GetInstance());
+    scope.AddDefaults();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+    
+    CRef<CDiscrepancySet> set = CDiscrepancySet::New(scope);
+    set->AddTest("ZERO_BASECOUNT");
+    set->Parse(seh);
+    set->Summarize();
+
+    const vector<CRef<CDiscrepancyCase> >& tst = set->GetTests();
+    BOOST_REQUIRE_EQUAL(tst.size(), 1);
+    TReportItemList rep = tst[0]->GetReport();
+    BOOST_REQUIRE_EQUAL(rep.size(), 1);
+
+    const CReportItem & rep_item = **rep.begin();
+    BOOST_CHECK_EQUAL(
+        rep_item.GetMsg(),
+        "3 sequences have a zero basecount for a nucleotide");
+    BOOST_CHECK_EQUAL(rep_item.CanAutofix(), false);
+
+    const TReportItemList sub_items(rep_item.GetSubitems());
+    BOOST_CHECK_EQUAL( sub_items.size(), 3 );
+    BOOST_CHECK_EQUAL(sub_items[0]->GetMsg(), "2 sequences have no As");
+    BOOST_CHECK_EQUAL(sub_items[1]->GetMsg(), "1 sequence has no Cs");
+    BOOST_CHECK_EQUAL(sub_items[2]->GetMsg(), "1 sequence has no Ts");
+}
