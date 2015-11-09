@@ -1011,7 +1011,7 @@ bool CWriteUtil::GetStringForModelEvidence(
     if (numRna > 0 || numEst > 0 || numProtein > 0 || numLongSra > 0 ||
         rnaseqBaseCoverage > 0)
     {
-        text << " Supporting evidence includes similarity to:";
+        text << "Supporting evidence includes similarity to:";
     }
     string section_prefix = " ";
     // The countable section
