@@ -10602,12 +10602,6 @@ bool CNewCleanup_imp::x_ShouldRemoveEmptyGene(const CGene_ref& gene)
    
 bool CNewCleanup_imp::x_CleanEmptyProt(CProt_ref& prot)
 {
-    if (prot.IsSetProcessed() &&
-        (prot.GetProcessed() == CProt_ref::eProcessed_signal_peptide ||
-        prot.GetProcessed() == CProt_ref::eProcessed_transit_peptide)) {
-        return false;
-    }
-
     bool any_change = false;
     if (prot.IsSetName() &&
         (prot.GetName().empty() ||
@@ -10642,6 +10636,12 @@ bool CNewCleanup_imp::x_CleanEmptyProt(CProt_ref& prot)
 
 bool CNewCleanup_imp::x_ShouldRemoveEmptyProt(const CProt_ref& prot )
 {
+    if (prot.IsSetProcessed() &&
+        (prot.GetProcessed() == CProt_ref::eProcessed_signal_peptide ||
+        prot.GetProcessed() == CProt_ref::eProcessed_transit_peptide)) {
+        return false;
+    }
+
     bool should_remove = false;
     if (!prot.IsSetName() &&
         !prot.IsSetDesc() &&
