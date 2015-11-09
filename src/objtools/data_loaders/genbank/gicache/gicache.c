@@ -107,7 +107,7 @@ typedef struct {
     char*   m_DataCache;
     Uint1   m_SequentialData;
     Uint1   m_FreeOnDrop;
-    volatile int m_Remapping; /* Count of threads currently trying to remap */
+    pthread_rwlock_t m_RemapLock; /* Remapper is WRITER, others are READERs */
     volatile Uint1 m_NeedRemap; /* Is remap needed? */
     Uint1   m_RemapOnRead; /* Is remap allowed when reading data? */
     Uint4   m_OffsetHeaderSize; /* 0 for 32-bit version, 256 for 64-bit */
@@ -116,6 +116,10 @@ typedef struct {
     ino_t   m_IndexInode;
     ino_t   m_DataInode;
 } SGiDataIndex;
+
+typedef struct {
+	int64_t m_Val;
+} packed_accession_t;
 
 static void (*LogFunc)(char*) = NULL;
 
@@ -244,6 +248,7 @@ static Uint1 x_OpenIndexFile(SGiDataIndex* data_index)
 {
     char buf[256];
     int flags;
+	int open_err;
 
     if (data_index->m_GiIndexFile >= 0)
         return 1;
@@ -256,6 +261,7 @@ static Uint1 x_OpenIndexFile(SGiDataIndex* data_index)
 
     strcat(buf, "idx");
     data_index->m_GiIndexFile = open(buf,flags,0644);
+	open_err = data_index->m_GiIndexFile < 0 ? errno : 0;
     data_index->m_GiIndexLen = 
         (data_index->m_GiIndexFile >= 0 ? 
          lseek(data_index->m_GiIndexFile, 0, SEEK_END)/sizeof(Uint4) : 0);
@@ -268,9 +274,9 @@ static Uint1 x_OpenIndexFile(SGiDataIndex* data_index)
     if (LogFunc) {
         char logmsg[256];
         sprintf(logmsg,
-                "GI_CACHE: Opened index file %s; filedes %d, inode %d, length %ld, path %s\n",
+                "GI_CACHE: Opened index file %s; filedes %d, inode %d, length %ld, path %s, err: %d\n",
                 buf, data_index->m_GiIndexFile, data_index->m_IndexInode,
-                data_index->m_GiIndexLen, data_index->m_FileNamePrefix);
+                data_index->m_GiIndexLen, data_index->m_FileNamePrefix, open_err);
         LogFunc(logmsg);
     }
 
@@ -306,6 +312,7 @@ static Uint1 x_OpenDataFile(SGiDataIndex* data_index)
 {
     char buf[256];
     int flags;
+	int open_err;
 
     if (data_index->m_DataFile >= 0)
         return 1;
@@ -315,6 +322,7 @@ static Uint1 x_OpenDataFile(SGiDataIndex* data_index)
     strcpy(buf, data_index->m_FileNamePrefix);
     strcat(buf, "dat");
     data_index->m_DataFile = open(buf,flags,0644);
+	open_err = data_index->m_GiIndexFile < 0 ? errno : 0;
     data_index->m_DataLen = (data_index->m_DataFile >= 0 ? 
                              lseek(data_index->m_DataFile, 0, SEEK_END) : 0);
     /* Save inode number */
@@ -325,9 +333,9 @@ static Uint1 x_OpenDataFile(SGiDataIndex* data_index)
     if (LogFunc) {
         char logmsg[256];
         sprintf(logmsg,
-                "GI_CACHE: Opened data file %s; filedes %d, inode %d, length %ld, path %s\n",
+                "GI_CACHE: Opened data file %s; filedes %d, inode %d, length %ld, path %s, err: %d\n",
                 buf, data_index->m_DataFile, data_index->m_DataInode,
-                data_index->m_DataLen, data_index->m_FileNamePrefix);
+                data_index->m_DataLen, data_index->m_FileNamePrefix, open_err);
         LogFunc(logmsg);
     }
 
@@ -490,21 +498,15 @@ static Uint1 GiDataIndex_ReMap(SGiDataIndex* data_index, int delay)
 {
     /* If some other thread has already done the remapping or is in the process
        of doing it, there is nothing to do here. */
-    if (!data_index->m_NeedRemap || data_index->m_Remapping)
+    if (!data_index->m_NeedRemap)
         return 1;
 
-    ++data_index->m_Remapping;
+	if (pthread_rwlock_wrlock(&data_index->m_RemapLock) != 0)
+		return 0;
 
-    /* Wait a little bit and check if some other thread has started doing the
-       remapping. In that case let the other thread do it. */
-    poll(NULL, 0, delay);
-
-    if (data_index->m_Remapping > 1) {
-        data_index->m_Remapping--;
-        return 0;
-    }
-
-    assert(data_index->m_Remapping == 1);
+	/* remapping might have been done by somebody else while we were waiting for wr lock */
+	if (!data_index->m_NeedRemap)
+        return 1;
 
     /* In read-only mode, check if inode numbers for underlying files have
      * changed. If so, close and reopen the file descriptors.
@@ -531,15 +533,19 @@ static Uint1 GiDataIndex_ReMap(SGiDataIndex* data_index, int delay)
             x_CloseFiles(data_index);
     }
 
-    if (!x_ReMapIndex(data_index))
+    if (!x_ReMapIndex(data_index)) {
+		pthread_rwlock_unlock(&data_index->m_RemapLock);
         return 0;
-    if (!x_ReMapData(data_index))
+	}
+    if (!x_ReMapData(data_index)) {
+		pthread_rwlock_unlock(&data_index->m_RemapLock);
         return 0;
+	}
 
     /* Inform any other threads that may want remapped data that remapping has
        already finished. */
-    data_index->m_Remapping = 0;
     data_index->m_NeedRemap = 0;
+	pthread_rwlock_unlock(&data_index->m_RemapLock);
 
     return 1;
 }
@@ -724,26 +730,41 @@ x_SetIndexOffset(SGiDataIndex* data_index, int gi, Uint4 page, int level,
     return 0;
 }
 
-static char* x_GetGiData(SGiDataIndex* data_index, int gi)
+static int x_GetGiData(SGiDataIndex* data_index, int gi, packed_accession_t* pa)
 {
     Uint4 page = 0;
     int base = data_index->m_OffsetHeaderSize;
     int shift = (data_index->m_SequentialData ? 1 : 0);
     int level;
     Uint1 is_64bit = (data_index->m_OffsetHeaderSize > 0);
+	pa->m_Val = 0;
 
     /* If some thread is currently remapping, the data is in an inconsistent
        state, therefore return NULL. */
-    if (data_index->m_Remapping)
-        return NULL;
 
-    if ((data_index->m_GiIndex == MAP_FAILED ||
-         data_index->m_Data == MAP_FAILED)) {
-        data_index->m_NeedRemap = 1;
+	if (pthread_rwlock_rdlock(&data_index->m_RemapLock) != 0)
+		return 0;
 
-        if (!data_index->m_RemapOnRead || !GiDataIndex_ReMap(data_index, 0))
-            return NULL;
-    }
+	if ((data_index->m_GiIndex == MAP_FAILED ||
+		 data_index->m_Data == MAP_FAILED)) {
+		data_index->m_NeedRemap = 1;
+		/* we can't remap while RD lock is aquired, so drop it first */
+		pthread_rwlock_unlock(&data_index->m_RemapLock);
+
+		if (!data_index->m_RemapOnRead || !GiDataIndex_ReMap(data_index, 0)) {
+			return 0;
+		}
+		/* re-aquire RD lock */
+		if (pthread_rwlock_rdlock(&data_index->m_RemapLock) != 0)
+			return 0;
+	}
+	/* we've tried to remap and if still we have MAP_FAILED there, bailout */
+	if ((data_index->m_GiIndex == MAP_FAILED ||
+         data_index->m_Data == MAP_FAILED)) 
+	{
+		pthread_rwlock_unlock(&data_index->m_RemapLock);
+		return 0;
+	}
 
     assert((data_index->m_GiIndex != MAP_FAILED) && 
            (data_index->m_Data != MAP_FAILED));
@@ -767,7 +788,8 @@ static char* x_GetGiData(SGiDataIndex* data_index, int gi)
         */
         if (base == -1) {
             data_index->m_NeedRemap = 1;
-            return NULL;
+			pthread_rwlock_unlock(&data_index->m_RemapLock);
+			return 0;
         }
     }
     
@@ -777,8 +799,10 @@ static char* x_GetGiData(SGiDataIndex* data_index, int gi)
         gi_offset = GET_TOP_PAGE_OFFSET(gi);
         /* If top page offset is not set, it means no gis from this whole top page
            have been saved in cache so far. */
-        if (gi_offset == 0)
-            return NULL;
+        if (gi_offset == 0) {
+			pthread_rwlock_unlock(&data_index->m_RemapLock);
+			return 0;
+		}
     }
     
     gi_offset += base;
@@ -789,23 +813,41 @@ static char* x_GetGiData(SGiDataIndex* data_index, int gi)
         data_index->m_NeedRemap = 1;
         if (!data_index->m_RemapOnRead || !x_ReMapData(data_index) ||
             gi_offset >= data_index->m_DataLen + data_index->m_DataCacheLen) 
-            return NULL;
+		{
+			pthread_rwlock_unlock(&data_index->m_RemapLock);
+            return 0;
+		}
     }
 
     /* If offset is beyond the mapped data, get the data from cache, otherwise
        from the memory mapped location. */
     if (gi_offset >= data_index->m_DataLen) {
-        return data_index->m_DataCache + (gi_offset - data_index->m_DataLen);
-    } else {
+		*pa = *(packed_accession_t*)(data_index->m_DataCache + (gi_offset - data_index->m_DataLen));
+		pthread_rwlock_unlock(&data_index->m_RemapLock);
+        return 1;
+    } 
+	else {
         /* If offset points to data that has been written to disk but not yet
            mapped, remap now. */
         if (gi_offset >= data_index->m_MappedDataLen) {
             data_index->m_NeedRemap = 1;
+			pthread_rwlock_unlock(&data_index->m_RemapLock);
             if (!data_index->m_RemapOnRead || !x_ReMapData(data_index))
-                return NULL;
+                return 0;
+			pthread_rwlock_rdlock(&data_index->m_RemapLock);
+			if (gi_offset >= data_index->m_MappedDataLen) {
+				pthread_rwlock_unlock(&data_index->m_RemapLock);
+				if (LogFunc) {
+					char logmsg[256];
+					sprintf(logmsg, "GI_CACHE: Possible corruption: gi_offset: %ld, gi: %d\n", gi_offset, gi);
+					LogFunc(logmsg);
+				}
+				return 0;
+			}
         }
-
-        return data_index->m_Data + gi_offset;
+		*pa = *(packed_accession_t*)(data_index->m_Data + gi_offset);
+		pthread_rwlock_unlock(&data_index->m_RemapLock);
+		return 1;
     }
 }
 
@@ -842,7 +884,7 @@ GiDataIndex_New(SGiDataIndex* data_index, int unit_size, const char* name,
     data_index->m_DataCacheLen = 0;
     data_index->m_DataCacheSize = unit_size*DATA_CACHE_SIZE;
     data_index->m_DataCache = (char*) malloc(data_index->m_DataCacheSize);
-    data_index->m_Remapping = 0;
+    pthread_rwlock_init(&data_index->m_RemapLock, NULL);
     data_index->m_NeedRemap = 1;
     data_index->m_RemapOnRead = 1;
     data_index->m_OffsetHeaderSize = (is_64bit ? kOffsetHeaderSize : 0);
@@ -863,6 +905,8 @@ static SGiDataIndex* GiDataIndex_Free(SGiDataIndex* data_index)
     x_CloseFiles(data_index);
     free(data_index->m_IndexCache);
     free(data_index->m_DataCache);
+	pthread_rwlock_destroy(&data_index->m_RemapLock);
+	memset(&data_index->m_RemapLock, 0, sizeof(data_index->m_RemapLock));
     if (data_index->m_FreeOnDrop) {
       free(data_index);
       data_index=NULL;
@@ -871,9 +915,9 @@ static SGiDataIndex* GiDataIndex_Free(SGiDataIndex* data_index)
 }
 
 /* Returns data corresponding to a given gi for reading only. */
-static const char* GiDataIndex_GetData(SGiDataIndex* data_index, int gi)
+static const int GiDataIndex_GetData(SGiDataIndex* data_index, int gi, packed_accession_t* pa)
 {
-    return x_GetGiData(data_index, gi);
+    return x_GetGiData(data_index, gi, pa);
 }
 
 /* Writes data for a gi. */
@@ -1723,10 +1767,12 @@ void GICache_ReMap(int delay_in_sec) {
 int GICache_GetAccession(int gi, char* acc, int acc_len)
 {
     int retval = 0;
+	int rv;
+	packed_accession_t gi_data;
     if(!gi_cache) return 0;
-    const char* gi_data = GiDataIndex_GetData(gi_cache, gi);
-    if (gi_data) {
-        if ((retval = s_DecodeGiAccession(gi_data, acc, acc_len)) < 0) {
+    rv = GiDataIndex_GetData(gi_cache, gi, &gi_data);
+    if (rv) {
+        if ((retval = s_DecodeGiAccession((const char*)&gi_data, acc, acc_len)) < 0) {
             /* If returned "accession" is invalid, force a remap and return empty
                string */
             acc[0] = NULLB;
@@ -1740,11 +1786,15 @@ int GICache_GetAccession(int gi, char* acc, int acc_len)
 
 int GICache_GetLength(int gi)
 {
+	const char *x;
     int length = 0;
+	int rv;
+	packed_accession_t gi_data;
     if(!gi_cache) return 0;
-    const char *x = GiDataIndex_GetData(gi_cache, gi);
+    rv = GiDataIndex_GetData(gi_cache, gi, &gi_data);
 
-    if(!x) return 0;
+    if(!rv) return 0;
+	x = (const char*)&gi_data;
 
     x++; /* Skip control byte */
     x += s_DecodeInt4(x, &length);
