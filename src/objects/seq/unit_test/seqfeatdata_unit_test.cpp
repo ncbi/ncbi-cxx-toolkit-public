@@ -1004,14 +1004,14 @@ BOOST_AUTO_TEST_CASE(Test_FixStrain)
     BOOST_CHECK_EQUAL(COrgMod::FixStrain("dsm/1235"), "DSM 1235");
     BOOST_CHECK_EQUAL(COrgMod::FixStrain("dsm:1235"), "DSM 1235");
     BOOST_CHECK_EQUAL(COrgMod::FixStrain("dsm : 1235"), "DSM 1235");
-    BOOST_CHECK_EQUAL(COrgMod::FixStrain("DSM"), "");
+    BOOST_CHECK_EQUAL(COrgMod::FixStrain("DSM"), "DSM");
 
     BOOST_CHECK_EQUAL(COrgMod::FixStrain("ATCC1235"), "ATCC 1235");
     BOOST_CHECK_EQUAL(COrgMod::FixStrain("ATCC/1235"), "ATCC 1235");
     BOOST_CHECK_EQUAL(COrgMod::FixStrain("atcc/1235"), "ATCC 1235");
     BOOST_CHECK_EQUAL(COrgMod::FixStrain("atcc:1235"), "ATCC 1235");
     BOOST_CHECK_EQUAL(COrgMod::FixStrain("atcc : 1235"), "ATCC 1235");
-    BOOST_CHECK_EQUAL(COrgMod::FixStrain("ATCC"), "");
+    BOOST_CHECK_EQUAL(COrgMod::FixStrain("ATCC"), "ATCC");
 }
 
 BOOST_AUTO_TEST_CASE(Test_AllowedFeatureLocation)
@@ -1036,8 +1036,8 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2183)
     BOOST_CHECK_EQUAL(CSubSource::FixAltitude("100 meters"), "100 m");
     BOOST_CHECK_EQUAL(CSubSource::FixAltitude("100 meter"), "100 m");
     BOOST_CHECK_EQUAL(CSubSource::FixAltitude("100 m"), "100 m");
-    BOOST_CHECK_EQUAL(CSubSource::FixAltitude("100 feet"), "30.48 m");
-    BOOST_CHECK_EQUAL(CSubSource::FixAltitude("100 foot"), "30.48 m");
+    BOOST_CHECK_EQUAL(CSubSource::FixAltitude("100 feet"), "30 m");
+    BOOST_CHECK_EQUAL(CSubSource::FixAltitude("100 foot"), "30 m");
 }
 
 

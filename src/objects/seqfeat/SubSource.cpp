@@ -1100,16 +1100,8 @@ void CSubSource::IsCorrectLatLonFormat (string lat_lon, bool& format_correct, bo
         vector<string> pieces;
         NStr::Tokenize(lat_lon, " ", pieces);
         if (pieces.size() > 3) {
-            int precision_lat = 0;
-            size_t pos = NStr::Find(pieces[0], ".");
-            if (pos != string::npos) {
-                precision_lat = int(pieces[0].length() - pos - 1);
-            }
-            int precision_lon = 0;
-            pos = NStr::Find(pieces[2], ".");
-            if (pos != string::npos) {
-                precision_lon = int(pieces[2].length() - pos - 1);
-            }
+            int precision_lat = x_GetPrecision(pieces[0]);
+            int precision_lon = x_GetPrecision(pieces[2]);
 
             char reformatted[1000];
             sprintf (reformatted, "%.*lf %c %.*lf %c", precision_lat, ns, lat,
@@ -2427,6 +2419,25 @@ bool CSubSource::IsAltitudeValid (const string& value)
 }
 
 
+int CSubSource::x_GetPrecision(const string& num_str)
+{
+    int precision = 0;
+    size_t pos = NStr::Find(num_str, ".");
+    if (pos != string::npos) {
+        precision = int(num_str.length() - pos - 1);
+    }
+    return precision;
+}
+
+
+string CSubSource::x_FormatWithPrecision(double val, int precision)
+{
+    char reformatted[1000];
+    sprintf(reformatted, "%.*lf", precision, val);
+    string rval = reformatted;
+    return rval;
+}
+
 string CSubSource::FixAltitude (const string& value)
 {
     if (NStr::IsBlank(value)) {
@@ -2439,9 +2450,10 @@ string CSubSource::FixAltitude (const string& value)
     if (NStr::IsBlank(number)) {
         return "";
     } else if (NStr::Equal(units, "ft.") || NStr::Equal(units, "ft") || NStr::Equal(units, "feet") || NStr::Equal(units, "foot")) {
+        int precision = x_GetPrecision(number);
         double val = NStr::StringToDouble(number);
         val *= 0.3048;
-        NStr::NumericToString(number, val);
+        number = x_FormatWithPrecision(val, precision);
         units = "m";
     } 
     

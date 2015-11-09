@@ -214,6 +214,9 @@ private:
     static vector<string> x_GetDateTokens(const string& orig_date);
     static CLatLonCountryId * x_CalculateLatLonId(float lat_value, float lon_value, string country, string province);
 
+    static int x_GetPrecision(const string& num_str);
+    static string x_FormatWithPrecision(double val, int precision);
+
     // validation data read from external files
     static auto_ptr<CLatLonCountryMap> m_LatLonCountryMap;
     static auto_ptr<CLatLonCountryMap> m_LatLonWaterMap;
