@@ -359,7 +359,7 @@ public:
     }
 
     template <class T>
-    const T GetKey(int index) const
+    const T & GetKey(int index) const
     {
         return m_GisOids[index].gi;
     }
