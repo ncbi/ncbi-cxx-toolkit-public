@@ -441,6 +441,11 @@ DISCREPANCY_AUTOFIX(CONTAINED_CDS)
     }
 }
 
+struct SBaseCount {
+    size_t count;
+    char base;  // capitalized
+};
+
 DISCREPANCY_CASE(ZERO_BASECOUNT, CSeq_inst, eAll, "Zero Base Counts")
 {
     if( obj.IsAa() ) {
@@ -455,10 +460,6 @@ DISCREPANCY_CASE(ZERO_BASECOUNT, CSeq_inst, eAll, "Zero Base Counts")
         }
     }
 
-    struct SBaseCount {
-        size_t count;
-        char base;  // capitalized
-    };
     SBaseCount base_counts[] = {
         { 0, 'A' },
         { 0, 'C' },
