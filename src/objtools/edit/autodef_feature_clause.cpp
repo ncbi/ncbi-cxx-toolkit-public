@@ -872,7 +872,7 @@ bool CAutoDefFeatureClause::x_GetGenericInterval (string &interval, bool suppres
         || subtype == CSeqFeatData::eSubtype_intron
         || subtype == CSeqFeatData::eSubtype_5UTR
         || subtype == CSeqFeatData::eSubtype_3UTR
-        || subtype == CSeqFeatData::eSubtype_repeat_region) {
+        || (subtype == CSeqFeatData::eSubtype_repeat_region && !NStr::Equal(m_Typeword, "endogenous virus"))) {
         return false;
     } 
     
