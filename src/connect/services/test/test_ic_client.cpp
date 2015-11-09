@@ -281,28 +281,36 @@ static void s_SimpleTest()
     src.reserve(kSrcSize);
     buf.reserve(kBufSize);
 
+// After CXX-7539 is fixed, counter i should be replaced with version
+#ifdef SIMPLE_TEST_VERSION_TESTING
+    for (size_t version = 0; version < kIterations; ++version) {
+#else
     const int version = 0;
-
     for (size_t i = 0; i < kIterations; ++i) {
+#endif
         const string key = GetUniqueKey();
         const string subkey = GetUniqueKey();
 
+#define SIMPLE_TEST_CTX \
+    ". Blob: " << key << ' ' << version << ' ' << subkey
+
+        try {
         // Creating blob
         RandomFill(src, kSrcSize, false);
         api.Store(key, version, subkey, src.data(), src.size());
         BOOST_REQUIRE_MESSAGE(api.HasBlob(key, subkey),
-                "Blob does not exist (" << i << ")");
+                "Blob does not exist" SIMPLE_TEST_CTX);
         BOOST_REQUIRE_MESSAGE(api.GetBlobSize(key, version, subkey) == kSrcSize,
-                "Blob size (GetBlobSize) differs from the source (" << i << ")");
+                "Blob size (GetBlobSize) differs from the source" SIMPLE_TEST_CTX);
 
         // Checking blob
         size_t size = 0;
         auto_ptr<IReader> reader(api.GetReadStream(key, version, subkey, &size));
 
         BOOST_REQUIRE_MESSAGE(size == kSrcSize,
-                "Blob size (GetData) differs from the source (" << i << ")");
+                "Blob size (GetData) differs from the source" SIMPLE_TEST_CTX);
         BOOST_REQUIRE_MESSAGE(reader.get(),
-                "Failed to get reader (" << i << ")");
+                "Failed to get reader" SIMPLE_TEST_CTX);
 
         const char* ptr = src.data();
 
@@ -312,20 +320,20 @@ static void s_SimpleTest()
             switch (reader->Read(buf.data(), kBufSize, &read)) {
             case eRW_Success:
                 BOOST_REQUIRE_MESSAGE(!memcmp(buf.data(), ptr, read),
-                        "Blob content does not match the source (" << i << ")");
+                        "Blob content does not match the source" SIMPLE_TEST_CTX);
                 BOOST_REQUIRE_MESSAGE(size >= read,
-                        "Blob size is greater than the source (" << i << ")");
+                        "Blob size is greater than the source" SIMPLE_TEST_CTX);
                 ptr += read;
                 size -= read;
                 continue;
 
             case eRW_Eof:
                 BOOST_REQUIRE_MESSAGE(!size,
-                        "Blob size is less than the source (" << i << ")");
+                        "Blob size is less than the source" SIMPLE_TEST_CTX);
                 break;
 
             default:
-                BOOST_ERROR("Reading blob failed (" << i << ")");
+                BOOST_FAIL("Reading blob failed" SIMPLE_TEST_CTX);
             }
 
             break;
@@ -336,10 +344,17 @@ static void s_SimpleTest()
 
         // Checking removed blob
         BOOST_REQUIRE_MESSAGE(!api.HasBlob(key, subkey),
-                "Removed blob still exists (" << i << ")");
+                "Removed blob still exists" SIMPLE_TEST_CTX);
         auto_ptr<IReader> fail_reader(api.GetReadStream(key, version, subkey, &size));
         BOOST_REQUIRE_MESSAGE(!fail_reader.get(),
-                "Got reader for removed blob (" << i << ")");
+                "Got reader for removed blob" SIMPLE_TEST_CTX);
+        }
+        catch (...) {
+            BOOST_ERROR("An exception has been caught" SIMPLE_TEST_CTX);
+            throw;
+        }
+
+#undef SIMPLE_TEST_CTX
     }
 }
 
