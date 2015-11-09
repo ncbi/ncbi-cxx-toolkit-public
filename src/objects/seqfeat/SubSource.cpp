@@ -745,15 +745,63 @@ vector<string> CSubSource::x_GetDateTokens(const string& orig_date)
     string cpy = orig_date;
     NStr::TruncateSpacesInPlace (cpy);
 
-    string one_token;    
-    for (i = 0; i < 4; i++) {
-        one_token = NStr::GetField (cpy, i, token_delimiters, NStr::eMergeDelims);
-        if (NStr::IsBlank (one_token)) {
-            break;
+    string curr_token = "";
+    bool is_chars = false;
+    ITERATE(string, s, cpy) {
+        if (strchr(token_delimiters.c_str(), *s) != NULL) {
+            if (!NStr::IsBlank(curr_token)) {
+                tokens.push_back(curr_token);
+            }
+            curr_token = "";
+            is_chars = false;
+        } else if (is_chars && !isalpha(*s)) {
+            // previous token was all letters, do not add non-letter characters
+            if (!NStr::IsBlank(curr_token)) {
+                tokens.push_back(curr_token);
+            }
+            curr_token = "";
+            curr_token += *s;
+            is_chars = false;
+        } else if (!NStr::IsBlank(curr_token) && !is_chars && isalpha(*s)) {
+            // previous token had no letters
+            tokens.push_back(curr_token);
+            curr_token = "";
+            curr_token += *s;
+            is_chars = true;
         } else {
-            tokens.push_back (one_token);
+            curr_token += *s;
+            if (isalpha(*s)) {
+                is_chars = true;
+            }
         }
     }
+    if (!NStr::IsBlank(curr_token)) {
+        tokens.push_back(curr_token);
+    }
+
+    // reattach 'st', 'nd', 'rd', and 'th' to numbers if present
+    if (tokens.size() > 3) {
+        vector<string>::iterator p = tokens.begin();  
+        bool prev_is_number = isdigit((*p).c_str()[0]);
+        vector<string>::iterator s = p;
+        ++s;
+        while (s != tokens.end()) {
+            if (prev_is_number &&
+                (NStr::EqualNocase(*s, "st") ||
+                NStr::EqualNocase(*s, "nd") ||
+                NStr::EqualNocase(*s, "rd") ||
+                NStr::EqualNocase(*s, "th"))) {
+                *p += *s;
+                s = tokens.erase(s);
+                prev_is_number = false;
+            } else {
+                ++p;
+                ++s;
+                prev_is_number = isdigit((*p).c_str()[0]);
+            }
+        }
+    }
+
     return tokens;
 }
 

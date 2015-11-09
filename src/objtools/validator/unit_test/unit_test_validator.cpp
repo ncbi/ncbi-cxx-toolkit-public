@@ -6540,7 +6540,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadAltitude)
 
     CLEAR_ERRORS
 
-    BOOST_CHECK_EQUAL(CSubSource::FixAltitude("123 ft."), "37.4904 m");
+    BOOST_CHECK_EQUAL(CSubSource::FixAltitude("123 ft."), "37 m");
 }
 
 
@@ -18803,7 +18803,7 @@ BOOST_AUTO_TEST_CASE(Test_SubSourceAutofix)
     ss->SetSubtype(CSubSource::eSubtype_altitude);
     ss->SetName("123 ft.");
     ss->AutoFix();
-    BOOST_CHECK_EQUAL(ss->GetName(), "37.4904 m");
+    BOOST_CHECK_EQUAL(ss->GetName(), "37 m");
 
 }
 

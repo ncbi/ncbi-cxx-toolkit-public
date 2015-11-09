@@ -1073,6 +1073,12 @@ BOOST_AUTO_TEST_CASE(Test_SQD_2319)
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("2012-01-52"), "");
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_GB_5391)
+{
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("June2011"), "Jun-2011");
+}
+
 BOOST_AUTO_TEST_CASE(Test_GetRNAProduct)
 {
     CRef<CRNA_ref> rna(new CRNA_ref());
