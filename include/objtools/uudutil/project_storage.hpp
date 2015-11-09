@@ -42,12 +42,9 @@
 #include <serial/objistr.hpp>
 #include <serial/serial.hpp>
 #include <connect/services/netstorage.hpp>
-
-
+#include <connect/services/netcache_api.hpp>
 
 BEGIN_NCBI_SCOPE
-
-class CNetCacheAPI;
 
 BEGIN_SCOPE(objects)
     class IGBProject;
