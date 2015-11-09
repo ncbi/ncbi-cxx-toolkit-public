@@ -1,7 +1,6 @@
 corelib$
 corelib/hash_impl$
 corelib/impl$
-connect$
 util$
 util/bitset$
 util/regexp$
