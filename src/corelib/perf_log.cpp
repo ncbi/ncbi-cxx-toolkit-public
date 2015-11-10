@@ -43,10 +43,10 @@ BEGIN_NCBI_SCOPE
 //     [Log]
 //     PerfLogging = true/false
 // Environment variable:
-//     LOG_PerfLogging
+//     LOG_PERFLOGGING
 //
 NCBI_PARAM_DECL(bool, Log, PerfLogging);
-NCBI_PARAM_DEF_EX(bool, Log, PerfLogging, false, eParam_NoThread, LOG_PerfLogging);
+NCBI_PARAM_DEF_EX(bool, Log, PerfLogging, false, eParam_NoThread, LOG_PERFLOGGING);
 typedef NCBI_PARAM_TYPE(Log, PerfLogging) TPerfLogging;
 
 

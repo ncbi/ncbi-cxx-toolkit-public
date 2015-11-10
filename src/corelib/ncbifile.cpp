@@ -142,11 +142,11 @@ NCBI_PARAM_DEF (string, NCBI, TmpDir, kEmptyStr);
 //     [NCBI]
 //     DeleteReadOnlyFiles = true/false
 // Environment variable:
-//     NCBI_CONFIG__NCBI__DeleteReadOnlyFiles
+//     NCBI_CONFIG__DELETEREADONLYFILES
 //
 NCBI_PARAM_DECL(bool, NCBI, DeleteReadOnlyFiles);
 NCBI_PARAM_DEF_EX(bool, NCBI, DeleteReadOnlyFiles, false,
-    eParam_NoThread, NCBI_CONFIG__DeleteReadOnlyFiles);
+    eParam_NoThread, NCBI_CONFIG__DELETEREADONLYFILES);
 
 
 // Declare how umask settings on Unix affect creating files/directories 
@@ -155,7 +155,7 @@ NCBI_PARAM_DEF_EX(bool, NCBI, DeleteReadOnlyFiles, false,
 //     [NCBI]
 //     FileAPIHonorUmask = true/false
 // Environment variable:
-//     NCBI_CONFIG__NCBI__FileAPIHonorUmask
+//     NCBI_CONFIG__FILEAPIHONORUMASK
 //
 // On WINDOWS: umask affect only CRT function, the part of API that
 // use Windows API directly just ignore umask setting.
@@ -163,7 +163,7 @@ NCBI_PARAM_DEF_EX(bool, NCBI, DeleteReadOnlyFiles, false,
 
 NCBI_PARAM_DECL(bool, NCBI, FileAPIHonorUmask);
 NCBI_PARAM_DEF_EX(bool, NCBI, FileAPIHonorUmask, DEFAULT_HONOR_UMASK_VALUE,
-                  eParam_NoThread, NCBI_CONFIG__FileAPIHonorUmask);
+    eParam_NoThread, NCBI_CONFIG__FILEAPIHONORUMASK);
 
 
 // Declare the parameter to turn on logging from CFile,
@@ -172,13 +172,13 @@ NCBI_PARAM_DEF_EX(bool, NCBI, FileAPIHonorUmask, DEFAULT_HONOR_UMASK_VALUE,
 //     [NCBI]
 //     FileAPILogging = true/false
 // Environment variable:
-//     NCBI_CONFIG__NCBI__FileAPILogging
+//     NCBI_CONFIG__FILEAPILOGGING
 //
 #define DEFAULT_LOGGING_VALUE false
 
 NCBI_PARAM_DECL(bool, NCBI, FileAPILogging);
 NCBI_PARAM_DEF_EX(bool, NCBI, FileAPILogging, DEFAULT_LOGGING_VALUE,
-    eParam_NoThread, NCBI_CONFIG__FileAPILogging);
+    eParam_NoThread, NCBI_CONFIG__FILEAPILOGGING);
 
 
 #define LOG_ERROR(log_message) \
