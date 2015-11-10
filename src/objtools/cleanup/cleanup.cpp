@@ -789,8 +789,7 @@ bool CCleanup::AddProteinTitle(CBioseq_Handle bsh)
     string new_defline = sequence::CDeflineGenerator().GenerateDefline(bsh, sequence::CDeflineGenerator::fIgnoreExisting);
     CSeqdesc_CI di(bsh, CSeqdesc::e_Title);
     if (di) {
-        if (sequence::GetCDSForProduct(*(bsh.GetCompleteBioseq()), &(bsh.GetScope())) != NULL
-            && !NStr::Equal(di->GetTitle(), new_defline)) {
+        if (!NStr::Equal(di->GetTitle(), new_defline)) {
             CSeqdesc* d = const_cast<CSeqdesc*>(&(*di));
             d->SetTitle(new_defline);
             return true;
