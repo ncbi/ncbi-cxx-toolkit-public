@@ -477,12 +477,22 @@ void CValidError_align::x_ValidateDenseg
     size_t numseg  = denseg.GetNumseg();
     string label;
     denseg.GetIds()[0]->GetLabel (&label);
+ 
+ 
+    string context;
+    size_t bar_pos = NStr::Find(label, "|");
+    if ( bar_pos != string::npos ) {
+        context = label.substr(bar_pos+1);
+    } else {
+        context = label;
+    }
+
 
     // assert dim == Ids.size()
     if ( dim != denseg.GetIds().size() ) {
         PostErr(eDiag_Error, eErr_SEQ_ALIGN_AlignDimSeqIdNotMatch,
                 "SeqId: The Seqalign has more or fewer ids than the number of rows in the alignment (context "
-                    + label + ").  Look for possible formatting errors in the ids.", align);
+                    + context + ").  Look for possible formatting errors in the ids.", align);
     }
 
     // assert numseg == Lens.size()
@@ -636,13 +646,20 @@ void CValidError_align::x_ValidateDendiag
 
         string label;
         dendiag.GetIds()[0]->GetLabel (&label);
+        string context;
+        size_t bar_pos = NStr::Find(label, "|");
+        if ( bar_pos != string::npos ) {
+            context = label.substr(bar_pos+1);
+        } else {
+            context = label;
+        }
 
         // assert dim == Ids.size()
         if ( dim != dendiag.GetIds().size() ) {
             PostErr(eDiag_Error, eErr_SEQ_ALIGN_SegsDimSeqIdNotMatch,
                     "SeqId: In segment " + NStr::SizetToString (num_dendiag) 
                     + ", there are more or fewer rows than there are seqids (context "
-                    + label + ").  Look for possible formatting errors in the ids.", align);
+                    + context + ").  Look for possible formatting errors in the ids.", align);
         }
 
         // assert dim == Starts.size()
@@ -696,10 +713,17 @@ void CValidError_align::x_ValidateStd
         if ( dim != stdseg.GetLoc().size() ) {
             string label;
             stdseg.GetLoc()[0]->GetLabel(&label);
+            string context;
+            size_t bar_pos = NStr::Find(label, "|");
+            if ( bar_pos != string::npos ) {
+                context = label.substr(bar_pos+1);
+            } else {
+                context = label;
+            }
             PostErr(eDiag_Error, eErr_SEQ_ALIGN_SegsDimSeqIdNotMatch,
                     "SeqId: In segment " + NStr::SizetToString (num_stdseg) 
                     + ", there are more or fewer rows than there are seqids (context "
-                    + label + ").  Look for possible formatting errors in the ids.", align);
+                    + context + ").  Look for possible formatting errors in the ids.", align);
         }
 
         // assert dim == Ids.size()

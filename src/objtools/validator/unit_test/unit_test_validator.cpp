@@ -17184,7 +17184,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_AlignDimSeqIdNotMatch)
     STANDARD_SETUP_WITH_DATABASE
 
     expected_errors.push_back(new CExpectedError("good1", eDiag_Error, "AlignDimSeqIdNotMatch", 
-                  "SeqId: The Seqalign has more or fewer ids than the number of rows in the alignment (context lcl|good1).  Look for possible formatting errors in the ids."));
+                  "SeqId: The Seqalign has more or fewer ids than the number of rows in the alignment (context good1).  Look for possible formatting errors in the ids."));
     expected_errors.push_back(new CExpectedError("good1", eDiag_Error, "SegsStartsMismatch", 
                   "The number of Starts (3) does not match the expected size of dim * numseg (4)"));
     options |= CValidator::eVal_val_align | CValidator::eVal_remote_fetch;
