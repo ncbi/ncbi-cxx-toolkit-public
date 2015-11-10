@@ -29,17 +29,23 @@
 *
 *****************************************************************************/
 
-#include "gicache.h"
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <assert.h>
 #include <poll.h>
 #include <errno.h>
-#include <pthread.h>
+#include "gicache.h"
 #include "ncbi_toolkit.h"
+#ifdef NCBI_CXX_TOOLKIT
+#include "connect/ncbi_core_cxx.hpp"
+#else
+#include "connect/ncbi_core_c.h"
+#endif
+#include "connect/ncbi_core.h"
 
 /****************************************************************************
  *
@@ -109,7 +115,7 @@ typedef struct {
     char*   m_DataCache;
     Uint1   m_SequentialData;
     Uint1   m_FreeOnDrop;
-    pthread_rwlock_t m_RemapLock; /* Remapper is WRITER, others are READERs */
+    MT_LOCK m_RemapLock; /* Remapper is WRITER, others are READERs */
     volatile Uint1 m_NeedRemap; /* Is remap needed? */
     Uint1   m_RemapOnRead; /* Is remap allowed when reading data? */
     Uint4   m_OffsetHeaderSize; /* 0 for 32-bit version, 256 for 64-bit */
@@ -208,7 +214,7 @@ static void x_UnMapIndex(SGiDataIndex* data_index)
         if (LogFunc) {
             char logmsg[256];
             sprintf(logmsg,
-                    "GI_CACHE: Unmapping index file, filedes %d, map length %ld, path %s\n",
+                    "GI_CACHE: Unmapping index file, filedes %d, map length %u, path %s\n",
                     data_index->m_GiIndexFile, data_index->m_MappedIndexLen,
                     data_index->m_FileNamePrefix);
             LogFunc(logmsg);
@@ -226,7 +232,7 @@ static void x_UnMapData(SGiDataIndex* data_index)
         if (LogFunc) {
             char logmsg[256];
             sprintf(logmsg,
-                    "GI_CACHE: Unmapping data file, filedes %d, map length %ld, path %s\n",
+                    "GI_CACHE: Unmapping data file, filedes %d, map length %lld, path %s\n",
                     data_index->m_DataFile, data_index->m_MappedDataLen,
                     data_index->m_FileNamePrefix);
             LogFunc(logmsg);
@@ -276,8 +282,8 @@ static Uint1 x_OpenIndexFile(SGiDataIndex* data_index)
     if (LogFunc) {
         char logmsg[256];
         sprintf(logmsg,
-                "GI_CACHE: Opened index file %s; filedes %d, inode %d, length %ld, path %s, err: %d\n",
-                buf, data_index->m_GiIndexFile, data_index->m_IndexInode,
+                "GI_CACHE: Opened index file %s; filedes %d, inode %lx, length %u, path %s, err: %d\n",
+                buf, data_index->m_GiIndexFile, (unsigned long)data_index->m_IndexInode,
                 data_index->m_GiIndexLen, data_index->m_FileNamePrefix, open_err);
         LogFunc(logmsg);
     }
@@ -335,8 +341,8 @@ static Uint1 x_OpenDataFile(SGiDataIndex* data_index)
     if (LogFunc) {
         char logmsg[256];
         sprintf(logmsg,
-                "GI_CACHE: Opened data file %s; filedes %d, inode %d, length %ld, path %s, err: %d\n",
-                buf, data_index->m_DataFile, data_index->m_DataInode,
+                "GI_CACHE: Opened data file %s; filedes %d, inode %lx, length %lld, path %s, err: %d\n",
+                buf, data_index->m_DataFile, (unsigned long)data_index->m_DataInode,
                 data_index->m_DataLen, data_index->m_FileNamePrefix, open_err);
         LogFunc(logmsg);
     }
@@ -398,7 +404,7 @@ static Uint1 x_MapIndex(SGiDataIndex* data_index)
     if (LogFunc) {
         char logmsg[256];
         sprintf(logmsg,
-                "GI_CACHE: Memory mapped index file, filedes %d, map length %ld, path %s\n",
+                "GI_CACHE: Memory mapped index file, filedes %d, map length %u, path %s\n",
                 data_index->m_GiIndexFile, data_index->m_MappedIndexLen,
                 data_index->m_FileNamePrefix);
         LogFunc(logmsg);
@@ -441,8 +447,8 @@ static Uint1 x_MapData(SGiDataIndex* data_index)
         if (LogFunc) {
             char logmsg[256];
             sprintf(logmsg,
-                    "GI_CACHE: Memory mapped data file, filedes %d, map length %ld, path %s\n",
-                    data_index->m_DataFile, data_index->m_MappedDataLen,
+                    "GI_CACHE: Memory mapped data file, filedes %d, map length %lld, path %s\n",
+                    data_index->m_DataFile, (long long)data_index->m_MappedDataLen,
                     data_index->m_FileNamePrefix);
             LogFunc(logmsg);
         }
@@ -498,13 +504,20 @@ static Uint1 x_ReMapData(SGiDataIndex* data_index)
 
 static Uint1 GiDataIndex_ReMap(SGiDataIndex* data_index, int delay)
 {
+	int err;
     /* If some other thread has already done the remapping or is in the process
        of doing it, there is nothing to do here. */
     if (!data_index->m_NeedRemap)
         return 1;
 
-	if (pthread_rwlock_wrlock(&data_index->m_RemapLock) != 0)
+	if ((err = MT_LOCK_Do(data_index->m_RemapLock, eMT_Lock)) > 0) {
+		if (LogFunc) {
+			char logmsg[256];
+			sprintf(logmsg, "GI_CACHE: failed to aquire WR lock, err: %d\n", err);
+			LogFunc(logmsg);
+		}
 		return 0;
+	}
 
 	/* remapping might have been done by somebody else while we were waiting for wr lock */
 	if (!data_index->m_NeedRemap)
@@ -536,18 +549,18 @@ static Uint1 GiDataIndex_ReMap(SGiDataIndex* data_index, int delay)
     }
 
     if (!x_ReMapIndex(data_index)) {
-		pthread_rwlock_unlock(&data_index->m_RemapLock);
+		MT_LOCK_Do(data_index->m_RemapLock, eMT_Unlock);
         return 0;
 	}
     if (!x_ReMapData(data_index)) {
-		pthread_rwlock_unlock(&data_index->m_RemapLock);
+		MT_LOCK_Do(data_index->m_RemapLock, eMT_Unlock);
         return 0;
 	}
 
     /* Inform any other threads that may want remapped data that remapping has
        already finished. */
     data_index->m_NeedRemap = 0;
-	pthread_rwlock_unlock(&data_index->m_RemapLock);
+	MT_LOCK_Do(data_index->m_RemapLock, eMT_Unlock);
 
     return 1;
 }
@@ -738,33 +751,47 @@ static int x_GetGiData(SGiDataIndex* data_index, int gi, packed_accession_t* pa)
     int base = data_index->m_OffsetHeaderSize;
     int shift = (data_index->m_SequentialData ? 1 : 0);
     int level;
+	int err;
     Uint1 is_64bit = (data_index->m_OffsetHeaderSize > 0);
-	pa->m_Val = 0;
+	pa->m_Val = 0;	
 
     /* If some thread is currently remapping, the data is in an inconsistent
        state, therefore return NULL. */
 
-	if (pthread_rwlock_rdlock(&data_index->m_RemapLock) != 0)
+	if ((err = MT_LOCK_Do(data_index->m_RemapLock, eMT_LockRead)) > 0) {
+		if (LogFunc) {
+			char logmsg[256];
+			sprintf(logmsg, "GI_CACHE: failed to aquire RD lock, err: %d\n", err);
+			LogFunc(logmsg);
+		}
 		return 0;
+	}
 
 	if ((data_index->m_GiIndex == MAP_FAILED ||
 		 data_index->m_Data == MAP_FAILED)) {
 		data_index->m_NeedRemap = 1;
 		/* we can't remap while RD lock is aquired, so drop it first */
-		pthread_rwlock_unlock(&data_index->m_RemapLock);
+		MT_LOCK_Do(data_index->m_RemapLock, eMT_Unlock);
 
 		if (!data_index->m_RemapOnRead || !GiDataIndex_ReMap(data_index, 0)) {
 			return 0;
 		}
 		/* re-aquire RD lock */
-		if (pthread_rwlock_rdlock(&data_index->m_RemapLock) != 0)
+		if ((err = MT_LOCK_Do(data_index->m_RemapLock, eMT_LockRead)) > 0) {
+			if (LogFunc) {
+				char logmsg[256];
+				sprintf(logmsg, "GI_CACHE: failed to aquire RD lock, err: %d\n", err);
+				LogFunc(logmsg);
+			}
 			return 0;
+		}
+
 	}
 	/* we've tried to remap and if still we have MAP_FAILED there, bailout */
 	if ((data_index->m_GiIndex == MAP_FAILED ||
          data_index->m_Data == MAP_FAILED)) 
 	{
-		pthread_rwlock_unlock(&data_index->m_RemapLock);
+		MT_LOCK_Do(data_index->m_RemapLock, eMT_Unlock);
 		return 0;
 	}
 
@@ -790,7 +817,7 @@ static int x_GetGiData(SGiDataIndex* data_index, int gi, packed_accession_t* pa)
         */
         if (base == -1) {
             data_index->m_NeedRemap = 1;
-			pthread_rwlock_unlock(&data_index->m_RemapLock);
+			MT_LOCK_Do(data_index->m_RemapLock, eMT_Unlock);
 			return 0;
         }
     }
@@ -802,7 +829,7 @@ static int x_GetGiData(SGiDataIndex* data_index, int gi, packed_accession_t* pa)
         /* If top page offset is not set, it means no gis from this whole top page
            have been saved in cache so far. */
         if (gi_offset == 0) {
-			pthread_rwlock_unlock(&data_index->m_RemapLock);
+			MT_LOCK_Do(data_index->m_RemapLock, eMT_Unlock);
 			return 0;
 		}
     }
@@ -816,7 +843,7 @@ static int x_GetGiData(SGiDataIndex* data_index, int gi, packed_accession_t* pa)
         if (!data_index->m_RemapOnRead || !x_ReMapData(data_index) ||
             gi_offset >= data_index->m_DataLen + data_index->m_DataCacheLen) 
 		{
-			pthread_rwlock_unlock(&data_index->m_RemapLock);
+			MT_LOCK_Do(data_index->m_RemapLock, eMT_Unlock);
             return 0;
 		}
     }
@@ -825,7 +852,7 @@ static int x_GetGiData(SGiDataIndex* data_index, int gi, packed_accession_t* pa)
        from the memory mapped location. */
     if (gi_offset >= data_index->m_DataLen) {
 		*pa = *(packed_accession_t*)(data_index->m_DataCache + (gi_offset - data_index->m_DataLen));
-		pthread_rwlock_unlock(&data_index->m_RemapLock);
+		MT_LOCK_Do(data_index->m_RemapLock, eMT_Unlock);
         return 1;
     } 
 	else {
@@ -833,22 +860,32 @@ static int x_GetGiData(SGiDataIndex* data_index, int gi, packed_accession_t* pa)
            mapped, remap now. */
         if (gi_offset >= data_index->m_MappedDataLen) {
             data_index->m_NeedRemap = 1;
-			pthread_rwlock_unlock(&data_index->m_RemapLock);
+			MT_LOCK_Do(data_index->m_RemapLock, eMT_Unlock);
             if (!data_index->m_RemapOnRead || !x_ReMapData(data_index))
                 return 0;
-			pthread_rwlock_rdlock(&data_index->m_RemapLock);
-			if (gi_offset >= data_index->m_MappedDataLen) {
-				pthread_rwlock_unlock(&data_index->m_RemapLock);
+
+			/* re-aquire RD lock */
+			if ((err = MT_LOCK_Do(data_index->m_RemapLock, eMT_LockRead)) > 0) {
 				if (LogFunc) {
 					char logmsg[256];
-					sprintf(logmsg, "GI_CACHE: Possible corruption: gi_offset: %ld, gi: %d\n", gi_offset, gi);
+					sprintf(logmsg, "GI_CACHE: failed to aquire RD lock, err: %d\n", err);
+					LogFunc(logmsg);
+				}
+				return 0;
+			}
+			/* still problem with offset? -> log it */
+			if (gi_offset >= data_index->m_MappedDataLen) {
+				MT_LOCK_Do(data_index->m_RemapLock, eMT_Unlock);
+				if (LogFunc) {
+					char logmsg[256];
+					sprintf(logmsg, "GI_CACHE: Possible corruption: gi_offset: %lld, gi: %d\n", gi_offset, gi);
 					LogFunc(logmsg);
 				}
 				return 0;
 			}
         }
 		*pa = *(packed_accession_t*)(data_index->m_Data + gi_offset);
-		pthread_rwlock_unlock(&data_index->m_RemapLock);
+		MT_LOCK_Do(data_index->m_RemapLock, eMT_Unlock);
 		return 1;
     }
 }
@@ -886,7 +923,11 @@ GiDataIndex_New(SGiDataIndex* data_index, int unit_size, const char* name,
     data_index->m_DataCacheLen = 0;
     data_index->m_DataCacheSize = unit_size*DATA_CACHE_SIZE;
     data_index->m_DataCache = (char*) malloc(data_index->m_DataCacheSize);
-    pthread_rwlock_init(&data_index->m_RemapLock, NULL);
+#ifdef NCBI_CXX_TOOLKIT
+    data_index->m_RemapLock = MT_LOCK_cxx2c(NULL, true);
+#else
+    data_index->m_RemapLock = MT_LOCK_c2c(0, 1);
+#endif
     data_index->m_NeedRemap = 1;
     data_index->m_RemapOnRead = 1;
     data_index->m_OffsetHeaderSize = (is_64bit ? kOffsetHeaderSize : 0);
@@ -907,7 +948,7 @@ static SGiDataIndex* GiDataIndex_Free(SGiDataIndex* data_index)
     x_CloseFiles(data_index);
     free(data_index->m_IndexCache);
     free(data_index->m_DataCache);
-	pthread_rwlock_destroy(&data_index->m_RemapLock);
+	MT_LOCK_Delete(data_index->m_RemapLock);
 	memset(&data_index->m_RemapLock, 0, sizeof(data_index->m_RemapLock));
     if (data_index->m_FreeOnDrop) {
       free(data_index);
@@ -1190,7 +1231,6 @@ static int GiDataIndex_GetMaxGi(SGiDataIndex* data_index)
     int shift = (data_index->m_SequentialData ? 1 : 0);
     int remainder = 0;
     Uint4* gi_index;
-    Int8 base_offset;
 
     x_Flush(data_index);
 
