@@ -2,7 +2,7 @@
 
 REQUIRES = unix
 
-SRC = reader_gicache gicache
+SRC = reader_gicache gicache_cxx
 
 LIB = ncbi_xreader_gicache
 

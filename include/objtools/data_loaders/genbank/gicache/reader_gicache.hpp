@@ -32,12 +32,13 @@
 
 #include <objtools/data_loaders/genbank/reader.hpp>
 #include <corelib/ncbimtx.hpp>
+#include <connect/ncbi_core_cxx.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-class NCBI_XREADER_GICACHE_EXPORT CGICacheReader : public CReader
+class NCBI_XREADER_GICACHE_EXPORT CGICacheReader : public CReader, protected CConnIniter
 {
 public:
     CGICacheReader(void);
