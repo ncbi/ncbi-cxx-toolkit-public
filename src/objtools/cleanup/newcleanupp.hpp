@@ -300,6 +300,7 @@ private:
 
     // Extended Cleanup functions
     void BioSourceEC ( CBioSource& biosrc );
+    void x_RemoveUnnecessaryGeneXrefs ( CSeq_feat& feat );
     void AddProteinTitles (CBioseq& seq);
     void ProtRefEC( CProt_ref& pr);
     void CdRegionEC( CSeq_feat& sf);

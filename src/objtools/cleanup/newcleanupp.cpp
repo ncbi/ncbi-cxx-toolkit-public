@@ -11043,6 +11043,20 @@ void CNewCleanup_imp::CreateMissingMolInfo( CBioseq& seq )
 }
 
 
+void CNewCleanup_imp::x_RemoveUnnecessaryGeneXrefs(CSeq_feat& f)
+{
+    CRef<CSeq_feat> copy(new CSeq_feat());
+    copy->Assign(f);
+
+    if (CCleanup::RemoveUnnecessaryGeneXrefs(*copy, *m_Scope)) {
+        CSeq_feat_Handle fh = m_Scope->GetSeq_featHandle(f);
+        CSeq_feat_EditHandle eh(fh);
+        eh.Replace(*copy);
+        ChangeMade(CCleanupChange::eRemoveGeneXref);
+    }
+}
+
+
 void CNewCleanup_imp::AddProteinTitles(CBioseq& seq)
 {
     if (!(m_Options & CCleanup::eClean_NoProteinTitles)) {
