@@ -269,6 +269,8 @@ private:
 
     // Execute HTTP GET request.
     // Store received content into the @ostr.
+
+    string x_GetHostName() const;
     void x_Get(string const& path, string const& params, CNcbiOstream& ostr);
     string x_GetContentType(EContentType content_type);
 
