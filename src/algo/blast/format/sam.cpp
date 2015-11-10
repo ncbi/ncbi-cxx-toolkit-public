@@ -93,6 +93,10 @@ void CBlast_SAM_Formatter::x_ProcessCustomSpec(const string & custom_spec,
 			m_refRow = 0;
 		} else if ("FA" == *iter) {
 			CSAM_Formatter::UnsetFlag(CSAM_Formatter::fSAM_PlainSeqIds);
+		} else if ("SQ" == *iter) {
+			CSAM_Formatter::SetFlag(CSAM_Formatter::fSAM_SeqData);
+		} else if ("GI" == *iter) {
+			CSAM_Formatter::SetFlag(CSAM_Formatter::fSAM_ForceGISeqIds);
 		}
 	}
 

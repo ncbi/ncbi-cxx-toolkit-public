@@ -208,15 +208,20 @@ const string kArgProduceHtml("html");
 const bool kDfltArgProduceHtml = false;
 const size_t kDfltLineLength = 60;
 
-const size_t kNumSAMOutputFormatSpecifiers = 2;
+const size_t kNumSAMOutputFormatSpecifiers = 4;
 const SSAMFormatSpec sc_SAMFormatSpecifiers[kNumSAMOutputFormatSpecifiers] = {
 	 SSAMFormatSpec("SR",
 	                "Subject as Reference Seq",
 	                eSAM_SubjAsRefSeq),
     SSAMFormatSpec("FA",
                    "Use NCBI FASTA-ID Format",
-                   eSAM_NCBIFastaID)
-
+                   eSAM_NCBIFastaID),
+    SSAMFormatSpec("GI",
+                   "Use GI",
+                   eSAM_UseGI),
+    SSAMFormatSpec("SQ",
+                   "Include Sequence Data",
+                   eSAM_SeqData)
 };
 
 string DescribeSAMOutputFormatSpecifiers()
