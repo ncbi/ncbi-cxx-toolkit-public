@@ -746,7 +746,7 @@ bool CValidError_align::x_ValidateDim
         EErrType et;
         if (part > 0) {
             et = eErr_SEQ_ALIGN_SegsDimOne;
-            msg = "Segs: Segment " + NStr::SizetToString (part) + "apparently has only one sequence.  Each portion of the alignment must have at least two sequences.";
+            msg = "Segs: Segment " + NStr::SizetToString (part) + " apparently has only one sequence.  Each portion of the alignment must have at least two sequences.";
         } else {
             et = eErr_SEQ_ALIGN_AlignDimOne;
             msg = "Dim: This seqalign apparently has only one sequence.  Each alignment must have at least two sequences.";
