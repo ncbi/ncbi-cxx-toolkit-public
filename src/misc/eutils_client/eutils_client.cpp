@@ -373,18 +373,6 @@ private:
 */
 
 
-static string s_GetHostName() {
-    const char* kEutils = "eutils_lb";
-    SConnNetInfo* net_info = ConnNetInfo_Create(kEutils);
-    SSERV_Info* info = SERV_GetInfo(kEutils, fSERV_Dns, SERV_ANYHOST, net_info);
-    if (!info || !info->host) {
-        NCBI_THROW(CException, eUnknown, "Can't get hostname for NCBI service eutils_lb");
-    }
-    string hostname = CSocketAPI::gethostbyaddr(info->host);
-    free(info);
-    ConnNetInfo_Destroy(net_info);
-    return hostname;
-}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -392,8 +380,7 @@ static string s_GetHostName() {
 
 CEutilsClient::
 CEutilsClient()
-    : m_HostName(s_GetHostName())
-    , m_UrlTag("gpipe")
+    : m_UrlTag("gpipe")
     , m_RetMax(kMax_Int)
 {
     SetMessageHandlerDefault();
@@ -472,9 +459,10 @@ Uint8 CEutilsClient::Count(const string& db,
     for (int retries = 0;  retries < 10;  ++retries) {
         try {
             string path = "/entrez/eutils/esearch.fcgi";
-            CConn_HttpStream istr(m_HostName,
+            string hostname = x_GetHostName();
+            CConn_HttpStream istr(hostname,
                                   path);
-            m_Url.push_back(x_BuildUrl(m_HostName, path, params));
+            m_Url.push_back(x_BuildUrl(hostname, path, params));
 
             istr << params;
             m_Time.push_back(CTime(CTime::eCurrent));
@@ -628,10 +616,11 @@ Uint8 CEutilsClient::x_Search(const string& db,
     for (int retries = 0;  retries < 10;  ++retries) {
         try {
             string path = "/entrez/eutils/esearch.fcgi";
-            CConn_HttpStream istr(m_HostName,
+            string hostname = x_GetHostName();
+            CConn_HttpStream istr(hostname,
                                   path);
 
-            m_Url.push_back(x_BuildUrl(m_HostName, path, params));
+            m_Url.push_back(x_BuildUrl(hostname, path, params));
             istr << params;
             m_Time.push_back(CTime(CTime::eCurrent));
 
@@ -731,6 +720,25 @@ void CEutilsClient::SearchHistory(const string& db,
     x_Get("/entrez/eutils/esearch.fcgi", oss.str(), ostr);
 }
 
+
+string CEutilsClient::x_GetHostName() const {
+    if (m_HostName.empty()) {
+        const char* kEutils = "eutils_lb";
+        SConnNetInfo* net_info = ConnNetInfo_Create(kEutils);
+        SSERV_Info* info = SERV_GetInfo(kEutils, fSERV_Dns, SERV_ANYHOST, net_info);
+        if (!info || !info->host) {
+            NCBI_THROW(CException, eUnknown, "Can't get hostname for NCBI service eutils_lb");
+        }
+        string hostname = CSocketAPI::gethostbyaddr(info->host);
+        free(info);
+        ConnNetInfo_Destroy(net_info);
+        return hostname;
+    } else {
+        return m_HostName;
+    }
+}
+
+
 void CEutilsClient::x_Get(string const& path, 
                           string const& params, 
                           CNcbiOstream& ostr)
@@ -740,9 +748,10 @@ void CEutilsClient::x_Get(string const& path,
     m_Time.clear();
     for (int retries = 0;  retries < 10;  ++retries) {
         try {
-            CConn_HttpStream istr(m_HostName,
+            string hostname = x_GetHostName();
+            CConn_HttpStream istr(hostname,
                                   path);
-            m_Url.push_back(x_BuildUrl(m_HostName, path, params));
+            m_Url.push_back(x_BuildUrl(hostname, path, params));
             istr << params;
             m_Time.push_back(CTime(CTime::eCurrent));
             if (NcbiStreamCopy(ostr, istr)) {
@@ -844,10 +853,11 @@ void CEutilsClient::x_Link(const string& db_from,
     for (int retries = 0;  retries < 10;  ++retries) {
         try {
             string path = "/entrez/eutils/elink.fcgi";
-            CConn_HttpStream istr(m_HostName,
+            string hostname = x_GetHostName();
+            CConn_HttpStream istr(hostname,
                                   path);
 
-            m_Url.push_back(x_BuildUrl(m_HostName, path, params));
+            m_Url.push_back(x_BuildUrl(hostname, path, params));
             istr << params;
             m_Time.push_back(CTime(CTime::eCurrent));
             CELinkParser<T2> parser(db_from, db_to, uids_to);
@@ -945,9 +955,10 @@ void CEutilsClient::x_Link(const string& db_from,
     for (int retries = 0;  retries < 10;  ++retries) {
         try {
             string path = "/entrez/eutils/elink.fcgi";
-            CConn_HttpStream istr(m_HostName,
+            string hostname = x_GetHostName();
+            CConn_HttpStream istr(hostname,
                                   path);
-            m_Url.push_back(x_BuildUrl(m_HostName, path, params));
+            m_Url.push_back(x_BuildUrl(hostname, path, params));
             istr << params;
             m_Time.push_back(CTime(CTime::eCurrent));
             if (NcbiStreamCopy(ostr, istr)) {
@@ -1033,9 +1044,10 @@ void CEutilsClient::x_Summary(const string& db,
         try {
             string path = "/entrez/eutils/esummary.fcgi?";
             LOG_POST(Info << "query: " << m_HostName + path + params );
-            CConn_HttpStream istr(m_HostName,
+            string hostname = x_GetHostName();
+            CConn_HttpStream istr(hostname,
                                   path);
-            m_Url.push_back(x_BuildUrl(m_HostName, path, params));
+            m_Url.push_back(x_BuildUrl(hostname, path, params));
             istr << params;
             m_Time.push_back(CTime(CTime::eCurrent));
             // slurp up all the output.
@@ -1147,9 +1159,10 @@ void CEutilsClient::x_Fetch(const string& db,
     for (int retries = 0;  retries < 10;  ++retries) {
         try {
             string path = "/entrez/eutils/efetch.fcgi";
-            CConn_HttpStream istr(m_HostName,
+            string hostname = x_GetHostName();
+            CConn_HttpStream istr(hostname,
                                   path);
-            m_Url.push_back(x_BuildUrl(m_HostName, path, params));
+            m_Url.push_back(x_BuildUrl(hostname, path, params));
             istr << params;
             m_Time.push_back(CTime(CTime::eCurrent));
             if (NcbiStreamCopy(ostr, istr)) {
