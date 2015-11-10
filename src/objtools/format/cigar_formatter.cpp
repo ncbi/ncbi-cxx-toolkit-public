@@ -155,6 +155,13 @@ CCIGAR_Formatter::TNumrow CCIGAR_Formatter::x_GetRowById(const CSeq_id& id)
 }
 
 
+static void s_ForceId(CConstRef<CSeq_id>& id,
+                      CScope& scope,
+                      sequence::EGetIdType force)
+{
+}
+
+
 void CCIGAR_Formatter::x_FormatLine(bool width_inverted)
 {
     if (m_TargetRow == m_RefRow) {
@@ -166,9 +173,11 @@ void CCIGAR_Formatter::x_FormatLine(bool width_inverted)
 
     if ( !m_RefId ) {
         m_RefId.Reset(&m_AlnMap->GetSeqId(m_RefRow));
+        AdjustSeqIdType(m_RefId);
     }
     if ( !m_TargetId ) {
         m_TargetId.Reset(&m_AlnMap->GetSeqId(m_TargetRow));
+        AdjustSeqIdType(m_TargetId);
     }
 
     m_RefWidth =
@@ -343,14 +352,6 @@ void CCIGAR_Formatter::x_FormatLine(bool width_inverted)
         }
     }
     CNcbiOstrstream aln_out;
-    m_TargetId.Reset(&m_AlnMap->GetSeqId(m_TargetRow));
-    if ( m_Scope ) {
-        CSeq_id_Handle acc_id = sequence::GetId(
-            *m_TargetId, *m_Scope, sequence::eGetId_ForceAcc);
-        if ( acc_id ) {
-            m_TargetId.Reset(acc_id.GetSeqId());
-        }
-    }
 
     AddSegment(cigar, m_LastType, last_count);
     string cigar_string = CNcbiOstrstreamToString(cigar);
@@ -435,6 +436,7 @@ void CCIGAR_Formatter::x_FormatDensegRows(const CDense_seg& ds,
             else {
                 _ASSERT(m_TargetRow >= 0);
                 m_TargetId.Reset(&m_AlnMap->GetSeqId(m_TargetRow));
+                AdjustSeqIdType(m_TargetId);
             }
             StartRows();
             for (m_RefRow = 0; m_RefRow < m_AlnMap->GetNumRows(); ++m_RefRow) {

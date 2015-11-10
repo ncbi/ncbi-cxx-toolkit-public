@@ -54,7 +54,7 @@ class NCBI_FORMAT_EXPORT CCIGAR_Formatter
 {
 public:
     enum ECIGARFlags {
-        fCIGAR_GffForFlybase = 1, ///< Flybase flavour of GFF3.
+        fCIGAR_GffForFlybase = 1 << 0, ///< Flybase flavour of GFF3.
         fCIGAR_Default = 0
     };
     typedef int TCIGARFlags;
@@ -83,11 +83,13 @@ protected:
     virtual void StartRows(void) {}
     virtual void EndRows(void) {}
     virtual void StartRow(void) {}
-    virtual void AddRow(const string& cigar) {}
+    virtual void AddRow(const string& /*cigar*/) {}
     virtual void EndRow(void) {}
     virtual void AddSegment(CNcbiOstream& cigar,
                             char seg_type,
                             TSeqPos seg_len);
+    // Force seq-id to the desired type (e.g. gi, acc.ver).
+    virtual void AdjustSeqIdType(CConstRef<CSeq_id>& /*id*/) {};
 
     // Get top level alignment
     const CSeq_align& GetSeq_align(void) const { return m_Align; }

@@ -71,6 +71,8 @@ protected:
     virtual void AddSegment(CNcbiOstream& cigar,
                             char seg_type,
                             TSeqPos seg_len);
+    virtual void AdjustSeqIdType(CConstRef<CSeq_id>& id);
+
 private:
     enum EReadFlags {
         fRead_Default       = 0x0000,
@@ -124,6 +126,19 @@ inline
 string CSAM_CIGAR_Formatter::x_GetTargetIdString(void) const
 {
     return x_GetSeqIdString(GetTargetId(), m_Flags);
+}
+
+
+void CSAM_CIGAR_Formatter::AdjustSeqIdType(CConstRef<CSeq_id>& id)
+{
+    CScope* scope = GetScope();
+    if ( !scope) return;
+    sequence::EGetIdType force_type = (m_Flags & CSAM_Formatter::fSAM_ForceGISeqIds) ?
+        sequence::eGetId_ForceGi : sequence::eGetId_ForceAcc;
+    CSeq_id_Handle forced_id = sequence::GetId(*id, *scope, force_type);
+    if (forced_id) {
+        id.Reset(forced_id.GetSeqId());
+    }
 }
 
 
@@ -190,28 +205,37 @@ void CSAM_CIGAR_Formatter::AddRow(const string& cigar)
     	}
     }
 
-    //string seq_data;
-    CBioseq_Handle h;
-    h = GetScope()->GetBioseqHandle(GetTargetId());
-    if ( h ) {
-        //CSeqVector vect = h.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
-        //vect.GetSeqData(tgt_rg.GetFrom(), tgt_rg.GetTo(), seq_data);
-        if ( TSeqPos(tgt_rg.GetToOpen()) < h.GetBioseqLength() ) {
-        	if(flags & fRead_Reverse) {
-        		clip_front = NStr::UInt8ToString(
-        		    h.GetBioseqLength() - tgt_rg.GetToOpen()) + "H";
-		}
-        	else {
-        		clip_back = NStr::UInt8ToString(
-        		    h.GetBioseqLength() - tgt_rg.GetToOpen()) + "H";
-        	}
+    string seq_data = "*";
+    if (m_Flags & CSAM_Formatter::fSAM_SeqData) {
+        CBioseq_Handle h;
+        h = GetScope()->GetBioseqHandle(GetTargetId());
+        if ( h ) {
+            if(flags & fRead_Reverse) {
+                CSeqVector vect = h.GetSeqVector(
+                    CBioseq_Handle::eCoding_Iupac, eNa_strand_minus);
+                vect.GetSeqData(h.GetBioseqLength() - tgt_rg.GetToOpen(),
+                    h.GetBioseqLength() - tgt_rg.GetFrom(), seq_data);
+            }
+            else {
+                CSeqVector vect = h.GetSeqVector(
+                    CBioseq_Handle::eCoding_Iupac, eNa_strand_plus);
+                vect.GetSeqData(tgt_rg.GetFrom(), tgt_rg.GetToOpen(), seq_data);
+            }
+            if ( TSeqPos(tgt_rg.GetToOpen()) < h.GetBioseqLength() ) {
+        	    if(flags & fRead_Reverse) {
+        		    clip_front = NStr::UInt8ToString(
+        		        h.GetBioseqLength() - tgt_rg.GetToOpen()) + "H";
+		    }
+        	    else {
+        		    clip_back = NStr::UInt8ToString(
+        		        h.GetBioseqLength() - tgt_rg.GetToOpen()) + "H";
+        	    }
+            }
+        }
+        else {
+            seq_data = string(tgt_rg.GetLength(), 'N'); // ???
         }
     }
-    /*
-    else {
-        seq_data = string(tgt_rg.GetLength(), 'N'); // ???
-    }
-    */
 
     // Add tags
     string AS; // alignment score, int
@@ -265,7 +289,7 @@ void CSAM_CIGAR_Formatter::AddRow(const string& cigar)
         "*\t" + // ??? mate reference sequence
         "0\t" + // mate position, 1-based
         "0\t" + // inferred insert size
-        /*seq_data + */ "*\t" +
+        seq_data + "\t" +
         "*" + // query quality
         AS + EV + NM + PI + BS // tags
         );

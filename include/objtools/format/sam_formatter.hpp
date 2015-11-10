@@ -61,6 +61,8 @@ public:
         fSAM_PercentageIdentity = 1 << 3,  ///< Generate PI tags
         fSAM_BitScore           = 1 << 4,  ///< Generate BS tags
         fSAM_PlainSeqIds        = 1 << 5,  ///< Drop type prefix in seq-ids
+        fSAM_SeqData            = 1 << 6,  ///< Print sequence data
+        fSAM_ForceGISeqIds      = 1 << 7,  ///< Force using GI ids
 
         //? Include all tags by default
         fSAM_Default            = fSAM_AlignmentScore     |
