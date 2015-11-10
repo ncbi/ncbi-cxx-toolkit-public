@@ -37,6 +37,7 @@
 #include <unistd.h>
 #include <assert.h>
 #include <poll.h>
+#include <errno.h>
 #include "ncbi_toolkit.h"
 
 /****************************************************************************
