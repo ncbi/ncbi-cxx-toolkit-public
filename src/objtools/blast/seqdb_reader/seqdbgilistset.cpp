@@ -351,8 +351,8 @@ void CSeqDBGiListSet::x_TranslateTisFromUserList(CSeqDBGiList & gilist)
     int target_index = 0;
 
     while(source_index < source_num && target_index < target_num) {
-        Int8 source_ti = source.GetTiOid(source_index).ti;
-        Int8 target_ti = target.GetTiOid(target_index).ti;
+        TTi source_ti = source.GetTiOid(source_index).ti;
+        TTi target_ti = target.GetTiOid(target_index).ti;
 
         // Match; translate if needed
 
