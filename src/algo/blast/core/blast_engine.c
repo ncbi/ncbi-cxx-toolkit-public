@@ -83,9 +83,9 @@ static char const rcsid[] =
 #define CONV_NUCL2PROT_COORDINATES(length) (length) / CODON_LENGTH
 
 NCBI_XBLAST_EXPORT const int   kBlastMajorVersion = 2;
-NCBI_XBLAST_EXPORT const int   kBlastMinorVersion = 2;
-NCBI_XBLAST_EXPORT const int   kBlastPatchVersion = 32;
-NCBI_XBLAST_EXPORT const char* kBlastReleaseDate = "09-14-2015";
+NCBI_XBLAST_EXPORT const int   kBlastMinorVersion = 3;
+NCBI_XBLAST_EXPORT const int   kBlastPatchVersion = 0;
+NCBI_XBLAST_EXPORT const char* kBlastReleaseDate = "12-17-2015";
 
 /** Structure to be passed to s_BlastSearchEngineCore, containing pointers 
     to various preallocated structures and arrays. */

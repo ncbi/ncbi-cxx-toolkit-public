@@ -43,8 +43,8 @@ BOOST_AUTO_TEST_SUITE(version_reference)
 
 BOOST_AUTO_TEST_CASE(testVersion) {
     const int kMajor = 2;
-    const int kMinor = 2;
-    const int kPatch = 32;
+    const int kMinor = 3;
+    const int kPatch = 0;
     blast::CBlastVersion v;
     BOOST_REQUIRE_EQUAL(kMajor, v.GetMajor());
     BOOST_REQUIRE_EQUAL(kMinor, v.GetMinor());
