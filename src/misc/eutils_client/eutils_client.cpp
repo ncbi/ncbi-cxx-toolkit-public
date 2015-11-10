@@ -727,7 +727,7 @@ string CEutilsClient::x_GetHostName() const {
         SConnNetInfo* net_info = ConnNetInfo_Create(kEutils);
         SSERV_Info* info = SERV_GetInfo(kEutils, fSERV_Dns, SERV_ANYHOST, net_info);
         if (!info || !info->host) {
-            NCBI_THROW(CException, eUnknown, "Can't get hostname for NCBI service eutils_lb");
+            return "eutils.ncbi.nlm.nih.gov";
         }
         string hostname = CSocketAPI::gethostbyaddr(info->host);
         free(info);
