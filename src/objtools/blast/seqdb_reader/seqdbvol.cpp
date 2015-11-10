@@ -1002,9 +1002,10 @@ CSeqDBVol::x_GetTaxDefline(int                    oid,
                            const CSeq_id        * preferred_seqid,
                            CSeqDBLockHold       & locked)
 {
-    typedef list< CRef<CBlast_def_line> > TBDLL;
-    typedef TBDLL::iterator               TBDLLIter;
-    typedef TBDLL::const_iterator         TBDLLConstIter;
+    // Commented out, not used at this time.
+//    typedef list< CRef<CBlast_def_line> > TBDLL;
+//    typedef TBDLL::iterator               TBDLLIter;
+//    typedef TBDLL::const_iterator         TBDLLConstIter;
 
     // 1. read a defline set w/ gethdr, filtering by membership bit.
 
@@ -1062,7 +1063,7 @@ CSeqDBVol::x_GetTaxonomy(int                    oid,
     }
 
     typedef list< CRef<CBlast_def_line> > TBDLL;
-    typedef TBDLL::iterator               TBDLLIter;
+//    typedef TBDLL::iterator               TBDLLIter;  // not used at this time
     typedef TBDLL::const_iterator         TBDLLConstIter;
 
     const TBDLL & dl = bdls->Get();
