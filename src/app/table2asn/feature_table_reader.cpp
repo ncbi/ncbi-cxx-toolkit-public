@@ -1041,12 +1041,25 @@ void CFeatureTableReader::ConvertSeqIntoSeqSet(CSeq_entry& entry, bool nuc_prod_
         if (bioseq.IsSetInst() &&
             bioseq.IsNa() &&
             bioseq.IsSetInst() &&
-            ! bioseq.GetInst().IsSetMol())
+            !bioseq.GetInst().IsSetMol())
         {
             bioseq.SetInst().SetMol(CSeq_inst::eMol_dna);
         }
-        entry.SetSet().SetClass(nuc_prod_set?CBioseq_set::eClass_nuc_prot:CBioseq_set::eClass_gen_prod_set);
+        entry.SetSet().SetClass(nuc_prod_set ? CBioseq_set::eClass_nuc_prot : CBioseq_set::eClass_gen_prod_set);
         entry.Parentize();
+    }
+}
+
+void CFeatureTableReader::ConvertNucSetToSet(CRef<CSeq_entry>& entry) const
+{
+    if (entry->IsSet() && entry->GetSet().GetClass() == CBioseq_set::eClass_nuc_prot)
+    {
+        CRef<CSeq_entry> newentry(new CSeq_entry);
+        newentry->SetSet().SetClass(CBioseq_set::eClass_genbank);
+        newentry->SetSet().SetSeq_set().push_back(entry);
+        entry = newentry;
+        newentry.Reset();
+        entry->Parentize();
     }
 }
 

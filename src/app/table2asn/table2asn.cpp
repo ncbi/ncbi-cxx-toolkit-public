@@ -457,10 +457,10 @@ int CTbl2AsnApp::Run(void)
         m_context.m_HandleAsSet = true;
     }
 
-    m_context.m_asn1_suffix = args["out-suffix"].AsString();
-
     if (m_context.m_delay_genprodset)
         m_context.m_GenomicProductSet = false;
+
+    m_context.m_asn1_suffix = args["out-suffix"].AsString();
 
     m_context.m_copy_genid_to_note = args["I"].AsBoolean();
     m_context.m_save_bioseq_set = args["K"].AsBoolean();
@@ -840,13 +840,11 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 #endif
     }
 
-
     fr.m_replacement_protein = m_replacement_proteins;
-//    if (!m_context.m_delay_genprodset)
-    {
-        fr.MergeCDSFeatures(*entry);
-        entry->Parentize();
-    }
+    fr.MergeCDSFeatures(*entry);
+
+    entry->Parentize();
+    
     if (m_possible_proteins.NotEmpty())
         fr.AddProteins(*m_possible_proteins, *entry);
 
@@ -855,7 +853,12 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
     if (m_context.m_GenomicProductSet)
     {
-        fr.ConvertSeqIntoSeqSet(*entry, false);
+        //fr.ConvertSeqIntoSeqSet(*entry, false);
+    }
+
+    if (m_context.m_HandleAsSet)
+    {
+        fr.ConvertNucSetToSet(entry);
     }
 
     m_context.ApplyAccession(*entry);
