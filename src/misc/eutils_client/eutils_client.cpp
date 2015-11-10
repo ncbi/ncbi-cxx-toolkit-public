@@ -36,6 +36,7 @@
 #include <misc/xmlwrapp/xmlwrapp.hpp>
 #include <misc/xmlwrapp/event_parser.hpp>
 #include <connect/ncbi_conn_stream.hpp>
+#include <connect/ncbi_socket.hpp>
 #include <misc/error_codes.hpp>
 
 #include <cmath>
@@ -372,6 +373,18 @@ private:
 */
 
 
+static string s_GetHostName() {
+    const char* kEutils = "eutils_lb";
+    SConnNetInfo* net_info = ConnNetInfo_Create(kEutils);
+    SSERV_Info* info = SERV_GetInfo(kEutils, fSERV_Dns, SERV_ANYHOST, net_info);
+    if (!info || !info->host) {
+        NCBI_THROW(CException, eUnknown, "Can't get hostname for NCBI service eutils_lb");
+    }
+    string hostname = CSocketAPI::gethostbyaddr(info->host);
+    free(info);
+    ConnNetInfo_Destroy(net_info);
+    return hostname;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -379,7 +392,7 @@ private:
 
 CEutilsClient::
 CEutilsClient()
-    : m_HostName("eutils.ncbi.nlm.nih.gov")
+    : m_HostName(s_GetHostName())
     , m_UrlTag("gpipe")
     , m_RetMax(kMax_Int)
 {
