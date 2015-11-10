@@ -2326,10 +2326,6 @@ Seq-entry ::= set {
                   partial TRUE,
                   comment "Slime mold (D.discoideum) transposon DIRS-1,
  complete, clone SB41",
-                  product whole general {
-                    db "WGS:AAFI",
-                    tag str "DDB0216437"
-                  },
                   location int {
                     from 1789,
                     to 3186,
@@ -2337,6 +2333,11 @@ Seq-entry ::= set {
                     id local str "DDB0232440",
                     fuzz-from lim lt,
                     fuzz-to lim gt
+                  },
+                  xref {
+                    {
+                      id local id 1
+                    }
                   },
                   dbxref {
                     {
@@ -2385,10 +2386,6 @@ Seq-entry ::= set {
                   partial TRUE,
                   comment "Slime mold (D.discoideum) transposon DIRS-1,
  complete, clone SB41",
-                  product whole general {
-                    db "WGS:AAFI",
-                    tag str "DDB0216438"
-                  },
                   location int {
                     from 3747,
                     to 4754,
@@ -2396,6 +2393,11 @@ Seq-entry ::= set {
                     id local str "DDB0232440",
                     fuzz-from lim lt,
                     fuzz-to lim gt
+                  },
+                  xref {
+                    {
+                      id local id 2
+                    }
                   },
                   dbxref {
                     {
@@ -2450,9 +2452,8 @@ MASLLLSNNVLFHVVKKMIVGNQMIL"
                   location int {
                     from 0,
                     to 463,
-                    id general {
-                      db "WGS:AAFI",
-                      tag str "DDB0216437"
+                    id genbank {
+                      accession "EAL73826"
                     }
                   }
                 }
@@ -2500,9 +2501,8 @@ NNTTGNSSNSKSSSGSNGRSNNFNGSPSNVASGSNNTKSANGTNNRFQKNKK"
                   location int {
                     from 0,
                     to 333,
-                    id general {
-                      db "WGS:AAFI",
-                      tag str "DDB0216438"
+                    id genbank {
+                      accession "EAL73827"
                     }
                   }
                 }
@@ -2524,9 +2524,8 @@ NNTTGNSSNSKSSSGSNGRSNNFNGSPSNVASGSNNTKSANGTNNRFQKNKK"
               },
               comment "Slime mold (D.discoideum) transposon DIRS-1, complete,
  clone SB41",
-              product whole general {
-                db "WGS:AAFI",
-                tag str "DDB0216437"
+              product whole genbank {
+                accession "EAL73826"
               },
               location int {
                 from 1789,
@@ -2541,6 +2540,9 @@ NNTTGNSSNSKSSSGSNGRSNNFNGSPSNVASGSNNTKSANGTNNRFQKNKK"
                       "hypothetical protein"
                     }
                   }
+                },
+                {
+                  id local id 4
                 }
               },
               dbxref {
@@ -2560,9 +2562,8 @@ NNTTGNSSNSKSSSGSNGRSNNFNGSPSNVASGSNNTKSANGTNNRFQKNKK"
               },
               comment "Slime mold (D.discoideum) transposon DIRS-1, complete,
  clone SB41",
-              product whole general {
-                db "WGS:AAFI",
-                tag str "DDB0216438"
+              product whole genbank {
+                accession "EAL73827"
               },
               location int {
                 from 3747,
@@ -2577,6 +2578,9 @@ NNTTGNSSNSKSSSGSNGRSNNFNGSPSNVASGSNNTKSANGTNNRFQKNKK"
                       "hypothetical protein"
                     }
                   }
+                },
+                {
+                  id local id 6
                 }
               },
               dbxref {

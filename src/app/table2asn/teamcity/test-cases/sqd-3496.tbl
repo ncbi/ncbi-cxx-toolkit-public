@@ -1,0 +1,41 @@
+>Feature scf7180001005074
+10	1400	gene
+			locus_tag	LHUM_24289
+10	1400	rRNA
+			transcript_id	LH24289-RA			
+			product	16S ribosomal RNA, large SSU
+21598	19797	gene
+			locus_tag	LHUM_LH24287
+21598	21537	mRNA
+21247	20918
+20840	20714
+20613	20524
+20406	20269
+19979	19797
+			transcript_id	gnl|WGS:AAJJ|TC004250-RA
+			protein_id	gnl|WGS:AAJJ|TC004250-PA|gb|EFA13198
+			product	actin, isoform 1
+21566	21537	CDS
+21247	20918
+20840	20714
+20613	20524
+20406	20269
+19979	19798
+			transcript_id	gnl|WGS:AAJJ|TC004250-RA
+			protein_id	gnl|WGS:AAJJ|TC004250-PA|gb|EFA13198
+			product	actin, variant 1
+135748	136149	gene
+			locus_tag	LHUM_LH24283
+135748	135838	mRNA
+135878	136149
+			transcript_id	gnl|WGS:AAJJ|TC031613-RA
+			protein_id	gnl|WGS:AAJJ|TC031613-PA
+135748	135838	CDS
+135878	136149
+			transcript_id	gnl|WGS:AAJJ|TC031613-RA
+			protein_id	gnl|WGS:AAJJ|TC031613-PA
+			product	madeup,tubulin
+			
+
+
+											

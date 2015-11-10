@@ -48,7 +48,7 @@ public:
 private:
    CRef<objects::CSeq_entry> TranslateProtein(
        objects::CScope& scope, objects::CSeq_entry_Handle top_entry_h, 
-       const objects::CSeq_feat& feature, CTempString locustag);
+       objects::CSeq_feat& cd_feature);
    objects::ILineErrorListener* m_logger;
    int m_local_id_counter;
    bool AddProteinToSeqEntry(const objects::CSeq_entry* protein, objects::CSeq_entry_Handle seh);
