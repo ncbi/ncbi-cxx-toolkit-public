@@ -42,8 +42,8 @@
 #include <corelib/ncbireg.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbimisc.hpp>
-
 #include <corelib/test_boost.hpp>
+#include <corelib/request_ctx.hpp>
 
 #include <util/random_gen.hpp>
 
@@ -902,6 +902,14 @@ static void s_SimpleTest(const CNamedParameterList* nc_params)
 }
 
 BOOST_AUTO_TEST_SUITE(NetCache)
+
+NCBITEST_AUTO_INIT()
+{
+    // Set client IP so AppLog entries could be filtered by it
+    CRequestContext& req = CDiagContext::GetRequestContext();
+    unsigned addr = CSocketAPI::GetLocalHostAddress();
+    req.SetClientIP(CSocketAPI::ntoa(addr));
+}
 
 BOOST_AUTO_TEST_CASE(OldStressTest)
 {
