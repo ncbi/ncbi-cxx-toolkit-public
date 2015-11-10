@@ -1414,11 +1414,9 @@ const CSeq_entry *ctx)
         has_taxon = true;
     }
 
-    if (IsRequireTaxonID()) {
-        if (!has_taxon) {
-            PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_NoTaxonID,
-                "BioSource is missing taxon ID", obj, ctx);
-        }
+    if (IsRequireTaxonID() && IsIndexerVersion() && !has_taxon) {
+        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_NoTaxonID,
+                   "BioSource is missing taxon ID", obj, ctx);
     }
 
     if (!orgref.IsSetOrgname()) {
