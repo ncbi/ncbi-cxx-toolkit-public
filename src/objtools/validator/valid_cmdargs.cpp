@@ -55,6 +55,7 @@ void CValidatorArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
     argdescr->AddFlag("ovl_pep", "Overlapping peptide features produce error instead of warning");
     argdescr->AddFlag("rubisco", "Look for rubisco abbreviations");
     argdescr->AddFlag("far_fetch_mRNA", "Fetch far mRNA products");
+    argdescr->AddFlag("w", "SeqSubmitParent Flag");
     argdescr->AddFlag("require_taxid", "Require Taxonomy ID on BioSources");
     argdescr->AddFlag("q", "Taxonomy Lookup");
     argdescr->AddFlag("non_ascii", "Report non-ASCII from reading");
@@ -113,8 +114,8 @@ int CValidatorArgUtil::ArgsToValidatorOptions(const CArgs& args)
     if (args["far_fetch_mRNA"]) {
         options |= CValidator::eVal_far_fetch_mrna_products;
     }
-    if (args["require_taxid"]) {
-        options |= CValidator::eVal_need_taxid;
+    if (args["w"]) {
+        options |= CValidator::eVal_seqsubmit_parent;
     }
     if (args["q"]) {
         options |= CValidator::eVal_do_tax_lookup;

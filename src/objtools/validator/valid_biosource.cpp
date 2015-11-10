@@ -890,7 +890,7 @@ const CSeq_entry *ctx)
         !orgref.GetOrgname().IsSetLineage() ||
         NStr::IsBlank(orgref.GetOrgname().GetLineage())) {
 
-        if (IsIndexerVersion()) {
+        if (!IsSeqSubmitParent() && IsIndexerVersion()) {
             EDiagSev sev = eDiag_Error;
 
             if (IsRefSeq()) {

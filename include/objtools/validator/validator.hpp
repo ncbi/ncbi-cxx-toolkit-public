@@ -76,7 +76,7 @@ public:
         eVal_val_align               = 0x4,
         eVal_val_exons               = 0x8,
         eVal_ovl_pep_err             = 0x10,
-        eVal_need_taxid              = 0x20,
+        eVal_seqsubmit_parent        = 0x20,
         eVal_need_isojta             = 0x40,
         eVal_validate_id_set         = 0x80,
         eVal_remote_fetch            = 0x100,
@@ -92,7 +92,7 @@ public:
         eVal_latlon_check_state      = 0x40000,
         eVal_latlon_ignore_water     = 0x80000,
         eVal_genome_submission       = 0x100000,
-        eVal_do_tax_lookup           = 0x200000,
+        eVal_do_tax_lookup           = 0x200000,       
     };
 
     // Constructor / Destructor

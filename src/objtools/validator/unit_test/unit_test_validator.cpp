@@ -4264,7 +4264,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_NoTaxonID)
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "NoTaxonID",
                               "BioSource is missing taxon ID"));
-    options |= CValidator::eVal_need_taxid;
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -4391,6 +4390,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MissingLineage)
     // back to error if no taxon but refseq
     unit_test_util::SetTaxon (entry, 0);
     expected_errors[0]->SetSeverity(eDiag_Error);
+    expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Warning, "NoTaxonID",
+        "BioSource is missing taxon ID"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -5283,7 +5284,9 @@ BOOST_AUTO_TEST_CASE(Test_Descr_TaxonomyLookupProblem)
     unit_test_util::SetTaxon(entry, 0);
 
     STANDARD_SETUP
-
+        
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "NoTaxonID",
+        "BioSource is missing taxon ID"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "OrganismNotFound",
                               "Organism not found in taxonomy database"));
 
@@ -5292,6 +5295,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_TaxonomyLookupProblem)
 
     CLEAR_ERRORS
 
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "NoTaxonID",
+        "BioSource is missing taxon ID"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "TaxonomyIsSpeciesProblem",
                               "Taxonomy lookup reports is_species_level FALSE"));
     unit_test_util::SetTaxname(entry, "Poeciliinae");
@@ -5300,6 +5305,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_TaxonomyLookupProblem)
 
     CLEAR_ERRORS
 
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "NoTaxonID",
+        "BioSource is missing taxon ID"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "TaxonomyConsultRequired",
                               "Taxonomy lookup reports taxonomy consultation needed"));
     unit_test_util::SetTaxname(entry, "Anabaena circinalis");
@@ -5312,6 +5319,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_TaxonomyLookupProblem)
     unit_test_util::SetGenome(entry, CBioSource::eGenome_nucleomorph);
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadOrganelle",
                               "Only Chlorarachniophyceae and Cryptophyta have nucleomorphs"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "NoTaxonID",
+        "BioSource is missing taxon ID"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "TaxonomyNucleomorphProblem",
                               "Taxonomy lookup does not have expected nucleomorph flag"));
     eval = validator.Validate(seh, options);
@@ -14049,6 +14058,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_MultipleEquivBioSources)
     expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "MultipleEquivBioSources",
                                "Multiple equivalent source features should be combined into one multi-interval feature"));
 
+    options |= CValidator::eVal_seqsubmit_parent;
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -14105,7 +14115,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadFullLengthFeature)
                                "Source feature is full length, should be descriptor"));
     expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "BadFullLengthFeature",
                                "Publication feature is full length, should be descriptor"));
-
+    options |= CValidator::eVal_seqsubmit_parent;
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 

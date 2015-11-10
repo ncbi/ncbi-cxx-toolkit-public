@@ -537,7 +537,8 @@ public:
     bool IsValidateAlignments(void)   const { return m_ValidateAlignments; }
     bool IsValidateExons(void)        const { return m_ValidateExons; }
     bool IsOvlPepErr(void)            const { return m_OvlPepErr; }
-    bool IsRequireTaxonID(void)       const { return m_RequireTaxonID; }
+    bool IsRequireTaxonID(void)       const { return !m_SeqSubmitParent; }
+    bool IsSeqSubmitParent(void)      const { return m_SeqSubmitParent; }
     bool IsRequireISOJTA(void)        const { return m_RequireISOJTA; }
     bool IsValidateIdSet(void)        const { return m_ValidateIdSet; }
     bool IsRemoteFetch(void)          const { return m_RemoteFetch; }
@@ -770,7 +771,6 @@ private:
     bool m_ValidateAlignments;   // Validate Alignments if true
     bool m_ValidateExons;        // Check exon feature splice sites
     bool m_OvlPepErr;            // Peptide overlap error if true, else warn
-    bool m_RequireTaxonID;       // BioSource requires taxonID dbxref
     bool m_RequireISOJTA;        // Journal requires ISO JTA
     bool m_ValidateIdSet;        // validate update against ID set in database
     bool m_RemoteFetch;          // Remote fetch enabled?
@@ -787,6 +787,7 @@ private:
     bool m_ValidateInferenceAccessions;  // check that accessions in inferences are valid
     bool m_ReportSpliceAsError;
     bool m_DoTaxLookup;
+    bool m_SeqSubmitParent; // some errors are suppressed if this is run on a newly created submission
 
     // flags calculated by examining data in record
     bool m_IsStandaloneAnnot;

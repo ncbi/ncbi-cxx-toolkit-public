@@ -204,7 +204,6 @@ void CValidError_imp::SetOptions(Uint4 options)
     m_ValidateAlignments = (options & CValidator::eVal_val_align) != 0;
     m_ValidateExons = (options & CValidator::eVal_val_exons) != 0;
     m_OvlPepErr = (options & CValidator::eVal_ovl_pep_err) != 0;
-    m_RequireTaxonID = (options & CValidator::eVal_need_taxid) != 0;
     m_RequireISOJTA = (options & CValidator::eVal_need_isojta) != 0;
     m_ValidateIdSet = (options & CValidator::eVal_validate_id_set) != 0;
     m_RemoteFetch = (options & CValidator::eVal_remote_fetch) != 0;
@@ -215,6 +214,7 @@ void CValidError_imp::SetOptions(Uint4 options)
     m_IndexerVersion = (options & CValidator::eVal_indexer_version) != 0;
     m_UseEntrez = (options & CValidator::eVal_use_entrez) != 0;
     m_DoTaxLookup = (options & CValidator::eVal_do_tax_lookup) != 0;
+    m_SeqSubmitParent = (options & CValidator::eVal_seqsubmit_parent) != 0;
     m_ValidateInferenceAccessions = (options & CValidator::eVal_inference_accns) != 0;
     m_IgnoreExceptions = (options & CValidator::eVal_ignore_exceptions) != 0;
     m_ReportSpliceAsError = (options & CValidator::eVal_report_splice_as_error) != 0;
