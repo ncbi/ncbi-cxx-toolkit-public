@@ -38,6 +38,7 @@
 #include <assert.h>
 #include <poll.h>
 #include <errno.h>
+#include <pthread.h>
 #include "ncbi_toolkit.h"
 
 /****************************************************************************
