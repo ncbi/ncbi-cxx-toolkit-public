@@ -4844,6 +4844,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "PIN<RUS>	s	Paleontological Institute, Russian Academy of Sciences",
 "PINN	s	Pinnacles National Monument",
 "PIR	c	Bulgarian Research Culture Collection",
+"PISR	s	Pechora-Ilych State Reserve, Russia",
 "PIUU	s	Paleontological Institut, University of Uppsala",
 "PKDC	s	Divisao de Museu de Historia Natural",
 "PKM	s	V. G. Belinsk Pedagogical Institute of Penza",
