@@ -154,7 +154,6 @@ void CTest_validatorApplication::Init(void)
     arg_desc->AddFlag("exon", "Validate exons");
     arg_desc->AddFlag("splice", "Report splice error as error");
     arg_desc->AddFlag("ovlpep", "Report overlapping peptide as error");
-    arg_desc->AddFlag("taxid", "Requires taxid");
     arg_desc->AddFlag("isojta", "Requires ISO-JTA");
     arg_desc->AddFlag("annot", "Verify Seq-annots only");
     arg_desc->AddFlag("acc", "Print Accession with errors");
@@ -416,7 +415,6 @@ void CTest_validatorApplication::SetupValidatorOptions(const CArgs& args)
     m_Options |= args["align"]    ? CValidator::eVal_val_align    : 0;
     m_Options |= args["exon"]     ? CValidator::eVal_val_exons    : 0;
     m_Options |= args["ovlpep"]   ? CValidator::eVal_ovl_pep_err  : 0;
-    m_Options |= args["taxid"]    ? CValidator::eVal_need_taxid   : 0;
     m_Options |= args["isojta"]   ? CValidator::eVal_need_isojta  : 0;
     m_Options |= args["g"]        ? CValidator::eVal_remote_fetch : 0;
 
