@@ -98,7 +98,7 @@ try:
                                     pass
                         print "filtering %s" % str(files)
                         file_names = [x for x in files if not re_fileskip.search(x)]
-                        file_names = [x for x in file_names if not x.startswith(".")[
+                        file_names = [x for x in file_names if not x.startswith(".")]
                         print "getting %s" % str(file_names)
 
                         for file_name in file_names:
