@@ -15,9 +15,6 @@ try:
     bin_dir = sys.argv[2]
     install_dir = sys.argv[3]
 
-    with open("/home/zakharov/pr_args.txt", "w") as f:
-        f.writelines([src_dir, "\n", bin_dir, "\n", install_dir])
-
     #locate all modules
     modules_dir = os.path.join(src_dir, MODULES_PATH)
     modules_dest_dir = os.path.join(install_dir, MODULES_DEST_PATH)
@@ -101,6 +98,7 @@ try:
                                     pass
                         print "filtering %s" % str(files)
                         file_names = [x for x in files if not re_fileskip.search(x)]
+                        file_names = [x for x in file_names if not x.startswith(".")[
                         print "getting %s" % str(file_names)
 
                         for file_name in file_names:
