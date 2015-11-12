@@ -69,6 +69,7 @@ public:
         SWGSSeqInfo(void)
             : m_IsWGS(false),
               m_ValidWGS(false),
+              m_NoRootSeq(false),
               m_SeqType('\0'),
               m_RowDigits(0),
               m_RowId(0)
@@ -108,6 +109,7 @@ public:
         string m_WGSAcc;
         bool m_IsWGS;
         bool m_ValidWGS;
+        bool m_NoRootSeq;
         char m_SeqType;
         Uint1 m_RowDigits;
         TVDBRowId m_RowId;
@@ -117,6 +119,7 @@ public:
         CWGSScaffoldIterator m_ScaffoldIter;
         CWGSProteinIterator m_ProteinIter;
         CRef<CID2_Blob_Id> m_BlobId;
+        AutoPtr<SWGSSeqInfo> m_RootSeq;
     };
 
     typedef vector<CRef<CID2_Reply> > TReplies;
@@ -163,7 +166,7 @@ protected:
                               const CTextseq_id& id,
                               TAllowSeqType allow_seq_type);
     SWGSSeqInfo ResolveProtAcc(const CTextseq_id& id);
-    SWGSSeqInfo GetRootSeq(const SWGSSeqInfo& seq);
+    SWGSSeqInfo& GetRootSeq(SWGSSeqInfo& seq);
     bool IsValidRowId(SWGSSeqInfo& seq);
     bool IsCorrectVersion(SWGSSeqInfo& seq, int version);
 
@@ -182,7 +185,11 @@ protected:
     NCBI_gb_state GetGBState(SWGSSeqInfo& seq);
     int GetID2BlobState(SWGSSeqInfo& seq);
     int GetBioseqState(SWGSSeqInfo& seq);
-    CRef<CSeq_entry> GetSeq_entry(SWGSSeqInfo& seq);
+
+    typedef int TChunkId;
+
+    CRef<CAsnBinData> GetObject(SWGSSeqInfo& seq);
+    CRef<CAsnBinData> GetChunk(SWGSSeqInfo& seq0, TChunkId chunk_id);
 
     // conversion to/from blob id
     SWGSSeqInfo ResolveBlobId(const CID2_Blob_Id& id);
@@ -199,14 +206,40 @@ protected:
     CWGSProteinIterator& GetProteinIterator(SWGSSeqInfo& seq);
     
     void SetBlobState(CID2_Reply& main_reply,
-                      int blob_state);
+                      int blob_state) const;
 
     bool ExcludedBlob(SWGSSeqInfo& seq,
                       const CID2_Request_Get_Blob_Info& request);
-    void WriteData(const SWGSSeqInfo& seq,
-                   CID2_Reply_Data& data,
-                   const CSerialObject& obj);
-    bool WorthCompressing(const SWGSSeqInfo& seq);
+    bool GetCompress(const SWGSSeqInfo& seq,
+                     const CSeq_entry& entry) const;
+    bool GetCompress(const SWGSSeqInfo& seq,
+                     const CID2S_Split_Info& split) const;
+    bool GetCompress(const SWGSSeqInfo& seq,
+                     TChunkId chunk_id,
+                     const CID2S_Chunk& chunk) const;
+    bool GetCompress(const SWGSSeqInfo& seq,
+                     TChunkId chunk_id,
+                     const CAsnBinData& obj) const;
+    void WriteData(CID2_Reply_Data& data,
+                   const CSerialObject& obj,
+                   bool compress) const;
+    void WriteData(CID2_Reply_Data& data,
+                   const CAsnBinData& obj,
+                   bool compress) const;
+    void WriteData(CID2_Reply_Data& data,
+                   const SWGSSeqInfo& seq,
+                   TChunkId chunk_id,
+                   const CAsnBinData& obj) const;
+    void WriteData(CID2_Reply_Data& data,
+                   const SWGSSeqInfo& seq,
+                   const CSeq_entry& obj) const;
+    void WriteData(CID2_Reply_Data& data,
+                   const SWGSSeqInfo& seq,
+                   const CID2S_Split_Info& obj) const;
+    void WriteData(CID2_Reply_Data& data,
+                   const SWGSSeqInfo& seq,
+                   TChunkId chunk_id,
+                   const CID2S_Chunk& obj) const;
     
     typedef limited_size_map<string, CWGSDb> TWGSDbCache;
 

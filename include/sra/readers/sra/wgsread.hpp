@@ -37,6 +37,7 @@
 #include <util/range.hpp>
 #include <util/rangemap.hpp>
 #include <util/simple_buffer.hpp>
+#include <serial/serialbase.hpp>
 #include <sra/readers/sra/vdbread.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 #include <objects/seq/Bioseq.hpp>
@@ -73,6 +74,9 @@ enum
 
 
 BEGIN_NCBI_NAMESPACE;
+
+class CObjectOStreamAsnBinary;
+
 BEGIN_NAMESPACE(objects);
 
 class CSeq_entry;
@@ -83,12 +87,31 @@ class CSeq_feat;
 class CBioseq;
 class CUser_object;
 class CUser_field;
+class CID2S_Split_Info;
+class CID2S_Chunk;
 
 class CWGSSeqIterator;
 class CWGSScaffoldIterator;
 class CWGSGiIterator;
 class CWGSProteinIterator;
 class CWGSFeatureIterator;
+
+struct SWGSCreateInfo;
+
+class NCBI_SRAREAD_EXPORT CAsnBinData : public CObject
+{
+public:
+    explicit CAsnBinData(CSerialObject& obj);
+    virtual ~CAsnBinData(void);
+
+    const CSerialObject& GetMainObject(void) const {
+        return *m_MainObject;
+    }
+    virtual void Serialize(CObjectOStreamAsnBinary& out) const;
+    
+private:
+    CRef<CSerialObject> m_MainObject;
+};
 
 
 class NCBI_SRAREAD_EXPORT CWGSGiResolver : public CObject
@@ -498,6 +521,7 @@ private:
     CVDBTable m_SeqTable;
     string m_IdPrefixWithVersion;
     string m_IdPrefix;
+    string m_IdPrefixDb;
     int m_IdVersion;
     SIZE_TYPE m_IdRowDigits;
 
@@ -807,8 +831,25 @@ public:
               gaps_linkage(0)
             {
             }
+
+        DECLARE_OPERATOR_BOOL(gaps_count > 0);
+        void operator++(void) {
+            _ASSERT(*this);
+            --gaps_count;
+            ++gaps_start;
+            ++gaps_len;
+            ++gaps_props;
+            if ( gaps_linkage ) {
+                ++gaps_linkage;
+            }
+        }
+        TSeqPos GetLength(void) const { return *gaps_len; }
+        TSeqPos GetFrom(void) const { return *gaps_start; }
+        TSeqPos GetToOpen(void) const { return GetFrom()+GetLength(); }
+        TSeqPos GetTo(void) const { return GetToOpen()-1; }
     } TWGSContigGapInfo;
 
+    bool HasGapInfo(void) const;
     void GetGapInfo(TWGSContigGapInfo& gap_info) const;
 
     enum EFlags {
@@ -820,7 +861,8 @@ public:
 
         fInst_ncbi4na = 0<<3,
         fInst_delta   = 1<<3,
-        fMaskInst     = fInst_ncbi4na|fInst_delta,
+        fInst_split   = 2<<3,
+        fMaskInst     = fInst_ncbi4na|fInst_delta|fInst_split,
         fDefaultInst  = fInst_delta,
 
         fSeqDescr     = 1<<4,
@@ -863,23 +905,23 @@ public:
 
     bool IsCircular(void) const;
 
-    typedef CVDBValueFor4Bits TSequencePacked4na;
-    // Return raw sequence in packed 4na encoding
-    TSequencePacked4na GetRawSequencePacked4na(void) const;
-    // Return trimmed sequence in packed 4na encoding
-    TSequencePacked4na GetSequencePacked4na(void) const;
-
-    typedef string TSequenceIUPACna;
-    // Return raw sequence in IUPACna encoding
-    TSequenceIUPACna GetRawSequenceIUPACna(void) const;
-    // Return trimmed sequence in IUPACna encoding
-    TSequenceIUPACna GetSequenceIUPACna(void) const;
-
     CRef<CSeq_inst> GetSeq_inst(TFlags flags = fDefaultFlags) const;
+    CRef<CDelta_ext> GetDelta(TSeqPos pos, TSeqPos len) const;
+    CRef<CDelta_ext> GetDelta(TSeqPos pos, TSeqPos len,
+                              TWGSContigGapInfo gap_info) const;
+    CRef<CSeq_data> Get2na(TSeqPos pos, TSeqPos len) const;
+    CRef<CSeq_data> Get4na(TSeqPos pos, TSeqPos len) const;
 
     CRef<CBioseq> GetBioseq(TFlags flags = fDefaultFlags) const;
     // GetSeq_entry may create nuc-prot set if the sequence has products
     CRef<CSeq_entry> GetSeq_entry(TFlags flags = fDefaultFlags) const;
+    CRef<CAsnBinData> GetSeq_entryData(TFlags flags = fDefaultFlags) const;
+    // GetSplitInfo may create Seq-entry as a skeleton w/o actual splitting
+    CRef<CID2S_Split_Info> GetSplitInfo(TFlags flags = fDefaultFlags) const;
+    CRef<CAsnBinData> GetSplitInfoData(TFlags flags = fDefaultFlags) const;
+    // Make chunk for the above split-info, flags must be the same
+    CRef<CID2S_Chunk> GetChunk(TFlags flags = fDefaultFlags) const;
+    CRef<CAsnBinData> GetChunkData(TFlags flags = fDefaultFlags) const;
 
 protected:
     void x_Init(const CWGSDb& wgs_db,
@@ -900,6 +942,10 @@ protected:
             x_ReportInvalid(method);
         }
     }
+
+    void x_CreateEntry(SWGSCreateInfo& info) const;
+    void x_CreateBioseq(SWGSCreateInfo& info) const;
+    void x_CreateSplit(SWGSCreateInfo& info) const;
 
 private:
     CWGSDb m_Db;
@@ -1014,6 +1060,9 @@ protected:
             x_ReportInvalid(method);
         }
     }
+
+    void x_CreateBioseq(SWGSCreateInfo& info) const;
+    void x_CreateEntry(SWGSCreateInfo& info) const;
 
 private:
     CWGSDb m_Db;
@@ -1187,6 +1236,8 @@ public:
     CRef<CSeq_entry> GetSeq_entry(TFlags flags = fDefaultFlags) const;
 
 protected:
+    friend struct SWGSCreateInfo;
+
     void x_Init(const CWGSDb& wgs_db);
 
     CWGSDb_Impl& GetDb(void) const {
@@ -1199,6 +1250,9 @@ protected:
             x_ReportInvalid(method);
         }
     }
+
+    void x_CreateBioseq(SWGSCreateInfo& info) const;
+    void x_CreateEntry(SWGSCreateInfo& info) const;
 
 private:
     CWGSDb m_Db;
@@ -1245,6 +1299,7 @@ public:
     }
 
     CWGSFeatureIterator& SelectRow(TVDBRowId row);
+    CWGSFeatureIterator& SelectRowRange(TVDBRowIdRange row_range);
     
     NCBI_WGS_seqtype GetLocSeqType(void) const;
     NCBI_WGS_seqtype GetProductSeqType(void) const;
@@ -1252,6 +1307,7 @@ public:
     TVDBRowId GetLocRowId(void) const;
     TVDBRowId GetProductRowId(void) const;
 
+    CTempString GetSeq_featBytes(void) const;
     CRef<CSeq_feat> GetSeq_feat() const;
 
 protected:

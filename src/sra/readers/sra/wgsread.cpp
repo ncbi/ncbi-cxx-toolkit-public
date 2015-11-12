@@ -43,12 +43,20 @@
 #include <objects/seqloc/seqloc__.hpp>
 #include <objects/seqalign/seqalign__.hpp>
 #include <objects/seqres/seqres__.hpp>
-#include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seqfeat/seqfeat__.hpp>
+#include <objects/seqsplit/seqsplit__.hpp>
 #include <serial/objistrasnb.hpp>
+#include <serial/objostrasnb.hpp>
 #include <serial/serial.hpp>
+#include <serial/pack_string.hpp>
+#include <serial/objhook.hpp>
+#include <serial/objectio.hpp>
 #include <sra/error_codes.hpp>
 
 #include <sra/readers/sra/kdbread.hpp>
+
+//#define WGS_USE_PACKED_4NA
+//#define COLLECT_PROFILE
 
 BEGIN_NCBI_NAMESPACE;
 
@@ -86,6 +94,240 @@ static bool s_GetClipByQuality(void)
 {
     static CSafeStatic<NCBI_PARAM_TYPE(WGS, CLIP_BY_QUALITY)> s_Value;
     return s_Value->Get();
+}
+
+
+static const char kSeq_descrFirstByte = 49;
+
+
+#ifdef COLLECT_PROFILE
+struct SProfiler
+{
+    const char* name;
+    size_t count;
+    CStopWatch sw;
+    SProfiler() : name(0), count(0) {}
+    ~SProfiler() {
+        if ( name )
+            cout << name<<" calls: "<<count<<" time: "<<sw.Elapsed()<<endl;
+    }
+};
+struct SProfilerGuard
+{
+    SProfiler& sw;
+    SProfilerGuard(SProfiler& sw, const char* name)
+        : sw(sw)
+        {
+            sw.name = name;
+            sw.count += 1;
+            sw.sw.Start();
+        }
+    ~SProfilerGuard()
+        {
+            sw.sw.Stop();
+        }
+};
+
+static SProfiler sw_Serialize;
+static SProfiler sw_Feat;
+static SProfiler sw_GetAccSeq_id;
+static SProfiler sw__GetProtFeat;
+static SProfiler sw___GetProtAnnot;
+static SProfiler sw___GetProtInst;
+static SProfiler sw___GetProtDescr;
+static SProfiler sw____GetProtWGSAcc;
+static SProfiler sw____GetProtAccVer;
+static SProfiler sw____GetProtAcc;
+static SProfiler sw____GetProtGISeq_id;
+static SProfiler sw____GetProtGnlSeq_id;
+static SProfiler sw____GetProtAccSeq_id;
+static SProfiler sw___GetProtIds;
+static SProfiler sw__GetProtBioseq;
+static SProfiler sw_GetProtEntry;
+static SProfiler sw__GetScaffoldFeat;
+static SProfiler sw___GetScaffoldQual;
+static SProfiler sw___GetScaffoldAnnot;
+static SProfiler sw___GetScaffoldInst;
+static SProfiler sw___GetScaffoldDescr;
+static SProfiler sw___GetScaffoldIds;
+static SProfiler sw__GetScaffoldBioseq;
+static SProfiler sw_GetScaffoldEntry;
+static SProfiler sw__GetContigFeat;
+static SProfiler sw___GetContigQual;
+static SProfiler sw___GetContigAnnot;
+static SProfiler sw____Get2na;
+static SProfiler sw____Get4na;
+static SProfiler sw____IsGap;
+static SProfiler sw____Get2naLen;
+static SProfiler sw____Get4naLen;
+static SProfiler sw____GetGapLen;
+static SProfiler sw____GetRaw2na;
+static SProfiler sw____GetRaw4na;
+static SProfiler sw___GetContigInst;
+static SProfiler sw___GetContigDescr;
+static SProfiler sw___GetContigIds;
+static SProfiler sw__GetContigBioseq;
+static SProfiler sw_GetContigEntry;
+
+# define PROFILE(var) SProfilerGuard guard(var, #var)
+#else
+# define PROFILE(var)
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+// CAsnBinData
+/////////////////////////////////////////////////////////////////////////////
+
+
+CAsnBinData::CAsnBinData(CSerialObject& obj)
+    : m_MainObject(&obj)
+{
+}
+
+
+CAsnBinData::~CAsnBinData(void)
+{
+}
+
+
+void CAsnBinData::Serialize(CObjectOStreamAsnBinary& out) const
+{
+    out << *m_MainObject;
+}
+
+
+class CAsnBinDataWithFeatures : public CAsnBinData
+{
+public:
+    explicit CAsnBinDataWithFeatures(CSerialObject& obj)
+        : CAsnBinData(obj),
+          m_EmptyDescr(new CSeq_descr)
+        {
+        }
+    virtual ~CAsnBinDataWithFeatures(void)
+        {
+        }
+
+    virtual void Serialize(CObjectOStreamAsnBinary& out) const;
+
+    typedef CSeq_annot::TData::TFtable TFtable;
+    struct SFtableInfo {
+        vector<char> m_Bytes;
+
+        void AddFeature(const CTempString& data)
+            {
+                m_Bytes.insert(m_Bytes.end(), data.begin(), data.end());
+            }
+    };
+    typedef vector<char> TDescrInfo;
+
+    void AddFeature(TFtable& ftable, const CTempString& data)
+        {
+            m_FtableMap[&ftable].AddFeature(data);
+        }
+    void AddDescr(CBioseq& seq, const CTempString& data)
+        {
+            seq.SetDescr(*m_EmptyDescr);
+            vector<char>& dst = m_DescrMap[&seq];
+            if ( 0 && data[0] == kSeq_descrFirstByte ) {
+                // test for DESCR variant with Seqdesc list insead of Seq-descr
+                dst.assign(data.begin()+2, data.end()-2);
+            }
+            else {
+                dst.assign(data.begin(), data.end());
+            }
+        }
+
+    typedef map<const TFtable*, SFtableInfo> TFtableMap;
+    typedef map<const CBioseq*, TDescrInfo> TDescrMap;
+    TFtableMap m_FtableMap;
+    TDescrMap m_DescrMap;
+    CRef<CSeq_descr> m_EmptyDescr;
+};
+
+class CFtableWriteHook : public CWriteChoiceVariantHook
+{
+public:
+    typedef const CSeq_annot::TData::TFtable* TKey;
+    typedef CAsnBinDataWithFeatures::SFtableInfo TInfo;
+    typedef map<TKey, TInfo> TInfoMap;
+    CFtableWriteHook(const TInfoMap& info_map)
+        : info_map(info_map)
+        {
+        }
+
+    virtual void WriteChoiceVariant(CObjectOStream& out,
+                                    const CConstObjectInfoCV& variant)
+        {
+            CConstObjectInfo var_info = variant.GetVariant();
+            TKey key = (TKey)var_info.GetObjectPtr();
+            TInfoMap::const_iterator iter = info_map.find(key);
+            if ( iter != info_map.end() ) {
+                COStreamContainer cont(out, var_info);
+                ITERATE ( CSeq_annot::TData::TFtable, it, *key ) {
+                    cont << **it;
+                }
+                const TInfo& info = iter->second;
+                out.Write(info.m_Bytes.data(), info.m_Bytes.size());
+            }
+            else {
+                DefaultWrite(out, variant);
+            }
+        }
+
+    const TInfoMap& info_map;
+};
+
+
+class CDescrWriteHook : public CWriteClassMemberHook
+{
+public:
+    typedef const CBioseq* TKey;
+    typedef CAsnBinDataWithFeatures::TDescrInfo TInfo;
+    typedef map<TKey, TInfo> TInfoMap;
+    CDescrWriteHook(const TInfoMap& info_map)
+        : info_map(info_map)
+        {
+        }
+
+    virtual void WriteClassMember(CObjectOStream& out,
+                                  const CConstObjectInfoMI& member)
+        {
+            TKey key = (TKey)member.GetClassObject().GetObjectPtr();
+            TInfoMap::const_iterator iter = info_map.find(key);
+            if ( iter != info_map.end() ) {
+                COStreamClassMember mem(out, member);
+                const TInfo& info = iter->second;
+                if ( info.data()[0] == kSeq_descrFirstByte ) {
+                    // Seq-descr
+                    out.Write(info.data(), info.size());
+                }
+                else {
+                    CObjectTypeInfo cont = member.GetMemberType();
+                    while ( cont.GetTypeFamily() == eTypeFamilyPointer ) {
+                        cont = cont.GetPointedType();
+                    }
+                    COStreamContainer mem(out, cont);
+                    out.Write(info.data(), info.size());
+                }
+            }
+            else {
+                DefaultWrite(out, member);
+            }
+        }
+
+    const TInfoMap& info_map;
+};
+
+
+void CAsnBinDataWithFeatures::Serialize(CObjectOStreamAsnBinary& out) const
+{
+    PROFILE(sw_Serialize);
+    CFtableWriteHook hook1(m_FtableMap);
+    CObjectHookGuard<CSeq_annot::TData> guard1("ftable", hook1, &out);
+    CDescrWriteHook hook2(m_DescrMap);
+    CObjectHookGuard<CBioseq> guard2("descr", hook2, &out);
+    CAsnBinData::Serialize(out);
 }
 
 
@@ -424,6 +666,12 @@ CWGSProtAccResolver::TIdRanges CWGSProtAccResolver::GetIdRanges(void) const
 /////////////////////////////////////////////////////////////////////////////
 
 
+#ifdef WGS_USE_PACKED_4NA
+typedef CVDBValueFor4Bits TSequence4na;
+#else
+typedef CVDBValueFor<Uint1> TSequence4na;
+#endif
+
 // SSeqTableCursor is helper accessor structure for SEQUENCE table
 struct CWGSDb_Impl::SSeqTableCursor : public CObject {
     explicit SSeqTableCursor(const CVDBTable& table);
@@ -439,7 +687,6 @@ struct CWGSDb_Impl::SSeqTableCursor : public CObject {
     DECLARE_VDB_COLUMN_AS_STRING(LABEL);
     DECLARE_VDB_COLUMN_AS(INSDC_coord_zero, READ_START);
     DECLARE_VDB_COLUMN_AS(INSDC_coord_len, READ_LEN);
-    DECLARE_VDB_COLUMN_AS_4BITS(READ);
     DECLARE_VDB_COLUMN_AS(INSDC_coord_zero, TRIM_START);
     DECLARE_VDB_COLUMN_AS(INSDC_coord_len, TRIM_LEN);
     DECLARE_VDB_COLUMN_AS(NCBI_taxid, TAXID);
@@ -458,6 +705,17 @@ struct CWGSDb_Impl::SSeqTableCursor : public CObject {
     DECLARE_VDB_COLUMN_AS(TVDBRowId, FEAT_PRODUCT_ROW_ID);
     typedef pair<TVDBRowId, TVDBRowId> row_range_t;
     DECLARE_VDB_COLUMN_AS(row_range_t, CONTIG_NAME_ROW_RANGE);
+
+#ifdef WGS_USE_PACKED_4NA
+    DECLARE_VDB_COLUMN_AS_4BITS(READ);
+#else
+    DECLARE_VDB_COLUMN_AS(INSDC_4na_bin, READ);
+#endif
+    CVDBColumnBits<2> m_READ_2na;
+
+    mutable TVDBRowId m_4naCacheRow;
+    mutable TSequence4na m_4naCache;
+    TSequence4na Get4na(TVDBRowId row) const;
 };
 
 
@@ -472,7 +730,6 @@ CWGSDb_Impl::SSeqTableCursor::SSeqTableCursor(const CVDBTable& table)
       INIT_VDB_COLUMN(LABEL),
       INIT_VDB_COLUMN(READ_START),
       INIT_VDB_COLUMN(READ_LEN),
-      INIT_VDB_COLUMN_AS(READ, INSDC:4na:packed),
       INIT_VDB_COLUMN(TRIM_START),
       INIT_VDB_COLUMN(TRIM_LEN),
       INIT_OPTIONAL_VDB_COLUMN(TAXID),
@@ -489,7 +746,14 @@ CWGSDb_Impl::SSeqTableCursor::SSeqTableCursor(const CVDBTable& table)
       INIT_OPTIONAL_VDB_COLUMN(FEAT_ROW_START),
       INIT_OPTIONAL_VDB_COLUMN(FEAT_ROW_END),
       INIT_OPTIONAL_VDB_COLUMN(FEAT_PRODUCT_ROW_ID),
-      INIT_OPTIONAL_VDB_COLUMN(CONTIG_NAME_ROW_RANGE)
+      INIT_OPTIONAL_VDB_COLUMN(CONTIG_NAME_ROW_RANGE),
+#ifdef WGS_USE_PACKED_4NA
+      INIT_VDB_COLUMN_AS(READ, INSDC:4na:packed),
+#else
+      INIT_VDB_COLUMN_AS(READ, INSDC:4na:bin),
+#endif
+      m_READ_2na(m_Cursor, "(INSDC:2na:packed)READ",
+                 NULL, CVDBColumn::eMissing_Allow)
 {
 }
 
@@ -785,6 +1049,7 @@ void CWGSDb_Impl::x_InitIdParams(void)
     m_IdPrefixWithVersion = acc.substr(0, prefix_len+2);
     m_IdPrefix = acc.substr(0, prefix_len);
     m_IdVersion = NStr::StringToNumeric<int>(acc.substr(prefix_len, 2));
+    m_IdPrefixDb = (IsTSA()? "TSA:": "WGS:")+m_IdPrefixWithVersion;
     Put(seq);
 }
 
@@ -793,10 +1058,14 @@ string CWGSDb_Impl::NormalizePathOrAccession(CTempString path_or_acc,
                                              CTempString vol_path)
 {
     if ( 1 ) {
-        string test_dir = "/home/dondosha/TEST";
-        string path = CDirEntry::MakePath(test_dir, path_or_acc);
-        if ( CDirEntry(path).Exists() ) {
-            return path;
+        static bool kTryTestFiles =
+            getenv("HOME") && strcmp(getenv("HOME"), "/home/vasilche") == 0;
+        if ( kTryTestFiles ) {
+            string test_dir = "/home/dondosha/TEST";
+            string path = CDirEntry::MakePath(test_dir, path_or_acc);
+            if ( CDirEntry(path).Exists() ) {
+                return path;
+            }
         }
     }
     if ( !vol_path.empty() ) {
@@ -1016,13 +1285,15 @@ void sx_AddDescrBytes(CSeq_descr& descr, CTempString bytes)
         // hack to determine if the data
         // is of type Seq-descr (starts with byte 49)
         // or of type Seqdesc (starts with byte >= 160)
-        if ( bytes[0] == 49 ) {
+        if ( bytes[0] == kSeq_descrFirstByte ) {
             in >> descr;
         }
         else {
-            CRef<CSeqdesc> desc(new CSeqdesc);
-            in >> *desc;
-            descr.Set().push_back(desc);
+            while ( in.HaveMoreData() ) {
+                CRef<CSeqdesc> desc(new CSeqdesc);
+                in >> *desc;
+                descr.Set().push_back(desc);
+            }
         }
     }
 }
@@ -1064,12 +1335,10 @@ CRef<CSeq_id> CWGSDb_Impl::GetGeneralSeq_id(CTempString tag) const
         sx_SetTag(dbtag, tag.substr(colon+1));
     }
     else if ( !m_IdPrefixWithVersion.empty() ) {
-        string db(IsTSA()? "TSA:": "WGS:");
-        db += m_IdPrefixWithVersion;
-        dbtag.SetDb(db);
-        db += ':';
-        if ( NStr::StartsWith(tag, db) ) {
-            sx_SetTag(dbtag, tag.substr(db.size()));
+        dbtag.SetDb(m_IdPrefixDb);
+        if ( NStr::StartsWith(tag, m_IdPrefixDb) &&
+             tag[m_IdPrefixDb.size()] == ':' ) {
+            sx_SetTag(dbtag, tag.substr(m_IdPrefixDb.size()+1));
         }
         else {
             sx_SetTag(dbtag, tag);
@@ -1081,6 +1350,7 @@ CRef<CSeq_id> CWGSDb_Impl::GetGeneralSeq_id(CTempString tag) const
 
 CRef<CSeq_id> CWGSDb_Impl::GetAccSeq_id(CTempString acc, int version) const
 {
+    PROFILE(sw_GetAccSeq_id);
     CRef<CSeq_id> id;
     if ( !acc.empty() ) {
         id = new CSeq_id(acc);
@@ -1589,6 +1859,37 @@ TVDBRowId CWGSDb_Impl::GetProtAccRowId(const string& acc)
 /////////////////////////////////////////////////////////////////////////////
 
 
+TSequence4na CWGSDb_Impl::SSeqTableCursor::Get4na(TVDBRowId row) const
+{
+    if ( m_4naCache.empty() || row != m_4naCacheRow ) {
+        PROFILE(sw____GetRaw4na);
+        m_4naCache = READ(row);
+        m_4naCacheRow = row;
+    }
+    return m_4naCache;
+}
+
+
+struct SWGSCreateInfo 
+{
+    CWGSDb db;
+    typedef int TFlags;
+    TFlags flags;
+    CRef<CBioseq> main_seq;
+    CRef<CSeq_entry> entry;
+    CRef<CID2S_Split_Info> split;
+    CRef<CAsnBinDataWithFeatures> data;
+
+    void x_AddDescr(CTempString bytes);
+    void x_AddFeature(const CWGSFeatureIterator& it,
+                      CSeq_annot::TData::TFtable& dst);
+    void x_AddFeatures(TVDBRowIdRange range,
+                       vector<TVDBRowId>& product_row_ids);
+    void x_AddFeatures(TVDBRowIdRange range);
+    void x_CreateProtSet(TVDBRowIdRange range);
+};
+
+
 bool CWGSSeqIterator::x_Excluded(void) const
 {
     if ( *this ) {
@@ -1944,6 +2245,7 @@ CRef<CSeq_id> CWGSSeqIterator::GetId(TFlags flags) const
 
 void CWGSSeqIterator::GetIds(CBioseq::TId& ids, TFlags flags) const
 {
+    PROFILE(sw___GetContigIds);
     if ( flags & fIds_acc ) {
         // acc.ver
         if ( CRef<CSeq_id> id = GetAccSeq_id() ) {
@@ -2022,7 +2324,11 @@ TVDBRowIdRange CWGSSeqIterator::GetLocFeatRowIdRange(void) const
     if ( !m_Cur->m_FEAT_ROW_START ) {
         return TVDBRowIdRange(0, 0);
     }
-    TVDBRowId start = *m_Cur->FEAT_ROW_START(m_CurrId);
+    CVDBValueFor<TVDBRowId> start_val = m_Cur->FEAT_ROW_START(m_CurrId);
+    if ( start_val.empty() ) {
+        return TVDBRowIdRange(0, 0);
+    }
+    TVDBRowId start = *start_val;
     TVDBRowId end = *m_Cur->FEAT_ROW_END(m_CurrId);
     if ( end < start ) {
         NCBI_THROW_FMT(CSraException, eDataError,
@@ -2039,11 +2345,13 @@ bool CWGSSeqIterator::HasAnnotSet(void) const
     return m_Cur->m_ANNOT && !m_Cur->ANNOT(m_CurrId).empty();
 }
 
+
 CTempString CWGSSeqIterator::GetAnnotBytes() const
 {
     x_CheckValid("CWGSSeqIterator::GetAnnotBytes");
     return *m_Cur->ANNOT(m_CurrId);
 }
+
 
 void CWGSSeqIterator::GetAnnotSet(TAnnotSet& annot_set, TFlags flags) const
 {
@@ -2060,6 +2368,7 @@ bool CWGSSeqIterator::HasQualityGraph(void) const
     return m_Cur->m_QUALITY && !m_Cur->QUALITY(m_CurrId).empty();
 }
 
+
 void
 CWGSSeqIterator::GetQualityVec(vector<INSDC_quality_phred>& quality_vec) const
 {
@@ -2075,6 +2384,7 @@ CWGSSeqIterator::GetQualityVec(vector<INSDC_quality_phred>& quality_vec) const
 void CWGSSeqIterator::GetQualityAnnot(TAnnotSet& annot_set,
                                       TFlags flags) const
 {
+    PROFILE(sw___GetContigQual);
     x_CheckValid("CWGSSeqIterator::GetQualityAnnot");
     if ( !(flags & fQualityGraph) || !m_Cur->m_QUALITY ) {
         return;
@@ -2137,31 +2447,42 @@ bool CWGSSeqIterator::IsCircular(void) const
 }
 
 
+bool CWGSSeqIterator::HasGapInfo(void) const
+{
+    return m_Cur->m_GAP_START;
+}
+
+
 void CWGSSeqIterator::GetGapInfo(TWGSContigGapInfo& gap_info) const
 {
-    if ( m_Cur->m_GAP_START ) {
-        CVDBValueFor<INSDC_coord_zero> start = m_Cur->GAP_START(m_CurrId);
-        gap_info.gaps_start = start.data();
-        size_t gaps_count = gap_info.gaps_count = start.size();
-        if ( !start.empty() ) {
-            CVDBValueFor<INSDC_coord_len> len = m_Cur->GAP_LEN(m_CurrId);
-            CVDBValueFor<NCBI_WGS_component_props> props =
-                m_Cur->GAP_PROPS(m_CurrId);
-            if ( len.size() != gaps_count || props.size() != gaps_count ) {
+    x_CheckValid("CWGSSeqIterator::GetGapInfo");
+
+    if ( !HasGapInfo() ) {
+        gap_info = TWGSContigGapInfo();
+        return;
+    }
+
+    CVDBValueFor<INSDC_coord_zero> start = m_Cur->GAP_START(m_CurrId);
+    gap_info.gaps_start = start.data();
+    size_t gaps_count = gap_info.gaps_count = start.size();
+    if ( !start.empty() ) {
+        CVDBValueFor<INSDC_coord_len> len = m_Cur->GAP_LEN(m_CurrId);
+        CVDBValueFor<NCBI_WGS_component_props> props =
+            m_Cur->GAP_PROPS(m_CurrId);
+        if ( len.size() != gaps_count || props.size() != gaps_count ) {
+            NCBI_THROW(CSraException, eDataError,
+                       "CWGSSeqIterator: inconsistent gap info");
+        }
+        gap_info.gaps_len = len.data();
+        gap_info.gaps_props = props.data();
+        if ( m_Cur->m_GAP_LINKAGE ) {
+            CVDBValueFor<NCBI_WGS_gap_linkage> linkage =
+                m_Cur->GAP_LINKAGE(m_CurrId);
+            if ( linkage.size() != gaps_count ) {
                 NCBI_THROW(CSraException, eDataError,
                            "CWGSSeqIterator: inconsistent gap info");
             }
-            gap_info.gaps_len = len.data();
-            gap_info.gaps_props = props.data();
-            if ( m_Cur->m_GAP_LINKAGE ) {
-                CVDBValueFor<NCBI_WGS_gap_linkage> linkage =
-                    m_Cur->GAP_LINKAGE(m_CurrId);
-                if ( linkage.size() != gaps_count ) {
-                    NCBI_THROW(CSraException, eDataError,
-                               "CWGSSeqIterator: inconsistent gap info");
-                }
-                gap_info.gaps_linkage = linkage.data();
-            }
+            gap_info.gaps_linkage = linkage.data();
         }
     }
 }
@@ -2245,6 +2566,9 @@ void sx_MakeGap(CDelta_seq& seg,
 }
 
 
+static const bool kRecoverGaps = true;
+
+#ifdef WGS_USE_PACKED_4NA
 // For 4na data in byte {base0 4 (highest) bits, base1 4 bits} the bits are:
 // 5: base0 is not 2na
 // 4: base1 is not 2na
@@ -2286,8 +2610,6 @@ static const Uint1 sx_4naFlags[256] = {
     52, 36, 37, 52, 38, 52, 52, 52, 39, 52, 52, 52, 52, 52, 52, 53  // =36
 };
 
-
-static const bool kRecoverGaps = true;
 
 #if 0
 static inline
@@ -2331,6 +2653,7 @@ bool sx_4naIsGap2nd(Uint1 b4na)
     return (b4na&0x0f) == 0x0f;
 }
 
+
 #if 0
 static inline
 bool sx_Is2na(const CVDBValueFor4Bits& read,
@@ -2373,6 +2696,7 @@ bool sx_IsGap(const CVDBValueFor4Bits& read,
               TSeqPos pos,
               TSeqPos len)
 {
+    PROFILE(sw____IsGap);
     _ASSERT(len > 0);
     TSeqPos raw_pos = pos+read.offset();
     const char* raw_ptr = read.raw_data()+(raw_pos/2);
@@ -2410,6 +2734,7 @@ TSeqPos sx_Get2naLength(const CVDBValueFor4Bits& read,
                         TSeqPos pos,
                         TSeqPos len)
 {
+    PROFILE(sw____Get2naLen);
     TSeqPos raw_pos = pos+read.offset();
     const char* raw_ptr = read.raw_data()+(raw_pos/2);
     TSeqPos rem_len = len;
@@ -2451,6 +2776,7 @@ TSeqPos sx_Get4naLength(const CVDBValueFor4Bits& read,
                         TSeqPos pos, TSeqPos len,
                         TSeqPos stop_2na_len, TSeqPos stop_gap_len)
 {
+    PROFILE(sw____Get4naLen);
     if ( len < stop_2na_len ) {
         return len;
     }
@@ -2589,6 +2915,7 @@ TSeqPos sx_GetGapLength(const CVDBValueFor4Bits& read,
                         TSeqPos pos,
                         TSeqPos len)
 {
+    PROFILE(sw____GetGapLen);
     TSeqPos raw_pos = pos+read.offset();
     const char* raw_ptr = read.raw_data()+(raw_pos/2);
     TSeqPos rem_len = len;
@@ -2627,11 +2954,19 @@ TSeqPos sx_GetGapLength(const CVDBValueFor4Bits& read,
 
 // Return 2na Seq-data for specified range.
 // The data mustn't have ambiguities.
-static
-CRef<CSeq_data> sx_Get2na(const CVDBValueFor4Bits& read,
-                          TSeqPos pos,
-                          TSeqPos len)
+CRef<CSeq_data> CWGSSeqIterator::Get2na(TSeqPos pos, TSeqPos len)
 {
+    if ( m_Cur->m_READ_2na ) {
+        PROFILE(sw____GetRaw2na);
+        CRef<CSeq_data> ret(new CSeq_data);
+        vector<char>& data = ret->SetNcbi2na().Set();
+        data.resize((len+3)/4);
+        m_Cur->m_Cursor.ReadElements(m_CurrId, m_Cur->m_READ_2na, 2, pos, len,
+                                     data.data());
+        return ret;
+    }
+
+    PROFILE(sw____Get2na);
     _ASSERT(len);
     CRef<CSeq_data> ret(new CSeq_data);
     vector<char>& data = ret->SetNcbi2na().Set();
@@ -2715,11 +3050,9 @@ CRef<CSeq_data> sx_Get2na(const CVDBValueFor4Bits& read,
 
 
 // return 4na Seq-data for specified range
-static
-CRef<CSeq_data> sx_Get4na(const CVDBValueFor4Bits& read,
-                          TSeqPos pos,
-                          TSeqPos len)
+CRef<CSeq_data> CWGSSeqIterator::Get4na(TSeqPos pos, TSeqPos len)
 {
+    PROFILE(sw____Get4na);
     _ASSERT(len);
     CRef<CSeq_data> ret(new CSeq_data);
     vector<char>& data = ret->SetNcbi4na().Set();
@@ -2750,117 +3083,295 @@ CRef<CSeq_data> sx_Get4na(const CVDBValueFor4Bits& read,
     return ret;
 }
 
+#else
 
-// add raw data as delta segments
-static
-void sx_AddDelta(const CSeq_id& id,
-                 CDelta_ext::Tdata& delta,
-                 const CVDBValueFor4Bits& read,
-                 TSeqPos pos,
-                 TSeqPos len,
-                 size_t gaps_count,
-                 const INSDC_coord_zero* gaps_start,
-                 const INSDC_coord_len* gaps_len,
-                 const NCBI_WGS_component_props* gaps_props,
-                 const NCBI_WGS_gap_linkage* gaps_linkage)
+typedef CVDBValueFor<Uint1> TSequence4na;
+
+static inline
+bool sx_Is2na(Uint1 b)
 {
-    // kMin2naSize is the minimal size of 2na segment that will
-    // save memory if inserted in between 4na segments.
-    // It's determined by formula MinLen = 8*MemoryOverfeadOfSegment.
-    // The memory overhead of a segment in total is
-    // (assuming allocation overhead equal to 2 pointers):
-    // 18*sizeof(void*)+7*sizeof(int)
-    // (+sizeof(int) on some 64-bit platforms due to alignment).
-    // So one segment memory overhead is 100 bytes on 32-bit platform,
-    // and 176 bytes on 64-bit platform.
-    // This leads to threshold size of 800 bases on 32-bit platforms and
-    // 1408 bases on most 64-bit platforms.
-    // We'll use slightly bigger threshold to take into account
-    // possible CPU overhead for 2na operations.
-    const TSeqPos kMin2naSize = 2048;
+    return b && !(b&(b-1));
+}
 
-    // size of chinks if the segment is split
-    const TSeqPos kChunk4naSize = 1<<16; // 64Ki bases or 32KiB
-    const TSeqPos kChunk2naSize = 1<<17; // 128Ki bases or 32KiB
 
-    // min size of segment to split
-    const TSeqPos kSplit4naSize = kChunk4naSize+kChunk4naSize/4;
-    const TSeqPos kSplit2naSize = kChunk2naSize+kChunk2naSize/4;
+static inline
+bool sx_IsGap(const CVDBValueFor<Uint1>& read,
+              TSeqPos pos,
+              TSeqPos len)
+{
+    PROFILE(sw____IsGap);
+    _ASSERT(len > 0);
+    for ( const Uint1* ptr = read.data()+pos; len; --len, ++ptr ) {
+        if ( *ptr != 0xf ) {
+            return false;
+        }
+    }
+    return true;
+}
 
-    // max size of gap segment
-    const TSeqPos kMinGapSize = gaps_start? kInvalidSeqPos: 20;
-    const TSeqPos kMaxGapSize = 200;
-    // size of gap segment if its actual size is unknown
-    const TSeqPos kUnknownGapSize = 100;
-    const TSeqPos kMinGapRecoverSize = gaps_start? kInvalidSeqPos: kMinGapSize;
-    
+
+static inline
+TSeqPos sx_Get2naLength(const CVDBValueFor<Uint1>& read,
+                        TSeqPos pos,
+                        TSeqPos len)
+{
+    PROFILE(sw____Get2naLen);
+    TSeqPos rem_len = len;
+    for ( const Uint1* ptr = read.data()+pos; rem_len; --rem_len, ++ptr ) {
+        if ( !sx_Is2na(*ptr) ) {
+            return len-rem_len;
+        }
+    }
+    return len;
+}
+
+
+static inline
+TSeqPos sx_Get4naLength(const CVDBValueFor<Uint1>& read,
+                        TSeqPos pos, TSeqPos len,
+                        TSeqPos stop_2na_len, TSeqPos stop_gap_len)
+{
+    PROFILE(sw____Get4naLen);
+    if ( len < stop_2na_len ) {
+        return len;
+    }
+    const Uint1* ptr = read.data()+pos;
+    TSeqPos rem_len = len, len2na = 0, gap_len = 0;
+    // |-------------------- len -----------------|
+    // |- 4na -|- len2na -|- gap_len -$- rem_len -|
+    // $ is current position
+    // only one of len2na and gap_len can be above zero
+
+    for ( ; rem_len; --rem_len, ++ptr ) {
+        // check both bases
+        Uint1 v = *ptr;
+        if ( sx_Is2na(v) ) {
+            if ( len2na == stop_2na_len-1 ) { // 1 more 2na is enough
+                return len-(rem_len+len2na);
+            }
+            ++len2na;
+            if ( kRecoverGaps ) {
+                gap_len = 0;
+            }
+        }
+        else {
+            if ( kRecoverGaps && v == 0xf ) {
+                if ( gap_len == stop_gap_len-1 ) { // 1 more gap is enough
+                    return len-(rem_len+gap_len);
+                }
+                ++gap_len;
+            }
+            len2na = 0;
+        }
+    }
+    _ASSERT(len2na < stop_2na_len);
+    _ASSERT(!kRecoverGaps || gap_len < stop_gap_len);
+    return len;
+}
+
+
+static inline
+TSeqPos sx_GetGapLength(const CVDBValueFor<Uint1>& read,
+                        TSeqPos pos,
+                        TSeqPos len)
+{
+    PROFILE(sw____GetGapLen);
+    const Uint1* ptr = read.data()+pos;
+    TSeqPos rem_len = len;
+    for ( ; rem_len; --rem_len, ++ptr ) {
+        // check both bases
+        if ( *ptr != 0xf ) {
+            return len-rem_len;
+        }
+    }
+    return len;
+}
+
+
+// Return 2na Seq-data for specified range.
+// The data mustn't have ambiguities.
+CRef<CSeq_data> CWGSSeqIterator::Get2na(TSeqPos pos, TSeqPos len) const
+{
+    if ( m_Cur->m_READ_2na ) {
+        PROFILE(sw____GetRaw2na);
+        CRef<CSeq_data> ret(new CSeq_data);
+        vector<char>& data = ret->SetNcbi2na().Set();
+        data.resize((len+3)/4);
+        m_Cur->m_Cursor.ReadElements(m_CurrId, m_Cur->m_READ_2na, 2, pos, len,
+                                     data.data());
+        return ret;
+    }
+
+    PROFILE(sw____Get2na);
+    _ASSERT(len);
+    CRef<CSeq_data> ret(new CSeq_data);
+    vector<char>& data = ret->SetNcbi2na().Set();
+    size_t dst_len = (len+3)/4;
+    data.reserve(dst_len);
+    TSequence4na read = m_Cur->Get4na(m_CurrId);
+    const Uint1* ptr = read.data()+pos;
+    for ( ; len >= 4; len -= 4, ptr += 4 ) {
+        Uint1 v0 = ptr[0];
+        Uint1 v1 = ptr[1];
+        Uint1 v2 = ptr[2];
+        Uint1 v3 = ptr[3];
+        Uint1 b = (0x40<<v0)+(0x10<<v1)+(0x4<<v2)+(0x1<<v3);
+        data.push_back(b);
+    }
+    if ( len > 0 ) {
+        // trailing odd bases 1..3
+        Uint1 b = 0x40<<ptr[0];
+        if ( len > 1 ) {
+            b |= 0x10<<ptr[1];
+            if ( len > 2 ) {
+                b |= 0x4<<ptr[2];
+            }
+        }
+        data.push_back(b);
+    }
+    return ret;
+}
+
+
+// return 4na Seq-data for specified range
+CRef<CSeq_data> CWGSSeqIterator::Get4na(TSeqPos pos, TSeqPos len) const
+{
+    TSequence4na read = m_Cur->Get4na(m_CurrId);
+    PROFILE(sw____Get4na);
+    _ASSERT(len);
+    CRef<CSeq_data> ret(new CSeq_data);
+    vector<char>& data = ret->SetNcbi4na().Set();
+    size_t dst_len = (len+1)/2;
+    const Uint1* ptr = read.data() + pos;
+    data.reserve(dst_len);
+    for ( ; len >= 2; len -= 2, ptr += 2 ) {
+        Uint1 v0 = ptr[0];
+        Uint1 v1 = ptr[1];
+        Uint1 b = (v0<<4)+v1;
+        data.push_back(b);
+    }
+    if ( len ) {
+        Uint1 v0 = ptr[0];
+        Uint1 b = (v0<<4);
+        data.push_back(b);
+    }
+    return ret;
+}
+
+#endif
+
+
+/////////////////////////////////////////////////////////////////////////////
+// delta control constants
+
+// kMin2naSize is the minimal size of 2na segment that will
+// save memory if inserted in between 4na segments.
+// It's determined by formula MinLen = 8*MemoryOverfeadOfSegment.
+// The memory overhead of a segment in total is
+// (assuming allocation overhead equal to 2 pointers):
+// 18*sizeof(void*)+7*sizeof(int)
+// (+sizeof(int) on some 64-bit platforms due to alignment).
+// So one segment memory overhead is 100 bytes on 32-bit platform,
+// and 176 bytes on 64-bit platform.
+// This leads to threshold size of 800 bases on 32-bit platforms and
+// 1408 bases on most 64-bit platforms.
+// We'll use slightly bigger threshold to take into account
+// possible CPU overhead for 2na operations.
+static const TSeqPos kMin2naSize = 2048;
+
+// size of chinks if the segment is split
+static const TSeqPos kChunk4naSize = 1<<16; // 64Ki bases or 32KiB
+static const TSeqPos kChunk2naSize = 1<<17; // 128Ki bases or 32KiB
+
+// min size of segment to split
+static const TSeqPos kSplit4naSize = kChunk4naSize+kChunk4naSize/4;
+static const TSeqPos kSplit2naSize = kChunk2naSize+kChunk2naSize/4;
+
+// end of delta control constants
+/////////////////////////////////////////////////////////////////////////////
+
+enum EDeltaType {
+    eDelta_all,
+    eDelta_split
+};
+
+// add raw data as delta segments with explicit gap info
+CRef<CDelta_ext> CWGSSeqIterator::GetDelta(TSeqPos pos, TSeqPos len,
+                                           TWGSContigGapInfo gap_info) const
+{
+    // skip gaps starting befor requested range
+    while ( gap_info && gap_info.GetFrom() < pos ) {
+        TSeqPos gap_end = gap_info.GetToOpen();
+        if ( gap_end > pos ) {
+            TSeqPos skip = gap_end - pos;
+            pos = gap_end;
+            // adjust range to exclude gap covering start of the range
+            if ( skip >= len ) {
+                // requested range is completely in the gap
+                len = 0;
+            }
+            else {
+                len -= skip;
+            }
+        }
+        ++gap_info;
+    }
+
+    CRef<CDelta_ext> ret(new CDelta_ext);
+    CDelta_ext::Tdata& delta = ret->Set();
+    TSequence4na read = m_Cur->Get4na(m_CurrId);
     for ( ; len > 0; ) {
         CRef<CDelta_seq> seg(new CDelta_seq);
         TSeqPos gap_start = kInvalidSeqPos;
-        if ( gaps_count ) {
-            gap_start = *gaps_start;
+        TSeqPos rem_len = len;
+        if ( gap_info ) {
+            gap_start = *gap_info.gaps_start;
             if ( pos == gap_start ) {
-                TSeqPos gap_len = *gaps_len;
+                TSeqPos gap_len = *gap_info.gaps_len;
                 if ( gap_len > len ) {
                     NCBI_THROW_FMT(CSraException, eDataError,
-                                   "CWGSSeqIterator: "<<id.AsFastaString()<<
+                                   "CWGSSeqIterator: "<<
+                                   GetAccSeq_id()->AsFastaString()<<
                                    ": gap at "<< pos << " is too long");
                 }
-                if ( !sx_IsGap(read, pos, gap_len) ) {
-                    NCBI_THROW_FMT(CSraException, eDataError,
-                                   "CWGSSeqIterator: "<<id.AsFastaString()<<
-                                   ": gap at "<< pos << " has non-gap base");
+                NCBI_WGS_component_props props = *gap_info.gaps_props;
+                NCBI_WGS_gap_linkage linkage = 0;
+                if ( gap_info.gaps_linkage ) {
+                    linkage = *gap_info.gaps_linkage;
                 }
-                sx_MakeGap(*seg, gap_len, *gaps_props,
-                           gaps_linkage? *gaps_linkage: 0);
-                --gaps_count;
-                ++gaps_start;
-                ++gaps_len;
-                ++gaps_props;
-                if ( gaps_linkage ) {
-                    ++gaps_linkage;
-                }
+                sx_MakeGap(*seg, gap_len, props, linkage);
+                ++gap_info;
                 delta.push_back(seg);
                 len -= gap_len;
                 pos += gap_len;
                 continue;
             }
-        }
-        CSeq_literal& literal = seg->SetLiteral();
-
-        TSeqPos rem_len = len;
-        if ( gaps_count ) {
             rem_len = min(rem_len, gap_start-pos);
         }
+
+        CSeq_literal& literal = seg->SetLiteral();
         TSeqPos seg_len = sx_Get2naLength(read, pos, min(rem_len, kSplit2naSize));
         if ( seg_len >= kMin2naSize || seg_len == len ) {
-            if ( seg_len >= kSplit2naSize ) {
+            if ( seg_len > kSplit2naSize ) {
                 seg_len = kChunk2naSize;
             }
-            literal.SetSeq_data(*sx_Get2na(read, pos, seg_len));
+            literal.SetSeq_data(*Get2na(pos, seg_len));
             _ASSERT(literal.GetSeq_data().GetNcbi2na().Get().size() == (seg_len+3)/4);
         }
         else {
             TSeqPos seg_len_2na = seg_len;
             seg_len += sx_Get4naLength(read, pos+seg_len,
                                        min(rem_len, kSplit4naSize)-seg_len,
-                                       kMin2naSize, kMinGapRecoverSize);
-            if ( kRecoverGaps && seg_len == 0 ) {
-                seg_len = sx_GetGapLength(read, pos, min(rem_len, kMaxGapSize));
-                _ASSERT(seg_len > 0);
-                if ( seg_len == kUnknownGapSize ) {
-                    literal.SetFuzz().SetLim(CInt_fuzz::eLim_unk);
-                }
-            }
-            else if ( seg_len == seg_len_2na ) {
-                literal.SetSeq_data(*sx_Get2na(read, pos, seg_len));
+                                       kMin2naSize, kInvalidSeqPos);
+            if ( seg_len == seg_len_2na ) {
+                literal.SetSeq_data(*Get2na(pos, seg_len));
                 _ASSERT(literal.GetSeq_data().GetNcbi2na().Get().size() == (seg_len+3)/4);
             }
             else {
                 if ( seg_len >= kSplit4naSize ) {
                     seg_len = kChunk4naSize;
                 }
-                literal.SetSeq_data(*sx_Get4na(read, pos, seg_len));
+                literal.SetSeq_data(*Get4na(pos, seg_len));
                 _ASSERT(literal.GetSeq_data().GetNcbi4na().Get().size() == (seg_len+1)/2);
             }
         }
@@ -2870,111 +3381,126 @@ void sx_AddDelta(const CSeq_id& id,
         pos += seg_len;
         len -= seg_len;
     }
+    return ret;
 }
 
-CWGSSeqIterator::TSequencePacked4na
-CWGSSeqIterator::GetRawSequencePacked4na(void) const
-{
-    x_CheckValid("CWGSSeqIterator::GetRawSequencePacked4na");
-    return m_Cur->READ(m_CurrId);
-}
 
-CWGSSeqIterator::TSequencePacked4na
-CWGSSeqIterator::GetSequencePacked4na(void) const
+// add raw data as delta segments with gap recovering
+CRef<CDelta_ext> CWGSSeqIterator::GetDelta(TSeqPos pos, TSeqPos len) const
 {
-    TSequencePacked4na seq = GetRawSequencePacked4na();
-    if ( GetClipByQualityFlag() ) {
-        seq = seq.substr(GetClipQualityLeft(), GetClipQualityLength());
+    // max size of gap segment
+    const TSeqPos kMinGapSize = 20;
+    const TSeqPos kMaxGapSize = 200;
+    // size of gap segment if its actual size is unknown
+    const TSeqPos kUnknownGapSize = 100;
+    
+    CRef<CDelta_ext> ret(new CDelta_ext);
+    CDelta_ext::Tdata& delta = ret->Set();
+    TSequence4na read = m_Cur->Get4na(m_CurrId);
+    for ( ; len > 0; ) {
+        CRef<CDelta_seq> seg(new CDelta_seq);
+        CSeq_literal& literal = seg->SetLiteral();
+
+        TSeqPos rem_len = len;
+        TSeqPos seg_len = sx_Get2naLength(read, pos, min(rem_len, kSplit2naSize));
+        if ( seg_len >= kMin2naSize || seg_len == len ) {
+            if ( seg_len > kSplit2naSize ) {
+                seg_len = kChunk2naSize;
+            }
+            literal.SetSeq_data(*Get2na(pos, seg_len));
+            _ASSERT(literal.GetSeq_data().GetNcbi2na().Get().size() == (seg_len+3)/4);
+        }
+        else {
+            TSeqPos seg_len_2na = seg_len;
+            seg_len += sx_Get4naLength(read, pos+seg_len,
+                                       min(rem_len, kSplit4naSize)-seg_len,
+                                       kMin2naSize, kMinGapSize);
+            if ( kRecoverGaps && seg_len == 0 ) {
+                seg_len = sx_GetGapLength(read, pos, min(rem_len, kMaxGapSize));
+                _ASSERT(seg_len > 0);
+                if ( seg_len == kUnknownGapSize ) {
+                    literal.SetFuzz().SetLim(CInt_fuzz::eLim_unk);
+                }
+            }
+            else if ( seg_len == seg_len_2na ) {
+                literal.SetSeq_data(*Get2na(pos, seg_len));
+                _ASSERT(literal.GetSeq_data().GetNcbi2na().Get().size() == (seg_len+3)/4);
+            }
+            else {
+                if ( seg_len >= kSplit4naSize ) {
+                    seg_len = kChunk4naSize;
+                }
+                literal.SetSeq_data(*Get4na(pos, seg_len));
+                _ASSERT(literal.GetSeq_data().GetNcbi4na().Get().size() == (seg_len+1)/2);
+            }
+        }
+
+        literal.SetLength(seg_len);
+        delta.push_back(seg);
+        pos += seg_len;
+        len -= seg_len;
     }
-    return seq;
+    return ret;
 }
 
-static string s_4na2IUPAC(CVDBValueFor4Bits packed)
-{
-    string seq;
-    size_t len = packed.size();
-    seq.reserve(len);
-    // FIXME: Find the standard C++ toolkit conversion method
-    // from 4na to iupacna encoding.
-    static const char kMap4NaToIupacna[] = "-ACMGRSVTWYHKDBN";
-    for ( size_t i = 0; i < len; ++i ) {
-        seq.push_back(kMap4NaToIupacna[packed[i]]);
-    }
-    return seq;
-}
-
-string CWGSSeqIterator::GetRawSequenceIUPACna(void) const
-{
-    return s_4na2IUPAC(GetRawSequencePacked4na());
-}
-
-string CWGSSeqIterator::GetSequenceIUPACna(void) const
-{
-    return s_4na2IUPAC(GetSequencePacked4na());
-}
 
 CRef<CSeq_inst> CWGSSeqIterator::GetSeq_inst(TFlags flags) const
 {
+    PROFILE(sw___GetContigInst);
     x_CheckValid("CWGSSeqIterator::GetSeq_inst");
-
     CRef<CSeq_inst> inst(new CSeq_inst);
-    TSeqPos length = GetSeqLength();
-    inst->SetLength(length);
     inst->SetMol(GetDb().IsTSA()? CSeq_inst::eMol_rna: CSeq_inst::eMol_dna);
     if ( IsCircular() ) {
         inst->SetTopology(CSeq_inst::eTopology_circular);
     }
+    TSeqPos length = GetSeqLength();
+    inst->SetLength(length);
     if ( length == 0 ) {
         inst->SetRepr(CSeq_inst::eRepr_not_set);
         return inst;
     }
-    CVDBValueFor4Bits read = GetSequencePacked4na();
+    TSeqPos pos = GetClipByQualityFlag()? GetClipQualityLeft(): 0;
     if ( (flags & fMaskInst) == fInst_ncbi4na ) {
         inst->SetRepr(CSeq_inst::eRepr_raw);
-        inst->SetSeq_data(*sx_Get4na(read, 0, length));
+        inst->SetSeq_data(*Get4na(pos, length));
+    }
+    else if ( HasGapInfo() ) {
+        inst->SetRepr(CSeq_inst::eRepr_delta);
+        inst->SetStrand(CSeq_inst::eStrand_ds);
+        CRef<CSeq_id> id = GetAccSeq_id();
+        TWGSContigGapInfo gap_info;
+        GetGapInfo(gap_info);
+        if  ( (flags & fMaskInst) == fInst_delta ) {
+            CRef<CDelta_ext> delta = GetDelta(pos, length, gap_info);
+            inst->SetExt().SetDelta(*delta);
+            if ( delta->Set().size() == 1 ) {
+                CDelta_seq& seg = *delta->Set().front();
+                if ( seg.IsLiteral() &&
+                     seg.GetLiteral().GetLength() == inst->GetLength() &&
+                     !seg.GetLiteral().IsSetFuzz() &&
+                     seg.GetLiteral().IsSetSeq_data() ) {
+                    // single segment, delta is not necessary
+                    inst->SetRepr(CSeq_inst::eRepr_raw);
+                    inst->SetSeq_data(seg.SetLiteral().SetSeq_data());
+                    inst->ResetStrand();
+                    inst->ResetExt();
+                }
+            }
+        }
+        else {
+            // split
+            CRef<CDelta_ext> delta = GetDelta(pos, length, gap_info);
+            inst->SetExt().SetDelta(*delta);
+        }
     }
     else {
         inst->SetRepr(CSeq_inst::eRepr_delta);
         inst->SetStrand(CSeq_inst::eStrand_ds);
         CRef<CSeq_id> id = GetAccSeq_id();
-        size_t gaps_count = 0;
-        const INSDC_coord_zero* gaps_start = 0;
-        const INSDC_coord_len* gaps_len = 0;
-        const NCBI_WGS_component_props* gaps_props = 0;
-        const NCBI_WGS_gap_linkage* gaps_linkage = 0;
-        if ( m_Cur->m_GAP_START ) {
-            CVDBValueFor<INSDC_coord_zero> start = m_Cur->GAP_START(m_CurrId);
-            gaps_start = start.data();
-            if ( !start.empty() ) {
-                gaps_count = start.size();
-                CVDBValueFor<INSDC_coord_len> len =
-                    m_Cur->GAP_LEN(m_CurrId);
-                CVDBValueFor<NCBI_WGS_component_props> props =
-                    m_Cur->GAP_PROPS(m_CurrId);
-                if ( len.size() != gaps_count || props.size() != gaps_count ) {
-                    NCBI_THROW(CSraException, eDataError,
-                               "CWGSSeqIterator: "+id->AsFastaString()+
-                               " inconsistent gap info");
-                }
-                gaps_len = len.data();
-                gaps_props = props.data();
-                if ( m_Cur->m_GAP_LINKAGE ) {
-                    CVDBValueFor<NCBI_WGS_gap_linkage> linkage =
-                        m_Cur->GAP_LINKAGE(m_CurrId);
-                    if ( linkage.size() != gaps_count ) {
-                        NCBI_THROW(CSraException, eDataError,
-                                   "CWGSSeqIterator: "+id->AsFastaString()+
-                                   " inconsistent gap info");
-                    }
-                    gaps_linkage = linkage.data();
-                }
-            }
-        }
-        CDelta_ext& delta = inst->SetExt().SetDelta();
-        sx_AddDelta(*id, delta.Set(), read, 0, length,
-                    gaps_count, gaps_start, gaps_len, gaps_props, gaps_linkage);
-        if ( delta.Set().size() == 1 ) {
-            CDelta_seq& seg = *delta.Set().front();
+        CRef<CDelta_ext> delta = GetDelta(pos, length);
+        inst->SetExt().SetDelta(*delta);
+        if ( delta->Set().size() == 1 ) {
+            CDelta_seq& seg = *delta->Set().front();
             if ( seg.IsLiteral() &&
                  seg.GetLiteral().GetLength() == inst->GetLength() &&
                  !seg.GetLiteral().IsSetFuzz() &&
@@ -2991,91 +3517,168 @@ CRef<CSeq_inst> CWGSSeqIterator::GetSeq_inst(TFlags flags) const
 }
 
 
-CRef<CBioseq> CWGSSeqIterator::GetBioseq(TFlags flags) const
+inline
+void SWGSCreateInfo::x_AddDescr(CTempString bytes)
 {
-    x_CheckValid("CWGSSeqIterator::GetBioseq");
-
-    CRef<CBioseq> ret(new CBioseq());
-    GetIds(ret->SetId(), flags);
-    if ( flags & fMaskDescr ) {
-        if ( CRef<CSeq_descr> descr = GetSeq_descr(flags) ) {
-            ret->SetDescr(*descr);
-        }
+    if ( bytes.empty() ) {
+        return;
     }
-    if ( flags & fMaskAnnot ) {
-        GetAnnotSet(ret->SetAnnot(), flags);
-        GetQualityAnnot(ret->SetAnnot(), flags);
-        if ( ret->GetAnnot().empty() ) {
-            ret->ResetAnnot();
-        }
+    if ( data ) {
+        data->AddDescr(*main_seq, bytes);
     }
-    ret->SetInst(*GetSeq_inst(flags));
-    return ret;
+    else {
+        sx_AddDescrBytes(main_seq->SetDescr(), bytes);
+    }
 }
 
 
-static
-void sx_AddFeatures(const CWGSDb& db, TVDBRowIdRange range,
-                    CSeq_entry& main_entry,
-                    vector<TVDBRowId>* product_row_ids = 0)
+inline
+void SWGSCreateInfo::x_AddFeature(const CWGSFeatureIterator& it,
+                                  CSeq_annot::TData::TFtable& dst)
 {
-    _ASSERT(main_entry.IsSeq());
-    CBioseq& main_seq = main_entry.SetSeq();
+    if ( data ) {
+        data->AddFeature(dst, it.GetSeq_featBytes());
+    }
+    else {
+        dst.push_back(it.GetSeq_feat());
+    }
+}
+
+
+void SWGSCreateInfo::x_AddFeatures(TVDBRowIdRange range,
+                                   vector<TVDBRowId>& product_row_ids)
+{
     CSeq_annot::TData::TFtable* main_features = 0;
     CSeq_annot::TData::TFtable* product_features = 0;
     for ( CWGSFeatureIterator feat_it(db, range); feat_it; ++feat_it ) {
-        CRef<CSeq_feat> feat = feat_it.GetSeq_feat();
-        TVDBRowId product_row_id =
-            product_row_ids? feat_it.GetProductRowId(): 0;
-        if ( product_row_id ) {
+        CSeq_annot::TData::TFtable* dst;
+        if ( TVDBRowId product_row_id = feat_it.GetProductRowId() ) {
             // product feature
+            product_row_ids.push_back(product_row_id);
             if ( !product_features ) {
                 CRef<CBioseq_set> seqset(new CBioseq_set);
                 seqset->SetClass(CBioseq_set::eClass_nuc_prot);
-                CRef<CSeq_entry> entry(new CSeq_entry);
-                entry->SetSeq(main_seq);
-                seqset->SetSeq_set().push_back(entry);
-                main_entry.SetSet(*seqset);
+                CRef<CSeq_entry> main_entry(new CSeq_entry);
+                main_entry->SetSeq(*main_seq);
+                seqset->SetSeq_set().push_back(main_entry);
+                entry->SetSet(*seqset);
                 CRef<CSeq_annot> annot(new CSeq_annot);
                 seqset->SetAnnot().push_back(annot);
                 product_features = &annot->SetData().SetFtable();
             }
-            product_features->push_back(feat);
-            product_row_ids->push_back(product_row_id);
+            dst = product_features;
         }
         else {
             // plain feature
             if ( !main_features ) {
                 CRef<CSeq_annot> annot(new CSeq_annot);
-                main_seq.SetAnnot().push_back(annot);
+                main_seq->SetAnnot().push_back(annot);
                 main_features = &annot->SetData().SetFtable();
             }
-            main_features->push_back(feat);
+            dst = main_features;
         }
+        x_AddFeature(feat_it, *dst);
     }
 }
 
 
-static
-void sx_MakeSeqOrSet(const CWGSDb& db, TVDBRowIdRange range,
-                     CSeq_entry& entry, CBioseq& main_seq)
+void SWGSCreateInfo::x_AddFeatures(TVDBRowIdRange range)
 {
-    entry.SetSeq(main_seq);
+    CSeq_annot::TData::TFtable* main_features = 0;
+    for ( CWGSFeatureIterator feat_it(db, range); feat_it; ++feat_it ) {
+        // plain feature
+        if ( !main_features ) {
+            CRef<CSeq_annot> annot(new CSeq_annot);
+            entry->SetSeq().SetAnnot().push_back(annot);
+            main_features = &annot->SetData().SetFtable();
+        }
+        x_AddFeature(feat_it, *main_features);
+    }
+}
+
+
+void CWGSSeqIterator::x_CreateBioseq(SWGSCreateInfo& info) const
+{
+    PROFILE(sw__GetContigBioseq);
+    _ASSERT(!info.main_seq);
+    info.main_seq = new CBioseq();
+    if ( info.entry ) {
+        _ASSERT(info.entry->Which() == CSeq_entry::e_not_set);
+        info.entry->SetSeq(*info.main_seq);
+    }
+    GetIds(info.main_seq->SetId(), info.flags);
+    if ( info.flags & fMaskDescr ) {
+        PROFILE(sw___GetContigDescr);
+        if ( info.flags & fMasterDescr ) {
+            if ( CRef<CSeq_descr> descr = GetSeq_descr(info.flags) ) {
+                info.main_seq->SetDescr(*descr);
+            }
+        }
+        else if ( m_Cur->m_DESCR ) {
+            // only own descriptors
+            CVDBStringValue descr = m_Cur->DESCR(m_CurrId);
+            if ( !descr.empty() ) {
+                info.x_AddDescr(*descr);
+            }
+        }
+    }
+    if ( info.flags & fMaskAnnot ) {
+        PROFILE(sw___GetContigAnnot);
+        GetAnnotSet(info.main_seq->SetAnnot(), info.flags);
+        GetQualityAnnot(info.main_seq->SetAnnot(), info.flags);
+        if ( info.main_seq->GetAnnot().empty() ) {
+            info.main_seq->ResetAnnot();
+        }
+    }
+    info.main_seq->SetInst(*GetSeq_inst(info.flags));
+}
+
+
+static
+bool sx_HasMoreProducts(const CWGSDb& db, TVDBRowIdRange range, size_t count)
+{
+    for ( CWGSFeatureIterator feat_it(db, range); feat_it; ++feat_it ) {
+        if ( feat_it.GetProductRowId() ) {
+            if ( !count ) {
+                return true;
+            }
+            --count;
+        }
+    }
+    return false;
+}
+
+
+void SWGSCreateInfo::x_CreateProtSet(TVDBRowIdRange range)
+{
+    _ASSERT(entry->IsSeq() && &entry->GetSeq() == main_seq);
     vector<TVDBRowId> product_row_ids;
-    sx_AddFeatures(db, range, entry, &product_row_ids);
+    {
+        PROFILE(sw__GetContigFeat);
+        x_AddFeatures(range, product_row_ids);
+    }
     if ( !product_row_ids.empty() ) {
+        // add proteins
+        TFlags save_flags = flags;
+        CRef<CBioseq> save_seq = main_seq;
+        CRef<CSeq_entry> save_entry = entry;
         CWGSProteinIterator prot_it(db);
-        CWGSProteinIterator::TFlags prot_flags =
-            prot_it.fDefaultFlags & ~prot_it.fMasterDescr;
-        CBioseq_set::TSeq_set& entries = entry.SetSet().SetSeq_set();
+        flags = prot_it.fDefaultFlags & ~prot_it.fMasterDescr;
+        CBioseq_set::TSeq_set& entries = save_entry->SetSet().SetSeq_set();
         ITERATE ( vector<TVDBRowId>, it, product_row_ids ) {
             if ( !prot_it.SelectRow(*it) ) {
                 ERR_POST_X(9, "CWGSDb::MakeSeqOrSet: "
                            "invalid protein row id: "<<*it);
                 continue;
             }
-            entries.push_back(prot_it.GetSeq_entry(prot_flags));
+            entry = new CSeq_entry;
+            main_seq = null;
+            prot_it.x_CreateEntry(*this);
+            entries.push_back(entry);
         }
+        flags = save_flags;
+        main_seq = save_seq;
+        entry = save_entry;
     }
 }
 
@@ -3093,27 +3696,125 @@ void sx_AddMasterDescr(const CWGSDb& db, CSeq_entry& entry)
 }
 
 
+void CWGSSeqIterator::x_CreateEntry(SWGSCreateInfo& info) const
+{
+    PROFILE(sw_GetContigEntry);
+    if ( !(info.flags & fSeqAnnot) || !info.db->FeatTable() ) {
+        // plain sequence only without FEATURE table
+        x_CreateBioseq(info);
+    }
+    else {
+        TFlags flags = info.flags;
+        info.flags = flags & ~fSeqAnnot & ~fMasterDescr;
+        x_CreateBioseq(info);
+        info.flags = flags;
+        info.x_CreateProtSet(GetLocFeatRowIdRange());
+        if ( flags & fMasterDescr ) {
+            sx_AddMasterDescr(m_Db, *info.entry);
+        }
+        GetQualityAnnot(info.main_seq->SetAnnot(), flags);
+        if ( info.main_seq->GetAnnot().empty() ) {
+            info.main_seq->ResetAnnot();
+        }
+    }
+}
+
+
+void CWGSSeqIterator::x_CreateSplit(SWGSCreateInfo& info) const
+{
+    // split data if...
+    bool split_data =
+        ((info.flags & fMaskInst) == fInst_delta) && // delta is requested
+        HasGapInfo() && // we have explcit gap info
+        GetSeqLength() > kSplit2naSize; // data is big enough
+    // split products if there are many enough
+    bool split_prod =
+        sx_HasMoreProducts(m_Db, GetLocFeatRowIdRange(), 10);
+    if ( !split_data && !split_prod ) {
+        x_CreateEntry(info);
+    }
+    else {
+        x_CreateEntry(info);
+    }
+}
+
+
+CRef<CBioseq> CWGSSeqIterator::GetBioseq(TFlags flags) const
+{
+    x_CheckValid("CWGSSeqIterator::GetBioseq");
+    SWGSCreateInfo info;
+    info.db = m_Db;
+    info.flags = flags;
+    x_CreateBioseq(info);
+    return info.main_seq;
+}
+
+
 CRef<CSeq_entry> CWGSSeqIterator::GetSeq_entry(TFlags flags) const
 {
     x_CheckValid("CWGSSeqIterator::GetSeq_entry");
+    SWGSCreateInfo info;
+    info.db = m_Db;
+    info.flags = flags;
+    info.entry = new CSeq_entry;
+    x_CreateEntry(info);
+    return info.entry;
+}
 
-    CRef<CSeq_entry> ret(new CSeq_entry());
-    if ( !(flags & fSeqAnnot) || !GetDb().FeatTable() ) {
-        // plain sequence only without FEATURE table
-        ret->SetSeq(*GetBioseq(flags));
-    }
-    else {
-        CRef<CBioseq> main_seq = GetBioseq(flags & ~fSeqAnnot & ~fMasterDescr);
-        sx_MakeSeqOrSet(m_Db, GetLocFeatRowIdRange(), *ret, *main_seq);
-        if ( flags & fMasterDescr ) {
-            sx_AddMasterDescr(m_Db, *ret);
-        }
-        GetQualityAnnot(main_seq->SetAnnot(), flags);
-        if ( main_seq->GetAnnot().empty() ) {
-            main_seq->ResetAnnot();
-        }
-    }
-    return ret;
+
+CRef<CAsnBinData> CWGSSeqIterator::GetSeq_entryData(TFlags flags) const
+{
+    x_CheckValid("CWGSSeqIterator::GetSeq_entryData");
+    SWGSCreateInfo info;
+    info.db = m_Db;
+    info.flags = flags;
+    info.entry = new CSeq_entry;
+    info.data = new CAsnBinDataWithFeatures(*info.entry);
+    x_CreateEntry(info);
+    return CRef<CAsnBinData>(info.data);
+}
+
+
+CRef<CID2S_Split_Info> CWGSSeqIterator::GetSplitInfo(TFlags flags) const
+{
+    x_CheckValid("CWGSSeqIterator::GetSplitInfo");
+    SWGSCreateInfo info;
+    info.db = m_Db;
+    info.flags = flags;
+    info.entry = new CSeq_entry;
+    info.split = new CID2S_Split_Info;
+    info.split->SetSkeleton(*info.entry);
+    x_CreateSplit(info);
+    return info.split;
+}
+
+
+CRef<CAsnBinData> CWGSSeqIterator::GetSplitInfoData(TFlags flags) const
+{
+    x_CheckValid("CWGSSeqIterator::GetSplitInfoData");
+    SWGSCreateInfo info;
+    info.db = m_Db;
+    info.flags = flags;
+    info.entry = new CSeq_entry;
+    info.split = new CID2S_Split_Info;
+    info.split->SetSkeleton(*info.entry);
+    info.data = new CAsnBinDataWithFeatures(*info.split);
+    x_CreateSplit(info);
+    return CRef<CAsnBinData>(info.data);
+}
+
+
+CRef<CID2S_Chunk> CWGSSeqIterator::GetChunk(TFlags flags) const
+{
+    x_CheckValid("CWGSSeqIterator::GetChunk");
+    return null;
+}
+
+
+CRef<CAsnBinData> CWGSSeqIterator::GetChunkData(TFlags flags) const
+{
+    x_CheckValid("CWGSSeqIterator::GetChunkData");
+    return null;
 }
 
 
@@ -3285,6 +3986,7 @@ CRef<CSeq_id> CWGSScaffoldIterator::GetGiSeq_id(void) const
 
 void CWGSScaffoldIterator::GetIds(CBioseq::TId& ids, TFlags flags) const
 {
+    PROFILE(sw___GetScaffoldIds);
     if ( flags & fIds_acc ) {
         // acc.ver
         if ( CRef<CSeq_id> id = GetAccSeq_id() ) {
@@ -3367,7 +4069,11 @@ TVDBRowIdRange CWGSScaffoldIterator::GetLocFeatRowIdRange(void) const
     if ( !m_Cur->m_FEAT_ROW_START ) {
         return TVDBRowIdRange(0, 0);
     }
-    TVDBRowId start = *m_Cur->FEAT_ROW_START(m_CurrId);
+    CVDBValueFor<TVDBRowId> start_val = m_Cur->FEAT_ROW_START(m_CurrId);
+    if ( start_val.empty() ) {
+        return TVDBRowIdRange(0, 0);
+    }
+    TVDBRowId start = *start_val;
     TVDBRowId end = *m_Cur->FEAT_ROW_END(m_CurrId);
     if ( end < start ) {
         NCBI_THROW_FMT(CSraException, eDataError,
@@ -3440,39 +4146,77 @@ CRef<CSeq_inst> CWGSScaffoldIterator::GetSeq_inst(TFlags flags) const
 }
 
 
+void CWGSScaffoldIterator::x_CreateBioseq(SWGSCreateInfo& info) const
+{
+    PROFILE(sw__GetScaffoldBioseq);
+    _ASSERT(!info.main_seq);
+    info.main_seq = new CBioseq();
+    if ( info.entry ) {
+        _ASSERT(info.entry->Which() == CSeq_entry::e_not_set);
+        info.entry->SetSeq(*info.main_seq);
+    }
+    GetIds(info.main_seq->SetId(), info.flags);
+    if ( info.flags & fMaskDescr ) {
+        PROFILE(sw___GetContigDescr);
+        if ( info.flags & fMaskDescr ) {
+            if ( CRef<CSeq_descr> descr = GetSeq_descr(info.flags) ) {
+                info.main_seq->SetDescr(*descr);
+            }
+        }
+        /*
+        else if ( m_Cur->m_DESCR ) {
+            // only own descriptors
+            CVDBStringValue descr = m_Cur->DESCR(m_CurrId);
+            if ( !descr.empty() ) {
+                info.x_AddDescr(*descr);
+            }
+        }
+        */
+    }
+    info.main_seq->SetInst(*GetSeq_inst(info.flags));
+}
+
+
+void CWGSScaffoldIterator::x_CreateEntry(SWGSCreateInfo& info) const
+{
+    PROFILE(sw_GetScaffoldEntry);
+    if ( !(info.flags & fSeqAnnot) || !info.db->FeatTable() ) {
+        // plain sequence only without FEATURE table
+        x_CreateBioseq(info);
+    }
+    else {
+        TFlags flags = info.flags;
+        info.flags = flags & ~fSeqAnnot & ~fMasterDescr;
+        x_CreateBioseq(info);
+        info.flags = flags;
+        info.x_CreateProtSet(GetLocFeatRowIdRange());
+        if ( flags & fMasterDescr ) {
+            sx_AddMasterDescr(m_Db, *info.entry);
+        }
+    }
+}
+
+
 CRef<CBioseq> CWGSScaffoldIterator::GetBioseq(TFlags flags) const
 {
     x_CheckValid("CWGSScaffoldIterator::GetBioseq");
-
-    CRef<CBioseq> ret(new CBioseq());
-    GetIds(ret->SetId(), flags);
-    if ( flags & fMaskDescr ) {
-        if ( CRef<CSeq_descr> descr = GetSeq_descr(flags) ) {
-            ret->SetDescr(*descr);
-        }
-    }
-    ret->SetInst(*GetSeq_inst(flags));
-    return ret;
+    SWGSCreateInfo info;
+    info.db = m_Db;
+    info.flags = flags;
+    x_CreateBioseq(info);
+    return info.main_seq;
 }
 
 
 CRef<CSeq_entry> CWGSScaffoldIterator::GetSeq_entry(TFlags flags) const
 {
     x_CheckValid("CWGSScaffoldIterator::GetSeq_entry");
-
-    CRef<CSeq_entry> ret(new CSeq_entry());
-    if ( !(flags & fSeqAnnot) || !GetDb().FeatTable() ) {
-        // plain sequence only without FEATURE table
-        ret->SetSeq(*GetBioseq(flags));
-    }
-    else {
-        CRef<CBioseq> main_seq = GetBioseq(flags & ~fSeqAnnot & ~fMasterDescr);
-        sx_MakeSeqOrSet(m_Db, GetLocFeatRowIdRange(), *ret, *main_seq);
-        if ( flags & fMasterDescr ) {
-            sx_AddMasterDescr(m_Db, *ret);
-        }
-    }
-    return ret;
+    SWGSCreateInfo info;
+    info.db = m_Db;
+    info.flags = flags;
+    info.entry = new CSeq_entry;
+    x_CreateEntry(info);
+    return info.entry;
 }
 
 
@@ -3755,6 +4499,7 @@ CSeq_id::TGi CWGSProteinIterator::GetGi(void) const
 
 CTempString CWGSProteinIterator::GetAccession(void) const
 {
+    PROFILE(sw____GetProtAcc);
     x_CheckValid("CWGSProteinIterator::GetAccession");
     return *CVDBStringValue(m_Cur->GB_ACCESSION(m_CurrId));
 }
@@ -3762,6 +4507,7 @@ CTempString CWGSProteinIterator::GetAccession(void) const
 
 int CWGSProteinIterator::GetAccVersion(void) const
 {
+    PROFILE(sw____GetProtAccVer);
     x_CheckValid("CWGSProteinIterator::GetAccVersion");
     return *m_Cur->ACC_VERSION(m_CurrId);
 }
@@ -3769,6 +4515,7 @@ int CWGSProteinIterator::GetAccVersion(void) const
 
 CRef<CSeq_id> CWGSProteinIterator::GetAccSeq_id(void) const
 {
+    PROFILE(sw____GetProtAccSeq_id);
     CRef<CSeq_id> id;
     CTempString acc = GetAccession();
     if ( !acc.empty() ) {
@@ -3777,9 +4524,12 @@ CRef<CSeq_id> CWGSProteinIterator::GetAccSeq_id(void) const
     else {
         id = GetDb().GetProteinSeq_id(m_CurrId);
     }
-    CTempString name = m_Cur->ACCESSION(m_CurrId);
-    if ( !name.empty() ) {
-        sx_SetName(*id, name);
+    {
+        PROFILE(sw____GetProtWGSAcc);
+        CTempString name = m_Cur->ACCESSION(m_CurrId);
+        if ( !name.empty() ) {
+            sx_SetName(*id, name);
+        }
     }
     return id;
 }
@@ -3787,6 +4537,7 @@ CRef<CSeq_id> CWGSProteinIterator::GetAccSeq_id(void) const
 
 CRef<CSeq_id> CWGSProteinIterator::GetGeneralSeq_id(void) const
 {
+    PROFILE(sw____GetProtGnlSeq_id);
     CRef<CSeq_id> id;
     if ( !id ) {
         id = GetDb().GetGeneralSeq_id(GetProteinName());
@@ -3797,6 +4548,7 @@ CRef<CSeq_id> CWGSProteinIterator::GetGeneralSeq_id(void) const
 
 CRef<CSeq_id> CWGSProteinIterator::GetGiSeq_id(void) const
 {
+    PROFILE(sw____GetProtGISeq_id);
     CRef<CSeq_id> id;
     if ( m_Cur->m_GI ) {
         CSeq_id::TGi gi = GetGi();
@@ -3811,6 +4563,7 @@ CRef<CSeq_id> CWGSProteinIterator::GetGiSeq_id(void) const
 
 void CWGSProteinIterator::GetIds(CBioseq::TId& ids, TFlags flags) const
 {
+    PROFILE(sw___GetProtIds);
     if ( flags & fIds_acc ) {
         // acc.ver
         if ( CRef<CSeq_id> id = GetAccSeq_id() ) {
@@ -3896,7 +4649,11 @@ TVDBRowIdRange CWGSProteinIterator::GetLocFeatRowIdRange(void) const
     if ( !m_Cur->m_FEAT_ROW_START ) {
         return TVDBRowIdRange(0, 0);
     }
-    TVDBRowId start = *m_Cur->FEAT_ROW_START(m_CurrId);
+    CVDBValueFor<TVDBRowId> start_val = m_Cur->FEAT_ROW_START(m_CurrId);
+    if ( start_val.empty() ) {
+        return TVDBRowIdRange(0, 0);
+    }
+    TVDBRowId start = *start_val;
     TVDBRowId end = *m_Cur->FEAT_ROW_END(m_CurrId);
     if ( end < start ) {
         NCBI_THROW_FMT(CSraException, eDataError,
@@ -3986,6 +4743,7 @@ void CWGSProteinIterator::GetAnnotSet(TAnnotSet& annot_set, TFlags flags) const
 
 CRef<CSeq_inst> CWGSProteinIterator::GetSeq_inst(TFlags flags) const
 {
+    PROFILE(sw___GetProtInst);
     x_CheckValid("CWGSProteinIterator::GetSeq_inst");
 
     CRef<CSeq_inst> inst(new CSeq_inst);
@@ -4016,43 +4774,80 @@ CRef<CSeq_inst> CWGSProteinIterator::GetSeq_inst(TFlags flags) const
 }
 
 
+void CWGSProteinIterator::x_CreateBioseq(SWGSCreateInfo& info) const
+{
+    PROFILE(sw__GetProtBioseq);
+    _ASSERT(!info.main_seq);
+    info.main_seq = new CBioseq();
+    if ( info.entry ) {
+        _ASSERT(info.entry->Which() == CSeq_entry::e_not_set);
+        info.entry->SetSeq(*info.main_seq);
+    }
+    GetIds(info.main_seq->SetId(), info.flags);
+    if ( info.flags & fMaskDescr ) {
+        PROFILE(sw___GetProtDescr);
+        if ( info.flags & fMasterDescr ) {
+            if ( CRef<CSeq_descr> descr = GetSeq_descr(info.flags) ) {
+                info.main_seq->SetDescr(*descr);
+            }
+        }
+        else if ( m_Cur->m_DESCR ) {
+            // only own descriptors
+            CVDBStringValue descr = m_Cur->DESCR(m_CurrId);
+            if ( !descr.empty() ) {
+                info.x_AddDescr(*descr);
+            }
+        }
+    }
+    if ( info.flags & fMaskAnnot ) {
+        PROFILE(sw___GetProtAnnot);
+        GetAnnotSet(info.main_seq->SetAnnot());
+        if ( info.main_seq->GetAnnot().empty() ) {
+            info.main_seq->ResetAnnot();
+        }
+    }
+    info.main_seq->SetInst(*GetSeq_inst(info.flags));
+}
+
+
+void CWGSProteinIterator::x_CreateEntry(SWGSCreateInfo& info) const
+{
+    PROFILE(sw_GetProtEntry);
+    if ( !(info.flags & fSeqAnnot) || !info.db->FeatTable() ) {
+        // plain sequence only without FEATURE table
+        x_CreateBioseq(info);
+    }
+    else {
+        TFlags flags = info.flags;
+        info.flags = flags & ~fSeqAnnot;
+        x_CreateBioseq(info);
+        info.flags = flags;
+        PROFILE(sw__GetProtFeat);
+        info.x_AddFeatures(GetLocFeatRowIdRange());
+    }
+}
+
+
 CRef<CBioseq> CWGSProteinIterator::GetBioseq(TFlags flags) const
 {
     x_CheckValid("CWGSProteinIterator::GetBioseq");
-
-    CRef<CBioseq> ret(new CBioseq());
-    GetIds(ret->SetId(), flags);
-    if ( flags & fMaskDescr ) {
-        if ( CRef<CSeq_descr> descr = GetSeq_descr(flags) ) {
-            ret->SetDescr(*descr);
-        }
-    }
-    if ( flags & fMaskAnnot ) {
-        GetAnnotSet(ret->SetAnnot());
-        if ( ret->GetAnnot().empty() ) {
-            ret->ResetAnnot();
-        }
-    }
-    ret->SetInst(*GetSeq_inst(flags));
-    return ret;
+    SWGSCreateInfo info;
+    info.db = m_Db;
+    info.flags = flags;
+    x_CreateBioseq(info);
+    return info.main_seq;
 }
 
 
 CRef<CSeq_entry> CWGSProteinIterator::GetSeq_entry(TFlags flags) const
 {
     x_CheckValid("CWGSProteinIterator::GetSeq_entry");
-
-    CRef<CSeq_entry> ret(new CSeq_entry());
-    if ( !(flags & fSeqAnnot) || !GetDb().FeatTable() ) {
-        // plain sequence only without FEATURE table
-        ret->SetSeq(*GetBioseq(flags));
-    }
-    else {
-        CRef<CBioseq> main_seq = GetBioseq(flags & ~fSeqAnnot);
-        ret->SetSeq(*main_seq);
-        sx_AddFeatures(m_Db, GetLocFeatRowIdRange(), *ret);
-    }
-    return ret;
+    SWGSCreateInfo info;
+    info.db = m_Db;
+    info.flags = flags;
+    info.entry = new CSeq_entry;
+    x_CreateEntry(info);
+    return info.entry;
 }
 
 
@@ -4139,7 +4934,8 @@ CWGSFeatureIterator::~CWGSFeatureIterator(void)
 }
 
 
-CWGSFeatureIterator& CWGSFeatureIterator::SelectRow(TVDBRowId row)
+CWGSFeatureIterator&
+CWGSFeatureIterator::SelectRow(TVDBRowId row)
 {
     if ( row < m_FirstGoodId ) {
         m_CurrId = m_FirstBadId;
@@ -4147,6 +4943,17 @@ CWGSFeatureIterator& CWGSFeatureIterator::SelectRow(TVDBRowId row)
     else {
         m_CurrId = row;
     }
+    return *this;
+}
+
+
+CWGSFeatureIterator&
+CWGSFeatureIterator::SelectRowRange(TVDBRowIdRange row_range)
+{
+    TVDBRowIdRange range = m_Cur->m_Cursor.GetRowIdRange();
+    m_FirstGoodId = m_CurrId = max(range.first, row_range.first);
+    m_FirstBadId = min(range.first+range.second,
+                       row_range.first+row_range.second);
     return *this;
 }
 
@@ -4205,12 +5012,55 @@ TVDBRowId CWGSFeatureIterator::GetProductRowId(void) const
 }
 
 
+CTempString CWGSFeatureIterator::GetSeq_featBytes(void) const
+{
+    return *m_Cur->SEQ_FEAT(m_CurrId);
+}
+
+
 CRef<CSeq_feat> CWGSFeatureIterator::GetSeq_feat(void) const
 {
+    PROFILE(sw_Feat);
     CRef<CSeq_feat> feat(new CSeq_feat);
-    CTempString bytes = *m_Cur->SEQ_FEAT(m_CurrId);
-    CObjectIStreamAsnBinary in(bytes.data(), bytes.size());
-    in >> *feat;
+    CTempString bytes = GetSeq_featBytes();
+    if ( 0 ) {
+        CObjectIStreamAsnBinary in(bytes.data(), bytes.size());
+        in >> *feat;
+    }
+    else {
+        static CObjectIStreamAsnBinary in;
+        static bool init_hooks = 0;
+        if ( init_hooks ) {
+            init_hooks = 0;
+            CObjectTypeInfo type;
+
+            if ( 1 ) {
+                type = CObjectTypeInfo(CType<CObject_id>());
+                type.FindVariant("str")
+                    .SetLocalReadHook(in, new CPackStringChoiceHook);
+            }
+
+            if ( 1 ) {
+                type = CObjectTypeInfo(CType<CImp_feat>());
+                type.FindMember("key")
+                    .SetLocalReadHook(in, new CPackStringClassHook(32, 128));
+            }
+
+            if ( 1 ) {
+                type = CObjectTypeInfo(CType<CDbtag>());
+                type.FindMember("db")
+                    .SetLocalReadHook(in, new CPackStringClassHook);
+            }
+
+            if ( 1 ) {
+                type = CType<CGb_qual>();
+                type.FindMember("qual")
+                    .SetLocalReadHook(in, new CPackStringClassHook);
+            }
+        }
+        in.OpenFromBuffer(bytes.data(), bytes.size());
+        in >> *feat;
+    }
     return feat;
 }
 
