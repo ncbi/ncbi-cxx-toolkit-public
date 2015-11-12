@@ -22,8 +22,8 @@ cgi$
 cgi/impl$
 html$
 connect$
-connect/services$
-connect/services/impl$
+connect/services
+-connect/services/test
 connect/ext$
 util$
 util/creaders$
