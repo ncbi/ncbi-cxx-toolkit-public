@@ -642,7 +642,7 @@ void CValidError_align::x_ValidateDendiag
         size_t dim = dendiag.GetDim();
 
         // assert dim >= 2
-        !x_ValidateDim(dendiag, align, num_dendiag);
+        x_ValidateDim(dendiag, align, num_dendiag);
 
         string label;
         dendiag.GetIds()[0]->GetLabel (&label);
