@@ -3355,6 +3355,29 @@ vector<string>& NStr::Split(const CTempString str, const CTempString delim,
     return s_Split(str, delim, arr, flags, token_pos);
 }
 
+list<CTempString>& NStr::Split(const CTempString str, const CTempString delim,
+                               list<CTempString>& arr, TSplitFlags flags,
+                               vector<SIZE_TYPE>* token_pos)
+{
+    list<CTempStringEx> arr2;
+    s_Split(str, delim, arr2, flags, token_pos);
+    arr.insert(arr.end(), arr2.begin(), arr2.end());
+    return arr;
+}
+
+vector<CTempString>& NStr::Split(const CTempString str, const CTempString delim,
+                                 vector<CTempString>& arr, TSplitFlags flags,
+                                 vector<SIZE_TYPE>* token_pos)
+{
+    vector<CTempStringEx> arr2;
+    s_Split(str, delim, arr2, flags, token_pos);
+    arr.reserve(arr.size() + arr2.size());
+    ITERATE (vector<CTempStringEx>, it, arr2) {
+        arr.push_back(*it);
+    }
+    return arr;
+}
+
 list<CTempStringEx>& NStr::Split(const CTempString str, const CTempString delim,
                                  list<CTempStringEx>& arr, TSplitFlags flags,
                                  vector<SIZE_TYPE>* token_pos, CTempString_Storage* storage)
@@ -3363,8 +3386,8 @@ list<CTempStringEx>& NStr::Split(const CTempString str, const CTempString delim,
 }
 
 vector<CTempStringEx>& NStr::Split(const CTempString str, const CTempString delim,
-                                  vector<CTempStringEx>& arr, TSplitFlags flags,
-                                  vector<SIZE_TYPE>* token_pos, CTempString_Storage* storage)
+                                   vector<CTempStringEx>& arr, TSplitFlags flags,
+                                   vector<SIZE_TYPE>* token_pos, CTempString_Storage* storage)
 {
     return s_Split(str, delim, arr, flags, token_pos, storage);
 }

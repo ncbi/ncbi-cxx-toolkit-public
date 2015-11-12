@@ -2459,6 +2459,20 @@ public:
                                 TSplitFlags          flags = 0,
                                 vector<SIZE_TYPE>*   token_pos = NULL);
 
+    static list<CTempString>& Split(
+                                const CTempString    str,
+                                const CTempString    delim,
+                                list<CTempString>&   arr,
+                                TSplitFlags          flags, // required
+                                vector<SIZE_TYPE>*   token_pos = NULL);
+
+    static vector<CTempString>& Split(
+                                const CTempString    str,
+                                const CTempString    delim,
+                                vector<CTempString>& arr,
+                                TSplitFlags          flags = 0,
+                                vector<SIZE_TYPE>*   token_pos = NULL);
+
     static list<CTempStringEx>& Split(
                                 const CTempString    str,
                                 const CTempString    delim,
