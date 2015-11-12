@@ -11054,6 +11054,16 @@ void CNewCleanup_imp::x_RemoveUnnecessaryGeneXrefs(CSeq_feat& f)
 void CNewCleanup_imp::AddProteinTitles(CBioseq& seq)
 {
     if (!(m_Options & CCleanup::eClean_NoProteinTitles)) {
+        // don't add if there is already a title directly on the sequence
+        if (seq.IsSetDescr()) {
+            ITERATE(CBioseq::TDescr::Tdata, it, seq.GetDescr().Get()){
+                if ((*it)->IsTitle()) {
+                    return;
+                }
+            }
+        }
+
+
         CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
         if (CCleanup::AddProteinTitle(bsh)) {
             ChangeMade(CCleanupChange::eAddDescriptor);
@@ -11231,6 +11241,12 @@ void CNewCleanup_imp::RemoveBadProteinTitle(CBioseq& seq)
     }
 
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+    // only remove if seq is in nuc-prot set
+    CBioseq_set_Handle parent = bsh.GetParentBioseq_set();
+    if (!parent || !parent.IsSetClass() || parent.GetClass() != CBioseq_set::eClass_nuc_prot) {
+        return;
+    }
+
     string new_defline = sequence::CDeflineGenerator().GenerateDefline(bsh, sequence::CDeflineGenerator::fIgnoreExisting);
     CBioseq::TDescr::Tdata::iterator title_it = seq.SetDescr().Set().begin();
     while (title_it != seq.SetDescr().Set().end()) {
