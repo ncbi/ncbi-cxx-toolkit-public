@@ -155,13 +155,6 @@ CCIGAR_Formatter::TNumrow CCIGAR_Formatter::x_GetRowById(const CSeq_id& id)
 }
 
 
-static void s_ForceId(CConstRef<CSeq_id>& id,
-                      CScope& scope,
-                      sequence::EGetIdType force)
-{
-}
-
-
 void CCIGAR_Formatter::x_FormatLine(bool width_inverted)
 {
     if (m_TargetRow == m_RefRow) {
