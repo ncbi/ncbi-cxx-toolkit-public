@@ -46,7 +46,7 @@ struct SNetServerImpl;                      ///< @internal
 struct SNetServerConnectionImpl;            ///< @internal
 struct SNetServerInfoImpl;                  ///< @internal
 struct SNetServerMultilineCmdOutputImpl;    ///< @internal
-struct INetServerConnectionListener;        ///< @internal
+class INetServerConnectionListener;         ///< @internal
 
 ///////////////////////////////////////////////////////////////////////////
 //
