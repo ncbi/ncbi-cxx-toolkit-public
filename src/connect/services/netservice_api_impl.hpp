@@ -322,6 +322,7 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
         INetServerConnectionListener* conn_listener);
 
     SDiscoveredServers* AllocServerGroup(unsigned discovery_iteration);
+    CNetServer GetServer(const SServerAddress& server_address);
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     void AllowXSiteConnections();

@@ -105,7 +105,7 @@ bool SNetScheduleJobReaderImpl::CImpl::CheckEntry(
         CNetScheduleJob& job,
         CNetScheduleAPI::EJobStatus* job_status)
 {
-    CNetServer server(m_API.GetService().GetServer(entry.server_address));
+    CNetServer server(m_API.GetService()->GetServer(entry.server_address));
     bool no_more_jobs = true;
 
     string cmd("READ2 reader_aff=0 ");

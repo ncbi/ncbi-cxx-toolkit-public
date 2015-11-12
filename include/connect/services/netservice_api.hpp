@@ -102,7 +102,6 @@ class NCBI_XCONNECT_EXPORT CNetService
 
     CNetServer GetServer(unsigned host, unsigned short port);
     CNetServer GetServer(const string& host, unsigned short port);
-    CNetServer GetServer(const SServerAddress& server_address);
 
     CNetServiceIterator Iterate(EIterationMode mode = eSortByLoad);
     CNetServiceIterator Iterate(CNetServer::TInstance priority_server);
@@ -143,17 +142,6 @@ class NCBI_XCONNECT_EXPORT CNetService
     bool IsUsingXSiteProxy();
 #endif
 };
-
-inline CNetServer CNetService::GetServer(const string& host,
-        unsigned short port)
-{
-    return GetServer(SServerAddress(host, port));
-}
-
-inline CNetServer CNetService::GetServer(unsigned host, unsigned short port)
-{
-    return GetServer(SServerAddress(host, port));
-}
 
 /// This class is for use by the grid_cli utility only.
 /// @internal

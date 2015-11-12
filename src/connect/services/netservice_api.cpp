@@ -766,19 +766,30 @@ CRef<SNetServerInPool> SNetServerPoolImpl::ReturnServer(
     return CRef<SNetServerInPool>(server_impl);
 }
 
-CNetServer CNetService::GetServer(const SServerAddress& server_address)
+CNetServer SNetServiceImpl::GetServer(const SServerAddress& server_address)
 {
-    m_Impl->m_ServerPool->m_RebalanceStrategy->OnResourceRequested();
+    m_ServerPool->m_RebalanceStrategy->OnResourceRequested();
 
-    CFastMutexGuard server_mutex_lock(m_Impl->m_ServerPool->m_ServerMutex);
+    CFastMutexGuard server_mutex_lock(m_ServerPool->m_ServerMutex);
 
-    SNetServerInPool* server = m_Impl->m_ServerPool->FindOrCreateServerImpl(
-            m_Impl->m_ServerPool->m_EnforcedServer.host == 0 ?
-            server_address : m_Impl->m_ServerPool->m_EnforcedServer);
+    SNetServerInPool* server = m_ServerPool->FindOrCreateServerImpl(
+            m_ServerPool->m_EnforcedServer.host == 0 ?
+            server_address : m_ServerPool->m_EnforcedServer);
 
-    server->m_ServerPool = m_Impl->m_ServerPool;
+    server->m_ServerPool = m_ServerPool;
 
-    return new SNetServerImpl(m_Impl, server);
+    return new SNetServerImpl(this, server);
+}
+
+CNetServer CNetService::GetServer(const string& host,
+        unsigned short port)
+{
+    return m_Impl->GetServer(SServerAddress(host, port));
+}
+
+CNetServer CNetService::GetServer(unsigned host, unsigned short port)
+{
+    return m_Impl->GetServer(SServerAddress(host, port));
 }
 
 class SRandomServiceTraversal : public IServiceTraversal
