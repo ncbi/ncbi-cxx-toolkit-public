@@ -295,59 +295,59 @@ static void s_SimpleTest()
     ". Blob: " << key << ' ' << version << ' ' << subkey
 
         try {
-        // Creating blob
-        RandomFill(src, kSrcSize, false);
-        api.Store(key, version, subkey, src.data(), src.size());
-        BOOST_REQUIRE_MESSAGE(api.HasBlob(key, subkey),
-                "Blob does not exist" SIMPLE_TEST_CTX);
-        BOOST_REQUIRE_MESSAGE(api.GetBlobSize(key, version, subkey) == kSrcSize,
-                "Blob size (GetBlobSize) differs from the source" SIMPLE_TEST_CTX);
+            // Creating blob
+            RandomFill(src, kSrcSize, false);
+            api.Store(key, version, subkey, src.data(), src.size());
+            BOOST_REQUIRE_MESSAGE(api.HasBlob(key, subkey),
+                    "Blob does not exist" SIMPLE_TEST_CTX);
+            BOOST_REQUIRE_MESSAGE(api.GetBlobSize(key, version, subkey) == kSrcSize,
+                    "Blob size (GetBlobSize) differs from the source" SIMPLE_TEST_CTX);
 
-        // Checking blob
-        size_t size = 0;
-        auto_ptr<IReader> reader(api.GetReadStream(key, version, subkey, &size));
+            // Checking blob
+            size_t size = 0;
+            auto_ptr<IReader> reader(api.GetReadStream(key, version, subkey, &size));
 
-        BOOST_REQUIRE_MESSAGE(size == kSrcSize,
-                "Blob size (GetData) differs from the source" SIMPLE_TEST_CTX);
-        BOOST_REQUIRE_MESSAGE(reader.get(),
-                "Failed to get reader" SIMPLE_TEST_CTX);
+            BOOST_REQUIRE_MESSAGE(size == kSrcSize,
+                    "Blob size (GetData) differs from the source" SIMPLE_TEST_CTX);
+            BOOST_REQUIRE_MESSAGE(reader.get(),
+                    "Failed to get reader" SIMPLE_TEST_CTX);
 
-        const char* ptr = src.data();
+            const char* ptr = src.data();
 
-        for (;;) {
-            size_t read = 0;
+            for (;;) {
+                size_t read = 0;
 
-            switch (reader->Read(buf.data(), kBufSize, &read)) {
-            case eRW_Success:
-                BOOST_REQUIRE_MESSAGE(!memcmp(buf.data(), ptr, read),
-                        "Blob content does not match the source" SIMPLE_TEST_CTX);
-                BOOST_REQUIRE_MESSAGE(size >= read,
-                        "Blob size is greater than the source" SIMPLE_TEST_CTX);
-                ptr += read;
-                size -= read;
-                continue;
+                switch (reader->Read(buf.data(), kBufSize, &read)) {
+                case eRW_Success:
+                    BOOST_REQUIRE_MESSAGE(!memcmp(buf.data(), ptr, read),
+                            "Blob content does not match the source" SIMPLE_TEST_CTX);
+                    BOOST_REQUIRE_MESSAGE(size >= read,
+                            "Blob size is greater than the source" SIMPLE_TEST_CTX);
+                    ptr += read;
+                    size -= read;
+                    continue;
 
-            case eRW_Eof:
-                BOOST_REQUIRE_MESSAGE(!size,
-                        "Blob size is less than the source" SIMPLE_TEST_CTX);
+                case eRW_Eof:
+                    BOOST_REQUIRE_MESSAGE(!size,
+                            "Blob size is less than the source" SIMPLE_TEST_CTX);
+                    break;
+
+                default:
+                    BOOST_FAIL("Reading blob failed" SIMPLE_TEST_CTX);
+                }
+
                 break;
-
-            default:
-                BOOST_FAIL("Reading blob failed" SIMPLE_TEST_CTX);
             }
 
-            break;
-        }
+            // Removing blob
+            api.RemoveBlob(key, version, subkey);
 
-        // Removing blob
-        api.RemoveBlob(key, version, subkey);
-
-        // Checking removed blob
-        BOOST_REQUIRE_MESSAGE(!api.HasBlob(key, subkey),
-                "Removed blob still exists" SIMPLE_TEST_CTX);
-        auto_ptr<IReader> fail_reader(api.GetReadStream(key, version, subkey, &size));
-        BOOST_REQUIRE_MESSAGE(!fail_reader.get(),
-                "Got reader for removed blob" SIMPLE_TEST_CTX);
+            // Checking removed blob
+            BOOST_REQUIRE_MESSAGE(!api.HasBlob(key, subkey),
+                    "Removed blob still exists" SIMPLE_TEST_CTX);
+            auto_ptr<IReader> fail_reader(api.GetReadStream(key, version, subkey, &size));
+            BOOST_REQUIRE_MESSAGE(!fail_reader.get(),
+                    "Got reader for removed blob" SIMPLE_TEST_CTX);
         }
         catch (...) {
             BOOST_ERROR("An exception has been caught" SIMPLE_TEST_CTX);
@@ -370,11 +370,17 @@ NCBITEST_AUTO_INIT()
 
 BOOST_AUTO_TEST_CASE(OldTest)
 {
-    EDiagSev prev_level = SetDiagPostLevel(eDiag_Info);
-    SetDiagTrace(eDT_Enable);
-    s_Run();
-    SetDiagTrace(eDT_Disable);
-    SetDiagPostLevel(prev_level);
+    try {
+        EDiagSev prev_level = SetDiagPostLevel(eDiag_Info);
+        SetDiagTrace(eDT_Enable);
+        s_Run();
+        SetDiagTrace(eDT_Disable);
+        SetDiagPostLevel(prev_level);
+    }
+    catch (...) {
+        BOOST_ERROR("An exception has been caught");
+        throw;
+    }
 }
 
 BOOST_AUTO_TEST_CASE(SimpleTest)
