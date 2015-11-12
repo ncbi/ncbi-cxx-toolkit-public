@@ -70,13 +70,16 @@ static
 void s_ApplyMap(SOptions* options)
 {
     char line[1024];
-    FILE* map_file = fopen(options->map, "r");
+    FILE* map_file;
 
     assert(options->map != NULL);
+    map_file = fopen(options->map, "r");
     if (map_file == NULL) {
-        fprintf(stderr,
-                "%s: Unable to open lock map %s: %s; leaving base as %s.\n",
-                s_AppName, options->map, strerror(errno), options->base);
+        if (errno != ENOENT) {
+            fprintf(stderr,
+                    "%s: Unable to open lock map %s: %s; leaving base as %s.\n",
+                    s_AppName, options->map, strerror(errno), options->base);
+        }
         return;
     }
     while (fgets(line, sizeof(line), map_file) != NULL) {
