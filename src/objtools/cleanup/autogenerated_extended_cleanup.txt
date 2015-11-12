@@ -122,7 +122,7 @@ use m_NewCleanup.ResynchProteinPartials { Seq-feat }
 use m_NewCleanup.ResynchPeptidePartials { POST Bioseq }
 use m_NewCleanup.RemoveBadProteinTitle { POST Bioseq }
 
-use m_NewCleanup.AddProteinTitles { Bioseq }
+use m_NewCleanup.AddProteinTitles { POST Bioseq }
 
 use m_NewCleanup.x_MoveSeqdescOrgToSourceOrg { Seqdesc }
 use m_NewCleanup.x_MoveSeqfeatOrgToSourceOrg { Seq-feat }
