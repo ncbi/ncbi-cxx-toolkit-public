@@ -1403,6 +1403,54 @@ void CId2ReaderBase::x_ProcessPacket(CReaderRequestResult& result,
         CID2Processor::TReplies replies = (*it)->ProcessSomeRequests(packet);
         ITERATE ( CID2Processor::TReplies, it, replies ) {
             CRef<CID2_Reply> reply = *it;
+            if ( GetDebugLevel() >= eTraceConn   ) {
+                CDebugPrinter s(0, "CId2Reader");
+                s << "Received from processor";
+                if ( GetDebugLevel() >= eTraceASN ) {
+                    if ( GetDebugLevel() >= eTraceBlobData ) {
+                        s << ": " << MSerial_AsnText << *reply;
+                    }
+                    else {
+                        CTypeIterator<CID2_Reply_Data> iter = Begin(*reply);
+                        if ( iter && iter->IsSetData() ) {
+                            CID2_Reply_Data::TData save;
+                            save.swap(iter->SetData());
+                            size_t size = 0, count = 0, max_chunk = 0;
+                            ITERATE ( CID2_Reply_Data::TData, i, save ) {
+                                ++count;
+                                size_t chunk = (*i)->size();
+                                size += chunk;
+                                max_chunk = max(max_chunk, chunk);
+                            }
+                            s << ": " << MSerial_AsnText << *reply <<
+                                "Data: " << size << " bytes in " <<
+                                count << " chunks with " <<
+                                max_chunk << " bytes in chunk max";
+                            save.swap(iter->SetData());
+                        }
+                        else {
+                            s << ": " << MSerial_AsnText << *reply;
+                        }
+                    }
+                }
+                else {
+                    s << " ID2-Reply.";
+                }
+            }
+            if ( GetDebugLevel() >= eTraceBlob ) {
+                for ( CTypeConstIterator<CID2_Reply_Data> it(Begin(*reply));
+                      it; ++it ) {
+                    if ( it->IsSetData() ) {
+                        try {
+                            CProcessor_ID2::DumpDataAsText(*it, NcbiCout);
+                        }
+                        catch ( CException& exc ) {
+                            ERR_POST_X(1, "Exception while dumping data: "
+                                       <<exc);
+                        }
+                    }
+                }
+            }
             int num = reply->GetSerial_number() - start_serial_num;
             if ( reply->IsSetDiscard() ||
                  num < 0 || num >= request_count || done[num] ) {
