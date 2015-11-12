@@ -139,29 +139,42 @@ public:
     typedef NStr::TSplitFlags TFlags;
 
     CStrTokenizeBase(const CTempString& str, const CTempString& delim,
-                     TFlags flags,
-                     CTempString_Storage* storage);
+                     TFlags flags, CTempString_Storage* storage);
 
     SIZE_TYPE GetPos(void) const { return m_Pos; }
     bool      AtEnd (void) const { return m_Pos == NPOS; }
 
-    bool Advance   (CTempStringList* part_collector);
-    void SkipDelims(void);
+    /// Return TRUE if it found some text and put it into collector.
+    /// The collector can have empty strings, even if function returns FALSE.
+    /// @note
+    ///   This method don't honor NStr::fSplit_Truncate_Begin flag, 
+    ///   due it's stream nature, so you should process it in the calling code.
+    ///   NStr::fSplit_Truncate_Begin is honored.
+    bool Advance(CTempStringList* part_collector, SIZE_TYPE* ptr_delim_pos = 0 /* out */);
 
+    /// Skip all delimiters starting from current position.
+    void SkipDelims(void) { x_SkipDelims(true); }
+
+    /// Assumes that we already have a delimiter on the previous
+    /// position, so just skip all subsequent, depending on flags.
+    void MergeDelims(void) { x_SkipDelims(false); }
+
+    // Set new delimiters.
     void SetDelim(const CTempString& delim);
 
 protected:
-    const CTempString& m_Str;
-    CTempString        m_Delim;
-    SIZE_TYPE          m_Pos;
-    TFlags             m_Flags;
+    const CTempString&   m_Str;
+    CTempString          m_Delim;
+    SIZE_TYPE            m_Pos;
+    TFlags               m_Flags;
     CTempString_Storage* m_Storage;
 
 private:
     void x_ExtendInternalDelim();
+    void x_SkipDelims(bool force_skip);
 
-    CTempStringEx m_InternalDelim;
-    CTempString_Storage m_DelimStorage;
+    CTempStringEx        m_InternalDelim;
+    CTempString_Storage  m_DelimStorage;
 };
 
 inline
@@ -178,12 +191,12 @@ inline
 void CStrTokenizeBase::SetDelim(const CTempString& delim)
 {
     m_Delim = delim;
+
     if ((m_Flags & NStr::fSplit_ByPattern) == 0) {
         m_InternalDelim = m_Delim;
     } else {
         m_InternalDelim.assign(m_Delim, 0, 1);
     }
-
     if ((m_Flags & (NStr::fSplit_CanEscape | NStr::fSplit_CanQuote)) != 0) {
         x_ExtendInternalDelim();
     }
@@ -220,7 +233,7 @@ public:
     ///   If delimiter is empty, then input string is appended to "arr" as is.
     /// @param flags
     ///   Flags governing splitting.
-    ///   Without NStr::fSplit_MergeDelims, delimiters that immediately follow
+    ///   Without NStr::fSplit_MergeDelimiters, delimiters that immediately follow
     ///   each other are treated as separate delimiters - empty string(s) 
     ///   appear in the target output.
     ///
@@ -241,10 +254,12 @@ public:
     ///   String added to target when there are no other characters between
     ///   delimiters
     ///
-    void Do(TContainer&        target,
-            TPosContainer&     token_pos,
-            const TString&     empty_str = TString())
+    void Do(TContainer&     target,
+            TPosContainer&  token_pos,
+            const TString&  empty_str = TString())
     {
+        const bool no_truncate_end = ((m_Flags & NStr::fSplit_Truncate_End) == 0);
+
         // Special cases
         if (m_Str.empty()) {
             return;
@@ -253,27 +268,32 @@ public:
             token_pos.push_back(0);
             return;
         }
-
         // Do target space reservation (if applicable)
         TReserveTrait::Reserve(*this, target, token_pos);
 
-        // Reposition to just after any initial delimiters
-        m_Pos = 0;
-        SkipDelims();
-
         // Tokenization
-        //
+        
         CTempStringList part_collector(m_Storage);
-        SIZE_TYPE       prev_pos;
+        SIZE_TYPE prev_pos;
+        SIZE_TYPE delim_pos = NPOS;
+        m_Pos = 0;
         do {
             prev_pos = m_Pos;
-            if (Advance(&part_collector)) {
+            bool have_text = Advance(&part_collector, &delim_pos);
+            if ( have_text || no_truncate_end ) {
                 target.push_back(empty_str);
                 part_collector.Join(&target.back());
                 part_collector.Clear();
                 token_pos.push_back(prev_pos);
             }
         } while ( !AtEnd() );
+
+        // account training delimiter
+        if ( delim_pos != NPOS  &&  no_truncate_end ) {
+            // add empty token after last delimiter
+            target.push_back(empty_str);
+            token_pos.push_back(delim_pos + 1);
+        }
     }
 };
 

@@ -3323,28 +3323,6 @@ string& NStr::ReplaceInPlace(string& src,
     return src;
 }
 
-#if 0
-struct unit_test
-{
-    string test(const string& str, const string& search, const string& replace)
-    {
-        string s = str;
-        NStr::ReplaceInPlace(s, search, replace);
-        return s;
-    };
-    unit_test()
-    {
-        test("11 222 3333 4444", " ", "");
-        test("11 222 3333 4444", " ", ".");
-        test("11 222 3333 4444", "222", "x");
-        test("11 222 3333 4444", "222", "xxx");
-        test("11 222 3333 4444", "222", "xxxx");
-    }
-};
-
-unit_test t;
-#endif
-
 
 template<typename TString, typename TContainer>
 TContainer& s_Split(const TString& str, const TString& delim,
@@ -3363,7 +3341,6 @@ TContainer& s_Split(const TString& str, const TString& delim,
     return arr;
 }
 
-
 list<string>& NStr::Split(const CTempString str, const CTempString delim,
                           list<string>& arr, TSplitFlags flags,
                           vector<SIZE_TYPE>* token_pos)
@@ -3371,30 +3348,78 @@ list<string>& NStr::Split(const CTempString str, const CTempString delim,
     return s_Split(str, delim, arr, flags, token_pos);
 }
 
-list<CTempStringEx>& NStr::Split(const CTempString str,
-                                 const CTempString delim,
+vector<string>& NStr::Split(const CTempString str, const CTempString delim,
+                            vector<string>& arr, TSplitFlags flags,
+                            vector<SIZE_TYPE>* token_pos)
+{
+    return s_Split(str, delim, arr, flags, token_pos);
+}
+
+list<CTempStringEx>& NStr::Split(const CTempString str, const CTempString delim,
                                  list<CTempStringEx>& arr, TSplitFlags flags,
-                                 vector<SIZE_TYPE>* token_pos,
-                                 CTempString_Storage* storage)
+                                 vector<SIZE_TYPE>* token_pos, CTempString_Storage* storage)
 {
     return s_Split(str, delim, arr, flags, token_pos, storage);
 }
 
-list<CTempString>& NStr::Split(const CTempString  str,
-                               const CTempString  delim,
-                               list<CTempString>& arr, EMergeDelims merge,
-                               vector<SIZE_TYPE>* token_pos)
+vector<CTempStringEx>& NStr::Split(const CTempString str, const CTempString delim,
+                                  vector<CTempStringEx>& arr, TSplitFlags flags,
+                                  vector<SIZE_TYPE>* token_pos, CTempString_Storage* storage)
+{
+    return s_Split(str, delim, arr, flags, token_pos, storage);
+}
+
+list<string>& NStr::SplitByPattern(const CTempString str, const CTempString delim,
+                                 list<string>& arr, TSplitFlags flags,
+                                 vector<SIZE_TYPE>* token_pos)
+{
+    return s_Split(str, delim, arr, fSplit_ByPattern | flags, token_pos);
+}
+
+vector<string>& NStr::SplitByPattern(const CTempString str, const CTempString delim,
+                                   vector<string>& arr, TSplitFlags flags,
+                                   vector<SIZE_TYPE>* token_pos)
+{
+    return s_Split(str, delim, arr, fSplit_ByPattern | flags, token_pos);
+}
+
+vector<CTempStringEx>& NStr::SplitByPattern(const CTempString str, const CTempString delim,
+                                          vector<CTempStringEx>& arr, TSplitFlags flags,
+                                          vector<SIZE_TYPE>* token_pos)
 {
     vector<CTempStringEx> arr2;
-    Tokenize(str, delim, arr2,
-             (merge == eMergeDelims) ? fSplit_MergeDelims : 0, token_pos);
+    s_Split(str, delim, arr2, fSplit_ByPattern | flags, token_pos);
+    arr.reserve(arr.size() + arr2.size());
     ITERATE (vector<CTempStringEx>, it, arr2) {
         arr.push_back(*it);
     }
     return arr;
 }
 
+list<CTempStringEx>& NStr::SplitByPattern(const CTempString str, const CTempString delim,
+                                        list<CTempStringEx>& arr, TSplitFlags flags,
+                                        vector<SIZE_TYPE>* token_pos)
+{
+    s_Split(str, delim, arr, fSplit_ByPattern | flags, token_pos);
+    return arr;
+}
 
+
+/// @deprecated
+list<CTempString>& NStr::Split(const CTempString  str,
+                               const CTempString  delim,
+                               list<CTempString>& arr, EMergeDelims merge,
+                               vector<SIZE_TYPE>* token_pos)
+{
+    vector<CTempStringEx> arr2;
+    Split(str, delim, arr2, (TSplitFlags)merge, token_pos);
+    ITERATE (vector<CTempStringEx>, it, arr2) {
+        arr.push_back(*it);
+    }
+    return arr;
+}
+
+/// @deprecated
 vector<string>& NStr::Tokenize(const CTempString str, const CTempString delim,
                                vector<string>& arr, TSplitFlags flags,
                                vector<SIZE_TYPE>* token_pos)
@@ -3402,6 +3427,15 @@ vector<string>& NStr::Tokenize(const CTempString str, const CTempString delim,
     return s_Split(str, delim, arr, flags, token_pos);
 }
 
+/// @deprecated
+vector<string>& NStr::Tokenize(const CTempString str, const CTempString delim,
+                               vector<string>& arr, EMergeDelims merge,
+                               vector<SIZE_TYPE>* token_pos)
+{
+    return s_Split(str, delim, arr, (TSplitFlags)merge, token_pos);
+}
+
+/// @deprecated
 vector<CTempStringEx>& NStr::Tokenize(const CTempString  str,
                                       const CTempString  delim,
                                       vector<CTempStringEx>& arr,
@@ -3412,6 +3446,7 @@ vector<CTempStringEx>& NStr::Tokenize(const CTempString  str,
     return s_Split(str, delim, arr, flags, token_pos, storage);
 }
 
+/// @deprecated
 vector<CTempString>& NStr::Tokenize(const CTempString  str,
                                     const CTempString  delim,
                                     vector<CTempString>& arr,
@@ -3419,8 +3454,7 @@ vector<CTempString>& NStr::Tokenize(const CTempString  str,
                                     vector<SIZE_TYPE>* token_pos)
 {
     vector<CTempStringEx> arr2;
-    Tokenize(str, delim, arr2,
-             (merge == eMergeDelims) ? fSplit_MergeDelims : 0, token_pos);
+    Split(str, delim, arr2, (TSplitFlags)merge, token_pos);
     arr.reserve(arr.size() + arr2.size());
     ITERATE (vector<CTempStringEx>, it, arr2) {
         arr.push_back(*it);
@@ -3429,17 +3463,25 @@ vector<CTempString>& NStr::Tokenize(const CTempString  str,
 }
 
 
+/// @deprecated
+vector<string>& NStr::TokenizePattern(const CTempString  str,
+                                      const CTempString  delim,
+                                      vector<string>&    arr,
+                                      EMergeDelims       merge,
+                                      vector<SIZE_TYPE>* token_pos)
+{
+    return SplitByPattern(str, delim, arr, (TSplitFlags)merge, token_pos);
+}
+
+/// @deprecated
 vector<CTempString>& NStr::TokenizePattern(const CTempString  str,
                                            const CTempString  delim,
                                            vector<CTempString>& arr,
-                                           EMergeDelims merge,
+                                           EMergeDelims       merge,
                                            vector<SIZE_TYPE>* token_pos)
 {
     vector<CTempStringEx> arr2;
-    Tokenize(str, delim, arr2,
-             fSplit_ByPattern 
-             | ((merge == eMergeDelims) ? fSplit_MergeDelims : 0),
-             token_pos);
+    Split(str, delim, arr2, fSplit_ByPattern | (TSplitFlags)merge, token_pos);
     arr.reserve(arr.size() + arr2.size());
     ITERATE (vector<CTempStringEx>, it, arr2) {
         arr.push_back(*it);
@@ -3448,8 +3490,7 @@ vector<CTempString>& NStr::TokenizePattern(const CTempString  str,
 }
 
 
-bool NStr::SplitInTwo(const CTempString str, 
-                      const CTempString delim,
+bool NStr::SplitInTwo(const CTempString str, const CTempString delim,
                       string& str1, string& str2, TSplitFlags flags)
 {
     CTempStringEx ts1, ts2;
@@ -3459,16 +3500,17 @@ bool NStr::SplitInTwo(const CTempString str,
     return result;
 }
 
+
 bool NStr::SplitInTwo(const CTempString str, const CTempString delim,
-                      CTempString& str1, CTempString& str2, EMergeDelims merge)
+                      CTempString& str1, CTempString& str2, TSplitFlags flags)
 {
-    CTempStringEx tsx1, tsx2;
-    bool result = SplitInTwo(str, delim, tsx1, tsx2,
-                             (merge == eMergeDelims) ? fSplit_MergeDelims : 0);
-    str1 = tsx1;
-    str2 = tsx2;
+    CTempStringEx ts1, ts2;
+    bool result = SplitInTwo(str, delim, ts1, ts2, flags);
+    str1 = ts1;
+    str2 = ts2;
     return result;
 }
+
 
 bool NStr::SplitInTwo(const CTempString str, const CTempString delim,
                       CTempStringEx& str1, CTempStringEx& str2,
@@ -3480,49 +3522,43 @@ bool NStr::SplitInTwo(const CTempString str, const CTempString delim,
             "NStr::SplitInTwo(): the selected flags require non-NULL storage",
             0);
     }
-
     typedef CStrTokenize<CTempString, int, CStrDummyTokenPos,
                          CStrDummyTokenCount,
                          CStrDummyTargetReserve<int, int> > TSplitter;
 
     CTempStringList part_collector(storage);
     TSplitter       splitter(str, delim, flags, storage);
-    bool            found_delim;
+    SIZE_TYPE       delim_pos = NPOS;
 
-    splitter.SkipDelims();
-    if (splitter.GetPos() == 0) {
-        splitter.Advance(&part_collector);
-        part_collector.Join(&str1);
-        part_collector.Clear();
-        if (splitter.AtEnd()) {
-            // check for trailing delimiter
-            if ((flags & fSplit_ByPattern) != 0) {
-                found_delim = NStr::EndsWith(str, delim);
-            } else {
-                found_delim = ( !str.empty()
-                               &&  delim.find(str[str.size()-1]) != NPOS);
-            }
-            if (found_delim  &&  (flags & fSplit_CanEscape) != 0) {
-                SIZE_TYPE dsz = ((flags & fSplit_ByPattern) == 0 ? 1
-                                   : delim.size());
-                if (str.size() > dsz  &&  str[str.size() - dsz - 1] == '\\') {
-                    found_delim = false; // actually escaped
-                }
-            }
-        } else {
-            found_delim = true;
-        }
-    } else {
-        found_delim = true;
-        str1.clear();
-    }
+    // get first part
+    splitter.Advance(&part_collector, &delim_pos);
+    part_collector.Join(&str1);
+    part_collector.Clear();
 
     // don't need further splitting, just quote and escape parsing
     splitter.SetDelim(kEmptyStr);
     splitter.Advance(&part_collector);
     part_collector.Join(&str2);
 
-    return found_delim;
+    return delim_pos != NPOS;
+}
+
+/// @deprecated
+bool NStr::SplitInTwo(const CTempString  str, 
+                      const CTempString  delim,
+                      string& str1, string& str2, EMergeDelims merge) {
+    return SplitInTwo(str, delim, str1, str2, (TSplitFlags)merge);
+}
+
+// @deprecated
+bool NStr::SplitInTwo(const CTempString str, const CTempString delim,
+                      CTempString& str1, CTempString& str2, EMergeDelims merge)
+{
+    CTempStringEx tsx1, tsx2;
+    bool result = SplitInTwo(str, delim, tsx1, tsx2, (TSplitFlags)merge);
+    str1 = tsx1;
+    str2 = tsx2;
+    return result;
 }
 
 
@@ -3532,7 +3568,6 @@ string s_NStr_Join(const T& arr, const CTempString delim)
     if (arr.empty()) {
         return kEmptyStr;
     }
-
     typename T::const_iterator it = arr.begin();
     string result = *it;
     SIZE_TYPE needed = result.size();
@@ -7361,15 +7396,27 @@ char* CTempString_Storage::Allocate(CTempString::size_type len)
 }
 
 
-bool CStrTokenizeBase::Advance(CTempStringList* part_collector)
+bool CStrTokenizeBase::Advance(CTempStringList* part_collector, SIZE_TYPE* ptr_delim_pos)
 {
-    SIZE_TYPE pos = m_Pos, part_start = m_Pos, delim_pos = 0, quote_pos = 0;
-    bool      found_text = false, done = (pos == NPOS);
+    SIZE_TYPE pos, part_start, delim_pos = 0, quote_pos = 0;
+    bool      found_text = false, done;
     char      active_quote = '\0';
 
+    // Skip leading delimiters.
+    // NOTE: We cannot process 
+    if (!m_Pos  &&  (m_Flags & NStr::fSplit_Truncate_Begin) != 0) {
+        SkipDelims();
+    }
+    pos = part_start = m_Pos;
+    done = (pos == NPOS);
+
+    // Checks
     if (pos >= m_Str.size()) {
         pos = NPOS;
         done = true;
+    }
+    if (ptr_delim_pos) {
+        *ptr_delim_pos = NPOS;
     }
 
     // Each chunk covers the half-open interval [part_start, delim_pos).
@@ -7401,10 +7448,8 @@ bool CStrTokenizeBase::Advance(CTempStringList* part_collector)
                     continue; // not actually a boundary
                 }
                 handled = true;
-            } else if (((m_Flags & NStr::fSplit_CanSingleQuote) != 0
-                        && c == '\'')
-                       ||  ((m_Flags & NStr::fSplit_CanDoubleQuote) != 0
-                            && c == '"')) {
+            } else if (((m_Flags & NStr::fSplit_CanSingleQuote) != 0  &&  c == '\'') || 
+                       ((m_Flags & NStr::fSplit_CanDoubleQuote) != 0  &&  c == '"')) {
                 active_quote = c;
                 quote_pos    = delim_pos;
                 handled = true;
@@ -7424,13 +7469,16 @@ bool CStrTokenizeBase::Advance(CTempStringList* part_collector)
             } else {
                 done = true;
             }
+            // save delimiter position
+            if (ptr_delim_pos) {
+                *ptr_delim_pos = delim_pos;
+            }
         }
 
         if (delim_pos > part_start) {
             found_text = true;
             if (part_collector != NULL) {
-                part_collector->Add
-                    (m_Str.substr(part_start, delim_pos - part_start));
+                part_collector->Add(m_Str.substr(part_start, delim_pos - part_start));
             }
         }
         part_start = next_start;
@@ -7450,33 +7498,38 @@ bool CStrTokenizeBase::Advance(CTempStringList* part_collector)
         m_Pos = NPOS;
     } else {
         m_Pos = pos;
-        SkipDelims();
+        MergeDelims();
     }
-
-    return found_text  ||  (m_Flags & NStr::fSplit_MergeDelims) == 0;
+    return found_text;
 }
 
-void CStrTokenizeBase::SkipDelims(void)
+
+void CStrTokenizeBase::x_SkipDelims(bool force_skip)
 {
-    if ((m_Flags & NStr::fSplit_MergeDelims) != 0) {
-        if ((m_Flags & NStr::fSplit_ByPattern) == 0) {
-            m_Pos = m_Str.find_first_not_of(m_Delim, m_Pos);
-        } else {
-            while (m_Pos + m_Delim.size() <= m_Str.size()  &&  m_Pos != NPOS
-                   &&  (memcmp(m_Delim.data(), m_Str.data() + m_Pos,
-                               m_Delim.size()) == 0)) {
-                m_Pos += m_Delim.size();
-            }
+    _ASSERT(NStr::fSplit_MergeDelimiters);
+
+    if ( !force_skip  &&  (m_Flags & NStr::fSplit_MergeDelimiters) == 0 ) {
+        return;
+    }
+    // skip all delimiters, starting from the current position
+    if ((m_Flags & NStr::fSplit_ByPattern) == 0) {
+        m_Pos = m_Str.find_first_not_of(m_Delim, m_Pos);
+    } else {
+        while (m_Pos != NPOS 
+                &&  m_Pos + m_Delim.size() <= m_Str.size()
+                && (memcmp(m_Delim.data(), m_Str.data() + m_Pos,
+                            m_Delim.size()) == 0)) {
+            m_Pos += m_Delim.size();
         }
     }
 }
+
 
 void CStrTokenizeBase::x_ExtendInternalDelim()
 {
     if ( !(m_Flags & (NStr::fSplit_CanEscape | NStr::fSplit_CanQuote)) ) {
         return; // Nothing to do
     }
-
     SIZE_TYPE n = m_InternalDelim.size();
     char* buf = m_DelimStorage.Allocate(n + 3);
     char *s = buf;

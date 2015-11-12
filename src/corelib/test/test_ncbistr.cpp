@@ -1054,7 +1054,7 @@ static const SRadixTest s_RadixTests[] = {
     { "012",        2, kBad }
 };
 
-BOOST_AUTO_TEST_CASE(s_StringToNumRadix)
+BOOST_AUTO_TEST_CASE(s_StringToNum_Radix)
 {
     const size_t count = sizeof(s_RadixTests)/sizeof(s_RadixTests[0]);
 
@@ -1430,7 +1430,7 @@ static const SStringDataSizeValues s_Str2DataSizeTests[] = {
     { "10", NStr::fDS_PutBSuffixToo + NStr::fConvErr_NoThrow, kBad }
 };
 
-BOOST_AUTO_TEST_CASE(s_StringToNumDataSize)
+BOOST_AUTO_TEST_CASE(s_StringToNum_DataSize)
 {
     const size_t count = sizeof(s_Str2DataSizeTests) /
                          sizeof(s_Str2DataSizeTests[0]);
@@ -1716,7 +1716,7 @@ static const SUint8DataSizeValues s_Num2StrDataSizeTests[] = {
     { 10, NStr::fDS_ProhibitSpaceBeforeSuffix, 3, NULL }
 };
 
-BOOST_AUTO_TEST_CASE(s_NumToStringDataSize)
+BOOST_AUTO_TEST_CASE(s_NumToString_DataSize)
 {
     const size_t count = sizeof(s_Num2StrDataSizeTests) /
                          sizeof(s_Num2StrDataSizeTests[0]);
@@ -2736,189 +2736,85 @@ BOOST_AUTO_TEST_CASE(s_XCompare)
 
 
 //----------------------------------------------------------------------------
-// NStr::Split()
+// NStr::Split() -- delimiters test
 //----------------------------------------------------------------------------
 
-static const string s_SplitStr[] = {
+static const char* s_SplitStr[] = {
+    "abc",
+    "---",
     "ab+cd+ef",
     "aaAAabBbbb",
     "-abc-def--ghijk---",
     "a12c3ba45acb678bc",
     "nodelim",
+    "",
     "emptydelim",
-    ";",
-    ""
+    ";"
 };
 
-static const string s_SplitDelim[] = {
-    "+", "AB", "-", "abc", "*", "", ";", "*"
+static const char* s_SplitDelim[] = {
+    "def", "-", "+", "AB", "-", "abc", "*", "*", "", ";"
 };
 
-static const string split_result[] = {
+static const char* s_SplitRes[] =
+{
+    // merge delimiters (legacy) -- NStr::eMergeDelims (+ truncate)
+    "abc",
     "ab", "cd", "ef",
     "aa", "ab", "bbb",
     "abc", "def", "ghijk",
     "12", "3", "45", "678",
     "nodelim",
-    "emptydelim"
+    "emptydelim",
+
+    // merge delimiters -- NStr::fSplit_MergeDelimiters
+    "abc",
+    "", "",
+    "ab", "cd", "ef",
+    "aa", "ab", "bbb",
+    "", "abc", "def", "ghijk", "",
+    "", "12", "3", "45", "678", "", 
+    "nodelim",
+    "emptydelim",
+    "", "",
+
+    // no merge delimiters -- default
+    "abc",
+    "", "", "", "",
+    "ab", "cd", "ef",
+    "aa", "", "ab", "bbb",
+    "", "abc", "def", "", "ghijk", "", "", "",
+    "", "12", "3", "", "45", "", "", "678", "", "",
+    "nodelim",
+    "emptydelim", 
+    "", ""
 };
 
 BOOST_AUTO_TEST_CASE(s_Split)
 {
     list<string> split;
-    for (size_t i = 0; i < sizeof(s_SplitStr) / sizeof(s_SplitStr[0]); i++) {
-        NStr::Split(s_SplitStr[i], s_SplitDelim[i], split);
+    size_t count = sizeof(s_SplitStr) / sizeof(s_SplitStr[0]);
+
+    for (size_t i = 0; i < count; i++) {
+        NStr::Split(s_SplitStr[i], s_SplitDelim[i], split, NStr::eMergeDelims);
+    }
+    for (size_t i = 0; i < count; i++) {
+        NStr::Split(s_SplitStr[i], s_SplitDelim[i], split, NStr::fSplit_MergeDelimiters);
+    }
+    for (size_t i = 0; i < count; i++) {
+        NStr::Split(s_SplitStr[i], s_SplitDelim[i], split, 0);
     }
     size_t j = 0;
     ITERATE(list<string>, it, split) {
-        BOOST_REQUIRE(j < sizeof(split_result) / sizeof(split_result[0]));
-        BOOST_CHECK(NStr::Compare(*it, split_result[j++]) == 0);
+        BOOST_REQUIRE(j < sizeof(s_SplitRes) / sizeof(s_SplitRes[0]));
+        BOOST_CHECK(NStr::Compare(*it, s_SplitRes[j++]) == 0);
     }
 }
 
 
 //----------------------------------------------------------------------------
-// NStr::Tokenize()
+// NStr::Split() -- with flags
 //----------------------------------------------------------------------------
-
-BOOST_AUTO_TEST_CASE(s_Tokenize)
-{
-    static const string s_TokStr[] = {
-        "ab+cd+ef",
-        "123;45,78",
-        "1;",
-        ";1",
-        "emptydelim"
-    };
-    static const string s_TokDelim[] = {
-        "+", ";,", ";", ";", ""
-    };
-    static const string tok_result[] = {
-        "ab", "cd", "ef",
-        "123", "45", "78",
-        "1", "", 
-        "", "1",
-        "emptydelim"
-    };
-
-    vector<string> tok;
-
-    for (size_t i = 0; i < sizeof(s_TokStr) / sizeof(s_TokStr[0]); ++i) {
-        NStr::Tokenize(s_TokStr[i], s_TokDelim[i], tok);               
-    }
-    {{
-        size_t i = 0;
-        ITERATE(vector<string>, it, tok) {
-            BOOST_REQUIRE(i < sizeof(tok_result) / sizeof(tok_result[0]));
-            BOOST_CHECK_EQUAL(NStr::Compare(*it, tok_result[i++]), 0);
-        }
-    }}
-    
-    tok.clear();
-
-    for (size_t i = 0; i < sizeof(s_SplitStr) / sizeof(s_SplitStr[0]); i++) {
-        NStr::Tokenize(s_SplitStr[i], s_SplitDelim[i], tok,
-                       NStr::eMergeDelims);
-    }
-    {{
-        size_t i = 0;
-        ITERATE(vector<string>, it, tok) {
-            BOOST_REQUIRE(i < sizeof(split_result) / sizeof(split_result[0]));
-            BOOST_CHECK_EQUAL(NStr::Compare(*it, split_result[i++]), 0);
-        }
-    }}
-}
-
-
-//----------------------------------------------------------------------------
-// NStr::SplitInTo()
-//----------------------------------------------------------------------------
-
-template<typename TMode>
-struct SSplitInTwo {
-    const char*  str;
-    const char*  delim;
-    TMode        mode;
-    const char*  expected_str1;
-    const char*  expected_str2;
-    bool         expected_ret;
-};
-    
-static const SSplitInTwo<NStr::EMergeDelims> s_SplitInTwoTest[] = {
-    { "ab+cd+ef",    "+",      NStr::eNoMergeDelims, "ab", "cd+ef",     true },
-    { "ab+cd+ef",    "+",      NStr::eMergeDelims,   "ab", "cd+ef",     true },
-    { "ab+++cd+ef",  "+",      NStr::eMergeDelims,   "ab", "cd+ef",     true },
-    { "ab+++",       "+",      NStr::eMergeDelims,   "ab", "",          true },
-    { "aaAAabBbbb",  "AB",     NStr::eNoMergeDelims, "aa", "AabBbbb",   true },
-    { "aaABAabBbbb", "AB",     NStr::eMergeDelims,   "aa", "abBbbb",    true },
-    { "aaCAabBCbbb", "ABC",    NStr::eNoMergeDelims, "aa", "AabBCbbb",  true },
-    { "-beg-delim-", "-",      NStr::eNoMergeDelims, "",   "beg-delim-",true },
-    { "end-delim:",  ":",      NStr::eNoMergeDelims, "end-delim",  "",  true },
-    { "nodelim",     ".,:;-+", NStr::eNoMergeDelims, "nodelim",    "",  false },
-    { "emptydelim",  "",       NStr::eNoMergeDelims, "emptydelim", "",  false },
-    { "", "emtpystring", NStr::eNoMergeDelims, "", "", false },
-    { "", "", NStr::eNoMergeDelims, "", "", false }
-};
-
-BOOST_AUTO_TEST_CASE(s_SplitInTwo)
-{
-    string string1, string2;
-    bool   result;
-    const size_t count = sizeof(s_SplitInTwoTest) /
-                         sizeof(s_SplitInTwoTest[0]);
-    for (size_t i = 0; i < count; i++) {
-        result = NStr::SplitInTwo(s_SplitInTwoTest[i].str,
-                                  s_SplitInTwoTest[i].delim,
-                                  string1, string2, s_SplitInTwoTest[i].mode);
-        BOOST_CHECK_EQUAL(s_SplitInTwoTest[i].expected_ret, result);
-        BOOST_CHECK_EQUAL(s_SplitInTwoTest[i].expected_str1, string1);
-        BOOST_CHECK_EQUAL(s_SplitInTwoTest[i].expected_str2, string2);
-    }
-}
-
-
-//----------------------------------------------------------------------------
-// NStr::TokenizePattern()
-//----------------------------------------------------------------------------
-
-BOOST_AUTO_TEST_CASE(s_TokenizePattern)
-{
-    static const string tok_pattern_str =
-        "<tag>begin<tag>text<tag><tag><tag>end<tag>";
-    static const string tok_pattern_delim = "<tag>";
-    static const string tok_pattern_result_m[] = {
-        "begin", "text", "end"
-    };
-    static const string tok_pattern_result_nm[] = {
-        "", "begin", "text",  "", "", "end", ""
-    };
-
-    vector<string> tok;
-
-    NStr::TokenizePattern(tok_pattern_str, tok_pattern_delim,
-                          tok, NStr::eMergeDelims);
-    {{
-        BOOST_REQUIRE_EQUAL(sizeof(tok_pattern_result_m)/sizeof(tok_pattern_result_m[0]),
-               tok.size());
-        size_t i = 0;
-        ITERATE(vector<string>, it, tok) {
-            BOOST_CHECK_EQUAL(NStr::Compare(*it, tok_pattern_result_m[i++]), 0);
-        }
-    }}
-    tok.clear();
-
-    NStr::TokenizePattern(tok_pattern_str, tok_pattern_delim,
-                          tok, NStr::eNoMergeDelims);
-    {{
-        BOOST_REQUIRE_EQUAL(sizeof(tok_pattern_result_nm)/sizeof(tok_pattern_result_nm[0]),
-               tok.size());
-        size_t i = 0;
-        ITERATE(vector<string>, it, tok) {
-            BOOST_CHECK_EQUAL(NStr::Compare(*it, tok_pattern_result_nm[i++]), 0);
-        }
-    }}
-}
-
 
 struct SSplitWithFlags
 {
@@ -2928,62 +2824,71 @@ struct SSplitWithFlags
     const char*       expected;
 };
 
-static const SSplitWithFlags s_SplitWithFlagsTest[] = {
-    { NStr::fSplit_CanEscape, "asdf jkl\\", " ", "" }, // throws
+static const SSplitWithFlags s_SplitWithFlagsTest[] = 
+{
+    { 0,
+            "one, two ", ", ",
+            "0: one, 4: , 5: two, 9: " },
+    { NStr::fSplit_MergeDelimiters,
+            "one, two ", ", ",
+            "0: one, 5: two, 9: " },
+    { NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate,
+            "one, two ", ", ",
+            "0: one, 5: two" },
+    { NStr::fSplit_MergeDelims /* legacy deprecated flag */,
+            "one, two ", ", ",
+            "0: one, 5: two" },
+    { NStr::fSplit_CanEscape,       
+            "asdf jkl\\", " ", "" }, // throws
     { NStr::fSplit_CanEscape | NStr::fSplit_ByPattern,
-      "\\x;y z\\; a'bc\\\\; de\"f;\\ ghi;", "; ",
-      "0: x;y z; a'bc\\, 17: de\"f; ghi;" },
-    { NStr::fSplit_CanSingleQuote | NStr::fSplit_MergeDelims,
-      "'abc'' def' g\\hi, jk\"l", ", ",
-      "0: abc' def, 12: g\\hi, 18: jk\"l" },
+            "\\x;y z\\; a'bc\\\\; de\"f;\\ ghi;", 
+            "; ",
+            "0: x;y z; a'bc\\, 17: de\"f; ghi;" },
+    { NStr::fSplit_CanSingleQuote | NStr::fSplit_MergeDelimiters,
+            "'abc'' def' g\\hi, jk\"l",
+            ", ",
+            "0: abc' def, 12: g\\hi, 18: jk\"l" },
     { NStr::fSplit_CanSingleQuote | NStr::fSplit_ByPattern,
-      "It's a trap!", ", ", "" }, // throws
+            "It's a trap!", ", ", "" }, // throws
     { NStr::fSplit_CanSingleQuote | NStr::fSplit_CanEscape,
-      "It\\'s... 'Monty Python''s' \"Flying\" Circus\\!", " ",
-      "0: It's..., 9: Monty Python's, 27: \"Flying\", 36: Circus!" },
-    { NStr::fSplit_CanSingleQuote | NStr::fSplit_CanEscape
-      | NStr::fSplit_ByPattern | NStr::fSplit_MergeDelims,
-      "<><>That\\'s<>s<'> n<'>t<><all>,<><>'f<>lks'", "<>",
-      "4: That's, 13: s<> n<>t, 25: <all>,, 35: f<>lks" },
+            "It\\'s... 'Monty Python''s' \"Flying\" Circus\\!",
+            " ",
+            "0: It's..., 9: Monty Python's, 27: \"Flying\", 36: Circus!" },
+    { NStr::fSplit_CanSingleQuote | NStr::fSplit_CanEscape  | NStr::fSplit_ByPattern | NStr::fSplit_MergeDelimiters,
+            "<><>That\\'s<>s<'> n<'>t<><all>,<><>'f<>lks'", 
+            "<>",
+            "0: , 4: That's, 13: s<> n<>t, 25: <all>,, 35: f<>lks" },
+    { NStr::fSplit_CanSingleQuote | NStr::fSplit_CanEscape  | NStr::fSplit_ByPattern /* + no merge delimiters */,
+            "<><>That\\'s<>s<'> n<'>t<><all>,<><>'f<>lks'", 
+            "<>",
+            "0: , 2: , 4: That's, 13: s<> n<>t, 25: <all>,, 33: , 35: f<>lks" },
     { NStr::fSplit_CanDoubleQuote, "\"Forget something?", " ", "" }, // throws
     { NStr::fSplit_CanDoubleQuote | NStr::fSplit_ByPattern,
-      "I said\\, \"\"\"Time's up, everyone!\"\"\"", ", ",
-      "0: I said\\, 9: \"Time's up, everyone!\"" },
-    { NStr::fSplit_CanDoubleQuote | NStr::fSplit_CanEscape
-      | NStr::fSplit_MergeDelims,
-      "one, \\\"two\\\" \"t h r \\\"e\\\" e\" ", ", ",
-      "0: one, 5: \"two\", 13: t h r \"e\" e" },
+            "I said\\, \"\"\"Time's up, everyone!\"\"\"",
+            ", ",
+            "0: I said\\, 9: \"Time's up, everyone!\"" },
     { NStr::fSplit_CanDoubleQuote | NStr::fSplit_CanSingleQuote,
-      " \"ne'st\" '\\eg\"gs'", " ",
-      "0: , 1: ne'st, 9: \\eg\"gs" },
-    { NStr::fSplit_CanQuote | NStr::fSplit_CanEscape
-      | NStr::fSplit_ByPattern | NStr::fSplit_MergeDelims,
-      "abc\\, def, \"gh'i\"\", j\\\"kl\", 'm\"no, p''qr\\'s', ", ", ",
-      "0: abc, def, 11: gh'i\", j\"kl, 28: m\"no, p'qr's" }
+            " \"ne'st\" '\\eg\"gs'",
+            " ",
+            "0: , 1: ne'st, 9: \\eg\"gs" },
+    { NStr::fSplit_CanDoubleQuote | NStr::fSplit_CanSingleQuote /* + no merge delimiters */,
+            " \"ne'st\" '\\eg\"gs'", 
+            " ",
+            "0: , 1: ne'st, 9: \\eg\"gs" },
+    { NStr::fSplit_CanQuote | NStr::fSplit_CanEscape | NStr::fSplit_ByPattern | NStr::fSplit_MergeDelimiters,
+            "abc\\, def, \"gh'i\"\", j\\\"kl\", 'm\"no, p''qr\\'s', ", 
+            ", ",
+            "0: abc, def, 11: gh'i\", j\"kl, 28: m\"no, p'qr's, 46: " }
 };
 
-// str, delim, flags, lhs, rhs, ret
-static const SSplitInTwo<NStr::TSplitFlags> s_SplitInTwoWithFlagsTest[] = {
-    { "a b:c: d", ": ", 0,                      "a",     "b:c: d", true },
-    { "a b:c: d", ": ", NStr::fSplit_ByPattern, "a b:c", "d",      true },
-    { "abc\\\\:", ":", NStr::fSplit_CanEscape, "abc\\", "", true },
-    { "abc\\:",   ":", NStr::fSplit_CanEscape, "abc:", "", false },
-    { "abc\\\\: ", ": ", NStr::fSplit_CanEscape | NStr::fSplit_ByPattern,
-      "abc\\", "", true },
-    { "abc\\: ",   ": ", NStr::fSplit_CanEscape | NStr::fSplit_ByPattern,
-      "abc: ", "", false },
-    { "'abc':", ":", NStr::fSplit_CanSingleQuote, "abc", "", true },
-    { "'abc:'", ":", NStr::fSplit_CanSingleQuote, "abc:", "", false }
-};
-
-BOOST_AUTO_TEST_CASE(s_SplitWithFlags)
+BOOST_AUTO_TEST_CASE(s_Split_WithFlags)
 {
     vector<CTempStringEx> v;
     vector<SIZE_TYPE>     token_pos;
     string                s;
 
-    size_t count = (sizeof(s_SplitWithFlagsTest) /
-                    sizeof(s_SplitWithFlagsTest[0]));
+    size_t count = (sizeof(s_SplitWithFlagsTest) / sizeof(s_SplitWithFlagsTest[0]));
+
     for (size_t i = 0; i < count; i++) {
         const SSplitWithFlags& data = s_SplitWithFlagsTest[i];
 
@@ -2991,7 +2896,7 @@ BOOST_AUTO_TEST_CASE(s_SplitWithFlags)
         v.clear();
         token_pos.clear();
         try {
-            NStr::Tokenize(data.str, data.delim, v, data.flags, &token_pos, &storage);
+            NStr::Split(data.str, data.delim, v, data.flags, &token_pos, &storage);
             BOOST_REQUIRE_EQUAL(v.size(), token_pos.size());
             CNcbiOstrstream oss;
             const char*     sep = "";
@@ -3003,24 +2908,199 @@ BOOST_AUTO_TEST_CASE(s_SplitWithFlags)
         } catch (CStringException&) {
             s.clear();
         }
-
         BOOST_CHECK_EQUAL(s, data.expected);
     }
+}
 
-    CTempStringEx lhs, rhs;
 
-    count = (sizeof(s_SplitInTwoWithFlagsTest) /
-             sizeof(s_SplitInTwoWithFlagsTest[0]));
+//----------------------------------------------------------------------------
+// NStr::SplitInTwo()
+//----------------------------------------------------------------------------
+
+template<typename TMode>
+struct SSplitInTwo {
+    const char*  str;
+    const char*  delim;
+    TMode        mode;
+    const char*  expected_str1;
+    const char*  expected_str2;
+    bool         expected_ret;
+};
+
+static const SSplitInTwo<NStr::EMergeDelims> s_SplitInTwoEnumTest[] =
+{
+    { "ab+cd+ef",    "+",      NStr::eNoMergeDelims, "ab", "cd+ef",     true },
+    { "ab+cd+ef",    "+",      NStr::eMergeDelims,   "ab", "cd+ef",     true },
+    { "ab+++cd+ef",  "+",      NStr::eMergeDelims,   "ab", "cd+ef",     true },
+    { "ab+++",       "+",      NStr::eMergeDelims,   "ab", "",          true },
+    { "+++ab+cd",    "+",      NStr::eMergeDelims,   "ab", "cd",        true },
+    { "+++ab+cd",    "+",      NStr::eNoMergeDelims, "",   "++ab+cd",   true },
+    { "aaAAabBbbb",  "AB",     NStr::eNoMergeDelims, "aa", "AabBbbb",   true },
+    { "aaABAabBbbb", "AB",     NStr::eMergeDelims,   "aa", "abBbbb",    true },
+    { "aaCAabBCbbb", "ABC",    NStr::eNoMergeDelims, "aa", "AabBCbbb",  true },
+    { "-beg-delim-", "-",      NStr::eNoMergeDelims, "",   "beg-delim-",true },
+    { "end-delim:",  ":",      NStr::eNoMergeDelims, "end-delim",  "",  true },
+    { "nodelim",     ".,:;-+", NStr::eNoMergeDelims, "nodelim",    "",  false },
+    { "emptydelim",  "",       NStr::eNoMergeDelims, "emptydelim", "",  false },
+    { "", "emtpystring",       NStr::eNoMergeDelims, "", "",            false },
+    { "", "",                  NStr::eNoMergeDelims, "", "",            false }
+};
+
+static const SSplitInTwo<NStr::TSplitFlags> s_SplitInTwoFlagsTest[] =
+{
+    { "ab+cd+ef",    "+",      0,                            "ab", "cd+ef",     true  },
+    { "ab+cd+ef",    "+",      NStr::fSplit_MergeDelimiters, "ab", "cd+ef",     true  },
+    { "ab+++cd+ef",  "+",      NStr::fSplit_MergeDelimiters, "ab", "cd+ef",     true  },
+    { "+++ab+cd",    "+",      0,                            "",   "++ab+cd",   true  },
+    { "+++ab+cd",    "+",      NStr::fSplit_MergeDelimiters, "",   "ab+cd",     true  },
+    { "+++ab+cd",    "+",      NStr::fSplit_Truncate_Begin,  "ab", "cd",        true  },
+    { "+++ab+cd",    "+",      NStr::fSplit_Truncate_End,    "",   "++ab+cd",   true  }, // no effect
+    { "+++ab+cd",    "+",      NStr::fSplit_Truncate,        "ab", "cd",        true  },
+    { "ab+++",       "+",      0,                            "ab", "++",        true  },
+    { "ab+++",       "+",      NStr::fSplit_MergeDelimiters, "ab", "",          true  },
+    { "ab+++",       "+",      NStr::fSplit_Truncate_End,    "ab", "++",        true  }, // no effect
+    { "ab+++",       "+",      NStr::fSplit_Truncate,        "ab", "++",        true  }, // no effect
+    { "ab+++",       "+",      NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate,
+                                                             "ab", "",          true  }, // no effect
+    { "ab+cd++",     "+",      0,                            "ab", "cd++",      true  },
+    { "ab+cd++",     "+",      NStr::fSplit_MergeDelimiters, "ab", "cd++",      true  }, // no effect
+    { "ab+cd++",     "+",      NStr::fSplit_Truncate_End,    "ab", "cd++",      true  }, // no effect
+    { "ab+cd++",     "+",      NStr::fSplit_Truncate,        "ab", "cd++",      true  }, // no effect
+    { "ab+cd++",     "+",      NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate,
+                                                             "ab", "cd++",      true  }, // no effect
+    { "aaAAabBbbb",  "AB",     0,                            "aa", "AabBbbb",   true  },
+    { "aaABAabBbbb", "AB",     NStr::fSplit_MergeDelimiters, "aa", "abBbbb",    true  },
+    { "aaCAabBCbbb", "ABC",    0,                            "aa", "AabBCbbb",  true  },
+    { "aaCAabBCbbb", "ABC",    NStr::fSplit_MergeDelimiters, "aa", "abBCbbb",   true  },
+    { "-beg-delim-", "-",      0,                            "",   "beg-delim-",true  },
+    { "-beg-delim-", "-",      NStr::fSplit_MergeDelimiters, "",   "beg-delim-",true  }, // no effect
+    { "-beg-delim-", "-",      NStr::fSplit_Truncate_End,    "",   "beg-delim-",true  }, // no effect
+    { "-beg-delim-", "-",      NStr::fSplit_Truncate_Begin,  "beg","delim-",    true  },
+    { "-beg-delim-", "-",      NStr::fSplit_Truncate,        "beg","delim-",    true  },
+    { "end-delim:",  ":",      0,                            "end-delim",  "",  true  },
+    { "end-delim:",  ":",      NStr::fSplit_Truncate_End,    "end-delim",  "",  true  }, // no effect
+    { "end-delim:",  ":",      NStr::fSplit_Truncate,        "end-delim",  "",  true  }, // no effect
+    { "nodelim",     ".,:;-+", 0,                            "nodelim",    "",  false },
+    { "emptydelim",  "",       0,                            "emptydelim", "",  false },
+    { "", "emtpystring",       0,                            "", "",            false },
+    { "", "",                  0,                            "", "",            false },
+    { "a b:c: d",    ": ",     NStr::fSplit_MergeDelimiters, "a",     "b:c: d", true  },
+    { "a b:c: d",    ": ",     NStr::fSplit_ByPattern,       "a b:c", "d",      true  },
+    { "abc\\\\:",    ":",      NStr::fSplit_CanEscape,       "abc\\", "",       true  },
+    { "abc\\:",      ":",      NStr::fSplit_CanEscape,       "abc:", "",        false },
+    { "abc\\\\: ",   ": ",     NStr::fSplit_CanEscape | NStr::fSplit_ByPattern,
+                                                             "abc\\", "",       true  },
+    { "abc\\: ",     ": ",     NStr::fSplit_CanEscape | NStr::fSplit_ByPattern,
+                                                             "abc: ", "",       false },
+    { "'abc':",      ":",      NStr::fSplit_CanSingleQuote,  "abc",  "",        true  },
+    { "'abc:'",      ":",      NStr::fSplit_CanSingleQuote,  "abc:", "",        false }
+};
+
+// @deprecated
+BOOST_AUTO_TEST_CASE(s_SplitInTwo_Enum)
+{
+    _ASSERT(NStr::eMergeDelims == (NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate));
+
+    string str1, str2;
+    const size_t count = sizeof(s_SplitInTwoEnumTest) /
+                         sizeof(s_SplitInTwoEnumTest[0]);
+
     for (size_t i = 0; i < count; i++) {
-        const SSplitInTwo<NStr::TSplitFlags>& data
-            = s_SplitInTwoWithFlagsTest[i];
-
-        CTempString_Storage storage;
-        bool result = NStr::SplitInTwo(data.str, data.delim, lhs, rhs,
-                                       data.mode, &storage);
+        const SSplitInTwo<NStr::EMergeDelims>& data = s_SplitInTwoEnumTest[i];
+        bool result = NStr::SplitInTwo(data.str, data.delim, str1, str2, data.mode);
         BOOST_CHECK_EQUAL(data.expected_ret,  result);
-        BOOST_CHECK_EQUAL(data.expected_str1, lhs);
-        BOOST_CHECK_EQUAL(data.expected_str2, rhs);
+        BOOST_CHECK_EQUAL(data.expected_str1, str1);
+        BOOST_CHECK_EQUAL(data.expected_str2, str2);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(s_SplitInTwo_Flags)
+{
+    CTempStringEx str1, str2;
+    size_t count = (sizeof(s_SplitInTwoFlagsTest) / sizeof(s_SplitInTwoFlagsTest[0]));
+
+    for (size_t i = 0; i < count; i++) {
+        const SSplitInTwo<NStr::TSplitFlags>& data = s_SplitInTwoFlagsTest[i];
+        CTempString_Storage storage;
+        bool result = NStr::SplitInTwo(data.str, data.delim, str1, str2,
+                                       data.mode, &storage);
+        BOOST_CHECK_EQUAL(data.expected_ret, result);
+        BOOST_CHECK_EQUAL(data.expected_str1, str1);
+        BOOST_CHECK_EQUAL(data.expected_str2, str2);
+    }
+}
+
+
+//----------------------------------------------------------------------------
+// NStr::SplitByPattern()
+//----------------------------------------------------------------------------
+
+static const char* s_SplitPatternStr[] = {
+    "<tag>",
+    "<tag><tag><tag>",
+    "begin<tag>",
+    "begin<tag><tag>",
+    "<tag><tag>end",
+    "<tag>text<tag>",
+    "<tag>begin<tag>text<tag><tag><tag>end<tag>"
+};
+
+static const char* s_SplitPatternRes[] =
+{
+    // merge delimiters (legacy) -- NStr::eMergeDelims (+ truncate)
+    /* empty */                     "#",
+    /* empty */                     "#",
+    "begin",                        "#",
+    "begin",                        "#",
+    "end",                          "#",
+    "text",                         "#",
+    "begin", "text", "end",         "#",
+
+    // merge delimiters -- NStr::fSplit_MergeDelimiters
+    "", "",                         "#",
+    "", "",                         "#",
+    "begin", "",                    "#",
+    "begin", "",                    "#",
+    "", "end",                      "#",
+    "", "text", "",                 "#",
+    "", "begin", "text", "end", "", "#",
+
+    // no merge delimiters -- default
+    "", "",                         "#",
+    "", "", "", "",                 "#",
+    "begin", "",                    "#",
+    "begin", "", "",                "#",
+    "", "", "end",                  "#",
+    "", "text", "",                 "#",
+    "", "begin", "text", "", "", "end", "", "#"
+};
+
+BOOST_AUTO_TEST_CASE(s_SplitByPattern)
+{
+    const char* pattern = "<tag>";
+    const char* stopper = "#";  // to correctly compare separate strings splitting
+
+    vector<string> split;
+    size_t count = sizeof(s_SplitPatternStr) / sizeof(s_SplitPatternStr[0]);
+
+    for (size_t i = 0; i < count; i++) {
+        NStr::SplitByPattern(s_SplitPatternStr[i], pattern, split, NStr::eMergeDelims);
+        split.push_back(stopper);
+    }
+    for (size_t i = 0; i < count; i++) {
+        NStr::SplitByPattern(s_SplitPatternStr[i], pattern, split, NStr::fSplit_MergeDelimiters);
+        split.push_back(stopper);
+    }
+    for (size_t i = 0; i < count; i++) {
+        NStr::SplitByPattern(s_SplitPatternStr[i], pattern, split, 0);
+        split.push_back(stopper);
+    }
+
+    size_t j = 0;
+    ITERATE(vector<string>, it, split)
+    {
+        BOOST_REQUIRE(j < sizeof(s_SplitPatternRes) / sizeof(s_SplitPatternRes[0]));
+        BOOST_CHECK(NStr::Compare(*it, s_SplitPatternRes[j++]) == 0);
     }
 }
 
@@ -3247,8 +3327,8 @@ struct SFindStr {
 #define f_NF  NStr::eNocase, NStr::eForwardSearch
 #define f_NR  NStr::eNocase, NStr::eReverseSearch
 
-static const SFindStr s_FindStrTest[] = {
-
+static const SFindStr s_FindStrTest[] =
+{
     // eCase + eForwardSearch
     { "bcbab",          "abc", f_CF, 0,  NPOS },
     { "abc",            "abc", f_CF, 0,  0    },
@@ -3666,8 +3746,8 @@ BOOST_AUTO_TEST_CASE(s_CUtf8)
         CUtf8::AppendAsUTF8(w8test,xxxwss[0]);
     }
 #endif
+    // iteration
     {
-// iteration
         wss.erase().append(1,0x1000).append(1,0x1100).append(1,0x1110).append(1,0x1111);
         wss2.erase();
         string s(CUtf8::AsUTF8(wss));
@@ -3681,7 +3761,7 @@ BOOST_AUTO_TEST_CASE(s_CUtf8)
         BOOST_CHECK(wss == wss2);
     }
 
-// wrong Utf8
+    // wrong Utf8
     {
         string u8tmp("micro=\302 Agrave=\303\200 atilde=\303\243 ccedil=\303\247");
         string expected("micro=\\302 A");
@@ -3949,7 +4029,7 @@ BOOST_AUTO_TEST_CASE(s_GetField)
     BOOST_CHECK_EQUAL( NStr::GetField("one::two", 176, "-.:;", NStr::eMergeDelims), string() );
 }
 
-BOOST_AUTO_TEST_CASE(s_GetFieldSingleDilimiter)
+BOOST_AUTO_TEST_CASE(s_GetField_SingleDilimiter)
 {
     BOOST_CHECK_EQUAL( NStr::GetField(NULL, 17, 'n'), string() );
     BOOST_CHECK_EQUAL( NStr::GetField("", 0, ':'), string() );
@@ -4001,7 +4081,7 @@ BOOST_AUTO_TEST_CASE(s_GetField_Unsafe)
     BOOST_CHECK_EQUAL( NStr::GetField_Unsafe("one::two", 176, "-.:;", NStr::eMergeDelims), string() );
 }
 
-BOOST_AUTO_TEST_CASE(s_GetFieldSingleDilimiter_Unsafe)
+BOOST_AUTO_TEST_CASE(s_GetField_SingleDilimiter_Unsafe)
 {
     BOOST_CHECK_EQUAL( NStr::GetField_Unsafe(NULL, 17, 'n'), string() );
     BOOST_CHECK_EQUAL( NStr::GetField_Unsafe("", 0, ':'), string() );
@@ -4084,7 +4164,7 @@ BOOST_AUTO_TEST_CASE(s_SQLEncode)
 // NStr::StrigToNum() speed test
 //----------------------------------------------------------------------------
 
-BOOST_AUTO_TEST_CASE(s_StringToIntSpeed)
+BOOST_AUTO_TEST_CASE(s_StringToInt_Speed)
 {
     const int COUNT = 10000000;
     const int TESTS = 6;
@@ -4158,7 +4238,7 @@ BOOST_AUTO_TEST_CASE(s_StringToIntSpeed)
 }
 
 
-BOOST_AUTO_TEST_CASE(s_StringToDoubleSpeed)
+BOOST_AUTO_TEST_CASE(s_StringToDouble_Speed)
 {
     const int COUNT = 10000000;
     const string ss[] = {
@@ -4337,6 +4417,6 @@ BOOST_AUTO_TEST_CASE(s_ShellEncode)
 
 NCBITEST_INIT_TREE()
 {
-    NCBITEST_DISABLE(s_StringToIntSpeed);
-    NCBITEST_DISABLE(s_StringToDoubleSpeed);
+    NCBITEST_DISABLE(s_StringToInt_Speed);
+    NCBITEST_DISABLE(s_StringToDouble_Speed);
 }

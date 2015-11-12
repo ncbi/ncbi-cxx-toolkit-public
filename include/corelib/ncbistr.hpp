@@ -2176,14 +2176,14 @@ public:
     /// @sa Find
     /// @deprecated
     ///   Use FindWord() variant with EDirection parameter.
+    inline
     NCBI_DEPRECATED
     static SIZE_TYPE FindWord(const CTempString str,
                               const CTempString word,
                               EOccurrence which,
-                              ECase       use_case = eCase)
-        {
-            return FindWord(str, word, use_case, which == eFirst ? eForwardSearch : eReverseSearch);
-        }
+                              ECase       use_case = eCase) {
+        return FindWord(str, word, use_case, which == eFirst ? eForwardSearch : eReverseSearch);
+    }
 
 
     /// Which end to truncate a string.
@@ -2223,6 +2223,7 @@ public:
 
     /// @deprecated  Use TruncateSpaces_Unsafe() instead -- AND, do make sure
     ///              that you indeed use that in a safe manner!
+    inline
     NCBI_DEPRECATED
     static CTempString TruncateSpaces(const CTempString str,
                                       ETrunc where = eTrunc_Both) {
@@ -2247,6 +2248,7 @@ public:
 
     /// @deprecated  Use TruncateSpaces_Unsafe() instead -- AND, do make sure
     ///              that you indeed use that in a safe manner!
+    inline
     NCBI_DEPRECATED
     static CTempString TruncateSpaces(const char* str,
                                       ETrunc where = eTrunc_Both) {
@@ -2380,74 +2382,233 @@ public:
                                   SIZE_TYPE     start_pos = 0,
                                   SIZE_TYPE     max_replace = 0);
 
-    /// Flags for Split(InTwo) and Tokenize.  With quote support enabled,
-    /// doubling a quote character suppresses its special meaning, as does
-    /// escaping it if that's enabled too; unescaped trailing backslashes
-    /// and unbalanced quotes result in exceptions.
+    /// Flags for Split*() methods. 
+    /// 
+    /// @note
+    ///   With quote support enabled, doubling a quote character suppresses
+    ///   its special meaning, as does escaping it if that's enabled too;
+    ///   unescaped trailing backslashes and unbalanced quotes result in
+    ///   exceptions.
     enum ESplitFlags {
-        fSplit_MergeDelims     = 1 << 0, ///< Merge adjacent delimiters
-        fSplit_ByPattern       = 1 << 1, ///< Require full delimiter strings
-        fSplit_CanEscape       = 1 << 2, ///< Allow \... escaping
-        fSplit_CanSingleQuote  = 1 << 3, ///< Allow '...' quoting
-        fSplit_CanDoubleQuote  = 1 << 4, ///< Allow "..." quoting
+        fSplit_MergeDelimiters = 1 << 0,  ///< Merge adjacent delimiters
+        fSplit_Truncate_Begin  = 1 << 1,  ///< Truncate leading delimiters
+        fSplit_Truncate_End    = 1 << 2,  ///< Truncate trailing delimiters
+        fSplit_Truncate        = fSplit_Truncate_Begin | fSplit_Truncate_End,
+        fSplit_ByPattern       = 1 << 3,  ///< Require full delimiter strings
+        fSplit_CanEscape       = 1 << 4,  ///< Allow \... escaping
+        fSplit_CanSingleQuote  = 1 << 5,  ///< Allow '...' quoting
+        fSplit_CanDoubleQuote  = 1 << 6,  ///< Allow "..." quoting
         fSplit_CanQuote        = fSplit_CanSingleQuote | fSplit_CanDoubleQuote
+    };
+    /// Deprecated flags for Split*() methods.
+    /// @deprecated
+    enum ESplitFlags_DEPRECATED {
+        /// Legacy merge delimiters flag
+        /// Note that it truncates leading and trailing delimiters as well.
+        /// Please use ESplitFlags instead.
+        fSplit_MergeDelims = fSplit_MergeDelimiters | fSplit_Truncate,
+        /// Mo merge the delimiters.
+        /// fSplit_NoMergeDelims can be temporary used for semantics
+        /// purposes only, because we still have legacy Split() version
+        /// without flags, that use fSplit_MergeDelims by default.
+        fSplit_NoMergeDelims = 0
     };
     typedef int TSplitFlags; ///< Bitwise OR of ESplitFlags
 
-    /// Whether to merge adjacent delimiters in Split and Tokenize.
+    /// Whether to merge adjacent delimiters.
+    /// Used by some methods that don't need full functionality of ESplitFlags.
     enum EMergeDelims {
-        eNoMergeDelims,     ///< No merging of delimiters -- default for
-                            ///< Tokenize()
-        eMergeDelims        ///< Merge the delimiters -- default for Split()
+        eMergeDelims   = fSplit_MergeDelims,   ///< Merge the delimiters
+        eNoMergeDelims = fSplit_NoMergeDelims  ///< No merge the delimiters
     };
-
 
     /// Split a string using specified delimiters.
     ///
     /// @param str
     ///   String to be split.
     /// @param delim
-    ///   Delimiter(s) used to split string "str".  The interpretation of
+    ///   Delimiter(s) used to split string "str". The interpretation of
     ///   multi-character values depends on flags: by default, any of those
     ///   characters marks a split point (when unquoted), but with
     ///   fSplit_ByPattern, the entire string must occur.  (Meanwhile,
     ///   an empty value disables splitting.)
     /// @param arr
-    ///   The split tokens are added to the list "arr" and also returned by the
-    ///   function.  NB: in the fully CTempString-based variant, modifying or
-    ///   destroying the string underlying "str" will invalidate the tokens.
+    ///   The split tokens are added to the list "arr" and also returned
+    ///   by the function.
     /// @param flags
     ///   Flags directing splitting, characterized under ESplitFlags.
     /// @param token_pos
     ///   Optional array for the tokens' positions in "str".
+    /// @attention
+    ///   Modifying source CTempString object or destroying it,
+    ///   will invalidate results.
     /// @return 
     ///   The list "arr" is also returned.
     /// @sa
-    ///   ESplitFlags, Tokenize, SplitInTwo
-    static list<string>& Split(const CTempString str,
-                               const CTempString delim,
-                               list<string>& arr,
-                               TSplitFlags   flags = fSplit_MergeDelims,
-                               vector<SIZE_TYPE>* token_pos = NULL);
+    ///   ESplitFlags, SplitInTwo, SplitByPattern
+    static list<string>& Split( const CTempString    str,
+                                const CTempString    delim,
+                                list<string>&        arr,
+                                TSplitFlags          flags, // required
+                                vector<SIZE_TYPE>*   token_pos = NULL);
 
-    static list<string>& Split(const CTempString str,
-                               const CTempString delim,
-                               list<string>& arr,
-                               EMergeDelims  merge,
-                               vector<SIZE_TYPE>* token_pos = NULL);
+    static vector<string>& Split(
+                                const CTempString    str,
+                                const CTempString    delim,
+                                vector<string>&      arr,
+                                TSplitFlags          flags = 0,
+                                vector<SIZE_TYPE>*   token_pos = NULL);
 
-    static list<CTempStringEx>& Split(const CTempString str,
-                                      const CTempString delim,
-                                      list<CTempStringEx>& arr,
-                                      TSplitFlags flags = fSplit_MergeDelims,
-                                      vector<SIZE_TYPE>*   token_pos = NULL,
-                                      CTempString_Storage* storage = NULL);
+    static list<CTempStringEx>& Split(
+                                const CTempString    str,
+                                const CTempString    delim,
+                                list<CTempStringEx>& arr,
+                                TSplitFlags          flags, // required
+                                vector<SIZE_TYPE>*   token_pos = NULL,
+                                CTempString_Storage* storage = NULL);
 
-    static list<CTempString>& Split(const CTempString  str,
-                                    const CTempString  delim,
-                                    list<CTempString>& arr,
-                                    EMergeDelims       merge = eMergeDelims,
-                                    vector<SIZE_TYPE>* token_pos = NULL);
+    static vector<CTempStringEx>& Split(
+                                const CTempString      str,
+                                const CTempString      delim,
+                                vector<CTempStringEx>& arr,
+                                TSplitFlags            flags = 0,
+                                vector<SIZE_TYPE>*     token_pos = NULL,
+                                CTempString_Storage*   storage = NULL);
+
+    /// Variation of Split() wihout flags -- for backward compatibility only.
+    /// @attention
+    ///   Automatically use flags: fSplit_MergeDelimiters | fSplit_Truncate
+    inline
+    static list<string>& Split(const CTempString    str,
+                               const CTempString    delim,
+                               list<string>&        arr) {
+        return Split(str, delim, arr, fSplit_MergeDelimiters | fSplit_Truncate);
+    }
+
+    /// Variation of Split() wihout flags -- for backward compatibility only.
+    /// @attention
+    ///   Automatically use flags: fSplit_MergeDelimiters | fSplit_Truncate
+    inline
+    static list<CTempStringEx>& Split(
+                                const CTempString    str,
+                                const CTempString    delim,
+                                list<CTempStringEx>& arr) {
+        return Split(str, delim, arr, fSplit_MergeDelimiters | fSplit_Truncate);
+    }
+
+    /// @deprecated  Use Split() with TSplitFlags instead
+    inline
+    NCBI_DEPRECATED
+    static list<string>& Split( const CTempString  str,
+                                const CTempString  delim,
+                                list<string>&      arr,
+                                EMergeDelims       merge,
+                                vector<SIZE_TYPE>* token_pos = NULL)  {
+        return Split(str, delim, arr, (TSplitFlags)merge, token_pos);
+    }
+
+    /// @deprecated  Use Split() with TSplitFlags instead
+    NCBI_DEPRECATED
+    static list<CTempString>& Split(
+                                const CTempString  str,
+                                const CTempString  delim,
+                                list<CTempString>& arr,
+                                EMergeDelims       merge = eMergeDelims,
+                                vector<SIZE_TYPE>* token_pos = NULL);
+
+    /// Split a string into two pieces using the specified delimiters
+    ///
+    /// @param str 
+    ///   String to be split.
+    /// @param delim
+    ///   Delimiters used to split string "str".
+    /// @param str1
+    ///   The sub-string of "str" before the first character of "delim".
+    ///   It will not contain any characters in "delim".
+    ///   Will be empty if "str" begin with a delimiter.
+    /// @param str2
+    ///   The sub-string of "str" after the first character of "delim" found.
+    ///   May contain "delim" characters.
+    ///   Will be empty if "str" had no "delim" characters or ended
+    ///   with the "delim" character.
+    /// @param flags
+    ///   Flags directing splitting, characterized under ESplitFlags.
+    ///   Note, that fSplit_Truncate_End don't have any effect due nature
+    ///   of this method.
+    /// @attention
+    ///   Modifying source CTempString object or destroying it,
+    ///   will invalidate results.
+    /// @return
+    ///   true if a symbol from "delim" was found in "str", false if not.
+    ///   This lets you distinguish when there were no delimiters and when
+    ///   the very last character was the first delimiter.
+    /// @sa
+    ///   ESplitFlags, Split
+    static bool SplitInTwo(const CTempString  str, 
+                           const CTempString  delim,
+                           string&            str1,
+                           string&            str2,
+                           TSplitFlags        flags = 0);
+
+    static bool SplitInTwo(const CTempString  str, 
+                           const CTempString  delim,
+                           CTempString&       str1,
+                           CTempString&       str2,
+                           TSplitFlags        flags = 0);
+
+    static bool SplitInTwo(const CTempString  str, 
+                           const CTempString  delim,
+                           CTempStringEx&     str1,
+                           CTempStringEx&     str2,
+                           TSplitFlags        flags = 0,
+                           CTempString_Storage* storage = NULL);
+
+    /// @deprecated  Use SplitInTwo() with TSplitFlags instead
+    NCBI_DEPRECATED
+    static bool SplitInTwo(const CTempString  str, 
+                           const CTempString  delim,
+                           string&            str1,
+                           string&            str2,
+                           EMergeDelims       merge);
+
+    /// @deprecated  Use SplitInTwo() with TSplitFlags instead
+    NCBI_DEPRECATED
+    static bool SplitInTwo(const CTempString  str, 
+                           const CTempString  delim,
+                           CTempString&       str1,
+                           CTempString&       str2,
+                           EMergeDelims       merge);
+
+
+    /// Variation of Split() wih fSplit_ByPattern flag applied by default
+
+    static list<string>& SplitByPattern(
+                                const CTempString    str,
+                                const CTempString    delim,
+                                list<string>&        arr,
+                                TSplitFlags          flags = 0,
+                                vector<SIZE_TYPE>*   token_pos = NULL);
+
+    static vector<string>& SplitByPattern(
+                                const CTempString    str,
+                                const CTempString    delim,
+                                vector<string>&      arr,
+                                TSplitFlags          flags = 0,
+                                vector<SIZE_TYPE>*   token_pos = NULL);
+
+    static vector<CTempStringEx>& SplitByPattern(
+                                const CTempString    str,
+                                const CTempString    delim,
+                                vector<CTempStringEx>& arr,
+                                TSplitFlags          flags = 0,
+                                vector<SIZE_TYPE>*   token_pos = NULL);
+
+    static list<CTempStringEx>& SplitByPattern(
+                                const CTempString    str,
+                                const CTempString    delim,
+                                list<CTempStringEx>& arr,
+                                TSplitFlags          flags = 0,
+                                vector<SIZE_TYPE>*   token_pos = NULL);
 
     /// Tokenize a string using the specified set of char delimiters.
     ///
@@ -2461,29 +2622,37 @@ public:
     ///   an empty value disables splitting.)
     /// @param arr
     ///   The tokens defined in "str" by using symbols from "delim" are added
-    ///   to the vector "arr" and also returned by the function.  NB: in the
-    ///   fully CTempString-based variant, modifying or destroying the string
-    ///   underlying "str" will invalidate the tokens.
+    ///   to the vector "arr" and also returned by the function.
     /// @param flags
     ///   Flags directing splitting, characterized under ESplitFlags.
     /// @param token_pos
     ///   Optional array for the tokens' positions in "str".
+    /// @attention
+    ///   Modifying source CTempString object or destroying it,
+    ///   will invalidate results.
     /// @return 
     ///   The vector "arr" is also returned.
     /// @sa
-    ///   ESplitFlags, Split, SplitInTwo
+    ///   ESplitFlags, Split, SplitInTwo, SplitByPattern
+
+    /// @deprecated  Use Split() instead
+    NCBI_DEPRECATED
     static vector<string>& Tokenize(const CTempString  str,
                                     const CTempString  delim,
                                     vector<string>&    arr,
                                     TSplitFlags        flags = 0,
                                     vector<SIZE_TYPE>* token_pos = NULL);
 
+    /// @deprecated  Use Split() instead
+    NCBI_DEPRECATED
     static vector<string>& Tokenize(const CTempString  str,
                                     const CTempString  delim,
                                     vector<string>&    arr,
                                     EMergeDelims       merge,
                                     vector<SIZE_TYPE>* token_pos = NULL);
 
+    /// @deprecated  Use Split() instead
+    NCBI_DEPRECATED
     static
     vector<CTempStringEx>& Tokenize(const CTempString      str,
                                     const CTempString      delim,
@@ -2492,13 +2661,17 @@ public:
                                     vector<SIZE_TYPE>*     token_pos = NULL,
                                     CTempString_Storage*   storage = NULL);
 
+    /// @deprecated  Use Split() instead
+    NCBI_DEPRECATED
     static
-    vector<CTempString>& Tokenize(const CTempString    str,
-                                  const CTempString    delim,
-                                  vector<CTempString>& arr,
-                                  EMergeDelims         merge = eNoMergeDelims,
-                                  vector<SIZE_TYPE>*   token_pos = NULL);
+    vector<CTempString>& Tokenize(  const CTempString    str,
+                                    const CTempString    delim,
+                                    vector<CTempString>& arr,
+                                    EMergeDelims         merge = eNoMergeDelims,
+                                    vector<SIZE_TYPE>*   token_pos = NULL);
 
+    /// @deprecated  Use SplitByPattern() instead
+    NCBI_DEPRECATED
     static
     vector<string>& TokenizePattern(const CTempString  str,
                                     const CTempString  delim,
@@ -2506,64 +2679,15 @@ public:
                                     EMergeDelims       merge = eNoMergeDelims,
                                     vector<SIZE_TYPE>* token_pos = NULL);
 
+    /// @deprecated  Use SplitByPattern() instead
+    NCBI_DEPRECATED
     static
-    vector<CTempString>& TokenizePattern(const CTempString    str,
-                                         const CTempString    delim,
-                                         vector<CTempString>& arr,
-                                         EMergeDelims merge = eNoMergeDelims,
-                                         vector<SIZE_TYPE>* token_pos = NULL);
-
-    /// Split a string into two pieces using the specified delimiters
-    ///
-    /// @param str 
-    ///   String to be split.
-    /// @param delim
-    ///   Delimiters used to split string "str".
-    /// @param str1
-    ///   The sub-string of "str" before the first character of "delim".
-    ///   It will not contain any characters in "delim".
-    ///   Will be empty if "str" begin with a "delim" character.
-    ///   If a CTempString object itself, any changes to the string
-    ///   underlying "str" will invalidate it (and "str2").
-    /// @param str2
-    ///   The sub-string of "str" after the first character of "delim" found.
-    ///   May contain "delim" characters.
-    ///   Will be empty if "str" had no "delim" characters or ended
-    ///   with the first "delim" character.
-    ///   If a CTempString object itself, any changes to the string
-    ///   underlying "str" will invalidate it (and "str1").
-    /// @param flags
-    ///   Flags directing splitting, characterized under ESplitFlags.
-    /// @return
-    ///   true if a symbol from "delim" was found in "str", false if not.
-    ///   This lets you distinguish when there were no delimiters and when
-    ///   the very last character was the first delimiter.
-    /// @sa
-    ///   ESplitFlags, Split, Tokenize
-    static bool SplitInTwo(const CTempString  str, 
-                           const CTempString  delim,
-                           string&            str1,
-                           string&            str2,
-                           TSplitFlags        flags = 0);
-
-    static bool SplitInTwo(const CTempString  str, 
-                           const CTempString  delim,
-                           string&            str1,
-                           string&            str2,
-                           EMergeDelims       merge);
-
-    static bool SplitInTwo(const CTempString  str, 
-                           const CTempString  delim,
-                           CTempStringEx&     str1,
-                           CTempStringEx&     str2,
-                           TSplitFlags        flags = 0,
-                           CTempString_Storage* storage = NULL);
-
-    static bool SplitInTwo(const CTempString  str, 
-                           const CTempString  delim,
-                           CTempString&       str1,
-                           CTempString&       str2,
-                           EMergeDelims       merge = eNoMergeDelims);
+    vector<CTempString>& TokenizePattern(
+                                    const CTempString    str,
+                                    const CTempString    delim,
+                                    vector<CTempString>& arr,
+                                    EMergeDelims         merge = eNoMergeDelims,
+                                    vector<SIZE_TYPE>*   token_pos = NULL);
 
 
     /// Join strings using the specified delimiter.
@@ -2575,12 +2699,14 @@ public:
     /// @return 
     ///   The strings in "arr" are joined into a single string, separated
     ///   with "delim".
+    /// @sa Split
     static string Join(const list<string>& arr,        const CTempString delim);
     static string Join(const list<CTempString>& arr,   const CTempString delim);
     static string Join(const vector<string>& arr,      const CTempString delim);
     static string Join(const vector<CTempString>& arr, const CTempString delim);
     static string Join(const set<string>& arr,         const CTempString delim);
     static string Join(const set<CTempString>& arr,    const CTempString delim);
+
 
     /// How to display printable strings.
     ///
@@ -2625,12 +2751,12 @@ public:
     /// Flags for Sanitize().
     enum ESS_Flags {
         // Character filters (if no filters are set, then use fSS_print)
-        fSS_alpha = 1 << 1,    ///< Check on ::isalpha()
-        fSS_digit = 1 << 2,    ///< Check on ::isdigit()
-        fSS_alnum = 1 << 3,    ///< Check on ::isalnum()
-        fSS_print = 1 << 4,    ///< Check on ::isprint()
-        fSS_cntrl = 1 << 5,    ///< Check on ::iscntrl()
-        fSS_punct = 1 << 6,    ///< Check on ::ispunct()
+        fSS_alpha = 1 << 0,    ///< Check on ::isalpha()
+        fSS_digit = 1 << 1,    ///< Check on ::isdigit()
+        fSS_alnum = 1 << 2,    ///< Check on ::isalnum()
+        fSS_print = 1 << 3,    ///< Check on ::isprint()
+        fSS_cntrl = 1 << 4,    ///< Check on ::iscntrl()
+        fSS_punct = 1 << 5,    ///< Check on ::ispunct()
 
         // Filter: in or out?
         fSS_Reject = 1 << 11,  ///< Reject specified characters, allow all other.
@@ -3924,7 +4050,7 @@ public:
     {
         AutoPtr<IStringDecoder> decoder_guard(decoder, own);
         list<string> lst;
-        NStr::Split(str, arg_sep, lst, merge_argsep);
+        NStr::Split(str, arg_sep, lst, (NStr::TSplitFlags)merge_argsep);
         pairs.clear();
         ITERATE(list<string>, it, lst) {
             string name, val;
@@ -5509,45 +5635,6 @@ inline
 const string* NStr::FindNoCase(const vector <string>& vec, const CTempString val)
 {
     return Find(vec, val, eNocase);
-}
-
-inline
-list<string>& NStr::Split(const CTempString str, const CTempString delim,
-                          list<string>& arr, EMergeDelims merge,
-                          vector<SIZE_TYPE>* token_pos)
-{
-    return Split(str, delim, arr,
-                 (merge == eMergeDelims) ? fSplit_MergeDelims : 0, token_pos);
-}
-
-inline
-vector<string>& NStr::Tokenize(const CTempString str, const CTempString delim,
-                               vector<string>& arr, EMergeDelims merge,
-                               vector<SIZE_TYPE>* token_pos)
-{
-    return Tokenize(str, delim, arr,
-                    (merge == eMergeDelims) ? fSplit_MergeDelims : 0,
-                    token_pos);
-}
-
-inline
-vector<string>& NStr::TokenizePattern(const CTempString str,
-                                      const CTempString delim,
-                                      vector<string>& arr, EMergeDelims merge,
-                                      vector<SIZE_TYPE>* token_pos)
-{
-    return Tokenize(str, delim, arr,
-                    fSplit_ByPattern
-                    | ((merge == eMergeDelims) ? fSplit_MergeDelims : 0),
-                    token_pos);
-}
-
-inline
-bool NStr::SplitInTwo(const CTempString str, const CTempString delim,
-                      string& str1, string& str2, EMergeDelims merge)
-{
-    return SplitInTwo(str, delim, str1, str2,
-                      (merge == eMergeDelims) ? fSplit_MergeDelims : 0);
 }
 
 inline
