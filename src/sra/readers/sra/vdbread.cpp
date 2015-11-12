@@ -745,6 +745,29 @@ void CVDBCursor::SetParam(const char* name, const CTempString& value) const
 }
 
 
+void CVDBCursor::ReadElements(TVDBRowId row, const CVDBColumn& column,
+                              uint32_t elem_bits,
+                              uint32_t start, uint32_t count,
+                              void* buffer) const
+{
+    DECLARE_SDK_GET_GUARD();
+    uint32_t read_count, remaining_count;
+    if ( rc_t rc = VCursorReadBitsDirect(*this, row, column.GetIndex(),
+                                         elem_bits, start, buffer, 0, count,
+                                         &read_count, &remaining_count) ) {
+        NCBI_THROW2_FMT(CSraException, eNotFoundValue,
+                        "Cannot read VDB value array: "<<*this<<column<<
+                        '['<<row<<"]["<<start<<".."<<(start+count-1)<<']', rc);
+    }
+    if ( read_count != count ) {
+        NCBI_THROW_FMT(CSraException, eNotFoundValue,
+                       "Cannot read VDB value array: "<<*this<<column<<
+                       '['<<row<<"]["<<start<<".."<<(start+count-1)<<
+                       "] only "<<read_count<<" elements are read");
+    }
+}
+
+
 static const size_t kCacheSize = 7;
 
 
@@ -929,6 +952,26 @@ void CVDBValue::x_ReportNotOneValue(void) const
 }
 
 
+void CVDBValue::x_CheckRange(size_t pos, size_t len) const
+{
+    if ( pos > size() ) {
+        NCBI_THROW2_FMT(CSraException, eInvalidIndex,
+                        "Invalid index for VDB value array: "<<pos,
+                        RC(rcApp, rcData, rcRetrieving, rcOffset, rcTooBig));
+    }
+    if ( pos+len < pos ) {
+        NCBI_THROW2_FMT(CSraException, eInvalidIndex,
+                        "Invalid length for VDB value sub-array: "<<pos<<','<<len,
+                        RC(rcApp, rcData, rcRetrieving, rcOffset, rcTooBig));
+    }
+    if ( pos+len > size() ) {
+        NCBI_THROW2_FMT(CSraException, eInvalidIndex,
+                        "Invalid end of VDB value sub-array: "<<pos<<','<<len,
+                        RC(rcApp, rcData, rcRetrieving, rcOffset, rcTooBig));
+    }
+}
+
+
 void CVDBValueFor4Bits::x_Get(const CVDBCursor& cursor,
                               TVDBRowId row,
                               const CVDBColumn& column)
@@ -943,7 +986,7 @@ void CVDBValueFor4Bits::x_Get(const CVDBCursor& cursor,
                         "Cannot read VDB 4-bits value array: "<<
                         cursor<<column<<'['<<row<<']', rc);
     }
-    if ( bit_offset != 0 && bit_offset != 4 ) {
+    if ( bit_offset >= 8 || (bit_offset&3) ) {
         NCBI_THROW2_FMT(CSraException, eInvalidState,
                         "Cannot read VDB 4-bits value array with odd bit offset"<<
                         cursor<<column<<'['<<row<<"]: "<<bit_offset,
@@ -965,11 +1008,12 @@ void CVDBValueFor4Bits::x_ReportIndexOutOfBounds(size_t index) const
 }
 
 
-CVDBValueFor4Bits CVDBValueFor4Bits::substr(size_t pos, size_t len) const
+inline
+void CVDBValueFor4Bits::x_CheckRange(size_t pos, size_t len) const
 {
     if ( pos > size() ) {
         NCBI_THROW2_FMT(CSraException, eInvalidIndex,
-                        "Invalid position for VDB 4-bits value sub-array: "<<pos,
+                        "Invalid index for VDB 4-bits value array: "<<pos,
                         RC(rcApp, rcData, rcRetrieving, rcOffset, rcTooBig));
     }
     if ( pos+len < pos ) {
@@ -982,11 +1026,85 @@ CVDBValueFor4Bits CVDBValueFor4Bits::substr(size_t pos, size_t len) const
                         "Invalid end of VDB 4-bits value sub-array: "<<pos<<','<<len,
                         RC(rcApp, rcData, rcRetrieving, rcOffset, rcTooBig));
     }
+}
+
+
+CVDBValueFor4Bits CVDBValueFor4Bits::substr(size_t pos, size_t len) const
+{
+    x_CheckRange(pos, len);
     size_t offset = m_ElemOffset + pos;
     const char* raw_data = m_RawData + offset/2;
     offset %= 2;
     // limits are checked above
     return CVDBValueFor4Bits(raw_data, uint32_t(offset), uint32_t(len));
+}
+
+
+void CVDBValueFor2Bits::x_Get(const CVDBCursor& cursor,
+                              TVDBRowId row,
+                              const CVDBColumn& column)
+{
+    DECLARE_SDK_GET_GUARD();
+    uint32_t bit_offset, bit_length, elem_count;
+    const void* data;
+    if ( rc_t rc = VCursorCellDataDirect(cursor, row, column.GetIndex(),
+                                         &bit_length, &data, &bit_offset,
+                                         &elem_count) ) {
+        NCBI_THROW2_FMT(CSraException, eNotFoundValue,
+                        "Cannot read VDB 2-bits value array: "<<
+                        cursor<<column<<'['<<row<<']', rc);
+    }
+    if ( bit_offset >= 8 || (bit_offset&1) ) {
+        NCBI_THROW2_FMT(CSraException, eInvalidState,
+                        "Cannot read VDB 2-bits value array with odd bit offset"<<
+                        cursor<<column<<'['<<row<<"]: "<<bit_offset,
+                        RC(rcApp, rcColumn, rcDecoding, rcOffset, rcUnsupported));
+    }
+    m_RawData = static_cast<const char*>(data);
+    m_ElemOffset = bit_offset >> 1;
+    m_ElemCount = elem_count;
+}
+
+
+void CVDBValueFor2Bits::x_ReportIndexOutOfBounds(size_t index) const
+{
+    if ( index >= size() ) {
+        NCBI_THROW2_FMT(CSraException, eInvalidIndex,
+                        "Invalid index for VDB 2-bits value array: "<<index,
+                        RC(rcApp, rcData, rcRetrieving, rcOffset, rcTooBig));
+    }
+}
+
+
+inline
+void CVDBValueFor2Bits::x_CheckRange(size_t pos, size_t len) const
+{
+    if ( pos > size() ) {
+        NCBI_THROW2_FMT(CSraException, eInvalidIndex,
+                        "Invalid index for VDB 2-bits value array: "<<pos,
+                        RC(rcApp, rcData, rcRetrieving, rcOffset, rcTooBig));
+    }
+    if ( pos+len < pos ) {
+        NCBI_THROW2_FMT(CSraException, eInvalidIndex,
+                        "Invalid length for VDB 2-bits value sub-array: "<<pos<<','<<len,
+                        RC(rcApp, rcData, rcRetrieving, rcOffset, rcTooBig));
+    }
+    if ( pos+len > size() ) {
+        NCBI_THROW2_FMT(CSraException, eInvalidIndex,
+                        "Invalid end of VDB 2-bits value sub-array: "<<pos<<','<<len,
+                        RC(rcApp, rcData, rcRetrieving, rcOffset, rcTooBig));
+    }
+}
+
+
+CVDBValueFor2Bits CVDBValueFor2Bits::substr(size_t pos, size_t len) const
+{
+    x_CheckRange(pos, len);
+    size_t offset = m_ElemOffset + pos;
+    const char* raw_data = m_RawData + offset/4;
+    offset %= 4;
+    // limits are checked above
+    return CVDBValueFor2Bits(raw_data, uint32_t(offset), uint32_t(len));
 }
 
 

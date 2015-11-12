@@ -373,6 +373,11 @@ public:
 
     void SetParam(const char* name, const CTempString& value) const;
 
+    void ReadElements(TVDBRowId row, const CVDBColumn& column,
+                      uint32_t elem_bits,
+                      uint32_t start, uint32_t count,
+                      void* buffer) const;
+    
 protected:
     void Init(const CVDBTable& table);
 
@@ -560,6 +565,11 @@ public:
         TVDBRowId row;
         const CVDBColumn& column;
     };
+    CVDBValue(void)
+        : m_Data(0),
+          m_ElemCount(0)
+        {
+        }
     CVDBValue(const CVDBCursor& cursor, const CVDBColumn& column)
         : m_Data(0),
           m_ElemCount(0)
@@ -599,6 +609,11 @@ public:
         }
 
 protected:
+    CVDBValue(const void* data, uint32_t size)
+        : m_Data(data), m_ElemCount(size)
+        {
+        }
+
     void x_Get(const CVDBCursor& cursor,
                const CVDBColumn& column);
     void x_Get(const CVDBCursor& cursor,
@@ -614,6 +629,7 @@ protected:
                 x_ReportIndexOutOfBounds(index);
             }
         }
+    void x_CheckRange(size_t pos, size_t len) const;
     void x_CheckOneValue(void) const
         {
             if ( size() != 1 ) {
@@ -622,7 +638,7 @@ protected:
         }
 
     const void* m_Data;
-    TVDBColumnIdx m_ElemCount;
+    uint32_t m_ElemCount;
 };
 
 
@@ -631,6 +647,12 @@ class NCBI_SRAREAD_EXPORT CVDBValueFor4Bits
 public:
     typedef unsigned TValue;
 
+    CVDBValueFor4Bits(void)
+        : m_RawData(0),
+          m_ElemOffset(0),
+          m_ElemCount(0)
+        {
+        }
     explicit CVDBValueFor4Bits(const CVDBValue::SRef& ref)
         : m_RawData(0),
           m_ElemOffset(0),
@@ -651,7 +673,7 @@ public:
         {
             return m_RawData;
         }
-    uint32_t offset(void) const
+    uint32_t raw_offset(void) const
         {
             return m_ElemOffset;
         }
@@ -667,7 +689,7 @@ public:
     TValue Value(size_t index) const
         {
             x_CheckIndex(index);
-            return x_ValueByRawIndex(index+offset());
+            return x_ValueByRawIndex(index+raw_offset());
         }
     TValue operator[](size_t index) const
         {
@@ -696,8 +718,100 @@ protected:
                 x_ReportIndexOutOfBounds(index);
             }
         }
+    void x_CheckRange(size_t pos, size_t len) const;
 
     CVDBValueFor4Bits(const char* raw_data, uint32_t offset, uint32_t size)
+        : m_RawData(raw_data),
+          m_ElemOffset(offset),
+          m_ElemCount(size)
+        {
+        }
+
+    const char* m_RawData;
+    uint32_t m_ElemOffset;
+    uint32_t m_ElemCount;
+};
+
+
+class NCBI_SRAREAD_EXPORT CVDBValueFor2Bits
+{
+public:
+    typedef unsigned TValue;
+
+    CVDBValueFor2Bits(void)
+        : m_RawData(0),
+          m_ElemOffset(0),
+          m_ElemCount(0)
+        {
+        }
+    explicit CVDBValueFor2Bits(const CVDBValue::SRef& ref)
+        : m_RawData(0),
+          m_ElemOffset(0),
+          m_ElemCount(0)
+        {
+            x_Get(ref.cursor, ref.row, ref.column);
+        }
+    CVDBValueFor2Bits(const CVDBCursor& cursor, TVDBRowId row,
+                      const CVDBColumn& column)
+        : m_RawData(0),
+          m_ElemOffset(0),
+          m_ElemCount(0)
+        {
+            x_Get(cursor, row, column);
+        }
+
+    const char* raw_data(void) const
+        {
+            return m_RawData;
+        }
+    uint32_t raw_offset(void) const
+        {
+            return m_ElemOffset;
+        }
+    uint32_t size(void) const
+        {
+            return m_ElemCount;
+        }
+    bool empty(void) const
+        {
+            return !size();
+        }
+
+    TValue Value(size_t index) const
+        {
+            x_CheckIndex(index);
+            return x_ValueByRawIndex(index+raw_offset());
+        }
+    TValue operator[](size_t index) const
+        {
+            return Value(index);
+        }
+
+    CVDBValueFor2Bits substr(size_t pos, size_t len) const;
+
+protected:
+    void x_Get(const CVDBCursor& cursor,
+               TVDBRowId row,
+               const CVDBColumn& column);
+    static TValue sub_value(uint8_t v, size_t sub_index)
+        {
+            return (v>>(6-2*sub_index))&3;
+        }
+    TValue x_ValueByRawIndex(size_t raw_index) const
+        {
+            return sub_value(raw_data()[raw_index/4], raw_index%4);
+        }
+
+    void x_ReportIndexOutOfBounds(size_t index) const;
+    void x_CheckIndex(size_t index) const
+        {
+            if ( index >= size() ) {
+                x_ReportIndexOutOfBounds(index);
+            }
+        }
+    void x_CheckRange(size_t pos, size_t len) const;
+
+    CVDBValueFor2Bits(const char* raw_data, uint32_t offset, uint32_t size)
         : m_RawData(raw_data),
           m_ElemOffset(offset),
           m_ElemCount(size)
@@ -715,6 +829,9 @@ class CVDBValueFor : public CVDBValue
 {
 public:
     typedef V TValue;
+    CVDBValueFor(void)
+        {
+        }
     CVDBValueFor(const CVDBCursor& cursor, const CVDBColumn& column)
         : CVDBValue(cursor, column)
         {
@@ -762,6 +879,19 @@ public:
         {
             return Value();
         }
+
+    CVDBValueFor<TValue> substr(size_t pos, size_t len) const
+        {
+            x_CheckRange(pos, len);
+            return CVDBValueFor<TValue>(data()+pos, uint32_t(len));
+        }
+
+protected:
+    CVDBValueFor(const TValue* data, uint32_t len)
+        : CVDBValue(data, len)
+        {
+        }
+
 private:
     // to cause ambiguity if assigned to a wrong type
     operator double(void) const;
@@ -771,6 +901,9 @@ private:
 class CVDBStringValue : public CVDBValueFor<char>
 {
 public:
+    CVDBStringValue(void)
+        {
+        }
     CVDBStringValue(const CVDBCursor& cursor,
                     const CVDBColumn& column)
         : CVDBValueFor<char>(cursor, column)
