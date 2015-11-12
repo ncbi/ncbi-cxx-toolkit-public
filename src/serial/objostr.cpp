@@ -656,6 +656,11 @@ bool CObjectOStream::Write(CByteSource& source)
     return true;
 }
 
+void CObjectOStream::Write(const char* data, size_t size)
+{
+    m_Output.Write(data, size);
+}
+
 void CObjectOStream::WriteFileHeader(TTypeInfo /*type*/)
 {
     // do nothing by default

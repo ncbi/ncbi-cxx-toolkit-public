@@ -550,6 +550,7 @@ public:
 
     // delayed buffer
     virtual bool Write(CByteSource& source);
+    void Write(const char* data, size_t size);
 
 #ifdef NCBI_STRICT_GI
     void WriteStd(const TGi& data);
