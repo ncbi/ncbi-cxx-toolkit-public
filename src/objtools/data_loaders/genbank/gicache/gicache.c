@@ -149,6 +149,11 @@ static void x_DumpIndexCache(SGiDataIndex* data_index)
         bytes_written =
             write(data_index->m_GiIndexFile, data_index->m_IndexCache,
                   data_index->m_IndexCacheLen*sizeof(int));
+		if (bytes_written != data_index->m_IndexCacheLen*sizeof(int) && LogFunc) {
+			char logmsg[256];
+			sprintf(logmsg, "GI_CACHE: Possible index corruption: failed to write: tried to write %lu, written: %d, err: %d\n", data_index->m_IndexCacheLen*sizeof(int), bytes_written, errno);
+			LogFunc(logmsg);
+		}
         assert(bytes_written == data_index->m_IndexCacheLen*sizeof(int));
         data_index->m_GiIndexLen += data_index->m_IndexCacheLen;
         assert(data_index->m_GiIndexLen*sizeof(Uint4) ==
@@ -171,6 +176,11 @@ static void x_DumpDataCache(SGiDataIndex* data_index)
         bytes_written = 
             write(data_index->m_DataFile, data_index->m_DataCache,
                   data_index->m_DataCacheLen);
+		if (bytes_written != data_index->m_DataCacheLen && LogFunc) {
+			char logmsg[256];
+			sprintf(logmsg, "GI_CACHE: Possible data corruption: failed to write: tried to write %u, written: %d, err: %d\n", data_index->m_DataCacheLen, bytes_written, errno);
+			LogFunc(logmsg);
+		}
         assert(bytes_written == data_index->m_DataCacheLen);
         data_index->m_DataLen += data_index->m_DataCacheLen;
         assert(data_index->m_DataLen == 
@@ -304,6 +314,11 @@ static Uint1 x_OpenIndexFile(SGiDataIndex* data_index)
         assert(0 == lseek(data_index->m_GiIndexFile, 0, SEEK_END));
         bytes_written = write(data_index->m_GiIndexFile, b,
                               data_index->m_GiIndexLen*sizeof(Uint4));
+		if (bytes_written != data_index->m_GiIndexLen*sizeof(Uint4) && LogFunc) {
+			char logmsg[256];
+			sprintf(logmsg, "GI_CACHE: Possible index corruption: failed to write: tried to write %lu, written: %d, err: %d\n", data_index->m_GiIndexLen*sizeof(Uint4), bytes_written, errno);
+			LogFunc(logmsg);
+		}
         assert(bytes_written == data_index->m_GiIndexLen*sizeof(Uint4));
         free(b);
         assert(data_index->m_GiIndexLen*sizeof(Uint4) ==
@@ -359,6 +374,11 @@ static Uint1 x_OpenDataFile(SGiDataIndex* data_index)
         memset(b, 0, sizeof(b));
         assert(0 == lseek(data_index->m_DataFile, 0, SEEK_END));
         bytes_written = write(data_index->m_DataFile, b, sizeof(b));
+		if (bytes_written != sizeof(b) && LogFunc) {
+			char logmsg[256];
+			sprintf(logmsg, "GI_CACHE: Possible file corruption: failed to write: tried to write %lu, written: %d, err: %d\n", sizeof(b), bytes_written, errno);
+			LogFunc(logmsg);
+		}
         assert(bytes_written == sizeof(b));
         data_index->m_DataLen = sizeof(b);
         assert(data_index->m_DataLen ==
@@ -510,7 +530,8 @@ static Uint1 GiDataIndex_ReMap(SGiDataIndex* data_index, int delay)
     if (!data_index->m_NeedRemap)
         return 1;
 
-	if ((err = MT_LOCK_Do(data_index->m_RemapLock, eMT_Lock)) > 0) {
+	/* MT_LOCK_Do return -1 - compiled with no locks, 0 -- failed, >0 -- aquired */
+	if ((err = MT_LOCK_Do(data_index->m_RemapLock, eMT_Lock)) == 0) {
 		if (LogFunc) {
 			char logmsg[256];
 			sprintf(logmsg, "GI_CACHE: failed to aquire WR lock, err: %d\n", err);
@@ -758,7 +779,7 @@ static int x_GetGiData(SGiDataIndex* data_index, int gi, packed_accession_t* pa)
     /* If some thread is currently remapping, the data is in an inconsistent
        state, therefore return NULL. */
 
-	if ((err = MT_LOCK_Do(data_index->m_RemapLock, eMT_LockRead)) > 0) {
+	if ((err = MT_LOCK_Do(data_index->m_RemapLock, eMT_LockRead)) == 0) {
 		if (LogFunc) {
 			char logmsg[256];
 			sprintf(logmsg, "GI_CACHE: failed to aquire RD lock, err: %d\n", err);
@@ -777,7 +798,7 @@ static int x_GetGiData(SGiDataIndex* data_index, int gi, packed_accession_t* pa)
 			return 0;
 		}
 		/* re-aquire RD lock */
-		if ((err = MT_LOCK_Do(data_index->m_RemapLock, eMT_LockRead)) > 0) {
+		if ((err = MT_LOCK_Do(data_index->m_RemapLock, eMT_LockRead)) == 0) {
 			if (LogFunc) {
 				char logmsg[256];
 				sprintf(logmsg, "GI_CACHE: failed to aquire RD lock, err: %d\n", err);
@@ -865,7 +886,7 @@ static int x_GetGiData(SGiDataIndex* data_index, int gi, packed_accession_t* pa)
                 return 0;
 
 			/* re-aquire RD lock */
-			if ((err = MT_LOCK_Do(data_index->m_RemapLock, eMT_LockRead)) > 0) {
+			if ((err = MT_LOCK_Do(data_index->m_RemapLock, eMT_LockRead)) == 0) {
 				if (LogFunc) {
 					char logmsg[256];
 					sprintf(logmsg, "GI_CACHE: failed to aquire RD lock, err: %d\n", err);
