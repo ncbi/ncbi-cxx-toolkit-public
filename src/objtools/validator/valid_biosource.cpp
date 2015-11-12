@@ -2779,7 +2779,7 @@ void CValidError_imp::ValidateTaxonomy(const CSeq_entry& se)
                                     PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem,
                                         "Organism name is '" + taxname_req
                                         + "', taxonomy ID should be '" + NStr::IntToString(taxid_rep)
-                                        + "' but is " + NStr::IntToString(taxid_req) + "'",
+                                        + "' but is '" + NStr::IntToString(taxid_req) + "'",
                                         **desc_it, *ctx_it);
                                 }
                             }
@@ -2938,7 +2938,7 @@ void CValidError_imp::ValidateTaxonomy(const COrg_ref& org, int genome)
                                 PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_TaxonomyLookupProblem,
                                     "Organism name is '" + taxname_req
                                     + "', taxonomy ID should be '" + NStr::IntToString(taxid_rep)
-                                    + "' but is " + NStr::IntToString(taxid_req) + "'",
+                                    + "' but is '" + NStr::IntToString(taxid_req) + "'",
                                     org);
                             }
                         }
