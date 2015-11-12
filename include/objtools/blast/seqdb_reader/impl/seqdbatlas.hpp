@@ -1941,7 +1941,7 @@ private:
     /// of a fast region lookup table (m_Recent).  Existing entries in
     /// the table will move down one slot.  If the new entry already
     /// exists somewhere else in the table, it will be removed from
-    /// that point (and only entries between that point and the top of
+    /// that point, and only entries between that point and the top of
     /// the table will need to move.  If all slots in the table are
     /// used, the last entry will simply be dropped.
     ///
@@ -1952,18 +1952,22 @@ private:
         if (m_Recent[0] == r)
             return;
 
-        int found_at = eNumRecent-1;
+        Uint4 found_at = eNumRecent - 1;
 
-        for(int i = 0; i < eNumRecent-1; i++) {
+        for(Uint4 i = 0; i < (eNumRecent - 1); ++i) {
             if (m_Recent[i] == r) {
                 found_at = i;
                 break;
             }
         }
 
-        while(found_at) {
-            m_Recent[found_at] = m_Recent[found_at-1];
-            found_at --;
+        // NOTE: The second conditional below SHOULDN'T be necessary if
+        // you read through the code above.  However, g++ doesn't trust it
+        // without the "<" condition and issues a warning:
+        // "array subscript is above array bounds"
+        while(found_at > 0  &&  found_at < eNumRecent) {
+            m_Recent[found_at] = m_Recent[found_at - 1];
+            --found_at;
         }
 
         m_Recent[0] = r;
