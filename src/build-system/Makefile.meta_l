@@ -24,7 +24,13 @@ endif
 
 ### Protect against two MAKE processes running in the same dir
 
-RWL = $(abs_top_srcdir)/scripts/common/impl/run_with_lock.sh
+ifeq "$(wildcard $(build_root)/bin/run_with_lock)" ""
+  RWL = $(abs_top_srcdir)/scripts/common/impl/run_with_lock.sh
+else
+  RWL = $(build_root)/bin/run_with_lock \
+         -getter $(abs_top_srcdir)/scripts/common/impl/get_lock.sh \
+         -reviewer $(abs_top_srcdir)/scripts/common/impl/is_log_interesting.awk
+endif
 
 ifeq "$(srcdir)" "."
   PTB_ROOT      = /net/snowman/vol/export2/win-coremake/App/Ncbi/cppcore/ptb
