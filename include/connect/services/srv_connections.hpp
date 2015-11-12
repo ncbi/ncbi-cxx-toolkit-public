@@ -110,7 +110,8 @@ class NCBI_XCONNECT_EXPORT CNetServer
     /// attempts to connect to the server and execute
     /// the specified command.
     SExecResult ExecWithRetry(const string& cmd,
-            bool multiline_output = false);
+            bool multiline_output = false,
+            INetServerConnectionListener* conn_listener = NULL);
 
     /// Retrieve basic information about the server as
     /// attribute name-value pairs.

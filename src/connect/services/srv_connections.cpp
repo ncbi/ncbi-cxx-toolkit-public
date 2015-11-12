@@ -828,7 +828,7 @@ void SNetServerInPool::ResetThrottlingParameters()
     m_Throttled = false;
 }
 
-CNetServer::SExecResult SNetServerImpl::ExecWithRetry(const string& cmd,
+CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd,
         bool multiline_output,
         INetServerConnectionListener* conn_listener)
 {
@@ -836,18 +836,18 @@ CNetServer::SExecResult SNetServerImpl::ExecWithRetry(const string& cmd,
 
     CTime max_connection_time(GetFastLocalTime());
     max_connection_time.AddNanoSecond(
-        m_ServerInPool->m_ServerPool->m_MaxConnectionTime * 1000000);
+        m_Impl->m_ServerInPool->m_ServerPool->m_MaxConnectionTime * 1000000);
 
     unsigned attempt = 0;
 
     if (conn_listener == NULL)
-        conn_listener = m_Service->m_Listener;
+        conn_listener = m_Impl->m_Service->m_Listener;
 
     for (;;) {
         string warning;
 
         try {
-            ConnectAndExec(cmd, multiline_output,
+            m_Impl->ConnectAndExec(cmd, multiline_output,
                     exec_result, NULL, NULL, conn_listener);
             return exec_result;
         }
@@ -856,10 +856,10 @@ CNetServer::SExecResult SNetServerImpl::ExecWithRetry(const string& cmd,
                     e.GetErrCode() == CNetSrvConnException::eServerThrottle)
                 throw;
 
-            if (m_ServerInPool->m_ServerPool->m_MaxConnectionTime > 0 &&
+            if (m_Impl->m_ServerInPool->m_ServerPool->m_MaxConnectionTime > 0 &&
                     max_connection_time <= GetFastLocalTime()) {
                 LOG_POST(Error << "Timeout (max_connection_time=" <<
-                    m_ServerInPool->m_ServerPool->m_MaxConnectionTime <<
+                    m_Impl->m_ServerInPool->m_ServerPool->m_MaxConnectionTime <<
                     "); cmd=" << cmd <<
                     "; exception=" << e.GetMsg());
                 throw;
@@ -872,10 +872,10 @@ CNetServer::SExecResult SNetServerImpl::ExecWithRetry(const string& cmd,
                     e.GetErrCode() != CNetScheduleException::eTryAgain)
                 throw;
 
-            if (m_ServerInPool->m_ServerPool->m_MaxConnectionTime > 0 &&
+            if (m_Impl->m_ServerInPool->m_ServerPool->m_MaxConnectionTime > 0 &&
                     max_connection_time <= GetFastLocalTime()) {
                 LOG_POST(Error << "Timeout (max_connection_time=" <<
-                    m_ServerInPool->m_ServerPool->m_MaxConnectionTime <<
+                    m_Impl->m_ServerInPool->m_ServerPool->m_MaxConnectionTime <<
                     "); cmd=" << cmd <<
                     "; exception=" << e.GetMsg());
                 throw;
@@ -890,17 +890,10 @@ CNetServer::SExecResult SNetServerImpl::ExecWithRetry(const string& cmd,
         warning += NStr::NumericToString(
                 TServConn_ConnMaxRetries::GetDefault());
 
-        CNetServer server(this);
-        conn_listener->OnWarning(warning, server);
+        conn_listener->OnWarning(warning, *this);
 
         SleepMilliSec(s_GetRetryDelay());
     }
-}
-
-CNetServer::SExecResult CNetServer::ExecWithRetry(const string& cmd,
-        bool multiline_output)
-{
-    return m_Impl->ExecWithRetry(cmd, multiline_output);
 }
 
 CNetServerInfo CNetServer::GetServerInfo()
