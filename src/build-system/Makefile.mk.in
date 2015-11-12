@@ -646,7 +646,7 @@ GENBANK_LDEP = \
     $(GENBANK_READER_PUBSEQOS_LIBS)
 GENBANK_LIBS = ncbi_xloader_genbank $(GENBANK_LDEP)
 
-GENBANK_READER_LDEP = $(XCONNEXT) xconnect id1 id2 seqsplit $(COMPRESS_LIBS) $(SOBJMGR_LIBS)
+GENBANK_READER_LDEP = $(XCONNEXT) xconnect id1 id2 $(SOBJMGR_LIBS) $(COMPRESS_LIBS)
 GENBANK_READER_LIBS = ncbi_xreader $(GENBANK_READER_LDEP)
 
 # In-house-only PubSeqOS loader (not always built)
@@ -671,8 +671,8 @@ GENBANK_READER_GICACHE_LIBS = ncbi_xreader_gicache \
 
 # Interdependent sequence libraries + seqcode.  Does not include seqset.
 SEQ_LIBS = seq seqcode sequtil
-SOBJMGR_LDEP = genome_collection seqedit seqset $(SEQ_LIBS) pub medline \
-    biblio general xser xutil xncbi
+SOBJMGR_LDEP = genome_collection seqedit seqsplit seqset $(SEQ_LIBS) \
+    pub medline biblio general xser xutil xncbi
 SOBJMGR_LIBS = xobjmgr $(SOBJMGR_LDEP)
 OBJMGR_LIBS = $(GENBANK_LIBS)
 
