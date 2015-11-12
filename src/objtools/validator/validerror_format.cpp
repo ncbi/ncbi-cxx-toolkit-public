@@ -163,6 +163,7 @@ string CValidErrorFormat::FormatForSubmitterReport(const CValidErrItem& error, C
             rval = x_FormatBadInstCodeForSubmitterReport(error);
             break;
         case eErr_SEQ_DESCR_LatLonCountry:
+        case eErr_SEQ_DESCR_LatLonWater:
             rval = x_FormatLatLonCountryForSubmitterReport(error);
             break;
         default:
