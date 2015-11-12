@@ -95,6 +95,7 @@ public:
     void   Add(const CTempString& s);
     void   Clear(void);
     void   Join(string* s) const;
+    void   Join(CTempString* s) const;
     void   Join(CTempStringEx* s) const;
     size_t GetSize(void) const;
 
