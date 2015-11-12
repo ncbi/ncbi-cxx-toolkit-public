@@ -67,7 +67,32 @@ struct SNetServerMultilineCmdOutputImpl : public CObject
     bool m_ReadCompletely;
 };
 
-struct SNetServerInPool;
+class INetServerProperties : public CObject
+{
+};
+
+class INetServerConnectionListener : public CObject
+{
+public:
+    virtual CRef<INetServerProperties> AllocServerProperties() = 0;
+
+    CConfig* PreInit(CObject* api_impl, CConfig* config, string* section);
+
+// Event handlers.
+public:
+    virtual CConfig* OnPreInit(CObject* api_impl,
+        CConfig* config, string* config_section) { return NULL; }
+    virtual void OnInit(CObject* api_impl,
+        CConfig* config, const string& config_section) = 0;
+    virtual void OnConnected(CNetServerConnection& connection) = 0;
+    virtual void OnError(const string& err_msg, CNetServer& server) = 0;
+    virtual void OnWarning(const string& warn_msg, CNetServer& server) = 0;
+
+    string GetClientName() const { return m_ClientName; }
+
+protected:
+    string m_ClientName;
+};
 
 struct SNetServerConnectionImpl : public CObject
 {
