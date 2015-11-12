@@ -313,8 +313,8 @@ int main(int argc, const char* const* argv)
     sprintf(pid_str, "%ld", (long)getpid());
     sprintf(s_LockName, "%s.lock", options.base);
     for (n = 1;  n <= NSIG;  ++n) {
-        if (n != SIGKILL  &&  n != SIGSTOP  &&  n != SIGCHLD
-            &&  n != SIGPIPE) {
+        if (n != SIGKILL  &&  n != SIGSTOP  &&  n != SIGTSTP  &&  n != SIGCONT
+            &&  n != SIGCHLD  &&  n != SIGPIPE) {
             signal(n, s_OnSignal);
         }
     }
