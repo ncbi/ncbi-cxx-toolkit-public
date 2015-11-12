@@ -345,11 +345,11 @@ CNetServer::SExecResult SNetICacheClientImpl::ChooseServerAndExec(
             selected_server = m_Service.IterateByWeight(key).GetServer();
 
         if (server_last_used_ptr == NULL)
-            return selected_server.ExecWithRetry(cmd,
+            return selected_server->ExecWithRetry(cmd,
                     multiline_output, conn_listener);
         else {
             CNetServer::SExecResult exec_result(
-                    selected_server.ExecWithRetry(cmd,
+                    selected_server->ExecWithRetry(cmd,
                             multiline_output, conn_listener));
             *server_last_used_ptr = selected_server;
             return exec_result;

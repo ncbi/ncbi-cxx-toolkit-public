@@ -281,6 +281,10 @@ struct SNetServerImpl : public CObject
             INetServerExecListener* exec_listener = NULL,
             INetServerConnectionListener* conn_listener = NULL);
 
+    CNetServer::SExecResult ExecWithRetry(const string& cmd,
+            bool multiline_output = false,
+            INetServerConnectionListener* conn_listener = NULL);
+
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     static const char kXSiteFwd[];
 #endif

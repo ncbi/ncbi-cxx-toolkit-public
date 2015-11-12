@@ -393,7 +393,7 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
                 // them into host:port immediately.
 
                 if (!key_is_mirrored)
-                    return server.ExecWithRetry(cmd, multiline_output,
+                    return server->ExecWithRetry(cmd, multiline_output,
                             conn_listener);
 
                 CNetServer::SExecResult exec_result;
@@ -444,7 +444,7 @@ CNetServer::SExecResult SNetCacheAPIImpl::ExecMirrorAware(
                 "accessed because it is not registered for the service.");
     }
 
-    return primary_server.ExecWithRetry(cmd, multiline_output, conn_listener);
+    return primary_server->ExecWithRetry(cmd, multiline_output, conn_listener);
 }
 
 CNetCacheAPI::CNetCacheAPI(CNetCacheAPI::EAppRegistry /* use_app_reg */,
