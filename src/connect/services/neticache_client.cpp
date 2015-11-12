@@ -37,6 +37,7 @@
 #include <connect/services/neticache_client.hpp>
 #include <connect/services/error_codes.hpp>
 #include <connect/services/netcache_api_expt.hpp>
+#include <connect/services/srv_connections.hpp>
 
 #include <connect/ncbi_conn_exception.hpp>
 
