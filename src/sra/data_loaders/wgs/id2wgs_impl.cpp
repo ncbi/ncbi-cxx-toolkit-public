@@ -59,6 +59,7 @@ NCBI_DEFINE_ERR_SUBCODE_X(24);
 BEGIN_NAMESPACE(objects);
 
 // behavior options
+//#define ALLOW_SPLIT
 #define TRACE_PROCESSING
 
 enum EResolveMaster {
@@ -71,7 +72,7 @@ static const EResolveMaster kResolveMaster = eResolveMaster_never;
 // default configuration parameters
 #define DEFAULT_VDB_CACHE_SIZE 10
 #define DEFAULT_INDEX_UPDATE_TIME 600
-#define DEFAULT_COMPRESS_DATA eCompressData_some
+#define DEFAULT_COMPRESS_DATA CID2WGSContext::eCompressData_some
 
 // debug levels
 enum EDebugLevel {
@@ -288,12 +289,36 @@ size_t sx_GetSize(const CID2_Reply_Data& data)
 END_LOCAL_NAMESPACE;
 
 
+CID2WGSContext::CID2WGSContext(void)
+    : m_CompressData(eCompressData_never),
+      m_ExplicitBlobState(false)
+{
+}
+
+
+bool CID2WGSContext::operator<(const CID2WGSContext& b) const
+{
+    if ( m_CompressData != b.m_CompressData ) {
+        return m_CompressData < b.m_CompressData;
+    }
+    if ( m_ExplicitBlobState != b.m_ExplicitBlobState ) {
+        return m_ExplicitBlobState < b.m_ExplicitBlobState;
+    }
+    return false;
+}
+
+
+bool CID2WGSContext::operator==(const CID2WGSContext& b) const
+{
+    return m_CompressData == b.m_CompressData &&
+        m_ExplicitBlobState == b.m_ExplicitBlobState;
+}
+
+
 CID2WGSProcessor_Impl::CID2WGSProcessor_Impl(const CConfig::TParamTree* params,
                                              const string& driver_name)
     : m_GiResolver(new CWGSGiResolver),
-      m_AccResolver(new CWGSProtAccResolver),
-      m_DefaultCompressData(eCompressData_never),
-      m_DefaultExplicitBlobState(false)
+      m_AccResolver(new CWGSProtAccResolver)
 {
     auto_ptr<CConfig::TParamTree> app_params;
     if ( !params ) {
@@ -334,12 +359,13 @@ CID2WGSProcessor_Impl::CID2WGSProcessor_Impl(const CConfig::TParamTree* params,
                     NCBI_ID2PROC_WGS_PARAM_COMPRESS_DATA,
                     CConfig::eErr_NoThrow,
                     DEFAULT_COMPRESS_DATA);
-    if ( compress_data >= eCompressData_never &&
-         compress_data <= eCompressData_always ) {
-        m_DefaultCompressData = ECompressData(compress_data);
+    if ( compress_data >= CID2WGSContext::eCompressData_never &&
+         compress_data <= CID2WGSContext::eCompressData_always ) {
+        m_InitialContext.m_CompressData =
+            CID2WGSContext::ECompressData(compress_data);
     }
-    ResetParameters();
-    TRACE_X(23, eDebug_open, "ID2WGS: compress_data = "<<m_CompressData);
+    TRACE_X(23, eDebug_open, "ID2WGS: compress_data = "<<
+            m_InitialContext.m_CompressData);
 }
 
 
@@ -350,26 +376,19 @@ CID2WGSProcessor_Impl::~CID2WGSProcessor_Impl(void)
 }
 
 
-void CID2WGSProcessor_Impl::ResetParameters(void)
+void CID2WGSProcessor_Impl::InitContext(CID2WGSContext& context,
+                                        const CID2_Request& request)
 {
-    m_CompressData = m_DefaultCompressData;
-    m_ExplicitBlobState = m_DefaultExplicitBlobState;
-}
-
-
-void CID2WGSProcessor_Impl::ProcessInit(const CID2_Request& request)
-{
-    ResetParameters();
-    if ( !request.IsSetParams() ) {
-        return;
-    }
-    // check if blob-state field is allowed
-    ITERATE ( CID2_Request::TParams::Tdata, it, request.GetParams().Get() ) {
-        const CID2_Param& param = **it;
-        if ( param.GetName() == "id2:allow" && param.IsSetValue() ) {
-            ITERATE ( CID2_Param::TValue, it2, param.GetValue() ) {
-                if ( *it2 == "*.blob-state" ) {
-                    m_ExplicitBlobState = true;
+    context = GetInitialContext();
+    if ( request.IsSetParams() ) {
+        // check if blob-state field is allowed
+        ITERATE ( CID2_Request::TParams::Tdata, it, request.GetParams().Get() ) {
+            const CID2_Param& param = **it;
+            if ( param.GetName() == "id2:allow" && param.IsSetValue() ) {
+                ITERATE ( CID2_Param::TValue, it2, param.GetValue() ) {
+                    if ( *it2 == "*.blob-state" ) {
+                        context.m_ExplicitBlobState = true;
+                    }
                 }
             }
         }
@@ -1185,7 +1204,8 @@ CID2WGSProcessor_Impl::Resolve(TReplies& replies,
 }
 
 
-bool CID2WGSProcessor_Impl::ProcessGetSeqId(TReplies& replies,
+bool CID2WGSProcessor_Impl::ProcessGetSeqId(CID2WGSContext& context,
+                                            TReplies& replies,
                                             CID2_Request& main_request,
                                             CID2_Request_Get_Seq_id& request)
 {
@@ -1198,7 +1218,8 @@ bool CID2WGSProcessor_Impl::ProcessGetSeqId(TReplies& replies,
 
 
 CID2WGSProcessor_Impl::SWGSSeqInfo
-CID2WGSProcessor_Impl::Resolve(TReplies& replies,
+CID2WGSProcessor_Impl::Resolve(CID2WGSContext& context,
+                               TReplies& replies,
                                CID2_Request& main_request,
                                CID2_Request_Get_Blob_Id& request)
 {
@@ -1214,7 +1235,7 @@ CID2WGSProcessor_Impl::Resolve(TReplies& replies,
     reply.SetSeq_id(request.SetSeq_id().SetSeq_id().SetSeq_id());
     reply.SetBlob_id(GetBlobId(seq));
     if ( int blob_state = GetID2BlobState(seq) ) {
-        SetBlobState(*main_reply, blob_state);
+        SetBlobState(context, *main_reply, blob_state);
     }
     reply.SetEnd_of_reply();
     replies.push_back(main_reply);
@@ -1223,13 +1244,14 @@ CID2WGSProcessor_Impl::Resolve(TReplies& replies,
 }
 
 
-bool CID2WGSProcessor_Impl::ProcessGetBlobId(TReplies& replies,
-                                        CID2_Request& main_request,
-                                        CID2_Request_Get_Blob_Id& request)
+bool CID2WGSProcessor_Impl::ProcessGetBlobId(CID2WGSContext& context,
+                                             TReplies& replies,
+                                             CID2_Request& main_request,
+                                             CID2_Request_Get_Blob_Id& request)
 {
     START_TRACE();
     TRACE_X(7, eDebug_request, "GetBlobId: "<<MSerial_AsnText<<main_request);
-    SWGSSeqInfo seq = Resolve(replies, main_request, request);
+    SWGSSeqInfo seq = Resolve(context, replies, main_request, request);
     TRACE_X(8, eDebug_resolve, "GetBlobId: done");
     return seq || seq.m_IsWGS;
 }
@@ -1298,13 +1320,14 @@ int CID2WGSProcessor_Impl::GetID2BlobState(SWGSSeqInfo& seq)
 }
 
 
-void CID2WGSProcessor_Impl::SetBlobState(CID2_Reply& main_reply,
+void CID2WGSProcessor_Impl::SetBlobState(CID2WGSContext& context,
+                                         CID2_Reply& main_reply,
                                          int blob_state) const
 {
     if ( !blob_state ) {
         return;
     }
-    if ( m_ExplicitBlobState ) {
+    if ( context.m_ExplicitBlobState ) {
         CID2_Reply::TReply& reply = main_reply.SetReply();
         switch ( reply.Which() ) {
         case CID2_Reply::TReply::e_Get_blob_id:
@@ -1359,7 +1382,10 @@ CRef<CAsnBinData> CID2WGSProcessor_Impl::GetObject(SWGSSeqInfo& seq0)
         CWGSSeqIterator& it = GetContigIterator(seq);
         CWGSSeqIterator::TFlags flags =
             (it.fDefaultFlags & ~it.fMaskDescr) | it.fSeqDescr;
-        CRef<CAsnBinData> obj;// = it.GetSplitInfoData(flags);
+        CRef<CAsnBinData> obj;
+#ifdef ALLOW_SPLIT
+        obj = it.GetSplitInfoData(flags);
+#endif
         if ( !obj ) {
             obj = it.GetSeq_entryData(flags);
         }
@@ -1392,19 +1418,20 @@ CRef<CAsnBinData> CID2WGSProcessor_Impl::GetChunk(SWGSSeqInfo& seq0,
         CWGSSeqIterator& it = GetContigIterator(seq);
         CWGSSeqIterator::TFlags flags =
             (it.fDefaultFlags & ~it.fMaskDescr) | it.fSeqDescr;
-        return it.GetChunkData(flags);
+        //return it.GetChunkData(chunk_id, flags);
     }
     return null;
 }
 
 
-bool CID2WGSProcessor_Impl::GetCompress(const SWGSSeqInfo& seq,
+bool CID2WGSProcessor_Impl::GetCompress(CID2WGSContext& context,
+                                        const SWGSSeqInfo& seq,
                                         const CSeq_entry& entry) const
 {
-    if ( m_CompressData == eCompressData_always ) {
+    if ( context.m_CompressData == context.eCompressData_always ) {
         return true;
     }
-    if ( m_CompressData == eCompressData_never ) {
+    if ( context.m_CompressData == context.eCompressData_never ) {
         return false;
     }
     if ( seq.IsMaster() ) {
@@ -1417,34 +1444,37 @@ bool CID2WGSProcessor_Impl::GetCompress(const SWGSSeqInfo& seq,
 }
 
 
-bool CID2WGSProcessor_Impl::GetCompress(const SWGSSeqInfo& seq,
+bool CID2WGSProcessor_Impl::GetCompress(CID2WGSContext& context,
+                                        const SWGSSeqInfo& seq,
                                         const CID2S_Split_Info& split) const
 {
-    if ( m_CompressData == eCompressData_always ) {
+    if ( context.m_CompressData == context.eCompressData_always ) {
         return true;
     }
-    if ( m_CompressData == eCompressData_never ) {
+    if ( context.m_CompressData == context.eCompressData_never ) {
         return false;
     }
     return true;
 }
 
 
-bool CID2WGSProcessor_Impl::GetCompress(const SWGSSeqInfo& seq,
+bool CID2WGSProcessor_Impl::GetCompress(CID2WGSContext& context,
+                                        const SWGSSeqInfo& seq,
                                         TChunkId chunk_id,
                                         const CID2S_Chunk& chunk) const
 {
-    if ( m_CompressData == eCompressData_always ) {
+    if ( context.m_CompressData == context.eCompressData_always ) {
         return true;
     }
-    if ( m_CompressData == eCompressData_never ) {
+    if ( context.m_CompressData == context.eCompressData_never ) {
         return false;
     }
     return false;
 }
 
 
-bool CID2WGSProcessor_Impl::GetCompress(const SWGSSeqInfo& seq,
+bool CID2WGSProcessor_Impl::GetCompress(CID2WGSContext& context,
+                                        const SWGSSeqInfo& seq,
                                         TChunkId chunk_id,
                                         const CAsnBinData& obj) const
 {
@@ -1452,19 +1482,19 @@ bool CID2WGSProcessor_Impl::GetCompress(const SWGSSeqInfo& seq,
     {
         typedef CSeq_entry Type;
         if ( const Type* ptr2 = dynamic_cast<const Type*>(ptr) ) {
-            return GetCompress(seq, *ptr2);
+            return GetCompress(context, seq, *ptr2);
         }
     }
     {
         typedef CID2S_Split_Info Type;
         if ( const Type* ptr2 = dynamic_cast<const Type*>(ptr) ) {
-            return GetCompress(seq, *ptr2);
+            return GetCompress(context, seq, *ptr2);
         }
     }
     {
         typedef CID2S_Chunk Type;
         if ( const Type* ptr2 = dynamic_cast<const Type*>(ptr) ) {
-            return GetCompress(seq, chunk_id, *ptr2);
+            return GetCompress(context, seq, chunk_id, *ptr2);
         }
     }
     return false;
@@ -1517,37 +1547,41 @@ void CID2WGSProcessor_Impl::WriteData(CID2_Reply_Data& data,
 }
 
 
-void CID2WGSProcessor_Impl::WriteData(CID2_Reply_Data& data,
+void CID2WGSProcessor_Impl::WriteData(CID2WGSContext& context,
+                                      CID2_Reply_Data& data,
                                       const SWGSSeqInfo& seq,
                                       TChunkId chunk_id,
                                       const CAsnBinData& obj) const
 {
-    WriteData(data, obj, GetCompress(seq, chunk_id, obj));
+    WriteData(data, obj, GetCompress(context, seq, chunk_id, obj));
 }
 
 
-void CID2WGSProcessor_Impl::WriteData(CID2_Reply_Data& data,
+void CID2WGSProcessor_Impl::WriteData(CID2WGSContext& context,
+                                      CID2_Reply_Data& data,
                                       const SWGSSeqInfo& seq,
                                       const CSeq_entry& obj) const
 {
-    WriteData(data, obj, GetCompress(seq, obj));
+    WriteData(data, obj, GetCompress(context, seq, obj));
 }
 
 
-void CID2WGSProcessor_Impl::WriteData(CID2_Reply_Data& data,
+void CID2WGSProcessor_Impl::WriteData(CID2WGSContext& context,
+                                      CID2_Reply_Data& data,
                                       const SWGSSeqInfo& seq,
                                       const CID2S_Split_Info& obj) const
 {
-    WriteData(data, obj, GetCompress(seq, obj));
+    WriteData(data, obj, GetCompress(context, seq, obj));
 }
 
 
-void CID2WGSProcessor_Impl::WriteData(CID2_Reply_Data& data,
+void CID2WGSProcessor_Impl::WriteData(CID2WGSContext& context,
+                                      CID2_Reply_Data& data,
                                       const SWGSSeqInfo& seq,
                                       TChunkId chunk_id,
                                       const CID2S_Chunk& obj) const
 {
-    WriteData(data, obj, GetCompress(seq, chunk_id, obj));
+    WriteData(data, obj, GetCompress(context, seq, chunk_id, obj));
 }
 
 
@@ -1572,7 +1606,8 @@ bool CID2WGSProcessor_Impl::ExcludedBlob(SWGSSeqInfo& seq,
 }
 
 
-bool CID2WGSProcessor_Impl::ProcessGetBlobInfo(TReplies& replies,
+bool CID2WGSProcessor_Impl::ProcessGetBlobInfo(CID2WGSContext& context,
+                                               TReplies& replies,
                                                CID2_Request& main_request,
                                                CID2_Request_Get_Blob_Info& request)
 {
@@ -1584,7 +1619,8 @@ bool CID2WGSProcessor_Impl::ProcessGetBlobInfo(TReplies& replies,
         seq = ResolveBlobId(req_id.GetBlob_id());
     }
     else {
-        seq = Resolve(replies, main_request, req_id.SetResolve().SetRequest());
+        seq = Resolve(context, replies, main_request,
+                      req_id.SetResolve().SetRequest());
     }
     if ( !seq ) {
         TRACE_X(10, eDebug_resolve, "GetBlobInfo: null");
@@ -1599,7 +1635,7 @@ bool CID2WGSProcessor_Impl::ProcessGetBlobInfo(TReplies& replies,
         CID2_Reply_Get_Blob& reply = main_reply->SetReply().SetGet_blob();
         reply.SetBlob_id(GetBlobId(seq));
         if ( int blob_state = GetID2BlobState(seq) ) {
-            SetBlobState(*main_reply, blob_state);
+            SetBlobState(context, *main_reply, blob_state);
         }
         CID2_Reply_Data& data = reply.SetData();
 
@@ -1613,7 +1649,7 @@ bool CID2WGSProcessor_Impl::ProcessGetBlobInfo(TReplies& replies,
             TRACE_X(11, eDebug_resolve, "GetSeq_entry: "<<seq);
             data.SetData_type(CID2_Reply_Data::eData_type_seq_entry);
         }
-        WriteData(data, seq, 0, *obj);
+        WriteData(context, data, seq, 0, *obj);
         TRACE_X(12, eDebug_resolve, "Seq("<<seq<<"): "<<
                 " data size: "<<sx_GetSize(data));
         replies.push_back(main_reply);
@@ -1623,7 +1659,45 @@ bool CID2WGSProcessor_Impl::ProcessGetBlobInfo(TReplies& replies,
 }
 
 
-bool CID2WGSProcessor_Impl::ProcessRequest(TReplies& replies,
+bool CID2WGSProcessor_Impl::ProcessGetChunks(CID2WGSContext& context,
+                                             TReplies& replies,
+                                             CID2_Request& main_request,
+                                             CID2S_Request_Get_Chunks& request)
+{
+    START_TRACE();
+    TRACE_X(9, eDebug_request, "GetChunks: "<<MSerial_AsnText<<main_request);
+    SWGSSeqInfo seq = ResolveBlobId(request.SetBlob_id());
+    if ( !seq ) {
+        TRACE_X(10, eDebug_resolve, "GetChunks: null");
+        return seq.m_IsWGS;
+    }
+
+    ITERATE ( CID2S_Request_Get_Chunks::TChunks, it, request.GetChunks() ) {
+        CRef<CID2_Reply> main_reply(new CID2_Reply);
+        if ( main_request.IsSetSerial_number() ) {
+            main_reply->SetSerial_number(main_request.GetSerial_number());
+        }
+        CID2S_Reply_Get_Chunk& reply = main_reply->SetReply().SetGet_chunk();
+        reply.SetBlob_id(GetBlobId(seq));
+        reply.SetChunk_id(*it);
+        CID2_Reply_Data& data = reply.SetData();
+
+        CRef<CAsnBinData> obj = GetChunk(seq, *it);
+        _ASSERT(obj->GetMainObject().GetThisTypeInfo() == CID2S_Chunk::GetTypeInfo());
+        TRACE_X(11, eDebug_resolve, "GetChunk: "<<seq);
+        data.SetData_type(CID2_Reply_Data::eData_type_id2s_chunk);
+        WriteData(context, data, seq, *it, *obj);
+        TRACE_X(12, eDebug_resolve, "Seq("<<seq<<"): "<<
+                " data size: "<<sx_GetSize(data));
+        replies.push_back(main_reply);
+    }
+    TRACE_X(14, eDebug_resolve,"GetChunks: done");
+    return true;
+}
+
+
+bool CID2WGSProcessor_Impl::ProcessRequest(CID2WGSContext& context,
+                                           TReplies& replies,
                                            CID2_Request& request)
 {
     if ( !s_Enabled() ) {
@@ -1634,19 +1708,23 @@ bool CID2WGSProcessor_Impl::ProcessRequest(TReplies& replies,
     try {
         switch ( request.GetRequest().Which() ) {
         case CID2_Request::TRequest::e_Init:
-            ProcessInit(request);
+            InitContext(context, request);
             return false;
         case CID2_Request::TRequest::e_Get_seq_id:
-            done = ProcessGetSeqId(replies, request,
+            done = ProcessGetSeqId(context, replies, request,
                                    request.SetRequest().SetGet_seq_id());
             break;
         case CID2_Request::TRequest::e_Get_blob_id:
-            done = ProcessGetBlobId(replies, request,
+            done = ProcessGetBlobId(context, replies, request,
                                     request.SetRequest().SetGet_blob_id());
             break;
         case CID2_Request::TRequest::e_Get_blob_info:
-            done = ProcessGetBlobInfo(replies, request,
+            done = ProcessGetBlobInfo(context, replies, request,
                                       request.SetRequest().SetGet_blob_info());
+            break;
+        case CID2_Request::TRequest::e_Get_chunks:
+            done = ProcessGetChunks(context, replies, request,
+                                    request.SetRequest().SetGet_chunks());
             break;
         default:
             return false;
@@ -1689,11 +1767,12 @@ bool CID2WGSProcessor_Impl::ProcessRequest(TReplies& replies,
 
 
 CID2WGSProcessor_Impl::TReplies
-CID2WGSProcessor_Impl::ProcessSomeRequests(CID2_Request_Packet& packet)
+CID2WGSProcessor_Impl::ProcessSomeRequests(CID2WGSContext& context,
+                                           CID2_Request_Packet& packet)
 {
     TReplies replies;
     ERASE_ITERATE ( CID2_Request_Packet::Tdata, it, packet.Set() ) {
-        if ( ProcessRequest(replies, **it) ) {
+        if ( ProcessRequest(context, replies, **it) ) {
             packet.Set().erase(it);
         }
     }

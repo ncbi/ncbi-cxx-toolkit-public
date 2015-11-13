@@ -51,14 +51,16 @@ BEGIN_NAMESPACE(objects);
 
 
 CID2WGSProcessor::CID2WGSProcessor(void)
-    : m_Impl(new CID2WGSProcessor_Impl)
+    : m_Impl(new CID2WGSProcessor_Impl),
+      m_CommonContext(GetInitialContext())
 {
 }
 
 
 CID2WGSProcessor::CID2WGSProcessor(const CConfig::TParamTree* params,
                                    const string& driver_name)
-    : m_Impl(new CID2WGSProcessor_Impl(params, driver_name))
+    : m_Impl(new CID2WGSProcessor_Impl(params, driver_name)),
+      m_CommonContext(GetInitialContext())
 {
 }
 
@@ -68,17 +70,46 @@ CID2WGSProcessor::~CID2WGSProcessor(void)
 }
 
 
+CID2WGSContext CID2WGSProcessor::GetInitialContext(void) const
+{
+    return m_Impl->GetInitialContext();
+}
+
+
+void CID2WGSProcessor::InitContext(CID2WGSContext& context,
+                                   const CID2_Request& request)
+{
+    m_Impl->InitContext(context, request);
+}
+
+
+bool CID2WGSProcessor::ProcessRequest(CID2WGSContext& context,
+                                      TReplies& replies,
+                                      CID2_Request& request)
+{
+    return m_Impl->ProcessRequest(context, replies, request);
+}
+
+
+CID2WGSProcessor::TReplies
+CID2WGSProcessor::ProcessSomeRequests(CID2WGSContext& context,
+                                      CID2_Request_Packet& packet)
+{
+    return m_Impl->ProcessSomeRequests(context, packet);
+}
+
+
 bool CID2WGSProcessor::ProcessRequest(TReplies& replies,
                                       CID2_Request& request)
 {
-    return m_Impl->ProcessRequest(replies, request);
+    return ProcessRequest(m_CommonContext, replies, request);
 }
 
 
 CID2WGSProcessor::TReplies
 CID2WGSProcessor::ProcessSomeRequests(CID2_Request_Packet& packet)
 {
-    return m_Impl->ProcessSomeRequests(packet);
+    return ProcessSomeRequests(m_CommonContext, packet);
 }
 
 

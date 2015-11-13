@@ -41,6 +41,30 @@ BEGIN_NAMESPACE(objects);
 
 class CID2WGSProcessor_Impl;
 
+class NCBI_ID2PROC_WGS_EXPORT CID2WGSContext
+{
+    CID2WGSContext(void);
+    
+    bool operator<(const CID2WGSContext& b) const;
+    bool operator==(const CID2WGSContext& b) const;
+    bool operator!=(const CID2WGSContext& b) const {
+        return !(*this == b);
+    }
+
+public:
+    friend class CID2WGSProcessor_Impl;
+
+    enum ECompressData {
+        eCompressData_never,
+        eCompressData_some, // if it's benefitial
+        eCompressData_always
+    };
+
+    ECompressData m_CompressData;
+    bool m_ExplicitBlobState;
+};
+
+
 class NCBI_ID2PROC_WGS_EXPORT CID2WGSProcessor : public CID2Processor
 {
 public:
@@ -49,12 +73,23 @@ public:
                      const string& driver_name);
     virtual ~CID2WGSProcessor(void);
 
+    CID2WGSContext GetInitialContext(void) const;
+    void InitContext(CID2WGSContext& context,
+                     const CID2_Request& request);
+
+    TReplies ProcessSomeRequests(CID2WGSContext& context,
+                                 CID2_Request_Packet& packet);
+    bool ProcessRequest(CID2WGSContext& context,
+                        TReplies& replies,
+                        CID2_Request& request);
+
     virtual TReplies ProcessSomeRequests(CID2_Request_Packet& packet);
 
     virtual bool ProcessRequest(TReplies& replies, CID2_Request& request);
 
 private:
     CRef<CID2WGSProcessor_Impl> m_Impl;
+    CID2WGSContext m_CommonContext;
 };
 
 

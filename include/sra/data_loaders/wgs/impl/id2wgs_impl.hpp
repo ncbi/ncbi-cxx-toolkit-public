@@ -38,6 +38,7 @@
 #include <sra/readers/sra/wgsread.hpp>
 #include <util/limited_size_map.hpp>
 #include <objects/id2/ID2_Blob_Id.hpp>
+#include <sra/data_loaders/wgs/id2wgs.hpp>
 #include <vector>
 
 BEGIN_NCBI_NAMESPACE;
@@ -53,9 +54,11 @@ class CID2_Request_Packet;
 class CID2_Request_Get_Seq_id;
 class CID2_Request_Get_Blob_Id;
 class CID2_Request_Get_Blob_Info;
+class CID2S_Request_Get_Chunks;
 class CID2_Blob_Id;
 class CID2_Reply;
 class CID2_Reply_Data;
+class CID2WGSContext;
 
 class NCBI_ID2PROC_WGS_EXPORT CID2WGSProcessor_Impl : public CObject
 {
@@ -123,28 +126,42 @@ public:
     };
 
     typedef vector<CRef<CID2_Reply> > TReplies;
-    TReplies ProcessSomeRequests(CID2_Request_Packet& packet);
+    TReplies ProcessSomeRequests(CID2WGSContext& context,
+                                 CID2_Request_Packet& packet);
 
-    bool ProcessRequest(TReplies& replies,
+    bool ProcessRequest(CID2WGSContext& context,
+                        TReplies& replies,
                         CID2_Request& request);
 
-    void ResetParameters(void);
-    void ProcessInit(const CID2_Request& main_request);
-    bool ProcessGetSeqId(TReplies& replies,
+    const CID2WGSContext& GetInitialContext(void) const {
+        return m_InitialContext;
+    }
+    void InitContext(CID2WGSContext& context,
+                     const CID2_Request& main_request);
+
+    bool ProcessGetSeqId(CID2WGSContext& context,
+                         TReplies& replies,
                          CID2_Request& main_request,
                          CID2_Request_Get_Seq_id& request);
-    bool ProcessGetBlobId(TReplies& replies,
+    bool ProcessGetBlobId(CID2WGSContext& context,
+                          TReplies& replies,
                           CID2_Request& main_request,
                           CID2_Request_Get_Blob_Id& request);
-    bool ProcessGetBlobInfo(TReplies& replies,
+    bool ProcessGetBlobInfo(CID2WGSContext& context,
+                            TReplies& replies,
                             CID2_Request& main_request,
                             CID2_Request_Get_Blob_Info& request);
+    bool ProcessGetChunks(CID2WGSContext& context,
+                          TReplies& replies,
+                          CID2_Request& main_request,
+                          CID2S_Request_Get_Chunks& request);
 
 protected:
     SWGSSeqInfo Resolve(TReplies& replies,
                         CID2_Request& main_request,
                         CID2_Request_Get_Seq_id& request);
-    SWGSSeqInfo Resolve(TReplies& replies,
+    SWGSSeqInfo Resolve(CID2WGSContext& context,
+                        TReplies& replies,
                         CID2_Request& main_request,
                         CID2_Request_Get_Blob_Id& request);
 
@@ -205,19 +222,24 @@ protected:
     CWGSScaffoldIterator& GetScaffoldIterator(SWGSSeqInfo& seq);
     CWGSProteinIterator& GetProteinIterator(SWGSSeqInfo& seq);
     
-    void SetBlobState(CID2_Reply& main_reply,
+    void SetBlobState(CID2WGSContext& context,
+                      CID2_Reply& main_reply,
                       int blob_state) const;
 
     bool ExcludedBlob(SWGSSeqInfo& seq,
                       const CID2_Request_Get_Blob_Info& request);
-    bool GetCompress(const SWGSSeqInfo& seq,
+    bool GetCompress(CID2WGSContext& context,
+                     const SWGSSeqInfo& seq,
                      const CSeq_entry& entry) const;
-    bool GetCompress(const SWGSSeqInfo& seq,
+    bool GetCompress(CID2WGSContext& context,
+                     const SWGSSeqInfo& seq,
                      const CID2S_Split_Info& split) const;
-    bool GetCompress(const SWGSSeqInfo& seq,
+    bool GetCompress(CID2WGSContext& context,
+                     const SWGSSeqInfo& seq,
                      TChunkId chunk_id,
                      const CID2S_Chunk& chunk) const;
-    bool GetCompress(const SWGSSeqInfo& seq,
+    bool GetCompress(CID2WGSContext& context,
+                     const SWGSSeqInfo& seq,
                      TChunkId chunk_id,
                      const CAsnBinData& obj) const;
     void WriteData(CID2_Reply_Data& data,
@@ -226,28 +248,26 @@ protected:
     void WriteData(CID2_Reply_Data& data,
                    const CAsnBinData& obj,
                    bool compress) const;
-    void WriteData(CID2_Reply_Data& data,
+    void WriteData(CID2WGSContext& context,
+                   CID2_Reply_Data& data,
                    const SWGSSeqInfo& seq,
                    TChunkId chunk_id,
                    const CAsnBinData& obj) const;
-    void WriteData(CID2_Reply_Data& data,
+    void WriteData(CID2WGSContext& context,
+                   CID2_Reply_Data& data,
                    const SWGSSeqInfo& seq,
                    const CSeq_entry& obj) const;
-    void WriteData(CID2_Reply_Data& data,
+    void WriteData(CID2WGSContext& context,
+                   CID2_Reply_Data& data,
                    const SWGSSeqInfo& seq,
                    const CID2S_Split_Info& obj) const;
-    void WriteData(CID2_Reply_Data& data,
+    void WriteData(CID2WGSContext& context,
+                   CID2_Reply_Data& data,
                    const SWGSSeqInfo& seq,
                    TChunkId chunk_id,
                    const CID2S_Chunk& obj) const;
     
     typedef limited_size_map<string, CWGSDb> TWGSDbCache;
-
-    enum ECompressData {
-        eCompressData_never,
-        eCompressData_some, // if it's benefitial
-        eCompressData_always
-    };
 
 private:
     CMutex m_Mutex;
@@ -256,10 +276,7 @@ private:
     CRef<CWGSProtAccResolver> m_AccResolver;
     TWGSDbCache m_WGSDbCache;
     CRef<CThreadNonStop> m_UpdateThread;
-    ECompressData m_DefaultCompressData;
-    bool m_DefaultExplicitBlobState;
-    ECompressData m_CompressData;
-    bool m_ExplicitBlobState;
+    CID2WGSContext m_InitialContext;
 };
 
 
