@@ -560,8 +560,10 @@ public:
         eIOFile,     ///< Name of file (must be writable)
         eDirectory,  ///< Name of file directory
         eDataSize,   ///< Integer number with possible "software" qualifiers (KB, KiB, et al)
-        eDateTime,   ///< DateTime string, formats "Y-M-DTh:m:gZ" or "Y/M/D h:m:gZ"
-
+        eDateTime,   ///< DateTime string, formats:
+                     ///< "M/D/Y h:m:s", "Y-M-DTh:m:g", "Y/M/D h:m:g", "Y-M-D h:m:g".
+                     ///< Time string can have trailing 'Z' symbol, specifying that
+                     ///< it represent time in the UTC format.
         k_EType_Size ///< For internal use only
     };
 
