@@ -1024,7 +1024,7 @@ void CNetScheduleHandler::x_ProcessMsgQueue(BUF buffer)
 
     // Empty queue name is a synonim for hardcoded 'noname'.
     // To have exactly one string comparison, make the name empty if 'noname'
-    if (m_QueueName == "noname" )
+    if (NStr::CompareNocase(m_QueueName, "noname") == 0)
         m_QueueName = "";
 
     if (!m_QueueName.empty()) {
@@ -3321,7 +3321,7 @@ void CNetScheduleHandler::x_ProcessQueueInfo(CQueue*)
 void CNetScheduleHandler::x_ProcessSetQueue(CQueue*)
 {
     if (m_CommandArguments.qname.empty() ||
-        m_CommandArguments.qname == "noname") {
+        NStr::CompareNocase(m_CommandArguments.qname, "noname") == 0) {
         // Disconnecting from all the queues
         m_QueueRef.Reset(NULL);
         m_QueueName.clear();
