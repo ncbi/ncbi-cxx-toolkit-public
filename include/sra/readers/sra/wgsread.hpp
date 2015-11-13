@@ -136,6 +136,13 @@ public:
     // return all WGS accessions that could contain gi
     typedef vector<string> TAccessionList;
     TAccessionList FindAll(TGi gi) const;
+    struct SSeqInfo {
+        string wgs_acc;
+        char type;
+        TVDBRowId row;
+    };
+    typedef vector<SSeqInfo> TSeqInfoList;
+    TSeqInfoList FindAll(TGi gi, const CVDBMgr& mgr) const;
 
     // return unordered list of WGS accessions and GI ranges
     typedef pair<TIntId, TIntId> TIdRange;

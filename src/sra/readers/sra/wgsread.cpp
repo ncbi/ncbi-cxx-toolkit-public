@@ -473,6 +473,63 @@ CWGSGiResolver::TAccessionList CWGSGiResolver::FindAll(TGi gi) const
 }
 
 
+CWGSGiResolver::TSeqInfoList
+CWGSGiResolver::FindAll(TGi gi, const CVDBMgr& mgr) const
+{
+    TSeqInfoList ret;
+    CMutexGuard guard(m_Mutex);
+    for ( TIndex::const_iterator it(m_Index.m_Index.begin(CRange<TIntId>(gi, gi))); it; ++it ) {
+        CVDB db;
+        try {
+            db = CVDB(mgr, it->second.acc);
+        }
+        catch ( CSraException& exc ) {
+            if ( exc.GetErrCode() == exc.eNotFoundDb ||
+                 exc.GetErrCode() == exc.eProtectedDb ) {
+                continue;
+            }
+            throw;
+        }
+        CVDBTable table(db, "GI_IDX", CVDBTable::eMissing_Allow);
+        if ( !table ) {
+            continue;
+        }
+        CVDBCursor cursor(table);
+        {
+            CVDBColumn col(cursor, "NUC_ROW_ID", CVDBColumn::eMissing_Allow);
+            if ( !col ) {
+                continue;
+            }
+            CVDBValueFor<TVDBRowId> value(cursor, TIntId(gi), col, CVDBValue::eMissing_Allow);
+            if ( !value.empty() ) {
+                SSeqInfo info;
+                info.wgs_acc = it->second.acc;
+                info.type = '\0';
+                info.row = *value;
+                ret.push_back(info);
+                continue;
+            }
+        }
+        {
+            CVDBColumn col(cursor, "PROT_ROW_ID", CVDBColumn::eMissing_Allow);
+            if ( !col ) {
+                continue;
+            }
+            CVDBValueFor<TVDBRowId> value(cursor, TIntId(gi), col, CVDBValue::eMissing_Allow);
+            if ( !value.empty() ) {
+                SSeqInfo info;
+                info.wgs_acc = it->second.acc;
+                info.type = 'P';
+                info.row = *value;
+                ret.push_back(info);
+                continue;
+            }
+        }
+    }
+    return ret;
+}
+
+
 CWGSGiResolver::TIdRanges CWGSGiResolver::GetIdRanges(void) const
 {
     TIdRanges ret;
