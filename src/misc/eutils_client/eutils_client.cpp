@@ -721,21 +721,30 @@ void CEutilsClient::SearchHistory(const string& db,
 }
 
 
-string CEutilsClient::x_GetHostName() const {
-    if (m_HostName.empty()) {
-        const char* kEutils = "eutils_lb";
-        SConnNetInfo* net_info = ConnNetInfo_Create(kEutils);
-        SSERV_Info* info = SERV_GetInfo(kEutils, fSERV_Dns, SERV_ANYHOST, net_info);
-        if (!info || !info->host) {
-            return "eutils.ncbi.nlm.nih.gov";
-        }
-        string hostname = CSocketAPI::gethostbyaddr(info->host);
-        free(info);
-        ConnNetInfo_Destroy(net_info);
-        return hostname;
-    } else {
+string CEutilsClient::x_GetHostName() const
+{
+    static const char kEutils[]   = "eutils.ncbi.nlm.nih.gov";
+    static const char kEutilsLB[] = "eutils_lb";
+
+    if (!m_HostName.empty()) {
         return m_HostName;
     }
+    SConnNetInfo* net_info = ConnNetInfo_Create(kEutilsLB);
+    SSERV_Info*       info = SERV_GetInfo(kEutilsLB, fSERV_Dns,
+                                          SERV_ANYHOST, net_info);
+    string host
+        = info  &&  info->host ? CSocketAPI::ntoa(info->host) : kEmptyStr;
+    if (info) {
+        free(info);
+    }
+    ConnNetInfo_Destroy(net_info);
+    if (!host.empty()) {
+        return host;
+    }
+    char buf[80];
+    const char* web = ConnNetInfo_GetValue(kEutilsLB, REG_CONN_HOST,
+                                           buf, sizeof(buf), kEutils);
+    return string(web  &&  *web ? web : kEutils);
 }
 
 
