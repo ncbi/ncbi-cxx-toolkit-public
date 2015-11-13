@@ -210,3 +210,28 @@ class Scenario1703( TestBase ):
                 raise
             pass
         return 0
+
+
+class Scenario1704( TestBase ):
+    " Scenario 1704 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Case insensitive queue name submit"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch()
+
+        # Submit a couple of jobs
+        self.ns.submitJob( 'TEST', 'bla', '', '', '', '' )
+        self.ns.submitJob( 'test', 'bla', '', '', '', '' )
+        j1 = self.ns.getJob( 'TeSt' )
+        self.ns.putJob( 'tEsT', j1[ 0 ], j1[ 1 ], 0 )
+        j2 = self.ns.getJob( 'TeSt' )
+        self.ns.putJob( 'tEsT', j2[ 0 ], j2[ 1 ], 0 )
+        return True
