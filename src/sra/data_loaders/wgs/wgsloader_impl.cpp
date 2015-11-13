@@ -100,7 +100,7 @@ static bool GetMasterDescrParam(void)
 
 
 NCBI_PARAM_DECL(size_t, WGS_LOADER, GC_SIZE);
-NCBI_PARAM_DEF(size_t, WGS_LOADER, GC_SIZE, 10);
+NCBI_PARAM_DEF(size_t, WGS_LOADER, GC_SIZE, 100);
 
 static size_t GetGCSize(void)
 {
