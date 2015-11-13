@@ -1,3 +1,5 @@
+# $Id$
+
 APP = unit_test_eutils
 SRC = unit_test_eutils
 
@@ -15,5 +17,6 @@ LIBS = $(LIBXSLT_STATIC_LIBS) \
 
 REQUIRES = Boost.Test.Included LIBXML LIBXSLT
 
-WATCHERS = kotliaro
+CHECK_CMD =
 
+WATCHERS = kotliaro

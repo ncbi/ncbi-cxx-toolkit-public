@@ -1,3 +1,6 @@
+# $Id$
+
+
 APP = test_eutils_client
 SRC = test_eutils_client
 
@@ -8,4 +11,6 @@ LIBS = $(LIBXSLT_LIBS) $(LIBXML_LIBS) $(NETWORK_LIBS) \
 
 REQUIRES = LIBXML LIBXSLT
 
-WATCHERS = smithrg grichenk
+CHECK_CMD = test_eutils_client -db pubmed -count dog  /CHECK_NAME=EUtilsCli_Dog
+
+WATCHERS = perkovan smithrg grichenk
