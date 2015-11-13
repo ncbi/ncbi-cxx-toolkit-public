@@ -436,7 +436,8 @@ void CCgi2RCgiApp::Init()
     string incs = config.GetString(cgi2rcgi_section, "html_template_includes",
                                         "cgi2rcgi.inc.html");
 
-    NStr::Tokenize(incs, ",; ", m_HtmlIncs, NStr::eMergeDelims);
+    NStr::Split(incs, ",; ", m_HtmlIncs,
+            NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
 
     m_FallBackUrl = config.GetString(cgi2rcgi_section,
@@ -459,9 +460,9 @@ void CCgi2RCgiApp::Init()
 
     if (!m_AffinityName.empty()) {
         vector<string> affinity_methods;
-        NStr::Tokenize(config.GetString(cgi2rcgi_section,
-            "affinity_source", "GET"), ", ;&|",
-                affinity_methods, NStr::eMergeDelims);
+        NStr::Split(config.GetString(cgi2rcgi_section,
+            "affinity_source", "GET"), ", ;&|", affinity_methods,
+                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
         for (vector<string>::const_iterator it = affinity_methods.begin();
                 it != affinity_methods.end(); ++it) {
             if (*it == "GET")
@@ -881,7 +882,8 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
             NStr::TruncateSpacesInPlace(status_code_and_reason);
             CTempString status_code, reason;
             NStr::SplitInTwo(status_code_and_reason, CTempString(" \t", 2),
-                    status_code, reason, NStr::eMergeDelims);
+                    status_code, reason,
+                    NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
             response.SetStatus(NStr::StringToUInt(status_code), reason);
         }
         response.WriteHeader();

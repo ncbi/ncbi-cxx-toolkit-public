@@ -699,7 +699,8 @@ void CNetScheduleServerListener::OnInit(
                 string affinity_ladder = config->GetString(config_section,
                         "affinity_ladder", CConfig::eErr_NoThrow, kEmptyStr);
                 list<CTempString> affinities;
-                NStr::Split(affinity_ladder, ", ", affinities);
+                NStr::Split(affinity_ladder, ", ", affinities,
+                        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
                 if (!affinities.empty()) {
                     list<CTempString>::const_iterator it = affinities.begin();

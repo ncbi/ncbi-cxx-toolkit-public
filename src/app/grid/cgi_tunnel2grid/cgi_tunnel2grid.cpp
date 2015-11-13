@@ -218,7 +218,7 @@ void CCgiTunnel2Grid::x_Init(const string& project)
     string incs = GetConfig().GetString("tunnel2grid", "html_template_includes", 
                                          project +".inc.html");
 
-    NStr::Tokenize(incs, ",", m_HtmlIncs);
+    NStr::Split(incs, ",", m_HtmlIncs, NStr::fSplit_NoMergeDelims);
 
     m_FallBackDelay = 
         GetConfig().GetInt("tunnel2grid", "error_url_delay", -1, 

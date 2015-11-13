@@ -394,7 +394,8 @@ bool SNetScheduleExecutorImpl::x_GetJobWithAffinityLadder(
     // XXX: Compatibility mode.
     // TODO: Can be thrown out after all NS serves are updated to version 4.22.0+
     list<CTempString> affinity_tokens;
-    NStr::Split(prio_aff_list, ",", affinity_tokens);
+    NStr::Split(prio_aff_list, ",", affinity_tokens,
+            NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
     string affinity_list;
     list<CTempString>::const_iterator it = affinity_tokens.begin();
@@ -506,7 +507,8 @@ string CNetScheduleNotificationHandler::MkBaseGETCmd(
     if (!affinity_list.empty()) {
         list<CTempString> affinity_tokens;
 
-        NStr::Split(affinity_list, ",", affinity_tokens);
+        NStr::Split(affinity_list, ",", affinity_tokens,
+                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
         ITERATE(list<CTempString>, token, affinity_tokens) {
             SNetScheduleAPIImpl::VerifyAffinityAlphabet(*token);

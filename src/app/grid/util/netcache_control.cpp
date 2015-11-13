@@ -244,7 +244,7 @@ int CNetCacheControl::Run()
         if (cmd & REQUIRES_KEY) {
             vector<string> key_parts;
 
-            NStr::Tokenize(key, ",", key_parts);
+            NStr::Split(key, ",", key_parts, NStr::fSplit_NoMergeDelims);
             if (key_parts.size() != 3) {
                 NCBI_THROW_FMT(CArgException, eInvalidArg,
                     "Invalid ICache key specification \"" << key << "\" ("

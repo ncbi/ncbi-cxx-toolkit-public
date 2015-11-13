@@ -412,7 +412,8 @@ CRemoteAppLauncher::CRemoteAppLauncher(const string& sec_name,
     const string cmd = reg.GetString(sec_name, "version_cmd", m_AppPath);
     const string args = reg.GetString(sec_name, "version_args", "-version");
     vector<string> v;
-    m_Version.reset(new CRemoteAppVersion(cmd, NStr::Tokenize(args, " ", v)));
+    m_Version.reset(new CRemoteAppVersion(cmd,
+                NStr::Split(args, " ", v, NStr::fSplit_NoMergeDelims)));
 }
 
 // We need this explicit empty destructor,

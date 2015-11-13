@@ -132,7 +132,7 @@ void CGridCommandLineInterfaceApp::ParseICacheKey(
 {
     vector<string> key_parts;
 
-    NStr::Tokenize(m_Opts.id, ",", key_parts);
+    NStr::Split(m_Opts.id, ",", key_parts, NStr::fSplit_NoMergeDelims);
     if (key_parts.size() != 3) {
         NCBI_THROW_FMT(CArgException, eInvalidArg,
             "Invalid ICache key specification \"" << m_Opts.id << "\" ("

@@ -311,7 +311,8 @@ CJsonNode SQueueInfoToJson::ExecOn(CNetServer server)
                     line.length() - m_SectionPrefix.length() - 1),
                     queue_params = CJsonNode::NewObjectNode());
         else if (queue_params && NStr::SplitInTwo(line, ": ",
-                param_name, param_value, NStr::eMergeDelims))
+                param_name, param_value,
+                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate))
             queue_params.SetByKey(param_name,
                     CJsonNode::GuessType(param_value));
 
@@ -706,7 +707,8 @@ void g_ProcessJobInfo(CNetScheduleAPI ns_api, const string& job_key,
                 CTempString field_name, field_value;
 
                 if (!NStr::SplitInTwo(line, TEMP_STRING_CTOR(": "),
-                        field_name, field_value, NStr::eMergeDelims))
+                        field_name, field_value,
+                        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate))
                     processor->ProcessRawLine(line);
                 else if (field_name == TEMP_STRING_CTOR("input"))
                     processor->ProcessInput(NStr::ParseQuoted(field_value));
@@ -995,7 +997,8 @@ static CJsonNode s_WordsToJsonArray(const CTempString& str)
 {
     CJsonNode array_node(CJsonNode::NewArrayNode());
     list<CTempString> words;
-    NStr::Split(str, TEMP_STRING_CTOR(" "), words);
+    NStr::Split(str, TEMP_STRING_CTOR(" "), words,
+            NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     ITERATE(list<CTempString>, it, words) {
         array_node.AppendString(*it);
     }

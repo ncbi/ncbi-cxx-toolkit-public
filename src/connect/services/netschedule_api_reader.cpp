@@ -173,7 +173,8 @@ bool SNetScheduleJobReaderImpl::CImpl::CheckEntryOld(
 {
 
     list<CTempString> affinity_tokens;
-    NStr::Split(prio_aff_list, ",", affinity_tokens);
+    NStr::Split(prio_aff_list, ",", affinity_tokens,
+            NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
     string affinity_list;
     list<CTempString>::const_iterator it = affinity_tokens.begin();
