@@ -534,7 +534,6 @@ EIO_Status CPipeHandle::Close(int* exitcode, const STimeout* timeout)
     if (status != eIO_Timeout) {
         x_Clear();
     }
-
     return status;
 }
 
