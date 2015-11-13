@@ -958,7 +958,7 @@ private:
 
 
 /// Helper class to allocate memory for CTempString[Ex] on demand
-/// in the functions which need to modify the strings (e.g. NStr::Splilt).
+/// in the functions which need to modify the strings (e.g. NStr::Split).
 
 
 class NCBI_XNCBI_EXPORT CTempString_Storage
