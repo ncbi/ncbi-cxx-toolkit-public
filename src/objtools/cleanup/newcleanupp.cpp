@@ -11334,7 +11334,8 @@ void CNewCleanup_imp::KeepLatestDateDesc(CSeq_descr & seq_descr)
 
 void CNewCleanup_imp::x_SingleSeqSetToSeq(CBioseq_set& set)
 {
-    if (set.IsSetSeq_set() && set.GetSeq_set().size() == 1) {
+    if (set.IsSetSeq_set() && set.GetSeq_set().size() == 1 &&
+        set.GetSeq_set().front()->IsSeq()) {
         CBioseq_set_Handle bh = m_Scope->GetBioseq_setHandle(set);
         CSeq_entry_Handle seh = bh.GetParentEntry();
         CSeq_entry_EditHandle eh(seh);
