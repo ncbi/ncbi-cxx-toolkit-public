@@ -426,6 +426,7 @@ DISCREPANCY_LINK_MODULE(division_code_conflicts);
 DISCREPANCY_LINK_MODULE(feature_per_bioseq);
 DISCREPANCY_LINK_MODULE(gene_names);
 DISCREPANCY_LINK_MODULE(spell_check);
+DISCREPANCY_LINK_MODULE(transl_too_long);
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
