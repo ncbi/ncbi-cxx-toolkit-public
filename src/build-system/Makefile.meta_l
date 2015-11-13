@@ -129,7 +129,7 @@ $(ign)+@i=$(1) ; \
 echo "cd $(abs_srcdir)  &&  $(MAKE_$(2)) $(3)" ; \
 cd $(abs_srcdir) && \
 if MAKE="$(MAKE) $(MFLAGS_NR)" \
-     $(RWL) -base make_asn -log "$(CURDIR)/make_$(1).log" $(MAKE_$(2)) $(3) \
+     $(RWL) -base make_asn -log "$(CURDIR)/make_$(1)_src.log" $(MAKE_$(2)) $(3) \
    &&  $(MAKE_LIB) src-stamp; then \
     : ; \
 else \
