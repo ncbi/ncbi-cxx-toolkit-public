@@ -125,10 +125,6 @@ typedef struct {
     ino_t   m_DataInode;
 } SGiDataIndex;
 
-typedef struct {
-	int64_t m_Val;
-} packed_accession_t;
-
 static void (*LogFunc)(char*) = NULL;
 
 /****************************************************************************
@@ -766,7 +762,7 @@ x_SetIndexOffset(SGiDataIndex* data_index, int gi, Uint4 page, int level,
     return 0;
 }
 
-static int x_GetGiData(SGiDataIndex* data_index, int gi, packed_accession_t* pa)
+static int x_GetGiData(SGiDataIndex* data_index, int gi, const char **buf)
 {
     Uint4 page = 0;
     int base = data_index->m_OffsetHeaderSize;
@@ -774,7 +770,7 @@ static int x_GetGiData(SGiDataIndex* data_index, int gi, packed_accession_t* pa)
     int level;
 	int err;
     Uint1 is_64bit = (data_index->m_OffsetHeaderSize > 0);
-	pa->m_Val = 0;	
+	*buf = NULL;
 
     /* If some thread is currently remapping, the data is in an inconsistent
        state, therefore return NULL. */
@@ -872,8 +868,7 @@ static int x_GetGiData(SGiDataIndex* data_index, int gi, packed_accession_t* pa)
     /* If offset is beyond the mapped data, get the data from cache, otherwise
        from the memory mapped location. */
     if (gi_offset >= data_index->m_DataLen) {
-		*pa = *(packed_accession_t*)(data_index->m_DataCache + (gi_offset - data_index->m_DataLen));
-		MT_LOCK_Do(data_index->m_RemapLock, eMT_Unlock);
+		*buf = data_index->m_DataCache + (gi_offset - data_index->m_DataLen);		
         return 1;
     } 
 	else {
@@ -905,8 +900,7 @@ static int x_GetGiData(SGiDataIndex* data_index, int gi, packed_accession_t* pa)
 				return 0;
 			}
         }
-		*pa = *(packed_accession_t*)(data_index->m_Data + gi_offset);
-		MT_LOCK_Do(data_index->m_RemapLock, eMT_Unlock);
+		*buf = data_index->m_Data + gi_offset;
 		return 1;
     }
 }
@@ -979,9 +973,9 @@ static SGiDataIndex* GiDataIndex_Free(SGiDataIndex* data_index)
 }
 
 /* Returns data corresponding to a given gi for reading only. */
-static const int GiDataIndex_GetData(SGiDataIndex* data_index, int gi, packed_accession_t* pa)
+static const int GiDataIndex_GetData(SGiDataIndex* data_index, int gi, const char **buf)
 {
-    return x_GetGiData(data_index, gi, pa);
+    return x_GetGiData(data_index, gi, buf);
 }
 
 /* Writes data for a gi. */
@@ -1127,12 +1121,16 @@ GiDataIndex_PutData(SGiDataIndex* data_index, int gi, const char* data,
 
 #ifdef ALLOW_IN_PLACE_MODIFICATION
 /* Returns data corresponding to a given gi, for possible modification. */
+/* !WARNING: it's caller responsibility to unlock buffer by calling MT_LOCK_Do(data_index->m_RemapLock, eMT_Unlock); in case if returned value is NOT null */
 static char* GiDataIndex_SetData(SGiDataIndex* data_index, int gi)
 {
+	const char *buf = NULL;
+	int rv;
     if (data_index->m_ReadOnlyMode)
         return NULL;
 
-    return x_GetGiData(data_index, gi);
+	rv = x_GetGiData(data_index, gi, &buf);
+    return rv ? buf : NULL;
 }
 
 /* Deletes data for a gi. */
@@ -1831,16 +1829,17 @@ int GICache_GetAccession(int gi, char* acc, int acc_len)
 {
     int retval = 0;
 	int rv;
-	packed_accession_t gi_data;
+	const char* gi_data = NULL;
     if(!gi_cache) return 0;
     rv = GiDataIndex_GetData(gi_cache, gi, &gi_data);
     if (rv) {
-        if ((retval = s_DecodeGiAccession((const char*)&gi_data, acc, acc_len)) < 0) {
+        if ((retval = s_DecodeGiAccession(gi_data, acc, acc_len)) < 0) {
             /* If returned "accession" is invalid, force a remap and return empty
                string */
             acc[0] = NULLB;
             gi_cache->m_NeedRemap = 1;
         }
+		MT_LOCK_Do(gi_cache->m_RemapLock, eMT_Unlock);
     } else {
         acc[0] = NULLB;
     }
@@ -1849,18 +1848,17 @@ int GICache_GetAccession(int gi, char* acc, int acc_len)
 
 int GICache_GetLength(int gi)
 {
-	const char *x;
+	const char *x = NULL;
     int length = 0;
 	int rv;
-	packed_accession_t gi_data;
     if(!gi_cache) return 0;
-    rv = GiDataIndex_GetData(gi_cache, gi, &gi_data);
+    rv = GiDataIndex_GetData(gi_cache, gi, &x);
 
     if(!rv) return 0;
-	x = (const char*)&gi_data;
 
     x++; /* Skip control byte */
     x += s_DecodeInt4(x, &length);
+	MT_LOCK_Do(gi_cache->m_RemapLock, eMT_Unlock);
     return length;
 }
 
