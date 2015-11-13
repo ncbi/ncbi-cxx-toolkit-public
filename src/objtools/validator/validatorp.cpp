@@ -2006,8 +2006,14 @@ void CValidError_imp::ValidateSeqLoc
     }
 
     bool ordered = true;
+    bool circular = false;
+    if ( seq  &&
+         seq.IsSetInst() && seq.GetInst().IsSetTopology() &&
+         seq.GetInst().GetTopology() == CSeq_inst::eTopology_circular ) {
+        circular = true;
+    }
     try {
-        if (m_Scope && (!sfp || CSeqFeatData::RequireLocationIntervalsInBiologicalOrder(sfp->GetData().GetSubtype()))) {
+        if (m_Scope && (!sfp || CSeqFeatData::RequireLocationIntervalsInBiologicalOrder(sfp->GetData().GetSubtype())) && !circular) {
             ordered = CValidator::IsSeqLocCorrectlyOrdered(loc, *m_Scope);
         }
     } catch ( const CException& ex) {
