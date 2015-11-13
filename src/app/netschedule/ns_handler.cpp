@@ -1130,7 +1130,8 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
                         m_CommandArguments.queue_from_job_key));
             queue_ptr = queue_ref.GetPointer();
 
-            if (m_QueueName != m_CommandArguments.queue_from_job_key) {
+            if (NStr::CompareNocase(m_QueueName,
+                                 m_CommandArguments.queue_from_job_key) != 0) {
                 orig_client_passed_checks = m_ClientId.GetPassedChecks();
                 orig_client_id = m_ClientId.GetID();
                 restore_client = true;

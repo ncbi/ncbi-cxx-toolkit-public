@@ -169,19 +169,21 @@ void  CQueueDataBase::x_Open(const SNSDBEnvironmentParams &  params,
     // Detect what queues need to be loaded. It depends on the configuration
     // file and on the dumped queues. It might be that the saved queues +
     // the config file queues excced the configured max number of queues.
-    set<string>             dump_static_queues;
-    map<string, string>     dump_dynamic_queues;    // qname -> qclass
+    set<string, PNocase>    dump_static_queues;
+    map<string, string,
+        PNocase>            dump_dynamic_queues;    // qname -> qclass
     TQueueParams            dump_queue_classes;
     x_ReadDumpQueueDesrc(dump_static_queues, dump_dynamic_queues,
                          dump_queue_classes);
-    set<string>             config_static_queues = x_GetConfigQueues();
+    set<string, PNocase>    config_static_queues = x_GetConfigQueues();
     string                  last_queue_load_error;
     size_t                  queue_load_error_count = 0;
 
     // Exclude number of queues will be the static queues from the config
     // plus the dumped dynamic queues
     size_t      final_dynamic_count = 0;
-    for (map<string, string>::const_iterator  k = dump_dynamic_queues.begin();
+    for (map<string, string, PNocase>::const_iterator
+            k = dump_dynamic_queues.begin();
             k != dump_dynamic_queues.end(); ++k)
         if (config_static_queues.find(k->first) == config_static_queues.end())
             ++final_dynamic_count;
@@ -234,7 +236,7 @@ void  CQueueDataBase::x_Open(const SNSDBEnvironmentParams &  params,
         x_ConfigureQueues(queues_from_ini, unused_diff);
 
         // Add the queues from the dump
-        for (map<string, string>::const_iterator
+        for (map<string, string, PNocase>::const_iterator
                 k = dump_dynamic_queues.begin();
                 k != dump_dynamic_queues.end(); ++k) {
             string      qname = k->first;
@@ -2138,7 +2140,7 @@ void CQueueDataBase::x_Dump()
     const string        lbsm_test_queue("LBSMDTestQueue");
     for (TQueueInfo::iterator  k = m_Queues.begin();
             k != m_Queues.end(); ++k) {
-        if (k->first != lbsm_test_queue) {
+        if (NStr::CompareNocase(k->first, lbsm_test_queue) != 0) {
             try {
                 k->second.second->Dump(m_DumpPath);
                 dumped_queues.insert(k->first);
@@ -2158,7 +2160,7 @@ void CQueueDataBase::x_Dump()
     set<string>     dynamic_queues_to_dump;
     for (TQueueInfo::iterator  k = m_Queues.begin();
             k != m_Queues.end(); ++k) {
-        if (k->first == lbsm_test_queue)
+        if (NStr::CompareNocase(k->first, lbsm_test_queue) == 0)
             continue;
         if (k->second.second->GetQueueKind() == CQueue::eKindStatic)
             continue;
@@ -2204,7 +2206,7 @@ void CQueueDataBase::x_Dump()
                     k != dynamic_queues_to_dump.end(); ++k) {
                 TQueueInfo::const_iterator  q = m_Queues.find(*k);
                 x_DumpQueueOrClass(qclasses_dump_file, *k,
-                                   q->second.first.qclass,true,
+                                   q->second.first.qclass, true,
                                    q->second.first);
             }
 
@@ -2606,8 +2608,9 @@ void CQueueDataBase::x_CreateStorageVersionFile(void)
 
 
 void
-CQueueDataBase::x_ReadDumpQueueDesrc(set<string> &  dump_static_queues,
-                                     map<string, string> &  dump_dynamic_queues,
+CQueueDataBase::x_ReadDumpQueueDesrc(set<string, PNocase> &  dump_static_queues,
+                                     map<string, string,
+                                         PNocase> &  dump_dynamic_queues,
                                      TQueueParams &  dump_queue_classes)
 {
     CDir        dump_dir(m_DumpPath);
@@ -2756,10 +2759,10 @@ CQueueDataBase::x_ReadDumpQueueDesrc(set<string> &  dump_static_queues,
 }
 
 
-set<string> CQueueDataBase::x_GetConfigQueues(void)
+set<string, PNocase> CQueueDataBase::x_GetConfigQueues(void)
 {
     const CNcbiRegistry &   reg = CNcbiApplication::Instance()->GetConfig();
-    set<string>             queues;
+    set<string, PNocase>    queues;
     list<string>            sections;
 
     reg.EnumerateSections(&sections);

@@ -567,7 +567,9 @@ string CNSGroupsRegistry::x_GetDumpFileName(const string &  dump_dir_name,
                                             const string &  qname) const
 {
     const string    fname("group_dict_dump.");
-    return dump_dir_name + fname + qname;
+    string          upper_queue_name = qname;
+    NStr::ToUpper(upper_queue_name);
+    return dump_dir_name + fname + upper_queue_name;
 }
 
 

@@ -4354,7 +4354,9 @@ void CQueue::RemoveDump(const string &  dump_dname)
 
 string CQueue::x_GetJobsDumpFileName(const string &  dump_dname) const
 {
-    return dump_dname + kJobsFileName + "." + m_QueueName;
+    string      upper_queue_name = m_QueueName;
+    NStr::ToUpper(upper_queue_name);
+    return dump_dname + kJobsFileName + "." + upper_queue_name;
 }
 
 

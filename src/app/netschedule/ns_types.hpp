@@ -66,7 +66,7 @@ typedef CNetScheduleAPI::EJobStatus                         TJobStatus;
 
 // Holds all the queue parameters - used for queue classes
 // and for reading from DB and ini files
-typedef map<string, SQueueParameters>                       TQueueParams;
+typedef map<string, SQueueParameters, PNocase>              TQueueParams;
 
 
 

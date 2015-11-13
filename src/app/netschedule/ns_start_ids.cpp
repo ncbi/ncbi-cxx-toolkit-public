@@ -54,9 +54,8 @@ CNSStartIDs::~CNSStartIDs()
 
 void CNSStartIDs::Set(const string &  qname, unsigned int  value)
 {
-    map< string,
-         unsigned int >::iterator   k;
-    CFastMutexGuard                 guard(m_Lock);
+    TStartIDs::iterator     k;
+    CFastMutexGuard         guard(m_Lock);
 
     k = m_IDs.find(qname);
     if (k != m_IDs.end()) {
@@ -74,9 +73,8 @@ void CNSStartIDs::Set(const string &  qname, unsigned int  value)
 
 unsigned int CNSStartIDs::Get(const string &  qname)
 {
-    map< string,
-         unsigned int >::const_iterator     k;
-    CFastMutexGuard                         guard(m_Lock);
+    TStartIDs::const_iterator       k;
+    CFastMutexGuard                 guard(m_Lock);
 
     k = m_IDs.find(qname);
     if (k != m_IDs.end())
@@ -143,9 +141,8 @@ void CNSStartIDs::Load(void)
 
 void CNSStartIDs::x_SerializeNoLock(void) const
 {
-    map< string,
-         unsigned int >::const_iterator     k;
-    FILE *                                  f = fopen(m_FileName.c_str(), "w");
+    TStartIDs::const_iterator       k;
+    FILE *                          f = fopen(m_FileName.c_str(), "w");
 
     if (f != NULL) {
         for (k = m_IDs.begin(); k != m_IDs.end(); ++k)

@@ -53,7 +53,8 @@ struct SQueueParameters
                         vector<string> &  warnings);
     // Returns true if evrything is OK with the linked sections
     bool ReadQueue(const IRegistry &  reg, const string &  sname,
-                   const map<string, SQueueParameters> &  queue_classes,
+                   const map<string, SQueueParameters,
+                             PNocase> &  queue_classes,
                    vector<string> &  warnings);
 
     // Transit parameters; stored in memory and in the DB but not present

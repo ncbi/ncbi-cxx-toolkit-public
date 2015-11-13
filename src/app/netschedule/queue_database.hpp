@@ -59,7 +59,8 @@ class CNetScheduleServer;
 
 // Holds parameters together with a queue instance
 typedef map<string,
-            pair<SQueueParameters, CRef<CQueue> > > TQueueInfo;
+            pair<SQueueParameters, CRef<CQueue> >,
+            PNocase >   TQueueInfo;
 
 
 struct SNSDBEnvironmentParams
@@ -313,10 +314,11 @@ private:
     bool x_CheckOpenPreconditions(bool  reinit);
     CBDB_Env *  x_CreateBDBEnvironment(const SNSDBEnvironmentParams &  params);
 
-    void x_ReadDumpQueueDesrc(set<string> &  dump_static_queues,
-                              map<string, string> &  dump_dynamic_queues,
+    void x_ReadDumpQueueDesrc(set<string, PNocase> &  dump_static_queues,
+                              map<string, string,
+                                  PNocase> &  dump_dynamic_queues,
                               TQueueParams &  dump_queue_classes);
-    set<string> x_GetConfigQueues(void);
+    set<string, PNocase> x_GetConfigQueues(void);
     void x_AppendDumpLinkedSections(void);
     CNSPreciseTime CalculateRuntimePrecision(void) const;
     void x_BackupDump(void);

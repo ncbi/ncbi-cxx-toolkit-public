@@ -48,6 +48,8 @@ using namespace std;
 // ids on per queue basis
 class CNSStartIDs
 {
+    typedef map< string, unsigned int, PNocase >    TStartIDs;
+
     public:
         CNSStartIDs(const string &  data_dir_name);
         ~CNSStartIDs();
@@ -64,7 +66,7 @@ class CNSStartIDs
     private:
         string                          m_FileName;
         mutable CFastMutex              m_Lock;
-        map< string, unsigned int >     m_IDs;
+        TStartIDs                       m_IDs;
 };
 
 
