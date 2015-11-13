@@ -54,6 +54,8 @@
 
 static const char* s_AppName;
 static char        s_LockName[PATH_MAX];
+static int         s_MainChildDone;
+static int         s_FinishingInBackground;
 
 
 typedef struct {
@@ -178,6 +180,12 @@ int s_Tee(int in, FILE* out1, FILE* out2)
 
 
 static
+void s_OnSIGCHLD(int n)
+{
+    s_MainChildDone = 1;
+}
+
+static
 int s_Run(const char* const* args, FILE* log)
 {
     int   stdout_fds[2], stderr_fds[2];
@@ -196,6 +204,8 @@ int s_Run(const char* const* args, FILE* log)
             close(stdout_fds[1]);
             return status;
         }
+        s_MainChildDone = 0;
+        signal(SIGCHLD, s_OnSIGCHLD);
     }
     pid = fork();
     if (pid < 0) { /* error */
@@ -237,7 +247,8 @@ int s_Run(const char* const* args, FILE* log)
                         nfds = stdout_fds[0] + 1;
                     }
                 }
-                if (select(nfds, &rfds, NULL, &efds, NULL) < 0) {
+                if (select(nfds, &rfds, NULL, &efds, NULL) < 0
+                    &&  errno != EINTR  &&  errno != EAGAIN) {
                     fprintf(stderr,
                             "%s: Error checking for output to log: %s\n",
                             s_AppName, strerror(errno));
@@ -251,9 +262,20 @@ int s_Run(const char* const* args, FILE* log)
                     ||  FD_ISSET(stderr_fds[0], &efds)) {
                     stderr_done = s_Tee(stderr_fds[0], stderr, log);
                 }
+                if (s_MainChildDone  &&  ( !stdout_done  ||  !stderr_done )
+                    &&  waitpid(pid, &status, WNOHANG) != 0) {
+                    s_MainChildDone = 0;
+                    if (fork() > 0) {
+                        s_FinishingInBackground = 1;
+                        break;
+                    }
+                }
             }
+            signal(SIGCHLD, SIG_DFL);
         }
-        waitpid(pid, &status, 0);
+        if ( !s_FinishingInBackground ) {
+            waitpid(pid, &status, 0);
+        }
     }
 
     if (log != NULL) {
@@ -332,7 +354,7 @@ int main(int argc, const char* const* argv)
 
     status = s_Run(argv + 1, log);
 
-    if (log != NULL) {
+    if (log != NULL  &&  !s_FinishingInBackground) {
         ELogStatus log_status = eNewLogInteresting;
         fclose(log);
         if (access(options.logfile, F_OK) != 0) {
