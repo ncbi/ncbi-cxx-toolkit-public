@@ -309,6 +309,13 @@ private:
     void RemoveBadProteinTitle(CBioseq& seq);
     void KeepLatestDateDesc(CSeq_descr & seq_descr);
     void x_SingleSeqSetToSeq(CBioseq_set& set);
+    static bool IsFullLength(const CSeq_loc& loc, const CBioseq& seq);
+    static CRef<CBioSource> BioSrcFromFeat(const CSeq_feat& f);
+    void x_ConvertSrcFeatToSrcDesc(CBioseq& seq);
+    void x_MergeDupBioSources(CSeq_descr & seq_descr);
+    static bool x_MergeDupOrgNames(COrgName& on1, const COrgName& add);
+    static bool x_MergeDupOrgRefs(COrg_ref& org1, const COrg_ref& add);
+    static bool x_MergeDupBioSources(CBioSource& src1, const CBioSource& add);
 
     // void XxxxxxBC (Cxxxxx& xxx);
 
@@ -523,6 +530,7 @@ private:
     bool x_CleanEmptyProt(CProt_ref& prot);
     bool x_ShouldRemoveEmptyProt(const CProt_ref& prot );
     bool x_ShouldRemoveEmptyPub(const CPubdesc& pubdesc );
+    void x_RemoveOldFeatures(CBioseq & bioseq);
 
     void x_BioseqSetEC( CBioseq_set & bioseq_set );
     void x_BioseqSetNucProtEC( CBioseq_set & bioseq_set );
