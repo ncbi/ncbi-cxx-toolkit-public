@@ -1418,7 +1418,7 @@ CRef<CAsnBinData> CID2WGSProcessor_Impl::GetChunk(SWGSSeqInfo& seq0,
         CWGSSeqIterator& it = GetContigIterator(seq);
         CWGSSeqIterator::TFlags flags =
             (it.fDefaultFlags & ~it.fMaskDescr) | it.fSeqDescr;
-        //return it.GetChunkData(chunk_id, flags);
+        return it.GetChunkData(chunk_id, flags);
     }
     return null;
 }

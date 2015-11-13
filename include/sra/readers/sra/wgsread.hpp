@@ -920,8 +920,11 @@ public:
     CRef<CID2S_Split_Info> GetSplitInfo(TFlags flags = fDefaultFlags) const;
     CRef<CAsnBinData> GetSplitInfoData(TFlags flags = fDefaultFlags) const;
     // Make chunk for the above split-info, flags must be the same
-    CRef<CID2S_Chunk> GetChunk(TFlags flags = fDefaultFlags) const;
-    CRef<CAsnBinData> GetChunkData(TFlags flags = fDefaultFlags) const;
+    typedef int TChunkId;
+    CRef<CID2S_Chunk> GetChunk(TChunkId chunk_id,
+                               TFlags flags = fDefaultFlags) const;
+    CRef<CAsnBinData> GetChunkData(TChunkId chunk_id,
+                                   TFlags flags = fDefaultFlags) const;
 
 protected:
     void x_Init(const CWGSDb& wgs_db,
@@ -945,7 +948,10 @@ protected:
 
     void x_CreateEntry(SWGSCreateInfo& info) const;
     void x_CreateBioseq(SWGSCreateInfo& info) const;
+    bool x_InitSplit(SWGSCreateInfo& info) const;
     void x_CreateSplit(SWGSCreateInfo& info) const;
+    void x_CreateChunk(SWGSCreateInfo& info,
+                       TChunkId chunk_id) const;
 
 private:
     CWGSDb m_Db;

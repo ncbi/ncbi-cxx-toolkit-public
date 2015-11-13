@@ -97,7 +97,18 @@ static bool s_GetClipByQuality(void)
 }
 
 
-static const char kSeq_descrFirstByte = 49;
+static const char kSeq_descrFirstByte = 49; // first byte of Seq-descr ASN.1
+
+// split parameters
+static bool kSplitEnabled = false;
+static int kMainEntryId = 1;
+enum EChunkType {
+    eChunk_prot,
+    eChunk_data,
+    eChunk_feat,
+    kChunkIdStep = 4
+};
+static const size_t kProdPerChunk = 64;
 
 
 #ifdef COLLECT_PROFILE
@@ -131,6 +142,7 @@ struct SProfilerGuard
 static SProfiler sw_Serialize;
 static SProfiler sw_Feat;
 static SProfiler sw_GetAccSeq_id;
+static SProfiler sw_GetChunk;
 static SProfiler sw__GetProtFeat;
 static SProfiler sw___GetProtAnnot;
 static SProfiler sw___GetProtInst;
@@ -196,15 +208,15 @@ void CAsnBinData::Serialize(CObjectOStreamAsnBinary& out) const
 }
 
 
-class CAsnBinDataWithFeatures : public CAsnBinData
+class CWGSAsnBinData : public CAsnBinData
 {
 public:
-    explicit CAsnBinDataWithFeatures(CSerialObject& obj)
+    explicit CWGSAsnBinData(CSerialObject& obj)
         : CAsnBinData(obj),
           m_EmptyDescr(new CSeq_descr)
         {
         }
-    virtual ~CAsnBinDataWithFeatures(void)
+    virtual ~CWGSAsnBinData(void)
         {
         }
 
@@ -249,7 +261,7 @@ class CFtableWriteHook : public CWriteChoiceVariantHook
 {
 public:
     typedef const CSeq_annot::TData::TFtable* TKey;
-    typedef CAsnBinDataWithFeatures::SFtableInfo TInfo;
+    typedef CWGSAsnBinData::SFtableInfo TInfo;
     typedef map<TKey, TInfo> TInfoMap;
     CFtableWriteHook(const TInfoMap& info_map)
         : info_map(info_map)
@@ -283,7 +295,7 @@ class CDescrWriteHook : public CWriteClassMemberHook
 {
 public:
     typedef const CBioseq* TKey;
-    typedef CAsnBinDataWithFeatures::TDescrInfo TInfo;
+    typedef CWGSAsnBinData::TDescrInfo TInfo;
     typedef map<TKey, TInfo> TInfoMap;
     CDescrWriteHook(const TInfoMap& info_map)
         : info_map(info_map)
@@ -320,7 +332,7 @@ public:
 };
 
 
-void CAsnBinDataWithFeatures::Serialize(CObjectOStreamAsnBinary& out) const
+void CWGSAsnBinData::Serialize(CObjectOStreamAsnBinary& out) const
 {
     PROFILE(sw_Serialize);
     CFtableWriteHook hook1(m_FtableMap);
@@ -414,7 +426,7 @@ bool CWGSGiResolver::x_Load(SIndexInfo& index,
     size_t count = 0;
     for ( CMemoryLineReader line(&stream); !line.AtEOF(); ) {
         tokens.clear();
-        NStr::Tokenize(*++line, " ", tokens);
+        NStr::Split(*++line, " ", tokens);
         if ( tokens.size() != 3 ) {
             if ( tokens.empty() || tokens[0][0] == '#' ) {
                 // allow empty lines and comments starting with #
@@ -554,7 +566,7 @@ bool CWGSProtAccResolver::x_Load(SIndexInfo& index,
     size_t count = 0;
     for ( CMemoryLineReader line(&stream); !line.AtEOF(); ) {
         tokens.clear();
-        NStr::Tokenize(*++line, " ", tokens);
+        NStr::Split(*++line, " ", tokens);
         if ( tokens.size() != 3 ) {
             if ( tokens.empty() || tokens[0][0] == '#' ) {
                 // allow empty lines and comments starting with #
@@ -1069,9 +1081,9 @@ string CWGSDb_Impl::NormalizePathOrAccession(CTempString path_or_acc,
         }
     }
     if ( !vol_path.empty() ) {
-        list<CTempString> dirs;
+        vector<CTempString> dirs;
         NStr::Split(vol_path, ":", dirs);
-        ITERATE ( list<CTempString>, it, dirs ) {
+        ITERATE ( vector<CTempString>, it, dirs ) {
             string path = CDirEntry::MakePath(*it, path_or_acc);
             if ( CDirEntry(path).Exists() ) {
                 return path;
@@ -1872,13 +1884,25 @@ TSequence4na CWGSDb_Impl::SSeqTableCursor::Get4na(TVDBRowId row) const
 
 struct SWGSCreateInfo 
 {
-    CWGSDb db;
     typedef int TFlags;
+
+    SWGSCreateInfo(const CWGSDb& db, TFlags flags)
+        : db(db),
+          flags(flags),
+          split_prod(false),
+          split_data(false),
+          split_feat(false)
+        {
+        }
+
+    CWGSDb db;
     TFlags flags;
+    bool split_prod, split_data, split_feat;
     CRef<CBioseq> main_seq;
     CRef<CSeq_entry> entry;
     CRef<CID2S_Split_Info> split;
-    CRef<CAsnBinDataWithFeatures> data;
+    CRef<CID2S_Chunk> chunk;
+    CRef<CWGSAsnBinData> data;
 
     void x_AddDescr(CTempString bytes);
     void x_AddFeature(const CWGSFeatureIterator& it,
@@ -1887,6 +1911,7 @@ struct SWGSCreateInfo
                        vector<TVDBRowId>& product_row_ids);
     void x_AddFeatures(TVDBRowIdRange range);
     void x_CreateProtSet(TVDBRowIdRange range);
+    void x_AddProducts(const vector<TVDBRowId>& product_row_ids);
 };
 
 
@@ -3589,7 +3614,7 @@ void SWGSCreateInfo::x_AddFeatures(TVDBRowIdRange range)
         // plain feature
         if ( !main_features ) {
             CRef<CSeq_annot> annot(new CSeq_annot);
-            entry->SetSeq().SetAnnot().push_back(annot);
+            main_seq->SetAnnot().push_back(annot);
             main_features = &annot->SetData().SetFtable();
         }
         x_AddFeature(feat_it, *main_features);
@@ -3635,17 +3660,81 @@ void CWGSSeqIterator::x_CreateBioseq(SWGSCreateInfo& info) const
 
 
 static
+void sx_GetProductsSlice(const CWGSDb& db, TVDBRowIdRange range,
+                         size_t skip, size_t count,
+                         vector<TVDBRowId>& product_row_ids)
+{
+    for ( CWGSFeatureIterator feat_it(db, range); feat_it; ++feat_it ) {
+        if ( TVDBRowId row_id = feat_it.GetProductRowId() ) {
+            if ( skip ) {
+                --skip;
+                continue;
+            }
+            product_row_ids.push_back(row_id);
+            if ( product_row_ids.size() == count ) {
+                break;
+            }
+        }
+    }
+}
+
+
+static
 bool sx_HasMoreProducts(const CWGSDb& db, TVDBRowIdRange range, size_t count)
 {
     for ( CWGSFeatureIterator feat_it(db, range); feat_it; ++feat_it ) {
         if ( feat_it.GetProductRowId() ) {
-            if ( !count ) {
-                return true;
+            if ( count ) {
+                --count;
+                continue;
             }
-            --count;
+            return true;
         }
     }
     return false;
+}
+
+
+void SWGSCreateInfo::x_AddProducts(const vector<TVDBRowId>& product_row_ids)
+{
+    // add products
+    TFlags save_flags = flags;
+    CRef<CBioseq> save_seq = main_seq;
+    CRef<CSeq_entry> save_entry = entry;
+    CWGSProteinIterator prot_it(db);
+    flags = prot_it.fDefaultFlags & ~prot_it.fMasterDescr;
+    CBioseq_set::TSeq_set* entries = 0;
+    CID2S_Chunk_Data::TBioseqs* bioseqs = 0;
+    if ( chunk ) {
+        CRef<CID2S_Chunk_Data> chunk_data(new CID2S_Chunk_Data);
+        chunk->SetData().push_back(chunk_data);
+        chunk_data->SetId().SetBioseq_set(kMainEntryId);
+        bioseqs = &chunk_data->SetBioseqs();
+    }
+    else {
+        entries = &save_entry->SetSet().SetSeq_set();
+    }
+    ITERATE ( vector<TVDBRowId>, it, product_row_ids ) {
+        if ( !prot_it.SelectRow(*it) ) {
+            ERR_POST_X(9, "CWGSDb::MakeSeqOrSet: "
+                       "invalid protein row id: "<<*it);
+            continue;
+        }
+        entry = null;
+        main_seq = null;
+        prot_it.x_CreateBioseq(*this);
+        if ( entries ) {
+            CRef<CSeq_entry> entry(new CSeq_entry);
+            entry->SetSeq(*main_seq);
+            entries->push_back(entry);
+        }
+        else {
+            bioseqs->push_back(main_seq);
+        }
+    }
+    flags = save_flags;
+    main_seq = save_seq;
+    entry = save_entry;
 }
 
 
@@ -3658,27 +3747,60 @@ void SWGSCreateInfo::x_CreateProtSet(TVDBRowIdRange range)
         x_AddFeatures(range, product_row_ids);
     }
     if ( !product_row_ids.empty() ) {
-        // add proteins
-        TFlags save_flags = flags;
-        CRef<CBioseq> save_seq = main_seq;
-        CRef<CSeq_entry> save_entry = entry;
-        CWGSProteinIterator prot_it(db);
-        flags = prot_it.fDefaultFlags & ~prot_it.fMasterDescr;
-        CBioseq_set::TSeq_set& entries = save_entry->SetSet().SetSeq_set();
-        ITERATE ( vector<TVDBRowId>, it, product_row_ids ) {
-            if ( !prot_it.SelectRow(*it) ) {
-                ERR_POST_X(9, "CWGSDb::MakeSeqOrSet: "
-                           "invalid protein row id: "<<*it);
-                continue;
+        if ( split_prod ) {
+            _ASSERT(entry && entry->IsSet());
+            entry->SetSet().SetId().SetId(kMainEntryId);
+            int chunk_index = 0;
+            size_t prod_count = 0;
+            CID2S_Bioseq_Ids::Tdata* ids = 0;
+            CWGSProteinIterator prot_it(db);
+            ITERATE ( vector<TVDBRowId>, it, product_row_ids ) {
+                if ( !ids || prod_count == kProdPerChunk ) {
+                    CRef<CID2S_Chunk_Info> chunk(new CID2S_Chunk_Info);
+                    split->SetChunks().push_back(chunk);
+                    chunk->SetId().Set(chunk_index*kChunkIdStep + eChunk_prot);
+                    prod_count = 0;
+                    ++chunk_index;
+
+                    CRef<CID2S_Chunk_Content> content;
+                    content = new CID2S_Chunk_Content;
+                    chunk->SetContent().push_back(content);
+                    content->SetFeat_ids();
+
+                    content = new CID2S_Chunk_Content;
+                    chunk->SetContent().push_back(content);
+                    CRef<CID2S_Bioseq_place_Info> place_info(new CID2S_Bioseq_place_Info);
+                    content->SetBioseq_place().push_back(place_info);
+                    place_info->SetBioseq_set(kMainEntryId);
+                    ids = &place_info->SetSeq_ids().Set();
+                }
+                ++prod_count;
+                if ( !prot_it.SelectRow(*it) ) {
+                    ERR_POST_X(9, "CWGSDb::MakeSeqOrSet: "
+                               "invalid protein row id: "<<*it);
+                    continue;
+                }
+                CRef<CID2S_Bioseq_Ids::C_E> add_id;
+                if ( TGi gi = prot_it.GetGi() ) {
+                    add_id = new CID2S_Bioseq_Ids::C_E;
+                    add_id->SetGi(gi);
+                    ids->push_back(add_id);
+                }
+                if ( CRef<CSeq_id> id = prot_it.GetAccSeq_id() ) {
+                    add_id = new CID2S_Bioseq_Ids::C_E;
+                    add_id->SetSeq_id(*id);
+                    ids->push_back(add_id);
+                }
+                if ( CRef<CSeq_id> id = prot_it.GetGeneralSeq_id() ) {
+                    add_id = new CID2S_Bioseq_Ids::C_E;
+                    add_id->SetSeq_id(*id);
+                    ids->push_back(add_id);
+                }
             }
-            entry = new CSeq_entry;
-            main_seq = null;
-            prot_it.x_CreateEntry(*this);
-            entries.push_back(entry);
         }
-        flags = save_flags;
-        main_seq = save_seq;
-        entry = save_entry;
+        else {
+            x_AddProducts(product_row_ids);
+        }
     }
 }
 
@@ -3720,21 +3842,61 @@ void CWGSSeqIterator::x_CreateEntry(SWGSCreateInfo& info) const
 }
 
 
+bool CWGSSeqIterator::x_InitSplit(SWGSCreateInfo& info) const
+{
+    if ( !kSplitEnabled ) {
+        return false;
+    }
+    // split data if...
+    if ( ((info.flags & fMaskInst) == fInst_delta) && // delta is requested
+         HasGapInfo() && // we have explicit gap info
+         GetSeqLength() > kSplit2naSize // data is big enough
+        ) {
+        info.split_data = true;
+    }
+    if ( sx_HasMoreProducts(m_Db, GetLocFeatRowIdRange(), kProdPerChunk) ) {
+        // split products if there are many enough
+        info.split_prod = true;
+    }
+    if ( !info.split_data && !info.split_prod && !info.split_feat ) {
+        return false;
+    }
+    info.entry = new CSeq_entry;
+    info.split = new CID2S_Split_Info;
+    info.split->SetSkeleton(*info.entry);
+    return true;
+}
+
+
 void CWGSSeqIterator::x_CreateSplit(SWGSCreateInfo& info) const
 {
     // split data if...
-    bool split_data =
-        ((info.flags & fMaskInst) == fInst_delta) && // delta is requested
-        HasGapInfo() && // we have explcit gap info
-        GetSeqLength() > kSplit2naSize; // data is big enough
-    // split products if there are many enough
-    bool split_prod =
-        sx_HasMoreProducts(m_Db, GetLocFeatRowIdRange(), 10);
-    if ( !split_data && !split_prod ) {
-        x_CreateEntry(info);
+    if ( ((info.flags & fMaskInst) == fInst_delta) && // delta is requested
+         HasGapInfo() && // we have explicit gap info
+         GetSeqLength() > kSplit2naSize // data is big enough
+        ) {
+        info.split_data = true;
     }
-    else {
-        x_CreateEntry(info);
+    if ( sx_HasMoreProducts(m_Db, GetLocFeatRowIdRange(), kProdPerChunk) ) {
+        // split products if there are many enough
+        info.split_prod = true;
+    }
+    x_CreateEntry(info);
+}
+
+
+void CWGSSeqIterator::x_CreateChunk(SWGSCreateInfo& info,
+                                    TChunkId chunk_id) const
+{
+    PROFILE(sw_GetChunk);
+    EChunkType type = EChunkType(chunk_id%kChunkIdStep);
+    size_t index = chunk_id/kChunkIdStep;
+    if ( type == eChunk_prot ) {
+        vector<TVDBRowId> product_row_ids;
+        sx_GetProductsSlice(m_Db, GetLocFeatRowIdRange(),
+                            index*kProdPerChunk, kProdPerChunk,
+                            product_row_ids);
+        info.x_AddProducts(product_row_ids);
     }
 }
 
@@ -3742,9 +3904,7 @@ void CWGSSeqIterator::x_CreateSplit(SWGSCreateInfo& info) const
 CRef<CBioseq> CWGSSeqIterator::GetBioseq(TFlags flags) const
 {
     x_CheckValid("CWGSSeqIterator::GetBioseq");
-    SWGSCreateInfo info;
-    info.db = m_Db;
-    info.flags = flags;
+    SWGSCreateInfo info(m_Db, flags);
     x_CreateBioseq(info);
     return info.main_seq;
 }
@@ -3753,9 +3913,7 @@ CRef<CBioseq> CWGSSeqIterator::GetBioseq(TFlags flags) const
 CRef<CSeq_entry> CWGSSeqIterator::GetSeq_entry(TFlags flags) const
 {
     x_CheckValid("CWGSSeqIterator::GetSeq_entry");
-    SWGSCreateInfo info;
-    info.db = m_Db;
-    info.flags = flags;
+    SWGSCreateInfo info(m_Db, flags);
     info.entry = new CSeq_entry;
     x_CreateEntry(info);
     return info.entry;
@@ -3765,11 +3923,9 @@ CRef<CSeq_entry> CWGSSeqIterator::GetSeq_entry(TFlags flags) const
 CRef<CAsnBinData> CWGSSeqIterator::GetSeq_entryData(TFlags flags) const
 {
     x_CheckValid("CWGSSeqIterator::GetSeq_entryData");
-    SWGSCreateInfo info;
-    info.db = m_Db;
-    info.flags = flags;
+    SWGSCreateInfo info(m_Db, flags);
     info.entry = new CSeq_entry;
-    info.data = new CAsnBinDataWithFeatures(*info.entry);
+    info.data = new CWGSAsnBinData(*info.entry);
     x_CreateEntry(info);
     return CRef<CAsnBinData>(info.data);
 }
@@ -3778,12 +3934,10 @@ CRef<CAsnBinData> CWGSSeqIterator::GetSeq_entryData(TFlags flags) const
 CRef<CID2S_Split_Info> CWGSSeqIterator::GetSplitInfo(TFlags flags) const
 {
     x_CheckValid("CWGSSeqIterator::GetSplitInfo");
-    SWGSCreateInfo info;
-    info.db = m_Db;
-    info.flags = flags;
-    info.entry = new CSeq_entry;
-    info.split = new CID2S_Split_Info;
-    info.split->SetSkeleton(*info.entry);
+    SWGSCreateInfo info(m_Db, flags);
+    if ( !x_InitSplit(info) ) {
+        return null;
+    }
     x_CreateSplit(info);
     return info.split;
 }
@@ -3792,29 +3946,36 @@ CRef<CID2S_Split_Info> CWGSSeqIterator::GetSplitInfo(TFlags flags) const
 CRef<CAsnBinData> CWGSSeqIterator::GetSplitInfoData(TFlags flags) const
 {
     x_CheckValid("CWGSSeqIterator::GetSplitInfoData");
-    SWGSCreateInfo info;
-    info.db = m_Db;
-    info.flags = flags;
-    info.entry = new CSeq_entry;
-    info.split = new CID2S_Split_Info;
-    info.split->SetSkeleton(*info.entry);
-    info.data = new CAsnBinDataWithFeatures(*info.split);
+    SWGSCreateInfo info(m_Db, flags);
+    if ( !x_InitSplit(info) ) {
+        return null;
+    }
+    info.data = new CWGSAsnBinData(*info.split);
     x_CreateSplit(info);
     return CRef<CAsnBinData>(info.data);
 }
 
 
-CRef<CID2S_Chunk> CWGSSeqIterator::GetChunk(TFlags flags) const
+CRef<CID2S_Chunk> CWGSSeqIterator::GetChunk(TChunkId chunk_id,
+                                            TFlags flags) const
 {
     x_CheckValid("CWGSSeqIterator::GetChunk");
-    return null;
+    SWGSCreateInfo info(m_Db, flags);
+    info.chunk = new CID2S_Chunk;
+    x_CreateChunk(info, chunk_id);
+    return info.chunk;
 }
 
 
-CRef<CAsnBinData> CWGSSeqIterator::GetChunkData(TFlags flags) const
+CRef<CAsnBinData> CWGSSeqIterator::GetChunkData(TChunkId chunk_id,
+                                                TFlags flags) const
 {
     x_CheckValid("CWGSSeqIterator::GetChunkData");
-    return null;
+    SWGSCreateInfo info(m_Db, flags);
+    info.chunk = new CID2S_Chunk;
+    info.data = new CWGSAsnBinData(*info.chunk);
+    x_CreateChunk(info, chunk_id);
+    return CRef<CAsnBinData>(info.data);
 }
 
 
@@ -4200,9 +4361,7 @@ void CWGSScaffoldIterator::x_CreateEntry(SWGSCreateInfo& info) const
 CRef<CBioseq> CWGSScaffoldIterator::GetBioseq(TFlags flags) const
 {
     x_CheckValid("CWGSScaffoldIterator::GetBioseq");
-    SWGSCreateInfo info;
-    info.db = m_Db;
-    info.flags = flags;
+    SWGSCreateInfo info(m_Db, flags);
     x_CreateBioseq(info);
     return info.main_seq;
 }
@@ -4211,9 +4370,7 @@ CRef<CBioseq> CWGSScaffoldIterator::GetBioseq(TFlags flags) const
 CRef<CSeq_entry> CWGSScaffoldIterator::GetSeq_entry(TFlags flags) const
 {
     x_CheckValid("CWGSScaffoldIterator::GetSeq_entry");
-    SWGSCreateInfo info;
-    info.db = m_Db;
-    info.flags = flags;
+    SWGSCreateInfo info(m_Db, flags);
     info.entry = new CSeq_entry;
     x_CreateEntry(info);
     return info.entry;
@@ -4800,10 +4957,18 @@ void CWGSProteinIterator::x_CreateBioseq(SWGSCreateInfo& info) const
         }
     }
     if ( info.flags & fMaskAnnot ) {
-        PROFILE(sw___GetProtAnnot);
-        GetAnnotSet(info.main_seq->SetAnnot());
-        if ( info.main_seq->GetAnnot().empty() ) {
-            info.main_seq->ResetAnnot();
+        if ( !info.db->FeatTable() ) {
+            // plain sequence only without FEATURE table
+            PROFILE(sw___GetProtAnnot);
+            GetAnnotSet(info.main_seq->SetAnnot());
+            if ( info.main_seq->GetAnnot().empty() ) {
+                info.main_seq->ResetAnnot();
+            }
+        }
+        else {
+            // generate features from FEATURE table
+            PROFILE(sw__GetProtFeat);
+            info.x_AddFeatures(GetLocFeatRowIdRange());
         }
     }
     info.main_seq->SetInst(*GetSeq_inst(info.flags));
@@ -4813,27 +4978,14 @@ void CWGSProteinIterator::x_CreateBioseq(SWGSCreateInfo& info) const
 void CWGSProteinIterator::x_CreateEntry(SWGSCreateInfo& info) const
 {
     PROFILE(sw_GetProtEntry);
-    if ( !(info.flags & fSeqAnnot) || !info.db->FeatTable() ) {
-        // plain sequence only without FEATURE table
-        x_CreateBioseq(info);
-    }
-    else {
-        TFlags flags = info.flags;
-        info.flags = flags & ~fSeqAnnot;
-        x_CreateBioseq(info);
-        info.flags = flags;
-        PROFILE(sw__GetProtFeat);
-        info.x_AddFeatures(GetLocFeatRowIdRange());
-    }
+    x_CreateBioseq(info);
 }
 
 
 CRef<CBioseq> CWGSProteinIterator::GetBioseq(TFlags flags) const
 {
     x_CheckValid("CWGSProteinIterator::GetBioseq");
-    SWGSCreateInfo info;
-    info.db = m_Db;
-    info.flags = flags;
+    SWGSCreateInfo info(m_Db, flags);
     x_CreateBioseq(info);
     return info.main_seq;
 }
@@ -4842,9 +4994,7 @@ CRef<CBioseq> CWGSProteinIterator::GetBioseq(TFlags flags) const
 CRef<CSeq_entry> CWGSProteinIterator::GetSeq_entry(TFlags flags) const
 {
     x_CheckValid("CWGSProteinIterator::GetSeq_entry");
-    SWGSCreateInfo info;
-    info.db = m_Db;
-    info.flags = flags;
+    SWGSCreateInfo info(m_Db, flags);
     info.entry = new CSeq_entry;
     x_CreateEntry(info);
     return info.entry;
