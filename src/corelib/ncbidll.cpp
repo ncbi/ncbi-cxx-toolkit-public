@@ -387,14 +387,14 @@ void CDllResolver::x_AddExtraDllPath(vector<string>& paths, TExtraDllPath which)
         // Parse PATH environment variable
         const TXChar* env = NcbiSys_getenv(_TX("PATH"));
         if (env  &&  *env) {
-            NStr::Tokenize(_T_STDSTRING(env), ";", paths);
+            NStr::Split(_T_STDSTRING(env), ";", paths, NStr::fSplit_NoMergeDelims);
         }
 
 #elif defined(NCBI_OS_UNIX)
         // From LD_LIBRARY_PATH environment variable
         const char* env = getenv("LD_LIBRARY_PATH");
         if (env  &&  *env) {
-            NStr::Tokenize(env, ":", paths);
+            NStr::Split(env, ":", paths, NStr::fSplit_NoMergeDelims);
         }
 #endif
     }
@@ -405,10 +405,10 @@ void CDllResolver::x_AddExtraDllPath(vector<string>& paths, TExtraDllPath which)
         const char* runpath = NCBI_GetRunpath();
         if (runpath  &&  *runpath) {
 #  if defined(NCBI_OS_MSWIN)
-            NStr::Tokenize(runpath, ";", paths);
+            NStr::Split(runpath, ";", paths, NStr::fSplit_NoMergeDelims);
 #  elif defined(NCBI_OS_UNIX)
             vector<string> tokenized;
-            NStr::Tokenize(runpath, ":", tokenized);
+            NStr::Split(runpath, ":", tokenized, NStr::fSplit_NoMergeDelims);
             ITERATE(vector<string>, i, tokenized) {
                 if (i->find("$ORIGIN") == NPOS) {
                     paths.push_back(*i);

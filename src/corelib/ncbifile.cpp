@@ -808,7 +808,7 @@ string CDirEntry::NormalizePath(const string& path, EFollowLinks follow_links)
     while ( !current.empty()  ||  !tail.empty() ) {
         std::list<string> pretail;
         if ( !current.empty() ) {
-            NStr::Split(current, kSep, pretail, NStr::eNoMergeDelims);
+            NStr::Split(current, kSep, pretail, NStr::fSplit_NoMergeDelims);
             current.erase();
             if (pretail.front().empty()
 #ifdef DISK_SEPARATOR
