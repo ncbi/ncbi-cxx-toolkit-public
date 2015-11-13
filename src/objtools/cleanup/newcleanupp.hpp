@@ -308,6 +308,7 @@ private:
     void ResynchPeptidePartials( CBioseq& seq );
     void RemoveBadProteinTitle(CBioseq& seq);
     void KeepLatestDateDesc(CSeq_descr & seq_descr);
+    void x_SingleSeqSetToSeq(CBioseq_set& set);
 
     // void XxxxxxBC (Cxxxxx& xxx);
 

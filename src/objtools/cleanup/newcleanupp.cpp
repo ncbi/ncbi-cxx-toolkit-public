@@ -11242,6 +11242,7 @@ void CNewCleanup_imp::RemoveBadProteinTitle(CBioseq& seq)
 
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
     // only remove if seq is in nuc-prot set
+    // and coding region for product sequence is available
     CBioseq_set_Handle parent = bsh.GetParentBioseq_set();
     if (!parent || !parent.IsSetClass() || parent.GetClass() != CBioseq_set::eClass_nuc_prot) {
         return;
@@ -11327,6 +11328,19 @@ void CNewCleanup_imp::KeepLatestDateDesc(CSeq_descr & seq_descr)
         }
         delete_equal_create = false;
         delete_equal_update = false;
+    }
+}
+
+
+void CNewCleanup_imp::x_SingleSeqSetToSeq(CBioseq_set& set)
+{
+    if (set.IsSetSeq_set() && set.GetSeq_set().size() == 1) {
+        CBioseq_set_Handle bh = m_Scope->GetBioseq_setHandle(set);
+        CSeq_entry_Handle seh = bh.GetParentEntry();
+        CSeq_entry_EditHandle eh(seh);
+        // This call will remove annots/descrs from the 
+        // set and attach them to the seq.
+        eh.ConvertSetToSeq();
     }
 }
 
