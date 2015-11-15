@@ -1,3 +1,6 @@
-# test-name	commandline	input-file
-COUNT_NUCLEOTIDES	COUNT_NUCLEOTIDES	COUNT_PROTEINS.sqn
-COUNT_PROTEINS	COUNT_PROTEINS	COUNT_PROTEINS.sqn
+### Test name		Commandline C++		Commandline C		Input file		Special use
+
+COUNT_NUCLEOTIDES	COUNT_NUCLEOTIDES	DISC_COUNT_NUCLEOTIDES	COUNT_PROTEINS.sqn
+COUNT_PROTEINS		COUNT_PROTEINS		COUNT_PROTEINS		COUNT_PROTEINS.sqn	
+
+### Please keep the tests in alphabetical order!
