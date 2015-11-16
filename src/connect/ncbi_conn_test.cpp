@@ -611,7 +611,7 @@ EIO_Status CConnTest::x_GetFirewallConfiguration(const SConnNetInfo* net_info)
     while (fwdcgi.getline(line, sizeof(line))) {
         responded = true;
         CTempString hostport, state;
-        if (!NStr::SplitInTwo(line, "\t", hostport, state, NStr::eMergeDelims))
+        if (!NStr::SplitInTwo(line, "\t", hostport, state))
             continue;
         bool fb;
         if (NStr::Compare(state, 0, 3, "FB-") == 0) {
