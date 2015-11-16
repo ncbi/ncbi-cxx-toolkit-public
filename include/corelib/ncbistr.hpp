@@ -2492,7 +2492,9 @@ public:
     /// Variation of Split() wihout flags -- for backward compatibility only.
     /// @attention
     ///   Automatically use flags: fSplit_MergeDelimiters | fSplit_Truncate
+    /// @deprecated  Use Split() with TSplitFlags instead
     inline
+    NCBI_DEPRECATED
     static list<string>& Split(const CTempString    str,
                                const CTempString    delim,
                                list<string>&        arr) {
@@ -2502,7 +2504,9 @@ public:
     /// Variation of Split() wihout flags -- for backward compatibility only.
     /// @attention
     ///   Automatically use flags: fSplit_MergeDelimiters | fSplit_Truncate
+    /// @deprecated  Use Split() with TSplitFlags instead
     inline
+    NCBI_DEPRECATED
     static list<CTempStringEx>& Split(
                                 const CTempString    str,
                                 const CTempString    delim,
