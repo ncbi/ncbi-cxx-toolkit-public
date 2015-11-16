@@ -770,7 +770,7 @@ BOOST_AUTO_TEST_CASE(ZERO_BASECOUNT)
 BOOST_AUTO_TEST_CASE(NO_ANNOTATION)
 {
     {{
-    // Test file #1
+    // Test file #1 - single bioseq seqentry
     CRef<CSeq_entry> entry = ReadEntryFromFile("test_data/no_annotation_seq.asn");
     BOOST_REQUIRE(entry);
     CScope scope(*CObjectManager::GetInstance());
@@ -790,7 +790,7 @@ BOOST_AUTO_TEST_CASE(NO_ANNOTATION)
     }}
 
     {{
-    // Test file #2
+    // Test file #2 - bioseq-set seqentry
     CRef<CSeq_entry> entry = ReadEntryFromFile("test_data/no_annotation_set.asn");
     BOOST_REQUIRE(entry);
     CScope scope(*CObjectManager::GetInstance());
@@ -806,7 +806,49 @@ BOOST_AUTO_TEST_CASE(NO_ANNOTATION)
     BOOST_REQUIRE_EQUAL(tst.size(), 1);
     TReportItemList rep = tst[0]->GetReport();
     BOOST_REQUIRE_EQUAL(rep.size(), 1);
-    BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "24 sequences have no annotation");
+    BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "2 sequences have no annotation");
+    }}
+}
+
+BOOST_AUTO_TEST_CASE(DISC_LONG_NO_ANNOTATION)
+{
+    {{
+    // Test file #1 - long sequence, no annotation
+    CRef<CSeq_entry> entry = ReadEntryFromFile("test_data/no_annotation_long_seq.asn");
+    BOOST_REQUIRE(entry);
+    CScope scope(*CObjectManager::GetInstance());
+    scope.AddDefaults();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+    
+    CRef<CDiscrepancySet> set = CDiscrepancySet::New(scope);
+    set->AddTest("DISC_LONG_NO_ANNOTATION");
+    set->Parse(seh);
+    set->Summarize();
+    
+    const vector<CRef<CDiscrepancyCase> >& tst = set->GetTests();
+    BOOST_REQUIRE_EQUAL(tst.size(), 1);
+    TReportItemList rep = tst[0]->GetReport();
+    BOOST_REQUIRE_EQUAL(rep.size(), 1);
+    BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "1 LONG sequence has no annotation");
+    }}
+
+    {{
+    // Test file #2 - not long enough sequence, no annotation
+    CRef<CSeq_entry> entry = ReadEntryFromFile("test_data/no_annotation_not_long_enough_seq.asn");
+    BOOST_REQUIRE(entry);
+    CScope scope(*CObjectManager::GetInstance());
+    scope.AddDefaults();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+    
+    CRef<CDiscrepancySet> set = CDiscrepancySet::New(scope);
+    set->AddTest("DISC_LONG_NO_ANNOTATION");
+    set->Parse(seh);
+    set->Summarize();
+    
+    const vector<CRef<CDiscrepancyCase> >& tst = set->GetTests();
+    BOOST_REQUIRE_EQUAL(tst.size(), 1);
+    TReportItemList rep = tst[0]->GetReport();
+    BOOST_CHECK_EQUAL(rep.size(), 0);  // No report expected
     }}
 }
 

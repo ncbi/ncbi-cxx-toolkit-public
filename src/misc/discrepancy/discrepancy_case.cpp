@@ -510,6 +510,7 @@ DISCREPANCY_CASE(NO_ANNOTATION, CSeq_inst, eAll, "No annotation")
     if (obj.IsAa()) {
         return;
     }
+
     // Report only nucleotides
 
     CBioseq_Handle bsh = context.GetScope().GetBioseqHandle(*context.GetCurrentBioseq());
@@ -520,6 +521,29 @@ DISCREPANCY_CASE(NO_ANNOTATION, CSeq_inst, eAll, "No annotation")
 }
 
 DISCREPANCY_SUMMARIZE(NO_ANNOTATION)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+DISCREPANCY_CASE(DISC_LONG_NO_ANNOTATION, CSeq_inst, eAll, "No annotation for LONG sequence")
+{
+    const int kSeqLength = 5000;
+    if (obj.IsAa() ||
+        !(obj.CanGetLength() && obj.GetLength() > kSeqLength)) 
+    {
+        return;
+    }
+
+    // Report only nucleotides that are longer than x
+
+    CBioseq_Handle bsh = context.GetScope().GetBioseqHandle(*context.GetCurrentBioseq());
+    CFeat_CI feats(bsh);
+    if (!feats) {
+        m_Objs["[n] LONG sequence[s] [has] no annotation"].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+    }
+}
+
+DISCREPANCY_SUMMARIZE(DISC_LONG_NO_ANNOTATION)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }

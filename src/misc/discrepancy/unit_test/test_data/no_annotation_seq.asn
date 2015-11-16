@@ -1,15 +1,7 @@
 Seq-entry ::= seq {
   id {
     local
-      str "BankIt1867902" ,
-    general {
-      db "BankIt" ,
-      tag
-        str "1867902" } ,
-    general {
-      db "TMSMART" ,
-      tag
-        id 58848759 } } ,
+      str "Seq1" } ,
   descr {
     source {
       genome genomic ,
@@ -54,136 +46,7 @@ Seq-entry ::= seq {
           name "[cultured bacterial source]" } } } ,
     molinfo {
       biomol genomic ,
-      completeness complete } ,
-    pub {
-      pub {
-        gen {
-          cit "Unpublished" ,
-          authors {
-            names
-              std {
-                {
-                  name
-                    name {
-                      last "zhou" ,
-                      first "dan" ,
-                      initials "d." } } } } ,
-          title "Resources" } } } ,
-    user {
-      type
-        str "Submission" ,
-      data {
-        {
-          label
-            str "SmartComment" ,
-          data
-            str "ALT EMAIL:zhoujianv1990@163.com" } ,
-        {
-          label
-            str "AdditionalComment" ,
-          data
-            str "BankIt1867902" } } } ,
-    user {
-      type
-        str "StructuredComment" ,
-      data {
-        {
-          label
-            str "StructuredCommentPrefix" ,
-          data
-            str "##Assembly-Data-START##" } ,
-        {
-          label
-            str "Sequencing Technology" ,
-          data
-            str "Sanger dideoxy sequencing" } ,
-        {
-          label
-            str "StructuredCommentSuffix" ,
-          data
-            str "##Assembly-Data-END##" } } } ,
-    user {
-      type
-        str "Submission" ,
-      data {
-        {
-          label
-            str "SmartComment" ,
-          data
-            str "TOTAL # OF SEQS:1" } } } ,
-    user {
-      type
-        str "Submission" ,
-      data {
-        {
-          label
-            str "AdditionalComment" ,
-          data
-            str "LocalID:BankIt1867902" } } } ,
-    user {
-      type
-        str "NcbiCleanup" ,
-      data {
-        {
-          label
-            str "method" ,
-          data
-            str "SeriousSeqEntryCleanup" } ,
-        {
-          label
-            str "version" ,
-          data
-            int 8 } ,
-        {
-          label
-            str "month" ,
-          data
-            int 11 } ,
-        {
-          label
-            str "day" ,
-          data
-            int 2 } ,
-        {
-          label
-            str "year" ,
-          data
-            int 2015 } } } ,
-    update-date
-      std {
-        year 2015 ,
-        month 11 ,
-        day 2 ,
-        hour 2 ,
-        minute 6 ,
-        second 1 } ,
-    pub {
-      pub {
-        sub {
-          authors {
-            names
-              std {
-                {
-                  name
-                    name {
-                      last "zhou" ,
-                      first "dan" ,
-                      initials "d." } } } ,
-            affil
-              std {
-                affil "Zhejiang University of Technology" ,
-                div "Ziliang C312" ,
-                city "Hangzhou" ,
-                sub "Zhejiang" ,
-                country "China" ,
-                street "Chao Wang Road No. 18 in Xiacheng District" ,
-                postal-code "310014" } } ,
-          medium email ,
-          date
-            std {
-              year 2015 ,
-              month 11 ,
-              day 2 } } } } } ,
+      completeness complete } } ,
   inst {
     repr raw ,
     mol dna ,
