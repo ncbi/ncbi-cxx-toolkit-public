@@ -521,7 +521,7 @@ void CPhrap_Read::ReadDS(CNcbiIstream& in)
     m_DS = new SReadDS;
     string tag = ReadLine(in);
     list<string> values;
-    NStr::Split(tag, " ", values, NStr::eNoMergeDelims);
+    NStr::Split(tag, " ", values, 0);
     bool in_time = false;
     ITERATE(list<string>, it, values) {
         if (*it == "CHROMAT_FILE:") {
