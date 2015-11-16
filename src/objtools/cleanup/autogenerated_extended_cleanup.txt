@@ -152,6 +152,12 @@ use m_NewCleanup.x_RemoveEmptyFeatureTables
     Bioseq-set
 }
 
+use  m_NewCleanup.x_MovePopPhyMutPub
+{
+    Bioseq,
+    Bioseq-set
+}
+
 #remove empty descr set after other cleaning steps are done
 use m_NewCleanup.x_ClearEmptyDescr {
     POST Bioseq-set,
