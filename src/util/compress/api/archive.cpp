@@ -615,7 +615,7 @@ auto_ptr<CArchive::TEntries> CArchive::x_ReadAndProcess(EAction action)
         if ( match  &&  m_MaskPattern.mask ) {
             match = false;
             list<CTempString> elems;
-            NStr::Split(path, "/", elems);
+            NStr::Split(path, "/", elems, NStr::fSplit_MergeDelimiters);
             ITERATE(list<CTempString>, it, elems) {
                 if (m_MaskPattern.mask->Match(*it, m_MaskPattern.acase)) {
                     match = true;
@@ -916,7 +916,7 @@ auto_ptr<CArchive::TEntries> CArchive::x_Append(const string&   src_path,
     }
     if ( match  &&  m_MaskPattern.mask ) {
         list<CTempString> elems;
-        NStr::Split(temp, "/", elems);
+        NStr::Split(temp, "/", elems, NStr::fSplit_MergeDelimiters);
         ITERATE(list<CTempString>, it, elems) {
             if (*it == "..") {
                 ARCHIVE_THROW(eBadName, "Name '" + temp + "' embeds parent directory ('..')");

@@ -2933,7 +2933,7 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
         if (match  &&  m_Mask[eExcludeMask].mask  &&  action != eTest) {
             list<CTempString> elems;
             _ASSERT(!m_Current.GetName().empty());
-            NStr::Split(m_Current.GetName(), "/", elems);
+            NStr::Split(m_Current.GetName(), "/", elems, NStr::fSplit_MergeDelimiters);
             match = !s_MatchPattern(elems,
                                     m_Mask[eExcludeMask].mask,
                                     m_Mask[eExcludeMask].acase);
@@ -3573,7 +3573,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
     }
 
     list<CTempString> elems;
-    NStr::Split(temp, "/", elems);
+    NStr::Split(temp, "/", elems, NStr::fSplit_MergeDelimiters);
     if (find(elems.begin(), elems.end(), "..") != elems.end()) {
         TAR_THROW(this, eBadName,
                   "Name '" + temp + "' embeds parent directory ('..')");
@@ -3757,7 +3757,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const CTarUserEntryInfo& entry,
     }
 
     list<CTempString> elems;
-    NStr::Split(temp, "/", elems);
+    NStr::Split(temp, "/", elems, NStr::fSplit_MergeDelimiters);
     if (find(elems.begin(), elems.end(), "..") != elems.end()) {
         TAR_THROW(this, eBadName,
                   "Name '" + temp + "' embeds parent directory ('..')");

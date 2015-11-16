@@ -782,9 +782,9 @@ CDiffList& CDiffText::Diff(CTempString s1, CTempString s2, TFlags flags)
     // (use '\n' as delimiter, for CRLF cases '\r' will be part of CTempString)
     vector<CTempString> lines; 
     size_type s1_num_lines, s2_num_lines;
-    NStr::Tokenize(s1, "\n", lines);
+    NStr::Split(s1, "\n", lines, NStr::fSplit_NoMergeDelims);
     s1_num_lines = lines.size();
-    NStr::Tokenize(s2, "\n", lines);
+    NStr::Split(s2, "\n", lines, NStr::fSplit_NoMergeDelims);
     s2_num_lines = lines.size() - s1_num_lines;
 
     // Create a map of unique strings with its positions in lines[].
