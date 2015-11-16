@@ -521,10 +521,12 @@ DISCREPANCY_AUTOFIX(CONTAINED_CDS)
     }
 }
 
+
 struct SBaseCount {
     size_t count;
     char base;  // capitalized
 };
+
 
 DISCREPANCY_CASE(ZERO_BASECOUNT, CSeq_inst, eAll, "Zero Base Counts")
 {
@@ -580,10 +582,12 @@ DISCREPANCY_CASE(ZERO_BASECOUNT, CSeq_inst, eAll, "Zero Base Counts")
     }
 }
 
+
 DISCREPANCY_SUMMARIZE(ZERO_BASECOUNT)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
+
 
 DISCREPANCY_CASE(NO_ANNOTATION, CSeq_inst, eAll, "No annotation")
 {
@@ -600,17 +604,17 @@ DISCREPANCY_CASE(NO_ANNOTATION, CSeq_inst, eAll, "No annotation")
     }
 }
 
+
 DISCREPANCY_SUMMARIZE(NO_ANNOTATION)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
-DISCREPANCY_CASE(DISC_LONG_NO_ANNOTATION, CSeq_inst, eAll, "No annotation for LONG sequence")
+
+DISCREPANCY_CASE(LONG_NO_ANNOTATION, CSeq_inst, eAll, "No annotation for LONG sequence")
 {
     const int kSeqLength = 5000;
-    if (obj.IsAa() ||
-        !(obj.CanGetLength() && obj.GetLength() > kSeqLength)) 
-    {
+    if (obj.IsAa() || !(obj.CanGetLength() && obj.GetLength() > kSeqLength)) {
         return;
     }
 
@@ -623,10 +627,12 @@ DISCREPANCY_CASE(DISC_LONG_NO_ANNOTATION, CSeq_inst, eAll, "No annotation for LO
     }
 }
 
-DISCREPANCY_SUMMARIZE(DISC_LONG_NO_ANNOTATION)
+
+DISCREPANCY_SUMMARIZE(LONG_NO_ANNOTATION)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
+
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

@@ -853,7 +853,7 @@ BOOST_AUTO_TEST_CASE(NO_ANNOTATION)
     }}
 }
 
-BOOST_AUTO_TEST_CASE(DISC_LONG_NO_ANNOTATION)
+BOOST_AUTO_TEST_CASE(LONG_NO_ANNOTATION)
 {
     {{
     // Test file #1 - long sequence, no annotation
@@ -864,7 +864,7 @@ BOOST_AUTO_TEST_CASE(DISC_LONG_NO_ANNOTATION)
     CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
     
     CRef<CDiscrepancySet> set = CDiscrepancySet::New(scope);
-    set->AddTest("DISC_LONG_NO_ANNOTATION");
+    set->AddTest("LONG_NO_ANNOTATION");
     set->Parse(seh);
     set->Summarize();
     
@@ -884,7 +884,7 @@ BOOST_AUTO_TEST_CASE(DISC_LONG_NO_ANNOTATION)
     CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
     
     CRef<CDiscrepancySet> set = CDiscrepancySet::New(scope);
-    set->AddTest("DISC_LONG_NO_ANNOTATION");
+    set->AddTest("LONG_NO_ANNOTATION");
     set->Parse(seh);
     set->Summarize();
     
