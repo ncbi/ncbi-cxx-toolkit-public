@@ -1950,18 +1950,20 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     "  5 = XML Blast output,\n"
     "  6 = tabular,\n"
     "  7 = tabular with comment lines,\n"
-    "  8 = Text ASN.1,\n"
-    "  9 = Binary ASN.1,\n"
+    "  8 = Seqalign (Text ASN.1),\n"
+    "  9 = Seqalign (Binary ASN.1),\n"
     " 10 = Comma-separated values,\n"
-    " 11 = BLAST archive format (ASN.1),\n"
-    " 12 = JSON Seqalign output,\n"
-    " 13 = JSON Blast output,\n"
-    " 14 = XML2 Blast output");
+    " 11 = BLAST archive (ASN.1),\n"
+    " 12 = Seqalign (JSON),\n"
+    " 13 = Multiple-file BLAST report (JSON),\n"
+    " 14 = Multiple-file BLAST XML2 (XML),\n"
+    " 15 = Single-file BLAST report (JSON),\n"
+    " 16 = Single-file BLAST XML2 (XML)");
 
     if(m_FormatFlags & eIsSAM) {
     	kOutputFormatDescription +=
-    			",\n 15 = SAM format \n\n"
-                "Options 6, 7, 10 and 15 "
+    			",\n 17 = Sequence Alignment/Map (SAM)\n\n"
+                "Options 6, 7, 10 and 17 "
     			"can be additionally configured to produce\n"
     		    "a custom format specified by space delimited format specifiers.\n"
     		    "The supported format specifiers for options 6, 7 and 10 are:\n";
@@ -1977,11 +1979,10 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
     if(m_FormatFlags & eIsSAM) {
     	kOutputFormatDescription +=
-    			"The supported format specifiers for option 15 are:\n" +
+    			"\nThe supported format specifiers for option 17 are:\n" +
         		DescribeSAMOutputFormatSpecifiers();
     }
 
-    kOutputFormatDescription += "Add specifier 'X' to option 13 and 14 to produce output file per query.\n";
     int dft_outfmt = kDfltArgOutputFormat;
 
     // Igblast shows extra column of gaps
