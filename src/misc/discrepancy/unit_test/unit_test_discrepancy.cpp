@@ -165,6 +165,49 @@ BOOST_AUTO_TEST_CASE(SHORT_SEQUENCES)
     BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "2 sequences are shorter than 50 nt");
 }
 
+BOOST_AUTO_TEST_CASE(PERCENT_N_INCLUDE_GAPS_IN_LENGTH)
+{
+    CRef<CSeq_entry> entry = ReadEntryFromFile("test_data/normal_delta.asn");
+    BOOST_REQUIRE(entry);
+    CScope scope(*CObjectManager::GetInstance());
+    scope.AddDefaults();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+    
+    CRef<CDiscrepancySet> set = CDiscrepancySet::New(scope);
+    set->AddTest("PERCENT_N");
+    set->Parse(seh);
+    set->Summarize();
+    
+    const vector<CRef<CDiscrepancyCase> >& tst = set->GetTests();
+    TReportItemList rep = tst[0]->GetReport();
+    BOOST_REQUIRE_EQUAL(rep.size(), 1);
+    /* 
+     * There will be 2 seqs if "seq_3_again" is handled incorrectly,
+     * either by not counting the length of the gap, or by counting
+     * the gap as Ns.
+     */
+    BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "1 sequence had greater than 5% Ns");
+}
+
+BOOST_AUTO_TEST_CASE(PERCENT_N)
+{
+    CRef<CSeq_entry> entry = ReadEntryFromFile("test_data/percent_n.asn");
+    BOOST_REQUIRE(entry);
+    CScope scope(*CObjectManager::GetInstance());
+    scope.AddDefaults();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+    
+    CRef<CDiscrepancySet> set = CDiscrepancySet::New(scope);
+    set->AddTest("PERCENT_N");
+    set->Parse(seh);
+    set->Summarize();
+    
+    const vector<CRef<CDiscrepancyCase> >& tst = set->GetTests();
+    TReportItemList rep = tst[0]->GetReport();
+    BOOST_REQUIRE_EQUAL(rep.size(), 1);
+    BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "1 sequence had greater than 5% Ns");
+}
+
 BOOST_AUTO_TEST_CASE(COUNT_TRNAS)
 {
     const char* inp = "Seq-entry ::= seq {\

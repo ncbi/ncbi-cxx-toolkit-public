@@ -36,6 +36,7 @@
 #include <objects/misc/sequence_util_macros.hpp>
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/seq_macros.hpp>
+#include <objects/seq/seqport_util.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/seq_vector.hpp>
@@ -100,6 +101,85 @@ DISCREPANCY_CASE(SHORT_SEQUENCES, CSeq_inst, eAll, "Find Short Sequences")
 
 
 DISCREPANCY_SUMMARIZE(SHORT_SEQUENCES)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+// PERCENT_N
+
+static size_t ambigBasesInSeq(const CSeq_data& seq_data_in) {
+    CSeq_data as_iupacna;
+    size_t num_Ns = 0;
+
+    TSeqPos nconv = CSeqportUtil::Convert(seq_data_in, &as_iupacna,
+            CSeq_data::e_Iupacna);
+    if (nconv == 0) {
+        // TODO: is this an actual error, should we do something more drastic?
+        return 0;
+    }
+
+    const string& iupacna_str = as_iupacna.GetIupacna().Get();
+
+    ITERATE( string, base_iter, iupacna_str ) {
+        if (toupper(*base_iter) == 'N') {
+            ++num_Ns;
+        }
+    }
+    return num_Ns;
+}
+
+DISCREPANCY_CASE(PERCENT_N, CSeq_inst, eAll, "Greater than 5 percent Ns")
+{
+    if (obj.IsAa()) {
+        return;
+    }
+
+    // skip if delta-seq with any far-pointers
+    if( FIELD_IS_SET_AND_IS(obj, Ext, Delta) ) {
+        FOR_EACH_DELTASEQ_IN_DELTAEXT(delta_seq_ci, obj.GetExt().GetDelta()) {
+            if( (*delta_seq_ci)->IsLoc() ) {
+                return;
+            }
+        }
+    }
+
+    // Make a Seq Map so that we can explicitly look at the gaps vs. the unknowns.
+    const CRef<CSeqMap> seq_map = CSeqMap::CreateSeqMapForBioseq(*context.GetCurrentBioseq());
+    SSeqMapSelector sel;
+    sel.SetFlags(CSeqMap::fFindData | CSeqMap::fFindGap);
+
+    CSeqMap_CI seq_iter(seq_map, &context.GetScope(), sel);
+
+    size_t count = 0;
+    size_t tot_length = 0;
+
+    for ( ; seq_iter; ++seq_iter) {
+        switch(seq_iter.GetType()) {
+            case CSeqMap::eSeqData:
+                count += ambigBasesInSeq(seq_iter.GetData());
+                tot_length += seq_iter.GetLength();
+                break;
+            case CSeqMap::eSeqGap:
+                tot_length += seq_iter.GetLength();
+                break;
+            default:
+                break;
+        }
+    }
+
+    size_t percent_Ns = (count * 100) / tot_length;
+
+    if (percent_Ns > 5) {
+        m_Objs["[n] sequence[s] had greater than 5% Ns"].Add(
+                *new CDiscrepancyObject(context.GetCurrentBioseq(),
+                    context.GetScope(),
+                    context.GetFile(),
+                    context.GetKeepRef()));
+    }
+}
+
+DISCREPANCY_SUMMARIZE(PERCENT_N)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
