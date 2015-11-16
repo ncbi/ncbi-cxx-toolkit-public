@@ -505,5 +505,24 @@ DISCREPANCY_SUMMARIZE(ZERO_BASECOUNT)
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
+DISCREPANCY_CASE(NO_ANNOTATION, CSeq_inst, eAll, "No annotation")
+{
+    if (obj.IsAa()) {
+        return;
+    }
+    // Report only nucleotides
+
+    CBioseq_Handle bsh = context.GetScope().GetBioseqHandle(*context.GetCurrentBioseq());
+    CFeat_CI feats(bsh);
+    if (!feats) {
+        m_Objs["[n] sequence[s] [has] no annotation"].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+    }
+}
+
+DISCREPANCY_SUMMARIZE(NO_ANNOTATION)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
