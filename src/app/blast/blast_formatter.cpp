@@ -369,7 +369,9 @@ int CBlastFormatterApp::PrintFormattedOutput(void)
 		// That does not work for other formats.  Ugly, but that's where it's at now.
 		if (m_LoadFromArchive == false || (fmt_args.GetFormattedOutputChoice() != CFormattingArgs::eXml 
                         && fmt_args.GetFormattedOutputChoice() != CFormattingArgs::eXml2 
-                        && fmt_args.GetFormattedOutputChoice() != CFormattingArgs::eJson )
+                        && fmt_args.GetFormattedOutputChoice() != CFormattingArgs::eJson
+                        && fmt_args.GetFormattedOutputChoice() != CFormattingArgs::eXml2_S
+                        && fmt_args.GetFormattedOutputChoice() != CFormattingArgs::eJson_S )
 			|| !m_RmtBlast->LoadFromArchive()) {
 			break;
                 }

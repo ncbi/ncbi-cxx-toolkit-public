@@ -869,10 +869,14 @@ public:
         eArchiveFormat,
         /// JSON seq-align
         eJsonSeqalign,
-        /// JSON output
+        /// JSON XInclude
         eJson,
-        /// XML2 output
+        /// XML2 XInclude
         eXml2,
+        /// JSON2 single file
+        eJson_S,
+        /// XML2 single file
+        eXml2_S,
         /// SAM format
         eSAM,
         /// Sentinel value for error checking
@@ -939,6 +943,8 @@ public:
             m_OutputFormat == eAsnBinary ||
             m_OutputFormat == eXml2 ||
             m_OutputFormat == eJson ||
+            m_OutputFormat == eXml2_S ||
+            m_OutputFormat == eJson_S ||
             m_OutputFormat == eJsonSeqalign ||
             m_OutputFormat == eSAM;
     }

@@ -1942,23 +1942,23 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
     string kOutputFormatDescription = string(
     "alignment view options:\n"
-    "  0 = pairwise,\n"
-    "  1 = query-anchored showing identities,\n"
-    "  2 = query-anchored no identities,\n"
-    "  3 = flat query-anchored, show identities,\n"
-    "  4 = flat query-anchored, no identities,\n"
-    "  5 = XML Blast output,\n"
-    "  6 = tabular,\n"
-    "  7 = tabular with comment lines,\n"
+    "  0 = Pairwise,\n"
+    "  1 = Query-anchored showing identities,\n"
+    "  2 = Query-anchored no identities,\n"
+    "  3 = Flat query-anchored showing identities,\n"
+    "  4 = Flat query-anchored no identities,\n"
+    "  5 = BLAST XML,\n"
+    "  6 = Tabular,\n"
+    "  7 = Tabular with comment lines,\n"
     "  8 = Seqalign (Text ASN.1),\n"
     "  9 = Seqalign (Binary ASN.1),\n"
     " 10 = Comma-separated values,\n"
     " 11 = BLAST archive (ASN.1),\n"
     " 12 = Seqalign (JSON),\n"
-    " 13 = Multiple-file BLAST report (JSON),\n"
-    " 14 = Multiple-file BLAST XML2 (XML),\n"
-    " 15 = Single-file BLAST report (JSON),\n"
-    " 16 = Single-file BLAST XML2 (XML)");
+    " 13 = Multiple-file BLAST JSON,\n"
+    " 14 = Multiple-file BLAST XML2,\n"
+    " 15 = Single-file BLAST JSON,\n"
+    " 16 = Single-file BLAST XML2");
 
     if(m_FormatFlags & eIsSAM) {
     	kOutputFormatDescription +=
@@ -1979,7 +1979,7 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
     if(m_FormatFlags & eIsSAM) {
     	kOutputFormatDescription +=
-    			"\nThe supported format specifiers for option 17 are:\n" +
+    			"The supported format specifier for option 17 is:\n" +
         		DescribeSAMOutputFormatSpecifiers();
     }
 
@@ -1989,9 +1989,9 @@ CFormattingArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     if (m_IsIgBlast) {
         kOutputFormatDescription = string(
     "alignment view options:\n"
-    "  3 = flat query-anchored, show identities,\n"
-    "  4 = flat query-anchored, no identities,\n"
-    "  7 = tabular with comment lines\n\n"
+    "  3 = Flat query-anchored, show identities,\n"
+    "  4 = Flat query-anchored, no identities,\n"
+    "  7 = Tabular with comment lines\n\n"
     "Options 7 can be additionally configured to produce\n"
     "a custom format specified by space delimited format specifiers.\n"
     "The supported format specifiers are:\n") +
@@ -2102,9 +2102,7 @@ CFormattingArgs::ParseFormattingString(const CArgs& args,
         if ( !(fmt_type == eTabular ||
                fmt_type == eTabularWithComments ||
                fmt_type == eCommaSeparatedValues ||
-               fmt_type == eSAM ||
-               fmt_type == eXml2 ||
-               fmt_type == eJson) ) {
+               fmt_type == eSAM) ) {
                custom_fmt_spec.clear();
         }
     }

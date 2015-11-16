@@ -877,14 +877,16 @@ GetCmdlineArgs(const CNcbiArguments & a)
 bool
 UseXInclude(const CFormattingArgs & f, const string & s)
 {
-	bool xin =
-	(((f.GetFormattedOutputChoice() ==  CFormattingArgs::eXml2)||
-	    (f.GetFormattedOutputChoice() ==  CFormattingArgs::eJson)) &&
-	   ((f.GetCustomOutputFormatSpec() == "X") ||
-	    (f.GetCustomOutputFormatSpec() == "x")) &&
-	   (s != "-"))? true:false;
-
-	return xin;
+	CFormattingArgs::EOutputFormat fmt = f.GetFormattedOutputChoice();
+	if((fmt ==  CFormattingArgs::eXml2) || (fmt ==  CFormattingArgs::eJson)) {
+	   if (s == "-"){
+		   string f_str = (fmt == CFormattingArgs::eXml2) ? "14.": "13.";
+		   NCBI_THROW(CInputException, eEmptyUserInput,
+		              "Please provide a file name for outfmt " + f_str);
+	   }
+	   return true;
+	}
+	return false;
 }
 
 string 
