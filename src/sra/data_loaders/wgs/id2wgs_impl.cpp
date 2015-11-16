@@ -690,24 +690,6 @@ CID2WGSProcessor_Impl::ResolveGeneral(const CDbtag& dbtag)
 CID2WGSProcessor_Impl::SWGSSeqInfo
 CID2WGSProcessor_Impl::ResolveGi(TGi gi)
 {
-    if ( 0 ) {
-        CWGSGiResolver::TSeqInfoList accs = m_GiResolver->FindAll(gi, m_Mgr);
-        ITERATE ( CWGSGiResolver::TSeqInfoList, acc_it, accs ) {
-            SWGSSeqInfo seq;
-            seq.m_WGSAcc = acc_it->wgs_acc;
-            seq.m_IsWGS = true;
-            seq.m_ValidWGS = true;
-            seq.m_RowId = acc_it->row;
-            if ( acc_it->type == 'P' ) {
-                seq.SetProtein();
-            }
-            else {
-                seq.SetContig();
-            }
-            return seq;
-        }
-        return SWGSSeqInfo();
-    }
     CWGSGiResolver::TAccessionList accs = m_GiResolver->FindAll(gi);
     ITERATE ( CWGSGiResolver::TAccessionList, acc_it, accs ) {
         if ( CWGSDb wgs_db = GetWGSDb(*acc_it) ) {
@@ -741,6 +723,9 @@ CID2WGSProcessor_Impl::ResolveGi(TGi gi)
                 return seq;
             }
         }
+    }
+    if ( !accs.empty() ) {
+        m_GiResolver->SetNonWGSGi(gi);
     }
     return SWGSSeqInfo();
 }
