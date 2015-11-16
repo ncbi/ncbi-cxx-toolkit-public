@@ -154,7 +154,6 @@ use m_NewCleanup.x_RemoveEmptyFeatureTables
 
 use  m_NewCleanup.x_MovePopPhyMutPub
 {
-    Bioseq,
     Bioseq-set
 }
 
