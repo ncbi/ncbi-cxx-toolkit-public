@@ -67,16 +67,19 @@ my $out_cpp = "$test.cpp.txt";
 my $gold = File::Spec->catfile($path, 'test-data', $tests{$test}{gold}) if $tests{$test}{gold} ne '';
 my $data = $tests{$test}{data};
 
+open(OLD_STDOUT, '>&STDOUT');
+open(STDOUT, '>/dev/null');
 my $cmd = "$exe_cpp -e $arg -i $input -o $out_cpp";
-print STDERR "running: $cmd\n";
-die "Error running $exe_cpp\n" if system($cmd);
+my $result = system($cmd);
+open(STDOUT, '>&OLD_STDOUT');
+die "Error running $exe_cpp\n" if $result;
 
 if ($gold eq '')
 { $cmd = "$exe_c -e $arg0 -i $input -o $out_c";
-  print STDERR "running: $cmd\n";
   die "Error running $exe_c\n" if system($cmd);
   $gold = $out_c;
 }
+
 
 ###
 ###   Compare output
@@ -90,6 +93,7 @@ if (!$keep_output)
   unlink $out_c if $gold eq $out_c;
 }
 print "SUCCESS!\n";
+
 
 sub read_output
 { my %obj;
