@@ -248,7 +248,7 @@ CAlignSort::CAlignSort(CScope &scope,
 , m_DataSizeLimit(0)
 , m_Extractor(scope)
 {
-    NStr::Tokenize(sorting_keys, ", \t\r\n", m_Extractor.key_toks, NStr::eMergeDelims);
+    NStr::Split(sorting_keys, ", \t\r\n", m_Extractor.key_toks, NStr::eMergeDelims);
     NON_CONST_ITERATE (vector<string>, iter, m_Extractor.key_toks) {
         *iter = NStr::TruncateSpaces(*iter);
 

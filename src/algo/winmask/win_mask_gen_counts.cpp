@@ -220,7 +220,7 @@ void CWinMaskCountsGenerator::operator()()
     vector< string > file_list;
 
     if( !use_list ) {
-        NStr::Tokenize(input, ",", file_list);
+        NStr::Split(input, ",", file_list);
     } else {
         string line;
         CNcbiIfstream fl_stream( input.c_str() );
