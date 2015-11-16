@@ -10855,6 +10855,132 @@ void CNewCleanup_imp::x_BioseqSetEC( CBioseq_set & bioseq_set )
     }
 }
 
+
+bool IsPubInSet(const CSeq_descr& descr, const CPubdesc& pub)
+{
+    bool found_a_match = false;
+    ITERATE(CBioseq::TDescr::Tdata, d, descr.Get()) {
+        if ((*d)->IsPub() && (*d)->GetPub().Equals(pub)) {
+            found_a_match = true;
+            break;
+        }
+    }
+    return found_a_match;
+}
+
+
+void CNewCleanup_imp::x_RemovePub(CSeq_entry& se, const CPubdesc& pub)
+{
+    if (se.IsSeq()) {
+        x_RemovePub(se.SetSeq(), pub);
+    } else if (se.IsSet()) {
+        x_RemovePub(se.SetSet(), pub);
+    }
+}
+
+
+void CNewCleanup_imp::x_RemovePub(CBioseq& seq, const CPubdesc& pub)
+{
+    if (seq.IsSetDescr()) {
+        x_RemovePub(seq.SetDescr(), pub);
+    }
+}
+
+
+void CNewCleanup_imp::x_RemovePub(CBioseq_set& set, const CPubdesc& pub)
+{
+    if (set.IsSetDescr()) {
+        x_RemovePub(set.SetDescr(), pub);
+    }
+}
+
+
+void CNewCleanup_imp::x_RemovePub(CSeq_descr& descr, const CPubdesc& pub)
+{
+    CSeq_descr::Tdata::iterator it = descr.Set().begin();
+    while (it != descr.Set().end()) {
+        if ((*it)->IsPub() && (*it)->GetPub().Equals(pub)) {
+            it = descr.Set().erase(it);
+            ChangeMade(CCleanupChange::eRemoveDescriptor);
+        } else {
+            ++it;
+        }
+    }
+}
+
+
+void CNewCleanup_imp::x_MovePopPhyMutPub(CBioseq_set& bioseq_set)
+{
+    if (!bioseq_set.IsSetSeq_set() || !bioseq_set.IsSetClass()) {
+        return;
+    }
+    bool can_consolidate_pubs = false;
+    switch (bioseq_set.GetClass()) {
+    case CBioseq_set::eClass_mut_set:
+    case CBioseq_set::eClass_pop_set:
+    case CBioseq_set::eClass_phy_set:
+    case CBioseq_set::eClass_eco_set:
+    case CBioseq_set::eClass_wgs_set:
+    case CBioseq_set::eClass_small_genome_set:
+        can_consolidate_pubs = true;
+        break;
+    default:
+        break;
+    }
+    if (!can_consolidate_pubs) {
+        // wrong kind of set
+        return;
+    }
+
+    CBioseq_set::TSeq_set::const_iterator first = bioseq_set.GetSeq_set().begin();
+    if (!(*first)->IsSetDescr()) {
+        // no common pubs
+        return;
+    }
+
+    vector<CRef<CPubdesc> > pubs_to_remove;
+
+    ITERATE(CBioseq::TDescr::Tdata, d, (*first)->GetDescr().Get()) {
+        if ((*d)->IsPub()) {
+            bool found_every_match = true;
+            CBioseq_set::TSeq_set::const_iterator other = first;
+            ++other;
+            while (other != bioseq_set.GetSeq_set().end()) {
+                if (!(*other)->IsSetDescr()) {
+                    found_every_match = false;
+                    break;
+                }
+                
+                if (!IsPubInSet((*other)->GetDescr(), (*d)->GetPub())) {
+                    found_every_match = false;
+                    break;
+                }
+                ++other;
+            }
+            if (found_every_match) {
+                if (!bioseq_set.IsSetDescr() || !IsPubInSet(bioseq_set.GetDescr(), (*d)->GetPub())) {
+                    // copy pub to parent
+                    CRef<CSeqdesc> new_pub(new CSeqdesc());
+                    new_pub->Assign(**d);
+                    bioseq_set.SetDescr().Set().push_back(new_pub);
+                    ChangeMade(CCleanupChange::eAddDescriptor);
+                }
+                // remove from children
+                CRef<CPubdesc> pub_cpy(new CPubdesc());
+                pub_cpy->Assign((*d)->GetPub());
+                pubs_to_remove.push_back(pub_cpy);
+            }
+        }
+    }
+    NON_CONST_ITERATE(CBioseq_set::TSeq_set, s, bioseq_set.SetSeq_set()) {
+        ITERATE(vector<CRef<CPubdesc> >, d, pubs_to_remove) {
+            x_RemovePub(**s, **d);
+        }
+    }
+
+}
+
+
 // this is for CNewCleanup_imp::x_BioseqSetNucProtEC.
 // It's out here because C++ doesn't like templates on
 // local types.

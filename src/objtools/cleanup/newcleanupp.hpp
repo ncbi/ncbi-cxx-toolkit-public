@@ -535,6 +535,11 @@ private:
 
     void x_BioseqSetEC( CBioseq_set & bioseq_set );
     void x_BioseqSetNucProtEC( CBioseq_set & bioseq_set );
+    void x_MovePopPhyMutPub(CBioseq_set& bioseq_set);
+    void x_RemovePub(CSeq_entry& se, const CPubdesc& pub);
+    void x_RemovePub(CBioseq& seq, const CPubdesc& pub);
+    void x_RemovePub(CBioseq_set& set, const CPubdesc& pub);
+    void x_RemovePub(CSeq_descr& descr, const CPubdesc& pub);
 
     bool x_IsDBLinkUserObj( const CSeqdesc & desc );
 
