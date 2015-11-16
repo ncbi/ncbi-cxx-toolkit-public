@@ -2233,15 +2233,16 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                     }
                 case eQual_inference:
                     {
-                        string prefix = "", remainder = "";
-                        CInferencePrefixList::GetPrefixAndRemainder (val, prefix, remainder);
-                        if (!NStr::IsBlank(prefix) && NStr::StartsWith (val, prefix)) {
-                            x_AddGBQualToFeature (sfp, qual, val);
-                        } else {
-                            x_ProcessMsg( pMessageListener, 
+                        string prefix, remainder;
+                        CInferencePrefixList::GetPrefixAndRemainder(val, prefix, remainder);
+                        if (!NStr::IsBlank(prefix)) {
+                            x_AddGBQualToFeature(sfp, qual, val);
+                        }
+                        else {
+                            x_ProcessMsg(pMessageListener,
                                 ILineError::eProblem_QualifierBadValue, eDiag_Error,
                                 seq_id, line,
-                                feat_name, qual, val );
+                                feat_name, qual, val);
                         }
                         return true;
                     }
