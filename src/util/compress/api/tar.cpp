@@ -3757,7 +3757,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const CTarUserEntryInfo& entry,
     }
 
     list<CTempStringEx> elems;
-    NStr::Split(temp, "/", elems, NStr::fSplit_MergeDelimiters);
+    NStr::Split(temp, "/", elems);
     if (find(elems.begin(), elems.end(), "..") != elems.end()) {
         TAR_THROW(this, eBadName,
                   "Name '" + temp + "' embeds parent directory ('..')");
