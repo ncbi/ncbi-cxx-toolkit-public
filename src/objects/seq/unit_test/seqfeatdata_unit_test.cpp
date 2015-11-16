@@ -1079,12 +1079,92 @@ BOOST_AUTO_TEST_CASE(Test_GB_5391)
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("June2011"), "Jun-2011");
 }
 
+struct SCollDateInfo {
+    const char * date_to_fix;
+    const char * expected_result;
+};
+
+BOOST_AUTO_TEST_CASE(Test_FixDateFormat_for_BI_2614)
+{
+    // all these formats should be acceptable, according to
+    // https://intranet.ncbi.nlm.nih.gov/ieb/DIRSUB/FT/
+    // (as of 10-Nov-2015), except a few which can be fixed by
+    // CSubSource::FixDateFormat
+    //
+    // In most cases CSubSource::FixDateFormat doesn't do anything,
+    // but there are a few formats which are not normally accepted but
+    // which CSubSource::FixDateFormat can fix.
+    static SCollDateInfo kGoodCollectionDates[] = {
+        // ISO date/times stay the same after CSubSource::FixDateFormat
+        { "1952", "1952" },
+        { "1952-10-21T11:43Z", "1952-10-21T11:43Z"},
+        { "1952-10-21T11Z", "1952-10-21T11Z" },
+        { "1952-10-21","1952-10-21"  },
+        { "1952-10", "1952-10" },
+        { "1952/1953", "1952/1953" },
+        { "1952-10-21/1953-02-15", "1952-10-21/1953-02-15" },
+        { "1952-10/1953-02", "1952-10/1953-02" },
+        { "1952-10-21T11:43Z/1952-10-21T17:43Z",
+          "1952-10-21T11:43Z/1952-10-21T17:43Z"},
+
+        // Dates already in DD-Mmm-YYY format also remain unchanged
+        // after CSubSource::FixDateFormat
+        { "21-Oct-1952", "21-Oct-1952" },
+        { "Oct-1952", "Oct-1952" },
+        { "21-Oct-1952/15-Feb-1953", "21-Oct-1952/15-Feb-1953" },
+        { "Oct-1952/Feb-1953", "Oct-1952/Feb-1953" },
+
+        // A few formats can be corrected
+        { "1-1-1952", "01-Jan-1952" },
+        { "1-1-1952/2-2-1952", "01-Jan-1952/02-Feb-1952" }
+    };
+    ITERATE_0_IDX(idx, ArraySize(kGoodCollectionDates)) {
+        // check CSubSource::FixDateFormat
+        const string fixed_date =
+            CSubSource::FixDateFormat(kGoodCollectionDates[idx].date_to_fix);
+        const string expected_date(
+            kGoodCollectionDates[idx].expected_result);
+        BOOST_CHECK_EQUAL(fixed_date, expected_date);
+
+        // check that fixed dates do pass CSubSource::IsCorrectDateFormat
+        bool bad_format = false;
+        bool in_future = false;
+        CSubSource::IsCorrectDateFormat(
+            fixed_date, bad_format, in_future);
+        BOOST_CHECK_MESSAGE( ! bad_format, fixed_date );
+        BOOST_CHECK_MESSAGE( ! in_future, fixed_date );
+
+        // check that fixed_date also passes
+        // CSubSource::GetCollectionDateProblem
+        BOOST_CHECK_MESSAGE(
+            "" == CSubSource::GetCollectionDateProblem(fixed_date),
+            fixed_date);
+
+        // divide into pieces for the functions that cannot handle a "/"
+        vector<string> date_pieces_strs;
+        NStr::Split(fixed_date, "/", date_pieces_strs);
+
+        ITERATE( vector<string>, date_piece_ci, date_pieces_strs ) {
+            const string & date_piece_str = *date_piece_ci;
+
+            // make sure fixed dates are acceptable to
+            // CSubSource::DateFromCollectionDate
+            BOOST_CHECK_MESSAGE(
+                CSubSource::DateFromCollectionDate(date_piece_str),
+                date_piece_str);
+            BOOST_CHECK_MESSAGE(
+                CSubSource::DateFromCollectionDate(date_piece_str),
+                date_piece_str);
+        }
+    }
+}
+
 BOOST_AUTO_TEST_CASE(Test_GetRNAProduct)
 {
     CRef<CRNA_ref> rna(new CRNA_ref());
     rna->SetType(CRNA_ref::eType_mRNA);
     BOOST_CHECK_EQUAL(rna->GetRnaProductName(), kEmptyStr);
-    
+
     string product("mRNA product");
     rna->SetExt().SetName(product);
     BOOST_CHECK_EQUAL(rna->GetRnaProductName(), product);
