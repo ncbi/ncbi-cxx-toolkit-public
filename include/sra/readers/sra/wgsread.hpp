@@ -144,6 +144,8 @@ public:
     typedef vector<SSeqInfo> TSeqInfoList;
     TSeqInfoList FindAll(TGi gi, const CVDBMgr& mgr) const;
 
+    void SetNonWGSGi(TGi gi);
+
     // return unordered list of WGS accessions and GI ranges
     typedef pair<TIntId, TIntId> TIdRange;
     typedef pair<string, TIdRange> TIdRangePair;
@@ -181,11 +183,14 @@ private:
         CTime  m_Timestamp;
     };
 
+    struct SNonWGSIndex;
+
     bool x_Load(SIndexInfo& index, const CTime* old_timestamp = 0) const;
 
     string m_IndexPath;
     mutable CMutex m_Mutex;
     SIndexInfo m_Index;
+    AutoPtr<SNonWGSIndex> m_NonWGSIndex;
 };
 
 

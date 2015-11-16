@@ -348,6 +348,12 @@ void CWGSAsnBinData::Serialize(CObjectOStreamAsnBinary& out) const
 /////////////////////////////////////////////////////////////////////////////
 
 
+struct CWGSGiResolver::SNonWGSIndex
+{
+    set<TGi> m_NonWGSGis;
+};
+
+
 string CWGSGiResolver::GetDefaultIndexPath(void)
 {
     return NCBI_PARAM_TYPE(WGS, GI_INDEX)::GetDefault();
@@ -397,6 +403,7 @@ bool CWGSGiResolver::Update(void)
     CMutexGuard guard(m_Mutex);
     index.m_Index.swap(m_Index.m_Index);
     swap(index.m_Timestamp, m_Index.m_Timestamp);
+    m_NonWGSIndex.reset();
     return true;
 }
 
@@ -462,8 +469,27 @@ bool CWGSGiResolver::x_Load(SIndexInfo& index,
 }
 
 
+void CWGSGiResolver::SetNonWGSGi(TGi gi)
+{
+    CMutexGuard guard(m_Mutex);
+    if ( !m_NonWGSIndex ) {
+        m_NonWGSIndex.reset(new SNonWGSIndex);
+    }
+    m_NonWGSIndex->m_NonWGSGis.insert(gi);
+}
+
+
 CWGSGiResolver::TAccessionList CWGSGiResolver::FindAll(TGi gi) const
 {
+    if ( m_NonWGSIndex ) {
+        CMutexGuard guard(m_Mutex);
+        if ( m_NonWGSIndex ) {
+            SNonWGSIndex& index = *m_NonWGSIndex;
+            if ( index.m_NonWGSGis.find(gi) != index.m_NonWGSGis.end() ) {
+                return TAccessionList();
+            }
+        }
+    }
     TAccessionList ret;
     CMutexGuard guard(m_Mutex);
     for ( TIndex::const_iterator it(m_Index.m_Index.begin(CRange<TIntId>(gi, gi))); it; ++it ) {
