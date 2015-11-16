@@ -2711,9 +2711,9 @@ void CTar::x_Backspace(EAction action)
 }
 
 
-static bool s_MatchPattern(const list<CTempString>& elems,
-                           const CMask*             mask,
-                           NStr::ECase              acase)
+static bool s_MatchPattern(const list<CTempStringEx>& elems,
+                           const CMask*               mask,
+                           NStr::ECase                acase)
 {
     _ASSERT(mask  &&  !elems.empty());
     if (elems.size() == 1) {
@@ -2721,7 +2721,7 @@ static bool s_MatchPattern(const list<CTempString>& elems,
     }
 
     string temp;
-    REVERSE_ITERATE(list<CTempString>, it, elems) {
+    REVERSE_ITERATE(list<CTempStringEx>, it, elems) {
         temp = temp.empty() ? string(*it) : string(*it) + '/' + temp;
         if (mask->Match(temp, acase)) {
             return true;
@@ -2931,9 +2931,9 @@ auto_ptr<CTar::TEntries> CTar::x_ReadAndProcess(EAction action)
                                                          .acase)
                       : true);
         if (match  &&  m_Mask[eExcludeMask].mask  &&  action != eTest) {
-            list<CTempString> elems;
+            list<CTempStringEx> elems;
             _ASSERT(!m_Current.GetName().empty());
-            NStr::Split(m_Current.GetName(), "/", elems, NStr::fSplit_MergeDelimiters);
+            NStr::Split(m_Current.GetName(), "/", elems);
             match = !s_MatchPattern(elems,
                                     m_Mask[eExcludeMask].mask,
                                     m_Mask[eExcludeMask].acase);
@@ -3572,8 +3572,8 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
                   "Empty entry name not allowed");
     }
 
-    list<CTempString> elems;
-    NStr::Split(temp, "/", elems, NStr::fSplit_MergeDelimiters);
+    list<CTempStringEx> elems;
+    NStr::Split(temp, "/", elems);
     if (find(elems.begin(), elems.end(), "..") != elems.end()) {
         TAR_THROW(this, eBadName,
                   "Name '" + temp + "' embeds parent directory ('..')");
@@ -3756,7 +3756,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const CTarUserEntryInfo& entry,
                   "Empty entry name not allowed");
     }
 
-    list<CTempString> elems;
+    list<CTempStringEx> elems;
     NStr::Split(temp, "/", elems, NStr::fSplit_MergeDelimiters);
     if (find(elems.begin(), elems.end(), "..") != elems.end()) {
         TAR_THROW(this, eBadName,
