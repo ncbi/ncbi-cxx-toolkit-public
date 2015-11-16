@@ -1617,7 +1617,8 @@ void CCgiRequest::GetCGIEntries(CEntryCollector_Base& collector) const
     TArgLimits arg_limits;
     int lim_unlisted = -1;
 
-    NStr::Split(TCGI_LogLimitArgs::GetDefault(), "&", limited);
+    NStr::Split(TCGI_LogLimitArgs::GetDefault(), "&", limited,
+                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     ITERATE(list<string>, it, limited) {
         string arg, val;
         NStr::SplitInTwo(*it, ":", arg, val);
@@ -1645,7 +1646,8 @@ void CCgiRequest::GetCGIEntries(CEntryCollector_Base& collector) const
         arg_limits[arg] = ival;
     }
 
-    NStr::Split(TCGI_LogExcludeArgs::GetDefault(), "&", excluded);
+    NStr::Split(TCGI_LogExcludeArgs::GetDefault(), "&", excluded,
+                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     ITERATE(list<string>, it, excluded) {
         if (*it == "*") {
             return;

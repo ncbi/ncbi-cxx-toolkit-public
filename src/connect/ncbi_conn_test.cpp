@@ -1272,7 +1272,8 @@ void CConnTest::PreCheck(EStage/*stage*/, unsigned int/*step*/,
         return;
 
     list<string> stmt;
-    NStr::Split(title, "\n", stmt);
+    NStr::Split(title, "\n", stmt,
+                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     SIZE_TYPE size = stmt.size();
     *m_Output << NcbiEndl << stmt.front() << '.';
     stmt.pop_front();
@@ -1311,7 +1312,8 @@ void CConnTest::PostCheck(EStage/*stage*/, unsigned int/*step*/,
         return;
 
     list<string> stmt;
-    NStr::Split(reason, "\n", stmt);
+    NStr::Split(reason, "\n", stmt,
+                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     ERASE_ITERATE(list<string>, str, stmt) {
         if (str->empty())
             stmt.erase(str);

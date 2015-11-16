@@ -192,7 +192,8 @@ CNcbiIstream& ReadMap(CNcbiIstream& is, TMap& cont)
     string input = ReadStringFromStream(is);
 
     vector<CTempString> pairs;
-    NStr::Split(input, "&", pairs);
+    NStr::Split(input, "&", pairs,
+                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
     cont.clear();
     ITERATE(vector<CTempString>, it, pairs) {
@@ -238,7 +239,8 @@ CNcbiIstream& ReadContainer(CNcbiIstream& is, TCont& cont)
     string input = ReadStringFromStream(is);
 
     vector<CTempString> strings;
-    NStr::Split(input, "&", strings);
+    NStr::Split(input, "&", strings,
+                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
     cont.clear();
     ITERATE(vector<CTempString>, it, strings) {

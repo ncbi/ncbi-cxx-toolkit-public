@@ -144,18 +144,19 @@ void CHttpHeaders::ClearAll(void)
 
 void CHttpHeaders::ParseHttpHeader(const CTempString& headers)
 {
-    list<string> lines;
-    NStr::Split(headers, HTTP_EOL, lines);
+    list<CTempString> lines;
+    NStr::Split(headers, HTTP_EOL, lines,
+                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
     string name, value;
-    ITERATE(list<string>, line, lines) {
+    ITERATE(list<CTempString>, line, lines) {
         size_t delim = line->find(kHttpHeaderDelimiter);
         if (delim == NPOS  ||  delim < 1) {
             // No delimiter or no name before the delimiter - skip the line.
             // Can be HTTP status or an empty line.
             continue;
         }
-        name = line->substr(0, delim);
+        name  = line->substr(0, delim);
         value = line->substr(delim + 1);
         NStr::TruncateSpacesInPlace(value, NStr::eTrunc_Both);
         m_Headers[name].push_back(value);
