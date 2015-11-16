@@ -342,6 +342,7 @@ private:
 
     CHTMLPlainText::EEncodeMode m_TargetEncodeMode;
     bool m_HTMLPassThrough;
+    bool m_PortAdded;
 };
 
 void CCgi2RCgiApp::Init()
@@ -499,6 +500,8 @@ void CCgi2RCgiApp::Init()
 
     m_AddJobIdToHeader = config.GetBool(cgi2rcgi_section, "add_job_id_to_response",
         false, IRegistry::eReturn);
+
+    m_PortAdded = false;
 }
 
 CCgiContext* CCgi2RCgiApp::CreateContextWithFlags(CNcbiArguments* args,
@@ -593,6 +596,16 @@ static void s_RemoveCallbackParameter(string* query_string)
 
 int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
 {
+    CNcbiEnvironment& env = SetEnvironment();
+
+    // Add server port to client node name.
+    if (!m_PortAdded) {
+        m_PortAdded = true;
+        const string port(env.Get(CCgiRequest::GetPropertyName(eCgi_ServerPort)));
+        CNetScheduleAPIExt api_ext(m_NetScheduleAPI);
+        api_ext.AddToClientNode(port);
+    }
+
     // Given "CGI context", get access to its "HTTP request" and
     // "HTTP response" sub-objects
     CCgiRequest& request = ctx.GetRequest();
@@ -634,7 +647,6 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
                 entries.erase(jquery_callback_it);
                 string query_string_param(
                         CCgiRequest::GetPropertyName(eCgi_QueryString));
-                CNcbiEnvironment& env = SetEnvironment();
                 string query_string = env.Get(query_string_param);
                 if (!query_string.empty()) {
                     s_RemoveCallbackParameter(&query_string);

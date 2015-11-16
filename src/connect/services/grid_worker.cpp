@@ -656,22 +656,10 @@ int SGridWorkerNodeImpl::Run(
     m_NetScheduleAPI.SetAuthParam("control_port", control_port_str);
     m_NetScheduleAPI.SetAuthParam("client_host", CSocketAPI::gethostname());
 
-    if (m_NetScheduleAPI->m_ClientNode.empty()) {
-        string client_node(m_NetScheduleAPI->m_Service->GetClientName());
-        client_node.append(2, ':');
-        client_node.append(CSocketAPI::gethostname());
-        client_node.append(1, ':');
-        client_node.append(NStr::NumericToString(
-            control_thread->GetControlPort()));
-        m_NetScheduleAPI.SetClientNode(client_node);
-
-        string session(NStr::NumericToString(CProcess::GetCurrentPid()) + '@');
-        session += NStr::NumericToString(GetFastLocalTime().GetTimeT());
-        session += ':';
-        session += GetDiagContext().GetStringUID();
-
-        m_NetScheduleAPI.SetClientSession(session);
-    }
+    // Add control port to client node name
+    const string port(NStr::NumericToString(control_thread->GetControlPort()));
+    CNetScheduleAPIExt api_ext(m_NetScheduleAPI);
+    api_ext.AddToClientNode(port);
 
     m_NetScheduleAPI.SetProgramVersion(m_JobProcessorFactory->GetJobVersion());
 

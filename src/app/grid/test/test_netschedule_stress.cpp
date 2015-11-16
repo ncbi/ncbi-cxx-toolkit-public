@@ -109,11 +109,8 @@ void CTestNetScheduleStress::Init(void)
 void TestBatchSubmit(const string& service,
                      const string& queue_name, unsigned jcount)
 {
-    CNetScheduleAPI cl(service, "stress_test", queue_name);
+    CNetScheduleAPI cl(service, kEmptyStr, queue_name);
     cl.SetProgramVersion("test 1.0.0");
-
-    cl.SetClientNode("stress_test_node");
-    cl.SetClientSession("stress_test_session");
 
     typedef vector<CNetScheduleJob> TJobs;
     TJobs jobs;

@@ -145,6 +145,12 @@ protected:
     string m_Message;
 };
 
+struct NCBI_XCONNECT_EXPORT CNetScheduleAPIExt : CNetScheduleAPI
+{
+    CNetScheduleAPIExt(CNetScheduleAPI::TInstance api) : CNetScheduleAPI(api) {}
+    void AddToClientNode(const string& data);
+};
+
 
 END_NCBI_SCOPE
 
