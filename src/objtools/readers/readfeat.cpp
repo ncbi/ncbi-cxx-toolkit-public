@@ -296,7 +296,7 @@ private:
     bool x_AddQualifierToCdregion (CRef<CSeq_feat> sfp, CSeqFeatData& sfdata,
                                    EQual qtype, const string& val,
                                    ILineErrorListener *pMessageListener, int line_num, const string &seq_id );
-    bool x_AddQualifierToRna      (CSeqFeatData& sfdata,
+    bool x_AddQualifierToRna      (CRef<CSeq_feat> sfp,
                                    EQual qtype, const string& val,
                                    ILineErrorListener *pMessageListener, int line_num, const string &seq_id );
     bool x_AddQualifierToImp      (CRef<CSeq_feat> sfp, CSeqFeatData& sfdata,
@@ -1246,15 +1246,19 @@ int CFeature_table_reader_imp::x_ParseTrnaString (
 )
 
 {
-    string fst, scd;
+    CTempString value(val);
 
-    scd = val;
-    if (NStr::StartsWith (val, "tRNA-")) {
-        NStr::SplitInTwo (val, "-", fst, scd);
+    if (NStr::StartsWith(value, "tRNA-")) {
+        value.assign(value, strlen("tRNA-"), CTempString::npos);
+    }
+    CTempString::size_type pos = value.find('(');
+    if (pos != CTempString::npos)
+    {
+        value.erase(pos);
     }
 
-    TTrnaMap::const_iterator t_iter = sm_TrnaKeys.find (scd.c_str ());
-    if (t_iter != sm_TrnaKeys.end ()) {
+    TTrnaMap::const_iterator t_iter = sm_TrnaKeys.find(string(value).c_str());
+    if (t_iter != sm_TrnaKeys.end()) {
         return t_iter->second;
     }
 
@@ -1397,7 +1401,7 @@ long CFeature_table_reader_imp::x_StringToLongNoThrow (
 
 
 bool CFeature_table_reader_imp::x_AddQualifierToRna (
-    CSeqFeatData& sfdata,
+    CRef<CSeq_feat> sfp,
     EQual qtype,
     const string& val,
     ILineErrorListener *pMessageListener, 
@@ -1405,6 +1409,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToRna (
     const string &seq_id
 )
 {
+    CSeqFeatData& sfdata = sfp->SetData();
     CRNA_ref& rrp = sfdata.SetRna ();
     CRNA_ref::EType rnatyp = rrp.GetType ();
     switch (rnatyp) {
@@ -1464,21 +1469,22 @@ bool CFeature_table_reader_imp::x_AddQualifierToRna (
         case CRNA_ref::eType_tRNA:
             switch (qtype) {
                 case eQual_product: {
-                        CRNA_ref::TExt& tex = rrp.SetExt ();
-                        CRNA_ref::C_Ext::E_Choice exttype = tex.Which ();
-                        if (exttype == CRNA_ref::C_Ext::e_Name) return false;
-                        CTrna_ext& trx = tex.SetTRNA ();
-                        int aaval = x_ParseTrnaString (val);
+                        if (rrp.IsSetExt() && rrp.GetExt().Which() == CRNA_ref::C_Ext::e_Name) 
+                            return false;
+
+                        sfp->SetComment(val);
+                        int aaval = x_ParseTrnaString(val);
                         if (aaval > 0) {
-                            CTrna_ext::TAa& taa = trx.SetAa ();
-                            taa.SetNcbieaa (aaval);
-                            trx.SetAa (taa);
-                            tex.SetTRNA (trx);
-                        } else {
-                            x_ProcessMsg( pMessageListener, 
-                                ILineError::eProblem_QualifierBadValue, eDiag_Error,
+                            CRNA_ref::TExt& tex = rrp.SetExt ();
+                            CTrna_ext& trx = tex.SetTRNA();
+                            CTrna_ext::TAa& taa = trx.SetAa();
+                            taa.SetNcbieaa(aaval);
+                        }
+                        else {
+                            x_ProcessMsg(pMessageListener,
+                                ILineError::eProblem_QualifierBadValue, eDiag_Warning,
                                 seq_id, line_num,
-                                "tRNA", "product", val );
+                                "tRNA", "product", val);
                         }
                         return true;
                     }
@@ -1794,7 +1800,7 @@ bool CFeature_table_reader_imp::x_AddGeneOntologyToFeature (
     }
 
     vector<string> fields;
-    NStr::Tokenize(val, "|", fields);
+    NStr::Split(val, "|", fields);
     while (fields.size() < 4) {
         fields.push_back("");
     }
@@ -2132,7 +2138,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                     if (x_AddQualifierToCdregion (sfp, sfdata, qtype, val, pMessageListener, line, seq_id)) return true;
                     break;
                 case CSeqFeatData::e_Rna:
-                    if (x_AddQualifierToRna (sfdata, qtype, val, pMessageListener, line, seq_id)) return true;
+                    if (x_AddQualifierToRna (sfp, qtype, val, pMessageListener, line, seq_id)) return true;
                     break;
                 case CSeqFeatData::e_Imp:
                     if (x_AddQualifierToImp (sfp, sfdata, qtype, qual, val)) return true;
