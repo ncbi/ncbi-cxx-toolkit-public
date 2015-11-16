@@ -182,7 +182,7 @@ public:
         os << "Host name: " << CSocketAPI::gethostname() <<
                 "\nControl port: " << control_server->GetControlPort() <<
                 "\nNetCache client name: " << node.GetNetCacheAPI().
-                        GetService().GetServerPool().GetClientName() <<
+                        GetService()->GetClientName() <<
                 "\nNetSchedule client name: " << node->GetClientName() <<
                 "\nQueue name: " << node->GetQueueName() <<
                 "\nNode ID: " << ns_api->m_ClientNode <<

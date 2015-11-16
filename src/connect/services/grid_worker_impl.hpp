@@ -175,7 +175,7 @@ struct SGridWorkerNodeImpl : public CObject
     }
     const string& GetClientName() const
     {
-        return m_NetScheduleAPI->m_Service->m_ServerPool->m_ClientName;
+        return m_NetScheduleAPI->m_Service->GetClientName();
     }
     const string& GetServiceName() const
     {

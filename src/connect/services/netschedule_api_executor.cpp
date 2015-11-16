@@ -795,7 +795,7 @@ const string& CNetScheduleExecutor::GetQueueName()
 
 const string& CNetScheduleExecutor::GetClientName()
 {
-    return m_Impl->m_API->m_Service->m_ServerPool.GetClientName();
+    return m_Impl->m_API->m_Service->GetClientName();
 }
 
 const string& CNetScheduleExecutor::GetServiceName()

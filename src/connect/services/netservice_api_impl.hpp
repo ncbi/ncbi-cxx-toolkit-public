@@ -83,8 +83,8 @@ struct SDiscoveredServers : public CObject
 struct NCBI_XCONNECT_EXPORT SNetServerPoolImpl : public CObject
 {
     // Construct a new object.
-    SNetServerPoolImpl(const string& api_name, const string& client_name,
-            INetServerConnectionListener* listener, bool old_style_auth);
+    SNetServerPoolImpl(INetServerConnectionListener* listener,
+            bool old_style_auth);
 
     void Init(CConfig* config, const string& section,
             INetServerConnectionListener* listener);
@@ -96,8 +96,6 @@ struct NCBI_XCONNECT_EXPORT SNetServerPoolImpl : public CObject
 
     virtual ~SNetServerPoolImpl();
 
-    string m_APIName;
-    string m_ClientName;
     CRef<INetServerConnectionListener> m_Listener;
 
     SServerAddress m_EnforcedServer;
@@ -248,12 +246,13 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
     SNetServiceImpl(const string& api_name, const string& client_name,
             INetServerConnectionListener* listener, bool old_style_auth = false) :
         m_Listener(listener),
-        m_ServerPool(new SNetServerPoolImpl(api_name, client_name, listener,
-                    old_style_auth)),
+        m_ServerPool(new SNetServerPoolImpl(listener, old_style_auth)),
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
         m_ColoNetwork(0),
         m_AllowXSiteConnections(false),
 #endif
+        m_APIName(api_name),
+        m_ClientName(client_name),
         m_UseSmartRetries(true),
         m_ConnectionMaxRetries(-1),
         m_ConnectionRetryDelay(-1)
@@ -270,6 +269,8 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
         m_ColoNetwork(prototype->m_ColoNetwork),
         m_AllowXSiteConnections(prototype->m_AllowXSiteConnections),
 #endif
+        m_APIName(prototype->m_APIName),
+        m_ClientName(prototype->m_ClientName),
         m_UseSmartRetries(prototype->m_UseSmartRetries),
         m_ConnectionMaxRetries(prototype->m_ConnectionMaxRetries),
         m_ConnectionRetryDelay(prototype->m_ConnectionRetryDelay)
@@ -285,6 +286,8 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
         m_ColoNetwork(prototype->m_ColoNetwork),
         m_AllowXSiteConnections(prototype->m_AllowXSiteConnections),
 #endif
+        m_APIName(prototype->m_APIName),
+        m_ClientName(prototype->m_ClientName),
         m_UseSmartRetries(prototype->m_UseSmartRetries),
         m_ConnectionMaxRetries(prototype->m_ConnectionMaxRetries),
         m_ConnectionRetryDelay(prototype->m_ConnectionRetryDelay)
@@ -304,6 +307,8 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
 
     string MakeAuthString();
 
+    CNetServer::SExecResult FindServerAndExec(const string& cmd,
+        bool multiline_output);
     void DiscoverServersIfNeeded();
     void GetDiscoveredServers(CRef<SDiscoveredServers>& discovered_servers);
 
@@ -323,6 +328,8 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
 
     SDiscoveredServers* AllocServerGroup(unsigned discovery_iteration);
     CNetServer GetServer(const SServerAddress& server_address);
+
+    const string& GetClientName() const { return m_ClientName; }
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     void AllowXSiteConnections();
@@ -353,6 +360,10 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
     unsigned int m_ColoNetwork;
     bool m_AllowXSiteConnections;
 #endif
+
+private:
+    string m_APIName;
+    string m_ClientName;
 
     // connection parameters from config
     bool m_UseSmartRetries;

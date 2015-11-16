@@ -276,11 +276,8 @@ bool SNetServiceIterator_Weighted::Prev()
     return true;
 }
 
-SNetServerPoolImpl::SNetServerPoolImpl(const string& api_name,
-        const string& client_name, INetServerConnectionListener* listener,
+SNetServerPoolImpl::SNetServerPoolImpl(INetServerConnectionListener* listener,
         bool old_style_auth) :
-    m_APIName(api_name),
-    m_ClientName(client_name),
     m_Listener(listener),
     m_EnforcedServer(0, 0),
     m_LBSMAffinityName(kEmptyStr),
@@ -471,6 +468,21 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
         m_ConnectionRetryDelay = (int)s_GetRetryDelay();
     }
 
+    if (m_ClientName.empty()) {
+        m_ClientName = m_Listener->GetClientName();
+    }
+
+    if (m_ClientName.empty() || m_ClientName == "noname" ||
+            NStr::FindNoCase(m_ClientName, "unknown") != NPOS) {
+        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
+        CNcbiApplication* app = CNcbiApplication::Instance();
+        if (app == NULL) {
+            NCBI_THROW_FMT(CArgException, eNoValue,
+                m_APIName << ": client name is not set");
+        }
+        m_ClientName = app->GetProgramDisplayName();
+    }
+
     m_ServerPool->Init(config, section, m_Listener.GetPointerOrNull());
 
     Construct();
@@ -481,12 +493,6 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
 void SNetServerPoolImpl::Init(CConfig* config, const string& section,
         INetServerConnectionListener* listener)
 {
-    _ASSERT(listener);
-
-    if (m_ClientName.empty()) {
-        m_ClientName = listener->GetClientName();
-    }
-
     if (config != NULL) {
         if (m_LBSMAffinityName.empty())
             m_LBSMAffinityName = config->GetString(section,
@@ -598,17 +604,6 @@ void SNetServerPoolImpl::Init(CConfig* config, const string& section,
         m_RebalanceStrategy = CreateDefaultRebalanceStrategy();
     }
 
-    if (m_ClientName.empty() || m_ClientName == "noname" ||
-            NStr::FindNoCase(m_ClientName, "unknown") != NPOS) {
-        CMutexGuard guard(CNcbiApplication::GetInstanceMutex());
-        CNcbiApplication* app = CNcbiApplication::Instance();
-        if (app == NULL) {
-            NCBI_THROW_FMT(CArgException, eNoValue,
-                m_APIName << ": client name is not set");
-        }
-        m_ClientName = app->GetProgramDisplayName();
-    }
-
     // Get affinity value from the local LBSM configuration file.
     if (!m_LBSMAffinityName.empty())
         m_LBSMAffinityValue = LBSMD_GetHostParameter(SERV_LOCALHOST,
@@ -638,7 +633,7 @@ string SNetServiceImpl::MakeAuthString()
     auth.reserve(256);
 
     auth += "client=\"";
-    auth += NStr::PrintableString(m_ServerPool->m_ClientName);
+    auth += NStr::PrintableString(m_ClientName);
     auth += '\"';
 
     if (!m_ServerPool->m_UseOldStyleAuth) {
@@ -658,11 +653,6 @@ string SNetServiceImpl::MakeAuthString()
     }
 
     return auth;
-}
-
-const string& CNetServerPool::GetClientName() const
-{
-    return m_Impl->m_ClientName;
 }
 
 const string& CNetService::GetServiceName() const
@@ -818,38 +808,44 @@ CNetServer SRandomServiceTraversal::NextServer()
     return ++m_Iterator ? *m_Iterator : CNetServer();
 }
 
-CNetServer::SExecResult CNetService::FindServerAndExec(const string& cmd,
+CNetServer::SExecResult SNetServiceImpl::FindServerAndExec(const string& cmd,
         bool multiline_output)
 {
-    switch (m_Impl->m_ServiceType) {
+    switch (m_ServiceType) {
     default: // CNetService::eServiceNotDefined
         NCBI_THROW_FMT(CNetSrvConnException, eSrvListEmpty,
-                m_Impl->m_ServerPool->m_APIName << ": command '" << cmd <<
+                m_APIName << ": command '" << cmd <<
                         "' requires a server but none specified");
 
     case CNetService::eLoadBalancedService:
         {
             CNetServer::SExecResult exec_result;
 
-            SRandomServiceTraversal random_traversal(*this);
+            SRandomServiceTraversal random_traversal(this);
 
-            m_Impl->IterateUntilExecOK(cmd, multiline_output,
+            IterateUntilExecOK(cmd, multiline_output,
                     exec_result, &random_traversal,
                     SNetServiceImpl::eIgnoreServerErrors,
-                    m_Impl->m_Listener);
+                    m_Listener);
 
             return exec_result;
         }
 
     case CNetService::eSingleServerService:
         {
-            CNetServer server(new SNetServerImpl(m_Impl,
-                    m_Impl->m_ServerPool->ReturnServer(
-                    m_Impl->m_DiscoveredServers->m_Servers.front().first)));
+            CNetServer server(new SNetServerImpl(this,
+                    m_ServerPool->ReturnServer(
+                    m_DiscoveredServers->m_Servers.front().first)));
 
             return server.ExecWithRetry(cmd, multiline_output);
         }
     }
+}
+
+CNetServer::SExecResult CNetService::FindServerAndExec(const string& cmd,
+        bool multiline_output)
+{
+    return m_Impl->FindServerAndExec(cmd, multiline_output);
 }
 
 void CNetService::ExecOnAllServers(const string& cmd)
@@ -862,7 +858,7 @@ void SNetServiceImpl::DiscoverServersIfNeeded()
 {
     if (m_ServiceType == CNetService::eServiceNotDefined) {
         NCBI_THROW_FMT(CNetSrvConnException, eSrvListEmpty,
-            m_ServerPool->m_APIName << ": service name is not set");
+            m_APIName << ": service name is not set");
     }
 
     if (m_ServiceType == CNetService::eLoadBalancedService) {

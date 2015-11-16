@@ -117,7 +117,7 @@ void CNetCacheServerListener::OnInit(CObject* api_impl,
 
     m_Auth = nc_impl->m_Service->MakeAuthString();
 
-    if (nc_impl->m_Service->m_ServerPool->m_ClientName.length() < 3) {
+    if (nc_impl->m_Service->GetClientName().length() < 3) {
         NCBI_THROW(CNetCacheException,
             eAuthenticationError, "Client name is too short or empty");
     }

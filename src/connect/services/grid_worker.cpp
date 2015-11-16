@@ -657,8 +657,7 @@ int SGridWorkerNodeImpl::Run(
     m_NetScheduleAPI.SetAuthParam("client_host", CSocketAPI::gethostname());
 
     if (m_NetScheduleAPI->m_ClientNode.empty()) {
-        string client_node(m_NetScheduleAPI->
-                m_Service->m_ServerPool->m_ClientName);
+        string client_node(m_NetScheduleAPI->m_Service->GetClientName());
         client_node.append(2, ':');
         client_node.append(CSocketAPI::gethostname());
         client_node.append(1, ':');
