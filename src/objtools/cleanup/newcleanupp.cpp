@@ -10538,6 +10538,25 @@ void CNewCleanup_imp::x_CleanupGenbankBlock( CSeq_descr & seq_descr )
   
 }
 
+
+void CNewCleanup_imp::x_RemoveOldDescriptors( CSeq_descr & seq_descr )
+{
+    EDIT_EACH_SEQDESC_ON_SEQDESCR( d, seq_descr ) {
+        switch ((*d)->Which()) {
+            case CSeqdesc::e_Modif:
+            case CSeqdesc::e_Mol_type:
+            case CSeqdesc::e_Method:
+            case CSeqdesc::e_Org:
+                ERASE_SEQDESC_ON_SEQDESCR(d, seq_descr);
+                ChangeMade(CCleanupChange::eRemoveDescriptor);
+                break;
+            default:
+                break;
+        }
+    }
+}
+
+
 bool CNewCleanup_imp::x_CleanEmptyGene(CGene_ref& gene)
 {
     bool any_change = false;
