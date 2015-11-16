@@ -419,7 +419,18 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
     m_ServiceName = service_name;
     NStr::TruncateSpacesInPlace(m_ServiceName);
 
-    if (CConfig *alt = m_Listener->PreInit(api_impl, config, &section)) {
+    if (config) {
+        m_ClientName = config->GetString(section, "client_name",
+                CConfig::eErr_NoThrow);
+
+        if (m_ClientName.empty()) {
+            m_ClientName = config->GetString(section, "client",
+                    CConfig::eErr_NoThrow);
+        }
+    }
+
+    if (CConfig *alt = m_Listener->OnPreInit(api_impl, config, &section,
+                m_ClientName)) {
         app_reg_config.reset(alt);
         config = alt;
     }
@@ -466,10 +477,6 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
     }
     if ( m_ConnectionRetryDelay < 0 ) {
         m_ConnectionRetryDelay = (int)s_GetRetryDelay();
-    }
-
-    if (m_ClientName.empty()) {
-        m_ClientName = m_Listener->GetClientName();
     }
 
     if (m_ClientName.empty() || m_ClientName == "noname" ||

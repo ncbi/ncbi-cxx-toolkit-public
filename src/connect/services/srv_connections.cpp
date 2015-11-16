@@ -242,24 +242,6 @@ void SNetServerConnectionImpl::WriteLine(const string& line)
     }
 }
 
-CConfig* INetServerConnectionListener::PreInit(CObject* api_impl,
-    CConfig* config, string* section)
-{
-    _ASSERT(section);
-
-    if (config) {
-        m_ClientName = config->GetString(*section, "client_name",
-                CConfig::eErr_NoThrow);
-
-        if (m_ClientName.empty()) {
-            m_ClientName = config->GetString(*section, "client",
-                    CConfig::eErr_NoThrow);
-        }
-    }
-
-    return OnPreInit(api_impl, config, section);
-}
-
 namespace {
     class CTimeoutKeeper
     {

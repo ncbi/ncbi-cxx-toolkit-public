@@ -57,7 +57,7 @@ public:
 
 public:
     virtual CConfig* OnPreInit(CObject* api_impl,
-        CConfig* config, string* config_section);
+        CConfig* config, string* config_section, string& client_name);
     virtual void OnInit(CObject* api_impl,
         CConfig* config, const string& config_section);
     virtual void OnConnected(CNetServerConnection& connection);

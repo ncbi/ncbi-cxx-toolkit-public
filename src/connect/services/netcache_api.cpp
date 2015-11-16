@@ -88,7 +88,7 @@ CRef<INetServerProperties> CNetCacheServerListener::AllocServerProperties()
 }
 
 CConfig* CNetCacheServerListener::OnPreInit(CObject* api_impl,
-        CConfig* config, string* config_section)
+        CConfig* config, string* config_section, string& client_name)
 {
     SNetCacheAPIImpl* nc_impl = static_cast<SNetCacheAPIImpl*>(api_impl);
 
@@ -98,8 +98,8 @@ CConfig* CNetCacheServerListener::OnPreInit(CObject* api_impl,
 
     if (CNetScheduleAPI api = nc_impl->m_NetScheduleAPI) {
         // Use client name from NetSchedule if it's not provided for NetCache
-        if (m_ClientName.empty()) {
-            m_ClientName = api.GetExecutor().GetClientName();
+        if (client_name.empty()) {
+            client_name = api.GetExecutor().GetClientName();
         }
 
         CNetScheduleConfigLoader loader(

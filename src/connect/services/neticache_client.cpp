@@ -857,7 +857,7 @@ public:
 
     virtual CRef<INetServerProperties> AllocServerProperties();
     virtual CConfig* OnPreInit(CObject* api_impl,
-        CConfig* config, string* config_section);
+        CConfig* config, string* config_section, string& client_name);
     virtual void OnInit(CObject* api_impl,
         CConfig* config, const string& config_section);
     virtual void OnConnected(CNetServerConnection& connection);
@@ -876,9 +876,10 @@ CRef<INetServerProperties> CSetValidWarningSuppressor::AllocServerProperties()
 }
 
 CConfig* CSetValidWarningSuppressor::OnPreInit(CObject* api_impl,
-        CConfig* config, string* config_section)
+        CConfig* config, string* config_section, string& client_name)
 {
-    return m_DelegateListener->OnPreInit(api_impl, config, config_section);
+    return m_DelegateListener->OnPreInit(api_impl, config, config_section,
+            client_name);
 }
 
 void CSetValidWarningSuppressor::OnInit(CObject* api_impl,
