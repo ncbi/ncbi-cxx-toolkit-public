@@ -238,6 +238,7 @@ class CWGSGiFileResolver : public CWGSGiResolver,
 {
 public:
     virtual void Resolve(TWGSPrefixes& prefixes, TGi gi);
+    virtual void SetNonResolving(TGi gi);
 };
 
 
@@ -250,6 +251,12 @@ void CWGSGiFileResolver::Resolve(TWGSPrefixes& prefixes, TGi gi)
             prefixes.push_back(*it);
         }
     }
+}
+
+
+void CWGSGiFileResolver::SetNonResolving(TGi gi)
+{
+    SetNonWGSGi(gi);
 }
 
 
@@ -289,6 +296,8 @@ public:
 
     virtual void Resolve(TWGSPrefixes& prefixes, TGi gi);
     virtual void Resolve(TWGSPrefixes& prefixes, const string& acc);
+
+    virtual void SetNonResolving(TGi gi);
 
     void Resolve(TWGSPrefixes& prefixes, const CSeq_id& id);
 
@@ -436,6 +445,11 @@ void CWGSID2Resolver::Resolve(TWGSPrefixes& prefixes, TGi gi)
 }
 
 
+void CWGSID2Resolver::SetNonResolving(TGi /*gi*/)
+{
+}
+
+
 void CWGSID2Resolver::Resolve(TWGSPrefixes& prefixes, const string& acc)
 {
     CSeq_id seq_id(acc);
@@ -561,9 +575,12 @@ CWGSDataLoader_Impl::GetFileInfoByGi(TGi gi)
                            " -> "<<file->GetWGSPrefix());
             }
             if ( file->FindGi(ret, gi) ) {
-                break;
+                return ret;
             }
         }
+    }
+    if ( !prefixes.empty() ) {
+        m_GiResolver->SetNonResolving(gi);
     }
     return ret;
 }

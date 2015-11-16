@@ -183,6 +183,7 @@ public:
         typedef CWGSDataLoader_Impl::TWGSPrefixes TWGSPrefixes;
 
         virtual void Resolve(TWGSPrefixes& prefixes, TGi gi) = 0;
+        virtual void SetNonResolving(TGi gi) = 0;
     };
 
     class IAccResolver
