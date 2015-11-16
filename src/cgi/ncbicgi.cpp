@@ -1171,16 +1171,17 @@ void CCgiRequest::x_Init
 }
 
 
-static CTempStringEx x_LastWord(const CTempStringEx& forward)
+static CTempString x_LastWord(const CTempStringEx& forward)
 {
     if ( forward.empty() ) {
-        return kEmptyStr;
+        return CTempString();
     }
 
     vector<CTempStringEx> words;
-    NStr::Tokenize(forward, ", \t", words, NStr::eMergeDelims);
+    NStr::Split(forward, ", \t", words,
+                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     if ( !words.size() ) {
-        return kEmptyStr;
+        return CTempString();
     }
 
     size_t i;

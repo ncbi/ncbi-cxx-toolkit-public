@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Author:  Maxim Didneko
+ * Author:  Maxim Didenko
  *
  */
 
@@ -189,15 +189,15 @@ CNcbiIstream& ReadMap(CNcbiIstream& is, TMap& cont)
     typedef CContElemConverter<typename TMap::key_type>    TKeyConverter;
     typedef CContElemConverter<typename TMap::mapped_type> TValueConverter;
 
-    string str = ReadStringFromStream(is);
+    string input = ReadStringFromStream(is);
 
-    vector<string> pairs;
-    NStr::Tokenize(str, "&", pairs);
+    vector<CTempString> pairs;
+    NStr::Split(input, "&", pairs);
 
     cont.clear();
-    ITERATE(vector<string>, it, pairs) {
-        string key;
-        string value;
+    ITERATE(vector<CTempString>, it, pairs) {
+        CTempString key;
+        CTempString value;
         NStr::SplitInTwo(*it, "=", key, value);
         cont.insert(typename TMap::value_type(
                     TKeyConverter::FromString(NStr::URLDecode(key)),
@@ -235,14 +235,14 @@ CNcbiIstream& ReadContainer(CNcbiIstream& is, TCont& cont)
 {
     typedef CContElemConverter<typename TCont::value_type> TValueConverter;
 
-    string str = ReadStringFromStream(is);
+    string input = ReadStringFromStream(is);
 
-    vector<string> vstrings;
-    NStr::Tokenize(str, "&", vstrings);
+    vector<CTempString> strings;
+    NStr::Split(input, "&", strings);
 
     cont.clear();
-    ITERATE(vector<string>, it, vstrings) {
-        cont.push_back( TValueConverter::FromString(NStr::URLDecode(*it)));
+    ITERATE(vector<CTempString>, it, strings) {
+        cont.push_back(TValueConverter::FromString(NStr::URLDecode(*it)));
     }
 
     return is;
