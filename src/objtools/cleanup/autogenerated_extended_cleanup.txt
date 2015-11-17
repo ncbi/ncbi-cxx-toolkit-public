@@ -120,6 +120,12 @@ use m_NewCleanup.x_RemoveOldDescriptors
     Bioseq-set.descr
 }
 
+use m_NewCleanup.x_RemoveEmptyDescriptors
+{
+    Bioseq.descr,
+    Bioseq-set.descr
+}
+
 use m_NewCleanup.CdRegionEC { Seq-feat }
 
 use m_NewCleanup.CreateMissingMolInfo { Bioseq }
