@@ -70,10 +70,13 @@ use m_NewCleanup.x_SortSeqDescs {
     POST Seq-entry
 }
 
-use m_NewCleanup.x_RemoveDupBioSource {
-    Bioseq
+use m_NewCleanup.x_MergeDupBioSources {
+    Bioseq.descr ,
+    Bioseq-set.descr
 }
+
 use m_NewCleanup.x_RemoveDupBioSource {
+    Bioseq ,
     Bioseq-set
 }
 
