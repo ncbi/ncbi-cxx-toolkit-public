@@ -6867,7 +6867,14 @@ if test -d "$SGE_PATH" -a -z "$SGE_LIBPATH"; then
          break
       fi
    done
+   BASE_SGE_LIBPATH=$SGE_LIBPATH
    NCBI_RPATHIFY(SGE_LIBPATH, $SGE_LIBPATH)
+   # Try to use a dedicated directory without alternate versions of
+   # system libraries such as OpenSSL.
+   if test -d "$BASE_SGE_LIBPATH" -a -d "$SGE_PATH/lib/drmaa"; then
+      SGE_LIBPATH=`echo $SGE_LIBPATH \
+          | sed -e "s,-L$BASE_SGE_LIBPATH,-L$SGE_PATH/lib/drmaa,g"`
+   fi
 fi
 NCBI_CHECK_THIRD_PARTY_LIB_EX(sge, SGE, drmaa,
   [[AC_LANG_PROGRAM([[#include <sys/types.h>
