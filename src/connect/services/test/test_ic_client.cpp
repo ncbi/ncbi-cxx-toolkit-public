@@ -366,17 +366,11 @@ NCBITEST_AUTO_INIT()
 
 BOOST_AUTO_TEST_CASE(OldTest)
 {
-    try {
-        EDiagSev prev_level = SetDiagPostLevel(eDiag_Info);
-        SetDiagTrace(eDT_Enable);
-        s_Run();
-        SetDiagTrace(eDT_Disable);
-        SetDiagPostLevel(prev_level);
-    }
-    catch (...) {
-        BOOST_ERROR("An exception has been caught");
-        throw;
-    }
+    EDiagSev prev_level = SetDiagPostLevel(eDiag_Info);
+    SetDiagTrace(eDT_Enable);
+    s_Run();
+    SetDiagTrace(eDT_Disable);
+    SetDiagPostLevel(prev_level);
 }
 
 BOOST_AUTO_TEST_CASE(SimpleTest)
