@@ -183,7 +183,7 @@ void CValidError_annot::ValidateSeqAnnotContext (const CSeq_annot& annot, const 
         }
 
         FOR_EACH_SEQFEAT_ON_SEQANNOT (feat_it, annot) {
-            if (!(*feat_it)->GetData().IsCdregion() || !set.IsSetClass() ||
+            if ( /* !(*feat_it)->GetData().IsCdregion() || */ !set.IsSetClass() ||
                 (set.GetClass() != CBioseq_set::eClass_nuc_prot && set.GetClass() != CBioseq_set::eClass_gen_prod_set)) {
                 m_Imp.IncrementMisplacedFeatureCount();
             } else if ((*feat_it)->IsSetLocation()) {
