@@ -3,7 +3,9 @@
 all: sources
 
 sources:
-	status=0 ; \
+	+status=0 ; \
+	MAKE="$(MAKE) $(MFLAGS)"; \
+	export MAKE; \
 	for x in seqalign seqblock seqfeat seqloc seqres seqtable; do \
 	    d=$(srcdir)/../$$x ; \
 	    (cd $$d  &&  $(builddir)/new_module.sh) || status=9 ; \
