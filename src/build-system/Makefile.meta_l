@@ -72,6 +72,11 @@ make_tag = $(word 1,$(MAKE))$(patsubst %,[%],$(filter-out 0,$(MAKELEVEL)))
 ifneq "" "$(findstring k,$(MFLAGS))"
   ign = -
 endif
+ifeq "" "$(findstring s,$(MFLAGS))"
+  echo_unless_silent = echo
+else
+  echo_unless_silent = :
+endif
 
 # 1: proj_name, 2: lock_map?, 3: command, 4: target, 5: ext, 6: cleanup,
 # 7: error_status, 8: is_expendable?
@@ -79,8 +84,8 @@ define make_one_leaf_proj
 $(if $(8),NCBI_BUT_EXPENDABLE=$(but_exp);,) \
 if NCBICXX_TESTING_REQS=1 $(3) -q requirements; then \
     if $(3) -q depend >/dev/null 2>&1 && $(3) -q $(4) >/dev/null 2>&1; then \
-	echo "$(make_tag) (Makefile.$(1)$(5)): Nothing to be done for \`$(4)'."; \
-    elif echo $(3) $(4) && \
+	$(echo_unless_silent) "$(make_tag) (Makefile.$(1)$(5)): Nothing to be done for \`$(4)'."; \
+    elif $(echo_unless_silent) $(3) $(4) && \
       $(RWL) -base "make_$(1)" -log "make_$(1).log" $(2) ! $(3) $(4) ; then \
         echo "FAILED$$NCBI_BUT_EXPENDABLE: $(rel_srcdir)/Makefile.$(1)$(5)" ; \
 	$(6) ; \
@@ -126,7 +131,7 @@ MAKE_WSDL = $(builddir)/new_module.sh --wsdl "$$i"
 # 1: proj_name, 2: proj_type, 3: target
 define make_one_spec_proj
 $(ign)+@i=$(1) ; \
-echo "cd $(abs_srcdir)  &&  $(MAKE_$(2)) $(3)" ; \
+$(echo_unless_silent) "cd $(abs_srcdir)  &&  $(MAKE_$(2)) $(3)" ; \
 cd $(abs_srcdir) && \
 if MAKE="$(MAKE) $(MFLAGS_NR)" \
      $(RWL) -base make_asn -log "$(CURDIR)/make_$(1)_src.log" $(MAKE_$(2)) $(3) \
