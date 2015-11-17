@@ -42,8 +42,6 @@
 #include <boost/preprocessor.hpp>
 #include <boost/type_traits/integral_constant.hpp>
 
-#include <common/test_assert.h>  /* This header must go last */
-
 USING_NCBI_SCOPE;
 
 
