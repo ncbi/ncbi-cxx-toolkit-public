@@ -1703,7 +1703,7 @@ void CBlastFormat::x_WriteXML2(CCmdLineBlastXML2ReportData & report_data)
 	else if (m_FormatType == CFormattingArgs::eJson_S) {
 			m_XMLFileCount++;
 			if(m_XMLFileCount > 1) {
-				m_Outfile << "},\n";
+				m_Outfile << ",\n";
 			}
 			BlastJSON_FormatReport(&report_data, &m_Outfile);
 	}
@@ -1806,7 +1806,7 @@ void CBlastFormat::x_GenerateXML2MasterFile(void)
 void CBlastFormat::x_GenerateJSONMasterFile(void)
 {
 	if(m_FormatType == CFormattingArgs::eJson_S) {
-		m_Outfile << "}\t]\n}\n";
+		m_Outfile << "]\n}\n";
 		return;
 	}
 

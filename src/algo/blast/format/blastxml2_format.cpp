@@ -823,6 +823,11 @@ public:
     // WriteFileHeader() is a dummy to keep xml prolog, doctype
     // from being printed with each object
     virtual void WriteFileHeader(TTypeInfo type) {m_Output.IncIndentLevel();};
+    virtual void EndOfWrite(void) {
+    	m_Output.DecIndentLevel();
+    	m_Output.PutEol();
+    	CObjectOStream::EndOfWrite();
+    };
 };
 
 void
