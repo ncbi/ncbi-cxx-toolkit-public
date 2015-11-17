@@ -258,8 +258,10 @@ void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
             m_Count_Bioseq++;
             Update_Bioseq_set_Stack(i);
             // CSeq_feat_BY_BIOSEQ cycle
+            CFeat_CI feat_ci(bsh);
+            m_Feat_CI = !!feat_ci;
             if (m_Enable_CSeq_feat_BY_BIOSEQ) {
-                for (CFeat_CI feat_ci(bsh); feat_ci; ++feat_ci) {
+                for (; feat_ci; ++feat_ci) {
                     const CSeq_feat_BY_BIOSEQ& obj = (const CSeq_feat_BY_BIOSEQ&)*feat_ci->GetSeq_feat();
                     NON_CONST_ITERATE(vector<CDiscrepancyVisitor<CSeq_feat_BY_BIOSEQ>* >, it, m_All_CSeq_feat_BY_BIOSEQ) {
                         Call(**it, obj);

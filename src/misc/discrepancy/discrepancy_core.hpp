@@ -256,6 +256,8 @@ public:
     CBioSource::TGenome GetCurrentGenome(void);
     bool IsEukaryotic(void);
     bool IsCurrentRnaInGenProdSet(void);
+    bool SequenceHasFarPointers(void);
+    bool HasFeatures(void) const { return m_Feat_CI; }
 
 protected:
     void Update_Bioseq_set_Stack(CTypesConstIterator& it);
@@ -270,6 +272,7 @@ protected:
     string m_SuspectRules;
     size_t m_Count_Bioseq;
     size_t m_Count_Seq_feat;
+    bool m_Feat_CI;
 
 #define ADD_DISCREPANCY_TYPE(type) bool m_Enable_##type; vector<CDiscrepancyVisitor<type>* > m_All_##type;
     ADD_DISCREPANCY_TYPE(CSeq_inst)

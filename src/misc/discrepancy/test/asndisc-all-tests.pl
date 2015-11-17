@@ -62,6 +62,7 @@ my $fail = 0;
 
 foreach my $test (sort keys %tests)
 { my $cmd = "$script $test -c $exe_c -cpp $exe_cpp";
+  $cmd = "$cmd -keep" if $keep_output;
   #print STDERR "running: $cmd\n";
   open(OLD_STDOUT, '>&STDOUT');
   open(STDOUT, '>/dev/null');

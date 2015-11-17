@@ -31,6 +31,10 @@
 #include "discrepancy_core.hpp"
 #include "utils.hpp"
 #include <sstream>
+#include <objects/seq/Delta_ext.hpp>
+#include <objects/seq/seq_macros.hpp>
+#include <objects/seq/Seq_ext.hpp>
+#include <objects/seqfeat/Delta_item.hpp>
 #include <objmgr/util/sequence.hpp>
 
 
@@ -119,18 +123,25 @@ static bool HasLineage(const CBioSource& biosrc, const string& def_lineage, cons
 
 bool CDiscrepancyContext::IsEukaryotic()
 {
-    const CBioSource* biosrc = GetCurrentBiosource();
-    if (biosrc) {
-        CBioSource::EGenome genome = (CBioSource::EGenome) biosrc->GetGenome();
-        if (genome != CBioSource::eGenome_mitochondrion
-            && genome != CBioSource::eGenome_chloroplast
-            && genome != CBioSource::eGenome_plastid
-            && genome != CBioSource::eGenome_apicoplast
-            && HasLineage(*biosrc, GetLineage(), "Eukaryota")) {
-            return true;
+    static bool result = false;
+    static size_t count = 0;
+    if (count != m_Count_Bioseq) {
+        count = m_Count_Bioseq;
+        const CBioSource* biosrc = GetCurrentBiosource();
+        if (biosrc) {
+            CBioSource::EGenome genome = (CBioSource::EGenome) biosrc->GetGenome();
+            if (genome != CBioSource::eGenome_mitochondrion
+                && genome != CBioSource::eGenome_chloroplast
+                && genome != CBioSource::eGenome_plastid
+                && genome != CBioSource::eGenome_apicoplast
+                && HasLineage(*biosrc, GetLineage(), "Eukaryota")) {
+                result = true;
+                return result;
+            }
         }
+        result = false;
     }
-    return false;
+    return result;
 }
 
 
@@ -156,6 +167,27 @@ CBioSource::TGenome CDiscrepancyContext::GetCurrentGenome()
         genome = biosrc ? biosrc->GetGenome() : CBioSource::eGenome_unknown;
     }
     return genome;
+}
+
+
+bool CDiscrepancyContext::SequenceHasFarPointers()
+{
+    static bool result = false;
+    static size_t count = 0;
+    if (count != m_Count_Bioseq) {
+        count = m_Count_Bioseq;
+        result = false;
+        if (!GetCurrentBioseq()->CanGetInst() || !GetCurrentBioseq()->GetInst().CanGetExt() || !GetCurrentBioseq()->GetInst().GetExt().IsDelta()) {
+            return result;
+        }
+        FOR_EACH_DELTASEQ_IN_DELTAEXT(it, GetCurrentBioseq()->GetInst().GetExt().GetDelta()) {
+            if ((*it)->IsLoc()) {
+                result = true;
+                return result;
+            }
+        }
+    }
+    return result;
 }
 
 

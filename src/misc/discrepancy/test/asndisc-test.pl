@@ -93,7 +93,7 @@ if (!$keep_output)
   unlink $out_c if $gold eq $out_c;
 }
 print "SUCCESS!\n";
-
+exit(0);
 
 sub read_output
 { my %obj;

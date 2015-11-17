@@ -34,8 +34,6 @@
 #include <objects/seqfeat/SeqFeatXref.hpp>
 #include <objects/macro/String_constraint.hpp>
 #include <objects/misc/sequence_util_macros.hpp>
-#include <objects/seq/Seq_ext.hpp>
-#include <objects/seq/seq_macros.hpp>
 #include <objects/seq/seqport_util.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/feat_ci.hpp>
@@ -129,19 +127,11 @@ static size_t ambigBasesInSeq(const CSeq_data& seq_data_in) {
     return num_Ns;
 }
 
+
 DISCREPANCY_CASE(PERCENT_N, CSeq_inst, eAll, "Greater than 5 percent Ns")
 {
-    if (obj.IsAa()) {
+    if (obj.IsAa() || context.SequenceHasFarPointers()) {
         return;
-    }
-
-    // skip if delta-seq with any far-pointers
-    if( FIELD_IS_SET_AND_IS(obj, Ext, Delta) ) {
-        FOR_EACH_DELTASEQ_IN_DELTAEXT(delta_seq_ci, obj.GetExt().GetDelta()) {
-            if( (*delta_seq_ci)->IsLoc() ) {
-                return;
-            }
-        }
     }
 
     // Make a Seq Map so that we can explicitly look at the gaps vs. the unknowns.
@@ -178,6 +168,7 @@ DISCREPANCY_CASE(PERCENT_N, CSeq_inst, eAll, "Greater than 5 percent Ns")
                     context.GetKeepRef()));
     }
 }
+
 
 DISCREPANCY_SUMMARIZE(PERCENT_N)
 {
@@ -530,16 +521,8 @@ struct SBaseCount {
 
 DISCREPANCY_CASE(ZERO_BASECOUNT, CSeq_inst, eAll, "Zero Base Counts")
 {
-    if( obj.IsAa() ) {
+    if (obj.IsAa() || context.SequenceHasFarPointers()) {
         return;
-    }
-    // skip if delta-seq with any far-pointers
-    if( FIELD_IS_SET_AND_IS(obj, Ext, Delta) ) {
-        FOR_EACH_DELTASEQ_IN_DELTAEXT(delta_seq_ci, obj.GetExt().GetDelta()) {
-            if( (*delta_seq_ci)->IsLoc() ) {
-                return;
-            }
-        }
     }
 
     SBaseCount base_counts[] = {
@@ -555,8 +538,7 @@ DISCREPANCY_CASE(ZERO_BASECOUNT, CSeq_inst, eAll, "Zero Base Counts")
     size_t & num_g = base_counts[2].count;
     size_t & num_t = base_counts[3].count;
 
-    CSeqVector seq_vec(*context.GetCurrentBioseq(), &context.GetScope(),
-                       CBioseq_Handle::eCoding_Iupac);
+    CSeqVector seq_vec(*context.GetCurrentBioseq(), &context.GetScope(), CBioseq_Handle::eCoding_Iupac);
     ITERATE(CSeqVector, base_ci, seq_vec) {
         switch(toupper(*base_ci)) {
         case 'A': ++num_a; break;
@@ -591,17 +573,10 @@ DISCREPANCY_SUMMARIZE(ZERO_BASECOUNT)
 
 DISCREPANCY_CASE(NO_ANNOTATION, CSeq_inst, eAll, "No annotation")
 {
-    if (obj.IsAa()) {
+    if (obj.IsAa() || context.HasFeatures()) {
         return;
     }
-
-    // Report only nucleotides
-
-    CBioseq_Handle bsh = context.GetScope().GetBioseqHandle(*context.GetCurrentBioseq());
-    CFeat_CI feats(bsh);
-    if (!feats) {
-        m_Objs["[n] sequence[s] [has] no annotation"].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
-    }
+    m_Objs["[n] sequence[s] [has] no annotation"].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
 }
 
 
@@ -614,17 +589,10 @@ DISCREPANCY_SUMMARIZE(NO_ANNOTATION)
 DISCREPANCY_CASE(LONG_NO_ANNOTATION, CSeq_inst, eAll, "No annotation for LONG sequence")
 {
     const int kSeqLength = 5000;
-    if (obj.IsAa() || !(obj.CanGetLength() && obj.GetLength() > kSeqLength)) {
+    if (obj.IsAa() || context.HasFeatures() || !(obj.CanGetLength() && obj.GetLength() > kSeqLength)) {
         return;
     }
-
-    // Report only nucleotides that are longer than x
-
-    CBioseq_Handle bsh = context.GetScope().GetBioseqHandle(*context.GetCurrentBioseq());
-    CFeat_CI feats(bsh);
-    if (!feats) {
-        m_Objs["[n] LONG sequence[s] [has] no annotation"].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
-    }
+    m_Objs["[n] LONG sequence[s] [has] no annotation"].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
 }
 
 
