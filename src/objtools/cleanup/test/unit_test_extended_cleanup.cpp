@@ -378,14 +378,15 @@ void s_ReportUnexpected(const vector<string>& observed, const vector<string>& ex
 
 BOOST_AUTO_TEST_CASE(Test_AddMetaGenomesAndEnvSample)
 {
-    CRef<CSeqdesc> srcdesc(new CSeqdesc());
-    srcdesc->SetSource().SetOrg().SetOrgname().SetLineage("metagenomes");
-    CRef<CSeq_entry> entry(new CSeq_entry());
-    entry->SetSeq().SetDescr().Set().push_back(srcdesc);
+    CRef<CSeq_entry> entry = BuildGoodSeq();
+    unit_test_util::SetLineage(entry, "metagenomes");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_metagenomic, "");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_environmental_sample, "");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_chromosome, "");
+    entry->Parentize();
 
     CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));;
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
-    entry->Parentize();
 
     CCleanup cleanup;
     CConstRef<CCleanupChange> changes;
@@ -395,14 +396,23 @@ BOOST_AUTO_TEST_CASE(Test_AddMetaGenomesAndEnvSample)
     // look for expected change flags
 	vector<string> changes_str = changes->GetAllDescriptions();
     vector<string> expected;
+    expected.push_back("Change Publication");
+    expected.push_back("Change Qualifiers");
+    expected.push_back("Move Descriptor");
     expected.push_back("Add BioSource SubSource");
     s_ReportUnexpected(changes_str, expected);
-    BOOST_CHECK_EQUAL(srcdesc->GetSource().IsSetSubtype(), true);
-    if (srcdesc->GetSource().IsSetSubtype()) {
-        BOOST_CHECK_EQUAL(srcdesc->GetSource().GetSubtype().size(), 1);
-        BOOST_CHECK_EQUAL(srcdesc->GetSource().GetSubtype().front()->GetSubtype(), CSubSource::eSubtype_metagenomic);
+    bool found_src = false;
+    ITERATE(CBioseq::TDescr::Tdata, it, entry->GetSeq().GetDescr().Get()) {
+        if ((*it)->IsSource()) {
+            found_src = true;
+            BOOST_CHECK_EQUAL((*it)->GetSource().IsSetSubtype(), true);
+            if ((*it)->GetSource().IsSetSubtype()) {
+                BOOST_CHECK_EQUAL((*it)->GetSource().GetSubtype().size(), 1);
+                BOOST_CHECK_EQUAL((*it)->GetSource().GetSubtype().front()->GetSubtype(), CSubSource::eSubtype_metagenomic);
+            }
+        }
     }
-
+    BOOST_CHECK_EQUAL(found_src, true);
     // no additional changes if cleanup again
     changes = cleanup.ExtendedCleanup (*entry, CCleanup::eClean_NoNcbiUserObjects);
     changes_str = changes->GetAllDescriptions();
@@ -410,39 +420,56 @@ BOOST_AUTO_TEST_CASE(Test_AddMetaGenomesAndEnvSample)
     s_ReportUnexpected(changes_str, expected);
 
     // test env sample
-    srcdesc->SetSource().SetOrg().SetOrgname().SetLineage("environmental sample");
+    unit_test_util::SetLineage(entry, "environmental sample");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_metagenomic, "");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_environmental_sample, "");
     changes = cleanup.ExtendedCleanup (*entry, CCleanup::eClean_NoNcbiUserObjects);
     changes_str = changes->GetAllDescriptions();
+    expected.push_back("Change Qualifiers");
     expected.push_back("Add BioSource SubSource");
     s_ReportUnexpected(changes_str, expected);
-    BOOST_CHECK_EQUAL(srcdesc->GetSource().IsSetSubtype(), true);
-    if (srcdesc->GetSource().IsSetSubtype()) {
-        BOOST_CHECK_EQUAL(srcdesc->GetSource().GetSubtype().size(), 2);
-        BOOST_CHECK_EQUAL(srcdesc->GetSource().GetSubtype().back()->GetSubtype(), CSubSource::eSubtype_environmental_sample);
+    found_src = false;
+    ITERATE(CBioseq::TDescr::Tdata, it, entry->GetSeq().GetDescr().Get()) {
+        if ((*it)->IsSource()) {
+            found_src = true;
+            BOOST_CHECK_EQUAL((*it)->GetSource().IsSetSubtype(), true);
+            if ((*it)->GetSource().IsSetSubtype()) {
+                BOOST_CHECK_EQUAL((*it)->GetSource().GetSubtype().size(), 1);
+                BOOST_CHECK_EQUAL((*it)->GetSource().GetSubtype().back()->GetSubtype(), CSubSource::eSubtype_environmental_sample);
+            }
+        }
     }
+    BOOST_CHECK_EQUAL(found_src, true);
 
     // also add env_sample for div ENV
-    srcdesc->SetSource().ResetSubtype();
-    srcdesc->SetSource().SetOrg().SetOrgname().ResetLineage();
-    srcdesc->SetSource().SetOrg().SetOrgname().SetDiv("ENV");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_metagenomic, "");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_environmental_sample, "");
+    unit_test_util::SetLineage(entry, "");
+    unit_test_util::SetDiv(entry, "ENV");
     changes = cleanup.ExtendedCleanup (*entry, CCleanup::eClean_NoNcbiUserObjects);
     changes_str = changes->GetAllDescriptions();
     expected.clear();
+    expected.push_back("Change Qualifiers");
     expected.push_back("Add BioSource SubSource");
     s_ReportUnexpected(changes_str, expected);
-    BOOST_CHECK_EQUAL(srcdesc->GetSource().IsSetSubtype(), true);
-    if (srcdesc->GetSource().IsSetSubtype()) {
-        BOOST_CHECK_EQUAL(srcdesc->GetSource().GetSubtype().size(), 1);
-        BOOST_CHECK_EQUAL(srcdesc->GetSource().GetSubtype().front()->GetSubtype(), CSubSource::eSubtype_environmental_sample);
+    found_src = false;
+    ITERATE(CBioseq::TDescr::Tdata, it, entry->GetSeq().GetDescr().Get()) {
+        if ((*it)->IsSource()) {
+            found_src = true;
+            BOOST_CHECK_EQUAL((*it)->GetSource().IsSetSubtype(), true);
+            if ((*it)->GetSource().IsSetSubtype()) {
+                BOOST_CHECK_EQUAL((*it)->GetSource().GetSubtype().size(), 1);
+                BOOST_CHECK_EQUAL((*it)->GetSource().GetSubtype().back()->GetSubtype(), CSubSource::eSubtype_environmental_sample);
+            }
+        }
     }
+    BOOST_CHECK_EQUAL(found_src, true);
 
     // no additional changes if cleanup again
     changes = cleanup.ExtendedCleanup (*entry, CCleanup::eClean_NoNcbiUserObjects);
     changes_str = changes->GetAllDescriptions();
     expected.clear();
     s_ReportUnexpected(changes_str, expected);
-
-
 }
 
 
