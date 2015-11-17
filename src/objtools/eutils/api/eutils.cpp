@@ -36,6 +36,7 @@
 #include <corelib/stream_utils.hpp>
 #include <corelib/ncbi_param.hpp>
 #include <serial/objistr.hpp>
+#include <connect/ncbi_socket.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -67,13 +68,12 @@ void CEUtils_Request::SetConnContext(const CRef<CEUtils_ConnContext>& ctx)
 }
 
 
-static const string kDefaultEUtils_Base_URL =
-    "http://eutils.ncbi.nlm.nih.gov/entrez/eutils/";
+static const string kDefaultEUtils_Path = "/entrez/eutils/";
 
 
 NCBI_PARAM_DECL(string, EUtils, Base_URL);
 NCBI_PARAM_DEF_EX(string, EUtils, Base_URL,
-                  kDefaultEUtils_Base_URL,
+                  "",
                   eParam_NoThread,
                   EUTILS_BASE_URL);
 typedef NCBI_PARAM_TYPE(EUtils, Base_URL) TEUtilsBaseURLParam;
@@ -81,7 +81,32 @@ typedef NCBI_PARAM_TYPE(EUtils, Base_URL) TEUtilsBaseURLParam;
 
 string CEUtils_Request::GetBaseURL(void)
 {
-    return TEUtilsBaseURLParam::GetDefault();
+    string url = TEUtilsBaseURLParam::GetDefault();
+    if ( url.empty() ) {
+        static const char kEutils[] = "eutils.ncbi.nlm.nih.gov";
+        static const char kEutilsLB[] = "eutils_lb";
+
+        string host;
+        SConnNetInfo* net_info = ConnNetInfo_Create(kEutilsLB);
+        SSERV_Info* info = SERV_GetInfo(kEutilsLB, fSERV_Dns,
+            SERV_ANYHOST, net_info);
+        host = info  &&  info->host ?
+            CSocketAPI::ntoa(info->host) : kEmptyStr;
+        if (info) {
+            free(info);
+        }
+        ConnNetInfo_Destroy(net_info);
+        if (host.empty()) {
+            char buf[80];
+            const char* web = ConnNetInfo_GetValue(kEutilsLB, REG_CONN_HOST,
+                buf, sizeof(buf), kEutils);
+            host = string(web  &&  *web ? web : kEutils);
+        }
+        _ASSERT(!host.empty());
+        url = "http://" + host + kDefaultEUtils_Path;
+        TEUtilsBaseURLParam::SetDefault(url);
+    }
+    return url;
 }
 
 
