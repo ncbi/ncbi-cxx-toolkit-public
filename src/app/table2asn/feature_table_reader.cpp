@@ -212,22 +212,69 @@ namespace
         }
     };
 
+    void FindMaximumId(const CSeq_entry::TAnnot& annots, int& id)
+    {
+        ITERATE(CSeq_entry::TAnnot, annot_it, annots)
+        {
+            if (!(**annot_it).IsFtable()) continue;
+            const CSeq_annot::TData::TFtable& ftable = (**annot_it).GetData().GetFtable();
+            ITERATE(CSeq_annot::TData::TFtable, feature_it, ftable)
+            {
+                const CSeq_feat& feature = **feature_it;
+                if (feature.IsSetId() && feature.GetId().IsLocal() && feature.GetId().GetLocal().IsId())
+                {
+                    int l = feature.GetId().GetLocal().GetId();
+                    if (l >= id)
+                        id = l + 1;
+                }
+            }
+        }
+    }
+
+    void FindMaximumId(const CSeq_entry& entry, int& id)
+    {
+        if (entry.IsSetAnnot())
+        {
+            FindMaximumId(entry.GetAnnot(), id);
+        }
+        if (entry.IsSeq())
+        {
+        }
+        else
+        if (entry.IsSet())
+        {
+            ITERATE(CBioseq_set::TSeq_set, set_it, entry.GetSet().GetSeq_set())
+            {
+                FindMaximumId(**set_it, id);
+            }
+        }
+    }
+
+    void AssignLocalIdIfEmpty(CSeq_feat& feature, int& id)
+    {
+        if (!feature.IsSetId())
+        {
+           feature.SetId().SetLocal().SetId(id++);
+        }
+    }
+
     void PostProcessFeatureTable(CSeq_entry& entry, CSeq_annot::TData::TFtable& ftable, int& id)
     {
         ftable.sort(SSeqAnnotCompare());
         for (CSeq_annot::C_Data::TFtable::iterator it = ftable.begin(); it != ftable.end(); )
         {
-            if ((**it).IsSetData() && (**it).GetData().IsPub())
+            CSeq_feat& feature = **it;
+            if (feature.IsSetData())
             {
-                CRef<CSeqdesc> pub_desc(new CSeqdesc);
-                pub_desc->SetPub((**it).SetData().SetPub());
-                entry.SetDescr().Set().push_back(pub_desc);
-                ftable.erase(it++);
-                continue; // avoid iterator increment
+                if (feature.GetData().IsPub())
+                {
+                    CRef<CSeqdesc> pub_desc(new CSeqdesc);
+                    pub_desc->SetPub(feature.SetData().SetPub());
+                    entry.SetDescr().Set().push_back(pub_desc);
+                    ftable.erase(it++);
+                    continue; // avoid iterator increment
+                }
             }
-
-            if (!(**it).IsSetId())
-               (**it).SetId().SetLocal().SetId(++id);
             it++;
         }
     }
@@ -297,15 +344,19 @@ namespace
         string protein_name;
         GetProteinName(protein_name, feature);
 
+
         if (protein_name.empty())
         {
-            // find locus
-            protein_name = locustag;
+            protein_name = "hypothetical protein";
         }
 
-        if (protein_name.empty())
-            protein_name = "hypothetical protein";
-
+        if (protein_name == "hypothetical protein" &&
+                !locustag.empty())
+        {
+            // find locus
+            protein_name += " ";
+            protein_name += locustag;
+        }
         return protein_name;
     }
 
@@ -478,7 +529,7 @@ namespace
 
 }
 
-CFeatureTableReader::CFeatureTableReader(ILineErrorListener* logger): m_logger(logger), m_local_id_counter(0)
+CFeatureTableReader::CFeatureTableReader(ILineErrorListener* logger) : m_logger(logger), m_local_id_counter(0), m_feature_links_kind(0)
 {
 }
 
@@ -584,39 +635,48 @@ CRef<CSeq_entry> CFeatureTableReader::TranslateProtein(CScope& scope, CSeq_entry
     CSeq_feat& prot_feat = CreateOrSetFTable(*protein);
 
     CProt_ref& prot_ref = prot_feat.SetData().SetProt();
-    if (!prot_ref.IsSetName() || prot_ref.GetName().empty())
-        prot_ref.SetName().push_back(protein_name);
 
-    prot_feat.SetId().SetLocal().SetId(++m_local_id_counter);
+    AssignLocalIdIfEmpty(prot_feat, m_local_id_counter);
     prot_feat.SetLocation().SetInt().SetFrom(0);
     prot_feat.SetLocation().SetInt().SetTo(protein->GetInst().GetLength() - 1);
     prot_feat.SetLocation().SetInt().SetId().Assign(*GetAccessionId(protein->GetId()));
 
     cd_feature.SetProduct().SetWhole().Assign(*GetAccessionId(protein->GetId()));
 
-    CConstRef<CSeq_feat> mrna(sequence::GetmRNAForProduct(protein_handle));
-    if (!mrna.Empty() && mrna->IsSetId())
+    if (m_feature_links_kind != 0)
     {
-        CSeq_feat& mrna_feature = *(CSeq_feat*)mrna.GetPointerOrNull();
-        CRef<CSeqFeatXref> xref(new CSeqFeatXref);
-        xref->SetId().Assign(mrna->GetId());
-        cd_feature.SetXref().push_back(xref);
+        CConstRef<CSeq_feat> mrna(sequence::GetmRNAForProduct(protein_handle));
+        if (!mrna.Empty() && mrna->IsSetId())
+        {
+            CSeq_feat& mrna_feature = *(CSeq_feat*)mrna.GetPointerOrNull();
+            CRef<CSeqFeatXref> xref(new CSeqFeatXref);
+            xref->SetId().Assign(mrna->GetId());
+            cd_feature.SetXref().push_back(xref);
 
-        xref.Reset(new CSeqFeatXref);
-        xref->SetId().Assign(cd_feature.GetId());
-        mrna_feature.SetXref().push_back(xref);
-        mrna_feature.ResetProduct();
+            xref.Reset(new CSeqFeatXref);
+            xref->SetId().Assign(cd_feature.GetId());
+            mrna_feature.SetXref().push_back(xref);
+            mrna_feature.ResetProduct();
+        }
     }
 
     return protein_entry;
 }
 
-void CFeatureTableReader::MergeCDSFeatures(CSeq_entry& entry)
+void CFeatureTableReader::MergeCDSFeatures(CSeq_entry& entry, char feature_links)
+{
+    m_feature_links_kind = feature_links;
+    m_local_id_counter = 0;
+    FindMaximumId(entry, ++m_local_id_counter);
+    MergeCDSFeatures_impl(entry);
+}
+
+void CFeatureTableReader::MergeCDSFeatures_impl(CSeq_entry& entry)
 {
     if (entry.IsSeq() && !entry.GetSeq().IsSetInst() )
         return;
 
-    switch(entry.Which())
+    switch (entry.Which())
     {
     case CSeq_entry::e_Seq:
         if (CheckIfNeedConversion(entry))
@@ -642,7 +702,7 @@ void CFeatureTableReader::MergeCDSFeatures(CSeq_entry& entry)
         }
         NON_CONST_ITERATE(CBioseq_set_Base::TSeq_set, it, entry.SetSet().SetSeq_set())
         {
-            MergeCDSFeatures(**it);
+            MergeCDSFeatures_impl(**it);
         }
         break;
     default:
@@ -827,8 +887,10 @@ void CFeatureTableReader::MoveCdRegions(CSeq_entry_Handle entry_h, const CBioseq
             if (!data.GetCdregion().IsSetCode())
             {
                 int code = GetGenomicCodeOfBioseq(bioseq);
-                if (code != 0)
-                    data.SetCdregion().SetCode().SetId(code);
+                if (code == 0)
+                    code = 1;
+
+                data.SetCdregion().SetCode().SetId(code);
             }
             if (!data.GetCdregion().IsSetFrame())
             {

@@ -483,6 +483,18 @@ int CTbl2AsnApp::Run(void)
     if (args["src-file"])
         m_context.m_single_source_qual_file = args["src-file"].AsString();
 
+    if (args["F"])
+    {
+        char f_arg = args["F"].AsString()[0];
+
+        if (args["F"].AsString().length() != 1 || 
+            !(f_arg == 'f' || f_arg == 'p'))
+        {
+            NCBI_THROW(CArgException, eConvert,
+                "Unrecognized feature link type " + args["F"].AsString());
+        }
+        m_context.m_feature_links = f_arg;
+    }
     if (args["f"])
         m_context.m_single_table5_file = args["f"].AsString();
 
@@ -842,7 +854,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     }
 
     fr.m_replacement_protein = m_replacement_proteins;
-    fr.MergeCDSFeatures(*entry);
+    fr.MergeCDSFeatures(*entry, m_context.m_feature_links);
 
     entry->Parentize();
     

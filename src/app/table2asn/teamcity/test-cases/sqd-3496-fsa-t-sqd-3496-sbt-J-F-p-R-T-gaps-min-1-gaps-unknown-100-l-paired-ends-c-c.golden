@@ -1148,7 +1148,6 @@ BA70036C8B8B8C16377EB88C4F774EF6CFF86F80'H
             {
               data ftable {
                 {
-                  id local id 3,
                   data gene {
                     locus-tag "LHUM_24289"
                   },
@@ -1160,7 +1159,6 @@ BA70036C8B8B8C16377EB88C4F774EF6CFF86F80'H
                   }
                 },
                 {
-                  id local id 4,
                   data rna {
                     type rRNA,
                     ext name "16S ribosomal RNA, large SSU"
@@ -1179,7 +1177,6 @@ BA70036C8B8B8C16377EB88C4F774EF6CFF86F80'H
                   }
                 },
                 {
-                  id local id 5,
                   data gene {
                     locus-tag "LHUM_LH24287"
                   },
@@ -1191,10 +1188,13 @@ BA70036C8B8B8C16377EB88C4F774EF6CFF86F80'H
                   }
                 },
                 {
-                  id local id 6,
                   data rna {
                     type mRNA,
                     ext name "actin, isoform 1"
+                  },
+                  product whole general {
+                    db "WGS:AAJJ",
+                    tag str "TC004250-PA"
                   },
                   location mix {
                     int {
@@ -1243,15 +1243,9 @@ BA70036C8B8B8C16377EB88C4F774EF6CFF86F80'H
                       qual "orig_transcript_id",
                       val "gnl|WGS:AAJJ|TC004250-RA"
                     }
-                  },
-                  xref {
-                    {
-                      id local id 1
-                    }
                   }
                 },
                 {
-                  id local id 7,
                   data gene {
                     locus-tag "LHUM_LH24283"
                   },
@@ -1263,9 +1257,12 @@ BA70036C8B8B8C16377EB88C4F774EF6CFF86F80'H
                   }
                 },
                 {
-                  id local id 8,
                   data rna {
                     type mRNA
+                  },
+                  product whole general {
+                    db "WGS:AAJJ",
+                    tag str "TC031613-PA"
                   },
                   location mix {
                     int {
@@ -1289,11 +1286,6 @@ BA70036C8B8B8C16377EB88C4F774EF6CFF86F80'H
                     {
                       qual "orig_transcript_id",
                       val "gnl|WGS:AAJJ|TC031613-RA"
-                    }
-                  },
-                  xref {
-                    {
-                      id local id 2
                     }
                   }
                 }
@@ -1333,7 +1325,7 @@ RCRYVIV*FSVSLIINS"
             {
               data ftable {
                 {
-                  id local id 9,
+                  id local id 1,
                   data prot {
                     name {
                       "actin, variant 1"
@@ -1377,7 +1369,7 @@ LEQINKIRQSKVSGASADEVYKPTWWLFDDMSFLSVHIAARSGESSLIVIIKILYCHLKNYYIKLQFLKSYV"
             {
               data ftable {
                 {
-                  id local id 10,
+                  id local id 2,
                   data prot {
                     name {
                       "madeup,tubulin"
@@ -1401,7 +1393,6 @@ LEQINKIRQSKVSGASADEVYKPTWWLFDDMSFLSVHIAARSGESSLIVIIKILYCHLKNYYIKLQFLKSYV"
         {
           data ftable {
             {
-              id local id 1,
               data cdregion {
                 frame one,
                 code {
@@ -1454,15 +1445,9 @@ LEQINKIRQSKVSGASADEVYKPTWWLFDDMSFLSVHIAARSGESSLIVIIKILYCHLKNYYIKLQFLKSYV"
                   qual "orig_transcript_id",
                   val "gnl|WGS:AAJJ|TC004250-RA"
                 }
-              },
-              xref {
-                {
-                  id local id 6
-                }
               }
             },
             {
-              id local id 2,
               data cdregion {
                 frame one,
                 code {
@@ -1491,11 +1476,6 @@ LEQINKIRQSKVSGASADEVYKPTWWLFDDMSFLSVHIAARSGESSLIVIIKILYCHLKNYYIKLQFLKSYV"
                 {
                   qual "orig_transcript_id",
                   val "gnl|WGS:AAJJ|TC031613-RA"
-                }
-              },
-              xref {
-                {
-                  id local id 8
                 }
               }
             }

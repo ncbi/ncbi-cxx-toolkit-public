@@ -31,7 +31,7 @@ public:
    // MergeCDSFeatures looks for cdregion features in the feature tables
 //    in sequence annotations and creates protein sequences based on them
 //    as well as converting the sequence or a seq-set into nuc-prot-set
-   void MergeCDSFeatures(objects::CSeq_entry& obj);
+   void MergeCDSFeatures(objects::CSeq_entry& obj, char feature_links);
    void ParseCdregions(objects::CSeq_entry& entry);
    // This method reads 5 column table and attaches these features
 //    to corresponding sequences
@@ -47,11 +47,13 @@ public:
    static 
    void RemoveEmptyFtable(objects::CBioseq& bioseq);
 private:
-   CRef<objects::CSeq_entry> TranslateProtein(
+    void MergeCDSFeatures_impl(objects::CSeq_entry& entry);
+    CRef<objects::CSeq_entry> TranslateProtein(
        objects::CScope& scope, objects::CSeq_entry_Handle top_entry_h, 
        objects::CSeq_feat& cd_feature);
    objects::ILineErrorListener* m_logger;
    int m_local_id_counter;
+   char m_feature_links_kind;
    bool AddProteinToSeqEntry(const objects::CSeq_entry* protein, objects::CSeq_entry_Handle seh);
    void MoveCdRegions(objects::CSeq_entry_Handle entry_h, const objects::CBioseq& bioseq, objects::CSeq_annot::TData::TFtable& seq_ftable, objects::CSeq_annot::TData::TFtable& set_ftable);
 };

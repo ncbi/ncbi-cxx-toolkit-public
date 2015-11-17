@@ -94,6 +94,7 @@ public:
     bool   m_handle_as_nuc;
     string m_asn1_suffix;
     string m_locus_tag_prefix;
+    char   m_feature_links;
 
     CRef<objects::CSeq_descr>  m_descriptors;
     auto_ptr<objects::edit::CRemoteUpdater>   m_remote_updater;

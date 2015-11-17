@@ -50,7 +50,6 @@ A44CA133B078F38F349CABA72FA7A081D053DFCDA48E0F679FA242F50C18E03DCD218E08F339C3
         {
           data ftable {
             {
-              id local id 2,
               data gene {
                 locus "RAD57"
               },
@@ -66,7 +65,6 @@ A44CA133B078F38F349CABA72FA7A081D053DFCDA48E0F679FA242F50C18E03DCD218E08F339C3
               }
             },
             {
-              id local id 3,
               data imp {
                 key "regulatory"
               },
@@ -88,7 +86,6 @@ A44CA133B078F38F349CABA72FA7A081D053DFCDA48E0F679FA242F50C18E03DCD218E08F339C3
               }
             },
             {
-              id local id 4,
               data imp {
                 key "regulatory"
               },
@@ -144,7 +141,7 @@ AKPGQIAYQITKRGIETA"
         {
           data ftable {
             {
-              id local id 5,
+              id local id 1,
               data prot {
                 name {
                   "DNA repair protein"
@@ -168,7 +165,6 @@ AKPGQIAYQITKRGIETA"
     {
       data ftable {
         {
-          id local id 1,
           data cdregion {
             frame one,
             code {

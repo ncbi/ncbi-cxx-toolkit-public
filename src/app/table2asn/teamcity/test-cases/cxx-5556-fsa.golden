@@ -38,7 +38,6 @@ Seq-entry ::= set {
           },
           data ftable {
             {
-              id local id 2,
               data gene {
                 locus "sde3p"
               },
@@ -76,7 +75,7 @@ GFIVVPLSKSLYDFHEGYDLYNLGFTAG"
         {
           data ftable {
             {
-              id local id 3,
+              id local id 1,
               data prot {
                 name {
                   "SDE3P"
@@ -97,9 +96,11 @@ GFIVVPLSKSLYDFHEGYDLYNLGFTAG"
     {
       data ftable {
         {
-          id local id 1,
           data cdregion {
-            frame one
+            frame one,
+            code {
+              id 1
+            }
           },
           product whole local str "WS1030",
           location int {

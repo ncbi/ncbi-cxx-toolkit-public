@@ -2287,7 +2287,6 @@ Seq-entry ::= set {
             {
               data ftable {
                 {
-                  id local id 3,
                   data gene {
                     locus-tag "DDB_G0267178"
                   },
@@ -2318,7 +2317,6 @@ Seq-entry ::= set {
                   }
                 },
                 {
-                  id local id 4,
                   data rna {
                     type mRNA,
                     ext name "test3"
@@ -2326,6 +2324,10 @@ Seq-entry ::= set {
                   partial TRUE,
                   comment "Slime mold (D.discoideum) transposon DIRS-1,
  complete, clone SB41",
+                  product whole general {
+                    db "WGS:AAFI",
+                    tag str "DDB0216437"
+                  },
                   location int {
                     from 1789,
                     to 3186,
@@ -2333,11 +2335,6 @@ Seq-entry ::= set {
                     id local str "DDB0232440",
                     fuzz-from lim lt,
                     fuzz-to lim gt
-                  },
-                  xref {
-                    {
-                      id local id 1
-                    }
                   },
                   dbxref {
                     {
@@ -2347,7 +2344,6 @@ Seq-entry ::= set {
                   }
                 },
                 {
-                  id local id 5,
                   data gene {
                     locus-tag "DDB_G0267180"
                   },
@@ -2378,7 +2374,6 @@ Seq-entry ::= set {
                   }
                 },
                 {
-                  id local id 6,
                   data rna {
                     type mRNA,
                     ext name "hypothetical protein"
@@ -2386,6 +2381,10 @@ Seq-entry ::= set {
                   partial TRUE,
                   comment "Slime mold (D.discoideum) transposon DIRS-1,
  complete, clone SB41",
+                  product whole general {
+                    db "WGS:AAFI",
+                    tag str "DDB0216438"
+                  },
                   location int {
                     from 3747,
                     to 4754,
@@ -2393,11 +2392,6 @@ Seq-entry ::= set {
                     id local str "DDB0232440",
                     fuzz-from lim lt,
                     fuzz-to lim gt
-                  },
-                  xref {
-                    {
-                      id local id 2
-                    }
                   },
                   dbxref {
                     {
@@ -2421,7 +2415,8 @@ Seq-entry ::= set {
             }
           },
           descr {
-            title "hypothetical protein [Dictyostelium discoideum AX4]",
+            title "hypothetical protein DDB_G0267178 [Dictyostelium discoideum
+ AX4]",
             molinfo {
               biomol peptide,
               tech concept-trans
@@ -2443,7 +2438,7 @@ MASLLLSNNVLFHVVKKMIVGNQMIL"
             {
               data ftable {
                 {
-                  id local id 7,
+                  id local id 1,
                   data prot {
                     name {
                       "hypothetical protein"
@@ -2472,7 +2467,8 @@ MASLLLSNNVLFHVVKKMIVGNQMIL"
             }
           },
           descr {
-            title "hypothetical protein [Dictyostelium discoideum AX4]",
+            title "hypothetical protein DDB_G0267180 [Dictyostelium discoideum
+ AX4]",
             molinfo {
               biomol peptide,
               tech concept-trans
@@ -2492,7 +2488,7 @@ NNTTGNSSNSKSSSGSNGRSNNFNGSPSNVASGSNNTKSANGTNNRFQKNKK"
             {
               data ftable {
                 {
-                  id local id 8,
+                  id local id 2,
                   data prot {
                     name {
                       "hypothetical protein"
@@ -2515,7 +2511,6 @@ NNTTGNSSNSKSSSGSNGRSNNFNGSPSNVASGSNNTKSANGTNNRFQKNKK"
         {
           data ftable {
             {
-              id local id 1,
               data cdregion {
                 frame one,
                 code {
@@ -2533,11 +2528,6 @@ NNTTGNSSNSKSSSGSNGRSNNFNGSPSNVASGSNNTKSANGTNNRFQKNKK"
                 strand plus,
                 id local str "DDB0232440"
               },
-              xref {
-                {
-                  id local id 4
-                }
-              },
               dbxref {
                 {
                   db "dictyBase",
@@ -2546,7 +2536,6 @@ NNTTGNSSNSKSSSGSNGRSNNFNGSPSNVASGSNNTKSANGTNNRFQKNKK"
               }
             },
             {
-              id local id 2,
               data cdregion {
                 frame one,
                 code {
@@ -2563,11 +2552,6 @@ NNTTGNSSNSKSSSGSNGRSNNFNGSPSNVASGSNNTKSANGTNNRFQKNKK"
                 to 4754,
                 strand plus,
                 id local str "DDB0232440"
-              },
-              xref {
-                {
-                  id local id 6
-                }
               },
               dbxref {
                 {
