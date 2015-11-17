@@ -93,7 +93,7 @@ auto-relevance.mk: $(RELEVANT_SUB_FILE) $(IRRELEVANT_SUB_FILE)
 # 1: name, 2: target, 3: is_expendable?
 define make_one_sub_proj_p
 +@if $(call is_relevant,$(1)/,)  ||  $(call is_relevant,$(1)/,_SUB) ; then \
-    echo $(MAKE) -C $(1) $(MFLAGS_NR) $(2) ; \
+    $(echo_unless_silent) $(MAKE) -C $(1) $(MFLAGS_NR) $(2) ; \
     $(call make_one_sub_proj_r_nonl,$(1),$(2),$(3)) ; \
 fi
 endef
