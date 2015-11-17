@@ -76,8 +76,12 @@ ID2-Request-Get-Seq-id ::= SEQUENCE {
                                 -- in general id with db "LABEL"
                 taxid   (256),  -- return a sequence taxonomy ID as integer
                                 -- in general id with db "TAXID"
-                hash    (512)   -- return a sequence hash as integer
+                hash    (512),  -- return a sequence hash as integer
                                 -- in general id with db "HASH"
+                seq-length (1024), -- return a sequence Seq-inst.length as int
+                                -- in general id with db "Seq-inst.length"
+                seq-mol    (2048)  -- return a sequence Seq-inst.mol as int
+                                -- in general id with db "Seq-inst.mol"
         } DEFAULT any
 }
 
