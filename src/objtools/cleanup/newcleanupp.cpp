@@ -3494,12 +3494,20 @@ void CNewCleanup_imp::GBQualBC (
     _ASSERT (FIELD_IS_SET (gbq, Qual) && FIELD_IS_SET (gbq, Val));
 
     if (NStr::EqualNocase(gbq.GetQual(), "rpt_unit_seq")) {
-        if (CGb_qual::CleanupRptUnitSeq(gbq.SetVal())) {
+        if (x_IsBaseRange(gbq.GetVal())) {
+            gbq.SetQual("rpt_unit_range");
+            CGb_qual::CleanupRptUnitRange(gbq.SetVal());
+            ChangeMade(CCleanupChange::eChangeQualifiers);
+        } else if (CGb_qual::CleanupRptUnitSeq(gbq.SetVal())) {
             ChangeMade(CCleanupChange::eChangeQualifiers);
         }
         x_CleanupRptUnit(gbq);
     } else if (NStr::EqualNocase(gbq.GetQual(), "rpt_unit_range")) {
-        if (CGb_qual::CleanupRptUnitRange(gbq.SetVal())) {
+        if (! x_IsBaseRange(gbq.GetVal())) {
+            gbq.SetQual("rpt_unit_seq");
+            CGb_qual::CleanupRptUnitSeq(gbq.SetVal());
+            ChangeMade(CCleanupChange::eChangeQualifiers);
+        } else if (CGb_qual::CleanupRptUnitRange(gbq.SetVal())) {
             ChangeMade(CCleanupChange::eChangeQualifiers);
         }
     } else if (NStr::EqualNocase(gbq.GetQual(), "rpt_unit")) {
