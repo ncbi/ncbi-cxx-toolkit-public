@@ -50,8 +50,6 @@
 #include <memory>
 #include <vector>
 
-#include <common/test_assert.h>  /* This header must go last */
-
 
 USING_NCBI_SCOPE;
 
@@ -290,10 +288,10 @@ void s_StressTest(const string&             service,
             if (!exists) {
                 cerr << "Not found: " << key << endl;
             }
-            assert(exists);
+            BOOST_REQUIRE(exists);
 
             int cmp = memcmp(buf.get(), buf2.get(), size);
-            assert(cmp == 0);
+            BOOST_REQUIRE(cmp == 0);
             ch[i0] = ch[i1] = 0;
         }
 
@@ -318,7 +316,7 @@ void s_TestKeysRead(CNetCacheAPI              nc_client,
         const string& key = *it;
         bool exists = s_CheckExists(nc_client, key,
             (unsigned char*) buf.get(), size, log_read);
-        assert(exists);
+        BOOST_REQUIRE(exists);
     }
 }
 
@@ -341,7 +339,7 @@ void s_RemoveBLOB_Test(const string& service,
 
 
     CNetCacheAPI::EReadResult rr =  nc.GetData(key, &z, 1);
-    assert(rr == CNetCacheAPI::eNotFound);
+    BOOST_REQUIRE(rr == CNetCacheAPI::eNotFound);
 }
 
 static
@@ -362,9 +360,9 @@ void s_ReadUpdateCharTest(const string& service,
     CNetCacheAPI::EReadResult rr =
         nc.GetData(key, &z, 1, &blob_size);
 
-    assert(rr == CNetCacheAPI::eReadComplete);
-    assert(z == 'Q');
-    assert(blob_size == 1);
+    BOOST_REQUIRE(rr == CNetCacheAPI::eReadComplete);
+    BOOST_REQUIRE(z == 'Q');
+    BOOST_REQUIRE(blob_size == 1);
 
     for (int i = 0; i < 10; ++i) {
         char z = 'X';
@@ -378,9 +376,9 @@ void s_ReadUpdateCharTest(const string& service,
         CNetCacheAPI::EReadResult rr =
             nc.GetData(key, &z, 1, &blob_size);
 
-        assert(rr == CNetCacheAPI::eReadComplete);
-        assert(z == 'Y');
-        assert(blob_size == 1);
+        BOOST_REQUIRE(rr == CNetCacheAPI::eReadComplete);
+        BOOST_REQUIRE(z == 'Y');
+        BOOST_REQUIRE(blob_size == 1);
     }
 
 }
@@ -607,7 +605,7 @@ static int s_Run(const CNamedParameterList* nc_params)
 
         key = nc_client.PutData(NULL, 0, nc_blob_ttl = 120);
         NcbiCout << key << NcbiEndl;
-        assert(!key.empty());
+        BOOST_REQUIRE(!key.empty());
 
         SleepMilliSec(700);
 
@@ -615,10 +613,10 @@ static int s_Run(const CNamedParameterList* nc_params)
         size_t bsize;
         auto_ptr<IReader> rdr(nc_client.GetData(key, &bsize));
 
-        assert(rdr.get() != NULL);
+        BOOST_REQUIRE(rdr.get() != NULL);
 
         cout << bsize << endl;
-        assert(bsize == 0);
+        BOOST_REQUIRE(bsize == 0);
     }}
 
 
@@ -628,11 +626,11 @@ static int s_Run(const CNamedParameterList* nc_params)
 
         key = nc_client.PutData(test_data, sizeof(test_data));
         NcbiCout << key << NcbiEndl;
-        assert(!key.empty());
+        BOOST_REQUIRE(!key.empty());
 
         unsigned id = CNetCacheKey(key).GetId();
         CNetCacheKey pk(key);
-        assert(pk.GetId() == id);
+        BOOST_REQUIRE(pk.GetId() == id);
 
     }}
 
@@ -645,30 +643,30 @@ static int s_Run(const CNamedParameterList* nc_params)
 
         size_t blob_size;
         IReader* reader = nc_client.GetData(key, &blob_size);
-        assert(reader);
-        assert(blob_size == sizeof(test_data));
+        BOOST_REQUIRE(reader);
+        BOOST_REQUIRE(blob_size == sizeof(test_data));
 
         size_t bytes_read = s_ReadIntoBuffer(reader, dataBuf, sizeof(dataBuf));
         delete reader;
 
-        assert(bytes_read == sizeof(test_data));
+        BOOST_REQUIRE(bytes_read == sizeof(test_data));
 
         int res = memcmp(dataBuf, test_data, sizeof(test_data));
-        assert(res == 0);
+        BOOST_REQUIRE(res == 0);
 
         reader = nc_client.GetPartReader(key,
             sizeof(test_data) - sizeof("dog."), sizeof(dataBuf), &blob_size);
 
-        assert(blob_size == sizeof("dog."));
+        BOOST_REQUIRE(blob_size == sizeof("dog."));
 
         bytes_read = s_ReadIntoBuffer(reader, dataBuf, sizeof(dataBuf));
 
-        assert(bytes_read == sizeof("dog."));
+        BOOST_REQUIRE(bytes_read == sizeof("dog."));
 
         delete reader;
 
         res = strcmp(dataBuf, "dog.");
-        assert(res == 0);
+        BOOST_REQUIRE(res == 0);
     }}
 
     {{
@@ -680,17 +678,17 @@ static int s_Run(const CNamedParameterList* nc_params)
 
         CNetCacheAPI::EReadResult rres =
             nc_client.GetData(key, dataBuf, sizeof(dataBuf));
-        assert(rres == CNetCacheAPI::eReadComplete);
+        BOOST_REQUIRE(rres == CNetCacheAPI::eReadComplete);
 
         int res = strcmp(dataBuf, test_data);
-        assert(res == 0);
+        BOOST_REQUIRE(res == 0);
 
         string str;
 
         nc_client.ReadPart(key, sizeof("The ") - 1,
             sizeof("The quick") - sizeof("The "), str);
 
-        assert(str == "quick");
+        BOOST_REQUIRE(str == "quick");
     }}
 
     // update existing BLOB
@@ -707,9 +705,9 @@ static int s_Run(const CNamedParameterList* nc_params)
         memset(dataBuf, 0xff, sizeof(dataBuf));
         CNetCacheAPI::EReadResult rres =
             nc_client.GetData(key, dataBuf, sizeof(dataBuf));
-        assert(rres == CNetCacheAPI::eReadComplete);
+        BOOST_REQUIRE(rres == CNetCacheAPI::eReadComplete);
         int res = strcmp(dataBuf, test_data2);
-        assert(res == 0);
+        BOOST_REQUIRE(res == 0);
 
         }
     }}
@@ -721,21 +719,21 @@ static int s_Run(const CNamedParameterList* nc_params)
         nc_client.SetDefaultParameters(nc_params);
 
         key = nc_client.PutData(test_data, sizeof(test_data), nc_blob_ttl = 80);
-        assert(!key.empty());
+        BOOST_REQUIRE(!key.empty());
     }}
 
     CNetCacheAPI nc_client(service, s_ClientName);
     nc_client.SetDefaultParameters(nc_params);
 
     bool exists = s_CheckExists(nc_client, key);
-    assert(exists);
+    BOOST_REQUIRE(exists);
 
     nc_client.Remove(key);
 
     SleepMilliSec(1800);
 
     exists = s_CheckExists(nc_client, key);
-    assert(!exists);
+    BOOST_REQUIRE(!exists);
 
     s_RemoveBLOB_Test(service, nc_params);
 
