@@ -520,6 +520,7 @@ private:
     void x_RemoveEmptyUserObject( CSeq_descr & seq_descr );
     void x_CleanupGenbankBlock( CSeq_descr & seq_descr );
     void x_RemoveOldDescriptors( CSeq_descr & seq_descr );
+    void x_RemoveEmptyDescriptors(CSeq_descr& seq_descr);
     void x_RemoveEmptyFeatures( CSeq_annot & seq_annot );
     void x_RemoveEmptyFeatureTables( list< CRef< CSeq_annot > > & annot_list);
     void x_RemoveEmptyFeatureTables( CBioseq & bioseq );
@@ -530,6 +531,7 @@ private:
     bool x_ShouldRemoveEmptyGene(const CGene_ref& gene );
     bool x_CleanEmptyProt(CProt_ref& prot);
     bool x_ShouldRemoveEmptyProt(const CProt_ref& prot );
+    static bool x_IsPubContentBad(const CPubdesc& pub, bool strict);
     bool x_ShouldRemoveEmptyPub(const CPubdesc& pubdesc );
     void x_RemoveOldFeatures(CBioseq & bioseq);
 

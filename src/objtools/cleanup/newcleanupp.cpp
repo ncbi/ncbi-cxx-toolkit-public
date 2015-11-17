@@ -10557,6 +10557,17 @@ void CNewCleanup_imp::x_RemoveOldDescriptors( CSeq_descr & seq_descr )
 }
 
 
+void CNewCleanup_imp::x_RemoveEmptyDescriptors(CSeq_descr& seq_descr)
+{
+    EDIT_EACH_SEQDESC_ON_SEQDESCR(d, seq_descr) {
+        if ((*d)->IsPub() && x_IsPubContentBad((*d)->GetPub(), false)) {
+            ERASE_SEQDESC_ON_SEQDESCR(d, seq_descr);
+            ChangeMade(CCleanupChange::eRemoveDescriptor);
+        }
+    }
+}
+
+
 bool CNewCleanup_imp::x_CleanEmptyGene(CGene_ref& gene)
 {
     bool any_change = false;
@@ -10610,16 +10621,16 @@ bool CNewCleanup_imp::x_ShouldRemoveEmptyGene(const CGene_ref& gene)
     if (!gene.IsSetLocus() &&
         !gene.IsSetAllele() &&
         !gene.IsSetDesc() &&
-        !gene.IsSetMaploc() &&
-        !gene.IsSetLocus_tag() &&
-        !gene.IsSetDb() &&
-        !gene.IsSetSyn()) {
-        should_remove = true;
+!gene.IsSetMaploc() &&
+!gene.IsSetLocus_tag() &&
+!gene.IsSetDb() &&
+!gene.IsSetSyn()) {
+should_remove = true;
     }
     return should_remove;
 }
 
-   
+
 bool CNewCleanup_imp::x_CleanEmptyProt(CProt_ref& prot)
 {
     bool any_change = false;
@@ -10654,7 +10665,7 @@ bool CNewCleanup_imp::x_CleanEmptyProt(CProt_ref& prot)
 }
 
 
-bool CNewCleanup_imp::x_ShouldRemoveEmptyProt(const CProt_ref& prot )
+bool CNewCleanup_imp::x_ShouldRemoveEmptyProt(const CProt_ref& prot)
 {
     if (prot.IsSetProcessed() &&
         (prot.GetProcessed() == CProt_ref::eProcessed_signal_peptide ||
@@ -10672,10 +10683,172 @@ bool CNewCleanup_imp::x_ShouldRemoveEmptyProt(const CProt_ref& prot )
     }
     return should_remove;
 }
-           
+
+
+bool HasAuthor(const CAuthor& author)
+{
+    if (!author.IsSetName()) {
+        return false;
+    }
+    if (author.GetName().IsName()) {
+        if (!author.GetName().GetName().IsSetLast() || NStr::IsBlank(author.GetName().GetName().GetLast())) {
+            return false;
+        } else {
+            return true;
+        }
+    } else if (author.GetName().IsConsortium()) {
+        return !NStr::IsBlank(author.GetName().GetConsortium());
+    } else if (author.GetName().IsStr()) {
+        return !NStr::IsBlank(author.GetName().GetStr());
+    } else {
+        return false;
+    }
+}
+
+
+bool HasAuthor(const CAuth_list& auth_list)
+{
+    bool has_name = false;
+    if (!auth_list.IsSetNames()) {
+        return false;
+    }
+    if (auth_list.GetNames().IsStd()) {
+        ITERATE(CAuth_list::TNames::TStd, it, auth_list.GetNames().GetStd()) {
+            if (HasAuthor(**it)) {
+                has_name = true;
+                break;
+            }
+        }
+    } else if (auth_list.GetNames().IsMl()) {
+        if (!auth_list.GetNames().GetMl().empty() &&
+            !NStr::IsBlank(auth_list.GetNames().GetMl().front())) {
+            has_name = true;
+        }
+    } else if (auth_list.GetNames().IsStr()) {
+        if (!auth_list.GetNames().GetStr().empty() &&
+            !NStr::IsBlank(auth_list.GetNames().GetStr().front())) {
+            has_name = true;
+        }
+    }
+    return has_name;
+}
+
+
+bool HasAuthor(const CPubdesc& pub, bool strict)
+{
+    if (!pub.IsSetPub()) {
+        return false;
+    }
+    
+    bool is_patent = false;
+    bool any_authors = false;
+    ITERATE(CPubdesc::TPub::Tdata, it, pub.GetPub().Get()) {
+        if ((*it)->IsPatent()) {
+            if (!strict) {
+                // if patent and not strict, just patent is ok
+                return true;
+            }
+        }
+        if ((*it)->IsSetAuthors()) {
+            any_authors = true;
+            if (HasAuthor((*it)->GetAuthors())) {
+                return true;
+            }
+        }
+    }
+    if (strict) {
+        return false;
+    } else if (any_authors) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+
+bool IsMinimal(const CCit_gen& gen)
+{
+    // note: Yes, a gen pub is minimal if it DOES have a citation
+    // but not journal, authors, volume, and pages
+    // copied logic from C Toolkit
+    if (gen.IsSetCit() &&
+        !gen.IsSetJournal() &&
+        !gen.IsSetAuthors() &&
+        !gen.IsSetVolume() &&
+        !gen.IsSetPages()) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+#define CHECK_TITLE(Title_type) \
+    case CTitle::C_E::e_##Title_type: \
+        if (!NStr::IsBlank((*title)->Get##Title_type())) { \
+            has_title = true; \
+        } \
+        break;
+
+
+bool CNewCleanup_imp::x_IsPubContentBad(const CPubdesc& pub, bool strict)
+{
+    // keep anything with a figure - backbone entry
+    if (pub.IsSetFig() && !NStr::IsBlank(pub.GetFig())) {
+        return false;
+    }
+
+    // if strict, must have at least one author name
+    if (!HasAuthor(pub, strict)) {
+        return true;
+    }
+
+    // remove if only one pub and is gen missing essential information
+    if (pub.IsSetPub() && pub.GetPub().Get().size() == 1 &&
+        pub.GetPub().Get().front()->IsGen() &&
+        IsMinimal(pub.GetPub().Get().front()->GetGen())) {
+        return true;
+    }
+    ITERATE(CPubdesc::TPub::Tdata, it, pub.GetPub().Get()) {
+        if ((*it)->IsArticle()) {
+            // all CitArt from journal must have journal title and imprint
+            const CCit_art& art = (*it)->GetArticle();
+            if (art.IsSetFrom() && art.GetFrom().IsJournal()) {
+                const CCit_jour& jour = art.GetFrom().GetJournal(); 
+                if (!jour.IsSetImp()) {
+                    return true;
+                }
+                bool has_title = false;
+                if (jour.IsSetTitle() && !jour.GetTitle().Get().empty()) {
+                    ITERATE(CCit_jour::TTitle::Tdata, title, jour.GetTitle().Get()) {
+                        switch ((*title)->Which()) {
+                            CHECK_TITLE(Name)
+                            CHECK_TITLE(Tsub)
+                            CHECK_TITLE(Trans)
+                            CHECK_TITLE(Jta)
+                            CHECK_TITLE(Iso_jta)
+                            CHECK_TITLE(Ml_jta)
+                            CHECK_TITLE(Coden)
+                            CHECK_TITLE(Issn)
+                            CHECK_TITLE(Abr)
+                            CHECK_TITLE(Isbn)
+                            default:
+                                break;
+                        }
+                    }                    
+                }
+                if (!has_title) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+
 bool CNewCleanup_imp::x_ShouldRemoveEmptyPub(const CPubdesc& pub)
 {
-    return false;
+    return x_IsPubContentBad(pub, false);
 }
 
 
