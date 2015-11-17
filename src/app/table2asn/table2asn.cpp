@@ -214,10 +214,10 @@ void CTbl2AsnApp::Init(void)
     arg_desc->AddFlag("s", "Read FASTAs as Set");                          // done
     arg_desc->AddFlag("g", "Genomic Product Set");
     arg_desc->AddFlag("J", "Delayed Genomic Product Set ");                // done
-    arg_desc->AddDefaultKey
+    arg_desc->AddOptionalKey
         ("F", "String", "Feature ID Links\n\
       o By Overlap\n\
-      p By Product", CArgDescriptions::eString, "o");
+      p By Product", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey
         ("A", "String", "Accession", CArgDescriptions::eString);           // done
@@ -392,9 +392,10 @@ int CTbl2AsnApp::Run(void)
     //m_LowCutoff = static_cast<EDiagSev>(args["Q"].AsInteger() - 1);
     //m_HighCutoff = static_cast<EDiagSev>(args["P"].AsInteger() - 1);
 
-    //m_DoCleanup = args["cleanup"] && args["cleanup"].AsBoolean();
-    if (args["c"])
-        m_context.m_cleanup = args["c"].AsString();
+//    if (args["c"])
+//        m_context.m_cleanup = args["c"].AsString();
+    m_context.m_cleanup = "b"; // always cleanup
+
 
     // Process file based on its content
     // Unless otherwise specifien we assume the file in hand is

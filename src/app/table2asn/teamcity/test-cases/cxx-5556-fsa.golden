@@ -107,15 +107,6 @@ GFIVVPLSKSLYDFHEGYDLYNLGFTAG"
             to 542,
             strand plus,
             id local str "Sc_16"
-          },
-          xref {
-            {
-              data prot {
-                name {
-                  "SDE3P"
-                }
-              }
-            }
           }
         }
       }

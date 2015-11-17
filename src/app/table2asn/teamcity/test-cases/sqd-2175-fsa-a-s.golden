@@ -37,7 +37,7 @@ Seq-entry ::= set {
             },
             {
               subtype collection-date,
-              name "6-Sep-2014"
+              name "06-Sep-2014"
             }
           }
         },
@@ -103,7 +103,7 @@ FABF02AE6CAFBFFC2D2CB80DF027C1FC02E73E31E301C8B8AFA2C1E83BBAE89AE0393223444811
             },
             {
               subtype collection-date,
-              name "6-Sep-2014"
+              name "06-Sep-2014"
             }
           }
         },
@@ -168,7 +168,7 @@ D0283E1AAA5644269A24EE8F0F6390660817C5EA7E131168D9E488ECBF57FBA7AEC4AEB93AFB6D
             },
             {
               subtype collection-date,
-              name "6-Sep-2014"
+              name "06-Sep-2014"
             }
           }
         },
@@ -233,7 +233,7 @@ B46B831BD5A97EC44595B4453A8BABE7520B272DC17DA8A1AF1468B8F4E1EAB82DB042B054'H
             },
             {
               subtype collection-date,
-              name "6-Sep-2014"
+              name "06-Sep-2014"
             }
           }
         },
@@ -298,7 +298,7 @@ B4253A8BABFE5E0B65A8964A4A65CAB0A74E1EA9C2DB04'H
             },
             {
               subtype collection-date,
-              name "6-Sep-2014"
+              name "06-Sep-2014"
             }
           }
         },
@@ -363,7 +363,7 @@ B6E23BEAF0B5641899057ED7BBE5246E3AEA8764A21E5AAD0768A0AEA861B42D34E55F3B52A7D1
             },
             {
               subtype collection-date,
-              name "6-Sep-2014"
+              name "06-Sep-2014"
             }
           }
         },

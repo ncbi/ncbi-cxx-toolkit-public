@@ -76,6 +76,7 @@ Seq-submit ::= {
         },
         pub {
           pub {
+            pmid 21825119,
             article {
               title {
                 name "Genome-wide recombination drives diversification of
@@ -160,8 +161,7 @@ Seq-submit ::= {
                 doi "10.1073/pnas.1104404108",
                 pubmed 21825119
               }
-            },
-            pmid 21825119
+            }
           }
         },
         user {

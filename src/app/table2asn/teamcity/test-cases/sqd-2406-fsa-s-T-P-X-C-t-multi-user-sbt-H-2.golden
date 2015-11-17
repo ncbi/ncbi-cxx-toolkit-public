@@ -88,20 +88,14 @@ Seq-submit ::= {
                     name name {
                       last "Gobu",
                       first "Vasuki",
-                      middle "",
-                      initials "",
-                      suffix "",
-                      title ""
+                      initials "V."
                     }
                   },
                   {
                     name name {
                       last "Sinyakov",
                       first "Denis",
-                      middle "",
-                      initials "",
-                      suffix "",
-                      title ""
+                      initials "D."
                     }
                   }
                 }
@@ -114,9 +108,6 @@ Seq-submit ::= {
                   date std {
                     year 2014
                   },
-                  volume "",
-                  issue "",
-                  pages "",
                   prepub in-press
                 }
               }

@@ -2303,11 +2303,11 @@ Seq-entry ::= set {
                   qual {
                     {
                       qual "old_locus_tag",
-                      val "DDBDRAFT_0216437"
+                      val "DDB_0216437"
                     },
                     {
                       qual "old_locus_tag",
-                      val "DDB_0216437"
+                      val "DDBDRAFT_0216437"
                     }
                   },
                   dbxref {
@@ -2363,11 +2363,11 @@ Seq-entry ::= set {
                   qual {
                     {
                       qual "old_locus_tag",
-                      val "DDBDRAFT_0216438"
+                      val "DDB_0216438"
                     },
                     {
                       qual "old_locus_tag",
-                      val "DDB_0216438"
+                      val "DDBDRAFT_0216438"
                     }
                   },
                   dbxref {
@@ -2535,13 +2535,6 @@ NNTTGNSSNSKSSSGSNGRSNNFNGSPSNVASGSNNTKSANGTNNRFQKNKK"
               },
               xref {
                 {
-                  data prot {
-                    name {
-                      "hypothetical protein"
-                    }
-                  }
-                },
-                {
                   id local id 4
                 }
               },
@@ -2572,13 +2565,6 @@ NNTTGNSSNSKSSSGSNGRSNNFNGSPSNVASGSNNTKSANGTNNRFQKNKK"
                 id local str "DDB0232440"
               },
               xref {
-                {
-                  data prot {
-                    name {
-                      "hypothetical protein"
-                    }
-                  }
-                },
                 {
                   id local id 6
                 }
