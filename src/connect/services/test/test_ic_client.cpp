@@ -48,8 +48,6 @@
 
 #include <util/random_gen.hpp>
 
-#include <common/test_assert.h>  /* This header must go last */
-
 
 USING_NCBI_SCOPE;
 
@@ -90,36 +88,36 @@ static int s_Run()
     SleepMilliSec(700);
 
     bool hb = cl.HasBlobs(key1, subkey);
-    assert(hb);
+    BOOST_REQUIRE(hb);
 
     size_t sz = cl.GetSize(key1, version, subkey);
-    assert(sz == data_size);
+    BOOST_REQUIRE(sz == data_size);
 
     char buf[1024] = {0,};
     cl.Read(key1, version, subkey, buf, sizeof(buf) - 1);
 
-    assert(strcmp(buf, test_data) == 0);
+    BOOST_REQUIRE(strcmp(buf, test_data) == 0);
 
     memset(buf, 0, sizeof(buf));
     cl.Read(key1, version, subkey, buf, sizeof(buf) - 1);
 
-    assert(strcmp(buf, test_data) == 0);
+    BOOST_REQUIRE(strcmp(buf, test_data) == 0);
 
     memset(buf, 0, sizeof(buf));
     cl.ReadPart(key1, version, subkey, sizeof("The ") - 1,
         sizeof("The quick") - sizeof("The "), buf, sizeof(buf) - 1);
 
-    assert(strcmp(buf, "quick") == 0);
+    BOOST_REQUIRE(strcmp(buf, "quick") == 0);
 
 
     sz = cl.GetSize(key1, version, subkey);
-    assert(sz == data_size);
+    BOOST_REQUIRE(sz == data_size);
     hb = cl.HasBlobs(key1, subkey);
-    assert(hb);
+    BOOST_REQUIRE(hb);
 
     cl.Remove(key1, version, subkey);
     hb = cl.HasBlobs(key1, subkey);
-    assert(!hb);
+    BOOST_REQUIRE(!hb);
 
     }}
 
@@ -138,23 +136,21 @@ static int s_Run()
     SleepMilliSec(700);
 
     size_t sz = cl.GetSize(key2, version, subkey);
-    assert(sz == test_size);
+    BOOST_REQUIRE(sz == test_size);
 
 
     cl.Read(key2, version, subkey, test_buf, test_size);
 
     for (size_t i = 0; i < test_size; ++i) {
-        if (test_buf[i] != 127) {
-            assert(0);
-        }
+        BOOST_REQUIRE(test_buf[i] != 127);
     }
 
     sz = cl.GetSize(key2, version, subkey);
-    assert(sz == test_size);
+    BOOST_REQUIRE(sz == test_size);
 
     cl.Remove(key2, version, subkey);
     bool hb = cl.HasBlobs(key2, subkey);
-    assert(!hb);
+    BOOST_REQUIRE(!hb);
     }}
 
 
@@ -203,13 +199,13 @@ static int s_Run()
 
         cl.GetBlobAccess(key1, 0, subkey, &blob_access);
 
-        assert(blob_access.blob_found);
-        assert(blob_access.reader.get() == NULL);
-        assert(blob_access.blob_size < blob_access.buf_size);
-        assert(memcmp(blob_access.buf, test_data, data_size) == 0);
-        assert(blob_access.current_version == version);
-        assert(blob_access.current_version_validity == ICache::eCurrent);
-        assert(blob_access.actual_age >= 2);
+        BOOST_REQUIRE(blob_access.blob_found);
+        BOOST_REQUIRE(blob_access.reader.get() == NULL);
+        BOOST_REQUIRE(blob_access.blob_size < blob_access.buf_size);
+        BOOST_REQUIRE(memcmp(blob_access.buf, test_data, data_size) == 0);
+        BOOST_REQUIRE(blob_access.current_version == version);
+        BOOST_REQUIRE(blob_access.current_version_validity == ICache::eCurrent);
+        BOOST_REQUIRE(blob_access.actual_age >= 2);
 
         blob_access.return_current_version = false;
         blob_access.maximum_age = 2;
@@ -218,7 +214,7 @@ static int s_Run()
 
         cl.GetBlobAccess(key1, version, subkey, &blob_access);
 
-        assert(!blob_access.blob_found);
+        BOOST_REQUIRE(!blob_access.blob_found);
 
         cl.Remove(key1, version, subkey);
     }}
