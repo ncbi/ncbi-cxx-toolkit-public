@@ -24,7 +24,7 @@ all all_files sources makefiles directories purge_sources purge_all_sources purg
 	+cd $(srcdir) || exit 2; \
 	for i in $(MODULES); do \
 	  if test -f "$$i/$$i.asn"; then \
-	    MAKE=$(MAKE); export MAKE; \
+	    MAKE="$(MAKE) $(MFLAGS)"; export MAKE; \
 	    ( cd $$i && $(new_module) $$i $@; ) \
 	    || case "$(MFLAGS)" in *k*) ;; *) exit 2 ;; esac; \
 	  else \
