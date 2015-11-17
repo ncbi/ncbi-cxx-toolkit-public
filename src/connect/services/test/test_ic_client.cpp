@@ -142,7 +142,7 @@ static int s_Run()
     cl.Read(key2, version, subkey, test_buf, test_size);
 
     for (size_t i = 0; i < test_size; ++i) {
-        BOOST_REQUIRE(test_buf[i] != 127);
+        BOOST_REQUIRE(test_buf[i] == 127);
     }
 
     sz = cl.GetSize(key2, version, subkey);
