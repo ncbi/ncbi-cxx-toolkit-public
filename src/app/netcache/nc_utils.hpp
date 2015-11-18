@@ -206,7 +206,8 @@ public:
         eDebugMoveRecord2,
         eDebugMoveRecord3,
         eDebugDeleteFile,
-        eDebugReleaseCacheData,
+        eDebugReleaseCacheData1,
+        eDebugReleaseCacheData2,
         eDebugDeleteSNCBlobVerData,
         eDebugDeleteCNCBlobVerManager,
         eDebugExtraWrite,
@@ -214,6 +215,11 @@ public:
         eDebugCacheDeleted2,
         eDebugCacheDeleted3,
         eDebugCacheDeleted4,
+        eDebugCacheFailedMgrAttach,
+        eDebugCacheFailedMgrDetach,
+        eDebugCacheWrong,
+        eDebugWrongCacheFound1,
+        eDebugWrongCacheFound2,
 #endif
         eLastAlert
     };

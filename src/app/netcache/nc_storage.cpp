@@ -52,6 +52,7 @@
 # include <sys/mman.h>
 #endif
 
+#define __NC_CACHEDATA_ALL_MONITOR 1
 
 BEGIN_NCBI_SCOPE
 
@@ -121,6 +122,14 @@ struct STimeTable
 };
 typedef map<Uint2, STimeTable*> TTimeBuckets;
 
+#if __NC_CACHEDATA_ALL_MONITOR
+struct SAllCacheTable
+{
+    CMiniMutex lock;
+    set<SNCCacheData *> all_cache_set;
+};
+typedef map<Uint2, SAllCacheTable*> TAllCacheBuckets;
+#endif
 
 
 /// Directory for all database files of the storage
@@ -175,6 +184,11 @@ static int s_LastFlushTime = 0;
 /// Internal cache of blobs identification information sorted to be able
 /// to search by key, subkey and version.
 static TBucketCacheMap s_BucketsCache;
+
+#if __NC_CACHEDATA_ALL_MONITOR
+static TAllCacheBuckets s_AllCache;
+#endif
+
 static EStopCause s_IsStopWrite = eNoStop;
 static bool s_CleanStart = false;
 static bool s_NeedSaveLogRecNo = false;
@@ -1053,6 +1067,9 @@ CNCBlobStorage::Initialize(bool do_reinit)
     for (Uint2 i = 1; i <= CNCDistributionConf::GetCntTimeBuckets(); ++i) {
         s_BucketsCache[i] = new SBucketCache();
         s_TimeTables[i] = new STimeTable();
+#if __NC_CACHEDATA_ALL_MONITOR
+        s_AllCache[i] = new  SAllCacheTable();
+#endif
     }
 
     s_BlobCounter.Set(0);
@@ -1176,6 +1193,17 @@ void CNCBlobStorage::WriteBlobStat(CSrvSocketTask& task)
     task.WriteText(eol).WriteText("CurKeysCnt").WriteText( is).WriteNumber( s_CurKeysCnt);
     task.WriteText(eol).WriteText("InCache_count").WriteText( is).WriteNumber( cache_count);
     task.WriteText(eol).WriteText("TimeTable_count").WriteText( is).WriteNumber( timetable_count);
+
+#if __NC_CACHEDATA_ALL_MONITOR
+    size_t ncaches_count = 0;
+    ITERATE(TAllCacheBuckets, tt, s_AllCache) {
+        SAllCacheTable* table = tt->second;
+        table->lock.Lock();
+        ncaches_count += table->all_cache_set.size();
+        table->lock.Unlock();
+    }
+    task.WriteText(eol).WriteText("caches_count").WriteText( is).WriteNumber( ncaches_count);
+#endif
 
     char buf[50];
     CSrvTime( expire).Print( buf, CSrvTime::eFmtJson);
@@ -1438,6 +1466,13 @@ s_GetKeyCacheData(Uint2 time_bucket, const string& key, bool need_create)
             data->time_bucket = time_bucket;
             cache->key_map.insert_unique_commit(*data, commit_data);
             AtomicAdd(s_CurKeysCnt, 1);
+
+#if __NC_CACHEDATA_ALL_MONITOR
+            SAllCacheTable* table = s_AllCache[time_bucket];
+            table->lock.Lock();
+            table->all_cache_set.insert(data);
+            table->lock.Unlock();
+#endif
         }
         else {
             data = &*ins_res.first;
@@ -1468,16 +1503,18 @@ CNCBlobStorage::ReferenceCacheData(SNCCacheData* data)
 void
 CNCBlobStorage::ReleaseCacheData(SNCCacheData* data)
 {
-#ifdef _DEBUG
     if (data->ref_cnt.Get() == 0) {
-        abort();
-    }
+#ifdef _DEBUG
+CNCAlerts::Register(CNCAlerts::eDebugReleaseCacheData1, "ref_cnt is 0");
 #endif
-
-    if (data->ref_cnt.Add(-1) != 0)
         return;
+    }
+    if (data->ref_cnt.Add(-1) != 0) {
+        return;
+    }
 
-    SBucketCache* cache = s_GetBucketCache(data->time_bucket);
+    Uint2 time_bucket = data->time_bucket;
+    SBucketCache* cache = s_GetBucketCache(time_bucket);
     cache->lock.Lock();
 
 #ifdef _DEBUG
@@ -1495,13 +1532,20 @@ CNCBlobStorage::ReleaseCacheData(SNCCacheData* data)
     size_t n = cache->key_map.erase(*data);
     cache->lock.Unlock();
 
+#if __NC_CACHEDATA_ALL_MONITOR
+    SAllCacheTable* table = s_AllCache[time_bucket];
+    table->lock.Lock();
+    table->all_cache_set.erase(data);
+    table->lock.Unlock();
+#endif
+
     if (n != 0) {
         AtomicSub(s_CurKeysCnt, 1);
         data->CallRCU();
     }
 #ifdef _DEBUG
     else {
-CNCAlerts::Register(CNCAlerts::eDebugReleaseCacheData, "nothing erased in key_map");
+CNCAlerts::Register(CNCAlerts::eDebugReleaseCacheData2, "nothing erased in key_map");
     }
 #endif
 }
@@ -1515,8 +1559,9 @@ s_InitializeAccessor(CNCBlobAccessor* acessor)
                        ||  acessor->GetAccessType() == eNCCopyCreate;
     SNCCacheData* data = s_GetKeyCacheData(time_bucket, key, need_create);
     acessor->Initialize(data);
-    if (data)
+    if (data) {
         CNCBlobStorage::ReleaseCacheData(data);
+    }
 }
 
 CNCBlobAccessor*
@@ -1647,11 +1692,11 @@ CNCAlerts::Register(CNCAlerts::eDebugReadBlobInfoFailed2, "ReadBlobInfo: ind_rec
 #endif
         return false;
     }
-    if (ind_rec->cache_data != ver_data->manager->GetCacheData()) {
+    if (ind_rec->cache_data != ver_data->ver_manager->GetCacheData()) {
         DB_CORRUPTED("Index record " << ver_data->coord.rec_num
                      << " in file " << file_info->file_name
                      << " has wrong cache_data pointer " << ind_rec->cache_data
-                     << " when should be " << ver_data->manager->GetCacheData() << ".");
+                     << " when should be " << ver_data->ver_manager->GetCacheData() << ".");
     }
     SFileMetaRec* meta_rec = s_CalcMetaAddress(file_info, ind_rec);
     ver_data->create_time = meta_rec->create_time;
@@ -2728,6 +2773,9 @@ CBlobCacher::x_CacheMetaRec(SNCDBFileInfo* file_info,
         SNCCacheData* old_data = &*ins_res.first;
         bucket_cache->key_map.erase(ins_res.first);
         bucket_cache->key_map.insert_equal(*cache_data);
+#if __NC_CACHEDATA_ALL_MONITOR
+        s_AllCache[time_bucket]->all_cache_set.erase(old_data);
+#endif
         --s_CurBlobsCnt;
         time_table->time_map.erase(time_table->time_map.iterator_to(*old_data));
         if (!old_data->coord.empty()) {
@@ -2745,6 +2793,9 @@ CBlobCacher::x_CacheMetaRec(SNCDBFileInfo* file_info,
         delete old_data;
     }
     time_table->time_map.insert_equal(*cache_data);
+#if __NC_CACHEDATA_ALL_MONITOR
+    s_AllCache[time_bucket]->all_cache_set.insert(cache_data);
+#endif
     ++s_CurBlobsCnt;
 
     return true;
@@ -3636,13 +3687,17 @@ CSpaceShrinker::x_PrepareToShrink(void)
         if (this_file->used_size == 0) {
             m_FilesToDel.push_back(SrvRef(this_file));
         }
-        else if (need_move) {
+        else /*if (need_move)*/ {
             if (cur_time >= this_file->next_shrink_time) {
                 this_file->info_lock.Lock();
                 this_file->is_releasing = false;
                 if (this_file->garb_size + this_file->used_size != 0) {
+#if 0
                     double this_pct = double(this_file->garb_size)
                                       / (this_file->garb_size + this_file->used_size);
+#else
+                    double this_pct = double(this_file->garb_size) / double(this_file->file_size);
+#endif
                     if (this_pct > max_pct) {
                         max_pct = this_pct;
                         m_MaxFile = this_file;
@@ -3660,13 +3715,15 @@ CSpaceShrinker::x_PrepareToShrink(void)
     }
     s_DBFilesLock.Unlock();
 
-    Uint8 proj_garbage = s_GarbageSize - total_rel_garb;
-    Uint8 proj_size = s_CurDBSize - (total_rel_garb + total_rel_used);
-    if (need_move
-        &&  (proj_garbage * 100 <= proj_size * s_MaxGarbagePct
-             ||  max_pct * 100 <= s_MaxGarbagePct))
-    {
-        m_MaxFile = NULL;
+    if (max_pct < 0.9) {
+        Uint8 proj_garbage = s_GarbageSize - total_rel_garb;
+        Uint8 proj_size = s_CurDBSize - (total_rel_garb + total_rel_used);
+        if (need_move
+            &&  (proj_garbage * 100 <= proj_size * s_MaxGarbagePct
+                 ||  max_pct * 100 <= s_MaxGarbagePct))
+        {
+            m_MaxFile = NULL;
+        }
     }
 
     m_CurDelFile = m_FilesToDel.begin();
@@ -3700,9 +3757,11 @@ CSpaceShrinker::State
 CSpaceShrinker::x_StartMoves(void)
 {
     m_StartTime = CSrvTime::CurSecs();
+/*
     bool need_move = s_CurDBSize >= s_MinDBSize
                      &&  s_GarbageSize * 100 > s_CurDBSize * s_MaxGarbagePct;
-    if (!m_MaxFile  ||  !need_move)
+*/
+    if (!m_MaxFile  /*||  !need_move*/)
         return &CSpaceShrinker::x_FinishSession;
 
     CreateNewDiagCtx();
@@ -3749,24 +3808,81 @@ CSpaceShrinker::x_MoveNextRecord(void)
         m_IndRec = m_MaxFile->index_head - m_RecNum;
     }
     while (m_RecNum <= m_PrevRecNum
-           ||  m_IndRec->cache_data->dead_time <= cur_time + s_MinMoveLife);
+           /*||  m_IndRec->cache_data->dead_time <= cur_time + s_MinMoveLife*/);
     m_MaxFile->info_lock.Unlock();
     if (!m_IndRec)
         return &CSpaceShrinker::x_FinishMoves;
+    if (s_IsIndexDeleted(m_MaxFile, m_IndRec))
+        return &CSpaceShrinker::x_FinishMoveRecord;
 
     m_CacheData = m_IndRec->cache_data;
-    m_CacheData->lock.Lock();
-    m_VerMgr = m_CacheData->ver_mgr;
-    if (m_VerMgr) {
-        m_VerMgr->ObtainReference();
-        m_CacheData->lock.Unlock();
 
-        m_VerMgr->RequestCurVersion(this);
-        return &CSpaceShrinker::x_CheckCurVersion;
+#if __NC_CACHEDATA_ALL_MONITOR
+    bool found = false;
+    SAllCacheTable* table = nullptr;
+    {
+        vector<SAllCacheTable*> v_all;
+        v_all.reserve(s_AllCache.size());
+        ITERATE(TAllCacheBuckets, tt, s_AllCache) {
+            v_all.push_back(tt->second);
+        }
+        random_shuffle(v_all.begin(), v_all.end());
+        ITERATE(vector<SAllCacheTable*>, tt, v_all) {
+            table = *tt;
+            table->lock.Lock();
+            found = table->all_cache_set.find(m_CacheData) != table->all_cache_set.end();
+            table->lock.Unlock();
+            if (found) {
+                break;
+            }
+        }
+    }
+    if (found) {
+        if (m_CacheData->dead_time == 0) {
+            table->lock.Lock();
+            table->all_cache_set.erase(m_CacheData);
+            table->lock.Unlock();
+//            found = false;
+#ifdef _DEBUG
+CNCAlerts::Register(CNCAlerts::eDebugWrongCacheFound2, "CSpaceShrinker::x_MoveNextRecord");
+#endif
+        }
+    }
+    if (!found) {
+#ifdef _DEBUG
+CNCAlerts::Register(CNCAlerts::eDebugWrongCacheFound1, "CSpaceShrinker::x_MoveNextRecord");
+#endif
+        m_CacheData = nullptr;
+        m_MaxFile->info_lock.Lock();
+        if (!s_IsIndexDeleted(m_MaxFile, m_IndRec)) {
+            s_MoveRecToGarbageNoLock(m_MaxFile, m_IndRec);
+        }
+        m_MaxFile->info_lock.Unlock();
+        return &CSpaceShrinker::x_FinishMoveRecord;
+    }
+#endif // __NC_CACHEDATA_ALL_MONITOR
+
+    m_CacheData->lock.Lock();
+    bool need_move = m_CacheData->dead_time > cur_time + s_MinMoveLife;
+    if (need_move) {
+        CNCBlobStorage::ReferenceCacheData(m_CacheData);
+        m_VerMgr = m_CacheData->ver_mgr;
+        if (m_VerMgr) {
+            m_VerMgr->ObtainReference();
+            m_CacheData->lock.Unlock();
+
+            m_VerMgr->RequestCurVersion(this);
+            return &CSpaceShrinker::x_CheckCurVersion;
+        }
     }
     m_CacheData->lock.Unlock();
+    if (!need_move) {
+        return &CSpaceShrinker::x_FinishMoves;
+    }
 
     if (s_IsIndexDeleted(m_MaxFile, m_IndRec)) {
+        CNCBlobStorage::ReleaseCacheData(m_CacheData);
+        m_CacheData = nullptr;
         SetRunnable();
         return NULL;
     }
@@ -3793,7 +3909,7 @@ CSpaceShrinker::x_CheckCurVersion(void)
     if (!IsTransFinished())
         return NULL;
     if (CTaskServer::IsInShutdown())
-        return &CSpaceShrinker::x_FinishMoves;
+        return &CSpaceShrinker::x_FinishMoveRecord;
 
     if (s_IsIndexDeleted(m_MaxFile, m_IndRec))
         return &CSpaceShrinker::x_FinishMoveRecord;
@@ -3857,6 +3973,10 @@ CSpaceShrinker::x_CheckCurVersion(void)
 CSpaceShrinker::State
 CSpaceShrinker::x_FinishMoveRecord(void)
 {
+    if (m_CacheData) {
+        CNCBlobStorage::ReleaseCacheData(m_CacheData);
+        m_CacheData = nullptr;
+    }
     if (m_VerMgr) {
         if (m_CurVer) {
             if (m_MovingMeta)
@@ -3870,7 +3990,7 @@ CSpaceShrinker::x_FinishMoveRecord(void)
     ++m_CntProcessed;
     m_PrevRecNum = m_RecNum;
 
-    if (m_Failed)
+    if (m_Failed || CTaskServer::IsInShutdown())
         SetState(&CSpaceShrinker::x_FinishMoves);
     else
         SetState(&CSpaceShrinker::x_MoveNextRecord);

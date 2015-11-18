@@ -121,7 +121,7 @@ public:
     Uint8   cur_chunk_num;
     SNCChunkMaps* chunk_maps;
 
-    CNCBlobVerManager* manager;
+    CNCBlobVerManager* ver_manager;
 
     int     saved_access_time;
     CMiniMutex wb_mem_lock;
@@ -132,7 +132,7 @@ public:
     vector<char*> chunks;
 
 
-    SNCBlobVerData(void);
+    SNCBlobVerData(CNCBlobVerManager* mgr);
     virtual ~SNCBlobVerData(void);
 
 public:
@@ -251,7 +251,8 @@ struct SNCBlobSummary
     {
 // 16jul15: expire or ver_expire? looks suspicious
 //        return expire < CSrvTime::CurSecs();
-        return dead_time < CSrvTime::CurSecs();
+//        return dead_time < CSrvTime::CurSecs();
+        return dead_time < CSrvTime::CurSecs()-60;
     }
 };
 

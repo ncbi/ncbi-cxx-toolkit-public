@@ -158,8 +158,8 @@ public:
                                 char* buffer,
                                 Uint4 buf_size);
 
-    static void ReferenceCacheData(SNCCacheData* data);
-    static void ReleaseCacheData(SNCCacheData* data);
+    static void ReferenceCacheData(SNCCacheData* cache_data);
+    static void ReleaseCacheData(SNCCacheData* cache_data);
     static void ChangeCacheDeadTime(SNCCacheData* cache_data);
 
 private:

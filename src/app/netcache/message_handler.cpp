@@ -1539,7 +1539,7 @@ CNCMessageHandler::CNCMessageHandler(void)
 #if __NC_TASKS_MONITOR
     m_TaskName = "CNCMessageHandler";
 #endif
-    m_CopyBlobInfo = new SNCBlobVerData();
+    m_CopyBlobInfo = new SNCBlobVerData(nullptr);
     m_LatestBlobSum = new SNCBlobSummary();
 
     SetState(&CNCMessageHandler::x_SocketOpened);
@@ -1757,7 +1757,7 @@ CNCMessageHandler::x_AssignCmdParams(void)
     delete m_LatestBlobSum;
     m_LatestBlobSum = new SNCBlobSummary();
     delete m_CopyBlobInfo;
-    m_CopyBlobInfo = new SNCBlobVerData();
+    m_CopyBlobInfo = new SNCBlobVerData(nullptr);
 
     CTempString cache_name;
 

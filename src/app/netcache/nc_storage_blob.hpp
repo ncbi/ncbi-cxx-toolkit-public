@@ -72,6 +72,7 @@ public:
 private:
     CNCBlobVerManager(const CNCBlobVerManager&);
     CNCBlobVerManager& operator= (const CNCBlobVerManager&);
+    CNCBlobVerManager(void);
 
     CNCBlobVerManager(Uint2 time_bucket,
                       const string& key,
@@ -90,6 +91,7 @@ private:
 
     Uint2 m_TimeBucket;
     bool  m_NeedReleaseMem;
+    bool  m_NeedAbort;
     SNCCacheData*  m_CacheData;
     CCurVerReader* m_CurVerReader;
     string m_Key;
