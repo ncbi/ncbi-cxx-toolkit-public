@@ -56,6 +56,8 @@ static const char* s_AppName;
 static char        s_LockName[PATH_MAX];
 static int         s_MainChildDone;
 static int         s_FinishingInBackground;
+static int         s_CaughtSignal;
+static sig_t       s_OrigHandlers[NSIG + 1];
 
 
 typedef struct {
@@ -211,11 +213,17 @@ int s_Run(const char* const* args, FILE* log)
     if (pid < 0) { /* error */
         fprintf(stderr, "%s: Fork failed: %s\n", s_AppName, strerror(errno));
     } else if (pid == 0) { /* child */
+        int n;
         if (log != NULL) {
             close(stdout_fds[0]);
             close(stderr_fds[0]);
             dup2(stdout_fds[1], STDOUT_FILENO);
             dup2(stderr_fds[1], STDERR_FILENO);
+        }
+        for (n = 1;  n <= NSIG;  ++n) {
+            if (n != SIGKILL  &&  n != SIGSTOP) {
+                signal(n, s_OrigHandlers[n]);
+            }
         }
         execvp(args[0], (char* const*) args);
         fprintf(stderr, "%s: Unable to exec %s: %s\n",
@@ -271,7 +279,7 @@ int s_Run(const char* const* args, FILE* log)
                     }
                 }
             }
-            signal(SIGCHLD, SIG_DFL);
+            signal(SIGCHLD, s_OrigHandlers[SIGCHLD]);
         }
         if ( !s_FinishingInBackground ) {
             waitpid(pid, &status, 0);
@@ -301,8 +309,12 @@ void s_OnSignal(int n)
 {
     /* Propagate to child?  The shell version doesn't. */
     fprintf(stderr, "%s: Caught signal %d\n", s_AppName, n);
+    /*
     s_CleanUp();
     _exit(n | 0x80);
+    */
+    s_CaughtSignal = n;
+    signal(n, s_OnSignal);
 }
 
 
@@ -337,10 +349,13 @@ int main(int argc, const char* const* argv)
     for (n = 1;  n <= NSIG;  ++n) {
         if (n != SIGKILL  &&  n != SIGSTOP  &&  n != SIGTSTP  &&  n != SIGCONT
             &&  n != SIGCHLD  &&  n != SIGPIPE) {
-            signal(n, s_OnSignal);
+            s_OrigHandlers[n] = signal(n, s_OnSignal);
         }
     }
     s_Run(getter_args, NULL);
+    if (s_CaughtSignal) {
+        goto cleanup;
+    }
 
     if (options.logfile != NULL) {
         sprintf(new_log, "%s.new", options.logfile);
@@ -352,9 +367,11 @@ int main(int argc, const char* const* argv)
         }
     }
 
-    status = s_Run(argv + 1, log);
+    if ( !s_CaughtSignal ) {
+        status = s_Run(argv + 1, log);
+    }
 
-    if (log != NULL  &&  !s_FinishingInBackground) {
+    if (log != NULL  &&  !s_FinishingInBackground  &&  !s_CaughtSignal) {
         ELogStatus log_status = eNewLogInteresting;
         fclose(log);
         if (access(options.logfile, F_OK) != 0) {
@@ -377,9 +394,12 @@ int main(int argc, const char* const* argv)
         }
     }
 
+ cleanup:
     s_CleanUp();
 
-    if (WIFSIGNALED(status)) {
+    if (s_CaughtSignal) {
+        status = s_CaughtSignal | 0x80;
+    } else if (WIFSIGNALED(status)) {
         status = WTERMSIG(status) | 0x80;
     } else {
         status = WEXITSTATUS(status);
