@@ -1,13 +1,13 @@
 #################################
 # $Id$
-# Author:  Mati Shomrat
+# Author:  Justin Foley
 #################################
 
-# Build application "annotwriter"
+# Build application "seqsub_split"
 #################################
 
 APP = seqsub_split
-SRC = seqsub_split
+SRC = ssub_fork
 LIB = xobjwrite variation_utils $(OBJREAD_LIBS) xalnmgr xobjutil \
       gbseq entrez2cli entrez2 tables $(OBJMGR_LIBS)
 
