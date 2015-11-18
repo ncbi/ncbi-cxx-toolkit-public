@@ -34,3 +34,4 @@
 -i sqd-2406.fsa -s -T -P -X C -t multi-user.sbt -H 2
 -i sqd-3496.fsa -t sqd-3496.sbt -J -F p -R -T -gaps-min 1 -gaps-unknown 100 -l paired-ends -c c
 -i sqd-3496.fsa -t sqd-3496.sbt -s -J -F p -R -T -gaps-min 1 -gaps-unknown 100 -l paired-ends -c c
+-i sqd-3542.fsa

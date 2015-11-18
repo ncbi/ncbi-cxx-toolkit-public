@@ -510,12 +510,17 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CBioSource>& bsrc,
         }
     }
 
-    if ( !organism.empty()
-        &&  ( !bsrc->GetOrg().IsSetTaxname()
-             ||  !NStr::EqualNocase(bsrc->GetOrg().GetTaxname(), organism))) {
-        bsrc->ResetOrg();
-        bsrc->ResetSubtype();
-        bsrc->SetOrg().SetTaxname(organism);
+    if ( !organism.empty())
+    {
+        if (!(bsrc->GetOrg().IsSetTaxname() && NStr::EqualNocase(bsrc->GetOrg().GetTaxname(), organism)))
+        {
+            if (bsrc->GetOrg().IsSetTaxname())
+            {
+                bsrc->ResetOrg();
+                bsrc->ResetSubtype();
+            }
+            bsrc->SetOrg().SetTaxname(organism);
+        }
     }
 
     // location
@@ -906,7 +911,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CGB_block>& gbb)
     if ((mod = FindMod("secondary-accession", "secondary-accessions")) != NULL)
     {
         list<CTempString> ranges;
-        NStr::Split(mod->value, ",", ranges);
+        NStr::Split(mod->value, ",", ranges, NStr::fSplit_MergeDelimiters);
         ITERATE (list<CTempString>, it, ranges) {
             string s = NStr::TruncateSpaces_Unsafe(*it);
             try {
@@ -923,7 +928,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitDesc<CGB_block>& gbb)
     // keyword[s]
     if ((mod = FindMod("keyword", "keywords")) != NULL) {
         list<string> keywordList;
-        NStr::Split( mod->value, ",;", keywordList );
+        NStr::Split(mod->value, ",;", keywordList, NStr::fSplit_MergeDelimiters);
         // trim every string and push it into the real keyword list
         NON_CONST_ITERATE( list<string>, keyword_iter, keywordList ) {
             NStr::TruncateSpacesInPlace( *keyword_iter );
@@ -941,7 +946,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CSeq_hist>& hist)
     if ((mod = FindMod("secondary-accession", "secondary-accessions")) != NULL)
     {
         list<CTempString> ranges;
-        NStr::Split(mod->value, ",", ranges);
+        NStr::Split(mod->value, ",", ranges, NStr::fSplit_MergeDelimiters);
         ITERATE (list<CTempString>, it, ranges) {
             string s = NStr::TruncateSpaces_Unsafe(*it);
             try {
@@ -1019,7 +1024,7 @@ void CSourceModParser::x_ApplyTPAMods(CAutoInitRef<CUser_object>& tpa)
     if ((mod = FindMod("primary", "primary-accessions")) != NULL) {
         CUser_object::TData data;
         list<CTempString> accns;
-        NStr::Split(mod->value, ",", accns);
+        NStr::Split(mod->value, ",", accns, NStr::fSplit_MergeDelimiters);
         ITERATE (list<CTempString>, it, accns) {
             CRef<CUser_field> field(new CUser_field), subfield(new CUser_field);
             field->SetLabel().SetId(0);
@@ -1045,7 +1050,7 @@ CSourceModParser::x_ApplyGenomeProjectsDBMods(CAutoInitRef<CUser_object>& gpdb)
     if ((mod = FindMod("project", "projects")) != NULL) {
         CUser_object::TData data;
         list<CTempString> ids;
-        NStr::Split(mod->value, ",;", ids);
+        NStr::Split(mod->value, ",;", ids, NStr::fSplit_MergeDelimiters);
         ITERATE (list<CTempString>, it, ids) {
             unsigned int id = NStr::StringToUInt(*it, NStr::fConvErr_NoThrow);
             if (id > 0) {

@@ -1,0 +1,48 @@
+Seq-entry ::= seq {
+  id {
+    local str "boom"
+  },
+  descr {
+    source {
+      org {
+        taxname "Afipia felis",
+        orgname {
+          mod {
+            {
+              subtype nat-host,
+              subname "Felis catus"
+            }
+          }
+        }
+      },
+      subtype {
+        {
+          subtype country,
+          name "Italy"
+        },
+        {
+          subtype isolation-source,
+          name "Felis catus"
+        },
+        {
+          subtype collection-date,
+          name "2015"
+        }
+      }
+    },
+    molinfo {
+      biomol genomic
+    },
+    create-date std {
+      year 2014,
+      month 2,
+      day 1
+    }
+  },
+  inst {
+    repr raw,
+    mol dna,
+    length 72,
+    seq-data ncbi2na '1FFFFFFFFFFFFFFEAA1FFFFFFFFFFFFFFEAA'H
+  }
+}
