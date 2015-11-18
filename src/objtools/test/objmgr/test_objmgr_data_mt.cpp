@@ -160,8 +160,8 @@ void CTestOM::SetValue(TBlobIdMap& vm, const TMapKey& key,
     if ( *old_value != value ) {
         string name;
         if ( &vm == &m_BlobIdMap ) name = "blob-id";
-        ERR_POST("Inconsistent "<<name<<" on "<<
-                 key.first.AsString()<<" "<<key.second<<
+        ERR_POST(SetPostFlags(eDPF_DateTime|eDPF_TID)<<"Inconsistent "<<name<<" on "<<
+                 key.first<<" "<<key.second<<
                  " was "<<old_value->ToString()<<" now "<<value.ToString());
         failed = true;
     }
@@ -179,8 +179,8 @@ void CTestOM::SetValue(TIntMap& vm, const TMapKey& key, int value)
     if ( old_value != value ) {
         string name;
         if ( &vm == &m_DescMap ) name = "desc";
-        ERR_POST("Inconsistent "<<name<<" on "<<
-                 key.first.AsString()<<" "<<key.second<<
+        ERR_POST(SetPostFlags(eDPF_DateTime|eDPF_TID)<<"Inconsistent "<<name<<" on "<<
+                 key.first<<" "<<key.second<<
                  " was "<<old_value<<" now "<<value);
         failed = true;
     }
@@ -221,7 +221,7 @@ void CTestOM::SetValue(TFeatMap& vm, const TMapKey& key, const TFeats& value)
         string name;
         if ( &vm == &m_Feat0Map ) name = "feat0";
         if ( &vm == &m_Feat1Map ) name = "feat1";
-        s << "Inconsistent "<<name<<" on "<<key.first.AsString()<<
+        s << "Inconsistent "<<name<<" on "<<key.first<<
             " was "<<old_value.size()<<" now "<<value.size() << NcbiEndl;
         ITERATE ( TFeats, it, old_value ) {
             s << " old: " << MSerial_AsnText << **it;
@@ -229,7 +229,7 @@ void CTestOM::SetValue(TFeatMap& vm, const TMapKey& key, const TFeats& value)
         ITERATE ( TFeats, it, value ) {
             s << " new: " << MSerial_AsnText << **it;
         }
-        ERR_POST(string(CNcbiOstrstreamToString(s)));
+        ERR_POST(SetPostFlags(eDPF_DateTime|eDPF_TID)<<string(CNcbiOstrstreamToString(s)));
         failed = true;
     }
 }
@@ -317,7 +317,7 @@ bool CTestOM::Thread_Run(int idx)
         }
         if ( m_pass_count > 1 ) {
             LOG_POST(SetPostFlags(eDPF_DateTime|eDPF_TID) <<
-                     ": starting pass " << (pass+1));
+                     "starting pass " << (pass+1));
         }
 
         static int error_count = 0;
@@ -327,7 +327,7 @@ bool CTestOM::Thread_Run(int idx)
             CNcbiOstrstream out;
             if ( m_verbose ) {
                 out << CTime(CTime::eCurrent).AsString() << " T" << idx
-                    << ": " << i << ": " << sih.AsString();
+                    << ": " << i << ": " << sih;
             }
             TMapKey key(sih, order);
             try {
@@ -362,8 +362,8 @@ bool CTestOM::Thread_Run(int idx)
                             _ASSERT(ids1.empty());
                         }
                     }
-                    LOG_POST("T" << idx << ": id = " << sih.AsString() <<
-                             ": INVALID HANDLE");
+                    LOG_POST(SetPostFlags(eDPF_DateTime|eDPF_TID)<<
+                             "id = " <<sih<<": INVALID HANDLE");
                     SetValue(m_DescMap, key, -1);
                     continue;
                 }
@@ -378,12 +378,14 @@ bool CTestOM::Thread_Run(int idx)
                 if ( preload_ids ) {
                     if ( 1 ) {
                         if ( ids1.empty() ) {
-                            ERR_POST("Ids discrepancy for " << sih.AsString());
+                            ERR_POST(SetPostFlags(eDPF_DateTime|eDPF_TID)<<
+                                     "Ids discrepancy for " << sih);
                         }
                     }
                     else {
                         if ( ids1 != ids2 ) {
-                            ERR_POST("Ids discrepancy for " << sih.AsString());
+                            ERR_POST(SetPostFlags(eDPF_DateTime|eDPF_TID)<<
+                                     "Ids discrepancy for " << sih);
                         }
                         //_ASSERT(ids1 == ids2);
                     }
@@ -425,16 +427,16 @@ bool CTestOM::Thread_Run(int idx)
                             feats.push_back(ConstRef(&it->GetOriginalFeature()));
                             annots.insert(it.GetAnnot());
                         }
+                        // verify result
+                        SetValue(m_Feat0Map, key, feats);
+
                         CAnnot_CI annot_it(handle.GetScope(), loc, sel);
                         if ( m_verbose ) {
                             out << " Seq-annots: " << annot_it.size()
                                 << " features: " << feats.size();
                             string msg = CNcbiOstrstreamToString(out);
-                            LOG_POST("T" << idx << ": " << msg);
+                            LOG_POST(SetPostFlags(eDPF_DateTime|eDPF_TID)<<msg);
                         }
-
-                        // verify result
-                        SetValue(m_Feat0Map, key, feats);
 
                         _ASSERT(annot_it.size() == annots.size());
                         set<CSeq_annot_Handle> annots2;
@@ -462,7 +464,7 @@ bool CTestOM::Thread_Run(int idx)
                             out << " Seq-annots: " << annot_it.size()
                                 << " features: " << feats.size();
                             string msg = CNcbiOstrstreamToString(out);
-                            LOG_POST("T" << idx << ": " << msg);
+                            LOG_POST(SetPostFlags(eDPF_DateTime|eDPF_TID)<<msg);
                         }
 
                         // verify result
@@ -487,7 +489,7 @@ bool CTestOM::Thread_Run(int idx)
                             out << " Seq-annots: " << annot_it.size()
                                 << " features: " << feats.size();
                             string msg = CNcbiOstrstreamToString(out);
-                            LOG_POST("T" << idx << ": " << msg);
+                            LOG_POST(SetPostFlags(eDPF_DateTime|eDPF_TID)<<msg);
                         }
 
                         _ASSERT(annot_it.size() == annots.size());
@@ -506,10 +508,10 @@ bool CTestOM::Thread_Run(int idx)
             catch (CLoaderException& e) {
                 if ( m_verbose ) {
                     string msg = CNcbiOstrstreamToString(out);
-                    LOG_POST("T" << idx << ": " << msg);
+                    LOG_POST(SetPostFlags(eDPF_DateTime|eDPF_TID)<<msg);
                 }
-                LOG_POST("T" << idx << ": id = " << sih.AsString() <<
-                         ": EXCEPTION = " << e.what());
+                LOG_POST(SetPostFlags(eDPF_DateTime|eDPF_TID)<<
+                         "id = "<<sih<<": EXCEPTION = "<<e.what());
                 ok = false;
                 if ( e.GetErrCode() == CLoaderException::eNoConnection ) {
                     break;
@@ -521,10 +523,10 @@ bool CTestOM::Thread_Run(int idx)
             catch (exception& e) {
                 if ( m_verbose ) {
                     string msg = CNcbiOstrstreamToString(out);
-                    LOG_POST("T" << idx << ": " << msg);
+                    LOG_POST(SetPostFlags(eDPF_DateTime|eDPF_TID)<<msg);
                 }
-                LOG_POST("T" << idx << ": id = " << sih.AsString() <<
-                         ": EXCEPTION = " << e.what());
+                LOG_POST(SetPostFlags(eDPF_DateTime|eDPF_TID)<<
+                         "id = "<<sih<<": EXCEPTION = "<<e.what());
                 if ( m_lds_db.empty() ) ok = false;
                 if ( ++error_count > m_max_errors ) {
                     ok = false;
