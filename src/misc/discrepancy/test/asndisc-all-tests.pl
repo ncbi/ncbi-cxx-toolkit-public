@@ -69,18 +69,20 @@ foreach my $test (sort keys %tests)
 { my $cmd = "$script $test -c $exe_c -cpp $exe_cpp";
   $cmd = "$cmd -keep" if $keep_output;
   $cmd = "$cmd -quiet" if $quiet;
+  print "##teamcity[testStarted name='$test' captureStandardOutput='true']\n";
   open(OLD_STDOUT, '>&STDOUT') if $quiet;
   open(STDOUT, '>/dev/null') if $quiet;
-  print STDERR "\nRUNNING: $cmd\n" unless $quiet;
   my $result = system($cmd);
   open(STDOUT, '>&OLD_STDOUT') if $quiet;
+  print "##teamcity[testFinished name='$test']\n";
 
   if ($result)
-  { print "$test: FAIL!\n";
+  { ##print "$test: FAIL!\n";
+    print "##teamcity[testFailed name='$test' message='$result']\n";
     $fail++;
   }
   else
-  { print "$test: PASS!\n";
+  { print "$test: PASS!\n\n";
     $pass++;
   }
 }
