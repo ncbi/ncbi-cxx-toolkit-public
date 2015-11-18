@@ -2695,8 +2695,9 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
     typedef vector<const CTSE_Chunk_Info*> TStubs;
     typedef map<const CTSE_Split_Info*, CTSE_Split_Info::TChunkIds> TStubMap;
     TStubs stubs;
+    bool restart = false;
     do {
-        if ( !stubs.empty() ) {
+        if ( restart ) {
             _ASSERT(!enough);
 
             TStubMap stubmap;
@@ -2706,6 +2707,7 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
                     push_back(chunk.GetChunkId());
             }
             stubs.clear();
+            restart = false;
 
             // Release lock for tse update:
             guard.Release();
@@ -2770,11 +2772,12 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
 
                     if ( annot_info.IsChunkStub() ) {
                         const CTSE_Chunk_Info& chunk = annot_info.GetChunk_Info();
-                        if ( !chunk.NotLoaded() ) {
+                        if ( !chunk.NotLoaded() && !tse.x_DirtyAnnotIndex() ) {
                             // Skip chunk stub
                             continue;
                         }
-                        if ( stubs.empty() ) {
+                        if ( !restart ) {
+                            restart = true;
                             // New annot objects are to be loaded,
                             // so we'll need to restart scan of current range.
                             // Forget already found objects
@@ -2783,9 +2786,11 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
                             // Update start index for the new search
                             from_idx = index;
                         }
-                        stubs.push_back(&chunk);
+                        if ( chunk.NotLoaded() ) {
+                            stubs.push_back(&chunk);
+                        }
                     }
-                    if ( !stubs.empty() ) {
+                    if ( restart ) {
                         _ASSERT(!enough);
                         continue;
                     }
@@ -2867,7 +2872,7 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
                             x_SearchLoc(ref_rmap, &*locs_cvt, &tseh);
                         }
                         if ( x_NoMoreObjects() ) {
-                            _ASSERT(stubs.empty());
+                            _ASSERT(!restart);
                             enough = true;
                             break;
                         }
@@ -2935,21 +2940,21 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
                                     aoit->second.m_AnnotLocationIndex);
                     }
                     if ( x_NoMoreObjects() ) {
-                        _ASSERT(stubs.empty());
+                        _ASSERT(!restart);
                         enough = true;
                         break;
                     }
                 }
                 if ( enough ) {
-                    _ASSERT(stubs.empty());
+                    _ASSERT(!restart);
                     break;
                 }
-                if ( !stubs.empty() ) {
+                if ( restart ) {
                     _ASSERT(!enough);
                     continue;
                 }
             }
-            if ( !stubs.empty() ) {
+            if ( restart ) {
                 _ASSERT(!enough);
                 continue;
             }
@@ -2960,15 +2965,15 @@ void CAnnot_Collector::x_SearchRange(const CTSE_Handle&    tseh,
                                 m_AnnotSet.end());
             }
             if ( enough ) {
-                _ASSERT(stubs.empty());
+                _ASSERT(!restart);
                 break;
             }
         }
         if ( enough ) {
-            _ASSERT(stubs.empty());
+            _ASSERT(!restart);
             break;
         }
-    } while ( !stubs.empty() );
+    } while ( restart );
 }
 
 
