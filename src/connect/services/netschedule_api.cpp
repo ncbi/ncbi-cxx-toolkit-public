@@ -696,7 +696,8 @@ void CNetScheduleServerListener::OnInit(
                         "affinity_list", CConfig::eErr_NoThrow, kEmptyStr);
 
                 if (!affinity_list.empty()) {
-                    NStr::Split(affinity_list, ", ", ns_impl->m_AffinityList);
+                    NStr::Split(affinity_list, ", ", ns_impl->m_AffinityList,
+                            NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
                     ITERATE(list<string>, it, ns_impl->m_AffinityList) {
                         SNetScheduleAPIImpl::VerifyAffinityAlphabet(*it);
                     }

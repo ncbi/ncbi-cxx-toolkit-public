@@ -158,7 +158,8 @@ string g_FindDataFile(const CTempString& name, CDirEntry::EType type)
         TNCBIDataDir dir;
 
         if ( !path.Get().empty() ) {
-            NStr::Split(path.Get(), kDelim, dirs);
+            NStr::Split(path.Get(), kDelim, dirs,
+                    NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
         }
         if ( !dir.Get().empty() ) {
             dirs.push_back(dir.Get());

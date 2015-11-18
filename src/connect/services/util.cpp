@@ -78,7 +78,8 @@ inline SCmdLineArgListImpl::SCmdLineArgListImpl(
 inline SCmdLineArgListImpl::SCmdLineArgListImpl(const string& args) :
     m_File(NULL)
 {
-    NStr::Split(args, CCmdLineArgList::GetDelimiterString(), m_Args);
+    NStr::Split(args, CCmdLineArgList::GetDelimiterString(), m_Args,
+            NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 }
 
 SCmdLineArgListImpl::~SCmdLineArgListImpl()

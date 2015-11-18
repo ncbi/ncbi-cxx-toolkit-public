@@ -391,8 +391,10 @@ CRemoteAppLauncher::CRemoteAppLauncher(const string& sec_name,
     m_IncludeEnv.clear();
     m_AddedEnv.clear();
 
-    NStr::Split(reg.GetString("env_inherit", "exclude", "")," ;,", m_ExcludeEnv);
-    NStr::Split(reg.GetString("env_inherit", "include", "")," ;,", m_IncludeEnv);
+    NStr::Split(reg.GetString("env_inherit", "exclude", "")," ;,", m_ExcludeEnv,
+            NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
+    NStr::Split(reg.GetString("env_inherit", "include", "")," ;,", m_IncludeEnv,
+            NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
     list<string> added_env;
     reg.EnumerateEntries("env_set", &added_env);

@@ -218,7 +218,8 @@ int CNSSubmitRemoteJobApp::Run(void)
         }
         list<string> tfiles;
         if (args["tfiles"]) {
-            NStr::Split(args["tfiles"].AsString(), ";", tfiles);
+            NStr::Split(args["tfiles"].AsString(), ";", tfiles,
+                    NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
         }
         request.SetCmdLine(cmd);
         if (tfiles.size() != 0) {
@@ -275,7 +276,8 @@ int CNSSubmitRemoteJobApp::Run(void)
             string files = s_FindParam(line, "tfiles=\"");
             if (files.size() != 0) {
                 list<string> tfiles;
-                NStr::Split(files, ";", tfiles);
+                NStr::Split(files, ";", tfiles,
+                        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
                 if (tfiles.size() != 0) {
                     ITERATE(list<string>, s, tfiles) {
                         request.AddFileForTransfer(*s);

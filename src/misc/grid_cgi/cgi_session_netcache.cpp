@@ -92,7 +92,8 @@ bool CCgiSession_NetCache::LoadSession(const string& sessionid)
     }
     m_SessionId = sessionid;
     list<string> pairs;
-    NStr::Split(master_value, ";", pairs);
+    NStr::Split(master_value, ";", pairs,
+            NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     ITERATE(list<string>, it, pairs) {
         string blobid, blobname;
         NStr::SplitInTwo(*it, "|", blobname, blobid);

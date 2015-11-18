@@ -55,7 +55,8 @@ struct SOptionOrCommandInfo : public CObject
 {
     SOptionOrCommandInfo(int id, const string& name_variants) : m_Id(id)
     {
-        NStr::Split(name_variants, "|", m_NameVariants);
+        NStr::Split(name_variants, "|", m_NameVariants,
+                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     }
 
     const string& GetPrimaryName() const {return m_NameVariants.front();}
