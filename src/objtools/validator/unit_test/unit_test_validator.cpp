@@ -9654,12 +9654,16 @@ BOOST_AUTO_TEST_CASE(Test_PKG_GenomicProductPackagingProblem)
     expected_errors[0]->SetSeverity(eDiag_Critical);
     expected_errors[0]->SetAccession("good");
     expected_errors[0]->SetErrMsg("Seq-annot packaged directly on genomic product set");
+    /*
     expected_errors.push_back(new CExpectedError("good", eDiag_Critical, "FeaturePackagingProblem",
         "There is 1 mispackaged feature in this record."));
+    */
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+    /*
     delete expected_errors[1];
     expected_errors.pop_back();
+    */
 
     scope.RemoveTopLevelSeqEntry(seh);
     entry->SetSet().ResetAnnot();
