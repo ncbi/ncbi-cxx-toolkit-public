@@ -10,10 +10,11 @@ my $exe_c = 'asndisc';
 my $exe_cpp;
 my %tests;
 my $keep_output;
+my $quiet;
 
 my $usage = <<"<<END>>";
 USAGE:
-      $exe <TEST_NAME> [-c <c-version-exe>] [-cpp <cpp-version-exe>] [-keep]
+      $exe <TEST_NAME> [-c <c-version-exe>] [-cpp <cpp-version-exe>] [-keep] [-quiet]
 <<END>>
 
 for (my $n = 0; $n < scalar @ARGV; $n++)
@@ -29,6 +30,10 @@ for (my $n = 0; $n < scalar @ARGV; $n++)
   }
   if ($ARGV[$n] eq '-keep')
   { $keep_output = 1;
+    next;
+  }
+  if ($ARGV[$n] eq '-quiet')
+  { $quiet = 1;
     next;
   }
   if ($test eq '')
@@ -67,16 +72,21 @@ my $out_cpp = "$test.cpp.txt";
 my $gold = File::Spec->catfile($path, 'test-data', $tests{$test}{gold}) if $tests{$test}{gold} ne '';
 my $data = $tests{$test}{data};
 
-open(OLD_STDOUT, '>&STDOUT');
-open(STDOUT, '>/dev/null');
 my $cmd = "$exe_cpp -e $arg -i $input -o $out_cpp";
+open(OLD_STDOUT, '>&STDOUT') if $quiet;
+open(STDOUT, '>/dev/null') if $quiet;
 my $result = system($cmd);
-open(STDOUT, '>&OLD_STDOUT');
+open(STDOUT, '>&OLD_STDOUT') if $quiet;
 die "Error running $exe_cpp\n" if $result;
 
 if ($gold eq '')
-{ $cmd = "$exe_c -e $arg0 -i $input -o $out_c";
-  die "Error running $exe_c\n" if system($cmd);
+{
+  $cmd = "$exe_c -e $arg0 -i $input -o $out_c";
+  open(OLD_STDOUT, '>&STDOUT') if $quiet;
+  open(STDOUT, '>/dev/null') if $quiet;
+  my $result = system($cmd);
+  open(STDOUT, '>&OLD_STDOUT') if $quiet;
+  die "Error running $exe_c\n" if $result;
   $gold = $out_c;
 }
 

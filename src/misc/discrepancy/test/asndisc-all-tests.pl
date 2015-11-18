@@ -9,11 +9,12 @@ my $exe_c = 'asndisc';
 my $exe_cpp;
 my %tests;
 my $keep_output;
+my $quiet;
 my $script = 'asndisc-test.pl';
 
 my $usage = <<"<<END>>";
 USAGE:
-      $exe [-c <c-version-exe>] [-cpp <cpp-version-exe>] [-keep]
+      $exe [-c <c-version-exe>] [-cpp <cpp-version-exe>] [-keep] [-quiet]
 <<END>>
 
 for (my $n = 0; $n < scalar @ARGV; $n++)
@@ -25,6 +26,10 @@ for (my $n = 0; $n < scalar @ARGV; $n++)
   if ($ARGV[$n] eq '-cpp')
   { $n++;
     $exe_cpp = $ARGV[$n];
+    next;
+  }
+  if ($ARGV[$n] eq '-quiet')
+  { $quiet = 1;
     next;
   }
   if ($ARGV[$n] eq '-keep')
@@ -63,11 +68,12 @@ my $fail = 0;
 foreach my $test (sort keys %tests)
 { my $cmd = "$script $test -c $exe_c -cpp $exe_cpp";
   $cmd = "$cmd -keep" if $keep_output;
+  $cmd = "$cmd -quiet" if $quiet;
   #print STDERR "running: $cmd\n";
-  open(OLD_STDOUT, '>&STDOUT');
-  open(STDOUT, '>/dev/null');
+  open(OLD_STDOUT, '>&STDOUT') if $quiet;
+  open(STDOUT, '>/dev/null') if $quiet;
   my $result = system($cmd);
-  open(STDOUT, '>&OLD_STDOUT');
+  open(STDOUT, '>&OLD_STDOUT') if $quiet;
 
   if ($result)
   { print "$test: FAIL!\n";
@@ -82,3 +88,5 @@ foreach my $test (sort keys %tests)
 my $total = $pass + $fail;
 print "\nPASS: $pass of $total\n";
 print "FAIL: $fail\n" if $fail;
+
+die print "FAIL: $fail of $total\n" if $fail;
