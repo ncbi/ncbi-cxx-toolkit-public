@@ -10,7 +10,6 @@ my $exe_cpp;
 my %tests;
 my $keep_output;
 my $quiet;
-my $script = 'asndisc-test.pl';
 
 my $usage = <<"<<END>>";
 USAGE:
@@ -41,6 +40,7 @@ for (my $n = 0; $n < scalar @ARGV; $n++)
 die $usage if $exe_c eq '' || $exe_cpp eq '';
 
 my $testdata = File::Spec->catfile($path, 'test-data.txt');
+my $script = File::Spec->catfile($path, 'asndisc-test.pl');
 
 open DATA, "<$testdata" or die "Cannot open $testdata\n";
 my @lines = <DATA>; close DATA;
@@ -69,9 +69,9 @@ foreach my $test (sort keys %tests)
 { my $cmd = "$script $test -c $exe_c -cpp $exe_cpp";
   $cmd = "$cmd -keep" if $keep_output;
   $cmd = "$cmd -quiet" if $quiet;
-  #print STDERR "running: $cmd\n";
   open(OLD_STDOUT, '>&STDOUT') if $quiet;
   open(STDOUT, '>/dev/null') if $quiet;
+  print STDERR "\nRUNNING: $cmd\n" unless $quiet;
   my $result = system($cmd);
   open(STDOUT, '>&OLD_STDOUT') if $quiet;
 
