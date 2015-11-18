@@ -68,7 +68,7 @@ static const double k_Min_Percent_Identity = 0.64999;
 static const int k_MaxReliableGapNum = 3;
 
 COligoSpecificityTemplate::COligoSpecificityTemplate(const CBioseq_Handle& template_handle,
-                                               const CSeq_align_set& input_seqalign,
+                                               CSeq_align_set& input_seqalign,
                                                CScope &scope,
                                                int word_size,
                                                TSeqPos allowed_total_mismatch,
@@ -1952,13 +1952,13 @@ void COligoSpecificityCheck::CheckSpecificity(const vector<SPrimerInfo>& primer_
 
 ///Place alignment from the same id into one holder.  Split the alignment in each holder
 /// into plus or minus strand and sort them by alignment start in ascending order
-void COligoSpecificityTemplate::x_SortHit(const CSeq_align_set& input_hits)
+void COligoSpecificityTemplate::x_SortHit(CSeq_align_set& input_hits)
 {
     CConstRef<CSeq_id> previous_id, subid;
     bool is_first_aln = true;
     TSortedHsp each_hit; //first element for plus strand, second element for minus strand
    
-    ITERATE(CSeq_align_set::Tdata, iter, input_hits.Get()) {
+    NON_CONST_ITERATE(CSeq_align_set::Tdata, iter, input_hits.Set()) {
         subid = &((*iter)->GetSeq_id(1));
         if (!is_first_aln && !subid->Match(*previous_id)) {
             //this aln is a new id, save  for the same seqid
@@ -1973,12 +1973,9 @@ void COligoSpecificityTemplate::x_SortHit(const CSeq_align_set& input_hits)
         }
         SHspInfo* temp = new SHspInfo;
         if ((*iter)->GetSeqStrand(0) == eNa_strand_minus) {
-            CRef<CSeq_align> new_align(new CSeq_align);
-            new_align->Assign(**iter);
-            //we deal with plus strand on master all the time
-            new_align->Reverse();
-          
-            temp ->hsp = new_align;
+           
+            (*iter)->Reverse();
+            temp ->hsp = *iter;
             each_hit.second.push_back(temp);
         } else {
             

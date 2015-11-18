@@ -84,7 +84,7 @@ public:
     ///@param allow_transcript_variants: a transcript variant from same gene 
     ///as the input template will not be reported as non-specific primer hit.
     COligoSpecificityTemplate(const CBioseq_Handle& template_handle,
-                           const CSeq_align_set& input_seqalign,
+                              CSeq_align_set& input_seqalign,
                            CScope& scope,
                            int word_size,
                            TSeqPos allowed_total_mismatch = 1,
@@ -183,7 +183,7 @@ private:
     vector<TSortedHsp> m_SortHit;      
   
     ///sort the hit
-    void x_SortHit(const CSeq_align_set& input);
+    void x_SortHit(CSeq_align_set& input);
 
     ///the requested target max length 
     TSeqPos m_TargetSizeMax;
