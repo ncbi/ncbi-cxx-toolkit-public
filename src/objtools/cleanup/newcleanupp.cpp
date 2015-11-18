@@ -1740,6 +1740,17 @@ void CNewCleanup_imp::BiosourceBC (
         string &name = GET_MUTABLE(subsrc, Name);
         s_CorrectTildes(name);
     }
+
+    if (biosrc.IsSetOrg()) {
+        if (biosrc.GetOrg().IsSetOrgname()) {
+            OrgnameBC(biosrc.SetOrg().SetOrgname(), biosrc.SetOrg());
+        }
+    }
+
+    x_PostBiosource(biosrc);
+    if (biosrc.IsSetOrg()) {
+        x_PostOrgRef(biosrc.SetOrg());
+    }
 }
 
 void CNewCleanup_imp::x_PostBiosource( CBioSource& biosrc )
@@ -1974,6 +1985,17 @@ void CNewCleanup_imp::x_PostOrgRef( COrg_ref& org )
         UNIQUE_SYN_ON_ORGREF (org, s_OrgrefSynEqual);
         ChangeMade (CCleanupChange::eCleanOrgref);
     }
+
+    // sort/unique org.mod
+    if (!MOD_ON_ORGREF_IS_SORTED(org, s_OrgrefSynCompare)) {
+        SORT_MOD_ON_ORGREF(org, s_OrgrefSynCompare);
+        ChangeMade(CCleanupChange::eCleanOrgref);
+    }
+    if (!MOD_ON_ORGREF_IS_UNIQUE(org, s_OrgrefSynEqual)) {
+        UNIQUE_MOD_ON_ORGREF(org, s_OrgrefSynEqual);
+        ChangeMade(CCleanupChange::eCleanOrgref);
+    }
+
 }
 
 // is om1 < om2
@@ -5143,6 +5165,7 @@ void CNewCleanup_imp::BioSourceEC(CBioSource& biosrc)
 void CNewCleanup_imp::x_AddEnvSamplOrMetagenomic(CBioSource& biosrc)
 {
     // add environmental_sample or metagenomic based on lineage or div
+
     if ( biosrc.IsSetOrg() && biosrc.GetOrg().IsSetOrgname()) {
         bool needs_env_sample = false;
         bool needs_metagenomic = false;
@@ -10389,6 +10412,7 @@ void CNewCleanup_imp::x_FixStructuredCommentKeywords( CBioseq & bioseq )
 
     vector<string> new_keywords;
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(bioseq);
+    CFeat_CI f(bsh);
     for (CSeqdesc_CI di(bsh, CSeqdesc::e_User); di; ++di) {
         const CUser_object& usr = di->GetUser();
         if ( ! CComment_rule::IsStructuredComment (usr) ) continue;
@@ -11371,6 +11395,7 @@ void CNewCleanup_imp::CreateMissingMolInfo( CBioseq& seq )
     if (seq.IsSetInst() && seq.GetInst().IsSetMol()) {
         bool is_product = false;
         CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+        CFeat_CI f(bsh);
         CBioseq_set_Handle p = bsh.GetParentBioseq_set();
         if (p && p.IsSetClass() && p.GetClass() == CBioseq_set::eClass_nuc_prot) {
             p = p.GetParentBioseq_set();
@@ -11908,6 +11933,7 @@ void CNewCleanup_imp::x_MergeDupBioSources(CSeq_descr & seq_descr)
                     (*src2)->GetSource().GetOrg().IsSetTaxname() &&
                     NStr::Equal((*src1)->GetSource().GetOrg().GetTaxname(), (*src2)->GetSource().GetOrg().GetTaxname())) {
                     x_MergeDupBioSources((*src1)->SetSource(), (*src2)->GetSource());
+                    BiosourceBC((*src1)->SetSource());
                     src2 = seq_descr.Set().erase(src2);
                     ChangeMade(CCleanupChange::eRemoveDescriptor);
                 } else {
