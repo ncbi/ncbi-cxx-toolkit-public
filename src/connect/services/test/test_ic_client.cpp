@@ -153,18 +153,18 @@ static int s_Run()
     BOOST_REQUIRE(!hb);
     }}
 
+    char test_buf[240];
 
     NcbiCout << "stress write" << NcbiEndl;
 
     // stress write
     {{
-    char test_buf[240];
-    size_t test_size = sizeof(test_buf);
-    for (int i = 0; i < 100; ++i) {
-        string key = "TEST_IC_CLIENT_KEY_" + NStr::IntToString(i) + "_" + uid;
-        cl.Store(key, 0, subkey, test_buf, test_size);
-        cl.Remove(key, 0, subkey);
-    }
+        size_t test_size = sizeof(test_buf);
+        for (int i = 0; i < 100; ++i) {
+            string key = "TEST_IC_CLIENT_KEY_" + NStr::IntToString(i) + "_" + uid;
+            cl.Store(key, 0, subkey, test_buf, test_size);
+            cl.Remove(key, 0, subkey);
+        }
     }}
 
     NcbiCout << "check reader/writer" << NcbiEndl;
@@ -175,10 +175,9 @@ static int s_Run()
         writer1->Write(str.c_str(), str.size());
         }
         size_t size = cl.GetSize(key1, version, subkey);
-        vector<unsigned char> test_buf(1000);
-        cl.Read(key1, version, subkey, &test_buf[0], test_buf.size());
-        cout << size << endl << string((char*)&test_buf[0],
-            test_buf.size()) << endl;
+        BOOST_REQUIRE(size <= sizeof(test_buf));
+        BOOST_REQUIRE(cl.Read(key1, version, subkey, test_buf, sizeof(test_buf)));
+        cout << size << endl << string(test_buf, size) << endl;
         cl.Remove(key1, version, subkey);
     }}
 
