@@ -28,7 +28,7 @@ export GENBANK_ID2_DEBUG
 
 exitcode=0
 for mode in "" "-no_reset" "-keep_handles" "-no_reset -keep_handles"; do
-    for file in test_objmgr_data.id*; do
+    for file in test_objmgr_data.id?; do
         echo "Testing: $@ $mode -idlist $file"
         $CHECK_EXEC "$@" $mode -idlist "$file"
         error=$?
@@ -42,5 +42,19 @@ for mode in "" "-no_reset" "-keep_handles" "-no_reset -keep_handles"; do
         fi
     done
 done
-
+if test -f test_objmgr_data.id_wgs?; then
+    for file in test_objmgr_data.id_wgs?; do
+        echo "Testing: $@ -idlist $file"
+        $CHECK_EXEC "$@" -idlist "$file"
+        error=$?
+        if test $error -ne 0; then
+            echo "$@ -idlist $file failed: $error"
+            exitcode=$error
+            case $error in
+                # signal 1 (HUP), 2 (INTR), 9 (KILL), or 15 (TERM).
+                129|130|137|143) echo "Apparently killed"; break 1 ;;
+            esac
+        fi
+    done
+fi
 exit $exitcode
