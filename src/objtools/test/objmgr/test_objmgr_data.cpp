@@ -121,6 +121,7 @@ protected:
     bool m_no_named;
     bool m_no_external;
     bool m_adaptive;
+    bool m_complete;
     int  m_pause;
     CRef<CPrefetchManager> m_prefetch_manager;
     bool m_verbose;
@@ -318,7 +319,7 @@ bool CTestOM::Thread_Run(int idx)
     else if ( idx%4 == 1 ) {
         sel.SetOverlapType(sel.eOverlap_Intervals);
     }
-    
+
     size_t seq_count = 0, all_ids_count = 0;
     size_t all_feat_count = 0, all_desc_count = 0;
     bool ok = true;
@@ -643,6 +644,9 @@ bool CTestOM::Thread_Run(int idx)
                         _ASSERT(annots == annots2);
                     }
                 }
+                if ( m_complete ) {
+                    handle.GetTopLevelEntry().GetCompleteObject();
+                }
                 if ( m_selective_reset ) {
                     scope.ResetHistory();
                     CAnnot_CI annot_it(handle);
@@ -746,6 +750,7 @@ bool CTestOM::TestApp_Args( CArgDescriptions& args)
     args.AddFlag("no_named", "Exclude features from named Seq-annots");
     args.AddFlag("no_external", "Exclude all external annotations");
     args.AddFlag("adaptive", "Use adaptive depth for feature iteration");
+    args.AddFlag("complete", "Load complete entries");
     args.AddFlag("verbose", "Print each Seq-id before processing");
     args.AddFlag("get_acc", "Get accession.version only");
     args.AddFlag("get_gi", "Get gi only");
@@ -849,6 +854,7 @@ bool CTestOM::TestApp_Init(void)
     m_no_named = args["no_named"];
     m_no_external = args["no_external"];
     m_adaptive = args["adaptive"];
+    m_complete = args["complete"];
     m_pause    = args["pause"].AsInteger();
 #ifdef NCBI_THREADS
     if ( args["prefetch"] ) {
