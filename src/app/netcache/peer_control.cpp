@@ -207,7 +207,7 @@ CNCPeerControl::CNCPeerControl(Uint8 srv_id)
     string hostport( CNCDistributionConf::GetPeerNameOrEmpty(m_SrvId));
     if (!hostport.empty()) {
         list<CTempString> srv_fields;
-        NStr::Split(hostport, ":", srv_fields);
+        ncbi_NStr_Split(hostport, ":", srv_fields);
         if (srv_fields.size() == 2) {
             m_Hostname = srv_fields.front();
         }

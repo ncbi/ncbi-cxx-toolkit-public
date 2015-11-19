@@ -33,7 +33,6 @@
 
 
 #include <corelib/guard.hpp>
-#include <common/ncbi_source_ver.h>
 
 
 BEGIN_NCBI_SCOPE

@@ -43,6 +43,7 @@
 #define CORELIB___NCBIMEMPOOL__HPP
 #define CORELIB___NCBI_OS_MSWIN_P__HPP
 #define CORELIB___NCBI_STACK__HPP
+#include <common/ncbi_source_ver.h>
 #include <corelib/ncbistl.hpp>
 #include <corelib/ncbitype.h>
 #include <corelib/ncbistre.hpp>

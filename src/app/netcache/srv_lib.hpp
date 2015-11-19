@@ -57,6 +57,12 @@ struct SSystemMutex;
 # define _DEBUG_ARG(arg)
 #endif
 
+#if NCBI_DEVELOPMENT_VER >= 20151116
+#define ncbi_NStr_Split(a,b,c)  NStr::Split(a,b,c, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate)
+#else
+#define ncbi_NStr_Split(a,b,c) NStr::Split(a,b,c);
+#endif
+
 class CDiagCompileInfo
 {
 public:

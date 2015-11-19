@@ -1271,7 +1271,7 @@ CNCActiveHandler::x_ReadFoundMeta(void)
         return &CNCActiveHandler::x_FinishCommand;
 
     list<CTempString> params;
-    NStr::Split(m_Response, " ", params);
+    ncbi_NStr_Split(m_Response, " ", params);
     if (params.size() < 5)
         return &CNCActiveHandler::x_ProcessProtocolError;
 
@@ -1665,7 +1665,7 @@ CNCActiveHandler::State
 CNCActiveHandler::x_ReadSyncStartAnswer(void)
 {
     list<CTempString> tokens;
-    NStr::Split(m_Response, " ", tokens);
+    ncbi_NStr_Split(m_Response, " ", tokens);
     if (tokens.size() != 2  &&  tokens.size() != 3)
         return &CNCActiveHandler::x_ProcessProtocolError;
 
@@ -1910,7 +1910,7 @@ CNCActiveHandler::State
 CNCActiveHandler::x_ReadSyncGetAnswer(void)
 {
     list<CTempString> tokens;
-    NStr::Split(m_Response, " ", tokens);
+    ncbi_NStr_Split(m_Response, " ", tokens);
     if (tokens.size() != 11) {
         return &CNCActiveHandler::x_ProcessProtocolError;
     }
@@ -2011,7 +2011,7 @@ CNCActiveHandler::x_ReadSyncProInfoAnswer(void)
     }
 
     list<CTempString> tokens;
-    NStr::Split(m_Response, " ", tokens);
+    ncbi_NStr_Split(m_Response, " ", tokens);
     if (tokens.size() != 7)
         return &CNCActiveHandler::x_ProcessProtocolError;
 
@@ -2048,13 +2048,13 @@ CNCActiveHandler::x_ReadPeerVersion(void)
     Uint8 ver = 0;
     try {
         list<CTempString> tokens;
-        NStr::Split(m_Response, "&", tokens);
+        ncbi_NStr_Split(m_Response, "&", tokens);
         ITERATE( list<CTempString>, t, tokens) {
             if (NStr::StartsWith(*t, "protocol_version")) {
                 CTempString one, two;
                 if (NStr::SplitInTwo(*t, "=", one, two)) {
                     list<CTempString> v;
-                    NStr::Split(two, ".", v);
+                    ncbi_NStr_Split(two, ".", v);
                     if (v.size() >= 3) {
                         for (int i=0; i<3; ++i) {
                             ver = ver * 100 + NStr::StringToUInt8( v.front());

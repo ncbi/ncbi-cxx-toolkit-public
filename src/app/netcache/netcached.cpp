@@ -435,7 +435,7 @@ static void
 s_ReadPerClientConfig(const CNcbiRegistry& reg)
 {
     string spec_prty = reg.Get(kNCReg_ServerSection, kNCReg_SpecPriority);
-    NStr::Tokenize(spec_prty, ", \t\r\n", s_SpecPriority, NStr::eMergeDelims);
+    ncbi_NStr_Split(spec_prty, ", \t\r\n", s_SpecPriority);
 
     SNCSpecificParams* main_params = new SNCSpecificParams;
     main_params->disable         = false;

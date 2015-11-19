@@ -257,7 +257,7 @@ CNCDistributionConf::InitMirrorConfig(const CNcbiRegistry& reg, string& err_mess
 
         string srv_name = reg_value;
         list<CTempString> srv_fields;
-        NStr::Split(reg_value, ":", srv_fields);
+        ncbi_NStr_Split(reg_value, ":", srv_fields);
         if (srv_fields.size() != 3) {
             err_message = srv_name + ": Invalid peer server specification";
             goto do_error;
