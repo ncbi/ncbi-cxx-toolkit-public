@@ -1099,6 +1099,42 @@ int CID2WGSProcessor_Impl::GetHash(SWGSSeqInfo& seq)
 }
 
 
+TSeqPos CID2WGSProcessor_Impl::GetLength(SWGSSeqInfo& seq)
+{
+    if ( !seq ) {
+        return kInvalidSeqPos;
+    }
+    if ( seq.IsContig() ) {
+        return GetContigIterator(seq).GetSeqLength();
+    }
+    if ( seq.IsScaffold() ) {
+        return GetScaffoldIterator(seq).GetSeqLength();
+    }
+    if ( seq.IsProtein() ) {
+        return GetProteinIterator(seq).GetSeqLength();
+    }
+    return kInvalidSeqPos;
+}
+
+
+CSeq_inst::TMol CID2WGSProcessor_Impl::GetType(SWGSSeqInfo& seq)
+{
+    if ( !seq ) {
+        return CSeq_inst::eMol_not_set;
+    }
+    if ( seq.IsContig() ) {
+        return CSeq_inst::eMol_na;
+    }
+    if ( seq.IsScaffold() ) {
+        return CSeq_inst::eMol_na;
+    }
+    if ( seq.IsProtein() ) {
+        return CSeq_inst::eMol_aa;
+    }
+    return CSeq_inst::eMol_not_set;
+}
+
+
 static CObject_id& s_AddSpecialId(CID2_Reply_Get_Seq_id::TSeq_id& ids,
                                   const char* name)
 {
@@ -1166,39 +1202,50 @@ CID2WGSProcessor_Impl::Resolve(TReplies& replies,
         main_reply->SetReply().SetGet_seq_id();
     reply.SetRequest(request);
     CID2_Reply_Get_Seq_id::TSeq_id& ids = reply.SetSeq_id();
-    switch ( request.GetSeq_id_type() ) {
-    case CID2_Request_Get_Seq_id::eSeq_id_type_any:
-    case CID2_Request_Get_Seq_id::eSeq_id_type_text:
+    if ( request.GetSeq_id_type() == request.eSeq_id_type_any ) {
         if ( CRef<CSeq_id> id = GetAccVer(seq) ) {
             ids.push_back(id);
         }
-        break;
-    case CID2_Request_Get_Seq_id::eSeq_id_type_gi:
+        else if ( TGi gi = GetGi(seq) ) {
+            CRef<CSeq_id> gi_id(new CSeq_id);
+            gi_id->SetGi(gi);
+            ids.push_back(gi_id);
+        }
+        else if ( CRef<CSeq_id> id = GetGeneral(seq) ) {
+            ids.push_back(id);
+        }
+    }
+    if ( request.GetSeq_id_type() & request.eSeq_id_type_text ) {
+        if ( CRef<CSeq_id> id = GetAccVer(seq) ) {
+            ids.push_back(id);
+        }
+    }
+    if ( request.GetSeq_id_type() & request.eSeq_id_type_gi ) {
         if ( TGi gi = GetGi(seq) ) {
             CRef<CSeq_id> gi_id(new CSeq_id);
             gi_id->SetGi(gi);
             ids.push_back(gi_id);
         }
-        break;
-    case CID2_Request_Get_Seq_id::eSeq_id_type_general:
+    }
+    if ( request.GetSeq_id_type() & request.eSeq_id_type_general ) {
         if ( CRef<CSeq_id> id = GetGeneral(seq) ) {
             ids.push_back(id);
         }
-        break;
-    case CID2_Request_Get_Seq_id::eSeq_id_type_all:
-        GetSeqIds(seq, ids);
-        break;
-    case CID2_Request_Get_Seq_id::eSeq_id_type_label:
+    }
+    if ( request.GetSeq_id_type() & request.eSeq_id_type_label ) {
         s_AddSpecialId(ids, "LABEL", GetLabel(seq));
-        break;
-    case CID2_Request_Get_Seq_id::eSeq_id_type_taxid:
+    }
+    if ( request.GetSeq_id_type() & request.eSeq_id_type_taxid ) {
         s_AddSpecialId(ids, "TAXID", GetTaxId(seq));
-        break;
-    case CID2_Request_Get_Seq_id::eSeq_id_type_hash:
+    }
+    if ( request.GetSeq_id_type() & request.eSeq_id_type_hash ) {
         s_AddSpecialId(ids, "HASH", GetHash(seq));
-        break;
-    default:
-        break;
+    }
+    if ( request.GetSeq_id_type() & request.eSeq_id_type_seq_length ) {
+        s_AddSpecialId(ids, "Seq-inst.length", GetLength(seq));
+    }
+    if ( request.GetSeq_id_type() & request.eSeq_id_type_seq_mol ) {
+        s_AddSpecialId(ids, "Seq-inst.mol", GetType(seq));
     }
     reply.SetEnd_of_reply();
     replies.push_back(main_reply);
