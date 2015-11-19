@@ -312,6 +312,7 @@ private:
     static bool IsFullLength(const CSeq_loc& loc, const CBioseq& seq);
     static CRef<CBioSource> BioSrcFromFeat(const CSeq_feat& f);
     void x_ConvertSrcFeatToSrcDesc(CBioseq& seq);
+    static bool x_AreBioSourcesMergeable(const CBioSource& src1, const CBioSource& src2);
     void x_MergeDupBioSources(CSeq_descr & seq_descr);
     static bool x_MergeDupOrgNames(COrgName& on1, const COrgName& add);
     static bool x_MergeDupOrgRefs(COrg_ref& org1, const COrg_ref& add);
@@ -537,6 +538,9 @@ private:
 
     void x_BioseqSetEC( CBioseq_set & bioseq_set );
     void x_BioseqSetNucProtEC( CBioseq_set & bioseq_set );
+    void x_MoveNpDBlinks(CBioseq_set& bioseq_set);
+    void x_MoveNpSrc(CBioseq_set& bioseq_set);
+    void x_MoveNpSrc(CRef<CSeqdesc>& srcdesc, CSeq_descr& descr);
     void x_MovePopPhyMutPub(CBioseq_set& bioseq_set);
     void x_RemovePub(CSeq_entry& se, const CPubdesc& pub);
     void x_RemovePub(CBioseq& seq, const CPubdesc& pub);

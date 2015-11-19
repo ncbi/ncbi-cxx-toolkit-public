@@ -1986,16 +1986,6 @@ void CNewCleanup_imp::x_PostOrgRef( COrg_ref& org )
         ChangeMade (CCleanupChange::eCleanOrgref);
     }
 
-    // sort/unique org.mod
-    if (!MOD_ON_ORGREF_IS_SORTED(org, s_OrgrefSynCompare)) {
-        SORT_MOD_ON_ORGREF(org, s_OrgrefSynCompare);
-        ChangeMade(CCleanupChange::eCleanOrgref);
-    }
-    if (!MOD_ON_ORGREF_IS_UNIQUE(org, s_OrgrefSynEqual)) {
-        UNIQUE_MOD_ON_ORGREF(org, s_OrgrefSynEqual);
-        ChangeMade(CCleanupChange::eCleanOrgref);
-    }
-
 }
 
 // is om1 < om2
@@ -11198,8 +11188,16 @@ namespace {
     };
 }
 
-void CNewCleanup_imp::x_BioseqSetNucProtEC( CBioseq_set & bioseq_set )
+void CNewCleanup_imp::x_BioseqSetNucProtEC(CBioseq_set & bioseq_set)
 {
+    x_MoveNpSrc(bioseq_set);
+    x_MoveNpDBlinks(bioseq_set);
+}
+
+
+void CNewCleanup_imp::x_MoveNpDBlinks(CBioseq_set& bioseq_set)
+{
+
     // if nuc-prot set has exactly one DBLink user-object on its
     // descendent bioseqs, move it to the nuc-prot set.
     // (identical DBLinks count as one)
@@ -11268,6 +11266,66 @@ void CNewCleanup_imp::x_BioseqSetNucProtEC( CBioseq_set & bioseq_set )
         }
     }
 }
+
+
+void CNewCleanup_imp::x_MoveNpSrc(CRef<CSeqdesc>& srcdesc, CSeq_descr& descr)
+{
+    CBioseq::TDescr::Tdata::iterator d = descr.Set().begin();
+    while (d != descr.Set().end()) {
+        bool do_remove = false;
+        if ((*d)->IsSource()) {
+            if (srcdesc && x_AreBioSourcesMergeable(srcdesc->GetSource(), (*d)->GetSource())) {
+                x_MergeDupBioSources(srcdesc->SetSource(), (*d)->GetSource());
+                do_remove = true;
+            } else if (!srcdesc) {
+                srcdesc.Reset(new CSeqdesc());
+                srcdesc->Assign(**d);
+                do_remove = true;
+            }
+        } 
+        if (do_remove) {
+            d = descr.Set().erase(d);
+        } else {
+            ++d;
+        }
+    }
+
+}
+
+
+void CNewCleanup_imp::x_MoveNpSrc(CBioseq_set& set)
+{
+    if (!set.IsSetClass() || set.GetClass() != CBioseq_set::eClass_nuc_prot ||
+        !set.IsSetSeq_set()) {
+        return;
+    }
+    
+    bool add_desc = true;
+    CRef<CSeqdesc> srcdesc(NULL);
+    if (set.IsSetDescr()) {
+        NON_CONST_ITERATE(CBioseq_set::TDescr::Tdata, it, set.SetDescr().Set()) {
+            if ((*it)->IsSource()) {
+                srcdesc = *it;
+                add_desc = false;
+            }
+        }
+    }
+    
+
+    NON_CONST_ITERATE(CBioseq_set::TSeq_set, it, set.SetSeq_set()) {
+        if ((*it)->IsSetDescr()) {
+            if ((*it)->IsSeq()) {
+                x_MoveNpSrc(srcdesc, (*it)->SetSeq().SetDescr());
+            } else if ((*it)->IsSet()) {
+                x_MoveNpSrc(srcdesc, (*it)->SetSet().SetDescr());
+            }
+        }
+    }
+    if (add_desc && srcdesc) {
+        set.SetDescr().Set().push_back(srcdesc);
+    }
+}
+
 
 bool CNewCleanup_imp::x_IsDBLinkUserObj( const CSeqdesc & desc )
 {
@@ -11854,6 +11912,13 @@ bool CNewCleanup_imp::x_MergeDupOrgRefs(COrg_ref& org1, const COrg_ref& add)
         ITERATE(COrg_ref::TMod, it, add.GetMod()) {
             org1.SetMod().push_back(*it);
         }
+        // sort/unique org.mod
+        if (!MOD_ON_ORGREF_IS_SORTED(org1, s_OrgrefSynCompare)) {
+            SORT_MOD_ON_ORGREF(org1, s_OrgrefSynCompare);
+        }
+        if (!MOD_ON_ORGREF_IS_UNIQUE(org1, s_OrgrefSynEqual)) {
+            UNIQUE_MOD_ON_ORGREF(org1, s_OrgrefSynEqual);
+        }
         any_change = true;
     }
 
@@ -11920,6 +11985,18 @@ bool CNewCleanup_imp::x_MergeDupBioSources(CBioSource& src1, const CBioSource& a
 }
 
 
+bool CNewCleanup_imp::x_AreBioSourcesMergeable(const CBioSource& src1, const CBioSource& src2)
+{
+    if (src1.IsSetOrg() && src1.GetOrg().IsSetTaxname() &&
+        src2.IsSetOrg() && src2.GetOrg().IsSetTaxname() &&
+        NStr::Equal(src1.GetOrg().GetTaxname(), src2.GetOrg().GetTaxname())) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 void CNewCleanup_imp::x_MergeDupBioSources(CSeq_descr & seq_descr)
 {
     CSeq_descr::Tdata::iterator src1 = seq_descr.Set().begin();
@@ -11929,9 +12006,7 @@ void CNewCleanup_imp::x_MergeDupBioSources(CSeq_descr & seq_descr)
             ++src2;
             while (src2 != seq_descr.Set().end()) {
                 if ((*src2)->IsSource() &&
-                    (*src2)->GetSource().IsSetOrg() &&
-                    (*src2)->GetSource().GetOrg().IsSetTaxname() &&
-                    NStr::Equal((*src1)->GetSource().GetOrg().GetTaxname(), (*src2)->GetSource().GetOrg().GetTaxname())) {
+                    x_AreBioSourcesMergeable((*src1)->GetSource(), (*src2)->GetSource())) {
                     x_MergeDupBioSources((*src1)->SetSource(), (*src2)->GetSource());
                     BiosourceBC((*src1)->SetSource());
                     src2 = seq_descr.Set().erase(src2);
