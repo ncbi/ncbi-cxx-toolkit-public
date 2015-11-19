@@ -921,14 +921,6 @@ CNetScheduleAPI::CNetScheduleAPI(const string& service_name,
 {
 }
 
-// This is for our GRID utilities only
-CNetScheduleAPI::CNetScheduleAPI(const string& service_name,
-        const string& client_name, const string& queue_name, bool wn_compatible) :
-    m_Impl(new SNetScheduleAPIImpl(service_name, client_name, queue_name,
-            wn_compatible))
-{
-}
-
 void CNetScheduleAPI::SetProgramVersion(const string& pv)
 {
     m_Impl->m_ProgramVersion = pv;
@@ -1488,6 +1480,20 @@ void CNetScheduleAPIExt::AddToClientNode(const string& data)
     client_node += ':';
     client_node += data;
     UpdateAuthString();
+}
+
+CNetScheduleAPI::TInstance
+CNetScheduleAPIExt::CreateWnCompat(const string& service_name,
+        const string& client_name)
+{
+    return new SNetScheduleAPIImpl(service_name, client_name, kEmptyStr, true);
+}
+
+CNetScheduleAPI::TInstance
+CNetScheduleAPIExt::CreateNoCfgLoad(const string& service_name,
+        const string& client_name, const string& queue_name)
+{
+    return new SNetScheduleAPIImpl(service_name, client_name, queue_name, false);
 }
 
 

@@ -317,9 +317,6 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
 
     /// @internal
     CCompoundIDPool GetCompoundIDPool();
-
-protected:
-    CNetScheduleAPI(const string&, const string&, const string&, bool);
 };
 
 

@@ -149,6 +149,12 @@ struct NCBI_XCONNECT_EXPORT CNetScheduleAPIExt : CNetScheduleAPI
 {
     CNetScheduleAPIExt(CNetScheduleAPI::TInstance api) : CNetScheduleAPI(api) {}
     void AddToClientNode(const string& data);
+
+    // Create workernode-compatible API
+    static TInstance CreateWnCompat(const string&, const string&);
+
+    // Create API with no auto config loading (from server)
+    static TInstance CreateNoCfgLoad(const string&, const string&, const string&);
 };
 
 

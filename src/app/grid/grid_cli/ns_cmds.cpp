@@ -73,9 +73,11 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
     }
 
     if (IsOptionSet(eWorkerNode)) {
-        m_NetScheduleAPI = SNsAPI(service, m_Opts.auth);
+        m_NetScheduleAPI = CNetScheduleAPIExt::CreateWnCompat(
+                service, m_Opts.auth);
     } else {
-        m_NetScheduleAPI = SNsAPI(service, m_Opts.auth, queue);
+        m_NetScheduleAPI = CNetScheduleAPIExt::CreateNoCfgLoad(
+                service, m_Opts.auth, queue);
     }
 
     if (job_provided && service_provided) {

@@ -58,14 +58,6 @@ public:
     int Run(void);
 
 private:
-    // Just a wrapper to get access to a protected constructor
-    struct SWnCompatibleNsAPI : public CNetScheduleAPI
-    {
-        SWnCompatibleNsAPI(const string& service, const string& client)
-            : CNetScheduleAPI(service, client, kEmptyStr, true)
-        {}
-    };
-
     void x_GetConnectionArgs(string& service, string& queue, int& retry,
                              bool queue_required);
     CNetScheduleAPI x_CreateNewClient(bool queue_required);
@@ -101,7 +93,7 @@ CNetScheduleAPI CNetScheduleControl::x_CreateNewClient(bool queue_required)
         return CNetScheduleAPI(service, "netschedule_admin", queue);
     }
 
-    return SWnCompatibleNsAPI(service, "netschedule_admin");
+    return CNetScheduleAPIExt::CreateWnCompat(service, "netschedule_admin");
 }
 
 void CNetScheduleControl::Init(void)

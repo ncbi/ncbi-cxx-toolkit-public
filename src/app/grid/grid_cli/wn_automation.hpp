@@ -48,7 +48,7 @@ struct SWorkerNodeAutomationObject : public SNetServiceAutomationObject
     virtual bool Call(const string& method,
             CArgArray& arg_array, CJsonNode& reply);
 
-    SNsAPI m_NetScheduleAPI;
+    CNetScheduleAPI m_NetScheduleAPI;
     CNetServer m_WorkerNode;
 };
 
