@@ -52,7 +52,9 @@
 # include <sys/mman.h>
 #endif
 
-#define __NC_CACHEDATA_ALL_MONITOR 1
+#define __NC_CACHEDATA_ALL_MONITOR 0
+// uses Boost intrusive rbtree to hold SNCCacheData (versus std::set)
+#define __NC_CACHEDATA_INTR_SET 1
 
 BEGIN_NCBI_SCOPE
 
@@ -108,6 +110,61 @@ enum EStopCause {
     eStopDiskCritical
 };
 
+
+#if __NC_CACHEDATA_INTR_SET
+struct SCacheDeadCompare
+{
+    bool operator() (const SNCCacheData& x, const SNCCacheData& y) const
+    {
+        return x.saved_dead_time < y.saved_dead_time;
+    }
+};
+
+struct SCacheKeyCompare
+{
+    bool operator() (const SNCCacheData& x, const SNCCacheData& y) const
+    {
+        return x.key < y.key;
+    }
+    bool operator() (const string& key, const SNCCacheData& y) const
+    {
+        return key < y.key;
+    }
+    bool operator() (const SNCCacheData& x, const string& key) const
+    {
+        return x.key < key;
+    }
+};
+
+typedef intr::rbtree<SNCCacheData,
+                     intr::base_hook<TTimeTableHook>,
+                     intr::constant_time_size<false>,
+                     intr::compare<SCacheDeadCompare> >     TTimeTableMap;
+typedef intr::rbtree<SNCCacheData,
+                     intr::base_hook<TKeyMapHook>,
+                     intr::constant_time_size<true>,
+                     intr::compare<SCacheKeyCompare> >      TKeyMap;
+#else  // __NC_CACHEDATA_INTR_SET
+struct SCacheDeadCompare
+{
+    bool operator() (const SNCCacheData* x, const SNCCacheData* y) const
+    {
+        return (x->saved_dead_time != y->saved_dead_time) ?
+            (x->saved_dead_time < y->saved_dead_time) : (x->key < y->key);
+    }
+};
+struct SCacheKeyCompare
+{
+    bool operator() (const SNCCacheData* x, const SNCCacheData* y) const
+    {
+        return x->key < y->key;
+    }
+};
+typedef std::set<SNCCacheData*, SCacheDeadCompare>  TTimeTableMap;
+typedef std::set<SNCCacheData*, SCacheKeyCompare>   TKeyMap;
+
+#endif  // __NC_CACHEDATA_INTR_SET
+
 struct SBucketCache
 {
     CMiniMutex   lock;
@@ -129,6 +186,23 @@ struct SAllCacheTable
     set<SNCCacheData *> all_cache_set;
 };
 typedef map<Uint2, SAllCacheTable*> TAllCacheBuckets;
+#endif
+
+#if __NC_CACHEDATA_MONITOR
+static CMiniMutex s_AllCacheLock;
+static set<SNCCacheData *> s_AllCacheSet;
+void SNCCacheData::x_Register(void)
+{
+    s_AllCacheLock.Lock();
+    s_AllCacheSet.insert(this);
+    s_AllCacheLock.Unlock();
+}
+void SNCCacheData::x_Revoke(void)
+{
+    s_AllCacheLock.Lock();
+    s_AllCacheSet.erase(this);
+    s_AllCacheLock.Unlock();
+}
 #endif
 
 
@@ -230,6 +304,7 @@ CNCBlobStorage::GetBList(const string& mask, auto_ptr<TNCBufferType>& buffer)
     ITERATE( TBucketCacheMap, bkt, s_BucketsCache) {
         SBucketCache* cache = bkt->second;
         cache->lock.Lock();
+#if __NC_CACHEDATA_INTR_SET
         TKeyMap::iterator lb = cache->key_map.lower_bound(search_mask);
         for ( ; lb != cache->key_map.end(); ++lb) {
             if (strncmp(search_mask.key.data(), lb->key.data(), search_mask.key.size())== 0) {
@@ -239,6 +314,17 @@ CNCBlobStorage::GetBList(const string& mask, auto_ptr<TNCBufferType>& buffer)
             }
             break;
         }
+#else
+        TKeyMap::iterator lb = cache->key_map.lower_bound(&search_mask);
+        for ( ; lb != cache->key_map.end(); ++lb) {
+            if (strncmp(search_mask.key.data(), (*lb)->key.data(), search_mask.key.size())== 0) {
+                string bkey( NStr::Replace((*lb)->key,"\1",","));
+                buffer->append(bkey.data(), bkey.size()).append("\n",1);
+                continue;
+            }
+            break;
+        }
+#endif
         cache->lock.Unlock();
     }
 
@@ -1175,9 +1261,14 @@ void CNCBlobStorage::WriteBlobStat(CSrvSocketTask& task)
         SBucketCache* cache = bkt->second;
         cache->lock.Lock();
         ITERATE(TKeyMap, it, cache->key_map) {
-            expire = max( expire, it->dead_time); 
             ++cache_count;
+#if __NC_CACHEDATA_INTR_SET
+            expire = max( expire, it->dead_time); 
             ++blob_per_file[it->coord.file_id];
+#else
+            expire = max( expire, (*it)->dead_time); 
+            ++blob_per_file[(*it)->coord.file_id];
+#endif
         }
         cache->lock.Unlock();
     }
@@ -1203,6 +1294,12 @@ void CNCBlobStorage::WriteBlobStat(CSrvSocketTask& task)
         table->lock.Unlock();
     }
     task.WriteText(eol).WriteText("caches_count").WriteText( is).WriteNumber( ncaches_count);
+#endif
+#if __NC_CACHEDATA_MONITOR
+    s_AllCacheLock.Lock();
+    size_t all_caches_count = s_AllCacheSet.size();
+    s_AllCacheLock.Unlock();
+    task.WriteText(eol).WriteText("all_caches_count").WriteText( is).WriteNumber( all_caches_count);
 #endif
 
     char buf[50];
@@ -1280,7 +1377,11 @@ if (is_audit) {
             SBucketCache* cache = bkt->second;
             cache->lock.Lock();
             ITERATE(TKeyMap, it, cache->key_map) {
+#if __NC_CACHEDATA_INTR_SET
                 all_cache_data.insert(&(*it));
+#else
+                all_cache_data.insert(*it);
+#endif
             }
             cache->lock.Unlock();
         }
@@ -1456,6 +1557,7 @@ s_GetKeyCacheData(Uint2 time_bucket, const string& key, bool need_create)
     SBucketCache* cache = s_GetBucketCache(time_bucket);
     SNCCacheData* data = NULL;
     cache->lock.Lock();
+#if __NC_CACHEDATA_INTR_SET
     if (need_create) {
         TKeyMap::insert_commit_data commit_data;
         pair<TKeyMap::iterator, bool> ins_res
@@ -1487,6 +1589,32 @@ s_GetKeyCacheData(Uint2 time_bucket, const string& key, bool need_create)
             data = &*it;
         }
     }
+#else  // __NC_CACHEDATA_INTR_SET
+    SNCCacheData search_mask;
+    search_mask.key = key;
+    TKeyMap::iterator it = cache->key_map.find( &search_mask);
+    if (it != cache->key_map.end()) {
+        data = *it;
+#ifdef _DEBUG
+        if (data->time_bucket != time_bucket) {
+            abort();
+        }
+#endif
+    } else if (need_create) {
+        data = new SNCCacheData();
+        data->key = key;
+        data->time_bucket = time_bucket;
+        cache->key_map.insert(data);
+        AtomicAdd(s_CurKeysCnt, 1);
+
+#if __NC_CACHEDATA_ALL_MONITOR
+        SAllCacheTable* table = s_AllCache[time_bucket];
+        table->lock.Lock();
+        table->all_cache_set.insert(data);
+        table->lock.Unlock();
+#endif
+    }
+#endif //__NC_CACHEDATA_INTR_SET
     if (data) {
         CNCBlobStorage::ReferenceCacheData(data);
     }
@@ -1524,12 +1652,21 @@ CNCAlerts::Register(CNCAlerts::eDebugReleaseCacheData1, "ref_cnt is 0");
 #endif
 
     if (data->ref_cnt.Get() != 0  ||  !data->coord.empty()
-        ||  !((TKeyMapHook*)data)->is_linked())
+#if 0
+#if __NC_CACHEDATA_INTR_SET
+        ||  !((TKeyMapHook*)data)->is_linked()
+#endif
+#endif
+       )
     {
         cache->lock.Unlock();
         return;
     }
+#if __NC_CACHEDATA_INTR_SET
     size_t n = cache->key_map.erase(*data);
+#else
+    size_t n = cache->key_map.erase(data);
+#endif
     cache->lock.Unlock();
 
 #if __NC_CACHEDATA_ALL_MONITOR
@@ -2240,7 +2377,11 @@ CNCBlobStorage::ChangeCacheDeadTime(SNCCacheData* cache_data)
     STimeTable* table = s_TimeTables[cache_data->time_bucket];
     table->lock.Lock();
     if (cache_data->saved_dead_time != 0) {
+#if __NC_CACHEDATA_INTR_SET
         table->time_map.erase(table->time_map.iterator_to(*cache_data));
+#else
+        table->time_map.erase(cache_data);
+#endif
         AtomicSub(s_CurBlobsCnt, 1);
         if (CNCBlobStorage::IsDraining() && s_CurBlobsCnt <= 0) {
             CTaskServer::RequestShutdown(eSrvSlowShutdown);
@@ -2248,7 +2389,11 @@ CNCBlobStorage::ChangeCacheDeadTime(SNCCacheData* cache_data)
     }
     cache_data->saved_dead_time = cache_data->dead_time;
     if (cache_data->saved_dead_time != 0) {
+#if __NC_CACHEDATA_INTR_SET
         table->time_map.insert_equal(*cache_data);
+#else
+        table->time_map.insert(cache_data);
+#endif
         AtomicAdd(s_CurBlobsCnt, 1);
     }
     table->lock.Unlock();
@@ -2400,7 +2545,11 @@ CNCBlobStorage::GetLatestBlobExpire(void)
         SBucketCache* cache = bkt->second;
         cache->lock.Lock();
         ITERATE(TKeyMap, it, cache->key_map) {
+#if __NC_CACHEDATA_INTR_SET
             res = max( res, it->dead_time); 
+#else
+            res = max( res, (*it)->dead_time); 
+#endif
         }
         cache->lock.Unlock();
     }
@@ -2426,7 +2575,11 @@ CNCBlobStorage::GetFullBlobsList(Uint2 slot, TNCBlobSumList& blobs_lst, const CN
         SNCTempBlobInfo* info_ptr = (SNCTempBlobInfo*)big_block;
 
         ITERATE(TKeyMap, it, cache->key_map) {
+#if __NC_CACHEDATA_INTR_SET
             new (info_ptr) SNCTempBlobInfo(*it);
+#else
+            new (info_ptr) SNCTempBlobInfo(**it);
+#endif
             ++info_ptr;
         }
         cache->lock.Unlock();
@@ -2480,8 +2633,13 @@ CNCBlobStorage::MeasureDB(SNCStateStat& state)
         STimeTable* table = it->second;
         table->lock.Lock();
         if (!table->time_map.empty()) {
+#if __NC_CACHEDATA_INTR_SET
             state.min_dead_time = min(state.min_dead_time,
                                       table->time_map.begin()->dead_time);
+#else
+            state.min_dead_time = min(state.min_dead_time,
+                                      (*table->time_map.begin())->dead_time);
+#endif
         }
         table->lock.Unlock();
     }
@@ -2762,6 +2920,7 @@ CBlobCacher::x_CacheMetaRec(SNCDBFileInfo* file_info,
         bucket_cache = it_bucket->second;
     }
     STimeTable* time_table = s_TimeTables[time_bucket];
+#if __NC_CACHEDATA_INTR_SET
     TKeyMap::insert_commit_data commit_data;
     pair<TKeyMap::iterator, bool> ins_res =
         bucket_cache->key_map.insert_unique_check(key, SCacheKeyCompare(), commit_data);
@@ -2769,15 +2928,37 @@ CBlobCacher::x_CacheMetaRec(SNCDBFileInfo* file_info,
         bucket_cache->key_map.insert_unique_commit(*cache_data, commit_data);
         ++s_CurKeysCnt;
     }
+#else
+    TKeyMap::iterator ins_res = bucket_cache->key_map.find(cache_data);
+    if (ins_res == bucket_cache->key_map.end()) {
+        bucket_cache->key_map.insert(cache_data);
+        ++s_CurKeysCnt;
+    }
+#endif
     else {
+#if __NC_CACHEDATA_INTR_SET
         SNCCacheData* old_data = &*ins_res.first;
         bucket_cache->key_map.erase(ins_res.first);
         bucket_cache->key_map.insert_equal(*cache_data);
+#else
+        SNCCacheData* old_data = *ins_res;
+        bucket_cache->key_map.erase(old_data);
+        bucket_cache->key_map.insert(cache_data);
+#endif
 #if __NC_CACHEDATA_ALL_MONITOR
         s_AllCache[time_bucket]->all_cache_set.erase(old_data);
 #endif
         --s_CurBlobsCnt;
+#if __NC_CACHEDATA_INTR_SET
         time_table->time_map.erase(time_table->time_map.iterator_to(*old_data));
+#else
+        time_table->time_map.erase(old_data);
+#endif
+#ifdef _DEBUG
+        if (old_data->Get_ver_mgr() || old_data->ref_cnt.Get() != 0) {
+            abort();
+        }
+#endif
         if (!old_data->coord.empty()) {
             CSrvRef<SNCDBFileInfo> old_file = s_GetDBFileNoLock(old_data->coord.file_id);
             SFileIndexRec* old_ind = s_GetIndexRec(old_file, old_data->coord.rec_num);
@@ -2789,10 +2970,15 @@ CBlobCacher::x_CacheMetaRec(SNCDBFileInfo* file_info,
                 s_MoveDataToGarbage(old_ind->chain_coord, map_depth, old_data->coord, false);
             }
             s_MoveRecToGarbage(old_file, old_ind);
+            old_data->coord.clear();
         }
         delete old_data;
     }
+#if __NC_CACHEDATA_INTR_SET
     time_table->time_map.insert_equal(*cache_data);
+#else
+    time_table->time_map.insert(cache_data);
+#endif
 #if __NC_CACHEDATA_ALL_MONITOR
     s_AllCache[time_bucket]->all_cache_set.insert(cache_data);
 #endif
@@ -3249,7 +3435,7 @@ CExpiredCleaner::x_DeleteNextData(void)
     Uint2 map_size = cache_data->map_size;
     cache_data->coord.clear();
     cache_data->dead_time = 0;
-    CNCBlobVerManager* mgr = cache_data->ver_mgr;
+    CNCBlobVerManager* mgr = cache_data->Get_ver_mgr();
     if (mgr) {
         mgr->ObtainReference();
     } else {
@@ -3378,7 +3564,11 @@ CExpiredCleaner::x_CleanNextBucket(void)
         if (m_BatchSize >= s_GCBatchSize)
             break;
 
+#if __NC_CACHEDATA_INTR_SET
         SNCCacheData* cache_data = &*it;
+#else
+        SNCCacheData* cache_data = *it;
+#endif
         if (cache_data->saved_dead_time >= m_NextDead)
             break;
 
@@ -3386,6 +3576,7 @@ CExpiredCleaner::x_CleanNextBucket(void)
         if (dead_time != 0) {
             // dead_time has changed, put blob back
             if (dead_time != cache_data->saved_dead_time) {
+#if __NC_CACHEDATA_INTR_SET
                 time_map.erase(time_map.iterator_to(*cache_data));
                 cache_data->saved_dead_time = dead_time;
                 time_map.insert_equal(*cache_data);
@@ -3395,6 +3586,17 @@ CExpiredCleaner::x_CleanNextBucket(void)
                 }
                 else
                     it = time_map.begin();
+#else
+                time_map.erase(cache_data);
+                cache_data->saved_dead_time = dead_time;
+                time_map.insert(cache_data);
+                if (last_data) {
+                    it = time_map.find(last_data);
+                    ++it;
+                } else {
+                    it = time_map.begin();
+                }
+#endif
                 continue;
             }
             // increment ref counter
@@ -3461,7 +3663,7 @@ CSpaceShrinker::x_MoveRecord(void)
     SNCDataCoord new_coord;
     CSrvRef<SNCDBFileInfo> new_file;
     SFileIndexRec* new_ind;
-    if (!s_GetNextWriteCoord(m_MaxFile->type_index, //ENCDBFileType(m_MaxFile->type_index + eFileIndexMoveShift),
+    if (!s_GetNextWriteCoord(m_MaxFile->type_index,
                              m_IndRec->rec_size, new_coord, new_file, new_ind))
     {
 #ifdef _DEBUG
@@ -3548,7 +3750,7 @@ CNCAlerts::Register(CNCAlerts::eDebugMoveRecord0,"s_GetNextWriteCoord");
 
     if (!m_CurVer) {
         m_CacheData->lock.Lock();
-        if (m_CacheData->ver_mgr
+        if (m_CacheData->Get_ver_mgr()
             ||  m_IndRec->chain_coord != chain_coord
             ||  (!chain_coord.empty()  &&  s_IsIndexDeleted(chain_file, chain_ind)
                  &&  !s_IsIndexDeleted(m_MaxFile, m_IndRec)))
@@ -3687,7 +3889,7 @@ CSpaceShrinker::x_PrepareToShrink(void)
         if (this_file->used_size == 0) {
             m_FilesToDel.push_back(SrvRef(this_file));
         }
-        else /*if (need_move)*/ {
+        else if (need_move) {
             if (cur_time >= this_file->next_shrink_time) {
                 this_file->info_lock.Lock();
                 this_file->is_releasing = false;
@@ -3808,7 +4010,7 @@ CSpaceShrinker::x_MoveNextRecord(void)
         m_IndRec = m_MaxFile->index_head - m_RecNum;
     }
     while (m_RecNum <= m_PrevRecNum
-           /*||  m_IndRec->cache_data->dead_time <= cur_time + s_MinMoveLife*/);
+           ||  m_IndRec->cache_data->dead_time <= cur_time + s_MinMoveLife);
     m_MaxFile->info_lock.Unlock();
     if (!m_IndRec)
         return &CSpaceShrinker::x_FinishMoves;
@@ -3866,7 +4068,7 @@ CNCAlerts::Register(CNCAlerts::eDebugWrongCacheFound1, "CSpaceShrinker::x_MoveNe
     bool need_move = m_CacheData->dead_time > cur_time + s_MinMoveLife;
     if (need_move) {
         CNCBlobStorage::ReferenceCacheData(m_CacheData);
-        m_VerMgr = m_CacheData->ver_mgr;
+        m_VerMgr = m_CacheData->Get_ver_mgr();
         if (m_VerMgr) {
             m_VerMgr->ObtainReference();
             m_CacheData->lock.Unlock();

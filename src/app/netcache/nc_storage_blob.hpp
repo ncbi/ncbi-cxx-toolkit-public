@@ -37,7 +37,7 @@ BEGIN_NCBI_SCOPE
 
 class CNCBlobStorage;
 class CNCBlobAccessor;
-struct SNCCacheData;
+class SNCCacheData;
 class CCurVerReader;
 struct SNCStateStat;
 

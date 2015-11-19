@@ -41,18 +41,9 @@ BEGIN_NCBI_SCOPE
 
 struct SFileRecHeader;
 struct SFileMetaRec;
-struct SNCCacheData;
+class  SNCCacheData;
 struct SCacheDeadCompare;
 struct SCacheKeyCompare;
-
-typedef intr::rbtree<SNCCacheData,
-                     intr::base_hook<TTimeTableHook>,
-                     intr::constant_time_size<false>,
-                     intr::compare<SCacheDeadCompare> >     TTimeTableMap;
-typedef intr::rbtree<SNCCacheData,
-                     intr::base_hook<TKeyMapHook>,
-                     intr::constant_time_size<true>,
-                     intr::compare<SCacheKeyCompare> >      TKeyMap;
 
 
 enum EFileRecType {
@@ -108,31 +99,6 @@ struct ATTR_PACKED SFileChunkDataRec
     Uint8   chunk_num;     // chunk index in blob
     Uint2   chunk_idx;     // chunk index in map
     Uint1   chunk_data[1]; // chunk data, see kNCMaxBlobChunkSize
-};
-
-
-struct SCacheDeadCompare
-{
-    bool operator() (const SNCCacheData& x, const SNCCacheData& y) const
-    {
-        return x.saved_dead_time < y.saved_dead_time;
-    }
-};
-
-struct SCacheKeyCompare
-{
-    bool operator() (const SNCCacheData& x, const SNCCacheData& y) const
-    {
-        return x.key < y.key;
-    }
-    bool operator() (const string& key, const SNCCacheData& y) const
-    {
-        return key < y.key;
-    }
-    bool operator() (const SNCCacheData& x, const string& key) const
-    {
-        return x.key < key;
-    }
 };
 
 

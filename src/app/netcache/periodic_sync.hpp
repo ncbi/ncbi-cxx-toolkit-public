@@ -43,7 +43,7 @@ BEGIN_NCBI_SCOPE
 
 class CNCPeerControl;
 class CNCActiveHandler;
-struct SNCCacheData;
+class SNCCacheData;
 
 
 enum ESyncInitiateResult {

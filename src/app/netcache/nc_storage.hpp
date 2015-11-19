@@ -52,30 +52,43 @@ typedef intr::set_base_hook< intr::tag<STimeTable_tag>,
 typedef intr::set_base_hook< intr::tag<SKeyMap_tag>,
                              intr::optimize_size<true> >    TKeyMapHook;
 
+#define __NC_CACHEDATA_MONITOR     0
 
-struct SNCCacheData : public TTimeTableHook,
+class SNCCacheData : public TTimeTableHook,
                       public TKeyMapHook,
                       public SNCBlobSummary,
                       public CSrvRCUUser
 {
+public:
     SNCDataCoord coord;
     string key;
     int saved_dead_time;
     Uint2 time_bucket;
     Uint2 map_size;
     Uint4 chunk_size;
-    CAtomicCounter ref_cnt;
+    CAtomicCounter_WithAutoInit ref_cnt;
     CMiniMutex lock;
-    CNCBlobVerManager* ver_mgr;
-
 
     SNCCacheData(void);
+    ~SNCCacheData(void);
+
+    CNCBlobVerManager* Get_ver_mgr(void) const {
+        return  ver_mgr;
+    }
 
 private:
+    CNCBlobVerManager* ver_mgr;
+
     SNCCacheData(const SNCCacheData&);
     SNCCacheData& operator= (const SNCCacheData&);
 
+#if __NC_CACHEDATA_MONITOR
+    void x_Register(void);
+    void x_Revoke(void);
+#endif
+
     virtual void ExecuteRCU(void);
+    friend class CNCBlobVerManager;
 };
 
 
@@ -171,18 +184,30 @@ private:
 //////////////////////////////////////////////////////////////////////////
 //  Inline functions
 //////////////////////////////////////////////////////////////////////////
-
 inline
 SNCCacheData::SNCCacheData(void)
     : saved_dead_time(0),
+      time_bucket(0),
+      map_size(0),
+      chunk_size(0),
       ver_mgr(NULL)
 {
-    coord.file_id = 0;
-    coord.rec_num = 0;
-    create_id = 0;
-    create_time = create_server = 0;
-    dead_time = ver_expire = 0;
-    ref_cnt.Set(0);
+#if __NC_CACHEDATA_MONITOR
+    x_Register();
+#endif
+}
+
+inline
+SNCCacheData::~SNCCacheData(void)
+{
+#ifdef _DEBUG
+    if (ver_mgr || !coord.empty() || ref_cnt.Get() != 0) {
+        abort();
+    }
+#endif
+#if __NC_CACHEDATA_MONITOR
+    x_Revoke();
+#endif
 }
 
 END_NCBI_SCOPE

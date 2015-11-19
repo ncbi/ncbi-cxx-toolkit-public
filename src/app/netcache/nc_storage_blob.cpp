@@ -608,7 +608,7 @@ void
 CNCBlobVerManager::DeleteVersion(const SNCBlobVerData* ver_data)
 {
     m_CacheData->lock.Lock();
-    _ASSERT(m_CacheData->ver_mgr == this);
+    _ASSERT(m_CacheData->Get_ver_mgr() == this);
     if (m_CurVersion == ver_data)
         x_DeleteCurVersion();
     m_CacheData->lock.Unlock();
@@ -618,7 +618,7 @@ void
 CNCBlobVerManager::DeleteDeadVersion(int /*cut_time*/)
 {
     m_CacheData->lock.Lock();
-    _ASSERT(m_CacheData->ver_mgr == this);
+    _ASSERT(m_CacheData->Get_ver_mgr() == this);
 #if 0
     CSrvRef<SNCBlobVerData> cur_ver(m_CurVersion);
     if (m_CurVersion) {
@@ -645,7 +645,12 @@ CNCBlobVerManager::CNCBlobVerManager(Uint2         time_bucket,
       m_Key(key)
 {
     CNCBlobStorage::ReferenceCacheData(m_CacheData);
-    m_CacheData->ver_mgr = this;
+//    m_CacheData->ver_mgr = this;
+    if (!AtomicCAS(cache_data->ver_mgr, nullptr, this)) {
+#ifdef _DEBUG
+CNCAlerts::Register(CNCAlerts::eDebugCacheFailedMgrAttach,"CNCBlobVerManager ctor");
+#endif
+    }
     //AtomicAdd(s_CntMgrs, 1);
     //Uint8 cnt = AtomicAdd(s_CntMgrs, 1);
     //INFO("CNCBlobVerManager, cnt=" << cnt);
@@ -679,7 +684,7 @@ CNCBlobVerManager::Get(Uint2         time_bucket,
                        bool          for_new_version)
 {
     cache_data->lock.Lock();
-    CNCBlobVerManager* mgr = cache_data->ver_mgr;
+    CNCBlobVerManager* mgr = cache_data->Get_ver_mgr();
     if (mgr) {
         mgr->ObtainReference();
     }
@@ -720,7 +725,10 @@ CNCBlobVerManager::x_ReleaseMgr(void)
 //        cache_data->ver_mgr = NULL;
         if (!AtomicCAS(cache_data->ver_mgr, this, nullptr)) {
 #ifdef _DEBUG
-CNCAlerts::Register(CNCAlerts::eDebugCacheFailedMgrDetach,"CNCBlobVerManager::x_ReleaseMgr");
+CNCAlerts::Register(CNCAlerts::eDebugCacheFailedMgrDetach,"x_ReleaseMgr");
+if (cache_data->ver_mgr != nullptr) {
+CNCAlerts::Register(CNCAlerts::eDebugCacheWrongMgr,"x_ReleaseMgr");
+}
 #endif
         }
         if (m_CurVersion) {
@@ -769,7 +777,7 @@ CNCBlobVerManager::ExecuteSlice(TSrvThreadNum /* thr_num */)
 
     m_CacheData->lock.Lock();
 
-    if (m_CacheData->ver_mgr != this) {
+    if (m_CacheData->Get_ver_mgr() != this) {
         m_NeedAbort = true;
 #ifdef _DEBUG
 CNCAlerts::Register(CNCAlerts::eDebugCacheWrong,"CNCBlobVerManager::ExecuteSlice");
@@ -865,7 +873,7 @@ CNCBlobVerManager::GetCurVersion(void)
     CSrvRef<SNCBlobVerData> cur_ver;
 
     m_CacheData->lock.Lock();
-    _ASSERT(m_CacheData->ver_mgr == this);
+    _ASSERT(m_CacheData->Get_ver_mgr() == this);
     if (m_CurVersion
         &&  m_CurVersion->dead_time <= CSrvTime::CurSecs())
     {
@@ -903,7 +911,7 @@ CNCBlobVerManager::FinalizeWriting(SNCBlobVerData* ver_data)
     CSrvRef<SNCBlobVerData> old_ver(ver_data);
 
     m_CacheData->lock.Lock();
-    _ASSERT(m_CacheData->ver_mgr == this);
+    _ASSERT(m_CacheData->Get_ver_mgr() == this);
     if (ver_data->dead_time > CSrvTime::CurSecs()
         &&  s_IsCurVerOlder(m_CurVersion, ver_data))
     {
