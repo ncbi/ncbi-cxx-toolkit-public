@@ -286,7 +286,8 @@ CNcbiResourceInfoFile::AddResourceInfo(const string& plain_text)
     string pwd, res_name, res_value, extra;
 
     // Get password for encoding
-    NStr::Split(data, kParserSeparators, split);
+    NStr::Split(data, kParserSeparators, split,
+                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     it = split.begin();
     if ( it == split.end() ) {
         // No password
@@ -624,7 +625,8 @@ void CNcbiEncrypt::sx_InitKeyMap(void)
                 files = CDirEntry::MakePath(CDir::GetHome(), kDefaultKeysFile);
             }
             list<string> file_list;
-            NStr::Split(files, ":", file_list);
+            NStr::Split(files, ":", file_list,
+                        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
             ITERATE(list<string>, it, file_list) {
                 string fname = *it;
                 size_t home_pos = fname.find("$HOME");
@@ -724,7 +726,8 @@ string CNcbiEncrypt::x_GetDomainKeys(const string& domain, TKeyMap* keys)
 {
     string first_key;
     list<string> paths;
-    NStr::Split(TKeyPaths::GetDefault(), ":", paths);
+    NStr::Split(TKeyPaths::GetDefault(), ":", paths,
+                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     ITERATE(list<string>, it, paths) {
         string path = *it;
         if (path == "$$") {

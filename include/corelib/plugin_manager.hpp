@@ -752,7 +752,7 @@ TClass* CPluginManager<TClass>::CreateInstanceFromList(
     _TRACE("Creating an instance of a driver having version " <<
            version << " from a list " << driver_list);
     list<string> drivers;
-    NStr::Split(driver_list, ":", drivers);
+    NStr::Split(driver_list, ":", drivers, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     ITERATE ( list<string>, it, drivers ) {
         string drv_name = *it;
         const TPluginManagerParamTree* driver_params = params ?
