@@ -871,6 +871,8 @@ CGBInfoManager::CGBInfoManager(size_t gc_size)
       m_CacheLabel(GetMainMutex(), gc_size),
       m_CacheTaxId(GetMainMutex(), gc_size),
       m_CacheHash(GetMainMutex(), gc_size),
+      m_CacheLength(GetMainMutex(), gc_size),
+      m_CacheType(GetMainMutex(), gc_size),
       m_CacheBlobIds(GetMainMutex(), gc_size),
       m_CacheBlobState(GetMainMutex(), gc_size),
       m_CacheBlobVersion(GetMainMutex(), gc_size),
@@ -951,6 +953,20 @@ CLoadLockTaxId::CLoadLockTaxId(CReaderRequestResult& result,
 CLoadLockHash::CLoadLockHash(CReaderRequestResult& result,
                              const CSeq_id_Handle& id)
     : TParent(result.GetLoadLockHash(id))
+{
+}
+
+
+CLoadLockLength::CLoadLockLength(CReaderRequestResult& result,
+                                 const CSeq_id_Handle& id)
+    : TParent(result.GetLoadLockLength(id))
+{
+}
+
+
+CLoadLockType::CLoadLockType(CReaderRequestResult& result,
+                             const CSeq_id_Handle& id)
+    : TParent(result.GetLoadLockType(id))
 {
 }
 
@@ -1525,6 +1541,96 @@ CReaderRequestResult::SetLoadedHash(const CSeq_id_Handle& id,
         LOG_POST(Info<<"GBLoader:SeqId("<<id<<") hash = "<<value);
     }
     return GetGBInfoManager().m_CacheHash.SetLoaded(*this, id, value);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Seq-id -> Length
+
+bool
+CReaderRequestResult::IsLoadedLength(const CSeq_id_Handle& id)
+{
+    return GetGBInfoManager().m_CacheLength.IsLoaded(*this, id);
+}
+
+
+bool
+CReaderRequestResult::MarkLoadingLength(const CSeq_id_Handle& id)
+{
+    return GetGBInfoManager().m_CacheLength.MarkLoading(*this, id);
+}
+
+
+CReaderRequestResult::TInfoLockLength
+CReaderRequestResult::GetLoadLockLength(const CSeq_id_Handle& id)
+{
+    // if connection is allocated we cannot wait for another lock because
+    // of possible deadlock.
+    EDoNotWait do_not_wait = m_AllocatedConnection? eDoNotWait: eAllowWaiting;
+    return GetGBInfoManager().m_CacheLength.GetLoadLock(*this, id, do_not_wait);
+}
+
+
+CReaderRequestResult::TInfoLockLength
+CReaderRequestResult::GetLoadedLength(const CSeq_id_Handle& id)
+{
+    return GetGBInfoManager().m_CacheLength.GetLoaded(*this, id);
+}
+
+
+bool
+CReaderRequestResult::SetLoadedLength(const CSeq_id_Handle& id,
+                                    const TSequenceLength& value)
+{
+    if ( s_GetLoadTraceLevel() > 0 ) {
+        LOG_POST(Info<<"GBLoader:SeqId("<<id<<") hash = "<<value);
+    }
+    return GetGBInfoManager().m_CacheLength.SetLoaded(*this, id, value);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Seq-id -> Type
+
+bool
+CReaderRequestResult::IsLoadedType(const CSeq_id_Handle& id)
+{
+    return GetGBInfoManager().m_CacheType.IsLoaded(*this, id);
+}
+
+
+bool
+CReaderRequestResult::MarkLoadingType(const CSeq_id_Handle& id)
+{
+    return GetGBInfoManager().m_CacheType.MarkLoading(*this, id);
+}
+
+
+CReaderRequestResult::TInfoLockType
+CReaderRequestResult::GetLoadLockType(const CSeq_id_Handle& id)
+{
+    // if connection is allocated we cannot wait for another lock because
+    // of possible deadlock.
+    EDoNotWait do_not_wait = m_AllocatedConnection? eDoNotWait: eAllowWaiting;
+    return GetGBInfoManager().m_CacheType.GetLoadLock(*this, id, do_not_wait);
+}
+
+
+CReaderRequestResult::TInfoLockType
+CReaderRequestResult::GetLoadedType(const CSeq_id_Handle& id)
+{
+    return GetGBInfoManager().m_CacheType.GetLoaded(*this, id);
+}
+
+
+bool
+CReaderRequestResult::SetLoadedType(const CSeq_id_Handle& id,
+                                    const TSequenceType& value)
+{
+    if ( s_GetLoadTraceLevel() > 0 ) {
+        LOG_POST(Info<<"GBLoader:SeqId("<<id<<") hash = "<<value);
+    }
+    return GetGBInfoManager().m_CacheType.SetLoaded(*this, id, value);
 }
 
 

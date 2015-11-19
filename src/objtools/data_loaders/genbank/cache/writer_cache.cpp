@@ -295,6 +295,38 @@ void CCacheWriter::SaveSequenceHash(CReaderRequestResult& result,
 }
 
 
+void CCacheWriter::SaveSequenceLength(CReaderRequestResult& result,
+                                      const CSeq_id_Handle& seq_id)
+{
+    if( !m_IdCache) {
+        return;
+    }
+
+    CLoadLockLength lock(result, seq_id);
+    if ( lock.IsLoadedLength() ) {
+        CStoreBuffer str;
+        str.StoreUint4(lock.GetLength());
+        x_WriteId(GetIdKey(seq_id), GetLengthSubkey(), str);
+    }
+}
+
+
+void CCacheWriter::SaveSequenceType(CReaderRequestResult& result,
+                                    const CSeq_id_Handle& seq_id)
+{
+    if( !m_IdCache) {
+        return;
+    }
+
+    CLoadLockType lock(result, seq_id);
+    if ( lock.IsLoadedType() ) {
+        CStoreBuffer str;
+        str.StoreInt4(lock.GetType());
+        x_WriteId(GetIdKey(seq_id), GetTypeSubkey(), str);
+    }
+}
+
+
 void CCacheWriter::WriteSeq_ids(const string& key,
                                 const CLoadLockSeqIds& lock)
 {

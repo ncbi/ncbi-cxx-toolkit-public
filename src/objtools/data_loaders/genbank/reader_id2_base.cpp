@@ -104,6 +104,13 @@ int CId2ReaderBase::GetDebugLevel(void)
 }
 
 
+static const char kSpecialId_label[] = "LABEL";
+static const char kSpecialId_taxid[] = "TAXID";
+static const char kSpecialId_hash[] = "HASH";
+static const char kSpecialId_length[] = "Seq-inst.length";
+static const char kSpecialId_type[] = "Seq-inst.mol";
+
+
 // Number of chunks allowed in a single request
 // 0 = unlimited request size
 // 1 = do not use packets or get-chunks requests
@@ -405,7 +412,7 @@ bool CId2ReaderBase::LoadSeq_idTaxId(CReaderRequestResult& result,
 bool CId2ReaderBase::LoadSequenceHash(CReaderRequestResult& result,
                                       const CSeq_id_Handle& seq_id)
 {
-    if ( m_AvoidRequest & fAvoidRequest_for_SequenceHash ) {
+    if ( m_AvoidRequest & fAvoidRequest_for_Seq_id_hash ) {
         return CReader::LoadSequenceHash(result, seq_id);
     }
 
@@ -421,7 +428,63 @@ bool CId2ReaderBase::LoadSequenceHash(CReaderRequestResult& result,
     x_ProcessRequest(result, req, 0);
 
     if ( !lock.IsLoadedHash() ) {
-        m_AvoidRequest |= fAvoidRequest_for_SequenceHash;
+        m_AvoidRequest |= fAvoidRequest_for_Seq_id_hash;
+        return true; // repeat
+    }
+
+    return true;
+}
+
+
+bool CId2ReaderBase::LoadSequenceLength(CReaderRequestResult& result,
+                                        const CSeq_id_Handle& seq_id)
+{
+    if ( m_AvoidRequest & fAvoidRequest_for_Seq_id_length ) {
+        return CReader::LoadSequenceLength(result, seq_id);
+    }
+
+    CLoadLockLength lock(result, seq_id);
+    if ( lock.IsLoadedLength() ) {
+        return true;
+    }
+    CID2_Request req;
+    CID2_Request::C_Request::TGet_seq_id& get_id =
+        req.SetRequest().SetGet_seq_id();
+    get_id.SetSeq_id().SetSeq_id().Assign(*seq_id.GetSeqId());
+    get_id.SetSeq_id_type(CID2_Request_Get_Seq_id::eSeq_id_type_all |
+                          CID2_Request_Get_Seq_id::eSeq_id_type_seq_length);
+    x_ProcessRequest(result, req, 0);
+
+    if ( !lock.IsLoadedLength() ) {
+        m_AvoidRequest |= fAvoidRequest_for_Seq_id_length;
+        return true; // repeat
+    }
+
+    return true;
+}
+
+
+bool CId2ReaderBase::LoadSequenceType(CReaderRequestResult& result,
+                                      const CSeq_id_Handle& seq_id)
+{
+    if ( m_AvoidRequest & fAvoidRequest_for_Seq_id_type ) {
+        return CReader::LoadSequenceType(result, seq_id);
+    }
+
+    CLoadLockType lock(result, seq_id);
+    if ( lock.IsLoadedType() ) {
+        return true;
+    }
+    CID2_Request req;
+    CID2_Request::C_Request::TGet_seq_id& get_id =
+        req.SetRequest().SetGet_seq_id();
+    get_id.SetSeq_id().SetSeq_id().Assign(*seq_id.GetSeqId());
+    get_id.SetSeq_id_type(CID2_Request_Get_Seq_id::eSeq_id_type_all |
+                          CID2_Request_Get_Seq_id::eSeq_id_type_seq_mol);
+    x_ProcessRequest(result, req, 0);
+
+    if ( !lock.IsLoadedType() ) {
+        m_AvoidRequest |= fAvoidRequest_for_Seq_id_type;
         return true; // repeat
     }
 
@@ -751,7 +814,7 @@ bool CId2ReaderBase::LoadHashes(CReaderRequestResult& result,
 {
     size_t max_request_size = GetMaxIdsRequestSize();
     if ( max_request_size <= 1 ||
-         (m_AvoidRequest & fAvoidRequest_for_SequenceHash) ) {
+         (m_AvoidRequest & fAvoidRequest_for_Seq_id_hash) ) {
         return CReader::LoadHashes(result, ids, loaded, ret);
     }
 
@@ -763,7 +826,7 @@ bool CId2ReaderBase::LoadHashes(CReaderRequestResult& result,
         if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
             continue;
         }
-        if ( m_AvoidRequest & fAvoidRequest_for_SequenceHash ) {
+        if ( m_AvoidRequest & fAvoidRequest_for_Seq_id_hash ) {
             return CReader::LoadHashes(result, ids, loaded, ret);
         }
         CLoadLockHash lock(result, ids[i]);
@@ -796,7 +859,7 @@ bool CId2ReaderBase::LoadHashes(CReaderRequestResult& result,
                     continue;
                 }
                 else {
-                    m_AvoidRequest |= fAvoidRequest_for_SequenceHash;
+                    m_AvoidRequest |= fAvoidRequest_for_Seq_id_hash;
                 }
             }
             packet.Set().clear();
@@ -817,7 +880,169 @@ bool CId2ReaderBase::LoadHashes(CReaderRequestResult& result,
                 continue;
             }
             else {
-                m_AvoidRequest |= fAvoidRequest_for_SequenceHash;
+                m_AvoidRequest |= fAvoidRequest_for_Seq_id_hash;
+            }
+        }
+    }
+
+    return true;
+}
+
+
+bool CId2ReaderBase::LoadLengths(CReaderRequestResult& result,
+                                 const TIds& ids, TLoaded& loaded, TLengths& ret)
+{
+    size_t max_request_size = GetMaxIdsRequestSize();
+    if ( max_request_size <= 1 ||
+         (m_AvoidRequest & fAvoidRequest_for_Seq_id_length) ) {
+        return CReader::LoadLengths(result, ids, loaded, ret);
+    }
+
+    size_t count = ids.size();
+    CID2_Request_Packet packet;
+    size_t packet_start = 0;
+    
+    for ( size_t i = 0; i < count; ++i ) {
+        if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
+            continue;
+        }
+        if ( m_AvoidRequest & fAvoidRequest_for_Seq_id_length ) {
+            return CReader::LoadLengths(result, ids, loaded, ret);
+        }
+        CLoadLockLength lock(result, ids[i]);
+        if ( lock.IsLoadedLength() ) {
+            ret[i] = lock.GetLength();
+            loaded[i] = true;
+            continue;
+        }
+        
+        CRef<CID2_Request> req(new CID2_Request);
+        CID2_Request::C_Request::TGet_seq_id& get_id =
+            req->SetRequest().SetGet_seq_id();
+        get_id.SetSeq_id().SetSeq_id().Assign(*ids[i].GetSeqId());
+        get_id.SetSeq_id_type(CID2_Request_Get_Seq_id::eSeq_id_type_all |
+                              CID2_Request_Get_Seq_id::eSeq_id_type_seq_length);
+        if ( packet.Set().empty() ) {
+            packet_start = i;
+        }
+        packet.Set().push_back(req);
+        if ( packet.Set().size() == max_request_size ) {
+            x_ProcessPacket(result, packet, 0);
+            size_t count = i+1;
+            for ( size_t i = packet_start; i < count; ++i ) {
+                if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
+                    continue;
+                }
+                CLoadLockLength lock(result, ids[i]);
+                if ( lock.IsLoadedLength() ) {
+                    ret[i] = lock.GetLength();
+                    loaded[i] = true;
+                    continue;
+                }
+                else {
+                    m_AvoidRequest |= fAvoidRequest_for_Seq_id_length;
+                }
+            }
+            packet.Set().clear();
+        }
+    }
+
+    if ( !packet.Set().empty() ) {
+        x_ProcessPacket(result, packet, 0);
+
+        for ( size_t i = packet_start; i < count; ++i ) {
+            if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
+                continue;
+            }
+            CLoadLockLength lock(result, ids[i]);
+            if ( lock.IsLoadedLength() ) {
+                ret[i] = lock.GetLength();
+                loaded[i] = true;
+                continue;
+            }
+            else {
+                m_AvoidRequest |= fAvoidRequest_for_Seq_id_length;
+            }
+        }
+    }
+
+    return true;
+}
+
+
+bool CId2ReaderBase::LoadTypes(CReaderRequestResult& result,
+                               const TIds& ids, TLoaded& loaded, TTypes& ret)
+{
+    size_t max_request_size = GetMaxIdsRequestSize();
+    if ( max_request_size <= 1 ||
+         (m_AvoidRequest & fAvoidRequest_for_Seq_id_type) ) {
+        return CReader::LoadTypes(result, ids, loaded, ret);
+    }
+
+    size_t count = ids.size();
+    CID2_Request_Packet packet;
+    size_t packet_start = 0;
+    
+    for ( size_t i = 0; i < count; ++i ) {
+        if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
+            continue;
+        }
+        if ( m_AvoidRequest & fAvoidRequest_for_Seq_id_type ) {
+            return CReader::LoadTypes(result, ids, loaded, ret);
+        }
+        CLoadLockType lock(result, ids[i]);
+        if ( lock.IsLoadedType() ) {
+            ret[i] = lock.GetType();
+            loaded[i] = true;
+            continue;
+        }
+        
+        CRef<CID2_Request> req(new CID2_Request);
+        CID2_Request::C_Request::TGet_seq_id& get_id =
+            req->SetRequest().SetGet_seq_id();
+        get_id.SetSeq_id().SetSeq_id().Assign(*ids[i].GetSeqId());
+        get_id.SetSeq_id_type(CID2_Request_Get_Seq_id::eSeq_id_type_all |
+                              CID2_Request_Get_Seq_id::eSeq_id_type_seq_mol);
+        if ( packet.Set().empty() ) {
+            packet_start = i;
+        }
+        packet.Set().push_back(req);
+        if ( packet.Set().size() == max_request_size ) {
+            x_ProcessPacket(result, packet, 0);
+            size_t count = i+1;
+            for ( size_t i = packet_start; i < count; ++i ) {
+                if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
+                    continue;
+                }
+                CLoadLockType lock(result, ids[i]);
+                if ( lock.IsLoadedType() ) {
+                    ret[i] = lock.GetType();
+                    loaded[i] = true;
+                    continue;
+                }
+                else {
+                    m_AvoidRequest |= fAvoidRequest_for_Seq_id_type;
+                }
+            }
+            packet.Set().clear();
+        }
+    }
+
+    if ( !packet.Set().empty() ) {
+        x_ProcessPacket(result, packet, 0);
+
+        for ( size_t i = packet_start; i < count; ++i ) {
+            if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
+                continue;
+            }
+            CLoadLockType lock(result, ids[i]);
+            if ( lock.IsLoadedType() ) {
+                ret[i] = lock.GetType();
+                loaded[i] = true;
+                continue;
+            }
+            else {
+                m_AvoidRequest |= fAvoidRequest_for_Seq_id_type;
             }
         }
     }
@@ -2084,6 +2309,16 @@ void CId2ReaderBase::x_ProcessGetStringSeqId(
 }
 
 
+static bool sx_IsSpecialId(const CSeq_id& id)
+{
+    if ( !id.IsGeneral() ) {
+        return false;
+    }
+    const string& db = id.GetGeneral().GetDb();
+    return db == kSpecialId_length || db == kSpecialId_type;
+}
+
+
 void CId2ReaderBase::x_ProcessGetSeqIdSeqId(
     CReaderRequestResult& result,
     SId2LoadedSet& loaded_set,
@@ -2093,6 +2328,7 @@ void CId2ReaderBase::x_ProcessGetSeqIdSeqId(
 {
     int state = 0;
     TErrorFlags errors = x_GetMessageError(main_reply);
+    const CID2_Request_Get_Seq_id& req = reply.GetRequest();
     if ( errors & fError_no_data ) {
         state |= CBioseq_Handle::fState_no_data;
         // no Seq-ids
@@ -2103,32 +2339,37 @@ void CId2ReaderBase::x_ProcessGetSeqIdSeqId(
             state |= CBioseq_Handle::fState_withdrawn;
         }
         SetAndSaveNoSeq_idSeq_ids(result, seq_id, state);
-        switch ( reply.GetRequest().GetSeq_id_type() ) {
-        case CID2_Request_Get_Seq_id::eSeq_id_type_gi:
+        
+        if ( req.GetSeq_id_type() & req.eSeq_id_type_gi ) {
             SetAndSaveSeq_idGi(result, seq_id, ZERO_GI);
-            break;
-        case CID2_Request_Get_Seq_id::eSeq_id_type_text:
+        }
+        if ( req.GetSeq_id_type() & req.eSeq_id_type_text ) {
             SetAndSaveSeq_idAccVer(result, seq_id, CSeq_id_Handle());
-            break;
-        case CID2_Request_Get_Seq_id::eSeq_id_type_label:
+        }
+        if ( req.GetSeq_id_type() & req.eSeq_id_type_label ) {
             SetAndSaveSeq_idLabel(result, seq_id, "");
-            break;
-        case CID2_Request_Get_Seq_id::eSeq_id_type_taxid:
+        }
+        if ( req.GetSeq_id_type() & req.eSeq_id_type_taxid ) {
             SetAndSaveSeq_idTaxId(result, seq_id, -1);
-            break;
-        case CID2_Request_Get_Seq_id::eSeq_id_type_hash:
+        }
+        if ( req.GetSeq_id_type() & req.eSeq_id_type_hash ) {
             SetAndSaveSequenceHash(result, seq_id, 0);
-            break;
-        default:
-            break;
+        }
+        if ( req.GetSeq_id_type() & req.eSeq_id_type_seq_length ) {
+            SetAndSaveSequenceLength(result, seq_id, kInvalidSeqPos);
+        }
+        if ( req.GetSeq_id_type() & req.eSeq_id_type_seq_mol ) {
+            SetAndSaveSequenceType(result, seq_id, CSeq_inst::eMol_not_set);
         }
         return;
     }
-    switch ( reply.GetRequest().GetSeq_id_type() ) {
-    case CID2_Request_Get_Seq_id::eSeq_id_type_all:
-    {{
+    if ( (req.GetSeq_id_type()&req.eSeq_id_type_all)==req.eSeq_id_type_all ) {
         CReader::TSeqIds seq_ids;
         ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, reply.GetSeq_id() ) {
+            if ( req.GetSeq_id_type() != req.eSeq_id_type_all &&
+                 sx_IsSpecialId(**it) ) {
+                continue;
+            }
             seq_ids.push_back(CSeq_id_Handle::GetHandle(**it));
         }
         if ( reply.IsSetEnd_of_reply() ) {
@@ -2141,21 +2382,16 @@ void CId2ReaderBase::x_ProcessGetSeqIdSeqId(
             loaded_set.m_Seq_ids[seq_id].first = state;
             loaded_set.m_Seq_ids[seq_id].second.swap(seq_ids);
         }
-        break;
-    }}
-    case CID2_Request_Get_Seq_id::eSeq_id_type_gi:
-    case CID2_Request_Get_Seq_id::eSeq_id_type_any:
-    {{
+    }
+    if ( req.GetSeq_id_type() & req.eSeq_id_type_gi ) {
         ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, reply.GetSeq_id() ) {
             if ( (**it).IsGi() ) {
                 SetAndSaveSeq_idGi(result, seq_id, (**it).GetGi());
                 break;
             }
         }
-        break;
-    }}
-    case CID2_Request_Get_Seq_id::eSeq_id_type_text:
-    {{
+    }
+    if ( req.GetSeq_id_type() & req.eSeq_id_type_text ) {
         ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, reply.GetSeq_id() ) {
             if ( (**it).GetTextseq_Id() ) {
                 SetAndSaveSeq_idAccVer(result, seq_id,
@@ -2164,25 +2400,21 @@ void CId2ReaderBase::x_ProcessGetSeqIdSeqId(
             }
         }
         SetAndSaveSeq_idAccVer(result, seq_id, CSeq_id_Handle());
-        break;
-    }}
-    case CID2_Request_Get_Seq_id::eSeq_id_type_label:
-    {{
+    }
+    if ( req.GetSeq_id_type() & req.eSeq_id_type_label ) {
         ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, reply.GetSeq_id() ) {
             const CSeq_id& id = **it;
             if ( id.IsGeneral() ) {
                 const CDbtag& dbtag = id.GetGeneral();
                 const CObject_id& obj_id = dbtag.GetTag();
-                if ( obj_id.IsStr() && dbtag.GetDb() == "LABEL" ) {
+                if ( obj_id.IsStr() && dbtag.GetDb() == kSpecialId_label ) {
                     SetAndSaveSeq_idLabel(result, seq_id, obj_id.GetStr());
                     break;
                 }
             }
         }
-        break;
-    }}
-    case CID2_Request_Get_Seq_id::eSeq_id_type_taxid:
-    {{
+    }
+    if ( req.GetSeq_id_type() & req.eSeq_id_type_taxid ) {
         ESave save = eDoNotSave;
         int taxid = -1;
         ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, reply.GetSeq_id() ) {
@@ -2190,7 +2422,7 @@ void CId2ReaderBase::x_ProcessGetSeqIdSeqId(
             if ( id.IsGeneral() ) {
                 const CDbtag& dbtag = id.GetGeneral();
                 const CObject_id& obj_id = dbtag.GetTag();
-                if ( obj_id.IsId() && dbtag.GetDb() == "TAXID" ) {
+                if ( obj_id.IsId() && dbtag.GetDb() == kSpecialId_taxid ) {
                     taxid = obj_id.GetId();
                     save = eSave;
                     break;
@@ -2198,10 +2430,8 @@ void CId2ReaderBase::x_ProcessGetSeqIdSeqId(
             }
         }
         SetAndSaveSeq_idTaxId(result, seq_id, taxid, save);
-        break;
-    }}
-    case CID2_Request_Get_Seq_id::eSeq_id_type_hash:
-    {{
+    }
+    if ( req.GetSeq_id_type() & req.eSeq_id_type_hash ) {
         ESave save = eDoNotSave;
         int hash = 0;
         ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, reply.GetSeq_id() ) {
@@ -2209,7 +2439,7 @@ void CId2ReaderBase::x_ProcessGetSeqIdSeqId(
             if ( id.IsGeneral() ) {
                 const CDbtag& dbtag = id.GetGeneral();
                 const CObject_id& obj_id = dbtag.GetTag();
-                if ( obj_id.IsId() && dbtag.GetDb() == "HASH" ) {
+                if ( obj_id.IsId() && dbtag.GetDb() == kSpecialId_hash ) {
                     hash = obj_id.GetId();
                     save = eSave;
                     break;
@@ -2217,11 +2447,40 @@ void CId2ReaderBase::x_ProcessGetSeqIdSeqId(
             }
         }
         SetAndSaveSequenceHash(result, seq_id, hash, save);
-        break;
-    }}
-    default:
-        // ???
-        break;
+    }
+    if ( req.GetSeq_id_type() & req.eSeq_id_type_seq_length ) {
+        ESave save = eDoNotSave;
+        TSeqPos length = kInvalidSeqPos;
+        ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, reply.GetSeq_id() ) {
+            const CSeq_id& id = **it;
+            if ( id.IsGeneral() ) {
+                const CDbtag& dbtag = id.GetGeneral();
+                const CObject_id& obj_id = dbtag.GetTag();
+                if ( obj_id.IsId() && dbtag.GetDb() == kSpecialId_length ) {
+                    length = TSeqPos(obj_id.GetId());
+                    save = eSave;
+                    break;
+                }
+            }
+        }
+        SetAndSaveSequenceLength(result, seq_id, length, save);
+    }
+    if ( req.GetSeq_id_type() & req.eSeq_id_type_seq_mol ) {
+        ESave save = eDoNotSave;
+        CSeq_inst::EMol type = CSeq_inst::eMol_not_set;
+        ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, reply.GetSeq_id() ) {
+            const CSeq_id& id = **it;
+            if ( id.IsGeneral() ) {
+                const CDbtag& dbtag = id.GetGeneral();
+                const CObject_id& obj_id = dbtag.GetTag();
+                if ( obj_id.IsId() && dbtag.GetDb() == kSpecialId_type ) {
+                    type = CSeq_inst::EMol(obj_id.GetId());
+                    save = eSave;
+                    break;
+                }
+            }
+        }
+        SetAndSaveSequenceType(result, seq_id, type, save);
     }
 }
 

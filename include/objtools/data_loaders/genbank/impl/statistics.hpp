@@ -60,6 +60,8 @@ public:
         eStat_ParseSplit,
         eStat_ParseChunk,
         eStat_Hash,
+        eStat_Length,
+        eStat_Type,
 
         eStats_Count,
         eStat_Last = eStats_Count-1

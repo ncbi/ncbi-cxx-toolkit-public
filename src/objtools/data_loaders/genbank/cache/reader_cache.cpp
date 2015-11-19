@@ -181,6 +181,18 @@ const char* SCacheInfo::GetHashSubkey(void)
 }
 
 
+const char* SCacheInfo::GetLengthSubkey(void)
+{
+    return "length";
+}
+
+
+const char* SCacheInfo::GetTypeSubkey(void)
+{
+    return "type";
+}
+
+
 const char* SCacheInfo::GetSeq_idsSubkey(void)
 {
     return "ids4";
@@ -842,6 +854,64 @@ bool CCacheReader::LoadSequenceHash(CReaderRequestResult& result,
     }
     conn.Release();
     lock.SetLoadedHash(hash, str.GetExpirationTime());
+    return true;
+}
+
+
+bool CCacheReader::LoadSequenceLength(CReaderRequestResult& result,
+                                      const CSeq_id_Handle& seq_id)
+{
+    if ( !m_IdCache ) {
+        return false;
+    }
+
+    CLoadLockLength lock(result, seq_id);
+    if ( lock.IsLoadedLength() ) {
+        return true;
+    }
+    
+    CConn conn(result, this);
+    CParseBuffer str(result, m_IdCache, GetIdKey(seq_id), GetLengthSubkey());
+    if ( !str.Found() ) {
+        conn.Release();
+        return false;
+    }
+    TSeqPos length = str.ParseUint4();
+    if ( !str.Done() ) {
+        conn.Release();
+        return false;
+    }
+    conn.Release();
+    lock.SetLoadedLength(length, str.GetExpirationTime());
+    return true;
+}
+
+
+bool CCacheReader::LoadSequenceType(CReaderRequestResult& result,
+                                    const CSeq_id_Handle& seq_id)
+{
+    if ( !m_IdCache ) {
+        return false;
+    }
+
+    CLoadLockType lock(result, seq_id);
+    if ( lock.IsLoadedType() ) {
+        return true;
+    }
+    
+    CConn conn(result, this);
+    CParseBuffer str(result, m_IdCache, GetIdKey(seq_id), GetTypeSubkey());
+    if ( !str.Found() ) {
+        conn.Release();
+        return false;
+    }
+    int type = str.ParseInt4();
+    if ( !str.Done() ) {
+        conn.Release();
+        return false;
+    }
+    conn.Release();
+    lock.SetLoadedType(CSeq_inst::EMol(type), str.GetExpirationTime());
     return true;
 }
 

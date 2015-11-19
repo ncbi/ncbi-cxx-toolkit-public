@@ -576,6 +576,70 @@ bool CReader::LoadSequenceHash(CReaderRequestResult& result,
 }
 
 
+bool CReader::LoadSequenceLength(CReaderRequestResult& result,
+                                 const CSeq_id_Handle& seq_id)
+{
+    if ( result.IsLoadedLength(seq_id) ) {
+        return true;
+    }
+
+    TSeqPos length = kInvalidSeqPos;
+    m_Dispatcher->LoadBlobs(result, seq_id, fBlobHasCore, 0);
+    CLoadLockBlobIds blobs(result, seq_id, static_cast<SAnnotSelector*>(0));
+    _ASSERT(blobs.IsLoaded());
+    CFixedBlob_ids blob_ids = blobs.GetBlob_ids();
+    ITERATE ( CFixedBlob_ids, it, blob_ids ) {
+        const CBlob_Info& info = *it;
+        const CBlob_id& blob_id = *info.GetBlob_id();
+        if ( !info.Matches(fBlobHasCore, 0) ) {
+            continue;
+        }
+        CLoadLockBlob blob(result, blob_id);
+        _ASSERT(blob.IsLoadedBlob());
+        CTSE_LoadLock& lock = blob.GetTSE_LoadLock();
+        _ASSERT(lock);
+        if ( CConstRef<CBioseq_Info> seq = lock->FindMatchingBioseq(seq_id) ) {
+            length = seq->GetInst().GetLength();
+            break;
+        }
+    }
+    SetAndSaveSequenceLength(result, seq_id, length);
+    return true;
+}
+
+
+bool CReader::LoadSequenceType(CReaderRequestResult& result,
+                               const CSeq_id_Handle& seq_id)
+{
+    if ( result.IsLoadedType(seq_id) ) {
+        return true;
+    }
+
+    CSeq_inst::TMol type = CSeq_inst::eMol_not_set;
+    m_Dispatcher->LoadBlobs(result, seq_id, fBlobHasCore, 0);
+    CLoadLockBlobIds blobs(result, seq_id, static_cast<SAnnotSelector*>(0));
+    _ASSERT(blobs.IsLoaded());
+    CFixedBlob_ids blob_ids = blobs.GetBlob_ids();
+    ITERATE ( CFixedBlob_ids, it, blob_ids ) {
+        const CBlob_Info& info = *it;
+        const CBlob_id& blob_id = *info.GetBlob_id();
+        if ( !info.Matches(fBlobHasCore, 0) ) {
+            continue;
+        }
+        CLoadLockBlob blob(result, blob_id);
+        _ASSERT(blob.IsLoadedBlob());
+        CTSE_LoadLock& lock = blob.GetTSE_LoadLock();
+        _ASSERT(lock);
+        if ( CConstRef<CBioseq_Info> seq = lock->FindMatchingBioseq(seq_id) ) {
+            type = seq->GetInst().GetMol();
+            break;
+        }
+    }
+    SetAndSaveSequenceType(result, seq_id, type);
+    return true;
+}
+
+
 bool CReader::LoadAccVers(CReaderRequestResult& result,
                           const TIds& ids, TLoaded& loaded, TIds& ret)
 {
@@ -661,7 +725,7 @@ bool CReader::LoadTaxIds(CReaderRequestResult& result,
 
 
 bool CReader::LoadHashes(CReaderRequestResult& result,
-                         const TIds& ids, TLoaded& loaded, TTaxIds& ret)
+                         const TIds& ids, TLoaded& loaded, THashes& ret)
 {
     size_t count = ids.size();
     for ( size_t i = 0; i < count; ++i ) {
@@ -674,6 +738,48 @@ bool CReader::LoadHashes(CReaderRequestResult& result,
         }
         if ( lock.IsLoadedHash() ) {
             ret[i] = lock.GetHash();
+            loaded[i] = true;
+        }
+    }
+    return true;
+}
+
+
+bool CReader::LoadLengths(CReaderRequestResult& result,
+                          const TIds& ids, TLoaded& loaded, TLengths& ret)
+{
+    size_t count = ids.size();
+    for ( size_t i = 0; i < count; ++i ) {
+        if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
+            continue;
+        }
+        CLoadLockLength lock(result, ids[i]);
+        if ( !lock.IsLoadedLength() ) {
+            m_Dispatcher->LoadSequenceLength(result, ids[i]);
+        }
+        if ( lock.IsLoadedLength() ) {
+            ret[i] = lock.GetLength();
+            loaded[i] = true;
+        }
+    }
+    return true;
+}
+
+
+bool CReader::LoadTypes(CReaderRequestResult& result,
+                          const TIds& ids, TLoaded& loaded, TTypes& ret)
+{
+    size_t count = ids.size();
+    for ( size_t i = 0; i < count; ++i ) {
+        if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
+            continue;
+        }
+        CLoadLockType lock(result, ids[i]);
+        if ( !lock.IsLoadedType() ) {
+            m_Dispatcher->LoadSequenceType(result, ids[i]);
+        }
+        if ( lock.IsLoadedType() ) {
+            ret[i] = lock.GetType();
             loaded[i] = true;
         }
     }
@@ -1134,6 +1240,34 @@ void CReader::SetAndSaveSequenceHash(CReaderRequestResult& result,
     }
     if ( CWriter* writer = result.GetIdWriter() ) {
         writer->SaveSequenceHash(result, seq_id);
+    }
+}
+
+
+void CReader::SetAndSaveSequenceLength(CReaderRequestResult& result,
+                                       const CSeq_id_Handle& seq_id,
+                                       TSeqPos length,
+                                       ESave save) const
+{
+    if ( !result.SetLoadedLength(seq_id, length) || save != eSave ) {
+        return;
+    }
+    if ( CWriter* writer = result.GetIdWriter() ) {
+        writer->SaveSequenceLength(result, seq_id);
+    }
+}
+
+
+void CReader::SetAndSaveSequenceType(CReaderRequestResult& result,
+                                     const CSeq_id_Handle& seq_id,
+                                     CSeq_inst::EMol type,
+                                     ESave save) const
+{
+    if ( !result.SetLoadedType(seq_id, type) || save != eSave ) {
+        return;
+    }
+    if ( CWriter* writer = result.GetIdWriter() ) {
+        writer->SaveSequenceType(result, seq_id);
     }
 }
 

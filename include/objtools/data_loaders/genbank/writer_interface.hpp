@@ -78,7 +78,7 @@ public:
 
 END_SCOPE(objects)
 
-NCBI_DECLARE_INTERFACE_VERSION(objects::CWriter,  "xwriter", 5, 1, 0);
+NCBI_DECLARE_INTERFACE_VERSION(objects::CWriter,  "xwriter", 6, 0, 0);
 
 template<>
 class CDllResolver_Getter<objects::CWriter>

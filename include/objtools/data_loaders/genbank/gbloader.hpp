@@ -192,19 +192,21 @@ public:
     virtual int GetTaxId(const CSeq_id_Handle& idh);
     virtual int GetSequenceState(const CSeq_id_Handle& idh);
     virtual int GetSequenceHash(const CSeq_id_Handle& idh);
+    virtual TSeqPos GetSequenceLength(const CSeq_id_Handle& sih);
+    virtual CSeq_inst::EMol GetSequenceType(const CSeq_id_Handle& sih);
 
     virtual void GetAccVers(const TIds& ids, TLoaded& loader, TIds& ret);
     virtual void GetGis(const TIds& ids, TLoaded& loader, TGis& ret);
     virtual void GetLabels(const TIds& ids, TLoaded& loader, TLabels& ret);
     virtual void GetTaxIds(const TIds& ids, TLoaded& loader, TTaxIds& ret);
-    virtual void GetSequenceLengths(const TIds& ids, TLoaded& loaded,
-                                    TSequenceLengths& ret);
-    virtual void GetSequenceTypes(const TIds& ids, TLoaded& loaded,
-                                  TSequenceTypes& ret);
     virtual void GetSequenceStates(const TIds& ids, TLoaded& loader,
                                    TSequenceStates& ret);
     virtual void GetSequenceHashes(const TIds& ids, TLoaded& loader,
                                    TSequenceHashes& ret);
+    virtual void GetSequenceLengths(const TIds& ids, TLoaded& loader,
+                                    TSequenceLengths& ret);
+    virtual void GetSequenceTypes(const TIds& ids, TLoaded& loader,
+                                  TSequenceTypes& ret);
 
     virtual TTSE_LockSet GetRecords(const CSeq_id_Handle& idh,
                                     EChoice choice);

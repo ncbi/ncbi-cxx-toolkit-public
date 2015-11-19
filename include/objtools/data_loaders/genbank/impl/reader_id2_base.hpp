@@ -90,6 +90,10 @@ public:
                          const CSeq_id_Handle& seq_id);
     bool LoadSequenceHash(CReaderRequestResult& result,
                           const CSeq_id_Handle& seq_id);
+    bool LoadSequenceLength(CReaderRequestResult& result,
+                            const CSeq_id_Handle& seq_id);
+    bool LoadSequenceType(CReaderRequestResult& result,
+                          const CSeq_id_Handle& seq_id);
     bool LoadSeq_idBlob_ids(CReaderRequestResult& result,
                             const CSeq_id_Handle& seq_id,
                             const SAnnotSelector* sel);
@@ -104,6 +108,10 @@ public:
                     const TIds& ids, TLoaded& loaded, TTaxIds& ret);
     bool LoadHashes(CReaderRequestResult& result,
                     const TIds& ids, TLoaded& loaded, THashes& ret);
+    bool LoadLengths(CReaderRequestResult& result,
+                     const TIds& ids, TLoaded& loaded, TLengths& ret);
+    bool LoadTypes(CReaderRequestResult& result,
+                   const TIds& ids, TLoaded& loaded, TTypes& ret);
     bool LoadStates(CReaderRequestResult& result,
                     const TIds& ids, TLoaded& loaded, TStates& ret);
 
@@ -259,10 +267,12 @@ private:
     CAtomicCounter_WithAutoInit m_RequestSerialNumber;
 
     enum {
-        fAvoidRequest_nested_get_blob_info = 1,
-        fAvoidRequest_for_Seq_id_label     = 2,
-        fAvoidRequest_for_Seq_id_taxid     = 4,
-        fAvoidRequest_for_SequenceHash     = 8
+        fAvoidRequest_nested_get_blob_info = 1<<0,
+        fAvoidRequest_for_Seq_id_label     = 1<<1,
+        fAvoidRequest_for_Seq_id_taxid     = 1<<2,
+        fAvoidRequest_for_Seq_id_hash      = 1<<3,
+        fAvoidRequest_for_Seq_id_length    = 1<<4,
+        fAvoidRequest_for_Seq_id_type      = 1<<5
     };
     typedef int TAvoidRequests;
     TAvoidRequests m_AvoidRequest;

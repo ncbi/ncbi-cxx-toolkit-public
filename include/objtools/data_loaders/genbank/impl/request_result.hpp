@@ -293,6 +293,10 @@ public:
     typedef GBL::CInfoCache<CBlob_id, TBlobState> TCacheBlobState;
     typedef int TSequenceHash;
     typedef GBL::CInfoCache<CSeq_id_Handle, TSequenceHash> TCacheHash;
+    typedef TSeqPos TSequenceLength;
+    typedef GBL::CInfoCache<CSeq_id_Handle, TSequenceLength> TCacheLength;
+    typedef CSeq_inst::EMol TSequenceType;
+    typedef GBL::CInfoCache<CSeq_id_Handle, TSequenceType> TCacheType;
     typedef int TBlobVersion;
     typedef GBL::CInfoCache<CBlob_id, TBlobVersion> TCacheBlobVersion;
     typedef GBL::CInfoCache<CBlob_id, CTSE_LoadLock> TCacheBlob;
@@ -306,6 +310,8 @@ public:
     TCacheLabel m_CacheLabel;
     TCacheTaxId m_CacheTaxId;
     TCacheHash m_CacheHash;
+    TCacheLength m_CacheLength;
+    TCacheType m_CacheType;
     TCacheBlobIds m_CacheBlobIds;
     TCacheBlobState m_CacheBlobState;
     TCacheBlobVersion m_CacheBlobVersion;
@@ -500,6 +506,64 @@ public:
             return SetLoaded(data);
         }
     bool SetLoadedHash(const TData& data, TExpirationTime expiration_time)
+        {
+            return SetLoaded(data, expiration_time);
+        }
+};
+
+
+class NCBI_XREADER_EXPORT CLoadLockLength :
+    public CGBInfoManager::TCacheLength::TInfoLock
+{
+    typedef CGBInfoManager::TCacheLength::TInfoLock TParent;
+public:
+    CLoadLockLength(void)
+        {
+        }
+    CLoadLockLength(CReaderRequestResult& result, const CSeq_id_Handle& id);
+
+    bool IsLoadedLength(void) const
+        {
+            return IsLoaded();
+        }
+    TData GetLength(void) const
+        {
+            return GetData();
+        }
+    bool SetLoadedLength(const TData& data)
+        {
+            return SetLoaded(data);
+        }
+    bool SetLoadedLength(const TData& data, TExpirationTime expiration_time)
+        {
+            return SetLoaded(data, expiration_time);
+        }
+};
+
+
+class NCBI_XREADER_EXPORT CLoadLockType :
+    public CGBInfoManager::TCacheType::TInfoLock
+{
+    typedef CGBInfoManager::TCacheType::TInfoLock TParent;
+public:
+    CLoadLockType(void)
+        {
+        }
+    CLoadLockType(CReaderRequestResult& result, const CSeq_id_Handle& id);
+
+    bool IsLoadedType(void) const
+        {
+            return IsLoaded();
+        }
+    TData GetType(void) const
+        {
+            return GetData();
+        }
+    bool SetLoadedType(const TData& data)
+        {
+            return SetLoaded(data);
+        }
+    bool SetLoadedType(const TData& data, TExpirationTime expiration_time)
         {
             return SetLoaded(data, expiration_time);
         }
@@ -741,6 +805,10 @@ public:
     typedef CGBInfoManager::TCacheTaxId::TInfoLock TInfoLockTaxId;
     typedef CGBInfoManager::TSequenceHash TSequenceHash;
     typedef CGBInfoManager::TCacheHash::TInfoLock TInfoLockHash;
+    typedef CGBInfoManager::TSequenceLength TSequenceLength;
+    typedef CGBInfoManager::TCacheLength::TInfoLock TInfoLockLength;
+    typedef CGBInfoManager::TSequenceType TSequenceType;
+    typedef CGBInfoManager::TCacheType::TInfoLock TInfoLockType;
     typedef CGBInfoManager::TCacheBlobIds::TInfoLock TInfoLockBlobIds;
     typedef CGBInfoManager::TCacheBlobState::TInfoLock TInfoLockBlobState;
     typedef CGBInfoManager::TCacheBlobVersion::TInfoLock TInfoLockBlobVersion;
@@ -831,6 +899,20 @@ public:
     TInfoLockHash GetLoadedHash(const CSeq_id_Handle& id);
     bool SetLoadedHash(const CSeq_id_Handle& id,
                        const TSequenceHash& value);
+
+    bool IsLoadedLength(const CSeq_id_Handle& id);
+    bool MarkLoadingLength(const CSeq_id_Handle& id);
+    TInfoLockLength GetLoadLockLength(const CSeq_id_Handle& id);
+    TInfoLockLength GetLoadedLength(const CSeq_id_Handle& id);
+    bool SetLoadedLength(const CSeq_id_Handle& id,
+                       const TSequenceLength& value);
+
+    bool IsLoadedType(const CSeq_id_Handle& id);
+    bool MarkLoadingType(const CSeq_id_Handle& id);
+    TInfoLockType GetLoadLockType(const CSeq_id_Handle& id);
+    TInfoLockType GetLoadedType(const CSeq_id_Handle& id);
+    bool SetLoadedType(const CSeq_id_Handle& id,
+                       const TSequenceType& value);
 
     bool IsLoadedBlobIds(const CSeq_id_Handle& id,
                          const SAnnotSelector* sel);

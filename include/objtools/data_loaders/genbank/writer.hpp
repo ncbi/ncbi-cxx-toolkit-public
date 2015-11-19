@@ -84,6 +84,10 @@ public:
                                  const CSeq_id_Handle& seq_id) = 0;
     virtual void SaveSequenceHash(CReaderRequestResult& result,
                                   const CSeq_id_Handle& seq_id) = 0;
+    virtual void SaveSequenceLength(CReaderRequestResult& result,
+                                    const CSeq_id_Handle& seq_id) = 0;
+    virtual void SaveSequenceType(CReaderRequestResult& result,
+                                  const CSeq_id_Handle& seq_id) = 0;
     virtual void SaveSeq_idBlob_ids(CReaderRequestResult& result,
                                     const CSeq_id_Handle& seq_id,
                                     const SAnnotSelector* sel) = 0;

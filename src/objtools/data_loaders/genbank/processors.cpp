@@ -597,13 +597,14 @@ void CProcessor::OffsetAllGisToOM(CBeginInfo obj, CTSE_SetObjectInfo* set_info)
 BEGIN_LOCAL_NAMESPACE;
 
 
-inline
+static inline
 bool s_CanBeWGSBlob(const CBlob_id& blob_id)
 {
     return !CProcessor_ExtAnnot::IsExtAnnot(blob_id);
 }
 
 
+static
 bool s_GoodLetters(CTempString s) {
     ITERATE ( CTempString, it, s ) {
         if ( !isalpha(*it & 0xff) ) {
@@ -614,6 +615,7 @@ bool s_GoodLetters(CTempString s) {
 }
 
 
+static
 bool s_GoodDigits(CTempString s) {
     bool have_non_zero = false;
     ITERATE ( CTempString, it, s ) {
@@ -628,6 +630,7 @@ bool s_GoodDigits(CTempString s) {
 }
 
 
+static
 CSeq_id_Handle s_GetWGSMasterSeq_id(const CSeq_id_Handle& idh)
 {
     CSeq_id_Handle master_idh;
@@ -698,16 +701,23 @@ CSeq_id_Handle s_GetWGSMasterSeq_id(const CSeq_id_Handle& idh)
 }
 
 
-inline
+static inline
 int s_GetGoodDescrMask(void)
 {
-    return
+    int main_mask =
         (1<<CSeqdesc::e_Pub) |
         (1<<CSeqdesc::e_Comment) |
         (1<<CSeqdesc::e_User);
+    int opt_mask =
+        (1<<CSeqdesc::e_Source) |
+        (1<<CSeqdesc::e_Molinfo) |
+        (1<<CSeqdesc::e_Create_date) |
+        (1<<CSeqdesc::e_Update_date);
+    return main_mask | opt_mask;
 }
 
 
+static
 bool s_IsGoodDescr(const CSeqdesc& desc)
 {
     if ( desc.Which() == CSeqdesc::e_Pub ||
@@ -730,6 +740,14 @@ bool s_IsGoodDescr(const CSeqdesc& desc)
 }
 
 
+static
+void s_AddMasterDescr(CBioseq_Info& seq, const CSeq_descr& descr)
+{
+    seq.AddSeq_descr(descr);
+}
+
+
+static
 CRef<CSeq_descr> s_GetWGSMasterDescr(CDataLoader* loader,
                                      const CSeq_id_Handle& master_idh)
 {
@@ -816,7 +834,7 @@ public:
         if ( m_Descr &&
              seq.x_NeedUpdate(seq.fNeedUpdate_descr) &&
              HasMasterId(seq) ) {
-            seq.AddSeq_descr(*m_Descr);
+            s_AddMasterDescr(seq, *m_Descr);
         }
     }
 

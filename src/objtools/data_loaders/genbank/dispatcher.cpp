@@ -72,7 +72,9 @@ static CGBRequestStatistics sx_Statistics[CGBRequestStatistics::eStats_Count] =
     CGBRequestStatistics("parsed", "SNP data"),
     CGBRequestStatistics("parsed", "split data"),
     CGBRequestStatistics("parsed", "chunk data"),
-    CGBRequestStatistics("loaded", "sequence hash")
+    CGBRequestStatistics("loaded", "sequence hash"),
+    CGBRequestStatistics("loaded", "sequence length"),
+    CGBRequestStatistics("loaded", "sequence type")
 };
 
 CGBRequestStatistics::CGBRequestStatistics(const char* action,
@@ -527,6 +529,92 @@ namespace {
         TLock m_Lock;
     };
 
+    class CCommandLoadSequenceLength : public CReadDispatcherCommand
+    {
+    public:
+        typedef CSeq_id_Handle TKey;
+        typedef CLoadLockLength TLock;
+        CCommandLoadSequenceLength(CReaderRequestResult& result,
+                                 const TKey& key)
+            : CReadDispatcherCommand(result),
+              m_Key(key), m_Lock(result, key)
+            {
+            }
+
+        bool IsDone(void)
+            {
+                return m_Lock.IsLoadedLength();
+            }
+        bool Execute(CReader& reader)
+            {
+                return reader.LoadSequenceLength(GetResult(), m_Key);
+            }
+        bool MayBeSkipped(void) const
+            {
+                return true;
+            }
+        string GetErrMsg(void) const
+            {
+                return "LoadSequenceLength("+m_Key.AsString()+"): "
+                    "data not found";
+            }
+        CGBRequestStatistics::EStatType GetStatistics(void) const
+            {
+                return CGBRequestStatistics::eStat_Length;
+            }
+        string GetStatisticsDescription(void) const
+            {
+                return "length("+m_Key.AsString()+")";
+            }
+        
+    private:
+        TKey m_Key;
+        TLock m_Lock;
+    };
+
+    class CCommandLoadSequenceType : public CReadDispatcherCommand
+    {
+    public:
+        typedef CSeq_id_Handle TKey;
+        typedef CLoadLockType TLock;
+        CCommandLoadSequenceType(CReaderRequestResult& result,
+                                 const TKey& key)
+            : CReadDispatcherCommand(result),
+              m_Key(key), m_Lock(result, key)
+            {
+            }
+
+        bool IsDone(void)
+            {
+                return m_Lock.IsLoadedType();
+            }
+        bool Execute(CReader& reader)
+            {
+                return reader.LoadSequenceType(GetResult(), m_Key);
+            }
+        bool MayBeSkipped(void) const
+            {
+                return true;
+            }
+        string GetErrMsg(void) const
+            {
+                return "LoadSequenceType("+m_Key.AsString()+"): "
+                    "data not found";
+            }
+        CGBRequestStatistics::EStatType GetStatistics(void) const
+            {
+                return CGBRequestStatistics::eStat_Type;
+            }
+        string GetStatisticsDescription(void) const
+            {
+                return "type("+m_Key.AsString()+")";
+            }
+        
+    private:
+        TKey m_Key;
+        TLock m_Lock;
+    };
+
     bool s_Blob_idsLoaded(CLoadLockBlobIds& ids,
                           CReaderRequestResult& result,
                           const CSeq_id_Handle& seq_id)
@@ -828,6 +916,96 @@ namespace {
         string GetStatisticsDescription(void) const
             {
                 return "hashes("+sx_DescribeUnloaded(m_Key, m_Loaded)+")";
+            }
+        
+    private:
+        const TKey& m_Key;
+        TLoaded& m_Loaded;
+        TRet& m_Ret;
+    };
+
+    class CCommandLoadLengths : public CReadDispatcherCommand
+    {
+    public:
+        typedef vector<CSeq_id_Handle> TKey;
+        typedef vector<bool> TLoaded;
+        typedef vector<TSeqPos> TRet;
+        CCommandLoadLengths(CReaderRequestResult& result,
+                           const TKey& key, TLoaded& loaded, TRet& ret)
+            : CReadDispatcherCommand(result),
+              m_Key(key), m_Loaded(loaded), m_Ret(ret)
+            {
+            }
+
+        bool IsDone(void)
+            {
+                return sx_BulkIsDone(m_Key, m_Loaded);
+            }
+        bool Execute(CReader& reader)
+            {
+                return reader.LoadLengths(GetResult(), m_Key, m_Loaded, m_Ret);
+            }
+        bool MayBeSkipped(void) const
+            {
+                return true;
+            }
+        string GetErrMsg(void) const
+            {
+                return "LoadLengths("+sx_DescribeUnloaded(m_Key, m_Loaded)+"): "
+                    "data not found";
+            }
+        CGBRequestStatistics::EStatType GetStatistics(void) const
+            {
+                return CGBRequestStatistics::eStat_Length;
+            }
+        string GetStatisticsDescription(void) const
+            {
+                return "lengths("+sx_DescribeUnloaded(m_Key, m_Loaded)+")";
+            }
+        
+    private:
+        const TKey& m_Key;
+        TLoaded& m_Loaded;
+        TRet& m_Ret;
+    };
+
+    class CCommandLoadTypes : public CReadDispatcherCommand
+    {
+    public:
+        typedef vector<CSeq_id_Handle> TKey;
+        typedef vector<bool> TLoaded;
+        typedef vector<CSeq_inst::EMol> TRet;
+        CCommandLoadTypes(CReaderRequestResult& result,
+                           const TKey& key, TLoaded& loaded, TRet& ret)
+            : CReadDispatcherCommand(result),
+              m_Key(key), m_Loaded(loaded), m_Ret(ret)
+            {
+            }
+
+        bool IsDone(void)
+            {
+                return sx_BulkIsDone(m_Key, m_Loaded);
+            }
+        bool Execute(CReader& reader)
+            {
+                return reader.LoadTypes(GetResult(), m_Key, m_Loaded, m_Ret);
+            }
+        bool MayBeSkipped(void) const
+            {
+                return true;
+            }
+        string GetErrMsg(void) const
+            {
+                return "LoadTypes("+sx_DescribeUnloaded(m_Key, m_Loaded)+"): "
+                    "data not found";
+            }
+        CGBRequestStatistics::EStatType GetStatistics(void) const
+            {
+                return CGBRequestStatistics::eStat_Type;
+            }
+        string GetStatisticsDescription(void) const
+            {
+                return "types("+sx_DescribeUnloaded(m_Key, m_Loaded)+")";
             }
         
     private:
@@ -1467,6 +1645,22 @@ void CReadDispatcher::LoadSequenceHash(CReaderRequestResult& result,
 }
 
 
+void CReadDispatcher::LoadSequenceLength(CReaderRequestResult& result,
+                                         const CSeq_id_Handle& seq_id)
+{
+    CCommandLoadSequenceLength command(result, seq_id);
+    Process(command);
+}
+
+
+void CReadDispatcher::LoadSequenceType(CReaderRequestResult& result,
+                                       const CSeq_id_Handle& seq_id)
+{
+    CCommandLoadSequenceType command(result, seq_id);
+    Process(command);
+}
+
+
 void CReadDispatcher::LoadAccVers(CReaderRequestResult& result,
                                   const TIds ids, TLoaded& loaded, TIds& ret)
 {
@@ -1503,6 +1697,22 @@ void CReadDispatcher::LoadHashes(CReaderRequestResult& result,
                                  const TIds ids, TLoaded& loaded, THashes& ret)
 {
     CCommandLoadHashes command(result, ids, loaded, ret);
+    Process(command);
+}
+
+
+void CReadDispatcher::LoadLengths(CReaderRequestResult& result,
+                                  const TIds ids, TLoaded& loaded, TLengths& ret)
+{
+    CCommandLoadLengths command(result, ids, loaded, ret);
+    Process(command);
+}
+
+
+void CReadDispatcher::LoadTypes(CReaderRequestResult& result,
+                                const TIds ids, TLoaded& loaded, TTypes& ret)
+{
+    CCommandLoadTypes command(result, ids, loaded, ret);
     Process(command);
 }
 

@@ -976,100 +976,58 @@ void CGBDataLoader::GetTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret)
 static const bool s_LoadBulkBlobs = true;
 
 
+TSeqPos CGBDataLoader::GetSequenceLength(const CSeq_id_Handle& sih)
+{
+    if ( CReadDispatcher::CannotProcess(sih) ) {
+        return 0;
+    }
+    CGBReaderRequestResult result(this, sih);
+    CLoadLockLength lock(result, sih);
+    if ( !lock.IsLoadedLength() ) {
+        m_Dispatcher->LoadSequenceLength(result, sih);
+    }
+    return lock.IsLoaded()? lock.GetLength(): 0;
+}
+
+
 void CGBDataLoader::GetSequenceLengths(const TIds& ids, TLoaded& loaded,
                                        TSequenceLengths& ret)
 {
-    if ( !s_LoadBulkBlobs ) {
-        CDataLoader::GetSequenceLengths(ids, loaded, ret);
-        return;
-    }
-    if ( ids.empty() ) {
-        return;
-    }
-    CGBReaderRequestResult result(this, ids[0]);
-    vector<CSeq_id_Handle> load_ids;
-    size_t count = ids.size();
-    _ASSERT(ids.size() == loaded.size());
-    _ASSERT(ids.size() == ret.size());
-    for ( size_t i = 0; i < count; ++i ) {
+    for ( size_t i = 0; i < ids.size(); ++i ) {
         if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
             continue;
         }
-        // add into loading set
-        load_ids.push_back(ids[i]);
-    }
-    if ( load_ids.empty() ) {
-        // nothing to load
+        CGBReaderRequestResult result(this, ids[i]);
+        m_Dispatcher->LoadLengths(result, ids, loaded, ret);
         return;
     }
-    sort(load_ids.begin(), load_ids.end());
-    m_Dispatcher->LoadBlobSet(result, load_ids);
-    // update sequence types
-    for ( size_t i = 0; i < count; ++i ) {
-        const CSeq_id_Handle& id = ids[i];
-        if ( loaded[i] || CReadDispatcher::CannotProcess(id) ) {
-            continue;
-        }
-        CLoadLockBlobIds blob_ids_lock(result, id, 0);
-        CFixedBlob_ids blob_ids = blob_ids_lock.GetBlob_ids();
-        ITERATE ( CFixedBlob_ids, it, blob_ids ) {
-            const CBlob_Info& info = *it;
-            const CBlob_id& blob_id = *info.GetBlob_id();
-            if ( !info.Matches(fBlobHasCore, 0) ) {
-                continue;
-            }
-            CLoadLockBlob blob(result, blob_id);
-            _ASSERT(blob.IsLoadedBlob());
-            CTSE_LoadLock& lock = blob.GetTSE_LoadLock();
-            _ASSERT(lock);
-            if ( CConstRef<CBioseq_Info> seq = lock->FindMatchingBioseq(id) ) {
-                ret[i] = seq->GetBioseqLength();
-                loaded[i] = true;
-                break;
-            }
-        }
+}
+
+
+CSeq_inst::EMol CGBDataLoader::GetSequenceType(const CSeq_id_Handle& sih)
+{
+    if ( CReadDispatcher::CannotProcess(sih) ) {
+        return CSeq_inst::eMol_not_set;
     }
+    CGBReaderRequestResult result(this, sih);
+    CLoadLockType lock(result, sih);
+    if ( !lock.IsLoadedType() ) {
+        m_Dispatcher->LoadSequenceType(result, sih);
+    }
+    return lock.IsLoaded()? lock.GetType(): CSeq_inst::eMol_not_set;
 }
 
 
 void CGBDataLoader::GetSequenceTypes(const TIds& ids, TLoaded& loaded,
                                      TSequenceTypes& ret)
 {
-    if ( !s_LoadBulkBlobs ) {
-        CDataLoader::GetSequenceTypes(ids, loaded, ret);
-        return;
-    }
-    TTSE_LockSets lock_sets;
-    size_t count = ids.size();
-    _ASSERT(ids.size() == loaded.size());
-    _ASSERT(ids.size() == ret.size());
-    for ( size_t i = 0; i < count; ++i ) {
+    for ( size_t i = 0; i < ids.size(); ++i ) {
         if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
             continue;
         }
-        // add into loading set
-        lock_sets[ids[i]];
-    }
-    if ( lock_sets.empty() ) {
-        // nothing to load
+        CGBReaderRequestResult result(this, ids[i]);
+        m_Dispatcher->LoadTypes(result, ids, loaded, ret);
         return;
-    }
-    GetBlobs(lock_sets);
-    // update sequence types
-    for ( size_t i = 0; i < count; ++i ) {
-        if ( loaded[i] || CReadDispatcher::CannotProcess(ids[i]) ) {
-            continue;
-        }
-        TTSE_LockSet& locks = lock_sets[ids[i]];
-        ITERATE(TTSE_LockSet, it, locks) {
-            CConstRef<CBioseq_Info> bs_info =
-                (*it)->FindMatchingBioseq(ids[i]);
-            if ( bs_info ) {
-                ret[i] = bs_info->GetInst_Mol();
-                loaded[i] = true;
-                break;
-            }
-        }
     }
 }
 

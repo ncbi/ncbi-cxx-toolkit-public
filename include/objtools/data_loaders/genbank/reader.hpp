@@ -90,6 +90,10 @@ public:
                                  const CSeq_id_Handle& seq_id);
     virtual bool LoadSequenceHash(CReaderRequestResult& result,
                                   const CSeq_id_Handle& seq_id);
+    virtual bool LoadSequenceLength(CReaderRequestResult& result,
+                                    const CSeq_id_Handle& seq_id);
+    virtual bool LoadSequenceType(CReaderRequestResult& result,
+                                  const CSeq_id_Handle& seq_id);
 
     // bulk requests
     typedef vector<CSeq_id_Handle> TIds;
@@ -99,6 +103,8 @@ public:
     typedef vector<int> TTaxIds;
     typedef vector<int> TStates;
     typedef vector<int> THashes;
+    typedef vector<TSeqPos> TLengths;
+    typedef vector<CSeq_inst::EMol> TTypes;
     virtual bool LoadAccVers(CReaderRequestResult& result,
                              const TIds& ids, TLoaded& loaded, TIds& ret);
     virtual bool LoadGis(CReaderRequestResult& result,
@@ -109,6 +115,10 @@ public:
                             const TIds& ids, TLoaded& loaded, TTaxIds& ret);
     virtual bool LoadHashes(CReaderRequestResult& result,
                             const TIds& ids, TLoaded& loaded, THashes& ret);
+    virtual bool LoadLengths(CReaderRequestResult& result,
+                             const TIds& ids, TLoaded& loaded, TLengths& ret);
+    virtual bool LoadTypes(CReaderRequestResult& result,
+                           const TIds& ids, TLoaded& loaded, TTypes& ret);
     virtual bool LoadStates(CReaderRequestResult& result,
                             const TIds& ids, TLoaded& loaded, TStates& ret);
 
@@ -198,6 +208,12 @@ public:
     void SetAndSaveSequenceHash(CReaderRequestResult& result,
                                 const CSeq_id_Handle& seq_id,
                                 int hash, ESave save = eSave) const;
+    void SetAndSaveSequenceLength(CReaderRequestResult& result,
+                                  const CSeq_id_Handle& seq_id,
+                                  TSeqPos length, ESave save = eSave) const;
+    void SetAndSaveSequenceType(CReaderRequestResult& result,
+                                const CSeq_id_Handle& seq_id,
+                                CSeq_inst::EMol type, ESave save = eSave) const;
     void SetAndSaveSeq_idBlob_ids(CReaderRequestResult& result,
                                   const CSeq_id_Handle& seq_id,
                                   const SAnnotSelector* sel,
