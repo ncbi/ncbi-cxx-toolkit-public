@@ -2209,6 +2209,17 @@ CNCMessageHandler::x_StartCommand(void)
         return m_CmdProcessor;
     }
 
+    // no blob access before caching is done
+    if (!CNCServer::IsCachingComplete())
+    {
+        diag_msg.Flush();
+        x_ReportError(eStatus_JustStarted);
+        if (!x_IsHttpMode()) {
+            x_ResetFlags();
+        }
+        return &CNCMessageHandler::x_FinishCommand;
+    }
+
     diag_msg.Flush();
 
     if (!CNCServer::IsInitiallySynced()  &&  !m_ForceLocal
@@ -2272,7 +2283,7 @@ CNCMessageHandler::x_ReadCommand(void)
         }
     } else {
         list<CTempString> arr;
-        NStr::Split(cmd_line, " ", arr);
+        ncbi_NStr_Split(cmd_line, " ", arr);
         bool good = false;
         if (arr.size() >= 3) {
             CTempString arr_cmd(arr.front());
@@ -2286,7 +2297,7 @@ CNCMessageHandler::x_ReadCommand(void)
                 {
                     // eg, "/"  "/service"
                     list<CTempString> uri_parts;
-                    NStr::Split(arr_uri, "/", uri_parts);
+                    ncbi_NStr_Split(arr_uri, "/", uri_parts);
                     if (uri_parts.size() > 0) {
                         if (arr_cmd != "POST") {
                             arr_key = uri_parts.back();
