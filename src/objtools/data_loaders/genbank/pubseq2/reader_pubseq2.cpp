@@ -81,6 +81,8 @@
 #define DEFAULT_NUM_CONN    2
 #define MAX_MT_CONN         5
 #define DEFAULT_EXCL_WGS_MASTER false
+#define DEFAULT_TIMEOUT      40
+#define DEFAULT_OPEN_TIMEOUT 20
 
 #define NCBI_USE_ERRCODE_X   Objtools_Rd_Pubseq2
 
@@ -167,6 +169,16 @@ CPubseq2Reader::CPubseq2Reader(const TPluginManagerParamTree* params,
         NCBI_GBLOADER_READER_PUBSEQ2_PARAM_EXCL_WGS_MASTER,
         CConfig::eErr_NoThrow,
         DEFAULT_EXCL_WGS_MASTER);
+    m_Timeout = conf.GetInt(
+        driver_name,
+        NCBI_GBLOADER_READER_PUBSEQ2_PARAM_TIMEOUT,
+        CConfig::eErr_NoThrow,
+        DEFAULT_TIMEOUT);
+    m_OpenTimeout = conf.GetInt(
+        driver_name,
+        NCBI_GBLOADER_READER_PUBSEQ2_PARAM_OPEN_TIMEOUT,
+        CConfig::eErr_NoThrow,
+        DEFAULT_OPEN_TIMEOUT);
 
     CReader::InitParams(conf, driver_name, DEFAULT_NUM_CONN);
 }
@@ -388,7 +400,9 @@ void CPubseq2Reader::x_ConnectAtSlot(TConn conn_)
                        m_DbapiDriver+"'");
         }
 
-        m_Context->SetTimeout(20);
+        if ( m_Timeout > 0 ) {
+            m_Context->SetTimeout(m_Timeout);
+        }
     }
 
     CPubseq2Validator validator(this, conn_, m_ExclWGSMaster);
@@ -418,6 +432,10 @@ void CPubseq2Reader::x_InitConnection(CDB_Connection& db_conn, TConn conn)
     packet.Set().push_back(Ref(&req));
     // that's it for now
     // TODO: add params
+
+    if ( m_OpenTimeout > 0 ) {
+        db_conn.SetTimeout(m_OpenTimeout);
+    }
 
     AutoPtr<CObjectIStream> result;
     // send init request
@@ -485,6 +503,10 @@ void CPubseq2Reader::x_InitConnection(CDB_Connection& db_conn, TConn conn)
     }
     if ( result->HaveMoreData() ) {
         ERR_POST_X(1, "More data in reply");
+    }
+
+    if ( m_Timeout > 0 ) {
+        db_conn.SetTimeout(m_Timeout);
     }
     // that's it for now
     // TODO: process params

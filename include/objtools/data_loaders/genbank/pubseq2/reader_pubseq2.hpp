@@ -87,6 +87,8 @@ private:
     string                    m_DbapiDriver;
 
     I_DriverContext*          m_Context;
+    int                       m_Timeout;
+    int                       m_OpenTimeout;
 
     struct SConnection
     {

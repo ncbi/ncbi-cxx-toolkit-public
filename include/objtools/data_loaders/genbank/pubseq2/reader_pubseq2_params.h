@@ -47,5 +47,9 @@
 #define NCBI_GBLOADER_READER_PUBSEQ2_PARAM_DRIVER   "driver"
 /* exclude WGS master descriptors */
 #define NCBI_GBLOADER_READER_PUBSEQ2_PARAM_EXCL_WGS_MASTER "exclude_wgs_master"
+/* timeout for requests */
+#define NCBI_GBLOADER_READER_PUBSEQ2_PARAM_TIMEOUT  "timeout"
+/* timeout for initial request */
+#define NCBI_GBLOADER_READER_PUBSEQ2_PARAM_OPEN_TIMEOUT "open_timeout"
 
 #endif
