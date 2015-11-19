@@ -146,7 +146,9 @@ CQueue::CQueue(CRequestExecutor&     executor,
     m_ClientRegistryTimeoutReader(default_client_registry_timeout_reader),
     m_ClientRegistryMinReaders(default_client_registry_min_readers),
     m_ClientRegistryTimeoutUnknown(default_client_registry_timeout_unknown),
-    m_ClientRegistryMinUnknowns(default_client_registry_min_unknowns)
+    m_ClientRegistryMinUnknowns(default_client_registry_min_unknowns),
+    m_JobInfoCacheSize(server->GetWSTCacheSize()),
+    m_JobInfoCache(m_StatusTracker, m_JobInfoCacheSize, m_StatisticsCounters)
 {
     _ASSERT(!queue_name.empty());
     m_ClientsRegistry.SetRegistries(&m_AffinityRegistry,
@@ -289,6 +291,9 @@ void CQueue::SetParameters(const SQueueParameters &  params)
     m_SubmHosts.SetHosts(params.subm_hosts);
     m_WnodeHosts.SetHosts(params.wnode_hosts);
     m_ReaderHosts.SetHosts(params.reader_hosts);
+
+    m_JobInfoCacheSize = m_Server->GetWSTCacheSize();
+    m_JobInfoCache.SetLimit(m_JobInfoCacheSize);
 }
 
 
@@ -526,6 +531,10 @@ unsigned int  CQueue::Submit(const CNSClientId &        client,
                                                        m_ReadTimeout,
                                                        m_PendingTimeout,
                                                        op_begin_time));
+
+        m_JobInfoCache.SetJobCachedInfo(job_id, job.GetClientIP(),
+                                                job.GetClientSID(),
+                                                job.GetNCBIPHID());
     }}
 
     rollback_action = new CNSSubmitRollback(client, job_id,
@@ -627,6 +636,10 @@ CQueue::SubmitBatch(const CNSClientId &             client,
                                                          m_ReadTimeout,
                                                          m_PendingTimeout,
                                                          curr_time));
+            m_JobInfoCache.SetJobCachedInfo(batch[k].first.GetId(),
+                                            batch[k].first.GetClientIP(),
+                                            batch[k].first.GetClientSID(),
+                                            batch[k].first.GetNCBIPHID());
         }
     }}
 
@@ -1218,10 +1231,56 @@ TJobStatus  CQueue::JobDelayReadExpiration(unsigned int            job_id,
 
 
 
+// This member is used for WST/WST2 which do not need to touch the job
 TJobStatus  CQueue::GetStatusAndLifetime(unsigned int      job_id,
-                                         CJob &            job,
-                                         bool              need_touch,
+                                         string &          client_ip,
+                                         string &          client_sid,
+                                         string &          client_phid,
                                          CNSPreciseTime *  lifetime)
+{
+    bool                updated_from_cache = false;
+    CFastMutexGuard     guard(m_OperationLock);
+    TJobStatus          status = GetJobStatus(job_id);
+
+    if (status == CNetScheduleAPI::eJobNotFound)
+        return status;
+
+    if (!m_JobInfoCache.IsInCleaning()) {
+        SJobCachedInfo  job_info;
+        if (m_JobInfoCache.GetJobCachedInfo(job_id, job_info)) {
+            client_ip = job_info.m_ClientIP;
+            client_sid = job_info.m_ClientSID;
+            client_phid = job_info.m_NCBIPHID;
+            updated_from_cache = true;
+        }
+    }
+
+    if (!updated_from_cache) {
+        CJob                job;
+        CNSTransaction      transaction(this);
+
+        if (job.Fetch(this, job_id) != CJob::eJF_Ok)
+            NCBI_THROW(CNetScheduleException, eInternalError,
+                       "Error fetching job");
+
+        client_ip = job.GetClientIP();
+        client_sid = job.GetClientSID();
+        client_phid = job.GetNCBIPHID();
+
+        if (!m_JobInfoCache.IsInCleaning())
+            m_JobInfoCache.SetJobCachedInfo(job_id, client_ip,
+                                            client_sid, client_phid);
+    }
+
+    *lifetime = x_GetEstimatedJobLifetime(job_id, status);
+    return status;
+}
+
+
+// This member is used for the SST/SST2 commands which also touch the job
+TJobStatus  CQueue::GetStatusAndLifetimeAndTouch(unsigned int      job_id,
+                                                 CJob &            job,
+                                                 CNSPreciseTime *  lifetime)
 {
     CFastMutexGuard     guard(m_OperationLock);
     TJobStatus          status = GetJobStatus(job_id);
@@ -1238,21 +1297,17 @@ TJobStatus  CQueue::GetStatusAndLifetime(unsigned int      job_id,
             NCBI_THROW(CNetScheduleException, eInternalError,
                        "Error fetching job");
 
-        if (need_touch) {
-            job.SetLastTouch(curr);
-            job.Flush(this);
-            transaction.Commit();
-        }
+        job.SetLastTouch(curr);
+        job.Flush(this);
+        transaction.Commit();
     }}
 
-    if (need_touch) {
-        m_GCRegistry.UpdateLifetime(job_id,
-                                    job.GetExpirationTime(m_Timeout,
-                                                          m_RunTimeout,
-                                                          m_ReadTimeout,
-                                                          m_PendingTimeout,
-                                                          curr));
-    }
+    m_GCRegistry.UpdateLifetime(job_id,
+                                job.GetExpirationTime(m_Timeout,
+                                                      m_RunTimeout,
+                                                      m_ReadTimeout,
+                                                      m_PendingTimeout,
+                                                      curr));
 
     *lifetime = x_GetEstimatedJobLifetime(job_id, status);
     return status;
@@ -1643,6 +1698,10 @@ TJobStatus  CQueue::Cancel(const CNSClientId &  client,
         old_status = m_StatusTracker.GetStatus(job_id);
         if (old_status == CNetScheduleAPI::eJobNotFound)
             return CNetScheduleAPI::eJobNotFound;
+
+        if (is_ns_rollback)
+            m_JobInfoCache.RemoveJobCachedInfo(job_id);
+
         if (old_status == CNetScheduleAPI::eCanceled) {
             if (is_ns_rollback)
                 m_StatisticsCounters.CountNSSubmitRollback(1);
@@ -2385,6 +2444,8 @@ void CQueue::EraseJob(unsigned int  job_id, TJobStatus  status)
     }}
     TimeLineRemove(job_id);
     m_StatisticsCounters.CountTransitionToDeleted(status, 1);
+
+    m_JobInfoCache.RemoveJobCachedInfo(job_id);
 }
 
 
@@ -2397,6 +2458,8 @@ void CQueue::x_Erase(const TNSBitVector &  job_ids, TJobStatus  status)
     m_JobsToDelete |= job_ids;
     m_JobsToDeleteOps += job_count;
     m_StatisticsCounters.CountTransitionToDeleted(status, job_count);
+
+    m_JobInfoCache.RemoveJobCachedInfo(job_ids);
 }
 
 
@@ -3497,6 +3560,16 @@ void  CQueue::PurgeClientRegistry(const CNSPreciseTime &  current_time)
                             m_ClientRegistryMinReaders,
                             m_ClientRegistryTimeoutUnknown,
                             m_ClientRegistryMinUnknowns, m_Log);
+}
+
+
+unsigned int  CQueue::PurgeJobInfoCache(void)
+{
+    if (m_JobInfoCache.GetSize() <= m_JobInfoCacheSize)
+        return 0;
+
+    CFastMutexGuard     guard(m_OperationLock);
+    return m_JobInfoCache.Purge();
 }
 
 

@@ -210,6 +210,8 @@ public:
     { return m_AnybodyCanReconfigure; }
     unsigned int GetReserveDumpSpace(void) const
     { return m_ReserveDumpSpace; }
+    unsigned int GetWSTCacheSize(void) const
+    { return m_WSTCacheSize; }
 
 protected:
     virtual void Exit();
@@ -287,6 +289,7 @@ private:
     bool                            m_AnybodyCanReconfigure;
 
     unsigned int                    m_ReserveDumpSpace;
+    unsigned int                    m_WSTCacheSize;
 
 private:
     string x_GenerateGUID(void) const;

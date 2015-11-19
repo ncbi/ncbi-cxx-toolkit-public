@@ -59,6 +59,7 @@
 #include "ns_group.hpp"
 #include "ns_gc_registry.hpp"
 #include "ns_precise_time.hpp"
+#include "ns_job_info_cache.hpp"
 
 #include <deque>
 #include <map>
@@ -226,9 +227,13 @@ public:
                                        const CNSPreciseTime &  tm);
 
     TJobStatus  GetStatusAndLifetime(unsigned int      job_id,
-                                     CJob &            job,
-                                     bool              need_touch,
+                                     string &          client_ip,
+                                     string &          client_sid,
+                                     string &          client_phid,
                                      CNSPreciseTime *  lifetime);
+    TJobStatus  GetStatusAndLifetimeAndTouch(unsigned int      job_id,
+                                             CJob &            job,
+                                             CNSPreciseTime *  lifetime);
 
     TJobStatus  SetJobListener(unsigned int            job_id,
                                CJob &                  job,
@@ -399,6 +404,7 @@ public:
     void          StaleNodes(const CNSPreciseTime &  current_time);
     void          PurgeBlacklistedJobs(void);
     void          PurgeClientRegistry(const CNSPreciseTime &  current_time);
+    unsigned int  PurgeJobInfoCache(void);
 
     CBDB_FileCursor& GetEventsCursor();
 
@@ -713,6 +719,10 @@ private:
     unsigned int                m_ClientRegistryMinReaders;
     CNSPreciseTime              m_ClientRegistryTimeoutUnknown;
     unsigned int                m_ClientRegistryMinUnknowns;
+
+    // Job info cache for WST2
+    unsigned int                m_JobInfoCacheSize;
+    CJobInfoCache               m_JobInfoCache;
 };
 
 

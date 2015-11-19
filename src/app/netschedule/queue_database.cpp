@@ -2019,6 +2019,19 @@ void CQueueDataBase::PurgeClientRegistry(void)
 }
 
 
+void CQueueDataBase::PurgeJobInfoCache(void)
+{
+    for (unsigned int  index = 0; ; ++index) {
+        CRef<CQueue>  queue = x_GetQueueAt(index);
+        if (queue.IsNull())
+            break;
+        queue->PurgeJobInfoCache();
+        if (x_CheckStopPurge())
+            break;
+    }
+}
+
+
 // Safely provides a queue at the given index
 CRef<CQueue>  CQueueDataBase::x_GetQueueAt(unsigned int  index)
 {

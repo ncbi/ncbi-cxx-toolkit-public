@@ -1498,8 +1498,9 @@ void CNetScheduleHandler::x_ProcessFastStatusS(CQueue* q)
     bool            cmdv2(m_CommandArguments.cmd == "SST2");
     CNSPreciseTime  lifetime;
     CJob            job;
-    TJobStatus      status = q->GetStatusAndLifetime(m_CommandArguments.job_id,
-                                                     job, true, &lifetime);
+    TJobStatus      status = q->GetStatusAndLifetimeAndTouch(
+                                                m_CommandArguments.job_id,
+                                                job, &lifetime);
 
 
     if (status == CNetScheduleAPI::eJobNotFound) {
@@ -1540,9 +1541,12 @@ void CNetScheduleHandler::x_ProcessFastStatusW(CQueue* q)
 {
     bool            cmdv2(m_CommandArguments.cmd == "WST2");
     CNSPreciseTime  lifetime;
-    CJob            job;
+    string          client_ip;
+    string          client_sid;
+    string          client_phid;
     TJobStatus      status = q->GetStatusAndLifetime(m_CommandArguments.job_id,
-                                                     job, false, &lifetime);
+                                                     client_ip, client_sid,
+                                                     client_phid, &lifetime);
 
 
     if (status == CNetScheduleAPI::eJobNotFound) {
@@ -1573,7 +1577,7 @@ void CNetScheduleHandler::x_ProcessFastStatusW(CQueue* q)
         }
         else
             x_WriteMessage("OK:" + NStr::NumericToString((int) status));
-        x_LogCommandWithJob(job);
+        x_LogCommandWithJob(client_ip, client_sid, client_phid);
     }
     x_PrintCmdRequestStop();
 }
@@ -2879,16 +2883,16 @@ void CNetScheduleHandler::x_ProcessReloadConfig(CQueue* q)
                 ERR_POST(*k);
         }
 
-        CJsonNode       diff = CJsonNode::NewObjectNode();
-        m_Server->Configure(reg, diff);
-        m_Server->SetAnybodyCanReconfigure(false);
-
         // Logging from the [server] section
         SNS_Parameters          params;
         params.Read(reg);
 
         CJsonNode   what_changed = m_Server->SetNSParameters(params, true);
         CJsonNode   services_changed = m_Server->ReadServicesConfig(reg);
+
+        CJsonNode   diff = CJsonNode::NewObjectNode();
+        m_Server->Configure(reg, diff);
+        m_Server->SetAnybodyCanReconfigure(false);
 
         if (what_changed.GetSize() == 0 &&
             diff.GetSize() == 0 &&
@@ -4125,6 +4129,24 @@ CNetScheduleHandler::x_LogCommandWithJob(const CJob &  job) const
             GetDiagContext().Extra().Print("ncbi_phid", job.GetNCBIPHID());
         } else
             GetDiagContext().Extra().Print("job_phid", job.GetNCBIPHID());
+    }
+}
+
+
+void
+CNetScheduleHandler::x_LogCommandWithJob(const string &  client_ip,
+                                         const string &  client_sid,
+                                         const string &  phid) const
+{
+    // If a command refers to a job some way then it should be logged
+    // in a different way depending on the command source.
+    if (x_NeedCmdLogging()) {
+        if (x_WorkerNodeCommand()) {
+            CDiagContext::GetRequestContext().SetClientIP(client_ip);
+            CDiagContext::GetRequestContext().SetSessionID(client_sid);
+            GetDiagContext().Extra().Print("ncbi_phid", phid);
+        } else
+            GetDiagContext().Extra().Print("job_phid", phid);
     }
 }
 

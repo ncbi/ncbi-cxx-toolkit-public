@@ -125,6 +125,7 @@ struct SNS_Parameters : SServer_Parameters
     unsigned int    affinity_dirt_percentage;
 
     unsigned int    reserve_dump_space;
+    unsigned int    wst_cache_size;
 
     void Read(const IRegistry &  reg);
 

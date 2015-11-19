@@ -505,6 +505,16 @@ void NS_ValidateServerSection(const IRegistry &  reg,
     }
 
     NS_ValidateDataSize(reg, section, "reserve_dump_space", warnings);
+
+    ok = NS_ValidateInt(reg, section, "wst_cache_size", warnings);
+    if (ok) {
+        int     val = reg.GetInt(section, "wst_cache_size",
+                                 default_wst_cache_size);
+        if (val < 0)
+            warnings.push_back(g_ValidPrefix + "value " +
+                     NS_RegValName(section, "wst_cache_size") +
+                     " must be >= 0");
+    }
 }
 
 

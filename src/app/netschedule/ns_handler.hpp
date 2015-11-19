@@ -243,6 +243,9 @@ private:
     bool x_NeedToGeneratePHIDAndSID(FProcessor  processor) const;
     bool x_WorkerNodeCommand(void) const;
     void x_LogCommandWithJob(const CJob &  job) const;
+    void x_LogCommandWithJob(const string &  client_ip,
+                             const string &  client_sid,
+                             const string &  phid) const;
 
     void x_ClearRollbackAction(void);
     void x_ExecuteRollbackAction(CQueue * q);

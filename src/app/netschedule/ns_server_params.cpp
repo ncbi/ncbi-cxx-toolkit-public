@@ -212,6 +212,10 @@ void SNS_Parameters::Read(const IRegistry &  reg)
 
     reserve_dump_space = NS_GetDataSize(reg, "server", "reserve_dump_space",
                                         default_reserve_dump_space);
+    wst_cache_size = GetIntNoErr("wst_cache_size",
+                                 default_wst_cache_size);
+    if (wst_cache_size < 0)
+        wst_cache_size = default_wst_cache_size;
 
     // Max affinities
     max_affinities = GetIntNoErr("max_affinities", default_max_affinities);

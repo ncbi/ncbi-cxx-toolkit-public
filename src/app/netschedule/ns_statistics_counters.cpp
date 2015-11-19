@@ -179,7 +179,10 @@ void CStatisticsCounters::PrintTransitions(CDiagContext_Extra &  extra) const
          .Print("TOTAL_ns_read_rollbacks", m_NSReadRollbackCounter.Get())
          .Print("TOTAL_picked_as_pending_outdated", m_PickedAsPendingOutdated.Get())
          .Print("TOTAL_picked_as_read_outdated", m_PickedAsReadOutdated.Get())
-         .Print("TOTAL_dbdeletions", m_DBDeleteCounter.Get());
+         .Print("TOTAL_dbdeletions", m_DBDeleteCounter.Get())
+         .Print("TOTAL_job_info_cache_hit", m_JobInfoCacheHit.Get())
+         .Print("TOTAL_job_info_cache_miss", m_JobInfoCacheMiss.Get())
+         .Print("TOTAL_job_info_cache_gc_removed", m_JobInfoGCRemoved.Get());
 
     for (size_t  index_from = 0;
          index_from < g_ValidJobStatusesSize; ++index_from) {
@@ -264,7 +267,16 @@ void CStatisticsCounters::PrintDelta(CDiagContext_Extra &  extra,
                 prev.m_PickedAsReadOutdated.Get())
          .Print("DELTA_dbdeletions",
                 m_DBDeleteCounter.Get() -
-                prev.m_DBDeleteCounter.Get());
+                prev.m_DBDeleteCounter.Get())
+         .Print("DELTA_job_info_cache_hit",
+                m_JobInfoCacheHit.Get() -
+                prev.m_JobInfoCacheHit.Get())
+         .Print("DELTA_job_info_cache_miss",
+                m_JobInfoCacheMiss.Get() -
+                prev.m_JobInfoCacheMiss.Get())
+         .Print("DELTA_job_info_cache_gc_removed",
+                m_JobInfoGCRemoved.Get() -
+                prev.m_JobInfoGCRemoved.Get());
 
     for (size_t  index_from = 0;
          index_from < g_ValidJobStatusesSize; ++index_from) {
@@ -365,7 +377,14 @@ string CStatisticsCounters::PrintTransitions(void) const
                     "OK:picked_as_read_outdated: " +
                     NStr::NumericToString(m_PickedAsReadOutdated.Get()) + "\n"
                     "OK:dbdeletions: " +
-                    NStr::NumericToString(m_DBDeleteCounter.Get()) + "\n";
+                    NStr::NumericToString(m_DBDeleteCounter.Get()) + "\n"
+                    "OK:job_info_cache_hit: " +
+                    NStr::NumericToString(m_JobInfoCacheHit.Get()) + "\n"
+                    "OK:job_info_cache_miss: " +
+                    NStr::NumericToString(m_JobInfoCacheMiss.Get()) + "\n"
+                    "OK:job_info_cache_gc_removed: " +
+                    NStr::NumericToString(m_JobInfoGCRemoved.Get()) + "\n"
+                    ;
 
     for (size_t  index_from = 0;
          index_from < g_ValidJobStatusesSize; ++index_from) {
@@ -624,6 +643,29 @@ void CStatisticsCounters::CountToPendingRescheduled(size_t  count)
     m_ToPendingRescheduled.Add(count);
     if (m_Scope == eQueueCounters)
         s_ServerWide.CountToPendingRescheduled(count);
+}
+
+void CStatisticsCounters::CountJobInfoCacheHit(size_t  count)
+{
+    m_JobInfoCacheHit.Add(count);
+    if (m_Scope == eQueueCounters)
+        s_ServerWide.CountJobInfoCacheHit(count);
+}
+
+
+void CStatisticsCounters::CountJobInfoCacheMiss(size_t  count)
+{
+    m_JobInfoCacheMiss.Add(count);
+    if (m_Scope == eQueueCounters)
+        s_ServerWide.CountJobInfoCacheMiss(count);
+}
+
+
+void CStatisticsCounters::CountJobInfoCacheGCRemoved(size_t  count)
+{
+    m_JobInfoGCRemoved.Add(count);
+    if (m_Scope == eQueueCounters)
+        s_ServerWide.CountJobInfoCacheGCRemoved(count);
 }
 
 

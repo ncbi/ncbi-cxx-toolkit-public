@@ -137,6 +137,7 @@ public:
     void StaleWNodes(void);
     void PurgeBlacklistedJobs(void);
     void PurgeClientRegistry(void);
+    void PurgeJobInfoCache(void);
 
     // Notify all listeners
     void NotifyListeners(void);
