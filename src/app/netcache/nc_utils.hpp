@@ -217,6 +217,7 @@ public:
         eDebugCacheDeleted4,
         eDebugCacheFailedMgrAttach,
         eDebugCacheFailedMgrDetach,
+        eDebugCacheWrongMgr,
         eDebugCacheWrong,
         eDebugWrongCacheFound1,
         eDebugWrongCacheFound2,

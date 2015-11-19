@@ -261,6 +261,7 @@ static const AlertToId  s_alertToIdMap[] = {
     {CNCAlerts::eDebugCacheDeleted4, "eDebugCacheDeleted4"},
     {CNCAlerts::eDebugCacheFailedMgrAttach, "eDebugCacheFailedMgrAttach"},
     {CNCAlerts::eDebugCacheFailedMgrDetach, "eDebugCacheFailedMgrDetach"},
+    {CNCAlerts::eDebugCacheWrongMgr, "eDebugCacheWrongMgr"},
     {CNCAlerts::eDebugCacheWrong, "eDebugCacheWrong"},
     {CNCAlerts::eDebugWrongCacheFound1, "eDebugWrongCacheFound1"},
     {CNCAlerts::eDebugWrongCacheFound2, "eDebugWrongCacheFound2"},
