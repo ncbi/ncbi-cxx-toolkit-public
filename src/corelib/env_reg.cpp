@@ -241,6 +241,34 @@ bool CEnvironmentRegistry::x_Set(const string& section, const string& name,
 }
 
 
+bool CEnvironmentRegistry::x_Unset(const string& section, const string& name,
+                                   TFlags flags)
+{
+    bool result = false;
+    ITERATE (TPriorityMap, it, m_PriorityMap) {
+        string var_name = it->second->RegToEnv(section, name);
+        bool   found;
+        if (var_name.empty()) {
+            continue;
+        }
+        m_Env->Get(var_name, &found);
+        if (found) {
+            result = true;
+            m_Env->Unset(var_name);
+        }
+        if ((m_Flags & fCaseFlags) == 0) {
+            string cap_name = var_name;
+            NStr::ToUpper(cap_name);
+            m_Env->Get(cap_name, &found);
+            if (found) {
+                result = true;
+                m_Env->Unset(cap_name);
+            }
+        }
+    }
+    return result;
+}
+
 bool CEnvironmentRegistry::x_SetComment(const string&, const string&,
                                         const string&, TFlags)
 {

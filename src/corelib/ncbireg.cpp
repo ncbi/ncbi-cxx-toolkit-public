@@ -815,6 +815,33 @@ bool IRWRegistry::Set(const string& section, const string& name,
 }
 
 
+bool IRWRegistry::Unset(const string& section, const string& name,
+                        TFlags flags)
+{
+    x_CheckFlags("IRWRegistry::Unset", flags,
+                 fTPFlags | fCountCleared | fSectionlessEntries);
+    string clean_section = NStr::TruncateSpaces(section);
+    if ( !s_IsNameSection(clean_section, flags) ) {
+        _TRACE("IRWRegistry::Unset: bad section name \""
+               << NStr::PrintableString(section) << '\"');
+        return false;
+    }
+    string clean_name = NStr::TruncateSpaces(name);
+    if ( !s_IsNameEntry(clean_name, flags) ) {
+        _TRACE("IRWRegistry::Unset: bad entry name \""
+               << NStr::PrintableString(name) << '\"');
+        return false;
+    }
+    TWriteGuard LOCK(*this);
+    if (x_Unset(clean_section, clean_name, flags)) {
+        x_SetModifiedFlag(true, flags);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 bool IRWRegistry::SetComment(const string& comment, const string& section,
                              const string& name, TFlags flags)
 {
@@ -965,25 +992,7 @@ bool CMemoryRegistry::x_Set(const string& section, const string& name,
     _TRACE(this << ": [" << section << ']' << name << " = " << value);
 #if 0 // historic behavior; could inappropriately expose entries in lower layers
     if (value.empty()) {
-        if (flags & fNoOverride) {
-            return false;
-        }
-        // remove
-        TSections::iterator sit = m_Sections.find(section);
-        if (sit == m_Sections.end()) {
-            return false;
-        }
-        TEntries& entries = sit->second.entries;
-        TEntries::iterator eit = entries.find(name);
-        if (eit == entries.end()) {
-            return false;
-        } else {
-            entries.erase(eit);
-            if (entries.empty()  &&  sit->second.comment.empty()) {
-                m_Sections.erase(sit);
-            }
-            return true;
-        }
+        return x_Unset(section, name, flags);
     } else
 #endif
     {
@@ -1020,6 +1029,29 @@ bool CMemoryRegistry::x_Set(const string& section, const string& name,
             return true;
         }
         return false;
+    }
+}
+
+
+bool CMemoryRegistry::x_Unset(const string& section, const string& name,
+                              TFlags flags)
+{
+    _TRACE(this << ": [" << section << ']' << name << " to be unset");
+    TSections::iterator sit = m_Sections.find(section);
+    if (sit == m_Sections.end()) {
+        return false;
+    }
+    TEntries& entries = sit->second.entries;
+    TEntries::iterator eit = entries.find(name);
+    if (eit == entries.end()) {
+        return false;
+    } else {
+        entries.erase(eit);
+        if (entries.empty()  &&  sit->second.comment.empty()
+            &&  (flags & fCountCleared) == 0) {
+            m_Sections.erase(sit);
+        }
+        return true;
     }
 }
 
@@ -1380,6 +1412,20 @@ bool CTwoLayerRegistry::x_Set(const string& section, const string& name,
         return m_Transient->Set(section, name, value, flags & ~fTPFlags,
                                 comment);
     }
+}
+
+
+bool CTwoLayerRegistry::x_Unset(const string& section, const string& name,
+                                TFlags flags)
+{
+    bool result = false;
+    if ((flags & fTPFlags) != fTransient) {
+        result |= m_Persistent->Unset(section, name, flags & ~fTPFlags);
+    }
+    if ((flags & fTPFlags) != fPersistent) {
+        result |= m_Transient->Unset(section, name, flags & ~fTPFlags);
+    }
+    return result;
 }
 
 
@@ -1861,6 +1907,19 @@ bool CCompoundRWRegistry::x_Set(const string& section, const string& name,
         }
     }
     return m_MainRegistry->Set(section, name, value, flags, comment);
+}
+
+
+bool CCompoundRWRegistry::x_Unset(const string& section, const string& name,
+                                  TFlags flags)
+{
+    bool result = false;
+    NON_CONST_ITERATE (CCompoundRegistry::TPriorityMap, it,
+                       m_AllRegistries->m_PriorityMap) {
+        IRWRegistry& subreg = dynamic_cast<IRWRegistry&>(*it->second);
+        result |= subreg.Unset(section, name, flags);
+    }
+    return result;
 }
 
 

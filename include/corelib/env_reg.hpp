@@ -125,6 +125,7 @@ protected:
     bool x_Set(const string& section, const string& name,
                const string& value, TFlags flags,
                const string& comment);
+    bool x_Unset(const string& section, const string& name, TFlags flags);
     bool x_SetComment(const string& comment, const string& section,
                       const string& name, TFlags flags);
 

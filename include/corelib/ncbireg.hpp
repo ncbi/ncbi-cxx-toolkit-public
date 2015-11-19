@@ -378,8 +378,6 @@ public:
 
     /// Set the configuration parameter value.
     ///
-    /// Unset the parameter if specified "value" is empty.
-    ///
     /// @param value
     ///   Value that the parameter is set to.
     /// @param flags
@@ -402,6 +400,12 @@ public:
              TFlags        flags   = 0,
              const string& comment = kEmptyStr);
 
+    /// Fully unset the configuration parameter value, so that
+    /// HasEntry returns false.
+    /// @return
+    ///   TRUE if there had been an existing value.
+    bool Unset(const string& section, const string& name, TFlags flags = 0);
+    
     /// Set comment "comment" for the registry entry "section:name".
     ///
     /// @param comment
@@ -442,6 +446,8 @@ protected:
     virtual bool x_Set(const string& section, const string& name,
                        const string& value, TFlags flags,
                        const string& comment) = 0;
+    virtual bool x_Unset(const string& section, const string& name,
+                         TFlags flags) = 0;
     virtual bool x_SetComment(const string& comment, const string& section,
                               const string& name, TFlags flags) = 0;
 
@@ -493,6 +499,7 @@ protected:
     bool x_Set(const string& section, const string& name,
                const string& value, TFlags flags,
                const string& comment);
+    bool x_Unset(const string& section, const string& name, TFlags flags);
     bool x_SetComment(const string& comment, const string& section,
                       const string& name, TFlags flags);
 
@@ -652,6 +659,7 @@ protected:
     bool x_Set(const string& section, const string& name,
                const string& value, TFlags flags,
                const string& comment);
+    bool x_Unset(const string& section, const string& name, TFlags flags);
     bool x_SetComment(const string& comment, const string& section,
                       const string& name, TFlags flags);
 
@@ -754,6 +762,7 @@ protected:
     bool x_Set(const string& section, const string& name,
                const string& value, TFlags flags,
                const string& comment);
+    bool x_Unset(const string& section, const string& name, TFlags flags);
     bool x_SetComment(const string& comment, const string& section,
                       const string& name, TFlags flags);
     IRWRegistry* x_Read(CNcbiIstream& is, TFlags flags, const string& path);
