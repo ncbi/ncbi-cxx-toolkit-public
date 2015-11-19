@@ -257,6 +257,7 @@ public:
     bool IsEukaryotic(void);
     bool IsCurrentRnaInGenProdSet(void);
     bool SequenceHasFarPointers(void);
+    map<char, size_t>& GetNucleotideCount(void);    // making map non-constant to allow operator[]
     bool HasFeatures(void) const { return m_Feat_CI; }
 
 protected:

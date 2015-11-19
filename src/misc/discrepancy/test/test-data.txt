@@ -2,5 +2,6 @@
 
 COUNT_NUCLEOTIDES	COUNT_NUCLEOTIDES	DISC_COUNT_NUCLEOTIDES	COUNT_PROTEINS.sqn
 COUNT_PROTEINS		COUNT_PROTEINS		COUNT_PROTEINS		COUNT_PROTEINS.sqn	
+ZERO_BASECOUNT		ZERO_BASECOUNT		ZERO_BASECOUNT		zero_basecount.asn	ZERO_BASECOUNT.gold.txt		C Toolkit counts the same sequence multiple times
 
 ### Please keep the tests in alphabetical order!

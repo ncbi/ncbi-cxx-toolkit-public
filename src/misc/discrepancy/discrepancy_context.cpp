@@ -35,6 +35,7 @@
 #include <objects/seq/seq_macros.hpp>
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seqfeat/Delta_item.hpp>
+#include <objmgr/seq_vector.hpp>
 #include <objmgr/util/sequence.hpp>
 
 
@@ -188,6 +189,23 @@ bool CDiscrepancyContext::SequenceHasFarPointers()
         }
     }
     return result;
+}
+
+
+map<char, size_t>& CDiscrepancyContext::GetNucleotideCount()
+{
+    static map<char, size_t> ret;
+    static size_t count = 0;
+    if (count == m_Count_Bioseq) {
+        return ret;
+    }
+    count = m_Count_Bioseq;
+    ret.clear();
+    CSeqVector seq_vec(*GetCurrentBioseq(), &GetScope(), CBioseq_Handle::eCoding_Iupac);
+    ITERATE(CSeqVector, base, seq_vec) {
+        ret[*base]++;
+    }
+    return ret;
 }
 
 

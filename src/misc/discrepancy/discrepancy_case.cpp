@@ -513,54 +513,14 @@ DISCREPANCY_AUTOFIX(CONTAINED_CDS)
 }
 
 
-struct SBaseCount {
-    size_t count;
-    char base;  // capitalized
-};
-
-
 DISCREPANCY_CASE(ZERO_BASECOUNT, CSeq_inst, eAll, "Zero Base Counts")
 {
     if (obj.IsAa() || context.SequenceHasFarPointers()) {
         return;
     }
-
-    SBaseCount base_counts[] = {
-        { 0, 'A' },
-        { 0, 'C' },
-        { 0, 'G' },
-        { 0, 'T' },
-    };
-    // make sure that a less-optimizing compiler doesn't do an array reference
-    // for every base.
-    size_t & num_a = base_counts[0].count;
-    size_t & num_c = base_counts[1].count;
-    size_t & num_g = base_counts[2].count;
-    size_t & num_t = base_counts[3].count;
-
-    CSeqVector seq_vec(*context.GetCurrentBioseq(), &context.GetScope(), CBioseq_Handle::eCoding_Iupac);
-    ITERATE(CSeqVector, base_ci, seq_vec) {
-        switch(toupper(*base_ci)) {
-        case 'A': ++num_a; break;
-        case 'C': ++num_c; break;
-        case 'G': ++num_g; break;
-        case 'T': ++num_t; break;
-        default:
-            // ignore others
-            break;
-        }
-    }
-
-    ITERATE_0_IDX(base_idx, ArraySize(base_counts)) {
-        const SBaseCount & base_count = base_counts[base_idx];
-        if( base_count.count < 1 ) {
-            m_Objs["[n] sequence[s] [has] a zero basecount for a nucleotide"][
-                FORMAT("[n] sequence[s] [has] no "
-                       << base_count.base << "s")].Add(
-                           *new CDiscrepancyObject(
-                               context.GetCurrentBioseq(), context.GetScope(),
-                               context.GetFile(), context.GetKeepRef()));
-        }
+    map<char, size_t>& Map = context.GetNucleotideCount();
+    if (!Map['A'] || !Map['C'] || !Map['G'] || !Map['T']) {
+        m_Objs["[n] sequence[s] [has] a zero basecount for a nucleotide"].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
     }
 }
 

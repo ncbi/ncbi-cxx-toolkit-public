@@ -1,0 +1,12 @@
+Discrepancy Report Results
+
+Summary
+ZERO_BASECOUNT: 3 sequences have a zero basecount for a nucleotide
+
+Detailed Report
+
+ZERO_BASECOUNT: 3 sequences have a zero basecount for a nucleotide
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\zero_basecount.asn:seq_that_is_missing_A (length 60)
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\zero_basecount.asn:seq_that_is_missing_C (length 60)
+C:\Users\kachalos.NCBI_NT\Desktop\svn\src\misc\discrepancy\test\test-data\zero_basecount.asn:seq_that_is_missing_A_and_T (length 60)
+
