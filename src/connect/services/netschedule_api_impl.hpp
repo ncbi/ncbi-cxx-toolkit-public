@@ -325,6 +325,11 @@ struct SNetScheduleAPIImpl : public CObject
     // maintain job affinity for the client.
     void x_ClearNode();
 
+    void UpdateAuthString();
+    void UseOldStyleAuth();
+    void SetAuthParam(const string& param_name, const string& param_value);
+    CCompoundIDPool GetCompoundIDPool() { return m_CompoundIDPool; }
+
     CNetService m_Service;
 
     string m_Queue;

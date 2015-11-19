@@ -428,7 +428,7 @@ private:
     CNetCacheAPI m_NetCacheAPI;
     CNetCacheAdmin m_NetCacheAdmin;
     CNetICacheClient m_NetICacheClient;
-    CNetScheduleAPI m_NetScheduleAPI;
+    CNetScheduleAPIExt m_NetScheduleAPI;
     CNetScheduleAdmin m_NetScheduleAdmin;
     CNetScheduleSubmitter m_NetScheduleSubmitter;
     CNetScheduleExecutor m_NetScheduleExecutor;

@@ -147,8 +147,22 @@ protected:
 
 struct NCBI_XCONNECT_EXPORT CNetScheduleAPIExt : CNetScheduleAPI
 {
-    CNetScheduleAPIExt(CNetScheduleAPI::TInstance api) : CNetScheduleAPI(api) {}
+    CNetScheduleAPIExt() {}
+    CNetScheduleAPIExt(TInstance api) : CNetScheduleAPI(api) {}
+    CNetScheduleAPIExt& operator=(TInstance api)
+    {
+        CNetScheduleAPI::operator=(api);
+        return *this;
+    }
     void AddToClientNode(const string& data);
+    void UpdateAuthString();
+    void UseOldStyleAuth();
+    void SetEventHandler(INetEventHandler* event_handler);
+    CCompoundIDPool GetCompoundIDPool();
+
+    /// Extract one of the servers comprising this service
+    /// as a separate NetSchedule API object.
+    CNetScheduleAPI GetServer(CNetServer::TInstance server);
 
     // Create workernode-compatible API
     static TInstance CreateWnCompat(const string&, const string&);

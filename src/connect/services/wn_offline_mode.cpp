@@ -219,14 +219,14 @@ int SGridWorkerNodeImpl::OfflineRun()
             try {
                 CRef<SOfflineJobContextImpl> job_context_impl(
                         new SOfflineJobContextImpl(this, output_dir_name,
-                                m_NetScheduleAPI.GetCompoundIDPool()));
+                                m_NetScheduleAPI->GetCompoundIDPool()));
 
                 CWorkerNodeJobContext job_context(job_context_impl);
 
                 job_context_impl->ResetJobContext();
 
                 CNetScheduleJobSerializer job_serializer(job_context.GetJob(),
-                        m_NetScheduleAPI.GetCompoundIDPool());
+                        m_NetScheduleAPI->GetCompoundIDPool());
 
                 job_serializer.LoadJobInput(dir_entry.GetPath());
 

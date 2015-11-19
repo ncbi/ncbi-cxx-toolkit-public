@@ -293,30 +293,6 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
     static ENetScheduleWarningType ExtractWarningType(string& warn_msg);
     static const char* WarningTypeToString(
             ENetScheduleWarningType warning_type);
-
-    /// @internal
-    void UpdateAuthString();
-
-    /// This method is for use by the grid_cli utility only.
-    /// @internal
-    void UseOldStyleAuth();
-
-    /// Extract one of the servers comprising this service
-    /// as a separate NetSchedule API object.
-    /// This method is for use by the grid_cli utility only.
-    /// @internal
-    CNetScheduleAPI GetServer(CNetServer::TInstance server);
-
-    /// This method is for use by the grid_cli utility only.
-    /// @internal
-    void SetEventHandler(INetEventHandler* event_handler);
-
-    /// This method is for use by worker nodes.
-    /// @internal
-    void SetAuthParam(const string& param_name, const string& param_value);
-
-    /// @internal
-    CCompoundIDPool GetCompoundIDPool();
 };
 
 

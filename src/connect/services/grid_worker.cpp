@@ -653,8 +653,8 @@ int SGridWorkerNodeImpl::Run(
     string control_port_str(
             NStr::NumericToString(control_thread->GetControlPort()));
     LOG_POST_X(60, "Control port: " << control_port_str);
-    m_NetScheduleAPI.SetAuthParam("control_port", control_port_str);
-    m_NetScheduleAPI.SetAuthParam("client_host", CSocketAPI::gethostname());
+    m_NetScheduleAPI->SetAuthParam("control_port", control_port_str);
+    m_NetScheduleAPI->SetAuthParam("client_host", CSocketAPI::gethostname());
 
     // Add control port to client node name
     const string port(NStr::NumericToString(control_thread->GetControlPort()));

@@ -302,7 +302,7 @@ private:
     int m_RefreshWait;
     int m_FirstDelay;
 
-    CNetScheduleAPI m_NetScheduleAPI;
+    CNetScheduleAPIExt m_NetScheduleAPI;
     CNetCacheAPI m_NetCacheAPI;
     auto_ptr<CGridClient> m_GridClient;
     CCgiResponse* m_Response;
@@ -602,8 +602,7 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
     if (!m_PortAdded) {
         m_PortAdded = true;
         const string port(env.Get(CCgiRequest::GetPropertyName(eCgi_ServerPort)));
-        CNetScheduleAPIExt api_ext(m_NetScheduleAPI);
-        api_ext.AddToClientNode(port);
+        m_NetScheduleAPI.AddToClientNode(port);
     }
 
     // Given "CGI context", get access to its "HTTP request" and

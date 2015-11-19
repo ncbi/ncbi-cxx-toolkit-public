@@ -75,11 +75,11 @@ struct SNetScheduleServiceAutomationObject : public SNetServiceAutomationObject
     virtual bool Call(const string& method,
             CArgArray& arg_array, CJsonNode& reply);
 
-    CNetScheduleAPI m_NetScheduleAPI;
+    CNetScheduleAPIExt m_NetScheduleAPI;
 
 protected:
     SNetScheduleServiceAutomationObject(CAutomationProc* automation_proc,
-            const CNetScheduleAPI& ns_server) :
+            const CNetScheduleAPI::TInstance ns_server) :
         SNetServiceAutomationObject(automation_proc,
                 CNetService::eSingleServerService),
         m_NetScheduleAPI(ns_server)
@@ -92,7 +92,7 @@ struct SNetScheduleServerAutomationObject :
         public SNetScheduleServiceAutomationObject
 {
     SNetScheduleServerAutomationObject(CAutomationProc* automation_proc,
-            CNetScheduleAPI ns_api, CNetServer::TInstance server) :
+            CNetScheduleAPIExt ns_api, CNetServer::TInstance server) :
         SNetScheduleServiceAutomationObject(automation_proc,
                 ns_api.GetServer(server)),
         m_NetServer(server)

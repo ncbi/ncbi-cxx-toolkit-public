@@ -925,7 +925,7 @@ void CNetScheduleAPI::SetProgramVersion(const string& pv)
 {
     m_Impl->m_ProgramVersion = pv;
 
-    UpdateAuthString();
+    m_Impl->UpdateAuthString();
 }
 
 const string& CNetScheduleAPI::GetProgramVersion() const
@@ -1341,7 +1341,7 @@ void CNetScheduleAPI::SetClientNode(const string& client_node)
 
     m_Impl->m_ClientNode = client_node;
 
-    UpdateAuthString();
+    m_Impl->UpdateAuthString();
 }
 
 void CNetScheduleAPI::SetClientSession(const string& client_session)
@@ -1350,41 +1350,31 @@ void CNetScheduleAPI::SetClientSession(const string& client_session)
 
     m_Impl->m_ClientSession = client_session;
 
-    UpdateAuthString();
+    m_Impl->UpdateAuthString();
 }
 
-void CNetScheduleAPI::UpdateAuthString()
+void SNetScheduleAPIImpl::UpdateAuthString()
 {
-    m_Impl->m_Service->m_ServerPool->ResetServerConnections();
+    m_Service->m_ServerPool->ResetServerConnections();
 
-    m_Impl->GetListener()->SetAuthString(m_Impl);
+    GetListener()->SetAuthString(this);
 }
 
 void CNetScheduleAPI::SetClientType(CNetScheduleAPI::EClientType client_type)
 {
     m_Impl->GetListener()->m_ClientType = client_type;
 
+    m_Impl->UpdateAuthString();
+}
+
+void SNetScheduleAPIImpl::UseOldStyleAuth()
+{
+    m_Service->m_ServerPool->m_UseOldStyleAuth = true;
+
     UpdateAuthString();
 }
 
-void CNetScheduleAPI::UseOldStyleAuth()
-{
-    m_Impl->m_Service->m_ServerPool->m_UseOldStyleAuth = true;
-
-    UpdateAuthString();
-}
-
-CNetScheduleAPI CNetScheduleAPI::GetServer(CNetServer::TInstance server)
-{
-    return new SNetScheduleAPIImpl(server->m_ServerInPool, m_Impl);
-}
-
-void CNetScheduleAPI::SetEventHandler(INetEventHandler* event_handler)
-{
-    m_Impl->GetListener()->m_EventHandler = event_handler;
-}
-
-void CNetScheduleAPI::SetAuthParam(const string& param_name,
+void SNetScheduleAPIImpl::SetAuthParam(const string& param_name,
         const string& param_value)
 {
     if (!param_value.empty()) {
@@ -1392,16 +1382,11 @@ void CNetScheduleAPI::SetAuthParam(const string& param_name,
         auth_param += "=\"";
         auth_param += NStr::PrintableString(param_value);
         auth_param += '"';
-        m_Impl->m_AuthParams[param_name] = auth_param;
+        m_AuthParams[param_name] = auth_param;
     } else
-        m_Impl->m_AuthParams.erase(param_name);
+        m_AuthParams.erase(param_name);
 
     UpdateAuthString();
-}
-
-CCompoundIDPool CNetScheduleAPI::GetCompoundIDPool()
-{
-    return m_Impl->m_CompoundIDPool;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1480,6 +1465,31 @@ void CNetScheduleAPIExt::AddToClientNode(const string& data)
     client_node += ':';
     client_node += data;
     UpdateAuthString();
+}
+
+void CNetScheduleAPIExt::UpdateAuthString()
+{
+    m_Impl->UpdateAuthString();
+}
+
+void CNetScheduleAPIExt::UseOldStyleAuth()
+{
+    m_Impl->UseOldStyleAuth();
+}
+
+void CNetScheduleAPIExt::SetEventHandler(INetEventHandler* event_handler)
+{
+    m_Impl->GetListener()->m_EventHandler = event_handler;
+}
+
+CCompoundIDPool CNetScheduleAPIExt::GetCompoundIDPool()
+{
+    return m_Impl->m_CompoundIDPool;
+}
+
+CNetScheduleAPI CNetScheduleAPIExt::GetServer(CNetServer::TInstance server)
+{
+    return new SNetScheduleAPIImpl(server->m_ServerInPool, m_Impl);
 }
 
 CNetScheduleAPI::TInstance
