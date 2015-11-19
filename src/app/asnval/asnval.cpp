@@ -167,6 +167,7 @@ private:
     string m_CurrentId;
     string m_LongestId;
     size_t m_NumFiles;
+    size_t m_NumRecords;
 
     size_t m_Level;
     size_t m_Reported;
@@ -200,10 +201,10 @@ public:
 CAsnvalApp::CAsnvalApp(void) :
     m_ObjMgr(0), m_In(0), m_Options(0), m_Continue(false), m_OnlyAnnots(false),
     m_Longest(0), m_CurrentId(""), m_LongestId(""), m_NumFiles(0),
-    m_Level(0), m_Reported(0), m_verbosity(eVerbosity_min),
+    m_NumRecords(0), m_Level(0), m_Reported(0), m_verbosity(eVerbosity_min),
     m_ValidErrorStream(0), m_LogStream(0)
 {
-    SetVersion(CVersionInfo(0, 9, 1));
+    SetVersion(CVersionInfo(0, 9, 2));
 }
 
 
@@ -503,7 +504,7 @@ int CAsnvalApp::Run(void)
     if (m_LogStream) {
         *m_LogStream << "Finished in " << stop_time - start_time << " seconds" << endl;
         *m_LogStream << "Longest processing time " << m_Longest << " seconds on " << m_LongestId << endl;
-        *m_LogStream << "Total number of records " << m_NumFiles << endl;
+        *m_LogStream << "Total number of records " << m_NumRecords << endl;
     }
 
     DestroyOutputStreams();
@@ -555,6 +556,7 @@ void CAsnvalApp::ReadClassMember
                     for (CSeq_annot_CI ni(seh); ni; ++ni) {
                         const CSeq_annot_Handle& sah = *ni;
                         CConstRef<CValidError> eval = validator.Validate(sah, m_Options);
+                        m_NumRecords++;
                         if ( eval ) {
                             PrintValidError(eval, GetArgs());
                         }
@@ -563,6 +565,7 @@ void CAsnvalApp::ReadClassMember
                     // CConstRef<CValidError> eval = validator.Validate(*se, &scope, m_Options);
                     CStopWatch sw(CStopWatch::eStart);
                     CConstRef<CValidError> eval = validator.Validate(seh, m_Options);
+                    m_NumRecords++;
                     //if (m_ValidErrorStream) {
                     //    *m_ValidErrorStream << "Elapsed = " << sw.Elapsed() << endl;
                     //}
@@ -755,13 +758,16 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry(CSeq_entry& se)
         for (CSeq_annot_CI ni(seh); ni; ++ni) {
             const CSeq_annot_Handle& sah = *ni;
             CConstRef<CValidError> eval = validator.Validate(sah, m_Options);
+            m_NumRecords++;
             if ( eval ) {
                 PrintValidError(eval, GetArgs());
             }
         }
         return CConstRef<CValidError>();
     }
-    return validator.Validate(se, scope, m_Options);
+    CConstRef<CValidError> eval = validator.Validate(se, scope, m_Options);
+    m_NumRecords++;
+    return eval;
 }
 
 
@@ -785,7 +791,9 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqFeat(void)
     }
 
     CValidator validator(*m_ObjMgr);
-    return validator.Validate(*feat, scope, m_Options);
+    CConstRef<CValidError> eval = validator.Validate(*feat, scope, m_Options);
+    m_NumRecords++;
+    return eval;
 }
 
 
@@ -804,7 +812,9 @@ CConstRef<CValidError> CAsnvalApp::ProcessBioSource(void)
 
     CValidator validator(*m_ObjMgr);
     CRef<CScope> scope = BuildScope();
-    return validator.Validate(*src, scope, m_Options);
+    CConstRef<CValidError> eval = validator.Validate(*src, scope, m_Options);
+    m_NumRecords++;
+    return eval;
 }
 
 
@@ -823,7 +833,9 @@ CConstRef<CValidError> CAsnvalApp::ProcessPubdesc(void)
 
     CValidator validator(*m_ObjMgr);
     CRef<CScope> scope = BuildScope();
-    return validator.Validate(*pd, scope, m_Options);
+    CConstRef<CValidError> eval = validator.Validate(*pd, scope, m_Options);
+    m_NumRecords++;
+    return eval;
 }
 
 
@@ -856,7 +868,9 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqSubmit(void)
         m_Cleanup.BasicCleanup (*ss);
     }
 
-    return validator.Validate(*ss, scope, m_Options);
+    CConstRef<CValidError> eval = validator.Validate(*ss, scope, m_Options);
+    m_NumRecords++;
+    return eval;
 }
 
 
@@ -875,7 +889,9 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqAnnot(void)
         m_Cleanup.BasicCleanup (*sa);
     }
     CSeq_annot_Handle sah = scope->AddSeq_annot(*sa);
-    return validator.Validate(sah, m_Options);
+    CConstRef<CValidError> eval = validator.Validate(sah, m_Options);
+    m_NumRecords++;
+    return eval;
 }
 
 
