@@ -96,6 +96,7 @@ public:
     }
 private:
     CNetScheduleKeyGenerator *  m_KeyGenerator;
+    CCompoundIDPool m_CompoundIDPool;
 };
 
 
@@ -238,7 +239,7 @@ CTestNetScheduleCrash::Submit( vector<CNetScheduleAPI> &    clients,
             submitter.SubmitJob(job);
 
             CNetScheduleKey     key( job.job_id,
-                                     clients[client].GetCompoundIDPool() );
+                                     m_CompoundIDPool );
             jobs.push_back( key.id );
             if (m_KeyGenerator == NULL)
                 m_KeyGenerator = new CNetScheduleKeyGenerator( key.host,
@@ -260,7 +261,7 @@ CTestNetScheduleCrash::Submit( vector<CNetScheduleAPI> &    clients,
 
             // Dirty hack: 'OK:' need to be stripped
             CNetScheduleKey     key( result.response.c_str(),
-                                     clients[client].GetCompoundIDPool() );
+                                     m_CompoundIDPool );
             jobs.push_back( key.id );
             if (m_KeyGenerator == NULL)
                 m_KeyGenerator = new CNetScheduleKeyGenerator( key.host,
@@ -410,7 +411,7 @@ CTestNetScheduleCrash::GetDone( vector<CNetScheduleAPI> &   clients,
             break;
 
         CNetScheduleKey     key( job.job_id,
-                                 clients[client].GetCompoundIDPool() );
+                                 m_CompoundIDPool );
         jobs_processed.push_back( key.id );
 
         job.output = "JOB DONE ";
