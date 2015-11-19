@@ -802,12 +802,6 @@ BOOST_AUTO_TEST_CASE(ZERO_BASECOUNT)
         rep_item.GetMsg(),
         "3 sequences have a zero basecount for a nucleotide");
     BOOST_CHECK_EQUAL(rep_item.CanAutofix(), false);
-
-    const TReportItemList sub_items(rep_item.GetSubitems());
-    BOOST_CHECK_EQUAL( sub_items.size(), 3 );
-    BOOST_CHECK_EQUAL(sub_items[0]->GetMsg(), "2 sequences have no As");
-    BOOST_CHECK_EQUAL(sub_items[1]->GetMsg(), "1 sequence has no Cs");
-    BOOST_CHECK_EQUAL(sub_items[2]->GetMsg(), "1 sequence has no Ts");
 }
 
 BOOST_AUTO_TEST_CASE(NO_ANNOTATION)
