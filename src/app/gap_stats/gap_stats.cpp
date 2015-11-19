@@ -584,7 +584,7 @@ int CGapStatsApplication::RunNoCatch(void)
         m_fFastaFlags = 0;
 
         vector< string > raw_gap_types;
-        NStr::Tokenize(args["gap-types"].AsString(), ",", raw_gap_types);
+        NStr::Split(args["gap-types"].AsString(), ",", raw_gap_types, 0);
         if( raw_gap_types.empty() ) {
             throw SOutMessage(
                 kEmptyStr, SOutMessage::kFatalStr,
