@@ -173,7 +173,7 @@ bool CGridCgiSampleApplication::CollectParams(CGridCgiContext&)
         // get the first "message" argument only...
         const string& m = args["message"].AsString();
         vector<string> sdoubles;
-        NStr::Tokenize(m, " ", sdoubles);
+        NStr::Split(m, " ", sdoubles, NStr::fSplit_NoMergeDelims);
         for (size_t i = 0; i < sdoubles.size(); ++i) {
             try {
                 double d = NStr::StringToDouble(sdoubles[i],
