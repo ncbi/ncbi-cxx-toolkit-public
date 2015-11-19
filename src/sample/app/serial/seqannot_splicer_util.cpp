@@ -417,7 +417,8 @@ void SetSeqAnnotChoiceMask(const string& mask)
     }
 
     list<string>    flag_list;
-    NStr::Split(mask, "|", flag_list);
+    NStr::Split(mask, "|", flag_list,
+                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     list<string>::iterator  fbegin(flag_list.begin());
     list<string>::iterator  fend(flag_list.end());
     list<string>::iterator  found_flag;
@@ -458,7 +459,8 @@ void SetSeqIdChoiceMask(const string& mask)
     }
 
     list<string>    flag_list;
-    NStr::Split(mask, "|", flag_list);
+    NStr::Split(mask, "|", flag_list,
+                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     list<string>::iterator  fbegin(flag_list.begin());
     list<string>::iterator  fend(flag_list.end());
     list<string>::iterator  found_flag;
