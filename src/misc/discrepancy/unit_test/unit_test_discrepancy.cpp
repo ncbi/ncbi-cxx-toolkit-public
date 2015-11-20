@@ -823,7 +823,7 @@ BOOST_AUTO_TEST_CASE(NO_ANNOTATION)
     BOOST_REQUIRE_EQUAL(tst.size(), 1);
     TReportItemList rep = tst[0]->GetReport();
     BOOST_REQUIRE_EQUAL(rep.size(), 1);
-    BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "1 sequence has no annotation");
+    BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "1 bioseq has no features");
     }}
 
     {{
@@ -843,7 +843,7 @@ BOOST_AUTO_TEST_CASE(NO_ANNOTATION)
     BOOST_REQUIRE_EQUAL(tst.size(), 1);
     TReportItemList rep = tst[0]->GetReport();
     BOOST_REQUIRE_EQUAL(rep.size(), 1);
-    BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "2 sequences have no annotation");
+    BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "2 bioseqs have no features");
     }}
 }
 
@@ -866,7 +866,7 @@ BOOST_AUTO_TEST_CASE(LONG_NO_ANNOTATION)
     BOOST_REQUIRE_EQUAL(tst.size(), 1);
     TReportItemList rep = tst[0]->GetReport();
     BOOST_REQUIRE_EQUAL(rep.size(), 1);
-    BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "1 LONG sequence has no annotation");
+    BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "1 bioseq is longer than 5000nt and has no features");
     }}
 
     {{
