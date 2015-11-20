@@ -4,10 +4,12 @@ WATCHERS = boukn dicuccio
 
 ASN_DEP = xnetblast
 
+LIB_OR_DLL = both
+DLL_LIB = xalgoalignnw xalgoalignutil xmergetree blastinput
+
 SRC = result_set  sequence_set   \
       alignment_filterer  alignment_scorer  \
       blast_aligner  banded_aligner  merge_aligner  inversion_merge_aligner   \
-      merge_tree_aligner \
       unordered_spliter \
       ngalign  
 
