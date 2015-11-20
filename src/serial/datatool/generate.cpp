@@ -953,7 +953,7 @@ void CCodeGenerator::GenerateClientCode(void)
         // explicit name; must be enabled
         list<string> l;
         // if multiple items, may have whitespace, commas, or both...
-        NStr::Split(clients, ", \t", l);
+        NStr::Split(clients, ", \t", l, NStr::fSplit_MergeDelimiters);
         ITERATE (list<string>, it, l) {
             if ( !it->empty() ) {
                 GenerateClientCode(*it, true);

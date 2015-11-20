@@ -115,7 +115,8 @@ int CTestID1ClientApp::Run(void)
 void CTestID1ClientApp::RunCommand(const string& command)
 {
     list<string> args;
-    NStr::Split(command, " ", args);
+    NStr::Split(command, " ", args,
+                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     string verb = args.front();
     args.pop_front();
 

@@ -712,7 +712,7 @@ TGi CId1FetchApp::LookUpFlatSeqID(const string& s)
         data.erase(data.end() - 1);
         // remove last character, which should be ')'
         vector<string> pieces;
-        NStr::Tokenize(data, ",", pieces);
+        NStr::Split(data, ",", pieces, NStr::fSplit_NoMergeDelims);
         pieces.resize(4, kEmptyStr);
         // name acc rel ver -> acc name ver rel
         CSeq_id id(type, pieces[1], pieces[0],

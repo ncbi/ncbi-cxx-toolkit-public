@@ -260,7 +260,8 @@ CODBC_Connection::x_GetDriverName(const IRegistry& registry)
     const string odbc_driver_name =
         registry.GetString("ODBC", "DRIVER_NAME", "'SQL Server'");
 
-    NStr::Tokenize(odbc_driver_name, " ", driver_names);
+    NStr::Split(odbc_driver_name, " ", driver_names,
+                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     EState state = eStInitial;
     string driver_name;
 

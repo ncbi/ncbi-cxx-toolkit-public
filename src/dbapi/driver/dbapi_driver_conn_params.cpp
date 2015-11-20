@@ -401,7 +401,7 @@ void CDBUriConnParams::ParseParamPairs(const string& param_pairs, size_t cur_pos
     string key;
     string value;
 
-    NStr::Tokenize(param_pairs, "&", arr_param);
+    NStr::Split(param_pairs, "&", arr_param, NStr::fSplit_NoMergeDelims);
 
     ITERATE(vector<string>, it, arr_param) {
         if (NStr::SplitInTwo(*it, "=", key, value)) {
@@ -423,7 +423,7 @@ CDB_ODBC_ConnParams::CDB_ODBC_ConnParams(const string& params)
     string key;
     string value;
 
-    NStr::Tokenize(params, ";", arr_param);
+    NStr::Split(params, ";", arr_param, NStr::fSplit_NoMergeDelims);
 
     ITERATE(vector<string>, it, arr_param) {
         if (NStr::SplitInTwo(*it, "=", key, value)) {
@@ -587,7 +587,8 @@ CDBInterfacesFileConnParams::CDBInterfacesFileConnParams(
             if (state == eKeyRead) {
                 NStr::TruncateSpacesInPlace(line);
                 arr_param.clear();
-                NStr::Tokenize(line, "\t ", arr_param);
+                NStr::Split(line, "\t ", arr_param,
+                            NStr::fSplit_NoMergeDelims);
 
                 if (NStr::Equal(arr_param[0], "query")) {
                     if (NStr::Equal(arr_param[1], "tli")) {
@@ -632,7 +633,8 @@ CDBInterfacesFileConnParams::CDBInterfacesFileConnParams(
                 } else {
                     NStr::TruncateSpacesInPlace(host_str);
                     arr_param.clear();
-                    NStr::Tokenize(host_str, ".", arr_param);
+                    NStr::Split(host_str, ".", arr_param,
+                                NStr::fSplit_NoMergeDelims);
 
                     b[0] = NStr::StringToUInt(arr_param[0]);
                     b[1] = NStr::StringToUInt(arr_param[1]);

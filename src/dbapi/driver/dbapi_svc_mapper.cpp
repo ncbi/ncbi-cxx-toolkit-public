@@ -341,11 +341,12 @@ CDBUDRandomMapper::ConfigureFromRegistry(const IRegistry* registry)
             vector<string> server_name;
             string service_name = *cit;
 
-            NStr::Tokenize(registry->GetString(section_name,
-                                               service_name,
-                                               service_name),
-                           " ,;",
-                           server_name);
+            NStr::Split(registry->GetString(section_name,
+                                            service_name,
+                                            service_name),
+                        " ,;",
+                        server_name,
+                        NStr::fSplit_MergeDelimiters);
 
             // Replace with new data ...
             if (!server_name.empty()) {
@@ -616,11 +617,12 @@ CDBUDPriorityMapper::ConfigureFromRegistry(const IRegistry* registry)
             vector<string> server_name;
             string service_name = *cit;
 
-            NStr::Tokenize(registry->GetString(section_name,
-                                               service_name,
-                                               service_name),
-                           " ,;",
-                           server_name);
+            NStr::Split(registry->GetString(section_name,
+                                            service_name,
+                                            service_name),
+                        " ,;",
+                        server_name,
+                        NStr::fSplit_MergeDelimiters);
 
             // Replace with new data ...
             if (!server_name.empty()) {
@@ -826,11 +828,12 @@ CDBUniversalMapper::ConfigureFromRegistry(const IRegistry* registry)
 
     if (registry) {
 
-        NStr::Tokenize(registry->GetString
+        NStr::Split(registry->GetString
                     (section_name, "MAPPERS",
                         def_mapper_name),
                     " ,;",
-                    service_name);
+                    service_name,
+                    NStr::fSplit_MergeDelimiters);
 
     } else {
         service_name.push_back(def_mapper_name);

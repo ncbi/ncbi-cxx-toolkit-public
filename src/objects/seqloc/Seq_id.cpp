@@ -781,7 +781,8 @@ void SAccGuide::AddRule(const CTempString& rule)
     if (tmp1.empty())
         return;
     tokens.reserve(3);
-    NStr::Tokenize(tmp1, " \t", tokens, NStr::eMergeDelims);
+    NStr::Split(tmp1, " \t", tokens,
+                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     if (tokens.empty()) {
         return;
     } else if (tokens.size() == 2
@@ -1798,7 +1799,7 @@ CSeq_id& CSeq_id::Set(const CTempString& the_id_in, TParseFlags flags)
         }
     } else {
         list<CTempString> fasta_pieces;
-        NStr::Split(the_id, "|", fasta_pieces, NStr::eNoMergeDelims);
+        NStr::Split(the_id, "|", fasta_pieces, NStr::fSplit_NoMergeDelims);
         x_Init(fasta_pieces, type);
         if ( !fasta_pieces.empty() ) {
             // tolerate trailing parts if they're all empty.

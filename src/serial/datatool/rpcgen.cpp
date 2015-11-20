@@ -85,7 +85,7 @@ static const CChoiceDataType* s_ChoiceType(const CDataType* dtype,
 {
     vector<string> v;
     if ( !element.empty() ) {
-        NStr::Tokenize(element, ".", v);
+        NStr::Split(element, ".", v, NStr::fSplit_NoMergeDelims);
     }
     ITERATE (vector<string>, subelement, v) {
         const CDataMemberContainerType* dct

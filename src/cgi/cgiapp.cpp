@@ -1037,7 +1037,8 @@ void CCgiApplication::ConfigureDiagFormat(CCgiContext& context)
         flagmap["uid"]         = eDPF_UID;
     }
     list<string> flags;
-    NStr::Split(format, " ", flags);
+    NStr::Split(format, " ", flags,
+                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     ITERATE(list<string>, flag, flags) {
         TFlagMap::const_iterator it;
         if ((it = flagmap.find(*flag)) != flagmap.end()) {

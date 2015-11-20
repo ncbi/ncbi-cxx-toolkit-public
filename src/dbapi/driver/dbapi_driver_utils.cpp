@@ -426,7 +426,8 @@ CRowInfo_SP_SQL_Server::Initialize(void) const
 			{
 				vector<string> arr_param;
 
-				NStr::Tokenize(GetSPName(), ".", arr_param);
+                NStr::Split(GetSPName(), ".", arr_param,
+                            NStr::fSplit_NoMergeDelims);
 				size_t pos = 0;
 
 				switch (arr_param.size()) {
