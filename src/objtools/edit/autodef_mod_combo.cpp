@@ -714,29 +714,29 @@ static const size_t kNumPreferred = sizeof(s_PreferredList) / sizeof (SPreferred
 bool CAutoDefModifierCombo::IsModifierRequiredByDefault(bool is_orgmod, int subtype)
 {
     bool rval = false;
-    if (is_orgmod) {
-        rval = false;
+if (is_orgmod) {
+    rval = false;
+} else {
+    if (subtype == CSubSource::eSubtype_endogenous_virus_name ||
+        subtype == CSubSource::eSubtype_plasmid_name ||
+        subtype == CSubSource::eSubtype_transgenic) {
+        rval = true;
     } else {
-        if (subtype == CSubSource::eSubtype_endogenous_virus_name ||
-            subtype == CSubSource::eSubtype_plasmid_name ||
-            subtype == CSubSource::eSubtype_transgenic) {
-            rval = true;
-        } else {
-            rval = false;
-        }
+        rval = false;
     }
-    return rval;
+}
+return rval;
 }
 
 
-string CAutoDefModifierCombo::GetSourceDescriptionString (const CBioSource& bsrc) 
+string CAutoDefModifierCombo::GetSourceDescriptionString(const CBioSource& bsrc)
 {
     unsigned int k;
     string       source_description = "";
     map<COrgMod::ESubtype, bool> orgmods;
     map<CSubSource::ESubtype, bool> subsrcs;
     bool no_extras = false;
-    
+
     /* start with tax name */
     source_description += bsrc.GetOrg().GetTaxname();
     x_CleanUpTaxName(source_description);
@@ -776,7 +776,7 @@ string CAutoDefModifierCombo::GetSourceDescriptionString (const CBioSource& bsrc
             no_extras = true;
         }
     }
-    
+
     if (!no_extras) {
         if (bsrc.CanGetOrigin() && bsrc.GetOrigin() == CBioSource::eOrigin_mut) {
             source_description = "Mutant " + source_description;
@@ -804,8 +804,24 @@ string CAutoDefModifierCombo::GetSourceDescriptionString (const CBioSource& bsrc
                 x_AddOrgModString(source_description, bsrc, (COrgMod::ESubtype)s_PreferredList[k].subtype);
             }
         } else {
-            if (subsrcs.find((CSubSource::ESubtype)s_PreferredList[k].subtype) != subsrcs.end()) { 
+            if (subsrcs.find((CSubSource::ESubtype)s_PreferredList[k].subtype) != subsrcs.end()) {
                 x_AddSubsourceString(source_description, bsrc, (CSubSource::ESubtype)s_PreferredList[k].subtype);
+            }
+        }
+    }
+
+    // add maxicircle/minicircle
+    if (bsrc.IsSetSubtype()) {
+        ITERATE(CBioSource::TSubtype, it, bsrc.GetSubtype()) {
+            if ((*it)->IsSetSubtype() && (*it)->IsSetName() &&
+                (*it)->GetSubtype() == CSubSource::eSubtype_other) {
+                const string& note = (*it)->GetName();
+                if (NStr::Find(note, "maxicircle") != string::npos) {
+                    source_description += " maxicircle";
+                }
+                if (NStr::Find(note, "minicircle") != string::npos) {
+                    source_description += " minicircle";
+                }
             }
         }
     }
