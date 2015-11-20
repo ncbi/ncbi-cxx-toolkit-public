@@ -61,6 +61,7 @@
 #include <objects/medline/Medline_entry.hpp>
 #include <objtools/edit/struc_comm_field.hpp>
 #include <objtools/edit/gb_block_field.hpp>
+#include <objtools/edit/seq_entry_edit.hpp>
 #include <objects/valid/Comment_rule.hpp>
 
 #include <util/ncbi_cache.hpp>
@@ -11726,7 +11727,7 @@ void CNewCleanup_imp::RemoveBadProteinTitle(CBioseq& seq)
 
 void CNewCleanup_imp::MoveCitationQuals(CBioseq& seq)
 {
-    vector<CConstRef<CPubdesc> > pubs;
+    vector<CConstRef<CPub> > pub_list;
     bool listed_pubs = false;
 
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
@@ -11749,9 +11750,21 @@ void CNewCleanup_imp::MoveCitationQuals(CBioseq& seq)
                     if ((*it)->IsSetQual() && NStr::Equal((*it)->GetQual(), "citation")) {
                         if (!(*it)->IsSetVal() || !s_IsAllDigits((*it)->GetVal())) {
                             // just delete
+                            do_remove = true;
                         } else {
-                            // TODO: list pubs if we haven't already
+                            // list pubs if we haven't already
+                            if (!listed_pubs) {
+                                pub_list = edit::GetCitationList(bsh);
+                                listed_pubs = true;
+                            }
                             // create appropriate Cit
+                            size_t num = NStr::StringToNonNegativeInt((*it)->GetVal());
+                            if (num <= pub_list.size()) {
+                                CRef<CPub> cp(new CPub());
+                                cp->Assign(*(pub_list[num]));
+                                new_feat->SetCit().SetPub().push_back(cp);
+                            }
+                            do_remove = true;
                         }
                     }
                     if (do_remove) {

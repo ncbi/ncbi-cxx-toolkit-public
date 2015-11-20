@@ -117,6 +117,7 @@
 
 #include <objtools/error_codes.hpp>
 #include <objtools/validator/validerror_format.hpp>
+#include <objtools/edit/seq_entry_edit.hpp>
 #include <util/sgml_entity.hpp>
 #include <util/line_reader.hpp>
 #include <util/util_misc.hpp>
@@ -2391,7 +2392,7 @@ static void s_CollectPubDescriptorLabels (const CSeq_entry& se,
 {
     FOR_EACH_SEQDESC_ON_SEQENTRY (it, se) {
         if ((*it)->IsPub()) {
-            GetPubdescLabels ((*it)->GetPub(), pmids, muids, serials, published_labels, unpublished_labels);
+            edit::GetPubdescLabels ((*it)->GetPub(), pmids, muids, serials, published_labels, unpublished_labels);
         }
     }
 
@@ -2416,7 +2417,7 @@ void CValidError_imp::ValidateCitations (const CSeq_entry_Handle& seh)
                 
     CFeat_CI feat (seh, SAnnotSelector(CSeqFeatData::e_Pub));
     while (feat) {
-        GetPubdescLabels (feat->GetData().GetPub(), pmids, muids, serials, published_labels, unpublished_labels);
+        edit::GetPubdescLabels (feat->GetData().GetPub(), pmids, muids, serials, published_labels, unpublished_labels);
         ++feat;
     }
 
@@ -3152,7 +3153,7 @@ CCacheImpl::GetPubdescToInfo(
     }
 
     CRef<CPubdescInfo> pInfo(new CPubdescInfo);
-    GetPubdescLabels (
+    edit::GetPubdescLabels (
         *pub, pInfo->m_pmids, pInfo->m_muids,
         pInfo->m_serials, pInfo->m_published_labels,
         pInfo->m_unpublished_labels);

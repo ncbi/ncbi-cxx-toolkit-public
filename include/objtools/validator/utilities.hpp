@@ -131,11 +131,6 @@ string GetDateErrorDescription (int flags);
 
 bool IsBioseqTSA (const CBioseq& seq, CScope* scope);
 
-void GetPubdescLabels 
-(const CPubdesc& pd, 
- vector<int>& pmids, vector<int>& muids, vector<int>& serials,
- vector<string>& published_labels, vector<string>& unpublished_labels);
-
 bool IsNCBIFILESeqId (const CSeq_id& id);
 bool IsRefGeneTrackingObject (const CUser_object& user);
 
@@ -144,8 +139,6 @@ void AppendBioseqLabel(string& str, const CBioseq& sq, bool supress_context);
 string GetBioseqIdLabel(const CBioseq& sq, bool limited = false);
 
 bool NCBI_VALIDATOR_EXPORT HasECnumberPattern (const string& str);
-
-string GetAuthorsString (const CAuth_list& auth_list);
 
 bool SeqIsPatent (const CBioseq& seq);
 bool SeqIsPatent (CBioseq_Handle seq);
