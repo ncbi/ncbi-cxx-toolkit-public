@@ -251,8 +251,7 @@ struct SNCBlobSummary
     {
 // 16jul15: expire or ver_expire? looks suspicious
 //        return expire < CSrvTime::CurSecs();
-//        return dead_time < CSrvTime::CurSecs();
-        return dead_time < CSrvTime::CurSecs()-60;
+        return dead_time < CSrvTime::CurSecs();
     }
 };
 

@@ -4010,7 +4010,10 @@ CSpaceShrinker::x_MoveNextRecord(void)
         m_IndRec = m_MaxFile->index_head - m_RecNum;
     }
     while (m_RecNum <= m_PrevRecNum
-           ||  m_IndRec->cache_data->dead_time <= cur_time + s_MinMoveLife);
+#if !__NC_CACHEDATA_ALL_MONITOR
+           ||  m_IndRec->cache_data->dead_time <= cur_time + s_MinMoveLife
+#endif
+           );
     m_MaxFile->info_lock.Unlock();
     if (!m_IndRec)
         return &CSpaceShrinker::x_FinishMoves;
