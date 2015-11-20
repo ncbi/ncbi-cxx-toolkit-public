@@ -536,7 +536,7 @@ DISCREPANCY_CASE(NO_ANNOTATION, CSeq_inst, eAll, "No annotation")
     if (obj.IsAa() || context.HasFeatures()) {
         return;
     }
-    m_Objs["[n] sequence[s] [has] no annotation"].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+    m_Objs["[n] bioseq[s] [has] no features"].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
 }
 
 
@@ -552,13 +552,43 @@ DISCREPANCY_CASE(LONG_NO_ANNOTATION, CSeq_inst, eAll, "No annotation for LONG se
     if (obj.IsAa() || context.HasFeatures() || !(obj.CanGetLength() && obj.GetLength() > kSeqLength)) {
         return;
     }
-    m_Objs["[n] LONG sequence[s] [has] no annotation"].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+    m_Objs["[n] bioseq[s] [is] longer than 5000nt and [has] no features"].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
 }
 
 
 DISCREPANCY_SUMMARIZE(LONG_NO_ANNOTATION)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+DISCREPANCY_CASE(BAD_LOCUS_TAG_FORMAT, CSeqFeatData, eAll, "Bad locus tag format")
+{
+}
+
+
+DISCREPANCY_SUMMARIZE(BAD_LOCUS_TAG_FORMAT)
+{
+}
+
+
+DISCREPANCY_CASE(MISSING_LOCUS_TAGS, CSeqFeatData, eAll, "Missing locus tags")
+{
+}
+
+
+DISCREPANCY_SUMMARIZE(MISSING_LOCUS_TAGS)
+{
+}
+
+
+DISCREPANCY_CASE(INCONSISTENT_LOCUS_TAG_PREFIX, CSeqFeatData, eAll, "Inconsistent locus tag prefix")
+{
+}
+
+
+DISCREPANCY_SUMMARIZE(INCONSISTENT_LOCUS_TAG_PREFIX)
+{
 }
 
 
