@@ -11752,6 +11752,7 @@ void CNewCleanup_imp::MoveCitationQuals(CBioseq& seq)
                             // just delete
                             do_remove = true;
                         } else {
+#if 0
                             // list pubs if we haven't already
                             if (!listed_pubs) {
                                 pub_list = edit::GetCitationList(bsh);
@@ -11765,6 +11766,7 @@ void CNewCleanup_imp::MoveCitationQuals(CBioseq& seq)
                                 new_feat->SetCit().SetPub().push_back(cp);
                             }
                             do_remove = true;
+#endif
                         }
                     }
                     if (do_remove) {

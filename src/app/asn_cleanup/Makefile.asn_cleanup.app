@@ -8,7 +8,7 @@
 
 APP = asn_cleanup
 SRC = asn_cleanup
-LIB = $(OBJEDIT_LIBS) $(XFORMAT_LIBS) xobjutil xobjedit xalnmgr xcleanup valid valerr xregexp \
+LIB = $(OBJEDIT_LIBS) $(XFORMAT_LIBS) xobjutil xalnmgr xcleanup valid valerr xregexp \
 	  entrez2cli entrez2 tables \
 	  ncbi_xdbapi_ftds dbapi dbapi_driver $(FTDS_LIB) \
 	  $(ncbi_xreader_pubseqos2) \
