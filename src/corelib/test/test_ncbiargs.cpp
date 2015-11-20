@@ -41,7 +41,10 @@
 USING_NCBI_SCOPE;
 
 
+//----------------------------------------------------------------------------
 // Extended test for all different types of arguments  [default test]
+//----------------------------------------------------------------------------
+
 static void s_InitTest0(CArgDescriptions& arg_desc)
 {
     // Describe the expected command-line arguments
@@ -126,6 +129,7 @@ static void s_InitTest0(CArgDescriptions& arg_desc)
          CArgDescriptions::eString);
 }
 
+
 static void s_RunTest0(const CArgs& args, ostream& os)
 {
     assert(!args.Exist(kEmptyStr));  // never exists;  use #1, #2, ... instead
@@ -136,8 +140,9 @@ static void s_RunTest0(const CArgs& args, ostream& os)
     assert(args["kd8"].GetDefault() == "123456789012");
     assert(args["kd"].GetDefault()  == "123");
 
-    if ( !args["logfile"] )
+    if ( !args["logfile"] ) {
         return;
+    }
 
     // Printout argument values
     os << "Printing arguments to file `"
@@ -192,144 +197,142 @@ static void s_RunTest0(const CArgs& args, ostream& os)
                << endl;
         }
     } else {
-        lg << "(no unnamed positional arguments passed in the cmd-line)"
-           << endl;
+        lg << "(no unnamed positional arguments passed in the cmd-line)" << endl;
     }
-
-    // Separator
-    lg << string(44, '-') << endl;
 }
 
 
+//----------------------------------------------------------------------------
+// The simplest test
+//----------------------------------------------------------------------------
 
-// Allowing
-static void s_InitTest9(CArgDescriptions& arg_desc)
+static void s_InitTest1(CArgDescriptions& arg_desc)
 {
-    arg_desc.AddKey("a",
-                    "stringsKey",
-                    "This is a test of set-of-strings argument",
+    arg_desc.AddOpening("first", "First opening arg", CArgDescriptions::eString);
+    arg_desc.AddKey("k",
+                    "key", "This is a key argument",
+                    CArgDescriptions::eString);
+}
+
+static void s_RunTest1(const CArgs& args, ostream& os)
+{
+    os << "first = " << args["first"].AsString() << endl;
+    os << "k = "     << args["k"].AsString() << endl;
+    
+    assert( args["first"].AsString() == "abc-123-def" );
+    assert( args["k"].AsString()     == "kvalue" );
+}
+
+
+//----------------------------------------------------------------------------
+// Data types
+//----------------------------------------------------------------------------
+
+static void s_InitTest2(CArgDescriptions& arg_desc)
+{
+    arg_desc.AddOpening("first", "First opening arg", CArgDescriptions::eInteger);
+    arg_desc.AddKey("ka",
+                    "alphaNumericKey", "This is a test alpha-num key argument",
                     CArgDescriptions::eString);
 
-    arg_desc.AddKey("ai",
-                    "strings_nocase_Key",
-                    "This is a test of set-of-strings arg (case-insensitive)",
-                    CArgDescriptions::eString);
+    arg_desc.AddKey("kb",
+                    "booleanKey", "This is a test boolean key argument",
+                    CArgDescriptions::eBoolean);
 
-    arg_desc.AddKey("i",
-                    "integerKey",
-                    "This is a test of integer argument",
+    arg_desc.AddKey("ki",
+                    "integerKey", "This is a test integer key argument",
                     CArgDescriptions::eInteger);
 
-    arg_desc.SetConstraint("a", &(*new CArgAllow_Strings, "foo", "bar", "qq"));
-    arg_desc.SetConstraint("ai", &(*new CArgAllow_Strings(NStr::eNocase),
-                                   "Foo", "bAr", "qQ"));
-    arg_desc.SetConstraint("i", new CArgAllow_Integers(-3, 34));
+    arg_desc.AddKey("kd",
+                    "doubleKey", "This is a test double key argument",
+                    CArgDescriptions::eDouble);
 }
 
-static void s_RunTest9(const CArgs& args, ostream& os)
+static void s_RunTest2(const CArgs& args, ostream& os)
 {
-    os << "a=" << args["a"].AsString()  << endl;
-    os << "i=" << args["i"].AsInteger() << endl;
-}
-
-
-
-// Argument with default walue
-static void s_InitTest8(CArgDescriptions& arg_desc)
-{
-    arg_desc.AddDefaultKey
-        ("k", "alphaNumericKey",
-         "This is an optional argument with default value",
-         CArgDescriptions::eString, "CORELIB",
-         CArgDescriptions::fOptionalSeparator | CArgDescriptions::fConfidential,
-         "", "xncbi core library");
-
-    arg_desc.AddKey
-        ("datasize", "MandatoryKey",
-         "This is a mandatory DataSize key argument",
-         CArgDescriptions::eDataSize);
-
-    arg_desc.AddKey
-        ("datetime", "MandatoryKey",
-         "This is a mandatory DateTime key argument",
-         CArgDescriptions::eDateTime);
-}
-
-static void s_RunTest8(const CArgs& args, ostream& os)
-{
-    os << "k=" << args["k"].AsString()  << endl;
-
-    os << "datasize=" << args["datasize"].AsString()  << endl;
-    os << "datasize=" << args["datasize"].AsInt8()  << endl;
-
-    os << "datetime=" << args["datetime"].AsString()  << endl;
-    os << "datetime=" << (args["datetime"].AsDateTime()).AsString()  << endl;
+    os << "first = " << args["first"].AsInteger() << endl;
+    os << "ka = "    << args["ka"].AsString() << endl;
+    os << "kb = "    << NStr::BoolToString( args["kb"].AsBoolean() ) << endl;
+    os << "ki = "    << args["ki"].AsInteger() << endl;
+    os << "kd = "    << args["kd"].AsDouble() << endl;
+    
+    assert( args["first"].AsInteger() == 123654 );
+    assert( args["ka"].AsString()  == "alpha2" );
+    assert( args["kb"].AsBoolean() == true );
+    assert( args["ki"].AsInteger() == 34 );
+    assert( NStr::DoubleToString(args["kd"].AsDouble()) == "1.567" );
 }
 
 
+//----------------------------------------------------------------------------
+// Optional
+//----------------------------------------------------------------------------
 
-// Position arguments - advanced
-static void s_InitTest7(CArgDescriptions& arg_desc)
+static void s_InitTest3(CArgDescriptions& arg_desc)
 {
-    arg_desc.SetPositionalMode(CArgDescriptions::ePositionalMode_Loose);
-
-    arg_desc.AddPositional
-        ("p2",
-         "This is a plain argument",  CArgDescriptions::eString);
-    arg_desc.AddExtra
-        (1, 3,
-         "These are extra arguments", CArgDescriptions::eInteger);
-    arg_desc.AddPositional
-        ("p1",
-         "This is a plain argument",  CArgDescriptions::eBoolean);
+    arg_desc.AddOptionalKey("k1",
+                            "fistOptionalKey",
+                            "This is an optional argument",
+                            CArgDescriptions::eString);
+    arg_desc.AddOptionalKey("k2",
+                            "secondOptionalKey",
+                            "This is an optional argument",
+                            CArgDescriptions::eString);
 
     arg_desc.AddFlag("f1", "Flag 1");
     arg_desc.AddFlag("f2", "Flag 2");
-    arg_desc.AddFlag("f3", "Flag 3");
-
-    arg_desc.SetDependency("p2", CArgDescriptions::eRequires, "#1");
-    arg_desc.SetDependency("f1", CArgDescriptions::eExcludes, "#1");
-    arg_desc.SetDependency("f2", CArgDescriptions::eRequires, "#2");
-    arg_desc.SetDependency("f3", CArgDescriptions::eExcludes, "#2");
 }
 
-static void s_RunTest7(const CArgs& args, ostream& os)
+static void s_RunTest3(const CArgs& args, ostream& os)
 {
-    os << "p1=" << args["p1"].AsString()  << endl;
-    os << "p2=" << args["p2"].AsString()  << endl;
-
-    if ( args.Exist("#1") ) {
-        os << "#1=" << args["#1"].AsInteger() << endl;
+    if (args["k1"]) {
+        os << "k1=" << args["k1"].AsString() << endl;
     }
-    if ( args.Exist("#2") ) {
-        os << "#2=" << args["#2"].AsInteger() << endl;
+    if (args["k2"]) {
+        os << "k2=" << args["k2"].AsString() << endl;
     }
-    if ( args.Exist("#3") ) {
-        os << "#3=" << args["#3"].AsInteger() << endl;
+    if (args["f1"]) {
+        os << "f1=" << args["f1"].AsString() << endl;
     }
+    if (args["f2"]) {
+        os << "f2=" << args["f2"].AsString() << endl;
+    }
+    assert(  args["k1"]  &&  args["k1"].AsString() == "v1" );
+    assert( !args["k2"] );
+    assert( !args["f1"] );
+    assert(  args["f2"]  &&  args["f2"].AsBoolean() == true );
 }
 
 
-// Position arguments
-static void s_InitTest6(CArgDescriptions& arg_desc)
+//----------------------------------------------------------------------------
+// Files
+//----------------------------------------------------------------------------
+
+static void s_InitTest4(CArgDescriptions& arg_desc)
 {
-    arg_desc.AddDefaultPositional
-        ("p1", "This is a positional argument with default value",
-         CArgDescriptions::eDouble, "1.23");
-    arg_desc.AddPositional
-        ("p2", "This is a mandatory positional argument",
-         CArgDescriptions::eBoolean);
+    arg_desc.AddKey("if",
+                    "inputFile", "This is an input file argument",
+                    CArgDescriptions::eInputFile);
+
+    arg_desc.AddKey("of",
+                    "outputFile", "This is an output file argument",
+                    CArgDescriptions::eOutputFile);
 }
 
-static void s_RunTest6(const CArgs& args, ostream& os)
+static void s_RunTest4(const CArgs& args, ostream& /*os*/)
 {
-    os << "p1=" << args["p1"].AsString() << endl;
-    os << "p2=" << args["p2"].AsString() << endl;
+    while ( !args["if"].AsInputFile().eof() ) {
+        string tmp;
+        args["if"].AsInputFile () >> tmp;
+        args["of"].AsOutputFile() << tmp << endl;
+    }
 }
 
 
-
+//----------------------------------------------------------------------------
 // Files - advanced
+//----------------------------------------------------------------------------
+
 static void s_InitTest5(CArgDescriptions& arg_desc)
 {
     arg_desc.AddKey("if",
@@ -372,104 +375,193 @@ static void s_RunTest5(const CArgs& args, ostream& /*os*/)
 }
 
 
-// Files
-static void s_InitTest4(CArgDescriptions& arg_desc)
-{
-    arg_desc.AddKey("if",
-                    "inputFile", "This is an input file argument",
-                    CArgDescriptions::eInputFile);
+//----------------------------------------------------------------------------
+// Position arguments
+//----------------------------------------------------------------------------
 
-    arg_desc.AddKey("of",
-                    "outputFile", "This is an output file argument",
-                    CArgDescriptions::eOutputFile);
+static void s_InitTest6(CArgDescriptions& arg_desc)
+{
+    arg_desc.AddDefaultPositional
+        ("p1", "This is a positional argument with default value",
+         CArgDescriptions::eDouble, "1.23");
+    arg_desc.AddPositional
+        ("p2", "This is a mandatory positional argument",
+         CArgDescriptions::eBoolean);
 }
 
-static void s_RunTest4(const CArgs& args, ostream& /*os*/)
+static void s_RunTest6(const CArgs& args, ostream& os)
 {
-    while ( !args["if"].AsInputFile().eof() ) {
-        string tmp;
-        args["if"].AsInputFile () >> tmp;
-        args["of"].AsOutputFile() << tmp << endl;
+    os << "p1=" << args["p1"].AsString() << endl;
+    os << "p2=" << args["p2"].AsString() << endl;
+    
+    assert( args["p1"].AsString()  == "1.23" );
+    assert( args["p2"].AsString()  == "No" );
+    assert( args["p2"].AsBoolean() == false );
+}
+
+
+//----------------------------------------------------------------------------
+// Position arguments - advanced
+//----------------------------------------------------------------------------
+
+static void s_InitTest7(CArgDescriptions& arg_desc)
+{
+    arg_desc.SetPositionalMode(CArgDescriptions::ePositionalMode_Loose);
+
+    arg_desc.AddPositional
+        ("p2",
+         "This is a plain argument",  CArgDescriptions::eString);
+    arg_desc.AddExtra
+        (1, 3,
+         "These are extra arguments", CArgDescriptions::eInteger);
+    arg_desc.AddPositional
+        ("p1",
+         "This is a plain argument",  CArgDescriptions::eBoolean);
+
+    arg_desc.AddFlag("f1", "Flag 1");
+    arg_desc.AddFlag("f2", "Flag 2");
+    arg_desc.AddFlag("f3", "Flag 3");
+
+    arg_desc.SetDependency("p2", CArgDescriptions::eRequires, "#1");
+    arg_desc.SetDependency("f1", CArgDescriptions::eExcludes, "#1");
+    arg_desc.SetDependency("f2", CArgDescriptions::eRequires, "#2");
+    arg_desc.SetDependency("f3", CArgDescriptions::eExcludes, "#2");
+}
+
+static void s_RunTest7(const CArgs& args, ostream& os)
+{
+    os << "p1=" << args["p1"].AsString()  << endl;
+    os << "p2=" << args["p2"].AsString()  << endl;
+
+    if ( args.Exist("#1") ) {
+        os << "#1=" << args["#1"].AsInteger() << endl;
+    }
+    if ( args.Exist("#2") ) {
+        os << "#2=" << args["#2"].AsInteger() << endl;
+    }
+    if ( args.Exist("#3") ) {
+        os << "#3=" << args["#3"].AsInteger() << endl;
     }
 }
 
 
+//----------------------------------------------------------------------------
+// Argument with default walue
+//----------------------------------------------------------------------------
 
-// Optional
-static void s_InitTest3(CArgDescriptions& arg_desc)
+static void s_InitTest8(CArgDescriptions& arg_desc)
 {
-    arg_desc.AddOptionalKey("k1",
-                            "fistOptionalKey",
-                            "This is an optional argument",
-                            CArgDescriptions::eString);
-    arg_desc.AddOptionalKey("k2",
-                            "secondOptionalKey",
-                            "This is an optional argument",
-                            CArgDescriptions::eString);
+    arg_desc.AddDefaultKey
+        ("k", "alphaNumericKey",
+         "This is an optional argument with default value",
+         CArgDescriptions::eString, "CORELIB",
+         CArgDescriptions::fOptionalSeparator | CArgDescriptions::fConfidential,
+         "", "xncbi core library");
 
-    arg_desc.AddFlag("f1", "Flag 1");
-    arg_desc.AddFlag("f2", "Flag 2");
+    arg_desc.AddKey
+        ("datasize", "MandatoryKey",
+         "This is a mandatory DataSize key argument",
+         CArgDescriptions::eDataSize);
+
+    arg_desc.AddKey
+        ("datetime", "MandatoryKey",
+         "This is a mandatory DateTime key argument",
+         CArgDescriptions::eDateTime);
 }
 
-static void s_RunTest3(const CArgs& args, ostream& os)
+static void s_RunTest8(const CArgs& args, ostream& os)
 {
-    if (args["k1"])
-        os << "k1=" << args["k1"].AsString() << endl;
-    if (args["k2"])
-        os << "k2=" << args["k2"].AsString() << endl;
+    os << "k=" << args["k"].AsString()  << endl;
+
+    os << "datasize(str)=" << args["datasize"].AsString() << endl;
+    os << "datasize(val)=" << args["datasize"].AsInt8()   << endl;
+    os << "datetime(str)=" << args["datetime"].AsString() << endl;
+    os << "datetime(val)=" << (args["datetime"].AsDateTime()).AsString()  << endl;
+
+    assert( args["datasize"].AsInt8() == 1000 );
+    assert( (args["datetime"].AsDateTime()).AsString() == "02/01/2015 00:00:00" );
+    assert( args["k"].AsString() == "CORELIB" );
 }
 
 
+//----------------------------------------------------------------------------
+// Constraints with allowing
+//----------------------------------------------------------------------------
 
-// Data types
-static void s_InitTest2(CArgDescriptions& arg_desc)
+static void s_InitTest9(CArgDescriptions& arg_desc)
 {
-    arg_desc.AddOpening("first", "First opening arg", CArgDescriptions::eInteger);
-    arg_desc.AddKey("ka",
-                    "alphaNumericKey", "This is a test alpha-num key argument",
+    arg_desc.AddKey("k",
+                    "stringsKey",
+                    "This is a test of set-of-strings argument",
                     CArgDescriptions::eString);
-
-    arg_desc.AddKey("kb",
-                    "booleanKey", "This is a test boolean key argument",
-                    CArgDescriptions::eBoolean);
 
     arg_desc.AddKey("ki",
-                    "integerKey", "This is a test integer key argument",
+                    "strings_nocase_Key",
+                    "This is a test of set-of-strings arg (case-insensitive)",
+                    CArgDescriptions::eString);
+
+    arg_desc.AddKey("i",
+                    "integerKey",
+                    "This is a test of integer argument",
                     CArgDescriptions::eInteger);
 
-    arg_desc.AddKey("kd",
-                    "doubleKey", "This is a test double key argument",
-                    CArgDescriptions::eDouble);
+    arg_desc.SetConstraint("k", &(*new CArgAllow_Strings, "foo", "bar", "qq"));
+    arg_desc.SetConstraint("ki",&(*new CArgAllow_Strings(NStr::eNocase),
+                                  "Foo", "bAr", "qQ"));
+    arg_desc.SetConstraint("i", new CArgAllow_Integers(-3, 34));
 }
 
-static void s_RunTest2(const CArgs& args, ostream& os)
+static void s_RunTest9(const CArgs& args, ostream& os)
 {
-    os << "first=" << args["first"].AsInteger() << endl;
-    os << "ka=" << args["ka"].AsString() << endl;
-    os << "kb=" << NStr::BoolToString( args["kb"].AsBoolean() ) << endl;
-    os << "ki=" << args["ki"].AsInteger() << endl;
-    os << "kd=" << args["kd"].AsDouble() << endl;
+    os << "k"   << args["k"].AsString()  << endl;
+    os << "ki=" << args["ki"].AsString()  << endl;
+    os << "i="  << args["i"].AsInteger() << endl;
 }
 
 
-// The simplest test
-static void s_InitTest1(CArgDescriptions& arg_desc)
+//----------------------------------------------------------------------------
+// Date/time
+//         
+//   "M/D/Y h:m:s",  // CTime default
+//   "Y-M-DTh:m:g",  // ISO8601
+//   "Y/M/D h:m:g",  // 
+//   "Y-M-D h:m:g",  // NCBI SQL server default
+//
+//----------------------------------------------------------------------------
+
+static void s_InitTest10(CArgDescriptions& arg_desc)
 {
-    arg_desc.AddOpening("first", "First opening arg", CArgDescriptions::eString);
-    arg_desc.AddKey("k",
-                    "key", "This is a key argument",
-                    CArgDescriptions::eString);
+    arg_desc.AddKey("dt1", "DateTime",
+                    "This is a mandatory DateTime key argument",
+                    CArgDescriptions::eDateTime);
+    arg_desc.AddKey("dt2", "DateTime",
+                    "This is a mandatory DateTime key argument",
+                    CArgDescriptions::eDateTime);
+    arg_desc.AddKey("dt3", "DateTime",
+                    "This is a mandatory DateTime key argument",
+                    CArgDescriptions::eDateTime);
+    arg_desc.AddKey("dt4", "DateTime",
+                    "This is a mandatory DateTime key argument",
+                    CArgDescriptions::eDateTime);
 }
 
-static void s_RunTest1(const CArgs& args, ostream& os)
+static void s_RunTest10(const CArgs& args, ostream& os)
 {
-    os << "first=" << args["first"].AsString() << endl;
-    os << "k=" << args["k"].AsString() << endl;
+    string dt1 = (args["dt1"].AsDateTime()).AsString();
+    string dt2 = (args["dt2"].AsDateTime()).AsString();
+    string dt3 = (args["dt3"].AsDateTime()).AsString();
+    string dt4 = (args["dt4"].AsDateTime()).AsString();
+
+    os << "datetime1 = " << dt1 << endl;
+    os << "datetime2 = " << dt2 << endl;
+    os << "datetime3 = " << dt3 << endl;
+    os << "datetime4 = " << dt4 << endl;
+    
+    assert(dt1 == dt2  &&  dt2 == dt3  &&  dt3==dt4);
 }
 
 
-
-/////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 //  Tests' array
 
 struct STest {
@@ -478,25 +570,26 @@ struct STest {
 };
 
 
-static STest s_Test[] =
+// Tests 1-9 can be executed with specifying env variable TEST_NO=X
+//
+static STest s_Test[] = 
 {
-    {s_InitTest0, s_RunTest0},  // default
-    {s_InitTest1, s_RunTest1},
-    {s_InitTest2, s_RunTest2},
-    {s_InitTest3, s_RunTest3},
-    {s_InitTest4, s_RunTest4},
-    {s_InitTest5, s_RunTest5},
-    {s_InitTest6, s_RunTest6},
-    {s_InitTest7, s_RunTest7},
-    {s_InitTest8, s_RunTest8},
-    {s_InitTest9, s_RunTest9},
-    {s_InitTest0, s_RunTest0},
-    {0,           0}
+    { s_InitTest0,  s_RunTest0 },  // default
+    { s_InitTest1,  s_RunTest1 },
+    { s_InitTest2,  s_RunTest2 },
+    { s_InitTest3,  s_RunTest3 },
+    { s_InitTest4,  s_RunTest4 },
+    { s_InitTest5,  s_RunTest5 },
+    { s_InitTest6,  s_RunTest6 },
+    { s_InitTest7,  s_RunTest7 },
+    { s_InitTest8,  s_RunTest8 },
+    { s_InitTest9,  s_RunTest9 },
+    { s_InitTest10, s_RunTest10}
 };
 
 
 
-/////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 //  CArgTestApplication::
 
 
@@ -512,15 +605,14 @@ private:
 };
 
 
-// Constructor -- setting version test
 CArgTestApplication::CArgTestApplication()
 {
     SetVersion(CVersionInfo(1,2,3,"NcbiArgTest"));
 } 
 
 
-// Choose the test to run, and
-// Setup arg.descriptions accordingly
+// Choose the test to run, and setup arg.descriptions accordingly
+
 void CArgTestApplication::Init(void)
 {
     // Set err.-posting and tracing on maximum
@@ -530,43 +622,13 @@ void CArgTestApplication::Init(void)
 
     // Get test # from env.variable $TEST_NO
     m_TestNo = 0;
-    size_t max_test = sizeof(s_Test) / sizeof(s_Test[0]) - 2;
+    size_t max_test = sizeof(s_Test) / sizeof(s_Test[0]) - 1;
     const string& test_str = GetEnvironment().Get("TEST_NO");
     if ( !test_str.empty() ) {
-        try {
-            m_TestNo = NStr::StringToULong(test_str);
-        } catch (...) {
-            m_TestNo = 0;
-        }
-
-        if (m_TestNo > max_test) {
-            m_TestNo = 0;
-        }
+        m_TestNo = NStr::StringToNumeric<size_t>(test_str);
+        assert(m_TestNo <= max_test);
     }
 
-    // The "no-test" case
-    if ( !s_Test[m_TestNo].init )
-        return;
-
-#if 0
-    // Create cmd-line argument descriptions class
-    auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
-
-    // Specify USAGE context
-    string prog_description =
-        "This is a test program for command-line argument processing.\n"
-        "TEST #" + NStr::SizetToString(m_TestNo) +
-        "    (To run another test, set env.variable $TEST_NO to 0.." +
-        NStr::SizetToString(max_test) + ")";
-    bool usage_sort_args = (m_TestNo == 10);
-    arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              prog_description, usage_sort_args);
-
-    // Describe cmd-line arguments according to the chosen test #
-    s_Test[m_TestNo].init(*arg_desc);
-    // Setup arg.descriptions for this application
-    SetupArgDescriptions(arg_desc.release());
-#else
     // Create cmd-line argument descriptions class
     auto_ptr<CCommandArgDescriptions> cmd_desc(
         new CCommandArgDescriptions(true,0, CCommandArgDescriptions::eCommandOptional |
@@ -578,85 +640,62 @@ void CArgTestApplication::Init(void)
         "TEST #" + NStr::SizetToString(m_TestNo) +
         "    (To run another test, set env.variable $TEST_NO to 0.." +
         NStr::SizetToString(max_test) + ")";
-    bool usage_sort_args = (m_TestNo == 10);
     cmd_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                              prog_description, usage_sort_args);
+                              prog_description, true);
 
-    string detailed_description = prog_description +
-        "\nIt also illustrates creating command groups";
-    cmd_desc->SetDetailedDescription(detailed_description);
+    cmd_desc->SetDetailedDescription(prog_description +
+        "\nIt also illustrates creating command groups");
 
     // Describe cmd-line arguments according to the chosen test #
     s_Test[m_TestNo].init(*cmd_desc);
 
-    // add few commands
-#if 1
-    for (int a=3; a>=0; --a) {
-
+    // Add commands and groups
+    // - create 2 groups (odd/even).
+    // - create command for each test except default (0);
+    for (size_t i=1; i<=max_test; ++i) {
+        string test = NStr::NumericToString(i);
         auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions());
-        string ctx = "Testing CCommandArgDescriptions: RunTest" + NStr::IntToString(a);
+        string ctx = "Testing CCommandArgDescriptions: RunTest" + test;
         string detailed = ctx + "\nthis will run specified test";
         arg_desc->SetUsageContext("", ctx, true);
         arg_desc->SetDetailedDescription(detailed);
-        s_Test[a].init(*arg_desc);
-        cmd_desc->SetCurrentCommandGroup(a%2 ? "Second command group" : "Command group #1");
-        cmd_desc->AddCommand("runtest" + NStr::IntToString(a), arg_desc.release(),
-                             "rt" + NStr::IntToString(a));
-
+        s_Test[i].init(*arg_desc);
+        cmd_desc->SetCurrentCommandGroup(i%2 ? "Second command group" : "First command group");
+        cmd_desc->AddCommand("runtest" + test, arg_desc.release(), "rt" + test);
     }
-    {
-        auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
-        arg_desc->SetUsageContext("","RunTest4 description");
-        s_Test[4].init(*arg_desc);
-        cmd_desc->AddCommand("d4", arg_desc.release());
-    }
-#endif
 
     // Setup arg.descriptions for this application
     SetupArgDescriptions(cmd_desc.release());
-#endif
 }
 
 
-// Printout arguments obtained from cmd.-line
 int CArgTestApplication::Run(void)
 {
     cout << string(72, '=') << endl;
 
-    // The "no-test" case
-    if ( !s_Test[m_TestNo].run ) {
-        cout << "No arguments described." << endl;
-        return 0;
+    size_t max_test = sizeof(s_Test) / sizeof(s_Test[0]) - 1;
+    string cmd_str(GetArgs().GetCommand());
+    
+    if (!cmd_str.empty()) {
+        cout << "command: " << cmd_str << endl;
+        NStr::TrimPrefixInPlace(cmd_str, "runtest");
+        size_t cmd_num = NStr::StringToNumeric<size_t>(cmd_str);
+        assert(cmd_num <= max_test);
+        m_TestNo = cmd_num;
     }
+    
+    // Run a test
+    s_Test[m_TestNo].run(GetArgs(), cout);
 
-    string command( GetArgs().GetCommand());
-    if (!command.empty()) {
-        cout << "command: " << command << endl;
-    }
-    // Do run
-    if (command == "runtest0") {
-        s_Test[0].run(GetArgs(), cout);
-    } else if (command == "runtest1") {
-        s_Test[1].run(GetArgs(), cout);
-    } else if (command == "runtest2") {
-        s_Test[2].run(GetArgs(), cout);
-    } else if (command == "runtest3") {
-        s_Test[3].run(GetArgs(), cout);
-    } else if (command == "runtest4") {
-        s_Test[4].run(GetArgs(), cout);
-    } else {
-        s_Test[m_TestNo].run(GetArgs(), cout);
-    }
-
-    // Printout obtained argument values
+    // Printout arguments obtained from cmd.-line
     string str;
+    cout << endl << "Raw arguments:" << endl;
     cout << GetArgs().Print(str) << endl;
 
     return 0;
 }
 
 
-// Cleanup
 void CArgTestApplication::Exit(void)
 {
     SetDiagStream(0);
@@ -664,7 +703,7 @@ void CArgTestApplication::Exit(void)
 
 
 
-/////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 //  MAIN
 
 int main(int argc, const char* argv[])
