@@ -11551,6 +11551,39 @@ void CNewCleanup_imp::CdRegionEC(CSeq_feat& sf)
 }
 
 
+void CNewCleanup_imp::MoveDbxrefs(CSeq_feat& sf)
+{
+    if (!sf.IsSetQual()) {
+        return;
+    }
+    CSeq_feat::TQual::iterator it = sf.SetQual().begin();
+    while (it != sf.SetQual().end()) {
+        if ((*it)->IsSetQual() && (*it)->IsSetVal() && NStr::Equal((*it)->GetQual(), "db_xref")) {
+            string val = (*it)->GetVal();
+            string tag, db;
+            CRef<CDbtag> dbp(new CDbtag);
+
+            if (NStr::SplitInTwo(val, ":", db, tag)) {
+                dbp->SetDb(db);
+                dbp->SetTag().SetStr(tag);
+            } else {
+                dbp->SetDb("?");
+                dbp->SetTag().SetStr(val);
+            }
+            sf.SetDbxref().push_back(dbp);
+            ChangeMade(CCleanupChange::eChangeDbxrefs);
+            ChangeMade(CCleanupChange::eRemoveQualifier);
+            it = sf.SetQual().erase(it);
+        } else {
+            ++it;
+        }
+    }
+    if (sf.GetQual().empty()) {
+        sf.ResetQual();
+    }
+}
+
+
 void CNewCleanup_imp::ResynchProteinPartials ( CSeq_feat& feat )
 {
     if (!feat.IsSetData() || !feat.GetData().IsProt()) {
@@ -11688,6 +11721,56 @@ void CNewCleanup_imp::RemoveBadProteinTitle(CBioseq& seq)
             ++title_it;
         }
     } 
+}
+
+
+void CNewCleanup_imp::MoveCitationQuals(CBioseq& seq)
+{
+    vector<CConstRef<CPubdesc> > pubs;
+    bool listed_pubs = false;
+
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+    CFeat_CI f(bsh);
+    while (f) {
+        if (f->IsSetQual()) {
+            bool has_citation = false;
+            ITERATE(CSeq_feat::TQual, it, f->GetQual()) {
+                if ((*it)->IsSetQual() && NStr::Equal((*it)->GetQual(), "citation")) {
+                    has_citation = true;
+                    break;
+                }
+            }
+            if (has_citation) {
+                CRef<CSeq_feat> new_feat(new CSeq_feat());
+                new_feat->Assign(*(f->GetSeq_feat()));
+                CSeq_feat::TQual::iterator it = new_feat->SetQual().begin();
+                while (it != new_feat->SetQual().end()) {
+                    bool do_remove = false;
+                    if ((*it)->IsSetQual() && NStr::Equal((*it)->GetQual(), "citation")) {
+                        if (!(*it)->IsSetVal() || !s_IsAllDigits((*it)->GetVal())) {
+                            // just delete
+                        } else {
+                            // TODO: list pubs if we haven't already
+                            // create appropriate Cit
+                        }
+                    }
+                    if (do_remove) {
+                        it = new_feat->SetQual().erase(it);
+                    } else {
+                        ++it;
+                    }
+                }
+                if (new_feat->GetQual().empty()) {
+                    new_feat->ResetQual();
+                }
+
+                CSeq_feat_EditHandle eh(f->GetSeq_feat_Handle());
+                eh.Replace(*new_feat);
+            }
+        }
+        ++f;
+    }
+
 }
 
 

@@ -304,9 +304,11 @@ private:
     void AddProteinTitles (CBioseq& seq);
     void ProtRefEC( CProt_ref& pr);
     void CdRegionEC( CSeq_feat& sf);
+    void MoveDbxrefs(CSeq_feat& sf);
     void ResynchProteinPartials ( CSeq_feat& feat );
     void ResynchPeptidePartials( CBioseq& seq );
     void RemoveBadProteinTitle(CBioseq& seq);
+    void MoveCitationQuals(CBioseq& seq);
     void KeepLatestDateDesc(CSeq_descr & seq_descr);
     void x_SingleSeqSetToSeq(CBioseq_set& set);
     static bool IsFullLength(const CSeq_loc& loc, const CBioseq& seq);
