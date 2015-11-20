@@ -296,7 +296,7 @@ case "\$method" in
 esac
 
 
-trap "touch $x_target_dir/check.failed"  1 2 15
+trap "touch $x_target_dir/check.failed; exit 1"  1 2 15
 rm $x_target_dir/check.failed $x_target_dir/check.success > /dev/null 2>&1 
 
 # Set log_site for tests

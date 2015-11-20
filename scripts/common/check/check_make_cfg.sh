@@ -280,7 +280,7 @@ esac
 
 ## Run
 
-trap "touch \$check_dir/check.failed"  1 2 15
+trap "touch \$check_dir/check.failed; exit 1"  1 2 15
 rm \$check_dir/check.failed \$check_dir/check.success > /dev/null 2>&1 
 
 # Set log_site for tests
