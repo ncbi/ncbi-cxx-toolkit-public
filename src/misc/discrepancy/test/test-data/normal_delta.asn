@@ -1,0 +1,2298 @@
+Seq-entry ::= set {
+        class pop-set ,
+        descr {
+          pub {
+            pub {
+              gen {
+                cit "Unpublished" ,
+                authors {
+                  names
+                    std {
+                      {
+                        name
+                          name {
+                            last "Bollin" ,
+                            first "Colleen" ,
+                            initials "C.J." } } } ,
+                  affil
+                    std {
+                      affil "NCBI" ,
+                      city "Bethesda" ,
+                      country "USA" } } ,
+                date
+                  std {
+                    year 2013 ,
+                    month 1 ,
+                    day 25 } ,
+                title "title" } } } ,
+          user {
+            type
+              str "Submission" ,
+            data {
+              {
+                label
+                  str "SmartComment" ,
+                data
+                  str "ALT EMAIL:b@b.com" } } } ,
+          user {
+            type
+              str "NCBIWizard" ,
+            data {
+              {
+                label
+                  str "Release Date confirmed" ,
+                data
+                  str "Yes" } ,
+              {
+                label
+                  str "WizardType" ,
+                data
+                  str "Standard" } ,
+              {
+                label
+                  str "Submission Status" ,
+                data
+                  str "OK" } ,
+              {
+                label
+                  str "SrcType" ,
+                data
+                  str "Foot-and-mouth disease virus" } ,
+              {
+                label
+                  str "Molecule Type Confirmed" ,
+                data
+                  str "Yes" } } } ,
+          user {
+            type
+              str "NcbiCleanup" ,
+            data {
+              {
+                label
+                  str "method" ,
+                data
+                  str "SequinCleanup" } ,
+              {
+                label
+                  str "version" ,
+                data
+                  int 7 } ,
+              {
+                label
+                  str "month" ,
+                data
+                  int 3 } ,
+              {
+                label
+                  str "day" ,
+                data
+                  int 5 } ,
+              {
+                label
+                  str "year" ,
+                data
+                  int 2013 } } } ,
+          create-date
+            std {
+              year 2013 ,
+              month 1 ,
+              day 25 } } ,
+        seq-set {
+          set {
+            class nuc-prot ,
+            descr {
+              source {
+                org {
+                  taxname "Bos javanicus" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype isolate ,
+                        subname "BoBM478" } } } } } } ,
+            seq-set {
+              seq {
+                id {
+                  local
+                    str "seq_1" } ,
+                descr {
+                  title "toll-like receptor 5 (TLR5) gene, complete cds" ,
+                  user {
+                    type
+                      str "CFastaReader" ,
+                    data {
+                      {
+                        label
+                          str "DefLine" ,
+                        data
+                          str ">seq_1  [org=Bos javanicus] [isolate=BoBM478]
+ toll-like receptor 5 (TLR5) gene, complete cds" } } } ,
+                  user {
+                    type
+                      str "Submission" ,
+                    data {
+                      {
+                        label
+                          str "SmartComment" ,
+                        data
+                          str "ALT EMAIL:b@b.com" } } } ,
+                  user {
+                    type
+                      str "NCBIWizard" ,
+                    data {
+                      {
+                        label
+                          str "Release Date confirmed" ,
+                        data
+                          str "Yes" } ,
+                      {
+                        label
+                          str "WizardType" ,
+                        data
+                          str "Standard" } ,
+                      {
+                        label
+                          str "SrcType" ,
+                        data
+                          str "Norovirus, Sapovirus (Caliciviridae)" } ,
+                      {
+                        label
+                          str "Molecule Type Confirmed" ,
+                        data
+                          str "Yes" } ,
+                      {
+                        label
+                          str "BioProject Confirmed" ,
+                        data
+                          str "Yes" } ,
+                      {
+                        label
+                          str "Submission Status" ,
+                        data
+                          str "OK" } } } ,
+                  user {
+                    type
+                      str "Submission" ,
+                    data {
+                      {
+                        label
+                          str "SmartComment" ,
+                        data
+                          str "ALT EMAIL:b@b.com" } } } ,
+                  user {
+                    type
+                      str "NCBIWizard" ,
+                    data {
+                      {
+                        label
+                          str "Release Date confirmed" ,
+                        data
+                          str "Yes" } ,
+                      {
+                        label
+                          str "WizardType" ,
+                        data
+                          str "Standard" } ,
+                      {
+                        label
+                          str "Submission Status" ,
+                        data
+                          str "Must specify Molecule Type; Must choose set
+ type" } } } ,
+                  user {
+                    type
+                      str "Submission" ,
+                    data {
+                      {
+                        label
+                          str "SmartComment" ,
+                        data
+                          str "ALT EMAIL:b@b.com" } } } ,
+                  user {
+                    type
+                      str "NCBIWizard" ,
+                    data {
+                      {
+                        label
+                          str "Release Date confirmed" ,
+                        data
+                          str "Yes" } ,
+                      {
+                        label
+                          str "WizardType" ,
+                        data
+                          str "Viruses" } ,
+                      {
+                        label
+                          str "Submission Status" ,
+                        data
+                          str "" } ,
+                      {
+                        label
+                          str "SrcType" ,
+                        data
+                          str "Foot-and-mouth disease virus" } ,
+                      {
+                        label
+                          str "Molecule Type Confirmed" ,
+                        data
+                          str "Yes" } } } ,
+                  create-date
+                    std {
+                      year 2013 ,
+                      month 1 ,
+                      day 25 } ,
+                  create-date
+                    std {
+                      year 2013 ,
+                      month 1 ,
+                      day 25 } ,
+                  create-date
+                    std {
+                      year 2013 ,
+                      month 1 ,
+                      day 25 } } ,
+                inst {
+                  repr raw ,
+                  mol na ,
+                  length 2667 ,
+                  seq-data
+                    ncbi4na '8482882128282228828828221814444488444141284228841
+228828288144148248114228412214822842128844118482882284288288841844884414142218
+281828882284211228212221148422221448222211212212211414228228428214288211281818
+214412148212112252182288222288228441421488421428428441428444112821488812222288
+412118881214141142288224111228422211828214418228141228444844114821418151288288
+421822141842888821444128422221228212811128824128488882284844828282251842848188
+111141844881888214111888442182888412821288441228182211111811118821414828881228
+821822282188225441128411882288411482218841288882288211251118122818848184841421
+441488211122228221144411112128282288288114228842841811221428481214214548282148
+441284411211484828411222188214111218448228441112228141848882844211844284444448
+441218218414111288214211842218211844414221418888282888448828812825821218818444
+882882188844288282211228411441822841281221212288842844428442214414282418418121
+428441218882121844481818288282228411288224118288841412128221441428411448228111
+228242281211211418111214818882414411842488881844128A41211228221148828211818182
+181811228828844441188181811881841888241844128122811448442281818841228421411411
+821218844418218821441211112188211188228444411188111812288441228224441811842828
+811112118881888828822114218822811818288288114844211811428418412888422111218222
+128812142211888218221188182141411814428141111828411841828281288228828221448122
+821828221418828218888111821111824288882288884821221111221842222882141411882214
+228141111428888228844141111818488421428842284441112844482184884441818888811444
+428882821828A21128228281828111811111281228411888228822122114148188821821828412
+842128414444128214228211141211214428412848828888822844241288122842811288141418
+228441818182844111221428228282822841822841888188842182128414842218141218112821
+811211888218284841484841128814842888818221884428211821112211818212118142844482
+822142141218481284218481222111288828442814448882218881214828882212141144284841
+141141141148888141482228111488882228888218282148212848212288412828488228248448
+218228212448812111488214444488884888218284881811411142221414828428488211441222
+218211444114141182141812181211181241842281888484288214814211141288841384448421
+411842888428211121228441848221481211214221111214188811228484288841141114141288
+818422244441111221218842211218221441842A48484414214214111418848284828248414214
+121288228814141244484484228241142288214881842221414214484288142841228211844242
+228218218448448448444482228482221488221828418414421821482218214144488248221411
+124421481288414484422841441828221441848841284488828211811128282821184218828111
+411141111441114411411141214852818821428421111848112212218282281442111441421488
+822128818242114221214181128284812288881888220'H } ,
+                annot {
+                  {
+                    data
+                      ftable {
+                        {
+                          data
+                            rna {
+                              type tRNA ,
+                              ext
+                                tRNA {
+                                  aa
+                                    ncbieaa 66 } } ,
+                          location
+                            int {
+                              from 0 ,
+                              to 2666 ,
+                              id
+                                local
+                                  str "seq_1" } } ,
+                        {
+                          data
+                            cdregion {
+                              frame three ,
+                              code {
+                                id 1 } } ,
+                          partial TRUE ,
+                          product
+                            whole
+                              local
+                                str "seq_1_1" ,
+                          location
+                            mix {
+                              int {
+                                from 0 ,
+                                to 29 ,
+                                strand plus ,
+                                id
+                                  local
+                                    str "seq_1" ,
+                                fuzz-from
+                                  lim lt } ,
+                              int {
+                                from 69 ,
+                                to 2608 ,
+                                strand plus ,
+                                id
+                                  local
+                                    str "seq_1" } } } } } } } ,
+              seq {
+                id {
+                  local
+                    str "seq_1_1" } ,
+                descr {
+                  molinfo {
+                    biomol peptide ,
+                    tech concept-trans ,
+                    completeness no-left } } ,
+                inst {
+                  repr raw ,
+                  mol aa ,
+                  length 855 ,
+                  seq-data
+                    ncbieaa "SSLSLLLHRGLTSPALGMSSCFFDGWRAIYLSCNLTQVPQVPNTTKSLL
+LSFNYIRTVTTXSFPFLEQLQLLELGTQFTPLTIYREAFRNLPNLRILDLGGSQIBFLHPDAFQGLPHLTKLRLFSCG
+LSBAVLKDGYFRNLASLTHLDLSKNKIQSLYLHPSFXELNSLKSIDFSFNXIPIVCEQEFKPLQGKTLSFLSLADNQL
+YSRVSVDWNKCLNPFRNMVLETLDVSGNGWGVDIMRNFSNAINGSQIFSLVLTXHIMGSSFGFSNLKDPDYHTFAGLA
+RSSMIQLDISHGYIFSLNFRIFETLQELKVLNLAYNKINSISRNAFYGLDNLQVLNISYNLLGELYNYDFDGLPKVAY
+IDLQKNHIGIIQDKTFKFLGKLNTLDLRDNALKTIYFLPSIPNIFLSGNKLMTLPNIPLTANFIQLSENRLENLNDLY
+FLLQVPHLQILILNQNRFSFCHQNHAPSENSSLEKLFLGENMLQLAWETGSCWDIFKGLSHLQLLYLNKNYLNFLPPR
+VFHHLTALRGLSLKDNRLTVLFPGDLPANLEILDISGNQLLSPDPDLFASLSAIDITHNNFICECELSAFIHWLNQTN
+ITIAGSPADMYCMYPNFLARVSIYSLSTEGCEEEEVLESLKFSLFISVTVTLTLFLVVILTVTKFRGFCFICYKKAQS
+LLFKDPIKGRESDTYKYDAYLCFSSKDFXWVQNALLKHLDVQYNSQNRFNLCFEERDFMPGENHIANIQDAVWSSRKI
+VCLVSRHFLRDGWCLEAFSYAQSRCLADLNGALIMVVVGSLSQFHLMRHQSIRGFVQKRQYLRWPEDLQDVDWFLNKL
+SQCILKKEKERKKDSXIQLQNVTTIS" } ,
+                annot {
+                  {
+                    data
+                      ftable {
+                        {
+                          data
+                            prot {
+                              name {
+                                "x" } } ,
+                          partial TRUE ,
+                          location
+                            int {
+                              from 0 ,
+                              to 854 ,
+                              id
+                                local
+                                  str "seq_1_1" ,
+                              fuzz-from
+                                lim lt } } } } } } } } ,
+          seq {
+            id {
+              local
+                str "seq_2" } ,
+            descr {
+              title "toll-like receptor 5 (TLR5) gene, complete cds" ,
+              source {
+                org {
+                  taxname "Odocoileus hemionus" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype isolate ,
+                        subname "JEW01" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_2  [org=Odocoileus hemionus] [isolate=JEW01]
+ toll-like receptor 5 (TLR5) gene, complete cds" } } } ,
+              user {
+                type
+                  str "Submission" ,
+                data {
+                  {
+                    label
+                      str "SmartComment" ,
+                    data
+                      str "ALT EMAIL:b@b.com" } } } ,
+              user {
+                type
+                  str "NCBIWizard" ,
+                data {
+                  {
+                    label
+                      str "Release Date confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "WizardType" ,
+                    data
+                      str "Standard" } ,
+                  {
+                    label
+                      str "SrcType" ,
+                    data
+                      str "Norovirus, Sapovirus (Caliciviridae)" } ,
+                  {
+                    label
+                      str "Molecule Type Confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "BioProject Confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "Submission Status" ,
+                    data
+                      str "OK" } } } ,
+              user {
+                type
+                  str "Submission" ,
+                data {
+                  {
+                    label
+                      str "SmartComment" ,
+                    data
+                      str "ALT EMAIL:b@b.com" } } } ,
+              user {
+                type
+                  str "NCBIWizard" ,
+                data {
+                  {
+                    label
+                      str "Release Date confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "WizardType" ,
+                    data
+                      str "Standard" } ,
+                  {
+                    label
+                      str "Submission Status" ,
+                    data
+                      str "Must specify Molecule Type; Must choose set type" } } } ,
+              user {
+                type
+                  str "Submission" ,
+                data {
+                  {
+                    label
+                      str "SmartComment" ,
+                    data
+                      str "ALT EMAIL:b@b.com" } } } ,
+              user {
+                type
+                  str "NCBIWizard" ,
+                data {
+                  {
+                    label
+                      str "Release Date confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "WizardType" ,
+                    data
+                      str "Viruses" } ,
+                  {
+                    label
+                      str "Submission Status" ,
+                    data
+                      str "" } ,
+                  {
+                    label
+                      str "SrcType" ,
+                    data
+                      str "Foot-and-mouth disease virus" } ,
+                  {
+                    label
+                      str "Molecule Type Confirmed" ,
+                    data
+                      str "Yes" } } } ,
+              create-date
+                std {
+                  year 2013 ,
+                  month 1 ,
+                  day 25 } ,
+              create-date
+                std {
+                  year 2013 ,
+                  month 1 ,
+                  day 25 } ,
+              create-date
+                std {
+                  year 2013 ,
+                  month 1 ,
+                  day 25 } } ,
+            inst {
+              repr delta ,
+              mol na ,
+              length 2669 ,
+              ext
+                delta {
+                  literal {
+                    length 1202 ,
+                    seq-data
+                      ncbi4na '8482A821282822288288282218144182184441412842288
+412288282881441482481282284122158228421288441188828822842882882118448844141422
+482818288822842112282122211484222214482222112122122114142282284282148882112818
+182141121482121522121822882222882284414214884214284284414284441128214888122222
+884122188822141411422882241112284222118282144182284412284448441148214181412882
+884218221412428888214444284822212282428411288241284888812848448282828418428481
+881111418448818882141118884431828884128212884412281822111118211188214148288812
+288218222821882244411284118822884114828188418888822282112118181828188481848414
+2124142821112222822114441111212828228828811422884284281122122828121421C6482822
+484412844154114848284112221882141112184482284411121281418488828442118442844444
+484418482121141112882142118422182118444142214188882828884488288122258212128184
+444828821888442882822112284114418228412214212122888428444284422144142824184181
+214284412188821218444218182882822284112882241482888414121282211414284114482288
+112282422842112114181112148188884144118421888818441288412112282211488282112181
+821218112288288444411281818118818118882418441281228114484422818188412284214114
+11821218844418218821441211112188211188228414411188111812288441A'H } ,
+                  literal {
+                    length 1271 ,
+                    seq-data
+                      ncbi2na '75A8C39DF0043F3FDF5093D70CDF7EAE90C27AE1FE50135
+47C4903F4D43CD220C87200DE0E3771F5F752B174DD48F74FF0340367FD7FED14014E55F488354
+972009FF5FA200CEF907E5EA096AD3BEA3BFF0AA7F54DD40D773783001C5E0FD7D4528B3F4D378
+791E2A874974084321E1EF7F75E98FC5E707C88D7A3337A0149D7775E35E3F3F93478B96E85C1D
+3040F4DEE2EE07CB9FF353E9D0D0141344333AB752484EC793B1501DDE9EABF57F12FFD4482BEE
+082082FF22D5C0BFD5FF4DFAD1ED17C1DEF5DB2D35F3AF002F5AABFEFD37BCC202578B79EF4285
+5342A088348C6C40C63973FB9F4B24087F83AB920E7F9D0117A3B52C49550048FC1FB9FE080887
+F395AA005136504D4239EEE8924A08FB7B76E24847D7CA86AEB976097D2F395224AE7C9E1743A6
+574D3ACBAEAB57B54BD4DE3824D254D22AF6D480490'H } ,
+                  literal {
+                    length 196 ,
+                    seq-data
+                      ncbi4na '58128841448442284144182822144184824128448882821
+181112828282118421882811144114111144111441141114121484281882142842111484811221
+22182822814821114414214888221288188141142212141811288848122888818882242'H } } } ,
+            annot {
+              {
+                data
+                  ftable {
+                    {
+                      data
+                        rna {
+                          type tRNA } ,
+                      location
+                        int {
+                          from 0 ,
+                          to 2668 ,
+                          id
+                            local
+                              str "seq_2" } } } } } } ,
+          seq {
+            id {
+              local
+                str "seq_3" } ,
+            descr {
+              title "toll-like receptor 5 (TLR5) gene, complete cds, modified to be test data" ,
+              source {
+                org {
+                  taxname "Odocoileus virginianus" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype isolate ,
+                        subname "JEW21" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_3 [org=Odocoileus virginianus] [isolate=JEW21]
+ toll-like receptor 5 (TLR5) gene, complete cds" } } } ,
+              user {
+                type
+                  str "Submission" ,
+                data {
+                  {
+                    label
+                      str "SmartComment" ,
+                    data
+                      str "ALT EMAIL:b@b.com" } } } ,
+              user {
+                type
+                  str "NCBIWizard" ,
+                data {
+                  {
+                    label
+                      str "Release Date confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "WizardType" ,
+                    data
+                      str "Standard" } ,
+                  {
+                    label
+                      str "SrcType" ,
+                    data
+                      str "Norovirus, Sapovirus (Caliciviridae)" } ,
+                  {
+                    label
+                      str "Molecule Type Confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "BioProject Confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "Submission Status" ,
+                    data
+                      str "OK" } } } ,
+              user {
+                type
+                  str "Submission" ,
+                data {
+                  {
+                    label
+                      str "SmartComment" ,
+                    data
+                      str "ALT EMAIL:b@b.com" } } } ,
+              user {
+                type
+                  str "NCBIWizard" ,
+                data {
+                  {
+                    label
+                      str "Release Date confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "WizardType" ,
+                    data
+                      str "Standard" } ,
+                  {
+                    label
+                      str "Submission Status" ,
+                    data
+                      str "Must specify Molecule Type; Must choose set type" } } } ,
+              user {
+                type
+                  str "Submission" ,
+                data {
+                  {
+                    label
+                      str "SmartComment" ,
+                    data
+                      str "ALT EMAIL:b@b.com" } } } ,
+              user {
+                type
+                  str "NCBIWizard" ,
+                data {
+                  {
+                    label
+                      str "Release Date confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "WizardType" ,
+                    data
+                      str "Viruses" } ,
+                  {
+                    label
+                      str "Submission Status" ,
+                    data
+                      str "" } ,
+                  {
+                    label
+                      str "SrcType" ,
+                    data
+                      str "Foot-and-mouth disease virus" } ,
+                  {
+                    label
+                      str "Molecule Type Confirmed" ,
+                    data
+                      str "Yes" } } } ,
+              create-date
+                std {
+                  year 2013 ,
+                  month 1 ,
+                  day 25 } ,
+              create-date
+                std {
+                  year 2013 ,
+                  month 1 ,
+                  day 25 } ,
+              create-date
+                std {
+                  year 2013 ,
+                  month 1 ,
+                  day 25 } } ,
+            inst {
+              repr delta ,
+              mol na ,
+              length 2665 ,
+              ext
+                delta {
+                  literal {
+                    length 1163 ,
+                    seq-data
+                      ncbi2na 'EDF47757DF75328D3A88797E17DDF28B6C75E14B5E47E83
+F7D79F7D0EBE8896DCDFD7905D150B954AD54114508975E74BF41CCD204B44944D7D57D7A24BE4
+9E7A27A81D2FC557E14FD48825F5805E54374A35E85EAE82D2321F7E4D4867FD2A9ED5176781F6
+1EFF1EEB7778E7B3C023AF3F480FE937F8747E85CD400D03D22DFC5F4D5D3D6A0783D7E0B73E3F
+F57410CCDCFB3B89189D015750A8011DD7DF097E79C145DC4926DD4E87A082EDE054F4804EB5E8
+04723BF7A43A7AAAE8ED10807D24394D0EA2523FDDFEBDF15B4473AADF4FE9F7505E0A35E14911
+7F9EA7A5289D8E3127A13F44EA4CDF75781F58B7F88475089E0AD7C1765E4108C04B3FE28393FC
+E87E105D42F7413344C17DFAA07330F30FD8E87170AE9733E179208344FA8D3D284'H } ,
+                  literal {
+                    length 1 ,
+                    seq-data
+                      ncbi4na '50'H } ,
+                  literal {
+                    length 1501 ,
+                    seq-data
+                      iupacna "TGTCTTCACTCTCCCTTCTTCTCCATAGGATCATGGGAGACTGCCTTGACCTTCTCTTAGGAGTCGTACT
+CCTGACCAGTCCTGCACTTGGAATTTCTTCCTGCTTCTTCAATGGTTGGAGAGCCGTCTATCTTTCCTGC
+AACCTCACCCAAGTGCCCCAGGTCCCCAACACCACCAAGAGCCTCCTGCTCAGTTTCAACTATATCAGAA
+CAGTCACAGCCACATCCTTCCCCTTCCTGGAGCAGTTGCAGCTGCTGGAGCTGGGAACTCAGTTTACCCC
+CTTGACCATTTCCAGAGAAGCCTTCCGAAACCTGCCCAATCTCAGGATCCTGGACCTGGGTGGAAGTCAG
+ATAGACTTCTTGCATCCAGACGCTTTTCAGGGGCTGTCCCACCTCGCTGAACTTCGTTTTTTTTTTTTTT
+TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
+TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
+TTTTCCCTCAACAATATATCTATTGTATGTGAGCACGAGCTCAAACCCCTCCAAGGGAAAACACTCTCCT
+TCTTAAGCCTTGCTGCTAACCACCTCTACAGCAGCGTCTCCATGGACTGGAAGAAGTGTCTGAACCCATT
+CAGAAACATGGTCCTGGAAACACTAGATGTTTCTGGCAATGGCTGGGGGGTGGATGTCACAAGAAACTTC
+AGCAATGCCATCAATGGGAGCCAGATTTTCTCTTTGGTTCTTACCCGTCACACTATGGGGTCTTCATTTG
+GCTTCTCCAACCTGAAGGATCCTGACCAGCACACCTTTGCTGGGCTGGCCAGGAGCTCGATGATACAGCT
+GGACATTTCACATGGGCATATCTTCTCCCTGAACTTCCGAGTCTTTGAGACACTCCAAGAGCTGAAGGTC
+CTTAACCTCGCCTGCAACAAGATAAACAGTATTTTGAGGAATGCATTTTATGGACTTGACAACCTCCAAG
+NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
+CTATATTGACCTGCAGAAGAATCACATTGGGATCATTCAGGACRAAACATTCAAATTCCTGAGGAAATTA
+NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
+NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
+NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
+CAAAATCGCTTTTCCTTTTGTCACCAAAACCATGCCCCTTCAGAGAATCCCAGCCTAGAAAAGCTTTTCC
+TTGGAGAAAATATGTTGCAACTTGCCTGGGAAGCCGGGTCATGTTGGGATGTTTTTAAGGGGCTTTCCCA
+TCTCCAAATCCTCTATCTGAATAAAAACTACCTGAATTTCCTTCCACCAGGAGTATTTCATCATCTGACT
+GCACTGAGGGGACTCAGCCTCAAAGACAATAGACTGACTGTTCTTTCTCCTGGCGATTTACCTGCTAACT
+TAGAGATCCTGGATATATCTGGAAACCAGCTCCTCTCTCCTGATCCTGATTTATTTGCATCACTGAGTGC
+CGTGGACCTAACTCATAACAAATTCATCTGTGAGTGTGAACTTAGTGCTTTTATCCATTGGCTCAATCAA
+ACCAACATCACAATATATGGGTCTCCAGCAGACATGTACTGCATGTACCCAAACTCTCTGGCTGGGGTTT
+CCCTTTACAGTTTTTCCACAGAAGGTTGTGAAGAAGAAGAAGTTTTAGAGTCCCTAAAGTTTTCCCTTTT
+CATCTTGGTCACTGTCACCTTAACTCTGTTCCTCGTAGTCATCCTTATGGTTAAAAAGTTCCGGGGGTTT
+TGTTTCATCTGTTATAAGAAAGCCCTGAGTCTGCTGTTCAAGGACCCCATCAAGGGAAGAGAATCAGATA
+CGTACAAATACGATGCCTATTTGTGCTTCAGTAGCAAAGACTTTGAATGGGTGCAGAATGCTTTGCTCAA
+ACACCTGGATGTCCAGTACAGCCCCCAAAACAGATTTAACTTGTGCTTTGAAGAAAGAGACTTTATGCCC
+GGGGAAAACCACATCGCCAACATCCAAGATGCTGTGTGGAGCAGCAGGAAGATTGTCTGTCTCGTGAGCA
+GACACTTCCTTAGGGACGGGTGGTGCCTCGAAGCCTTCAGTTATGCCCAGAGCAGGTGCTTAGCTGACCT
+CAATGGCGCCCTCATCATGGTAGTGGTGGGGTCCCTGTCCCAGTTCCATCTGATGAAGCATCAGCCCATC
+AGAGGGTTCGTCCAGAAACAGCAATACTTGAGGTGGCCTGAGGATCTCCAGGATGTCGACTGGTTTCTCA
+ATAAACTCTCTCAATGCATTCTAAAGGAAGAAAAGGAAAGGAAGAAAGACAGTGCTATTCAGCTGCAAAG
+CGTAACCACCATCTCCTAGTCAAAGGAGCAGTTTCCACTTATTAGAAGCCACAGATAACTTTGTACCTTT
+TATTT" } } } } ,
+          seq {
+            id {
+              local
+                str "seq_3_again" } ,
+            descr {
+              title "toll-like receptor 5 (TLR5) gene, complete cds, modified to be test data" ,
+              source {
+                org {
+                  taxname "Odocoileus virginianus" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype isolate ,
+                        subname "JEW21" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_3 [org=Odocoileus virginianus] [isolate=JEW21]
+ toll-like receptor 5 (TLR5) gene, complete cds" } } } ,
+              user {
+                type
+                  str "Submission" ,
+                data {
+                  {
+                    label
+                      str "SmartComment" ,
+                    data
+                      str "ALT EMAIL:b@b.com" } } } ,
+              user {
+                type
+                  str "NCBIWizard" ,
+                data {
+                  {
+                    label
+                      str "Release Date confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "WizardType" ,
+                    data
+                      str "Standard" } ,
+                  {
+                    label
+                      str "SrcType" ,
+                    data
+                      str "Norovirus, Sapovirus (Caliciviridae)" } ,
+                  {
+                    label
+                      str "Molecule Type Confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "BioProject Confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "Submission Status" ,
+                    data
+                      str "OK" } } } ,
+              user {
+                type
+                  str "Submission" ,
+                data {
+                  {
+                    label
+                      str "SmartComment" ,
+                    data
+                      str "ALT EMAIL:b@b.com" } } } ,
+              user {
+                type
+                  str "NCBIWizard" ,
+                data {
+                  {
+                    label
+                      str "Release Date confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "WizardType" ,
+                    data
+                      str "Standard" } ,
+                  {
+                    label
+                      str "Submission Status" ,
+                    data
+                      str "Must specify Molecule Type; Must choose set type" } } } ,
+              user {
+                type
+                  str "Submission" ,
+                data {
+                  {
+                    label
+                      str "SmartComment" ,
+                    data
+                      str "ALT EMAIL:b@b.com" } } } ,
+              user {
+                type
+                  str "NCBIWizard" ,
+                data {
+                  {
+                    label
+                      str "Release Date confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "WizardType" ,
+                    data
+                      str "Viruses" } ,
+                  {
+                    label
+                      str "Submission Status" ,
+                    data
+                      str "" } ,
+                  {
+                    label
+                      str "SrcType" ,
+                    data
+                      str "Foot-and-mouth disease virus" } ,
+                  {
+                    label
+                      str "Molecule Type Confirmed" ,
+                    data
+                      str "Yes" } } } ,
+              create-date
+                std {
+                  year 2013 ,
+                  month 1 ,
+                  day 25 } ,
+              create-date
+                std {
+                  year 2013 ,
+                  month 1 ,
+                  day 25 } ,
+              create-date
+                std {
+                  year 2013 ,
+                  month 1 ,
+                  day 25 } } ,
+            inst {
+              repr delta ,
+              mol na ,
+              length 2850 ,
+              ext
+                delta {
+                  literal {
+                    length 1163 ,
+                    seq-data
+                      ncbi2na 'EDF47757DF75328D3A88797E17DDF28B6C75E14B5E47E83
+F7D79F7D0EBE8896DCDFD7905D150B954AD54114508975E74BF41CCD204B44944D7D57D7A24BE4
+9E7A27A81D2FC557E14FD48825F5805E54374A35E85EAE82D2321F7E4D4867FD2A9ED5176781F6
+1EFF1EEB7778E7B3C023AF3F480FE937F8747E85CD400D03D22DFC5F4D5D3D6A0783D7E0B73E3F
+F57410CCDCFB3B89189D015750A8011DD7DF097E79C145DC4926DD4E87A082EDE054F4804EB5E8
+04723BF7A43A7AAAE8ED10807D24394D0EA2523FDDFEBDF15B4473AADF4FE9F7505E0A35E14911
+7F9EA7A5289D8E3127A13F44EA4CDF75781F58B7F88475089E0AD7C1765E4108C04B3FE28393FC
+E87E105D42F7413344C17DFAA07330F30FD8E87170AE9733E179208344FA8D3D284'H } ,
+                  literal {
+                    length 1 ,
+                    seq-data
+                      ncbi4na '50'H } ,
+literal { length 185 },
+                  literal {
+                    length 1501 ,
+                    seq-data
+                      iupacna "TGTCTTCACTCTCCCTTCTTCTCCATAGGATCATGGGAGACTGCCTTGACCTTCTCTTAGGAGTCGTACT
+CCTGACCAGTCCTGCACTTGGAATTTCTTCCTGCTTCTTCAATGGTTGGAGAGCCGTCTATCTTTCCTGC
+AACCTCACCCAAGTGCCCCAGGTCCCCAACACCACCAAGAGCCTCCTGCTCAGTTTCAACTATATCAGAA
+CAGTCACAGCCACATCCTTCCCCTTCCTGGAGCAGTTGCAGCTGCTGGAGCTGGGAACTCAGTTTACCCC
+CTTGACCATTTCCAGAGAAGCCTTCCGAAACCTGCCCAATCTCAGGATCCTGGACCTGGGTGGAAGTCAG
+ATAGACTTCTTGCATCCAGACGCTTTTCAGGGGCTGTCCCACCTCGCTGAACTTCGTTTTTTTTTTTTTT
+TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
+TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
+TTTTCCCTCAACAATATATCTATTGTATGTGAGCACGAGCTCAAACCCCTCCAAGGGAAAACACTCTCCT
+TCTTAAGCCTTGCTGCTAACCACCTCTACAGCAGCGTCTCCATGGACTGGAAGAAGTGTCTGAACCCATT
+CAGAAACATGGTCCTGGAAACACTAGATGTTTCTGGCAATGGCTGGGGGGTGGATGTCACAAGAAACTTC
+AGCAATGCCATCAATGGGAGCCAGATTTTCTCTTTGGTTCTTACCCGTCACACTATGGGGTCTTCATTTG
+GCTTCTCCAACCTGAAGGATCCTGACCAGCACACCTTTGCTGGGCTGGCCAGGAGCTCGATGATACAGCT
+GGACATTTCACATGGGCATATCTTCTCCCTGAACTTCCGAGTCTTTGAGACACTCCAAGAGCTGAAGGTC
+CTTAACCTCGCCTGCAACAAGATAAACAGTATTTTGAGGAATGCATTTTATGGACTTGACAACCTCCAAG
+TTCTCAACATATCACATAACCTTCTTGGGGAACTATATAATTATAATTTCGATGGACTACCTAAGGTGGC
+CTATATTGACCTGCAGAAGAATCACATTGGGATCATTCAGGACRAAACATTCAAATTCCTGAGGAAATTA
+NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
+NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN
+TAGACTAGAAAATCTGAATGATCTCACTTTCCTTCTCCAGGTACCTCATCTCCAGATTCTCATTTTAAAT
+CAAAATCGCTTTTCCTTTTGTCACCAAAACCATGCCCCTTCAGAGAATCCCAGCCTAGAAAAGCTTTTCC
+TTGGAGAAAATATGTTGCAACTTGCCTGGGAAGCCGGGTCATGTTGGGATGTTTTTAAGGGGCTTTCCCA
+TCTCCAAATCCTCTATCTGAATAAAAACTACCTGAATTTCCTTCCACCAGGAGTATTTCATCATCTGACT
+GCACTGAGGGGACTCAGCCTCAAAGACAATAGACTGACTGTTCTTTCTCCTGGCGATTTACCTGCTAACT
+TAGAGATCCTGGATATATCTGGAAACCAGCTCCTCTCTCCTGATCCTGATTTATTTGCATCACTGAGTGC
+CGTGGACCTAACTCATAACAAATTCATCTGTGAGTGTGAACTTAGTGCTTTTATCCATTGGCTCAATCAA
+ACCAACATCACAATATATGGGTCTCCAGCAGACATGTACTGCATGTACCCAAACTCTCTGGCTGGGGTTT
+CCCTTTACAGTTTTTCCACAGAAGGTTGTGAAGAAGAAGAAGTTTTAGAGTCCCTAAAGTTTTCCCTTTT
+CATCTTGGTCACTGTCACCTTAACTCTGTTCCTCGTAGTCATCCTTATGGTTAAAAAGTTCCGGGGGTTT
+TGTTTCATCTGTTATAAGAAAGCCCTGAGTCTGCTGTTCAAGGACCCCATCAAGGGAAGAGAATCAGATA
+CGTACAAATACGATGCCTATTTGTGCTTCAGTAGCAAAGACTTTGAATGGGTGCAGAATGCTTTGCTCAA
+ACACCTGGATGTCCAGTACAGCCCCCAAAACAGATTTAACTTGTGCTTTGAAGAAAGAGACTTTATGCCC
+GGGGAAAACCACATCGCCAACATCCAAGATGCTGTGTGGAGCAGCAGGAAGATTGTCTGTCTCGTGAGCA
+GACACTTCCTTAGGGACGGGTGGTGCCTCGAAGCCTTCAGTTATGCCCAGAGCAGGTGCTTAGCTGACCT
+CAATGGCGCCCTCATCATGGTAGTGGTGGGGTCCCTGTCCCAGTTCCATCTGATGAAGCATCAGCCCATC
+AGAGGGTTCGTCCAGAAACAGCAATACTTGAGGTGGCCTGAGGATCTCCAGGATGTCGACTGGTTTCTCA
+ATAAACTCTCTCAATGCATTCTAAAGGAAGAAAAGGAAAGGAAGAAAGACAGTGCTATTCAGCTGCAAAG
+CGTAACCACCATCTCCTAGTCAAAGGAGCAGTTTCCACTTATTAGAAGCCACAGATAACTTTGTACCTTT
+TATTT" } } } } ,
+          seq {
+            id {
+              local
+                str "seq_4" } ,
+            descr {
+              title "toll-like receptor 5 (TLR5) gene, complete cds" ,
+              source {
+                org {
+                  taxname "Giraffa camelopardalis" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype isolate ,
+                        subname "KB3332" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_4 [org=Giraffa camelopardalis][isolate=KB3332]
+ toll-like receptor 5 (TLR5) gene, complete cds" } } } ,
+              user {
+                type
+                  str "Submission" ,
+                data {
+                  {
+                    label
+                      str "SmartComment" ,
+                    data
+                      str "ALT EMAIL:b@b.com" } } } ,
+              user {
+                type
+                  str "NCBIWizard" ,
+                data {
+                  {
+                    label
+                      str "Release Date confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "WizardType" ,
+                    data
+                      str "Standard" } ,
+                  {
+                    label
+                      str "SrcType" ,
+                    data
+                      str "Norovirus, Sapovirus (Caliciviridae)" } ,
+                  {
+                    label
+                      str "Molecule Type Confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "BioProject Confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "Submission Status" ,
+                    data
+                      str "OK" } } } ,
+              user {
+                type
+                  str "Submission" ,
+                data {
+                  {
+                    label
+                      str "SmartComment" ,
+                    data
+                      str "ALT EMAIL:b@b.com" } } } ,
+              user {
+                type
+                  str "NCBIWizard" ,
+                data {
+                  {
+                    label
+                      str "Release Date confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "WizardType" ,
+                    data
+                      str "Standard" } ,
+                  {
+                    label
+                      str "Submission Status" ,
+                    data
+                      str "Must specify Molecule Type; Must choose set type" } } } ,
+              user {
+                type
+                  str "Submission" ,
+                data {
+                  {
+                    label
+                      str "SmartComment" ,
+                    data
+                      str "ALT EMAIL:b@b.com" } } } ,
+              user {
+                type
+                  str "NCBIWizard" ,
+                data {
+                  {
+                    label
+                      str "Release Date confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "WizardType" ,
+                    data
+                      str "Viruses" } ,
+                  {
+                    label
+                      str "Submission Status" ,
+                    data
+                      str "" } ,
+                  {
+                    label
+                      str "SrcType" ,
+                    data
+                      str "Foot-and-mouth disease virus" } ,
+                  {
+                    label
+                      str "Molecule Type Confirmed" ,
+                    data
+                      str "Yes" } } } ,
+              create-date
+                std {
+                  year 2013 ,
+                  month 1 ,
+                  day 25 } ,
+              create-date
+                std {
+                  year 2013 ,
+                  month 1 ,
+                  day 25 } ,
+              create-date
+                std {
+                  year 2013 ,
+                  month 1 ,
+                  day 25 } } ,
+            inst {
+              repr raw ,
+              mol na ,
+              length 2681 ,
+              seq-data
+                ncbi2na 'EDF47777DF75328D3888797E17DDF28B6C75E14B5E47E8BF7D79F
+7F8EBE8895DCDFD7905D150B954AD54114508975E749F41CCD284B44144D7D57D7A24BE49E7A27
+A81D2FC557E14FC48825F5805E54374A35E85EAE82DA321F7E4D48E7FD2A1E55174F81F61EFFDE
+EB7778E7B3C023A73F480FE937F8747E85CD400D03D22DFC5F4D5D3D6A0783D7E0B53E3FF57414
+0C5CFB3B89081D015750A8011DD7DF097E78C145EC492ADD2E87A082EDE054F480CEB5E805723B
+F7A43A7AAAE86D38807D24394D0EA2523FDDFEBDF1534CF3ABDF6FE9F7505E0A35E149117F9EA7
+A5289D8E3127A13F44EACCDF75783F58B7F88675289E0BD781765C4108C0473F628393FCE87E10
+5F42F7433344C17DFAA0F330F38FD8E87170EE9773E179208344FA8D3D284013F03D7BA03C0C5F
+A175A8C39DF0043F3FDF5093D70CDFFEAE90C27AE1FE5013547C8943F4D47CD220CA7200DE0E37
+71F5F752B174DD48F7CFF0340367FD7FED14014E55F488354972009FF5FA200CEF907E5EA0969D
+3BEA3BFF0AA7F54DD49D773783001C5E0FD7D4528B3F6D378791E2A874974084129F1EF7F75EB8
+7C5E707C88D7A3337A0149D7775E35E3F3F13478B96E84C1D3040F4DEE2EE07CB1FF353E9D0D01
+4334433FAB752484EC793B1501DDE9EABF57F12DFD4482BE6082082FF22D5E0BFD5FF4D7AD1ED1
+7E1DEF5DBAD35D12F102F5AABFEFD37BCC202548B79EF42855342A088348C6C40CE3973FB9F4B2
+4087F83AB920E7F9D0117A3B52C49250048FC1FB9FE080887F395AAC05334504D4A39EEE892480
+8FB7B76E24847D7C886AEB976097D0F195224AE7C9E1743A6574D3AEBAEAB57B54BD4DE3824D2D
+4D22AF6D480692C7E2BA5E28DD4A3BE1EBF74301DDE0E4F7020200A02820212E7BD27900EC1443
+75CB50A24BF51F34427123077B17FCFD652FC5400'H } } ,
+          seq {
+            id {
+              local
+                str "seq_5" } ,
+            descr {
+              title "toll-like receptor 5 (TLR5) gene, complete cds" ,
+              source {
+                org {
+                  taxname "Rupicapra rupicapra" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype isolate ,
+                        subname "Rr6389" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_5 [org=Rupicapra rupicapra][isolate=Rr6389]
+ toll-like receptor 5 (TLR5) gene, complete cds" } } } ,
+              user {
+                type
+                  str "Submission" ,
+                data {
+                  {
+                    label
+                      str "SmartComment" ,
+                    data
+                      str "ALT EMAIL:b@b.com" } } } ,
+              user {
+                type
+                  str "NCBIWizard" ,
+                data {
+                  {
+                    label
+                      str "Release Date confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "WizardType" ,
+                    data
+                      str "Standard" } ,
+                  {
+                    label
+                      str "SrcType" ,
+                    data
+                      str "Norovirus, Sapovirus (Caliciviridae)" } ,
+                  {
+                    label
+                      str "Molecule Type Confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "BioProject Confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "Submission Status" ,
+                    data
+                      str "OK" } } } ,
+              user {
+                type
+                  str "Submission" ,
+                data {
+                  {
+                    label
+                      str "SmartComment" ,
+                    data
+                      str "ALT EMAIL:b@b.com" } } } ,
+              user {
+                type
+                  str "NCBIWizard" ,
+                data {
+                  {
+                    label
+                      str "Release Date confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "WizardType" ,
+                    data
+                      str "Standard" } ,
+                  {
+                    label
+                      str "Submission Status" ,
+                    data
+                      str "Must specify Molecule Type; Must choose set type" } } } ,
+              user {
+                type
+                  str "Submission" ,
+                data {
+                  {
+                    label
+                      str "SmartComment" ,
+                    data
+                      str "ALT EMAIL:b@b.com" } } } ,
+              user {
+                type
+                  str "NCBIWizard" ,
+                data {
+                  {
+                    label
+                      str "Release Date confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "WizardType" ,
+                    data
+                      str "Viruses" } ,
+                  {
+                    label
+                      str "Submission Status" ,
+                    data
+                      str "" } ,
+                  {
+                    label
+                      str "SrcType" ,
+                    data
+                      str "Foot-and-mouth disease virus" } ,
+                  {
+                    label
+                      str "Molecule Type Confirmed" ,
+                    data
+                      str "Yes" } } } ,
+              create-date
+                std {
+                  year 2013 ,
+                  month 1 ,
+                  day 25 } ,
+              create-date
+                std {
+                  year 2013 ,
+                  month 1 ,
+                  day 25 } ,
+              create-date
+                std {
+                  year 2013 ,
+                  month 1 ,
+                  day 25 } } ,
+            inst {
+              repr delta ,
+              mol na ,
+              length 2679 ,
+              ext
+                delta {
+                  literal {
+                    length 836 ,
+                    seq-data
+                      ncbi4na '84828821282822288288282212144182184441418842288
+412288282881441482581282284122118228421288441188828822842882882418448844141422
+282818288822848112282122211484222214482222118122122114142282284282142882112818
+182144121482141128121822882222882284414214884214284284414284441128214888128822
+884122188112141411422882241112284222118282144182284412284448441148214181412882
+884218221412428888214441284222212282128411288241284888882848448282822418428481
+881111418448818882141118884421828884128242884412281822111118211188214148288818
+288218222828882244411284118822884114822188418888822282112211181228188481848414
+214414882111222282211444111121282822882881142288428418112218884812142144482821
+484412844114114848284112221882141112184482284411122281418488828442118442844444
+484412182184141112882142118422182118444142214188882828884488288122218212188184
+448828825'H } ,
+                  literal {
+                    length 1436 ,
+                    seq-data
+                      ncbi2na 'FE9F7505E0A35E149117F9EA725289D8E3127A13F44EACC
+DF75781D68B7F80675289E0AD701765C4108C04B3F62839BFCE876105D42F743334CC17DFAA0F3
+30D38FD8E87170AC9733E179208344FA8D3D284013D03D7AA03C0C57A175A8C39DF0043F3FDF50
+93D70CDF7EAE90C27AE1FE5013547C4943F8D43CD220CA7200DE0E3771F5F752B174DD48F74FF0
+340367FD7FEDE4014E55F488354972009FF5FA200CEF907E5EA0162D3BEA33FF0AA7F74DD41D77
+3783001C5E0FD7D4528B3F4D378791E2A874974084129E1EF7F75E987C5E707C88D7A3337A0149
+D7B75E35E3F3F93478B94E84C1D3040F4DEE3EE07CB9FF353EAD0D0143344337AB752484EC793B
+1501DDE9EABF53F12DFD4482BEE082083FF22D5C0BFD5FF4DFBD1FD17E15EF5DB8D35D3AF102F5
+AABFEFD37BCC202548B79EF42855342A088348C4C40C63973FB9F4B24087F83AB920E7F9D0117A
+3B52C4925204CFC17B9FE080887F395AA005136504D4A39'H } ,
+                  literal {
+                    length 407 ,
+                    seq-data
+                      ncbi4na 'A4848441421421441141284828482824841421412128822
+881414124448448422824114228821488124222141421448428814284122821121424222821821
+844844844844448222848222148822182841841142182148221821414448824822141112442148
+128841448442284144182822144184884128448882821481112828282118421882811141114111
+144111441141114121484281882142842111484811221224828228144211144142148882212881
+2842114221214181128284812288881888224221488812210'H } } } } ,
+          seq {
+            id {
+              local
+                str "seq_6" } ,
+            descr {
+              title "toll-like receptor 5 (TLR5) gene, complete cds" ,
+              source {
+                org {
+                  taxname "Oryx gazella" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype isolate ,
+                        subname "SAZ06" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_6  [org=Oryx gazella][isolate=SAZ06] toll-like
+ receptor 5 (TLR5) gene, complete cds" } } } ,
+              user {
+                type
+                  str "Submission" ,
+                data {
+                  {
+                    label
+                      str "SmartComment" ,
+                    data
+                      str "ALT EMAIL:b@b.com" } } } ,
+              user {
+                type
+                  str "NCBIWizard" ,
+                data {
+                  {
+                    label
+                      str "Release Date confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "WizardType" ,
+                    data
+                      str "Standard" } ,
+                  {
+                    label
+                      str "SrcType" ,
+                    data
+                      str "Norovirus, Sapovirus (Caliciviridae)" } ,
+                  {
+                    label
+                      str "Molecule Type Confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "BioProject Confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "Submission Status" ,
+                    data
+                      str "OK" } } } ,
+              user {
+                type
+                  str "Submission" ,
+                data {
+                  {
+                    label
+                      str "SmartComment" ,
+                    data
+                      str "ALT EMAIL:b@b.com" } } } ,
+              user {
+                type
+                  str "NCBIWizard" ,
+                data {
+                  {
+                    label
+                      str "Release Date confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "WizardType" ,
+                    data
+                      str "Standard" } ,
+                  {
+                    label
+                      str "Submission Status" ,
+                    data
+                      str "Must specify Molecule Type; Must choose set type" } } } ,
+              user {
+                type
+                  str "Submission" ,
+                data {
+                  {
+                    label
+                      str "SmartComment" ,
+                    data
+                      str "ALT EMAIL:b@b.com" } } } ,
+              user {
+                type
+                  str "NCBIWizard" ,
+                data {
+                  {
+                    label
+                      str "Release Date confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "WizardType" ,
+                    data
+                      str "Viruses" } ,
+                  {
+                    label
+                      str "Submission Status" ,
+                    data
+                      str "" } ,
+                  {
+                    label
+                      str "SrcType" ,
+                    data
+                      str "Foot-and-mouth disease virus" } ,
+                  {
+                    label
+                      str "Molecule Type Confirmed" ,
+                    data
+                      str "Yes" } } } ,
+              create-date
+                std {
+                  year 2013 ,
+                  month 1 ,
+                  day 25 } ,
+              create-date
+                std {
+                  year 2013 ,
+                  month 1 ,
+                  day 25 } ,
+              create-date
+                std {
+                  year 2013 ,
+                  month 1 ,
+                  day 25 } } ,
+            inst {
+              repr delta ,
+              mol na ,
+              length 2672 ,
+              ext
+                delta {
+                  literal {
+                    length 962 ,
+                    seq-data
+                      ncbi4na '84828821282822288288282218144182184441412842288
+412288282888441482481282284122148228421288441188828822842882882118448844141422
+282818288822842112282122211484222214482222112122122114142282284282142882112888
+18214412148214112A121822882222882284414214884214284284414284441128214888122222
+884122188812141411422882241112284222118282144182284412284448441148244181412882
+88421822141242888821444128422221228212841128424128488888284844828282A418428481
+881111418448818882141118884421828884128242884412281822111118211188214148288812
+288218222821882214411284118822884114822188418888822282112211181228188481848414
+214414882111222282211444111121282822882881142288428418112212884812142144482821
+484412844114114848284112221882141112184482284411122281418488828442118442844444
+485412182184141112882142148422182118444142214188882828884488288122218212188184
+448828824888442882822112284114418228412214212122888428444281422144142824184181
+214284412188821218444818182882822284112882241482888414125'H } ,
+                  literal {
+                    length 1710 ,
+                    seq-data
+                      ncbi2na '75289E0AD701765C4108C04B3F62839BFCE874105D42F74
+3334CC17DFAA0F330D38FD8E87170ACB733E179208344FA8D3D284013D03D7AA03C0C5FA175A8C
+39DF0043F3FDF5093D70CDF7EAE90C27AE1FE5013547C4943F8D43CD220CA7200DE0E3771F5F75
+2B174DD48F74FF0340367FDFFED24014E55F488354972009FF5FA200CEF907E5EA01E2D39EA33F
+F0AA7F74DD42D773783001C5E0FD7D4528B3F4D378691E2A874974A84129E1EF7F75E987C5E707
+C88D7A3337A0149D7775E35C3B3F93478B94E84C1D3040F4DEE3EE07CB9FF353EAD0D014334433
+7AB752484EC793B1501DDE9EABF53F12DFD4482BE6082083DF22D5D2BFD5FF4DF9D1ED17C1DEF5
+DBAD35D12F102F5AABFEFD37BCC202548B79EF42855342A088348C6C40C63973FB9F4B24087F83
+AB920E7F9D0117A3B52C49250048FC17B9FE080887F395AA005136504D4A396EE8924808FB7B76
+E24847D7C886AEB976097D2F195224AE7C9E1743A6574D3AEBAEAB57B54BD4FE3824D2D4D22AF6
+D480692C7E2BA5E28DD4A3BE1EBF74301DDD0E4F7020200A02820212E73D27902EC145375CA40A
+24BF51F1E425123077B17FCFD6520'H } } } } ,
+          seq {
+            id {
+              local
+                str "seq_7" } ,
+            descr {
+              title "toll-like receptor 5 (TLR5) gene, complete cds" ,
+              source {
+                org {
+                  taxname "Oryx leucoryx" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype isolate ,
+                        subname "SAZ07" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_7 [org=Oryx leucoryx][isolate=SAZ07] toll-like
+ receptor 5 (TLR5) gene, complete cds" } } } ,
+              user {
+                type
+                  str "Submission" ,
+                data {
+                  {
+                    label
+                      str "SmartComment" ,
+                    data
+                      str "ALT EMAIL:b@b.com" } } } ,
+              user {
+                type
+                  str "NCBIWizard" ,
+                data {
+                  {
+                    label
+                      str "Release Date confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "WizardType" ,
+                    data
+                      str "Standard" } ,
+                  {
+                    label
+                      str "SrcType" ,
+                    data
+                      str "Norovirus, Sapovirus (Caliciviridae)" } ,
+                  {
+                    label
+                      str "Molecule Type Confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "BioProject Confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "Submission Status" ,
+                    data
+                      str "OK" } } } ,
+              user {
+                type
+                  str "Submission" ,
+                data {
+                  {
+                    label
+                      str "SmartComment" ,
+                    data
+                      str "ALT EMAIL:b@b.com" } } } ,
+              user {
+                type
+                  str "NCBIWizard" ,
+                data {
+                  {
+                    label
+                      str "Release Date confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "WizardType" ,
+                    data
+                      str "Standard" } ,
+                  {
+                    label
+                      str "Submission Status" ,
+                    data
+                      str "Must specify Molecule Type; Must choose set type" } } } ,
+              user {
+                type
+                  str "Submission" ,
+                data {
+                  {
+                    label
+                      str "SmartComment" ,
+                    data
+                      str "ALT EMAIL:b@b.com" } } } ,
+              user {
+                type
+                  str "NCBIWizard" ,
+                data {
+                  {
+                    label
+                      str "Release Date confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "WizardType" ,
+                    data
+                      str "Viruses" } ,
+                  {
+                    label
+                      str "Submission Status" ,
+                    data
+                      str "" } ,
+                  {
+                    label
+                      str "SrcType" ,
+                    data
+                      str "Foot-and-mouth disease virus" } ,
+                  {
+                    label
+                      str "Molecule Type Confirmed" ,
+                    data
+                      str "Yes" } } } ,
+              create-date
+                std {
+                  year 2013 ,
+                  month 1 ,
+                  day 25 } ,
+              create-date
+                std {
+                  year 2013 ,
+                  month 1 ,
+                  day 25 } ,
+              create-date
+                std {
+                  year 2013 ,
+                  month 1 ,
+                  day 25 } } ,
+            inst {
+              repr delta ,
+              mol na ,
+              length 2679 ,
+              ext
+                delta {
+                  literal {
+                    length 960 ,
+                    seq-data
+                      ncbi2na 'EDF47757DF75328D3A88797E17DDFE8B6C75E14B5E47E83
+F7D79F7D0EBE8895DCDFD7905D150B954AD54114508975E749F41FCD284B48144D7D57D7A24BE4
+9E7A27A81D2FC557E14FC48825F5805E54374A35E85EAE82DA321F7E4D4867FD2A1E5D174781E6
+1EFFDEEB7758E7B3C023AF3F480FE937F8767E85CD400D03D22DFC5F4D5D3D4A0783D7E0B53E3F
+F574140C5CFB3B8928BD015750A8011DD7DF097E78C147EC492ADD2E87A082EDE054F4804EB5E8
+05723BF7A03A7AAAE84D38807D24B94D0EA2523FDDFEBDF15344F3ABDF4FE9F7505E0A35E14911
+7F9EA725289D8E3127A13F44EACCDF75781F58B7F88'H } ,
+                  literal {
+                    length 1 ,
+                    seq-data
+                      ncbi4na 'A0'H } ,
+                  literal {
+                    length 1718 ,
+                    seq-data
+                      ncbi2na '9D4A2782B5C05D9710423012CFD8A0E6FF3A1D041750BDD
+0CCD3305F7EA83CCC34E3F63A1C5C2B2DCCF85E4820D13EA34F4A1004F40F5EA80F0317E85D6A3
+0E77C010FCFF7D424F5C337DFABA4309EB87F9404D51F1250FE350F3488329C8037838DDC7D7DD
+4AC5D37523DD3FC0D00D9FF7FFB490053957D220D525C8027FD7E88033BE41F97A8078B4E7A8CF
+FC2A9FDD3750B5DCDE0C0071783F5F514A2CFD34DE1A478AA1D25D2A104A787BDFDD7A61F179C1
+F2235E8CCDE805275DDD78D70ECFE4D1E2E53A13074C103D37B8FB81F2E7FCD4FAB434050CD10C
+DEADD49213B1E4EC540777A7AAFD4FC4B7F5120AF9820820F7C8B574AFF57FD37E747B45F077BD
+76EB4D744BC40BD6AAFFBF4DEF30809522DE7BD0A154D0A8220D231B10318E5CFEE7D2C9021FE0
+EAE4839FE74045E8ED4B124940123F05EE7F820221FCE56A80144D9413528E5BBA2492023EDEDD
+B89211F5F221ABAE5D825F4BC654892B9F2785D0E915D34EBAEBAAD5ED52F53F8E0934B5348ABD
+B5201A4B1F8AE978A37528EF87AFDD0C07774393DC08080280A08084B9CF49E40BB0514DD72902
+892FD47C7909448C1DEC5FF3F594BC500'H } } } } ,
+          seq {
+            id {
+              local
+                str "seq_8" } ,
+            descr {
+              title "toll-like receptor 5 (TLR5) gene, complete cds" ,
+              source {
+                org {
+                  taxname "Tragelaphus strepsiceros" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype isolate ,
+                        subname "SAZ15" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_8 [org=Tragelaphus
+ strepsiceros][isolate=SAZ15] toll-like receptor 5 (TLR5) gene, complete cds" } } } ,
+              user {
+                type
+                  str "Submission" ,
+                data {
+                  {
+                    label
+                      str "SmartComment" ,
+                    data
+                      str "ALT EMAIL:b@b.com" } } } ,
+              user {
+                type
+                  str "NCBIWizard" ,
+                data {
+                  {
+                    label
+                      str "Release Date confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "WizardType" ,
+                    data
+                      str "Standard" } ,
+                  {
+                    label
+                      str "SrcType" ,
+                    data
+                      str "Norovirus, Sapovirus (Caliciviridae)" } ,
+                  {
+                    label
+                      str "Molecule Type Confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "BioProject Confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "Submission Status" ,
+                    data
+                      str "OK" } } } ,
+              user {
+                type
+                  str "Submission" ,
+                data {
+                  {
+                    label
+                      str "SmartComment" ,
+                    data
+                      str "ALT EMAIL:b@b.com" } } } ,
+              user {
+                type
+                  str "NCBIWizard" ,
+                data {
+                  {
+                    label
+                      str "Release Date confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "WizardType" ,
+                    data
+                      str "Standard" } ,
+                  {
+                    label
+                      str "Submission Status" ,
+                    data
+                      str "Must specify Molecule Type; Must choose set type" } } } ,
+              user {
+                type
+                  str "Submission" ,
+                data {
+                  {
+                    label
+                      str "SmartComment" ,
+                    data
+                      str "ALT EMAIL:b@b.com" } } } ,
+              user {
+                type
+                  str "NCBIWizard" ,
+                data {
+                  {
+                    label
+                      str "Release Date confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "WizardType" ,
+                    data
+                      str "Viruses" } ,
+                  {
+                    label
+                      str "Submission Status" ,
+                    data
+                      str "" } ,
+                  {
+                    label
+                      str "SrcType" ,
+                    data
+                      str "Foot-and-mouth disease virus" } ,
+                  {
+                    label
+                      str "Molecule Type Confirmed" ,
+                    data
+                      str "Yes" } } } ,
+              create-date
+                std {
+                  year 2013 ,
+                  month 1 ,
+                  day 25 } ,
+              create-date
+                std {
+                  year 2013 ,
+                  month 1 ,
+                  day 25 } ,
+              create-date
+                std {
+                  year 2013 ,
+                  month 1 ,
+                  day 25 } } ,
+            inst {
+              repr delta ,
+              mol na ,
+              length 2630 ,
+              ext
+                delta {
+                  literal {
+                    length 787 ,
+                    seq-data
+                      ncbi4na '84828821282822288288282218144182184441412842288
+412288282881441488481282284122148228421288441188828822842882882418448844141422
+182818288C2284211228212221148422A21448222214212212211414228A284282142882112818
+182144121482121112421822882222882284414214884214284284414284441128214888122222
+884122188818441411422882241112284222118282144182284412284448441148214181412882
+884218221418428888214441284222212282128411288241284888882848448282822418428481
+881111418448818882141118884421828884128212884412281822111118111188214148288812
+288218228821882244411284118822884114822188418888822282112211181228188481848414
+214414882111222282211444111121282822882881142288428418112212284812142144482821
+484412844114114848284112221882141112184482284411128281418488828442118442844444
+484412182184141112882142118482182118450'H } ,
+                  literal {
+                    length 1843 ,
+                    seq-data
+                      ncbi2na '8948FF77FAF7C54D33CEAF7D3FA7DDC17828D7871445FE7
+A9E94A27638C49E84FD13AB337DD5E07D62DFE011D4A2782B5C05F9710423012CFD0A0E6FF3A1D
+841750BDD0CCD3305F7EA83CCC3CE3F63A1C5C2BA5CCF85E4820D13EA34F4A1004F40F5EA80F05
+17E85D6A30E77C010FCFF7D424F5C337DF0BAC309E387F9404D51F1250FD350F3488329C803783
+8DDC7D7DD4AC5D37523DD3FC0D00D9FF5FFB450053957D220D525C8027FD7E88033BE41F97A807
+AB4EFA8CFFC2A9FDD375075DCDC0C0071783F5F514A2CFD34DE1E478AA1D25D02104A787BDF7D7
+A61F179C1F2235E8CCDC805275DDD78D78FCFE4D1E2E53213074C10FD37B87B81F2E7FCD47A743
+4050CD10C9EADD49213B1E4EC5407F7A72AFD4FC4B7F5120A7B820820BFC8BD702FF57FD374B47
+B45F877BD76EB4D746BC40BD2AAFFBF4DEF30809522DE7BD0A154D0A8220D231310318E5CFEE7D
+2C9021FE0EAE4839FE74045E8ED4B104940123F05EE7F820221FCE56A80144F9413528E5BBA249
+2023EDEDDB89211F5F221ABAE5D825F4BCE54892B9F2785D0E995D34EBAEBAAD5ED52F5378E093
+4B5348ABDB5201A4B1F8AE978A37528EF87AFDD0C07774393DC08080280208084B9CF8BE403B05
+14DD72902892FD47C'H } } } } ,
+          seq {
+            id {
+              local
+                str "seq_9" } ,
+            descr {
+              title "toll-like receptor 5 (TLR5) gene, complete cds" ,
+              source {
+                org {
+                  taxname "Tragelaphus imberbis" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype isolate ,
+                        subname "SAZ17" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_9 [org=Tragelaphus imberbis][isolate=SAZ17]
+ toll-like receptor 5 (TLR5) gene, complete cds" } } } ,
+              user {
+                type
+                  str "Submission" ,
+                data {
+                  {
+                    label
+                      str "SmartComment" ,
+                    data
+                      str "ALT EMAIL:b@b.com" } } } ,
+              user {
+                type
+                  str "NCBIWizard" ,
+                data {
+                  {
+                    label
+                      str "Release Date confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "WizardType" ,
+                    data
+                      str "Standard" } ,
+                  {
+                    label
+                      str "SrcType" ,
+                    data
+                      str "Norovirus, Sapovirus (Caliciviridae)" } ,
+                  {
+                    label
+                      str "Molecule Type Confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "BioProject Confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "Submission Status" ,
+                    data
+                      str "OK" } } } ,
+              user {
+                type
+                  str "Submission" ,
+                data {
+                  {
+                    label
+                      str "SmartComment" ,
+                    data
+                      str "ALT EMAIL:b@b.com" } } } ,
+              user {
+                type
+                  str "NCBIWizard" ,
+                data {
+                  {
+                    label
+                      str "Release Date confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "WizardType" ,
+                    data
+                      str "Standard" } ,
+                  {
+                    label
+                      str "Submission Status" ,
+                    data
+                      str "Must specify Molecule Type; Must choose set type" } } } ,
+              user {
+                type
+                  str "Submission" ,
+                data {
+                  {
+                    label
+                      str "SmartComment" ,
+                    data
+                      str "ALT EMAIL:b@b.com" } } } ,
+              user {
+                type
+                  str "NCBIWizard" ,
+                data {
+                  {
+                    label
+                      str "Release Date confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "WizardType" ,
+                    data
+                      str "Viruses" } ,
+                  {
+                    label
+                      str "Submission Status" ,
+                    data
+                      str "" } ,
+                  {
+                    label
+                      str "SrcType" ,
+                    data
+                      str "Foot-and-mouth disease virus" } ,
+                  {
+                    label
+                      str "Molecule Type Confirmed" ,
+                    data
+                      str "Yes" } } } ,
+              create-date
+                std {
+                  year 2013 ,
+                  month 1 ,
+                  day 25 } ,
+              create-date
+                std {
+                  year 2013 ,
+                  month 1 ,
+                  day 25 } ,
+              create-date
+                std {
+                  year 2013 ,
+                  month 1 ,
+                  day 25 } } ,
+            inst {
+              repr delta ,
+              mol na ,
+              length 2676 ,
+              ext
+                delta {
+                  literal {
+                    length 1547 ,
+                    seq-data
+                      ncbi2na 'EDF47757DF75328D3A88797E17DDF28B6C75E14B5E47E83
+F7D79F7D8EBE8894DCDFD7905D150B954AF54914508975E749F41CCD284B44064D7D57D7A24BE4
+9E7A27A81D2FC557E14FCE8825F5805E54374A35E85EAE82D2321F7E4D48E7FD2A1E55174781F6
+1EFFDEEB7758E7B3C023AF3F480FE937F8747E85CD400C03D22DFC5F4D5D3D6A0783D7E0B53E3F
+F574140C5CFB3B8928BD015750A8011DD7DF097E78C145EC492ADD2E87A082EDE054F4804EB5E8
+07723BF7A43A7AAAE84D38807D24394D0EA2523FDDFEBDF15344F3ABDF4FE9F7505E0A35E1C5D1
+7F9EA7A5289D8E3127A13F44EACCDF75781F58B7F80475289E0AD7017E5C4108C04B3F62839BFC
+E876105D42F743334CC17DFAA0F330F38FD8E87170AE9733E179208344FA8D3D284013D03D7AA0
+3C1C5FA175A8C39DF004BF3FDF5093D70CDF7C2EB0C278E1FE5013547C4943F4D43CD220CA7200
+DE0E3771F5F752B174DD48F74FF0340367FD7FED14014E55F488354972009FF5FA200CEF907E5E
+A01EAD3BEA33FF0AA7F74DD40'H } ,
+                  literal {
+                    length 1129 ,
+                    seq-data
+                      ncbi4na 'A8228281828111811111281228411888228822122144148
+188821821828412842128414444128214228211141211214428412848828828822844241288122
+842811288141418228441818182814111221428228282822841822841888188844182128414842
+218141218112821811211888218284841284841128814842888818221884428211821112211818
+212118142844482822142141218481284218481222111288828442814448882218881214828882
+212141144284841141141141148888141482228111488882228888218282148212848212288412
+828488228248448218228212448812111488214444488884888218284881811411142221414828
+428488211441222218211444114141182141812181211181241842281888484288214814211141
+288841384448421411842888428211121228441848221481211214221111214188811228484288
+841141114141288818422A44441111221218842211218221441842248484414214214111118848
+284828248414214121288228814141244484484228241142288214881842221414214484288142
+841228211844242228218218448448448444482228482221488221828418411421821482218214
+144488248221411124421481288414484422841441828221441848841284488828211811128282
+821184218828111411141111441111411411141214842818841488421111848112212218282281
+442111441421488822128818842114221214181428284812888881888224221488120'H } } } } ,
+          seq {
+            id {
+              local
+                str "seq_10" } ,
+            descr {
+              title "toll-like receptor 5 (TLR5) gene, complete cds" ,
+              source {
+                org {
+                  taxname "Oryx dammah" ,
+                  orgname {
+                    mod {
+                      {
+                        subtype isolate ,
+                        subname "SAZ21" } } } } } ,
+              user {
+                type
+                  str "CFastaReader" ,
+                data {
+                  {
+                    label
+                      str "DefLine" ,
+                    data
+                      str ">seq_10 [org=Oryx dammah][isolate=SAZ21] toll-like
+ receptor 5 (TLR5) gene, complete cds" } } } ,
+              user {
+                type
+                  str "Submission" ,
+                data {
+                  {
+                    label
+                      str "SmartComment" ,
+                    data
+                      str "ALT EMAIL:b@b.com" } } } ,
+              user {
+                type
+                  str "NCBIWizard" ,
+                data {
+                  {
+                    label
+                      str "Release Date confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "WizardType" ,
+                    data
+                      str "Standard" } ,
+                  {
+                    label
+                      str "SrcType" ,
+                    data
+                      str "Norovirus, Sapovirus (Caliciviridae)" } ,
+                  {
+                    label
+                      str "Molecule Type Confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "BioProject Confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "Submission Status" ,
+                    data
+                      str "OK" } } } ,
+              user {
+                type
+                  str "Submission" ,
+                data {
+                  {
+                    label
+                      str "SmartComment" ,
+                    data
+                      str "ALT EMAIL:b@b.com" } } } ,
+              user {
+                type
+                  str "NCBIWizard" ,
+                data {
+                  {
+                    label
+                      str "Release Date confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "WizardType" ,
+                    data
+                      str "Standard" } ,
+                  {
+                    label
+                      str "Submission Status" ,
+                    data
+                      str "Must specify Molecule Type; Must choose set type" } } } ,
+              user {
+                type
+                  str "Submission" ,
+                data {
+                  {
+                    label
+                      str "SmartComment" ,
+                    data
+                      str "ALT EMAIL:b@b.com" } } } ,
+              user {
+                type
+                  str "NCBIWizard" ,
+                data {
+                  {
+                    label
+                      str "Release Date confirmed" ,
+                    data
+                      str "Yes" } ,
+                  {
+                    label
+                      str "WizardType" ,
+                    data
+                      str "Viruses" } ,
+                  {
+                    label
+                      str "Submission Status" ,
+                    data
+                      str "" } ,
+                  {
+                    label
+                      str "SrcType" ,
+                    data
+                      str "Foot-and-mouth disease virus" } ,
+                  {
+                    label
+                      str "Molecule Type Confirmed" ,
+                    data
+                      str "Yes" } } } ,
+              create-date
+                std {
+                  year 2013 ,
+                  month 1 ,
+                  day 25 } ,
+              create-date
+                std {
+                  year 2013 ,
+                  month 1 ,
+                  day 25 } ,
+              create-date
+                std {
+                  year 2013 ,
+                  month 1 ,
+                  day 25 } } ,
+            inst {
+              repr delta ,
+              mol na ,
+              length 2669 ,
+              ext
+                delta {
+                  literal {
+                    length 2146 ,
+                    seq-data
+                      ncbi2na 'EDF47757DF75328D3A88797E17DDFE8B6C75E14B5E47E83
+F7D79F7D0EBE8895DCDFD7905D150B954AD54114508975E749F41FCD284B48144D7D57D7A24BE4
+9E7A27A81D2FC557E14FC48825F5805E54374A35E85EAE82DA321F7E4D4867FD2A1E5D174781E6
+1EFFDEEB7758E7B3C023AF3F480FE937F8767E85CD400D03D22DFC5F4D5D3D4A0783D7E0B53E3F
+F574140C5CFB3B8928BD015750A8011DD7DF097E78C147EC492ADD2E87A082EDE054F4804EB5E8
+05723BF7A03A7AAAE84D38807D24B94D0EA2523FDDFEBDF15344F3ABDF4FE9F7505E0A35E14911
+7F9EA725289D8E3127A13F44EACCDF75781F58B7F88675289E0AD701765C4108C04B3F62839BFC
+E874105D42F743334CC17DFAA0F330D38FD8E87170ACB733E179208344FA8D3D284013D03D7AA0
+3C0C5FA175A8C39DF0043F3FDF5093D70CDF7EAE90C27AE1FE5013547C4943F8D43CD220CA7200
+DE0E3771F5F752B174DD48F74FF0340367FDFFED24014E55F488354972009FF5FA200CEF907E5E
+A01E2D39EA33FF0AA7F74DD42D773783001C5E0FD7D4528B3F4D378691E2A874974A84129E1EF7
+F75E987C5E707C88D7A3F37A0149D7775E35C3B3F93478B94E84C1D3040F4DEE1EE07CB9FF353E
+9D0D0143344327AB752484EC793B1501FDE9CABF53F12DFD44829EE082082FF22D5C0BFD5FF4DD
+2D1ED17E1DEF5DBAD35D1AF102F4AABFEFD37BCC202548B79EF42855342A088348C4C40C63973F
+B9F4B24087F80'H } ,
+                  literal {
+                    length 523 ,
+                    seq-data
+                      ncbi4na '38444842141184288842821112122844184822148121121
+4221111214188811228484288841141114141288818422A4444111122121824221121822144184
+224848441421421411141884828482824841421412128822881414124448448422824114228821
+488124222141421448428814284122821184424222821821844844844844448222848222148822
+188841841142182148221821414448824822141112442148128841448442284144182822144184
+884128448882821181112828282118421882811141114111144111441141114121484281882142
+842111484811221221828228144211144142148882212881284211422121418112828481228888
+188822420'H } } } } } }

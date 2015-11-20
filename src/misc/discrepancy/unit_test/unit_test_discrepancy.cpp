@@ -186,7 +186,7 @@ BOOST_AUTO_TEST_CASE(PERCENT_N_INCLUDE_GAPS_IN_LENGTH)
      * either by not counting the length of the gap, or by counting
      * the gap as Ns.
      */
-    BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "1 sequence had greater than 5% Ns");
+    BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "1 sequence has more than 5% Ns");
 }
 
 BOOST_AUTO_TEST_CASE(PERCENT_N)
@@ -205,7 +205,7 @@ BOOST_AUTO_TEST_CASE(PERCENT_N)
     const vector<CRef<CDiscrepancyCase> >& tst = set->GetTests();
     TReportItemList rep = tst[0]->GetReport();
     BOOST_REQUIRE_EQUAL(rep.size(), 1);
-    BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "1 sequence had greater than 5% Ns");
+    BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "1 sequence has more than 5% Ns");
 }
 
 BOOST_AUTO_TEST_CASE(COUNT_TRNAS)

@@ -215,6 +215,19 @@ public:
 
 class CSeq_feat_BY_BIOSEQ : public CSeq_feat {};
 
+struct CSeqSummary
+{
+    CSeqSummary() : Len(0), A(0), C(0), G(0), T(0), N(0) {}
+    void clear(void) { Len = 0; A = 0; C = 0; G = 0; T = 0; N = 0; }
+    size_t Len;
+    size_t A;
+    size_t C;
+    size_t G;
+    size_t T;
+    size_t N;
+    // add more counters if needed
+};
+
 /// CDiscrepancyContext - manage and run the list of tests
 
 class CDiscrepancyContext : public CDiscrepancySet
@@ -257,7 +270,7 @@ public:
     bool IsEukaryotic(void);
     bool IsCurrentRnaInGenProdSet(void);
     bool SequenceHasFarPointers(void);
-    map<char, size_t>& GetNucleotideCount(void);    // making map non-constant to allow operator[]
+    const CSeqSummary& GetNucleotideCount(void);
     bool HasFeatures(void) const { return m_Feat_CI; }
 
 protected:

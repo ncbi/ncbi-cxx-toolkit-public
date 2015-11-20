@@ -34,7 +34,6 @@
 #include <objects/seqfeat/SeqFeatXref.hpp>
 #include <objects/macro/String_constraint.hpp>
 #include <objects/misc/sequence_util_macros.hpp>
-#include <objects/seq/seqport_util.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/seq_vector.hpp>
@@ -106,66 +105,14 @@ DISCREPANCY_SUMMARIZE(SHORT_SEQUENCES)
 
 // PERCENT_N
 
-static size_t ambigBasesInSeq(const CSeq_data& seq_data_in) {
-    CSeq_data as_iupacna;
-    size_t num_Ns = 0;
-
-    TSeqPos nconv = CSeqportUtil::Convert(seq_data_in, &as_iupacna,
-            CSeq_data::e_Iupacna);
-    if (nconv == 0) {
-        // TODO: is this an actual error, should we do something more drastic?
-        return 0;
-    }
-
-    const string& iupacna_str = as_iupacna.GetIupacna().Get();
-
-    ITERATE( string, base_iter, iupacna_str ) {
-        if (toupper(*base_iter) == 'N') {
-            ++num_Ns;
-        }
-    }
-    return num_Ns;
-}
-
-
-DISCREPANCY_CASE(PERCENT_N, CSeq_inst, eAll, "Greater than 5 percent Ns")
+DISCREPANCY_CASE(PERCENT_N, CSeq_inst, eAll, "More than 5 percent Ns")
 {
     if (obj.IsAa() || context.SequenceHasFarPointers()) {
         return;
     }
-
-    // Make a Seq Map so that we can explicitly look at the gaps vs. the unknowns.
-    const CRef<CSeqMap> seq_map = CSeqMap::CreateSeqMapForBioseq(*context.GetCurrentBioseq());
-    SSeqMapSelector sel;
-    sel.SetFlags(CSeqMap::fFindData | CSeqMap::fFindGap);
-
-    CSeqMap_CI seq_iter(seq_map, &context.GetScope(), sel);
-
-    size_t count = 0;
-    size_t tot_length = 0;
-
-    for ( ; seq_iter; ++seq_iter) {
-        switch(seq_iter.GetType()) {
-            case CSeqMap::eSeqData:
-                count += ambigBasesInSeq(seq_iter.GetData());
-                tot_length += seq_iter.GetLength();
-                break;
-            case CSeqMap::eSeqGap:
-                tot_length += seq_iter.GetLength();
-                break;
-            default:
-                break;
-        }
-    }
-
-    size_t percent_Ns = (count * 100) / tot_length;
-
-    if (percent_Ns > 5) {
-        m_Objs["[n] sequence[s] had greater than 5% Ns"].Add(
-                *new CDiscrepancyObject(context.GetCurrentBioseq(),
-                    context.GetScope(),
-                    context.GetFile(),
-                    context.GetKeepRef()));
+    const CSeqSummary& sum = context.GetNucleotideCount();
+    if (sum.N * 100. / sum.Len > 5) {
+        m_Objs["[n] sequence[s] [has] more than 5% Ns"].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
     }
 }
 
@@ -518,8 +465,8 @@ DISCREPANCY_CASE(ZERO_BASECOUNT, CSeq_inst, eAll, "Zero Base Counts")
     if (obj.IsAa() || context.SequenceHasFarPointers()) {
         return;
     }
-    map<char, size_t>& Map = context.GetNucleotideCount();
-    if (!Map['A'] || !Map['C'] || !Map['G'] || !Map['T']) {
+    const CSeqSummary& sum = context.GetNucleotideCount();
+    if (!sum.A || !sum.C || !sum.G || !sum.T) {
         m_Objs["[n] sequence[s] [has] a zero basecount for a nucleotide"].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
     }
 }
