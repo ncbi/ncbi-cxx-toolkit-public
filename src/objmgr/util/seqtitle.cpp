@@ -899,12 +899,12 @@ static bool s_EndsWithStrain(const string& name, const string& strain)
         return false;
     }
     pos = name.find(' ', pos + 1);
-    if (pos == NPOS) {
+    if (pos == NPOS  ||  pos + strain.size() >= name.size()) {
         return false;
     }
-    // XXX - the C Toolkit looks for the first occurrence, which could
+    // XXX - the C Toolkit starts looking unnecessarily early, which could
     // (at least in theory) lead to false negatives.
-    pos = NStr::FindNoCase(name, strain, pos + 1, NPOS, NStr::eLast);
+    pos = NStr::FindNoCase(name, strain, name.size() - strain.size() - 1);
     if (pos == name.size() - strain.size()) {
         return true;
     } else if (pos == name.size() - strain.size() - 1
