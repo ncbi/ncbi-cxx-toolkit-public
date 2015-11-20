@@ -520,7 +520,7 @@ s_ReadServerParams(void)
 
     string ports_str = reg.Get(kNCReg_ServerSection, kNCReg_Ports);
     list<string> split_ports;
-    NStr::Split(ports_str, ", \t\r\n", split_ports);
+    ncbi_NStr_Split(ports_str, ", \t\r\n", split_ports);
     ITERATE(list<string>, it, split_ports) {
         try {
             s_Ports.insert(NStr::StringToInt(*it));

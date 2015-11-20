@@ -309,7 +309,7 @@ CNCDistributionConf::InitMirrorConfig(const CNcbiRegistry& reg, string& err_mess
         }
 
         list<string> values;
-        NStr::Split(reg_value, ",", values);
+        ncbi_NStr_Split(reg_value, ",", values);
         ITERATE(list<string>, it, values) {
             Uint2 slot = NStr::StringToUInt(*it,
                 NStr::fConvErr_NoThrow | NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces);
