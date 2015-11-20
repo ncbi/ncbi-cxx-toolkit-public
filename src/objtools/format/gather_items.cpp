@@ -1022,9 +1022,13 @@ void CFlatGatherer::x_IdComments(CBioseqContext& ctx,
             {{
                 if ( ctx.IsRSCompleteGenomic() ) {  // NC
                     if ( !genome_build_number.empty()   &&
-                         !has_ref_track_status &&
-                         eGenomeAnnotComment == eGenomeAnnotComment_Yes ) {
-                        x_AddComment(new CGenomeAnnotComment(ctx, genome_build_number));
+                         !has_ref_track_status /* &&
+                         eGenomeAnnotComment == eGenomeAnnotComment_Yes */ ) {
+                        if ( eGenomeAnnotComment == eGenomeAnnotComment_Yes ) {
+                            x_AddComment(new CGenomeAnnotComment(ctx, genome_build_number));
+                        } else {
+                            x_AddComment(new CGenomeAnnotComment(ctx));
+                        }
                     }
                 }
                 else if ( ctx.IsRSContig()  ||  ctx.IsRSIntermedWGS() ) {
@@ -1033,8 +1037,12 @@ void CFlatGatherer::x_IdComments(CBioseqContext& ctx,
                         if ( !NStr::IsBlank(encode) ) {
                             x_AddComment(new CCommentItem(encode, ctx));
                         }
-                    } else if ( !has_ref_track_status && eGenomeAnnotComment == eGenomeAnnotComment_Yes ) {
-                        x_AddComment(new CGenomeAnnotComment(ctx, genome_build_number));
+                    } else if ( !has_ref_track_status /* && eGenomeAnnotComment == eGenomeAnnotComment_Yes */ ) {
+                        if ( eGenomeAnnotComment == eGenomeAnnotComment_Yes ) {
+                             x_AddComment(new CGenomeAnnotComment(ctx, genome_build_number));
+                       } else {
+                            x_AddComment(new CGenomeAnnotComment(ctx));
+                        }
                     }
                 }
                 if ( ctx.IsRSPredictedProtein()  ||
