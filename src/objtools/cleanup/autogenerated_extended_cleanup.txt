@@ -130,7 +130,9 @@ use m_NewCleanup.x_RemoveEmptyDescriptors
 }
 
 use m_NewCleanup.CdRegionEC { Seq-feat }
+use m_NewCleanup.MoveDbxrefs { Seq-feat }
 
+use m_NewCleanup.MoveCitationQuals { Bioseq }
 use m_NewCleanup.CreateMissingMolInfo { Bioseq }
 
 use m_NewCleanup.ResynchProteinPartials { Seq-feat }
