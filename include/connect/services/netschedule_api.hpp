@@ -919,14 +919,19 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
     void PrintServerVersion(CNcbiOstream& output_stream);
 
     struct SWorkerNodeInfo {
-        string name;
-        string prog;
+        string node;
+        string session;
         string host;
         unsigned short port;
         CTime last_access;
     };
 
     void GetWorkerNodes(list<SWorkerNodeInfo>& worker_nodes);
+
+    /// Return a JSON object where each key is a worker node
+    /// session and the value is a JSON object containing
+    /// status information reported by the worker node itself.
+    CJsonNode GetWorkerNodeInfo();
 
     void PrintConf(CNcbiOstream& output_stream);
 
@@ -977,6 +982,62 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
 
     void GetQueueList(TQueueList& result);
 };
+
+/// Types of administrative information NetSchedule can return.
+///
+enum ENetScheduleStatTopic {
+    eNetScheduleStatJobGroups,
+    eNetScheduleStatClients,
+    eNetScheduleStatNotifications,
+    eNetScheduleStatAffinities,
+    eNumberOfNetStheduleStatTopics
+};
+
+/// @internal
+/// Return unquoted and unescaped version of 'str' if it
+/// starts with a quote. Otherwise, return 'str' itself.
+///
+NCBI_XCONNECT_EXPORT
+string g_UnquoteIfQuoted(const CTempString& str);
+
+/// @internal
+/// Return NetSchedule command to get information on the
+/// specified topic.
+///
+NCBI_XCONNECT_EXPORT
+string g_GetNetScheduleStatCommand(ENetScheduleStatTopic topic);
+
+/// @internal
+/// Return a JSON object that contains the requested infromation.
+/// The structure of the object depends on the topic.
+///
+NCBI_XCONNECT_EXPORT
+CJsonNode g_GenericStatToJson(CNetServer server,
+        ENetScheduleStatTopic topic, bool verbose);
+
+/// @internal
+/// Convert 'server_info' to a JSON object.
+///
+NCBI_XCONNECT_EXPORT
+CJsonNode g_ServerInfoToJson(CNetServerInfo server_info,
+        bool server_version_key);
+
+/// @internal
+/// Detect older format of the worker node info line that contained
+/// executable name followed by PID.
+/// @return false if 'stat_info' already has the new format
+///         of the executable name; true if 'stat_info' was fixed.
+///
+NCBI_XCONNECT_EXPORT
+bool g_FixMisplacedPID(CJsonNode& stat_info, CTempString& executable_path,
+        const char* pid_key);
+
+/// @internal
+/// Return a JSON object that contains status information reported
+/// by the specified worker node.
+///
+NCBI_XCONNECT_EXPORT
+CJsonNode g_WorkerNodeInfoToJson(CNetServer worker_node);
 
 /* @} */
 

@@ -37,22 +37,6 @@
 
 BEGIN_NCBI_SCOPE
 
-enum ENetScheduleStatTopic {
-    eNetScheduleStatJobGroups,
-    eNetScheduleStatClients,
-    eNetScheduleStatNotifications,
-    eNetScheduleStatAffinities,
-    eNumberOfNetStheduleStatTopics
-};
-
-string g_GetNetScheduleStatCommand(ENetScheduleStatTopic topic);
-
-CJsonNode g_GenericStatToJson(CNetServer server,
-        ENetScheduleStatTopic topic, bool verbose);
-
-bool g_FixMisplacedPID(CJsonNode& stat_info, CTempString& executable_path,
-        const char* pid_key);
-
 CJsonNode g_LegacyStatToJson(CNetServer server, bool verbose);
 
 CJsonNode g_QueueInfoToJson(CNetScheduleAPI ns_api,
@@ -123,14 +107,9 @@ CJsonNode g_ExecAnyCmdToJson(CNetService service,
         CNetService::EServiceType service_type,
         const string& command, bool multiline);
 
-CJsonNode g_ServerInfoToJson(CNetServerInfo server_info,
-        bool server_version_key);
-
 CJsonNode g_ServerInfoToJson(CNetService service,
         CNetService::EServiceType service_type,
         bool server_version_key);
-
-CJsonNode g_WorkerNodeInfoToJson(CNetServer worker_node);
 
 void g_SuspendNetSchedule(CNetScheduleAPI netschedule_api, bool pullback_mode);
 void g_ResumeNetSchedule(CNetScheduleAPI netschedule_api);

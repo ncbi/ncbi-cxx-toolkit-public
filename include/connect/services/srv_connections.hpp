@@ -85,9 +85,6 @@ class NCBI_XCONNECT_EXPORT CNetServerInfo
     bool GetNextAttribute(string& attr_name, string& attr_value);
 };
 
-NCBI_XCONNECT_EXPORT
-CNetServerInfo g_ServerInfoFromString(const string& server_info);
-
 ///////////////////////////////////////////////////////////////////////////
 //
 class NCBI_XCONNECT_EXPORT CNetServer
