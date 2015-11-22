@@ -263,6 +263,7 @@ public:
     void SetSuspectRules(const string& name);
     CConstRef<CSuspect_rule_set> GetProductRules(void);
     CConstRef<CSuspect_rule_set> GetOrganelleProductRules(void);
+    const TReportObjectList& GetNaSeqs(void) const { return m_NaSeqs; }
 
     // Lazy
     const CBioSource* GetCurrentBiosource(void);
@@ -287,6 +288,7 @@ protected:
     size_t m_Count_Bioseq;
     size_t m_Count_Seq_feat;
     bool m_Feat_CI;
+    TReportObjectList m_NaSeqs;
 
 #define ADD_DISCREPANCY_TYPE(type) bool m_Enable_##type; vector<CDiscrepancyVisitor<type>* > m_All_##type;
     ADD_DISCREPANCY_TYPE(CSeq_inst)

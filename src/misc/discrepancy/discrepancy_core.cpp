@@ -257,6 +257,9 @@ void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
             m_Current_Bioseq.Reset(bsh.GetCompleteBioseq());
             m_Count_Bioseq++;
             Update_Bioseq_set_Stack(i);
+            if (m_Current_Bioseq->GetInst().IsNa()) {
+                m_NaSeqs.push_back(CRef<CReportObj>(new CDiscrepancyObject(m_Current_Bioseq, *m_Scope, m_File, m_KeepRef)));
+            }
             // CSeq_feat_BY_BIOSEQ cycle
             CFeat_CI feat_ci(bsh);
             m_Feat_CI = !!feat_ci;
