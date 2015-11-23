@@ -26,7 +26,7 @@
  * Authors:  Maxim Didenko
  *
  * File Description:
- *
+ *                   
  *
  */
 
@@ -37,7 +37,7 @@
 BEGIN_NCBI_SCOPE
 ///////////////////////////////////////////////////////
 //
-void CTextTagWriter::x_WriteTag(const string& name,
+void CTextTagWriter::x_WriteTag(const string& name, 
                                  const TAttributes* attr,
                                  const string& text,
                                  bool close_tag)
@@ -52,7 +52,7 @@ void CTextTagWriter::x_WriteTag(const string& name,
         }
         m_Os << "}";
     }
-    m_Os << " : " << text << NcbiEndl;
+    m_Os << " : " << text << NcbiEndl;   
 }
 
 void CTextTagWriter::x_WriteCloseTag(const string& name)
@@ -82,7 +82,7 @@ CXmlTagWriter::~CXmlTagWriter()
         WriteCloseTag("NSJobsInfo");
     } catch (...) {}
 }
-void CXmlTagWriter::x_WriteTag(const string& name,
+void CXmlTagWriter::x_WriteTag(const string& name, 
                                const TAttributes* attr,
                                const string& text,
                                bool close_tag)
@@ -142,20 +142,20 @@ CNSInfoRenderer::~CNSInfoRenderer()
 
 struct STagGuard
 {
-    STagGuard(ITagWriter& writer, const string& tag,
-             const ITagWriter::TAttributes& attrs)
-        : m_Writer(writer), m_Tag(tag)
+    STagGuard(ITagWriter& writer, const string& tag,  
+             const ITagWriter::TAttributes& attrs) 
+        : m_Writer(writer), m_Tag(tag) 
     {
-        m_Writer.WriteBeginTag(m_Tag, attrs);
+        m_Writer.WriteBeginTag(m_Tag, attrs);    
     }
     STagGuard(ITagWriter& writer, const string& tag)
-        : m_Writer(writer), m_Tag(tag)
+        : m_Writer(writer), m_Tag(tag) 
     {
-        m_Writer.WriteBeginTag(m_Tag);
+        m_Writer.WriteBeginTag(m_Tag);    
     }
     ~STagGuard()
     {
-        m_Writer.WriteCloseTag(m_Tag);
+        m_Writer.WriteCloseTag(m_Tag);    
     }
     ITagWriter& m_Writer;
     string m_Tag;
@@ -165,7 +165,7 @@ class CNSJobListRenderAction : public  CNSInfoCollector::IAction<CNSJobInfo>
 {
 public:
     CNSJobListRenderAction(CNSInfoRenderer& renderer,
-                           CNSInfoRenderer::TFlags flags =
+                           CNSInfoRenderer::TFlags flags = 
                            CNSInfoRenderer::eMinimal)
         : m_Renderer(renderer), m_Flags(flags) {}
 
@@ -188,28 +188,28 @@ void CNSInfoRenderer::RenderJob(const string& job_id, TFlags flags)
 }
 
 void CNSInfoRenderer::RenderJob(const CNSJobInfo& info, TFlags flags)
-{
+{   
     CNetScheduleAPI::EJobStatus status = info.GetStatus();
     ITagWriter::TAttributes attrs;
     attrs.push_back(ITagWriter::TAttribute("Id", info.GetId()));
     if (flags & eStatus)
         attrs.push_back(ITagWriter::TAttribute
-                        ("Status",
+                        ("Status", 
                          CNetScheduleAPI::StatusToString(status) ));
 
     if (flags & eRetCode && (status == CNetScheduleAPI::eDone ||
                              status == CNetScheduleAPI::eFailed) )
         attrs.push_back(ITagWriter::TAttribute
-                        ("RetCode",
+                        ("RetCode", 
                          NStr::IntToString(info.GetRetCode()) ));
-
+    
 
     if ( flags < eCmdLine) {
         m_Writer.WriteTag("Job", attrs);
         return;
     }
-
-    STagGuard guard(m_Writer,"Job", attrs);
+    
+    STagGuard guard(m_Writer,"Job", attrs);    
     if (flags & eCmdLine) {
         x_RenderString("CmdLine", info.GetCmdLine());
     }
@@ -236,7 +236,7 @@ void CNSInfoRenderer::RenderJob(const CNSJobInfo& info, TFlags flags)
                                  status == CNetScheduleAPI::eFailed ||
                                  status == CNetScheduleAPI::eCanceled)) {
         x_RenderString("RawOutput", info.GetRawOutput());
-    }
+    }    
 
 }
 
@@ -254,7 +254,7 @@ void CNSInfoRenderer::RenderBlob(const string& blob_id)
             is->read(&*buf.begin(), bsize);
             m_Writer.WriteTag("Blob", attrs, buf);
         } else {
-            STagGuard guard(m_Writer, "Blob", attrs);
+            STagGuard guard(m_Writer, "Blob", attrs);    
             m_Writer.WriteStream(*is);
         }
     }
@@ -265,7 +265,7 @@ void CNSInfoRenderer::x_RenderString(const string& name, const string& value)
     if(value.size() < 50) {
         m_Writer.WriteTag(name, value);
     } else {
-        STagGuard guard(m_Writer, name);
+        STagGuard guard(m_Writer, name);    
         m_Writer.WriteText(value);
     }
 }
@@ -274,7 +274,7 @@ void CNSInfoRenderer::x_RenderStream(const string& name, CNcbiIstream& is)
     if(!is.good())
         m_Writer.WriteTag(name);
     else {
-        STagGuard guard(m_Writer, name);
+        STagGuard guard(m_Writer, name);    
         m_Writer.WriteStream(is);
     }
 }
@@ -293,8 +293,8 @@ void CNSInfoRenderer::RenderWNode(
     }
     STagGuard guard(m_Writer,"WNode", attrs);
     if (flags <= eStandard) {
-        x_RenderString("Node", info.node);
-        x_RenderString("Session", info.session);
+        x_RenderString("Name", info.name);
+        x_RenderString("Prog", info.prog);
         x_RenderString("LastAccess", info.last_access.AsString("M/D/Y h:m:s"));
     }
 
@@ -305,7 +305,7 @@ class CWNodeListRenderAction :
 {
 public:
     CWNodeListRenderAction(CNSInfoRenderer& renderer,
-                           CNSInfoRenderer::TFlags flags =
+                           CNSInfoRenderer::TFlags flags = 
                            CNSInfoRenderer::eMinimal)
         : m_Renderer(renderer), m_Flags(flags) {}
 

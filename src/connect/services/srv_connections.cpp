@@ -888,4 +888,9 @@ CNetServerInfo CNetServer::GetServerInfo()
     return new SNetServerInfoImpl(response);
 }
 
+CNetServerInfo g_ServerInfoFromString(const string& server_info)
+{
+    return new SNetServerInfoImpl(server_info);
+}
+
 END_NCBI_SCOPE
