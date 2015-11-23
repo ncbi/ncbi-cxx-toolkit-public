@@ -7,7 +7,7 @@ DLL_LIB = blast_services gene_info seqdb $(OBJREAD_LIBS) xalnmgr xobjutil \
 
 ###  BASIC PROJECT SETTINGS
 LIB = align_format
-SRC = format_flags align_format_util showdefline showalign tabular vectorscreen seqalignfilter \
+SRC = format_flags align_format_util showdefline showalign tabular vectorscreen seqalignfilter taxFormat \
       aln_printer
 # OBJ =
 
