@@ -1200,6 +1200,10 @@ public:
                                                 list<TGi>& use_this_gi,
                                                 TGi& gi);
 
+    static TGi GetDisplayIds(const list< CRef< objects::CBlast_def_line > > &bdl,
+                                              const objects::CSeq_id& aln_id,
+                                              list<TGi>& use_this_gi);
+
     ///Check if accession is WGS
     ///@param accession: string accession [in]
     ///@param wgsProj: string  wgsProj [out]      
@@ -1221,6 +1225,7 @@ public:
 
     /// Calculate the uniq subject query coverage range (blastn only)
     static int GetUniqSeqCoverage(objects::CSeq_align_set & alnset);
+    static TGi GetGiForSeqIdList (const list<CRef<objects::CSeq_id> >& ids);
 
 protected:
 
