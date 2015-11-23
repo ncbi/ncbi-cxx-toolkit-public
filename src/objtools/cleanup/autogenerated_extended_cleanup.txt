@@ -174,6 +174,9 @@ use m_NewCleanup.x_ClearEmptyDescr {
     POST Bioseq
 }
 
+#remove orphaned proteins
+use m_NewCleanup.x_RemoveOrphanedProteins { POST Bioseq-set }
+
 #convert seq-entry set that contains only one sequence to a sequence seq-entry
 use m_NewCleanup.x_SingleSeqSetToSeq { POST Bioseq-set }
 
