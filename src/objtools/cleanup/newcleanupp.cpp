@@ -11752,10 +11752,9 @@ void CNewCleanup_imp::MoveCitationQuals(CBioseq& seq)
                             // just delete
                             do_remove = true;
                         } else {
-#if 0
                             // list pubs if we haven't already
                             if (!listed_pubs) {
-                                pub_list = edit::GetCitationList(bsh);
+                                pub_list = CCleanup::GetCitationList(bsh);
                                 listed_pubs = true;
                             }
                             // create appropriate Cit
@@ -11766,7 +11765,6 @@ void CNewCleanup_imp::MoveCitationQuals(CBioseq& seq)
                                 new_feat->SetCit().SetPub().push_back(cp);
                             }
                             do_remove = true;
-#endif
                         }
                     }
                     if (do_remove) {
@@ -11856,6 +11854,22 @@ void CNewCleanup_imp::KeepLatestDateDesc(CSeq_descr & seq_descr)
         }
         delete_equal_create = false;
         delete_equal_update = false;
+    }
+}
+
+
+void CNewCleanup_imp::x_RemoveOrphanedProteins(CBioseq_set& set)
+{
+    CBioseq_set_Handle bh;
+    objects::CBioseq_CI b_iter(bh, objects::CSeq_inst::eMol_aa);
+    for (; b_iter; ++b_iter)
+    {
+        CBioseq_Handle bsh = *b_iter;
+        if (sequence::GetCDSForProduct(bsh) == NULL && sequence::GetPROTForProduct(bsh) == NULL)
+        {
+            CBioseq_EditHandle eh(*b_iter);
+            eh.Remove();
+        }
     }
 }
 

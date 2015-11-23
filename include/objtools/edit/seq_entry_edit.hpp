@@ -36,7 +36,6 @@
 #include <objects/seq/Seq_gap.hpp>
 #include <objects/seq/Linkage_evidence.hpp>
 #include <objects/submit/Seq_submit.hpp>
-#include <objects/pub/Pub.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -305,20 +304,6 @@ void RetranslateCdregion(CBioseq_Handle nuc_bsh,
 NCBI_XOBJEDIT_EXPORT CRef<CSeqdesc> FindUnverified(const CBioseq& seq);
 NCBI_XOBJEDIT_EXPORT bool IsUnverifiedOrganism(const CBioseq& seq);
 NCBI_XOBJEDIT_EXPORT bool IsUnverifiedFeature(const CBioseq& seq);
-
-// For Publication Citations
-/// Get labels for a pubdesc. To be used in citations.
-NCBI_XOBJEDIT_EXPORT void GetPubdescLabels
-(const CPubdesc& pd,
-vector<int>& pmids, vector<int>& muids, vector<int>& serials,
-vector<string>& published_labels, vector<string>& unpublished_labels);
-
-/// Get list of pubs that can be used for citations for Seq-feat on a Bioseq-handle
-/// @param bsh Bioseq-handle to search
-/// @return vector<CConstRef<CPub> > ordered list of pubs
-/// Note that Seq-feat.cit appear in the flatfile using the position
-/// in the list
-NCBI_XOBJEDIT_EXPORT vector<CConstRef<CPub> > GetCitationList(CBioseq_Handle bsh);
 
 END_SCOPE(edit)
 END_SCOPE(objects)

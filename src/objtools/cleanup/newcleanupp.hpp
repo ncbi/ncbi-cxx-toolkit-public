@@ -310,6 +310,7 @@ private:
     void RemoveBadProteinTitle(CBioseq& seq);
     void MoveCitationQuals(CBioseq& seq);
     void KeepLatestDateDesc(CSeq_descr & seq_descr);
+    void x_RemoveOrphanedProteins(CBioseq_set& set);
     void x_SingleSeqSetToSeq(CBioseq_set& set);
     static bool IsFullLength(const CSeq_loc& loc, const CBioseq& seq);
     static CRef<CBioSource> BioSrcFromFeat(const CSeq_feat& f);

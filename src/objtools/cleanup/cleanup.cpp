@@ -34,6 +34,16 @@
 #include <serial/serialbase.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_annot.hpp>
+// included for GetPubdescLabels and GetCitationList
+#include <objects/pub/Pub.hpp>
+#include <objects/pub/Pub_equiv.hpp>
+#include <objects/seq/Pubdesc.hpp>
+#include <objects/biblio/Author.hpp>
+#include <objects/biblio/Auth_list.hpp>
+#include <objects/general/Person_id.hpp>
+#include <objects/general/Name_std.hpp>
+#include <objects/misc/sequence_macros.hpp>
+
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seqset/seqset_macros.hpp>
@@ -1175,6 +1185,198 @@ bool CCleanup::NormalizeDescriptorOrder(CSeq_entry_Handle seh)
     }
 
     return rval;
+}
+
+void s_GetAuthorsString(string *out_authors, const CAuth_list& auth_list)
+{
+    string & auth_str = *out_authors;
+    auth_str.clear();
+
+    if (!auth_list.IsSetNames()) {
+        return;
+    }
+
+    vector<string> name_list;
+
+    if (auth_list.GetNames().IsStd()) {
+        ITERATE(CAuth_list::TNames::TStd, auth_it, auth_list.GetNames().GetStd()) {
+            if ((*auth_it)->IsSetName()) {
+                string label = "";
+                (*auth_it)->GetName().GetLabel(&label);
+                name_list.push_back(label);
+            }
+        }
+    } else if (auth_list.GetNames().IsMl()) {
+        copy(BEGIN_COMMA_END(auth_list.GetNames().GetMl()),
+            back_inserter(name_list));
+    } else if (auth_list.GetNames().IsStr()) {
+        copy(BEGIN_COMMA_END(auth_list.GetNames().GetStr()),
+            back_inserter(name_list));
+    }
+
+    if (name_list.size() == 0) {
+        return;
+    } else if (name_list.size() == 1) {
+        auth_str = name_list.back();
+        return;
+    }
+
+    // join most of them by commas, but the last one gets an "and"
+    string last_author;
+    last_author.swap(name_list.back());
+    name_list.pop_back();
+    // swap is faster than assignment
+    NStr::Join(name_list, ", ").swap(auth_str);
+    auth_str += "and ";
+    auth_str += last_author;
+
+    return;
+}
+
+
+void s_GetAuthorsString(
+    string *out_authors_string, const CPubdesc& pd)
+{
+    string & authors_string = *out_authors_string;
+    authors_string.clear();
+
+    FOR_EACH_PUB_ON_PUBDESC(pub, pd) {
+        if ((*pub)->IsSetAuthors()) {
+            s_GetAuthorsString(&authors_string, (*pub)->GetAuthors());
+            break;
+        }
+    }
+}
+
+
+void CCleanup::GetPubdescLabels
+(const CPubdesc& pd,
+vector<int>& pmids, vector<int>& muids, vector<int>& serials,
+vector<string>& published_labels,
+vector<string>& unpublished_labels)
+{
+    string label = "";
+    bool   is_published = false;
+    bool   need_label = false;
+
+    if (!pd.IsSetPub()) {
+        return;
+    }
+    ITERATE(CPubdesc::TPub::Tdata, it, pd.GetPub().Get()) {
+        if ((*it)->IsPmid()) {
+            pmids.push_back((*it)->GetPmid());
+            is_published = true;
+        } else if ((*it)->IsMuid()) {
+            muids.push_back((*it)->GetMuid());
+            is_published = true;
+        } else if ((*it)->IsGen()) {
+            if ((*it)->GetGen().IsSetCit()
+                && NStr::StartsWith((*it)->GetGen().GetCit(), "BackBone id_pub", NStr::eNocase)) {
+                need_label = true;
+            }
+            if ((*it)->GetGen().IsSetSerial_number()) {
+                serials.push_back((*it)->GetGen().GetSerial_number());
+                if ((*it)->GetGen().IsSetCit()
+                    || (*it)->GetGen().IsSetJournal()
+                    || (*it)->GetGen().IsSetDate()) {
+                    need_label = true;
+                }
+            } else {
+                need_label = true;
+            }
+        } else {
+            need_label = true;
+        }
+        if (need_label && NStr::IsBlank(label)) {
+            // create unique label
+            (*it)->GetLabel(&label, CPub::eContent, true);
+            string auth_str;
+            s_GetAuthorsString(&auth_str, pd);
+            label += "; ";
+            label += auth_str;
+        }
+    }
+    if (!NStr::IsBlank(label)) {
+        if (is_published) {
+            published_labels.push_back(label);
+        } else {
+            unpublished_labels.push_back(label);
+        }
+    }
+}
+
+
+vector<CConstRef<CPub> > CCleanup::GetCitationList(CBioseq_Handle bsh)
+{
+    vector<CConstRef<CPub> > pub_list;
+
+    // first get descriptor pubs
+    CSeqdesc_CI di(bsh, CSeqdesc::e_Pub);
+    while (di) {
+        vector<int> pmids;
+        vector<int> muids;
+        vector<int> serials;
+        vector<string> published_labels;
+        vector<string> unpublished_labels;
+        GetPubdescLabels(di->GetPub(), pmids, muids, serials, published_labels, unpublished_labels);
+        if (pmids.size() > 0) {
+            CRef<CPub> pub(new CPub());
+            pub->SetPmid().Set(pmids[0]);
+            pub_list.push_back(pub);
+        } else if (muids.size() > 0) {
+            CRef<CPub> pub(new CPub());
+            pub->SetMuid(muids[0]);
+            pub_list.push_back(pub);
+        } else if (serials.size() > 0) {
+            CRef<CPub> pub(new CPub());
+            pub->SetGen().SetSerial_number(serials[0]);
+            pub_list.push_back(pub);
+        } else if (published_labels.size() > 0) {
+            CRef<CPub> pub(new CPub());
+            pub->SetGen().SetCit(published_labels[0]);
+            pub_list.push_back(pub);
+        } else if (unpublished_labels.size() > 0) {
+            CRef<CPub> pub(new CPub());
+            pub->SetGen().SetCit(unpublished_labels[0]);
+            pub_list.push_back(pub);
+        }
+
+        ++di;
+    }
+    // now get pub features
+    CFeat_CI fi(bsh, SAnnotSelector(CSeqFeatData::e_Pub));
+    while (fi) {
+        vector<int> pmids;
+        vector<int> muids;
+        vector<int> serials;
+        vector<string> published_labels;
+        vector<string> unpublished_labels;
+        GetPubdescLabels(fi->GetData().GetPub(), pmids, muids, serials, published_labels, unpublished_labels);
+        if (pmids.size() > 0) {
+            CRef<CPub> pub(new CPub());
+            pub->SetPmid().Set(pmids[0]);
+            pub_list.push_back(pub);
+        } else if (muids.size() > 0) {
+            CRef<CPub> pub(new CPub());
+            pub->SetMuid(muids[0]);
+            pub_list.push_back(pub);
+        } else if (serials.size() > 0) {
+            CRef<CPub> pub(new CPub());
+            pub->SetGen().SetSerial_number(serials[0]);
+            pub_list.push_back(pub);
+        } else if (published_labels.size() > 0) {
+            CRef<CPub> pub(new CPub());
+            pub->SetGen().SetCit(published_labels[0]);
+            pub_list.push_back(pub);
+        } else if (unpublished_labels.size() > 0) {
+            CRef<CPub> pub(new CPub());
+            pub->SetGen().SetCit(unpublished_labels[0]);
+            pub_list.push_back(pub);
+        }
+
+        ++fi;
+    }
+    return pub_list;
 }
 
 END_SCOPE(objects)
