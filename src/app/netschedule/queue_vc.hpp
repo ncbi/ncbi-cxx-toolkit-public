@@ -83,7 +83,8 @@ public:
         list<string>        programs;
         CQueueClientInfo    program_info;
 
-        NStr::Split(program_name, ";,", programs);
+        NStr::Split(program_name, ";,", programs,
+                    NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
         ITERATE(list<string>, it, programs) {
             const string &  vstr = *it;
             try {

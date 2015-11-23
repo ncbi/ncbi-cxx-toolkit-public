@@ -55,7 +55,8 @@ CJsonNode CNetScheduleAccessList::SetHosts(const string &  host_names)
 {
     CJsonNode           diff = CJsonNode::NewArrayNode();
     vector<string>      hosts;
-    NStr::Tokenize(host_names, ";, \n\r", hosts, NStr::eMergeDelims);
+    NStr::Split(host_names, ";, \n\r", hosts,
+                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
     CWriteLockGuard guard(m_Lock);
     TNSBitVector        old_hosts = m_Hosts;

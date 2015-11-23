@@ -121,7 +121,7 @@ void CNSStartIDs::Load(void)
 
         // This is a meaningfull line
         list<string>        tokens;
-        NStr::Split(s, "=", tokens, NStr::eNoMergeDelims);
+        NStr::Split(s, "=", tokens, NStr::fSplit_NoMergeDelims);
         if (tokens.size() != 2) {
             ERR_POST("Poor format of the " + kStartJobIDsFileName +
                      " file. Line: " + s + ". Ignore and continue.");

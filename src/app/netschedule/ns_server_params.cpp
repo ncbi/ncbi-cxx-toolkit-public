@@ -85,7 +85,8 @@ void SErrorEmulatorParameter::x_ReadCommon(const IRegistry &  reg,
         return;
 
     list<string>    parts;
-    NStr::Split(reg_value, " ", parts);
+    NStr::Split(reg_value, " ", parts,
+                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     size_t          parts_count = parts.size();
 
     if (parts_count != 1 && parts_count != 2)
@@ -96,7 +97,8 @@ void SErrorEmulatorParameter::x_ReadCommon(const IRegistry &  reg,
     if (parts_count == 2) {
         // Need to read the range
         list<string>    range_parts;
-        NStr::Split(parts.back(), "-", range_parts);
+        NStr::Split(parts.back(), "-", range_parts,
+                    NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
         if (range_parts.size() != 2)
             NCBI_THROW(CNetScheduleException, eInvalidParameter,
@@ -114,7 +116,8 @@ void SErrorEmulatorParameter::x_ReadCommon(const IRegistry &  reg,
 
     // Read frequency
     list<string>    val_freq_parts;
-    NStr::Split(parts.front(), ":", val_freq_parts);
+    NStr::Split(parts.front(), ":", val_freq_parts,
+                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     if (val_freq_parts.size() != 1 && val_freq_parts.size() != 2)
         NCBI_THROW(CNetScheduleException, eInvalidParameter,
                    "Unexpected value and frequence format of the [" +

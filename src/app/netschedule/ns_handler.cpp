@@ -1602,9 +1602,9 @@ void CNetScheduleHandler::x_ProcessChangeAffinity(CQueue* q)
     list<string>    aff_to_del_list;
 
     NStr::Split(m_CommandArguments.aff_to_add,
-                "\t,", aff_to_add_list, NStr::eNoMergeDelims);
+                "\t,", aff_to_add_list, NStr::fSplit_NoMergeDelims);
     NStr::Split(m_CommandArguments.aff_to_del,
-                "\t,", aff_to_del_list, NStr::eNoMergeDelims);
+                "\t,", aff_to_del_list, NStr::fSplit_NoMergeDelims);
 
     // Check that the same affinity has not been mentioned in both add and del
     // lists
@@ -1659,7 +1659,7 @@ void CNetScheduleHandler::x_ProcessSetAffinity(CQueue* q)
 
     list<string>    aff_to_set;
     NStr::Split(m_CommandArguments.affinity_token,
-                "\t,", aff_to_set, NStr::eNoMergeDelims);
+                "\t,", aff_to_set, NStr::fSplit_NoMergeDelims);
 
     ECommandGroup   cmd_group = eGet;
     if (m_CommandArguments.cmd == "SETRAFF")
@@ -2033,10 +2033,10 @@ void CNetScheduleHandler::x_ProcessGetJob(CQueue* q)
 
     list<string>    aff_list;
     NStr::Split(m_CommandArguments.affinity_token,
-                "\t,", aff_list, NStr::eNoMergeDelims);
+                "\t,", aff_list, NStr::fSplit_NoMergeDelims);
     list<string>    group_list;
     NStr::Split(m_CommandArguments.group,
-                "\t,", group_list, NStr::eNoMergeDelims);
+                "\t,", group_list, NStr::fSplit_NoMergeDelims);
 
     CJob            job;
     string          added_pref_aff;
@@ -2236,7 +2236,7 @@ void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
 
     list<string>        aff_list;
     NStr::Split(m_CommandArguments.affinity_token,
-                "\t,", aff_list, NStr::eNoMergeDelims);
+                "\t,", aff_list, NStr::fSplit_NoMergeDelims);
 
     string              added_pref_aff;
     x_ClearRollbackAction();
@@ -3478,10 +3478,10 @@ void CNetScheduleHandler::x_ProcessReading(CQueue* q)
 
     list<string>    aff_list;
     NStr::Split(m_CommandArguments.affinity_token,
-                "\t,", aff_list, NStr::eNoMergeDelims);
+                "\t,", aff_list, NStr::fSplit_NoMergeDelims);
     list<string>    group_list;
     NStr::Split(m_CommandArguments.group,
-                "\t,", group_list, NStr::eNoMergeDelims);
+                "\t,", group_list, NStr::fSplit_NoMergeDelims);
 
     x_ClearRollbackAction();
     if (q->GetJobForReadingOrWait(m_ClientId,

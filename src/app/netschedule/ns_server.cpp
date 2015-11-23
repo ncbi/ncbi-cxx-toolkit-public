@@ -683,8 +683,8 @@ CNetScheduleServer::x_SetAdminClientNames(const string &  client_names)
     vector<string>      old_admins = m_AdminClientNames;
 
     m_AdminClientNames.clear();
-    NStr::Tokenize(client_names, ";, \n\r", m_AdminClientNames,
-                   NStr::eMergeDelims);
+    NStr::Split(client_names, ";, \n\r", m_AdminClientNames,
+                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     sort(m_AdminClientNames.begin(), m_AdminClientNames.end());
 
     if (old_admins != m_AdminClientNames) {

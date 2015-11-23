@@ -2731,8 +2731,12 @@ CQueueDataBase::x_ReadDumpQueueDesrc(set<string, PNocase> &  dump_static_queues,
                                                 linked_section_names_size);
                     list<string>    prefixes;
                     list<string>    names;
-                    NStr::Split(dump_prefs, ",", prefixes);
-                    NStr::Split(dump_names, ",", names);
+                    NStr::Split(dump_prefs, ",", prefixes,
+                                NStr::fSplit_MergeDelimiters |
+                                NStr::fSplit_Truncate);
+                    NStr::Split(dump_names, ",", names,
+                                NStr::fSplit_MergeDelimiters |
+                                NStr::fSplit_Truncate);
                     list<string>::const_iterator pref_it = prefixes.begin();
                     list<string>::const_iterator names_it = names.begin();
                     for ( ; pref_it != prefixes.end() &&
