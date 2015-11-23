@@ -593,6 +593,8 @@ for x_arg in "$@" ; do
       fi
       ;;
 
+      --with-vdb=rc ) ;;
+
       --srcdir=* | --x-includes=* | --x-libraries=* | --with-tcheck=* \
       | --with-ncbi-c=* | --with-sss=* | --with-vdb=* | --with-z=* \
       | --with-bz2=* | --with-lzo=* | --with-pcre=* \
