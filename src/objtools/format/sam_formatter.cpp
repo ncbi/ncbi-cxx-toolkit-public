@@ -206,10 +206,20 @@ void CSAM_CIGAR_Formatter::AddRow(const string& cigar)
     }
 
     string seq_data = "*";
-    if (m_Flags & CSAM_Formatter::fSAM_SeqData) {
-        CBioseq_Handle h;
-        h = GetScope()->GetBioseqHandle(GetTargetId());
-        if ( h ) {
+    CBioseq_Handle h;
+    h = GetScope()->GetBioseqHandle(GetTargetId());
+    if ( h ) {
+        if ( TSeqPos(tgt_rg.GetToOpen()) < h.GetBioseqLength() ) {
+        	if(flags & fRead_Reverse) {
+        		clip_front = NStr::UInt8ToString(
+        		    h.GetBioseqLength() - tgt_rg.GetToOpen()) + "H";
+		}
+        	else {
+        		clip_back = NStr::UInt8ToString(
+        		    h.GetBioseqLength() - tgt_rg.GetToOpen()) + "H";
+        	}
+        }
+        if (m_Flags & CSAM_Formatter::fSAM_SeqData) {
             if(flags & fRead_Reverse) {
                 CSeqVector vect = h.GetSeqVector(
                     CBioseq_Handle::eCoding_Iupac, eNa_strand_minus);
@@ -221,18 +231,10 @@ void CSAM_CIGAR_Formatter::AddRow(const string& cigar)
                     CBioseq_Handle::eCoding_Iupac, eNa_strand_plus);
                 vect.GetSeqData(tgt_rg.GetFrom(), tgt_rg.GetToOpen(), seq_data);
             }
-            if ( TSeqPos(tgt_rg.GetToOpen()) < h.GetBioseqLength() ) {
-        	    if(flags & fRead_Reverse) {
-        		    clip_front = NStr::UInt8ToString(
-        		        h.GetBioseqLength() - tgt_rg.GetToOpen()) + "H";
-		    }
-        	    else {
-        		    clip_back = NStr::UInt8ToString(
-        		        h.GetBioseqLength() - tgt_rg.GetToOpen()) + "H";
-        	    }
-            }
         }
-        else {
+    }
+    else {
+        if (m_Flags & CSAM_Formatter::fSAM_SeqData) {
             seq_data = string(tgt_rg.GetLength(), 'N'); // ???
         }
     }
