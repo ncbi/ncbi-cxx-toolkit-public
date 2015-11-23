@@ -709,7 +709,7 @@ ETokenType CNcbiApplogApp::ParseToken()
     ETokenType type = eApp;
 
     list<string> pairs;
-    NStr::Split(m_Token, "&", pairs);
+    NStr::Split(m_Token, "&", pairs, NStr::fSplit_MergeDelimiters);
 
     // Mandatory keys
     bool have_name  = false,

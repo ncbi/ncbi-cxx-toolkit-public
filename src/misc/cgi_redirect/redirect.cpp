@@ -185,17 +185,20 @@ TCgiEntries& CCgiRedirectApplication::RemapEntries(CCgiContext& ctx,
     // Get list of entries to remove
     list<string> remove_entries;
     string str = reg.Get("Entries", "Remove");
-    NStr::Split(str, " ", remove_entries);
+    NStr::Split(str, " ", remove_entries,
+                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
     // Get list of entries to clear
     list<string> clear_entries;
     str = reg.Get("Entries", "Clear");
-    NStr::Split(str, " ", clear_entries);
+    NStr::Split(str, " ", clear_entries,
+                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
     // Get list of entries to add as empty
     list<string> add_empty_entries;
     str = reg.Get("Entries", "Add");
-    NStr::Split(str, " ", add_empty_entries);
+    NStr::Split(str, " ", add_empty_entries,
+                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
     // Get substitutions for present entries
     list<string> change_entries;
