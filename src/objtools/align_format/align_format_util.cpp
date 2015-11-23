@@ -3804,6 +3804,46 @@ CRef<CSeq_id> CAlignFormatUtil::GetDisplayIds(const CBioseq_Handle& handle,
     return wid;
 }
 
+TGi CAlignFormatUtil::GetDisplayIds(const list< CRef< CBlast_def_line > > &bdl,
+                                              const CSeq_id& aln_id,
+                                              list<TGi>& use_this_gi)
+                                              
+                                           
+{
+    TGi gi = ZERO_GI;
+    
+    if(!bdl.empty()){    
+        bool found = false;
+        for(list< CRef< CBlast_def_line > >::const_iterator iter = bdl.begin();
+            iter != bdl.end(); iter++){
+            const CBioseq::TId* cur_id = &((*iter)->GetSeqid());
+            TGi cur_gi =  FindGi(*cur_id);                
+            if (!use_this_gi.empty()) {
+                ITERATE(list<TGi>, iter_gi, use_this_gi){
+                    if(cur_gi == *iter_gi){
+                        found = true;
+                        break;
+                    }
+                }
+            } else {
+                ITERATE(CBioseq::TId, iter_id, *cur_id) {
+                    if ((*iter_id)->Match(aln_id) 
+                      || (aln_id.IsGeneral() && aln_id.GetGeneral().CanGetDb() && 
+                         (*iter_id)->IsGeneral() && (*iter_id)->GetGeneral().CanGetDb() &&
+                         aln_id.GetGeneral().GetDb() == (*iter_id)->GetGeneral().GetDb())) {
+                        found = true;
+                    }
+                }
+            }
+            if(found){                
+                gi = cur_gi;                
+                break;
+            }
+        }
+    }    
+    return gi;
+}
+
 static inline CRange<TSeqPos> & s_FixMinusStrandRange(CRange<TSeqPos> & rng)
 {
 	if(rng.GetFrom() > rng.GetTo()){
@@ -3874,7 +3914,40 @@ int CAlignFormatUtil::GetUniqSeqCoverage(CSeq_align_set & alnset)
 	return query_rng_coll.GetCoveredLength();
 }
 
+///return id type specified or null ref
+///@param ids: the input ids
+///@param choice: id of choice
+///@return: the id with specified type
+///
+static CRef<CSeq_id> s_GetSeqIdByType(const list<CRef<CSeq_id> >& ids, 
+                                      CSeq_id::E_Choice choice)
+{
+    CRef<CSeq_id> cid;
+    
+    for (CBioseq::TId::const_iterator iter = ids.begin(); iter != ids.end(); 
+         iter ++){
+        if ((*iter)->Which() == choice){
+            cid = *iter;
+            break;
+        }
+    }
+    
+    return cid;
+}
 
+///return gi from id list
+///@param ids: the input ids
+///@return: the gi if found
+///
+TGi CAlignFormatUtil::GetGiForSeqIdList (const list<CRef<CSeq_id> >& ids)
+{
+    TGi gi = ZERO_GI;
+    CRef<CSeq_id> id = s_GetSeqIdByType(ids, CSeq_id::e_Gi);
+    if (!(id.Empty())){
+        return id->GetGi();
+    }
+    return gi;
+}
 
 END_SCOPE(align_format)
 END_NCBI_SCOPE
