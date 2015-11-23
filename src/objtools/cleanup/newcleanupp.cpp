@@ -7015,6 +7015,45 @@ void CNewCleanup_imp::x_CleanupECNumber( string &ec_num )
     s_RemoveInitial( ec_num, "EC ", NStr::eNocase );
     s_RemoveInitial( ec_num, "EC:", NStr::eNocase );
 
+    // remove trailing punctuation: 
+    // 1. periods unless they are preceded by a digit, an 'n', or a '-'
+    // 2. dashes unless they are preceded by a period
+    // 3. all other trailing punctuation always
+
+    string::reverse_iterator s1 = ec_num.rbegin();
+    if (s1 != ec_num.rend() && (ispunct(*s1) || isspace(*s1))) {
+        string::reverse_iterator s2 = s1;
+        ++s2;
+        while (s2 != ec_num.rend() && (ispunct(*s1) || isspace(*s1))) {
+            bool do_erase = false;
+            if (isspace(*s1)) {
+                do_erase = true;
+            } else if (*s1 == '.') {
+                if (*s2 != 'n' && *s2 != '-' && !isdigit(*s2)) {
+                    do_erase = true;
+                }
+            } else if (*s1 == '-') {
+                if (*s2 != '.') {
+                    do_erase = true;
+                }
+            } else {
+                do_erase = true;
+            }
+            if (do_erase) {
+                ec_num = ec_num.substr(0, ec_num.length() - 1);
+                s1 = ec_num.rbegin();
+                if (s1 == ec_num.rend()) {
+                    break;
+                }
+                s2 = s1;
+                ++s2;
+            } else {
+                break;
+            }
+        }
+    }
+
+
     if( ec_num.length() != original_ec_num_length ) {
         ChangeMade(CCleanupChange::eCleanECNumber);
     }
