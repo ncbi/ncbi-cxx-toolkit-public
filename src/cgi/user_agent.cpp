@@ -323,26 +323,32 @@ bool CCgiUserAgent::x_CheckPattern(int /*EPattern*/ what,
     // External patterns
     if ( !external_patterns.empty() ) {
         if (external_patterns.find_first_of(kMultiLinePatternDelimiters) != NPOS) {
-            NStr::Split(external_patterns, kMultiLinePatternDelimiters, patterns);
+            NStr::Split(external_patterns, kMultiLinePatternDelimiters, patterns,
+                        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
         } else {
-            NStr::Split(external_patterns, kSingleLinePatternDelimiters, patterns);
+            NStr::Split(external_patterns, kSingleLinePatternDelimiters, patterns,
+                        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
         }
     }
     // User-defined patterns
     if (current_status) {
         if ( !exclude_patterns.empty() ) {
             if (external_patterns.find_first_of(kMultiLinePatternDelimiters) != NPOS) {
-                NStr::Split(USTR(exclude_patterns), kMultiLinePatternDelimiters, patterns);
+                NStr::Split(USTR(exclude_patterns), kMultiLinePatternDelimiters, patterns,
+                            NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
             } else {
-                NStr::Split(USTR(exclude_patterns), kSingleLinePatternDelimiters, patterns);
+                NStr::Split(USTR(exclude_patterns), kSingleLinePatternDelimiters, patterns,
+                            NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
             }
         }
     } else {
         if ( !include_patterns.empty() ) {
             if (external_patterns.find_first_of(kMultiLinePatternDelimiters) != NPOS) {
-                NStr::Split(USTR(include_patterns), kMultiLinePatternDelimiters, patterns);
+                NStr::Split(USTR(include_patterns), kMultiLinePatternDelimiters, patterns,
+                            NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
             } else {
-                NStr::Split(USTR(include_patterns), kSingleLinePatternDelimiters, patterns);
+                NStr::Split(USTR(include_patterns), kSingleLinePatternDelimiters, patterns,
+                            NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
             }
         }
     }
