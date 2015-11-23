@@ -335,19 +335,19 @@ bool BrBookURLToCCddBookRef(const string& brBookUrl, CRef< CCdd_book_ref>& bookR
 {
     bool result = false;
     string bookname, address, subaddress, typeStr, firstTokenStr;
-    vector<string> sharpTokens;
+    list<string> sharpTokens;
     CRegexp regexpCommon("book=(.*)&part=(.*)");
     CRegexp regexpRendertype("&part=(.*)&rendertype=(.*)&id=(.*)");
 
     //  note:  I don't have ownership of the CEnumeratedTypeValues pointer
     const CEnumeratedTypeValues* allowedElements = CCdd_book_ref::GetTypeInfo_enum_ETextelement();
     
-    NStr::Tokenize(brBookUrl, "#", sharpTokens);
+    NStr::Split(brBookUrl, "#", sharpTokens, 0);
     if (sharpTokens.size() == 1 || sharpTokens.size() == 2) {
         bool haveSubaddr = (sharpTokens.size() == 2);
         
         //  All URLs have 'book' and 'part' parameters.
-        firstTokenStr = sharpTokens[0];
+        firstTokenStr = sharpTokens.front();
         regexpCommon.GetMatch(firstTokenStr, 0, 0, CRegexp::fMatch_default, true);
         if (regexpCommon.NumFound() == 3) {  //  i.e., found full pattern + two subpatterns
 
@@ -377,7 +377,7 @@ bool BrBookURLToCCddBookRef(const string& brBookUrl, CRef< CCdd_book_ref>& bookR
                 //  If there's something after the '#', if it's an old-style
                 //  URL it could be numeric -> prepend 'A' in that case.
                 if (haveSubaddr) {
-                    subaddress = sharpTokens[1];
+                    subaddress = sharpTokens.back();
                     if (NStr::StringToULong(subaddress, NStr::fConvErr_NoThrow) != 0) {
                         subaddress = "A" + subaddress;
                     }
