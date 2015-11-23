@@ -120,18 +120,18 @@ void BlastdbCopyApplication::Init(void)
 
     arg_desc->SetCurrentGroup("Configuration options");
 
-    arg_desc->AddOptionalKey(
-            kArgDbTitle,
-            "database_title",
-            "Title for BLAST database",
-            CArgDescriptions::eString
-    );
-
     arg_desc->AddKey(
             kArgGiList,
             "input_file",
             "Text or binary gi file to restrict the BLAST "
             "database provided in -db argument",
+            CArgDescriptions::eString
+    );
+
+    arg_desc->AddOptionalKey(
+            kArgDbTitle,
+            "database_title",
+            "Title for BLAST database",
             CArgDescriptions::eString
     );
 
@@ -189,20 +189,21 @@ public:
     CBlastDbBioseqSource(
             CRef<CSeqDBExpert> blastdb,
             CRef<CSeqDBGiList> gilist,
-            bool copy_membership_bits = false
+            bool               copy_membership_bits = false,
+            bool               copy_leaf_taxids     = true
     )
     {
-        CStopWatch total_timer, bioseq_timer, memb_timer;
+        CStopWatch total_timer, bioseq_timer, memb_timer, leaf_timer;
         total_timer.Start();
         for (int i = 0; i < gilist->GetNumGis(); i++) {
             const CSeqDBGiList::SGiOid& elem = gilist->GetGiOid(i);
             int oid = 0;
-            if ( !blastdb->GiToOid(GI_FROM(int, elem.gi), oid)) {
+            if (!blastdb->GiToOid(elem.gi, oid)) {
                 // not found on source BLASTDB, skip
                 continue;
             }
             if (m_Oids2Copy.insert(oid).second == false) {
-                // don't add the same OID twice to avoid duplicates
+                // don't add the same OID twice, to avoid duplicates
                 continue;
             }
 
@@ -219,27 +220,41 @@ public:
             m_Bioseqs.push_back(bs);
             bioseq_timer.Stop();
 
-            if (copy_membership_bits == false) {
-                // If we're not copying the membership bits, we're done
-                // with this gi, so loop back for the next one.
-                continue;
+            if (copy_membership_bits) {
+                memb_timer.Start();
+                CRef<CBlast_def_line_set> hdr =
+                        CSeqDB::ExtractBlastDefline(*bs);
+                ITERATE(CBlast_def_line_set::Tdata, itr, hdr->Get()) {
+                    CRef<CBlast_def_line> bdl = *itr;
+                    if (bdl->CanGetMemberships() &&
+                            !bdl->GetMemberships().empty()) {
+                        int memb_bits = bdl->GetMemberships().front();
+                        if (memb_bits == 0) {
+                            continue;
+                        }
+                        const string id =
+                                bdl->GetSeqid().front()->AsFastaString();
+                        m_MembershipBits[memb_bits].push_back(id);
+                    }
+                }
+                memb_timer.Stop();
             }
 
-            memb_timer.Start();
-            CRef<CBlast_def_line_set> hdr = CSeqDB::ExtractBlastDefline(*bs);
-            ITERATE(CBlast_def_line_set::Tdata, itr, hdr->Get()) {
-                CRef<CBlast_def_line> bdl = *itr;
-                if (bdl->CanGetMemberships() &&
-                        !bdl->GetMemberships().empty()) {
-                    int memb_bits = bdl->GetMemberships().front();
-                    if (memb_bits == 0) {
-                        continue;
-                    }
-                    const string id = bdl->GetSeqid().front()->AsFastaString();
-                    m_MembershipBits[memb_bits].push_back(id);
+            if (copy_leaf_taxids) {
+                leaf_timer.Start();
+                CRef<CBlast_def_line_set> hdr =
+                        CSeqDB::ExtractBlastDefline(*bs);
+                ITERATE(CBlast_def_line_set::Tdata, itr, hdr->Get()) {
+                    CRef<CBlast_def_line> bdl = *itr;
+                    CBlast_def_line::TTaxIds leafs = bdl->GetLeafTaxIds();
+                    const string id =
+                            bdl->GetSeqid().front()->AsFastaString();
+                    set<int> ids = m_LeafTaxids[id];
+                    ids.insert(leafs.begin(), leafs.end());
+                    m_LeafTaxids[id] = ids;
                 }
+                leaf_timer.Stop();
             }
-            memb_timer.Stop();
         }
         total_timer.Stop();
         ERR_POST(
@@ -258,10 +273,20 @@ public:
                 Info << "Processed membership bits in "
                 << memb_timer.AsSmartString()
         );
+        ERR_POST(
+                Info << "Processed leaf taxids in "
+                << leaf_timer.AsSmartString()
+        );
     }
 
-    const TLinkoutMap GetMembershipBits() const {
+    const TLinkoutMap GetMembershipBits() const
+    {
         return m_MembershipBits;
+    }
+
+    const TIdToLeafs GetLeafTaxIds() const
+    {
+        return m_LeafTaxids;
     }
 
     virtual CConstRef<CBioseq> GetNext()
@@ -275,9 +300,11 @@ public:
     }
 private:
     typedef list< CConstRef<CBioseq> > TBioseqs;
-    TBioseqs m_Bioseqs;
-    set<int> m_Oids2Copy;
+
+    TBioseqs    m_Bioseqs;
+    set<int>    m_Oids2Copy;
     TLinkoutMap m_MembershipBits;
+    TIdToLeafs  m_LeafTaxids;
 };
 
 bool BlastdbCopyApplication::x_ShouldParseSeqIds(const string& dbname,
@@ -406,6 +433,7 @@ int BlastdbCopyApplication::Run(void)
         destdb.SetSourceDb(sourcedb);
         destdb.StartBuild();
         destdb.SetMembBits(bioseq_source.GetMembershipBits(), false);
+        destdb.SetLeafTaxIds(bioseq_source.GetLeafTaxIds(), false);
         destdb.AddSequences(bioseq_source, kCopyPIGs);
         destdb.EndBuild();
         timer.Stop();

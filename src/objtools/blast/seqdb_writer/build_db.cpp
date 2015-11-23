@@ -1011,6 +1011,7 @@ CBuildDatabase::CBuildDatabase(const string         & dbname,
     : m_IsProtein    (is_protein),
       m_KeepLinks    (false),
       m_KeepMbits    (false),
+      m_KeepLeafs    (false),
       m_Taxids       (new CTaxIdSet()),
       m_LogFile      (*logfile),
       m_UseRemote    (true),
@@ -1059,6 +1060,7 @@ CBuildDatabase::CBuildDatabase(const string & dbname,
     : m_IsProtein    (is_protein),
       m_KeepLinks    (false),
       m_KeepMbits    (false),
+      m_KeepLeafs    (false),
       m_Taxids       (new CTaxIdSet()),
       m_LogFile      (*logfile),
       m_UseRemote    (true),
@@ -1158,6 +1160,7 @@ void CBuildDatabase::SetSourceDb(const string & src_db_name)
     SetSourceDb(src_db);
 }
 
+// NCBI_DEPRECATED
 void CBuildDatabase::SetLinkouts(const TLinkoutMap & linkouts,
                                  bool                keep_links)
 {
@@ -1172,6 +1175,16 @@ void CBuildDatabase::SetMembBits(const TLinkoutMap & membbits,
     m_LogFile << "Keep MBits: " << (keep_mbits ? "T" : "F") << endl;
     MapToLMBits(membbits, m_Id2Mbits);
     m_KeepMbits = keep_mbits;
+}
+
+void CBuildDatabase::SetLeafTaxIds(
+        const TIdToLeafs& taxids,
+        bool              keep_taxids
+)
+{
+    m_LogFile << "Keep Leaf Taxids: " << (keep_taxids ? "T" : "F") << endl;
+    m_Id2Leafs = taxids;
+    m_KeepLeafs = keep_taxids;
 }
 
 bool
@@ -1298,7 +1311,7 @@ bool CBuildDatabase::AddFasta(CNcbiIstream & fasta_file)
             success = AddSequences(fbs);
 	    if (success == false)
             	NCBI_THROW(CWriteDBException, eFileErr, "No sequences added");
-		
+
         }
         catch (...) {
             EndBuild(true);
@@ -1370,6 +1383,43 @@ bool CBuildDatabase::x_EndBuild(bool erase, const CException * close_exception)
 
 
 static void
+s_SetDeflineLeafs(
+        objects::CBlast_def_line& defline,
+        TIdToLeafs&               leafs,
+        bool                      keep_old,
+        vector<string>&           keys
+)
+{
+    bool found = false;
+    CBlast_def_line::TTaxIds taxids;
+
+    ITERATE(vector<string>, key, keys) {
+        if (!key->empty()) {
+            TIdToLeafs::iterator item = leafs.find(*key);
+            if (item != leafs.end()) {
+                found = true;
+                taxids.insert(item->second.begin(), item->second.end());
+            }
+        }
+    }
+
+    CBlast_def_line::TTaxIds tv;
+    if (found) {
+        if (keep_old) {
+            const CBlast_def_line::TTaxIds& tx = defline.GetLeafTaxIds();
+            tv.insert(tx.begin(), tx.end());
+        }
+        tv.insert(taxids.begin(), taxids.end());
+        defline.SetLeafTaxIds(tv);
+    } else {
+        if (!keep_old) {
+            defline.SetLeafTaxIds(tv);
+        }
+    }
+}
+
+
+static void
 s_SetDeflineBits(objects::CBlast_def_line & defline,
                  TIdToBits       & bitmap,
                  bool              keep_old,
@@ -1425,8 +1475,10 @@ CBuildDatabase::x_SetLinkAndMbit(CRef<objects::CBlast_def_line_set> headers)
         CBlast_def_line & defline = **iter;
         GetDeflineKeys(defline, keys);
 
-        s_SetDeflineBits(defline, m_Id2Links, m_KeepLinks, false, keys);
+        // m_Id2Links is DEPRECATED
+//        s_SetDeflineBits(defline, m_Id2Links, m_KeepLinks, false, keys);
         s_SetDeflineBits(defline, m_Id2Mbits, m_KeepMbits, true, keys);
+        s_SetDeflineLeafs(defline, m_Id2Leafs, m_KeepLeafs, keys);
     }
 }
 

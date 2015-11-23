@@ -229,8 +229,10 @@ public:
     /// sequences added to the database.
     ///
     /// @param src_db The source database. [in]
-    void SetLinkouts(const TLinkoutMap & linkouts,
-                     bool                keep_links);
+    NCBI_DEPRECATED void SetLinkouts(
+            const TLinkoutMap & linkouts,
+            bool                keep_links
+    );
 
     /// Specify a membership bit lookup object.
     ///
@@ -238,8 +240,16 @@ public:
     /// data for sequences added to the database.
     ///
     /// @param src_db The source database. [in]
-    void SetMembBits(const TLinkoutMap & membbits,
-                     bool                keep_mbits);
+    void SetMembBits(
+            const TLinkoutMap & membbits,
+            bool                keep_mbits
+    );
+
+    /// Specify a leaf-taxids object.
+    void SetLeafTaxIds(
+            const TIdToLeafs& taxids,
+            bool              keep_taxids
+    );
 
     /// Build the database.
     ///
@@ -507,7 +517,7 @@ private:
     /// @return True if all sequences were resolved.
     bool x_ReportUnresolvedIds(const CInputGiList & gi_list) const;
 
-    /// Store linkout and membership bits in provided headers.
+    /// Store linkout (now deprecated) and membership bits in provided headers.
     ///
     /// Each Seq-id found in each defline in the provided headers will
     /// be looked up in the set of linkout and membership bits
@@ -516,6 +526,11 @@ private:
     ///
     /// @param headers These deflines will be modified. [in|out]
     void x_SetLinkAndMbit(CRef<objects::CBlast_def_line_set> headers);
+
+    /// Store leaf taxids in provided headers.
+    ///
+    /// @param headers These deflines will be modified. [in|out]
+    void x_SetLeafTaxids(CRef<objects::CBlast_def_line_set> headers);
 
     /// Fetch a sequence from the remote service and add it to the db.
     ///
@@ -551,9 +566,11 @@ private:
     bool m_IsProtein;
 
     /// True to keep linkout bits from source dbs, false to discard.
+    /// DEPRECATED
     bool m_KeepLinks;
 
     /// Table of linkout bits to apply to sequences.
+    /// DEPRECATED
     TIdToBits m_Id2Links;
 
     /// True to keep membership bits from source dbs, false to discard.
@@ -561,6 +578,12 @@ private:
 
     /// Table of membership bits to apply to sequences.
     TIdToBits m_Id2Mbits;
+
+    /// True to keep leaf taxids from source dbs, false to discard.
+    bool m_KeepLeafs;
+
+    /// Table of leaf taxids to apply to sequences.
+    TIdToLeafs m_Id2Leafs;
 
     /// Object manager, used for remote fetching.
     CRef<objects::CObjectManager>  m_ObjMgr;

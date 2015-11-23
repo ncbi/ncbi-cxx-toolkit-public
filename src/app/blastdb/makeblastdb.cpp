@@ -1114,7 +1114,7 @@ void CMakeBlastDBApp::x_BuildDatabase()
 
     TLinkoutMap no_bits;
 
-    m_DB->SetLinkouts(no_bits, true);
+//    m_DB->SetLinkouts(no_bits, true);     // DEPRECATED
     m_DB->SetMembBits(no_bits, true);
 
     // Max file size

@@ -162,7 +162,10 @@ private:
 };
 
 /// Maps Seq-id key to bitset.
-typedef map< string, int > TIdToBits;
+typedef map<string, int> TIdToBits;
+
+/// Map from Seq-id string to set of leaf taxids.
+typedef map<string, CBlast_def_line::TTaxIds> TIdToLeafs;
 
 /// Map from linkout bit number to list of ids.
 typedef map<int, vector<string> > TLinkoutMap;
