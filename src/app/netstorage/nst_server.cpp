@@ -286,7 +286,8 @@ set<string>
 CNetStorageServer::x_GetAdminClientNames(const string &  client_names)
 {
     vector<string>      admins;
-    NStr::Tokenize(client_names, ";, ", admins, NStr::eMergeDelims);
+    NStr::Split(client_names, ";, ", admins,
+                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     return set<string>(admins.begin(), admins.end());
 }
 
