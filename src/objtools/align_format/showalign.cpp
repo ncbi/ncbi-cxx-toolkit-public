@@ -496,41 +496,6 @@ static string s_GetQueryIDFromSeqAlign(const CSeq_align_set& actual_aln_list)
     return queryID;
 }
 
-///return id type specified or null ref
-///@param ids: the input ids
-///@param choice: id of choice
-///@return: the id with specified type
-///
-static CRef<CSeq_id> s_GetSeqIdByType(const list<CRef<CSeq_id> >& ids, 
-                                      CSeq_id::E_Choice choice)
-{
-    CRef<CSeq_id> cid;
-    
-    for (CBioseq::TId::const_iterator iter = ids.begin(); iter != ids.end(); 
-         iter ++){
-        if ((*iter)->Which() == choice){
-            cid = *iter;
-            break;
-        }
-    }
-    
-    return cid;
-}
-
-///return gi from id list
-///@param ids: the input ids
-///@return: the gi if found
-///
-TGi CDisplaySeqalign::x_GetGiForSeqIdList (const list<CRef<CSeq_id> >& ids)
-{
-    TGi gi = ZERO_GI;
-    CRef<CSeq_id> id = s_GetSeqIdByType(ids, CSeq_id::e_Gi);
-    if (!(id.Empty())){
-        return id->GetGi();
-    }
-    return gi;
-}
-
 
 ///return concatenated exon sequence
 ///@param feat: the feature containing this cds
@@ -1080,7 +1045,7 @@ CAlignFormatUtil::SSeqURLInfo *CDisplaySeqalign::x_InitSeqUrl(TGi giToUse,string
 					CRange<TSeqPos>(0,0);					
     bool flip = (m_AlnLinksParams.count(idString) > 0) ? m_AlnLinksParams[idString].flip : false;	
 	string user_url= (!m_BlastType.empty()) ? m_Reg->Get(m_BlastType, "TOOL_URL") : "";        		
-    giToUse = (giToUse == ZERO_GI) ? x_GetGiForSeqIdList(ids):giToUse;    
+    giToUse = (giToUse == ZERO_GI) ? CAlignFormatUtil::GetGiForSeqIdList(ids):giToUse;    
 	CAlignFormatUtil::SSeqURLInfo *seqUrlInfo = new CAlignFormatUtil::SSeqURLInfo(user_url,m_BlastType,m_IsDbNa,m_DbName,m_Rid,
                                              m_QueryNumber,
                                              giToUse,
@@ -1736,7 +1701,7 @@ void CDisplaySeqalign::x_DisplaySequenceIDForQueryAnchored(SAlnRowInfo *alnRoInf
             gi = m_AV->GetSeqId(row).GetGi();
         }
         if(!(gi > ZERO_GI)){
-            gi = x_GetGiForSeqIdList(m_AV->GetBioseqHandle(row).
+            gi = CAlignFormatUtil::GetGiForSeqIdList(m_AV->GetBioseqHandle(row).
                                      GetBioseqCore()->GetId());
         }
         string anchorTmpl,checkBoxTmpl,id_lbl;        
@@ -2211,7 +2176,7 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CR
     int seqLength = (int)bsp_handle.GetBioseqLength();    
 
 	const list<CRef<CSeq_id> > ids = bdl->GetSeqid();
-	TGi gi =  x_GetGiForSeqIdList(ids);
+	TGi gi =  CAlignFormatUtil::GetGiForSeqIdList(ids);
     TGi gi_in_use_this_gi = ZERO_GI;
     
     ITERATE(list<TGi>, iter_gi, use_this_gi){
@@ -4522,7 +4487,7 @@ void CDisplaySeqalign::x_FillSeqid(string& id, int row) const
                         gi = m_AV->GetSeqId(row).GetGi();
                     }
                     if(!(gi > ZERO_GI)){
-                        gi = x_GetGiForSeqIdList(m_AV->GetBioseqHandle(row).\
+                        gi = CAlignFormatUtil::GetGiForSeqIdList(m_AV->GetBioseqHandle(row).\
                                                  GetBioseqCore()->GetId());
                     }
                     if(gi > ZERO_GI){
@@ -4550,7 +4515,7 @@ void CDisplaySeqalign::x_FillSeqid(string& id, int row) const
                 gi = m_AV->GetSeqId(row).GetGi();
             }
             if(!(gi > ZERO_GI)){
-                gi = x_GetGiForSeqIdList(m_AV->GetBioseqHandle(row).\
+                gi = CAlignFormatUtil::GetGiForSeqIdList(m_AV->GetBioseqHandle(row).\
                                          GetBioseqCore()->GetId());
             }
             if(gi > ZERO_GI){
