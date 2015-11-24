@@ -11616,6 +11616,14 @@ void CNewCleanup_imp::MoveDbxrefs(CSeq_feat& sf)
     }
     if (sf.GetQual().empty()) {
         sf.ResetQual();
+    } 
+
+    if (sf.IsSetDbxref()) {
+        // sort/unique db_xrefs
+        if (!DBXREF_ON_SEQFEAT_IS_SORTED(sf, s_DbtagCompare)) {
+            SORT_DBXREF_ON_SEQFEAT(sf, s_DbtagCompare);
+            ChangeMade(CCleanupChange::eCleanDbxrefs);
+        }
     }
 }
 
