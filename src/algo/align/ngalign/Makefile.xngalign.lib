@@ -4,7 +4,6 @@ WATCHERS = boukn dicuccio
 
 ASN_DEP = xnetblast
 
-LIB_OR_DLL = both
 DLL_LIB = xalgoalignnw xalgoalignutil xmergetree blastinput
 
 SRC = result_set  sequence_set   \
