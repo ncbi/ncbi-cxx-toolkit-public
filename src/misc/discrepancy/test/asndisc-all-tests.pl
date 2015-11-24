@@ -48,6 +48,7 @@ foreach my $line (@lines)
 { chomp $line;
   $line=~s/#.*$//;
   next unless $line=~/(\S+)\s+(\S+)\s+(\S+)\s+(\S+)(?:\s+(\S+))?/;
+  die "Test name conflict: $1\n" if $tests{$1};
   $tests{$1}{arg} = $2;
   $tests{$1}{arg0} = $3;
   $tests{$1}{data} = $4;
