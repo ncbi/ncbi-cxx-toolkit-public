@@ -339,5 +339,5 @@ if test ! -f ${real_srcdir}/src/$1/Makefile.in  -o  \
 fi
 ])
 
-m4_include([ax_jni_include_dir.m4])
-m4_include([ax_prog_cc_for_build.m4])
+m4_include([m4/ax_jni_include_dir.m4])
+m4_include([m4/ax_prog_cc_for_build.m4])
