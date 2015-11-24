@@ -171,6 +171,12 @@ struct NCBI_XCONNECT_EXPORT CNetScheduleAPIExt : CNetScheduleAPI
     static TInstance CreateNoCfgLoad(const string&, const string&, const string&);
 };
 
+// XXX: Workaround for VAR-1651
+// Return a JSON object where each key is a worker node
+// session and the value is a JSON object containing
+// status information reported by the worker node itself.
+NCBI_XCONNECT_EXPORT
+CJsonNode g_GetWorkerNodeInfo(CNetScheduleAPI api);
 
 END_NCBI_SCOPE
 

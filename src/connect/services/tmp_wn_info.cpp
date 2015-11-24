@@ -33,9 +33,12 @@
 
 #include <connect/services/netschedule_api.hpp>
 
-#if 0
+// XXX: Workaround for VAR-1651
+// TODO: Merge this code with code of grid_cli (see also r485314).
 
 BEGIN_NCBI_SCOPE
+
+typedef CNetScheduleAdmin::SWorkerNodeInfo SWorkerNodeInfo;
 
 /// Types of administrative information NetSchedule can return.
 ///
@@ -76,13 +79,13 @@ bool s_FixMisplacedPID(CJsonNode& stat_info, CTempString& executable_path,
 ///
 CJsonNode s_WorkerNodeInfoToJson(CNetServer worker_node);
 
-void CNetScheduleAdmin::GetWorkerNodes(list<SWorkerNodeInfo>& worker_nodes)
+void s_GetWorkerNodes(CNetScheduleAPI api, list<SWorkerNodeInfo>& worker_nodes)
 {
     worker_nodes.clear();
 
     set<string> unique_sessions;
 
-    for (CNetServiceIterator iter = m_Impl->m_API->m_Service.Iterate(
+    for (CNetServiceIterator iter = api->m_Service.Iterate(
             CNetService::eIncludePenalized); iter; ++iter) {
 
         CJsonNode client_info_array = s_GenericStatToJson(*iter,
@@ -101,8 +104,8 @@ void CNetScheduleAdmin::GetWorkerNodes(list<SWorkerNodeInfo>& worker_nodes)
                 worker_nodes.push_back(SWorkerNodeInfo());
 
                 SWorkerNodeInfo& wn_info = worker_nodes.back();
-                wn_info.node = client_info.GetString("client_node");
-                wn_info.session = session;
+                wn_info.name = client_info.GetString("client_node");
+                wn_info.prog = session;
                 wn_info.host = client_info.GetString("client_host");
                 wn_info.port =
                         client_info.GetInteger("worker_node_control_port");
@@ -113,20 +116,20 @@ void CNetScheduleAdmin::GetWorkerNodes(list<SWorkerNodeInfo>& worker_nodes)
     }
 }
 
-CJsonNode CNetScheduleAdmin::GetWorkerNodeInfo()
+CJsonNode g_GetWorkerNodeInfo(CNetScheduleAPI api)
 {
     CJsonNode result(CJsonNode::NewObjectNode());
 
     list<SWorkerNodeInfo> worker_nodes;
-    GetWorkerNodes(worker_nodes);
+    s_GetWorkerNodes(api, worker_nodes);
 
     ITERATE(list<CNetScheduleAdmin::SWorkerNodeInfo>, wn_info, worker_nodes) {
         CNetScheduleAPI wn_api(wn_info->host + ':' +
                 NStr::NumericToString(wn_info->port),
-                m_Impl->m_API->m_Service->GetClientName(),
+                api->m_Service->GetClientName(),
                 kEmptyStr);
 
-        result.SetByKey(wn_info->session, s_WorkerNodeInfoToJson(
+        result.SetByKey(wn_info->prog, s_WorkerNodeInfoToJson(
                 wn_api.GetService().Iterate().GetServer()));
     }
 
@@ -447,5 +450,3 @@ CJsonNode s_WorkerNodeInfoToJson(CNetServer worker_node)
 }
 
 END_NCBI_SCOPE
-
-#endif
