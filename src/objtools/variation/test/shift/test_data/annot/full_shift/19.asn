@@ -3,22 +3,41 @@ Seq-annot ::= {
     {
       data variation {
         name "NC_000007.13:g.126096600_126096601insAAAAAAAA",
-        data instance {
-          type ins,
-          delta {
+        data set {
+          type package,
+          variations {
             {
-              seq literal {
-                length 8,
-                seq-data iupacna "AAAAAAAA"
-              },
-              action ins-before
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 27,
+                      seq-data iupacna "AAAAAAAAAAAAAAAAAAAAAAAAAAA"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              data instance {
+                type delins,
+                delta {
+                  {
+                    seq literal {
+                      length 35,
+                      seq-data iupacna "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+                    }
+                  }
+                }
+              }
             }
           }
         }
       },
       location int {
         from 126096573,
-        to 126096600,
+        to 126096599,
         strand plus,
         id gi 224589819
       },

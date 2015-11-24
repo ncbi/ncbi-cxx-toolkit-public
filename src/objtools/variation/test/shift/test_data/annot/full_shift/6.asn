@@ -21,14 +21,26 @@ Seq-annot ::= {
           variations {
             {
               data instance {
-                type ins,
+                type identity,
                 delta {
                   {
                     seq literal {
-                      length 3,
-                      seq-data iupacna "TGC"
-                    },
-                    action ins-before
+                      length 20,
+                      seq-data iupacna "TGCTGCTGCTGCTGCTGCTG"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              data instance {
+                type delins,
+                delta {
+                  {
+                    seq literal {
+                      length 23,
+                      seq-data iupacna "TGCTGCTGCTGCTGCTGCTGCTG"
+                    }
                   }
                 }
               }
@@ -38,7 +50,7 @@ Seq-annot ::= {
       },
       location int {
         from 10689125,
-        to 10689145,
+        to 10689144,
         id other {
           accession "NT_005612",
           version 16

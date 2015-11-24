@@ -1634,7 +1634,7 @@ void CVariationNormalizationRight::ModifyLocation(CSeq_loc &loc,
     }
 }
 
-void CVariationNormalizationInt::ModifyLocation(CSeq_loc &loc, 
+void CVariationNormalizationDelIns::ModifyLocation(CSeq_loc &loc, 
     SEndPosition& sep, const CVariation_inst::TType type, const TSeqPos& deletion_size ) 
 {
     if (sep.left == sep.right)
@@ -1698,7 +1698,7 @@ void CVariationNormalizationLeftInt::ModifyLocation( CSeq_loc &loc,
 }
 
 
-void CVariationNormalizationInt::Rotate(string& v)
+void CVariationNormalizationDelIns::Rotate(string& v)
 {
     RotateRight(v);
 }
@@ -1821,7 +1821,7 @@ void
         feat.ResetExts();
 }
 
-bool CVariationNormalizationInt::ProcessShift(string &common_repeat_unit_allele, 
+bool CVariationNormalizationDelIns::ProcessShift(string &common_repeat_unit_allele, 
     SEndPosition& sep, CSeqVector &seqvec, int& rotation_counter, const CVariation_inst::TType type)
 {
     // First, shift left, and find out:
@@ -1833,6 +1833,8 @@ bool CVariationNormalizationInt::ProcessShift(string &common_repeat_unit_allele,
     bool found_left = CVariationNormalizationLeft::ProcessShift(
         common_repeat_unit_allele, sep_tmp,
         seqvec,rotation_counter,type);
+    
+    
     // Second, shift the original data right, and find out:
     //  The new right
     int ignored_counter=0;
@@ -1903,19 +1905,144 @@ void CVariationNormalization::AlterToHGVSVar(CSeq_feat& feat, CScope& scope)
     CVariationNormalizationRight::x_Shift(feat,scope);
 }
 
-void CVariationNormalization::NormalizeAmbiguousVars(CVariation& var, CScope &scope)
+void CVariationNormalization::AlterToDelIns(CVariation& var, CScope &scope)
 {
-    CVariationNormalizationInt::x_Shift(var,scope);
+    CVariationNormalizationDelIns::x_Shift(var,scope);
 }
 
-void CVariationNormalization::NormalizeAmbiguousVars(CSeq_annot& annot, CScope &scope)
+void CVariationNormalization::AlterToDelIns(CSeq_annot& annot, CScope &scope)
 {
-    CVariationNormalizationInt::x_Shift(annot,scope);
+    CVariationNormalizationDelIns::x_Shift(annot,scope);
+
+    NON_CONST_ITERATE(CSeq_annot::TData::TFtable, feat_it,
+        annot.SetData().SetFtable()) {
+        CSeq_feat& feat = **feat_it;
+        if(!isFullyShifted(feat)) {
+            continue;
+        }
+        if(CVariationUtilities::GetVariationType(feat.GetData().GetVariation()) == CVariation_inst::eType_del) {
+            CVariationNormalizationDelIns::ConvertExpandedDeletionToDelIns(feat, scope);
+        }
+        if(CVariationUtilities::GetVariationType(feat.GetData().GetVariation()) == CVariation_inst::eType_ins) {
+            CVariationNormalizationDelIns::ConvertExpandedInsertionToDelIns(feat, scope);
+        }
+    }
 }
 
-void CVariationNormalization::NormalizeAmbiguousVars(CSeq_feat& feat, CScope &scope)
+namespace
 {
-    CVariationNormalizationInt::x_Shift(feat,scope);
+    CRef<CVariation_ref> s_CreateVariationRefFor(
+        const CVariation_inst::TType type, const string& deleted_seq)
+    {
+        CRef<CVariation_inst> vinst_identity = Ref(new CVariation_inst);
+        vinst_identity->SetType(type);
+        
+        CRef<CDelta_item> delta = Ref(new CDelta_item);
+        vinst_identity->SetDelta().push_back(delta);
+        
+        CRef<CSeq_literal> literal = Ref(new CSeq_literal);
+        delta->SetSeq().SetLiteral(*literal);
+        literal->SetLength(deleted_seq.length());
+        
+        CRef<CSeq_data> seq_data = Ref(new CSeq_data);
+        literal->SetSeq_data(*seq_data);
+        seq_data->SetIupacna().Set(deleted_seq);
+        
+        CRef<CVariation_ref> vref_identity = Ref(new CVariation_ref);
+        vref_identity->SetData().SetInstance(*vinst_identity);
+
+        return vref_identity;
+    }
+}
+
+void CVariationNormalizationDelIns::ConvertExpandedInsertionToDelIns(CSeq_feat& feat, CScope &scope)
+{
+    CSeq_loc& loc = feat.SetLocation();
+    // Don't add another, as the meaning of an expanded insertion seq-loc was beyond the repeat unit
+    TSeqPos del_size = loc.GetStop(eExtreme_Positional) - loc.GetStart(eExtreme_Positional);
+
+    const CSeq_id* seq_id = loc.GetId();
+
+    ENa_strand strand = eNa_strand_unknown;
+    if(loc.IsSetStrand()) {
+        strand = loc.GetStrand();
+    }
+
+    CRef<CSeqVector> seqvec = PrefetchSequence(scope, *seq_id, strand);
+    string ref_seq = GetSeq(loc.GetStart(eExtreme_Positional), del_size, *seqvec);
+
+    string ref;
+    vector<string> alts;
+    CVariationUtilities::GetVariationRefAlt(feat.GetData().GetVariation(), ref, alts);
+
+    string inserted_seq = alts.front() + ref_seq; // ref_seq.substr(0, alts.front().length()) + ref_seq;
+
+    CVariation_ref::TData::TSet::TVariations& variation_list
+        = feat.SetData().SetVariation().SetData().SetSet().SetVariations();
+    feat.SetData().SetVariation().SetData().SetSet().SetType(CVariation_ref::TData::TSet::eData_set_type_package);
+
+    variation_list.clear();
+    variation_list.push_back(s_CreateVariationRefFor(CVariation_inst::eType_identity, ref_seq));
+    variation_list.push_back(s_CreateVariationRefFor(CVariation_inst::eType_delins, inserted_seq));
+
+    ///Adjust location by decrementing 'stop' by one.  If length of reference is 1, then it becomes a point.
+    if(ref_seq.length() == 1) {
+        auto pnt = Ref(new CSeq_loc);
+        pnt->SetPnt().SetId(*SerialClone(*(feat.GetLocation().GetId())));
+        pnt->SetPnt().SetPoint(feat.GetLocation().GetStart(eExtreme_Positional));
+        pnt->SetPnt().SetStrand(feat.GetLocation().GetStrand());
+        feat.SetLocation(*pnt);
+    } else {
+        loc.SetInt().SetTo() = loc.SetInt().SetTo() - 1;
+    }
+}
+void CVariationNormalizationDelIns::ConvertExpandedDeletionToDelIns(CSeq_feat& feat, CScope &scope)
+{
+    const CSeq_loc& loc = feat.GetLocation();
+    TSeqPos del_size = loc.GetStop(eExtreme_Positional) - loc.GetStart(eExtreme_Positional) + 1;
+
+    const CSeq_id* seq_id = loc.GetId();
+
+    ENa_strand strand = eNa_strand_unknown;
+    if(loc.IsSetStrand()) {
+        strand = loc.GetStrand();
+    }
+
+    CRef<CSeqVector> seqvec = PrefetchSequence(scope, *seq_id, strand);
+    string ref_seq = GetSeq(loc.GetStart(eExtreme_Positional), del_size, *seqvec);
+
+    string ref;
+    vector<string> alts;
+    CVariationUtilities::GetVariationRefAlt(feat.GetData().GetVariation(), ref, alts);
+
+    string inserted_seq = ref_seq.substr(ref.length());
+
+    CVariation_ref::TData::TSet::TVariations& variation_list 
+        = feat.SetData().SetVariation().SetData().SetSet().SetVariations();
+    feat.SetData().SetVariation().SetData().SetSet().SetType(CVariation_ref::TData::TSet::eData_set_type_package);
+    variation_list.clear();
+
+    variation_list.push_back(s_CreateVariationRefFor(CVariation_inst::eType_identity, ref_seq));
+    variation_list.push_back(s_CreateVariationRefFor(CVariation_inst::eType_delins, inserted_seq));
+}
+
+void CVariationNormalization::AlterToDelIns(CSeq_feat& feat, CScope &scope)
+{
+    CVariationNormalizationDelIns::x_Shift(feat,scope);
+
+    if(!isFullyShifted(feat)) {
+        return;
+    }
+
+    // now convert this simple insertion or deletion into a delins.
+    if(CVariationUtilities::GetVariationType(feat.GetData().GetVariation()) == CVariation_inst::eType_del) {
+        CVariationNormalizationDelIns::ConvertExpandedDeletionToDelIns(feat, scope);
+    }
+
+    if(CVariationUtilities::GetVariationType(feat.GetData().GetVariation()) == CVariation_inst::eType_ins) {
+        CVariationNormalizationDelIns::ConvertExpandedInsertionToDelIns(feat, scope);
+    }
+
 }
 
 
@@ -1937,14 +2064,14 @@ void CVariationNormalization::AlterToVarLoc(CSeq_feat& feat, CScope& scope)
 bool CVariationNormalization::IsShiftable(const CSeq_loc &loc, 
     const string &allele, CScope &scope, CVariation_inst::TType type)
 {
-    return CVariationNormalizationInt::x_IsShiftable(loc,allele,scope,type);
+    return CVariationNormalizationDelIns::x_IsShiftable(loc,allele,scope,type);
 }
 
 void CVariationNormalization::NormalizeVariation(CVariation& var, 
     ETargetContext target_ctxt, CScope& scope)
 {
     switch(target_ctxt) {
-    case eDbSnp : NormalizeAmbiguousVars(var,scope); break;
+    case eDbSnp : AlterToDelIns(var,scope); break;
     case eHGVS : AlterToHGVSVar(var,scope); break;
     case eVCF : AlterToVCFVar(var,scope); break;
     case eVarLoc : AlterToVarLoc(var,scope); break;
@@ -1955,7 +2082,7 @@ void CVariationNormalization::NormalizeVariation(CVariation& var,
 void CVariationNormalization::NormalizeVariation(CSeq_annot& annot, ETargetContext target_ctxt, CScope& scope)
 {
     switch(target_ctxt) {
-    case eDbSnp : NormalizeAmbiguousVars(annot,scope); break;
+    case eDbSnp : AlterToDelIns(annot,scope); break;
     case eHGVS : AlterToHGVSVar(annot,scope); break;
     case eVCF : AlterToVCFVar(annot,scope); break;
     case eVarLoc : AlterToVarLoc(annot,scope); break;
@@ -1966,7 +2093,7 @@ void CVariationNormalization::NormalizeVariation(CSeq_annot& annot, ETargetConte
 void CVariationNormalization::NormalizeVariation(CSeq_feat& feat, ETargetContext target_ctxt, CScope& scope)
 {
     switch(target_ctxt) {
-    case eDbSnp : NormalizeAmbiguousVars(feat,scope); break;
+    case eDbSnp : AlterToDelIns(feat,scope); break;
     case eHGVS : AlterToHGVSVar(feat,scope); break;
     case eVCF : AlterToVCFVar(feat,scope); break;
     case eVarLoc : AlterToVarLoc(feat,scope); break;

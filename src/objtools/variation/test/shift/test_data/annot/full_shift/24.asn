@@ -7,14 +7,26 @@ Seq-annot ::= {
           variations {
             {
               data instance {
-                type ins,
+                type identity,
                 delta {
                   {
                     seq literal {
-                      length 2,
-                      seq-data iupacna "CC"
-                    },
-                    action ins-before
+                      length 1,
+                      seq-data iupacna "C"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              data instance {
+                type delins,
+                delta {
+                  {
+                    seq literal {
+                      length 3,
+                      seq-data iupacna "CCC"
+                    }
                   }
                 }
               }
@@ -22,9 +34,9 @@ Seq-annot ::= {
           }
         }
       },
-      location int {
-        from 842385,
-        to 842386,
+      location pnt {
+        point 842385,
+        strand unknown,
         id other {
           accession "NC_000001",
           version 10

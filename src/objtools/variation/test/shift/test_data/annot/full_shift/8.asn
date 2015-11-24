@@ -43,21 +43,22 @@ Seq-annot ::= {
                 delta {
                   {
                     seq literal {
-                      length 22,
-                      seq-data iupacna "GGAGGCGGGGACACCAGGGCCT"
+                      length 23,
+                      seq-data iupacna "GGAGGCGGGGACACCAGGGCCTG"
                     }
                   }
-                },
-                observation reference
+                }
               }
             },
             {
               data instance {
-                type del,
+                type delins,
                 delta {
                   {
-                    seq this NULL,
-                    action del-at
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "G"
+                    }
                   }
                 }
               }

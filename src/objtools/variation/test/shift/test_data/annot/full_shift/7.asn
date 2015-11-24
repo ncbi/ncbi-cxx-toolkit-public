@@ -21,27 +21,28 @@ Seq-annot ::= {
           variations {
             {
               data instance {
-                type del,
+                type identity,
                 delta {
                   {
-                    seq this NULL,
-                    action del-at
+                    seq literal {
+                      length 5,
+                      seq-data iupacna "CCCCC"
+                    }
                   }
                 }
               }
             },
             {
               data instance {
-                type identity,
+                type delins,
                 delta {
                   {
                     seq literal {
-                      length 1,
-                      seq-data iupacna "C"
+                      length 4,
+                      seq-data iupacna "CCCC"
                     }
                   }
-                },
-                observation reference
+                }
               }
             }
           }
