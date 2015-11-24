@@ -701,30 +701,22 @@ CSeq_id_Handle s_GetWGSMasterSeq_id(const CSeq_id_Handle& idh)
 }
 
 
-static inline
-int s_GetGoodDescrMask(void)
-{
-    int main_mask =
-        (1<<CSeqdesc::e_Pub) |
-        (1<<CSeqdesc::e_Comment) |
-        (1<<CSeqdesc::e_User);
-    int opt_mask =
-        (1<<CSeqdesc::e_Source) |
-        (1<<CSeqdesc::e_Molinfo) |
-        (1<<CSeqdesc::e_Create_date) |
-        (1<<CSeqdesc::e_Update_date);
-    return main_mask | opt_mask;
-}
+static const int kForceDescrMask = ((1<<CSeqdesc::e_Pub) |
+                                    (1<<CSeqdesc::e_Comment) |
+                                    (1<<CSeqdesc::e_User));
+
+static const int kOptionalDescrMask = ((1<<CSeqdesc::e_Source) |
+                                       (1<<CSeqdesc::e_Molinfo) |
+                                       (1<<CSeqdesc::e_Create_date) |
+                                       (1<<CSeqdesc::e_Update_date));
+
+static const int kGoodDescrMask = kForceDescrMask | kOptionalDescrMask;
 
 
 static
 bool s_IsGoodDescr(const CSeqdesc& desc)
 {
-    if ( desc.Which() == CSeqdesc::e_Pub ||
-         desc.Which() == CSeqdesc::e_Comment ) {
-        return true;
-    }
-    else if ( desc.Which() == CSeqdesc::e_User ) {
+    if ( desc.Which() == CSeqdesc::e_User ) {
         const CObject_id& type = desc.GetUser().GetType();
         if ( type.Which() == CObject_id::e_Str ) {
             const string& name = type.GetStr();
@@ -736,14 +728,34 @@ bool s_IsGoodDescr(const CSeqdesc& desc)
             }
         }
     }
+    else if ( (1 << desc.Which()) & kGoodDescrMask ) {
+        return true;
+    }
     return false;
 }
 
 
 static
-void s_AddMasterDescr(CBioseq_Info& seq, const CSeq_descr& descr)
+void s_AddMasterDescr(CBioseq_Info& seq, const CSeq_descr& src)
 {
-    seq.AddSeq_descr(descr);
+    int existing_mask = 0;
+    CSeq_descr::Tdata& dst = seq.x_SetDescr().Set();
+    ITERATE ( CSeq_descr::Tdata, it, dst ) {
+        const CSeqdesc& desc = **it;
+        existing_mask |= 1 << desc.Which();
+    }
+    ITERATE ( CSeq_descr::Tdata, it, src.Get() ) {
+        int mask = 1 << (*it)->Which();
+        if ( mask & kOptionalDescrMask ) {
+            if ( mask & existing_mask ) {
+                continue;
+            }
+        }
+        else if ( !(mask & kForceDescrMask) ) {
+            continue;
+        }
+        dst.push_back(*it);
+    }
 }
 
 
@@ -813,8 +825,7 @@ public:
     virtual void Update(CBioseq_Info& seq) {
         if ( HasMasterId(seq) ) {
             // register master descr chunk
-            seq.x_AddDescrChunkId(s_GetGoodDescrMask(),
-                                  kMasterWGS_ChunkId);
+            seq.x_AddDescrChunkId(kGoodDescrMask, kMasterWGS_ChunkId);
         }
     }
 };
