@@ -52,8 +52,6 @@ rem Always configure with additional Unicode configurations
 if _%SRV_NAME% == _ set SRV_NAME=%COMPUTERNAME%
 
 call msvcvars.bat > NUL
-set archw=Win32
-if _%arch%_ == _64_ set archw=x64
 
 
 rem --- Required parameters
@@ -62,6 +60,9 @@ set cmd=%~1%
 set solution=%~2
 set libdll=%~3
 set arch=%~4
+
+set archw=Win32
+if _%arch%_ == _64_ set archw=x64
 
 shift
 shift
