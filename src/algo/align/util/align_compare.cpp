@@ -41,7 +41,9 @@
 #include <objects/seqalign/Spliced_exon_chunk.hpp>
 #include <objects/seqalign/Prot_pos.hpp>
 #include <objects/seqalign/Product_pos.hpp>
+#include <objects/seqalign/Score.hpp>
 #include <objects/seq/seq_id_handle.hpp>
+#include <objects/general/Object_id.hpp>
 
 #include <objtools/alnmgr/pairwise_aln.hpp>
 #include <objtools/alnmgr/aln_converters.hpp>
@@ -342,10 +344,60 @@ void s_PopulateScores(const CSeq_align &align,
     }
 }
 
+static void s_PopulateScoreSet(const CSeq_align &align,
+                               const set<string> &score_set,
+                               bool score_set_as_blacklist,
+                               CAlignCompare::TIntegerScoreSet &integer_scores,
+                               CAlignCompare::TRealScoreSet &real_scores)
+{
+    if (score_set.empty() && !score_set_as_blacklist) {
+        /// Empty set of scores; nothing to do
+        return;
+    }
+    ITERATE (CSeq_align::TScore, score_it, align.GetScore()) {
+        if ((*score_it)->GetId().IsStr() &&
+                score_set_as_blacklist !=
+                score_set.count((*score_it)->GetId().GetStr()))
+        {
+            if ((*score_it)->GetValue().IsInt()) {
+                integer_scores[(*score_it)->GetId().GetStr()] =
+                    (*score_it)->GetValue().GetInt();
+            } else {
+                real_scores[(*score_it)->GetId().GetStr()] =
+                    (*score_it)->GetValue().GetReal();
+            }
+        }
+    }
+}
+
+static bool s_EquivalentScores(const CAlignCompare::TRealScoreSet &scores1,
+                               const CAlignCompare::TRealScoreSet &scores2,
+                               double real_score_tolerance)
+{
+    for (CAlignCompare::TRealScoreSet::const_iterator it1 = scores1.begin(),
+                                                      it2 = scores2.begin();
+         it1 != scores1.end() || it2 != scores2.end(); ++it1, ++it2)
+    {
+        if (it1 == scores1.end() || it2 == scores2.end()
+                                 || it1->first != it2->first)
+        {
+            /// The two don't have the same set of real-value scores
+            return false;
+        }
+        double allowed_diff = max(abs(it1->second), abs(it2->second))
+                            * real_score_tolerance;
+        if (abs(it1->second - it2->second) > allowed_diff) {
+            return false;
+        }
+    }
+    return true;
+}
+
 struct SComparison
 {
     SComparison(const CAlignCompare::SAlignment& first,
-                const CAlignCompare::SAlignment& second);
+                const CAlignCompare::SAlignment& second,
+                double real_score_tolerance);
 
     size_t spans_in_common;
     size_t spans_overlap;
@@ -361,7 +413,8 @@ struct SComparison
 // span ranges actually overlap, and determines by how much
 //
 SComparison::SComparison(const CAlignCompare::SAlignment& first,
-                         const CAlignCompare::SAlignment& second)
+                         const CAlignCompare::SAlignment& second,
+                         double real_score_tolerance)
 : spans_in_common(0)
 , spans_overlap(0)
 , spans_unique_first(0)
@@ -423,7 +476,10 @@ SComparison::SComparison(const CAlignCompare::SAlignment& first,
     is_equivalent = spans_in_common == first.spans.size() &&
                     spans_in_common == second.spans.size() &&
                     first.query_mismatches == second.query_mismatches &&
-                    first.subject_mismatches == second.subject_mismatches;
+                    first.subject_mismatches == second.subject_mismatches &&
+                    first.integer_scores == second.integer_scores &&
+                    s_EquivalentScores(first.real_scores, second.real_scores,
+                                       real_score_tolerance);
     for ( ;  first_it != first.spans.end();  ++first_it, ++spans_unique_first) {
         sum_a += first_it->first.GetLength() * first_it->first.GetLength();
     }
@@ -519,7 +575,9 @@ struct SComp_Less
 CAlignCompare::SAlignment::
 SAlignment(int s, const CRef<CSeq_align> &al, EMode mode, ERowComparison row,
                   const TDisambiguatingScoreList &score_list,
-                  const vector<string> &quality_score_list)
+                  const vector<string> &quality_score_list,
+                  const set<string> &score_set,
+                  bool score_set_as_blacklist)
 : source_set(s)
 , query_strand(eNa_strand_unknown)
 , subject_strand(eNa_strand_unknown)
@@ -540,6 +598,8 @@ SAlignment(int s, const CRef<CSeq_align> &al, EMode mode, ERowComparison row,
         s_PopulateScores(*align, score_list.first, scores.first);
         s_PopulateScores(*align, score_list.second, scores.second, false);
         s_PopulateScores(*align, quality_score_list, quality_scores);
+        s_PopulateScoreSet(*align, score_set, score_set_as_blacklist,
+                           integer_scores, real_scores);
         switch (mode) {
         case e_Full:
             s_GetAlignmentMismatches(*align, *this, row);
@@ -688,7 +748,8 @@ vector<const CAlignCompare::SAlignment *> CAlignCompare::NextGroup()
         ITERATE (TAlignPtrSet, set1_it, set1_aligns) {
             ITERATE (TAlignPtrSet, set2_it, set2_aligns) {
                 comparisons.push_back(TComp(TPtrPair(*set1_it, *set2_it),
-                                            SComparison(**set1_it, **set2_it)));
+                                            SComparison(**set1_it, **set2_it,
+                                                        m_RealScoreTolerance)));
             }
         }
         std::sort(comparisons.begin(), comparisons.end(), SComp_Less(m_Strict));

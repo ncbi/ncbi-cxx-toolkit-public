@@ -71,6 +71,9 @@ public:
 
     typedef pair< vector<string>, vector<string> > TDisambiguatingScoreList;
 
+    typedef map<string,int> TIntegerScoreSet;
+    typedef map<string,double> TRealScoreSet;
+
     //////////////////////////////////////////////////////////////////////////////
     //
     // struct defining all information needed to store a single alignment
@@ -91,6 +94,8 @@ public:
 
         TDisambiguatingScoreValues scores;
         vector<double> quality_scores;
+        TIntegerScoreSet integer_scores;
+        TRealScoreSet real_scores;
     
         CRef<CSeq_align> align;
         TAlignmentSpans  spans;
@@ -102,7 +107,9 @@ public:
 
         SAlignment(int s, const CRef<CSeq_align> &al, EMode mode, ERowComparison row,
                    const TDisambiguatingScoreList &score_list,
-                   const vector<string> &quality_score_list);
+                   const vector<string> &quality_score_list,
+                   const set<string> &score_set,
+                   bool score_set_as_blacklist);
 
         int CompareGroup(const SAlignment &o, bool strict_only) const;
     };
@@ -114,7 +121,10 @@ public:
                   bool ignore_not_present = false,
                   ERowComparison row = e_Both,
                   const TDisambiguatingScoreList &scores = TDisambiguatingScoreList(),
-                  const vector<string> &quality_scores = vector<string>())
+                  const vector<string> &quality_scores = vector<string>(),
+                  const set<string> &score_set = set<string>(),
+                  bool score_set_as_blacklist = false,
+                  double real_score_tolerance = 0)
     : m_Set1(set1)
     , m_Set2(set2)
     , m_Mode(mode)
@@ -123,6 +133,9 @@ public:
     , m_Row(row)
     , m_DisambiguitingScores(scores)
     , m_QualityScores(quality_scores)
+    , m_ScoreSet(score_set)
+    , m_ScoreSetAsBlacklist(score_set_as_blacklist)
+    , m_RealScoreTolerance(real_score_tolerance)
     , m_CountSet1(0)
     , m_CountSet2(0)
     , m_CountEquivSet1(0)
@@ -164,6 +177,9 @@ private:
     ERowComparison m_Row;
     TDisambiguatingScoreList m_DisambiguitingScores;
     vector<string> m_QualityScores;
+    set<string> m_ScoreSet;
+    bool m_ScoreSetAsBlacklist;
+    double m_RealScoreTolerance;
 
     size_t m_CountSet1;
     size_t m_CountSet2;
@@ -191,7 +207,8 @@ private:
     {
         ++(set == 1 ? m_CountSet1 : m_CountSet2);
         return new SAlignment(set, (set == 1 ? m_Set1 : m_Set2).GetNext(),
-                              m_Mode, m_Row, m_DisambiguitingScores, m_QualityScores);
+                              m_Mode, m_Row, m_DisambiguitingScores, m_QualityScores,
+                              m_ScoreSet, m_ScoreSetAsBlacklist);
     }
 
     void x_GetCurrentGroup(int set);
