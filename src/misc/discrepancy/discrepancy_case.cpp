@@ -547,19 +547,24 @@ DISCREPANCY_CASE(POSSIBLE_LINKER, CSeq_inst, eAll, "Detect linker sequence after
     string seq_data(kEmptyStr);
     seq_vec.GetSeqData(bsh.GetInst_Length()-30, bsh.GetInst_Length(), seq_data);
 
-    size_t polya_tail_cnt = 0;
+    size_t tail_len = 0;
+    bool found_linker = false;
+
     ITERATE(string, base_it , seq_data) {
-        if (polya_tail_cnt > 20) {
+        char base = toupper(*base_it);
+
+        if (base == 'A') {
+            tail_len++;
+        } else if (tail_len > 20) {
+            found_linker = true;
             break;
-        }
-        switch(toupper(*base_it)) {
-        case 'A': ++polya_tail_cnt; break;
-        default: polya_tail_cnt = 0; break;
+        } else {
+            tail_len = 0;
         }
     }
 
-    if (polya_tail_cnt > 20) {
-        m_Objs["[n] sequence[s] may have linker sequence after the poly-A tail"].
+    if (found_linker) {
+        m_Objs["[n] bioseq[s] may have linker sequence after the poly-A tail"].
           Add(*new CDiscrepancyObject(context.GetCurrentBioseq(),
                                       context.GetScope(),
                                       context.GetFile(),

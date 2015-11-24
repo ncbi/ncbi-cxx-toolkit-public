@@ -946,6 +946,24 @@ BOOST_AUTO_TEST_CASE(POSSIBLE_LINKER)
      }}
 
     {{
+        //4. Test passes on rna polyA only - single
+        CRef<CSeq_entry> entry = ReadEntryFromFile("test_data/possible_linker_single_only_polyA.asn");
+        CScope scope(*CObjectManager::GetInstance());
+        scope.AddDefaults();
+        CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+
+        CRef<CDiscrepancySet> Set = CDiscrepancySet::New(scope);
+        Set->AddTest("POSSIBLE_LINKER");
+        Set->Parse(seh);
+        Set->Summarize();
+        const vector<CRef<CDiscrepancyCase> >& tst = Set->GetTests();
+        BOOST_REQUIRE_EQUAL(tst.size(), 1);
+        TReportItemList rep = tst[0]->GetReport();
+        BOOST_CHECK_EQUAL(rep.size(), 0); // No report expected
+     }}
+
+
+    {{
         //4. Test fails on rna poly - set
         CRef<CSeq_entry> entry = ReadEntryFromFile("test_data/possible_linker_set.asn");
         CScope scope(*CObjectManager::GetInstance());

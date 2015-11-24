@@ -24,7 +24,7 @@ Seq-entry ::= set {
           label
             str "day" ,
           data
-            int 22 } ,
+            int 24 } ,
         {
           label
             str "year" ,
@@ -34,7 +34,7 @@ Seq-entry ::= set {
       std {
         year 2015 ,
         month 11 ,
-        day 22 } ,
+        day 24 } ,
     pub {
       pub {
         gen {
@@ -52,22 +52,22 @@ Seq-entry ::= set {
               std {
                 affil "NIH" ,
                 div "NCBI" } } ,
-          title "Testing rRNA poly A tail - set" } } } } ,
+          title "Testing rRNA polyA linker seqs - set" } } } } ,
   seq-set {
     seq {
       id {
         local
           str "Seq1" } ,
       descr {
+        title "Acorus americanus" ,
         source {
           genome genomic ,
           org {
-            taxname "Acorus americanus" ,
+            taxname "Acanthamoeba castellanii" ,
             orgname {
-              lineage "Eukaryota; Viridiplantae; Streptophyta; Embryophyta;
- Tracheophyta; Spermatophyta; Magnoliophyta; Liliopsida; Acoraceae; Acorus" ,
+              lineage "Eukaryota; Acanthamoebidae; Acanthamoeba" ,
               gcode 1 ,
-              div "PLN" } } } ,
+              div "INV" } } } ,
         molinfo {
           biomol mRNA } } ,
       inst {
@@ -94,15 +94,50 @@ Seq-entry ::= set {
         local
           str "Seq2" } ,
       descr {
+        title "Acorus americanus" ,
         source {
           genome genomic ,
           org {
-            taxname "Acorus americanus" ,
+            taxname "Acanthamoeba castellanii" ,
             orgname {
-              lineage "Eukaryota; Viridiplantae; Streptophyta; Embryophyta;
- Tracheophyta; Spermatophyta; Magnoliophyta; Liliopsida; Acoraceae; Acorus" ,
+              lineage "Eukaryota; Acanthamoebidae; Acanthamoeba" ,
               gcode 1 ,
-              div "PLN" } } } ,
+              div "INV" } } } ,
+        molinfo {
+          biomol mRNA } } ,
+      inst {
+        repr raw ,
+        mol rna ,
+        length 1068 ,
+        seq-data
+          ncbi4na '48441182828284882881488284882812882822122114822281121242444
+844244482242242242242248824114128241442824142122828828428242224422228228182228
+242424128482822422412412218114224228422821824284422121211241822484421144111421
+241441248121481411884841182422441111121828488442442482184118114244222252412412
+212822882422822424222114242214818442431442441444818442224214214448812824411414
+244142142424244244484422412212812142424244822112214121282414411242414112142222
+182182212282114114282112112844182114148488884482214884818421242224448412842488
+288418288428842444114441448418884181114844418111422114488442812818481444488418
+188428411442824181111418842184128242812118448412121418211211141144111144882148
+882228421244288188848128418842818414428248884418411818881818414418428224888418
+181848142848214888428881212818821844821128411421242428141211422884421118484828
+421881288248228441442188888188444121184228418422118482188182111144288248112142
+881224188181842822121412212181421811114111488481121881484428212284281282218224
+8881811181118412112488412888888111111111111111111111111111111111111111148'H } } ,
+    seq {
+      id {
+        local
+          str "Seq3" } ,
+      descr {
+        title "Acorus americanus" ,
+        source {
+          genome genomic ,
+          org {
+            taxname "Acanthamoeba castellanii" ,
+            orgname {
+              lineage "Eukaryota; Acanthamoebidae; Acanthamoeba" ,
+              gcode 1 ,
+              div "INV" } } } ,
         molinfo {
           biomol mRNA } } ,
       inst {
@@ -118,17 +153,17 @@ Seq-entry ::= set {
     seq {
       id {
         local
-          str "Seq3" } ,
+          str "Seq4" } ,
       descr {
+        title "Acorus americanus" ,
         source {
           genome genomic ,
           org {
-            taxname "Acorus americanus" ,
+            taxname "Acanthamoeba castellanii" ,
             orgname {
-              lineage "Eukaryota; Viridiplantae; Streptophyta; Embryophyta;
- Tracheophyta; Spermatophyta; Magnoliophyta; Liliopsida; Acoraceae; Acorus" ,
+              lineage "Eukaryota; Acanthamoebidae; Acanthamoeba" ,
               gcode 1 ,
-              div "PLN" } } } ,
+              div "INV" } } } ,
         molinfo {
           biomol mRNA } } ,
       inst {
@@ -136,4 +171,62 @@ Seq-entry ::= set {
         mol rna ,
         length 21 ,
         seq-data
-          ncbi2na '000000000000'H } } } }
+          ncbi2na '000000000000'H } } ,
+    seq {
+      id {
+        local
+          str "Seq5" } ,
+      descr {
+        title "Acorus americanus" ,
+        source {
+          genome genomic ,
+          org {
+            taxname "Acanthamoeba castellanii" ,
+            orgname {
+              lineage "Eukaryota; Acanthamoebidae; Acanthamoeba" ,
+              gcode 1 ,
+              div "INV" } } } ,
+        molinfo {
+          biomol mRNA } } ,
+      inst {
+        repr raw ,
+        mol rna ,
+        length 23 ,
+        seq-data
+          ncbi2na '000000000010'H } } ,
+    seq {
+      id {
+        local
+          str "Seq6" } ,
+      descr {
+        title "Acorus americanus" ,
+        source {
+          genome genomic ,
+          org {
+            taxname "Acanthamoeba castellanii" ,
+            orgname {
+              lineage "Eukaryota; Acanthamoebidae; Acanthamoeba" ,
+              gcode 1 ,
+              div "INV" } } } ,
+        molinfo {
+          biomol mRNA } } ,
+      inst {
+        repr raw ,
+        mol rna ,
+        length 1074 ,
+        seq-data
+          ncbi4na '48441182828284882881488284882812882822122114822281121242444
+844244482242242242242248824114128241442824142122828828428242224422228228182228
+242424128482822422412412218114224228422821824284422121211241822484421144111421
+241441248121481411884841182422441111121828488442442482184118114244222252412412
+212822882422822424222114242214818442431442441444818442224214214448812824411414
+244142142424244244484422412212812142424244822112214121282414411242414112142222
+182182212282114114282112112844182114148488884482214884818421242224448412842488
+288418288428842444114441448418884181114844418111422114488442812818481444488418
+188428411442824181111418842184128242812118448412121418211211141144111144882148
+882228421244288188848128418842818414428248884418411818881818414418428224888418
+181848142848214888428881212818821844821128411421242428141211422884421118484828
+421881288248228441442188888188444121184228418422118482188182111144288248112142
+881224188181842822121412212181421811114111488481121881484428212284281282218224
+888181118111841211248841288888811111111111111111111111111111111111111114881211
+2'H } } } }
