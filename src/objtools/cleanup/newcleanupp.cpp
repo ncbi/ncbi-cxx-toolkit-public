@@ -7028,10 +7028,6 @@ void CNewCleanup_imp::x_CleanupECNumber( string &ec_num )
             bool do_erase = false;
             if (isspace(*s1)) {
                 do_erase = true;
-            } else if (*s1 == '.') {
-                if (*s2 != 'n' && *s2 != '-' && !isdigit(*s2)) {
-                    do_erase = true;
-                }
             } else if (*s1 == '-') {
                 if (*s2 != '.') {
                     do_erase = true;
