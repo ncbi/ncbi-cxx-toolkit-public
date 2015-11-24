@@ -50,17 +50,17 @@ enum ENetScheduleStatTopic {
 /// Return unquoted and unescaped version of 'str' if it
 /// starts with a quote. Otherwise, return 'str' itself.
 ///
-string g_UnquoteIfQuoted(const CTempString& str);
+string s_UnquoteIfQuoted(const CTempString& str);
 
 /// Return a JSON object that contains the requested infromation.
 /// The structure of the object depends on the topic.
 ///
-CJsonNode g_GenericStatToJson(CNetServer server,
+CJsonNode s_GenericStatToJson(CNetServer server,
         ENetScheduleStatTopic topic, bool verbose);
 
 /// Convert 'server_info' to a JSON object.
 ///
-CJsonNode g_ServerInfoToJson(CNetServerInfo server_info,
+CJsonNode s_ServerInfoToJson(CNetServerInfo server_info,
         bool server_version_key);
 
 /// Detect older format of the worker node info line that contained
@@ -68,13 +68,13 @@ CJsonNode g_ServerInfoToJson(CNetServerInfo server_info,
 /// @return false if 'stat_info' already has the new format
 ///         of the executable name; true if 'stat_info' was fixed.
 ///
-bool g_FixMisplacedPID(CJsonNode& stat_info, CTempString& executable_path,
+bool s_FixMisplacedPID(CJsonNode& stat_info, CTempString& executable_path,
         const char* pid_key);
 
 /// Return a JSON object that contains status information reported
 /// by the specified worker node.
 ///
-CJsonNode g_WorkerNodeInfoToJson(CNetServer worker_node);
+CJsonNode s_WorkerNodeInfoToJson(CNetServer worker_node);
 
 void CNetScheduleAdmin::GetWorkerNodes(list<SWorkerNodeInfo>& worker_nodes)
 {
@@ -85,7 +85,7 @@ void CNetScheduleAdmin::GetWorkerNodes(list<SWorkerNodeInfo>& worker_nodes)
     for (CNetServiceIterator iter = m_Impl->m_API->m_Service.Iterate(
             CNetService::eIncludePenalized); iter; ++iter) {
 
-        CJsonNode client_info_array = g_GenericStatToJson(*iter,
+        CJsonNode client_info_array = s_GenericStatToJson(*iter,
                 eNetScheduleStatClients, /*verbose*/ false);
 
         for (CJsonIterator client_info_iter = client_info_array.Iterate();
@@ -126,7 +126,7 @@ CJsonNode CNetScheduleAdmin::GetWorkerNodeInfo()
                 m_Impl->m_API->m_Service->GetClientName(),
                 kEmptyStr);
 
-        result.SetByKey(wn_info->session, g_WorkerNodeInfoToJson(
+        result.SetByKey(wn_info->session, s_WorkerNodeInfoToJson(
                 wn_api.GetService().Iterate().GetServer()));
     }
 
@@ -148,7 +148,7 @@ struct {
     {"STAT AFFINITIES", "AFFINITY: ", "affinity_token"}
 };
 
-string g_UnquoteIfQuoted(const CTempString& str)
+string s_UnquoteIfQuoted(const CTempString& str)
 {
     switch (str[0]) {
     case '"':
@@ -181,7 +181,7 @@ static void NormalizeStatKeyName(CTempString& key)
         *begin = isalnum(*begin) ? tolower(*begin) : '_';
 }
 
-bool g_FixMisplacedPID(CJsonNode& stat_info, CTempString& executable_path,
+bool s_FixMisplacedPID(CJsonNode& stat_info, CTempString& executable_path,
         const char* pid_key)
 {
     SIZE_TYPE misplaced_pid = NStr::Find(executable_path, "; PID: ");
@@ -196,7 +196,7 @@ bool g_FixMisplacedPID(CJsonNode& stat_info, CTempString& executable_path,
     return true;
 }
 
-CJsonNode g_GenericStatToJson(CNetServer server,
+CJsonNode s_GenericStatToJson(CNetServer server,
         ENetScheduleStatTopic topic, bool verbose)
 {
     string stat_cmd(s_StatTopics[topic].command);
@@ -221,12 +221,12 @@ CJsonNode g_GenericStatToJson(CNetServer server,
             if (entity_info)
                 entities.Append(entity_info);
             entity_info = CJsonNode::NewObjectNode();
-            entity_info.SetString(entity_name, g_UnquoteIfQuoted(
+            entity_info.SetString(entity_name, s_UnquoteIfQuoted(
                     CTempString(line.data() + prefix.length(),
                     line.length() - prefix.length())));
         } else if (entity_info && NStr::StartsWith(line, "  ")) {
             if (NStr::StartsWith(line, "    ") && array_value) {
-                array_value.AppendString(g_UnquoteIfQuoted(
+                array_value.AppendString(s_UnquoteIfQuoted(
                         NStr::TruncateSpaces(line, NStr::eTrunc_Begin)));
             } else {
                 if (array_value)
@@ -250,7 +250,7 @@ CJsonNode g_GenericStatToJson(CNetServer server,
     return entities;
 }
 
-CJsonNode g_ServerInfoToJson(CNetServerInfo server_info,
+CJsonNode s_ServerInfoToJson(CNetServerInfo server_info,
         bool server_version_key)
 {
     CJsonNode server_info_node(CJsonNode::NewObjectNode());
@@ -332,7 +332,7 @@ inline static CNetServerInfo s_ServerInfoFromString(const string& server_info)
     return new SNetServerInfoImpl(server_info);
 }
 
-CJsonNode g_WorkerNodeInfoToJson(CNetServer worker_node)
+CJsonNode s_WorkerNodeInfoToJson(CNetServer worker_node)
 {
     CNetServerMultilineCmdOutput output(
             worker_node.ExecWithRetry("STAT", true));
@@ -396,7 +396,7 @@ CJsonNode g_WorkerNodeInfoToJson(CNetServer worker_node)
             else if (key == "node_started_at")
                 key = "started";
             else if (key == "executable_path")
-                g_FixMisplacedPID(wn_info, value, "pid");
+                s_FixMisplacedPID(wn_info, value, "pid");
             else if (key == "maximum_job_threads") {
                 int maximum_job_threads = NStr::StringToInt(value,
                             NStr::fConvErr_NoThrow |
@@ -417,7 +417,7 @@ CJsonNode g_WorkerNodeInfoToJson(CNetServer worker_node)
             }
             wn_info.SetByKey(key, CJsonNode::GuessType(value));
         } else if (wn_info.GetSize() == 0)
-            wn_info = g_ServerInfoToJson(s_ServerInfoFromString(line), false);
+            wn_info = s_ServerInfoToJson(s_ServerInfoFromString(line), false);
         else if (NStr::Find(line, TEMP_STRING_CTOR("suspended")) != NPOS)
             suspended = true;
         else if (NStr::Find(line, TEMP_STRING_CTOR("shutting down")) != NPOS)
