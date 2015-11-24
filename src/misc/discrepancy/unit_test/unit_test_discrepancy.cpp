@@ -889,3 +889,78 @@ BOOST_AUTO_TEST_CASE(LONG_NO_ANNOTATION)
     }}
 }
 
+
+BOOST_AUTO_TEST_CASE(POSSIBLE_LINKER)
+{
+    {{
+        //1. Test should Pass for non-rna seq
+        CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+        CScope scope(*CObjectManager::GetInstance());
+        scope.AddDefaults();
+        CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+
+        CRef<CDiscrepancySet> Set = CDiscrepancySet::New(scope);
+        Set->AddTest("POSSIBLE_LINKER");
+        Set->Parse(seh);
+        Set->Summarize();
+        const vector<CRef<CDiscrepancyCase> >& tst = Set->GetTests();
+        BOOST_REQUIRE_EQUAL(tst.size(), 1);
+        TReportItemList rep = tst[0]->GetReport();
+        BOOST_CHECK_EQUAL(rep.size(), 0);  // No report expected
+     }}
+
+    {{
+        //2. Test should Pass rna seq but no polyA tail
+        CRef<CSeq_entry> entry = ReadEntryFromFile("test_data/possible_linker_not_found.asn");
+        CScope scope(*CObjectManager::GetInstance());
+        scope.AddDefaults();
+        CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+
+        CRef<CDiscrepancySet> Set = CDiscrepancySet::New(scope);
+        Set->AddTest("POSSIBLE_LINKER");
+        Set->Parse(seh);
+        Set->Summarize();
+        const vector<CRef<CDiscrepancyCase> >& tst = Set->GetTests();
+        BOOST_REQUIRE_EQUAL(tst.size(), 1);
+        TReportItemList rep = tst[0]->GetReport();
+        BOOST_CHECK_EQUAL(rep.size(), 0);  // No report expected
+     }}
+
+    {{
+        //3. Test fails on rna poly - single
+        CRef<CSeq_entry> entry = ReadEntryFromFile("test_data/possible_linker_single.asn");
+        CScope scope(*CObjectManager::GetInstance());
+        scope.AddDefaults();
+        CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+
+        CRef<CDiscrepancySet> Set = CDiscrepancySet::New(scope);
+        Set->AddTest("POSSIBLE_LINKER");
+        Set->Parse(seh);
+        Set->Summarize();
+        const vector<CRef<CDiscrepancyCase> >& tst = Set->GetTests();
+        BOOST_REQUIRE_EQUAL(tst.size(), 1);
+        TReportItemList rep = tst[0]->GetReport();
+        BOOST_CHECK_EQUAL(rep.size(), 1);
+        BOOST_CHECK_EQUAL(rep[0]->GetMsg(),
+                          "1 sequence may have linker sequence after the poly-A tail");
+     }}
+
+    {{
+        //4. Test fails on rna poly - set
+        CRef<CSeq_entry> entry = ReadEntryFromFile("test_data/possible_linker_set.asn");
+        CScope scope(*CObjectManager::GetInstance());
+        scope.AddDefaults();
+        CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+
+        CRef<CDiscrepancySet> Set = CDiscrepancySet::New(scope);
+        Set->AddTest("POSSIBLE_LINKER");
+        Set->Parse(seh);
+        Set->Summarize();
+        const vector<CRef<CDiscrepancyCase> >& tst = Set->GetTests();
+        BOOST_REQUIRE_EQUAL(tst.size(), 1);
+        TReportItemList rep = tst[0]->GetReport();
+        BOOST_CHECK_EQUAL(rep.size(), 1);
+        BOOST_CHECK_EQUAL(rep[0]->GetMsg(),
+                          "2 sequences may have linker sequence after the poly-A tail");
+     }}
+}

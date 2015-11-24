@@ -1,0 +1,373 @@
+Seq-entry ::= set {
+  level 1 ,
+  class nuc-prot ,
+  descr {
+    source {
+      genome genomic ,
+      org {
+        taxname "Zea mays" ,
+        db {
+          {
+            db "taxon" ,
+            tag
+              id 4577 } } ,
+        orgname {
+          name
+            binomial {
+              genus "Zea" ,
+              species "mays" } ,
+          lineage "Eukaryota; Viridiplantae; Streptophyta; Embryophyta;
+ Tracheophyta; Spermatophyta; Magnoliophyta; Liliopsida; Poales; Poaceae;
+ PACMAD clade; Panicoideae; Andropogonodae; Andropogoneae; Tripsacinae; Zea" ,
+          gcode 1 ,
+          mgcode 1 ,
+          div "PLN" ,
+          pgcode 11 } } ,
+      subtype {
+        {
+          subtype chromosome ,
+          name "1" } ,
+        {
+          subtype map ,
+          name "1" } } } ,
+    pub {
+      pub {
+        pmid 18937034 ,
+        article {
+          title {
+            name "Insights into corn genes derived from large-scale cDNA
+ sequencing." } ,
+          authors {
+            names
+              std {
+                {
+                  name
+                    ml "Alexandrov NN" ,
+                  affil
+                    str "Ceres, Inc., 1535 Rancho Conejo Blvd, Thousand Oaks,
+ CA 91320, USA. nalexandrov@ceres-inc.com" } ,
+                {
+                  name
+                    ml "Brover VV" } ,
+                {
+                  name
+                    ml "Freidin S" } ,
+                {
+                  name
+                    ml "Troukhan ME" } ,
+                {
+                  name
+                    ml "Tatarinova TV" } ,
+                {
+                  name
+                    ml "Zhang H" } ,
+                {
+                  name
+                    ml "Swaller TJ" } ,
+                {
+                  name
+                    ml "Lu YP" } ,
+                {
+                  name
+                    ml "Bouck J" } ,
+                {
+                  name
+                    ml "Flavell RB" } ,
+                {
+                  name
+                    ml "Feldmann KA" } } } ,
+          from
+            journal {
+              title {
+                iso-jta "Plant Mol. Biol." ,
+                ml-jta "Plant Mol Biol" ,
+                issn "0167-4412" ,
+                name "Plant molecular biology" } ,
+              imp {
+                date
+                  std {
+                    year 2009 ,
+                    month 1 } ,
+                volume "69" ,
+                issue "1-2" ,
+                pages "179-194" ,
+                language "eng" ,
+                pubstatus ppublish ,
+                history {
+                  {
+                    pubstatus received ,
+                    date
+                      std {
+                        year 2008 ,
+                        month 8 ,
+                        day 15 } } ,
+                  {
+                    pubstatus accepted ,
+                    date
+                      std {
+                        year 2008 ,
+                        month 10 ,
+                        day 1 } } ,
+                  {
+                    pubstatus aheadofprint ,
+                    date
+                      std {
+                        year 2008 ,
+                        month 10 ,
+                        day 21 } } ,
+                  {
+                    pubstatus pubmed ,
+                    date
+                      std {
+                        year 2008 ,
+                        month 10 ,
+                        day 22 ,
+                        hour 9 ,
+                        minute 0 } } ,
+                  {
+                    pubstatus medline ,
+                    date
+                      std {
+                        year 2009 ,
+                        month 4 ,
+                        day 15 ,
+                        hour 9 ,
+                        minute 0 } } ,
+                  {
+                    pubstatus other ,
+                    date
+                      std {
+                        year 2008 ,
+                        month 10 ,
+                        day 22 ,
+                        hour 9 ,
+                        minute 0 } } } } } ,
+          ids {
+            doi "10.1007/s11103-008-9415-4" ,
+            pubmed 18937034 ,
+            other {
+              db "pmc" ,
+              tag
+                str "PMC2709227" } ,
+            other {
+              db "ELocationID doi" ,
+              tag
+                str "10.1007/s11103-008-9415-4" } } } } } ,
+    user {
+      type
+        str "RefGeneTracking" ,
+      data {
+        {
+          label
+            str "Status" ,
+          data
+            str "Provisional" } ,
+        {
+          label
+            str "Assembly" ,
+          data
+            fields {
+              {
+                label
+                  id 0 ,
+                data
+                  fields {
+                    {
+                      label
+                        str "accession" ,
+                      data
+                        str "EU965236.1" } ,
+                    {
+                      label
+                        str "gi" ,
+                      data
+                        int 195635771 } } } } } } } ,
+    user {
+      type
+        str "StructuredComment" ,
+      data {
+        {
+          label
+            str "StructuredCommentPrefix" ,
+          data
+            str "##Evidence-Data-START##" } ,
+        {
+          label
+            str "Transcript exon combination" ,
+          data
+            str "EU965236.1 [ECO:0000332]" } ,
+        {
+          label
+            str "StructuredCommentSuffix" ,
+          data
+            str "##Evidence-Data-END##" } } } ,
+    update-date
+      std {
+        year 2015 ,
+        month 8 ,
+        day 4 } } ,
+  seq-set {
+    seq {
+      id {
+        other {
+          accession "NM_001156490" ,
+          version 2 } ,
+        gi 672890440 } ,
+      descr {
+        title "Zea mays mRNA (LOC100283589), mRNA" ,
+        molinfo {
+          biomol mRNA } ,
+        create-date
+          std {
+            year 2009 ,
+            month 4 ,
+            day 10 } } ,
+      inst {
+        repr raw ,
+        mol rna ,
+        length 1532 ,
+        seq-data
+          ncbi4na '48441182828284882881488284882812882822122114822281121242444
+844244482242242242242248824114128241442824142122828828428242224422228228182228
+242424128482822422412412218114224228422821824284422121211241822484421144111421
+241441248121481411884841182422441111121828488442442482184118114244222252412412
+212822882422822424222114242214818442431442441444818442224214214448812824411414
+244142142424244244484422412212812142424244822112214121282414411242414112142222
+182182212282114114282112112844182114148488884482214884818421242224448412842488
+288418288428842444114441448418884181114844418111422114488442812818481444488418
+188428411442824181111418842184128242812118448412121418211211141144111144882148
+882228421244288188848128418842818414428248884418411818881818414418428224888418
+181848142848214888428881212818821844821128411421242428141211422884421118484828
+421881288248228441442188888188444121184228418422118482188182111144288241411828
+411444884411888444112148488812842188142888442118414812428411114111882228421822
+141224888448182114812114888212881414418428488418842221411844488488221882218282
+882111881884421414414818418282414284488284184114112882218411888481212414812884
+211111221414882422414284184244144284448422282448418441144214412211148121284821
+211418414844414488822818282818282424888482284244114241442211224228122211241141
+422142112421112141444111184888282122414448412182414488282448481811421841481818
+228441144428842811214288122418818184282212141221218142181111411148848112188148
+442821228428128221822488818111811184121124884128888881111111111111111'H ,
+        hist {
+          assembly {
+            {
+              type partial ,
+              dim 2 ,
+              segs
+                denseg {
+                  dim 2 ,
+                  numseg 1 ,
+                  ids {
+                    gi 672890440 ,
+                    gi 195635770 } ,
+                  starts {
+                    0 ,
+                    1 } ,
+                  lens {
+                    1532 } ,
+                  strands {
+                    plus ,
+                    plus } } } } ,
+          replaces {
+            date
+              std {
+                year 2014 ,
+                month 8 ,
+                day 16 } ,
+            ids {
+              gi 226507079 } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  gene {
+                    locus "LOC100283589" ,
+                    desc "mRNA" } ,
+                location
+                  int {
+                    from 0 ,
+                    to 1531 ,
+                    strand plus ,
+                    id
+                      gi 672890440 } ,
+                dbxref {
+                  {
+                    db "GeneID" ,
+                    tag
+                      id 100283589 } } } ,
+              {
+                data
+                  imp {
+                    key "misc_feature" } ,
+                comment "upstream in-frame stop codon" ,
+                location
+                  int {
+                    from 236 ,
+                    to 238 ,
+                    strand plus ,
+                    id
+                      gi 672890440 } } } } } } ,
+    seq {
+      id {
+        other {
+          accession "NP_001149962" ,
+          version 1 } ,
+        gi 226507080 } ,
+      descr {
+        title "mRNA [Zea mays]" ,
+        molinfo {
+          biomol peptide } ,
+        create-date
+          std {
+            year 2009 ,
+            month 4 ,
+            day 10 } } ,
+      inst {
+        repr raw ,
+        mol aa ,
+        length 367 ,
+        seq-data
+          ncbieaa "MNKRPXDDHSFASAPKRQYGXGGGYGPQQGYSEERSSARRVADHYSARSNQTLEERENS
+PIIHLKKLNNWIKSVLVQLYARPGDCVLDLACGKGGDLIKWDKAKVGYYVGVDIAEGSIKDCMTRYNGDTDQQRRKRF
+SFPARLICTDCYEARLDEYLYEDAPFDICSCQFALHYSWSTEARARQALANVSALLRPGGIFIGTMPDANVIIKRLRE
+SEGLEFGNSVYCISFGNEYAEKKFPASRPFGIKYKFHLEDAVDCPEWVVPFHLFKLLAEEYDLELVLMKNFHEFVHEY
+LQKPEFAELMRRLGALGDGRQDQSTLSQDEWEVSYLYLAFVLRKRGQPPTQRRASNANRGKMFLTEGDIEVLGV" } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  prot {
+                    name {
+                      "mRNA" ,
+                      "GRMZM2G042398" ,
+                      "hypothetical protein" } } ,
+                location
+                  int {
+                    from 0 ,
+                    to 366 ,
+                    id
+                      gi 226507080 } } } } } } } ,
+  annot {
+    {
+      data
+        ftable {
+          {
+            data
+              cdregion {
+                frame one ,
+                code {
+                  id 1 } } ,
+            product
+              whole
+                gi 226507080 ,
+            location
+              int {
+                from 269 ,
+                to 1372 ,
+                strand plus ,
+                id
+                  gi 672890440 } } } } } }
+

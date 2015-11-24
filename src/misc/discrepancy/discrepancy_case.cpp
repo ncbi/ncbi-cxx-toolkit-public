@@ -34,11 +34,14 @@
 #include <objects/seqfeat/SeqFeatXref.hpp>
 #include <objects/macro/String_constraint.hpp>
 #include <objects/misc/sequence_util_macros.hpp>
+#include <objects/seq/MolInfo.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/util/feature.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/bioseq_handle.hpp>
+#include <objmgr/seqdesc_ci.hpp>
 #include <sstream>
 
 BEGIN_NCBI_SCOPE;
@@ -508,6 +511,67 @@ DISCREPANCY_SUMMARIZE(LONG_NO_ANNOTATION)
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
+
+DISCREPANCY_CASE(POSSIBLE_LINKER, CSeq_inst, eAll, "Detect linker sequence after poly-A tail")
+{
+    if (obj.IsAa() ) {
+        return;
+    }
+
+    CBioseq_Handle bsh = context.GetScope().GetBioseqHandle(*context.GetCurrentBioseq());
+    if ( !bsh.IsSetInst_Mol()  ||
+         bsh.GetInst_Mol() != CSeq_inst::eMol_rna ) {
+        return;
+    }
+
+    CSeqdesc_CI desc_it (bsh, CSeqdesc::e_Molinfo);
+    if ( !desc_it ) {
+        return;
+    }
+
+    if ( ! (desc_it->GetMolinfo().IsSetBiomol())  || 
+         (desc_it->GetMolinfo().GetBiomol() != CMolInfo::eBiomol_mRNA) ) {
+        return;
+    }
+
+    if (bsh.IsSetInst_Length() && bsh.GetInst_Length() < 30) {
+        // not long enough to have poly-a tail
+        return;
+    }
+        
+    CSeqVector seq_vec(*context.GetCurrentBioseq(), &context.GetScope(),
+                       CBioseq_Handle::eCoding_Iupac,
+                       eNa_strand_plus
+                       );
+
+    string seq_data(kEmptyStr);
+    seq_vec.GetSeqData(bsh.GetInst_Length()-30, bsh.GetInst_Length(), seq_data);
+
+    size_t polya_tail_cnt = 0;
+    ITERATE(string, base_it , seq_data) {
+        if (polya_tail_cnt > 20) {
+            break;
+        }
+        switch(toupper(*base_it)) {
+        case 'A': ++polya_tail_cnt; break;
+        default: polya_tail_cnt = 0; break;
+        }
+    }
+
+    if (polya_tail_cnt > 20) {
+        m_Objs["[n] sequence[s] may have linker sequence after the poly-A tail"].
+          Add(*new CDiscrepancyObject(context.GetCurrentBioseq(),
+                                      context.GetScope(),
+                                      context.GetFile(),
+                                      context.GetKeepRef()));
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(POSSIBLE_LINKER)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

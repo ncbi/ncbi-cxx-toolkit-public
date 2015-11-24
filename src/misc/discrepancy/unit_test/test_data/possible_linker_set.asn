@@ -1,0 +1,139 @@
+Seq-entry ::= set {
+  class phy-set ,
+  descr {
+    user {
+      type
+        str "NcbiCleanup" ,
+      data {
+        {
+          label
+            str "method" ,
+          data
+            str "SequinCleanup" } ,
+        {
+          label
+            str "version" ,
+          data
+            int 8 } ,
+        {
+          label
+            str "month" ,
+          data
+            int 11 } ,
+        {
+          label
+            str "day" ,
+          data
+            int 22 } ,
+        {
+          label
+            str "year" ,
+          data
+            int 2015 } } } ,
+    create-date
+      std {
+        year 2015 ,
+        month 11 ,
+        day 22 } ,
+    pub {
+      pub {
+        gen {
+          cit "Unpublished" ,
+          authors {
+            names
+              std {
+                {
+                  name
+                    name {
+                      last "Gobu" ,
+                      first "Vasuki" ,
+                      initials "V." } } } ,
+            affil
+              std {
+                affil "NIH" ,
+                div "NCBI" } } ,
+          title "Testing rRNA poly A tail - set" } } } } ,
+  seq-set {
+    seq {
+      id {
+        local
+          str "Seq1" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "Acorus americanus" ,
+            orgname {
+              lineage "Eukaryota; Viridiplantae; Streptophyta; Embryophyta;
+ Tracheophyta; Spermatophyta; Magnoliophyta; Liliopsida; Acoraceae; Acorus" ,
+              gcode 1 ,
+              div "PLN" } } } ,
+        molinfo {
+          biomol mRNA } } ,
+      inst {
+        repr raw ,
+        mol rna ,
+        length 1066 ,
+        seq-data
+          ncbi4na '48441182828284882881488284882812882822122114822281121242444
+844244482242242242242248824114128241442824142122828828428242224422228228182228
+242424128482822422412412218114224228422821824284422121211241822484421144111421
+241441248121481411884841182422441111121828488442442482184118114244222252412412
+212822882422822424222114242214818442431442441444818442224214214448812824411414
+244142142424244244484422412212812142424244822112214121282414411242414112142222
+182182212282114114282112112844182114148488884482214884818421242224448412842488
+288418288428842444114441448418884181114844418111422114488442812818481444488418
+188428411442824181111418842184128242812118448412121418211211141144111144882148
+882228421244288188848128418842818414428248884418411818881818414418428224888418
+181848142848214888428881212818821844821128411421242428141211422884421118484828
+421881288248228441442188888188444121184228418422118482188182111144288248112142
+881224188181842822121412212181421811114111488481121881484428212284281282218224
+88818111811184121124884128888881111111111111111111111111111111111111111'H } } ,
+    seq {
+      id {
+        local
+          str "Seq2" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "Acorus americanus" ,
+            orgname {
+              lineage "Eukaryota; Viridiplantae; Streptophyta; Embryophyta;
+ Tracheophyta; Spermatophyta; Magnoliophyta; Liliopsida; Acoraceae; Acorus" ,
+              gcode 1 ,
+              div "PLN" } } } ,
+        molinfo {
+          biomol mRNA } } ,
+      inst {
+        repr raw ,
+        mol rna ,
+        length 646 ,
+        seq-data
+          ncbi2na '20DE0ABE83FA812EFC793C9FE90E2C6780203D5E4D485BFACD0B10BF47C
+8A39EF8F9520EAFBD4F5377D03CFA48A2CE37627AF78E081F5383FB118B1F900148BD96278E68A
+7AB95DAE3A0A4A140B11ED108E2EA2BF5CDDCDD9BFB5E6826294165C541822524190122A00EFDD
+162AE1362BDDAECC24E2CCD7A0A9F9C127C58F339D44851324C0202FB04F2E9D179C7535BF3030
+3841BE1FFF000000000000000000000'H } } ,
+    seq {
+      id {
+        local
+          str "Seq3" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "Acorus americanus" ,
+            orgname {
+              lineage "Eukaryota; Viridiplantae; Streptophyta; Embryophyta;
+ Tracheophyta; Spermatophyta; Magnoliophyta; Liliopsida; Acoraceae; Acorus" ,
+              gcode 1 ,
+              div "PLN" } } } ,
+        molinfo {
+          biomol mRNA } } ,
+      inst {
+        repr raw ,
+        mol rna ,
+        length 21 ,
+        seq-data
+          ncbi2na '000000000000'H } } } }
