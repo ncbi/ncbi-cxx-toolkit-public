@@ -1987,7 +1987,7 @@ void CVariationNormalizationDelIns::ConvertExpandedInsertionToDelIns(CSeq_feat& 
 
     ///Adjust location by decrementing 'stop' by one.  If length of reference is 1, then it becomes a point.
     if(ref_seq.length() == 1) {
-        auto pnt = Ref(new CSeq_loc);
+        CRef<CSeq_loc> pnt = Ref(new CSeq_loc);
         pnt->SetPnt().SetId(*SerialClone(*(feat.GetLocation().GetId())));
         pnt->SetPnt().SetPoint(feat.GetLocation().GetStart(eExtreme_Positional));
         pnt->SetPnt().SetStrand(feat.GetLocation().GetStrand());
