@@ -339,5 +339,17 @@ if test ! -f ${real_srcdir}/src/$1/Makefile.in  -o  \
 fi
 ])
 
+# AS_VAR_IF(VARIABLE, VALUE, IF-TRUE, IF-FALSE)
+# ---------------------------------------------
+# Implement a shell `if test $VARIABLE = VALUE; then-else'.
+# Polymorphic, and avoids sh expansion error upon interrupt or term signal.
+# (Taken from Autoconf 2.64, for the sake of ax_check_gnu_make.m4.)
+m4_define([AS_VAR_IF],
+[AS_LITERAL_IF([$1],
+  [AS_IF([test "x$$1" = x""$2], [$3], [$4])],
+  [AS_VAR_COPY([as_val], [$1])
+   AS_IF([test "x$as_val" = x""$2], [$3], [$4])])])
+
+m4_include([m4/ax_check_gnu_make.m4])
 m4_include([m4/ax_jni_include_dir.m4])
 m4_include([m4/ax_prog_cc_for_build.m4])

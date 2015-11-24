@@ -2141,6 +2141,11 @@ case "$compiler" in
    * ) NO_STRICT_ALIASING=
 esac
 
+dnl Autoconf 2.62+ has an AC_PATH_PROGS_FEATURE_CHECK macro that could
+dnl also be useful, but we're still on 2.60.
+AX_CHECK_GNU_MAKE
+AC_PATH_PROG(MAKE, ${ax_cv_gnu_make_command-make})
+export MAKE
 
 #### Automatic generation of dependencies for/by the "make" utility
 case "$host_os" in
@@ -2151,7 +2156,7 @@ if test "$with_autodep" = "yes" ; then
    Rules="rules_with_autodep"
 elif test "$with_autodep" = "no" ; then
    Rules="rules"
-elif make --version 2>/dev/null | grep 'GNU Make' >/dev/null ; then
+elif $MAKE --version 2>/dev/null | grep 'GNU Make' >/dev/null ; then
    Rules="rules_with_autodep"
 else
    Rules="rules"
@@ -8106,7 +8111,7 @@ else
 fi
 
 dnl Try to build simple helpers
-(cd $builddir/build-system/helpers && ${MAKE-make} -k)
+(cd $builddir/build-system/helpers && $MAKE -k)
 
 dnl Create Makefile.flat if requested
 if test "$with_configure_dialog" = yes; then
@@ -8137,7 +8142,7 @@ if test "$with_flat_makefile" != "no"; then
    fi
    if $real_srcdir/scripts/common/impl/create_flat_makefile.sh "$build_root" \
        -s "$real_srcdir" $cfm_flags  &&  test -f "$builddir/Makefile.flat"; then
-      build_flat="Alternatively, cd $builddir && make -f Makefile.flat"
+      build_flat="Alternatively, cd $builddir && $MAKE -f Makefile.flat"
    elif test -f "$builddir/Flat.configuration_log"; then
       $EGREP 'Error:|already defined' "$builddir/Flat.configuration_log"
       AC_MSG_ERROR([flat makefile generation failed.])
@@ -8172,7 +8177,7 @@ esac
 
 if test -n "$with_projects"; then
     build_proj="To build selected projects (as listed in \"$with_projects\"):
-  cd $builddir && make all_p"
+  cd $builddir && $MAKE all_p"
 fi
 
 cat << EOCONF
@@ -8199,8 +8204,8 @@ PROJECTS:
 Tools / flags / paths:  $builddir/Makefile.mk
 Configuration  header:  $ncbiconf
 
-To build everything:  cd $builddir && make all_r
-or simply run make in the current directory
+To build everything:  cd $builddir && $MAKE all_r
+or simply run $MAKE in the current directory
 $build_proj
 $build_flat
 ******* CONFIGURATION SUCCESSFUL *******
@@ -8217,6 +8222,7 @@ CXXFLAGS='$CXXFLAGS'
 CPPFLAGS='$CPPFLAGS'
 LDFLAGS='$LDFLAGS'
 LIB_OR_DLL='$LIB_OR_DLL'
+MAKE='$MAKE'
 with_dll='$with_dll'
 WithFeatures='$WithFeatures'
 WithoutFeatures='$WithoutFeatures'
@@ -8232,6 +8238,7 @@ with_saved_settings='$with_saved_settings'
 smart_pwd='$smart_pwd'
 real_srcdir='$real_srcdir'
 EGREP='$EGREP'
+export MAKE PATH
 ])
 
 AC_WARNING([*** Please don't forget to update .../src/build-system/NEWS if appropriate! ***])dnl

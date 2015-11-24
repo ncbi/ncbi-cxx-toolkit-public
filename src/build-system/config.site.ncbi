@@ -108,6 +108,10 @@ if [ -d /panfs/traces01.be-md.ncbi.nlm.nih.gov/trace_software ]; then
 fi
 
 case "$ncbi_platform" in
+    FreeBSD*   ) : ${MAKE=/usr/local/bin/gmake}; export MAKE ;;
+esac
+
+case "$ncbi_platform" in
     Linux64    ) : ${AVRO_PATH=$NCBI/avro-cpp-1.7.7-ncbi1} ;;
 esac
 

@@ -691,6 +691,9 @@ UNLESS_WITH_DLL
 STATIC
 USUAL_AND_DLL
 USUAL_AND_LIB
+AWK
+ifGNUmake
+MAKE
 LN_S
 RANLIB
 AR
@@ -9287,6 +9290,121 @@ case "$compiler" in
    * ) NO_STRICT_ALIASING=
 esac
 
+  for ac_prog in gawk mawk nawk awk
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
+if test "${ac_cv_prog_AWK+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if test -n "$AWK"; then
+  ac_cv_prog_AWK="$AWK" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_AWK="$ac_prog"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+fi
+fi
+AWK=$ac_cv_prog_AWK
+if test -n "$AWK"; then
+  { echo "$as_me:$LINENO: result: $AWK" >&5
+echo "${ECHO_T}$AWK" >&6; }
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+  test -n "$AWK" && break
+done
+
+  { echo "$as_me:$LINENO: checking for GNU make" >&5
+echo $ECHO_N "checking for GNU make... $ECHO_C" >&6; }
+if test "${_cv_gnu_make_command+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+      _cv_gnu_make_command="" ;
+    for a in "$MAKE" make gmake gnumake ; do
+      if test -z "$a" ; then continue ; fi ;
+      if "$a" --version 2> /dev/null | grep GNU 2>&1 > /dev/null ; then
+        _cv_gnu_make_command=$a ;
+        AX_CHECK_GNU_MAKE_HEADLINE=$("$a" --version 2> /dev/null | grep "GNU Make")
+        ax_check_gnu_make_version=$(echo ${AX_CHECK_GNU_MAKE_HEADLINE} | ${AWK} -F " " '{ print $(NF); }')
+        break ;
+      fi
+    done ;
+fi
+{ echo "$as_me:$LINENO: result: $_cv_gnu_make_command" >&5
+echo "${ECHO_T}$_cv_gnu_make_command" >&6; }
+  if test "x$_cv_gnu_make_command" = x""""; then
+  ifGNUmake="#"
+else
+  ifGNUmake=""
+fi
+
+  if test "x$_cv_gnu_make_command" = x""""; then
+  $as_unset ax_cv_gnu_make_command || test "${ax_cv_gnu_make_command+set}" != set || { ax_cv_gnu_make_command=; export ax_cv_gnu_make_command; }
+else
+  ax_cv_gnu_make_command=${_cv_gnu_make_command}
+fi
+
+
+
+# Extract the first word of "${ax_cv_gnu_make_command-make}", so it can be a program name with args.
+set dummy ${ax_cv_gnu_make_command-make}; ac_word=$2
+{ echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
+if test "${ac_cv_path_MAKE+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $MAKE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_MAKE="$MAKE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_path_MAKE="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+MAKE=$ac_cv_path_MAKE
+if test -n "$MAKE"; then
+  { echo "$as_me:$LINENO: result: $MAKE" >&5
+echo "${ECHO_T}$MAKE" >&6; }
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+export MAKE
 
 #### Automatic generation of dependencies for/by the "make" utility
 case "$host_os" in
@@ -9297,7 +9415,7 @@ if test "$with_autodep" = "yes" ; then
    Rules="rules_with_autodep"
 elif test "$with_autodep" = "no" ; then
    Rules="rules"
-elif make --version 2>/dev/null | grep 'GNU Make' >/dev/null ; then
+elif $MAKE --version 2>/dev/null | grep 'GNU Make' >/dev/null ; then
    Rules="rules_with_autodep"
 else
    Rules="rules"
@@ -45503,6 +45621,7 @@ CXXFLAGS='$CXXFLAGS'
 CPPFLAGS='$CPPFLAGS'
 LDFLAGS='$LDFLAGS'
 LIB_OR_DLL='$LIB_OR_DLL'
+MAKE='$MAKE'
 with_dll='$with_dll'
 WithFeatures='$WithFeatures'
 WithoutFeatures='$WithoutFeatures'
@@ -45518,6 +45637,7 @@ with_saved_settings='$with_saved_settings'
 smart_pwd='$smart_pwd'
 real_srcdir='$real_srcdir'
 EGREP='$EGREP'
+export MAKE PATH
 
 
 _ACEOF
@@ -45677,6 +45797,9 @@ UNLESS_WITH_DLL!$UNLESS_WITH_DLL$ac_delim
 STATIC!$STATIC$ac_delim
 USUAL_AND_DLL!$USUAL_AND_DLL$ac_delim
 USUAL_AND_LIB!$USUAL_AND_LIB$ac_delim
+AWK!$AWK$ac_delim
+ifGNUmake!$ifGNUmake$ac_delim
+MAKE!$MAKE$ac_delim
 LN_S!$LN_S$ac_delim
 RANLIB!$RANLIB$ac_delim
 AR!$AR$ac_delim
@@ -45688,9 +45811,6 @@ BASENAME!$BASENAME$ac_delim
 SED!$SED$ac_delim
 TOUCH!$TOUCH$ac_delim
 GREP!$GREP$ac_delim
-EGREP!$EGREP$ac_delim
-VALGRIND_PATH!$VALGRIND_PATH$ac_delim
-LDD!$LDD$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -45732,6 +45852,9 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+EGREP!$EGREP$ac_delim
+VALGRIND_PATH!$VALGRIND_PATH$ac_delim
+LDD!$LDD$ac_delim
 CXXCPP!$CXXCPP$ac_delim
 TCHECK_CL!$TCHECK_CL$ac_delim
 AMQ!$AMQ$ac_delim
@@ -45826,9 +45949,6 @@ GIF_LIBS!$GIF_LIBS$ac_delim
 XPM_INCLUDE!$XPM_INCLUDE$ac_delim
 XPM_LIBS!$XPM_LIBS$ac_delim
 freetype_config!$freetype_config$ac_delim
-FTGL_INCLUDE!$FTGL_INCLUDE$ac_delim
-FTGL_LIBS!$FTGL_LIBS$ac_delim
-MAGIC_INCLUDE!$MAGIC_INCLUDE$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -45870,6 +45990,9 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+FTGL_INCLUDE!$FTGL_INCLUDE$ac_delim
+FTGL_LIBS!$FTGL_LIBS$ac_delim
+MAGIC_INCLUDE!$MAGIC_INCLUDE$ac_delim
 MAGIC_LIBS!$MAGIC_LIBS$ac_delim
 MIMETIC_INCLUDE!$MIMETIC_INCLUDE$ac_delim
 MIMETIC_LIBS!$MIMETIC_LIBS$ac_delim
@@ -45964,9 +46087,6 @@ BDB_CACHE_LIB!$BDB_CACHE_LIB$ac_delim
 DBAPI_DRIVER!$DBAPI_DRIVER$ac_delim
 DBAPI_CTLIB!$DBAPI_CTLIB$ac_delim
 DBAPI_DBLIB!$DBAPI_DBLIB$ac_delim
-DBAPI_MYSQL!$DBAPI_MYSQL$ac_delim
-DBAPI_ODBC!$DBAPI_ODBC$ac_delim
-THREAD_LIBS!$THREAD_LIBS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -46008,6 +46128,9 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+DBAPI_MYSQL!$DBAPI_MYSQL$ac_delim
+DBAPI_ODBC!$DBAPI_ODBC$ac_delim
+THREAD_LIBS!$THREAD_LIBS$ac_delim
 NCBIATOMIC_LIB!$NCBIATOMIC_LIB$ac_delim
 OPENMP_FLAGS!$OPENMP_FLAGS$ac_delim
 UNSAFE_MATH_FLAG!$UNSAFE_MATH_FLAG$ac_delim
@@ -46102,9 +46225,6 @@ VDB_STATIC_LIBS!$VDB_STATIC_LIBS$ac_delim
 VDB_REQ!$VDB_REQ$ac_delim
 VDB_POST_LINK!$VDB_POST_LINK$ac_delim
 SP_INCLUDE!$SP_INCLUDE$ac_delim
-SP_LIBS!$SP_LIBS$ac_delim
-ORBACUS_INCLUDE!$ORBACUS_INCLUDE$ac_delim
-ORBACUS_LIBPATH!$ORBACUS_LIBPATH$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -46146,6 +46266,9 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+SP_LIBS!$SP_LIBS$ac_delim
+ORBACUS_INCLUDE!$ORBACUS_INCLUDE$ac_delim
+ORBACUS_LIBPATH!$ORBACUS_LIBPATH$ac_delim
 LIBOB!$LIBOB$ac_delim
 LIBIMR!$LIBIMR$ac_delim
 ICU_CONFIG!$ICU_CONFIG$ac_delim
@@ -46213,7 +46336,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 65; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 68; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
@@ -46730,7 +46853,7 @@ else
    echo "$ncbicfg" is not present
 fi
 
-(cd $builddir/build-system/helpers && ${MAKE-make} -k)
+(cd $builddir/build-system/helpers && $MAKE -k)
 
 if test "$with_configure_dialog" = yes; then
    if test "$with_flat_makefile" = no; then
@@ -46764,7 +46887,7 @@ if test "$with_flat_makefile" != "no"; then
    fi
    if $real_srcdir/scripts/common/impl/create_flat_makefile.sh "$build_root" \
        -s "$real_srcdir" $cfm_flags  &&  test -f "$builddir/Makefile.flat"; then
-      build_flat="Alternatively, cd $builddir && make -f Makefile.flat"
+      build_flat="Alternatively, cd $builddir && $MAKE -f Makefile.flat"
    elif test -f "$builddir/Flat.configuration_log"; then
       $EGREP 'Error:|already defined' "$builddir/Flat.configuration_log"
       { { echo "$as_me:$LINENO: error: flat makefile generation failed." >&5
@@ -46800,7 +46923,7 @@ esac
 
 if test -n "$with_projects"; then
     build_proj="To build selected projects (as listed in \"$with_projects\"):
-  cd $builddir && make all_p"
+  cd $builddir && $MAKE all_p"
 fi
 
 cat << EOCONF
@@ -46827,8 +46950,8 @@ PROJECTS:
 Tools / flags / paths:  $builddir/Makefile.mk
 Configuration  header:  $ncbiconf
 
-To build everything:  cd $builddir && make all_r
-or simply run make in the current directory
+To build everything:  cd $builddir && $MAKE all_r
+or simply run $MAKE in the current directory
 $build_proj
 $build_flat
 ******* CONFIGURATION SUCCESSFUL *******
