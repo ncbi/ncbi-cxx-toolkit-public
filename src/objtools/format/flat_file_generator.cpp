@@ -249,6 +249,11 @@ void CFlatFileGenerator::Generate
     location->Assign(loc);
     m_Ctx->SetLocation(location);
 
+    CFlatFileConfig& cfg = m_Ctx->GetConfig();
+    if (cfg.IsStyleNormal()) {
+        cfg.SetStyleMaster();
+    }
+
     Generate(entry, item_os);
 }
 
