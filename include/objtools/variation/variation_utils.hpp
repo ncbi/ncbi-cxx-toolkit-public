@@ -208,7 +208,7 @@ public:
 
 };
 
-class CVariationNormalizationInt : public CVariationNormalization_base<CVariationNormalizationInt>
+class CVariationNormalizationDelIns : public CVariationNormalization_base<CVariationNormalizationDelIns>
 {
 public:
     static bool ProcessShift(string &allele, SEndPosition& sep,
@@ -219,6 +219,9 @@ public:
 
     template<class V>
     static void SetShiftFlag(V& v) { x_SetShiftFlag(v,"Fully Shifted"); }
+
+    static void ConvertExpandedDeletionToDelIns(CSeq_feat& feat, CScope &scope);
+    static void ConvertExpandedInsertionToDelIns(CSeq_feat& feat, CScope &scope);
 
 };
 
@@ -272,9 +275,9 @@ public:
     //These methods search out ambiguous ins/del, and alter SeqLoc
     //to a Seq-equiv: the first is the original SeqLoc
     //the second is an interval representing the IOA
-    static void NormalizeAmbiguousVars(CVariation& var, CScope &scope);
-    static void NormalizeAmbiguousVars(CSeq_annot& var, CScope &scope);
-    static void NormalizeAmbiguousVars(CSeq_feat& feat, CScope &scope);
+    static void AlterToDelIns(CVariation& var, CScope &scope);
+    static void AlterToDelIns(CSeq_annot& var, CScope &scope);
+    static void AlterToDelIns(CSeq_feat& feat, CScope &scope);
 
     //HGVS
     //*Assume* Seq-equiv's are present and second one is 'IOA'
