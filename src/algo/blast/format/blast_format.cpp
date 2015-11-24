@@ -124,10 +124,16 @@ CBlastFormat::CBlastFormat(const blast::CBlastOptions& options,
         m_SeqInfoSrc.Reset(db_adapter.MakeSeqInfoSrc());
     }
     if(m_IsDbScan) {
-	BlastSeqSrc* seqsrc = db_adapter.MakeSeqSrc();
+	int num_seqs=0;
+        int total_length=0;
+	if (!is_remote_search)
+        {
+                BlastSeqSrc* seqsrc = db_adapter.MakeSeqSrc();
+                num_seqs=BlastSeqSrcGetNumSeqs(seqsrc);
+                total_length=BlastSeqSrcGetTotLen(seqsrc);
+        }
 	CBlastFormatUtil::FillScanModeBlastDbInfo(m_DbInfo, m_DbIsAA,
-		BlastSeqSrcGetNumSeqs(seqsrc), BlastSeqSrcGetTotLen(seqsrc),
-		m_SubjectTag);
+                num_seqs, total_length, m_SubjectTag);
     } else {
         CBlastFormatUtil::GetBlastDbInfo(m_DbInfo, m_DbName, m_DbIsAA,
                                    dbfilt_algorithm, is_remote_search);
