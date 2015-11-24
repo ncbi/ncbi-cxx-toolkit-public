@@ -60,6 +60,7 @@ align_format needs $(OBJREAD_LIBS)
 align_format needs blast_services
 align_format needs gene_info
 align_format needs seqdb
+align_format needs taxon1
 align_format needs xalnmgr
 align_format needs xcgi
 align_format needs xhtml
