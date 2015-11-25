@@ -242,7 +242,6 @@ const CSeqSummary& CDiscrepancyContext::GetNucleotideCount()
     sel.SetFlags(CSeqMap::fFindData | CSeqMap::fFindGap);
     CSeqMap_CI seq_iter(seq_map, &GetScope(), sel);
     for (; seq_iter; ++seq_iter) {
-        CSeq_data as_iupacna;
         switch (seq_iter.GetType()) {
             case CSeqMap::eSeqData:
                 ret.Len += seq_iter.GetLength();

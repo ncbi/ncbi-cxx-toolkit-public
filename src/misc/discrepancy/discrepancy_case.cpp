@@ -32,6 +32,7 @@
 #include "utils.hpp"
 #include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
+#include <objects/seq/seqport_util.hpp>
 #include <objects/macro/String_constraint.hpp>
 #include <objects/misc/sequence_util_macros.hpp>
 #include <objects/seq/MolInfo.hpp>
@@ -101,6 +102,66 @@ DISCREPANCY_CASE(SHORT_SEQUENCES, CSeq_inst, eAll, "Find Short Sequences")
 
 
 DISCREPANCY_SUMMARIZE(SHORT_SEQUENCES)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
+// N_RUNS
+
+bool SeqHasNRuns(const CSeq_data& seq_data, const size_t min_run_length) {
+    // TODO: record the actual locations of the runs of Ns.
+    // For example, in the C version...
+    // asndisc -e N_RUNS -X N_RUNS -i test-data/normal_delta.asn  -o /dev/stdout
+    // <snip>
+    // DiscRep_SUB:N_RUNS::seq_3 has runs of Ns at the following locations: 2215-2284, 2355-2564
+    //
+    // See Count14NProc and CountBaseProc in sqnutil3.c
+
+    CSeq_data as_iupacna;
+    TSeqPos nconv = CSeqportUtil::Convert(seq_data, &as_iupacna, CSeq_data::e_Iupacna);
+    if (nconv == 0) {
+        return false;
+    }
+    size_t curr_run_length = 0;
+
+    const string& iupacna_str = as_iupacna.GetIupacna().Get();
+    ITERATE(string, base, iupacna_str) {
+        switch (*base) {
+            case 'N':
+                ++curr_run_length;
+                if (curr_run_length >= min_run_length) {
+                    return true;
+                }
+                break;
+            default:
+                curr_run_length = 0;
+                break;
+        }
+    }
+    return false;
+}
+
+DISCREPANCY_CASE(N_RUNS, CSeq_inst, eAll, "More than 10 Ns in a row")
+{
+    if (obj.IsAa() || context.SequenceHasFarPointers()) {
+        return;
+    }
+
+    // CSeqMap, not CSeqVector, because gaps should not count as N runs.
+    const CRef<CSeqMap> seq_map = CSeqMap::CreateSeqMapForBioseq(*context.GetCurrentBioseq());
+    SSeqMapSelector sel;
+    sel.SetFlags(CSeqMap::fFindData);
+    CSeqMap_CI seq_iter(seq_map, &context.GetScope(), sel);
+    for (; seq_iter; ++seq_iter) {
+        if (SeqHasNRuns(seq_iter.GetData(), 10)) {
+            m_Objs["[n] sequence[s] [has] runs of 10 or more Ns"].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+            break;
+        }
+    }
+}
+
+DISCREPANCY_SUMMARIZE(N_RUNS)
 {
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
