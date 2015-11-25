@@ -39,7 +39,7 @@ BEGIN_NCBI_SCOPE
 
 struct NCBI_NET_CACHE_EXPORT CNetICacheClientExt : CNetICacheClient
 {
-    CNetICacheClientExt() {}
+    CNetICacheClientExt() : CNetICacheClient(eVoid) {}
     CNetICacheClientExt(TInstance api)
         : CNetICacheClient(api)
     {
