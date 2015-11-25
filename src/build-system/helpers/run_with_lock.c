@@ -288,9 +288,7 @@ int s_Run(const char* const* args, FILE* log)
 
     if (log != NULL) {
         close(stdout_fds[0]);
-        close(stdout_fds[1]);
         close(stderr_fds[0]);
-        close(stderr_fds[1]);
     }
     return status;
 }
@@ -300,7 +298,9 @@ static
 void s_CleanUp(void)
 {
     const char* args[] = { "/bin/rm", "-rf", s_LockName, NULL };
-    s_Run(args, NULL);
+    if ( !s_FinishingInBackground ) {
+        s_Run(args, NULL);
+    }
 }
 
 
