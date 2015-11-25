@@ -160,18 +160,24 @@ class CReportNode : public CObject
 {
 public:
     typedef map<string, CRef<CReportNode> > TNodeMap;
+
     CReportNode(const string& name = kEmptyStr) : m_Name(name) {}
+    
     CReportNode& operator[](const string& name);
+    
     void SetFatal(bool b = true) { m_Fatal = b; }
     void SetAutofix(bool b = true) { m_Autofix = b; }
     void SetExt(bool b = true) { m_Ext = b; }
+    
     static void Add(TReportObjectList& list, CReportObj& obj, bool unique = true);
     void Add(CReportObj& obj, bool unique = true) { Add(m_Objs, obj, unique); }
     static void Add(TReportObjectList& list, TReportObjectList& objs, bool unique = true);
     void Add(TReportObjectList& objs, bool unique = true) { Add(m_Objs, objs, unique); }
+    
     TReportObjectList& GetObjects() { return m_Objs; }
     TNodeMap& GetMap() { return m_Map; }
     CRef<CReportItem> Export(CDiscrepancyCase& test, bool unique = true);
+    
     bool empty() { return m_Map.empty() && m_Objs.empty(); }
     void clear() { m_Map.clear(); m_Objs.clear(); }
 protected:
@@ -245,7 +251,8 @@ public:
             INIT_DISCREPANCY_TYPE(CSeq_feat_BY_BIOSEQ),
             INIT_DISCREPANCY_TYPE(CBioSource),
             INIT_DISCREPANCY_TYPE(CRNA_ref),
-            INIT_DISCREPANCY_TYPE(COrgName)
+            INIT_DISCREPANCY_TYPE(COrgName),
+            INIT_DISCREPANCY_TYPE(CSeq_annot)
         {}
     bool AddTest(const string& name);
     void Parse(const objects::CSeq_entry_Handle& handle);
@@ -301,6 +308,7 @@ protected:
     ADD_DISCREPANCY_TYPE(CBioSource)
     ADD_DISCREPANCY_TYPE(CRNA_ref)
     ADD_DISCREPANCY_TYPE(COrgName)
+    ADD_DISCREPANCY_TYPE(CSeq_annot)
 };
 
 

@@ -212,6 +212,7 @@ bool CDiscrepancyContext::AddTest(const string& name)
     REGISTER_DISCREPANCY_TYPE(CBioSource)
     REGISTER_DISCREPANCY_TYPE(COrgName)
     REGISTER_DISCREPANCY_TYPE(CRNA_ref)
+    REGISTER_DISCREPANCY_TYPE(CSeq_annot)
     return false;
 }
 
@@ -249,6 +250,7 @@ void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
     ENABLE_DISCREPANCY_TYPE(CBioSource)
     ENABLE_DISCREPANCY_TYPE(COrgName)
     ENABLE_DISCREPANCY_TYPE(CRNA_ref)
+    ENABLE_DISCREPANCY_TYPE(CSeq_annot)
     
     for (i = Begin(*handle.GetCompleteSeq_entry()); i; ++i) {
         CTypesConstIterator::TIteratorContext ctx = i.GetContextData();
@@ -292,6 +294,7 @@ void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
         HANDLE_DISCREPANCY_TYPE(CBioSource)
         HANDLE_DISCREPANCY_TYPE(COrgName)
         HANDLE_DISCREPANCY_TYPE(CRNA_ref)
+        HANDLE_DISCREPANCY_TYPE(CSeq_annot)
     }
 }
 

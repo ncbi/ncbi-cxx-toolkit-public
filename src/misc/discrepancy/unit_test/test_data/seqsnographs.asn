@@ -1,0 +1,203 @@
+Seq-entry ::= set {
+  class phy-set,
+  descr {
+    pub {
+      pub {
+        gen {
+          cit "Unpublished",
+          authors {
+            names std {
+              {
+                name name {
+                  last "q",
+                  first "q",
+                  initials "qq."
+                }
+              }
+            },
+            affil str "q"
+          },
+          title "q"
+        }
+      }
+    }
+  },
+  seq-set {
+    seq {
+      id {
+        local str "seq_1"
+      },
+      descr {
+        title "toll-like receptor 5 (TLR5) gene, complete cds",
+        source {
+          genome genomic,
+          org {
+            taxname "Influenza A virus",
+            orgname {
+              mod {
+                {
+                  subtype strain,
+                  subname "this is my strain"
+                },
+                {
+                  subtype serotype,
+                  subname "this is my serotype"
+                },
+                {
+                  subtype isolate,
+                  subname "BoBM478"
+                }
+              }
+            }
+          }
+        },
+        molinfo {
+          biomol genomic
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "LocalId",
+              data str "seq_1"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 208,
+        seq-data ncbi2na 'EDF47757DF75328D3A88797E17DDF28B6C75E14B5E47E83B7D79
+F7F8EBE8894DCDFD7905D150B954AD54114508975E749F41CCD2'H
+      }
+    },
+    seq {
+      id {
+        local str "seq_2"
+      },
+      descr {
+        title "toll-like receptor 5 (TLR5) gene, complete cds",
+        source {
+          genome genomic,
+          org {
+            taxname "Odocoileus hemionus",
+            orgname {
+              mod {
+                {
+                  subtype isolate,
+                  subname "JEW01"
+                }
+              },
+              gcode 1
+            }
+          }
+        },
+        molinfo {
+          biomol genomic
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "LocalId",
+              data str "seq_2"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 227,
+        seq-data ncbi4na '8482A82128282228828828221814418218444141284228841228
+828288144148248128228412215822842128844118882882284288288211844884414142248281
+828882284211228212221148422221448222211212212211414228228428214888211281818214
+11214821215221218220'H
+      }
+    },
+    seq {
+      id {
+        local str "seq_3"
+      },
+      descr {
+        title "toll-like receptor 5 (TLR5) gene, complete cds",
+        source {
+          genome genomic,
+          org {
+            taxname "Odocoileus virginianus",
+            orgname {
+              mod {
+                {
+                  subtype isolate,
+                  subname "JEW21"
+                }
+              },
+              gcode 1
+            }
+          }
+        },
+        molinfo {
+          biomol genomic
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "LocalId",
+              data str "seq_3"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 41,
+        seq-data ncbi2na 'EDF47757DF75328D3A8840'H
+      }
+    },
+    seq {
+      id {
+        local str "seq_4"
+      },
+      descr {
+        title "toll-like receptor 5 (TLR5) gene, complete cds",
+        source {
+          genome genomic,
+          org {
+            taxname "Giraffa camelopardalis",
+            orgname {
+              mod {
+                {
+                  subtype isolate,
+                  subname "KB3332"
+                }
+              },
+              gcode 1
+            }
+          }
+        },
+        molinfo {
+          biomol genomic
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "LocalId",
+              data str "seq_4"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 210,
+        seq-data ncbi2na 'EDF47777DF75328D3888797E17DDF28B6C75E14B5E47E8BF7D79
+F7F8EBE8895DCDFD7905D150B954AD54114508975E749F41CCD280'H
+      }
+    }
+  }
+}

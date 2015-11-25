@@ -670,6 +670,42 @@ DISCREPANCY_SUMMARIZE(BAD_LOCUS_TAG_FORMAT)
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
+// QUALITY_SCORES
+
+DISCREPANCY_CASE(QUALITY_SCORES, CSeq_annot, eAll, "Check for quality scores")
+{
+    if (!context.GetCurrentBioseq()->IsSetInst() || context.GetCurrentBioseq()->IsAa()) {
+        return;
+    }
+
+    if (m_Count != context.GetCountBioseq()) { // stepping onto a new sequence
+        m_Count = context.GetCountBioseq();
+        if (obj.IsGraph()) {
+            m_Objs["has qual scores"].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(),
+                context.GetScope(), context.GetFile(), context.GetKeepRef()));
+        }
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(QUALITY_SCORES)
+{
+    size_t all_na = context.GetNaSeqs().size();
+    size_t quals = m_Objs["has qual scores"].GetObjects().size();
+    m_Objs.clear();
+
+    string some = NStr::IntToString(all_na - quals);
+    if (all_na == quals) {
+        m_Objs["Quality scores are present on all sequences"];
+    }
+    else if (quals == 0) {
+        m_Objs["Quality scores are missing on all sequences"];
+    }
+    else {
+        m_Objs["Quality scores are missing on some(" + some + ") sequences"];
+    }
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

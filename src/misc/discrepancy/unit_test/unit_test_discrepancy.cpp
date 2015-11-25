@@ -984,6 +984,7 @@ BOOST_AUTO_TEST_CASE(POSSIBLE_LINKER)
 }
 
 
+
 BOOST_AUTO_TEST_CASE(BAD_LOCUS_TAG_FORMAT)
 {
     {{
@@ -1008,3 +1009,84 @@ BOOST_AUTO_TEST_CASE(BAD_LOCUS_TAG_FORMAT)
 }
 
 
+BOOST_AUTO_TEST_CASE(QUALITY_SCORES)
+{
+    {{
+        // all sequences have quality scores
+        CRef<CSeq_entry> entry = ReadEntryFromFile("test_data/seqsallgraphs.asn");
+        BOOST_REQUIRE(entry);
+        CScope scope(*CObjectManager::GetInstance());
+        scope.AddDefaults();
+        CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+
+        CRef<CDiscrepancySet> Set = CDiscrepancySet::New(scope);
+        Set->AddTest("QUALITY_SCORES");
+        Set->Parse(seh);
+        Set->Summarize();
+        const vector<CRef<CDiscrepancyCase> >& tst = Set->GetTests();
+        BOOST_REQUIRE_EQUAL(tst.size(), 1);
+        TReportItemList rep = tst[0]->GetReport();
+        BOOST_REQUIRE_EQUAL(rep.size(), 1);
+        BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "Quality scores are present on all sequences");
+
+    }}
+
+    {{
+        // all sequences have quality scores, one of the graph is empty
+        CRef<CSeq_entry> entry = ReadEntryFromFile("test_data/seqsemptygraph.asn");
+        BOOST_REQUIRE(entry);
+        CScope scope(*CObjectManager::GetInstance());
+        scope.AddDefaults();
+        CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+
+        CRef<CDiscrepancySet> Set = CDiscrepancySet::New(scope);
+        Set->AddTest("QUALITY_SCORES");
+        Set->Parse(seh);
+        Set->Summarize();
+        const vector<CRef<CDiscrepancyCase> >& tst = Set->GetTests();
+        BOOST_REQUIRE_EQUAL(tst.size(), 1);
+        TReportItemList rep = tst[0]->GetReport();
+        BOOST_REQUIRE_EQUAL(rep.size(), 1);
+        BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "Quality scores are missing on some(3) sequences");
+    }}
+
+    {{
+        // no sequences have quality scores
+        CRef<CSeq_entry> entry = ReadEntryFromFile("test_data/seqsnographs.asn");
+        BOOST_REQUIRE(entry);
+        CScope scope(*CObjectManager::GetInstance());
+        scope.AddDefaults();
+        CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+
+        CRef<CDiscrepancySet> Set = CDiscrepancySet::New(scope);
+        Set->AddTest("QUALITY_SCORES");
+        Set->Parse(seh);
+        Set->Summarize();
+        const vector<CRef<CDiscrepancyCase> >& tst = Set->GetTests();
+        BOOST_REQUIRE_EQUAL(tst.size(), 1);
+        TReportItemList rep = tst[0]->GetReport();
+        BOOST_REQUIRE_EQUAL(rep.size(), 1);
+        BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "Quality scores are missing on all sequences");
+
+    }}
+
+    {{
+        // some sequences have quality scores
+        CRef<CSeq_entry> entry = ReadEntryFromFile("test_data/seqsomegraphs.asn");
+        BOOST_REQUIRE(entry);
+        CScope scope(*CObjectManager::GetInstance());
+        scope.AddDefaults();
+        CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+
+        CRef<CDiscrepancySet> Set = CDiscrepancySet::New(scope);
+        Set->AddTest("QUALITY_SCORES");
+        Set->Parse(seh);
+        Set->Summarize();
+        const vector<CRef<CDiscrepancyCase> >& tst = Set->GetTests();
+        BOOST_REQUIRE_EQUAL(tst.size(), 1);
+        TReportItemList rep = tst[0]->GetReport();
+        BOOST_REQUIRE_EQUAL(rep.size(), 1);
+        BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "Quality scores are missing on some(2) sequences");
+
+    }}
+}
