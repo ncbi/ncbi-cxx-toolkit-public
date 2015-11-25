@@ -1083,7 +1083,11 @@ string CAutoDef::GetOneFeatureClauseList(CBioseq_Handle bh, unsigned int genome_
             string biomol = "";
             CSeqdesc_CI mi(bh, CSeqdesc::e_Molinfo);
             if (mi && mi->GetMolinfo().IsSetBiomol()) {
-                biomol = CMolInfo::GetBiomolName(mi->GetMolinfo().GetBiomol());
+                if (mi->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_mRNA) {
+                    biomol = "mRNA";
+                } else {
+                    biomol = CMolInfo::GetBiomolName(mi->GetMolinfo().GetBiomol());
+                }
             }
             if (!NStr::IsBlank(biomol)) {
                 feature_clauses = " " + biomol;
