@@ -1499,7 +1499,8 @@ private:
 ///
 /// CFile --
 ///
-/// Define class to work with files.
+/// Define class to work with regular files.
+/// NOTE: it don't work with any special or block devices like /dev/null
 ///
 /// Models a file in a file system. Basic functionality is derived from
 /// CDirEntry and extended for files.
