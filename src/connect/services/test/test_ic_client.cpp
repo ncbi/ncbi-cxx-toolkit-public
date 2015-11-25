@@ -72,6 +72,7 @@ static int s_Run()
     const string cache_name  = TNetCache_CacheName::GetDefault();
 
     CNetICacheClient cl(service, cache_name, s_ClientName);
+    cl.SetFlags(ICache::fBestReliability);
 
     const static char test_data[] =
             "The quick brown fox jumps over the lazy dog.";
@@ -266,6 +267,7 @@ static void s_SimpleTest()
     const string cache_name  = TNetCache_CacheName::GetDefault();
 
     CNetICacheClient api(service, cache_name, s_ClientName);
+    api.SetFlags(ICache::fBestReliability);
 
     const size_t kIterations = 50;
     const size_t kSrcSize = 20 * 1024 * 1024; // 20MB

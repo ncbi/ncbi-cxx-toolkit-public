@@ -12,6 +12,5 @@ REQUIRES = Boost.Test.Included
 
 CHECK_REQUIRES = in-house-resources
 CHECK_CMD = test_ic_client
-CHECK_COPY = test_ic_client.ini
 
 WATCHERS = sadyrovr gouriano
