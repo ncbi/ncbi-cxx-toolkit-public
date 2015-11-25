@@ -11649,7 +11649,7 @@ void CNewCleanup_imp::MoveStandardName(CSeq_feat& sf)
             const string& product = sf.GetData().GetRna().GetRnaProductName();
             if (NStr::IsBlank(product)) {
                 string remainder = "";
-                sf.SetData().SetRna().SetRnaProductName(product, remainder);
+                sf.SetData().SetRna().SetRnaProductName(val, remainder);
                 val = remainder;
                 ChangeMade(CCleanupChange::eChangeRNAref);
             }
