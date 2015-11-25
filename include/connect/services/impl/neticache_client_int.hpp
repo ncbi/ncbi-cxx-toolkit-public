@@ -37,7 +37,7 @@
 BEGIN_NCBI_SCOPE
 
 
-struct NCBI_XCONNECT_EXPORT CNetICacheClientExt : CNetICacheClient
+struct NCBI_NET_CACHE_EXPORT CNetICacheClientExt : CNetICacheClient
 {
     CNetICacheClientExt() {}
     CNetICacheClientExt(TInstance api)
