@@ -305,6 +305,7 @@ private:
     void ProtRefEC( CProt_ref& pr);
     void CdRegionEC( CSeq_feat& sf);
     void MoveDbxrefs(CSeq_feat& sf);
+    void MoveStandardName(CSeq_feat& sf);
     void ResynchProteinPartials ( CSeq_feat& feat );
     void ResynchPeptidePartials( CBioseq& seq );
     void RemoveBadProteinTitle(CBioseq& seq);

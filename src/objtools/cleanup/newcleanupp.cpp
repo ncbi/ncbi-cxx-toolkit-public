@@ -11628,6 +11628,31 @@ void CNewCleanup_imp::MoveDbxrefs(CSeq_feat& sf)
 }
 
 
+void CNewCleanup_imp::MoveStandardName(CSeq_feat& sf)
+{
+    if (!sf.IsSetQual()) {
+        return;
+    }
+    CSeq_feat::TQual::iterator it = sf.SetQual().begin();
+    while (it != sf.SetQual().end()) {
+        if ((*it)->IsSetQual() && (*it)->IsSetVal() && NStr::Equal((*it)->GetQual(), "standard_name")) {
+            string val = (*it)->GetVal();
+            if (sf.IsSetComment()) {
+                val = sf.GetComment() + "; " + val;
+            }
+            sf.SetComment(val);
+            ChangeMade(CCleanupChange::eRemoveQualifier);
+            it = sf.SetQual().erase(it);
+        } else {
+            ++it;
+        }
+    }
+    if (sf.GetQual().empty()) {
+        sf.ResetQual();
+    }
+}
+
+
 void CNewCleanup_imp::ResynchProteinPartials ( CSeq_feat& feat )
 {
     if (!feat.IsSetData() || !feat.GetData().IsProt()) {
