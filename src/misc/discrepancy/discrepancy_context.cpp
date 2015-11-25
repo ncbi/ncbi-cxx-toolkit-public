@@ -39,6 +39,7 @@
 #include <objects/seqfeat/Delta_item.hpp>
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <util/xregexp/regexp.hpp>
 
 
 BEGIN_NCBI_SCOPE;
@@ -269,6 +270,18 @@ string CDiscrepancyContext::GetGenomeName(int n)
         }
     }
     return n < G.size() ? G[n] : kEmptyStr;
+}
+
+
+bool CDiscrepancyContext::IsBadLocusTagFormat(const string& locus_tag)
+{
+    // Optimization:  compile regexp only once by making it static.
+    static CRegexp regexp("^[[:alpha:]][[:alnum:]]{2,}_[[:alnum:]]+$");
+
+    // Locus tag format documentation:  
+    // http://www.ncbi.nlm.nih.gov/genomes/locustag/Proposal.pdf
+
+    return !regexp.IsMatch(locus_tag); 
 }
 
 

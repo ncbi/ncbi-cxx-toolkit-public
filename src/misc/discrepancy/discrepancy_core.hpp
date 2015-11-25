@@ -276,6 +276,7 @@ public:
     const CSeqSummary& GetNucleotideCount(void);
     bool HasFeatures(void) const { return m_Feat_CI; }
     static string GetGenomeName(int n);
+    bool IsBadLocusTagFormat(const string& locus_tag);
 
 protected:
     void Update_Bioseq_set_Stack(CTypesConstIterator& it);
