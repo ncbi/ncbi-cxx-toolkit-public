@@ -942,7 +942,7 @@ BOOST_AUTO_TEST_CASE(POSSIBLE_LINKER)
         TReportItemList rep = tst[0]->GetReport();
         BOOST_CHECK_EQUAL(rep.size(), 1);
         BOOST_CHECK_EQUAL(rep[0]->GetMsg(),
-                          "1 sequence may have linker sequence after the poly-A tail");
+                          "1 bioseq may have linker sequence after the poly-A tail");
      }}
 
     {{
@@ -979,6 +979,6 @@ BOOST_AUTO_TEST_CASE(POSSIBLE_LINKER)
         TReportItemList rep = tst[0]->GetReport();
         BOOST_CHECK_EQUAL(rep.size(), 1);
         BOOST_CHECK_EQUAL(rep[0]->GetMsg(),
-                          "2 sequences may have linker sequence after the poly-A tail");
+                          "2 bioseqs may have linker sequence after the poly-A tail");
      }}
 }
