@@ -578,5 +578,31 @@ DISCREPANCY_SUMMARIZE(POSSIBLE_LINKER)
     m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
+
+DISCREPANCY_CASE(BAD_LOCUS_TAG_FORMAT, CSeqFeatData, eAll, "Bad locus tag format")
+{
+    if (obj.Which() != CSeqFeatData::e_Gene) {
+        return;
+    }
+
+    // Looking for Gene-ref.locus-tag
+    const CGene_ref& gene_ref = obj.GetGene();
+    if (!gene_ref.CanGetLocus_tag()) {
+        return;
+    }
+
+    string locus_tag = gene_ref.GetLocus_tag();
+    if (!locus_tag.empty() && context.IsBadLocusTagFormat(locus_tag)) {
+        m_Objs["[n] locus tag[s] [is] incorrectly formatted."].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(BAD_LOCUS_TAG_FORMAT)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE

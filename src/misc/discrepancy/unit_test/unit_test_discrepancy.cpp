@@ -982,3 +982,29 @@ BOOST_AUTO_TEST_CASE(POSSIBLE_LINKER)
                           "2 bioseqs may have linker sequence after the poly-A tail");
      }}
 }
+
+
+BOOST_AUTO_TEST_CASE(BAD_LOCUS_TAG_FORMAT)
+{
+    {{
+    // Test file #1
+    CRef<CSeq_entry> entry = ReadEntryFromFile("test_data/bad_locus_tag_format.asn");
+    BOOST_REQUIRE(entry);
+    CScope scope(*CObjectManager::GetInstance());
+    scope.AddDefaults();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+    
+    CRef<CDiscrepancySet> set = CDiscrepancySet::New(scope);
+    set->AddTest("BAD_LOCUS_TAG_FORMAT");
+    set->Parse(seh);
+    set->Summarize();
+    
+    const vector<CRef<CDiscrepancyCase> >& tst = set->GetTests();
+    BOOST_REQUIRE_EQUAL(tst.size(), 1);
+    TReportItemList rep = tst[0]->GetReport();
+    BOOST_REQUIRE_EQUAL(rep.size(), 1);
+    BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "4 locus tags are incorrectly formatted.");
+    }}
+}
+
+
