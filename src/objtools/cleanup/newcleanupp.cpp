@@ -11630,6 +11630,15 @@ void CNewCleanup_imp::MoveDbxrefs(CSeq_feat& sf)
 
 void CNewCleanup_imp::MoveStandardName(CSeq_feat& sf)
 {
+    // only for rRNAs
+    if (!sf.IsSetData() || !sf.GetData().IsRna()) {
+        return;
+    }
+    // not for EMBL or DDBJ
+    if (m_SeqEntryInfoStack.top().m_IsEmblOrDdbj) {
+        return;
+    }
+
     if (!sf.IsSetQual()) {
         return;
     }
@@ -11637,11 +11646,20 @@ void CNewCleanup_imp::MoveStandardName(CSeq_feat& sf)
     while (it != sf.SetQual().end()) {
         if ((*it)->IsSetQual() && (*it)->IsSetVal() && NStr::Equal((*it)->GetQual(), "standard_name")) {
             string val = (*it)->GetVal();
-            if (sf.IsSetComment()) {
-                val = sf.GetComment() + "; " + val;
+            const string& product = sf.GetData().GetRna().GetRnaProductName();
+            if (NStr::IsBlank(product)) {
+                string remainder = "";
+                sf.SetData().SetRna().SetRnaProductName(product, remainder);
+                val = remainder;
+                ChangeMade(CCleanupChange::eChangeRNAref);
             }
-            sf.SetComment(val);
-            ChangeMade(CCleanupChange::eRemoveQualifier);
+            if (!NStr::IsBlank(val)) {
+                if (sf.IsSetComment()) {
+                    val = sf.GetComment() + "; " + val;
+                }
+                sf.SetComment(val);
+                ChangeMade(CCleanupChange::eRemoveQualifier);
+            }
             it = sf.SetQual().erase(it);
         } else {
             ++it;
