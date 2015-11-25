@@ -299,7 +299,7 @@ void CDiscrepancyContext::Parse(const CSeq_entry_Handle& handle)
 void CDiscrepancyContext::Summarize()
 {
     NON_CONST_ITERATE (vector<CRef<CDiscrepancyCase> >, it, m_Tests) {
-        (*it)->Summarize();
+        static_cast<CDiscrepancyCore&>(**it).Summarize(*this);
     }
 }
 

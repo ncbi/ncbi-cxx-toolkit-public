@@ -66,16 +66,12 @@ public:
 typedef vector<CRef<CReportItem> > TReportItemList;
 
 
-class CDiscrepancySet;
-
-
 class NCBI_DISCREPANCY_EXPORT CDiscrepancyCase : public CObject
 {
 public:
     virtual ~CDiscrepancyCase(void){}
     virtual string GetName(void) const = 0;
     virtual string GetType(void) const = 0;
-    virtual void Summarize(void) = 0;
     virtual TReportItemList GetReport(void) const = 0;
 };
 

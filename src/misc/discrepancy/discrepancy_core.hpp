@@ -164,6 +164,7 @@ public:
     CReportNode& operator[](const string& name);
     void SetFatal(bool b = true) { m_Fatal = b; }
     void SetAutofix(bool b = true) { m_Autofix = b; }
+    void SetExt(bool b = true) { m_Ext = b; }
     static void Add(TReportObjectList& list, CReportObj& obj, bool unique = true);
     void Add(CReportObj& obj, bool unique = true) { Add(m_Objs, obj, unique); }
     static void Add(TReportObjectList& list, TReportObjectList& objs, bool unique = true);
@@ -179,6 +180,7 @@ protected:
     TReportObjectList m_Objs;
     bool m_Fatal;
     bool m_Autofix;
+    bool m_Ext;
 };
 
 
@@ -186,7 +188,7 @@ class CDiscrepancyCore : public CDiscrepancyCase
 {
 public:
     CDiscrepancyCore() : m_Count(0) {}
-    void Summarize(void){}
+    virtual void Summarize(CDiscrepancyContext& context){}
     virtual TReportItemList GetReport(void) const { return m_ReportItems;}
     virtual void Autofix(const CDiscrepancyItem* item, CScope& scope) {}
 protected:
@@ -273,6 +275,7 @@ public:
     bool SequenceHasFarPointers(void);
     const CSeqSummary& GetNucleotideCount(void);
     bool HasFeatures(void) const { return m_Feat_CI; }
+    static string GetGenomeName(int n);
 
 protected:
     void Update_Bioseq_set_Stack(CTypesConstIterator& it);
@@ -319,7 +322,7 @@ protected:
     {                                                                                                               \
     public:                                                                                                         \
         void Visit(const type&, CDiscrepancyContext&);                                                              \
-        void Summarize(void);                                                                                       \
+        void Summarize(CDiscrepancyContext&);                                                                       \
         string GetName(void) const { return #name;}                                                                 \
         string GetType(void) const { return #type;}                                                                 \
     protected:                                                                                                      \
@@ -339,7 +342,7 @@ protected:
 
 
 #define DISCREPANCY_SUMMARIZE(name) \
-    void CDiscrepancyCase_##name::Summarize(void)
+    void CDiscrepancyCase_##name::Summarize(CDiscrepancyContext& context)
 
 
 #define DISCREPANCY_AUTOFIX(name) \

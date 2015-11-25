@@ -31,6 +31,9 @@
 #include "discrepancy_core.hpp"
 #include "utils.hpp"
 #include <objects/seqfeat/BioSource.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
+#include <objects/seqfeat/OrgMod.hpp>
+#include <objects/seqfeat/SubSource.hpp>
 //#include <objects/seqfeat/Imp_feat.hpp>
 //#include <objects/seqfeat/SeqFeatXref.hpp>
 //#include <objects/macro/String_constraint.hpp>
@@ -51,23 +54,39 @@ DISCREPANCY_MODULE(sesame_street);
 
 // Some animals are more equal than others...
 
+
 DISCREPANCY_CASE(SOURCE_QUALS, CBioSource, eAll, "Some animals are more equal than others...")
 {
-    //cout << "CBioSource" << endl;
-    /*
-    CSeq_inst::TMol mol = obj.GetMol();
-    if (mol != CSeq_inst::eMol_dna && mol != CSeq_inst::eMol_rna && mol != CSeq_inst::eMol_na) {
-        return;
+    CRef<CDiscrepancyObject> disc_obj(new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+    m_Objs["all"].Add(*disc_obj);
+    if (obj.CanGetGenome()) {
+        m_Objs["location"][context.GetGenomeName(obj.GetGenome())].Add(*disc_obj);
     }
-    m_Objs["[n] nucleotide Bioseq[s] [is] present"].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
-    */
+    if (obj.CanGetOrg()) {
+        const COrg_ref& org_ref = obj.GetOrg();
+        if (org_ref.CanGetTaxname()) {
+            m_Objs["taxname"][org_ref.GetTaxname()].Add(*disc_obj);
+        }
+        m_Objs["taxid"][NStr::IntToString(org_ref.GetTaxId())].Add(*disc_obj);
+    }
+    if (obj.CanGetSubtype()) {
+        ITERATE(list<CRef<CSubSource> >, it, obj.GetSubtype()) {
+            if ((*it)->CanGetName()) {
+                m_Objs[(*it)->GetSubtypeName((*it)->GetSubtype(), CSubSource::eVocabulary_insdc)][(*it)->GetName()].Add(*disc_obj);
+            }
+        }
+    }
+    if (obj.IsSetOrgMod()) {
+        ITERATE(list<CRef<COrgMod> >, it, obj.GetOrgname().GetMod()) {
+            m_Objs[(*it)->GetSubtypeName((*it)->GetSubtype(), COrgMod::eVocabulary_insdc)][(*it)->GetSubname()].Add(*disc_obj);
+        }
+    }
 }
 
 
 DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
 {
-    m_Objs["[n] nucleotide Bioseq[s] [is] present"];
-    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+    //m_ReportItems = m_Objs.Export(*this)->GetSubitems();
 }
 
 

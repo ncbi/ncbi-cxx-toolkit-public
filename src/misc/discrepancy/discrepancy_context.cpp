@@ -31,6 +31,7 @@
 #include "discrepancy_core.hpp"
 #include "utils.hpp"
 #include <sstream>
+#include <objects/macro/Source_location.hpp>
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/seq_macros.hpp>
 #include <objects/seq/Seq_ext.hpp>
@@ -254,6 +255,20 @@ const CSeqSummary& CDiscrepancyContext::GetNucleotideCount()
         }
     }
     return ret;
+}
+
+
+string CDiscrepancyContext::GetGenomeName(int n)
+{
+    static vector<string> G;
+    if (G.empty()) {
+        G.resize(eSource_location_chromatophore + 1);
+        for (size_t i = eSource_location_unknown; i <= eSource_location_chromatophore; i++) {
+            string str = ENUM_METHOD_NAME(ESource_location)()->FindName(i, true);
+            G[i] = (str == "unknown") ? kEmptyStr : ((str == "extrachrom") ? "extrachromosomal" : str);
+        }
+    }
+    return n < G.size() ? G[n] : kEmptyStr;
 }
 
 

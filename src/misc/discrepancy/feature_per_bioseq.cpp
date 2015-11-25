@@ -49,7 +49,7 @@ DISCREPANCY_CASE(DUPLICATE_GENE_LOCUS, CSeq_feat_BY_BIOSEQ, eNormal, "Duplicate 
     }
     if (m_Count != context.GetCountBioseq()) {
         m_Count = context.GetCountBioseq();
-        Summarize();
+        Summarize(context);
     }
     if (!context.IsCurrentRnaInGenProdSet()) {
         m_Objs[obj.GetData().GetGene().GetLocus()].Add(*new CDiscrepancyObject(CConstRef<CSeq_feat>(&obj), context.GetScope(), context.GetFile(), context.GetKeepRef()), false);
@@ -86,7 +86,7 @@ DISCREPANCY_CASE(COUNT_RRNAS, CSeq_feat_BY_BIOSEQ, eNormal, "Count rRNAs")
 
     if (m_Count != context.GetCountBioseq()) {
         m_Count = context.GetCountBioseq();
-        Summarize();
+        Summarize(context);
         m_Objs[kEmptyStr].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
     }
 
@@ -191,7 +191,7 @@ DISCREPANCY_CASE(COUNT_TRNAS, CSeq_feat_BY_BIOSEQ, eNormal, "Count tRNAs")
 
     if (m_Count != context.GetCountBioseq()) {
         m_Count = context.GetCountBioseq();
-        Summarize();
+        Summarize(context);
         m_Objs[kEmptyStr].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
     }
 
