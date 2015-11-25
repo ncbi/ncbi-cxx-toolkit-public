@@ -1392,7 +1392,7 @@ public:
      *        documents.
      * @see xml::save_option
      * @note compression part of the options is currently ignored.
-     * @note use append_to_string(...) and save_to_string(...) instead.
+     * @deprecated use append_to_string(...) and save_to_string(...) instead.
      * @author Peter Jones and Sergey Satskiy, NCBI
     **/
     //####################################################################
