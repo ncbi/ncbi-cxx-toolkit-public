@@ -88,6 +88,36 @@ CNcbiOstream& CComments::PrintHPPMember(CNcbiOstream& out) const
     return Empty() ? out : Print(out, "    ///","\n    ///","\n");
 }
 
+bool CComments::PrintSchemaComments(CNcbiOstream& out, int indent, int /*flags*/) const
+{
+    if ( Empty() ) {
+        return false;
+    }
+    
+    out << '>'; // close 'element' tag
+#if 0
+    PrintASNNewLine(out, indent) << "<xs:annotation><xs:documentation>";
+    ITERATE ( TComments, i, m_Comments ) {
+        out << '\n' << *i;
+    }
+    PrintASNNewLine(out, indent) << "</xs:documentation></xs:annotation>";
+#else
+    if ( OneLine() ) {
+        PrintASNNewLine(out, indent) << "<xs:annotation><xs:documentation>";
+        out << NStr::TruncateSpaces(m_Comments.front());
+        out << "</xs:documentation></xs:annotation>";
+    }
+    else {
+        PrintASNNewLine(out, indent) << "<xs:annotation><xs:documentation>";
+        ITERATE ( TComments, i, m_Comments ) {
+            out << '\n' << *i;
+        }
+        PrintASNNewLine(out, indent) << "</xs:documentation></xs:annotation>";
+    }
+#endif
+    return true;
+}
+
 CNcbiOstream& CComments::PrintDTD(CNcbiOstream& out, int flags) const
 {
     if ( Empty() ) // no comments

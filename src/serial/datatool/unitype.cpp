@@ -134,7 +134,9 @@ void CUniSequenceDataType::PrintXMLSchema(CNcbiOstream& out,
         string type(typeStatic ? typeStatic->GetSchemaTypeString() : typeElem->GetSchemaTypeString());
         bool any = dynamic_cast<const CAnyContentDataType*>(typeStatic) != 0;
         PrintASNNewLine(out, indent++);
+        string xsdk("element");
         if (any) {
+            xsdk = "any";
             out << "<xs:any processContents=\"lax\"";
             const string& ns = GetNamespaceName();
             if (!ns.empty()) {
@@ -164,7 +166,13 @@ void CUniSequenceDataType::PrintXMLSchema(CNcbiOstream& out,
             }
         }
         if (hasAttlist) {
+#if _DATATOOL_USE_SCHEMA_STYLE_COMMENTS
+            if (!(GetDataMember() && GetDataMember()->GetComments().PrintSchemaComments(out, indent+1))) {
+                out << ">";
+            }
+#else
             out << ">";
+#endif
             PrintASNNewLine(out, indent++) << "<xs:complexType>";
             PrintASNNewLine(out, indent++) << "<xs:simpleContent>";
             PrintASNNewLine(out, indent++) << "<xs:extension base=\"" << type << "\">";
@@ -174,7 +182,15 @@ void CUniSequenceDataType::PrintXMLSchema(CNcbiOstream& out,
             PrintASNNewLine(out, --indent) << "</xs:complexType>";
             PrintASNNewLine(out, --indent) << "</xs:element>";
         } else {
+#if _DATATOOL_USE_SCHEMA_STYLE_COMMENTS
+            if (GetDataMember() && GetDataMember()->GetComments().PrintSchemaComments(out, indent)) {
+                PrintASNNewLine(out, --indent) << "</xs:" << xsdk << ">";
+            } else {
+                out << "/>";
+            }
+#else
             out << "/>";
+#endif
         }
     } else {
         bool asn_container = false;

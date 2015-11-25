@@ -120,16 +120,20 @@ void CStaticDataType::PrintXMLSchema(CNcbiOstream& out,
     if (IsNillable()) {
         out << " nillable=\"true\"";
     }
-    if (type.empty() && PrintXMLSchemaContents(out,indent+1)) {
+    if (PrintXMLSchemaContents(out,indent+1,mem)) {
         PrintASNNewLine(out, indent) << "</xs:" << xsdk << ">";
     } else {
         out << "/>";
     }
 }
 
-bool CStaticDataType::PrintXMLSchemaContents(CNcbiOstream& out, int indent) const
+bool CStaticDataType::PrintXMLSchemaContents(CNcbiOstream& out, int indent, const CDataMember* mem) const
 {
+#if _DATATOOL_USE_SCHEMA_STYLE_COMMENTS
+    return (mem && mem->GetComments().PrintSchemaComments(out,indent));
+#else
     return false;
+#endif
 }
 
 void CStaticDataType::PrintDTDElement(CNcbiOstream& out, bool contents_only) const
@@ -201,9 +205,15 @@ const char* CNullDataType::GetXMLContents(void) const
     return "EMPTY";
 }
 
-bool CNullDataType::PrintXMLSchemaContents(CNcbiOstream& out, int indent) const
+bool CNullDataType::PrintXMLSchemaContents(CNcbiOstream& out, int indent, const CDataMember* mem) const
 {
+#if _DATATOOL_USE_SCHEMA_STYLE_COMMENTS
+    if (!CStaticDataType::PrintXMLSchemaContents(out, indent, mem)) {
+        out << ">";
+    }
+#else
     out << ">";
+#endif
     PrintASNNewLine(out, indent) << "<xs:complexType/>";
     return true;
 }
@@ -266,14 +276,22 @@ string CBoolDataType::GetSchemaTypeString(void) const
     return kEmptyStr;
 }
 
-bool CBoolDataType::PrintXMLSchemaContents(CNcbiOstream& out, int indent) const
+bool CBoolDataType::PrintXMLSchemaContents(CNcbiOstream& out, int indent, const CDataMember* mem) const
 {
+#if _DATATOOL_USE_SCHEMA_STYLE_COMMENTS
+    bool tagclosed = CStaticDataType::PrintXMLSchemaContents(out, indent, mem);
+#else
+    bool tagclosed = false;
+#endif
+
     if (GetParentType() && 
         GetParentType()->GetDataMember() &&
         GetParentType()->GetDataMember()->Attlist()) {
-        return false;
+        return tagclosed;
     }
-    out << ">";
+    if (!tagclosed) {
+        out << ">";
+    }
     const CBoolDataValue *val = GetDataMember() ?
         dynamic_cast<const CBoolDataValue*>(GetDataMember()->GetDefault()) : 0;
 
@@ -629,9 +647,15 @@ const char* CBitStringDataType::GetXMLContents(void) const
     return DTDEntitiesEnabled() ? "%BITS;" : "#PCDATA";
 }
 
-bool CBitStringDataType::PrintXMLSchemaContents(CNcbiOstream& out, int indent) const
+bool CBitStringDataType::PrintXMLSchemaContents(CNcbiOstream& out, int indent, const CDataMember* mem) const
 {
+#if _DATATOOL_USE_SCHEMA_STYLE_COMMENTS
+    if (!CStaticDataType::PrintXMLSchemaContents(out, indent, mem)) {
+        out << ">";
+    }
+#else
     out << ">";
+#endif
     PrintASNNewLine(out,indent++) << "<xs:simpleType>";
     PrintASNNewLine(out,indent++) << "<xs:restriction base=\"xs:string\">";
     PrintASNNewLine(out,indent)   << "<xs:pattern value=\"([0-1])*\"/>";

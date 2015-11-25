@@ -108,7 +108,13 @@ void CReferenceDataType::PrintXMLSchema(CNcbiOstream& out,
             if (GetDataMember() && GetDataMember()->Optional()) {
                 out << " minOccurs=\"0\"";
             }
+#if _DATATOOL_USE_SCHEMA_STYLE_COMMENTS
+            if (!(GetDataMember() && GetDataMember()->GetComments().PrintSchemaComments(out, indent))) {
+                out << ">";
+            }
+#else
             out << ">";
+#endif
             PrintASNNewLine(out,indent++) << "<xs:complexType>";
             PrintASNNewLine(out,indent++) << "<xs:sequence>";
         }

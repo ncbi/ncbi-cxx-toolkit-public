@@ -269,7 +269,9 @@ void CDataTypeModule::PrintXMLSchema(CNcbiOstream& out) const
     m_ExtraDefs.clear();
     ITERATE ( TDefinitions, i, m_Definitions ) {
         out << "\n";
+#if !_DATATOOL_USE_SCHEMA_STYLE_COMMENTS
         i->second->PrintDTDTypeComments(out, 0);
+#endif
         i->second->PrintXMLSchema(out,0);
     }
     out << m_ExtraDefs;

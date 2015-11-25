@@ -50,7 +50,7 @@ public:
     //virtual string GetDefaultCType(void) const;
     virtual const char* GetDefaultCType(void) const = 0;
     virtual const char* GetXMLContents(void) const = 0;
-    virtual bool PrintXMLSchemaContents(CNcbiOstream& out, int indent) const;
+    virtual bool PrintXMLSchemaContents(CNcbiOstream& out, int indent, const CDataMember* mem) const;
 };
 
 class CNullDataType : public CStaticDataType {
@@ -65,7 +65,7 @@ public:
     virtual const char* GetASNKeyword(void) const;
     virtual const char* GetDEFKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
-    virtual bool PrintXMLSchemaContents(CNcbiOstream& out, int indent) const;
+    virtual bool PrintXMLSchemaContents(CNcbiOstream& out, int indent, const CDataMember* mem) const;
 };
 
 class CBoolDataType : public CStaticDataType {
@@ -81,7 +81,7 @@ public:
     virtual const char* GetDEFKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
     virtual string GetSchemaTypeString(void) const;
-    virtual bool PrintXMLSchemaContents(CNcbiOstream& out, int indent) const;
+    virtual bool PrintXMLSchemaContents(CNcbiOstream& out, int indent, const CDataMember* mem) const;
 
     void PrintDTDExtra(CNcbiOstream& out) const;
 };
@@ -156,7 +156,7 @@ public:
     virtual const char* GetASNKeyword(void) const;
     virtual const char* GetDEFKeyword(void) const;
     virtual const char* GetXMLContents(void) const;
-    virtual bool PrintXMLSchemaContents(CNcbiOstream& out, int indent) const;
+    virtual bool PrintXMLSchemaContents(CNcbiOstream& out, int indent, const CDataMember* mem) const;
 };
 
 class COctetStringDataType : public CBitStringDataType {

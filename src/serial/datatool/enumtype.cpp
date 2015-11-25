@@ -158,7 +158,15 @@ void CEnumDataType::PrintXMLSchema(CNcbiOstream& out,
                 use = "optional";
             }
         }
+#if _DATATOOL_USE_SCHEMA_STYLE_COMMENTS
+        PrintASNNewLine(out, indent) << tmp;
+        if (!Comments().PrintSchemaComments(out, indent+1)) {
+            out << '>';
+        }
+        ++indent;
+#else
         opentag.push_back(tmp + ">");
+#endif
         closetag.push_front("</xs:element>");
         opentag.push_back("<xs:complexType>");
         closetag.push_front("</xs:complexType>");
@@ -171,8 +179,8 @@ void CEnumDataType::PrintXMLSchema(CNcbiOstream& out,
         }
     }
     string tmp = "<xs:attribute name=\"" + value + "\" use=\"" + use + "\"" + form;
+    const CDataMember* mem = GetDataMember();
     if (!inAttlist) {
-        const CDataMember* mem = GetDataMember();
         if (mem && mem->Optional() && mem->GetDefault()) {
             tmp += " default=\"" + GetXmlValueName(mem->GetDefault()->GetXmlString()) + "\"";
         }
@@ -195,14 +203,25 @@ void CEnumDataType::PrintXMLSchema(CNcbiOstream& out,
         }
     }
     if ( haveComments ) {
-        out << "\n<!--\n";
+#if _DATATOOL_USE_SCHEMA_STYLE_COMMENTS
+        PrintASNNewLine(out, indent) << "<xs:annotation><xs:documentation>";
         ITERATE ( TValues, i, m_Values ) {
             if ( !i->GetComments().Empty() ) {
-                i->GetComments().Print(out, "    "+i->GetName()+"\t- ",
-                                       "\n        ", "\n");
+                i->GetComments().Print(out, "\n "+i->GetName()+"\t- ",
+                                            "\n ", "");
             }
         }
-        out << "-->";
+        PrintASNNewLine(out, indent) << "</xs:documentation></xs:annotation>";
+#else
+        out << "\n<!--";
+        ITERATE ( TValues, i, m_Values ) {
+            if ( !i->GetComments().Empty() ) {
+                i->GetComments().Print(out, "\n    "+i->GetName()+"\t- ",
+                                       "\n        ", "");
+            }
+        }
+        out << "\n-->";
+#endif
     }
     ITERATE ( TValues, i, m_Values ) {
         PrintASNNewLine(out, indent) <<

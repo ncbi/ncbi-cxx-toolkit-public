@@ -38,6 +38,8 @@
 
 BEGIN_NCBI_SCOPE
 
+#define _DATATOOL_USE_SCHEMA_STYLE_COMMENTS  1
+
 class CComments
 {
 public:
@@ -60,6 +62,7 @@ public:
     
     CNcbiOstream& Print(CNcbiOstream& out, const string& before,
                         const string& between, const string& after) const;
+    bool PrintSchemaComments(CNcbiOstream& out, int indent, int flags = 0) const;
     CNcbiOstream& PrintDTD(CNcbiOstream& out, int flags = 0) const;
     CNcbiOstream& PrintASN(CNcbiOstream& out, int indent, int flags = 0) const;
 

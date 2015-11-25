@@ -261,8 +261,16 @@ void CDataMemberContainerType::PrintXMLSchema(CNcbiOstream& out,
                     tmp += " type=\"" + tname + "\"/>";
                     PrintASNNewLine(out, indent) << tmp;
                 } else {
+#if _DATATOOL_USE_SCHEMA_STYLE_COMMENTS
+                    PrintASNNewLine(out, indent) << tmp;
+                    if (!Comments().PrintSchemaComments(out, indent+1)) {
+                        out << '>';
+                    }
+                    ++indent;
+#else
                     tmp += ">";
                     opentag.push_back(tmp);
+#endif
                     closetag2.push_front("</xs:element>");
                 }
 
@@ -987,7 +995,9 @@ void CDataMember::PrintSpecDump(CNcbiOstream& out, int indent, const char* tag) 
 
 void CDataMember::PrintXMLSchema(CNcbiOstream& out, int indent, bool contents_only) const
 {
+#if !_DATATOOL_USE_SCHEMA_STYLE_COMMENTS
     m_Comments.PrintDTD(out, CComments::eNoEOL); 
+#endif
     GetType()->PrintXMLSchema(out, indent, contents_only);
 }
 
