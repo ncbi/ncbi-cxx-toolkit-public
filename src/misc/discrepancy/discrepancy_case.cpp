@@ -646,8 +646,14 @@ DISCREPANCY_CASE(BAD_LOCUS_TAG_FORMAT, CSeqFeatData, eAll, "Bad locus tag format
         return;
     }
 
-    // Looking for Gene-ref.locus-tag
     const CGene_ref& gene_ref = obj.GetGene();
+
+    // Bypass pseudo-genes
+    if (gene_ref.CanGetPseudo() && gene_ref.GetPseudo() == true) {
+        return;
+    }
+
+    // Looking for Gene-ref.locus-tag
     if (!gene_ref.CanGetLocus_tag()) {
         return;
     }
