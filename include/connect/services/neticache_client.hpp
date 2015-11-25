@@ -335,9 +335,6 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
     /// This method is for use by the grid_cli utility only.
     /// @internal
     void SetEventHandler(INetEventHandler* event_handler);
-
-protected:
-    void x_ProlongBlobLifetime(const string&, unsigned);
 };
 
 extern NCBI_NET_CACHE_EXPORT const char* const kNetICacheDriverName;
@@ -359,5 +356,7 @@ void Cache_RegisterDriver_NetCache(void);
 
 
 END_NCBI_SCOPE
+
+#include "impl/neticache_client_int.hpp"
 
 #endif  /* CONNECT_SERVICES___NETICACHE_CLIENT__HPP */

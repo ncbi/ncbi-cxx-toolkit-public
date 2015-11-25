@@ -110,14 +110,14 @@ public:
 
 struct SContext : CObject
 {
-    CNetICacheClient icache_client;
+    CNetICacheClientExt icache_client;
     SFileTrackAPI filetrack_api;
     CCompoundIDPool compound_id_pool;
     TNetStorageFlags default_flags;
     string app_domain;
 
     SContext(const SCombinedNetStorageConfig&, TNetStorageFlags);
-    SContext(const string&, CNetICacheClient, TNetStorageFlags,
+    SContext(const string&, CNetICacheClient::TInstance, TNetStorageFlags,
             CCompoundIDPool::TInstance, const SFileTrackConfig&);
     Uint8 GetRandomNumber() { return filetrack_api.GetRandUint8(); }
 

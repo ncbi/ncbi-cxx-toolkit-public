@@ -196,8 +196,7 @@ class CNetCache : public CLocation
 public:
     CNetCache(TObjLoc& object_loc, SContext* context)
         : CLocation(object_loc),
-          m_Context(context),
-          m_Client(eVoid)
+          m_Context(context)
     {}
 
     bool Init();
@@ -213,7 +212,7 @@ public:
 
 private:
     CRef<SContext> m_Context;
-    CNetICacheClient m_Client;
+    CNetICacheClientExt m_Client;
     CRONetCache m_Read;
     CWONetCache m_Write;
 };
@@ -435,7 +434,6 @@ bool CNetCache::Init()
         if (m_ObjectLoc.GetLocation() == eNFL_NetCache) {
             m_Client = CNetICacheClient(m_ObjectLoc.GetNCServiceName(),
                     m_ObjectLoc.GetAppDomain(), kEmptyStr);
-            m_Client.SetFlags(ICache::fBestReliability);
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
             if (m_ObjectLoc.IsXSiteProxyAllowed())
                 m_Client.GetService().AllowXSiteConnections();
@@ -573,20 +571,10 @@ void CNetCache::RemoveImpl()
 }
 
 
-struct SIClient : public CNetICacheClient
-{
-    SIClient(CNetICacheClient::TInstance impl) : CNetICacheClient(impl) {}
-
-    void ProlongBlobLifetime(const string& key, const CTimeout& ttl)
-    {
-        x_ProlongBlobLifetime(key, ttl.GetAsDouble());
-    }
-};
-
 void CNetCache::SetExpirationImpl(const CTimeout& ttl)
 {
     NC_EXISTS_IMPL;
-    SIClient(m_Client).ProlongBlobLifetime(m_ObjectLoc.GetICacheKey(), ttl);
+    m_Client.ProlongBlobLifetime(m_ObjectLoc.GetICacheKey(), ttl);
 }
 
 
@@ -881,7 +869,7 @@ SContext::SContext(const SCombinedNetStorageConfig& config, TNetStorageFlags fla
 }
 
 
-SContext::SContext(const string& domain, CNetICacheClient client,
+SContext::SContext(const string& domain, CNetICacheClient::TInstance client,
         TNetStorageFlags flags, CCompoundIDPool::TInstance id_pool,
         const SFileTrackConfig& ft_config)
     : icache_client(client),
@@ -913,10 +901,6 @@ void SContext::Init()
         if (app_domain.empty() && icache_client) {
             app_domain = icache_client.GetCacheName();
         }
-    }
-
-    if (icache_client) {
-        icache_client.SetFlags(ICache::fBestReliability);
     }
 }
 
