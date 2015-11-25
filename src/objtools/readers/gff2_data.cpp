@@ -420,7 +420,7 @@ string CGff2Record::xNormalizedAttributeValue(
     if ( NStr::EndsWith( strValue, "\"" ) ) {
         strValue = strValue.substr( 0, strValue.length() - 1 );
     }   
-    return NStr::URLDecode(strValue);
+    return NStr::URLDecode(strValue, NStr::eUrlDec_Percent);
 }
 
 

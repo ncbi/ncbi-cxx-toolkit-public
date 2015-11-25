@@ -92,7 +92,7 @@ CRef<CSeq_id> CReadUtil::AsSeqId(
     bool localInts)
 //  -----------------------------------------------------------------
 {
-    string rawId(NStr::URLDecode(givenId));
+    string rawId(NStr::URLDecode(givenId, NStr::eUrlDec_Percent));
 
     if (flags & CReaderBase::fAllIdsAsLocal) {
         CRef<CSeq_id> pId(new CSeq_id);
