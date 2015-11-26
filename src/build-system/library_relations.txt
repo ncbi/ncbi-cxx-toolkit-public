@@ -460,6 +460,7 @@ gpipe_ftp needs xrepeatdb
 gpipe_ftp_new needs gc_utils
 gpipe_ftp_new needs gcaccess_utils
 gpipe_ftp_new needs gpinit
+gpipe_ftp_new needs gpipe_alnutil
 gpipe_ftp_new needs xalgoalignutil
 gpipe_ftp_new needs xobjwrite
 gpipe_ftp_new needs xrepeatdb
