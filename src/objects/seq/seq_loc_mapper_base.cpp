@@ -2081,6 +2081,13 @@ CSeq_loc_Mapper_Base::CollectSynonyms(const CSeq_id_Handle& id) const
     m_SeqInfo->CollectSynonyms(id, synonyms);
     ITERATE(TSynonyms, syn, synonyms) {
         m_SynonymMap[*syn] = id;
+        // Add matching (e.g. versionless) synonyms.
+        CConstRef<CSeq_id> syn_id = syn->GetSeqId();
+        CSeq_id::TSeqIdHandles matches;
+        syn_id->GetMatchingIds(matches);
+        ITERATE(CSeq_id::TSeqIdHandles, mit, matches) {
+            m_SynonymMap[*mit] = id;
+        }
     }
     return id;
 }
