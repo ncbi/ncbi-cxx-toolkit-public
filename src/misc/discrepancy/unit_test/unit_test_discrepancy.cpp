@@ -984,6 +984,29 @@ BOOST_AUTO_TEST_CASE(POSSIBLE_LINKER)
 }
 
 
+BOOST_AUTO_TEST_CASE(MISSING_LOCUS_TAGS)
+{
+    {{
+    // Test file #1
+    CRef<CSeq_entry> entry = ReadEntryFromFile("test_data/missing_locus_tags.asn");
+    BOOST_REQUIRE(entry);
+    CScope scope(*CObjectManager::GetInstance());
+    scope.AddDefaults();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+    
+    CRef<CDiscrepancySet> set = CDiscrepancySet::New(scope);
+    set->AddTest("MISSING_LOCUS_TAGS");
+    set->Parse(seh);
+    set->Summarize();
+    
+    const vector<CRef<CDiscrepancyCase> >& tst = set->GetTests();
+    BOOST_REQUIRE_EQUAL(tst.size(), 1);
+    TReportItemList rep = tst[0]->GetReport();
+    BOOST_REQUIRE_EQUAL(rep.size(), 1);
+    BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "2 genes have no locus tags.");
+    }}
+}
+
 
 BOOST_AUTO_TEST_CASE(BAD_LOCUS_TAG_FORMAT)
 {

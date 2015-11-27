@@ -640,6 +640,32 @@ DISCREPANCY_SUMMARIZE(POSSIBLE_LINKER)
 }
 
 
+DISCREPANCY_CASE(MISSING_LOCUS_TAGS, CSeqFeatData, eAll, "Missing locus tags")
+{
+    if (obj.Which() != CSeqFeatData::e_Gene) {
+        return;
+    }
+
+    const CGene_ref& gene_ref = obj.GetGene();
+
+    // Skip pseudo-genes
+    if (gene_ref.CanGetPseudo() && gene_ref.GetPseudo() == true) {
+        return;
+    }
+
+    // Report missing or empty locus tags
+    if (!gene_ref.CanGetLocus_tag() || NStr::TruncateSpaces(gene_ref.GetLocus_tag()).empty()) {
+        m_Objs["[n] gene[s] [has] no locus tag[s]."].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(MISSING_LOCUS_TAGS)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
 DISCREPANCY_CASE(BAD_LOCUS_TAG_FORMAT, CSeqFeatData, eAll, "Bad locus tag format")
 {
     if (obj.Which() != CSeqFeatData::e_Gene) {
@@ -648,16 +674,17 @@ DISCREPANCY_CASE(BAD_LOCUS_TAG_FORMAT, CSeqFeatData, eAll, "Bad locus tag format
 
     const CGene_ref& gene_ref = obj.GetGene();
 
-    // Bypass pseudo-genes
+    // Skip pseudo-genes
     if (gene_ref.CanGetPseudo() && gene_ref.GetPseudo() == true) {
         return;
     }
 
-    // Looking for Gene-ref.locus-tag
+    // Skip missing locus tags
     if (!gene_ref.CanGetLocus_tag()) {
         return;
     }
 
+    // Report non-empty, bad-format locus tags
     string locus_tag = gene_ref.GetLocus_tag();
     if (!locus_tag.empty() && context.IsBadLocusTagFormat(locus_tag)) {
         m_Objs["[n] locus tag[s] [is] incorrectly formatted."].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
