@@ -144,7 +144,7 @@ BOOST_AUTO_TEST_CASE(FreqRatiosFromMsa)
     string tmp_line;
     getline(raw_data, tmp_line);
     list<string>  ref_data;
-    NStr::Split(tmp_line,  " ", ref_data);
+    NStr::Split(tmp_line,  " ", ref_data, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     list<string>::iterator ref_pt=ref_data.begin();
     ITERATE(list<double>, pt, freq_ratios) {
     	if (*pt == 0) {
