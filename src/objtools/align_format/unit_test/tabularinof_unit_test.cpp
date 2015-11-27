@@ -238,7 +238,7 @@ BOOST_AUTO_TEST_CASE(TaxonomyOutput) {
 
     string output = CNcbiOstrstreamToString(output_stream);
     vector<string> results;
-    NStr::Tokenize(output, "\n", results);
+    NStr::Split(output, "\n", results);
 
     for(unsigned int i=0; i < 8; i++) {
     	BOOST_REQUIRE(results[i].find(ref[i]) != NPOS);
@@ -283,7 +283,7 @@ BOOST_AUTO_TEST_CASE(SubjectTitlesOutput) {
 
     	string output = CNcbiOstrstreamToString(output_stream);
     	vector<string> results;
-    	NStr::Tokenize(output, "\n", results);
+    	NStr::Split(output, "\n", results);
     	for(unsigned int i=0; i < 8; i++) {
     	    BOOST_REQUIRE(results[i].find(ref[i]) != NPOS);
     	}
@@ -310,7 +310,7 @@ BOOST_AUTO_TEST_CASE(SubjectTitlesOutput) {
             "PREDICTED: interleukin-1 alpha [Bubalus bubalis]<>interleukin-1 alpha [Bubalus bubalis]<>Interleukin-1 alpha [Bubalus bubalis x Bubalus carabanensis]",
             "interleukin 1, alpha [Bubalus bubalis]<>Interleukin-1 alpha [Bubalus bubalis]"}; 
     	vector<string> results;
-    	NStr::Tokenize(output, "\n", results);
+    	NStr::Split(output, "\n", results);
     	for(unsigned int i=0; i < 8; i++) {
     	    BOOST_REQUIRE(results[i].find(ref[i]) != NPOS);
     	}
