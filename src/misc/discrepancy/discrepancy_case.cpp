@@ -676,6 +676,49 @@ DISCREPANCY_SUMMARIZE(MISSING_LOCUS_TAGS)
 }
 
 
+DISCREPANCY_CASE(INCONSISTENT_LOCUS_TAG_PREFIX, CSeqFeatData, eAll, "Inconsistent locus tag prefix")
+{
+    if (obj.Which() != CSeqFeatData::e_Gene) {
+        return;
+    }
+
+    const CGene_ref& gene_ref = obj.GetGene();
+
+    // Skip pseudo-genes
+    if (gene_ref.CanGetPseudo() && gene_ref.GetPseudo() == true) {
+        return;
+    }
+
+    // Skip missing locus tags
+    if (!gene_ref.CanGetLocus_tag()) {
+        return;
+    }
+
+    // Report on good locus tags - are they consistent?
+    string locus_tag = gene_ref.GetLocus_tag();
+    if (!locus_tag.empty() && !context.IsBadLocusTagFormat(locus_tag)) {
+        // Store each unique prefix in a bin
+        // If there is more than 1 bin, the prefixes are inconsistent
+        string prefix;
+        string tagvalue;
+        NStr::SplitInTwo(locus_tag, "_", prefix, tagvalue);
+
+        stringstream ss;
+        ss << "[n] feature[s] [has] locus tag prefix " << prefix << ".";
+        m_Objs[ss.str()].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+    }
+}
+
+
+DISCREPANCY_SUMMARIZE(INCONSISTENT_LOCUS_TAG_PREFIX)
+{
+    // If there is more than 1 bin, the prefixes are inconsistent
+    if (m_Objs.GetMap().size() > 1) {
+        m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+    }
+}
+
+
 DISCREPANCY_CASE(BAD_LOCUS_TAG_FORMAT, CSeqFeatData, eAll, "Bad locus tag format")
 {
     if (obj.Which() != CSeqFeatData::e_Gene) {

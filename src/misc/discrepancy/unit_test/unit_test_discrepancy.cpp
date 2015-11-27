@@ -1008,6 +1008,96 @@ BOOST_AUTO_TEST_CASE(MISSING_LOCUS_TAGS)
 }
 
 
+BOOST_AUTO_TEST_CASE(INCONSISTENT_LOCUS_TAG_PREFIX)
+{
+    {{
+    // Test file #1
+    CRef<CSeq_entry> entry = ReadEntryFromFile("test_data/inconsistent_locus_tag_prefix.asn");
+    BOOST_REQUIRE(entry);
+    CScope scope(*CObjectManager::GetInstance());
+    scope.AddDefaults();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+    
+    CRef<CDiscrepancySet> set = CDiscrepancySet::New(scope);
+    set->AddTest("INCONSISTENT_LOCUS_TAG_PREFIX");
+    set->Parse(seh);
+    set->Summarize();
+    
+    const vector<CRef<CDiscrepancyCase> >& tst = set->GetTests();
+    BOOST_REQUIRE_EQUAL(tst.size(), 1);
+    TReportItemList rep = tst[0]->GetReport();
+    BOOST_REQUIRE_EQUAL(rep.size(), 5);
+    BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "1 feature has locus tag prefix AB1.");
+    BOOST_CHECK_EQUAL(rep[1]->GetMsg(), "1 feature has locus tag prefix AB2.");
+    BOOST_CHECK_EQUAL(rep[2]->GetMsg(), "1 feature has locus tag prefix AB3.");
+    BOOST_CHECK_EQUAL(rep[3]->GetMsg(), "1 feature has locus tag prefix AB4.");
+    BOOST_CHECK_EQUAL(rep[4]->GetMsg(), "1 feature has locus tag prefix AB5.");
+    }}
+
+    {{
+    // Test file #2
+    CRef<CSeq_entry> entry = ReadEntryFromFile("test_data/inconsistent_locus_tag_prefix_2.asn");
+    BOOST_REQUIRE(entry);
+    CScope scope(*CObjectManager::GetInstance());
+    scope.AddDefaults();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+    
+    CRef<CDiscrepancySet> set = CDiscrepancySet::New(scope);
+    set->AddTest("INCONSISTENT_LOCUS_TAG_PREFIX");
+    set->Parse(seh);
+    set->Summarize();
+    
+    const vector<CRef<CDiscrepancyCase> >& tst = set->GetTests();
+    BOOST_REQUIRE_EQUAL(tst.size(), 1);
+    TReportItemList rep = tst[0]->GetReport();
+    BOOST_REQUIRE_EQUAL(rep.size(), 3);
+    BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "2 features have locus tag prefix AB1.");
+    BOOST_CHECK_EQUAL(rep[1]->GetMsg(), "2 features have locus tag prefix AB3.");
+    BOOST_CHECK_EQUAL(rep[2]->GetMsg(), "1 feature has locus tag prefix AB5.");
+    }}
+
+    {{
+    // Test file #3
+    CRef<CSeq_entry> entry = ReadEntryFromFile("test_data/inconsistent_locus_tag_prefix_3.asn");
+    BOOST_REQUIRE(entry);
+    CScope scope(*CObjectManager::GetInstance());
+    scope.AddDefaults();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+    
+    CRef<CDiscrepancySet> set = CDiscrepancySet::New(scope);
+    set->AddTest("INCONSISTENT_LOCUS_TAG_PREFIX");
+    set->Parse(seh);
+    set->Summarize();
+    
+    const vector<CRef<CDiscrepancyCase> >& tst = set->GetTests();
+    BOOST_REQUIRE_EQUAL(tst.size(), 1);
+    TReportItemList rep = tst[0]->GetReport();
+    BOOST_REQUIRE_EQUAL(rep.size(), 2);
+    BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "4 features have locus tag prefix AB1.");
+    BOOST_CHECK_EQUAL(rep[1]->GetMsg(), "1 feature has locus tag prefix AB3.");
+    }}
+
+    {{
+    // Test file #4
+    CRef<CSeq_entry> entry = ReadEntryFromFile("test_data/inconsistent_locus_tag_prefix_4.asn");
+    BOOST_REQUIRE(entry);
+    CScope scope(*CObjectManager::GetInstance());
+    scope.AddDefaults();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+    
+    CRef<CDiscrepancySet> set = CDiscrepancySet::New(scope);
+    set->AddTest("INCONSISTENT_LOCUS_TAG_PREFIX");
+    set->Parse(seh);
+    set->Summarize();
+    
+    const vector<CRef<CDiscrepancyCase> >& tst = set->GetTests();
+    BOOST_REQUIRE_EQUAL(tst.size(), 1);
+    TReportItemList rep = tst[0]->GetReport();
+    BOOST_CHECK_EQUAL(rep.size(), 0);  // No report expected because locus tag prefixes are all consistent
+    }}
+}
+
+
 BOOST_AUTO_TEST_CASE(BAD_LOCUS_TAG_FORMAT)
 {
     {{
