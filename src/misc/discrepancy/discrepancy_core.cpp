@@ -166,6 +166,7 @@ CRef<CReportItem> CReportNode::Export(CDiscrepancyCase& test, bool unique)
     NStr::ReplaceInPlace(str, "[has]", objs.size() == 1 ? "has" : "have");
     CRef<CDiscrepancyItem> item(new CDiscrepancyItem(test, str));
     item->m_Autofix = autofix;
+    item->m_Ext = m_Ext;
     item->m_Subs = subs;
     item->m_Objs = objs;
     return CRef<CReportItem>((CReportItem*)item);

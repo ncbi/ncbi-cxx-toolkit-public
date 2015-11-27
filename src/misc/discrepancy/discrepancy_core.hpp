@@ -134,16 +134,18 @@ class CReportNode;
 class CDiscrepancyItem : public CReportItem
 {
 public:
-    CDiscrepancyItem(CDiscrepancyCase& t, const string& s) : m_Msg(s), m_Autofix(false), m_Test(&t) {}
+    CDiscrepancyItem(CDiscrepancyCase& t, const string& s) : m_Msg(s), m_Autofix(false), m_Ext(false), m_Test(&t) {}
     string GetTitle(void) const { return m_Test->GetName();}
     string GetMsg(void) const { return m_Msg;}
     TReportObjectList GetDetails(void) const { return m_Objs;}
     TReportItemList GetSubitems(void) const { return m_Subs;}
     bool CanAutofix(void) const { return m_Autofix; }
+    bool IsExtended(void) const { return m_Ext; }
     void Autofix(CScope& scope);
 protected:
     string m_Msg;
     bool m_Autofix;
+    bool m_Ext;
     TReportObjectList m_Objs;
     TReportItemList m_Subs;
     CRef<CDiscrepancyCase> m_Test;
@@ -161,18 +163,18 @@ class CReportNode : public CObject
 public:
     typedef map<string, CRef<CReportNode> > TNodeMap;
 
-    CReportNode(const string& name = kEmptyStr) : m_Name(name) {}
+    CReportNode(const string& name = kEmptyStr) : m_Name(name), m_Fatal(false), m_Autofix(false), m_Ext(false) {}
     
     CReportNode& operator[](const string& name);
     
-    void SetFatal(bool b = true) { m_Fatal = b; }
-    void SetAutofix(bool b = true) { m_Autofix = b; }
-    void SetExt(bool b = true) { m_Ext = b; }
-    
+    CReportNode& Fatal(bool b = true) { m_Fatal = b; return *this; }
+    CReportNode& Autofix(bool b = true) { m_Autofix = b; return *this; }
+    CReportNode& Ext(bool b = true) { m_Ext = b; return *this; }
+
     static void Add(TReportObjectList& list, CReportObj& obj, bool unique = true);
-    void Add(CReportObj& obj, bool unique = true) { Add(m_Objs, obj, unique); }
+    CReportNode& Add(CReportObj& obj, bool unique = true) { Add(m_Objs, obj, unique);  return *this; }
     static void Add(TReportObjectList& list, TReportObjectList& objs, bool unique = true);
-    void Add(TReportObjectList& objs, bool unique = true) { Add(m_Objs, objs, unique); }
+    CReportNode& Add(TReportObjectList& objs, bool unique = true) { Add(m_Objs, objs, unique);  return *this; }
     
     TReportObjectList& GetObjects() { return m_Objs; }
     TNodeMap& GetMap() { return m_Map; }

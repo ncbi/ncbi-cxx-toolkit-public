@@ -5360,8 +5360,7 @@ DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eNormal, "Suspect Product 
             if (!DoesObjectMatchConstraintChoiceSet(context, constr)) continue;
         }
         CReportNode& node = m_Objs["[n] product name[s] contain[S] suspect phrase[s] or character[s]"][GetRuleText(**rule)][GetRuleMatch(**rule)];
-        node.Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef(), (*rule)->CanGetReplace(), (CObject*)&**rule));
-        node.SetFatal((*rule)->GetFatal());
+        node.Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef(), (*rule)->CanGetReplace(), (CObject*)&**rule)).Fatal((*rule)->GetFatal());
     }
 }
 
@@ -5473,8 +5472,7 @@ DISCREPANCY_CASE(TEST_ORGANELLE_PRODUCTS, CSeqFeatData, eNormal, "Organelle prod
             if (!DoesObjectMatchConstraintChoiceSet(context, constr)) continue;
         }
         CReportNode& node = m_Objs["[n] organelle product name[s] contain[S] suspect phrase[s] or character[s]"][GetRuleText(**rule)][GetRuleMatch(**rule)];
-        node.Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef(), (*rule)->CanGetReplace(), (CObject*)&**rule));
-        node.SetFatal((*rule)->GetFatal());
+        node.Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef(), (*rule)->CanGetReplace(), (CObject*)&**rule)).Fatal((*rule)->GetFatal());
     }
 }
 

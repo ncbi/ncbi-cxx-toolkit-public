@@ -526,12 +526,22 @@ DISCREPANCY_AUTOFIX(CONTAINED_CDS)
 
 DISCREPANCY_CASE(ZERO_BASECOUNT, CSeq_inst, eAll, "Zero Base Counts")
 {
+    static const char* kMsg = "[n] sequence[s] [has] a zero basecount for a nucleotide";
     if (obj.IsAa() || context.SequenceHasFarPointers()) {
         return;
     }
     const CSeqSummary& sum = context.GetNucleotideCount();
-    if (!sum.A || !sum.C || !sum.G || !sum.T) {
-        m_Objs["[n] sequence[s] [has] a zero basecount for a nucleotide"].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+    if (!sum.A) {
+        m_Objs[kMsg]["[n] sequence[s] [has] no As"].Ext().Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+    }
+    if (!sum.C) {
+        m_Objs[kMsg]["[n] sequence[s] [has] no Cs"].Ext().Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+    }
+    if (!sum.G) {
+        m_Objs[kMsg]["[n] sequence[s] [has] no Gs"].Ext().Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+    }
+    if (!sum.T) {
+        m_Objs[kMsg]["[n] sequence[s] [has] no Ts"].Ext().Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
     }
 }
 

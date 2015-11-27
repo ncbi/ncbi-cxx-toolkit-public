@@ -65,11 +65,12 @@ protected:
     string m_Lineage;   // override lineage
     vector<string> m_Files;
     vector<string> m_Tests;
+    bool m_Ext;
 };
 
 
 CDiscRepApp::CDiscRepApp(void) :
-    m_Scope(*CObjectManager::GetInstance())
+    m_Scope(*CObjectManager::GetInstance()), m_Ext(false)
 {
 }
 
@@ -128,6 +129,8 @@ void CDiscRepApp::Init(void)
     arg_desc->AddOptionalKey("w", "SuspectProductFile", "Suspect product rule file name", CArgDescriptions::eInputFile);
     arg_desc->AddOptionalKey("L", "LineageToUse", "Default lineage", CArgDescriptions::eString);
 
+    arg_desc->AddOptionalKey("X", "ExpandCategories", "Expand Report Categories (comma-delimited list of test names or ALL)", CArgDescriptions::eString);
+
 /*
     arg_desc->AddOptionalKey("M", "MessageLevel", 
         "Output message level: 'a': add FATAL tags and output all messages, 'f': add FATAL tags and output FATAL messages only",
@@ -138,9 +141,6 @@ void CDiscRepApp::Init(void)
     arg_desc->AddDefaultKey("R", "Remote", 
                           "Allow GenBank data loader: 'T' = true, 'F' = false",
                            CArgDescriptions::eBoolean, "T");
-    arg_desc->AddOptionalKey("X", "ExpandCategories", 
-         "Expand Report Categories (comma-delimited list of test names or ALL)",
-                                CArgDescriptions::eString); 
 */
     SetupArgDescriptions(arg_desc.release());  // call CreateArgs
 };
@@ -293,10 +293,13 @@ void CDiscRepApp::x_ProcessAll(const string& outname)
 void CDiscRepApp::x_RecursiveOutput(CNcbiOfstream& out, const TReportItemList& list)
 {
     ITERATE(TReportItemList, it, list) {
+        if ((*it)->IsExtended() && !m_Ext) {
+            continue;
+        }
         out << (*it)->GetTitle() << ": " << (*it)->GetMsg() << "\n";
         cout << (*it)->GetTitle() << ": " << (*it)->GetMsg() << "\n";        // TODO: remove from the final version
         TReportItemList subs = (*it)->GetSubitems();
-        if (!subs.empty()) {
+        if (!subs.empty() && (m_Ext || !subs[0]->IsExtended())) {
             x_RecursiveOutput(out, subs);
         }
         else {
@@ -375,6 +378,20 @@ int CDiscRepApp::Run(void)
     if (m_Tests.empty()) {
         ERR_POST("Empty test list");
         return 1;
+    }
+
+    if (args["X"]) {
+        list<string> List;
+        NStr::Split(args["X"].AsString(), ", ", List);
+        ITERATE(list<string>, s, List) {
+            if (*s != "ALL") {
+                ERR_POST("Unknown option: " + *s);
+                return 1;
+            }
+            else {
+                m_Ext = true;
+            }
+        }
     }
 
     // input files
