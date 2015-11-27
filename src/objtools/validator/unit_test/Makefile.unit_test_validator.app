@@ -17,4 +17,4 @@ CHECK_CMD =
 CHECK_COPY = unit_test_validator.ini
 CHECK_TIMEOUT = 3000
 
-WATCHERS = bollin kans kornbluh
+WATCHERS = bollin kans kornbluh foleyjp asztalos

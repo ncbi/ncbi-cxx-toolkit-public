@@ -11,7 +11,7 @@ LIB = xvalidate
 
 ASN_DEP = general biblio pub seq seqset submit taxon3 valerr
 
-WATCHERS = bollin kornbluh
+WATCHERS = bollin kornbluh kans foleyjp asztalos
 
 
 USES_LIBRARIES =  \
