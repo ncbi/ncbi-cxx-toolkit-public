@@ -1410,7 +1410,6 @@ private:
     void* get_node_data (void) const;
     void* release_node_data (void);
     node_set convert_to_nset(void *) const;
-    friend class tree_parser;
     friend class impl::node_iterator;
     friend class document;
     friend class xslt::xpath_object;

@@ -1,6 +1,6 @@
 # $Id$
 
-SRC = ait_impl document event_parser node_iterator tree_parser \
+SRC = ait_impl document event_parser node_iterator \
       xml_init attributes node node_manip stylesheet utility     \
       xslt_init namespace xpath_expression node_set document_impl schema errors dtd \
       document_proxy libxml2_xmlwrapp deref_impl xpath_object extension_function \

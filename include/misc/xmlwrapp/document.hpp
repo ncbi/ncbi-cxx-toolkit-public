@@ -68,7 +68,6 @@ namespace xml {
 // forward declarations
 class dtd;
 class schema;
-class tree_parser;
 
 namespace impl {
 struct doc_impl;
@@ -766,7 +765,6 @@ private:
     bool is_failure (error_messages* messages,
                      warnings_as_errors_type how) const;
 
-    friend class tree_parser;
     friend class xslt::stylesheet;
     friend class schema;
     friend class dtd;

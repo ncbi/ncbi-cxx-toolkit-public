@@ -66,7 +66,6 @@
 #include <misc/xmlwrapp/node.hpp>
 #include <misc/xmlwrapp/attributes.hpp>
 #include <misc/xmlwrapp/document.hpp>
-#include <misc/xmlwrapp/tree_parser.hpp>
 #include <misc/xmlwrapp/event_parser.hpp>
 #include <misc/xmlwrapp/namespace.hpp>
 #include <misc/xmlwrapp/xpath_expression.hpp>
