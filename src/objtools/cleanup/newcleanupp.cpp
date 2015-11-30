@@ -11057,6 +11057,7 @@ void CNewCleanup_imp::x_RemoveEmptyFeatureTables( CBioseq_set & bioseq_set )
 
 void CNewCleanup_imp::x_RemoveOldFeatures(CBioseq & bioseq)
 {
+#if 0
     CBioseq_Handle bh = m_Scope->GetBioseqHandle(bioseq);
     bool any_erasures = true;
     while (any_erasures) {
@@ -11077,7 +11078,7 @@ void CNewCleanup_imp::x_RemoveOldFeatures(CBioseq & bioseq)
             ++f;
         }
     }
-
+#endif
 }
 
 
@@ -11645,6 +11646,9 @@ void CNewCleanup_imp::MoveStandardName(CSeq_feat& sf)
 {
     // only for rRNAs
     if (!sf.IsSetData() || !sf.GetData().IsRna()) {
+        return;
+    }
+    if (!sf.GetData().GetRna().IsSetType() || sf.GetData().GetRna().GetType() == CRNA_ref::eType_tmRNA) {
         return;
     }
     // not for EMBL or DDBJ
