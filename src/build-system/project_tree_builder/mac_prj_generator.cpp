@@ -714,13 +714,13 @@ string CMacProjectGenerator::CreateProjectCustomScriptPhase(
         CRef<CArray> inputs(  new CArray);
         CRef<CArray> outputs( new CArray);
         list<string> in_list;
-        NStr::Split(info.m_Input, LIST_SEPARATOR, in_list);
+        NStr::Split(info.m_Input, LIST_SEPARATOR, in_list, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
         ITERATE( list<string>, i, in_list) {
             AddString( *inputs,
                 GetRelativePath(CDirEntry::ConcatPath(script_loc,*i)));
         }
         list<string> out_list;
-        NStr::Split(info.m_Output, LIST_SEPARATOR, out_list);
+        NStr::Split(info.m_Output, LIST_SEPARATOR, out_list, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
         ITERATE( list<string>, o, out_list) {
             AddString( *outputs,
                 GetRelativePath(CDirEntry::ConcatPath(script_loc,*o)));
@@ -1057,7 +1057,7 @@ void CMacProjectGenerator::CreateBuildSettings(CDict& dict_cfg, const SConfigInf
         tmp_str = GetApp().GetMetaMakefile().GetCompilerOpt("ARCHS", cfg);
     }
     tmp_list.clear();
-    NStr::Split(tmp_str, LIST_SEPARATOR, tmp_list);
+    NStr::Split(tmp_str, LIST_SEPARATOR, tmp_list, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     CRef<CArray> archs( AddArray( *settings, "ARCHS"));
     ITERATE( list<string>, a, tmp_list) {
         AddString( *archs, *a);
@@ -1243,10 +1243,10 @@ void CMacProjectGenerator::CreateProjectBuildSettings(
     list<string> tmp_list = prj.m_Defines;
     tmp_list = prj_files.GetProjectContext().Defines(cfg);
     string tmp_str = metamake.GetCompilerOpt("GCC_PREPROCESSOR_DEFINITIONS", cfg);
-    NStr::Split(tmp_str, LIST_SEPARATOR, tmp_list);
+    NStr::Split(tmp_str, LIST_SEPARATOR, tmp_list, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     if (dll_build) {
         tmp_str = GetApp().GetConfig().Get(CMsvc7RegSettings::GetMsvcSection(), "DllBuildDefine");
-        NStr::Split(tmp_str, LIST_SEPARATOR, tmp_list);
+        NStr::Split(tmp_str, LIST_SEPARATOR, tmp_list, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     }
 
     tmp_list.sort();

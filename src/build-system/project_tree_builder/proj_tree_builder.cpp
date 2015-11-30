@@ -294,7 +294,7 @@ void SMakeProjectT::DoResolveDefs(CSymResolver& resolver,
                                         list<string> resolved_defs;
                                         NStr::Split(resolved_def_str, 
                                                     LIST_SEPARATOR, 
-                                                    resolved_defs);
+                                                    resolved_defs, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
                                         if (msvc_empty) {
                                             copy(resolved_defs.begin(),
                                                 resolved_defs.end(),
@@ -446,7 +446,7 @@ void SMakeProjectT::CreateIncludeDirs(const list<string>& cpp_flags,
             GetApp().GetSite().ResolveDefine(CSymResolver::StripDefine(flag), dir_all);
             if ( !dir_all.empty() ) {
                 list<string> dir_list;
-                NStr::Split(dir_all, LIST_SEPARATOR, dir_list);
+                NStr::Split(dir_all, LIST_SEPARATOR, dir_list, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
                 ITERATE(list<string>, dir_item, dir_list) {
                     const string& dir = *dir_item;
                     if ( CDirEntry(dir).IsDir() ) {
@@ -1013,7 +1013,7 @@ void SMakeProjectT::ConvertLibDepends(const list<string>& depends,
             string def;
             GetApp().GetSite().ResolveDefine(CSymResolver::StripDefine(id), def);
             list<string> resolved_def;
-            NStr::Split(def, LIST_SEPARATOR, resolved_def);
+            NStr::Split(def, LIST_SEPARATOR, resolved_def, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
             ITERATE(list<string>, r, resolved_def) {
                 id = *r;
                 if (!site.IsLibWithChoice(id) ||
@@ -1056,7 +1056,7 @@ void SMakeProjectT::ConvertLibDependsMacro(const list<string>& depends,
             if (CSymResolver::IsDefine(id) &&
                 site.GetMacros().GetValue(CSymResolver::StripDefine(id),lib)) {
                 list<string> res;
-                NStr::Split(lib, LIST_SEPARATOR, res);
+                NStr::Split(lib, LIST_SEPARATOR, res, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
                 ITERATE( list<string>, r, res) {
                     if (NStr::StartsWith(*r, "-l")) {
                         depends_libs.push_back(r->substr(2));

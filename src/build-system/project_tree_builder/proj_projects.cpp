@@ -181,8 +181,8 @@ bool CProjectsLstFileFilter::CheckProject(const string& project_base_dir, bool* 
                 break;
             } else if (weak) {
                 list<string> splitmask, splitdir;
-                NStr::Split( str, "/", splitmask);
-                NStr::Split( proj_dir, "/", splitdir);
+                NStr::Split( str, "/", splitmask, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
+                NStr::Split( proj_dir, "/", splitdir, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
                 if (splitmask.size() > splitdir.size()) {
                     splitmask.resize(splitdir.size());
                     string reduced( NStr::Join(splitmask,"/"));

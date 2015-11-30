@@ -45,7 +45,7 @@ inline void GetDllsList   (const CPtbRegistry& registry,
     string dlls_ids_str = 
         registry.GetString("DllBuild", "DLLs");
     
-    NStr::Split(dlls_ids_str, LIST_SEPARATOR, *dlls_ids);
+    NStr::Split(dlls_ids_str, LIST_SEPARATOR, *dlls_ids, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 }
 
 
@@ -55,7 +55,7 @@ inline void GetHostedLibs (const CPtbRegistry& registry,
                            list<string>*        lib_ids)
 {
     string hosting_str = registry.GetString(dll_id, "Hosting");
-    NStr::Split(hosting_str, LIST_SEPARATOR, *lib_ids);
+    NStr::Split(hosting_str, LIST_SEPARATOR, *lib_ids, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
 }
 

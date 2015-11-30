@@ -212,7 +212,7 @@ const CMsvcMetaMakefile::SPchInfo& CMsvcMetaMakefile::GetPchInfo(void) const
     m_PchInfo->m_PchUsageDefine = m_MakeFile.GetString("UsePch", "PchUsageDefine");
     m_PchInfo->m_DefaultPch     = m_MakeFile.GetString("UsePch", "DefaultPch");
     string do_not_use_pch_str   = m_MakeFile.GetString("UsePch", "DoNotUsePch");
-    NStr::Split(do_not_use_pch_str, LIST_SEPARATOR, m_PchInfo->m_DontUsePchList);
+    NStr::Split(do_not_use_pch_str, LIST_SEPARATOR, m_PchInfo->m_DontUsePchList, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     string irrelevant[] = {"UsePch","PchUsageDefine","DefaultPch","DoNotUsePch",""};
 
     list<string> projects_with_pch_dirs;
@@ -331,7 +331,7 @@ bool CMsvcProjectMakefile::Redefine(const string& value, list<string>& redef) co
         string new_val = m_MakeFile.GetString("Redefine", value);
         if (!new_val.empty()) {
             redef.clear();
-            NStr::Split(new_val, LIST_SEPARATOR, redef);
+            NStr::Split(new_val, LIST_SEPARATOR, redef, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
             _TRACE(m_FilePath << " redefines:  " << value << " = " << new_val);
             return true;
         }
@@ -401,7 +401,7 @@ void CMsvcProjectMakefile::GetAdditionalSourceFiles(const SConfigInfo& config,
     string files_string = 
         GetOpt(m_MakeFile, "AddToProject", "SourceFiles", config);
     
-    NStr::Split(files_string, LIST_SEPARATOR, *files);
+    NStr::Split(files_string, LIST_SEPARATOR, *files, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 }
 
 
@@ -411,7 +411,7 @@ void CMsvcProjectMakefile::GetAdditionalLIB(const SConfigInfo& config,
     string lib_string = 
         GetOpt(m_MakeFile, "AddToProject", "LIB", config);
     
-    NStr::Split(lib_string, LIST_SEPARATOR, *lib_ids);
+    NStr::Split(lib_string, LIST_SEPARATOR, *lib_ids, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 }
 
 
@@ -422,7 +422,7 @@ void CMsvcProjectMakefile::GetExcludedSourceFiles(const SConfigInfo& config,
         GetOpt(m_MakeFile, 
                "ExcludedFromProject", "SourceFiles", config);
     
-    NStr::Split(files_string, LIST_SEPARATOR, *files);
+    NStr::Split(files_string, LIST_SEPARATOR, *files, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 }
 
 
@@ -433,7 +433,7 @@ void CMsvcProjectMakefile::GetExcludedLIB(const SConfigInfo& config,
         GetOpt(m_MakeFile, 
                "ExcludedFromProject", "LIB", config);
     
-    NStr::Split(lib_string, LIST_SEPARATOR, *lib_ids);
+    NStr::Split(lib_string, LIST_SEPARATOR, *lib_ids, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 }
 
 
@@ -443,7 +443,7 @@ void CMsvcProjectMakefile::GetAdditionalIncludeDirs(const SConfigInfo& config,
     string dirs_string = 
         GetOpt(m_MakeFile, "AddToProject", "IncludeDirs", config);
     
-    NStr::Split(dirs_string, LIST_SEPARATOR, *dirs);
+    NStr::Split(dirs_string, LIST_SEPARATOR, *dirs, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 }
 
 void CMsvcProjectMakefile::GetHeadersInInclude(const SConfigInfo& config, 
@@ -468,7 +468,7 @@ void CMsvcProjectMakefile::x_GetHeaders(
     dirs_string = NStr::Replace(dirs_string,"\\",separator);
     
     files->clear();
-    NStr::Split(dirs_string, LIST_SEPARATOR, *files);
+    NStr::Split(dirs_string, LIST_SEPARATOR, *files, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     if (files->empty() && !m_Compound) {
         files->push_back("*.h");
         files->push_back("*.hpp");
@@ -501,7 +501,7 @@ CMsvcProjectMakefile::GetCustomBuildInfo(list<SCustomBuildInfo>* info) const
     }
     
     list<string> source_files;
-    NStr::Split(source_files_str, LIST_SEPARATOR, source_files);
+    NStr::Split(source_files_str, LIST_SEPARATOR, source_files, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
     ITERATE(list<string>, p, source_files){
         const string& source_file = *p;
@@ -544,7 +544,7 @@ void CMsvcProjectMakefile::GetResourceFiles(const SConfigInfo& config,
     string files_string = 
         GetOpt(m_MakeFile, "AddToProject", "ResourceFiles", config);
     
-    NStr::Split(files_string, LIST_SEPARATOR, *files);
+    NStr::Split(files_string, LIST_SEPARATOR, *files, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 }
 
 void CMsvcProjectMakefile::GetExtraFiles(map<string, list<string> >*  files_map) const
@@ -558,7 +558,7 @@ void CMsvcProjectMakefile::GetExtraFiles(map<string, list<string> >*  files_map)
             string group_name = NStr::Replace(s->substr(prefix.size()),"_"," ");
             string files_string = m_MakeFile.Get(section, "Files");
             list<string> raw_files, files;
-            NStr::Split(files_string, LIST_SEPARATOR, raw_files);
+            NStr::Split(files_string, LIST_SEPARATOR, raw_files, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
             string fname;
             bool started = false;
             ITERATE(list<string>, f, raw_files) {

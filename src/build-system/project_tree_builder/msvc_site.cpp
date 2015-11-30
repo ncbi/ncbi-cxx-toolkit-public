@@ -58,7 +58,7 @@ CMsvcSite::CMsvcSite(const string& reg_path)
         // Provided requests
         str = x_GetConfigureEntry("ProvidedRequests");
         list<string> provided;
-        NStr::Split(str, LIST_SEPARATOR, provided);
+        NStr::Split(str, LIST_SEPARATOR, provided, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
         ITERATE (list<string>, it, provided) {
             m_ProvidedThing.insert(*it);
         }
@@ -74,7 +74,7 @@ CMsvcSite::CMsvcSite(const string& reg_path)
         // Not provided requests
         str = x_GetConfigureEntry("NotProvidedRequests");
         list<string> not_provided;
-        NStr::Split(str, LIST_SEPARATOR, not_provided);
+        NStr::Split(str, LIST_SEPARATOR, not_provided, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
         ITERATE (list<string>, it, not_provided) {
             m_NotProvidedThing.insert(*it);
         }
@@ -134,7 +134,7 @@ void CMsvcSite::InitializeLibChoices(void)
 
     str = x_GetConfigureEntry("ComponentChoices");
     list<string> comp_choices;
-    NStr::Split(str, LIST_SEPARATOR, comp_choices);
+    NStr::Split(str, LIST_SEPARATOR, comp_choices, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
     if (CMsvc7RegSettings::GetMsvcPlatform() != CMsvc7RegSettings::eUnix) {
         // special cases
@@ -174,7 +174,7 @@ void CMsvcSite::InitializeLibChoices(void)
     // Lib choices
     str = x_GetConfigureEntry("LibChoices");
     list<string> lib_choices_list;
-    NStr::Split(str, LIST_SEPARATOR, lib_choices_list);
+    NStr::Split(str, LIST_SEPARATOR, lib_choices_list, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     ITERATE(list<string>, p, lib_choices_list) {
         const string& choice_str = *p;
         string lib_id;
@@ -269,7 +269,7 @@ void CMsvcSite::GetComponents(const string& entry,
                               list<string>* components) const
 {
     components->clear();
-    NStr::Split(m_Registry.Get(entry, "Component"), " ,\t", *components);
+    NStr::Split(m_Registry.Get(entry, "Component"), " ,\t", *components, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 }
 
 string CMsvcSite::ProcessMacros(string raw_data, bool preserve_unresolved) const
@@ -334,10 +334,10 @@ void CMsvcSite::GetLibInfo(const string& lib,
     } else {
         string include_str    = ToOSPath(
             ProcessMacros(GetOpt(m_Registry, section, "INCLUDE", config),false));
-        NStr::Split(include_str, LIST_SEPARATOR, libinfo->m_IncludeDir);
+        NStr::Split(include_str, LIST_SEPARATOR, libinfo->m_IncludeDir, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
         string defines_str    = GetOpt(m_Registry, section, "DEFINES", config);
-        NStr::Split(defines_str, LIST_SEPARATOR, libinfo->m_LibDefines);
+        NStr::Split(defines_str, LIST_SEPARATOR, libinfo->m_LibDefines, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
         libinfo->m_LibPath    = ToOSPath(
             ProcessMacros(GetOpt(m_Registry, section, "LIBPATH", config),false));
@@ -345,17 +345,17 @@ void CMsvcSite::GetLibInfo(const string& lib,
             ProcessMacros(GetOpt(m_Registry, section, "BINPATH", config),false));
 
         string libs_str = GetOpt(m_Registry, section, "LIB", config);
-        NStr::Split(libs_str, LIST_SEPARATOR, libinfo->m_Libs);
+        NStr::Split(libs_str, LIST_SEPARATOR, libinfo->m_Libs, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
         libs_str = GetOpt(m_Registry, section, "STDLIB", config);
-        NStr::Split(libs_str, LIST_SEPARATOR, libinfo->m_StdLibs);
+        NStr::Split(libs_str, LIST_SEPARATOR, libinfo->m_StdLibs, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
         string macro_str = GetOpt(m_Registry, section, "MACRO", config);
-        NStr::Split(macro_str, LIST_SEPARATOR, libinfo->m_Macro);
+        NStr::Split(macro_str, LIST_SEPARATOR, libinfo->m_Macro, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
         string files_str    = ProcessMacros(GetOpt(m_Registry, section, "FILES", config),false);
         list<string> tmp;
-        NStr::Split(files_str, "|", tmp);
+        NStr::Split(files_str, "|", tmp, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
         ITERATE( list<string>, f, tmp) {
             libinfo->m_Files.push_back( ToOSPath(*f));
         }
@@ -385,7 +385,7 @@ bool CMsvcSite::IsLibEnabledInConfig(const string&      lib,
     }
     list<string> enabled_configs;
     NStr::Split(enabled_configs_str, 
-                LIST_SEPARATOR, enabled_configs);
+                LIST_SEPARATOR, enabled_configs, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
     return find(enabled_configs.begin(), 
                 enabled_configs.end(), 
@@ -409,7 +409,7 @@ bool CMsvcSite::ResolveDefine(const string& define, string& resolved) const
         if (CMsvc7RegSettings::GetMsvcPlatform() != CMsvc7RegSettings::eUnix) {
             if (m_UnixMakeDef.GetValue(define,resolved)) {
                 list<string> lst, res;
-                NStr::Split(resolved, LIST_SEPARATOR_LIBS, lst);
+                NStr::Split(resolved, LIST_SEPARATOR_LIBS, lst, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
                 ITERATE(list<string>, l, lst) {
                     if (SMakeProjectT::IsConfigurableDefine(*l)) {
                         resolved = x_GetDefinesEntry(SMakeProjectT::StripConfigurableDefine(*l));
@@ -441,7 +441,7 @@ void CMsvcSite::GetConfigureDefines(list<string>* defines) const
 {
     defines->clear();
     NStr::Split(x_GetConfigureEntry("Defines"), LIST_SEPARATOR,
-                *defines);
+                *defines, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 }
 
 
@@ -563,7 +563,7 @@ void CMsvcSite::GetLibChoiceIncludes(
                                                cpp_flags_define);
     //split on parts
     list<string> parts;
-    NStr::Split(include_str, LIST_SEPARATOR, parts);
+    NStr::Split(include_str, LIST_SEPARATOR, parts, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
     string lib_id;
     ITERATE(list<string>, p, parts) {
@@ -659,7 +659,7 @@ void CMsvcSite::GetThirdPartyLibsToInstall(list<string>* libs) const
     libs->clear();
 
     string libs_str = x_GetConfigureEntry("ThirdPartyLibsToInstall");
-    NStr::Split(libs_str, LIST_SEPARATOR, *libs);
+    NStr::Split(libs_str, LIST_SEPARATOR, *libs, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 }
 
 
@@ -690,7 +690,7 @@ void CMsvcSite::GetStandardFeatures(list<string>& features) const
 {
     features.clear();
     NStr::Split(x_GetConfigureEntry("StandardFeatures"),
-                LIST_SEPARATOR, features);
+                LIST_SEPARATOR, features, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 }
 
 //-----------------------------------------------------------------------------
@@ -749,7 +749,7 @@ string CMsvcSite::GetPlatformInfo(const string& sysname,
     string result(orig), syn, res;
     if (!str.empty() && NStr::SplitInTwo(str, ":", syn, res)) {
         list< string > entries;
-        NStr::Split(syn, LIST_SEPARATOR, entries);
+        NStr::Split(syn, LIST_SEPARATOR, entries, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
         if (find(entries.begin(), entries.end(), orig) != entries.end()) {
             result = res;
         }
@@ -847,7 +847,7 @@ bool CMsvcSite::IsLibOk(const SLibInfo& lib_info, bool silent) const
         bool group_exists = false;
         ITERATE(list<string>, g, lib_info.m_Files) {
             list<string> tmp;
-            NStr::Split(*g, LIST_SEPARATOR, tmp);
+            NStr::Split(*g, LIST_SEPARATOR, tmp, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
             bool file_exists = true;
             ITERATE( list<string>, p, tmp) {
                 string file = *p;
@@ -885,7 +885,7 @@ bool CMsvcSite::IsLibOk(const SLibInfo& lib_info, bool silent) const
 void CMsvcSite::ProcessMacros(const list<SConfigInfo>& configs)
 {
     list<string> macros;
-    NStr::Split(x_GetConfigureEntry("Macros"), LIST_SEPARATOR, macros);
+    NStr::Split(x_GetConfigureEntry("Macros"), LIST_SEPARATOR, macros, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
     ITERATE(list<string>, m, macros) {
         const string& macro = *m;

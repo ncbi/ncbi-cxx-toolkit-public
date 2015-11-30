@@ -728,7 +728,7 @@ string CMsvc7RegSettings::GetMsvcSection(void)
         if (arch != "i386") {
             NStr::ReplaceInPlace(arch, ",", " ");
             list<string> lst;
-            NStr::Split(arch, " ", lst);
+            NStr::Split(arch, " ", lst, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
             lst.sort();
             arch = NStr::Join(lst,"_");
             s += "." + arch;

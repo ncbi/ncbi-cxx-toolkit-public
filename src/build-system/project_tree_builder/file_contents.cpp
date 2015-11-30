@@ -487,12 +487,12 @@ void CSimpleMakeFileContents::AddReadyKV(const SKeyValue& kv)
             NStr::FindCase(kv.m_Value," -l") != NPOS ||
             NStr::FindCase(kv.m_Value,"-rpath") != NPOS ||
             NStr::FindCase(kv.m_Value,"-framework") != NPOS) {
-            NStr::Split(kv.m_Value, LIST_SEPARATOR_LIBS, values);
+            NStr::Split(kv.m_Value, LIST_SEPARATOR_LIBS, values, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
         } else {
             if (m_ValueSeparator.empty()) {
                 m_ValueSeparator = LIST_SEPARATOR;
             }
-            NStr::Split(kv.m_Value, m_ValueSeparator, values);
+            NStr::Split(kv.m_Value, m_ValueSeparator, values, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
         }
 // change '{' into '(', because I rely on that in many places
         NON_CONST_ITERATE(list<string>, v, values) {
@@ -528,7 +528,7 @@ void CSimpleMakeFileContents::AddReadyKV(const SKeyValue& kv)
                     NStr::SplitInTwo(CSymResolver::StripDefine(value), ",", first, second);
                     NStr::SplitInTwo(first, " ", func, arg);
                     list<string> tmp;
-                    NStr::Split(second, " ", tmp);
+                    NStr::Split(second, " ", tmp, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
                     ITERATE(list<string>, t, tmp) {
                         dest.push_back(*t+arg);
                     }

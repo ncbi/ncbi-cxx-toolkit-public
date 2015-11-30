@@ -2216,7 +2216,7 @@ void CProjBulderApp::GetMetaDataFiles(list<string>* files) const
     *files = m_CustomMetaData;
     if (CMsvc7RegSettings::GetMsvcPlatform() != CMsvc7RegSettings::eUnix) {
         NStr::Split(GetConfig().Get("ProjectTree", "MetaData"), LIST_SEPARATOR,
-                    *files);
+                    *files, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     } else {
         string name(GetApp().GetSite().GetConfigureEntry("MetaData"));
         if (!name.empty()) {
@@ -2243,7 +2243,7 @@ void CProjBulderApp::GetBuildConfigs(list<SConfigInfo>* configs)
     const string& config_str
       = GetConfig().Get(CMsvc7RegSettings::GetMsvcSection(), name);
     list<string> configs_list;
-    NStr::Split(config_str, LIST_SEPARATOR, configs_list);
+    NStr::Split(config_str, LIST_SEPARATOR, configs_list, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     LoadConfigInfoByNames(GetConfig(), configs_list, configs);
 }
 
@@ -2382,7 +2382,7 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
     list<string> implicit_exclude_list;
     NStr::Split(implicit_exclude_str, 
                 LIST_SEPARATOR, 
-                implicit_exclude_list);
+                implicit_exclude_list, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     ITERATE(list<string>, p, implicit_exclude_list) {
         const string& subdir = *p;
         string dir = CDirEntry::ConcatPath(m_ProjectTreeInfo->m_Src, 
@@ -2540,7 +2540,7 @@ void CProjBulderApp::LoadProjectTags(const string& filename)
             }
             list<string> values;
             if (line.find('=') != string::npos) {
-                NStr::Split(line, "=", values);
+                NStr::Split(line, "=", values, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
                 if (values.size() > 1) {
                     string first = NStr::TruncateSpaces(values.front());
                     string second = NStr::TruncateSpaces(values.back());
@@ -2549,7 +2549,7 @@ void CProjBulderApp::LoadProjectTags(const string& filename)
                 }
                 continue;
             }
-            NStr::Split(line, LIST_SEPARATOR, values);
+            NStr::Split(line, LIST_SEPARATOR, values, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
             ITERATE(list<string>,v,values) {
                 m_RegisteredProjectTags.insert(*v);
             }
@@ -2567,7 +2567,7 @@ bool  CProjBulderApp::FindDepGraph(const string& root, list<string>& found) cons
     found.clear();
     list<string> locations;
     string locstr(GetConfig().Get("ProjectTree", "DepGraph"));
-    NStr::Split(locstr, LIST_SEPARATOR, locations);
+    NStr::Split(locstr, LIST_SEPARATOR, locations, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     for (list<string>::const_iterator l = locations.begin(); l != locations.end(); ++l) {
         CDirEntry fileloc(CDirEntry::ConcatPath(root,CDirEntry::ConvertToOSPath(*l)));
         if (fileloc.Exists() && fileloc.IsFile()) {
@@ -2588,7 +2588,7 @@ void   CProjBulderApp::LoadDepGraph(const string& filename)
                 continue;
             }
             list<string> values;
-            NStr::Split(line, " ", values);
+            NStr::Split(line, " ", values, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
             if (values.size() < 2) {
                 continue;
             }
@@ -2603,7 +2603,7 @@ void   CProjBulderApp::LoadDepGraph(const string& filename)
                 site.ResolveDefine(CSymResolver::StripDefine(first), resolved);
                 first = resolved;
             }
-            NStr::Split(first, LIST_SEPARATOR_LIBS, first_list);
+            NStr::Split(first, LIST_SEPARATOR_LIBS, first_list, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
             list<string> third_list;
 #if DO_PATCHTREEMAKEFILES
@@ -2626,7 +2626,7 @@ void   CProjBulderApp::LoadDepGraph(const string& filename)
                 }
                 third = resolved;
             }
-            NStr::Split(third, LIST_SEPARATOR_LIBS, third_list);
+            NStr::Split(third, LIST_SEPARATOR_LIBS, third_list, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 #endif
             ITERATE(list<string>, f, first_list) {
                 string f_name(*f);
@@ -2634,7 +2634,7 @@ void   CProjBulderApp::LoadDepGraph(const string& filename)
                     f_name = f->substr(2);
                 } else if (NStr::FindCase(*f,"-framework") != NPOS) {
                     list<string> f_list;
-                    NStr::Split(f_name, ",", f_list);
+                    NStr::Split(f_name, ",", f_list, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
                     f_name = f_list.back();
                 } else if (f->at(0) == '-') {
                     continue;
@@ -2763,7 +2763,7 @@ void CProjBulderApp::UpdateDepGraph( CProjectTreeBuilder::TFiles& files)
                     }
                     dep = resolved;
                 }
-                NStr::Split(dep, LIST_SEPARATOR_LIBS, dep_list);
+                NStr::Split(dep, LIST_SEPARATOR_LIBS, dep_list, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
                 ITERATE(list<string>, d, dep_list) {
                     string dep_name = NStr::StartsWith(*d, "-l") ? d->substr(2) : *d;
                     CSymResolver::StripSuffix(dep_name);

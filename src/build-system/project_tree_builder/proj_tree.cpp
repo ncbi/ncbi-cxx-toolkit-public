@@ -640,7 +640,7 @@ void CProjectTreeFolders::CreatePath(const string& root_src_dir,
     string rel_dir = 
         CDirEntry::CreateRelativePath(root_src_dir, project_base_dir);
     string sep(1, CDirEntry::GetPathSeparator());
-    NStr::Split(rel_dir, sep, *path);
+    NStr::Split(rel_dir, sep, *path, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1020,7 +1020,7 @@ void CMakeGenerator::GenerateCMakeTree(CProjectItemsTree& projects_tree)
                 CDirEntry::CreateRelativePath(src_root, 
                     CDirEntry::ConvertToOSPath(prj.m_SourcesBaseDir)));
         list<string> pathnodes;
-        NStr::Split(relpath, separator, pathnodes);
+        NStr::Split(relpath, separator, pathnodes, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
 // subdirectories/ build tree
         string curpath;
@@ -1188,7 +1188,7 @@ cerr << "Unhandled source: " << *s << " in " << prj.m_Name << endl;
                                     }
                                     if (NStr::FindCase( value,"general") != NPOS) {
                                         list<string> vv_lst;
-                                        NStr::Split(value, LIST_SEPARATOR_LIBS, vv_lst);
+                                        NStr::Split(value, LIST_SEPARATOR_LIBS, vv_lst, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
                                         NON_CONST_ITERATE( list<string>, vv, vv_lst) {
                                             if (*vv == "general") {
                                                 *vv = "general-lib";
@@ -1253,7 +1253,7 @@ cerr << "Found ConfigurableDefine: " << *s << " in " << prj.m_Name << endl;
                         string resolved;
                         site.ResolveDefine(value, resolved);
                         list<string> resolved_list;
-                        NStr::Split(resolved, " ", resolved_list);
+                        NStr::Split(resolved, " ", resolved_list, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
                         ITERATE( list<string>, r, resolved_list) {
                             if (NStr::StartsWith(*r, "-D")) {
                                 defines.push_back(*r);
