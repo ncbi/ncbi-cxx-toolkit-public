@@ -438,7 +438,7 @@ void CFileCode::GenerateHPP(const string& path, string& fileName) const
     string extra = m_CodeGenerator->GetConfig().Get("-","_extra_headers");
     if (!extra.empty()) {
         list<string> extra_values;
-        NStr::Split(extra, " \t\n\r,;", extra_values);
+        NStr::Split(extra, " \t\n\r,;", extra_values, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
         header << "// extra headers\n";
         list<string>::const_iterator i;
         for (i = extra_values.begin(); i != extra_values.end(); ++i) {

@@ -307,7 +307,7 @@ void CCodeGenerator::UndoGenerateCode(void)
             }
             NStr::ReplaceInPlace(strline,"GENFILES =","");
             list<string> files;
-            NStr::Split( strline, " ", files);
+            NStr::Split( strline, " ", files, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
             ITERATE(list<string>, f, files) {
                 CFile fo;
                 fo.Reset( MakeAbsolutePath( Path(m_HPPDir, *f)) + "_.hpp");

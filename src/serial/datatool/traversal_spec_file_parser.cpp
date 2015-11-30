@@ -199,17 +199,17 @@ CTraversalSpecFileParser::CDescFileNode::CDescFileNode(
     EWhen when ) 
     : m_Func(func), m_ConstantArgs(constant_args), m_ID(++ms_HighestID), m_When(when)
 {
-    NStr::Tokenize( pattern, ".", m_Pattern );
+    NStr::Split( pattern, ".", m_Pattern, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate );
 
     m_ExceptPatterns.resize( except_patterns.size() );
     int ii = 0;
     for( ; ii < (int)m_ExceptPatterns.size(); ++ii ) {
-        NStr::Tokenize( except_patterns[ii], ".", m_ExceptPatterns[ii] );
+        NStr::Split( except_patterns[ii], ".", m_ExceptPatterns[ii], NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate );
     }
 
     m_ArgPatterns.resize( arg_patterns.size() );
     for( ; ii < (int)m_ArgPatterns.size(); ++ii ) {
-        NStr::Tokenize( arg_patterns[ii], ".", m_ArgPatterns[ii] );
+        NStr::Split( arg_patterns[ii], ".", m_ArgPatterns[ii], NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate );
     }
 }
 
@@ -435,7 +435,7 @@ void CTraversalSpecFileParser::x_ParseOutputClassNameClause( CTokenizer &tokeniz
     string output_class_name_with_namespace;
     tokenizer.GetNextOrThrow( output_class_name_with_namespace );
 
-    NStr::Tokenize( output_class_name_with_namespace, "::", m_Namespace );
+    NStr::Split( output_class_name_with_namespace, "::", m_Namespace, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate );
 
     // last piece becomes class-name, though
     m_OutputClassName = m_Namespace.back();
@@ -642,7 +642,7 @@ void CTraversalSpecFileParser::x_ParseDeprecated( CTokenizer &tokenizer )
         }
 
         TPattern pattern;
-        NStr::Tokenize( pattern_str, ".", pattern );
+        NStr::Split( pattern_str, ".", pattern, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate );
 
         m_DeprecatedPatterns.push_back( pattern );
 

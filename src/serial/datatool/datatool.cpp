@@ -271,7 +271,7 @@ bool CDataTool::ProcessModules(void)
     
     if ( generator.GetOpt("opm", &opt) ) {
 //        modulesPath.clear();
-        NStr::Split(opt, ",", modulesPath);
+        NStr::Split(opt, ",", modulesPath, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     }
     
     SourceFile::EType srctype =
@@ -727,7 +727,7 @@ SourceFile::EType CDataTool::LoadDefinitions(
     ITERATE (CArgValue::TStringArray, n, nameList) {
         if (split_names) {
             list<string> t;
-            NStr::Split(*n, " ", t);
+            NStr::Split(*n, " ", t, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
             names.insert(names.end(), t.begin(), t.end());
         } else {
             names.push_back(*n);
