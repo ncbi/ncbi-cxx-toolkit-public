@@ -15,7 +15,7 @@ class CTable2AsnValidator
 {
 public:
     CConstRef<objects::CValidError> Validate(const CSerialObject& object, Uint4 opts);
-    void Cleanup(objects::CSeq_entry& entry);
+    void Cleanup(objects::CSeq_entry& entry, const string& flags);
     void ReportErrors(CConstRef<objects::CValidError> errors, CNcbiOstream& out);
 };
 

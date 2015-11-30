@@ -284,15 +284,8 @@ void CTbl2AsnApp::Init(void)
         "Z", "OutFile", "Discrepancy Report Output File", CArgDescriptions::eOutputFile);
 
     arg_desc->AddOptionalKey("c", "String", "Cleanup (combine any of the following letters)\n\
-      d Correct Collection Dates (assume month first)\n\
-      D Correct Collection Dates (assume day first)\n\
-      b Append note to coding regions that overlap other coding regions\n\
-        with similar product names and do not contain 'ABC'\n\
-      x Extend partial ends of features by one or two nucleotides to abut\n\
-        gaps or sequence ends\n\
-      p Add exception to non-extendable partials\n\
-      s Add exception to short introns\n\
-      f Fix product names", CArgDescriptions::eString);
+      b Basic Cleanup\n\
+      e Extended Cleanup", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("z", "OutFile", "Cleanup Log File", CArgDescriptions::eOutputFile);
 
@@ -392,9 +385,18 @@ int CTbl2AsnApp::Run(void)
     //m_LowCutoff = static_cast<EDiagSev>(args["Q"].AsInteger() - 1);
     //m_HighCutoff = static_cast<EDiagSev>(args["P"].AsInteger() - 1);
 
-//    if (args["c"])
-//        m_context.m_cleanup = args["c"].AsString();
-    m_context.m_cleanup = "b"; // always cleanup
+    if (args["c"])
+    {
+        if (args["c"].AsString().find_first_not_of("bc") != string::npos)
+        {
+            NCBI_THROW(CArgException, eConvert,
+                "Unrecognized cleanup type " + args["c"].AsString());
+        }
+
+        m_context.m_cleanup = args["c"].AsString();
+    }
+    else
+       m_context.m_cleanup = "b"; // always cleanup
 
 
     // Process file based on its content
@@ -929,7 +931,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
     if (!m_context.m_cleanup.empty())
     {
-        validator.Cleanup(*entry);
+        validator.Cleanup(*entry, m_context.m_cleanup);
     }
 
 #if 0

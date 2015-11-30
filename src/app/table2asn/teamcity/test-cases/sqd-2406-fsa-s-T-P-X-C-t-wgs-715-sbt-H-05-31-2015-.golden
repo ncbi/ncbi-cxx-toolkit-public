@@ -111,6 +111,10 @@ Seq-submit ::= {
                 {
                   subtype isolation-source,
                   name "soil"
+                },
+                {
+                  subtype environmental-sample,
+                  name ""
                 }
               }
             },
@@ -193,6 +197,10 @@ Seq-submit ::= {
                 {
                   subtype isolation-source,
                   name "soil"
+                },
+                {
+                  subtype environmental-sample,
+                  name ""
                 }
               }
             },

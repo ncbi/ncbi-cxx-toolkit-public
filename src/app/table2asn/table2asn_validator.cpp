@@ -36,10 +36,17 @@ static const string& s_GetSeverityLabel (EDiagSev sev)
 
 } // end anonymous namespace
 
-void CTable2AsnValidator::Cleanup(CSeq_entry& entry)
+void CTable2AsnValidator::Cleanup(CSeq_entry& entry, const string& flags)
 {
     CCleanup cleanup;
-    cleanup.BasicCleanup(entry, CCleanup::eClean_SyncGenCodes);
+    if (flags.find('e'))
+    {
+        cleanup.ExtendedCleanup(entry, CCleanup::eClean_SyncGenCodes | CCleanup::eClean_NoNcbiUserObjects);
+    }
+    else
+    {
+        cleanup.BasicCleanup(entry, CCleanup::eClean_SyncGenCodes | CCleanup::eClean_NoNcbiUserObjects);
+    }
 }
 
 CConstRef<CValidError> CTable2AsnValidator::Validate(const CSerialObject& object, Uint4 opts)
