@@ -165,6 +165,26 @@ BOOST_AUTO_TEST_CASE(SHORT_SEQUENCES)
     BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "2 sequences are shorter than 50 nt");
 }
 
+BOOST_AUTO_TEST_CASE(EC_NUMBER_NOTE) 
+{
+    CRef<CSeq_entry> entry = ReadEntryFromFile("test_data/ec_number_note.asn");
+    BOOST_REQUIRE(entry);
+    CScope scope(*CObjectManager::GetInstance());
+    scope.AddDefaults();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+
+    CRef<CDiscrepancySet> set = CDiscrepancySet::New(scope);
+
+    set->AddTest("EC_NUMBER_NOTE");
+    set->Parse(seh);
+    set->Summarize();
+
+    const vector<CRef<CDiscrepancyCase> >&tst = set->GetTests();
+    TReportItemList rep = tst[0]->GetReport();
+    BOOST_REQUIRE_EQUAL(rep.size(), 1);
+    BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "2 features have EC numbers in notes or products");
+}
+
 BOOST_AUTO_TEST_CASE(PERCENT_N_INCLUDE_GAPS_IN_LENGTH)
 {
     CRef<CSeq_entry> entry = ReadEntryFromFile("test_data/normal_delta.asn");
