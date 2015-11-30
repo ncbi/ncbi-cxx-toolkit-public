@@ -1,3 +1,11 @@
+Release 4.24.0 cloned from 4.23.2 (2015-11-30)
+
+Improvements:
+    * NetSchedule: queue name case insensitivity (JIRA: CXX-7536)
+    * NetSchedule: remove [server]/reinit parameter (JIRA: CXX-7466)
+    * NetSchedule: WST/WST2 overheads (JIRA: CXX-4826)
+
+
 Release 4.23.2 cloned from 4.23.1 (2015-10-19)
 
 Improvements:
