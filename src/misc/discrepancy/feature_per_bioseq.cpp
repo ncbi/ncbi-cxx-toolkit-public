@@ -32,6 +32,9 @@
 #include "utils.hpp"
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/util/feature.hpp>
+#include <objmgr/util/sequence.hpp>
+#include <objtools/validator/utilities.hpp>
+
 
 BEGIN_NCBI_SCOPE;
 BEGIN_SCOPE(NDiscrepancy)
@@ -278,6 +281,79 @@ DISCREPANCY_SUMMARIZE(COUNT_TRNAS)
 
 DISCREPANCY_ALIAS(COUNT_TRNAS, FIND_DUP_TRNAS);
 
+
+static CConstRef<CProt_ref> sGetProtRefForFeature(const CSeq_feat& seq_feat, CScope& scope, bool look_xref)
+{
+    CConstRef<CProt_ref> prot_ref(0);
+
+    if (seq_feat.GetData().IsProt()) {
+        prot_ref = CConstRef<CProt_ref> (&(seq_feat.GetData().GetProt()));
+        return prot_ref;
+    }
+
+    if (seq_feat.GetData().IsCdregion()) {
+        if (look_xref) prot_ref.Reset(seq_feat.GetProtXref());
+        if (prot_ref.Empty() && seq_feat.CanGetProduct()) {
+
+            CBioseq_Handle bsh = sequence::GetBioseqFromSeqLoc(seq_feat.GetProduct(), scope);
+            if (bsh) {
+               for (CFeat_CI prot_ci(bsh, CSeqFeatData::e_Prot); prot_ci; ++prot_ci) {
+                   prot_ref.Reset( &(prot_ci->GetOriginalFeature().GetData().GetProt()) );
+                   if (prot_ref->GetProcessed() == CProt_ref::eProcessed_not_set) {
+                       break;
+                   }
+               }
+            }
+        }
+    }
+
+    return prot_ref;
+}
+
+
+DISCREPANCY_CASE(EC_NUMBER_NOTE, CSeq_feat_BY_BIOSEQ, eAll, "Seq-feat has EC number note")
+{
+    bool discrepancy_found = false;
+
+    if (obj.IsSetComment() &&
+        validator::HasECnumberPattern(obj.GetComment())) {
+        discrepancy_found = true;
+    }
+    else if (obj.IsSetData() &&
+             obj.GetData().IsCdregion() &&
+             obj.IsSetProduct()) {
+        CConstRef<CProt_ref> prot_ref(sGetProtRefForFeature(obj, context.GetScope(), false));
+        if (prot_ref.NotEmpty()) {
+            if (prot_ref->IsSetName()) {
+                ITERATE(list<string>, it, prot_ref->GetName()) {
+                    if (validator::HasECnumberPattern(*it)) {
+                        discrepancy_found = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!discrepancy_found &&
+                prot_ref->IsSetDesc() &&
+                validator::HasECnumberPattern(prot_ref->GetDesc())) {
+                discrepancy_found = true;
+            }
+        }
+    }
+
+    if (discrepancy_found) {
+        m_Objs["[n] feature[s] [has] EC numbers in notes or products"].Add(
+                *new CDiscrepancyObject(CConstRef<CSeq_feat>(&obj),
+                                        context.GetScope(),
+                                        context.GetFile(),
+                                        context.GetKeepRef()));
+    }
+}
+
+DISCREPANCY_SUMMARIZE(EC_NUMBER_NOTE)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
 
 END_SCOPE(NDiscrepancy)
 END_NCBI_SCOPE
