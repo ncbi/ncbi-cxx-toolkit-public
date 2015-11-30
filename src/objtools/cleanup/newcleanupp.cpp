@@ -12115,22 +12115,31 @@ bool CNewCleanup_imp::x_MergeDupOrgNames(COrgName& on1, const COrgName& add)
 }
 
 
+bool HasMod(const COrg_ref& org, const string& mod)
+{
+    if (!org.IsSetMod()) {
+        return false;
+    }
+    ITERATE(COrg_ref::TMod, it, org.GetMod()) {
+        if (NStr::Equal(*it, mod)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 bool CNewCleanup_imp::x_MergeDupOrgRefs(COrg_ref& org1, const COrg_ref& add)
 {
     bool any_change = false;
     // mods
     if (add.IsSetMod()) {
         ITERATE(COrg_ref::TMod, it, add.GetMod()) {
-            org1.SetMod().push_back(*it);
+            if (!HasMod(org1, *it)) {
+                org1.SetMod().push_back(*it);
+                any_change = true;
+            }
         }
-        // sort/unique org.mod
-        if (!MOD_ON_ORGREF_IS_SORTED(org1, s_OrgrefSynCompare)) {
-            SORT_MOD_ON_ORGREF(org1, s_OrgrefSynCompare);
-        }
-        if (!MOD_ON_ORGREF_IS_UNIQUE(org1, s_OrgrefSynEqual)) {
-            UNIQUE_MOD_ON_ORGREF(org1, s_OrgrefSynEqual);
-        }
-        any_change = true;
     }
 
     // dbxrefs
