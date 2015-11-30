@@ -72,7 +72,7 @@ NCBI_PARAM_ENUM_ARRAY(objects::CLDS2_DataLoader::ELockMode, LDS2, DataLoader_Loc
 };
 
 NCBI_PARAM_ENUM_DEF_EX(objects::CLDS2_DataLoader::ELockMode, LDS2, DataLoader_Lock,
-                       objects::CLDS2_DataLoader::eLockDatabase,
+                       objects::CLDS2_DataLoader::eCacheDatabase,
                        eParam_NoThread, LDS2_DATALOADER_LOCK);
 typedef NCBI_PARAM_TYPE(LDS2, DataLoader_Lock) TLDS2_LockMode;
 
