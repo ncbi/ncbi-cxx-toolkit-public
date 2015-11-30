@@ -2841,27 +2841,27 @@ typedef int TFindFiles;
 
 /// Find files in the specified directory
 template<class TFindFunc>
-TFindFunc FindFilesInDir(const CDir&            dir,
-                         const vector<string>&  masks,
-                         const vector<string>&  masks_subdir,
-                         TFindFunc&             find_func,
-                         TFindFiles             flags = fFF_Default)
+void FindFilesInDir(const CDir&            dir,
+                    const vector<string>&  masks,
+                    const vector<string>&  masks_subdir,
+                    TFindFunc&             find_func,
+                    TFindFiles             flags = fFF_Default)
 {
     TFindFiles find_type = flags & (fFF_Dir | fFF_File);
     if ( find_type == 0 ) {
         // nothing to find
-        return find_func;
+        return;
     }
     auto_ptr<CDir::TEntries> 
         contents(dir.GetEntriesPtr(kEmptyStr, CDir::fIgnoreRecursive | CDir::fIgnorePath));
     if (contents.get() == NULL) {
         // error
-        return find_func;
+        return;
     }
 
     NStr::ECase use_case = (flags & fFF_Nocase) ? NStr::eNocase : NStr::eCase;
-
     string path;
+
     if ( dir.GetPath().length() ) {
         path = CDirEntry::AddTrailingPathSeparator(dir.GetPath());
     }
@@ -2886,37 +2886,36 @@ TFindFunc FindFilesInDir(const CDir&            dir,
              CDirEntry::MatchesMask(name, masks_subdir, use_case) &&
              (entry_type == fFF_Dir || dir_entry.IsDir()) /*real dir*/ ) {
             CDir nested_dir(dir_entry.GetPath());
-            find_func = FindFilesInDir(nested_dir, masks, masks_subdir,
-                                       find_func, flags);
+            FindFilesInDir(nested_dir, masks, masks_subdir, find_func, flags);
         }
-    } // ITERATE
-    return find_func;
+    }
+    return;
 }
 
 
 /// Find files in the specified directory
 template<class TFindFunc>
-TFindFunc FindFilesInDir(const CDir&   dir,
-                         const CMask&  masks,
-                         const CMask&  masks_subdir,
-                         TFindFunc&    find_func,
-                         TFindFiles    flags = fFF_Default)
+void FindFilesInDir(const CDir&   dir,
+                    const CMask&  masks,
+                    const CMask&  masks_subdir,
+                    TFindFunc&    find_func,
+                    TFindFiles    flags = fFF_Default)
 {
     TFindFiles find_type = flags & (fFF_Dir | fFF_File);
     if ( find_type == 0 ) {
         // nothing to find
-        return find_func;
+        return;
     }
     auto_ptr<CDir::TEntries> 
         contents(dir.GetEntriesPtr(kEmptyStr, CDir::fIgnoreRecursive |  CDir::fIgnorePath));
     if (contents.get() == NULL) {
         // error
-        return find_func;
+        return;
     }
 
     NStr::ECase use_case = (flags & fFF_Nocase) ? NStr::eNocase : NStr::eCase;
-
     string path;
+
     if ( dir.GetPath().length() ) {
         path = CDirEntry::AddTrailingPathSeparator(dir.GetPath());
     }
@@ -2941,11 +2940,10 @@ TFindFunc FindFilesInDir(const CDir&   dir,
              masks_subdir.Match(name, use_case) &&
              (entry_type == fFF_Dir || dir_entry.IsDir()) /*real dir*/ ) {
             CDir nested_dir(dir_entry.GetPath());
-            find_func = FindFilesInDir(nested_dir, masks, masks_subdir,
-                                       find_func, flags);
+            FindFilesInDir(nested_dir, masks, masks_subdir, find_func, flags);
         }
-    } // ITERATE entries
-    return find_func;
+    }
+    return;
 }
 
 
@@ -2968,38 +2966,37 @@ TFindFunc FindFilesInDir(const CDir&   dir,
 
 template<class TPathIterator, 
          class TFindFunc>
-TFindFunc FindFiles(TPathIterator         path_begin,
-                    TPathIterator         path_end,
-                    const vector<string>& masks,
-                    TFindFunc&            find_func,
-                    TFindFiles            flags = fFF_Default)
+void FindFiles(TPathIterator         path_begin,
+               TPathIterator         path_end,
+               const vector<string>& masks,
+               TFindFunc&            find_func,
+               TFindFiles            flags = fFF_Default)
 {
     vector<string> masks_empty;
     for (; path_begin != path_end; ++path_begin) {
         const string& dir_name = *path_begin;
         CDir dir(dir_name);
-        find_func = FindFilesInDir(dir, masks, masks_empty, find_func, flags);
+        FindFilesInDir(dir, masks, masks_empty, find_func, flags);
     }
-    return find_func;
+    return;
 }
 
 
 template<class TPathIterator, 
          class TFindFunc>
-TFindFunc FindFiles2(TPathIterator         path_begin,
-                     TPathIterator         path_end,
-                     const vector<string>& masks,
-                     const vector<string>& masks_subdir,
-                     TFindFunc&            find_func,
-                     TFindFiles            flags = fFF_Default)
+void FindFiles2(TPathIterator         path_begin,
+                TPathIterator         path_end,
+                const vector<string>& masks,
+                const vector<string>& masks_subdir,
+                TFindFunc&            find_func,
+                TFindFiles            flags = fFF_Default)
 {
     for (; path_begin != path_end; ++path_begin) {
         const string& dir_name = *path_begin;
         CDir dir(dir_name);
-        find_func = FindFilesInDir(dir, masks, masks_subdir,
-                                   find_func, flags);
+        FindFilesInDir(dir, masks, masks_subdir, find_func, flags);
     }
-    return find_func;
+    return;
 }
 
 
@@ -3016,18 +3013,19 @@ TFindFunc FindFiles2(TPathIterator         path_begin,
 template<class TPathIterator, 
          class TMaskIterator, 
          class TFindFunc>
-TFindFunc FindFiles(TPathIterator path_begin,
-                    TPathIterator path_end,
-                    TMaskIterator mask_begin,
-                    TMaskIterator mask_end,
-                    TFindFunc&    find_func,
-                    TFindFiles    flags = fFF_Default)
+void FindFiles(TPathIterator path_begin,
+               TPathIterator path_end,
+               TMaskIterator mask_begin,
+               TMaskIterator mask_end,
+               TFindFunc&    find_func,
+               TFindFiles    flags = fFF_Default)
 {
     vector<string> masks;
     for (; mask_begin != mask_end; ++mask_begin) {
         masks.push_back(*mask_begin);
     }
-    return FindFiles(path_begin, path_end, masks, find_func, flags);
+    FindFiles(path_begin, path_end, masks, find_func, flags);
+    return;
 }
 
 
@@ -3043,38 +3041,37 @@ TFindFunc FindFiles(TPathIterator path_begin,
 
 template<class TPathIterator, 
          class TFindFunc>
-TFindFunc FindFiles(TPathIterator path_begin,
-                    TPathIterator path_end,
-                    const CMask&  masks,
-                    TFindFunc&    find_func,
-                    TFindFiles    flags = fFF_Default)
+void FindFiles(TPathIterator path_begin,
+               TPathIterator path_end,
+               const CMask&  masks,
+               TFindFunc&    find_func,
+               TFindFiles    flags = fFF_Default)
 {
     CMaskFileName masks_empty;
     for (; path_begin != path_end; ++path_begin) {
         const string& dir_name = *path_begin;
         CDir dir(dir_name);
-        find_func = FindFilesInDir(dir, masks, masks_empty, find_func, flags);
+        FindFilesInDir(dir, masks, masks_empty, find_func, flags);
     }
-    return find_func;
+    return;
 }
 
 
 template<class TPathIterator, 
          class TFindFunc>
-TFindFunc FindFiles2(TPathIterator path_begin,
-                     TPathIterator path_end,
-                     const CMask&  masks,
-                     const CMask&  masks_subdir,
-                     TFindFunc&    find_func,
-                     TFindFiles    flags = fFF_Default)
+void FindFiles2(TPathIterator path_begin,
+                TPathIterator path_end,
+                const CMask&  masks,
+                const CMask&  masks_subdir,
+                TFindFunc&    find_func,
+                TFindFiles    flags = fFF_Default)
 {
     for (; path_begin != path_end; ++path_begin) {
         const string& dir_name = *path_begin;
         CDir dir(dir_name);
-        find_func = FindFilesInDir(dir, masks, masks_subdir,
-                                   find_func, flags);
+        FindFilesInDir(dir, masks, masks_subdir, find_func, flags);
     }
-    return find_func;
+    return;
 }
 
 
