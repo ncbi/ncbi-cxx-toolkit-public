@@ -115,12 +115,12 @@ bool CDebugDumpViewer::x_CheckLocation(const char* file, int line)
     // otherwise - look for this particular line
     // location range must be in the form "10,20-30,150-200"
     list<string> loc;
-    NStr::Split( value,",",loc);
+    NStr::Split( value,",",loc, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     list<string>::iterator it_loc;
     for (it_loc = loc.begin(); it_loc != loc.end(); ++it_loc) {
         list<string> range;
         list<string>::iterator it_range;
-        NStr::Split( *it_loc,"-",range);
+        NStr::Split( *it_loc,"-",range, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
         int from=0, to;
         try {
             it_range = range.begin();
@@ -175,7 +175,7 @@ void CDebugDumpViewer::Bpt(
 
     while (x_GetInput(input)) {
         cmnd.clear();
-        NStr::Split( input, " ", cmnd);
+        NStr::Split( input, " ", cmnd, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
         narg = cmnd.size();
         need_info = true;
 
