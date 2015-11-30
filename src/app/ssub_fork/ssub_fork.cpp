@@ -57,6 +57,8 @@ public:
     void Init();
     int Run();
 
+    typedef vector<CRef<CSeq_entry> > TSeqEntryArray;
+
 private:
     CObjectIStream* xInitInputStream(const CArgs& args) const; // Why CObjectIStream instead of NcbiIstream here?
 
@@ -76,16 +78,16 @@ private:
                               bool wrap_entries,
                               list<CRef<CSeq_submit> >& output_array) const;
    
-    void xWrapSeqEntries(vector<CRef<CSeq_entry> >& seq_entry_array, 
+    void xWrapSeqEntries(TSeqEntryArray& seq_entry_array, 
                          const TSeqPos& bundle_size,
-                         vector<CRef<CSeq_entry> >& wrapped_entry_array) const;
+                         TSeqEntryArray& wrapped_entry_array) const;
 
     void xFlattenSeqEntrys(CSeq_submit::TData::TEntrys& entries,
-                           vector<CRef<CSeq_entry> >& seq_entry_array) const;
+                           TSeqEntryArray& seq_entry_array) const;
 
     void xFlattenSeqEntry(CSeq_entry& seq_entry, 
                           const CSeq_descr& seq_descr,
-                          vector<CRef<CSeq_entry> >& seq_entry_array) const;
+                          TSeqEntryArray& seq_entry_array) const;
 
     void xMergeSeqDescr(const CSeq_descr& src, CSeq_descr& dst) const; 
 
@@ -241,7 +243,7 @@ string CSeqSubSplitter::xGetFileExtension(const string& filename) const
 {
    string extension = "";
    vector<string> arr;
-   NStr::Tokenize(filename,".",arr);
+   NStr::Split(filename,".",arr);
    if (arr.size() > 1) {
        extension = arr.back();
    }
@@ -423,11 +425,11 @@ struct SIdCompare : public SCompare<SIdCompare>
 
 
 
-void CSeqSubSplitter::xWrapSeqEntries(vector<CRef<CSeq_entry> >& seq_entry_array, 
+void CSeqSubSplitter::xWrapSeqEntries(TSeqEntryArray& seq_entry_array, 
                                       const TSeqPos& bundle_size,
-                                      vector<CRef<CSeq_entry> >& wrapped_entry_array) const
+                                      TSeqEntryArray& wrapped_entry_array) const
 {
-    vector<CRef<CSeq_entry> >::iterator seq_entry_it = seq_entry_array.begin();
+    TSeqEntryArray::iterator seq_entry_it = seq_entry_array.begin();
     while (seq_entry_it != seq_entry_array.end()) {
         CRef<CSeq_entry> seq_entry = Ref(new CSeq_entry());
         seq_entry->SetSet().SetClass(CBioseq_set::eClass_genbank);
@@ -455,7 +457,7 @@ bool CSeqSubSplitter::xTryProcessSeqSubmit(CRef<CSeq_submit>& input_sub,
         return false;
     }
 
-    vector<CRef<CSeq_entry> > seq_entry_array;
+    TSeqEntryArray seq_entry_array;
 
     CRef<CSeq_descr> seq_descr = Ref(new CSeq_descr());
     xFlattenSeqEntrys(input_sub->SetData().SetEntrys(), seq_entry_array);
@@ -479,16 +481,16 @@ bool CSeqSubSplitter::xTryProcessSeqSubmit(CRef<CSeq_submit>& input_sub,
     } 
 
     if (wrap_entries) { // wrap the entries inside a genbank set
-        vector<CRef<CSeq_entry> > wrapped_entry_array;
+        TSeqEntryArray wrapped_entry_array;
         xWrapSeqEntries(seq_entry_array, bundle_size, wrapped_entry_array);
-        for(int i=0; i<wrapped_entry_array.size(); ++i) {
+        for(size_t i=0; i<wrapped_entry_array.size(); ++i) {
             CRef<CSeq_submit> seqsub = Ref(new CSeq_submit());
             seqsub->SetSub(input_sub->SetSub());
             seqsub->SetData().SetEntrys().push_back(wrapped_entry_array[i]);
             output_array.push_back(seqsub);
         }
     } else {
-        vector<CRef<CSeq_entry> >::iterator seq_entry_it = seq_entry_array.begin();
+        TSeqEntryArray::iterator seq_entry_it = seq_entry_array.begin();
         while (seq_entry_it != seq_entry_array.end()) {
             CRef<CSeq_submit> seqsub = Ref(new CSeq_submit());
             seqsub->SetSub(input_sub->SetSub());
@@ -569,7 +571,7 @@ void CSeqSubSplitter::xMergeSeqDescr(const CSeq_descr& src, CSeq_descr& dst) con
 
 
 void CSeqSubSplitter::xFlattenSeqEntrys(CSeq_submit::TData::TEntrys& entries,
-                                       vector<CRef<CSeq_entry> >& seq_entry_array) const 
+                                        TSeqEntryArray& seq_entry_array) const 
 {
     NON_CONST_ITERATE(CSeq_submit::TData::TEntrys, it, entries) {
         CSeq_entry& seq_entry = **it;
@@ -581,7 +583,7 @@ void CSeqSubSplitter::xFlattenSeqEntrys(CSeq_submit::TData::TEntrys& entries,
 
 void CSeqSubSplitter::xFlattenSeqEntry(CSeq_entry& entry,
                                        const CSeq_descr& seq_descr,
-                                       vector<CRef<CSeq_entry> >& seq_entry_array) const 
+                                       TSeqEntryArray& seq_entry_array) const 
 {
     if (entry.IsSeq() ||
         (entry.IsSet() &&
