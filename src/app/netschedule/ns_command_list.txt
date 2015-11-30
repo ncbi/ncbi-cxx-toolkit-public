@@ -5,6 +5,7 @@
 SHUTDOWN
 GETCONF                 # 4.10.0 and up
 VERSION
+HEALTH
 RECO
 ACNT                    # Deprecated: Use STAT JOBS instead
 QLST                    # Deprecated: Use STAT QUEUES instead
@@ -13,6 +14,8 @@ QINF2                   # 4.14.0 and up
 DROPQ
 QCRE
 QDEL
+QPAUSE
+QRESUME
 STATUS                  # Deprecated: Use STATUS2 instead
 STATUS2                 # 4.10.0 and up
 STAT
@@ -26,6 +29,7 @@ STAT QUEUES             # 4.14.0 and up
 DUMP
 AFLS
 GETP                    # It's better to use STAT QUEUES
+GETP2
 GETC                    # It's better to use STAT QUEUES
 CANCELQ                 # 4.10.0 and up
 REFUSESUBMITS           # 4.11.0 and up
@@ -47,6 +51,8 @@ WST                     # Deprecated: Use WST2 instead
 WST2                    # 4.10.0 and up
 CHAFF                   # 4.10.0 and up
 SETAFF                  # 4.16.4 and up
+CHRAFF
+SETRAFF
 GET                     # Deprecated: Use GET2 instead
 GET2                    # 4.10.0 and up
 PUT                     # Deprecated: Use PUT2 instead
@@ -60,12 +66,16 @@ FPUT                    # Deprecated: Use FPUT2 instead
 FPUT2                   # 4.10.0 and up
 JXCG                    # Deprecated: Use PUT2 + GET2 instead
 JDEX
+JDREX
 READ
+READ2
 CFRM
 FRED
 RDRB
 CWREAD                  # 4.18.0 and up
 JDREX                   # 4.18.0 and up
+ACKALERT
+SETCLIENTDATA
 
 REGC                    # Deprecated
 URGC                    # Deprecated
