@@ -6,3 +6,7 @@
 ifeq "$(COMPILER)" "icc"
   config.o login.o query.o threadsafe.o: CFLAGS += -fno-builtin-strcat
 endif
+
+# Limit usage of KRB5_INCLUDE to avoid iconv header/library skew that
+# can otherwise occur on FreeBSD, and perhaps elsewhere.
+gssapi.o: CPPFLAGS += $(KRB5_INCLUDE)
