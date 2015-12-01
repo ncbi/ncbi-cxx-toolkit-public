@@ -266,6 +266,9 @@ public:
     bool x_HasTemporaryLocation(
         const CSeq_feat& );
 
+    virtual bool xIsIgnoredFeatureType(
+        const string&);
+
     static bool IsExon(
         CRef< CSeq_feat > );
 

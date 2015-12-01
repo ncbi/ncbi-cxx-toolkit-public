@@ -343,6 +343,10 @@ bool CGff2Reader::x_ParseFeatureGff(
         ProcessError(err, pEC);
         return false;
     }
+    if (xIsIgnoredFeatureType(pRecord->Type())) {
+        return true;
+    }
+
     if (pRecord->Type() == "protein") {
         if (this->m_iFlags & CGff2Reader::fGenbankMode) {
             AutoPtr<CObjReaderLineException> pErr(
@@ -1356,6 +1360,14 @@ bool CGff2Reader::IsAlignmentData(
     if (NStr::StartsWith(columns[2], "match")) {
         return true;
     }
+    return false;
+}
+
+//  ============================================================================
+bool CGff2Reader::xIsIgnoredFeatureType(
+    const string& type)
+//  ============================================================================
+{
     return false;
 }
 

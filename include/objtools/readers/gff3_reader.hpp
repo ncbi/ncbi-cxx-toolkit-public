@@ -153,6 +153,9 @@ protected:
         const CGff2Record&,
         ILineErrorListener*);
 
+    virtual bool xIsIgnoredFeatureType(
+        const string&);
+
     // Data:
     map<string, string> mCdsParentMap;
     map<string, CRef<CSeq_interval> > mMrnaLocs;

@@ -1,0 +1,118 @@
+Seq-annot ::= {
+  id {
+    local str "scaffold01"
+  },
+  data ftable {
+    {
+      id local id 1,
+      data imp {
+        key "contig"
+      },
+      location int {
+        from 0,
+        to 2679304,
+        strand both,
+        id local str "scaffold01"
+      },
+      qual {
+        {
+          qual "ID",
+          val "scaffold01"
+        },
+        {
+          qual "Name",
+          val "scaffold01"
+        }
+      }
+    },
+    {
+      id local id 2,
+      data gene {
+      },
+      location int {
+        from 45898,
+        to 47538,
+        strand plus,
+        id local str "scaffold01"
+      },
+      qual {
+        {
+          qual "ID",
+          val "maker-scaffold01-pred_gff_GeneMark.hmm-gene-0.40"
+        },
+        {
+          qual "Name",
+          val "maker-scaffold01-pred_gff_GeneMark.hmm-gene-0.40"
+        }
+      }
+    },
+    {
+      id local id 3,
+      data rna {
+        type mRNA
+      },
+      location mix {
+        int {
+          from 45898,
+          to 47538,
+          strand plus,
+          id local str "scaffold01"
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "maker-scaffold01-pred_gff_GeneMark.hmm-gene-0.40-mRNA-1"
+        },
+        {
+          qual "Parent",
+          val "maker-scaffold01-pred_gff_GeneMark.hmm-gene-0.40"
+        },
+        {
+          qual "_AED",
+          val "0.01"
+        },
+        {
+          qual "_QI",
+          val "0|-1|0|1|-1|1|1|0|546"
+        },
+        {
+          qual "_eAED",
+          val "0.02"
+        }
+      },
+      xref {
+        {
+          id local id 4
+        }
+      }
+    },
+    {
+      id local id 4,
+      data cdregion {
+        frame one
+      },
+      location int {
+        from 45898,
+        to 47538,
+        strand plus,
+        id local str "scaffold01"
+      },
+      qual {
+        {
+          qual "ID",
+          val "maker-scaffold01-pred_gff_GeneMark.hmm-gene-0.40-mRNA-1:cds"
+        },
+        {
+          qual "Parent",
+          val "maker-scaffold01-pred_gff_GeneMark.hmm-gene-0.40-mRNA-1"
+        }
+      },
+      xref {
+        {
+          id local id 3
+        }
+      }
+    }
+  }
+}

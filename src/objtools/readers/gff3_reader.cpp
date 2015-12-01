@@ -596,5 +596,58 @@ bool CGff3Reader::xReadInit()
     return true;
 }
 
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::xIsIgnoredFeatureType(
+    const string& ftype)
+//  ----------------------------------------------------------------------------
+{
+    vector<string>::const_iterator cit;
+
+    static vector<string> ignoredTypesAlways;
+    if (ignoredTypesAlways.empty()) {
+        ignoredTypesAlways.push_back("protein");
+    }
+    static vector<string> ignoredTypesGenbank;
+    if (ignoredTypesGenbank.empty()) {
+        ignoredTypesGenbank.push_back("replicon");
+        ignoredTypesGenbank.push_back("chromosome");
+        ignoredTypesGenbank.push_back("dna_chromosome");
+        ignoredTypesGenbank.push_back("rna_chromosome");
+        ignoredTypesGenbank.push_back("apicoplast_chromosome");
+        ignoredTypesGenbank.push_back("chloroplast_chromosome");
+        ignoredTypesGenbank.push_back("chromoplast_chromosome");
+        ignoredTypesGenbank.push_back("cyanelle_chromosome");
+        ignoredTypesGenbank.push_back("leucoplast_chromosome");
+        ignoredTypesGenbank.push_back("macronuclear_chromosome");
+        ignoredTypesGenbank.push_back("micronuclear_chromosome");
+        ignoredTypesGenbank.push_back("mitochondrial_chromosome");
+        ignoredTypesGenbank.push_back("nuclear_chromosome");
+        ignoredTypesGenbank.push_back("nucleomorphic_chromosome");
+        ignoredTypesGenbank.push_back("contig");
+        ignoredTypesGenbank.push_back("supercontig");
+        ignoredTypesGenbank.push_back("ultracontig");
+        ignoredTypesGenbank.push_back("partial_genomic_sequence_assembly");
+        ignoredTypesGenbank.push_back("sequence_assembly");
+        ignoredTypesGenbank.push_back("assembly");
+    }
+
+    cit = std::find(ignoredTypesAlways.begin(), ignoredTypesAlways.end(), ftype);
+    if (cit != ignoredTypesAlways.end()) {
+        return true;
+    }
+    if (!(m_iFlags & CGff2Reader::fGenbankMode)) {
+        return false;
+    }
+
+    /* -genbank mode:*/
+    cit = std::find(ignoredTypesGenbank.begin(), ignoredTypesGenbank.end(), ftype);
+    if (cit != ignoredTypesGenbank.end()) {
+        return true;
+    }
+
+    /*anything else?*/
+    return false;
+}
+
 END_objects_SCOPE
 END_NCBI_SCOPE

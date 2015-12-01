@@ -1,0 +1,6 @@
+##gff-version 3
+scaffold01	.	contig	1	2679305	.	.	.	ID=scaffold01;Name=scaffold01
+scaffold01	maker	gene	45899	47539	.	+	.	ID=maker-scaffold01-pred_gff_GeneMark.hmm-gene-0.40;Name=maker-scaffold01-pred_gff_GeneMark.hmm-gene-0.40
+scaffold01	maker	mRNA	45899	47539	.	+	.	ID=maker-scaffold01-pred_gff_GeneMark.hmm-gene-0.40-mRNA-1;Parent=maker-scaffold01-pred_gff_GeneMark.hmm-gene-0.40;Name=17_t;_AED=0.01;_eAED=0.02;_QI=0|-1|0|1|-1|1|1|0|546
+scaffold01	maker	exon	45899	47539	.	+	.	ID=maker-scaffold01-pred_gff_GeneMark.hmm-gene-0.40-mRNA-1:exon:0;Parent=maker-scaffold01-pred_gff_GeneMark.hmm-gene-0.40-mRNA-1
+scaffold01	maker	CDS	45899	47539	.	+	0	ID=maker-scaffold01-pred_gff_GeneMark.hmm-gene-0.40-mRNA-1:cds;Parent=maker-scaffold01-pred_gff_GeneMark.hmm-gene-0.40-mRNA-1
