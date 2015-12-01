@@ -161,7 +161,8 @@ void CDiagStrErrCodeMatcher::Print(ostream& out) const
 void CDiagStrErrCodeMatcher::x_Parse(TPattern& pattern, const string& str)
 {
     list<string> loc;
-    NStr::Split( str,",",loc);
+    NStr::Split( str, ",", loc,
+        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     list<string>::iterator it_loc;
     for (it_loc = loc.begin(); it_loc != loc.end(); ++it_loc) {
         string first, second;

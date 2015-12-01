@@ -879,9 +879,11 @@ string CExec::ResolvePath(const string& filename)
                 if (env  &&  *env) {
                     list<string> split_path;
 #  ifdef NCBI_OS_MSWIN
-                    NStr::Split(_T_STDSTRING(env), ";", split_path);
+                    NStr::Split(_T_STDSTRING(env), ";", split_path,
+                        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 #  else
-                    NStr::Split(env, ":", split_path);
+                    NStr::Split(env, ":", split_path,
+                        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 #  endif
                     ITERATE(list<string>, it, split_path) {
                         string p = CDirEntry::MakePath(*it, tmp);

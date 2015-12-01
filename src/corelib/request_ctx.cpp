@@ -507,7 +507,8 @@ string CRequestContext::SelectLastHitID(const string& hit_ids)
         return hit_ids;
     }
     list<string> ids;
-    NStr::Split(hit_ids, ", ", ids);
+    NStr::Split(hit_ids, ", ", ids,
+        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     return ids.empty() ? kEmptyStr : ids.back();
 }
 
@@ -519,7 +520,8 @@ string CRequestContext::SelectLastSessionID(const string& session_ids)
         return session_ids;
     }
     list<string> ids;
-    NStr::Split(session_ids, ", ", ids);
+    NStr::Split(session_ids, ", ", ids,
+        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     REVERSE_ITERATE(list<string>, it, ids) {
         if (*it != "UNK_SESSION") {
             return *it;

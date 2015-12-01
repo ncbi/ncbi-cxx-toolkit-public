@@ -1452,7 +1452,8 @@ bool CDirEntry::StringToMode(const CTempString& mode,
         // eModeFormat_Symbolic
         } else {
             std::list<string> parts;
-            NStr::Split(mode, ",", parts);
+            NStr::Split(mode, ",", parts,
+                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
             if ( parts.empty() ) {
                 CNcbiError::Set(CNcbiError::eInvalidArgument, mode);
                 return false;
@@ -4719,7 +4720,8 @@ void s_GetDiskSpace_PANFS(const string&               path,
                 throw kParseError;
             }
             vector<string> tokens;
-            NStr::Tokenize(data + 1, " ", tokens, NStr::fSplit_MergeDelims);
+            NStr::Split(data + 1, " ", tokens,
+                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
             if ( tokens.size() != 6 ) {
                 throw kParseError;
             }
@@ -5967,7 +5969,8 @@ void FindFiles(const string& pattern,
     string search_path = kDirSep;
 
     std::list<string> parts;
-    NStr::Split(abs_path, kDirSep, parts);
+    NStr::Split(abs_path, kDirSep, parts,
+        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     if ( parts.empty() ) {
         return;
     }

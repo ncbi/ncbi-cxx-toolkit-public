@@ -121,7 +121,8 @@ bool CTestDiagApp::TestApp_Exit(void)
     TStringList messages;
 
     // Get the list of messages and check the size
-    NStr::Split(test_res, "\r\n", messages);
+    NStr::Split(test_res, "\r\n", messages,
+        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
     assert(messages.size() == s_NumThreads*3+m_LogMsgCount);
 

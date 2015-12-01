@@ -463,7 +463,8 @@ bool CTestDiagApp::TestApp_Exit(void)
 
     // Get the list of messages
     string s = CNcbiOstrstreamToString(s_Sout);
-    NStr::Split(s, "\r\n", messages);
+    NStr::Split(s, "\r\n", messages,
+        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
     bool result = true;
     ITERATE(TStrings, i, messages) {

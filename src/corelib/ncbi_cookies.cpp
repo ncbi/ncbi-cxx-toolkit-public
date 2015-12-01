@@ -512,7 +512,8 @@ bool CHttpCookie::Parse(const CTempString& str)
 
     // Parse additional attributes.
     list<string> attrs;
-    NStr::Split(attr_str, ";", attrs);
+    NStr::Split(attr_str, ";", attrs,
+        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     string expires, maxage;
     ITERATE(list<string>, it, attrs) {
         pos = it->find('=');
@@ -729,7 +730,8 @@ size_t CHttpCookies::Add(ECookieHeader header,
     size_t count = 0;
     if (header == eHeader_Cookie) {
         list<string> cookies;
-        NStr::Split(str, ";", cookies);
+        NStr::Split(str, ";", cookies,
+            NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
         ITERATE(list<string>, it, cookies) {
             if ( cookie.Parse(*it) ) {
                 Add(cookie);
@@ -851,7 +853,8 @@ CHttpCookie* CHttpCookies::x_Find(const string& domain,
 string CHttpCookies::sx_RevertDomain(const string& domain)
 {
     list<string> names;
-    NStr::Split(domain, ".", names);
+    NStr::Split(domain, ".", names,
+        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     string ret;
     REVERSE_ITERATE(list<string>, it, names) {
         if ( !ret.empty() ) {

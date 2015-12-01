@@ -2665,7 +2665,8 @@ void CDiagContext::x_StartRequest(void)
     string log_args = s_LogEnvironment->Get();
     if ( !log_args.empty() ) {
         list<string> log_args_list;
-        NStr::Split(log_args, " ", log_args_list);
+        NStr::Split(log_args, " ", log_args_list,
+            NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
         CDiagContext_Extra extra = GetDiagContext().Extra();
         extra.Print("LogEnvironment", "true");
         {{
@@ -2688,7 +2689,8 @@ void CDiagContext::x_StartRequest(void)
     log_args = s_LogRegistry->Get();
     if ( !log_args.empty() ) {
         list<string> log_args_list;
-        NStr::Split(log_args, " ", log_args_list);
+        NStr::Split(log_args, " ", log_args_list,
+            NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
         CDiagContext_Extra extra = GetDiagContext().Extra();
         extra.Print("LogRegistry", "true");
         {{
@@ -7337,7 +7339,8 @@ bool s_ParseErrCodeInfoStr(string&          str,
         }
 
         // Split string on parts
-        NStr::Split(str, ",", tokens);
+        NStr::Split(str, ",", tokens,
+            NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
         if (tokens.size() < 2) {
             ERR_POST_X(11, "Error message file parsing: Incorrect file format "
                            ", line " + NStr::UInt8ToString(line));

@@ -103,7 +103,8 @@ TParamTree* s_FindSubNode(const string& path,
     list<string> name_list;
     list<TParamTree*> node_list;
 
-    NStr::Split(path, "/", name_list);
+    NStr::Split(path, "/", name_list,
+        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     tree_root->FindNodes(name_list, &node_list);
     return node_list.empty() ? 0 : *node_list.rbegin();
 }
@@ -115,7 +116,8 @@ void s_ParseSubNodes(const string& sub_nodes,
                      set<string>&  rm_sections)
 {
     list<string> sub_list;
-    NStr::Split(sub_nodes, ",; \t\n\r", sub_list);
+    NStr::Split(sub_nodes, ",; \t\n\r", sub_list,
+        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     set<string> sub_set;
     s_List2Set(sub_list, &sub_set);
     ITERATE(set<string>, sub_it, sub_set) {
@@ -256,7 +258,8 @@ CConfig::TParamTree* CConfig::ConvertRegToTree(const IRegistry& reg)
             tree_root->AddNode(node_ptr = node.release());
         } else {
             list<string> sub_node_list;
-            NStr::Split(section_name, "/", sub_node_list);
+            NStr::Split(section_name, "/", sub_node_list,
+                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
             node_ptr = tree_root->FindOrCreateNode(sub_node_list);
         }
 
@@ -275,7 +278,8 @@ CConfig::TParamTree* CConfig::ConvertRegToTree(const IRegistry& reg)
             }
             if (NStr::CompareNocase(element_name, kIncludeSections) == 0) {
                 list<string> inc_list;
-                NStr::Split(element_value, ",; \t\n\r", inc_list);
+                NStr::Split(element_value, ",; \t\n\r", inc_list,
+                    NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
                 s_List2Set(inc_list, &inc_sections[node_ptr]);
                 continue;
             }

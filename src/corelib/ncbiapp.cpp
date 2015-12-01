@@ -1217,9 +1217,11 @@ string CNcbiApplication::FindProgramExecutablePath
             }
             list<string> split_path;
 #  ifdef NCBI_OS_MSWIN
-            NStr::Split(env_path, ";", split_path);
+            NStr::Split(env_path, ";", split_path,
+                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 #  else
-            NStr::Split(env_path, ":", split_path);
+            NStr::Split(env_path, ":", split_path,
+                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 #  endif
             string base_name = CDirEntry(app_path).GetBase();
             ITERATE(list<string>, it, split_path) {
