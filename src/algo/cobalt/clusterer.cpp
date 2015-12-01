@@ -712,6 +712,29 @@ void CClusterer::ComputeClustersFromLinks(void)
         }
     }
 
+    // try merging clusters
+    for (int i=0;i < (int)m_Clusters.size() - 1;i++) {
+        if (m_Clusters[i].size() == 0) {
+            continue;
+        }
+        for (size_t k=i+1;k < m_Clusters.size();k++) {
+            if (m_Clusters[k].size() == 0) {
+                continue;
+            }
+
+            double distance;
+            if (x_CanJoinClusters(m_ClusterId[*m_Clusters[i].begin()],
+                                  m_ClusterId[*m_Clusters[k].begin()],
+                                  distance)) {
+
+                // the first cluster is the joined one
+                x_JoinClusters(m_ClusterId[*m_Clusters[i].begin()],
+                               m_ClusterId[*m_Clusters[k].begin()],
+                               distance);
+            }
+        }
+    }
+
     // find elements that were not assigned to any clusters and create
     // one-element clusters for them
     if (m_ReportSingletons) {
