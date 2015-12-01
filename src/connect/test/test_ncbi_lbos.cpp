@@ -72,16 +72,22 @@ NCBITEST_AUTO_INIT()
     if (CNcbiApplication::Instance()->GetArgs()["lbos"]) {
         string custom_lbos = 
             CNcbiApplication::Instance()->GetArgs()["lbos"].AsString();
-        CNcbiApplication::Instance()->GetConfig().Set("CONN", 
-                                                      "LBOS", 
-                                                      custom_lbos);
+        config.Set("CONN", "LBOS", custom_lbos);
     }
-    ERR_POST(Info << "LBOS=" <<
-        CNcbiApplication::Instance()->GetConfig().Get("CONN", "LBOS"));
-    LBOS_Deannounce("/lbostest", /* For initialization of LBOS mapper.    */
-                    "1.0.0",     /* We actually do not want to deannounce */
-                    "lbos.dev.be-md.ncbi.nlm.nih.gov", /* anything!       */
-                    5000, NULL, NULL);
+    LOG_POST(Error << "Checking LBOS primary address... LBOS=" << 
+             config.Get("CONN", "LBOS"));
+    CCObjHolder<char> lbos_answer(NULL);
+    CCObjHolder<char> status_message(NULL);
+    LBOS_ServiceVersionGetCurrent("/lbostest", 
+                                  &lbos_answer.Get(), 
+                                  &status_message.Get());
+    lbos_answer = NULL;
+    status_message = NULL;
+    LOG_POST(Error << "Updating /lbostest version to 1.0.0...");
+    LBOS_ServiceVersionUpdate("/lbostest", "1.0.0",
+                              &lbos_answer.Get(), 
+                              &status_message.Get());
+    LOG_POST(Error << "/lbostest version successfully updated!");
 #ifdef NCBI_THREADS
     s_HealthchecKThread = new CHealthcheckThread;
     s_HealthchecKThread->Run();
@@ -92,7 +98,66 @@ NCBITEST_AUTO_INIT()
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-BOOST_AUTO_TEST_SUITE( Compose_LBOS_address )//////////////////////////////////
+BOOST_AUTO_TEST_SUITE( ConfigureEndpoint )/////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+/*
+ * 1. Set version then check version - should show the version that was 
+ *    just set.
+ * 2. Check version, then set different version, then check version -
+ *    should show new version.
+ * 3. Set version, check that it was set, then delete version - check
+ *    that no version exists.
+ * 4. Announce two servers with different version. First, set one version
+ *    and discover server with that version. Then, set the second version
+ *    and discover server with that version.
+ * 5. Announce one server. Discover it. Then delete version. Try to
+ *    discover it again, should not find.
+ */
+ 
+/* 1. Set version then check version - should show the version that was 
+ *    just set.
+ *   Test is not for multi-threading                                        */
+BOOST_AUTO_TEST_CASE(Configure__SetThenCheck__ShowsSetVersion)
+{
+    Configure::SetThenCheck__ShowsSetVersion();
+}
+
+/* 2. Check version, then set different version, then check version -
+ *    should show new version.
+ *   Test is not for multi-threading                                       */
+BOOST_AUTO_TEST_CASE(Configure__CheckSetNewCheck__ChangesVersion)
+{
+    Configure::CheckSetNewCheck__ChangesVersion();
+}
+
+/* 3. Set version, check that it was set, then delete version - check
+ *    that no version exists.
+ *   Test is not for multi-threading                                       */
+BOOST_AUTO_TEST_CASE(Configure__DeleteThenCheck__VersionEmpty)
+{
+    Configure::DeleteThenCheck__VersionEmpty();
+}
+
+/* 4. Announce two servers with different version. First, set one version
+ *    and discover server with that version. Then, set the second version
+ *    and discover server with that version.
+ *   Test is not for multi-threading                                      */
+BOOST_AUTO_TEST_CASE(Configure__AnnounceThenChangeVersion__DiscoverAnotherServer)
+{
+    Configure::AnnounceThenChangeVersion__DiscoverAnotherServer();
+}
+
+/* 5. Announce one server. Discover it. Then delete version. Try to
+ *    discover it again, should not find.
+ *   Test is not for multi-threading                                      */
+BOOST_AUTO_TEST_CASE(Configure__AnnounceThenDeleteVersion__DiscoverFindsNothing)
+{
+    Configure::AnnounceThenDeleteVersion__DiscoverFindsNothing();
+}
+ BOOST_AUTO_TEST_SUITE_END()
+
+///////////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_SUITE( ComposeLBOSAddress )////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 /*
  * 1. Should try only one current zone
@@ -106,27 +171,27 @@ BOOST_AUTO_TEST_SUITE( Compose_LBOS_address )//////////////////////////////////
  * Should try only one current zone and return it  */
 BOOST_AUTO_TEST_CASE(g_LBOS_ComposeLBOSAddress__LBOSExists__ShouldReturnLbos)
 {
-    Compose_LBOS_address::LBOSExists__ShouldReturnLbos();
+    ComposeLBOSAddress::LBOSExists__ShouldReturnLbos();
 }
 
 /* Composing lbos address from /etc/ncbi/role + /etc/ncbi/domain:
  * Should return NULL if fail on ZONE  */
 BOOST_AUTO_TEST_CASE(g_LBOS_ComposeLBOSAddress__RoleFail__ShouldReturnNULL)
 {
-    Compose_LBOS_address::RoleFail__ShouldReturnNULL();
+    ComposeLBOSAddress::RoleFail__ShouldReturnNULL();
 }
 
 /* Composing lbos address from /etc/ncbi/role + /etc/ncbi/domain:
  * Should return NULL if fail on DOMAIN  */
 BOOST_AUTO_TEST_CASE(g_LBOS_ComposeLBOSAddress__DomainFail__ShouldReturnNULL)
 {
-    Compose_LBOS_address::DomainFail__ShouldReturnNULL();
+    ComposeLBOSAddress::DomainFail__ShouldReturnNULL();
 }
 
 BOOST_AUTO_TEST_SUITE_END()
 
 ///////////////////////////////////////////////////////////////////////////////
-BOOST_AUTO_TEST_SUITE( Reset_iterator)/////////////////////////////////////////
+BOOST_AUTO_TEST_SUITE( ResetIterator)/////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 /*
  * 1. Should make capacity of elements in data->cand equal zero
@@ -137,25 +202,25 @@ BOOST_AUTO_TEST_SUITE( Reset_iterator)/////////////////////////////////////////
 
 BOOST_AUTO_TEST_CASE(SERV_Reset__NoConditions__IterContainsZeroCandidates)
 {
-    Reset_iterator::NoConditions__IterContainsZeroCandidates();
+    ResetIterator::NoConditions__IterContainsZeroCandidates();
 }
 
 
 BOOST_AUTO_TEST_CASE(SERV_Reset__MultipleReset__ShouldNotCrash)
 {
-    Reset_iterator::MultipleReset__ShouldNotCrash();
+    ResetIterator::MultipleReset__ShouldNotCrash();
 }
 
 
 BOOST_AUTO_TEST_CASE(SERV_Reset__Multiple_AfterGetNextInfo__ShouldNotCrash)
 {
-    Reset_iterator::Multiple_AfterGetNextInfo__ShouldNotCrash();
+    ResetIterator::Multiple_AfterGetNextInfo__ShouldNotCrash();
 }
 
 BOOST_AUTO_TEST_SUITE_END()
 
 ///////////////////////////////////////////////////////////////////////////////
-BOOST_AUTO_TEST_SUITE( Close_iterator )////////////////////////////////////////
+BOOST_AUTO_TEST_SUITE( CloseIterator )/////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 /*
  * 1. Should work immediately after Open
@@ -165,17 +230,17 @@ BOOST_AUTO_TEST_SUITE( Close_iterator )////////////////////////////////////////
  */
 BOOST_AUTO_TEST_CASE(SERV_CloseIter__AfterOpen__ShouldWork)
 {
-    Close_iterator::AfterOpen__ShouldWork();
+    CloseIterator::AfterOpen__ShouldWork();
 }
 
 BOOST_AUTO_TEST_CASE(SERV_CloseIter__AfterReset__ShouldWork)
 {
-    Close_iterator::AfterReset__ShouldWork();
+    CloseIterator::AfterReset__ShouldWork();
 }
 
 BOOST_AUTO_TEST_CASE(SERV_CloseIter__AfterGetNextInfo__ShouldWork)
 {
-    Close_iterator::AfterGetNextInfo__ShouldWork();
+    CloseIterator::AfterGetNextInfo__ShouldWork();
 }
 
 /* In this test we check three different situations: when getnextinfo was
@@ -183,7 +248,7 @@ BOOST_AUTO_TEST_CASE(SERV_CloseIter__AfterGetNextInfo__ShouldWork)
  * iterate through all found servers. */
 BOOST_AUTO_TEST_CASE(SERV_CloseIter__FullCycle__ShouldWork)
 {
-    Close_iterator::FullCycle__ShouldWork();
+    CloseIterator::FullCycle__ShouldWork();
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -198,8 +263,8 @@ BOOST_AUTO_TEST_CASE(DTab__DTabRegistryAndHttp__RegistryGoesFirst)
     DTab::DTabRegistryAndHttp__RegistryGoesFirst();
 }
 
-/** 2. Announce server with non-standard version and server with no standard 
-    version at all. Both should be found via DTab                            */
+/** 2. Announce a server with a non-standard version and a server with no  
+    standard version at all. Both should be found via DTab                   */
 BOOST_AUTO_TEST_CASE(DTab__NonStandardVersion__FoundWithDTab)
 {
     DTab::NonStandardVersion__FoundWithDTab();
@@ -208,7 +273,7 @@ BOOST_AUTO_TEST_SUITE_END()
 
 
 ///////////////////////////////////////////////////////////////////////////////
-BOOST_AUTO_TEST_SUITE( Resolve_via_LBOS )//////////////////////////////////////
+BOOST_AUTO_TEST_SUITE( ResolveViaLBOS )////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 /* 1. Should return string with IP:port if OK
  * 2. Should return NULL if lbos answered "not found"
@@ -224,23 +289,23 @@ BOOST_AUTO_TEST_SUITE( Resolve_via_LBOS )//////////////////////////////////////
 
 BOOST_AUTO_TEST_CASE(s_LBOS_ResolveIPPort__ServiceExists__ReturnHostIP)
 {
-    Resolve_via_LBOS::ServiceExists__ReturnHostIP();
+    ResolveViaLBOS::ServiceExists__ReturnHostIP();
 }
 
 
 BOOST_AUTO_TEST_CASE(s_LBOS_ResolveIPPort__ServiceDoesNotExist__ReturnNULL)
 {
-    Resolve_via_LBOS::ServiceDoesNotExist__ReturnNULL();
+    ResolveViaLBOS::ServiceDoesNotExist__ReturnNULL();
 }
 
 BOOST_AUTO_TEST_CASE(s_LBOS_ResolveIPPort__NoLBOS__ReturnNULL)
 {
-    Resolve_via_LBOS::NoLBOS__ReturnNULL();
+    ResolveViaLBOS::NoLBOS__ReturnNULL();
 }
 
 BOOST_AUTO_TEST_CASE(s_LBOS_ResolveIPPort__FakeMassiveInput__ShouldProcess)
 {
-    Resolve_via_LBOS::FakeMassiveInput__ShouldProcess();
+    ResolveViaLBOS::FakeMassiveInput__ShouldProcess();
 }
 
 
@@ -249,7 +314,7 @@ BOOST_AUTO_TEST_SUITE_END()
 
 
 ///////////////////////////////////////////////////////////////////////////////
-BOOST_AUTO_TEST_SUITE( Get_LBOS_address_suite )//////////////////////////////////
+BOOST_AUTO_TEST_SUITE( Get_LBOS_address_suite )////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 /*
  * 1. Should try only one current zone
@@ -262,7 +327,7 @@ BOOST_AUTO_TEST_SUITE( Get_LBOS_address_suite )/////////////////////////////////
  * Should try only one current zone and return it  */
 BOOST_AUTO_TEST_CASE(g_LBOS_GetLBOSAddresses__SpecificMethod__FirstInResult)
 {
-    Get_LBOS_address::SpecificMethod__FirstInResult();
+    GetLBOSAddress::SpecificMethod__FirstInResult();
 }
 
 /* Composing lbos address from /etc/ncbi/role + /etc/ncbi/domain:
@@ -270,14 +335,14 @@ BOOST_AUTO_TEST_CASE(g_LBOS_GetLBOSAddresses__SpecificMethod__FirstInResult)
 BOOST_AUTO_TEST_CASE(
         g_LBOS_GetLBOSAddresses__CustomHostNotProvided__SkipCustomHost)
 {
-    Get_LBOS_address::CustomHostNotProvided__SkipCustomHost();
+    GetLBOSAddress::CustomHostNotProvided__SkipCustomHost();
 }
 
 /* Composing lbos address from /etc/ncbi/role + /etc/ncbi/domain:
  * Should return NULL if fail on DOMAIN  */
 BOOST_AUTO_TEST_CASE(g_LBOS_GetLBOSAddresses__NoConditions__AddressDefOrder)
 {
-    Get_LBOS_address::NoConditions__AddressDefOrder();
+    GetLBOSAddress::NoConditions__AddressDefOrder();
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -296,16 +361,16 @@ BOOST_AUTO_TEST_SUITE( Get_candidates )////////////////////////////////////////
  * try to resolve IP, and to know if it uses the headers we provided.
  */
 
-BOOST_AUTO_TEST_CASE(s_LBOS_FillCandidates__LBOSNoResponse__SkipLBOS) {
-    Get_candidates::LBOSNoResponse__SkipLBOS();
+BOOST_AUTO_TEST_CASE(s_LBOS_FillCandidates__LBOSNoResponse__ErrorNoLBOS) {
+    GetCandidates::LBOSNoResponse__ErrorNoLBOS();
 }
 
 BOOST_AUTO_TEST_CASE(s_LBOS_FillCandidates__LBOSResponse__Finish) {
-    Get_candidates::LBOSResponds__Finish();
+    GetCandidates::LBOSResponds__Finish();
 }
 
 BOOST_AUTO_TEST_CASE(s_LBOS_FillCandidates__NetInfoProvided__UseNetInfo) {
-    Get_candidates::NetInfoProvided__UseNetInfo();
+    GetCandidates::NetInfoProvided__UseNetInfo();
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -609,9 +674,9 @@ BOOST_AUTO_TEST_CASE(
 }
 /* 12. Trying to announce in another domain - do nothing                     */
 BOOST_AUTO_TEST_CASE(
-        Announcement__AnotherRegion__NoAnnounce)
+        Announcement__ForeignDomain__NoAnnounce)
 {
-    Announcement::AnotherRegion__NoAnnounce();
+    Announcement::ForeignDomain__NoAnnounce();
 }
 /* 13. Was passed incorrect healthcheck URL(NULL or empty not starting with
  *     "http(s)://") : do not announce and return INVALID_ARGS               */
@@ -645,16 +710,15 @@ BOOST_AUTO_TEST_CASE(Announcement__RealLife__VisibleAfterAnnounce)
 }
 /* 18. If was passed "0.0.0.0" as IP, should replace it with local IP or
  *     hostname                                                              */
-BOOST_AUTO_TEST_CASE(Announcement__IP0000__DoNotReplace)
+BOOST_AUTO_TEST_CASE(Announcement__IP0000__ReplaceWithIP)
 {
-    Announcement::IP0000__DoNotReplace();
+    Announcement::IP0000__ReplaceWithIP();
 }
 /* 19. Was passed "0.0.0.0" as IP and could not manage to resolve local host
  *     IP : do not announce and return DNS_RESOLVE_ERROR                     */
-BOOST_AUTO_TEST_CASE(
-                   Announcement__ResolveLocalIPError__AllOK)
+BOOST_AUTO_TEST_CASE(Announcement__ResolveLocalIPError__ReturnDNSError)
 {
-    Announcement::ResolveLocalIPError__AllOK();
+    Announcement::ResolveLocalIPError__ReturnDNSError();
 }
 /* 20. lbos is OFF - return eLBOS_Off                                        */
 BOOST_AUTO_TEST_CASE(Announcement__LBOSOff__ReturnKLBOSOff)
@@ -680,11 +744,18 @@ BOOST_AUTO_TEST_CASE(Announcement__HealthcheckDead__AnnouncementOK)
 {
     Announcement::HealthcheckDead__AnnouncementOK();
 }
+/* 24. Announce server with separate host and healtcheck - should be found in
+ *     %LBOS%/text/service                                                   */
+BOOST_AUTO_TEST_CASE(Announcement__SeparateHost__AnnouncementOK)
+{
+    Announcement::SeparateHost__AnnouncementOK();
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 
 ///////////////////////////////////////////////////////////////////////////////
-BOOST_AUTO_TEST_SUITE( AnnounceRegistryTest )//////////////////////////////////////////
+BOOST_AUTO_TEST_SUITE( AnnounceRegistryTest )//////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 /*   1. All parameters good (Custom section has all parameters correct in 
  *      config) - return eLBOS_Success
@@ -819,9 +890,9 @@ BOOST_AUTO_TEST_CASE(Deannouncement__RealLife__InvisibleAfterDeannounce)
     Deannouncement::RealLife__InvisibleAfterDeannounce();
 }
 /*6. If trying to deannounce in another domain - do not deannounce           */
-BOOST_AUTO_TEST_CASE(Deannouncement__AnotherDomain__DoNothing)
+BOOST_AUTO_TEST_CASE(Deannouncement__ForeignDomain__DoNothing)
 {
-    Deannouncement::AnotherDomain__DoNothing();
+    Deannouncement::ForeignDomain__DoNothing();
 }
 /* 7. Deannounce without IP specified - deannounce from local host           */
 BOOST_AUTO_TEST_CASE(Deannouncement__NoHostProvided__LocalAddress)
@@ -853,7 +924,7 @@ BOOST_AUTO_TEST_SUITE_END()
 
 
 ///////////////////////////////////////////////////////////////////////////////
-BOOST_AUTO_TEST_SUITE( AnnounceTest_CXX )//////////////////////////////////////////
+BOOST_AUTO_TEST_SUITE( AnnounceTest_CXX )//////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 /*  1. Successfully announced: return SUCCESS
  *  2. Successfully announced: SLBOS_AnnounceHandle deannounce_handle 
@@ -911,11 +982,6 @@ BOOST_AUTO_TEST_CASE(Announcement_CXX__NoLBOS__ThrowNoLBOSAndNotFind)
     Announcement_CXX::NoLBOS__ThrowNoLBOSAndNotFind();
 }
 
-/*  6. Could not find lbos : char* lbos_answer is set to NULL                */
-BOOST_AUTO_TEST_CASE(Announcement_CXX__NoLBOS__LBOSAnswerNull)
-{
-    Announcement_CXX::NoLBOS__LBOSAnswerNull();
-}
 
 /*  8. lbos returned error: return eLBOS_ServerError                         */
 BOOST_AUTO_TEST_CASE(Announcement_CXX__LBOSError__ThrowServerError)
@@ -939,10 +1005,9 @@ BOOST_AUTO_TEST_CASE(
 }
 
 /* 12. Trying to announce in another domain - do nothing                     */
-BOOST_AUTO_TEST_CASE(
-        Announcement_CXX__AnotherRegion__NoAnnounce)
+BOOST_AUTO_TEST_CASE(Announcement_CXX__ForeignDomain__NoAnnounce)
 {
-    Announcement_CXX::AnotherRegion__NoAnnounce();
+    Announcement_CXX::ForeignDomain__NoAnnounce();
 }
 /* 13. Was passed incorrect healthcheck URL(NULL or empty not starting with
  *     "http(s)://") : do not announce and return INVALID_ARGS               */
@@ -976,15 +1041,15 @@ BOOST_AUTO_TEST_CASE(Announcement_CXX__RealLife__VisibleAfterAnnounce)
 }
 /* 18. If was passed "0.0.0.0" as IP, should replace it with local IP or
  *     hostname                                                              */
-BOOST_AUTO_TEST_CASE(Announcement_CXX__IP0000__DoNotReplace)
+BOOST_AUTO_TEST_CASE(Announcement_CXX__IP0000__ReplaceWithIP)
 {
-    Announcement_CXX::IP0000__DoNotReplace();
+    Announcement_CXX::IP0000__ReplaceWithIP();
 }
 /* 19. Was passed "0.0.0.0" as IP and could not manage to resolve local host
  *     IP : do not announce and return DNS_RESOLVE_ERROR                     */
-BOOST_AUTO_TEST_CASE(Announcement_CXX__ResolveLocalIPError__AllOK)
+BOOST_AUTO_TEST_CASE(Announcement_CXX__ResolveLocalIPError__ReturnDNSError)
 {
-    Announcement_CXX::ResolveLocalIPError__AllOK();
+    Announcement_CXX::ResolveLocalIPError__ReturnDNSError();
 }
 /* 20. lbos is OFF - return eLBOS_Off                                        */
 BOOST_AUTO_TEST_CASE(Announcement_CXX__LBOSOff__ThrowKLBOSOff)
@@ -1014,7 +1079,7 @@ BOOST_AUTO_TEST_SUITE_END()
 
 
 ///////////////////////////////////////////////////////////////////////////////
-BOOST_AUTO_TEST_SUITE( AnnounceRegistryTest_CXX )//////////////////////////////////////////
+BOOST_AUTO_TEST_SUITE( AnnounceRegistryTest_CXX )//////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 /*  1.  All parameters good (Custom section has all parameters correct in 
  *      config) - return eLBOS_Success
@@ -1108,7 +1173,7 @@ BOOST_AUTO_TEST_CASE(
 BOOST_AUTO_TEST_SUITE_END()
 
 ///////////////////////////////////////////////////////////////////////////////
-BOOST_AUTO_TEST_SUITE( Deannounce_CXX )////////////////////////////////////////////
+BOOST_AUTO_TEST_SUITE( Deannounce_CXX )////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 /* 1. Successfully deannounced : return 1
  * 2. Successfully deannounced : if announcement was saved in local storage, 
@@ -1152,9 +1217,9 @@ BOOST_AUTO_TEST_CASE(Deannouncement_CXX__RealLife__InvisibleAfterDeannounce)
     Deannouncement_CXX::RealLife__InvisibleAfterDeannounce();
 }
 /*6. If trying to deannounce in another domain - do not deannounce           */
-BOOST_AUTO_TEST_CASE(Deannouncement_CXX__AnotherDomain__DoNothing)
+BOOST_AUTO_TEST_CASE(Deannouncement_CXX__ForeignDomain__DoNothing)
 {
-    Deannouncement_CXX::AnotherDomain__DoNothing();
+    Deannouncement_CXX::ForeignDomain__DoNothing();
 }
 /* 7. Deannounce without IP specified - deannounce from local host           */
 BOOST_AUTO_TEST_CASE(Deannouncement_CXX__NoHostProvided__LocalAddress)
@@ -1176,7 +1241,7 @@ BOOST_AUTO_TEST_SUITE_END()
 
 
 ///////////////////////////////////////////////////////////////////////////////
-BOOST_AUTO_TEST_SUITE( DeannounceAll_CXX )/////////////////////////////////////////
+BOOST_AUTO_TEST_SUITE( DeannounceAll_CXX )/////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_CASE(DeannounceAll_CXX__AllDeannounced__NoSavedLeft)
 {
@@ -1240,5 +1305,5 @@ BOOST_AUTO_TEST_SUITE_END()
 /* Moved to be last because not very important and very long                 */
 BOOST_AUTO_TEST_CASE(s_LBOS_ResolveIPPort__FakeErrorInput__ShouldNotCrash)
 {
-    Resolve_via_LBOS::FakeErrorInput__ShouldNotCrash();
+    ResolveViaLBOS::FakeErrorInput__ShouldNotCrash();
 }

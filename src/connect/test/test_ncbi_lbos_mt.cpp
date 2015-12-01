@@ -62,8 +62,9 @@ private:
 
 bool CTestLBOSApp::TestApp_Args(CArgDescriptions& args)
 {
-    args.AddOptionalPositional("lbos", "Primary address to LBOS",
-                               CArgDescriptions::eString);
+    args.AddOptionalPositional("lbos", 
+                                "Primary_LBOS_address", 
+                                CArgDescriptions::eString);
     args.SetUsageContext(GetArguments().GetProgramBasename(),
                          "LBOS mapper API MT test");
     return true;
@@ -180,67 +181,92 @@ void CTestLBOSApp::SwapAddressesTest(int idx)
 bool CTestLBOSApp::Thread_Run(int idx)
 {    
     //SwapAddressesTest(idx);
-    Compose_LBOS_address::LBOSExists__ShouldReturnLbos();
+    CloseIterator::FullCycle__ShouldWork();
+    while (s_HealthchecKThread->IsBusy()) continue;
+    Announcement::AlreadyAnnouncedInTheSameZone__ReplaceInStorage(idx);
+    while (s_HealthchecKThread->IsBusy()) continue;
     TestApp_IntraGroupSyncPoint();
-    Reset_iterator::NoConditions__IterContainsZeroCandidates();
+    ComposeLBOSAddress::LBOSExists__ShouldReturnLbos();
+    while (s_HealthchecKThread->IsBusy()) continue;
     TestApp_IntraGroupSyncPoint();
-    Reset_iterator::MultipleReset__ShouldNotCrash();
+    ResetIterator::NoConditions__IterContainsZeroCandidates();
+    while (s_HealthchecKThread->IsBusy()) continue;
     TestApp_IntraGroupSyncPoint();
-    Reset_iterator::Multiple_AfterGetNextInfo__ShouldNotCrash();
+    ResetIterator::MultipleReset__ShouldNotCrash();
+    while (s_HealthchecKThread->IsBusy()) continue;
     TestApp_IntraGroupSyncPoint();
-    Close_iterator::AfterOpen__ShouldWork();
+    ResetIterator::Multiple_AfterGetNextInfo__ShouldNotCrash();
+    while (s_HealthchecKThread->IsBusy()) continue;
     TestApp_IntraGroupSyncPoint();
-    Close_iterator::AfterReset__ShouldWork();
+    CloseIterator::AfterOpen__ShouldWork();
+    while (s_HealthchecKThread->IsBusy()) continue;
     TestApp_IntraGroupSyncPoint();
-    Close_iterator::AfterGetNextInfo__ShouldWork();
+    CloseIterator::AfterReset__ShouldWork();
+    while (s_HealthchecKThread->IsBusy()) continue;
     TestApp_IntraGroupSyncPoint();
-    Close_iterator::FullCycle__ShouldWork();
+    CloseIterator::AfterGetNextInfo__ShouldWork();
+    while (s_HealthchecKThread->IsBusy()) continue;
     TestApp_IntraGroupSyncPoint();
-    Resolve_via_LBOS::ServiceExists__ReturnHostIP();
     TestApp_IntraGroupSyncPoint();
-    Resolve_via_LBOS::ServiceDoesNotExist__ReturnNULL();
+    ResolveViaLBOS::ServiceExists__ReturnHostIP();
+    while (s_HealthchecKThread->IsBusy()) continue;
     TestApp_IntraGroupSyncPoint();
-    Resolve_via_LBOS::NoLBOS__ReturnNULL();
+    ResolveViaLBOS::ServiceDoesNotExist__ReturnNULL();
+    while (s_HealthchecKThread->IsBusy()) continue;
     TestApp_IntraGroupSyncPoint();
-    Get_LBOS_address::CustomHostNotProvided__SkipCustomHost();
+    ResolveViaLBOS::NoLBOS__ReturnNULL();
+    while (s_HealthchecKThread->IsBusy()) continue;
+    TestApp_IntraGroupSyncPoint();
+    GetLBOSAddress::CustomHostNotProvided__SkipCustomHost();
+    while (s_HealthchecKThread->IsBusy()) continue;
     TestApp_IntraGroupSyncPoint();
     GetNextInfo::IterIsNull__ReturnNull();
+    while (s_HealthchecKThread->IsBusy()) continue;
     TestApp_IntraGroupSyncPoint();
     GetNextInfo::WrongMapper__ReturnNull();
+    while (s_HealthchecKThread->IsBusy()) continue;
     TestApp_IntraGroupSyncPoint();
-
     Announcement::AllOK__ReturnSuccess(idx);
+    while (s_HealthchecKThread->IsBusy()) continue;
     TestApp_IntraGroupSyncPoint();
     Announcement::AllOK__LBOSAnswerProvided(idx);
+    while (s_HealthchecKThread->IsBusy()) continue;
     TestApp_IntraGroupSyncPoint();
     Announcement::AllOK__AnnouncedServerSaved(idx);
-    TestApp_IntraGroupSyncPoint();
-    Announcement::AlreadyAnnouncedInTheSameZone__ReplaceInStorage(idx);
+    while (s_HealthchecKThread->IsBusy()) continue;
     TestApp_IntraGroupSyncPoint();
     Announcement::IncorrectURL__ReturnInvalidArgs(idx);
+    while (s_HealthchecKThread->IsBusy()) continue;
     TestApp_IntraGroupSyncPoint();
     Announcement::IncorrectPort__ReturnInvalidArgs(idx);
+    while (s_HealthchecKThread->IsBusy()) continue;
     TestApp_IntraGroupSyncPoint();
     Announcement::IncorrectVersion__ReturnInvalidArgs(idx);
+    while (s_HealthchecKThread->IsBusy()) continue;
     TestApp_IntraGroupSyncPoint();
     Announcement::IncorrectServiceName__ReturnInvalidArgs(idx);
+    while (s_HealthchecKThread->IsBusy()) continue;
     TestApp_IntraGroupSyncPoint();
     Announcement::RealLife__VisibleAfterAnnounce(idx);
+    while (s_HealthchecKThread->IsBusy()) continue;
     TestApp_IntraGroupSyncPoint();
-
     Deannouncement::Deannounced__Return1(0, idx);
+    while (s_HealthchecKThread->IsBusy()) continue;
     TestApp_IntraGroupSyncPoint();
     Deannouncement::Deannounced__AnnouncedServerRemoved(idx);
+    while (s_HealthchecKThread->IsBusy()) continue;
     TestApp_IntraGroupSyncPoint();
     Deannouncement::LBOSExistsDeannounce400__Return400(idx);
+    while (s_HealthchecKThread->IsBusy()) continue;
     TestApp_IntraGroupSyncPoint();
     Deannouncement::RealLife__InvisibleAfterDeannounce(idx);
-    TestApp_IntraGroupSyncPoint();
-
+    while (s_HealthchecKThread->IsBusy()) continue;
     TestApp_IntraGroupSyncPoint();
     Stability::GetNext_Reset__ShouldNotCrash();
+    while (s_HealthchecKThread->IsBusy()) continue;
     TestApp_IntraGroupSyncPoint();
     Stability::FullCycle__ShouldNotCrash();
+    while (s_HealthchecKThread->IsBusy()) continue;
     TestApp_IntraGroupSyncPoint();
 
     return true;
@@ -253,19 +279,13 @@ bool CTestLBOSApp::TestApp_Init(void)
     CONNECT_Init(dynamic_cast<ncbi::IRWRegistry*>(&config));
     if (GetArgs()["lbos"]) {
         string custom_lbos = GetArgs()["lbos"].AsString();
-        CNcbiApplication::GetConfig().Set("CONN", "LBOS", custom_lbos);
+        config.Set("CONN", "LBOS", custom_lbos);
     }
-    ERR_POST(Info << "LBOS=" <<
-             CNcbiApplication::GetConfig().Get("CONN", "LBOS"));
-    char *lbos_ouput_orig = g_LBOS_UnitTesting_GetLBOSFuncs()->
-        UrlReadAll(*net_info, "http://lbos.dev.be-md.ncbi.nlm.nih.gov:8080"
-        "/lbos/text/service", NULL, NULL);
-    string lbos_output = string(lbos_ouput_orig);
-    free(lbos_ouput_orig);
-    LBOS_Deannounce("/lbostest", /* for initialization */
-                    "1.0.0",
-                    "lbos.dev.be-md.ncbi.nlm.nih.gov",
-                    5000, NULL, NULL);
+    LOG_POST(Error << "LBOS tested: " << config.Get("CONN", "LBOS"));
+    CCObjHolder<char> lbos_answer(NULL);
+    CCObjHolder<char> status_message(NULL);
+    LBOS_ServiceVersionUpdate("/lbostest", "1.0.0",
+                              &*lbos_answer, &*status_message);
 #ifdef NCBI_THREADS
     s_HealthchecKThread = new CHealthcheckThread;
     s_HealthchecKThread->Run();

@@ -37,6 +37,13 @@
 
 BEGIN_NCBI_SCOPE
 
+struct SLbosConfigure
+{
+    string prev_version;
+    string current_version;
+};
+
+
 class NCBI_XNCBI_EXPORT LBOS
 {
 public:
@@ -70,6 +77,7 @@ public:
     static void 
         Announce(const string&   service,
                  const string&   version,
+                 const string&   host,
                  unsigned short  port,
                  const string&   healthcheck_url);
                                   
@@ -135,6 +143,44 @@ public:
     * @sa Announce(), Deannounce()
     */
     static void DeannounceAll(void);
+
+
+    /** This request will show currently used version for a requested service.
+    * Current and previous version will be the same.
+    * @param service[in]
+    *  Name of service for which to ask default version
+    * @return
+    *  Structure with version before and after request (they will be the 
+    *  same, since nothing will be changed)
+    */
+    static
+    SLbosConfigure ServiceVersionGetCurrent(const string&  service);
+
+
+    /** This request can be used to set new version for a service. Current and
+    * previous versions show currently set and previously used service versions.
+    * @param[in] service
+    *  Name of service for which the version is going to be changed
+    * @param new_version[out]
+    *  Version that will be used by default for specefied service
+    * @return
+    *  Structure with version before and after request
+    */
+    static
+    SLbosConfigure ServiceVersionUpdate(const string&  service,
+                                              const string&  new_version);
+
+
+    /** This service can be used to remove service from configuration. Current
+    *   version will be empty. Previous version shows deleted version.
+    * @param[in] service
+    *  Name of service for which the version is going to be deleted
+    * @return
+    *  Structure with version before and after request (version after 
+    *  request will be an empty string)
+    */
+    static
+    SLbosConfigure ServiceVersionDelete(const string&  service);
 };
 
 
@@ -176,8 +222,7 @@ public:
         x_InitErrCode((CException::EErrCode) err_code);
         m_StatusCode = status_code;
         stringstream message_builder;
-        message_builder << info.GetFile() << ":" << info.GetLine() << "("
-            << info.GetFunction() << ") " << "Error: "
+        message_builder << "Error: "
             << message << endl;
         m_Message = message_builder.str();
     }
@@ -195,8 +240,7 @@ public:
         x_InitErrCode((CException::EErrCode) args.GetErrCode());
         m_StatusCode = status_code;
         stringstream message_builder;
-        message_builder << info.GetFile() << ":" << info.GetLine() << "(" 
-                        << info.GetFunction() << ") " << "Error: " 
+        message_builder << "Error: " 
                         << status_code << " " << GetErrCodeString() << endl;
         m_Message = message_builder.str();
     }
@@ -226,7 +270,7 @@ public:
     }
     NCBI_EXCEPTION_DEFAULT_THROW(CLBOSException)
 protected:
-    CLBOSException(void) {}
+    CLBOSException(void) : m_StatusCode(0) { }
     virtual const CException* x_Clone(void) const
     {
         return new CLBOSException(*this);

@@ -58,6 +58,7 @@ static string s_LBOS_header;
 static
 unsigned short s_FakeAnnounceEx(const char*     service,
                                const char*      version,
+                               const char*      host,
                                unsigned short   port,
                                const char*      healthcheck_url,
                                char**           LBOS_answer,
@@ -149,7 +150,7 @@ class CMockFunction
 {
 public:
     CMockFunction(T& original, T mock)
-        : m_OriginalValue(original), m_Original(original) 
+        : m_OriginalValue(original), m_Original(original)
     {
         original = mock;
     }
@@ -242,6 +243,9 @@ public:
         free(m_Obj);
     }
     T*& operator*() {
+        return m_Obj;
+    }
+    T*& Get() {
         return m_Obj;
     }
     T*& operator->() {
@@ -449,7 +453,7 @@ public:
             return false;
         }
         const char* ex_message = ex.what();
-        ex_message = strstr(ex_message, " Error: ") + strlen(" Error: ");
+        ex_message = strstr(ex_message, "Error: ") + strlen("Error: ");
         string message;
         message.append(ex_message);
         if (message != m_ExpectedMessage) {
@@ -488,44 +492,6 @@ int s_CountServers(string service, unsigned short port, string dtab = "")
     return servers;
 }
 
-/** Check if expected number of specified servers is announced 
- * (usually it is 0 or 1)
- * This function does not care about host (IP) of server.
- */
-int s_CountServersWithExpectation(string service,
-                                  unsigned short port, 
-                                  int expected_count,
-                                  int secs_timeout,
-                                  string dtab = "")
-{
-    const int wait_time = 500; /* msecs */
-    int max_retries = secs_timeout * 1000 / wait_time; /* number of repeats 
-                                                          until timeout */
-    int retries = 0;
-    int servers = 0;
-    while (servers != expected_count && retries < max_retries) {
-        servers = 0;
-        if (retries > 0) { /* for the first cycle we do not sleep */
-            SleepMilliSec(wait_time);
-        }
-        const SSERV_Info* info;
-        CConnNetInfo net_info(service);
-        if (dtab.length() > 1) {
-            ConnNetInfo_SetUserHeader(*net_info, dtab.c_str());
-        }
-        CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,
-            SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
-            *net_info, 0/*skip*/, 0/*n_skip*/,
-            0/*external*/, 0/*arg*/, 0/*val*/));
-        do {
-            info = SERV_GetNextInfoEx(*iter, NULL);
-            if (info != NULL && info->port == port)
-                servers++;
-        } while (info != NULL);
-        retries++;
-    }
-    return servers;
-}
 
 
 template <unsigned int lines>
@@ -536,28 +502,26 @@ EIO_Status           s_FakeReadDiscoveryCorrupt   (CONN, void*,
 
 
 template<size_t count>
-static void          s_FakeFillCandidates                (SLBOS_Data* data,
-                                                          const char* service);
-static void          s_FakeFillCandidatesWithError          (SLBOS_Data*,
-                                                             const char*);
-static SSERV_Info**  s_FakeResolveIPPort                    (const char*,
-                                                             const char*,
-                                                             SConnNetInfo*);
-static void          s_FakeInitialize                    (void);
-static void          s_FakeInitializeCheckInstances      (void);
+static void          s_FakeFillCandidates            (SLBOS_Data*  data,
+                                                      const char*  service);
+static void          s_FakeFillCandidatesWithError   (SLBOS_Data*,
+                                                      const char*);
+static SSERV_Info**  s_FakeResolveIPPort             (const char*,
+                                                      const char*,
+                                                      SConnNetInfo*);
+static void          s_FakeInitialize                (void);
+static void          s_FakeInitializeCheckInstances  (void);
 static void          s_FakeFillCandidatesCheckInstances
-                                                      (SLBOS_Data* data,
-                                                       const char* service);
+                                                     (SLBOS_Data*  data,
+                                                      const char*  service);
 template<int instance_number>
-static SSERV_Info**  s_FakeResolveIPPortSwapAddresses(const char* lbos_address,
-                                                      const char* serviceName,
-                                                      SConnNetInfo*  net_info);
+static SSERV_Info**  s_FakeResolveIPPortSwapAddresses(const char*  lbos_address,
+                                                      const char*  serviceName,
+                                                      SConnNetInfo*net_info);
 
-template <bool success> /* 0 - error, 1 - success */
-static const char*         s_FakeGetHostByAddrEx     (unsigned int host,
-                                                      char*        buf,
-                                                      size_t       bufsize,
-                                                      ESwitch      log);
+/* 0 - error, 1 - success */
+template <bool success, int a1, int a2, int a3, int a4>
+static unsigned int s_FakeGetLocalHostAddress        (ESwitch reget);
 
 
 template<int response_code>
@@ -675,6 +639,7 @@ EIO_Status s_RealReadAnnounce(CONN              conn,
 static
 unsigned short s_LBOS_Announce(const char*             service,
                                const char*             version,
+                               const char*             host,
                                unsigned short&         port,
                                const char*             healthcheck_url,
                                /* lbos_answer is never NULL  */
@@ -692,7 +657,7 @@ unsigned short s_LBOS_Announce(const char*             service,
     do {
 #endif
         announce_result =
-            LBOS_Announce(service, version, port, healthcheck_url, 
+            LBOS_Announce(service, version, host, port, healthcheck_url,
                           lbos_answer, http_status_message);
 #ifdef QUICK_AND_DIRTY /* If we announce many times on different ports until
                           success (remove this hack when LBOS is fixed) */
@@ -704,12 +669,37 @@ unsigned short s_LBOS_Announce(const char*             service,
     return announce_result;
 }
 
+static
+unsigned short s_LBOS_AnnounceReg(const char*             registry_section,
+                                  /* lbos_answer is never NULL  */
+                                  char**                  lbos_answer,
+                                  char**                  http_status_message) 
+{ 
+
+    int announce_result = 0;
+#ifndef NCBI_THREADS // If we have to answer healthchech in the same thread
+    CMockFunction<FLBOS_ConnReadMethod*> mock(
+        g_LBOS_UnitTesting_GetLBOSFuncs()->Read, s_RealReadAnnounce);
+#endif /* NCBI_THREADS */
+#ifdef QUICK_AND_DIRTY /* If we announce many times on different ports until
+                          success (remove this hack when LBOS is fixed) */
+    do {
+#endif
+        announce_result =
+            LBOS_AnnounceFromRegistry(registry_section, lbos_answer, 
+                                      http_status_message); 
+#ifdef QUICK_AND_DIRTY /* If we announce many times on different ports until
+                          success (remove this hack when LBOS is fixed) */
+        if (announce_result != 200) {
+            port++;
+        }
+    } while (announce_result != 200);
+#endif
+    return announce_result;
+}
 
 static
-void s_LBOS_CPP_Announce(const string& service,
-                         const string& version,
-                         unsigned short& port, 
-                         const string& healthcheck_url)
+void s_LBOS_CPP_AnnounceReg(const string& registry_section)
 {
 
 #ifndef NCBI_THREADS // If we have to answer healthchech in the same thread
@@ -725,8 +715,7 @@ void s_LBOS_CPP_Announce(const string& service,
         try {
             success = true;
 #endif
-            LBOS::Announce(service, version, port,
-                healthcheck_url);
+            LBOS::AnnounceFromRegistry(registry_section);
 #ifdef QUICK_AND_DIRTY /* If we announce many times on different ports until
                           success (remove this hack when LBOS is fixed) */
         }
@@ -737,6 +726,38 @@ void s_LBOS_CPP_Announce(const string& service,
 #endif
 }
 
+static
+void s_LBOS_CPP_Announce(const string&   service,
+                         const string&   version,
+                         const string&   host,
+                         unsigned short& port,
+                         const string&   healthcheck_url)
+{
+
+#ifndef NCBI_THREADS // If we have to answer healthchech in the same thread
+    CMockFunction<FLBOS_ConnReadMethod*> mock(
+        g_LBOS_UnitTesting_GetLBOSFuncs()->Read,
+        s_RealReadAnnounce);
+#endif /* NCBI_THREADS */
+
+#ifdef QUICK_AND_DIRTY /* If we announce many times on different ports until
+        success (remove this hack when LBOS is fixed) */
+    bool success;
+    do {
+        try {
+            success = true;
+#endif
+            LBOS::Announce(service, version, host, port,
+                healthcheck_url);
+#ifdef QUICK_AND_DIRTY /* If we announce many times on different ports until
+                success (remove this hack when LBOS is fixed) */
+        }
+        catch (...) {
+            success = false;
+        }
+    } while (!success);
+#endif
+}
 
 /* Emulate a lot of records to be sure that algorithm can take so much.
  * The IP number start with zero (octal format), which makes some of
@@ -934,26 +955,26 @@ static SSERV_Info** s_FakeResolveIPPortSwapAddresses(const char*   lbos_address,
 
 
 template <bool success, int a1, int a2, int a3, int a4>
-static const char*         s_FakeGetHostByAddrEx(unsigned int host,
-                                                 char*        buf,
-                                                 size_t       bufsize,
-                                                 ESwitch      log)
+static unsigned int s_FakeGetLocalHostAddress(ESwitch reget)
 {
     stringstream ss;
-    ss << a1 << "." << a2 << "." << a3 << "." << a4;
     int localscope_success = success;
+    unsigned int host;
+    ss << a1 << "." << a2 << "." << a3 << "." << a4;
+    unsigned short port;
     if (localscope_success) {
         /* We know for sure that buffer is large enough */
-        sprintf(buf, "%s", ss.str().c_str());
-        return buf;
+        SOCK_StringToHostPort(ss.str().c_str(), &host, &port);
+        return host;
     }
-    return NULL;
+    return 0;
 }
 
 static string s_GetMyHost() {
-    char hostname[200];
-    SOCK_gethostname(hostname, 200);
-    return hostname; /* will be converted to string */
+    //char hostname[200];
+    string host = CSocketAPI::gethostbyaddr(0);
+    //SOCK_gethostname(hostname, 200);
+    return host; /* will be converted to string */
 }
 
 static string s_GetMyIP() {

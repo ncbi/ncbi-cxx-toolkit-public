@@ -49,6 +49,10 @@ extern "C" {
 *  Any non-null non-empty string that will help to identify the version
 *  of service. A good idea is to use [semantic versioning]
 *  (http://semver.org/) like "4.7.2"
+* @param [in] host
+*  Optional parameter (NULL to ignore). If provided, tells on which host
+*  the server resides. Can be different from healthcheck host. If set to
+*  NULL, host is taken from healthcheck.
 * @param [in] port
 *  Port for the service. Can differ from healthcheck port.
 * @param [in] healthcheck_url
@@ -79,6 +83,7 @@ extern "C" {
 NCBI_XCONNECT_EXPORT
 unsigned short LBOS_Announce(const char*             service,
                              const char*             version,
+                             const char*             host,
                              unsigned short          port,
                              const char*             healthcheck_url,
                              char**                  lbos_answer,

@@ -78,13 +78,16 @@ static void s_ProcessResult(unsigned short result,
 
 
 void LBOS::Announce(const string& service, const string& version,
-                    unsigned short port, const string& healthcheck_url)
+                    const string& host, unsigned short port,
+                    const string& healthcheck_url)
 {
     char* body_str = NULL, *status_message_str = NULL;
     AutoPtr< char*, Free<char*> > body_aptr(&body_str),
                                   status_message_aptr(&status_message_str);
     unsigned short result = LBOS_Announce(service.c_str(), version.c_str(),
-        port, healthcheck_url.c_str(), &*body_aptr, &*status_message_aptr);
+                                          host.c_str(), port,
+                                          healthcheck_url.c_str(),
+                                          &*body_aptr, &*status_message_aptr);
     s_ProcessResult(result, *body_aptr, *status_message_aptr);
 }
 
@@ -114,11 +117,81 @@ void LBOS::Deannounce(const string&         service,
 {
     char* body_str = NULL, *status_message_str = NULL;
     AutoPtr< char*, Free<char*> > body_aptr(&body_str),
-        status_message_aptr(&status_message_str);
+                                  status_message_aptr(&status_message_str);
     unsigned short result = LBOS_Deannounce(service.c_str(), version.c_str(), 
                                             host.c_str(), port, &*body_aptr, 
                                             &*status_message_aptr);
     s_ProcessResult(result, *body_aptr, *status_message_aptr);
+}
+
+
+SLbosConfigure ParseLbosConfigureAnswer(const char* lbos_answer)
+{
+    if (lbos_answer == NULL) {
+        lbos_answer = strdup("");
+    }
+    string body = lbos_answer;
+    
+    /* How the string we parse looks like:
+     * <lbos>
+     * <configuration name="/lbos" currentVersion="0.1.4-76-ami-c61703ae" 
+     *                             previousVersion="0.1.4-76-ami-c61703ae"/>
+     * </lbos>
+     */
+    size_t cur_ver_start = body.find("currentVersion") + 
+                           strlen("currentVersion=\"");
+    size_t cur_ver_end = body.find("\"", cur_ver_start);
+    size_t prev_ver_start = body.find("previousVersion") + 
+                            strlen("previousVersion=\"");
+    size_t prev_ver_end = body.find("\"", prev_ver_start);
+
+
+    SLbosConfigure res;
+    res.current_version = body.substr(cur_ver_start, 
+                                      cur_ver_end - cur_ver_start);
+    res.prev_version = body.substr(prev_ver_start,
+                                   prev_ver_end - prev_ver_start);
+    return res;
+}
+
+SLbosConfigure LBOS::ServiceVersionGetCurrent(const string&  service) 
+{
+    char* body_str = NULL, *status_message_str = NULL;
+    AutoPtr< char*, Free<char*> > body_aptr(&body_str),
+                                  status_message_aptr(&status_message_str);
+    unsigned short result = 
+        LBOS_ServiceVersionGetCurrent(service.c_str(),&*body_aptr,
+                                      &*status_message_aptr);
+    s_ProcessResult(result, *body_aptr, *status_message_aptr);
+    return ParseLbosConfigureAnswer(*body_aptr);
+}
+
+
+SLbosConfigure LBOS::ServiceVersionUpdate(const string&  service,
+                                          const string&  new_version)
+{
+    char* body_str = NULL, *status_message_str = NULL;
+    AutoPtr< char*, Free<char*> > body_aptr(&body_str),
+                                  status_message_aptr(&status_message_str);
+    unsigned short result = LBOS_ServiceVersionUpdate(service.c_str(),
+                                                      new_version.c_str(),
+                                                      &*body_aptr,
+                                                      &*status_message_aptr);
+    s_ProcessResult(result, *body_aptr, *status_message_aptr);
+    return ParseLbosConfigureAnswer(*body_aptr);
+}
+
+
+SLbosConfigure LBOS::ServiceVersionDelete(const string&  service)
+{
+    char* body_str = NULL, *status_message_str = NULL;
+    AutoPtr< char*, Free<char*> > body_aptr(&body_str),
+                                  status_message_aptr(&status_message_str);
+    unsigned short result = LBOS_ServiceVersionDelete(service.c_str(),
+                                                      &*body_aptr,
+                                                      &*status_message_aptr);
+    s_ProcessResult(result, *body_aptr, *status_message_aptr);
+    return ParseLbosConfigureAnswer(*body_aptr);
 }
 
 
@@ -173,5 +246,6 @@ const char* CLBOSException::GetErrCodeString(void) const
         return "Unknown lbos error code";
     }
 }
+
 
 END_NCBI_SCOPE

@@ -82,6 +82,7 @@ typedef enum {
     eLBOSFindMethod_CustomHost,     /**< Use custom address provided by
                                          s_SetLBOSaddress()                  */
     eLBOSFindMethod_Registry,       /**< Use value from registry (default)   */
+    eLBOSFindMethod_Lbosresolve,    /**< Use value from /etc/ncbi/lbosresolve*/
     eLBOSFindMethod_EtcNcbiDomain,  /**< Use value from /etc/ncbi/domain     */
     eLBOSFindMethod_127001          /**< Use 127.0.0.1 from /etc/ncbi/domain */
 } ELBOSFindMethod;
@@ -116,6 +117,7 @@ typedef struct {
     int http_response_code;
     char* http_status_mesage;
     const char* header;
+    size_t content_length; /* -1 (max value) as no limit */
 } SLBOS_UserData;
 
 
@@ -235,6 +237,10 @@ SSERV_Info* FLBOS_GetNextInfoMethod(SERV_ITER  iter,
  *  name should start with '/'.
  * @param version[in]
  *  Any non-NULL valid C-string.
+* @param [in] host
+*  Optional parameter (NULL to ignore). If provided, tells on which host
+*  the server resides. Can be different from healthcheck host. If set to
+*  NULL, host is taken from healthcheck.
  * @param port[in]
  *  Port for service. Can differ from healthcheck port.
  * @param healthcheck_url[in]
@@ -251,8 +257,9 @@ SSERV_Info* FLBOS_GetNextInfoMethod(SERV_ITER  iter,
  * @see
  *  ELBOS_Result                                                             */
 typedef
-unsigned short FLBOS_AnnounceMethod(const char*      service,
+unsigned short FLBOS_AnnounceMethod(const char*    service,
                                   const char*      version,
+                                  const char*      host,
                                   unsigned short   port,
                                   const char*      healthcheck_url,
                                   char**           LBOS_answer,
@@ -304,27 +311,25 @@ typedef EHTTP_HeaderParse FLBOS_ParseHeader(const char*      header,
                                              void* /* int* */response_code,
                                              int             server_error);
 
-
-typedef const char* FLBOS_SOCKGetHostByAddrExMethod(unsigned int host,
-                                                    char*        buf,
-                                                    size_t       bufsize,
-                                                    ESwitch      log);
+/** Get (and cache for faster follow-up retrievals) the address of
+ * local host.                                                               */
+typedef unsigned int FLBOS_SOCKGetLocalHostAddressMethod(ESwitch reget);
 
 ///////////////////////////////////////////////////////////////////////////////
 //                       VIRTUAL FUNCTIONS TABLE                             //
 ///////////////////////////////////////////////////////////////////////////////
 typedef struct {
-    FLBOS_ResolveIPPortMethod*          ResolveIPPort;
-    FLBOS_ConnReadMethod*               Read;
-    FLBOS_ComposeLBOSAddressMethod*     ComposeLBOSAddress;
-    FLBOS_FillCandidatesMethod*         FillCandidates;
-    FLBOS_DestroyDataMethod*            DestroyData;
-    FLBOS_GetNextInfoMethod*            GetNextInfo;
-    FLBOS_InitializeMethod*             Initialize;
-    FLBOS_UrlReadAllMethod*             UrlReadAll;
-    FLBOS_ParseHeader*                  ParseHeader;
-    FLBOS_SOCKGetHostByAddrExMethod*    GetHostByAddr;
-    FLBOS_AnnounceMethod*               AnnounceEx;
+    FLBOS_ResolveIPPortMethod*              ResolveIPPort;
+    FLBOS_ConnReadMethod*                   Read;
+    FLBOS_ComposeLBOSAddressMethod*         ComposeLBOSAddress;
+    FLBOS_FillCandidatesMethod*             FillCandidates;
+    FLBOS_DestroyDataMethod*                DestroyData;
+    FLBOS_GetNextInfoMethod*                GetNextInfo;
+    FLBOS_InitializeMethod*                 Initialize;
+    FLBOS_UrlReadAllMethod*                 UrlReadAll;
+    FLBOS_ParseHeader*                      ParseHeader;
+    FLBOS_SOCKGetLocalHostAddressMethod*    LocalHostAddr;
+    FLBOS_AnnounceMethod*                   AnnounceEx;
 } SLBOS_Functions;
 
 
@@ -341,9 +346,9 @@ char** g_LBOS_GetLBOSAddresses(void);
 
 
 /** Get all possible lbos addresses for this platform, extended version.
- * @param priority_find_method[in]
+ * @param[in]   priority_find_method
  *  First method to try.
- * @param lbos[in]
+ * @param[in]   lbos
  *  If primary method is set to eLBOSFindMethod_CustomHost, lbos IP:port or
  *  host:port should be provided.
  * @return
@@ -373,7 +378,7 @@ const SSERV_VTable*  SERV_LBOS_Open(SERV_ITER           iter,
 
 
 /** Checks C-string if it is NULL or is of zero length.
- * @param str[in]
+ * @param[in]   str
  *  String to check.
  * @return
  *  true - string is NULL or empty;
@@ -390,9 +395,9 @@ char* g_LBOS_ComposeLBOSAddress(void);
 
 
 /** Set primary method how to find lbos. Default is eLBOSFindMethod_Registry.
- *  @param iter[in]     
+ *  @param[in]  iter
  *   Iterator that represents current request to lbos.
- *  @param method[in]   
+ *  @param[in]  method
  *   One of methods.
  *  @return             f
  *   false - something went wrong, primary method was not changed;
@@ -404,9 +409,9 @@ int/*bool*/ g_LBOS_UnitTesting_SetLBOSFindMethod(SERV_ITER        iter,
 
 /**  Set custom host for lbos. It will be used when method 
  *  eLBOSFindMethod_CustomHost is used.
- *  @param iter[in]     
+ *  @param[in]  iter
  *   Iterator that represents current request to lbos.
- *  @param address[in]  
+ *  @param[in]  address
  *   IP:port  or host:port to use.
  *  @return             
  *   false - something went wrong, lbos address was not changed.
@@ -452,6 +457,56 @@ int/*bool*/ g_LBOS_UnitTesting_SetLBOSRoleAndDomainFiles(const char*  roleFile,
                                              const char*          version,
                                              unsigned short       port,
                                              const char*          host);
+
+ /** Get LBOS-specific announcement variable from registry                   */
+ NCBI_XCONNECT_EXPORT
+ char*   g_LBOS_RegGet(const char* section,
+                      const char* name,
+                      const char* def_value);
+
+
+ /** This service can be used to remove service from configuration. Current
+ * version will be empty. Previous version shows deleted version.
+ */
+NCBI_XCONNECT_EXPORT
+unsigned short LBOS_ServiceVersionDelete(const char*  service,
+                                         char**       lbos_answer,
+                                         char**       http_status_message);
+
+
+/** This request can be used to set new version for a service. Current and
+* previous versions show currently set and previously used service versions.
+* @param[in] service
+*  Name of service for which the version is going to be changed
+* @param new_version[out]
+*  Version that will be used by default for specefied service
+* @param lbos_answer[out]
+*  Variable to be assigned pointer to C-string with LBOS answer
+* @param http_status_message[out]
+*  Variable to be assigned pointer to C-string with status message from LBOS
+*/
+NCBI_XCONNECT_EXPORT
+unsigned short LBOS_ServiceVersionUpdate(const char*  service,
+                                         const char*  new_version,
+                                         char**       lbos_answer,
+                                         char**       http_status_message);
+
+
+/** This request will show currently used version for a requested service.
+* Current and previous version will be the same.
+* @param service[in]
+*  Name of service for which to ask default version
+* @param lbos_answer[out]
+*  Variable to be assigned pointer to C-string with LBOS answer
+* @param http_status_message[out]
+*  Variable to be assigned pointer to C-string with status message from LBOS
+* @return
+*  Status code returned by LBOS
+*/
+NCBI_XCONNECT_EXPORT
+unsigned short LBOS_ServiceVersionGetCurrent(const char* service,
+                                             char**      lbos_answer,
+                                             char**      http_status_message);
 
 ///////////////////////////////////////////////////////////////////////////////
 //                      GLOBAL VARIABLES FOR UNIT TESTS                      //
