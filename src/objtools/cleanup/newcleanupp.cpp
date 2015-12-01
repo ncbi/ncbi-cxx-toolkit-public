@@ -11090,6 +11090,13 @@ CRef<CBioSource> BioSourceFromImpFeat(const CSeq_feat& sf)
             if (do_gbqual_to_orgmod) {
                 src->SetOrg().SetMod().push_back(mod_val);
             }
+            CBioSource::EGenome genome = CBioSource::GetGenomeByOrganelle(qual);
+
+            if (genome != CBioSource::eGenome_unknown && 
+                (!src->IsSetGenome() || 
+                (src->GetGenome() == CBioSource::eGenome_mitochondrion && genome == CBioSource::eGenome_kinetoplast))) {
+                src->SetGenome(genome);
+            }
         }
     }
     return src;
@@ -11124,6 +11131,7 @@ void CNewCleanup_imp::x_RemoveOldFeatures(CBioseq & bioseq)
                     if (bsrc) {
                         x_ConvertOrgref_modToSubSource(*bsrc);
                         x_ConvertOrgref_modToOrgMod(bsrc->SetOrg());
+                        BiosourceBC(*bsrc);
                         CRef<CSeqdesc> d(new CSeqdesc());
                         d->SetSource().Assign(*bsrc);
                         CBioseq_EditHandle eh(bh);
