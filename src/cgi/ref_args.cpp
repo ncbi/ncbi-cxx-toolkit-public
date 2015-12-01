@@ -73,7 +73,8 @@ void CRefArgs::AddDefinitions(const string& definitions)
 {
     typedef list<string> TDefList;
     TDefList defs;
-    NStr::Split(definitions, "\n", defs);
+    NStr::Split(definitions, "\n", defs,
+        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     ITERATE(TDefList, def, defs) {
         string host, args;
         if ( NStr::SplitInTwo(*def, " ", host, args) ) {
@@ -88,7 +89,8 @@ void CRefArgs::AddDefinitions(const string& host_mask,
 {
     typedef list<string> TArgList;
     TArgList arg_list;
-    NStr::Split(arg_names, ",", arg_list);
+    NStr::Split(arg_names, ",", arg_list,
+        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     ITERATE(TArgList, arg, arg_list) {
         m_HostMap.insert(
             THostMap::value_type(host_mask, NStr::TruncateSpaces(*arg)));

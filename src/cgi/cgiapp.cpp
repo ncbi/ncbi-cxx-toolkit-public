@@ -1488,7 +1488,8 @@ string CCgiStatistics::Compose_Entries(void)
         return kEmptyStr;
 
     list<string> vars;
-    NStr::Split(log_args, ",; \t", vars);
+    NStr::Split(log_args, ",; \t", vars,
+        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
     string msg;
     ITERATE (list<string>, i, vars) {

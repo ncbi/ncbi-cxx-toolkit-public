@@ -623,7 +623,8 @@ static bool s_IsAllowedOrigin(const string& origin)
     }
 
     TStringList origins;
-    NStr::Split(allowed, ", ", origins);
+    NStr::Split(allowed, ", ", origins,
+        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     ITERATE(TStringList, it, origins) {
         if (NStr::EndsWith(origin, *it, NStr::eCase)) {
             return true;
@@ -641,7 +642,8 @@ static bool s_IsAllowedMethod(const string& method)
         return false;
     }
     TStringList methods;
-    NStr::Split(TCORS_AllowMethods::GetDefault(), ", ", methods);
+    NStr::Split(TCORS_AllowMethods::GetDefault(), ", ", methods,
+        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     ITERATE(TStringList, it, methods) {
         // Methods are case-sensitive.
         if (*it == method) return true;
@@ -672,12 +674,14 @@ static bool s_IsAllowedHeaderList(const string& headers)
     ah += kSimpleHeaders;
     ah += kDefaultHeaders;
     NStr::ToUpper(ah);
-    NStr::Split(ah, ", ", allowed);
+    NStr::Split(ah, ", ", allowed,
+        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     allowed.sort();
 
     string rh = headers;
     NStr::ToUpper(rh);
-    NStr::Split(rh, ", ", requested);
+    NStr::Split(rh, ", ", requested,
+        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     requested.sort();
 
     TStringList::const_iterator ait = allowed.begin();
