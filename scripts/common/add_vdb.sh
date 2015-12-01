@@ -10,23 +10,28 @@ cd $root
 root=`pwd`
 ptb_ini=../src/build-system/project_tree_builder.ini
 tag=`sed -ne 's,.*/vdb-versions/,,p' $ptb_ini`
-name=ncbi-vdb${tag+"-$tag"}
+name=ncbi-vdb${tag:+"-$tag"}
 platform=`COMMON_DetectPlatform`
 
 mkdir -p src
 cd src
 if [ -d ncbi-vdb/.git ]; then
-    (cd ncbi-vdb  &&  git fetch)
+    (cd ncbi-vdb  &&  git fetch --tags master)
 else
     git clone https://github.com/ncbi/ncbi-vdb.git
 fi
 if [ -d ngs/.git ]; then
-    (cd ngs  &&  git fetch)
+    (cd ngs  &&  git pull)
 else
     git clone https://github.com/ncbi/ngs.git
 fi
 cd ncbi-vdb
-git checkout "${tag:-master}"
+git checkout "${tag:-master}" || git checkout master
+if [ ! -d interfaces ]; then
+    echo "WARNING: tag $tag unusable; trying master."
+    name=ncbi-vdb
+    git checkout master
+fi
 if [ "$platform" = IntelMAC ]; then
     archflag=--arch=fat86
     if [ ! -d $root/tmp/force-clang ]; then
