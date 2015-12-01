@@ -11136,6 +11136,8 @@ void CNewCleanup_imp::x_RemoveOldFeatures(CBioseq & bioseq)
                         d->SetSource().Assign(*bsrc);
                         CBioseq_EditHandle eh(bh);
                         eh.SetDescr().Set().push_back(d);
+                        ChangeMade(CCleanupChange::eAddDescriptor);
+#if 0
                         // and remove feature if whole location
                         if (f->GetLocation().IsInt() &&
                             f->GetLocation().GetStart(eExtreme_Positional) == 0 &&
@@ -11146,6 +11148,7 @@ void CNewCleanup_imp::x_RemoveOldFeatures(CBioseq & bioseq)
                             ChangeMade(CCleanupChange::eRemoveFeat);
                             any_erasures = true;
                         }
+#endif
                     }
                 }
             }
