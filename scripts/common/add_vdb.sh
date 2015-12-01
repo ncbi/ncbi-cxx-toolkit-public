@@ -16,7 +16,7 @@ platform=`COMMON_DetectPlatform`
 mkdir -p src
 cd src
 if [ -d ncbi-vdb/.git ]; then
-    (cd ncbi-vdb  &&  git fetch --tags master)
+    (cd ncbi-vdb  &&  git fetch --tags origin master)
 else
     git clone https://github.com/ncbi/ncbi-vdb.git
 fi
