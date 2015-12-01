@@ -4,7 +4,8 @@ m4_copy([_AC_SRCDIRS], [NCBI_ORIG__AC_SRCDIRS])
 m4_define([_AC_SRCDIRS],
 [# Base source directories on path to *input* file.
 if test -n "$ac_f"; then
-   ac_dir_in=`AS_DIRNAME(["$ac_f"])`
+   ac_f_rel=`echo "$ac_f" | sed -e 's,^/.*/\./,,'`
+   ac_dir_in=`AS_DIRNAME(["$ac_f_rel"])`
 else
    ac_dir_in=$1
 fi

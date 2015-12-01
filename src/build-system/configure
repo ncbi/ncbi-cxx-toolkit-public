@@ -2015,12 +2015,13 @@ if test "$ac_init_help" = "recursive"; then
     test -d "$ac_dir" || continue
     # Base source directories on path to *input* file.
 if test -n "$ac_f"; then
-   ac_dir_in=`$as_dirname -- "$ac_f" ||
-$as_expr X"$ac_f" : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
-	 X"$ac_f" : 'X\(//\)[^/]' \| \
-	 X"$ac_f" : 'X\(//\)$' \| \
-	 X"$ac_f" : 'X\(/\)' \| . 2>/dev/null ||
-echo X"$ac_f" |
+   ac_f_rel=`echo "$ac_f" | sed -e 's,^/.*/\./,,'`
+   ac_dir_in=`$as_dirname -- "$ac_f_rel" ||
+$as_expr X"$ac_f_rel" : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
+	 X"$ac_f_rel" : 'X\(//\)[^/]' \| \
+	 X"$ac_f_rel" : 'X\(//\)$' \| \
+	 X"$ac_f_rel" : 'X\(/\)' \| . 2>/dev/null ||
+echo X"$ac_f_rel" |
     sed '/^X\(.*[^/]\)\/\/*[^/][^/]*\/*$/{
 	    s//\1/
 	    q
@@ -46520,12 +46521,13 @@ echo "$as_me: error: cannot create directory $as_dir" >&2;}
    { (exit 1); exit 1; }; }; }
   # Base source directories on path to *input* file.
 if test -n "$ac_f"; then
-   ac_dir_in=`$as_dirname -- "$ac_f" ||
-$as_expr X"$ac_f" : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
-	 X"$ac_f" : 'X\(//\)[^/]' \| \
-	 X"$ac_f" : 'X\(//\)$' \| \
-	 X"$ac_f" : 'X\(/\)' \| . 2>/dev/null ||
-echo X"$ac_f" |
+   ac_f_rel=`echo "$ac_f" | sed -e 's,^/.*/\./,,'`
+   ac_dir_in=`$as_dirname -- "$ac_f_rel" ||
+$as_expr X"$ac_f_rel" : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
+	 X"$ac_f_rel" : 'X\(//\)[^/]' \| \
+	 X"$ac_f_rel" : 'X\(//\)$' \| \
+	 X"$ac_f_rel" : 'X\(/\)' \| . 2>/dev/null ||
+echo X"$ac_f_rel" |
     sed '/^X\(.*[^/]\)\/\/*[^/][^/]*\/*$/{
 	    s//\1/
 	    q
