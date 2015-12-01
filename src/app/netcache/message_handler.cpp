@@ -703,7 +703,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
     { "PROXY_GET",
         {&CNCMessageHandler::x_DoCmd_Get,
             "PROXY_GET",
-            eProxyBlobRead,
+            eProxyBlobRead | fDoNotProxyToPeers,
             eNCReadData,
             eProxyRead},
           // Name of cache for blob (for NC-generated blob keys this will be
@@ -747,7 +747,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
     { "PROXY_HASB",
         {&CNCMessageHandler::x_DoCmd_HasBlob,
             "PROXY_HASB",
-            eProxyBlobRead | fPeerFindExistsOnly,
+            eProxyBlobRead | fPeerFindExistsOnly | fDoNotProxyToPeers,
             eNCRead,
             eProxyHasBlob},
           // Name of cache for blob (for NC-generated blob keys this will be
@@ -774,7 +774,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
     { "PROXY_GSIZ",
         {&CNCMessageHandler::x_DoCmd_GetSize,
             "PROXY_GetSIZe",
-            eProxyBlobRead,
+            eProxyBlobRead | fDoNotProxyToPeers,
             eNCRead,
             eProxyGetSize},
           // Name of cache for blob (for NC-generated blob keys this will be
@@ -812,7 +812,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
     { "PROXY_READLAST",
         {&CNCMessageHandler::x_DoCmd_GetLast,
             "PROXY_READLAST",
-            eProxyBlobRead | fNoBlobVersionCheck,
+            eProxyBlobRead | fNoBlobVersionCheck | fDoNotProxyToPeers,
             eNCReadData,
             eProxyReadLast},
           // Name of cache for blob (for NC-generated blob keys this will be
@@ -853,7 +853,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
     { "PROXY_SETVALID",
         {&CNCMessageHandler::x_DoCmd_SetValid,
             "PROXY_SETVALID",
-            fNeedsBlobAccess | fNeedsStorageCache,
+            fNeedsBlobAccess | fNeedsStorageCache | fDoNotProxyToPeers,
             eNCRead,
             eProxySetValid},
           // Name of cache for blob (for NC-generated blob keys this will be
@@ -878,7 +878,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
     { "PROXY_RMV",
         {&CNCMessageHandler::x_DoCmd_Remove,
             "PROXY_ReMoVe",
-            fNeedsBlobAccess | fNoBlobAccessStats,
+            fNeedsBlobAccess | fNoBlobAccessStats | fDoNotProxyToPeers,
             eNCCreate,
             eProxyRemove},
           // Name of cache for blob (for NC-generated blob keys this will be
@@ -929,7 +929,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
     { "PROXY_GETMETA",
         {&CNCMessageHandler::x_DoCmd_GetMeta,
             "PROXY_GETMETA",
-            eProxyBlobRead | fDoNotCheckPassword,
+            eProxyBlobRead | fDoNotCheckPassword | fDoNotProxyToPeers,
             eNCRead,
             eProxyGetMeta},
           // Name of cache for blob (for NC-generated blob keys this will be
@@ -1232,7 +1232,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
     { "PROXY_PROLONG",
         {&CNCMessageHandler::x_DoCmd_Prolong,
             "PROXY_PROLONG",
-            eProxyBlobRead,
+            eProxyBlobRead | fDoNotProxyToPeers,
             eNCRead,
             eProxyProlong},
           // Name of cache for blob (for NC-generated blob keys this will be
@@ -1393,7 +1393,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
     { "PROXY_BLIST",
         {&CNCMessageHandler::x_DoCmd_GetBList,
             "PROXY_BLIST",
-            fNeedsStorageCache | fNeedsBlobList,
+            fNeedsStorageCache | fNeedsBlobList | fDoNotProxyToPeers,
             eNCNone, eProxyNone},
           // Name of cache for blob.
         { { "cache",   eNSPT_Str,  eNSPA_Required },

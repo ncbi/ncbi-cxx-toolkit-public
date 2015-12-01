@@ -733,6 +733,19 @@ CReplayThread::x_Remove(Uint8 key_id)
     SKeyInfo* key_info = &it_key->second;
     try {
         m_NC.Remove(key_info->key);
+
+// test
+        if (m_NC.HasBlob(key_info->key)) {
+//            ++m_CntBadHasb[size_index];
+            ERR_POST(CTime(CTime::eCurrent).AsString("h:m:s.r")
+                 << " Error while removing blob with key '" << key_info->key << "': HasBlob returns true");
+            
+            for (int f=0; f<100 && m_NC.HasBlob(key_info->key); ++f) {
+                ERR_POST(CTime(CTime::eCurrent).AsString("h:m:s.r")
+                    << " Error while removing blob with key '" << key_info->key << "': HasBlob returns true");
+            }
+        }
+
         Uint4 size_index = s_GetSizeIndex(key_info->size);
         ++m_CntErased[size_index];
         m_SizeErased[size_index] += key_info->size;
