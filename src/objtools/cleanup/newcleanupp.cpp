@@ -11055,30 +11055,96 @@ void CNewCleanup_imp::x_RemoveEmptyFeatureTables( CBioseq_set & bioseq_set )
 }
 
 
+CRef<CBioSource> BioSourceFromImpFeat(const CSeq_feat& sf)
+{
+    CRef<CBioSource> src(NULL);
+    if (!sf.IsSetQual()) {
+        return src;
+    }
+
+    ITERATE(CSeq_feat::TQual, it, sf.GetQual()) {
+        if ((*it)->IsSetQual() && NStr::Equal((*it)->GetQual(), "organism") && (*it)->IsSetVal()) {
+            src.Reset(new CBioSource());
+            src->SetOrg().SetTaxname((*it)->GetVal());
+        }
+    }
+    if (!src) {
+        return src;
+    }
+    
+    ITERATE(CSeq_feat::TQual, it, sf.GetQual()) {
+        if ((*it)->IsSetQual() && (*it)->IsSetVal()) {
+            const string qual = NStr::Replace(GET_FIELD(**it, Qual), "_", "-");
+            const string &val = GET_FIELD(**it, Val);
+
+            // determine whether we should convert this gbqual into an orgmod
+            string mod_val = qual + "=" + val;
+            size_t val_pos;
+            COrgMod::TSubtype ost;
+            CSubSource::TSubtype sst;
+            bool do_gbqual_to_orgmod =
+                s_StringHasOrgModPrefix(mod_val, val_pos, ost) ||
+                s_StringHasSubSourcePrefix(mod_val, val_pos, sst);
+
+            // if required, do the conversion
+            if (do_gbqual_to_orgmod) {
+                src->SetOrg().SetMod().push_back(mod_val);
+            }
+        }
+    }
+    return src;
+}
+
+
 void CNewCleanup_imp::x_RemoveOldFeatures(CBioseq & bioseq)
 {
-#if 0
     CBioseq_Handle bh = m_Scope->GetBioseqHandle(bioseq);
+
+    CSeqdesc_CI src(bh, CSeqdesc::e_Source);
     bool any_erasures = true;
     while (any_erasures) {
         any_erasures = false;
         CFeat_CI f(bh);
         while (f) {
-            if (f->IsSetData() && 
+            if (f->IsSetData() &&
                 (f->GetData().IsOrg() ||
-                 (f->GetData().IsImp() && f->GetData().GetImp().IsSetKey() &&
-                  NStr::Equal(f->GetData().GetImp().GetKey(), "source")))) {
-                CSeq_feat_Handle fh(*f);
-                CSeq_feat_EditHandle eh(fh);
-                eh.Remove();
-                any_erasures = true;
-                ChangeMade(CCleanupChange::eRemoveFeat);
-                break;
+                (f->GetData().IsImp() && f->GetData().GetImp().IsSetKey() &&
+                NStr::Equal(f->GetData().GetImp().GetKey(), "source")))) {
+                if (src) {
+                    // remove import source features if source descriptor already present
+                    CSeq_feat_Handle fh(*f);
+                    CSeq_feat_EditHandle eh(fh);
+                    eh.Remove();
+                    any_erasures = true;
+                    ChangeMade(CCleanupChange::eRemoveFeat);
+                    break;
+                } else {
+                    // convert imp-source feature to biosource
+                    CRef<CBioSource> bsrc = BioSourceFromImpFeat(*(f->GetSeq_feat()));
+                    if (bsrc) {
+                        x_ConvertOrgref_modToSubSource(*bsrc);
+                        x_ConvertOrgref_modToOrgMod(bsrc->SetOrg());
+                        CRef<CSeqdesc> d(new CSeqdesc());
+                        d->SetSource().Assign(*bsrc);
+                        CBioseq_EditHandle eh(bh);
+                        eh.SetDescr().Set().push_back(d);
+                        // and remove feature if whole location
+                        if (f->GetLocation().IsInt() &&
+                            f->GetLocation().GetStart(eExtreme_Positional) == 0 &&
+                            f->GetLocation().GetStop(eExtreme_Positional) == bh.GetBioseqLength() - 1) {
+                            CSeq_feat_Handle fh(*f);
+                            CSeq_feat_EditHandle eh(fh);
+                            eh.Remove();
+                            ChangeMade(CCleanupChange::eRemoveFeat);
+                            any_erasures = true;
+                        }
+                    }
+                }
             }
             ++f;
         }
     }
-#endif
+
 }
 
 
