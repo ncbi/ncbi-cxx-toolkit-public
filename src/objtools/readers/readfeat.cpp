@@ -2368,7 +2368,7 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                         CSeq_id::ParseIDs(ids, val,                                
                                  CSeq_id::fParse_ValidLocal
                                | CSeq_id::fParse_PartialOK);
-//                        if (ids.size()>1)
+                        if ((flags & CFeature_table_reader::fLeaveProteinIds) || (ids.size()>1))
                         {
                             x_AddGBQualToFeature (sfp, qual, val); // need to store all ids
                         }

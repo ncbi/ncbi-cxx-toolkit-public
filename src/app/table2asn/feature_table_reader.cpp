@@ -757,7 +757,10 @@ void CFeatureTableReader::ReadFeatureTable(CSeq_entry& entry, ILineReader& line_
 
     while (!line_reader.AtEOF()) {
         CRef<CSeq_annot> annot = CFeature_table_reader::ReadSequinFeatureTable(
-            line_reader, CFeature_table_reader::fCreateGenesFromCDSs, m_logger, 0/*filter*/, seqid_prefix);
+            line_reader, 
+            CFeature_table_reader::fLeaveProteinIds |
+            CFeature_table_reader::fCreateGenesFromCDSs, 
+            m_logger, 0/*filter*/, seqid_prefix);
 
         if (annot.Empty() || !annot->IsSetData() || !annot->GetData().IsFtable() ||
             annot->GetData().GetFtable().empty()) {
