@@ -273,6 +273,7 @@ int s_Run(const char* const* args, FILE* log)
                 if (s_MainChildDone  &&  ( !stdout_done  ||  !stderr_done )
                     &&  waitpid(pid, &status, WNOHANG) != 0) {
                     s_MainChildDone = 0;
+                    fflush(log);
                     if (fork() > 0) {
                         s_FinishingInBackground = 1;
                         break;
@@ -281,7 +282,7 @@ int s_Run(const char* const* args, FILE* log)
             }
             signal(SIGCHLD, s_OrigHandlers[SIGCHLD]);
         }
-        if ( !s_FinishingInBackground ) {
+        if (log == NULL  ||  !s_FinishingInBackground ) {
             waitpid(pid, &status, 0);
         }
     }
@@ -371,7 +372,7 @@ int main(int argc, const char* const* argv)
         status = s_Run(argv + 1, log);
     }
 
-    if (log != NULL  &&  !s_FinishingInBackground  &&  !s_CaughtSignal) {
+    if (log != NULL  &&  !s_CaughtSignal  &&  access(new_log, F_OK) == 0) {
         ELogStatus log_status = eNewLogInteresting;
         fclose(log);
         if (access(options.logfile, F_OK) != 0) {
@@ -383,11 +384,7 @@ int main(int argc, const char* const* argv)
             }
         }
         if (log_status != eNewLogBoring) {
-            if (log_status != eOldLogMissing
-                &&  unlink(options.logfile) < 0) {
-                fprintf(stderr, "%s: Unable to remove old log file %s: %s\n",
-                        s_AppName, options.logfile, strerror(errno));
-            } else if (rename(new_log, options.logfile) < 0) {
+            if (rename(new_log, options.logfile) < 0) {
                 fprintf(stderr, "%s: Unable to rename log file %s: %s\n",
                         s_AppName, new_log, strerror(errno));
             }
