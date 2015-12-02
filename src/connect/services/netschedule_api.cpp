@@ -36,6 +36,7 @@
 
 #include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_conn_exception.hpp>
+#include <connect/ncbi_userhost.hpp>
 
 #include <corelib/ncbi_system.hpp>
 #include <corelib/plugin_manager_impl.hpp>
@@ -644,12 +645,13 @@ void CNetScheduleServerListener::OnInit(
     SNetScheduleAPIImpl* ns_impl = static_cast<SNetScheduleAPIImpl*>(api_impl);
     _ASSERT(ns_impl);
 
-    string client_node(ns_impl->m_Service->GetClientName());
-    client_node.append(2, ':');
-    client_node.append(GetDiagContext().GetUsername());
-    client_node.append(1, '@');
-    client_node.append(GetDiagContext().GetHost());
-    ns_impl->m_ClientNode = client_node;
+    SetDiagUserAndHost();
+
+    const string& user(GetDiagContext().GetUsername());
+    ns_impl->m_ClientNode =
+        ns_impl->m_Service->GetClientName() + "::" +
+        (user.empty() ? kEmptyStr : user + '@') +
+        GetDiagContext().GetHost();
 
     auto_ptr<CConfig> config_holder;
     CNetScheduleOwnConfigLoader loader;
@@ -736,12 +738,10 @@ void CNetScheduleServerListener::OnInit(
         }
 
         if (!ns_impl->m_ClientNode.empty()) {
-            string session(NStr::NumericToString(CDiagContext::GetPID()));
-            session += '@';
-            session += NStr::NumericToString(GetFastLocalTime().GetTimeT());
-            session += ':';
-            session += GetDiagContext().GetStringUID();
-            ns_impl->m_ClientSession = session;
+            ns_impl->m_ClientSession =
+                NStr::NumericToString(CDiagContext::GetPID()) + '@' +
+                NStr::NumericToString(GetFastLocalTime().GetTimeT()) + ':' +
+                GetDiagContext().GetStringUID();
         }
 
         SetAuthString(ns_impl);
