@@ -22,4 +22,9 @@ if test -r "$PFILE"; then
     wgs_test -file "$PFILE" -limit_count 1 -check_non_empty_lookup -contig_name CTG92 -protein_name XFASADRAFT_1728 -protein_acc EAO13866 || err="$?"
     #wgs_test -file "$PFILE" -limit_count 1 -check_non_empty_lookup -contig_name ctg92 -protein_name XfasaDRAFT_1728 -protein_acc eao13866 || err="$?"
 fi
+if test "$err" = 0; then
+    echo "Passed all tests."
+else
+    echo "Failed some tests!"
+fi
 exit "$err"
