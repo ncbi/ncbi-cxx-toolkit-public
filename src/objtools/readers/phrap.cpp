@@ -993,7 +993,8 @@ void CPhrap_Contig::ReadTag(CNcbiIstream& in, char tag)
     SContigTag ct;
     string data = ReadLine(in);
     list<string> fields;
-    NStr::Split(data, " ", fields);
+    NStr::Split(data, " ", fields,
+        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     list<string>::const_iterator f = fields.begin();
 
     // Need some tricks to get optional NoTrans flag

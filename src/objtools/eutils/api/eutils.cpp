@@ -278,7 +278,8 @@ string CEUtils_IdGroup::AsQueryString(void) const
 void CEUtils_IdGroup::SetIds(const string& ids)
 {
     list<string> tmp;
-    NStr::Split(ids, ",", tmp);
+    NStr::Split(ids, ",", tmp,
+        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     ITERATE(list<string>, it, tmp) {
         AddId(*it);
     }
@@ -288,7 +289,8 @@ void CEUtils_IdGroup::SetIds(const string& ids)
 void CEUtils_IdGroupSet::SetGroups(const string& groups)
 {
     list<string> tmp;
-    NStr::Split(groups, "&", tmp);
+    NStr::Split(groups, "&", tmp,
+        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
     ITERATE(list<string>, it, tmp) {
         string ids = *it;
         if (ids.find("id=") == 0) {

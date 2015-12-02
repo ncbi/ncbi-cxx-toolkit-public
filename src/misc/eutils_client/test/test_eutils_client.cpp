@@ -143,7 +143,8 @@ int CTestEutilsClient::Run(void)
      
     if (args["docsum"].HasValue()) {
         list<string> idstrs;
-        NStr::Split(args["docsum"].AsString(), ",", idstrs);
+        NStr::Split(args["docsum"].AsString(), ",", idstrs,
+            NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
         vector<int> uids;
         ITERATE(list<string>, id_it, idstrs) {
             uids.push_back(NStr::StringToInt(*id_it) );

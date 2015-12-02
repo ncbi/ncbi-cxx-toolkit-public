@@ -67,7 +67,8 @@ CHttpRetryContext& CHttpRetryContext::operator=(const CRetryContext& ctx)
 void CHttpRetryContext::ParseHeader(const char* http_header)
 {
     list<string> lines;
-    NStr::Split(http_header, HTTP_EOL, lines);
+    NStr::Split(http_header, HTTP_EOL, lines,
+        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
     SetContentOverride(eNot_set);
     ResetContent();

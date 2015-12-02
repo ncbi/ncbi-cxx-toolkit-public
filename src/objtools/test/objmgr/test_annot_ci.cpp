@@ -148,7 +148,8 @@ void CheckString(const string& str,
     }
     else {
         list<string> errs;
-        NStr::Split(str, "\n\r", errs);
+        NStr::Split(str, "\n\r", errs,
+            NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
         CNcbiIstream& in = args["results"].AsInputFile();
         ITERATE(list<string>, err, errs) {
             string ref;

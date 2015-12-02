@@ -125,7 +125,8 @@ void CIdMapperConfig::Initialize(CNcbiIstream& istr)
         }
         string id_set = reg.Get(m_strContext, *iter);
         list<string> ids;
-        NStr::Split(id_set, " \t\n\r", ids);
+        NStr::Split(id_set, " \t\n\r", ids,
+            NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
         ///
         /// id_from and id_to are naturally reversed, since we use a format
@@ -187,7 +188,7 @@ CIdMapperConfig::SetCurrentContext(
 //  ============================================================================
 {
     vector<string> columns;
-    NStr::Tokenize( strLine, " \t[]|:", columns, NStr::eMergeDelims );
+    NStr::Tokenize( strLine, " \t[]|:", columns, NStr::fSplit_MergeDelimiters);
     
     //sanity check: only a single columns remaining
     if ( columns.size() != 1 ) {
