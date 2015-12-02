@@ -63,26 +63,27 @@ BEGIN_SCOPE(align_format)
  * @endcode
  */
  
- const string kTaxBrowserURL           = "//www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi";
- const string kBlastNameLink           = "<a href=\"<@taxBrowserURL@>?id=<@bl_taxid@>\" target=\"lnk<@rid@>\" title=\"Show taxonomy info for <@blast_name@> (taxid <@taxid@>)\"><@blast_name@></a>";
+ const string kTaxBrowserURL           =    "//www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi";
+ const string kBlastNameLink           =    "<a href=\"<@taxBrowserURL@>?id=<@bl_taxid@>\" target=\"lnktx<@rid@>\" title=\"Show taxonomy info for <@blast_name@> (taxid <@taxid@>)\"><@blast_name@></a>";
 
- const string kOrgReportTable          = "<table><caption><h1>Organism Report</h1></caption><tr><th>Accession</th><th>Descr</th><th>Score</th><th>E-value</th></tr><@table_rows@></table>";
- const string kOrgReportOrganismHeader = "<tr><th colspan=\"4\"><a href=\"<@taxBrowserURL@>?id=<@taxid@>\" name=\"<@taxid@>\" title=\"Show taxonomy info for <@scientific_name@> (taxid <@taxid@>)\" target=\"lnk<@rid@>\"><@scientific_name@>[<@blast_name_link@>] taxid <@taxid@></th></tr>";
- const string kOrgReportOrganismHeaderNoTaxConnect = "<tr><th colspan=\"4\"><a href=\"<@taxBrowserURL@>?id=<@taxid@>\" name=\"<@taxid@>\" title=\"Show taxonomy info for <@scientific_name@> (taxid <@taxid@>)\" target=\"lnk<@rid@>\"><@scientific_name@>[<@blast_name@>]</th></tr>";
+ const string kOrgReportTable          =    "<table><caption><h1>Organism Report</h1></caption><tr><th>Accession</th><th>Descr</th><th>Score</th><th>E-value</th></tr><@table_rows@></table><@taxidToSeqsMap@>";
+ const string kOrgReportOrganismHeader =    "<tr><th colspan=\"4\"><a href=\"<@taxBrowserURL@>?id=<@taxid@>\" name=\"<@taxid@>\" title=\"Show taxonomy info for <@scientific_name@> (taxid <@taxid@>)\" target=\"lnktx<@rid@>\"><@scientific_name@>[<@blast_name_link@>] taxid <@taxid@></th></tr>";
+ const string kOrgReportOrganismHeaderNoTaxConnect = "<tr><th colspan=\"4\"><a href=\"<@taxBrowserURL@>?id=<@taxid@>\" name=\"<@taxid@>\" title=\"Show taxonomy info for <@scientific_name@> (taxid <@taxid@>)\" target=\"lnktx<@rid@>\"><@scientific_name@>[<@blast_name@>]</th></tr>";
 
- const string kOrgReportTableHeader    = "<tr><th>Accession</th><th>Description</th><th>Score</th><th>E-value</th></tr>";
- const string kOrgReportTableRow       = "<tr><td><a title=\"Show report for <@acc@>\" target=\"lnk<@rid@>\" href=\"//www.ncbi.nlm.nih.gov/protein/<@gi@>?report=fwwwtax&amp;log$=taxrep&amp;RID=<@rid@>\"><@acc@></a></td><td><@descr_abbr@></td><td><@score@></td><td><@evalue@></td></tr>";
+ const string kOrgReportTableHeader    =     "<tr><th>Accession</th><th>Description</th><th>Score</th><th>E-value</th></tr>";
+ const string kOrgReportTableRow       =     "<tr><td><a title=\"Show report for <@acc@>\" target=\"lnktx<@rid@>\" href=\"//www.ncbi.nlm.nih.gov/protein/<@gi@>?report=fwwwtax&amp;log$=taxrep&amp;RID=<@rid@>\"><@acc@></a></td><td><@descr_abbr@></td><td><@score@></td><td><@evalue@></td></tr>";
+ const string kTaxIdToSeqsMap    =      "<input type=\"hidden\" value=\"<@giList@>\" />";
+
+ const string kLineageReportTable      =     "<table><caption><h1>Linage Report</h1><caption><@table_rows@></table>";
+ const string kLineageReportTableHeader =    "<tr><th>Organism</th><th>Blast Name</th><th>Score</th><th>Number of Hits</th><th>Description</th></tr>";
+ const string kLineageReportOrganismHeader = "<tr><td><@depth@><a href=\"//<@taxBrowserURL@>?id=<@taxid@>\" title=\"Show taxonomy info for <@scientific_name@> (taxid <@taxid@>)\" target=\"lnktx<@rid@>\"><@scientific_name@></a><td><@blast_name_link@></td><td colspan =\"3\"></td></tr>";
+ const string kLineageReportTableRow =       "<tr><td><@depth@><a href=\"//<@taxBrowserURL@>?id=<@taxid@>\" title=\"Show taxonomy info for <@scientific_name@> (taxid <@taxid@>)\" target=\"lnktx<@rid@>\"><@scientific_name@></a></td><td><@blast_name_link@></td><td><@score@></td><td><a href=\"#<@taxid@>\" title=\"Show organism report for <@scientific_name@>\"><@numhits@></a></td><td><a title=\"Show report for <@acc@> <@descr_abbr@>\" target=\"lnktx<@rid@>\" href=\"//www.ncbi.nlm.nih.gov/protein/<@gi@>?report=genbank&amp;log$=taxrep&amp;RID=<@rid@>\"><@descr_abbr@></a></td></tr>";
 
 
- const string kLineageReportTable      = "<table><caption><h1>Linage Report</h1><caption><@table_rows@></table>";
- const string kLineageReportTableHeader = "<tr><th>Organism</th><th>Blast Name</th><th>Score</th><th>Number of Hits</th><th>Description</th></tr>";
- const string kLineageReportOrganismHeader = "<tr><td><@depth@><a href=\"//<@taxBrowserURL@>?id=<@taxid@>\" title=\"Show taxonomy info for <@scientific_name@> (taxid <@taxid@>)\" target=\"lnk<@rid@>\"><@scientific_name@></a><td><@blast_name_link@></td><td colspan =\"3\"></td></tr>";
- const string kLineageReportTableRow = "<tr><td><@depth@><a href=\"//<@taxBrowserURL@>?id=<@taxid@>\" title=\"Show taxonomy info for <@scientific_name@> (taxid <@taxid@>)\" target=\"lnk<@rid@>\"><@scientific_name@></a></td><td><@blast_name_link@></td><td><@score@></td><td><a href=\"#<@taxid@>\" title=\"Show organism report for <@scientific_name@>\"><@numhits@></a></td><td><a title=\"Show report for <@acc@> <@descr_abbr@>\" target=\"lnk<@rid@>\" href=\"//www.ncbi.nlm.nih.gov/protein/<@gi@>?report=genbank&amp;log$=taxrep&amp;RID=<@rid@>\"><@descr_abbr@></a></td></tr>";
-
-
- const string kTaxonomyReportTable      = "<table><caption><h1>Taxonomy Report</h1><caption><@table_rows@></table>";
- const string kTaxonomyReportTableHeader = "<tr><th>Taxonomy</th><th>Number of hits</th><th>Number of organisms</th><th>Description</th></tr>"; 
- const string kTaxonomyReportTableRow = "<tr><td><@depth@><a href=\"//<@taxBrowserURL@>?id=<@taxid@>\" title=\"Show taxonomy info for <@scientific_name@> (taxid <@taxid@>)\" target=\"lnk<@rid@>\"><@scientific_name@></a></td><td><@numhits@></td><td><@numOrgs@></td><td><@descr_abbr@></td></tr>";
+ const string kTaxonomyReportTable      =     "<table><caption><h1>Taxonomy Report</h1><caption><@table_rows@></table>";
+ const string kTaxonomyReportTableHeader =    "<tr><th>Taxonomy</th><th>Number of hits</th><th>Number of organisms</th><th>Description</th></tr>"; 
+ const string kTaxonomyReportOrganismHeader = "<tr><td><@depth@><a href=\"//<@taxBrowserURL@>?id=<@taxid@>\" title=\"Show taxonomy info for <@scientific_name@> (taxid <@taxid@>)\" target=\"lnktx<@rid@>\"><@scientific_name@></a></td><td><@numhits@></td><td><@numOrgs@></td><td><@descr_abbr@></td></tr>"; 
+ const string kTaxonomyReportTableRow =       "<tr><td><@depth@><a href=\"//<@taxBrowserURL@>?id=<@taxid@>\" title=\"Show taxonomy info for <@scientific_name@> (taxid <@taxid@>)\" target=\"lnktx<@rid@>\"><@scientific_name@></a></td><td><@numhits@></td><td><@numOrgs@></td><td><@descr_abbr@></td></tr>";
 
  
 
@@ -112,7 +113,9 @@ class NCBI_ALIGN_FORMAT_EXPORT CTaxFormat {
     ///    
     void DisplayLineageReport(CNcbiOstream& out);
 
-
+    ///Displays Taxonomy Report
+    ///@param out: stream for display
+    ///    
     void DisplayTaxonomyReport(CNcbiOstream& out);
     
     struct SSeqInfo {
@@ -133,11 +136,14 @@ class NCBI_ALIGN_FORMAT_EXPORT CTaxFormat {
         string blastName;
         int    blNameTaxid;
         vector <SSeqInfo*> seqInfoList;        
+        string             giList;
+        string             accList;
         unsigned int       numChildren;
         unsigned int       depth;
         vector <int>       lineage;        
         unsigned int       numHits;
         unsigned int       numOrgs; 
+        string             taxidList;
     };
 
     typedef map < int, struct STaxInfo > TSeqTaxInfoMap; 
@@ -156,12 +162,15 @@ class NCBI_ALIGN_FORMAT_EXPORT CTaxFormat {
         string orgReportTableHeader;    ///< Template for displaying organism report table header
         string orgReportTableRow;       ///< Tempalte for displaying organism report table row
 
+        string taxIdToSeqsMap;
+
         string lineageReportTable;          ///< Template for displaying lineage report table
         string lineageReportOrganismHeader; ///< Template for displaying lineage report organism header
         string lineageReportTableHeader;    ///< Template for displaying lineage report table header
         string lineageReportTableRow;       ///< Template for displaying lineage report table row
 
         string taxonomyReportTable;
+        string taxonomyReportOrganismHeader;
         string taxonomyReportTableHeader;
         string taxonomyReportTableRow;
     };
@@ -205,11 +214,11 @@ protected:
 
       
     string m_Rid;    
-    STaxFormatTemplates *m_TaxFormatTemplates; 
+    STaxFormatTemplates *m_TaxFormatTemplates; ///<
     CNcbiIfstream *m_ConfigFile;
     CNcbiRegistry *m_Reg;
-    string  m_TaxBrowserURL;
-    CTaxon1 *m_TaxClient;
+    string  m_TaxBrowserURL;                ///< Taxonomy Browser URL
+    CTaxon1 *m_TaxClient;                   ///< Taxonomy server client
 
     bool  m_ConnectToTaxServer;
     bool  m_TaxTreeLoaded;    
@@ -243,6 +252,7 @@ protected:
     void x_InitBlastNameTaxInfo(STaxInfo &taxInfo);
 
     string x_MapSeqTemplate(string seqTemplate, SSeqInfo *seqInfo);
+    string x_MapSeqTemplate(string seqTemplate, STaxInfo &taxInfo);
     string x_MapTaxInfoTemplate(string tableRowTemplate,STaxInfo &taxInfo);
 
     void x_PrintTaxInfo(int taxid);       
