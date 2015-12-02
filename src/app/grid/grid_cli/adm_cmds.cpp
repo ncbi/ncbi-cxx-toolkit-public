@@ -577,8 +577,8 @@ namespace {
             fAlignRight = 1,
             fLastColumn = 2
         };
-        CAdjustableTableColumn(unsigned min_width = 0,
-                unsigned spacing = 1,
+        CAdjustableTableColumn(int min_width = 0,
+                int spacing = 1,
                 unsigned mode = 0) :
             m_Width(min_width),
             m_Spacing(spacing),
@@ -588,7 +588,7 @@ namespace {
         void AddCell(const string& text)
         {
             if (m_Width < text.length())
-                m_Width = text.length();
+                m_Width = static_cast<int>(text.length());
             m_Cells.push_back(text);
         }
         void PrintCell(size_t row)
@@ -611,7 +611,7 @@ namespace {
         {
             const static char eight_dashes[] = "--------";
 
-            unsigned width = m_Width;
+            int width = m_Width;
             while (width > 8) {
                 printf("%s", eight_dashes);
                 width -= 8;
@@ -625,8 +625,8 @@ namespace {
         size_t GetHeight() const {return m_Cells.size();}
 
     private:
-        unsigned m_Width;
-        unsigned m_Spacing;
+        int m_Width;
+        int m_Spacing;
         unsigned m_Mode;
         vector<string> m_Cells;
     };
