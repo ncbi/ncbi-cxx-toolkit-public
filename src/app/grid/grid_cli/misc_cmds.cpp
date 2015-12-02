@@ -120,12 +120,10 @@ int CGridCommandLineInterfaceApp::Cmd_Login()
         cid.AppendString(m_Opts.auth);
     }
 
-    string user, host;
-    g_GetUserAndHost(&user, &host);
     cid.AppendLabel(LOGIN_TOKEN_USER_FIELD);
-    cid.AppendString(user);
+    cid.AppendString(GetDiagContext().GetUsername());
     cid.AppendLabel(LOGIN_TOKEN_HOST_FIELD);
-    cid.AppendHost(host);
+    cid.AppendHost(GetDiagContext().GetHost());
 
     if (IsOptionSet(eNetCache)) {
         cid.AppendLabel(LOGIN_TOKEN_NETCACHE_FIELD);
@@ -150,7 +148,7 @@ int CGridCommandLineInterfaceApp::Cmd_Login()
     }
 
     cid.AppendLabel(LOGIN_TOKEN_SESSION_PID_FIELD);
-    cid.AppendID((Uint8) CProcess::GetCurrentPid());
+    cid.AppendID(CDiagContext::GetPID());
 
     cid.AppendLabel(LOGIN_TOKEN_SESSION_TIMESTAMP_FIELD);
     cid.AppendCurrentTime();

@@ -1155,15 +1155,6 @@ void g_ResumeWorkerNode(CNetServer worker_node)
     worker_node.ExecWithRetry("RESUME", false);
 }
 
-void g_GetUserAndHost(string* user, string* host)
-{
-    char user_buf[64];
-    if (CORE_GetUsername(user_buf, sizeof(user_buf)) != NULL)
-        *user = user_buf;
-
-    *host = CSocketAPI::gethostname();
-}
-
 CJsonNode s_GetBlobMeta(const CNetCacheKey& key)
 {
     CJsonNode result(CJsonNode::NewObjectNode());

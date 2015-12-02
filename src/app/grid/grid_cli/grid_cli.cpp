@@ -34,6 +34,7 @@
 
 #include "grid_cli.hpp"
 
+#include <connect/ncbi_userhost.hpp>
 #include <connect/services/clparser.hpp>
 #include <connect/services/grid_app_version_info.hpp>
 
@@ -1625,6 +1626,8 @@ int CGridCommandLineInterfaceApp::Run()
 #endif
         }
     }
+
+    SetDiagUserAndHost();
 
     try {
         int retcode = (this->*cmd_def->cmd_proc)();

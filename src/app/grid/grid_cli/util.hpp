@@ -139,8 +139,6 @@ void g_SuspendWorkerNode(CNetServer worker_node,
         bool pullback_mode, unsigned timeout);
 void g_ResumeWorkerNode(CNetServer worker_node);
 
-void g_GetUserAndHost(string* user, string* host);
-
 #define TOKEN_TYPE__NETCACHE_BLOB_KEY "NetCacheBlobKey"
 #define TOKEN_TYPE__NETSCHEDULE_JOB_KEY "NetScheduleJobKey"
 #define TOKEN_TYPE__NETSTORAGEOBJECT_LOC "NetStorageObjectLoc"
