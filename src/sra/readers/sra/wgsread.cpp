@@ -537,11 +537,11 @@ CWGSDb_Impl::SFeatTableCursor::SFeatTableCursor(const CVDBTable& table)
       INIT_VDB_COLUMN(LOC_START),
       INIT_VDB_COLUMN(LOC_LEN),
       INIT_VDB_COLUMN(LOC_STRAND),
-      INIT_VDB_COLUMN(PRODUCT_SEQ_TYPE),
-      INIT_VDB_COLUMN(PRODUCT_ACCESSION),
-      INIT_VDB_COLUMN(PRODUCT_ROW_ID),
-      INIT_VDB_COLUMN(PRODUCT_START),
-      INIT_VDB_COLUMN(PRODUCT_LEN),
+      INIT_OPTIONAL_VDB_COLUMN(PRODUCT_SEQ_TYPE),
+      INIT_OPTIONAL_VDB_COLUMN(PRODUCT_ACCESSION),
+      INIT_OPTIONAL_VDB_COLUMN(PRODUCT_ROW_ID),
+      INIT_OPTIONAL_VDB_COLUMN(PRODUCT_START),
+      INIT_OPTIONAL_VDB_COLUMN(PRODUCT_LEN),
       INIT_VDB_COLUMN(SEQ_FEAT)
 {
 }
@@ -4864,6 +4864,9 @@ TVDBRowId CWGSFeatureIterator::GetLocRowId(void) const
 TVDBRowId CWGSFeatureIterator::GetProductRowId(void) const
 {
     x_CheckValid("CWGSFeatureIterator::GetProductRowId");
+    if ( !m_Cur->m_PRODUCT_ROW_ID ) {
+        return 0;
+    }
     CVDBValueFor<TVDBRowId> row = m_Cur->PRODUCT_ROW_ID(m_CurrId);
     return row.empty()? 0: *row;
 }
