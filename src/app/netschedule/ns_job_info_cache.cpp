@@ -48,7 +48,8 @@ CJobInfoCache::CJobInfoCache(const CJobStatusTracker &  status_tracker,
                              CStatisticsCounters &      statistics) :
     m_StatusTracker(status_tracker),
     m_StatisticsCounters(statistics),
-    m_Limit(limit)
+    m_Limit(limit),
+    m_Cleaning(false)
 {}
 
 
@@ -156,6 +157,8 @@ unsigned int CJobInfoCache::Purge(void)
     if (m_Cache.size() <= m_Limit)
         return 0;
 
+    m_Cleaning = true;
+
     unsigned int    count = 0;
     unsigned int    need_to_remove = m_Cache.size() - m_Limit;
     TNSBitVector    all_jobs;
@@ -204,6 +207,7 @@ unsigned int CJobInfoCache::Purge(void)
     }
 
     m_StatisticsCounters.CountJobInfoCacheGCRemoved(count);
+    m_Cleaning = false;
     return count;
 }
 
