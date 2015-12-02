@@ -1002,6 +1002,8 @@ public:
     CWriter* GetIdWriter(void) const;
     CWriter* GetBlobWriter(void) const;
 
+    bool IsInProcessor(void) const { return m_InProcessor > 0; }
+
 private:
     friend class CLoadLockBlob;
     friend class CLoadLockSetter;
@@ -1015,6 +1017,7 @@ private:
     TLevel          m_Level;
     CSeq_id_Handle  m_RequestedId;
     int             m_RecursionLevel;
+    int             m_InProcessor;
     double          m_RecursiveTime;
     CReaderAllocatedConnection* m_AllocatedConnection;
     double          m_RetryDelay;
@@ -1031,7 +1034,9 @@ private: // hide methods
 class CReaderRequestResultRecursion : public CStopWatch
 {
 public:
-    CReaderRequestResultRecursion(CReaderRequestResult& result);
+    explicit
+    CReaderRequestResultRecursion(CReaderRequestResult& result,
+                                  bool in_processor = false);
     ~CReaderRequestResultRecursion(void);
     CReaderRequestResult& GetResult(void) const
         {
@@ -1047,6 +1052,7 @@ public:
 private:
     CReaderRequestResult& m_Result;
     double m_SaveTime;
+    bool m_InProcessor;
 private: // to prevent copying
     CReaderRequestResultRecursion(const CReaderRequestResultRecursion&);
     void operator=(const CReaderRequestResultRecursion&);

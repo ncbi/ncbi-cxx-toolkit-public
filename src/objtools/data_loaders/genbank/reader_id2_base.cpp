@@ -177,7 +177,7 @@ CId2ReaderBase::CId2ReaderBase(void)
 {
     vector<string> proc_list;
     string proc_param = NCBI_PARAM_TYPE(GENBANK, ID2_PROCESSOR)::GetDefault();
-    NStr::Tokenize(proc_param, ";", proc_list, NStr::eNoMergeDelims);
+    NStr::Split(proc_param, ";", proc_list);
     ITERATE ( vector<string>, it, proc_list ) {
         const string& proc_name = *it;
         CRef<CID2Processor> proc;
@@ -190,6 +190,7 @@ CId2ReaderBase::CId2ReaderBase(void)
                        "cannot load ID2 processor "<<proc_name<<": "<<exc);
         }
         if ( proc ) {
+            // send init request
             CID2_Request req;
             req.SetRequest().SetInit();
             x_SetContextData(req);
@@ -1558,6 +1559,44 @@ void CId2ReaderBase::x_ProcessRequest(CReaderRequestResult& result,
 }
 
 
+BEGIN_LOCAL_NAMESPACE;
+
+
+class CProcessorResolver : public CID2ProcessorResolver
+{
+public:
+    CProcessorResolver(CReadDispatcher& dispatcher,
+                       CReaderRequestResult& result)
+        : m_Dispatcher(dispatcher),
+          m_RequestResult(result)
+        {
+        }
+
+    virtual TIds GetIds(const CSeq_id& id)
+        {
+            TIds ret;
+            CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(id);
+            CLoadLockSeqIds lock(m_RequestResult, idh);
+            if ( !lock.IsLoaded() ) {
+                CReaderRequestResultRecursion recurse(m_RequestResult, true);
+                m_Dispatcher.LoadSeq_idSeq_ids(m_RequestResult, idh);
+            }
+            CFixedSeq_ids ids = lock.GetSeq_ids();
+            ITERATE ( CFixedSeq_ids, it, ids ) {
+                ret.push_back(it->GetSeqId());
+            }
+            return ret;
+        }
+
+private:
+    CReadDispatcher& m_Dispatcher;
+    CReaderRequestResult& m_RequestResult;
+};
+
+
+END_LOCAL_NAMESPACE;
+
+
 void CId2ReaderBase::x_SetContextData(CID2_Request& request)
 {
     if ( request.GetRequest().IsInit() ) {
@@ -1566,10 +1605,12 @@ void CId2ReaderBase::x_SetContextData(CID2_Request& request)
         param->SetValue().push_back(GetDiagContext().GetAppName());
         request.SetParams().Set().push_back(param);
         if ( 1 ) {
-            // allow new blob-state field in several ID2 replies
             CRef<CID2_Param> param(new CID2_Param);
             param->SetName("id2:allow");
+            // allow new blob-state field in several ID2 replies
             param->SetValue().push_back("*.blob-state");
+            // enable VDB-based WGS sequences
+            param->SetValue().push_back("vdb-wgs");
             request.SetParams().Set().push_back(param);
         }
     }
@@ -1625,7 +1666,12 @@ void CId2ReaderBase::x_ProcessPacket(CReaderRequestResult& result,
     
     int remaining_count = request_count;
     NON_CONST_ITERATE ( TProcessors, it, m_Processors ) {
-        CID2Processor::TReplies replies = (*it)->ProcessSomeRequests(packet);
+        if ( result.IsInProcessor() ) {
+            break;
+        }
+        CProcessorResolver resolver(*m_Dispatcher, result);
+        CID2Processor::TReplies replies =
+            (*it)->ProcessSomeRequests(packet, &resolver);
         ITERATE ( CID2Processor::TReplies, it, replies ) {
             CRef<CID2_Reply> reply = *it;
             if ( GetDebugLevel() >= eTraceConn   ) {

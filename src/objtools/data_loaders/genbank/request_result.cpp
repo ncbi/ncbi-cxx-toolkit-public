@@ -692,6 +692,7 @@ CReaderRequestResult::CReaderRequestResult(const CSeq_id_Handle& requested_id,
       m_Level(0),
       m_RequestedId(requested_id),
       m_RecursionLevel(0),
+      m_InProcessor(0),
       m_RecursiveTime(0),
       m_AllocatedConnection(0),
       m_RetryDelay(0),
@@ -825,13 +826,18 @@ CReaderRequestResult::GetNewExpirationTime(void) const
 
 
 CReaderRequestResultRecursion::CReaderRequestResultRecursion(
-    CReaderRequestResult& result)
+    CReaderRequestResult& result,
+    bool in_processor)
     : CStopWatch(eStart),
-      m_Result(result)
+      m_Result(result),
+      m_InProcessor(in_processor)
 {
     m_SaveTime = result.m_RecursiveTime;
     result.m_RecursiveTime = 0;
     ++result.m_RecursionLevel;
+    if ( m_InProcessor ) {
+        ++result.m_InProcessor;
+    }
 }
 
 
@@ -840,6 +846,9 @@ CReaderRequestResultRecursion::~CReaderRequestResultRecursion(void)
     _ASSERT(m_Result.m_RecursionLevel>0);
     m_Result.m_RecursiveTime += m_SaveTime;
     --m_Result.m_RecursionLevel;
+    if ( m_InProcessor ) {
+        --m_Result.m_InProcessor;
+    }
 }
 
 
