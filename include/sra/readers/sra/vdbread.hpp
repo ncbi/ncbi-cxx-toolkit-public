@@ -236,6 +236,10 @@ public:
 
     string FindAccPath(const string& acc) const;
 
+    void Close(void) {
+        *this = CVDBMgr();
+    }
+
 protected:
     void x_Init(void);
 
@@ -262,6 +266,10 @@ public:
             return m_Name;
         }
     CNcbiOstream& PrintFullName(CNcbiOstream& out) const;
+
+    void Close(void) {
+        *this = CVDB();
+    }
 
 private:
     string m_Name;
@@ -298,6 +306,10 @@ public:
     string GetFullName(void) const;
     CNcbiOstream& PrintFullName(CNcbiOstream& out) const;
 
+    void Close(void) {
+        *this = CVDBTable();
+    }
+
 public:
     CVDB m_Db;
     string m_Name;
@@ -333,6 +345,10 @@ public:
 
     TVDBRowIdRange Find(const string& value) const;
 
+    void Close(void) {
+        *this = CVDBTableIndex();
+    }
+
 private:
     CVDBTable m_Table;
     const char* m_Name;
@@ -343,6 +359,10 @@ class NCBI_SRAREAD_EXPORT CVDBCursor
     : public CSraRef<const VCursor>
 {
 public:
+    CVDBCursor(void)
+        : m_RowOpened(false)
+        {
+        }
     explicit CVDBCursor(const CVDBTable& table)
         : m_RowOpened(false)
         {
@@ -378,6 +398,10 @@ public:
                       uint32_t start, uint32_t count,
                       void* buffer) const;
     
+    void Close(void) {
+        *this = CVDBCursor();
+    }
+
 protected:
     void Init(const CVDBTable& table);
 
@@ -392,6 +416,8 @@ class NCBI_SRAREAD_EXPORT CVDBObjectCacheBase
 public:
     CVDBObjectCacheBase(void);
     ~CVDBObjectCacheBase(void);
+
+    void Clear(void);
 
 protected:
     CObject* Get(TVDBRowId row);
@@ -504,8 +530,8 @@ public:
 
 // DECLARE_VDB_COLUMN is helper macro to declare accessor to VDB column
 #define DECLARE_VDB_COLUMN(name)                                        \
-    CVDBValue::SRef name(TVDBRowId row) const {                         \
-        return CVDBValue::SRef(m_Cursor, row, NCBI_NAME2(m_,name));     \
+    CVDBValue::SRef name(TVDBRowId row, CVDBValue::EMissing missing = CVDBValue::eMissing_Throw) const { \
+        return CVDBValue::SRef(m_Cursor, row, NCBI_NAME2(m_,name), missing); \
     }                                                                   \
     CVDBColumn NCBI_NAME2(m_, name)
 
@@ -518,8 +544,8 @@ public:
 
 // DECLARE_VDB_COLUMN is helper macro to declare accessor to VDB column
 #define DECLARE_VDB_COLUMN_AS_STRING(name)                              \
-    CVDBStringValue name(TVDBRowId row) const {                         \
-        return CVDBStringValue(m_Cursor, row, NCBI_NAME2(m_,name));     \
+    CVDBStringValue name(TVDBRowId row, CVDBValue::EMissing missing = CVDBValue::eMissing_Throw) const { \
+        return CVDBStringValue(m_Cursor, row, NCBI_NAME2(m_,name), missing); \
     }                                                                   \
     CVDBColumnBits<8> NCBI_NAME2(m_, name)
 
@@ -910,8 +936,9 @@ public:
         {
         }
     CVDBStringValue(const CVDBCursor& cursor, TVDBRowId row,
-                    const CVDBColumn& column)
-        : CVDBValueFor<char>(cursor, row, column)
+                    const CVDBColumn& column,
+                    EMissing missing = eMissing_Throw)
+        : CVDBValueFor<char>(cursor, row, column, missing)
         {
         }
     explicit CVDBStringValue(const CVDBValue::SRef& ref)

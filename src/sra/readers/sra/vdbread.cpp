@@ -785,6 +785,13 @@ CVDBObjectCacheBase::~CVDBObjectCacheBase(void)
 DEFINE_STATIC_FAST_MUTEX(sm_CacheMutex);
 
 
+void CVDBObjectCacheBase::Clear(void)
+{
+    CFastMutexGuard guard(sm_CacheMutex);
+    m_Objects.clear();
+}
+
+
 CObject* CVDBObjectCacheBase::Get(TVDBRowId row)
 {
     CFastMutexGuard guard(sm_CacheMutex);
