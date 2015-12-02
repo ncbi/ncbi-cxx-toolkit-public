@@ -356,7 +356,7 @@ static void s_PopulateScoreSet(const CSeq_align &align,
     }
     ITERATE (CSeq_align::TScore, score_it, align.GetScore()) {
         if ((*score_it)->GetId().IsStr() &&
-                score_set_as_blacklist !=
+                (score_set_as_blacklist ? 0 : 1) ==
                 score_set.count((*score_it)->GetId().GetStr()))
         {
             if ((*score_it)->GetValue().IsInt()) {
