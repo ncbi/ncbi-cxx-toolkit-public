@@ -650,16 +650,13 @@ int SGridWorkerNodeImpl::Run(
         return 3;
     }
 
-    string control_port_str(
-            NStr::NumericToString(control_thread->GetControlPort()));
-    LOG_POST_X(60, "Control port: " << control_port_str);
-    m_NetScheduleAPI->SetAuthParam("control_port", control_port_str);
-    m_NetScheduleAPI->SetAuthParam("client_host", CSocketAPI::gethostname());
-
-    // Add control port to client node name
-    const string port(NStr::NumericToString(control_thread->GetControlPort()));
-    CNetScheduleAPIExt api_ext(m_NetScheduleAPI);
-    api_ext.AddToClientNode(port);
+    const string& client(GetClientName());
+    const string& host(CSocketAPI::gethostname());
+    const string& port(NStr::NumericToString(control_thread->GetControlPort()));
+    LOG_POST_X(60, "Control port: " << port);
+    m_NetScheduleAPI->SetAuthParam("control_port", port);
+    m_NetScheduleAPI->SetAuthParam("client_host", host);
+    m_NetScheduleAPI.SetClientNode(client + "::" + host + ':' + port);
 
     m_NetScheduleAPI.SetProgramVersion(m_JobProcessorFactory->GetJobVersion());
 
@@ -716,7 +713,7 @@ int SGridWorkerNodeImpl::Run(
         fprintf(procinfo_file, "pid: %lu\nport: %s\n"
                 "client_node: %s\nclient_session: %s\n",
                 (unsigned long) CDiagContext::GetPID(),
-                control_port_str.c_str(),
+                port.c_str(),
                 m_NetScheduleAPI->m_ClientNode.c_str(),
                 m_NetScheduleAPI->m_ClientSession.c_str());
         fclose(procinfo_file);
