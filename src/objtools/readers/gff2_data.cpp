@@ -373,7 +373,7 @@ bool CGff2Record::GetAttribute(
     if (it == m_Attributes.end()) {
         return false;
     }
-    NStr::Split(it->second, ",", values);
+    NStr::Split(it->second, ",", values, 0);
     return !values.empty();
 }
 
@@ -785,7 +785,7 @@ bool CGff2Record::x_MigrateAttributes(
     if (it != attrs_left.end()) {
         if (pFeature->GetData().IsGene()) {
             list<string> geneValues;
-            NStr::Split(it->second, ",", geneValues);
+            NStr::Split(it->second, ",", geneValues, 0);
             string value;
             list<string>::const_iterator cit = geneValues.begin();
             if (cit != geneValues.end()) {
@@ -1009,7 +1009,7 @@ bool CGff2Record::xMigrateAttributeDefault(
         return true;
     }
     list<CTempStringEx> values;
-    NStr::Split(it->second, ",", values);
+    NStr::Split(it->second, ",", values, 0);
     for (list<CTempStringEx>::const_iterator cit = values.begin(); cit != values.end();
             cit++) {
         string value = xNormalizedAttributeValue(*cit);

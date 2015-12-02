@@ -303,7 +303,7 @@ bool CGff3Reader::xUpdateAnnotCds(
     string strParents;
     if (record.GetAttribute("Parent", strParents)) {
         list<string> parents;
-        NStr::Split(strParents, ",", parents);
+        NStr::Split(strParents, ",", parents, 0);
         for (list<string>::const_iterator cit = parents.begin();
                 cit != parents.end();
                 ++cit) {
@@ -401,7 +401,7 @@ bool CGff3Reader::xFeatureSetXrefGrandParent(
     CRef<CSeq_feat> pParent = it->second;
     const string &grandParentsStr = pParent->GetNamedQual("Parent");
     list<string> grandParents;
-    NStr::Split(grandParentsStr, ",", grandParents);
+    NStr::Split(grandParentsStr, ",", grandParents, 0);
     for (list<string>::const_iterator gpcit = grandParents.begin();
             gpcit != grandParents.end(); ++gpcit) {
         IdToFeatureMap::iterator gpit = m_MapIdToFeature.find(*gpcit);
@@ -519,7 +519,7 @@ bool CGff3Reader::xUpdateAnnotMrna(
     string parentsStr;
     if ((m_iFlags & fGeneXrefs)  &&  record.GetAttribute("Parent", parentsStr)) {
         list<string> parents;
-        NStr::Split(parentsStr, ",", parents);
+        NStr::Split(parentsStr, ",", parents, 0);
         for (list<string>::const_iterator cit = parents.begin();
                 cit != parents.end();
                 ++cit) {

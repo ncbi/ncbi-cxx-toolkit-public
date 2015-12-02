@@ -1255,7 +1255,7 @@ bool CGff2Reader::xGenerateParentChildXrefs(
         CSeq_feat& feat = **featIt;
         const string& parentStr = feat.GetNamedQual("Parent");
         PARENTS parents;
-        NStr::Split(parentStr, ",", parents);
+        NStr::Split(parentStr, ",", parents, 0);
         for (PARENTS::iterator parentIt = parents.begin(); parentIt != parents.end(); ++parentIt) {
             const string& parent = *parentIt; 
             xSetAncestryLine(feat, parent);
@@ -1281,7 +1281,7 @@ void CGff2Reader::xSetAncestryLine(
         xSetAncestorXrefs(feat, *pAncestor);
         ancestorStr = pAncestor->GetNamedQual("Parent");
         PARENTS ancestors;
-        NStr::Split(ancestorStr, ",", ancestors);
+        NStr::Split(ancestorStr, ",", ancestors, 0);
         for (PARENTS::iterator it = ancestors.begin(); it != ancestors.end(); ++it) {
             const string& ancestorStr = *it;
             xSetAncestryLine(feat, ancestorStr);

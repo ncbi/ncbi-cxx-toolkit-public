@@ -344,7 +344,7 @@ bool CGvfReader::xFeatureSetLocationInterval(
     size_t lower, upper;
     if (record.GetAttribute( "Start_range", strRange ) )
     {
-        NStr::Split( strRange, ",", range_borders );
+        NStr::Split( strRange, ",", range_borders, 0 );
         if ( range_borders.size() != 2 ) {
             AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(
@@ -387,7 +387,7 @@ bool CGvfReader::xFeatureSetLocationInterval(
     range_borders.clear();
     if (record.GetAttribute( "End_range", strRange ) )
     {
-        NStr::Split( strRange, ",", range_borders );
+        NStr::Split( strRange, ",", range_borders, 0 );
         if ( range_borders.size() != 2 ) {
             AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(
@@ -473,7 +473,7 @@ bool CGvfReader::xFeatureSetLocationPoint(
 
     list<string> bounds;
     size_t lower, upper;
-    NStr::Split( strRangeLower, ",", bounds );
+    NStr::Split( strRangeLower, ",", bounds, 0 );
     if (bounds.size() != 2) {
         AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
@@ -590,7 +590,7 @@ bool CGvfReader::xVariationSetInsertions(
     string strAlleles;
     if ( record.GetAttribute( "Variant_seq", strAlleles ) ) {
         list<string> alleles;
-        NStr::Split( strAlleles, ",", alleles );
+        NStr::Split( strAlleles, ",", alleles, 0 );
         alleles.sort();
         alleles.unique();
         for ( list<string>::const_iterator cit = alleles.begin(); 
@@ -877,7 +877,7 @@ bool CGvfReader::xVariationSetDeletions(
     string strAlleles;
     if ( record.GetAttribute( "Variant_seq", strAlleles ) ) {
         list<string> alleles;
-        NStr::Split( strAlleles, ",", alleles );
+        NStr::Split( strAlleles, ",", alleles, 0 );
         alleles.sort();
         alleles.unique();
         for ( list<string>::const_iterator cit = alleles.begin(); 
@@ -940,7 +940,7 @@ bool CGvfReader::xVariationSetSnvs(
     string strAlleles;
     if ( record.GetAttribute( "Variant_seq", strAlleles ) ) {
         list<string> alleles;
-        NStr::Split( strAlleles, ",", alleles );
+        NStr::Split( strAlleles, ",", alleles, 0 );
         alleles.sort();
         alleles.unique();
         for ( list<string>::const_iterator cit = alleles.begin(); 
