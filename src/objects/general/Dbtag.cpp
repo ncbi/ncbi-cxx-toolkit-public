@@ -103,6 +103,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     { "HMP", CDbtag::eDbtagType_HMP },
     { "HOMD", CDbtag::eDbtagType_HOMD },
     { "HSSP", CDbtag::eDbtagType_HSSP },
+    { "I5KNAL", CDbtag::eDbtagType_I5KNAL },
     { "IKMC", CDbtag::eDbtagType_IKMC },
     { "IMGT/GENE-DB", CDbtag::eDbtagType_IMGT_GENEDB },
     { "IMGT/HLA", CDbtag::eDbtagType_IMGT_HLA },
@@ -683,6 +684,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_GenBank, "http://www.ncbi.nlm.nih.gov/nuccore/" },
     { CDbtag::eDbtagType_BioSample, "http://www.ncbi.nlm.nih.gov/biosample/" },
     { CDbtag::eDbtagType_ISHAM_ITS, "http://its.mycologylab.org/BioloMICS.aspx?Table=Sequences&ExactMatch=T&Name=MITS" },
+    { CDbtag::eDbtagType_I5KNAL, "https://i5k.nal.usda.gov/" },
 };
 
 typedef CStaticPairArrayMap<CDbtag::EDbtagType, const char*> TUrlPrefixMap;

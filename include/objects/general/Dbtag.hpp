@@ -209,7 +209,8 @@ public:
         eDbtagType_GenBank,
         eDbtagType_BioSample,
         eDbtagType_ISHAM_ITS,
-        eDbtagType_ERIC
+        eDbtagType_ERIC,
+        eDbtagType_I5KNAL
     };
 
     enum EDbtagGroup {
