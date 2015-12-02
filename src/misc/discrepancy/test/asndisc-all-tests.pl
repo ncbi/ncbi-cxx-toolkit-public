@@ -76,7 +76,6 @@ foreach my $test (sort keys %tests)
   open(STDOUT, '>/dev/null') if $quiet;
   my $result = system($cmd);
   open(STDOUT, '>&OLD_STDOUT') if $quiet;
-  print "##teamcity[testFinished name='$test']\n";
 
   if ($result)
   { ##print "$test: FAIL!\n";
@@ -87,6 +86,7 @@ foreach my $test (sort keys %tests)
   { print "$test: PASS!\n\n";
     $pass++;
   }
+  print "##teamcity[testFinished name='$test']\n";
 }
 
 my $total = $pass + $fail;
