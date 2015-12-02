@@ -1,0 +1,19 @@
+Discrepancy Report Results
+
+Summary
+ZERO_BASECOUNT:3 sequences have a zero basecount for a nucleotide
+
+
+Detailed Report
+
+DiscRep_ALL:ZERO_BASECOUNT::3 sequences have a zero basecount for a nucleotide
+DiscRep_SUB:ZERO_BASECOUNT::2 sequences have no As
+test-data/zero_basecount.asn:seq_that_is_missing_A (length 60)
+test-data/zero_basecount.asn:seq_that_is_missing_A_and_T (length 60)
+
+DiscRep_SUB:ZERO_BASECOUNT::1 sequences have no Ts
+test-data/zero_basecount.asn:seq_that_is_missing_A_and_T (length 60)
+
+DiscRep_SUB:ZERO_BASECOUNT::1 sequences have no Cs
+test-data/zero_basecount.asn:seq_that_is_missing_C (length 60)
+

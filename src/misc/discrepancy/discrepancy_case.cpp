@@ -109,37 +109,43 @@ DISCREPANCY_SUMMARIZE(SHORT_SEQUENCES)
 
 // N_RUNS
 
-bool SeqHasNRuns(const CSeq_data& seq_data, const size_t min_run_length) {
-    // TODO: record the actual locations of the runs of Ns.
-    // For example, in the C version...
-    // asndisc -e N_RUNS -X N_RUNS -i test-data/normal_delta.asn  -o /dev/stdout
-    // <snip>
-    // DiscRep_SUB:N_RUNS::seq_3 has runs of Ns at the following locations: 2215-2284, 2355-2564
-    //
-    // See Count14NProc and CountBaseProc in sqnutil3.c
-
+void FindNRuns(vector<CRange<TSeqPos> >& runs, const CSeq_data& seq_data, const TSeqPos start_pos, const TSeqPos min_run_length) {
     CSeq_data as_iupacna;
     TSeqPos nconv = CSeqportUtil::Convert(seq_data, &as_iupacna, CSeq_data::e_Iupacna);
     if (nconv == 0) {
-        return false;
+        return;
     }
-    size_t curr_run_length = 0;
+
+    CRange<TSeqPos> this_run;
+
+    TSeqPos position = start_pos;
 
     const string& iupacna_str = as_iupacna.GetIupacna().Get();
     ITERATE(string, base, iupacna_str) {
+        TSeqPos curr_length = this_run.GetLength();
+
         switch (*base) {
             case 'N':
-                ++curr_run_length;
-                if (curr_run_length >= min_run_length) {
-                    return true;
+                if (curr_length == 0) {
+                    this_run.SetFrom(position);
                 }
+                this_run.SetToOpen(position + 1);
                 break;
             default:
-                curr_run_length = 0;
+                if (curr_length >= min_run_length) {
+                    runs.push_back(this_run);
+                }
+
+                if (curr_length != 0) {
+                    this_run = CRange<TSeqPos>::GetEmpty();
+                }
                 break;
         }
+        ++position;
     }
-    return false;
+    if (this_run.GetLength() >= min_run_length) {
+        runs.push_back(this_run);
+    }
 }
 
 DISCREPANCY_CASE(N_RUNS, CSeq_inst, eAll, "More than 10 Ns in a row")
@@ -148,16 +154,34 @@ DISCREPANCY_CASE(N_RUNS, CSeq_inst, eAll, "More than 10 Ns in a row")
         return;
     }
 
+    bool found_any = false;
+    vector<CRange<TSeqPos> > runs;
+
+    ostringstream sub_key;
+    sub_key << context.GetCurrentBioseq()->GetFirstId()->GetSeqIdString();
+    sub_key << " has runs of Ns at the following locations: ";
+
     // CSeqMap, not CSeqVector, because gaps should not count as N runs.
     const CRef<CSeqMap> seq_map = CSeqMap::CreateSeqMapForBioseq(*context.GetCurrentBioseq());
     SSeqMapSelector sel;
     sel.SetFlags(CSeqMap::fFindData);
     CSeqMap_CI seq_iter(seq_map, &context.GetScope(), sel);
     for (; seq_iter; ++seq_iter) {
-        if (SeqHasNRuns(seq_iter.GetData(), 10)) {
-            m_Objs["[n] sequence[s] [has] runs of 10 or more Ns"].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
-            break;
+        FindNRuns(runs, seq_iter.GetData(), seq_iter.GetPosition(), 10);
+        ITERATE(vector<CRange<TSeqPos> >, run, runs) {
+            if (!found_any) {
+                found_any = true;
+            } else {
+                sub_key << ", ";
+            }
+
+            sub_key << (run->GetFrom() + 1) << "-" << (run->GetTo() + 1);
         }
+        runs.clear();
+    }
+
+    if (found_any) {
+        m_Objs["[n] sequence[s] [has] runs of 10 or more Ns"][sub_key.str()].Ext().Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
     }
 }
 

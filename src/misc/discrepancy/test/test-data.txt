@@ -1,14 +1,16 @@
-### Test name		Commandline C++		Commandline C		Input file		Special use
+### Test name		Commandline C++		Commandline C		Input file		-X?	Special use
 
 COUNT_NUCLEOTIDES	COUNT_NUCLEOTIDES	DISC_COUNT_NUCLEOTIDES	COUNT_PROTEINS.sqn
 COUNT_PROTEINS		COUNT_PROTEINS		COUNT_PROTEINS		COUNT_PROTEINS.sqn	
 N_RUNS			N_RUNS			N_RUNS			normal_delta.asn
+N_RUNS-X		N_RUNS			N_RUNS			normal_delta.asn	-X	N_RUNS-X.gold.txt	C Toolkit calculates location incorrectly for delta seqs
 PERCENT_N		PERCENT_N		DISC_PERCENT_N		percent_n.asn
 PERCENT_N-1		PERCENT_N		DISC_PERCENT_N		normal_delta.asn
 POSSIBLE_LINKER		POSSIBLE_LINKER		DISC_POSSIBLE_LINKER	possible_linker_set.asn
 POSSIBLE_LINKER-1	POSSIBLE_LINKER		DISC_POSSIBLE_LINKER	possible_linker_single.asn
 POSSIBLE_LINKER-2	POSSIBLE_LINKER		DISC_POSSIBLE_LINKER	possible_linker_not_found.asn
 POSSIBLE_LINKER-3	POSSIBLE_LINKER		DISC_POSSIBLE_LINKER	possible_linker_single_only_polyA.asn
-ZERO_BASECOUNT		ZERO_BASECOUNT		ZERO_BASECOUNT		zero_basecount.asn	ZERO_BASECOUNT.gold.txt		C Toolkit counts the same sequence multiple times
+ZERO_BASECOUNT		ZERO_BASECOUNT		ZERO_BASECOUNT		zero_basecount.asn		ZERO_BASECOUNT.gold.txt		C Toolkit counts the same sequence multiple times
+ZERO_BASECOUNT-X	ZERO_BASECOUNT		ZERO_BASECOUNT		zero_basecount.asn	-X	ZERO_BASECOUNT-X.gold.txt	C Toolkit counts the same sequence multiple times
 
 ### Please keep the tests in alphabetical order!

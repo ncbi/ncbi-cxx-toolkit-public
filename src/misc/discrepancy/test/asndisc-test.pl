@@ -51,12 +51,13 @@ my @lines = <DATA>; close DATA;
 foreach my $line (@lines)
 { chomp $line;
   $line=~s/#.*$//;
-  next unless $line=~/(\S+)\s+(\S+)\s+(\S+)\s+(\S+)(?:\s+(\S+))?/;
+  next unless $line=~/(\S+)\s+(\S+)\s+(\S+)\s+(\S+)(\s+-X)?(?:\s+(\S+))?/;
   die "Test name conflict: $1\n" if $tests{$1};
   $tests{$1}{arg} = $2;
   $tests{$1}{arg0} = $3;
   $tests{$1}{data} = $4;
-  $tests{$1}{gold} = $5;
+  $tests{$1}{ext} = $5;
+  $tests{$1}{gold} = $6;
 }
 
 die "Test $test not found\n" unless exists $tests{$test};
@@ -74,6 +75,8 @@ my $gold = File::Spec->catfile($path, 'test-data', $tests{$test}{gold}) if $test
 my $data = $tests{$test}{data};
 
 my $cmd = "$exe_cpp -e $arg -i $input -o $out_cpp";
+$cmd .= " -X ALL" if $tests{$test}{ext};
+
 open(OLD_STDOUT, '>&STDOUT') if $quiet;
 open(STDOUT, '>/dev/null') if $quiet;
 my $result = system($cmd);
@@ -83,6 +86,7 @@ die "Error running $exe_cpp\n" if $result;
 if ($gold eq '')
 {
   $cmd = "$exe_c -e $arg0 -i $input -o $out_c";
+  $cmd .= " -X ALL" if $tests{$test}{ext};
   open(OLD_STDOUT, '>&STDOUT') if $quiet;
   open(STDOUT, '>/dev/null') if $quiet;
   my $result = system($cmd);

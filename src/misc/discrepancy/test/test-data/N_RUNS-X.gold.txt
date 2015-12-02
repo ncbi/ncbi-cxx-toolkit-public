@@ -1,0 +1,15 @@
+Discrepancy Report Results
+
+Summary
+N_RUNS:2 sequences have runs of 10 or more Ns
+
+
+Detailed Report
+
+DiscRep_ALL:N_RUNS::2 sequences have runs of 10 or more Ns
+DiscRep_SUB:N_RUNS::seq_3 has runs of Ns at the following locations: 2215-2284, 2355-2564
+test-data/normal_delta.asn:seq_3 (length 2665, 282 other)
+
+DiscRep_SUB:N_RUNS::seq_3_again has runs of Ns at the following locations: 2269-2278, 2349-2359, 2570-2679
+test-data/normal_delta.asn:seq_3_again (length 2850, 142 other, 185 gap)
+

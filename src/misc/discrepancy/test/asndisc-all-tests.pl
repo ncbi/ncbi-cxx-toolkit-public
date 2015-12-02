@@ -47,12 +47,13 @@ my @lines = <DATA>; close DATA;
 foreach my $line (@lines)
 { chomp $line;
   $line=~s/#.*$//;
-  next unless $line=~/(\S+)\s+(\S+)\s+(\S+)\s+(\S+)(?:\s+(\S+))?/;
+  next unless $line=~/(\S+)\s+(\S+)\s+(\S+)\s+(\S+)(\s+-X)?(?:\s+(\S+))?/;
   die "Test name conflict: $1\n" if $tests{$1};
   $tests{$1}{arg} = $2;
   $tests{$1}{arg0} = $3;
   $tests{$1}{data} = $4;
-  $tests{$1}{gold} = $5;
+  $tests{$1}{ext} = $5;
+  $tests{$1}{gold} = $6;
 }
 
 die "$exe_c does not exist!\n" unless -e $exe_c;
