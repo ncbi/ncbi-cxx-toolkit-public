@@ -525,7 +525,7 @@ void CNetScheduleNotificationHandler::CmdAppendTimeoutGroupAndClientInfo(
         string& cmd, const CDeadline* deadline, const string& job_group)
 {
     if (deadline != NULL) {
-        unsigned remaining_seconds =
+        unsigned remaining_seconds = (unsigned)
             ceil(deadline->GetRemainingTime().GetAsDouble());
 
         if (remaining_seconds > 0) {

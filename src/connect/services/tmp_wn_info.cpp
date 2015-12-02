@@ -107,7 +107,7 @@ void s_GetWorkerNodes(CNetScheduleAPI api, list<SWorkerNodeInfo>& worker_nodes)
                 wn_info.name = client_info.GetString("client_node");
                 wn_info.prog = session;
                 wn_info.host = client_info.GetString("client_host");
-                wn_info.port =
+                wn_info.port = (unsigned short)
                         client_info.GetInteger("worker_node_control_port");
                 wn_info.last_access = CTime(
                         client_info.GetString("last_access"), "M/D/Y h:m:s.r");

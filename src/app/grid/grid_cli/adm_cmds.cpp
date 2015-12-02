@@ -587,8 +587,9 @@ namespace {
         }
         void AddCell(const string& text)
         {
-            if (m_Width < text.length())
-                m_Width = static_cast<int>(text.length());
+            int length = (int)text.length();
+            if (m_Width < length)
+                m_Width = length;
             m_Cells.push_back(text);
         }
         void PrintCell(size_t row)

@@ -506,13 +506,14 @@ bool CNetScheduleNotificationHandler::RequestJobWatching(
         CNetScheduleAPI::EJobStatus* job_status,
         int* last_event_index)
 {
+    double remaining_seconds = ceil(deadline.GetRemainingTime().GetAsDouble());
+
     string cmd("LISTEN job_key=" + job_id);
 
     cmd += " port=";
     cmd += NStr::NumericToString(GetPort());
     cmd += " timeout=";
-    unsigned remaining_seconds = ceil(deadline.GetRemainingTime().GetAsDouble());
-    cmd += NStr::NumericToString(remaining_seconds);
+    cmd += NStr::NumericToString((unsigned)remaining_seconds);
 
     g_AppendClientIPSessionIDHitID(cmd);
 
