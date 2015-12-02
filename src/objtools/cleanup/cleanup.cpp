@@ -809,7 +809,7 @@ bool CCleanup::AddProteinTitle(CBioseq_Handle bsh)
     }
 
     CRef<CSeqdesc> t(new CSeqdesc());
-    t->SetTitle(sequence::CDeflineGenerator().GenerateDefline(bsh));
+    t->SetTitle(new_defline);
     CBioseq_EditHandle eh = bsh.GetEditHandle();
     eh.AddSeqdesc(*t);
     return true;
