@@ -152,22 +152,13 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
         break;
     }
 
-    if (!IsOptionSet(eClientNode)) {
-        string user, host;
-        g_GetUserAndHost(&user, &host);
-        DefineClientNode(user, host);
+    if (IsOptionSet(eClientNode)) {
+        m_NetScheduleAPI.SetClientNode(m_Opts.client_node);
     }
 
-    if (!m_Opts.client_node.empty())
-        m_NetScheduleAPI.SetClientNode(m_Opts.client_node);
-
-    if (!IsOptionSet(eClientSession))
-        DefineClientSession((Uint8) CProcess::GetCurrentPid(),
-                (Int8) GetFastLocalTime().GetTimeT(),
-                GetDiagContext().GetStringUID());
-
-    if (!m_Opts.client_session.empty())
+    if (IsOptionSet(eClientSession)) {
         m_NetScheduleAPI.SetClientSession(m_Opts.client_session);
+    }
 }
 
 void CGridCommandLineInterfaceApp::JobInfo_PrintStatus(
