@@ -290,7 +290,7 @@ CRef<CWGSResolver_VDB::SAccIdxTableCursor> CWGSResolver_VDB::AccIdx(void)
 
 
 inline
-void CWGSResolver_VDB::Put(CRef<SGiIdxTableCursor>& curs, TVDBRowId row)
+void CWGSResolver_VDB::Put(CRef<SGiIdxTableCursor>& curs, TIntId row)
 {
     m_GiIdx.Put(curs, row);
 }
