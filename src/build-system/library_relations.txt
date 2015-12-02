@@ -1350,10 +1350,8 @@ xctools needs xncbi
 xctools needs3party $(NCBI_C_ncbi)
 xdb needs xncbi
 xdiff needs xncbi
-xdiscrepancy needs $(OBJEDIT_LIBS)
-xdiscrepancy needs $(XFORMAT_LIBS)
 xdiscrepancy needs macro
-xdiscrepancy needs xalnmgr
+xdiscrepancy needs xvalidate
 xdiscrepancy_report needs $(OBJMGR_LIBS)
 xdiscrepancy_report needs macro
 xdiscrepancy_report needs xmlwrapp
