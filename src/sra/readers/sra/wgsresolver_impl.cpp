@@ -266,7 +266,7 @@ string CWGSResolver_VDB::GetDefaultWGSIndexPath(void)
 
 
 inline
-CRef<CWGSResolver_VDB::SGiIdxTableCursor> CWGSResolver_VDB::GiIdx(TVDBRowId row)
+CRef<CWGSResolver_VDB::SGiIdxTableCursor> CWGSResolver_VDB::GiIdx(TIntId row)
 {
     CRef<SGiIdxTableCursor> curs = m_GiIdx.Get(row);
     if ( !curs ) {
