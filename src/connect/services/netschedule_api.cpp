@@ -646,7 +646,9 @@ void CNetScheduleServerListener::OnInit(
 
     string client_node(ns_impl->m_Service->GetClientName());
     client_node.append(2, ':');
-    client_node.append(CSocketAPI::gethostname());
+    client_node.append(GetDiagContext().GetUsername());
+    client_node.append(1, '@');
+    client_node.append(GetDiagContext().GetHost());
     ns_impl->m_ClientNode = client_node;
 
     auto_ptr<CConfig> config_holder;
@@ -734,7 +736,7 @@ void CNetScheduleServerListener::OnInit(
         }
 
         if (!ns_impl->m_ClientNode.empty()) {
-            string session(NStr::NumericToString(CProcess::GetCurrentPid()));
+            string session(NStr::NumericToString(CDiagContext::GetPID()));
             session += '@';
             session += NStr::NumericToString(GetFastLocalTime().GetTimeT());
             session += ':';
