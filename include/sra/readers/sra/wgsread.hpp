@@ -114,168 +114,6 @@ private:
 };
 
 
-class NCBI_SRAREAD_EXPORT CWGSGiResolver : public CObject
-{
-public:
-    CWGSGiResolver(void);
-    explicit CWGSGiResolver(const string& index_path);
-    ~CWGSGiResolver(void);
-
-    static string GetDefaultIndexPath(void);
-
-    const string& GetIndexPath(void) const {
-        return m_IndexPath;
-    }
-
-    bool IsValid(void) const;
-
-    const CTime& GetTimestamp(void) const {
-        return m_Index.m_Timestamp;
-    }
-
-    // return all WGS accessions that could contain gi
-    typedef vector<string> TAccessionList;
-    TAccessionList FindAll(TGi gi) const;
-    struct SSeqInfo {
-        string wgs_acc;
-        char type;
-        TVDBRowId row;
-    };
-    typedef vector<SSeqInfo> TSeqInfoList;
-    TSeqInfoList FindAll(TGi gi, const CVDBMgr& mgr) const;
-
-    void SetNonWGSGi(TGi gi);
-
-    // return unordered list of WGS accessions and GI ranges
-    typedef pair<TIntId, TIntId> TIdRange;
-    typedef pair<string, TIdRange> TIdRangePair;
-    typedef vector<TIdRangePair> TIdRanges;
-    TIdRanges GetIdRanges(void) const;
-
-    struct SWGSAccession {
-        enum {
-            kMinWGSAccessionLength = 6, // AAAA01
-            kMaxWGSAccessionLength = 9  // AAAA01.11
-        };
-
-        SWGSAccession(void) {
-            acc[0] = '\0';
-        }
-        explicit SWGSAccession(CTempString str) {
-            size_t len = str.size();
-            for ( size_t i = 0; i < len; ++i ) {
-                acc[i] = str[i];
-            }
-            acc[len] = '\0';
-        }
-
-        char acc[kMaxWGSAccessionLength+1];
-    };
-
-    void LoadFirst(const string& index_path);
-    bool Update(void);
-
-private:
-    typedef CRangeMultimap<SWGSAccession, TIntId> TIndex;
-    struct SIndexInfo
-    {
-        TIndex m_Index;
-        CTime  m_Timestamp;
-    };
-
-    struct SNonWGSIndex;
-
-    bool x_Load(SIndexInfo& index, const CTime* old_timestamp = 0) const;
-
-    string m_IndexPath;
-    mutable CMutex m_Mutex;
-    SIndexInfo m_Index;
-    AutoPtr<SNonWGSIndex> m_NonWGSIndex;
-};
-
-
-class NCBI_SRAREAD_EXPORT CWGSProtAccResolver : public CObject
-{
-public:
-    CWGSProtAccResolver(void);
-    explicit CWGSProtAccResolver(const string& index_path);
-    ~CWGSProtAccResolver(void);
-
-    static string GetDefaultIndexPath(void);
-
-    const string& GetIndexPath(void) const {
-        return m_IndexPath;
-    }
-
-    bool IsValid(void) const;
-
-    const CTime& GetTimestamp(void) const {
-        return m_Index.m_Timestamp;
-    }
-
-    struct NCBI_SRAREAD_EXPORT SAccInfo
-    {
-        SAccInfo(void)
-            : m_IdLength(0)
-            {
-            }
-        SAccInfo(CTempString acc, Uint4& id);
-        
-        string GetAcc(Uint4 id) const;
-
-        DECLARE_OPERATOR_BOOL(m_IdLength != 0);
-
-        bool operator<(const SAccInfo& b) const {
-            if ( m_IdLength != b.m_IdLength ) {
-                return m_IdLength < b.m_IdLength;
-            }
-            return m_AccPrefix < b.m_AccPrefix;
-        }
-
-        bool operator==(const SAccInfo& b) const {
-            return m_IdLength == b.m_IdLength &&
-                m_AccPrefix == b.m_AccPrefix;
-        }
-        bool operator!=(const SAccInfo& b) const {
-            return !(*this == b);
-        }
-
-        string m_AccPrefix;
-        Uint4  m_IdLength;
-    };
-
-    // return all WGS accessions that could contain protein accession
-    typedef vector<string> TAccessionList;
-    TAccessionList FindAll(const string& acc) const;
-
-    // return unordered list of WGS accessions and GI ranges
-    typedef pair<string, string> TIdRange;
-    typedef pair<string, TIdRange> TIdRangePair;
-    typedef vector<TIdRangePair> TIdRanges;
-    TIdRanges GetIdRanges(void) const;
-
-    typedef CWGSGiResolver::SWGSAccession SWGSAccession;
-
-    void LoadFirst(const string& index_path);
-    bool Update(void);
-
-private:
-    typedef CRangeMultimap<SWGSAccession, Uint4> TRangeIndex;
-    typedef map<SAccInfo, TRangeIndex> TIndex; // by acc prefix
-    struct SIndexInfo
-    {
-        TIndex m_Index;
-        CTime  m_Timestamp;
-    };
-
-    bool x_Load(SIndexInfo& index, const CTime* old_timestamp = 0) const;
-
-    string m_IndexPath;
-    mutable CMutex m_Mutex;
-    SIndexInfo m_Index;
-};
-
-
 class NCBI_SRAREAD_EXPORT CWGSDb_Impl : public CObject
 {
 public:
@@ -407,12 +245,42 @@ public:
     // return sorted non-overlapping ranges of protein GIs in the VDB
     TGiRanges GetProtGiRanges(void);
 
-    typedef CWGSProtAccResolver::SAccInfo SAccInfo;
+    struct NCBI_SRAREAD_EXPORT SProtAccInfo
+    {
+        SProtAccInfo(void)
+            : m_IdLength(0)
+            {
+            }
+        SProtAccInfo(CTempString acc, Uint4& id);
+        
+        string GetAcc(Uint4 id) const;
+
+        DECLARE_OPERATOR_BOOL(m_IdLength != 0);
+
+        bool operator<(const SProtAccInfo& b) const {
+            if ( m_IdLength != b.m_IdLength ) {
+                return m_IdLength < b.m_IdLength;
+            }
+            return m_AccPrefix < b.m_AccPrefix;
+        }
+
+        bool operator==(const SProtAccInfo& b) const {
+            return m_IdLength == b.m_IdLength &&
+                m_AccPrefix == b.m_AccPrefix;
+        }
+        bool operator!=(const SProtAccInfo& b) const {
+            return !(*this == b);
+        }
+
+        string m_AccPrefix;
+        Uint4  m_IdLength;
+    };
+
     typedef COpenRange<Uint4> TIdRange;
-    typedef map<SAccInfo, TIdRange> TAccRanges;
+    typedef map<SProtAccInfo, TIdRange> TProtAccRanges;
     // return map of 3+5 accession ranges
     // Key of each element is accession prefix/length pair
-    TAccRanges GetProtAccRanges(void);
+    TProtAccRanges GetProtAccRanges(void);
 
 protected:
     friend class CWGSSeqIterator;
@@ -631,12 +499,12 @@ public:
         return GetNCObject().GetProtGiRanges();
     }
 
-    typedef CWGSDb_Impl::SAccInfo SAccInfo;
+    typedef CWGSDb_Impl::SProtAccInfo SProtAccInfo;
     typedef CWGSDb_Impl::TIdRange TIdRange;
-    typedef CWGSDb_Impl::TAccRanges TAccRanges;
+    typedef CWGSDb_Impl::TProtAccRanges TProtAccRanges;
     // return map of 3+5 accession ranges
     // Key of each element is accession pattern, digital part zeroed.
-    TAccRanges GetProtAccRanges(void) {
+    TProtAccRanges GetProtAccRanges(void) {
         return GetNCObject().GetProtAccRanges();
     }
 
