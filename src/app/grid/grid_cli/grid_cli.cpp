@@ -1778,38 +1778,21 @@ bool CGridCommandLineInterfaceApp::ParseLoginToken(const string& token)
         label_field = label_field.GetNextHomogeneous();
     }
 
-    DefineClientNode(user, host);
-    DefineClientSession(pid, timestamp, uid);
+    const string& app(m_Opts.app_uid);
+    m_Opts.client_node =
+        (app.empty() ? DEFAULT_APP_UID : app) + "::" +
+        (user.empty() ? kEmptyStr : user + '@') +
+        host;
 
-    return true;
-}
-
-void CGridCommandLineInterfaceApp::DefineClientNode(
-    const string& user, const string& host)
-{
-    m_Opts.client_node = !m_Opts.app_uid.empty() ?
-            m_Opts.app_uid : DEFAULT_APP_UID;
-    m_Opts.client_node.append(2, ':');
-
-    if (!user.empty()) {
-        m_Opts.client_node += user;
-        m_Opts.client_node += '@';
-    }
-
-    m_Opts.client_node += host;
+    m_Opts.client_session =
+        NStr::NumericToString(pid) + '@' +
+        NStr::NumericToString(timestamp) + ':' +
+        uid;
 
     MarkOptionAsSet(eClientNode);
-}
-
-void CGridCommandLineInterfaceApp::DefineClientSession(Uint8 pid,
-        Int8 timestamp, const string& uid)
-{
-    m_Opts.client_session = NStr::NumericToString(pid) + '@';
-    m_Opts.client_session += NStr::NumericToString(timestamp);
-    m_Opts.client_session += ':';
-    m_Opts.client_session += uid;
-
     MarkOptionAsSet(eClientSession);
+
+    return true;
 }
 
 int main(int argc, const char* argv[])

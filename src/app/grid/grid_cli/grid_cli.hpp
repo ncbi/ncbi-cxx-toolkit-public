@@ -366,9 +366,6 @@ private:
 private:
     CNetScheduleAPI::EJobStatus StringToJobStatus(const char* status_str);
     bool ParseLoginToken(const string& token);
-    void DefineClientNode(const string& user, const string& host);
-    void DefineClientSession(Uint8 pid,
-            Int8 timestamp, const string& uid);
 
     void MarkOptionAsAccepted(int option)
     {
