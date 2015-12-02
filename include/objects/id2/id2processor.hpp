@@ -36,9 +36,23 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
+class CSeq_id;
 class CID2_Request_Packet;
 class CID2_Request;
 class CID2_Reply;
+
+// CID2ProcessorResolver callback can be used to get information from user of
+// CID2Processor interface to avoid possible deadlock or infinite recursion
+class NCBI_ID2_EXPORT CID2ProcessorResolver : public CObject
+{
+public:
+    CID2ProcessorResolver(void);
+    virtual ~CID2ProcessorResolver(void);
+
+    typedef vector<CConstRef<CSeq_id> > TIds;
+
+    virtual TIds GetIds(const CSeq_id& id) = 0;
+};
 
 
 class NCBI_ID2_EXPORT CID2Processor : public CObject
@@ -49,8 +63,11 @@ public:
     
     typedef vector<CRef<CID2_Reply> > TReplies;
 
-    virtual TReplies ProcessSomeRequests(CID2_Request_Packet& packet) = 0;
-    virtual bool ProcessRequest(TReplies& replies, CID2_Request& request) = 0;
+    virtual TReplies ProcessSomeRequests(CID2_Request_Packet& packet,
+                                         CID2ProcessorResolver* resolver = 0) = 0;
+    virtual bool ProcessRequest(TReplies& replies,
+                                CID2_Request& request,
+                                CID2ProcessorResolver *resolver = 0) = 0;
 };
 
 

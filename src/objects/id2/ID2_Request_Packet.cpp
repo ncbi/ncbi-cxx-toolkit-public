@@ -54,6 +54,17 @@ CID2_Request_Packet::~CID2_Request_Packet(void)
 {
 }
 
+
+CID2ProcessorResolver::CID2ProcessorResolver(void)
+{
+}
+
+
+CID2ProcessorResolver::~CID2ProcessorResolver(void)
+{
+}
+
+
 CID2Processor::CID2Processor(void)
 {
 }
