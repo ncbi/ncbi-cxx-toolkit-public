@@ -48,7 +48,7 @@ class CID2_Reply;
 class CID2Client;
 class CDataLoader;
 
-class CWGSResolver_VDB : public CWGSResolver
+class NCBI_SRAREAD_EXPORT CWGSResolver_VDB : public CWGSResolver
 {
 public:
     explicit CWGSResolver_VDB(const CVDBMgr& mgr);
@@ -114,7 +114,7 @@ private:
 };
 
 
-class CWGSResolver_Ids : public CWGSResolver
+class NCBI_SRAREAD_EXPORT CWGSResolver_Ids : public CWGSResolver
 {
 public:
     CWGSResolver_Ids(void);
@@ -134,7 +134,7 @@ protected:
 };
 
 
-class CWGSResolver_DL : public CWGSResolver_Ids
+class NCBI_SRAREAD_EXPORT CWGSResolver_DL : public CWGSResolver_Ids
 {
 public:
     CWGSResolver_DL(void); // find GenBank loader
@@ -156,7 +156,7 @@ protected:
 };
 
 
-class CWGSResolver_Proc : public CWGSResolver_Ids
+class NCBI_SRAREAD_EXPORT CWGSResolver_Proc : public CWGSResolver_Ids
 {
 public:
     explicit
@@ -179,7 +179,7 @@ protected:
 //#define WGS_RESOLVER_USE_ID2_CLIENT
 
 #ifdef WGS_RESOLVER_USE_ID2_CLIENT
-class CWGSResolver_ID2 : public CWGSResolver_Ids
+class NCBI_SRAREAD_EXPORT CWGSResolver_ID2 : public CWGSResolver_Ids
 {
 public:
     CWGSResolver_ID2(void);
@@ -371,7 +371,7 @@ private:
 };
 
     
-class CWGSResolver_RangeFiles : public CWGSResolver
+class NCBI_SRAREAD_EXPORT CWGSResolver_RangeFiles : public CWGSResolver
 {
 public:
     CWGSResolver_RangeFiles(void);
