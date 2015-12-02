@@ -35,6 +35,8 @@
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_system.hpp>
 #include <sra/readers/sra/wgsread.hpp>
+#include <sra/readers/sra/wgsresolver.hpp>
+#include <sra/readers/sra/impl/wgsresolver_impl.hpp>
 #include <sra/readers/ncbi_traces_path.hpp>
 
 #include <objects/general/general__.hpp>
@@ -96,6 +98,8 @@ void CWGSTestApp::Init(void)
     arg_desc->AddFlag("withdrawn", "Include withdrawn sequences");
     arg_desc->AddFlag("master", "Include master descriptors if any");
     arg_desc->AddFlag("master-no-filter", "Do not filter master descriptors");
+
+    //arg_desc->AddFlag("resolve-gi", "Resolve gi list");
 
     arg_desc->AddFlag("gi-check", "Check GI index");
     arg_desc->AddFlag("gi-range", "Print GI range if any");
@@ -261,7 +265,7 @@ int LowLevelTest(void)
             CALL(VDBManagerRelease(mgr));
         }
     }
-    if ( 1 ) {
+    if ( 0 ) {
         cout << "LowLevelTest for MT cursor read..." << endl;
         const VDBManager* mgr = 0;
         CALL(VDBManagerMakeRead(&mgr, 0));
@@ -328,6 +332,95 @@ int LowLevelTest(void)
         CALL(VTableRelease(table));
         CALL(VDatabaseRelease(db));
         CALL(VDBManagerRelease(mgr));
+    }
+    if ( 1 ) {
+        cout << "LowLevelTest sequence reading..." << endl;
+        for ( int i = 0; i < 1; ++i ) {
+            const VDBManager* mgr = 0;
+            CALL(VDBManagerMakeRead(&mgr, 0));
+
+            const VDatabase* db = 0;
+            CALL(VDBManagerOpenDBRead(mgr, &db, 0, "JELW01"));
+
+            const VTable* table = 0;
+            CALL(VDatabaseOpenTableRead(db, &table, "SEQUENCE"));
+
+            const VCursor* cursor = 0;
+            CALL(VTableCreateCursorRead(table, &cursor));
+            CALL(VCursorPermitPostOpenAdd(cursor));
+            CALL(VCursorOpen(cursor));
+
+            char data0[10];
+            uint32_t total = 0;
+            const char* type = 0;
+            uint32_t bit_size = 0;
+            const size_t kBases = 1<<17;
+            char* buffer = new char[kBases];
+            uint32_t col;
+
+            uint64_t row0 = 1, row1 = 300;
+            CStopWatch sw(CStopWatch::eStart);
+            if ( 1 ) {
+                type = "packed 2na";
+                CALL(VCursorAddColumn(cursor, &col,
+                                      "(INSDC:2na:packed)READ"));
+                bit_size = 2;
+            }
+            if ( 0 ) {
+                type = "packed 4na";
+                CALL(VCursorAddColumn(cursor, &col,
+                                      "(INSDC:4na:packed)READ"));
+                bit_size = 4;
+            }
+            if ( 0 ) {
+                type = "byte 4na";
+                CALL(VCursorAddColumn(cursor, &col,
+                                      "(INSDC:4na:bin)READ"));
+                bit_size = 8;
+            }
+            const char* method = 0;
+            if ( 1 ) {
+                method = "in chunks";
+                for ( uint64_t row = row0; row <= row1; ++row ) {
+                    uint32_t pos = 0, elem_read, elem_rem = 1;
+                    for ( ; elem_rem; pos += elem_read ) {
+                        CALL(VCursorReadBitsDirect(cursor, row, col,
+                                                   bit_size, pos,
+                                                   buffer, 0, kBases,
+                                                   &elem_read, &elem_rem));
+                        if ( row == 1 && pos == 0 ) memcpy(data0, buffer, 10);
+                    }
+                    total += pos;
+                }
+            }
+            else {
+                method = "in whole";
+                for ( uint64_t row = row0; row <= row1; ++row ) {
+                    uint32_t bit_offset, bit_length, elem_count;
+                    const void* data;
+                    CALL(VCursorCellDataDirect(cursor, row, col,
+                                               &bit_length, &data, &bit_offset,
+                                               &elem_count));
+                    assert(bit_length = bit_size);
+                    if ( row == 1 ) memcpy(data0, data, 10);
+                    total += elem_count;
+                }
+            }
+            double time = sw.Elapsed();
+            delete[] buffer;
+            cout << "read "<<type<<" "<<method
+                 <<" time: "<<time<<" bases="<<total << endl;
+            cout << "data:" << hex;
+            for ( size_t i = 0; i < 10; ++i ) {
+                cout << ' ' << (data0[i]&0xff);
+            }
+            cout << dec << endl;
+
+            CALL(VCursorRelease(cursor));
+            CALL(VTableRelease(table));
+            CALL(VDatabaseRelease(db));
+            CALL(VDBManagerRelease(mgr));
+        }
     }
     cout << "LowLevelTest done" << endl;
     return 0;
@@ -409,8 +502,8 @@ static TAccRanges GetProtAccRanges(CWGSDb wgs_db)
 {
     TAccRanges ret;
     TAccRange range;
-    CWGSDb::TAccRanges ranges = wgs_db.GetProtAccRanges();
-    ITERATE ( CWGSDb::TAccRanges, it, ranges ) {
+    CWGSDb::TProtAccRanges ranges = wgs_db.GetProtAccRanges();
+    ITERATE ( CWGSDb::TProtAccRanges, it, ranges ) {
         range.first = it->first.GetAcc(it->second.GetFrom());
         range.second = it->first.GetAcc(it->second.GetTo());
         ret.push_back(range);
@@ -422,7 +515,7 @@ static bool LoadGiIndex(TGiRangeIndex& index,
                         CTime& time,
                         const string& file_name)
 {
-    CWGSGiResolver resolver(file_name);
+    CWGSResolver_GiRangeFile resolver(file_name);
     if ( !resolver.IsValid() ) {
         // allow missing file
         time = CTime(CTime::eCurrent);
@@ -430,9 +523,9 @@ static bool LoadGiIndex(TGiRangeIndex& index,
     }
     time = resolver.GetTimestamp();
 
-    CWGSGiResolver::TIdRanges ranges = resolver.GetIdRanges();
+    CWGSResolver_GiRangeFile::TIdRanges ranges = resolver.GetIdRanges();
     sort(ranges.begin(), ranges.end());
-    ITERATE ( CWGSGiResolver::TIdRanges, it, ranges ) {
+    ITERATE ( CWGSResolver_GiRangeFile::TIdRanges, it, ranges ) {
         index[it->first].push_back(it->second);
     }
     return true;
@@ -442,7 +535,7 @@ static bool LoadAccIndex(TAccRangeIndex& index,
                          CTime& time,
                          const string& file_name)
 {
-    CWGSProtAccResolver resolver(file_name);
+    CWGSResolver_AccRangeFile resolver(file_name);
     if ( !resolver.IsValid() ) {
         // allow missing file
         time = CTime(CTime::eCurrent);
@@ -450,9 +543,9 @@ static bool LoadAccIndex(TAccRangeIndex& index,
     }
     time = resolver.GetTimestamp();
 
-    CWGSProtAccResolver::TIdRanges ranges = resolver.GetIdRanges();
+    CWGSResolver_AccRangeFile::TIdRanges ranges = resolver.GetIdRanges();
     sort(ranges.begin(), ranges.end());
-    ITERATE ( CWGSProtAccResolver::TIdRanges, it, ranges ) {
+    ITERATE ( CWGSResolver_AccRangeFile::TIdRanges, it, ranges ) {
         index[it->first].push_back(it->second);
     }
     return true;
@@ -819,6 +912,17 @@ int CWGSTestApp::Run(void)
         }
     }
 
+    /*
+      if ( args["resolve-gi"] ) {
+      vector<string> gis_str;
+      NStr::Tokenize(args["resolve-gi"].AsString(), ",", gis_str);
+      ITERATE ( vector<string>, it, gis_str ) {
+      TGi gi = NStr::StringToNumeric<TIntId>(*it);
+            
+      }
+      }
+    */
+
     if ( args["gi-check"] ) {
         typedef map<TGi, uint64_t> TGiIdx;
         TGiIdx nuc_idx;
@@ -890,10 +994,10 @@ int CWGSTestApp::Run(void)
     }
     if ( args["acc-ranges"] ) {
         sw.Restart();
-        CWGSDb::TAccRanges ranges = wgs_db.GetProtAccRanges();
+        CWGSDb::TProtAccRanges ranges = wgs_db.GetProtAccRanges();
         out << "Got "<<ranges.size()<<" protein accession ranges in "<<sw.Elapsed()<<"s:"
             << NcbiEndl;
-        ITERATE ( CWGSDb::TAccRanges, it, ranges ) {
+        ITERATE ( CWGSDb::TProtAccRanges, it, ranges ) {
             out << "  Accs: "<<it->first<<": "<<it->second
                 << NcbiEndl;
         }
@@ -902,14 +1006,28 @@ int CWGSTestApp::Run(void)
     bool check_non_empty_lookup = args["check_non_empty_lookup"];
     if ( args["gi"] ) {
         TGi gi = TIntId(args["gi"].AsInt8());
-        CWGSGiResolver gi_resolver;
-        CWGSGiResolver::TAccessionList accs = gi_resolver.FindAll(gi);
-        if ( accs.empty() ) {
-            out << "No WGS accessions with gi "<<gi<<NcbiEndl;
+        CWGSResolver_VDB resolver(mgr);
+        if ( resolver.IsValid() ) {
+            CWGSResolver::TWGSPrefixes prefixes = resolver.GetPrefixes(gi);
+            if ( prefixes.empty() ) {
+                out << "No WGS accessions with gi "<<gi<<NcbiEndl;
+            }
+            else {
+                ITERATE ( CWGSResolver::TWGSPrefixes, it, prefixes ) {
+                    out << "GI "<<gi<<" is found in WGS " << *it << NcbiEndl;
+                }
+            }
         }
         else {
-            ITERATE ( CWGSGiResolver::TAccessionList, it, accs ) {
-                out << "WGS accessions with gi: "<<*it<<NcbiEndl;
+            CWGSResolver_GiRangeFile resolver;
+            CWGSResolver::TWGSPrefixes prefixes = resolver.GetPrefixes(gi);
+            if ( prefixes.empty() ) {
+                out << "No WGS accessions with gi "<<gi<<NcbiEndl;
+            }
+            else {
+                ITERATE ( CWGSResolver::TWGSPrefixes, it, prefixes ) {
+                    out << "WGS accessions with gi "<<gi<<": "<<*it<<NcbiEndl;
+                }
             }
         }
         CWGSGiIterator gi_it(wgs_db, gi);
@@ -1041,6 +1159,30 @@ int CWGSTestApp::Run(void)
     }
     if ( args["protein_acc"] ) {
         string name = args["protein_acc"].AsString();
+        CWGSResolver_VDB resolver(mgr);
+        if ( resolver.IsValid() ) {
+            CWGSResolver::TWGSPrefixes prefixes = resolver.GetPrefixes(name);
+            if ( prefixes.empty() ) {
+                out << "No WGS accessions with protein acc "<<name<<NcbiEndl;
+            }
+            else {
+                ITERATE ( CWGSResolver::TWGSPrefixes, it, prefixes ) {
+                    out << "Protein acc "<<name<<" is found in WGS " << *it << NcbiEndl;
+                }
+            }
+        }
+        else {
+            CWGSResolver_AccRangeFile resolver;
+            CWGSResolver::TWGSPrefixes prefixes = resolver.GetPrefixes(name);
+            if ( prefixes.empty() ) {
+                out << "No WGS accessions with protein acc "<<name<<NcbiEndl;
+            }
+            else {
+                ITERATE ( CWGSResolver::TWGSPrefixes, it, prefixes ) {
+                    out << "WGS accessions with protein acc "<<name<<": "<<*it<<NcbiEndl;
+                }
+            }
+        }
         uint64_t row_id = wgs_db.GetProtAccRowId(name);
         out << "Protein acc "<<name<<" is in PROTEIN table row " << row_id
             << NcbiEndl;
