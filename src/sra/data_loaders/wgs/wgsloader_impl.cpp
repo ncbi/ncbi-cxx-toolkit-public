@@ -56,6 +56,7 @@
 
 #include <sra/error_codes.hpp>
 #include <sra/readers/ncbi_traces_path.hpp>
+#include <sra/readers/sra/wgsresolver.hpp>
 #include <sra/data_loaders/wgs/wgsloader.hpp>
 #include <sra/data_loaders/wgs/impl/wgsloader_impl.hpp>
 
@@ -73,11 +74,6 @@ NCBI_DEFINE_ERR_SUBCODE_X(16);
 BEGIN_SCOPE(objects)
 
 class CDataLoader;
-
-static const char kGBLoaderName[] = "GBLOADER";
-
-//static const int kTSEId = 1;
-//static const int kMainChunkId = -1;
 
 NCBI_PARAM_DECL(int, WGS_LOADER, DEBUG);
 NCBI_PARAM_DEF_EX(int, WGS_LOADER, DEBUG, 0,
@@ -214,250 +210,6 @@ bool CWGSBlobId::operator==(const CBlobId& id) const
 
 
 /////////////////////////////////////////////////////////////////////////////
-// Resolvers
-/////////////////////////////////////////////////////////////////////////////
-
-
-CWGSDataLoader_Impl::IGiResolver::~IGiResolver(void)
-{
-}
-
-
-CWGSDataLoader_Impl::IAccResolver::~IAccResolver(void)
-{
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
-// File resolver
-/////////////////////////////////////////////////////////////////////////////
-
-
-class CWGSGiFileResolver : public CWGSGiResolver,
-                           public CWGSDataLoader_Impl::IGiResolver
-{
-public:
-    virtual void Resolve(TWGSPrefixes& prefixes, TGi gi);
-    virtual void SetNonResolving(TGi gi);
-};
-
-
-void CWGSGiFileResolver::Resolve(TWGSPrefixes& prefixes, TGi gi)
-{
-    prefixes.clear();
-    if ( IsValid() ) {
-        TAccessionList accs = FindAll(gi);
-        ITERATE ( TAccessionList, it, accs ) {
-            prefixes.push_back(*it);
-        }
-    }
-}
-
-
-void CWGSGiFileResolver::SetNonResolving(TGi gi)
-{
-    SetNonWGSGi(gi);
-}
-
-
-class CWGSAccFileResolver : public CWGSProtAccResolver,
-                            public CWGSDataLoader_Impl::IAccResolver
-{
-public:
-    virtual void Resolve(TWGSPrefixes& prefixes, const string& acc);
-};
-
-
-void CWGSAccFileResolver::Resolve(TWGSPrefixes& prefixes, const string& acc)
-{
-    prefixes.clear();
-    if ( IsValid() ) {
-        TAccessionList accs = FindAll(acc);
-        ITERATE ( TAccessionList, it, accs ) {
-            prefixes.push_back(*it);
-        }
-    }
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
-// ID2 client resolver
-/////////////////////////////////////////////////////////////////////////////
-
-
-class CWGSID2Resolver : public CObject,
-                        public CWGSDataLoader_Impl::IGiResolver,
-                        public CWGSDataLoader_Impl::IAccResolver
-{
-public:
-    CWGSID2Resolver(void) : m_Initialized(false) {}
-
-    typedef CWGSDataLoader_Impl::TWGSPrefixes TWGSPrefixes;
-
-    virtual void Resolve(TWGSPrefixes& prefixes, TGi gi);
-    virtual void Resolve(TWGSPrefixes& prefixes, const string& acc);
-
-    virtual void SetNonResolving(TGi gi);
-
-    void Resolve(TWGSPrefixes& prefixes, const CSeq_id& id);
-
-    string ParseWGSPrefix(const CSeq_id& id) const;
-
-private:
-    CMutex m_Mutex;
-    bool m_Initialized;
-    CRef<CDataLoader> m_GBLoader;
-#ifdef USE_ID2_CLIENT
-    string ParseWGSPrefix(const CID2_Reply& reply) const;
-    CRef<CID2Client> m_ID2Client;
-#endif
-};
-
-
-string CWGSID2Resolver::ParseWGSPrefix(const CSeq_id& id) const
-{
-    if ( !id.IsGeneral() ) {
-        return string();
-    }
-    const string& db = id.GetGeneral().GetDb();
-    if ( (db.size() != 8 && db.size() != 10) ||
-         !NStr::StartsWith(db, "WGS:") ) {
-        return string();
-    }
-    string prefix = db.substr(4);
-    if ( prefix.size() == 4 ) {
-        prefix += "01";
-    }
-    _ASSERT(prefix.size() == 6);
-    for ( size_t i = 0; i < 4; ++i ) {
-        if ( !isupper(Uint1(prefix[i])) ) {
-            return string();
-        }
-    }
-    for ( size_t i = 4; i < 6; ++i ) {
-        if ( !isdigit(Uint1(prefix[i])) ) {
-            return string();
-        }
-    }
-    return prefix;
-}
-
-
-#ifdef USE_ID2_CLIENT
-string CWGSID2Resolver::ParseWGSPrefix(const CID2_Reply& reply) const
-{
-    if ( !reply.GetReply().IsGet_seq_id() ) {
-        return string();
-    }
-    const CID2_Reply_Get_Seq_id& reply_id = reply.GetReply().GetGet_seq_id();
-    if ( !reply_id.IsSetSeq_id() ) {
-        return string();
-    }
-    const CID2_Reply_Get_Seq_id::TSeq_id& ids = reply_id.GetSeq_id();
-    ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, ids ) {
-        string prefix = ParseWGSPrefix(**it);
-        if ( !prefix.empty() ) {
-            return prefix;
-        }
-    }
-    return string();
-}
-#endif
-
-
-void CWGSID2Resolver::Resolve(TWGSPrefixes& prefixes, const CSeq_id& id)
-{
-    prefixes.clear();
-    if ( !m_Initialized ) {
-        CMutexGuard guard(m_Mutex);
-        if ( !m_Initialized ) {
-            m_Initialized = true;
-            m_GBLoader =
-                CObjectManager::GetInstance()->FindDataLoader(kGBLoaderName);
-            if ( m_GBLoader ) {
-                if ( GetDebugLevel() >= 1 ) {
-                    ERR_POST_X(15, "CWGSDataLoader: "
-                               "Using GB loader to resolve ids");
-                }
-            }
-            else {
-#ifdef USE_ID2_CLIENT
-                if ( GetDebugLevel() >= 1 ) {
-                    ERR_POST_X(16, "CWGSDataLoader: "
-                               "Using CID2Client to resolve ids");
-                }
-                m_ID2Client = new CID2Client();
-#endif
-            }
-        }
-    }
-    if ( m_GBLoader ) {
-        if ( GetDebugLevel() >= 5 ) {
-            ERR_POST_X(11, "CWGSDataLoader: "
-                       "Asking GB for "<<id.AsFastaString());
-        }
-        CDataLoader::TIds ids;
-        m_GBLoader->GetIds(CSeq_id_Handle::GetHandle(id), ids);
-        ITERATE ( CDataLoader::TIds, rit, ids ) {
-            if ( GetDebugLevel() >= 5 ) {
-                ERR_POST_X(12, "CWGSDataLoader: "
-                           "Parsing Seq-id from GB "<<*rit);
-            }
-            string prefix = ParseWGSPrefix(*rit->GetSeqId());
-            if ( !prefix.empty() ) {
-                prefixes.push_back(prefix);
-                break;
-            }
-        }
-    }
-#ifdef USE_ID2_CLIENT
-    if ( m_ID2Client ) {
-        CID2_Request_Get_Seq_id req;
-        req.SetSeq_id().SetSeq_id(const_cast<CSeq_id&>(id));
-        req.SetSeq_id_type(req.eSeq_id_type_general);
-        if ( GetDebugLevel() >= 5 ) {
-            ERR_POST_X(13, "CWGSDataLoader: "
-                       "Asking ID2 for "<<id.AsFastaString());
-        }
-        m_ID2Client->AskGet_seq_id(req);
-        const CID2Client::TReplies& replies = m_ID2Client->GetAllReplies();
-        ITERATE ( CID2Client::TReplies, rit, replies ) {
-            if ( GetDebugLevel() >= 5 ) {
-                ERR_POST_X(14, "CWGSDataLoader: "
-                           "Parsing ID2 reply "<<MSerial_AsnText<<**rit);
-            }
-            string prefix = ParseWGSPrefix(**rit);
-            if ( !prefix.empty() ) {
-                prefixes.push_back(prefix);
-                break;
-            }
-        }
-    }
-#endif
-}
-
-
-void CWGSID2Resolver::Resolve(TWGSPrefixes& prefixes, TGi gi)
-{
-    CSeq_id seq_id;
-    seq_id.SetGi(gi);
-    Resolve(prefixes, seq_id);
-}
-
-
-void CWGSID2Resolver::SetNonResolving(TGi /*gi*/)
-{
-}
-
-
-void CWGSID2Resolver::Resolve(TWGSPrefixes& prefixes, const string& acc)
-{
-    CSeq_id seq_id(acc);
-    Resolve(prefixes, seq_id);
-}
-
-
-/////////////////////////////////////////////////////////////////////////////
 // CWGSDataLoader_Impl
 /////////////////////////////////////////////////////////////////////////////
 
@@ -473,16 +225,6 @@ CWGSDataLoader_Impl::CWGSDataLoader_Impl(
     if ( m_WGSVolPath.empty() && params.m_WGSFiles.empty() ) {
         m_WGSVolPath = GetWGSVolPath();
     }
-    if ( false ) {
-        CRef<CWGSID2Resolver> resolver(new CWGSID2Resolver());
-        m_GiResolver = resolver;
-        m_AccResolver = resolver;
-    }
-    else {
-        m_GiResolver = new CWGSGiFileResolver();
-        m_AccResolver = new CWGSAccFileResolver();
-        //m_AccResolver = new CWGSID2Resolver();
-    }
     ITERATE (vector<string>, it, params.m_WGSFiles) {
         CRef<CWGSFileInfo> info(new CWGSFileInfo(*this, *it));
         if ( !m_FixedFiles.insert(TFixedFiles::value_type(info->GetWGSPrefix(),
@@ -497,6 +239,18 @@ CWGSDataLoader_Impl::CWGSDataLoader_Impl(
 
 CWGSDataLoader_Impl::~CWGSDataLoader_Impl(void)
 {
+}
+
+
+CWGSResolver& CWGSDataLoader_Impl::GetResolver(void)
+{
+    if ( !m_Resolver ) {
+        CMutexGuard guard(m_Mutex);
+        if ( !m_Resolver ) {
+            m_Resolver = CWGSResolver::CreateResolver(m_Mgr);
+        }
+    }
+    return *m_Resolver;
 }
 
 
@@ -565,9 +319,9 @@ CWGSDataLoader_Impl::GetFileInfoByGi(TGi gi)
             }
         }
     }
-    TWGSPrefixes prefixes;
-    m_GiResolver->Resolve(prefixes, gi);
-    ITERATE ( TWGSPrefixes, it, prefixes ) {
+    CWGSResolver& resolver = GetResolver();
+    CWGSResolver::TWGSPrefixes prefixes = resolver.GetPrefixes(gi);
+    ITERATE ( CWGSResolver::TWGSPrefixes, it, prefixes ) {
         if ( CConstRef<CWGSFileInfo> file = GetWGSFile(*it) ) {
             if ( GetDebugLevel() >= 2 ) {
                 ERR_POST_X(6, "CWGSDataLoader: "
@@ -575,12 +329,13 @@ CWGSDataLoader_Impl::GetFileInfoByGi(TGi gi)
                            " -> "<<file->GetWGSPrefix());
             }
             if ( file->FindGi(ret, gi) ) {
+                resolver.SetWGSPrefix(gi, prefixes, *it);
                 return ret;
             }
         }
     }
     if ( !prefixes.empty() ) {
-        m_GiResolver->SetNonResolving(gi);
+        resolver.SetNonWGS(gi, prefixes);
     }
     return ret;
 }
@@ -620,9 +375,9 @@ CWGSDataLoader_Impl::GetFileInfoByProtAcc(const string& acc)
             }
         }
     }
-    TWGSPrefixes prefixes;
-    m_AccResolver->Resolve(prefixes, acc);
-    ITERATE ( TWGSPrefixes, it, prefixes ) {
+    CWGSResolver& resolver = GetResolver();
+    CWGSResolver::TWGSPrefixes prefixes = resolver.GetPrefixes(acc);
+    ITERATE ( CWGSResolver::TWGSPrefixes, it, prefixes ) {
         if ( CConstRef<CWGSFileInfo> file = GetWGSFile(*it) ) {
             if ( GetDebugLevel() >= 2 ) {
                 ERR_POST_X(10, "CWGSDataLoader: "
@@ -630,9 +385,13 @@ CWGSDataLoader_Impl::GetFileInfoByProtAcc(const string& acc)
                            " -> "<<file->GetWGSPrefix());
             }
             if ( file->FindProtAcc(ret, acc) ) {
-                break;
+                resolver.SetWGSPrefix(acc, prefixes, *it);
+                return ret;
             }
         }
+    }
+    if ( !prefixes.empty() ) {
+        resolver.SetNonWGS(acc, prefixes);
     }
     return ret;
 }
@@ -1168,22 +927,22 @@ void CWGSFileInfo::LoadBlob(const CWGSBlobId& blob_id,
 {
     if ( !load_lock.IsLoaded() ) {
         NCBI_gb_state gb_state = 0;
-        CRef<CBioseq> seq;
+        CRef<CSeq_entry> entry;
         if ( blob_id.m_SeqType == 'S' ) {
             if ( CWGSScaffoldIterator it = GetScaffoldIterator(blob_id) ) {
-                seq = it.GetBioseq();
+                entry = it.GetSeq_entry();
             }
         }
         else if ( blob_id.m_SeqType == 'P' ) {
             if ( CWGSProteinIterator it = GetProteinIterator(blob_id) ) {
                 gb_state = it.GetGBState();
-                seq = it.GetBioseq();
+                entry = it.GetSeq_entry();
             }
         }
         else {
             if ( CWGSSeqIterator it = GetContigIterator(blob_id) ) {
                 gb_state = it.GetGBState();
-                seq = it.GetBioseq();
+                entry = it.GetSeq_entry();
             }
         }
         CBioseq_Handle::TBioseqStateFlags state = 0;
@@ -1203,15 +962,13 @@ void CWGSFileInfo::LoadBlob(const CWGSBlobId& blob_id,
                 break;
             }
         }
-        if ( !seq ) {
+        if ( !entry ) {
             state |= CBioseq_Handle::fState_no_data;
         }
         if ( state ) {
             load_lock->SetBlobState(state);
         }
-        if ( seq ) {
-            CRef<CSeq_entry> entry(new CSeq_entry);
-            entry->SetSeq(*seq);
+        if ( entry ) {
             load_lock->SetSeq_entry(*entry);
         }
     }

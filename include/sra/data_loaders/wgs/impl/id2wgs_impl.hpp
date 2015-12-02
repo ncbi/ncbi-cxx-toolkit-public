@@ -59,6 +59,8 @@ class CID2_Blob_Id;
 class CID2_Reply;
 class CID2_Reply_Data;
 class CID2WGSContext;
+class CDataLoader;
+class CWGSResolver;
 
 class NCBI_ID2PROC_WGS_EXPORT CID2WGSProcessor_Impl : public CObject
 {
@@ -127,11 +129,13 @@ public:
 
     typedef vector<CRef<CID2_Reply> > TReplies;
     TReplies ProcessSomeRequests(CID2WGSContext& context,
-                                 CID2_Request_Packet& packet);
+                                 CID2_Request_Packet& packet,
+                                 CID2ProcessorResolver* resolver);
 
     bool ProcessRequest(CID2WGSContext& context,
                         TReplies& replies,
-                        CID2_Request& request);
+                        CID2_Request& request,
+                        CID2ProcessorResolver* resolver);
 
     const CID2WGSContext& GetInitialContext(void) const {
         return m_InitialContext;
@@ -142,34 +146,44 @@ public:
     bool ProcessGetSeqId(CID2WGSContext& context,
                          TReplies& replies,
                          CID2_Request& main_request,
+                         CID2ProcessorResolver* resolver,
                          CID2_Request_Get_Seq_id& request);
     bool ProcessGetBlobId(CID2WGSContext& context,
                           TReplies& replies,
                           CID2_Request& main_request,
+                          CID2ProcessorResolver* resolver,
                           CID2_Request_Get_Blob_Id& request);
     bool ProcessGetBlobInfo(CID2WGSContext& context,
                             TReplies& replies,
                             CID2_Request& main_request,
+                            CID2ProcessorResolver* resolver,
                             CID2_Request_Get_Blob_Info& request);
     bool ProcessGetChunks(CID2WGSContext& context,
                           TReplies& replies,
                           CID2_Request& main_request,
+                          CID2ProcessorResolver* resolver,
                           CID2S_Request_Get_Chunks& request);
 
 protected:
     SWGSSeqInfo Resolve(TReplies& replies,
                         CID2_Request& main_request,
+                        CID2ProcessorResolver* resolver,
                         CID2_Request_Get_Seq_id& request);
     SWGSSeqInfo Resolve(CID2WGSContext& context,
                         TReplies& replies,
                         CID2_Request& main_request,
+                        CID2ProcessorResolver* resolver,
                         CID2_Request_Get_Blob_Id& request);
 
     // lookup
-    SWGSSeqInfo Resolve(const CSeq_id& id);
-    SWGSSeqInfo ResolveGi(TGi gi);
     SWGSSeqInfo ResolveGeneral(const CDbtag& dbtag);
-    SWGSSeqInfo ResolveAcc(const CTextseq_id& id);
+    SWGSSeqInfo ResolveGi(TGi gi,
+                          CID2ProcessorResolver* resolver);
+    SWGSSeqInfo ResolveAcc(const CTextseq_id& id,
+                           CID2ProcessorResolver* resolver);
+    SWGSSeqInfo Resolve(const CSeq_id& id,
+                        CID2ProcessorResolver* resolver);
+
     enum EAllowSeqType {
         fAllow_master   = 1<<0,
         fAllow_contig   = 1<<1,
@@ -182,7 +196,8 @@ protected:
     SWGSSeqInfo ResolveWGSAcc(const string& acc,
                               const CTextseq_id& id,
                               TAllowSeqType allow_seq_type);
-    SWGSSeqInfo ResolveProtAcc(const CTextseq_id& id);
+    SWGSSeqInfo ResolveProtAcc(const CTextseq_id& id,
+                               CID2ProcessorResolver* resolver);
     SWGSSeqInfo& GetRootSeq(SWGSSeqInfo& seq);
     bool IsValidRowId(SWGSSeqInfo& seq);
     bool IsCorrectVersion(SWGSSeqInfo& seq, int version);
@@ -269,12 +284,14 @@ protected:
     
     typedef limited_size_map<string, CWGSDb> TWGSDbCache;
 
+    CRef<CWGSResolver> GetWGSResolver(CID2ProcessorResolver* resolver);
+
 private:
     CMutex m_Mutex;
     CVDBMgr m_Mgr;
-    CRef<CWGSGiResolver> m_GiResolver;
-    CRef<CWGSProtAccResolver> m_AccResolver;
+    CRef<CWGSResolver> m_Resolver;
     TWGSDbCache m_WGSDbCache;
+    unsigned m_UpdateDelay;
     CRef<CThreadNonStop> m_UpdateThread;
     CID2WGSContext m_InitialContext;
 };

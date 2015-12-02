@@ -85,31 +85,35 @@ void CID2WGSProcessor::InitContext(CID2WGSContext& context,
 
 bool CID2WGSProcessor::ProcessRequest(CID2WGSContext& context,
                                       TReplies& replies,
-                                      CID2_Request& request)
+                                      CID2_Request& request,
+                                      CID2ProcessorResolver* resolver)
 {
-    return m_Impl->ProcessRequest(context, replies, request);
+    return m_Impl->ProcessRequest(context, replies, request, resolver);
 }
 
 
 CID2WGSProcessor::TReplies
 CID2WGSProcessor::ProcessSomeRequests(CID2WGSContext& context,
-                                      CID2_Request_Packet& packet)
+                                      CID2_Request_Packet& packet,
+                                      CID2ProcessorResolver* resolver)
 {
-    return m_Impl->ProcessSomeRequests(context, packet);
+    return m_Impl->ProcessSomeRequests(context, packet, resolver);
 }
 
 
 bool CID2WGSProcessor::ProcessRequest(TReplies& replies,
-                                      CID2_Request& request)
+                                      CID2_Request& request,
+                                      CID2ProcessorResolver* resolver)
 {
-    return ProcessRequest(m_CommonContext, replies, request);
+    return ProcessRequest(m_CommonContext, replies, request, resolver);
 }
 
 
 CID2WGSProcessor::TReplies
-CID2WGSProcessor::ProcessSomeRequests(CID2_Request_Packet& packet)
+CID2WGSProcessor::ProcessSomeRequests(CID2_Request_Packet& packet,
+                                      CID2ProcessorResolver* resolver)
 {
-    return ProcessSomeRequests(m_CommonContext, packet);
+    return ProcessSomeRequests(m_CommonContext, packet, resolver);
 }
 
 

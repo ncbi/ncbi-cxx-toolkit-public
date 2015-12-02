@@ -308,8 +308,21 @@ struct PDescLess {
 CRef<CSeq_descr> sx_ExtractDescr(const CBioseq_Handle& bh)
 {
     CRef<CSeq_descr> descr(new CSeq_descr);
+    const int kSingleMask =
+        (1 << CSeqdesc::e_Source) |
+        (1 << CSeqdesc::e_Molinfo) |
+        (1 << CSeqdesc::e_Create_date) |
+        (1 << CSeqdesc::e_Update_date);
+    int found = 0;
     CSeq_descr::Tdata& dst = descr->Set();
     for ( CSeqdesc_CI it(bh); it; ++it ) {
+        int bit = 1 << it->Which();
+        if ( bit & kSingleMask ) {
+            if ( bit & found ) {
+                continue;
+            }
+            found |= bit;
+        }
         dst.push_back(Ref(SerialClone(*it)));
     }
     dst.sort(PDescLess());
@@ -416,11 +429,13 @@ bool sx_Equal(const CBioseq_Handle& bh1, const CBioseq_Handle& bh2)
         has_id_error = true;
         report_id_error = GetReportGeneralIdError();
     }
-    if ( !descr1->Equals(*descr2) ) {
-        has_descr_error = true;
-    }
-    if ( !annot1->Equals(*annot2) ) {
-        has_annot_error = true;
+    if ( 0 ) {
+        if ( !descr1->Equals(*descr2) ) {
+            has_descr_error = true;
+        }
+        if ( !annot1->Equals(*annot2) ) {
+            has_annot_error = true;
+        }
     }
     if ( bh1.GetState() != bh2.GetState() ) {
         has_state_error = true;
@@ -1009,7 +1024,7 @@ const size_t s_ProteinProteinDescCount = 9;
 const size_t s_ProteinProteinPubCount = 2;
 #else
 const string s_ProteinFile = 
-                    "/home/dondosha/trunk/internal/c++/src/internal/ID/WGS/JTED01";
+                    "x/home/dondosha/trunk/internal/c++/src/internal/ID/WGS/JTED01";
 const string s_ProteinVDBAcc     = "JTED01";
 const string s_ProteinContigId   = "JTED01000001";
 const string s_ProteinScaffoldId = "JTED01S000001";
@@ -1150,7 +1165,10 @@ BOOST_AUTO_TEST_CASE(FetchProt6)
 BOOST_AUTO_TEST_CASE(FetchProt11)
 {
     // WGS VDB with proteins: access contig
-    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr);
+    if ( !CDirEntry(s_ProteinFile).Exists() ) {
+        return;
+    }
+    CRef<CObjectManager> om = sx_InitOM(eWithMasterDescr, s_ProteinFile);
 
     CRef<CScope> scope(new CScope(*om));
     scope->AddDefaults();

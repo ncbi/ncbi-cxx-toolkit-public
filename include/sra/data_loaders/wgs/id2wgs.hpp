@@ -62,6 +62,7 @@ public:
 
     ECompressData m_CompressData;
     bool m_ExplicitBlobState;
+    bool m_AllowVDB;
 };
 
 
@@ -78,14 +79,19 @@ public:
                      const CID2_Request& request);
 
     TReplies ProcessSomeRequests(CID2WGSContext& context,
-                                 CID2_Request_Packet& packet);
+                                 CID2_Request_Packet& packet,
+                                 CID2ProcessorResolver* resolver = 0);
     bool ProcessRequest(CID2WGSContext& context,
                         TReplies& replies,
-                        CID2_Request& request);
+                        CID2_Request& request,
+                        CID2ProcessorResolver* resolver = 0);
 
-    virtual TReplies ProcessSomeRequests(CID2_Request_Packet& packet);
+    virtual TReplies ProcessSomeRequests(CID2_Request_Packet& packet,
+                                         CID2ProcessorResolver* resolver = 0);
 
-    virtual bool ProcessRequest(TReplies& replies, CID2_Request& request);
+    virtual bool ProcessRequest(TReplies& replies,
+                                CID2_Request& request,
+                                CID2ProcessorResolver* resolver = 0);
 
 private:
     CRef<CID2WGSProcessor_Impl> m_Impl;

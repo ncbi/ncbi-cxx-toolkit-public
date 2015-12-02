@@ -48,6 +48,7 @@ class CWGSDataLoader_Impl;
 class CWGSSeqInfo;
 class CWGSFileInfo;
 class CWGSBlobId;
+class CWGSResolver;
 
 class CWGSFileInfo : public CObject
 {
@@ -173,31 +174,10 @@ public:
             m_AddWGSMasterDescr = flag;
         }
     
-    typedef vector<string> TWGSPrefixes;
-    
-    class IGiResolver
-    {
-    public:
-        virtual ~IGiResolver(void);
-    
-        typedef CWGSDataLoader_Impl::TWGSPrefixes TWGSPrefixes;
-
-        virtual void Resolve(TWGSPrefixes& prefixes, TGi gi) = 0;
-        virtual void SetNonResolving(TGi gi) = 0;
-    };
-
-    class IAccResolver
-    {
-    public:
-        virtual ~IAccResolver(void);
-    
-        typedef CWGSDataLoader_Impl::TWGSPrefixes TWGSPrefixes;
-
-        virtual void Resolve(TWGSPrefixes& prefixes, const string& acc) = 0;
-    };
-
 protected:
     friend class CWGSFileInfo;
+
+    CWGSResolver& GetResolver(void);
 
 private:
     // first:
@@ -213,8 +193,7 @@ private:
     CMutex  m_Mutex;
     CVDBMgr m_Mgr;
     string  m_WGSVolPath;
-    CIRef<IGiResolver> m_GiResolver;
-    CIRef<IAccResolver> m_AccResolver;
+    CRef<CWGSResolver> m_Resolver;
     TFixedFiles m_FixedFiles;
     TFoundFiles m_FoundFiles;
     bool m_AddWGSMasterDescr;
