@@ -5452,9 +5452,14 @@ DISCREPANCY_CASE(TEST_ORGANELLE_PRODUCTS, CSeqFeatData, eNormal, "Organelle prod
     if (obj.GetSubtype() != CSeqFeatData::eSubtype_prot) {
         return;
     }
+    CBioSource::TGenome genome = context.GetCurrentGenome();
+    if (genome == CBioSource::eGenome_mitochondrion || genome == CBioSource::eGenome_chloroplast || genome == CBioSource::eGenome_plastid) {
+        return;
+    }
+
     CConstRef<CSuspect_rule_set> rules = context.GetOrganelleProductRules();
     const CProt_ref& prot = obj.GetProt();
-    string prot_name = *(prot.GetName().begin()); 
+    string prot_name = *(prot.GetName().begin());
 
     ITERATE (list<CRef<CSuspect_rule> >, rule, rules->Get()) {
         const CSearch_func& find = (*rule)->GetFind();

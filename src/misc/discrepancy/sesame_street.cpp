@@ -86,7 +86,35 @@ DISCREPANCY_CASE(SOURCE_QUALS, CBioSource, eAll, "Some animals are more equal th
 
 DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
 {
-    //m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+    CReportNode report;
+    CReportNode::TNodeMap& map = m_Objs.GetMap();
+    TReportObjectList& all = m_Objs["all"].GetObjects();
+    size_t total = all.size();
+    NON_CONST_ITERATE(CReportNode::TNodeMap, it, map) {
+        if (it->first == "all") {
+            continue;
+        }
+        string qual = it->first;
+        size_t bins = 0;
+        size_t uniq = 0;
+        size_t num = 0;
+        CReportNode::TNodeMap& sub = it->second->GetMap();
+        NON_CONST_ITERATE (CReportNode::TNodeMap, jj, sub) {
+            TReportObjectList& obj = jj->second->GetObjects();
+            bins++;
+            num += obj.size();
+            uniq += obj.size() == 1 ? 1 : 0;
+        }
+        size_t missing = total - num;
+        string diagnosis = it->first;
+        diagnosis += " (";
+        diagnosis += num == total ? "all present" : "some missing";
+        diagnosis += ", ";
+        diagnosis += bins == 1 ? "all same" : uniq == num ? "all unique" : "some duplicates";
+        diagnosis += ")";
+        report[diagnosis];
+    }
+    m_ReportItems = report.Export(*this)->GetSubitems();
 }
 
 

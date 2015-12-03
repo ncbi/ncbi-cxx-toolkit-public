@@ -1,0 +1,1973 @@
+Seq-entry ::= set {
+  class phy-set,
+  descr {
+    title "Bryophytina NADH dehydrogenase subunit 5 (nad5) gene, partial cds;
+ and nad5-nad4 intergenic spacer, partial sequence; mitochondrial.",
+    pub {
+      pub {
+        pmid 26618775,
+        article {
+          title {
+            name "The Complete Moss Mitochondrial Genome in the Angiosperm
+ Amborella Is a Chimera Derived from Two Moss Whole-Genome Transfers."
+          },
+          authors {
+            names std {
+              {
+                name name {
+                  last "Taylor",
+                  first "Z",
+                  initials "Z.N."
+                }
+              },
+              {
+                name name {
+                  last "Rice",
+                  first "D",
+                  initials "D.W."
+                }
+              },
+              {
+                name name {
+                  last "Palmer",
+                  first "J",
+                  initials "J.D."
+                }
+              }
+            }
+          },
+          from journal {
+            title {
+              iso-jta "PLoS ONE"
+            },
+            imp {
+              date std {
+                year 2015,
+                month 11,
+                day 30
+              },
+              volume "10",
+              issue "11",
+              pages "E0137532",
+              pubstatus epublish
+            }
+          },
+          ids {
+            doi "10.1371/journal.pone.0137532",
+            pubmed 26618775
+          }
+        }
+      }
+    },
+    pub {
+      pub {
+        sub {
+          authors {
+            names std {
+              {
+                name name {
+                  last "Taylor",
+                  first "Zachary",
+                  initials "Z.N."
+                }
+              }
+            },
+            affil std {
+              affil "Indiana University",
+              div "Biology",
+              city "Bloomington",
+              sub "IN",
+              country "USA",
+              street "1001 East 3rd Street",
+              postal-code "47405"
+            }
+          },
+          medium email,
+          date std {
+            year 2015,
+            month 11,
+            day 2
+          }
+        }
+      }
+    },
+    user {
+      type str "Submission",
+      data {
+        {
+          label str "SmartComment",
+          data str "ALT EMAIL:zntaylor@indiana.edu"
+        },
+        {
+          label str "AdditionalComment",
+          data str "BankIt1868149"
+        }
+      }
+    },
+    user {
+      type str "StructuredComment",
+      data {
+        {
+          label str "StructuredCommentPrefix",
+          data str "##Assembly-Data-START##"
+        },
+        {
+          label str "Sequencing Technology",
+          data str "Sanger dideoxy sequencing"
+        },
+        {
+          label str "StructuredCommentSuffix",
+          data str "##Assembly-Data-END##"
+        }
+      }
+    },
+    user {
+      type str "Submission",
+      data {
+        {
+          label str "SmartComment",
+          data str "TOTAL # OF SEQS:9"
+        }
+      }
+    },
+    user {
+      type str "Submission",
+      data {
+        {
+          label str "SmartComment",
+          data str "TOTAL # OF SETS:1"
+        }
+      }
+    },
+    user {
+      type str "Submission",
+      data {
+        {
+          label str "AdditionalComment",
+          data str "RESUB: This is a resubmission of Group/BankIt#:1866471"
+        }
+      }
+    },
+    user {
+      type str "Submission",
+      data {
+        {
+          label str "AdditionalComment",
+          data str "Submission Title:LocusN"
+        }
+      }
+    },
+    user {
+      type str "NcbiAutofix",
+      data {
+      }
+    },
+    user {
+      type str "NcbiCleanup",
+      data {
+        {
+          label str "method",
+          data str "ExtendedSeqEntryCleanup"
+        },
+        {
+          label str "version",
+          data int 1
+        },
+        {
+          label str "month",
+          data int 12
+        },
+        {
+          label str "day",
+          data int 3
+        },
+        {
+          label str "year",
+          data int 2015
+        }
+      }
+    },
+    update-date std {
+      year 2015,
+      month 12,
+      day 3
+    }
+  },
+  seq-set {
+    set {
+      class nuc-prot,
+      descr {
+        source {
+          genome mitochondrion,
+          org {
+            taxname "Atrichum angustatum",
+            db {
+              {
+                db "taxon",
+                tag id 37310
+              }
+            },
+            orgname {
+              name binomial {
+                genus "Atrichum",
+                species "angustatum"
+              },
+              lineage "Eukaryota; Viridiplantae; Streptophyta; Embryophyta;
+ Bryophyta; Bryophytina; Polytrichopsida; Polytrichales; Polytrichaceae;
+ Atrichum",
+              gcode 1,
+              mgcode 1,
+              div "PLN",
+              pgcode 11
+            }
+          }
+        }
+      },
+      seq-set {
+        seq {
+          id {
+            local str "Seq1__4",
+            general {
+              db "BankIt",
+              tag str "1868149/Seq1"
+            },
+            general {
+              db "TMSMART",
+              tag id 59205910
+            },
+            genbank {
+              accession "KU057450"
+            }
+          },
+          descr {
+            title "Atrichum angustatum NADH dehydrogenase subunit 5 (nad5)
+ gene, partial cds; and nad5-nad4 intergenic spacer, partial sequence;
+ mitochondrial.",
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:Seq1"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "NoncodingProductFeat"
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "KeepNoncodingProductFeat",
+                  data bool TRUE
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "DoNotApplyToSp",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int -99
+                },
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "Seq1__4"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 413,
+            strand ds,
+            seq-data ncbi2na '3FE00013C9181C00B4C7D74CC314E01FC2A390E3094B9C65
+7FFF27F9EA0A2A58A560970024000303FFE54369FFDF357D85787AA5B5AD30C9095C0B026FA902
+4980A609390F132CEE6C40254D0BCE43FF9A1FCEC630B92AB0E38CC54CA9673A7A025282033A17
+9B40'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data gene {
+                    locus "nad5"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 28,
+                    strand plus,
+                    id genbank {
+                      accession "KU057450"
+                    },
+                    fuzz-from lim lt
+                  }
+                },
+                {
+                  data imp {
+                    key "misc_feature"
+                  },
+                  partial TRUE,
+                  comment "nad5-nad4 intergenic spacer",
+                  location int {
+                    from 29,
+                    to 412,
+                    strand plus,
+                    id genbank {
+                      accession "KU057450"
+                    },
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "Seq1_prot_1__2",
+            general {
+              db "TMSMART",
+              tag id 59205911
+            }
+          },
+          descr {
+            title "NADH dehydrogenase subunit 5, partial (mitochondrion)
+ [Atrichum angustatum]",
+            molinfo {
+              biomol peptide,
+              completeness no-left
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "Seq1_prot_1__2"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol aa,
+            length 8,
+            seq-data ncbieaa "FEKNISTN"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data prot {
+                    name {
+                      "NADH dehydrogenase subunit 5"
+                    }
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 7,
+                    id local str "Seq1_prot_1__2",
+                    fuzz-from lim lt
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                frame three,
+                code {
+                  id 1
+                }
+              },
+              partial TRUE,
+              product whole local str "Seq1_prot_1__2",
+              location int {
+                from 0,
+                to 28,
+                strand plus,
+                id genbank {
+                  accession "KU057450"
+                },
+                fuzz-from lim lt
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        local str "Seq2__4",
+        general {
+          db "BankIt",
+          tag str "1868149/Seq2"
+        },
+        general {
+          db "TMSMART",
+          tag id 59205912
+        },
+        genbank {
+          accession "KU057451"
+        }
+      },
+      descr {
+        title "Cladomniopsis crenatoobtusa nad5-nad4 intergenic spacer,
+ partial sequence; mitochondrial.",
+        source {
+          genome mitochondrion,
+          org {
+            taxname "Cladomniopsis crenatoobtusa",
+            db {
+              {
+                db "taxon",
+                tag id 245465
+              }
+            },
+            syn {
+              "Cladomniopsis crenatoobtusa M.Fleisch.",
+              "Cladomniopsis crenato-obtusa"
+            },
+            orgname {
+              name binomial {
+                genus "Cladomniopsis",
+                species "crenatoobtusa"
+              },
+              mod {
+                {
+                  subtype old-name,
+                  subname "Cladomniopsis crenato-obtusa"
+                }
+              },
+              lineage "Eukaryota; Viridiplantae; Streptophyta; Embryophyta;
+ Bryophyta; Bryophytina; Bryopsida; Bryidae; Hypnanae; Ptychomniales;
+ Ptychomniaceae; Cladomniopsis",
+              gcode 1,
+              mgcode 1,
+              div "PLN",
+              pgcode 11
+            }
+          }
+        },
+        molinfo {
+          biomol genomic
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "AdditionalComment",
+              data str "LocalID:Seq2"
+            }
+          }
+        },
+        user {
+          class "1.0",
+          type str "AutodefOptions",
+          data {
+            {
+              label str "SpecifyNuclearProduct",
+              data bool TRUE
+            },
+            {
+              label str "MiscFeatRule",
+              data str "NoncodingProductFeat"
+            },
+            {
+              label str "FeatureListType",
+              data str "List All Features"
+            },
+            {
+              label str "KeepNoncodingProductFeat",
+              data bool TRUE
+            },
+            {
+              label str "HIVRule",
+              data str "WantBoth"
+            },
+            {
+              label str "DoNotApplyToSp",
+              data bool TRUE
+            },
+            {
+              label str "LeaveParenthetical",
+              data bool TRUE
+            },
+            {
+              label str "MaxMods",
+              data int -99
+            },
+            {
+              label str "UseLabels",
+              data bool TRUE
+            }
+          }
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "LocalId",
+              data str "Seq2__4"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 615,
+        strand ds,
+        seq-data ncbi2na '413C9181C0AA4C7D7CCC314E01FE2A110E3094B9C657FFFA7D96
+22A2A78A561825C1090000C8FFF825C2739DE4B58538C85B20200EAD760C091BF3E7FAB73AA8DE
+802082820B02BE838C830C0D8088803A0005300600000FDA7FFF3DF7E14E1E296D4B4C324255CA
+93C0601A6029824E43C4CB399B3009D362F390F3E6A7F3B330B92AAF38E331530A5DCE9E8896A0
+88CE8566979A20249B55A8'H
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data imp {
+                key "misc_feature"
+              },
+              partial TRUE,
+              comment "nad5-nad4 intergenic spacer",
+              location int {
+                from 0,
+                to 614,
+                strand plus,
+                id local str "Seq2__4",
+                fuzz-from lim lt,
+                fuzz-to lim gt
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        local str "Seq3__4",
+        general {
+          db "BankIt",
+          tag str "1868149/Seq3"
+        },
+        general {
+          db "TMSMART",
+          tag id 59205913
+        },
+        genbank {
+          accession "KU057452"
+        }
+      },
+      descr {
+        title "Trachyxiphium drepanophyllum nad5-nad4 intergenic spacer,
+ partial sequence; mitochondrial.",
+        source {
+          genome mitochondrion,
+          org {
+            taxname "Trachyxiphium drepanophyllum",
+            db {
+              {
+                db "taxon",
+                tag id 245453
+              }
+            },
+            orgname {
+              name binomial {
+                genus "Trachyxiphium",
+                species "drepanophyllum"
+              },
+              lineage "Eukaryota; Viridiplantae; Streptophyta; Embryophyta;
+ Bryophyta; Bryophytina; Bryopsida; Bryidae; Hypnanae; Hookeriales;
+ Pilotrichaceae; Trachyxiphium",
+              gcode 1,
+              mgcode 1,
+              div "PLN",
+              pgcode 11
+            }
+          }
+        },
+        molinfo {
+          biomol genomic
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "AdditionalComment",
+              data str "LocalID:Seq3"
+            }
+          }
+        },
+        user {
+          class "1.0",
+          type str "AutodefOptions",
+          data {
+            {
+              label str "SpecifyNuclearProduct",
+              data bool TRUE
+            },
+            {
+              label str "MiscFeatRule",
+              data str "NoncodingProductFeat"
+            },
+            {
+              label str "FeatureListType",
+              data str "List All Features"
+            },
+            {
+              label str "KeepNoncodingProductFeat",
+              data bool TRUE
+            },
+            {
+              label str "HIVRule",
+              data str "WantBoth"
+            },
+            {
+              label str "DoNotApplyToSp",
+              data bool TRUE
+            },
+            {
+              label str "LeaveParenthetical",
+              data bool TRUE
+            },
+            {
+              label str "MaxMods",
+              data int -99
+            },
+            {
+              label str "UseLabels",
+              data bool TRUE
+            }
+          }
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "LocalId",
+              data str "Seq3__4"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 575,
+        strand ds,
+        seq-data ncbi2na '184FA460702A931F5F320C5300FF8A86438C252E7195FFFE9567
+8AA8A9E295860970424000323FFE89709CE759ADC9CE3016E00803A35D830246F3E7FAB73AA0DE
+8020A2000B02BE838C830C0D808880388005700600000FDA7FCF75F853878A5B52D1B8F0A5B5AD
+32C90956893E0409A4029824E43C4CB399B7009D342F3B0E3E6A7F3B330B4AABCE38CC54C29773
+A4'H
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data imp {
+                key "misc_feature"
+              },
+              partial TRUE,
+              comment "nad5-nad4 intergenic spacer",
+              location int {
+                from 0,
+                to 574,
+                strand plus,
+                id local str "Seq3__4",
+                fuzz-from lim lt,
+                fuzz-to lim gt
+              }
+            }
+          }
+        }
+      }
+    },
+    set {
+      class nuc-prot,
+      descr {
+        source {
+          genome mitochondrion,
+          org {
+            taxname "Dimorphocladon borneense",
+            db {
+              {
+                db "taxon",
+                tag id 245478
+              }
+            },
+            orgname {
+              name binomial {
+                genus "Dimorphocladon",
+                species "borneense"
+              },
+              lineage "Eukaryota; Viridiplantae; Streptophyta; Embryophyta;
+ Bryophyta; Bryophytina; Bryopsida; Bryidae; Hypnanae; Hypnales;
+ Symphyodontaceae; Dimorphocladon",
+              gcode 1,
+              mgcode 1,
+              div "PLN",
+              pgcode 11
+            }
+          }
+        }
+      },
+      seq-set {
+        seq {
+          id {
+            local str "Seq4__4",
+            general {
+              db "BankIt",
+              tag str "1868149/Seq4"
+            },
+            general {
+              db "TMSMART",
+              tag id 59205914
+            },
+            genbank {
+              accession "KU057453"
+            }
+          },
+          descr {
+            title "Dimorphocladon borneense NADH dehydrogenase subunit 5
+ (nad5) gene, partial cds; mitochondrial.",
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:Seq4"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "NoncodingProductFeat"
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "KeepNoncodingProductFeat",
+                  data bool TRUE
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "DoNotApplyToSp",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int -99
+                },
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "Seq4__4"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 624,
+            strand ds,
+            seq-data ncbi2na '84F2460702A931F5F330C53807F8A86438C252E7195FFFE9
+56588A8A9E295860970424000323FFE89509CEF79ADC9CE3016E80803A35D870246F3E7FAB73AA
+0DE082082080B02BE838C830C0D808880380085300620800FDA7FFF3DD7696E1E216D4B46E3E29
+6F4B4C324257224F81026B80A629390F132CE66CC0274D0BCE43CF9A9FCECCC2E4A9824D331530
+A5DCEBE8096AA80CC8566979820249'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data gene {
+                    locus "nad5"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 17,
+                    strand plus,
+                    id local str "Seq4__4",
+                    fuzz-from lim lt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "Seq4_prot_2",
+            general {
+              db "TMSMART",
+              tag id 59205915
+            }
+          },
+          descr {
+            title "NADH dehydrogenase subunit 5, partial (mitochondrion)
+ [Dimorphocladon borneense]",
+            molinfo {
+              biomol peptide,
+              completeness no-left
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "Seq4_prot_2"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol aa,
+            length 5,
+            seq-data ncbieaa "DISTN"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data prot {
+                    name {
+                      "NADH dehydrogenase subunit 5"
+                    }
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 4,
+                    id local str "Seq4_prot_2",
+                    fuzz-from lim lt
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                frame one,
+                code {
+                  id 1
+                }
+              },
+              partial TRUE,
+              product whole local str "Seq4_prot_2",
+              location int {
+                from 0,
+                to 17,
+                strand plus,
+                id local str "Seq4__4",
+                fuzz-from lim lt
+              }
+            }
+          }
+        }
+      }
+    },
+    set {
+      class nuc-prot,
+      descr {
+        source {
+          genome mitochondrion,
+          org {
+            taxname "Thamnobryum alleghaniense",
+            db {
+              {
+                db "taxon",
+                tag id 389508
+              }
+            },
+            syn {
+              "Thamnobryum alleghaniense (Muell.Hal.) Nieuwl."
+            },
+            orgname {
+              name binomial {
+                genus "Thamnobryum",
+                species "alleghaniense"
+              },
+              lineage "Eukaryota; Viridiplantae; Streptophyta; Embryophyta;
+ Bryophyta; Bryophytina; Bryopsida; Bryidae; Hypnanae; Hypnales; Neckeraceae;
+ Thamnobryum",
+              gcode 1,
+              mgcode 1,
+              div "PLN",
+              pgcode 11
+            }
+          }
+        }
+      },
+      seq-set {
+        seq {
+          id {
+            local str "Seq5__4",
+            general {
+              db "BankIt",
+              tag str "1868149/Seq5"
+            },
+            general {
+              db "TMSMART",
+              tag id 59205916
+            },
+            genbank {
+              accession "KU057454"
+            }
+          },
+          descr {
+            title "Thamnobryum alleghaniense NADH dehydrogenase subunit 5
+ (nad5) gene, partial cds; mitochondrial.",
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:Seq5"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "NoncodingProductFeat"
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "KeepNoncodingProductFeat",
+                  data bool TRUE
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "DoNotApplyToSp",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int -99
+                },
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "Seq5__4"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 628,
+            strand ds,
+            seq-data ncbi2na '613C9181C0AA4C7D7CCC314E01FE2A190E3094B9C657FFFA
+559622A2A78A561825C1090000C8FFFA25C2739DE6B72738C05BA0200E8D760C891BCF9A4AB73A
+A0DE082082080B023E838C830E0D8088803400053006000003F69FFFCF75D85B87885B52D1B8F8
+A5B52D30C9095C813E0409AE029824E43C4CB399B3009D342F390F3E6A7F3B330B92AAF38E3315
+30A5DCE9E8096A280CE8566979820279'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data gene {
+                    locus "nad5"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 18,
+                    strand plus,
+                    id local str "Seq5__4",
+                    fuzz-from lim lt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "Seq5_prot_3",
+            general {
+              db "TMSMART",
+              tag id 59205917
+            }
+          },
+          descr {
+            title "NADH dehydrogenase subunit 5, partial (mitochondrion)
+ [Thamnobryum alleghaniense]",
+            molinfo {
+              biomol peptide,
+              completeness no-left
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "Seq5_prot_3"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol aa,
+            length 5,
+            seq-data ncbieaa "DISTN"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data prot {
+                    name {
+                      "NADH dehydrogenase subunit 5"
+                    }
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 4,
+                    id local str "Seq5_prot_3",
+                    fuzz-from lim lt
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                frame two,
+                code {
+                  id 1
+                }
+              },
+              partial TRUE,
+              product whole local str "Seq5_prot_3",
+              location int {
+                from 0,
+                to 18,
+                strand plus,
+                id local str "Seq5__4",
+                fuzz-from lim lt
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        local str "Seq6__4",
+        general {
+          db "BankIt",
+          tag str "1868149/Seq6"
+        },
+        general {
+          db "TMSMART",
+          tag id 59205918
+        },
+        genbank {
+          accession "KU057455"
+        }
+      },
+      descr {
+        title "Hookeria lucens nad5-nad4 intergenic spacer region, partial
+ sequence; mitochondrial.",
+        source {
+          genome mitochondrion,
+          org {
+            taxname "Hookeria lucens",
+            db {
+              {
+                db "taxon",
+                tag id 65539
+              }
+            },
+            orgname {
+              name binomial {
+                genus "Hookeria",
+                species "lucens"
+              },
+              lineage "Eukaryota; Viridiplantae; Streptophyta; Embryophyta;
+ Bryophyta; Bryophytina; Bryopsida; Bryidae; Hypnanae; Hookeriales;
+ Hookeriaceae; Hookeria",
+              gcode 1,
+              mgcode 1,
+              div "PLN",
+              pgcode 11
+            }
+          }
+        },
+        molinfo {
+          biomol genomic
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "AdditionalComment",
+              data str "LocalID:Seq6"
+            }
+          }
+        },
+        user {
+          class "1.0",
+          type str "AutodefOptions",
+          data {
+            {
+              label str "SpecifyNuclearProduct",
+              data bool TRUE
+            },
+            {
+              label str "MiscFeatRule",
+              data str "NoncodingProductFeat"
+            },
+            {
+              label str "FeatureListType",
+              data str "List All Features"
+            },
+            {
+              label str "KeepNoncodingProductFeat",
+              data bool TRUE
+            },
+            {
+              label str "HIVRule",
+              data str "WantBoth"
+            },
+            {
+              label str "DoNotApplyToSp",
+              data bool TRUE
+            },
+            {
+              label str "LeaveParenthetical",
+              data bool TRUE
+            },
+            {
+              label str "MaxMods",
+              data int -99
+            },
+            {
+              label str "UseLabels",
+              data bool TRUE
+            }
+          }
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "LocalId",
+              data str "Seq6__4"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol dna,
+        length 639,
+        strand ds,
+        seq-data ncbi2na '184FA460702A931F5F330C53807F8A86438C252E7195FFFE9565
+88A8A9E295860970424000323FFE89709CE779ADE9CE3016E80803A35D830246F3E7FAB73AA0DE
+802202088B22BE838C830C0D80A880388005300600000FDA7FFF3DD7E16E1E296D4B46E3E296D6
+B4C324257204F81826980A609390F132CE66CC0274D0BCE43CF9A9FCECCE2E4A92AAF38E331530
+A5DCE9E88969280CE8566979A20279B558'H
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data imp {
+                key "misc_feature"
+              },
+              partial TRUE,
+              comment "nad5-nad4 intergenic spacer region",
+              location int {
+                from 0,
+                to 638,
+                strand plus,
+                id genbank {
+                  accession "KU057455"
+                },
+                fuzz-from lim lt,
+                fuzz-to lim gt
+              }
+            }
+          }
+        }
+      }
+    },
+    set {
+      class nuc-prot,
+      descr {
+        source {
+          genome mitochondrion,
+          org {
+            taxname "Chaetomitrium borneense",
+            db {
+              {
+                db "taxon",
+                tag id 245475
+              }
+            },
+            orgname {
+              name binomial {
+                genus "Chaetomitrium",
+                species "borneense"
+              },
+              lineage "Eukaryota; Viridiplantae; Streptophyta; Embryophyta;
+ Bryophyta; Bryophytina; Bryopsida; Bryidae; Hypnanae; Hypnales;
+ Symphyodontaceae; Chaetomitrium",
+              gcode 1,
+              mgcode 1,
+              div "PLN",
+              pgcode 11
+            }
+          }
+        }
+      },
+      seq-set {
+        seq {
+          id {
+            local str "Seq7__3",
+            general {
+              db "BankIt",
+              tag str "1868149/seq7"
+            },
+            general {
+              db "TMSMART",
+              tag id 59205919
+            },
+            genbank {
+              accession "KU057456"
+            }
+          },
+          descr {
+            title "Chaetomitrium borneense NADH dehydrogenase subunit 5 (nad5)
+ gene, partial cds; mitochondrial.",
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:seq7"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "NoncodingProductFeat"
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "KeepNoncodingProductFeat",
+                  data bool TRUE
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "DoNotApplyToSp",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int -99
+                },
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "Seq7__3"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 630,
+            strand ds,
+            seq-data ncbi2na '84F2460702A931F5F330C53807F8A86438C252E7195FFFE9
+56588A8A9E295860970424000323FFE89709CE779ADC9CE3016E80803A35D830246F3E7DAB73AA
+0DE082082080B02BE838C830C0D888880380805300620800FDA7FFF3D57696E1E216D4B46E3E29
+6F4B4C324257224F81026B808609390F132CE66CC0274D0BCE43CF9A9FCECCC2E4A9824D331530
+A5DCEBE8096AA80CE8566979A20249B550'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data gene {
+                    locus "nad5"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 17,
+                    strand plus,
+                    id local str "Seq7__3",
+                    fuzz-from lim lt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "Seq7_prot_4",
+            general {
+              db "TMSMART",
+              tag id 59205920
+            }
+          },
+          descr {
+            title "NADH dehydrogenase subunit 5, partial (mitochondrion)
+ [Chaetomitrium borneense]",
+            molinfo {
+              biomol peptide,
+              completeness no-left
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "Seq7_prot_4"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol aa,
+            length 5,
+            seq-data ncbieaa "DISTN"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data prot {
+                    name {
+                      "NADH dehydrogenase subunit 5"
+                    }
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 4,
+                    id local str "Seq7_prot_4",
+                    fuzz-from lim lt
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                frame one,
+                code {
+                  id 1
+                }
+              },
+              partial TRUE,
+              product whole local str "Seq7_prot_4",
+              location int {
+                from 0,
+                to 17,
+                strand plus,
+                id local str "Seq7__3",
+                fuzz-from lim lt
+              }
+            }
+          }
+        }
+      }
+    },
+    set {
+      class nuc-prot,
+      descr {
+        source {
+          genome mitochondrion,
+          org {
+            taxname "Daltonia gracilis",
+            db {
+              {
+                db "taxon",
+                tag id 245341
+              }
+            },
+            orgname {
+              name binomial {
+                genus "Daltonia",
+                species "gracilis"
+              },
+              lineage "Eukaryota; Viridiplantae; Streptophyta; Embryophyta;
+ Bryophyta; Bryophytina; Bryopsida; Bryidae; Hypnanae; Hookeriales;
+ Daltoniaceae; Daltonia",
+              gcode 1,
+              mgcode 1,
+              div "PLN",
+              pgcode 11
+            }
+          }
+        }
+      },
+      seq-set {
+        seq {
+          id {
+            local str "Seq8__3",
+            general {
+              db "BankIt",
+              tag str "1868149/seq8"
+            },
+            general {
+              db "TMSMART",
+              tag id 59205921
+            },
+            genbank {
+              accession "KU057457"
+            }
+          },
+          descr {
+            title "Daltonia gracilis NADH dehydrogenase subunit 5 (nad5) gene,
+ partial cds; mitochondrial.",
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:seq8"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "NoncodingProductFeat"
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "KeepNoncodingProductFeat",
+                  data bool TRUE
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "DoNotApplyToSp",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int -99
+                },
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "Seq8__3"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 626,
+            strand ds,
+            seq-data ncbi2na '184F2460702A931F5F330C53807F8A86438C252E7195FFFE
+956788A8A9E29586097042400088FFFA25C2739D66B72738C059A0200E8D760C091B7FA373A837
+800860A2000B02BE838C010C8D808880388005300600C00FDA7FFF3DD7616E1E296DCB46E1EA96
+D4B4C324257224F0102E980A609390F132CE66CC02F4D0BCE43CF9A1FCECC80AAAF38E331530A5
+DCE9E8096A080CE8D66979820279B550'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data gene {
+                    locus "nad5"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 19,
+                    strand plus,
+                    id local str "Seq8__3",
+                    fuzz-from lim lt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "Seq8_prot_5",
+            general {
+              db "TMSMART",
+              tag id 59205922
+            }
+          },
+          descr {
+            title "NADH dehydrogenase subunit 5, partial (mitochondrion)
+ [Daltonia gracilis]",
+            molinfo {
+              biomol peptide,
+              completeness no-left
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "Seq8_prot_5"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol aa,
+            length 5,
+            seq-data ncbieaa "DISTN"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data prot {
+                    name {
+                      "NADH dehydrogenase subunit 5"
+                    }
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 4,
+                    id local str "Seq8_prot_5",
+                    fuzz-from lim lt
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                frame three,
+                code {
+                  id 1
+                }
+              },
+              partial TRUE,
+              product whole local str "Seq8_prot_5",
+              location int {
+                from 0,
+                to 19,
+                strand plus,
+                id local str "Seq8__3",
+                fuzz-from lim lt
+              }
+            }
+          }
+        }
+      }
+    },
+    set {
+      class nuc-prot,
+      descr {
+        source {
+          genome mitochondrion,
+          org {
+            taxname "Diphyscium foliosum",
+            db {
+              {
+                db "taxon",
+                tag id 82928
+              }
+            },
+            orgname {
+              name binomial {
+                genus "Diphyscium",
+                species "foliosum"
+              },
+              lineage "Eukaryota; Viridiplantae; Streptophyta; Embryophyta;
+ Bryophyta; Bryophytina; Bryopsida; Diphysciidae; Diphysciales; Diphysciaceae;
+ Diphyscium",
+              gcode 1,
+              mgcode 1,
+              div "PLN",
+              pgcode 11
+            }
+          }
+        }
+      },
+      seq-set {
+        seq {
+          id {
+            local str "Seq9__2",
+            general {
+              db "BankIt",
+              tag str "1868149/seq9"
+            },
+            general {
+              db "TMSMART",
+              tag id 59205923
+            },
+            genbank {
+              accession "KU057458"
+            }
+          },
+          descr {
+            title "Diphyscium foliosum NADH dehydrogenase subunit 5 (nad5)
+ gene, partial cds; mitochondrial.",
+            molinfo {
+              biomol genomic
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:seq9"
+                }
+              }
+            },
+            user {
+              class "1.0",
+              type str "AutodefOptions",
+              data {
+                {
+                  label str "SpecifyNuclearProduct",
+                  data bool TRUE
+                },
+                {
+                  label str "MiscFeatRule",
+                  data str "NoncodingProductFeat"
+                },
+                {
+                  label str "FeatureListType",
+                  data str "List All Features"
+                },
+                {
+                  label str "KeepNoncodingProductFeat",
+                  data bool TRUE
+                },
+                {
+                  label str "HIVRule",
+                  data str "WantBoth"
+                },
+                {
+                  label str "DoNotApplyToSp",
+                  data bool TRUE
+                },
+                {
+                  label str "LeaveParenthetical",
+                  data bool TRUE
+                },
+                {
+                  label str "MaxMods",
+                  data int -99
+                },
+                {
+                  label str "UseLabels",
+                  data bool TRUE
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "Seq9__2"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 580,
+            strand ds,
+            seq-data ncbi2na '084F2460702A531F5F330CD1807F0A86C38C252E7195FFDA
+7D9622A2A78A571A25C10C0000323FFF89709CE7D9ADC9C622B4E002AA5C030244C36BFAB738C8
+DE00A8A080C382BE838C8DA2A200053000803FDA7FFF3557606E1EA94D4B4CB24857C26FA90249
+808609790F1B2CEEEEC8274D0BCE43CF9A17B92AAF38E331532859CE9C88942080EE85E4979022
+279B5DA8'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data gene {
+                    locus "nad5"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 19,
+                    strand plus,
+                    id local str "Seq9__2",
+                    fuzz-from lim lt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "Seq9_prot_6",
+            general {
+              db "TMSMART",
+              tag id 59205924
+            }
+          },
+          descr {
+            title "NADH dehydrogenase subunit 5, partial (mitochondrion)
+ [Diphyscium foliosum]",
+            molinfo {
+              biomol peptide,
+              completeness no-left
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "Seq9_prot_6"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol aa,
+            length 5,
+            seq-data ncbieaa "DISTN"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data prot {
+                    name {
+                      "NADH dehydrogenase subunit 5"
+                    }
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 4,
+                    id local str "Seq9_prot_6",
+                    fuzz-from lim lt
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                frame three,
+                code {
+                  id 1
+                }
+              },
+              partial TRUE,
+              product whole local str "Seq9_prot_6",
+              location int {
+                from 0,
+                to 19,
+                strand plus,
+                id local str "Seq9__2",
+                fuzz-from lim lt
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
