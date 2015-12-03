@@ -139,3 +139,11 @@ version 6.9.0 (CXX-7396)
 Modified periodic sync logic to avoid deadlocks and enhance speed, corrected error handling.
 Added blob enumeration command.
 Reviewed and corrected configuration defaults.
+
+December 02, 2015
+version 6.9.1 (CXX-7583)
+Added reporting of expired blob deletion.
+Added DB files error checks and recovery when handling data blobs and shrinking database.
+
+
+
