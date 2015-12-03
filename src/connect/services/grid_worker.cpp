@@ -656,6 +656,9 @@ int SGridWorkerNodeImpl::Run(
     LOG_POST_X(60, "Control port: " << port);
     m_NetScheduleAPI->SetAuthParam("control_port", port);
     m_NetScheduleAPI->SetAuthParam("client_host", host);
+
+    // This overrides default client node format (omits user name),
+    // so deployed worker nodes could be determined by GRID Dashboard.
     m_NetScheduleAPI.SetClientNode(client + "::" + host + ':' + port);
 
     m_NetScheduleAPI.SetProgramVersion(m_JobProcessorFactory->GetJobVersion());

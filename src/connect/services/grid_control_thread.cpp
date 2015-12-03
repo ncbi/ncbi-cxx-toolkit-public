@@ -181,6 +181,7 @@ public:
 
         os << "Host name: " << CSocketAPI::gethostname() <<
                 "\nControl port: " << control_server->GetControlPort() <<
+                "\nUser name: " << GetDiagContext().GetUsername() <<
                 "\nNetCache client name: " << node.GetNetCacheAPI().
                         GetService()->GetClientName() <<
                 "\nNetSchedule client name: " << node->GetClientName() <<
