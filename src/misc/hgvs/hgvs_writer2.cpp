@@ -782,12 +782,12 @@ bool IsMitochondrion(CBioseq_Handle bsh)
 //VAR-1556
 bool ContainsAnyFuzz(CConstRef<CVariantPlacement> p)
 {
-    return !p                     ? false
-         : p->IsSetStart_offset() ? true
-         : p->IsSetStop_offset()  ? true
-         : CTypeConstIterator<CInt_fuzz>(Begin(p->GetLoc()))
-                                  ? true
-         :                          false;
+    return !p                          ? false
+         : p->IsSetStart_offset_fuzz() ? true
+         : p->IsSetStop_offset_fuzz()  ? true
+         : CTypeConstIterator<CInt_fuzz>(
+                 Begin(p->GetLoc()))   ? true
+         :                               false;
 }
 
 
