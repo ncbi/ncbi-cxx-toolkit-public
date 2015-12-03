@@ -123,6 +123,12 @@ use m_NewCleanup.x_RemoveOldDescriptors
     Bioseq-set.descr
 }
 
+use m_NewCleanup.x_RemoveDupPubs
+{
+    Bioseq.descr,
+    Bioseq-set.descr
+}
+
 use m_NewCleanup.x_RemoveEmptyDescriptors
 {
     Bioseq.descr,
