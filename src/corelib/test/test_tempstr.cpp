@@ -400,7 +400,6 @@ BOOST_AUTO_TEST_CASE(TestTempString)
     }}
 
 
-
     /// ----------------------------------------------------------------------
     ///
     /// test substring
@@ -499,6 +498,38 @@ BOOST_AUTO_TEST_CASE(TestTempString)
         ERR_POST(Info << "str.substr()    = " << sub);
         ERR_POST(Info << "tmp.Copy() = " << s);
         BOOST_CHECK(s == sub);
+    }}
+
+
+    /// ----------------------------------------------------------------------
+    ///
+    /// operator +
+    ///
+    /// ----------------------------------------------------------------------
+    {{
+        char*  c  = "AA";
+        string s  = "BB";
+        char*  ct = "123";
+        CTempString t(ct);
+        CTempString t1(ct, 1);
+        CTempString t2(ct+1, 2);
+
+        string res;
+
+        res = c + t;
+        BOOST_CHECK(res == "AA123" );
+        res = t + c;
+        BOOST_CHECK(res == "123AA" );
+        res = s + t;
+        BOOST_CHECK(res == "BB123" );
+        res = t + s;
+        BOOST_CHECK(res == "123BB" );
+        res = t + t;
+        BOOST_CHECK(res == "123123" );
+        res = t1 + t2;
+        BOOST_CHECK(res == "123" );
+        res = t2 + t1;
+        BOOST_CHECK(res == "231" );
     }}
 }
 

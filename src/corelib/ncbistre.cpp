@@ -413,12 +413,6 @@ CNcbiOstrstreamToString::operator string(void) const
 }
 
 
-CNcbiOstream& operator<<(CNcbiOstream& out, const CTempString& str)
-{
-    return out.write(str.data(), str.length());
-}
-
-
 CNcbiOstream& operator<<(CNcbiOstream& out, CUpcaseStringConverter s)
 {
     ITERATE ( string, c, s.m_String ) {

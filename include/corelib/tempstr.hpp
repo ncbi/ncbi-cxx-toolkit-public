@@ -94,9 +94,9 @@ public:
     
     /// Assign new values to the content of the a string
     CTempString& assign(const char* src_str, size_type len);
-    CTempString& assign(const CTempString& src_str);
-    CTempString& assign(const CTempString& src_str, size_type pos, size_type len);
-    CTempString& operator=(const CTempString& str);
+    CTempString& assign(const CTempString src_str);
+    CTempString& assign(const CTempString src_str, size_type pos, size_type len);
+    CTempString& operator=(const CTempString str);
     
 
     /// Return an iterator to the string's starting position
@@ -130,7 +130,7 @@ public:
 
     /// Find the first instance of the entire matching string within the
     /// current string, beginning at an optional offset.
-    size_type find(const CTempString& match,
+    size_type find(const CTempString match,
                    size_type pos = 0) const;
 
     /// Find the first instance of a given character string within the
@@ -139,7 +139,7 @@ public:
 
     /// Find the first instance of the entire matching string within the
     /// current string in a backward direction, beginning at an optional offset.
-    size_type rfind(const CTempString& match,
+    size_type rfind(const CTempString match,
                     size_type pos = npos) const;
 
     /// Find the last instance of a given character string within the
@@ -148,22 +148,22 @@ public:
 
     /// Find the first occurrence of any character in the matching string
     /// within the current string, beginning at an optional offset.
-    size_type find_first_of(const CTempString& match,
+    size_type find_first_of(const CTempString match,
                             size_type pos = 0) const;
 
     /// Find the first occurrence of any character not in the matching string
     /// within the current string, beginning at an optional offset.
-    size_type find_first_not_of(const CTempString& match,
+    size_type find_first_not_of(const CTempString match,
                                 size_type pos = 0) const;
 
     /// Find the last occurrence of any character in the matching string
     /// within the current string, beginning at an optional offset.
-    size_type find_last_of(const CTempString& match,
+    size_type find_last_of(const CTempString match,
                            size_type pos = npos) const;
 
     /// Find the last occurrence of any character not in the matching string
     /// within the current string, beginning at an optional offset.
-    size_type find_last_not_of(const CTempString& match,
+    size_type find_last_not_of(const CTempString match,
                                size_type pos = npos) const;
 
     /// Obtain a substring from this string, beginning at a given offset
@@ -178,13 +178,13 @@ public:
     char operator[](size_type pos) const;
 
     /// Compare the current string with a given string.
-    int compare(const CTempString& str) const;
+    int compare(const CTempString str) const;
 
     // Comparison operators, see compare().
-    bool operator==(const CTempString& str) const;
-    bool operator!=(const CTempString& str) const;
-    bool operator< (const CTempString& str) const;
-    bool operator> (const CTempString& str) const;
+    bool operator==(const CTempString str) const;
+    bool operator!=(const CTempString str) const;
+    bool operator< (const CTempString str) const;
+    bool operator> (const CTempString str) const;
 
     /// @}
 
@@ -208,63 +208,116 @@ private:
 };
 
 
-NCBI_XNCBI_EXPORT
-CNcbiOstream& operator<<(CNcbiOstream& out, const CTempString& str);
+/////////////////////////////////////////////////////////////////////////////
 
 
 // Global comparison operators (counterparts for CTempString::operator's).
 
 inline
-bool operator==(const char* str1, const CTempString& str2)
+bool operator==(const char* str1, const CTempString str2)
 {
     return str2.compare(str1) == 0;
 }
 
 inline
-bool operator==(const string& str1, const CTempString& str2)
+bool operator==(const string& str1, const CTempString str2)
 {
     return str2.compare(str1) == 0;
 }
 
 inline
-bool operator!=(const char* str1, const CTempString& str2)
+bool operator!=(const char* str1, const CTempString str2)
 {
     return str2.compare(str1) != 0;
 }
 
 inline
-bool operator!=(const string& str1, const CTempString& str2)
+bool operator!=(const string& str1, const CTempString str2)
 {
     return str2.compare(str1) != 0;
 }
 
 inline
-bool operator<(const char* str1, const CTempString& str2)
+bool operator<(const char* str1, const CTempString str2)
 {
     return str2.compare(str1) > 0;
 }
 
 inline
-bool operator<(const string& str1, const CTempString& str2)
+bool operator<(const string& str1, const CTempString str2)
 {
     return str2.compare(str1) > 0;
 }
 
 inline
-bool operator>(const char* str1, const CTempString& str2)
+bool operator>(const char* str1, const CTempString str2)
 {
     return str2.compare(str1) < 0;
 }
 
 inline
-bool operator>(const string& str1, const CTempString& str2)
+bool operator>(const string& str1, const CTempString str2)
 {
     return str2.compare(str1) < 0;
 }
 
-/*
- * @}
- */
+// Operator +
+
+/// @internal
+inline
+string g_CTempString_plus(const char* str1, size_t len1,
+                          const char* str2, size_t len2)
+{
+    string tmp;
+    tmp.reserve(len1 + len2);
+    tmp.assign(str1, len1);
+    tmp.append(str2, len2);
+    return tmp;
+}
+
+inline
+string operator+(const char* str1, const CTempString str2)
+{
+    return g_CTempString_plus(str1, strlen(str1),
+                              str2.data(), str2.length());
+}
+
+inline
+string operator+(const CTempString str1, const char* str2)
+{
+    return g_CTempString_plus(str1.data(), str1.length(),
+                              str2, strlen(str2));
+}
+
+inline
+string operator+(const string& str1, const CTempString str2)
+{
+    return g_CTempString_plus(str1.data(), str1.length(),
+                              str2.data(), str2.length());
+}
+
+inline
+string operator+(const CTempString str1, const string& str2)
+{
+    return g_CTempString_plus(str1.data(), str1.length(),
+                              str2.data(), str2.length());
+}
+
+inline
+string operator+(const CTempString str1, const CTempString str2)
+{
+    return g_CTempString_plus(str1.data(), str1.length(),
+                              str2.data(), str2.length());
+}
+
+
+// Put CTempString to stream
+inline
+CNcbiOstream& operator<<(CNcbiOstream& out, const CTempString str)
+{
+    return out.write(str.data(), str.length());
+}
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -514,7 +567,7 @@ void CTempString::Copy(string& dst, size_type pos, size_type len) const
 
 
 inline
-CTempString::size_type CTempString::find_first_of(const CTempString& match,
+CTempString::size_type CTempString::find_first_of(const CTempString match,
                                                   size_type pos) const
 {
     if (match.length()  &&  pos < length()) {
@@ -529,7 +582,7 @@ CTempString::size_type CTempString::find_first_of(const CTempString& match,
 
 
 inline
-CTempString::size_type CTempString::find_first_not_of(const CTempString& match,
+CTempString::size_type CTempString::find_first_not_of(const CTempString match,
                                                       size_type pos) const
 {
     if (match.length()  &&  pos < length()) {
@@ -556,7 +609,7 @@ CTempString::size_type CTempString::find_first_not_of(const CTempString& match,
 
 
 inline
-CTempString::size_type CTempString::find_last_of(const CTempString& match,
+CTempString::size_type CTempString::find_last_of(const CTempString match,
                                                  size_type pos) const
 {
     if (match.length()) {
@@ -586,7 +639,7 @@ CTempString::size_type CTempString::find_last_of(const CTempString& match,
 
 
 inline
-CTempString::size_type CTempString::find_last_not_of(const CTempString& match,
+CTempString::size_type CTempString::find_last_not_of(const CTempString match,
                                                      size_type pos) const
 {
     if (match.length()) {
@@ -631,7 +684,7 @@ CTempString::size_type CTempString::find(char match, size_type pos) const
 
 
 inline
-CTempString::size_type CTempString::find(const CTempString& match,
+CTempString::size_type CTempString::find(const CTempString match,
                                          size_type pos) const
 {
     if (pos + match.length() > length()) {
@@ -681,7 +734,7 @@ CTempString::size_type CTempString::rfind(char match, size_type pos) const
 
 
 inline
-CTempString::size_type CTempString::rfind(const CTempString& match,
+CTempString::size_type CTempString::rfind(const CTempString match,
                                           size_type pos) const
 {
     if (match.length() > length()) {
@@ -720,7 +773,7 @@ CTempString& CTempString::assign(const char* src, size_type len)
 
 
 inline
-CTempString& CTempString::assign(const CTempString& src_str)
+CTempString& CTempString::assign(const CTempString src_str)
 {
     if (this != &src_str) {
         NCBI_TEMPSTR_DESTROY_COPY();
@@ -733,7 +786,7 @@ CTempString& CTempString::assign(const CTempString& src_str)
 
 
 inline
-CTempString& CTempString::assign(const CTempString& src_str,
+CTempString& CTempString::assign(const CTempString src_str,
                                  size_type          pos, 
                                  size_type          len)
 {
@@ -745,7 +798,7 @@ CTempString& CTempString::assign(const CTempString& src_str,
 
 
 inline
-CTempString& CTempString::operator=(const CTempString& src_str)
+CTempString& CTempString::operator=(const CTempString src_str)
 {
     return assign(src_str);
 }
@@ -773,7 +826,7 @@ CTempString::operator string(void) const
 
 
 inline
-int CTempString::compare(const CTempString& str) const
+int CTempString::compare(const CTempString str) const
 {
     const int kLess    = -1;
     const int kEqual   =  0;
@@ -803,25 +856,25 @@ int CTempString::compare(const CTempString& str) const
 
 
 inline
-bool CTempString::operator==(const CTempString& str) const
+bool CTempString::operator==(const CTempString str) const
 {
     return compare(str) == 0;
 }
 
 inline
-bool CTempString::operator!=(const CTempString& str) const
+bool CTempString::operator!=(const CTempString str) const
 {
     return compare(str) != 0;
 }
 
 inline
-bool CTempString::operator<(const CTempString& str) const
+bool CTempString::operator<(const CTempString str) const
 {
     return compare(str) < 0;
 }
 
 inline
-bool CTempString::operator>(const CTempString& str) const
+bool CTempString::operator>(const CTempString str) const
 {
     return compare(str) > 0;
 }
@@ -904,9 +957,9 @@ public:
         {
             return *this = str;
         }
-    CTempStringEx& assign(const CTempString& str,
-                          size_type          pos, 
-                          size_type          count)
+    CTempStringEx& assign(const CTempString str,
+                          size_type         pos, 
+                          size_type         count)
         {
             m_ZeroAtEnd = eNoZeroAtEnd;
             CTempString::assign(str, pos, count);
@@ -980,5 +1033,8 @@ private:
 
 
 END_NCBI_SCOPE
+
+
+/* @} */
 
 #endif  // CORELIB___TEMPSTR__HPP
