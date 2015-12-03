@@ -24,6 +24,7 @@
 -i wgs-752.sqn -src-file  wgs-752.ssrc
 -i sqd-1657.fsa -a s
 -i cxx-5556.fsa
+-i sqd-3536.fsa -t sqd-2042.sbt
 -i sqd-2175.fsa -a s
 -i sqd-2187.sqn -gaps-min 1 -l paired-ends
 -i wgs-832.sqn -gaps-min 0 -src-file wgs-832-src.src
