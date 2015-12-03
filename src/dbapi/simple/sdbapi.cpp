@@ -1065,14 +1065,14 @@ CSDB_ConnectionParam::x_FillLowerParams(CDBConnParamsBase* params) const
 
     params->SetParam("login_timeout", Get(eLoginTimeout,    eWithOverrides));
     params->SetParam("io_timeout",    Get(eIOTimeout,       eWithOverrides));
-    params->SetParam("single_server", Get(eExclusiveServer, eWithOverrides));
-    params->SetParam("is_pooled",     Get(eUseConnPool,     eWithOverrides));
+    x_FillBoolParam(params, "single_server", eExclusiveServer);
+    x_FillBoolParam(params, "is_pooled",     eUseConnPool);
     params->SetParam("pool_minsize",  Get(eConnPoolMinSize, eWithOverrides));
     params->SetParam("pool_maxsize",  Get(eConnPoolMaxSize, eWithOverrides));
     params->SetParam("pool_idle_time", Get(eConnPoolIdleTime, eWithOverrides));
     params->SetParam("pool_wait_time", Get(eConnPoolWaitTime, eWithOverrides));
-    params->SetParam("pool_allow_temp_overflow",
-                     Get(eConnPoolAllowTempOverflow, eWithOverrides));
+    x_FillBoolParam(params, "pool_allow_temp_overflow",
+                    eConnPoolAllowTempOverflow);
 
     // Generic named parameters.  The historic version of this logic
     // had two quirks, which I [AMU] have not carried over:
@@ -1106,6 +1106,17 @@ CSDB_ConnectionParam::x_FillLowerParams(CDBConnParamsBase* params) const
     }
 
     params->SetParam("do_not_read_conf", "true");
+}
+
+void
+CSDB_ConnectionParam::x_FillBoolParam(CDBConnParamsBase* params,
+                                      const string& name, EParam id) const
+{
+    string value = Get(id, eWithOverrides);
+    if ( !value.empty()  &&  value != "default") {
+        value = NStr::BoolToString(NStr::StringToBool(value));
+    }
+    params->SetParam(name, value);
 }
 
 

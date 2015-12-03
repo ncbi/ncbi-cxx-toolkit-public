@@ -989,6 +989,9 @@ private:
     /// configuration file.
     void x_FillLowerParams(CDBConnParamsBase* params) const;
 
+    void x_FillBoolParam(CDBConnParamsBase* params, const string& name,
+                         EParam id) const;
+
     /// Determine what password to use, accounting for possible
     /// encryption or indirection.
     string x_GetPassword() const;
