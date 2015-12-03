@@ -149,10 +149,10 @@ bool SNetScheduleServiceAutomationObject::Call(const string& method,
     else if (method == "set_node_session") {
         CJsonNode arg(arg_array.NextNode());
         const string node(arg.IsNull() ? kEmptyStr : arg_array.GetString(arg));
-        m_NetScheduleAPI.SetClientNode(node);
+        m_NetScheduleAPI.ReSetClientNode(node);
         arg = arg_array.NextNode();
         const string session(arg.IsNull() ? kEmptyStr : arg_array.GetString(arg));
-        m_NetScheduleAPI.SetClientSession(session);
+        m_NetScheduleAPI.ReSetClientSession(session);
     } else if (method == "queue_info")
         reply.Append(g_QueueInfoToJson(m_NetScheduleAPI,
                 arg_array.NextString(kEmptyStr), m_ActualServiceType));

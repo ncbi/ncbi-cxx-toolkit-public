@@ -1494,6 +1494,20 @@ CNetScheduleAPI CNetScheduleAPIExt::GetServer(CNetServer::TInstance server)
     return new SNetScheduleAPIImpl(server->m_ServerInPool, m_Impl);
 }
 
+void CNetScheduleAPIExt::ReSetClientNode(const string& client_node)
+{
+    g_VerifyAlphabet(client_node, "client node ID", eCC_RelaxedId);
+    m_Impl->m_ClientNode = client_node;
+    m_Impl->UpdateAuthString();
+}
+
+void CNetScheduleAPIExt::ReSetClientSession(const string& client_session)
+{
+    g_VerifyAlphabet(client_session, "client session ID", eCC_RelaxedId);
+    m_Impl->m_ClientSession = client_session;
+    m_Impl->UpdateAuthString();
+}
+
 CNetScheduleAPI::TInstance
 CNetScheduleAPIExt::CreateWnCompat(const string& service_name,
         const string& client_name)

@@ -164,6 +164,10 @@ struct NCBI_XCONNECT_EXPORT CNetScheduleAPIExt : CNetScheduleAPI
     /// as a separate NetSchedule API object.
     CNetScheduleAPI GetServer(CNetServer::TInstance server);
 
+    // These allow empty values, too (unlike Set* counterparts)
+    void ReSetClientNode(const string&);
+    void ReSetClientSession(const string&);
+
     // Create workernode-compatible API
     static TInstance CreateWnCompat(const string&, const string&);
 

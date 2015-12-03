@@ -153,11 +153,11 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
     }
 
     if (IsOptionSet(eClientNode)) {
-        m_NetScheduleAPI.SetClientNode(m_Opts.client_node);
+        m_NetScheduleAPI.ReSetClientNode(m_Opts.client_node);
     }
 
     if (IsOptionSet(eClientSession)) {
-        m_NetScheduleAPI.SetClientSession(m_Opts.client_session);
+        m_NetScheduleAPI.ReSetClientSession(m_Opts.client_session);
     }
 }
 
