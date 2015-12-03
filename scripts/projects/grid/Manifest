@@ -45,8 +45,8 @@ Linux64-Centos : Debug : GCC.sh --with-debug --with-mt --without-bdb
 Linux64-Ubuntu : Release : GCC.sh --without-debug --with-optimization --with-symbols --with-mt --without-bdb
 Linux64-Ubuntu : Debug : GCC.sh --with-debug --with-mt --without-bdb
 Linux32-Ubuntu : Release : GCC.sh --without-debug --with-optimization --with-symbols --with-mt --without-bdb --without-runpath
-FreeBSD32 : Release : Clang.sh --without-debug --with-optimization --with-symbols --with-mt --without-bdb
-FreeBSD32 : Debug : Clang.sh --with-debug --with-mt --without-bdb
+FreeBSD64 : Release : Clang.sh --without-debug --with-optimization --with-symbols --with-mt --without-bdb
+FreeBSD64 : Debug : Clang.sh --with-debug --with-mt --without-bdb
 IntelMAC : Release : GCC.sh --without-debug --with-optimization --with-symbols --with-mt --without-bdb
 IntelMAC : Debug : GCC.sh --with-debug --with-mt --without-bdb
 Win32_13 : Release : static 32 ReleaseDLL

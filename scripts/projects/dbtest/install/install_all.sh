@@ -24,13 +24,13 @@ declare -a PLATF_FILE_MASKS
 PLATF_FILE_MASKS=(   "*Linux64*"
                      "*Win32*"
                      "*Linux32*"
-                     "*FreeBSD32*"
+                     "*FreeBSD64*"
                      "*IntelMAC*")
 declare -a PLATF_DIR_NAMES
 PLATF_DIR_NAMES=(    "Linux64"
                      "Win32"
                      "Linux32"
-                     "FreeBSD32"
+                     "FreeBSD64"
                      "IntelMAC")
 declare -a PLATF_SERVERS
 PLATF_SERVERS=(      "coremake2"

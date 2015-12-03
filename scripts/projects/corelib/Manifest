@@ -33,7 +33,7 @@ Linux64-Centos  : icc       : ICC.sh       --without-debug --without-mt --with-s
 Linux64-Centos  : icc_mtdll : ICC.sh       --without-debug --with-mt --with-dll --without-runpath --with-flat-makefile
 Linux64-Centos  : gcc       : GCC.sh       --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
-FreeBSD32  : plain     : Clang.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+FreeBSD64  : plain     : Clang.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 
 SunOSx86   : gcc     : GCC.sh 4.5.3     --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 SunOSx86   : w55     : WorkShop55.sh 32 --without-debug --without-mt --with-static --without-runpath --with-flat-makefile

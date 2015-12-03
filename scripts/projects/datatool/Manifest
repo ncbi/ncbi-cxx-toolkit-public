@@ -30,7 +30,7 @@ APP: datatool
 Linux64-Centos  : plain  : GCC.sh      --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c
 Linux64-Ubuntu  : plain  : GCC.sh      --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c
 
-FreeBSD32  : plain  : Clang.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c
+FreeBSD64  : plain  : Clang.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c
 
 IntelMAC   : plain  : GCC.sh           --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c
 

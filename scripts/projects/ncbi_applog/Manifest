@@ -29,7 +29,7 @@ POSTBUILD: cp $srcdir/src/misc/clog/app/test_ncbi_applog.sh $installdir/bin
 
 Linux64-Centos : plain  : GCC.sh   --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 Linux64-Ubuntu : plain  : GCC.sh   --without-debug --with-mt    --with-static --without-runpath --with-flat-makefile
-FreeBSD32      : plain  : Clang.sh --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
+FreeBSD64      : plain  : Clang.sh --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 IntelMAC       : plain  : GCC.sh   --without-debug --without-mt --with-static --without-runpath --with-flat-makefile
 Win32_13       : plain  : static 32 ReleaseMT
 
