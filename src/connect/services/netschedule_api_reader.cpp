@@ -178,7 +178,7 @@ bool SNetScheduleJobReaderImpl::CImpl::CheckEntryOld(
 
     string affinity_list;
     list<CTempString>::const_iterator it = affinity_tokens.begin();
-    bool no_more_jobs;
+    bool no_more_jobs = true;
     bool ret = false;
 
     while (it != affinity_tokens.end()) {
