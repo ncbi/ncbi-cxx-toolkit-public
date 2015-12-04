@@ -40,6 +40,7 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Packed_seqint.hpp>
 #include <objmgr/seq_vector.hpp>
+#include <util/random_gen.hpp>
 
 #include <iostream>
 #include <vector>
@@ -71,16 +72,18 @@ class NCBI_XALGODUSTMASK_EXPORT CSymDustMasker
                 \param r base letter in IOPACNA encoding
                 \return the same letter in NCBI2NA encoding
              */
-            Uint1 operator()( Uint1 r ) const
+            Uint1 operator()( Uint1 r )
             {
                 switch( r )
                 {
                     case 67: return 1;
                     case 71: return 2;
                     case 84: return 3;
+                    case 78: return (m_Random.GetRand() & 0x3);
                     default: return 0;
                 }
             }
+            CRandom m_Random;
         };
 
         typedef objects::CSeqVector seq_t;          /**<\internal Sequence type. */
