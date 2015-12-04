@@ -323,7 +323,7 @@ static void x_TestGetFilteredQueryRegions(ENa_strand strand) {
     masked_offsets.push_back(make_pair(7600U, 7672U));
     masked_offsets.push_back(make_pair(7766U, 7772U));
     masked_offsets.push_back(make_pair(8873U, 8880U));
-    masked_offsets.push_back(make_pair(9114U, 9179U));
+    masked_offsets.push_back(make_pair(9109U, 9179U));
 
     const size_t kNumQueries(1);
     const size_t kNumLocs(masked_offsets.size());
@@ -1169,7 +1169,7 @@ BOOST_AUTO_TEST_CASE(CombineRepeatAndDustFilter) {
     const int kNumLocs = 13;
     const int kStarts[kNumLocs] = 
         { 0, 298, 380, 1449, 2851, 3113, 4704, 6364, 6512, 7600, 
-          7766, 8873, 9114};
+          7766, 8873, 9109};
     const int kEnds[kNumLocs] = 
         { 212, 305, 1297, 1479, 2953, 3764, 4710, 6373, 6573, 7672, 
           7772, 8880, 9179};
@@ -1202,7 +1202,7 @@ BOOST_AUTO_TEST_CASE(FilterLocNuclBoth) {
     const int kNumLocs = 15;
     const int kDustStarts[kNumLocs] = 
         { 298, 875, 1018, 1449, 3113, 3282, 3428, 3598, 4704, 6364, 
-          6512, 7600, 7766, 8873, 9114};
+          6512, 7600, 7766, 8873, 9109};
     const int kDustEnds[kNumLocs] = 
         { 305, 882, 1115, 1479, 3133, 3298, 3441, 3606, 4710, 6373, 
           6573, 7672, 7772, 8880 , 9179}; 
@@ -1232,7 +1232,7 @@ BOOST_AUTO_TEST_CASE(FilterLocNuclPlus) {
     const int kNumLocs = 15;
     const int kDustStarts[kNumLocs] = 
         { 298, 875, 1018, 1449, 3113, 3282, 3428, 3598, 4704, 6364, 
-          6512, 7600, 7766, 8873, 9114};
+          6512, 7600, 7766, 8873, 9109};
     const int kDustEnds[kNumLocs] = 
         { 305, 882, 1115, 1479, 3133, 3298, 3441, 3606, 4710, 6373, 
           6573, 7672, 7772, 8880 , 9179}; 
@@ -1262,7 +1262,7 @@ BOOST_AUTO_TEST_CASE(FilterLocNuclMinus) {
     const int kNumLocs = 15;
     const int kDustStarts[kNumLocs] = 
         { 298, 875, 1018, 1449, 3113, 3282, 3428, 3598, 4704, 6364, 
-          6512, 7600, 7766, 8873, 9114};
+          6512, 7600, 7766, 8873, 9109};
     const int kDustEnds[kNumLocs] = 
         { 305, 882, 1115, 1479, 3133, 3298, 3441, 3606, 4710, 6373, 
           6573, 7672, 7772, 8880 , 9179}; 
@@ -1444,7 +1444,7 @@ BOOST_AUTO_TEST_CASE(FilterMultipleQueriesLocNuclPlus) {
 
     int dust_starts0[kNumLocs0] = 
         { 298, 875, 1018, 1449, 3113, 3282, 3428, 3598, 4704, 6364, 
-          6512, 7600, 7766, 8873, 9114};
+          6512, 7600, 7766, 8873, 9109};
     int dust_ends0[kNumLocs0] = 
         { 305, 882, 1115, 1479, 3133, 3298, 3441, 3606, 4710, 6373, 
           6573, 7672, 7772, 8880 , 9179}; 
