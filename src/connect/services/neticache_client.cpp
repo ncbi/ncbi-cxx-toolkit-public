@@ -497,6 +497,57 @@ void CNetICacheClient::GetBlobOwner(const string&  key,
     *owner = kEmptyStr;
 }
 
+list<string> CNetICacheClient::GetSubkeyList(const string& key)
+{
+    CNetServerMultilineCmdOutput output(
+            m_Impl->ChooseServerAndExec(
+                m_Impl->MakeStdCmd("BLIST", key, &m_Impl->m_DefaultParameters),
+                key,
+                true,
+                &m_Impl->m_DefaultParameters));
+
+    output->SetNetCacheCompatMode();
+    string line;
+
+    if (!output.ReadLine(line)) {
+        NCBI_THROW(CNetCacheException, eInvalidServerResponse,
+            "Failed to read SIZE field");
+    }
+
+    const string kSize = "SIZE=";
+    string::size_type pos = line.find(kSize);
+
+    if (pos == string::npos) {
+        output->m_Connection->Abort();
+        NCBI_THROW(CNetCacheException, eInvalidServerResponse,
+            "No SIZE field in reply to BLIST command");
+    }
+
+    Int8 to_read = NStr::StringToInt8(line.substr(pos + kSize.size()),
+            NStr::fAllowTrailingSymbols);
+
+    list<string> result;
+
+    while (to_read > 0) {
+        output.ReadLine(line);
+        to_read -= line.size() + 1; // Plus newline character
+
+        vector<string> blob;
+        NStr::Split(line, ",", blob, NStr::fSplit_NoMergeDelims);
+
+        // It should be "cachename,key,subkey"
+        if (blob.size() != 3) {
+            NCBI_THROW_FMT(CNetCacheException, eInvalidServerResponse,
+                "Unexpected response format: " << line);
+        }
+
+        // Only subkey is used
+        result.push_back(blob[2]);
+    }
+
+    return result;
+}
+
 IReader* SNetICacheClientImpl::GetReadStreamPart(
     const string& key, int version, const string& subkey,
     size_t offset, size_t part_size,

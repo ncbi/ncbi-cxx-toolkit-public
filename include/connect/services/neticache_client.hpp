@@ -39,6 +39,8 @@
 
 #include "netcache_api.hpp"
 
+#include <list>
+
 #include <connect/ncbi_core_cxx.hpp>
 
 #include <util/resource_pool.hpp>
@@ -143,6 +145,10 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
                               int            version,
                               const string&  subkey,
                               string*        owner);
+
+    /// Returns a list of subkeys for a given key
+    ///
+    list<string> GetSubkeyList(const string& key);
 
     /// @warning
     ///    This method DOES NOT follow ICache::Read() interface

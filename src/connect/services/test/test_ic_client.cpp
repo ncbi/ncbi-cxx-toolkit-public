@@ -263,6 +263,9 @@ string GetUniqueKey()
 
 static void s_SimpleTest()
 {
+#define SIMPLE_TEST_CTX \
+    ". Blob: " << key << ' ' << version << ' ' << subkey
+
     const string service  = TNetCache_ServiceName::GetDefault();
     const string cache_name  = TNetCache_CacheName::GetDefault();
 
@@ -278,6 +281,9 @@ static void s_SimpleTest()
     src.reserve(kSrcSize);
     buf.reserve(kBufSize);
 
+    const string key = GetUniqueKey();
+    vector<string> subkeys;
+
 // After CXX-7539 is fixed, counter i should be replaced with version
 #ifdef SIMPLE_TEST_VERSION_TESTING
     for (size_t version = 0; version < kIterations; ++version) {
@@ -285,11 +291,8 @@ static void s_SimpleTest()
     const int version = 0;
     for (size_t i = 0; i < kIterations; ++i) {
 #endif
-        const string key = GetUniqueKey();
         const string subkey = GetUniqueKey();
-
-#define SIMPLE_TEST_CTX \
-    ". Blob: " << key << ' ' << version << ' ' << subkey
+        subkeys.push_back(subkey);
 
         try {
             // Creating blob
@@ -335,13 +338,54 @@ static void s_SimpleTest()
 
                 break;
             }
+        }
+        catch (...) {
+            BOOST_ERROR("An exception has been caught" SIMPLE_TEST_CTX);
+            throw;
+        }
+    }
 
+    try {
+        list<string> received(api.GetSubkeyList(key));
+
+        if (received.size() != subkeys.size()) {
+            BOOST_ERROR("Received unexpected number of subkeys: " <<
+                    received.size() << " vs " << subkeys.size());
+        }
+
+        set<string> expected(subkeys.begin(), subkeys.end());
+
+        for (list<string>::const_iterator i = received.begin();
+                i != received.end(); ++i) {
+            const string subkey = *i;
+
+            if (expected.find(subkey) == expected.end()) {
+                BOOST_ERROR("Received unexpected subkey: " SIMPLE_TEST_CTX);
+            }
+        }
+    }
+    catch (...) {
+        BOOST_ERROR("An exception has been caught. Blob: " << key);
+        throw;
+    }
+
+// After CXX-7539 is fixed, counter i should be replaced with version
+#ifdef SIMPLE_TEST_VERSION_TESTING
+    for (size_t version = 0; version < kIterations; ++version) {
+#else
+    for (size_t i = 0; i < kIterations; ++i) {
+#endif
+        const string subkey = subkeys.back();
+        subkeys.pop_back();
+
+        try {
             // Removing blob
             api.RemoveBlob(key, version, subkey);
 
             // Checking removed blob
             BOOST_REQUIRE_MESSAGE(!api.HasBlob(key, subkey),
                     "Removed blob still exists" SIMPLE_TEST_CTX);
+            size_t size = 0;
             auto_ptr<IReader> fail_reader(api.GetReadStream(key, version, subkey, &size));
             BOOST_REQUIRE_MESSAGE(!fail_reader.get(),
                     "Got reader for removed blob" SIMPLE_TEST_CTX);
@@ -350,9 +394,8 @@ static void s_SimpleTest()
             BOOST_ERROR("An exception has been caught" SIMPLE_TEST_CTX);
             throw;
         }
-
-#undef SIMPLE_TEST_CTX
     }
+#undef SIMPLE_TEST_CTX
 }
 
 BOOST_AUTO_TEST_SUITE(NetICacheClient)
