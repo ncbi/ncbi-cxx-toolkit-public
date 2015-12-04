@@ -52,7 +52,7 @@ fi
 
 # Get app name
 x_app=`grep '^ *APP[ =]' "$x_srcdir/Makefile.$x_test.app"`
-x_app=`echo "$x_app" | sed -e 's/^.*=//' -e 's/^ *//' -e 's/\s*$//'`
+x_app=`echo "$x_app" | sed -e 's/^.*=//' -e 's/^ *//' -e 's/ *$//'`
 
 x_tpath=$x_srcdir_rel/$x_test
 if grep -c '^ *CHECK_CMD' $x_srcdir/Makefile.$x_test.app > /dev/null ; then 
