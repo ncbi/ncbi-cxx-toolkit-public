@@ -101,7 +101,6 @@ CBDB_SplitTest::LoadSplitStore(vector<TestRec>& test_set,
                                TBlobSplitStore& split_store)
 {
     unsigned blob_id = 1;
-    unsigned round = 0;
     CBDB_RawFile::TBuffer buffer;
 
     for (size_t i = 0; i < test_set.size(); ++i) {
@@ -182,7 +181,7 @@ void CBDB_SplitTest::ReadTestSet(vector<TestRec>&  test_set,
     for(++lr; !lr.AtEOF(); ++lr) {
         CTempString st = *lr;
         string count_str, size_str;
-        string s = NStr::TruncateSpaces(st);
+        string s = NStr::TruncateSpaces(string(st));
         NStr::SplitInTwo(s, " \t", count_str, size_str);
         TestRec rec;
         rec.count = NStr::StringToUInt(count_str,
