@@ -130,7 +130,7 @@ string s_PutBlob(
                CNetCacheAPI              nc_client,
                const void*               buf,
                size_t                    size,
-               vector<STransactionInfo>* log)
+               vector<STransactionInfo>& log)
 {
     STransactionInfo info;
     info.blob_size = size;
@@ -145,7 +145,7 @@ string s_PutBlob(
     info.key = nc_client.PutData(buf, size, nc_blob_ttl = 60 * 8);
     info.transaction_time = sw.Elapsed();
 
-    log->push_back(info);
+    log.push_back(info);
     return info.key;
 }
 
@@ -210,10 +210,9 @@ void s_StressTest(const string&             service,
                   const CNamedParameterList* nc_params,
                   size_t                    size,
                   unsigned int              repeats,
-                  vector<STransactionInfo>* log_write,
-                  vector<STransactionInfo>* log_read,
-
-                  vector<string>*           rep_keys,  // key representatives
+                  vector<STransactionInfo>& log_write,
+                  vector<STransactionInfo>& log_read,
+                  vector<string>&           rep_keys,  // key representatives
                   unsigned                  key_factor // repr. choose factor
                   )
 {
@@ -229,12 +228,8 @@ void s_StressTest(const string&             service,
     memset(buf.get(),  0, size);
     memset(buf2.get(), 0, size);
 
-    if (log_write) {
-        log_write->clear();
-    }
-    if (log_read) {
-        log_read->clear();
-    }
+    log_write.clear();
+    log_read.clear();
 
     string key;
     for (unsigned i = 0; i < repeats; ) {
@@ -262,8 +257,8 @@ void s_StressTest(const string&             service,
             // take every "key_factor" key,
             // so we have evenly (across db pages)
             // distributed slice of the database
-            if (i % key_factor == 0 && rep_keys) {
-                rep_keys->push_back(key);
+            if (i % key_factor == 0) {
+                rep_keys.push_back(key);
             }
 
             ch[i0] = ch[i1] = 0;
@@ -284,7 +279,7 @@ void s_StressTest(const string&             service,
             ch[i1] = 127;
 
             bool exists = s_CheckExists(nc_client,
-                key, (unsigned char*)buf2.get(), size, log_read);
+                key, (unsigned char*)buf2.get(), size, &log_read);
             if (!exists) {
                 cerr << "Not found: " << key << endl;
             }
@@ -308,14 +303,14 @@ static
 void s_TestKeysRead(CNetCacheAPI              nc_client,
                     vector<string>&           rep_keys,
                     unsigned                  size,
-                    vector<STransactionInfo>* log_read)
+                    vector<STransactionInfo>& log_read)
 {
     AutoPtr<char, ArrayDeleter<char> > buf  = new char[size];
 
     ITERATE(vector<string>, it, rep_keys) {
         const string& key = *it;
         bool exists = s_CheckExists(nc_client, key,
-            (unsigned char*) buf.get(), size, log_read);
+            (unsigned char*) buf.get(), size, &log_read);
         BOOST_REQUIRE(exists);
     }
 }
@@ -755,7 +750,7 @@ static int s_Run(const CNamedParameterList* nc_params)
         NcbiCout << "STRESS TEST " << (i + 1) << "/" <<
             stress_test_repetitions << NcbiEndl << NcbiEndl;
 
-        s_StressTest(service, nc_params, 256, repeats, &log, &log_read, &rep_keys, 10);
+        s_StressTest(service, nc_params, 256, repeats, log, log_read, rep_keys, 10);
         NcbiCout << NcbiEndl << "BLOB write statistics:" << NcbiEndl;
         s_ReportStatistics(log);
         NcbiCout << NcbiEndl << "BLOB read statistics:" << NcbiEndl;
@@ -763,21 +758,21 @@ static int s_Run(const CNamedParameterList* nc_params)
         NcbiCout << NcbiEndl << NcbiEndl;
 
 
-        s_StressTest(service, nc_params, 1024 * 5, repeats, &log, &log_read, &rep_keys, 10);
+        s_StressTest(service, nc_params, 1024 * 5, repeats, log, log_read, rep_keys, 10);
         NcbiCout << NcbiEndl << "BLOB write statistics:" << NcbiEndl;
         s_ReportStatistics(log);
         NcbiCout << NcbiEndl << "BLOB read statistics:" << NcbiEndl;
         s_ReportStatistics(log_read);
         NcbiCout << NcbiEndl;
 
-        s_StressTest(service, nc_params, 1024 * 100, repeats/2, &log, &log_read, &rep_keys, 20);
+        s_StressTest(service, nc_params, 1024 * 100, repeats/2, log, log_read, rep_keys, 20);
         NcbiCout << NcbiEndl << "BLOB write statistics:" << NcbiEndl;
         s_ReportStatistics(log);
         NcbiCout << NcbiEndl << "BLOB read statistics:" << NcbiEndl;
         s_ReportStatistics(log_read);
         NcbiCout << NcbiEndl;
 
-        s_StressTest(service, nc_params, 1024 * 1024 * 5, repeats/50, &log, &log_read, &rep_keys, 30);
+        s_StressTest(service, nc_params, 1024 * 1024 * 5, repeats/50, log, log_read, rep_keys, 30);
         NcbiCout << NcbiEndl << "BLOB write statistics:" << NcbiEndl;
         s_ReportStatistics(log);
         NcbiCout << NcbiEndl << "BLOB read statistics:" << NcbiEndl;
@@ -788,7 +783,7 @@ static int s_Run(const CNamedParameterList* nc_params)
         NcbiCout << NcbiEndl << "Random BLOB read statistics. Number of BLOBs="
                  << rep_keys.size()
                  << NcbiEndl;
-        s_TestKeysRead(nc_client, rep_keys, 1024 * 1024 * 10, &log_read);
+        s_TestKeysRead(nc_client, rep_keys, 1024 * 1024 * 10, log_read);
         s_ReportStatistics(log_read);
         NcbiCout << NcbiEndl;
 
