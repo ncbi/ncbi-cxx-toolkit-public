@@ -280,6 +280,7 @@ public:
     const CBioSource* GetCurrentBiosource(void);
     CBioSource::TGenome GetCurrentGenome(void);
     bool IsEukaryotic(void);
+    bool IsBacterial(void);
     bool IsCurrentRnaInGenProdSet(void);
     bool SequenceHasFarPointers(void);
     const CSeqSummary& GetNucleotideCount(void);

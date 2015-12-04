@@ -149,6 +149,26 @@ bool CDiscrepancyContext::IsEukaryotic()
 }
 
 
+bool CDiscrepancyContext::IsBacterial()
+{
+    static bool result = false;
+    static size_t count = 0;
+    if (count != m_Count_Bioseq) {
+        count = m_Count_Bioseq;
+        const CBioSource* biosrc = GetCurrentBiosource();
+        if (biosrc) {
+            CBioSource::EGenome genome = (CBioSource::EGenome) biosrc->GetGenome();
+            if (HasLineage(*biosrc, GetLineage(), "Bacteria")) {
+                result = true;
+                return result;
+            }
+        }
+        result = false;
+    }
+    return result;
+}
+
+
 bool CDiscrepancyContext::IsCurrentRnaInGenProdSet()
 {
     static bool result = false;
