@@ -1,0 +1,5498 @@
+Seq-entry ::= set {
+  class genbank,
+  descr {
+    user {
+      type str "NcbiCleanup",
+      data {
+        {
+          label str "method",
+          data str "ExtendedSeqEntryCleanup"
+        },
+        {
+          label str "version",
+          data int 1
+        },
+        {
+          label str "month",
+          data int 12
+        },
+        {
+          label str "day",
+          data int 3
+        },
+        {
+          label str "year",
+          data int 2015
+        }
+      }
+    }
+  },
+  seq-set {
+    set {
+      class pop-set,
+      descr {
+        title "Lumnitzera racemosa abscisic stress ripening protein gene,
+ partial cds.",
+        user {
+          class "SMART_V1.0",
+          type id 1,
+          data {
+            {
+              label id 1,
+              num 1,
+              data int 9685178
+            }
+          }
+        },
+        update-date std {
+          year 2015,
+          month 7,
+          day 2
+        }
+      },
+      seq-set {
+        set {
+          class nuc-prot,
+          descr {
+            source {
+              genome genomic,
+              org {
+                taxname "Lumnitzera racemosa",
+                db {
+                  {
+                    db "taxon",
+                    tag id 99438
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Lumnitzera",
+                    species "racemosa"
+                  },
+                  mod {
+                    {
+                      subtype isolate,
+                      subname "Lr265_H1"
+                    }
+                  },
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons;
+ Gunneridae; Pentapetalae; rosids; malvids; Myrtales; Combretaceae; Lumnitzera",
+                  gcode 1,
+                  mgcode 1,
+                  div "PLN",
+                  pgcode 11
+                }
+              }
+            },
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Li",
+                          first "Jianfang",
+                          initials "J."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Yang",
+                          first "Yuchen",
+                          initials "Y."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Fang",
+                          first "Lu",
+                          initials "L."
+                        }
+                      },
+                      {
+                        name name {
+                          last "He",
+                          first "Ziwen",
+                          initials "Z."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Wuxia",
+                          initials "W."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Chen",
+                          first "Qipian",
+                          initials "Q."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Miaomiao",
+                          initials "M."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhong",
+                          first "Cairong",
+                          initials "C."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhou",
+                          first "Renchao",
+                          initials "R."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Shi",
+                          first "Suhua",
+                          initials "S."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Sun Yat-Sen University",
+                      div "School of Life Sciences",
+                      city "Guangzhou",
+                      sub "Guangdong",
+                      country "China",
+                      street "Xingang West Road 135"
+                    }
+                  },
+                  title "Recent population admixture in the mangrove tree
+ Lumnitzera racemosa in Southeast Asia revealed by Illumina and Sanger
+ sequencing"
+                }
+              }
+            },
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Li",
+                          first "Jianfang",
+                          initials "J."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Yang",
+                          first "Yuchen",
+                          initials "Y."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Fang",
+                          first "Lu",
+                          initials "L."
+                        }
+                      },
+                      {
+                        name name {
+                          last "He",
+                          first "Ziwen",
+                          initials "Z."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Wuxia",
+                          initials "W."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Chen",
+                          first "Qipian",
+                          initials "Q."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Miaomiao",
+                          initials "M."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhong",
+                          first "Cairong",
+                          initials "C."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhou",
+                          first "Renchao",
+                          initials "R."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Shi",
+                          first "Suhua",
+                          initials "S."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Sun Yat-Sen University",
+                      div "School of Life Sciences",
+                      city "Guangzhou",
+                      sub "Guangdong",
+                      country "China",
+                      street "Xingang West Road 135"
+                    }
+                  },
+                  date std {
+                    year 2015,
+                    month 7,
+                    day 1
+                  }
+                }
+              }
+            },
+            create-date std {
+              year 2015,
+              month 7,
+              day 1
+            }
+          },
+          seq-set {
+            seq {
+              id {
+                local str "Lr265_H1",
+                general {
+                  db "NCBIFILE",
+                  tag str "Lumnitzera_racemosa_enrichment_haplotypes.sqn/Lr265
+_H1"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 56721000
+                },
+                genbank {
+                  accession "KT246108"
+                }
+              },
+              descr {
+                title "Lumnitzera racemosa isolate Lr265_H1 abscisic stress
+ ripening protein gene, partial cds.",
+                molinfo {
+                  biomol genomic
+                },
+                user {
+                  type str "StructuredComment",
+                  data {
+                    {
+                      label str "StructuredCommentPrefix",
+                      data str "##Assembly-Data-START##"
+                    },
+                    {
+                      label str "Assembly Method",
+                      data str "Clustal v. X1.81"
+                    },
+                    {
+                      label str "Sequencing Technology",
+                      data str "Sanger dideoxy sequencing"
+                    },
+                    {
+                      label str "StructuredCommentSuffix",
+                      data str "##Assembly-Data-END##"
+                    }
+                  }
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "Lr265_H1"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 847,
+                seq-data ncbi2na '482BC7680516F3A01F50168138F34028A009144045F8
+91BEB81FAE59E59E99739FEB0C393100F34CD33D17130CCCCCCD4F7FFCCCEC34CE0418F4EF10E0
+6EDBA35014DFADCC2D3882E02AFD03456F7F5DD9C2AA469F810A04A3F0CC3F3872B7F31360D817
+319837E67BEAE7B20C54CC05E2FFAECD4425B74B345359B18DB45E2B9788CE08D491FE7301C100
+335062CEA5D43EE3F0900A000A5F5B3F9FD0E00AF133E95BF308E309100D06C30E673F07ABF90C
+63C3DCCAFE3FF4FF5FFEFFDB5FC1BCCFF7EE07BFD4B18824E09820A35224E444A440'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data rna {
+                        type mRNA,
+                        ext name "abscisic stress ripening protein"
+                      },
+                      partial TRUE,
+                      location mix {
+                        int {
+                          from 0,
+                          to 133,
+                          strand plus,
+                          id local str "Lr265_H1",
+                          fuzz-from lim lt
+                        },
+                        int {
+                          from 797,
+                          to 846,
+                          strand plus,
+                          id local str "Lr265_H1",
+                          fuzz-to lim gt
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                local str "Lr265_H1_1",
+                general {
+                  db "NCBIFILE",
+                  tag str "Lumnitzera_racemosa_enrichment_haplotypes.sqn/Lr265
+_H1_1"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 56721001
+                }
+              },
+              descr {
+                title "abscisic stress ripening protein, partial [Lumnitzera
+ racemosa]",
+                molinfo {
+                  biomol peptide,
+                  tech concept-trans-a,
+                  completeness no-ends
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "Lr265_H1_1"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol aa,
+                length 61,
+                seq-data ncbieaa "QKVTRKPPLWKLPNRNMIIKRRKSTTNTLSTLVNLVPLPLAPML
+CTRSMKRRRIQSMHTGT"
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data prot {
+                        name {
+                          "abscisic stress ripening protein"
+                        }
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 60,
+                        id local str "Lr265_H1_1",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data cdregion {
+                    frame one,
+                    code {
+                      id 1
+                    }
+                  },
+                  partial TRUE,
+                  product whole local str "Lr265_H1_1",
+                  location mix {
+                    int {
+                      from 0,
+                      to 133,
+                      strand plus,
+                      id local str "Lr265_H1",
+                      fuzz-from lim lt
+                    },
+                    int {
+                      from 797,
+                      to 846,
+                      strand plus,
+                      id local str "Lr265_H1",
+                      fuzz-to lim gt
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        set {
+          class nuc-prot,
+          descr {
+            source {
+              genome genomic,
+              org {
+                taxname "Lumnitzera racemosa",
+                db {
+                  {
+                    db "taxon",
+                    tag id 99438
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Lumnitzera",
+                    species "racemosa"
+                  },
+                  mod {
+                    {
+                      subtype isolate,
+                      subname "Lr265_H2"
+                    }
+                  },
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons;
+ Gunneridae; Pentapetalae; rosids; malvids; Myrtales; Combretaceae; Lumnitzera",
+                  gcode 1,
+                  mgcode 1,
+                  div "PLN",
+                  pgcode 11
+                }
+              }
+            },
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Li",
+                          first "Jianfang",
+                          initials "J."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Yang",
+                          first "Yuchen",
+                          initials "Y."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Fang",
+                          first "Lu",
+                          initials "L."
+                        }
+                      },
+                      {
+                        name name {
+                          last "He",
+                          first "Ziwen",
+                          initials "Z."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Wuxia",
+                          initials "W."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Chen",
+                          first "Qipian",
+                          initials "Q."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Miaomiao",
+                          initials "M."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhong",
+                          first "Cairong",
+                          initials "C."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhou",
+                          first "Renchao",
+                          initials "R."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Shi",
+                          first "Suhua",
+                          initials "S."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Sun Yat-Sen University",
+                      div "School of Life Sciences",
+                      city "Guangzhou",
+                      sub "Guangdong",
+                      country "China",
+                      street "Xingang West Road 135"
+                    }
+                  },
+                  title "Recent population admixture in the mangrove tree
+ Lumnitzera racemosa in Southeast Asia revealed by Illumina and Sanger
+ sequencing"
+                }
+              }
+            },
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Li",
+                          first "Jianfang",
+                          initials "J."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Yang",
+                          first "Yuchen",
+                          initials "Y."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Fang",
+                          first "Lu",
+                          initials "L."
+                        }
+                      },
+                      {
+                        name name {
+                          last "He",
+                          first "Ziwen",
+                          initials "Z."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Wuxia",
+                          initials "W."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Chen",
+                          first "Qipian",
+                          initials "Q."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Miaomiao",
+                          initials "M."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhong",
+                          first "Cairong",
+                          initials "C."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhou",
+                          first "Renchao",
+                          initials "R."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Shi",
+                          first "Suhua",
+                          initials "S."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Sun Yat-Sen University",
+                      div "School of Life Sciences",
+                      city "Guangzhou",
+                      sub "Guangdong",
+                      country "China",
+                      street "Xingang West Road 135"
+                    }
+                  },
+                  date std {
+                    year 2015,
+                    month 7,
+                    day 1
+                  }
+                }
+              }
+            },
+            create-date std {
+              year 2015,
+              month 7,
+              day 1
+            }
+          },
+          seq-set {
+            seq {
+              id {
+                local str "Lr265_H2",
+                general {
+                  db "NCBIFILE",
+                  tag str "Lumnitzera_racemosa_enrichment_haplotypes.sqn/Lr265
+_H2"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 56721002
+                },
+                genbank {
+                  accession "KT246109"
+                }
+              },
+              descr {
+                title "Lumnitzera racemosa isolate Lr265_H2 abscisic stress
+ ripening protein gene, partial cds.",
+                molinfo {
+                  biomol genomic
+                },
+                user {
+                  type str "StructuredComment",
+                  data {
+                    {
+                      label str "StructuredCommentPrefix",
+                      data str "##Assembly-Data-START##"
+                    },
+                    {
+                      label str "Assembly Method",
+                      data str "Clustal v. X1.81"
+                    },
+                    {
+                      label str "Sequencing Technology",
+                      data str "Sanger dideoxy sequencing"
+                    },
+                    {
+                      label str "StructuredCommentSuffix",
+                      data str "##Assembly-Data-END##"
+                    }
+                  }
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "Lr265_H2"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 845,
+                seq-data ncbi2na '482BC7680516F3A01F50168138F34028A009144045F8
+91BEB81FAE59E59E99739FEB0C393100F34CD33D17130CCCCCD4F7FFCCCEC34CE0418F4EF10E06
+EDBA35014DFADCC2D3882E02AFD03456F7F5DD9C2AA469F810A04A3F0CC3F3872B7F31360D8173
+19837E67BEAE7B20C54CC05E2FFAECD4425B74B345359B18DB45E2B9788CE08D491FE7301C1003
+35062CEA5D43EE3F0900A000A5F5B3F9FD0E00AF133E95BF308E309100D06C30E673F07ABF90C6
+3C3DCCAFE3FF4FF5FFEFFDB5FC1BCCFF7EE07BFD4B18824E09820A35224E444A4400'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data rna {
+                        type mRNA,
+                        ext name "abscisic stress ripening protein"
+                      },
+                      partial TRUE,
+                      location mix {
+                        int {
+                          from 0,
+                          to 133,
+                          strand plus,
+                          id local str "Lr265_H2",
+                          fuzz-from lim lt
+                        },
+                        int {
+                          from 795,
+                          to 844,
+                          strand plus,
+                          id local str "Lr265_H2",
+                          fuzz-to lim gt
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                local str "Lr265_H2_1",
+                general {
+                  db "NCBIFILE",
+                  tag str "Lumnitzera_racemosa_enrichment_haplotypes.sqn/Lr265
+_H2_1"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 56721003
+                }
+              },
+              descr {
+                title "abscisic stress ripening protein, partial [Lumnitzera
+ racemosa]",
+                molinfo {
+                  biomol peptide,
+                  tech concept-trans-a,
+                  completeness no-ends
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "Lr265_H2_1"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol aa,
+                length 61,
+                seq-data ncbieaa "QKVTRKPPLWKLPNRNMIIKRRKSTTNTLSTLVNLVPLPLAPML
+CTRSMKRRRIQSMHTGT"
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data prot {
+                        name {
+                          "abscisic stress ripening protein"
+                        }
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 60,
+                        id local str "Lr265_H2_1",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data cdregion {
+                    frame one,
+                    code {
+                      id 1
+                    }
+                  },
+                  partial TRUE,
+                  product whole local str "Lr265_H2_1",
+                  location mix {
+                    int {
+                      from 0,
+                      to 133,
+                      strand plus,
+                      id local str "Lr265_H2",
+                      fuzz-from lim lt
+                    },
+                    int {
+                      from 795,
+                      to 844,
+                      strand plus,
+                      id local str "Lr265_H2",
+                      fuzz-to lim gt
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        set {
+          class nuc-prot,
+          descr {
+            source {
+              genome genomic,
+              org {
+                taxname "Lumnitzera racemosa",
+                db {
+                  {
+                    db "taxon",
+                    tag id 99438
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Lumnitzera",
+                    species "racemosa"
+                  },
+                  mod {
+                    {
+                      subtype isolate,
+                      subname "Lr265_H3"
+                    }
+                  },
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons;
+ Gunneridae; Pentapetalae; rosids; malvids; Myrtales; Combretaceae; Lumnitzera",
+                  gcode 1,
+                  mgcode 1,
+                  div "PLN",
+                  pgcode 11
+                }
+              }
+            },
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Li",
+                          first "Jianfang",
+                          initials "J."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Yang",
+                          first "Yuchen",
+                          initials "Y."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Fang",
+                          first "Lu",
+                          initials "L."
+                        }
+                      },
+                      {
+                        name name {
+                          last "He",
+                          first "Ziwen",
+                          initials "Z."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Wuxia",
+                          initials "W."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Chen",
+                          first "Qipian",
+                          initials "Q."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Miaomiao",
+                          initials "M."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhong",
+                          first "Cairong",
+                          initials "C."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhou",
+                          first "Renchao",
+                          initials "R."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Shi",
+                          first "Suhua",
+                          initials "S."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Sun Yat-Sen University",
+                      div "School of Life Sciences",
+                      city "Guangzhou",
+                      sub "Guangdong",
+                      country "China",
+                      street "Xingang West Road 135"
+                    }
+                  },
+                  title "Recent population admixture in the mangrove tree
+ Lumnitzera racemosa in Southeast Asia revealed by Illumina and Sanger
+ sequencing"
+                }
+              }
+            },
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Li",
+                          first "Jianfang",
+                          initials "J."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Yang",
+                          first "Yuchen",
+                          initials "Y."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Fang",
+                          first "Lu",
+                          initials "L."
+                        }
+                      },
+                      {
+                        name name {
+                          last "He",
+                          first "Ziwen",
+                          initials "Z."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Wuxia",
+                          initials "W."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Chen",
+                          first "Qipian",
+                          initials "Q."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Miaomiao",
+                          initials "M."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhong",
+                          first "Cairong",
+                          initials "C."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhou",
+                          first "Renchao",
+                          initials "R."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Shi",
+                          first "Suhua",
+                          initials "S."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Sun Yat-Sen University",
+                      div "School of Life Sciences",
+                      city "Guangzhou",
+                      sub "Guangdong",
+                      country "China",
+                      street "Xingang West Road 135"
+                    }
+                  },
+                  date std {
+                    year 2015,
+                    month 7,
+                    day 1
+                  }
+                }
+              }
+            },
+            create-date std {
+              year 2015,
+              month 7,
+              day 1
+            }
+          },
+          seq-set {
+            seq {
+              id {
+                local str "Lr265_H3",
+                general {
+                  db "NCBIFILE",
+                  tag str "Lumnitzera_racemosa_enrichment_haplotypes.sqn/Lr265
+_H3"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 56721004
+                },
+                genbank {
+                  accession "KT246110"
+                }
+              },
+              descr {
+                title "Lumnitzera racemosa isolate Lr265_H3 abscisic stress
+ ripening protein gene, partial cds.",
+                molinfo {
+                  biomol genomic
+                },
+                user {
+                  type str "StructuredComment",
+                  data {
+                    {
+                      label str "StructuredCommentPrefix",
+                      data str "##Assembly-Data-START##"
+                    },
+                    {
+                      label str "Assembly Method",
+                      data str "Clustal v. X1.81"
+                    },
+                    {
+                      label str "Sequencing Technology",
+                      data str "Sanger dideoxy sequencing"
+                    },
+                    {
+                      label str "StructuredCommentSuffix",
+                      data str "##Assembly-Data-END##"
+                    }
+                  }
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "Lr265_H3"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 843,
+                seq-data ncbi2na '482BC7680516F3A01F50168138F34028A009144045F8
+91BEB81FAE59E79E99739FEB0C393100F34CD33D17130CCCCD4F7FFCCCEE34CE0418F4EF10E06E
+DBA35014DFADCC2D3882E22AFD03456F7F5DD9C2AA469F810A04A3F0CC3F3872B7F31360D81731
+9837E67BEAE7B20C54CC05E2FFAECD4425B7CB345359B18DB45F2B9788CE08D491FEF301C10033
+5062CEA5D4FEE3F0900A000A5F5B3F9FD0E00AF333E95BF308E309100D06C30E673F07ABF90C63
+C3DCC8FE3FF7FF5FFEFFDB5FC1BCCFF7EE0FBFD4B18824E09820A35224E444A440'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data rna {
+                        type mRNA,
+                        ext name "abscisic stress ripening protein"
+                      },
+                      partial TRUE,
+                      location mix {
+                        int {
+                          from 0,
+                          to 133,
+                          strand plus,
+                          id local str "Lr265_H3",
+                          fuzz-from lim lt
+                        },
+                        int {
+                          from 793,
+                          to 842,
+                          strand plus,
+                          id local str "Lr265_H3",
+                          fuzz-to lim gt
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                local str "Lr265_H3_1",
+                general {
+                  db "NCBIFILE",
+                  tag str "Lumnitzera_racemosa_enrichment_haplotypes.sqn/Lr265
+_H3_1"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 56721005
+                }
+              },
+              descr {
+                title "abscisic stress ripening protein, partial [Lumnitzera
+ racemosa]",
+                molinfo {
+                  biomol peptide,
+                  tech concept-trans-a,
+                  completeness no-ends
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "Lr265_H3_1"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol aa,
+                length 61,
+                seq-data ncbieaa "QKVTRKPPLWKLPNRNMIIKRRKSTTNTLSTLVNLVPLLLAPML
+CTRSMKRRRIQSMHTGT"
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data prot {
+                        name {
+                          "abscisic stress ripening protein"
+                        }
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 60,
+                        id local str "Lr265_H3_1",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data cdregion {
+                    frame one,
+                    code {
+                      id 1
+                    }
+                  },
+                  partial TRUE,
+                  product whole local str "Lr265_H3_1",
+                  location mix {
+                    int {
+                      from 0,
+                      to 133,
+                      strand plus,
+                      id local str "Lr265_H3",
+                      fuzz-from lim lt
+                    },
+                    int {
+                      from 793,
+                      to 842,
+                      strand plus,
+                      id local str "Lr265_H3",
+                      fuzz-to lim gt
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        set {
+          class nuc-prot,
+          descr {
+            source {
+              genome genomic,
+              org {
+                taxname "Lumnitzera racemosa",
+                db {
+                  {
+                    db "taxon",
+                    tag id 99438
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Lumnitzera",
+                    species "racemosa"
+                  },
+                  mod {
+                    {
+                      subtype isolate,
+                      subname "Lr265_H4"
+                    }
+                  },
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons;
+ Gunneridae; Pentapetalae; rosids; malvids; Myrtales; Combretaceae; Lumnitzera",
+                  gcode 1,
+                  mgcode 1,
+                  div "PLN",
+                  pgcode 11
+                }
+              }
+            },
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Li",
+                          first "Jianfang",
+                          initials "J."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Yang",
+                          first "Yuchen",
+                          initials "Y."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Fang",
+                          first "Lu",
+                          initials "L."
+                        }
+                      },
+                      {
+                        name name {
+                          last "He",
+                          first "Ziwen",
+                          initials "Z."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Wuxia",
+                          initials "W."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Chen",
+                          first "Qipian",
+                          initials "Q."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Miaomiao",
+                          initials "M."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhong",
+                          first "Cairong",
+                          initials "C."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhou",
+                          first "Renchao",
+                          initials "R."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Shi",
+                          first "Suhua",
+                          initials "S."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Sun Yat-Sen University",
+                      div "School of Life Sciences",
+                      city "Guangzhou",
+                      sub "Guangdong",
+                      country "China",
+                      street "Xingang West Road 135"
+                    }
+                  },
+                  title "Recent population admixture in the mangrove tree
+ Lumnitzera racemosa in Southeast Asia revealed by Illumina and Sanger
+ sequencing"
+                }
+              }
+            },
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Li",
+                          first "Jianfang",
+                          initials "J."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Yang",
+                          first "Yuchen",
+                          initials "Y."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Fang",
+                          first "Lu",
+                          initials "L."
+                        }
+                      },
+                      {
+                        name name {
+                          last "He",
+                          first "Ziwen",
+                          initials "Z."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Wuxia",
+                          initials "W."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Chen",
+                          first "Qipian",
+                          initials "Q."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Miaomiao",
+                          initials "M."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhong",
+                          first "Cairong",
+                          initials "C."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhou",
+                          first "Renchao",
+                          initials "R."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Shi",
+                          first "Suhua",
+                          initials "S."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Sun Yat-Sen University",
+                      div "School of Life Sciences",
+                      city "Guangzhou",
+                      sub "Guangdong",
+                      country "China",
+                      street "Xingang West Road 135"
+                    }
+                  },
+                  date std {
+                    year 2015,
+                    month 7,
+                    day 1
+                  }
+                }
+              }
+            },
+            create-date std {
+              year 2015,
+              month 7,
+              day 1
+            }
+          },
+          seq-set {
+            seq {
+              id {
+                local str "Lr265_H4",
+                general {
+                  db "NCBIFILE",
+                  tag str "Lumnitzera_racemosa_enrichment_haplotypes.sqn/Lr265
+_H4"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 56721006
+                },
+                genbank {
+                  accession "KT246111"
+                }
+              },
+              descr {
+                title "Lumnitzera racemosa isolate Lr265_H4 abscisic stress
+ ripening protein gene, partial cds.",
+                molinfo {
+                  biomol genomic
+                },
+                user {
+                  type str "StructuredComment",
+                  data {
+                    {
+                      label str "StructuredCommentPrefix",
+                      data str "##Assembly-Data-START##"
+                    },
+                    {
+                      label str "Assembly Method",
+                      data str "Clustal v. X1.81"
+                    },
+                    {
+                      label str "Sequencing Technology",
+                      data str "Sanger dideoxy sequencing"
+                    },
+                    {
+                      label str "StructuredCommentSuffix",
+                      data str "##Assembly-Data-END##"
+                    }
+                  }
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "Lr265_H4"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 843,
+                seq-data ncbi2na '482BC7680516F3A01F50168138F34028A009144045F8
+91BEB81FAE59E79E99739FEB0C393100F34CD33D17130CCCCD4F7FFCCCEE34CE0418F4EF10E06E
+DBA35014DFADCC2D3882E22AFD03456F7F5DD9C2AA469F810A04A3F0CC3F3872B7F31360D81731
+9837EE7BEAE7B20C54CC05E2FFAECD4425B7CB345359B18DB45F2B9788CE08D491FEF301C10033
+5062CEA5D4FEE3F0900A000A5F5B3F9FD0E00AF333E95BF308E309100D06C30E673F07ABF90C63
+C3DCC8FE3FF7FF5FFEFFDB5FC1BCCFF7EE0FBFD4B18824E09820A35224E444A440'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data rna {
+                        type mRNA,
+                        ext name "abscisic stress ripening protein"
+                      },
+                      partial TRUE,
+                      location mix {
+                        int {
+                          from 0,
+                          to 133,
+                          strand plus,
+                          id local str "Lr265_H4",
+                          fuzz-from lim lt
+                        },
+                        int {
+                          from 793,
+                          to 842,
+                          strand plus,
+                          id local str "Lr265_H4",
+                          fuzz-to lim gt
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                local str "Lr265_H4_1",
+                general {
+                  db "NCBIFILE",
+                  tag str "Lumnitzera_racemosa_enrichment_haplotypes.sqn/Lr265
+_H4_1"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 56721007
+                }
+              },
+              descr {
+                title "abscisic stress ripening protein, partial [Lumnitzera
+ racemosa]",
+                molinfo {
+                  biomol peptide,
+                  tech concept-trans-a,
+                  completeness no-ends
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "Lr265_H4_1"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol aa,
+                length 61,
+                seq-data ncbieaa "QKVTRKPPLWKLPNRNMIIKRRKSTTNTLSTLVNLVPLLLAPML
+CTRSMKRRRIQSMHTGT"
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data prot {
+                        name {
+                          "abscisic stress ripening protein"
+                        }
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 60,
+                        id local str "Lr265_H4_1",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data cdregion {
+                    code {
+                      id 1
+                    }
+                  },
+                  partial TRUE,
+                  product whole local str "Lr265_H4_1",
+                  location mix {
+                    int {
+                      from 0,
+                      to 133,
+                      strand plus,
+                      id local str "Lr265_H4",
+                      fuzz-from lim lt
+                    },
+                    int {
+                      from 793,
+                      to 842,
+                      strand plus,
+                      id local str "Lr265_H4",
+                      fuzz-to lim gt
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    set {
+      class pop-set,
+      descr {
+        title "Lumnitzera racemosa unknown protein gene, partial cds.",
+        user {
+          class "SMART_V1.0",
+          type id 1,
+          data {
+            {
+              label id 1,
+              num 1,
+              data int 9685179
+            }
+          }
+        },
+        update-date std {
+          year 2015,
+          month 7,
+          day 2
+        }
+      },
+      seq-set {
+        set {
+          class nuc-prot,
+          descr {
+            source {
+              genome genomic,
+              org {
+                taxname "Lumnitzera racemosa",
+                db {
+                  {
+                    db "taxon",
+                    tag id 99438
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Lumnitzera",
+                    species "racemosa"
+                  },
+                  mod {
+                    {
+                      subtype isolate,
+                      subname "Lr598_H1"
+                    }
+                  },
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons;
+ Gunneridae; Pentapetalae; rosids; malvids; Myrtales; Combretaceae; Lumnitzera",
+                  gcode 1,
+                  mgcode 1,
+                  div "PLN",
+                  pgcode 11
+                }
+              }
+            },
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Li",
+                          first "Jianfang",
+                          initials "J."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Yang",
+                          first "Yuchen",
+                          initials "Y."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Fang",
+                          first "Lu",
+                          initials "L."
+                        }
+                      },
+                      {
+                        name name {
+                          last "He",
+                          first "Ziwen",
+                          initials "Z."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Wuxia",
+                          initials "W."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Chen",
+                          first "Qipian",
+                          initials "Q."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Miaomiao",
+                          initials "M."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhong",
+                          first "Cairong",
+                          initials "C."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhou",
+                          first "Renchao",
+                          initials "R."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Shi",
+                          first "Suhua",
+                          initials "S."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Sun Yat-Sen University",
+                      div "School of Life Sciences",
+                      city "Guangzhou",
+                      sub "Guangdong",
+                      country "China",
+                      street "Xingang West Road 135"
+                    }
+                  },
+                  title "Recent population admixture in the mangrove tree
+ Lumnitzera racemosa in Southeast Asia revealed by Illumina and Sanger
+ sequencing"
+                }
+              }
+            },
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Li",
+                          first "Jianfang",
+                          initials "J."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Yang",
+                          first "Yuchen",
+                          initials "Y."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Fang",
+                          first "Lu",
+                          initials "L."
+                        }
+                      },
+                      {
+                        name name {
+                          last "He",
+                          first "Ziwen",
+                          initials "Z."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Wuxia",
+                          initials "W."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Chen",
+                          first "Qipian",
+                          initials "Q."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Miaomiao",
+                          initials "M."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhong",
+                          first "Cairong",
+                          initials "C."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhou",
+                          first "Renchao",
+                          initials "R."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Shi",
+                          first "Suhua",
+                          initials "S."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Sun Yat-Sen University",
+                      div "School of Life Sciences",
+                      city "Guangzhou",
+                      sub "Guangdong",
+                      country "China",
+                      street "Xingang West Road 135"
+                    }
+                  },
+                  date std {
+                    year 2015,
+                    month 7,
+                    day 1
+                  }
+                }
+              }
+            },
+            create-date std {
+              year 2015,
+              month 7,
+              day 1
+            }
+          },
+          seq-set {
+            seq {
+              id {
+                local str "Lr598_H1",
+                general {
+                  db "NCBIFILE",
+                  tag str "Lumnitzera_racemosa_enrichment_haplotypes.sqn/Lr598
+_H1"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 56721008
+                },
+                genbank {
+                  accession "KT246112"
+                }
+              },
+              descr {
+                title "Lumnitzera racemosa isolate Lr598_H1 unknown protein
+ gene, partial cds.",
+                molinfo {
+                  biomol genomic
+                },
+                user {
+                  type str "StructuredComment",
+                  data {
+                    {
+                      label str "StructuredCommentPrefix",
+                      data str "##Assembly-Data-START##"
+                    },
+                    {
+                      label str "Assembly Method",
+                      data str "Clustal v. X1.81"
+                    },
+                    {
+                      label str "Sequencing Technology",
+                      data str "Sanger dideoxy sequencing"
+                    },
+                    {
+                      label str "StructuredCommentSuffix",
+                      data str "##Assembly-Data-END##"
+                    }
+                  }
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "Lr598_H1"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 1034,
+                seq-data ncbi2na '93EAFB3339144ACFCF6933FEFFCECEE55F0FEFEB5CEC
+DF933C314B42EF6EB04390CC44F53EF9CF9FBDE5729C80C3F44BC89F89FC1EE7C40E72404FE93E
+0FF7B3EFAEC8C24091F9E89E32828FE38A01E500FCCCE38A20A7722B9007BDCEC5353CC3FA1E75
+FF43F4FDB4FCDF404CD0FB3DCC8953084F3EFC1B80FD03CBE43AE20EF200F8FF219D50FB7AE83B
+4124000FCA053A0503FCE3353DFD1F4FE4F88FE2933940EAF70C835343ECA7FCEFF373CA308813
+F15F72E3DBB09CE4F001FB0F9E0FFD313ED3024F70CEC7E0CE43FE03EAF36FE29C100240D3BC31
+1254CE224097BBE0DF4FD13463174DFB4CE84CEF4B1F4F5C8BE93BCF228F5379F3EFC2F7F9F384
+8A1D90'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data rna {
+                        type mRNA,
+                        ext name "unknown protein"
+                      },
+                      partial TRUE,
+                      location mix {
+                        int {
+                          from 0,
+                          to 26,
+                          strand plus,
+                          id local str "Lr598_H1",
+                          fuzz-from lim lt
+                        },
+                        int {
+                          from 267,
+                          to 353,
+                          strand plus,
+                          id local str "Lr598_H1",
+                          fuzz-to lim gt
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                local str "Lr598_H1_1",
+                general {
+                  db "NCBIFILE",
+                  tag str "Lumnitzera_racemosa_enrichment_haplotypes.sqn/Lr598
+_H1_1"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 56721009
+                }
+              },
+              descr {
+                title "unknown protein, partial [Lumnitzera racemosa]",
+                molinfo {
+                  biomol peptide,
+                  tech concept-trans-a,
+                  completeness no-ends
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "Lr598_H1_1"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol aa,
+                length 38,
+                seq-data ncbieaa "ALGCIYAPQISKALAGADRKDLMRKLPKFIYDEEKALE"
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data prot {
+                        name {
+                          "unknown protein"
+                        }
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 37,
+                        id local str "Lr598_H1_1",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data cdregion {
+                    frame one,
+                    code {
+                      id 1
+                    }
+                  },
+                  partial TRUE,
+                  product whole local str "Lr598_H1_1",
+                  location mix {
+                    int {
+                      from 0,
+                      to 26,
+                      strand plus,
+                      id local str "Lr598_H1",
+                      fuzz-from lim lt
+                    },
+                    int {
+                      from 267,
+                      to 353,
+                      strand plus,
+                      id local str "Lr598_H1",
+                      fuzz-to lim gt
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        set {
+          class nuc-prot,
+          descr {
+            source {
+              genome genomic,
+              org {
+                taxname "Lumnitzera racemosa",
+                db {
+                  {
+                    db "taxon",
+                    tag id 99438
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Lumnitzera",
+                    species "racemosa"
+                  },
+                  mod {
+                    {
+                      subtype isolate,
+                      subname "Lr598_H2"
+                    }
+                  },
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons;
+ Gunneridae; Pentapetalae; rosids; malvids; Myrtales; Combretaceae; Lumnitzera",
+                  gcode 1,
+                  mgcode 1,
+                  div "PLN",
+                  pgcode 11
+                }
+              }
+            },
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Li",
+                          first "Jianfang",
+                          initials "J."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Yang",
+                          first "Yuchen",
+                          initials "Y."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Fang",
+                          first "Lu",
+                          initials "L."
+                        }
+                      },
+                      {
+                        name name {
+                          last "He",
+                          first "Ziwen",
+                          initials "Z."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Wuxia",
+                          initials "W."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Chen",
+                          first "Qipian",
+                          initials "Q."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Miaomiao",
+                          initials "M."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhong",
+                          first "Cairong",
+                          initials "C."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhou",
+                          first "Renchao",
+                          initials "R."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Shi",
+                          first "Suhua",
+                          initials "S."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Sun Yat-Sen University",
+                      div "School of Life Sciences",
+                      city "Guangzhou",
+                      sub "Guangdong",
+                      country "China",
+                      street "Xingang West Road 135"
+                    }
+                  },
+                  title "Recent population admixture in the mangrove tree
+ Lumnitzera racemosa in Southeast Asia revealed by Illumina and Sanger
+ sequencing"
+                }
+              }
+            },
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Li",
+                          first "Jianfang",
+                          initials "J."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Yang",
+                          first "Yuchen",
+                          initials "Y."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Fang",
+                          first "Lu",
+                          initials "L."
+                        }
+                      },
+                      {
+                        name name {
+                          last "He",
+                          first "Ziwen",
+                          initials "Z."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Wuxia",
+                          initials "W."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Chen",
+                          first "Qipian",
+                          initials "Q."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Miaomiao",
+                          initials "M."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhong",
+                          first "Cairong",
+                          initials "C."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhou",
+                          first "Renchao",
+                          initials "R."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Shi",
+                          first "Suhua",
+                          initials "S."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Sun Yat-Sen University",
+                      div "School of Life Sciences",
+                      city "Guangzhou",
+                      sub "Guangdong",
+                      country "China",
+                      street "Xingang West Road 135"
+                    }
+                  },
+                  date std {
+                    year 2015,
+                    month 7,
+                    day 1
+                  }
+                }
+              }
+            },
+            create-date std {
+              year 2015,
+              month 7,
+              day 1
+            }
+          },
+          seq-set {
+            seq {
+              id {
+                local str "Lr598_H2",
+                general {
+                  db "NCBIFILE",
+                  tag str "Lumnitzera_racemosa_enrichment_haplotypes.sqn/Lr598
+_H2"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 56721010
+                },
+                genbank {
+                  accession "KT246113"
+                }
+              },
+              descr {
+                title "Lumnitzera racemosa isolate Lr598_H2 unknown protein
+ gene, partial cds.",
+                molinfo {
+                  biomol genomic
+                },
+                user {
+                  type str "StructuredComment",
+                  data {
+                    {
+                      label str "StructuredCommentPrefix",
+                      data str "##Assembly-Data-START##"
+                    },
+                    {
+                      label str "Assembly Method",
+                      data str "Clustal v. X1.81"
+                    },
+                    {
+                      label str "Sequencing Technology",
+                      data str "Sanger dideoxy sequencing"
+                    },
+                    {
+                      label str "StructuredCommentSuffix",
+                      data str "##Assembly-Data-END##"
+                    }
+                  }
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "Lr598_H2"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 1033,
+                seq-data ncbi2na '93EAFB3339144ACFCF6933FEFFCECEE55F0FEFEB5CEC
+DF933C316B42EF6EB04390CC44F53EF9CF9FBDE5729C80C3F44BC89F89FC1EE7C40E72404FE93E
+0FF7B3EFAEC8C24091D9E89E32828FE38A01E500FCCCE38A20A7722B9007BDEEC5353CC3FA1E75
+FF43F4FDB4FCDF404CD0FB3DCC8953084F3CFC1B80FD03CBE43AE206F200F8FF219D50FB7AE83B
+4124000FCA0538140FF38CD4F7F47D3F93E23F8A4CE503ABDC320D4D0FB29FF3BFCDCF28C2204F
+C57DCB8FEEC27393C00FEC3E783FF4C4FB4C093DC33B1F83390FF80FABCD3F8A704009034EF0C4
+49533889025EEF837D3F44D18C5D37ED33A133BD2C7D3D722FA4EF3C8A3D4DE7CFBF0BDFE7CE12
+287640'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data rna {
+                        type mRNA,
+                        ext name "unknown protein"
+                      },
+                      partial TRUE,
+                      location mix {
+                        int {
+                          from 0,
+                          to 26,
+                          strand plus,
+                          id local str "Lr598_H2",
+                          fuzz-from lim lt
+                        },
+                        int {
+                          from 267,
+                          to 353,
+                          strand plus,
+                          id local str "Lr598_H2",
+                          fuzz-to lim gt
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                local str "Lr598_H2_1",
+                general {
+                  db "NCBIFILE",
+                  tag str "Lumnitzera_racemosa_enrichment_haplotypes.sqn/Lr598
+_H2_1"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 56721011
+                }
+              },
+              descr {
+                title "unknown protein, partial [Lumnitzera racemosa]",
+                molinfo {
+                  biomol peptide,
+                  tech concept-trans-a,
+                  completeness no-ends
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "Lr598_H2_1"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol aa,
+                length 38,
+                seq-data ncbieaa "ALGCIYAPQISKALAGADRKDLMRKLPKFIYDEEKALE"
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data prot {
+                        name {
+                          "unknown protein"
+                        }
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 37,
+                        id local str "Lr598_H2_1",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data cdregion {
+                    frame one,
+                    code {
+                      id 1
+                    }
+                  },
+                  partial TRUE,
+                  product whole local str "Lr598_H2_1",
+                  location mix {
+                    int {
+                      from 0,
+                      to 26,
+                      strand plus,
+                      id local str "Lr598_H2",
+                      fuzz-from lim lt
+                    },
+                    int {
+                      from 267,
+                      to 353,
+                      strand plus,
+                      id local str "Lr598_H2",
+                      fuzz-to lim gt
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    set {
+      class pop-set,
+      descr {
+        title "Lumnitzera racemosa mitochondrial import inner membrane
+ translocase subunit tim17 tim22 tim23 family protein gene, partial cds;
+ nuclear gene for mitochondrial product.",
+        user {
+          class "SMART_V1.0",
+          type id 1,
+          data {
+            {
+              label id 1,
+              num 1,
+              data int 9685180
+            }
+          }
+        },
+        update-date std {
+          year 2015,
+          month 7,
+          day 2
+        }
+      },
+      seq-set {
+        set {
+          class nuc-prot,
+          descr {
+            source {
+              genome genomic,
+              org {
+                taxname "Lumnitzera racemosa",
+                db {
+                  {
+                    db "taxon",
+                    tag id 99438
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Lumnitzera",
+                    species "racemosa"
+                  },
+                  mod {
+                    {
+                      subtype isolate,
+                      subname "Lr618_H1"
+                    }
+                  },
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons;
+ Gunneridae; Pentapetalae; rosids; malvids; Myrtales; Combretaceae; Lumnitzera",
+                  gcode 1,
+                  mgcode 1,
+                  div "PLN",
+                  pgcode 11
+                }
+              }
+            },
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Li",
+                          first "Jianfang",
+                          initials "J."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Yang",
+                          first "Yuchen",
+                          initials "Y."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Fang",
+                          first "Lu",
+                          initials "L."
+                        }
+                      },
+                      {
+                        name name {
+                          last "He",
+                          first "Ziwen",
+                          initials "Z."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Wuxia",
+                          initials "W."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Chen",
+                          first "Qipian",
+                          initials "Q."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Miaomiao",
+                          initials "M."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhong",
+                          first "Cairong",
+                          initials "C."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhou",
+                          first "Renchao",
+                          initials "R."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Shi",
+                          first "Suhua",
+                          initials "S."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Sun Yat-Sen University",
+                      div "School of Life Sciences",
+                      city "Guangzhou",
+                      sub "Guangdong",
+                      country "China",
+                      street "Xingang West Road 135"
+                    }
+                  },
+                  title "Recent population admixture in the mangrove tree
+ Lumnitzera racemosa in Southeast Asia revealed by Illumina and Sanger
+ sequencing"
+                }
+              }
+            },
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Li",
+                          first "Jianfang",
+                          initials "J."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Yang",
+                          first "Yuchen",
+                          initials "Y."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Fang",
+                          first "Lu",
+                          initials "L."
+                        }
+                      },
+                      {
+                        name name {
+                          last "He",
+                          first "Ziwen",
+                          initials "Z."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Wuxia",
+                          initials "W."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Chen",
+                          first "Qipian",
+                          initials "Q."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Miaomiao",
+                          initials "M."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhong",
+                          first "Cairong",
+                          initials "C."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhou",
+                          first "Renchao",
+                          initials "R."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Shi",
+                          first "Suhua",
+                          initials "S."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Sun Yat-Sen University",
+                      div "School of Life Sciences",
+                      city "Guangzhou",
+                      sub "Guangdong",
+                      country "China",
+                      street "Xingang West Road 135"
+                    }
+                  },
+                  date std {
+                    year 2015,
+                    month 7,
+                    day 1
+                  }
+                }
+              }
+            },
+            create-date std {
+              year 2015,
+              month 7,
+              day 1
+            }
+          },
+          seq-set {
+            seq {
+              id {
+                local str "Lr618_H1",
+                general {
+                  db "NCBIFILE",
+                  tag str "Lumnitzera_racemosa_enrichment_haplotypes.sqn/Lr618
+_H1"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 56721012
+                },
+                genbank {
+                  accession "KT246114"
+                }
+              },
+              descr {
+                title "Lumnitzera racemosa isolate Lr618_H1 mitochondrial
+ import inner membrane translocase subunit tim17 tim22 tim23 family protein
+ gene, partial cds; nuclear gene for mitochondrial product.",
+                molinfo {
+                  biomol genomic
+                },
+                user {
+                  type str "StructuredComment",
+                  data {
+                    {
+                      label str "StructuredCommentPrefix",
+                      data str "##Assembly-Data-START##"
+                    },
+                    {
+                      label str "Assembly Method",
+                      data str "Clustal v. X1.81"
+                    },
+                    {
+                      label str "Sequencing Technology",
+                      data str "Sanger dideoxy sequencing"
+                    },
+                    {
+                      label str "StructuredCommentSuffix",
+                      data str "##Assembly-Data-END##"
+                    }
+                  }
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "Lr618_H1"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 902,
+                seq-data ncbi2na 'C0582348D38E17BC0F7B0DA2BFEB9EB9CF7EA65F42B4
+07F77577B6BBB42FF297FF39C3791E1E3BCB1F808523EDF7B34FCCAEBEDBC114EBD088F3BF0FC4
+C80143C3DFA00100DFE9EE3D8222F772C38D4B20893BE122BA4CBD0FA13BB0415C77AC00A205E7
+FEFBD6DD54EFDFE297F837524D329432C13FB4D46BBFD70783C03EDC3D0B5E00135BBBCB4FC8F7
+322B9EBAFBEEA30C04979F7B78D2287CD831493F918F7F541B35DD7FD7FE8A7337E51F5EF398D7
+BF48D3F45EC40F71409C7FFDC0F0FDCDA78E22AE6B44F8400E012FE07FE013740D3DE82E37BE7F
+80FF2AA189EA9ED0B0'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data rna {
+                        type mRNA,
+                        ext name "mitochondrial import inner membrane
+ translocase subunit tim17 tim22 tim23 family protein"
+                      },
+                      partial TRUE,
+                      location mix {
+                        int {
+                          from 0,
+                          to 83,
+                          strand plus,
+                          id local str "Lr618_H1",
+                          fuzz-from lim lt
+                        },
+                        int {
+                          from 878,
+                          to 901,
+                          strand plus,
+                          id local str "Lr618_H1",
+                          fuzz-to lim gt
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                local str "Lr618_H1_1",
+                general {
+                  db "NCBIFILE",
+                  tag str "Lumnitzera_racemosa_enrichment_haplotypes.sqn/Lr618
+_H1_1"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 56721013
+                }
+              },
+              descr {
+                title "mitochondrial import inner membrane translocase subunit
+ tim17 tim22 tim23 family protein, partial [Lumnitzera racemosa]",
+                molinfo {
+                  biomol peptide,
+                  tech concept-trans-a,
+                  completeness no-ends
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "Lr618_H1_1"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol aa,
+                length 35,
+                seq-data ncbieaa "NRRSDHDDLLNSVIGGFGAGAILGRLQGGRAGAVK"
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data prot {
+                        name {
+                          "mitochondrial import inner membrane translocase
+ subunit tim17 tim22 tim23 family protein"
+                        }
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 34,
+                        id local str "Lr618_H1_1",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data cdregion {
+                    frame three,
+                    code {
+                      id 1
+                    }
+                  },
+                  partial TRUE,
+                  product whole local str "Lr618_H1_1",
+                  location mix {
+                    int {
+                      from 0,
+                      to 83,
+                      strand plus,
+                      id local str "Lr618_H1",
+                      fuzz-from lim lt
+                    },
+                    int {
+                      from 878,
+                      to 901,
+                      strand plus,
+                      id local str "Lr618_H1",
+                      fuzz-to lim gt
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        set {
+          class nuc-prot,
+          descr {
+            source {
+              genome genomic,
+              org {
+                taxname "Lumnitzera racemosa",
+                db {
+                  {
+                    db "taxon",
+                    tag id 99438
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Lumnitzera",
+                    species "racemosa"
+                  },
+                  mod {
+                    {
+                      subtype isolate,
+                      subname "Lr618_H2"
+                    }
+                  },
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons;
+ Gunneridae; Pentapetalae; rosids; malvids; Myrtales; Combretaceae; Lumnitzera",
+                  gcode 1,
+                  mgcode 1,
+                  div "PLN",
+                  pgcode 11
+                }
+              }
+            },
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Li",
+                          first "Jianfang",
+                          initials "J."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Yang",
+                          first "Yuchen",
+                          initials "Y."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Fang",
+                          first "Lu",
+                          initials "L."
+                        }
+                      },
+                      {
+                        name name {
+                          last "He",
+                          first "Ziwen",
+                          initials "Z."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Wuxia",
+                          initials "W."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Chen",
+                          first "Qipian",
+                          initials "Q."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Miaomiao",
+                          initials "M."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhong",
+                          first "Cairong",
+                          initials "C."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhou",
+                          first "Renchao",
+                          initials "R."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Shi",
+                          first "Suhua",
+                          initials "S."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Sun Yat-Sen University",
+                      div "School of Life Sciences",
+                      city "Guangzhou",
+                      sub "Guangdong",
+                      country "China",
+                      street "Xingang West Road 135"
+                    }
+                  },
+                  title "Recent population admixture in the mangrove tree
+ Lumnitzera racemosa in Southeast Asia revealed by Illumina and Sanger
+ sequencing"
+                }
+              }
+            },
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Li",
+                          first "Jianfang",
+                          initials "J."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Yang",
+                          first "Yuchen",
+                          initials "Y."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Fang",
+                          first "Lu",
+                          initials "L."
+                        }
+                      },
+                      {
+                        name name {
+                          last "He",
+                          first "Ziwen",
+                          initials "Z."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Wuxia",
+                          initials "W."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Chen",
+                          first "Qipian",
+                          initials "Q."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Miaomiao",
+                          initials "M."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhong",
+                          first "Cairong",
+                          initials "C."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhou",
+                          first "Renchao",
+                          initials "R."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Shi",
+                          first "Suhua",
+                          initials "S."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Sun Yat-Sen University",
+                      div "School of Life Sciences",
+                      city "Guangzhou",
+                      sub "Guangdong",
+                      country "China",
+                      street "Xingang West Road 135"
+                    }
+                  },
+                  date std {
+                    year 2015,
+                    month 7,
+                    day 1
+                  }
+                }
+              }
+            },
+            create-date std {
+              year 2015,
+              month 7,
+              day 1
+            }
+          },
+          seq-set {
+            seq {
+              id {
+                local str "Lr618_H2",
+                general {
+                  db "NCBIFILE",
+                  tag str "Lumnitzera_racemosa_enrichment_haplotypes.sqn/Lr618
+_H2"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 56721014
+                },
+                genbank {
+                  accession "KT246115"
+                }
+              },
+              descr {
+                title "Lumnitzera racemosa isolate Lr618_H2 mitochondrial
+ import inner membrane translocase subunit tim17 tim22 tim23 family protein
+ gene, partial cds; nuclear gene for mitochondrial product.",
+                molinfo {
+                  biomol genomic
+                },
+                user {
+                  type str "StructuredComment",
+                  data {
+                    {
+                      label str "StructuredCommentPrefix",
+                      data str "##Assembly-Data-START##"
+                    },
+                    {
+                      label str "Assembly Method",
+                      data str "Clustal v. X1.81"
+                    },
+                    {
+                      label str "Sequencing Technology",
+                      data str "Sanger dideoxy sequencing"
+                    },
+                    {
+                      label str "StructuredCommentSuffix",
+                      data str "##Assembly-Data-END##"
+                    }
+                  }
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "Lr618_H2"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 902,
+                seq-data ncbi2na 'C0582348D38E17BC0F7B0DA2BFEB9EB9CF7EA65F42B4
+07F77577B6BBB42FF297FF39C3791E1E3BCB1F808523EDF7B34FCCAEBEDBC114EBD088F3BF0FC4
+C80143C3DFA00100DFE9EE3D8222F7B2C38D4B20893BE122BA4CBD0FA13BB0415C77AC00A205E7
+FEFBD6DD54EFDFE297F837524D329432C13FB4D46BBFD70783C03EDC3D0B5E00135BBBCB4FC8F7
+322B9EBAFBEEA30C04979F7B78D2287CD831493F918F7F541B35DD7FD7FE8A7337E51F5EF398D7
+BF48D3F45EC40F71409C7FFDC0F0FDCDA78E22AE6B44F8400E012FE07FE013740D3DE82E37BE7F
+80FF2AA189EA9ED0B0'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data rna {
+                        type mRNA,
+                        ext name "mitochondrial import inner membrane
+ translocase subunit tim17 tim22 tim23 family protein"
+                      },
+                      partial TRUE,
+                      location mix {
+                        int {
+                          from 0,
+                          to 83,
+                          strand plus,
+                          id local str "Lr618_H2",
+                          fuzz-from lim lt
+                        },
+                        int {
+                          from 878,
+                          to 901,
+                          strand plus,
+                          id local str "Lr618_H2",
+                          fuzz-to lim gt
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                local str "Lr618_H2_1",
+                general {
+                  db "NCBIFILE",
+                  tag str "Lumnitzera_racemosa_enrichment_haplotypes.sqn/Lr618
+_H2_1"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 56721015
+                }
+              },
+              descr {
+                title "mitochondrial import inner membrane translocase subunit
+ tim17 tim22 tim23 family protein, partial [Lumnitzera racemosa]",
+                molinfo {
+                  biomol peptide,
+                  tech concept-trans-a,
+                  completeness no-ends
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "Lr618_H2_1"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol aa,
+                length 35,
+                seq-data ncbieaa "NRRSDHDDLLNSVIGGFGAGAILGRLQGGRAGAVK"
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data prot {
+                        name {
+                          "mitochondrial import inner membrane translocase
+ subunit tim17 tim22 tim23 family protein"
+                        }
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 34,
+                        id local str "Lr618_H2_1",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data cdregion {
+                    frame three,
+                    code {
+                      id 1
+                    }
+                  },
+                  partial TRUE,
+                  product whole local str "Lr618_H2_1",
+                  location mix {
+                    int {
+                      from 0,
+                      to 83,
+                      strand plus,
+                      id local str "Lr618_H2",
+                      fuzz-from lim lt
+                    },
+                    int {
+                      from 878,
+                      to 901,
+                      strand plus,
+                      id local str "Lr618_H2",
+                      fuzz-to lim gt
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        set {
+          class nuc-prot,
+          descr {
+            source {
+              genome genomic,
+              org {
+                taxname "Lumnitzera racemosa",
+                db {
+                  {
+                    db "taxon",
+                    tag id 99438
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Lumnitzera",
+                    species "racemosa"
+                  },
+                  mod {
+                    {
+                      subtype isolate,
+                      subname "Lr618_H3"
+                    }
+                  },
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons;
+ Gunneridae; Pentapetalae; rosids; malvids; Myrtales; Combretaceae; Lumnitzera",
+                  gcode 1,
+                  mgcode 1,
+                  div "PLN",
+                  pgcode 11
+                }
+              }
+            },
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Li",
+                          first "Jianfang",
+                          initials "J."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Yang",
+                          first "Yuchen",
+                          initials "Y."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Fang",
+                          first "Lu",
+                          initials "L."
+                        }
+                      },
+                      {
+                        name name {
+                          last "He",
+                          first "Ziwen",
+                          initials "Z."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Wuxia",
+                          initials "W."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Chen",
+                          first "Qipian",
+                          initials "Q."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Miaomiao",
+                          initials "M."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhong",
+                          first "Cairong",
+                          initials "C."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhou",
+                          first "Renchao",
+                          initials "R."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Shi",
+                          first "Suhua",
+                          initials "S."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Sun Yat-Sen University",
+                      div "School of Life Sciences",
+                      city "Guangzhou",
+                      sub "Guangdong",
+                      country "China",
+                      street "Xingang West Road 135"
+                    }
+                  },
+                  title "Recent population admixture in the mangrove tree
+ Lumnitzera racemosa in Southeast Asia revealed by Illumina and Sanger
+ sequencing"
+                }
+              }
+            },
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Li",
+                          first "Jianfang",
+                          initials "J."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Yang",
+                          first "Yuchen",
+                          initials "Y."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Fang",
+                          first "Lu",
+                          initials "L."
+                        }
+                      },
+                      {
+                        name name {
+                          last "He",
+                          first "Ziwen",
+                          initials "Z."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Wuxia",
+                          initials "W."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Chen",
+                          first "Qipian",
+                          initials "Q."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Miaomiao",
+                          initials "M."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhong",
+                          first "Cairong",
+                          initials "C."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhou",
+                          first "Renchao",
+                          initials "R."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Shi",
+                          first "Suhua",
+                          initials "S."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Sun Yat-Sen University",
+                      div "School of Life Sciences",
+                      city "Guangzhou",
+                      sub "Guangdong",
+                      country "China",
+                      street "Xingang West Road 135"
+                    }
+                  },
+                  date std {
+                    year 2015,
+                    month 7,
+                    day 1
+                  }
+                }
+              }
+            },
+            create-date std {
+              year 2015,
+              month 7,
+              day 1
+            }
+          },
+          seq-set {
+            seq {
+              id {
+                local str "Lr618_H3",
+                general {
+                  db "NCBIFILE",
+                  tag str "Lumnitzera_racemosa_enrichment_haplotypes.sqn/Lr618
+_H3"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 56721016
+                },
+                genbank {
+                  accession "KT246116"
+                }
+              },
+              descr {
+                title "Lumnitzera racemosa isolate Lr618_H3 mitochondrial
+ import inner membrane translocase subunit tim17 tim22 tim23 family protein
+ gene, partial cds; nuclear gene for mitochondrial product.",
+                molinfo {
+                  biomol genomic
+                },
+                user {
+                  type str "StructuredComment",
+                  data {
+                    {
+                      label str "StructuredCommentPrefix",
+                      data str "##Assembly-Data-START##"
+                    },
+                    {
+                      label str "Assembly Method",
+                      data str "Clustal v. X1.81"
+                    },
+                    {
+                      label str "Sequencing Technology",
+                      data str "Sanger dideoxy sequencing"
+                    },
+                    {
+                      label str "StructuredCommentSuffix",
+                      data str "##Assembly-Data-END##"
+                    }
+                  }
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "Lr618_H3"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 958,
+                seq-data ncbi2na 'C0582348D38E17BC0F7B0DA2BFEB9EB9CF7EA65F42B4
+07F77577B6BBB42FF297FF39C3791E1E3BCB1F808523EDF7B34FCCAEBEDBC114EBD088F3BF0FC4
+C80143C3DFA00100DFE92E3D8222F772C38D4B20893BE122FA4CBD0FA13BB0415C77AC00A205E7
+FEFBD6DD54EFDFF297F837524D3294014203FD67F48CDC0EF3DE7EF9D432C13FB4D46B3FD70783
+C03EDC3D0B5E0013539BCB4FCBF7322B9EBAFBEEA31E04979F7B78D228FCD831493F91CF7F541B
+35FD7FD7FE8A7337E51F5EF398D7BF48D3F45EC40F71409C7FFDC0F0FDCD270E22AE6B44F8400E
+012FE07FE013740D3DE82E37BE7F80FF2AA189EA9ED0B0'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data rna {
+                        type mRNA,
+                        ext name "mitochondrial import inner membrane
+ translocase subunit tim17 tim22 tim23 family protein"
+                      },
+                      partial TRUE,
+                      location mix {
+                        int {
+                          from 0,
+                          to 83,
+                          strand plus,
+                          id local str "Lr618_H3",
+                          fuzz-from lim lt
+                        },
+                        int {
+                          from 934,
+                          to 957,
+                          strand plus,
+                          id local str "Lr618_H3",
+                          fuzz-to lim gt
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                local str "Lr618_H3_1",
+                general {
+                  db "NCBIFILE",
+                  tag str "Lumnitzera_racemosa_enrichment_haplotypes.sqn/Lr618
+_H3_1"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 56721017
+                }
+              },
+              descr {
+                title "mitochondrial import inner membrane translocase subunit
+ tim17 tim22 tim23 family protein, partial [Lumnitzera racemosa]",
+                molinfo {
+                  biomol peptide,
+                  tech concept-trans-a,
+                  completeness no-ends
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "Lr618_H3_1"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol aa,
+                length 35,
+                seq-data ncbieaa "NRRSDHDDLLNSVIGGFGAGAILGRLQGGRAGAVK"
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data prot {
+                        name {
+                          "mitochondrial import inner membrane translocase
+ subunit tim17 tim22 tim23 family protein"
+                        }
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 34,
+                        id local str "Lr618_H3_1",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data cdregion {
+                    frame three,
+                    code {
+                      id 1
+                    }
+                  },
+                  partial TRUE,
+                  product whole local str "Lr618_H3_1",
+                  location mix {
+                    int {
+                      from 0,
+                      to 83,
+                      strand plus,
+                      id local str "Lr618_H3",
+                      fuzz-from lim lt
+                    },
+                    int {
+                      from 934,
+                      to 957,
+                      strand plus,
+                      id local str "Lr618_H3",
+                      fuzz-to lim gt
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        set {
+          class nuc-prot,
+          descr {
+            source {
+              genome genomic,
+              org {
+                taxname "Lumnitzera racemosa",
+                db {
+                  {
+                    db "taxon",
+                    tag id 99438
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Lumnitzera",
+                    species "racemosa"
+                  },
+                  mod {
+                    {
+                      subtype isolate,
+                      subname "Lr618_H4"
+                    }
+                  },
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons;
+ Gunneridae; Pentapetalae; rosids; malvids; Myrtales; Combretaceae; Lumnitzera",
+                  gcode 1,
+                  mgcode 1,
+                  div "PLN",
+                  pgcode 11
+                }
+              }
+            },
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Li",
+                          first "Jianfang",
+                          initials "J."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Yang",
+                          first "Yuchen",
+                          initials "Y."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Fang",
+                          first "Lu",
+                          initials "L."
+                        }
+                      },
+                      {
+                        name name {
+                          last "He",
+                          first "Ziwen",
+                          initials "Z."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Wuxia",
+                          initials "W."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Chen",
+                          first "Qipian",
+                          initials "Q."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Miaomiao",
+                          initials "M."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhong",
+                          first "Cairong",
+                          initials "C."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhou",
+                          first "Renchao",
+                          initials "R."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Shi",
+                          first "Suhua",
+                          initials "S."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Sun Yat-Sen University",
+                      div "School of Life Sciences",
+                      city "Guangzhou",
+                      sub "Guangdong",
+                      country "China",
+                      street "Xingang West Road 135"
+                    }
+                  },
+                  title "Recent population admixture in the mangrove tree
+ Lumnitzera racemosa in Southeast Asia revealed by Illumina and Sanger
+ sequencing"
+                }
+              }
+            },
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Li",
+                          first "Jianfang",
+                          initials "J."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Yang",
+                          first "Yuchen",
+                          initials "Y."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Fang",
+                          first "Lu",
+                          initials "L."
+                        }
+                      },
+                      {
+                        name name {
+                          last "He",
+                          first "Ziwen",
+                          initials "Z."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Wuxia",
+                          initials "W."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Chen",
+                          first "Qipian",
+                          initials "Q."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Miaomiao",
+                          initials "M."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhong",
+                          first "Cairong",
+                          initials "C."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhou",
+                          first "Renchao",
+                          initials "R."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Shi",
+                          first "Suhua",
+                          initials "S."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Sun Yat-Sen University",
+                      div "School of Life Sciences",
+                      city "Guangzhou",
+                      sub "Guangdong",
+                      country "China",
+                      street "Xingang West Road 135"
+                    }
+                  },
+                  date std {
+                    year 2015,
+                    month 7,
+                    day 1
+                  }
+                }
+              }
+            },
+            create-date std {
+              year 2015,
+              month 7,
+              day 1
+            }
+          },
+          seq-set {
+            seq {
+              id {
+                local str "Lr618_H4",
+                general {
+                  db "NCBIFILE",
+                  tag str "Lumnitzera_racemosa_enrichment_haplotypes.sqn/Lr618
+_H4"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 56721018
+                },
+                genbank {
+                  accession "KT246117"
+                }
+              },
+              descr {
+                title "Lumnitzera racemosa isolate Lr618_H4 mitochondrial
+ import inner membrane translocase subunit tim17 tim22 tim23 family protein
+ gene, partial cds; nuclear gene for mitochondrial product.",
+                molinfo {
+                  biomol genomic
+                },
+                user {
+                  type str "StructuredComment",
+                  data {
+                    {
+                      label str "StructuredCommentPrefix",
+                      data str "##Assembly-Data-START##"
+                    },
+                    {
+                      label str "Assembly Method",
+                      data str "Clustal v. X1.81"
+                    },
+                    {
+                      label str "Sequencing Technology",
+                      data str "Sanger dideoxy sequencing"
+                    },
+                    {
+                      label str "StructuredCommentSuffix",
+                      data str "##Assembly-Data-END##"
+                    }
+                  }
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "Lr618_H4"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 958,
+                seq-data ncbi2na 'C0582348D38E17BC0F7B0DA2BFEB9EB9CF7EA65F42B4
+07F77577B6BBB42FF297FF38C3791E1E3BCB1F808523EDF7B34FCCAEBEDBC114EBD088F3BF0FC4
+C80143C3DFA00100DFE92E3D8222F772C38D4B20893BE122FA4CBD0FA13BB0415C77AC00A205E7
+FEFBD6DD54EFDFF297F837524D3294014203FD67F48CDC0EF3DE7EF9D432C13FB4D46B3FD70783
+C03EDC3D0B5E0013539BCB4FCBF7322B9EBAFBEEA31E04979F7B78D228FCD831493F91CF7F541B
+35FD7FD7FE8A7337E51F5EF398D7BF48D3F45EC40F71409C7FFDC0F0FDCD270E22AE6B44F8400E
+012FE07FE013740D3DE82E37BE7F80FF2AA189EA9ED0B0'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data rna {
+                        type mRNA,
+                        ext name "mitochondrial import inner membrane
+ translocase subunit tim17 tim22 tim23 family protein"
+                      },
+                      partial TRUE,
+                      location mix {
+                        int {
+                          from 0,
+                          to 83,
+                          strand plus,
+                          id local str "Lr618_H4",
+                          fuzz-from lim lt
+                        },
+                        int {
+                          from 934,
+                          to 957,
+                          strand plus,
+                          id local str "Lr618_H4",
+                          fuzz-to lim gt
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                local str "Lr618_H4_1",
+                general {
+                  db "NCBIFILE",
+                  tag str "Lumnitzera_racemosa_enrichment_haplotypes.sqn/Lr618
+_H4_1"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 56721019
+                }
+              },
+              descr {
+                title "mitochondrial import inner membrane translocase subunit
+ tim17 tim22 tim23 family protein, partial [Lumnitzera racemosa]",
+                molinfo {
+                  biomol peptide,
+                  tech concept-trans-a,
+                  completeness no-ends
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "Lr618_H4_1"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol aa,
+                length 35,
+                seq-data ncbieaa "NRRSDHDDLLNSVIGGFGAGAILGRLQGGRAGAVK"
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data prot {
+                        name {
+                          "mitochondrial import inner membrane translocase
+ subunit tim17 tim22 tim23 family protein"
+                        }
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 34,
+                        id local str "Lr618_H4_1",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data cdregion {
+                    frame three,
+                    code {
+                      id 1
+                    }
+                  },
+                  partial TRUE,
+                  product whole local str "Lr618_H4_1",
+                  location mix {
+                    int {
+                      from 0,
+                      to 83,
+                      strand plus,
+                      id local str "Lr618_H4",
+                      fuzz-from lim lt
+                    },
+                    int {
+                      from 934,
+                      to 957,
+                      strand plus,
+                      id local str "Lr618_H4",
+                      fuzz-to lim gt
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        set {
+          class nuc-prot,
+          descr {
+            source {
+              genome genomic,
+              org {
+                taxname "Lumnitzera racemosa",
+                db {
+                  {
+                    db "taxon",
+                    tag id 99438
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Lumnitzera",
+                    species "racemosa"
+                  },
+                  mod {
+                    {
+                      subtype isolate,
+                      subname "Lr618_H5"
+                    }
+                  },
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons;
+ Gunneridae; Pentapetalae; rosids; malvids; Myrtales; Combretaceae; Lumnitzera",
+                  gcode 1,
+                  mgcode 1,
+                  div "PLN",
+                  pgcode 11
+                }
+              }
+            },
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Li",
+                          first "Jianfang",
+                          initials "J."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Yang",
+                          first "Yuchen",
+                          initials "Y."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Fang",
+                          first "Lu",
+                          initials "L."
+                        }
+                      },
+                      {
+                        name name {
+                          last "He",
+                          first "Ziwen",
+                          initials "Z."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Wuxia",
+                          initials "W."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Chen",
+                          first "Qipian",
+                          initials "Q."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Miaomiao",
+                          initials "M."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhong",
+                          first "Cairong",
+                          initials "C."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhou",
+                          first "Renchao",
+                          initials "R."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Shi",
+                          first "Suhua",
+                          initials "S."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Sun Yat-Sen University",
+                      div "School of Life Sciences",
+                      city "Guangzhou",
+                      sub "Guangdong",
+                      country "China",
+                      street "Xingang West Road 135"
+                    }
+                  },
+                  title "Recent population admixture in the mangrove tree
+ Lumnitzera racemosa in Southeast Asia revealed by Illumina and Sanger
+ sequencing"
+                }
+              }
+            },
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Li",
+                          first "Jianfang",
+                          initials "J."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Yang",
+                          first "Yuchen",
+                          initials "Y."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Fang",
+                          first "Lu",
+                          initials "L."
+                        }
+                      },
+                      {
+                        name name {
+                          last "He",
+                          first "Ziwen",
+                          initials "Z."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Wuxia",
+                          initials "W."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Chen",
+                          first "Qipian",
+                          initials "Q."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Miaomiao",
+                          initials "M."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhong",
+                          first "Cairong",
+                          initials "C."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhou",
+                          first "Renchao",
+                          initials "R."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Shi",
+                          first "Suhua",
+                          initials "S."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Sun Yat-Sen University",
+                      div "School of Life Sciences",
+                      city "Guangzhou",
+                      sub "Guangdong",
+                      country "China",
+                      street "Xingang West Road 135"
+                    }
+                  },
+                  date std {
+                    year 2015,
+                    month 7,
+                    day 1
+                  }
+                }
+              }
+            },
+            create-date std {
+              year 2015,
+              month 7,
+              day 1
+            }
+          },
+          seq-set {
+            seq {
+              id {
+                local str "Lr618_H5",
+                general {
+                  db "NCBIFILE",
+                  tag str "Lumnitzera_racemosa_enrichment_haplotypes.sqn/Lr618
+_H5"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 56721020
+                },
+                genbank {
+                  accession "KT246118"
+                }
+              },
+              descr {
+                title "Lumnitzera racemosa isolate Lr618_H5 mitochondrial
+ import inner membrane translocase subunit tim17 tim22 tim23 family protein
+ gene, partial cds; nuclear gene for mitochondrial product.",
+                molinfo {
+                  biomol genomic
+                },
+                user {
+                  type str "StructuredComment",
+                  data {
+                    {
+                      label str "StructuredCommentPrefix",
+                      data str "##Assembly-Data-START##"
+                    },
+                    {
+                      label str "Assembly Method",
+                      data str "Clustal v. X1.81"
+                    },
+                    {
+                      label str "Sequencing Technology",
+                      data str "Sanger dideoxy sequencing"
+                    },
+                    {
+                      label str "StructuredCommentSuffix",
+                      data str "##Assembly-Data-END##"
+                    }
+                  }
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "Lr618_H5"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 958,
+                seq-data ncbi2na 'C0582348D38E17BC0F7B0DA2BFEB9EB9CF7EA65F42B4
+07F77577B6BBB42FF297FF39C3791E1E3BCB1F808523EDF7B34FCCAEBEDBC114EBD088F3BF0FC4
+C80143C3DFA00100DFE92E3D8222F772C38D4B20893BE122FA4CBD0FA13BB0415C77AC00A205E7
+FEFBD6DD54EFDFF297F837524D3294014203FD67F48CDC0EF3DE7EF9D432C13FB4D46B3FD70783
+C03EDC3D0B5E0033539BCB4FCBF7322B9EBAFBEEA31E04979F7B78D228FCD831493F91CF7F541B
+35FD7FD7FE8A7337E51F5EF398D7BF48D3F45EC40F71409C7FFDC0F0FDCD270E22AE6B44F8400E
+012FE07FE013740D3DE82E37BE7F80FF2AA189EA9ED0B0'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data rna {
+                        type mRNA,
+                        ext name "mitochondrial import inner membrane
+ translocase subunit tim17 tim22 tim23 family protein"
+                      },
+                      partial TRUE,
+                      location mix {
+                        int {
+                          from 0,
+                          to 83,
+                          strand plus,
+                          id local str "Lr618_H5",
+                          fuzz-from lim lt
+                        },
+                        int {
+                          from 934,
+                          to 957,
+                          strand plus,
+                          id local str "Lr618_H5",
+                          fuzz-to lim gt
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                local str "Lr618_H5_1",
+                general {
+                  db "NCBIFILE",
+                  tag str "Lumnitzera_racemosa_enrichment_haplotypes.sqn/Lr618
+_H5_1"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 56721021
+                }
+              },
+              descr {
+                title "mitochondrial import inner membrane translocase subunit
+ tim17 tim22 tim23 family protein, partial [Lumnitzera racemosa]",
+                molinfo {
+                  biomol peptide,
+                  tech concept-trans-a,
+                  completeness no-ends
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "Lr618_H5_1"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol aa,
+                length 35,
+                seq-data ncbieaa "NRRSDHDDLLNSVIGGFGAGAILGRLQGGRAGAVK"
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data prot {
+                        name {
+                          "mitochondrial import inner membrane translocase
+ subunit tim17 tim22 tim23 family protein"
+                        }
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 34,
+                        id local str "Lr618_H5_1",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data cdregion {
+                    frame three,
+                    code {
+                      id 1
+                    }
+                  },
+                  partial TRUE,
+                  product whole local str "Lr618_H5_1",
+                  location mix {
+                    int {
+                      from 0,
+                      to 83,
+                      strand plus,
+                      id local str "Lr618_H5",
+                      fuzz-from lim lt
+                    },
+                    int {
+                      from 934,
+                      to 957,
+                      strand plus,
+                      id local str "Lr618_H5",
+                      fuzz-to lim gt
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    set {
+      class pop-set,
+      descr {
+        title "Lumnitzera racemosa valine-trna ligase-like protein gene,
+ partial cds.",
+        user {
+          class "SMART_V1.0",
+          type id 1,
+          data {
+            {
+              label id 1,
+              num 1,
+              data int 9685181
+            }
+          }
+        },
+        update-date std {
+          year 2015,
+          month 7,
+          day 2
+        }
+      },
+      seq-set {
+        set {
+          class nuc-prot,
+          descr {
+            source {
+              genome genomic,
+              org {
+                taxname "Lumnitzera racemosa",
+                db {
+                  {
+                    db "taxon",
+                    tag id 99438
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Lumnitzera",
+                    species "racemosa"
+                  },
+                  mod {
+                    {
+                      subtype isolate,
+                      subname "Lr81_H1"
+                    }
+                  },
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons;
+ Gunneridae; Pentapetalae; rosids; malvids; Myrtales; Combretaceae; Lumnitzera",
+                  gcode 1,
+                  mgcode 1,
+                  div "PLN",
+                  pgcode 11
+                }
+              }
+            },
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Li",
+                          first "Jianfang",
+                          initials "J."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Yang",
+                          first "Yuchen",
+                          initials "Y."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Fang",
+                          first "Lu",
+                          initials "L."
+                        }
+                      },
+                      {
+                        name name {
+                          last "He",
+                          first "Ziwen",
+                          initials "Z."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Wuxia",
+                          initials "W."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Chen",
+                          first "Qipian",
+                          initials "Q."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Miaomiao",
+                          initials "M."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhong",
+                          first "Cairong",
+                          initials "C."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhou",
+                          first "Renchao",
+                          initials "R."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Shi",
+                          first "Suhua",
+                          initials "S."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Sun Yat-Sen University",
+                      div "School of Life Sciences",
+                      city "Guangzhou",
+                      sub "Guangdong",
+                      country "China",
+                      street "Xingang West Road 135"
+                    }
+                  },
+                  title "Recent population admixture in the mangrove tree
+ Lumnitzera racemosa in Southeast Asia revealed by Illumina and Sanger
+ sequencing"
+                }
+              }
+            },
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Li",
+                          first "Jianfang",
+                          initials "J."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Yang",
+                          first "Yuchen",
+                          initials "Y."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Fang",
+                          first "Lu",
+                          initials "L."
+                        }
+                      },
+                      {
+                        name name {
+                          last "He",
+                          first "Ziwen",
+                          initials "Z."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Wuxia",
+                          initials "W."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Chen",
+                          first "Qipian",
+                          initials "Q."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Miaomiao",
+                          initials "M."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhong",
+                          first "Cairong",
+                          initials "C."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhou",
+                          first "Renchao",
+                          initials "R."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Shi",
+                          first "Suhua",
+                          initials "S."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Sun Yat-Sen University",
+                      div "School of Life Sciences",
+                      city "Guangzhou",
+                      sub "Guangdong",
+                      country "China",
+                      street "Xingang West Road 135"
+                    }
+                  },
+                  date std {
+                    year 2015,
+                    month 7,
+                    day 1
+                  }
+                }
+              }
+            },
+            create-date std {
+              year 2015,
+              month 7,
+              day 1
+            }
+          },
+          seq-set {
+            seq {
+              id {
+                local str "Lr81_H1",
+                general {
+                  db "NCBIFILE",
+                  tag str "Lumnitzera_racemosa_enrichment_haplotypes.sqn/Lr81_
+H1"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 56721022
+                },
+                genbank {
+                  accession "KT246119"
+                }
+              },
+              descr {
+                title "Lumnitzera racemosa isolate Lr81_H1 valine-trna
+ ligase-like protein gene, partial cds.",
+                molinfo {
+                  biomol genomic
+                },
+                user {
+                  type str "StructuredComment",
+                  data {
+                    {
+                      label str "StructuredCommentPrefix",
+                      data str "##Assembly-Data-START##"
+                    },
+                    {
+                      label str "Assembly Method",
+                      data str "Clustal v. X1.81"
+                    },
+                    {
+                      label str "Sequencing Technology",
+                      data str "Sanger dideoxy sequencing"
+                    },
+                    {
+                      label str "StructuredCommentSuffix",
+                      data str "##Assembly-Data-END##"
+                    }
+                  }
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "Lr81_H1"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 980,
+                seq-data ncbi2na 'A97D93BC3FFF7DF7EFE87A283BE7F187DD3DF3EE947E
+7DE1CFE4B70FECDF3FCC10E435288648D0D4F45CBE7AE0A1E827CDF55C9E33AF8CCDE782F49A7F
+72197F700E4B78B38E8F3EED9743DD40ACEDDDFDDF270A7C34B323BBA0ECF324C3FBD52C4F5C24
+88923BEE2D0F4E02FBFCE108B5503D4974CBD2FFD12703532817E235F42F33A14B0D2323BBF04E
+0ED52CDBB97CD9FEBC205FBE2FDDFDFCC0F3C04203A3CD0F70A0F03DCA0FA3D43BE90E200A9C22
+0F0BA00EA3D520FF4280443A570C78B15F0A7FAF072533B114F13B043F41DFDC20C14257EDD350
+C2CC0C336032F8FE8FF1A30EB600FCF8E23644C33CEF7B0EB92FE005'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data rna {
+                        type mRNA,
+                        ext name "valine-trna ligase-like protein"
+                      },
+                      partial TRUE,
+                      location int {
+                        from 142,
+                        to 308,
+                        strand plus,
+                        id local str "Lr81_H1",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                local str "Lr81_H1_1",
+                general {
+                  db "NCBIFILE",
+                  tag str "Lumnitzera_racemosa_enrichment_haplotypes.sqn/Lr81_
+H1_1"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 56721023
+                }
+              },
+              descr {
+                title "valine-trna ligase-like protein, partial [Lumnitzera
+ racemosa]",
+                molinfo {
+                  biomol peptide,
+                  tech concept-trans-a,
+                  completeness no-ends
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "Lr81_H1_1"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol aa,
+                length 55,
+                seq-data ncbieaa "DADQSIHLVAGEGLEAYLPLADMVDISAEVQRLSRRLSKMQSEY
+DGLLCRLNSPK"
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data prot {
+                        name {
+                          "valine-trna ligase-like protein"
+                        }
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 54,
+                        id local str "Lr81_H1_1",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data cdregion {
+                    frame three,
+                    code {
+                      id 1
+                    }
+                  },
+                  partial TRUE,
+                  product whole local str "Lr81_H1_1",
+                  location int {
+                    from 142,
+                    to 308,
+                    strand plus,
+                    id local str "Lr81_H1",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        set {
+          class nuc-prot,
+          descr {
+            source {
+              genome genomic,
+              org {
+                taxname "Lumnitzera racemosa",
+                db {
+                  {
+                    db "taxon",
+                    tag id 99438
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Lumnitzera",
+                    species "racemosa"
+                  },
+                  mod {
+                    {
+                      subtype isolate,
+                      subname "Lr81_H2"
+                    }
+                  },
+                  lineage "Eukaryota; Viridiplantae; Streptophyta;
+ Embryophyta; Tracheophyta; Spermatophyta; Magnoliophyta; eudicotyledons;
+ Gunneridae; Pentapetalae; rosids; malvids; Myrtales; Combretaceae; Lumnitzera",
+                  gcode 1,
+                  mgcode 1,
+                  div "PLN",
+                  pgcode 11
+                }
+              }
+            },
+            pub {
+              pub {
+                gen {
+                  cit "Unpublished",
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Li",
+                          first "Jianfang",
+                          initials "J."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Yang",
+                          first "Yuchen",
+                          initials "Y."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Fang",
+                          first "Lu",
+                          initials "L."
+                        }
+                      },
+                      {
+                        name name {
+                          last "He",
+                          first "Ziwen",
+                          initials "Z."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Wuxia",
+                          initials "W."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Chen",
+                          first "Qipian",
+                          initials "Q."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Miaomiao",
+                          initials "M."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhong",
+                          first "Cairong",
+                          initials "C."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhou",
+                          first "Renchao",
+                          initials "R."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Shi",
+                          first "Suhua",
+                          initials "S."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Sun Yat-Sen University",
+                      div "School of Life Sciences",
+                      city "Guangzhou",
+                      sub "Guangdong",
+                      country "China",
+                      street "Xingang West Road 135"
+                    }
+                  },
+                  title "Recent population admixture in the mangrove tree
+ Lumnitzera racemosa in Southeast Asia revealed by Illumina and Sanger
+ sequencing"
+                }
+              }
+            },
+            pub {
+              pub {
+                sub {
+                  authors {
+                    names std {
+                      {
+                        name name {
+                          last "Li",
+                          first "Jianfang",
+                          initials "J."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Yang",
+                          first "Yuchen",
+                          initials "Y."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Fang",
+                          first "Lu",
+                          initials "L."
+                        }
+                      },
+                      {
+                        name name {
+                          last "He",
+                          first "Ziwen",
+                          initials "Z."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Wuxia",
+                          initials "W."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Chen",
+                          first "Qipian",
+                          initials "Q."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Guo",
+                          first "Miaomiao",
+                          initials "M."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhong",
+                          first "Cairong",
+                          initials "C."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Zhou",
+                          first "Renchao",
+                          initials "R."
+                        }
+                      },
+                      {
+                        name name {
+                          last "Shi",
+                          first "Suhua",
+                          initials "S."
+                        }
+                      }
+                    },
+                    affil std {
+                      affil "Sun Yat-Sen University",
+                      div "School of Life Sciences",
+                      city "Guangzhou",
+                      sub "Guangdong",
+                      country "China",
+                      street "Xingang West Road 135"
+                    }
+                  },
+                  date std {
+                    year 2015,
+                    month 7,
+                    day 1
+                  }
+                }
+              }
+            },
+            create-date std {
+              year 2015,
+              month 7,
+              day 1
+            }
+          },
+          seq-set {
+            seq {
+              id {
+                local str "Lr81_H2",
+                general {
+                  db "NCBIFILE",
+                  tag str "Lumnitzera_racemosa_enrichment_haplotypes.sqn/Lr81_
+H2"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 56721024
+                },
+                genbank {
+                  accession "KT246120"
+                }
+              },
+              descr {
+                title "Lumnitzera racemosa isolate Lr81_H2 valine-trna
+ ligase-like protein gene, partial cds.",
+                molinfo {
+                  biomol genomic
+                },
+                user {
+                  type str "StructuredComment",
+                  data {
+                    {
+                      label str "StructuredCommentPrefix",
+                      data str "##Assembly-Data-START##"
+                    },
+                    {
+                      label str "Assembly Method",
+                      data str "Clustal v. X1.81"
+                    },
+                    {
+                      label str "Sequencing Technology",
+                      data str "Sanger dideoxy sequencing"
+                    },
+                    {
+                      label str "StructuredCommentSuffix",
+                      data str "##Assembly-Data-END##"
+                    }
+                  }
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "Lr81_H2"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 981,
+                seq-data ncbi2na 'A97D93BC3FFF7DF7EFE87A283BE7F187DD3DF3EE947E
+7DE1CFE4B70FECDF3FCC10E435288E48D0D4F45CBE7AE0A1E827CDF55C9E33AF8CCDE782F49A7F
+72197F700E4B78B38E8F3CED9743DD40ACEDDDFDDF270A7C0D2CC8EEE83B3CC930FEF54B13D709
+22248EFB8B43D380BEFF30422D540F525F32F4BFF449C0D4CA05F88D7C0BCCE852C348C8EEFC13
+83B54B1EEE5F367FAF0817EF8BF77F7F303CF01080E8F343DC283C0F7283E8F50EFA438802A728
+83C2E803A8F5483FD0A0110E95C31E2C57C29FEBC1C94FEC453C4EC10FD077F708305095F974D4
+30B3030CE80CBE3FA3FC68CBAD803F3E388D11304F3BDEC3AE4BF80140'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data rna {
+                        type mRNA,
+                        ext name "valine-trna ligase-like protein"
+                      },
+                      partial TRUE,
+                      location int {
+                        from 142,
+                        to 308,
+                        strand plus,
+                        id local str "Lr81_H2",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                local str "Lr81_H2_1",
+                general {
+                  db "NCBIFILE",
+                  tag str "Lumnitzera_racemosa_enrichment_haplotypes.sqn/Lr81_
+H2_1"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 56721025
+                }
+              },
+              descr {
+                title "valine-trna ligase-like protein, partial [Lumnitzera
+ racemosa]",
+                molinfo {
+                  biomol peptide,
+                  tech concept-trans-a,
+                  completeness no-ends
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "Lr81_H2_1"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol aa,
+                length 55,
+                seq-data ncbieaa "DADQSIHLVAGEGLEAYLPLADMVDISAEVQRLSRRLSKMQSEY
+DGLLCRLNSPK"
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data prot {
+                        name {
+                          "valine-trna ligase-like protein"
+                        }
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 54,
+                        id local str "Lr81_H2_1",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data cdregion {
+                    frame three,
+                    code {
+                      id 1
+                    }
+                  },
+                  partial TRUE,
+                  product whole local str "Lr81_H2_1",
+                  location int {
+                    from 142,
+                    to 308,
+                    strand plus,
+                    id local str "Lr81_H2",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

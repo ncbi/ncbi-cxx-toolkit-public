@@ -60,7 +60,7 @@ static const string rrna_standard_name[] = {
 
 DISCREPANCY_CASE(RRNA_NAME_CONFLICTS, CSeqFeatData, eAll, "rRNA name conflicts")
 {
-    if (!obj.IsRna() || !obj.GetRna().CanGetExt() || !obj.GetRna().GetExt().IsName()) {
+    if (!obj.IsRna() || !obj.GetRna().CanGetExt() || !obj.GetRna().GetExt().IsName() || obj.GetRna().GetType() != CRNA_ref::eType_rRNA) {
         return;
     }
     const string& name = obj.GetRna().GetExt().GetName();
