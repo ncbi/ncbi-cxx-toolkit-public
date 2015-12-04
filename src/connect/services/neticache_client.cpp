@@ -518,7 +518,6 @@ list<string> CNetICacheClient::GetSubkeyList(const string& key)
     string::size_type pos = line.find(kSize);
 
     if (pos == string::npos) {
-        output->m_Connection->Abort();
         NCBI_THROW(CNetCacheException, eInvalidServerResponse,
             "No SIZE field in reply to BLIST command");
     }
