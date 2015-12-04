@@ -96,7 +96,8 @@ CBDB_ConfigStructureParser::ParseStructureLine(const string&           line,
     int cmp;
     list<string> tokens;
 
-    NStr::Split(line, string(" \t"), tokens, NStr::eMergeDelims);
+    NStr::Split(line, string(" \t"), tokens,
+                NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
     descr->field_name = descr->type = "";
     descr->length = 0;
@@ -448,7 +449,7 @@ void CBDB_FileDumperApp::Dump(const CArgs&                args,
 
         if (field_count > 1) {
             list<string> keys;
-            NStr::Split(key_str, string("|"), keys, NStr::eNoMergeDelims);
+            NStr::Split(key_str, string("|"), keys, NStr::fSplit_NoMergeDelims);
 
             unsigned cnt = 0;
             ITERATE(list<string>, it, keys) {
@@ -475,7 +476,7 @@ int CBDB_FileDumperApp::Run(void)
 {
     try
     {
-        CArgs args = GetArgs();
+        const CArgs &  args = GetArgs();
         const string& conf_name = args["confname"].AsString();
 
         CBDB_ConfigStructureParser parser;
