@@ -574,6 +574,9 @@ string XSDParser::ParseElementContent(DTDElement* owner, int emb)
     tok = GetRawAttributeSet();
 
     if (GetAttribute("ref")) {
+        if (!owner) {
+            ParseError("ref attribute not allowed for root elements", "");
+        }
         if (IsValue("schema") &&
             GetElementNamespace(m_ValuePrefix) == eSchemaNamespace) {
             name = CreateTmpEmbeddedName(owner->GetName(), emb);
