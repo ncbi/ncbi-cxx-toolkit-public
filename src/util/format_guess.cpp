@@ -909,6 +909,7 @@ CFormatGuess::TestFormatNewick(
 
     bool is_nexus = false;
     bool has_trees = false;
+    size_t bytes_checked = 0;
     ITERATE( list<string>, it, m_TestLines ) {
         if ( NPOS != it->find( "#NEXUS" ) ) {
             is_nexus = true;
@@ -918,6 +919,52 @@ CFormatGuess::TestFormatNewick(
         if (NPOS != NStr::FindNoCase(*it, "begin trees;")) { 
             has_trees = true;
         }
+
+        // lenght of line + newline character.  Newline could be 2 on windows,
+        // but if this number is too small, it's not a problem.
+        bytes_checked += (*it).size() + 1;
+    }
+
+    // Trees can be anywhere in a nexus file.  If nexus is true and has_trees is false, 
+    // try to read the whole file to see if there is a tree.
+    if (is_nexus && !has_trees) {       
+        m_Stream.seekg(0, ios::end);
+
+        // Get length of stream.  If stream does not support this operation,
+        // assume it is nexus only.
+        // Also return false if our initial test buffer included the whole file.
+        size_t len = m_Stream.tellg();
+        if (len == -1 || len <= bytes_checked) {
+            m_Stream.seekg(0, ios::beg);
+            return false;
+        }
+
+        // If it's huge, we truncate - could miss a tree, but a memory allocation
+        // error would be worse.
+        len = std::min(len, size_t(1024 * 1024 * 512));
+
+        size_t buf_size = len - bytes_checked;
+
+        // Read in the remaining lines of the file in one block
+        char* buf = new char[buf_size + 1];
+        try {
+            m_Stream.seekg(bytes_checked, ios::beg);
+            m_Stream.read(buf, buf_size);
+            buf[buf_size] = 0;
+
+            m_Stream.clear();  // in case we reached eof
+            m_Stream.seekg(0, ios::beg);
+
+            if (NPOS != NStr::FindNoCase(CTempString(buf), "begin trees;")) {
+                has_trees = true;
+            }
+        }    
+        catch (...) {
+            delete[] buf;
+            return false;
+        }
+
+        delete[] buf;
     }
 
     // In a nexus file with a tree, we will just read in the tree (ignoring for now
@@ -995,8 +1042,7 @@ CFormatGuess::TestFormatDistanceMatrix(
     list<string> toks;
 
     /// first line: one token, one number
-    NStr::Split(*iter++, "\t ", toks,
-        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
+    NStr::Split(*iter++, "\t ", toks);
     if (toks.size() != 1  ||
         toks.front().find_first_not_of("0123456789") != string::npos) {
         return false;
@@ -1007,8 +1053,7 @@ CFormatGuess::TestFormatDistanceMatrix(
     // line, the number of values should increase monotonically
     for (size_t i = 1;  iter != m_TestLines.end();  ++i, ++iter) {
         toks.clear();
-        NStr::Split(*iter, "\t ", toks,
-            NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
+        NStr::Split(*iter, "\t ", toks);
         if (toks.size() != i) {
             /// we can ignore the last line ; it may be truncated
             list<string>::const_iterator it = iter;
@@ -1166,8 +1211,7 @@ CFormatGuess::TestFormatAlignment(
         }
 
         toks.clear();
-        NStr::Split(*iter, delims, toks,
-            NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
+        NStr::Split(*iter, delims, toks);
         ncols = toks.size();
         found = true;
     }
@@ -1184,8 +1228,7 @@ CFormatGuess::TestFormatAlignment(
         } 
 
         toks.clear();
-        NStr::Split(*iter, delims, toks,
-            NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
+        NStr::Split(*iter, delims, toks);
         if (toks.size() != ncols) {
             list<string>::const_iterator it = iter;
             ++it;
@@ -1328,8 +1371,7 @@ CFormatGuess::TestFormatTextAsn(
     while ( ! TestBuffer.fail() ) {
         vector<string> Fields;
         NcbiGetline( TestBuffer, strLine, "\n\r" );
-        NStr::Split(strLine, " \t", Fields,
-            NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
+        NStr::Tokenize( strLine, " \t", Fields, NStr::eMergeDelims );
         if ( IsAsnComment( Fields  ) ) {
             continue;
         }
@@ -1406,8 +1448,7 @@ CFormatGuess::TestFormatBed(
         }
 
         vector<string> columns;
-        NStr::Split(str, " \t", columns,
-            NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
+        NStr::Tokenize( str, " \t", columns, NStr::eMergeDelims );
         if (columns.size() < 3 || columns.size() > 12) {
             return false;
         }
@@ -1460,8 +1501,7 @@ CFormatGuess::TestFormatBed15(
         }
 
         vector<string> columns;
-        NStr::Split(*it, " \t", columns,
-            NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
+        NStr::Tokenize( *it, " \t", columns, NStr::eMergeDelims );
         if ( columns.size() != columncount ) {
             return false;
         } else {
@@ -1997,8 +2037,7 @@ bool CFormatGuess::IsLineAgp(
     }
 
     vector<string> tokens;
-    if (NStr::Split(line, " \t", tokens,
-        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate).size() < 8) {
+    if ( NStr::Tokenize( line, " \t", tokens, NStr::eMergeDelims ).size() < 8 ) {
         return false;
     }
 
@@ -2055,8 +2094,7 @@ bool CFormatGuess::IsLineGlimmer3(
     const string& line )
 {
     list<string> toks;
-    NStr::Split(line, "\t ", toks,
-        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
+    NStr::Split(line, "\t ", toks);
     if (toks.size() != 5) {
         return false;
     }
@@ -2097,8 +2135,7 @@ bool CFormatGuess::IsLineGtf(
     const string& line )
 {
     vector<string> tokens;
-    if (NStr::Split(line, " \t", tokens,
-        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate).size() < 8) {
+    if ( NStr::Tokenize( line, " \t", tokens, NStr::eMergeDelims ).size() < 8 ) {
         return false;
     }
     if ( ! s_IsTokenPosInt( tokens[3] ) ) {
@@ -2130,8 +2167,7 @@ bool CFormatGuess::IsLineGvf(
 //  ----------------------------------------------------------------------------
 {
     vector<string> tokens;
-    if (NStr::Split(line, " \t", tokens,
-        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate).size() < 8) {
+    if ( NStr::Tokenize( line, " \t", tokens, NStr::eMergeDelims ).size() < 8 ) {
         return false;
     }
     if ( ! s_IsTokenPosInt( tokens[3] ) ) {
@@ -2206,8 +2242,7 @@ bool CFormatGuess::IsLineGff3(
     const string& line )
 {
     vector<string> tokens;
-    if (NStr::Split(line, " \t", tokens,
-        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate).size() < 8) {
+    if ( NStr::Tokenize( line, " \t", tokens, NStr::eMergeDelims ).size() < 8 ) {
         return false;
     }
     if ( ! s_IsTokenPosInt( tokens[3] ) ) {
@@ -2251,8 +2286,7 @@ bool CFormatGuess::IsLineGff2(
     const string& line )
 {
     vector<string> tokens;
-    if (NStr::Split(line, " \t", tokens,
-        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate).size() < 8) {
+    if ( NStr::Tokenize( line, " \t", tokens, NStr::eMergeDelims ).size() < 8 ) {
         return false;
     }
     if ( ! s_IsTokenPosInt( tokens[3] ) ) {
@@ -2279,8 +2313,7 @@ bool CFormatGuess::IsLinePhrapId(
     const string& line )
 {
     vector<string> values;
-    if (NStr::Split(line, " \t", values,
-        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate).empty()) {
+    if ( NStr::Tokenize( line, " \t", values, NStr::eMergeDelims ).empty() ) {
         return false;
     }
 
@@ -2313,8 +2346,7 @@ bool CFormatGuess::IsLineRmo(
     //  Make sure there is enough stuff on that line:
     //
     list<string> values;
-    if (NStr::Split(line, " \t", values,
-        NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate).size() < MIN_VALUES_PER_RECORD) {
+    if ( NStr::Split( line, " \t", values ).size() < MIN_VALUES_PER_RECORD ) {
         return false;
     }
 
@@ -2419,16 +2451,13 @@ CFormatGuess::EnsureSplitLines()
     m_TestLines.clear();
 
     if ( string::npos != data.find( "\r\n" ) ) {
-        NStr::Split(data, "\r\n", m_TestLines,
-            NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
+        NStr::Split( data, "\r\n", m_TestLines );
     }
     else if ( string::npos != data.find( "\n" ) ) {
-        NStr::Split(data, "\n", m_TestLines,
-            NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
+        NStr::Split( data, "\n", m_TestLines );
     }
     else if ( string::npos != data.find( "\r" ) ) {
-        NStr::Split(data, "\r", m_TestLines,
-            NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
+        NStr::Split( data, "\r", m_TestLines );
     }
     else {
         //single truncated line
