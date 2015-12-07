@@ -5,15 +5,25 @@
 
 ifeq "$(COMPILER)-$(DEBUG_SFX)$(DLL)" "icc-Release"
   ncbi_ansi_ext.o:       CFLAGS += -fno-builtin-strncat
-  ncbi_connutil.o:       CFLAGS += -fno-builtin-strcat -fno-builtin-strcspn \
+  ncbi_conn_test.o:      CFLAGS += -fno-builtin-strcpy
+  ncbi_connutil.o:       CFLAGS += -fno-builtin-strcat -fno-builtin-strcpy \
+                                   -fno-builtin-strcspn -fno-builtin-strspn
+  ncbi_ftp_connector.o:  CFLAGS += -fno-builtin-strcpy -fno-builtin-strcspn \
+                                   -fno-builtin-strncmp -fno-builtin-strspn
+  ncbi_http_connector.o: CFLAGS += -fno-builtin-strcpy -fno-builtin-strcspn \
                                    -fno-builtin-strspn
-  ncbi_ftp_connector.o:  CFLAGS += -fno-builtin-strcspn -fno-builtin-strspn
-  ncbi_http_connector.o: CFLAGS += -fno-builtin-strcspn -fno-builtin-strspn
   ncbi_lbos.o:           CFLAGS += -fno-builtin-strcat
+  ncbi_lbsm.o:           CFLAGS += -fno-builtin-strcpy
   ncbi_lbsmd.o:          CFLAGS += -fno-builtin-strcspn -fno-builtin-strspn
   ncbi_local.o:          CFLAGS += -fno-builtin-strcspn -fno-builtin-strspn
-  ncbi_server_info.o:    CFLAGS += -fno-builtin-strcspn -fno-builtin-strspn
-  ncbi_service.o:        CFLAGS += -fno-builtin-strcat -fno-builtin-strpbrk
-  ncbi_socket.o:         CFLAGS += -fno-builtin-strcat
+  ncbi_sendmail.o:       CFLAGS += -fno-builtin-strcpy
+  ncbi_server_info.o:    CFLAGS += -fno-builtin-strcpy -fno-builtin-strcspn \
+                                   -fno-builtin-strspn
+  ncbi_service.o:        CFLAGS += -fno-builtin-strcat -fno-builtin-strcpy \
+                                   -fno-builtin-strpbrk
+  ncbi_service_connector.o: CFLAGS += -fno-builtin-strcpy -fno-builtin-strncmp
+  ncbi_socket.o:         CFLAGS += -fno-builtin-strcat -fno-builtin-strcpy
+  ncbi_socket_connector.o: CFLAGS += -fno-builtin-strcpy
+  ncbi_util.o:           CFLAGS += -fno-builtin-strncmp
   ncbi_version.o:        CFLAGS += -fno-builtin-strcspn -fno-builtin-strspn
 endif
