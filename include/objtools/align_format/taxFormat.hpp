@@ -64,7 +64,7 @@ BEGIN_SCOPE(align_format)
  */
  
  const string kTaxBrowserURL           =    "//www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi";
- const string kBlastNameLink           =    "<a href=\"<@taxBrowserURL@>?id=<@bl_taxid@>\" target=\"lnktx<@rid@>\" title=\"Show taxonomy info for <@blast_name@> (taxid <@taxid@>)\"><@blast_name@></a>";
+ const string kBlastNameLink           =    "<a href=\"<@taxBrowserURL@>?id=<@bl_taxid@>\" target=\"lnktx<@rid@>\" title=\"Show taxonomy info for <@blast_name@> (taxid <@bl_taxid@>)\"><@blast_name@></a>";
 
  const string kOrgReportTable          =    "<table><caption><h1>Organism Report</h1></caption><tr><th>Accession</th><th>Descr</th><th>Score</th><th>E-value</th></tr><@table_rows@></table><@taxidToSeqsMap@>";
  const string kOrgReportOrganismHeader =    "<tr><th colspan=\"4\"><a href=\"<@taxBrowserURL@>?id=<@taxid@>\" name=\"<@taxid@>\" title=\"Show taxonomy info for <@scientific_name@> (taxid <@taxid@>)\" target=\"lnktx<@rid@>\"><@scientific_name@>[<@blast_name_link@>] taxid <@taxid@></th></tr>";
@@ -138,12 +138,13 @@ class NCBI_ALIGN_FORMAT_EXPORT CTaxFormat {
         vector <SSeqInfo*> seqInfoList;        
         string             giList;
         string             accList;
+        string             taxidList;
+
         unsigned int       numChildren;
         unsigned int       depth;
         vector <int>       lineage;        
         unsigned int       numHits;
-        unsigned int       numOrgs; 
-        string             taxidList;
+        unsigned int       numOrgs;         
     };
 
     typedef map < int, struct STaxInfo > TSeqTaxInfoMap; 
@@ -253,7 +254,7 @@ protected:
 
     string x_MapSeqTemplate(string seqTemplate, SSeqInfo *seqInfo);
     string x_MapSeqTemplate(string seqTemplate, STaxInfo &taxInfo);
-    string x_MapTaxInfoTemplate(string tableRowTemplate,STaxInfo &taxInfo);
+    string x_MapTaxInfoTemplate(string tableRowTemplate,STaxInfo &taxInfo,unsigned int depth = 0);
 
     void x_PrintTaxInfo(int taxid);       
 };
