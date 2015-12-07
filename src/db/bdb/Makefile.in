@@ -9,8 +9,8 @@
 REQUIRES = BerkeleyDB bdb
 
 LIB_PROJ = bdb ncbi_xcache_bdb
-#SUB_PROJ = test test_split demo dumper cache_verify 
-#bvstore_util
+#SUB_PROJ = test cache_verify bvstore_util
+SUB_PROJ = test_split demo dumper test_vmerge
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
