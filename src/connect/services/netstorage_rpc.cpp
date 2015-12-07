@@ -68,13 +68,13 @@ const char* CNetStorageException::GetErrCodeString() const
     }
 }
 
-static void s_WriteToSocket(CSocket* sock,
+static void s_WriteToSocket(CSocket& sock,
         const char* output_buffer, size_t output_buffer_size)
 {
     size_t bytes_written;
 
     while (output_buffer_size > 0) {
-        EIO_Status  status = sock->Write(output_buffer,
+        EIO_Status  status = sock.Write(output_buffer,
                 output_buffer_size, &bytes_written);
         if (status != eIO_Success) {
             // Error writing to the socket.
@@ -92,7 +92,7 @@ static void s_WriteToSocket(CSocket* sock,
 
             NCBI_THROW_FMT(CNetStorageException, eIOError,
                     "Error writing message to the NetStorage server " <<
-                            sock->GetPeerAddress() << ". "
+                            sock.GetPeerAddress() << ". "
                     "Socket write error status: " <<
                             IO_StatusStr(status) << ". "
                     "Bytes written: " <<
@@ -108,25 +108,23 @@ static void s_WriteToSocket(CSocket* sock,
 class CSendJsonOverSocket
 {
 public:
-    CSendJsonOverSocket() : m_JSONWriter(m_UTTPWriter) {}
+    CSendJsonOverSocket(CSocket& sock) : m_JSONWriter(m_UTTPWriter), m_Socket(sock) {}
 
-    void SendMessage(const CJsonNode& message, CSocket* sock);
+    void SendMessage(const CJsonNode& message);
 
 private:
     void x_SendOutputBuffer();
 
     CUTTPWriter m_UTTPWriter;
     CJsonOverUTTPWriter m_JSONWriter;
-    CSocket* m_Socket;
+    CSocket& m_Socket;
 };
 
-void CSendJsonOverSocket::SendMessage(const CJsonNode& message, CSocket* sock)
+void CSendJsonOverSocket::SendMessage(const CJsonNode& message)
 {
     char write_buffer[WRITE_BUFFER_SIZE];
 
     m_UTTPWriter.Reset(write_buffer, WRITE_BUFFER_SIZE);
-
-    m_Socket = sock;
 
     if (!m_JSONWriter.WriteMessage(message))
         do
@@ -148,7 +146,7 @@ void CSendJsonOverSocket::x_SendOutputBuffer()
     } while (m_JSONWriter.NextOutputBuffer());
 }
 
-static void s_SendUTTPChunk(const char* chunk, size_t chunk_size, CSocket* sock)
+static void s_SendUTTPChunk(const char* chunk, size_t chunk_size, CSocket& sock)
 {
     CUTTPWriter uttp_writer;
 
@@ -170,7 +168,7 @@ static void s_SendUTTPChunk(const char* chunk, size_t chunk_size, CSocket* sock)
     s_WriteToSocket(sock, output_buffer, output_buffer_size);
 }
 
-static void s_SendEndOfData(CSocket* sock)
+static void s_SendEndOfData(CSocket& sock)
 {
     CUTTPWriter uttp_writer;
 
@@ -192,12 +190,12 @@ static void s_SendEndOfData(CSocket* sock)
     s_WriteToSocket(sock, output_buffer, output_buffer_size);
 }
 
-static void s_ReadSocket(CSocket* sock, void* buffer,
+static void s_ReadSocket(CSocket& sock, void* buffer,
         size_t buffer_size, size_t* bytes_read)
 {
     EIO_Status status;
 
-    while ((status = sock->Read(buffer,
+    while ((status = sock.Read(buffer,
             buffer_size, bytes_read)) == eIO_Interrupt)
         /* no-op */;
 
@@ -206,7 +204,7 @@ static void s_ReadSocket(CSocket* sock, void* buffer,
         // eIO_NotSupported, eIO_Unknown
         NCBI_THROW_FMT(CNetStorageException, eIOError,
                 "I/O error while reading from NetStorage server " <<
-                        sock->GetPeerAddress() << ". "
+                        sock.GetPeerAddress() << ". "
                 "Socket status: " << IO_StatusStr(status) << '.');
     }
 }
@@ -214,14 +212,14 @@ static void s_ReadSocket(CSocket* sock, void* buffer,
 class CReadJsonFromSocket
 {
 public:
-    CJsonNode ReadMessage(CSocket* sock);
+    CJsonNode ReadMessage(CSocket& sock);
 
 private:
     CUTTPReader m_UTTPReader;
     CJsonOverUTTPReader m_JSONReader;
 };
 
-CJsonNode CReadJsonFromSocket::ReadMessage(CSocket* sock)
+CJsonNode CReadJsonFromSocket::ReadMessage(CSocket& sock)
 {
     try {
         char read_buffer[READ_BUFFER_SIZE];
@@ -236,13 +234,13 @@ CJsonNode CReadJsonFromSocket::ReadMessage(CSocket* sock)
         } while (!m_JSONReader.ReadMessage(m_UTTPReader));
     }
     catch (...) {
-        sock->Close();
+        sock.Close();
         throw;
     }
 
     if (m_UTTPReader.GetNextEvent() != CUTTPReader::eEndOfBuffer) {
-        string server_address(sock->GetPeerAddress());
-        sock->Close();
+        string server_address(sock.GetPeerAddress());
+        sock.Close();
         NCBI_THROW_FMT(CNetStorageException, eIOError,
                 "Extra bytes past message end while reading from " <<
                         server_address << " after receiving " <<
@@ -253,12 +251,12 @@ CJsonNode CReadJsonFromSocket::ReadMessage(CSocket* sock)
 }
 
 static void s_TrapErrors(const CJsonNode& request,
-        const CJsonNode& reply, CSocket* sock)
+        const CJsonNode& reply, CSocket& sock)
 {
     CJsonNode issues(reply.GetByKeyOrNull("Warnings"));
 
     if (issues) {
-        string server_address(sock->GetPeerAddress());
+        string server_address(sock.GetPeerAddress());
 
         for (CJsonIterator it = issues.Iterate(); it; ++it) {
             LOG_POST(Warning << "NetStorage server " << server_address <<
@@ -291,7 +289,7 @@ static void s_TrapErrors(const CJsonNode& request,
         string err_msg = FORMAT("Error while executing " <<
                         request.GetString("Type") << " "
                 "on NetStorage server " <<
-                        sock->GetPeerAddress() << ". "
+                        sock.GetPeerAddress() << ". "
                 "Server returned " << errors);
 
         switch (code) {
@@ -310,17 +308,17 @@ static void s_TrapErrors(const CJsonNode& request,
     if (reply.GetInteger("RE") != request.GetInteger("SN")) {
         NCBI_THROW_FMT(CNetStorageException, eServerError,
                 "Message serial number mismatch "
-                "(NetStorage server: " << sock->GetPeerAddress() << "; "
+                "(NetStorage server: " << sock.GetPeerAddress() << "; "
                 "request: " << request.Repr() << "; "
                 "reply: " << reply.Repr() << ").");
     }
 }
 
-static CJsonNode s_Exchange(const CJsonNode& request, CSocket* sock)
+static CJsonNode s_Exchange(const CJsonNode& request, CSocket& sock)
 {
-    CSendJsonOverSocket message_sender;
+    CSendJsonOverSocket message_sender(sock);
 
-    message_sender.SendMessage(request, sock);
+    message_sender.SendMessage(request);
 
     CReadJsonFromSocket message_reader;
 
@@ -363,7 +361,7 @@ void CNetStorageServerListener::OnInit(CObject* /*api_impl*/,
 void CNetStorageServerListener::OnConnected(
         CNetServerConnection& connection)
 {
-    s_Exchange(m_Hello, &connection->m_Socket);
+    s_Exchange(m_Hello, connection->m_Socket);
 }
 
 void CNetStorageServerListener::OnError(const string& /*err_msg*/,
@@ -706,9 +704,9 @@ private:
 void CJsonOverUTTPExecHandler::Exec(CNetServerConnection::TInstance conn_impl,
         STimeout* timeout)
 {
-    CSendJsonOverSocket sender;
+    CSendJsonOverSocket sender(conn_impl->m_Socket);
 
-    sender.SendMessage(m_Request, &conn_impl->m_Socket);
+    sender.SendMessage(m_Request);
 
     m_Connection = conn_impl;
 }
@@ -731,7 +729,7 @@ CJsonNode SNetStorageRPC::Exchange(CNetService service,
     if (conn != NULL)
         *conn = json_over_uttp_sender.GetConnection();
 
-    CSocket* sock = &json_over_uttp_sender.GetConnection()->m_Socket;
+    CSocket& sock = json_over_uttp_sender.GetConnection()->m_Socket;
 
     CJsonNode reply(message_reader.ReadMessage(sock));
 
@@ -856,7 +854,7 @@ string SNetStorageObjectRPC::GetLoc()
 
 void SNetStorageObjectRPC::ReadConfirmation()
 {
-    CSocket* sock = &m_Connection->m_Socket;
+    CSocket& sock = m_Connection->m_Socket;
 
     CJsonOverUTTPReader json_reader;
     try {
@@ -873,7 +871,7 @@ void SNetStorageObjectRPC::ReadConfirmation()
             NCBI_THROW_FMT(CNetStorageException, eIOError,
                     "Extra bytes past confirmation message "
                     "while reading " << m_Locator << " from " <<
-                    sock->GetPeerAddress() << '.');
+                    sock.GetPeerAddress() << '.');
         }
     }
     catch (...) {
@@ -907,7 +905,7 @@ ERW_Result SNetStorageObjectRPC::Read(void* buffer, size_t buf_size,
 
         server->TryExec(json_over_uttp_sender);
 
-        CSocket* sock = &json_over_uttp_sender.GetConnection()->m_Socket;
+        CSocket& sock = json_over_uttp_sender.GetConnection()->m_Socket;
 
         CJsonOverUTTPReader json_reader;
 
@@ -922,7 +920,7 @@ ERW_Result SNetStorageObjectRPC::Read(void* buffer, size_t buf_size,
         }
         catch (...) {
             m_UTTPReader.Reset();
-            sock->Close();
+            sock.Close();
             throw;
         }
 
@@ -1003,7 +1001,7 @@ ERW_Result SNetStorageObjectRPC::Read(void* buffer, size_t buf_size,
                 return bytes_copied ? eRW_Success : eRW_Eof;
 
             case CUTTPReader::eEndOfBuffer:
-                s_ReadSocket(&m_Connection->m_Socket, m_ReadBuffer,
+                s_ReadSocket(m_Connection->m_Socket, m_ReadBuffer,
                         READ_BUFFER_SIZE, &bytes_read_local);
 
                 m_UTTPReader.SetNewBuffer(m_ReadBuffer, bytes_read_local);
@@ -1063,7 +1061,7 @@ ERW_Result SNetStorageObjectRPC::Write(const void* buf_pos, size_t buf_size,
 
     try {
         s_SendUTTPChunk(reinterpret_cast<const char*>(buf_pos),
-                buf_size, &m_Connection->m_Socket);
+                buf_size, m_Connection->m_Socket);
         if (bytes_written != NULL)
             *bytes_written = buf_size;
         return eRW_Success;
@@ -1189,7 +1187,7 @@ void SNetStorageObjectRPC::Close()
     } else { /* m_State == eWriting */
         m_State = eReady;
 
-        CSocket* sock = &conn_copy->m_Socket;
+        CSocket& sock = conn_copy->m_Socket;
 
         s_SendEndOfData(sock);
 
