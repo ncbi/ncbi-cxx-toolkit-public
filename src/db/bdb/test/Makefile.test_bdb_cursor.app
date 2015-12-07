@@ -11,7 +11,7 @@ SRC = test_bdb_cursor
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
 LIB = $(BDB_LIB) test_boost xutil xncbi
-LIBS = $(BERKELEYDB_LIBS)
+LIBS = $(BERKELEYDB_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 REQUIRES = Boost.Test.Included
 
@@ -23,4 +23,4 @@ CHECK_CMD =
 #CHECK_COPY = unit_test_sample.ini
 ### END COPIED SETTINGS
 
-WATCHERS = joukovv
+WATCHERS = satskyse
