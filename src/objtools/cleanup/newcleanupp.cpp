@@ -10805,8 +10805,12 @@ bool HasAuthor(const CAuth_list& auth_list)
         return false;
     }
     if (auth_list.GetNames().IsStd()) {
-        ITERATE(CAuth_list::TNames::TStd, it, auth_list.GetNames().GetStd()) {
-            if (HasAuthor(**it)) {
+        ITERATE (CAuth_list::TNames::TStd, it, auth_list.GetNames().GetStd()) {
+            if (!(*it)->CanGetName()) {
+                continue;
+            }
+            const CPerson_id& pid = (*it)->GetName();
+            if (pid.IsName()  ||  pid.IsMl()  ||  pid.IsStr()) {
                 has_name = true;
                 break;
             }
