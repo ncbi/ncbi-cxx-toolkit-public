@@ -507,9 +507,10 @@ BOOST_AUTO_TEST_CASE(TestTempString)
     ///
     /// ----------------------------------------------------------------------
     {{
-        char*  c  = "AA";
-        string s  = "BB";
-        char*  ct = "123";
+        const char*  c  = "AA";
+        const string s  = "BB";
+        const char*  ct = "123";
+        
         CTempString t(ct);
         CTempString t1(ct, 1);
         CTempString t2(ct+1, 2);
