@@ -208,8 +208,8 @@ int CBDB_Env::x_Open(const char* db_home, int flags)
             fatal_recovery:
             LOG_POST_X(1, Warning << "BDB_Env: Trying fatal recovery.");
             if ((ret == DB_RUNRECOVERY) && (flags & DB_INIT_TXN)) {
-                recover_flag &= ~DB_RECOVER;
                 recover_flag = flags | DB_RECOVER_FATAL | DB_CREATE;
+                recover_flag &= ~DB_RECOVER;
 
                 ret = m_Env->open(m_Env, db_home, recover_flag, 0664);
                 if (ret) {
