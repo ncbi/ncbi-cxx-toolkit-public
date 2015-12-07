@@ -117,14 +117,29 @@ const char* kDefaultCGI = "http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/util/ncb
 //#endif
 
 
-/// Regular expression to check lines of raw logs.
-const char*  kApplogRegexp = "^\\d{5,}/\\d{3,}/\\d{4,}/[NSPRBE ]{3}[0-9A-Z]{16} \\d{4,}/\\d{4,} \\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}";
+/// Regular expression to check lines of raw logs (checks all fields up to appname).
+/// NOTE: we need subpattern for application name only!
+const char* kApplogRegexp = 
+    "^\\d{5,}/\\d{3,}/\\d{4,}/[NSPRBE ]{3}[0-9A-Z]{16} "     // <pid>/<tid>/<rid>/<state> <guid>
+    "\\d{4,}/\\d{4,} "                                       // <psn>/<tsn> 
+    "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3,9} "  // <time>
+    ".{15} .{15} [^ ]{1,} +"                                 // <host> <client> <session>
+    "([^ ]{1,}) ";                                           // <application> (see note above)
 
-// Base position of the application name in the string if time format have milliseconds
-// (3 digits after seconds). It will be increased if necessary.
-const unsigned int kTimeCheckPos = 68;
-const unsigned int kNamePos      = 126; 
-const unsigned int kParamsPos    = kNamePos + 15;
+
+/// Regular expression to check perf message and get position of performance parameters
+///    perf <exit_code> <timespan> [<performance_parameters>]
+const char* kPerfRegexp = "^\\d+ (\\d+\\.\\d+)";
+
+
+/// Minimum raw line length:
+///    5+3+4+2+16+4+4+23+15+15+24 (min for fields) + (11 delimiters) + (1 char for appname)
+///    http://www.ncbi.nlm.nih.gov/toolkit/doc/book/ch_core/#ch_core.The_New_Post_Format
+const unsigned int kMinLineLen   = 127;
+
+/// Parameters offset after the end of the application name
+const unsigned int kParamsOffset = 15;
+
 
 /// Declare the parameter for logging CGI
 NCBI_PARAM_DECL(string, NCBI, NcbiApplogCGI); 
@@ -607,6 +622,7 @@ int CNcbiApplogApp::Redirect()
 #endif
 
     // Send request to another machine via CGI
+
     CConn_HttpStream cgi(url);
     if ( m_IsRaw ) {
         if ( m_Info.logsite.empty() ) {
@@ -991,24 +1007,15 @@ int CNcbiApplogApp::Run(void)
                 break;
             }
         }
-        if ( !found ||  m_Raw_line.length() <= kNamePos + 1 ) {
+        if ( !found ||  m_Raw_line.length() < kMinLineLen ) {
             throw "Error processing input raw log, cannot find any line in applog format";
         }
-        // check timestamp
-        size_t pos = m_Raw_line.find(' ', kTimeCheckPos);
-        if (pos == NPOS) {
+        // Get application name
+        const int* apos = re.GetResults(1);
+        if ( !apos || !apos[0] || !apos[1] || (apos[0] >= apos[1])) {
             throw "Error processing input raw log, line has wrong format";
         }
-        if (pos - kTimeCheckPos > 9) {
-            throw "Error processing input raw log, timestamp has wrong format";
-        }
-        size_t namepos = kNamePos + (pos - kTimeCheckPos);
-        // get an application name
-        pos = m_Raw_line.find(' ', namepos + 1);
-        if (pos == NPOS) {
-            throw "Error processing input raw log, line has wrong format";
-        }
-        m_Info.appname = m_Raw_line.substr(namepos, pos - namepos);
+        m_Info.appname = m_Raw_line.substr(apos[0], apos[1] - apos[0]);
     
     } else {
         // Initialize session from existing token
@@ -1298,22 +1305,17 @@ int CNcbiApplogApp::Run(void)
                 } else {
                     // Use logsite name instead of appname if necessary.
 
-                    size_t pos = m_Raw_line.find(' ', kTimeCheckPos);
-                    if (pos == NPOS) {
+                    const int* apos = re.GetResults(1);
+                    if (!apos || !apos[0] || !apos[1] || (apos[0] >= apos[1])) {
                         throw "Error processing input raw log, line has wrong format";
                     }
-                    if (pos - kTimeCheckPos > 9) {
-                        throw "Error processing input raw log, timestamp has wrong format";
-                    }
-                    size_t namepos  = kNamePos + (pos - kTimeCheckPos);
-                    size_t parampos = kParamsPos + (pos - kTimeCheckPos);
-
-                    if (m_Raw_line.length() <= namepos + 1  ||
-                        !NStr::StartsWith(CTempString(CTempString(m_Raw_line), namepos), m_Info.appname)) {
+                    size_t namepos = apos[0];
+                    if (!NStr::StartsWith(CTempString(CTempString(m_Raw_line), namepos), m_Info.appname)) {
                         throw "Error processing input raw log, line has wrong format";
                     }
                     // Replace app name
                     m_Raw_line = NStr::Replace(m_Raw_line, m_Info.appname, m_Info.logsite, namepos, 1);
+                    size_t parampos = apos[0] + m_Info.logsite.size() + kParamsOffset;
 
                     /// Command type for original name to logsite substitution.
                     typedef enum {
@@ -1337,20 +1339,24 @@ int CNcbiApplogApp::Run(void)
                     switch (cmd)  {
                     case eCmdPerf:
                         {
-                            // Find end of status and time, parameters starts after last space
-                            size_t start = parampos + m_Info.logsite.size();
-                            size_t pos = m_Raw_line.find_last_of(' ');
-                            if (pos == NPOS || pos <= namepos) {
+                            // Find start of the performance parameters, if any
+                            CRegexp re_perf(kPerfRegexp);
+                            if (re_perf.IsMatch(CTempString(m_Raw_line.data() + parampos))) {
+                                const int* ppos = re_perf.GetResults(1);
+                                if (ppos  &&  ppos[0]  &&  ppos[1]) {
+                                    param_ofs = ppos[1] + 1;
+                                }
+                            }
+                            if ( !param_ofs ) {
                                 throw "Error processing input raw log, perf line has wrong format";
                             }
-                            param_ofs = pos - start + 1;
                         }
                         // fall through
 
                     case eCmdRequestStart:
                         // Modify parameters for 'request-start' and 'perf' commands
                         {
-                            size_t pos = parampos + m_Info.logsite.size() + param_ofs;
+                            size_t pos = parampos + param_ofs;
                             string params = NStr::TruncateSpaces(m_Raw_line.substr(pos, NPOS));
                             if ( params.empty() ) {
                                 params = orig_appname;
