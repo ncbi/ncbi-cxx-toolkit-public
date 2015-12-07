@@ -910,61 +910,48 @@ CFormatGuess::TestFormatNewick(
     bool is_nexus = false;
     bool has_trees = false;
     size_t bytes_checked = 0;
+    char check_string[] = "begin trees;";
+    const size_t check_size = 12;
+
     ITERATE( list<string>, it, m_TestLines ) {
         if ( NPOS != it->find( "#NEXUS" ) ) {
             is_nexus = true;
         }
-
-        // case insensitive
-        if (NPOS != NStr::FindNoCase(*it, "begin trees;")) { 
-            has_trees = true;
-        }
-
-        // lenght of line + newline character.  Newline could be 2 on windows,
-        // but if this number is too small, it's not a problem.
-        bytes_checked += (*it).size() + 1;
     }
 
-    // Trees can be anywhere in a nexus file.  If nexus is true and has_trees is false, 
+    // Trees can be anywhere in a nexus file.  If nexus is true, 
     // try to read the whole file to see if there is a tree.
-    if (is_nexus && !has_trees) {       
-        m_Stream.seekg(0, ios::end);
+    if (is_nexus) {
+        // Read in file one chunk at a time.  Readline would be better
+        // but is not avialable for this stream.  Since the text we 
+        // are looking for "begin trees;" may span two chunks, we
+        // copy the last 12 characters of the previous chunk to
+        // the front of the new one.
+        const size_t read_size = 1024 * 1024;
+        char test_buf[read_size + check_size + 1];
+        memset(test_buf, ' ', check_size); // "previous chunk" initially blank.
 
-        // Get length of stream.  If stream does not support this operation,
-        // assume it is nexus only.
-        // Also return false if our initial test buffer included the whole file.
-        size_t len = m_Stream.tellg();
-        if (len == -1 || len <= bytes_checked) {
-            m_Stream.seekg(0, ios::beg);
-            return false;
-        }
-
-        // If it's huge, we truncate - could miss a tree, but a memory allocation
-        // error would be worse.
-        len = std::min(len, size_t(1024 * 1024 * 512));
-
-        size_t buf_size = len - bytes_checked;
-
-        // Read in the remaining lines of the file in one block
-        char* buf = new char[buf_size + 1];
-        try {
-            m_Stream.seekg(bytes_checked, ios::beg);
-            m_Stream.read(buf, buf_size);
-            buf[buf_size] = 0;
-
-            m_Stream.clear();  // in case we reached eof
-            m_Stream.seekg(0, ios::beg);
-
-            if (NPOS != NStr::FindNoCase(CTempString(buf), "begin trees;")) {
-                has_trees = true;
+        size_t max_reads = 512;  // max read to locate tree: 512 MB
+        for (size_t i = 0; i < max_reads; ++i) {
+            m_Stream.read(test_buf+check_size, read_size);
+            size_t num_read = m_Stream.gcount();
+            if (num_read > 0) {
+                test_buf[num_read + check_size] = 0; // null terminator
+                if (NPOS != NStr::FindNoCase(CTempString(test_buf), "begin trees;")) {
+                    has_trees = true;
+                    m_Stream.clear();  // in case we reached eof
+                    break;
+                }
+                // copy end of buffer to beginning in case string
+                // spans two buffers:
+                strncpy(test_buf, test_buf + num_read, check_size);
             }
-        }    
-        catch (...) {
-            delete[] buf;
-            return false;
-        }
 
-        delete[] buf;
+            if (m_Stream.eof() || m_Stream.fail()) {
+                m_Stream.clear();  // clear eof
+                break;
+            }
+        }
     }
 
     // In a nexus file with a tree, we will just read in the tree (ignoring for now
