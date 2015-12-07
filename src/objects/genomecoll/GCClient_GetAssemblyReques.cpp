@@ -128,33 +128,6 @@ bool CGCClient_GetAssemblyRequest::SRequestParam::SetMode(EAssemblyMode mode)
     return true;
 }
 
-bool CGCClient_GetAssemblyRequest::SRequestParam::SetMode(const string& mode)
-{
-    level            = CGCClient_GetAssemblyRequest::eLevel_component;
-    assembly_flags   = eGCClient_AttributeFlags_none;
-    chromosome_flags = eGCClient_AttributeFlags_biosource;
-    scaffold_flags   = eGCClient_AttributeFlags_none;
-    component_flags  = eGCClient_AttributeFlags_none;
-
-	if(mode == "Gbench")
-	{
-        level            = CGCClient_GetAssemblyRequest::eLevel_scaffold;
-        assembly_flags   = eGCClient_AttributeFlags_none;
-        chromosome_flags = eGCClient_AttributeFlags_biosource |
-                           eGCClient_AttributeFlags_exclude_aligndb;
-	}
-	else if(mode == "Gbench_chrs")
-	{
-        level            = CGCClient_GetAssemblyRequest::eLevel_replicon;
-        assembly_flags   = eGCClient_AttributeFlags_none;
-        chromosome_flags = eGCClient_AttributeFlags_biosource;
-	}
-	else
-        return false;
-
-    return true;
-}
-
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

@@ -134,7 +134,7 @@ CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(int releaseId,
 {
     CGCClient_GetAssemblyRequest req;
     CGCClientResponse reply;
-    
+
     req.SetRelease_id(releaseId);
     req.SetLevel(level);
     req.SetAssm_flags(asmAttrFlags);
@@ -154,63 +154,31 @@ CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(int releaseId,
     }
 }
 
+static string ToStringMode(CGCClient_GetAssemblyRequest::EAssemblyMode mode)
+{
+    switch (mode) {
+        case CGCClient_GetAssemblyRequest::eAssemblyMode_assembly_only: return "AssemblyOnly";
+        case CGCClient_GetAssemblyRequest::eAssemblyMode_eukaryotic_annotation: return "EukAnnotation";
+        case CGCClient_GetAssemblyRequest::eAssemblyMode_prokaryotic_annotation: return "ProkAnnotation";
+        case CGCClient_GetAssemblyRequest::eAssemblyMode_entrez_indexing: return "EntrezIndexing";
+        case CGCClient_GetAssemblyRequest::eAssemblyMode_assembly_backend: return "AssemblyBackend";
+        case CGCClient_GetAssemblyRequest::eAssemblyMode_sequence_names: return "SequenceNames";
+        case CGCClient_GetAssemblyRequest::eAssemblyMode_ftp_export: return "AllSequencesWithAlignments";
+        default: NCBI_THROW(CException, eUnknown, "GetAssembly: Illegal mode passed.");
+    }
+}
+
 CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(const string& acc, CGCClient_GetAssemblyRequest::EAssemblyMode mode)
 {
-    CGCClient_GetAssemblyRequest::SRequestParam params;
-    if(!params.SetMode(mode))
-        NCBI_THROW(CException, eUnknown, "GetAssembly: Illegal mode passed.");
-
-    return GetAssembly(acc,
-                       params.level,
-                       params.assembly_flags,
-                       params.chromosome_flags,
-                       params.scaffold_flags,
-                       params.component_flags);
+    return GetAssembly(acc, ToStringMode(mode));
 }
 
 CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(int releaseId, CGCClient_GetAssemblyRequest::EAssemblyMode mode)
 {
-    CGCClient_GetAssemblyRequest::SRequestParam params;
-    if(!params.SetMode(mode))
-        NCBI_THROW(CException, eUnknown, "GetAssembly: Illegal mode passed.");
-
-    return GetAssembly(releaseId,
-                       params.level,
-                       params.assembly_flags,
-                       params.chromosome_flags,
-                       params.scaffold_flags,
-                       params.component_flags);
+    return GetAssembly(releaseId, ToStringMode(mode));
 }
 
 CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(const string& acc, const string& mode)
-{
-    CGCClient_GetAssemblyRequest::SRequestParam params;
-    if(!params.SetMode(mode))
-        NCBI_THROW(CException, eUnknown, "GetAssembly: Illegal mode passed.");
-
-    return GetAssembly(acc,
-                       params.level,
-                       params.assembly_flags,
-                       params.chromosome_flags,
-                       params.scaffold_flags,
-                       params.component_flags);
-}
-
-CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(int releaseId, const string& mode)
-{
-    CGCClient_GetAssemblyRequest::SRequestParam params;
-    if(!params.SetMode(mode))
-        NCBI_THROW(CException, eUnknown, "GetAssembly: Illegal mode passed.");
-
-    return GetAssembly(releaseId,
-                       params.level,
-                       params.assembly_flags,
-                       params.chromosome_flags,
-                       params.scaffold_flags,
-                       params.component_flags);
-}
-
-CRef<CGC_Assembly> CGenomicCollectionsService::_GetAssemblyNew(const string& acc, const string& mode)
 {
     CGCClient_GetAssemblyBlobRequest req;
     CGCClientResponse reply;
@@ -230,7 +198,7 @@ CRef<CGC_Assembly> CGenomicCollectionsService::_GetAssemblyNew(const string& acc
     }
 }
 
-CRef<CGC_Assembly> CGenomicCollectionsService::_GetAssemblyNew(int releaseId, const string& mode)
+CRef<CGC_Assembly> CGenomicCollectionsService::GetAssembly(int releaseId, const string& mode)
 {
     CGCClient_GetAssemblyBlobRequest req;
     CGCClientResponse reply;

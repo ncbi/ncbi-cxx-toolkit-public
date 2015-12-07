@@ -74,6 +74,8 @@ public:
 
     typedef EGCClient_AttributeFlags EAttributeFlags;
 
+    /// @deprecated Use GetAssembly(const string& acc, const string& mode)
+    NCBI_DEPRECATED
     CRef<CGC_Assembly> GetAssembly
         (const string& acc, 
          int level = CGCClient_GetAssemblyRequest::eLevel_scaffold,
@@ -82,6 +84,8 @@ public:
          int scafAttrFlags = eGCClient_AttributeFlags_none, 
          int compAttrFlags = eGCClient_AttributeFlags_none);
 
+    /// @deprecated Use GetAssembly(int releaseId,     const string& mode)
+    NCBI_DEPRECATED
     CRef<CGC_Assembly> GetAssembly
         (int releaseId, 
          int level = CGCClient_GetAssemblyRequest::eLevel_scaffold,
@@ -90,7 +94,11 @@ public:
          int scafAttrFlags = eGCClient_AttributeFlags_none, 
          int compAttrFlags = eGCClient_AttributeFlags_none);
 
+    /// @deprecated Use GetAssembly(const string& acc, const string& mode)
+    NCBI_DEPRECATED
     CRef<CGC_Assembly> GetAssembly(const string& acc, CGCClient_GetAssemblyRequest::EAssemblyMode mode);
+    /// @deprecated Use GetAssembly(int releaseId,     const string& mode)
+    NCBI_DEPRECATED
     CRef<CGC_Assembly> GetAssembly(int releaseId,     CGCClient_GetAssemblyRequest::EAssemblyMode mode);
 
     CRef<CGC_Assembly> GetAssembly(const string& acc, const string& mode);
@@ -101,12 +109,24 @@ public:
     struct SAssemblyMode
     {
         //as defined in GenomeColl_Master.dbo.CodeServiceModeAlias
-        static string kAssemblyOnly() {return "AssemblyOnly";};
-        static string kFTPExport()  {return "FTPExport";};
-    };
 
-    CRef<CGC_Assembly> _GetAssemblyNew(const string& acc, const string& mode);
-    CRef<CGC_Assembly> _GetAssemblyNew(int releaseId,     const string& mode);
+        //minimal contents: Only metadata
+        static string kAssemblyOnly() {return "AssemblyOnly";};
+
+        // Maximum contents:
+        // all sequences down to contigs
+        // all statistics on assembly, units and replicons
+        // alignments data when available
+        // pseudo scaffolds are reported as unlocalized/unplaced, as needed for analysis
+        static string kAllSequencesWithAlignments()  {return "AllSequencesWithAlignments";};
+
+        // Almost maximum contents:
+        // all sequences down to contigs
+        // No statistics
+        // No alignments data (which could be very large)
+        // pseudo scaffolds are reported as unlocalized/unplaced, as needed for analysis
+        static string kAllSequences()  {return "AllSequences";};
+    };
 
     string ValidateChrType(const string& chrType, const string& chrLoc);
 
