@@ -106,6 +106,10 @@ class Scenario1502( TestBase ):
         self.fromScratch()
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario1502' )
+        try:
+            ns_client.set_client_identification( '', '' )
+        except:
+            pass
 
         try:
             execAny( ns_client, "CHRAFF add=a1" )
@@ -282,6 +286,11 @@ class Scenario1508( TestBase ):
 
         try:
             ns_client = self.getNetScheduleService( 'TEST', 'scenario1508' )
+            try:
+                ns_client.set_client_identification( '', '' )
+            except:
+                pass
+
             execAny( ns_client, 'READ2 reader_aff=1 any_aff=1' )
         except Exception, exc:
             if "Anonymous client" in str( exc ):
@@ -1024,6 +1033,11 @@ class Scenario1525( TestBase ):
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario1525' )
         try:
+            ns_client.set_client_identification( '', '' )
+        except:
+            pass
+
+        try:
             execAny( ns_client, 'CWREAD' )
         except Exception, exc:
             if "no client_node and client_session at handshake" in str( exc ):
@@ -1226,6 +1240,11 @@ class Scenario1531( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
         ns_client = self.getNetScheduleService( 'TEST', 'scenario1531' )
+        try:
+            ns_client.set_client_identification( '', '' )
+        except:
+            pass
+
         try:
             execAny( ns_client,
                      'READ2 reader_aff=0 any_aff=1' )

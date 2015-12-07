@@ -283,6 +283,10 @@ class Scenario104( TestBase ):
         self.fromScratch()
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario104' )
+        try:
+            ns_client.set_client_identification( '', '' )
+        except:
+            pass
         getClientInfo( ns_client, None, 0, 0 )
         return True
 
@@ -763,6 +767,10 @@ class Scenario117( TestBase ):
         self.ns.getJob( 'TEST', -1, '', "", 'scenario117-2', 'default' )
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario117' )
+        try:
+            ns_client.set_client_identification( '', '' )
+        except:
+            pass
         getClientInfo( ns_client, minClients = 2, maxClients = 2 )
         return True
 
@@ -784,6 +792,10 @@ class Scenario118( TestBase ):
 
         try:
             ns_client = self.getNetScheduleService( 'TEST', 'scenario118' )
+            try:
+                ns_client.set_client_identification( '', '' )
+            except:
+                pass
             changeAffinity( ns_client, [ 'a1' ], [] )
         except Exception, excp:
             if "cannot use CHAFF command" in str( excp ):
@@ -994,6 +1006,10 @@ class Scenario125( TestBase ):
 
         try:
             ns_client = self.getNetScheduleService( 'TEST', 'scenario125' )
+            try:
+                ns_client.set_client_identification( '', '' )
+            except:
+                pass
             output = execAny( ns_client,                       # analysis:ignore
                               'GET2 wnode_aff=1 any_aff=1' )
         except Exception, exc:
@@ -3882,6 +3898,10 @@ class Scenario194( TestBase ):
         self.fromScratch()
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario194' )
+        try:
+            ns_client.set_client_identification( '', '' )
+        except:
+            pass
 
         self.ns.getFastJobStatus( 'TEST', NON_EXISTED_JOB )
         getClientInfo( ns_client, None, 0, 0 )
@@ -3908,6 +3928,10 @@ class Scenario195( TestBase ):
         self.fromScratch()
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario195' )
+        try:
+            ns_client.set_client_identification( '', '' )
+        except:
+            pass
 
         self.ns.getJobStatus( 'TEST', NON_EXISTED_JOB )
         getClientInfo( ns_client, None, 0, 0 )
@@ -3935,6 +3959,10 @@ class Scenario196( TestBase ):
         self.fromScratch()
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario196' )
+        try:
+            ns_client.set_client_identification( '', '' )
+        except:
+            pass
 
         self.ns.submitJob( 'TEST', 'input' )
         getClientInfo( ns_client, None, 0, 0 )
@@ -3962,6 +3990,10 @@ class Scenario197( TestBase ):
         self.fromScratch()
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario197' )
+        try:
+            ns_client.set_client_identification( '', '' )
+        except:
+            pass
 
         self.ns.cancelJob( 'TEST', NON_EXISTED_JOB )
         getClientInfo( ns_client, None, 0, 0 )
@@ -3989,6 +4021,10 @@ class Scenario198( TestBase ):
         self.fromScratch()
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario198' )
+        try:
+            ns_client.set_client_identification( '', '' )
+        except:
+            pass
 
         try:
             # This generates an exception for non existing job
@@ -4024,6 +4060,11 @@ class Scenario203( TestBase ):
         self.fromScratch()
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario203' )
+        try:
+            ns_client.set_client_identification( '', '' )
+        except:
+            pass
+
         self.ns.getBriefStat( 'TEST' )
         client = getClientInfo( ns_client, None, 0, 0 )     # analysis:ignore
 
@@ -4049,6 +4090,11 @@ class Scenario204( TestBase ):
         self.fromScratch()
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario204' )
+        try:
+            ns_client.set_client_identification( '', '' )
+        except:
+            pass
+
         self.ns.getAffinityStatus( 'TEST' )
         getClientInfo( ns_client, None, 0, 0 )
 
@@ -4075,6 +4121,11 @@ class Scenario206( TestBase ):
         self.fromScratch()
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario206' )
+        try:
+            ns_client.set_client_identification( '', '' )
+        except:
+            pass
+
         jobID = self.ns.submitJob( 'TEST', 'bla',
                                    node = 'prep', session = 'session' )
         self.ns.getJob( 'TEST', node = 'prep', session = 'session' )
@@ -4106,6 +4157,11 @@ class Scenario207( TestBase ):
         self.fromScratch()
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario207' )
+        try:
+            ns_client.set_client_identification( '', '' )
+        except:
+            pass
+
         jobID = self.ns.submitJob( 'TEST', 'bla',
                                    node = 'prep', session = 'session' )
         self.ns.getJob( 'TEST', node = 'prep', session = 'session' )
@@ -4135,6 +4191,11 @@ class Scenario208( TestBase ):
         self.fromScratch()
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario208' )
+        try:
+            ns_client.set_client_identification( '', '' )
+        except:
+            pass
+
         self.ns.getQueueDump( 'TEST' )
         getClientInfo( ns_client, None, 0, 0 )
 
@@ -4160,6 +4221,11 @@ class Scenario212( TestBase ):
         self.fromScratch()
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario212' )
+        try:
+            ns_client.set_client_identification( '', '' )
+        except:
+            pass
+
         jobID = self.ns.submitJob( 'TEST', 'bla',
                                    node = 'prep', session = 'session' )
         self.ns.getJob( 'TEST', node = 'prep', session = 'session' )
@@ -4189,6 +4255,11 @@ class Scenario213( TestBase ):
         self.fromScratch()
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario213' )
+        try:
+            ns_client.set_client_identification( '', '' )
+        except:
+            pass
+
         jobID = self.ns.submitJob( 'TEST', 'bla', affinity = 'myaff',   # analysis:ignore
                                    node = 'prep', session = 'session' )
         self.ns.getAffinityStatus( 'TEST', 'myaff' )
@@ -4217,6 +4288,11 @@ class Scenario214( TestBase ):
         self.fromScratch()
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario214' )
+        try:
+            ns_client.set_client_identification( '', '' )
+        except:
+            pass
+
         output = execAny( ns_client, 'GETP' )
         getClientInfo( ns_client, None, 0, 0 )
 
@@ -4244,6 +4320,11 @@ class Scenario215( TestBase ):
         self.fromScratch()
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario215' )
+        try:
+            ns_client.set_client_identification( '', '' )
+        except:
+            pass
+
         output = execAny( ns_client, 'GETC' )
         getClientInfo( ns_client, None, 0, 0 )
 
@@ -4407,6 +4488,10 @@ class Scenario221( TestBase ):
         self.fromScratch()
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario221' )
+        try:
+            ns_client.set_client_identification( '', '' )
+        except:
+            pass
 
         try:
             execAny( ns_client, 'CWGET' )
@@ -5248,6 +5333,11 @@ class Scenario246( TestBase ):
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario246' )
         try:
+            ns_client.set_client_identification( '', '' )
+        except:
+            pass
+
+        try:
             execAny( ns_client,
                      'GET2 wnode_aff=0 any_aff=1' )
         except Exception, exc:
@@ -5274,6 +5364,11 @@ class Scenario247( TestBase ):
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario247' )
         try:
+            ns_client.set_client_identification( '', '' )
+        except:
+            pass
+
+        try:
             execAny( ns_client, 'PUT2 ' + NON_EXISTED_JOB + ' passport 0 77' )
         except Exception, exc:
             if "Anonymous client" in str( exc ):
@@ -5299,6 +5394,11 @@ class Scenario248( TestBase ):
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario248' )
         try:
+            ns_client.set_client_identification( '', '' )
+        except:
+            pass
+
+        try:
             execAny( ns_client, 'FPUT2 ' + NON_EXISTED_JOB + ' passport err_msg out 1' )
         except Exception, exc:
             if "Anonymous client" in str( exc ):
@@ -5323,6 +5423,11 @@ class Scenario249( TestBase ):
         self.fromScratch()
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario249' )
+        try:
+            ns_client.set_client_identification( '', '' )
+        except:
+            pass
+
         try:
             execAny( ns_client, 'RETURN2 ' + NON_EXISTED_JOB + ' passport' )
         except Exception, exc:
