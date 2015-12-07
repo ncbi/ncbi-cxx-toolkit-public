@@ -4,28 +4,16 @@
 # __intel_sse2_str* functions (as of ICC [20]13)
 
 ifeq "$(COMPILER)-$(DEBUG_SFX)$(DLL)" "icc-Release"
-  strcspn=ftp_connector http_connector lbsmd local server_info version
-  $(strcspn:%=ncbi_%.o): %.o: $(srcdir)/%.c
-	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL) \
-	    -fno-builtin-strcspn -fno-builtin-strspn $< -o $@ $(CC_FILTER)
-
-  ncbi_ansi_ext.o: $(srcdir)/ncbi_ansi_ext.c
-	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL) -fno-builtin-strncat $< -o $@ \
-	    $(CC_FILTER)
-
-  ncbi_connutil.o: $(srcdir)/ncbi_connutil.c
-	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL) -fno-builtin-strcat \
-	    -fno-builtin-strcspn -fno-builtin-strspn $< -o $@ $(CC_FILTER)
-
-  ncbi_service.o: $(srcdir)/ncbi_service.c
-	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL) -fno-builtin-strcat \
-            -fno-builtin-strpbrk $< -o $@ $(CC_FILTER)
-
-  ncbi_socket.o: $(srcdir)/ncbi_socket.c
-	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL) -fno-builtin-strcat $< -o $@ \
-	    $(CC_FILTER)
-
-  ncbi_lbos.o: $(srcdir)/ncbi_lbos.c
-	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL) -fno-builtin-strcat $< -o $@ \
-	    $(CC_FILTER)
+  ncbi_ansi_ext.o:       CFLAGS += -fno-builtin-strncat
+  ncbi_connutil.o:       CFLAGS += -fno-builtin-strcat -fno-builtin-strcspn \
+                                   -fno-builtin-strspn
+  ncbi_ftp_connector.o:  CFLAGS += -fno-builtin-strcspn -fno-builtin-strspn
+  ncbi_http_connector.o: CFLAGS += -fno-builtin-strcspn -fno-builtin-strspn
+  ncbi_lbos.o:           CFLAGS += -fno-builtin-strcat
+  ncbi_lbsmd.o:          CFLAGS += -fno-builtin-strcspn -fno-builtin-strspn
+  ncbi_local.o:          CFLAGS += -fno-builtin-strcspn -fno-builtin-strspn
+  ncbi_server_info.o:    CFLAGS += -fno-builtin-strcspn -fno-builtin-strspn
+  ncbi_service.o:        CFLAGS += -fno-builtin-strcat -fno-builtin-strpbrk
+  ncbi_socket.o:         CFLAGS += -fno-builtin-strcat
+  ncbi_version.o:        CFLAGS += -fno-builtin-strcspn -fno-builtin-strspn
 endif
