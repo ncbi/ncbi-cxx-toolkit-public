@@ -160,6 +160,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     { "UniProtKB/TrEMBL", CDbtag::eDbtagType_UniProt_TrEMBL },
     { "UniSTS", CDbtag::eDbtagType_UniSTS },
     { "VBASE2", CDbtag::eDbtagType_VBASE2 },
+    { "VISTA", CDbtag::eDbtagType_VISTA },
     { "VectorBase", CDbtag::eDbtagType_VectorBase },
     { "Vega", CDbtag::eDbtagType_Vega },
     { "ViPR", CDbtag::eDbtagType_ViPR },
@@ -685,6 +686,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_BioSample, "http://www.ncbi.nlm.nih.gov/biosample/" },
     { CDbtag::eDbtagType_ISHAM_ITS, "http://its.mycologylab.org/BioloMICS.aspx?Table=Sequences&ExactMatch=T&Name=MITS" },
     { CDbtag::eDbtagType_I5KNAL, "https://i5k.nal.usda.gov/" },
+    { CDbtag::eDbtagType_VISTA, "http://enhancer.lbl.gov/cgi-bin/dbxref.pl?id=" },
 };
 
 typedef CStaticPairArrayMap<CDbtag::EDbtagType, const char*> TUrlPrefixMap;

@@ -210,7 +210,8 @@ public:
         eDbtagType_BioSample,
         eDbtagType_ISHAM_ITS,
         eDbtagType_ERIC,
-        eDbtagType_I5KNAL
+        eDbtagType_I5KNAL,
+        eDbtagType_VISTA
     };
 
     enum EDbtagGroup {
