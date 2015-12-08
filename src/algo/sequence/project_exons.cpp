@@ -70,7 +70,6 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 
-
 /// Recursively convert empty container-locs to null-locs, 
 /// drop null sublocs from containers, and unwrap singleton containers
 void Canonicalize(CSeq_loc& loc)
@@ -974,9 +973,10 @@ CRef<CSeq_loc> ProjectCDSExon(const CSeq_align& spliced_aln,
                     cds_subloc->IsPartialStop(eExtreme_Biological)));
 #endif
 
-        exon_loc->SetPacked_int().Set().insert(exon_loc->SetPacked_int().Set().end(),
-                                               exon_subloc->SetPacked_int().Set().begin(),
-                                               exon_subloc->SetPacked_int().Set().end());
+        exon_loc->SetPacked_int().Set().insert(
+                exon_loc->SetPacked_int().Set().end(),
+                exon_subloc->SetPacked_int().Set().begin(),
+                exon_subloc->SetPacked_int().Set().end());
 
     }
     return exon_loc;
@@ -995,7 +995,35 @@ CRef<CSeq_loc> ProjectExons(const CSeq_align& spliced_aln,
             ProjectCDSExon(spliced_aln, spliced_exon, *product_cds_loc)
           : ProjectExon(spliced_exon, spliced_aln.GetSeq_id(1), spliced_aln.GetSeqStrand(1));
 
-        AugmentPartialness(*exon_loc, GetExonPartialness(spliced_aln, spliced_exon));
+        const T53Partialness partialness =
+            GetExonPartialness(spliced_aln, spliced_exon);
+
+        if(!product_cds_loc) {
+            AugmentPartialness(*exon_loc, partialness);
+        } else {
+            // GP-15635/case-(3,4) 
+            // Inherit partialness only if the CDS mapped up to the exon's terminal
+            bool start_partial = partialness.first;
+            bool stop_partial =  partialness.second;
+            if(spliced_aln.GetSeqStrand(1) == eNa_strand_minus) {
+                swap(start_partial, stop_partial);
+            }
+
+            if(start_partial
+               && sequence::GetStart(*exon_loc, NULL) 
+                  == spliced_exon.GetGenomic_start())
+            {
+                exon_loc->SetPartialStart(true, eExtreme_Positional);
+            }
+            
+            if(stop_partial
+               && sequence::GetStop(*exon_loc, NULL) 
+                  == spliced_exon.GetGenomic_end())
+            {
+                exon_loc->SetPartialStop(true, eExtreme_Positional);
+            }
+        }
+
         exons_loc->SetMix().Set().push_back(exon_loc);
     }
 
