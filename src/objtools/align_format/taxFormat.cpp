@@ -166,7 +166,7 @@ class CUpwardTreeFiller : public ITreeIterator::I4Each
 {
 public:
 
-    virtual ~CUpwardTreeFiller() {} //add desctructor m_TaxClient->Fini()
+    virtual ~CUpwardTreeFiller() {} 
     CUpwardTreeFiller(CTaxFormat::TSeqTaxInfoMap &seqAlignTaxInfoMap)        
         : m_SeqAlignTaxInfoMap(seqAlignTaxInfoMap),
           m_Curr(NULL)          
@@ -197,7 +197,7 @@ public:
     {
         int taxid = tax_node->GetTaxId();
                
-        //if(m_Curr) { //there was Level End - we are at brahch processing
+        //if m_Curr != NULL there was Level End - we are at branch processing
         int currTaxid = (m_Curr) ? m_Curr->taxid : 0;
         bool useTaxid = false;                       
         if(taxid == currTaxid) {//branch processing            
@@ -212,7 +212,7 @@ public:
                 m_Curr->taxidList += NStr::NumericToString(m_Curr->taxid);
             }
         }
-        else {// - terminal node
+        else { // - terminal node
             x_InitTaxInfo(tax_node); // sets m_Curr                        
             //cerr << "******taxid child=" << m_Curr->taxid <<  " " << m_Curr->scientificName << endl;            
             m_Curr->numHits = m_Curr->seqInfoList.size();             
@@ -460,8 +460,7 @@ void CTaxFormat::x_InitTaxClient(void)
             const string& err = m_TaxClient->GetLastError();
             NCBI_THROW(CException, eUnknown,"Cannot connect to tax server. " + err);
         }
-    }    
-    //Add error processing use 
+    }        
 }
 
 
@@ -489,44 +488,60 @@ void CTaxFormat::x_InitLineageReport(void)
 
 void CTaxFormat::x_LoadTaxTree(void)
 {
-        x_InitTaxClient();                
-        if(!m_TaxTreeLoaded) {
-            vector <int> taxidsToRoot;    
-            vector <int> alignTaxids = GetAlignTaxIDs();
+    x_InitTaxClient();                
+    if(!m_TaxTreeLoaded) {
+        vector <int> taxidsToRoot;    
+        vector <int> alignTaxids = GetAlignTaxIDs();
+
+        bool tax_load_ok = false;
+        if(m_TaxClient->IsAlive()) {          
             m_TaxClient->GetPopsetJoin(alignTaxids,taxidsToRoot);
-            //taxidsToRoot contain all taxids excluding alignTaxids
-        
-            bool tax_load_ok = false;
+            //taxidsToRoot contain all taxids excluding alignTaxids        
+
             //Adding alignTaxids
             for(size_t i = 0; i < alignTaxids.size(); i++) {
                 int tax_id = alignTaxids[i];                                    
+
+                if(!m_TaxClient->IsAlive()) break;
                 tax_load_ok |= m_TaxClient->LoadNode(tax_id);                                        
-            }
-       
-            ITERATE(vector<int>, it, taxidsToRoot) {
-                int tax_id = *it;                        
-                tax_load_ok |= m_TaxClient->LoadNode(tax_id);                                       
-            }            
-            if (!tax_load_ok) {
-                 NCBI_THROW(CException, eUnknown,"Taxonomic load was not successfull.");
-            }
-            m_TaxTreeLoaded = true;
-            
-            if(m_TaxClient->IsAlive()) {
-                m_TreeIterator = m_TaxClient->GetTreeIterator();
-            }
-            else {
-                const string& err = m_TaxClient->GetLastError();
-                NCBI_THROW(CException, eUnknown,"Cannot connect to tax server. " + err);
+
+                if(!tax_load_ok) break;
             }
         }
+        if(m_TaxClient->IsAlive() && tax_load_ok) {          
+            ITERATE(vector<int>, it, taxidsToRoot) {
+                int tax_id = *it;                 
+
+                if(!m_TaxClient->IsAlive()) break;
+                tax_load_ok |= m_TaxClient->LoadNode(tax_id);
+
+                if(!tax_load_ok) break;
+            }            
+        }
+        if (!tax_load_ok) {
+            NCBI_THROW(CException, eUnknown,"Taxonomic load was not successfull.");
+        }
+        m_TaxTreeLoaded = true;
+            
+        if(m_TaxClient->IsAlive()) {
+            m_TreeIterator = m_TaxClient->GetTreeIterator();
+        }
+        else {
+            const string& err = m_TaxClient->GetLastError();
+            NCBI_THROW(CException, eUnknown,"Cannot connect to tax server. " + err);
+        }
+    }
 }
 
 
-void CTaxFormat::x_PrintTaxInfo(int taxid)
+void CTaxFormat::x_PrintTaxInfo(vector <int> taxids, string title)
 {
-    STaxInfo taxInfo = GetTaxTreeInfo(taxid); //m_TaxTreeinfo->seqTaxInfoMap[taxid];                         
-    cerr << "*****taxid=" << taxid << " " << taxInfo.scientificName << " " << taxInfo.blastName << " " << "depth:" <<  taxInfo.depth << " numHits:" << taxInfo.numHits << " numOrgs:" << taxInfo.numOrgs << endl;            
+    cerr << "******" << title << "**********" << endl;
+    for(size_t i = 0; i < taxids.size(); i++) {
+        int taxid = taxids[i];                            
+        STaxInfo taxInfo = GetTaxTreeInfo(taxid);                         
+        cerr << "*****taxid=" << taxid << " " << taxInfo.scientificName << " " << taxInfo.blastName << " " << "depth:" <<  taxInfo.depth << " numHits:" << taxInfo.numHits << " numOrgs:" << taxInfo.numOrgs << endl;            
+    }
 }
 
 
@@ -539,20 +554,14 @@ void CTaxFormat::x_InitOrgTaxMetaData(void)
         //Create m_TaxTreeinfo with all taxids participating in common tree
         m_TreeIterator->TraverseUpward(upwFiller);            
         m_TaxTreeinfo = upwFiller.GetTreeTaxInfo();
-        std::reverse(m_TaxTreeinfo->orderedTaxids.begin(),m_TaxTreeinfo->orderedTaxids.end());        
-        for(size_t i = 0; i < m_TaxTreeinfo->orderedTaxids.size(); i++) {
-            int taxid = m_TaxTreeinfo->orderedTaxids[i];
-            //x_PrintTaxInfo(taxid);            
-        }         
-
+        std::reverse(m_TaxTreeinfo->orderedTaxids.begin(),m_TaxTreeinfo->orderedTaxids.end());                            
+        
         //Add depth and linage infor to m_TaxTreeinfo
         CDownwardTreeFiller dwnwFiller(&m_TaxTreeinfo->seqTaxInfoMap);
         m_TreeIterator->TraverseDownward(dwnwFiller);
-        vector <int> taxTreeTaxids = GetTaxTreeTaxIDs();        
-        for(size_t i = 0; i < taxTreeTaxids.size(); i++) {
-            int taxid = taxTreeTaxids[i];
-            //x_PrintTaxInfo(taxid);            
-        } 
+        vector <int> taxTreeTaxids = GetTaxTreeTaxIDs();
+
+        //x_PrintTaxInfo(taxTreeTaxids,"Taxonomy tree");                     
     }
 }
 
@@ -600,6 +609,23 @@ static vector <int> s_InitAlignHitLineage(vector <int> bestHitLinage, struct CTa
     return alignHitLineage;
 }
 
+
+
+void CTaxFormat::x_PrintLineage(void)
+{
+    cerr << " Lineage " << endl;
+    ITERATE(list <STaxInfo>, iter, m_AlnLineageTaxInfo) {             
+        int taxid = iter->taxid;    
+        string name = iter->scientificName;            
+        cerr << "taxid" << taxid << " " << name << ": "; 
+        for(size_t i = 0; i< iter->lineage.size();i++) {                
+            int lnTaxid = iter->lineage[i];            
+            cerr << " " << lnTaxid << " " << GetTaxTreeInfo(lnTaxid).scientificName + "," ;
+        }
+        cerr << endl;
+    }
+}
+
 void CTaxFormat::x_InitLineageMetaData(void)
 {
         int betsHitTaxid = m_BlastResTaxInfo->orderedTaxids[0];
@@ -613,27 +639,10 @@ void CTaxFormat::x_InitLineageMetaData(void)
             taxInfo.lineage = alignHitLineage;
             x_InitBlastNameTaxInfo(taxInfo);                                    
             m_AlnLineageTaxInfo.push_back(taxInfo);            
-        }
-        cerr << " Lineage " << endl;
+        }        
         m_AlnLineageTaxInfo.sort(s_SortByLinageToBestHit);                
-        ITERATE(list <STaxInfo>, iter, m_AlnLineageTaxInfo) {             
-            int taxid = iter->taxid;    
-            string name = iter->scientificName;            
-            cerr << "taxid:" << taxid << " " << name;
-            for(size_t i = 0; i< iter->lineage.size();i++) {                
-                int lnTaxid = iter->lineage[i];
-                STaxInfo &taxInfo = GetTaxTreeInfo(lnTaxid);
-                x_InitBlastNameTaxInfo(taxInfo);                
-                cerr << " " << lnTaxid << " " << GetTaxTreeInfo(lnTaxid).scientificName + "," ;
-            }
-            cerr << endl;
-        }
+        //x_PrintLineage();                
 }
-
-
-
-
-
 
 void CUpwardTreeFiller::x_InitTaxInfo(const ITaxon1Node* tax_node)
 {
