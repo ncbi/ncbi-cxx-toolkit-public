@@ -1,6 +1,5 @@
 # $Id$
 ifeq "$(COMPILER)-$(DEBUG_SFX)$(DLL)" "icc-Release"
-  ncbi_conn_stream.o: $(srcdir)/ncbi_conn_stream.cpp
-	$(CXX_WRAPPER) $(CXX) $(CXXFLAGS_ALL) -fno-builtin-strspn $< -o $@ \
-	    $(CXX_FILTER)
+  ncbi_conn_stream.o: CXXFLAGS += -fno-builtin-strspn
+  ncbi_conn_test.o:   CXXFLAGS += -fno-builtin-strcpy
 endif

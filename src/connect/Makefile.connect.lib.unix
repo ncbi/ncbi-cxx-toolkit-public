@@ -5,7 +5,6 @@
 
 ifeq "$(COMPILER)-$(DEBUG_SFX)$(DLL)" "icc-Release"
   ncbi_ansi_ext.o:       CFLAGS += -fno-builtin-strncat
-  ncbi_conn_test.o:      CFLAGS += -fno-builtin-strcpy
   ncbi_connutil.o:       CFLAGS += -fno-builtin-strcat -fno-builtin-strcpy \
                                    -fno-builtin-strcspn -fno-builtin-strspn
   ncbi_ftp_connector.o:  CFLAGS += -fno-builtin-strcpy -fno-builtin-strcspn \
@@ -25,5 +24,6 @@ ifeq "$(COMPILER)-$(DEBUG_SFX)$(DLL)" "icc-Release"
   ncbi_socket.o:         CFLAGS += -fno-builtin-strcat -fno-builtin-strcpy
   ncbi_socket_connector.o: CFLAGS += -fno-builtin-strcpy
   ncbi_util.o:           CFLAGS += -fno-builtin-strncmp
-  ncbi_version.o:        CFLAGS += -fno-builtin-strcspn -fno-builtin-strspn
+  ncbi_version.o:        CFLAGS += -fno-builtin-strcpy -fno-builtin-strcspn \
+                                   -fno-builtin-strspn
 endif
