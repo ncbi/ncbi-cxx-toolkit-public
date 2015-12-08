@@ -500,6 +500,10 @@ public:
 ///
 /// Example: Translating "CNcbiArguments" ---> "CArgs".
 /// Can also be used to compose and print out the USAGE info.
+///
+/// @sa CInputStreamSource
+///   CInputStreamSource helper class makes it possible to supply a list of
+///   input files, or list of directories
 
 class NCBI_XNCBI_EXPORT CArgDescriptions
 {
@@ -1367,7 +1371,7 @@ private:
     map<string,string> m_Aliases;   ///< command to alias; one alias only
     list<string> m_Commands;        ///< command names, and order
     list<string> m_CmdGroups;       ///< group names, and order
-    size_t m_CurrentGroup;          ///< current group #
+    size_t m_CurrentCmdGroup;       ///< current group #
     mutable string m_Command;       ///< current command
 };
 
@@ -1794,6 +1798,49 @@ private:
     string m_Comment;   ///< Argument description
 };
 
+//////////////////////////////////////////////////
+#if 0
+class NCBI_XNCBI_EXPORT CArgDescChoice : public CArgDesc
+{
+    /// Constructor.
+    CArgDescChoice(const string& name,    ///< Argument name
+             const string& comment  ///< Argument description
+            );
+
+    /// Destructor.
+    virtual ~CArgDescChoice(void);
+
+    /// Add description for mandatory key.
+    void AddKey(const string& name,       ///< Name of argument key
+                const string& synopsis,   ///< Synopsis for argument
+                const string& comment,    ///< Argument description
+                CArgDescriptions::EType         type,       ///< Argument type
+                CArgDescriptions::TFlags        flags = 0   ///< Optional flags
+               );
+
+    /// Add description for flag argument.
+    void AddFlag(const string& name,      ///< Name of argument
+                 const string& comment,   ///< Argument description
+                 CBoolEnum<CArgDescriptions::EFlagValue> set_value = CArgDescriptions::eFlagHasValueIfSet
+                 );
+
+    virtual string GetUsageSynopsis(bool name_only = false) const;
+    virtual CArgValue* ProcessArgument(const string& value) const;
+    virtual CArgValue* ProcessDefault(void) const;
+
+private:
+    typedef set< AutoPtr<CArgDesc> >  TArgs;
+    typedef TArgs::iterator           TArgsI;   ///< Arguments iterator
+    typedef TArgs::const_iterator     TArgsCI;  ///< Const arguments iterator
+
+    bool Exist(const string& name) const;
+    TArgsI  x_Find(const string& name);
+    TArgsCI x_Find(const string& name) const;
+    void x_AddDesc(CArgDesc& arg); 
+
+    TArgs        m_Args;
+};
+#endif
 
 END_NCBI_SCOPE
 

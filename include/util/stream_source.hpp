@@ -57,7 +57,7 @@ BEGIN_NCBI_SCOPE
 /// input streams using the code metaphor:
 ///
 /// \code
-///     CArgs args = GetArgs();
+///     const CArgs& args = GetArgs();
 ///     for (CInputStreamSource source(args);  source;  ++source) {
 ///         CNcbiIstream& istr = *source;
 ///         ...
