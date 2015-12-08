@@ -1070,6 +1070,12 @@ int CProcess::Wait(unsigned long timeout, CExitInfo* info) const
 //       by other processes behind this API. Be aware.
 
 
+CPIDGuard::CPIDGuard(const string& filename)
+{
+    CPIDGuard(filename, kEmptyStr);
+}
+
+
 CPIDGuard::CPIDGuard(const string& filename, const string& dir)
     : m_PID(0)
 {
