@@ -185,7 +185,7 @@ void CBDB_BlobMetaContainer::Serialize(CBDB_RawFile::TBuffer* buf,
     ::memcpy(ptr, &magic, sizeof(magic));
     ptr += sizeof(magic);
 
-    size_t sz = m_Loc.size();
+    unsigned sz = (unsigned)(m_Loc.size());
     _ASSERT(sz);
     if (sz != 1) {
         ::memcpy(ptr, &sz, sizeof(sz));
@@ -429,7 +429,7 @@ void CBDB_ExtBlobMap::Serialize(CBDB_RawFile::TBuffer* buf,
     ::memcpy(ptr, &magic, sizeof(magic));
     ptr += sizeof(magic);
 
-    size_t sz = m_BlobMap.size();
+    unsigned sz = (unsigned)(m_BlobMap.size());
     ::memcpy(ptr, &sz, sizeof(sz));
     ptr += sizeof(sz);
 
@@ -488,7 +488,7 @@ void CBDB_ExtBlobMap::Deserialize(const CBDB_RawFile::TBuffer& buf,
     ::memcpy(&magic, ptr, sizeof(magic));
     ptr += sizeof(magic);
 
-    unsigned bits_used = 32;
+    unsigned bits_used = 64;
     if (magic & s_ExtBlob_Mask_16bit) {
         bits_used = 16;
     } else
