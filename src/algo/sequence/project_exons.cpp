@@ -213,8 +213,9 @@ T53Partialness GetTerminalPartialness(const CSeq_align& spliced_aln,
                          && cds_stop <= exon.GetProduct_end().GetNucpos();
         }
 
-        partialness.first  = !start_covered;
-        partialness.second = !stop_covered;
+        partialness.first  = !start_covered || product_cds_loc->IsPartialStart(eExtreme_Positional);
+        partialness.second = !stop_covered  || product_cds_loc->IsPartialStop(eExtreme_Positional);
+
         if(spliced_aln.GetSeqStrand(0) == eNa_strand_minus) {
             swap(partialness.first, partialness.second);
         }
@@ -960,8 +961,18 @@ CRef<CSeq_loc> ProjectCDSExon(const CSeq_align& spliced_aln,
                 spliced_aln.GetSeq_id(1),
                 spliced_aln.GetSeqStrand(1));
 
-        AugmentPartialness(*exon_subloc, T53Partialness(cds_subloc->IsPartialStart(eExtreme_Biological),
-                                                        cds_subloc->IsPartialStop(eExtreme_Biological)));
+#if 0
+        // GP-15635 
+        // This is wrong, because this will add partialness to every cds-exon.
+        // Instead, the caller will make sure that the partialness is 
+        // properly inherited from cds-loc for the aggregate exons-loc
+        // (see GetTerminalPartialness(...)
+        AugmentPartialness(
+                *exon_subloc, 
+                T53Partialness(
+                    cds_subloc->IsPartialStart(eExtreme_Biological),
+                    cds_subloc->IsPartialStop(eExtreme_Biological)));
+#endif
 
         exon_loc->SetPacked_int().Set().insert(exon_loc->SetPacked_int().Set().end(),
                                                exon_subloc->SetPacked_int().Set().begin(),
