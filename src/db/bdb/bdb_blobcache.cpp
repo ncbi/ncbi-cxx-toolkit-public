@@ -1183,7 +1183,8 @@ void CBDB_Cache::x_PidLock(ELockMode lm)
     {
     case ePidLock:
         _ASSERT(m_PidGuard == 0);
-        m_PidGuard = new CPIDGuard(lock_file_path, m_Path);
+        m_PidGuard = new CPIDGuard(CDirEntry::CreateAbsolutePath(
+                                                            lock_file_path));
         break;
     case eNoLock:
         break;
