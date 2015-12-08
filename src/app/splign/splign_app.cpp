@@ -41,6 +41,7 @@
 #include <serial/objostrasn.hpp>
 #include <serial/serial.hpp>
 
+#include <algo/align/nw/align_exception.hpp>
 #include <algo/align/nw/nw_spliced_aligner16.hpp>
 #include <algo/align/splign/splign_cmdargs.hpp>
 #include <algo/align/util/hit_comparator.hpp>
@@ -414,6 +415,29 @@ bool CSplignApp::x_GetNextComp(istream& ifs,
        && hitrefs.front()->GetQueryId()->Match(*(hitrefs_next.front()->GetQueryId()))
        && hitrefs.front()->GetSubjId()->Match(*(hitrefs_next.front()->GetSubjId())))
     {
+        {{
+          //check if compartments intersect
+                THit::TCoord min1 = min(hitrefs.front()->GetSubjMin(),
+                       hitrefs.back()->GetSubjMin());
+                THit::TCoord min2 = min(hitrefs_next.front()->GetSubjMin(),
+                       hitrefs_next.back()->GetSubjMin());
+                THit::TCoord max1 = max(hitrefs.front()->GetSubjMax(),
+                       hitrefs.back()->GetSubjMax());
+                THit::TCoord max2 = max(hitrefs_next.front()->GetSubjMax(),
+                       hitrefs_next.back()->GetSubjMax());
+                if( max1 > min1 && min2 < max1 ) {
+                    CNcbiOstrstream ostr;
+                    ostr << "\nTwo compartments intersect for pair "<<hitrefs.front()->GetQueryId()->AsFastaString()
+                         <<" "<<hitrefs.front()->GetSubjId()->AsFastaString()
+                         << "\n compartment ranges are"
+                         <<"\n(" << min1+1 << ", " << max1+1 << ')'
+                         <<"\n(" << min2+1 << ", " << max2+1 << ")\n";
+                    const string errmsg = CNcbiOstrstreamToString(ostr);
+                    NCBI_THROW2(CAlgoAlignException, ePattern, errmsg, eDiag_Fatal);
+                }
+
+        }}
+        
         if(hitrefs.front()->GetSubjStart() < hitrefs_next.front()->GetSubjStart()) {
             *psubj_min = smin != kUndef? smin: 0;
             *psubj_max = min(hitrefs_next.front()->GetSubjMin(),

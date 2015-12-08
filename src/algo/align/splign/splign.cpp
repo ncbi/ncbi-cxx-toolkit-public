@@ -1602,8 +1602,9 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
             const THit::TCoord hsmax (h->GetSubjMax());
             if(!(smin <= hsmin && hsmax <= smax)) {
                 CNcbiOstrstream ostr;
-                ostr << "Invalid pattern hit:\n" << *h
-                     << "\n Interval = (" << smin << ", " << smax << ')';
+                ostr << "\nOne of compartment hits:\n" << *h
+                     << "\n goes outside the genome range = (" << smin+1 << ", " << smax+1 << ')'
+                     <<"\n allowed for the compartment";
                 const string errmsg = CNcbiOstrstreamToString(ostr);
                 NCBI_THROW(CAlgoAlignException, ePattern, errmsg);
             }
