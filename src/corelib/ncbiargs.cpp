@@ -2611,9 +2611,11 @@ void CArgDescriptions::x_PreCheck(void) const
             }
         }
 
+/*
         if (dynamic_cast<CArgDescDefault*> (&arg) == 0) {
             continue;
         }
+*/
 
         try {
             arg.VerifyDefault();
@@ -3734,7 +3736,7 @@ void CArgDescriptions::x_PrintAliasesAsXml( CNcbiOstream& out,
 
 CCommandArgDescriptions::CCommandArgDescriptions(
     bool auto_help, CArgErrorHandler* err_handler, TCommandArgFlags cmd_flags)
-    : CArgDescriptions(auto_help,err_handler), m_Cmd_req(cmd_flags), m_CurrentGroup(0)
+    : CArgDescriptions(auto_help,err_handler), m_Cmd_req(cmd_flags), m_CurrentCmdGroup(0)
 {
 }
 
@@ -3744,10 +3746,10 @@ CCommandArgDescriptions::~CCommandArgDescriptions(void)
 
 void CCommandArgDescriptions::SetCurrentCommandGroup(const string& group)
 {
-    m_CurrentGroup = x_GetCommandGroupIndex(group);
-    if (m_CurrentGroup == 0) {
+    m_CurrentCmdGroup = x_GetCommandGroupIndex(group);
+    if (m_CurrentCmdGroup == 0) {
         m_CmdGroups.push_back(group);
-        m_CurrentGroup = m_CmdGroups.size();
+        m_CurrentCmdGroup = m_CmdGroups.size();
     }
 }
 
@@ -3791,13 +3793,13 @@ void CCommandArgDescriptions::AddCommand(
             description->Delete(s_AutoHelpXml);
         }
 
-        if (m_CurrentGroup == 0) {
+        if (m_CurrentCmdGroup == 0) {
             SetCurrentCommandGroup(kEmptyStr);
         }
         m_Commands.remove(command);
         m_Commands.push_back(command);
         m_Description[command] = description;
-        m_Groups[command] = m_CurrentGroup;
+        m_Groups[command] = m_CurrentCmdGroup;
         if (!alias.empty()) {
             m_Aliases[command] = alias;
         } else {
@@ -4586,7 +4588,6 @@ CArgAllow* CArgAllow_Doubles::Clone(void) const
     clone->m_MinMax = m_MinMax;
     return clone;
 }
-
 
 ///////////////////////////////////////////////////////
 // CArgException
