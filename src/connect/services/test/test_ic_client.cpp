@@ -360,12 +360,13 @@ static void s_SimpleTest()
             const string subkey = *i;
 
             if (expected.find(subkey) == expected.end()) {
-                BOOST_ERROR("Received unexpected subkey: " SIMPLE_TEST_CTX);
+                BOOST_ERROR("Received unexpected subkey " << subkey <<
+                        " for key " << key);
             }
         }
     }
     catch (...) {
-        BOOST_ERROR("An exception has been caught. Blob: " << key);
+        BOOST_ERROR("An exception has been caught. Key: " << key);
         throw;
     }
 
