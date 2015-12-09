@@ -36,6 +36,7 @@
 #include <corelib/ncbifile.hpp>
 #include <corelib/ncbitime.hpp>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <db/bdb/bdb_expt.hpp>
 #include <db/bdb/bdb_types.hpp>
@@ -1341,7 +1342,7 @@ static void s_TEST_BDB_LOB_File(void)
     size_t bsize = 50 * 1024 * 1024;
     char* buf = new char[bsize];
     for (size_t k = 0; k < bsize; ++k)
-        buf[k] = (char)random();
+        buf[k] = (char)rand();
 
     int test_size = 50;
 
