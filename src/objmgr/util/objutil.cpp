@@ -1338,7 +1338,7 @@ void GetDeltaSeqSummary(const CBioseq_Handle& seq, SDeltaSeqSummary& summary)
 }
 
 
-const string GetTechString(int tech)
+string GetTechString(int tech)
 {
     static const char* concept_trans_str = "conceptual translation";
     static const char* seq_pept_str = "direct peptide sequencing";

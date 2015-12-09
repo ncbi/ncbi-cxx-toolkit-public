@@ -110,7 +110,7 @@ struct SDeltaSeqSummary
 
 void GetDeltaSeqSummary(const CBioseq_Handle& seq, SDeltaSeqSummary& summary);
 
-const string GetTechString(int tech);
+string GetTechString(int tech);
 
 
 struct SModelEvidance
