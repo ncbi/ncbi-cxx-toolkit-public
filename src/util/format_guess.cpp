@@ -927,11 +927,11 @@ CFormatGuess::TestFormatNewick(
         // are looking for "begin trees;" may span two chunks, we
         // copy the last 12 characters of the previous chunk to
         // the front of the new one.
-        const size_t read_size = 1024 * 1024;
+        const size_t read_size = 16384;
         char test_buf[read_size + check_size + 1];
         memset(test_buf, ' ', check_size); // "previous chunk" initially blank.
 
-        size_t max_reads = 512;  // max read to locate tree: 512 MB
+        size_t max_reads = 32768;  // max read to locate tree: 512 MB
         for (size_t i = 0; i < max_reads; ++i) {
             m_Stream.read(test_buf+check_size, read_size);
             size_t num_read = m_Stream.gcount();
