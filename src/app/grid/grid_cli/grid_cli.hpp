@@ -116,6 +116,9 @@
 #define JOB_INPUT_DIR_OPTION "job-input-dir"
 #define JOB_OUTPUT_DIR_OPTION "job-output-dir"
 #define PROTOCOL_DUMP_OPTION "protocol-dump"
+#define PASSWORD_OPTION "password"
+#define OFFSET_OPTION "offset"
+#define SIZE_OPTION "size|length"
 
 #define LOGIN_COMMAND "login"
 #define JOBINFO_COMMAND "jobinfo"

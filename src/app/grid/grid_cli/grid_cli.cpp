@@ -148,13 +148,13 @@ struct SOptionDefinition {
     {OPT_DEF(ePositionalArgument, eCacheArg), "CACHE", NULL, {-1}},
 
     {OPT_DEF(eOptionWithParameter, ePassword),
-        "password", "Enable NetCache password protection.", {-1}},
+        PASSWORD_OPTION, "Enable NetCache password protection.", {-1}},
 
     {OPT_DEF(eOptionWithParameter, eOffset),
-        "offset", "Byte offset of the portion of data.", {-1}},
+        OFFSET_OPTION, "Byte offset of the portion of data.", {-1}},
 
     {OPT_DEF(eOptionWithParameter, eSize),
-        "size|length", "Length (in bytes) of the portion of data.", {-1}},
+        SIZE_OPTION, "Length (in bytes) of the portion of data.", {-1}},
 
     {OPT_DEF(eOptionWithParameter, eTTL),
         "ttl", "Override the default time-to-live value.", {-1}},
