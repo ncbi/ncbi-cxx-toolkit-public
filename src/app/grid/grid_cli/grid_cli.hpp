@@ -249,6 +249,8 @@ enum EOption {
     eMirror,
     eServiceName,
     eNoDNSLookup,
+    eNCID,
+    eOptionalNCID,
 
     eExtendedOptionDelimiter,
 
@@ -349,7 +351,14 @@ private:
             int version;
             string subkey;
 
-            SNCID() : version(0) {}
+            SNCID() : version(0), parts(0) {}
+            bool AddPart(const string& part);
+            void Parse(bool icache_mode, bool require_version);
+            bool HasVersion() const { return !ver.empty(); }
+
+        private:
+            string ver;
+            int parts;
         } ncid;
 
         char option_flags[eNumberOfOptions];
@@ -534,13 +543,11 @@ private:
     void SetUp_AdminCmd(EAdminCmdSeverity cmd_severity);
     int NetCacheSanityCheck();
     int NetScheduleSanityCheck();
-    void SetUp_NetCacheCmd(bool icache_mode);
+    void SetUp_NetCacheCmd(bool icache_mode, bool require_version = true);
     void SetUp_NetCacheCmd() { SetUp_NetCacheCmd(IsOptionSet(eCache)); }
     void SetUp_NetCacheAdminCmd(EAdminCmdSeverity cmd_severity);
 
     static void PrintBlobMeta(const CNetCacheKey& key);
-    void ParseICacheKey(bool permit_empty_version = false,
-        bool* version_is_defined = NULL);
     void PrintServerAddress(CNetServer server);
     void SetUp_NetScheduleCmd(EAPIClass api_class,
             EAdminCmdSeverity cmd_severity = eReadOnlyAdminCmd);

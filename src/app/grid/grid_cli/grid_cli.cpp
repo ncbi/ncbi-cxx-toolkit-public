@@ -438,6 +438,10 @@ struct SOptionDefinition {
         "no-dns-lookup", "Disable reverse DNS lookup "
             "for the server IP addresses.", {-1}},
 
+    {OPT_DEF(eOneOrMorePositional, eNCID), "ID", NULL, {-1}},
+
+    {OPT_DEF(eZeroOrMorePositional, eOptionalNCID), "ID", NULL, {-1}},
+
     /* Options available only with --extended-cli go below. */
 
     {OPT_DEF(eSwitch, eExtendedOptionDelimiter), NULL, NULL, {-1}},
@@ -494,10 +498,21 @@ struct SCommandCategoryDefinition {
     {eExtendedCLICommand, "Extended commands"},
 };
 
-#define ICACHE_KEY_FORMAT_EXPLANATION \
+#define ICACHE_KEY_FORMAT_EXPLANATION_BASE \
     "\n\nBoth NetCache and ICache modes are supported. " \
-    "ICache mode requires blob ID to be specified in the " \
-    "following format: \"key,version,subkey\"."
+    "ICache mode requires blob ID to be specified in one of the " \
+    "following formats:\n" \
+    "  * \"key,version,subkey\"\n"
+
+#define ICACHE_KEY_FORMAT_EXPLANATION \
+    ICACHE_KEY_FORMAT_EXPLANATION_BASE \
+    "  * \"key\" \"version\" \"subkey\""
+
+#define ICACHE_KEY_FORMAT_EXPLANATION_OPT_VERSION \
+    ICACHE_KEY_FORMAT_EXPLANATION_BASE \
+    "  * \"key\" [\"version\"] \"subkey\"\n" \
+    "    (version could be omitted only if " PASSWORD_OPTION ", " \
+    OFFSET_OPTION " and " SIZE_OPTION " options are not used)."
 
 #define MAY_REQUIRE_LOCATION_HINTING \
     "Some object locators may require additional options " \
@@ -564,7 +579,7 @@ struct SCommandDefinition {
         "Print vital information about the specified blob. "
         "Expired blobs will be reported as not found."
         ICACHE_KEY_FORMAT_EXPLANATION,
-        {eID, eNetCache, eCache, eTryAllServers, eLoginToken, eAuth,
+        {eNCID, eNetCache, eCache, eTryAllServers, eLoginToken, eAuth,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetCacheCommand, &CGridCommandLineInterfaceApp::Cmd_GetBlob,
@@ -572,8 +587,8 @@ struct SCommandDefinition {
         "Read the blob identified by ID and send its contents "
         "to the standard output (or to the specified output "
         "file). Expired blobs will be reported as not found."
-        ICACHE_KEY_FORMAT_EXPLANATION,
-        {eID, eNetCache, eCache, ePassword, eOffset, eSize,
+        ICACHE_KEY_FORMAT_EXPLANATION_OPT_VERSION,
+        {eNCID, eNetCache, eCache, ePassword, eOffset, eSize,
             eTryAllServers, eOutputFile, eLoginToken, eAuth,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
@@ -582,7 +597,7 @@ struct SCommandDefinition {
         "Read data from the standard input (or a file) until EOF is "
         "encountered and save the received data as a NetCache blob."
         ICACHE_KEY_FORMAT_EXPLANATION,
-        {eOptionalID, eNetCache, eCache, ePassword, eTTL,
+        {eOptionalNCID, eNetCache, eCache, ePassword, eTTL,
             eEnableMirroring, eUseCompoundID,
             eInput, eInputFile, eCompatMode, eLoginToken, eAuth,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
@@ -592,7 +607,7 @@ struct SCommandDefinition {
         "Delete a blob if it exists. If the blob has expired "
         "(or never existed), no errors are reported."
         ICACHE_KEY_FORMAT_EXPLANATION,
-        {eID, eNetCache, eCache, ePassword, eLoginToken, eAuth,
+        {eNCID, eNetCache, eCache, ePassword, eLoginToken, eAuth,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eAdministrativeCommand, &CGridCommandLineInterfaceApp::Cmd_Purge,
@@ -1572,6 +1587,14 @@ int CGridCommandLineInterfaceApp::Run()
                 break;
             case eServiceName:
                 m_Opts.service_name = opt_value;
+                break;
+            case eNCID:
+            case eOptionalNCID:
+                if (!m_Opts.ncid.AddPart(opt_value)) {
+                    fprintf(stderr, GRID_APP_NAME
+                            ": too many positional parameters.\n");
+                    return 2;
+                }
                 break;
             case eProtocolDump:
                 if ((m_Opts.protocol_dump = fopen(opt_value, "a")) == NULL) {

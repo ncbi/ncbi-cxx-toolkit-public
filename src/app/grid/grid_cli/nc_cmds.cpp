@@ -41,8 +41,11 @@ void s_SetupMirroring()
     reg.Set("netcache_api", "enable_mirroring", "true");
 }
 
-void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(bool icache_mode)
+void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(bool icache_mode,
+        bool require_version)
 {
+    m_Opts.ncid.Parse(icache_mode, require_version);
+
     if (IsOptionSet(eEnableMirroring))
         s_SetupMirroring();
 
@@ -51,7 +54,7 @@ void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(bool icache_mode)
         m_NetCacheAPI = CNetCacheAPI(m_Opts.nc_service,
                 m_Opts.auth, m_NetScheduleAPI);
 
-        if (!m_Opts.id.empty() && IsOptionExplicitlySet(eNetCache)) {
+        if (!m_Opts.ncid.key.empty() && IsOptionExplicitlySet(eNetCache)) {
             string host, port;
 
             if (!NStr::SplitInTwo(m_Opts.nc_service, ":", host, port)) {
@@ -133,27 +136,62 @@ void CGridCommandLineInterfaceApp::PrintBlobMeta(const CNetCacheKey& key)
         printf("service_name: %s\n", service.c_str());
 }
 
-void CGridCommandLineInterfaceApp::ParseICacheKey(
-    bool permit_empty_version, bool* version_is_defined)
+bool CGridCommandLineInterfaceApp::SOptions::SNCID::AddPart(
+        const string& value)
 {
-    vector<string> key_parts;
-
-    NStr::Split(m_Opts.id, ",", key_parts, NStr::fSplit_NoMergeDelims);
-    if (key_parts.size() != 3) {
-        NCBI_THROW_FMT(CArgException, eInvalidArg,
-            "Invalid ICache key specification \"" << m_Opts.id << "\" ("
-            "expected a comma-separated key,version,subkey triplet).");
+    switch (++parts) {
+        case 1:
+            // First parameter is always key
+            key = value;
+            return true;
+        case 2:
+            // Second parameter could be subkey
+            // (when only two parameters provided) or version (when three).
+            // Until we get third parameter we consider this as subkey
+            subkey = value;
+            return true;
+        case 3:
+            // Okay, we have got third parameter, move second into version
+            ver = subkey;
+            subkey = value;
+            return true;
     }
-    if (!key_parts[1].empty())
-        m_Opts.ncid.version = NStr::StringToInt(key_parts[1]);
-    else if (permit_empty_version)
-        *version_is_defined = false;
-    else {
+
+    return false;
+}
+
+void CGridCommandLineInterfaceApp::SOptions::SNCID::Parse(
+        bool icache_mode, bool require_version)
+{
+    if (!icache_mode) {
+        if (parts > 1) {
+            NCBI_THROW_FMT(CArgException, eInvalidArg,
+                    "Too many positional parameters.");
+        }
+
+        return;
+    }
+
+    if (parts == 1) {
+        vector<string> key_parts;
+
+        NStr::Split(key, ",", key_parts, NStr::fSplit_NoMergeDelims);
+        if (key_parts.size() != 3) {
+            NCBI_THROW_FMT(CArgException, eInvalidArg,
+                "Invalid ICache key specification \"" << key << "\" ("
+                "expected a comma-separated key,version,subkey triplet).");
+        }
+        key = key_parts.front();
+        ver = key_parts[1];
+        subkey = key_parts.back();
+    }
+
+    if (!ver.empty()) {
+        version = NStr::StringToInt(ver);
+    } else if (require_version) {
         NCBI_THROW(CArgException, eNoValue,
             "blob version parameter is missing");
     }
-    m_Opts.ncid.key = key_parts.front();
-    m_Opts.ncid.subkey = key_parts.back();
 }
 
 void CGridCommandLineInterfaceApp::PrintServerAddress(CNetServer server)
@@ -167,16 +205,13 @@ int CGridCommandLineInterfaceApp::Cmd_BlobInfo()
 {
     SetUp_NetCacheCmd();
 
-    if (m_APIClass != eNetCacheAPI)
-        ParseICacheKey();
-
     try {
         CNetServerMultilineCmdOutput output;
 
         if (m_APIClass == eNetCacheAPI) {
-            PrintBlobMeta(CNetCacheKey(m_Opts.id, m_CompoundIDPool));
+            PrintBlobMeta(CNetCacheKey(m_Opts.ncid.key, m_CompoundIDPool));
 
-            output = m_NetCacheAPI.GetBlobInfo(m_Opts.id,
+            output = m_NetCacheAPI.GetBlobInfo(m_Opts.ncid.key,
                     nc_try_all_servers = IsOptionSet(eTryAllServers));
         } else {
             CNetServer server_last_used;
@@ -206,7 +241,7 @@ int CGridCommandLineInterfaceApp::Cmd_BlobInfo()
 
         if (m_APIClass == eNetCacheAPI)
             printf("Size: %lu\n", (unsigned long)
-                m_NetCacheAPI.GetBlobSize(m_Opts.id));
+                m_NetCacheAPI.GetBlobSize(m_Opts.ncid.key));
         else {
             CNetServer server_last_used;
 
@@ -227,10 +262,10 @@ int CGridCommandLineInterfaceApp::Cmd_BlobInfo()
 
 int CGridCommandLineInterfaceApp::Cmd_GetBlob()
 {
-    SetUp_NetCacheCmd();
-
     int reader_select = IsOptionSet(ePassword, OPTION_N(1)) |
         (m_Opts.offset != 0 || m_Opts.size != 0 ? OPTION_N(0) : 0);
+
+    SetUp_NetCacheCmd(IsOptionSet(eCache), reader_select);
 
     auto_ptr<IReader> reader;
 
@@ -239,14 +274,14 @@ int CGridCommandLineInterfaceApp::Cmd_GetBlob()
         switch (reader_select) {
         case 0: /* no special case */
             reader.reset(m_NetCacheAPI.GetReader(
-                m_Opts.id,
+                m_Opts.ncid.key,
                 &blob_size,
                 (nc_caching_mode = CNetCacheAPI::eCaching_Disable,
                 nc_try_all_servers = IsOptionSet(eTryAllServers))));
             break;
         case OPTION_N(0): /* use offset */
             reader.reset(m_NetCacheAPI.GetPartReader(
-                m_Opts.id,
+                m_Opts.ncid.key,
                 m_Opts.offset,
                 m_Opts.size,
                 &blob_size,
@@ -255,7 +290,7 @@ int CGridCommandLineInterfaceApp::Cmd_GetBlob()
             break;
         case OPTION_N(1): /* use password */
             reader.reset(m_NetCacheAPI.GetReader(
-                    m_Opts.id,
+                    m_Opts.ncid.key,
                     &blob_size,
                     (nc_caching_mode = CNetCacheAPI::eCaching_Disable,
                     nc_blob_password = m_Opts.password,
@@ -263,7 +298,7 @@ int CGridCommandLineInterfaceApp::Cmd_GetBlob()
             break;
         case OPTION_N(1) | OPTION_N(0): /* use password and offset */
             reader.reset(m_NetCacheAPI.GetPartReader(
-                    m_Opts.id,
+                    m_Opts.ncid.key,
                     m_Opts.offset,
                     m_Opts.size,
                     &blob_size,
@@ -272,14 +307,10 @@ int CGridCommandLineInterfaceApp::Cmd_GetBlob()
                     nc_try_all_servers = IsOptionSet(eTryAllServers))));
         }
     } else {
-        bool version_is_defined = true;
-
-        ParseICacheKey(reader_select == 0, &version_is_defined);
-
         ICache::EBlobVersionValidity validity;
         switch (reader_select) {
         case 0: /* no special case */
-            reader.reset(version_is_defined ?
+            reader.reset(m_Opts.ncid.HasVersion() ?
                 m_NetICacheClient.GetReadStream(
                     m_Opts.ncid.key,
                     m_Opts.ncid.version,
@@ -326,7 +357,7 @@ int CGridCommandLineInterfaceApp::Cmd_GetBlob()
                     nc_blob_password = m_Opts.password,
                     nc_try_all_servers = IsOptionSet(eTryAllServers))));
         }
-        if (!version_is_defined)
+        if (!m_Opts.ncid.HasVersion())
             NcbiCerr << "Blob version: " <<
                     m_Opts.ncid.version << NcbiEndl <<
                 "Blob validity: " << (validity == ICache::eCurrent ?
@@ -359,10 +390,10 @@ int CGridCommandLineInterfaceApp::Cmd_PutBlob()
 
     auto_ptr<IEmbeddedStreamWriter> writer;
 
-    // Cannot use a reference here because m_Opts.id.empty() is
+    // Cannot use a reference here because m_Opts.ncid.key.empty() is
     // used later to find out whether a blob was given in the
     // command line.
-    string blob_key = m_Opts.id;
+    string blob_key = m_Opts.ncid.key;
 
     CNetServer server_last_used;
 
@@ -389,8 +420,6 @@ int CGridCommandLineInterfaceApp::Cmd_PutBlob()
                     nc_blob_ttl = m_Opts.ttl));
         }
     } else {
-        ParseICacheKey();
-
         writer.reset(IsOptionSet(ePassword) ?
             m_NetICacheClient.GetNetCacheWriter(
                     m_Opts.ncid.key,
@@ -439,7 +468,7 @@ int CGridCommandLineInterfaceApp::Cmd_PutBlob()
 
     writer->Close();
 
-    if (m_APIClass == eNetCacheAPI && m_Opts.id.empty())
+    if (m_APIClass == eNetCacheAPI && m_Opts.ncid.key.empty())
         NcbiCout << blob_key << NcbiEndl;
 
     return 0;
@@ -454,12 +483,11 @@ int CGridCommandLineInterfaceApp::Cmd_RemoveBlob()
 
     if (m_APIClass == eNetCacheAPI)
         if (IsOptionSet(ePassword))
-            m_NetCacheAPI.Remove(m_Opts.id, nc_blob_password = m_Opts.password);
+            m_NetCacheAPI.Remove(m_Opts.ncid.key,
+                    nc_blob_password = m_Opts.password);
         else
-            m_NetCacheAPI.Remove(m_Opts.id);
+            m_NetCacheAPI.Remove(m_Opts.ncid.key);
     else {
-        ParseICacheKey();
-
         if (IsOptionSet(ePassword))
             m_NetICacheClient.RemoveBlob(m_Opts.ncid.key,
                     m_Opts.ncid.version, m_Opts.ncid.subkey,
