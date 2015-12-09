@@ -2627,13 +2627,22 @@ void CSeq_loc_Mapper_Base::x_OptimizeSeq_loc(CRef<CSeq_loc>& loc) const
         return;
     case CSeq_loc::e_Mix:
         {
-            // remove final NULL, if any
+            // remove final NULLs (optionally except one), if any
             {{
                 CSeq_loc_mix::Tdata &mix_locs = loc->SetMix().Set();
-                while( (mix_locs.size() > 1) && 
-                       (mix_locs.back()->IsNull()) ) 
+                bool have_null = false;
+                while (mix_locs.size() > 1  &&
+                       mix_locs.back()->IsNull())
                 {
+                    have_null = true;
                     mix_locs.pop_back();
+                }
+                // NULLs may indicate removed ranges, in this case preserve one NULL.
+                if (GetNonMappingAsNull()  &&  have_null  &&
+                    mix_locs.size() > 0  &&  !mix_locs.back()->IsNull()) {
+                    CRef<CSeq_loc> null_loc(new CSeq_loc);
+                    null_loc->SetNull();
+                    mix_locs.push_back(null_loc);
                 }
             }}
 
@@ -2800,7 +2809,7 @@ bool CSeq_loc_Mapper_Base::x_MapNextRange(const TRange&     src_rg,
     }
     // If the previous range could not be mapped and was removed,
     // indicate it using fuzz.
-    if ( m_LastTruncated ) {
+    if ( !GetNonMappingAsNull() && m_LastTruncated ) {
         // TODO: Reconsider this "if" after we switch permanently to C++
         if ( ((m_FuzzOption & fFuzzOption_CStyle) == 0) && !fuzz.first ) {
             if( (m_FuzzOption & fFuzzOption_RemoveLimTlOrTr) != 0 ) {
@@ -2867,6 +2876,11 @@ void CSeq_loc_Mapper_Base::x_SetLastTruncated(void)
         return;
     }
     m_LastTruncated = true;
+    if ( GetNonMappingAsNull() ) {
+        // Replace the original range with NULL.
+        x_PushNullLoc();
+        return;
+    }
     // Update the mapped location before checking its properties.
     x_PushRangesToDstMix();
     // If the mapped location does not have any fuzz set, set it to
@@ -3108,6 +3122,9 @@ void CSeq_loc_Mapper_Base::x_MapSeq_loc(const CSeq_loc& src_loc)
                 CRef<CSeq_loc> loc(new CSeq_loc);
                 loc->Assign(src_loc);
                 x_PushLocToDstMix(loc);
+            }
+            else if ( GetNonMappingAsNull() ) {
+                x_PushNullLoc();
             }
             else {
                 m_Partial = true;
@@ -3728,6 +3745,15 @@ void CSeq_loc_Mapper_Base::x_PushLocToDstMix(CRef<CSeq_loc> loc)
 }
 
 
+void CSeq_loc_Mapper_Base::x_PushNullLoc(void)
+{
+    CRef<CSeq_loc> null_loc(new CSeq_loc);
+    null_loc->SetNull();
+    x_PushRangesToDstMix();
+    x_PushLocToDstMix(null_loc);
+}
+
+
 bool CSeq_loc_Mapper_Base::x_ReverseRangeOrder(int str) const
 {
     if (m_MergeFlag == eMergeContained  || m_MergeFlag == eMergeAll) {
@@ -4185,6 +4211,18 @@ void CSeq_loc_Mapper_Base::x_SetMiscFlag(EMiscFlags flag, bool value)
     else {
         m_MiscFlags &= ~flag;
     }
+}
+
+
+NCBI_PARAM_DECL(bool, Mapper, NonMapping_As_Null);
+NCBI_PARAM_DEF_EX(bool, Mapper, NonMapping_As_Null, false, eParam_NoThread,
+                  MAPPER_NONMAPPING_AS_NULL);
+typedef NCBI_PARAM_TYPE(Mapper, NonMapping_As_Null) TNonMappingAsNullParam;
+
+
+bool CSeq_loc_Mapper_Base::GetNonMappingAsNull(void)
+{
+    return TNonMappingAsNullParam::GetDefault();
 }
 
 

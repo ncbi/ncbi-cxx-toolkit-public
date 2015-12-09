@@ -536,21 +536,21 @@ CRef<CSeq_loc_mix> CSeq_loc_Conversion::GetDstMix(void)
 }
 
 
-void CSeq_loc_Conversion::SetDstLoc(CRef<CSeq_loc>* dst)
+void CSeq_loc_Conversion::SetDstLoc(CRef<CSeq_loc>& dst)
 {
     CSeq_loc* loc = 0;
-    if ( !(*dst) ) {
+    if ( !dst ) {
         switch ( m_LastType ) {
         case eMappedObjType_Seq_interval:
-            dst->Reset(loc = new CSeq_loc);
+            dst.Reset(loc = new CSeq_loc);
             loc->SetInt(*GetDstInterval());
             break;
         case eMappedObjType_Seq_point:
-            dst->Reset(loc = new CSeq_loc);
+            dst.Reset(loc = new CSeq_loc);
             loc->SetPnt(*GetDstPoint());
             break;
         case eMappedObjType_Seq_loc_mix:
-            dst->Reset(loc = new CSeq_loc);
+            dst.Reset(loc = new CSeq_loc);
             loc->SetMix(*GetDstMix());
             break;
         default:
@@ -565,30 +565,48 @@ void CSeq_loc_Conversion::SetDstLoc(CRef<CSeq_loc>* dst)
 
 
 void CSeq_loc_Conversion::ConvertPacked_int(const CSeq_loc& src,
-                                            CRef<CSeq_loc>* dst)
+                                            CRef<CSeq_loc>& dst)
 {
     _ASSERT(src.Which() == CSeq_loc::e_Packed_int);
     const CPacked_seqint::Tdata& src_ints = src.GetPacked_int().Get();
     CPacked_seqint::Tdata* dst_ints = 0;
+    // If the result contains NULLs, may need to use mix instead.
+    CSeq_loc_mix::Tdata* dst_mix = 0;
     bool last_truncated = false;
     ITERATE ( CPacked_seqint::Tdata, i, src_ints ) {
         if ( ConvertInterval(**i) ) {
-            if ( !dst_ints ) {
-                dst->Reset(new CSeq_loc);
-                dst_ints = &(*dst)->SetPacked_int().Set();
+            if ( !dst_ints  &&  !dst_mix ) {
+                dst.Reset(new CSeq_loc);
+                dst_ints = &dst->SetPacked_int().Set();
             }
             CRef<CSeq_interval> dst_int = GetDstInterval();
             if ( last_truncated  &&
+                !CSeq_loc_Mapper_Base::GetNonMappingAsNull()  &&
                 !dst_int->IsPartialStart(eExtreme_Biological) ) {
                 dst_int->SetPartialStart(true, eExtreme_Biological);
             }
-            dst_ints->push_back(dst_int);
+            if ( dst_mix ) {
+                CRef<CSeq_loc> mix_loc(new CSeq_loc);
+                mix_loc->SetInt(*dst_int);
+                dst_mix->push_back(mix_loc);
+            }
+            else {
+                dst_ints->push_back(dst_int);
+            }
             last_truncated = false;
         }
         else {
-            if ( !last_truncated  &&  *dst  &&
-                !(*dst)->IsPartialStop(eExtreme_Biological) ) {
-                (*dst)->SetPartialStop(true, eExtreme_Biological);
+            if (last_truncated) continue;
+            if (CSeq_loc_Mapper_Base::GetNonMappingAsNull()) {
+                dst_mix = CSeq_loc_Conversion::s_ConvertToMix(dst);
+                _ASSERT(dst_mix);
+                CRef<CSeq_loc> null_loc(new CSeq_loc);
+                null_loc->SetNull();
+                dst_mix->push_back(null_loc);
+                last_truncated = true;
+            }
+            else if (dst  &&  !dst->IsPartialStop(eExtreme_Biological) ) {
+                dst->SetPartialStop(true, eExtreme_Biological);
             }
             last_truncated = true;
         }
@@ -597,7 +615,7 @@ void CSeq_loc_Conversion::ConvertPacked_int(const CSeq_loc& src,
 
 
 void CSeq_loc_Conversion::ConvertPacked_pnt(const CSeq_loc& src,
-                                            CRef<CSeq_loc>* dst)
+                                            CRef<CSeq_loc>& dst)
 {
     _ASSERT(src.Which() == CSeq_loc::e_Packed_pnt);
     const CPacked_seqpnt& src_pack_pnts = src.GetPacked_pnt();
@@ -609,28 +627,61 @@ void CSeq_loc_Conversion::ConvertPacked_pnt(const CSeq_loc& src,
     }
     const CPacked_seqpnt::TPoints& src_pnts = src_pack_pnts.GetPoints();
     CPacked_seqpnt::TPoints* dst_pnts = 0;
+    CSeq_loc_mix::Tdata* dst_mix = 0;
+    ENa_strand dst_strand = eNa_strand_unknown;
+    CRef<CInt_fuzz> dst_fuzz;
+    if ( src_pack_pnts.IsSetStrand() ) {
+        dst_strand = ConvertStrand(src_pack_pnts.GetStrand());
+    }
+    if ( src_pack_pnts.IsSetFuzz() ) {
+        dst_fuzz.Reset(new CInt_fuzz);
+        if ( m_Reverse ) {
+            dst_fuzz->Assign(*ReverseFuzz(src_pack_pnts.GetFuzz()));
+        }
+        else {
+            dst_fuzz->Assign(src_pack_pnts.GetFuzz());
+        }
+    }
+
     ITERATE ( CPacked_seqpnt::TPoints, i, src_pnts ) {
         TSeqPos dst_pos = ConvertPos(*i);
-        if ( dst_pos != kInvalidSeqPos ) {
+        if ( dst_pos == kInvalidSeqPos ) 
+        {
+            if (CSeq_loc_Mapper::GetNonMappingAsNull()) {
+                dst_mix = s_ConvertToMix(dst);
+                CRef<CSeq_loc> null_loc(new CSeq_loc);
+                null_loc->SetNull();
+                dst_mix->push_back(null_loc);
+            }
+            continue;
+        }
+        if ( dst_mix ) {
+            CRef<CSeq_loc> mix_loc(new CSeq_loc);
+            mix_loc->SetPnt().SetId(GetDstId());
+            mix_loc->SetPnt().SetPoint(dst_pos);
+            if ( src_pack_pnts.IsSetStrand() ) {
+                mix_loc->SetPnt().SetStrand(dst_strand);
+            }
+            if ( dst_fuzz ) {
+                mix_loc->SetPnt().SetFuzz(*dst_fuzz);
+            }
+        }
+        else {
             if ( !dst_pnts ) {
-                dst->Reset(new CSeq_loc);
-                CPacked_seqpnt& pnts = (*dst)->SetPacked_pnt();
+                dst.Reset(new CSeq_loc);
+                CPacked_seqpnt& pnts = dst->SetPacked_pnt();
                 pnts.SetId(GetDstId());
                 dst_pnts = &pnts.SetPoints();
                 if ( src_pack_pnts.IsSetStrand() ) {
-                    pnts.SetStrand(ConvertStrand(src_pack_pnts.GetStrand()));
+                    pnts.SetStrand(dst_strand);
                 }
-                if ( src_pack_pnts.IsSetFuzz() ) {
-                    CConstRef<CInt_fuzz> fuzz(&src_pack_pnts.GetFuzz());
-                    if ( m_Reverse ) {
-                        fuzz = ReverseFuzz(*fuzz);
-                    }
-                    pnts.SetFuzz(const_cast<CInt_fuzz&>(*fuzz));
+                if ( dst_fuzz ) {
+                    pnts.SetFuzz(*dst_fuzz);
                 }
             }
             dst_pnts->push_back(dst_pos);
-            m_TotalRange += TRange(dst_pos, dst_pos);
         }
+        m_TotalRange += TRange(dst_pos, dst_pos);
     }
 }
 
@@ -734,7 +785,7 @@ bool CSeq_loc_Conversion::ConvertSimpleMix(const CSeq_loc& src)
 
 
 void CSeq_loc_Conversion::ConvertMix(const CSeq_loc& src,
-                                     CRef<CSeq_loc>* dst,
+                                     CRef<CSeq_loc>& dst,
                                      EConvertFlag flag)
 {
     _ASSERT(src.Which() == CSeq_loc::e_Mix);
@@ -746,13 +797,11 @@ void CSeq_loc_Conversion::ConvertMix(const CSeq_loc& src,
     CRef<CSeq_loc> dst_loc;
     bool last_truncated = false;
     ITERATE ( CSeq_loc_mix::Tdata, i, src_mix ) {
-        if ( Convert(**i, &dst_loc, eCnvAlways) ) {
-            if ( !dst_mix ) {
-                dst->Reset(new CSeq_loc);
-                dst_mix = &(*dst)->SetMix().Set();
-            }
+        if ( Convert(**i, dst_loc, eCnvAlways) ) {
             _ASSERT(dst_loc);
+            dst_mix = s_ConvertToMix(dst);
             if ( last_truncated  &&
+                !CSeq_loc_Mapper_Base::GetNonMappingAsNull()  &&
                 !dst_loc->IsPartialStart(eExtreme_Biological) ) {
                 dst_loc->SetPartialStart(true, eExtreme_Biological);
             }
@@ -760,9 +809,15 @@ void CSeq_loc_Conversion::ConvertMix(const CSeq_loc& src,
             last_truncated = false;
         }
         else {
-            if ( !last_truncated  &&  *dst  &&
-                !(*dst)->IsPartialStop(eExtreme_Biological) ) {
-                (*dst)->SetPartialStop(true, eExtreme_Biological);
+            if (last_truncated) continue;
+            if (CSeq_loc_Mapper_Base::GetNonMappingAsNull()) {
+                CRef<CSeq_loc> null_loc(new CSeq_loc);
+                null_loc->SetNull();
+                dst_mix = s_ConvertToMix(dst);
+                dst_mix->push_back(null_loc);
+            }
+            else if (dst  &&  !dst->IsPartialStop(eExtreme_Biological)) {
+                dst->SetPartialStop(true, eExtreme_Biological);
             }
             last_truncated = true;
         }
@@ -771,17 +826,22 @@ void CSeq_loc_Conversion::ConvertMix(const CSeq_loc& src,
 
 
 void CSeq_loc_Conversion::ConvertEquiv(const CSeq_loc& src,
-                                       CRef<CSeq_loc>* dst)
+                                       CRef<CSeq_loc>& dst)
 {
     _ASSERT(src.Which() == CSeq_loc::e_Equiv);
     const CSeq_loc_equiv::Tdata& src_equiv = src.GetEquiv().Get();
     CSeq_loc_equiv::Tdata* dst_equiv = 0;
     CRef<CSeq_loc> dst_loc;
     ITERATE ( CSeq_loc_equiv::Tdata, i, src_equiv ) {
-        if ( Convert(**i, &dst_loc, eCnvAlways) ) {
+        if ( Convert(**i, dst_loc, eCnvAlways)  ||
+            CSeq_loc_Mapper::GetNonMappingAsNull()) {
             if ( !dst_equiv ) {
-                dst->Reset(new CSeq_loc);
-                dst_equiv = &(*dst)->SetEquiv().Set();
+                dst.Reset(new CSeq_loc);
+                dst_equiv = &dst->SetEquiv().Set();
+            }
+            if (!dst_loc) {
+                dst_loc.Reset(new CSeq_loc);
+                dst_loc->SetNull();
             }
             dst_equiv->push_back(dst_loc);
         }
@@ -790,14 +850,14 @@ void CSeq_loc_Conversion::ConvertEquiv(const CSeq_loc& src,
 
 
 void CSeq_loc_Conversion::ConvertBond(const CSeq_loc& src,
-                                      CRef<CSeq_loc>* dst)
+                                      CRef<CSeq_loc>& dst)
 {
     _ASSERT(src.Which() == CSeq_loc::e_Bond);
     const CSeq_bond& src_bond = src.GetBond();
     CSeq_bond* dst_bond = 0;
     if ( ConvertPoint(src_bond.GetA()) ) {
-        dst->Reset(new CSeq_loc);
-        dst_bond = &(*dst)->SetBond();
+        dst.Reset(new CSeq_loc);
+        dst_bond = &dst->SetBond();
         dst_bond->SetA(*GetDstPoint());
         if ( src_bond.IsSetB() ) {
             dst_bond->SetB().Assign(src_bond.GetB());
@@ -806,8 +866,8 @@ void CSeq_loc_Conversion::ConvertBond(const CSeq_loc& src,
     if ( src_bond.IsSetB() ) {
         if ( ConvertPoint(src_bond.GetB()) ) {
             if ( !dst_bond ) {
-                dst->Reset(new CSeq_loc);
-                dst_bond = &(*dst)->SetBond();
+                dst.Reset(new CSeq_loc);
+                dst_bond = &dst->SetBond();
                 dst_bond->SetA().Assign(src_bond.GetA());
             }
             dst_bond->SetB(*GetDstPoint());
@@ -817,10 +877,10 @@ void CSeq_loc_Conversion::ConvertBond(const CSeq_loc& src,
 
 
 bool CSeq_loc_Conversion::Convert(const CSeq_loc& src,
-                                  CRef<CSeq_loc>* dst,
+                                  CRef<CSeq_loc>& dst,
                                   EConvertFlag flag)
 {
-    dst->Reset();
+    dst.Reset();
     CSeq_loc* loc = 0;
     _ASSERT(!IsSpecialLoc());
     m_LastType = eMappedObjType_Seq_loc;
@@ -833,14 +893,14 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src,
         break;
     case CSeq_loc::e_Null:
     {
-        dst->Reset(loc = new CSeq_loc);
+        dst.Reset(loc = new CSeq_loc);
         loc->SetNull();
         break;
     }
     case CSeq_loc::e_Empty:
     {
         if ( GoodSrcId(src.GetEmpty()) ) {
-            dst->Reset(loc = new CSeq_loc);
+            dst.Reset(loc = new CSeq_loc);
             loc->SetEmpty(GetDstId());
         }
         break;
@@ -905,7 +965,7 @@ bool CSeq_loc_Conversion::Convert(const CSeq_loc& src,
     if ( flag == eCnvAlways && IsSpecialLoc() ) {
         SetDstLoc(dst);
     }
-    return dst->NotEmpty();
+    return dst.NotEmpty();
 }
 
 
@@ -975,7 +1035,7 @@ void CSeq_loc_Conversion::ConvertCdregion(CAnnotObject_Ref& ref,
     mapped_cbs.clear();
     ITERATE(CCdregion::TCode_break, it, src_cb) {
         CRef<CSeq_loc> cb_loc;
-        Convert((*it)->GetLoc(), &cb_loc, eCnvAlways);
+        Convert((*it)->GetLoc(), cb_loc, eCnvAlways);
         // Preserve partial flag
         ResetKeepPartial();
         if (cb_loc  &&  cb_loc->Which() != CSeq_loc::e_not_set) {
@@ -1042,7 +1102,7 @@ void CSeq_loc_Conversion::ConvertRna(CAnnotObject_Ref& ref,
         mapped_feat->SetData().SetRna().SetExt().SetTRNA().ResetCodon();
     }
     CRef<CSeq_loc> ac_loc;
-    Convert(src_anticodon, &ac_loc, eCnvAlways);
+    Convert(src_anticodon, ac_loc, eCnvAlways);
     // Preserve partial flag
     ResetKeepPartial();
     if (ac_loc  &&  ac_loc->Which() != CSeq_loc::e_not_set) {
@@ -1134,10 +1194,10 @@ void CSeq_loc_Conversion::Convert(CAnnotObject_Ref& ref, ELocationType loctype)
             CRef<CSeq_loc> mapped_loc;
             if ( loctype == eLocation ) {
                 ConvertFeature(ref, *orig_feat, mapped_feat);
-                Convert(orig_feat->GetLocation(), &mapped_loc);
+                Convert(orig_feat->GetLocation(), mapped_loc);
             }
             else {
-                Convert(orig_feat->GetProduct(), &mapped_loc);
+                Convert(orig_feat->GetProduct(), mapped_loc);
             }
             map_info.SetMappedSeq_loc(mapped_loc.GetPointerOrNull());
             if ( mapped_feat ) {
@@ -1178,7 +1238,7 @@ void CSeq_loc_Conversion::Convert(CAnnotObject_Ref& ref, ELocationType loctype)
                 orig_loc = created_loc;
             }
             CRef<CSeq_loc> mapped_loc;
-            Convert(*orig_loc, &mapped_loc);
+            Convert(*orig_loc, mapped_loc);
             map_info.SetMappedSeq_loc(mapped_loc.GetPointerOrNull());
         }
         break;
@@ -1187,7 +1247,7 @@ void CSeq_loc_Conversion::Convert(CAnnotObject_Ref& ref, ELocationType loctype)
     {
         CRef<CSeq_loc> mapped_loc;
         m_GraphRanges.Reset(new CGraphRanges);
-        Convert(obj.GetGraphFast()->GetLoc(), &mapped_loc);
+        Convert(obj.GetGraphFast()->GetLoc(), mapped_loc);
         map_info.SetMappedSeq_loc(mapped_loc.GetPointerOrNull());
         map_info.SetGraphRanges(m_GraphRanges.GetPointerOrNull());
         break;
@@ -1232,10 +1292,10 @@ void CSeq_loc_Conversion::Convert(CAnnotObject_Ref& ref,
             CRef<CSeq_loc> mapped_loc;
             if ( loctype == eLocation ) {
                 ConvertFeature(ref, *orig_feat, mapped_feat);
-                Convert(orig_feat->GetLocation(), &mapped_loc, eCnvAlways);
+                Convert(orig_feat->GetLocation(), mapped_loc, eCnvAlways);
             }
             else {
-                Convert(orig_feat->GetProduct(), &mapped_loc, eCnvAlways);
+                Convert(orig_feat->GetProduct(), mapped_loc, eCnvAlways);
             }
             map_info.SetMappedSeq_loc(mapped_loc.GetPointerOrNull());
             if ( mapped_feat ) {
@@ -1281,7 +1341,7 @@ void CSeq_loc_Conversion::Convert(CAnnotObject_Ref& ref,
                 orig_loc = created_loc;
             }
             CRef<CSeq_loc> mapped_loc;
-            Convert(*orig_loc, &mapped_loc);
+            Convert(*orig_loc, mapped_loc);
             map_info.SetMappedSeq_loc(mapped_loc.GetPointerOrNull());
         }
         break;
@@ -1290,7 +1350,7 @@ void CSeq_loc_Conversion::Convert(CAnnotObject_Ref& ref,
     {
         CRef<CSeq_loc> mapped_loc;
         m_GraphRanges.Reset(new CGraphRanges);
-        Convert(obj.GetGraphFast()->GetLoc(), &mapped_loc);
+        Convert(obj.GetGraphFast()->GetLoc(), mapped_loc);
         map_info.SetMappedSeq_loc(mapped_loc.GetPointerOrNull());
         map_info.SetGraphRanges(m_GraphRanges.GetPointerOrNull());
         break;
@@ -1302,7 +1362,7 @@ void CSeq_loc_Conversion::Convert(CAnnotObject_Ref& ref,
         const CSeqTableInfo& table = annot.GetTableInfo();
         CConstRef<CSeq_loc> loc = table.GetTableLocation();
         if ( loc ) {
-            Convert(*loc, &mapped_loc);
+            Convert(*loc, mapped_loc);
             map_info.SetMappedSeq_loc(mapped_loc.GetPointerOrNull());
         }
         break;
@@ -1325,7 +1385,7 @@ void CSeq_loc_Conversion::SetMappedLocation(CAnnotObject_Ref& ref,
     if ( IsSpecialLoc() ) {
         if ( m_DstFuzz_from || m_DstFuzz_to ) {
             CRef<CSeq_loc> mapped_loc;
-            SetDstLoc(&mapped_loc);
+            SetDstLoc(mapped_loc);
             map_info.SetMappedSeq_loc(mapped_loc);
         }
         else if ( m_LastType != eMappedObjType_Seq_loc_mix ) {
@@ -1354,6 +1414,50 @@ void CSeq_loc_Conversion::SetMappedLocation(CAnnotObject_Ref& ref,
             map_info.SetMappedSeq_loc(m_Dst_loc_Empty);
         }
     }
+}
+
+
+CSeq_loc_mix::Tdata* CSeq_loc_Conversion::s_ConvertToMix(CRef<CSeq_loc>& loc)
+{
+    if ( !loc ) {
+        loc.Reset(new CSeq_loc);
+        return &loc->SetMix().Set();
+    }
+    if (loc->IsMix()) return &loc->SetMix().Set();
+
+    CRef<CSeq_loc> new_dst(new CSeq_loc);
+    CSeq_loc_mix::Tdata* dst_mix = &new_dst->SetMix().Set();
+    switch (loc->Which()) {
+    case CSeq_loc::e_Packed_int:
+        NON_CONST_ITERATE(CPacked_seqint::Tdata, ii, loc->SetPacked_int().Set()) {
+            CRef<CSeq_loc> mix_loc(new CSeq_loc);
+            mix_loc->SetInt(**ii);
+            dst_mix->push_back(mix_loc);
+        }
+        break;
+    case CSeq_loc::e_Packed_pnt:
+    {
+        CPacked_seqpnt& ppnt = loc->SetPacked_pnt();
+        NON_CONST_ITERATE(CPacked_seqpnt::TPoints, pi, ppnt.SetPoints()) {
+            CRef<CSeq_loc> mix_loc(new CSeq_loc);
+            mix_loc->SetPnt().SetId(ppnt.SetId());
+            if (ppnt.IsSetFuzz()) {
+                mix_loc->SetPnt().SetFuzz(ppnt.SetFuzz());
+            }
+            if (ppnt.IsSetStrand()) {
+                mix_loc->SetPnt().SetStrand(ppnt.SetStrand());
+            }
+            mix_loc->SetPnt().SetPoint(*pi);
+            dst_mix->push_back(mix_loc);
+        }
+        break;
+    }
+    default:
+        dst_mix->push_back(loc);
+        break;
+    }
+    loc.Reset(new_dst);
+    return dst_mix;
 }
 
 
@@ -1488,7 +1592,7 @@ void CSeq_loc_Conversion_Set::ConvertCdregion(CAnnotObject_Ref& ref,
     mapped_cbs.clear();
     ITERATE(CCdregion::TCode_break, it, src_cb) {
         CRef<CSeq_loc> cb_loc;
-        Convert((*it)->GetLoc(), &cb_loc, 0);
+        Convert((*it)->GetLoc(), cb_loc, 0);
         m_TotalRange = TRange::GetEmpty();
         if (cb_loc  &&  cb_loc->Which() != CSeq_loc::e_not_set) {
             CRef<CCode_break> cb(new CCode_break);
@@ -1549,7 +1653,7 @@ void CSeq_loc_Conversion_Set::ConvertRna(CAnnotObject_Ref& ref,
         mapped_feat->SetData().SetRna().SetExt().SetTRNA().ResetCodon();
     }
     CRef<CSeq_loc> ac_loc;
-    Convert(src_anticodon, &ac_loc, 0);
+    Convert(src_anticodon, ac_loc, 0);
     // Preserve partial flag
     m_TotalRange = TRange::GetEmpty();
     if (ac_loc  &&  ac_loc->Which() != CSeq_loc::e_not_set) {
@@ -1628,7 +1732,7 @@ void CSeq_loc_Conversion_Set::Convert(CAnnotObject_Ref& ref,
             src_loc = &obj.GetFeatFast()->GetProduct();
             loc_index = 1;
         }
-        Convert(*src_loc, &mapped_loc, loc_index);
+        Convert(*src_loc, mapped_loc, loc_index);
         map_info.SetMappedSeq_loc(mapped_loc.GetPointerOrNull());
         break;
     }
@@ -1636,7 +1740,7 @@ void CSeq_loc_Conversion_Set::Convert(CAnnotObject_Ref& ref,
     {
         CRef<CSeq_loc> mapped_loc;
         m_GraphRanges.Reset(new CGraphRanges);
-        Convert(obj.GetGraphFast()->GetLoc(), &mapped_loc, 0);
+        Convert(obj.GetGraphFast()->GetLoc(), mapped_loc, 0);
         map_info.SetMappedSeq_loc(mapped_loc.GetPointerOrNull());
         map_info.SetGraphRanges(m_GraphRanges.GetPointerOrNull());
         break;
@@ -1661,10 +1765,9 @@ void CSeq_loc_Conversion_Set::Convert(CAnnotObject_Ref& ref,
 
 
 bool CSeq_loc_Conversion_Set::ConvertPoint(const CSeq_point& src,
-                                           CRef<CSeq_loc>* dst,
+                                           CRef<CSeq_loc>& dst,
                                            unsigned int loc_index)
 {
-    _ASSERT(*dst);
     bool res = false;
     TRangeIterator mit = BeginRanges(CSeq_id_Handle::GetHandle(src.GetId()),
         src.GetPoint(), src.GetPoint(), loc_index);
@@ -1672,7 +1775,7 @@ bool CSeq_loc_Conversion_Set::ConvertPoint(const CSeq_point& src,
         CSeq_loc_Conversion& cvt = *mit->second;
         cvt.Reset();
         if (cvt.ConvertPoint(src)) {
-            (*dst)->SetPnt(*cvt.GetDstPoint());
+            dst->SetPnt(*cvt.GetDstPoint());
             m_TotalRange += cvt.GetTotalRange();
             res = true;
             break;
@@ -1747,10 +1850,9 @@ namespace {
 
 
 bool CSeq_loc_Conversion_Set::ConvertInterval(const CSeq_interval& src,
-                                              CRef<CSeq_loc>* dst,
+                                              CRef<CSeq_loc>& dst,
                                               unsigned int loc_index)
 {
-    _ASSERT(*dst);
     CRef<CSeq_loc> tmp(new CSeq_loc);
     CPacked_seqint::Tdata& ints = tmp->SetPacked_int().Set();
     TRange total_range(TRange::GetEmpty());
@@ -1816,10 +1918,10 @@ bool CSeq_loc_Conversion_Set::ConvertInterval(const CSeq_interval& src,
         m_GraphRanges->IncOffset(src.GetLength());
     }
     if (ints.size() > 1) {
-        dst->Reset(tmp);
+        dst.Reset(tmp);
     }
     else if (ints.size() == 1) {
-        (*dst)->SetInt(**ints.begin());
+        dst->SetInt(**ints.begin());
     }
     m_TotalRange += total_range;
     // does not guarantee the whole interval is mapped, but should work
@@ -1830,38 +1932,56 @@ bool CSeq_loc_Conversion_Set::ConvertInterval(const CSeq_interval& src,
 
 
 bool CSeq_loc_Conversion_Set::ConvertPacked_int(const CSeq_loc& src,
-                                                CRef<CSeq_loc>* dst,
+                                                CRef<CSeq_loc>& dst,
                                                 unsigned int loc_index)
 {
     bool res = false;
     _ASSERT(src.Which() == CSeq_loc::e_Packed_int);
     const CPacked_seqint::Tdata& src_ints = src.GetPacked_int().Get();
-    CPacked_seqint::Tdata& dst_ints = (*dst)->SetPacked_int().Set();
+    CPacked_seqint::Tdata* dst_ints = &dst->SetPacked_int().Set();
+    // If the result contains NULLs, may need to use mix instead.
+    CSeq_loc_mix::Tdata* dst_mix = 0;
     bool last_truncated = false;
     ITERATE ( CPacked_seqint::Tdata, i, src_ints ) {
         CRef<CSeq_loc> dst_int(new CSeq_loc);
-        bool mapped = ConvertInterval(**i, &dst_int, loc_index);
+        bool mapped = ConvertInterval(**i, dst_int, loc_index);
         if (mapped) {
             if ( last_truncated  &&
+                !CSeq_loc_Mapper_Base::GetNonMappingAsNull()  &&
                 !dst_int->IsPartialStart(eExtreme_Biological) ) {
                 dst_int->SetPartialStart(true, eExtreme_Biological);
             }
-            if ( dst_int->IsInt() ) {
-                dst_ints.push_back(CRef<CSeq_interval>(&dst_int->SetInt()));
-            }
-            else if ( dst_int->IsPacked_int() ) {
-                dst_ints.splice(dst_ints.end(),
-                                dst_int->SetPacked_int().Set());
+            if (dst_mix) {
+                dst_mix->push_back(dst_int);
             }
             else {
-                _ASSERT("this cannot happen" && 0);
+                if ( dst_int->IsInt() ) {
+                    dst_ints->push_back(CRef<CSeq_interval>(&dst_int->SetInt()));
+                }
+                else if ( dst_int->IsPacked_int() ) {
+                    dst_ints->splice(dst_ints->end(),
+                        dst_int->SetPacked_int().Set());
+                }
+                else {
+                    dst_mix = CSeq_loc_Conversion::s_ConvertToMix(dst);
+                    _ASSERT(dst_mix);
+                    dst_mix->push_back(dst_int);
+                }
             }
         }
         else {
-            if ( !last_truncated  &&
-                !(*dst)->IsPartialStop(eExtreme_Biological) ) {
-                (*dst)->SetPartialStop(true, eExtreme_Biological);
+            if (last_truncated) continue;
+            if (CSeq_loc_Mapper_Base::GetNonMappingAsNull()) {
+                dst_mix = CSeq_loc_Conversion::s_ConvertToMix(dst);
+                _ASSERT(dst_mix);
+                CRef<CSeq_loc> null_loc(new CSeq_loc);
+                null_loc->SetNull();
+                dst_mix->push_back(null_loc);
             }
+            else if (!dst->IsPartialStop(eExtreme_Biological)) {
+                dst->SetPartialStop(true, eExtreme_Biological);
+            }
+            last_truncated = true;
         }
         m_Partial |= !mapped;
         res |= mapped;
@@ -1872,17 +1992,19 @@ bool CSeq_loc_Conversion_Set::ConvertPacked_int(const CSeq_loc& src,
 
 
 bool CSeq_loc_Conversion_Set::ConvertPacked_pnt(const CSeq_loc& src,
-                                                CRef<CSeq_loc>* /* dst */,
+                                                CRef<CSeq_loc>& dst,
                                                 unsigned int loc_index)
 {
     bool res = false;
     _ASSERT(src.Which() == CSeq_loc::e_Packed_pnt);
     const CPacked_seqpnt& src_pack_pnts = src.GetPacked_pnt();
     const CPacked_seqpnt::TPoints& src_pnts = src_pack_pnts.GetPoints();
-    CRef<CSeq_loc> tmp(new CSeq_loc);
     // using mix, not point, since mappings may have
     // different strand, fuzz etc.
-    CSeq_loc_mix::Tdata& locs = tmp->SetMix().Set();
+    if (!dst) {
+        dst.Reset(new CSeq_loc);
+    }
+    CSeq_loc_mix::Tdata& locs = dst->SetMix().Set();
     ITERATE ( CPacked_seqpnt::TPoints, i, src_pnts ) {
         bool mapped = false;
         TSeqPos graph_offset = m_GraphRanges ? m_GraphRanges->GetOffset() : 0;
@@ -1915,6 +2037,11 @@ bool CSeq_loc_Conversion_Set::ConvertPacked_pnt(const CSeq_loc& src,
         if ( m_GraphRanges ) {
             m_GraphRanges->IncOffset(1);
         }
+        if (!mapped && CSeq_loc_Mapper::GetNonMappingAsNull()) {
+            CRef<CSeq_loc> null_loc(new CSeq_loc);
+            null_loc->SetNull();
+            locs.push_back(null_loc);
+        }
         m_Partial |= !mapped;
         res |= mapped;
     }
@@ -1923,20 +2050,21 @@ bool CSeq_loc_Conversion_Set::ConvertPacked_pnt(const CSeq_loc& src,
 
 
 bool CSeq_loc_Conversion_Set::ConvertMix(const CSeq_loc& src,
-                                         CRef<CSeq_loc>* dst,
+                                         CRef<CSeq_loc>& dst,
                                          unsigned int loc_index)
 {
     bool res = false;
     _ASSERT(src.Which() == CSeq_loc::e_Mix);
     const CSeq_loc_mix::Tdata& src_mix = src.GetMix().Get();
     CRef<CSeq_loc> dst_loc;
-    CSeq_loc_mix::Tdata& dst_mix = (*dst)->SetMix().Set();
+    CSeq_loc_mix::Tdata& dst_mix = dst->SetMix().Set();
     bool last_truncated = false;
     ITERATE ( CSeq_loc_mix::Tdata, i, src_mix ) {
         dst_loc.Reset(new CSeq_loc);
-        if ( Convert(**i, &dst_loc, loc_index) ) {
+        if ( Convert(**i, dst_loc, loc_index) ) {
             _ASSERT(dst_loc);
             if ( last_truncated  &&
+                !CSeq_loc_Mapper::GetNonMappingAsNull()  &&
                 !dst_loc->IsPartialStart(eExtreme_Biological) ) {
                 dst_loc->SetPartialStart(true, eExtreme_Biological);
             }
@@ -1945,9 +2073,14 @@ bool CSeq_loc_Conversion_Set::ConvertMix(const CSeq_loc& src,
             last_truncated = false;
         }
         else {
-            if ( !last_truncated  &&
-                !(*dst)->IsPartialStop(eExtreme_Biological) ) {
-                (*dst)->SetPartialStop(true, eExtreme_Biological);
+            if (last_truncated) continue;
+            if (CSeq_loc_Mapper::GetNonMappingAsNull()) {
+                CRef<CSeq_loc> null_loc(new CSeq_loc);
+                null_loc->SetNull();
+                dst_mix.push_back(null_loc);
+            }
+            else if (!dst->IsPartialStop(eExtreme_Biological)) {
+                dst->SetPartialStop(true, eExtreme_Biological);
             }
             last_truncated = true;
         }
@@ -1958,16 +2091,21 @@ bool CSeq_loc_Conversion_Set::ConvertMix(const CSeq_loc& src,
 
 
 bool CSeq_loc_Conversion_Set::ConvertEquiv(const CSeq_loc& src,
-                                           CRef<CSeq_loc>* dst,
+                                           CRef<CSeq_loc>& dst,
                                            unsigned int loc_index)
 {
     bool res = false;
     _ASSERT(src.Which() == CSeq_loc::e_Equiv);
     const CSeq_loc_equiv::Tdata& src_equiv = src.GetEquiv().Get();
     CRef<CSeq_loc> dst_loc;
-    CSeq_loc_equiv::Tdata& dst_equiv = (*dst)->SetEquiv().Set();
+    CSeq_loc_equiv::Tdata& dst_equiv = dst->SetEquiv().Set();
     ITERATE ( CSeq_loc_equiv::Tdata, i, src_equiv ) {
-        if ( Convert(**i, &dst_loc, loc_index) ) {
+        if ( Convert(**i, dst_loc, loc_index)  ||
+            CSeq_loc_Mapper::GetNonMappingAsNull() ) {
+            if (!dst_loc) {
+                dst_loc.Reset(new CSeq_loc);
+                dst_loc->SetNull();
+            }
             dst_equiv.push_back(dst_loc);
             res = true;
         }
@@ -1978,7 +2116,7 @@ bool CSeq_loc_Conversion_Set::ConvertEquiv(const CSeq_loc& src,
 
 
 bool CSeq_loc_Conversion_Set::ConvertBond(const CSeq_loc& src,
-                                          CRef<CSeq_loc>* dst,
+                                          CRef<CSeq_loc>& dst,
                                           unsigned int loc_index)
 {
     bool res = false;
@@ -1986,7 +2124,7 @@ bool CSeq_loc_Conversion_Set::ConvertBond(const CSeq_loc& src,
     const CSeq_bond& src_bond = src.GetBond();
     // using mix, not bond, since mappings may have
     // different strand, fuzz etc.
-    (*dst)->SetBond();
+    dst->SetBond();
     CRef<CSeq_point> pntA;
     CRef<CSeq_point> pntB;
     {{
@@ -2019,7 +2157,7 @@ bool CSeq_loc_Conversion_Set::ConvertBond(const CSeq_loc& src,
             }
         }
     }
-    CSeq_bond& dst_bond = (*dst)->SetBond();
+    CSeq_bond& dst_bond = dst->SetBond();
     if ( pntA  ||  pntB ) {
         if ( pntA ) {
             dst_bond.SetA(*pntA);
@@ -2040,10 +2178,10 @@ bool CSeq_loc_Conversion_Set::ConvertBond(const CSeq_loc& src,
 
 
 bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src,
-                                      CRef<CSeq_loc>* dst,
+                                      CRef<CSeq_loc>& dst,
                                       unsigned int loc_index)
 {
-    dst->Reset(new CSeq_loc);
+    dst.Reset(new CSeq_loc);
     bool res = false;
     switch ( src.Which() ) {
     case CSeq_loc::e_not_set:
@@ -2054,7 +2192,7 @@ bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src,
         break;
     case CSeq_loc::e_Null:
     {
-        (*dst)->SetNull();
+        dst->SetNull();
         res = true;
         break;
     }
@@ -2068,7 +2206,7 @@ bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src,
             CSeq_loc_Conversion& cvt = *mit->second;
             cvt.Reset();
             if ( cvt.GoodSrcId(src.GetEmpty()) ) {
-                (*dst)->SetEmpty(cvt.GetDstId());
+                dst->SetEmpty(cvt.GetDstId());
                 res = true;
                 break;
             }
@@ -2133,12 +2271,12 @@ bool CSeq_loc_Conversion_Set::Convert(const CSeq_loc& src,
 
 
 void CSeq_loc_Conversion_Set::Convert(const CSeq_align& src,
-                                      CRef<CSeq_align>* dst)
+                                      CRef<CSeq_align>& dst)
 {
     CSeq_loc_Mapper loc_mapper(0, NULL);
     CSeq_align_Mapper mapper(src, loc_mapper);
     mapper.Convert(*this);
-    *dst = mapper.GetDstAlign();
+    dst = mapper.GetDstAlign();
 }
 
 

@@ -159,7 +159,7 @@ CAnnotMapping_Info::GetMappedSeq_align(const CSeq_align& orig) const
             SafeCast(m_MappedObject.GetPointer()));
 
         CRef<CSeq_align> dst;
-        cvts.Convert(orig, &dst);
+        cvts.Convert(orig, dst);
 
         CRange<TSeqPos>& range = const_cast<CRange<TSeqPos>&>(m_TotalRange);
         range = range.GetEmpty();

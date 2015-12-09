@@ -736,6 +736,10 @@ private:
     // See also x_PushRangesToDstMix.
     void x_PushLocToDstMix(CRef<CSeq_loc> loc);
 
+    // Pushes NULL location to the destination mix (when a range
+    // can not be mapped).
+    void x_PushNullLoc(void);
+
     // Map the alignment. If row is NULL, map all rows. Otherwise
     // map only the selected row.
     CRef<CSeq_align> x_MapSeq_align(const CSeq_align& src_align,
@@ -906,6 +910,12 @@ public:
     /// be used instead, since it takes care of synonym storage and mapping.
     /// This method does nothing but storing synonyms in the container.
     void CollectSynonyms(const CSeq_id_Handle& id, TSynonyms& synonyms) const;
+    // Check if ranges which can not be mapped should be replaced with NULL
+    // locations. By default removed ranges are reported using neighbor's fuzz.
+    // The flag is controlled from environment/registry:
+    // MAPPER_NONMAPPING_AS_NULL=t
+    // [Mapper]/Nonmapping_As_Null=t
+    static bool GetNonMappingAsNull(void);
 };
 
 

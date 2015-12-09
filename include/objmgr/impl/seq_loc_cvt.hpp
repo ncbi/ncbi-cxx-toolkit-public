@@ -138,7 +138,7 @@ public:
         eProduct
     };
 
-    bool Convert(const CSeq_loc& src, CRef<CSeq_loc>* dst,
+    bool Convert(const CSeq_loc& src, CRef<CSeq_loc>& dst,
                  EConvertFlag flag = eCnvDefault);
 
     void Reset(void);
@@ -211,7 +211,7 @@ private:
     CRef<CSeq_point> GetDstPoint(void);
     CRef<CSeq_loc_mix> GetDstMix(void);
 
-    void SetDstLoc(CRef<CSeq_loc>* loc);
+    void SetDstLoc(CRef<CSeq_loc>& loc);
 
     bool IsSpecialLoc(void) const;
 
@@ -235,13 +235,15 @@ private:
             return TRange(m_Src_from, m_Src_to);
         }
 
-    void ConvertPacked_int(const CSeq_loc& src, CRef<CSeq_loc>* dst);
-    void ConvertPacked_pnt(const CSeq_loc& src, CRef<CSeq_loc>* dst);
+    void ConvertPacked_int(const CSeq_loc& src, CRef<CSeq_loc>& dst);
+    void ConvertPacked_pnt(const CSeq_loc& src, CRef<CSeq_loc>& dst);
     bool ConvertSimpleMix(const CSeq_loc& src);
-    void ConvertMix(const CSeq_loc& src, CRef<CSeq_loc>* dst,
+    void ConvertMix(const CSeq_loc& src, CRef<CSeq_loc>& dst,
                     EConvertFlag flag = eCnvDefault);
-    void ConvertEquiv(const CSeq_loc& src, CRef<CSeq_loc>* dst);
-    void ConvertBond(const CSeq_loc& src, CRef<CSeq_loc>* dst);
+    void ConvertEquiv(const CSeq_loc& src, CRef<CSeq_loc>& dst);
+    void ConvertBond(const CSeq_loc& src, CRef<CSeq_loc>& dst);
+
+    static CSeq_loc_mix::Tdata* s_ConvertToMix(CRef<CSeq_loc>& loc);
 
     // Translation parameters:
     //   Source id and bounds:
@@ -325,9 +327,9 @@ public:
     void Convert(CAnnotObject_Ref& obj,
                  CSeq_loc_Conversion::ELocationType loctype);
     bool Convert(const CSeq_loc& src,
-                 CRef<CSeq_loc>* dst,
+                 CRef<CSeq_loc>& dst,
                  unsigned int loc_index);
-    void Convert(const CSeq_align& src, CRef<CSeq_align>* dst);
+    void Convert(const CSeq_align& src, CRef<CSeq_align>& dst);
 
     void Reset(void);
     bool IsPartial(void) const
@@ -351,26 +353,26 @@ private:
     void x_Add(CSeq_loc_Conversion& cvt, unsigned int loc_index);
 
     bool ConvertPoint(const CSeq_point& src,
-                      CRef<CSeq_loc>* dst,
+                      CRef<CSeq_loc>& dst,
                       unsigned int loc_index);
     bool ConvertInterval(const CSeq_interval& src,
-                         CRef<CSeq_loc>* dst,
+                         CRef<CSeq_loc>& dst,
                          unsigned int loc_index);
 
     bool ConvertPacked_int(const CSeq_loc& src,
-                           CRef<CSeq_loc>* dst,
+                           CRef<CSeq_loc>& dst,
                            unsigned int loc_index);
     bool ConvertPacked_pnt(const CSeq_loc& src,
-                           CRef<CSeq_loc>* dst,
+                           CRef<CSeq_loc>& dst,
                            unsigned int loc_index);
     bool ConvertMix(const CSeq_loc& src,
-                    CRef<CSeq_loc>* dst,
+                    CRef<CSeq_loc>& dst,
                     unsigned int loc_index);
     bool ConvertEquiv(const CSeq_loc& src,
-                      CRef<CSeq_loc>* dst,
+                      CRef<CSeq_loc>& dst,
                       unsigned int loc_index);
     bool ConvertBond(const CSeq_loc& src,
-                     CRef<CSeq_loc>* dst,
+                     CRef<CSeq_loc>& dst,
                      unsigned int loc_index);
     void ConvertFeature(CAnnotObject_Ref& ref,
                         const CSeq_feat& orig_feat,
