@@ -69,7 +69,7 @@ bool IsPartOfUrl(
     string separators( "( \t\r\n" );
     static const char legal_path_chars_str[] =
         "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_-.";
-    const CTempString legal_path_chars(legal_path_chars_str, sizeof(legal_path_chars_str));
+    const CTempString legal_path_chars(legal_path_chars_str, sizeof(legal_path_chars_str) - 1);
 
     //
     //  Weed out silly input:
