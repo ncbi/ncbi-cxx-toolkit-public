@@ -126,7 +126,7 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
     { "HASB",
         {&CNCMessageHandler::x_DoCmd_HasBlob,
             "IC_HASB",
-            eClientBlobRead | fPeerFindExistsOnly,
+            eClientBlobRead | fPeerFindExistsOnly | fNoBlobVersionCheck,
             eNCRead,
             eProxyHasBlob},
           // Name of cache for blob.
@@ -3974,10 +3974,22 @@ CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_HasBlob(void)
 {
     LOG_CURRENT_FUNCTION
+    int ver = 0;
+    bool ver_report = false;
     bool exist = m_LatestExist  &&  m_LatestBlobSum->expire > CSrvTime::CurSecs();
-    if (!exist)
+    if (exist) {
+        ver = m_BlobAccess->GetCurBlobVersion();
+        ver_report = m_BlobVersion != ver;
+        exist = !ver_report;
+    }
+    if (!exist) {
         GetDiagCtx()->SetRequestStatus(eStatus_NotFound);
-    x_ReportOK("OK:").WriteNumber(exist ? 1 : 0).WriteText("\n");
+    }
+    x_ReportOK("OK:").WriteNumber(exist ? 1 : 0);
+    if (ver_report) {
+        WriteText(", VER=").WriteNumber(ver);
+    }
+    WriteText("\n");
     return &CNCMessageHandler::x_FinishCommand;
 }
 
