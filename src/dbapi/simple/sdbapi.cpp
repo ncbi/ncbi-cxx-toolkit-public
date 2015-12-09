@@ -936,7 +936,7 @@ CSDB_ConnectionParam::Set(const CSDB_ConnectionParam& param,
 
 void CSDB_ConnectionParam::x_FillParamMap(void)
 {
-    static const string kDefault = "default";
+    static const char* kDefault = "default";
     m_ParamMap.clear();
 
     impl::SDBConfParams conf_params;

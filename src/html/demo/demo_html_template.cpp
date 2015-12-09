@@ -312,10 +312,7 @@ int CDemoApplication::Run(void)
 //
 //----------------------------------------------------------------------------
 
-static CDemoApplication theDemoApplication;
-
 int main(int argc, const char* argv[])
 {
-    // Execute main application function.
-    return theDemoApplication.AppMain(argc, argv);
+    return CDemoApplication().AppMain(argc, argv);
 }

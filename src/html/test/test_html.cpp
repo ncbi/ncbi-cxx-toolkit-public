@@ -208,10 +208,7 @@ int CTestApplication::Run(void)
 // APPLICATION OBJECT  and  MAIN
 //
 
-static CTestApplication theTestApplication;
-
 int main(int argc, const char* argv[])
 {
-    // Execute main application function
-    return theTestApplication.AppMain(argc, argv);
+    return CTestApplication().AppMain(argc, argv);
 }
