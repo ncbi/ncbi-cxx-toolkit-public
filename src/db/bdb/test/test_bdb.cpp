@@ -1340,6 +1340,8 @@ static void s_TEST_BDB_LOB_File(void)
 
     size_t bsize = 50 * 1024 * 1024;
     char* buf = new char[bsize];
+    for (size_t k = 0; k < bsize; ++k)
+        buf[k] = (char)random();
 
     int test_size = 50;
 
@@ -1372,9 +1374,7 @@ static void s_TEST_BDB_LOB_File(void)
         cout << "Time=" << finish - start << "sec." << endl;
     }
     cout << "Big blob file timing test OK." << endl;
-    delete buf;
-
-
+    delete [] buf;
     }}
 
 
