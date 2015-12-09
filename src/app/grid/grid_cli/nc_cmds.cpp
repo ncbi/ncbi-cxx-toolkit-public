@@ -145,15 +145,15 @@ void CGridCommandLineInterfaceApp::ParseICacheKey(
             "expected a comma-separated key,version,subkey triplet).");
     }
     if (!key_parts[1].empty())
-        m_Opts.icache_key.version = NStr::StringToInt(key_parts[1]);
+        m_Opts.ncid.version = NStr::StringToInt(key_parts[1]);
     else if (permit_empty_version)
         *version_is_defined = false;
     else {
         NCBI_THROW(CArgException, eNoValue,
             "blob version parameter is missing");
     }
-    m_Opts.icache_key.key = key_parts.front();
-    m_Opts.icache_key.subkey = key_parts.back();
+    m_Opts.ncid.key = key_parts.front();
+    m_Opts.ncid.subkey = key_parts.back();
 }
 
 void CGridCommandLineInterfaceApp::PrintServerAddress(CNetServer server)
@@ -182,9 +182,9 @@ int CGridCommandLineInterfaceApp::Cmd_BlobInfo()
             CNetServer server_last_used;
 
             output = m_NetICacheClient.GetBlobInfo(
-                    m_Opts.icache_key.key,
-                    m_Opts.icache_key.version,
-                    m_Opts.icache_key.subkey,
+                    m_Opts.ncid.key,
+                    m_Opts.ncid.version,
+                    m_Opts.ncid.subkey,
                     (nc_try_all_servers = IsOptionSet(eTryAllServers),
                     nc_server_last_used = &server_last_used));
 
@@ -211,9 +211,9 @@ int CGridCommandLineInterfaceApp::Cmd_BlobInfo()
             CNetServer server_last_used;
 
             size_t blob_size = m_NetICacheClient.GetBlobSize(
-                    m_Opts.icache_key.key,
-                    m_Opts.icache_key.version,
-                    m_Opts.icache_key.subkey,
+                    m_Opts.ncid.key,
+                    m_Opts.ncid.version,
+                    m_Opts.ncid.subkey,
                     nc_server_last_used = &server_last_used);
 
             PrintServerAddress(server_last_used);
@@ -281,23 +281,23 @@ int CGridCommandLineInterfaceApp::Cmd_GetBlob()
         case 0: /* no special case */
             reader.reset(version_is_defined ?
                 m_NetICacheClient.GetReadStream(
-                    m_Opts.icache_key.key,
-                    m_Opts.icache_key.version,
-                    m_Opts.icache_key.subkey,
+                    m_Opts.ncid.key,
+                    m_Opts.ncid.version,
+                    m_Opts.ncid.subkey,
                     NULL,
                     (nc_caching_mode = CNetCacheAPI::eCaching_Disable,
                     nc_try_all_servers = IsOptionSet(eTryAllServers))) :
                 m_NetICacheClient.GetReadStream(
-                    m_Opts.icache_key.key,
-                    m_Opts.icache_key.subkey,
-                    &m_Opts.icache_key.version,
+                    m_Opts.ncid.key,
+                    m_Opts.ncid.subkey,
+                    &m_Opts.ncid.version,
                     &validity));
             break;
         case OPTION_N(0): /* use offset */
             reader.reset(m_NetICacheClient.GetReadStreamPart(
-                m_Opts.icache_key.key,
-                m_Opts.icache_key.version,
-                m_Opts.icache_key.subkey,
+                m_Opts.ncid.key,
+                m_Opts.ncid.version,
+                m_Opts.ncid.subkey,
                 m_Opts.offset,
                 m_Opts.size,
                 NULL,
@@ -306,9 +306,9 @@ int CGridCommandLineInterfaceApp::Cmd_GetBlob()
             break;
         case OPTION_N(1): /* use password */
             reader.reset(m_NetICacheClient.GetReadStream(
-                    m_Opts.icache_key.key,
-                    m_Opts.icache_key.version,
-                    m_Opts.icache_key.subkey,
+                    m_Opts.ncid.key,
+                    m_Opts.ncid.version,
+                    m_Opts.ncid.subkey,
                     NULL,
                     (nc_caching_mode = CNetCacheAPI::eCaching_Disable,
                     nc_blob_password = m_Opts.password,
@@ -316,9 +316,9 @@ int CGridCommandLineInterfaceApp::Cmd_GetBlob()
             break;
         case OPTION_N(1) | OPTION_N(0): /* use password and offset */
             reader.reset(m_NetICacheClient.GetReadStreamPart(
-                    m_Opts.icache_key.key,
-                    m_Opts.icache_key.version,
-                    m_Opts.icache_key.subkey,
+                    m_Opts.ncid.key,
+                    m_Opts.ncid.version,
+                    m_Opts.ncid.subkey,
                     m_Opts.offset,
                     m_Opts.size,
                     NULL,
@@ -328,7 +328,7 @@ int CGridCommandLineInterfaceApp::Cmd_GetBlob()
         }
         if (!version_is_defined)
             NcbiCerr << "Blob version: " <<
-                    m_Opts.icache_key.version << NcbiEndl <<
+                    m_Opts.ncid.version << NcbiEndl <<
                 "Blob validity: " << (validity == ICache::eCurrent ?
                     "current" : "expired") << NcbiEndl;
     }
@@ -393,16 +393,16 @@ int CGridCommandLineInterfaceApp::Cmd_PutBlob()
 
         writer.reset(IsOptionSet(ePassword) ?
             m_NetICacheClient.GetNetCacheWriter(
-                    m_Opts.icache_key.key,
-                    m_Opts.icache_key.version,
-                    m_Opts.icache_key.subkey,
+                    m_Opts.ncid.key,
+                    m_Opts.ncid.version,
+                    m_Opts.ncid.subkey,
                     (nc_blob_ttl = m_Opts.ttl,
                     nc_blob_password = m_Opts.password,
                     nc_server_last_used = &server_last_used)) :
             m_NetICacheClient.GetNetCacheWriter(
-                    m_Opts.icache_key.key,
-                    m_Opts.icache_key.version,
-                    m_Opts.icache_key.subkey,
+                    m_Opts.ncid.key,
+                    m_Opts.ncid.version,
+                    m_Opts.ncid.subkey,
                     (nc_blob_ttl = m_Opts.ttl,
                     nc_server_last_used = &server_last_used)));
     }
@@ -461,12 +461,12 @@ int CGridCommandLineInterfaceApp::Cmd_RemoveBlob()
         ParseICacheKey();
 
         if (IsOptionSet(ePassword))
-            m_NetICacheClient.RemoveBlob(m_Opts.icache_key.key,
-                    m_Opts.icache_key.version, m_Opts.icache_key.subkey,
+            m_NetICacheClient.RemoveBlob(m_Opts.ncid.key,
+                    m_Opts.ncid.version, m_Opts.ncid.subkey,
                     nc_blob_password = m_Opts.password);
         else
-            m_NetICacheClient.RemoveBlob(m_Opts.icache_key.key,
-                m_Opts.icache_key.version, m_Opts.icache_key.subkey);
+            m_NetICacheClient.RemoveBlob(m_Opts.ncid.key,
+                m_Opts.ncid.version, m_Opts.ncid.subkey);
     }
 
     return 0;

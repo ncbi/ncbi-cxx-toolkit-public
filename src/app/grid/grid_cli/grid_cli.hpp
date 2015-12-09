@@ -341,13 +341,13 @@ private:
         string ft_site;
         string ft_key;
 
-        struct SICacheBlobKey {
+        struct SNCID {
             string key;
             int version;
             string subkey;
 
-            SICacheBlobKey() : version(0) {}
-        } icache_key;
+            SNCID() : version(0) {}
+        } ncid;
 
         char option_flags[eNumberOfOptions];
 
