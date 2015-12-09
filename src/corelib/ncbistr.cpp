@@ -269,7 +269,7 @@ bool NStr::MatchesMask(CTempString str, CTempString mask, ECase use_case)
             return false;
 
         default:
-            // Compare nonpattern character in mask and name
+            // Compare non pattern character in mask and name
             char s = str[str_pos++];
             if (use_case == NStr::eNocase) {
                 c = tolower((unsigned char) c);
@@ -2564,7 +2564,7 @@ SIZE_TYPE NStr::DoubleToStringPosix(double val, unsigned int precision,
     bool exp_positive = dec >= 0;
     unsigned int exp= (unsigned int)(exp_positive ? dec : (-dec));
 
-// assemble the result
+    // assemble the result
     char *buffer_pos = buffer;
 //    char *buffer_end = buffer + bufsize;
     char *digits_pos = digits;
@@ -2572,8 +2572,8 @@ SIZE_TYPE NStr::DoubleToStringPosix(double val, unsigned int precision,
     if (sign < 0) {
         *buffer_pos++ = '-';
     }
-// The 'e' format is used when the exponent of the value is less than -4
-//  or greater than or equal to the precision argument
+    // The 'e' format is used when the exponent of the value is less than -4
+    //  or greater than or equal to the precision argument
     if ((exp_positive && exp >= precision) || (!exp_positive && exp > 4)) {
         *buffer_pos++ = *digits_pos++;
         --digits_len;
@@ -2592,7 +2592,7 @@ SIZE_TYPE NStr::DoubleToStringPosix(double val, unsigned int precision,
         bool need_zeros = exp < 10 ? true : false;
         size_t need_digits = exp < 100 ? 2 : 3;
 #endif
-// assuming exp < 1000
+        // assuming exp < 1000
         buffer_pos = s_ncbi_append_int2str(buffer_pos, exp, need_digits,need_zeros);
     } else if (exp_positive) {
         *buffer_pos++ = *digits_pos++;
@@ -4147,40 +4147,40 @@ static struct tag_HtmlEntities
 {
     TUnicodeSymbol u;
     const char*    s;
-
-} const s_HtmlEntities[] = {
-        {  9, "Tab" }, 
-        { 10, "NewLine" }, 
-        { 33, "excl" }, 
+}
+const s_HtmlEntities[] = {
+    {    9, "Tab" }, 
+    {   10, "NewLine" }, 
+    {   33, "excl" }, 
     {   34, "quot" }, 
-        { 35, "num" }, 
-        { 36, "dollar" }, 
-        { 37, "percnt" }, 
+    {   35, "num" }, 
+    {   36, "dollar" }, 
+    {   37, "percnt" }, 
     {   38, "amp" }, 
     {   39, "apos" }, 
-        { 40, "lpar" }, 
-        { 41, "rpar" }, 
-        { 42, "ast" }, 
-        { 43, "plus" }, 
-        { 44, "comma" }, 
-        { 46, "period" }, 
-        { 47, "sol" }, 
-        { 58, "colon" }, 
-        { 59, "semi" }, 
+    {   40, "lpar" }, 
+    {   41, "rpar" }, 
+    {   42, "ast" }, 
+    {   43, "plus" }, 
+    {   44, "comma" }, 
+    {   46, "period" }, 
+    {   47, "sol" }, 
+    {   58, "colon" }, 
+    {   59, "semi" }, 
     {   60, "lt" }, 
-        { 61, "equals" }, 
+    {   61, "equals" }, 
     {   62, "gt" }, 
-        { 63, "quest" }, 
-        { 64, "commat" }, 
-        { 91, "lsqb" }, 
-        { 92, "bsol" }, 
-        { 93, "rsqb" }, 
-        { 94, "Hat" }, 
-        { 95, "lowbar" }, 
-        { 96, "grave" }, 
-        {123, "lcub" }, 
-        {124, "verbar" }, 
-        {125, "rcub" }, 
+    {   63, "quest" }, 
+    {   64, "commat" }, 
+    {   91, "lsqb" }, 
+    {   92, "bsol" }, 
+    {   93, "rsqb" }, 
+    {   94, "Hat" }, 
+    {   95, "lowbar" }, 
+    {   96, "grave" }, 
+    {  123, "lcub" }, 
+    {  124, "verbar" }, 
+    {  125, "rcub" }, 
     {  160, "nbsp" }, 
     {  161, "iexcl" }, 
     {  162, "cent" }, 
@@ -4567,7 +4567,7 @@ string NStr::JsonEncode(const CTempString str)
             break;
         default:
             if ((unsigned int)c < 0x20 || (unsigned int)c >= 0x80) {
-                const char* charmap = "0123456789abcdef";
+                static const char* charmap = "0123456789abcdef";
                 result.append("\\u00");
                 Uint1 ch = c;
                 unsigned hi = ch >> 4;
@@ -4610,7 +4610,7 @@ string NStr::ShellEncode(const string& str)
     // - Escape without quotes. Use backslash.
     /////////////////////////////////////////////////////////////////////////
 
-    // 2. Non-empty printable string without metacharacters.
+    // 2. Non-empty printable string without meta-characters.
     //
     // Shell special characters, according to IEEE Std 1003.1,
     // plus ! (Bourne shell exit status negation and Bash history expansion),
@@ -4624,7 +4624,7 @@ string NStr::ShellEncode(const string& str)
         return str;
     }
 
-    // 3. Printable string, but either empty or some shell metacharacters.
+    // 3. Printable string, but either empty or some shell meta-characters.
     //
     // Aesthetics preference:
     // i)   If the string includes literal single-quotes, then prefer
@@ -4651,7 +4651,7 @@ string NStr::ShellEncode(const string& str)
     //      quoting: if there are many literal single-quotes and the
     //      use of double-quotes would involve the need to escape embedded
     //      characters, then it may be more pleasing to escape the
-    //      shell metacharacters, and avoid the need for single-quoting
+    //      shell meta-characters, and avoid the need for single-quoting
     //      in the presence of literal single-quotes.
     // iii) If there are no literal double-quotes, then all else being equal,
     //      avoid double-quotes and prefer escaping. Double-quotes are
@@ -4674,7 +4674,7 @@ string NStr::ShellEncode(const string& str)
     // Aesthetic improvement: Remove paired single-quotes ('')
     // that aren't escaped, as these evaluate to an empty string.
     // Don't apply this simplification for the degenerate case when
-    // the string is the empty string ''. (Nondegenerate strings
+    // the string is the empty string ''. (Non degenerate strings
     // must be length greater than 2). Implement the equivalent
     // of the Perl regexp:
     //
@@ -6022,7 +6022,7 @@ bool s_IsIPAddress(const char* str, size_t size)
                     return false;
                 }
                 if (prev_colon  &&  c - prev_colon  == 1) {
-                    // A group of zeroes found
+                    // A group of zeros found
                     if (have_group) {
                         // Only one group is allowed
                         return false;
