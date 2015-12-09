@@ -68,7 +68,7 @@ class CSeq_graph;
 class IMapper_Sequence_Info;
 
 
-/// CMappingRange - describles a single interval to interval
+/// CMappingRange - describes a single interval to interval
 /// mapping.
 class NCBI_SEQ_EXPORT CMappingRange : public CObject
 {
@@ -109,7 +109,7 @@ public:
     TRange Map_Range(TSeqPos           from,
                      TSeqPos           to,
                      const TRangeFuzz* fuzz = 0) const;
-    /// Map the strand, return true if the destination strand sould be
+    /// Map the strand, return true if the destination strand should be
     /// set (even if it's eNa_strand_unknown -- this may happen if the
     /// source strand is set to unknown).
     bool Map_Strand(bool is_set_strand,
@@ -130,11 +130,11 @@ private:
     CSeq_id_Handle      m_Dst_id_Handle;
     TSeqPos             m_Dst_from;
     ENa_strand          m_Dst_strand;
-    // Wether the mapping reverses the strand or not.
+    // Whether the mapping reverses the strand or not.
     // This value can be calculated from source and destination
     // strands, but is cached for better performance.
     bool                m_Reverse;
-    // Wether to extend the mapped location to the end of
+    // Whether to extend the mapped location to the end of
     // destination range. Used when mapping from a prot to a nuc.
     // ExtTo is set when both conditions are met:
     // - the mapping is from a protein to a nucleotide
@@ -166,14 +166,15 @@ private:
     //friend class CSeq_align_Mapper;
     friend struct CMappingRangeRef_Less;
     friend struct CMappingRangeRef_LessRev;
+
 public:
     // Interface for CPairwiseAln converter
     TSeqPos GetSrc_from(void) const { return m_Src_from; }
     TSeqPos GetDst_from(void) const { return m_Dst_from; }
-    TSeqPos GetLength(void) const { return m_Src_to - m_Src_from; }
-    bool GetReverse(void) const { return m_Reverse; }
-    int GetGroup(void) const { return m_Group; }
-    void SetGroup(int grp) { m_Group = grp; }
+    TSeqPos GetLength(void)   const { return m_Src_to - m_Src_from; }
+    bool    GetReverse(void)  const { return m_Reverse; }
+    int     GetGroup(void)    const { return m_Group; }
+    void    SetGroup(int grp) { m_Group = grp; }
 };
 
 
@@ -398,7 +399,7 @@ public:
     /// Merge any abutting or overlapping intervals
     CSeq_loc_Mapper_Base& SetMergeAll(void);
 
-    /// Wether to preserve or remove NULL sub-locations (usually
+    /// Whether to preserve or remove NULL sub-locations (usually
     /// indicating gaps) from the result. By default gaps are preserved.
     CSeq_loc_Mapper_Base& SetGapPreserve(void);
     CSeq_loc_Mapper_Base& SetGapRemove(void);
@@ -409,7 +410,7 @@ public:
     CSeq_loc_Mapper_Base& SetTrimSplicedSeg(bool trim);
 
     /// Keep ranges which can not be mapped. Does not affect truncation
-    /// of partially mapped ranges. By default nonmapping ranges are
+    /// of partially mapped ranges. By default non-mapping ranges are
     /// removed.
     CSeq_loc_Mapper_Base& KeepNonmappingRanges(void);
     CSeq_loc_Mapper_Base& TruncateNonmappingRanges(void);
@@ -664,7 +665,7 @@ private:
     // sequence types could not be detected. In this case the mapper
     // will attempt to find at least one known type in the location
     // and force it for all sub-locations with unknown types.
-    // The function will fail if there are diferent known types in the
+    // The function will fail if there are different known types in the
     // same seq-loc.
     ESeqType x_ForceSeqTypes(const CSeq_loc& loc) const;
 
@@ -817,12 +818,12 @@ private:
     enum EMiscFlags {
         // Trim leading/trailing indels (gaps) from mapped spliced-seg alignments.
         fTrimSplicedSegs        = 1 << 0,
-        // Wether to keep or discard ranges which can not be mapped.
+        // Whether to keep or discard ranges which can not be mapped.
         fKeepNonmapping         = 1 << 1,
-        // Wether to check or not if the original location is on the same strand
+        // Whether to check or not if the original location is on the same strand
         // as the mapping source.
         fCheckStrand            = 1 << 2,
-        // Wether to include a source of each mapped range to the mapped seq-loc.
+        // Whether to include a source of each mapped range to the mapped seq-loc.
         fIncludeSrcLocs         = 1 << 3,
         // Prefer spliced-seg for mixed alignments.
         fMixedAlignsAsSpliced   = 1 << 4,
@@ -832,7 +833,7 @@ private:
     };
     typedef int TMiscFlags;
 
-    bool x_IsSetMiscFlag(EMiscFlags flag) const { return m_MiscFlags & flag; }
+    bool x_IsSetMiscFlag(EMiscFlags flag) const { return (m_MiscFlags & flag) == flag; }
     void x_SetMiscFlag(EMiscFlags flag, bool value);
 
     TMiscFlags m_MiscFlags;
@@ -904,9 +905,7 @@ public:
     /// NOTE: In most cases CollectSynonyms(const CSeq_id_Handle& id) should
     /// be used instead, since it takes care of synonym storage and mapping.
     /// This method does nothing but storing synonyms in the container.
-    void CollectSynonyms(const CSeq_id_Handle& id,
-                         TSynonyms&            synonyms) const;
-
+    void CollectSynonyms(const CSeq_id_Handle& id, TSynonyms& synonyms) const;
 };
 
 
