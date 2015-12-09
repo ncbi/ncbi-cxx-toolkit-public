@@ -1141,8 +1141,8 @@ void CFlatGatherer::x_RefSeqComments(CBioseqContext& ctx,
                     CCommentItem::eFormat_Html : CCommentItem::eFormat_Text;
                 string str = 
                     CCommentItem::GetStringForRefTrack(uo, ctx.GetHandle(), format, 
-                    ( eGenomeAnnotComment == eGenomeAnnotComment_Yes ? 
-                      CCommentItem::eGenomeBuildComment_Yes : 
+                    ( /* eGenomeAnnotComment == eGenomeAnnotComment_Yes ?
+                      CCommentItem::eGenomeBuildComment_Yes : */
                       CCommentItem::eGenomeBuildComment_No ) );
                 if ( !str.empty() ) {
                     x_AddComment(new CCommentItem(str, ctx, &uo));
