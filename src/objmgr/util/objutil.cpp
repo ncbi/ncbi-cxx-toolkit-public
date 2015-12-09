@@ -61,14 +61,16 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+
 bool IsPartOfUrl(
     const string& sentence,
     size_t pos )
 {
     string separators( "( \t\r\n" );
-    const static string legal_path_chars(
-        "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_-." );
-    
+    static const char legal_path_chars_str[] =
+        "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_-.";
+    const CTempString legal_path_chars(legal_path_chars_str, sizeof(legal_path_chars_str));
+
     //
     //  Weed out silly input:
     //
@@ -133,6 +135,7 @@ bool IsPartOfUrl(
     return false; /* never found the terminating '/' */
 };
 
+
 static bool s_RunOfStars(string& s, SIZE_TYPE start, SIZE_TYPE length)
 {
     SIZE_TYPE max = start + 66;
@@ -147,9 +150,9 @@ static bool s_RunOfStars(string& s, SIZE_TYPE start, SIZE_TYPE length)
     return true;
 }
 
+
 void ExpandTildes(string& s, ETildeStyle style)
 {
-
     if ( style == eTilde_tilde ) {
         return;
     }
@@ -343,7 +346,7 @@ bool RemovePeriodFromEnd(string& str, bool keep_ellipsis)
     } */
 
     /**
-    static const string kEllipsis = "...";
+    static const char* kEllipsis = "...";
 
     if ( NStr::EndsWith(str, '.') ) {
         if ( !keep_ellipsis  ||  !NStr::EndsWith(str, kEllipsis) ) {
@@ -386,7 +389,7 @@ class CIsGraph
 {
 public:
     bool operator()( const char c ) {
-        return isgraph(c);
+        return isgraph((unsigned char)c) != 0;
     }
 };
 
@@ -529,7 +532,7 @@ bool TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis)
     // while we're at it, also check if the junk contains a tilde and/or period
     bool isPeriod = false;
     bool isTilde = false;
-    int start_of_junk_pos = str.length() - 1;
+    int start_of_junk_pos = (int)str.length() - 1;
     for( ; start_of_junk_pos >= 0 ; --start_of_junk_pos ) {
         const char ch = str[start_of_junk_pos];
         if (ch <= ' ' || ch == '.' || ch == ',' || ch == '~' || ch == ';') {
@@ -580,7 +583,7 @@ bool TrimSpacesAndJunkFromEnds(string& str, bool allow_ellipsis)
         // holds the suffix to add after we remove the junk
         const char * suffix = ""; // by default, just remove junk
 
-        const int chars_in_junk = ( str.length() - start_of_junk_pos );
+        const int chars_in_junk = ( (int)str.length() - start_of_junk_pos );
         _ASSERT( chars_in_junk >= 1 );
 
         // allow one period at end
@@ -733,9 +736,9 @@ void TrimSpacesAndJunkFromEnds(string& result, const CTempString& str, bool allo
         static const int kMaxCharsToLookAt = 20;
 
         // go backwards, looking for the ampersand
-        int amp_iter = (start_of_junk_pos - 1);
+        int amp_iter = ((int)start_of_junk_pos - 1);
         for (; amp_iter >= 0 && ((start_of_junk_pos - amp_iter) < kMaxCharsToLookAt); --amp_iter) {
-            const char ch = str[amp_iter];
+            const unsigned char ch = str[amp_iter];
             if (isalnum(ch) || ch == '#') {
                 // just keep going
             }
@@ -757,7 +760,7 @@ void TrimSpacesAndJunkFromEnds(string& result, const CTempString& str, bool allo
     // if there's junk, chop it off (but leave period/tildes/ellipsis as appropriate)
     if (start_of_junk_pos < str.length()) {
 
-        const int chars_in_junk = (str.length() - start_of_junk_pos);
+        const int chars_in_junk = ((int)str.length() - start_of_junk_pos);
         _ASSERT(chars_in_junk >= 1);
 
         // allow one period at end
@@ -1220,20 +1223,20 @@ void DateToString(const CDate& date, string& str, EDateToString format_choice )
 {
     // One day we should make regular format default to JAN, since "JUN" seems
     // kind of arbitrary.
-    static const string regular_format  = "%{%2D%|01%}-%{%3N%|JUN%}-%Y";
-    static const string cit_sub_format = "%{%2D%|??%}-%{%3N%|???%}-%{%4Y%|/???%}";
-    static const string patent_format  = "%{%2D%|01%}-%{%3N%|JAN%}-%Y";
+    static const char* regular_format = "%{%2D%|01%}-%{%3N%|JUN%}-%Y";
+    static const char* cit_sub_format = "%{%2D%|??%}-%{%3N%|???%}-%{%4Y%|/???%}";
+    static const char* patent_format  = "%{%2D%|01%}-%{%3N%|JAN%}-%Y";
 
-    const string& format = ( format_choice == eDateToString_cit_sub ?
+    const char* format = ( format_choice == eDateToString_cit_sub ?
         cit_sub_format :
         ( format_choice == eDateToString_patent ? patent_format : regular_format ) );
 
     string date_str;
     date.GetDate(&date_str, format);
     NStr::ToUpper(date_str);
-
     str.append(date_str);
 }
+
 
 void GetDeltaSeqSummary(const CBioseq_Handle& seq, SDeltaSeqSummary& summary)
 {
@@ -1335,14 +1338,14 @@ void GetDeltaSeqSummary(const CBioseq_Handle& seq, SDeltaSeqSummary& summary)
 }
 
 
-const string& GetTechString(int tech)
+const string GetTechString(int tech)
 {
-    static const string concept_trans_str = "conceptual translation";
-    static const string seq_pept_str = "direct peptide sequencing";
-    static const string both_str = "conceptual translation with partial peptide sequencing";
-    static const string seq_pept_overlap_str = "sequenced peptide, ordered by overlap";
-    static const string seq_pept_homol_str = "sequenced peptide, ordered by homology";
-    static const string concept_trans_a_str = "conceptual translation supplied by author";
+    static const char* concept_trans_str = "conceptual translation";
+    static const char* seq_pept_str = "direct peptide sequencing";
+    static const char* both_str = "conceptual translation with partial peptide sequencing";
+    static const char* seq_pept_overlap_str = "sequenced peptide, ordered by overlap";
+    static const char* seq_pept_homol_str = "sequenced peptide, ordered by homology";
+    static const char* concept_trans_a_str = "conceptual translation supplied by author";
     
     switch ( tech ) {
     case CMolInfo::eTech_concept_trans:
@@ -1716,7 +1719,7 @@ namespace {
         const _T &str_iter_end)
         //  ============================================================================
     {
-        static const string possible_tag_starts[] = {
+        static const char* possible_tag_starts[] = {
             "<a href=",
             "<acronym title",
             "</a>",
@@ -1727,7 +1730,7 @@ namespace {
 
         // check every string it might start with
         for (int possible_str_idx = 0; possible_str_idx < num_possible_tag_starts; ++possible_str_idx) {
-            const string &expected_str = possible_tag_starts[possible_str_idx];
+            const string expected_str = possible_tag_starts[possible_str_idx];
 
             string::size_type idx = 0;
             _T check_str_iter = str_iter;
@@ -1856,26 +1859,26 @@ bool
 CommentHasSuspiciousHtml( const string &str )
 {
     // list is not complete, still need to take proper precautions
-    static const string bad_html_strings[] = { 
+    static const char* bad_html_strings[] = { 
         "<script", "<object", "<applet", "<embed", "<form", 
         "javascript:", "vbscript:"
     };
 
     // load matching fsa if not already done
-    static CTextFsa fsa;
-    if( ! fsa.IsPrimed() ) {
+    static CSafeStatic<CTextFsa> fsa;
+    if( ! fsa->IsPrimed() ) {
         for( size_t ii = 0; ii < ArraySize(bad_html_strings); ++ii ) {
-            fsa.AddWord( bad_html_strings[ii] );
+            fsa->AddWord( bad_html_strings[ii] );
         }
-        fsa.Prime();
+        fsa->Prime();
     }
 
     // do the match
     int current_state = 0;
     for ( SIZE_TYPE str_idx = 0 ; str_idx < str.length(); ++str_idx) {
         const char ch = str[str_idx];
-        int next_state = fsa.GetNextState (current_state, ch);
-        if (fsa.IsMatchFound (next_state)) {
+        int next_state = fsa->GetNextState (current_state, ch);
+        if (fsa->IsMatchFound (next_state)) {
             return true;
         }
         current_state = next_state;
