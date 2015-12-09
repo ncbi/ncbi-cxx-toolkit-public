@@ -47,7 +47,7 @@ void CGridCommandLineInterfaceApp::SetUp_AdminCmd(
             IsOptionAccepted(eWorkerNode, OPTION_N(2)) |
             IsOptionAccepted(eNetStorage, OPTION_N(3))) {
     case OPTION_N(0): // eNetCache
-        SetUp_NetCacheCmd(eNetCacheAdmin, cmd_severity);
+        SetUp_NetCacheAdminCmd(cmd_severity);
         return;
 
     case OPTION_N(1): // eNetSchedule
@@ -72,7 +72,7 @@ void CGridCommandLineInterfaceApp::SetUp_AdminCmd(
             IsOptionExplicitlySet(eWorkerNode, OPTION_N(2)) |
             IsOptionExplicitlySet(eNetStorage, OPTION_N(3))) {
     case OPTION_N(0): // eNetCache
-        SetUp_NetCacheCmd(eNetCacheAdmin, cmd_severity);
+        SetUp_NetCacheAdminCmd(cmd_severity);
         return;
 
     case OPTION_N(1): // eNetSchedule

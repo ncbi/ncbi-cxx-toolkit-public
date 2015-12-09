@@ -531,13 +531,10 @@ private:
     void SetUp_AdminCmd(EAdminCmdSeverity cmd_severity);
     int NetCacheSanityCheck();
     int NetScheduleSanityCheck();
-    void SetUp_NetCacheCmd(EAPIClass api_class,
-            EAdminCmdSeverity cmd_severity = eReadOnlyAdminCmd);
-    void SetUp_NetCacheCmd()
-    {
-        SetUp_NetCacheCmd(IsOptionSet(eCache) ?
-                eNetICacheClient : eNetCacheAPI);
-    }
+    void SetUp_NetCacheCmd(bool icache_mode);
+    void SetUp_NetCacheCmd() { SetUp_NetCacheCmd(IsOptionSet(eCache)); }
+    void SetUp_NetCacheAdminCmd(EAdminCmdSeverity cmd_severity);
+
     static void PrintBlobMeta(const CNetCacheKey& key);
     void ParseICacheKey(bool permit_empty_version = false,
         bool* version_is_defined = NULL);

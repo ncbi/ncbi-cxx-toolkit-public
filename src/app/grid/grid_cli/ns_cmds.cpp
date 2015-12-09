@@ -49,7 +49,7 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
         CGridCommandLineInterfaceApp::EAdminCmdSeverity cmd_severity)
 {
     if (api_class == eNetScheduleSubmitter)
-        SetUp_NetCacheCmd(eNetCacheAPI);
+        SetUp_NetCacheCmd(false);
 
     m_APIClass = api_class;
 

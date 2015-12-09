@@ -35,19 +35,19 @@
 
 USING_NCBI_SCOPE;
 
-void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(
-        CGridCommandLineInterfaceApp::EAPIClass api_class,
-        CGridCommandLineInterfaceApp::EAdminCmdSeverity cmd_severity)
+void s_SetupMirroring()
 {
-    m_APIClass = api_class;
-
     CNcbiRegistry& reg(CNcbiApplication::Instance()->GetConfig());
+    reg.Set("netcache_api", "enable_mirroring", "true");
+}
 
+void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(bool icache_mode)
+{
     if (IsOptionSet(eEnableMirroring))
-        reg.Set("netcache_api", "enable_mirroring", "true");
+        s_SetupMirroring();
 
-    switch (api_class) {
-    case eNetCacheAPI:
+    if (!icache_mode) {
+        m_APIClass = eNetCacheAPI;
         m_NetCacheAPI = CNetCacheAPI(m_Opts.nc_service,
                 m_Opts.auth, m_NetScheduleAPI);
 
@@ -68,9 +68,8 @@ void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(
         if (IsOptionSet(eAllowXSiteConn))
             m_NetCacheAPI.GetService().AllowXSiteConnections();
 #endif
-        break;
-
-    case eNetICacheClient:
+    } else {
+        m_APIClass = eNetICacheClient;
         m_NetICacheClient = CNetICacheClient(m_Opts.nc_service,
             m_Opts.cache_name, m_Opts.auth);
 
@@ -86,22 +85,29 @@ void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(
 
         if (!IsOptionSet(eCompatMode))
             m_NetICacheClient.SetFlags(ICache::fBestReliability);
-        break;
+    }
+}
 
-    default: /* case eNetCacheAdmin: */
-        if (cmd_severity != eReadOnlyAdminCmd &&
-                !IsOptionExplicitlySet(eNetCache)) {
-            NCBI_THROW(CArgException, eNoValue, "'--" NETCACHE_OPTION "' "
-                "must be explicitly specified.");
-        }
-        m_NetCacheAPI = CNetCacheAPI(m_Opts.nc_service, m_Opts.auth);
-        m_NetCacheAdmin = m_NetCacheAPI.GetAdmin();
+void CGridCommandLineInterfaceApp::SetUp_NetCacheAdminCmd(
+        CGridCommandLineInterfaceApp::EAdminCmdSeverity cmd_severity)
+{
+    m_APIClass = eNetCacheAdmin;
+
+    if (IsOptionSet(eEnableMirroring))
+        s_SetupMirroring();
+
+    if (cmd_severity != eReadOnlyAdminCmd &&
+            !IsOptionExplicitlySet(eNetCache)) {
+        NCBI_THROW(CArgException, eNoValue, "'--" NETCACHE_OPTION "' "
+            "must be explicitly specified.");
+    }
+    m_NetCacheAPI = CNetCacheAPI(m_Opts.nc_service, m_Opts.auth);
+    m_NetCacheAdmin = m_NetCacheAPI.GetAdmin();
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-        if (IsOptionSet(eAllowXSiteConn))
-            m_NetCacheAPI.GetService().AllowXSiteConnections();
+    if (IsOptionSet(eAllowXSiteConn))
+        m_NetCacheAPI.GetService().AllowXSiteConnections();
 #endif
-    }
 }
 
 void CGridCommandLineInterfaceApp::PrintBlobMeta(const CNetCacheKey& key)
@@ -468,7 +474,7 @@ int CGridCommandLineInterfaceApp::Cmd_RemoveBlob()
 
 int CGridCommandLineInterfaceApp::Cmd_Purge()
 {
-    SetUp_NetCacheCmd(eNetCacheAdmin, eAdminCmdWithSideEffects);
+    SetUp_NetCacheAdminCmd(eAdminCmdWithSideEffects);
 
     m_NetCacheAdmin.Purge(m_Opts.cache_name);
 
