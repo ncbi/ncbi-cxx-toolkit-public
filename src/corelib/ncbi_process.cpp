@@ -1071,11 +1071,23 @@ int CProcess::Wait(unsigned long timeout, CExitInfo* info) const
 
 
 CPIDGuard::CPIDGuard(const string& filename)
+    : m_PID(0)
 {
-    CPIDGuard(filename, kEmptyStr);
+    string dir;
+    CDirEntry::SplitPath(filename, &dir, 0, 0);
+    if (dir.empty()) {
+        m_Path = CDirEntry::MakePath(CDir::GetTmpDir(), filename);
+    } else {
+        m_Path = filename;
+    }
+    // Create guard for MT-Safe protect	
+    m_MTGuard.reset(new CInterProcessLock(m_Path + ".guard"));
+    // Update PID
+    UpdatePID();
 }
 
 
+/// @deprecated
 CPIDGuard::CPIDGuard(const string& filename, const string& dir)
     : m_PID(0)
 {

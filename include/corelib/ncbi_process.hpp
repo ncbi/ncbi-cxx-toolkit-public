@@ -476,13 +476,12 @@ public:
     ///
     /// If the file already exists and identifies a live process,
     /// throws CPIDGuardException.
-    ///
     /// @filename
     ///   Name of the file to store PID. 
     ///   If "filename" contains path, it should be absolute
-    ///   and point to existing directory.
-    ///   If "filename" contains no path, that $TMPDIR or /tmp will be
-    ///   used on Unix, and %HOME% on Windows to store it.
+    ///   and points to an existing directory.
+    ///   If "filename" contains no path, that $TMPDIR will be used on Unix,
+    ///   and %HOME% on Windows to store it.
     CPIDGuard(const string& filename);
 
     /// Create/check PID file.
@@ -496,8 +495,10 @@ public:
     /// @dir
     ///   An absolute path to the existing directory on the file system
     ///   to store PID file "filename".
-    ///   If "dir" is empty and "filename" doesn't contains path,
-    ///   that $TMPDIR or /tmp will be used on Unix, and %HOME% on Windows.
+    ///   If "dir" is empty and "filename" contains no path,
+    ///   that $TMPDIR will be used on Unix, and %HOME% on Windows to store it.
+    /// @deprecated
+    NCBI_DEPRECATED
     CPIDGuard(const string& filename, const string& dir);
 
     /// Destructor.
