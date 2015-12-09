@@ -6077,6 +6077,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UADBA	s	University dAntananarivo, Department de Biologie Animale",
 "UADY	s	Universidad Autonoma de Yucatan, Departamento de Botanica",
 "UAEM	s	Univeridad Autonoma de Morelos",
+"UAEU	s	United Arab Emirates University",
 "UAGC	s	Universidad Autonoma de Guerrero, Area de Ciencias Naturales",
 "UAIC<CIV>	s	University of Abidjan",
 "UAIC<USA-AL>	s	University of Alabama, Ichthyological Collection",
