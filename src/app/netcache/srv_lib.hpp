@@ -58,11 +58,11 @@ struct SSystemMutex;
 #endif
 
 #if NCBI_DEVELOPMENT_VER >= 20151116
-#define ncbi_NStr_Split(a,b,c)    NStr::Split(a,b,c, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate)
-#define ncbi_NStr_Tokenize(a,b,c) NStr::Split(a,b,c, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate)
+#define ncbi_NStr_Split(a,b,c)      NStr::Split(a,b,c, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate)
+#define ncbi_NStr_Tokenize(a,b,c,d) NStr::Split(a,b,c, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate)
 #else
 #define ncbi_NStr_Split(a,b,c) NStr::Split(a,b,c)
-#define ncbi_NStr_Tokenize(a,b,c) NStr::Tokenize(a,b,c)
+#define ncbi_NStr_Tokenize(a,b,c,d) NStr::Tokenize(a,b,c,d)
 #endif
 
 class CDiagCompileInfo

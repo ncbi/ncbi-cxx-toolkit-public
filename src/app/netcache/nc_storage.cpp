@@ -2465,11 +2465,11 @@ CNCBlobStorage::GetAllowedDBSize(Int8 free_space)
     Int8 allowed_db_size = total_space;
 
     if (total_space < s_DiskCritical)
-        allowed_db_size = 0;
+        allowed_db_size = 16;
     else
         allowed_db_size = min(allowed_db_size, total_space - s_DiskCritical);
     if (total_space < s_DiskFreeLimit)
-        allowed_db_size = 0;
+        allowed_db_size = 16;
     else
         allowed_db_size = min(allowed_db_size, total_space - s_DiskFreeLimit);
     if (s_StopWriteOnSize != 0  &&  s_StopWriteOnSize < allowed_db_size)
