@@ -506,9 +506,9 @@ gpipe_type_verifier needs gpipe_asn_cleanup
 gpipe_type_verifier needs xalgognomon
 gpipe_type_verifier needs xalgowinmask
 gpipe_val needs $(SEQ_LIBS)
-gpipe_val needs gpipe_common
 gpipe_val needs pub
 gpipe_val needs valerr
+gpipe_val needs xmlwrapp
 gpipe_xml needs $(SEQ_LIBS)
 gpipe_xml needs connssl
 gpipe_xml needs gpipe_attr
