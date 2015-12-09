@@ -1,0 +1,839 @@
+Seq-entry ::= set {
+  class genbank,
+  seq-set {
+    set {
+      class nuc-prot,
+      descr {
+        source {
+          genome genomic,
+          org {
+            taxname "Methanobacterium formicicum phage",
+            orgname {
+              mod {
+                {
+                  subtype isolate,
+                  subname "Drs3"
+                },
+                {
+                  subtype nat-host,
+                  subname "Methanobacterium formicicum, strain Dresden Khl10"
+                }
+              },
+              gcode 1
+            }
+          },
+          subtype {
+            {
+              subtype country,
+              name "Germany"
+            },
+            {
+              subtype isolation-source,
+              name "Anaerobic digester"
+            },
+            {
+              subtype other,
+              name "[cultured bacterial source]"
+            }
+          },
+          pcr-primers {
+            {
+              forward {
+                {
+                  seq "5'aggcaactgtgctatccgagggag",
+                  name "nbam24"
+                }
+              },
+              reverse {
+                {
+                  seq "5-aggcaactgtgctatccgagggag3'",
+                  name "nbam24"
+                }
+              }
+            }
+          }
+        },
+        pub {
+          pub {
+            gen {
+              cit "Unpublished",
+              authors {
+                names std {
+                  {
+                    name name {
+                      last "Wolf",
+                      first "Sandro",
+                      initials "S."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Reetz",
+                      first "Jochen",
+                      initials "J."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Hoffmann",
+                      first "Kathrin",
+                      initials "K."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Kern",
+                      first "Tobias",
+                      initials "T."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Rother",
+                      first "Michael",
+                      initials "M."
+                    }
+                  }
+                }
+              },
+              title "Isolation of the lytic archeophage Drs3 infecting
+ Methanobacterium formicicum"
+            }
+          }
+        },
+        pub {
+          pub {
+            sub {
+              authors {
+                names std {
+                  {
+                    name name {
+                      last "Wolf",
+                      first "Sandro",
+                      initials "S."
+                    }
+                  }
+                },
+                affil std {
+                  affil "Technische Universitat Dresden",
+                  div "Biology / Institute of Microbiology",
+                  city "Dresden",
+                  sub "Saxony",
+                  country "Germany",
+                  street "Zellescher Weg 20b",
+                  postal-code "01217"
+                }
+              },
+              medium email,
+              date std {
+                year 2013,
+                month 8,
+                day 28
+              }
+            }
+          }
+        },
+        user {
+          class "SMART_V1.0",
+          type id 1,
+          data {
+            {
+              label id 1,
+              num 1,
+              data int 8039485
+            }
+          }
+        },
+        user {
+          type str "StructuredComment",
+          data {
+            {
+              label str "StructuredCommentPrefix",
+              data str "##Assembly-Data-START##"
+            },
+            {
+              label str "Sequencing Technology",
+              data str "Sanger dideoxy sequencing"
+            },
+            {
+              label str "StructuredCommentSuffix",
+              data str "##Assembly-Data-END##"
+            }
+          }
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "SmartComment",
+              data str "TOTAL # OF SEQS:2"
+            },
+            {
+              label str "AdditionalComment",
+              data str "BankIt1657039"
+            }
+          }
+        },
+        user {
+          type str "NcbiCleanup",
+          data {
+            {
+              label str "method",
+              data str "SequinCleanup"
+            },
+            {
+              label str "version",
+              data int 7
+            },
+            {
+              label str "month",
+              data int 12
+            },
+            {
+              label str "day",
+              data int 2
+            },
+            {
+              label str "year",
+              data int 2013
+            }
+          }
+        },
+        update-date std {
+          year 2013,
+          month 8,
+          day 27,
+          hour 10,
+          minute 59,
+          second 58
+        }
+      },
+      seq-set {
+        seq {
+          id {
+            local str "Seq1",
+            general {
+              db "BankIt",
+              tag str "1657039/Seq1"
+            },
+            general {
+              db "TMSMART",
+              tag id 39787263
+            },
+            genbank {
+              accession "KF591393"
+            }
+          },
+          descr {
+            molinfo {
+              biomol genomic,
+              completeness partial
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:Seq1"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "Seq1"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 1172,
+            strand ds,
+            seq-data ncbi2na '000581F8A53E332F80B8D203F80B16A8A775B03E3E06C23C
+03C34C57DE8C2AA26EC6A3CE3F8205FAA39FE00B9D28EFBC01274A98A69C73470038D322E82AFA
+30373FC0578FC3929E2363CE77C0F8F8270A0D5BC0002002AA411915753FF7F5FFFE0FCF300339
+2E3F14E0C94693DCA3C959E8BB1E34382A93A015681FE1BBC34F83E743CE7798A00BCB00CF3CA2
+F5C9293AC02C478C25807F9F7C7D73547D5A18C134CF352F125041E94B8BFA5A42E02130D04ECE
+945FD16C43B80F248E12C090105BFC13D0014C43A5A39F2ECAA49E82CF728FE896BF3D34C8E15C
+D009B2782780B027F10200F0883A32AA049C0158720018001ABC5D730E32C3274087D13C385C46
+930D02012056C35797782570015C210AA114C855044EAE87C05D56737B8015601E171C'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data gene {
+                    locus "Putative terminase large subunit gene",
+                    desc "terminase large subunit gene"
+                  },
+                  partial TRUE,
+                  comment "4.2.1.1",
+                  location int {
+                    from 419,
+                    to 1171,
+                    strand plus,
+                    id genbank {
+                      accession "KF591393"
+                    },
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "Seq1_prot_1",
+            general {
+              db "TMSMART",
+              tag id 39787264
+            }
+          },
+          descr {
+            title "Putative terminase large subunit, partial [Methanobacterium
+ formicicum phage]",
+            molinfo {
+              biomol peptide,
+              completeness no-right
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "Seq1_prot_1"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol aa,
+            length 251,
+            seq-data ncbieaa "MNSHGILGLARWSVLINEGAWKPRNFDVLIIELLNYALRGKVSKILLG
+VPSRHGKSTLISRNFASYFLSHFPDDNIILSSYSQQLASEFGRQVKDIINMYGHLSPYNVKLADDSKANNRFNIQKPY
+NGRMLSVGAAGSILGFGAGLFIIDDPIKSVAEAESKALQRKLREWIGGTAKTRLEKRKNGLPPIMIVIAQRLHINDLH
+GIIKETEPVIPASEALKTLRQGDTIDPNTWVDLNLPAICENPETDLL"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data prot {
+                    name {
+                      "1.1.1.58"
+                    },
+                    desc "terminase large subunit",
+                    ec {
+                      "alma",
+                      "1.1.1.58",
+                      "4.3.21.-"
+                    }
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 250,
+                    id local str "Seq1_prot_1",
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                frame one,
+                code {
+                  id 1
+                }
+              },
+              partial TRUE,
+              comment "[intronless gene]",
+              product whole local str "Seq1_prot_1",
+              location int {
+                from 419,
+                to 1171,
+                strand plus,
+                id local str "Seq1",
+                fuzz-to lim gt
+              }
+            }
+          }
+        }
+      }
+    },
+    set {
+      class nuc-prot,
+      descr {
+        source {
+          genome genomic,
+          org {
+            taxname "Methanobacterium formicicum phage",
+            orgname {
+              mod {
+                {
+                  subtype isolate,
+                  subname "Drs3"
+                },
+                {
+                  subtype nat-host,
+                  subname "Methanobacterium formicicum, strain Dresden Khl10"
+                }
+              },
+              gcode 1
+            }
+          },
+          subtype {
+            {
+              subtype country,
+              name "Germany"
+            },
+            {
+              subtype isolation-source,
+              name "Anaerobic digester"
+            },
+            {
+              subtype other,
+              name "[cultured bacterial source]"
+            }
+          },
+          pcr-primers {
+            {
+              forward {
+                {
+                  seq "aggcaactgtgctatccgagggag",
+                  name "nbam24"
+                }
+              },
+              reverse {
+                {
+                  seq "aggcaactgtgctatccgagggag",
+                  name "nbam24"
+                }
+              }
+            }
+          }
+        },
+        pub {
+          pub {
+            gen {
+              cit "Unpublished",
+              authors {
+                names std {
+                  {
+                    name name {
+                      last "Wolf",
+                      first "Sandro",
+                      initials "S."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Reetz",
+                      first "Jochen",
+                      initials "J."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Hoffmann",
+                      first "Kathrin",
+                      initials "K."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Kern",
+                      first "Tobias",
+                      initials "T."
+                    }
+                  },
+                  {
+                    name name {
+                      last "Rother",
+                      first "Michael",
+                      initials "M."
+                    }
+                  }
+                }
+              },
+              title "Isolation of the lytic archeophage Drs3 infecting
+ Methanobacterium formicicum"
+            }
+          }
+        },
+        pub {
+          pub {
+            sub {
+              authors {
+                names std {
+                  {
+                    name name {
+                      last "Wolf",
+                      first "Sandro",
+                      initials "S."
+                    }
+                  }
+                },
+                affil std {
+                  affil "Technische Universitat Dresden",
+                  div "Biology / Institute of Microbiology",
+                  city "Dresden",
+                  sub "Saxony",
+                  country "Germany",
+                  street "Zellescher Weg 20b",
+                  postal-code "01217"
+                }
+              },
+              medium email,
+              date std {
+                year 2013,
+                month 8,
+                day 28
+              }
+            }
+          }
+        },
+        user {
+          class "SMART_V1.0",
+          type id 1,
+          data {
+            {
+              label id 1,
+              num 1,
+              data int 8039486
+            }
+          }
+        },
+        user {
+          type str "StructuredComment",
+          data {
+            {
+              label str "StructuredCommentPrefix",
+              data str "##Assembly-Data-START##"
+            },
+            {
+              label str "Sequencing Technology",
+              data str "Sanger dideoxy sequencing"
+            },
+            {
+              label str "StructuredCommentSuffix",
+              data str "##Assembly-Data-END##"
+            }
+          }
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "SmartComment",
+              data str "TOTAL # OF SEQS:2"
+            },
+            {
+              label str "AdditionalComment",
+              data str "BankIt1657039"
+            }
+          }
+        },
+        user {
+          type str "NcbiCleanup",
+          data {
+            {
+              label str "method",
+              data str "SequinCleanup"
+            },
+            {
+              label str "version",
+              data int 7
+            },
+            {
+              label str "month",
+              data int 12
+            },
+            {
+              label str "day",
+              data int 2
+            },
+            {
+              label str "year",
+              data int 2013
+            }
+          }
+        },
+        update-date std {
+          year 2013,
+          month 8,
+          day 27,
+          hour 10,
+          minute 59,
+          second 58
+        }
+      },
+      seq-set {
+        seq {
+          id {
+            local str "Seq2",
+            general {
+              db "BankIt",
+              tag str "1657039/Seq2"
+            },
+            general {
+              db "TMSMART",
+              tag id 39787265
+            },
+            genbank {
+              accession "KF591394"
+            }
+          },
+          descr {
+            molinfo {
+              biomol genomic,
+              completeness partial
+            },
+            user {
+              type str "Submission",
+              data {
+                {
+                  label str "AdditionalComment",
+                  data str "LocalID:Seq2"
+                }
+              }
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "Seq2"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol dna,
+            length 3275,
+            strand ds,
+            seq-data ncbi2na '5AAACF84E7CF897BE39BD2E83D570BAA3C2CBCC0F02FCABC
+0C300008EA20E3333ACF8802384CF02A8F0E15A072F80F027F2AAA035771B5DFD00BE0E8B08F80
+23E0940931ACFF629C38079C02A901941D6E1A8E3A015AAC03C17E0090940962FE0A40F2295FCD
+DD0E0411D34E0EE38BA1C02E131027E0AF867FE388FF6202C6E1F34AAE0CF02A8E090088C880FD
+7821A38AA6E030DE9F873EEBC51F3B8CA4268FC115750D73F4F240A5AF217B30E03830AD03013D
+7F1FFFF7FECF7FCFFCC30CFF313DFFD1BF11CD18C3EDCFFA2FA0B24E926F0E80D30C226BA30A52
+60B67840B90A00F4BA4EAA102F2C0D1C840BC94351E201CD509734803A81C1A8E2E7CE54BC1E50
+104104F34B438B0096A539E891FA42CBAC568EAC174C012A5C1479E30E438900CD43127D12F191
+C2F2004518DA8B01CBF4A3C83790BB00B05DFD11003F868BC09C036582EA8B08DA8B98DA43A7E8
+DB9C0D00BA095F06203CA473AA4AD3072E7B6B90CA0EAAB3F385D16DADCACE9DB81238D1FE3859
+05128DA5AA49C807CB8141E8D2307058D2EBAA7F789FAC390E0433423491E838514249CD5C3655
+C7BA30AFA529E73FE3AB0211441E74A030E165DFD6EAF83A60FE135F2370FFACC1C0405F8E8E7A
+FA2EB9268E3BE0A3306793CDC0BDF8E205F8FC2E8B8E8F5145A003E200F082DFD2879EB00F3EA8
+12BEF5F13E00259E333DF0AF04410F56A1D146A8F32532592AF4EF3FF0691D5CD7EB2EEF6B9DE0
+8B3A7B3FF283EF02B9E0867F077F708E0349E6BA39A51CE9F31DB90292691E9ED7E89E5148BF30
+FD32F9E0AC53241C2F241E5950E9FE819E57279C15CDA8CBACBA530C95D325B1C9F1F330CB0E21
+EF28390C07AF3A06AF0043CAAAC4FCEAA1F3E493A065789A247E9EAFE8335CBD0BA8ABD36CA077
+CCA27E83D7F90392E2553054A7F2BF3CE839FC412BFDAE1EBD1270A52E09C3A2F3929DCA22BFF2
+E5326A2592BA3EE819CFD52BE526E7E888EF275B3BD00AEF1CA3C41FF3ADFD7EAAA7FC592CE901
+6DAA9B9E827F4F2713E41FD3C4FBC9A178D2E80CD1BD1E2F4E2E23BABA7FD241C36B82D32B94FF
+0BACFAA2FEECC03AC8F790D425B44A3AB039FD734FFC512355ACE3E5FF3F29FE43EA43D34BF493
+B575C75D3318DFA2E41E304EAD3C10'H
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data gene {
+                    locus "Hypothetical protein gene",
+                    desc "Hypothetical protein gene"
+                  },
+                  location int {
+                    from 119,
+                    to 577,
+                    strand plus,
+                    id local str "Seq2"
+                  }
+                },
+                {
+                  data gene {
+                    locus "putative tape measure protein gene",
+                    desc "tape measure protein gene"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 829,
+                    to 3274,
+                    strand plus,
+                    id local str "Seq2",
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "Seq2_prot_2",
+            general {
+              db "TMSMART",
+              tag id 39787266
+            }
+          },
+          descr {
+            title "Hypothetical protein [Methanobacterium formicicum phage]",
+            molinfo {
+              biomol peptide
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "Seq2_prot_2"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol aa,
+            length 152,
+            seq-data ncbieaa "MIYMVLRKDDILKGINDPELVEIKALGGEIPLRPLSKVEWSKIEKIEA
+KAYGIFEANETAKRGKRQLRDGMMETRGKINLEKQAKAEFEGKLEALYLSMNNTHHECDEWTKSDIQSLKVDAFDEIF
+EKVRDLSGVNIKGDEAKEIEKFPEDG"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data prot {
+                    name {
+                      "Hypothetical protein"
+                    }
+                  },
+                  location int {
+                    from 0,
+                    to 151,
+                    id local str "Seq2_prot_2"
+                  }
+                }
+              }
+            }
+          }
+        },
+        seq {
+          id {
+            local str "Seq2_prot_3",
+            general {
+              db "TMSMART",
+              tag id 39787267
+            }
+          },
+          descr {
+            title "putative tape measure protein, partial [Methanobacterium
+ formicicum phage]",
+            molinfo {
+              biomol peptide,
+              completeness no-right
+            },
+            user {
+              type str "OriginalID",
+              data {
+                {
+                  label str "LocalId",
+                  data str "Seq2_prot_3"
+                }
+              }
+            }
+          },
+          inst {
+            repr raw,
+            mol aa,
+            length 815,
+            seq-data ncbieaa "MAALMEIIIRAVDKASEVADKVQGKFSGMGDKVSKSLDKVSQSTEKLS
+QAYQKMGTNGMSAYAQLTAKQQQHYQSMSKSRAMLEHLASSGTRMGNLIKQGLTTADNAMSKISNTASQLRTKLENTT
+IGSKLVSGLESASVKVTSFTQKFDGVKAKIAEVGSKIGSAIGNGLDRAKSKVEALNEKLGTMGQVITSAVGAIGMGGI
+YDLTVGLGMAREQMITLMTATTGSAGAARNLVNQLDQITNRSVVGLSELGNAMNNIKISTGMTTKQLSLIAPTVDKVG
+QAAILMGKDTTTAQEIMTASFRGLNGEFDILRSNFGITKQTLMDAGWSGAADDVEGYNAALSKVLDENLDLSGVMDST
+TGKIEKIKKSFRTAGKIIGEQVVPYIEKAADIFLRLTQQFPGLTTGIIAIAAGFMLFLTALPILGSVFGALKSMAVFL
+GIVKGAEDALTLSKMKSAAVDAATMAYTRAKAAALAVLGAATRVYNFIVAEGTIATKLATAAQWLWNAALAANPIGIV
+VVAIIALIAVLAYLYNSNETVRNAINWLWNGLKQLGGYIYGGLIAAWNALSGALGWVWNILVQVGGFIVGTLIGAWNS
+FANAVSPITQALGLLWNALQQVFGDWFTAKASEANGVMQALGEVFSAIAGAAGGLWNAISQVASVLGEMLAPYVQKVL
+LGLQLLWSFLGGAFTAVWQTVGGVLEAFISYIATFITLLADLISGNITFTEFMSEMWVAFQQLIGEVIGAILSGIGEF
+VYKMVDSAIQAVTGWVNAFLSFLPQIPGMIAFYLGFAIGQFISFSMSLLLLIYDLGVQLITWVIN"
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data prot {
+                    name {
+                      "putative tape measure protein"
+                    },
+                    desc "tape measure protein"
+                  },
+                  partial TRUE,
+                  location int {
+                    from 0,
+                    to 814,
+                    id local str "Seq2_prot_3",
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                frame one,
+                code {
+                  id 1
+                }
+              },
+              product whole local str "Seq2_prot_2",
+              location int {
+                from 119,
+                to 577,
+                strand plus,
+                id local str "Seq2"
+              }
+            },
+            {
+              data cdregion {
+                frame one,
+                code {
+                  id 1
+                }
+              },
+              partial TRUE,
+              comment "[intronless gene]",
+              product whole local str "Seq2_prot_3",
+              location int {
+                from 829,
+                to 3274,
+                strand plus,
+                id local str "Seq2",
+                fuzz-to lim gt
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

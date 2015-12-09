@@ -1,0 +1,11 @@
+Discrepancy Report Results
+
+Summary
+EC_NUMBER_NOTE: 2 features have EC numbers in notes or products.
+
+Detailed Report
+
+EC_NUMBER_NOTE: 2 features have EC numbers in notes or products.
+test-data/ec_number_note.asn:Gene	Putative terminase large subunit gene	gb|KF591393|:plus420->1172	
+test-data/ec_number_note.asn:CDS	1.1.1.58	gb|KF591393|:plus420->1172	
+
