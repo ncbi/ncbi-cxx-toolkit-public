@@ -4466,7 +4466,7 @@ static const SFileSystem s_FileSystem[] = {
     if (statvfs(path.c_str(), &st) != 0) {                     \
         NCBI_THROW(CFileErrnoException, eFileSystemInfo, msg); \
     }                                                          \
-    info->total_space  = (Uint8)st.f_bsize * st.f_blocks       \
+    info->total_space  = (Uint8)st.f_bsize * st.f_blocks;      \
     if (st.f_frsize) {                                         \
         info->free_space = (Uint8)st.f_frsize * st.f_bavail;   \
         info->block_size = (unsigned long)st.f_frsize;         \
