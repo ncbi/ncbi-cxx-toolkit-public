@@ -3983,7 +3983,7 @@ CNCMessageHandler::x_DoCmd_HasBlob(void)
         exist = !ver_report;
     }
     if (!exist) {
-        GetDiagCtx()->SetRequestStatus(eStatus_NotFound);
+        GetDiagCtx()->SetRequestStatus(ver_report ? sStatus_BlobVersion : eStatus_NotFound);
     }
     x_ReportOK("OK:").WriteNumber(exist ? 1 : 0);
     if (ver_report) {

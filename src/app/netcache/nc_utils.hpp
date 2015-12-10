@@ -87,6 +87,8 @@ enum EHTTPStatus {
     eStatus_NewerBlob   = 206,
     /// "Fake" connection detected -- no data received from client at all.
     eStatus_FakeConn    = 207,
+    /// Blob version did not match
+    sStatus_BlobVersion = 291,
     /// Status for PUT2 command or connection that used PUT2 command.
     eStatus_PUT2Used    = 301,
     /// SETVALID cannot be executed as new version was already written.
