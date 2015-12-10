@@ -226,7 +226,7 @@ public:
         {
             seq.SetDescr(*m_EmptyDescr);
             vector<char>& dst = m_DescrMap[&seq];
-            if ( 0 && data[0] == kSeq_descrFirstByte ) {
+            if ( data[0] == kSeq_descrFirstByte ) {
                 // test for DESCR variant with Seqdesc list insead of Seq-descr
                 dst.assign(data.begin()+2, data.end()-2);
             }
@@ -724,18 +724,6 @@ void CWGSDb_Impl::x_InitIdParams(void)
 string CWGSDb_Impl::NormalizePathOrAccession(CTempString path_or_acc,
                                              CTempString vol_path)
 {
-    if ( 0 ) {
-        if ( CVPath::IsPlainAccession(path_or_acc) &&
-             path_or_acc.size() == 6 ) {
-            string ret = NCBI_TRACES04_PATH "/wgs01/WGS_NEW/";
-            ret += path_or_acc.substr(0, 2);
-            ret += '/';
-            ret += path_or_acc.substr(2, 2);
-            ret += '/';
-            ret += path_or_acc;
-            return ret;
-        }
-    }
     if ( 1 ) {
         static bool kTryTestFiles =
             getenv("HOME") && strcmp(getenv("HOME"), "/home/vasilche") == 0;
@@ -749,7 +737,7 @@ string CWGSDb_Impl::NormalizePathOrAccession(CTempString path_or_acc,
     }
     if ( !vol_path.empty() ) {
         vector<CTempString> dirs;
-        NStr::Split(vol_path, ":", dirs);
+        NStr::Tokenize(vol_path, ":", dirs);
         ITERATE ( vector<CTempString>, it, dirs ) {
             string path = CDirEntry::MakePath(*it, path_or_acc);
             if ( CDirEntry(path).Exists() ) {

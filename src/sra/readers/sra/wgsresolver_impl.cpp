@@ -434,7 +434,7 @@ bool CWGSResolver_GiRangeFile::x_Load(SIndexInfo& index,
     size_t count = 0;
     for ( CMemoryLineReader line(&stream); !line.AtEOF(); ) {
         tokens.clear();
-        NStr::Split(*++line, " ", tokens);
+        NStr::Tokenize(*++line, " ", tokens, NStr::eMergeDelims);
         if ( tokens.size() != 3 ) {
             if ( tokens.empty() || tokens[0][0] == '#' ) {
                 // allow empty lines and comments starting with #
@@ -604,7 +604,7 @@ bool CWGSResolver_AccRangeFile::x_Load(SIndexInfo& index,
     size_t count = 0;
     for ( CMemoryLineReader line(&stream); !line.AtEOF(); ) {
         tokens.clear();
-        NStr::Split(*++line, " ", tokens);
+        NStr::Tokenize(*++line, " ", tokens, NStr::eMergeDelims);
         if ( tokens.size() != 3 ) {
             if ( tokens.empty() || tokens[0][0] == '#' ) {
                 // allow empty lines and comments starting with #
