@@ -162,9 +162,13 @@ protected:
         int,
         CRef<CSeq_feat> ) const;
 
-    virtual bool x_InitFeatureData(
+    virtual bool xInitFeatureData(
         int,
         CRef<CSeq_feat> ) const;
+
+    virtual bool xUpdateFeatureData(
+        int,
+        CRef<CSeq_feat>) const;
 
     virtual bool x_MigrateAttributesSubSource(
         int,

@@ -576,7 +576,7 @@ bool CGff2Record::InitializeFeature(
 {
     return (
         x_InitFeatureLocation(flags, pFeature)  &&
-        x_InitFeatureData(flags, pFeature)  &&
+        xInitFeatureData(flags, pFeature)  &&
         x_MigrateId(pFeature)  &&
         x_MigrateStartStopStrand(pFeature)  &&
         x_MigrateType(pFeature)  &&
@@ -609,14 +609,47 @@ bool CGff2Record::UpdateFeature(
             pOld->Assign(pFeature->GetLocation());
             pFeature->SetLocation().SetMix().AddSeqLoc(*pOld);
         }
-        if (pFeature->GetData().GetSubtype() == CSeqFeatData::eSubtype_cdregion) {
-            if (pAddLoc->GetInt().CanGetStrand() && pAddLoc->GetInt().GetStrand() == eNa_strand_minus) {
-                pFeature->SetData().SetCdregion().SetFrame(FramePlusToMinus(Phase()));
+    }
+    if (!this->xUpdateFeatureData(flags, pFeature)) {
+        return false;
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Record::xUpdateFeatureData(
+    int flags,
+    CRef<CSeq_feat> pFeature) const
+    //  ----------------------------------------------------------------------------
+{
+    CRef<CSeq_loc> pAddLoc = GetSeqLoc(flags);
+    CSeqFeatData::ESubtype subtype = pFeature->GetData().GetSubtype();
+
+    switch(subtype) {
+        default: {
+            return true;
+        }
+        case CSeqFeatData::eSubtype_cdregion: {
+            if (!pAddLoc->GetInt().CanGetStrand()) {
+                return true;
+            }
+            if (pAddLoc->GetInt().GetStrand() == eNa_strand_plus) {
+                if (SeqStart() == pAddLoc->GetStart(eExtreme_Positional)) {
+                    pFeature->SetData().SetCdregion().SetFrame(Phase());
+                }
+                return true;
+            }
+            if (pAddLoc->GetInt().GetStrand() == eNa_strand_minus) {
+                if (SeqStop() == pAddLoc->GetStop(eExtreme_Positional)) {
+                    pFeature->SetData().SetCdregion().SetFrame(Phase());
+                }
+                return true;
             }
         }
     }
     return true;
 }
+    
 
 //  ----------------------------------------------------------------------------
 bool CGff2Record::x_MigrateId(
@@ -1171,7 +1204,7 @@ bool CGff2Record::x_InitFeatureLocation(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff2Record::x_InitFeatureData(
+bool CGff2Record::xInitFeatureData(
     int flags,
     CRef<CSeq_feat> pFeature ) const
 //  ----------------------------------------------------------------------------
