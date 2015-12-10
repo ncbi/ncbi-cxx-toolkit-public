@@ -3428,7 +3428,18 @@ CExpiredCleaner::x_DeleteNextData(void)
     SNCCacheData* cache_data = m_CacheDatas[m_CurDelData];
 
     cache_data->lock.Lock();
-    SRV_LOG(Warning, "Erasing expired blob: " << cache_data->key);
+    {
+        CSrvDiagMsg diag_msg;
+        diag_msg.StartRequest().PrintParam("_type", "expiration");
+        CNCBlobKeyLight key(cache_data->key);
+        if (key.IsICacheKey()) {
+            diag_msg.PrintParam("cache",key.Cache()).PrintParam("key",key.RawKey()).PrintParam("subkey",key.SubKey());
+        } else {
+            diag_msg.PrintParam("key",key.RawKey());
+        }
+        diag_msg.Flush();
+        diag_msg.StopRequest();
+    }
     SNCDataCoord coord = cache_data->coord;
     Uint8 size = cache_data->size;
     Uint4 chunk_size = cache_data->chunk_size;
@@ -3540,7 +3551,6 @@ CExpiredCleaner::x_StartSession(void)
 
     m_CurBucket = 1;
     CreateNewDiagCtx();
-    CSrvDiagMsg().StartRequest().PrintParam("_type", "expiration");
     return &CExpiredCleaner::x_CleanNextBucket;
 }
 
@@ -3622,7 +3632,6 @@ CExpiredCleaner::x_CleanNextBucket(void)
 CExpiredCleaner::State
 CExpiredCleaner::x_FinishSession(void)
 {
-    CSrvDiagMsg().StopRequest();
     ReleaseDiagCtx();
     SetState(&CExpiredCleaner::x_StartSession);
     if (!CTaskServer::IsInShutdown()) {
