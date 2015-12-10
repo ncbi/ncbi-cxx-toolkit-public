@@ -3940,6 +3940,17 @@ void CNetScheduleHandler::x_PrintCmdRequestStart(const SParsedCmd &  cmd)
         bool    is_worker_node_command = x_WorkerNodeCommand();
 
         CDiagContext::SetRequestContext(m_CmdContext);
+
+        // A client IP and a session ID must be set as early as possible
+        if (!is_worker_node_command) {
+            ITERATE(TNSProtoParams, it, cmd.params) {
+                if (it->first == "ip")
+                    CDiagContext::GetRequestContext().SetClientIP(it->second);
+                else if (it->first == "sid")
+                    CDiagContext::GetRequestContext().SetSessionID(it->second);
+            }
+        }
+
         CDiagContext_Extra    ctxt_extra =
                 GetDiagContext().PrintRequestStart()
                             .Print("_type", "cmd")
@@ -3949,20 +3960,16 @@ void CNetScheduleHandler::x_PrintCmdRequestStart(const SParsedCmd &  cmd)
                             .Print("conn", m_ConnContext->GetRequestID());
 
         ITERATE(TNSProtoParams, it, cmd.params) {
-            if (it->first == "ip") {
-                if (!is_worker_node_command)
-                    CDiagContext::GetRequestContext().SetClientIP(it->second);
+            // IP is set before the print request start
+            if (it->first == "ip")
                 continue;
-            }
-            if (it->first == "sid") {
-                if (!is_worker_node_command)
-                    CDiagContext::GetRequestContext().SetSessionID(it->second);
+            // SID is set before the print request start
+            if (it->first == "sid")
                 continue;
-            }
-            if (it->first == "ncbi_phid") {
-                if (is_worker_node_command)
-                    continue;
-            }
+            // Skip ncbi_phid because it is printed by request start anyway
+            if (it->first == "ncbi_phid")
+                continue;
+
             ctxt_extra.Print(it->first, it->second);
         }
         ctxt_extra.Flush();
