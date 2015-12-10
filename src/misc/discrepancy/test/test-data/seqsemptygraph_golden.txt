@@ -1,0 +1,9 @@
+Discrepancy Report Results
+
+Summary
+QUALITY_SCORES: Quality scores are missing on some(3) sequences
+
+Detailed Report
+
+QUALITY_SCORES: Quality scores are missing on some(3) sequences
+

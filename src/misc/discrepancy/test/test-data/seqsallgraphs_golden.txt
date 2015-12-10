@@ -1,0 +1,9 @@
+Discrepancy Report Results
+
+Summary
+QUALITY_SCORES: Quality scores are present on all sequences
+
+Detailed Report
+
+QUALITY_SCORES: Quality scores are present on all sequences
+
