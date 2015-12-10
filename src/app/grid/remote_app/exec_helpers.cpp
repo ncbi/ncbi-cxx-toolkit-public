@@ -116,10 +116,11 @@ class CRemoteAppReaper
 
         ~CCollector()
         {
-            if (m_Context.Enabled()) {
-                m_Context.CollectorImplStop();
-                Join();
-            }
+            if (m_Context.Enabled())
+                try {
+                    m_Context.CollectorImplStop();
+                    Join();
+                } STD_CATCH_ALL("Exception in ~CCollector()")
         }
 
     private:
