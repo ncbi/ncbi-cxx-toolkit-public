@@ -478,7 +478,7 @@ void CRetryContext::ResetContent(void)
 inline
 bool CRetryContext::x_IsSetFlag(FFlags f) const
 {
-    return m_Flags & f;
+    return (m_Flags & f) == f;
 }
 
 
