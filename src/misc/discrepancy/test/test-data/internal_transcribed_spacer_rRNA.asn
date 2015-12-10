@@ -1,0 +1,118 @@
+Seq-entry ::= seq {
+  id {
+    local str "Seq1"
+  },
+  descr {
+    source {
+      genome genomic,
+      org {
+        taxname "Acanthamoeba castellanii",
+        orgname {
+          lineage "Eukaryota; Acanthamoebidae; Acanthamoeba",
+          gcode 1,
+          div "INV"
+        }
+      }
+    },
+    molinfo {
+      biomol genomic
+    },
+    user {
+      type str "OriginalID",
+      data {
+        {
+          label str "LocalId",
+          data str "Seq1"
+        }
+      }
+    }
+  },
+  inst {
+    repr raw,
+    mol dna,
+    length 266,
+    seq-data iupacna "TAAGCAGGGGAGAATTCTATTAACCATGAAGACTATCATTGCTTTGAGCTACATTC
+TATGTCTGGTTTTCGCTCAAAAACTTCCTGGAAATGACAACAGCACGGCAACGCTGTGCCTTGGGCACCATGCAGTAC
+CAAACGGAACGATAGTGAAAACAATCACGAATGACCAAATTGAAGTTACTAATGCTACTGAGCTGGTTCAGAGTTCCT
+CAACAGGTGAAATATGCGACAGTCCTCATCAGATCCTTGATGGAGAAAACTGCA"
+  },
+  annot {
+    {
+      data ftable {
+        {
+          data rna {
+            type rRNA,
+            ext name "internal region"
+          },
+          location int {
+            from 0,
+            to 9,
+            strand plus,
+            id local str "Seq1"
+          }
+        },
+        {
+          data rna {
+            type rRNA,
+            ext name "transcribed region"
+          },
+          location int {
+            from 19,
+            to 29,
+            strand plus,
+            id local str "Seq1"
+          }
+        },
+        {
+          data rna {
+            type rRNA,
+            ext name "contains spacer"
+          },
+          location int {
+            from 39,
+            to 49,
+            strand plus,
+            id local str "Seq1"
+          }
+        },
+        {
+          data rna {
+            type rRNA,
+            ext name "16S ribosomal RNA"
+          },
+          location int {
+            from 59,
+            to 69,
+            strand plus,
+            id local str "Seq1"
+          }
+        },
+        {
+          data rna {
+            type mRNA,
+            ext name "testing the internal rna name"
+          },
+          location int {
+            from 79,
+            to 89,
+            strand plus,
+            id local str "Seq1"
+          }
+        },
+        {
+          data rna {
+            type miscRNA,
+            ext gen {
+              product "contains spacer"
+            }
+          },
+          location int {
+            from 99,
+            to 109,
+            id local str "Seq1"
+          }
+        }
+      }
+    }
+  }
+}
