@@ -137,7 +137,7 @@ EHTTP_HeaderParse      s_LBOS_ParseHeader  (const char*   header,
                                                           response,
                                             int           server_error);
 /*LBOS is intended to answer in 0.5 sec, or is considered dead*/
-static const STimeout   s_LBOS_Timeout       =  {10, 500000};
+static const STimeout   kLBOSTimeout       =  {10, 500000};
 static char**           s_LBOS_InstancesList =  NULL;/** Not to get 404 errors
                                                         on every resolve, we
                                                         will remember the last
@@ -177,9 +177,10 @@ static SLBOS_Functions s_LBOS_funcs = {
 ///////////////////////////////////////////////////////////////////////////////
 //                  INTERNAL STORAGE OF ANNOUNCED SERVERS                    //
 ///////////////////////////////////////////////////////////////////////////////
-/** Add service to list of announced servers. 
- * NOTE: Intended to be used inside critical section, with caller having
- *       locked already, so does not lock.  */
+/** Add server to list of announced servers.
+ * @attention
+ *  Intended to be used inside critical section, with caller having
+ *  locked already, so does not lock.  */
 static int  s_LBOS_FindAnnouncedServer(const char*            service,
                                       const char*             version,
                                       unsigned short          port,
@@ -216,6 +217,10 @@ static int  s_LBOS_FindAnnouncedServer(const char*            service,
 }
 
 
+/** Remove server from list of announced servers.
+ * @attention
+ *  Intended to be used inside critical section, with caller having
+ *  locked already, so does not lock.  */
 static 
 int/*bool*/ s_LBOS_RemoveAnnouncedServer(const char*          service,
                                          const char*          version,
@@ -235,7 +240,6 @@ int/*bool*/ s_LBOS_RemoveAnnouncedServer(const char*          service,
                              about memory leaks */
     }
     return_code = 1;
-    CORE_LOCK_WRITE;
     /* For convenience, we use some aliases. Not references, because this 
      * is not C++ */
     arr = &s_LBOS_AnnouncedServers;
@@ -263,12 +267,15 @@ int/*bool*/ s_LBOS_RemoveAnnouncedServer(const char*          service,
             sizeof(**arr) * (*count - pos -1 ));
     (*count)--;
 unlock_and_return:
-    CORE_UNLOCK;
     assert(return_code == 0 || return_code == 1);
     return return_code;
 }
 
 
+/** Remove server from list of announced servers.
+ * @attention
+ *  Intended to be used inside critical section, with caller having
+ *  locked already, so does not lock.  */
 static 
 int/*bool*/ s_LBOS_AddAnnouncedServer(const char*            service,
                                      const char*             version,
@@ -300,8 +307,6 @@ int/*bool*/ s_LBOS_AddAnnouncedServer(const char*            service,
     handle.version = strdup(version);
     handle.service = strdup(service);
 
-    CORE_LOCK_WRITE;
-
     /* We search for the same server being already announced                 */  
     s_LBOS_RemoveAnnouncedServer(service, version, port,
                                  healthcheck_info->host);
@@ -330,7 +335,6 @@ int/*bool*/ s_LBOS_AddAnnouncedServer(const char*            service,
 
 clear_and_exit:
     ConnNetInfo_Destroy(healthcheck_info);
-    CORE_UNLOCK;
     return return_code;
 }
 
@@ -626,7 +630,7 @@ char** g_LBOS_GetLBOSAddressesEx (ELBOSFindMethod priority_find_method,
 {
     char* lbosaddress = NULL;
     size_t lbosaddresses_count = 0;
-    char** addresses = (char**)malloc(sizeof(char*) * kLBOSAddresses);
+    char** addresses = (char**)calloc(kLBOSAddresses, sizeof(char*));
     if (addresses == NULL) {
         CORE_LOG_X(1, eLOG_Warning,
                    "Memory allocation problem while generating "
@@ -647,6 +651,8 @@ char** g_LBOS_GetLBOSAddressesEx (ELBOSFindMethod priority_find_method,
          find_method_iter < find_method_count;
          ++find_method_iter)
     {
+        if (lbosaddresses_count > 0)
+            break;
         switch (find_method_order[find_method_iter]) {
         case eLBOSFindMethod_None :
             break;
@@ -709,6 +715,7 @@ char** g_LBOS_GetLBOSAddressesEx (ELBOSFindMethod priority_find_method,
             if (g_LBOS_StringIsNullOrEmpty(lbosaddress)) {
                 CORE_LOG_X(1, eLOG_Warning, "Trying to find LBOS using "
                         "registry failed");
+                free(lbosaddress); /* just in case */
                 break;
             }
             addresses[lbosaddresses_count++] = lbosaddress;
@@ -986,8 +993,8 @@ static CONN s_LBOS_ConnectURL(SConnNetInfo* net_info, const char* url,
      * We define very little timeout so that we can quickly iterate
      * through LBOSes (they should answer in no more than 0.5 second)
      */
-    CONN_SetTimeout(conn, eIO_Open,      &s_LBOS_Timeout);
-    CONN_SetTimeout(conn, eIO_ReadWrite, &s_LBOS_Timeout);
+    CONN_SetTimeout(conn, eIO_Open,      &kLBOSTimeout);
+    CONN_SetTimeout(conn, eIO_ReadWrite, &kLBOSTimeout);
     return conn;
 }
 
@@ -1011,8 +1018,8 @@ static char * s_LBOS_UrlReadAll(SConnNetInfo*   net_info,
     size_t        oneLineSize      = kMaxLineSize;
     /* how much bytes was read in one turn*/
     size_t        bytesRead        = 0;    
-    /* Connector to LBOS. We do not know if LBOS really exists at url */
-    CONN          connector;
+    /* Connection to LBOS. We do not know if LBOS really exists at url */
+    CONN          conn;
     char*         buf;
     size_t        totalBufSize;
     char*         realloc_result;
@@ -1027,27 +1034,31 @@ static char * s_LBOS_UrlReadAll(SConnNetInfo*   net_info,
     user_data.header = net_info->http_user_header;
     /* Set content length to the maximum possible value */
     user_data.content_length = (size_t)-1; 
-    connector      = s_LBOS_ConnectURL(net_info, url, &user_data);
-    if (connector == NULL) {
+    conn = s_LBOS_ConnectURL(net_info, url, &user_data);
+    if (conn == NULL) {
         return NULL;
     }
-    CONN_SetUserData(connector, &user_data);
+    CONN_SetUserData(conn, &user_data);
     buf              = (char*)calloc(oneLineSize, sizeof(char));
     /* Total length of buffer. We already have oneLineSize because of calloc */
     totalBufSize     = oneLineSize;    
     if (buf == NULL)
     {
-        CORE_LOG(eLOG_Warning, "s_LBOS_UrlReadAll: No RAM. "
+        CORE_LOG(eLOG_Critical, "s_LBOS_UrlReadAll: No RAM. "
                                "Returning NULL.");
-        CONN_Close(connector);
+        CONN_Close(conn);
         return NULL;
     }
     do {
         /* If there is no LBOS, we will know about it here */
         status = g_LBOS_UnitTesting_GetLBOSFuncs()->
-                          Read(connector, buf + strlen(buf),
+                          Read(conn, buf + strlen(buf),
                                totalBufSize - totalRead - 1 /* for \0 */,
                                &bytesRead, eIO_ReadPlain);
+        if (user_data.http_response_code != 200) {
+            CORE_LOGF(eLOG_Critical, ("s_LBOS_UrlReadAll: LBOS returned status "
+                    "code %d", user_data.http_response_code));
+        }
         if (status_code != NULL) {
             *status_code = user_data.http_response_code;
         }
@@ -1059,15 +1070,30 @@ static char * s_LBOS_UrlReadAll(SConnNetInfo*   net_info,
         /* If could not connect, fail now */
         if (user_data.http_response_code == 0) {
             free(buf);
+            CONN_Close(conn);
             return NULL;
         }
         totalRead += bytesRead;
 
         buf[totalRead] = 0; /* force end of string */
-        /* If we have read enough, exit this loop */
-        if (totalRead >= user_data.content_length) {
+#if 0
+        /* If we have read enough and use PUT or DELETE methods,
+         * exit this loop */
+        if (
+                totalRead >= user_data.content_length
+                /*&&
+                (   net_info->req_method == eReqMethod_Put
+                    ||
+                    net_info->req_method == eReqMethod_Delete
+                )*/
+            )
+        {
+            CONN_Flush(conn);
+            CONN_SetTimeout(conn, eIO_Close, &kLBOSZeroTimeout);
+            SOCK_CloseEx(sock, 0/*retain SOCK*/);
             break;
         }
+#endif
         /* IF we still have to read - then add space to buffer, if needed  */
         if (status == eIO_Success && totalBufSize < totalRead * 2)
         {
@@ -1092,7 +1118,7 @@ static char * s_LBOS_UrlReadAll(SConnNetInfo*   net_info,
     }  else  {
         buf = realloc_result;
     }
-    CONN_Close(connector);
+    CONN_Close(conn);
     return buf;
 }
 
@@ -1129,8 +1155,11 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
     }
     infos_count = 0;
     infos_capacity = 1;
-    /* Update HTTP Header with local DTabs from registry */
+    /* Update HTTP Header with local DTabs from registry and revert after we 
+     * finished reading from URL */
     /* First, we look if there is DTab-Local already in header*/
+    char* old_header = net_info->http_user_header ?
+            strdup(net_info->http_user_header) : NULL;
     user_dtab = g_LBOS_strcasestr(net_info->http_user_header, 
                                               "DTab-local:");
     /* If there is an already defined local DTab, we mix it with one from 
@@ -1188,9 +1217,11 @@ static SSERV_Info** s_LBOS_ResolveIPPort(const char* lbos_address,
     sprintf(url, "%s%s%s%s", "http://", lbos_address, kLBOSQuery,
             servicename_url_encoded);
     lbos_answer = s_LBOS_UrlReadAll(net_info, url, NULL, NULL);
+    /* Revert header */
+    ConnNetInfo_OverrideUserHeader(net_info, old_header);
+    free(old_header);
     free(url);
     free(servicename_url_encoded);
-
     /* If no connection */
     if (lbos_answer == NULL) {
         free(infos);
@@ -1879,9 +1910,22 @@ static EHTTP_HeaderParse s_LBOS_ParseHeader(const char*      header,
             free(status_message);
             return eHTTP_HeaderError;
         }
-        if ((content_length_pos = strstr(strlwr(header), "content-length")) != NULL) {
-            sscanf(content_length_pos, "content-length: %lu", &content_length);
+        if (status_code != 200) {
+            CORE_LOGF(eLOG_Critical, ("s_LBOS_UrlReadAll: LBOS returned status "
+                    "code %d", status_code));
         }
+        char* temp_header = strlwr(strdup(header)); /* we cannot modify
+                                                     * original */
+        /* We search with prefix \r\n, which would mean that this is tag, not
+         * part of some other value
+         */
+        if ((content_length_pos = strstr(temp_header, "\r\ncontent-length: "))
+                != NULL)
+        {
+            content_length_pos += strlen("\r\ncontent-length: ");
+            sscanf(content_length_pos, "%lu", &content_length);
+        }
+        free(temp_header);
         /* check for empty document */
         response_output->http_response_code = status_code;
         response_output->http_status_mesage = status_message;
@@ -2312,7 +2356,9 @@ unsigned short LBOS_Announce(const char*             service,
                                                           lbos_answer,
                                                           http_status_message);     
     if (result == kLBOSSuccess) {
+        CORE_LOCK_WRITE;
         s_LBOS_AddAnnouncedServer(service, version, port, healthcheck_url);
+        CORE_UNLOCK;
     }
 
     /* Cleanup */
@@ -2366,7 +2412,9 @@ unsigned short LBOS_AnnounceFromRegistry(const char*  registry_section,
     result = LBOS_Announce(srvc, vers, host, (unsigned short)port, hlth,
                            lbos_answer, http_status_message);    
     if (result == kLBOSSuccess) {
+        CORE_LOCK_WRITE;
         s_LBOS_AddAnnouncedServer(srvc, vers, port, hlth);
+        CORE_UNLOCK;
     }
 
     /* Cleanup */
@@ -2526,7 +2574,9 @@ unsigned short LBOS_Deannounce(const char*        service,
     /* If kLBOSNotFound or kLBOSSuccess - we delete server from local storage
     * as no longer existing */
     if (retval == kLBOSNotFound || retval == kLBOSSuccess) {
+        CORE_LOCK_WRITE;
         s_LBOS_RemoveAnnouncedServer(service, version, port, host);
+        CORE_UNLOCK;
     }
 
     /*
@@ -2662,6 +2712,7 @@ unsigned short LBOS_ServiceVersionGetCurrent(const char*  service,
     /*
      * Cleanup
      */
+    free(query);
     free(service_encoded);
     return return_code;
 }
@@ -2722,6 +2773,7 @@ unsigned short LBOS_ServiceVersionUpdate(const char*  service,
      * Cleanup
      */
     free(service_encoded);
+    free(query);
     return return_code;
 }
 
@@ -2769,8 +2821,10 @@ unsigned short LBOS_ServiceVersionDelete(const char*  service,
      * Cleanup
      */
     free(service_encoded);
+    free(query);
     return return_code;
 }
 
 
 #undef NCBI_USE_ERRCODE_X
+

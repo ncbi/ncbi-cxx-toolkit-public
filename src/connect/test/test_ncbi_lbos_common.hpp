@@ -42,6 +42,7 @@
 #include <corelib/ncbifile.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_lbos.hpp>
+#include "../ncbi_lbosp.hpp"
 #include <connect/server.hpp>
 #include <util/random_gen.hpp>
 /*C*/
@@ -95,9 +96,13 @@
 #   undef  NCBITEST_CHECK_EQUAL
 #   define NCBITEST_CHECK_EQUAL(S,E)                                          \
     do {                                                                      \
-           stringstream ss;                                                   \
-           ss << " (" << S << " != " << E <<  ")";                            \
-           NCBITEST_CHECK_MESSAGE(S == E, ss.str().c_str());                  \
+        stringstream ss, lh_str, rh_str;                                      \
+        lh_str << S;                                                          \
+        rh_str << E;                                                          \
+        ss << " (" << #S << " != " << #E <<  ")"                              \
+           << " (" << lh_str.str() << " != " << rh_str.str() <<  ")";         \
+        NCBITEST_CHECK_MESSAGE(lh_str.str() == rh_str.str(),                  \
+                                   ss.str().c_str());                         \
     } while(false);
 
 #   undef  NCBITEST_CHECK_NE
@@ -140,7 +145,7 @@ USING_NCBI_SCOPE;
 static void            s_PrintInfo                  (HOST_INFO);
 static void            s_TestFindMethod             (ELBOSFindMethod);
 static string          s_PrintThreadNum             (int);
-static string          s_PrintAnnouncedServers      ();
+static void          s_PrintAnnouncedServers      ();
 
 /** Return a priori known LBOS address */
 template <unsigned int lines>
@@ -162,7 +167,10 @@ static const int       kThreadsNum                  = 34;
 static bool            s_CheckIfAnnounced           (string         service,
                                                      string         version,
                                                      unsigned short server_port,
-                                                     string      health_suffix);
+                                                     string      health_suffix,
+                                                     bool      expectedAnnounced 
+                                                                         = true,
+                                                     string          host = "");
 /** Static variables that are used in mock functions.
  * This is not thread-safe! */
 static int             s_CallCounter                = 0;
@@ -172,14 +180,16 @@ static string          s_LastHeader;
 /** When the test is run in single-threaded mode, we set the number of the 
  * main thread to -1 to distinguish betwenn MT and ST    */
 const int              kSingleThreadNumber          = -1;
-/* Seconds to try to find server */
-const int              kDiscoveryDelaySec           = 10;
+/* Seconds to try to find server. We wait maximum of 60 seconds. */
+const int              kDiscoveryDelaySec = 60; 
 const unsigned short   kDefaultPort                 = 5000; /* for tests where
                         port is not necessary (they fail before announcement) */
+/* msecs to wait after announcement.deannouncement */
+
 #include "test_ncbi_lbos_mocks.hpp"
 
 #define WRITE_LOG(text,thread_num) \
-    LOG_POST(s_PrintThreadNum(thread_num) << "\t" << text);
+    LOG_POST(s_PrintThreadNum(thread_num) << "\t" << __FILE__ << "\t" << __LINE__ << "\t" << text);
 
 #define PORT 8085 /* port for healtcheck */
 #define PORT_STR_HELPER(port) #port
@@ -262,6 +272,8 @@ static void s_PrintRegistryAnnounceParams(const char* registry_section,
     time_elapsed = s_TimeDiff(&time_stop, &time_start);    
 
 
+/** Announce using C interface. If annoucement finishes with error - return 
+ * error */
 static unsigned short s_AnnounceC(const char*       name,
                                   const char*       version,
                                   const char*       host,
@@ -275,9 +287,9 @@ static unsigned short s_AnnounceC(const char*       name,
     MEASURE_TIME_START
     if (health != NULL) {
         stringstream healthcheck;
-        healthcheck << health << "?port=" << port << 
-                       "&host=" << (host ? host : "") <<
-                       "&version=" << (version ? version : "");
+        healthcheck << health << "/port" << port << 
+                       "/host" << (host ? host : "") <<
+                       "/version" << (version ? version : "");
         s_PrintAnnouncementDetails(name, version, port, 
                                    healthcheck.str().c_str(),
                                    thread_num);
@@ -297,6 +309,8 @@ static unsigned short s_AnnounceC(const char*       name,
 }
         
 
+/** Announce using C interface. If announcement finishes with error - try again
+ * until success (with invalid parameters means infinite loop) */
 static unsigned short s_AnnounceCSafe(const char*       name,
                                        const char*      version,
                                        const char*      host,
@@ -310,9 +324,9 @@ static unsigned short s_AnnounceCSafe(const char*       name,
     MEASURE_TIME_START
     if (health != NULL) {
         stringstream healthcheck;
-        healthcheck << health << "?port=" << port << 
-                       "&host=" << (host ? host : "") <<
-                       "&version=" << (version ? version : "");
+        healthcheck << health << "/port" << port << 
+                       "/host" << (host ? host : "") <<
+                       "/version" << (version ? version : "");
         s_PrintAnnouncementDetails(name, version, port, 
                                    healthcheck.str().c_str(), 
                                    thread_num);
@@ -331,6 +345,10 @@ static unsigned short s_AnnounceCSafe(const char*       name,
     return result;
 }
 
+
+/** Announce using C interface and using values from registry. If announcement 
+ * finishes with error - try again until success (with invalid parameters means
+ * infinite loop) */
 static unsigned short s_AnnounceCRegistry(const char*   registry_section,
                                           char**        lbos_ans,
                                           char**        lbos_mes,
@@ -347,6 +365,9 @@ static unsigned short s_AnnounceCRegistry(const char*   registry_section,
     return result;
 }
 
+
+/** Announce using C++ interface. If annoucement finishes with error - return
+ * error */
 static void s_AnnounceCPP(const string& name,
                           const string& version,
                           const string& host,
@@ -357,8 +378,8 @@ static void s_AnnounceCPP(const string& name,
     s_PrintAnnouncementDetails(name.c_str(), version.c_str(), port, 
                                health.c_str(), thread_num);
     stringstream healthcheck;
-    healthcheck << health << "?port=" << port << "&host=" << host << 
-                   "&version=" << version;
+    healthcheck << health << "/port" << port << "/host" << host <<
+                   "/version" << version;
     MEASURE_TIME_START
     try {
         LBOS::Announce(name, version, host, port, healthcheck.str());
@@ -375,6 +396,33 @@ static void s_AnnounceCPP(const string& name,
                             "OK", 200, time_elapsed, thread_num);
 }
 
+
+/** Announce using C++ interface. If announcement finishes with error - try 
+ * again until success (with invalid parameters means infinite loop) */
+static void s_AnnounceCPPSafe(const string& name,
+    const string& version,
+    const string& host,
+    unsigned short port,
+    const string& health,
+    int thread_num)
+{
+    s_PrintAnnouncementDetails(name.c_str(), version.c_str(), port,
+        health.c_str(), thread_num);
+    stringstream healthcheck;
+    healthcheck << health << "/port" << port << "/host" << host <<
+                   "/version" << version;
+    MEASURE_TIME_START
+        s_LBOS_CPP_Announce(name, version, host, port, healthcheck.str());
+    MEASURE_TIME_FINISH
+        /* Print good result */
+        s_PrintAnnouncedDetails("<C++ does not show answer from LBOS>",
+        "OK", 200, time_elapsed, kSingleThreadNumber);
+}
+
+
+/** Announce using C++ interface and using values from registry. If 
+ * announcement finishes with error - try again until success (with invalid 
+ * parameters means infinite loop) */
 static void s_AnnounceCPPFromRegistry(const string& registry_section)
 {
     s_PrintRegistryAnnounceParams(registry_section.c_str(),
@@ -393,27 +441,7 @@ static void s_AnnounceCPPFromRegistry(const string& registry_section)
     MEASURE_TIME_FINISH
     /* Print good result */
     s_PrintAnnouncedDetails("<C++ does not show answer from LBOS>",
-                            "OK", 200, time_elapsed, kSingleThreadNumber);
-}
-
-static void s_AnnounceCPPSafe(const string& name,
-                              const string& version,
-                              const string& host,
-                              unsigned short port,
-                              const string& health,
-                              int thread_num)
-{
-    s_PrintAnnouncementDetails(name.c_str(), version.c_str(), port, 
-                               health.c_str(), thread_num);
-    stringstream healthcheck;
-    healthcheck << health << "?port=" << port << "&host=" << host << 
-                   "&version=" << version;
-    MEASURE_TIME_START
-        s_LBOS_CPP_Announce(name, version, host, port, healthcheck.str());
-    MEASURE_TIME_FINISH
-    /* Print good result */
-    s_PrintAnnouncedDetails("<C++ does not show answer from LBOS>",
-                            "OK", 200, time_elapsed, kSingleThreadNumber);
+    "OK", 200, time_elapsed, kSingleThreadNumber);
 }
 
 
@@ -497,7 +525,7 @@ static void s_DeannounceCPP(const string& name,
     MEASURE_TIME_FINISH
     /* Print good result */
     s_PrintDeannouncedDetails("<C++ does not show answer from LBOS>",
-                            "OK", 200, time_elapsed, thread_num);
+                              "OK", 200, time_elapsed, thread_num);
 }
 
 
@@ -518,6 +546,7 @@ static void s_SelectPort(int&               count_before,
         thread_num);
 }
 
+
 /** Check if expected number of specified servers is announced 
  * (usually it is 0 or 1)
  * This function does not care about host (IP) of server.
@@ -535,7 +564,7 @@ int s_CountServersWithExpectation(string            service,
                    " via service discovery "
                    "(expecting " << expected_count << " servers found).",
                thread_num);
-    const int wait_time = 500; /* msecs */
+    const int wait_time = 5000; /* msecs */
     int max_retries = secs_timeout * 1000 / wait_time; /* number of repeats 
                                                           until timeout */
     int retries = 0;
@@ -563,24 +592,24 @@ int s_CountServersWithExpectation(string            service,
             retries++;
         }
     MEASURE_TIME_FINISH
-        WRITE_LOG("Found " << servers << " servers of service " << service 
-                  << ", port " << port << "after " << time_elapsed << 
-                  " seconds.", thread_num);
+        WRITE_LOG("Found " << servers << " servers of service " << service << 
+                  ", port " << port << " after " << time_elapsed <<
+                  " seconds via service discovery.", thread_num);
     return servers;
 }
 
+
 static int  s_FindAnnouncedServer(string            service,
-    string            version,
-    unsigned short    port,
-    string            host,
-    int               thread_num)
+                                  string            version,
+                                  unsigned short    port,
+                                  string            host,
+                                  int               thread_num)
 {
     WRITE_LOG("Trying to find announced server in the storage\"" <<
                 service << "\" with version 1.0.0 and port " <<
                 port << ", ip " << host,
               thread_num);
-    WRITE_LOG("Announced servers list: \n" << s_PrintAnnouncedServers(),
-              thread_num);
+    s_PrintAnnouncedServers();
 
 
     CLBOSStatus lbos_status(true, true);
@@ -590,6 +619,7 @@ static int  s_FindAnnouncedServer(string            service,
     unsigned int found = 0;
     /* Just iterate and compare */
     unsigned int i = 0;
+    CORE_LOCK_READ;
     for (i = 0; i < count; i++) {
         if (strcasecmp(service.c_str(), arr[i].service) == 0
             &&
@@ -602,6 +632,7 @@ static int  s_FindAnnouncedServer(string            service,
             found++;
         }
     }
+    CORE_UNLOCK;
     WRITE_LOG("Found  " << found <<
         " servers in the inner LBOS storage", thread_num);
     return found;
@@ -913,7 +944,6 @@ void LBOSOff__ReturnKLBOSOff(int thread_num);
 void LBOSAnnounceCorruptOutput__ReturnServerError(int thread_num);
 void HealthcheckDead__ReturnKLBOSSuccess(int thread_num);
 void HealthcheckDead__AnnouncementOK(int thread_num);
-void SeparateHost__AnnouncementOK(int thread_num);
 
 }
 
@@ -1454,6 +1484,21 @@ void FullCycle__ShouldWork()
                     &lbos_answer.Get(), NULL, kSingleThreadNumber);
     lbos_answer = NULL;
 
+    unsigned int servers_found1 =
+        s_CountServersWithExpectation(service, port1, 1, kDiscoveryDelaySec,
+                                      kSingleThreadNumber),
+                 servers_found2 =
+        s_CountServersWithExpectation(service, port2, 1, kDiscoveryDelaySec,
+                                      kSingleThreadNumber),
+                 servers_found3 =
+        s_CountServersWithExpectation(service, port3, 1, kDiscoveryDelaySec,
+                                      kSingleThreadNumber);
+    NCBITEST_REQUIRE_MESSAGE(servers_found1 == 1, "lbostest was announced, "
+                                                   "but cannot find it");
+    NCBITEST_REQUIRE_MESSAGE(servers_found2 == 1, "lbostest was announced, "
+                                                   "but cannot find it");
+    NCBITEST_REQUIRE_MESSAGE(servers_found3 == 1, "lbostest was announced, "
+                                                   "but cannot find it");
     /*
      * 1. We close after first GetNextInfo
      */
@@ -1463,7 +1508,7 @@ void FullCycle__ShouldWork()
                       0/*external*/, 0/*arg*/, 0/*val*/));
     if (*iter == NULL) {
         NCBITEST_CHECK_MESSAGE(*iter != NULL,
-            "LBOS not found when it should be");
+            "Could not find announced lbostest nodes");
         return;
     }
     SERV_GetNextInfo(*iter);
@@ -1482,7 +1527,7 @@ void FullCycle__ShouldWork()
                       0/*external*/, 0/*arg*/, 0/*val*/);
     if (*iter == NULL) {
         NCBITEST_CHECK_MESSAGE(*iter != NULL,
-            "LBOS not found when it should be");
+            "Could not find announced lbostest nodes");
         return;
     }
     data = static_cast<SLBOS_Data*>(iter->data);
@@ -1500,7 +1545,12 @@ void FullCycle__ShouldWork()
                       SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
                       *net_info, 0/*skip*/, 0/*n_skip*/,
                       0/*external*/, 0/*arg*/, 0/*val*/);
-
+    
+    if (*iter == NULL) {
+        NCBITEST_CHECK_MESSAGE(*iter != NULL,
+            "Could not find announced lbostest nodes");
+        return;
+    }
     for (i = 0;  i < static_cast<SLBOS_Data*>(iter->data)->n_cand;  ++i) {
         SERV_GetNextInfo(*iter);
     }
@@ -2847,7 +2897,7 @@ void AllOK__AnnouncedServerSaved(int thread_num = -1)
                            "SUCCESS as expected");
 
     NCBITEST_CHECK_EQUAL(
-        s_FindAnnouncedServer(node_name, "1.0.0", port, s_GetMyIP().c_str(),
+        s_FindAnnouncedServer(node_name, "1.0.0", port, s_GetMyIP(),
                               thread_num),
         1);
     /* Cleanup */
@@ -3439,8 +3489,8 @@ void IP0000__ReplaceWithIP(int thread_num = -1)
     NCBITEST_CHECK_EQUAL(result, kLBOSDNSResolveError);
     stringstream healthcheck;
     healthcheck << "http%3A%2F%2F1.2.3.4%3A" PORT_STR(PORT) "%2Fhealth" << 
-                   "%3Fport%3D" << port <<
-                   "%26host%3D%26version%3D1.0.0";
+                   "%2Fport" << port <<
+                   "%2Fhost%2Fversion1.0.0";
     NCBITEST_CHECK_EQUAL(s_LBOS_hostport, healthcheck.str().c_str());
     lbos_answer = NULL;
     lbos_status_message = NULL;
@@ -3453,8 +3503,8 @@ void IP0000__ReplaceWithIP(int thread_num = -1)
     NCBITEST_CHECK_EQUAL(result, kLBOSDNSResolveError);
     healthcheck.str(std::string());
     healthcheck << "http%3A%2F%2F251.252.253.147%3A" PORT_STR(PORT) 
-                   "%2Fhealth" << "%3Fport%3D" << port <<
-                   "%26host%3D%26version%3D1.0.0";
+                   "%2Fhealth" << "%2Fport" << port <<
+                   "%2Fhost%2Fversion1.0.0";
     NCBITEST_CHECK_EQUAL(s_LBOS_hostport, healthcheck.str().c_str());
     /* Cleanup*/
     WRITE_LOG("Reverting mock of SOCK_gethostbyaddr", 
@@ -3626,44 +3676,6 @@ void HealthcheckDead__AnnouncementOK(int thread_num = -1)
     lbos_answer = NULL;
     s_DeannounceC(node_name.c_str(), "1.0.0", "", port, &lbos_answer.Get(), NULL,
                   thread_num);
-}
-
-
-/* 24. Announce server with separate host and healtcheck - should be found in 
- *     %LBOS%/text/service                                                   */
-void SeparateHost__AnnouncementOK(int thread_num = -1)
-{
-    CLBOSStatus lbos_status(true, true);
-    CCObjHolder<char> lbos_answer(NULL);
-    string node_name = s_GenerateNodeName();
-    CCObjHolder<char> lbos_status_message(NULL);
-    unsigned short result;
-    unsigned short port = kDefaultPort;
-    WRITE_LOG("Trying to announce server with separate host that is not the "
-              "same as healtcheck host - return code from LBOS(200).",
-              thread_num);
-    int count_before;
-    s_SelectPort(count_before, node_name, port, thread_num);
-
-    result = s_AnnounceCSafe(node_name.c_str(), "1.0.0", "cnn.com", port,
-                             "http://0.0.0.0:" PORT_STR(PORT) "/health",
-                             &lbos_answer.Get(), &lbos_status_message.Get(), 
-                             thread_num);
-    int count_after = s_CountServersWithExpectation(node_name, port, 1, 
-                                                    kDiscoveryDelaySec,
-                                                    thread_num);
-    NCBITEST_CHECK_EQUAL(result, kLBOSSuccess);
-    NCBITEST_CHECK_EQUAL(count_after, count_before + 1);
-    
-    stringstream healthcheck;
-    healthcheck << ":4097/healt" << "?port=" << port <<
-                   "&host=" << "cnn.com" << "&version=1.0.0";
-    NCBITEST_CHECK_MESSAGE(s_CheckIfAnnounced(node_name, "1.0.0", port,
-                                              healthcheck.str().c_str()),
-                           "Service was not announced");
-    lbos_answer = NULL;
-    s_DeannounceC(node_name.c_str(), "1.0.0", "cnn.com", port, 
-                  &lbos_answer.Get(), NULL, thread_num);
 }
 
 
@@ -4001,12 +4013,14 @@ void Deannounced__Return1(unsigned short port, int thread_num = -1)
     lbos_answer = NULL;
     lbos_status_message = NULL;
     /* Count how many servers there are */
-    int count_after = s_CountServersWithExpectation(node_name, port, 1, kDiscoveryDelaySec,
+    int count_after = s_CountServersWithExpectation(node_name, port, 1, 
+                                                    kDiscoveryDelaySec,
                                                     thread_num);
     NCBITEST_CHECK_EQUAL(count_after, count_before + 1);
 
     result = s_DeannounceC(node_name.c_str(), "1.0.0", "", port, 
-                           &lbos_answer.Get(), &lbos_status_message.Get(), thread_num);
+                           &lbos_answer.Get(), &lbos_status_message.Get(), 
+                           thread_num);
     NCBITEST_CHECK_EQUAL(result, kLBOSSuccess);
     NCBITEST_CHECK_EQUAL(
         string(*lbos_status_message ? *lbos_status_message : "<NULL>"), "OK");
@@ -4030,13 +4044,14 @@ void Deannounced__Return1(unsigned short port, int thread_num = -1)
     lbos_status_message = NULL;
 
     /* Count how many servers there are */
-    count_after = s_CountServersWithExpectation(node_name, port, 1, kDiscoveryDelaySec,
-                                                thread_num);
+    count_after = s_CountServersWithExpectation(node_name, port, 1, 
+                                                kDiscoveryDelaySec, thread_num);
     NCBITEST_CHECK_EQUAL(count_after, count_before + 1);
 
     result = s_DeannounceC(node_name.c_str(), 
                            "1.0.0", s_GetMyIP().c_str(), port,
-                           &lbos_answer.Get(), &lbos_status_message.Get(), thread_num);
+                           &lbos_answer.Get(), &lbos_status_message.Get(), 
+                           thread_num);
     NCBITEST_CHECK_EQUAL(result, kLBOSSuccess);
     NCBITEST_CHECK_EQUAL(
         string(*lbos_status_message ? *lbos_status_message : "<NULL>"), "OK");
@@ -4631,7 +4646,7 @@ void AlreadyAnnouncedInTheSameZone__ReplaceInStorage(int thread_num = -1)
                                                     thread_num);
     NCBITEST_CHECK_EQUAL(count_after, count_before + 1);
     NCBITEST_CHECK_EQUAL(s_FindAnnouncedServer(node_name, "1.0.0", port,
-                           "0.0.0.0", thread_num), 1);
+                         "0.0.0.0", thread_num), 1);
     /*
      * Second time
      */
@@ -4869,8 +4884,8 @@ void IP0000__ReplaceWithIP(int thread_num = -1)
                       thread_num), CLBOSException, comparator);
     stringstream healthcheck;
     healthcheck << "http%3A%2F%2F1.2.3.4%3A" PORT_STR(PORT) "%2Fhealth" << 
-                   "%3Fport%3D" << port <<
-                   "%26host%3D" << "" << "%26version%3D1.0.0";
+                   "%2Fport" << port <<
+                   "%2Fhost" << "" << "%2Fversion1.0.0";
     NCBITEST_CHECK_EQUAL(s_LBOS_hostport, healthcheck.str().c_str());
     mock1 = s_FakeGetLocalHostAddress<true, 251,252,253,147>;
     BOOST_CHECK_EXCEPTION(
@@ -4880,8 +4895,8 @@ void IP0000__ReplaceWithIP(int thread_num = -1)
     healthcheck.str(std::string());
     healthcheck << "http%3A%2F%2F251.252.253.147%3A" PORT_STR(PORT) 
                    "%2Fhealth" << 
-                   "%3Fport%3D" << port <<
-                   "%26host%3D" << "" << "%26version%3D1.0.0";
+                   "%2Fport" << port <<
+                   "%2Fhost" << "" << "%2Fversion1.0.0";
     NCBITEST_CHECK_EQUAL(s_LBOS_hostport, healthcheck.str().c_str());
     /* Cleanup*/
     WRITE_LOG("Reverting mock og SOCK_gethostbyaddr with \"1.2.3.4\"",
@@ -5051,6 +5066,46 @@ void HealthcheckDead__AnnouncementOK(int thread_num = -1)
     NCBITEST_CHECK_MESSAGE(s_CheckIfAnnounced(node_name, "1.0.0", port,
                                               healthcheck.str().c_str()), 
                            "Service was not announced");
+}
+
+
+/* 24. Announce server with separate host and healthcheck - should be found in
+*     %LBOS%/text/service                                                   */
+void SeparateHost__AnnouncementOK(int thread_num = -1)
+{
+    CLBOSStatus lbos_status(true, true);
+    CCObjHolder<char> lbos_answer(NULL);
+    string node_name = s_GenerateNodeName();
+    CCObjHolder<char> lbos_status_message(NULL);
+    unsigned short port = kDefaultPort;
+    WRITE_LOG("Trying to announce server with separate host that is not the "
+              "same as healtcheck host - return code from LBOS(200).",
+              thread_num);
+    int count_before;
+    s_SelectPort(count_before, node_name, port, thread_num);
+
+    BOOST_CHECK_NO_THROW(s_AnnounceCPPSafe(node_name, "1.0.0", "cnn.com", port,
+                                           "http://0.0.0.0:" PORT_STR(PORT)
+                                           "/health",
+                                           thread_num));
+    int count_after = s_CountServersWithExpectation(node_name, port, 1,
+        kDiscoveryDelaySec,
+        thread_num);
+    NCBITEST_CHECK_EQUAL(count_after, count_before + 1);
+
+    stringstream healthcheck;
+    healthcheck << ":4097/healt" << "?port=" << port <<
+                   "&host=" << "cnn.com" << "&version=1.0.0";
+    string announced_ip = CLBOSIpCache::HostnameTryFind(node_name, "cnn.com", 
+                                                    "1.0.0", port);
+    NCBITEST_CHECK_MESSAGE(s_CheckIfAnnounced(node_name, "1.0.0", port,
+                           healthcheck.str().c_str(), true,
+                           announced_ip),
+                           "Service was not announced");
+    lbos_answer = NULL;
+    BOOST_CHECK_NO_THROW(s_DeannounceCPP(node_name.c_str(), "1.0.0",
+                                         "cnn.com", port,
+                                         thread_num));
 }
 } /* namespace Announcement */
 
@@ -5375,13 +5430,13 @@ void Deannounced__AnnouncedServerRemoved(int thread_num = -1)
                           thread_num));
     /* Check that server is in storage */
     NCBITEST_CHECK_EQUAL(
-        s_FindAnnouncedServer(node_name.c_str(), "1.0.0", port, s_GetMyHost(),
+        s_FindAnnouncedServer(node_name.c_str(), "1.0.0", port, s_GetMyIP(),
                               thread_num), 1);
     BOOST_CHECK_NO_THROW(
         s_DeannounceCPP(node_name, "1.0.0", s_GetMyHost(), port, thread_num));
     /* Check that server was removed from storage */
     NCBITEST_CHECK_EQUAL(
-        s_FindAnnouncedServer(node_name.c_str(), "1.0.0", port, s_GetMyHost(),
+        s_FindAnnouncedServer(node_name.c_str(), "1.0.0", port, s_GetMyIP(),
                               thread_num), 0);
 
     /* Now check with IP instead of host name */
@@ -5561,7 +5616,8 @@ void NoHostProvided__LocalAddress(int thread_num = -1)
     BOOST_CHECK_NO_THROW(
         s_DeannounceCPP(node_name, "1.0.0", "", port, thread_num));
     NCBITEST_CHECK_MESSAGE(!s_CheckIfAnnounced(node_name, "1.0.0", port, 
-                                               ":" PORT_STR(PORT) "/health"),
+                                               ":" PORT_STR(PORT) "/health", 
+                                               false),
                            "Service was not deannounced");
 }
 
@@ -6629,14 +6685,19 @@ void s_TestFindMethod(ELBOSFindMethod find_method)
     }
 }
 
-#ifdef DEANNOUNCE_ALL_BEFORE_TEST
-/** Remove from ZooKeeper only those services which have name specified in
- * special array (this array is defined inside this function) and are
- * based on current host. We do not remove servers that are based on another 
- * host not to interfere with other test applications. And we do not touch 
- * servers with other names that are not related to our test */
-static void s_ClearZooKeeper()
+struct SAnnouncedServer
 {
+    unsigned int host;
+    unsigned short port;
+    string version;
+    string service;
+};
+
+
+/** Result of parsing of /service */
+static vector<SAnnouncedServer> s_ParseService()
+{
+    vector<SAnnouncedServer> nodes;
     CConnNetInfo net_info;
     size_t start = 0, end = 0;
     CCObjArrayHolder<char> lbos_addresses(g_LBOS_GetLBOSAddresses());
@@ -6646,11 +6707,12 @@ static void s_ClearZooKeeper()
     * launch of test crashed)
     */
     CCObjHolder<char> lbos_output_orig(g_LBOS_UnitTesting_GetLBOSFuncs()->
-        UrlReadAll(*net_info, (string("http://") + lbos_addr + 
+        UrlReadAll(*net_info, (string("http://") + lbos_addr +
         "/lbos/text/service").c_str(), NULL, NULL));
     if (*lbos_output_orig == NULL)
         lbos_output_orig = strdup("");
     string lbos_output = *lbos_output_orig;
+    LOG_POST(Error << "/text/service output: \r\n" << lbos_output);
     vector<string> to_find;
     to_find.push_back("/lbostest");
     to_find.push_back("/lbostest1");
@@ -6669,10 +6731,12 @@ static void s_ClearZooKeeper()
             string version = lbos_output.substr(start, end - start);
             // Now we extract ip
             start = end + 1; //skip \t
-            end = lbos_output.find(":", start); //skip ip
+            end = lbos_output.find("\t", start); //skip ip
             string ip = lbos_output.substr(start, end - start);
+            /* Make sure that it is IP, not host name */
+            ip = CSocketAPI::HostPortToString(CSocketAPI::gethostbyname(ip), 0);
             // Now we extract port
-            start = end + 1; //skip ":"
+            start = end + 1; //skip "\t"
             end = lbos_output.find("\t", start);
             unsigned short port =
                 NStr::StringToInt(lbos_output.substr(start, end - start));
@@ -6683,15 +6747,39 @@ static void s_ClearZooKeeper()
             start = end + 1; //skip \t
             end = lbos_output.find("\t", start);
             string is_announced = lbos_output.substr(start, end - start);
-            if (is_announced == "true" && ip == s_GetMyIP()) {
-                try {
-                    s_DeannounceCPP(to_find[i], version, ip, port, kSingleThreadNumber);
-                }
-                catch (const CLBOSException&) {
-                }
+            if (is_announced == "true") {
+                SAnnouncedServer node;
+                node.host = CSocketAPI::gethostbyname(ip);
+                node.port = port;
+                node.service = to_find[i];
+                node.version = version;
+                nodes.push_back(node);
             }
         }
         start = 0; // reset search for the next service
+    }
+    return nodes;
+}
+
+
+#ifdef DEANNOUNCE_ALL_BEFORE_TEST
+/** Remove from ZooKeeper only those services which have name specified in
+ * special array (this array is defined inside this function) and are
+ * based on current host. We do not remove servers that are based on another 
+ * host not to interfere with other test applications. And we do not touch 
+ * servers with other names that are not related to our test */
+static void s_ClearZooKeeper()
+{
+    vector<SAnnouncedServer> nodes = s_ParseService();
+    for (auto node : nodes) {
+        string host = CSocketAPI::HostPortToString(node.host, 0);
+        if (host == s_GetMyIP()) {
+            try {
+                s_DeannounceCPP(node.service, node.version, host, node.port, kSingleThreadNumber);
+            }
+            catch (const CLBOSException&) {
+            }
+        }
     }
 }
 #endif /* DEANNOUNCE_ALL_BEFORE_TEST */
@@ -6702,37 +6790,42 @@ static
 bool s_CheckIfAnnounced(string          service, 
                         string          version, 
                         unsigned short  server_port, 
-                        string          health_suffix) 
+                        string          health_suffix,
+                        bool            expectedAnnounced,
+                        string          expected_host)
 {   
-    CConnNetInfo net_info;
-    char server_hostport[1024], health_hostport[1024];
-    unsigned int host = SOCK_GetLocalHostAddress(eOn);
-    CCObjArrayHolder<char> lbos_addresses(g_LBOS_GetLBOSAddresses());
-    string lbos_addr(lbos_addresses[0]);
-    SOCK_HostPortToString(host, server_port, server_hostport, 1024);
-    SOCK_HostPortToString(host, 0, health_hostport, 1024);
-    //SOCK_gethostbyaddrEx(0, health_hostport, 1024, eOn);
-    CCObjHolder<char> lbos_output_orig(g_LBOS_UnitTesting_GetLBOSFuncs()->
-            UrlReadAll(*net_info, 
-                       (string("http://") + lbos_addr + 
-                                                  "/lbos/text/service").c_str(), 
-                       NULL, NULL));
-    if (*lbos_output_orig == NULL) 
-        lbos_output_orig = strdup("");
-    string lbos_output(*lbos_output_orig);
-    stringstream ss;
-    ss << service << "\t" << version << "\t" <<  server_hostport <<
-          "\thttp://" << 
-#ifdef NCBI_COMPILER_MSVC
-          _strlwr(health_hostport) 
-#else 
-          strlwr(health_hostport)
-#endif
-          << health_suffix << "\ttrue";
-    /*ConnNetInfo_Destroy(*net_info);*/
-    string to_find = ss.str();
-    return (lbos_output.find(to_find) != string::npos);
+    int wait_msecs = 500;
+    int max_retries = kDiscoveryDelaySec * 1000 / wait_msecs;
+    int retries = 0;
+    bool announced = !expectedAnnounced;
+    expected_host = expected_host == "" ?
+        CSocketAPI::HostPortToString(CSocketAPI::GetLocalHostAddress(), 0) :
+        CSocketAPI::HostPortToString(CSocketAPI::gethostbyname(expected_host), 0);
+    MEASURE_TIME_START
+        while (announced != expectedAnnounced && retries < max_retries) {
+            announced = false;
+            if (retries > 0) { /* for the first cycle we do not sleep */
+                SleepMilliSec(wait_msecs);
+            }
+            vector<SAnnouncedServer> nodes = s_ParseService();
+            for (auto node : nodes) {
+                string host = CSocketAPI::HostPortToString(node.host, 0);
+                if (expected_host == host && node.port == server_port && node.version == version && node.service == service) {
+                    announced = true;
+                    break;
+                }
+            }
+            retries++;
+        }
+    MEASURE_TIME_FINISH
+    LOG_POST(Error << "Server " << service << " with port " << server_port <<
+             " and version " << version << " was" <<
+             (announced ? "" : " NOT") << " found int /text/service after " <<
+             time_elapsed << " seconds (expected to" <<
+             (expectedAnnounced ? "" : " NOT") << " find it).");
+    return announced;    
 }
+
 
 /** A simple construction that returns "Thread n: " when n is not -1, 
  *  and returns "" (empty string) when n is -1. */
@@ -6747,7 +6840,8 @@ static string s_PrintThreadNum(int n) {
     return ss.str();
 }
 
-static string s_PrintAnnouncedServers() {
+static void s_PrintAnnouncedServers() {
+#if 0
     int count, i;
     stringstream ss;
     struct SLBOS_AnnounceHandle_Tag** arr =
@@ -6757,13 +6851,13 @@ static string s_PrintAnnouncedServers() {
         return "";
     count = g_LBOS_UnitTesting_GetAnnouncedServersNum();
 
-    /* Just iterate and compare */
     for (i = 0; i < count; i++) {
         ss << i << ". " << 
             "\t" << (*arr)[i].service << "\t" << (*arr)[i].version << 
             "\t" << (*arr)[i].host << ":" << (*arr)[i].port << endl;
     }
-    return ss.str();
+    WRITE_LOG("Announced servers list: \n" <<  ss.str());
+#endif
 }
 
 #endif /* CONNECT___TEST_NCBI_LBOS__HPP*/

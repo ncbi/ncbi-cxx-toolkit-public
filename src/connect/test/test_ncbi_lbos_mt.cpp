@@ -178,12 +178,14 @@ void CTestLBOSApp::SwapAddressesTest(int idx)
     TestApp_GlobalSyncPoint();
 }
 
+
 static void s_RelaxHealthcheck()
 {
 #ifdef NCBI_THREADS
     while (s_HealthchecKThread->IsBusy()) continue;
 #endif
 }
+
 
 bool CTestLBOSApp::Thread_Run(int idx)
 {    

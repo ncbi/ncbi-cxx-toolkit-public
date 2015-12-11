@@ -97,6 +97,10 @@ NCBITEST_AUTO_INIT()
 #endif
 }
 
+BOOST_AUTO_TEST_CASE(Deannouncement__Deannounced__AnnouncedServerRemoved)
+{
+    Deannouncement::Deannounced__AnnouncedServerRemoved();
+}
 ///////////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_SUITE( ConfigureEndpoint )/////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -744,12 +748,6 @@ BOOST_AUTO_TEST_CASE(Announcement__HealthcheckDead__AnnouncementOK)
 {
     Announcement::HealthcheckDead__AnnouncementOK();
 }
-/* 24. Announce server with separate host and healtcheck - should be found in
- *     %LBOS%/text/service                                                   */
-BOOST_AUTO_TEST_CASE(Announcement__SeparateHost__AnnouncementOK)
-{
-    Announcement::SeparateHost__AnnouncementOK();
-}
 
 BOOST_AUTO_TEST_SUITE_END()
 
@@ -777,62 +775,62 @@ BOOST_AUTO_TEST_SUITE( AnnounceRegistryTest )//////////////////////////////////
         config) - return eLBOS_Success                                       */
 BOOST_AUTO_TEST_CASE(AnnouncementRegistry__ParamsGood__ReturnSuccess) 
 {
-    return AnnouncementRegistry::ParamsGood__ReturnSuccess();
+    AnnouncementRegistry::ParamsGood__ReturnSuccess();
 }
 /*  2.  Custom section has nothing in config - return eLBOS_InvalidArgs      */
 BOOST_AUTO_TEST_CASE(
                   AnnouncementRegistry__CustomSectionNoVars__ReturnInvalidArgs)
 {
-    return AnnouncementRegistry::CustomSectionNoVars__ReturnInvalidArgs();
+    AnnouncementRegistry::CustomSectionNoVars__ReturnInvalidArgs();
 }
 /*  3.  Section empty or NULL (should use default section and return 
         eLBOS_Success)                                                       */
 BOOST_AUTO_TEST_CASE(
 AnnouncementRegistry__CustomSectionEmptyOrNullAndDefaultSectionIsOk__ReturnSuccess)
 {
-    return AnnouncementRegistry::
+    AnnouncementRegistry::
                  CustomSectionEmptyOrNullAndDefaultSectionIsOk__ReturnSuccess();
 }
 /*  4.  Service is empty or NULL - return eLBOS_InvalidArgs                  */
 BOOST_AUTO_TEST_CASE(
                    AnnouncementRegistry__ServiceEmptyOrNull__ReturnInvalidArgs)
 {
-    return AnnouncementRegistry::ServiceEmptyOrNull__ReturnInvalidArgs();
+    AnnouncementRegistry::ServiceEmptyOrNull__ReturnInvalidArgs();
 }
 /*  5.  Version is empty or NULL - return eLBOS_InvalidArgs                  */
 BOOST_AUTO_TEST_CASE(
                    AnnouncementRegistry__VersionEmptyOrNull__ReturnInvalidArgs)
 {
-    return AnnouncementRegistry::VersionEmptyOrNull__ReturnInvalidArgs();
+    AnnouncementRegistry::VersionEmptyOrNull__ReturnInvalidArgs();
 }
 /*  6.  port is empty or NULL - return eLBOS_InvalidArgs                     */
 BOOST_AUTO_TEST_CASE(AnnouncementRegistry__PortEmptyOrNull__ReturnInvalidArgs)
 {
-    return AnnouncementRegistry::PortEmptyOrNull__ReturnInvalidArgs();
+    AnnouncementRegistry::PortEmptyOrNull__ReturnInvalidArgs();
 }
 /*  7.  port is out of range - return eLBOS_InvalidArgs                      */
 BOOST_AUTO_TEST_CASE(AnnouncementRegistry__PortOutOfRange__ReturnInvalidArgs)
 {
-    return AnnouncementRegistry::PortOutOfRange__ReturnInvalidArgs();
+    AnnouncementRegistry::PortOutOfRange__ReturnInvalidArgs();
 }
 /*  8.  port contains letters - return eLBOS_InvalidArgs                     */
 BOOST_AUTO_TEST_CASE(
                   AnnouncementRegistry__PortContainsLetters__ReturnInvalidArgs)
 {
-    return AnnouncementRegistry::PortContainsLetters__ReturnInvalidArgs();
+    AnnouncementRegistry::PortContainsLetters__ReturnInvalidArgs();
 }
 /*  9.  healthcheck is empty or NULL - return eLBOS_InvalidArgs              */
 BOOST_AUTO_TEST_CASE(
               AnnouncementRegistry__HealthchecktEmptyOrNull__ReturnInvalidArgs)
 {
-    return AnnouncementRegistry::HealthchecktEmptyOrNull__ReturnInvalidArgs();
+    AnnouncementRegistry::HealthchecktEmptyOrNull__ReturnInvalidArgs();
 }
 /*  10. healthcheck does not start with http:// or https:// - return         
         eLBOS_InvalidArgs                                                    */  
 BOOST_AUTO_TEST_CASE(
       AnnouncementRegistry__HealthcheckDoesNotStartWithHttp__ReturnInvalidArgs)
 {
-    return AnnouncementRegistry::
+    AnnouncementRegistry::
                           HealthcheckDoesNotStartWithHttp__ReturnInvalidArgs();
 }
 /*  11. Trying to announce server and providing dead healthcheck URL -
@@ -840,7 +838,7 @@ BOOST_AUTO_TEST_CASE(
 BOOST_AUTO_TEST_CASE(
                    AnnouncementRegistry__HealthcheckDead__ReturnKLBOSSuccess)
 {
-    return AnnouncementRegistry::HealthcheckDead__ReturnKLBOSSuccess();
+    AnnouncementRegistry::HealthcheckDead__ReturnKLBOSSuccess();
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -1075,6 +1073,12 @@ BOOST_AUTO_TEST_CASE(Announcement_CXX__HealthcheckDead__AnnouncementOK)
 {
     Announcement_CXX::HealthcheckDead__AnnouncementOK();
 }
+/* 24. Announce server with separate host and healtcheck - should be found in
+*     %LBOS%/text/service                                                   */
+BOOST_AUTO_TEST_CASE(Announcement_CXX__SeparateHost__AnnouncementOK)
+{
+    Announcement_CXX::SeparateHost__AnnouncementOK();
+}
 BOOST_AUTO_TEST_SUITE_END()
 
 
@@ -1101,13 +1105,13 @@ BOOST_AUTO_TEST_SUITE( AnnounceRegistryTest_CXX )//////////////////////////////
         config) - return eLBOS_Success                                       */
 BOOST_AUTO_TEST_CASE(AnnouncementRegistry_CXX__ParamsGood__ReturnSuccess) 
 {
-    return AnnouncementRegistry_CXX::ParamsGood__ReturnSuccess();
+    AnnouncementRegistry_CXX::ParamsGood__ReturnSuccess();
 }
 /*  2.  Custom section has nothing in config - return eLBOS_InvalidArgs      */
 BOOST_AUTO_TEST_CASE(
     AnnouncementRegistry_CXX__CustomSectionNoVars__ThrowInvalidArgs)
 {
-    return AnnouncementRegistry_CXX::CustomSectionNoVars__ThrowInvalidArgs();
+    AnnouncementRegistry_CXX::CustomSectionNoVars__ThrowInvalidArgs();
 }
 /*  3.  Section empty or NULL (should use default section and return 
         eLBOS_Success)                                                       */
@@ -1115,44 +1119,44 @@ BOOST_AUTO_TEST_CASE(
 AnnouncementRegistry_CXX__CustomSectionEmptyOrNullAndSectionIsOk__AllOK
                                                                               )
 {
-    return AnnouncementRegistry_CXX::
+    AnnouncementRegistry_CXX::
                        CustomSectionEmptyOrNullAndSectionIsOk__AllOK();
 }
 /*  4.  Service is empty or NULL - return eLBOS_InvalidArgs                  */
 BOOST_AUTO_TEST_CASE(
     AnnouncementRegistry_CXX__ServiceEmptyOrNull__ThrowInvalidArgs)
 {
-    return AnnouncementRegistry_CXX::ServiceEmptyOrNull__ThrowInvalidArgs();
+    AnnouncementRegistry_CXX::ServiceEmptyOrNull__ThrowInvalidArgs();
 }
 /*  5.  Version is empty or NULL - return eLBOS_InvalidArgs                  */
 BOOST_AUTO_TEST_CASE(
     AnnouncementRegistry_CXX__VersionEmptyOrNull__ThrowInvalidArgs)
 {
-    return AnnouncementRegistry_CXX::VersionEmptyOrNull__ThrowInvalidArgs();
+    AnnouncementRegistry_CXX::VersionEmptyOrNull__ThrowInvalidArgs();
 }
 /*  6.  port is empty or NULL - return eLBOS_InvalidArgs                     */
 BOOST_AUTO_TEST_CASE(
     AnnouncementRegistry_CXX__PortEmptyOrNull__ThrowInvalidArgs)
 {
-    return AnnouncementRegistry_CXX::PortEmptyOrNull__ThrowInvalidArgs();
+    AnnouncementRegistry_CXX::PortEmptyOrNull__ThrowInvalidArgs();
 }
 /*  7.  port is out of range - return eLBOS_InvalidArgs                      */
 BOOST_AUTO_TEST_CASE(
     AnnouncementRegistry_CXX__PortOutOfRange__ThrowInvalidArgs)
 {
-    return AnnouncementRegistry_CXX::PortOutOfRange__ThrowInvalidArgs();
+    AnnouncementRegistry_CXX::PortOutOfRange__ThrowInvalidArgs();
 }
 /*  8.  port contains letters - return eLBOS_InvalidArgs                     */
 BOOST_AUTO_TEST_CASE(
               AnnouncementRegistry_CXX__PortContainsLetters__ThrowInvalidArgs)
 {
-    return AnnouncementRegistry_CXX::PortContainsLetters__ThrowInvalidArgs();
+    AnnouncementRegistry_CXX::PortContainsLetters__ThrowInvalidArgs();
 }
 /*  9.  healthcheck is empty or NULL - return eLBOS_InvalidArgs              */
 BOOST_AUTO_TEST_CASE(
           AnnouncementRegistry_CXX__HealthchecktEmptyOrNull__ThrowInvalidArgs)
 {
-    return AnnouncementRegistry_CXX::
+    AnnouncementRegistry_CXX::
             HealthchecktEmptyOrNull__ThrowInvalidArgs();
 }
 /*  10. healthcheck does not start with http:// or https:// - return         
@@ -1160,7 +1164,7 @@ BOOST_AUTO_TEST_CASE(
 BOOST_AUTO_TEST_CASE(
   AnnouncementRegistry_CXX__HealthcheckDoesNotStartWithHttp__ThrowInvalidArgs)
 {
-    return AnnouncementRegistry_CXX::
+    AnnouncementRegistry_CXX::
                           HealthcheckDoesNotStartWithHttp__ThrowInvalidArgs();
 }      
 /*  11. Trying to announce server and providing dead healthcheck URL -
@@ -1168,7 +1172,7 @@ BOOST_AUTO_TEST_CASE(
 BOOST_AUTO_TEST_CASE(
     AnnouncementRegistry_CXX__HealthcheckDead__ThrowE_NotFound)
 {
-    return AnnouncementRegistry_CXX::HealthcheckDead__ThrowE_NotFound();
+    AnnouncementRegistry_CXX::HealthcheckDead__ThrowE_NotFound();
 }      
 BOOST_AUTO_TEST_SUITE_END()
 

@@ -49,8 +49,6 @@ class NCBI_XNCBI_EXPORT LBOS
 public:
     /** Announce server.
     *
-    * @attention
-    *  IP for the server being announced is taken from healthcheck URL!
     * @param [in] service
     *  Name of service as it will appear in ZK. For services this means that the
     *  name should start with '/'.
@@ -58,6 +56,12 @@ public:
     *  Any non-null non-empty string that will help to identify the version
     *  of service. A good idea is to use [semantic versioning]
     *  (http://semver.org/) like "4.7.2"
+    * @param [in] host
+    *  Optional parameter. Set to "" (empty string) to use host from 
+    *  healthcheck_url to make sure that server and healthcheck actually reside 
+    *  on the same machine (it can be important when you specify hostname that 
+    *  can be resolved to multiple IPs, and LBOS ends up registering server 
+    *  on one host and healthcheck on another)
     * @param [in] port
     *  Port for the service. Can differ from healthcheck port.
     * @param [in] healthcheck_url
@@ -107,7 +111,7 @@ public:
     * @exception CLBOSException
     * @sa Announce(), Deannounce(), DeannounceAll(), CLBOSException
     */
-    static void AnnounceFromRegistry(const string&  registry_section);
+    static void AnnounceFromRegistry(string  registry_section);
 
 
     /** Deannounce service.
@@ -195,6 +199,7 @@ public:
 class NCBI_XNCBI_EXPORT CLBOSException : public CException
 {
 public:
+    typedef int TErrCode;
     enum EErrCode {
         e_NoLBOS,               /**< lbos was not found                       */
         e_DNSResolveError,      /**< Local address not resolved               */
@@ -215,41 +220,17 @@ public:
     CLBOSException(const CDiagCompileInfo& info,
                    const CException* prev_exception, EErrCode err_code,
                    const string& message, unsigned short status_code,
-                   EDiagSev severity = eDiag_Error)
-               : CException(info, prev_exception, (message), severity, 0)
-    {
-        x_Init(info, message, prev_exception, severity);                
-        x_InitErrCode((CException::EErrCode) err_code);
-        m_StatusCode = status_code;
-        stringstream message_builder;
-        message_builder << "Error: "
-            << message << endl;
-        m_Message = message_builder.str();
-    }
+                   EDiagSev severity = eDiag_Error);
 
     CLBOSException(const CDiagCompileInfo& info, 
                    const CException* prev_exception, 
                    const CExceptionArgs<EErrCode>& args, 
                    const string& message,
-                   unsigned short status_code)
-        : CException(info, prev_exception, (message), 
-        args.GetSeverity(), 0)                                        
-    {                                                                   
-        x_Init(info, message, prev_exception, args.GetSeverity());      
-        x_InitArgs(args);
-        x_InitErrCode((CException::EErrCode) args.GetErrCode());
-        m_StatusCode = status_code;
-        stringstream message_builder;
-        message_builder << "Error: " 
-                        << status_code << " " << GetErrCodeString() << endl;
-        m_Message = message_builder.str();
-    }
+                   unsigned short status_code);
+    virtual ~CLBOSException(void) throw();
     
     /** Get original status code and status message from LBOS in a string     */
-    virtual const char* what() const throw()
-    { 
-        return m_Message.c_str();
-    }
+    virtual const char* what() const throw();
 
     /** Translate from the error code value to its string representation.     */
     virtual const char* GetErrCodeString(void) const;
@@ -259,22 +240,12 @@ public:
     static EErrCode s_HTTPCodeToEnum(unsigned short http_code);
 
     unsigned short GetStatusCode(void) const;
-    virtual ~CLBOSException(void) throw() {}
-    virtual const char* GetType(void) const { return "CLBOSException"; }
-    typedef int TErrCode;
-    TErrCode GetErrCode(void) const
-    {
-        return typeid(*this) == typeid(CLBOSException) ?
-            (TErrCode) this->x_GetErrCode() :
-            (TErrCode)CException::eInvalid;
-    }
+    virtual const char* GetType(void) const;
+    TErrCode GetErrCode(void) const;
     NCBI_EXCEPTION_DEFAULT_THROW(CLBOSException)
 protected:
-    CLBOSException(void) : m_StatusCode(0) { }
-    virtual const CException* x_Clone(void) const
-    {
-        return new CLBOSException(*this);
-    }
+    CLBOSException(void);
+    virtual const CException* x_Clone(void) const;
 private:
     unsigned short m_StatusCode;
     string m_Message;

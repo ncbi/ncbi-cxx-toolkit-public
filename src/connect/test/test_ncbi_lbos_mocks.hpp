@@ -677,7 +677,7 @@ unsigned short s_LBOS_AnnounceReg(const char*             registry_section,
 { 
 
     int announce_result = 0;
-#ifndef NCBI_THREADS // If we have to answer healthchech in the same thread
+#ifndef NCBI_THREADS // If we have to answer healthcheck in the same thread
     CMockFunction<FLBOS_ConnReadMethod*> mock(
         g_LBOS_UnitTesting_GetLBOSFuncs()->Read, s_RealReadAnnounce);
 #endif /* NCBI_THREADS */
