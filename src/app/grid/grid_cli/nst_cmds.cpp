@@ -93,12 +93,6 @@ void CGridCommandLineInterfaceApp::SetUp_NetStorageCmd(EAPIClass api_class,
     if (IsOptionExplicitlySet(eAllowXSiteConn))
         g_AllowXSiteConnections(m_NetStorage);
 #endif
-
-    CDirectNetStorage dst(CNcbiApplication::Instance()->GetConfig(), "ST_Test", 0, "test");
-    cerr << "===TESTING===" << endl;
-    g_PrintJSON(stdout, dst.ReportConfig());
-    cerr << "===TESTING===" << endl;
-    exit(0);
 }
 
 static void s_NetStorage_RemoveStdReplyFields(CJsonNode& server_reply)
