@@ -95,7 +95,9 @@ an_euk_pipeline needs3party $(BOOST_FILESYSTEM_LIBS)
 an_euk_pipeline needs3party $(BOOST_SYSTEM_LIBS)
 an_prok_pipeline needs $(GPIPE_COMMON_LIBS)
 an_prok_pipeline needs gpipe_an_base
+an_prok_pipeline needs gpipe_asn_proc
 an_prok_pipeline needs pathogen_connection
+an_prok_pipeline needs tax_xml
 an_prok_pipeline needs xobjwrite
 an_worker_nodes needs gpipe_an_base
 asn_cache includes id_dump
@@ -323,7 +325,6 @@ ftgl needs3party $(ORIG_LIBS)
 gbproj needs submit
 gbproj needs xconnect
 gbseq needs xser
-gc_ftp_ctl needs gpipe_objutil
 gc_load_utils needs $(GPIPE_COMMON_LIBS)
 gc_load_utils needs gc_organism
 gc_load_utils needs gc_utils
@@ -1048,6 +1049,7 @@ sybtcl64 needs3party $(ORIG_LIBS)
 sybtcl64 needs3party comn64
 sybtcl64 needs3party intl64
 tables needs3party $(ORIG_LIBS)
+tax_assignment_region needs gpipe_objutil
 tax_xml needs gpipe_objutil
 taxon needs xser
 taxon1 needs $(SEQ_LIBS)
