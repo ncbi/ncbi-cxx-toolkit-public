@@ -150,7 +150,7 @@ public:
 
     CRef<CGCClient_AssembliesForSequences> FindAllAssemblies
         (const list<string>& seq_id,
-         int filter_type = eGCClient_FindBestAssemblyFilter_all,
+         int filter_type,
          int sort_type = eGCClient_FindBestAssemblySort_default);
 
 
