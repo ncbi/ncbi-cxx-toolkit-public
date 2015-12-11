@@ -76,7 +76,7 @@ CTaxFormat::CTaxFormat(const CSeq_align_set& seqalign,
     m_Ctx = NULL;    
     m_TaxTreeinfo = NULL;
     m_BlastResTaxInfo = NULL;    
-
+    m_Debug = false;
     
     if(m_ConnectToTaxServer) {        
         x_InitTaxClient();        
@@ -172,13 +172,16 @@ public:
           m_Curr(NULL)          
     {
         m_TreeTaxInfo = new CTaxFormat::SBlastResTaxInfo;    
+        m_Debug = false;
     }    
+
     CTaxFormat::SBlastResTaxInfo* GetTreeTaxInfo(void){ return m_TreeTaxInfo;}
+    void SetDebugMode(bool debug) {m_Debug = debug;}
 
     ITreeIterator::EAction LevelBegin(const ITaxon1Node* tax_node)
     {
-        x_InitTaxInfo(tax_node); // sets m_Curr
-        //cerr << "******Begin taxid branch=" << m_Curr->taxid << " " << m_Curr->scientificName << endl;        
+        x_InitTaxInfo(tax_node); // sets m_Curr        
+        x_PrintTaxInfo("Begin branch");
         m_Curr->numChildren = 0;
         m_Curr->numHits = 0;
         m_Curr->numOrgs = 0;
@@ -187,7 +190,7 @@ public:
             CTaxFormat::STaxInfo* par = m_Nodes.top();
             par->numChildren++; 
         }    
-        m_Nodes.push(m_Curr); //Push current taxid info into stack
+        m_Nodes.push(m_Curr); //Push current taxid node info into stack
         m_Curr = NULL;
                 
         return ITreeIterator::eOk;
@@ -204,7 +207,7 @@ public:
             m_Curr->numHits += m_Curr->seqInfoList.size();                                                            
             useTaxid = (m_Curr->numChildren > 1 || m_Curr->seqInfoList.size() > 0);
             if(!useTaxid) {                
-                //cerr << "******Removed taxid branch=" << m_Curr->taxid << " " << m_Curr->scientificName << endl;
+                x_PrintTaxInfo("Removed branch");                
             }            
             if(m_Curr->seqInfoList.size() > 0) {
                 m_Curr->numOrgs++;
@@ -213,8 +216,8 @@ public:
             }
         }
         else { // - terminal node
-            x_InitTaxInfo(tax_node); // sets m_Curr                        
-            //cerr << "******taxid child=" << m_Curr->taxid <<  " " << m_Curr->scientificName << endl;            
+            x_InitTaxInfo(tax_node); // sets m_Curr                                    
+            x_PrintTaxInfo("Terminal node");
             m_Curr->numHits = m_Curr->seqInfoList.size();             
             m_Curr->numOrgs = 1;
             m_Curr->taxidList = NStr::NumericToString(m_Curr->taxid);
@@ -234,27 +237,31 @@ public:
         }
         if(taxid != currTaxid) {            
             m_Curr = NULL;
-        }
-        //Check CTaxTreeBrowser code is Alive should be used        
+        }        
         return ITreeIterator::eOk;
     }
 
     ITreeIterator::EAction LevelEnd(const ITaxon1Node* tax_node)
     {
-        m_Curr = m_Nodes.top();                
-        //cerr << "******End taxid branch=" << m_Curr->taxid << " " << m_Curr->scientificName << endl;        
+        m_Curr = m_Nodes.top();                        
+        x_PrintTaxInfo("End branch");
         m_Nodes.pop();                
         return ITreeIterator::eOk;
     }
 
     void x_InitTaxInfo(const ITaxon1Node* tax_node);
     void x_InitTreeTaxInfo(void);
-
+    void x_PrintTaxInfo(string header) {
+        if(m_Debug) {
+            cerr << header << " for taxid: " << m_Curr->taxid << " " << m_Curr->scientificName << endl;        
+        }
+    }
        
-    CTaxFormat::TSeqTaxInfoMap       m_SeqAlignTaxInfoMap; ///< SBlastResTaxInfo structure containing information for taxids in alignment, orderedTaxids are ordered by highest score
-    CTaxFormat::SBlastResTaxInfo     *m_TreeTaxInfo;       /// SBlastResTaxInfo Map containing information for all taxids in common tree, intermidiate nodes with no hits or only 1 child are removed
+    CTaxFormat::TSeqTaxInfoMap       m_SeqAlignTaxInfoMap; ///< Map containing information for taxids and corresponding sequnces in alignment
+    CTaxFormat::SBlastResTaxInfo     *m_TreeTaxInfo;       ///< SBlastResTaxInfo Map containing information for all taxids in common tree, intermidiate nodes with no hits or only 1 child are removed
     CTaxFormat::STaxInfo*            m_Curr;        
     stack<CTaxFormat::STaxInfo*>     m_Nodes;        
+    bool                             m_Debug;
 };
 
 
@@ -268,58 +275,62 @@ public:
 class CDownwardTreeFiller : public ITreeIterator::I4Each
 {
 public:
-
+    void SetDebugMode(bool debug) {m_Debug = debug;}
     virtual ~CDownwardTreeFiller() { }
     CDownwardTreeFiller(CTaxFormat::TSeqTaxInfoMap *treeTaxInfoMap)        
         : m_TreeTaxInfoMap(treeTaxInfoMap)          
     {
         m_Depth = 0;        
+        m_Debug = false;
     }    
     
 
     ITreeIterator::EAction LevelBegin(const ITaxon1Node* tax_node)
     {
-        int taxid = tax_node->GetTaxId();
-        string scientificName = tax_node->GetName();        
+        int taxid = tax_node->GetTaxId();        
         if((*m_TreeTaxInfoMap).count(taxid) != 0 ) {//sequence is in alignment            
             m_Depth++;
             m_Lineage.push_back(taxid); //Push current taxid info into stack
         }        
-        //cerr << "******Begin taxid branch=" << taxid << " " << scientificName << " depth" <<  m_Depth << endl;                
-        
+        x_PrintTaxInfo("Begin branch",tax_node);        
                 
         return ITreeIterator::eOk;
     }
 
     ITreeIterator::EAction Execute(const ITaxon1Node* tax_node)
     {
-        int taxid = tax_node->GetTaxId();
-        string scientificName = tax_node->GetName();        
+        int taxid = tax_node->GetTaxId();        
         if((*m_TreeTaxInfoMap).count(taxid) != 0 ) {//sequence is in alignment            
             (*m_TreeTaxInfoMap)[taxid].depth = m_Depth;
             for(size_t i = 0; i < m_Lineage.size(); i++) {
                 (*m_TreeTaxInfoMap)[taxid].lineage.assign(m_Lineage.begin(),m_Lineage.end());
             }
-        }        
-        //cerr << "******Execute taxid branch=" << taxid << " " << scientificName << " depth" <<  m_Depth << endl;        
+        }     
+        x_PrintTaxInfo("Execute branch",tax_node);                
         return ITreeIterator::eOk;
     }
 
     ITreeIterator::EAction LevelEnd(const ITaxon1Node* tax_node)
     {
-        int taxid = tax_node->GetTaxId();
-        string scientificName = tax_node->GetName();        
+        int taxid = tax_node->GetTaxId();        
         if((*m_TreeTaxInfoMap).count(taxid) != 0 ) {//sequence is in alignment            
             m_Depth--;
             m_Lineage.pop_back();
-        }        
-        //cerr << "******End taxid branch=" << taxid << " " << scientificName << " depth" <<  m_Depth << endl;                
+        }     
+        x_PrintTaxInfo("End branch",tax_node);                
         return ITreeIterator::eOk;
     }
                
+    void x_PrintTaxInfo(string header, const ITaxon1Node* tax_node) {        
+        if(m_Debug) {
+            cerr << header << " for taxid: " << tax_node->GetTaxId() << " " << tax_node->GetName() << " depth: " <<  m_Depth << endl;        
+        }
+    }
+
     CTaxFormat::TSeqTaxInfoMap       *m_TreeTaxInfoMap;    
     int                              m_Depth;
     vector <int>                     m_Lineage;
+    bool                             m_Debug;
 };
 
 
@@ -338,21 +349,21 @@ void CTaxFormat::DisplayOrgReport(CNcbiOstream& out)
         orgHeader = x_MapTaxInfoTemplate(orgHeader,seqsForTaxID);
         string prevTaxid,nextTaxid, hidePrevTaxid, hideNextTaxid, hideTop;
         const string kDisabled = "disabled=\"disabled\"";
-        if(i == 0) {
-            prevTaxid = "";
+        if(i == 0) {        
             hidePrevTaxid = kDisabled;
-            hideTop = kDisabled;
-            nextTaxid = NStr::NumericToString(m_BlastResTaxInfo->orderedTaxids[i + 1]);        
+            hideTop = kDisabled;            
         }
-        else if (i== m_BlastResTaxInfo->orderedTaxids.size() - 1) {
-            nextTaxid = "";
-            hideNextTaxid = kDisabled;
+        if (i == m_BlastResTaxInfo->orderedTaxids.size() - 1) {        
+            hideNextTaxid = kDisabled;            
+        }        
+        if(i > 0) {            
             prevTaxid = NStr::NumericToString(m_BlastResTaxInfo->orderedTaxids[i - 1]);
         }
-        else {
-            nextTaxid = NStr::NumericToString(m_BlastResTaxInfo->orderedTaxids[i + 1]);
-            prevTaxid = NStr::NumericToString(m_BlastResTaxInfo->orderedTaxids[i - 1]);
+        if(i < m_BlastResTaxInfo->orderedTaxids.size() - 1) {
+            nextTaxid = NStr::NumericToString(m_BlastResTaxInfo->orderedTaxids[i + 1]);            
         }
+        
+
         orgHeader = CAlignFormatUtil::MapTemplate(orgHeader,"next_taxid",nextTaxid);
         orgHeader = CAlignFormatUtil::MapTemplate(orgHeader,"disable_nexttaxid",hideNextTaxid);
         orgHeader = CAlignFormatUtil::MapTemplate(orgHeader,"prev_taxid",prevTaxid);
@@ -536,11 +547,13 @@ void CTaxFormat::x_LoadTaxTree(void)
 
 void CTaxFormat::x_PrintTaxInfo(vector <int> taxids, string title)
 {
-    cerr << "******" << title << "**********" << endl;
-    for(size_t i = 0; i < taxids.size(); i++) {
-        int taxid = taxids[i];                            
-        STaxInfo taxInfo = GetTaxTreeInfo(taxid);                         
-        cerr << "*****taxid=" << taxid << " " << taxInfo.scientificName << " " << taxInfo.blastName << " " << "depth:" <<  taxInfo.depth << " numHits:" << taxInfo.numHits << " numOrgs:" << taxInfo.numOrgs << endl;            
+    if(m_Debug) {
+        cerr << "******" << title << "**********" << endl;
+        for(size_t i = 0; i < taxids.size(); i++) {
+            int taxid = taxids[i];                            
+            STaxInfo taxInfo = GetTaxTreeInfo(taxid);                         
+            cerr << "taxid=" << taxid << " " << taxInfo.scientificName << " " << taxInfo.blastName << " " << "depth: " <<  taxInfo.depth << " numHits: " << taxInfo.numHits << " numOrgs: " << taxInfo.numOrgs << endl;            
+        }
     }
 }
 
@@ -550,7 +563,7 @@ void CTaxFormat::x_InitOrgTaxMetaData(void)
 {
     if(!m_TreeIterator.Empty()) {        
         CUpwardTreeFiller upwFiller(m_BlastResTaxInfo->seqTaxInfoMap);
-
+        upwFiller.SetDebugMode(m_Debug);
         //Create m_TaxTreeinfo with all taxids participating in common tree
         m_TreeIterator->TraverseUpward(upwFiller);            
         m_TaxTreeinfo = upwFiller.GetTreeTaxInfo();
@@ -558,10 +571,11 @@ void CTaxFormat::x_InitOrgTaxMetaData(void)
         
         //Add depth and linage infor to m_TaxTreeinfo
         CDownwardTreeFiller dwnwFiller(&m_TaxTreeinfo->seqTaxInfoMap);
+        dwnwFiller.SetDebugMode(m_Debug);
         m_TreeIterator->TraverseDownward(dwnwFiller);
         vector <int> taxTreeTaxids = GetTaxTreeTaxIDs();
 
-        //x_PrintTaxInfo(taxTreeTaxids,"Taxonomy tree");                     
+        x_PrintTaxInfo(taxTreeTaxids,"Taxonomy tree");                     
     }
 }
 
@@ -613,16 +627,18 @@ static vector <int> s_InitAlignHitLineage(vector <int> bestHitLinage, struct CTa
 
 void CTaxFormat::x_PrintLineage(void)
 {
-    cerr << " Lineage " << endl;
-    ITERATE(list <STaxInfo>, iter, m_AlnLineageTaxInfo) {             
-        int taxid = iter->taxid;    
-        string name = iter->scientificName;            
-        cerr << "taxid" << taxid << " " << name << ": "; 
-        for(size_t i = 0; i< iter->lineage.size();i++) {                
-            int lnTaxid = iter->lineage[i];            
-            cerr << " " << lnTaxid << " " << GetTaxTreeInfo(lnTaxid).scientificName + "," ;
+    if(m_Debug) {
+        cerr << "*********Lineage*********" << endl;
+        ITERATE(list <STaxInfo>, iter, m_AlnLineageTaxInfo) {             
+            int taxid = iter->taxid;    
+            string name = iter->scientificName;            
+            cerr << "taxid" << taxid << " " << name << ": "; 
+            for(size_t i = 0; i< iter->lineage.size();i++) {                
+                int lnTaxid = iter->lineage[i];            
+                cerr << " " << lnTaxid << " " << GetTaxTreeInfo(lnTaxid).scientificName + "," ;
+            }
+            cerr << endl;
         }
-        cerr << endl;
     }
 }
 
@@ -641,7 +657,14 @@ void CTaxFormat::x_InitLineageMetaData(void)
             m_AlnLineageTaxInfo.push_back(taxInfo);            
         }        
         m_AlnLineageTaxInfo.sort(s_SortByLinageToBestHit);                
-        //x_PrintLineage();                
+        ITERATE(list <STaxInfo>, iter, m_AlnLineageTaxInfo) {            
+            for(size_t i = 0; i< iter->lineage.size();i++) {                
+                int lnTaxid = iter->lineage[i];  
+                STaxInfo &taxInfo = GetTaxTreeInfo(lnTaxid);
+                x_InitBlastNameTaxInfo(taxInfo);                                                    
+            }            
+        }
+        x_PrintLineage();                
 }
 
 void CUpwardTreeFiller::x_InitTaxInfo(const ITaxon1Node* tax_node)
