@@ -78,8 +78,8 @@ struct SUserKey
 
 
 
-void SetSessionAndIP(const CJsonNode &  message,
-                     const CSocket &    peer);
+void SetSessionAndIPAndPHID(const CJsonNode &  message,
+                            const CSocket &    peer);
 
 SCommonRequestArguments
 ExtractCommonFields(const CJsonNode &  message);

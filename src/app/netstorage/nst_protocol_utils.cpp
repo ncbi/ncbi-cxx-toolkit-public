@@ -41,8 +41,8 @@
 BEGIN_NCBI_SCOPE
 
 
-void SetSessionAndIP(const CJsonNode &  message,
-                     const CSocket &    peer)
+void SetSessionAndIPAndPHID(const CJsonNode &  message,
+                            const CSocket &    peer)
 {
     if (message.HasKey("SessionID")) {
         string  session = message.GetString("SessionID");
@@ -62,6 +62,16 @@ void SetSessionAndIP(const CJsonNode &  message,
     else
         CDiagContext::GetRequestContext().SetClientIP(
                                 client_ip);
+
+    if (message.HasKey("ncbi_phid")) {
+        try {
+            string      ncbi_phid = message.GetString("ncbi_phid");
+            if (!ncbi_phid.empty())
+                CDiagContext::GetRequestContext().SetHitID(ncbi_phid);
+        } catch (const exception &  ex) {
+            ERR_POST(ex.what());
+        }
+    }
 }
 
 

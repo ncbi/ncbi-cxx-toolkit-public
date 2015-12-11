@@ -926,7 +926,7 @@ CNetStorageHandler::x_PrintMessageRequestStart(const CJsonNode &  message)
 
         // The setting of the client session and IP
         // must be done before logging.
-        SetSessionAndIP(message, GetSocket());
+        SetSessionAndIPAndPHID(message, GetSocket());
 
         CDiagContext_Extra    ctxt_extra =
             GetDiagContext().PrintRequestStart()
@@ -935,16 +935,15 @@ CNetStorageHandler::x_PrintMessageRequestStart(const CJsonNode &  message)
 
         for (CJsonIterator it = message.Iterate(); it; ++it) {
             string      key = it.GetKey();
-            if (key == "ncbi_phid") {
-                string  ncbi_phid = it.GetNode().Repr(
-                                                CJsonNode::fVerbatimIfString);
-                if (!ncbi_phid.empty())
-                    m_CmdContext->SetHitID(ncbi_phid);
+
+            // ncbi_phid has been printed by PrintRequestStart() anyway
+            if (key == "ncbi_phid")
                 continue;
-            }
-            if (key != "SessionID" || key != "ClientIP")
-                ctxt_extra.Print(key,
-                        it.GetNode().Repr(CJsonNode::fVerbatimIfString));
+            if (key == "SessionID" || key == "ClientIP")
+                continue;
+
+            ctxt_extra.Print(key,
+                             it.GetNode().Repr(CJsonNode::fVerbatimIfString));
         }
 
         ctxt_extra.Flush();
