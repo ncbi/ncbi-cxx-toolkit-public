@@ -248,6 +248,8 @@ protected:
     string  m_TaxBrowserURL;                ///< Taxonomy Browser URL
     CTaxon1 *m_TaxClient;                   ///< Taxonomy server client
 
+    bool    m_Debug;
+
     bool  m_ConnectToTaxServer;
     bool  m_TaxTreeLoaded;    
     CRef< ITreeIterator > m_TreeIterator;
