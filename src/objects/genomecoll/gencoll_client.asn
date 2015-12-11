@@ -147,9 +147,11 @@ GCClient-ValidateChrTypeLocResponse ::= SEQUENCE {
 
 GCClient-FindBestAssemblyFilter ::= INTEGER {
     any(0),
+    latest-major-annotated(0),
     latest(1),
     major(2),
-    annotated(3)
+    annotated(3),
+    all(4)
 }
 
 GCClient-FindBestAssemblySort ::= INTEGER {
@@ -162,7 +164,7 @@ GCClient-FindBestAssemblySort ::= INTEGER {
 GCClient-FindBestAssemblyRequest ::= SEQUENCE {
     seq-id-acc SET OF VisibleString,
 
-    filter GCClient-FindBestAssemblyFilter DEFAULT any,
+    filter GCClient-FindBestAssemblyFilter DEFAULT latest-major-annotated,
 
     sort GCClient-FindBestAssemblySort DEFAULT default,
 

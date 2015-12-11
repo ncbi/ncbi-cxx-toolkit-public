@@ -459,7 +459,7 @@ int CTestGenomicCollectionsSvcApplication::RunUsingClient(const CArgs& args, CNc
             list<string> acc;
             NStr::Split(args["acc"].AsString(), ",", acc);
 
-            int filter = args["filter"] ? args["filter"].AsInteger() : eGCClient_FindBestAssemblyFilter_any;
+            int filter = args["filter"] ? args["filter"].AsInteger() : eGCClient_FindBestAssemblyFilter_all;
             int sort = args["sort"] ? args["sort"].AsInteger() : eGCClient_FindBestAssemblySort_default;
 
             if(acc.size() == 1)
@@ -478,7 +478,7 @@ int CTestGenomicCollectionsSvcApplication::RunUsingClient(const CArgs& args, CNc
             list<string> acc;
             NStr::Split(args["acc"].AsString(), ",", acc);
 
-            int filter = args["filter"] ? args["filter"].AsInteger() : eGCClient_FindBestAssemblyFilter_any;
+            int filter = args["filter"] ? args["filter"].AsInteger() : eGCClient_FindBestAssemblyFilter_all;
             int sort = args["sort"] ? args["sort"].AsInteger() : eGCClient_FindBestAssemblySort_default;
 
             CRef<CGCClient_AssembliesForSequences> reply(cli->FindAllAssemblies(acc, filter, sort));

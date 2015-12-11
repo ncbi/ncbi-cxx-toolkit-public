@@ -140,17 +140,17 @@ public:
 
     CRef<CGCClient_AssemblyInfo> FindBestAssembly
         (const string& seq_id,
-         int filter_type = eGCClient_FindBestAssemblyFilter_any,
+         int filter_type,
          int sort_type = eGCClient_FindBestAssemblySort_default);
 
     CRef<CGCClient_AssemblySequenceInfo> FindBestAssembly
         (const list<string>& seq_id,
-         int filter_type = eGCClient_FindBestAssemblyFilter_any,
+         int filter_type,
          int sort_type = eGCClient_FindBestAssemblySort_default);
 
     CRef<CGCClient_AssembliesForSequences> FindAllAssemblies
         (const list<string>& seq_id,
-         int filter_type = eGCClient_FindBestAssemblyFilter_any,
+         int filter_type = eGCClient_FindBestAssemblyFilter_all,
          int sort_type = eGCClient_FindBestAssemblySort_default);
 
 
