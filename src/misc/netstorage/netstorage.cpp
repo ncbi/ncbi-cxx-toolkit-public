@@ -40,10 +40,10 @@ BEGIN_NCBI_SCOPE
 using namespace NDirectNetStorageImpl;
 
 
-template <class Derived, class Base>
-Derived* Impl(CRef<Base, CNetComponentCounterLocker<Base> >& base_ref)
+template <class TDerived, class TBaseRef>
+TDerived* Impl(TBaseRef& base_ref)
 {
-    return static_cast<Derived*>(base_ref.GetNonNullPointer());
+    return static_cast<TDerived*>(base_ref.GetNonNullPointer());
 }
 
 
@@ -121,6 +121,7 @@ struct SDirectNetStorageImpl : public SNetStorageImpl
     void Remove(const string&);
 
     CObj* Create(TNetStorageFlags, const string&, Int8 = 0);
+    CJsonNode ReportConfig() const;
 
 private:
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
@@ -186,6 +187,18 @@ CObj* SDirectNetStorageImpl::Create(TNetStorageFlags flags,
     selector->SetLocator();
 
     return new CObj(selector);
+}
+
+
+CJsonNode SDirectNetStorageImpl::ReportConfig() const
+{
+    CJsonNode result(CJsonNode::NewObjectNode());
+    CJsonNode empty(CJsonNode::NewObjectNode());
+
+    if (m_Context->icache_client) result.SetByKey("netcache", empty);
+    if (m_Context->filetrack_api) result.SetByKey("filetrack", empty);
+
+    return result;
 }
 
 
@@ -321,6 +334,12 @@ CDirectNetStorageObject CDirectNetStorage::Create(
 CDirectNetStorageObject CDirectNetStorage::Open(const string& object_loc)
 {
     return Impl<SDirectNetStorageImpl>(m_Impl)->OpenImpl(object_loc);
+}
+
+
+CJsonNode CDirectNetStorage::ReportConfig() const
+{
+    return Impl<const SDirectNetStorageImpl>(m_Impl)->ReportConfig();
 }
 
 

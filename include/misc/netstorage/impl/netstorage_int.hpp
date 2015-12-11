@@ -69,6 +69,8 @@ public:
         TNetStorageFlags flags);
 
     CDirectNetStorageObject Open(const string& object_loc);
+
+    CJsonNode ReportConfig() const;
 };
 
 /// @internal
