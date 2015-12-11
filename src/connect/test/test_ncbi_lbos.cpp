@@ -1310,4 +1310,4 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_CASE(s_LBOS_ResolveIPPort__FakeErrorInput__ShouldNotCrash)
 {
     ResolveViaLBOS::FakeErrorInput__ShouldNotCrash();
-}
+};

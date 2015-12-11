@@ -4518,11 +4518,11 @@ void NoLBOS__ThrowNoLBOSAndNotFind(int thread_num = -1)
 {
     WRITE_LOG("Testing behavior of LBOS when no LBOS is found.", 
               thread_num);
-    WRITE_LOG("Expected exception with error code \"" << "e_NoLBOS" << 
+    WRITE_LOG("Expected exception with error code \"" << "e_LBOSNoLBOS" <<
                 "\", status code \"" << 450 << 
                 "\", message \"" << "450\\n" << "\".",
               thread_num);
-    ExceptionComparator<CLBOSException::e_NoLBOS, 450> comparator("450\n");
+    ExceptionComparator<CLBOSException::e_LBOSNoLBOS, 450> comparator("450\n");
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GenerateNodeName();
     unsigned short port = kDefaultPort;
@@ -4548,12 +4548,12 @@ void LBOSError__ThrowServerError(int thread_num = -1)
     WRITE_LOG("LBOS returned unknown error: "
                 " Should throw exception with received code (507)", 
               thread_num);
-    WRITE_LOG("Expected exception with error code \"" << "e_Unknown" << 
+    WRITE_LOG("Expected exception with error code \"" << "e_LBOSUnknown" <<
                 "\", status code \"" << 507 << 
                 "\", message \"" << 
                 "507 LBOS STATUS Those lbos errors are scaaary\\n" << "\".",
               thread_num);
-    ExceptionComparator<CLBOSException::e_Unknown, 507> comparator(
+    ExceptionComparator<CLBOSException::e_LBOSUnknown, 507> comparator(
         "507 LBOS STATUS Those lbos errors are scaaary\n");
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GenerateNodeName();
@@ -4565,7 +4565,7 @@ void LBOSError__ThrowServerError(int thread_num = -1)
             s_AnnounceCPP(node_name, "1.0.0", "", port,
                           "http://0.0.0.0:" PORT_STR(PORT) "/health",
                           thread_num),
-            CLBOSException, comparator);
+            CLBOSException, comparator.operator());
 }
 
 
@@ -4576,7 +4576,7 @@ void LBOSError__LBOSAnswerProvided(int thread_num = -1)
     WRITE_LOG("LBOS returned unknown error: "
                 " Exact message from LBOS should be provided", 
               thread_num);
-    WRITE_LOG("Expected exception with error code \"" << "e_Unknown" << 
+    WRITE_LOG("Expected exception with error code \"" << "e_LBOSUnknown" <<
                 "\", status code \"" << 507 << 
                 "\", message \"" << 
                 "507 LBOS STATUS Those lbos errors are scaaary\\n" << "\".",
@@ -4595,7 +4595,7 @@ void LBOSError__LBOSAnswerProvided(int thread_num = -1)
     catch(const CLBOSException& ex) {
         /* Checking that message in exception is exactly what LBOS sent*/
         NCBITEST_CHECK_MESSAGE(
-            ex.GetErrCode() == CLBOSException::e_Unknown,
+            ex.GetErrCode() == CLBOSException::e_LBOSUnknown,
             "LBOS exception contains wrong error type");
         const char* ex_message =
             strstr(ex.what(), "Error: ") + strlen("Error: ");
@@ -4674,7 +4674,7 @@ void ForeignDomain__NoAnnounce(int thread_num = -1)
 #if 0 /* deprecated */
     /* Test is not run in TeamCity*/
     if (!getenv("TEAMCITY_VERSION")) {
-        ExceptionComparator<CLBOSException::e_NoLBOS, 450> comparator("450\n");
+        ExceptionComparator<CLBOSException::e_LBOSNoLBOS, 450> comparator("450\n");
         CLBOSStatus lbos_status(true, true);
         unsigned short port = kDefaultPort;
         string node_name = s_GenerateNodeName();
@@ -4683,7 +4683,7 @@ void ForeignDomain__NoAnnounce(int thread_num = -1)
                   "return error code kLBOSNoLBOS", thread_num);
         WRITE_LOG("Mocking region with \"or-wa\"", thread_num);
         CMockString mock(*g_LBOS_UnitTesting_CurrentDomain(), "or-wa");
-        WRITE_LOG("Expected exception with error code \"" << "e_NoLBOS" << 
+        WRITE_LOG("Expected exception with error code \"" << "e_LBOSNoLBOS" <<
             "\", status code \"" << 450 <<
                     "\", message \"" << "450\\n" << "\".",
                   thread_num);
@@ -4702,14 +4702,14 @@ void ForeignDomain__NoAnnounce(int thread_num = -1)
 /* Test is thread-safe. */
 void IncorrectURL__ThrowInvalidArgs(int thread_num = -1)
 {
-    ExceptionComparator<CLBOSException::e_InvalidArgs, 452> comparator
+    ExceptionComparator<CLBOSException::e_LBOSInvalidArgs, 452> comparator
                                                                 ("452\n");
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GenerateNodeName();
     unsigned short port = kDefaultPort;
     WRITE_LOG("Testing behavior of LBOS "
              "mapper when passed incorrect healthcheck URL", thread_num);
-    WRITE_LOG("Expected exception with error code \"" << "e_InvalidArgs" << 
+    WRITE_LOG("Expected exception with error code \"" << "e_LBOSInvalidArgs" <<
               "\", status code \"" << 452 <<
                 "\", message \"" << "452\\n" << "\".",
               thread_num);
@@ -4742,11 +4742,11 @@ void IncorrectPort__ThrowInvalidArgs(int thread_num = -1)
 {
     WRITE_LOG("Testing behavior of LBOS "
               "mapper when passed incorrect port (zero)", thread_num);
-    WRITE_LOG("Expected exception with error code \"" << "e_InvalidArgs" << 
+    WRITE_LOG("Expected exception with error code \"" << "e_LBOSInvalidArgs" <<
               "\", status code \"" << 452 <<
                 "\", message \"" << "452\\n" << "\".",
               thread_num);
-    ExceptionComparator<CLBOSException::e_InvalidArgs, 452> comparator
+    ExceptionComparator<CLBOSException::e_LBOSInvalidArgs, 452> comparator
                                                                 ("452\n");
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GenerateNodeName();
@@ -4772,11 +4772,11 @@ void IncorrectVersion__ThrowInvalidArgs(int thread_num = -1)
     WRITE_LOG("Testing behavior of LBOS "
              "mapper when passed incorrect version - should return "
              "kLBOSInvalidArgs", thread_num);
-    WRITE_LOG("Expected exception with error code \"" << "e_InvalidArgs" << 
+    WRITE_LOG("Expected exception with error code \"" << "e_LBOSInvalidArgs" <<
               "\", status code \"" << 452 <<
                 "\", message \"" << "452\\n" << "\".",
               thread_num);
-    ExceptionComparator<CLBOSException::e_InvalidArgs, 452> comparator
+    ExceptionComparator<CLBOSException::e_LBOSInvalidArgs, 452> comparator
                                                                 ("452\n");
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GenerateNodeName();
@@ -4802,7 +4802,7 @@ void IncorrectVersion__ThrowInvalidArgs(int thread_num = -1)
 /* Test is thread-safe. */
 void IncorrectServiceName__ThrowInvalidArgs(int thread_num = -1)
 {
-    ExceptionComparator<CLBOSException::e_InvalidArgs, 452> comparator
+    ExceptionComparator<CLBOSException::e_LBOSInvalidArgs, 452> comparator
                                                                 ("452\n");
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GenerateNodeName();
@@ -4810,7 +4810,7 @@ void IncorrectServiceName__ThrowInvalidArgs(int thread_num = -1)
     WRITE_LOG("Testing behavior of LBOS "
               "mapper when passed incorrect service name - should return "
               "kLBOSInvalidArgs", thread_num);
-    WRITE_LOG("Expected exception with error code \"" << "e_InvalidArgs" << 
+    WRITE_LOG("Expected exception with error code \"" << "e_LBOSInvalidArgs" <<
               "\", status code \"" << 452 <<
                 "\", message \"" << "452\\n" << "\".",
               thread_num);
@@ -4861,7 +4861,7 @@ void RealLife__VisibleAfterAnnounce(int thread_num = -1)
 /* Test is NOT thread-safe. */
 void IP0000__ReplaceWithIP(int thread_num = -1)
 {
-    ExceptionComparator<CLBOSException::e_DNSResolveError, 451> comparator
+    ExceptionComparator<CLBOSException::e_LBOSDNSResolveError, 451> comparator
                                                                 ("451\n");
     CLBOSStatus lbos_status(true, true);
     /* Here we mock SOCK_gethostbyaddrEx to specify IP address that we want to
@@ -4910,7 +4910,7 @@ void IP0000__ReplaceWithIP(int thread_num = -1)
 /* Test is NOT thread-safe. */
 void ResolveLocalIPError__ReturnDNSError(int thread_num = -1)
 {
-    ExceptionComparator<CLBOSException::e_DNSResolveError, 451> comparator
+    ExceptionComparator<CLBOSException::e_LBOSDNSResolveError, 451> comparator
                                                                 ("451\n");
     CLBOSStatus lbos_status(true, true);
     WRITE_LOG("If healthcheck has 0.0.0.0 specified as host, "
@@ -4938,12 +4938,12 @@ void ResolveLocalIPError__ReturnDNSError(int thread_num = -1)
 /* Test is NOT thread-safe. */
 void LBOSOff__ThrowKLBOSOff(int thread_num = -1)
 {
-    ExceptionComparator<CLBOSException::e_Off, 550> comparator("550\n");
+    ExceptionComparator<CLBOSException::e_LBOSOff, 550> comparator("550\n");
     CLBOSStatus lbos_status(true, false);
     WRITE_LOG("LBOS mapper is OFF (maybe it is not turned ON in registry " 
               "or it could not initialize at start) - return kLBOSOff", 
               thread_num);
-    WRITE_LOG("Expected exception with error code \"" << "e_Off" << 
+    WRITE_LOG("Expected exception with error code \"" << "e_LBOSOff" <<
               "\", status code \"" << 550 <<
                 "\", message \"" << "550\\n" << "\".",
               thread_num);
@@ -5002,11 +5002,11 @@ void HealthcheckDead__ThrowE_NotFound(int thread_num = -1)
                 "return  kLBOSBadRequest",thread_num);
     s_SelectPort(count_before, node_name, port, thread_num);
     WRITE_LOG("Expected exception with error code \"" << 
-                "e_BadRequest" << 
+                "e_LBOSBadRequest" <<
                 "\", status code \"" << 400 <<
                 "\", message \"" << "400 Bad Request\\n" << "\".",
               thread_num);
-    ExceptionComparator<CLBOSException::e_BadRequest, 400> comparator
+    ExceptionComparator<CLBOSException::e_LBOSBadRequest, 400> comparator
                                                       ("400 Bad Request\n");
     BOOST_CHECK_EXCEPTION(
         s_AnnounceCPP(node_name, "1.0.0", "", port, "http://badhealth.gov",
@@ -5024,7 +5024,7 @@ void HealthcheckDead__ThrowE_NotFound(int thread_num = -1)
      WRITE_LOG("Part II. Healthcheck is \"http:/0.0.0.0:4097/healt\" - "
                 "should work fine",thread_num);
     s_SelectPort(count_before, node_name, port, thread_num);
-//  ExceptionComparator<CLBOSException::e_NotFound, 404> comparator2
+//  ExceptionComparator<CLBOSException::e_LBOSNotFound, 404> comparator2
 //                                                       ("404 Not Found\n");
     BOOST_CHECK_NO_THROW(                    //  missing 'h'
         s_AnnounceCPPSafe(node_name, "1.0.0", "", port,// v
@@ -5128,11 +5128,11 @@ void ParamsGood__ReturnSuccess()
 /*  2.  Custom section has nothing in config - return kLBOSInvalidArgs       */
 void CustomSectionNoVars__ThrowInvalidArgs() 
 {
-    ExceptionComparator<CLBOSException::e_InvalidArgs, 452> comparator("452\n");
+    ExceptionComparator<CLBOSException::e_LBOSInvalidArgs, 452> comparator("452\n");
     WRITE_LOG("Testing custom section that has nothing in config", 
               kSingleThreadNumber);
     WRITE_LOG("Expected exception with error code \"" << 
-                "e_InvalidArgs" << 
+                "e_LBOSInvalidArgs" <<
                 "\", status code \"" << 452 <<
                 "\", message \"" << "452\\n" << "\".",
               kSingleThreadNumber);
@@ -5160,7 +5160,7 @@ void CustomSectionEmptyOrNullAndSectionIsOk__AllOK()
 
 void TestNullOrEmptyField(const char* field_tested)
 {
-    ExceptionComparator<CLBOSException::e_InvalidArgs, 452> comparator
+    ExceptionComparator<CLBOSException::e_LBOSInvalidArgs, 452> comparator
                                                                 ("452\n");
     CLBOSStatus lbos_status(true, true);
     string null_section = "SECTION_WITHOUT_";
@@ -5172,7 +5172,7 @@ void TestNullOrEmptyField(const char* field_tested)
     WRITE_LOG("Part I. " << field_tested << " is not in section (NULL)", 
               kSingleThreadNumber);
     WRITE_LOG("Expected exception with error code \"" << 
-                "e_InvalidArgs" << 
+                "e_LBOSInvalidArgs" <<
                 "\", status code \"" << 452 <<
                 "\", message \"" << "452\\n" << "\".",
               kSingleThreadNumber);
@@ -5185,7 +5185,7 @@ void TestNullOrEmptyField(const char* field_tested)
     WRITE_LOG("Part II. " << field_tested << " is an empty string", 
               kSingleThreadNumber);
     WRITE_LOG("Expected exception with error code \"" << 
-                "e_InvalidArgs" << 
+                "e_LBOSInvalidArgs" <<
                 "\", status code \"" << 452 <<
                 "\", message \"" << "452\\n" << "\".",
               kSingleThreadNumber);
@@ -5223,14 +5223,14 @@ void PortOutOfRange__ThrowInvalidArgs()
 {
     WRITE_LOG("Port is out of range - return kLBOSInvalidArgs", 
               kSingleThreadNumber);
-    ExceptionComparator<CLBOSException::e_InvalidArgs, 452> comparator
+    ExceptionComparator<CLBOSException::e_LBOSInvalidArgs, 452> comparator
                                                                 ("452\n");
     /*
      * I. port = 0 
      */
     WRITE_LOG("Part I. Port is 0", kSingleThreadNumber);
     WRITE_LOG("Expected exception with error code \"" << 
-                "e_InvalidArgs" << 
+                "e_LBOSInvalidArgs" <<
                 "\", status code \"" << 452 <<
                 "\", message \"" << "452\\n" << "\".",
               kSingleThreadNumber);
@@ -5242,7 +5242,7 @@ void PortOutOfRange__ThrowInvalidArgs()
      */
     WRITE_LOG("Part II. Port is 100000", kSingleThreadNumber);
     WRITE_LOG("Expected exception with error code \"" << 
-                "e_InvalidArgs" << 
+                "e_LBOSInvalidArgs" <<
                 "\", status code \"" << 452 <<
                 "\", message \"" << "452\\n" << "\".",
               kSingleThreadNumber);
@@ -5254,7 +5254,7 @@ void PortOutOfRange__ThrowInvalidArgs()
      */
     WRITE_LOG("Part III. Port is 65536", kSingleThreadNumber);
     WRITE_LOG("Expected exception with error code \"" << 
-                "e_InvalidArgs" << 
+                "e_LBOSInvalidArgs" <<
                 "\", status code \"" << 452 <<
                 "\", message \"" << "452\\n" << "\".",
               kSingleThreadNumber);
@@ -5268,11 +5268,11 @@ void PortContainsLetters__ThrowInvalidArgs()
     WRITE_LOG("Port contains letters", 
               kSingleThreadNumber);
     WRITE_LOG("Expected exception with error code \"" << 
-                "e_InvalidArgs" << 
+                "e_LBOSInvalidArgs" <<
                 "\", status code \"" << 452 <<
                 "\", message \"" << "452\\n" << "\".",
               kSingleThreadNumber);
-    ExceptionComparator<CLBOSException::e_InvalidArgs, 452> comparator("452\n");
+    ExceptionComparator<CLBOSException::e_LBOSInvalidArgs, 452> comparator("452\n");
     CLBOSStatus lbos_status(true, true);
     BOOST_CHECK_EXCEPTION(
         s_AnnounceCPPFromRegistry("SECTION_WITH_CORRUPTED_PORT"),
@@ -5292,11 +5292,11 @@ void HealthcheckDoesNotStartWithHttp__ThrowInvalidArgs()
     WRITE_LOG("Healthcheck does not start with http:// or https://",
               kSingleThreadNumber);
     WRITE_LOG("Expected exception with error code \"" << 
-                "e_InvalidArgs" << 
+                "e_LBOSInvalidArgs" <<
                 "\", status code \"" << 452 <<
                 "\", message \"" << "452\\n" << "\".",
               kSingleThreadNumber);
-    ExceptionComparator<CLBOSException::e_InvalidArgs, 452> comparator
+    ExceptionComparator<CLBOSException::e_LBOSInvalidArgs, 452> comparator
                                                                 ("452\n");
     CLBOSStatus lbos_status(true, true);
     BOOST_CHECK_EXCEPTION(
@@ -5318,11 +5318,11 @@ void HealthcheckDead__ThrowE_NotFound()
     WRITE_LOG("Part I. Healthcheck is \"http://badhealth.gov\" - "
               "return  kLBOSBadRequest", kSingleThreadNumber);
     WRITE_LOG("Expected exception with error code \"" << 
-                "e_BadRequest" << 
+                "e_LBOSBadRequest" <<
                 "\", status code \"" << 400 <<
                 "\", message \"" << "400 Bad Request\\n" << "\".",
               kSingleThreadNumber);
-    ExceptionComparator<CLBOSException::e_BadRequest, 400> comparator
+    ExceptionComparator<CLBOSException::e_LBOSBadRequest, 400> comparator
                                                           ("400 Bad Request\n");
     BOOST_CHECK_EXCEPTION(
         s_AnnounceCPPFromRegistry("SECTION_WITH_HEALTHCHECK_DNS_ERROR"),
@@ -5487,11 +5487,11 @@ void NoLBOS__Return0(int thread_num = -1)
 {
     WRITE_LOG("Could not connect to provided LBOS", thread_num);
     WRITE_LOG("Expected exception with error code \"" << 
-                "e_NoLBOS" << 
+                "e_LBOSNoLBOS" <<
                 "\", status code \"" << 450 <<
                 "\", message \"" << "450\\n" << "\".",
               thread_num);
-    ExceptionComparator<CLBOSException::e_NoLBOS, 450> comparator("450\n");
+    ExceptionComparator<CLBOSException::e_LBOSNoLBOS, 450> comparator("450\n");
     CLBOSStatus lbos_status(true, true);
     string node_name = s_GenerateNodeName();
     unsigned short port = kDefaultPort;
@@ -5511,11 +5511,11 @@ void LBOSExistsDeannounceError__Return0(int thread_num = -1)
 {
     WRITE_LOG("Could not connect to provided LBOS", thread_num);
     WRITE_LOG("Expected exception with error code \"" << 
-                "e_BadRequest" << 
+                "e_LBOSBadRequest" <<
                 "\", status code \"" << 400 <<
                 "\", message \"" << "400 Bad Request\\n" << "\".",
               thread_num);
-    ExceptionComparator<CLBOSException::e_BadRequest, 400> comparator
+    ExceptionComparator<CLBOSException::e_LBOSBadRequest, 400> comparator
                                                        ("400 Bad Request\n");
     CLBOSStatus lbos_status(true, true);
     /* Currently LBOS does not return any errors */
@@ -5563,9 +5563,9 @@ void ForeignDomain__DoNothing(int thread_num = -1)
     /* Test is not run in TeamCity*/
     if (!getenv("TEAMCITY_VERSION")) {
         WRITE_LOG("Deannounce in foreign domain", thread_num);
-        ExceptionComparator<CLBOSException::e_NoLBOS, 450> comparator("450\n");
+        ExceptionComparator<CLBOSException::e_LBOSNoLBOS, 450> comparator("450\n");
         WRITE_LOG("Expected exception with error code \"" << 
-                    "e_NoLBOS" << 
+                    "e_LBOSNoLBOS" <<
                     "\", status code \"" << 450 <<
                     "\", message \"" << "450\\n" << "\".",
                   thread_num);
@@ -5628,11 +5628,11 @@ void LBOSOff__ThrowKLBOSOff(int thread_num = -1)
     WRITE_LOG("Deannonce when LBOS mapper is OFF", 
               thread_num);
     WRITE_LOG("Expected exception with error code \"" << 
-                "e_Off" << 
+                "e_LBOSOff" <<
                 "\", status code \"" << 550 <<
                 "\", message \"" << "550\\n" << "\".",
               thread_num);
-    ExceptionComparator<CLBOSException::e_Off, 550> comparator("550\n");
+    ExceptionComparator<CLBOSException::e_LBOSOff, 550> comparator("550\n");
     CLBOSStatus lbos_status(true, false);
     BOOST_CHECK_EXCEPTION(
         s_DeannounceCPP("lbostest", "1.0.0", "", 8080, thread_num), 
@@ -5640,18 +5640,18 @@ void LBOSOff__ThrowKLBOSOff(int thread_num = -1)
 }
 
 
-/* 9. Trying to deannounce non-existent service - throw e_NotFound           */
+/* 9. Trying to deannounce non-existent service - throw e_LBOSNotFound           */
 /*    Test is thread-safe. */
 void NotExists__ThrowE_NotFound(int thread_num = -1)
 {
     WRITE_LOG("Deannonce non-existent service", 
               thread_num);
     WRITE_LOG("Expected exception with error code \"" << 
-                "e_NotFound" << 
+                "e_LBOSNotFound" <<
                 "\", status code \"" << 404 <<
                 "\", message \"" << "404 Not Found\\n" << "\".",
               thread_num);
-    ExceptionComparator<CLBOSException::e_NotFound, 404> comparator
+    ExceptionComparator<CLBOSException::e_LBOSNotFound, 404> comparator
                                                         ("404 Not Found\n");
     CLBOSStatus lbos_status(true, true);
     BOOST_CHECK_EXCEPTION(
@@ -6771,11 +6771,13 @@ static vector<SAnnouncedServer> s_ParseService()
 static void s_ClearZooKeeper()
 {
     vector<SAnnouncedServer> nodes = s_ParseService();
-    for (auto node : nodes) {
-        string host = CSocketAPI::HostPortToString(node.host, 0);
+    vector<SAnnouncedServer>::iterator node;
+    for (node = nodes.begin(); node != nodes.end(); node++) {
+        string host = CSocketAPI::HostPortToString(node->host, 0);
         if (host == s_GetMyIP()) {
             try {
-                s_DeannounceCPP(node.service, node.version, host, node.port, kSingleThreadNumber);
+                s_DeannounceCPP(node->service, node->version, host, node->port,
+                                kSingleThreadNumber);
             }
             catch (const CLBOSException&) {
             }
@@ -6808,9 +6810,12 @@ bool s_CheckIfAnnounced(string          service,
                 SleepMilliSec(wait_msecs);
             }
             vector<SAnnouncedServer> nodes = s_ParseService();
-            for (auto node : nodes) {
-                string host = CSocketAPI::HostPortToString(node.host, 0);
-                if (expected_host == host && node.port == server_port && node.version == version && node.service == service) {
+            vector<SAnnouncedServer>::iterator node;
+            for (node = nodes.begin();  node != nodes.end();   node++) {
+                string host = CSocketAPI::HostPortToString(node->host, 0);
+                if (expected_host == host && node->port == server_port &&
+                        node->version == version && node->service == service)
+                {
                     announced = true;
                     break;
                 }
