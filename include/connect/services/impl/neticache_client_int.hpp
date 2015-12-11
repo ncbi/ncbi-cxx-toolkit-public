@@ -43,13 +43,13 @@ struct NCBI_NET_CACHE_EXPORT CNetICacheClientExt : CNetICacheClient
     CNetICacheClientExt(TInstance api)
         : CNetICacheClient(api)
     {
-        SetFlags(fBestReliability);
+        if (api) SetFlags(fBestReliability);
     }
 
     CNetICacheClientExt& operator=(TInstance api)
     {
         CNetICacheClient::operator=(api);
-        SetFlags(fBestReliability);
+        if (api) SetFlags(fBestReliability);
         return *this;
     }
 
