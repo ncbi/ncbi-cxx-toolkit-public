@@ -10269,7 +10269,7 @@ Seq-annot ::= {
     {
       data gene {
         locus "OR4C45",
-        desc "olfactory receptor, family 4, subfamily C, member 45"
+        desc "olfactory receptor family 4 subfamily C member 45"
       },
       location int {
         from 49972873,
@@ -10295,7 +10295,7 @@ Seq-annot ::= {
     {
       data rna {
         type mRNA,
-        ext name "olfactory receptor, family 4, subfamily C, member 45"
+        ext name "olfactory receptor family 4 subfamily C member 45"
       },
       except TRUE,
       comment "The RefSeq transcript has 1 substitution compared to this
