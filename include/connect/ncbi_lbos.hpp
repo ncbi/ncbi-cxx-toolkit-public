@@ -201,19 +201,20 @@ class NCBI_XNCBI_EXPORT CLBOSException : public CException
 public:
     typedef int TErrCode;
     enum EErrCode {
-        e_NoLBOS,               /**< lbos was not found                       */
-        e_DNSResolveError,      /**< Local address not resolved               */
-        e_InvalidArgs,          /**< Arguments not valid                      */
-        e_DeannounceFail,       /**< Error while deannounce/                  */
-        e_NotFound,             /**< For deannouncement only. Did not
+        e_LBOSNoLBOS,               /**< lbos was not found                   */
+        e_LBOSDNSResolveError,      /**< Local address not resolved           */
+        e_LBOSInvalidArgs,          /**< Arguments not valid                  */
+        e_LBOSDeannounceFail,       /**< Error while deannounce/              */
+        e_LBOSNotFound,             /**< For deannouncement only. Did not
                                      find such server to deannounce           */
-        e_Off,                  /**< LBOS mapper is off for any of two reasons:
-                                     either it is not enalbed in registry, or
-                                     no LBOS was found at initialization      */
-        e_MemAllocError,        /**< A memory allocation error encountered    */
-        e_LBOSCorruptOutput,    /**< LBOS returned unexpected output          */
-        e_BadRequest,           /**< LBOS returned "400 Bad Request"          */
-        e_Unknown               /**< No information about this error 
+        e_LBOSOff,                  /**< LBOS mapper is off for any of two
+                                     reasons: either it is not enalbed in
+                                     registry, or no LBOS was found at
+                                     initialization                           */
+        e_LBOSMemAllocError,        /**< A memory allocation error encountered*/
+        e_LBOSCorruptOutput,        /**< LBOS returned unexpected output      */
+        e_LBOSBadRequest,           /**< LBOS returned "400 Bad Request"      */
+        e_LBOSUnknown               /**< No information about this error
                                      code meaning                             */
     };
 

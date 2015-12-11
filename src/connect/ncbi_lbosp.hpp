@@ -84,7 +84,7 @@ public:
         unsigned short port);
 
 private:
-    static CSafeStatic<map<CLBOSIpCacheKey, string>> x_IpCache;
+    static CSafeStatic< map< CLBOSIpCacheKey, string > > x_IpCache;
 };
 
 

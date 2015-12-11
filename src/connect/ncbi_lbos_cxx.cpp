@@ -145,7 +145,7 @@ void CLBOSIpCache::HostnameDelete(string service, string hostname,
 }
 
 
-CSafeStatic<map<CLBOSIpCacheKey, string>> CLBOSIpCache::x_IpCache;
+CSafeStatic< map< CLBOSIpCacheKey, string > > CLBOSIpCache::x_IpCache;
 
 
 static void s_ProcessResult(unsigned short result, 
@@ -195,9 +195,11 @@ void LBOS::Announce(const string& service, const string& version,
         cur_host = healthcheck_info->host;
         /* If we could not parse healthcheck URL, throw "Invalid Arguments" */
         if (cur_host == "") {
+            ConnNetInfo_Destroy(healthcheck_info);
             throw CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-                CLBOSException::EErrCode::e_InvalidArgs,
-                NStr::IntToString(kLBOSInvalidArgs), kLBOSInvalidArgs);
+                                 CLBOSException::e_LBOSInvalidArgs,
+                                 NStr::IntToString(kLBOSInvalidArgs),
+                                 kLBOSInvalidArgs);
         }
         ConnNetInfo_Destroy(healthcheck_info);
     }
@@ -216,8 +218,7 @@ void LBOS::Announce(const string& service, const string& version,
      * do.*/
     if (ip == ":0") {
         throw CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-                             CLBOSException::EErrCode::e_BadRequest,
-                             "400 Bad Request",
+                             CLBOSException::e_LBOSBadRequest, "400 Bad Request",
                              kLBOSBadRequest);
     }
     /* If healthcheck is on the same host as server, we try to replace hostname 
@@ -251,14 +252,15 @@ void LBOS::AnnounceFromRegistry(string reg_section)
     }
     catch (...) {
         throw CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-            CLBOSException::EErrCode::e_InvalidArgs,
-            NStr::IntToString(kLBOSInvalidArgs), kLBOSInvalidArgs);
+                             CLBOSException::e_LBOSInvalidArgs,
+                             NStr::IntToString(kLBOSInvalidArgs),
+                             kLBOSInvalidArgs);
     }
     if (port_int < 1 || port_int > 65535)
     {
         throw CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-            CLBOSException::EErrCode::e_InvalidArgs,
-            NStr::IntToString(kLBOSInvalidArgs), kLBOSInvalidArgs);
+                             CLBOSException::e_LBOSInvalidArgs, NStr::IntToString(kLBOSInvalidArgs),
+                             kLBOSInvalidArgs);
     }
     unsigned short port = static_cast<unsigned short>(port_int);
     Announce(service, version, host, port, health);
@@ -373,23 +375,23 @@ CLBOSException::EErrCode
 {
     switch (http_code) {
     case kLBOSNoLBOS:
-        return e_NoLBOS;
+        return e_LBOSNoLBOS;
     case kLBOSNotFound:
-        return e_NotFound;
+        return e_LBOSNotFound;
     case kLBOSBadRequest:
-        return e_BadRequest;
+        return e_LBOSBadRequest;
     case kLBOSOff:
-        return e_Off;
+        return e_LBOSOff;
     case kLBOSInvalidArgs:
-        return e_InvalidArgs;
+        return e_LBOSInvalidArgs;
     case kLBOSDNSResolveError:
-        return e_DNSResolveError;
+        return e_LBOSDNSResolveError;
     case kLBOSMemAllocError:
-        return e_MemAllocError;
+        return e_LBOSMemAllocError;
     case kLBOSCorruptOutput:
         return e_LBOSCorruptOutput;
     default:
-        return e_Unknown;
+        return e_LBOSUnknown;
     }
 }
 
@@ -402,18 +404,18 @@ unsigned short CLBOSException::GetStatusCode(void) const {
 const char* CLBOSException::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {
-    case e_NoLBOS:
+    case e_LBOSNoLBOS:
         return "LBOS was not found";
-    case e_NotFound:
+    case e_LBOSNotFound:
         return "Healthcheck URL is not working or lbos could not resolve"
                "host of healthcheck URL";
-    case e_DNSResolveError:
+    case e_LBOSDNSResolveError:
         return "Could not get IP of current machine";
-    case e_MemAllocError:
+    case e_LBOSMemAllocError:
         return "Memory allocation error happened while performing request";
-    case e_Off:
+    case e_LBOSOff:
         return "lbos functionality is turned OFF. Check config file.";
-    case e_InvalidArgs:
+    case e_LBOSInvalidArgs:
         return "Invalid arguments were provided. No request to lbos was sent";
     default:
         return "Unknown lbos error code";
