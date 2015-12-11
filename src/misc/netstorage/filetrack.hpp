@@ -37,6 +37,7 @@
 
 #include <connect/ncbi_conn_stream.hpp>
 
+#include <corelib/ncbimisc.hpp>
 #include <corelib/reader_writer.hpp>
 
 #include <util/random_gen.hpp>
@@ -123,6 +124,8 @@ struct SFileTrackAPI
     string MakeMutipartFormDataHeader(const string& boundary);
 
     Uint8 GetRandUint8(void) { return m_Random.GetRandUint8(); }
+
+    DECLARE_OPERATOR_BOOL(!config.key.empty());
 
     const SFileTrackConfig config;
 

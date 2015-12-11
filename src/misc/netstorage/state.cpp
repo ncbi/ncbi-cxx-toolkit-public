@@ -886,7 +886,7 @@ void SContext::Init()
 {
     const TNetStorageFlags backend_storage =
         (icache_client                     ? fNST_NetCache  : 0) |
-        (!filetrack_api.config.key.empty() ? fNST_FileTrack : 0);
+        (!filetrack_api                    ? fNST_FileTrack : 0);
 
     // If there were specific underlying storages requested
     if (TNetStorageLocFlags(default_flags)) {
