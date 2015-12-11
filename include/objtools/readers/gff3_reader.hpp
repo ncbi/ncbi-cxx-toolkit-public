@@ -87,6 +87,8 @@ public:
 
     virtual ~CGff3Reader();
 
+    bool IsInGenbankMode() const;
+
 protected:
     virtual CGff2Record* x_CreateRecord() { return new CGff3ReadRecord(); };    
 

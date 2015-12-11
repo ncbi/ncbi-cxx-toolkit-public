@@ -167,6 +167,13 @@ CGff3Reader::~CGff3Reader()
 }
 
 //  ----------------------------------------------------------------------------
+bool CGff3Reader::IsInGenbankMode() const
+//  ----------------------------------------------------------------------------
+{
+    return (m_iFlags & CGff3Reader::fGenbankMode);
+}
+
+//  ----------------------------------------------------------------------------
 bool CGff3Reader::x_UpdateFeatureCds(
     const CGff2Record& gff,
     CRef<CSeq_feat> pFeature)
@@ -317,7 +324,7 @@ bool CGff3Reader::xUpdateAnnotCds(
             // if this record had an ID attribute then look for a cds of the same ID:parent
             // combination:
             string cdsId;
-            if (!id.empty()) {
+            if (!IsInGenbankMode()  &&  !id.empty()) {
                 cdsId = id + ":" + *cit;
                 IdToFeatureMap::iterator it = m_MapIdToFeature.find(cdsId);
                 if (it != m_MapIdToFeature.end()) {
@@ -635,7 +642,7 @@ bool CGff3Reader::xIsIgnoredFeatureType(
     if (cit != ignoredTypesAlways.end()) {
         return true;
     }
-    if (!(m_iFlags & CGff2Reader::fGenbankMode)) {
+    if (!IsInGenbankMode()) {
         return false;
     }
 
