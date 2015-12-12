@@ -4042,6 +4042,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MUFM	s	Manipur University Fish Museum",
 "MUFS	s	Department of Animal Science, Miyazaki  University",
 "MUGM	s	Museo de Ciencias Naturales, Coleccion \"Gustavo Orces\" (Ecuador)",
+"MUGT	s	Museo de Ciencias Naturales de la Universidad de Guayaquil",
 "MUHW	s	Marshall University, Biological Sciences Department",
 "MUJ	s	Museo Javeriano de Historia Natural, Laboratoriao de Entomologia",
 "MUL	c	Department of Microbiology MUL-B 250",
