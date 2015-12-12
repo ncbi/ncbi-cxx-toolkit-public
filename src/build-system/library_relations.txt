@@ -334,7 +334,6 @@ gc_schedule needs xconnserv
 gc_util_sdbapi needs gencoll_client
 gc_util_sdbapi needs gpipe_common
 gc_utils needs gpipe_objutil
-gcaccess_utils needs $(GPIPE_COMMON_LIBS)
 gcaccess_utils needs $(GPIPE_GENCOLL_LIBS)
 gcedit needs agp_lookup
 gcedit needs gc_load_utils
@@ -458,6 +457,7 @@ gpipe_ftp needs gpipe_alnutil
 gpipe_ftp needs xalgoalignutil
 gpipe_ftp needs xobjwrite
 gpipe_ftp needs xrepeatdb
+gpipe_ftp_new needs $(GPIPE_COMMON_LIBS)
 gpipe_ftp_new needs gc_utils
 gpipe_ftp_new needs gcaccess_utils
 gpipe_ftp_new needs gpinit
