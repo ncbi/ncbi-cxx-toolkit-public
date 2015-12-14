@@ -96,10 +96,8 @@ x_files=`grep '^ *CHECK_COPY' "$x_srcdir/Makefile.$x_test.app" | sed -e 's/^.*=/
 # Get application's check timeout
 x_timeout=`grep '^ *CHECK_TIMEOUT' "$x_srcdir/Makefile.$x_test.app" | sed -e 's/^.*=//' -e 's/^[ ]*//'`
 x_timeout="${x_timeout:-$x_timeout_default}"
-# Get application's requirement
-reg_build=`grep '^ *REQUIRES' "$x_srcdir/Makefile.$x_test.app" | sed -e 's/^.*=//' -e 's/^[ ]*//'`
-req_check=`grep '^ *CHECK_REQUIRES' "$x_srcdir/Makefile.$x_test.app" | sed -e 's/^.*=//' -e 's/^[ ]*//'`
-x_requires="$reg_build $req_check"
+# Get check requirements
+x_requires=`grep '^ *CHECK_REQUIRES' "$x_srcdir/Makefile.$x_test.app" | sed -e 's/^.*=//' -e 's/^[ ]*//'`
 
 # Get list of watchers
 x_makefile="$x_srcdir/Makefile.$x_test.app"

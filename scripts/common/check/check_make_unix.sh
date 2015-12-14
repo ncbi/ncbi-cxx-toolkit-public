@@ -810,7 +810,7 @@ for x_row in $x_tests; do
    x_requires=" `echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//'  -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'` "
    x_authors=`echo "$x_row" | sed -e 's/.*~//'`
 
-   # Check application requirements
+   # Check application requirements ($CHECK_REQUIRES)
    for x_req in $x_requires; do
       test -f "$x_conf_dir/status/$x_req.enabled"  ||  continue 2
    done
