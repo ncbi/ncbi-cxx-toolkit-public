@@ -318,6 +318,7 @@ DISCREPANCY_LINK_MODULE(spell_check);
 DISCREPANCY_LINK_MODULE(transl_too_long);
 DISCREPANCY_LINK_MODULE(cds_trna_overlap);
 DISCREPANCY_LINK_MODULE(sesame_street);
+DISCREPANCY_LINK_MODULE(transl_note);
 
 
 END_SCOPE(NDiscrepancy)

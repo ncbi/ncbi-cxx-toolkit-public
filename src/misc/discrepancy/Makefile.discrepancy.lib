@@ -5,7 +5,7 @@
 
 SRC = discrepancy_core report_object discrepancy_context utils \
       discrepancy_case suspect_product_names division_code_conflicts feature_per_bioseq gene_names rna_names spell_check \
-      transl_too_long sesame_street cds_trna_overlap
+      transl_too_long sesame_street cds_trna_overlap transl_note
 
 LIB = xdiscrepancy
 
