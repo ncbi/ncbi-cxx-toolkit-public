@@ -50,7 +50,7 @@ enum EErrorMessageVerbosity {
 class CFileUploadApplication : public CCgiApplication
 {
 public:
-    CFileUploadApplication() : m_NetStorage(eVoid) {}
+    CFileUploadApplication();
     void Init();
     int  ProcessRequest(CCgiContext& ctx);
 
@@ -73,32 +73,37 @@ private:
 };
 
 #define GRID_APP_NAME "file_upload.cgi"
-#define CONFIG_SECTION "file_upload"
-#define INIT_STRING_PARAM "destination"
-#define ERROR_MESSAGE_VERBOSITY_PARAM "error_message"
+
+CFileUploadApplication::CFileUploadApplication()
+    : m_NetStorage(eVoid)
+{
+}
 
 void CFileUploadApplication::Init()
 {
+    const string kSection = "file_upload";
+    const string kInitString = "destination";
+    const string kVerbosity = "error_message";
+
     CCgiApplication::Init();
 
     SetRequestFlags(CCgiRequest::fParseInputOnDemand);
 
     const IRegistry& reg = GetConfig();
 
-    string init_string(reg.Get(CONFIG_SECTION, INIT_STRING_PARAM));
+    string init_string(reg.Get(kSection, kInitString));
 
     if (init_string.empty()) {
-        NCBI_THROW(CConfigException, eParameterMissing,
-                "Missing configuration parameter ["
-                CONFIG_SECTION "]." INIT_STRING_PARAM);
+        NCBI_THROW_FMT(CConfigException, eParameterMissing,
+                "Missing configuration parameter [" <<
+                kSection << "]." << kInitString);
     }
 
-    m_SourceFieldName = reg.Get(CONFIG_SECTION, "source_field_name");
+    m_SourceFieldName = reg.Get(kSection, "source_field_name");
     if (m_SourceFieldName.empty())
         m_SourceFieldName = "file";
 
-    string error_message_verbosity(reg.Get(CONFIG_SECTION,
-            ERROR_MESSAGE_VERBOSITY_PARAM));
+    string error_message_verbosity(reg.Get(kSection, kVerbosity));
 
     if (error_message_verbosity.empty())
 #ifndef _DEBUG
@@ -114,7 +119,7 @@ void CFileUploadApplication::Init()
         m_ErrorMessageVerbosity = eEMV_LogRef;
     else {
         NCBI_THROW_FMT(CConfigException, eParameterMissing,
-                "Invalid '" ERROR_MESSAGE_VERBOSITY_PARAM "' value '" <<
+                "Invalid '" << kVerbosity << "' value '" <<
                         error_message_verbosity << '\'');
     }
 
