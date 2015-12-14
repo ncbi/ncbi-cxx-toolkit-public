@@ -1962,7 +1962,8 @@ void CAlignCollapser::GetCollapsedAlgnments(TAlignModelClusterSet& clsset) {
     TIntMap strandedminus_len; 
     ITERATE(TAlignModelList, ia, rnaseq_or_est) {
         const CAlignModel& align = *ia;
-        if((align.Type()&CGeneModel::eSR) && !(align.Status()&CGeneModel::eUnknownOrientation) && align.Exons().size() == 1) {  // ORINTEED notspliced rnaseq
+        if((align.Type()&CGeneModel::eSR) && !(align.Status()&CGeneModel::eUnknownOrientation) && 
+          !(align.Status()&CGeneModel::ePolyA) && !(align.Status()&CGeneModel::eCap) && align.Exons().size() == 1) {  // ORINTEED notspliced rnaseq        
             TIntMap* mp = (align.Strand() == ePlus) ? &strandedplus_len : &strandedminus_len;
             if(mp->empty() || mp->rbegin()->first+mp->rbegin()->second < align.Limits().GetFrom()) {   // abutting intervals are united
                 (*mp)[align.Limits().GetFrom()] = align.Limits().GetLength();
