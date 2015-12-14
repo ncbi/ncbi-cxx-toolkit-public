@@ -434,6 +434,54 @@ DISCREPANCY_AUTOFIX(OVERLAPPING_CDS)
 }
 
 
+// OVERLAPPING_RRNAS
+
+DISCREPANCY_CASE(OVERLAPPING_RRNAS, CSeq_feat_BY_BIOSEQ, eNormal, "Overlapping rRNAs")
+{
+    if (obj.GetData().GetSubtype() != CSeqFeatData::eSubtype_rRNA) {
+        return;
+    }
+
+    // See if we have moved to the "next" Bioseq
+    if (m_Count != context.GetCountBioseq()) {
+        m_Count = context.GetCountBioseq();
+        m_Objs["rRNAs"].clear();
+    }
+
+    // We ask to keep the reference because we do need the actual object to stick around so we can deal with them later.
+    CRef<CDiscrepancyObject> this_disc_obj(new CDiscrepancyObject(CConstRef<CSeq_feat>(&obj), context.GetScope(), context.GetFile(), true));
+    const CSeq_loc& this_location = obj.GetLocation();
+
+    NON_CONST_ITERATE(TReportObjectList, robj, m_Objs["rRNAs"].GetObjects())
+    {
+        const CDiscrepancyObject* other_disc_obj = dynamic_cast<CDiscrepancyObject*>(robj->GetNCPointer());
+        const CSeq_feat* other_seq_feat = dynamic_cast<const CSeq_feat*>(other_disc_obj->GetObject().GetPointer());
+        const CSeq_loc& other_location = other_seq_feat->GetLocation();
+
+        if (sequence::Compare(this_location, other_location, &context.GetScope()) != sequence::eNoOverlap) {
+            // We add with unique=false because it's O(num overlaps) each time to uniquify.
+            // We do it at the end instead.
+            m_Objs["[n] rRNA feature[s] overlap[S] another rRNA feature."]
+                .Add(**robj, false)
+                .Add(*this_disc_obj, false);
+        }
+    }
+
+    m_Objs["rRNAs"].Add(*this_disc_obj);
+}
+
+DISCREPANCY_SUMMARIZE(OVERLAPPING_RRNAS)
+{
+    m_Objs.GetMap().erase("rRNAs");
+
+    // Make the list unique now.
+    TReportObjectList& hits = m_Objs["[n] rRNA feature[s] overlap[S] another rRNA feature."].GetObjects();
+    set<CRef<CReportObj> > uniq(hits.begin(), hits.end());
+    hits.assign(uniq.begin(), uniq.end());
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
+
+
 // CONTAINED_CDS
 
 static bool HasContainedNote(const CSeq_feat& feat)

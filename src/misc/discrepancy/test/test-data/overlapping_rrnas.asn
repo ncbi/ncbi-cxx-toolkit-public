@@ -1,0 +1,640 @@
+Seq-entry ::= seq {
+  id {
+    general {
+      db "REF_SSU16S" ,
+      tag
+        str "CT573213:5633232-5634741" } ,
+    other {
+      accession "NR_074514" ,
+      version 1 } ,
+    gi 444304090 } ,
+  descr {
+    title "Frankia alni ACN14a strain ACN14A 16S ribosomal RNA, complete
+ sequence" ,
+    source {
+      genome genomic ,
+      org {
+        taxname "Frankia alni ACN14a" ,
+        db {
+          {
+            db "taxon" ,
+            tag
+              id 326424 } } ,
+        orgname {
+          name
+            binomial {
+              genus "Frankia" ,
+              species "alni" } ,
+          mod {
+            {
+              subtype strain ,
+              subname "ACN14A" } } ,
+          lineage "Bacteria; Actinobacteria; Frankiales; Frankiaceae; Frankia" ,
+          gcode 11 ,
+          div "BCT" } } } ,
+    molinfo {
+      biomol rRNA ,
+      completeness complete } ,
+    pub {
+      pub {
+        pmid 17151343 ,
+        article {
+          title {
+            name "Genome characteristics of facultatively symbiotic Frankia
+ sp. strains reflect host range and host plant biogeography." } ,
+          authors {
+            names
+              std {
+                {
+                  name
+                    name {
+                      last "Normand" ,
+                      initials "P." } ,
+                  affil
+                    str "Universite de Lyon, UMR CNRS, 5557 Ecologie
+ Microbienne, IFR41 Bio Environnement et Sante, Universite Lyon I,
+ Villeurbanne 69622 cedex, France. normand@biomserv.univ-lyon1.fr" } ,
+                {
+                  name
+                    name {
+                      last "Lapierre" ,
+                      initials "P." } } ,
+                {
+                  name
+                    name {
+                      last "Tisa" ,
+                      initials "L.S." } } ,
+                {
+                  name
+                    name {
+                      last "Gogarten" ,
+                      initials "J.P." } } ,
+                {
+                  name
+                    name {
+                      last "Alloisio" ,
+                      initials "N." } } ,
+                {
+                  name
+                    name {
+                      last "Bagnarol" ,
+                      initials "E." } } ,
+                {
+                  name
+                    name {
+                      last "Bassi" ,
+                      initials "C.A." } } ,
+                {
+                  name
+                    name {
+                      last "Berry" ,
+                      initials "A.M." } } ,
+                {
+                  name
+                    name {
+                      last "Bickhart" ,
+                      initials "D.M." } } ,
+                {
+                  name
+                    name {
+                      last "Choisne" ,
+                      initials "N." } } ,
+                {
+                  name
+                    name {
+                      last "Couloux" ,
+                      initials "A." } } ,
+                {
+                  name
+                    name {
+                      last "Cournoyer" ,
+                      initials "B." } } ,
+                {
+                  name
+                    name {
+                      last "Cruveiller" ,
+                      initials "S." } } ,
+                {
+                  name
+                    name {
+                      last "Daubin" ,
+                      initials "V." } } ,
+                {
+                  name
+                    name {
+                      last "Demange" ,
+                      initials "N." } } ,
+                {
+                  name
+                    name {
+                      last "Francino" ,
+                      initials "M.P." } } ,
+                {
+                  name
+                    name {
+                      last "Goltsman" ,
+                      initials "E." } } ,
+                {
+                  name
+                    name {
+                      last "Huang" ,
+                      initials "Y." } } ,
+                {
+                  name
+                    name {
+                      last "Kopp" ,
+                      initials "O.R." } } ,
+                {
+                  name
+                    name {
+                      last "Labarre" ,
+                      initials "L." } } ,
+                {
+                  name
+                    name {
+                      last "Lapidus" ,
+                      initials "A." } } ,
+                {
+                  name
+                    name {
+                      last "Lavire" ,
+                      initials "C." } } ,
+                {
+                  name
+                    name {
+                      last "Marechal" ,
+                      initials "J." } } ,
+                {
+                  name
+                    name {
+                      last "Martinez" ,
+                      initials "M." } } ,
+                {
+                  name
+                    name {
+                      last "Mastronunzio" ,
+                      initials "J.E." } } ,
+                {
+                  name
+                    name {
+                      last "Mullin" ,
+                      initials "B.C." } } ,
+                {
+                  name
+                    name {
+                      last "Niemann" ,
+                      initials "J." } } ,
+                {
+                  name
+                    name {
+                      last "Pujic" ,
+                      initials "P." } } ,
+                {
+                  name
+                    name {
+                      last "Rawnsley" ,
+                      initials "T." } } ,
+                {
+                  name
+                    name {
+                      last "Rouy" ,
+                      initials "Z." } } ,
+                {
+                  name
+                    name {
+                      last "Schenowitz" ,
+                      initials "C." } } ,
+                {
+                  name
+                    name {
+                      last "Sellstedt" ,
+                      initials "A." } } ,
+                {
+                  name
+                    name {
+                      last "Tavares" ,
+                      initials "F." } } ,
+                {
+                  name
+                    name {
+                      last "Tomkins" ,
+                      initials "J.P." } } ,
+                {
+                  name
+                    name {
+                      last "Vallenet" ,
+                      initials "D." } } ,
+                {
+                  name
+                    name {
+                      last "Valverde" ,
+                      initials "C." } } ,
+                {
+                  name
+                    name {
+                      last "Wall" ,
+                      initials "L.G." } } ,
+                {
+                  name
+                    name {
+                      last "Wang" ,
+                      initials "Y." } } ,
+                {
+                  name
+                    name {
+                      last "Medigue" ,
+                      initials "C." } } ,
+                {
+                  name
+                    name {
+                      last "Benson" ,
+                      initials "D.R." } } } } ,
+          from
+            journal {
+              title {
+                iso-jta "Genome Res." ,
+                ml-jta "Genome Res" ,
+                issn "1088-9051" ,
+                name "Genome research" } ,
+              imp {
+                date
+                  std {
+                    year 2007 ,
+                    month 1 } ,
+                volume "17" ,
+                issue "1" ,
+                pages "7-15" ,
+                language "eng" ,
+                pubstatus ppublish ,
+                history {
+                  {
+                    pubstatus aheadofprint ,
+                    date
+                      std {
+                        year 2006 ,
+                        month 12 ,
+                        day 6 } } ,
+                  {
+                    pubstatus pubmed ,
+                    date
+                      std {
+                        year 2006 ,
+                        month 12 ,
+                        day 8 ,
+                        hour 9 ,
+                        minute 0 } } ,
+                  {
+                    pubstatus medline ,
+                    date
+                      std {
+                        year 2007 ,
+                        month 2 ,
+                        day 3 ,
+                        hour 9 ,
+                        minute 0 } } ,
+                  {
+                    pubstatus other ,
+                    date
+                      std {
+                        year 2006 ,
+                        month 12 ,
+                        day 8 ,
+                        hour 9 ,
+                        minute 0 } } } } } ,
+          ids {
+            pii "gr.5798407" ,
+            doi "10.1101/gr.5798407" ,
+            pubmed 17151343 ,
+            other {
+              db "pmc" ,
+              tag
+                str "PMC1716269" } } } } ,
+      comment "1. UMR CNRS 5557 Ecologie Microbienne, IFR41 Bio Environnement
+ et Sante Universite Lyon I, Villeurbanne 69622 cedex, France; 2. Department
+ of Molecular and Cell Biology, University of Connecticut, Storrs, CT 06279 3.
+ Department of Microbiology, University of New Hampshire, Durham, NH, 03824.
+ 4. Department of Plant Sciences, University of California, Davis, CA 95616 5.
+ INRA-URGV, 2 rue Gaston Cremieux BP5708 91057 Evry cedex, France 6.
+ Genoscope, Centre National de Sequenage, 2 rue Gaston Cremieux BP5706 91057
+ Evry cedex, France. 7. Genoscope, CNRS-UMR 8030, Atelier de Genomique
+ Comparative, 2 rue Gaston Cremieux BP5706 91006 Evry cedex, France 8.
+ Bioinformatics and Evolutionary Genomics Laboratory, UMR CNRS 5558,
+ Universite Lyon I, Villeurbanne 69622 cedex, France 9. DOE Joint Genome
+ Institute, 2800 Mitchell Drive, Walnut Creek, CA 94598 10. Departments of
+ Botany and Biochemistry, Cellular & Molecular Biology and The Genome Science
+ & Technology Program, The University of Tennessee, Knoxville, TN 37996 11.
+ UPSC, Dept of Plant Physiology, Ume University, S-90187 Ume, Sweden 12.
+ Instituto de Biologia Molecular e Celular, Microbiologia Celular e Aplicada,
+ Rua do Campo Alegre, 823, 4150-180 Porto, Portugal. 13. Clemson University
+ Genomics Institute, Room 304 Biosystems Research Complex, Clemson, SC 29634
+ 14. Departamento de Ciencia y Tecnologa, Universidad Nacional de Quilmes,
+ Saenz Pea 180 Bernal B1876BXD Argentina" } ,
+    pub {
+      pub {
+        sub {
+          authors {
+            names
+              std {
+                {
+                  name
+                    name {
+                      last "Genoscope" } } } ,
+            affil
+              str "Genoscope - Centre National de Sequencage : BP 191 91006
+ EVRY cedex - FRANCE (E-mail : seqref@genoscope.cns.fr - Web :
+ www.genoscope.cns.fr)" } ,
+          medium email ,
+          date
+            std {
+              year 2006 ,
+              month 8 ,
+              day 30 } } } } ,
+    pub {
+      pub {
+        sub {
+          authors {
+            names
+              std {
+                {
+                  name
+                    consortium "NCBI RefSeq Targeted Loci Project" } } ,
+            affil
+              std {
+                affil "National Center for Biotechnology Information, NIH" ,
+                city "Bethesda" ,
+                sub "MD" ,
+                country "USA" ,
+                postal-code "20894" } } ,
+          date
+            std {
+              year 2013 ,
+              month 1 ,
+              day 28 } } } } ,
+    user {
+      type
+        str "RefGeneTracking" ,
+      data {
+        {
+          label
+            str "IdenticalTo" ,
+          data
+            fields {
+              {
+                label
+                  id 0 ,
+                data
+                  fields {
+                    {
+                      label
+                        str "name" ,
+                      data
+                        str "CT573213:5633232-5634741" } } } } } ,
+        {
+          label
+            str "Status" ,
+          data
+            str "REVIEWED" } } } ,
+    user {
+      type
+        str "DBLink" ,
+      data {
+        {
+          label
+            str "BioProject" ,
+          num 1 ,
+          data
+            strs {
+              "PRJNA33175" } } } } ,
+    user {
+      type
+        str "GenomeProjectsDB" ,
+      data {
+        {
+          label
+            str "ProjectID" ,
+          data
+            int 33175 } } } ,
+    embl {
+      div pro ,
+      creation-date
+        std {
+          year 2006 ,
+          month 8 ,
+          day 3 } ,
+      update-date
+        std {
+          year 2010 ,
+          month 11 ,
+          day 17 } ,
+      xref {
+        {
+          dbname
+            name "GR" ,
+          id {
+            str "CT573213_GR" } } ,
+        {
+          dbname
+            name "RFAM" ,
+          id {
+            str "RF00001" ,
+            str "5S_rRNA" } } ,
+        {
+          dbname
+            name "RFAM" ,
+          id {
+            str "RF00005" ,
+            str "tRNA" } } ,
+        {
+          dbname
+            name "RFAM" ,
+          id {
+            str "RF00010" ,
+            str "RNaseP_bact_a" } } ,
+        {
+          dbname
+            name "RFAM" ,
+          id {
+            str "RF00023" ,
+            str "tmRNA" } } ,
+        {
+          dbname
+            name "RFAM" ,
+          id {
+            str "RF00050" ,
+            str "FMN" } } ,
+        {
+          dbname
+            name "RFAM" ,
+          id {
+            str "RF00059" ,
+            str "TPP" } } ,
+        {
+          dbname
+            name "RFAM" ,
+          id {
+            str "RF00162" ,
+            str "SAM" } } ,
+        {
+          dbname
+            name "RFAM" ,
+          id {
+            str "RF00169" ,
+            str "SRP_bact" } } ,
+        {
+          dbname
+            name "RFAM" ,
+          id {
+            str "RF00174" ,
+            str "Cobalamin" } } ,
+        {
+          dbname
+            name "RFAM" ,
+          id {
+            str "RF00177" ,
+            str "SSU_rRNA_5" } } ,
+        {
+          dbname
+            name "RFAM" ,
+          id {
+            str "RF00230" ,
+            str "T-box" } } ,
+        {
+          dbname
+            name "RFAM" ,
+          id {
+            str "RF00379" ,
+            str "ydaO-yuaA" } } ,
+        {
+          dbname
+            name "RFAM" ,
+          id {
+            str "RF00504" ,
+            str "Glycine" } } ,
+        {
+          dbname
+            name "RFAM" ,
+          id {
+            str "RF00515" ,
+            str "PyrR" } } ,
+        {
+          dbname
+            name "RFAM" ,
+          id {
+            str "RF00634" ,
+            str "SAM-IV" } } ,
+        {
+          dbname
+            name "RFAM" ,
+          id {
+            str "RF01066" ,
+            str "6C" } } ,
+        {
+          dbname
+            name "RFAM" ,
+          id {
+            str "RF01118" ,
+            str "PK-G12rRNA" } } ,
+        {
+          dbname
+            name "RFAM" ,
+          id {
+            str "RF01325" ,
+            str "CRISPR-DR12" } } ,
+        {
+          dbname
+            name "SILVA-LSU" ,
+          id {
+            str "CT573213" } } ,
+        {
+          dbname
+            name "SILVA-SSU" ,
+          id {
+            str "CT573213" } } } } ,
+    create-date
+      std {
+        year 2013 ,
+        month 1 ,
+        day 30 } ,
+    update-date
+      std {
+        year 2015 ,
+        month 2 ,
+        day 2 } } ,
+  inst {
+    repr raw ,
+    mol rna ,
+    length 1510 ,
+    strand ss ,
+    seq-data
+      ncbi2na 'F8E88BF8D7A74A1819E9A6E7C11390B6262A9F69D726981AB8B046EA4179562
+77A0C176A016A9C3968CE19C5A937AEBBA023F369DA8EA56697349FBEBAAE3A5C50A6186AC9697
+88A985A511EA1E211A54875C6A2924BAA0CF990EA6025E19261966EAA38697DABEC05DFD24A860
+990B86B179208245A5071B949259AC31B2AE426FB5A0F3EA6C089DB29A5ED9B69EE0056A9D055A
+9792D8C6A4A722D692A887A0F5EBB26B80E648CD28A045AE9829AB77A9681E19C289809BAA2604
+A3C8C57ACB5196C06FA99CAEEAA17D46975B9649C193C265597AA2C696429C01D0283E1AA95910
+9A6893BA7C3D8E4198205F14A9F84E4A80DDB2231AAD6C2AD7912BAE4E9EDB49DBB6E23BEAF0B5
+6418990576D73BE5262F3B6A874CA21E5AAD0768A0AEA8E1B42D34E55F1B5EA791139C43A5AC40
+A9E6316E2BA260D50025ADD2F68DAADE41D855B82DA2D9CB0D923490E79AE0C6F56A5FB111656D
+1B4602DAC115825AE97057EEAA896D82BA85A63EA182DB042B25B1682B9A7A345D7F0'H } ,
+  annot {
+    {
+      data
+        ftable {
+          {
+            data
+              rna {
+                type rRNA ,
+                ext
+                  name "16S ribosomal RNA" } ,
+            comment "Evidence 2b : Function of strongly homologous gene;
+ Product type n : RNA" ,
+            location
+              int {
+                from 0 ,
+                to 1509 ,
+                strand plus ,
+                id
+                  gi 444304090 } ,
+            qual {
+              {
+                qual "inference" ,
+                val "similar to sequence" } } },
+          {
+            data
+              rna {
+                type rRNA ,
+                ext
+                  name "18S ribosomal RNA" } ,
+            comment "Evidence 2b : Function of strongly homologous gene;
+ Product type n : RNA" ,
+            location
+              int {
+                from 20 ,
+                to 1509 ,
+                strand plus ,
+                id
+                  gi 444304090 } ,
+            qual {
+              {
+                qual "inference" ,
+                val "similar to sequence" } } },
+          {
+            data
+              rna {
+                type rRNA ,
+                ext
+                  name "23S ribosomal RNA" } ,
+            comment "Evidence 2b : Function of strongly homologous gene;
+ Product type n : RNA" ,
+            location
+              int {
+                from 3 ,
+                to 1509 ,
+                strand minus ,
+                id
+                  gi 444304090 } ,
+            qual {
+              {
+                qual "inference" ,
+                val "similar to sequence" } } } } } } }
+

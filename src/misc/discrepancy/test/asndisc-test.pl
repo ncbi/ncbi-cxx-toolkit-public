@@ -141,7 +141,7 @@ sub read_output
         next;
       }
       if ($line=~/$data:\s*(.*)/)
-      { $msg = $1;
+      { $msg = normalize_detail($1);
         $obj{details}{$current}{$msg}++;
         next;
       }
@@ -150,6 +150,7 @@ sub read_output
   return %obj;
 }
 
+# Fix descriptions and headings
 sub normalize
 { my $str = shift;
 
@@ -169,6 +170,16 @@ sub normalize_word
   return '[has]'  if $word eq 'has' || $word eq 'have';
   return $1 if $word=~/(.+)s$/;
   return $word;
+}
+
+# Fix data lines, like coordinates of features.
+sub normalize_detail
+{ my $str = shift;
+
+  $str=~s/:plus(\d+-\d+)$/:$1/;
+  $str=~s/:minus(\d+-\d+)$/:c$1/;
+
+  return $str;
 }
 
 sub compare_output
