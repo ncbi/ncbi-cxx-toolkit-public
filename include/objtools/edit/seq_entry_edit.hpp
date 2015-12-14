@@ -304,6 +304,7 @@ void RetranslateCdregion(CBioseq_Handle nuc_bsh,
 NCBI_XOBJEDIT_EXPORT CRef<CSeqdesc> FindUnverified(const CBioseq& seq);
 NCBI_XOBJEDIT_EXPORT bool IsUnverifiedOrganism(const CBioseq& seq);
 NCBI_XOBJEDIT_EXPORT bool IsUnverifiedFeature(const CBioseq& seq);
+NCBI_XOBJEDIT_EXPORT bool IsUnverifiedMisassembled(const CBioseq& seq);
 
 END_SCOPE(edit)
 END_SCOPE(objects)

@@ -3026,6 +3026,19 @@ bool IsUnverifiedFeature(const CBioseq& seq)
     return false;
 }
 
+bool IsUnverifiedMisassembled(const CBioseq& seq)
+{
+    if (!seq.IsSetDescr()) {
+        return false;
+    }
+    ITERATE(CBioseq::TDescr::Tdata, it, seq.GetDescr().Get()) {
+        if ((*it)->IsUser() && (*it)->GetUser().IsUnverifiedMisassembled()) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void SortSeqDescr(CSeq_descr& descr)
 {
     descr.Set().sort(CompareSeqdesc());

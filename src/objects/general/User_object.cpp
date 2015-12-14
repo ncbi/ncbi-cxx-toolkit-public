@@ -752,6 +752,26 @@ void CUser_object::RemoveUnverifiedFeature()
 }
 
 
+static const string kUnverifiedMisassembled = "Misassembled";
+
+bool CUser_object::IsUnverifiedMisassembled() const
+{
+    return x_IsUnverifiedType(kUnverifiedMisassembled);
+}
+
+
+void CUser_object::AddUnverifiedMisassembled()
+{
+    x_AddUnverifiedType(kUnverifiedMisassembled);
+}
+
+
+void CUser_object::RemoveUnverifiedMisassembled()
+{
+    x_RemoveUnverifiedType(kUnverifiedMisassembled);
+}
+
+
 void CUser_object::UpdateNcbiCleanup(int version)
 {
     SetObjectType(eObjectType_Cleanup);

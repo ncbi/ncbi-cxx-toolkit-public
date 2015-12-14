@@ -167,13 +167,16 @@ public:
     EObjectType GetObjectType() const;
     void SetObjectType(EObjectType obj_type);
 
-    // for Unverified User-objects: Can have Organism and/or Feature
+    // for Unverified User-objects: Can have Organism and/or Feature and/or Misassembled
     bool IsUnverifiedOrganism() const;
     void AddUnverifiedOrganism();
     void RemoveUnverifiedOrganism();
     bool IsUnverifiedFeature() const;
     void AddUnverifiedFeature();
     void RemoveUnverifiedFeature();
+    bool IsUnverifiedMisassembled() const;
+    void AddUnverifiedMisassembled();
+    void RemoveUnverifiedMisassembled();
 
     void UpdateNcbiCleanup(int version);
 

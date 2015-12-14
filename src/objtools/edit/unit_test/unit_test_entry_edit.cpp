@@ -1385,27 +1385,38 @@ BOOST_AUTO_TEST_CASE(Test_Unverified)
     new_unv->SetUser().AddUnverifiedOrganism();
     BOOST_CHECK_EQUAL(edit::IsUnverifiedOrganism(entry->GetSeq()), true);
     BOOST_CHECK_EQUAL(edit::IsUnverifiedFeature(entry->GetSeq()), false);
+    BOOST_CHECK_EQUAL(edit::IsUnverifiedMisassembled(entry->GetSeq()), false);
     CRef<CSeqdesc> unv = edit::FindUnverified(entry->GetSeq());
     BOOST_CHECK_EQUAL(unv.GetPointer(), new_unv.GetPointer());
 
     new_unv->SetUser().AddUnverifiedFeature();
     BOOST_CHECK_EQUAL(edit::IsUnverifiedOrganism(entry->GetSeq()), true);
     BOOST_CHECK_EQUAL(edit::IsUnverifiedFeature(entry->GetSeq()), true);
+    BOOST_CHECK_EQUAL(edit::IsUnverifiedMisassembled(entry->GetSeq()), false);
     unv = edit::FindUnverified(entry->GetSeq());
     BOOST_CHECK_EQUAL(unv.GetPointer(), new_unv.GetPointer());
 
     new_unv->SetUser().RemoveUnverifiedOrganism();
     BOOST_CHECK_EQUAL(edit::IsUnverifiedOrganism(entry->GetSeq()), false);
     BOOST_CHECK_EQUAL(edit::IsUnverifiedFeature(entry->GetSeq()), true);
+    BOOST_CHECK_EQUAL(edit::IsUnverifiedMisassembled(entry->GetSeq()), false);
     unv = edit::FindUnverified(entry->GetSeq());
     BOOST_CHECK_EQUAL(unv.GetPointer(), new_unv.GetPointer());
 
     new_unv->SetUser().RemoveUnverifiedFeature();
     BOOST_CHECK_EQUAL(edit::IsUnverifiedOrganism(entry->GetSeq()), false);
     BOOST_CHECK_EQUAL(edit::IsUnverifiedFeature(entry->GetSeq()), false);
+    BOOST_CHECK_EQUAL(edit::IsUnverifiedMisassembled(entry->GetSeq()), false);
     unv = edit::FindUnverified(entry->GetSeq());
     BOOST_CHECK_EQUAL(unv.GetPointer(), new_unv.GetPointer());
     
+    new_unv->SetUser().AddUnverifiedMisassembled();
+    BOOST_CHECK_EQUAL(edit::IsUnverifiedOrganism(entry->GetSeq()), false);
+    BOOST_CHECK_EQUAL(edit::IsUnverifiedFeature(entry->GetSeq()), false);
+    BOOST_CHECK_EQUAL(edit::IsUnverifiedMisassembled(entry->GetSeq()), true);
+    unv = edit::FindUnverified(entry->GetSeq());
+    BOOST_CHECK_EQUAL(unv.GetPointer(), new_unv.GetPointer());
+
 
 }
 
