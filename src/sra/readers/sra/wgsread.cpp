@@ -2916,7 +2916,10 @@ CRef<CSeq_data> CWGSSeqIterator::Get2na(TSeqPos pos, TSeqPos len) const
         PROFILE(sw____GetRaw2na);
         CRef<CSeq_data> ret(new CSeq_data);
         vector<char>& data = ret->SetNcbi2na().Set();
-        data.resize((len+3)/4);
+        size_t bytes = (len+3)/4;
+        // allocate 8-byte aligned memory to allow multi-byte operations at end
+        data.reserve((bytes+7)/8*8);
+        data.resize(bytes);
         m_Cur->m_Cursor.ReadElements(m_CurrId, m_Cur->m_READ_2na, 2, pos, len,
                                      data.data());
         return ret;
