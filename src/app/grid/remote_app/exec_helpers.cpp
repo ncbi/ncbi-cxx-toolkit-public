@@ -266,26 +266,39 @@ public:
         : m_App(app), m_Args(args)
     {}
 
-    string Get(const string& v) const
-    {
-        istringstream in;
-        ostringstream out;
-        ostringstream err;
-        int exit_code;
-
-        if (CPipe::ExecWait(m_App, m_Args, in, out, err, exit_code) == CPipe::eDone) {
-            // Restrict version string to 1024 chars
-            string app_ver(out.str(), 0, 1024);
-            return NStr::Sanitize(app_ver) + " / " + v;
-        }
-
-        return v;
-    }
+    string Get(const string& v) const;
 
 private:
     const string m_App;
     const vector<string> m_Args;
 };
+
+string CRemoteAppVersion::Get(const string& v) const
+{
+    struct WaitOneSecond : CPipe::IProcessWatcher
+    {
+        const CDeadline deadline;
+        WaitOneSecond() : deadline(1) {}
+        EAction Watch(TProcessHandle)
+        {
+            return deadline.IsExpired() ? eStop : eContinue;
+        }
+    } wait_one_second;
+
+    istringstream in;
+    ostringstream out;
+    ostringstream err;
+    int exit_code;
+
+    if (CPipe::ExecWait(m_App, m_Args, in, out, err, exit_code,
+                kEmptyStr, 0, &wait_one_second) == CPipe::eDone) {
+        // Restrict version string to 1024 chars
+        string app_ver(out.str(), 0, 1024);
+        return NStr::Sanitize(app_ver) + " / " + v;
+    }
+
+    return v;
+}
 
 //////////////////////////////////////////////////////////////////////////////
 ///
