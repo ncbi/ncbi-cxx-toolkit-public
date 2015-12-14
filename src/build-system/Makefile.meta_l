@@ -206,7 +206,12 @@ endif
 
 # 1: proj_name
 define add_one_check
-+@$(check_add) $(abs_srcdir) $(1) $(signature) $(subdir)  ||  exit 5
+@i=$(1) ; \
+if NCBICXX_TESTING_REQS=1 $(MAKE_APP) -q requirements >/dev/null 2>&1; then \
+    $(check_add) $(abs_srcdir) $(1) $(signature) $(subdir)  ||  exit 5 ; \
+else \
+    echo SKIP -- $(rel_srcdir)/$(1) ; \
+fi
 
 endef
 define add_each_check
