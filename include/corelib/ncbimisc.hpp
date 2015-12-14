@@ -943,6 +943,8 @@ const TSeqPos kInvalidSeqPos = ((TSeqPos) (-1));
 /// Use this typedef rather than its expansion, which may change.
 typedef int TSignedSeqPos;
 
+/// Type for Taxon1-name.taxid
+typedef int TTaxId;
 
 /// Type for sequence GI.
 ///
