@@ -45,8 +45,8 @@ public:
     bool Exists();
     void Remove();
     const CNetStorageObjectLoc& Locator();
-    string FtPathLock();
-    void FtPathUnlock();
+    string FileTrack_Path_Lock();
+    void FileTrack_Path_Unlock();
 
 private:
     CDirectNetStorageObject(SNetStorageObjectImpl* impl);

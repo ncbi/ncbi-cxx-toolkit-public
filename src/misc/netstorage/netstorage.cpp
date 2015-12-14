@@ -77,14 +77,14 @@ const CNetStorageObjectLoc& CDirectNetStorageObject::Locator()
 }
 
 
-string CDirectNetStorageObject::FtPathLock()
+string CDirectNetStorageObject::FileTrack_Path_Lock()
 {
     // TODO: Implement locking
     return kEmptyStr;
 }
 
 
-void CDirectNetStorageObject::FtPathUnlock()
+void CDirectNetStorageObject::FileTrack_Path_Unlock()
 {
     // TODO: Implement unlocking
 }
