@@ -112,7 +112,7 @@ DISCREPANCY_CASE(TRANSL_NO_NOTE, CSeq_feat, eAll, "Transl_except without Note")
     CFeatureInspectResults result = InspectSeqFeat(obj);
     if (result.m_hasException && !result.m_hasNote)
     {
-        m_Objs["[n] features have a translation exception but no note"].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef(), true));
+        m_Objs["[n] feature[s] [has] a translation exception but no note"].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef(), true));
     }
 }
 DISCREPANCY_SUMMARIZE(TRANSL_NO_NOTE)
@@ -127,7 +127,7 @@ DISCREPANCY_CASE(NOTE_NO_TRANSL, CSeq_feat, eAll, "Note without Transl_except")
     CFeatureInspectResults result = InspectSeqFeat(obj);
     if (result.m_hasNote && !result.m_hasException)
     {
-        m_Objs["[n] features have a note but not translation exception"].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef(), true));
+        m_Objs["[n] feature[s] [has] a note but not translation exception"].Add(*new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef(), true));
     }
 }
 DISCREPANCY_SUMMARIZE(NOTE_NO_TRANSL)
