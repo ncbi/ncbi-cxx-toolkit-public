@@ -521,11 +521,11 @@ bool CSrcWriter::xTryDefaultId(
         displayName = "accession";
     }
 
-    if (!id.empty()) {
-        const string defaultValue = "";
-        xPrepareTableColumn(colName, displayName, defaultValue);
-        xAppendColumnValue(colName, id);
-    }
+    const string defaultValue = "";
+    xPrepareTableColumn(colName, displayName, defaultValue);
+    xAppendColumnValue(colName, id);
+
+    mSrcTable->SetNum_rows(mSrcTable->GetNum_rows()+1);
     return true;
 }
 
@@ -544,40 +544,24 @@ bool CSrcWriter::xGather(
     bool wantLocalId = ( find(desiredFields.begin(), desiredFields.end(), "localid") != desiredFields.end() );
     bool wantDef = ( find(desiredFields.begin(), desiredFields.end(), "definition") != desiredFields.end() );
 
-    if (bsh) {
-        if (!xGatherId(bsh)) {
-            return false;
-        }
 
-        if (wantGi && !xGatherGi(bsh)) {
-            return false; 
-        }
-
-        if (wantLocalId && !xGatherLocalId(bsh)) {
-            return false;
-        }
-    } else if (xTryDefaultId(default_id)) {
-        mSrcTable->SetNum_rows(mSrcTable->GetNum_rows()+1);
-        return true;
-    } else {
-        return false;
+    if (!bsh) {
+        return xTryDefaultId(default_id);
     }
 
-    if (wantDef) {
-        if (!xGatherDefline(bsh)) {
-            return false;
-        }
-    }
-
-    CSeqdesc_CI sdit(bsh, CSeqdesc::e_Source);
-    if (!sdit) {
-        mSrcTable->SetNum_rows(mSrcTable->GetNum_rows()+1);
+    if (!xGatherId(bsh) || 
+        (wantGi && !xGatherGi(bsh)) ||
+        (wantLocalId && !xGatherLocalId(bsh)) ||
+        (wantDef && !xGatherDefline(bsh))) {
+        return false; // Not sure if this is the correct logic. 
+                      // If any of the accession, GI, Local ID or definition are invalid/not found, 
+                      // the row is not counted.
     }
 
 
 
-    //for (CSeqdesc_CI sdit(bsh, CSeqdesc::e_Source); sdit; ++sdit) {
-    for (; sdit; ++sdit) {
+    int num_sources = 0;
+    for (CSeqdesc_CI sdit(bsh, CSeqdesc::e_Source); sdit; ++sdit) {
         const CBioSource& src = sdit->GetSource();
         for (FIELDS::const_iterator cit = desiredFields.begin();
                 cit != desiredFields.end(); ++cit) {
@@ -588,8 +572,16 @@ bool CSrcWriter::xGather(
                 return false;
             }
         }
+        ++num_sources;
+        mSrcTable->SetNum_rows(mSrcTable->GetNum_rows()+1); // Each source has its own row
+    }
+
+
+    if (num_sources == 0) { 
         mSrcTable->SetNum_rows(mSrcTable->GetNum_rows()+1);
     }
+
+
     return true;
 }
 
