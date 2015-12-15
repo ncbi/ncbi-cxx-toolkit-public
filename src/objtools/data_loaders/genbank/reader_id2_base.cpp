@@ -2565,7 +2565,8 @@ void CId2ReaderBase::x_ProcessGetBlobId(
     }
     TContentsMask mask = 0;
     {{ // TODO: temporary logic, this info should be returned by server
-        if ( !CProcessor_ExtAnnot::IsExtAnnot(blob_id) ) {
+        if ( blob_id.GetSubSat() == CID2_Blob_Id::eSub_sat_main ||
+             blob_id.GetSat() == CProcessor_ExtAnnot::eSat_VDB_WGS ) {
             mask |= fBlobHasAllLocal;
         }
         else {
