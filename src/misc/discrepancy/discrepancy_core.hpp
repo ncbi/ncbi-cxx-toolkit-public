@@ -249,6 +249,7 @@ public:
             m_Count_Seq_feat(0),
 #define INIT_DISCREPANCY_TYPE(type) m_Enable_##type(false)
             INIT_DISCREPANCY_TYPE(CSeq_inst),
+            INIT_DISCREPANCY_TYPE(CSeq_feat),
             INIT_DISCREPANCY_TYPE(CSeqFeatData),
             INIT_DISCREPANCY_TYPE(CSeq_feat_BY_BIOSEQ),
             INIT_DISCREPANCY_TYPE(CBioSource),
@@ -306,6 +307,7 @@ protected:
 
 #define ADD_DISCREPANCY_TYPE(type) bool m_Enable_##type; vector<CDiscrepancyVisitor<type>* > m_All_##type;
     ADD_DISCREPANCY_TYPE(CSeq_inst)
+    ADD_DISCREPANCY_TYPE(CSeq_feat)
     ADD_DISCREPANCY_TYPE(CSeqFeatData)
     ADD_DISCREPANCY_TYPE(CSeq_feat_BY_BIOSEQ)
     ADD_DISCREPANCY_TYPE(CBioSource)
