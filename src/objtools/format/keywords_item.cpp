@@ -233,6 +233,10 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
             is_tsa = true; // remember so we don't add it twice
             break;
 
+        case CMolInfo::eTech_targeted:
+            x_AddKeyword("Targeted");
+            break;
+
         case CMolInfo::eTech_unknown:
         case CMolInfo::eTech_standard:
         case CMolInfo::eTech_other:
