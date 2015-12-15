@@ -68,7 +68,7 @@ my $pass = 0;
 my $fail = 0;
 
 foreach my $test (sort keys %tests)
-{ my $cmd = "$script $test -c $exe_c -cpp $exe_cpp";
+{ my $cmd = "perl $script $test -c $exe_c -cpp $exe_cpp";
   $cmd = "$cmd -keep" if $keep_output;
   $cmd = "$cmd -quiet" if $quiet;
   print "##teamcity[testStarted name='$test' captureStandardOutput='true']\n";
