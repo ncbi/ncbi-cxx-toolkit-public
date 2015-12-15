@@ -582,6 +582,8 @@ void CBioseqContext::x_SetDataFromUserObjects(void)
                             m_fUnverified |= fUnverified_Organism;
                         } else if( NStr::EqualNocase( field.GetData().GetStr(), "Features") ) {
                             m_fUnverified |= fUnverified_SequenceOrAnnotation;
+                        } else if( NStr::EqualNocase( field.GetData().GetStr(), "Misassembled") ) {
+                            m_fUnverified |= fUnverified_Misassembled;
                         }
                     }
                 }

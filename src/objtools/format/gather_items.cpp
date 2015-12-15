@@ -936,7 +936,8 @@ void CFlatGatherer::x_UnverifiedComment(CBioseqContext& ctx) const
     typedef SStaticPair<CBioseqContext::TUnverified, const char*> TUnverifiedElem;
     static const TUnverifiedElem sc_unverified_map[] = {
         { CBioseqContext::fUnverified_Organism,              "source organism" },
-        { CBioseqContext::fUnverified_SequenceOrAnnotation,  "sequence and/or annotation" }
+        { CBioseqContext::fUnverified_SequenceOrAnnotation,  "sequence and/or annotation" },
+        { CBioseqContext::fUnverified_Misassembled,          "correct assembly" }
     };
     typedef CStaticArrayMap<CBioseqContext::TUnverified, const char*> TUnverifiedMap;
     DEFINE_STATIC_ARRAY_MAP(TUnverifiedMap, sc_UnverifiedMap, sc_unverified_map);
