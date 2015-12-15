@@ -995,7 +995,14 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
                 day = val2;
                 year = val1 + 2000;
             } else {
-                return "";
+                int month_num = GetMonthNumberFromString(month); 
+                if (IsDayValueOkForMonth(val1, month_num, val2 + 2000)) {
+                    day = val1;
+                    year = val2 + 2000;
+                } else {
+                    day = val2;
+                    year = val1 + 2000;
+                }                
             }
         } else {
             return "";

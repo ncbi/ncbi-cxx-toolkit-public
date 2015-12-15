@@ -1068,6 +1068,13 @@ BOOST_AUTO_TEST_CASE(Test_GB_3965)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_GB_5458)
+{
+    bool ambig = false;
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("15-Jul-13", false, ambig), "15-Jul-2013");
+    BOOST_CHECK_EQUAL(ambig, false);
+}
+
 BOOST_AUTO_TEST_CASE(Test_SQD_2319)
 {
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("2012-01-52"), "");
