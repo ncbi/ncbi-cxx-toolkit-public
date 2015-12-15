@@ -176,8 +176,8 @@ sub normalize_word
 sub normalize_detail
 { my $str = shift;
 
-  $str=~s/:plus(\d+-\d+)$/:$1/;
-  $str=~s/:minus(\d+-\d+)$/:c$1/;
+  $str=~s/:plus([<]?\d+-[>]?\d+)/:$1/;
+  $str=~s/:minus([<]?\d+-[>]?\d+)/:c$1/;
 
   return $str;
 }
