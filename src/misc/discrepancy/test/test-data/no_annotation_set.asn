@@ -1,0 +1,77 @@
+Seq-entry ::= set {
+  class pop-set ,
+  seq-set {
+    seq {
+      id {
+        local
+          str "HRV-C43-Mon12-TU2010" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "Rhinovirus C" ,
+            orgname {
+              mod {
+                {
+                  subtype strain ,
+                  subname "VP4-VP2" } ,
+                {
+                  subtype nat-host ,
+                  subname "Homosapiens" } } } } ,
+          subtype {
+            {
+              subtype country ,
+              name "Tunisia" } ,
+            {
+              subtype collection-date ,
+              name "2010" } ,
+            {
+              subtype other ,
+              name "[virus wizard]" } } } ,
+        molinfo {
+          biomol genomic } } ,
+      inst {
+        repr raw ,
+        mol rna ,
+        length 389 ,
+        seq-data
+          ncbi2na '3A9952B770102EFA244E0144BD3928D6A92CBC0CFF04F073C408E790BD2
+B7440108FDDD0854D00F45417BA58DEF060D79FE3B7534BE09FBAF1D6329F09034736B2F514D10
+54239ED04436C931A22E972717768FE8E7134BE30941115E2174D236BC0'H } } ,
+    seq {
+      id {
+        local
+          str "HRV-C5-Mon15-TU2010" } ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "Rhinovirus C" ,
+            orgname {
+              mod {
+                {
+                  subtype strain ,
+                  subname "VP4-VP2" } ,
+                {
+                  subtype nat-host ,
+                  subname "Homosapiens" } } } } ,
+          subtype {
+            {
+              subtype country ,
+              name "Tunisia" } ,
+            {
+              subtype collection-date ,
+              name "2010" } ,
+            {
+              subtype other ,
+              name "[virus wizard]" } } } ,
+        molinfo {
+          biomol genomic } } ,
+      inst {
+        repr raw ,
+        mol rna ,
+        length 389 ,
+        seq-data
+          ncbi2na '3AB952B4B0120EFA744602E8334934D2BD2D300CFF04F0F1C408769C92E
+BF0901087DD4E854880FC7097FA78EF3870D493C38B50B3229FBA3DD6329D01034736B27510C10
+44A11FC044B6E9F3AE0E948317808478E62E7B210171D35201371216FC0'H } } } }

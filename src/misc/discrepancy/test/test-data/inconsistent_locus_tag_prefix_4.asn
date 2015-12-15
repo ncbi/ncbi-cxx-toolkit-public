@@ -1,0 +1,648 @@
+Seq-entry ::= set {
+  class pop-set ,
+  seq-set {
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "Fig leaf mottle associated virus 1" ,
+            orgname {
+              mod {
+                {
+                  subtype nat-host ,
+                  subname "Ficus carica" } } } } ,
+          subtype {
+            {
+              subtype country ,
+              name "Montenegro: Bar: Podgorica" } } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "Seq1" } ,
+          descr {
+            title "FLMaV1-MF31" ,
+            molinfo {
+              biomol genomic } } ,
+          inst {
+            repr raw ,
+            mol rna ,
+            length 351 ,
+            seq-data
+              ncbi2na 'BA78E40BF3F60659EAD71F5B8FC09BCECA27074686F89D3177601F4
+1747306E82D9C0BAB4681648C6BDAF359F3076EAB182DFD85D5FD70CDBCCFBF1BF2F8269608A7F
+D2EC0ED39DD32EDEC5A7AF1279DC023CF4E824E6F04'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "hsp70" ,
+                        locus-tag "AB1_0020" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 350 ,
+                        strand plus ,
+                        id
+                          local
+                            str "Seq1" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "Seq1_prot_1" } ,
+          descr {
+            title "CAJ34535.3, partial [Fig leaf mottle associated virus 1]" ,
+            molinfo {
+              biomol peptide ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 117 ,
+            seq-data
+              ncbieaa "VADAKFISNAAGSYFRDLKRYVGANSRTLSSYLSKLQPHYNVEVAKVGHGTADTV
+RLSAYNSWGTKSFDLPFLISLYCLRLVEAAEEAFQCKCHALIVSVPAGYSCSKRLFMEACVN" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "CAJ34535.3" } ,
+                        desc "heat shock protein 70-like" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 116 ,
+                        id
+                          local
+                            str "Seq1_prot_1" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 1 } } ,
+                partial TRUE ,
+                product
+                  whole
+                    local
+                      str "Seq1_prot_1" ,
+                location
+                  int {
+                    from 0 ,
+                    to 350 ,
+                    strand plus ,
+                    id
+                      local
+                        str "Seq1" ,
+                    fuzz-from
+                      lim lt ,
+                    fuzz-to
+                      lim gt } ,
+                dbxref {
+                  {
+                    db "GI" ,
+                    tag
+                      id 78321982 } ,
+                  {
+                    db "GOA" ,
+                    tag
+                      str "q333S8" } } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "Fig leaf mottle associated virus 1" ,
+            orgname {
+              mod {
+                {
+                  subtype nat-host ,
+                  subname "Ficus carica" } } } } ,
+          subtype {
+            {
+              subtype country ,
+              name "Montenegro: Bar: Podgorica" } } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "Seq2" } ,
+          descr {
+            title "FLMaV1-MF19" ,
+            molinfo {
+              biomol genomic } } ,
+          inst {
+            repr raw ,
+            mol rna ,
+            length 351 ,
+            seq-data
+              ncbi2na 'BA78E40BF3F60659EAD71F5B8FE09BC6CA25074687F8313177609F4
+1747306C82D9C0B294681748C6BDAF379F3076EAB182DFD85D5FD7CCDBEC7B71BF2F8249E08A7F
+D2EC0ED19DD32CDEE527ACB29CDC023CF4E824D9F04'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "hsp70" ,
+                        locus-tag "AB1_0021" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 350 ,
+                        strand plus ,
+                        id
+                          local
+                            str "Seq2" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "Seq2_prot_2" } ,
+          descr {
+            title "CAJ34535.3, partial [Fig leaf mottle associated virus 1]" ,
+            molinfo {
+              biomol peptide ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 117 ,
+            seq-data
+              ncbieaa "VADAKFISNAAGSYFRDLKRYVGANSRTLNTYLSKLQPHYNVEVAKVGHGTSDTV
+RLSAYNSWGTKSFDLPFLISLYCLRLVEAAEEAFQCKCHALIVSVPAGSRLSKRLFMEASLN" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "CAJ34535.3" } ,
+                        desc "heat shock protein 70-like" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 116 ,
+                        id
+                          local
+                            str "Seq2_prot_2" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 1 } } ,
+                partial TRUE ,
+                product
+                  whole
+                    local
+                      str "Seq2_prot_2" ,
+                location
+                  int {
+                    from 0 ,
+                    to 350 ,
+                    strand plus ,
+                    id
+                      local
+                        str "Seq2" ,
+                    fuzz-from
+                      lim lt ,
+                    fuzz-to
+                      lim gt } ,
+                dbxref {
+                  {
+                    db "GI" ,
+                    tag
+                      id 78321982 } ,
+                  {
+                    db "GOA" ,
+                    tag
+                      str "q333S8" } } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "Fig leaf mottle associated virus 1" ,
+            orgname {
+              mod {
+                {
+                  subtype nat-host ,
+                  subname "Ficus carica" } } } } ,
+          subtype {
+            {
+              subtype country ,
+              name "Montenegro: Bar: Podgorica" } } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "Seq3" } ,
+          descr {
+            title "FLMaV1-MF26" ,
+            molinfo {
+              biomol genomic } } ,
+          inst {
+            repr raw ,
+            mol rna ,
+            length 351 ,
+            seq-data
+              ncbi2na 'BA78E40BF3F60659EAD71F5B8FC09BCECA25074686F89D3177601F4
+1747306C82D9C0BAB4681648C6BDAF379F3076EAB182DFD85D5FD70CD3CCFBF1BF2F8269608A7F
+D2EC2ED19DF32ED6C527AF327BDC021CF4E824E6F04'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "hsp70" ,
+                        locus-tag "AB1_0022" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 350 ,
+                        strand plus ,
+                        id
+                          local
+                            str "Seq3" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "Seq3_prot_3" } ,
+          descr {
+            title "CAJ34535.3, partial [Fig leaf mottle associated virus 1]" ,
+            molinfo {
+              biomol peptide ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 117 ,
+            seq-data
+              ncbieaa "VADAKFISNAAGSYFRDLKRYVGANSRTLSSYLSKLQPHYNVEVAKVGHGTADTV
+RLSAYNSWGTKSFDLPFLISLYCLRLVEAAEEAFQCKCHALIVSVPAGYSCSKRLFMEACVN" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "CAJ34535.3" } ,
+                        desc "heat shock protein 70-like" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 116 ,
+                        id
+                          local
+                            str "Seq3_prot_3" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 1 } } ,
+                partial TRUE ,
+                product
+                  whole
+                    local
+                      str "Seq3_prot_3" ,
+                location
+                  int {
+                    from 0 ,
+                    to 350 ,
+                    strand plus ,
+                    id
+                      local
+                        str "Seq3" ,
+                    fuzz-from
+                      lim lt ,
+                    fuzz-to
+                      lim gt } ,
+                dbxref {
+                  {
+                    db "GI" ,
+                    tag
+                      id 78321982 } ,
+                  {
+                    db "GOA" ,
+                    tag
+                      str "q333S8" } } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "Fig leaf mottle associated virus 1" ,
+            orgname {
+              mod {
+                {
+                  subtype nat-host ,
+                  subname "Ficus carica" } } } } ,
+          subtype {
+            {
+              subtype country ,
+              name "Montenegro: Bar: Podgorica" } } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "Seq4" } ,
+          descr {
+            title "FLMaV1-MF28" ,
+            molinfo {
+              biomol genomic } } ,
+          inst {
+            repr raw ,
+            mol rna ,
+            length 351 ,
+            seq-data
+              ncbi2na 'BA78E40BF3F60459E8D71F5B8FC09BCECA25074684F89D3177601F4
+1747306E82D9C0B294681668C6BDAFB59F3076EAB182DFD85D5FD7CCD3ECFBF1B72F8269E08A7F
+D2EC0ED19DD32EDEC5A7AF127BDC023CF4E827A6F04'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "hsp70" ,
+                        locus-tag "AB1_0023" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 350 ,
+                        strand plus ,
+                        id
+                          local
+                            str "Seq4" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "Seq4_prot_4" } ,
+          descr {
+            title "CAJ34535.3, partial [Fig leaf mottle associated virus 1]" ,
+            molinfo {
+              biomol peptide ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 117 ,
+            seq-data
+              ncbieaa "VADAKFISNTAGSYFRDLKRYVGANSRTLSSYLSKLQPHYNVEVAKVGHGTADTV
+RLSAYNSWGTKSFDLPFLISLYCLRLVEAAEEAFQCKCHALIVSVPAGYSCSKRLFMEAGVN" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "CAJ34535.3" } ,
+                        desc "heat shock protein 70-like" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 116 ,
+                        id
+                          local
+                            str "Seq4_prot_4" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 1 } } ,
+                partial TRUE ,
+                product
+                  whole
+                    local
+                      str "Seq4_prot_4" ,
+                location
+                  int {
+                    from 0 ,
+                    to 350 ,
+                    strand plus ,
+                    id
+                      local
+                        str "Seq4" ,
+                    fuzz-from
+                      lim lt ,
+                    fuzz-to
+                      lim gt } ,
+                dbxref {
+                  {
+                    db "GI" ,
+                    tag
+                      id 78321982 } ,
+                  {
+                    db "GOA" ,
+                    tag
+                      str "q333S8" } } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "Fig leaf mottle associated virus 1" ,
+            orgname {
+              mod {
+                {
+                  subtype nat-host ,
+                  subname "Ficus carica" } } } } ,
+          subtype {
+            {
+              subtype country ,
+              name "Montenegro: Bar: Podgorica" } } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "Seq5" } ,
+          descr {
+            title "FLMaV1-MF30" ,
+            molinfo {
+              biomol genomic } } ,
+          inst {
+            repr raw ,
+            mol rna ,
+            length 351 ,
+            seq-data
+              ncbi2na 'BA78E40BF3F60C592AD71F5B8FC09BCECA27076687F8BD3177601F4
+174730EC88D9C0B2B468166846BDAF379F3076EAB182DFD8DD5FD74CDBECFBF1B72F8A69E08A5F
+D2EC0ED1DDD32DDEF5A7ACB27BD4023CF4E824E6F04'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "hsp70" ,
+                        locus-tag "AB1_0024" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 350 ,
+                        strand plus ,
+                        id
+                          local
+                            str "Seq5" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "Seq5_prot_5" } ,
+          descr {
+            title "CAJ34535.3, partial [Fig leaf mottle associated virus 1]" ,
+            molinfo {
+              biomol peptide ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 117 ,
+            seq-data
+              ncbieaa "VADAKFISNTAGSYFRDLKRYVGANSRTLSSYLSKLQPHYNVEIAKVGHGTADTV
+RLSAYNSWGTKSFDLPFLISLYCLRLVEAAEEAFQCKCHSLIVSVPAGSSCSKRLFMEACVN" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "CAJ34535.3" } ,
+                        desc "heat shock protein 70-like" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 116 ,
+                        id
+                          local
+                            str "Seq5_prot_5" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 1 } } ,
+                partial TRUE ,
+                product
+                  whole
+                    local
+                      str "Seq5_prot_5" ,
+                location
+                  int {
+                    from 0 ,
+                    to 350 ,
+                    strand plus ,
+                    id
+                      local
+                        str "Seq5" ,
+                    fuzz-from
+                      lim lt ,
+                    fuzz-to
+                      lim gt } ,
+                dbxref {
+                  {
+                    db "GI" ,
+                    tag
+                      id 78321982 } ,
+                  {
+                    db "GOA" ,
+                    tag
+                      str "q333S8" } } } } } } } } }

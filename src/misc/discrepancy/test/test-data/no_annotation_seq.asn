@@ -1,0 +1,66 @@
+Seq-entry ::= seq {
+  id {
+    local
+      str "Seq1" } ,
+  descr {
+    source {
+      genome genomic ,
+      org {
+        taxname "Staphylococcus" ,
+        db {
+          {
+            db "taxon" ,
+            tag
+              id 1279 } } ,
+        syn {
+          "Aurococcus" } ,
+        orgname {
+          name
+            partial {
+              {
+                fixed-level other ,
+                level "genus" ,
+                name "Staphylococcus" } } ,
+          mod {
+            {
+              subtype strain ,
+              subname "Staphylococcus" } ,
+            {
+              subtype variety ,
+              subname "Single" } } ,
+          lineage "Bacteria; Firmicutes; Bacilli; Bacillales" ,
+          gcode 11 ,
+          div "BCT" } } ,
+      subtype {
+        {
+          subtype country ,
+          name "China" } ,
+        {
+          subtype isolation-source ,
+          name "Pseudomonas sp." } ,
+        {
+          subtype altitude ,
+          name "50 m" } ,
+        {
+          subtype other ,
+          name "[cultured bacterial source]" } } } ,
+    molinfo {
+      biomol genomic ,
+      completeness complete } } ,
+  inst {
+    repr raw ,
+    mol dna ,
+    length 1448 ,
+    topology circular ,
+    strand ds ,
+    seq-data
+      ncbi2na '5C31390B6260486289F9D7786F269A1AB8B046E8C17173087A8C1F6A01689C3
+168C333E0593AF432E021AFF9ED1F323A359964F272FAC2B069F14290639B2585E22AE369447A0
+78846B521D71A8A492CA837D643A9809786890659B8B8E0ADF68DB0077BCF2A08103BB0B07391B
+7E1AC5C34809469C1C6E524966B0C6CAE909BCD683CFA9B02666CA6BFFC2DE3B80951A7416E8AB
+4FA01E801F8B9208A02E83D4EEC9AE03992233A28114BA60A61FDEB7B078678EE6026EA8D0128F
+2315EB2D465B018E2E70BBCAABF5957CB9E49C193C247597AA2C61642BE01D0283E1AA159109AE
+893BAFC3D824198205F140DF84D77855DC88C8BFD57DAA848B84AEB93AFB6D276EDB88EFABC2D5
+90626415F09F2F94D3C2FA91DC2F8796B8405A282BAA386D034D3957CE3FA9C446E710E843102A
+4980598AD090354C0BEF74BDA3ECB790761CCE09E83672C36C8D24E71AE0C6F56ADFB111656D11
+4622FEC115825AE8B053FA2725B60AEA1038F'H } }

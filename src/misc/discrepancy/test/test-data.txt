@@ -1,13 +1,23 @@
 ### Test name		Commandline C++		Commandline C		Input file		-X?	Special use
 
 BAD_BACTERIAL_GENE_NAME	BAD_BACTERIAL_GENE_NAME	DISC_BAD_BACTERIAL_GENE_NAME	BAD_BACTERIAL_GENE_NAME.asn
+BAD_LOCUS_TAG_FORMAT    BAD_LOCUS_TAG_FORMAT    BAD_LOCUS_TAG_FORMAT    bad_locus_tag_format.asn
 COUNT_NUCLEOTIDES	COUNT_NUCLEOTIDES	DISC_COUNT_NUCLEOTIDES	COUNT_PROTEINS.sqn
 COUNT_PROTEINS		COUNT_PROTEINS		COUNT_PROTEINS		COUNT_PROTEINS.sqn	
 EC_NUMBER_NOTE	EC_NUMBER_NOTE	EC_NUMBER_NOTE	ec_number_note.asn	EC_NUMBER_NOTE.gold.txt
+INCONSISTENT_LOCUS_TAG_PREFIX                   INCONSISTENT_LOCUS_TAG_PREFIX                   INCONSISTENT_LOCUS_TAG_PREFIX inconsistent_locus_tag_prefix.asn 
+INCONSISTENT_LOCUS_TAG_PREFIX-2                 INCONSISTENT_LOCUS_TAG_PREFIX                   INCONSISTENT_LOCUS_TAG_PREFIX inconsistent_locus_tag_prefix_2.asn 
+INCONSISTENT_LOCUS_TAG_PREFIX-3                 INCONSISTENT_LOCUS_TAG_PREFIX                   INCONSISTENT_LOCUS_TAG_PREFIX inconsistent_locus_tag_prefix_3.asn 
+INCONSISTENT_LOCUS_TAG_PREFIX-4                 INCONSISTENT_LOCUS_TAG_PREFIX                   INCONSISTENT_LOCUS_TAG_PREFIX inconsistent_locus_tag_prefix_4.asn
 INTERNAL_TRANSCRIBED_SPACER_RRNA	INTERNAL_TRANSCRIBED_SPACER_RRNA	DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA	internal_transcribed_spacer_rRNA.asn	internal_transcribed_spacer_rRNA_golden.txt
+LONG_NO_ANNOTATION      LONG_NO_ANNOTATION      DISC_LONG_NO_ANNOTATION no_annotation_long_seq.asn
+LONG_NO_ANNOTATION-1    LONG_NO_ANNOTATION      DISC_LONG_NO_ANNOTATION no_annotation_not_long_enough_seq.asn
+MISSING_LOCUS_TAGS      MISSING_LOCUS_TAGS      MISSING_LOCUS_TAGS      missing_locus_tags.asn  
 N_RUNS			N_RUNS			N_RUNS			normal_delta.asn
 N_RUNS-X		N_RUNS			N_RUNS			normal_delta.asn	-X	N_RUNS-X.gold.txt	C Toolkit calculates location incorrectly for delta seqs
 OVERLAPPING_RRNAS	OVERLAPPING_RRNAS	TEST_OVERLAPPING_RRNAS	overlapping_rrnas.asn
+NO_ANNOTATION           NO_ANNOTATION           NO_ANNOTATION           no_annotation_seq.asn
+NO_ANNOTATION-1         NO_ANNOTATION           NO_ANNOTATION           no_annotation_set.asn
 PERCENT_N		PERCENT_N		DISC_PERCENT_N		percent_n.asn
 PERCENT_N-1		PERCENT_N		DISC_PERCENT_N		normal_delta.asn
 POSSIBLE_LINKER		POSSIBLE_LINKER		DISC_POSSIBLE_LINKER	possible_linker_set.asn
