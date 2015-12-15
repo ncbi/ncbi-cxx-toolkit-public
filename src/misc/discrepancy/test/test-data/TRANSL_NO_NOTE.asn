@@ -1,0 +1,276 @@
+Seq-entry ::= set {
+  class genbank,
+  descr {
+    user {
+      type str "NcbiCleanup",
+      data {
+        {
+          label str "method",
+          data str "ExtendedSeqEntryCleanup"
+        },
+        {
+          label str "version",
+          data int 1
+        },
+        {
+          label str "month",
+          data int 12
+        },
+        {
+          label str "day",
+          data int 3
+        },
+        {
+          label str "year",
+          data int 2015
+        }
+      }
+    }
+  },
+  seq-set {
+    set {
+      class phy-set,
+      descr {
+        title "Eoleptestheria cytochrome c oxidase subunit I (COI) gene,
+ partial cds; mitochondrial.",
+        user {
+          class "SMART_V1.0",
+          type id 1,
+          data {
+            {
+              label id 1,
+              num 1,
+              data int 9307858
+            }
+          }
+        },
+        user {
+          type str "NcbiAutofix",
+          data {
+          }
+        }
+      },
+      seq-set {
+        set {
+          class nuc-prot,
+          descr {
+            source {
+              genome mitochondrion,
+              org {
+                taxname "Eoleptestheria cf. ticinensis P.92000",
+                db {
+                  {
+                    db "taxon",
+                    tag id 1758323
+                  }
+                },
+                orgname {
+                  name binomial {
+                    genus "Eoleptestheria",
+                    species "cf. ticinensis P.92000"
+                  },
+                  mod {
+                    {
+                      subtype isolate,
+                      subname "P.92000"
+                    }
+                  },
+                  lineage "Eukaryota; Metazoa; Ecdysozoa; Arthropoda;
+ Crustacea; Branchiopoda; Diplostraca; Spinicaudata; Leptestheriidae;
+ Eoleptestheria",
+                  gcode 1,
+                  mgcode 5,
+                  div "INV"
+                }
+              }
+            }
+          },
+          seq-set {
+            seq {
+              id {
+                local str "P.92000",
+                general {
+                  db "NCBIFILE",
+                  tag str "COI_Eolept_Genbank1/P.92000"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 52405222
+                },
+                genbank {
+                  accession "KP754129"
+                }
+              },
+              descr {
+                title "Eoleptestheria cf. ticinensis P.92000 cytochrome c
+ oxidase subunit I (COI) gene, partial cds; mitochondrial.",
+                molinfo {
+                  biomol genomic
+                }
+              },
+              inst {
+                repr raw,
+                mol dna,
+                length 569,
+                seq-data ncbi4na '88444421422244882888418244441841821118881811
+848148848112842921842888848118418888888818448818422818188118844144488844111884
+488448822828818488444442422841818442288222824488111811818414888884428888122822
+142188118828288428882844142844148441414144842844812144884112848481222222828282
+842844218242821842844442182148841888114118288882228421288142144548282482818888
+444442818211888818812812818818811818424448421444118114888141224118822828488848
+284142848844818812842828828428228488182888122848888142844842118812818188488112
+8418241118881118124824888888418228428441444444412221188280'H
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data cdregion {
+                        frame one,
+                        code {
+                          id 5
+                        },
+                        code-break {
+                          {
+                            loc int {
+                              from 501,
+                              to 503,
+                              strand plus,
+                              id general {
+                                db "PRJNA215333",
+                                tag str "SAMN02378201-tid14811.19"
+                              }
+                            },
+                            aa ncbieaa 84
+                          }
+                        }
+                      },
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 568,
+                        strand plus,
+                        id local str "P.92000",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            seq {
+              id {
+                local str "P.92000_1",
+                general {
+                  db "NCBIFILE",
+                  tag str "COI_Eolept_Genbank1/P.92000_1"
+                },
+                general {
+                  db "TMSMART",
+                  tag id 52405223
+                }
+              },
+              descr {
+                title "cytochrome c oxidase subunit I, partial (mitochondrion)
+ [Eoleptestheria cf. ticinensis P.92000]",
+                molinfo {
+                  biomol peptide,
+                  tech concept-trans,
+                  completeness no-ends
+                },
+                user {
+                  type str "OriginalID",
+                  data {
+                    {
+                      label str "LocalId",
+                      data str "P.92000_1"
+                    }
+                  }
+                }
+              },
+              inst {
+                repr raw,
+                mol aa,
+                length 190,
+                seq-data ncbieaa "LGQPGSLIGDDQIYNVVVTAHAFVMIFFMVMPMLIGGFGNWLVP
+LMLGAPDMAFPRLNNMSFWLLPPALILLLSGAGVESGAGTGWTVYPPLSAGIAHAGASVDLSIFSLHLAGVSSILGAI
+NFITTIINMRVQGMSLDRIPLFVWAVGITALLLLLSLPVLAGAITMLLTDRNLNTSFFDPAGGGDPIL"
+              },
+              annot {
+                {
+                  data ftable {
+                    {
+                      data cdregion {
+                        frame one,
+                        code {
+                          id 5
+                        },
+                        code-break {
+                          {
+                            loc int {
+                              from 188,
+                              to 189,
+                              strand plus,
+                              id local str "P.92000_1"
+                            },
+                            aa ncbieaa 42
+                          }
+                        }
+                      },
+                      
+                      partial TRUE,
+                      location int {
+                        from 0,
+                        to 189,
+                        id local str "P.92000_1",
+                        fuzz-from lim lt,
+                        fuzz-to lim gt
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          annot {
+            {
+              data ftable {
+                {
+                  data cdregion {
+                    frame one,
+                    code {
+                      id 5
+                    },
+                    code-break {
+                      {
+                        loc int {
+                          from 565,
+                          to 568,
+                          strand plus,
+                          id local str "P.92000"
+                        },
+                        aa ncbieaa 42
+                      }
+                    }
+                  },
+                  partial TRUE,
+                  comment "TAA stop codon is completed by the addition of 3' A residues to the mRNA",
+                  product whole local str "P.92000_1",
+                  location int {
+                    from 0,
+                    to 568,
+                    strand plus,
+                    id local str "P.92000",
+                    fuzz-from lim lt,
+                    fuzz-to lim gt
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
