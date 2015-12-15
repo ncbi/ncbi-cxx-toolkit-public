@@ -6,6 +6,6 @@ NOTE_NO_TRANSL: 2 features have a note but not translation exception
 Detailed Report
 
 NOTE_NO_TRANSL: 2 features have a note but not translation exception
-test-data\NOTE_NO_TRANSL.asn:CDS	TAA stop codon is completed by the addition of 3' A residues to the mRNA	gb|KP754129|:plus<1->569	
-test-data\NOTE_NO_TRANSL.asn:CDS	TAA stop codon is completed by the addition of 3' A residues to the mRNA	lcl|P.92000_1:<1->190	
+test-data/NOTE_NO_TRANSL.asn:CDS	TAA stop codon is completed by the addition of 3' A residues to the mRNA	gb|KP754129|:plus<1->569	
+test-data/NOTE_NO_TRANSL.asn:CDS	TAA stop codon is completed by the addition of 3' A residues to the mRNA	lcl|P.92000_1:<1->190	
 

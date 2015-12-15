@@ -1,10 +1,10 @@
 Discrepancy Report Results
 
 Summary
-TRANSL_NO_NOTE: 1 features have a translation exception but no note
+TRANSL_NO_NOTE: 1 feature has a translation exception but no note
 
 Detailed Report
 
-TRANSL_NO_NOTE: 1 features have a translation exception but no note
-test-data\TRANSL_NO_NOTE.asn:CDS	CDS	lcl|P.92000_1:<1->190	
+TRANSL_NO_NOTE: 1 feature has a translation exception but no note
+test-data/TRANSL_NO_NOTE.asn:CDS	CDS	lcl|P.92000_1:<1->190	
 
