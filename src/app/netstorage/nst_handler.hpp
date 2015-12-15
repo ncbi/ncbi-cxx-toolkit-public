@@ -66,6 +66,17 @@ class CRequestContextResetter
 };
 
 
+// Helper class to make sure the pushed IMessageListener is popped
+// approprietely at the end of the scope
+class CMessageListenerResetter
+{
+    public:
+        CMessageListenerResetter();
+        ~CMessageListenerResetter();
+};
+
+
+
 class CNetStorageHandler : public IServer_ConnectionHandler
 {
 public:
@@ -240,9 +251,11 @@ private:
                            const SCommonRequestArguments &  common_args);
     void x_ProcessExists(const CJsonNode &                message,
                          const SCommonRequestArguments &  common_args);
-    void x_ProcessGetSize(const CJsonNode &                 message,
+    void x_ProcessGetSize(const CJsonNode &                message,
                           const SCommonRequestArguments &  common_args);
-    void x_ProcessSetExpTime(const CJsonNode &                 message,
+    void x_ProcessSetExpTime(const CJsonNode &                message,
+                             const SCommonRequestArguments &  common_args);
+    void x_ProcessLockFTPath(const CJsonNode &                message,
                              const SCommonRequestArguments &  common_args);
 
 private:

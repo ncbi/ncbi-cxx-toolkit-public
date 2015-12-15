@@ -39,6 +39,7 @@
 
 #include <corelib/resource_info.hpp>
 #include <connect/services/netstorage.hpp>
+#include <corelib/ncbi_message.hpp>
 
 #include "nst_handler.hpp"
 #include "nst_server.hpp"
@@ -83,6 +84,7 @@ CNetStorageHandler::SProcessorMap   CNetStorageHandler::sm_Processors[] =
     { "EXISTS",           & CNetStorageHandler::x_ProcessExists },
     { "GETSIZE",          & CNetStorageHandler::x_ProcessGetSize },
     { "SETEXPTIME",       & CNetStorageHandler::x_ProcessSetExpTime },
+    { "LOCKFTPATH",       & CNetStorageHandler::x_ProcessLockFTPath },
     { "",                 NULL }
 };
 
@@ -95,6 +97,15 @@ CRequestContextResetter::~CRequestContextResetter()
 {
     CDiagContext::SetRequestContext(NULL);
 }
+
+CMessageListenerResetter::CMessageListenerResetter()
+{}
+
+CMessageListenerResetter::~CMessageListenerResetter()
+{
+    IMessageListener::PopListener();
+}
+
 
 
 CNetStorageHandler::CNetStorageHandler(CNetStorageServer *  server)
@@ -2546,6 +2557,91 @@ CNetStorageHandler::x_ProcessSetExpTime(
         else
             AppendError(reply, CNetStorageServerException::eStorageError,
                           "Unknown remote storage SetExpiration error");
+    }
+
+    x_SendSyncMessage(reply);
+    x_PrintMessageRequestStop();
+}
+
+
+void
+CNetStorageHandler::x_ProcessLockFTPath(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+    m_Server->GetClientRegistry().AppendType(m_Client, CNSTClient::eWriter);
+    x_CheckNonAnonymousClient();
+
+    if (!message.HasKey("ObjectLoc") && !message.HasKey("UserKey"))
+        NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
+                   "LOCKFTPATH message must have ObjectLoc or UserKey. "
+                   "None of them was found.");
+
+    if (!message.HasKey("On"))
+        NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
+                   "LOCKFTPATH message must have the On field.");
+
+    CJsonNode               on = message.GetByKey("On");
+    CJsonNode::ENodeType    node_type = on.GetNodeType();
+    if (node_type != CJsonNode::eBoolean)
+        NCBI_THROW(CNetStorageServerException, eInvalidArgument,
+                   "Invalid type of the On field. Boolean is expected.");
+
+    if (m_MetadataOption == eMetadataMonitoring)
+        NCBI_THROW(CNetStorageServerException, eInvalidMetaInfoRequest,
+                   "LOCKFTPATH could not be used when the HELLO metadata "
+                   "option is set to Monitoring");
+
+    CJsonNode         reply = CreateResponseMessage(common_args.m_SerialNumber);
+    CDirectNetStorageObject     direct_object = x_GetObject(message);
+    string                      object_key =
+                                        direct_object.Locator().GetUniqueKey();
+
+    if (x_DetectMetaDBNeedOnGetObjectInfo(message))
+        x_CheckObjectExpiration(object_key, true, reply);
+
+
+    CMessageListener_Basic      warnings_listener;  // for collecting warnings
+    IMessageListener::PushListener(warnings_listener);
+
+    CMessageListenerResetter    listener_resetter;  // for reliable popping the
+                                                    // listener
+
+
+    CNSTPreciseTime     start = CNSTPreciseTime::Current();
+    try {
+        if (on.AsBoolean()) {
+            string  lock_path = direct_object.FileTrack_Path_Lock();
+            reply.SetString("Path", lock_path);
+            if (m_Server->IsLogTimingNSTAPI())
+                m_Timing.Append("NetStorageAPI FileTrack_Path_Lock", start);
+        } else {
+            direct_object.FileTrack_Path_Unlock();
+            if (m_Server->IsLogTimingNSTAPI())
+                m_Timing.Append("NetStorageAPI FileTrack_Path_Unlock", start);
+        }
+    } catch (...) {
+        if (m_Server->IsLogTimingNSTAPI()) {
+            if (on.AsBoolean())
+                m_Timing.Append("NetStorageAPI FileTrack_Path_Lock exception",
+                                start);
+            else
+                m_Timing.Append("NetStorageAPI FileTrack_Path_Unlock exception",
+                                start);
+        }
+        throw;
+    }
+
+    // Append warnings if so
+    size_t      warn_count = warnings_listener.Count();
+    for (size_t  k = 0; k < warn_count; ++k) {
+        const IMessage &    warn = warnings_listener.GetMessage(k);
+
+        // As agreed when CXX-7622 is discussed, all the collected messages are
+        // warnings, regardless of their severity. The errors are supposed to
+        // be reported via the C++ exceptions mechanism.
+
+        AppendWarning(reply, warn.GetCode(), warn.GetText());
     }
 
     x_SendSyncMessage(reply);

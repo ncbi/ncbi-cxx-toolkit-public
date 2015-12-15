@@ -114,6 +114,8 @@ class NetStorageConsole:
                                  "sends an unterminated malformed message" ],
              'setexp':         [ self.sendSetexp,
                                  "sends SETEXPTIME message; <object locator> <ttl as dTh:m:s or infinity>" ],
+             'lockftpath':     [ self.sendLockFTPath,
+                                 "sends LOCKFTPATH message; <object locator>" ],
            }
 
         self.__commandSN = 0
@@ -892,6 +894,23 @@ class NetStorageConsole:
             print "Command failed"
         return
 
+    def sendLockFTPath( self, arguments ):
+        " Sends LOCKFTPATH message "
+        if len( arguments ) != 1:
+            print "Exactly 1 argument isrequired: locator"
+            return
+
+        objectLoc = arguments[ 0 ]
+        message = { 'Type':         'LOCKFTPATH',
+                    'SessionID':    SESSIONID,
+                    'ncbi_phid':    NCBI_PHID,
+                    'ClientIP':     hostIP,
+                    'ObjectLoc':    objectLoc }
+
+        response = self.exchange( message )
+        if "Status" not in response or response[ "Status" ] != "OK":
+            print "Command failed"
+        return
 
     def exchange( self, message ):
         " Does the basic exchange "
