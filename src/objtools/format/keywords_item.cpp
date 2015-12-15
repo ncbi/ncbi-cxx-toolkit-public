@@ -286,7 +286,12 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
         }
     }
 
-    if( ctx.GetUnverifiedType() != CBioseqContext::fUnverified_None ) {
+    CBioseqContext::TUnverified unv = ctx.GetUnverifiedType();
+    if ((unv & CBioseqContext::fUnverified_Organism) != 0) {
+        x_AddKeyword("UNVERIFIED_ORGANISM");
+    } else if ((unv & CBioseqContext::fUnverified_Misassembled) != 0) {
+        x_AddKeyword("UNVERIFIED_MISASSEMBLY");
+    } else if ((unv & CBioseqContext::fUnverified_SequenceOrAnnotation) != 0) {
         x_AddKeyword("UNVERIFIED");
     }
 
