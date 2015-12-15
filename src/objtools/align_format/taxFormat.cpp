@@ -90,7 +90,7 @@ CTaxFormat::CTaxFormat(const CSeq_align_set& seqalign,
     m_ConfigFile = new CNcbiIfstream(".ncbirc");
     m_Reg = new CNcbiRegistry(*m_ConfigFile);             
     if(m_Reg) {
-        m_TaxBrowserURL = m_Reg->Get("TAXONOMY","TOOL_URL");
+        m_TaxBrowserURL = m_Reg->Get("TAX_BROWSER","BLASTFMTUTIL");
     }
     m_TaxBrowserURL = (m_TaxBrowserURL.empty()) ? kTaxBrowserURL : m_TaxBrowserURL;
 
@@ -867,10 +867,9 @@ string CTaxFormat::x_MapSeqTemplate(string seqTemplate, STaxInfo &taxInfo)
 {
     SSeqInfo *seqInfo = taxInfo.seqInfoList[0];
     int taxid = taxInfo.taxid;
-    string descr = (taxInfo.seqInfoList.size() > 1) ? "Top hit: " : "";
-
+    
     string reportTableRow = CAlignFormatUtil::MapTemplate(seqTemplate,"acc",m_BlastResTaxInfo->seqTaxInfoMap[taxid].accList);        
-    reportTableRow = CAlignFormatUtil::MapTemplate(reportTableRow,"descr",descr + seqInfo->title);    
+    reportTableRow = CAlignFormatUtil::MapTemplate(reportTableRow,"descr",seqInfo->title);    
     reportTableRow = x_MapSeqTemplate(reportTableRow,seqInfo);    
     
     return reportTableRow;
