@@ -810,14 +810,17 @@ for x_row in $x_tests; do
    x_requires=" `echo "$x_row" | sed -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/^[^~]*~//'  -e 's/^[^~]*~//' -e 's/^[^~]*~//' -e 's/~.*$//'` "
    x_authors=`echo "$x_row" | sed -e 's/.*~//'`
 
-   # Check application requirements ($CHECK_REQUIRES)
-   for x_req in $x_requires; do
-      test -f "$x_conf_dir/status/$x_req.enabled"  ||  continue 2
-   done
-
    # Application base build directory
    x_work_dir_tail="`echo \"$x_row\" | sed -e 's/~.*$//'`"
    x_work_dir="$x_compile_dir/$x_work_dir_tail"
+
+   # Check application requirements ($CHECK_REQUIRES)
+   for x_req in $x_requires; do
+      if test ! -f "$x_conf_dir/status/$x_req.enabled" ; then
+         echo "SKIP -- $x_work_dir_tail/$x_app (unmet CHECK_REQUIRES)"
+         continue 2
+      fi
+   done
 
    # Copy specified files to the build directory
 
