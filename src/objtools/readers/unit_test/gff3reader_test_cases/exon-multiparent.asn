@@ -268,7 +268,7 @@ Seq-annot ::= {
     {
       id local id 8,
       data cdregion {
-        frame two
+        frame one
       },
       location mix {
         int {

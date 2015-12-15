@@ -622,25 +622,33 @@ bool CGff2Record::xUpdateFeatureData(
     CRef<CSeq_feat> pFeature) const
     //  ----------------------------------------------------------------------------
 {
-    CRef<CSeq_loc> pAddLoc = GetSeqLoc(flags);
+    const CSeq_loc& target = pFeature->GetLocation();
     CSeqFeatData::ESubtype subtype = pFeature->GetData().GetSubtype();
+    CRef<CSeq_loc> pAddLoc = GetSeqLoc(flags);
 
     switch(subtype) {
         default: {
             return true;
         }
         case CSeqFeatData::eSubtype_cdregion: {
+            // if incoming piece is new feature start then it will provide the
+            //  frame
+            //
             if (!pAddLoc->GetInt().CanGetStrand()) {
                 return true;
             }
             if (pAddLoc->GetInt().GetStrand() == eNa_strand_plus) {
-                if (SeqStart() == pAddLoc->GetStart(eExtreme_Positional)) {
+                size_t curStart = target.GetStart(eExtreme_Positional);
+                size_t newStart = pAddLoc->GetStart(eExtreme_Positional);
+                if (curStart == newStart) {
                     pFeature->SetData().SetCdregion().SetFrame(Phase());
                 }
                 return true;
             }
             if (pAddLoc->GetInt().GetStrand() == eNa_strand_minus) {
-                if (SeqStop() == pAddLoc->GetStop(eExtreme_Positional)) {
+                size_t curStop = target.GetStop(eExtreme_Positional);
+                size_t newStop = pAddLoc->GetStop(eExtreme_Positional);
+                if (curStop == newStop) {
                     pFeature->SetData().SetCdregion().SetFrame(Phase());
                 }
                 return true;
