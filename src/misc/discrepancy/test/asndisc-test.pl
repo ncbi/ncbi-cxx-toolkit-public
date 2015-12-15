@@ -157,6 +157,7 @@ sub normalize
   ### add special cases here!
   $str=~s/sequences in record$/sequences are present/;
   $str=~s/>/more than/g;
+  $str=~s/\.$//;
 
   my @words = split(' ', $str);
   for (my $i = 0; $i < scalar @words; $i++){ $words[$i] = normalize_word($words[$i]); }
