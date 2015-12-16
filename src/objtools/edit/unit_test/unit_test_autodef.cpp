@@ -1708,6 +1708,14 @@ BOOST_AUTO_TEST_CASE(Test_IsModifierInString)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_IsUsableInDefline)
+{
+    BOOST_CHECK_EQUAL(CAutoDefModifierCombo::IsUsableInDefline(CSubSource::eSubtype_plasmid_name), true);
+    BOOST_CHECK_EQUAL(CAutoDefModifierCombo::IsUsableInDefline(CSubSource::eSubtype_collected_by), false);
+    BOOST_CHECK_EQUAL(CAutoDefModifierCombo::IsUsableInDefline(COrgMod::eSubtype_strain), true);
+    BOOST_CHECK_EQUAL(CAutoDefModifierCombo::IsUsableInDefline(COrgMod::eSubtype_variety), false);
+}
+
 
 
 END_SCOPE(objects)

@@ -109,6 +109,8 @@ public:
     CAutoDefOptions::EHIVCloneIsolateRule GetHIVCloneIsolateRule();
 
     string GetSourceDescriptionString(const CBioSource& bsrc);
+    static bool IsUsableInDefline(CSubSource::ESubtype subtype);
+    static bool IsUsableInDefline(COrgMod::ESubtype subtype);
 
     typedef vector<CSubSource::ESubtype> TSubSourceTypeVector;
     typedef vector<COrgMod::ESubtype> TOrgModTypeVector;

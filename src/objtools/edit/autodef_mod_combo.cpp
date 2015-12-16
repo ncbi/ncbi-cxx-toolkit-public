@@ -711,6 +711,30 @@ static const SPreferredQual s_PreferredList[] = {
 
 static const size_t kNumPreferred = sizeof(s_PreferredList) / sizeof (SPreferredQual);
 
+bool CAutoDefModifierCombo::IsUsableInDefline(CSubSource::ESubtype subtype)
+{
+    size_t k;
+    for (k = 0; k < kNumPreferred; k++) {
+        if (!s_PreferredList[k].is_orgmod && (CSubSource::ESubtype)s_PreferredList[k].subtype == subtype) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+bool CAutoDefModifierCombo::IsUsableInDefline(COrgMod::ESubtype subtype)
+{
+    size_t k;
+    for (k = 0; k < kNumPreferred; k++) {
+        if (s_PreferredList[k].is_orgmod && (COrgMod::ESubtype)s_PreferredList[k].subtype == subtype) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 bool CAutoDefModifierCombo::IsModifierRequiredByDefault(bool is_orgmod, int subtype)
 {
     bool rval = false;
