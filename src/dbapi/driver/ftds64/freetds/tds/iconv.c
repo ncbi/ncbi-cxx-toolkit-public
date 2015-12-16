@@ -146,7 +146,7 @@ tds_iconv_init(void)
 	/* long search needed ?? */
     if (!iconv_names[POS_UTF16LE] || !iconv_names[POS_UTF16BE]) {
 		for (i = 0; iconv_aliases[i].alias; ++i) {
-            if (strncmp(canonic_charsets[iconv_aliases[i].canonic].name, "UTF-16", 5) != 0)
+            if (strncmp(canonic_charsets[iconv_aliases[i].canonic].name, "UTF-16", 6) != 0)
 				continue;
 
 			cd = tds_sys_iconv_open(iconv_aliases[i].alias, iconv_names[POS_ISO1]);
