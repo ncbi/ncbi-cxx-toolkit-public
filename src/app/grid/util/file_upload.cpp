@@ -213,13 +213,13 @@ void CFileUploadApplication::Copy(SContext& ctx, CCgiEntry& entry,
 
 TNetStorageFlags s_GetFlags(const string& dst)
 {
-    if (NStr::CompareNocase(dst, "netcache"))
+    if (!NStr::CompareNocase(dst, "netcache"))
         return fNST_NetCache;
-    else if (NStr::CompareNocase(dst, "filetrack"))
+    else if (!NStr::CompareNocase(dst, "filetrack"))
         return fNST_FileTrack;
-    else if (NStr::CompareNocase(dst, "fast"))
+    else if (!NStr::CompareNocase(dst, "fast"))
         return fNST_Fast;
-    else if (NStr::CompareNocase(dst, "persistent"))
+    else if (!NStr::CompareNocase(dst, "persistent"))
         return fNST_Persistent;
     else
         throw std::runtime_error("Invalid dst value: " + dst);
@@ -240,8 +240,9 @@ int CFileUploadApplication::ProcessRequest(CCgiContext& ctx)
             app_ctx.json.SetBoolean("success", false);
             app_ctx.json.SetString("msg", "Nothing to upload");
         } else {
-            const CCgiEntry& dst(request.GetEntry("dst"));
-            Copy(app_ctx, file, s_GetFlags(dst));
+            bool dst_found = false;
+            const CCgiEntry& dst(request.GetEntry("dst", &dst_found));
+            Copy(app_ctx, file, dst_found ? s_GetFlags(dst) : 0);
         }
     }
     catch (CException& e) {
