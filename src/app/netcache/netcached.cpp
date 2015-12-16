@@ -75,6 +75,7 @@ static const char* kNCReg_CtrlPort            = "control_port";
 static const char* kNCReg_AdminClient         = "admin_client_name";
 static const char* kNCReg_DefAdminClient      = "netcache_control";
 static const char* kNCReg_SpecPriority        = "app_setup_priority";
+static const char* kNCReg_DefSpecPriority     = "cache,port";
 //static const char* kNCReg_NetworkTimeout      = "network_timeout";
 static const char* kNCReg_DisableClient       = "disable_client";
 //static const char* kNCReg_CommandTimeout      = "cmd_timeout";
@@ -434,7 +435,10 @@ s_CheckDefClientConfig(SSpecParamsSet* cur_set,
 static void
 s_ReadPerClientConfig(const CNcbiRegistry& reg)
 {
-    string spec_prty = reg.Get(kNCReg_ServerSection, kNCReg_SpecPriority);
+    string spec_prty = reg.GetString(kNCReg_ServerSection, kNCReg_SpecPriority,kNCReg_DefSpecPriority);
+    if (NStr::FindNoCase(spec_prty,"disable") != NPOS) {
+        spec_prty.clear();
+    }
     ncbi_NStr_Tokenize(spec_prty, ", \t\r\n", s_SpecPriority, NStr::eMergeDelims);
 
     SNCSpecificParams* main_params = new SNCSpecificParams;
@@ -471,7 +475,7 @@ s_ReadPerClientConfig(const CNcbiRegistry& reg)
             if (!NStr::StartsWith(section, kNCReg_AppSetupPrefix, NStr::eNocase))
                 continue;
             SSpecParamsSet* cur_set  = s_SpecParams;
-            NON_CONST_REVERSE_ITERATE(TSpecKeysList, prty_it, s_SpecPriority) {
+            ITERATE(TSpecKeysList, prty_it, s_SpecPriority) {
                 const string& key_name = *prty_it;
                 if (reg.HasEntry(section, key_name, IRegistry::fCountCleared)) {
                     const string& key_value = reg.Get(section, key_name);
@@ -634,7 +638,7 @@ const SNCSpecificParams*
 CNCServer::GetAppSetup(const TStringMap& client_params)
 {
     const SSpecParamsSet* cur_set = s_SpecParams;
-    NON_CONST_REVERSE_ITERATE(TSpecKeysList, key_it, s_SpecPriority) {
+    ITERATE(TSpecKeysList, key_it, s_SpecPriority) {
         TStringMap::const_iterator it = client_params.find(*key_it);
         const SSpecParamsSet* next_set = NULL;
         if (it != client_params.end()) {
@@ -642,11 +646,90 @@ CNCServer::GetAppSetup(const TStringMap& client_params)
             unsigned int best_index = 0;
             next_set = s_FindNextParamsSet(cur_set, value, best_index);
         }
-        if (!next_set)
+        if (!next_set) {
             next_set = static_cast<const SSpecParamsSet*>(cur_set->entries[0].value.GetPointer());
+        }
         cur_set = next_set;
     }
     return static_cast<const SNCSpecificParams*>(cur_set->entries[0].value.GetPointer());
+}
+
+// similar to s_CheckDefClientConfig
+static void
+s_CollectClientConfigKeys(SSpecParamsSet* cur_set,
+                       SSpecParamsSet* prev_set,
+                       Uint1 depth,
+                       SSpecParamsSet* deflt,
+                       vector<string>& keys)
+{
+    if (depth != 0) {
+        SSpecParamsSet* this_deflt = NULL;
+        if (deflt)
+            this_deflt = (SSpecParamsSet*)deflt->entries[0].value.GetPointer();
+        for (size_t i = 0; i < cur_set->entries.size(); ++i) {
+            keys.push_back(cur_set->entries[i].key);
+            s_CollectClientConfigKeys((SSpecParamsSet*)cur_set->entries[i].value.GetPointer(),
+                                   cur_set, depth - 1, this_deflt, keys);
+            this_deflt = (SSpecParamsSet*)cur_set->entries[0].value.GetPointer();
+        }
+    }
+}
+
+void CNCServer::WriteAppSetup(CSrvSocketTask& task, const TStringMap& client)
+{
+    set<string> all_ports;
+    ITERATE(TPortsList, it, s_Ports) {
+        unsigned int port = *it;
+        all_ports.insert(NStr::NumericToString(*it));
+    }
+    all_ports.insert(NStr::NumericToString(s_CtrlPort));
+
+    set<string> ports;
+    if (client.find("port") != client.end()) {
+        ports.insert(client.at("port"));
+    } else {
+        ports = all_ports;
+    }
+
+    list<string> caches;
+    if (client.find("cache") != client.end()) {
+        caches.push_back(client.at("cache"));
+    } else {
+        vector<string> keys;
+        s_CollectClientConfigKeys(s_SpecParams, NULL, Uint1(s_SpecPriority.size()), NULL, keys);
+        ITERATE(vector<string>, k, keys) {
+            if (k->empty() || all_ports.find(*k) != all_ports.end()) {
+                continue;
+            }
+            caches.push_back(*k);
+        }
+        caches.sort();
+        caches.unique();
+        caches.push_back("");
+    }
+
+    string is("\": "), iss("\": \""), eol(",\n\""), eos("\"");
+    task.WriteText(eol).WriteText(kNCReg_SpecPriority).WriteText(iss).WriteText( NStr::Join(s_SpecPriority,",")).WriteText(eos);
+    task.WriteText(eol).WriteText("setup\": [\n");
+    bool is_first = true;
+    ITERATE(set<string>, p, ports) {
+        ITERATE(list<string>, c, caches) {
+            if (!is_first) {
+                task.WriteText(",");
+            }
+            is_first = false;
+            task.WriteText("{\n");
+
+            TStringMap client;
+            client["port"] = *p;
+            client["cache"] = *c;
+            task.WriteText("\"").WriteText("port").WriteText(is).WriteText(*p);
+            task.WriteText(eol).WriteText("cache").WriteText(iss).WriteText(*c).WriteText(eos);
+            CNCServer::WriteAppSetup(task, CNCServer::GetAppSetup(client));
+            task.WriteText("\n}");
+        }
+    }
+    task.WriteText("]");
 }
 
 void CNCServer::WriteAppSetup(CSrvSocketTask& task, const SNCSpecificParams* params)

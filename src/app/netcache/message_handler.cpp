@@ -3637,18 +3637,13 @@ CNCMessageHandler::x_DoCmd_GetConfig(void)
         WriteText(section).WriteText("\"");
         if (section == "netcache") {
             TStringMap client;
-            client = m_ClientParams;
             if (params.find("port") != params.end()) {
                 client["port"] = params["port"];
             }
             if (params.find("cache") != params.end()) {
                 client["cache"] = params["cache"];
             }
-            ITERATE(TStringMap, p, client) {
-                string iss("\": \""), eol(",\n\"");
-                WriteText(eol).WriteText("__client__").WriteText(p->first).WriteText(iss).WriteText(p->second).WriteText("\"");
-            }
-            CNCServer::WriteAppSetup(*this, CNCServer::GetAppSetup(client));
+            CNCServer::WriteAppSetup(*this, client);
 //        } else if (section == "task_server") {
         } else if (section == "storage") {
             CNCBlobStorage::WriteSetup(*this);

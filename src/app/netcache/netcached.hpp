@@ -212,6 +212,7 @@ class CNCServer
 {
 public:
     static const SNCSpecificParams* GetAppSetup(const TStringMap& client_params);
+    static void WriteAppSetup(CSrvSocketTask& task, const TStringMap& client);
     static void WriteAppSetup(CSrvSocketTask& task, const SNCSpecificParams* app);
     static void WriteEnvInfo(CSrvSocketTask& task);
 
