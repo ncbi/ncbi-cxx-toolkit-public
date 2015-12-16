@@ -1181,10 +1181,10 @@ bool CGff3Writer::xWriteFeature(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    CSeqFeatData::ESubtype s = mf.GetFeatSubtype();
-    if (s == CSeqFeatData::eSubtype_repeat_region) {
-        cerr << "";
-    }
+    //CSeqFeatData::ESubtype s = mf.GetFeatSubtype();
+    //if (s == CSeqFeatData::eSubtype_repeat_region) {
+    //    cerr << "";
+    //}
     try {
         switch( mf.GetFeatSubtype() ) {
             default:
