@@ -473,10 +473,10 @@ public:
     SAFE_CONST_STATIC_EX(type, type, init_value)
 
 /// Declare CSafeStatic<const string>, initialize it with 'const char* value'.
-#define SAFE_CONST_STATIC_STRING(value) \
-    char SAFE_CONST_STATIC_STRING_##__LINE__[] = value; \
+#define SAFE_CONST_STATIC_STRING(var, value) \
+    char SAFE_CONST_STATIC_STRING_##var[] = value; \
     SAFE_CONST_STATIC_EX(std::string, const char*, \
-    SAFE_CONST_STATIC_STRING_##__LINE__)
+    SAFE_CONST_STATIC_STRING_##var) var
 
 
 /////////////////////////////////////////////////////////////////////////////
