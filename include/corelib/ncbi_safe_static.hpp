@@ -462,21 +462,22 @@ public:
 };
 
 
-/// Declare CSafeStatic<const type>, initilize it with 'init_value' of type
+/// Declare CSafeStatic<const type>, initialize it with 'init_value' of the same type.
+#define SAFE_CONST_STATIC(type, init_value) \
+    SAFE_CONST_STATIC_EX(type, type, init_value)
+
+/// Declare CSafeStatic<const type>, initialize it with 'init_value' of type
 /// 'init_value_type'.
 #define SAFE_CONST_STATIC_EX(type, init_value_type, init_value) \
     CSafeStatic< const type, \
     CSafeStaticInit_Callbacks<const type, init_value_type, init_value> >
-
-/// Declare CSafeStatic<const type>, initilize it with 'init_value' of the same type.
-#define SAFE_CONST_STATIC(type, init_value) \
-    SAFE_CONST_STATIC_EX(type, type, init_value)
 
 /// Declare CSafeStatic<const string>, initialize it with 'const char* value'.
 #define SAFE_CONST_STATIC_STRING(var, value) \
     char SAFE_CONST_STATIC_STRING_##var[] = value; \
     SAFE_CONST_STATIC_EX(std::string, const char*, \
     SAFE_CONST_STATIC_STRING_##var) var
+
 
 
 /////////////////////////////////////////////////////////////////////////////
