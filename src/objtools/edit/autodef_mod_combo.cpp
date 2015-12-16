@@ -255,97 +255,6 @@ void CAutoDefModifierCombo::AddOrgMod(COrgMod::ESubtype st, bool even_if_not_uni
 }
 
 
-void CAutoDefModifierCombo::GetAvailableModifiers (CAutoDefSourceDescription::TAvailableModifierVector &modifier_list)
-{
-    unsigned int k;
-    
-    // first, set up modifier list with blanks
-    modifier_list.clear();
-    //note - later come back and rearrange in order of importance
-    // add orgmod modifiers
-    //dosage, old name, and old lineage are deliberately omitted
-    modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_strain, true));
-    modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_substrain, true));
-    modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_type, true));
-    modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_subtype, true));
-    modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_variety, true));
-    modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_serotype, true));
-    modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_serogroup, true));
-    modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_serovar, true));
-    modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_cultivar, true));
-    modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_pathovar, true));
-    modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_chemovar, true));
-    modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_biovar, true));
-    modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_biotype, true));
-    modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_group, true));
-    modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_subgroup, true));
-    modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_isolate, true));
-    modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_common, true));
-    modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_acronym, true));
-    modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_nat_host, true));
-    modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_sub_species, true));
-    modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_specimen_voucher, true));
-    modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_authority, true));
-    modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_forma, true));
-    modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_forma_specialis, true));
-    modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_ecotype, true));
-    modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_synonym, true));
-    modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_anamorph, true));
-    modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_teleomorph, true));
-    modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_breed, true));
-    modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_bio_material, true));
-    modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_culture_collection, true));
-    modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_gb_acronym, true));
-    modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_gb_anamorph, true));
-    modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_gb_synonym, true));
-    modifier_list.push_back(CAutoDefAvailableModifier(COrgMod::eSubtype_other, true));
-
-
-    // add subsource modifiers
-    // map, fwd_primer_name, fwd_primer_seq, rev_primer_name, and rev_primer_seq are deliberately omitted
-    modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_chromosome, false));
-    modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_clone, false));
-    modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_subclone, false));
-    modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_haplotype, false));
-    modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_genotype, false));
-    modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_sex, false));
-    modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_cell_line, false));
-    modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_cell_type, false));
-    modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_tissue_type, false));
-    modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_clone_lib, false));
-    modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_dev_stage, false));
-    modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_frequency, false));
-    modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_germline, false));
-    modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_rearranged, false));
-    modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_lab_host, false));
-    modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_pop_variant, false));
-    modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_tissue_lib, false));
-    modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_plasmid_name, false));
-    modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_transposon_name, false));
-    modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_insertion_seq_name, false));
-    modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_plastid_name, false));
-    modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_country, false));
-    modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_segment, false));
-    modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_endogenous_virus_name, false));
-    modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_transgenic, false));
-    modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_environmental_sample, false));
-    modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_isolation_source, false));
-    modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_lat_lon, false));
-    modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_altitude, false));
-    modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_collection_date, false));
-    modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_collected_by, false));
-    modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_identified_by, false));
-    modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_mating_type, false));
-    modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_linkage_group, false));
-    modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_haplogroup, false));
-    modifier_list.push_back(CAutoDefAvailableModifier(CSubSource::eSubtype_other, false));
-
-    for (k = 0; k < m_GroupList.size(); k++) {
-        m_GroupList[k]->GetAvailableModifiers(modifier_list);
-    }
-}
-
-
 string CAutoDefModifierCombo::x_GetSubSourceLabel (CSubSource::ESubtype st)
 {
     string label = "";
@@ -710,6 +619,27 @@ static const SPreferredQual s_PreferredList[] = {
 
 
 static const size_t kNumPreferred = sizeof(s_PreferredList) / sizeof (SPreferredQual);
+
+void CAutoDefModifierCombo::GetAvailableModifiers(CAutoDefSourceDescription::TAvailableModifierVector &modifier_list)
+{
+    size_t k;
+
+    // first, set up modifier list with blanks
+    modifier_list.clear();
+
+    for (k = 0; k < kNumPreferred; k++) {
+        if (s_PreferredList[k].is_orgmod) {
+            modifier_list.push_back(CAutoDefAvailableModifier((COrgMod::ESubtype)s_PreferredList[k].subtype, true));
+        } else {
+            modifier_list.push_back(CAutoDefAvailableModifier((CSubSource::ESubtype)s_PreferredList[k].subtype, false));
+        }
+    }
+
+    for (k = 0; k < m_GroupList.size(); k++) {
+        m_GroupList[k]->GetAvailableModifiers(modifier_list);
+    }
+}
+
 
 bool CAutoDefModifierCombo::IsUsableInDefline(CSubSource::ESubtype subtype)
 {
