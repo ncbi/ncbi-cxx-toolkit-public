@@ -211,8 +211,12 @@ void CFileUploadApplication::Copy(SContext& ctx, CCgiEntry& entry,
     }
 }
 
-TNetStorageFlags s_GetFlags(const string& dst)
+TNetStorageFlags s_GetFlags(CCgiEntry* entry)
 {
+    if (!entry) return 0;
+
+    const string& dst(entry->GetValue());
+
     if (!NStr::CompareNocase(dst, "netcache"))
         return fNST_NetCache;
     else if (!NStr::CompareNocase(dst, "filetrack"))
@@ -234,15 +238,14 @@ int CFileUploadApplication::ProcessRequest(CCgiContext& ctx)
     SContext app_ctx("input data");
 
     try {
-        CCgiEntry file(request.GetEntry(m_SourceFieldName));
+        CCgiEntry* file(request.GetPossiblyUnparsedEntry(m_SourceFieldName));
 
-        if (file.empty()) {
+        if (!file) {
             app_ctx.json.SetBoolean("success", false);
             app_ctx.json.SetString("msg", "Nothing to upload");
         } else {
-            bool dst_found = false;
-            const CCgiEntry& dst(request.GetEntry("dst", &dst_found));
-            Copy(app_ctx, file, dst_found ? s_GetFlags(dst) : 0);
+            CCgiEntry* dst(request.GetPossiblyUnparsedEntry("dst"));
+            Copy(app_ctx, *file, s_GetFlags(dst));
         }
     }
     catch (CException& e) {
