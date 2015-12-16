@@ -70,12 +70,14 @@ private:
     CNetStorage m_NetStorage;
     string m_SourceFieldName;
     EErrorMessageVerbosity m_ErrorMessageVerbosity;
+    CTimeout m_ObjectTtl;
 };
 
 #define GRID_APP_NAME "file_upload.cgi"
 
 CFileUploadApplication::CFileUploadApplication()
     : m_NetStorage(eVoid)
+    , m_ObjectTtl(CTimeout::eDefault)
 {
 }
 
@@ -84,6 +86,7 @@ void CFileUploadApplication::Init()
     const string kSection = "file_upload";
     const string kInitString = "destination";
     const string kVerbosity = "error_message";
+    const string kObjectTtl = "ttl";
 
     CCgiApplication::Init();
 
@@ -121,6 +124,10 @@ void CFileUploadApplication::Init()
         NCBI_THROW_FMT(CConfigException, eParameterMissing,
                 "Invalid '" << kVerbosity << "' value '" <<
                         error_message_verbosity << '\'');
+    }
+
+    if (reg.HasEntry(kSection, kObjectTtl)) {
+        m_ObjectTtl.Set(reg.GetDouble(kSection, kObjectTtl, 0.0));
     }
 
     m_NetStorage = CNetStorage(init_string);
@@ -200,6 +207,11 @@ void CFileUploadApplication::Copy(SContext& ctx, CCgiEntry& entry,
     } while (read_result != eRW_Eof);
 
     netstorage_object.Close();
+
+    if (!m_ObjectTtl.IsDefault()) {
+        netstorage_object.SetExpiration(m_ObjectTtl);
+    }
+
     string key = netstorage_object.GetLoc();
     string md5 = sum.GetHexSum();
     ctx.json.SetBoolean("success", true);
