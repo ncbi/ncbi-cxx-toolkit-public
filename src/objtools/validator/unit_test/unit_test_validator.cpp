@@ -366,6 +366,14 @@ BOOST_AUTO_TEST_CASE(Test_Descr_LatLonCountry)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_lat_lon, "");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_country, "");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_lat_lon, "18.47 N 64.23000000000002 W");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_country, "Puerto Rico: Rio Mameyes in Luquillo");
+    expected_errors[0]->SetErrMsg("Lat_lon '18.47 N 64.23000000000002 W' is in water 'Caribbean Sea', 'Puerto Rico: Rio Mameyes in Luquillo' is 108 km away");
+    eval = validator.Validate(seh, options);
+    CheckErrors(*eval, expected_errors);
+
     CLEAR_ERRORS
 }
 
