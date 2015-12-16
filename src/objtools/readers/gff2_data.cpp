@@ -1240,9 +1240,6 @@ bool CGff2Record::xInitFeatureData(
             if (frame == CCdregion::eFrame_not_set) {
                 frame = CCdregion::eFrame_one;
             }
-            else if (Strand() == eNa_strand_minus) {
-                frame = FramePlusToMinus(frame);
-            } 
             pFeature->SetData().SetCdregion();
             pFeature->SetData().SetCdregion().SetFrame(frame);
             return true;
