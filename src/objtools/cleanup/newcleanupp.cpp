@@ -11705,6 +11705,113 @@ void CNewCleanup_imp::CdRegionEC(CSeq_feat& sf)
 }
 
 
+bool CNewCleanup_imp::IsSyntheticConstruct(const CBioSource& src)
+{
+    if (!src.IsSetOrigin() || src.GetOrigin() != CBioSource::eOrigin_artificial) {
+        return false;
+    }
+    if (!src.IsSetOrg() || !src.GetOrg().IsSetTaxname() || !NStr::EqualNocase(src.GetOrg().GetTaxname(), "synthetic construct")) {
+        return false;
+    }
+    return true;
+}
+
+
+void CNewCleanup_imp::x_ExtendSingleGeneOnMrna(CBioseq& seq)
+{
+    // don't bother unless length greater than zero and mRNA
+    if (!seq.IsSetInst() ||
+        !seq.GetInst().IsSetLength() ||
+        seq.GetInst().GetLength() == 0 ||
+        !seq.GetInst().IsSetMol() ||
+        !seq.GetInst().IsNa()) {
+        return;
+    }
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+    if (!bsh) {
+        return;
+    }
+
+    CSeqdesc_CI m(bsh, CSeqdesc::e_Molinfo);
+    if (!m || !m->GetMolinfo().IsSetBiomol() || m->GetMolinfo().GetBiomol() != CMolInfo::eBiomol_mRNA) {
+        return;
+    }
+
+    // skip if synthetic construct
+    CSeqdesc_CI s(bsh, CSeqdesc::e_Source);
+    if (s && IsSyntheticConstruct(s->GetSource())) { 
+        return;
+    }
+
+    CFeat_CI f(bsh);
+    size_t num_gene = 0;
+    size_t num_mrna = 0;
+    size_t num_cds = 0;
+    CConstRef<CSeq_feat> gene(NULL);
+    while (f) {
+        if (f->IsSetData()) {
+            if (f->GetData().IsGene()) {
+                num_gene++;
+                if (num_gene > 1) {
+                    // bail if more than one gene
+                    break;
+                }
+                gene.Reset(f->GetSeq_feat());
+            } else if (f->GetData().IsCdregion()) {
+                num_cds++;
+                if (num_cds > 1) {
+                    // bail if more than one CDS
+                    break;
+                }
+            } else if (f->GetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
+                num_mrna++;
+                if (num_mrna > 1) {
+                    // bail if more than one mRNA
+                    break;
+                }
+            }
+        }
+        ++f;
+    }
+
+    if (num_gene != 1 || num_cds > 1 || num_mrna > 1) {
+        return;
+    }
+
+    if (!gene->GetLocation().IsInt()) {
+        // bail if location is multi-interval and sequence is EMBL or DDBJ
+        ITERATE(CBioseq::TId, id, seq.GetId()) {
+            if ((*id)->IsDdbj() || (*id)->IsEmbl()) {
+                return;
+            }
+        }
+    }
+
+    if (gene->GetLocation().IsInt() &&
+        gene->GetLocation().GetStart(eExtreme_Biological) == 0 &&
+        gene->GetLocation().GetStop(eExtreme_Biological) == seq.GetLength() - 1) {
+        // already full length, no need to change
+        return;
+    }
+
+    bool partial_start = gene->GetLocation().IsPartialStart(eExtreme_Biological);
+    bool partial_stop = gene->GetLocation().IsPartialStop(eExtreme_Biological);
+
+    CRef<CSeq_feat> new_gene(new CSeq_feat());
+    new_gene->Assign(*gene);
+    new_gene->SetLocation().SetInt().SetId().Assign(*(gene->GetLocation().GetId()));
+    new_gene->SetLocation().SetInt().SetFrom(0);
+    new_gene->SetLocation().SetInt().SetTo(seq.GetLength() - 1);
+    new_gene->SetLocation().SetPartialStart(partial_start, eExtreme_Biological);
+    new_gene->SetLocation().SetPartialStop(partial_stop, eExtreme_Biological);
+
+    CSeq_feat_Handle fh = m_Scope->GetSeq_featHandle(*gene);
+    CSeq_feat_EditHandle eh(fh);
+    eh.Replace(*new_gene);
+    ChangeMade(CCleanupChange::eChangeFeatureLocation);
+}
+
+
 void CNewCleanup_imp::MoveDbxrefs(CSeq_feat& sf)
 {
     if (!sf.IsSetQual()) {

@@ -304,6 +304,9 @@ private:
     void AddProteinTitles (CBioseq& seq);
     void ProtRefEC( CProt_ref& pr);
     void CdRegionEC( CSeq_feat& sf);
+    void x_ExtendSingleGeneOnMrna(CBioseq& seq);
+    static bool IsSyntheticConstruct(const CBioSource& src);
+
     void MoveDbxrefs(CSeq_feat& sf);
     void MoveStandardName(CSeq_feat& sf);
     void ResynchProteinPartials ( CSeq_feat& feat );
