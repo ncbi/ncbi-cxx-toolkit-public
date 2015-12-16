@@ -142,6 +142,8 @@ use m_NewCleanup.MoveStandardName { Seq-feat }
 use m_NewCleanup.MoveCitationQuals { Bioseq }
 use m_NewCleanup.CreateMissingMolInfo { Bioseq }
 
+use m_NewCleanup.x_ExtendSingleGeneOnMrna { Bioseq }
+
 use m_NewCleanup.ResynchProteinPartials { Seq-feat }
 use m_NewCleanup.ResynchPeptidePartials { POST Bioseq }
 use m_NewCleanup.RemoveBadProteinTitle { POST Bioseq }
