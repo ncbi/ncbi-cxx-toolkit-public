@@ -1,0 +1,13 @@
+Discrepancy Report Results
+
+Summary
+BAD_LOCUS_TAG_FORMAT: 4 locus tags are incorrectly formatted.
+
+Detailed Report
+
+BAD_LOCUS_TAG_FORMAT: 4 locus tags are incorrectly formatted.
+test-data/bad_locus_tag_format.asn:Gene	hsp70	lcl|Seq2:plus<1->351	2BC_0020
+test-data/bad_locus_tag_format.asn:Gene	hsp70	lcl|Seq3:plus<1->351	ABC
+test-data/bad_locus_tag_format.asn:Gene	hsp70	lcl|Seq4:plus<1->351	A4_0020
+test-data/bad_locus_tag_format.asn:Gene	hsp70	lcl|Seq5:plus<1->351	AB5_
+

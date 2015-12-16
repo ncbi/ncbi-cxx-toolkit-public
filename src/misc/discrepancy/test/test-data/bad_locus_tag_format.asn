@@ -429,7 +429,7 @@ D2EC0ED19DD32EDEC5A7AF127BDC023CF4E827A6F04'H } ,
                     data
                       gene {
                         locus "hsp70" ,
-                        locus-tag "A44_0020" } ,
+                        locus-tag "A4_0020" } ,
                     partial TRUE ,
                     location
                       int {
