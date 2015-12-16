@@ -91,7 +91,8 @@ void CSrcChkApp::Init()
     // input
     {{
         arg_desc->AddOptionalKey("i", "IDsFile", 
-            "IDs file name", CArgDescriptions::eInputFile );
+            "IDs file name. Defaults to stdin", 
+            CArgDescriptions::eInputFile );
     }}
 
     // parameters
@@ -105,7 +106,8 @@ void CSrcChkApp::Init()
     // output
     {{ 
         arg_desc->AddOptionalKey("o", "OutputFile", 
-            "Output file name", CArgDescriptions::eOutputFile );
+            "Output file name. Defaults to stdout", 
+            CArgDescriptions::eOutputFile );
     }}
     {{
     //  misc
@@ -144,14 +146,12 @@ bool CSrcChkApp::xTryProcessIdFile(
     const CArgs& args)
 //  -----------------------------------------------------------------------------
 {
-    if(!args["i"]) {
-        return false;
-    }
     CNcbiOstream* pOs = xInitOutputStream(args);
     if (0 == pOs) {
-        CSrcError* pE = CSrcError::Create(
-            ncbi::eDiag_Error,
-            "Unable to open output file \"" + args["o"].AsString() + "\".");
+        string error_msg = args["o"] ? 
+                           "Unable to open output file \"" + args["o"].AsString() + "\"." :
+                           "Unable to write to stdout.";
+        CSrcError* pE = CSrcError::Create(ncbi::eDiag_Error, error_msg);
         m_pErrors->PutError(*pE);
         delete pE;
         return false;
@@ -167,12 +167,13 @@ bool CSrcChkApp::xTryProcessIdFile(
 
     CNcbiIstream* pIfstr = 0;
     try {
-        pIfstr = &args["i"].AsInputFile();
+        pIfstr = args["i"] ? &args["i"].AsInputFile() : &cin;
     }
     catch(std::exception&) {
-        CSrcError* pE = CSrcError::Create(
-            ncbi::eDiag_Error,
-            "Unable to open ID file \"" + args["i"].AsString() + "\".");
+        string error_msg = args["i"] ? 
+                     "Unable to open ID file \"" + args["i"].AsString() + "\"." :
+                     "Unable to read IDs from stdin.";
+        CSrcError* pE = CSrcError::Create(ncbi::eDiag_Error, error_msg);
         m_pErrors->PutError(*pE);
         delete pE;
         return false;
