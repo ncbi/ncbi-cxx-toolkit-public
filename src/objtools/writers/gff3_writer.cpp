@@ -1181,7 +1181,10 @@ bool CGff3Writer::xWriteFeature(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    //CSeqFeatData::ESubtype s = mf.GetFeatSubtype();
+    CSeqFeatData::ESubtype s = mf.GetFeatSubtype();
+    if (s == CSeqFeatData::eSubtype_repeat_region) {
+        cerr << "";
+    }
     try {
         switch( mf.GetFeatSubtype() ) {
             default:
@@ -1499,6 +1502,7 @@ bool CGff3Writer::xAssignFeatureAttributes(
             !xAssignFeatureAttributeNote(record, fc, mf)  ||
             !xAssignFeatureAttributeModelEvidence(record, fc, mf)  ||
             !xAssignFeatureAttributeIsOrdered(record, fc, mf)  ||
+            !xAssignFeatureAttributeRptFamily(record, fc, mf) ||
             !xAssignFeatureAttributeTranscriptId(record, fc, mf)) {
         return false;
     }
@@ -1756,7 +1760,7 @@ bool CGff3Writer::xAssignFeatureAttributeModelEvidence(
     CGffFeatureRecord& record,
     CGffFeatureContext& fc,
     CMappedFeat mf)
-    //  ----------------------------------------------------------------------------
+//  ----------------------------------------------------------------------------
 {
     string modelEvidence;
     if (!CWriteUtil::GetStringForModelEvidence(mf, modelEvidence)) {
@@ -1764,6 +1768,35 @@ bool CGff3Writer::xAssignFeatureAttributeModelEvidence(
     }
     if (!modelEvidence.empty()) {
         record.SetAttribute("model_evidence", modelEvidence);
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Writer::xAssignFeatureAttributeRptFamily(
+    CGffFeatureRecord& record,
+    CGffFeatureContext& fc,
+    CMappedFeat mf)
+//  -----------------------------------------------------------------------------
+{
+    CSeqFeatData::ESubtype s = mf.GetFeatSubtype();
+    switch (s) {
+        default:
+            return true;
+        case CSeqFeatData::eSubtype_oriT:
+        case CSeqFeatData::eSubtype_repeat_region: {
+            const CSeq_feat::TQual& quals = mf.GetQual();
+            if (quals.empty()) {
+                return true;
+            }
+            for (CSeq_feat::TQual::const_iterator cit = quals.begin();
+                cit != quals.end(); ++cit) {
+                if ((*cit)->GetQual() == "rpt_family") {
+                    record.SetAttribute("rpt_family", (*cit)->GetVal());
+                    return true;
+                }
+            }
+        }
     }
     return true;
 }

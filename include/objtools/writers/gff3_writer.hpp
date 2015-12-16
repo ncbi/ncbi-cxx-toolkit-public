@@ -441,6 +441,10 @@ protected:
         CGffFeatureRecord&,
         CGffFeatureContext&,
         CMappedFeat);
+    bool xAssignFeatureAttributeRptFamily(
+        CGffFeatureRecord&,
+        CGffFeatureContext&,
+        CMappedFeat);
     string xNextGenericId();
     string xNextGeneId();
     string xNextCdsId();
