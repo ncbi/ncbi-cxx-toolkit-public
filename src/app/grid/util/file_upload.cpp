@@ -65,7 +65,7 @@ private:
 
     template <class What>
     void Error(SContext&, const What&, const string& = kEmptyStr) const;
-    void Copy(SContext&, CCgiEntry&);
+    void Copy(SContext&, CCgiEntry&, TNetStorageFlags);
 
     CNetStorage m_NetStorage;
     string m_SourceFieldName;
@@ -158,7 +158,8 @@ void CFileUploadApplication::Error(SContext& ctx, const What& what,
     ctx.json.SetString("msg", err_msg);
 }
 
-void CFileUploadApplication::Copy(SContext& ctx, CCgiEntry& entry)
+void CFileUploadApplication::Copy(SContext& ctx, CCgiEntry& entry,
+        TNetStorageFlags flags)
 {
     const string& filename_from_entry = entry.GetFilename();
     if (!filename_from_entry.empty()) {
@@ -166,7 +167,7 @@ void CFileUploadApplication::Copy(SContext& ctx, CCgiEntry& entry)
     }
 
     auto_ptr<IReader> reader(entry.GetValueReader());
-    CNetStorageObject netstorage_object = m_NetStorage.Create();
+    CNetStorageObject netstorage_object = m_NetStorage.Create(flags);
     IEmbeddedStreamWriter& writer(netstorage_object.GetWriter());
 
     char buf[16384];
@@ -210,6 +211,20 @@ void CFileUploadApplication::Copy(SContext& ctx, CCgiEntry& entry)
     }
 }
 
+TNetStorageFlags s_GetFlags(const string& dst)
+{
+    if (NStr::CompareNocase(dst, "netcache"))
+        return fNST_NetCache;
+    else if (NStr::CompareNocase(dst, "filetrack"))
+        return fNST_FileTrack;
+    else if (NStr::CompareNocase(dst, "fast"))
+        return fNST_Fast;
+    else if (NStr::CompareNocase(dst, "persistent"))
+        return fNST_Persistent;
+    else
+        throw std::runtime_error("Invalid dst value: " + dst);
+}
+
 int CFileUploadApplication::ProcessRequest(CCgiContext& ctx)
 {
     CCgiRequest& request = ctx.GetRequest();
@@ -219,19 +234,14 @@ int CFileUploadApplication::ProcessRequest(CCgiContext& ctx)
     SContext app_ctx("input data");
 
     try {
-        for (;;) {
-            TCgiEntriesI it = request.GetNextEntry();
+        CCgiEntry file(request.GetEntry(m_SourceFieldName));
 
-            if (it == request.GetEntries().end()) {
-                app_ctx.json.SetBoolean("success", false);
-                app_ctx.json.SetString("msg", "Nothing to upload");
-                break;
-            }
-
-            if (it->first == m_SourceFieldName) {
-                Copy(app_ctx, it->second);
-                break;
-            }
+        if (file.empty()) {
+            app_ctx.json.SetBoolean("success", false);
+            app_ctx.json.SetString("msg", "Nothing to upload");
+        } else {
+            const CCgiEntry& dst(request.GetEntry("dst"));
+            Copy(app_ctx, file, s_GetFlags(dst));
         }
     }
     catch (CException& e) {
