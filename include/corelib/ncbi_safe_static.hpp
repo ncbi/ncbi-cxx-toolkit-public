@@ -134,7 +134,7 @@ protected:
     {}
 
     /// Pointer to the data
-    void* m_Ptr;
+    const void* m_Ptr;
 
     DECLARE_CLASS_STATIC_MUTEX(sm_Mutex);
 
@@ -243,6 +243,7 @@ public:
     // classes. To do this there are two different versions of the following
     // methods.
     static void s_AddReference(void*) {}
+    static void s_AddReference(const void*) {}
     static void s_AddReference(CObject* ptr)
     {
         if (ptr) ptr->AddReference();
@@ -251,7 +252,15 @@ public:
     {
         if (ptr) delete static_cast<T*>(ptr);
     }
+    static void s_RemoveReference(const void* ptr)
+    {
+        if (ptr) delete const_cast<T*>(static_cast<const T*>(ptr));
+    }
     static void s_RemoveReference(CObject* ptr)
+    {
+        if (ptr) ptr->RemoveReference();
+    }
+    static void s_RemoveReference(const CObject* ptr)
     {
         if (ptr) ptr->RemoveReference();
     }
@@ -390,7 +399,7 @@ public:
         if ( !m_Ptr ) {
             x_Init();
         }
-        return *static_cast<T*>(m_Ptr);
+        return *static_cast<T*>(const_cast<void*>(m_Ptr));
     }
 
     T* operator-> (void) { return &Get(); }
@@ -428,7 +437,7 @@ private:
                                CMutexGuard& guard)
     {
         TThisType* this_ptr = static_cast<TThisType*>(safe_static);
-        if ( T* ptr = static_cast<T*>(this_ptr->m_Ptr) ) {
+        if ( T* ptr = static_cast<T*>(const_cast<void*>(this_ptr->m_Ptr)) ) {
             TCallbacks callbacks = this_ptr->m_Callbacks;
             this_ptr->m_Ptr = 0;
             guard.Release();
@@ -439,6 +448,35 @@ private:
 
     TCallbacks m_Callbacks;
 };
+
+
+/// Safe static callbacks version allowing initial value of type V
+// to be set through template argument.
+template<class T, class V, V value>
+class CSafeStaticInit_Callbacks : public CSafeStatic_Callbacks<T>
+{
+public:
+    T* Create(void) {
+        return new T(value);
+    }
+};
+
+
+/// Declare CSafeStatic<const type>, initilize it with 'init_value' of type
+/// 'init_value_type'.
+#define SAFE_CONST_STATIC_EX(type, init_value_type, init_value) \
+    CSafeStatic< const type, \
+    CSafeStaticInit_Callbacks<const type, init_value_type, init_value> >
+
+/// Declare CSafeStatic<const type>, initilize it with 'init_value' of the same type.
+#define SAFE_CONST_STATIC(type, init_value) \
+    SAFE_CONST_STATIC_EX(type, type, init_value)
+
+/// Declare CSafeStatic<const string>, initialize it with 'const char* value'.
+#define SAFE_CONST_STATIC_STRING(value) \
+    char SAFE_CONST_STATIC_STRING_##__LINE__[] = value; \
+    SAFE_CONST_STATIC_EX(std::string, const char*, \
+    SAFE_CONST_STATIC_STRING_##__LINE__)
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -476,7 +514,7 @@ public:
         if ( !m_Ptr ) {
             x_Init();
         }
-        return *static_cast<T*> (m_Ptr);
+        return *static_cast<T*>(const_cast<void*>(m_Ptr));
     }
     /// Get the existing object or create a new one using the provided
     /// FUserCreate object.
@@ -488,7 +526,7 @@ public:
         if ( !m_Ptr ) {
             x_Init(user_create);
         }
-        return *static_cast<T*> (m_Ptr);
+        return *static_cast<T*>(const_cast<void*>(m_Ptr));
     }
 
     T* operator -> (void) { return &Get(); }
@@ -512,7 +550,7 @@ private:
                                CMutexGuard& guard)
     {
         CSafeStaticPtr<T>* this_ptr = static_cast<CSafeStaticPtr<T>*>(safe_static);
-        if ( T* ptr = static_cast<T*>(this_ptr->m_Ptr) ) {
+        if ( T* ptr = static_cast<T*>(const_cast<void*>(this_ptr->m_Ptr)) ) {
             CSafeStaticPtr_Base::FUserCleanup user_cleanup = this_ptr->m_UserCleanup;
             this_ptr->m_Ptr = 0;
             guard.Release();
@@ -560,7 +598,7 @@ public:
         if ( !m_Ptr ) {
             x_Init();
         }
-        return *static_cast<T*>(m_Ptr);
+        return *static_cast<T*>(const_cast<void*>(m_Ptr));
     }
     /// Get the existing object or create a new one using the provided
     /// FUserCreate object.
@@ -595,7 +633,7 @@ private:
                                CMutexGuard& guard)
     {
         CSafeStaticRef<T>* this_ptr = static_cast<CSafeStaticRef<T>*>(safe_static);
-        if ( T* ptr = static_cast<T*>(this_ptr->m_Ptr) ) {
+        if ( T* ptr = static_cast<T*>(const_cast<void*>(this_ptr->m_Ptr)) ) {
             CSafeStaticPtr_Base::FUserCleanup user_cleanup = this_ptr->m_UserCleanup;
             this_ptr->m_Ptr = 0;
             guard.Release();
