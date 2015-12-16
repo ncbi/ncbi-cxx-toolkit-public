@@ -173,9 +173,11 @@ void CFileUploadApplication::Copy(SContext& ctx, CCgiEntry& entry,
     char buf[16384];
     CMD5 sum;
     size_t length = 0;
-    for (;;) {
+    ERW_Result read_result = eRW_Success;
+
+    do {
         size_t read = 0;
-        ERW_Result read_result = reader->Read(buf, sizeof(buf), &read);
+        read_result = reader->Read(buf, sizeof(buf), &read);
 
         if (read_result != eRW_Success && read_result != eRW_Eof) {
             Error(ctx, g_RW_ResultToString(read_result));
@@ -195,20 +197,18 @@ void CFileUploadApplication::Copy(SContext& ctx, CCgiEntry& entry,
             }
         }
 
-        if (read_result == eRW_Eof) {
-            netstorage_object.Close();
-            string key = netstorage_object.GetLoc();
-            string md5 = sum.GetHexSum();
-            ctx.json.SetBoolean("success", true);
-            ctx.json.SetString("key", key);
-            ctx.json.SetString("md5", md5);
-            GetDiagContext().Extra().
-                Print("key", key).
-                Print("md5", md5).
-                Print("length", length);
-            return;
-        }
-    }
+    } while (read_result != eRW_Eof);
+
+    netstorage_object.Close();
+    string key = netstorage_object.GetLoc();
+    string md5 = sum.GetHexSum();
+    ctx.json.SetBoolean("success", true);
+    ctx.json.SetString("key", key);
+    ctx.json.SetString("md5", md5);
+    GetDiagContext().Extra().
+        Print("key", key).
+        Print("md5", md5).
+        Print("length", length);
 }
 
 TNetStorageFlags s_GetFlags(CCgiEntry* entry)
