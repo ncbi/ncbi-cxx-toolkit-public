@@ -1,6 +1,7 @@
 #undef NDEBUG
 #include "common.h"
-#include <assert.h>
+
+#include <common/test_assert.h>
 
 /*
 	Test for a bug executing after a not successfully execute

@@ -1,0 +1,10 @@
+# $Id$
+#
+# FreeTDS DBLIB library
+
+LIB_PROJ = dblib95
+SUB_PROJ = unittests
+
+srcdir = @srcdir@
+
+include @builddir@/Makefile.meta

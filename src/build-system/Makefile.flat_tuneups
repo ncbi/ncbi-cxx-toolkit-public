@@ -55,10 +55,14 @@ all_dirs ?= $(expendable_dirs) $(spec_bearing_dirs) $(plain_dirs)
 # Lists of directories in any branch which can benefit from the
 # aforementioned hints because some of their projects have files in common.
 
+ftds95_ut = ctlib dblib odbc tds
+
 main_hintees = algo/cobalt/demo app/grid/remote_app cgi connect \
     connect/daemons connect/ext connect/test dbapi/driver/ctlib/samples \
-    dbapi/driver/ftds64/ctlib/samples dbapi/test dbapi/test/driver \
-    objmgr/test sample/app/cgi sample/app/cgi/cgires
+    dbapi/driver/ftds64/ctlib/samples dbapi/driver/ftds95/ctlib/samples \
+    $(ftds95_ut:%=dbapi/driver/ftds95/freetds/%/unittests) \
+    dbapi/test dbapi/test/driver objmgr/test \
+    sample/app/cgi sample/app/cgi/cgires
 
 gpipe_hintees_ = app/action_nodes app/aligndb app/fscr app/gbench \
     app/gencoll/altloci_load app/gencoll/ftp_reports app/gpinit app/kmer \

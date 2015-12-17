@@ -18,7 +18,6 @@
 
 TDS_RCSID(var, "$Id$");
 
-#undef strtok_r
 char *
 strtok_r(char *str, const char *sep, char **lasts)
 {

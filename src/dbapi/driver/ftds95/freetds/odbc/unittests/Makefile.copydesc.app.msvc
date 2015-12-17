@@ -1,0 +1,4 @@
+[Linker]
+; Trim default library list, whose inclusion of system ODBC libraries
+; is problematic.
+AdditionalDependencies = kernel32.lib;shell32.lib;user32.lib

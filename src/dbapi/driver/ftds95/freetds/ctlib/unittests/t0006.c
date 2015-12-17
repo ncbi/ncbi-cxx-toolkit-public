@@ -5,10 +5,12 @@
 #endif /* HAVE_STRING_H */
 
 #include <stdio.h>
-#include <assert.h>
 #include <ctpublic.h>
 
+#include <common/test_assert.h>
+
 CS_CONTEXT *ctx;
+
 static int allSuccess = 1;
 
 typedef const char *STR;

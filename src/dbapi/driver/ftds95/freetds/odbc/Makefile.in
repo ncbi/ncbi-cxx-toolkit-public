@@ -1,0 +1,12 @@
+# $Id$
+#
+# FreeTDS ODBC library
+
+LIB_PROJ = odbc95
+SUB_PROJ = unittests
+
+REQUIRES = -XCODE
+
+srcdir = @srcdir@
+
+include @builddir@/Makefile.meta

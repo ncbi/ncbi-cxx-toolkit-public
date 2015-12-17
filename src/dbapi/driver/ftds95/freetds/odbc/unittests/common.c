@@ -1,6 +1,5 @@
 #include "common.h"
 
-#include <assert.h>
 #include <ctype.h>
 
 #if HAVE_SYS_SOCKET_H
@@ -24,6 +23,8 @@
 #else
 #define TDS_SDIR_SEPARATOR "\\"
 #endif
+
+#include <common/test_assert.h>
 
 HENV odbc_env;
 HDBC odbc_conn;

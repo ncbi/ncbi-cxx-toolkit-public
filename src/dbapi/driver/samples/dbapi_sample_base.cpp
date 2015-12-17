@@ -100,6 +100,7 @@ CDbapiSampleApp::CDbapiSampleApp(EUseSampleDatabase sd)
 
     DBAPI_RegisterDriver_FTDS();
     DBAPI_RegisterDriver_FTDS64();
+    DBAPI_RegisterDriver_FTDS95();
 
 #endif // NCBI_DLL_BUILD
 }
@@ -151,7 +152,7 @@ CDbapiSampleApp::Init()
                               "DBAPI Sample Application");
 
     // Describe the expected command-line arguments
-#define FTDS_DRIVERS "ftds", "ftds64"
+#define FTDS_DRIVERS "ftds", "ftds64", "ftds95"
 
 #if defined(NCBI_OS_MSWIN)
 #define DEF_SERVER    "MS_DEV1"

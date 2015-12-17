@@ -9,6 +9,7 @@ ulimit -n 1536 > /dev/null 2>&1
 # ctlib against DBAPI_SYB155_TEST)
 unset LANG LC_ALL LC_CTYPE
 
+# driver_list="ctlib dblib ftds64 ftds95 ftds95-v73 odbc"
 driver_list="ctlib dblib ftds64 odbc"
 
 if echo $FEATURES | grep "\-connext" > /dev/null ; then
@@ -143,6 +144,16 @@ fi
 
 # Loop through all combinations of {driver, server, test}
 for driver in $driver_list ; do
+    case $driver in
+        *-v*)
+            v_flag=`echo $driver | sed -e 's/.*-v/-v /'`
+            driver=`echo $driver | sed -e 's/-v.*//'`
+            ;;
+        *)
+            v_flag=
+            ;;
+    esac
+
     cat <<EOF
 
 ******************* DRIVER:  $driver ************************
@@ -188,6 +199,15 @@ EOF
 
     else
         for server in $server_list ; do
+            case "$v_flag" in
+              -v\ 7?)
+                if test $server != $server_mssql \
+                     -a $server != $server_mssql2005; then
+                    continue
+                fi
+                ;;
+            esac
+
             if test \( $driver = "ctlib" -o $driver = "dblib" \)  -a  \( $server = $server_mssql -o $server = $server_mssql2005 -o \( $static_config = 1 -a $win_config = 1 \) \) ; then
                 continue
             fi
@@ -204,11 +224,12 @@ EOF
             cat <<EOF
 
 ~~~~~~ SERVER:  $server ~~~~~~~~~~~~~~~~~~~~~~~~
+
 EOF
 
         # lang_query
 
-            cmd="lang_query -lb on -d $driver -S $server -Q"
+            cmd="lang_query -lb on -d $driver -S $server $v_flag -Q"
             if test $driver != 'dblib' -o \( $driver = 'dblib' -a $server != $server_mssql -a $server != $server_mssql2005 \) ; then
                 RunTest2 'select qq = 57.55 + 0.0033' '<ROW><qq>57\.5533<'
             fi
@@ -225,36 +246,36 @@ EOF
                 continue
             fi
 
-            cmd="dbapi_conn_policy -lb on -d $driver -S $server"
+            cmd="dbapi_conn_policy -lb on -d $driver -S $server $v_flag"
             RunSimpleTest "dbapi_conn_policy"
 
             # Do not run dbapi_bcp and dbapi_testspeed on SunOS Intel
             if test $driver = "ctlib" -a \( $SYSTEM_NAME = "SunOS" -a $PROCESSOR_TYPE = "i" \) ; then
-                sum_list="$sum_list XXX_SEPARATOR #  dbapi_bcp -lb on -d $driver -S $server (skipped because of invalid Sybase client installation)"
-                sum_list="$sum_list XXX_SEPARATOR #  dbapi_testspeed -lb on -d $driver -S $server (skipped because of invalid Sybase client installation)"
+                sum_list="$sum_list XXX_SEPARATOR #  dbapi_bcp -lb on -d $driver -S $server $v_flag (skipped because of invalid Sybase client installation)"
+                sum_list="$sum_list XXX_SEPARATOR #  dbapi_testspeed -lb on -d $driver -S $server $v_flag (skipped because of invalid Sybase client installation)"
             else
-                cmd="dbapi_bcp -lb on -d $driver -S $server"
+                cmd="dbapi_bcp -lb on -d $driver -S $server $v_flag"
                 RunSimpleTest "dbapi_bcp"
 
-                cmd="dbapi_testspeed -lb on -d $driver -S $server"
+                cmd="dbapi_testspeed -lb on -d $driver -S $server $v_flag"
                 RunSimpleTest "dbapi_testspeed"
             fi
 
             # Do not run dbapi_cursor on SunOS Intel
-            cmd="dbapi_cursor -lb on -d $driver -S $server"
+            cmd="dbapi_cursor -lb on -d $driver -S $server $v_flag"
             if test $driver = "ctlib" -a \( $SYSTEM_NAME = "SunOS" -a $PROCESSOR_TYPE = "i" \) ; then
                 sum_list="$sum_list XXX_SEPARATOR #  $cmd (skipped because of invalid Sybase client installation)"
-            elif test $driver = "ftds64" -a  $server != $server_mssql -a  $server != $server_mssql2005 ; then
+            elif test \( $driver = "ftds64" -o $driver = "ftds95" \) -a  $server != $server_mssql -a  $server != $server_mssql2005 ; then
                 sum_list="$sum_list XXX_SEPARATOR #  $cmd (skipped)"
             else
                 RunSimpleTest "dbapi_cursor"
             fi
 
 
-            cmd="dbapi_query -lb on -d $driver -S $server"
+            cmd="dbapi_query -lb on -d $driver -S $server $v_flag"
             RunSimpleTest "dbapi_query"
 
-            cmd="dbapi_send_data -lb on -d $driver -S $server"
+            cmd="dbapi_send_data -lb on -d $driver -S $server $v_flag"
             RunSimpleTest "dbapi_send_data"
 
         done

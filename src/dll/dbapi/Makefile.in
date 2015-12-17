@@ -9,6 +9,7 @@ SUB_PROJ =  \
     ncbi_xdbapi_dblib \
     ncbi_xdbapi_ftds \
     ncbi_xdbapi_ftds64 \
+    ncbi_xdbapi_ftds95 \
     ncbi_xdbapi_mysql \
     ncbi_xdbapi_odbc
 

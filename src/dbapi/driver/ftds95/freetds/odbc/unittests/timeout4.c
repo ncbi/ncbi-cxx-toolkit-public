@@ -22,6 +22,8 @@
 #include <sys/wait.h>
 #endif /* HAVE_SYS_WAIT_H */
 
+#include <common/test_assert.h>
+
 /*
  * test error on connection close 
  * With a trick we simulate a connection close then we try to 

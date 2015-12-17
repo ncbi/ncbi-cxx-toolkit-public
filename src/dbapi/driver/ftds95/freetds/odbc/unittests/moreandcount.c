@@ -1,5 +1,7 @@
 #include "common.h"
 
+#include <common/test_assert.h>
+
 /* Test for SQLMoreResults and SQLRowCount on batch */
 
 static char software_version[] = "$Id$";

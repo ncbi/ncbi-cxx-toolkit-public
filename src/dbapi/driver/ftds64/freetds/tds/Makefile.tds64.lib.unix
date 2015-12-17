@@ -4,7 +4,8 @@
 # __intel_sse2_str* functions (as of ICC [20]13).
 
 ifeq "$(COMPILER)" "icc"
-  config.o login.o query.o threadsafe.o: CFLAGS += -fno-builtin-strcat
+  config.o query.o threadsafe.o: CFLAGS += -fno-builtin-strcat
+  login.o: CFLAGS += -fno-builtin-strcat -fno-builtin-strchr
 endif
 
 # Limit usage of KRB5_INCLUDE to avoid iconv header/library skew that

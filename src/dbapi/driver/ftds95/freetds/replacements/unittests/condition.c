@@ -33,6 +33,8 @@
 #include <freetds/thread.h>
 #include "replacements.h"
 
+#include <common/test_assert.h>
+
 #define int2ptr(i) ((void*)(((char*)0)+(i)))
 #define ptr2int(p) ((int)(((char*)(p))-((char*)0)))
 

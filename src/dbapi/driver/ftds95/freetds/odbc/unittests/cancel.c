@@ -13,6 +13,8 @@
 
 #if TDS_HAVE_MUTEX
 
+#include <common/test_assert.h>
+
 #ifdef _WIN32
 #undef HAVE_ALARM
 #endif

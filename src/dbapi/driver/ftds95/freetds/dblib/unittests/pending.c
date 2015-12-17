@@ -6,6 +6,8 @@
 
 #include "common.h"
 
+#include <common/test_assert.h>
+
 int
 main(int argc, char **argv)
 {

@@ -5,7 +5,6 @@
 
 #include "common.h"
 
-#include <assert.h>
 
 #if HAVE_SYS_STAT_H
 #include <sys/stat.h>
@@ -14,6 +13,8 @@
 #include "bcp.h"
 
 static char software_version[] = "$Id$";
+#include <common/test_assert.h>
+
 static void *no_unused_var_warn[] = { software_version, no_unused_var_warn };
 
 static char cmd[512];

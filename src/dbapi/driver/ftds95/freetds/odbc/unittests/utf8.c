@@ -1,5 +1,7 @@
 #include "common.h"
 
+#include <common/test_assert.h>
+
 /* test binding with UTF-8 encoding */
 
 #ifndef _WIN32

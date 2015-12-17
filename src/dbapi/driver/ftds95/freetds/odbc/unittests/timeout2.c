@@ -4,7 +4,8 @@
 #include <unistd.h>
 #endif
 
-#include <assert.h>
+#include <common/test_assert.h>
+
 
 #include "replacements.h"
 

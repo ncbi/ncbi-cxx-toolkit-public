@@ -5,6 +5,8 @@
 
 #include "common.h"
 
+#include <common/test_assert.h>
+
 static int failed = 0;
 
 static void

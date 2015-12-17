@@ -1,5 +1,7 @@
 #include "common.h"
 
+#include <common/test_assert.h>
+
 /*
  * 1) Test cursor do not give error for statement that do not return rows
  * 2) Test cursor returns results on language RPCs

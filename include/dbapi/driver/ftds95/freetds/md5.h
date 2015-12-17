@@ -5,6 +5,12 @@
 
 #include <freetds/pushvis.h>
 
+/* Rename functions in order to avoid conflicts with other versions. */
+#define MD5Init      FTDS95_MD5Init
+#define MD5Update    FTDS95_MD5Update
+#define MD5Transform FTDS95_MD5Transform
+#define MD5Final     FTDS95_MD5Final
+
 struct MD5Context {
 	TDS_UINT buf[4];
 	TDS_UINT8 bytes;

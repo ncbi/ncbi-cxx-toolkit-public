@@ -2,6 +2,8 @@
 #include <ctype.h>
 #include "parser.h"
 
+#include <common/test_assert.h>
+
 /*
  * SQLDescribeCol test for precision
  * test what say SQLDescribeCol about precision using some type

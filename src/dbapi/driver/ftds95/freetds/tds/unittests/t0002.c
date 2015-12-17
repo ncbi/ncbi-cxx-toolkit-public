@@ -20,6 +20,8 @@
 
 #include <freetds/string.h>
 
+#include <common/test_assert.h>
+
 static char *
 value_as_string(TDSSOCKET * tds, int col_idx)
 {

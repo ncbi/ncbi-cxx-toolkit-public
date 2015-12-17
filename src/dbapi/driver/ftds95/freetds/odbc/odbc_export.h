@@ -1,4 +1,5 @@
 #undef tdsdump_log
+#define tdsdump_log tdsdump_do_log
 
 #ifdef ENABLE_ODBC_WIDE
 static SQLRETURN _SQLDriverConnect(SQLHDBC hdbc, SQLHWND hwnd, ODBC_CHAR * szConnStrIn, SQLSMALLINT cbConnStrIn, ODBC_CHAR * szConnStrOut, SQLSMALLINT cbConnStrOutMax, SQLSMALLINT FAR* pcbConnStrOut, SQLUSMALLINT fDriverCompletion, int wide);
@@ -455,4 +456,5 @@ SQLRETURN ODBC_PUBLIC ODBC_API SQLTables(SQLHSTMT hstmt, SQLCHAR * szCatalogName
 }
 #endif
 
+#undef tdsdump_log
 #define tdsdump_log TDSDUMP_LOG_FAST

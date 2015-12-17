@@ -122,15 +122,15 @@ typedef char TDS_CHAR;					/*  8-bit char     */
 typedef unsigned char TDS_UCHAR;			/*  8-bit uchar    */
 typedef unsigned char TDS_TINYINT;			/*  8-bit unsigned */
 typedef tds_sysdep_int16_type TDS_SMALLINT;		/* 16-bit int      */
-typedef unsigned tds_sysdep_int16_type TDS_USMALLINT;	/* 16-bit unsigned */
+typedef tds_sysdep_uint16_type TDS_USMALLINT;   /* 16-bit unsigned */
 typedef tds_sysdep_int32_type TDS_INT;			/* 32-bit int      */
-typedef unsigned tds_sysdep_int32_type TDS_UINT;	/* 32-bit unsigned */
+typedef tds_sysdep_uint32_type TDS_UINT;        /* 32-bit unsigned */
 typedef tds_sysdep_real32_type TDS_REAL;		/* 32-bit real     */
 typedef tds_sysdep_real64_type TDS_FLOAT;		/* 64-bit real     */
 typedef tds_sysdep_int64_type TDS_INT8;			/* 64-bit integer  */
-typedef unsigned tds_sysdep_int64_type TDS_UINT8;	/* 64-bit unsigned */
+typedef tds_sysdep_uint64_type TDS_UINT8;       /* 64-bit unsigned */
 typedef tds_sysdep_intptr_type TDS_INTPTR;
-typedef unsigned tds_sysdep_intptr_type TDS_UINTPTR;
+typedef tds_sysdep_uintptr_type TDS_UINTPTR;
 
 #include <freetds/proto.h>
 
@@ -1410,17 +1410,18 @@ int tdsdump_isopen(void);
 int tdsdump_open(const char *filename);
 #include <freetds/pushvis.h>
 void tdsdump_close(void);
-void tdsdump_dump_buf(const char* file, unsigned int level_line, const char *msg, const void *buf, size_t length);
+void tdsdump_do_dump_buf(const char* file, unsigned int level_line,
+                         const char *msg, const void *buf, size_t length);
 void tdsdump_col(const TDSCOLUMN *col);
-#undef tdsdump_log
-void tdsdump_log(const char* file, unsigned int level_line, const char *fmt, ...)
+void tdsdump_do_log(const char* file, unsigned int level_line,
+                    const char *fmt, ...)
 #if defined(__GNUC__) && __GNUC__ >= 2
 	__attribute__ ((__format__ (__printf__, 3, 4)))
 #endif
 ;
-#define TDSDUMP_LOG_FAST if (TDS_UNLIKELY(tds_write_dump)) tdsdump_log
+#define TDSDUMP_LOG_FAST if (TDS_UNLIKELY(tds_write_dump)) tdsdump_do_log
 #define tdsdump_log TDSDUMP_LOG_FAST
-#define TDSDUMP_BUF_FAST if (TDS_UNLIKELY(tds_write_dump)) tdsdump_dump_buf
+#define TDSDUMP_BUF_FAST if (TDS_UNLIKELY(tds_write_dump)) tdsdump_do_dump_buf
 #define tdsdump_dump_buf TDSDUMP_BUF_FAST
 
 extern int tds_write_dump;

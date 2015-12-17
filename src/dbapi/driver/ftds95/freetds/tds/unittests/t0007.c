@@ -20,6 +20,8 @@
 #include "common.h"
 #include <freetds/convert.h>
 
+#include <common/test_assert.h>
+
 static TDSCONTEXT ctx;
 
 static void

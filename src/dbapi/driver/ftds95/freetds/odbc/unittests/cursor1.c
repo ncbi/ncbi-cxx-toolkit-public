@@ -1,5 +1,7 @@
 #include "common.h"
 
+#include <common/test_assert.h>
+
 /* Test cursors */
 
 static char software_version[] = "$Id$";

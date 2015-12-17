@@ -1,0 +1,3 @@
+[AddToProject]
+Resourcefiles = ../win32/setup.rc
+SourceFiles   = ../win32/initnet ../win32/winlogin ../win32/winsetup

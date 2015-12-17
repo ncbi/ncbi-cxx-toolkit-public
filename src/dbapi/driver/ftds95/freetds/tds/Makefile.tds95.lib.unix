@@ -1,0 +1,13 @@
+# $Id$
+
+# Adjust ICC flags to avoid problematic references to
+# __intel_sse2_str* functions (as of ICC [20]13).  In particular,
+# strend is troublesome here, despite having been fine in 0.64.
+
+ifeq "$(COMPILER)" "icc"
+  bulk.o login.o: CFLAGS += -fno-builtin-strchr
+endif
+
+# Limit usage of KRB5_INCLUDE to avoid iconv header/library skew that
+# can otherwise occur on FreeBSD, and perhaps elsewhere.
+gssapi.o: CPPFLAGS += $(KRB5_INCLUDE)

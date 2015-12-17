@@ -1,0 +1,8 @@
+# $Id$
+#################################
+
+# LIB_PROJ = replacements95 # Folded into tds95
+SUB_PROJ = unittests
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

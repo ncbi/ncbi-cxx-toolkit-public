@@ -26,9 +26,9 @@
 #include <stdlib.h>
 #endif /* HAVE_STDLIB_H */
 
-#include <assert.h>
-
 #include "replacements.h"
+
+#include <common/test_assert.h>
 
 int main(void)
 {

@@ -1,0 +1,4 @@
+; $Id$
+
+[AddToProject]
+HeadersInInclude = ../*.h

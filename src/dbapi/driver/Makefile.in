@@ -1,7 +1,7 @@
 # $Id$
 
 LIB_PROJ = dbapi_driver
-SUB_PROJ = util ctlib ftds64 ftds-default dblib mysql odbc samples
+SUB_PROJ = util ctlib ftds64 ftds95 ftds-default dblib mysql odbc samples
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

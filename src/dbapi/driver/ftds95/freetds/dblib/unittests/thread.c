@@ -11,6 +11,8 @@
 
 #include "replacements.h"
 
+#include <common/test_assert.h>
+
 #ifdef TDS_HAVE_MUTEX
 
 static tds_mutex mutex = TDS_MUTEX_INITIALIZER;

@@ -4708,6 +4708,9 @@ if test "$with_ftds" != "no" ; then
    case "$with_ftds" in
       64 | 0.64 | yes | '' )
          ;;
+      95 | 0.95 )
+         ftds_ver=95
+         ;;
       * )
          FTDS_PATH=$with_ftds
          try_local=no
@@ -4717,6 +4720,7 @@ if test "$with_ftds" != "no" ; then
    NCBI_RPATHIFY(FTDS_CTLIBS,   $FTDS_PATH/lib,      [ ]$FTDS_CTLIBS)
    FTDS_INCLUDE="-I$FTDS_PATH/include"
    NCBI_LOCAL_FTDS(64)
+   NCBI_LOCAL_FTDS(95)
    if test -n "$freetds" ; then
       FTDS_LIB="ncbi_xdbapi_ftds${ftds_ver} \$(FTDS${ftds_ver}_LIB)"
       FTDS_LIBS="\$(FTDS${ftds_ver}_LIBS)"
@@ -4774,6 +4778,12 @@ AC_SUBST(FTDS64_LIB)
 AC_SUBST(FTDS64_CTLIB_INCLUDE)
 AC_SUBST(FTDS64_CTLIB_LIBS)
 AC_SUBST(FTDS64_CTLIB_LIB)
+AC_SUBST(FTDS95_INCLUDE)
+AC_SUBST(FTDS95_LIBS)
+AC_SUBST(FTDS95_LIB)
+AC_SUBST(FTDS95_CTLIB_INCLUDE)
+AC_SUBST(FTDS95_CTLIB_LIBS)
+AC_SUBST(FTDS95_CTLIB_LIB)
 AC_SUBST(FTDS_INCLUDE)
 AC_SUBST(FTDS_LIBS)
 AC_SUBST(FTDS_LIB)

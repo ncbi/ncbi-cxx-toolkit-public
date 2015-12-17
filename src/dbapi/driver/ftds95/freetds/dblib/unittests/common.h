@@ -6,7 +6,6 @@
 
 #include <stdarg.h>
 #include <stdio.h>
-#include <assert.h>
 
 #if HAVE_UNISTD_H
 #include <unistd.h>
@@ -33,12 +32,17 @@
 
 #include <freetds/sysdep_private.h>
 
+/* #include <common/test_assert.h> */
+
+
 #if !defined(EXIT_FAILURE)
 #define EXIT_FAILURE 1
 #define EXIT_SUCCESS 0
 #endif
 
+#ifndef FREETDS_SRCDIR
 #define FREETDS_SRCDIR FREETDS_TOPDIR "/src/dblib/unittests"
+#endif
 
 #if defined(HAVE__SNPRINTF) && !defined(HAVE_SNPRINTF)
 #define snprintf _snprintf

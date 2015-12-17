@@ -1,5 +1,7 @@
 #include "common.h"
 
+#include <common/test_assert.h>
+
 /* test SQL_C_DEFAULT with NCHAR type */
 
 static char software_version[] = "$Id$";

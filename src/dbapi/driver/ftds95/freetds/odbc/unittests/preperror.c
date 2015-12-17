@@ -1,5 +1,7 @@
 #include "common.h"
 
+#include <common/test_assert.h>
+
 /* test error on prepared statement, from Nathaniel Talbott test */
 
 static char software_version[] = "$Id$";

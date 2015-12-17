@@ -742,6 +742,12 @@ FTDS64_LIB
 FTDS64_CTLIB_INCLUDE
 FTDS64_CTLIB_LIBS
 FTDS64_CTLIB_LIB
+FTDS95_INCLUDE
+FTDS95_LIBS
+FTDS95_LIB
+FTDS95_CTLIB_INCLUDE
+FTDS95_CTLIB_LIBS
+FTDS95_CTLIB_LIB
 FTDS_INCLUDE
 FTDS_LIBS
 FTDS_LIB
@@ -30680,6 +30686,9 @@ if test "$with_ftds" != "no" ; then
    case "$with_ftds" in
       64 | 0.64 | yes | '' )
          ;;
+      95 | 0.95 )
+         ftds_ver=95
+         ;;
       * )
          FTDS_PATH=$with_ftds
          try_local=no
@@ -30732,6 +30741,22 @@ if test "$with_ftds" != "no" ; then
       FTDS64_LIB='$(FTDS64_CTLIB_LIB)'
       FTDS64_LIBS='$(FTDS64_CTLIB_LIBS)'
       FTDS64_INCLUDE='$(FTDS64_CTLIB_INCLUDE)'
+
+   d="dbapi/driver/ftds95/freetds"
+      if test $try_local = yes -a -f "${real_srcdir}/src/$d/Makefile.in" ; then
+         test "$ftds_ver" = 95  &&  FTDS_PATH="<$d>"
+         FTDS95_CTLIB_LIB="ct_ftds95${STATIC} tds_ftds95${STATIC}"
+         FTDS95_CTLIB_LIBS='$(ICONV_LIBS) $(KRB5_LIBS)'
+         FTDS95_CTLIB_INCLUDE="-I\$(includedir)/$d -I\$(includedir0)/$d"
+         freetds=freetds
+      elif test -d "$FTDS_PATH" ; then
+         FTDS95_CTLIB_LIB=
+         FTDS95_CTLIB_LIBS=$FTDS_CTLIBS
+         FTDS95_CTLIB_INCLUDE=$FTDS_INCLUDE
+      fi
+      FTDS95_LIB='$(FTDS95_CTLIB_LIB)'
+      FTDS95_LIBS='$(FTDS95_CTLIB_LIBS)'
+      FTDS95_INCLUDE='$(FTDS95_CTLIB_INCLUDE)'
 
    if test -n "$freetds" ; then
       FTDS_LIB="ncbi_xdbapi_ftds${ftds_ver} \$(FTDS${ftds_ver}_LIB)"
@@ -30856,6 +30881,12 @@ _ACEOF
 
              WithPackages="$WithPackages${WithPackagesSep}FreeTDS"; WithPackagesSep=" "
 fi
+
+
+
+
+
+
 
 
 
@@ -46495,6 +46526,12 @@ FTDS64_LIB!$FTDS64_LIB$ac_delim
 FTDS64_CTLIB_INCLUDE!$FTDS64_CTLIB_INCLUDE$ac_delim
 FTDS64_CTLIB_LIBS!$FTDS64_CTLIB_LIBS$ac_delim
 FTDS64_CTLIB_LIB!$FTDS64_CTLIB_LIB$ac_delim
+FTDS95_INCLUDE!$FTDS95_INCLUDE$ac_delim
+FTDS95_LIBS!$FTDS95_LIBS$ac_delim
+FTDS95_LIB!$FTDS95_LIB$ac_delim
+FTDS95_CTLIB_INCLUDE!$FTDS95_CTLIB_INCLUDE$ac_delim
+FTDS95_CTLIB_LIBS!$FTDS95_CTLIB_LIBS$ac_delim
+FTDS95_CTLIB_LIB!$FTDS95_CTLIB_LIB$ac_delim
 FTDS_INCLUDE!$FTDS_INCLUDE$ac_delim
 FTDS_LIBS!$FTDS_LIBS$ac_delim
 FTDS_LIB!$FTDS_LIB$ac_delim
@@ -46549,12 +46586,6 @@ TIFF_INCLUDE!$TIFF_INCLUDE$ac_delim
 TIFF_LIBS!$TIFF_LIBS$ac_delim
 UNGIF_INCLUDE!$UNGIF_INCLUDE$ac_delim
 UNGIF_LIBS!$UNGIF_LIBS$ac_delim
-GIF_INCLUDE!$GIF_INCLUDE$ac_delim
-GIF_LIBS!$GIF_LIBS$ac_delim
-XPM_INCLUDE!$XPM_INCLUDE$ac_delim
-XPM_LIBS!$XPM_LIBS$ac_delim
-freetype_config!$freetype_config$ac_delim
-FTGL_INCLUDE!$FTGL_INCLUDE$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -46596,6 +46627,12 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+GIF_INCLUDE!$GIF_INCLUDE$ac_delim
+GIF_LIBS!$GIF_LIBS$ac_delim
+XPM_INCLUDE!$XPM_INCLUDE$ac_delim
+XPM_LIBS!$XPM_LIBS$ac_delim
+freetype_config!$freetype_config$ac_delim
+FTGL_INCLUDE!$FTGL_INCLUDE$ac_delim
 FTGL_LIBS!$FTGL_LIBS$ac_delim
 MAGIC_INCLUDE!$MAGIC_INCLUDE$ac_delim
 MAGIC_LIBS!$MAGIC_LIBS$ac_delim
@@ -46687,12 +46724,6 @@ f_outlib!$f_outlib$ac_delim
 f_libpath!$f_libpath$ac_delim
 f_runpath!$f_runpath$ac_delim
 f_outexe!$f_outexe$ac_delim
-BDB_LIB!$BDB_LIB$ac_delim
-BDB_CACHE_LIB!$BDB_CACHE_LIB$ac_delim
-DBAPI_DRIVER!$DBAPI_DRIVER$ac_delim
-DBAPI_CTLIB!$DBAPI_CTLIB$ac_delim
-DBAPI_DBLIB!$DBAPI_DBLIB$ac_delim
-DBAPI_MYSQL!$DBAPI_MYSQL$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -46734,6 +46765,12 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+BDB_LIB!$BDB_LIB$ac_delim
+BDB_CACHE_LIB!$BDB_CACHE_LIB$ac_delim
+DBAPI_DRIVER!$DBAPI_DRIVER$ac_delim
+DBAPI_CTLIB!$DBAPI_CTLIB$ac_delim
+DBAPI_DBLIB!$DBAPI_DBLIB$ac_delim
+DBAPI_MYSQL!$DBAPI_MYSQL$ac_delim
 DBAPI_ODBC!$DBAPI_ODBC$ac_delim
 THREAD_LIBS!$THREAD_LIBS$ac_delim
 NCBIATOMIC_LIB!$NCBIATOMIC_LIB$ac_delim
@@ -46825,12 +46862,6 @@ LIBSSSDB!$LIBSSSDB$ac_delim
 sssutils!$sssutils$ac_delim
 VDB_INCLUDE!$VDB_INCLUDE$ac_delim
 VDB_LIB!$VDB_LIB$ac_delim
-VDB_LIBS!$VDB_LIBS$ac_delim
-VDB_STATIC_LIBS!$VDB_STATIC_LIBS$ac_delim
-VDB_REQ!$VDB_REQ$ac_delim
-VDB_POST_LINK!$VDB_POST_LINK$ac_delim
-SP_INCLUDE!$SP_INCLUDE$ac_delim
-SP_LIBS!$SP_LIBS$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -46872,6 +46903,12 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+VDB_LIBS!$VDB_LIBS$ac_delim
+VDB_STATIC_LIBS!$VDB_STATIC_LIBS$ac_delim
+VDB_REQ!$VDB_REQ$ac_delim
+VDB_POST_LINK!$VDB_POST_LINK$ac_delim
+SP_INCLUDE!$SP_INCLUDE$ac_delim
+SP_LIBS!$SP_LIBS$ac_delim
 ORBACUS_INCLUDE!$ORBACUS_INCLUDE$ac_delim
 ORBACUS_LIBPATH!$ORBACUS_LIBPATH$ac_delim
 LIBOB!$LIBOB$ac_delim
@@ -46941,7 +46978,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 67; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 73; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

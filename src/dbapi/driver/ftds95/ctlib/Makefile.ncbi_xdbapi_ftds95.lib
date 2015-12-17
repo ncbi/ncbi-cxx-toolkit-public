@@ -1,0 +1,17 @@
+# $Id: Makefile$
+
+SRC = bcp connection context cursor lang_cmd result rpc ftds95_ctlib_utils
+
+LIB = ncbi_xdbapi_ftds95
+
+CPPFLAGS = -DFTDS_IN_USE $(FTDS95_INCLUDE) $(ORIG_CPPFLAGS)
+
+# Build shared version when possible
+LIB_OR_DLL = both
+
+# Dependencies for shared library
+DLL_LIB = $(FTDS95_CTLIB_LIB) dbapi_driver$(DLL)
+DLL_DLIB = $(DLL_LIB) xncbi
+LIBS = $(RUNPATH_ORIGIN) $(KRB5_LIBS) $(ICONV_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
+
+WATCHERS = ucko

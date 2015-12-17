@@ -1,0 +1,9 @@
+# $Id$
+
+# Adjust ICC flags to avoid problematic references to
+# __intel_sse2_str* functions (as of ICC [20]13).  In particular,
+# strtok has become troublesome.
+
+ifeq "$(COMPILER)" "icc"
+  ct.o: CFLAGS += -fno-builtin-strtok
+endif

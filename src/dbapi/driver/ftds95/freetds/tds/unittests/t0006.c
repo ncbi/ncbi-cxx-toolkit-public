@@ -19,6 +19,8 @@
 #include "common.h"
 #include <freetds/convert.h>
 
+#include <common/test_assert.h>
+
 static char software_version[] = "$Id$";
 static void *no_unused_var_warn[] = { software_version, no_unused_var_warn };
 

@@ -28,6 +28,11 @@
 #ifndef _sybdb_h_
 #define _sybdb_h_
 
+#ifndef NCBI_FTDS_RENAME_SYBDB
+#  define NCBI_FTDS_RENAME_SYBDB 1
+#endif
+#include "../impl/rename_ftds_dblib.h"
+
 #include "tds_sysdep_public.h"
 
 #undef TDS_STATIC_CAST
@@ -248,9 +253,9 @@ typedef tds_sysdep_int64_type DBBIGINT;
 typedef unsigned char DBBINARY;
 typedef tds_sysdep_real32_type DBREAL;
 typedef tds_sysdep_real64_type DBFLT8;
-typedef unsigned tds_sysdep_int16_type DBUSMALLINT;
-typedef unsigned tds_sysdep_int32_type DBUINT;
-typedef unsigned tds_sysdep_int64_type DBUBIGINT;
+typedef tds_sysdep_uint16_type DBUSMALLINT;
+typedef tds_sysdep_uint32_type DBUINT;
+typedef tds_sysdep_uint64_type DBUBIGINT;
 
 typedef struct 
 {
@@ -276,7 +281,7 @@ typedef DBNUMERIC DBDECIMAL;
 typedef struct
 {
 	DBINT mnyhigh;
-	unsigned tds_sysdep_int32_type mnylow;
+    tds_sysdep_uint32_type mnylow;
 } DBMONEY;
 
 typedef struct

@@ -1,5 +1,7 @@
 #include "common.h"
 
+#include <common/test_assert.h>
+
 /* Test for {?=call store(?)} syntax and run */
 
 static char software_version[] = "$Id$";

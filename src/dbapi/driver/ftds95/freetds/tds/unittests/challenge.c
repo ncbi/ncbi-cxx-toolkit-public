@@ -21,11 +21,12 @@
  * Purpose: test challenge code.
  */
 #include "common.h"
-#include <assert.h>
 #include "md4.h"
 #include "md5.h"
 #include "hmac_md5.h"
 #include "des.h"
+
+#include <common/test_assert.h>
 
 static char software_version[] = "$Id$";
 static void *no_unused_var_warn[] = { software_version, no_unused_var_warn };

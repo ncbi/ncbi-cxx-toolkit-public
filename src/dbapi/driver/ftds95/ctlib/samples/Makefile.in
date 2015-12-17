@@ -1,0 +1,6 @@
+# $Id$
+
+APP_PROJ = ctl_sp_who_ftds95 ctl_lang_ftds95
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

@@ -25,9 +25,6 @@
 /* Define to 1 if you have the `asprintf' function. */
 /* #undef HAVE_ASPRINTF */
 
-/* Define to 1 if you have the `atoll' function. */
-#define HAVE_ATOLL 1
-
 /* Define to 1 if you have the <dlfcn.h> header file. */
 /* #undef HAVE_DLFCN_H */
 
@@ -78,6 +75,9 @@
    getservbyname_r(). */
 /* #undef HAVE_FUNC_GETSERVBYNAME_R_6 */
 
+/* Define if you have getaddrinfo function */
+#define HAVE_GETADDRINFO 1
+
 /* Define to 1 if you have the `gethostname' function. */
 #define HAVE_GETHOSTNAME 1
 
@@ -97,7 +97,7 @@
 /* #undef HAVE_ICONV */
 
 /* Define to 1 if you have the <inttypes.h> header file. */
-#define HAVE_INTTYPES_H 1
+/* #undef HAVE_INTTYPES_H */
 
 /* Define to 1 if you have the <limits.h> header file. */
 #define HAVE_LIMITS_H 1
@@ -107,6 +107,9 @@
 
 /* Define to 1 if your system provides the malloc_options variable. */
 /* #undef HAVE_MALLOC_OPTIONS */
+
+/* Define to 1 if you have the <malloc.h> header file. */
+#define HAVE_MALLOC_H 1
 
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
@@ -141,7 +144,7 @@
 /* Define to 1 if the system has the type `SQLSETPOSIROW'. */
 /* #undef HAVE_SQLSETPOSIROW */
 
-/* Defined if --enable-sspi and SSPI detected */
+/* Defined if not --disable-sspi and SSPI detected */
 #define HAVE_SSPI 1
 
 /* Define to 1 if you have the <stddef.h> header file. */
@@ -258,9 +261,6 @@
 /* The size of `__int64', as computed by sizeof. */
 #define SIZEOF___INT64 8
 
-/* Define to 1 if you want to use SSPI for Win32 */
-#define HAVE_SSPI 1
-
 /* Define to 1 if you have the ANSI C header files. */
 #define STDC_HEADERS 1
 
@@ -275,7 +275,7 @@
 #define TDS_I64_PREFIX "I64"
 
 /* Version number of package */
-#define VERSION "0.83.dev"
+#define VERSION "0.95"
 
 /* Define to 1 if your processor stores words with the most significant byte
    first (like Motorola and SPARC, unlike Intel and VAX). */
