@@ -50,6 +50,10 @@
 #ifndef MAX
 #define MAX(a,b) ( (a) > (b) ? (a) : (b) )
 #endif
+
+#ifndef MIN
+#define MIN(a,b) ( (a) < (b) ? (a) : (b) )
+#endif
 /** \endcond */
 
 /**
@@ -70,6 +74,7 @@ static TDSRET tds_bcp_start_insert_stmt(TDSSOCKET *tds, TDSBCPINFO *bcpinfo);
 static int tds_bcp_add_fixed_columns(TDSBCPINFO *bcpinfo, tds_bcp_get_col_data get_col_data, tds_bcp_null_error null_error, int offset, unsigned char * rowbuffer, int start);
 static int tds_bcp_add_variable_columns(TDSBCPINFO *bcpinfo, tds_bcp_get_col_data get_col_data, tds_bcp_null_error null_error, int offset, TDS_UCHAR *rowbuffer, int start, int *pncols);
 static void tds_bcp_row_free(TDSRESULTINFO* result, unsigned char *row);
+static int tds_bcp_is_bound(TDSBCPINFO *bcpinfo, TDSCOLUMN *colinfo);
 
 /**
  * Initialize BCP information.
@@ -164,6 +169,9 @@ tds_bcp_init(TDSSOCKET *tds, TDSBCPINFO *bcpinfo)
 			curcol->bcp_column_data = tds_alloc_bcp_column_data(sizeof(TDS_NUMERIC));
 			((TDS_NUMERIC *) curcol->bcp_column_data->data)->precision = curcol->column_prec;
 			((TDS_NUMERIC *) curcol->bcp_column_data->data)->scale = curcol->column_scale;
+        } else if (bcpinfo->bind_count != 0 /* ctlib */
+                   &&  is_blob_type(curcol->column_type)) {
+            curcol->bcp_column_data = tds_alloc_bcp_column_data(0);
 		} else {
 			curcol->bcp_column_data = 
 				tds_alloc_bcp_column_data(MAX(curcol->column_size,curcol->on_server.column_size));
@@ -281,7 +289,7 @@ tds_bcp_start_insert_stmt(TDSSOCKET * tds, TDSBCPINFO * bcpinfo)
 		for (i = 0; i < bcpinfo->bindinfo->num_cols; i++) {
 			bcpcol = bcpinfo->bindinfo->columns[i];
 
-			if (bcpcol->column_timestamp)
+            if (bcpcol->column_timestamp || !tds_bcp_is_bound(bcpinfo, bcpcol))
 				continue;
 			if (!bcpinfo->identity_insert_on && bcpcol->column_identity)
 				continue;
@@ -334,7 +342,7 @@ TDSRET
 tds_bcp_send_record(TDSSOCKET *tds, TDSBCPINFO *bcpinfo, tds_bcp_get_col_data get_col_data, tds_bcp_null_error ignored, int offset)
 {
 	TDSCOLUMN  *bindcol;
-	int i;
+    int i, start_col = bcpinfo->next_col;
 	TDSRET rc;
 
 	tdsdump_log(TDS_DBG_FUNC, "tds_bcp_send_bcp_record(%p, %p, %p, ignored, %d)\n", tds, bcpinfo, get_col_data, offset);
@@ -342,14 +350,33 @@ tds_bcp_send_record(TDSSOCKET *tds, TDSBCPINFO *bcpinfo, tds_bcp_get_col_data ge
 	if (tds->out_flag != TDS_BULK || tds_set_state(tds, TDS_WRITING) != TDS_WRITING)
 		return TDS_FAIL;
 
+    if (start_col > 0) {
+        bindcol = bcpinfo->bindinfo->columns[start_col - 1];
+        *bindcol->column_lenbind
+            = MIN((TDS_INT) bindcol->column_bindlen - bcpinfo->text_sent,
+                  *bindcol->column_lenbind);
+        tds_put_n(tds, bindcol->column_varaddr, *bindcol->column_lenbind);
+        bcpinfo->text_sent += *bindcol->column_lenbind;
+        if ((TDS_UINT) bcpinfo->text_sent < bindcol->column_bindlen) {
+            return TDS_SUCCESS; /* That's all for now. */
+        } else if (!IS_TDS7_PLUS(tds->conn)) {
+            bcpinfo->blob_cols++;
+        }
+        bcpinfo->next_col  = 0;
+        bcpinfo->text_sent = 0;
+    }
+
 	if (IS_TDS7_PLUS(tds->conn)) {
 
-		tds_put_byte(tds, TDS_ROW_TOKEN);   /* 0xd1 */
-		for (i = 0; i < bcpinfo->bindinfo->num_cols; i++) {
+        if (start_col == 0) {
+            tds_put_byte(tds, TDS_ROW_TOKEN);   /* 0xd1 */
+        }
+        for (i = start_col; i < bcpinfo->bindinfo->num_cols; i++) {
 	
 			TDS_INT save_size;
 			unsigned char *save_data;
 			TDSBLOB blob;
+            int /* bool */ has_text = 0;
 
 			bindcol = bcpinfo->bindinfo->columns[i];
 
@@ -359,14 +386,17 @@ tds_bcp_send_record(TDSSOCKET *tds, TDSBCPINFO *bcpinfo, tds_bcp_get_col_data ge
 			 */
 
 			if ((!bcpinfo->identity_insert_on && bindcol->column_identity) || 
-				bindcol->column_timestamp) {
+                bindcol->column_timestamp ||
+                !tds_bcp_is_bound(bcpinfo, bindcol)) {
 				continue;
 			}
 
 			rc = get_col_data(bcpinfo, bindcol, offset);
-			if (TDS_FAILED(rc)) {
+            if (rc == TDS_FAIL) {
 				tdsdump_log(TDS_DBG_INFO1, "get_col_data (column %d) failed\n", i + 1);
 				goto cleanup;
+            } else if (rc != TDS_SUCCESS) { /* CS_BLK_HAS_TEXT? */
+                has_text = 1;
 			}
 			tdsdump_log(TDS_DBG_INFO1, "gotten column %d length %d null %d\n",
 					i + 1, bindcol->bcp_column_data->datalen, bindcol->bcp_column_data->is_null);
@@ -376,6 +406,8 @@ tds_bcp_send_record(TDSSOCKET *tds, TDSBCPINFO *bcpinfo, tds_bcp_get_col_data ge
 			assert(bindcol->column_data == NULL);
 			if (bindcol->bcp_column_data->is_null) {
 				bindcol->column_cur_size = -1;
+            } else if (has_text) {
+                bindcol->column_cur_size = bindcol->bcp_column_data->datalen;
 			} else if (is_blob_col(bindcol)) {
 				bindcol->column_cur_size = bindcol->bcp_column_data->datalen;
 				memset(&blob, 0, sizeof(blob));
@@ -391,9 +423,15 @@ tds_bcp_send_record(TDSSOCKET *tds, TDSBCPINFO *bcpinfo, tds_bcp_get_col_data ge
 
 			if (TDS_FAILED(rc))
 				goto cleanup;
+            else if (has_text) {
+                bcpinfo->next_col = i + 1;
+                /* bcpinfo->text_sent = 0; */
+                break;
+            }
 		}
 	}  /* IS_TDS7_PLUS */
 	else {
+      if (start_col == 0) {
 		int row_pos;
 		int row_sz_pos;
 		int blob_cols = 0;
@@ -433,32 +471,41 @@ tds_bcp_send_record(TDSSOCKET *tds, TDSBCPINFO *bcpinfo, tds_bcp_get_col_data ge
 
 		/* row is done, now handle any text/image data */
 
-		blob_cols = 0;
+        bcpinfo->blob_cols = 0;
+      }
 
-		for (i = 0; i < bcpinfo->bindinfo->num_cols; i++) {
+        for (i = start_col; i < bcpinfo->bindinfo->num_cols; i++) {
 			bindcol = bcpinfo->bindinfo->columns[i];
 			if (is_blob_type(bindcol->column_type)) {
 				rc = get_col_data(bcpinfo, bindcol, offset);
-				if (TDS_FAILED(rc))
+                if (rc == TDS_FAIL)
 					goto cleanup;
 				/* unknown but zero */
 				tds_put_smallint(tds, 0);
 				tds_put_byte(tds, bindcol->column_type);
-				tds_put_byte(tds, 0xff - blob_cols);
+                tds_put_byte(tds, 0xff - bcpinfo->blob_cols);
 				/*
 				 * offset of txptr we stashed during variable
 				 * column processing 
 				 */
 				tds_put_smallint(tds, bindcol->column_textpos);
 				tds_put_int(tds, bindcol->bcp_column_data->datalen);
+                if (rc != TDS_SUCCESS) { /* CS_BLK_HAS_TEXT? */
+                    bcpinfo->next_col = i + 1;
+                    /* bcpinfo->text_sent = 0; */
+                    break;
+                }
 				tds_put_n(tds, bindcol->bcp_column_data->data, bindcol->bcp_column_data->datalen);
-				blob_cols++;
+                bcpinfo->blob_cols++;
 
 			}
 		}
 	}
 
-	tds_set_state(tds, TDS_SENDING);
+    if (i == bcpinfo->bindinfo->num_cols) {
+        tds_set_state(tds, TDS_SENDING);
+        bcpinfo->next_col = 0;
+    }
 	return TDS_SUCCESS;
 
 cleanup:
@@ -605,7 +652,7 @@ tds_bcp_add_variable_columns(TDSBCPINFO *bcpinfo, tds_bcp_get_col_data get_col_d
 
 		tdsdump_log(TDS_DBG_FUNC, "%4d %8d %8d %8d\n", i, ncols, row_pos, cpbytes);
 
-		if (TDS_FAILED(get_col_data(bcpinfo, bcpcol, offset)))
+        if (get_col_data(bcpinfo, bcpcol, offset) == TDS_FAIL)
 			return -1;
 
 #if USING_SYBEBCNN
@@ -723,7 +770,7 @@ tds7_bcp_send_colmetadata(TDSSOCKET *tds, TDSBCPINFO *bcpinfo)
 	for (i = 0; i < bcpinfo->bindinfo->num_cols; i++) {
 		bcpcol = bcpinfo->bindinfo->columns[i];
 		if ((!bcpinfo->identity_insert_on && bcpcol->column_identity) || 
-			bcpcol->column_timestamp) {
+            bcpcol->column_timestamp  ||  !tds_bcp_is_bound(bcpinfo, bcpcol)) {
 			continue;
 		}
 		num_cols++;
@@ -742,7 +789,7 @@ tds7_bcp_send_colmetadata(TDSSOCKET *tds, TDSBCPINFO *bcpinfo)
 		 */
 
 		if ((!bcpinfo->identity_insert_on && bcpcol->column_identity) || 
-			bcpcol->column_timestamp) {
+            bcpcol->column_timestamp  ||  !tds_bcp_is_bound(bcpinfo, bcpcol)) {
 			continue;
 		}
 
@@ -1152,4 +1199,18 @@ tds_writetext_end(TDSSOCKET *tds)
 	tds_flush_packet(tds);
 	tds_set_state(tds, TDS_PENDING);
 	return TDS_SUCCESS;
+}
+
+
+static int tds_bcp_is_bound(TDSBCPINFO *bcpinfo, TDSCOLUMN *colinfo)
+{
+    return (bcpinfo  &&  colinfo  &&
+            /* Don't interfere with dblib bulk insertion from files. */
+            (bcpinfo->xfer_init == 0
+             ||  colinfo->column_varaddr != NULL
+             ||  (colinfo->column_lenbind != NULL
+                  &&  (*colinfo->column_lenbind != 0
+                       ||  (colinfo->column_nullbind != NULL
+                            /* null-value for blk_textxfer ... */
+                            /* &&  *colinfo->column_nullbind == -1 */)))));
 }
