@@ -402,9 +402,6 @@ void CNetStorageObjectLoc::ToJSON(CJsonNode& root) const
     if (m_LocatorFlags & fLF_NetStorageService)
         root.SetString("ServiceName", m_ServiceName);
 
-    if (m_LocatorFlags & fLF_HasObjectID)
-        root.SetInteger("ObjectID", (Int8) m_ObjectID);
-
     CJsonNode storage_flags(CJsonNode::NewObjectNode());
 
     storage_flags.SetBoolean("Movable",
@@ -415,15 +412,8 @@ void CNetStorageObjectLoc::ToJSON(CJsonNode& root) const
             (m_LocatorFlags & fLF_NoMetaData) != 0);
 
     root.SetByKey("StorageFlags", storage_flags);
-
     root.SetString("Namespace", m_AppDomain);
-
-    if (m_LocatorFlags & fLF_HasUserKey)
-        root.SetString("UserKey", m_ShortUniqueKey);
-    else {
-        root.SetInteger("Timestamp", (Int8) m_Timestamp);
-        root.SetInteger("Random", (Int8) m_Random);
-    }
+    root.SetString("ShortUniqueKey", m_ShortUniqueKey);
 
     if (!m_LocationCode.empty())
         root.SetString("DefaultLocation", m_LocationCode);
