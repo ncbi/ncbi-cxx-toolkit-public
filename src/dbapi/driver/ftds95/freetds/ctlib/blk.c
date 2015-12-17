@@ -42,6 +42,7 @@ static void _blk_null_error(TDSBCPINFO *bcpinfo, int index, int offset);
 static TDSRET _blk_get_col_data(TDSBCPINFO *bulk, TDSCOLUMN *bcpcol, int offset);
 static CS_RETCODE _blk_rowxfer_in(CS_BLKDESC * blkdesc, CS_INT rows_to_xfer, CS_INT * rows_xferred);
 static CS_RETCODE _blk_rowxfer_out(CS_BLKDESC * blkdesc, CS_INT rows_to_xfer, CS_INT * rows_xferred);
+static void _blk_clean_desc(CS_BLKDESC * blkdesc);
 
 CS_RETCODE
 blk_alloc(CS_CONNECTION * connection, CS_INT version, CS_BLKDESC ** blk_pointer)
@@ -252,7 +253,36 @@ blk_done(CS_BLKDESC * blkdesc, CS_INT type, CS_INT * outrow)
 			*outrow = rows_copied;
 		
 		/* free allocated storage in blkdesc & initialise flags, etc. */
-	
+        _blk_clean_desc(blkdesc);
+        break;
+
+    case CS_BLK_CANCEL:
+        tds->out_pos = 8; /* discard staged query data */
+        /* Can't transition directly from SENDING to PENDING. */
+        tds_set_state(tds, TDS_WRITING);
+        tds_set_state(tds, TDS_PENDING);
+
+        tds_send_cancel(tds);
+
+        if (TDS_FAILED(tds_process_cancel(tds))) {
+            _ctclient_msg(blkdesc->con, "blk_done", 2, 5, 1, 140, "");
+            return CS_FAIL;
+        }
+
+        if (outrow)
+            *outrow = 0;
+
+        /* free allocated storage in blkdesc & initialise flags, etc. */
+        _blk_clean_desc(blkdesc);
+        break;
+    }
+
+    return CS_SUCCEED;
+}
+
+
+static void _blk_clean_desc (CS_BLKDESC * blkdesc)
+{
 		if (blkdesc->bcpinfo.tablename)
 			TDS_ZERO_FREE(blkdesc->bcpinfo.tablename);
 	
@@ -270,12 +300,6 @@ blk_done(CS_BLKDESC * blkdesc, CS_INT type, CS_INT * outrow)
         blkdesc->bcpinfo.text_sent = 0;
         blkdesc->bcpinfo.next_col = 0;
         blkdesc->bcpinfo.blob_cols = 0;
-
-		break;
-
-	}
-
-	return CS_SUCCEED;
 }
 
 CS_RETCODE
@@ -286,9 +310,7 @@ blk_drop(CS_BLKDESC * blkdesc)
 	if (!blkdesc)
 		return CS_SUCCEED;
 
-	free(blkdesc->bcpinfo.tablename);
-	free(blkdesc->bcpinfo.insert_stmt);
-	tds_free_results(blkdesc->bcpinfo.bindinfo);
+    _blk_clean_desc(blkdesc);
 	free(blkdesc);
 
 	return CS_SUCCEED;
