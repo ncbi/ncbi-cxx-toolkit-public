@@ -62,14 +62,12 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-bool IsPartOfUrl(
-    const string& sentence,
-    size_t pos )
+SAFE_CONST_STATIC_STRING(kLegalPathChars, "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_-.");
+
+bool IsPartOfUrl(const string& sentence, size_t pos)
 {
     string separators( "( \t\r\n" );
-    static const char legal_path_chars_str[] =
-        "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_-.";
-    const CTempString legal_path_chars(legal_path_chars_str, sizeof(legal_path_chars_str) - 1);
+    const string& legal_path_chars = kLegalPathChars.Get();
 
     //
     //  Weed out silly input:
@@ -760,7 +758,7 @@ void TrimSpacesAndJunkFromEnds(string& result, const CTempString& str, bool allo
     // if there's junk, chop it off (but leave period/tildes/ellipsis as appropriate)
     if (start_of_junk_pos < str.length()) {
 
-        const int chars_in_junk = ((int)str.length() - start_of_junk_pos);
+        const int chars_in_junk = (int)(str.length() - start_of_junk_pos);
         _ASSERT(chars_in_junk >= 1);
 
         // allow one period at end
@@ -1338,33 +1336,34 @@ void GetDeltaSeqSummary(const CBioseq_Handle& seq, SDeltaSeqSummary& summary)
 }
 
 
-string GetTechString(int tech)
+SAFE_CONST_STATIC_STRING(kTS_concept_trans,    "conceptual translation");
+SAFE_CONST_STATIC_STRING(kTS_concept_trans_a,  "conceptual translation supplied by author");
+SAFE_CONST_STATIC_STRING(kTS_both,             "conceptual translation with partial peptide sequencing");
+SAFE_CONST_STATIC_STRING(kTS_seq_pept,         "direct peptide sequencing");
+SAFE_CONST_STATIC_STRING(kTS_seq_pept_homol,   "sequenced peptide, ordered by homology");
+SAFE_CONST_STATIC_STRING(kTS_seq_pept_overlap, "sequenced peptide, ordered by overlap");
+
+const string& GetTechString(int tech)
 {
-    static const char* concept_trans_str = "conceptual translation";
-    static const char* seq_pept_str = "direct peptide sequencing";
-    static const char* both_str = "conceptual translation with partial peptide sequencing";
-    static const char* seq_pept_overlap_str = "sequenced peptide, ordered by overlap";
-    static const char* seq_pept_homol_str = "sequenced peptide, ordered by homology";
-    static const char* concept_trans_a_str = "conceptual translation supplied by author";
     
     switch ( tech ) {
     case CMolInfo::eTech_concept_trans:
-        return concept_trans_str;
+        return kTS_concept_trans.Get();
 
     case CMolInfo::eTech_seq_pept :
-        return seq_pept_str;
+        return kTS_seq_pept.Get();
 
     case CMolInfo::eTech_both:
-        return both_str;
+        return kTS_both.Get();
 
     case CMolInfo::eTech_seq_pept_overlap:
-        return seq_pept_overlap_str;
+        return kTS_seq_pept_overlap.Get();
 
     case CMolInfo::eTech_seq_pept_homol:
-        return seq_pept_homol_str;
+        return kTS_seq_pept_homol.Get();
 
     case CMolInfo::eTech_concept_trans_a:
-        return concept_trans_a_str;
+        return kTS_concept_trans_a.Get();
 
     default:
         return kEmptyStr;
