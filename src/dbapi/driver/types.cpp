@@ -1503,17 +1503,19 @@ void CDB_LongChar::SetValue(const char* str,
                             size_t len,
                             EEncoding enc)
 {
-    CheckStringTruncation(CDB_VarChar(str, len, enc).Size(), m_Size);
+    CDB_VarChar vc(str, len, enc);
+    CheckStringTruncation(vc.Size(), m_Size);
 
-    Assign(str, m_Size, enc);
+    Assign(vc.AsCString(), m_Size, enc);
 }
 
 
 void CDB_LongChar::SetValue(const TStringUCS2& str, size_t len)
 {
-    CheckStringTruncation(CDB_VarChar(str, len).Size(), m_Size);
+    CDB_VarChar vc(str, len);
+    CheckStringTruncation(vc.Size(), m_Size);
 
-    Assign(str, m_Size);
+    Assign(vc.Data(), m_Size);
 }
 
 
