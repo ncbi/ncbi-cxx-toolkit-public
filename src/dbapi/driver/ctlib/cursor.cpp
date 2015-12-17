@@ -318,34 +318,24 @@ I_ITDescriptor* CTL_CursorCmd::x_GetITDescriptor(unsigned int item_num)
         if(!GetResult().SkipItem()) return 0;
     }
 
-    I_ITDescriptor* desc= 0;
-    if(static_cast<unsigned int>(GetResult().CurrentItemNo()) == item_num) {
-        desc = GetResult().GetImageOrTextDescriptor();
-    }
-    else {
-        auto_ptr<CTL_ITDescriptor> dsc(new CTL_ITDescriptor);
-
-        bool rc = (Check(ct_data_info(x_GetSybaseCmd(), CS_GET, item_num+1, &dsc->m_Desc))
-                   != CS_SUCCEED);
-
-        CHECK_DRIVER_ERROR(
-            rc,
-            "ct_data_info failed." + GetDbgInfo(),
-            130010 );
-
-        if (dsc->m_Desc.textptrlen > 0
-            &&  strcmp((const char*)dsc->m_Desc.textptr,
-                       "dummy textptr\0\0") == 0) {
-            desc = dsc.release();
-        } else {
-            string table, column;
-            NStr::SplitInTwo(dsc->m_Desc.name, ".", table, column);
-            desc = new CTL_CursorITDescriptor
-                (static_cast<CTL_CursorResult&>(GetResult()),
-                 table, column, dsc->m_Desc.datatype);
+    auto_ptr<I_ITDescriptor> desc
+        (GetResult().GetImageOrTextDescriptor(item_num));
+    if (desc.get() != NULL) {
+        try {
+            GetConnection().CompleteITDescriptor(*desc, GetCmdName(), item_num);
+        } catch (CDB_Exception &) {
+            if (desc->DescriptorType() == CTL_ITDESCRIPTOR_TYPE_MAGNUM) {
+                CTL_ITDescriptor& ctl_desc
+                    = static_cast<CTL_ITDescriptor&>(*desc);
+                string table, column;
+                NStr::SplitInTwo(ctl_desc.m_Desc.name, ".", table, column);
+                desc.reset(new CTL_CursorITDescriptor
+                           (static_cast<CTL_CursorResult&>(GetResult()),
+                            table, column, ctl_desc.m_Desc.datatype));
+            }
         }
     }
-    return desc;
+    return desc.release();
 }
 
 bool CTL_CursorCmd::UpdateTextImage(unsigned int item_num, CDB_Stream& data,
@@ -679,12 +669,14 @@ I_ITDescriptor* CTL_CursorCmdExpl::x_GetITDescriptor(unsigned int item_num)
     }
 
     auto_ptr<I_ITDescriptor> desc(m_Res->GetImageOrTextDescriptor(item_num));
+    // if (desc.get() != NULL) {
+    //     GetConnection().CompleteITDescriptor(*desc, GetCmdName(), item_num);
+    // }
     if (desc.get() != NULL
         &&  desc->DescriptorType() == CTL_ITDESCRIPTOR_TYPE_MAGNUM) {
         CTL_ITDescriptor* dsc = static_cast<CTL_ITDescriptor*>(desc.get());
-        if (dsc->m_Desc.textptrlen > 0
-            &&  strcmp((const char*)dsc->m_Desc.textptr,
-                       "dummy textptr\0\0") == 0) {
+        if (dsc->m_Desc.textptrlen <= 0
+            ||  memcmp(dsc->m_Desc.textptr, "dummy textptr\0\0", 16) == 0) {
             string table, column;
             NStr::SplitInTwo(dsc->m_Desc.name, ".", table, column);
             desc.reset(new CTL_CursorITDescriptor(*m_Res, table, column,

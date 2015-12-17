@@ -768,6 +768,9 @@ BOOST_AUTO_TEST_CASE(Test_LOB_LowLevel)
     string sql;
     CDB_Text txt;
 
+    const CArgValue& arg_v = CNcbiApplication::Instance()->GetArgs()["v"];
+    bool is_tds72 = arg_v.HasValue()  &&  arg_v.AsInteger() >= 72;
+
     try {
         bool rc = false;
         auto_ptr<CDB_LangCmd> auto_stmt;
@@ -824,7 +827,18 @@ BOOST_AUTO_TEST_CASE(Test_LOB_LowLevel)
         // Send data ...
         {
             txt.Append("test clob data ...");
-            conn->SendData(*descr, txt);
+            bool caught = false;
+            try {
+                conn->SendData(*descr, txt);
+            } catch (CDB_Exception& e) {
+                caught = true;
+                if (is_tds72) {
+                    _TRACE(e);
+                } else {
+                    ERR_POST(e);
+                }
+            }
+            BOOST_CHECK_EQUAL(caught, is_tds72);
         }
 
         // Use CDB_ITDescriptor explicitely ..,

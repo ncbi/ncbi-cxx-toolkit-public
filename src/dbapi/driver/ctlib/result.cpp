@@ -756,8 +756,9 @@ CTL_RowResult::GetImageOrTextDescriptor(int item_num)
 {
     bool is_null = false;
 
-    if ((unsigned int) item_num >= GetDefineParams().GetNum()  ||  item_num < 0) {
-        return 0;
+    if ((unsigned int) item_num >= GetDefineParams().GetNum()
+        ||  item_num < m_BindedCols) {
+        return NULL;
     }
 
     char dummy[4];
@@ -769,6 +770,7 @@ CTL_RowResult::GetImageOrTextDescriptor(int item_num)
         m_NullValue[item_num] = eIsNull;
 
     auto_ptr<CTL_ITDescriptor> desc(new CTL_ITDescriptor);
+    desc->m_Desc.textptrlen = 0;
 
     bool rc = (Check(ct_data_info(x_GetSybaseCmd(),
                                   CS_GET,
@@ -776,6 +778,17 @@ CTL_RowResult::GetImageOrTextDescriptor(int item_num)
                                   &desc->m_Desc))
         != CS_SUCCEED);
     CHECK_DRIVER_ERROR( rc, "ct_data_info failed." + GetDbgInfo(), 130010 );
+
+    if (memcmp(desc->m_Desc.textptr, "dummy textptr\0\0", 16) == 0) {
+        desc->m_Desc.textptrlen = 0;
+    }
+    if (desc->m_Desc.textptrlen <= 0) {
+        desc->m_Context.reset
+            (new CDB_ClientEx(DIAG_COMPILE_INFO, NULL,
+                              "No valid TEXTPTR found", eDiag_Error, 130011,
+                              GetDbgInfo(), GetConnection(), GetLastParams()));
+        // Return desc anyway, as salvaging is possible in many cases.
+    }
 
     return desc.release();
 }
@@ -914,6 +927,15 @@ CTL_ITDescriptor::CTL_ITDescriptor()
     return;
 }
 
+CTL_ITDescriptor& CTL_ITDescriptor::operator=(const CTL_ITDescriptor& desc)
+{
+    m_Desc = desc.m_Desc;
+    if (desc.m_Context.get() != NULL) {
+        m_Context.reset(desc.m_Context->Clone());
+    }
+    return *this;
+}
+
 int CTL_ITDescriptor::DescriptorType() const
 {
     return CTL_ITDESCRIPTOR_TYPE_MAGNUM;
@@ -939,10 +961,15 @@ CTL_CursorITDescriptor::CTL_CursorITDescriptor(CTL_CursorResult& cursor_result,
                        "CURRENT OF " + cursor_result.GetCursorName()),
       m_CursorResult(&cursor_result)
 {
-    if (datatype == CS_VARBINARY_TYPE  ||  datatype == CS_IMAGE_TYPE) {
+    switch (datatype) {
+    case CS_BINARY_TYPE:
+    case CS_IMAGE_TYPE:
+    case CS_VARBINARY_TYPE:
         SetColumnType(eBinary);
-    } else {
+        break;
+    default:
         SetColumnType(eText);
+        break;
     }
     m_CursorResult->RegisterDescriptor(*this);
 }
@@ -965,7 +992,8 @@ CTL_CursorResultExpl::CTL_CursorResultExpl(CTL_LangCmd* cmd,
     m_Cmd(cmd),
     m_Res(NULL),
     m_CurItemNo(0),
-    m_ReadBuffer(NULL)
+    m_ReadBuffer(NULL),
+    m_CursorName(cursor_name)
 {
 }
 
@@ -1029,12 +1057,19 @@ bool CTL_CursorResultExpl::Fetch()
                                                    (m_Res->GetDefineParams());
 
         int col_cnt = m_Res->GetColumnNum();
+        bool need_textptrs = false;
         m_Fields.resize(col_cnt, NULL);
         m_ITDescrs.resize(col_cnt, NULL);
         for (int i = 0; i < col_cnt; ++i) {
             EDB_Type item_type = m_Res->ItemDataType(m_Res->CurrentItemNo());
             if (item_type == eDB_Text || item_type == eDB_Image) {
                 m_ITDescrs[i] = m_Res->GetImageOrTextDescriptor();
+                if ((m_ITDescrs[i]->DescriptorType()
+                     == CTL_ITDESCRIPTOR_TYPE_MAGNUM)
+                    &&  (static_cast<CTL_ITDescriptor*>(m_ITDescrs[i])
+                         ->m_Desc.textptrlen <= 0)) {
+                    need_textptrs = true;
+                }
             }
             m_Fields[i] = m_Res->GetItem();
         }
@@ -1053,6 +1088,10 @@ bool CTL_CursorResultExpl::Fetch()
                 while (res->Fetch())
                     continue;
             }
+        }
+
+        if (need_textptrs) {
+            GetConnection().CompleteITDescriptors(m_ITDescrs, m_CursorName);
         }
 
         return true;

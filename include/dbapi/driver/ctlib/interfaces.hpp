@@ -365,7 +365,9 @@ class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_Connection : public impl::CConnection
     friend class CTL_LRCmd;
     friend class CTL_SendDataCmd;
     friend class CTL_BCPInCmd;
+    friend class CTL_CursorCmd;
     friend class CTL_CursorCmdExpl;
+    friend class CTL_CursorResultExpl;
     friend class CTL_RowResult;
 
 protected:
@@ -461,7 +463,14 @@ protected:
 
     virtual TSockHandle GetLowLevelHandle(void) const;
 
+    void CompleteITDescriptor(I_ITDescriptor& desc, const string& cursor_name,
+                              int item_num);
+
+    void CompleteITDescriptors(vector<I_ITDescriptor*>& descs,
+                               const string& cursor_name);
+
 private:
+    void x_LoadTextPtrProcs(void);
     void x_CmdAlloc(CS_COMMAND** cmd);
     bool x_SendData(I_ITDescriptor& desc, CDB_Stream& img, bool log_it = true);
     bool x_SendUpdateWrite(CDB_ITDescriptor& desc, CDB_Stream& img,
@@ -476,6 +485,7 @@ private:
     CTLibContext*       m_Cntx;
     CTL_CmdBase*        m_ActiveCmd;
     ctlib::Connection   m_Handle;
+    bool                m_TextPtrProcsLoaded;
 };
 
 
@@ -1201,6 +1211,7 @@ private:
     int                     m_CurItemNo;
     size_t                  m_ReadBytes;
     void*                   m_ReadBuffer;
+    string                  m_CursorName;
 };
 
 
@@ -1443,8 +1454,11 @@ public:
 
 protected:
     CTL_ITDescriptor(void);
+    CTL_ITDescriptor& operator=(const CTL_ITDescriptor& desc);
 
-    CS_IODESC m_Desc;
+    CS_IODESC               m_Desc;
+    /// Set only when m_Desc lacks a valid textptr
+    auto_ptr<CDB_Exception> m_Context;
 };
 
 class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_CursorITDescriptor

@@ -63,6 +63,7 @@ inline int close(int fd)
 
 #include "../dbapi_driver_exception_storage.hpp"
 
+#include "dbapi_get_cursor_textptrs.inc"
 
 #define NCBI_USE_ERRCODE_X   Dbapi_CTlib_Conn
 
@@ -106,6 +107,7 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
 , m_Cntx(&cntx)
 , m_ActiveCmd(NULL)
 , m_Handle(cntx, *this)
+, m_TextPtrProcsLoaded(false)
 {
 #ifdef FTDS_IN_USE
     int tds_version = 0;
@@ -313,10 +315,14 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
 
 
 #undef NCBI_DATABASE_THROW
+#undef NCBI_DATABASE_RETHROW
+
 #define NCBI_DATABASE_THROW(ex_class, message, err_code, severity) \
     NCBI_DATABASE_THROW_ANNOTATED(ex_class, message, err_code, severity, \
         GetDbgInfo(), *this, GetLastParams())
-// No use of NCBI_DATABASE_RETHROW or DATABASE_DRIVER_*_EX here.
+#define NCBI_DATABASE_RETHROW(prev_ex, ex_class, message, err_code, severity) \
+    NCBI_DATABASE_RETHROW_ANNOTATED(prev_ex, ex_class, message, err_code, \
+        severity, GetDbgInfo(), *this, GetLastParams())
 
 
 CS_RETCODE
@@ -448,6 +454,137 @@ CTL_Connection::GetLowLevelHandle(void) const
 #else
     return impl::CConnection::GetLowLevelHandle();
 #endif
+}
+
+
+void CTL_Connection::x_LoadTextPtrProcs(void)
+{
+    if (m_TextPtrProcsLoaded) {
+        return;
+    }
+
+    string sql;
+    size_t n = ArraySize(kDBAPI_get_cursor_textptrs);
+    for (size_t i = 0;  i < n;  ++i) {
+        const char* line = kDBAPI_get_cursor_textptrs[i];
+        if (NStr::EqualNocase(line, "GO")) {
+            sql.resize(sql.find_last_not_of("\n ;") + 1);
+            CTL_LangCmd cmd(*this, sql);
+            CHECK_DRIVER_ERROR(!cmd.Send(),
+                               "Cannot define internal stored procedures",
+                               130011);
+            cmd.DumpResults();
+            sql.clear();
+        } else {
+            sql += line;
+            sql += '\n';
+        }
+    }
+
+    m_TextPtrProcsLoaded = true;
+}
+
+
+void CTL_Connection::CompleteITDescriptor(I_ITDescriptor& desc,
+                                          const string& cursor_name,
+                                          int item_num)
+{
+    if (desc.DescriptorType() != CTL_ITDESCRIPTOR_TYPE_MAGNUM) {
+        return; // not ours
+    }
+
+    CTL_ITDescriptor& ctl_desc = static_cast<CTL_ITDescriptor&>(desc);
+    if (ctl_desc.m_Desc.textptrlen > 0
+        &&  (strcmp((const char*)ctl_desc.m_Desc.textptr, "dummy textptr\0\0")
+             != 0)) {
+        return; // already good
+    }
+
+    x_LoadTextPtrProcs();
+
+    // Attempt to dig a usable textptr up.
+    CDB_VarChar          cursor_id(cursor_name);
+    CDB_Int              column_param(item_num);
+    CDB_VarBinary        textptr(ctl_desc.m_Desc.textptr, CS_TP_SIZE);
+    auto_ptr<CDB_RPCCmd> cmd(RPC("#dbapi_get_cursor_textptr"));
+    CDBParams&           params = cmd->GetBindParams();
+
+    params.Bind("@cursor_id", &cursor_id);
+    params.Bind("@column",    &column_param);
+    params.Bind("@textptr",   &textptr,       true /* output */);
+
+    CHECK_DRIVER_ERROR(!cmd->Send(),
+                       "Cannot call #dbapi_get_cursor_textptr", 130012);
+    // cmd->DumpResults();
+    while (cmd->HasMoreResults()) {
+        auto_ptr<CDB_Result> result(cmd->Result());
+        if (result.get() != NULL) {
+            while (result->Fetch()) {
+                if (result->ResultType() == eDB_ParamResult) {
+                    result->GetItem(&textptr);
+                }
+            }
+        }
+    }
+    CHECK_DRIVER_ERROR(cmd->HasFailed()  ||  textptr.IsNULL(),
+                       "#dbapi_get_cursor_textptr failed"
+                       " to return a text pointer.", 130013);
+    ctl_desc.m_Desc.textptrlen
+        = (CS_INT) min(textptr.Size(), (size_t)CS_TP_SIZE);
+    if (textptr.Data() != ctl_desc.m_Desc.textptr) {
+        memcpy(ctl_desc.m_Desc.textptr, textptr.Data(),
+               ctl_desc.m_Desc.textptrlen);
+    }
+}
+
+
+void CTL_Connection::CompleteITDescriptors(vector<I_ITDescriptor*>& descs,
+                                          const string& cursor_name)
+{
+    x_LoadTextPtrProcs();
+
+    CDB_VarChar          cursor_id(cursor_name);
+    CDB_Int              position;
+    CDB_VarBinary        textptr;
+    auto_ptr<CDB_RPCCmd> cmd(RPC("#dbapi_get_cursor_textptrs"));
+    CDBParams&           params = cmd->GetBindParams();
+
+    params.Bind("@cursor_id", &cursor_id);
+
+    CHECK_DRIVER_ERROR(!cmd->Send(),
+                       "Cannot call #dbapi_get_cursor_textptrs.", 130014);
+    while (cmd->HasMoreResults()) {
+        auto_ptr<CDB_Result> result(cmd->Result());
+        if (result.get() == NULL) {
+            continue; // break?
+        }
+        while (result->Fetch()) {
+            if (result->ResultType() != eDB_RowResult) {
+                continue;
+            }
+            position.AssignNULL();
+            textptr.AssignNULL();
+            result->GetItem(&position);
+            result->GetItem(&textptr);
+            CHECK_DRIVER_ERROR(position.IsNULL()  ||  textptr.IsNULL(),
+                               "#dbapi_get_cursor_textptrs returned a NULL"
+                               " value.",
+                               130015);
+            int i = position.Value();
+            CHECK_DRIVER_ERROR(i < 0  ||  (size_t) i >= descs.size(),
+                               "#dbapi_get_cursor_textptrs returned an"
+                               " out-of-range position",
+                               130016);
+            _ASSERT(descs[i] != NULL);
+            _ASSERT(descs[i]->DescriptorType()
+                    == CTL_ITDESCRIPTOR_TYPE_MAGNUM);
+            CS_IODESC& iod = static_cast<CTL_ITDescriptor*>(descs[i])->m_Desc;
+            iod.textptrlen = (CS_INT) min(textptr.Size(), (size_t) CS_TP_SIZE);
+            memcpy(iod.textptr, textptr.Data(), iod.textptrlen);
+        }
+    }
+    CHECK_DRIVER_ERROR(cmd->HasFailed(), "#dbapi_get_cursor_textptrs failed.",
+                       130017);
 }
 
 
@@ -728,6 +865,17 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& stream,
     auto_ptr<I_ITDescriptor> d_guard(p_desc);
     CS_COMMAND* cmd;
 
+    CTL_ITDescriptor& desc = p_desc ?
+        dynamic_cast<CTL_ITDescriptor&> (*p_desc) :
+            dynamic_cast<CTL_ITDescriptor&> (descr_in);
+    if (desc.m_Desc.textptrlen <= 0) {
+        _ASSERT(desc.m_Context.get());
+        DATABASE_DRIVER_ERROR_EX(
+            *desc.m_Context,
+            "No valid textptr found, perhaps due to a limitation of TDS 7.2+"
+            " for which automatic workarounds are not always possible.",
+            110030);
+    }
     x_CmdAlloc(&cmd);
 
     if (Check(ct_command(cmd, CS_SEND_DATA_CMD, 0, CS_UNUSED, CS_COLUMN_DATA))
@@ -736,9 +884,6 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& stream,
         DATABASE_DRIVER_ERROR( "ct_command failed." + GetDbgInfo(), 110031 );
     }
 
-    CTL_ITDescriptor& desc = p_desc ?
-        dynamic_cast<CTL_ITDescriptor&> (*p_desc) :
-            dynamic_cast<CTL_ITDescriptor&> (descr_in);
     desc.m_Desc.total_txtlen  = size;
     desc.m_Desc.log_on_update = log_it ? CS_TRUE : CS_FALSE;
 
@@ -920,24 +1065,13 @@ CTL_Connection::x_GetNativeITDescriptor(const CDB_ITDescriptor& descr_in)
     auto_ptr<CDB_LangCmd> lcmd;
     bool rc = false;
 
-    q  = "set rowcount 1\nupdate ";
-    q += descr_in.TableName();
-    q += " set ";
-    q += descr_in.ColumnName();
-#ifdef FTDS_IN_USE
-    q += " = '0x0' where ";
-#else
-    q += " = NULL where ";
-#endif
-    q += descr_in.SearchConditions();
-    q += " \nselect ";
+    q  = "select top 1 ";
     q += descr_in.ColumnName();
     q += ", TEXTPTR(" + descr_in.ColumnName() + ")";
     q += " from ";
     q += descr_in.TableName();
     q += " where ";
     q += descr_in.SearchConditions();
-    q += " \nset rowcount 0";
 
     lcmd.reset(LangCmd(q));
     rc = !lcmd->Send();
@@ -953,7 +1087,23 @@ CTL_Connection::x_GetNativeITDescriptor(const CDB_ITDescriptor& descr_in)
             while(res->Fetch()) {
                 // res->ReadItem(NULL, 0);
                 descr = res->GetImageOrTextDescriptor();
-                if(descr) break;
+                if (descr) {
+                    _ASSERT(descr->DescriptorType()
+                            == CTL_ITDESCRIPTOR_TYPE_MAGNUM);
+                    CS_IODESC& iod = ((CTL_ITDescriptor*)descr)->m_Desc;
+                    if (iod.textptrlen <= 0) {
+                        res->SkipItem();
+                        CDB_VarBinary textptr;
+                        res->GetItem(&textptr);
+                        if ( !textptr.IsNULL() ) {
+                            iod.textptrlen = (CS_INT) min(textptr.Size(),
+                                                          (size_t) CS_TP_SIZE);
+                            memcpy(iod.textptr, textptr.Data(),
+                                   iod.textptrlen);
+                        }
+                    }
+                    break;
+                }
             }
         }
         delete res;
@@ -1054,9 +1204,14 @@ CTL_Connection::x_ProcessResultInternal(CS_COMMAND* cmd, CS_INT res_type)
 
 
 #undef NCBI_DATABASE_THROW
+#undef NCBI_DATABASE_RETHROW
+
 #define NCBI_DATABASE_THROW(ex_class, message, err_code, severity) \
     NCBI_DATABASE_THROW_ANNOTATED(ex_class, message, err_code, severity, \
         GetDbgInfo(), GetConnection(), GetLastParams())
+#define NCBI_DATABASE_RETHROW(prev_ex, ex_class, message, err_code, severity) \
+    NCBI_DATABASE_RETHROW_ANNOTATED(prev_ex, ex_class, message, err_code, \
+        severity, GetDbgInfo(), GetConnection(), GetLastParams())
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -1132,6 +1287,18 @@ CTL_SendDataCmd::CTL_SendDataCmd(CTL_Connection& conn,
 #endif
     }
 
+    auto_ptr<I_ITDescriptor> d_guard(p_desc);
+
+    CTL_ITDescriptor& desc = p_desc ? dynamic_cast<CTL_ITDescriptor&>(*p_desc) :
+        dynamic_cast<CTL_ITDescriptor&> (descr_in);
+    if (desc.m_Desc.textptrlen <= 0) {
+        _ASSERT(desc.m_Context.get());
+        DATABASE_DRIVER_ERROR_EX(
+            *desc.m_Context,
+            "No valid textptr found, perhaps due to a limitation of TDS 7.2+"
+            " for which automatic workarounds are not always possible.",
+            110093);
+    }
     if (Check(ct_command(x_GetSybaseCmd(),
                          CS_SEND_DATA_CMD,
                          0,
@@ -1143,10 +1310,6 @@ CTL_SendDataCmd::CTL_SendDataCmd(CTL_Connection& conn,
         DATABASE_DRIVER_ERROR( "ct_command failed." + GetDbgInfo(), 110093 );
     }
 
-    auto_ptr<I_ITDescriptor> d_guard(p_desc);
-
-    CTL_ITDescriptor& desc = p_desc ? dynamic_cast<CTL_ITDescriptor&>(*p_desc) :
-        dynamic_cast<CTL_ITDescriptor&> (descr_in);
     // desc.m_Desc.datatype   = CS_TEXT_TYPE;
     desc.m_Desc.total_txtlen  = (CS_INT)nof_bytes;
     desc.m_Desc.log_on_update = log_it ? CS_TRUE : CS_FALSE;

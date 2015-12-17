@@ -271,6 +271,10 @@ CVariant::SetITDescriptor(I_ITDescriptor* descr)
 inline I_ITDescriptor&
 CVariant::GetITDescriptor(void) const
 {
+    if (m_descr.get() == NULL) {
+        NCBI_THROW(CVariantException, eVariant,
+                   "No blob descriptor available.");
+    }
     return *m_descr;
 }
 

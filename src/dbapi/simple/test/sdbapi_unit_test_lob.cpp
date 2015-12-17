@@ -60,15 +60,26 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
             query.RequireRowCount(0);
             BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
-            sql  = " SELECT text_field FROM " + GetTableName();
-            // sql += " FOR UPDATE OF text_field";
-            query.SetSql(sql);
-            query.Execute();
-            query.RequireRowCount(1);
+            CBlobBookmark bm;
+            if (GetArgs().GetServerType() == eSqlSrvMsSql) {
+                // When using TDS protocol 7.2 or newer, SELECT won't
+                // implicitly return text pointers, so the historical
+                // approach below (retained for Sybase because we can
+                // do so) won't work.  This code is simpler anyway.
+                bm = GetDatabase().NewBookmark(GetTableName(), "text_field",
+                                               "int_field = 0",
+                                               CBlobBookmark::eText);
+            } else {
+                sql  = " SELECT text_field FROM " + GetTableName();
+                // sql += " FOR UPDATE OF text_field";
+                query.SetSql(sql);
+                query.Execute();
+                query.RequireRowCount(1);
 
-            CQuery::iterator it = query.SingleSet().begin();
-            CBlobBookmark bm = it[1].GetBookmark();
-            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
+                CQuery::iterator it = query.SingleSet().begin();
+                bm = it[1].GetBookmark();
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
+            }
 
             ostream& out = bm.GetOStream(clob_value.size(), kBOSFlags);
             out.write(clob_value.data(), clob_value.size());
@@ -129,17 +140,12 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
 
                     query.ClearParameters();
 
-                    sql  = " SELECT text_field FROM " + GetTableName();
-                    sql += " WHERE int_field = " + NStr::NumericToString(ind);
-
                     if (ind % 2 == 0) {
-                        query.SetSql(sql);
-                        query.Execute();
-                        query.RequireRowCount(1);
-
-                        bms.push_back(query.begin()[1].GetBookmark());
-                        BOOST_CHECK_NO_THROW
-                            (query.VerifyDone(CQuery::eAllResultSets));
+                        bms.push_back
+                            (GetDatabase().NewBookmark
+                             (GetTableName(), "text_field",
+                              "int_field = " + NStr::NumericToString(ind),
+                              CBlobBookmark::eText));
                     }
                 }
                 ITERATE(vector<CBlobBookmark>, it, bms) {
@@ -379,16 +385,17 @@ BOOST_AUTO_TEST_CASE(Test_LOB2)
 
             // Update CLOB value.
             {
-                sql  = " SELECT text_field FROM " + GetTableName();
-                // sql += " FOR UPDATE OF text_field";
-
-                query.SetSql(sql);
-                query.Execute();
-                query.RequireRowCount(num_of_records);
-
                 vector<CBlobBookmark> bms;
-                ITERATE(CQuery, it, query.SingleSet()) {
-                    bms.push_back(it[1].GetBookmark());
+                for (int i = 0; i < num_of_records; ++i) {
+                    // Hack -- queries in bookmarks are interpreted when
+                    // used, so each will effectively get a different row.
+                    // Also, allow a DATALENGTH value of 1 (not just 0)
+                    // for compatibility with Sybase, which doesn't care
+                    // for non-NULL empty blobs.
+                    bms.push_back(GetDatabase().NewBookmark
+                                  (GetTableName(), "text_field",
+                                   "DATALENGTH(text_field) <= 1",
+                                   CBlobBookmark::eText));
                 }
                 ITERATE(vector<CBlobBookmark>, it, bms) {
                     ostream& out = it->GetOStream(sizeof(clob_value) - 1,
@@ -694,20 +701,19 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple)
 
             // Update LOB value.
             {
-                sql  = " SELECT text01, text02, image01, image02 FROM " + table_name;
-                // With next line MS SQL returns incorrect blob descriptors in select
-                //sql += " ORDER BY id";
-
-                query.SetSql(sql);
-                query.Execute();
-                query.RequireRowCount(1);
-
                 vector<CBlobBookmark> bms;
-                ITERATE(CQuery, it, query.SingleSet()) {
-                    for (int pos = 1; pos <= 4; ++pos) {
-                        bms.push_back(it[pos].GetBookmark());
-                    }
-                }
+                bms.push_back(GetDatabase().NewBookmark
+                              (table_name, "text01", "1 = 1",
+                               CBlobBookmark::eText));
+                bms.push_back(GetDatabase().NewBookmark
+                              (table_name, "text02", "1 = 1",
+                               CBlobBookmark::eText));
+                bms.push_back(GetDatabase().NewBookmark
+                              (table_name, "image01", "1 = 1",
+                               CBlobBookmark::eBinary));
+                bms.push_back(GetDatabase().NewBookmark
+                              (table_name, "image02", "1 = 1",
+                               CBlobBookmark::eBinary));
                 ITERATE(vector<CBlobBookmark>, it, bms) {
                     ostream& out = it->GetOStream(clob_value.size(),
                                                   kBOSFlags);
@@ -879,16 +885,10 @@ BOOST_AUTO_TEST_CASE(Test_BlobStream)
             query.RequireRowCount(0);
             BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
-            sql  = " SELECT text_field FROM " + GetTableName();
-
-            query.SetSql(sql);
-            query.Execute();
-            query.RequireRowCount(1);
-
             vector<CBlobBookmark> bms;
-            ITERATE(CQuery, it, query.SingleSet()) {
-                bms.push_back(it[1].GetBookmark());
-            }
+            bms.push_back(GetDatabase().NewBookmark
+                          (GetTableName(), "text_field", "int_field = 0",
+                           CBlobBookmark::eText));
             ITERATE(vector<CBlobBookmark>, it, bms) {
                 ostream& ostrm = it->GetOStream(data_len, kBOSFlags);
                 string s = CNcbiOstrstreamToString(out);
