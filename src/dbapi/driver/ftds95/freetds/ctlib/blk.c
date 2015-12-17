@@ -709,6 +709,7 @@ _blk_get_col_data(TDSBCPINFO *bulk, TDSCOLUMN *bindcol, int offset)
 	CS_BLKDESC *blkdesc = (CS_BLKDESC *) bulk->parent;
 	CS_CONTEXT *ctx = blkdesc->con->ctx;
 	CS_DATAFMT srcfmt, destfmt;
+    BCPCOLDATA  *coldata = bindcol->bcp_column_data;
 
 	tdsdump_log(TDS_DBG_FUNC, "_blk_get_col_data(%p, %p, %d)\n", bulk, bindcol, offset);
 
@@ -804,8 +805,10 @@ _blk_get_col_data(TDSBCPINFO *bulk, TDSCOLUMN *bindcol, int offset)
 		destfmt.format	= CS_FMT_UNUSED;
 
 		/* if convert return FAIL mark error but process other columns */
-		if ((result = cs_convert(ctx, &srcfmt, (CS_VOID *) src, 
-					 &destfmt, (CS_VOID *) bindcol->bcp_column_data->data, &destlen)) != CS_SUCCEED) {
+        if ((result = _cs_convert_ex(ctx, &srcfmt, (CS_VOID *) src, &destfmt,
+                                     (CS_VOID *) coldata->data, &destlen,
+                                     (CS_VOID **) &coldata->data))
+            != CS_SUCCEED) {
 			tdsdump_log(TDS_DBG_INFO1, "convert failed for %d \n", srcfmt.datatype);
 			return CS_FAIL;
 		}

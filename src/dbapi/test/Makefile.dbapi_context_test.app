@@ -23,7 +23,7 @@ CHECK_TIMEOUT = 60
 
 CHECK_CMD = dbapi_context_test -dr ftds64     -S MsSql
 CHECK_CMD = dbapi_context_test -dr ftds95     -S MsSql
-# CHECK_CMD = dbapi_context_test -dr ftds95     -S MsSql -v 73
+CHECK_CMD = dbapi_context_test -dr ftds95     -S MsSql -v 73
 CHECK_CMD = dbapi_context_test -dr odbc       -S MsSql
 CHECK_CMD = dbapi_context_test -dr ctlib      -S Sybase
 CHECK_CMD = dbapi_context_test -dr ftds64     -S Sybase

@@ -289,6 +289,10 @@ CS_LOCALE *_cs_locale_copy(CS_LOCALE *orig);
 int _cs_locale_copy_inplace(CS_LOCALE *new_locale, CS_LOCALE *orig);
 void _csclient_msg(CS_CONTEXT * ctx, const char *funcname, int layer,
                    int origin, int severity, int number, const char *fmt, ...);
+CS_RETCODE _cs_convert_ex(CS_CONTEXT * ctx, CS_DATAFMT * srcfmt,
+                          CS_VOID * srcdata, CS_DATAFMT * destfmt,
+                          CS_VOID * destdata, CS_INT * resultlen,
+                          CS_VOID ** handle);
 
 #ifdef __cplusplus
 #if 0

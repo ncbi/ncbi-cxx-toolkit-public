@@ -27,7 +27,7 @@ CHECK_TIMEOUT = 600
 # CHECK_CMD = dbapi_unit_test -dr dblib      -S MsSql
 CHECK_CMD = dbapi_unit_test -dr ftds64     -S MsSql
 # CHECK_CMD = dbapi_unit_test -dr ftds95     -S MsSql
-# CHECK_CMD = dbapi_unit_test -dr ftds95     -S MsSql -v 73
+CHECK_CMD = dbapi_unit_test -dr ftds95     -S MsSql -v 73
 CHECK_CMD = dbapi_unit_test -dr odbc       -S MsSql
 # Force the traditional C locale when using Sybase ctlib to avoid
 # error #4847 from Sybase ASE 15.5 (reporting that character set
@@ -35,6 +35,6 @@ CHECK_CMD = dbapi_unit_test -dr odbc       -S MsSql
 CHECK_CMD = env LC_ALL=C dbapi_unit_test -dr ctlib -S Sybase
 CHECK_CMD = dbapi_unit_test -dr dblib      -S Sybase
 CHECK_CMD = dbapi_unit_test -dr ftds64     -S Sybase
-# CHECK_CMD = dbapi_unit_test -dr ftds95     -S Sybase
+CHECK_CMD = dbapi_unit_test -dr ftds95     -S Sybase
 
 WATCHERS = ucko

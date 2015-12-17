@@ -114,6 +114,7 @@
 #  define ct_send_data      ct_send_data_ver95
 #  define ct_setparam       ct_setparam_ver95
 
+#  define _cs_convert_ex            _cs_convert_ex_ver95
 #  define _cs_locale_copy           _cs_locale_copy_ver95
 #  define _cs_locale_copy_inplace   _cs_locale_copy_inplace_ver95
 #  define _cs_locale_free           _cs_locale_free_ver95
