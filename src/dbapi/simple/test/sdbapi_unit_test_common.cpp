@@ -58,10 +58,15 @@ GetArgs(void)
 ///////////////////////////////////////////////////////////////////////////////
 static AutoPtr<CDatabase> s_Conn = NULL;
 
+static void s_ResetConnection(void);
+
 CDatabase&
 GetDatabase(void)
 {
     _ASSERT(s_Conn.get());
+    if ( !s_Conn->IsConnected(CDatabase::eFastCheck) ) {
+        s_ResetConnection();
+    }
     return *s_Conn;
 }
 
@@ -80,7 +85,7 @@ NCBITEST_AUTO_INIT()
         params.Set(CSDB_ConnectionParam::ePassword, GetArgs().GetUserPassword());
         params.Set(CSDB_ConnectionParam::eDatabase, GetArgs().GetDatabaseName());
         s_Conn.reset(new CDatabase(params));
-        s_Conn->Connect();
+        s_ResetConnection();
     }
     catch (CSDB_Exception& ex) {
         LOG_POST(Warning << "Error connecting to database: " << ex);
@@ -88,8 +93,12 @@ NCBITEST_AUTO_INIT()
         return;
     }
     _ASSERT(s_Conn.get());
+}
 
-    CQuery query(GetDatabase().NewQuery());
+static void s_ResetConnection(void)
+{
+    s_Conn->Connect();
+    CQuery query(s_Conn->NewQuery());
 
     // Create a test table ...
     string sql;

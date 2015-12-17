@@ -895,7 +895,7 @@ BOOST_AUTO_TEST_CASE(Test_BlobStream)
 
                 ostrm.write(s.data(), data_len);
 
-                BOOST_CHECK_EQUAL(ostrm.fail(), false);
+                BOOST_REQUIRE(!ostrm.fail());
 
                 ostrm.flush();
 

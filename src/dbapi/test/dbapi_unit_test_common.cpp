@@ -227,10 +227,15 @@ CommonFini(void)
 ///////////////////////////////////////////////////////////////////////////////
 static AutoPtr<IConnection> s_Conn = NULL;
 
+static void s_ResetConnection(void);
+
 IConnection&
 GetConnection(void)
 {
     _ASSERT(s_Conn.get());
+    if ( !s_Conn->IsAlive() ) {
+        s_ResetConnection();
+    }
     return *s_Conn;
 }
 
@@ -241,6 +246,11 @@ NCBITEST_AUTO_INIT()
     if (!CommonInit())
         return;
 
+    s_ResetConnection();
+}
+
+static void s_ResetConnection(void)
+{
     s_Conn.reset(GetDS().CreateConnection( CONN_OWNERSHIP ));
     _ASSERT(s_Conn.get());
 
