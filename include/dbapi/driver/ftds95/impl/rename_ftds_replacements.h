@@ -66,7 +66,10 @@
 #  define tds_cond_signal               tds_cond_signal_ver95
 #endif
 #define tds_cond_init                   tds_cond_init_ver95
-#define tds_cond_timedwait              tds_cond_timedwait_ver95
+#if (defined(_THREAD_SAFE) && defined(TDS_HAVE_PTHREAD_MUTEX)) \
+    || defined(_WIN32)
+#  define tds_cond_timedwait            tds_cond_timedwait_ver95
+#endif
 #ifndef HAVE_SOCKETPAIR
 #  define tds_socketpair                tds_socketpair_ver95
 #endif
