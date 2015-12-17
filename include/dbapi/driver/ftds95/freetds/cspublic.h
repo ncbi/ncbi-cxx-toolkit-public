@@ -275,8 +275,11 @@ enum
 	CS_TDS_50,
 	CS_TDS_70,
 	CS_TDS_71,
+#define CS_TDS_71 CS_TDS_71
 	CS_TDS_72,
+#define CS_TDS_72 CS_TDS_72
 	CS_TDS_73,
+#define CS_TDS_73 CS_TDS_73
 	CS_TDS_80 = CS_TDS_71,
 };
 

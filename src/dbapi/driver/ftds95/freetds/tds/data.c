@@ -826,7 +826,8 @@ tds_generic_put(TDSSOCKET * tds, TDSCOLUMN * curcol, int bcp7)
 		switch (curcol->column_varint_size) {
 		case 8:
 			tds_put_int8(tds, colsize);
-            tds_put_int(tds, (TDS_INT)colsize);
+            if ( !bcp7 )
+                tds_put_int(tds, (TDS_INT)colsize);
 			break;
 		case 4:	/* It's a BLOB... */
 			colsize = MIN(colsize, size);

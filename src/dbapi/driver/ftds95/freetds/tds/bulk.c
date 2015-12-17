@@ -171,7 +171,7 @@ tds_bcp_init(TDSSOCKET *tds, TDSBCPINFO *bcpinfo)
 			((TDS_NUMERIC *) curcol->bcp_column_data->data)->precision = curcol->column_prec;
 			((TDS_NUMERIC *) curcol->bcp_column_data->data)->scale = curcol->column_scale;
         } else if (bcpinfo->bind_count != 0 /* ctlib */
-                   &&  is_blob_type(curcol->column_type)) {
+                   &&  is_blob_col(curcol)) {
             curcol->bcp_column_data = tds_alloc_bcp_column_data(0);
 		} else {
 			curcol->bcp_column_data = 
