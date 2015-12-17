@@ -504,7 +504,8 @@ f(DES_KEY * key, register TDS_UINT r, register unsigned char *subkey)
 	register int er;
 
 #ifdef	TRACE
-	printf("f(%08lx, %02x %02x %02x %02x %02x %02x %02x %02x) = ",
+    tdsdump_log(TDS_DBG_FUNC,
+                "f(%08lx, %02x %02x %02x %02x %02x %02x %02x %02x) = ",
 	       r, subkey[0], subkey[1], subkey[2], subkey[3], subkey[4], subkey[5], subkey[6], subkey[7]);
 #endif
 	/* Run E(R) ^ K through the combined S & P boxes.
@@ -541,7 +542,7 @@ f(DES_KEY * key, register TDS_UINT r, register unsigned char *subkey)
 	rt |= (r & 1) << 5;
 	rval |= spp[((int) rt ^ *subkey) & 0x3f];
 #ifdef	TRACE
-	printf(" %08lx\n", rval);
+    tdsdump_log(TDS_DBG_FUNC, " %08lx\n", rval);
 #endif
 	return rval;
 }

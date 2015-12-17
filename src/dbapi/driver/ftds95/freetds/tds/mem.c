@@ -673,12 +673,16 @@ winsock_initialized(void)
 		return 1;
 
 	if (WSANOTINITIALISED != (erc = WSAGetLastError())) {
-		fprintf(stderr, "tds_init_winsock: WSAEnumProtocols failed with %d (%s)\n", erc, sock_strerror(erc) );
+        tdsdump_log(TDS_DBG_ERROR,
+                    "tds_init_winsock: WSAEnumProtocols failed with %d (%s)\n",
+                    erc, sock_strerror(erc) );
 		return 0;
 	}
 	
 	if (SOCKET_ERROR == (erc = WSAStartup(requested_version, &wsa_data))) {
-		fprintf(stderr, "tds_init_winsock: WSAStartup failed with %d (%s)\n", erc, sock_strerror(erc) );
+        tdsdump_log(TDS_DBG_ERROR,
+                    "tds_init_winsock: WSAStartup failed with %d (%s)\n",
+                    erc, sock_strerror(erc) );
 		return 0;
 	}
 #endif

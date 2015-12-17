@@ -317,7 +317,7 @@ ct_callback(CS_CONTEXT * ctx, CS_CONNECTION * con, CS_INT action, CS_INT type, C
 			*(void **) func = (CS_VOID *) (con ? con->_servermsg_cb : ctx->_servermsg_cb);
 			return CS_SUCCEED;
 		default:
-			fprintf(stderr, "Unknown callback %d\n", type);
+            _csclient_msg(ctx, "ct_callback", 2, 1, 16, 27, "%d", type);
 			*(void **) func = NULL;
 			return CS_SUCCEED;
 		}
@@ -1773,7 +1773,7 @@ _ct_bind_data(CS_CONTEXT *ctx, TDSRESULTINFO * resinfo, TDSRESULTINFO *bindinfo,
 				if (is_blob_col(curcol))
 					src = (unsigned char *) ((TDSBLOB *) src)->textvalue;
 
-				srcfmt.datatype = _ct_get_client_type(curcol);
+                srcfmt.datatype = _ct_get_client_type(ctx, curcol);
 				srcfmt.maxlength = curcol->column_cur_size;
 
 				destfmt.datatype = bindcol->column_bindtype;
@@ -1903,7 +1903,7 @@ ct_con_drop(CS_CONNECTION * con)
 }
 
 int
-_ct_get_client_type(TDSCOLUMN *col)
+_ct_get_client_type(CS_CONTEXT *ctx, TDSCOLUMN *col)
 {
 	tdsdump_log(TDS_DBG_FUNC, "_ct_get_client_type(type %d, user %d, size %d)\n", col->column_type, col->column_usertype, col->column_size);
 
@@ -1939,7 +1939,8 @@ _ct_get_client_type(TDSCOLUMN *col)
 		case 1:
 			return CS_TINYINT_TYPE;
 		default:
-			fprintf(stderr, "Unknown size %d for SYBINTN\n", col->column_size);
+            _csclient_msg(ctx, "_ct_get_client_type", 2, 1, 16, 28,
+                          "%d", col->column_size);
 		}
 		break;
 	case SYBREAL:
@@ -1954,7 +1955,8 @@ _ct_get_client_type(TDSCOLUMN *col)
 		} else if (col->column_size == 8) {
 			return CS_FLOAT_TYPE;
 		}
-		fprintf(stderr, "Error! unknown float size of %d\n", col->column_size);
+        _csclient_msg(ctx, "_ct_get_client_type", 2, 1, 16, 29,
+                      "%d", col->column_size);
 		break;
 	case SYBMONEY:
 		return CS_MONEY_TYPE;
@@ -1968,7 +1970,8 @@ _ct_get_client_type(TDSCOLUMN *col)
 		} else if (col->column_size == 8) {
 			return CS_MONEY_TYPE;
 		}
-		fprintf(stderr, "Error! unknown money size of %d\n", col->column_size);
+        _csclient_msg(ctx, "_ct_get_client_type", 2, 1, 16, 30,
+                      "%d", col->column_size);
 		break;
 	case SYBDATETIME:
 		return CS_DATETIME_TYPE;
@@ -1982,7 +1985,8 @@ _ct_get_client_type(TDSCOLUMN *col)
 		} else if (col->column_size == 8) {
 			return CS_DATETIME_TYPE;
 		}
-		fprintf(stderr, "Error! unknown date size of %d\n", col->column_size);
+        _csclient_msg(ctx, "_ct_get_client_type", 2, 1, 16, 31,
+                      "%d", col->column_size);
 		break;
 	case SYBNUMERIC:
 		return CS_NUMERIC_TYPE;
@@ -2317,7 +2321,7 @@ ct_describe(CS_COMMAND * cmd, CS_INT item, CS_DATAFMT * datafmt)
 	datafmt->name[len] = 0;
 	datafmt->namelen = len;
 	/* need to turn the SYBxxx into a CS_xxx_TYPE */
-	datafmt->datatype = _ct_get_client_type(curcol);
+    datafmt->datatype = _ct_get_client_type(cmd->con->ctx, curcol);
 	tdsdump_log(TDS_DBG_INFO1, "ct_describe() datafmt->datatype = %d server type %d\n", datafmt->datatype,
 		    curcol->column_type);
 	if (is_numeric_type(curcol->column_type))
@@ -2391,7 +2395,7 @@ ct_res_info(CS_COMMAND * cmd, CS_INT type, CS_VOID * buffer, CS_INT buflen, CS_I
 		memcpy(buffer, &int_val, sizeof(CS_INT));
 		break;
 	default:
-		fprintf(stderr, "Unknown type in ct_res_info: %d\n", type);
+        _csclient_msg(cmd->con->ctx, "ct_res_info", 2, 1, 16, 32, "%d", type);
 		return CS_FAIL;
 		break;
 	}
@@ -2684,7 +2688,8 @@ ct_compute_info(CS_COMMAND * cmd, CS_INT type, CS_INT colnum, CS_VOID * buffer, 
 			*outlen = sizeof(CS_INT);
 		break;
 	default:
-		fprintf(stderr, "Unknown type in ct_compute_info: %d\n", type);
+        _csclient_msg(cmd->con->ctx, "ct_compute_info", 2, 1, 16, 32,
+                      "%d", type);
 		return CS_FAIL;
 		break;
 	}
@@ -3201,7 +3206,7 @@ ct_param(CS_COMMAND * cmd, CS_DATAFMT * datafmt, CS_VOID * data, CS_INT datalen,
 	switch (cmd->command_type) {
 	case CS_RPC_CMD:
 		if (cmd->rpc == NULL) {
-			fprintf(stdout, "RPC is NULL ct_param\n");
+            tdsdump_log(TDS_DBG_ERROR, "RPC is NULL ct_param\n");
 			return CS_FAIL;
 		}
 
@@ -3305,7 +3310,7 @@ ct_setparam(CS_COMMAND * cmd, CS_DATAFMT * datafmt, CS_VOID * data, CS_INT * dat
 	case CS_RPC_CMD:
 
 		if (cmd->rpc == NULL) {
-			fprintf(stdout, "RPC is NULL ct_param\n");
+            tdsdump_log(TDS_DBG_ERROR, "RPC is NULL in ct_setparam\n");
 			return CS_FAIL;
 		}
 
@@ -3337,7 +3342,7 @@ ct_setparam(CS_COMMAND * cmd, CS_DATAFMT * datafmt, CS_VOID * data, CS_INT * dat
 	case CS_DYNAMIC_CMD :
 
 		if (cmd->dyn == NULL) {
-			fprintf(stdout, "cmd->dyn is NULL ct_param\n");
+            tdsdump_log(TDS_DBG_ERROR, "cmd->dyn is NULL in ct_setparam\n");
 			return CS_FAIL;
 		}
 
@@ -4172,7 +4177,8 @@ paraminfoalloc(TDSSOCKET * tds, CS_PARAM * first_param)
 
 memory_error:
 	tds_free_param_results(params);
-	tdsdump_log(TDS_DBG_SEVERE, "out of memory for rpc!");
+    _csclient_msg(((CS_CONNECTION*)tds_get_parent(tds))->ctx,
+                  "paraminfoalloc", 2, 1, 17, 33, "");
 	return NULL;
 }
 

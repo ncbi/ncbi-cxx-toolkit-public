@@ -191,7 +191,7 @@ blk_describe(CS_BLKDESC * blkdesc, CS_INT item, CS_DATAFMT * datafmt)
 	datafmt->name[len] = 0;
 	datafmt->namelen = len;
 	/* need to turn the SYBxxx into a CS_xxx_TYPE */
-	datafmt->datatype = _ct_get_client_type(curcol);
+    datafmt->datatype = _ct_get_client_type(blkdesc->con->ctx, curcol);
 	tdsdump_log(TDS_DBG_INFO1, "blk_describe() datafmt->datatype = %d server type %d\n", datafmt->datatype,
 			curcol->column_type);
 	/* FIXME is ok this value for numeric/decimal? */
@@ -711,7 +711,7 @@ _blk_get_col_data(TDSBCPINFO *bulk, TDSCOLUMN *bindcol, int offset)
             return CS_BLK_HAS_TEXT;
         }
 
-		printf("error source field not addressable \n");
+        tdsdump_log(TDS_DBG_ERROR, "Source field not addressable\n");
 		return TDS_FAIL;
 	}
 
@@ -740,8 +740,9 @@ _blk_get_col_data(TDSBCPINFO *bulk, TDSCOLUMN *bindcol, int offset)
 			case CS_UBIGINT_TYPE:	    srclen = 8; break;
 			case CS_UNIQUE_TYPE:	    srclen = 16; break;
 			default:
-				printf("error not fixed length type (%d) and datalen not specified\n",
-					bindcol->column_bindtype);
+                tdsdump_log(TDS_DBG_ERROR,
+                            "Not fixed length type (%d) and datalen not specified\n",
+                            bindcol->column_bindtype);
 				return CS_FAIL;
 			}
 
@@ -759,7 +760,7 @@ _blk_get_col_data(TDSBCPINFO *bulk, TDSCOLUMN *bindcol, int offset)
 		srcfmt.datatype = srctype;
 		srcfmt.maxlength = srclen;
 
-		destfmt.datatype  = _ct_get_client_type(bindcol);
+        destfmt.datatype  = _ct_get_client_type(blkdesc->con->ctx, bindcol);
         destfmt.maxlength = bindcol->on_server.column_size;
 		destfmt.precision = bindcol->column_prec;
 		destfmt.scale     = bindcol->column_scale;

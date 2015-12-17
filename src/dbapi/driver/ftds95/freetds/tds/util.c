@@ -138,7 +138,7 @@ tds_set_state(TDSSOCKET * tds, TDS_STATE state)
 			break;
         } else if (tds->state == TDS_READING) {
             tdsdump_log(TDS_DBG_ERROR, "tds_submit_query(): state is READING\n");
-            tdserror(tds->tds_ctx, tds, TDSETIME, 0);
+            tdserror(tds_get_ctx(tds), tds, TDSETIME, 0);
             return tds->state;
 		} else if (tds->state != TDS_IDLE && tds->state != TDS_SENDING) {
 			tds_mutex_unlock(&tds->wire_mtx);
