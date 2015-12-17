@@ -147,13 +147,13 @@ static TDS_UINT utf16len(const utf16_t * s);
 static const char *tds_prtype(int token);
 #endif
 
-const char tds_hex_digits[16] = "0123456789abcdef";
+const char tds_hex_digits[] = "0123456789abcdef";
 
 /**
  * Copy a terminated string to result and return len or TDS_CONVERT_NOMEM
  */
 static TDS_INT
-string_to_result(int desttype, const char *s, CONV_RESULT * cr)
+string_to_result_(int desttype, const char *s, CONV_RESULT * cr)
 {
 	size_t len = strlen(s);
 
@@ -168,13 +168,13 @@ string_to_result(int desttype, const char *s, CONV_RESULT * cr)
 }
 
 #define string_to_result(s, cr) \
-	string_to_result(desttype, s, cr)
+    string_to_result_(desttype, s, cr)
 
 /**
  * Copy binary data to to result and return len or TDS_CONVERT_NOMEM
  */
 static TDS_INT
-binary_to_result(int desttype, const void *data, size_t len, CONV_RESULT * cr)
+binary_to_result_(int desttype, const void *data, size_t len, CONV_RESULT * cr)
 {
 	if (desttype != TDS_CONVERT_BINARY) {
 		cr->ib = (TDS_CHAR *) malloc(len);
@@ -187,7 +187,7 @@ binary_to_result(int desttype, const void *data, size_t len, CONV_RESULT * cr)
 }
 
 #define binary_to_result(data, len, cr) \
-	binary_to_result(desttype, data, len, cr)
+    binary_to_result_(desttype, data, len, cr)
 
 /* "N" versions are safe to list due to iconv calls elsewhere. */
 #define CASE_ALL_CHAR \
@@ -291,10 +291,10 @@ tds_convert_binary(const TDS_UCHAR * src, TDS_INT srclen, int desttype, CONV_RES
 	return TDS_CONVERT_NOAVAIL;
 }
 
-TDS_INT
-tds_char2hex(TDS_CHAR *dest, TDS_UINT destlen, const TDS_CHAR * src, TDS_UINT srclen)
+ssize_t
+tds_char2hex(TDS_CHAR *dest, size_t destlen, const TDS_CHAR * src, size_t srclen)
 {
-	unsigned int i;
+    size_t i;
 	unsigned char hex1, c = 0;
 
 	/* if srclen if odd we must add a "0" before ... */
@@ -385,7 +385,7 @@ tds_convert_char(const TDS_CHAR * src, TDS_UINT srclen, int desttype, CONV_RESUL
 			test_alloc(cr->ib);
 			ib = cr->ib;
 		}
-		return tds_char2hex(ib, desttype == TDS_CONVERT_BINARY ? cr->cb.len : 0xffffffffu, src, srclen);
+        return (TDS_INT) tds_char2hex(ib, desttype == TDS_CONVERT_BINARY ? cr->cb.len : 0xffffffffu, src, srclen);
 		break;
 	case SYBINT1:
 	case SYBUINT1:
@@ -2753,7 +2753,7 @@ store_time(const char *datestr, struct tds_time *t)
 	const char *s;
 	int hours = 0, minutes = 0, seconds = 0, nanosecs = 0;
 	int ret = 1;
-	unsigned ns_div = 1;
+    int ns_div = 1;
 
 	for (s = datestr; *s && strchr("apmAPM", (int) *s) == NULL; s++) {
 		if (*s == ':' || *s == '.') {
@@ -2855,8 +2855,8 @@ store_hour(const char *hour, const char *ampm, struct tds_time *t)
  * @param srctype type requires
  * @return nullable type
  */
-TDS_INT
-tds_get_null_type(int srctype)
+TDS_SERVER_TYPE
+tds_get_null_type(int /* TDS_SERVER_TYPE */ srctype)
 {
 
 	switch (srctype) {
@@ -2892,7 +2892,7 @@ tds_get_null_type(int srctype)
 	default:
 		break;
 	}
-	return srctype;
+    return (TDS_SERVER_TYPE)srctype;
 }
 
 /**

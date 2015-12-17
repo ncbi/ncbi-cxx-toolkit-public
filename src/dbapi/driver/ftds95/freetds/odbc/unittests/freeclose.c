@@ -93,7 +93,7 @@ init_fake_server(int ip_port)
 }
 
 static void
-write_all(TDS_SYS_SOCKET s, const void *buf, size_t len)
+write_all(TDS_SYS_SOCKET s, const void *buf, int len)
 {
 	int res, l;
 	fd_set fds_write;
@@ -271,7 +271,7 @@ static TDS_THREAD_PROC_DECLARE(fake_thread_proc, arg)
 	}
 	CLOSESOCKET(fake_sock);
 	CLOSESOCKET(server_sock);
-	return NULL;
+    return 0;
 }
 
 int
@@ -417,7 +417,7 @@ main(int argc, char **argv)
 	odbc_reset_statement();
 
 	tds_mutex_lock(&mtx);
-	if (inserts > 1 || round_trips > num_inserts * 2 + 6) {
+    if (inserts > 1 || round_trips > (unsigned int) num_inserts * 2 + 6) {
 		fprintf(stderr, "Too much round trips (%u) or insert (%u) !!!\n", round_trips, inserts);
 		tds_mutex_unlock(&mtx);
 		return 1;

@@ -299,7 +299,7 @@ DSNDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 BOOL INSTAPI
 ConfigDSN(HWND hwndParent, WORD fRequest, LPCSTR lpszDriver, LPCSTR lpszAttributes)
 {
-	int result;
+    INT_PTR result;
 	DSNINFO *di;
 	const char *errmsg;
 
@@ -326,7 +326,7 @@ ConfigDSN(HWND hwndParent, WORD fRequest, LPCSTR lpszDriver, LPCSTR lpszAttribut
 			DWORD errorcode = GetLastError();
 			char buf[1000];
 
-			FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, errorcode, 0, buf, 1000, NULL);
+            FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, errorcode, 0, buf, 1000, NULL);
 		}
 
 		/* if user hit [Cancel] then clean up and return FALSE */
@@ -406,7 +406,7 @@ ConfigDriver(HWND hwndParent, WORD fRequest, LPCSTR lpszDriver, LPCSTR lpszArgs,
 
 	if (msg && lpszMsg && cbMsgMax > strlen(msg)) {
 		strcpy(lpszMsg, msg);
-		*pcbMsgOut = strlen(msg);
+        *pcbMsgOut = (WORD) strlen(msg);
 	}
 	return TRUE;
 }
@@ -423,16 +423,16 @@ ConfigTranslator(HWND hwndParent, DWORD * pvOption)
 HRESULT WINAPI
 DllRegisterServer(void)
 {
-	TCHAR fn[MAX_PATH], full_fn[MAX_PATH];
-	LPTSTR name;
+    char fn[MAX_PATH], full_fn[MAX_PATH];
+    char *name;
 	WORD len_out;
 	DWORD cnt;
 	char *desc = NULL;
 	BOOL b_res;
 
-	if (!GetModuleFileName(hinstFreeTDS, fn, TDS_VECTOR_SIZE(fn)))
+    if (!GetModuleFileNameA(hinstFreeTDS, fn, TDS_VECTOR_SIZE(fn)))
 		return SELFREG_E_CLASS;
-	if (!GetFullPathName(fn, TDS_VECTOR_SIZE(full_fn), full_fn, &name) || !name || full_fn == name)
+    if (!GetFullPathNameA(fn, TDS_VECTOR_SIZE(full_fn), full_fn, &name) || !name || full_fn == name)
 		return SELFREG_E_CLASS;
 
 	if (asprintf(&desc, "FreeTDS%c"

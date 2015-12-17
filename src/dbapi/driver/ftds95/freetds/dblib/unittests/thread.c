@@ -112,7 +112,7 @@ static TDS_THREAD_PROC_DECLARE(thread_test, arg)
 		dbloginfree(login);
 		fprintf(stderr, "Unable to connect to %s\n", SERVER);
 		set_failed();
-		return NULL;
+        return 0;
 	}
 	dbloginfree(login);
 
@@ -139,7 +139,7 @@ static TDS_THREAD_PROC_DECLARE(thread_test, arg)
 	}
 
 	dbclose(dbproc);
-	return NULL;
+    return 0;
 }
 
 int

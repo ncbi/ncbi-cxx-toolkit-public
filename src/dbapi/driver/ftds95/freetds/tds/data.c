@@ -335,7 +335,7 @@ tds_varmax_stream_read(TDSINSTREAM *stream, void *ptr, size_t len)
 	/* read part of data */
 	if (len > s->chunk_left)
 		len = s->chunk_left;
-	s->chunk_left -= len;
+    s->chunk_left -= (TDS_INT) len;
 	if (tds_get_n(s->tds, ptr, len))
 		return len;
 	return -1;
@@ -462,13 +462,13 @@ tds_variant_get(TDSSOCKET * tds, TDSCOLUMN * curcol)
 		if (v->data)
 			TDS_ZERO_FREE(v->data);
 		v->data_len = sizeof(TDS_DATETIMEALL);
-		v->data = calloc(1, sizeof(TDS_DATETIMEALL));
+        v->data = (TDS_CHAR *) calloc(1, sizeof(TDS_DATETIMEALL));
 		curcol->column_type = type;
-		curcol->column_data = (void *) v->data;
+        curcol->column_data = (unsigned char *) v->data;
 		/* trick, call get function */
 		rc = tds_msdatetime_get(tds, curcol);
 		curcol->column_type = SYBVARIANT;
-		curcol->column_data = (void *) v;
+        curcol->column_data = (unsigned char *) v;
 		return rc;
 	}
 	varint = (type == SYBUNIQUE) ? 0 : tds_get_varint_size(tds->conn, type);
@@ -614,7 +614,7 @@ tds_generic_get(TDSSOCKET * tds, TDSCOLUMN * curcol)
 	dest = curcol->column_data;
 	if (is_blob_col(curcol)) {
 		TDSDATAINSTREAM r;
-		size_t allocated;
+        int allocated;
 
 		blob = (TDSBLOB *) dest; 	/* cf. column_varint_size case 4, above */
 
@@ -712,13 +712,13 @@ tds_generic_put_info(TDSSOCKET * tds, TDSCOLUMN * col)
         if (col->column_output  &&  col->column_size <= 0
             &&  is_char_type(col->column_type))
             size = 255;
-		tds_put_byte(tds, size);
+        tds_put_byte(tds, (unsigned char)size);
 		break;
 	case 2:
-		tds_put_smallint(tds, size);
+        tds_put_smallint(tds, (TDS_SMALLINT)size);
 		break;
 	case 4:
-		tds_put_int(tds, size);
+        tds_put_int(tds, (TDS_INT)size);
 		break;
 	case 8:
 		tds_put_smallint(tds, 0xffff);
@@ -826,7 +826,7 @@ tds_generic_put(TDSSOCKET * tds, TDSCOLUMN * curcol, int bcp7)
 		switch (curcol->column_varint_size) {
 		case 8:
 			tds_put_int8(tds, colsize);
-			tds_put_int(tds, colsize);
+            tds_put_int(tds, (TDS_INT)colsize);
 			break;
 		case 4:	/* It's a BLOB... */
 			colsize = MIN(colsize, size);
@@ -840,15 +840,15 @@ tds_generic_put(TDSSOCKET * tds, TDSCOLUMN * curcol, int bcp7)
 				tds_put_n(tds, textptr, 16);
 				tds_put_n(tds, textptr, 8);
 			}
-			tds_put_int(tds, colsize);
+            tds_put_int(tds, (TDS_INT)colsize);
 			break;
 		case 2:
 			colsize = MIN(colsize, size);
-			tds_put_smallint(tds, colsize);
+            tds_put_smallint(tds, (TDS_SMALLINT)colsize);
 			break;
 		case 1:
 			colsize = MIN(colsize, size);
-			tds_put_byte(tds, colsize);
+            tds_put_byte(tds, (unsigned char)colsize);
 			break;
 		case 0:
 			/* TODO should be column_size */
@@ -897,11 +897,11 @@ tds_generic_put(TDSSOCKET * tds, TDSCOLUMN * curcol, int bcp7)
 			tds_put_n(tds, blob->textptr, 16);
 			tds_put_n(tds, blob->timestamp, 8);
 			colsize = MIN(colsize, 0x7fffffff);
-			tds_put_int(tds, colsize);
+            tds_put_int(tds, (TDS_INT)colsize);
 			break;
 		case 2:
 			colsize = MIN(colsize, 8000);
-			tds_put_smallint(tds, colsize);
+            tds_put_smallint(tds, (TDS_SMALLINT)colsize);
 			break;
 		case 1:
 			if (!colsize) {
@@ -913,7 +913,7 @@ tds_generic_put(TDSSOCKET * tds, TDSCOLUMN * curcol, int bcp7)
 				return TDS_SUCCESS;
 			}
 			colsize = MIN(colsize, 255);
-			tds_put_byte(tds, colsize);
+            tds_put_byte(tds, (unsigned char)colsize);
 			break;
 		case 0:
 			/* TODO should be column_size */
@@ -1186,7 +1186,7 @@ tds_msdatetime_put(TDSSOCKET *tds, TDSCOLUMN *col, int bcp7)
 		TDS_PUT_UA2LE(p, dta->offset);
 		p += 2;
 	}
-	buf[0] = p - buf - 1;
+    buf[0] = (unsigned char)(p - buf - 1);
 	tds_put_n(tds, buf, p - buf);
 
 	return TDS_SUCCESS;

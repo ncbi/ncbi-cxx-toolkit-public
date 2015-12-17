@@ -167,7 +167,7 @@ main(int argc, char **argv)
 				break;
 			}
 			assert(src);
-			srclen = strlen(src);
+            srclen = (TDS_UINT) strlen(src);
 			break;
 		case SYBINT1:
 		case SYBUINT1:

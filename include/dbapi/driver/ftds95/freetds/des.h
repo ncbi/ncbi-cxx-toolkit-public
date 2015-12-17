@@ -16,8 +16,8 @@ typedef struct des_key
 } DES_KEY;
 
 void tds_des_set_odd_parity(des_cblock key);
-int tds_des_ecb_encrypt(const void *plaintext, int len, DES_KEY * akey, des_cblock output);
-int tds_des_set_key(DES_KEY * dkey, const des_cblock user_key, int len);
+int tds_des_ecb_encrypt(const void *plaintext, size_t len, DES_KEY * akey, des_cblock output);
+int tds_des_set_key(DES_KEY * dkey, const des_cblock user_key, size_t len);
 void tds_des_encrypt(DES_KEY * key, des_cblock block);
 void _mcrypt_decrypt(DES_KEY * key, unsigned char *block);
 

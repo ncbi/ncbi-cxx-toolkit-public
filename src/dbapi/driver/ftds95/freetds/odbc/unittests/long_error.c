@@ -52,7 +52,7 @@ main(void)
 static void
 extract_error(SQLHANDLE handle, SQLSMALLINT type)
 {
-	SQLINTEGER i = 0;
+    SQLSMALLINT i = 0;
 	SQLINTEGER native;
 	SQLWCHAR state[7];
 	SQLWCHAR text[256];

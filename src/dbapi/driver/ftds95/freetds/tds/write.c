@@ -94,7 +94,7 @@ tds_put_n(TDSSOCKET * tds, const void *buf, size_t n)
 int
 tds_put_string(TDSSOCKET * tds, const char *s, int len)
 {
-	int res;
+    /* int res; */
 	TDSSTATICINSTREAM r;
 	TDSDATAOUTSTREAM w;
 
@@ -134,7 +134,8 @@ tds_put_string(TDSSOCKET * tds, const char *s, int len)
 	tds_staticin_stream_init(&r, s, len);
 	tds_dataout_stream_init(&w, tds);
 
-	res = tds_convert_stream(tds, tds->conn->char_convs[client2ucs2], to_server, &r.stream, &w.stream);
+    /* res = */ tds_convert_stream(tds, tds->conn->char_convs[client2ucs2],
+                                   to_server, &r.stream, &w.stream);
 	return w.written;
 }
 

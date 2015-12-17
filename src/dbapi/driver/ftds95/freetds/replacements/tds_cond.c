@@ -117,7 +117,7 @@ static void
 detect_cond(void)
 {
 	/* detect if this Windows support condition variables */
-	HMODULE mod = GetModuleHandle("kernel32");
+    HMODULE mod = GetModuleHandleA("kernel32");
 
 	init_cv  = (init_cv_t)  GetProcAddress(mod, "InitializeConditionVariable");
 	sleep_cv = (sleep_cv_t) GetProcAddress(mod, "SleepConditionVariableCS");
@@ -173,6 +173,10 @@ int (*tds_cond_timedwait) (tds_condition * cond, tds_mutex * mtx, int timeout_se
 
 #include <freetds/tds.h>
 #include <freetds/thread.h>
+
+#if defined(HAVE_GETTIMEOFDAY)  &&  defined(HAVE_SYS_TIME_H)
+#include <sys/time.h>
+#endif
 
 /* check if we can use clock_gettime */
 #undef USE_CLOCK_IN_COND

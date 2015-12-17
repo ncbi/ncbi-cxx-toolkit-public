@@ -161,7 +161,8 @@ main(int argc, char **argv)
 	
 	start_time = time(NULL);
 	ntimeouts = 0;
-	dbsetinterrupt(dbproc, (void*)chkintr, (void*)hndlintr);
+    dbsetinterrupt(dbproc, (DB_DBCHKINTR_FUNC)chkintr,
+                   (DB_DBHNDLINTR_FUNC)hndlintr);
 	
 	if (FAIL == dbsqlsend(dbproc)) {
 		fprintf(stderr, "Failed: dbsend\n");

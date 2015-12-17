@@ -44,20 +44,20 @@ void tds_ssl_deinit(TDSCONNECTION *conn);
 
 #  ifdef HAVE_GNUTLS
 
-static inline int
+static inline size_t
 tds_ssl_pending(TDSCONNECTION *conn)
 {
 	return gnutls_record_check_pending((gnutls_session_t) conn->tls_session);
 }
 
-static inline int
-tds_ssl_read(TDSCONNECTION *conn, unsigned char *buf, int buflen)
+static inline ssize_t
+tds_ssl_read(TDSCONNECTION *conn, unsigned char *buf, size_t buflen)
 {
 	return gnutls_record_recv((gnutls_session_t) conn->tls_session, buf, buflen);
 }
 
-static inline int
-tds_ssl_write(TDSCONNECTION *conn, unsigned char *buf, int buflen)
+static inline ssize_t
+tds_ssl_write(TDSCONNECTION *conn, unsigned char *buf, size_t buflen)
 {
 	return gnutls_record_send((gnutls_session_t) conn->tls_session, buf, buflen);
 }
@@ -100,13 +100,13 @@ tds_ssl_pending(TDSCONNECTION *conn)
 }
 
 static inline int
-tds_ssl_read(TDSCONNECTION *conn, unsigned char *buf, int buflen)
+tds_ssl_read(TDSCONNECTION *conn, unsigned char *buf, size_t buflen)
 {
 	return -1;
 }
 
 static inline int
-tds_ssl_write(TDSCONNECTION *conn, unsigned char *buf, int buflen)
+tds_ssl_write(TDSCONNECTION *conn, unsigned char *buf, size_t buflen)
 {
 	return -1;
 }

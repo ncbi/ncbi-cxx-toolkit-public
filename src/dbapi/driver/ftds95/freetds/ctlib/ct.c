@@ -718,7 +718,7 @@ ct_cmd_alloc(CS_CONNECTION * con, CS_COMMAND ** cmd)
 CS_RETCODE
 ct_command(CS_COMMAND * cmd, CS_INT type, const CS_VOID * buffer, CS_INT buflen, CS_INT option)
 {
-	int query_len, current_query_len;
+    ssize_t query_len, current_query_len;
 
 	tdsdump_log(TDS_DBG_FUNC, "ct_command(%p, %d, %p, %d, %d)\n", cmd, type, buffer, buflen, option);
 
@@ -2020,7 +2020,7 @@ _ct_get_client_type(CS_CONTEXT *ctx, TDSCOLUMN *col)
 	return CS_FAIL;
 }
 
-int
+TDS_SERVER_TYPE
 _ct_get_server_type(TDSSOCKET *tds, int datatype)
 {
 	tdsdump_log(TDS_DBG_FUNC, "_ct_get_server_type(%d)\n", datatype);
@@ -2070,7 +2070,7 @@ _ct_get_server_type(TDSSOCKET *tds, int datatype)
          * SENSITIVITY, BOUNDARY, VOID, USHORT, BLOB, DATE, TIME, UNITEXT,
          * XML, USER
          */
-		return -1;
+        return (TDS_SERVER_TYPE)-1;
 		break;
 	}
 }
@@ -2304,7 +2304,7 @@ ct_describe(CS_COMMAND * cmd, CS_INT item, CS_DATAFMT * datafmt)
 	TDSSOCKET *tds;
 	TDSRESULTINFO *resinfo;
 	TDSCOLUMN *curcol;
-	int len;
+    size_t len;
 
 	tdsdump_log(TDS_DBG_FUNC, "ct_describe(%p, %d, %p)\n", cmd, item, datafmt);
 
@@ -2324,7 +2324,7 @@ ct_describe(CS_COMMAND * cmd, CS_INT item, CS_DATAFMT * datafmt)
 	strncpy(datafmt->name, tds_dstr_cstr(&curcol->column_name), len);
 	/* name is always null terminated */
 	datafmt->name[len] = 0;
-	datafmt->namelen = len;
+    datafmt->namelen = (TDS_INT) len;
 	/* need to turn the SYBxxx into a CS_xxx_TYPE */
     datafmt->datatype = _ct_get_client_type(cmd->con->ctx, curcol);
 	tdsdump_log(TDS_DBG_INFO1, "ct_describe() datafmt->datatype = %d server type %d\n", datafmt->datatype,
@@ -2457,7 +2457,7 @@ ct_config(CS_CONTEXT * ctx, CS_INT action, CS_INT property, CS_VOID * buffer, CS
 					);
 					((char*)buffer)[buflen - 1]= 0;
 					if (*outlen < 0)
-						*outlen = strlen((char*) buffer);
+                        *outlen = (CS_INT) strlen((char*) buffer);
 					ret = CS_SUCCEED;
 				}
 				break;
@@ -2477,7 +2477,7 @@ ct_config(CS_CONTEXT * ctx, CS_INT action, CS_INT property, CS_VOID * buffer, CS
 					*outlen= snprintf((char*) buffer, buflen, "%s", settings->freetds_version);
 					((char*)buffer)[buflen - 1]= 0;
 					if (*outlen < 0)
-						*outlen = strlen((char*) buffer);
+                        *outlen = (CS_INT) strlen((char*) buffer);
 					ret = CS_SUCCEED;
 				}
 				break;
@@ -2590,7 +2590,7 @@ ct_cmd_props(CS_COMMAND * cmd, CS_INT action, CS_INT property, CS_VOID * buffer,
 				if ((CS_INT) len >= buflen)
 					return CS_FAIL;
 				strcpy((char*) buffer, cursor->cursor_name);
-				if (outlen) *outlen = len;
+                if (outlen) *outlen = (CS_INT)len;
 			}
 			if (property == CS_CUR_ROWCOUNT) {
 				*(CS_INT *)buffer = cursor->cursor_rows;
@@ -2733,7 +2733,7 @@ ct_get_data(CS_COMMAND * cmd, CS_INT item, CS_VOID * buffer, CS_INT buflen, CS_I
 
 	if (item != cmd->get_data_item) {
 		TDSBLOB *blob = NULL;
-		size_t table_namelen, column_namelen;
+        TDS_INT table_namelen, column_namelen;
 
 		/* allocare needed descriptor if needed */
 		free(cmd->iodesc);
@@ -3145,7 +3145,7 @@ ct_capability(CS_CONNECTION * con, CS_INT action, CS_INT type, CS_INT capability
 CS_RETCODE
 ct_dynamic(CS_COMMAND * cmd, CS_INT type, CS_CHAR * id, CS_INT idlen, CS_CHAR * buffer, CS_INT buflen)
 {
-	int query_len;
+    size_t query_len;
 	CS_CONNECTION *con;
 	CS_DYNAMIC *dyn;
 
@@ -4115,7 +4115,8 @@ paraminfoalloc(TDSSOCKET * tds, CS_PARAM * first_param)
 	TDSCOLUMN *pcol;
 	TDSPARAMINFO *params = NULL, *new_params;
 
-	int temp_type, tds_type;
+    int temp_type;
+    TDS_SERVER_TYPE tds_type;
 
 	tdsdump_log(TDS_DBG_FUNC, "paraminfoalloc(%p, %p)\n", tds, first_param);
 
@@ -4713,7 +4714,7 @@ _ct_allocate_dynamic(CS_CONNECTION * con, char *id, int idlen)
 {
 	CS_DYNAMIC *dyn;
 	CS_DYNAMIC **pdyn;
-	int id_len;
+    size_t id_len;
 
 	tdsdump_log(TDS_DBG_FUNC, "_ct_allocate_dynamic(%p, %p, %d)\n", con, id, idlen);
 
@@ -4748,7 +4749,7 @@ static CS_DYNAMIC *
 _ct_locate_dynamic(CS_CONNECTION * con, char *id, int idlen)
 {
 	CS_DYNAMIC *dyn;
-	int id_len;
+    size_t id_len;
 
 	tdsdump_log(TDS_DBG_FUNC, "_ct_locate_dynamic(%p, %p, %d)\n", con, id, idlen);
 

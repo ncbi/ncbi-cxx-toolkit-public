@@ -495,10 +495,11 @@ tds_select(TDSSOCKET * tds, unsigned tds_sel, int timeout_seconds)
  * @TODO remove tds, save error somewhere, report error in another way
  * @returns 0 if blocking, <0 error >0 bytes read
  */
-static int
-tds_socket_read(TDSCONNECTION * conn, TDSSOCKET *tds, unsigned char *buf, int buflen)
+static ssize_t
+tds_socket_read(TDSCONNECTION * conn, TDSSOCKET *tds, unsigned char *buf, size_t buflen)
 {
-	int len, err;
+    ssize_t len;
+    int err;
 
 	/* read directly from socket*/
 	len = READSOCKET(conn->s, buf, buflen);
@@ -519,10 +520,11 @@ tds_socket_read(TDSCONNECTION * conn, TDSSOCKET *tds, unsigned char *buf, int bu
  * Write to an OS socket
  * @returns 0 if blocking, <0 error >0 bytes readed
  */
-static int
-tds_socket_write(TDSCONNECTION *conn, TDSSOCKET *tds, const unsigned char *buf, int buflen, int last)
+static ssize_t
+tds_socket_write(TDSCONNECTION *conn, TDSSOCKET *tds, const unsigned char *buf, size_t buflen, int last)
 {
-	int err, len;
+    int err;
+    ssize_t len;
 
 #ifdef USE_MSGMORE
 	len = send(conn->s, buf, buflen, last ? MSG_NOSIGNAL : MSG_NOSIGNAL|MSG_MORE);
@@ -555,7 +557,8 @@ static void
 tds_check_cancel(TDSCONNECTION *conn)
 {
 	TDSSOCKET *tds;
-	int rc, len;
+    int rc;
+    ssize_t len;
 	char to_cancel[16];
 
 	len = READSOCKET(conn->s_signaled, to_cancel, sizeof(to_cancel));
@@ -594,14 +597,15 @@ tds_check_cancel(TDSCONNECTION *conn)
  * Loops until we have received some characters
  * return -1 on failure
  */
-int
-tds_goodread(TDSSOCKET * tds, unsigned char *buf, int buflen)
+ssize_t
+tds_goodread(TDSSOCKET * tds, unsigned char *buf, size_t buflen)
 {
 	if (tds == NULL || buf == NULL || buflen < 1)
 		return -1;
 
 	for (;;) {
-		int len, err;
+        ssize_t len;
+        int err;
 
 		/* FIXME this block writing from other sessions */
 		len = tds_select(tds, TDSSELREAD, tds->query_timeout);
@@ -644,8 +648,8 @@ tds_goodread(TDSSOCKET * tds, unsigned char *buf, int buflen)
 	}
 }
 
-int
-tds_connection_read(TDSSOCKET * tds, unsigned char *buf, int buflen)
+ssize_t
+tds_connection_read(TDSSOCKET * tds, unsigned char *buf, size_t buflen)
 {
 	TDSCONNECTION *conn = tds->conn;
 
@@ -666,10 +670,10 @@ tds_connection_read(TDSSOCKET * tds, unsigned char *buf, int buflen)
  * \param last 1 if this is the last packet, else 0
  * \return length written (>0), <0 on failure
  */
-int
+ssize_t
 tds_goodwrite(TDSSOCKET * tds, const unsigned char *buffer, size_t buflen, unsigned char last)
 {
-	int len;
+    ssize_t len;
 	size_t sent = 0;
 
 	assert(tds && buffer);
@@ -727,10 +731,10 @@ tds_goodwrite(TDSSOCKET * tds, const unsigned char *buffer, size_t buflen, unsig
 	return (int) sent;
 }
 
-int
-tds_connection_write(TDSSOCKET *tds, unsigned char *buf, int buflen, int final)
+ssize_t
+tds_connection_write(TDSSOCKET *tds, unsigned char *buf, size_t buflen, int final)
 {
-	int sent;
+    ssize_t sent;
 	TDSCONNECTION *conn = tds->conn;
 
 #if !defined(_WIN32) && !defined(MSG_NOSIGNAL) && !defined(DOS32X) && (!defined(__APPLE__) || !defined(SO_NOSIGPIPE))

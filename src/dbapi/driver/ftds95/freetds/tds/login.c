@@ -490,7 +490,7 @@ tds_connect(TDSSOCKET * tds, TDSLOGIN * login, int *p_oserr)
 
 	if (login->text_size || (!db_selected && !tds_dstr_isempty(&login->database))) {
 		char *str;
-		int len;
+        size_t len;
 
 		len = 64 + tds_quote_id(tds, NULL, tds_dstr_cstr(&login->database),-1);
 		if ((str = (char *) malloc(len)) == NULL)
@@ -721,7 +721,7 @@ tds7_send_login(TDSSOCKET * tds, TDSLOGIN * login)
 
 	const unsigned char *ptds7version = tds70Version;
 	
-	TDS_INT block_size = 4096;
+    unsigned int block_size = 4096;
 	
 	unsigned char option_flag1 = TDS_SET_LANG_ON | TDS_USE_DB_NOTIFY | TDS_INIT_DB_FATAL;
 	unsigned char option_flag2 = login->option_flag2;
@@ -759,7 +759,7 @@ tds7_send_login(TDSSOCKET * tds, TDSLOGIN * login)
 	};
 	struct {
 		const void *ptr;
-		unsigned pos, len;
+        size_t pos, len;
 	} data_fields[NUM_DATA_FIELDS], *field;
 
 	tds->out_flag = TDS7_LOGIN;
@@ -995,14 +995,14 @@ tds71_do_login(TDSSOCKET * tds, TDSLOGIN* login)
 {
 	int i, len;
 	const char *instance_name = tds_dstr_isempty(&login->instance_name) ? "MSSQLServer" : tds_dstr_cstr(&login->instance_name);
-	int instance_name_len = strlen(instance_name) + 1;
+    TDS_USMALLINT instance_name_len = strlen(instance_name) + 1;
 	TDS_CHAR crypt_flag;
 	unsigned int start_pos = 21;
 	TDSRET ret;
 
 #define START_POS 21
 #define UI16BE(n) ((n) >> 8), ((n) & 0xffu)
-#define SET_UI16BE(i,n) do { buf[i] = ((n) >> 8); buf[i+1] = ((n) & 0xffu); } while(0)
+#define SET_UI16BE(i,n) do { buf[i] = ((n) >> 8); buf[i+1] = (TDS_UCHAR)((n) & 0xffu); } while(0)
 	TDS_UCHAR buf[] = {
 		/* netlib version */
 		0, UI16BE(START_POS), UI16BE(6),

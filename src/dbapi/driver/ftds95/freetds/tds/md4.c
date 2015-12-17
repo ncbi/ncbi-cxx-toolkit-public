@@ -41,6 +41,8 @@
 #include <freetds/bytes.h>
 #include "md4.h"
 
+#include <freetds/bytes.h>
+
 TDS_RCSID(var, "$Id$");
 
 #undef word32
@@ -56,7 +58,7 @@ static void
 byteReverse(unsigned char *buf, unsigned longs)
 {
 	do {
-		*(word32 *) buf = TDS_GET_A4LE(buf);
+        TDS_PUT_A4(buf, TDS_GET_A4LE(buf));
 		buf += 4;
 	} while (--longs);
 }
@@ -161,8 +163,8 @@ MD4Final(struct MD4Context *ctx, unsigned char *digest)
 	byteReverse(ctx->in, 14);
 
 	/* Append length in bits and transform */
-	((word32 *) ctx->in)[14] = (word32) (ctx->bytes << 3);
-	((word32 *) ctx->in)[15] = (word32) (ctx->bytes >> 29);
+    TDS_PUT_UA4(ctx->in + 14 * sizeof(word32), (word32) (ctx->bytes << 3));
+    TDS_PUT_UA4(ctx->in + 15 * sizeof(word32), (word32) (ctx->bytes >> 29));
 
 	MD4Transform(ctx->buf, (word32 *) ctx->in);
 	byteReverse((unsigned char *) ctx->buf, 4);

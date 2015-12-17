@@ -601,7 +601,7 @@ tds_read_packet(TDSSOCKET * tds)
 	tds->in_len = 0;
 	tds->in_pos = 0;
 	for (p = pkt, end = p+8; p < end;) {
-		int len = tds_connection_read(tds, p, end - p);
+        ssize_t len = tds_connection_read(tds, p, end - p);
 		if (len <= 0) {
 			tds_close_socket(tds);
 			return -1;
@@ -757,7 +757,7 @@ int
 tds_put_cancel(TDSSOCKET * tds)
 {
 	unsigned char out_buf[8];
-	int sent;
+    ssize_t sent;
 
 	out_buf[0] = TDS_CANCEL;	/* out_flag */
 	out_buf[1] = 1;	/* final */

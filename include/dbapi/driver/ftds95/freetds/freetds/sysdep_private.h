@@ -41,6 +41,8 @@
 # define TDS_NOSIGNAL 0L
 #endif
 
+#include <config.h>
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -70,7 +72,10 @@ typedef int pid_t;
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(_WIN64)
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#pragma warning(push)
+#pragma warning(disable : 4191)
 #include <wspiapi.h>
+#pragma warning(pop)
 #include <windows.h>
 #define READSOCKET(a,b,c)	recv((a), (char *) (b), (c), TDS_NOSIGNAL)
 #define WRITESOCKET(a,b,c)	send((a), (const char *) (b), (c), TDS_NOSIGNAL)

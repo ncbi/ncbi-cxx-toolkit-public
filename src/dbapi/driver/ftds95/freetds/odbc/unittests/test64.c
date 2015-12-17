@@ -109,9 +109,9 @@ test_params(void)
 		SQLMoreResults(odbc_stmt);
 		for (n = 0; n < ARRAY_SIZE; ++n)
 			SQLMoreResults(odbc_stmt);
-		l = len;
+        l = (unsigned long)len;
 		len >>= 16;
-		h = len >> 16;
+        h = (unsigned long)(len >> 16);
 		l &= 0xfffffffflu;
 		if (h != 0 || l != 2) {
 			fprintf(stderr, "Wrong number returned in param rows high %lu low %lu\n", h, l);
@@ -191,9 +191,9 @@ test_rows(void)
 	}
 
 	/* test setting just some test pointers */
-	set_ird_params1(int2ptr(0x01020304));
+    set_ird_params1((SQLULEN*)int2ptr(0x01020304));
 	check_ird_params();
-	set_ird_params2(int2ptr(0xabcdef12));
+    set_ird_params2((SQLULEN*)int2ptr(0xabcdef12));
 	check_ird_params();
 
 	/* now see results */
@@ -229,9 +229,9 @@ test_rows(void)
 		}
 		SQLMoreResults(odbc_stmt);
 
-		l = len;
+        l = (unsigned long)len;
 		len >>= 16;
-		h = len >> 16;
+        h = (unsigned long)(len >> 16);
 		l &= 0xfffffffflu;
 		if (h != 0 || l != 2) {
 			fprintf(stderr, "Wrong number returned in rows high %lu(0x%lx) low %lu(0x%lx) test %s\n", h, h, l, l, test_name);

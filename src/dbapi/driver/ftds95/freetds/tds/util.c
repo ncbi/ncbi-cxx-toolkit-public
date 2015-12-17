@@ -267,7 +267,7 @@ static const TDS_ERROR_MESSAGE tds_error_messages[] =
 	, { TDSECONF,              EXUSER,	"Local configuration error.  "
 						"Check TDSDUMPCONFIG log for details." }
 	/* last, with masgno == 0 */
-	, { 0,              EXCONSISTENCY,	"unrecognized msgno" }
+    , { (TDSERRNO)0,    EXCONSISTENCY,  "unrecognized msgno" }
 	};
 	
 static

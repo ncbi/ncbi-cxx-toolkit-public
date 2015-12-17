@@ -435,7 +435,6 @@ tds_bcp_send_record(TDSSOCKET *tds, TDSBCPINFO *bcpinfo, tds_bcp_get_col_data ge
       if (start_col == 0) {
 		int row_pos;
 		int row_sz_pos;
-		int blob_cols = 0;
 		int var_cols_written = 0;
 		TDS_INT	 old_record_size = bcpinfo->bindinfo->row_size;
 		unsigned char *record = bcpinfo->bindinfo->current_row;
@@ -499,7 +498,7 @@ tds_bcp_send_record(TDSSOCKET *tds, TDSBCPINFO *bcpinfo, tds_bcp_get_col_data ge
 					goto cleanup;
 				/* unknown but zero */
 				tds_put_smallint(tds, 0);
-				tds_put_byte(tds, bindcol->column_type);
+                tds_put_byte(tds, (unsigned char) bindcol->column_type);
                 tds_put_byte(tds, 0xff - bcpinfo->blob_cols);
 				/*
 				 * offset of txptr we stashed during variable
@@ -744,7 +743,7 @@ tds_bcp_add_variable_columns(TDSBCPINFO *bcpinfo, tds_bcp_get_col_data get_col_d
 			unsigned int n_pfx = 1;
 
 			for (i = 0; i <= ncols ; ++i)
-				if ((offsets[i] / 256) < pfx_top)
+                if ((offsets[i] / 256u) < pfx_top)
 					++n_pfx;
 			*poff++ = n_pfx;
 			--pfx_top;
@@ -821,7 +820,7 @@ tds7_bcp_send_colmetadata(TDSSOCKET *tds, TDSBCPINFO *bcpinfo)
 		else
 			tds_put_smallint(tds, bcpcol->column_usertype);
 		tds_put_smallint(tds, bcpcol->column_flags);
-		tds_put_byte(tds, bcpcol->on_server.column_type);
+        tds_put_byte(tds, (unsigned char) bcpcol->on_server.column_type);
 
 		assert(bcpcol->funcs);
 		bcpcol->funcs->put_info(tds, bcpcol);
@@ -836,7 +835,7 @@ tds7_bcp_send_colmetadata(TDSSOCKET *tds, TDSBCPINFO *bcpinfo)
 		}
 		/* FIXME support multibyte string */
 		len = tds_dstr_len(&bcpcol->column_name);
-		tds_put_byte(tds, len);
+        tds_put_byte(tds, (unsigned char) len);
 		tds_put_string(tds, tds_dstr_cstr(&bcpcol->column_name), len);
 
 	}
@@ -1105,7 +1104,7 @@ tds_bcp_fread(TDSSOCKET * tds, TDSICONV * char_conv, FILE * stream, const char *
 	r.stream.read = tds_file_stream_read;
 	r.f = stream;
 	r.term_len = term_len;
-	r.left = calloc(1, term_len*3);
+    r.left = (char*) calloc(1, term_len*3);
 	r.left_pos = 0;
 	if (!r.left) return TDS_FAIL;
 

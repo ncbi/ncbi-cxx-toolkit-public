@@ -27,7 +27,10 @@
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#pragma warning(push)
+#pragma warning(disable : 4191)
 #include <wspiapi.h>
+#pragma warning(pop)
 #include <windows.h>
 #endif
 

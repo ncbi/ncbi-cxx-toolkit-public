@@ -39,7 +39,9 @@ shutdown_last_socket(void)
 {
 	TDS_SYS_SOCKET max_socket = odbc_find_last_socket();
 	TDS_SYS_SOCKET sockets[2];
+#if defined(__APPLE__) && defined(SO_NOSIGPIPE)
     int on = 1;
+#endif
 
 	if (max_socket < 0)
 		return 0;

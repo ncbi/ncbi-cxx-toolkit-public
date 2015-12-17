@@ -32,6 +32,8 @@
 #ifndef _READPASSPHRASE_H_
 #define _READPASSPHRASE_H_
 
+#include <config.h>
+
 #include <freetds/pushvis.h>
 
 #ifndef HAVE_READPASSPHRASE

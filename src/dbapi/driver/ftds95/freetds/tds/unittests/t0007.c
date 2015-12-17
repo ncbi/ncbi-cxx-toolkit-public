@@ -25,7 +25,7 @@
 static TDSCONTEXT ctx;
 
 static void
-test2(const char *src, int len, int midtype, int dsttype, const char *result, int line)
+test2_(const char *src, int len, int midtype, int dsttype, const char *result, int line)
 {
 	int i, res;
 	char buf[256];
@@ -97,20 +97,20 @@ test2(const char *src, int len, int midtype, int dsttype, const char *result, in
 }
 
 static void
-test0(const char *src, int len, int dsttype, const char *result, int line)
+test0_(const char *src, int len, int dsttype, const char *result, int line)
 {
-	test2(src, len, 0, dsttype, result, line);
+    test2_(src, len, 0, dsttype, result, line);
 }
 
 static void
-test(const char *src, int dsttype, const char *result, int line)
+test_(const char *src, int dsttype, const char *result, int line)
 {
-	test0(src, strlen(src), dsttype, result, line);
+    test0_(src, (int)strlen(src), dsttype, result, line);
 }
 
-#define test2(s,m,d,r) test2(s,strlen(s),m,d,r,__LINE__)
-#define test0(s,l,d,r) test0(s,l,d,r,__LINE__)
-#define test(s,d,r) test(s,d,r,__LINE__)
+#define test2(s,m,d,r) test2_(s,(int)strlen(s),m,d,r,__LINE__)
+#define test0(s,l,d,r) test0_(s,l,d,r,__LINE__)
+#define test(s,d,r) test_(s,d,r,__LINE__)
 
 static int
 int_types[] = {
@@ -329,9 +329,9 @@ main(int argc, char **argv)
 
 		/* try conversion from char (already tested above) */
 		cr_src.n.precision = 20; cr_src.n.scale = 0;
-		len_src = tds_convert(&ctx, SYBVARCHAR, *value, strlen(*value), *type1, &cr_src);
+        len_src = tds_convert(&ctx, SYBVARCHAR, *value, (TDS_UINT)strlen(*value), *type1, &cr_src);
 		cr_dst.n.precision = 20; cr_dst.n.scale = 0;
-		len_dst = tds_convert(&ctx, SYBVARCHAR, *value, strlen(*value), *type2, &cr_dst);
+        len_dst = tds_convert(&ctx, SYBVARCHAR, *value, (TDS_UINT)strlen(*value), *type2, &cr_dst);
 		if (len_src <= 0 || len_dst <= 0)
 			continue;
 		cr_dst.n.precision = 20; cr_dst.n.scale = 0;

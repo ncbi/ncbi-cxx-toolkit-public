@@ -285,7 +285,7 @@ des_init(DES_KEY * key)
 
 /* Set key (initialize key schedule array) */
 int
-tds_des_set_key(DES_KEY * dkey, const des_cblock user_key, int len)
+tds_des_set_key(DES_KEY * dkey, const des_cblock user_key, size_t len)
 {
 	char pc1m[56];		/* place to modify pc1 into */
 	char pcr[56];		/* place to rotate pc1 into */
@@ -619,9 +619,9 @@ spinit(DES_KEY * key)
 /* ECB MODE */
 
 int
-tds_des_ecb_encrypt(const void *plaintext, int len, DES_KEY * akey, des_cblock output)
+tds_des_ecb_encrypt(const void *plaintext, size_t len, DES_KEY * akey, des_cblock output)
 {
-	int j;
+    size_t j;
 	const unsigned char *plain = (const unsigned char *) plaintext;
 
 	for (j = 0; j < len / 8; j++) {

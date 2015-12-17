@@ -128,7 +128,7 @@ static TDS_THREAD_PROC_DECLARE(fake_thread_proc, arg)
 		if (len < 0 && sock_errno != TDSSOCK_EINPROGRESS)
 			break;
 	}
-	return NULL;
+    return 0;
 }
 
 int

@@ -47,7 +47,9 @@ static int
 shutdown_last_socket(TDS_SYS_SOCKET max_socket)
 {
 	TDS_SYS_SOCKET sockets[2];
+#if defined(__APPLE__) && defined(SO_NOSIGPIPE)
     int on = 1;
+#endif
 #if 0
     int max_socket = -1, i;
 

@@ -26,6 +26,9 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <time.h>
+#include <sys/types.h>
+
+#include <config.h>
 
 #ifdef HAVE_STDDEF_H
 #include <stddef.h>
@@ -47,6 +50,25 @@ typedef struct tdsiconvinfo TDSICONV;
 typedef struct tds_connection TDSCONNECTION;
 typedef struct tds_socket TDSSOCKET;
 typedef struct tds_column TDSCOLUMN;
+/* More, to address "declared with greater visibility" warnings. */
+typedef struct tds_authentication  TDSAUTHENTICATION;
+typedef struct tds_bcpcoldata      BCPCOLDATA;
+typedef struct tds_bcpinfo         TDSBCPINFO;
+typedef struct tds_capabilities    TDS_CAPABILITIES;
+typedef struct tds_capability_type TDS_CAPABILITY_TYPE;
+typedef struct tds_column_funcs    TDSCOLUMNFUNCS;
+typedef struct tds_context         TDSCONTEXT;
+typedef struct tds_cursor          TDSCURSOR;
+typedef struct tds_cursor_status   TDS_CURSOR_STATUS;
+typedef struct tds_dstr           *DSTR;
+typedef struct tds_dynamic         TDSDYNAMIC;
+typedef struct tds_env             TDSENV;
+typedef struct tds_locale          TDSLOCALE;
+typedef struct tds_login           TDSLOGIN;
+typedef struct tds_packet          TDSPACKET;
+typedef struct tds_result_info     TDSCOMPUTEINFO;
+typedef struct tds_result_info     TDSRESULTINFO;
+typedef TDSRESULTINFO              TDSPARAMINFO;
 
 #include <freetds/version.h>
 #include "tds_sysdep_public.h"
@@ -90,10 +112,10 @@ typedef struct tds_compiletime_settings
  * Use tds_dstr_* functions/macros, do not access members directly.
  * There should be always a buffer.
  */
-typedef struct tds_dstr {
+struct tds_dstr {
 	size_t dstr_size;
 	char dstr_s[1];
-} *DSTR;
+} /* *DSTR */;
 
 /**
  * @file tds.h
@@ -349,7 +371,12 @@ typedef enum tds_encryption_level {
 #endif
 
 #if ENABLE_EXTRA_CHECKS
-# if defined(__GNUC__) && __GNUC__ >= 2
+# if defined(__llvm__)  \
+     ||  (defined(__GNUC__)  \
+          &&  (__GNUC__ >= 5  ||  (__GNUC__  == 4  &&  __GNUC_MINOR__ >= 6)))
+# define TDS_COMPILE_CHECK(name,check) \
+    _Static_assert(check,#name)
+# elif defined(__GNUC__) && __GNUC__ >= 2
 # define TDS_COMPILE_CHECK(name,check) \
     extern int name[(check)?1:-1] __attribute__ ((unused))
 # else
@@ -510,20 +537,20 @@ typedef union
 
 #define TDS_ALIGN_SIZE sizeof(tds_align_struct)
 
-typedef struct tds_capability_type
+struct tds_capability_type
 {
 	unsigned char type;
 	unsigned char len; /* always sizeof(values) */
 	unsigned char values[TDS_MAX_CAPABILITY/2-2];
-} TDS_CAPABILITY_TYPE;
+} /* TDS_CAPABILITY_TYPE */;
 
-typedef struct tds_capabilities
+struct tds_capabilities
 {
 	TDS_CAPABILITY_TYPE types[2];
-} TDS_CAPABILITIES;
+} /* TDS_CAPABILITIES */;
 
 #define TDS_MAX_LOGIN_STR_SZ 128
-typedef struct tds_login
+struct tds_login
 {
 	DSTR server_name;		/**< server name (in freetds.conf) */
 	int port;			/**< port of database service */
@@ -569,7 +596,7 @@ typedef struct tds_login
 	unsigned int use_utf16:1;
 	unsigned int valid_configuration:1;
 	unsigned int check_ssl_hostname:1;
-} TDSLOGIN;
+} /* TDSLOGIN */;
 
 typedef struct tds_headers
 {
@@ -579,12 +606,12 @@ typedef struct tds_headers
 	/* TDS 7.4+: trace activity ID char[20] */
 } TDSHEADERS;
 
-typedef struct tds_locale
+struct tds_locale
 {
 	char *language;
 	char *server_charset;
 	char *date_fmt;
-} TDSLOCALE;
+} /* TDSLOCALE */;
 
 /** 
  * Information about blobs (e.g. text or image).
@@ -623,12 +650,12 @@ typedef struct tds_encoding
 	unsigned char canonic;
 } TDS_ENCODING;
 
-typedef struct tds_bcpcoldata
+struct tds_bcpcoldata
 {
 	TDS_UCHAR *data;
 	TDS_INT    datalen;
 	TDS_INT    is_null;
-} BCPCOLDATA;
+} /* BCPCOLDATA */;
 
 
 typedef TDSRET  tds_func_get_info(TDSSOCKET *tds, TDSCOLUMN *col);
@@ -637,7 +664,7 @@ typedef TDS_INT tds_func_row_len(TDSCOLUMN *col);
 typedef TDSRET  tds_func_put_info(TDSSOCKET *tds, TDSCOLUMN *col);
 typedef TDSRET  tds_func_put_data(TDSSOCKET *tds, TDSCOLUMN *col, int bcp7);
 
-typedef struct tds_column_funcs
+struct tds_column_funcs
 {
 	tds_func_get_info *get_info;
 	tds_func_get_data *get_data;
@@ -661,7 +688,7 @@ typedef struct tds_column_funcs
 #if 0
 	TDSRET (*convert)(TDSSOCKET *tds, TDSCOLUMN *col);
 #endif
-} TDSCOLUMNFUNCS;
+} /* TDSCOLUMNFUNCS */;
 
 /** 
  * Metadata about columns in regular and compute rows 
@@ -747,7 +774,7 @@ struct tds_column
 
 
 /** Hold information for any results */
-typedef struct tds_result_info
+struct tds_result_info
 {
 	/* TODO those fields can became a struct */
 	TDSCOLUMN **columns;
@@ -764,7 +791,7 @@ typedef struct tds_result_info
 	TDS_TINYINT rows_exist;
 	/* TODO remove ?? used only in dblib */
 	TDS_TINYINT more_results;
-} TDSRESULTINFO;
+} /* TDSRESULTINFO */;
 
 /** values for tds->state */
 typedef enum tds_states
@@ -850,10 +877,6 @@ enum TDS_DBG_LOG_STATE
 };
 #endif
 
-typedef struct tds_result_info TDSCOMPUTEINFO;
-
-typedef TDSRESULTINFO TDSPARAMINFO;
-
 typedef struct tds_message
 {
 	TDS_CHAR *server;
@@ -884,7 +907,7 @@ typedef enum {
 	, TDS_CURSOR_STATE_ACTIONED = 3		/* acknowledged by server */
 } TDS_CURSOR_STATE;
 
-typedef struct tds_cursor_status
+struct tds_cursor_status
 {
 	TDS_CURSOR_STATE declare;
 	TDS_CURSOR_STATE cursor_row;
@@ -892,7 +915,7 @@ typedef struct tds_cursor_status
 	TDS_CURSOR_STATE fetch;
 	TDS_CURSOR_STATE close; 
 	TDS_CURSOR_STATE dealloc;
-} TDS_CURSOR_STATUS;
+} /* TDS_CURSOR_STATUS */;
 
 typedef enum tds_cursor_operation
 {
@@ -915,7 +938,7 @@ typedef enum tds_cursor_fetch
 /**
  * Holds informations about a cursor
  */
-typedef struct tds_cursor
+struct tds_cursor
 {
 	struct tds_cursor *next;	/**< next in linked list, keep first */
 	TDS_INT ref_count;		/**< reference counter so client can retain safely a pointer */
@@ -936,23 +959,23 @@ typedef struct tds_cursor
 	TDS_USMALLINT srv_status;
 	TDSRESULTINFO *res_info;	/** row fetched from this cursor */
 	TDS_INT type, concurrency;
-} TDSCURSOR;
+} /* TDSCURSOR */;
 
 /**
  * Current environment as reported by the server
  */
-typedef struct tds_env
+struct tds_env
 {
 	int block_size;
 	char *language;
 	char *charset;
 	char *database;
-} TDSENV;
+} /* TDSENV */;
 
 /**
  * Holds information for a dynamic (also called prepared) query.
  */
-typedef struct tds_dynamic
+struct tds_dynamic
 {
 	struct tds_dynamic *next;	/**< next in linked list, keep first */
 	TDS_INT ref_count;		/**< reference counter so client can retain safely a pointer */
@@ -986,7 +1009,7 @@ typedef struct tds_dynamic
 	TDSPARAMINFO *params;
 	/** saved query, we need to know original query if prepare is impossible */
 	char *query;
-} TDSDYNAMIC;
+} /* TDSDYNAMIC */;
 
 typedef enum {
 	TDS_MULTIPLE_QUERY,
@@ -1001,7 +1024,6 @@ typedef struct tds_multiple
 } TDSMULTIPLE;
 
 /* forward declaration */
-typedef struct tds_context TDSCONTEXT;
 typedef int (*err_handler_t) (const TDSCONTEXT *, TDSSOCKET *, TDSMESSAGE *);
 
 struct tds_context
@@ -1022,21 +1044,21 @@ enum TDS_ICONV_ENTRY
 	, initial_char_conv_count	/* keep last */
 };
 
-typedef struct tds_authentication
+struct tds_authentication
 {
 	TDS_UCHAR *packet;
 	int packet_len;
 	TDSRET (*free)(TDSCONNECTION* conn, struct tds_authentication * auth);
 	TDSRET (*handle_next)(TDSSOCKET * tds, struct tds_authentication * auth, size_t len);
-} TDSAUTHENTICATION;
+} /* TDSAUTHENTICATION */;
 
-typedef struct tds_packet
+struct tds_packet
 {
 	struct tds_packet *next;
 	short sid;
 	unsigned len, capacity;
 	unsigned char buf[1];
-} TDSPACKET;
+} /* TDSPACKET */;
 
 /* field related to connection */
 struct tds_connection
@@ -1276,7 +1298,7 @@ void tds_release_cur_dyn(TDSSOCKET * tds)
 }
 void tds_dynamic_deallocated(TDSCONNECTION *conn, TDSDYNAMIC *dyn);
 void tds_set_cur_dyn(TDSSOCKET *tds, TDSDYNAMIC *dyn);
-TDSSOCKET *tds_realloc_socket(TDSSOCKET * tds, size_t bufsize);
+TDSSOCKET *tds_realloc_socket(TDSSOCKET * tds, unsigned int bufsize);
 char *tds_alloc_client_sqlstate(int msgno);
 char *tds_alloc_lookup_sqlstate(TDSSOCKET * tds, int msgno);
 TDSLOGIN *tds_alloc_login(int use_environment);
@@ -1286,7 +1308,7 @@ TDSLOGIN *tds_init_login(TDSLOGIN * login, TDSLOCALE * locale);
 TDSLOCALE *tds_alloc_locale(void);
 void *tds_alloc_param_data(TDSCOLUMN * curparam);
 void tds_free_locale(TDSLOCALE * locale);
-TDSCURSOR * tds_alloc_cursor(TDSSOCKET * tds, const char *name, TDS_INT namelen, const char *query, TDS_INT querylen);
+TDSCURSOR * tds_alloc_cursor(TDSSOCKET * tds, const char *name, size_t namelen, const char *query, size_t querylen);
 void tds_free_row(TDSRESULTINFO * res_info, unsigned char *row);
 TDSSOCKET *tds_alloc_socket(TDSCONTEXT * context, unsigned int bufsize);
 TDSSOCKET *tds_alloc_additional_socket(TDSCONNECTION *conn);
@@ -1335,12 +1357,12 @@ TDSRET tds_submit_begin_tran(TDSSOCKET *tds);
 TDSRET tds_submit_rollback(TDSSOCKET *tds, int cont);
 TDSRET tds_submit_commit(TDSSOCKET *tds, int cont);
 TDSRET tds_disconnect(TDSSOCKET * tds);
-size_t tds_quote_id(TDSSOCKET * tds, char *buffer, const char *id, int idlen);
-size_t tds_quote_string(TDSSOCKET * tds, char *buffer, const char *str, int len);
+size_t tds_quote_id(TDSSOCKET * tds, char *buffer, const char *id, ssize_t idlen);
+size_t tds_quote_string(TDSSOCKET * tds, char *buffer, const char *str, ssize_t len);
 const char *tds_skip_comment(const char *s);
 const char *tds_skip_quoted(const char *s);
 size_t tds_fix_column_size(TDSSOCKET * tds, TDSCOLUMN * curcol);
-const char *tds_convert_string(TDSSOCKET * tds, TDSICONV * char_conv, const char *s, int len, size_t *out_len);
+const char *tds_convert_string(TDSSOCKET * tds, TDSICONV * char_conv, const char *s, ssize_t len, size_t *out_len);
 void tds_convert_string_free(const char *original, const char *converted);
 #if !ENABLE_EXTRA_CHECKS
 #define tds_convert_string_free(original, converted) \
@@ -1446,16 +1468,16 @@ void tds_close_socket(TDSSOCKET * tds);
 int tds7_get_instance_ports(FILE *output, struct tds_addrinfo *addr);
 int tds7_get_instance_port(struct tds_addrinfo *addr, const char *instance);
 const char *tds_prwsaerror(int erc);
-int tds_connection_read(TDSSOCKET * tds, unsigned char *buf, int buflen);
-int tds_connection_write(TDSSOCKET *tds, unsigned char *buf, int buflen, int final);
+ssize_t tds_connection_read(TDSSOCKET * tds, unsigned char *buf, size_t buflen);
+ssize_t tds_connection_write(TDSSOCKET *tds, unsigned char *buf, size_t buflen, int final);
 #define TDSSELREAD  POLLIN
 #define TDSSELWRITE POLLOUT
 int tds_select(TDSSOCKET * tds, unsigned tds_sel, int timeout_seconds);
 #if ENABLE_ODBC_MARS
 void tds_connection_close(TDSCONNECTION *conn);
 #endif
-int tds_goodread(TDSSOCKET * tds, unsigned char *buf, int buflen);
-int tds_goodwrite(TDSSOCKET * tds, const unsigned char *buffer, size_t buflen, unsigned char last);
+ssize_t tds_goodread(TDSSOCKET * tds, unsigned char *buf, size_t buflen);
+ssize_t tds_goodwrite(TDSSOCKET * tds, const unsigned char *buffer, size_t buflen, unsigned char last);
 
 /* packet.c */
 int tds_read_packet(TDSSOCKET * tds);
@@ -1501,7 +1523,7 @@ enum tds_bcp_directions
 	TDS_BCP_QUERYOUT = 3
 };
 
-typedef struct tds_bcpinfo
+struct tds_bcpinfo
 {
 	const char *hint;
 	void *parent;
@@ -1515,7 +1537,7 @@ typedef struct tds_bcpinfo
     TDS_INT text_sent;
     TDS_INT next_col;
     TDS_INT blob_cols;
-} TDSBCPINFO;
+} /* TDSBCPINFO */;
 
 TDSRET tds_bcp_init(TDSSOCKET *tds, TDSBCPINFO *bcpinfo);
 typedef TDSRET (*tds_bcp_get_col_data) (TDSBCPINFO *bulk, TDSCOLUMN *bcpcol, int offset);

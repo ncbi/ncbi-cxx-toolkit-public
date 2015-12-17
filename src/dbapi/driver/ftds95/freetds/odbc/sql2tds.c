@@ -135,7 +135,7 @@ odbc_wstr2str(TDS_STMT * stmt, const char *src, int* len)
 		return NULL;
 	}
 
-	*len = p - out;
+    *len = (int)(p - out);
 	return out;
 }
 
@@ -154,11 +154,12 @@ _odbc_blob_free(TDSCOLUMN *col)
  */
 SQLRETURN
 odbc_sql2tds(TDS_STMT * stmt, const struct _drecord *drec_ipd, const struct _drecord *drec_apd, TDSCOLUMN *curcol,
-	int compute_row, const TDS_DESC* axd, unsigned int n_row)
+    int compute_row, const TDS_DESC* axd, SQLSETPOSIROW n_row)
 {
 	TDS_DBC * dbc = stmt->dbc;
 	TDSCONNECTION * conn = dbc->tds_socket->conn;
-	int dest_type, src_type, sql_src_type, res;
+    TDS_SERVER_TYPE dest_type, src_type;
+    int sql_src_type, res;
 	CONV_RESULT ores;
 	TDSBLOB *blob;
 	char *src, *converted_src;
@@ -167,7 +168,7 @@ odbc_sql2tds(TDS_STMT * stmt, const struct _drecord *drec_ipd, const struct _dre
 	TDS_DATETIMEALL dta;
 	TDS_NUMERIC num;
 	SQL_NUMERIC_STRUCT *sql_num;
-	SQLINTEGER sql_len;
+    SQLLEN sql_len;
 	int need_data = 0, i;
 
 	/* TODO handle bindings of char like "{d '2002-11-12'}" */
@@ -210,8 +211,8 @@ odbc_sql2tds(TDS_STMT * stmt, const struct _drecord *drec_ipd, const struct _dre
 #endif
 	}
 	if (is_numeric_type(curcol->column_type)) {
-		curcol->column_prec = drec_ipd->sql_desc_precision;
-		curcol->column_scale = drec_ipd->sql_desc_scale;
+        curcol->column_prec = (TDS_TINYINT)drec_ipd->sql_desc_precision;
+        curcol->column_scale = (TDS_TINYINT)drec_ipd->sql_desc_scale;
 	}
 
 	if (drec_ipd->sql_desc_parameter_type != SQL_PARAM_INPUT)
@@ -256,7 +257,7 @@ odbc_sql2tds(TDS_STMT * stmt, const struct _drecord *drec_ipd, const struct _dre
 	if (!compute_row)
 		return SQL_SUCCESS;
 
-	src = drec_apd->sql_desc_data_ptr;
+    src = (char*)drec_apd->sql_desc_data_ptr;
 	if (src && n_row) {
 		SQLLEN len;
 		if (axd->header.sql_desc_bind_type != SQL_BIND_BY_COLUMN) {
@@ -298,9 +299,9 @@ odbc_sql2tds(TDS_STMT * stmt, const struct _drecord *drec_ipd, const struct _dre
 			return SQL_ERROR;
 		}
 		if (sql_src_type == SQL_C_WCHAR)
-			len = sqlwcslen((const SQLWCHAR *) src) * sizeof(SQLWCHAR);
+            len = (int)sqlwcslen((const SQLWCHAR *) src) * sizeof(SQLWCHAR);
 		else
-			len = strlen(src);
+            len = (int)strlen(src);
 		break;
 	case SQL_DEFAULT_PARAM:
 		odbc_errs_add(&stmt->errs, "07S01", NULL);	/* Invalid use of default parameter */
@@ -376,6 +377,9 @@ odbc_sql2tds(TDS_STMT * stmt, const struct _drecord *drec_ipd, const struct _dre
 			curcol->column_cur_size = len;
 			return SQL_SUCCESS;
 		}
+
+    default:
+        break;
 	}
 
 	/* allocate given space */
@@ -419,6 +423,8 @@ odbc_sql2tds(TDS_STMT * stmt, const struct _drecord *drec_ipd, const struct _dre
 		src = (char *) &num;
 		break;
 		/* TODO intervals */
+    default:
+        break;
 	}
 
 	converted_src = NULL;
@@ -468,8 +474,10 @@ odbc_sql2tds(TDS_STMT * stmt, const struct _drecord *drec_ipd, const struct _dre
 		break;
 	case SYBNUMERIC:
 	case SYBDECIMAL:
-		((TDS_NUMERIC *) dest)->precision = drec_ipd->sql_desc_precision;
-		((TDS_NUMERIC *) dest)->scale = drec_ipd->sql_desc_scale;
+        ((TDS_NUMERIC *) dest)->precision
+            = (unsigned char)drec_ipd->sql_desc_precision;
+        ((TDS_NUMERIC *) dest)->scale
+            = (unsigned char) drec_ipd->sql_desc_scale;
 	case SYBINTN:
 	case SYBINT1:
 	case SYBINT2:

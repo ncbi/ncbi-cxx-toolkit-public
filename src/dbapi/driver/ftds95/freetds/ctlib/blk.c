@@ -174,7 +174,7 @@ CS_RETCODE
 blk_describe(CS_BLKDESC * blkdesc, CS_INT item, CS_DATAFMT * datafmt)
 {
 	TDSCOLUMN *curcol;
-	int len;
+    size_t len;
 
 	tdsdump_log(TDS_DBG_FUNC, "blk_describe(%p, %d, %p)\n", blkdesc, item, datafmt);
 
@@ -190,7 +190,7 @@ blk_describe(CS_BLKDESC * blkdesc, CS_INT item, CS_DATAFMT * datafmt)
 	strncpy(datafmt->name, tds_dstr_cstr(&curcol->column_name), len);
 	/* name is always null terminated */
 	datafmt->name[len] = 0;
-	datafmt->namelen = len;
+    datafmt->namelen = (CS_INT) len;
 	/* need to turn the SYBxxx into a CS_xxx_TYPE */
     datafmt->datatype = _ct_get_client_type(blkdesc->con->ctx, curcol);
 	tdsdump_log(TDS_DBG_INFO1, "blk_describe() datafmt->datatype = %d server type %d\n", datafmt->datatype,

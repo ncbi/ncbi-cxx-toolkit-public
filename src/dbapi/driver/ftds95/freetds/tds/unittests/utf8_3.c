@@ -80,7 +80,7 @@ test(const char *buf)
 		curcol = tds->current_results->columns[0];
 
 		if (strcmp(tmp, tds_dstr_cstr(&curcol->column_name)) != 0) {
-			int l = tds_dstr_len(&curcol->column_name);
+            size_t l = tds_dstr_len(&curcol->column_name);
 
 			if (l > (sizeof(query) -1))
 				l = (sizeof(query) -1);

@@ -57,7 +57,7 @@ public:
                   CDB_Object* param, bool is_out = false);
 
     unsigned int NofParams() const {
-        return m_Params.size();
+        return static_cast<unsigned int>(m_Params.size());
     }
 
     CDB_Object* GetParam(unsigned int param_no) const {

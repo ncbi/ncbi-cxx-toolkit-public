@@ -427,7 +427,7 @@ tds_process_login_tokens(TDSSOCKET * tds)
 		}
 	} while (marker != TDS_DONE_TOKEN);
 	/* TODO why ?? */
-	tds->spid = tds->rows_affected;
+    tds->spid = (int)tds->rows_affected;
 	if (tds->spid == 0) {
 		if (TDS_FAILED(tds_set_spid(tds))) {
 			tdsdump_log(TDS_DBG_ERROR, "tds_set_spid() failed\n");
@@ -2543,7 +2543,7 @@ tds_process_dynamic(TDSSOCKET * tds)
 		drain = id_len - TDS_MAX_DYNID_LEN;
 		id_len = TDS_MAX_DYNID_LEN;
 	}
-	id_len = tds_get_string(tds, id_len, id, TDS_MAX_DYNID_LEN);
+    id_len = (TDS_TINYINT) tds_get_string(tds, id_len, id, TDS_MAX_DYNID_LEN);
 	id[id_len] = '\0';
 	if (drain) {
 		tds_get_n(tds, NULL, drain);

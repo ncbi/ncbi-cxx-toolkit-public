@@ -26,6 +26,8 @@
 #include <freetds/thread.h>
 #include <freetds/data.h>
 
+#include <config.h>
+
 #if defined(UNIXODBC) || defined(_WIN32) || defined(TDS_NO_DM)
 #include <sql.h>
 #include <sqlext.h>
@@ -145,7 +147,9 @@ extern "C"
 /* $Id$ */
 
 #include <freetds/pushvis.h>
-#if defined(__GNUC__) && __GNUC__ >= 4 && !defined(__MINGW32__)
+#ifdef __clang__
+#define ODBC_API SQL_API __attribute__((visibility("default")))
+#elif defined(__GNUC__) && __GNUC__ >= 4 && !defined(__MINGW32__)
 #define ODBC_API SQL_API __attribute__((externally_visible))
 #else
 #define ODBC_API SQL_API
@@ -669,8 +673,8 @@ typedef union {
 # define _WIDE
 # define ODBC_CHAR SQLCHAR
 #endif
-int odbc_set_stmt_query(struct _hstmt *stmt, const ODBC_CHAR *sql, int sql_len _WIDE);
-int odbc_set_stmt_prepared_query(struct _hstmt *stmt, const ODBC_CHAR *sql, int sql_len _WIDE);
+int odbc_set_stmt_query(struct _hstmt *stmt, const ODBC_CHAR *sql, ssize_t sql_len _WIDE);
+int odbc_set_stmt_prepared_query(struct _hstmt *stmt, const ODBC_CHAR *sql, ssize_t sql_len _WIDE);
 void odbc_set_return_status(struct _hstmt *stmt, unsigned int n_row);
 void odbc_set_return_params(struct _hstmt *stmt, unsigned int n_row);
 
@@ -690,13 +694,13 @@ odbc_set_sql_type_info(TDSCOLUMN * col, struct _drecord *drec, SQLINTEGER odbc_v
 }
 
 int odbc_sql_to_c_type_default(int sql_type);
-int odbc_sql_to_server_type(TDSCONNECTION * conn, int sql_type, int sql_unsigned);
-int odbc_c_to_server_type(int c_type);
+TDS_SERVER_TYPE odbc_sql_to_server_type(TDSCONNECTION * conn, int sql_type, int sql_unsigned);
+TDS_SERVER_TYPE odbc_c_to_server_type(int c_type);
 
 SQLINTEGER odbc_sql_to_displaysize(int sqltype, TDSCOLUMN *col);
-int odbc_get_string_size(int size, ODBC_CHAR * str _WIDE);
+size_t odbc_get_string_size(ssize_t size, ODBC_CHAR * str _WIDE);
 void odbc_rdbms_version(TDSSOCKET * tds_socket, char *pversion_string);
-SQLINTEGER odbc_get_param_len(const struct _drecord *drec_axd, const struct _drecord *drec_ixd, const TDS_DESC* axd, unsigned int n_row);
+SQLLEN odbc_get_param_len(const struct _drecord *drec_axd, const struct _drecord *drec_ixd, const TDS_DESC* axd, SQLSETPOSIROW n_row);
 
 #ifdef ENABLE_ODBC_WIDE
 DSTR* odbc_dstr_copy_flag(TDS_DBC *dbc, DSTR *s, int size, ODBC_CHAR * str, int flag);
@@ -710,7 +714,9 @@ DSTR* odbc_dstr_copy(TDS_DBC *dbc, DSTR *s, int size, ODBC_CHAR * str);
 #endif
 
 
-SQLRETURN odbc_set_string_flag(TDS_DBC *dbc, SQLPOINTER buffer, SQLINTEGER cbBuffer, void FAR * pcbBuffer, const char *s, int len, int flag);
+SQLRETURN odbc_set_string_flag(TDS_DBC *dbc, SQLPOINTER buffer,
+                               SQLINTEGER cbBuffer, void FAR * pcbBuffer,
+                               const char *s, ssize_t len, int flag);
 #ifdef ENABLE_ODBC_WIDE
 #define odbc_set_string(dbc, buf, buf_len, out_len, s, s_len) \
 	odbc_set_string_flag(dbc, sizeof((buf)->mb) ? (buf) : (buf), buf_len, out_len, s, s_len, (wide) | (sizeof(*(out_len)) == sizeof(SQLSMALLINT)?0:0x10))
@@ -744,7 +750,7 @@ const char *parse_const_param(const char * s, TDS_SERVER_TYPE *type);
 /*
  * sql2tds.c
  */
-SQLRETURN odbc_sql2tds(TDS_STMT * stmt, const struct _drecord *drec_ixd, const struct _drecord *drec_axd, TDSCOLUMN *curcol, int compute_row, const TDS_DESC* axd, unsigned int n_row);
+SQLRETURN odbc_sql2tds(TDS_STMT * stmt, const struct _drecord *drec_ixd, const struct _drecord *drec_axd, TDSCOLUMN *curcol, int compute_row, const TDS_DESC* axd, SQLSETPOSIROW n_row);
 
 /*
  * sqlwchar.c

@@ -80,6 +80,7 @@ tds_init_secdll(void)
 	tds_mutex_lock(&sec_mutex);
 	for (;;) {
 		if (!secdll) {
+            /*
 			OSVERSIONINFO osver;
 
 			memset(&osver, 0, sizeof(osver));
@@ -89,6 +90,7 @@ tds_init_secdll(void)
 			if (osver.dwPlatformId == VER_PLATFORM_WIN32_NT && osver.dwMajorVersion <= 4)
                 secdll = LoadLibraryA("security.dll");
 			else
+            */
                 secdll = LoadLibraryA("secur32.dll");
 			if (!secdll)
 				break;
@@ -223,13 +225,13 @@ tds_sspi_get_auth(TDSSOCKET * tds)
 	user_name = tds_dstr_cstr(&login->user_name);
 	if ((p = strchr(user_name, '\\')) != NULL) {
 		identity.Flags = SEC_WINNT_AUTH_IDENTITY_ANSI;
-		identity.Password = (void *) tds_dstr_cstr(&login->password);
-		identity.PasswordLength = tds_dstr_len(&login->password);
-		identity.Domain = (void *) user_name;
-		identity.DomainLength = p - user_name;
+        identity.Password = (unsigned char *) tds_dstr_cstr(&login->password);
+        identity.PasswordLength = (unsigned long)tds_dstr_len(&login->password);
+        identity.Domain = (unsigned char *) user_name;
+        identity.DomainLength = (unsigned long)(p - user_name);
 		user_name = p + 1;
-		identity.User = (void *) user_name;
-		identity.UserLength = strlen(user_name);
+        identity.User = (unsigned char *) user_name;
+        identity.UserLength = (unsigned long)strlen(user_name);
 	}
 
 	auth = (TDSSSPIAUTH *) calloc(1, sizeof(TDSSSPIAUTH));
