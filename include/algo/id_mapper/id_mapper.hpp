@@ -148,6 +148,10 @@ protected:
     void x_PrioritizeIds(void);
     void x_PrioritizeIds(objects::CGC_Sequence& Sequence);
 
+    
+    // is the given CSeq_id found in the given Gencoll, exactly, anywhere 
+    bool x_IsExactIdInAssembly(const objects::CSeq_id& Id) const;
+    bool x_IsFuzzyIdInAssembly(const objects::CSeq_id& Id) const;
     // Fixes locals that should be accessions, and versionless accessions
     CConstRef<objects::CSeq_id> x_FixImperfectId(CConstRef<objects::CSeq_id> Id,
                                                  const SIdSpec& Spec

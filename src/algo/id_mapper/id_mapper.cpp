@@ -30,8 +30,6 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <objects/seqloc/Seq_loc.hpp>
-#include <objects/seqloc/Seq_point.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
@@ -43,8 +41,7 @@
 #include <objects/seq/Delta_seq.hpp>
 #include <objects/seq/Seq_literal.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
-#include <objects/seqloc/Seq_loc.hpp>
-#include <objects/seqloc/Seq_interval.hpp>
+#include <objects/seqloc/seqloc__.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/seq_map.hpp>
 #include <objmgr/seq_map_ci.hpp>
@@ -175,7 +172,6 @@ CGencollIdMapper::Map(const objects::CSeq_loc& Loc, const SIdSpec& Spec) const
     Id = x_ApplyPatternToId(Id, Spec);
     Id = x_NCBI34_Map_IdFix(Id);
     
-    
     SIdSpec GuessSpec;
     Guess(Loc, GuessSpec);
     if (Spec.IsSpecMet(GuessSpec)) {
@@ -200,7 +196,7 @@ CGencollIdMapper::Map(const objects::CSeq_loc& Loc, const SIdSpec& Spec) const
             }
         }
     }}
-
+    
     {{
         const CSeq_id_Handle Idh = CSeq_id_Handle::GetHandle(*Id);
         TIdToSeqMap::const_iterator Found = m_IdToSeqMap.find(Idh);
@@ -675,6 +671,40 @@ CGencollIdMapper::x_PrioritizeIds(CGC_Sequence& Sequence)
     }
 }
 
+
+bool 
+CGencollIdMapper::x_IsExactIdInAssembly(const CSeq_id& Id) const 
+{
+    CSeq_id_Handle InIdh = CSeq_id_Handle::GetHandle(Id);
+    TIdToSeqMap::const_iterator Found = m_IdToSeqMap.find(InIdh);
+    return (Found != m_IdToSeqMap.end());
+}
+
+bool 
+CGencollIdMapper::x_IsFuzzyIdInAssembly(const CSeq_id& Id) const 
+{
+    if(x_IsExactIdInAssembly(Id))
+        return true;
+
+    SIdSpec Ignore;
+    CConstRef<CSeq_id> FuzzyId(&Id);
+
+    FuzzyId = x_FixImperfectId(FuzzyId, Ignore);
+    if(x_IsExactIdInAssembly(*FuzzyId))
+        return true;
+
+    FuzzyId = x_NCBI34_Map_IdFix(FuzzyId);
+    if(x_IsExactIdInAssembly(*FuzzyId))
+        return true;
+
+    CConstRef<CGC_Sequence> Seq;
+    Seq = x_FindChromosomeSequence(*FuzzyId, Ignore);
+    if(Seq.NotNull()) 
+        return true;
+   
+    return false;
+}
+
 CConstRef<CSeq_id>
 CGencollIdMapper::x_FixImperfectId(CConstRef<CSeq_id> Id,
                                    const SIdSpec& Spec
@@ -682,11 +712,43 @@ CGencollIdMapper::x_FixImperfectId(CConstRef<CSeq_id> Id,
 {
     // Fix up the ID if its not as well formed as it could be.
     // Because GenColl only stores perfectly formed IDs.
-
-    if (Id->IsGi() && Id->GetGi() < GI_CONST(50)) {
+    
+    // nothing to fix here
+    if(x_IsExactIdInAssembly(*Id))
+        return Id;
+   
+    // Any GI might be a goofy numeric string id, check for it
+    if (Id->IsGi() /*&& Id->GetGi() < GI_CONST(50)*/ ) {
         CRef<CSeq_id> NewId(new CSeq_id());
         NewId->SetLocal().SetStr() = NStr::NumericToString(Id->GetGi());
-        Id = NewId;
+        if(x_IsExactIdInAssembly(*NewId))
+            Id = NewId;
+    }
+    
+
+    // Fix PDB-looking ids. There are no PDBs in Gencoll. Any PDB that gets in here
+    // was a mis-identified local string. 
+    if(Id->IsPdb()) {
+        // local str "2LHet" 
+        //Seq-id ::= pdb {
+        //      mol "2LHe",
+        //        chain 116  (t) 
+        //}
+        string LocalStr;
+        
+        if(Id->GetPdb().CanGetMol()) 
+            LocalStr = Id->GetPdb().GetMol();
+
+        if(Id->GetPdb().CanGetChain()) {
+            LocalStr += ((char)(Id->GetPdb().GetChain()));
+        }
+
+        if(LocalStr.size() == 5) {
+            CRef<CSeq_id> NewId(new CSeq_id);
+            NewId->SetLocal().SetStr(LocalStr);
+            if(x_IsExactIdInAssembly(*NewId))
+                Id = NewId;
+        }
     }
 
     // First make Acc-as-locals into some form of Acc.
@@ -719,7 +781,8 @@ CGencollIdMapper::x_FixImperfectId(CConstRef<CSeq_id> Id,
         const int Ver = m_AccToVerMap.find(textseqid->GetAccession())->second;
         CRef<CSeq_id> NewId(new CSeq_id());
         NewId->Set(Id->Which(), textseqid->GetAccession(), kEmptyStr, Ver);
-        Id = NewId;
+        if(x_IsExactIdInAssembly(*NewId))
+            Id = NewId;
     }
 
     return Id;
@@ -792,6 +855,7 @@ CGencollIdMapper::x_AddSeqToMap(const CSeq_id& Id,
         m_IdToSeqMap.erase(Found);
     }
     m_IdToSeqMap.insert(make_pair(Handle, Seq));
+    //cerr << "x_AddSeqToMap : " << Handle.AsString() << " is " << Seq->GetSeq_id().AsFastaString() << endl;
 
     {{
         CConstRef<CGC_Sequence> ParentSeq = Seq->GetParent();

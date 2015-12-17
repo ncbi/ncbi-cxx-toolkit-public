@@ -787,12 +787,8 @@ BOOST_AUTO_TEST_CASE(TestCasePartialChromosomeTest)
     CGenomicCollectionsService GCService;
     CConstRef<CGC_Assembly> GenColl(
         GCService.GetAssembly("GCF_000001405.13",
-                              CGCClient_GetAssemblyRequest::eLevel_component,
-                              0,
-                              0,
-                              2048, // pseudo
-                              0
-                             )
+                              CGCClient_GetAssemblyRequest::eLevel_scaffold
+                            )
     );
 
     // Make a Spec
@@ -823,6 +819,65 @@ BOOST_AUTO_TEST_CASE(TestCasePartialChromosomeTest)
 }
 
 
+// Fix-up PDB Seq-ids
+BOOST_AUTO_TEST_CASE(TestCase_PDBSeqIdFix)
+{
+    // Fetch Gencoll
+    CGenomicCollectionsService GCService;
+    CConstRef<CGC_Assembly> GenColl(
+        GCService.GetAssembly("GCF_000001215.2",
+                              CGCClient_GetAssemblyRequest::eLevel_scaffold));
 
+    // Make a Spec
+    CGencollIdMapper::SIdSpec MapSpec;
+    MapSpec.TypedChoice = CGC_TypedSeqId::e_Refseq;
+    MapSpec.Alias = CGC_SeqIdAlias::e_Public;
+    MapSpec.Role = eGC_SequenceRole_top_level;
+
+    // Do a Map
+    CGencollIdMapper Mapper(GenColl);
+    
+    // This PDB Seq-id is a mis-read of "local.str = 2LHet"
+    CSeq_loc OrigLoc;
+    OrigLoc.SetInt().SetId().SetPdb().SetMol().Set("2LHe");
+    OrigLoc.SetInt().SetId().SetPdb().SetChain(116);
+    OrigLoc.SetInt().SetFrom(1322833);
+    OrigLoc.SetInt().SetTo(1322945);
+    
+    CRef<CSeq_loc> Result = Mapper.Map(OrigLoc, MapSpec);
+    BOOST_CHECK(Result.NotNull());
+    BOOST_CHECK_EQUAL(Result->GetInt().GetId().GetSeqIdString(true), "NW_001848855.1"); 
+}
+
+
+
+// Fix-up GI Seq-ids that should be strings
+BOOST_AUTO_TEST_CASE(TestCase_GINumberString)
+{
+    // Fetch Gencoll
+    CGenomicCollectionsService GCService;
+    CConstRef<CGC_Assembly> GenColl(
+        GCService.GetAssembly("GCF_000307585.1",
+                              CGCClient_GetAssemblyRequest::eLevel_scaffold));
+
+    // Make a Spec
+    CGencollIdMapper::SIdSpec MapSpec;
+    MapSpec.TypedChoice = CGC_TypedSeqId::e_Refseq;
+    MapSpec.Alias = CGC_SeqIdAlias::e_Public;
+    MapSpec.Role = eGC_SequenceRole_top_level;
+
+    // Do a Map
+    CGencollIdMapper Mapper(GenColl);
+    
+    // This PDB Seq-id is a mis-read of "local.str = 2LHet"
+    CSeq_loc OrigLoc;
+    OrigLoc.SetInt().SetId().SetGi(397912605);
+    OrigLoc.SetInt().SetFrom(1);
+    OrigLoc.SetInt().SetTo(41937);
+    
+    CRef<CSeq_loc> Result = Mapper.Map(OrigLoc, MapSpec);
+    BOOST_CHECK(Result.NotNull());
+    BOOST_CHECK_EQUAL(Result->GetInt().GetId().GetSeqIdString(true), "NC_018264.1"); 
+}
 BOOST_AUTO_TEST_SUITE_END();
 
