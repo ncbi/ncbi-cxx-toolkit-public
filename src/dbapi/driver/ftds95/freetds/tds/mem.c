@@ -846,6 +846,7 @@ tds_init_login(TDSLOGIN *login, TDSLOCALE * locale)
 
 	login->valid_configuration = 1;
 	login->check_ssl_hostname = 1;
+    login->use_utf16 = 1;
 
 	return login;
 }
