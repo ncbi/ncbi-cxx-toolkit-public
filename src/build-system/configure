@@ -31369,6 +31369,10 @@ case "$ODBC_PATH" in
 #define HAVE_SQLLEN 1
 _ACEOF
 
+   cat >>confdefs.h <<\_ACEOF
+#define NCBI_SQLCOLATTRIBUTE_SQLLEN 1
+_ACEOF
+
    ;;
  *)
              WithPackages="$WithPackages${WithPackagesSep}ODBC"; WithPackagesSep=" "

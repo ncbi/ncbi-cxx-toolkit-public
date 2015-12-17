@@ -98,6 +98,12 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define	SQL_OV_ODBC3						3UL
 #endif  /* ODBCVER >= 0x0300 */
 
+#if (ODBCVER >= 0x0380)
+/* new values for SQL_ATTR_ODBC_VERSION */
+/* From ODBC 3.8 onwards, we should use <major version> * 100 + <minor version> */
+#define SQL_OV_ODBC3_80                     380UL
+#endif  /* ODBCVER >= 0x0380 */
+
 /* connection attributes */
 #define SQL_ACCESS_MODE                 101
 #define SQL_AUTOCOMMIT                  102
@@ -134,6 +140,8 @@ extern "C" {                         /* Assume C declarations for C++ */
 
 #define SQL_ATTR_CONNECTION_DEAD	1209	/* GetConnectAttr only */
 
+#define SQL_ATTR_DRIVER_THREADING	1028	/* Driver threading level */
+
 #if (ODBCVER >= 0x0351)
 /*	ODBC Driver Manager sets this connection attribute to a unicode driver
 	(which supports SQLConnectW) when the application is an ANSI application
@@ -148,6 +156,11 @@ extern "C" {                         /* Assume C declarations for C++ */
 	connection pooling.
 */
 #define SQL_ATTR_ANSI_APP			115
+#endif
+
+#if (ODBCVER >= 0x0380)
+#define SQL_ATTR_RESET_CONNECTION   116
+#define SQL_ATTR_ASYNC_DBC_FUNCTIONS_ENABLE    117
 #endif
 
 /* SQL_CONNECT_OPT_DRVR_START is not meaningful for 3.0 driver */
@@ -177,7 +190,11 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define SQL_OPT_TRACE_OFF               0UL
 #define SQL_OPT_TRACE_ON                1UL
 #define SQL_OPT_TRACE_DEFAULT           SQL_OPT_TRACE_OFF
-#define SQL_OPT_TRACE_FILE_DEFAULT      "\\SQL.LOG"
+#ifdef _WINDOWS_
+#define SQL_OPT_TRACE_FILE_DEFAULT      "\\temp\\SQL.LOG"
+#else
+#define SQL_OPT_TRACE_FILE_DEFAULT      "/tmp/SQL.LOG"
+#endif
 
 /* SQL_ODBC_CURSORS options */
 #define SQL_CUR_USE_IF_NEEDED           0UL
@@ -204,6 +221,18 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define SQL_AA_TRUE					1L	/* the application is an ANSI app */
 #define SQL_AA_FALSE					0L	/* the application is a Unicode app */
 #endif
+
+/* values for SQL_ATTR_RESET_CONNECTION */
+#if (ODBCVER >= 0x0380)
+#define SQL_RESET_CONNECTION_YES        1UL
+#endif
+
+/* values for SQL_ATTR_ASYNC_DBC_FUNCTIONS_ENABLE */
+#if (ODBCVER >= 0x0380)
+#define SQL_ASYNC_DBC_ENABLE_ON         1UL
+#define SQL_ASYNC_DBC_ENABLE_OFF        0UL
+#define SQL_ASYNC_DBC_ENABLE_DEFAULT    SQL_ASYNC_DBC_ENABLE_OFF
+#endif 
 
 /* statement attributes */
 #define SQL_QUERY_TIMEOUT		0
@@ -252,6 +281,10 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define SQL_ATTR_USE_BOOKMARKS				SQL_USE_BOOKMARKS	
 
 #endif  /* ODBCVER >= 0x0300 */
+
+#if (ODBCVER >= 0x0380)
+#define SQL_ATTR_ASYNC_STMT_EVENT           29
+#endif /* ODBCVER >= 0x0380 */
 
 #if (ODBCVER < 0x0300)
 #define SQL_STMT_OPT_MAX                SQL_ROW_NUMBER
@@ -524,7 +557,7 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define SQL_C_USHORT     (SQL_C_SHORT+SQL_UNSIGNED_OFFSET) /* UNSIGNED SMALLINT*/
 #define SQL_C_UTINYINT   (SQL_TINYINT+SQL_UNSIGNED_OFFSET) /* UNSIGNED TINYINT*/
 
-#if (ODBCVER >= 0x0300) && (SIZEOF_LONG == 8) && defined(DO_YOU_KNOW_WHAT_YOUR_ARE_DOING)
+#if (ODBCVER >= 0x0300) && (SIZEOF_LONG_INT == 8) && !defined(BUILD_LEGACY_64_BIT_MODE)
 #define SQL_C_BOOKMARK   SQL_C_UBIGINT                     /* BOOKMARK        */
 #else
 #define SQL_C_BOOKMARK   SQL_C_ULONG                       /* BOOKMARK        */
@@ -538,6 +571,29 @@ extern "C" {                         /* Assume C declarations for C++ */
 #if (ODBCVER < 0x0300)
 #define SQL_TYPE_MIN                    SQL_BIT
 #define SQL_TYPE_MAX                    SQL_VARCHAR
+#endif
+
+/* base value of driver-specific C-Type (max is 0x7fff) */
+/* define driver-specific C-Type, named as SQL_DRIVER_C_TYPE_BASE, */
+/* SQL_DRIVER_C_TYPE_BASE+1, SQL_DRIVER_C_TYPE_BASE+2, etc. */
+#if (ODBCVER >= 0x380)
+#define SQL_DRIVER_C_TYPE_BASE      0x4000
+#endif
+
+/* base value of driver-specific fields/attributes (max are 0x7fff [16-bit] or 0x00007fff [32-bit]) */
+/* define driver-specific SQL-Type, named as SQL_DRIVER_SQL_TYPE_BASE, */
+/* SQL_DRIVER_SQL_TYPE_BASE+1, SQL_DRIVER_SQL_TYPE_BASE+2, etc. */
+/* */
+/* Please note that there is no runtime change in this version of DM. */
+/* However, we suggest that driver manufacturers adhere to this range */
+/* as future versions of the DM may enforce these constraints */
+#if (ODBCVER >= 0x380)
+#define SQL_DRIVER_SQL_TYPE_BASE    0x4000
+#define SQL_DRIVER_DESC_FIELD_BASE  0x4000
+#define SQL_DRIVER_DIAG_FIELD_BASE  0x4000
+#define SQL_DRIVER_INFO_TYPE_BASE   0x4000
+#define SQL_DRIVER_CONN_ATTR_BASE   0x00004000 
+#define SQL_DRIVER_STMT_ATTR_BASE   0x00004000
 #endif
 
 #if (ODBCVER >= 0x0300)
@@ -763,6 +819,7 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define SQL_CONVERT_VARBINARY               69
 #define SQL_CONVERT_VARCHAR                 70
 #define SQL_CONVERT_LONGVARBINARY           71
+#define SQL_CONVERT_GUID           			173
 #define SQL_ODBC_SQL_OPT_IEF                73		/* SQL_INTEGRITY */
 #define SQL_CORRELATION_NAME                74
 #define SQL_NON_NULLABLE_COLUMNS            75
@@ -888,6 +945,21 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define SQL_UNION_STATEMENT						SQL_UNION
 #endif  /* ODBCVER >= 0x0300 */
 
+#if (ODBCVER >= 0x0380)
+/* Info Types */
+#define SQL_ASYNC_DBC_FUNCTIONS                 10023
+#endif 
+
+#define SQL_DRIVER_AWARE_POOLING_SUPPORTED      10024
+
+#if (ODBCVER >= 0x0380)
+#define SQL_ASYNC_NOTIFICATION                  10025
+
+/* Possible values for SQL_ASYNC_NOTIFICATION */
+#define SQL_ASYNC_NOTIFICATION_NOT_CAPABLE      0x00000000L
+#define SQL_ASYNC_NOTIFICATION_CAPABLE          0x00000001L
+#endif /* ODBCVER >= 0x0380 */
+
 #define	SQL_DTC_TRANSITION_COST					1750
 
 /* SQL_ALTER_TABLE bitmasks */
@@ -941,6 +1013,7 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define	SQL_CVT_WCHAR						0x00200000L
 #define	SQL_CVT_WLONGVARCHAR				0x00400000L
 #define	SQL_CVT_WVARCHAR					0x00800000L
+#define	SQL_CVT_GUID						0x01000000L
 
 #endif  /* ODBCVER >= 0x0300 */
 
@@ -1220,6 +1293,9 @@ extern "C" {                         /* Assume C declarations for C++ */
 
 #define SQL_GD_BLOCK                        0x00000004L
 #define SQL_GD_BOUND                        0x00000008L
+#if (ODBCVER >= 0x0380)
+    #define SQL_GD_OUTPUT_PARAMS            0x00000010L
+#endif
 
 /* SQL_POSITIONED_STATEMENTS masks */
 
@@ -1624,11 +1700,20 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define SQL_US_UNION							SQL_U_UNION
 #define SQL_US_UNION_ALL						SQL_U_UNION_ALL
 
+/* values for SQL_DRIVER_AWARE_POOLING_SUPPORTED */
+#define SQL_DRIVER_AWARE_POOLING_NOT_CAPABLE    0x00000000L
+#define SQL_DRIVER_AWARE_POOLING_CAPABLE        0x00000001L
 #endif  /* ODBCVER >= 0x0300 */
 
 /* SQL_DTC_TRANSITION_COST bitmasks */
 #define SQL_DTC_ENLIST_EXPENSIVE				0x00000001L
 #define SQL_DTC_UNENLIST_EXPENSIVE				0x00000002L
+
+#if (ODBCVER >= 0x0380)
+/* possible values for SQL_ASYNC_DBC_FUNCTIONS */
+#define SQL_ASYNC_DBC_NOT_CAPABLE               0x00000000L
+#define SQL_ASYNC_DBC_CAPABLE                   0x00000001L
+#endif 
 
 /* additional SQLDataSources fetch directions */
 #if (ODBCVER >= 0x0300)
@@ -1769,6 +1854,11 @@ SQLRETURN SQL_API SQLDriverConnect(
 #define SQL_RESULT_COL                   3
 #define SQL_PARAM_OUTPUT                 4
 #define SQL_RETURN_VALUE                 5
+#if (ODBCVER >= 0x0380)
+    #define SQL_PARAM_INPUT_OUTPUT_STREAM   8
+    #define SQL_PARAM_OUTPUT_STREAM         16
+#endif
+
 
 /* Defines for SQLProcedures (returned in the result set) */
 #define SQL_PT_UNKNOWN                   0
@@ -1853,9 +1943,9 @@ SQLRETURN SQL_API SQLDescribeParam(
 SQLRETURN SQL_API SQLExtendedFetch(
     SQLHSTMT           hstmt,
     SQLUSMALLINT       fFetchType,
-    SQLROWOFFSET       irow,
-    SQLROWSETSIZE 	  *pcrow,
-    SQLUSMALLINT 	  *rgfRowStatus);
+    SQLLEN             irow,
+    SQLULEN 	  	   *pcrow,
+    SQLUSMALLINT 	   *rgfRowStatus);
 
 SQLRETURN SQL_API SQLForeignKeys(
     SQLHSTMT           hstmt,
@@ -1889,8 +1979,8 @@ SQLRETURN SQL_API SQLNumParams(
 
 SQLRETURN SQL_API SQLParamOptions(
     SQLHSTMT           hstmt,
-    SQLUINTEGER        crow,
-    SQLUINTEGER 	  *pirow);
+    SQLULEN        	   crow,
+    SQLULEN 	  	   *pirow);
 
 SQLRETURN SQL_API SQLPrimaryKeys(
     SQLHSTMT           hstmt,
@@ -2017,24 +2107,46 @@ SQLRETURN SQL_API SQLSetScrollOptions(    /*      Use SQLSetStmtOptions */
     SQLLEN             crowKeyset,
     SQLUSMALLINT       crowRowset);
 
-/* Tracing section */
-
-#define		TRACE_VERSION	1000		/* Version of trace API */
-
+/*!
+ * \defgroup    Tracing.
+ *
+ *              unixODBC implements a slight variation of the tracing mechanism used 
+ *              on MS platforms. The unixODBC method loses the ability to produce trace
+ *              output for invalid handles but gains the following;
+ *
+ *              - better concurrency 
+ *              - allows tracing to be turned on/off and configured at finer granularity
+ *              - hopefully; better performance
+ *
+ *              unixODBC provides a cross-platform helper library called 'trace' and an
+ *              example/default trace plugin called 'odbctrac'. Those writing an ODBC 
+ *              driver can use the 'trace' helper library (a static library). Those wanting
+ *              to create custom trace output can implement a different version of the
+ *              'odbctrac' plugin.
+ *
+ *              The text file driver (odbctxt) included with unixODBC is an example of a 
+ *              driver using the 'trace' helper library.
+ *
+ *              The 'trace' library and the example plugin 'odbctrac' are designed to be 
+ *              portable on all platforms where unixODBC is available and on MS platforms.
+ *              This will allow drivers using 'trace' and 'odbctrac' plugin to equilly 
+ *              portable. On MS platforms - this compliments traditional tracing (mostly
+ *              just used by the Driver Manager).
+ *
+ * \sa          trace
+ *              odbctxt
+ *              odbctrac
+ */
+/*@{*/
+#define	TRACE_VERSION 1000                                  /*!< Version of trace API                               */
 #ifdef UNICODE
-RETCODE	 TraceOpenLogFile(LPWSTR,LPWSTR,DWORD); 	/* open a trace log file				*/
-#endif
-#ifdef __cplusplus
-RETCODE	 TraceCloseLogFile();					    /* Request to close a trace log			*/
+RETCODE TraceOpenLogFile(SQLPOINTER,LPWSTR,LPWSTR,DWORD); 	/*!< open a trace log file				                */
 #else
-RETCODE	 TraceCloseLogFile(VOID);				    /* Request to close a trace log			*/
+RETCODE TraceOpenLogFile(SQLPOINTER,LPSTR,LPSTR,DWORD); 	/*!< open a trace log file				                */
 #endif
-VOID	 TraceReturn(RETCODE,RETCODE);			/* Processes trace after FN is called	*/
-#ifdef __cplusplus
-DWORD	 TraceVersion();							/* Returns trace API version			*/
-#else
-DWORD	 TraceVersion(VOID);							/* Returns trace API version			*/
-#endif
+RETCODE TraceCloseLogFile(SQLPOINTER);					    /*!< Request to close a trace log		                */
+SQLRETURN TraceReturn(SQLPOINTER,SQLRETURN);                /*!< Call to produce trace output upon function return. */
+DWORD	 TraceVersion(void);						        /*!< Returns trace API version			                */
 
 /* Functions for Visual Studio Analyzer*/
 /* to turn on/off tracing or VS events, call TraceVSControl by setting or clearing the following bits  */
@@ -2067,11 +2179,22 @@ typedef struct tagODBC_VS_ARGS {
 	RETCODE	RetCode;
 } ODBC_VS_ARGS, *PODBC_VS_ARGS;
 
-VOID	FireVSDebugEvent(PODBC_VS_ARGS);
-
+void	FireVSDebugEvent(PODBC_VS_ARGS);
+/*@}*/
 
 #ifdef __cplusplus
 }
+#endif
+
+/*
+ * connection pooling retry times
+ */
+
+BOOL ODBCSetTryWaitValue ( DWORD dwValue );
+#ifdef __cplusplus
+DWORD ODBCGetTryWaitValue ( );
+#else
+DWORD ODBCGetTryWaitValue ( void );
 #endif
 
 #ifndef __SQLUCODE_H

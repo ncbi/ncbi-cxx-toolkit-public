@@ -654,7 +654,7 @@
 #define NCBI_RESTRICT_CXX __restrict__
 
 /* Define to 1 if SQLColAttribute's last argument is an SQLLEN * */
-/* #undef NCBI_SQLCOLATTRIBUTE_SQLLEN */
+#define NCBI_SQLCOLATTRIBUTE_SQLLEN 1
 
 /* Define to whatever syntax your compiler supports for declaring thread-local
    variables, or leave undefined if it doesn't. */

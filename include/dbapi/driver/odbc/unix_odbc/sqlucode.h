@@ -33,7 +33,7 @@ SQLRETURN SQL_API SQLColAttributeW(
 	SQLPOINTER		pCharAttr,
 	SQLSMALLINT		cbCharAttrMax,	
 	SQLSMALLINT  	*pcbCharAttr,
-	SQLPOINTER		pNumAttr);	
+	SQLLEN		*pNumAttr);	
 
 SQLRETURN SQL_API SQLColAttributesW(
     SQLHSTMT           hstmt,
@@ -381,7 +381,7 @@ SQLRETURN SQL_API SQLColAttributeA(
 	SQLPOINTER		pCharAttr,
 	SQLSMALLINT		cbCharAttrMax,	
 	SQLSMALLINT  	        *pcbCharAttr,
-	SQLPOINTER              pNumAttr);	
+	SQLLEN              	*pNumAttr);	
 
 SQLRETURN SQL_API SQLColAttributesA(
     SQLHSTMT        hstmt,
