@@ -625,6 +625,9 @@ tds_iconv(TDSSOCKET * tds, TDSICONV * conv, TDS_ICONV_DIRECTION io,
 
 		/* iconv success, return */
 		if (irreversible != (size_t) - 1) {
+            if (irreversible > 0) {
+                eilseq_raised = 1;
+            }
 			/* here we detect end of conversion and try to reset shift state */
 			if (inbuf) {
 				/*
@@ -643,7 +646,7 @@ tds_iconv(TDSSOCKET * tds, TDSICONV * conv, TDS_ICONV_DIRECTION io,
 		if (conv_errno == EILSEQ)
 			eilseq_raised = 1;
 
-		if (conv_errno != EILSEQ || io != to_client || !inbuf)
+        if (!eilseq_raised || io != to_client || !inbuf)
 			break;
 		/* 
 		 * Invalid input sequence encountered reading from server. 
