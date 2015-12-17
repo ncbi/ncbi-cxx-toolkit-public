@@ -552,7 +552,7 @@ cs_convert(CS_CONTEXT * ctx, CS_DATAFMT * srcfmt, CS_VOID * srcdata, CS_DATAFMT 
 	tdsdump_log(TDS_DBG_FUNC, "converting type %d (%d bytes) to type = %d (%d bytes)\n",
 		    src_type, src_len, desttype, destlen);
 
-	if (!is_fixed_type(desttype) && (destlen <= 0)) {
+    if (!is_fixed_type(desttype) && (destlen < 0)) { /* was <= */
 		return CS_FAIL;
 	}
 
