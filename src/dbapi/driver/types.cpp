@@ -1581,7 +1581,7 @@ CDB_VarBinary::~CDB_VarBinary(void)
 
 void CDB_VarBinary::SetValue(const void* v, size_t l)
 {
-    if (v  &&  l) {
+    if (v != NULL) {
         if (m_Value.Empty()) {
             m_Value.Reset(new TValue);
         }
@@ -1662,7 +1662,7 @@ CDB_Binary::CDB_Binary(const CDB_Binary& v, bool share_data)
 
 void CDB_Binary::SetValue(const void* v, size_t v_size)
 {
-    if (v && v_size) {
+    if (v != NULL) {
         CheckBinaryTruncation(v_size, m_Size);
 
         if (m_Value.Empty()) {
@@ -1758,7 +1758,7 @@ CDB_LongBinary::CDB_LongBinary(const CDB_LongBinary& v, bool share_data)
 
 void CDB_LongBinary::SetValue(const void* v, size_t v_size)
 {
-    if (v && v_size) {
+    if (v != NULL) {
         m_DataSize = min(v_size, m_Size);
         CheckBinaryTruncation(v_size, m_Size);
         if (m_Value.Empty()) {
