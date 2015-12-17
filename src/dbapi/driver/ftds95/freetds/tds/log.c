@@ -92,6 +92,15 @@ tdsdump_on(void)
 	tds_mutex_unlock(&g_dump_mutex);
 }
 
+/**
+ * Get the logging state.
+ */
+int
+tdsdump_state(void)
+{
+    return tds_write_dump;
+}
+
 int
 tdsdump_isopen()
 {

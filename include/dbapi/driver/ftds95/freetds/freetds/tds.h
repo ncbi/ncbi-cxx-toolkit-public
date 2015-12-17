@@ -1416,6 +1416,7 @@ unsigned int tds_gettime_ms(void);
 /* log.c */
 void tdsdump_off(void);
 void tdsdump_on(void);
+int tdsdump_state(void);
 int tdsdump_isopen(void);
 #include <freetds/popvis.h>
 int tdsdump_open(const char *filename);
