@@ -4072,6 +4072,7 @@ AC_CACHE_CHECK(for library containing iconv, ac_cv_search_iconv, [
       done
    fi])
 if test "x$ac_cv_search_iconv" != xno; then
+   NCBI_PACKAGE(Iconv)
    AC_DEFINE(HAVE_LIBICONV, 1,
    [Define to 1 if ICONV is available, either in its own library or as part
     of the standard libraries.])
