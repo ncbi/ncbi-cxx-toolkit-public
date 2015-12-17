@@ -92,7 +92,7 @@ typedef char				TCHAR;
 #endif
 
 typedef unsigned short		WORD;
-#if (SIZEOF_LONG_INT == 4)
+#if (SIZEOF_INT == 2)
 typedef unsigned long		DWORD;
 #else
 typedef unsigned int		DWORD;
@@ -172,8 +172,13 @@ typedef unsigned long   SQLSETPOSIROW;
  */
 #endif
 #else
+#if SIZEOF_INT < 4
 typedef long            SQLINTEGER;
 typedef unsigned long   SQLUINTEGER;
+#else
+typedef int             SQLINTEGER;
+typedef unsigned int    SQLUINTEGER;
+#endif
 #define SQLLEN          SQLINTEGER
 #define SQLULEN         SQLUINTEGER
 #define SQLSETPOSIROW   SQLUSMALLINT

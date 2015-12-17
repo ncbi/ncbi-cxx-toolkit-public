@@ -615,11 +615,11 @@ extern "C" {                         /* Assume C declarations for C++ */
 #define SQL_COLUMN_IGNORE			SQL_IGNORE
 #endif  /* ODBCVER >= 0x0300 */
 #define SQL_LEN_DATA_AT_EXEC_OFFSET  (-100)
-#define SQL_LEN_DATA_AT_EXEC(length) (-(length)+SQL_LEN_DATA_AT_EXEC_OFFSET)
+#define SQL_LEN_DATA_AT_EXEC(length) (SQL_LEN_DATA_AT_EXEC_OFFSET-(length))
 
 /* binary length for driver specific attributes */
 #define SQL_LEN_BINARY_ATTR_OFFSET	 (-100)
-#define SQL_LEN_BINARY_ATTR(length)	 (-(length)+SQL_LEN_BINARY_ATTR_OFFSET)
+#define SQL_LEN_BINARY_ATTR(length)  (SQL_LEN_BINARY_ATTR_OFFSET-(length))
 
 /* Defines used by Driver Manager when mapping SQLSetParam to SQLBindParameter
 */
