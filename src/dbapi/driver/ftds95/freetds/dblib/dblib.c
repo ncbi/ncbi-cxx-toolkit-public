@@ -2354,10 +2354,14 @@ dbconvert(DBPROCESS * dbproc, int srctype, const BYTE * src, DBINT srclen, int d
 				break;
 			default:
 				assert(destlen > 0);
-				if (destlen < 0 || srclen > destlen) {
+                if (destlen < 0) {
 					dbperror(dbproc, SYBECOFL, 0);
 					ret = -1;
 				} else {
+                    if (srclen > destlen) {
+                        dbperror(dbproc, 50000, 0);
+                        srclen = destlen;
+                    }
 					memcpy(dest, src, srclen);
 					for (i = srclen; i < destlen; i++)
 						dest[i] = ' ';
@@ -2523,13 +2527,17 @@ dbconvert(DBPROCESS * dbproc, int srctype, const BYTE * src, DBINT srclen, int d
 			break;
 		default:
 			assert(destlen > 0);
-			if (destlen < 0 || len > destlen) {
+            if (destlen < 0) {
 				dbperror(dbproc, SYBECOFL, 0);
 				ret = -1;
 				tdsdump_log(TDS_DBG_INFO1, "%d bytes type %d -> %d, destlen %d < %d required\n",
 					    srclen, srctype, desttype, destlen, len);
 				break;
 			}
+            if (len > destlen) {
+                dbperror(dbproc, 50000, 0);
+                len = destlen;
+            }
 			/* else pad with blanks */
 			memcpy(dest, dres.c, len);
 			for (i = len; i < destlen; i++)
