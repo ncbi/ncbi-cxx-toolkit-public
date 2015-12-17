@@ -35,33 +35,22 @@
 #include "hellocmd.hpp"
 #include <cgi/cgictx.hpp>
 
-#include <common/test_assert.h> /* This header must go last */
+// You don't need next header in the real application,
+// It is here for the test purposes only.
+#include <common/test_assert.h>
+
 
 
 /////////////////////////////////
-// APPLICATION OBJECT
-//   and
 // MAIN
 //
 
 USING_NCBI_SCOPE;
 
-// Note that if the application's object ("theHelloApp") was defined
-// inside the scope of function "main()", then its destructor could be
-// called *before* destructors of other statically allocated objects
-// defined in other modules.
-// It would cause a premature closure of diag. stream, and disallow the
-// destructors of other projects to refer to this application object:
-//  - the singleton method CNcbiApplication::Instance() would return NULL, and
-//  - if there is a "raw"(direct) pointer to "theTestApplication" then it
-//    might cause a real trouble.
-static CHelloApp theHelloApp;
-
-
 int main(int argc, const char* argv[])
 {
     // Execute main application function
-    return theHelloApp.AppMain(argc, argv);
+    return CHelloApp().AppMain(argc, argv);
 }
 
 
@@ -92,5 +81,6 @@ int CHelloApp::ProcessRequest(CCgiContext& ctx)
     ctx.GetResource().HandleRequest(ctx);
     return 0;
 }
+
 
 END_NCBI_SCOPE

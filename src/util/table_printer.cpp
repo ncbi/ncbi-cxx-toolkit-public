@@ -131,8 +131,9 @@ void CTablePrinter::x_AddCellValue(
         // handle a cell value that's too long
         switch(colInfo.m_eDataTooLong) {
         case eDataTooLong_ShowErrorInColumn: {
-            const static string kErrMsg = "**ERROR**";
-            if( colInfo.m_iColWidth >= kErrMsg.length() ) {
+            static const char kErrMsg[] = "**ERROR**";
+            static const size_t kErrMsgLen = sizeof(kErrMsg) - 1;
+            if( colInfo.m_iColWidth >= kErrMsgLen ) {
                 m_ostrm << kErrMsg;
             } else {
                 m_ostrm << string(colInfo.m_iColWidth, '?');
