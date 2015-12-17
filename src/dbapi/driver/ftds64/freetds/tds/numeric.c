@@ -307,7 +307,7 @@ tds_numeric_to_string(const TDS_NUMERIC * numeric, char *s)
 	}
 
 	/* transform to 10 base number and output */
-	i = 4 * ((packet10k + TDS_VECTOR_SIZE(packet10k)) - p);	/* current digit */
+    i = 4 * (unsigned int) ((packet10k + TDS_VECTOR_SIZE(packet10k)) - p); /* current digit */
 	/* skip leading zeroes */
 	n = 1000;
 	remainder = *p;

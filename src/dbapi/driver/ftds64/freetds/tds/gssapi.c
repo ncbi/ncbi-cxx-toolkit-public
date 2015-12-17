@@ -57,6 +57,9 @@
 
 #ifdef ENABLE_KRB5
 
+#ifdef __APPLE__
+#define GSSKRB_APPLE_DEPRECATED(x) /**/
+#endif
 #include <gssapi/gssapi_krb5.h>
 
 #include "tds.h"

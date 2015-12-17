@@ -52,7 +52,7 @@ TDS_RCSID(var, "$Id$");
  */
 
 static int
-odbc_set_stmt(TDS_STMT * stmt, char **dest, const char *sql, int sql_len)
+odbc_set_stmt(TDS_STMT * stmt, char **dest, const char *sql, ssize_t sql_len)
 {
 	char *p;
 
@@ -94,14 +94,14 @@ odbc_set_stmt(TDS_STMT * stmt, char **dest, const char *sql, int sql_len)
 }
 
 int
-odbc_set_stmt_query(TDS_STMT * stmt, const char *sql, int sql_len)
+odbc_set_stmt_query(TDS_STMT * stmt, const char *sql, ssize_t sql_len)
 {
 	return odbc_set_stmt(stmt, &stmt->query, sql, sql_len);
 }
 
 
 int
-odbc_set_stmt_prepared_query(TDS_STMT * stmt, const char *sql, int sql_len)
+odbc_set_stmt_prepared_query(TDS_STMT * stmt, const char *sql, ssize_t sql_len)
 {
 	return odbc_set_stmt(stmt, &stmt->prepared_query, sql, sql_len);
 }
@@ -201,8 +201,8 @@ odbc_set_return_params(struct _hstmt *stmt)
 	}
 }
 
-int
-odbc_get_string_size(int size, SQLCHAR * str)
+size_t
+odbc_get_string_size(ssize_t size, SQLCHAR * str)
 {
 	if (str) {
 		if (size == SQL_NTS)
@@ -328,7 +328,7 @@ odbc_server_to_sql_type(int col_type, int col_size)
  * Pass this an SQL_C_* type and get a SYB* type which most closely corresponds
  * to the SQL_C_* type.
  */
-int
+TDS_SERVER_TYPE
 odbc_c_to_server_type(int c_type)
 {
 	switch (c_type) {
@@ -395,7 +395,7 @@ odbc_c_to_server_type(int c_type)
 #endif
 		break;
 	}
-	return TDS_FAIL;
+    return (TDS_SERVER_TYPE) TDS_FAIL;
 }
 
 void
@@ -592,7 +592,7 @@ odbc_sql_to_c_type_default(int sql_type)
 	}
 }
 
-int
+TDS_SERVER_TYPE
 odbc_sql_to_server_type(TDSSOCKET * tds, int sql_type)
 {
 
@@ -648,7 +648,7 @@ odbc_sql_to_server_type(TDSSOCKET * tds, int sql_type)
 		return SYBIMAGE;
 		/* TODO interval types */
 	default:
-		return 0;
+        return (TDS_SERVER_TYPE) 0;
 	}
 }
 
@@ -661,7 +661,7 @@ odbc_sql_to_server_type(TDSSOCKET * tds, int sql_type)
  * @param len       len of string to copy. <0 null terminated
  */
 SQLRETURN
-odbc_set_string(SQLPOINTER buffer, SQLSMALLINT cbBuffer, SQLSMALLINT FAR * pcbBuffer, const char *s, int len)
+odbc_set_string(SQLPOINTER buffer, SQLSMALLINT cbBuffer, SQLSMALLINT FAR * pcbBuffer, const char *s, ssize_t len)
 {
 	SQLRETURN result = SQL_SUCCESS;
 
@@ -683,7 +683,7 @@ odbc_set_string(SQLPOINTER buffer, SQLSMALLINT cbBuffer, SQLSMALLINT FAR * pcbBu
 }
 
 SQLRETURN
-odbc_set_string_i(SQLPOINTER buffer, SQLINTEGER cbBuffer, SQLINTEGER FAR * pcbBuffer, const char *s, int len)
+odbc_set_string_i(SQLPOINTER buffer, SQLINTEGER cbBuffer, SQLINTEGER FAR * pcbBuffer, const char *s, ssize_t len)
 {
 	SQLRETURN result = SQL_SUCCESS;
 
@@ -713,10 +713,10 @@ odbc_rdbms_version(TDSSOCKET * tds, char *pversion_string)
 }
 
 /** Return length of parameter from parameter information */
-SQLINTEGER
+SQLLEN
 odbc_get_param_len(const struct _drecord *drec_apd, const struct _drecord *drec_ipd)
 {
-	SQLINTEGER len;
+    SQLLEN len;
 	int size;
 
 	if (drec_apd->sql_desc_indicator_ptr && *drec_apd->sql_desc_indicator_ptr == SQL_NULL_DATA)

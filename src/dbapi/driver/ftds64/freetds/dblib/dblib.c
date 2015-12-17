@@ -628,7 +628,7 @@ dbstring_length(DBSTRING * dbstr)
 }
 
 static int
-dbstring_getchar(DBSTRING * dbstr, int i)
+dbstring_getchar(DBSTRING * dbstr, ssize_t i)
 {
 
 	if (dbstr == NULL) {
@@ -1668,7 +1668,7 @@ _db_get_server_type(int bindtype)
 DBINT
 dbconvert(DBPROCESS * dbproc, int srctype, const BYTE * src, DBINT srclen, int desttype, BYTE * dest, DBINT destlen)
 {
-	TDSSOCKET *tds = NULL;
+    /* TDSSOCKET *tds = NULL; */
 
 	CONV_RESULT dres;
 	DBINT ret;
@@ -1677,11 +1677,14 @@ dbconvert(DBPROCESS * dbproc, int srctype, const BYTE * src, DBINT srclen, int d
 	DBNUMERIC *num;
 
 	tdsdump_log(TDS_DBG_INFO1, "dbconvert(%d [%s] len %d => %d [%s] len %d)\n",
-		     srctype, tds_prdatatype(srctype), srclen, desttype, tds_prdatatype(desttype), destlen);
+                    srctype, tds_prdatatype((TDS_SERVER_TYPE)srctype), srclen,
+                    desttype, tds_prdatatype((TDS_SERVER_TYPE)desttype), destlen);
 
+    /*
 	if (dbproc) {
 		tds = dbproc->tds_socket;
 	}
+    */
 
 	if (src == NULL || srclen == 0) {
 
@@ -2046,7 +2049,7 @@ dbbind(DBPROCESS * dbproc, int column, int vartype, DBINT varlen, BYTE * varaddr
 	TDSSOCKET *tds = NULL;
 	int srctype = -1;
 	int desttype = -1;
-	TDS_SMALLINT num_cols = 0;
+    /* TDS_SMALLINT num_cols = 0; */
 
 	tdsdump_log(TDS_DBG_INFO1, "dbbind() column = %d %d %d\n", column, vartype, varlen);
 	dbproc->avail_flag = FALSE;
@@ -2072,7 +2075,7 @@ dbbind(DBPROCESS * dbproc, int column, int vartype, DBINT varlen, BYTE * varaddr
 		return FAIL;
 	}
 
-	num_cols = tds->res_info->num_cols;
+    /* num_cols = tds->res_info->num_cols; */
 
 	colinfo = tds->res_info->columns[column - 1];
 	srctype = tds_get_conversion_type(colinfo->column_type, colinfo->column_size);
@@ -2598,8 +2601,8 @@ dbcancel(DBPROCESS * dbproc)
 
 	tds = dbproc->tds_socket;
 
-	tds_send_cancel(dbproc->tds_socket);
-	tds_process_cancel(dbproc->tds_socket);
+    tds_send_cancel(tds);
+    tds_process_cancel(tds);
 
 	return SUCCEED;
 }
@@ -2657,9 +2660,10 @@ dbspr1row(DBPROCESS * dbproc, char *buffer, DBINT buf_len)
 	TDSRESULTINFO *resinfo;
 	TDSSOCKET *tds;
 	TDSDATEREC when;
-	int i, col, collen, namlen;
+    size_t i, collen, namlen;
+    int col;
 	int desttype, srctype;
-	int padlen;
+    size_t padlen;
 	DBINT len;
 	int c;
 
@@ -2686,7 +2690,7 @@ dbspr1row(DBPROCESS * dbproc, char *buffer, DBINT buf_len)
 			if (srctype == SYBDATETIME || srctype == SYBDATETIME4) {
 				memset(&when, 0, sizeof(when));
 				tds_datecrack(srctype, dbdata(dbproc, col + 1), &when);
-				len = tds_strftime(buffer, buf_len, "%b %e %Y %I:%M%p", &when);
+                len = (DBINT) tds_strftime(buffer, buf_len, "%b %e %Y %I:%M%p", &when);
 			} else {
 				len = dbconvert(dbproc, srctype, dbdata(dbproc, col + 1), -1, desttype, (BYTE *) buffer, buf_len);
 			}
@@ -2744,12 +2748,14 @@ dbprrow(DBPROCESS * dbproc)
 	TDSCOLUMN *colinfo;
 	TDSRESULTINFO *resinfo;
 	TDSSOCKET *tds;
-	int i, col, collen, namlen, len;
+    int i;
+    size_t collen, namlen, len;
+    int col;
 	char dest[256];
 	int desttype, srctype;
 	TDSDATEREC when;
 	DBINT status;
-	int padlen;
+    size_t padlen;
 	int c;
 	int selcol;
 	int linechar;
@@ -2795,7 +2801,7 @@ dbprrow(DBPROCESS * dbproc)
 					}
 				}
 
-				printf("%.*s", len, dest);
+                fwrite(dest, 1, len, stdout);
 				collen = _get_printable_size(colinfo);
 				namlen = colinfo->column_namelen;
 				padlen = (collen > namlen ? collen : namlen) - len;
@@ -2937,7 +2943,7 @@ dbprrow(DBPROCESS * dbproc)
 						i++;
 					}
 				}
-				printf("%.*s", len, dest);
+                fwrite(dest, 1, len, stdout);
 				collen = _get_printable_size(colinfo);
 				namlen = colinfo->column_namelen;
 				padlen = (collen > namlen ? collen : namlen) - len;
@@ -4472,7 +4478,7 @@ dbmnymaxneg(DBPROCESS * dbproc, DBMONEY * amount)
 	if (!amount)
 		return FAIL;
 	amount->mnylow = 0;
-	amount->mnyhigh = -0x80000000l;
+    amount->mnyhigh = -1 << 31;
 	return SUCCEED;
 }
 
@@ -4579,7 +4585,7 @@ dbmnydec(DBPROCESS * dbproc, DBMONEY * amount)
 		--amount->mnylow;
 		return SUCCEED;
 	}
-	if (amount->mnyhigh == -0x80000000l)
+    if (amount->mnyhigh == -1 << 31)
 		return FAIL;
 	amount->mnylow = 0xFFFFFFFFlu;
 	--amount->mnyhigh;
@@ -4601,7 +4607,7 @@ dbmnyminus(DBPROCESS * dbproc, DBMONEY * src, DBMONEY * dest)
 {
 	if (!src || !dest)
 		return FAIL;
-	if (src->mnyhigh == -0x80000000l && src->mnylow == 0)
+    if (src->mnyhigh == -1 << 31 && src->mnylow == 0)
 		return FAIL;
 	dest->mnyhigh = -src->mnyhigh;
 	dest->mnylow = (~src->mnylow) + 1u;
@@ -6358,7 +6364,7 @@ copy_data_to_host_var(DBPROCESS * dbproc, int srctype, const BYTE * src, DBINT s
 				int desttype, BYTE * dest, DBINT destlen,
 				int bindtype, DBSMALLINT *indicator)
 {
-	TDSSOCKET *tds = NULL;
+    /* TDSSOCKET *tds = NULL; */
 
 	CONV_RESULT dres;
 	DBINT ret;
@@ -6372,9 +6378,11 @@ copy_data_to_host_var(DBPROCESS * dbproc, int srctype, const BYTE * src, DBINT s
 	tdsdump_log(TDS_DBG_INFO1, "copy_data_to_host_var(%d [%s] len %d => %d [%s] len %d)\n",
 		     srctype, tds_prdatatype(srctype), srclen, desttype, tds_prdatatype(desttype), destlen);
 
+    /*
 	if (dbproc) {
 		tds = dbproc->tds_socket;
 	}
+    */
 
 	if (src == NULL || (srclen == 0 && is_nullable_type(srctype))) {
 		_set_null_value(dest, desttype, destlen);

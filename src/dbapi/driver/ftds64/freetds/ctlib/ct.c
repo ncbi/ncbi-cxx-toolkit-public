@@ -332,7 +332,8 @@ ct_callback(CS_CONTEXT * ctx, CS_CONNECTION * con, CS_INT action, CS_INT type, C
 CS_RETCODE
 ct_con_props(CS_CONNECTION * con, CS_INT action, CS_INT property, CS_VOID * buffer, CS_INT buflen, CS_INT * out_len)
 {
-    CS_INT intval = 0, maxcp;
+    CS_INT intval = 0;
+    size_t maxcp;
     TDSSOCKET *tds;
     TDSLOGIN *tds_login;
     char *set_buffer = NULL;
@@ -691,8 +692,8 @@ ct_cmd_alloc(CS_CONNECTION * con, CS_COMMAND ** cmd)
 CS_RETCODE
 ct_command(CS_COMMAND * cmd, CS_INT type, const CS_VOID * buffer, CS_INT buflen, CS_INT option)
 {
-    int query_len;
-    int current_query_len;
+    ssize_t query_len;
+    ssize_t current_query_len;
 
     tdsdump_log(TDS_DBG_FUNC, "ct_command()\n");
 
@@ -853,7 +854,7 @@ ct_send(CS_COMMAND * cmd)
 {
     TDSSOCKET *tds;
     CS_RETCODE ret;
-    CSREMOTE_PROC **rpc;
+    /* CSREMOTE_PROC **rpc; */
     TDSPARAMINFO *pparam_info;
     TDSCURSOR *cursor;
     TDSDYNAMIC *tdsdyn;
@@ -947,7 +948,7 @@ ct_send(CS_COMMAND * cmd)
             return CS_FAIL;
         }
 
-        rpc = &(cmd->rpc);
+        /* rpc = &(cmd->rpc); */
         pparam_info = paraminfoalloc(tds, cmd->rpc->param_list);
         ret = tds_submit_rpc(tds, cmd->rpc->name, pparam_info);
 
@@ -1722,7 +1723,7 @@ _ct_bind_data(CS_CONTEXT *ctx, TDSRESULTINFO * resinfo, TDSRESULTINFO *bindinfo,
     unsigned char *src;
     unsigned char *dest, *temp_add;
     int result = 0;
-    TDS_INT srctype, srclen, desttype, len;
+    TDS_INT srctype, srclen, /* desttype, */ len;
     CS_DATAFMT srcfmt, destfmt;
     TDS_INT *datalen = NULL;
     TDS_SMALLINT *nullind = NULL;
@@ -1746,7 +1747,7 @@ _ct_bind_data(CS_CONTEXT *ctx, TDSRESULTINFO * resinfo, TDSRESULTINFO *bindinfo,
 
 
         srctype = curcol->column_type;
-        desttype = _ct_get_server_type(bindcol->column_bindtype);
+        /* desttype = _ct_get_server_type(bindcol->column_bindtype); */
 
         /* retrieve the initial bound column_varaddress */
         /* and increment it if offset specified         */
@@ -2487,7 +2488,7 @@ ct_config(CS_CONTEXT * ctx, CS_INT action, CS_INT property, CS_VOID * buffer, CS
                     );
                     ((char*)buffer)[buflen - 1]= 0;
                     if (*outlen < 0)
-                        *outlen = strlen((char*) buffer);
+                        *outlen = (CS_INT) strlen((char*) buffer);
                     ret = CS_SUCCEED;
                 }
                 break;
@@ -2507,7 +2508,7 @@ ct_config(CS_CONTEXT * ctx, CS_INT action, CS_INT property, CS_VOID * buffer, CS
                     *outlen= snprintf(buffer, buflen, "%s", settings->freetds_version);
                     ((char*)buffer)[buflen - 1]= 0;
                     if (*outlen < 0)
-                        *outlen = strlen((char*) buffer);
+                        *outlen = (CS_INT) strlen((char*) buffer);
                     ret = CS_SUCCEED;
                 }
                 break;
@@ -2560,14 +2561,14 @@ ct_config(CS_CONTEXT * ctx, CS_INT action, CS_INT property, CS_VOID * buffer, CS
 CS_RETCODE
 ct_cmd_props(CS_COMMAND * cmd, CS_INT action, CS_INT property, CS_VOID * buffer, CS_INT buflen, CS_INT * outlen)
 {
-    TDSSOCKET *tds;
+    /* TDSSOCKET *tds; */
     TDSCURSOR *cursor;
     int maxcp;
 
     if (!cmd->con || !cmd->con->tds_socket)
         return CS_FAIL;
 
-    tds = cmd->con->tds_socket;
+    /* tds = cmd->con->tds_socket; */
 
     tdsdump_log(TDS_DBG_FUNC, "ct_cmd_props() action = %s property = %d\n", CS_GET ? "CS_GET" : "CS_SET", property);
     if (action == CS_SET) {
@@ -2622,7 +2623,7 @@ ct_cmd_props(CS_COMMAND * cmd, CS_INT action, CS_INT property, CS_VOID * buffer,
                 if ((CS_INT)len >= buflen)
                     return CS_FAIL;
                 strcpy(buffer, cursor->cursor_name);
-                if (outlen) *outlen = len;
+                if (outlen) *outlen = (CS_INT)len;
             }
             if (property == CS_CUR_ROWCOUNT) {
                 *(CS_INT *)buffer = cursor->cursor_rows;
@@ -2760,7 +2761,7 @@ ct_get_data(CS_COMMAND * cmd, CS_INT item, CS_VOID * buffer, CS_INT buflen, CS_I
 
     if (item != cmd->get_data_item) {
         TDSBLOB *blob = NULL;
-        size_t table_namelen, column_namelen;
+        CS_INT table_namelen, column_namelen;
 
         /* allocare needed descriptor if needed */
         if (cmd->iodesc)
@@ -3427,7 +3428,7 @@ ct_capability(CS_CONNECTION * con, CS_INT action, CS_INT type, CS_INT capability
 CS_RETCODE
 ct_dynamic(CS_COMMAND * cmd, CS_INT type, CS_CHAR * id, CS_INT idlen, CS_CHAR * buffer, CS_INT buflen)
 {
-    int query_len;
+    size_t query_len;
     CS_CONNECTION *con;
     CS_DYNAMIC *dyn;
 
@@ -4384,7 +4385,7 @@ paraminfoalloc(TDSSOCKET * tds, CS_PARAM * first_param)
     TDSCOLUMN *pcol;
     TDSPARAMINFO *params = NULL;
 
-    int temp_type;
+    TDS_SERVER_TYPE temp_type;
     CS_BYTE *temp_value;
     CS_INT temp_datalen;
     int param_is_null;
@@ -4410,7 +4411,7 @@ paraminfoalloc(TDSSOCKET * tds, CS_PARAM * first_param)
             param_is_null = 0;
             temp_datalen = 0;
             temp_value = NULL;
-            temp_type = p->type;
+            temp_type = (TDS_SERVER_TYPE) p->type;
 
             /* here's one way of passing a null parameter */
 
@@ -4473,7 +4474,7 @@ paraminfoalloc(TDSSOCKET * tds, CS_PARAM * first_param)
                 }
             }
         } else {
-            temp_type = p->type;
+            temp_type = (TDS_SERVER_TYPE) p->type;
             temp_value = p->value;
             temp_datalen = *(p->datalen);
         }
@@ -4484,7 +4485,7 @@ paraminfoalloc(TDSSOCKET * tds, CS_PARAM * first_param)
         pcol->column_namelen = 0;
         if (p->name) {
             tds_strlcpy(pcol->column_name, p->name, sizeof(pcol->column_name));
-            pcol->column_namelen = strlen(pcol->column_name);
+            pcol->column_namelen = (TDS_SMALLINT) strlen(pcol->column_name);
         }
 
         if (p->status == CS_RETURN)
@@ -4654,9 +4655,9 @@ _ct_fill_param(CS_INT cmd_type, CS_PARAM * param, CS_DATAFMT * datafmt, CS_VOID 
 
                 if (data) {
                     if (*(param->datalen) == CS_NULLTERM) {
+                        *(param->datalen) = strlen((char*)data);
                         tdsdump_log(TDS_DBG_INFO1, " _ct_fill_param() about to strdup string %u bytes long\n",
-                                (unsigned int) strlen(data));
-                        *(param->datalen) = strlen(data);
+                                (unsigned int) *(param->datalen));
                     } else if (*(param->datalen) < 0) {
                         return CS_FAIL;
                     }
@@ -5034,7 +5035,7 @@ _ct_allocate_dynamic(CS_CONNECTION * con, char *id, int idlen)
 {
     CS_DYNAMIC *dyn;
     CS_DYNAMIC **pdyn;
-    int id_len;
+    size_t id_len;
 
     dyn = (CS_DYNAMIC *) malloc(sizeof(CS_DYNAMIC));
 
@@ -5068,7 +5069,7 @@ static CS_DYNAMIC *
 _ct_locate_dynamic(CS_CONNECTION * con, char *id, int idlen)
 {
     CS_DYNAMIC *dyn;
-    int id_len;
+    size_t id_len;
 
     if (idlen == CS_NULLTERM)
         id_len = strlen(id);

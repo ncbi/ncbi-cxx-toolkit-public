@@ -138,7 +138,7 @@ static TDS_UINT utf16len(const utf16_t * s);
 static const char *tds_prtype(int token);
 #endif
 
-const char tds_hex_digits[16] = "0123456789abcdef";
+const char tds_hex_digits[] = "0123456789abcdef";
 
 /**
  * Return type suitable for conversions (convert all nullable types to 
@@ -2636,8 +2636,8 @@ store_hour(const char *hour, const char *ampm, struct tds_time *t)
  * @param srctype type requires
  * @return nullable type
  */
-TDS_INT
-tds_get_null_type(int srctype)
+TDS_SERVER_TYPE
+tds_get_null_type(TDS_SERVER_TYPE srctype)
 {
 
 	switch (srctype) {

@@ -40,7 +40,7 @@ int
 vasprintf(char **ret, const char *fmt, va_list ap)
 {
 #if HAVE_VSNPRINTF
-	int chunks;
+    size_t chunks;
 	size_t buflen;
 	char *buf;
 	int len;

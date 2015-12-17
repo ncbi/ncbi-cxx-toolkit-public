@@ -49,7 +49,7 @@ struct string_linked_list
  */
 
 static char *
-norm_fmt(const char *fmt, int fmtlen)
+norm_fmt(const char *fmt, ssize_t fmtlen)
 {
 	char *newfmt;
 	char *cp;
@@ -81,7 +81,7 @@ norm_fmt(const char *fmt, int fmtlen)
 }
 
 int
-tds_vstrbuild(char *buffer, int buflen, int *resultlen, char *text, int textlen, const char *formats, int formatlen, va_list ap)
+tds_vstrbuild(char *buffer, size_t buflen, int *resultlen, char *text, ssize_t textlen, const char *formats, ssize_t formatlen, va_list ap)
 {
 	char *newformat;
 	char *params;

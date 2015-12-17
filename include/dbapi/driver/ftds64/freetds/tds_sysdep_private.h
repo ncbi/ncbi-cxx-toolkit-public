@@ -64,7 +64,7 @@ typedef int pid_t;
 #include <winsock2.h>
 #include <windows.h>
 #define READSOCKET(a,b,c)	recv((a), (b), (c), 0L)
-#define WRITESOCKET(a,b,c)	send((a), (b), (c), 0L)
+#define WRITESOCKET(a,b,c)  send((a), (const char*) (b), (c), 0L)
 #define CLOSESOCKET(a)		closesocket((a))
 #define IOCTLSOCKET(a,b,c)	ioctlsocket((a), (b), (c))
 #define NETDB_REENTRANT 1	/* BSD-style netdb interface is reentrant */

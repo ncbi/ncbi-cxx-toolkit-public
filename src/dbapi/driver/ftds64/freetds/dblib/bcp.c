@@ -972,9 +972,9 @@ _bcp_exec_out(DBPROCESS * dbproc, DBINT * rows_copied)
 					    && (hostcol->datatype == SYBCHAR || hostcol->datatype == SYBVARCHAR)) {
 						tds_datecrack(srctype, src, &when);
 						if (bcpdatefmt)
-							buflen = tds_strftime((TDS_CHAR *)hostcol->bcp_column_data->data, 256, bcpdatefmt, &when);
+                            buflen = (int)tds_strftime((TDS_CHAR *)hostcol->bcp_column_data->data, 256, bcpdatefmt, &when);
 						else
-							buflen = tds_strftime((TDS_CHAR *)hostcol->bcp_column_data->data, 256, "%Y-%m-%d %H:%M:%S.%z", &when);
+                            buflen = (int)tds_strftime((TDS_CHAR *)hostcol->bcp_column_data->data, 256, "%Y-%m-%d %H:%M:%S.%z", &when);
 					} else {
 						/*
 						 * For null columns, the above work to determine the output buffer size is moot,
@@ -1235,8 +1235,8 @@ _bcp_read_hostfile(DBPROCESS * dbproc, FILE * hostfile, int *row_error)
 			 */
 			col_bytes_left = collen;
 			/* TODO make tds_iconv_fread handle terminator directly to avoid fseek in _bcp_measure_terminated_field */
-			file_bytes_left = tds_iconv_fread(cd, hostfile, file_len, hostcol->term_len, (TDS_CHAR *)coldata, &col_bytes_left);
-			collen -= col_bytes_left;
+            file_bytes_left = (int)tds_iconv_fread(cd, hostfile, file_len, hostcol->term_len, (TDS_CHAR *)coldata, &col_bytes_left);
+            collen -= (int) col_bytes_left;
 
 			/* tdsdump_log(TDS_DBG_FUNC, "collen is %d after tds_iconv_fread()\n", collen); */
 
@@ -1439,7 +1439,7 @@ _bcp_measure_terminated_field(FILE * hostfile, BYTE * terminator, int term_len)
 		return -1;
 	}
 
-	for (sample_size = 1; (bytes_read = fread(sample, sample_size, 1, hostfile)) != 0;) {
+    for (sample_size = 1; (bytes_read = (int)fread(sample, sample_size, 1, hostfile)) != 0;) {
 
 		bytes_read *= sample_size;
 
@@ -1837,7 +1837,7 @@ _bcp_exec_in(DBPROCESS * dbproc, DBINT * rows_copied)
 	offset_type row_start, row_end;
 	offset_type error_row_size;
 
-	const size_t chunk_size = 0x20000u;
+    const offset_type chunk_size = 0x20000ul;
 	
 	*rows_copied = 0;
 	
@@ -1898,7 +1898,7 @@ _bcp_exec_in(DBPROCESS * dbproc, DBINT * rows_copied)
 				fseeko(hostfile, row_start, SEEK_SET);
 
 				while (error_row_size > 0) {
-					size_t chunk = (size_t)error_row_size > chunk_size ? chunk_size : error_row_size;
+                    offset_type chunk = error_row_size > chunk_size ? chunk_size : error_row_size;
 
 					if (!row_in_error)
 						row_in_error = malloc(chunk);
@@ -2519,7 +2519,7 @@ _bcp_send_colmetadata(DBPROCESS * dbproc)
  * \sa 	BCP_SETL(), bcp_batch(), bcp_bind(), bcp_colfmt(), bcp_colfmt_ps(), bcp_collen(), bcp_colptr(), bcp_columns(), bcp_control(), bcp_done(), bcp_exec(), bcp_getl(), bcp_init(), bcp_moretext(), bcp_options(), bcp_readfmt(), bcp_sendrow()
  */
 static char *
-_bcp_fgets(char *buffer, size_t size, FILE *f)
+_bcp_fgets(char *buffer, int size, FILE *f)
 {
 	char *p = fgets(buffer, size, f);
 	if (p == NULL)
@@ -2550,7 +2550,7 @@ bcp_readfmt(DBPROCESS * dbproc, char *filename)
 	FILE *ffile;
 	char buffer[1024];
 
-	float lf_version = 0.0;
+    /* float lf_version = 0.0; */
 	int li_numcols = 0;
 	int colinfo_count = 0;
 
@@ -2576,7 +2576,7 @@ bcp_readfmt(DBPROCESS * dbproc, char *filename)
 	}
 
 	if ((_bcp_fgets(buffer, sizeof(buffer), ffile)) != NULL)
-		lf_version = (float)atof(buffer);
+        /* lf_version = (float)atof(buffer) */;
 
 	if ((_bcp_fgets(buffer, sizeof(buffer), ffile)) != NULL)
 		li_numcols = atoi(buffer);
@@ -3392,7 +3392,7 @@ rtrim(char *istr, int ilen)
 
 	for (t = istr + ilen; --t > istr && *t == ' '; )
 		*t = '\0';
-	return t - istr + 1;
+    return (int) (t - istr + 1);
 }
 
 /**

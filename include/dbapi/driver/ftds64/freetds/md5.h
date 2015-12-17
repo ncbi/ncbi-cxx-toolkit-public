@@ -13,12 +13,15 @@
 struct MD5Context {
 	TDS_UINT buf[4];
 	TDS_UINT bits[2];
-	unsigned char in[64];
+    union {
+        unsigned char in[64];
+        TDS_UINT in_uints[16];
+    } u;
 };
 
 void MD5Init(struct MD5Context *context);
 void MD5Update(struct MD5Context *context, unsigned char const *buf,
-	       unsigned len);
+               size_t len);
 void MD5Final(struct MD5Context *context, unsigned char *digest);
 void MD5Transform(TDS_UINT buf[4], TDS_UINT const in[16]);
 

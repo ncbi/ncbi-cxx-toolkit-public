@@ -481,7 +481,7 @@ tds_process_auth(TDSSOCKET * tds)
     int data_block_offset;
 
     int target_info_len = 0;
-    int target_info_offset;
+    /* int target_info_offset; */
 
     /* For debuging purposes ...
     unsigned char* target_info;
@@ -538,7 +538,7 @@ tds_process_auth(TDSSOCKET * tds)
 
         target_info_len = tds_get_smallint(tds); /* Target Information len */
         target_info_len = tds_get_smallint(tds); /* Target Information len */
-        target_info_offset = tds_get_int(tds);  /* Target Information offset */
+        /* target_info_offset = */ tds_get_int(tds);  /* Target Information offset */
 
         where += 16;
 
@@ -1118,7 +1118,7 @@ tds_process_col_name(TDSSOCKET * tds)
         for (col = 0; col < /*info->*/num_cols; col++) {
             curcol = info->columns[col];
             tds_strlcpy(curcol->column_name, cur->column_name, sizeof(curcol->column_name));
-            curcol->column_namelen = strlen(curcol->column_name);
+            curcol->column_namelen = (TDS_SMALLINT) strlen(curcol->column_name);
             prev = cur;
             cur = cur->next;
             free(prev->column_name);
@@ -1291,7 +1291,7 @@ tds_process_colinfo(TDSSOCKET * tds)
 static int
 tds_process_param_result(TDSSOCKET * tds, TDSPARAMINFO ** pinfo)
 {
-    int hdrsize;
+    /* int hdrsize; */
     TDSCOLUMN *curparam;
     TDSPARAMINFO *info;
     int i;
@@ -1303,7 +1303,7 @@ tds_process_param_result(TDSSOCKET * tds, TDSPARAMINFO ** pinfo)
     /* TODO check if current_results is a param result */
 
     /* limited to 64K but possible types are always smaller (not TEXT/IMAGE) */
-    hdrsize = tds_get_smallint(tds);
+    /* hdrsize = */ tds_get_smallint(tds);
     if ((info = tds_alloc_param_result(*pinfo)) == NULL)
         return TDS_FAIL;
 
@@ -1393,7 +1393,7 @@ tds_process_params_result_token(TDSSOCKET * tds)
 static int
 tds_process_compute_result(TDSSOCKET * tds)
 {
-    int hdrsize;
+    /* int hdrsize; */
     int col, num_cols;
     TDS_TINYINT by_cols = 0;
     TDS_SMALLINT *cur_by_col;
@@ -1404,7 +1404,7 @@ tds_process_compute_result(TDSSOCKET * tds)
 
     CHECK_TDS_EXTRA(tds);
 
-    hdrsize = tds_get_smallint(tds);
+    /* hdrsize = */ tds_get_smallint(tds);
 
     /*
      * compute statement id which this relates
@@ -1449,7 +1449,7 @@ tds_process_compute_result(TDSSOCKET * tds)
 
         if (curcol->column_namelen == 0) {
             strcpy(curcol->column_name, tds_pr_op(curcol->column_operator));
-            curcol->column_namelen = strlen(curcol->column_name);
+            curcol->column_namelen = (TDS_SMALLINT) strlen(curcol->column_name);
         }
 
         /*  User defined data type of the column */
@@ -1751,7 +1751,7 @@ tds_get_data_info(TDSSOCKET * tds, TDSCOLUMN * curcol, int is_param)
 static int
 tds_process_result(TDSSOCKET * tds)
 {
-    int hdrsize;
+    /* int hdrsize; */
     int col, num_cols;
     TDSCOLUMN *curcol;
     TDSRESULTINFO *info;
@@ -1761,7 +1761,7 @@ tds_process_result(TDSSOCKET * tds)
     tds_free_all_results(tds);
     tds->rows_affected = TDS_NO_COUNT;
 
-    hdrsize = tds_get_smallint(tds);
+    /* hdrsize = */ tds_get_smallint(tds);
 
     /* read number of columns and allocate the columns structure */
     num_cols = tds_get_smallint(tds);
@@ -1804,7 +1804,7 @@ tds_process_result(TDSSOCKET * tds)
 static int
 tds5_process_result(TDSSOCKET * tds)
 {
-    int hdrsize;
+    /* int hdrsize; */
 
     int colnamelen;
     int col, num_cols;
@@ -1824,7 +1824,7 @@ tds5_process_result(TDSSOCKET * tds)
     /*
      * read length of packet (4 bytes)
      */
-    hdrsize = tds_get_int(tds);
+    /* hdrsize = */ tds_get_int(tds);
 
     /* read number of columns and allocate the columns structure */
     num_cols = tds_get_smallint(tds);
@@ -2340,13 +2340,13 @@ static int
 tds_process_end(TDSSOCKET * tds, int marker, int *flags_parm)
 {
     int more_results, was_cancelled, error, done_count_valid;
-    int tmp, state;
+    int tmp /*, state */;
 
     CHECK_TDS_EXTRA(tds);
 
     tmp = tds_get_smallint(tds);
 
-    state = tds_get_smallint(tds);
+    /* state = */ tds_get_smallint(tds);
 
     more_results = (tmp & TDS_DONE_MORE_RESULTS) != 0;
     was_cancelled = (tmp & TDS_DONE_CANCELLED) != 0;
@@ -2588,7 +2588,7 @@ static int
 tds_process_msg(TDSSOCKET * tds, int marker)
 {
     int rc;
-    int len;
+    /* int len; */
     int len_sqlstate;
     int has_eed = 0;
     TDSMESSAGE msg;
@@ -2599,7 +2599,7 @@ tds_process_msg(TDSSOCKET * tds, int marker)
     memset(&msg, 0, sizeof(TDSMESSAGE));
 
     /* packet length */
-    len = tds_get_smallint(tds);
+    /* len = */ tds_get_smallint(tds);
 
     /* message number */
     rc = tds_get_int(tds);
@@ -2837,7 +2837,7 @@ static TDSDYNAMIC *
 tds_process_dynamic(TDSSOCKET * tds)
 {
     int token_sz;
-    unsigned char type, status;
+    unsigned char type /*, status */;
     int id_len;
     char id[TDS_MAX_DYNID_LEN + 1];
     int drain = 0;
@@ -2846,7 +2846,7 @@ tds_process_dynamic(TDSSOCKET * tds)
 
     token_sz = tds_get_smallint(tds);
     type = tds_get_byte(tds);
-    status = tds_get_byte(tds);
+    /* status = */ tds_get_byte(tds);
     /* handle only acknowledge */
     if (type != 0x20) {
         tdsdump_log(TDS_DBG_ERROR, "Unrecognized TDS5_DYN type %x\n", type);
@@ -2869,7 +2869,7 @@ tds_process_dynamic(TDSSOCKET * tds)
 static int
 tds_process_dyn_result(TDSSOCKET * tds)
 {
-    int hdrsize;
+    /* int hdrsize; */
     int col, num_cols;
     TDSCOLUMN *curcol;
     TDSPARAMINFO *info;
@@ -2877,7 +2877,7 @@ tds_process_dyn_result(TDSSOCKET * tds)
 
     CHECK_TDS_EXTRA(tds);
 
-    hdrsize = tds_get_smallint(tds);
+    /* hdrsize = */ tds_get_smallint(tds);
     num_cols = tds_get_smallint(tds);
 
     if (tds->cur_dyn) {
@@ -2918,7 +2918,7 @@ tds_process_dyn_result(TDSSOCKET * tds)
 static int
 tds5_process_dyn_result2(TDSSOCKET * tds)
 {
-    int hdrsize;
+    /* int hdrsize; */
     int col, num_cols;
     TDSCOLUMN *curcol;
     TDSPARAMINFO *info;
@@ -2926,7 +2926,7 @@ tds5_process_dyn_result2(TDSSOCKET * tds)
 
     CHECK_TDS_EXTRA(tds);
 
-    hdrsize = tds_get_int(tds);
+    /* hdrsize = */ tds_get_int(tds);
     num_cols = tds_get_smallint(tds);
 
     if (tds->cur_dyn) {
@@ -3419,7 +3419,7 @@ tds7_process_compute_result(TDSSOCKET * tds)
 
         if (!curcol->column_namelen) {
             strcpy(curcol->column_name, tds_pr_op(curcol->column_operator));
-            curcol->column_namelen = strlen(curcol->column_name);
+            curcol->column_namelen = (TDS_SMALLINT) strlen(curcol->column_name);
         }
 
         tds_add_row_column_size(info, curcol);
@@ -3437,10 +3437,10 @@ static int
 tds_process_cursor_tokens(TDSSOCKET * tds)
 {
     TDS_SMALLINT hdrsize;
-    TDS_INT rowcount;
+    /* TDS_INT rowcount; */
     TDS_INT cursor_id;
     TDS_TINYINT namelen;
-    unsigned char cursor_cmd;
+    /* unsigned char cursor_cmd; */
     TDS_SMALLINT cursor_status;
     TDSCURSOR *cursor;
 
@@ -3456,12 +3456,12 @@ tds_process_cursor_tokens(TDSSOCKET * tds)
         tds_get_n(tds, NULL, namelen);
         hdrsize -= namelen;
     }
-    cursor_cmd    = tds_get_byte(tds);
+    /* cursor_cmd = */ tds_get_byte(tds);
     cursor_status = tds_get_smallint(tds);
     hdrsize -= 3;
 
     if (hdrsize == sizeof(TDS_INT))
-        rowcount = tds_get_int(tds);
+        /* rowcount = */ tds_get_int(tds);
 
     if (tds->cur_cursor) {
         cursor = tds->cur_cursor;
@@ -3477,7 +3477,7 @@ tds_process_cursor_tokens(TDSSOCKET * tds)
 static int
 tds5_process_optioncmd(TDSSOCKET * tds)
 {
-    TDS_SMALLINT length;
+    /* TDS_SMALLINT length; */
     TDS_INT command;
     TDS_INT option;
     TDS_INT argsize;
@@ -3489,7 +3489,7 @@ tds5_process_optioncmd(TDSSOCKET * tds)
 
     assert(IS_TDS50(tds));
 
-    length = tds_get_smallint(tds);
+    /* length = */ tds_get_smallint(tds);
     command = tds_get_byte(tds);
     option = tds_get_byte(tds);
     argsize = tds_get_byte(tds);

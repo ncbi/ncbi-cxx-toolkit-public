@@ -82,7 +82,7 @@ tds_dstr_free(DSTR * s)
  * @return string copied or NULL on memory error
  */
 DSTR
-tds_dstr_copyn(DSTR * s, const char *src, unsigned int length)
+tds_dstr_copyn(DSTR * s, const char *src, size_t length)
 {
 	if (*s != (DSTR) &tds_str_empty)
 		free(*s);

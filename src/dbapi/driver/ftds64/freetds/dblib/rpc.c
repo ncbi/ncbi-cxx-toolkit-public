@@ -122,7 +122,7 @@ dbrpcinit(DBPROCESS * dbproc, char *rpcname, DBSMALLINT options)
 	}
 
 	/* store */
-	(*rpc)->options = options & DBRPCRECOMPILE;
+    (*rpc)->options = dbrpcrecompile;
 	(*rpc)->param_list = NULL;
 
 	/* completed */
@@ -395,7 +395,7 @@ param_info_alloc(TDSSOCKET * tds, DBREMOTE_PROC * rpc)
 		/* meta data */
 		if (p->name) {
 			tds_strlcpy(pcol->column_name, p->name, sizeof(pcol->column_name));
-			pcol->column_namelen = strlen(pcol->column_name);
+            pcol->column_namelen = (TDS_SMALLINT) strlen(pcol->column_name);
 		}
 
 		tds_set_param_type(tds, pcol, temp_type);

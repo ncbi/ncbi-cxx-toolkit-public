@@ -21,6 +21,7 @@
 #include <config.h>
 #endif /* HAVE_CONFIG_H */
 
+#include <stddef.h>
 #include <stdio.h>
 
 #if HAVE_STDLIB_H
@@ -45,7 +46,12 @@ TDS_RCSID(var, "$Id$");
  */
 #if ENABLE_EXTRA_CHECKS
 
-#if defined(__GNUC__) && __GNUC__ >= 2
+#if defined(__llvm__)  \
+    ||  (defined(__GNUC__)  \
+         &&  (__GNUC__ >= 5  ||  (__GNUC__  == 4  &&  __GNUC_MINOR__ >= 6)))
+#define COMPILE_CHECK(name,check) \
+    _Static_assert(check,#name)
+#elif defined(__GNUC__) && __GNUC__ >= 2
 #define COMPILE_CHECK(name,check) \
     extern int name[(check)?1:-1] __attribute__ ((unused))
 #else
@@ -56,7 +62,8 @@ TDS_RCSID(var, "$Id$");
 /* TODO test SYBxxx consistency */
 
 #define TEST_ATTRIBUTE(t,sa,fa,sb,fb) \
-	COMPILE_CHECK(t,sizeof(((sa*)0)->fa) == sizeof(((sb*)0)->fb) && (int)(&((sa*)0)->fa) == (int)(&((sb*)0)->fb))
+    COMPILE_CHECK(t##a, sizeof(((sa*)0)->fa) == sizeof(((sb*)0)->fb)); \
+    COMPILE_CHECK(t##b, offsetof(sa, fa) == offsetof(sa, fb));
 
 TEST_ATTRIBUTE(t21,TDS_MONEY4,mny4,DBMONEY4,mny4);
 TEST_ATTRIBUTE(t22,TDS_OLD_MONEY,mnyhigh,DBMONEY,mnyhigh);

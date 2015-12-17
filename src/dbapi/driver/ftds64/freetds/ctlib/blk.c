@@ -662,7 +662,7 @@ blk_textxfer(CS_BLKDESC * blkdesc, CS_BYTE * buffer, CS_INT buflen, CS_INT * out
     static const TDS_TINYINT textptr_size = 16;
 
     unsigned char *record;
-    TDS_INT	  old_record_size;
+    /* TDS_INT   old_record_size; */
     TDS_INT	  new_record_size;
 
     TDS_INT	 varint_4;
@@ -673,18 +673,18 @@ blk_textxfer(CS_BLKDESC * blkdesc, CS_BYTE * buffer, CS_INT buflen, CS_INT * out
     CS_INT      srclen  = 0;
     CS_INT      srctype = 0;
     CS_SMALLINT *nullind = NULL;
-    CS_INT      *datalen = NULL;
+    /* CS_INT      *datalen = NULL; */
     unsigned char* current_row = blkdesc->bindinfo->current_row;
 
-    CS_DATAFMT srcfmt;
-    CS_DATAFMT destfmt;
+    /* CS_DATAFMT srcfmt; */
+    /* CS_DATAFMT destfmt; */
 
     CS_INT need_to_send;
 
     tdsdump_log(TDS_DBG_FUNC, "blk_textxfer(blkdesc, buflen %d, outlen)\n", buflen);
 
     record = blkdesc->bindinfo->current_row;
-    old_record_size = blkdesc->bindinfo->row_size;
+    /* old_record_size = blkdesc->bindinfo->row_size; */
     new_record_size = 0;
 
     if(blkdesc->current_col >= blkdesc->bindinfo->num_cols)
@@ -714,9 +714,11 @@ blk_textxfer(CS_BLKDESC * blkdesc, CS_BYTE * buffer, CS_INT buflen, CS_INT * out
             nullind = bindcol->column_nullbind;
         }
 
+        /*
         if (bindcol->column_lenbind) {
             datalen = bindcol->column_lenbind;
         }
+        */
 
         srctype = bindcol->column_bindtype; 		/* used to pass to cs_convert */
 
@@ -797,6 +799,7 @@ blk_textxfer(CS_BLKDESC * blkdesc, CS_BYTE * buffer, CS_INT buflen, CS_INT * out
         need_to_send = (CS_INT)bindcol->column_bindlen - blkdesc->text_sent;
         buflen = (buflen > need_to_send) ? need_to_send : buflen;
 
+        /*
         srcfmt.datatype = srctype;
         srcfmt.maxlength = srclen;
 
@@ -806,6 +809,7 @@ blk_textxfer(CS_BLKDESC * blkdesc, CS_BYTE * buffer, CS_INT buflen, CS_INT * out
         destfmt.scale     = bindcol->column_scale;
 
         destfmt.format  = CS_FMT_UNUSED;
+        */
 
         buflen = MIN(buflen, (CS_INT)bindcol->column_bindlen - blkdesc->text_sent);
 
@@ -871,8 +875,8 @@ _blk_rowxfer_out(CS_BLKDESC * blkdesc, CS_INT rows_to_xfer, CS_INT * rows_xferre
     TDS_INT result_type;
     TDS_INT ret;
     TDS_INT temp_count;
-    TDS_INT row_of_query;
-    TDS_INT rows_written;
+    /* TDS_INT row_of_query; */
+    /* TDS_INT rows_written; */
 
     tdsdump_log(TDS_DBG_FUNC, "blk_rowxfer_out()\n");
 
@@ -907,8 +911,8 @@ _blk_rowxfer_out(CS_BLKDESC * blkdesc, CS_INT rows_to_xfer, CS_INT * rows_xferre
         blkdesc->xfer_init = 1;
     }
 
-    row_of_query = 0;
-    rows_written = 0;
+    /* row_of_query = 0; */
+    /* rows_written = 0; */
 
     if (rows_xferred)
         *rows_xferred = 0;
@@ -948,14 +952,14 @@ static CS_RETCODE
 _blk_rowxfer_in(CS_BLKDESC * blkdesc, CS_INT rows_to_xfer, CS_INT * rows_xferred)
 {
 
-    TDSSOCKET *tds;
+    /* TDSSOCKET *tds; */
     TDS_INT each_row;
     CS_RETCODE rc = CS_SUCCEED;
 
     if (!blkdesc)
         return CS_FAIL;
 
-    tds = blkdesc->con->tds_socket;
+    /* tds = blkdesc->con->tds_socket; */
 
     /*
      * the first time blk_xfer called after blk_init()

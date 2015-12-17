@@ -134,7 +134,8 @@ sql2tds(TDS_STMT * stmt, const struct _drecord *drec_ipd, const struct _drecord 
 	int compute_row)
 {
 	TDS_DBC * dbc = stmt->dbc;
-	int dest_type, src_type, sql_src_type, res;
+    TDS_SERVER_TYPE dest_type, src_type;
+    int sql_src_type, res;
 	CONV_RESULT ores;
 	TDSBLOB *blob;
 	char *src;
@@ -144,7 +145,7 @@ sql2tds(TDS_STMT * stmt, const struct _drecord *drec_ipd, const struct _drecord 
 	TDS_DATETIME dt;
 	TDS_NUMERIC num;
 	SQL_NUMERIC_STRUCT *sql_num;
-	SQLINTEGER sql_len;
+    SQLLEN sql_len;
 	int need_data = 0, i;
 
 	/* TODO handle bindings of char like "{d '2002-11-12'}" */
@@ -204,7 +205,7 @@ sql2tds(TDS_STMT * stmt, const struct _drecord *drec_ipd, const struct _drecord 
 	if (!compute_row)
 		return TDS_SUCCEED;
 
-	src = drec_apd->sql_desc_data_ptr;
+    src = (char *) drec_apd->sql_desc_data_ptr;
 	if (src && stmt->curr_param_row) {
 		if (stmt->apd->header.sql_desc_bind_type != SQL_BIND_BY_COLUMN) {
 			src += stmt->apd->header.sql_desc_bind_type;
@@ -339,6 +340,8 @@ sql2tds(TDS_STMT * stmt, const struct _drecord *drec_ipd, const struct _drecord 
 		src = (char *) &num;
 		break;
 		/* TODO intervals */
+    default:
+        break;
 	}
 
 	res = tds_convert(dbc->env->tds_ctx, src_type, src, len, dest_type, &ores);

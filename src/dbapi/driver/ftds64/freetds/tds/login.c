@@ -480,7 +480,7 @@ tds_connect(TDSSOCKET * tds, TDSCONNECTION * connection)
 static int
 tds_put_login_string(TDSSOCKET * tds, const char *buf, int n)
 {
-    int buf_len = (buf ? strlen(buf) : 0);
+    size_t buf_len = (buf ? strlen(buf) : 0);
 
     return tds_put_buf(tds, (const unsigned char *) buf, n, buf_len);
 }
@@ -669,10 +669,10 @@ tds7_send_auth(TDSSOCKET * tds,
     const char *domain;
     const char *user_name;
     const char *p;
-    int user_name_len;
-    int host_name_len;
-    int password_len;
-    int domain_len;
+    TDS_USMALLINT user_name_len;
+    TDS_USMALLINT host_name_len;
+    /* TDS_USMALLINT password_len; */
+    TDS_USMALLINT domain_len;
 
     unsigned char* ntlm_v2_response = NULL;
     int ntlm_response_len = 0;
@@ -689,7 +689,7 @@ tds7_send_auth(TDSSOCKET * tds,
     user_name = tds_dstr_cstr(&connection->user_name);
     user_name_len = user_name ? strlen(user_name) : 0;
     host_name_len = tds_dstr_len(&connection->client_host_name);
-    password_len = tds_dstr_len(&connection->password);
+    /* password_len = tds_dstr_len(&connection->password); */
 
     /* parse domain\username */
     if (user_name == NULL  ||  (p = strchr(user_name, '\\')) == NULL)
@@ -833,23 +833,23 @@ tds7_send_login(TDSSOCKET * tds, TDSCONNECTION * connection)
     size_t unicode_left;
     int packet_size;
     int block_size;
-    int current_pos;
+    TDS_USMALLINT current_pos;
     static const unsigned char ntlm_id[] = "NTLMSSP";
     int domain_login = 0;
 
     const char *domain = "";
     const char *user_name = tds_dstr_cstr(&connection->user_name);
     const char *p;
-    int user_name_len = strlen(user_name);
-    int host_name_len = tds_dstr_len(&connection->client_host_name);
-    int app_name_len = tds_dstr_len(&connection->app_name);
+    TDS_USMALLINT user_name_len = strlen(user_name);
+    TDS_USMALLINT host_name_len = tds_dstr_len(&connection->client_host_name);
+    TDS_USMALLINT app_name_len = tds_dstr_len(&connection->app_name);
     size_t password_len = tds_dstr_len(&connection->password);
-    int server_name_len = tds_dstr_len(&connection->server_name);
-    int library_len = tds_dstr_len(&connection->library);
-    int language_len = tds_dstr_len(&connection->language);
-    int database_len = tds_dstr_len(&connection->database);
-    int domain_len = strlen(domain);
-    int auth_len = 0;
+    TDS_USMALLINT server_name_len = tds_dstr_len(&connection->server_name);
+    TDS_USMALLINT library_len = tds_dstr_len(&connection->library);
+    TDS_USMALLINT language_len = tds_dstr_len(&connection->language);
+    TDS_USMALLINT database_len = tds_dstr_len(&connection->database);
+    TDS_USMALLINT domain_len = strlen(domain);
+    TDS_USMALLINT auth_len = 0;
 
     tds->out_flag = 0x10;
 
@@ -1124,9 +1124,9 @@ tds7_send_login(TDSSOCKET * tds, TDSCONNECTION * connection)
  * 'len' characters
  */
 unsigned char *
-tds7_crypt_pass(const unsigned char *clear_pass, int len, unsigned char *crypt_pass)
+tds7_crypt_pass(const unsigned char *clear_pass, size_t len, unsigned char *crypt_pass)
 {
-    int i;
+    size_t i;
 
     for (i = 0; i < len; i++)
         crypt_pass[i] = ((clear_pass[i] << 4) | (clear_pass[i] >> 4)) ^ 0xA5;

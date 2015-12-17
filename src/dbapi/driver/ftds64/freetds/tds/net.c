@@ -905,7 +905,7 @@ tds7_get_instance_port(const char *ip_addr, const char *instance)
 		/* request instance information */
 		msg[0] = 4;
 		tds_strlcpy(msg + 1, instance, sizeof(msg) - 1);
-		sendto(s, msg, strlen(msg) + 1, 0, (struct sockaddr *) &sin, sizeof(sin));
+        sendto(s, msg, (int) strlen(msg) + 1, 0, (struct sockaddr *) &sin, sizeof(sin));
 
 		fd.fd = s;
 		fd.events = POLLIN;
@@ -929,7 +929,7 @@ tds7_get_instance_port(const char *ip_addr, const char *instance)
 
 			/* assure null terminated */
 			msg[msg_len] = 0;
-			tdsdump_dump_buf(TDS_DBG_INFO1, "instance info", msg, msg_len);
+            tdsdump_dump_buf(TDS_DBG_INFO1, "instance info", msg, (int) msg_len);
 
 			/*
 			 * parse message and check instance name and port

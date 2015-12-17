@@ -56,7 +56,7 @@ void tds_dstr_zero(DSTR * s);
 void tds_dstr_free(DSTR * s);
 
 DSTR tds_dstr_copy(DSTR * s, const char *src);
-DSTR tds_dstr_copyn(DSTR * s, const char *src, unsigned int length);
+DSTR tds_dstr_copyn(DSTR * s, const char *src, size_t length);
 DSTR tds_dstr_set(DSTR * s, char *src);
 
 /** \@} */

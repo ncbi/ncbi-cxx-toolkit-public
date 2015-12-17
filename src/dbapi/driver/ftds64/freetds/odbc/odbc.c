@@ -215,7 +215,7 @@ change_autocommit(TDS_DBC * dbc, int state)
 }
 
 static SQLRETURN
-change_database(TDS_DBC * dbc, char *database, int database_len)
+change_database(TDS_DBC * dbc, char *database, size_t database_len)
 {
 	TDSSOCKET *tds = dbc->tds_socket;
 
@@ -307,7 +307,7 @@ SQLDriverConnect(SQLHDBC hdbc, SQLHWND hwnd, SQLCHAR FAR * szConnStrIn, SQLSMALL
 		 SQLSMALLINT cbConnStrOutMax, SQLSMALLINT FAR * pcbConnStrOut, SQLUSMALLINT fDriverCompletion)
 {
 	TDSCONNECTION *connection;
-	int conlen = odbc_get_string_size(cbConnStrIn, szConnStrIn);
+    size_t conlen = odbc_get_string_size(cbConnStrIn, szConnStrIn);
 
 	INIT_HDBC;
 
@@ -818,11 +818,11 @@ SQLSetEnvAttr(SQLHENV henv, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEGER S
 			odbc_errs_add(&env->errs, "HY024", NULL);
 			ODBC_RETURN(env, SQL_ERROR);
 		}
-		env->attr.odbc_version = (SQLINTEGER) Value;
+        env->attr.odbc_version = (SQLINTEGER) (TDS_INTPTR) Value;
 		ODBC_RETURN_(env);
 		break;
 	case SQL_ATTR_OUTPUT_NTS:
-		env->attr.output_nts = (SQLINTEGER) Value;
+        env->attr.output_nts = (SQLINTEGER) (TDS_INTPTR) Value;
 		/* TODO - Make this really work */
 		/* env->attr.output_nts = SQL_TRUE; */
 		ODBC_RETURN_(env);
@@ -2190,7 +2190,7 @@ SQLSetDescField(SQLHDESC hdesc, SQLSMALLINT icol, SQLSMALLINT fDescType, SQLPOIN
 	case SQL_DESC_NAME:
 		{
 			/* FIXME test len >= 0 */
-			int len = odbc_get_string_size(BufferLength, (SQLCHAR *) Value);
+            size_t len = odbc_get_string_size(BufferLength, (SQLCHAR *) Value);
 
 			if (!tds_dstr_copyn(&drec->sql_desc_name, Value, len)) {
 				odbc_errs_add(&desc->errs, "HY001", NULL);
@@ -3608,11 +3608,11 @@ SQLPrepare(SQLHSTMT hstmt, SQLCHAR FAR * szSqlStr, SQLINTEGER cbSqlStr)
 SQLRETURN
 _SQLRowCount(SQLHSTMT hstmt, SQLLEN FAR * pcrow)
 {
-	TDSSOCKET *tds;
+    /* TDSSOCKET *tds; */
 
 	INIT_HSTMT;
 
-	tds = stmt->dbc->tds_socket;
+    /* tds = stmt->dbc->tds_socket; */
 	if (stmt->row_status == NOT_IN_ROW) {
 		odbc_errs_add(&stmt->errs, "24000", NULL);
 		ODBC_RETURN(stmt, SQL_ERROR);
@@ -3930,7 +3930,7 @@ SQLGetData(SQLHSTMT hstmt, SQLUSMALLINT icol, SQLSMALLINT fCType, SQLPOINTER rgb
 
 		if (is_blob_type(colinfo->column_type)) {
 			/* calc how many bytes was readed */
-			int readed = cbValueMax;
+            SQLLEN readed = cbValueMax;
 
 			/* FIXME test on destination char ??? */
 			if (stmt->dbc->env->attr.output_nts != SQL_FALSE && nSybType == SYBTEXT && readed > 0)
@@ -5055,7 +5055,7 @@ static SQLRETURN SQL_API
 _SQLSetConnectAttr(SQLHDBC hdbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLINTEGER StringLength)
 {
 	SQLULEN u_value = (SQLULEN) ValuePtr;
-	int len = 0;
+    size_t len = 0;
 	SQLRETURN ret = SQL_SUCCESS;
 
 	INIT_HDBC;
@@ -5538,7 +5538,7 @@ SQLTables(SQLHSTMT hstmt, SQLCHAR FAR * szCatalogName, SQLSMALLINT cbCatalogName
 
 	/* fix type if needed quoting it */
 	if (szTableType && cbTableType != SQL_NULL_DATA) {
-		int len = odbc_get_string_size(cbTableType, szTableType);
+        size_t len = odbc_get_string_size(cbTableType, szTableType);
 		int to_fix = 0;
 		int elements = 0;
 		char *p = (char *) szTableType;
@@ -5547,7 +5547,7 @@ SQLTables(SQLHSTMT hstmt, SQLCHAR FAR * szCatalogName, SQLSMALLINT cbCatalogName
 		for (;;) {
 			char *begin = p;
 
-			p = memchr(p, ',', end - p);
+            p = (char *) memchr(p, ',', end - p);
 			if (!p)
 				p = end;
 			++elements;
@@ -5573,7 +5573,7 @@ SQLTables(SQLHSTMT hstmt, SQLCHAR FAR * szCatalogName, SQLSMALLINT cbCatalogName
 			for (;;) {
 				char *begin = p;
 
-				p = memchr(p, ',', end - p);
+                p = (char *) memchr(p, ',', end - p);
 				if (!p)
 					p = end;
 				if ((p - begin) < 2 || begin[0] != '\'' || p[-1] != '\'') {
@@ -5692,8 +5692,8 @@ odbc_log_unimplemented_type(const char function_name[], int fType)
 	return;
 }
 
-static int
-odbc_quote_metadata(TDS_DBC * dbc, char type, char *dest, const char *s, int len)
+static size_t
+odbc_quote_metadata(TDS_DBC * dbc, char type, char *dest, const char *s, ssize_t len)
 {
 	int unquote = 0;
 	char prev, buf[1200], *dst;
@@ -5786,11 +5786,12 @@ odbc_stat_execute(TDS_STMT * stmt, const char *begin, int nparams, ...)
 	{
 		char *name;
 		char *value;
-		int len;
+        size_t len;
 		char type;
 	}
 	params[ODBC_MAX_STAT_PARAM];
-	int i, len, param_qualifier = -1;
+    int i, param_qualifier = -1;
+    ssize_t len;
 	char *proc, *p;
 	int retcode;
 	va_list marker;

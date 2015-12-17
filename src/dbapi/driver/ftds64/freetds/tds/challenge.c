@@ -66,9 +66,9 @@ static void tds_encrypt_answer(const unsigned char *hash, const unsigned char *c
 static void tds_convert_key(const unsigned char *key_56, DES_KEY * ks);
 
 
-static void convert_to_upper(char* buf, int len)
+static void convert_to_upper(char* buf, size_t len)
 {
-    int i;
+    size_t i;
 
     for (i = 0; i < len; i++) {
         buf[i] = toupper(buf[i]);
@@ -80,8 +80,8 @@ static const char*
 convert_to_usc2le_string(TDSSOCKET * tds,
                          const TDSICONV * char_conv,
                          const char *s,
-                         int len,
-                         int *out_len)
+                         ssize_t len,
+                         size_t *out_len)
 {
 	char *buf;
 
@@ -142,9 +142,9 @@ void generate_random_buffer(unsigned char *out, int len)
 static void make_ntlm_hash(TDSSOCKET * tds, const char* passwd, unsigned char ntlm_hash[16])
 {
     MD4_CTX context;
-    int passwd_len = 0;
+    size_t passwd_len = 0;
     const char* passwd_usc2le = NULL;
-    int passwd_usc2le_len = 0;
+    size_t passwd_usc2le_len = 0;
 
     passwd_len = strlen(passwd);
 
@@ -177,11 +177,11 @@ static void make_ntlm_v2_hash(TDSSOCKET * tds,
 {
     unsigned char ntlm_hash[16];
     char buf[256];
-    int buf_len = 0;
-    int user_len = 0;
-    int target_len = 0;
+    size_t buf_len = 0;
+    size_t user_len = 0;
+    size_t target_len = 0;
     const char* buf_usc2le;
-    int buf_usc2le_len = 0;
+    size_t buf_usc2le_len = 0;
 
     user_len = strlen(user);
     if (user_len > 128)
@@ -275,13 +275,13 @@ tds_answer_challenge(TDSSOCKET * tds,
     const char* passwd;
     const char* user_name;
     const char *p;
-    int domain_len;
-    int user_name_len;
+    size_t domain_len;
+    /* int user_name_len; */
     int ntlm_v;
     unsigned char* lm_v2_response;
 
-    int len;
-    int i;
+    size_t len;
+    size_t i;
     static const des_cblock magic = { 0x4B, 0x47, 0x53, 0x21, 0x40, 0x23, 0x24, 0x25 };
     DES_KEY ks;
     unsigned char hash[24];
@@ -297,10 +297,10 @@ tds_answer_challenge(TDSSOCKET * tds,
 
     passwd = tds_dstr_cstr(&connection->password);
     user_name = tds_dstr_cstr(&connection->user_name);
-    user_name_len = user_name ? strlen(user_name) : 0;
+    /* user_name_len = user_name ? strlen(user_name) : 0; */
 
     /* parse domain\username */
-    p = user_name_len ? strchr(user_name, '\\') : NULL;
+    p = user_name/*_len*/ ? strchr(user_name, '\\') : NULL;
 
     domain_len = p ? p - user_name : 0;
     memcpy(domain, user_name, domain_len);
@@ -308,7 +308,7 @@ tds_answer_challenge(TDSSOCKET * tds,
 
     if (p != NULL) {
         user_name = p + 1;
-        user_name_len = strlen(user_name);
+        /* user_name_len = strlen(user_name); */
     }
 
     ntlm_v = 2;

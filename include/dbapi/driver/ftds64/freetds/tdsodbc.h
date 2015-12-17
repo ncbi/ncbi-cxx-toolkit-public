@@ -456,24 +456,24 @@ void odbc_check_desc_extra(TDS_DESC * desc);
 /*
  * odbc_util.h
  */
-int odbc_set_stmt_query(struct _hstmt *stmt, const char *sql, int sql_len);
-int odbc_set_stmt_prepared_query(struct _hstmt *stmt, const char *sql, int sql_len);
+int odbc_set_stmt_query(struct _hstmt *stmt, const char *sql, ssize_t sql_len);
+int odbc_set_stmt_prepared_query(struct _hstmt *stmt, const char *sql, ssize_t sql_len);
 void odbc_set_return_status(struct _hstmt *stmt);
 void odbc_set_return_params(struct _hstmt *stmt);
 
 SQLSMALLINT odbc_server_to_sql_type(int col_type, int col_size);
 int odbc_sql_to_c_type_default(int sql_type);
-int odbc_sql_to_server_type(TDSSOCKET * tds, int sql_type);
-int odbc_c_to_server_type(int c_type);
+TDS_SERVER_TYPE odbc_sql_to_server_type(TDSSOCKET * tds, int sql_type);
+TDS_SERVER_TYPE odbc_c_to_server_type(int c_type);
 
 void odbc_set_sql_type_info(TDSCOLUMN * col, struct _drecord *drec);
 SQLINTEGER odbc_sql_to_displaysize(int sqltype, int column_size, int column_prec);
-int odbc_get_string_size(int size, SQLCHAR * str);
+size_t odbc_get_string_size(ssize_t size, SQLCHAR * str);
 void odbc_rdbms_version(TDSSOCKET * tds_socket, char *pversion_string);
-SQLINTEGER odbc_get_param_len(const struct _drecord *drec_apd, const struct _drecord *drec_ipd);
+SQLLEN odbc_get_param_len(const struct _drecord *drec_apd, const struct _drecord *drec_ipd);
 
-SQLRETURN odbc_set_string(SQLPOINTER buffer, SQLSMALLINT cbBuffer, SQLSMALLINT FAR * pcbBuffer, const char *s, int len);
-SQLRETURN odbc_set_string_i(SQLPOINTER buffer, SQLINTEGER cbBuffer, SQLINTEGER FAR * pcbBuffer, const char *s, int len);
+SQLRETURN odbc_set_string(SQLPOINTER buffer, SQLSMALLINT cbBuffer, SQLSMALLINT FAR * pcbBuffer, const char *s, ssize_t len);
+SQLRETURN odbc_set_string_i(SQLPOINTER buffer, SQLINTEGER cbBuffer, SQLINTEGER FAR * pcbBuffer, const char *s, ssize_t len);
 
 SQLSMALLINT odbc_get_concise_sql_type(SQLSMALLINT type, SQLSMALLINT interval);
 SQLRETURN odbc_set_concise_sql_type(SQLSMALLINT concise_type, struct _drecord *drec, int check_only);

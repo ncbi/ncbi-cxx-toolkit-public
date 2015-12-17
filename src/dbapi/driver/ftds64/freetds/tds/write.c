@@ -59,9 +59,9 @@ TDS_RCSID(var, "$Id$");
  *		much like read() and memcpy()
  */
 int
-tds_put_n(TDSSOCKET * tds, const void *buf, int n)
+tds_put_n(TDSSOCKET * tds, const void *buf, ssize_t n)
 {
-	int left;
+    ssize_t left;
 	const unsigned char *bufp = (const unsigned char *) buf;
 
 	assert(n >= 0);
@@ -95,14 +95,14 @@ tds_put_n(TDSSOCKET * tds, const void *buf, int n)
  * \param len length of string in characters, or -1 for null terminated
  */
 int
-tds_put_string(TDSSOCKET * tds, const char *s, int len)
+tds_put_string(TDSSOCKET * tds, const char *s, ssize_t len)
 {
-	TDS_ENCODING *client, *server;
+    TDS_ENCODING *client /*, *server */;
 	char outbuf[256], *poutbuf;
 	size_t inbytesleft, outbytesleft, bytes_out = 0;
 
 	client = &tds->char_convs[client2ucs2]->client_charset;
-	server = &tds->char_convs[client2ucs2]->server_charset;
+    /* server = &tds->char_convs[client2ucs2]->server_charset; */
 
 	if (len < 0) {
 		if (client->min_bytes_per_char == 1) {	/* ascii or UTF-8 */
@@ -164,9 +164,9 @@ tds_put_string(TDSSOCKET * tds, const char *s, int len)
 }
 
 int
-tds_put_buf(TDSSOCKET * tds, const unsigned char *buf, int dsize, int ssize)
+tds_put_buf(TDSSOCKET * tds, const unsigned char *buf, size_t dsize, size_t ssize)
 {
-	int cpsize;
+    size_t cpsize;
 
 	cpsize = ssize > dsize ? dsize : ssize;
 	tds_put_n(tds, buf, cpsize);

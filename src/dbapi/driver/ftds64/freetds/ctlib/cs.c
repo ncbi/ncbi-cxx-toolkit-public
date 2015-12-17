@@ -319,7 +319,7 @@ CS_INT maxcp;
                 free(ctx->userdata);
 
             if (buflen == CS_NULLTERM) {
-                maxcp = strlen(buffer) + 1;
+                maxcp = strlen((char*) buffer) + 1;
             } else {
                 maxcp = buflen;
             }
@@ -766,8 +766,8 @@ cs_dt_crack(CS_CONTEXT * ctx, CS_INT datetype, CS_VOID * dateval, CS_DATEREC * d
 {
 TDS_DATETIME *dt;
 TDS_DATETIME4 *dt4;
-time_t tmp_secs_from_epoch;
-struct tm *t;
+/* time_t tmp_secs_from_epoch; */
+/* struct tm *t; */
 TDSDATEREC dr;
 
     if (datetype == CS_DATETIME_TYPE) {
@@ -779,7 +779,7 @@ TDSDATEREC dr;
     } else {
         return CS_FAIL;
     }
-    t = (struct tm *) gmtime(&tmp_secs_from_epoch);
+    /* t = (struct tm *) gmtime(&tmp_secs_from_epoch); */
     daterec->dateyear = dr.year;
     daterec->datemonth = dr.month;
     daterec->datedmonth = dr.day;

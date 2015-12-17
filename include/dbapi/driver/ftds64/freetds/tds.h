@@ -1259,8 +1259,8 @@ void tds_cursor_deallocated(TDSSOCKET *tds, TDSCURSOR *cursor);
 void tds_release_cursor(TDSSOCKET *tds, TDSCURSOR *cursor);
 void tds_free_bcp_column_data(BCPCOLDATA * coldata);
 
-int tds_put_n(TDSSOCKET * tds, const void *buf, int n);
-int tds_put_string(TDSSOCKET * tds, const char *buf, int len);
+int tds_put_n(TDSSOCKET * tds, const void *buf, ssize_t n);
+int tds_put_string(TDSSOCKET * tds, const char *buf, ssize_t len);
 int tds_put_int(TDSSOCKET * tds, TDS_INT i);
 int tds_put_int8(TDSSOCKET * tds, TDS_INT8 i);
 int tds_put_smallint(TDSSOCKET * tds, TDS_SMALLINT si);
@@ -1288,7 +1288,7 @@ TDSLOCALE *tds_get_locale(void);
 unsigned char *tds_alloc_row(TDSRESULTINFO * res_info);
 unsigned char *tds_alloc_compute_row(TDSCOMPUTEINFO * res_info);
 BCPCOLDATA * tds_alloc_bcp_column_data(int column_size);
-unsigned char *tds7_crypt_pass(const unsigned char *clear_pass, int len, unsigned char *crypt_pass);
+unsigned char *tds7_crypt_pass(const unsigned char *clear_pass, size_t len, unsigned char *crypt_pass);
 TDSDYNAMIC *tds_lookup_dynamic(TDSSOCKET * tds, char *id);
 const char *tds_prtype(int token);
 
@@ -1363,8 +1363,8 @@ int tds_get_dynid(TDSSOCKET * tds, char **id);
 int tds_submit_unprepare(TDSSOCKET * tds, TDSDYNAMIC * dyn);
 int tds_submit_rpc(TDSSOCKET * tds, const char *rpc_name, TDSPARAMINFO * params);
 int tds_submit_optioncmd(TDSSOCKET * tds, TDS_OPTION_CMD command, TDS_OPTION option, TDS_OPTION_ARG *param, TDS_INT param_size);
-int tds_quote_id(TDSSOCKET * tds, char *buffer, const char *id, int idlen);
-int tds_quote_string(TDSSOCKET * tds, char *buffer, const char *str, int len);
+size_t tds_quote_id(TDSSOCKET * tds, char *buffer, const char *id, ssize_t idlen);
+size_t tds_quote_string(TDSSOCKET * tds, char *buffer, const char *str, ssize_t len);
 const char *tds_skip_quoted(const char *s);
 
 int tds_cursor_declare(TDSSOCKET * tds, TDSCURSOR * cursor, int *send);
@@ -1408,7 +1408,7 @@ extern const char tds_hex_digits[];
 
 /* write.c */
 int tds_flush_packet(TDSSOCKET * tds);
-int tds_put_buf(TDSSOCKET * tds, const unsigned char *buf, int dsize, int ssize);
+int tds_put_buf(TDSSOCKET * tds, const unsigned char *buf, size_t dsize, size_t ssize);
 
 /* read.c */
 unsigned char tds_get_byte(TDSSOCKET * tds);
@@ -1468,7 +1468,7 @@ void tds_ssl_deinit(TDSSOCKET *tds);
 
 
 /* vstrbuild.c */
-int tds_vstrbuild(char *buffer, int buflen, int *resultlen, char *text, int textlen, const char *formats, int formatlen,
+int tds_vstrbuild(char *buffer, size_t buflen, int *resultlen, char *text, ssize_t textlen, const char *formats, ssize_t formatlen,
           va_list ap);
 
 /* numeric.c */
@@ -1477,7 +1477,7 @@ TDS_INT tds_numeric_to_string(const TDS_NUMERIC * numeric, char *s);
 TDS_INT tds_numeric_change_prec_scale(TDS_NUMERIC * numeric, unsigned char new_prec, unsigned char new_scale);
 
 /* getmac.c */
-void tds_getmac(int s, unsigned char mac[6]);
+void tds_getmac(TDS_SYS_SOCKET s, unsigned char mac[6]);
 
 #ifdef HAVE_SSPI
 TDSAUTHENTICATION * tds_sspi_get_auth(TDSSOCKET * tds);

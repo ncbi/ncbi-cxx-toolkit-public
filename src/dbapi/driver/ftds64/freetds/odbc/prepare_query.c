@@ -233,7 +233,7 @@ start_parse_prepared_query(struct _hstmt *stmt, int compute_row)
 int
 continue_parse_prepared_query(struct _hstmt *stmt, SQLPOINTER DataPtr, SQLLEN StrLen_or_Ind)
 {
-	struct _drecord *drec_apd, *drec_ipd;
+    /* struct _drecord *drec_apd, *drec_ipd; */
 	SQLLEN len;
 	int need_bytes;
 	TDSCOLUMN *curcol;
@@ -244,8 +244,8 @@ continue_parse_prepared_query(struct _hstmt *stmt, SQLPOINTER DataPtr, SQLLEN St
 
 	if (stmt->param_num > stmt->apd->header.sql_desc_count || stmt->param_num > stmt->ipd->header.sql_desc_count)
 		return SQL_ERROR;
-	drec_apd = &stmt->apd->records[stmt->param_num - 1];
-	drec_ipd = &stmt->ipd->records[stmt->param_num - 1];
+    /* drec_apd = &stmt->apd->records[stmt->param_num - 1]; */
+    /* drec_ipd = &stmt->ipd->records[stmt->param_num - 1]; */
 
 	curcol = stmt->params->columns[stmt->param_num - (stmt->prepared_query_is_func ? 2 : 1)];
 	blob = NULL;

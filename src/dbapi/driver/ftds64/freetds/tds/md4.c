@@ -87,12 +87,14 @@ MD4Init(struct MD4Context *ctx)
 	ctx->bits[1] = 0;
 }
 
+#define in u.in
+
 /*
  * Update context to reflect the concatenation of another buffer full
  * of bytes.
  */
 void
-MD4Update(struct MD4Context *ctx, unsigned char const *buf, unsigned len)
+MD4Update(struct MD4Context *ctx, unsigned char const *buf, size_t len)
 {
 	register word32 t;
 
@@ -173,8 +175,8 @@ MD4Final(struct MD4Context *ctx, unsigned char *digest)
 	byteReverse(ctx->in, 14);
 
 	/* Append length in bits and transform */
-	((word32 *) ctx->in)[14] = ctx->bits[0];
-	((word32 *) ctx->in)[15] = ctx->bits[1];
+    ctx->u.in_uints[14] = ctx->bits[0];
+    ctx->u.in_uints[15] = ctx->bits[1];
 
 	MD4Transform(ctx->buf, (word32 *) ctx->in);
 	byteReverse((unsigned char *) ctx->buf, 4);
@@ -183,6 +185,8 @@ MD4Final(struct MD4Context *ctx, unsigned char *digest)
 		memcpy(digest, ctx->buf, 16);
     memset(ctx, 0, sizeof(*ctx));   /* In case it's sensitive */
 }
+
+#undef in
 
 /* The three core functions */
 

@@ -25,6 +25,8 @@
 #include <string.h>
 #endif /* HAVE_STRING_H */
 
+#include <stddef.h>
+
 #include "cspublic.h"
 #include "ctlib.h"
 #include "tds.h"
@@ -40,7 +42,12 @@ TDS_RCSID(var, "$Id$");
  */
 #if ENABLE_EXTRA_CHECKS
 
-#if defined(__GNUC__) && __GNUC__ >= 2
+#if defined(__llvm__)  \
+    ||  (defined(__GNUC__)  \
+         &&  (__GNUC__ >= 5  ||  (__GNUC__  == 4  &&  __GNUC_MINOR__ >= 6)))
+#define COMPILE_CHECK(name,check) \
+    _Static_assert(check,#name)
+#elif defined(__GNUC__) && __GNUC__ >= 2
 #define COMPILE_CHECK(name,check) \
     extern int name[(check)?1:-1] __attribute__ ((unused))
 #else
@@ -67,7 +74,8 @@ TEST_EQUAL(t14,CS_MSG_RESULT,TDS_MSG_RESULT);
 TEST_EQUAL(t15,CS_DESCRIBE_RESULT,TDS_DESCRIBE_RESULT);
 
 #define TEST_ATTRIBUTE(t,sa,fa,sb,fb) \
-	COMPILE_CHECK(t,sizeof(((sa*)0)->fa) == sizeof(((sb*)0)->fb) && (size_t)(&((sa*)0)->fa) == (size_t)(&((sb*)0)->fb))
+    COMPILE_CHECK(t##a, sizeof(((sa*)0)->fa) == sizeof(((sb*)0)->fb)); \
+    COMPILE_CHECK(t##b, offsetof(sa, fa) == offsetof(sa, fb));
 
 TEST_ATTRIBUTE(t21,TDS_MONEY4,mny4,CS_MONEY4,mny4);
 TEST_ATTRIBUTE(t22,TDS_OLD_MONEY,mnyhigh,CS_MONEY,mnyhigh);
@@ -135,11 +143,11 @@ _ct_handle_server_message(const TDSCONTEXT * ctx_tds, TDSSOCKET * tds, TDSMESSAG
 	memset(&errmsg, '\0', sizeof(errmsg));
 	errmsg.msgnumber = msg->msgno;
 	tds_strlcpy(errmsg.text, msg->message, sizeof(errmsg.text));
-	errmsg.textlen = strlen(errmsg.text);
+    errmsg.textlen = (CS_INT) strlen(errmsg.text);
 	errmsg.sqlstate[0] = 0;
 	if (msg->sql_state)
 		tds_strlcpy((char *) errmsg.sqlstate, msg->sql_state, sizeof(errmsg.sqlstate));
-	errmsg.sqlstatelen = strlen((char *) errmsg.sqlstate);
+    errmsg.sqlstatelen = (CS_INT) strlen((char *) errmsg.sqlstate);
 	errmsg.state = msg->state;
 	errmsg.severity = msg->severity;
 	errmsg.line = msg->line_number;
