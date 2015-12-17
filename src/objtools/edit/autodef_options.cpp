@@ -97,6 +97,13 @@ void CAutoDefOptions::InitFromUserObject(const CUser_object& obj)
             } else if (field_type == eOptionFieldType_ProductFlag) {
                 if ((*it)->IsSetData() && (*it)->GetData().IsStr()) { 
                     m_ProductFlag = GetProductFlag((*it)->GetData().GetStr());
+                    m_NuclearCopyFlag = CBioSource::eGenome_unknown;
+                    m_BooleanFlags[eOptionFieldType_SpecifyNuclearProduct] = false;
+                }
+            } else if (field_type == eOptionFieldType_NuclearCopyFlag) {
+                if ((*it)->IsSetData() && (*it)->GetData().IsStr()) {
+                    m_NuclearCopyFlag = GetProductFlag((*it)->GetData().GetStr());
+                    m_ProductFlag = CBioSource::eGenome_unknown;
                     m_BooleanFlags[eOptionFieldType_SpecifyNuclearProduct] = false;
                 }
             INITENUMFIELD(FeatureListType)
@@ -162,6 +169,7 @@ const TNameValPair sc_FieldTypes[] = {
         { "MaxMods", CAutoDefOptions::eOptionFieldType_MaxMods },
         { "MiscFeatRule", CAutoDefOptions::eOptionFieldType_MiscFeatRule },
         { "ModifierList", CAutoDefOptions::eOptionFieldType_ModifierList },
+        { "NuclearCopyFlag", CAutoDefOptions::eOptionFieldType_NuclearCopyFlag },
         { "ProductFlag", CAutoDefOptions::eOptionFieldType_ProductFlag },
         { "SpecifyNuclearProduct", CAutoDefOptions::eOptionFieldType_SpecifyNuclearProduct },
         { "SuppressAlleles", CAutoDefOptions::eOptionFieldType_SuppressAlleles },
@@ -241,6 +249,19 @@ CBioSource::TGenome CAutoDefOptions::GetProductFlag(const string& value) const
 }
 
 
+string CAutoDefOptions::GetNuclearCopyFlag(CBioSource::TGenome value) const
+{
+    return CBioSource::GetOrganelleByGenome(value);
+}
+
+
+CBioSource::TGenome CAutoDefOptions::GetNuclearCopyFlag(const string& value) const
+{
+    return CBioSource::GetGenomeByOrganelle(value);
+}
+
+
+
 bool CAutoDefOptions::x_IsBoolean(TFieldType field_type) const
 {
     bool rval = true;
@@ -250,6 +271,7 @@ bool CAutoDefOptions::x_IsBoolean(TFieldType field_type) const
         case eOptionFieldType_FeatureListType:
         case eOptionFieldType_MiscFeatRule:
         case eOptionFieldType_ProductFlag:
+        case eOptionFieldType_NuclearCopyFlag:
         case eOptionFieldType_SuppressedFeatures:
         case eOptionFieldType_ModifierList:
         case eOptionFieldType_MaxMods:

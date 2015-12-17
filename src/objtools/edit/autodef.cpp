@@ -928,11 +928,13 @@ string CAutoDef::x_GetFeatureClauseProductEnding(const string& feature_clauses,
 {
     bool pluralize = false;
 	unsigned int product_flag_to_use;
+    unsigned int nuclear_copy_flag = CBioSource::eGenome_unknown;
     
 	if (m_Options.GetSpecifyNuclearProduct()) {
 	    product_flag_to_use = s_GetProductFlagFromCDSProductNames (bh);
 	} else {
 		product_flag_to_use = m_Options.GetProductFlag();
+        nuclear_copy_flag = m_Options.GetNuclearCopyFlag();
 	}
     if (NStr::Find(feature_clauses, "genes") != NCBI_NS_STD::string::npos) {
         pluralize = true;
@@ -972,19 +974,29 @@ string CAutoDef::x_GetFeatureClauseProductEnding(const string& feature_clauses,
     if (!NStr::IsBlank(ending)) {
         ending = "; " + ending;
     } else {
-        ending = OrganelleByGenome(product_flag_to_use);
-        if (NStr::IsBlank(ending)) {
-            if (!NStr::IsBlank(genome_from_mods)) {
-                ending = "; " + genome_from_mods;
-            }
-        } else {
-            if (NStr::Equal(ending, "mitochondrion")) {
-                ending = "mitochondrial";
-            }
-            if (pluralize) {
-                ending = "; nuclear genes for " + ending + " products";
+        if (product_flag_to_use != CBioSource::eGenome_unknown) {
+            ending = OrganelleByGenome(product_flag_to_use);
+            if (NStr::IsBlank(ending)) {
+                if (!NStr::IsBlank(genome_from_mods)) {
+                    ending = "; " + genome_from_mods;
+                }
             } else {
-                ending = "; nuclear gene for " +  ending + " product";
+                if (NStr::Equal(ending, "mitochondrion")) {
+                    ending = "mitochondrial";
+                }
+                if (pluralize) {
+                    ending = "; nuclear genes for " + ending + " products";
+                } else {
+                    ending = "; nuclear gene for " + ending + " product";
+                }
+            }
+        } else if (nuclear_copy_flag != CBioSource::eGenome_unknown) {
+            ending = OrganelleByGenome(nuclear_copy_flag);
+            if (!NStr::IsBlank(ending)) {
+                if (NStr::Equal(ending, "mitochondrion")) {
+                    ending = "mitochondrial";
+                }
+                ending = "; nuclear copy of " + ending + " gene";
             }
         }
     } 

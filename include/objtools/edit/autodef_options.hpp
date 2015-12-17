@@ -69,6 +69,7 @@ public:
         eOptionFieldType_FeatureListType,
         eOptionFieldType_MiscFeatRule,
         eOptionFieldType_ProductFlag,
+        eOptionFieldType_NuclearCopyFlag,
         eOptionFieldType_SpecifyNuclearProduct,
         eOptionFieldType_AltSpliceFlag,
         eOptionFieldType_SuppressLocusTags,
@@ -137,6 +138,14 @@ public:
     void SetProductFlag(CBioSource::EGenome val) { 
         m_ProductFlag = val; 
         m_BooleanFlags[eOptionFieldType_SpecifyNuclearProduct] = false; 
+        m_NuclearCopyFlag = CBioSource::eGenome_unknown;
+    }
+
+    CBioSource::TGenome GetNuclearCopyFlag() const { return m_NuclearCopyFlag; };
+    void SetNuclearCopyFlag(CBioSource::EGenome val) {
+        m_NuclearCopyFlag = val;
+        m_BooleanFlags[eOptionFieldType_SpecifyNuclearProduct] = false;
+        m_ProductFlag = CBioSource::eGenome_unknown;
     }
 
     bool GetSpecifyNuclearProduct() const { return m_BooleanFlags[eOptionFieldType_SpecifyNuclearProduct]; }
@@ -144,6 +153,7 @@ public:
         m_BooleanFlags[eOptionFieldType_SpecifyNuclearProduct] = val;
         if (val) {
             m_ProductFlag = CBioSource::eGenome_unknown;
+            m_NuclearCopyFlag = CBioSource::eGenome_unknown;
         }
     }
 
@@ -207,6 +217,9 @@ public:
     string GetProductFlag(CBioSource::TGenome value) const;
     CBioSource::TGenome GetProductFlag(const string& value) const;
 
+    string GetNuclearCopyFlag(CBioSource::TGenome value) const;
+    CBioSource::TGenome GetNuclearCopyFlag(const string& value) const;
+
 private:
 
     bool m_BooleanFlags[eOptionFieldMax];
@@ -215,6 +228,7 @@ private:
     TFeatureListType m_FeatureListType;
     TMiscFeatRule m_MiscFeatRule;
     CBioSource::TGenome m_ProductFlag;
+    CBioSource::TGenome m_NuclearCopyFlag;
     typedef vector<CSeqFeatData::ESubtype> TSuppressedFeatureSubtypes;
     TSuppressedFeatureSubtypes m_SuppressedFeatureSubtypes;
 
@@ -250,6 +264,7 @@ private:
     AUTODEFENUMFIELD(MiscFeatRule)
     AUTODEFENUMFIELD(HIVRule)
     AUTODEFENUMFIELD(ProductFlag)
+    AUTODEFENUMFIELD(NuclearCopyFlag)
 
     void x_Reset();
 };

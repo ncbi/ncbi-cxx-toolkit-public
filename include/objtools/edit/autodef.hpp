@@ -87,6 +87,7 @@ public:
     void SetFeatureListType(CAutoDefOptions::EFeatureListType feature_list_type);
     void SetMiscFeatRule(CAutoDefOptions::EMiscFeatRule misc_feat_rule);
     void SetProductFlag(CBioSource::EGenome product_flag);
+    void SetNuclearCopyFlag(CBioSource::EGenome product_flag);
 	void SetSpecifyNuclearProduct (bool specify_nuclear_product);
     void SetAltSpliceFlag (bool alt_splice_flag);
     void SetSuppressLocusTags(bool suppress_locus_tags);
@@ -183,6 +184,13 @@ inline
 void CAutoDef::SetProductFlag(CBioSource::EGenome product_flag)
 {
     m_Options.SetProductFlag(product_flag);
+}
+
+
+inline
+void CAutoDef::SetNuclearCopyFlag(CBioSource::EGenome product_flag)
+{
+    m_Options.SetNuclearCopyFlag(product_flag);
 }
 
 
