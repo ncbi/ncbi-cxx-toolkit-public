@@ -291,10 +291,11 @@ static void _blk_clean_desc (CS_BLKDESC * blkdesc)
 	
 		if (blkdesc->bcpinfo.bindinfo) {
             /*
-             * In TDS 5.0, the structure of the row is different,
-             * so free it before entering tds_free_results.
+             * In TDS 5.0 and for transfers in, the structure of the row
+             * is different, so free it before entering tds_free_results.
              */
-            if (IS_TDS50(blkdesc->con->tds_socket->conn)
+            if ((IS_TDS50(blkdesc->con->tds_socket->conn)
+                 ||  blkdesc->bcpinfo.direction == CS_BLK_IN)
                 &&  blkdesc->bcpinfo.bindinfo->current_row)
                 TDS_ZERO_FREE(blkdesc->bcpinfo.bindinfo->current_row);
 			tds_free_results(blkdesc->bcpinfo.bindinfo);
