@@ -31,7 +31,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include <connect/services/netstorage.hpp>
+#include <misc/netstorage/netstorage.hpp>
 #include <connect/services/grid_app_version_info.hpp>
 
 #include <cgi/cgiapp.hpp>
@@ -130,7 +130,7 @@ void CFileUploadApplication::Init()
         m_ObjectTtl.Set(reg.GetDouble(kSection, kObjectTtl, 0.0));
     }
 
-    m_NetStorage = CNetStorage(init_string);
+    m_NetStorage = CCombinedNetStorage(init_string);
 }
 
 template <class What>
