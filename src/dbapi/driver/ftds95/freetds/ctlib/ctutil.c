@@ -96,8 +96,11 @@ _ct_handle_client_message(const TDSCONTEXT * ctx_tds, TDSSOCKET * tds, TDSMESSAG
     errmsg.severity = msg->severity;
 	strcpy(errmsg.msgstring, msg->message);
 	errmsg.msgstringlen = strlen(msg->message);
-	errmsg.osstring[0] = '\0';
-	errmsg.osstringlen = 0;
+    if (msg->osstr) {
+        errmsg.osstringlen = (CS_INT)strlen(msg->osstr);
+        tds_strlcpy(errmsg.osstring, msg->osstr, CS_MAX_MSG);
+    }
+
 	/* if there is no connection, attempt to call the context handler */
 	if (!con) {
 		ctx = (CS_CONTEXT *) ctx_tds->parent;
