@@ -1756,11 +1756,15 @@ _ct_bind_data(CS_CONTEXT *ctx, TDSRESULTINFO * resinfo, TDSRESULTINFO *bindinfo,
 			nullind = bindcol->column_nullbind;
 			assert(nullind);
 			nullind += offset;
+        } else {
+            nullind = &nullind_dummy;
 		}
 		if (bindcol->column_lenbind) {
 			pdatalen = bindcol->column_lenbind;
 			assert(pdatalen);
 			pdatalen += offset;
+        } else {
+            pdatalen = &datalen_dummy;
 		}
 
 		if (dest) {
