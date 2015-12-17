@@ -38,6 +38,7 @@ close_last_socket(void)
 {
 	TDS_SYS_SOCKET max_socket = odbc_find_last_socket();
 	TDS_SYS_SOCKET sockets[2];
+    int on = 1;
 
 	if (max_socket < 0)
 		return 0;
@@ -45,6 +46,12 @@ close_last_socket(void)
 	/* replace socket with a new one */
 	if (socketpair(AF_UNIX, SOCK_STREAM, 0, sockets) < 0)
 		return 0;
+
+#if defined(__APPLE__) && defined(SO_NOSIGPIPE)
+    if (setsockopt(sockets[0], SOL_SOCKET, SO_NOSIGPIPE, (const void *) &on,
+        sizeof(on)))
+        return 0;
+#endif
 
 	/* substitute socket */
 	close(max_socket);

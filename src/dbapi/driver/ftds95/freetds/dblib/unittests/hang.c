@@ -2,7 +2,10 @@
  * Purpose: Test for dbsqlexec on closed connection
  */
 
+#define _FREETDS_LIBRARY_SOURCE 1 /* Avoid clashes over SYBCHAR et al. */
+#include <freetds/tds.h>
 #include "common.h"
+#include "dblib.h"
 
 #if HAVE_UNISTD_H
 #include <unistd.h>
@@ -41,10 +44,12 @@ char *UNITTEST;
 static int end_socket = -1;
 
 static int
-shutdown_last_socket(void)
+shutdown_last_socket(TDS_SYS_SOCKET max_socket)
 {
-	int max_socket = -1, i;
 	TDS_SYS_SOCKET sockets[2];
+    int on = 1;
+#if 0
+    int max_socket = -1, i;
 
 	for (i = 3; i < 1024; ++i) {
 		struct stat file_stat;
@@ -62,12 +67,19 @@ shutdown_last_socket(void)
 				max_socket = i;
 		}
 	}
+#endif
 	if (max_socket < 0)
 		return 0;
 
 	/* replace socket with a new one */
 	if (socketpair(AF_UNIX, SOCK_STREAM, 0, sockets) < 0)
 		return 0;
+
+#if defined(__APPLE__) && defined(SO_NOSIGPIPE)
+    if (setsockopt(sockets[0], SOL_SOCKET, SO_NOSIGPIPE, (const void *) &on,
+        sizeof(on)))
+        return 0;
+#endif
 
 	/* substitute socket */
 	close(max_socket);
@@ -118,7 +130,7 @@ test(int close_socket)
 		return 1;
 	}
 
-	if (!shutdown_last_socket()) {
+    if (!shutdown_last_socket(tds_get_s(dbproc->tds_socket))) {
 		fprintf(stderr, "Error shutting down connection\n");
 		return 1;
 	}

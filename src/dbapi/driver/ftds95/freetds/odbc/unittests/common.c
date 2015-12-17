@@ -24,6 +24,8 @@
 #define TDS_SDIR_SEPARATOR "\\"
 #endif
 
+#include <freetds/odbc.h>
+
 #include <common/test_assert.h>
 
 HENV odbc_env;
@@ -717,6 +719,9 @@ odbc_mark_sockets_opened(void)
 TDS_SYS_SOCKET
 odbc_find_last_socket(void)
 {
+#if 1
+    return tds_get_s(((TDS_DBC*)odbc_conn)->tds_socket);
+#else
 	typedef struct {
 		TDS_SYS_SOCKET sock;
 		int local_port;
@@ -789,5 +794,6 @@ odbc_find_last_socket(void)
 	if (num_found == 0)
 		return INVALID_SOCKET;
 	return found[num_found-1].sock;
+#endif
 }
 
