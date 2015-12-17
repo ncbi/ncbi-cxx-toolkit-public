@@ -23,6 +23,8 @@
 static char rcsid_tds_sysdep_public_h[] = "$Id$";
 static void *no_unused_tds_sysdep_public_h_warn[] = { rcsid_tds_sysdep_public_h, no_unused_tds_sysdep_public_h_warn };
 
+#include <corelib/ncbitype.h>
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -39,7 +41,6 @@ extern "C"
 #define tds_sysdep_int64_type __int64	/* 64-bit int */
 #define tds_sysdep_real32_type float	/* 32-bit real */
 #define tds_sysdep_real64_type double	/* 64-bit real */
-#define tds_sysdep_intptr_type int	/* 32-bit int */
 #endif				/* defined(WIN32) || defined(_WIN32) || defined(__WIN32__) */
 
 #ifndef tds_sysdep_int16_type
@@ -63,7 +64,7 @@ extern "C"
 #endif				/* !tds_sysdep_real64_type */
 
 #ifndef tds_sysdep_intptr_type
-#define tds_sysdep_intptr_type int
+#define tds_sysdep_intptr_type intptr_t /* pointer-sized signed int */
 #endif				/* !tds_sysdep_intptr_type */
 
 #if !defined(__WIN32__) && !defined(_WIN32) && !defined(WIN32)
