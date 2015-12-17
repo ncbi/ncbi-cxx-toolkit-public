@@ -136,6 +136,10 @@ tds_set_state(TDSSOCKET * tds, TDS_STATE state)
 							state_names[prior_state], state_names[state]);
 			tdserror(tds_get_ctx(tds), tds, TDSEWRIT, 0);
 			break;
+        } else if (tds->state == TDS_READING) {
+            tdsdump_log(TDS_DBG_ERROR, "tds_submit_query(): state is READING\n");
+            tdserror(tds->tds_ctx, tds, TDSETIME, 0);
+            return tds->state;
 		} else if (tds->state != TDS_IDLE && tds->state != TDS_SENDING) {
 			tds_mutex_unlock(&tds->wire_mtx);
 			tdsdump_log(TDS_DBG_ERROR, "logic error: cannot change query state from %s to %s\n", 
