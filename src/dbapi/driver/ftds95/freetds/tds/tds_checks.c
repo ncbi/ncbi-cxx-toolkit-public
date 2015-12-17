@@ -218,7 +218,12 @@ tds_check_column_extra(const TDSCOLUMN * column)
 		assert(column->column_prec >= 1 && column->column_prec <= MAXPRECISION);
 		assert(column->column_scale <= column->column_prec);
 /*		assert(column->column_cur_size == tds_numeric_bytes_per_prec[column->column_prec] + 2 || column->column_cur_size == -1); */
-	} else {
+    } else if (!is_blob_type(column->column_type)) {
+        /*
+         * Skip for BLOBs, whose reported maximum may have been merely
+         * nominal, and doesn't really matter because their storage is
+         * generally allocated separately, based on actual result sizes.
+         */
 		assert(column->column_cur_size <= column->column_size);
 	}
 
