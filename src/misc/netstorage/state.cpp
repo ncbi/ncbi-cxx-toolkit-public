@@ -466,7 +466,7 @@ IState* CNetCache::StartRead(void* buf, size_t count,
 
     size_t blob_size;
     CRONetCache::TReaderPtr reader(m_Client.GetReadStream(
-                m_ObjectLoc.GetICacheKey(), 0, kEmptyStr, &blob_size,
+                m_ObjectLoc.GetShortUniqueKey(), 0, kEmptyStr, &blob_size,
                 (nc_caching_mode = CNetCacheAPI::eCaching_Disable,
                 nc_cache_name = m_ObjectLoc.GetAppDomain())));
 
@@ -486,7 +486,7 @@ IState* CNetCache::StartWrite(const void* buf, size_t count,
     _ASSERT(result);
 
     CWONetCache::TWriterPtr writer(m_Client.GetNetCacheWriter(
-                m_ObjectLoc.GetICacheKey(), 0, kEmptyStr,
+                m_ObjectLoc.GetShortUniqueKey(), 0, kEmptyStr,
                 nc_cache_name = m_ObjectLoc.GetAppDomain()));
 
     if (!writer.get()) {
@@ -503,7 +503,7 @@ IState* CNetCache::StartWrite(const void* buf, size_t count,
 Uint8 CNetCache::GetSizeImpl()
 {
     return m_Client.GetBlobSize(
-            m_ObjectLoc.GetICacheKey(), 0, kEmptyStr,
+            m_ObjectLoc.GetShortUniqueKey(), 0, kEmptyStr,
             nc_cache_name = m_ObjectLoc.GetAppDomain());
 }
 
@@ -514,7 +514,7 @@ CNetStorageObjectInfo CNetCache::GetInfoImpl()
 
     try {
         CNetServerMultilineCmdOutput output = m_Client.GetBlobInfo(
-                m_ObjectLoc.GetICacheKey(), 0, kEmptyStr,
+                m_ObjectLoc.GetShortUniqueKey(), 0, kEmptyStr,
                 nc_cache_name = m_ObjectLoc.GetAppDomain());
 
         string line, key, val;
@@ -542,7 +542,7 @@ CNetStorageObjectInfo CNetCache::GetInfoImpl()
 // Cannot use ExistsImpl() directly from other methods,
 // as otherwise it would get into thrown exception instead of those methods
 #define NC_EXISTS_IMPL                                                      \
-    if (!m_Client.HasBlob(m_ObjectLoc.GetICacheKey(),                       \
+    if (!m_Client.HasBlob(m_ObjectLoc.GetShortUniqueKey(),                       \
                 kEmptyStr, nc_cache_name = m_ObjectLoc.GetAppDomain())) {   \
         /* Have to throw to let other locations try */                      \
         NCBI_THROW_FMT(CNetStorageException, eNotExists,                    \
@@ -566,7 +566,7 @@ void CNetCache::RemoveImpl()
     // NetCache returns OK on removing already-removed/non-existent blobs,
     // so have to check for existence first and throw if not
     NC_EXISTS_IMPL;
-    m_Client.RemoveBlob(m_ObjectLoc.GetICacheKey(), 0, kEmptyStr,
+    m_Client.RemoveBlob(m_ObjectLoc.GetShortUniqueKey(), 0, kEmptyStr,
             nc_cache_name = m_ObjectLoc.GetAppDomain());
 }
 
@@ -574,7 +574,7 @@ void CNetCache::RemoveImpl()
 void CNetCache::SetExpirationImpl(const CTimeout& ttl)
 {
     NC_EXISTS_IMPL;
-    m_Client.ProlongBlobLifetime(m_ObjectLoc.GetICacheKey(), ttl);
+    m_Client.ProlongBlobLifetime(m_ObjectLoc.GetShortUniqueKey(), ttl);
 }
 
 

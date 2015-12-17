@@ -89,7 +89,7 @@ public:
         m_LocatorFlags |= fLF_HasObjectID;
         m_ObjectID = object_id;
         if ((m_LocatorFlags & fLF_HasUserKey) == 0) {
-            m_ICacheKey = MakeICacheKey();
+            m_ShortUniqueKey = MakeShortUniqueKey();
             m_UniqueKey = MakeUniqueKey();
         }
         m_Dirty = true;
@@ -119,9 +119,12 @@ public:
     CTime GetCreationTime() const {return CTime(m_Timestamp);}
 
     bool HasUserKey() const {return (m_LocatorFlags & fLF_HasUserKey) != 0;}
-    string GetAppDomain() const {return m_AppDomain;}
 
-    string GetICacheKey() const {return m_ICacheKey;}
+    // These are intended to be used together
+    string GetAppDomain() const {return m_AppDomain;}
+    string GetShortUniqueKey() const {return m_ShortUniqueKey;}
+
+    // This contains both of the above
     string GetUniqueKey() const {return m_UniqueKey;}
 
     void SetLocation_NetCache(const string& service_name,
@@ -180,8 +183,8 @@ private:
     typedef unsigned TNetCacheFlags;
 
     void Parse(const string& object_loc);
-    string MakeICacheKey() const;
-    string MakeUniqueKey() const { return m_AppDomain + '-' + m_ICacheKey; }
+    string MakeShortUniqueKey() const;
+    string MakeUniqueKey() const { return m_AppDomain + '-' + m_ShortUniqueKey; }
 
     void x_Pack() const;
     void SetLocatorFlags(TLocatorFlags flags) {m_LocatorFlags |= flags;}
@@ -207,7 +210,7 @@ private:
     Uint8 m_Random;
 
     // Either user key or key composed of timestamp, random value and object ID.
-    string m_ICacheKey;
+    string m_ShortUniqueKey;
     // The same as above plus app domain
     string m_UniqueKey;
 

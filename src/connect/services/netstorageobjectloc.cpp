@@ -65,7 +65,7 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
     m_AppDomain(app_domain),
     m_Timestamp(time(NULL)),
     m_Random(random_number),
-    m_ICacheKey(MakeICacheKey()),
+    m_ShortUniqueKey(MakeShortUniqueKey()),
     m_UniqueKey(MakeUniqueKey()),
     m_NCFlags(0),
     m_Dirty(true)
@@ -83,7 +83,7 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
     m_ObjectID(0),
     m_Location(eNFL_Unknown),
     m_AppDomain(app_domain),
-    m_ICacheKey(unique_key),
+    m_ShortUniqueKey(unique_key),
     m_UniqueKey(MakeUniqueKey()),
     m_NCFlags(0),
     m_Dirty(true)
@@ -184,7 +184,7 @@ void CNetStorageObjectLoc::Parse(const string& object_loc)
     if (m_LocatorFlags & fLF_HasUserKey) {
         // Get the unique object key.
         VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
-        m_ICacheKey = field.GetString();
+        m_ShortUniqueKey = field.GetString();
     } else {
         // Get object creation timestamp.
         VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
@@ -194,7 +194,7 @@ void CNetStorageObjectLoc::Parse(const string& object_loc)
         m_Random = (Uint8) field.GetRandom() << (sizeof(Uint4) * 8);
         VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
         m_Random |= field.GetRandom();
-        m_ICacheKey = MakeICacheKey();
+        m_ShortUniqueKey = MakeShortUniqueKey();
     }
 
     m_UniqueKey = MakeUniqueKey();
@@ -271,7 +271,7 @@ CNetStorageObjectLoc::EFileTrackSite CNetStorageObjectLoc::GetFileTrackSite() co
                     eFileTrack_ProdSite;
 }
 
-string CNetStorageObjectLoc::MakeICacheKey() const
+string CNetStorageObjectLoc::MakeShortUniqueKey() const
 {
     string result = NStr::NumericToString(m_Timestamp);
     result += '-';
@@ -309,7 +309,7 @@ void CNetStorageObjectLoc::x_Pack() const
     // Save object identification
     if (m_LocatorFlags & fLF_HasUserKey)
         // Save the unique object key.
-        cid.AppendString(m_ICacheKey);
+        cid.AppendString(m_ShortUniqueKey);
     else {
         // Save object creation timestamp.
         cid.AppendTimestamp(m_Timestamp);
@@ -419,7 +419,7 @@ void CNetStorageObjectLoc::ToJSON(CJsonNode& root) const
     root.SetString("Namespace", m_AppDomain);
 
     if (m_LocatorFlags & fLF_HasUserKey)
-        root.SetString("UserKey", m_ICacheKey);
+        root.SetString("UserKey", m_ShortUniqueKey);
     else {
         root.SetInteger("Timestamp", (Int8) m_Timestamp);
         root.SetInteger("Random", (Int8) m_Random);
