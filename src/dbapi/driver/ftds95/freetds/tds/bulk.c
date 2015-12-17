@@ -75,6 +75,7 @@ static int tds_bcp_add_fixed_columns(TDSBCPINFO *bcpinfo, tds_bcp_get_col_data g
 static int tds_bcp_add_variable_columns(TDSBCPINFO *bcpinfo, tds_bcp_get_col_data get_col_data, tds_bcp_null_error null_error, int offset, TDS_UCHAR *rowbuffer, int start, int *pncols);
 static void tds_bcp_row_free(TDSRESULTINFO* result, unsigned char *row);
 static int tds_bcp_is_bound(TDSBCPINFO *bcpinfo, TDSCOLUMN *colinfo);
+static int tds_bcp_read_column_defaults(TDSSOCKET *tds, TDSBCPINFO *bcpinfo);
 
 /**
  * Initialize BCP information.
@@ -339,13 +340,13 @@ tds_bcp_start_insert_stmt(TDSSOCKET * tds, TDSBCPINFO * bcpinfo)
  * \return TDS_SUCCESS or TDS_FAIL.
  */
 TDSRET
-tds_bcp_send_record(TDSSOCKET *tds, TDSBCPINFO *bcpinfo, tds_bcp_get_col_data get_col_data, tds_bcp_null_error ignored, int offset)
+tds_bcp_send_record(TDSSOCKET *tds, TDSBCPINFO *bcpinfo, tds_bcp_get_col_data get_col_data, tds_bcp_null_error null_error, int offset)
 {
 	TDSCOLUMN  *bindcol;
     int i, start_col = bcpinfo->next_col;
 	TDSRET rc;
 
-	tdsdump_log(TDS_DBG_FUNC, "tds_bcp_send_bcp_record(%p, %p, %p, ignored, %d)\n", tds, bcpinfo, get_col_data, offset);
+    tdsdump_log(TDS_DBG_FUNC, "tds_bcp_send_bcp_record(%p, %p, %p, %p, %d)\n", tds, bcpinfo, get_col_data, null_error, offset);
 
 	if (tds->out_flag != TDS_BULK || tds_set_state(tds, TDS_WRITING) != TDS_WRITING)
 		return TDS_FAIL;
@@ -448,14 +449,14 @@ tds_bcp_send_record(TDSSOCKET *tds, TDSBCPINFO *bcpinfo, tds_bcp_get_col_data ge
 		row_pos = 2;
 
 		rc = TDS_FAIL;
-		if ((row_pos = tds_bcp_add_fixed_columns(bcpinfo, get_col_data, NULL, offset, record, row_pos)) < 0)
+        if ((row_pos = tds_bcp_add_fixed_columns(bcpinfo, get_col_data, null_error, offset, record, row_pos)) < 0)
 			goto cleanup;
 
 		row_sz_pos = row_pos;
 
 		/* potential variable columns to write */
 
-		if ((row_pos = tds_bcp_add_variable_columns(bcpinfo, get_col_data, NULL, offset, record, row_pos, &var_cols_written)) < 0)
+        if ((row_pos = tds_bcp_add_variable_columns(bcpinfo, get_col_data, null_error, offset, record, row_pos, &var_cols_written)) < 0)
 			goto cleanup;
 
 
@@ -477,6 +478,22 @@ tds_bcp_send_record(TDSSOCKET *tds, TDSBCPINFO *bcpinfo, tds_bcp_get_col_data ge
         for (i = start_col; i < bcpinfo->bindinfo->num_cols; i++) {
 			bindcol = bcpinfo->bindinfo->columns[i];
 			if (is_blob_type(bindcol->column_type)) {
+                /* Elide trailing NULLs */
+                if (bindcol->bcp_column_data->is_null) {
+                    int j;
+                    for (j = i + 1;  j < bcpinfo->bindinfo->num_cols;  ++j) {
+                        TDSCOLUMN *bindcol2 = bcpinfo->bindinfo->columns[j];
+                        if (is_blob_type(bindcol2->column_type)
+                            &&  !bindcol2->bcp_column_data->is_null) {
+                            break;
+                        }
+                    }
+                    if (j == bcpinfo->bindinfo->num_cols) {
+                        i = j;
+                        break;
+                    }
+                }
+
 				rc = get_col_data(bcpinfo, bindcol, offset);
                 if (rc == TDS_FAIL)
 					goto cleanup;
@@ -524,7 +541,7 @@ cleanup:
  * \returns new row length or -1 on error.
  */
 static int
-tds_bcp_add_fixed_columns(TDSBCPINFO *bcpinfo, tds_bcp_get_col_data get_col_data, tds_bcp_null_error ignored, 
+tds_bcp_add_fixed_columns(TDSBCPINFO *bcpinfo, tds_bcp_get_col_data get_col_data, tds_bcp_null_error null_error,
 				int offset, unsigned char * rowbuffer, int start)
 {
 	TDS_NUMERIC *num;
@@ -543,7 +560,8 @@ tds_bcp_add_fixed_columns(TDSBCPINFO *bcpinfo, tds_bcp_get_col_data get_col_data
 
 		bcpcol = bcpinfo->bindinfo->columns[i];
 
-		if (is_nullable_type(bcpcol->column_type) || bcpcol->column_nullable)
+        if (is_nullable_type(bcpcol->on_server.column_type)
+            || bcpcol->column_nullable)
 			continue;
 
 		tdsdump_log(TDS_DBG_FUNC, "tds_bcp_add_fixed_columns column %d is a fixed column\n", i + 1);
@@ -553,14 +571,11 @@ tds_bcp_add_fixed_columns(TDSBCPINFO *bcpinfo, tds_bcp_get_col_data get_col_data
 			return -1;
 		}
 
-#if USING_SYBEBCNN
-		Let the server reject if no default is defined for the column.
-		if (bcpcol->bcp_column_data->is_null) {
+        if (bcpcol->bcp_column_data->is_null  &&  null_error) {
 			/* No value or default value available and NULL not allowed. */
 			null_error(bcpinfo, i, offset);
 			return -1;
 		}
-#endif
 
 		if (is_numeric_type(bcpcol->column_type)) {
 			num = (TDS_NUMERIC *) bcpcol->bcp_column_data->data;
@@ -628,7 +643,7 @@ tds_bcp_add_variable_columns(TDSBCPINFO *bcpinfo, tds_bcp_get_col_data get_col_d
 		TDSCOLUMN *bcpcol = bcpinfo->bindinfo->columns[i];
 		tdsdump_log(TDS_DBG_FUNC, "%4d %8d %18s %18s %8s\n", 	i, 
 									bcpcol->column_type,  
-									is_nullable_type(bcpcol->column_type)? "yes" : "no", 
+                                    is_nullable_type(bcpcol->on_server.column_type)? "yes" : "no",
 									bcpcol->column_nullable? "yes" : "no", 
 									bcpcol->bcp_column_data->is_null? "yes" : "no" );
 	}
@@ -647,7 +662,8 @@ tds_bcp_add_variable_columns(TDSBCPINFO *bcpinfo, tds_bcp_get_col_data get_col_d
 		 * Is this column of "variable" type, i.e. NULLable
 		 * or naturally variable length e.g. VARCHAR
 		 */
-		if (!is_nullable_type(bcpcol->column_type) && !bcpcol->column_nullable)
+        if (!is_nullable_type(bcpcol->on_server.column_type)
+            && !bcpcol->column_nullable)
 			continue;
 
 		tdsdump_log(TDS_DBG_FUNC, "%4d %8d %8d %8d\n", i, ncols, row_pos, cpbytes);
@@ -655,15 +671,13 @@ tds_bcp_add_variable_columns(TDSBCPINFO *bcpinfo, tds_bcp_get_col_data get_col_d
         if (get_col_data(bcpinfo, bcpcol, offset) == TDS_FAIL)
 			return -1;
 
-#if USING_SYBEBCNN
 		/* If it's a NOT NULL column, and we have no data, throw an error. */
-		No, the column could have a default defined.
-		if (!(bcpcol->column_nullable) && bcpcol->bcp_column_data->is_null) {
+        if (!(bcpcol->column_nullable) && bcpcol->bcp_column_data->is_null
+            &&  null_error) {
 			/* No value or default value available and NULL not allowed. */
 			null_error(bcpinfo, i, offset);
 			return -1;
 		}
-#endif
 
 		/* move the column buffer into the rowbuffer */
 		if (!bcpcol->bcp_column_data->is_null) {
@@ -674,11 +688,18 @@ tds_bcp_add_variable_columns(TDSBCPINFO *bcpinfo, tds_bcp_get_col_data get_col_d
 					TDS_NUMERIC *num = (TDS_NUMERIC *) bcpcol->bcp_column_data->data;
 				cpbytes = tds_numeric_bytes_per_prec[num->precision];
 				memcpy(&rowbuffer[row_pos], num->array, cpbytes);
+            } else if ((bcpcol->column_type == SYBVARCHAR
+                        ||  bcpcol->column_type == SYBCHAR)
+                       &&  bcpcol->bcp_column_data->datalen == 0) {
+                cpbytes = 1;
+                rowbuffer[row_pos] = ' ';
 			} else {
 				cpbytes = bcpcol->bcp_column_data->datalen > bcpcol->column_size ?
 				bcpcol->column_size : bcpcol->bcp_column_data->datalen;
 				memcpy(&rowbuffer[row_pos], bcpcol->bcp_column_data->data, cpbytes);
 			}
+        } else if (is_blob_type(bcpcol->column_type)) {
+            bcpcol->column_textpos = row_pos;
 		}
 
 		row_pos += cpbytes;
@@ -715,7 +736,9 @@ tds_bcp_add_variable_columns(TDSBCPINFO *bcpinfo, tds_bcp_get_col_data get_col_d
 
 		tdsdump_log(TDS_DBG_FUNC, "ncols=%u poff=%p [%u]\n", ncols, poff, offsets[ncols]);
 
-		*poff++ = ncols + 1;
+        if (offsets[ncols] / 256  ==  offsets[ncols-1] / 256) {
+            *poff++ = ncols + 1;
+        }
 		/* this is some kind of run-length-prefix encoding */
 		while (pfx_top) {
 			unsigned int n_pfx = 1;
@@ -871,11 +894,16 @@ tds_bcp_start(TDSSOCKET *tds, TDSBCPINFO *bcpinfo)
 	/* set we want to switch to bulk state */
 	tds->bulk_query = 1;
 
-	/*
-	 * In TDS 5 we get the column information as a result set from the "insert bulk" command.
-	 * We're going to ignore it.  
-	 */
-	rc = tds_process_simple_query(tds);
+    if (IS_TDS7_PLUS(tds->conn)) {
+        rc = tds_process_simple_query(tds);
+    } else {
+        /*
+         * In TDS 5 we get the column information as a result set from
+         * the "insert bulk" command.  We need to get information
+         * about default values from it.
+         */
+        rc = tds_bcp_read_column_defaults(tds, bcpinfo);
+    }
 	if (TDS_FAILED(rc))
 		return rc;
 
@@ -1213,4 +1241,119 @@ static int tds_bcp_is_bound(TDSBCPINFO *bcpinfo, TDSCOLUMN *colinfo)
                        ||  (colinfo->column_nullbind != NULL
                             /* null-value for blk_textxfer ... */
                             /* &&  *colinfo->column_nullbind == -1 */)))));
+}
+
+static int tds_bcp_read_column_defaults(TDSSOCKET *tds, TDSBCPINFO *bcpinfo)
+{
+    TDS_INT res_type;
+    TDS_INT done_flags;
+    int     rc;
+    int     ret = TDS_SUCCESS;
+
+    int            num_defs = 0;
+    int            colnum, res_colnum;
+    TDS_TINYINT    byte_val;
+    unsigned char* src;
+    TDSRESULTINFO* resinfo;
+    TDSRESULTINFO* bindinfo = bcpinfo->bindinfo;
+    TDSCOLUMN*     curcol;
+    TDSCOLUMN*     bindcol;
+
+    /* Read metainformation about all columns */
+    for (colnum = 0; ; ++colnum) {
+        rc = tds_process_tokens(tds, &res_type, &done_flags,
+                                TDS_RETURN_ROW | TDS_RETURN_DONE);
+        if (TDS_FAILED(rc)) {
+            ret = TDS_FAIL;
+            break;
+        }
+
+        if (res_type == TDS_DONE_RESULT) {
+            if ((done_flags & TDS_DONE_ERROR) != 0)
+                ret = TDS_FAIL;
+            /* First recordset with columnsmetainfo is done - go to the next */
+            break;
+        }
+
+        if (res_type != TDS_ROW_RESULT)
+            continue;
+
+        resinfo = tds->current_results;
+
+#if ENABLE_EXTRA_CHECKS
+        /* Most probably the format of result is fixed, but couple of asserts
+           are still needed to be sure */
+        assert(resinfo->num_cols == 12);
+        assert(colnum < bindinfo->num_cols);
+#endif
+
+        bindcol = bindinfo->columns[colnum];
+
+        /* Read "default" flag of the column */
+        curcol = resinfo->columns[9];
+
+#if ENABLE_EXTRA_CHECKS
+        assert(curcol->column_type == SYBINT1);
+#endif
+
+        src = curcol->column_data;
+        byte_val = *((TDS_TINYINT*) src);
+
+        if (byte_val == 1) {
+            ++num_defs;
+            bindcol->column_hasdefault = 1;
+        }
+    }
+
+    if (TDS_SUCCEED(ret)  &&  num_defs > 0
+        &&  TDS_SUCCEED(tds_process_tokens(tds, &res_type, &done_flags,
+                                           TDS_RETURN_ROW)))
+    {
+        resinfo = tds->current_results;
+
+#if ENABLE_EXTRA_CHECKS
+        assert(resinfo->num_cols == num_defs);
+#endif
+
+        /* Now read all default values */
+        res_colnum = 0;
+        for (colnum = 0; colnum < bindinfo->num_cols; ++colnum) {
+            bindcol = bindinfo->columns[colnum];
+            if (!bindcol->column_hasdefault)
+                continue;
+
+            curcol = resinfo->columns[res_colnum];
+            ++res_colnum;
+            src = curcol->column_data;
+            if (is_blob_type(curcol->column_type)) {
+                src = (unsigned char*) ((TDSBLOB*)src)->textvalue;
+                bindcol->bcp_column_data
+                    = tds_alloc_bcp_column_data(curcol->column_cur_size);
+            }
+            /*
+             * Maybe it's better to ignore all requests of defaults
+             * after first request
+             */
+            if (bindcol->column_default) {
+                bindcol->column_default = realloc(bindcol->column_default,
+                                                  curcol->column_cur_size);
+            }
+            else {
+                bindcol->column_default = malloc(curcol->column_cur_size);
+            }
+            if (!bindcol->column_default) {
+                ret = TDS_FAIL;
+                break;
+            }
+
+            bindcol->column_def_size = curcol->column_cur_size;
+            memcpy(bindcol->column_default, src, bindcol->column_def_size);
+        }
+    }
+
+    if (TDS_SUCCEED(ret)) {
+        ret = tds_process_simple_query(tds);
+    }
+
+    return ret;
 }

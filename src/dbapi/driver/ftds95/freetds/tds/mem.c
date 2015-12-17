@@ -139,6 +139,8 @@ tds_free_column(TDSCOLUMN *col)
 	tds_dstr_free(&col->table_name);
 	tds_dstr_free(&col->column_name);
 	tds_dstr_free(&col->table_column_name);
+    if (col->column_default)
+        free(col->column_default);
 	free(col);
 }
 

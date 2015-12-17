@@ -290,6 +290,13 @@ static void _blk_clean_desc (CS_BLKDESC * blkdesc)
 			TDS_ZERO_FREE(blkdesc->bcpinfo.insert_stmt);
 	
 		if (blkdesc->bcpinfo.bindinfo) {
+            /*
+             * In TDS 5.0, the structure of the row is different,
+             * so free it before entering tds_free_results.
+             */
+            if (IS_TDS50(blkdesc->con->tds_socket->conn)
+                &&  blkdesc->bcpinfo.bindinfo->current_row)
+                TDS_ZERO_FREE(blkdesc->bcpinfo.bindinfo->current_row);
 			tds_free_results(blkdesc->bcpinfo.bindinfo);
 			blkdesc->bcpinfo.bindinfo = NULL;
 		}
@@ -695,7 +702,7 @@ _blk_get_col_data(TDSBCPINFO *bulk, TDSCOLUMN *bindcol, int offset)
 	CS_INT      srclen  = 0;
 	CS_INT      destlen  = 0;
 	CS_SMALLINT *nullind = NULL;
-	CS_INT      *datalen = NULL;
+    CS_INT      *datalen = &srclen;
 	CS_BLKDESC *blkdesc = (CS_BLKDESC *) bulk->parent;
 	CS_CONTEXT *ctx = blkdesc->con->ctx;
 	CS_DATAFMT srcfmt, destfmt;
@@ -709,6 +716,7 @@ _blk_get_col_data(TDSBCPINFO *bulk, TDSCOLUMN *bindcol, int offset)
 
 	src = (unsigned char *) bindcol->column_varaddr;
 	src += offset * bindcol->column_bindlen;
+    srctype = bindcol->column_bindtype;         /* passes to cs_convert */
 	
 	if (bindcol->column_nullbind) {
 		nullind = bindcol->column_nullbind;
@@ -722,22 +730,24 @@ _blk_get_col_data(TDSBCPINFO *bulk, TDSCOLUMN *bindcol, int offset)
 	if (!src) {
         if (nullind  &&  *nullind == -1) {
             null_column = 1;
-        }
-
-        bindcol->bcp_column_data->datalen = *datalen;
-        bindcol->bcp_column_data->is_null = null_column;
-
-        if (/* null_column == 0  && */ is_blob_type(bindcol->column_type)
-            &&  bindcol->column_varaddr == NULL) {
+            bindcol->bcp_column_data->datalen = 0;
+            bindcol->bcp_column_data->is_null = 1;
+        } else if (bindcol->column_hasdefault
+                   &&  ( !is_blob_type(bindcol->column_type)
+                        ||  datalen == 0)) {
+            src = bindcol->column_default;
+            srctype = _ct_get_client_type(blkdesc->con->ctx, bindcol);
+            datalen = &bindcol->column_def_size;
+        } else if (is_blob_type(bindcol->column_type)) {
+            bindcol->bcp_column_data->datalen = *datalen;
+            bindcol->bcp_column_data->is_null = 0;
             /* Data will come piecemeal, via blk_textxfer. */
             return CS_BLK_HAS_TEXT;
+        } else {
+            bindcol->bcp_column_data->datalen = 0;
+            bindcol->bcp_column_data->is_null = 1;
         }
-
-        tdsdump_log(TDS_DBG_ERROR, "Source field not addressable\n");
-		return TDS_FAIL;
 	}
-
-	srctype = bindcol->column_bindtype; 		/* passes to cs_convert */
 
 	tdsdump_log(TDS_DBG_INFO1, "blk_get_col_data srctype = %d \n", srctype);
 	tdsdump_log(TDS_DBG_INFO1, "blk_get_col_data datalen = %d \n", *datalen);

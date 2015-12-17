@@ -546,6 +546,14 @@ tds_generic_get(TDSSOCKET * tds, TDSCOLUMN * curcol)
 			break;
 		}
 		
+        if (!is_blob_type(curcol->column_type)) {
+            /* Any other non-BLOB type (e.g., XSYBCHAR) */
+            colsize = tds_get_int(tds);
+            if (colsize == 0)
+                colsize = -1;
+            break;
+        }
+
 		/* It's a BLOB... */
 		len = tds_get_byte(tds);
 		blob = (TDSBLOB *) curcol->column_data;
@@ -701,6 +709,9 @@ tds_generic_put_info(TDSSOCKET * tds, TDSCOLUMN * col)
 	case 0:
 		break;
 	case 1:
+        if (col->column_output  &&  col->column_size <= 0
+            &&  is_char_type(col->column_type))
+            size = 255;
 		tds_put_byte(tds, size);
 		break;
 	case 2:

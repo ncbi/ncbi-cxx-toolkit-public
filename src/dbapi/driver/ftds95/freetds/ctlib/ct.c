@@ -1917,12 +1917,15 @@ _ct_get_client_type(CS_CONTEXT *ctx, TDSCOLUMN *col)
 		return CS_CHAR_TYPE;
 		break;
 	case SYBINT8:
+    case SYBUINT8:
 		return CS_BIGINT_TYPE;
 		break;
 	case SYBINT4:
+    case SYBUINT4:
 		return CS_INT_TYPE;
 		break;
 	case SYBINT2:
+    case SYBUINT2:
 		return CS_SMALLINT_TYPE;
 		break;
 	case SYBINT1:

@@ -59,6 +59,7 @@ static int tds_count_placeholders_ucs2le(const char *query, const char *query_en
 
 #define TDS_PUT_DATA_USE_NAME 1
 #define TDS_PUT_DATA_PREFIX_NAME 2
+#define TDS_PUT_DATA_IQ_PARAM 0x80000000
 
 #undef MIN
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))
@@ -1635,7 +1636,10 @@ tds_put_data_info(TDSSOCKET * tds, TDSCOLUMN * curcol, int flags)
 	 */
 
 	tdsdump_log(TDS_DBG_ERROR, "tds_put_data_info putting status \n");
-	tds_put_byte(tds, curcol->column_output);	/* status (input) */
+    if (IS_TDS50(tds->conn)  &&  (flags & TDS_PUT_DATA_IQ_PARAM) == 0)
+        tds_put_int(tds, curcol->column_output);   /* status (input) */
+    else
+        tds_put_byte(tds, curcol->column_output);   /* status (input) */
 	if (!IS_TDS7_PLUS(tds->conn))
 		tds_put_int(tds, curcol->column_usertype);	/* usertype */
 	/* FIXME: column_type is wider than one byte.  Do something sensible, not just lop off the high byte. */
@@ -1662,6 +1666,9 @@ static int
 tds_put_data_info_length(TDSSOCKET * tds, TDSCOLUMN * curcol, int flags)
 {
 	int len = 8;
+
+    if (IS_TDS50(tds->conn)  &&  (flags & TDS_PUT_DATA_IQ_PARAM) == 0)
+        len = 11;
 
 	CHECK_TDS_EXTRA(tds);
 	CHECK_COLUMN_EXTRA(curcol);
@@ -1798,17 +1805,26 @@ static int
 tds_put_params(TDSSOCKET * tds, TDSPARAMINFO * info, int flags)
 {
 	int i, len;
+    char token = TDS5_PARAMFMT2_TOKEN;
 
 	CHECK_TDS_EXTRA(tds);
 	CHECK_PARAMINFO_EXTRA(info);
 
+    if ( !strcmp(tds->conn->product_name, "Adaptive Server Anywhere") ) {
+        flags |= TDS_PUT_DATA_IQ_PARAM;
+        token  = TDS5_PARAMFMT_TOKEN;
+    }
 	/* column descriptions */
-	tds_put_byte(tds, TDS5_PARAMFMT_TOKEN);
+    tds_put_byte(tds, token);
 	/* size */
 	len = 2;
 	for (i = 0; i < info->num_cols; i++)
 		len += tds_put_data_info_length(tds, info->columns[i], flags);
-	tds_put_smallint(tds, len);
+    if (flags & TDS_PUT_DATA_IQ_PARAM) {
+        tds_put_smallint(tds, len);
+    } else {
+        tds_put_int(tds, len);
+    }
 	/* number of parameters */
 	tds_put_smallint(tds, info->num_cols);
 	/* column detail for each parameter */
