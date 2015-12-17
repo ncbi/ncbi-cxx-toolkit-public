@@ -315,8 +315,8 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
     case eDB_VarChar: {
         CDB_VarChar& par = dynamic_cast<CDB_VarChar&> (param);
 
+        param_fmt.datatype = NCBI_CS_STRING_TYPE;
 #ifdef FTDS_IN_USE
-        param_fmt.datatype = CS_VARCHAR_TYPE;
         if (GetConnection().GetCTLibContext().GetClientEncoding() == eEncoding_UTF8
             &&  !par.IsNULL())
         {
@@ -324,18 +324,20 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
                                   eEncoding_UTF8, CUtf8::eValidate));
             CUtf8::AsBasicString<TCharUCS2>(str_check);
         }
-#else
-        param_fmt.datatype = CS_CHAR_TYPE;
 #endif
 
         if ( declare_only ) {
             break;
         }
 
+        CTempVarChar varchar;
+        varchar.SetValue(par.Value());
+        CTempString ts = varchar.GetValue();
+
         ret_code = Check(ct_param(x_GetSybaseCmd(),
                                   &param_fmt,
-                                  (CS_VOID*) par.Data(),
-                                  (CS_INT) par.Size(),
+                                  (CS_VOID*) ts.data(),
+                                  (CS_INT) ts.size(),
                                   indicator)
                          );
         break;

@@ -82,6 +82,16 @@
 #    define CTLIB_SetPacketSize         TDS_SetPacketSize
 #    define CTLIB_SetMaxNofConns        TDS_SetMaxNofConns
 
+#  define NCBI_CS_STRING_TYPE CS_VARCHAR_TYPE
+#  if NCBI_FTDS_VERSION >= 91
+#    define USE_STRUCT_CS_VARCHAR 1
+#  endif
+
+#else
+
+// There is a problem with CS_VARCHAR_TYPE on x86_64 ...
+#  define NCBI_CS_STRING_TYPE CS_CHAR_TYPE
+
 #endif // FTDS_IN_USE
 
 BEGIN_NCBI_SCOPE
@@ -485,6 +495,19 @@ public:
     virtual ~CTL_CmdBase(void);
 
 protected:
+    class CTempVarChar
+    {
+    public:
+        void SetValue(const CTempString& s);
+        CTempString GetValue(void) const;
+    private:
+#ifdef USE_STRUCT_CS_VARCHAR
+        AutoPtr<CS_VARCHAR, CDeleter<CS_VARCHAR> > m_Data;
+#else
+        CTempString m_Data;
+#endif
+    };
+
     inline CS_RETCODE Check(CS_RETCODE rc);
 
 protected:
@@ -831,8 +854,7 @@ protected:
 private:
     bool x_AssignParams(void);
     bool x_IsUnicodeClientAPI(void) const;
-    CS_VOID* x_GetValue(const CDB_Char& value, const CTempString& s) const;
-    CS_VOID* x_GetValue(const CDB_VarChar& value, const CTempString& s) const;
+    CTempString x_GetStringValue(unsigned int i);
     CS_BLKDESC* x_GetSybaseCmd(void) const
     {
         return m_Cmd;
@@ -841,6 +863,7 @@ private:
 
 private:
     struct SBcpBind {
+        CTempVarChar varchar;
         CS_INT      datalen;
         CS_SMALLINT indicator;
         char        buffer[sizeof(CS_NUMERIC)]; // 35 bytes ...
@@ -1199,6 +1222,39 @@ inline
 const CDBParams* CTL_Connection::GetLastParams(void) const {
     return m_ActiveCmd ? m_ActiveCmd->GetLastParams() : NULL;
 }
+
+
+#ifdef USE_STRUCT_CS_VARCHAR
+inline
+void CTL_CmdBase::CTempVarChar::SetValue(const CTempString& s)
+{
+    m_Data.reset
+        (static_cast<CS_VARCHAR*>
+         (malloc(sizeof(CS_VARCHAR) - sizeof(m_Data->str) + s.size())));
+    m_Data->len = static_cast<CS_SMALLINT>(s.size());
+    memcpy(m_Data->str, s.data(), s.size());
+}
+
+inline
+CTempString CTL_CmdBase::CTempVarChar::GetValue(void) const
+{
+    return CTempString((char*)m_Data.get(),
+                       sizeof(CS_VARCHAR) - sizeof(m_Data->str) + m_Data->len);
+}
+#else
+inline
+void CTL_CmdBase::CTempVarChar::SetValue(const CTempString& s)
+{
+    m_Data = s;
+}
+
+inline
+CTempString CTL_CmdBase::CTempVarChar::GetValue(void) const
+{
+    return m_Data;
+}
+#endif
+
 
 inline
 CTL_Connection&
