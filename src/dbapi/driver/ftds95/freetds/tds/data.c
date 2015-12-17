@@ -282,7 +282,7 @@ tds_generic_row_len(TDSCOLUMN *col)
 
 	if (is_blob_col(col))
 		return sizeof(TDSBLOB);
-	return col->column_size;
+    return col->column_size + col->column_varint_size;
 }
 
 static TDSRET
