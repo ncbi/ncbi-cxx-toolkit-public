@@ -3723,6 +3723,64 @@ ct_poll(CS_CONTEXT * ctx, CS_CONNECTION * connection, CS_INT milliseconds, CS_CO
 	return CS_FAIL;
 }
 
+static
+int str_icmp(char* s1, char* s2, int len)
+{
+    int i;
+
+    for (i = 0; i < len; ++i) {
+        char c1 = s1[i];
+        char c2 = s2[i];
+
+        if (c1 >= 'a' && c1 <= 'z') {
+            c1 -= 'a'-'A';
+        }
+
+        if (c2 >= 'a' && c2 <= 'z') {
+            c2 -= 'a'-'A';
+        }
+
+        if (c1 == c2) {
+            if (c1 == '\0') {
+                return 0;
+            }
+        } else {
+            if (c1 < c2) {
+                return -1;
+            } else {
+                return 1;
+            }
+        }
+    }
+
+    return 0;
+}
+
+static
+char* get_next_tok(char* str, char* delimiter, char **ptrptr)
+{
+    char* result = NULL;
+    *ptrptr = NULL;
+
+    if (str && delimiter) {
+        size_t str_len = strlen(str);
+
+        size_t pos = strspn(str, delimiter);
+
+        if (pos == 0) {
+            *ptrptr = strpbrk(str, delimiter);
+            return str;
+        } else {
+            if (pos != str_len) {
+                result = str + pos;
+                *ptrptr = strpbrk(result, delimiter);
+            }
+        }
+    }
+
+    return result;
+}
+
 CS_RETCODE
 ct_cursor(CS_COMMAND * cmd, CS_INT type, CS_CHAR * name, CS_INT namelen, CS_CHAR * text, CS_INT tlen, CS_INT option)
 {
@@ -3755,6 +3813,47 @@ ct_cursor(CS_COMMAND * cmd, CS_INT type, CS_CHAR * name, CS_INT namelen, CS_CHAR
 		cursor->status.fetch      = _CS_CURS_TYPE_UNACTIONED;
 		cursor->status.close      = _CS_CURS_TYPE_UNACTIONED;
 		cursor->status.dealloc    = _CS_CURS_TYPE_UNACTIONED;
+
+        if (option == CS_UNUSED || (option & CS_END) != 0) {
+            /* Try to figure out type of the cursor. */
+            char delimiter[] = "\n\t,.[]() ";
+            int state = 0;
+            char* savept = NULL;
+            char* s = text;
+
+            char* tok = get_next_tok(s, delimiter, &savept);
+            while (tok != NULL) {
+                s = savept;
+
+                if (str_icmp(tok, "FOR", 3) == 0) {
+                    state = 1;
+                } else if (str_icmp(tok, "UPDATE", 6) == 0) {
+                    if (state == 1) {
+                        state = 2;
+                        break;
+                    }
+                } else {
+                    state = 0;
+                }
+
+                tok = get_next_tok(s, delimiter, &savept);
+            }
+
+            if (state == 2) {
+                /* FOR UPDATE */
+                cursor->type = 0x4; /* Forward-only cursor. */
+            } else {
+                /* readonly */
+                cursor->type = 0x1; /* Keyset-driven cursor. Default value. */
+            }
+        } else if ((option & CS_FOR_UPDATE) != 0) {
+            cursor->type = 0x4; /* Forward-only cursor. */
+        } else {
+            cursor->type = 0x1; /* Keyset-driven cursor. Default value. */
+        }
+
+        cursor->concurrency = 0x2004;
+        /* Optimistic. Checks timestamps and, when not available, values. */
 
 		tds_release_cursor(&cmd->cursor);
 		cmd->cursor = cursor;
