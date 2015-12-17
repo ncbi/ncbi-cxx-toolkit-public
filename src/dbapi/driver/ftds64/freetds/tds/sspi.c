@@ -195,7 +195,7 @@ tds_sspi_get_auth(TDSSOCKET * tds)
 	SECURITY_STATUS status;
 	ULONG attrs;
 	TimeStamp ts;
-	SEC_WINNT_AUTH_IDENTITY identity;
+    SEC_WINNT_AUTH_IDENTITY_A identity;
 	const char *p, *user_name, *server_name;
 
 	TDSSSPIAUTH *auth;

@@ -445,7 +445,7 @@ tds_get_homedir(void)
     if (!FAILED(hr)) {
         hr = SHGetSpecialFolderLocation(NULL, CSIDL_APPDATA, &pidl);
         if (!FAILED(hr)) {
-            if (SHGetPathFromIDList(pidl, path))
+            if (SHGetPathFromIDListA(pidl, path))
                 res = strdup(path);
             (*pMalloc->lpVtbl->Free)(pMalloc, pidl);
         }
