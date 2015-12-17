@@ -156,4 +156,8 @@ typedef int socklen_t;
 #  define ENABLE_KRB5 1
 #endif
 
+#ifndef _THREAD_SAFE
+#  define TDS_NO_THREADSAFE 1
+#endif
+
 #endif  /* DBAPI_DRIVER_FTDS95_FREETDS___CONFIG__H */
