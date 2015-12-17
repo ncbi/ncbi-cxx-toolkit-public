@@ -104,7 +104,7 @@ ExecuteSQL(const string& sql)
 
 NCBITEST_INIT_CMDLINE(arg_desc)
 {
-#define ALL_DRIVERS   "ctlib", "dblib", "ftds", "odbc"
+#define ALL_DRIVERS   "ctlib", "dblib", "ftds", "ftds64", "odbc"
 #if defined(NCBI_OS_MSWIN)
 #define DEF_SERVER    "MSDEV1"
 #define DEF_DRIVER    "ftds"
@@ -171,7 +171,8 @@ NCBITEST_INIT_VARIABLES(parser)
     parser->AddSymbol("SERVER_SybaseSQL", GetArgs().GetServerType() == CTestArguments::eSybase);
     parser->AddSymbol("SERVER_MicrosoftSQL", GetArgs().GetServerType() == CTestArguments::eMsSql);
 
-    parser->AddSymbol("DRIVER_ftds", GetArgs().GetDriverName() == "ftds");
+    parser->AddSymbol("DRIVER_ftds",
+                      NStr::StartsWith(GetArgs().GetDriverName(), "ftds"));
     parser->AddSymbol("DRIVER_odbc", GetArgs().GetDriverName() == "odbc");
     parser->AddSymbol("DRIVER_ctlib", GetArgs().GetDriverName() == "ctlib");
     parser->AddSymbol("DRIVER_dblib", GetArgs().GetDriverName() == "dblib");

@@ -33,7 +33,6 @@
 
 #include "ctlib_utils.hpp"
 
-#include <corelib/plugin_manager_impl.hpp>
 #include <corelib/plugin_manager_store.hpp>
 #include <corelib/ncbi_param.hpp>
 
@@ -57,7 +56,7 @@
 
 #ifdef FTDS_IN_USE
 #  include "config.h"
-#  include "tds.h"
+#  include <ctlib.h>
 #endif
 
 #define NCBI_USE_ERRCODE_X   Dbapi_CTLib_Context
@@ -66,7 +65,9 @@
 BEGIN_NCBI_SCOPE
 
 #ifdef FTDS_IN_USE
-namespace ftds64_ctlib
+#define ftdsVER "ftds" NCBI_AS_STRING(NCBI_FTDS_VERSION)
+
+namespace NCBI_NS_FTDS_CTLIB
 {
 #endif
 
@@ -781,7 +782,7 @@ string CTLibContext::GetApplicationName(void) const
         app_name = GetDiagContext().GetAppName();
         if (app_name.empty()) {
 #ifdef FTDS_IN_USE
-            app_name = "DBAPI-ftds64";
+            app_name = "DBAPI-" ftdsVER;
 #else
             app_name = "DBAPI-ctlib";
 #endif
@@ -1592,25 +1593,6 @@ CS_INT GetCtlibTdsVersion(int version)
 //
 
 ///////////////////////////////////////////////////////////////////////////////
-class CDbapiCtlibCFBase : public CSimpleClassFactoryImpl<I_DriverContext, CTLibContext>
-{
-public:
-    typedef CSimpleClassFactoryImpl<I_DriverContext, CTLibContext> TParent;
-
-public:
-    CDbapiCtlibCFBase(const string& driver_name);
-    ~CDbapiCtlibCFBase(void);
-
-public:
-    virtual TInterface*
-    CreateInstance(
-        const string& driver  = kEmptyStr,
-        CVersionInfo version =
-        NCBI_INTERFACE_VERSION(I_DriverContext),
-        const TPluginManagerParamTree* params = 0) const;
-
-};
-
 CDbapiCtlibCFBase::CDbapiCtlibCFBase(const string& driver_name)
     : TParent( driver_name, 0 )
 {
@@ -1719,21 +1701,16 @@ CDbapiCtlibCFBase::CreateInstance(
 ///////////////////////////////////////////////////////////////////////////////
 #if defined(FTDS_IN_USE)
 
-class CDbapiCtlibCF_ftds64_ctlib : public CDbapiCtlibCFBase
+#  define CDbapiCtlibCF_ftdsVER_ctlib \
+    NCBI_FTDS_VERSION_NAME2(CDbapiCtlibCF_ftds,_ctlib)
+#  define DBAPI_RegisterDriver_FTDSVER \
+    NCBI_FTDS_VERSION_NAME(DBAPI_RegisterDriver_FTDS)
+
+class CDbapiCtlibCF_ftdsVER_ctlib : public CDbapiCtlibCFBase
 {
 public:
-    CDbapiCtlibCF_ftds64_ctlib(void)
-    : CDbapiCtlibCFBase("ftds64")
-    {
-    }
-};
-
-
-class CDbapiCtlibCF_ftds : public CDbapiCtlibCFBase
-{
-public:
-    CDbapiCtlibCF_ftds(void)
-    : CDbapiCtlibCFBase("ftds")
+    CDbapiCtlibCF_ftdsVER_ctlib(void)
+    : CDbapiCtlibCFBase(ftdsVER)
     {
     }
 };
@@ -1753,7 +1730,7 @@ public:
 
 
 #ifdef FTDS_IN_USE
-} // namespace ftds64_ctlib
+} // namespace NCBI_NS_FTDS_CTLIB
 #endif
 
 
@@ -1761,30 +1738,18 @@ public:
 #if defined(FTDS_IN_USE)
 
 void
-NCBI_EntryPoint_xdbapi_ftds64(
+NCBI_EntryPoint_xdbapi_ftdsVER(
     CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
     CPluginManager<I_DriverContext>::EEntryPointRequest method)
 {
-    CHostEntryPointImpl<ftds64_ctlib::CDbapiCtlibCF_ftds64_ctlib>::NCBI_EntryPointImpl( info_list, method );
-}
-
-void
-NCBI_EntryPoint_xdbapi_ftds(
-    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
-    CPluginManager<I_DriverContext>::EEntryPointRequest method)
-{
-    CHostEntryPointImpl<ftds64_ctlib::CDbapiCtlibCF_ftds>::NCBI_EntryPointImpl(
-        info_list,
-        method
-        );
+    CHostEntryPointImpl<NCBI_NS_FTDS_CTLIB::CDbapiCtlibCF_ftdsVER_ctlib>::NCBI_EntryPointImpl( info_list, method );
 }
 
 NCBI_DBAPIDRIVER_CTLIB_EXPORT
 void
-DBAPI_RegisterDriver_FTDS(void)
+DBAPI_RegisterDriver_FTDSVER(void)
 {
-    RegisterEntryPoint<I_DriverContext>(NCBI_EntryPoint_xdbapi_ftds);
-    RegisterEntryPoint<I_DriverContext>(NCBI_EntryPoint_xdbapi_ftds64);
+    RegisterEntryPoint<I_DriverContext>(NCBI_EntryPoint_xdbapi_ftdsVER);
 }
 
 

@@ -93,8 +93,8 @@ CDBSetConnParams::GetPassword(void) const
 
 
 ////////////////////////////////////////////////////////////////////////////////
-const char* ftds64_driver = "ftds";
-const char* ftds_driver = ftds64_driver;
+const char* ftds64_driver = "ftds64";
+const char* ftds_driver = "ftds";
 
 const char* odbc_driver = "odbc";
 const char* ctlib_driver = "ctlib";
@@ -166,6 +166,7 @@ bool CommonInit(void)
 #endif
 
     DBAPI_RegisterDriver_FTDS();
+    DBAPI_RegisterDriver_FTDS64();
 
 #else
     CPluginManager_DllResolver::EnableGlobally(true);
@@ -397,7 +398,7 @@ NCBITEST_INIT_VARIABLES(parser)
     parser->AddSymbol("SERVER_SybaseSQL", GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer);
     parser->AddSymbol("SERVER_MicrosoftSQL", GetArgs().GetServerType() == CDBConnParams::eMSSqlServer);
 
-    parser->AddSymbol("DRIVER_ftds", GetArgs().GetDriverName() == ftds_driver);
+    parser->AddSymbol("DRIVER_ftds", GetArgs().IsFreeTDS());
     parser->AddSymbol("DRIVER_ftds64", GetArgs().GetDriverName() == ftds64_driver);
     parser->AddSymbol("DRIVER_odbc", GetArgs().GetDriverName() == odbc_driver);
     parser->AddSymbol("DRIVER_ctlib", GetArgs().GetDriverName() == ctlib_driver);
@@ -533,6 +534,12 @@ CTestArguments::IsBCPAvailable(void) const
 }
 
 bool
+CTestArguments::IsFreeTDS(void) const
+{
+    return NStr::StartsWith(GetDriverName(), "ftds");
+}
+
+bool
 CTestArguments::IsODBCBased(void) const
 {
     return GetDriverName() == odbc_driver;
@@ -540,18 +547,14 @@ CTestArguments::IsODBCBased(void) const
 
 bool CTestArguments::DriverAllowsMultipleContexts(void) const
 {
-    return GetDriverName() == ctlib_driver
-        || GetDriverName() == ftds64_driver
-        || IsODBCBased();
+    return (GetDriverName() == ctlib_driver) || IsFreeTDS() || IsODBCBased();
 }
 
 void
 CTestArguments::SetDatabaseParameters(void)
 {
-    if ((GetDriverName() == ftds64_driver
-         // || GetDriverName() == odbc_driver
-        ) && GetServerType() == CDBConnParams::eMSSqlServer
-        )
+    if ((IsFreeTDS() /*  ||  GetDriverName() == odbc_driver */)
+        &&  GetServerType() == CDBConnParams::eMSSqlServer)
     {
         m_ParamBase.SetEncoding(eEncoding_UTF8);
         m_ParamBase2.SetEncoding(eEncoding_UTF8);
@@ -587,23 +590,25 @@ void CTestArguments::PutMsgExpected(const char* msg, const char* replacement) co
 NCBITEST_INIT_CMDLINE(arg_desc)
 {
 // Describe the expected command-line arguments
+#define FTDS_DRIVERS ftds_driver, ftds64_driver
+
 #define DEF_SERVER    "MSSQL"
-#define DEF_DRIVER    ftds64_driver
-#define ALL_DRIVERS   ctlib_driver, dblib_driver, ftds64_driver, odbc_driver
+#define DEF_DRIVER    ftds_driver
+#define ALL_DRIVERS   ctlib_driver, dblib_driver, FTDS_DRIVERS, odbc_driver
 
 //#if defined(NCBI_OS_MSWIN)
 //#define DEF_SERVER    "MSSQL"
 //#define DEF_DRIVER    ftds_driver
-//#define ALL_DRIVERS   ctlib_driver, dblib_driver, ftds64_driver, odbc_driver
+//#define ALL_DRIVERS   ctlib_driver, dblib_driver, FTDS_DRIVERS, odbc_driver
 
 //#elif defined(HAVE_LIBSYBASE)
 //#define DEF_SERVER    "Sybase"
 //#define DEF_DRIVER    ctlib_driver
-//#define ALL_DRIVERS   ctlib_driver, dblib_driver, ftds64_driver
+//#define ALL_DRIVERS   ctlib_driver, dblib_driver, FTDS_DRIVERS
 //#else
 //#define DEF_SERVER    "MSSQL"
 //#define DEF_DRIVER    ftds_driver
-//#define ALL_DRIVERS   ftds64_driver
+//#define ALL_DRIVERS   FTDS_DRIVERS
 //#endif
 
     arg_desc->AddDefaultKey("S", "server",

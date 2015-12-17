@@ -25,7 +25,7 @@
 #ifndef NCBI_DBAPI_RENAME_CTLIB
 #  define NCBI_DBAPI_RENAME_CTLIB
 #endif
-#include <dbapi/driver/ctlib/ncbi_dbapi_rename_ctlib.h>
+#include <../impl/rename_ftds_ctlib.h>
 
 #ifdef __cplusplus
 extern "C"

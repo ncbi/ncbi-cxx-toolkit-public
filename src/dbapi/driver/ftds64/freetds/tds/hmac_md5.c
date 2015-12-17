@@ -1,5 +1,9 @@
 /* $Id$ */
 
+#if HAVE_CONFIG_H
+#include <config.h>
+#endif /* HAVE_CONFIG_H */
+
 #include "tds.h"
 #include "hmac_md5.h"
 #include <memory.h>

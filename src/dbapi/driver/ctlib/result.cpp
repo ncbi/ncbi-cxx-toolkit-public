@@ -51,7 +51,7 @@
 BEGIN_NCBI_SCOPE
 
 #ifdef FTDS_IN_USE
-namespace ftds64_ctlib
+namespace NCBI_NS_FTDS_CTLIB
 {
 #define MAX_VARCHAR_SIZE 8000
 #else
@@ -729,7 +729,7 @@ size_t CTL_RowResult::ReadItem(void* buffer, size_t buffer_size,
             IncCurrentItemNum();
         }
 #else
-        IncCurrentItemNum(); // That won't work with the ftds64 driver
+        IncCurrentItemNum(); // That won't work with the ftds driver
 #endif
 
         break;
@@ -1301,7 +1301,7 @@ CTL_CursorResultExpl::~CTL_CursorResultExpl()
 
 
 #ifdef FTDS_IN_USE
-} // namespace ftds64_ctlib
+} // namespace NCBI_NS_FTDS_CTLIB
 #endif
 
 END_NCBI_SCOPE

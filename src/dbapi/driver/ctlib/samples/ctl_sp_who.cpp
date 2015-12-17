@@ -34,7 +34,7 @@
 #include "../../dbapi_driver_sample_base.hpp"
 #include <dbapi/driver/exception.hpp>
 #ifdef FTDS_IN_USE
-# include <dbapi/driver/ftds64/interfaces.hpp>
+# include <interfaces.hpp>
 #else
 # include <dbapi/driver/ctlib/interfaces.hpp>
 #endif

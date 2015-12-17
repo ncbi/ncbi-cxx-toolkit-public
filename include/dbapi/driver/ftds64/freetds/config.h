@@ -34,8 +34,8 @@
 #define ENABLE_EXTRA_CHECKS 1
 #endif
 
-#include <dbapi/driver/ftds64/ncbi_ftds_rename_sybdb_ver64.h>
-#include <dbapi/driver/ftds64/freetds/rename_freetds64.h>
+#include <dbapi/driver/ftds64/impl/rename_ftds_replacements.h>
+#include <dbapi/driver/ftds64/impl/rename_ftds_tds.h>
 
 #if defined(HAVE_GETHOSTBYADDR_R)
 #  if   HAVE_GETHOSTBYADDR_R == 5

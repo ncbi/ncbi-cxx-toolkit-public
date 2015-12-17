@@ -2502,7 +2502,7 @@ BOOST_AUTO_TEST_CASE(Test_CDBCmdConvertSafe)
         DoTest_CDBCmdConvertSafe<Int2>("select Convert(smallint, 1), 2.0, '3'", 1);
         DoTest_CDBCmdConvertSafe<Int4>("select 1, 2.0, '3'", 1);
         if (!((GetArgs().GetDriverName() == dblib_driver ||
-                GetArgs().GetDriverName() == ftds_driver ||
+                GetArgs().IsFreeTDS() ||
                 GetArgs().GetDriverName() == ctlib_driver)
             && GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer)
             )
@@ -2980,7 +2980,7 @@ BOOST_AUTO_TEST_CASE(Test_CDBCmdConvert)
         DoTest_CDBCmdConvert<Int2>("select Convert(smallint, 1), 2.0, '3'", 1);
         DoTest_CDBCmdConvert<Int4>("select 1, 2.0, '3'", 1);
         if (!((GetArgs().GetDriverName() == dblib_driver ||
-                GetArgs().GetDriverName() == ftds_driver ||
+                GetArgs().IsFreeTDS() ||
                 GetArgs().GetDriverName() == ctlib_driver)
             && GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer)
             )

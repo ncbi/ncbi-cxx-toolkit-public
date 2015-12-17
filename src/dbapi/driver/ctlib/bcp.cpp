@@ -48,7 +48,7 @@
 BEGIN_NCBI_SCOPE
 
 #ifdef FTDS_IN_USE
-namespace ftds64_ctlib
+namespace NCBI_NS_FTDS_CTLIB
 {
 #endif
 
@@ -723,7 +723,7 @@ CTL_BCPInCmd::Close(void)
 
 void CTL_BCPInCmd::SetHints(CTempString hints)
 {
-#ifdef FTDS_IN_USE
+#if defined(FTDS_IN_USE)  &&  defined(blk_sethints)
     m_Hints.clear();
     if (Check(blk_sethints(x_GetSybaseCmd(), (CS_CHAR*)hints.data(), CS_INT(hints.size()))) == CS_FAIL) {
         DATABASE_DRIVER_ERROR("blk_sethints failed." + GetDbgInfo(), 123018);
@@ -736,7 +736,7 @@ void CTL_BCPInCmd::SetHints(CTempString hints)
 
 void CTL_BCPInCmd::x_BlkSetHints(void)
 {
-#ifdef FTDS_IN_USE
+#if defined(FTDS_IN_USE)  &&  defined(blk_sethints)
     string hints;
     ITERATE(THintsMap, it, m_Hints) {
         if (!hints.empty())
@@ -813,7 +813,7 @@ void CTL_BCPInCmd::AddOrderHint(CTempString columns)
 
 
 #ifdef FTDS_IN_USE
-} // namespace ftds64_ctlib
+} // namespace NCBI_NS_FTDS_CTLIB
 #endif
 
 END_NCBI_SCOPE

@@ -4700,12 +4700,10 @@ SYBASE_LIBPATH=
 ## FreeTDS libraries
 freetds=
 if test "$with_ftds" != "no" ; then
-   ftds64=ftds64
+   ftds_ver=64
    try_local=yes
    case "$with_ftds" in
-      64 | yes | '' )
-         ftds_ver=64
-         ftds64=ftds
+      64 | 0.64 | yes | '' )
          ;;
       * )
          FTDS_PATH=$with_ftds
@@ -4717,7 +4715,7 @@ if test "$with_ftds" != "no" ; then
    FTDS_INCLUDE="-I$FTDS_PATH/include"
    NCBI_LOCAL_FTDS(64)
    if test -n "$freetds" ; then
-      FTDS_LIB="\$(FTDS${ftds_ver}_LIB)"
+      FTDS_LIB="ncbi_xdbapi_ftds${ftds_ver} \$(FTDS${ftds_ver}_LIB)"
       FTDS_LIBS="\$(FTDS${ftds_ver}_LIBS)"
       FTDS_INCLUDE="\$(FTDS${ftds_ver}_INCLUDE)"
       if test "$with_ftds_renamed" != "no" ; then
@@ -4777,7 +4775,6 @@ AC_SUBST(FTDS_INCLUDE)
 AC_SUBST(FTDS_LIBS)
 AC_SUBST(FTDS_LIB)
 AC_SUBST(freetds)
-AC_SUBST(ftds64)
 
 
 ## MySQL

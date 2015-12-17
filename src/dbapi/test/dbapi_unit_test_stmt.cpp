@@ -1635,7 +1635,7 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                 BOOST_REQUIRE(md != NULL);
 
                 EDB_Type curr_type = md->GetType(1);
-                if (GetArgs().GetDriverName() == ftds_driver ||
+                if (GetArgs().IsFreeTDS() ||
                     GetArgs().GetDriverName() == dblib_driver ||
                     GetArgs().GetDriverName() == ctlib_driver
                     ) {
@@ -1732,14 +1732,14 @@ BOOST_AUTO_TEST_CASE(Test_ResultsetMetaData)
                 BOOST_REQUIRE(md != NULL);
 
                 EDB_Type curr_type = md->GetType(1);
-                if ((GetArgs().GetDriverName() == ftds_driver &&
+                if ((GetArgs().IsFreeTDS() &&
                         GetArgs().GetServerType() == CDBConnParams::eMSSqlServer) ||
                     GetArgs().GetDriverName() == dblib_driver ||
                     (GetArgs().GetDriverName() == ctlib_driver &&
                         NStr::CompareNocase(GetSybaseClientVersion(), 0, 4, "12.0") == 0)
                     ) {
                     BOOST_CHECK_EQUAL(curr_type, eDB_VarBinary);
-                } else if ((GetArgs().GetDriverName() == ftds_driver &&
+                } else if ((GetArgs().IsFreeTDS()  &&
                         GetArgs().GetServerType() == CDBConnParams::eSybaseSQLServer) ||
                     GetArgs().GetDriverName() == ctlib_driver ||
                     GetArgs().GetDriverName() == odbc_driver

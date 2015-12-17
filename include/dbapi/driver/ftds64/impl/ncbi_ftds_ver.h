@@ -1,7 +1,4 @@
-#ifndef DBAPI_DRIVER___DRIVERS__HPP
-#define DBAPI_DRIVER___DRIVERS__HPP
-
-/* $Id$
+/*  $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -26,35 +23,15 @@
  *
  * ===========================================================================
  *
- * Author:  Vladimir Soussov
+ * Author:  Aaron Ucko
  *
- * File Description:  Drivers' registration
+ * File Description:
+ *   Identify the target FreeTDS version, to allow others in parallel.
  *
  */
 
-
-/** @addtogroup DbDriverReg
- *
- * @{
- */
-
-
-BEGIN_NCBI_SCOPE
-
-// New and recommended.
-extern void DBAPI_RegisterDriver_CTLIB      (void);
-extern void DBAPI_RegisterDriver_DBLIB      (void);
-extern void DBAPI_RegisterDriver_FTDS       (void);
-extern void DBAPI_RegisterDriver_FTDS64     (void);
-extern void DBAPI_RegisterDriver_ODBC       (void);
-extern void DBAPI_RegisterDriver_MYSQL      (void);
-// Development ...
-// extern void DBAPI_RegisterDriver_GATEWAY (void);
-
-END_NCBI_SCOPE
-
-
-/* @} */
-
-
-#endif  /* DBAPI_DRIVER___DRIVERS__HPP */
+#ifndef NCBI_FTDS_VERSION
+#  define NCBI_FTDS_VERSION              64
+#  define NCBI_FTDS_VERSION_NAME(X)      X ## 64
+#  define NCBI_FTDS_VERSION_NAME2(X,Y)   X ## 64 ## Y
+#endif

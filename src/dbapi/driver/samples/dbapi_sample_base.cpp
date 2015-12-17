@@ -99,6 +99,7 @@ CDbapiSampleApp::CDbapiSampleApp(EUseSampleDatabase sd)
 #endif
 
     DBAPI_RegisterDriver_FTDS();
+    DBAPI_RegisterDriver_FTDS64();
 
 #endif // NCBI_DLL_BUILD
 }
@@ -150,21 +151,20 @@ CDbapiSampleApp::Init()
                               "DBAPI Sample Application");
 
     // Describe the expected command-line arguments
+#define FTDS_DRIVERS "ftds", "ftds64"
+
 #if defined(NCBI_OS_MSWIN)
 #define DEF_SERVER    "MS_DEV1"
 #define DEF_DRIVER    "ftds"
-#define ALL_DRIVERS   "ctlib", "dblib", "ftds", \
-                      "gateway", "odbc"
+#define ALL_DRIVERS   "ctlib", "dblib", FTDS_DRIVERS, "gateway", "odbc"
 #elif defined(HAVE_LIBSYBASE)
 #define DEF_SERVER    "DBAPI_DEV3"
 #define DEF_DRIVER    "ctlib"
-#define ALL_DRIVERS   "ctlib", "dblib", "ftds", "gateway", \
-                      "odbc"
+#define ALL_DRIVERS   "ctlib", "dblib", FTDS_DRIVERS, "gateway", "odbc"
 #else
 #define DEF_SERVER    "MS_DEV1"
 #define DEF_DRIVER    "ftds"
-#define ALL_DRIVERS   "ftds", "gateway", \
-                      "odbc"
+#define ALL_DRIVERS   FTDS_DRIVERS, "gateway", "odbc"
 #endif
 
     arg_desc->AddDefaultKey("S", "server",

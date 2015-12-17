@@ -46,7 +46,7 @@
 BEGIN_NCBI_SCOPE
 
 #ifdef FTDS_IN_USE
-namespace ftds64_ctlib
+namespace NCBI_NS_FTDS_CTLIB
 {
 #endif
 
@@ -169,7 +169,7 @@ bool CTL_RPCCmd::x_AssignParams()
 }
 
 #ifdef FTDS_IN_USE
-} // namespace ftds64_ctlib
+} // namespace NCBI_NS_FTDS_CTLIB
 #endif
 
 END_NCBI_SCOPE

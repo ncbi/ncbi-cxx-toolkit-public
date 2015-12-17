@@ -154,6 +154,7 @@ public:
 
     bool IsBCPAvailable(void) const;
 
+    bool IsFreeTDS(void) const;
     bool IsODBCBased(void) const;
     bool DriverAllowsMultipleContexts(void) const;
 

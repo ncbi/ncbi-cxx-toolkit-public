@@ -382,8 +382,7 @@ SYBASE_LIBS    = @SYBASE_LIBS@
 SYBASE_DLLS    = @SYBASE_DLLS@
 SYBASE_DBLIBS  = @SYBASE_DBLIBS@
 
-# FreeTDS -- version v0.64, default
-ftds64               = @ftds64@
+# FreeTDS -- specific bundled versions, default
 FTDS64_CTLIB_LIBS    = @FTDS64_CTLIB_LIBS@
 FTDS64_CTLIB_LIB     = @FTDS64_CTLIB_LIB@
 FTDS64_CTLIB_INCLUDE = @FTDS64_CTLIB_INCLUDE@

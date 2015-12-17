@@ -44,6 +44,17 @@
 #include <bkpublic.h>
 
 #ifdef FTDS_IN_USE
+
+#  ifdef NCBI_DBAPI_RENAME_CTLIB
+#    include <../impl/ncbi_ftds_ver.h>
+#  else
+#    define NCBI_FTDS_VERSION            0
+#    define NCBI_FTDS_VERSION_NAME(X)    X
+#    define NCBI_FTDS_VERSION_NAME2(X,Y) X ## Y
+#  endif
+
+#  define NCBI_NS_FTDS_CTLIB NCBI_FTDS_VERSION_NAME2(ftds,_ctlib)
+
 // Make it look like the ftds driver ...
 #    define CTLibContext            CTDSContext
 #    define CTL_Connection          CTDS_Connection
@@ -76,7 +87,7 @@
 BEGIN_NCBI_SCOPE
 
 #ifdef FTDS_IN_USE
-namespace ftds64_ctlib
+namespace NCBI_NS_FTDS_CTLIB
 {
 #endif
 
@@ -1401,7 +1412,7 @@ private:
 };
 
 #ifdef FTDS_IN_USE
-} // namespace ftds64_ctlib
+} // namespace NCBI_NS_FTDS_CTLIB
 #endif
 
 END_NCBI_SCOPE

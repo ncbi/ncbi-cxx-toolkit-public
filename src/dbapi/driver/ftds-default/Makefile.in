@@ -1,0 +1,8 @@
+# $Id$
+
+LIB_PROJ = ncbi_xdbapi_ftds
+
+REQUIRES = FreeTDS
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

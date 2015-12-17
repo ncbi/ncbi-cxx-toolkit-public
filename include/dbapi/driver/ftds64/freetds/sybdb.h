@@ -30,7 +30,7 @@
 #ifndef NCBI_FTDS_RENAME_SYBDB
 #  define NCBI_FTDS_RENAME_SYBDB
 #endif
-#include <dbapi/driver/ftds64/ncbi_ftds_rename_sybdb_ver64.h>
+#include <dbapi/driver/ftds64/impl/rename_ftds_dblib.h>
 
 #include "tds_sysdep_public.h"
 

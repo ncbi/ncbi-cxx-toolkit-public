@@ -52,6 +52,13 @@ inline int close(int fd)
 
 #ifdef FTDS_IN_USE
 #  include <ctlib.h>
+#  ifndef tds_conn
+#    ifdef tds_get_s
+#      define tds_conn(x) ((x)->conn)
+#    else
+#      define tds_conn(x) (x)
+#    endif
+#  endif
 #endif
 
 #include "../dbapi_driver_exception_storage.hpp"
@@ -63,7 +70,7 @@ inline int close(int fd)
 BEGIN_NCBI_SCOPE
 
 #ifdef FTDS_IN_USE
-namespace ftds64_ctlib
+namespace NCBI_NS_FTDS_CTLIB
 {
 
 
@@ -71,7 +78,7 @@ CDBConnParams::EServerType
 GetTDSServerType(CS_CONNECTION* conn)
 {
     if (conn != NULL && conn->tds_socket != NULL) {
-        const char* product = conn->tds_socket->product_name;
+        const char* product = tds_conn(conn->tds_socket)->product_name;
 
         if (product != NULL && strlen(product) != 0) {
             if (strcmp(product, "sql server") == 0) {
@@ -183,7 +190,7 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
                                    CS_NULLTERM,
                                    NULL)) != CS_SUCCEED
 #ifdef FTDS_IN_USE
-        || CheckWhileOpening(ct_con_props(
+        || (CheckWhileOpening(ct_con_props(
                                    x_GetSybaseConn(), 
                                    CS_SET, 
                                    CS_TDS_VERSION, 
@@ -191,6 +198,7 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
                                    CS_UNUSED, 
                                    NULL)
                                   ) != CS_SUCCEED
+            &&  tds_version != 0)
 #endif
         )
     {
@@ -436,7 +444,7 @@ I_ConnectionExtra::TSockHandle
 CTL_Connection::GetLowLevelHandle(void) const
 {
 #ifdef FTDS_IN_USE
-    return x_GetSybaseConn()->tds_socket->s;
+    return tds_conn(x_GetSybaseConn()->tds_socket)->s;
 #else
     return impl::CConnection::GetLowLevelHandle();
 #endif
@@ -1326,7 +1334,7 @@ CTL_SendDataCmd::RowCount() const
 }
 
 #ifdef FTDS_IN_USE
-} // namespace ftds64_ctlib
+} // namespace NCBI_NS_FTDS_CTLIB
 #endif
 
 END_NCBI_SCOPE

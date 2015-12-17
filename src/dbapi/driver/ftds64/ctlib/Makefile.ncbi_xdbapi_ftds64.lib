@@ -2,7 +2,7 @@
 
 SRC = bcp connection context cursor lang_cmd result rpc ftds64_ctlib_utils
 
-LIB = ncbi_xdbapi_$(ftds64)
+LIB = ncbi_xdbapi_ftds64
 
 CPPFLAGS = -DFTDS_IN_USE $(FTDS64_INCLUDE) $(ORIG_CPPFLAGS)
 
