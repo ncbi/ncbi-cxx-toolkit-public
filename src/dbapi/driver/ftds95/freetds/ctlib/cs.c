@@ -758,7 +758,7 @@ cs_convert(CS_CONTEXT * ctx, CS_DATAFMT * srcfmt, CS_VOID * srcdata, CS_DATAFMT 
 		}
 		memcpy(dest, cres.ib, len);
 		free(cres.ib);
-		*resultlen = destlen;
+        *resultlen = len;
 		if (destvc) {
 			destvc->len = len;
 			*resultlen = sizeof(*destvc);
