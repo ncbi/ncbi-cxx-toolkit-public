@@ -88,8 +88,10 @@ public:
         m_LocatorFlags &= ~(TLocatorFlags) fLF_NoMetaData;
         m_LocatorFlags |= fLF_HasObjectID;
         m_ObjectID = object_id;
-        if ((m_LocatorFlags & fLF_HasUserKey) == 0)
-            x_SetUniqueKeyFromRandom();
+        if ((m_LocatorFlags & fLF_HasUserKey) == 0) {
+            m_ICacheKey = MakeICacheKey();
+            m_UniqueKey = MakeUniqueKey();
+        }
         m_Dirty = true;
     }
 
@@ -178,8 +180,8 @@ private:
     typedef unsigned TNetCacheFlags;
 
     void Parse(const string& object_loc);
-    void x_SetUniqueKeyFromRandom();
-    void x_SetUniqueKeyFromUserDefinedKey();
+    string MakeICacheKey() const;
+    string MakeUniqueKey() const { return m_AppDomain + '-' + m_ICacheKey; }
 
     void x_Pack() const;
     void SetLocatorFlags(TLocatorFlags flags) {m_LocatorFlags |= flags;}
@@ -204,11 +206,9 @@ private:
     Int8 m_Timestamp;
     Uint8 m_Random;
 
-    string m_UserKey;
-
-    // Either "m_Timestamp-m_Random[-m_ObjectID]" or m_UserKey.
+    // Either user key or key composed of timestamp, random value and object ID.
     string m_ICacheKey;
-    // "m_AppDomain-m_ICacheKey"
+    // The same as above plus app domain
     string m_UniqueKey;
 
     TNetCacheFlags m_NCFlags;

@@ -65,10 +65,12 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
     m_AppDomain(app_domain),
     m_Timestamp(time(NULL)),
     m_Random(random_number),
+    m_ICacheKey(MakeICacheKey()),
+    m_UniqueKey(MakeUniqueKey()),
     m_NCFlags(0),
     m_Dirty(true)
 {
-    x_SetUniqueKeyFromRandom();
+
 }
 
 CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
@@ -81,11 +83,11 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
     m_ObjectID(0),
     m_Location(eNFL_Unknown),
     m_AppDomain(app_domain),
-    m_UserKey(unique_key),
+    m_ICacheKey(unique_key),
+    m_UniqueKey(MakeUniqueKey()),
     m_NCFlags(0),
     m_Dirty(true)
 {
-    x_SetUniqueKeyFromUserDefinedKey();
 }
 
 #define INVALID_LOC_ERROR_MSG "Invalid NetStorage object locator"
@@ -182,9 +184,7 @@ void CNetStorageObjectLoc::Parse(const string& object_loc)
     if (m_LocatorFlags & fLF_HasUserKey) {
         // Get the unique object key.
         VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
-        m_UserKey = field.GetString();
-
-        x_SetUniqueKeyFromUserDefinedKey();
+        m_ICacheKey = field.GetString();
     } else {
         // Get object creation timestamp.
         VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
@@ -194,9 +194,10 @@ void CNetStorageObjectLoc::Parse(const string& object_loc)
         m_Random = (Uint8) field.GetRandom() << (sizeof(Uint4) * 8);
         VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
         m_Random |= field.GetRandom();
-
-        x_SetUniqueKeyFromRandom();
+        m_ICacheKey = MakeICacheKey();
     }
+
+    m_UniqueKey = MakeUniqueKey();
 
     // Not used, though has to be read to be backward-compatible
     if (m_LocatorFlags & fLF_Cacheable) {
@@ -270,24 +271,18 @@ CNetStorageObjectLoc::EFileTrackSite CNetStorageObjectLoc::GetFileTrackSite() co
                     eFileTrack_ProdSite;
 }
 
-void CNetStorageObjectLoc::x_SetUniqueKeyFromRandom()
+string CNetStorageObjectLoc::MakeICacheKey() const
 {
-    m_ICacheKey = NStr::NumericToString(m_Timestamp);
-    m_ICacheKey += '-';
-    m_ICacheKey += NStr::NumericToString(m_Random);
-    if (m_LocatorFlags & fLF_HasObjectID) {
-        m_ICacheKey += '-';
-        m_ICacheKey.append(NStr::NumericToString(m_ObjectID));
-    }
-    m_UniqueKey = m_AppDomain + '-';
-    m_UniqueKey += m_ICacheKey;
-}
+    string result = NStr::NumericToString(m_Timestamp);
+    result += '-';
+    result += NStr::NumericToString(m_Random);
 
-void CNetStorageObjectLoc::x_SetUniqueKeyFromUserDefinedKey()
-{
-    m_ICacheKey = m_UserKey;
-    m_UniqueKey = m_AppDomain + '-';
-    m_UniqueKey += m_UserKey;
+    if (m_LocatorFlags & fLF_HasObjectID) {
+        result += '-';
+        result += NStr::NumericToString(m_ObjectID);
+    }
+
+    return result;
 }
 
 void CNetStorageObjectLoc::x_Pack() const
@@ -314,7 +309,7 @@ void CNetStorageObjectLoc::x_Pack() const
     // Save object identification
     if (m_LocatorFlags & fLF_HasUserKey)
         // Save the unique object key.
-        cid.AppendString(m_UserKey);
+        cid.AppendString(m_ICacheKey);
     else {
         // Save object creation timestamp.
         cid.AppendTimestamp(m_Timestamp);
@@ -424,7 +419,7 @@ void CNetStorageObjectLoc::ToJSON(CJsonNode& root) const
     root.SetString("Namespace", m_AppDomain);
 
     if (m_LocatorFlags & fLF_HasUserKey)
-        root.SetString("UserKey", m_UserKey);
+        root.SetString("UserKey", m_ICacheKey);
     else {
         root.SetInteger("Timestamp", (Int8) m_Timestamp);
         root.SetInteger("Random", (Int8) m_Random);
