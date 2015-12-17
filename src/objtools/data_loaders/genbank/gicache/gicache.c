@@ -282,7 +282,10 @@ static Uint1 x_OpenIndexFile(SGiDataIndex* data_index)
 
     /* Save inode number */
     struct stat stat_buf;
-    fstat(data_index->m_GiIndexFile, &stat_buf);
+    memset(&stat_buf, 0, sizeof(stat_buf));
+    if (data_index->m_GiIndexFile >= 0) {
+        fstat(data_index->m_GiIndexFile, &stat_buf);
+	}
     data_index->m_IndexInode = stat_buf.st_ino;
 
     if (LogFunc) {
@@ -346,7 +349,10 @@ static Uint1 x_OpenDataFile(SGiDataIndex* data_index)
                              lseek(data_index->m_DataFile, 0, SEEK_END) : 0);
     /* Save inode number */
     struct stat stat_buf;
-    fstat(data_index->m_DataFile, &stat_buf);
+    memset(&stat_buf, 0, sizeof(stat_buf));
+    if (data_index->m_DataFile >= 0) {
+        fstat(data_index->m_DataFile, &stat_buf);
+    }
     data_index->m_DataInode = stat_buf.st_ino;
 
     if (LogFunc) {
