@@ -16,7 +16,11 @@
 #  define TDS70     1
 #endif
 #define VERSION   "0.64"
+
+/* ODBC settings */
 #define UNIXODBC  1
+#define TDS_NO_DM 1
+#define SQL_NOUNICODEMAP 1
 
 #include <ncbiconf.h>
 
