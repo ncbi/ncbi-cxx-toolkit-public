@@ -93,8 +93,6 @@ public:
         m_Dirty = true;
     }
 
-    Uint8 GetObjectID() const {return m_ObjectID;}
-
     void SetServiceName(const string& service_name)
     {
         if (service_name.empty() ||
@@ -111,39 +109,23 @@ public:
 
     ENetStorageObjectLocation GetLocation() const {return m_Location;}
 
-    bool IsMovable() const {return (m_LocatorFlags & fLF_Movable) != 0;}
-    bool IsCacheable() const {return (m_LocatorFlags & fLF_Cacheable) != 0;}
     bool IsMetaDataDisabled() const
     {
         return (m_LocatorFlags & fLF_NoMetaData) != 0;
     }
 
-    Int8 GetTimestamp() const {return m_Timestamp;}
     CTime GetCreationTime() const {return CTime(m_Timestamp);}
-    Uint8 GetRandom() const {return m_Random;}
 
     bool HasUserKey() const {return (m_LocatorFlags & fLF_HasUserKey) != 0;}
     string GetAppDomain() const {return m_AppDomain;}
-    string GetUserKey() const {return m_UserKey;}
 
     string GetICacheKey() const {return m_ICacheKey;}
     string GetUniqueKey() const {return m_UniqueKey;}
 
-    void SetCacheChunkSize(size_t cache_chunk_size)
-    {
-        m_CacheChunkSize = cache_chunk_size;
-        m_Dirty = true;
-    }
-
-    Uint8 GetCacheChunkSize() const {return m_CacheChunkSize;}
-
     void SetLocation_NetCache(const string& service_name,
-        Uint4 server_ip, unsigned short server_port,
         bool allow_xsite_conn);
 
     string GetNCServiceName() const {return m_NCServiceName;}
-    Uint4 GetNetCacheIP() const {return m_NetCacheIP;}
-    Uint2 GetNetCachePort() const {return m_NetCachePort;}
 
     bool IsXSiteProxyAllowed() const
     {
@@ -192,7 +174,6 @@ private:
 
     enum ENetCacheFlags {
         fNCF_AllowXSiteConn     = (1 << 0),
-        fNCF_ServerSpecified    = (1 << 1),
     };
     typedef unsigned TNetCacheFlags;
 
@@ -230,12 +211,8 @@ private:
     // "m_AppDomain-m_ICacheKey"
     string m_UniqueKey;
 
-    Uint8 m_CacheChunkSize;
-
     TNetCacheFlags m_NCFlags;
     string m_NCServiceName;
-    Uint4 m_NetCacheIP;
-    Uint2 m_NetCachePort;
 
     mutable bool m_Dirty;
 

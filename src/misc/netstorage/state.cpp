@@ -451,7 +451,7 @@ void CNetCache::SetLocator()
 {
     CNetService service(m_Client.GetService());
     m_ObjectLoc.SetLocation_NetCache(
-            service.GetServiceName(), 0, 0,
+            service.GetServiceName(),
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
             service.IsUsingXSiteProxy() ? true :
 #endif

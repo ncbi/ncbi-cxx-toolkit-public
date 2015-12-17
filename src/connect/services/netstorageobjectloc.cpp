@@ -46,8 +46,6 @@
 
 #define NCBI_USE_ERRCODE_X  NetStorage_Common
 
-#define DEFAULT_CACHE_CHUNK_SIZE (1024 * 1024)
-
 #define FILETRACK_STORAGE_CODE "FT"
 #define NETCACHE_STORAGE_CODE "NC"
 
@@ -67,10 +65,7 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
     m_AppDomain(app_domain),
     m_Timestamp(time(NULL)),
     m_Random(random_number),
-    m_CacheChunkSize(DEFAULT_CACHE_CHUNK_SIZE),
     m_NCFlags(0),
-    m_NetCacheIP(0),
-    m_NetCachePort(0),
     m_Dirty(true)
 {
     x_SetUniqueKeyFromRandom();
@@ -87,10 +82,7 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
     m_Location(eNFL_Unknown),
     m_AppDomain(app_domain),
     m_UserKey(unique_key),
-    m_CacheChunkSize(DEFAULT_CACHE_CHUNK_SIZE),
     m_NCFlags(0),
-    m_NetCacheIP(0),
-    m_NetCachePort(0),
     m_Dirty(true)
 {
     x_SetUniqueKeyFromUserDefinedKey();
@@ -125,10 +117,7 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
     m_CompoundIDPool(cid_pool),
     m_ObjectID(0),
     m_Location(eNFL_Unknown),
-    m_CacheChunkSize(DEFAULT_CACHE_CHUNK_SIZE),
     m_NCFlags(0),
-    m_NetCacheIP(0),
-    m_NetCachePort(0),
     m_Dirty(false),
     m_Locator(object_loc)
 {
@@ -140,10 +129,7 @@ CNetStorageObjectLoc::CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
     m_CompoundIDPool(cid_pool),
     m_ObjectID(0),
     m_Location(eNFL_Unknown),
-    m_CacheChunkSize(DEFAULT_CACHE_CHUNK_SIZE),
     m_NCFlags(0),
-    m_NetCacheIP(0),
-    m_NetCachePort(0),
     m_Dirty(false),
     m_Locator(object_loc)
 {
@@ -212,10 +198,9 @@ void CNetStorageObjectLoc::Parse(const string& object_loc)
         x_SetUniqueKeyFromRandom();
     }
 
-    // If this object is cacheable, load the size of cache chunks.
+    // Not used, though has to be read to be backward-compatible
     if (m_LocatorFlags & fLF_Cacheable) {
-        VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
-        m_CacheChunkSize = (Uint8) field.GetInteger();
+        field.GetNextNeighbor();
     }
 
     // Find storage info (optional).
@@ -234,12 +219,6 @@ void CNetStorageObjectLoc::Parse(const string& object_loc)
                 // Get the service name.
                 VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
                 m_NCServiceName = field.GetServiceName();
-                // Get the primary NetCache server IP and port.
-                if (m_NCFlags & fNCF_ServerSpecified) {
-                    VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
-                    m_NetCacheIP = field.GetIPv4Address();
-                    m_NetCachePort = field.GetPort();
-                }
             }
 
             break;
@@ -249,7 +228,6 @@ void CNetStorageObjectLoc::Parse(const string& object_loc)
 
 void CNetStorageObjectLoc::SetLocation_NetCache(
         const string& service_name,
-        Uint4 server_ip, unsigned short server_port,
         bool allow_xsite_conn)
 {
     m_Dirty = true;
@@ -258,11 +236,6 @@ void CNetStorageObjectLoc::SetLocation_NetCache(
     m_Location = eNFL_NetCache;
 
     m_NCServiceName = service_name;
-
-    if (server_ip != 0 && server_port != 0)
-        m_NCFlags |= fNCF_ServerSpecified;
-    else
-        m_NCFlags &= ~(TNetCacheFlags) fNCF_ServerSpecified;
 
     if (allow_xsite_conn)
         m_NCFlags |= fNCF_AllowXSiteConn;
@@ -281,7 +254,6 @@ void CNetStorageObjectLoc::SetLocation_FileTrack(EFileTrackSite ft_site)
 
     m_NCServiceName.clear();
     m_NCFlags = 0;
-    m_CacheChunkSize = DEFAULT_CACHE_CHUNK_SIZE;
 
     m_LocatorFlags &= ~(TLocatorFlags) (fLF_DevEnv | fLF_QAEnv);
 
@@ -351,9 +323,9 @@ void CNetStorageObjectLoc::x_Pack() const
         cid.AppendRandom((Uint4) m_Random);
     }
 
-    // If this object is cacheable, save the size of cache chunks.
+    // Not used, though has to be written to be backward-compatible
     if (m_LocatorFlags & fLF_Cacheable)
-        cid.AppendInteger((Int8) m_CacheChunkSize);
+        cid.AppendInteger(0);
 
     // Save storage info (optional).
     if (m_Location != eNFL_Unknown) {
@@ -368,9 +340,6 @@ void CNetStorageObjectLoc::x_Pack() const
             cid.AppendFlags(m_NCFlags);
             // Save the service name.
             cid.AppendServiceName(m_NCServiceName);
-            // Save the primary NetCache server IP and port.
-            if (m_NCFlags & fNCF_ServerSpecified)
-                cid.AppendIPv4SockAddr(m_NetCacheIP, m_NetCachePort);
             break;
         default:
             break;
@@ -461,9 +430,6 @@ void CNetStorageObjectLoc::ToJSON(CJsonNode& root) const
         root.SetInteger("Random", (Int8) m_Random);
     }
 
-    if (m_LocatorFlags & fLF_Cacheable)
-        root.SetInteger("CacheChunkSize", (Int8) m_CacheChunkSize);
-
     if (!m_LocationCode.empty())
         root.SetString("DefaultLocation", m_LocationCode);
 
@@ -472,11 +438,6 @@ void CNetStorageObjectLoc::ToJSON(CJsonNode& root) const
     switch (m_Location) {
     case eNFL_NetCache:
         storage_info.SetString("ServiceName", m_NCServiceName);
-        if (m_NCFlags & fNCF_ServerSpecified) {
-            storage_info.SetString("ServerHost",
-                    g_NetService_gethostnamebyaddr(m_NetCacheIP));
-            storage_info.SetInteger("ServerPort", m_NetCachePort);
-        }
         storage_info.SetBoolean("AllowXSiteConn", IsXSiteProxyAllowed());
 
         root.SetByKey("NetCache", storage_info);
