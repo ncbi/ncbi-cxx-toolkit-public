@@ -1315,7 +1315,7 @@ SQLSetEnvAttr(SQLHENV henv, SQLINTEGER Attribute, SQLPOINTER Value, SQLINTEGER S
 	case SQL_ATTR_OUTPUT_NTS:
 		env->attr.output_nts = i_val;
 		/* TODO - Make this really work */
-		env->attr.output_nts = SQL_TRUE;
+        /* env->attr.output_nts = SQL_TRUE; */
 		break;
 	default:
 		odbc_errs_add(&env->errs, "HY092", NULL);
