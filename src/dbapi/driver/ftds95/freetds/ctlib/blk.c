@@ -760,7 +760,7 @@ _blk_get_col_data(TDSBCPINFO *bulk, TDSCOLUMN *bindcol, int offset)
 		srcfmt.maxlength = srclen;
 
 		destfmt.datatype  = _ct_get_client_type(bindcol);
-		destfmt.maxlength = bindcol->column_size;
+        destfmt.maxlength = bindcol->on_server.column_size;
 		destfmt.precision = bindcol->column_prec;
 		destfmt.scale     = bindcol->column_scale;
 
