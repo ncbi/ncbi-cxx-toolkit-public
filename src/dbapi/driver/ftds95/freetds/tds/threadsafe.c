@@ -349,6 +349,9 @@ tds_getservice(const char *name)
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_PASSIVE;
+#ifdef AI_CANONNAME
+    hints.ai_flags |= AI_CANONNAME;
+#endif
 	res = NULL;
 	if (getaddrinfo(NULL, name, &hints, &res))
 		return 0;
