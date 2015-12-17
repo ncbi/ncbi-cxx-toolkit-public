@@ -6,9 +6,9 @@ SRC = challenge config convert data des getmac iconv locale login md4 md5 mem ne
       tds_checks replacements hmac_md5 gssapi sspi
 
 CPPFLAGS = -D_FREETDS_LIBRARY_SOURCE -DHAVE_CONFIG_H=1 $(FTDS64_INCLUDE) $(ORIG_CPPFLAGS)
+LIBS    = $(FTDS64_LIBS) $(NETWORK_LIBS) $(C_LIBS)
+LINK    = $(C_LINK)
 
 WATCHERS = ucko
 
-LIBS = $(KRB5_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
-USES_LIBRARIES =  \
-    $(KRB5_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
+USES_LIBRARIES = $(FTDS64_LIBS) $(NETWORK_LIBS) $(C_LIBS)
