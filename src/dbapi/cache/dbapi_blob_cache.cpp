@@ -182,10 +182,8 @@ public:
                         int                      version,
                         const string&            subkey,
                         unsigned                 buf_size = kWriterBufferSize)
-    : m_GoodStateFlag(true),
-      m_Conn(conn),
+    : m_Conn(conn),
       m_Key(key),
-      m_Version(version),
       m_SubKey(subkey),
       m_Buffer(0),
       m_BytesInBuffer(0),
@@ -217,7 +215,7 @@ public:
                 } else { // use temp file instead
                     m_TmpFile.reset(
                         CFile::CreateTmpFileEx(m_TempDir, m_TempPrefix));
-                    for (unsigned i = 0; i < m_BlobSize;) {
+                    for (size_t i = 0; i < m_BlobSize;) {
                         char buf[1024];
                         size_t br = rs->Read(buf, sizeof(buf));
                         m_TmpFile->write(buf, br);
@@ -289,19 +287,17 @@ private:
     auto_ptr<fstream>     m_TmpFile;
     string                m_TempDir;
     string                m_TempPrefix;
-    bool                  m_GoodStateFlag; //!< Stream is in the good state
 
     IConnection*          m_Conn;
 
     string                m_Key;
-    int                   m_Version;
     string                m_SubKey;
 
     unsigned char*        m_Buffer;
-    unsigned int          m_BytesInBuffer;
-    unsigned int          m_BlobSize;
-    unsigned int          m_ReadPos;
-    unsigned int          m_MemBufferSize;
+    size_t                m_BytesInBuffer;
+    size_t                m_BlobSize;
+    size_t                m_ReadPos;
+    size_t                m_MemBufferSize;
 };
 
 
@@ -313,7 +309,7 @@ public:
                       const string&            key,
                       int                      version,
                       const string&            subkey,
-                      unsigned int             buffer_size = kWriterBufferSize)
+                      size_t                   buffer_size = kWriterBufferSize)
     : m_Cache(cache),
       m_TmpFile(0),
       m_GoodStateFlag(true),
@@ -363,7 +359,7 @@ public:
                 "Cannot call IWriter::Write after Flush");
         }
 
-        unsigned int new_buf_length = m_BytesInBuffer + count;
+        size_t new_buf_length = m_BytesInBuffer + count;
 
         if (m_Buffer) {
             // Filling the buffer while we can
@@ -544,8 +540,8 @@ private:
     string                m_SubKey;
 
     unsigned char*        m_Buffer;
-    unsigned int          m_BytesInBuffer;
-    unsigned int          m_MemBufferSize;
+    size_t                m_BytesInBuffer;
+    size_t                m_MemBufferSize;
 };
 
 

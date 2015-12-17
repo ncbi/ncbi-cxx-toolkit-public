@@ -139,8 +139,8 @@ int CDBAPI_CacheTest::Run(void)
                                                1,
                                                "");
 
-        int s = strlen(szTest);
-        assert(blob_size == size_t(s));
+        size_t s = strlen(szTest);
+        assert(blob_size == s);
 
         char blob_buf[1024] = {0,};
         blob_cache->Read("key_1",
@@ -155,7 +155,7 @@ int CDBAPI_CacheTest::Run(void)
         {
         auto_ptr<IWriter> wrt(blob_cache->GetWriteStream("key_3", 1, "sk1"));
         size_t bytes_written;
-        int s = strlen(szTest);
+        size_t s = strlen(szTest);
         wrt->Write(szTest, s, &bytes_written);
         wrt->Flush();
         }

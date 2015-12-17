@@ -271,7 +271,7 @@ unsigned int CCachedRowInfo::FindParamPosInternal(const string& name) const
 
     const size_t param_num = m_Info.size();
 
-    for (size_t i = 0; i < param_num; ++i) {
+    for (unsigned int i = 0; i < param_num; ++i) {
         if (m_Info[i].m_Name == name) {
             return i;
         }

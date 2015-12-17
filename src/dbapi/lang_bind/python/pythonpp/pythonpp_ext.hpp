@@ -759,13 +759,6 @@ public:
         delete static_cast<T*>( obj );
     }
 
-protected:
-    static void PrepareForPython(CExtModule<T>* self)
-    {
-        // Borrowed reference.
-        PyObject_Init( self, &GetType() );
-    }
-
 private:
     typedef vector<SMethodDef>  TMethodHndlList;
     static TMethodHndlList      sm_MethodHndlList;

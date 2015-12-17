@@ -61,7 +61,6 @@ protected:
     unsigned GetTimeout(const CArgs& args);
 
 private:
-    IDataSource*            m_Ds;
     auto_ptr<IConnection>   m_Conn;
     CDBAPI_Cache            m_Cache;
 };

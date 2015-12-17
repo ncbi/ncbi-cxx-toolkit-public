@@ -152,7 +152,6 @@ private:
     TRecordSet  m_RecordSet;
     auto_ptr<const IResultSetMetaData> m_MetaData;
     size_t      m_CurRowNum;
-    size_t      m_CurColNum;
 };
 
 CCachedResultSet::CCachedResultSet(IResultSet& other)
@@ -160,7 +159,6 @@ CCachedResultSet::CCachedResultSet(IResultSet& other)
 , m_ColumsNum(other.GetTotalColumns())
 , m_MetaData(other.GetMetaData(eTakeOwnership))
 , m_CurRowNum(0)
-, m_CurColNum(0)
 {
     while (other.Next()) {
         m_RecordSet.push_back(TRecord());

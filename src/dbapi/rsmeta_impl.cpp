@@ -81,7 +81,7 @@ unsigned int CResultSetMetaData::FindParamPosInternal(const string& name) const
 {
     const size_t param_num = m_colInfo.size();
 
-    for (size_t i = 0; i < param_num; ++i) {
+    for (unsigned int i = 0; i < param_num; ++i) {
         if (m_colInfo[i].m_name == name) {
             return i;
         }
@@ -93,7 +93,7 @@ unsigned int CResultSetMetaData::FindParamPosInternal(const string& name) const
 
 unsigned int CResultSetMetaData::GetTotalColumns() const 
 {
-    return m_colInfo.size();
+    return (unsigned int)m_colInfo.size();
 }
 
 EDB_Type CResultSetMetaData::GetType(const CDBParamVariant& param) const 

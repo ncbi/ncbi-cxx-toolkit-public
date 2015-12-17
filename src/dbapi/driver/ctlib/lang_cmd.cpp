@@ -202,7 +202,7 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
     CS_SMALLINT   indicator  = param.IsNULL() ? -1 : 0;
 
     {{
-        size_t l = param_name.copy(param_fmt.name, CS_MAX_NAME-1);
+        CS_INT l = (CS_INT) param_name.copy(param_fmt.name, CS_MAX_NAME-1);
         param_fmt.name[l] = '\0';
         param_fmt.namelen = l;
     }}

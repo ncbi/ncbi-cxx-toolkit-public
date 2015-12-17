@@ -40,6 +40,9 @@
 #pragma warning(disable: 4005)
 #endif
 
+#ifdef HAVE_FSTAT
+#  undef HAVE_FSTAT
+#endif
 #ifdef HAVE_GETHOSTBYNAME_R
 #  undef HAVE_GETHOSTBYNAME_R
 #endif
@@ -50,6 +53,9 @@
 
 #include <Python.h>
 
+#ifdef HAVE_FSTAT
+#  undef HAVE_FSTAT
+#endif
 #ifdef HAVE_GETHOSTBYNAME_R
 #  undef HAVE_GETHOSTBYNAME_R
 #endif

@@ -193,7 +193,7 @@ CDbapiTestSpeedApp::RunSample(void)
     if (args["g"]) {
         host_name = args["g"].AsString();
 
-        int i = NStr::Find(host_name, ":");
+        SIZE_TYPE i = NStr::Find(host_name, ":");
         if ( i > 0 ) {
             port_num = host_name.substr( i + 1 );
             host_name.resize(i);
@@ -332,11 +332,11 @@ CDbapiTestSpeedApp::RunSample(void)
                     return 1;
                 }
                 char buf[10240];
-                int sz;
+                size_t sz;
                 while ( f.good() && !f.eof() ) {
                     f.read( buf, sizeof(buf) );
                     sz = (size_t)f.gcount();
-                    if ( sz <= 0 ) break;
+                    if ( sz == 0 ) break;
                     pTxt.Append(buf, sz);
                     if ( sz != sizeof(buf) ) break;
                 }
@@ -472,7 +472,8 @@ CDbapiTestSpeedApp::FetchFile(const string& table_name, bool readItems)
                         // cout<< "j=" << j
                         //    << " CurrentItemNo()=" << r->CurrentItemNo() << "\n";
                         for ( ;; ) {
-                            int len_txt = r->ReadItem(txt_buf, sizeof(txt_buf), &isNull);
+                            size_t len_txt = r->ReadItem
+                                (txt_buf, sizeof(txt_buf), &isNull);
                             //cout << "len_txt=" << len_txt << " isNull=" << isNull << "\n";
                             if ( isNull || len_txt<=0 ) break;
                             f.write(txt_buf, len_txt);
@@ -497,8 +498,9 @@ CDbapiTestSpeedApp::FetchFile(const string& table_name, bool readItems)
                             char txt_buf[10240];
                             //cout << "text_val.Size()=" << text_val.Size() << "\n";
                             for ( ;; ) {
-                                int len_txt = text_val.Read( txt_buf, sizeof(txt_buf) );
-                                if ( len_txt<=0 ) break;
+                                size_t len_txt
+                                    = text_val.Read(txt_buf, sizeof(txt_buf));
+                                if (len_txt == 0) break;
                                 f.write(txt_buf, len_txt);
                             }
                         }
@@ -549,8 +551,8 @@ CDbapiTestSpeedApp::FetchResults (const string& table_name, bool readItems)
                          rt != eDB_DateTime && rt != eDB_SmallDateTime ) {
                         bool isNull;
                         char buf[1024];
-                        int sz=0;
-                        while ( j == abs(r->CurrentItemNo()) ) {
+                        size_t sz=0;
+                        while ( j == (unsigned int) r->CurrentItemNo() ) {
                             sz += r->ReadItem(buf, sizeof(buf), &isNull);
                         }
                         continue;

@@ -134,7 +134,7 @@ CDB_Params::GetParamNum(unsigned int param_no, const string& param_name)
                 // Parameter not found ...
 		CHECK_DRIVER_ERROR(IsLocked(), "Parameters are locked. New bindins are not allowed.", 20001);
                 m_Params.resize(m_Params.size() + 1);
-                return m_Params.size() - 1;
+                return (unsigned int)(m_Params.size() - 1);
             }
         }
     } else {

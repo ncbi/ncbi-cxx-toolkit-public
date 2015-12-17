@@ -286,7 +286,7 @@ size_t CResultSet::Read(void* buf, size_t size)
         return 0;
     }
     else {
-        int ret = m_rs->ReadItem(buf, size, &m_wasNull);
+        size_t ret = m_rs->ReadItem(buf, size, &m_wasNull);
         if( ret == 0 ) {
             m_column = m_rs->CurrentItemNo();
         }

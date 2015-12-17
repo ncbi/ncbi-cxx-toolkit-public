@@ -2878,7 +2878,7 @@ BOOST_AUTO_TEST_CASE(Test_NVARCHAR)
         const string kTableName = "#test_nvarchar", kText(5, 'A');
         const TStringUCS2 kTextUCS2(5, (TCharUCS2)'A');
         const EDB_Type kTypes[] = { eDB_Char, eDB_LongChar, eDB_VarChar };
-        const unsigned int kNumTypes = sizeof(kTypes) / sizeof(*kTypes);
+        const Int4 kNumTypes = sizeof(kTypes) / sizeof(*kTypes);
 
         auto_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
 

@@ -2707,7 +2707,7 @@ void CDB_Numeric::x_MakeFromString(unsigned int precision, unsigned int scale,
         precision = (unsigned int) s.size();
         if (scale == 0) {
             SIZE_TYPE dot_pos = s.find('.');
-            scale = (dot_pos == NPOS) ? 0 : precision - dot_pos;
+            scale = (dot_pos == NPOS) ? 0 : precision - (unsigned int) dot_pos;
             if (scale > 1)
                 --scale;
         }

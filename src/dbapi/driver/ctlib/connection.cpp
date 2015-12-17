@@ -740,12 +740,9 @@ bool CTL_Connection::x_SendData(I_ITDescriptor& descr_in, CDB_Stream& stream,
         return false;
     }
 
-    char   buff[1800];
-    size_t len = 0;
-    size_t invalid_len = 0;
-
     while (size > 0) {
-        len = (CS_INT) stream.Read(buff + invalid_len, sizeof(buff) - invalid_len - 1);
+        char   buff[1800];
+        CS_INT len = (CS_INT) stream.Read(buff, sizeof(buff) - 1);
 
         if (!len) {
             Check(ct_cancel(0, cmd, CS_CANCEL_ALL));
