@@ -406,6 +406,10 @@ tds_bcp_send_record(TDSSOCKET *tds, TDSBCPINFO *bcpinfo, tds_bcp_get_col_data ge
 			save_data = bindcol->column_data;
 			assert(bindcol->column_data == NULL);
 			if (bindcol->bcp_column_data->is_null) {
+                if ( !bindcol->column_nullable
+                     &&  !is_nullable_type(bindcol->on_server.column_type) ) {
+                    return TDS_FAIL;
+                }
 				bindcol->column_cur_size = -1;
             } else if (has_text) {
                 bindcol->column_cur_size = bindcol->bcp_column_data->datalen;
