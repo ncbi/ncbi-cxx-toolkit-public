@@ -3045,7 +3045,7 @@ AC_CHECK_HEADERS(iostream  iostream.h)
 AC_CHECK_HEADERS(fstream   fstream.h)
 AC_CHECK_HEADERS(strstream strstream.h strstrea.h)
 
-AC_CHECK_HEADERS(inttypes.h limits)
+AC_CHECK_HEADERS(inttypes.h limits limits.h)
 
 ### Check for the platform (very roughly)
 AC_CHECK_HEADERS(unistd.h,  x_have_unistd="yes")
@@ -3136,10 +3136,11 @@ AC_CHECK_HEADERS(atomic.h cpuid.h dlfcn.h ieeefp.h poll.h sys/epoll.h \
 case "$host_os" in
    cygwin*) AC_CHECK_HEADERS(winternl.h) ;;
 esac
-# for FreeTDS 0.6x
-AC_CHECK_HEADERS(arpa/inet.h errno.h malloc.h netdb.h \
-                 netinet/in.h netinet/tcp.h paths.h signal.h \
-                 sys/ioctl.h sys/select.h sys/socket.h sys/time.h wchar.h)
+# for FreeTDS
+AC_CHECK_HEADERS(arpa/inet.h errno.h libgen.h locale.h malloc.h netdb.h \
+                 netinet/in.h netinet/tcp.h paths.h signal.h stddef.h \
+                 sys/ioctl.h sys/select.h sys/socket.h sys/time.h \
+                 valgrind/memcheck.h wchar.h)
 AC_HEADER_TIME
 
 ## gethostbyname_r() -- 2 different variants: 5-arg (Solaris), 6-arg (Linux).
@@ -3355,12 +3356,12 @@ fi
 ### Check for other standard library functions
 
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS(euidaccess atoll basename lchown fseeko getgrouplist \
-               getpagesize getpass getpassphrase getpwuid getrusage \
-               gettimeofday getuid memrchr readpassphrase readv usleep \
-               asprintf vasprintf vsnprintf select statfs statvfs \
-               strcasecmp strlcat strlcpy strdup strndup strtok_r \
-               sysmp timegm utimes lutimes writev)
+AC_CHECK_FUNCS(alarm asprintf atoll basename euidaccess fseeko fstat \
+               getgrouplist getopt getpagesize getpass getpassphrase \
+               getpwuid getrusage gettimeofday getuid lchown lutimes memrchr \
+               putenv readpassphrase readv select setenv statfs statvfs \
+               strcasecmp strdup strlcat strlcpy strndup strsep strtok_r \
+               sysmp timegm usleep utimes vasprintf vsnprintf writev)
 AC_LANG_POP(C)
 
 AC_TYPE_SIGNAL
@@ -3470,6 +3471,7 @@ if test "${with_universal-no}" = "no"; then
    AC_CHECK_SIZEOF(long long)
    AC_CHECK_SIZEOF(short)
    AC_CHECK_SIZEOF(void*)
+   AC_CHECK_SIZEOF(wchar_t, [], [#include <wchar.h>])
    AC_CHECK_SIZEOF(__int64)
 fi
 AC_CHECK_TYPES([intptr_t, uintptr_t])
@@ -3988,7 +3990,7 @@ test "$ac_cv_func_getnameinfo" = "yes" && \
   AC_DEFINE(HAVE_GETNAMEINFO, 1,
             [Define to 1 if you have the `getnameinfo' function.])
 AC_CHECK_FUNCS(freehostent gethostent_r getipnodebyaddr getipnodebyname \
-               inet_ntop)
+               inet_ntop socketpair)
 LIBS=$orig_LIBS
 
 
@@ -4042,7 +4044,7 @@ if test -n "$DEMANGLE_LIBS$RT_LIBS"; then
     LIBS="$DEMANGLE_LIBS $RT_LIBS $LIBS"
     orig_LIBS="$DEMANGLE_LIBS $RT_LIBS $orig_LIBS"
 fi
-AC_CHECK_FUNCS([nanosleep sched_yield])
+AC_CHECK_FUNCS([nanosleep pthread_condattr_setclock sched_yield])
 
 dnl NCBI_CHECK_LIBS(ICONV, iconv, iconv)
 # We need to include <iconv.h>, since some implementations rename the symbols.
@@ -4976,12 +4978,12 @@ case "$ODBC_PATH" in
       AC_CHECK_HEADERS(odbcss.h, [], [], [#include <sql.h>])
 
       AC_CHECK_FUNCS(SQLGetPrivateProfileString)
-      AC_CHECK_TYPES(SQLLEN,,,[#include <sqltypes.h>])
+      AC_CHECK_TYPES([SQLLEN, SQLSETPOSIROW],,,[#include <sqltypes.h>])
 
       AC_CACHE_CHECK([whether SQLColAttribute's last argument is an SQLLEN *],
          ncbi_cv_func_sqlcolattribute_sqllen,
          [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-            [[#include <sql.h>>
+            [[#include <sql.h>
               SQLRETURN SQL_API SQLColAttribute
                 (SQLHSTMT sh, SQLUSMALLINT cn, SQLUSMALLINT fi, SQLPOINTER ca,
                  SQLSMALLINT bl, SQLSMALLINT *sl, SQLLEN *na);]],
@@ -5004,6 +5006,7 @@ case "$ODBC_PATH" in
    ODBC_LIBS=
    dnl AC_DEFINE(HAVE_SQLGETPRIVATEPROFILESTRING, 1)
    AC_DEFINE(HAVE_SQLLEN, 1)
+   AC_DEFINE(HAVE_SQLSETPOSIROW, 1)
    AC_DEFINE(NCBI_SQLCOLATTRIBUTE_SQLLEN, 1)
    ;;
  *)

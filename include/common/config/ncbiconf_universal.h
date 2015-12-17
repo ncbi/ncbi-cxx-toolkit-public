@@ -56,6 +56,7 @@
 #  endif
 #  define SIZEOF_LONG_LONG     8
 #  define SIZEOF_SHORT         2
+#  define SIZEOF_WCHAR_T       4
 /* Define these macros to literal constants rather than calculating them,
  * to avoid redefinition warnings when using some third-party libraries. */
 #  if LONG_BIT == 64

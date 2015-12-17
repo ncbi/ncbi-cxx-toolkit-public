@@ -110,6 +110,9 @@
 /* Define to 1 if necessary to get FIONBIO (e.g., on Solaris) */
 /* #undef BSD_COMP */
 
+/* Define to 1 if you have the `alarm' function. */
+#define HAVE_ALARM 1
+
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #define HAVE_ARPA_INET_H 1
 
@@ -176,6 +179,9 @@
 
 /* Define to 1 if you have the `fseeko' function. */
 #define HAVE_FSEEKO 1
+
+/* Define to 1 if you have the `fstat' function. */
+#define HAVE_FSTAT 1
 
 /* Define to 1 if you have the <fstream> header file. */
 #define HAVE_FSTREAM 1
@@ -285,6 +291,9 @@
 /* Define to 1 if FreeTDS libraries are available. */
 /* #undef HAVE_LIBFTDS */
 
+/* Define to 1 if you have the <libgen.h> header file. */
+#define HAVE_LIBGEN_H 1
+
 /* Define to 1 if you have libglut. */
 /* #undef HAVE_LIBGLUT */
 
@@ -349,6 +358,12 @@
 /* Define to 1 if you have the <limits> header file. */
 #define HAVE_LIMITS 1
 
+/* Define to 1 if you have the <limits.h> header file. */
+#define HAVE_LIMITS_H 1
+
+/* Define to 1 if you have the <locale.h> header file. */
+#define HAVE_LOCALE_H 1
+
 /* Define to 1 if you have the `localtime_r' function. */
 #define HAVE_LOCALTIME_R 1
 
@@ -409,11 +424,17 @@
 /* Define to 1 if you have the `pthread_atfork' function. */
 /* #undef HAVE_PTHREAD_ATFORK */
 
+/* Define to 1 if you have the `pthread_condattr_setclock' function. */
+/* #undef HAVE_PTHREAD_CONDATTR_SETCLOCK */
+
 /* Define to 1 if pthread mutexes are available. */
 #define HAVE_PTHREAD_MUTEX 1
 
 /* Define to 1 if you have the `pthread_setconcurrency' function. */
 #define HAVE_PTHREAD_SETCONCURRENCY 1
+
+/* Define to 1 if you have the `putenv' function. */
+#define HAVE_PUTENV 1
 
 /* Define to 1 if Python 2.3 libraries are available. */
 /* #undef HAVE_PYTHON23 */
@@ -444,11 +465,17 @@
 /* Define to 1 if you have `union semun'. */
 #define HAVE_SEMUN 1
 
+/* Define to 1 if you have the `setenv' function. */
+#define HAVE_SETENV 1
+
 /* Define to 1 if you have the <signal.h> header file. */
 #define HAVE_SIGNAL_H 1
 
 /* Define to 1 if `sin_len' is a member of `struct sockaddr_in'. */
 #define HAVE_SIN_LEN 1
+
+/* Define to 1 if you have the `socketpair' function. */
+#define HAVE_SOCKETPAIR 1
 
 /* Define to 1 if the system has the type `socklen_t'. */
 #define HAVE_SOCKLEN_T 1
@@ -458,6 +485,9 @@
 
 /* Define to 1 if the system has the type `SQLLEN'. */
 #define HAVE_SQLLEN 1
+
+/* Define to 1 if the system has the type `SQLSETPOSIROW'. */
+#define HAVE_SQLSETPOSIROW 1
 
 /* Define to 1 if you have the `statfs' function. */
 #define HAVE_STATFS 1

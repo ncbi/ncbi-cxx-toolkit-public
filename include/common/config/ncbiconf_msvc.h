@@ -48,6 +48,7 @@
 #define SIZEOF_LONG         4
 #define SIZEOF_LONG_DOUBLE  8
 #define SIZEOF_SHORT        2
+#define SIZEOF_WCHAR_T      2
 
 #define STDC_HEADERS     1
 
@@ -56,6 +57,7 @@
 #define HAVE_IOSTREAM    1
 #define HAVE_IOSTREAM_H  1
 #define HAVE_LIMITS      1
+#define HAVE_LIMITS_H    1
 #define HAVE_STRSTREA_H  1
 #define HAVE_STRSTREAM   1
 #define HAVE_SYS_STAT_H  1
@@ -88,6 +90,7 @@ typedef __int64 ssize_t;
 #  define SIZEOF_SIZE_T       8
 #  define SIZEOF_VOIDP        8
 #  define NCBI_PLATFORM_BITS  64
+#  define NCBI_SQLCOLATTRIBUTE_SQLLEN 1
 #else
 #  define HOST         "i386-pc-win32"
 #  define HOST_OS      "win32"
@@ -100,14 +103,20 @@ typedef   int   ssize_t;
 
 #define HAVE_LIBKRB5                    1
 
-/* FreeTDS v0.63 */
+/* FreeTDS */
 
+#define HAVE_ALARM                      1
 #define HAVE_ATOLL                      1
 #define HAVE_ERRNO_H                    1
+#define HAVE_FSTAT                      1
 #define HAVE_GETHOSTNAME                1
 #define HAVE_INT64                      1
+#define HAVE_LOCALE_H                   1
 #define HAVE_MALLOC_H                   1
 #define HAVE_MEMORY_H                   1
+#define HAVE_PUTENV                     1
+#define HAVE_SQLLEN                     1
+#define HAVE_SQLSETPOSIROW              1
 #define HAVE_STDLIB_H                   1
 #define HAVE_STRING_H                   1
 

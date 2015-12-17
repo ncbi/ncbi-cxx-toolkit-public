@@ -3,6 +3,9 @@
 /* Define to 1 if necessary to get FIONBIO (e.g., on Solaris) */
 #undef BSD_COMP
 
+/* Define to 1 if you have the `alarm' function. */
+#undef HAVE_ALARM
+
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #undef HAVE_ARPA_INET_H
 
@@ -98,6 +101,9 @@
 /* Define to 1 if you have the `fseeko' function. */
 #undef HAVE_FSEEKO
 
+/* Define to 1 if you have the `fstat' function. */
+#undef HAVE_FSTAT
+
 /* Define to 1 if you have the <fstream> header file. */
 #undef HAVE_FSTREAM
 
@@ -141,6 +147,9 @@
 
 /* Define to 1 if you have the `getnameinfo' function. */
 #undef HAVE_GETNAMEINFO
+
+/* Define to 1 if you have the `getopt' function. */
+#undef HAVE_GETOPT
 
 /* Define to 1 if you have the `getpagesize' function. */
 #undef HAVE_GETPAGESIZE
@@ -238,6 +247,9 @@
 
 /* Define to 1 if libgcrypt is available. */
 #undef HAVE_LIBGCRYPT
+
+/* Define to 1 if you have the <libgen.h> header file. */
+#undef HAVE_LIBGEN_H
 
 /* Define to 1 if libgif is available. */
 #undef HAVE_LIBGIF
@@ -364,6 +376,12 @@
 /* Define to 1 if you have the <limits> header file. */
 #undef HAVE_LIMITS
 
+/* Define to 1 if you have the <limits.h> header file. */
+#undef HAVE_LIMITS_H
+
+/* Define to 1 if you have the <locale.h> header file. */
+#undef HAVE_LOCALE_H
+
 /* Define to 1 if you have the `localtime_r' function. */
 #undef HAVE_LOCALTIME_R
 
@@ -436,6 +454,9 @@
 /* Define to 1 if you have the `pthread_atfork' function. */
 #undef HAVE_PTHREAD_ATFORK
 
+/* Define to 1 if you have the `pthread_condattr_setclock' function. */
+#undef HAVE_PTHREAD_CONDATTR_SETCLOCK
+
 /* Define to 1 if pthread mutexes are available. */
 #undef HAVE_PTHREAD_MUTEX
 
@@ -444,6 +465,9 @@
 
 /* Define to 1 if the PUBSEQ service is available. */
 #undef HAVE_PUBSEQ_OS
+
+/* Define to 1 if you have the `putenv' function. */
+#undef HAVE_PUTENV
 
 /* Define to 1 if Python libraries are available. */
 #undef HAVE_PYTHON
@@ -480,11 +504,17 @@
 /* Define to 1 if you have `union semun'. */
 #undef HAVE_SEMUN
 
+/* Define to 1 if you have the `setenv' function. */
+#undef HAVE_SETENV
+
 /* Define to 1 if you have the <signal.h> header file. */
 #undef HAVE_SIGNAL_H
 
 /* Define to 1 if `sin_len' is a member of `struct sockaddr_in'. */
 #undef HAVE_SIN_LEN
+
+/* Define to 1 if you have the `socketpair' function. */
+#undef HAVE_SOCKETPAIR
 
 /* Define to 1 if the system has the type `socklen_t'. */
 #undef HAVE_SOCKLEN_T
@@ -501,11 +531,17 @@
 /* Define to 1 if the system has the type `SQLLEN'. */
 #undef HAVE_SQLLEN
 
+/* Define to 1 if the system has the type `SQLSETPOSIROW'. */
+#undef HAVE_SQLSETPOSIROW
+
 /* Define to 1 if you have the `statfs' function. */
 #undef HAVE_STATFS
 
 /* Define to 1 if you have the `statvfs' function. */
 #undef HAVE_STATVFS
+
+/* Define to 1 if you have the <stddef.h> header file. */
+#undef HAVE_STDDEF_H
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
@@ -536,6 +572,9 @@
 
 /* Define to 1 if you have the `strndup' function. */
 #undef HAVE_STRNDUP
+
+/* Define to 1 if you have the `strsep' function. */
+#undef HAVE_STRSEP
 
 /* Define to 1 if you have the <strstream> header file. */
 #undef HAVE_STRSTREAM
@@ -621,6 +660,9 @@
 
 /* Define to 1 if you have the `utimes' function. */
 #undef HAVE_UTIMES
+
+/* Define to 1 if you have the <valgrind/memcheck.h> header file. */
+#undef HAVE_VALGRIND_MEMCHECK_H
 
 /* Define to 1 if you have the `vasprintf' function. */
 #undef HAVE_VASPRINTF
@@ -878,6 +920,9 @@
 
 /* The size of `void*', as computed by sizeof. */
 #undef SIZEOF_VOIDP
+
+/* The size of `wchar_t', as computed by sizeof. */
+#undef SIZEOF_WCHAR_T
 
 /* The size of `__int64', as computed by sizeof. */
 #undef SIZEOF___INT64
