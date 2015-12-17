@@ -443,6 +443,8 @@ tds_select(TDSSOCKET * tds, unsigned tds_sel, int timeout_seconds)
 		if (rc < 0) {
 			switch (sock_errno) {
 			case TDSSOCK_EINTR:
+            case EAGAIN:
+            case TDSSOCK_EINPROGRESS:
 				/* FIXME this should be global maximun, not loop one */
 				seconds += poll_seconds;
 				break;	/* let interrupt handler be called */
@@ -536,7 +538,7 @@ tds_socket_write(TDSCONNECTION *conn, TDSSOCKET *tds, const unsigned char *buf, 
 		return len;
 
 	err = sock_errno;
-	if (0 == len || TDSSOCK_WOULDBLOCK(err))
+    if (0 == len || TDSSOCK_WOULDBLOCK(err) || err == TDSSOCK_EINTR)
 		return 0;
 
 	assert(len < 0);
