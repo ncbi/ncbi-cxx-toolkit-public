@@ -760,14 +760,19 @@ public:
     /// Get a set of entries(decoded) received from the client.
     /// Also includes "indexes" if "indexes_as_entries" in the
     /// constructor was TRUE (default).
+    /// NOTE: In the "fParseInputOnDemand" mode not all of the entries
+    ///       may be loaded at the time of the call.
     const TCgiEntries& GetEntries(void) const;
     TCgiEntries& GetEntries(void);
 
     /// Get entry value by name
     ///
-    /// NOTE:  There can be more than one entry with the same name;
-    ///        only one of these entry will be returned.
-    /// To get all matches, use GetEntries() and "multimap::" member functions.
+    /// NOTE 1: There can be more than one entry with the same name;
+    ///         only one of these entry will be returned. To get all matches
+    ///         use GetEntries() and "multimap::" member functions.
+    /// NOTE 2: In the "fParseInputOnDemand" mode not all of the entries
+    ///         may be loaded at the time of the call, so -- use
+    ///         GetPossiblyUnparsedEntry() instead.
     const CCgiEntry& GetEntry(const string& name, bool* is_found = 0) const;
 
     /// Get next entry when parsing input on demand.
@@ -796,9 +801,12 @@ public:
     TCgiIndexes& GetIndexes(void);
 
     enum ESessionCreateMode {
-        eCreateIfNotExist,     ///< If Session does not exist the new one will be created    
-        eDontCreateIfNotExist, ///< If Session does not exist the exception will be thrown
-        eDontLoad              ///< Do not try to load or create session
+        /// If Session does not exist the new one will be created    
+        eCreateIfNotExist,
+        /// If Session does not exist the exception will be thrown
+        eDontCreateIfNotExist,
+        ///< Do not try to load or create session
+        eDontLoad
     };
 
     /// Get session
