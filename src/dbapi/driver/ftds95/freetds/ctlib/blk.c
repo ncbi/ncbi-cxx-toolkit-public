@@ -110,6 +110,8 @@ blk_bind(CS_BLKDESC * blkdesc, CS_INT item, CS_DATAFMT * datafmt, CS_VOID * buff
 		colinfo->column_lenbind  = NULL;
 
 		return CS_SUCCEED;
+    } else if (datafmt == NULL) {
+        return CS_FAIL;
 	}
 
 	/*
@@ -751,9 +753,10 @@ _blk_get_col_data(TDSBCPINFO *bulk, TDSCOLUMN *bindcol, int offset)
 	}
 
 	tdsdump_log(TDS_DBG_INFO1, "blk_get_col_data srctype = %d \n", srctype);
-	tdsdump_log(TDS_DBG_INFO1, "blk_get_col_data datalen = %d \n", *datalen);
+    tdsdump_log(TDS_DBG_INFO1, "blk_get_col_data datalen = %d \n",
+                datalen ? *datalen : -1);
 
-	if (*datalen) {
+    if (datalen) {
 		if (*datalen == CS_UNUSED) {
 			switch (srctype) {
 			case CS_LONG_TYPE:	    srclen = 8; break;
