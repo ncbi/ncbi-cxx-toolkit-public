@@ -2054,8 +2054,13 @@ _ct_get_server_type(TDSSOCKET *tds, int datatype)
 	case CS_UNIQUE_TYPE:		return SYBUNIQUE;
 	case CS_LONGBINARY_TYPE:	return SYBLONGBINARY;
 	case CS_UNICHAR_TYPE:		return SYBVARCHAR;
+    case CS_LONGCHAR_TYPE:      return SYBLONGCHAR;
 
 	default:
+        /*
+         * SENSITIVITY, BOUNDARY, VOID, USHORT, BLOB, DATE, TIME, UNITEXT,
+         * XML, USER
+         */
 		return -1;
 		break;
 	}
