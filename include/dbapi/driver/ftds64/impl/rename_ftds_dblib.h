@@ -1,5 +1,5 @@
-#ifndef DBAPI_DRIVER_FTDS___NCBI_FTDS_RENAME_SYBDB_VER64__H
-#define DBAPI_DRIVER_FTDS___NCBI_FTDS_RENAME_SYBDB_VER64__H
+#ifndef DBAPI_DRIVER_FTDS64_IMPL___RENAME_FTDS_DBLIB__H
+#define DBAPI_DRIVER_FTDS64_IMPL___RENAME_FTDS_DBLIB__H
 
 /*  $Id$
  * ===========================================================================
@@ -64,16 +64,19 @@
 #  define dbalttype dbalttype_ver64
 #  define dbaltutype dbaltutype_ver64
 #  define dbaltbind dbaltbind_ver64
+#  define dbanullbind dbanullbind_ver64
 #  define dbbind dbbind_ver64
 #  define dbbylist dbbylist_ver64
 #  define dbcancel dbcancel_ver64
 #  define dbcanquery dbcanquery_ver64
+#  define dbchange dbchange_ver64
 #  define dbclose dbclose_ver64
 #  define dbclrbuf dbclrbuf_ver64
 #  define dbclropt dbclropt_ver64
 #  define dbcmd dbcmd_ver64
 #  define dbcmdrow dbcmdrow_ver64
 #  define dbcollen dbcollen_ver64
+#  define dbcolinfo dbcolinfo_ver64
 #  define dbcolname dbcolname_ver64
 #  define dbcolsource dbcolsource_ver64
 #  define dbcoltype dbcoltype_ver64
@@ -95,6 +98,7 @@
 #  define dbfirstrow dbfirstrow_ver64
 #  define dbfreebuf dbfreebuf_ver64
 #  define dbgetchar dbgetchar_ver64
+#  define dbgetmaxprocs dbgetmaxprocs_ver64
 #  define dbgetpacket dbgetpacket_ver64
 #  define dbgetrow dbgetrow_ver64
 #  define dbgetuserdata dbgetuserdata_ver64
@@ -109,6 +113,7 @@
 #  define dbloginfree dbloginfree_ver64
 #  define dbmny4add dbmny4add_ver64
 #  define dbmny4cmp dbmny4cmp_ver64
+#  define dbmny4copy dbmny4copy_ver64
 #  define dbmny4divide dbmny4divide_ver64
 #  define dbmny4minus dbmny4minus_ver64
 #  define dbmny4mul dbmny4mul_ver64
@@ -142,6 +147,7 @@
 #  define dbnumcompute dbnumcompute_ver64
 #  define dbnumrets dbnumrets_ver64
 /* #  define dbopen dbopen_ver64 */
+#  define dbperror dbperror_ver64
 #  define dbpoll dbpoll_ver64
 #  define dbprhead dbprhead_ver64
 #  define dbprrow dbprrow_ver64
@@ -166,6 +172,7 @@
 #  define dbrpwclr dbrpwclr_ver64
 #  define dbrpwset dbrpwset_ver64
 #  define dbsafestr dbsafestr_ver64
+#  define dbservcharset dbservcharset_ver64
 #  define dbsetavail dbsetavail_ver64
 #  define dbsetdefcharset dbsetdefcharset_ver64
 #  define dbsetdeflang dbsetdeflang_ver64
@@ -176,8 +183,10 @@
 #  define dbsetlname dbsetlname_ver64
 #  define dbsetlogintime dbsetlogintime_ver64
 #  define dbsetlshort dbsetlshort_ver64
+#  define dbsetlversion dbsetlversion_ver64
 #  define dbsetmaxprocs dbsetmaxprocs_ver64
 #  define dbsetopt dbsetopt_ver64
+#  define dbsetrow dbsetrow_ver64
 #  define dbsettime dbsettime_ver64
 #  define dbsetuserdata dbsetuserdata_ver64
 #  define dbsetversion dbsetversion_ver64
@@ -189,8 +198,11 @@
 #  define dbsqlexec dbsqlexec_ver64
 #  define dbsqlok dbsqlok_ver64
 #  define dbsqlsend dbsqlsend_ver64
+#  define dbstrbuild dbstrbuild_ver64
 #  define dbstrcpy dbstrcpy_ver64
 #  define dbstrlen dbstrlen_ver64
+#  define dbtablecolinfo dbtablecolinfo_ver64
+#  define dbtds dbtds_ver64
 #  define dbtxptr dbtxptr_ver64
 #  define dbtxtimestamp dbtxtimestamp_ver64
 #  define dbuse dbuse_ver64
@@ -203,11 +215,13 @@
 #  define scan_xact scan_xact_ver64
 #  define start_xact start_xact_ver64
 #  define stat_xact stat_xact_ver64
-#  if defined(NCBI_OS_MSWIN)
-#    define asprintf asprintf_ver64
-#    define vasprintf vasprintf_ver64
-#    define strtok_r strtok_r_ver64
-#  endif
+#  define tdsdbopen tdsdbopen_ver64
+#  define _dblib_client_msg _dblib_client_msg_ver64
+#  define _dblib_err_handler _dblib_err_handler_ver64
+#  define _dblib_handle_err_message _dblib_handle_err_message_ver64
+#  define _dblib_handle_info_message _dblib_handle_info_message_ver64
+#  define _dblib_msg_handler _dblib_msg_handler_ver64
+#  define _dblib_setTDS_version _dblib_setTDS_version_ver64
 #endif  /* NCBI_FTDS_RENAME_SYBDB */
 
-#endif  /* DBAPI_DRIVER_FTDS___NCBI_FTDS_RENAME_SYBDB_VER64__H */
+#endif  /* DBAPI_DRIVER_FTDS64_IMPL___RENAME_FTDS_DBLIB__H */

@@ -1,11 +1,45 @@
-#ifndef DBAPI_DRIVER_FTDS64_FREETDS___RENAME_FREETDS64__H
-#define DBAPI_DRIVER_FTDS64_FREETDS___RENAME_FREETDS64__H
+#ifndef DBAPI_DRIVER_FTDS64_IMPL___RENAME_FTDS_TDS__H
+#define DBAPI_DRIVER_FTDS64_IMPL___RENAME_FTDS_TDS__H
 
-#ifndef HAVE_POLL
-#  define fakepoll                      fakepoll_ver64
-#endif
+/*  $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data, the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties, express or implied, including
+ *  warranties of performance, merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Author:  Denis Vakatov
+ *
+ * File Description:
+ *   Macros to rename FreeTDS TDS symbols -- to avoid their clashing
+ *   with other versions'
+ *
+ */
+
 #define generate_random_buffer          generate_random_buffer_ver64
-#define readpassphrase                  readpassphrase_ver64
+#define hmac_md5                        hmac_md5_ver64
+#define hmac_md5_final                  hmac_md5_final_ver64
+#define hmac_md5_init_limK_to_64        hmac_md5_init_limK_to_64_ver64
+#define hmac_md5_init_rfc2104           hmac_md5_init_rfc2104_ver64
+#define hmac_md5_update                 hmac_md5_update_ver64
 #define tds7_crypt_pass                 tds7_crypt_pass_ver64
 #define tds7_get_instance_port          tds7_get_instance_port_ver64
 #define tds7_send_auth                  tds7_send_auth_ver64
@@ -53,6 +87,7 @@
 #define tds_cursor_setrows              tds_cursor_setrows_ver64
 #define tds_cursor_update               tds_cursor_update_ver64
 #define tds_datecrack                   tds_datecrack_ver64
+#define tds_debug_flags                 tds_debug_flags_ver64
 #define tds_des_ecb_encrypt             tds_des_ecb_encrypt_ver64
 #define tds_des_encrypt                 tds_des_encrypt_ver64
 #define tds_des_set_key                 tds_des_set_key_ver64
@@ -85,6 +120,7 @@
 #define tds_free_results                tds_free_results_ver64
 #define tds_free_row                    tds_free_row_ver64
 #define tds_free_socket                 tds_free_socket_ver64
+#define tds_g_append_mode               tds_g_append_mode_ver64
 #define tds_get_byte                    tds_get_byte_ver64
 #define tds_get_cardinal_type           tds_get_cardinal_type_ver64
 #define tds_get_char_data               tds_get_char_data_ver64
@@ -105,6 +141,8 @@
 #define tds_gethostbyname_r             tds_gethostbyname_r_ver64
 #define tds_getmac                      tds_getmac_ver64
 #define tds_getservbyname_r             tds_getservbyname_r_ver64
+#define tds_gss_get_auth                tds_gss_get_auth_ver64
+#define tds_hex_digits                  tds_hex_digits_ver64
 #define tds_iconv                       tds_iconv_ver64
 #define tds_iconv_alloc                 tds_iconv_alloc_ver64
 #define tds_iconv_close                 tds_iconv_close_ver64
@@ -122,6 +160,7 @@
 #define tds_multiple_init               tds_multiple_init_ver64
 #define tds_multiple_query              tds_multiple_query_ver64
 #define tds_next_placeholder            tds_next_placeholder_ver64
+#define tds_numeric_bytes_per_prec      tds_numeric_bytes_per_prec_ver64
 #define tds_numeric_change_prec_scale   tds_numeric_change_prec_scale_ver64
 #define tds_numeric_to_string           tds_numeric_to_string_ver64
 #define tds_open_socket                 tds_open_socket_ver64
@@ -172,9 +211,8 @@
 #define tds_ssl_deinit                  tds_ssl_deinit_ver64
 #define tds_ssl_init                    tds_ssl_init_ver64
 #endif
+#define tds_str_empty                   tds_str_empty_ver64
 #define tds_strftime                    tds_strftime_ver64
-#define tds_strlcat                     tds_strlcat_ver64
-#define tds_strlcpy                     tds_strlcpy_ver64
 #define tds_submit_execdirect           tds_submit_execdirect_ver64
 #define tds_submit_execute              tds_submit_execute_ver64
 #define tds_submit_optioncmd            tds_submit_optioncmd_ver64
@@ -202,4 +240,4 @@
 #define tdsdump_on                      tdsdump_on_ver64
 #define tdsdump_open                    tdsdump_open_ver64
 
-#endif  /* DBAPI_DRIVER_FTDS64_FREETDS___RENAME_FREETDS64__H */
+#endif  /* DBAPI_DRIVER_FTDS64_IMPL___RENAME_FTDS_TDS__H */

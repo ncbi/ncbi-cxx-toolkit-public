@@ -1,5 +1,5 @@
-#ifndef DBAPI_DRIVER_CTLIB___NCBI_DBAPI_RENAME_CTLIB__H
-#define DBAPI_DRIVER_CTLIB___NCBI_DBAPI_RENAME_CTLIB__H
+#ifndef DBAPI_DRIVER_FTDS64_IMPL___RENAME_FTDS_CTLIB__H
+#define DBAPI_DRIVER_FTDS64_IMPL___RENAME_FTDS_CTLIB__H
 
 /*  $Id$
  * ===========================================================================
@@ -59,6 +59,7 @@
 #  define cs_strcmp         cs_strcmp_ver64
 #  define cs_time           cs_time_ver64
 #  define cs_will_convert   cs_will_convert_ver64
+#  define _csclient_msg     _csclient_msg_ver64
 #  define ct_init           ct_init_ver64
 #  define ct_con_alloc      ct_con_alloc_ver64
 #  define ct_con_props      ct_con_props_ver64
@@ -94,6 +95,13 @@
 #  define ct_poll           ct_poll_ver64
 #  define ct_cursor         ct_cursor_ver64
 #  define ct_diag           ct_diag_ver64
+#  define _ct_bind_data     _ct_bind_data_ver64
+#  define _ct_diag_clearmsg _ct_diag_clearmsg_ver64
+#  define _ct_get_client_type _ct_get_client_type_ver64
+#  define _ct_get_server_type _ct_get_server_type_ver64
+#  define _ct_handle_client_message _ct_handle_client_message_ver64
+#  define _ct_handle_server_message _ct_handle_server_message_ver64
+#  define _ctclient_msg     _ctclient_msg_ver64
 #  define blk_alloc         blk_alloc_ver64
 #  define blk_bind          blk_bind_ver64
 #  define blk_colval        blk_colval_ver64
@@ -122,4 +130,4 @@
 #endif  /* NCBI_DBAPI_RENAME_CTLIB */
 
 
-#endif  /* DBAPI_DRIVER_CTLIB___NCBI_DBAPI_RENAME_CTLIB__H */
+#endif  /* DBAPI_DRIVER_FTDS64_IMPL___RENAME_FTDS_CTLIB__H */
