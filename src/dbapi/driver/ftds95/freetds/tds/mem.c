@@ -784,7 +784,7 @@ tds_init_login(TDSLOGIN *login, TDSLOCALE * locale)
 	 * 0x01 means change to initial language must succeed
 	 */
 	login->option_flag2 = 0x03;
-	login->tds_version = TDS_DEFAULT_VERSION;
+    login->tds_version = 0 /* was TDS_DEFAULT_VERSION */;
 	login->block_size = 0;
 
 #if HAVE_NL_LANGINFO && defined(CODESET)

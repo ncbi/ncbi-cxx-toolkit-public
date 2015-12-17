@@ -6,8 +6,13 @@ status=0
 for server in $servers; do
     TDSPWDFILE=login-info-$server.txt
     case "$server" in
-        MS* ) TDSVER=7.3 ;;
-        * )   TDSVER=5.0 ;;
+        MS* )
+            TDSVER=7.3
+            export TDSVER
+            ;;
+        * )
+            unset TDSVER
+            ;;
     esac
     cat >$TDSPWDFILE <<EOF
 SRV=$server
@@ -15,7 +20,7 @@ UID=DBAPI_test
 PWD=allowed
 DB=DBAPI_Sample
 EOF
-    export TDSPWDFILE TDSVER
+    export TDSPWDFILE
     echo $server
     echo --------------------
     if $CHECK_EXEC "$@"; then
