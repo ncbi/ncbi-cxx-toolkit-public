@@ -163,18 +163,23 @@ EDB_ResType CTL_RowResult::ResultType() const
 EDB_Type
 CTL_RowResult::ConvDataType_Ctlib2DBAPI(const CS_DATAFMT& fmt)
 {
+    bool is_blob = fmt.maxlength >= kMax_Int >> 1  ||  fmt.maxlength == -1;
+
     switch ( fmt.datatype ) {
     case CS_VARBINARY_TYPE:
-    case CS_BINARY_TYPE:        return eDB_VarBinary;
+    case CS_BINARY_TYPE:        return is_blob ? eDB_Image : eDB_VarBinary;
     case CS_BIT_TYPE:           return eDB_Bit;
     case CS_LONGCHAR_TYPE:
     case CS_VARCHAR_TYPE:
-    case CS_CHAR_TYPE:          return eDB_VarChar;
+    case CS_CHAR_TYPE:          return is_blob ? eDB_Text : eDB_VarChar;
     case CS_DATETIME_TYPE:      return eDB_DateTime;
     case CS_DATETIME4_TYPE:     return eDB_SmallDateTime;
     case CS_TINYINT_TYPE:       return eDB_TinyInt;
     case CS_SMALLINT_TYPE:      return eDB_SmallInt;
     case CS_INT_TYPE:           return eDB_Int;
+#ifdef CS_BIGINT_TYPE
+    case CS_BIGINT_TYPE:
+#endif
     case CS_LONG_TYPE:          return eDB_BigInt;
     case CS_DECIMAL_TYPE:
     case CS_NUMERIC_TYPE:
@@ -192,10 +197,10 @@ CTL_RowResult::ConvDataType_Ctlib2DBAPI(const CS_DATAFMT& fmt)
     case CS_REAL_TYPE:          return eDB_Float;
     case CS_TEXT_TYPE:          return eDB_Text;
     case CS_IMAGE_TYPE:         return eDB_Image;
-    case CS_LONGBINARY_TYPE:    return eDB_LongBinary;
+    case CS_LONGBINARY_TYPE:    return is_blob ? eDB_Image : eDB_LongBinary;
 
 #ifdef FTDS_IN_USE
-    case CS_UNIQUE_TYPE:        return eDB_VarBinary;
+    case CS_UNIQUE_TYPE:        return is_blob ? eDB_Image : eDB_VarBinary;
 #endif
 
 //     case CS_MONEY_TYPE:
@@ -368,6 +373,9 @@ static bool s_CanStore(CS_INT src, EDB_Type dst)
     case CS_TINYINT_TYPE:  if (dst == eDB_TinyInt)  { return true; }
     case CS_SMALLINT_TYPE: if (dst == eDB_SmallInt) { return true; }
     case CS_INT_TYPE:      if (dst == eDB_Int)      { return true; }
+#ifdef CS_BIGINT_TYPE
+    case CS_BIGINT_TYPE:
+#endif
     case CS_LONG_TYPE:     return dst == eDB_BigInt;
 
     case CS_REAL_TYPE:  return dst == eDB_Float;
@@ -396,21 +404,44 @@ CDB_Object* CTL_RowResult::GetItemInternal(
 	CDB_Object* item_buf
 	)
 {
-    CS_INT outlen = 0, maxlength = fmt.maxlength;
+    CS_INT outlen = 0, datatype = fmt.datatype, maxlength = fmt.maxlength;
     char buffer[2048];
     EDB_Type b_type = ConvDataType_Ctlib2DBAPI(fmt);
     bool is_null = false;
 
     CHECK_DRIVER_ERROR(b_type == eDB_UnsupportedType,
                        "Unsupported result type "
-                       + NStr::NumericToString(fmt.datatype),
+                       + NStr::NumericToString(datatype),
                        130004);
 
+    if ((maxlength >= kMax_Int >> 1  ||  maxlength == -1)
+        &&  datatype != CS_TEXT_TYPE  &&  datatype != CS_IMAGE_TYPE) {
+        // True (TDS 7.2+) VARCHAR(MAX) or the like; determine actual length
+        // and pass off as text or image as appropriate.
+        CS_IODESC iodesc;
+        Check(ct_get_data(cmd, item_no, buffer, 0, &outlen));
+        Check(ct_data_info(cmd, CS_GET, item_no, &iodesc));
+        maxlength = max((CS_INT)0, iodesc.total_txtlen);
+        switch (b_type) {
+        case eDB_Char:
+        case eDB_LongChar:
+        case eDB_VarChar:
+        case eDB_Text:
+            datatype = CS_TEXT_TYPE;
+            b_type   = eDB_Text;
+            break;
+        default:
+            datatype = CS_IMAGE_TYPE;
+            b_type   = eDB_Image;
+            break;
+        }
+    }
+
     if (item_buf == NULL) {
-        _ASSERT(s_CanStore(fmt.datatype, b_type));
+        _ASSERT(s_CanStore(datatype, b_type));
     } else {
         b_type = item_buf->GetType();
-        CHECK_DRIVER_ERROR(!s_CanStore(fmt.datatype, b_type),
+        CHECK_DRIVER_ERROR(!s_CanStore(datatype, b_type),
                            "Wrong type of CDB_Object.", 130020);
     }
 
@@ -427,7 +458,7 @@ CDB_Object* CTL_RowResult::GetItemInternal(
             break; \
         }
 
-    switch ( fmt.datatype ) {
+    switch ( datatype ) {
     case CS_CHAR_TYPE:
     case CS_BINARY_TYPE:
     case CS_VARCHAR_TYPE:
@@ -449,13 +480,13 @@ CDB_Object* CTL_RowResult::GetItemInternal(
 
         ENSURE_ITEM();
 
-        CHECK_DRIVER_ERROR(fmt.datatype == CS_LONGCHAR_TYPE
+        CHECK_DRIVER_ERROR(datatype == CS_LONGCHAR_TYPE
                            &&  b_type == eDB_VarChar
                            &&  outlen > MAX_VARCHAR_SIZE,
                            "Invalid conversion to CDB_VarChar type.", 230021);
 
 #ifndef FTDS_IN_USE
-        CHECK_DRIVER_ERROR(fmt.datatype == CS_LONGCHAR_TYPE
+        CHECK_DRIVER_ERROR(datatype == CS_LONGCHAR_TYPE
                            &&  b_type == eDB_Char
                            &&  outlen > MAX_VARCHAR_SIZE,
                            "Invalid conversion to CDB_VarChar type.", 230022);
@@ -487,15 +518,21 @@ CDB_Object* CTL_RowResult::GetItemInternal(
     case CS_SMALLINT_TYPE:
     case CS_INT_TYPE:
     case CS_BIT_TYPE:
+#ifdef CS_BIGINT_TYPE
+    case CS_BIGINT_TYPE:
+#endif
     case CS_LONG_TYPE:
     {
         Int8 v = 0;
         CS_INT sz;
-        switch (fmt.datatype) {
+        switch (datatype) {
         case CS_TINYINT_TYPE:  sz = sizeof(CS_TINYINT);  break;
         case CS_SMALLINT_TYPE: sz = sizeof(CS_SMALLINT); break;
         case CS_INT_TYPE:      sz = sizeof(CS_INT);      break;
         case CS_BIT_TYPE:      sz = sizeof(CS_BIT);      break;
+#ifdef CS_BIGINT_TYPE
+        case CS_BIGINT_TYPE:
+#endif
         case CS_LONG_TYPE:     sz = sizeof(v);           break;
         default:               sz = 0;                   _TROUBLE;
         }

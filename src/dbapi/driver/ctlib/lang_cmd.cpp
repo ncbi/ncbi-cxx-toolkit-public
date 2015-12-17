@@ -330,9 +330,15 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
             break;
         }
 
+        CTempString  ts;
         CTempVarChar varchar;
-        varchar.SetValue(par.Value());
-        CTempString ts = varchar.GetValue();
+        if (par.Size() <= kMax_UI1) {
+            varchar.SetValue(par.Value());
+            ts = varchar.GetValue();
+        } else {
+            param_fmt.datatype = CS_LONGCHAR_TYPE;
+            ts.assign(par.Data(), par.Size());
+        }
 
         ret_code = Check(ct_param(x_GetSybaseCmd(),
                                   &param_fmt,
@@ -675,6 +681,9 @@ CTL_LRCmd::Cancel(void)
             size_t was_timeout = GetConnection().PrepareToCancel();
             try {
                 CS_RETCODE retcode = Check(ct_cancel(NULL, x_GetSybaseCmd(), CS_CANCEL_ALL));
+                CS_INT ignored_results_type;
+                // Force full cancellation processing in FreeTDS 0.91.
+                ct_results(x_GetSybaseCmd(), &ignored_results_type);
                 GetConnection().CancelFinished(was_timeout);
 
                 switch (retcode) {

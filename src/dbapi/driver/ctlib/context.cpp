@@ -569,7 +569,7 @@ CTLibContext::CTLibContext(bool reuse_context, CS_INT version) :
         case 46:
         case CS_VERSION_100:
             DATABASE_DRIVER_ERROR("FTDS driver does not support TDS protocol "
-                                  "version other than 5.0 or 7.0.",
+                                  "version other than 5.0 or 7.x.",
                                   300011 );
             break;
     }
@@ -1254,7 +1254,16 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
         */
 
 #ifdef FTDS_IN_USE
-        if ((msg->msgnumber & 0xFF) == 25) {
+        if (msg->msgnumber == 20003) {
+            CDB_TimeoutEx ex(
+                DIAG_COMPILE_INFO,
+                0,
+                message,
+                msg->msgnumber);
+
+            PassException(ex, server_name, user_name, msg->severity, params);
+            return CS_SUCCEED;
+        } else if ((msg->msgnumber & 0xFF) == 25) {
             CDB_TruncateEx ex(
                 DIAG_COMPILE_INFO,
                 0,
@@ -1559,6 +1568,13 @@ CS_INT GetCtlibTdsVersion(int version)
     case 42:
     case 46:
     case 70:
+    case 71:
+#ifdef CS_TDS_72
+    case 72:
+#endif
+#ifdef CS_TDS_73
+    case 73:
+#endif
     case 80:
         return version;
     case 100:

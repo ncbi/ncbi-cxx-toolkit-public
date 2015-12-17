@@ -126,9 +126,20 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
         case 70:
             tds_version = CS_TDS_70;
             break;
+        case 71:
         case 80:
             tds_version = CS_TDS_80;
             break;
+#ifdef CS_TDS_72
+        case 72:
+            tds_version = CS_TDS_72;
+            break;
+#endif
+#ifdef CS_TDS_73
+        case 73:
+            tds_version = CS_TDS_73;
+            break;
+#endif
         case 125:
             tds_version = CS_TDS_50;
             break;
@@ -140,7 +151,7 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
         case 46:
         case CS_VERSION_100:
             DATABASE_DRIVER_ERROR("FTDS driver does not support TDS protocol "
-                                  "version other than 5.0 or 7.0." + GetDbgInfo(),
+                                  "version other than 5.0 or 7.x.",
                                   300011 );
             break;
     }

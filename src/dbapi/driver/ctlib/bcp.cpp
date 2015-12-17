@@ -48,6 +48,12 @@
 BEGIN_NCBI_SCOPE
 
 #ifdef FTDS_IN_USE
+#  if NCBI_FTDS_VERSION > 91 /* defined(CS_BIGINT_TYPE) */
+#    define NCBI_CS_BIGINT_TYPE CS_BIGINT_TYPE
+#  else
+#    define NCBI_CS_BIGINT_TYPE CS_LONG_TYPE
+#  endif
+
 namespace NCBI_NS_FTDS_CTLIB
 {
 #endif
@@ -232,7 +238,7 @@ bool CTL_BCPInCmd::x_AssignParams()
             CDB_BigInt& par = dynamic_cast<CDB_BigInt&> (param);
 
 #ifdef FTDS_IN_USE
-            param_fmt.datatype = CS_LONG_TYPE;
+            param_fmt.datatype = NCBI_CS_BIGINT_TYPE;
             Int8 value = par.Value();
             memcpy(bind.buffer, &value, sizeof(value));
 #else
