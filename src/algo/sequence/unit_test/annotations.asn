@@ -9610,7 +9610,7 @@ Seq-annot ::= {
     {
       data gene {
         locus "ASIC2",
-        desc "acid sensing ion channel 2",
+        desc "acid sensing ion channel subunit 2",
         syn {
           "ACCN",
           "ACCN1",
