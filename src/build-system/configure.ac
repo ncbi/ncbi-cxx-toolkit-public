@@ -4722,7 +4722,7 @@ if test "$with_ftds" != "no" ; then
    NCBI_LOCAL_FTDS(64)
    NCBI_LOCAL_FTDS(95)
    if test -n "$freetds" ; then
-      FTDS_LIB="ncbi_xdbapi_ftds${ftds_ver} \$(FTDS${ftds_ver}_LIB)"
+      FTDS_LIB="\$(FTDS${ftds_ver}_LIB)"
       FTDS_LIBS="\$(FTDS${ftds_ver}_LIBS)"
       FTDS_INCLUDE="\$(FTDS${ftds_ver}_INCLUDE)"
       if test "$with_ftds_renamed" != "no" ; then

@@ -30759,7 +30759,7 @@ if test "$with_ftds" != "no" ; then
       FTDS95_INCLUDE='$(FTDS95_CTLIB_INCLUDE)'
 
    if test -n "$freetds" ; then
-      FTDS_LIB="ncbi_xdbapi_ftds${ftds_ver} \$(FTDS${ftds_ver}_LIB)"
+      FTDS_LIB="\$(FTDS${ftds_ver}_LIB)"
       FTDS_LIBS="\$(FTDS${ftds_ver}_LIBS)"
       FTDS_INCLUDE="\$(FTDS${ftds_ver}_INCLUDE)"
       if test "$with_ftds_renamed" != "no" ; then

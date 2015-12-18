@@ -1,16 +1,17 @@
 # $Id$
 
-SRC = context
+SRC = bcp connection context real_context cursor ftds_ctlib_utils lang_cmd \
+      result rpc
 
 LIB = ncbi_xdbapi_ftds
 
-CPPFLAGS = -DFTDS_IN_USE $(FTDS_INCLUDE) $(ORIG_CPPFLAGS)
+CPPFLAGS = -DFTDS_IN_USE $(FTDS_INCLUDE) -I$(srcdir) $(ORIG_CPPFLAGS)
 
 # Build shared version when possible
 LIB_OR_DLL = both
 
 # Dependencies for shared library
-DLL_LIB = $(FTDS_LIB:ncbi%=ncbi%$(DLL)) dbapi_driver$(DLL)
+DLL_LIB = $(FTDS_LIB) dbapi_driver$(DLL)
 LIBS    = $(RUNPATH_ORIGIN) $(FTDS_LIBS) $(ORIG_LIBS)
 
 WATCHERS = ucko
