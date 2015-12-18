@@ -323,7 +323,12 @@ public:
                
     void x_PrintTaxInfo(string header, const ITaxon1Node* tax_node) {        
         if(m_Debug) {
-            cerr << header << " for taxid: " << tax_node->GetTaxId() << " " << tax_node->GetName() << " depth: " <<  m_Depth << endl;        
+            string lineage;
+            for(size_t j = 0; j < m_Lineage.size(); j++) {
+                if(!lineage.empty()) lineage += ",";
+                lineage += NStr::NumericToString(m_Lineage[j]);
+            }            
+            cerr << header << " for taxid: " << tax_node->GetTaxId() << " " << tax_node->GetName() << " depth: " <<  m_Depth << " lineage: " << lineage << endl;
         }
     }
 
@@ -451,8 +456,7 @@ void CTaxFormat::DisplayTaxonomyReport(CNcbiOstream& out)
         }
         taxReportTableRow = x_MapTaxInfoTemplate(taxReportTableRow,taxInfo,taxInfo.depth);               
         taxReportTableRow = CAlignFormatUtil::MapTemplate(taxReportTableRow,"numhits",taxInfo.numHits);                    
-        taxReportTableRow = CAlignFormatUtil::MapTemplate(taxReportTableRow,"numOrgs",taxInfo.numOrgs); 
-        //taxReportTableRow = CAlignFormatUtil::MapTemplate(taxReportTableRow,"lineage",taxInfo.lineage);         
+        taxReportTableRow = CAlignFormatUtil::MapTemplate(taxReportTableRow,"numOrgs",taxInfo.numOrgs);                
 
         taxReportRows += taxReportTableRow;            
      }
@@ -514,9 +518,25 @@ void CTaxFormat::x_LoadTaxTree(void)
                 int tax_id = alignTaxids[i];                                    
 
                 if(!m_TaxClient->IsAlive()) break;
-                tax_load_ok |= m_TaxClient->LoadNode(tax_id);                                        
+                const ITaxon1Node* tax_node = NULL;
+                tax_load_ok |= m_TaxClient->LoadNode(tax_id,&tax_node);                                                        
+                if(!tax_load_ok) break;                
 
-                if(!tax_load_ok) break;
+                if(tax_node && tax_node->GetTaxId() != tax_id) {
+                    int newTaxid = tax_node->GetTaxId();
+                    if(m_Debug) {
+                        cerr << "*******TAXID MISMATCH: changing " << tax_id << " to " << tax_node->GetTaxId() << "-" << endl;
+                    }
+                    STaxInfo &taxInfo = GetAlignTaxInfo(tax_id);
+                    taxInfo.taxid = newTaxid;
+                    for(size_t j = 0; i < taxInfo.seqInfoList.size(); j++) {
+                        SSeqInfo* seqInfo = taxInfo.seqInfoList[j];                        
+                        seqInfo->taxid = newTaxid;
+                    }        
+                    m_BlastResTaxInfo->seqTaxInfoMap.insert(CTaxFormat::TSeqTaxInfoMap::value_type(newTaxid,taxInfo));  
+                    m_BlastResTaxInfo->orderedTaxids[i] = newTaxid;                    
+                    m_BlastResTaxInfo->seqTaxInfoMap.erase(tax_id);
+                }
             }
         }
         if(m_TaxClient->IsAlive() && tax_load_ok) {          
@@ -552,7 +572,12 @@ void CTaxFormat::x_PrintTaxInfo(vector <int> taxids, string title)
         for(size_t i = 0; i < taxids.size(); i++) {
             int taxid = taxids[i];                            
             STaxInfo taxInfo = GetTaxTreeInfo(taxid);                         
-            cerr << "taxid=" << taxid << " " << taxInfo.scientificName << " " << taxInfo.blastName << " " << "depth: " <<  taxInfo.depth << " numHits: " << taxInfo.numHits << " numOrgs: " << taxInfo.numOrgs << endl;            
+            string lineage;
+            for(size_t j = 0; j < taxInfo.lineage.size(); j++) {
+                if(!lineage.empty()) lineage += ",";
+                lineage += NStr::NumericToString(taxInfo.lineage[j]);
+            }
+            cerr << "taxid=" << taxid << " " << taxInfo.scientificName << " " << taxInfo.blastName << " " << "depth: " <<  taxInfo.depth << " numHits: " << taxInfo.numHits << " numOrgs: " << taxInfo.numOrgs << " lineage: " << lineage << endl;                        
         }
     }
 }
@@ -650,7 +675,7 @@ void CTaxFormat::x_InitLineageMetaData(void)
         
         list <STaxInfo> alnTaxInfo;
         for(size_t i = 0; i < alignTaxids.size(); i++) {                    
-            STaxInfo &taxInfo = GetTaxTreeInfo(alignTaxids[i]);
+            STaxInfo taxInfo = GetTaxTreeInfo(alignTaxids[i]);
             vector <int> alignHitLineage = s_InitAlignHitLineage(m_BestHitLineage,taxInfo);
             taxInfo.lineage = alignHitLineage;
             x_InitBlastNameTaxInfo(taxInfo);                                    
