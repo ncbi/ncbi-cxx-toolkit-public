@@ -7,7 +7,7 @@ REQUIRES = SQLITE3 dbapi FreeTDS
 APP = test_objmgr_data_mt
 SRC = test_objmgr_data_mt
 LIB = ncbi_xloader_lds2 lds2 sqlitewrapp $(OBJREAD_LIBS) xobjutil ncbi_xdbapi_ftds \
-      $(FTDS64_CTLIB_LIB) dbapi_driver$(STATIC) test_mt submit $(OBJMGR_LIBS)
+      $(FTDS_LIB) dbapi_driver$(STATIC) test_mt submit $(OBJMGR_LIBS)
 
 LIBS = $(SQLITE3_LIBS) $(FTDS_LIBS) $(CMPRS_LIBS) \
        $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
