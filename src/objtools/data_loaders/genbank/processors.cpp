@@ -1206,16 +1206,7 @@ void CProcessor_ID1_SNP::ProcessObjStream(CReaderRequestResult& result,
     }
     TSeqEntryInfo entry = GetSeq_entry(result, blob_id, reply);
     result.SetAndSaveBlobState(blob_id, entry.second);
-        
-    CLoadLockSetter setter(blob);
-    if ( !setter.IsLoaded() ) {
-        if ( entry.first ) {
-            OffsetAllGisToOM(*entry.first, &set_info);
-            setter.SetSeq_entry(*entry.first, &set_info);
-        }
-        setter.SetLoaded();
-    }
-        
+    
     CWriter* writer = GetWriter(result);
     if ( writer && version >= 0 ) {
         if ( set_info.m_Seq_annot_InfoMap.empty() || !entry.first ) {
@@ -1235,6 +1226,15 @@ void CProcessor_ID1_SNP::ProcessObjStream(CReaderRequestResult& result,
                                  *entry.first, entry.second, set_info);
             }
         }
+    }
+
+    CLoadLockSetter setter(blob);
+    if ( !setter.IsLoaded() ) {
+        if ( entry.first ) {
+            OffsetAllGisToOM(*entry.first, &set_info);
+            setter.SetSeq_entry(*entry.first, &set_info);
+        }
+        setter.SetLoaded();
     }
 }
 
