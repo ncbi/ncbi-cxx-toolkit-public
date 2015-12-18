@@ -155,6 +155,57 @@ static void sort_namespace_definitions_recursively(xml::node &  n)
         sort_namespace_definitions_recursively(*k);
 }
 
+
+static void set_parser_context_options(xmlParserCtxtPtr  ctxt)
+{
+    if (ctxt == NULL)
+        return;
+
+    // Parser context options
+    // XML_PARSE_HUGE - overrides the default libxml2 parser limits. If it is
+    //                  not here then certain large documents will not be parsed
+    // XML_PARSE_NODICT - when xmlCtxtUseOptions() is called, it sets the
+    //                    context field 'dictNames' to 1. We would prefer not
+    //                    to change the initialized context so this flag is
+    //                    supplied.
+    int     options = XML_PARSE_HUGE | XML_PARSE_NODICT;
+
+    // When the xmlCtxtUseOptions() is called it updates the context
+    // 'loadsubset' field. To avoid updating it the XML_PARSE_DTDLOAD flag
+    // may need to be supplied if the user requested the loading external DTD
+    // (default). This behavior is controlled by the user via the
+    // xml::init::load_external_subsets() call.
+    if (xmlLoadExtDtdDefaultValue != 0)
+        options |= XML_PARSE_DTDLOAD;
+
+    // When the xmlCtxtUseOptions() is called it updates the context
+    // 'keepBlanks' field. To avoid updating it the XML_PARSE_NOBLANKS flag
+    // may need to be supplied.
+    // The user controls this behavior via the xml::init::remove_whitespace()
+    // call.
+    if (xmlKeepBlanksDefaultValue == 0)
+        options |= XML_PARSE_NOBLANKS;
+
+    // When the xmlCtxtUseOptions() is called it updates the context
+    // 'validate' field. To avoid updating it the XML_PARSE_DTDVALID flag may
+    // need to be supplied.
+    // The user controls this behavior via the xml::init::validate_xml() call.
+    if (xmlDoValidityCheckingDefaultValue != 0)
+        options |= XML_PARSE_DTDVALID;
+
+    // When the xmlCtxtUseOptions() is called it updates the context
+    // 'replaceEntities' field. To avoid updating it the XML_PARSE_NOENT flag
+    // may need to be supplied.
+    // The user controls this behavior via the xml::init::substitute_entities()
+    // call.
+    if (xmlSubstituteEntitiesDefaultValue != 0)
+        options |= XML_PARSE_NOENT;
+
+    // Set the context options
+    xmlCtxtUseOptions(ctxt, options);
+}
+
+
 //####################################################################
 namespace {
     const char const_default_encoding[] = "ISO-8859-1";
@@ -175,6 +226,63 @@ xml::document::document (void) :
     pimpl_(new doc_impl)
 {}
 //####################################################################
+
+
+// This custom xmlSAXParseFileWithData_Custom() function is basically a copy of
+// the standard libxml2 xmlSAXParseFileWithData() function with a small change.
+// It allows to set the appropriate context options, notably the ability to
+// parse huge XML documents.
+// The standard libxml2 function hides the parser context and therefore the
+// options are not available.
+static xmlDocPtr xmlSAXParseFileWithData_Custom(xmlSAXHandlerPtr sax,
+                                                const char *filename,
+                                                void *data)
+{
+    xmlDocPtr ret;
+    xmlParserCtxtPtr ctxt;
+
+    ctxt = xmlCreateFileParserCtxt(filename);
+    if (ctxt == NULL)
+        return NULL;
+
+    // This is the major difference to the standard libxml2 version: setting
+    // the context options.
+    set_parser_context_options(ctxt);
+
+    if (sax != NULL) {
+        if (ctxt->sax != NULL)
+            xmlFree(ctxt->sax);
+        ctxt->sax = sax;
+    }
+
+    if (data!=NULL)
+        ctxt->_private = data;
+
+    if (ctxt->directory == NULL)
+        ctxt->directory = xmlParserGetDirectory(filename);
+
+    xmlParseDocument(ctxt);
+    if (ctxt->wellFormed) {
+        ret = ctxt->myDoc;
+        if (ret != NULL) {
+            if (ctxt->input->buf->compressed > 0)
+                ret->compression = 9;
+            else
+                ret->compression = ctxt->input->buf->compressed;
+        }
+    }
+    else {
+        ret = NULL;
+        xmlFreeDoc(ctxt->myDoc);
+        ctxt->myDoc = NULL;
+    }
+    if (sax != NULL)
+        ctxt->sax = NULL;
+    xmlFreeParserCtxt(ctxt);
+    return ret;
+}
+
+
 xml::document::document (const char *               filename,
                          error_messages *           messages,
                          warnings_as_errors_type    how) :
@@ -201,9 +309,7 @@ xml::document::document (const char *               filename,
     else
         messages->get_messages().clear();
 
-    xmlDocPtr tmpdoc = xmlSAXParseFileWithData(&sax, filename,
-                                               0, temp);
-
+    xmlDocPtr tmpdoc = xmlSAXParseFileWithData_Custom(&sax, filename, temp);
     if (!tmpdoc) {
         // It is a common case that the file does not exist or cannot be
         // opened. libxml2 does not recognise it so make a test here to
@@ -241,6 +347,8 @@ xml::document::document (const char *               data,
                                         "memory buffer is too large"));
     if (ctxt == 0)
         throw std::bad_alloc();
+
+    set_parser_context_options(ctxt);
 
     xmlSAXHandler   sax;
     memset(&sax, 0, sizeof(sax));
@@ -343,6 +451,8 @@ xml::document::document (std::istream &           stream,
     if (ctxt == 0)
         throw std::bad_alloc();
     ctxt->_private = temp;
+
+    set_parser_context_options(ctxt);
 
     /* Parse the document chunk by chunk */
     char                buffer[const_buffer_size];
