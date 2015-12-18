@@ -32,46 +32,6 @@
 */
 
 #include <ncbi_pch.hpp>
-#include "../ctlib/ctlib_utils.hpp"
-
-#include <corelib/plugin_manager_store.hpp>
-// Need declaration for CDllResolver_Getter<I_DriverContext>
-#include <dbapi/driver/driver_mgr.hpp>
-// #include <dbapi/driver/drivers.hpp>
-
-#define DBAPI_RegisterDriver_FTDSVER \
-    NCBI_FTDS_VERSION_NAME(DBAPI_RegisterDriver_FTDS)
-
-BEGIN_NCBI_SCOPE
-
-extern void NCBI_DBAPIDRIVER_CTLIB_EXPORT DBAPI_RegisterDriver_FTDSVER(void);
-
-BEGIN_SCOPE(NCBI_NS_FTDS_CTLIB)
-
-class CDbapiCtlibCF_ftds : public CDbapiCtlibCFBase
-{
-public:
-    CDbapiCtlibCF_ftds(void)
-    : CDbapiCtlibCFBase("ftds")
-    {
-    }
-};
-
-END_SCOPE(NCBI_NS_FTDS_CTLIB)
-
-extern "C"
-NCBI_DLL_EXPORT void NCBI_EntryPoint_xdbapi_ftds(
-    CPluginManager<I_DriverContext>::TDriverInfoList&   info_list,
-    CPluginManager<I_DriverContext>::EEntryPointRequest method)
-{
-    CHostEntryPointImpl<NCBI_NS_FTDS_CTLIB::CDbapiCtlibCF_ftds>
-        ::NCBI_EntryPointImpl(info_list, method);
-}
-
-NCBI_DLL_EXPORT void DBAPI_RegisterDriver_FTDS(void)
-{
-    RegisterEntryPoint<I_DriverContext>(NCBI_EntryPoint_xdbapi_ftds);
-    DBAPI_RegisterDriver_FTDSVER();
-}
-
-END_NCBI_SCOPE
+#include <../impl/ncbi_ftds_ver.h>
+#define  TARGET <../NCBI_FTDS_VERSION_NAME(ftds)/ctlib/context.cpp>
+#include TARGET

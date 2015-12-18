@@ -1,7 +1,6 @@
 # $Id$
 
-SRC = bcp connection context real_context cursor ftds_ctlib_utils lang_cmd \
-      result rpc
+SRC = bcp connection context cursor ftds_ctlib_utils lang_cmd result rpc
 
 LIB = ncbi_xdbapi_ftds
 

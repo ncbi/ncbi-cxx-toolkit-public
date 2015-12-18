@@ -45,7 +45,12 @@
 
 #ifdef FTDS_IN_USE
 
-#  ifdef NCBI_DBAPI_RENAME_CTLIB
+#  if defined(NCBI_FTDS_VERSION_NAME)  &&  defined(TARGET)
+#    undef NCBI_FTDS_VERSION_NAME
+#    undef NCBI_FTDS_VERSION_NAME2
+#    define NCBI_FTDS_VERSION_NAME(X)    X
+#    define NCBI_FTDS_VERSION_NAME2(X,Y) X ## Y
+#  elif defined(NCBI_DBAPI_RENAME_CTLIB)
 #    include <../impl/ncbi_ftds_ver.h>
 #  else
 #    define NCBI_FTDS_VERSION            0
