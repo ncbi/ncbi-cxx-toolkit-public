@@ -25,7 +25,7 @@ class CMultiReader
 //  ============================================================================
 {
 public:
-   CMultiReader(const CTable2AsnContext& context);
+   CMultiReader(CTable2AsnContext& context);
    ~CMultiReader();
  
    CFormatGuess::EFormat LoadFile(CNcbiIstream& in, CRef<objects::CSeq_entry>& entry, CRef<objects::CSeq_submit>& submit);
@@ -61,7 +61,7 @@ private:
     string m_AnnotName;
     string m_AnnotTitle;
 
-    const CTable2AsnContext& m_context;
+    CTable2AsnContext& m_context;
 };
 
 END_NCBI_SCOPE

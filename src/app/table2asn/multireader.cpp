@@ -67,11 +67,15 @@
 #include <serial/objostr.hpp>
 #include <serial/objostrasn.hpp>
 #include <serial/serial.hpp>
+#include <objects/seq/Annot_id.hpp>
+#include <objects/general/Dbtag.hpp>
 
 //#include <objtools/readers/error_container.hpp>
 
 #include "multireader.hpp"
 #include "table2asn_context.hpp"
+
+#include <objtools/edit/feattable_edit.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -359,7 +363,7 @@ void CMultiReader::WriteObject(
     ostr.flush();
 }
 
-CMultiReader::CMultiReader(const CTable2AsnContext& context)
+CMultiReader::CMultiReader(CTable2AsnContext& context)
     :m_context(context)
 {
 }
@@ -1025,6 +1029,24 @@ CRef<CSeq_entry> CMultiReader::xReadGFF3(CNcbiIstream& instream)
     entry->SetSeq();
     reader.ReadSeqAnnotsNew(entry->SetAnnot(), lr, m_context.m_logger);
 
+    unsigned int startingLocusTagNumber = 1;
+
+    typedef CGff3Reader::TAnnotList ANNOTS;
+    ANNOTS& annots = entry->SetAnnot();
+   
+    for (ANNOTS::iterator it = annots.begin(); it != annots.end(); ++it){
+        edit::CFeatTableEdit fte(**it, m_context.m_locus_tag_prefix, startingLocusTagNumber, m_context.m_logger);
+        fte.InferPartials();
+        fte.InferParentMrnas();
+        fte.InferParentGenes();
+        fte.EliminateBadQualifiers();
+        fte.GenerateLocusTags();
+        fte.GenerateProteinAndTranscriptIds();
+        fte.SubmitFixProducts();
+    }
+
+
+
     return entry;
 }
 
@@ -1073,8 +1095,34 @@ bool CMultiReader::LoadAnnot(objects::CSeq_entry& obj, CNcbiIstream& in)
     if (xReadFile(in, entry, submit)
         && entry->IsSetAnnot() && !entry->GetAnnot().empty())
     {
-        obj.SetAnnot().insert(obj.SetAnnot().end(),
-            entry->SetAnnot().begin(), entry->SetAnnot().end());
+        CScope scope(*m_context.m_ObjMgr);
+        scope.AddDefaults();
+        scope.AddTopLevelSeqEntry(obj);
+        ITERATE(CBioseq::TAnnot, annot_it, entry->SetAnnot())
+        {
+            CSeq_id id;
+            const CAnnot_id& annot_id = *(**annot_it).GetId().front();
+            if (annot_id.IsLocal())
+                id.SetLocal().Assign(annot_id.GetLocal());
+            else
+            if (annot_id.IsGeneral())
+            {
+                id.SetGeneral().Assign(annot_id.GetGeneral());
+            }
+            else
+            {
+                //cerr << "Unknown id type:" << annot_id.Which() << endl;
+                continue;
+            }
+
+            CBioseq_Handle bioseq_h = scope.GetBioseqHandle(id);
+            if (bioseq_h)
+            {
+                CBioseq_EditHandle edit_handle = bioseq_h.GetEditHandle();
+                CBioseq& bioseq = (CBioseq&)*edit_handle.GetBioseqCore();
+                bioseq.SetAnnot().push_back(*annot_it);
+            }
+        }
 
         return true;
     }
