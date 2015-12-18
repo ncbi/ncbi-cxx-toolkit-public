@@ -29,6 +29,8 @@
 *   Unit test for data loading from ID.
 */
 
+#define NCBI_TEST_APPLICATION
+
 #include <ncbi_pch.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_handle.hpp>
@@ -51,6 +53,23 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
+NCBI_PARAM_DECL(Int8, GENBANK, GI_OFFSET);
+NCBI_PARAM_DEF_EX(Int8, GENBANK, GI_OFFSET, 0,
+                  eParam_NoThread, GENBANK_GI_OFFSET);
+
+static
+TIntId GetGiOffset(void)
+{
+    static volatile TIntId gi_offset;
+    static volatile bool initialized;
+    if ( !initialized ) {
+        gi_offset = NCBI_PARAM_TYPE(GENBANK, GI_OFFSET)::GetDefault();
+        initialized = true;
+    }
+    return gi_offset;
+}
+
+
 static CRef<CScope> s_InitScope(void)
 {
     CRef<CObjectManager> om = CObjectManager::GetInstance();
@@ -65,23 +84,45 @@ static CRef<CScope> s_InitScope(void)
     return scope;
 }
 
-void s_Print(const char *msg, const vector<CSeq_id_Handle>& ids)
+
+string s_AsString(const vector<CSeq_id_Handle>& ids)
 {
-    NcbiCout << msg << "Ids {\n";
+    CNcbiOstrstream out;
+    out << '{';
     ITERATE ( vector<CSeq_id_Handle>, it, ids ) {
-        NcbiCout << MSerial_AsnText << *it->GetSeqId();
+        out << ' ' <<  *it;
     }
-    NcbiCout << "}" << NcbiEndl;
+    out << " }";
+    return CNcbiOstrstreamToString(out);
 }
+
+
+bool s_RelaxGpipeCheck(void)
+{
+    return true;
+}
+
+
+bool s_ContainsId(const CSeq_id_Handle& id, const vector<CSeq_id_Handle>& ids)
+{
+    if ( find(ids.begin(), ids.end(), id) != ids.end() ) {
+        return true;
+    }
+    if ( id.Which() == CSeq_id::e_Gpipe && s_RelaxGpipeCheck() ) {
+        return true;
+    }
+    return false;
+}
+
 
 void s_CompareIdSets(const char* type,
                      const vector<CSeq_id_Handle>& req_ids,
                      const vector<CSeq_id_Handle>& ids,
                      bool exact)
 {
-    ERR_POST("CompareIdSets: "<<type);
-    //s_Print("req_ids: ", req_ids);
-    //s_Print("ids: ", ids);
+    LOG_POST("CompareIdSets: "<<type);
+    LOG_POST("req_ids: "<<s_AsString(req_ids));
+    LOG_POST("    ids: "<<s_AsString(ids));
     if ( exact ) {
         BOOST_CHECK_EQUAL(ids.size(), req_ids.size());
     }
@@ -89,21 +130,17 @@ void s_CompareIdSets(const char* type,
         BOOST_CHECK(ids.size() >= req_ids.size());
     }
     ITERATE ( vector<CSeq_id_Handle>, it, req_ids ) {
-        ERR_POST("checking "<<*it);
-#ifdef _RWSTD_NO_CLASS_PARTIAL_SPEC
-        int cnt = 0;
-        count(ids.begin(), ids.end(), *it, cnt);
-        BOOST_CHECK_EQUAL(cnt, 1u);
-#else
-        BOOST_CHECK_EQUAL(count(ids.begin(), ids.end(), *it), 1u);
-#endif
+        LOG_POST("checking "<<*it);
+        BOOST_CHECK(s_ContainsId(*it, ids));
     }
 }
+
 
 CSeq_id_Handle s_Normalize(const CSeq_id_Handle& id)
 {
     return CSeq_id_Handle::GetHandle(id.AsString());
 }
+
 
 vector<CSeq_id_Handle> s_Normalize(const vector<CSeq_id_Handle>& ids)
 {
@@ -114,6 +151,7 @@ vector<CSeq_id_Handle> s_Normalize(const vector<CSeq_id_Handle>& ids)
     return ret;
 }
 
+
 struct SBioseqInfo
 {
     string m_RequestId;
@@ -121,10 +159,11 @@ struct SBioseqInfo
     TSeqPos m_MinLength, m_MaxLength;
 };
 
+
 static const SBioseqInfo s_BioseqInfos[] = {
     {
-        "NC_000001",
-        "gi|224589800;ref|NC_000001.10|;gpp|GPC_000000025.1|;gnl|NCBI_GENOMES|1;gnl|ASM:GCF_000001305|1",
+        "NC_000001.10",
+        "gi|224589800;ref|NC_000001.10|;gpp|GPC_000001293.1|;gnl|NCBI_GENOMES|1;gnl|ASM:GCF_000001305|1",
         249250621,
         249250621
     }
@@ -138,14 +177,17 @@ void s_CheckIds(const SBioseqInfo& info, CScope* scope)
     {
         vector<string> req_ids_str;
         NStr::Tokenize(info.m_RequiredIds, ";", req_ids_str);
+        TIntId gi_offset = GetGiOffset();
         ITERATE ( vector<string>, it, req_ids_str ) {
-            req_ids.push_back(CSeq_id_Handle::GetHandle(*it));
+            CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(*it);
+            if ( gi_offset && idh.IsGi() ) {
+                idh = CSeq_id_Handle::GetGiHandle(idh.GetGi() + gi_offset);
+            }
+            req_ids.push_back(idh);
         }
     }
 
-    //s_Print("Required ", req_ids);
     CScope::TIds ids = s_Normalize(scope->GetIds(idh));
-    //s_Print("Reported ", ids);
     s_CompareIdSets("expected with get-ids",
                     req_ids, ids, true);
 
@@ -155,6 +197,7 @@ void s_CheckIds(const SBioseqInfo& info, CScope* scope)
     s_CompareIdSets("get-ids with Bioseq",
                     ids, s_Normalize(bh.GetId()), true);
 }
+
 
 void s_CheckSequence(const SBioseqInfo& info, CScope* scope)
 {
@@ -171,11 +214,25 @@ void s_CheckSequence(const SBioseqInfo& info, CScope* scope)
     }
 }
 
+
 void s_CheckAll(const SBioseqInfo& info, CScope* scope)
 {
     s_CheckIds(info, scope);
     s_CheckSequence(info, scope);
 }
+
+
+SAnnotSelector s_GetSelector(CSeqFeatData::ESubtype subtype,
+                             const char* name = 0)
+{
+    SAnnotSelector sel(subtype);
+    sel.SetResolveAll().SetAdaptiveDepth();
+    if ( name ) {
+        sel.AddNamedAnnots(name);
+    }
+    return sel;
+}
+
 
 BOOST_AUTO_TEST_CASE(CheckIds)
 {
@@ -185,6 +242,7 @@ BOOST_AUTO_TEST_CASE(CheckIds)
     }
 }
 
+
 BOOST_AUTO_TEST_CASE(CheckSequence)
 {
     for ( size_t i = 0; i < ArraySize(s_BioseqInfos); ++i ) {
@@ -193,6 +251,7 @@ BOOST_AUTO_TEST_CASE(CheckSequence)
     }
 }
 
+
 BOOST_AUTO_TEST_CASE(CheckAll)
 {
     for ( size_t i = 0; i < ArraySize(s_BioseqInfos); ++i ) {
@@ -200,6 +259,18 @@ BOOST_AUTO_TEST_CASE(CheckAll)
         s_CheckAll(s_BioseqInfos[i], scope);
     }
 }
+
+
+BOOST_AUTO_TEST_CASE(CheckSNP)
+{
+    CRef<CScope> scope = s_InitScope();
+    CBioseq_Handle bh =
+        scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("NC_000001.10"));
+    BOOST_REQUIRE(bh);
+    BOOST_CHECK(CFeat_CI(bh, CRange<TSeqPos>(249200000, 249210000),
+                         s_GetSelector(CSeqFeatData::eSubtype_variation)));
+}
+
 
 NCBITEST_INIT_TREE()
 {

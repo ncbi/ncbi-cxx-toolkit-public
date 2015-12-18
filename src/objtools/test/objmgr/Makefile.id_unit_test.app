@@ -13,6 +13,8 @@ CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
 LIBS = $(FTDS_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
-#CHECK_CMD = id_unit_test
+CHECK_COPY = all_readers.sh
+
+CHECK_CMD = all_readers.sh id_unit_test
 
 WATCHERS = vasilche
