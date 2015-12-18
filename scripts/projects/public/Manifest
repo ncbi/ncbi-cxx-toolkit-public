@@ -10,6 +10,7 @@
 #
 
 USE_COMPONENTS
+TAG_PRE_COMMIT: tagprecommit/use_embedded_ptb.py
 
 # Each line describes a single configuration
 # The format is as follows:
