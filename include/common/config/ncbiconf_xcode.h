@@ -495,6 +495,9 @@
 /* Define to 1 if you have the `statvfs' function. */
 #define HAVE_STATVFS 1
 
+/* Define to 1 if you have the <stddef.h> header file. */
+#define HAVE_STDDEF_H 1
+
 /* Define to 1 if you have the <stdint.h> header file. */
 #define HAVE_STDINT_H 1
 
