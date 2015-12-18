@@ -6,5 +6,5 @@ HOSTED_LIBS    = ncbi_xdbapi_ftds
 
 DEPENDENCIES   = ncbi_core ncbi_dbapi_driver ncbi_xdbapi_ftds64
 
-#CPPFLAGS = -DNCBI_DBAPIDRIVER_CTLIB_EXPORTS
+CPPFLAGS = -DNCBI_DBAPIDRIVER_CTLIB_EXPORTS
 
