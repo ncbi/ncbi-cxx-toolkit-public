@@ -540,6 +540,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BMKB	s	Brunei Museum",
 "BMM	s	Buergermeister Mueller, Museum",
 "BMNH	s	Natural History Museum, London",
+"BMNH:ENT	s	Natural History Museum, London, Entomology collection",
 "BMNHC	s	Burpee Museum of Natural History",
 "BMPS	s	Bristol Museum and Philosophical Society",
 "BMR	s	Bureau of Mineral Resources",
