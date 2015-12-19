@@ -229,6 +229,7 @@ ct64 needs3party $(ORIG_LIBS)
 ct64 needs3party comn64
 ct64 needs3party intl64
 ct_ftds64 needs tds_ftds64
+ct_ftds95 needs tds_ftds95
 ctransition needs xncbi
 ctutils needs $(VDB_LIB)
 ctutils needs3party $(SYBASE_DLLS)
@@ -244,6 +245,8 @@ dbapi_sample_base needs $(DBAPI_CTLIB)
 dbapi_sample_base needs $(DBAPI_ODBC)
 dbapi_sample_base needs $(XCONNEXT)
 dbapi_sample_base needs ncbi_xdbapi_ftds
+dbapi_sample_base needs ncbi_xdbapi_ftds64
+dbapi_sample_base needs ncbi_xdbapi_ftds95
 dbapi_sample_base needs xconnect
 dbapi_sample_base needs xutil
 dbapi_sample_base needs3party $(SYBASE_DLLS)
@@ -768,6 +771,12 @@ ncbi_xdbapi_dblib needs3party $(SYBASE_DLLS)
 ncbi_xdbapi_ftds needs $(FTDS_LIB)
 ncbi_xdbapi_ftds needs dbapi_driver
 ncbi_xdbapi_ftds needs3party $(FTDS_LIBS)
+ncbi_xdbapi_ftds64 needs $(FTDS_LIB)
+ncbi_xdbapi_ftds64 needs dbapi_driver
+ncbi_xdbapi_ftds64 needs3party $(FTDS_LIBS)
+ncbi_xdbapi_ftds95 needs $(FTDS95_LIB)
+ncbi_xdbapi_ftds95 needs dbapi_driver
+ncbi_xdbapi_ftds95 needs3party $(FTDS95_LIBS)
 ncbi_xdbapi_mysql needs dbapi_driver
 ncbi_xdbapi_mysql needs3party $(MYSQL_LIBS)
 ncbi_xdbapi_mysql needs3party $(NETWORK_LIBS)
@@ -885,6 +894,7 @@ objmmail needs3party $(NCBI_C_ncbi)
 objprt needs xser
 objtax1 needs3party ncbiobj
 odbc_ftds64 needs tds_ftds64
+odbc_ftds95 needs tds_ftds95
 omssa needs $(SEQ_LIBS)
 omssa needs pub
 osutils needs3party $(RT_LIBS)
@@ -1046,6 +1056,7 @@ sybdb64 includes3party comn64
 sybdb64 includes3party intl64
 sybdb64 needs3party $(ORIG_LIBS)
 sybdb_ftds64 needs tds_ftds64
+sybdb_ftds95 needs tds_ftds95
 sybtcl64 needs3party $(ORIG_LIBS)
 sybtcl64 needs3party comn64
 sybtcl64 needs3party intl64
@@ -1066,6 +1077,10 @@ taxutl needs taxon1
 tds_ftds64 needs3party $(KRB5_LIBS)
 tds_ftds64 needs3party $(NETWORK_LIBS)
 tds_ftds64 needs3party $(ORIG_LIBS)
+tds_ftds95 needs3party $(KRB5_LIBS)
+tds_ftds95 needs3party $(NETWORK_LIBS)
+tds_ftds95 needs3party $(ORIG_LIBS)
+tds_ftds95 needs3party $(RT_LIBS)
 tea_crypt needs generic_db_utils
 test_boost includes3party $(BOOST_TEST_LIBS)
 test_boost needs xncbi
