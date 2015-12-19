@@ -39,7 +39,7 @@
 # define _DIAGASSERT(x) assert((x))
 #endif
 
-#if !defined(_WIN32)
+#if !defined(_WIN32) && 0
 # include "namespace.h"
 #endif
 
