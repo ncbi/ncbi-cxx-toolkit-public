@@ -221,6 +221,9 @@
 /* Define to 1 if you have the `getlogin_r' function */
 #define HAVE_GETLOGIN_R 1
 
+/* Define to 1 if you have the `getopt' function. */
+#define HAVE_GETOPT 1
+
 /* Define to 1 if you have the `getnameinfo' function. */
 #define HAVE_GETNAMEINFO 1
 
@@ -528,6 +531,9 @@
 /* Define to 1 if you have the `strndup' function. */
 /* #undef HAVE_STRNDUP */
 
+/* Define to 1 if you have the `strsep' function. */
+#undef HAVE_STRSEP
+
 /* Define to 1 if you have the <strstream> header file. */
 #define HAVE_STRSTREAM 1
 
@@ -609,6 +615,9 @@
 
 /* Define to 1 if you have the `utimes' function. */
 #define HAVE_UTIMES 1
+
+/* Define to 1 if you have the <valgrind/memcheck.h> header file. */
+/* #undef HAVE_VALGRIND_MEMCHECK_H */
 
 /* Define to 1 if you have the `vasprintf' function. */
 #define HAVE_VASPRINTF 1
