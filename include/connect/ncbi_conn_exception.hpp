@@ -77,7 +77,7 @@ public:
         eUnknown      = eIO_Unknown
     };
     virtual const char* GetErrCodeString(void) const;
-    NCBI_EXCEPTION_DEFAULT(CIO_Exception, CException);
+    NCBI_EXCEPTION_DEFAULT(CIO_Exception, CConnException);
 };
 
 

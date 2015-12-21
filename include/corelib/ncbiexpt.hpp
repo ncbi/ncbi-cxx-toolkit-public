@@ -1177,6 +1177,7 @@ public: \
     }
 
 
+#if 0
 /// Exception bug workaround for GCC version less than 3.00.
 ///
 /// GCC compiler v.2.95 has a bug: one should not use virtual base class in
@@ -1193,6 +1194,15 @@ public: \
 #else
 #  define EXCEPTION_VIRTUAL_BASE virtual
 #endif
+#endif // if 0
+
+/// Do not use virtual base classes in exception declaration at all,
+/// because in this case derived class should initialize all base
+/// classes directly, that is not convenient and hard to control.
+///
+/// @deprecated
+///
+#define EXCEPTION_VIRTUAL_BASE
 
 
 
