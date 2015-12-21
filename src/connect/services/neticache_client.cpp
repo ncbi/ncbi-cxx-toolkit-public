@@ -1091,7 +1091,7 @@ void CNetICacheClientExt::ProlongBlobLifetime(const string& key,
     cmd += "\" \"";
     cmd += key;
     cmd += "\" \"\" ttl=";
-    cmd += NStr::NumericToString(ttl.GetAsDouble());
+    cmd += NStr::NumericToString((unsigned)ttl.GetAsDouble());
 
     m_Impl->AppendClientIPSessionID(&cmd);
     m_Impl->ChooseServerAndExec(cmd, key, false, &m_Impl->m_DefaultParameters);
