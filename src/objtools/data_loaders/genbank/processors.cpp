@@ -2490,6 +2490,7 @@ void CProcessor_ExtAnnot::Process(CReaderRequestResult& result,
     case eSubSat_microRNA:
         name.SetNamed("other");
         type.SetFeatSubtype(CSeqFeatData::eSubtype_ncRNA);
+        more_types.push_back(SAnnotTypeSelector(CSeqFeatData::eSubtype_otherRNA));
         db_name = "Annot:microRNA";
         break;
     case eSubSat_Exon:
