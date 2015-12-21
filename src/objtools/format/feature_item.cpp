@@ -3813,8 +3813,20 @@ void CFeatureItem::x_AddRptUnitQual(
 static bool s_IsValidRptType(const string& type)
 {
     static const char* const valid_rpt[] = {
-        "direct", "dispersed", "flanking", "inverted", "other",
-        "tandem", "terminal"
+        "centromeric_repeat",
+        "direct",
+        "dispersed",
+        "engineered_foreign_repetitive_element",
+        "flanking",
+        "inverted",
+        "long_terminal_repeat",
+        "non_LTR_retrotransposon_polymeric_tract",
+        "other",
+        "tandem",
+        "telomeric_repeat",
+        "terminal",
+        "X_element_combinatorial_repeat",
+        "Y_prime_element"
     };
     typedef CStaticArraySet<string, PNocase> TValidRptTypes;
     DEFINE_STATIC_ARRAY_MAP(TValidRptTypes, valid_types, valid_rpt);
