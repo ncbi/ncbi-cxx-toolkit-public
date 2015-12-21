@@ -3074,6 +3074,15 @@ void CNewCleanup_imp::ImpFeatBC( CSeq_feat& feat )
             satellite_qual->SetVal( val );
 
             feat.SetQual().push_back( satellite_qual );
+        } else if ( key == "LTR" ) {
+            SET_FIELD(imf, Key, "repeat_region");
+            ChangeMade(CCleanupChange::eChangeKeywords);
+
+            CRef<CGb_qual> rpt_type_qual( new CGb_qual );
+            rpt_type_qual->SetQual( "rpt_type" );
+            rpt_type_qual->SetVal( "long_terminal_repeat" );
+
+            feat.SetQual().push_back( rpt_type_qual );
         }
 
         CSeqFeatData::ESubtype subtype = feat.GetData().GetSubtype();
