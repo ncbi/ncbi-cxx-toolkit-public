@@ -100,7 +100,7 @@ CRef <CFeature_field> CField_type :: FeatureFieldFromCDSGeneProtField (ECDSGeneP
    return (CRef <CFeature_field> (0));
 };
 
-static const string dblink_name[] = {
+static const char* dblink_name[] = {
    "Trace Assembly Archive",
    "BioSample",
    "ProbeDB",

@@ -134,7 +134,7 @@ bool CString_constraint :: x_IsFirstEachCap(const string& str) const
 }
 
 
-static const string weasels[] = {
+static const char* weasels[] = {
   "candidate",
   "hypothetical",
   "novel",
@@ -148,17 +148,15 @@ static const string weasels[] = {
   "unique"
 };
 
-bool CString_constraint :: x_IsWeasel(const string& str) const
+bool CString_constraint::x_IsWeasel(const string& str) const
 {
-  size_t sz = ArraySize(weasels);
-  const string *begin = weasels;
-  const string *end = &(weasels[sz]);
-
-  if (find(begin, end, str) != end) {
-        return true;
-  } else {
-        return false;
-  }
+    size_t n = ArraySize(weasels);
+    for (size_t i = 0; i <= n; i++) {
+        if (str == weasels[i]) {
+            return true;
+        }
+    }
+    return false;
 };
 
 string CString_constraint :: x_SkipWeasel(const string& str) const
@@ -167,7 +165,7 @@ string CString_constraint :: x_SkipWeasel(const string& str) const
     return kEmptyStr;
   }
   string ret_str;
-  vector <string> arr;
+  vector<string> arr;
   arr = NStr::Tokenize(str, " ", arr);
 
   bool found = false;

@@ -712,7 +712,7 @@ void CUser_object::x_RemoveUnverifiedType(const string& val)
 }
 
 
-static const string kUnverifiedOrganism = "Organism";
+static const char* kUnverifiedOrganism = "Organism";
 
 bool CUser_object::IsUnverifiedOrganism() const
 {
@@ -732,7 +732,7 @@ void CUser_object::RemoveUnverifiedOrganism()
 }
 
 
-static const string kUnverifiedFeature = "Features";
+static const char* kUnverifiedFeature = "Features";
 
 bool CUser_object::IsUnverifiedFeature() const
 {
@@ -752,7 +752,7 @@ void CUser_object::RemoveUnverifiedFeature()
 }
 
 
-static const string kUnverifiedMisassembled = "Misassembled";
+static const char* kUnverifiedMisassembled = "Misassembled";
 
 bool CUser_object::IsUnverifiedMisassembled() const
 {
