@@ -300,20 +300,36 @@ string CRemoteAppVersion::Get(const string& v) const
     return v;
 }
 
+struct SSection
+{
+    const IRegistry& reg;
+    const string& name;
+
+    SSection(const IRegistry& r, const string& n) : reg(r), name(n) {}
+
+    int Get(const string& param, int def) const
+    {
+        return reg.GetInt(name, param, def, 0, IRegistry::eReturn);
+    }
+
+    bool Get(const string& param, bool def) const
+    {
+        return reg.GetBool(name, param, def, 0, IRegistry::eReturn);
+    }
+};
+
 //////////////////////////////////////////////////////////////////////////////
 ///
 CRemoteAppLauncher::CRemoteAppLauncher(const string& sec_name,
-        const IRegistry& reg)
-    : m_MaxAppRunningTime(0), m_KeepAlivePeriod(0),
+        const IRegistry& reg) :
       m_NonZeroExitAction(eDoneOnNonZeroExit),
       m_RemoveTempDir(true),
       m_CacheStdOutErr(true)
 {
-    m_MaxAppRunningTime =
-        reg.GetInt(sec_name,"max_app_run_time",0,0,IRegistry::eReturn);
+    const SSection sec(reg, sec_name);
 
-    m_KeepAlivePeriod =
-        reg.GetInt(sec_name,"keep_alive_period",0,0,IRegistry::eReturn);
+    m_MaxAppRunningTime = sec.Get("max_app_run_time", 0);
+    m_KeepAlivePeriod = sec.Get("keep_alive_period", 0);
 
     if (reg.HasEntry(sec_name, "non_zero_exit_action") ) {
         string val = reg.GetString(sec_name, "non_zero_exit_action", "");
@@ -330,8 +346,7 @@ CRemoteAppLauncher::CRemoteAppLauncher(const string& sec_name,
                    "value: \"" << val << "\". "
                    "Allowed values: fail, return, done");
         }
-    } else if (reg.GetBool(sec_name, "fail_on_non_zero_exit", false, 0,
-            CNcbiRegistry::eReturn))
+    } else if (sec.Get("fail_on_non_zero_exit", false))
         m_NonZeroExitAction = eFailOnNonZeroExit;
 
     if (reg.HasEntry(sec_name, "fail_no_retries_if_exit_code")) {
@@ -340,8 +355,7 @@ CRemoteAppLauncher::CRemoteAppLauncher(const string& sec_name,
                     kEmptyStr).c_str(), "fail_no_retries_if_exit_code");
     }
 
-    if (reg.GetBool(sec_name, "run_in_separate_dir", false, 0,
-            CNcbiRegistry::eReturn)) {
+    if (sec.Get("run_in_separate_dir", false)) {
         if (reg.HasEntry(sec_name, "tmp_dir"))
             m_TempDir = reg.GetString(sec_name, "tmp_dir", "." );
         else
@@ -354,13 +368,10 @@ CRemoteAppLauncher::CRemoteAppLauncher(const string& sec_name,
             m_TempDir = CDirEntry::NormalizePath(tmp);
         }
         if (reg.HasEntry(sec_name, "remove_tmp_dir"))
-            m_RemoveTempDir = reg.GetBool(sec_name, "remove_tmp_dir", true, 0,
-                                    CNcbiRegistry::eReturn);
+            m_RemoveTempDir = sec.Get("remove_tmp_dir", true);
         else
-            m_RemoveTempDir = reg.GetBool(sec_name, "remove_tmp_path", true, 0,
-                                    CNcbiRegistry::eReturn);
-        m_CacheStdOutErr = reg.GetBool(sec_name, "cache_std_out_err", true, 0,
-                                    CNcbiRegistry::eReturn);
+            m_RemoveTempDir = sec.Get("remove_tmp_path", true);
+        m_CacheStdOutErr = sec.Get("cache_std_out_err", true);
     }
 
     m_AppPath = reg.GetString(sec_name, "app_path", kEmptyStr);
@@ -392,14 +403,9 @@ CRemoteAppLauncher::CRemoteAppLauncher(const string& sec_name,
         }
     }
 
-    m_MaxMonitorRunningTime = reg.GetInt(sec_name,
-            "max_monitor_running_time", 5, 0, IRegistry::eReturn);
-
-    m_MonitorPeriod = reg.GetInt(sec_name,
-            "monitor_period", 5, 0, IRegistry::eReturn);
-
-    m_KillTimeout = reg.GetInt(sec_name,
-            "kill_timeout", 1, 0, IRegistry::eReturn);
+    m_MaxMonitorRunningTime = sec.Get("max_monitor_running_time", 5);
+    m_MonitorPeriod = sec.Get("monitor_period", 5);
+    m_KillTimeout = sec.Get("kill_timeout", 1);
 
     m_ExcludeEnv.clear();
     m_IncludeEnv.clear();
@@ -419,10 +425,8 @@ CRemoteAppLauncher::CRemoteAppLauncher(const string& sec_name,
     }
 
     const string name = CNcbiApplication::Instance()->GetProgramDisplayName();
-    int sleep = reg.GetInt(sec_name,
-            "sleep_between_reap_attempts", 60, 0, IRegistry::eReturn);
-    int max_attempts = reg.GetInt(sec_name,
-            "max_reap_attempts_after_kill", 60, 0, IRegistry::eReturn);
+    int sleep = sec.Get("sleep_between_reap_attempts", 60);
+    int max_attempts = sec.Get("max_reap_attempts_after_kill", 60);
     m_Reaper.reset(new CRemoteAppReaper(sleep, max_attempts, name));
 
     const string cmd = reg.GetString(sec_name, "version_cmd", m_AppPath);
