@@ -317,7 +317,8 @@ xml::document::document (const char *               filename,
         FILE *test(fopen(filename, "r"));
         if (test == NULL) {
             error_message  msg("Cannot open file",
-                               error_message::type_fatal_error);
+                               error_message::type_fatal_error,
+                               0, filename);
             temp->get_messages().push_back(msg);
             throw parser_exception(*temp);
         }
@@ -439,10 +440,12 @@ xml::document::document (std::istream &           stream,
         messages->get_messages().clear();
 
     /* Make sure that the stream is not empty */
-    if (stream && (stream.eof() || stream.peek() == std::istream::traits_type::eof()))
+    if (stream && (stream.eof() ||
+                   stream.peek() == std::istream::traits_type::eof()))
     {
         temp->get_messages().push_back(error_message("empty xml document",
-                                                     error_message::type_error));
+                                                     error_message::type_error,
+                                                     0, ""));
         throw parser_exception(*temp);
     }
 
@@ -1025,8 +1028,16 @@ namespace {
                                            const std::string &message) {
         try {
             error_messages *p = static_cast<error_messages*>(v);
-            if (p)
-                p->get_messages().push_back(error_message(message, mt));
+            if (p) {
+                int     line = xmlLastError.line;
+                if (line < 0)
+                    line = 0;
+                std::string     filename;
+                if (xmlLastError.file != NULL)
+                    filename = xmlLastError.file;
+                p->get_messages().push_back(error_message(message, mt,
+                                                          line, filename));
+            }
         } catch (...) {}
     }
 
@@ -1060,8 +1071,17 @@ namespace {
             xmlParserCtxtPtr ctxt = static_cast<xmlParserCtxtPtr>(v);
             error_messages *p = static_cast<error_messages*>(ctxt->_private);
 
-            if (p) // handle bug in older versions of libxml
-                p->get_messages().push_back(error_message(message, mt));
+            // handle bug in older versions of libxml2
+            if (p) {
+                int     line = xmlLastError.line;
+                if (line < 0)
+                    line = 0;
+                std::string     filename;
+                if (xmlLastError.file != NULL)
+                    filename = xmlLastError.file;
+                p->get_messages().push_back(error_message(message, mt,
+                                                          line, filename));
+            }
         } catch (...) {}
     }
 

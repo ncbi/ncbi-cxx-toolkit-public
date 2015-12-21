@@ -72,10 +72,14 @@ public:
      *
      * @param message The error message.
      * @param msg_type The error type.
+     * @param line file line realting to error message. 0 if none.
+     * @param filename file name if available or an empty string.
      * @author Sergey Satskiy, NCBI
     **/
     error_message(const std::string& message,
-                  message_type msg_type);
+                  message_type msg_type,
+                  int line,
+                  const std::string& filename);
 
     /**
      * Get the error message type.
@@ -93,9 +97,25 @@ public:
     **/
     std::string  get_message      (void) const;
 
+    /**
+     * Get the line number.
+     *
+     * @return The line number, 0 if not available.
+    **/
+    int get_line (void) const;
+
+    /**
+     * Get the file name.
+     *
+     * @return The file name, empty string if not available.
+    **/
+    std::string  get_filename (void) const;
+
 private:
     message_type message_type_;
     std::string  message_;
+    int          line_;
+    std::string  filename_;
 };
 
 

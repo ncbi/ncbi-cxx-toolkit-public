@@ -442,7 +442,8 @@ xslt::stylesheet::stylesheet(const char *filename)
 
         msgs.get_messages().push_back(xml::error_message(
                                             pimpl_->error_,
-                                            xml::error_message::type_error));
+                                            xml::error_message::type_error,
+                                            0, ""));
         throw xml::parser_exception(msgs);
     }
 
@@ -472,7 +473,8 @@ xslt::stylesheet::stylesheet(const xml::document &  doc)
         xml::error_messages     messages;
         messages.get_messages().push_back(xml::error_message(
                                             pimpl_->error_,
-                                            xml::error_message::type_error));
+                                            xml::error_message::type_error,
+                                            0, ""));
         throw xml::parser_exception(messages);
     }
 
@@ -502,7 +504,8 @@ xslt::stylesheet::stylesheet (const char* data, size_t size)
 
         msgs.get_messages().push_back(xml::error_message(
                                             pimpl_->error_,
-                                            xml::error_message::type_error));
+                                            xml::error_message::type_error,
+                                            0, ""));
         throw xml::parser_exception(msgs);
     }
 
@@ -531,7 +534,8 @@ xslt::stylesheet::stylesheet (std::istream & stream)
 
         msgs.get_messages().push_back(xml::error_message(
                                             pimpl_->error_,
-                                            xml::error_message::type_error));
+                                            xml::error_message::type_error,
+                                            0, ""));
         throw xml::parser_exception(msgs);
     }
 

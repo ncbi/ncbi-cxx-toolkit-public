@@ -302,9 +302,14 @@ bool event_parser::parse_file (const char *filename, error_messages* messages,
         pimpl_->parser_status_ = false;
         if (messages)
         {
-            std::string message("Cannot open file" + std::string(filename));
-            messages->get_messages().push_back(error_message(message,
-                                                             error_message::type_error));
+            std::string file_name;
+            if (filename != NULL)
+                file_name = filename;
+            std::string message("Cannot open file" + file_name);
+            messages->get_messages().push_back(
+                                        error_message(message,
+                                                      error_message::type_error,
+                                                      0, file_name));
         }
         return false;
     }
@@ -329,7 +334,8 @@ bool event_parser::parse_stream (std::istream &stream, error_messages* messages,
     {
         pimpl_->parser_status_ = false;
         temp->get_messages().push_back(error_message("empty xml document",
-                                                     error_message::type_error));
+                                                     error_message::type_error,
+                                                     0, ""));
         return false;
     }
 
@@ -977,8 +983,16 @@ void epimpl::event_entity_reference (const xmlChar *name) {
 void epimpl::event_warning (const std::string &message) {
     if (!parser_status_) return;
 
-    errors_->get_messages().push_back(error_message(message,
-                                                    error_message::type_warning));
+    int     line = xmlLastError.line;
+    if (line < 0)
+        line = 0;
+    std::string     filename;
+    if (xmlLastError.file != NULL)
+        filename = xmlLastError.file;
+    errors_->get_messages().push_back(
+                                error_message(message,
+                                              error_message::type_warning,
+                                              line, filename));
     try {
         parser_status_ = parent_.warning(message);
     } catch (const std::exception &ex) {
@@ -994,8 +1008,16 @@ void epimpl::event_warning (const std::string &message) {
 void epimpl::event_error (const std::string &message) {
     if (!parser_status_) return;
 
-    errors_->get_messages().push_back(error_message(message,
-                                                    error_message::type_error));
+    int     line = xmlLastError.line;
+    if (line < 0)
+        line = 0;
+    std::string     filename;
+    if (xmlLastError.file != NULL)
+        filename = xmlLastError.file;
+    errors_->get_messages().push_back(
+                                error_message(message,
+                                              error_message::type_error,
+                                              line, filename));
     try {
         parser_status_ = parent_.error(message);
     } catch (const std::exception &ex) {
@@ -1012,8 +1034,16 @@ void epimpl::event_error (const std::string &message) {
 void epimpl::event_fatal_error (const std::string &message) {
     if (!parser_status_) return;
 
-    errors_->get_messages().push_back(error_message(message,
-                                                    error_message::type_fatal_error));
+    int     line = xmlLastError.line;
+    if (line < 0)
+        line = 0;
+    std::string     filename;
+    if (xmlLastError.file != NULL)
+        filename = xmlLastError.file;
+    errors_->get_messages().push_back(
+                                error_message(message,
+                                              error_message::type_fatal_error,
+                                              line, filename));
     parser_status_ = false;
     xmlStopParser(parser_context_);
 }

@@ -102,7 +102,8 @@ dtd::dtd (const char* filename, error_messages* messages,
         // have a better error message.
         error_messages dtd_parser_messages_;
         error_message msg(get_dtd_parsing_error_message(filename),
-                          error_message::type_error);
+                          error_message::type_error,
+                          0, filename);
         if (messages)
             messages->get_messages().push_back(msg);
         dtd_parser_messages_.get_messages().push_back(msg);
@@ -181,8 +182,16 @@ namespace {
                                 const std::string &message) {
         try {
             error_messages *p = static_cast<error_messages*>(v);
-            if (p)
-                p->get_messages().push_back(error_message(message, mt));
+            if (p) {
+                int     line = xmlLastError.line;
+                if (line < 0)
+                    line = 0;
+                std::string     filename;
+                if (xmlLastError.file != NULL)
+                    filename = xmlLastError.file;
+                p->get_messages().push_back(error_message(message, mt,
+                                                          line, filename));
+            }
         } catch (...) {}
     }
 

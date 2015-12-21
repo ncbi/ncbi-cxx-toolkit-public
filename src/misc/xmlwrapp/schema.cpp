@@ -195,8 +195,16 @@ namespace {
                                 const std::string &message) {
         try {
             error_messages *p = static_cast<error_messages*>(v);
-            if (p)
-                p->get_messages().push_back(error_message(message, mt));
+            if (p) {
+                int     line = xmlLastError.line;
+                if (line < 0)
+                    line = 0;
+                std::string     filename;
+                if (xmlLastError.file != NULL)
+                    filename = xmlLastError.file;
+                p->get_messages().push_back(error_message(message, mt,
+                                                          line, filename));
+            }
         } catch (...) {}
     }
 
