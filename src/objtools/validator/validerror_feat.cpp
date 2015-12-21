@@ -442,8 +442,20 @@ const string s_PlastidTxt[] = {
 
 
 static string s_LegalRepeatTypes[] = {
-  "tandem", "inverted", "flanking", "terminal",
-  "direct", "dispersed", "other"
+  "centromeric_repeat",
+  "direct",
+  "dispersed",
+  "engineered_foreign_repetitive_element",
+  "flanking",
+  "inverted",
+  "long_terminal_repeat",
+  "non_LTR_retrotransposon_polymeric_tract",
+  "other",
+  "tandem",
+  "telomeric_repeat",
+  "terminal",
+  "X_element_combinatorial_repeat",
+  "Y_prime_element"
 };
 
 
