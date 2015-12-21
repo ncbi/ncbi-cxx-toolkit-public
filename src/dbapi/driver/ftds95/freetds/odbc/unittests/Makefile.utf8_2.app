@@ -9,7 +9,7 @@ LIBS     = $(FTDS95_CTLIB_LIBS) $(NETWORK_LIBS) $(RT_LIBS) $(C_LIBS)
 LINK     = $(C_LINK)
 
 CHECK_CMD  = test-odbc95.sh odbc95_utf8_2
-CHECK_COPY = test-odbc95.sh odbc.ini
+CHECK_COPY = odbc.ini
 
 # This test fails with FreeTDS's replacement iconv, which doesn't
 # support any legacy encodings apart from ISO-8859-1 and ASCII.

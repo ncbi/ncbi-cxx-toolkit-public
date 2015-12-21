@@ -9,6 +9,8 @@ APP_PROJ = t0001 t0002 t0003 t0004 t0005 t0006 t0007 t0008 t0009 t0011 t0012 \
            rpc dbmorecmds bcp thread text_buffer done_handling timeout hang \
            null null2 setnull numeric pending cancel
 
+EXTRA_CONFIGURABLES = test-db95.sh
+
 srcdir = @srcdir@
 
 include @builddir@/Makefile.meta

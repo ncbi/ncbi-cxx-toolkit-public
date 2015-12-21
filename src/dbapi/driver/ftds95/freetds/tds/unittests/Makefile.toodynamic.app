@@ -9,7 +9,6 @@ LIBS     = $(FTDS95_CTLIB_LIBS) $(NETWORK_LIBS) $(RT_LIBS) $(C_LIBS)
 LINK     = $(C_LINK)
 
 CHECK_CMD  = test-tds95.sh tds95_toodynamic
-CHECK_COPY = test-tds95.sh
 
 CHECK_REQUIRES = in-house-resources
 

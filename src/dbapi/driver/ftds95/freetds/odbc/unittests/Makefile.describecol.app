@@ -10,7 +10,7 @@ LIBS     = $(FTDS95_CTLIB_LIBS) $(NETWORK_LIBS) $(RT_LIBS) $(C_LIBS)
 LINK     = $(C_LINK)
 
 CHECK_CMD  = test-odbc95.sh odbc95_describecol
-CHECK_COPY = test-odbc95.sh odbc.ini describecol.in
+CHECK_COPY = odbc.ini describecol.in
 
 CHECK_REQUIRES = in-house-resources
 

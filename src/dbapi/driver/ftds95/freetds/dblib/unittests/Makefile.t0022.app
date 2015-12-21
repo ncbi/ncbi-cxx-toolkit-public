@@ -12,7 +12,7 @@ LINK     = $(C_LINK)
 # Work around a known server bug observed when using TDS 7.x, under which
 # the test either fails outright (with TDS 7.3) or self-disables (7.0-7.2).
 CHECK_CMD  = test-db95.sh --ms-ver 4.2 --no-auto db95_t0022
-CHECK_COPY = test-db95.sh t0022.sql
+CHECK_COPY = t0022.sql
 
 CHECK_REQUIRES = in-house-resources
 

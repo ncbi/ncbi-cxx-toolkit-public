@@ -10,7 +10,6 @@ LINK     = $(C_LINK)
 
 # Needs automatic textptr metadata, gone as of TDS 7.2.
 CHECK_CMD  = test-ct95.sh --ms-ver 7.1 ct95_get_send_data
-CHECK_COPY = test-ct95.sh
 
 CHECK_REQUIRES = in-house-resources
 

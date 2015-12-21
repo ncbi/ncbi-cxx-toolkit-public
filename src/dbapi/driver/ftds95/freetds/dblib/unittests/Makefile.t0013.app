@@ -11,7 +11,7 @@ LINK     = $(C_LINK)
 
 # Needs automatic textptr metadata, gone as of TDS 7.2.
 CHECK_CMD  = test-db95.sh --ms-ver 7.1 --no-auto db95_t0013
-CHECK_COPY = test-db95.sh t0013.sql data.bin
+CHECK_COPY = t0013.sql data.bin
 
 CHECK_REQUIRES = in-house-resources
 

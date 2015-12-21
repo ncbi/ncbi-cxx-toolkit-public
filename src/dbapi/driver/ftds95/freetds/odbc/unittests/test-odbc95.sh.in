@@ -1,4 +1,11 @@
-#!/bin/sh
+@script_shell@
+
+syb="@SYBASE_PATH@"
+if test -d "$syb" -o -z "$SYBASE"; then
+    SYBASE=$syb
+    export SYBASE
+fi
+
 servers='MSDEV1 DBAPI_DEV3'
 failures=
 succeeded_anywhere=no

@@ -16,6 +16,8 @@ APP_PROJ = t0001 t0002 t0003 t0004 connect print date norowset funccall \
            test64 prepare_warn long_error mars1 array_error describecol2 \
            closestmt
 
+EXTRA_CONFIGURABLES = test-odbc95.sh
+
 srcdir = @srcdir@
 
 include @builddir@/Makefile.meta
