@@ -60,7 +60,7 @@ public:
         CNcbiIstream& in, CNcbiOstream& out, CNcbiOstream& err,
         int& exit_value,
         CWorkerNodeJobContext& job_context,
-        int app_run_timeout,
+        unsigned app_run_timeout,
         const char* const env[]) const;
 
     const string& GetAppPath() const { return m_AppPath; }
@@ -92,7 +92,7 @@ public:
 
 private:
     string m_AppPath;
-    int m_MaxAppRunningTime;
+    CTimeout m_MaxAppRunningTime;
     int m_KeepAlivePeriod;
     ENonZeroExitAction m_NonZeroExitAction;
     CRangeList m_RangeList;
@@ -101,7 +101,7 @@ private:
     bool m_CacheStdOutErr;
 
     string m_MonitorAppPath;
-    int m_MaxMonitorRunningTime;
+    CTimeout m_MaxMonitorRunningTime;
     int m_MonitorPeriod;
     unsigned int m_KillTimeout;
 

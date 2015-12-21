@@ -300,6 +300,12 @@ string CRemoteAppVersion::Get(const string& v) const
     return v;
 }
 
+CTimeout s_ToTimeout(unsigned sec)
+{
+    // Zero counts as infinite timeout
+    return sec ? CTimeout(sec, 0) : CTimeout::eInfinite;
+}
+
 struct SSection
 {
     const IRegistry& reg;
@@ -328,7 +334,7 @@ CRemoteAppLauncher::CRemoteAppLauncher(const string& sec_name,
 {
     const SSection sec(reg, sec_name);
 
-    m_MaxAppRunningTime = sec.Get("max_app_run_time", 0);
+    m_MaxAppRunningTime = s_ToTimeout(sec.Get("max_app_run_time", 0));
     m_KeepAlivePeriod = sec.Get("keep_alive_period", 0);
 
     if (reg.HasEntry(sec_name, "non_zero_exit_action") ) {
@@ -403,7 +409,7 @@ CRemoteAppLauncher::CRemoteAppLauncher(const string& sec_name,
         }
     }
 
-    m_MaxMonitorRunningTime = sec.Get("max_monitor_running_time", 5);
+    m_MaxMonitorRunningTime = s_ToTimeout(sec.Get("max_monitor_running_time", 5));
     m_MonitorPeriod = sec.Get("monitor_period", 5);
     m_KillTimeout = sec.Get("kill_timeout", 1);
 
@@ -492,22 +498,19 @@ struct STmpDirGuard
 class CPipeProcessWatcher_Base : public CPipe::IProcessWatcher
 {
 public:
-    CPipeProcessWatcher_Base(int max_app_running_time,
+    CPipeProcessWatcher_Base(const CTimeout& max_app_running_time,
             CRemoteAppReaper::CManager &process_manager)
         : m_ProcessManager(process_manager),
-          m_MaxAppRunningTime(max_app_running_time)
-
+          m_Deadline(max_app_running_time),
+          m_LogSeconds((unsigned)max_app_running_time.GetAsDouble())
     {
-        if (max_app_running_time > 0)
-            m_RunningTime.reset(new CStopWatch(CStopWatch::eStart));
     }
 
     virtual CPipe::IProcessWatcher::EAction Watch(TProcessHandle pid)
     {
-        if (m_MaxAppRunningTime > 0 && m_RunningTime->Elapsed() >
-                (double) m_MaxAppRunningTime) {
+        if (m_Deadline.IsExpired()) {
             ERR_POST("Job run time exceeded "
-                     << m_MaxAppRunningTime
+                     << m_LogSeconds
                      <<" seconds, stopping the child: " << pid);
             return m_ProcessManager(pid);
         }
@@ -519,8 +522,8 @@ protected:
     CRemoteAppReaper::CManager& m_ProcessManager;
 
 private:
-    auto_ptr<CStopWatch> m_RunningTime;
-    int m_MaxAppRunningTime;
+    const CDeadline m_Deadline;
+    const unsigned m_LogSeconds;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -552,7 +555,7 @@ public:
     };
 
     CRAMonitor(const string& app, const char* const* env,
-        int max_app_running_time) :
+        CTimeout max_app_running_time) :
         m_App(app),
         m_Env(env),
         m_MaxAppRunningTime(max_app_running_time)
@@ -587,7 +590,7 @@ public:
 private:
     string m_App;
     const char* const* m_Env;
-    int m_MaxAppRunningTime;
+    CTimeout m_MaxAppRunningTime;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -596,7 +599,7 @@ class CPipeProcessWatcher : public CPipeProcessWatcher_Base
 {
 public:
     CPipeProcessWatcher(CWorkerNodeJobContext& job_context,
-                   int max_app_running_time,
+                   CTimeout max_app_running_time,
                    int keep_alive_period,
                    const string& job_wdir,
                    CRemoteAppReaper::CManager &process_manager)
@@ -800,7 +803,7 @@ bool CRemoteAppLauncher::ExecRemoteApp(const vector<string>& args,
     CNcbiIstream& in, CNcbiOstream& out, CNcbiOstream& err,
     int& exit_value,
     CWorkerNodeJobContext& job_context,
-    int app_run_timeout,
+    unsigned app_run_timeout,
     const char* const env[]) const
 {
     string tmp_path = m_TempDir;
@@ -848,12 +851,7 @@ bool CRemoteAppLauncher::ExecRemoteApp(const vector<string>& args,
         CTmpStreamGuard std_err_guard(tmp_path, "std.err", err,
             m_CacheStdOutErr);
 
-        int max_app_run_time = m_MaxAppRunningTime;
-
-        if (app_run_timeout > 0 &&
-            (max_app_run_time == 0 || max_app_run_time > app_run_timeout))
-            max_app_run_time = app_run_timeout;
-
+        CTimeout max_app_run_time = min(s_ToTimeout(app_run_timeout), m_MaxAppRunningTime);
         string working_dir(tmp_path.empty() ? CDir::GetCwd() : tmp_path);
 
 #ifdef NCBI_OS_MSWIN
