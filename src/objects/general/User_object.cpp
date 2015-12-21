@@ -48,6 +48,12 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+
+SAFE_CONST_STATIC_STRING(kUnverifiedOrganism,     "Organism");
+SAFE_CONST_STATIC_STRING(kUnverifiedMisassembled, "Misassembled");
+SAFE_CONST_STATIC_STRING(kUnverifiedFeature,      "Features");
+
+
 // destructor
 CUser_object::~CUser_object(void)
 {
@@ -712,63 +718,57 @@ void CUser_object::x_RemoveUnverifiedType(const string& val)
 }
 
 
-static const string kUnverifiedOrganism = "Organism";
-
 bool CUser_object::IsUnverifiedOrganism() const
 {
-    return x_IsUnverifiedType(kUnverifiedOrganism);
+    return x_IsUnverifiedType(kUnverifiedOrganism.Get());
 }
 
 
 void CUser_object::AddUnverifiedOrganism()
 {
-    x_AddUnverifiedType(kUnverifiedOrganism);
+    x_AddUnverifiedType(kUnverifiedOrganism.Get());
 }
 
 
 void CUser_object::RemoveUnverifiedOrganism()
 {
-    x_RemoveUnverifiedType(kUnverifiedOrganism);
+    x_RemoveUnverifiedType(kUnverifiedOrganism.Get());
 }
 
 
-static const string kUnverifiedFeature = "Features";
-
 bool CUser_object::IsUnverifiedFeature() const
 {
-    return x_IsUnverifiedType(kUnverifiedFeature);
+    return x_IsUnverifiedType(kUnverifiedFeature.Get());
 }
 
 
 void CUser_object::AddUnverifiedFeature()
 {
-    x_AddUnverifiedType(kUnverifiedFeature);
+    x_AddUnverifiedType(kUnverifiedFeature.Get());
 }
 
 
 void CUser_object::RemoveUnverifiedFeature()
 {
-    x_RemoveUnverifiedType(kUnverifiedFeature);
+    x_RemoveUnverifiedType(kUnverifiedFeature.Get());
 }
 
 
-static const string kUnverifiedMisassembled = "Misassembled";
-
 bool CUser_object::IsUnverifiedMisassembled() const
 {
-    return x_IsUnverifiedType(kUnverifiedMisassembled);
+    return x_IsUnverifiedType(kUnverifiedMisassembled.Get());
 }
 
 
 void CUser_object::AddUnverifiedMisassembled()
 {
-    x_AddUnverifiedType(kUnverifiedMisassembled);
+    x_AddUnverifiedType(kUnverifiedMisassembled.Get());
 }
 
 
 void CUser_object::RemoveUnverifiedMisassembled()
 {
-    x_RemoveUnverifiedType(kUnverifiedMisassembled);
+    x_RemoveUnverifiedType(kUnverifiedMisassembled.Get());
 }
 
 
