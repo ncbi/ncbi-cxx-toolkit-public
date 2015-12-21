@@ -51,6 +51,12 @@ typedef ncbi::CNcbiStrstream TStrStream;
 BEGIN_NCBI_SCOPE
 
 
+#ifdef NCBI_OS_MSWIN
+static const CTempString kConfigPathDelim = ";";
+#else
+static const CTempString kConfigPathDelim = ":;";
+#endif
+
 static CSafeStatic<CMetaRegistry> s_Instance;
 
 
@@ -323,9 +329,17 @@ void CMetaRegistry::GetDefaultSearchPath(CMetaRegistry::TSearchPath& path)
     path.clear();
 
     const TXChar* cfg_path = NcbiSys_getenv(_TX("NCBI_CONFIG_PATH"));
+    TSearchPath   path_tail;
     if (cfg_path) {
-        path.push_back(_T_STDSTRING(cfg_path));
-        return;
+        NStr::Split(_T_STDSTRING(cfg_path), kConfigPathDelim, path,
+                    NStr::fSplit_NoMergeDelims);
+        TSearchPath::iterator it = find(path.begin(), path.end(), kEmptyStr);
+        if (it == path.end()) {
+            return;
+        } else {
+            path_tail.assign(it + 1, path.end());
+            path.erase(it, path.end());
+        }
     }
 
     if (NcbiSys_getenv(_TX("NCBI_DONT_USE_LOCAL_CONFIG")) == NULL) {
@@ -369,6 +383,14 @@ void CMetaRegistry::GetDefaultSearchPath(CMetaRegistry::TSearchPath& path)
             }
         }
     }}
+
+    if ( !path_tail.empty() ) {
+        ITERATE (TSearchPath, it, path_tail) {
+            if ( !it->empty() ) {
+                path.push_back(*it);
+            }
+        }
+    }
 }
 
 

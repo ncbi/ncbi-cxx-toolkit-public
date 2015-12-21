@@ -146,9 +146,9 @@ public:
     static       TSearchPath& SetSearchPath(void);
 
     /// Clears path and substitutes the default search path.  If the
-    /// environment NCBI_CONFIG_PATH is set, the default is to look there
-    /// exclusively; otherwise, the default list contains the following
-    /// directories in order:
+    /// environment variable NCBI_CONFIG_PATH is set, the default is to
+    /// look there exclusively; otherwise, the default list contains the
+    /// following directories in order:
     ///    - The current working directory.
     ///    - The user's home directory.
     ///    - The directory, if any, given by the environment variable "NCBI".
@@ -158,6 +158,12 @@ public:
     ///      (Requires use of CNcbiApplication.)
     /// The first two directories are skipped if the environment variable
     /// NCBI_DONT_USE_LOCAL_CONFIG is set.
+    ///
+    /// @note NCBI_CONFIG_PATH may contain multiple directories,
+    /// delimited by semicolons on Windows and either colons or
+    /// semicolons on other platforms.  An empty element anywhere in
+    /// the path designates the default list that would take effect
+    /// in the absence of NCBI_CONFIG_PATH, as detailed above.    
     static void GetDefaultSearchPath(TSearchPath& path);
 
     /// Yield the path to a registry with the given name if available,
