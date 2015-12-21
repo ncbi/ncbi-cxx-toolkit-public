@@ -184,7 +184,7 @@ const int              kSingleThreadNumber          = -1;
 const int              kDiscoveryDelaySec = 60; 
 const unsigned short   kDefaultPort                 = 5000; /* for tests where
                         port is not necessary (they fail before announcement) */
-/* msecs to wait after announcement.deannouncement */
+/* msecs to wait after announcement.de-announcement */
 
 #include "test_ncbi_lbos_mocks.hpp"
 
@@ -638,6 +638,32 @@ static int  s_FindAnnouncedServer(string            service,
     return found;
 }
 
+/** To run tests of /configuration we need name of service that is not used yet.
+*/
+static bool s_CheckServiceKnown(string service)
+{
+    bool exists;
+    LBOS::ServiceVersionGet(service, &exists);
+    return exists;
+}
+
+static string s_GetUnknownService() {
+    static string charset = "abcdefghijklmnopqrstuvwxyz"
+                            "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                            "1234567890";
+    const int length = 10;
+
+    for (;;) {
+        string result = "/";
+        result.resize(length);
+        for (int i = 1; i < length; i++)
+            result[i] = charset[rand() % charset.length()];
+        if (!s_CheckServiceKnown(result)) {
+            return result;
+        }
+    }
+    return ""; /* never reachable */
+}
 
 #ifdef NCBI_THREADS
 class CHealthcheckThread : public CThread
@@ -981,12 +1007,12 @@ void HealthcheckDoesNotStartWithHttp__ReturnInvalidArgs();
 namespace Deannouncement
 // \/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
 {
-/* 1. Successfully deannounced : return 1
- * 2. Successfully deannounced : if announcement was saved in local storage, 
+/* 1. Successfully de-announced : return 1
+ * 2. Successfully de-announced : if announcement was saved in local storage, 
  *    remove it
  * 3. Could not connect to provided LBOS : fail and return 0
  * 4. Successfully connected to LBOS, but deannounce returned error : return 0
- * 5. Real - life test : after deannouncement server should be invisible 
+ * 5. Real - life test : after de-announcement server should be invisible 
  *    to resolve                                                            
  * 6. Another domain - do not deannounce 
  * 7. Deannounce without IP specified - deannounce from local host 
@@ -1064,7 +1090,7 @@ namespace Configure
     void CheckSetNewCheck__ChangesVersion();
     /* 3. Set version, check that it was set, then delete version - check
     *    that no version exists */
-    void DeleteThenCheck__VersionEmpty();
+    void DeleteThenCheck__SetExistsFalse();
     /* 4. Announce two servers with different version. First set one version
     *    and discover server with that version. Then set the second version
     *    and discover server with that version. */
@@ -1072,6 +1098,32 @@ namespace Configure
     /* 5. Announce one server. Discover it. Then delete version. Try to
     *    discover it again, should not find.*/
     void AnnounceThenDeleteVersion__DiscoverFindsNothing();
+    /* 6. Set with no service - invalid args */
+    void SetNoService__InvalidArgs();
+    /* 7. Get with no service - invalid args */
+    void GetNoService__InvalidArgs();
+    /* 8. Delete with no service - invalid args */
+    void DeleteNoService__InvalidArgs();
+    /* 9. Set with empty version - OK */
+    void SetEmptyVersion__OK();
+    /* 10. Set with empty version no service - invalid args */
+    void SetNoServiceEmptyVersion__InvalidArgs();
+    /* 11. Get, set, delete with service that does not exist, providing
+     *     "exists" parameter - this parameter should be false and version 
+     *     should be empty */
+    void ServiceNotExistsAndBoolProvided__EqualsFalse();
+    /* 12. Get, set, delete with service that does exist, providing
+     *     "exists" parameter - this parameter should be true and version 
+     *     should be filled */
+    void ServiceExistsAndBoolProvided__EqualsTrue();
+    /* 13. Get, set, delete with service that does not exist, not providing
+     *     "exists" parameter -  version should be empty and no crash should 
+     *     happen*/
+    void ServiceNotExistsAndBoolNotProvided__NoCrash();
+    /* 14. Get, set, delete with service that does exist, not providing
+     *     "exists" parameter - this parameter should be true and version
+     *     should be filled */
+    void ServiceExistsAndBoolNotProvided__NoCrash();
 }
 
 
@@ -1290,8 +1342,8 @@ void MultipleReset__ShouldNotCrash()
         if (*iter == NULL)
             continue;//If nothing found, and reset does not crash - good enough
         data = static_cast<SLBOS_Data*>(iter->data);
-        NCBITEST_CHECK_EQUAL(data->n_cand, 0);
-        NCBITEST_CHECK_EQUAL(data->pos_cand, 0);
+        NCBITEST_CHECK_EQUAL(data->n_cand, 0U);
+        NCBITEST_CHECK_EQUAL(data->pos_cand, 0U);
     }
     return;
 }
@@ -1627,7 +1679,7 @@ void NonStandardVersion__FoundWithDTab()
                      (string("http://") + s_GetMyIP() + ":" PORT_STR(PORT) "/health").c_str(),
                     &lbos_answer.Get(), NULL, kSingleThreadNumber);
 
-	unsigned int servers_found = 
+    unsigned int servers_found =
         s_CountServersWithExpectation(service, port, 1, kDiscoveryDelaySec, kSingleThreadNumber,
                                   "DTab-local: /lbostest=>/zk#/lbostest/1.1.0");
     NCBITEST_CHECK_MESSAGE(servers_found == 1,
@@ -1655,7 +1707,7 @@ void NonStandardVersion__FoundWithDTab()
                   &lbos_answer.Get(), NULL, kSingleThreadNumber);
 
     servers_found = s_CountServersWithExpectation(service, port, 1, kDiscoveryDelaySec,
-						   kSingleThreadNumber,
+                           kSingleThreadNumber,
                            "DTab-local: /lbostest1=>/zk#/lbostest1/1.1.0");
     NCBITEST_CHECK_MESSAGE(servers_found == 1,
                            "Error while searching server with no standard"
@@ -1911,7 +1963,7 @@ void CustomHostNotProvided__SkipCustomHost()
                            g_LBOS_GetLBOSAddressesEx(eLBOSFindMethod_CustomHost,
                                                      NULL));
     /* We check the count of LBOS addresses */
-    NCBITEST_CHECK_EQUAL(addresses.count(),  1);
+    NCBITEST_CHECK_EQUAL(addresses.count(),  1U);
 }
 
 void NoConditions__AddressDefOrder()
@@ -1970,9 +2022,9 @@ void NoConditions__AddressDefOrder()
 
     /* IV. Default */
     WRITE_LOG("3. Checking localhost LBOS address", kSingleThreadNumber);
-	NCBITEST_REQUIRE_MESSAGE(addresses[2] !=  NULL,
-	                         "LBOS address list ended too soon");
-	NCBITEST_CHECK_EQUAL(string(addresses[2]), "127.0.0.1:8080");
+    NCBITEST_REQUIRE_MESSAGE(addresses[2] !=  NULL,
+                             "LBOS address list ended too soon");
+    NCBITEST_CHECK_EQUAL(string(addresses[2]), "127.0.0.1:8080");
 
 #ifndef NCBI_OS_MSWIN
     WRITE_LOG("4. Checking first etc/ncbi LBOS address", kSingleThreadNumber);
@@ -3202,7 +3254,7 @@ void AlreadyAnnouncedInTheSameZone__ReplaceInStorage(int thread_num = -1)
 
 /* 12. Trying to announce in foreign domain - do nothing and 
        return that no LBOS is found (because no LBOS in current 
-	   domain is found) */
+       domain is found) */
 /* Test is NOT thread-safe. */
 void ForeignDomain__NoAnnounce(int thread_num = -1)
 {
@@ -3988,11 +4040,11 @@ void HealthcheckDead__ReturnKLBOSSuccess()
 namespace Deannouncement
 // \/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
 {
-/* 1. Successfully deannounced: return kLBOSSuccess                          */
+/* 1. Successfully de-announced: return kLBOSSuccess                          */
 /*    Test is thread-safe. */
 void Deannounced__Return1(unsigned short port, int thread_num = -1)
 {
-    WRITE_LOG("Successfully deannounced: return kLBOSSuccess",thread_num);
+    WRITE_LOG("Successfully de-announced: return kLBOSSuccess",thread_num);
     CLBOSStatus lbos_status(true, true);
     CCObjHolder<char> lbos_status_message(NULL);
     CCObjHolder<char> lbos_answer(NULL);
@@ -4060,12 +4112,12 @@ void Deannounced__Return1(unsigned short port, int thread_num = -1)
 }
 
 
-/* 2. Successfully deannounced : if announcement was saved in local storage, 
+/* 2. Successfully de-announced : if announcement was saved in local storage, 
  *    remove it                                                              */
 /* Test is thread-safe. */
 void Deannounced__AnnouncedServerRemoved(int thread_num = -1)
 {
-    WRITE_LOG("Successfully deannounced : if announcement was saved in local "
+    WRITE_LOG("Successfully de-announced : if announcement was saved in local "
               "storage, remove it",thread_num);
     CLBOSStatus lbos_status(true, true);
     CCObjHolder<char> lbos_answer(NULL);
@@ -4229,12 +4281,12 @@ void LBOSExistsDeannounce400__Return400(int thread_num = -1)
 }
 
 
-/* 5. Real - life test : after deannouncement server should be invisible 
+/* 5. Real - life test : after de-announcement server should be invisible 
  *    to resolve                                                             */
 /* Test is thread-safe. */
 void RealLife__InvisibleAfterDeannounce(int thread_num = -1)
 {
-    WRITE_LOG("Real-life test : after deannouncement server should "
+    WRITE_LOG("Real-life test : after de-announcement server should "
               "be invisible to resolve", thread_num);
     CLBOSStatus lbos_status(true, true);
     /* It is best to take test Deannounced__Return1() and just check number
@@ -4565,7 +4617,7 @@ void LBOSError__ThrowServerError(int thread_num = -1)
             s_AnnounceCPP(node_name, "1.0.0", "", port,
                           "http://0.0.0.0:" PORT_STR(PORT) "/health",
                           thread_num),
-            CLBOSException, comparator.operator());
+            CLBOSException, comparator);
 }
 
 
@@ -5355,7 +5407,7 @@ void HealthcheckDead__ThrowE_NotFound()
 namespace Deannouncement_CXX
 // \/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
 {
-/* 1. Successfully deannounced: return 1                                     */
+/* 1. Successfully de-announced: return 1                                     */
 /*    Test is thread-safe. */
 void Deannounced__Return1(unsigned short port, int thread_num = -1)
 {
@@ -5402,12 +5454,12 @@ void Deannounced__Return1(unsigned short port, int thread_num = -1)
 }
 
 
-/* 2. Successfully deannounced : if announcement was saved in local storage, 
+/* 2. Successfully de-announced : if announcement was saved in local storage, 
  *    remove it                                                              */
 /* Test is thread-safe. */
 void Deannounced__AnnouncedServerRemoved(int thread_num = -1)
 {
-    WRITE_LOG("Successfully deannounced : if announcement was saved in local "
+    WRITE_LOG("Successfully de-announced : if announcement was saved in local "
               "storage, remove it", thread_num);
     CLBOSStatus lbos_status(true, true);
     /* Prepare for test. We need to be sure that there is no previously 
@@ -5528,12 +5580,12 @@ void LBOSExistsDeannounceError__Return0(int thread_num = -1)
 }
 
 
-/* 5. Real-life test: after deannouncement server should be invisible 
+/* 5. Real-life test: after de-announcement server should be invisible 
  *    to resolve                                                             */
 /* Test is thread-safe. */
 void RealLife__InvisibleAfterDeannounce(int thread_num = -1)
 {
-    WRITE_LOG("Real-life test : after deannouncement server should "
+    WRITE_LOG("Real-life test : after de-announcement server should "
               "be invisible to resolve", thread_num);
     CLBOSStatus lbos_status(true, true);
     /* It is best to take test Deannounced__Return1() and just check number
@@ -5618,7 +5670,7 @@ void NoHostProvided__LocalAddress(int thread_num = -1)
     NCBITEST_CHECK_MESSAGE(!s_CheckIfAnnounced(node_name, "1.0.0", port, 
                                                ":" PORT_STR(PORT) "/health", 
                                                false),
-                           "Service was not deannounced");
+                           "Service was not de-announced");
 }
 
 /* 8. LBOS is OFF - return kLBOSOff                                         */
@@ -6025,17 +6077,17 @@ namespace Configure
 void SetThenCheck__ShowsSetVersion()
 {
     CLBOSStatus lbos_status(true, true);
-    string node_name = s_GenerateNodeName();
+    string node_name = s_GetUnknownService();
         
     /* Set version */
-    LBOS::ServiceVersionUpdate(node_name, "1.0.0");
+    LBOS::ServiceVersionSet(node_name, "1.0.0");
 
     /* Check version */
-    SLbosConfigure conf_data = LBOS::ServiceVersionGetCurrent(node_name);
-    NCBITEST_CHECK_EQUAL(conf_data.prev_version, conf_data.current_version);
-    NCBITEST_CHECK_EQUAL(conf_data.current_version, "1.0.0");
-    NCBITEST_CHECK_EQUAL(conf_data.current_version, "1.0.0");
+    string conf_data = LBOS::ServiceVersionGet(node_name);
+    NCBITEST_CHECK_EQUAL(conf_data, "1.0.0");
 
+    /* Cleanup */
+    LBOS::ServiceVersionDelete(node_name);
 }
 
 /* 2. Check version, then set different version, then check version -
@@ -6044,51 +6096,47 @@ void SetThenCheck__ShowsSetVersion()
 void CheckSetNewCheck__ChangesVersion()
 {
     CLBOSStatus lbos_status(true, true);
-    string node_name = s_GenerateNodeName();
+    string node_name = s_GetUnknownService();
 
     /* Check version and save it */
-    SLbosConfigure conf_data = LBOS::ServiceVersionGetCurrent(node_name);
-    string prev_version = conf_data.current_version;
+    string conf_data = LBOS::ServiceVersionGet(node_name);
+    string prev_version = conf_data;
 
     /* Set different version */
-    conf_data = LBOS::ServiceVersionUpdate(node_name, prev_version + ".0");
-    NCBITEST_CHECK_EQUAL(conf_data.current_version, prev_version + ".0");
-    NCBITEST_CHECK_EQUAL(conf_data.prev_version, prev_version);
+    conf_data = LBOS::ServiceVersionSet(node_name, prev_version + ".0");
+    NCBITEST_CHECK_EQUAL(conf_data, prev_version);
 
     /* Check version */
-    conf_data = LBOS::ServiceVersionGetCurrent(node_name);
-    NCBITEST_CHECK_EQUAL(conf_data.prev_version, conf_data.current_version);
-    NCBITEST_CHECK_EQUAL(conf_data.current_version, prev_version + ".0");
-    NCBITEST_CHECK_EQUAL(conf_data.prev_version, prev_version + ".0");
-
+    conf_data = LBOS::ServiceVersionGet(node_name);
+    NCBITEST_CHECK_EQUAL(conf_data, prev_version + ".0");
 
     /* Cleanup */
-    LBOS::ServiceVersionUpdate(node_name, "1.0.0");
+    LBOS::ServiceVersionDelete(node_name);
 }
 
 /* 3. Set version, check that it was set, then delete version - check
  *    that no version exists.
  *   Test is not for multi-threading                                       */
-void DeleteThenCheck__VersionEmpty()
+void DeleteThenCheck__SetExistsFalse()
 {
+    bool exists;
     CLBOSStatus lbos_status(true, true);
-    string node_name = s_GenerateNodeName();
+    string node_name = s_GetUnknownService();
+    ExceptionComparator<CLBOSException::e_LBOSNotFound, 404> comp("404\n");
 
     /* Set version */
-    LBOS::ServiceVersionUpdate(node_name, "1.0.0");
+    LBOS::ServiceVersionSet(node_name, "1.0.0", &exists);
 
     /* Delete version */
-    SLbosConfigure conf_data = LBOS::ServiceVersionDelete(node_name);
-    NCBITEST_CHECK_EQUAL(conf_data.current_version, "");
-    NCBITEST_CHECK_EQUAL(conf_data.prev_version, "1.0.0");
+    string conf_data = LBOS::ServiceVersionDelete(node_name);
+    NCBITEST_CHECK_EQUAL(conf_data, "1.0.0");
 
     /* Check version */
-    conf_data = LBOS::ServiceVersionGetCurrent(node_name);
-    NCBITEST_CHECK_EQUAL(conf_data.current_version, "");
-    NCBITEST_CHECK_EQUAL(conf_data.prev_version, "");
+    LBOS::ServiceVersionGet(node_name, &exists);
+    NCBITEST_CHECK_EQUAL(exists, false);
 
     /* Cleanup */
-    LBOS::ServiceVersionUpdate(node_name, "1.0.0");
+    LBOS::ServiceVersionDelete(node_name);
 }
 
 /* 4. Announce two servers with different version. First, set one version
@@ -6098,7 +6146,7 @@ void DeleteThenCheck__VersionEmpty()
 void AnnounceThenChangeVersion__DiscoverAnotherServer()
 {
     CLBOSStatus lbos_status(true, true);
-    string node_name = s_GenerateNodeName();
+    string node_name = s_GetUnknownService();
     unsigned short port1, port2;
     string health = 
         string("http://") + s_GetMyIP() + ":" PORT_STR(PORT) "/health";
@@ -6112,30 +6160,31 @@ void AnnounceThenChangeVersion__DiscoverAnotherServer()
                       kSingleThreadNumber);
 
     /* Set first version */
-    LBOS::ServiceVersionUpdate(node_name, "v1");
+    LBOS::ServiceVersionSet(node_name, "v1");
     unsigned int servers_found =
         s_CountServersWithExpectation(node_name, port1, 1, kDiscoveryDelaySec, 
                                       kSingleThreadNumber, "");
-    NCBITEST_CHECK_EQUAL(servers_found, 1);
+    NCBITEST_CHECK_EQUAL(servers_found, 1U);
     servers_found =
         s_CountServersWithExpectation(node_name, port2, 0, kDiscoveryDelaySec, 
                                       kSingleThreadNumber, "");
-    NCBITEST_CHECK_EQUAL(servers_found, 0);
+    NCBITEST_CHECK_EQUAL(servers_found, 0U);
 
     /* Set second version and discover  */
-    LBOS::ServiceVersionUpdate(node_name, "v2");
+    LBOS::ServiceVersionSet(node_name, "v2");
     servers_found =
         s_CountServersWithExpectation(node_name, port1, 0, kDiscoveryDelaySec, 
                                       kSingleThreadNumber, "");
-    NCBITEST_CHECK_EQUAL(servers_found, 0);
+    NCBITEST_CHECK_EQUAL(servers_found, 0U);
     servers_found =
         s_CountServersWithExpectation(node_name, port2, 1, kDiscoveryDelaySec, 
                                       kSingleThreadNumber, "");
-    NCBITEST_CHECK_EQUAL(servers_found, 1);
+    NCBITEST_CHECK_EQUAL(servers_found, 1U);
 
     /* Cleanup */
     s_DeannounceCPP(node_name, "v1", "", port1, kSingleThreadNumber);
     s_DeannounceCPP(node_name, "v2", "", port2, kSingleThreadNumber);
+    LBOS::ServiceVersionDelete(node_name);
 
 }
 
@@ -6145,11 +6194,11 @@ void AnnounceThenChangeVersion__DiscoverAnotherServer()
 void AnnounceThenDeleteVersion__DiscoverFindsNothing()
 {
     CLBOSStatus lbos_status(true, true);
-    string node_name = s_GenerateNodeName();
+    string node_name = s_GetUnknownService();
     unsigned short port;
 
     /* Set version */
-    LBOS::ServiceVersionUpdate(node_name, "1.0.0");
+    LBOS::ServiceVersionSet(node_name, "1.0.0");
     
     /* Announce and discover */
     string health = 
@@ -6161,18 +6210,207 @@ void AnnounceThenDeleteVersion__DiscoverFindsNothing()
     unsigned int servers_found =
         s_CountServersWithExpectation(node_name, port, 1, kDiscoveryDelaySec, 
                                       kSingleThreadNumber, "");
-    NCBITEST_CHECK_EQUAL(servers_found, 1);
+    NCBITEST_CHECK_EQUAL(servers_found, 1U);
 
     /* Delete version and not discover */
     LBOS::ServiceVersionDelete(node_name);
     servers_found =
         s_CountServersWithExpectation(node_name, port, 0, kDiscoveryDelaySec, 
                                       kSingleThreadNumber, "");
-    NCBITEST_CHECK_EQUAL(servers_found, 0);
+    NCBITEST_CHECK_EQUAL(servers_found, 0U);
 
     /* Cleanup */
-    LBOS::ServiceVersionUpdate(node_name, "1.0.0");
+    LBOS::ServiceVersionDelete(node_name);
     s_DeannounceCPP(node_name, "1.0.0", "", port, kSingleThreadNumber);
+}
+
+/* 6. Set with no service - invalid args */
+void SetNoService__InvalidArgs()
+{
+    CLBOSStatus lbos_status(true, true);
+    ExceptionComparator<CLBOSException::e_LBOSInvalidArgs, 452> comp("452\n");
+
+    /* Set version */
+    BOOST_CHECK_EXCEPTION(LBOS::ServiceVersionSet("", "1.0.0"), 
+                          CLBOSException, 
+                          comp);
+}
+
+/* 7. Get with no service - invalid args */
+void GetNoService__InvalidArgs()
+{
+    CLBOSStatus lbos_status(true, true);
+    ExceptionComparator<CLBOSException::e_LBOSInvalidArgs, 452> comp("452\n");
+
+    /* Set version */
+    BOOST_CHECK_EXCEPTION(LBOS::ServiceVersionGet(""), 
+                          CLBOSException, 
+                          comp);
+}
+
+/* 8. Delete with no service - invalid args */
+void DeleteNoService__InvalidArgs()
+{
+    CLBOSStatus lbos_status(true, true);
+    ExceptionComparator<CLBOSException::e_LBOSInvalidArgs, 452> comp("452\n");
+
+    /* Set version */
+    BOOST_CHECK_EXCEPTION(LBOS::ServiceVersionDelete(""), 
+                          CLBOSException, 
+                          comp);
+}
+
+/* 9. Set with empty version - OK */
+void SetEmptyVersion__OK()
+{
+    CLBOSStatus lbos_status(true, true);
+    string node_name = s_GetUnknownService();
+    ExceptionComparator<CLBOSException::e_LBOSInvalidArgs, 452> comp("452\n");
+
+    /* Set version */
+    BOOST_CHECK_EXCEPTION(LBOS::ServiceVersionSet(node_name, ""),
+                          CLBOSException, comp);
+
+    /* Check empty version */
+    string cur_version = LBOS::ServiceVersionGet(node_name);
+    NCBITEST_CHECK_EQUAL(cur_version, "");
+
+    /* Cleanup */
+    LBOS::ServiceVersionDelete(node_name);
+}
+
+/* 10. Set with empty version no service - invalid args */
+void SetNoServiceEmptyVersion__InvalidArgs()
+{
+    CLBOSStatus lbos_status(true, true);
+    ExceptionComparator<CLBOSException::e_LBOSInvalidArgs, 452> comp("452\n");
+
+    /* Set version */
+    BOOST_CHECK_EXCEPTION(LBOS::ServiceVersionSet("", ""), 
+                          CLBOSException, 
+                          comp);
+}
+
+/* 11. Get, set, delete with service that does not exist, providing
+*     "exists" parameter - this parameter should be false and version
+*     should be empty */
+void ServiceNotExistsAndBoolProvided__EqualsFalse()
+{
+    CLBOSStatus lbos_status(true, true);
+    string node_name = s_GetUnknownService();
+    bool exists = true;
+    string conf_version = "1";
+
+    /* Get version */
+    conf_version = LBOS::ServiceVersionGet(node_name, &exists);
+    NCBITEST_CHECK_EQUAL(exists, false);
+    NCBITEST_CHECK_EQUAL(conf_version, "");
+    conf_version = "1";
+    exists = true;
+
+    /* Delete */
+    conf_version = LBOS::ServiceVersionDelete(node_name, &exists);
+    NCBITEST_CHECK_EQUAL(exists, false);
+    NCBITEST_CHECK_EQUAL(conf_version, "");
+    conf_version = "1";
+    exists = true;
+
+    /* Set version */
+    conf_version = LBOS::ServiceVersionSet(node_name, "1.0.0", &exists);
+    NCBITEST_CHECK_EQUAL(exists, false);
+    NCBITEST_CHECK_EQUAL(conf_version, "");
+    conf_version = "1";
+    exists = true;
+
+    /* Cleanup */
+    LBOS::ServiceVersionDelete(node_name);
+}
+
+/* 12. Get, set, delete with service that does exist, providing
+*     "exists" parameter - this parameter should be true and version
+*     should be filled */
+void ServiceExistsAndBoolProvided__EqualsTrue()
+{
+    CLBOSStatus lbos_status(true, true);
+    string node_name = s_GetUnknownService();
+    bool exists = false;
+    string conf_version = "1";
+    LBOS::ServiceVersionSet(node_name, "1.0.0", &exists);
+
+    /* Get version */
+    conf_version = LBOS::ServiceVersionGet(node_name, &exists);
+    NCBITEST_CHECK_EQUAL(exists, true);
+    NCBITEST_CHECK_EQUAL(conf_version, "1.0.0");
+    conf_version = "1";
+    exists = false;
+
+    /* Set version */
+    conf_version = LBOS::ServiceVersionSet(node_name, "1.0.0", &exists);
+    NCBITEST_CHECK_EQUAL(exists, true);
+    NCBITEST_CHECK_EQUAL(conf_version, "1.0.0");
+    conf_version = "1";
+    exists = false;
+
+    /* Delete (and also a cleanup) */
+    conf_version = LBOS::ServiceVersionDelete(node_name, &exists);
+    NCBITEST_CHECK_EQUAL(exists, true);
+    NCBITEST_CHECK_EQUAL(conf_version, "1.0.0");
+    conf_version = "1";
+    exists = false;
+}
+
+/* 13. Get, set, delete with service that does not exist, not providing
+*     "exists" parameter -  version should be empty and no crash should
+*     happen*/
+void ServiceNotExistsAndBoolNotProvided__NoCrash()
+{
+    CLBOSStatus lbos_status(true, true);
+    string node_name = s_GetUnknownService();
+    string conf_version = "1";
+
+    /* Get version */
+    conf_version = LBOS::ServiceVersionGet(node_name);
+    NCBITEST_CHECK_EQUAL(conf_version, "");
+    conf_version = "1";
+
+    /* Delete */
+    conf_version = LBOS::ServiceVersionDelete(node_name);
+    NCBITEST_CHECK_EQUAL(conf_version, "");
+    conf_version = "1";
+
+    /* Set version */
+    conf_version = LBOS::ServiceVersionSet(node_name, "1.0.0");
+    NCBITEST_CHECK_EQUAL(conf_version, "");
+    conf_version = "1";
+
+    /* Cleanup */
+    LBOS::ServiceVersionDelete(node_name);
+}
+
+/* 14. Get, set, delete with service that does exist, not providing
+*     "exists" parameter - this parameter should be true and version
+*     should be filled */
+void ServiceExistsAndBoolNotProvided__NoCrash()
+{
+    CLBOSStatus lbos_status(true, true);
+    string node_name = s_GetUnknownService();
+    string conf_version = "1";
+    LBOS::ServiceVersionSet(node_name, "1.0.0");
+
+    /* Get version */
+    conf_version = LBOS::ServiceVersionGet(node_name);
+    NCBITEST_CHECK_EQUAL(conf_version, "1.0.0");
+    conf_version = "1";
+
+    /* Set version */
+    conf_version = LBOS::ServiceVersionSet(node_name, "1.0.0");
+    NCBITEST_CHECK_EQUAL(conf_version, "1.0.0");
+    conf_version = "1";
+
+    /* Delete (and also a cleanup) */
+    conf_version = LBOS::ServiceVersionDelete(node_name);
+    NCBITEST_CHECK_EQUAL(conf_version, "1.0.0");
+    conf_version = "1";
 }
 }
 

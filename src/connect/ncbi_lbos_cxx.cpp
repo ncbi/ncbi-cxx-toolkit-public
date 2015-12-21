@@ -62,6 +62,15 @@ struct Free
 };
 
 
+/// A structure to save parse results from LBOS /configuration
+struct SLbosConfigure
+{
+    bool existed; /*< right before request */
+    bool exists;  /*< after request  */
+    string prev_version;
+    string current_version;
+};
+
 bool CLBOSIpCacheKey::operator==(const CLBOSIpCacheKey& rh) const
 {
     return x_Service == rh.x_Service &&
@@ -259,7 +268,8 @@ void LBOS::AnnounceFromRegistry(string reg_section)
     if (port_int < 1 || port_int > 65535)
     {
         throw CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
-                             CLBOSException::e_LBOSInvalidArgs, NStr::IntToString(kLBOSInvalidArgs),
+                             CLBOSException::e_LBOSInvalidArgs, 
+                             NStr::IntToString(kLBOSInvalidArgs),
                              kLBOSInvalidArgs);
     }
     unsigned short port = static_cast<unsigned short>(port_int);
@@ -298,9 +308,18 @@ void LBOS::Deannounce(const string&         service,
     }
 }
 
-
+/** Check LBOS response for /configuration request 
+ * @param[in] lbos_answer
+ *  Exact body of LBOS response/
+ * @param[in] method_get
+ *  If the method was GET, than we throw NOT FOUND if no current version was 
+ *  returned 
+ * @return 
+ *  Filled structure with previous version and current version (or one of 
+ *  them or none of them)*/
 SLbosConfigure ParseLbosConfigureAnswer(const char* lbos_answer)
 {
+    SLbosConfigure res;
     if (lbos_answer == NULL) {
         lbos_answer = strdup("");
     }
@@ -312,52 +331,77 @@ SLbosConfigure ParseLbosConfigureAnswer(const char* lbos_answer)
      *                             previousVersion="0.1.4-76-ami-c61703ae"/>
      * </lbos>
      */
-    size_t cur_ver_start = body.find("currentVersion") + 
-                           strlen("currentVersion=\"");
-    size_t cur_ver_end = body.find("\"", cur_ver_start);
-    size_t prev_ver_start = body.find("previousVersion") + 
-                            strlen("previousVersion=\"");
-    size_t prev_ver_end = body.find("\"", prev_ver_start);
-
-
-    SLbosConfigure res;
-    res.current_version = body.substr(cur_ver_start, 
-                                      cur_ver_end - cur_ver_start);
-    res.prev_version = body.substr(prev_ver_start,
-                                   prev_ver_end - prev_ver_start);
+    /* First, just check if we can parse at least service name*/
+    size_t name_start = body.find("name=\"") +
+                        strlen("name=\"");
+    if (name_start == 0) {
+        ERR_POST(Error << "Could not parse ZK configuration answer");
+        return res;
+    } 
+    size_t name_end = body.find("\"", name_start);
+    string name = body.substr(name_start, name_end - name_start);
+    /* Now let's get current version */
+    size_t cur_ver_start = body.find("currentVersion=\"");
+    res.exists = cur_ver_start != string::npos;
+    if (res.exists) {
+        cur_ver_start += strlen("currentVersion=\"");
+        size_t cur_ver_end = body.find("\"", cur_ver_start);
+        res.current_version = body.substr(cur_ver_start, 
+                                          cur_ver_end - cur_ver_start);
+    }
+    /* Now let's get previous version, if possible  */
+    size_t prev_ver_start = body.find("previousVersion=\"");
+    res.existed = prev_ver_start != string::npos;
+    if (res.existed) {
+        prev_ver_start += strlen("previousVersion=\"");
+        size_t prev_ver_end = body.find("\"", prev_ver_start);
+        res.prev_version = body.substr(prev_ver_start,
+                                       prev_ver_end - prev_ver_start);
+    }
     return res;
 }
 
 
-SLbosConfigure LBOS::ServiceVersionGetCurrent(const string&  service) 
+string LBOS::ServiceVersionGet(const string&  service,
+                               bool* exists) 
 {
     char* body_str = NULL, *status_message_str = NULL;
     AutoPtr< char*, Free<char*> > body_aptr(&body_str),
                                   status_message_aptr(&status_message_str);
     unsigned short result = 
-        LBOS_ServiceVersionGetCurrent(service.c_str(),&*body_aptr,
+        LBOS_ServiceVersionGet(service.c_str(),&*body_aptr,
                                       &*status_message_aptr);
     s_ProcessResult(result, *body_aptr, *status_message_aptr);
-    return ParseLbosConfigureAnswer(*body_aptr);
+    SLbosConfigure res = ParseLbosConfigureAnswer(*body_aptr);
+    if (exists != NULL) {
+        *exists = res.exists;
+    }
+    return res.current_version;
 }
 
 
-SLbosConfigure LBOS::ServiceVersionUpdate(const string&  service,
-                                          const string&  new_version)
+string LBOS::ServiceVersionSet(const string&  service,
+                               const string&  new_version,
+                               bool* existed)
 {
     char* body_str = NULL, *status_message_str = NULL;
     AutoPtr< char*, Free<char*> > body_aptr(&body_str),
                                   status_message_aptr(&status_message_str);
-    unsigned short result = LBOS_ServiceVersionUpdate(service.c_str(),
+    unsigned short result = LBOS_ServiceVersionSet(service.c_str(),
                                                       new_version.c_str(),
                                                       &*body_aptr,
                                                       &*status_message_aptr);
     s_ProcessResult(result, *body_aptr, *status_message_aptr);
-    return ParseLbosConfigureAnswer(*body_aptr);
+    SLbosConfigure res = ParseLbosConfigureAnswer(*body_aptr);
+    if (existed != NULL) {
+        *existed = res.existed;
+    }
+    return res.prev_version;
 }
 
 
-SLbosConfigure LBOS::ServiceVersionDelete(const string&  service)
+string LBOS::ServiceVersionDelete(const string&  service,
+                                  bool* existed)
 {
     char* body_str = NULL, *status_message_str = NULL;
     AutoPtr< char*, Free<char*> > body_aptr(&body_str),
@@ -366,7 +410,11 @@ SLbosConfigure LBOS::ServiceVersionDelete(const string&  service)
                                                       &*body_aptr,
                                                       &*status_message_aptr);
     s_ProcessResult(result, *body_aptr, *status_message_aptr);
-    return ParseLbosConfigureAnswer(*body_aptr);
+    SLbosConfigure res = ParseLbosConfigureAnswer(*body_aptr);
+    if (existed != NULL) {
+        *existed = res.existed;
+    }
+    return res.prev_version;
 }
 
 

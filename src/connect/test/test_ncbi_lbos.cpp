@@ -65,6 +65,11 @@ NCBITEST_AUTO_FINI()
 
 NCBITEST_AUTO_INIT()
 {
+#ifdef NCBI_OS_MSWIN
+    srand(NULL);
+#else
+    srand(time(NULL));
+#endif
     boost::unit_test::framework::master_test_suite().p_name->assign(
         "lbos mapper Unit Test");
     CNcbiRegistry& config = CNcbiApplication::Instance()->GetConfig();
@@ -78,15 +83,13 @@ NCBITEST_AUTO_INIT()
              config.Get("CONN", "LBOS"));
     CCObjHolder<char> lbos_answer(NULL);
     CCObjHolder<char> status_message(NULL);
-    LBOS_ServiceVersionGetCurrent("/lbostest", 
+    LBOS_ServiceVersionGet("/lbostest", 
                                   &lbos_answer.Get(), 
                                   &status_message.Get());
     lbos_answer = NULL;
     status_message = NULL;
     LOG_POST(Error << "Updating /lbostest version to 1.0.0...");
-    LBOS_ServiceVersionUpdate("/lbostest", "1.0.0",
-                              &lbos_answer.Get(), 
-                              &status_message.Get());
+    LBOS::ServiceVersionSet("/lbostest", "1.0.0");
     LOG_POST(Error << "/lbostest version successfully updated!");
 #ifdef NCBI_THREADS
     s_HealthchecKThread = new CHealthcheckThread;
@@ -97,10 +100,11 @@ NCBITEST_AUTO_INIT()
 #endif
 }
 
-BOOST_AUTO_TEST_CASE(Deannouncement__Deannounced__AnnouncedServerRemoved)
+BOOST_AUTO_TEST_CASE(Configure__DeleteThenCheck__SetExistsFalse)
 {
-    Deannouncement::Deannounced__AnnouncedServerRemoved();
+    Configure::DeleteThenCheck__SetExistsFalse();
 }
+
 ///////////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_SUITE( ConfigureEndpoint )/////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -116,7 +120,23 @@ BOOST_AUTO_TEST_SUITE( ConfigureEndpoint )/////////////////////////////////////
  *    and discover server with that version.
  * 5. Announce one server. Discover it. Then delete version. Try to
  *    discover it again, should not find.
- */
+ * 6. Set with no service - invalid args
+ * 7. Get with no service - invalid args 
+ * 8. Delete with no service - invalid args 
+ * 9. Set with empty version - OK 
+ * 10. Set with empty version no service - invalid args 
+ * 11. Get, set, delete with service that does not exist, providing
+ *     "exists" parameter - this parameter should be false and version
+ *     should be empty
+ * 12. Get, set, delete with service that does exist, providing
+ *     "exists" parameter - this parameter should be true and version
+ *     should be filled
+ * 13. Get, set, delete with service that does not exist, not providing
+ *     "exists" parameter -  version should be empty and no crash should
+ *     happen
+ * 14. Get, set, delete with service that does exist, not providing
+ *     "exists" parameter - this parameter should be true and version
+ *     should be filled */
  
 /* 1. Set version then check version - should show the version that was 
  *    just set.
@@ -137,9 +157,9 @@ BOOST_AUTO_TEST_CASE(Configure__CheckSetNewCheck__ChangesVersion)
 /* 3. Set version, check that it was set, then delete version - check
  *    that no version exists.
  *   Test is not for multi-threading                                       */
-BOOST_AUTO_TEST_CASE(Configure__DeleteThenCheck__VersionEmpty)
+BOOST_AUTO_TEST_CASE(Configure__DeleteThenCheck__SetExistsFalse)
 {
-    Configure::DeleteThenCheck__VersionEmpty();
+    Configure::DeleteThenCheck__SetExistsFalse();
 }
 
 /* 4. Announce two servers with different version. First, set one version
@@ -157,6 +177,68 @@ BOOST_AUTO_TEST_CASE(Configure__AnnounceThenChangeVersion__DiscoverAnotherServer
 BOOST_AUTO_TEST_CASE(Configure__AnnounceThenDeleteVersion__DiscoverFindsNothing)
 {
     Configure::AnnounceThenDeleteVersion__DiscoverFindsNothing();
+}
+
+/* 6. Set with no service - invalid args */
+BOOST_AUTO_TEST_CASE(Configure__SetNoService__InvalidArgs)
+{
+    Configure::SetNoService__InvalidArgs();
+}
+
+/* 7. Get with no service - invalid args */
+BOOST_AUTO_TEST_CASE(Configure__GetNoService__InvalidArgs)
+{
+    Configure::GetNoService__InvalidArgs();
+}
+
+/* 8. Delete with no service - invalid args */
+BOOST_AUTO_TEST_CASE(Configure__DeleteNoService__InvalidArgs)
+{
+    Configure::DeleteNoService__InvalidArgs();
+}
+
+/* 9. Set with empty version - OK */
+BOOST_AUTO_TEST_CASE(Configure__SetEmptyVersion__OK)
+{
+    Configure::SetEmptyVersion__OK();
+}
+
+/* 10. Set with empty version no service - invalid args */
+BOOST_AUTO_TEST_CASE(Configure__SetNoServiceEmptyVersion__InvalidArgs)
+{
+    Configure::SetNoServiceEmptyVersion__InvalidArgs();
+}
+
+/* 11. Get, set, delete with service that does not exist, providing
+*     "exists" parameter - this parameter should be false and version
+*     should be empty */
+BOOST_AUTO_TEST_CASE(Configure__ServiceNotExistsAndBoolProvided__EqualsFalse)
+{
+    Configure::ServiceNotExistsAndBoolProvided__EqualsFalse();
+}
+
+/* 12. Get, set, delete with service that does exist, providing
+*     "exists" parameter - this parameter should be true and version
+*     should be filled */
+BOOST_AUTO_TEST_CASE(Configure__ServiceExistsAndBoolProvided__EqualsTrue)
+{
+    Configure::ServiceExistsAndBoolProvided__EqualsTrue();
+}
+
+/* 13. Get, set, delete with service that does not exist, not providing
+*     "exists" parameter -  version should be empty and no crash should
+*     happen*/
+BOOST_AUTO_TEST_CASE(Configure__ServiceNotExistsAndBoolNotProvided__NoCrash)
+{
+    Configure::ServiceNotExistsAndBoolNotProvided__NoCrash();
+}
+
+/* 14. Get, set, delete with service that does exist, not providing
+*     "exists" parameter - this parameter should be true and version
+*     should be filled */
+BOOST_AUTO_TEST_CASE(Configure__ServiceExistsAndBoolNotProvided__NoCrash)
+{
+    Configure::ServiceExistsAndBoolNotProvided__NoCrash();
 }
  BOOST_AUTO_TEST_SUITE_END()
 
@@ -846,17 +928,17 @@ BOOST_AUTO_TEST_SUITE_END()
 ///////////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_SUITE( Deannounce )////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-/* 1. Successfully deannounced : return 1
- * 2. Successfully deannounced : if announcement was saved in local storage, 
+/* 1. Successfully de-announced : return 1
+ * 2. Successfully de-announced : if announcement was saved in local storage, 
  *    remove it
  * 3. Could not connect to provided lbos : fail and return 0
  * 4. Successfully connected to lbos, but deannounce returned error : return 0
- * 5. Real - life test : after deannouncement server should be invisible 
+ * 5. Real - life test : after de-announcement server should be invisible 
  *    to resolve                                                            
  * 6. Another domain - do not deannounce 
  * 7. Deannounce without IP specified - deannounce from local host 
  * 8. lbos is OFF - return eLBOS_Off                                         */
- /* 1. Successfully deannounced: return 1                                    */
+ /* 1. Successfully de-announced: return 1                                    */
 BOOST_AUTO_TEST_CASE(Deannouncement__Deannounced__Return1)
 {
     /* Here we specifiy port (specify that we do not intend to use specific 
@@ -864,7 +946,7 @@ BOOST_AUTO_TEST_CASE(Deannouncement__Deannounced__Return1)
      * (Deannouncement__RealLife__InvisibleAfterDeannounce)    */
     Deannouncement::Deannounced__Return1(0);
 }
-/* 2. Successfully deannounced : if announcement was saved in local storage, 
+/* 2. Successfully de-announced : if announcement was saved in local storage, 
  *    remove it                                                              */
 BOOST_AUTO_TEST_CASE(Deannouncement__Deannounced__AnnouncedServerRemoved)
 {
@@ -881,7 +963,7 @@ BOOST_AUTO_TEST_CASE(Deannouncement__LBOSExistsDeannounce400__Return400)
 {
     Deannouncement::LBOSExistsDeannounce400__Return400();
 }
-/* 5. Real - life test : after deannouncement server should be invisible 
+/* 5. Real - life test : after de-announcement server should be invisible 
  *    to resolve                                                             */
 BOOST_AUTO_TEST_CASE(Deannouncement__RealLife__InvisibleAfterDeannounce)
 {
@@ -1179,17 +1261,17 @@ BOOST_AUTO_TEST_SUITE_END()
 ///////////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_SUITE( Deannounce_CXX )////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-/* 1. Successfully deannounced : return 1
- * 2. Successfully deannounced : if announcement was saved in local storage, 
+/* 1. Successfully de-announced : return 1
+ * 2. Successfully de-announced : if announcement was saved in local storage, 
  *    remove it
  * 3. Could not connect to provided lbos : fail and return 0
  * 4. Successfully connected to lbos, but deannounce returned error : return 0
- * 5. Real - life test : after deannouncement server should be invisible 
+ * 5. Real - life test : after de-announcement server should be invisible 
  *    to resolve                                                            
  * 6. Another domain - do not deannounce 
  * 7. Deannounce without IP specified - deannounce from local host 
  * 8. lbos is OFF - return eLBOS_Off                                         */
- /* 1. Successfully deannounced: return 1                                    */
+ /* 1. Successfully de-announced: return 1                                    */
 BOOST_AUTO_TEST_CASE(Deannouncement_CXX__Deannounced__Return1)
 {
     /* Here we specifiy port (specify that we do not intend to use specific 
@@ -1197,7 +1279,7 @@ BOOST_AUTO_TEST_CASE(Deannouncement_CXX__Deannounced__Return1)
      * (Deannouncement_CXX__RealLife__InvisibleAfterDeannounce)    */
     Deannouncement_CXX::Deannounced__Return1(0);
 }
-/* 2. Successfully deannounced : if announcement was saved in local storage, 
+/* 2. Successfully de-announced : if announcement was saved in local storage, 
  *    remove it                                                              */
 BOOST_AUTO_TEST_CASE(Deannouncement_CXX__Deannounced__AnnouncedServerRemoved)
 {
@@ -1214,7 +1296,7 @@ BOOST_AUTO_TEST_CASE(Deannouncement_CXX__LBOSExistsDeannounceError__Return0)
 {
     Deannouncement_CXX::LBOSExistsDeannounceError__Return0();
 }
-/* 5. Real - life test : after deannouncement server should be invisible 
+/* 5. Real - life test : after de-announcement server should be invisible 
  *    to resolve                                                             */
 BOOST_AUTO_TEST_CASE(Deannouncement_CXX__RealLife__InvisibleAfterDeannounce)
 {
@@ -1310,4 +1392,4 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_CASE(s_LBOS_ResolveIPPort__FakeErrorInput__ShouldNotCrash)
 {
     ResolveViaLBOS::FakeErrorInput__ShouldNotCrash();
-};
+}

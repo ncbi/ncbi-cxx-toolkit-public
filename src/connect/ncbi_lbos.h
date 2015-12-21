@@ -127,13 +127,13 @@ unsigned short LBOS_AnnounceFromRegistry(const char*  registry_section,
 
 /** Deannounce service.*
 * @param [in] service
-*  Name of service to be deannounced.
+*  Name of service to be de-announced.
 * @param [in] version
-*  Version of service to be deannounced.
+*  Version of service to be de-announced.
 * @param [in] host
-*  IP or hostname of service to be deannounced. NULL to use local host address
+*  IP or hostname of service to be de-announced. NULL to use local host address
 * @param [in] port
-*  Port of service to be deannounced.
+*  Port of service to be de-announced.
 * @param [out] lbos_answer
 *  This variable will be assigned a pointer to C-string with exact body of
 *  lbos' response (or NULL, if no lbos was reached).

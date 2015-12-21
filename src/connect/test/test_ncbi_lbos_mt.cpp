@@ -291,7 +291,7 @@ bool CTestLBOSApp::TestApp_Init(void)
     LOG_POST(Error << "LBOS tested: " << config.Get("CONN", "LBOS"));
     CCObjHolder<char> lbos_answer(NULL);
     CCObjHolder<char> status_message(NULL);
-    LBOS_ServiceVersionUpdate("/lbostest", "1.0.0",
+    LBOS_ServiceVersionSet("/lbostest", "1.0.0",
                               &*lbos_answer, &*status_message);
 #ifdef NCBI_THREADS
     s_HealthchecKThread = new CHealthcheckThread;

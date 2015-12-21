@@ -269,15 +269,15 @@ unsigned short FLBOS_AnnounceMethod(const char*    service,
 /** Deannounce previously announced service.
  * @param lbos_hostport[in]    
  *  Address of the same lbos that was used for announcement of the service 
- *  now being deannounced.
+ *  now being de-announced.
  * @param service[in]    
- *  Name of service to be deannounced.
+ *  Name of service to be de-announced.
  * @param version[in]    
- *  Version of service to be deannounced.
+ *  Version of service to be de-announced.
  * @param port[in]       
- *  Port of service to be deannounced.
+ *  Port of service to be de-announced.
  * @param[in]            
- *  IP or hostname of service to be deannounced.
+ *  IP or hostname of service to be de-announced.
  * @return               
  *  false - any error, no deannounce was made;
  *  true - success, deannounce was made.                                     */
@@ -486,7 +486,7 @@ unsigned short LBOS_ServiceVersionDelete(const char*  service,
 *  Variable to be assigned pointer to C-string with status message from LBOS
 */
 NCBI_XCONNECT_EXPORT
-unsigned short LBOS_ServiceVersionUpdate(const char*  service,
+unsigned short LBOS_ServiceVersionSet(const char*  service,
                                          const char*  new_version,
                                          char**       lbos_answer,
                                          char**       http_status_message);
@@ -504,7 +504,7 @@ unsigned short LBOS_ServiceVersionUpdate(const char*  service,
 *  Status code returned by LBOS
 */
 NCBI_XCONNECT_EXPORT
-unsigned short LBOS_ServiceVersionGetCurrent(const char* service,
+unsigned short LBOS_ServiceVersionGet(const char* service,
                                              char**      lbos_answer,
                                              char**      http_status_message);
 

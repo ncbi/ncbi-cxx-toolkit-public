@@ -1480,23 +1480,23 @@ static int s_LBOS_CheckDeannounceArgs(const char* service,
                                       unsigned short port)
 {
     if (!g_LBOS_StringIsNullOrEmpty(host) && strstr(host, ":") != NULL) {
-        CORE_LOG(eLOG_Critical, "Invalid argument passed for deannouncement, "
+        CORE_LOG(eLOG_Critical, "Invalid argument passed for de-announcement, "
                                 "please check that \"host\" parameter does "
                                 "not contain protocol or port");
         return 0;
     }
     if (port < 1 || port > 65535) {
-        CORE_LOG(eLOG_Critical, "Invalid argument passed for deannouncement, "
+        CORE_LOG(eLOG_Critical, "Invalid argument passed for de-announcement, "
                                 "incorrect port.");
         return 0;
     }
     if (g_LBOS_StringIsNullOrEmpty(version)) {
-        CORE_LOG(eLOG_Critical, "Invalid argument passed for deannouncement, "
+        CORE_LOG(eLOG_Critical, "Invalid argument passed for de-announcement, "
                                 "no version specified.");
         return 0;
     }
     if (g_LBOS_StringIsNullOrEmpty(service)) {
-        CORE_LOG(eLOG_Critical, "Invalid argument passed for deannouncement, "
+        CORE_LOG(eLOG_Critical, "Invalid argument passed for de-announcement, "
                                 "no service name specified.");
         return 0;
     }
@@ -1544,7 +1544,7 @@ static unsigned short s_LBOS_PerformRequest(const char* request,
     for (i = 0;  lbos_addresses[i] != NULL && last_code != 200;  ++i) {
         char* query;
         size_t length = 0;
-        /* We deny foreign deannouncement*/
+        /* We deny foreign de-announcement*/
         /* Compare local domain and LBOS domain */
         if (!g_LBOS_CheckDomain(lbos_addresses[i])) {
             CORE_LOGF_X(1, eLOG_Error,
@@ -2462,7 +2462,7 @@ unsigned short s_LBOS_Deannounce(const char*      service,
     for (i = 0; lbos_addresses[i] != NULL && last_code != 200; ++i) {
         char* query;
         size_t length;
-        /* We deny foreign deannouncement*/
+        /* We deny foreign de-announcement*/
         /* Compare local domain and LBOS domain */
         if (!g_LBOS_CheckDomain(lbos_addresses[i])) {
             CORE_LOGF_X(1, eLOG_Warning,
@@ -2594,13 +2594,13 @@ unsigned short LBOS_Deannounce(const char*        service,
 /** Deannounce all announced servers.
  * @note    
  *  Though this function is mt-safe, you should fully recognize the fact 
- *  results of simultaneous multiple deannouncement of the same service can be 
- *  unpredictable. For example, if service has just been deannounced in 
+ *  results of simultaneous multiple de-announcement of the same service can be 
+ *  unpredictable. For example, if service has just been de-announced in 
  *  different thread, this thread will return error "service is not announced".
 
  * @return 
- *  1 - all services deannounced successfully 
- *  0 - at least one server could not be deannounced */
+ *  1 - all services de-announced successfully 
+ *  0 - at least one server could not be de-announced */
 void LBOS_DeannounceAll()
 {
     struct SLBOS_AnnounceHandle_Tag** arr;
@@ -2672,9 +2672,9 @@ void LBOS_DeannounceAll()
  * @return
  *  Status code returned by LBOS
  */
-unsigned short LBOS_ServiceVersionGetCurrent(const char*  service,
-                                               char**       lbos_answer,
-                                               char**       http_status_message)
+unsigned short LBOS_ServiceVersionGet(const char*  service,
+                                             char**       lbos_answer,
+                                             char**       http_status_message)
 {
     char*          service_encoded;
     const char*    query_format;
@@ -2729,10 +2729,10 @@ unsigned short LBOS_ServiceVersionGetCurrent(const char*  service,
  * @param http_status_message[out]
  *  Variable to be assigned pointer to C-string with status message from LBOS
  */
-unsigned short LBOS_ServiceVersionUpdate(const char*  service,
-                                           const char*  new_version,
-                                           char**       lbos_answer,
-                                           char**       http_status_message)
+unsigned short LBOS_ServiceVersionSet(const char*  service,
+                                         const char*  new_version,
+                                         char**       lbos_answer,
+                                         char**       http_status_message)
 {
     char*          service_encoded;
     const char*    query_format;

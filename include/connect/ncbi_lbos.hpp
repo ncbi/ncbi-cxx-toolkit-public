@@ -37,12 +37,6 @@
 
 BEGIN_NCBI_SCOPE
 
-struct SLbosConfigure
-{
-    string prev_version;
-    string current_version;
-};
-
 
 class NCBI_XNCBI_EXPORT LBOS
 {
@@ -89,21 +83,20 @@ public:
    /** Modification of Announce() that gets all needed parameters from 
     * registry.
     *
-    * @attention
-    *  IP for the server being announced is taken from healthcheck URL!
     * @param [in] registry_section
     *  Name of section in registry file where to look for 
     *  announcement parameters. Please check documentation for Announce() to
     *  to see requirements for the arguments.
     *  Parameters are:
-    *  SERVICE, VERSION, PORT, HEALTHCHECK
+    *  service, version, host, port, healthcheck
     *  Example:
     *  --------------
     *  [LBOS_ANNOUNCEMENT]
-    *  SERVICE=MYSERVICE
-    *  VERSION=1.0.0
-    *  PORT=8080
-    *  HEALTH=http://0.0.0.0:8080/health
+    *  service=MYSERVICE
+    *  version=1.0.0
+    *  host=0.0.0.0
+    *  port=8080
+    *  health=http://0.0.0.0:8080/health
     *
     * @return
     *  Returns nothing if announcement was successful. Otherwise, throws an
@@ -116,16 +109,16 @@ public:
 
     /** Deannounce service.
     * @param [in] service
-    *  Name of service to be deannounced.
+    *  Name of service to be de-announced.
     * @param [in] version
-    *  Version of service to be deannounced.
+    *  Version of service to be de-announced.
     * @param [in] host
-    *  IP or hostname of service to be deannounced. Provide empty string
+    *  IP or hostname of service to be de-announced. Provide empty string
     *  (not "0.0.0.0") to use local host address.
     * @param [in] port
-    *  Port of service to be deannounced.
+    *  Port of service to be de-announced.
     * @return
-    *  Returns nothing if deannouncement was successful. Otherwise, throws an
+    *  Returns nothing if de-announcement was successful. Otherwise, throws an
     *  exception.
     * @exception CLBOSException
     * @sa Announce(), DeannounceAll(), CLBOSException
@@ -138,8 +131,8 @@ public:
 
     /** Deannounce all servers that were announced during runtime.
     * @note
-    *  There is no guarantee that all servers were deannounced successfully
-    *  after this function returns. There is a guarantee that deannouncement
+    *  There is no guarantee that all servers were de-announced successfully
+    *  after this function returns. There is a guarantee that de-announcement
     *  request was sent to LBOS for each server that was announced during
     *  runtime.
     * @return
@@ -149,16 +142,19 @@ public:
     static void DeannounceAll(void);
 
 
-    /** This request will show currently used version for a requested service.
+    /** Show currently used version for a requested service.
     * Current and previous version will be the same.
     * @param service[in]
     *  Name of service for which to ask default version
     * @return
-    *  Structure with version before and after request (they will be the 
-    *  same, since nothing will be changed)
+    *  Current version
+    * @exception CLBOSException
+    *  If no record for the service was found, the exception will contain 
+    *  e_LBOSNotFound code
     */
     static
-    SLbosConfigure ServiceVersionGetCurrent(const string&  service);
+    string ServiceVersionGet(const string&  service,
+                             bool* existed = NULL);
 
 
     /** This request can be used to set new version for a service. Current and
@@ -166,13 +162,14 @@ public:
     * @param[in] service
     *  Name of service for which the version is going to be changed
     * @param new_version[out]
-    *  Version that will be used by default for specefied service
+    *  Version that will be used by default for specified service
     * @return
-    *  Structure with version before and after request
+    *  Version before request
     */
     static
-    SLbosConfigure ServiceVersionUpdate(const string&  service,
-                                              const string&  new_version);
+    string ServiceVersionSet(const string&  service,
+                             const string&  new_version,
+                             bool* existed = NULL);
 
 
     /** This service can be used to remove service from configuration. Current
@@ -180,15 +177,15 @@ public:
     * @param[in] service
     *  Name of service for which the version is going to be deleted
     * @return
-    *  Structure with version before and after request (version after 
-    *  request will be an empty string)
+    *  Version before request 
     */
     static
-    SLbosConfigure ServiceVersionDelete(const string&  service);
+    string ServiceVersionDelete(const string&  service,
+                                bool* existed = NULL);
 };
 
 
-/**  CLBOSException is thrown if annoucement/deannouncement fails for any
+/**  CLBOSException is thrown if announcement/de-announcement fails for any
  * reason. CLBOSException has overloaded "what()" method that will return
  * message from LBOS, which should contain status code and status message.
  * If announcement failed not because of LBOS, but because of bad arguments,
@@ -205,10 +202,10 @@ public:
         e_LBOSDNSResolveError,      /**< Local address not resolved           */
         e_LBOSInvalidArgs,          /**< Arguments not valid                  */
         e_LBOSDeannounceFail,       /**< Error while deannounce/              */
-        e_LBOSNotFound,             /**< For deannouncement only. Did not
+        e_LBOSNotFound,             /**< For de-announcement only. Did not
                                      find such server to deannounce           */
         e_LBOSOff,                  /**< LBOS mapper is off for any of two
-                                     reasons: either it is not enalbed in
+                                     reasons: either it is not enabled in
                                      registry, or no LBOS was found at
                                      initialization                           */
         e_LBOSMemAllocError,        /**< A memory allocation error encountered*/
