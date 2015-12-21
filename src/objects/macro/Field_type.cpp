@@ -113,7 +113,7 @@ string CField_type :: GetDBLinkFieldFromUserObject(const CUser_object& user_obj,
 {
   string str(kEmptyStr);
   if (user_obj.GetType().IsStr() && user_obj.GetType().GetStr() == "DBLink") {
-    string field_name = dblink_name[(int)dblink_tp];
+    CTempString field_name(dblink_name[(int)dblink_tp]);
     ITERATE (vector <CRef <CUser_field> >, it, user_obj.GetData()) {
        if ( (*it)->GetLabel().IsStr() 
                 && ((*it)->GetLabel().GetStr() == field_name) ) {
