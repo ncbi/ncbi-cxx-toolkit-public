@@ -352,7 +352,7 @@ BOOST_AUTO_TEST_CASE(CheckExtMGC)
     SAnnotSelector sel(CSeqFeatData::eSubtype_misc_difference);
     sel.SetResolveAll().SetAdaptiveDepth();
     sel.AddNamedAnnots("MGC");
-    //s_CheckFeat(sel, "NC_000001.10");
+    s_CheckFeat(sel, "BC103747.1");
 }
 
 
@@ -362,7 +362,7 @@ BOOST_AUTO_TEST_CASE(CheckExtHPRD)
     SAnnotSelector sel(CSeqFeatData::eSubtype_site);
     sel.SetResolveAll().SetAdaptiveDepth();
     sel.AddNamedAnnots("HPRD");
-    //s_CheckFeat(sel, "NC_000001.10");
+    s_CheckFeat(sel, "NP_003933.1");
 }
 
 
