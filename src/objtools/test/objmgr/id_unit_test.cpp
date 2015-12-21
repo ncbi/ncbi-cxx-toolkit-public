@@ -241,6 +241,54 @@ SAnnotSelector s_GetSelector(CSeqFeatData::ESubtype subtype,
 }
 
 
+void s_CheckFeat(const SAnnotSelector& sel,
+                 const string& str_id,
+                 CRange<TSeqPos> range = CRange<TSeqPos>::GetWhole())
+{
+    CRef<CScope> scope = s_InitScope();
+    CRef<CSeq_id> seq_id(new CSeq_id(str_id));
+    CRef<CSeq_loc> loc(new CSeq_loc);
+    if ( range == CRange<TSeqPos>::GetWhole() ) {
+        loc->SetWhole(*seq_id);
+    }
+    else {
+        CSeq_interval& interval = loc->SetInt();
+        interval.SetId(*seq_id);
+        interval.SetFrom(range.GetFrom());
+        interval.SetTo(range.GetTo());
+    }
+    BOOST_CHECK(CFeat_CI(*scope, *loc, sel));
+
+    CBioseq_Handle bh = scope->GetBioseqHandle(*seq_id);
+    BOOST_REQUIRE(bh);
+    BOOST_CHECK(CFeat_CI(bh, range, sel));
+}
+
+
+void s_CheckGraph(const SAnnotSelector& sel,
+                  const string& str_id,
+                  CRange<TSeqPos> range = CRange<TSeqPos>::GetWhole())
+{
+    CRef<CScope> scope = s_InitScope();
+    CRef<CSeq_id> seq_id(new CSeq_id(str_id));
+    CRef<CSeq_loc> loc(new CSeq_loc);
+    if ( range == CRange<TSeqPos>::GetWhole() ) {
+        loc->SetWhole(*seq_id);
+    }
+    else {
+        CSeq_interval& interval = loc->SetInt();
+        interval.SetId(*seq_id);
+        interval.SetFrom(range.GetFrom());
+        interval.SetTo(range.GetTo());
+    }
+    BOOST_CHECK(CGraph_CI(*scope, *loc, sel));
+
+    CBioseq_Handle bh = scope->GetBioseqHandle(*seq_id);
+    BOOST_REQUIRE(bh);
+    BOOST_CHECK(CGraph_CI(bh, range, sel));
+}
+
+
 BOOST_AUTO_TEST_CASE(CheckIds)
 {
     for ( size_t i = 0; i < ArraySize(s_BioseqInfos); ++i ) {
@@ -268,129 +316,93 @@ BOOST_AUTO_TEST_CASE(CheckAll)
 }
 
 
-BOOST_AUTO_TEST_CASE(CheckSNP)
+BOOST_AUTO_TEST_CASE(CheckExtSNP)
 {
-    LOG_POST("Checking SNP");
-    CRef<CScope> scope = s_InitScope();
-    CBioseq_Handle bh =
-        scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("NC_000001.10"));
-    BOOST_REQUIRE(bh);
+    LOG_POST("Checking ExtAnnot SNP");
     SAnnotSelector sel(CSeqFeatData::eSubtype_variation);
     sel.SetResolveAll().SetAdaptiveDepth();
     sel.AddNamedAnnots("SNP");
-    BOOST_CHECK(CFeat_CI(bh, CRange<TSeqPos>(249200000, 249210000), sel));
+    s_CheckFeat(sel, "NC_000001.10", CRange<TSeqPos>(249200000, 249210000));
 }
 
 
-BOOST_AUTO_TEST_CASE(CheckSNPGraph)
+BOOST_AUTO_TEST_CASE(CheckExtSNPGraph)
 {
-    LOG_POST("Checking SNP graph");
-    CRef<CScope> scope = s_InitScope();
-    CBioseq_Handle bh =
-        scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("NC_000001.10"));
-    BOOST_REQUIRE(bh);
+    LOG_POST("Checking ExtAnnot SNP graph");
     SAnnotSelector sel(CSeq_annot::C_Data::e_Graph);
     sel.SetResolveAll().SetAdaptiveDepth();
     sel.AddNamedAnnots("SNP");
-    BOOST_CHECK(CGraph_CI(bh, CRange<TSeqPos>(249200000, 249210000), sel));
+    s_CheckGraph(sel, "NC_000001.10", CRange<TSeqPos>(249200000, 249210000));
 }
 
 
-BOOST_AUTO_TEST_CASE(CheckCDD)
+BOOST_AUTO_TEST_CASE(CheckExtCDD)
 {
-    LOG_POST("Checking CDD");
-    CRef<CScope> scope = s_InitScope();
-    CBioseq_Handle bh =
-        scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("AAC73113.1"));
-    BOOST_REQUIRE(bh);
+    LOG_POST("Checking ExtAnnot CDD");
     SAnnotSelector sel(CSeqFeatData::eSubtype_region);
     sel.SetResolveAll().SetAdaptiveDepth();
     sel.AddNamedAnnots("CDD");
-    BOOST_CHECK(CFeat_CI(bh, sel));
+    s_CheckFeat(sel, "AAC73113.1");
 }
 
 
-BOOST_AUTO_TEST_CASE(CheckMGC)
+BOOST_AUTO_TEST_CASE(CheckExtMGC)
 {
-    LOG_POST("Checking MGC");
-    CRef<CScope> scope = s_InitScope();
-    CBioseq_Handle bh =
-        scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("NC_000001.10"));
-    BOOST_REQUIRE(bh);
+    LOG_POST("Checking ExtAnnot MGC");
     SAnnotSelector sel(CSeqFeatData::eSubtype_misc_difference);
     sel.SetResolveAll().SetAdaptiveDepth();
     sel.AddNamedAnnots("MGC");
-    //BOOST_CHECK(CFeat_CI(bh, sel));
+    //s_CheckFeat(sel, "NC_000001.10");
 }
 
 
-BOOST_AUTO_TEST_CASE(CheckHPRD)
+BOOST_AUTO_TEST_CASE(CheckExtHPRD)
 {
-    LOG_POST("Checking HPRD");
-    CRef<CScope> scope = s_InitScope();
-    CBioseq_Handle bh =
-        scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("NC_000001.10"));
-    BOOST_REQUIRE(bh);
+    LOG_POST("Checking ExtAnnot HPRD");
     SAnnotSelector sel(CSeqFeatData::eSubtype_site);
     sel.SetResolveAll().SetAdaptiveDepth();
     sel.AddNamedAnnots("HPRD");
-    //BOOST_CHECK(CFeat_CI(bh, sel));
+    //s_CheckFeat(sel, "NC_000001.10");
 }
 
 
-BOOST_AUTO_TEST_CASE(CheckSTS)
+BOOST_AUTO_TEST_CASE(CheckExtSTS)
 {
-    LOG_POST("Checking STS");
-    CRef<CScope> scope = s_InitScope();
-    CBioseq_Handle bh =
-        scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("NC_000001.10"));
-    BOOST_REQUIRE(bh);
+    LOG_POST("Checking ExtAnnot STS");
     SAnnotSelector sel(CSeqFeatData::eSubtype_STS);
     sel.SetResolveAll().SetAdaptiveDepth();
     sel.AddNamedAnnots("STS");
-    BOOST_CHECK(CFeat_CI(bh, CRange<TSeqPos>(249200000, 249220000), sel));
+    s_CheckFeat(sel, "NC_000001.10", CRange<TSeqPos>(249200000, 249220000));
 }
 
 
-BOOST_AUTO_TEST_CASE(CheckTRNA)
+BOOST_AUTO_TEST_CASE(CheckExtTRNA)
 {
-    LOG_POST("Checking tRNA");
-    CRef<CScope> scope = s_InitScope();
-    CBioseq_Handle bh =
-        scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("NT_026437.11"));
-    BOOST_REQUIRE(bh);
+    LOG_POST("Checking ExtAnnot tRNA");
     SAnnotSelector sel(CSeqFeatData::eSubtype_tRNA);
     sel.SetResolveAll().SetAdaptiveDepth();
     sel.AddNamedAnnots("tRNA");
-    BOOST_CHECK(CFeat_CI(bh, sel));
+    s_CheckFeat(sel, "NT_026437.11");
 }
 
 
-BOOST_AUTO_TEST_CASE(CheckMicroRNA)
+BOOST_AUTO_TEST_CASE(CheckExtMicroRNA)
 {
-    LOG_POST("Checking microRNA");
-    CRef<CScope> scope = s_InitScope();
-    CBioseq_Handle bh =
-        scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("NT_026437.11"));
-    BOOST_REQUIRE(bh);
+    LOG_POST("Checking ExtAnnot microRNA");
     SAnnotSelector sel(CSeqFeatData::eSubtype_otherRNA);
     sel.SetResolveAll().SetAdaptiveDepth();
     sel.AddNamedAnnots("other");
-    //BOOST_CHECK(CFeat_CI(bh, sel));
+    s_CheckFeat(sel, "NT_026437.11");
 }
 
 
-BOOST_AUTO_TEST_CASE(CheckExon)
+BOOST_AUTO_TEST_CASE(CheckExtExon)
 {
-    LOG_POST("Checking Exon");
-    CRef<CScope> scope = s_InitScope();
-    CBioseq_Handle bh =
-        scope->GetBioseqHandle(CSeq_id_Handle::GetHandle("NR_003287.2"));
-    BOOST_REQUIRE(bh);
+    LOG_POST("Checking ExtAnnot Exon");
     SAnnotSelector sel(CSeqFeatData::eSubtype_exon);
     sel.SetResolveAll().SetAdaptiveDepth();
     sel.AddNamedAnnots("Exon");
-    BOOST_CHECK(CFeat_CI(bh, sel));
+    s_CheckFeat(sel, "NR_003287.2");
 }
 
 
