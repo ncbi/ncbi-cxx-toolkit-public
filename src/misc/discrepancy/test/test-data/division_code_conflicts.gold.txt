@@ -1,0 +1,15 @@
+Discrepancy Report Results
+
+Summary
+DIVISION_CODE_CONFLICTS: Division code conflicts found
+
+Detailed Report
+
+DIVISION_CODE_CONFLICTS: Division code conflicts found
+DIVISION_CODE_CONFLICTS: 1 bioseq has divsion code BCT
+division_code_conflicts.asn:Seq2 (length 1451)
+
+DIVISION_CODE_CONFLICTS: 2 bioseqs have divsion code INV
+division_code_conflicts.asn:Seq1 (length 5121)
+division_code_conflicts.asn:Seq3 (length 1021)
+

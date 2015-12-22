@@ -1,0 +1,279 @@
+Seq-submit ::= {
+  sub {
+    contact {
+      contact {
+        name
+          name {
+            last "q" ,
+            first "q" ,
+            initials "qq" } ,
+        affil
+          str "q" } } ,
+    cit {
+      authors {
+        names
+          std {
+            {
+              name
+                name {
+                  last "q" ,
+                  first "q" ,
+                  initials "qq." } } } ,
+        affil
+          str "q" } ,
+      date
+        std {
+          year 2012 ,
+          month 5 ,
+          day 30 } } ,
+    hup TRUE ,
+    reldate
+      std {
+        year 2012 ,
+        month 7 ,
+        day 17 } ,
+    subtype new ,
+    tool "Sequin 12.10 - MS WINDOWS VISTA" } ,
+  data
+    entrys {
+      set {
+        class pop-set ,
+        descr {
+          pub {
+            pub {
+              gen {
+                cit "Unpublished" ,
+                authors {
+                  names
+                    std {
+                      {
+                        name
+                          name {
+                            last "q" ,
+                            first "q" ,
+                            initials "qq." } } } ,
+                  affil
+                    str "q" } ,
+                title "tentative title for manuscript" } } } ,
+          user {
+            type
+              str "NcbiCleanup" ,
+            data {
+              {
+                label
+                  str "method" ,
+                data
+                  str "SequinCleanup" } ,
+              {
+                label
+                  str "version" ,
+                data
+                  int 8 } ,
+              {
+                label
+                  str "month" ,
+                data
+                  int 8 } ,
+              {
+                label
+                  str "day" ,
+                data
+                  int 24 } ,
+              {
+                label
+                  str "year" ,
+                data
+                  int 2015 } } } ,
+          create-date
+            std {
+              year 2012 ,
+              month 5 ,
+              day 30 } } ,
+        seq-set {
+          set {
+            class nuc-prot ,
+            descr {
+              source {
+                genome genomic ,
+                org {
+                  taxname "Acanthamoeba castellanii" ,
+                  orgname {
+                    lineage "Eukaryota; Acanthamoebidae; Acanthamoeba" ,
+                    gcode 1 ,
+                    div "INV" } } } } ,
+            seq-set {
+              seq {
+                id {
+                  local
+                    str "Seq1" } ,
+                descr {
+                  molinfo {
+                    biomol genomic } } ,
+                inst {
+                  repr raw ,
+                  mol dna ,
+                  length 5121 ,
+                  seq-data
+                    ncbi2na 'C24AA20F73C14E08734F9FE2713DCEDEBFD9D001F5E80E104
+91A419EE5FA914E4B1406818CB8010D1838503E0BC70E71E27AF48BD7412B80CE612D74D235F8E
+8801E4470C8E773EA215D2EE3A7D403082EA17FFBE0609025C4907BC57CE3B968F39757CAD1CBE
+5935A447A2FC10E027D0FA1E8B47401A042779F930A2370CB2FDFCB23E0FAF8547C07D031524F8
+1B87394043810FE103EC4FEAABD1456AC684285037D7B39D0D34A08344B371402094109EC3560C
+DA3721520C283357248309373E8432C016A2131FF8F04912A0DC3E75CAAF1F403182EA009D0C38
+8D239153E90390F7939347503A093D50E1014F500EC04A344C6A97B548CEF090247780F2412839
+80EC5220101C8A4CFE990C9ABF4C803AFA8A83AE8EBEB1AFD293403DE2A08A109248DD0091D092
+436340D0EA09E0DAF8DA80141880F5348F80083DD20B60A883D285F880CEF8A11C032377AD3106
+689F7EF95E88149310F8DC1E1D2038101EFE000408241E2A00E78A33A90EBEFD00CC5103B84397
+9328D0D203A07CC1463B31223824F0105AF52342A2F89E0B4AB1023E8D73A3F5FE5334EFFF9FEE
+F9FEFAAF4D3BA979402A413CB092A883DCF053821CD3E7F89C4F73B7AFF674007D7A0384124690
+67B97EA45392C501A0632E0043460E140F82F1C39C789EBD22F5D04AE033984B5D348D7E3A2007
+911C3239DCFA88574BB8E9F500C20BA85FFEF818240971241EF15F38EE5A3CE5D5F2B472F964D6
+911E8BF043809F43E87A2D1D0068109DE7E4C288DC32CBF7F2C8F83EBE151F01F40C5493E06E1C
+E5010E043F840FB13FAAAF4515AB1A10A140DF5ECE7434D2820D12CDC5008250427B0D583368DC
+854830A0CD5C920C24DCFA10CB005A884C7FE3C1244A8370F9D72ABC7D00C60BA8027430E2348E
+454FA40E43DE4E4D1D40E824F54384053D403B0128D131AA5ED5233BC24091DE03C904A0E603B1
+488040722933FA64326AFD3200EBEA2A0EBA3AFAC6BF4A4D00F78A822842492374024742490D8D
+0343A827836BE36A00506203D4D23E0020F7482D82A20F4A17E2033BE284700C8DDEB4C419A27D
+FBE57A20524C43E370787480E0407BF80010209078A8039E28CEA43AFBF40331440EE10E5E4CA3
+43480E81F30518ECC488E093C0416BD48D0A8BE2782D2AC408FA35CE8FD7F94CD3BFFE7FBBE7FB
+EABD34EEA5E500A904F2C24AA20F73C14E08734F9FE2713DCEDEBFD9D001F5E80E10491A419EE5
+FA914E4B1406818CB8010D1838503E0BC70E71E27AF48BD7412B80CE612D74D235F8E8801E4470
+C8E773EA215D2EE3A7D403082EA17FFBE0609025C4907BC57CE3B968F39757CAD1CBE5935A447A
+2FC10E027D0FA1E8B47401A042779F930A2370CB2FDFCB23E0FAF8547C07D031524F81B8739404
+3810FE103EC4FEAABD1456AC684285037D7B39D0D34A08344B371402094109EC3560CDA3721520
+C283357248309373E8432C016A2131FF8F04912A0DC3E75CAAF1F403182EA009D0C388D239153E
+90390F7939347503A093D50E1014F500EC04A344C6A97B548CEF090247780F241283980EC52201
+01C8A4CFE990C9ABF4C803AFA8A83AE8EBEB1AFD293403DE2A08A109248DD0091D092436340D0E
+A09E0DAF8DA80141880F5348F80083DD20B60A883D285F880CEF8A11C032377AD3106689F7EF95
+E88149310F8DC1E1D2038101EFE000408241E2A00E78A33A90EBEFD00CC5103B843979328D0D20
+3A07CC1463B31223824F0105AF52342A2F89E0B4AB1023E8D73A3F5FE5334EFFF9FEEF9FEFAAF4
+D3BA979402A413C80'H } } ,
+              seq {
+                id {
+                  local
+                    str "Seq1_1" } ,
+                descr {
+                  molinfo {
+                    biomol peptide ,
+                    tech concept-trans } } ,
+                inst {
+                  repr raw ,
+                  mol aa ,
+                  length 1706 ,
+                  seq-data
+                    ncbieaa "-AGENSINHEDYHCFELHSMSGFRSKTSWK*QQHGNAVPWAPCSTKRND
+SENNHE*PN*SY*CY*AGSEFLNR*NMRQSSSDP*WRKLHTNRCSIGRPSV*WLPK*EVGPFC*TKQSLQQLLPL*CA
+GLCLP*VTSCRIRHTGV*Q*KLQLDWSHSKRNKLCLHKEI***FL**IELVDPLKLQIPSIERDYAKQ*TI*QIVHLG
+GSPPGYGQGPNLPVCSIIRKNHSIYQKKPTSCNPEYRI*TQNKEYP*QNKHLLDNSKTGRHTFD*QHRESNCS*GLLQ
+NTKWEKLNNEIRCTHWQMQFCMHHSKWKHSQ*QTIPKCKQDHIRGLSQIC*AKHSEISNRNAKCTRETN*RHIWRNSG
+FHRKWLGGNGGWLVRFQASKF*GKRTSSRSQKHSSSNRSNQWEAESVDRENQREIPSD*KRILRSRRENSGP*EIC*G
+H*NRSLVIQRGASCCPGEPAYN*SN*LRNEQTV*KNKEATEGKC*GYGQWLFQNIPQM*QCLHRINQKWNL*PRCIQR
+*SIKQPVPDQGS*AEVRVQRLDPMDFLCHIMFFALCCFVGVHHVGLPKGQH**AGENSINHEDYHCFELHSMSGFRSK
+TSWK*QQHGNAVPWAPCSTKRNDSENNHE*PN*SY*CY*AGSEFLNR*NMRQSSSDP*WRKLHTNRCSIGRPSV*WLP
+K*EVGPFC*TKQSLQQLLPL*CAGLCLP*VTSCRIRHTGV*Q*KLQLDWSHSKRNKLCLHKEI***FL**IELVDPLK
+LQIPSIERDYAKQ*TI*QIVHLGGSPPGYGQGPNLPVCSIIRKNHSIYQKKPTSCNPEYRI*TQNKEYP*QNKHLLDN
+SKTGRHTFD*QHRESNCS*GLLQNTKWEKLNNEIRCTHWQMQFCMHHSKWKHSQ*QTIPKCKQDHIRGLSQIC*AKHS
+EISNRNAKCTRETN*RHIWRNSGFHRKWLGGNGGWLVRFQASKF*GKRTSSRSQKHSSSNRSNQWEAESVDRENQREI
+PSD*KRILRSRRENSGP*EIC*GH*NRSLVIQRGASCCPGEPAYN*SN*LRNEQTV*KNKEATEGKC*GYGQWLFQNI
+PQM*QCLHRINQKWNL*PRCIQR*SIKQPVPDQGS*AEVRVQRLDPMDFLCHIMFFALCCFVGVHHVGLPKGQH**AG
+ENSINHEDYHCFELHSMSGFRSKTSWK*QQHGNAVPWAPCSTKRNDSENNHE*PN*SY*CY*AGSEFLNR*NMRQSSS
+DP*WRKLHTNRCSIGRPSV*WLPK*EVGPFC*TKQSLQQLLPL*CAGLCLP*VTSCRIRHTGV*Q*KLQLDWSHSKRN
+KLCLHKEI***FL**IELVDPLKLQIPSIERDYAKQ*TI*QIVHLGGSPPGYGQGPNLPVCSIIRKNHSIYQKKPTSC
+NPEYRI*TQNKEYP*QNKHLLDNSKTGRHTFD*QHRESNCS*GLLQNTKWEKLNNEIRCTHWQMQFCMHHSKWKHSQ*
+QTIPKCKQDHIRGLSQIC*AKHSEISNRNAKCTRETN*RHIWRNSGFHRKWLGGNGGWLVRFQASKF*GKRTSSRSQK
+HSSSNRSNQWEAESVDRENQREIPSD*KRILRSRRENSGP*EIC*GH*NRSLVIQRGASCCPGEPAYN*SN*LRNEQT
+V*KNKEATEGKC*GYGQWLFQNIPQM*QCLHRINQKWNL*PRCIQR*SIKQPVPDQGS*AEVRVQRLDPMDFLCHIMF
+FALCCFVGVHHVGLPKGQH" } ,
+                annot {
+                  {
+                    data
+                      ftable {
+                        {
+                          data
+                            prot {
+                              name {
+                                "ANOPHELES" } } ,
+                          location
+                            int {
+                              from 0 ,
+                              to 1705 ,
+                              id
+                                local
+                                  str "Seq1_1" } } } } } } } ,
+            annot {
+              {
+                data
+                  ftable {
+                    {
+                      data
+                        cdregion {
+                          code {
+                            id 1 } } ,
+                      product
+                        whole
+                          local
+                            str "Seq1_1" ,
+                      location
+                        int {
+                          from 0 ,
+                          to 5120 ,
+                          strand plus ,
+                          id
+                            local
+                              str "Seq1" } } } } } } ,
+          seq {
+            id {
+              local
+                str "Seq2" } ,
+            descr {
+              source {
+                genome genomic ,
+                org {
+                  taxname "Escherichia coli" ,
+                  orgname {
+                    gcode 11 ,
+                    div "BCT" } } } ,
+              molinfo {
+                biomol genomic } } ,
+            inst {
+              repr raw ,
+              mol dna ,
+              length 1451 ,
+              seq-data
+                ncbi2na 'F24024A2C08E0D40D008C3063E9DEFDDD14FD44339F7D3903E537
+E3071EC13E4FD090CE0F41D55501050B8E7BB81410C32020130488CBB378504514C88280CE5501
+4920C480FAD00590EE13C4A3F917FF70A10F63CA7F59EBAA137AB842205F3BB4E635E10BBCD0FE
+57E84A81047010EE4F40C112C6E32855F3687F3E3838BCAEF5FF4DEA85090BB9324EB52742FB46
+3A0093A793BFB306AA38C00E41E727D3F10EA29FB232EFB74EB50203DD2854A2D20E6FECD0E81F
+912CB0E1E3A0B9F4A009E31C031CF4F8A2A8036F4C7244FB4A0B9D24ED8A2E77E735D8CD7AED23
+BB7922107A029D4329536C8CC04C0A34C93EDD4BCEEEF4A1FBE8844548001849D492C94FBFA35C
+10E082BAD3A2E029EA5FE38E80E1BBA3A8204341886D19F2ACE017D02D3E0A7AD415C2D40F9230
+3290B4CBE122B8CAD6BCF7ACFF77BE0A402793436B9FF3BA2F8CAA82008A00E0B7EE85D012CFBE
+EFFBA45D2B133A04A74E978EA9A174374E5CCC27F640D7630'H } } ,
+          seq {
+            id {
+              local
+                str "Seq3" } ,
+            descr {
+              source {
+                genome genomic ,
+                org {
+                  taxname "Acanthamoeba castellanii" ,
+                  orgname {
+                    lineage "Eukaryota; Acanthamoebidae; Acanthamoeba" ,
+                    gcode 1 ,
+                    div "INV" } } } ,
+              molinfo {
+                biomol genomic } } ,
+            inst {
+              repr raw ,
+              mol dna ,
+              length 1021 ,
+              seq-data
+                ncbi2na 'D2B23BE023897DC162B601B3BDDDCDBD4D2955D02588D99221F82
+3B7F9EA0011237E29DD3A0E9C0842143DED177870AA3FEABFBBD19D16E54B898A1E49B219FED40
+395D0EA0E88540C13A1024BC07B32807C22A2306F53AA502032774BCF79EB91F94BE4EA5D3310C
+A3AA9EC14782E93FA5EBBB904EE248F9E1D5244ADD32923AC90414353C3004E20483AFFA524712
+70A73A240E9E8D0B8929268A53A23E72D294A48EB9290E2253EA1D35CBD4B1EB7088E37DF803F9
+217348060EAAE48E418F42E159FBEF9660CD3EA37E47E33EE8F7E36DFFFD039B7361DF404697C0
+2295F71A0A2C5E2DCE2A08336028124839EE8E78612D3FED24C8BE8B000714EFDC000'H } } } } } }
