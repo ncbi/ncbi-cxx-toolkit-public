@@ -1,0 +1,10 @@
+Discrepancy Report Results
+
+Summary
+TRANSL_TOO_LONG: 1 feature has translation exception longer than 3 bp
+
+Detailed Report
+
+TRANSL_TOO_LONG: 1 feature has translation exception longer than 3 bp
+transl_too_long.asn:CDS	p83 protein	gb|KP259608|:plus35-2272	
+

@@ -1,0 +1,847 @@
+Seq-entry ::= set {
+  class nuc-prot,
+  descr {
+    source {
+      genome genomic,
+      org {
+        taxname "Soybean yellow mottle mosaic virus",
+        db {
+          {
+            db "taxon",
+            tag id 578361
+          }
+        },
+        orgname {
+          name virus "Soybean yellow mottle mosaic virus",
+          mod {
+            {
+              subtype isolate,
+              subname "New Delhi"
+            },
+            {
+              subtype nat-host,
+              subname "Vigna radiata L. (mungbean); cultivar SML-668"
+            }
+          },
+          lineage "Viruses; ssRNA viruses; ssRNA positive-strand viruses, no
+ DNA stage; Tombusviridae; Carmovirus",
+          gcode 1,
+          div "VRL"
+        }
+      },
+      subtype {
+        {
+          subtype country,
+          name "India"
+        },
+        {
+          subtype collection-date,
+          name "03-Aug-2012"
+        },
+        {
+          subtype collected-by,
+          name "Nagamani Sandra"
+        },
+        {
+          subtype identified-by,
+          name "Nagamani Sandra"
+        }
+      }
+    },
+    pub {
+      pub {
+        gen {
+          cit "Unpublished",
+          authors {
+            names std {
+              {
+                name name {
+                  last "Sandra",
+                  first "Nagamani",
+                  initials "N."
+                }
+              },
+              {
+                name name {
+                  last "Mandal",
+                  first "Bikash",
+                  initials "B."
+                }
+              },
+              {
+                name name {
+                  last "Jain",
+                  first "Rakesh",
+                  initials "R.K."
+                }
+              }
+            }
+          },
+          title "Full genome characterization of Soybean yellow mottle mosaic
+ virus"
+        }
+      }
+    },
+    pub {
+      pub {
+        sub {
+          authors {
+            names std {
+              {
+                name name {
+                  last "Sandra",
+                  first "Nagamani",
+                  initials "N."
+                }
+              },
+              {
+                name name {
+                  last "Mandal",
+                  first "Bikash",
+                  initials "B."
+                }
+              },
+              {
+                name name {
+                  last "Jain",
+                  first "Rakesh",
+                  initials "R.K."
+                }
+              }
+            },
+            affil std {
+              affil "Advanced Centre for Plant Virology, Indian Agricultural
+ Research Institute",
+              div "Division of Plant Pathology",
+              city "New Delhi",
+              sub "Delhi",
+              country "India",
+              street "Pusa Campus",
+              postal-code "110012"
+            }
+          },
+          medium email,
+          date std {
+            year 2014,
+            month 12,
+            day 8
+          }
+        }
+      }
+    },
+    user {
+      type str "Submission",
+      data {
+        {
+          label str "SmartComment",
+          data str "ALT EMAIL:nagamani.iari@gmail.com"
+        },
+        {
+          label str "AdditionalComment",
+          data str "BankIt1767527"
+        }
+      }
+    },
+    user {
+      type str "Submission",
+      data {
+        {
+          label str "SmartComment",
+          data str "TOTAL # OF SEQS:1"
+        }
+      }
+    },
+    user {
+      type str "NcbiAutofix",
+      data {
+      }
+    },
+    user {
+      type str "NcbiCleanup",
+      data {
+        {
+          label str "method",
+          data str "SequinCleanup"
+        },
+        {
+          label str "version",
+          data int 8
+        },
+        {
+          label str "month",
+          data int 7
+        },
+        {
+          label str "day",
+          data int 1
+        },
+        {
+          label str "year",
+          data int 2015
+        }
+      }
+    },
+    user {
+      type str "NcbiCleanup",
+      data {
+        {
+          label str "method",
+          data str "ExtendedSeqEntryCleanup"
+        },
+        {
+          label str "version",
+          data int 1
+        },
+        {
+          label str "month",
+          data int 7
+        },
+        {
+          label str "day",
+          data int 1
+        },
+        {
+          label str "year",
+          data int 2015
+        }
+      }
+    },
+    user {
+      type str "NcbiCleanup",
+      data {
+        {
+          label str "method",
+          data str "ExtendedSeqEntryCleanup"
+        },
+        {
+          label str "version",
+          data int 1
+        },
+        {
+          label str "month",
+          data int 7
+        },
+        {
+          label str "day",
+          data int 1
+        },
+        {
+          label str "year",
+          data int 2015
+        }
+      }
+    },
+    user {
+      type str "NcbiCleanup",
+      data {
+        {
+          label str "method",
+          data str "ExtendedSeqEntryCleanup"
+        },
+        {
+          label str "version",
+          data int 1
+        },
+        {
+          label str "month",
+          data int 7
+        },
+        {
+          label str "day",
+          data int 1
+        },
+        {
+          label str "year",
+          data int 2015
+        }
+      }
+    },
+    user {
+      type str "NcbiCleanup",
+      data {
+        {
+          label str "method",
+          data str "ExtendedSeqEntryCleanup"
+        },
+        {
+          label str "version",
+          data int 1
+        },
+        {
+          label str "month",
+          data int 7
+        },
+        {
+          label str "day",
+          data int 1
+        },
+        {
+          label str "year",
+          data int 2015
+        }
+      }
+    },
+    user {
+      type str "NcbiCleanup",
+      data {
+        {
+          label str "method",
+          data str "ExtendedSeqEntryCleanup"
+        },
+        {
+          label str "version",
+          data int 1
+        },
+        {
+          label str "month",
+          data int 7
+        },
+        {
+          label str "day",
+          data int 1
+        },
+        {
+          label str "year",
+          data int 2015
+        }
+      }
+    },
+    user {
+      type str "NcbiCleanup",
+      data {
+        {
+          label str "method",
+          data str "ExtendedSeqEntryCleanup"
+        },
+        {
+          label str "version",
+          data int 1
+        },
+        {
+          label str "month",
+          data int 7
+        },
+        {
+          label str "day",
+          data int 1
+        },
+        {
+          label str "year",
+          data int 2015
+        }
+      }
+    },
+    update-date std {
+      year 2015,
+      month 7,
+      day 1
+    }
+  },
+  seq-set {
+    seq {
+      id {
+        local str "Seq1",
+        general {
+          db "BankIt",
+          tag str "1767527/Seq1"
+        },
+        general {
+          db "TMSMART",
+          tag id 50048509
+        },
+        genbank {
+          accession "KP259608"
+        }
+      },
+      descr {
+        title "Soybean yellow mottle mosaic virus isolate New Delhi, complete
+ genome.",
+        molinfo {
+          biomol genomic,
+          completeness complete
+        },
+        user {
+          type str "Submission",
+          data {
+            {
+              label str "AdditionalComment",
+              data str "LocalID:Seq1"
+            }
+          }
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "LocalId",
+              data str "Seq1"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol rna,
+        length 3974,
+        seq-data ncbi2na 'AA0AC1494BD50774A3BE310F6810E517B08BA0A5551A97D24E6C
+E97E2B4F2BDFF7E5079E670FDA6397A96326C1CA05A11046E427722C7FAA1FD534208EBC6E45AA
+93A27E05010651D882F9938826EDB81291940AF1F7E2E03AC949E4A711FC3A4D558D848270DCFA
+AB992BF7A5073E5289369E14141219E2BEB439259557AF3879414A386E975382F0E06155EF81C7
+12A5FB3FA2992BAE4C551E290F2F9585DDD408BBE9043AFE3D6F2A9FD885626AF5972F432AB970
+A6EE52AFC31C030B6E98515E13903465CA06B2516ED2313A84ADFAAFB70E901DFEBBD30762DD14
+179B22B74F818BBFC6C8188690BC494554955154ACDFE2D1EFA8FC06427800AFBE85D3D4A368CE
+18BDB35FB34E92880863734909AF8F57CED9B42E8080A39F174913D3429E208C53EE8201485495
+562D35059B0D463106C82DADAC5F202FE04D3FB16EA3E104D3ABA941ED342A738ED8D0368DCD3F
+51A7EA04330A052C90FA3F84E25AF61413BF782293C2BF8912EFC5E413F6A0F95107672BE7E0E9
+032105BAB19C37178A822D0312192AAECA38BAE13811247A80FB7DE9FB94D1BA01D3A0A8D0BF61
+C7010688E3EEEBCD1200370E0925BF980AF806FD161CEBF47E4C9A01D4BB38BC891762FF905D41
+7FBD7688CAE8518D2025F7B493F40A11F1EEED69E810E122394907A78390DA50EEAF24FB726AB5
+6B3E48BCF10E574C201F54868DFAFA1011EEA0BE84BABFC59726F1118EA5AF16BDB34B88DADAFF
+6FF13CE128BC45239D0BA47A04B3C6167430D05B73D8168AB06509781D841137DDD3F0E824D409
+2041BAC82CA25A4370A2502A353142A3012B12BA745392D8C2142AC0517A6B8D1AAB8FFBCFBA74
+C6B44B433C1FC33F84676554AB0504F137B8F71F94DF71E73D79DC52607943DD349497B474F51F
+702CBF3327B6914152FDEC942460E0E810E745B6541D9420A20878A8298D1DD4205260261D8E49
+6161955F022BB4167908B7510A22D5E594FD750EED43A2F581C67B18401016B4C4931E27FAA077
+CEDC32778B55E7CCD9DA11D0542E35E413D0FAB1259DD46A3384ECC874F0FB88D3711D56BB9871
+47128DAFB3E9938548E72E39C35E10ED16375D0CE9E99EDDEBDADFF755F68F09604F0927616F3B
+9B8411472E35C27AF8E7A4031FB64DB3A52414D051D5F6576B8AE23DD3115E41D7415525D3D453
+AE40AFA99E55D556ABAB54BC6719C647B03AE4136D85047345F641E6AA4C5CB4696D8E4127A1D0
+445EDB4787DA4AFCAB92A442E7921D9575D3BFA449DD037AA414D13F8AA541D6BB7C8EFCEDB588
+4BA6D0C10652F00544470D7A95D4EE149B5388D3A4EB81A1F54ACAAE915BACEE81400C8BBC99ED
+44A703EEA29D42A5C6C9B1FC52035F6AEABAC0810C37E838FA9D6E4EE8955550'H
+      }
+    },
+    seq {
+      id {
+        local str "Seq1_prot_6",
+        general {
+          db "TMSMART",
+          tag id 50048510
+        }
+      },
+      descr {
+        title "p83 protein [Soybean yellow mottle mosaic virus]",
+        molinfo {
+          biomol peptide,
+          completeness complete
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "LocalId",
+              data str "Seq1_prot_6"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 745,
+        seq-data iupacaa "MLIQFGTMPPVRVEGPPRAFSMRMALRSLGSFLANCCANFGDAWADSVTRNR
+TQHVQALEYFGDFPIKKMVTCTGGMELEPNNATREVAHEKRVVNRHAKGYFLSEMVASCRLHFNGIPRSTEANLLGVR
+RFLANYCQEHRLTNQQTLRLVNAAAPLVMTANQDDVASMKLMNDPLLNYYRALYLEAQVVHTPLRQLVARPLSKECWQ
+QWFDSVRGFRDPSGFRLVQXGCLRRVPGFNTKISRGDHPDMQITPRNGSHRVRYMGQVLGLSNGKLFGVHNSSLTNLR
+RGLIERVFYVERDGKLQPPPAPTPGIFESLLGFKRKLKKVVGPHSRIGYDEFVSLYHGRRKTIYQQAVDSLMSRQVER
+KDAYLSTFIKAEKIPLWKKPDPAPRVIQPRNPRYNVEVGRYLRKFEHHLYRGIDNIMGGPTVIKGYDVDQIGSIISTA
+WEQYKEPVAIGFDMSRFDQHVSEEALRFEHSVYLQHFGNCPQLARLLEWQIDNRGYANLPEGRVKYRRRGCRMSGDMN
+TALGNCLLACAITWKLMEGIKFRLLNNGDDCVVITEKSNEAAVCERLKRFTDYGFTCIAETPVYELEHLEFCNLQPLF
+LGDRWTTIRKPSVSISKDTYCVSGWNNDRDASNWLNAIGQCGLALSSGVPVLQSYYNALIRNFPDGSWLDKHCGKLDS
+GFYRLALHTMGRLPVRISEIGRFSFYIMTGVTPDAQVALEQYYDRSIINRLFEPEGNAKPELDNTSSLI"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "p83 protein"
+                },
+                desc "Replication-associated protein; ORF 1 and ORF 2"
+              },
+              location int {
+                from 0,
+                to 744,
+                id local str "Seq1_prot_6"
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        local str "Seq1_prot_7",
+        general {
+          db "TMSMART",
+          tag id 50048511
+        }
+      },
+      descr {
+        title "p25 protein [Soybean yellow mottle mosaic virus]",
+        molinfo {
+          biomol peptide
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "LocalId",
+              data str "Seq1_prot_7"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 227,
+        seq-data ncbieaa "MLIQFGTMPPVRVEGPPRAFSMRMALRSLGSFLANCCANFGDAWADSVTRNR
+TQHVQALEYFGDFPIKKMVTCTGGMELEPNNATREVAHEKRVVNRHAKGYFLSEMVASCRLHFNGIPRSTEANLLGVR
+RFLANYCQEHRLTNQQTLRLVNAAAPLVMTANQDDVASMKLMNDPLLNYYRALYLEAQVVHTPLRQLVARPLSKECWQ
+QWFDSVRGFRDPSGFRLVQ"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "p25 protein"
+                },
+                desc "Replicase protein; ORF1"
+              },
+              location int {
+                from 0,
+                to 226,
+                id local str "Seq1_prot_7"
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        local str "Seq1_prot_8",
+        general {
+          db "TMSMART",
+          tag id 50048512
+        }
+      },
+      descr {
+        title "p8 protein [Soybean yellow mottle mosaic virus]",
+        molinfo {
+          biomol peptide
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "LocalId",
+              data str "Seq1_prot_8"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 68,
+        seq-data ncbieaa "MEASKAEQRGRSRSRQSKEPKGSIPRDKQVQVAHHAVDKTKGKPPGGDHGGD
+FVIVAHTVTVNINFNI"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "p8 protein"
+                },
+                desc "Movement protein; ORF3"
+              },
+              location int {
+                from 0,
+                to 67,
+                id local str "Seq1_prot_8"
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        local str "Seq1_prot_9",
+        general {
+          db "TMSMART",
+          tag id 50048513
+        }
+      },
+      descr {
+        title "p10 protein [Soybean yellow mottle mosaic virus]",
+        molinfo {
+          biomol peptide
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "LocalId",
+              data str "Seq1_prot_9"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 94,
+        seq-data ncbieaa "MQSIRPRVNHLAVITGVILLLWLIRSQSILTLIFDTLAPRVTNITSVILLAI
+FYCYSCSTSELPILISQPVTHSTSKVVYIAVGTNPVSVAKHE"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "p10 protein"
+                },
+                desc "Movement protein;ORF4"
+              },
+              location int {
+                from 0,
+                to 93,
+                id local str "Seq1_prot_9"
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        local str "Seq1_prot_10",
+        general {
+          db "TMSMART",
+          tag id 50048514
+        }
+      },
+      descr {
+        title "p39 protein [Soybean yellow mottle mosaic virus]",
+        molinfo {
+          biomol peptide
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "LocalId",
+              data str "Seq1_prot_10"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 354,
+        seq-data ncbieaa "MNGTMLTVAQLAKKEKTEGRRSLSKNQRKRLDAADRRPLKEVSTAARVSTRR
+VPAAISSNVSNGVPNYAVRQNKPVIQHTELWGTLMSNSSESPAYIARTLNPSDPATFNWVQPLSTGYDMYRLINCEII
+YTPRCATTTTGSVVLAHDPDASDANPDNVTDLLNMAGAVSGSVFSPLRIKPNIKQLDRYVRDNTTSDPKLVDAGKILV
+ASYGQQPSTTPFALGEVRFSYTLQLLNPQPHSTMVQRLGAAPPPGVGPSYATLRTVNGATSSTNTITFATAGAYLVTA
+VDATAGLNTPVVTDFGRFRVQGTSAADSPLLMFGTALKSGATITFEGPNSGVLDVYVVRDSGVNNNAS"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "p39 protein"
+                },
+                desc "Coat Protein; ORF5"
+              },
+              location int {
+                from 0,
+                to 353,
+                id local str "Seq1_prot_10"
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        local str "Seq1_prot_11",
+        general {
+          db "TMSMART",
+          tag id 50048515
+        }
+      },
+      descr {
+        title "p25 protein [Soybean yellow mottle mosaic virus]",
+        molinfo {
+          biomol peptide
+        },
+        user {
+          type str "OriginalID",
+          data {
+            {
+              label str "LocalId",
+              data str "Seq1_prot_11"
+            }
+          }
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 223,
+        seq-data ncbieaa "MEQCSPSPNSPRRRRLREGDHSPRTSESDSMQPTDAPLKRCQPLQESPQGES
+LPPFPPMCPMEFRTTLYDKTNRSYSILSFGELLCLIALSPLLISLGHSTQVILQHSIGYSRSPRDMTCIDSLIVRSST
+LPGVRLPLQDRLYWRMTQMLVMLILTMSPISSIWLALSLVRSFLPFGLSRTLSSSTVMCVTTPLVILSWLMLAKYLSH
+RMASNHQPLPSPSVR"
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data prot {
+                name {
+                  "p25 protein"
+                },
+                desc "Unknown function; ORF6"
+              },
+              location int {
+                from 0,
+                to 222,
+                id local str "Seq1_prot_11"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  annot {
+    {
+      data ftable {
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 1
+            },
+            code-break {
+              {
+                loc int {
+                  from 715,
+                  to 720,
+                  id genbank {
+                    accession "KP259608"
+                  }
+                },
+                aa ncbieaa 42
+              }
+            }
+          },
+          product whole local str "Seq1_prot_6",
+          location int {
+            from 34,
+            to 2271,
+            strand plus,
+            id genbank {
+              accession "KP259608"
+            }
+          },
+          qual {
+            {
+              qual "transl_except",
+              val "715-718"
+            }
+          }
+        },
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 1
+            }
+          },
+          product whole local str "Seq1_prot_7",
+          location int {
+            from 34,
+            to 717,
+            strand plus,
+            id local str "Seq1"
+          }
+        },
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 1
+            }
+          },
+          product whole local str "Seq1_prot_8",
+          location int {
+            from 2271,
+            to 2477,
+            strand plus,
+            id local str "Seq1"
+          }
+        },
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 1
+            }
+          },
+          product whole local str "Seq1_prot_9",
+          location int {
+            from 2374,
+            to 2658,
+            strand plus,
+            id local str "Seq1"
+          }
+        },
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 1
+            }
+          },
+          product whole local str "Seq1_prot_10",
+          location int {
+            from 2655,
+            to 3719,
+            strand plus,
+            id local str "Seq1"
+          }
+        },
+        {
+          data cdregion {
+            frame one,
+            code {
+              id 1
+            }
+          },
+          product whole local str "Seq1_prot_11",
+          location int {
+            from 2659,
+            to 3330,
+            strand plus,
+            id local str "Seq1"
+          }
+        }
+      }
+    }
+  }
+}
