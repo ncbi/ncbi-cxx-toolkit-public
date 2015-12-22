@@ -55,8 +55,8 @@ struct SNCStateStat
     Int8 cnt_blobs;
     Int8 cnt_keys;
     int min_dead_time;
-    Uint4 peer_active_conns;
-    Uint4 peer_bg_conns;
+    int peer_active_conns;
+    int peer_bg_conns;
     Uint8 mirror_queue_size;
     Uint8 sync_log_size;
     size_t wb_size;
@@ -169,8 +169,8 @@ private:
     CSrvStatTerm<Uint8> m_GarbageSize;
     CSrvStatTerm<Uint8> m_CntBlobs;
     CSrvStatTerm<Uint8> m_CntKeys;
-    CSrvStatTerm<Uint8> m_MirrorActiveConns;
-    CSrvStatTerm<Uint8> m_MirrorBGConns;
+    CSrvStatTerm<int> m_MirrorActiveConns;
+    CSrvStatTerm<int> m_MirrorBGConns;
     CSrvStatTerm<Uint8> m_MirrorQSize;
     CSrvStatTerm<Uint8> m_SyncLogSize;
     CSrvStatTerm<size_t> m_WBMemSize;

@@ -265,7 +265,7 @@ public:
     void StartResponse(Uint8 local_rec_no, Uint8 remote_rec_no, bool by_blobs);
     bool AddStartEvent(SNCSyncEvent* evt);
     bool AddStartBlob(const string& key, SNCBlobSummary* blob_sum);
-    bool GetNextTask(SSyncTaskInfo& task_info);
+    bool GetNextTask(SSyncTaskInfo& task_info, bool* is_valid = nullptr);
     void ExecuteSyncTask(const SSyncTaskInfo& task_info, CNCActiveHandler* conn);
     void CmdFinished(ESyncResult res, ESynActionType action, CNCActiveHandler* conn, int hint);
     bool IsStuck(void) const {

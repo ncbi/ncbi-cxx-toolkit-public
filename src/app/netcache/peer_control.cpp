@@ -372,17 +372,12 @@ CNCPeerControl::x_ReserveBGConnNow(void)
 inline void
 CNCPeerControl::x_IncBGConns(void)
 {
-    if (++m_BGConns > m_ActiveConns) {
-        SRV_FATAL("too many BGConns");
-    }
+    ++m_BGConns;
 }
 
 inline void
 CNCPeerControl::x_DecBGConns(void)
 {
-    if (m_BGConns == 0) {
-        SRV_FATAL("no BGConns");
-    }
     --m_BGConns;
 }
 
@@ -399,9 +394,7 @@ CNCPeerControl::x_DecBGConns(CNCActiveHandler* conn)
 inline void
 CNCPeerControl::x_DecActiveConns(void)
 {
-    if (m_ActiveConns == 0  ||  --m_ActiveConns < m_BGConns) {
-        SRV_FATAL("no ActiveConns");
-    }
+    --m_ActiveConns;
 }
 
 inline void
@@ -522,7 +515,7 @@ retry:
         is_locked = false;
     }
     else if (m_HasBGTasks
-             &&  m_BGConns < CNCDistributionConf::GetMaxPeerBGConns())
+             /*&&  m_BGConns < CNCDistributionConf::GetMaxPeerBGConns()*/)
     {
         // m_ObjLock is locked
         x_IncBGConns();
@@ -559,7 +552,8 @@ retry:
         else if (!m_SyncList.empty()) {
             CNCActiveSyncControl* sync_ctrl = *m_NextTaskSync;
             SSyncTaskInfo task_info;
-            if (!sync_ctrl->GetNextTask(task_info)) {
+            bool is_valid = true;
+            if (!sync_ctrl->GetNextTask(task_info, &is_valid)) {
                 TNCActiveSyncListIt cur_it = m_NextTaskSync;
                 ++m_NextTaskSync;
                 m_SyncList.erase(cur_it);
@@ -569,16 +563,20 @@ retry:
             if (m_NextTaskSync == m_SyncList.end())
                 m_NextTaskSync = m_SyncList.begin();
             x_UpdateHasTasks();
+            if (!is_valid) {
+                goto retry;
+            }
             m_ObjLock.Unlock();
             is_locked = false;
 
-            if (conn)
+            if (conn) {
                 conn->SetReservedForBG(true);
-            else
+            } else {
                 conn = x_CreateNewConn(true);
-            if (conn)
+            }
+            if (conn) {
                 sync_ctrl->ExecuteSyncTask(task_info, conn);
-            else {
+            } else {
                 sync_ctrl->CmdFinished(eSynNetworkError, eSynActionNone, NULL, NC_SYNC_HINT);
                 // unlocked now; we need to lock to retry
                 m_ObjLock.Lock();
@@ -804,7 +802,7 @@ CNCPeerControl::GetMirrorQueueSize(Uint8 srv_id)
 void
 CNCPeerControl::ReadCurState(SNCStateStat& state)
 {
-    Uint4 active = 0,  bg = 0;
+    int active = 0,  bg = 0;
     s_MapLock.Lock();
     ITERATE(TControlMap, it_ctrl, s_Controls) {
         CNCPeerControl* peer = it_ctrl->second;

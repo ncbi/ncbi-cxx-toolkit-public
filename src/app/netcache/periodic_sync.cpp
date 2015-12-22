@@ -1309,11 +1309,18 @@ CNCActiveSyncControl::x_DoFinalize(CNCActiveHandler* conn)
 }
 
 bool
-CNCActiveSyncControl::GetNextTask(SSyncTaskInfo& task_info)
+CNCActiveSyncControl::GetNextTask(SSyncTaskInfo& task_info, bool* is_valid)
 {
     m_Lock.Lock();
     if (m_NextTask == eSynNoTask) {
-        SRV_FATAL("Invalid state: m_NextTask: " << m_NextTask);
+        if (is_valid) {
+            *is_valid = false;
+            task_info.task_type = eSynNoTask;
+            m_Lock.Unlock();
+            return false;
+        } else {
+            SRV_FATAL("Invalid state: m_NextTask: " << m_NextTask);
+        }
     }
     task_info.task_type = m_NextTask;
     task_info.get_evt = m_CurGetEvent;
@@ -1330,7 +1337,9 @@ CNCActiveSyncControl::GetNextTask(SSyncTaskInfo& task_info)
     x_CalcNextTask();
     bool has_more = m_NextTask != eSynNeedFinalize  &&  m_NextTask != eSynNoTask;
     m_Lock.Unlock();
-
+    if (is_valid) {
+        *is_valid = true;
+    }
     return has_more;
 }
 

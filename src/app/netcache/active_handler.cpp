@@ -1028,6 +1028,7 @@ CNCActiveHandler::x_ConnClosedReplaceable(void)
 {
     if (m_Proxy->NeedToClose())
         return &CNCActiveHandler::x_CloseCmdAndConn;
+#if 0
     if (m_GotAnyAnswer) {
         // In this case we already talked to server for some time and then got
         // a disconnect. With old NC server this could mean that connection is
@@ -1035,6 +1036,7 @@ CNCActiveHandler::x_ConnClosedReplaceable(void)
         // mean only some network glitch. i.e. normally it shouldn't happen.
         return &CNCActiveHandler::x_ReplaceServerConn;
     }
+#endif
 
     // Here we will be if we attempted to connect to another NC server and got
     // some error as a result. This is a serious error, we cannot do anything

@@ -211,8 +211,8 @@ private:
     Uint8 m_FirstNWErrTime;
     Uint8 m_ThrottleStart;
     Uint8 m_NextSyncTime;
-    Uint2 m_ActiveConns;
-    Uint2 m_BGConns;
+    int m_ActiveConns;
+    int m_BGConns;
     Uint2 m_SlotsToInitSync;
     Uint2 m_OrigSlotsToInitSync;
     Uint2 m_CntActiveSyncs;
