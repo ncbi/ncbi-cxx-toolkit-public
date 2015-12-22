@@ -1194,7 +1194,9 @@ BioSource ::= SEQUENCE {
         endogenous-virus (19) ,
         hydrogenosome (20) ,
         chromosome (21) ,
-        chromatophore (22)
+        chromatophore (22) ,
+        plasmid-in-mitochondrion (23) ,
+        plasmid-in-plastid (24)
       } DEFAULT unknown ,
     origin INTEGER {
       unknown (0) ,
