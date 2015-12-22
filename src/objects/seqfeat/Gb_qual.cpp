@@ -297,6 +297,189 @@ bool CGb_qual::IsIllegalQualName(const string& val)
     return false;
 }
 
+static string s_FindInArray(const string &val, const char **arr)
+{
+    string result;
+    for (unsigned int i = 0; arr[i][0] != '\0'; i++) 
+        if (arr[i] == val)
+        {
+            result = val;
+            break;
+        }
+    return result;
+}
+
+void CGb_qual::ParseInferenceString(string val, string &category, string &type_str, bool &is_same_species, string &database, 
+                                    string &accession, string &program, string &version, string &acc_list)
+{
+    category.clear();
+    static const char *categories[] = {"COORDINATES", "DESCRIPTION", "EXISTENCE", "\0"};
+    for (unsigned int i = 0; categories[i][0] != '\0'; i++) 
+    {
+        if (NStr::StartsWith(val, categories[i], NStr::eNocase)) {
+            category = categories[i];
+            val = val.substr(strlen(categories[i]));
+            NStr::TruncateSpacesInPlace(val);
+            if (NStr::StartsWith(val, ":")) {
+                val = val.substr(1);
+                NStr::TruncateSpacesInPlace(val);
+            }
+            break;
+        }
+    }
+
+
+    static const char *types[] = {
+        "similar to sequence",
+        "similar to protein",
+        "similar to DNA",
+        "similar to RNA",
+        "similar to mRNA",
+        "similar to EST",
+        "similar to other RNA",
+        "profile",
+        "nucleotide motif",
+        "protein motif",
+        "ab initio prediction",
+        "alignment",
+        "\0"};
+
+    type_str.clear();
+    is_same_species = false;
+    // start with 1 - first item is blank
+    for (unsigned int i = 0; types[i][0] != '\0'; i++) 
+    {
+        if (NStr::StartsWith(val, types[i], NStr::eNocase)) 
+        {
+            type_str = types[i];
+            val = val.substr(strlen(types[i]));
+            NStr::TruncateSpacesInPlace(val);
+            if (NStr::StartsWith(val, "(same species)", NStr::eNocase)) {
+                is_same_species = true;
+                val = val.substr(14);
+                NStr::TruncateSpacesInPlace(val);
+            }
+	    if (NStr::StartsWith(val, ":")) {
+                val = val.substr(1);
+                NStr::TruncateSpacesInPlace(val);
+            }
+            break;
+        }
+    }
+
+    // add type-dependent extra data
+    if (NStr::StartsWith(type_str, "similar to ")) {
+
+        static const char *choices[] = {
+            "GenBank",
+            "EMBL",
+            "DDBJ",
+            "INSD",
+            "RefSeq",
+            "UniProt",
+            "Other",
+            "\0"};
+     
+        NStr::TruncateSpacesInPlace(val);
+        while (NStr::StartsWith(val, "|")) {
+            val = val.substr(1);
+            NStr::TruncateSpacesInPlace(val);
+        }
+        size_t pos = NStr::Find(val, ":");
+        if (pos == string::npos) {
+            database = s_FindInArray(val, choices);
+            if (database.empty())
+                accession = val;            
+            else
+                accession.clear();
+        } else {
+            string part1 = val.substr(0, pos);
+            string part2 = val.substr(pos + 1);
+            database = s_FindInArray(part1, choices);
+            if (!database.empty())
+            {
+                accession = part2;            
+            }
+            else
+            {
+                if (NStr::IsBlank(part1)) 
+                {
+                    accession = part2;
+                } else 
+                {
+                    accession = val;
+                }
+            }
+        }
+    } else if (NStr::EqualNocase(type_str, "profile") 
+		         || NStr::EqualNocase(type_str, "nucleotide motif")
+		         || NStr::EqualNocase(type_str, "protein motif")) {
+
+        if (NStr::IsBlank (val)) {
+            program.clear();
+            version.clear();
+        } else {
+            size_t pos = NStr::Find(val, ":");
+            if (pos == string::npos) {
+                program = val;
+                version.clear();
+            } else {
+                string part1 = val.substr(0, pos);
+                string part2 = val.substr(pos + 1);
+                program = part1;
+                version = part2;
+            }
+        }
+    } else if (NStr::EqualNocase(type_str, "ab initio prediction")) {
+
+        if (NStr::IsBlank (val)) {
+            program.clear();
+            version.clear();
+        } else {
+            size_t pos = NStr::Find(val, ":");
+            if (pos == string::npos) {
+                program = val;
+                version.clear();
+            } else {
+                string part1 = val.substr(0, pos);
+                string part2 = val.substr(pos + 1);
+                program = part1;
+                version = part2;
+            }
+        }
+    } else if (NStr::EqualNocase(type_str, "alignment")) {
+
+        string acc_list_str;
+        if (NStr::IsBlank (val)) {
+            program.clear();
+            version.clear();
+        } else {
+            size_t pos = NStr::Find(val, ":");
+            if (pos == string::npos) {
+                program = val;
+                version.clear();
+            } else {
+                string part1 = val.substr(0, pos);
+                string part2 = val.substr(pos + 1);
+                program = part1;
+                pos = NStr::Find(part2, ":");
+                if (pos == string::npos) {
+                    version = part2;
+                    // set alignment list blank
+                    acc_list.clear();
+                } else {
+                    string ver_str = part2.substr(0, pos);
+                    acc_list_str = part2.substr(pos + 1);
+                    version = ver_str;
+                    // set alignment list
+                    NStr::ReplaceInPlace(acc_list_str, ",", "\n");
+                    acc_list = acc_list_str;
+                }
+            }
+        }
+    }
+}
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
