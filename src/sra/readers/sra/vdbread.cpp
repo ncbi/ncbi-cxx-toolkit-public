@@ -470,7 +470,7 @@ CVDB::CVDB(const CVDBMgr& mgr, const string& acc_or_path)
 
 CNcbiOstream& CVDB::PrintFullName(CNcbiOstream& out) const
 {
-    return out << '.' << GetName();
+    return out << GetName();
 }
 
 
@@ -867,7 +867,7 @@ void CVDBColumn::Init(const CVDBCursor& cursor,
             m_Index = kInvalidIndex;
             if ( missing == eMissing_Throw ) {
                 NCBI_THROW2_FMT(CSraException, eNotFoundColumn,
-                                "Cannot get VDB column: "<<*this, rc);
+                                "Cannot get VDB column: "<<cursor<<*this,rc);
             }
             else {
                 return;
@@ -878,15 +878,15 @@ void CVDBColumn::Init(const CVDBCursor& cursor,
         VTypedesc type;
         if ( rc_t rc = VCursorDatatype(cursor, m_Index, 0, &type) ) {
             NCBI_THROW2_FMT(CSraException, eInvalidState,
-                            "Cannot get VDB column type: "<<*this, rc);
+                            "Cannot get VDB column type: "<<cursor<<*this,rc);
         }
         size_t size = type.intrinsic_bits*type.intrinsic_dim;
         if ( size != element_bit_size ) {
-            ERR_POST_X(1, "Wrong VDB column size "<<name<<
+            ERR_POST_X(1, "Wrong VDB column size "<<cursor<<*this<<
                        " expected "<<element_bit_size<<" bits != "<<
                        type.intrinsic_dim<<"*"<<type.intrinsic_bits<<" bits");
             NCBI_THROW2_FMT(CSraException, eInvalidState,
-                            "Wrong VDB column size: "<<*this<<": "<<size,
+                            "Wrong VDB column size: "<<cursor<<*this<<": "<<size,
                             RC(rcApp, rcColumn, rcConstructing, rcSelf, rcIncorrect));
         }
     }
