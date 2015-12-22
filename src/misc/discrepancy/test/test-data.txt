@@ -1,22 +1,22 @@
 ### Test name		Commandline C++		Commandline C		Input file		-X?	Special use
 
 BAD_BACTERIAL_GENE_NAME	BAD_BACTERIAL_GENE_NAME	DISC_BAD_BACTERIAL_GENE_NAME	BAD_BACTERIAL_GENE_NAME.asn
-BAD_LOCUS_TAG_FORMAT    BAD_LOCUS_TAG_FORMAT    BAD_LOCUS_TAG_FORMAT    bad_locus_tag_format.asn        bad_locus_tag_format.gold.txt
+BAD_LOCUS_TAG_FORMAT    BAD_LOCUS_TAG_FORMAT    BAD_LOCUS_TAG_FORMAT    bad_locus_tag_format.asn        bad_locus_tag_format.gold.txt	C version doesn't think A4_0020 is bad (but it is)
 COUNT_NUCLEOTIDES	COUNT_NUCLEOTIDES	DISC_COUNT_NUCLEOTIDES	COUNT_PROTEINS.sqn
 COUNT_PROTEINS		COUNT_PROTEINS		COUNT_PROTEINS		COUNT_PROTEINS.sqn	
-DIVISION_CODE_CONFLICTS DIVISION_CODE_CONFLICTS DIVISION_CODE_CONFLICTS division_code_conflicts.asn division_code_conflicts.gold.txt
+DIVISION_CODE_CONFLICTS DIVISION_CODE_CONFLICTS DIVISION_CODE_CONFLICTS division_code_conflicts.asn division_code_conflicts.gold.txt	C version prints species instead of seq length? XXX
 EC_NUMBER_NOTE	EC_NUMBER_NOTE	EC_NUMBER_NOTE	ec_number_note.asn	
 INCONSISTENT_LOCUS_TAG_PREFIX                   INCONSISTENT_LOCUS_TAG_PREFIX                   INCONSISTENT_LOCUS_TAG_PREFIX inconsistent_locus_tag_prefix.asn 
 INCONSISTENT_LOCUS_TAG_PREFIX-2                 INCONSISTENT_LOCUS_TAG_PREFIX                   INCONSISTENT_LOCUS_TAG_PREFIX inconsistent_locus_tag_prefix_2.asn 
 INCONSISTENT_LOCUS_TAG_PREFIX-3                 INCONSISTENT_LOCUS_TAG_PREFIX                   INCONSISTENT_LOCUS_TAG_PREFIX inconsistent_locus_tag_prefix_3.asn 
 INCONSISTENT_LOCUS_TAG_PREFIX-4                 INCONSISTENT_LOCUS_TAG_PREFIX                   INCONSISTENT_LOCUS_TAG_PREFIX inconsistent_locus_tag_prefix_4.asn
-INTERNAL_TRANSCRIBED_SPACER_RRNA	INTERNAL_TRANSCRIBED_SPACER_RRNA	DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA	internal_transcribed_spacer_rRNA.asn	internal_transcribed_spacer_rRNA_golden.txt
+INTERNAL_TRANSCRIBED_SPACER_RRNA	INTERNAL_TRANSCRIBED_SPACER_RRNA	DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA	internal_transcribed_spacer_rRNA.asn
 LONG_NO_ANNOTATION      LONG_NO_ANNOTATION      DISC_LONG_NO_ANNOTATION no_annotation_long_seq.asn
 LONG_NO_ANNOTATION-1    LONG_NO_ANNOTATION      DISC_LONG_NO_ANNOTATION no_annotation_not_long_enough_seq.asn
 MISSING_LOCUS_TAGS      MISSING_LOCUS_TAGS      MISSING_LOCUS_TAGS      missing_locus_tags.asn  
 N_RUNS			N_RUNS			N_RUNS			normal_delta.asn
 N_RUNS-X		N_RUNS			N_RUNS			normal_delta.asn	-X	N_RUNS-X.gold.txt	C Toolkit calculates location incorrectly for delta seqs
-NOTE_NO_TRANSL		NOTE_NO_TRANSL		NOTE_NO_TRANSL		NOTE_NO_TRANSL.asn		NOTE_NO_TRANSL.gold.txt
+NOTE_NO_TRANSL		NOTE_NO_TRANSL		NOTE_NO_TRANSL		NOTE_NO_TRANSL.asn		NOTE_NO_TRANSL.gold.txt	C version detects the same sequence twice
 OVERLAPPING_RRNAS	OVERLAPPING_RRNAS	TEST_OVERLAPPING_RRNAS	overlapping_rrnas.asn
 NO_ANNOTATION           NO_ANNOTATION           NO_ANNOTATION           no_annotation_seq.asn
 NO_ANNOTATION-1         NO_ANNOTATION           NO_ANNOTATION           no_annotation_set.asn
@@ -26,15 +26,15 @@ POSSIBLE_LINKER		POSSIBLE_LINKER		DISC_POSSIBLE_LINKER	possible_linker_set.asn
 POSSIBLE_LINKER-1	POSSIBLE_LINKER		DISC_POSSIBLE_LINKER	possible_linker_single.asn
 POSSIBLE_LINKER-2	POSSIBLE_LINKER		DISC_POSSIBLE_LINKER	possible_linker_not_found.asn
 POSSIBLE_LINKER-3	POSSIBLE_LINKER		DISC_POSSIBLE_LINKER	possible_linker_single_only_polyA.asn
-QUALITY_SCORES_1	QUALITY_SCORES	DISC_QUALITY_SCORES seqsallgraphs.asn   seqsallgraphs_golden.txt 
-QUALITY_SCORES_2	QUALITY_SCORES	DISC_QUALITY_SCORES seqsemptygraph.asn  seqsemptygraph_golden.txt
-QUALITY_SCORES_3	QUALITY_SCORES	DISC_QUALITY_SCORES seqsnographs.asn    seqsnographs_golden.txt
-QUALITY_SCORES_4	QUALITY_SCORES	DISC_QUALITY_SCORES seqsomegraphs.asn   seqsomegraphs_golden.txt
+QUALITY_SCORES_1	QUALITY_SCORES	DISC_QUALITY_SCORES seqsallgraphs.asn
+QUALITY_SCORES_2	QUALITY_SCORES	DISC_QUALITY_SCORES seqsemptygraph.asn  seqsemptygraph_golden.txt	C++ version adds a count of affected seqs
+QUALITY_SCORES_3	QUALITY_SCORES	DISC_QUALITY_SCORES seqsnographs.asn
+QUALITY_SCORES_4	QUALITY_SCORES	DISC_QUALITY_SCORES seqsomegraphs.asn   seqsomegraphs_golden.txt	C++ version adds a count of affected seqs
 RRNA_NAME_CONFLICTS	RRNA_NAME_CONFLICTS	RRNA_NAME_CONFLICTS	RRNA_NAME_CONFLICTS.asn
-SHORT_SEQUENCES	SHORT_SEQUENCES	SHORT_SEQUENCES	shortseqs.asn	shortseqs_golden.txt
+SHORT_SEQUENCES	SHORT_SEQUENCES	SHORT_SEQUENCES	shortseqs.asn
 TEST_ORGANELLE_PRODUCTS	TEST_ORGANELLE_PRODUCTS	TEST_ORGANELLE_PRODUCTS TEST_ORGANELLE_PRODUCTS.asn
-TRANSL_NO_NOTE		TRANSL_NO_NOTE		TRANSL_NO_NOTE		TRANSL_NO_NOTE.asn		TRANSL_NO_NOTE.gold.txt
-TRANSL_TOO_LONG	        TRANSL_TOO_LONG         TRANSL_TOO_LONG         transl_too_long.asn             transl_too_long.gold.txt
+TRANSL_NO_NOTE		TRANSL_NO_NOTE		TRANSL_NO_NOTE		TRANSL_NO_NOTE.asn
+TRANSL_TOO_LONG	        TRANSL_TOO_LONG         TRANSL_TOO_LONG         transl_too_long.asn             transl_too_long.gold.txt	C version doesn't detect this problem? XXX
 ZERO_BASECOUNT		ZERO_BASECOUNT		ZERO_BASECOUNT		zero_basecount.asn		ZERO_BASECOUNT.gold.txt		C Toolkit counts the same sequence multiple times
 ZERO_BASECOUNT-X	ZERO_BASECOUNT		ZERO_BASECOUNT		zero_basecount.asn	-X	ZERO_BASECOUNT-X.gold.txt	C Toolkit counts the same sequence multiple times
 

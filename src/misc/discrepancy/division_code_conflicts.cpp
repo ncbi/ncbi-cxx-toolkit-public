@@ -48,7 +48,7 @@ DISCREPANCY_CASE(DIVISION_CODE_CONFLICTS, CBioSource, eOncaller, "Division Code 
     if (obj.IsSetOrg() && obj.GetOrg().IsSetOrgname() && obj.GetOrg().GetOrgname().IsSetDiv() && !obj.GetOrg().GetOrgname().GetDiv().empty())
     {
         string div = obj.GetOrg().GetOrgname().GetDiv();
-        string str = "[n] bioseq[s] [has] divsion code ";
+        string str = "[n] bioseq[s] [has] division code ";
         str += div;
         m_Objs["Division code conflicts found"][str].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
     }

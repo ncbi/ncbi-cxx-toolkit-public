@@ -226,7 +226,7 @@ DISCREPANCY_CASE(INTERNAL_TRANSCRIBED_SPACER_RRNA, CRNA_ref, eOncaller, "Look fo
     const string& rna_name = obj.GetRnaProductName();
     for (size_t i = 0; kRRNASpacer[i][0] != '\0'; ++i) {
         if (NStr::FindNoCase(rna_name, kRRNASpacer[i]) != NPOS) {
-            m_Objs["[n] rRNA feature products contain 'internal', 'transcribed' or 'spacer'"].Add(
+            m_Objs["[n] rRNA feature products contain 'internal', 'transcribed', or 'spacer'"].Add(
                 *new CDiscrepancyObject(context.GetCurrentSeq_feat(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
         }
     }
