@@ -1,9 +1,10 @@
 # $Id$
 
 # Adjust ICC flags to avoid problematic references to
-# __intel_sse2_str* functions (as of ICC [20]13).  In particular,
-# strtok has become troublesome.
+# __intel_sse2_str* functions (as of ICC [20]13).
 
 ifeq "$(COMPILER)" "icc"
-  ct.o: CFLAGS += -fno-builtin-strtok
+  blk.o:    CFLAGS += -fno-builtin-strcpy
+  ct.o:     CFLAGS += -fno-builtin-strcpy -fno-builtin-strtok
+  ctutil.o: CFLAGS += -fno-builtin-strcpy
 endif
