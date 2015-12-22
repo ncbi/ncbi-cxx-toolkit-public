@@ -281,7 +281,7 @@ int CTestGenomicCollectionsSvcApplication::RunServerDirect(const CArgs& args, CN
     PrepareRequest(request, args);
     
     cout << "\nDirectly invoking CGI with following post request :\n" << MSerial_AsnText << request << endl;
-    
+
     std::ostringstream  objStream;
     objStream << MSerial_AsnBinary << request;
     string reqString = objStream.str();
@@ -319,7 +319,7 @@ int CTestGenomicCollectionsSvcApplication::RunServerDirect(const CArgs& args, CN
                 cout << "Discarding header line " << ++linesDiscarded << " : " << buffer << endl;
             }
         }
-        
+
         CGCClientResponse reply;
         objOutStream >> MSerial_AsnBinary >> reply;
 
@@ -352,7 +352,7 @@ int CTestGenomicCollectionsSvcApplication::RunServerDirect(const CArgs& args, CN
 static
 CGC_AssemblyDesc* GetAssebmlyDesc(CRef<CGC_Assembly>& assembly)
 {
-    return assembly->IsAssembly_set() && assembly->SetAssembly_set().IsSetDesc() ? &assembly->SetAssembly_set().SetDesc() :
+    return assembly->IsAssembly_set() && assembly->GetAssembly_set().IsSetDesc() ? &assembly->SetAssembly_set().SetDesc() :
            assembly->IsUnit() && assembly->GetUnit().IsSetDesc() ? &assembly->SetUnit().SetDesc() :
            NULL;
 
@@ -373,7 +373,7 @@ void RemoveVersions(CRef<CGC_Assembly>& assembly)
     CGC_AssemblyDesc* desc = GetAssebmlyDesc(assembly);
     if (desc && desc->CanGetDescr())
     {
-        list< CRef<CSeqdesc> >& l = assembly->SetAssembly_set().SetDesc().SetDescr().Set();
+        list< CRef<CSeqdesc> >& l = desc->SetDescr().Set();
         l.erase(remove_if(l.begin(), l.end(),
                           isVersionsObject),
                 l.end());
