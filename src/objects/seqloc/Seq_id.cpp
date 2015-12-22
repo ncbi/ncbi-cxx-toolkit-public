@@ -1096,7 +1096,12 @@ CSeq_id::x_IdentifyAccession(const CTempString& main_acc, bool has_version)
                         return eAcc_pdb;
                     }
                     break;
-                case 5: case 4:
+                case 5:
+                    // Historically fell through, but supporting
+                    // undelimited chains is a courtesy best extended
+                    // only when explicitly constructing PDB IDs.
+                    break;
+                case 4:
                     return eAcc_pdb;
                 }
             }

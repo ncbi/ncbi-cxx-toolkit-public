@@ -228,7 +228,8 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromPDBAcc)
     // NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("1GAV2")));
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("1GAV.2")));
 
-    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("1GAVX")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("1GAVX")));
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("pdb|1GAVX")));
     BOOST_CHECK(id->IsPdb());
     BOOST_CHECK_EQUAL(id->GetPdb().GetMol().Get(), string("1GAV"));
     BOOST_CHECK_EQUAL(id->GetPdb().GetChain(), 'X');
