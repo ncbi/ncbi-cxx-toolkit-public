@@ -2621,6 +2621,7 @@ static TCommentLocPtr s_FindComment (char * string)
 static void s_RemoveCommentFromLine (char * linestring)
 {
     TCommentLocPtr clp;
+    size_t offset;
 
     if (linestring == NULL) {
         return;
@@ -2637,8 +2638,14 @@ static void s_RemoveCommentFromLine (char * linestring)
      * line, get rid of the arrow character as well so it doesn't end up 
      * in the sequence data
      */
-    if ( linestring [0] == '>'  &&  linestring [1] == 0) {
-        linestring [0] = 0;
+    if ( linestring [0] == '>') {
+        offset = 1;
+        while (isspace(linestring[offset])) {
+            offset++;
+        }
+        if (linestring[offset] == 0) {
+            linestring[0] = 0;
+        }
     }
 
     /* if the line now contains only space, truncate it */
