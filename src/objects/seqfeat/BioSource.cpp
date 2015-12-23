@@ -84,6 +84,7 @@ int CBioSource::GetGenCode(void) const
         case eGenome_kinetoplast:
         case eGenome_mitochondrion:
         case eGenome_hydrogenosome:
+        case eGenome_plasmid_in_mitochondrion:
             {
                 // mitochondrial code
                 if (orn.IsSetMgcode()) {
@@ -98,6 +99,8 @@ int CBioSource::GetGenCode(void) const
         case eGenome_apicoplast:
         case eGenome_leucoplast:
         case eGenome_proplastid:
+        case eGenome_chromatophore:
+        case eGenome_plasmid_in_plastid:
             {
                 // bacteria and plant plastid code
                 if (orn.IsSetPgcode()) {
@@ -440,6 +443,8 @@ string CBioSource::GetRepliconName(void) const
     if (IsSetGenome()) {
         switch (GetGenome()) {
             case CBioSource::eGenome_plasmid:
+            case CBioSource::eGenome_plasmid_in_mitochondrion:
+            case CBioSource::eGenome_plasmid_in_plastid:
                 return "unnamed";
                 break;
             case CBioSource::eGenome_chromosome:
@@ -454,9 +459,11 @@ string CBioSource::GetRepliconName(void) const
             case CBioSource::eGenome_apicoplast:
             case CBioSource::eGenome_leucoplast:
             case CBioSource::eGenome_proplastid:
+            case CBioSource::eGenome_chromatophore:
                 return "Pltd";
                 break;
             case CBioSource::eGenome_mitochondrion:
+            case CBioSource::eGenome_hydrogenosome:
                 return "MT";
                 break;
         }
@@ -467,8 +474,14 @@ string CBioSource::GetRepliconName(void) const
 
 string CBioSource::GetBioprojectType (void) const
 {
-    if (IsSetGenome() && GetGenome() == CBioSource::eGenome_plasmid) {
-        return "ePlasmid";
+    if (IsSetGenome()) {
+        switch (GetGenome()) {
+            case CBioSource::eGenome_plasmid:
+            case CBioSource::eGenome_plasmid_in_mitochondrion:
+            case CBioSource::eGenome_plasmid_in_plastid:
+                return "ePlasmid";
+                break;
+        }
     }
 
     ITERATE (CBioSource::TSubtype, sit, GetSubtype()) {
