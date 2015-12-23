@@ -151,7 +151,7 @@ static const char* weasels[] = {
 bool CString_constraint::x_IsWeasel(const string& str) const
 {
     size_t n = ArraySize(weasels);
-    for (size_t i = 0; i <= n; i++) {
+    for (size_t i = 0; i < n; i++) {
         if (str == weasels[i]) {
             return true;
         }
