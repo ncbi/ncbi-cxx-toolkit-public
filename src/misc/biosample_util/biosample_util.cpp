@@ -81,7 +81,7 @@ BEGIN_SCOPE(biosample_util)
 using namespace xml;
 
 CRef< CSeq_descr >
-GetBiosampleData(string accession, bool use_dev_server)
+GetBiosampleData(const string& accession, bool use_dev_server)
 {
     string host = use_dev_server ? "dev-api-int" : "api-int";
     string path = "/biosample/fetch/";
@@ -149,7 +149,7 @@ TStatus ProcessBiosampleStatusNode(node& item)
     return response;
 }
 
-EStatus GetBiosampleStatus(string accession, bool use_dev_server)
+EStatus GetBiosampleStatus(const string& accession, bool use_dev_server)
 {
     string host = use_dev_server ? "dev-api-int" : "api-int";
     string path = "/biosample/fetch/";
@@ -438,7 +438,7 @@ TStructuredCommentTableColumnList GetAvailableFields(vector<CConstRef<CUser_obje
 }
 
 
-TBiosampleFieldDiffList GetFieldDiffs(string sequence_id, string biosample_id, const CBioSource& src, const CBioSource& sample)
+TBiosampleFieldDiffList GetFieldDiffs(const string& sequence_id, const string& biosample_id, const CBioSource& src, const CBioSource& sample)
 {
     TBiosampleFieldDiffList rval;
 
@@ -466,7 +466,7 @@ bool s_ShouldIgnoreStructuredCommentFieldDiff (const string& label, const string
 }
 
 
-TBiosampleFieldDiffList GetFieldDiffs(string sequence_id, string biosample_id, const CUser_object& src, const CUser_object& sample)
+TBiosampleFieldDiffList GetFieldDiffs(const string& sequence_id, const string& biosample_id, const CUser_object& src, const CUser_object& sample)
 {
     TBiosampleFieldDiffList rval;
 
@@ -496,7 +496,7 @@ TBiosampleFieldDiffList GetFieldDiffs(string sequence_id, string biosample_id, c
 }
 
 
-TBiosampleFieldDiffList GetFieldDiffs(string sequence_id, string biosample_id, CConstRef<CUser_object> src, CConstRef<CUser_object> sample)
+TBiosampleFieldDiffList GetFieldDiffs(const string& sequence_id, const string& biosample_id, CConstRef<CUser_object> src, CConstRef<CUser_object> sample)
 {
     TBiosampleFieldDiffList rval;
 

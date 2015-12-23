@@ -51,6 +51,7 @@
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/object_manager.hpp>
+#include <objtools/edit/dblink_field.hpp>
 
 #include <vector>
 #include <algorithm>
@@ -133,13 +134,13 @@ vector<string> GetBiosampleIDs(CBioseq_Handle bh)
 {
     vector<string> ids;
 
-    CSeqdesc_CI desc_ci(bh, CSeqdesc::e_User);
-    while (desc_ci) {
-        vector<string> new_ids = GetDBLinkIDs(*desc_ci, "BioSample");
+    edit::CDBLinkField dblink_field(edit::CDBLinkField::eDBLinkFieldType_BioSample);
+    vector<CConstRef<CObject> > objs = dblink_field.GetObjects(bh);
+    ITERATE(vector<CConstRef<CObject> >, it, objs) {
+        vector<string> new_ids = dblink_field.GetVals(**it);
         ITERATE(vector<string>, s, new_ids) {
             ids.push_back(*s);
         }
-        ++desc_ci;
     }
     return ids;
 }
