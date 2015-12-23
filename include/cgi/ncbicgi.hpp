@@ -928,8 +928,8 @@ private:
     /// Set client-ip property for logging
     void x_SetClientIpProperty(TFlags flags) const;
 
-    /// Set the HitID property of CRequestContext.
-    void x_SetPageHitId(TFlags flags);
+    /// Set the properties of CRequestContext (HitId, Dtab etc.).
+    void x_InitRequestContext(TFlags flags);
 
     /// prohibit default initialization and assignment
     CCgiRequest(const CCgiRequest&);

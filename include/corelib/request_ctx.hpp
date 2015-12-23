@@ -150,6 +150,12 @@ public:
     /// If hit id is not set, return empty string.
     const string& GetNextSubHitID(void);
 
+    /// Dtab
+    bool IsSetDtab(void) const;
+    const string& GetDtab(void) const;
+    void SetDtab(const string& dtab);
+    void UnsetDtab(void);
+
     /// Request exit status
     int  GetRequestStatus(void) const;
     void SetRequestStatus(int status);
@@ -274,7 +280,8 @@ private:
         eProp_HitID         = 1 << 3,
         eProp_ReqStatus     = 1 << 4,
         eProp_BytesRd       = 1 << 5,
-        eProp_BytesWr       = 1 << 6
+        eProp_BytesWr       = 1 << 6,
+        eProp_Dtab          = 1 << 7
     };
     typedef int TPropSet;
 
@@ -296,6 +303,7 @@ private:
     string         m_ClientIP;
     CEncodedString m_SessionID;
     string         m_HitID;
+    string         m_Dtab;
     mutable bool   m_LoggedHitID;
     int            m_SubHitID;
     int            m_ReqStatus;
@@ -451,6 +459,35 @@ void CRequestContext::UnsetHitID(void)
     m_HitID.clear();
     m_LoggedHitID = false;
     m_SubHitID = 0;
+}
+
+
+inline
+bool CRequestContext::IsSetDtab(void) const
+{
+    return x_IsSetProp(eProp_Dtab);
+}
+
+
+inline
+const string& CRequestContext::GetDtab(void) const
+{
+    return x_IsSetProp(eProp_Dtab) ? m_Dtab : kEmptyStr;
+}
+
+
+inline
+void CRequestContext::SetDtab(const string& dtab)
+{
+    x_SetProp(eProp_Dtab);
+    m_Dtab = dtab;
+}
+
+
+inline
+void CRequestContext::UnsetDtab(void)
+{
+    x_UnsetProp(eProp_Dtab);
 }
 
 

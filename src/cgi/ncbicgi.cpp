@@ -1071,7 +1071,7 @@ CCgiRequest::CCgiRequest
 
     x_SetClientIpProperty(flags);
 
-    x_SetPageHitId(flags);
+    x_InitRequestContext(flags);
 }
 
 
@@ -1134,7 +1134,7 @@ void CCgiRequest::x_Init
 
     x_ProcessInputStream(flags, istr, ifd);
 
-    x_SetPageHitId(flags);
+    x_InitRequestContext(flags);
 
     // Check for an IMAGEMAP input entry like: "Command.x=5&Command.y=3" and
     // put them with empty string key for better access
@@ -1228,30 +1228,35 @@ void CCgiRequest::x_SetClientIpProperty(TFlags flags) const
 }
 
 
-void CCgiRequest::x_SetPageHitId(TFlags flags)
+void CCgiRequest::x_InitRequestContext(TFlags flags)
 {
     CRequestContext& rctx = CDiagContext::GetRequestContext();
-    if ( rctx.IsSetHitID(CRequestContext::eHitID_Request) ) {
-        return;
+    if ( !rctx.IsSetHitID(CRequestContext::eHitID_Request) ) {
+        if ((flags & fIgnorePageHitId) == 0) {
+            string phid;
+            // Check if pageviewid is present. If not, generate one.
+            TCgiEntries::iterator phid_it = m_Entries.find(
+                g_GetNcbiString(eNcbiStrings_PHID));
+            if (phid_it != m_Entries.end()) {
+                phid = phid_it->second;
+            }
+            else {
+                // Try HTTP_NCBI_PHID
+                phid = CRequestContext::SelectLastHitID(
+                    GetRandomProperty("NCBI_PHID", true));
+            }
+            if ( phid.empty() ) {
+                rctx.SetHitID();
+            }
+            else {
+                rctx.SetHitID(phid);
+            }
+        }
     }
-    if ((flags & fIgnorePageHitId) == 0) {
-        string phid;
-        // Check if pageviewid is present. If not, generate one.
-        TCgiEntries::iterator phid_it = m_Entries.find(
-            g_GetNcbiString(eNcbiStrings_PHID));
-        if (phid_it != m_Entries.end()) {
-            phid = phid_it->second;
-        }
-        else {
-            // Try HTTP_NCBI_PHID
-            phid = CRequestContext::SelectLastHitID(
-                GetRandomProperty("NCBI_PHID", true));
-        }
-        if ( phid.empty() ) {
-            rctx.SetHitID();
-        }
-        else {
-            rctx.SetHitID(phid);
+    if ( !rctx.IsSetDtab() ) {
+        string dtab = x_GetPropertyByName("DTAB_LOCAL");
+        if ( !dtab.empty() ) {
+            rctx.SetDtab(dtab);
         }
     }
 }
