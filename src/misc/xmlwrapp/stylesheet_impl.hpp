@@ -44,6 +44,7 @@
 
 #include <misc/xmlwrapp/ownership.hpp>
 #include <misc/xmlwrapp/document.hpp>
+#include <misc/xmlwrapp/errors.hpp>
 
 #include "extension_function_impl.hpp"
 #include "extension_element_impl.hpp"
@@ -113,12 +114,18 @@ namespace xslt {
 
         struct stylesheet_impl
         {
-            stylesheet_impl (void) : ss_(0), errors_occured_(false) { }
+            stylesheet_impl (void) :
+                ss_(0), errors_occured_(false), messages_(NULL)
+            {}
 
             xsltStylesheetPtr       ss_;
             xml::document           doc_;
             std::string             error_;
             bool                    errors_occured_;
+
+            // Messages are only for the apply(...) calls when the user
+            // supplies a container for the errors
+            xml::error_messages *   messages_;
 
             // Extension functions support
             ext_funcs_map_type      ext_functions_;

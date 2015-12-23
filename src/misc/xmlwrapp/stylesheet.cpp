@@ -307,8 +307,6 @@ static void error_cb(void *c, const char *message, ...)
     xslt::impl::stylesheet_impl *s_impl =
                     static_cast<xslt::impl::stylesheet_impl*>(ctxt->_private);
 
-    s_impl->errors_occured_ = true;
-
     // tell the processor to stop when it gets a chance:
     if ( ctxt->state == XSLT_STATE_OK )
         ctxt->state = XSLT_STATE_STOPPED;
@@ -316,6 +314,7 @@ static void error_cb(void *c, const char *message, ...)
     // concatenate all error messages:
     if ( s_impl->errors_occured_ )
         s_impl->error_.append("\n");
+    s_impl->errors_occured_ = true;
 
     std::string formatted;
 
@@ -325,6 +324,34 @@ static void error_cb(void *c, const char *message, ...)
     va_end(ap);
 
     s_impl->error_.append(formatted);
+
+    if (s_impl->messages_ != NULL) {
+        // Need to insert the error information into the user provided container
+        int             line = 0;
+        std::string     filename;
+
+        // Supposedly the current served node
+        xmlNodePtr      node = ctxt->inst;
+        if (node != NULL) {
+            if ((node->type == XML_DOCUMENT_NODE) ||
+                (node->type == XML_HTML_DOCUMENT_NODE)) {
+                xmlDocPtr   d = (xmlDocPtr) node;
+                if (d->URL != NULL)
+                    filename = reinterpret_cast<const char *>(d->URL);
+            } else {
+                line = xmlGetLineNo(node);
+                if (node->doc != NULL)
+                    if (node->doc->URL != NULL)
+                        filename = reinterpret_cast<const char*>(node->doc->URL);
+            }
+        }
+
+        s_impl->messages_->get_messages().push_back(
+                                        xml::error_message(
+                                            formatted,
+                                            xml::error_message::type_error,
+                                            line, filename));
+    }
 }
 
 } // extern "C"
@@ -333,7 +360,9 @@ static void error_cb(void *c, const char *message, ...)
 
 xmlDocPtr apply_stylesheet(xslt::impl::stylesheet_impl *s_impl,
                            xmlDocPtr doc,
-                           const xslt::stylesheet::param_type *p = NULL)
+                           const xslt::stylesheet::param_type *p = NULL,
+                           xml::error_messages *  messages_ = NULL
+                           )
 {
     xsltStylesheetPtr style = s_impl->ss_;
 
@@ -376,6 +405,7 @@ xmlDocPtr apply_stylesheet(xslt::impl::stylesheet_impl *s_impl,
 
     // clear the error flag before applying the stylesheet
     s_impl->errors_occured_ = false;
+    s_impl->messages_ = messages_;
 
     xmlDocPtr result =
         xsltApplyStylesheetUser(style, doc, p ? &v[0] : 0, NULL, NULL, ctxt);
@@ -428,6 +458,9 @@ void xslt::stylesheet::attach_refcount(void)
 
 xslt::stylesheet::stylesheet(const char *filename)
 {
+    if (!filename)
+        throw xslt::exception("invalid file name");
+
     std::auto_ptr<impl::stylesheet_impl>
                     ap(pimpl_ = new impl::stylesheet_impl);
     xml::error_messages msgs;
@@ -443,7 +476,7 @@ xslt::stylesheet::stylesheet(const char *filename)
         msgs.get_messages().push_back(xml::error_message(
                                             pimpl_->error_,
                                             xml::error_message::type_error,
-                                            0, ""));
+                                            0, filename));
         throw xml::parser_exception(msgs);
     }
 
@@ -636,10 +669,11 @@ xslt::stylesheet::~stylesheet()
 }
 
 
-xml::document_proxy xslt::stylesheet::apply (const xml::document &doc)
+xml::document_proxy xslt::stylesheet::apply (const xml::document &doc,
+                                             xml::error_messages *  messages_)
 {
     xmlDocPtr input = static_cast<xmlDocPtr>(doc.get_doc_data_read_only());
-    xmlDocPtr xmldoc = apply_stylesheet(pimpl_, input);
+    xmlDocPtr xmldoc = apply_stylesheet(pimpl_, input, NULL, messages_);
 
     if ( !xmldoc )
         throw xslt::exception(pimpl_->error_);
@@ -649,10 +683,11 @@ xml::document_proxy xslt::stylesheet::apply (const xml::document &doc)
 
 
 xml::document_proxy xslt::stylesheet::apply (const xml::document &doc,
-                                             const param_type &with_params)
+                                             const param_type &with_params,
+                                             xml::error_messages *  messages_ )
 {
     xmlDocPtr input = static_cast<xmlDocPtr>(doc.get_doc_data_read_only());
-    xmlDocPtr xmldoc = apply_stylesheet(pimpl_, input, &with_params);
+    xmlDocPtr xmldoc = apply_stylesheet(pimpl_, input, &with_params, messages_);
 
     if ( !xmldoc )
         throw xslt::exception(pimpl_->error_);

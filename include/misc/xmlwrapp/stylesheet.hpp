@@ -50,6 +50,7 @@
 #include <misc/xmlwrapp/document.hpp>
 #include <misc/xmlwrapp/extension_function.hpp>
 #include <misc/xmlwrapp/extension_element.hpp>
+#include <misc/xmlwrapp/errors.hpp>
 
 // standard includes
 #include <map>
@@ -185,10 +186,15 @@ public:
      * output method is xml. (The xslt default output method is xml).
      *
      * @param doc The XML document to transform.
+     * @param messages_ A pointer to the object where the error
+     *                  messages are collected. If NULL is passed then no
+     *                  messages will be collected. In case of errors an
+     *                  exception is thrown anyway.
      * @return The result tree.
     **/
     //####################################################################
-    xml::document_proxy apply (const xml::document &doc);
+    xml::document_proxy apply (const xml::document &doc,
+                               xml::error_messages *  messages_ = NULL);
 
     //####################################################################
     /**
@@ -206,6 +212,10 @@ public:
      *
      * @param doc The XML document to transform.
      * @param with_params Override xsl:param elements using the given key/value map
+     * @param messages_ A pointer to the object where the error
+     *                  messages are collected. If NULL is passed then no
+     *                  messages will be collected. In case of errors an
+     *                  exception is thrown anyway.
      * @note each (simple) param name must be enclosed in quotes as per libxslt specs
      * @note string parameter value has to be enclosed in quotes. e.g.,
      * @note params["ParamString"] = "'Text'";
@@ -216,7 +226,8 @@ public:
      **/
     //####################################################################
     xml::document_proxy apply (const xml::document &doc,
-                               const param_type &with_params);
+                               const param_type &with_params,
+                               xml::error_messages *  messages_ = NULL);
 
 private:
     impl::stylesheet_impl *pimpl_;
