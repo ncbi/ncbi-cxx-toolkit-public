@@ -579,10 +579,11 @@ static unsigned short s_GeneratePort(int thread_num = -1)
 /** Accepts requests on specified socket.
     Returns result - if managed or not to answer */
 static 
-bool s_AnswerHealthcheck(CListeningSocket& listening_sock, short int port) {
+bool s_AnswerHealthcheck(CListeningSocket& listening_sock) {
     CSocket sock;
     STimeout sock_timeout = { 1, 500 };
     if (listening_sock.Accept(sock, &sock_timeout) != eIO_Success) {
+        ERR_POST(Error << "Could not accept healthcheck request from LBOS");
         return false;
     }
     char buf[4096];
@@ -606,7 +607,7 @@ bool s_AnswerHealthcheck(CListeningSocket& listening_sock, short int port) {
 
 
 #ifndef NCBI_THREADS // If we have to answer healthchech in the same thread
-/** If single-threaded mode, instead of just read, make first flush,
+/** If single-threaded mode, instead of just read, make flush first,
  * then answer healthcheck, and then get answer from LBOS (hopefully,
  * OK)
  *  If multi-threaded mode, then just read, and healthcheck will be answered
@@ -620,11 +621,11 @@ EIO_Status s_RealReadAnnounce(CONN              conn,
 {
     EIO_Status status = eIO_Timeout;
     size_t total_read = 0;
-    CListeningSocket listening_sock(4096);
+    CListeningSocket listening_sock(PORT);
     CSocket sock;
-    listening_sock.Listen(4096);
+    listening_sock.Listen(PORT);
     CONN_Flush(conn); //Send request for announcement
-    s_AnswerHealthcheck(listening_sock, 4096); // answer the healthcheck
+    s_AnswerHealthcheck(listening_sock); // answer the healthcheck
     do { // Get answer from LBOS after it received response for healthcheck
         status = CONN_Read(conn, (char*) line + total_read,
                            size - total_read, n_read, how);

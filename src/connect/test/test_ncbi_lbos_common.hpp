@@ -186,14 +186,15 @@ const unsigned short   kDefaultPort                 = 5000; /* for tests where
                         port is not necessary (they fail before announcement) */
 /* msecs to wait after announcement.de-announcement */
 
-#include "test_ncbi_lbos_mocks.hpp"
-
-#define WRITE_LOG(text,thread_num) \
-    LOG_POST(s_PrintThreadNum(thread_num) << "\t" << __FILE__ << "\t" << __LINE__ << "\t" << text);
-
 #define PORT 8085 /* port for healtcheck */
 #define PORT_STR_HELPER(port) #port
 #define PORT_STR(port) PORT_STR_HELPER(port)
+
+#include "test_ncbi_lbos_mocks.hpp"
+
+#define WRITE_LOG(text,thread_num)                                             \
+        LOG_POST(s_PrintThreadNum(thread_num) << "\t" <<                       \
+                 __FILE__ << "\t" << __LINE__ << "\t" << text);
 
 static void s_PrintAnnouncementDetails(const char* name,
                                        const char* version,
