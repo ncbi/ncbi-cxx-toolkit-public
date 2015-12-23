@@ -92,7 +92,7 @@ public:
 
 private:
     string m_AppPath;
-    CTimeout m_MaxAppRunningTime;
+    CTimeout m_AppRunTimeout;
     int m_KeepAlivePeriod;
     ENonZeroExitAction m_NonZeroExitAction;
     CRangeList m_RangeList;
@@ -101,7 +101,7 @@ private:
     bool m_CacheStdOutErr;
 
     string m_MonitorAppPath;
-    CTimeout m_MaxMonitorRunningTime;
+    CTimeout m_MonitorRunTimeout;
     int m_MonitorPeriod;
     unsigned int m_KillTimeout;
 

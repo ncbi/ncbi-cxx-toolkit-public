@@ -334,7 +334,7 @@ CRemoteAppLauncher::CRemoteAppLauncher(const string& sec_name,
 {
     const SSection sec(reg, sec_name);
 
-    m_MaxAppRunningTime = s_ToTimeout(sec.Get("max_app_run_time", 0));
+    m_AppRunTimeout = s_ToTimeout(sec.Get("max_app_run_time", 0));
     m_KeepAlivePeriod = sec.Get("keep_alive_period", 0);
 
     if (reg.HasEntry(sec_name, "non_zero_exit_action") ) {
@@ -409,7 +409,7 @@ CRemoteAppLauncher::CRemoteAppLauncher(const string& sec_name,
         }
     }
 
-    m_MaxMonitorRunningTime = s_ToTimeout(sec.Get("max_monitor_running_time", 5));
+    m_MonitorRunTimeout = s_ToTimeout(sec.Get("max_monitor_running_time", 5));
     m_MonitorPeriod = sec.Get("monitor_period", 5);
     m_KillTimeout = sec.Get("kill_timeout", 1);
 
@@ -498,11 +498,11 @@ struct STmpDirGuard
 class CTimedProcessWatcher : public CPipe::IProcessWatcher
 {
 public:
-    CTimedProcessWatcher(const CTimeout& max_app_running_time,
+    CTimedProcessWatcher(const CTimeout& run_timeout,
             CRemoteAppReaper::CManager &process_manager)
         : m_ProcessManager(process_manager),
-          m_Deadline(max_app_running_time),
-          m_LogSeconds((unsigned)max_app_running_time.GetAsDouble())
+          m_Deadline(run_timeout),
+          m_LogSeconds((unsigned)run_timeout.GetAsDouble())
     {
     }
 
@@ -554,23 +554,23 @@ public:
         eInternalError = 3,
     };
 
-    CRAMonitor(const string& app, const char* const* env,
-        CTimeout max_app_running_time) :
-        m_App(app),
+    CRAMonitor(const string& path, const char* const* env,
+        CTimeout run_timeout) :
+        m_Path(path),
         m_Env(env),
-        m_MaxAppRunningTime(max_app_running_time)
+        m_RunTimeout(run_timeout)
     {
     }
 
     int Run(vector<string>& args, CNcbiOstream& out, CNcbiOstream& err,
             CRemoteAppReaper::CManager &process_manager)
     {
-        CTimedProcessWatcher callback(m_MaxAppRunningTime, process_manager);
+        CTimedProcessWatcher callback(m_RunTimeout, process_manager);
         CNcbiStrstream in;
         int exit_value;
         CPipe::EFinish ret = CPipe::eCanceled;
         try {
-            ret = CPipe::ExecWait(m_App, args, in,
+            ret = CPipe::ExecWait(m_Path, args, in,
                                   out, err, exit_value,
                                   kEmptyStr, m_Env,
                                   &callback,
@@ -588,9 +588,9 @@ public:
     }
 
 private:
-    string m_App;
+    string m_Path;
     const char* const* m_Env;
-    CTimeout m_MaxAppRunningTime;
+    CTimeout m_RunTimeout;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -599,11 +599,11 @@ class CPipeProcessWatcher : public CTimedProcessWatcher
 {
 public:
     CPipeProcessWatcher(CWorkerNodeJobContext& job_context,
-                   CTimeout max_app_running_time,
+                   CTimeout run_timeout,
                    int keep_alive_period,
                    const string& job_wdir,
                    CRemoteAppReaper::CManager &process_manager)
-        : CTimedProcessWatcher(max_app_running_time, process_manager),
+        : CTimedProcessWatcher(run_timeout, process_manager),
           m_JobContext(job_context), m_KeepAlivePeriod(keep_alive_period),
           m_Monitor(NULL), m_JobWDir(job_wdir)
     {
@@ -851,7 +851,7 @@ bool CRemoteAppLauncher::ExecRemoteApp(const vector<string>& args,
         CTmpStreamGuard std_err_guard(tmp_path, "std.err", err,
             m_CacheStdOutErr);
 
-        CTimeout max_app_run_time = min(s_ToTimeout(app_run_timeout), m_MaxAppRunningTime);
+        CTimeout run_timeout = min(s_ToTimeout(app_run_timeout), m_AppRunTimeout);
         string working_dir(tmp_path.empty() ? CDir::GetCwd() : tmp_path);
 
 #ifdef NCBI_OS_MSWIN
@@ -859,7 +859,7 @@ bool CRemoteAppLauncher::ExecRemoteApp(const vector<string>& args,
 #endif
 
         CPipeProcessWatcher callback(job_context,
-            max_app_run_time,
+            run_timeout,
             m_KeepAlivePeriod,
             working_dir,
             m_Reaper->GetManager());
@@ -867,7 +867,7 @@ bool CRemoteAppLauncher::ExecRemoteApp(const vector<string>& args,
         auto_ptr<CRAMonitor> ra_monitor;
         if (!m_MonitorAppPath.empty() && m_MonitorPeriod > 0) {
             ra_monitor.reset(new CRAMonitor(m_MonitorAppPath, env,
-                m_MaxMonitorRunningTime));
+                m_MonitorRunTimeout));
             callback.SetMonitor(*ra_monitor, m_MonitorPeriod);
         }
 
