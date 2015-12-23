@@ -141,6 +141,9 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
             break;
 #endif
         case 125:
+#if defined(CS_VERSION_125)  &&  CS_VERSION_125 != 125
+        case CS_VERSION_125:
+#endif
             tds_version = CS_TDS_50;
             break;
         case CS_VERSION_110:
