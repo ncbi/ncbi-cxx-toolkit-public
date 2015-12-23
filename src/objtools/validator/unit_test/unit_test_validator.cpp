@@ -215,6 +215,48 @@ void CheckErrors(const CValidError& eval,
     }
 }
 
+
+void CheckStrings(vector<string>& seen, vector<string>& expected)
+{
+    vector<string>::iterator it1 = seen.begin();
+    vector<string>::iterator it2 = expected.begin();
+    bool any = false;
+    while (it1 != seen.end() && it2 != expected.end()) {
+        BOOST_CHECK_EQUAL(*it1, *it2);
+        if (!NStr::Equal(*it1, *it2)) {
+            any = true;
+        }
+        it1++;
+        it2++;
+    }
+    while (it1 != seen.end()) {
+        BOOST_CHECK_EQUAL(*it1, "Unexpected string");
+        it1++;
+        any = true;
+    }
+    while (it2 != expected.end()) {
+        BOOST_CHECK_EQUAL("Missing string", *it2);
+        it2++;
+        any = true;
+    }
+
+    if (any) {
+        printf("Seen:\n");
+        vector<string>::iterator it1 = seen.begin();
+        while (it1 != seen.end()) {
+            printf("%s\n", (*it1).c_str());
+            it1++;
+        }
+        printf("Expected:\n");
+        vector<string>::iterator it2 = expected.begin();
+        while (it2 != expected.end()) {
+            printf("%s\n", (*it2).c_str());
+            it2++;
+        }
+    }
+}
+
+
 // Not currently used, but I'll leave it here in case
 // it's useful in the future.
 
@@ -375,6 +417,190 @@ BOOST_AUTO_TEST_CASE(Test_Descr_LatLonCountry)
     CheckErrors(*eval, expected_errors);
 
     CLEAR_ERRORS
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_ValidError_Format)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+
+    // Create consensus splice problems
+    CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
+    CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
+    cds->SetLocation().Assign(*unit_test_util::MakeMixLoc(nuc->SetSeq().SetId().front()));
+    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[44] = 'A';
+    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[45] = 'G';
+    CRef<CSeq_feat> intron = unit_test_util::MakeIntronForMixLoc(nuc->SetSeq().SetId().front());
+    unit_test_util::AddFeat(intron, nuc);
+
+    CRef<CSeq_feat> other_intron = unit_test_util::AddMiscFeature(nuc);
+    other_intron->SetData().SetImp().SetKey("intron");
+
+    // create EC number problems
+    CRef<CSeq_feat> prot = entry->GetSet().GetSeq_set().back()->GetAnnot().front()->GetData().GetFtable().front();
+    prot->SetData().SetProt().SetEc().push_back("1.2.3.10");
+    prot->SetData().SetProt().SetEc().push_back("1.1.3.22");
+    prot->SetData().SetProt().SetEc().push_back("1.1.99.n");
+    prot->SetData().SetProt().SetEc().push_back("1.1.1.17");
+    prot->SetData().SetProt().SetEc().push_back("11.22.33.44");
+    prot->SetData().SetProt().SetEc().push_back("11.22.n33.44");
+    prot->SetData().SetProt().SetEc().push_back("11.22.33.n44");
+
+
+    // create bad institution code errors
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_specimen_voucher, "XXX:foo");
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_culture_collection, "YYY:foo");
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_bio_material, "ZZZ:foo");
+
+    // create lat-lon country error
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_lat_lon, "30 N 30 E");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_country, "Panama");
+
+    STANDARD_SETUP
+
+        eval = validator.Validate(seh, options);
+
+    CValidErrorFormat format(*objmgr);
+
+    vector<string> expected;
+    expected.push_back("intron\tlcl|nuc\tGT at 17");
+    expected.push_back("intron\tlcl|nuc\tGT at 1");
+    expected.push_back("intron\tlcl|nuc\tAG at 11");
+    expected.push_back("prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
+    expected.push_back("prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
+    expected.push_back("prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
+    expected.push_back("prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
+    expected.push_back("prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
+    expected.push_back("CDS\tlcl|nuc\tGT at 16");
+    expected.push_back("nuc:Lat_lon '30 N 30 E' maps to 'Egypt' instead of 'Panama'");
+    expected.push_back("nuc\tXXX;YYY;ZZZ");
+    expected.push_back("nuc\tXXX;YYY;ZZZ");
+    expected.push_back("nuc\tXXX;YYY;ZZZ");
+
+    vector<string> seen;
+    for (CValidError_CI vit(*eval); vit; ++vit) {
+        string val = format.FormatForSubmitterReport(*vit, scope);
+        seen.push_back(val);
+    }
+    CheckStrings(seen, expected);
+
+    expected.clear();
+    seen.clear();
+    for (CValidError_CI vit(*eval); vit; ++vit) {
+        seen.push_back(vit->GetErrCode());
+    }
+    expected.push_back("NotSpliceConsensusDonor");
+    expected.push_back("NotSpliceConsensusDonor");
+    expected.push_back("NotSpliceConsensusAcceptor");
+    expected.push_back("BadEcNumberValue");
+    expected.push_back("BadEcNumberValue");
+    expected.push_back("BadEcNumberValue");
+    expected.push_back("BadEcNumberFormat");
+    expected.push_back("BadEcNumberValue");
+    expected.push_back("NotSpliceConsensusDonor");
+    expected.push_back("LatLonCountry");
+    expected.push_back("BadInstitutionCode");
+    expected.push_back("BadInstitutionCode");
+    expected.push_back("BadInstitutionCode");
+    CheckStrings(seen, expected);
+
+    seen.clear();
+    expected.clear();
+    vector<unsigned int> codes = format.GetListOfErrorCodes(*eval);
+    ITERATE(vector<unsigned int>, it, codes) {
+        string val = CValidErrItem::ConvertErrCode(*it);
+        seen.push_back(val);
+    }
+    expected.push_back("LatLonCountry");
+    expected.push_back("BadInstitutionCode");
+    expected.push_back("BadEcNumberFormat");
+    expected.push_back("BadEcNumberValue");
+    expected.push_back("NotSpliceConsensusDonor");
+    expected.push_back("NotSpliceConsensusAcceptor");
+    CheckStrings(seen, expected);
+
+    string rval = format.FormatForSubmitterReport(*eval, scope, eErr_SEQ_FEAT_NotSpliceConsensusDonor);
+    expected.clear();
+    seen.clear();
+    NStr::Tokenize(rval, "\n", seen);
+    expected.push_back("Not Splice Consensus");
+    expected.push_back("intron\tlcl|nuc\tGT at 17");
+    expected.push_back("intron\tlcl|nuc\tGT at 1");
+    expected.push_back("CDS\tlcl|nuc\tGT at 16");
+    expected.push_back("");
+    CheckStrings(seen, expected);
+
+    rval = format.FormatCategoryForSubmitterReport(*eval, scope, eSubmitterFormatErrorGroup_ConsensusSplice);
+    expected.clear();
+    seen.clear();
+    NStr::Tokenize(rval, "\n", seen);
+    expected.push_back("Not Splice Consensus");
+    expected.push_back("intron\tlcl|nuc\tGT at 17");
+    expected.push_back("intron\tlcl|nuc\tGT at 1");
+    expected.push_back("intron\tlcl|nuc\tAG at 11");
+    expected.push_back("CDS\tlcl|nuc\tGT at 16");
+    expected.push_back("");
+    CheckStrings(seen, expected);
+
+    expected.clear();
+    seen.clear();
+    vector<string> cat_list = format.FormatCompleteSubmitterReport(*eval, scope);
+    ITERATE(vector<string>, it, cat_list) {
+        vector<string> sublist;
+        NStr::Tokenize(*it, "\n", sublist);
+        ITERATE(vector<string>, sit, sublist) {
+            seen.push_back(*sit);
+        }
+    }
+    expected.push_back("Not Splice Consensus");
+    expected.push_back("intron\tlcl|nuc\tGT at 17");
+    expected.push_back("intron\tlcl|nuc\tGT at 1");
+    expected.push_back("intron\tlcl|nuc\tAG at 11");
+    expected.push_back("CDS\tlcl|nuc\tGT at 16");
+    expected.push_back("");
+    expected.push_back("EC Number Format");
+    expected.push_back("prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
+    expected.push_back("");
+    expected.push_back("EC Number Value");
+    expected.push_back("prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
+    expected.push_back("prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
+    expected.push_back("prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
+    expected.push_back("prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
+    expected.push_back("");
+    expected.push_back("Bad Institution Codes");
+    expected.push_back("nuc\tXXX;YYY;ZZZ");
+    expected.push_back("nuc\tXXX;YYY;ZZZ");
+    expected.push_back("nuc\tXXX;YYY;ZZZ");
+    expected.push_back("");
+    expected.push_back("LatLonCountry Errors");
+    expected.push_back("nuc:Lat_lon '30 N 30 E' maps to 'Egypt' instead of 'Panama'");
+    expected.push_back("");
+    CheckStrings(seen, expected);
+
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_lat_lon, "");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_country, "");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_lat_lon, "18.47 N 64.23000000000002 W");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_country, "Puerto Rico: Rio Mameyes in Luquillo");
+    eval = validator.Validate(seh, options);
+
+    expected.pop_back();
+    expected.pop_back();
+    expected.pop_back();
+    expected.push_back("LatLonWater");
+    expected.push_back("nuc:Lat_lon '18.47 N 64.23000000000002 W' is in water 'Caribbean Sea', 'Puerto Rico: Rio Mameyes in Luquillo' is 108 km away");
+    expected.push_back("");
+    seen.clear();
+    cat_list = format.FormatCompleteSubmitterReport(*eval, scope);
+    ITERATE(vector<string>, it, cat_list) {
+        vector<string> sublist;
+        NStr::Tokenize(*it, "\n", sublist);
+        ITERATE(vector<string>, sit, sublist) {
+            seen.push_back(*sit);
+        }
+    }
+
+    CheckStrings(seen, expected);
+
 }
 
 
@@ -18900,230 +19126,6 @@ BOOST_AUTO_TEST_CASE(Test_RmCultureNotes)
     BOOST_CHECK_EQUAL(src->IsSetSubtype(), false);
 }
 
-
-void CheckStrings(vector<string>& seen, vector<string>& expected)
-{
-    vector<string>::iterator it1 = seen.begin();
-    vector<string>::iterator it2 = expected.begin();
-    bool any = false;
-    while (it1 != seen.end() && it2 != expected.end()) {
-        BOOST_CHECK_EQUAL(*it1, *it2);
-        if (!NStr::Equal(*it1, *it2)) {
-            any = true;
-        }
-        it1++;
-        it2++;
-    }
-    while (it1 != seen.end()) {
-        BOOST_CHECK_EQUAL(*it1, "Unexpected string");
-        it1++;
-        any = true;
-    }
-    while (it2 != expected.end()) {
-        BOOST_CHECK_EQUAL("Missing string", *it2);
-        it2++;
-        any = true;
-    }
-
-    if (any) {
-        printf("Seen:\n");
-        vector<string>::iterator it1 = seen.begin();
-        while (it1 != seen.end()) {
-            printf("%s\n", (*it1).c_str());
-            it1++;
-        }
-        printf("Expected:\n");
-        vector<string>::iterator it2 = expected.begin();
-        while (it2 != expected.end()) {
-            printf("%s\n", (*it2).c_str());
-            it2++;
-        }
-    }
-}
-
-
-BOOST_AUTO_TEST_CASE(Test_ValidError_Format)
-{
-    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
-
-    // Create consensus splice problems
-    CRef<CSeq_feat> cds = unit_test_util::GetCDSFromGoodNucProtSet(entry);
-    CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
-    cds->SetLocation().Assign(*unit_test_util::MakeMixLoc(nuc->SetSeq().SetId().front()));
-    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[44] = 'A';
-    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set()[45] = 'G';
-    CRef<CSeq_feat> intron = unit_test_util::MakeIntronForMixLoc(nuc->SetSeq().SetId().front());
-    unit_test_util::AddFeat(intron, nuc);
-
-    CRef<CSeq_feat> other_intron = unit_test_util::AddMiscFeature(nuc);
-    other_intron->SetData().SetImp().SetKey("intron");
-
-    // create EC number problems
-    CRef<CSeq_feat> prot = entry->GetSet().GetSeq_set().back()->GetAnnot().front()->GetData().GetFtable().front();
-    prot->SetData().SetProt().SetEc().push_back("1.2.3.10");
-    prot->SetData().SetProt().SetEc().push_back("1.1.3.22");
-    prot->SetData().SetProt().SetEc().push_back("1.1.99.n");
-    prot->SetData().SetProt().SetEc().push_back("1.1.1.17");
-    prot->SetData().SetProt().SetEc().push_back("11.22.33.44");
-    prot->SetData().SetProt().SetEc().push_back("11.22.n33.44");
-    prot->SetData().SetProt().SetEc().push_back("11.22.33.n44");
-
-
-    // create bad institution code errors
-    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_specimen_voucher, "XXX:foo");
-    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_culture_collection, "YYY:foo");
-    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_bio_material, "ZZZ:foo");
-
-    // create lat-lon country error
-    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_lat_lon, "30 N 30 E");
-    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_country, "Panama");
-
-    STANDARD_SETUP
-
-    eval = validator.Validate(seh, options);
-
-    CValidErrorFormat format(*objmgr);
-
-    vector<string> expected;
-    expected.push_back("intron\tlcl|nuc\tGT at 17");
-    expected.push_back("intron\tlcl|nuc\tGT at 1");
-    expected.push_back("intron\tlcl|nuc\tAG at 11");
-    expected.push_back("prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
-    expected.push_back("prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
-    expected.push_back("prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
-    expected.push_back("prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
-    expected.push_back("prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
-    expected.push_back("CDS\tlcl|nuc\tGT at 16");
-    expected.push_back("nuc:Lat_lon '30 N 30 E' maps to 'Egypt' instead of 'Panama'");
-    expected.push_back("nuc\tXXX;YYY;ZZZ");
-    expected.push_back("nuc\tXXX;YYY;ZZZ");
-    expected.push_back("nuc\tXXX;YYY;ZZZ");
-
-    vector<string> seen;
-    for ( CValidError_CI vit(*eval); vit; ++vit) {
-        string val = format.FormatForSubmitterReport(*vit, scope);
-        seen.push_back(val);
-    }
-    CheckStrings(seen, expected);
-
-    expected.clear();
-    seen.clear();
-    for ( CValidError_CI vit(*eval); vit; ++vit) {
-        seen.push_back(vit->GetErrCode());
-    }
-    expected.push_back("NotSpliceConsensusDonor");
-    expected.push_back("NotSpliceConsensusDonor");
-    expected.push_back("NotSpliceConsensusAcceptor");
-    expected.push_back("BadEcNumberValue");
-    expected.push_back("BadEcNumberValue");
-    expected.push_back("BadEcNumberValue");
-    expected.push_back("BadEcNumberFormat");
-    expected.push_back("BadEcNumberValue");
-    expected.push_back("NotSpliceConsensusDonor");
-    expected.push_back("LatLonCountry");
-    expected.push_back("BadInstitutionCode");
-    expected.push_back("BadInstitutionCode");
-    expected.push_back("BadInstitutionCode");
-    CheckStrings(seen, expected);
-    
-    seen.clear();
-    expected.clear();
-    vector<unsigned int> codes = format.GetListOfErrorCodes(*eval);
-    ITERATE(vector<unsigned int>, it, codes) {
-        string val = CValidErrItem::ConvertErrCode(*it);
-        seen.push_back(val);
-    }
-    expected.push_back("LatLonCountry");
-    expected.push_back("BadInstitutionCode");
-    expected.push_back("BadEcNumberFormat");
-    expected.push_back("BadEcNumberValue");
-    expected.push_back("NotSpliceConsensusDonor");
-    expected.push_back("NotSpliceConsensusAcceptor");
-    CheckStrings(seen, expected);
-
-    string rval = format.FormatForSubmitterReport(*eval, scope, eErr_SEQ_FEAT_NotSpliceConsensusDonor);
-    expected.clear();
-    seen.clear();
-    NStr::Tokenize(rval, "\n", seen);
-    expected.push_back("Not Splice Consensus");
-    expected.push_back("intron\tlcl|nuc\tGT at 17");
-    expected.push_back("intron\tlcl|nuc\tGT at 1");
-    expected.push_back("CDS\tlcl|nuc\tGT at 16");
-    expected.push_back("");
-    CheckStrings(seen, expected);
-
-    rval = format.FormatCategoryForSubmitterReport(*eval, scope, eSubmitterFormatErrorGroup_ConsensusSplice);
-    expected.clear();
-    seen.clear();
-    NStr::Tokenize(rval, "\n", seen);
-    expected.push_back("Not Splice Consensus");
-    expected.push_back("intron\tlcl|nuc\tGT at 17");
-    expected.push_back("intron\tlcl|nuc\tGT at 1");
-    expected.push_back("intron\tlcl|nuc\tAG at 11");
-    expected.push_back("CDS\tlcl|nuc\tGT at 16");
-    expected.push_back("");
-    CheckStrings(seen, expected);
-
-    expected.clear();
-    seen.clear();
-    vector<string> cat_list = format.FormatCompleteSubmitterReport(*eval, scope);
-    ITERATE(vector<string>, it, cat_list) {
-        vector<string> sublist;
-        NStr::Tokenize(*it, "\n", sublist);
-        ITERATE(vector<string>, sit, sublist) {
-            seen.push_back(*sit);
-        }
-    }
-    expected.push_back("Not Splice Consensus");
-    expected.push_back("intron\tlcl|nuc\tGT at 17");
-    expected.push_back("intron\tlcl|nuc\tGT at 1");
-    expected.push_back("intron\tlcl|nuc\tAG at 11");
-    expected.push_back("CDS\tlcl|nuc\tGT at 16");
-    expected.push_back("");
-    expected.push_back("EC Number Format");
-    expected.push_back("prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
-    expected.push_back("");
-    expected.push_back("EC Number Value");
-    expected.push_back("prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
-    expected.push_back("prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
-    expected.push_back("prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
-    expected.push_back("prot\t1.2.3.10;1.1.3.22;1.1.99.n;1.1.1.17;11.22.33.44;11.22.n33.44;11.22.33.n44\t\tfake protein name");
-    expected.push_back("");
-    expected.push_back("Bad Institution Codes");
-    expected.push_back("nuc\tXXX;YYY;ZZZ");
-    expected.push_back("nuc\tXXX;YYY;ZZZ");
-    expected.push_back("nuc\tXXX;YYY;ZZZ");
-    expected.push_back("");
-    expected.push_back("LatLonCountry Errors");
-    expected.push_back("nuc:Lat_lon '30 N 30 E' maps to 'Egypt' instead of 'Panama'");
-    expected.push_back("");
-    CheckStrings(seen, expected);
-
-    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_lat_lon, "");
-    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_country, "");
-    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_lat_lon, "18.47 N 64.23000000000002 W");
-    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_country, "Puerto Rico: Rio Mameyes in Luquillo");
-    eval = validator.Validate(seh, options);
-
-    expected.pop_back();
-    expected.pop_back();
-    expected.pop_back();
-    expected.push_back("LatLonWater");
-    expected.push_back("nuc:Lat_lon '18.47 N 64.23000000000002 W' is in water 'Caribbean Sea', 'Puerto Rico: Rio Mameyes in Luquillo' is 108 km away");
-    expected.push_back("");
-    seen.clear();
-    cat_list = format.FormatCompleteSubmitterReport(*eval, scope);
-    ITERATE(vector<string>, it, cat_list) {
-        vector<string> sublist;
-        NStr::Tokenize(*it, "\n", sublist);
-        ITERATE(vector<string>, sit, sublist) {
-            seen.push_back(*sit);
-        }
-    }
-
-    CheckStrings(seen, expected);
-
-}
 
 BOOST_AUTO_TEST_CASE(Test_VR_28)
 {
