@@ -43,6 +43,11 @@ timestamp_file=`mktemp /tmp/check_exec_timestamp.XXXXXXXXXX`
 touch $timestamp_file
 trap "rm -f $tmp $timestamp_file" 0 1 2 15
 
+# Reinforce timeout
+# Note, we cannot set it to $timeout for MT-test, because
+# CPU time count for each thread and sum.
+ulimit -t `expr $timeout \* 3` > /dev/null 2>&1
+
 # Use different kill on Unix and Cygwin
 case `uname -s` in
    CYGWIN* ) cygwin=true  ; kill='/bin/kill -f' ;;
