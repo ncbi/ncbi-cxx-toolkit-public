@@ -43,7 +43,7 @@
 // other includes
 #include <serial/enumvalues.hpp>
 #include <serial/serialimpl.hpp>
-#include <util/xregexp/regexp.hpp>
+
 
 // generated classes
 
@@ -481,6 +481,21 @@ void CGb_qual::ParseInferenceString(string val, string &category, string &type_s
     }
 }
 
+static void ReplaceIfNotFound(string &inference, const string &find, const string &replace)
+{
+    size_t start = 0;
+    while (start != NPOS)
+    {
+        size_t pos1 = NStr::Find(inference, find, start);
+        size_t pos2 = NStr::Find(inference, replace, start);
+        if (pos1 == NPOS)
+            break;
+        if (pos1 != pos2)
+            NStr::ReplaceInPlace(inference, find, replace, start, 1);
+        start = pos1 + find.length();
+    }
+}
+
 string CGb_qual::CleanupAndRepairInference( const string &orig_inference )
 {
     string inference(orig_inference);
@@ -488,19 +503,19 @@ string CGb_qual::CleanupAndRepairInference( const string &orig_inference )
         return inference;
     }
 
-
-    CRegexpUtil colonFixer( inference );
-    colonFixer.Replace( "[ ]+:", ":" );
-    colonFixer.Replace( ":*:[ ]+", ": ");
-    colonFixer.GetResult().swap( inference ); // swap is faster than assignment
-
-    // check if missing space after a prefix
-    // e.g. "COORDINATES:foo" should become "COORDINATES: foo"
-    CRegexp spaceInserter("(COORDINATES|DESCRIPTION|EXISTENCE):[^ ]", CRegexp::fCompile_default);
-    if( spaceInserter.IsMatch( inference ) ) {
-        int location_just_beyond_match = spaceInserter.GetResults(0)[1];
-        inference.insert( inference.begin() + location_just_beyond_match - 1, ' ' );
+    string old_inf;
+    while (old_inf != inference)
+    {
+        old_inf = inference;
+        NStr::ReplaceInPlace(inference,"  ", " ");
+        NStr::ReplaceInPlace(inference," :", ":");
+        NStr::ReplaceInPlace(inference,"::", ":");
+        NStr::ReplaceInPlace(inference,":  ", ": ");
     }
+
+    ReplaceIfNotFound(inference, "COORDINATES:", "COORDINATES: ");
+    ReplaceIfNotFound(inference, "DESCRIPTION:", "DESCRIPTION: ");
+    ReplaceIfNotFound(inference, "EXISTENCE:", "EXISTENCE: ");
 
     return inference;
 }
