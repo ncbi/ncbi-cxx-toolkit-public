@@ -82,6 +82,9 @@ public:
 
     static void ParseInferenceString(string val, string &category, string &type_str, bool &is_same_species, string &database, 
                                      string &accession, string &program, string &version, string &acc_list);
+
+    static string CleanupAndRepairInference( const string &orig_inference );
+
 private:
     // Prohibit copy constructor and assignment operator
     CGb_qual(const CGb_qual& value);

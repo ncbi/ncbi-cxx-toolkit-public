@@ -43,6 +43,7 @@
 // other includes
 #include <serial/enumvalues.hpp>
 #include <serial/serialimpl.hpp>
+#include <util/xregexp/regexp.hpp>
 
 // generated classes
 
@@ -478,6 +479,30 @@ void CGb_qual::ParseInferenceString(string val, string &category, string &type_s
             }
         }
     }
+}
+
+string CGb_qual::CleanupAndRepairInference( const string &orig_inference )
+{
+    string inference(orig_inference);
+    if( inference.empty() ) {
+        return inference;
+    }
+
+
+    CRegexpUtil colonFixer( inference );
+    colonFixer.Replace( "[ ]+:", ":" );
+    colonFixer.Replace( ":*:[ ]+", ": ");
+    colonFixer.GetResult().swap( inference ); // swap is faster than assignment
+
+    // check if missing space after a prefix
+    // e.g. "COORDINATES:foo" should become "COORDINATES: foo"
+    CRegexp spaceInserter("(COORDINATES|DESCRIPTION|EXISTENCE):[^ ]", CRegexp::fCompile_default);
+    if( spaceInserter.IsMatch( inference ) ) {
+        int location_just_beyond_match = spaceInserter.GetResults(0)[1];
+        inference.insert( inference.begin() + location_just_beyond_match - 1, ' ' );
+    }
+
+    return inference;
 }
 
 END_objects_SCOPE // namespace ncbi::objects::
