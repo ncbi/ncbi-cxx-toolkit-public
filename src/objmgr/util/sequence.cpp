@@ -3450,21 +3450,21 @@ static void AddGapToDeltaSeq (CRef<CBioseq>prot, bool unknown_length, TSeqPos ad
 
 
 CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
-                                                   CScope& scope)
+    CScope& scope)
 {
     const CGenetic_code* code = NULL;
     int frame = 0;
     if (cds.GetData().IsCdregion()) {
         const CCdregion& cdr = cds.GetData().GetCdregion();
-        if (cdr.IsSetFrame ()) {
-            switch (cdr.GetFrame ()) {
-            case CCdregion::eFrame_two :
+        if (cdr.IsSetFrame()) {
+            switch (cdr.GetFrame()) {
+            case CCdregion::eFrame_two:
                 frame = 1;
                 break;
-            case CCdregion::eFrame_three :
+            case CCdregion::eFrame_three:
                 frame = 2;
                 break;
-            default :
+            default:
                 break;
             }
         }
@@ -3492,11 +3492,11 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
     // get appropriate translation table
     const CTrans_table & tbl =
         (code ? CGen_code_table::GetTransTable(*code) :
-                CGen_code_table::GetTransTable(1));
+        CGen_code_table::GetTransTable(1));
 
     // main loop through bases
     CSeqVector::const_iterator start = seq.begin();
-    for (int i = 0;  i < frame;  ++i) {
+    for (int i = 0; i < frame; ++i) {
         ++start;
     }
 
@@ -3507,19 +3507,19 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
     bool check_start = (is_5prime_complete && frame == 0);
     bool first_time = true;
 
-    for (i = 0;  i < length;  ++i) {
+    for (i = 0; i < length; ++i) {
         bool is_gap = true;
         bool unknown_length = false;
         TSeqPos pos = (i * 3) + frame;
 
         if (start.HasZeroGapBefore()) {
-            AddGapToDeltaSeq (prot, true, 0);
+            AddGapToDeltaSeq(prot, true, 0);
         }
 
         // loop through one codon at a time
-        for (k = 0;  k < 3;  ++k, ++start) {
+        for (k = 0; k < 3; ++k, ++start) {
             state = tbl.NextCodonState(state, *start);
-            if (seq.IsInGap(pos + k )) {
+            if (seq.IsInGap(pos + k)) {
                 if (is_gap && !unknown_length) {
                     CSeqMap_CI map_iter(map, &scope, SSeqMapSelector(), pos + k);
                     if (map_iter.GetType() == CSeqMap::eSeqGap
@@ -3533,10 +3533,10 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
         }
 
         if (is_gap) {
-            AddGapToDeltaSeq (prot, unknown_length, 1);
+            AddGapToDeltaSeq(prot, unknown_length, 1);
         } else {
             // save translated amino acid
-            if (first_time  &&  check_start) { 
+            if (first_time  &&  check_start) {
                 AddAAToDeltaSeq(prot, tbl.GetStartResidue(state));
             } else {
                 AddAAToDeltaSeq(prot, tbl.GetCodonResidue(state));
@@ -3551,7 +3551,7 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
         bool is_gap = true;
         bool unknown_length = false;
         TSeqPos pos = (length * 3) + frame;
-        for (k = 0;  k < mod;  ++k, ++start) {
+        for (k = 0; k < mod; ++k, ++start) {
             state = tbl.NextCodonState(state, *start);
             if (seq.IsInGap(pos + k)) {
                 if (is_gap && !unknown_length) {
@@ -3569,16 +3569,16 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
 
         CRef<CDelta_seq> last = prot->SetInst().SetExt().SetDelta().Set().back();
         if (is_gap) {
-            AddGapToDeltaSeq (prot, unknown_length, 1);
+            AddGapToDeltaSeq(prot, unknown_length, 1);
         } else {
-            for ( ;  k < 3;  ++k) {
+            for (; k < 3; ++k) {
                 state = tbl.NextCodonState(state, 'N');
             }
 
             // save translated amino acid
             char c = tbl.GetCodonResidue(state);
             if (c != 'X') {
-                if (first_time  &&  check_start) { 
+                if (first_time  &&  check_start) {
                     AddAAToDeltaSeq(prot, tbl.GetStartResidue(state));
                 } else {
                     AddAAToDeltaSeq(prot, tbl.GetCodonResidue(state));
@@ -3588,47 +3588,47 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
     }
 
     TSeqPos prot_len = 0;
-    ITERATE (CDelta_ext::Tdata, seg_it, prot->SetInst().SetExt().SetDelta().Set()) {
+    ITERATE(CDelta_ext::Tdata, seg_it, prot->SetInst().SetExt().SetDelta().Set()) {
         prot_len += (*seg_it)->GetLiteral().GetLength();
     }
 
     // code break substitution
-    if (cds.GetData().IsCdregion()  &&
+    if (cds.GetData().IsCdregion() &&
         cds.GetData().GetCdregion().IsSetCode_break()) {
         const CCdregion& cdr = cds.GetData().GetCdregion();
-        ITERATE (CCdregion::TCode_break, code_break, cdr.GetCode_break()) {
+        ITERATE(CCdregion::TCode_break, code_break, cdr.GetCode_break()) {
             const CRef <CCode_break> brk = *code_break;
             const CSeq_loc& cbk_loc = brk->GetLoc();
             TSeqPos seq_pos =
                 sequence::LocationOffset(cds.GetLocation(), cbk_loc,
-                                         sequence::eOffset_FromStart,
-                                         &scope);
+                sequence::eOffset_FromStart,
+                &scope);
             seq_pos -= frame;
             string::size_type i = seq_pos / 3;
             if (i < prot_len) {
-                const CCode_break::C_Aa& c_aa = brk->GetAa ();
-                if (c_aa.IsNcbieaa ()) {
+                const CCode_break::C_Aa& c_aa = brk->GetAa();
+                if (c_aa.IsNcbieaa()) {
                     CDelta_ext::Tdata::iterator seg_it = prot->SetInst().SetExt().SetDelta().Set().begin();
                     string::size_type offset = 0;
                     while (seg_it != prot->SetInst().SetExt().SetDelta().Set().end()
-                           && offset + (*seg_it)->GetLiteral().GetLength() < i) {
+                        && offset + (*seg_it)->GetLiteral().GetLength() < i) {
                         offset += (*seg_it)->GetLiteral().GetLength();
                         ++seg_it;
                     }
                     if (seg_it != prot->SetInst().SetExt().SetDelta().Set().end()
                         && !(*seg_it)->GetLiteral().GetSeq_data().IsGap()) {
                         if ((*seg_it)->GetLiteral().GetSeq_data().IsIupacaa()) {
-                            (*seg_it)->SetLiteral().SetSeq_data().SetIupacaa().Set()[i - offset] = c_aa.GetNcbieaa ();
+                            (*seg_it)->SetLiteral().SetSeq_data().SetIupacaa().Set()[i - offset] = c_aa.GetNcbieaa();
                         } else {
-                            (*seg_it)->SetLiteral().SetSeq_data().SetNcbieaa().Set()[i - offset] = c_aa.GetNcbieaa ();
+                            (*seg_it)->SetLiteral().SetSeq_data().SetNcbieaa().Set()[i - offset] = c_aa.GetNcbieaa();
                         }
                     }
                 }
             } else if (i == prot_len) {
                 // add terminal exception
-                const CCode_break::C_Aa& c_aa = brk->GetAa ();
-                if (c_aa.IsNcbieaa () && c_aa.GetNcbieaa () == 42) {
-                    AddAAToDeltaSeq(prot, c_aa.GetNcbieaa ());
+                const CCode_break::C_Aa& c_aa = brk->GetAa();
+                if (c_aa.IsNcbieaa() && c_aa.GetNcbieaa() == 42) {
+                    AddAAToDeltaSeq(prot, c_aa.GetNcbieaa());
                 }
             }
         }
@@ -3654,20 +3654,21 @@ CRef<CBioseq> CSeqTranslator::TranslateToProtein(const CSeq_feat& cds,
 
     // recalculate protein length, check need for ncbieaa - may have been altered by removal of stop codon/transl_except
     prot_len = 0;
-    NON_CONST_ITERATE (CDelta_ext::Tdata, seg_it, prot->SetInst().SetExt().SetDelta().Set()) {
+    NON_CONST_ITERATE(CDelta_ext::Tdata, seg_it, prot->SetInst().SetExt().SetDelta().Set()) {
         prot_len += (*seg_it)->GetLiteral().GetLength();
         if ((*seg_it)->GetLiteral().IsSetSeq_data()
             && (*seg_it)->GetLiteral().GetSeq_data().IsNcbieaa()) {
             string current = (*seg_it)->GetLiteral().GetSeq_data().GetNcbieaa();
-            if (NStr::Find (current, "*") == string::npos && NStr::Find (current, "-") == string::npos) {
+            if (NStr::Find(current, "*") == string::npos && NStr::Find(current, "-") == string::npos) {
                 (*seg_it)->SetLiteral().SetSeq_data().SetIupacaa().Set(current);
             }
-        }            
+        }
     }
     prot->SetInst().SetLength(prot_len);
 
-
-    if (prot->SetInst().SetExt().SetDelta().Set().size() == 1
+    if (prot->GetInst().GetLength() == 0) {
+        prot.Reset(NULL);
+    } else if (prot->SetInst().SetExt().SetDelta().Set().size() == 1
         && prot->SetInst().SetExt().SetDelta().Set().front()->IsLiteral()
         && prot->SetInst().SetExt().SetDelta().Set().front()->GetLiteral().IsSetSeq_data()) {
         // only one segment, should be raw rather than delta
