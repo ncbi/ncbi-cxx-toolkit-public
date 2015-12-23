@@ -119,7 +119,7 @@ private:
 // constructor
 CAsn2FastaApp::CAsn2FastaApp (void)
 {
-    SetVersion(CVersionInfo(0, 9, 1));
+    SetVersion(CVersionInfo(0, 9, 2));
 }
 
 // destructor
@@ -624,6 +624,8 @@ void CAsn2FastaApp::PrintQualityScores(const CBioseq& bsp, CNcbiOstream* out_str
     int i = 0;
     int j = 0;
     bool first = true;
+    int min = 0;
+    int max = 0;
 
     if (bsp.IsSetLength()) {
         len = bsp.GetLength();
@@ -633,6 +635,7 @@ void CAsn2FastaApp::PrintQualityScores(const CBioseq& bsp, CNcbiOstream* out_str
         if (! annot.IsGraph()) continue;
         FOR_EACH_SEQGRAPH_ON_SEQANNOT (gr_itr, annot) {
             const CSeq_graph& graph = **gr_itr;
+            const CSeq_graph::TGraph& src_data = graph.GetGraph();
             if (first) {
                 first = false;
                 *out_stream << ">";
@@ -641,9 +644,31 @@ void CAsn2FastaApp::PrintQualityScores(const CBioseq& bsp, CNcbiOstream* out_str
                     const string& g_title = graph.GetTitle();
                     *out_stream << " " << g_title;
                 }
+                if (src_data.Which() == CSeq_graph::TGraph::e_Byte) {
+                    const CByte_graph& byte_graph = src_data.GetByte();
+                    if (byte_graph.IsSetValues()) {
+                        const CByte_graph::TValues& bytes = byte_graph.GetValues();
+                        if (bytes.size() > 0) {
+                            char ch = bytes [0];
+                            min = (int) ch;
+                            max = (int) ch;
+                            for (i = 1; i < bytes.size(); i++) {
+                                char ch = bytes [i];
+                                if (min > (int) ch) {
+                                    min = (int) ch;
+                                }
+                                if (max < (int) ch) {
+                                    max = (int) ch;
+                                }
+                            }
+                            *out_stream << " (Length: " << bytes.size();
+                            *out_stream << ", Min: " << min;
+                            *out_stream << ", Max: " << max << ")";
+                        }
+                    }
+                }
                 *out_stream << '\n';
             }
-            const CSeq_graph::TGraph& src_data = graph.GetGraph();
             switch (src_data.Which()) {
                 case CSeq_graph::TGraph::e_Byte:
                     {
@@ -668,9 +693,12 @@ void CAsn2FastaApp::PrintQualityScores(const CBioseq& bsp, CNcbiOstream* out_str
                     if (byte_graph.IsSetValues()) {
                         const CByte_graph::TValues& bytes = byte_graph.GetValues();
                         for (i = 0; i < bytes.size(); i++) {
+                            /*
                             if (j > 0) {
                                 *out_stream << " ";
                             }
+                            */
+                            *out_stream << " ";
                             char ch = bytes [i];
                             if ((int) ch < 10) {
                                 *out_stream << " ";
