@@ -43,9 +43,6 @@ timestamp_file=`mktemp /tmp/check_exec_timestamp.XXXXXXXXXX`
 touch $timestamp_file
 trap "rm -f $tmp $timestamp_file" 0 1 2 15
 
-# Reinforce timeout
-ulimit -t `expr $timeout + 5` > /dev/null 2>&1
-
 # Use different kill on Unix and Cygwin
 case `uname -s` in
    CYGWIN* ) cygwin=true  ; kill='/bin/kill -f' ;;
