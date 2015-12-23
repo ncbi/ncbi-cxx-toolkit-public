@@ -495,10 +495,10 @@ struct STmpDirGuard
 };
 //////////////////////////////////////////////////////////////////////////////
 ///
-class CPipeProcessWatcher_Base : public CPipe::IProcessWatcher
+class CTimedProcessWatcher : public CPipe::IProcessWatcher
 {
 public:
-    CPipeProcessWatcher_Base(const CTimeout& max_app_running_time,
+    CTimedProcessWatcher(const CTimeout& max_app_running_time,
             CRemoteAppReaper::CManager &process_manager)
         : m_ProcessManager(process_manager),
           m_Deadline(max_app_running_time),
@@ -565,7 +565,7 @@ public:
     int Run(vector<string>& args, CNcbiOstream& out, CNcbiOstream& err,
             CRemoteAppReaper::CManager &process_manager)
     {
-        CPipeProcessWatcher_Base callback(m_MaxAppRunningTime, process_manager);
+        CTimedProcessWatcher callback(m_MaxAppRunningTime, process_manager);
         CNcbiStrstream in;
         int exit_value;
         CPipe::EFinish ret = CPipe::eCanceled;
@@ -595,7 +595,7 @@ private:
 
 //////////////////////////////////////////////////////////////////////////////
 ///
-class CPipeProcessWatcher : public CPipeProcessWatcher_Base
+class CPipeProcessWatcher : public CTimedProcessWatcher
 {
 public:
     CPipeProcessWatcher(CWorkerNodeJobContext& job_context,
@@ -603,7 +603,7 @@ public:
                    int keep_alive_period,
                    const string& job_wdir,
                    CRemoteAppReaper::CManager &process_manager)
-        : CPipeProcessWatcher_Base(max_app_running_time, process_manager),
+        : CTimedProcessWatcher(max_app_running_time, process_manager),
           m_JobContext(job_context), m_KeepAlivePeriod(keep_alive_period),
           m_Monitor(NULL), m_JobWDir(job_wdir)
     {
@@ -628,7 +628,7 @@ public:
 
         LOG_POST(Note << "Child PID: " << NStr::UInt8ToString((Uint8) pid));
 
-        return CPipeProcessWatcher_Base::OnStart(pid);
+        return CTimedProcessWatcher::OnStart(pid);
     }
 
     virtual CPipe::IProcessWatcher::EAction Watch(TProcessHandle pid)
@@ -640,7 +640,7 @@ public:
         }
 
         CPipe::IProcessWatcher::EAction action =
-                CPipeProcessWatcher_Base::Watch(pid);
+                CTimedProcessWatcher::Watch(pid);
 
         if (action != CPipe::IProcessWatcher::eContinue)
             return action;
