@@ -1965,6 +1965,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "GDAC	s	Universidad de Granada, Departamento de Biologia Vegetal, Botanica",
 "GDGM	s	Guangdong Institute of Microbiology",
 "GDMA	s	Medical University of Gdansk, Department of Biology and Pharmaceutical Botany",
+"GDMCC	c	Guangdong Microbial Culture Collection Center",
 "GDMM	s	Guangdong Institute of Chinese Materia Medica",
 "GDMP	s	Guangdong Medical and Pharmaceutical College, Pharmacy Department",
 "GDOR	s	Museo Civico di Storia Naturale Giacomo Doria",
