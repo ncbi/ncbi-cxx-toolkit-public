@@ -904,8 +904,8 @@ BOOST_AUTO_TEST_CASE(TranslateIdents)
 
 BOOST_AUTO_TEST_CASE(StringIdentSearch)
 {
-
-    CSeqDB nr("nr", CSeqDB::eProtein);
+    const string kDb("nr");
+    CSeqDB nr(kDb, CSeqDB::eProtein);
 
     // Sets of equivalent strings
 
@@ -1012,11 +1012,8 @@ BOOST_AUTO_TEST_CASE(StringIdentSearch)
             int oid1(-1);
             bool worked = nr.GiToOid(*gip, oid1);
 
-            if (! worked) {
-                cerr << "Failing GI is " << *gip << endl;
-            }
-
-            BOOST_REQUIRE(worked);
+            BOOST_REQUIRE_MESSAGE(worked, "Failed to find GI " << *gip 
+                                  << " in " << kDb);
 
             gi_oids.insert(oid1);
         }
@@ -1025,7 +1022,8 @@ BOOST_AUTO_TEST_CASE(StringIdentSearch)
             vector<int> oids;
             nr.AccessionToOids(*strp, oids);
 
-            BOOST_REQUIRE(! oids.empty());
+            BOOST_REQUIRE_MESSAGE(! oids.empty(), "Failed to find accession " 
+                                  << *strp << " in " << kDb);
 
             ITERATE(vector<int>, iter, oids) {
                 str_oids.insert(*iter);
