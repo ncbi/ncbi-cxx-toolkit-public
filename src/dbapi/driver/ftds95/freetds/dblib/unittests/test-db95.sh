@@ -1,16 +1,17 @@
-@script_shell@
-
-syb="@SYBASE_PATH@"
-if test -d "$syb" -o -z "$SYBASE"; then
-    SYBASE=$syb
-    export SYBASE
-fi
-
+#!/bin/sh
 servers='MSDEV1 DBAPI_DEV3'
 failures=
 status=0
 
 MSTDSVER=7.3
+
+if [ -r test-db95.cfg ]; then
+    . test-db95.cfg
+    if test -d "$syb" -o -z "$SYBASE"; then
+        SYBASE=$syb
+        export SYBASE
+    fi
+fi
 
 while :; do
     case "$1" in
@@ -35,6 +36,18 @@ while :; do
             ;;
     esac
 done
+
+base=`echo $1 | sed -e 's/^db95_//'`
+if [ -r "$base.sql" ]; then
+    for x in "$base".??*; do
+        cp -f "$x" "db95_$x"
+    done
+fi
+if [ -r "${base}_1.sql" ]; then
+    for x in "$base"_*.??*; do
+        cp -f "$x" "db95_$x"
+    done
+fi
 
 for server in $servers; do
     TDSPWDFILE=login-info-$server.txt

@@ -10,7 +10,7 @@ LIBS     = $(FTDS95_CTLIB_LIBS) $(NETWORK_LIBS) $(RT_LIBS) $(C_LIBS)
 LINK     = $(C_LINK)
 
 CHECK_CMD  = test-db95.sh --no-auto db95_done_handling
-CHECK_COPY = done_handling.sql
+CHECK_COPY = test-db95.sh done_handling.sql
 
 CHECK_REQUIRES = in-house-resources
 

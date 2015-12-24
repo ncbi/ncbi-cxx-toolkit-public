@@ -10,6 +10,7 @@ LINK     = $(C_LINK)
 
 # Per upstream, really a utility, and as such not worth running as a test.
 # CHECK_CMD  = test-tds95.sh tds95_collations
+# CHECK_COPY = test-tds95.sh
 
 # CHECK_REQUIRES = in-house-resources
 

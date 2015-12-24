@@ -9,7 +9,7 @@ LIBS     = $(FTDS95_CTLIB_LIBS) $(NETWORK_LIBS) $(RT_LIBS) $(C_LIBS)
 LINK     = $(C_LINK)
 
 CHECK_CMD  = test-odbc95.sh odbc95_array_out
-CHECK_COPY = odbc.ini
+CHECK_COPY = test-odbc95.sh odbc.ini
 
 CHECK_REQUIRES = in-house-resources
 

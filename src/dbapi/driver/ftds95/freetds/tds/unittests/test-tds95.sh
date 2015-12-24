@@ -1,14 +1,15 @@
-@script_shell@
-
-syb="@SYBASE_PATH@"
-if test -d "$syb" -o -z "$SYBASE"; then
-    SYBASE=$syb
-    export SYBASE
-fi
-
+#!/bin/sh
 servers='MSDEV1 DBAPI_DEV3'
 failures=
 status=0
+
+if [ -r test-tds95.cfg ]; then
+    . test-tds95.cfg
+    if test -d "$syb" -o -z "$SYBASE"; then
+        SYBASE=$syb
+        export SYBASE
+    fi
+fi
 
 for server in $servers; do
     TDSPWDFILE=login-info-$server.txt

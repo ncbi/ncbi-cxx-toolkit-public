@@ -1,15 +1,16 @@
-@script_shell@
-
-syb="@SYBASE_PATH@"
-if test -d "$syb" -o -z "$SYBASE"; then
-    SYBASE=$syb
-    export SYBASE
-fi
-
+#!/bin/sh
 servers='MSDEV1 DBAPI_DEV3'
 failures=
 succeeded_anywhere=no
 status=0
+
+if [ -r test-odbc95.cfg ]; then
+    . test-odbc95.cfg
+    if test -d "$syb" -o -z "$SYBASE"; then
+        SYBASE=$syb
+        export SYBASE
+    fi
+fi
 
 while :; do
     case "$1" in
