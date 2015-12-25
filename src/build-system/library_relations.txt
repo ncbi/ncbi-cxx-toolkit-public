@@ -83,6 +83,7 @@ an_core needs gpinit_bag_util
 an_core needs gpipe_an_base
 an_core needs gpipe_kmer
 an_core needs gpipe_val
+an_core needs gpipe_xmlutil
 an_core needs ncbi_xcache_netcache
 an_core needs pathogen_connection
 an_core needs reftrack_access
@@ -405,9 +406,9 @@ gnutls needs3party $(Z_LIBS)
 gp_python_attr needs gpipe_attr
 gp_python_attr needs3party $(PYTHON_LIBS)
 gpcgi needs $(SDBAPI_LIB)
+gpcgi needs gpipe_xmlutil
 gpcgi needs xcgi
 gpcgi needs xconnect
-gpcgi needs xmlwrapp
 gpcgi needs xregexp
 gpexec_query needs gpipe_common
 gpexec_query needs monitor_buildrun
