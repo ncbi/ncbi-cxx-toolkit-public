@@ -48,6 +48,8 @@ const char *  CNetStorageGCException::GetErrCodeString(void) const
         return "eExpirationExpected";
     case eStopGC:
         return "eStopGC";
+    case eApplicationLockError:
+        return "eApplicationLockError";
     default:
         return CException::GetErrCodeString();
     }

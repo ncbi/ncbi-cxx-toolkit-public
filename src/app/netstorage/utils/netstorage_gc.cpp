@@ -105,6 +105,13 @@ int CNetStorageGCApp::Run(void)
         return 1;
     }
 
+
+    // Avoid having more than one instance of the garbage collector working
+    // with the same database. In case of a crash the lock would be released
+    // automatically by the database.
+    db.GetAppLock();
+
+
     vector<string>          candidates = db.GetGCCandidates();
     m_TotalCount = candidates.size();
 
@@ -126,11 +133,13 @@ int CNetStorageGCApp::Run(void)
         try {
             x_RemoveObjects(candidates, verbose, db, dryrun);
         } catch (...) {
+            db.ReleaseAppLock();
             x_PrintFinishCounters(verbose);
             throw;
         }
     }
 
+    db.ReleaseAppLock();
     x_PrintFinishCounters(verbose);
     return 0;
 }

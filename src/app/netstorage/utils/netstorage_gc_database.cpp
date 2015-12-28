@@ -84,6 +84,75 @@ CNetStorageGCDatabase::~CNetStorageGCDatabase(void)
 }
 
 
+void  CNetStorageGCDatabase::GetAppLock(void)
+{
+    if (m_Verbose)
+        cout << "Getting the application lock..." << endl;
+
+    try {
+        CQuery              query = m_Db->NewQuery();
+
+        query.SetParameter("@Resource", "GarbageCollectorLock");
+        query.SetParameter("@LockMode", "Exclusive");
+        query.SetParameter("@LockOwner", "Session");
+        query.SetParameter("@LockTimeout", 0);
+
+        query.ExecuteSP("sp_getapplock");
+        if (query.GetStatus() != 0)
+            NCBI_THROW(CNetStorageGCException, eApplicationLockError,
+                       "Error getting the application lock");
+    } catch (...) {
+        cerr << "Error getting the application lock for the database" << endl;
+        throw;
+    }
+
+    if (m_Verbose)
+        cout << "Got" << endl;
+}
+
+
+void  CNetStorageGCDatabase::ReleaseAppLock(void)
+{
+    if (m_Verbose)
+        cout << "Releasing the application lock..." << endl;
+
+    try {
+        CQuery              query = m_Db->NewQuery();
+
+        query.SetParameter("@Resource", "GarbageCollectorLock");
+        query.SetParameter("@LockOwner", "Session");
+
+        query.ExecuteSP("sp_releaseapplock");
+        if (query.GetStatus() != 0)
+            NCBI_THROW(CNetStorageGCException, eApplicationLockError,
+                       "Error releasing the application lock");
+    } catch (const CNetStorageGCException &  ex) {
+        ERR_POST(ex);
+        cerr << ex.what() << endl;
+        return;
+    } catch (const CException &  ex) {
+        ERR_POST(ex);
+        cerr << "Exception while releasing the application lock "
+                "for the database: " << ex.what() << endl;
+        return;
+    } catch (const std::exception &  ex) {
+        ERR_POST(ex.what());
+        cerr << "Exception while releasing the application lock "
+                "for the database: " << ex.what() << endl;
+        return;
+    } catch (...) {
+        string      msg = "Unknown error of releasing the application lock "
+                          "for the database";
+        ERR_POST(msg);
+        cerr << msg << endl;
+        return;
+    }
+
+    if (m_Verbose)
+        cout << "Released" << endl;
+}
+
+
 void  CNetStorageGCDatabase::x_ReadDbAccessInfo(const CNcbiRegistry &  reg)
 {
     if (m_Verbose)

@@ -57,6 +57,8 @@ public:
     int             GetDBStructureVersion(void);
     void            RemoveObject(const string &  locator, bool  dryrun,
                                  const string &  hit_id);
+    void            GetAppLock(void);
+    void            ReleaseAppLock(void);
 
 private:
     void x_Connect(void);

@@ -48,7 +48,8 @@ class CNetStorageGCException : public CException
             eTooManyDBStructureVersions     = 2,
             eNetStorageServiceNotFound      = 3,
             eExpirationExpected             = 4,
-            eStopGC                         = 5
+            eStopGC                         = 5,
+            eApplicationLockError           = 6
         };
         virtual const char *  GetErrCodeString(void) const;
         NCBI_EXCEPTION_DEFAULT(CNetStorageGCException, CException);
