@@ -26,6 +26,7 @@ dbapi/driver/util$ update-only
 dbapi/driver/odbc/unix_odbc$ update-only
 dbapi/driver/ctlib$
 dbapi/driver/ftds64$
+dbapi/driver/ftds64/impl$
 dbapi/driver/ftds64/freetds
 dbapi/driver/ftds64/ctlib$
 dbapi/driver/ftds-default
