@@ -786,44 +786,11 @@ CRef<CGenetic_code> GetGeneticCodeForBioseq(CBioseq_Handle bh)
     }
     CSeqdesc_CI src(bh, CSeqdesc::e_Source);
     if (src && src->GetSource().IsSetOrg() && src->GetSource().GetOrg().IsSetOrgname()) {
-        if (src->GetSource().IsSetGenome()) {
-            switch (src->GetSource().GetGenome()) {
-                case CBioSource::eGenome_mitochondrion:
-                case CBioSource::eGenome_kinetoplast:
-                case CBioSource::eGenome_hydrogenosome:
-                    if (src->GetSource().IsSetMgcode()) {
-                        code.Reset(new CGenetic_code());
-                        code->SetId(src->GetSource().GetMgcode());
-                    }
-                    break;
-                case CBioSource::eGenome_chloroplast:
-                case CBioSource::eGenome_chromoplast:
-                case CBioSource::eGenome_plasmid:
-                case CBioSource::eGenome_cyanelle:
-                case CBioSource::eGenome_apicoplast:
-                case CBioSource::eGenome_leucoplast:
-                case CBioSource::eGenome_proplastid:
-                case CBioSource::eGenome_chromatophore:
-                    if (src->GetSource().IsSetPgcode()) {
-                        code.Reset(new CGenetic_code());
-                        code->SetId(src->GetSource().GetPgcode());
-                    } else {
-                        code.Reset(new CGenetic_code());
-                        code->SetId(11);
-                    }
-                    break;
-                default:
-                    if (src->GetSource().IsSetGcode()) {
-                        code.Reset(new CGenetic_code());
-                        code->SetId(src->GetSource().GetGcode());
-                    }
-                    break;
-            }
-        } else {
-            if (src->GetSource().IsSetGcode()) {
-                code.Reset(new CGenetic_code());
-                code->SetId(src->GetSource().GetGcode());
-            }
+        const CBioSource & bsrc = src->GetSource();
+        int bioseqGenCode = bsrc.GetGenCode(0);
+        if (bioseqGenCode > 0) {
+            code.Reset(new CGenetic_code());
+            code->SetId(bioseqGenCode);
         }
     }
     return code;
