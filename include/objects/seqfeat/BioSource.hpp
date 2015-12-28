@@ -63,7 +63,7 @@ public:
     ~CBioSource(void);
 
     // Get the appropriate gene code from this BioSource.
-    int GetGenCode(void) const;
+    int GetGenCode(int def = 1) const;
 
     // function for getting genome value from organelle name
     static CBioSource::EGenome GetGenomeByOrganelle (const string& organelle, NStr::ECase use_case = NStr::eCase, bool starts_with = false);

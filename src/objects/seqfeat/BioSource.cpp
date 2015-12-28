@@ -70,13 +70,13 @@ CBioSource::~CBioSource(void)
 }
 
 
-int CBioSource::GetGenCode(void) const
+int CBioSource::GetGenCode(int def) const
 {
     try {
         TGenome genome = CanGetGenome() ? GetGenome() : eGenome_unknown;
 
         if ( !CanGetOrg()  ||  !GetOrg().CanGetOrgname() ) {
-            return 1; // assume standard genetic code
+            return def; // assume standard genetic code
         }
         const COrgName& orn = GetOrg().GetOrgname();
 
@@ -90,7 +90,7 @@ int CBioSource::GetGenCode(void) const
                 if (orn.IsSetMgcode()) {
                     return orn.GetMgcode();
                 }
-                return 1;
+                return def;
             }
         case eGenome_chloroplast:
         case eGenome_chromoplast:
@@ -115,11 +115,11 @@ int CBioSource::GetGenCode(void) const
                 if (orn.IsSetGcode()) {
                     return orn.GetGcode();
                 }
-                return 1;
+                return def;
             }
         }
     } catch (...) {
-        return 1; // was 0(!)
+        return def; // was 0(!)
     }
 }
 
