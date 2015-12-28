@@ -1509,6 +1509,7 @@ tds_put_data_info(TDSSOCKET * tds, TDSCOLUMN * curcol, int flags)
         tds_put_byte(tds, num->scale);
 #endif
     } else {
+        size_t min;
         switch (curcol->column_varint_size) {
         case 0:
             break;
@@ -1523,10 +1524,14 @@ tds_put_data_info(TDSSOCKET * tds, TDSCOLUMN * curcol, int flags)
             }
             break;
         case 2:
-            /* ssikorsk */
-            /* tds_put_smallint(tds, MIN(curcol->column_size, 8000)); */
-            /* tds_put_smallint(tds, curcol->column_size); */
-            tds_put_smallint(tds, 8000); 
+            /* note that varchar(max)/varbinary(max) have a varint of 8 */
+            if (curcol->on_server.column_type == XSYBNVARCHAR
+                || curcol->on_server.column_type == XSYBNCHAR)
+                min = 2;
+            else
+                min = 1;
+            tds_put_smallint(tds, MAX(MIN(curcol->column_size * min, 8000u),
+                                      min));
             break;
         case 4:
             tds_put_int(tds, MIN(curcol->column_size, 0x7fffffff));
