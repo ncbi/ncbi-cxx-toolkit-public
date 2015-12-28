@@ -1000,8 +1000,10 @@ CRef<CSeq_loc> ProjectExons(const CSeq_align& spliced_aln,
 
         if(!product_cds_loc) {
             AugmentPartialness(*exon_loc, partialness);
-        } else {
-            // GP-15635/case-(3,4) 
+        } else if(exon_loc->GetId()) {
+            // note: if no seq-id, GetStart/GetStop will throw - GP-15887
+            //
+            // GP-15635/case-(3,4):
             // Inherit partialness only if the CDS mapped up to the exon's terminal
             bool start_partial = partialness.first;
             bool stop_partial =  partialness.second;
