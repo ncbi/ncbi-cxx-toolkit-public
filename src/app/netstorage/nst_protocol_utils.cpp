@@ -167,20 +167,18 @@ CreateResponseMessage(Int8  serial_number)
 CJsonNode
 CreateErrorResponseMessage(Int8            serial_number,
                            Int8            error_code,
-                           const string &  error_message)
+                           const string &  error_message,
+                           const string &  scope,
+                           Int8            sub_code)
 {
     CJsonNode       reply_message(CJsonNode::NewObjectNode());
     CJsonNode       errors(CJsonNode::NewArrayNode());
-    CJsonNode       error_node(CJsonNode::NewObjectNode());
 
     reply_message.SetString("Type", kMessageTypeReply);
     reply_message.SetString("Status", kStatusError);
     reply_message.SetInteger("RE", serial_number);
 
-
-    error_node.SetInteger("Code", error_code);
-    error_node.SetString("Message", error_message);
-    errors.Append(error_node);
+    errors.Append(CreateIssue(error_code, error_message, scope, sub_code));
 
     reply_message.SetByKey("Errors", errors);
 
@@ -191,7 +189,9 @@ CreateErrorResponseMessage(Int8            serial_number,
 void
 AppendWarning(CJsonNode &     message,
               Int8            code,
-              const string &  warning_message)
+              const string &  warning_message,
+              const string &  scope,
+              Int8            sub_code)
 {
     CJsonNode   warnings;
     if (!message.HasKey("Warnings"))
@@ -199,18 +199,16 @@ AppendWarning(CJsonNode &     message,
     else
         warnings = message.GetByKey("Warnings");
 
-    CJsonNode   warning_node(CJsonNode::NewObjectNode());
-    warning_node.SetInteger("Code", code);
-    warning_node.SetString("Message", warning_message);
-
-    warnings.Append(warning_node);
+    warnings.Append(CreateIssue(code, warning_message, scope, sub_code));
 }
 
 
 void
 AppendError(CJsonNode &     message,
             Int8            code,
-            const string &  error_message)
+            const string &  error_message,
+            const string &  scope,
+            Int8            sub_code)
 {
     message.SetString("Status", kStatusError);
 
@@ -220,11 +218,24 @@ AppendError(CJsonNode &     message,
     else
         errors = message.GetByKey("Errors");
 
-    CJsonNode   error_node(CJsonNode::NewObjectNode());
-    error_node.SetInteger("Code", code);
-    error_node.SetString("Message", error_message);
+    errors.Append(CreateIssue(code, error_message, scope, sub_code));
+}
 
-    errors.Append(error_node);
+
+CJsonNode
+CreateIssue(Int8  error_code,
+            const string &  error_message,
+            const string &  scope,
+            Int8  sub_code)
+{
+    CJsonNode       issue_node(CJsonNode::NewObjectNode());
+
+    issue_node.SetInteger("Code", error_code);
+    issue_node.SetString("Message", error_message);
+    issue_node.SetString("Scope", scope);
+    issue_node.SetInteger("SubCode", sub_code);
+
+    return issue_node;
 }
 
 END_NCBI_SCOPE

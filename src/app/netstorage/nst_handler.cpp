@@ -50,6 +50,7 @@
 #include "nst_warning.hpp"
 #include "nst_config.hpp"
 #include "nst_util.hpp"
+#include "error_codes.hpp"
 
 
 USING_NCBI_SCOPE;
@@ -418,8 +419,10 @@ void CNetStorageHandler::x_OnMessage(const CJsonNode &  message)
 
         CJsonNode   response = CreateErrorResponseMessage(
                             common_args.m_SerialNumber,
-                            CNetStorageServerException::eInvalidMessageHeader,
-                            "Error extracting mandatory fields");
+                            NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                            "Error extracting mandatory fields",
+                            ex.GetClass(),
+                            CNetStorageServerException::eInvalidMessageHeader);
 
         x_SetCmdRequestStatus(eStatus_BadRequest);
         if (x_SendSyncMessage(response) == eIO_Success)
@@ -436,8 +439,10 @@ void CNetStorageHandler::x_OnMessage(const CJsonNode &  message)
         // Send response message with an error
         CJsonNode   response = CreateErrorResponseMessage(
                             common_args.m_SerialNumber,
-                            CNetStorageServerException::eShuttingDown,
-                            "Server is shutting down");
+                            NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                            "Server is shutting down",
+                            kScopeLogic,
+                            CNetStorageServerException::eShuttingDown);
 
         x_SetCmdRequestStatus(eStatus_ShuttingDown);
         if (x_SendSyncMessage(response) == eIO_Success)
@@ -456,8 +461,10 @@ void CNetStorageHandler::x_OnMessage(const CJsonNode &  message)
         // Send response message with an error
         CJsonNode   response = CreateErrorResponseMessage(
                             common_args.m_SerialNumber,
-                            CNetStorageServerException::eMessageAfterBye,
-                            "No messages are allowed after BYE");
+                            NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                            "No messages are allowed after BYE",
+                            kScopeLogic,
+                            CNetStorageServerException::eMessageAfterBye);
 
         x_SetCmdRequestStatus(eStatus_BadRequest);
         if (x_SendSyncMessage(response) == eIO_Success)
@@ -470,6 +477,7 @@ void CNetStorageHandler::x_OnMessage(const CJsonNode &  message)
     string        error_client_message;
     unsigned int  error_code;
     unsigned int  http_error_code;
+    string        error_scope;
 
     try {
         m_Timing.Clear();
@@ -496,6 +504,7 @@ void CNetStorageHandler::x_OnMessage(const CJsonNode &  message)
         http_error_code = ex.ErrCodeToHTTPStatusCode();
         error_code = ex.GetErrCode();
         error_client_message = ex.what();
+        error_scope = ex.GetClass();
 
         // Note: eAccess alert is set at the point before an exception is
         // thrown. This is done for a clean alert message.
@@ -510,6 +519,7 @@ void CNetStorageHandler::x_OnMessage(const CJsonNode &  message)
         else
             error_code = CNetStorageServerException::eStorageError;
         error_client_message = ex.what();
+        error_scope = ex.GetClass();
     }
     catch (const CException &  ex) {
         ERR_POST(ex);
@@ -518,6 +528,7 @@ void CNetStorageHandler::x_OnMessage(const CJsonNode &  message)
         http_error_code = eStatus_ServerError;
         error_code = CNetStorageServerException::eInternalError;
         error_client_message = ex.what();
+        error_scope = ex.GetClass();
     }
     catch (const std::exception &  ex) {
         ERR_POST("STL exception: " << ex.what());
@@ -526,6 +537,7 @@ void CNetStorageHandler::x_OnMessage(const CJsonNode &  message)
         http_error_code = eStatus_ServerError;
         error_code = CNetStorageServerException::eInternalError;
         error_client_message = ex.what();
+        error_scope = kScopeStdException;
     }
     catch (...) {
         ERR_POST("Unknown exception");
@@ -534,6 +546,7 @@ void CNetStorageHandler::x_OnMessage(const CJsonNode &  message)
         http_error_code = eStatus_ServerError;
         error_code = CNetStorageServerException::eInternalError;
         error_client_message = "Unknown exception";
+        error_scope = kScopeUnknownException;
     }
 
     if (error) {
@@ -541,9 +554,10 @@ void CNetStorageHandler::x_OnMessage(const CJsonNode &  message)
 
         // Send response message with an error
         CJsonNode   response = CreateErrorResponseMessage(
-                                        common_args.m_SerialNumber,
-                                        error_code,
-                                        error_client_message);
+                                    common_args.m_SerialNumber,
+                                    NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                                    error_client_message,
+                                    error_scope, error_code);
         x_SendSyncMessage(response);
         x_PrintMessageRequestStop();
     }
@@ -587,8 +601,9 @@ void CNetStorageHandler::x_OnData(const void* data, size_t data_size)
         // Send response message with an error
         CJsonNode   response = CreateErrorResponseMessage(
                                     m_DataMessageSN,
-                                    CNetStorageServerException::eWriteError,
-                                    message);
+                                    NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                                    message, kScopeStdException,
+                                    CNetStorageServerException::eWriteError);
         x_SendSyncMessage(response);
         m_ObjectBeingWritten = eVoid;
         m_DataMessageSN = -1;
@@ -606,8 +621,9 @@ void CNetStorageHandler::x_OnData(const void* data, size_t data_size)
         // Send response message with an error
         CJsonNode   response = CreateErrorResponseMessage(
                                     m_DataMessageSN,
-                                    CNetStorageServerException::eWriteError,
-                                    message);
+                                    NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                                    message, kScopeUnknownException,
+                                    CNetStorageServerException::eWriteError);
         x_SendSyncMessage(response);
         m_ObjectBeingWritten = eVoid;
         m_DataMessageSN = -1;
@@ -651,8 +667,9 @@ void CNetStorageHandler::x_SendWriteConfirmation()
 
         CJsonNode   response = CreateErrorResponseMessage(
                                     m_DataMessageSN,
-                                    CNetStorageServerException::eWriteError,
-                                    message);
+                                    NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                                    message, ex.GetClass(),
+                                    CNetStorageServerException::eWriteError);
         x_SendSyncMessage(response);
         m_ObjectBeingWritten = eVoid;
         m_DataMessageSN = -1;
@@ -678,10 +695,9 @@ void CNetStorageHandler::x_SendWriteConfirmation()
             } catch (const CException &  ex) {
                 x_SetCmdRequestStatus(eStatus_ServerError);
                 CJsonNode   response = CreateErrorResponseMessage(
-                                            m_DataMessageSN,
-                                            ex.GetErrCode(),
-                                            ex.what());
-
+                                    m_DataMessageSN,
+                                    NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                                    ex.what(), ex.GetClass(), ex.GetErrCode());
                 x_SendSyncMessage(response);
                 ERR_POST(ex);
                 if (!x_PrintTimingIsOn() && !m_Timing.Empty())
@@ -695,8 +711,10 @@ void CNetStorageHandler::x_SendWriteConfirmation()
                 x_SetCmdRequestStatus(eStatus_ServerError);
                 CJsonNode   response = CreateErrorResponseMessage(
                                     m_DataMessageSN,
-                                    CNetStorageServerException::eUnknownError,
-                                    "Unknown metadata information DB error");
+                                    NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                                    "Unknown metadata information DB error",
+                                    kScopeUnknownException,
+                                    CNetStorageServerException::eUnknownError);
                 x_SendSyncMessage(response);
                 ERR_POST("Unknown metadata information DB error");
                 if (!x_PrintTimingIsOn() && !m_Timing.Empty())
@@ -729,7 +747,9 @@ void CNetStorageHandler::x_SendWriteConfirmation()
                 }
             } catch (const CException &  ex) {
                 CJsonNode   response = CreateResponseMessage(m_DataMessageSN);
-                AppendWarning(response, eDatabaseWarning, ex.what());
+                AppendWarning(response,
+                              NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                              ex.what(), ex.GetClass(), eDatabaseWarning);
                 x_SendSyncMessage(response);
                 ERR_POST(ex);
                 if (!x_PrintTimingIsOn() && !m_Timing.Empty())
@@ -741,8 +761,10 @@ void CNetStorageHandler::x_SendWriteConfirmation()
                 return;
             } catch (...) {
                 CJsonNode   response = CreateResponseMessage(m_DataMessageSN);
-                AppendWarning(response, eDatabaseWarning,
-                              "Unknown updating object meta info error");
+                AppendWarning(response,
+                              NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                              "Unknown updating object meta info error",
+                              kScopeUnknownException, eDatabaseWarning);
                 x_SendSyncMessage(response);
                 ERR_POST("Unknown updating object meta info error");
                 if (!x_PrintTimingIsOn() && !m_Timing.Empty())
@@ -1146,11 +1168,13 @@ CNetStorageHandler::x_ProcessHealth(
                 db_stat_node.SetString(k->first, k->second);
         } catch (const std::exception &  ex) {
             // Health must not fail if there is no meta DB connection
-            AppendWarning(reply, eDatabaseWarning, ex.what());
+            AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                          ex.what(), kScopeStdException, eDatabaseWarning);
         } catch (...) {
             // Health must not fail if there is no meta DB connection
-            AppendWarning(reply, eDatabaseWarning,
-                          "Unknown metainfo DB access error");
+            AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                          "Unknown metainfo DB access error",
+                          kScopeUnknownException, eDatabaseWarning);
         }
     }
     reply.SetByKey("MetainfoDB", db_stat_node);
@@ -1197,16 +1221,19 @@ CNetStorageHandler::x_ProcessAckAlert(
             // No warning needed, everything is fine
             break;
         case eNotFound:
-            AppendWarning(reply, eAlertNotFoundWarning,
-                          "Alert has not been found");
+            AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                          "Alert has not been found", kScopeLogic,
+                          eAlertNotFoundWarning);
             break;
         case eAlreadyAcknowledged:
-            AppendWarning(reply, eAlertAlreadyAcknowledgedWarning,
-                          "Alert has already been acknowledged");
+            AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                          "Alert has already been acknowledged", kScopeLogic,
+                          eAlertAlreadyAcknowledgedWarning);
             break;
         default:
-            AppendWarning(reply, eAlertUnknownAcknowledgeResultWarning,
-                          "Unknown acknowledge result");
+            AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                          "Unknown acknowledge result", kScopeLogic,
+                          eAlertUnknownAcknowledgeResultWarning);
     }
     x_SendSyncMessage(reply);
     x_PrintMessageRequestStop();
@@ -1245,9 +1272,10 @@ CNetStorageHandler::x_ProcessReconfigure(
     bool                reloaded = app->ReloadConfig(
                                             CMetaRegistry::fReloadIfChanged);
     if (!reloaded && !m_Server->AnybodyCanReconfigure()) {
-        AppendWarning(reply, eConfigNotChangedWarning,
+        AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
                       "Configuration file has not been changed, "
-                      "RECONFIGURE ignored");
+                      "RECONFIGURE ignored", kScopeLogic,
+                      eConfigNotChangedWarning);
         x_SendSyncMessage(reply);
         x_PrintMessageRequestStop();
         return;
@@ -1315,9 +1343,10 @@ CNetStorageHandler::x_ProcessReconfigure(
     if (server_diff.IsNull() && metadata_diff.IsNull()) {
         if (m_ConnContext.NotNull())
              GetDiagContext().Extra().Print("accepted_changes", "none");
-        AppendWarning(reply, eConfigNotChangedWarning,
+        AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
                       "No changeable parameters were identified "
-                      "in the new configuration file");
+                      "in the new configuration file",
+                      kScopeLogic, eConfigNotChangedWarning);
         reply.SetByKey("What", CJsonNode::NewObjectNode());
         x_SendSyncMessage(reply);
         x_PrintMessageRequestStop();
@@ -1397,8 +1426,9 @@ CNetStorageHandler::x_ProcessGetClientsInfo(
                                                                  m_Timing);
             if (status != 0) {
                 reply.SetString("DBClients", "MetadataAccessWarning");
-                AppendWarning(reply, eDatabaseWarning,
-                              "Stored procedure return code is non zero");
+                AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                              "Stored procedure return code is non zero",
+                              kScopeLogic, eDatabaseWarning);
             } else {
                 CJsonNode   db_clients_node(CJsonNode::NewArrayNode());
                 for (vector<string>::const_iterator  k = names.begin();
@@ -1408,13 +1438,16 @@ CNetStorageHandler::x_ProcessGetClientsInfo(
             }
         } catch (const exception &  ex) {
             reply.SetString("DBClients", "MetadataAccessWarning");
-            AppendWarning(reply, eDatabaseWarning, "Error while getting a list "
-                          "of clients in the metainfo DB: " +
-                          string(ex.what()));
+            AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                          "Error while getting a list of clients "
+                          "in the metainfo DB: " + string(ex.what()),
+                          kScopeStdException, eDatabaseWarning);
         } catch (...) {
             reply.SetString("DBClients", "MetadataAccessWarning");
-            AppendWarning(reply, eDatabaseWarning, "Unknown error while "
-                          "getting a list of clients in the metainfo DB");
+            AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                          "Unknown error while getting a list of clients "
+                          "in the metainfo DB",
+                          kScopeUnknownException, eDatabaseWarning);
         }
     } else {
         reply.SetString("DBClients", "NoMetadataAccess");
@@ -1561,7 +1594,8 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
             reply.SetString("ObjectReadCount", warning);
             reply.SetString("ObjectWriteCount", warning);
             reply.SetString("ClientName", warning);
-            AppendWarning(reply, eDatabaseWarning, ex.what());
+            AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                          ex.what(), ex.GetClass(), eDatabaseWarning);
         } catch (const exception &  ex) {
             const string    warning = "MetadataAccessWarning";
             reply.SetString("ExpirationTime", warning);
@@ -1573,9 +1607,10 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
             reply.SetString("ObjectReadCount", warning);
             reply.SetString("ObjectWriteCount", warning);
             reply.SetString("ClientName", warning);
-            AppendWarning(reply, eDatabaseWarning, "Error while getting "
-                          "object fixed attributes: " +
-                          string(ex.what()));
+            AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                          "Error while gettingobject fixed attributes: " +
+                          string(ex.what()), kScopeStdException,
+                          eDatabaseWarning);
         } catch (...) {
             const string    warning = "MetadataAccessWarning";
             reply.SetString("ExpirationTime", warning);
@@ -1587,8 +1622,9 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
             reply.SetString("ObjectReadCount", warning);
             reply.SetString("ObjectWriteCount", warning);
             reply.SetString("ClientName", warning);
-            AppendWarning(reply, eDatabaseWarning, "Unknown error while "
-                          "getting object fixed attributes");
+            AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                          "Unknown error while getting object fixed attributes",
+                          kScopeUnknownException, eDatabaseWarning);
         }
     } else {
         const string    no_access = "NoMetadataAccess";
@@ -1619,19 +1655,23 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
         }
     } catch (const CNetStorageException &  ex) {
         if (ex.GetErrCode() == CNetStorageException::eNotExists)
-            AppendWarning(reply, eRemoteObjectInfoWarning,
+            AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
                           "Error while getting remote object info: " +
-                          string(ex.what()));
+                          string(ex.what()), ex.GetClass(),
+                          eRemoteObjectInfoWarning);
         if (double(start) != 0.0 && m_Server->IsLogTimingNSTAPI())
             m_Timing.Append("NetStorageAPI GetInfo exception", start);
     } catch (const exception &  ex) {
-        AppendWarning(reply, eRemoteObjectInfoWarning,
-                      "Error while getting remote object info");
+        AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                      "Error while getting remote object info: " +
+                      string(ex.what()), kScopeStdException,
+                      eRemoteObjectInfoWarning);
         if (double(start) != 0.0 && m_Server->IsLogTimingNSTAPI())
             m_Timing.Append("NetStorageAPI GetInfo exception", start);
     } catch (...) {
-        AppendWarning(reply, eRemoteObjectInfoWarning,
-                      "Unknown error while getting remote object info");
+        AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                      "Unknown error while getting remote object info",
+                      kScopeUnknownException, eRemoteObjectInfoWarning);
         if (double(start) != 0.0 && m_Server->IsLogTimingNSTAPI())
             m_Timing.Append("NetStorageAPI GetInfo exception", start);
     }
@@ -1950,16 +1990,19 @@ CNetStorageHandler::x_ProcessDelAttr(
 
     if (status == -1) {
         // Object is not found
-        AppendWarning(reply, eObjectNotFoundWarning,
-                      "NetStorage object is not found");
+        AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                      "NetStorage object is not found",
+                      kScopeLogic, eObjectNotFoundWarning);
     } else if (status == -2) {
         // Attribute is not found
-        AppendWarning(reply, eAttributeNotFoundWarning,
-                      "NetStorage attribute is not found");
+        AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                      "NetStorage attribute is not found",
+                      kScopeLogic, eAttributeNotFoundWarning);
     } else if (status == -3) {
         // Attribute value is not found
-        AppendWarning(reply, eAttributeValueNotFoundWarning,
-                      "NetStorage attribute value is not found");
+        AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                      "NetStorage attribute value is not found",
+                      kScopeLogic, eAttributeValueNotFoundWarning);
     } else if (status != 0) {
         // Unknown status
         NCBI_THROW(CNetStorageServerException, eInternalError,
@@ -2167,8 +2210,10 @@ CNetStorageHandler::x_ProcessRead(
         // NB: the object TTL will not be updated if there was an object
         need_meta_db_update = false;
         reply = CreateErrorResponseMessage(common_args.m_SerialNumber,
-                       CNetStorageServerException::eReadError,
-                       string("Object read error: ") + ex.what());
+                        NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                        string("Object read error: ") + ex.what(),
+                        ex.GetClass(),
+                        CNetStorageServerException::eReadError);
         ERR_POST(ex);
         if (double(start) != 0.0 && m_Server->IsLogTimingNSTAPI())
             m_Timing.Append("NetStorageAPI read (exception)", start);
@@ -2254,8 +2299,9 @@ CNetStorageHandler::x_ProcessDelete(
 
     if (need_meta_db_update && status == -1) {
         // Stored procedure return -1 if the object is not found in the meta DB
-        AppendWarning(reply, eObjectNotFoundWarning,
-                      "Object not found in meta info DB");
+        AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                      "Object not found in meta info DB",
+                      kScopeLogic, eObjectNotFoundWarning);
     }
 
     x_SendSyncMessage(reply);
@@ -2490,12 +2536,15 @@ CNetStorageHandler::x_ProcessSetExpTime(
             status = m_Server->GetDb().ExecSP_SetExpiration(object_key, ttl,
                                                             m_Timing);
         } catch (const exception &  ex) {
-            AppendError(reply, CNetStorageServerException::eDatabaseError,
-                        ex.what());
+            AppendError(reply, NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                        ex.what(), kScopeStdException,
+                        CNetStorageServerException::eDatabaseError);
             db_error = true;
         } catch (...) {
-            AppendError(reply, CNetStorageServerException::eDatabaseError,
-                        "Unknown metainfo DB update error");
+            AppendError(reply, NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                        "Unknown metainfo DB update error",
+                        kScopeUnknownException,
+                        CNetStorageServerException::eDatabaseError);
             db_error = true;
         }
 
@@ -2532,31 +2581,39 @@ CNetStorageHandler::x_ProcessSetExpTime(
             // error, it is just that it makes no sense to call SetExpiration()
             // for the storage.
             if (db_error)
-                AppendWarning(reply, eRemoteObjectSetExpirationWarning,
-                              ex.what());
+                AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                              ex.what(), ex.GetClass(),
+                              eRemoteObjectSetExpirationWarning);
         } else {
             // That's a real problem of setting the object expiration
             if (db_update && db_error)
-                AppendWarning(reply, eRemoteObjectSetExpirationWarning,
-                              ex.what());
+                AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                              ex.what(), ex.GetClass(),
+                              eRemoteObjectSetExpirationWarning);
             else
-                AppendError(reply, CNetStorageServerException::eStorageError,
-                            ex.what());
+                AppendError(reply, NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                            ex.what(), ex.GetClass(),
+                            CNetStorageServerException::eStorageError);
         }
     } catch (const exception &  ex) {
         if (db_update && db_error)
-            AppendWarning(reply, eRemoteObjectSetExpirationWarning,
-                          ex.what());
+            AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                          ex.what(), kScopeStdException,
+                          eRemoteObjectSetExpirationWarning);
         else
-            AppendError(reply, CNetStorageServerException::eStorageError,
-                        ex.what());
+            AppendError(reply, NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                        ex.what(), kScopeStdException,
+                        CNetStorageServerException::eStorageError);
     } catch (...) {
+        const string    msg = "Unknown remote storage SetExpiration error";
         if (db_update && db_error)
-            AppendWarning(reply, eRemoteObjectSetExpirationWarning,
-                          "Unknown remote storage SetExpiration error");
+            AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                          msg, kScopeUnknownException,
+                          eRemoteObjectSetExpirationWarning);
         else
-            AppendError(reply, CNetStorageServerException::eStorageError,
-                          "Unknown remote storage SetExpiration error");
+            AppendError(reply, NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                        msg, kScopeUnknownException,
+                        CNetStorageServerException::eStorageError);
     }
 
     x_SendSyncMessage(reply);
@@ -2641,7 +2698,8 @@ CNetStorageHandler::x_ProcessLockFTPath(
         // warnings, regardless of their severity. The errors are supposed to
         // be reported via the C++ exceptions mechanism.
 
-        AppendWarning(reply, warn.GetCode(), warn.GetText());
+        AppendWarning(reply, warn.GetCode(), warn.GetText(),
+                      kScopeIMessage, warn.GetSubCode());
     }
 
     x_SendSyncMessage(reply);
@@ -3055,19 +3113,23 @@ CNetStorageHandler::x_CheckObjectExpiration(const string &  object_key,
     } catch (const CNetStorageServerException &  ex) {
         if (db_exception)
             throw;
-        AppendWarning(reply, eDatabaseWarning, ex.what());
+        AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                      ex.what(), ex.GetClass(), eDatabaseWarning);
         return expiration;
     } catch (const exception &  ex) {
         if (db_exception)
             throw;
-        AppendWarning(reply, eDatabaseWarning, "Error while getting an "
-                      "object expiration time: " + string(ex.what()));
+        AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                      "Error while getting an object expiration time: " +
+                      string(ex.what()),
+                      kScopeStdException, eDatabaseWarning);
         return expiration;
     } catch (...) {
         if (db_exception)
             throw;
-        AppendWarning(reply, eDatabaseWarning, "Unknown error while "
-                      "getting an object expiration time");
+        AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
+                      "Unknown error while getting an object expiration time",
+                      kScopeUnknownException, eDatabaseWarning);
         return expiration;
     }
 

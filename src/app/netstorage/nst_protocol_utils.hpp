@@ -47,6 +47,12 @@ const string    kStatusOK = "OK";
 const string    kStatusError = "ERROR";
 const string    kMessageTypeReply = "REPLY";
 
+// Scope for errors and warnings
+const string    kScopeStdException = "std::exception";
+const string    kScopeUnknownException = "unknown_exception";
+const string    kScopeIMessage = "IMessage";
+const string    kScopeLogic = "logic";
+
 
 
 // Stores the parsed common fields of the incoming messages
@@ -100,18 +106,29 @@ CreateResponseMessage(Int8  serial_number);
 CJsonNode
 CreateErrorResponseMessage(Int8  serial_number,
                            Int8  error_code,
-                           const string &  error_message);
+                           const string &  error_message,
+                           const string &  scope,
+                           Int8  sub_code);
 
 void
 AppendWarning(CJsonNode &     message,
               Int8            code,
-              const string &  warning_message);
+              const string &  warning_message,
+              const string &  scope,
+              Int8            sub_code);
 
 void
 AppendError(CJsonNode &     message,
             Int8            code,
-            const string &  error_message);
+            const string &  error_message,
+            const string &  scope,
+            Int8            sub_code);
 
+CJsonNode
+CreateIssue(Int8  error_code,
+            const string &  error_message,
+            const string &  scope,
+            Int8  sub_code);
 
 
 END_NCBI_SCOPE
