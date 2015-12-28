@@ -2,7 +2,6 @@ corelib$
 util$
 util/regexp$
 util/compress
-util/fileblobstorage$
 util/qparse$
 util/bitset$ update-only
 util/cache$ update-only
@@ -29,4 +28,5 @@ dbapi/driver/ctlib$
 dbapi/driver/ftds64$
 dbapi/driver/ftds64/freetds
 dbapi/driver/ftds64/ctlib$
+dbapi/driver/ftds-default
 dbapi/simple$
