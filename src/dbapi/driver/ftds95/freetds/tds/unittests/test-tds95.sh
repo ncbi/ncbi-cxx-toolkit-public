@@ -9,6 +9,11 @@ if [ -r test-tds95.cfg ]; then
         SYBASE=$syb
         export SYBASE
     fi
+elif [ -z "${NCBI_TRIED_RUN_SYBASE_APP+set}" ] \
+     &&  run_sybase_app.sh -run-script true; then
+    NCBI_TRIED_RUN_SYBASE_APP=1
+    export NCBI_TRIED_RUN_SYBASE_APP
+    exec run_sybase_app.sh -run-script "$0" "$@"
 fi
 
 for server in $servers; do
