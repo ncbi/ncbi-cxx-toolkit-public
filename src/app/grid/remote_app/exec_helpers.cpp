@@ -900,11 +900,9 @@ void CRemoteAppLauncher::FinishJob(bool finished_ok, int ret,
                     "Exited with return code " + NStr::IntToString(ret) +
                     " - will not be rerun",
                     true /* no retries */);
-        else if (ret == 0 || GetNonZeroExitAction() ==
-                CRemoteAppLauncher::eDoneOnNonZeroExit)
+        else if (ret == 0 || m_NonZeroExitAction == eDoneOnNonZeroExit)
             context.CommitJob();
-        else if (GetNonZeroExitAction() ==
-                CRemoteAppLauncher::eReturnOnNonZeroExit)
+        else if (m_NonZeroExitAction == eReturnOnNonZeroExit)
             context.ReturnJob();
         else
             context.CommitJobWithFailure(

@@ -67,12 +67,6 @@ public:
             CWorkerNodeJobContext& context) const;
 
     const string& GetAppPath() const { return m_AppPath; }
-    ENonZeroExitAction GetNonZeroExitAction() const
-        {return m_NonZeroExitAction;}
-
-    // Check whether retries are disabled for the specified exit code.
-    bool MustFailNoRetries(int exit_code) const;
-
     const CNcbiEnvironment& GetLocalEnv() const { return m_LocalEnv; }
 
 #ifdef NCBI_OS_MSWIN
@@ -94,6 +88,9 @@ public:
     static bool CanExec(const CFile& file);
 
 private:
+    // Check whether retries are disabled for the specified exit code.
+    bool MustFailNoRetries(int exit_code) const;
+
     string m_AppPath;
     CTimeout m_AppRunTimeout;
     int m_KeepAlivePeriod;
