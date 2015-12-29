@@ -62,7 +62,7 @@ public:
         m_RemoteAppLauncher(remote_app_launcher)
     {}
 
-    const vector<const char*>& GetEnv(const CWorkerNodeJobContext&);
+    const char* const* GetEnv(const CWorkerNodeJobContext&);
 
 private:
     const CRemoteAppLauncher& m_RemoteAppLauncher;
@@ -71,9 +71,10 @@ private:
     vector<const char*> m_Env;
 };
 
-const vector<const char*>& CAppEnvHolder::GetEnv(
+const char* const* CAppEnvHolder::GetEnv(
         const CWorkerNodeJobContext& context)
 {
+    // If called for the first time
     if (m_Env.empty()) {
         const CRemoteAppLauncher::TEnvMap& added_env =
                 m_RemoteAppLauncher.GetAddedEnv();
@@ -92,6 +93,8 @@ const vector<const char*>& CAppEnvHolder::GetEnv(
         m_Env.clear();
     }
 
+    // m_CtxEnvValues cannot be replaced with a local variable,
+    // as it holds actual values (m_Env holds only pointers to them)
     m_CtxEnvValues.clear();
     m_CtxEnvValues.push_back("NCBI_NS_SERVICE=" +
             context.GetWorkerNode().GetServiceName());
@@ -124,7 +127,7 @@ const vector<const char*>& CAppEnvHolder::GetEnv(
     }
 
     m_Env.push_back(NULL);
-    return m_Env;
+    return &m_Env[0];
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -207,8 +210,6 @@ int CRemoteAppJob::Do(CWorkerNodeJobContext& context)
     int ret = -1;
     bool finished_ok = false;
     try {
-        vector<const char*> env(m_AppEnvHolder.GetEnv(context));
-
         finished_ok = m_RemoteAppLauncher.ExecRemoteApp(args,
                                     m_Request.GetStdInForRead(),
                                     m_Result.GetStdOutForWrite(),
@@ -216,7 +217,7 @@ int CRemoteAppJob::Do(CWorkerNodeJobContext& context)
                                     ret,
                                     context,
                                     m_Request.GetAppRunTimeout(),
-                                    &env[0]);
+                                    m_AppEnvHolder.GetEnv(context));
     } catch (...) {
         m_Request.Reset();
         m_Result.Reset();
