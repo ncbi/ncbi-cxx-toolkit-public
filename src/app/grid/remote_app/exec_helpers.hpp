@@ -102,7 +102,7 @@ private:
 
     string m_MonitorAppPath;
     CTimeout m_MonitorRunTimeout;
-    int m_MonitorPeriod;
+    CTimeout m_MonitorPeriod;
     STimeout m_KillTimeout;
 
     CNcbiEnvironment m_LocalEnv;

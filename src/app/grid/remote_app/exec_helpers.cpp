@@ -427,7 +427,7 @@ CRemoteAppLauncher::CRemoteAppLauncher(const string& sec_name,
     }
 
     m_MonitorRunTimeout = s_ToTimeout(sec.Get("max_monitor_running_time", 5));
-    m_MonitorPeriod = sec.Get("monitor_period", 5);
+    m_MonitorPeriod = s_ToTimeout(sec.Get("monitor_period", 5));
     m_KillTimeout.sec = sec.Get("kill_timeout", 1);
     m_KillTimeout.usec = 0;
 
@@ -621,16 +621,15 @@ public:
                    CRemoteAppReaper::CManager &process_manager)
         : CTimedProcessWatcher(run_timeout, process_manager),
           m_JobContext(job_context), m_KeepAlive(keep_alive_period),
-          m_Monitor(NULL), m_JobWDir(job_wdir)
+          m_Monitor(NULL), m_MonitorWatch(CTimeout::eInfinite),
+          m_JobWDir(job_wdir)
     {
     }
 
-    void SetMonitor(CRAMonitor& monitor, int monitor_perod)
+    void SetMonitor(CRAMonitor& monitor, const CTimeout& monitor_period)
     {
         m_Monitor = &monitor;
-        m_MonitorPeriod = monitor_perod;
-        if (m_MonitorPeriod)
-            m_MonitorWatch.reset(new CStopWatch(CStopWatch::eStart));
+        m_MonitorWatch = monitor_period;
     }
 
     virtual EAction OnStart(TProcessHandle pid)
@@ -663,8 +662,7 @@ public:
             m_JobContext.JobDelayExpiration(m_KeepAlive.PresetSeconds() + 10);
             m_KeepAlive.Restart();
         }
-        if (m_Monitor && m_MonitorWatch.get() &&
-                m_MonitorWatch->Elapsed() > (double) m_MonitorPeriod) {
+        if (m_Monitor && m_MonitorWatch.IsExpired()) {
             CNcbiOstrstream out;
             CNcbiOstrstream err;
             vector<string> args;
@@ -707,7 +705,7 @@ public:
                 x_Log("internal error", err);
                 break;
             }
-            m_MonitorWatch->Restart();
+            m_MonitorWatch.Restart();
         }
 
         return CPipe::IProcessWatcher::eContinue;
@@ -727,8 +725,7 @@ private:
     CWorkerNodeJobContext& m_JobContext;
     CTimer m_KeepAlive;
     CRAMonitor* m_Monitor;
-    auto_ptr<CStopWatch> m_MonitorWatch;
-    int m_MonitorPeriod;
+    CTimer m_MonitorWatch;
     string m_JobWDir;
 };
 
@@ -877,7 +874,7 @@ bool CRemoteAppLauncher::ExecRemoteApp(const vector<string>& args,
             m_Reaper->GetManager());
 
         auto_ptr<CRAMonitor> ra_monitor;
-        if (!m_MonitorAppPath.empty() && m_MonitorPeriod > 0) {
+        if (!m_MonitorAppPath.empty() && m_MonitorPeriod.IsFinite()) {
             ra_monitor.reset(new CRAMonitor(m_MonitorAppPath, env,
                 m_MonitorRunTimeout));
             callback.SetMonitor(*ra_monitor, m_MonitorPeriod);
