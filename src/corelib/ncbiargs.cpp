@@ -1924,6 +1924,7 @@ static string s_CArgs_ReadFromStdin(const string& name, EEchoInput echo_input, c
     }
 
     string value;
+
 #if defined(NCBI_OS_MSWIN)
     DWORD dw = 0;
     HANDLE hIn = GetStdHandle(STD_INPUT_HANDLE);
@@ -1954,7 +1955,7 @@ static string s_CArgs_ReadFromStdin(const string& name, EEchoInput echo_input, c
     }
 #else
     size_t i = 0;
-    char ch;
+    unsigned char ch;
 
     struct termios mode, silent_mode;
     if (echo_input == eNoEcho) {
@@ -1964,7 +1965,7 @@ static string s_CArgs_ReadFromStdin(const string& name, EEchoInput echo_input, c
         tcsetattr( STDIN_FILENO, TCSANOW, &silent_mode );
     }
 
-    for( i = 0; (ch = getchar()) != EOF && (ch != '\n') && (ch != '\r'); i++ ) {
+    for( i = 0; (ch = (unsigned char)getchar()) != EOF && (ch != '\n') && (ch != '\r'); i++ ) {
         if (ch == '\b') {
             if (value.size() > 0) {
                 value.erase( value.size()-1, 1);

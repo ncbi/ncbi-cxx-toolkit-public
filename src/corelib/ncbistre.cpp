@@ -329,8 +329,8 @@ size_t NcbiStreamToString(string* str, CNcbiIstream& is, size_t pos)
 bool NcbiStreamCompare(CNcbiIstream& is1, CNcbiIstream& is2)
 {
     while (is1 && is2) {
-        char c1 = is1.get();
-        char c2 = is2.get();
+        char c1 = (char)is1.get();
+        char c2 = (char)is2.get();
         if (c1 != c2) {
             return false;
         }
@@ -527,17 +527,17 @@ void s_WritePrintable(CNcbiOstream& out, char c, char n)
     int k = 1;
 
     *octal = '\\';
-    v =  (unsigned char) c >> 6;
+    v = (unsigned char)((unsigned char) c >> 6);
     if (v  ||  full) {
-        octal[k++] = '0' + v;
+        octal[k++] = char('0' + v);
         full = true;
     }
     v = ((unsigned char) c >> 3) & 7;
     if (v  ||  full) {
-        octal[k++] = '0' + v;
+        octal[k++] = char('0' + v);
     }
-    v =  (unsigned char) c       & 7;
-    octal    [k++] = '0' + v;
+    v = (unsigned char) c & 7;
+    octal[k++] = char('0' + v);
     out.write(octal, k);
 }
 

@@ -1009,7 +1009,7 @@ BOOST_AUTO_TEST_CASE(TestBASE64Encoding)
         memset(buf2, '\0', sizeof(buf2));
         memset(buf3, '\0', sizeof(buf3));
         for (j = 0; j < len; j++) {
-            buf1[j] = rand() & 0xFF;
+            buf1[j] = char(rand() & 0xFF);
         }
 
         j = rand() % 100;

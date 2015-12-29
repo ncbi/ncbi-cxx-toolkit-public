@@ -82,8 +82,8 @@ private:
 #endif
 
     const size_t m_BufferSize;
-    long   m_Buffer[10];
-    long   m_LastItemProduced;
+    size_t m_Buffer[10];
+    size_t m_LastItemProduced;
     size_t m_QueueSize;
     size_t m_QueueStartOffset;
     size_t m_TotalItemsProduced;
@@ -145,8 +145,7 @@ void CTestCondVarApp::Produce(int idx)
         size_t Item = m_LastItemProduced;
         i = Item;
         __TEST_OUTPUT(" produced: " << Item);
-        m_Buffer[(m_QueueStartOffset + m_QueueSize)%m_BufferSize] =
-            m_LastItemProduced++;
+        m_Buffer[(m_QueueStartOffset + m_QueueSize)%m_BufferSize] = m_LastItemProduced++;
         ++m_QueueSize;
         ++m_TotalItemsProduced;
 

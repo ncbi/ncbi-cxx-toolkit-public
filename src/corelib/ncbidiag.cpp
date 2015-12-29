@@ -4077,7 +4077,7 @@ string CExtraDecoder::Decode(const CTempString src, EStringType stype) const
                 NCBI_THROW2(CStringException, eFormat,
                     "Inavild char in extra arg", p);
             }
-            str[dst] = (n1 << 4) | n2;
+            str[dst] = char((n1 << 4) | n2);
             p += 3;
             break;
         }

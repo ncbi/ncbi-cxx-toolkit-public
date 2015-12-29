@@ -137,8 +137,8 @@ void message(const char* msg,
 {
     if ( 0 ) {
         LOG_POST(msg
-                 <<'\n'<<setw(40) << msg1 << ": "<<t1*1e9/COUNT<<" usec"
-                 <<'\n'<<setw(40) << msg2 << ": "<<t2*1e9/COUNT<<" usec");
+                 <<'\n'<<setw(40) << msg1 << ": "<< t1 * 1e9/(double)COUNT << " usec"
+                 <<'\n'<<setw(40) << msg2 << ": "<< t2 * 1e9/(double)COUNT << " usec");
     }
     size_t total, resident, shared;
     if ( GetMemoryUsage(&total, &resident, &shared) ) {
@@ -938,9 +938,9 @@ bool CTestTlsObjectApp::TestApp_Init(void)
 bool CTestTlsObjectApp::TestApp_Exit(void)
 {
     check_cnts(~0u);
-    LOG_POST("Max memory VS: "<<max_total/(1024*1024.)<<" MB"<<
-             " RSS: "<<max_resident/(1024*1024.)<<" MB"<<
-             " SHR: "<<max_shared/(1024*1024.)<<" MB");
+    LOG_POST("Max memory VS: " << (double)max_total/(1024*1024.) << " MB" <<
+             " RSS: " << (double)max_resident/(1024*1024.) << " MB" <<
+             " SHR: " << (double)max_shared/(1024*1024.) << " MB");
     NcbiCout << "Test completed." << NcbiEndl;
     return true;
 }

@@ -277,7 +277,7 @@ int CTestHash::Run(void)
 
     set<int> bhashes;
     for (int i = 0; i < MaxHashSize + 1; i++) {
-        bhashes.insert(hash<string>()(keys[i]) % (int)b_hs.bucket_count());
+        bhashes.insert(int(hash<string>()(keys[i]) % (int)b_hs.bucket_count()));
     }
     NcbiCout << "keys: " << keys.size()
         << ", hashes: " << hashes.size()

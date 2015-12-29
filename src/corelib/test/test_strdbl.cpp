@@ -66,7 +66,7 @@ public:
 
     void RunD2SSpeedBenchmark(void);
     void RunD2SPrecisionBenchmark(void);
-    bool CompareSerialization(double data, size_t digits);
+    bool CompareSerialization(double data, unsigned int digits);
 
     static double PreciseStringToDouble(const CTempStringEx& s);
     double GenerateDouble(void);
@@ -279,7 +279,7 @@ double StringToDoublePosixOld(const char* ptr, char** endptr)
     if (endptr) {
         *endptr = (char*)ptr;
     }
-    return ret;
+    return (double)ret;
 }
 
 
@@ -467,7 +467,7 @@ CDecimal& CDecimal::operator=(int v)
             m_Sign = 1;
         }
         m_Mantissa = NStr::UIntToString(unsigned(v));
-        m_Exponent = m_Mantissa.size();
+        m_Exponent = (int)m_Mantissa.size();
     }
     Normalize();
     return *this;
@@ -523,7 +523,7 @@ CDecimal& CDecimal::operator=(const CTempStringEx& s)
                 --ptr;
                 break;
             }
-            dot_position = m_Mantissa.size();
+            dot_position = (int)m_Mantissa.size();
             dot = true;
         }
         else if (c == 'e' || c == 'E') {
@@ -550,7 +550,7 @@ CDecimal& CDecimal::operator=(const CTempStringEx& s)
         NCBI_THROW2(CStringException, eConvert,
                     "Cannot convert '"+string(s)+"'", ptr);
     }
-    int exponent = dot ? dot_position - m_Mantissa.size() : 0;
+    int exponent = dot ? dot_position - (int)m_Mantissa.size() : 0;
 // read exponent
     if (expn && s[ptr]) {
         int expvalue = 0;
@@ -594,9 +594,9 @@ CDecimal& CDecimal::operator=(const CTempStringEx& s)
             exponent = expnegate ? exponent - expvalue : exponent + expvalue;
         }
     }
-    m_Exponent = exponent+m_Mantissa.size();
+    m_Exponent = exponent + (int)m_Mantissa.size();
 
-    if ( !m_Sign && !m_Mantissa.empty() ) {
+    if ( !m_Sign  &&  !m_Mantissa.empty() ) {
         m_Sign = 1;
     }
 
@@ -672,7 +672,7 @@ CDecimal operator+(const CDecimal& d1, const CDecimal& d2)
         else {
             c = 0;
         }
-        ret.m_Mantissa[pos+i] = '0'+v;
+        ret.m_Mantissa[pos+i] = char('0'+v);
     }
     if ( c ) {
         ret.m_Mantissa.insert(0u, 1u, char('0'+c));
@@ -744,14 +744,14 @@ CDecimal operator-(const CDecimal& d1, const CDecimal& d2)
         else {
             c = 0;
         }
-        ret.m_Mantissa[pos+i] = '0'+v;
+        ret.m_Mantissa[pos+i] = char('0'+v);
     }
     c = ret.Decrement(pos, c);
     if ( c ) {
         ret.m_Sign = -1;
         size_t size = ret.m_Mantissa.size();
         for ( size_t i = 0; i < size; ++i ) {
-            ret.m_Mantissa[i] = '0'+(9-(ret.m_Mantissa[i]-'0'));
+            ret.m_Mantissa[i] = char('0'+(9-(ret.m_Mantissa[i]-'0')));
         }
         c = ret.Increment(size, 1);
         if ( c ) {
@@ -1041,7 +1041,7 @@ void CTestApp::RunPrecisionBenchmark(void)
             if ( rand()%1 ) *ptr++ = '-';
             *ptr++ = '.';
             for ( int i = 0; i < digits; ++i ) {
-                *ptr++ = '0'+rand()%10;
+                *ptr++ = char('0' + rand()%10);
             }
             sprintf(ptr, "e%d", exp);
         }
@@ -1422,7 +1422,7 @@ void CTestApp::RunD2SPrecisionBenchmark(void)
 }
 
 // this is to compare old and new WriteDouble serialization code
-bool CTestApp::CompareSerialization(double data, size_t digits)
+bool CTestApp::CompareSerialization(double data, unsigned int digits)
 {
     bool res = true;
 
@@ -1471,8 +1471,8 @@ bool CTestApp::CompareSerialization(double data, size_t digits)
     {{
         char buffer[128];
         int dec, sign;
-        size_t len = NStr::DoubleToString_Ecvt(
-            data, digits, buffer, sizeof(buffer), &dec, &sign);
+        size_t len = NStr::DoubleToString_Ecvt(data, digits, buffer,
+                                               sizeof(buffer), &dec, &sign);
         //todo: verify that len > 0
         asntext_new = "{ ";
         if (sign < 0) {asntext_new += "-";}

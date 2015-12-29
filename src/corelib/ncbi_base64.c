@@ -79,7 +79,7 @@ extern void BASE64_Encode
         if (i >= src_size) {
             break;
         }
-        shift += 2;
+        shift = (unsigned char)(shift + 2);  // shift += 2;
         shift &= 7;
         temp = (c << (8 - shift)) & 0x3F;
         if (shift) {
@@ -129,11 +129,11 @@ extern int/*bool*/ BASE64_Decode
         if (c == '=') {
             c  = 64; /*end*/
         } else if (c >= 'A'  &&  c <= 'Z') {
-            c -= 'A';
+            c = (unsigned char)(c - 'A');         // c -= 'A';
         } else if (c >= 'a'  &&  c <= 'z') {
-            c -= 'a' - 26;
+            c = (unsigned char)(c - ('a' - 26));  // c -= 'a' - 26;
         } else if (c >= '0'  &&  c <= '9') {
-            c -= '0' - 52;
+            c = (unsigned char)(c - ('0' - 52));  // c -= '0' - 52;
         } else if (c == '+') {
             c  = 62;
         } else if (c == '/') {
@@ -182,13 +182,13 @@ extern int/*bool*/ BASE64_Decode
             }
             switch (k) {
             case 0:
-                dst[j++] = (temp & 0xFF0000) >> 16;
+                dst[j++] = (unsigned char)((temp & 0xFF0000) >> 16);
                 /*FALLTHRU*/;
             case 4:
-                dst[j++] = (temp & 0xFF00) >> 8;
+                dst[j++] = (unsigned char)((temp & 0xFF00) >> 8);
                 /*FALLTHRU*/
             case 3:
-                dst[j++] = (temp & 0xFF);
+                dst[j++] = (unsigned char)(temp & 0xFF);
                 break;
             default:
                 break;
@@ -313,21 +313,21 @@ extern EBase64_Result base64url_decode(const void* src_buf, size_t src_size,
     while (src_size > 3) {
         XLAT_BASE64_CHAR(src_ch0);
         XLAT_BASE64_CHAR(src_ch1);
-        *dst++ = src_ch0 << 2 | src_ch1 >> 4;
+        *dst++ = (unsigned char)(src_ch0 << 2 | src_ch1 >> 4);
         XLAT_BASE64_CHAR(src_ch0);
-        *dst++ = src_ch1 << 4 | src_ch0 >> 2;
+        *dst++ = (unsigned char)(src_ch1 << 4 | src_ch0 >> 2);
         XLAT_BASE64_CHAR(src_ch1);
-        *dst++ = src_ch0 << 6 | src_ch1;
+        *dst++ = (unsigned char)(src_ch0 << 6 | src_ch1);
         src_size -= 4;
     }
 
     if (src_size > 1) {
         XLAT_BASE64_CHAR(src_ch0);
         XLAT_BASE64_CHAR(src_ch1);
-        *dst++ = src_ch0 << 2 | src_ch1 >> 4;
+        *dst++ = (unsigned char)(src_ch0 << 2 | src_ch1 >> 4);
         if (src_size > 2) {
             XLAT_BASE64_CHAR(src_ch0);
-            *dst = src_ch1 << 4 | src_ch0 >> 2;
+            *dst = (unsigned char)(src_ch1 << 4 | src_ch0 >> 2);
         }
     } else if (src_size == 1)
         return eBase64_InvalidInput;

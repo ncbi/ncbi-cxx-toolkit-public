@@ -59,7 +59,7 @@ private:
 CStackTraceImpl::CStackTraceImpl(void)
 {
     m_Stack.resize(CStackTrace::s_GetStackTraceMaxDepth());
-    m_Stack.resize(backtrace(&m_Stack[0], m_Stack.size()));
+    m_Stack.resize(backtrace(&m_Stack[0], (int)m_Stack.size()));
 }
 
 
@@ -70,7 +70,7 @@ CStackTraceImpl::~CStackTraceImpl(void)
 
 void CStackTraceImpl::Expand(CStackTrace::TStack& stack)
 {
-    char** syms = backtrace_symbols(&m_Stack[0], m_Stack.size());
+    char** syms = backtrace_symbols(&m_Stack[0], (int)m_Stack.size());
     for (size_t i = 0;  i < m_Stack.size();  ++i) {
         string sym = syms[i];
 

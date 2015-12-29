@@ -298,9 +298,9 @@ int main(int argc, const char* argv[], const char* envp[])
 
         if ( strstr(argv[1],"Quote")) {
             // Check arguments
-            const int n = sizeof(s_QuoteArgsTest) / sizeof(s_QuoteArgsTest[0]);
+            const size_t n = sizeof(s_QuoteArgsTest) / sizeof(s_QuoteArgsTest[0]);
             assert(argc == (n-1));
-            for (int i=2; i<argc; i++) {
+            for (size_t i=2; i<argc; i++) {
                 //cout << i << " = '" << argv[i] << "'" << endl;
                 //cout << i << " = '" << s_QuoteArgsTest[i] << "'" << endl;
                 //cout << i << " = '" << NStr::PrintableString(argv[i]) << "'" << endl;

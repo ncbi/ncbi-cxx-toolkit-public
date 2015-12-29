@@ -151,7 +151,7 @@ void CTestThread::GlobalSyncPoint(void)
     /* If we are the last thread to come to sync point, we yield 
        so that threads that were waiting for us go first      */
     if (s_NumberOfThreads.Get() > 1) {
-        s_Semaphore.Post(s_NumberOfThreads.Get() - 1);
+        s_Semaphore.Post((unsigned int)s_NumberOfThreads.Get() - 1);
         s_SyncCounter.Set(0);
         SleepMilliSec(0);
     }

@@ -62,7 +62,7 @@ BOOST_AUTO_TEST_CASE(TestBase64URL)
 
         for (;;) {
             for (int byte = 0; byte < len; ++byte)
-                original_buffer[byte] = (bits >> (byte >> 3)) & 0xFF;
+                original_buffer[byte] = char((bits >> (byte >> 3)) & 0xFF);
 
             BOOST_CHECK(base64url_encode(NULL, len,
                     NULL, 0, &encoded_len) == eBase64_BufferTooSmall);

@@ -156,14 +156,13 @@ const char kFormatEscapeSymbol = '$';
         } else { return false; } \
     }
 
-#define CHECK_RANGE_YEAR(value)       CHECK_RANGE_EXCEPTION(value, "Year", 1583, kMax_Int)
-#define CHECK_RANGE_MONTH(value)      CHECK_RANGE_EXCEPTION(value, "Month", 1, 12)
-#define CHECK_RANGE_DAY(value)        CHECK_RANGE_EXCEPTION(value, "Day", 1, 31)
-#define CHECK_RANGE_HOUR(value)       CHECK_RANGE_EXCEPTION(value, "Hour", 0, 23)
-#define CHECK_RANGE_MIN(value)        CHECK_RANGE_EXCEPTION(value, "Minute", 0, 59)
-#define CHECK_RANGE_SEC(value)        CHECK_RANGE_EXCEPTION(value, "Second", 0, 61)
-#define CHECK_RANGE_NSEC(value)       CHECK_RANGE_EXCEPTION(value, "Nanosecond", 0, \
-                                                            kNanoSecondsPerSecond - 1)
+#define CHECK_RANGE_YEAR(value)        CHECK_RANGE_EXCEPTION(value, "Year", 1583, kMax_Int)
+#define CHECK_RANGE_MONTH(value)       CHECK_RANGE_EXCEPTION(value, "Month", 1, 12)
+#define CHECK_RANGE_DAY(value)         CHECK_RANGE_EXCEPTION(value, "Day", 1, 31)
+#define CHECK_RANGE_HOUR(value)        CHECK_RANGE_EXCEPTION(value, "Hour", 0, 23)
+#define CHECK_RANGE_MIN(value)         CHECK_RANGE_EXCEPTION(value, "Minute", 0, 59)
+#define CHECK_RANGE_SEC(value)         CHECK_RANGE_EXCEPTION(value, "Second", 0, 61)
+#define CHECK_RANGE_NSEC(value)        CHECK_RANGE_EXCEPTION(value, "Nanosecond", 0, kNanoSecondsPerSecond - 1)
 
 #define CHECK_RANGE2_YEAR(value, err)  CHECK_RANGE2(value, "Year", 1583, kMax_Int, err)
 #define CHECK_RANGE2_MONTH(value, err) CHECK_RANGE2(value, "Month", 1, 12, err)
@@ -171,8 +170,17 @@ const char kFormatEscapeSymbol = '$';
 #define CHECK_RANGE2_HOUR(value, err)  CHECK_RANGE2(value, "Hour", 0, 23, err)
 #define CHECK_RANGE2_MIN(value, err)   CHECK_RANGE2(value, "Minute", 0, 59, err)
 #define CHECK_RANGE2_SEC(value, err)   CHECK_RANGE2(value, "Second", 0, 61, err)
-#define CHECK_RANGE2_NSEC(value, err)  CHECK_RANGE2(value, "Nanosecond", 0, \
-                                                    kNanoSecondsPerSecond - 1, err)
+#define CHECK_RANGE2_NSEC(value, err)  CHECK_RANGE2(value, "Nanosecond", 0, kNanoSecondsPerSecond - 1, err)
+
+// Bitfilds setters (to avoid warnings)
+
+#define SET_YEAR(value)  m_Data.year  = static_cast<unsigned int>((value) & 0xFFF)
+#define SET_MONTH(value) m_Data.month = static_cast<unsigned char>((value) & 0x0F)
+#define SET_DAY(value)   m_Data.day   = static_cast<unsigned char>((value) & 0x1F)
+#define SET_HOUR(value)  m_Data.hour  = static_cast<unsigned char>((value) & 0x1F)
+#define SET_MIN(value)   m_Data.min   = static_cast<unsigned char>((value) & 0x3F)
+#define SET_SEC(value)   m_Data.sec   = static_cast<unsigned char>((value) & 0x3F)
+
 
 
 //============================================================================
@@ -260,7 +268,7 @@ void s_AddInt(string& str, long value)
     char   buf[size];
     size_t pos = size;
     do {
-        buf[--pos] = char(value % 10) + '0';
+        buf[--pos] = char((value % 10) + '0');
         value /= 10;
     } while (value);
     str.append(buf + pos, size - pos);
@@ -281,7 +289,7 @@ void s_AddZeroPadInt(string& str, long value, size_t len, bool ignore_trailing_z
 
     size_t pos = size;
     do {
-        buf[--pos] = char(value % 10) + '0';
+        buf[--pos] = char((value % 10) + '0');
         value /= 10;
     } while (value);
 
@@ -302,8 +310,8 @@ void s_AddZeroPadInt2(string& str, long value)
 {
     _ASSERT((value >= 0)  &&  (value <= 99));
     char buf[2];
-    buf[1] = char(value % 10) + '0';
-    buf[0] = char(value / 10) + '0'; 
+    buf[1] = char((value % 10) + '0');
+    buf[0] = char((value / 10) + '0'); 
     str.append(buf, 2);
 }
 
@@ -434,9 +442,9 @@ CTime::CTime(int year, int yearDayNumber,
 
     CTime t = CTime(year, 1, 1);
     t.AddDay(yearDayNumber - 1);
-    m_Data.year  = t.Year();
-    m_Data.month = t.Month();
-    m_Data.day   = t.Day();
+    m_Data.year  = t.m_Data.year;
+    m_Data.month = t.m_Data.month;
+    m_Data.day   = t.m_Data.day;
 }
 
 
@@ -617,7 +625,7 @@ bool CTime::x_Init(const string& str, const CTimeFormat& format, EErrAction err_
                 size_t namelen = strlen(*name);
                 if (NStr::strncasecmp(sss, *name, namelen) == 0) {
                     sss += namelen;
-                    m_Data.month = i + 1;
+                    SET_MONTH(i + 1);
                     break;
                 }
                 ++name;
@@ -741,7 +749,7 @@ bool CTime::x_Init(const string& str, const CTimeFormat& format, EErrAction err_
         switch ( *fff ) {
         case 'Y':
             CHECK_RANGE2_YEAR(value, err_action);
-            m_Data.year = (unsigned int)value;
+            SET_YEAR(value);
             is_year_present = true;
             break;
         case 'y':
@@ -751,39 +759,39 @@ bool CTime::x_Init(const string& str, const CTimeFormat& format, EErrAction err_
                 value += 1900;
             }
             CHECK_RANGE2_YEAR(value, err_action);
-            m_Data.year = (unsigned int)value;
+            SET_YEAR(value);
             is_year_present = true;
             break;
         case 'M':
             CHECK_RANGE2_MONTH(value, err_action);
-            m_Data.month = (unsigned char)value;
+            SET_MONTH(value);
             is_month_present = true;
             break;
         case 'D':
         case 'd':
             CHECK_RANGE2_DAY(value, err_action);
-            m_Data.day = (unsigned char)value;
+            SET_DAY(value);
             is_day_present = true;
             break;
         case 'h':
             CHECK_RANGE2_HOUR(value, err_action);
-            m_Data.hour = (unsigned char)value;
+            SET_HOUR(value);
             is_time_present = true;
             break;
         case 'H':
             CHECK_RANGE2_HOUR(value, err_action);
-            m_Data.hour = (unsigned char)value % 12;
+            SET_HOUR(value % 12);
             is_12hour = true;
             is_time_present = true;
             break;
         case 'm':
             CHECK_RANGE2_MIN(value, err_action);
-            m_Data.min = (unsigned char)value;
+            SET_MIN(value);
             is_time_present = true;
             break;
         case 's':
             CHECK_RANGE2_SEC(value, err_action);
-            m_Data.sec = (unsigned char)value;
+            SET_SEC(value);
             is_time_present = true;
             break;
         case 'l':
@@ -804,7 +812,7 @@ bool CTime::x_Init(const string& str, const CTimeFormat& format, EErrAction err_
         case 'g':
         case 'G':
             CHECK_RANGE2_SEC(value, err_action);
-            m_Data.sec = (unsigned char)value;
+            SET_SEC(value);
             if ( *sss == '.' ) {
                 ++sss;
                 char* s = value_str;
@@ -839,7 +847,7 @@ bool CTime::x_Init(const string& str, const CTimeFormat& format, EErrAction err_
 
     // Correct 12-hour time if needed
     if (is_12hour  &&  hour_format == ePM) {
-        m_Data.hour += 12;
+        SET_HOUR(m_Data.hour + 12);
     }
 
     // Skip all remaining white spaces in the string
@@ -898,21 +906,21 @@ bool CTime::x_Init(const string& str, const CTimeFormat& format, EErrAction err_
             break;
         case 1222:                          // M,D,time -> Y = current
         case 1221:                          // M,D      -> Y = current
-            m_Data.year  = current.Year();
+            m_Data.year  = current.m_Data.year;
             break;
         case 1211:                          // M        -> Y = current, D = 1
-            m_Data.year  = current.Year();
+            m_Data.year  = current.m_Data.year;
             m_Data.day   = 1;
             break;
         case 1122:                          // D, time  -> Y,M = current
         case 1121:                          // D        -> Y,M = current
-            m_Data.year  = current.Year();
-            m_Data.month = current.Month();
+            m_Data.year  = current.m_Data.year;
+            m_Data.month = current.m_Data.month;
             break;
         case 1112:                          // time     -> Y,M,D = current
-            m_Data.year  = current.Year();
-            m_Data.month = current.Month();
-            m_Data.day   = current.Day();
+            m_Data.year  = current.m_Data.year;
+            m_Data.month = current.m_Data.month;
+            m_Data.day   = current.m_Data.day;
             break;
     }
 
@@ -955,12 +963,13 @@ CTime::CTime(int year, int month, int day, int hour,
     CHECK_RANGE_SEC(second);
     CHECK_RANGE_NSEC(nanosecond);
 
-    m_Data.year        = year;
-    m_Data.month       = month;
-    m_Data.day         = day;
-    m_Data.hour        = hour;
-    m_Data.min         = minute;
-    m_Data.sec         = second;
+    SET_YEAR(year);
+    SET_MONTH(month);
+    SET_DAY(day);
+    SET_HOUR(hour);
+    SET_MIN(minute);
+    SET_SEC(second);
+    
     m_Data.nanosec     = (Int4)nanosecond;
     m_Data.tz          = tz;
     m_Data.tzprec      = tzp;
@@ -1031,10 +1040,10 @@ bool CTime::ValidateString(const string& str, const CTimeFormat& fmt)
 void CTime::SetYear(int year)
 {
     CHECK_RANGE_YEAR(year);
-    m_Data.year = year;
+    SET_YEAR(year);
     int n_days = DaysInMonth();
     if ( m_Data.day > n_days ) {
-        m_Data.day = n_days;
+        SET_DAY(n_days);
     }
     // Additional checks
     if ( !IsValid() ) {
@@ -1048,10 +1057,10 @@ void CTime::SetYear(int year)
 void CTime::SetMonth(int month)
 {
     CHECK_RANGE_MONTH(month);
-    m_Data.month = month;
+    SET_MONTH(month);
     int n_days = DaysInMonth();
     if ( m_Data.day > n_days ) {
-        m_Data.day = n_days;
+        SET_DAY(n_days);
     }
     // Additional checks
     if ( !IsValid() ) {
@@ -1067,9 +1076,9 @@ void CTime::SetDay(int day)
     CHECK_RANGE_DAY(day);
     int n_days = DaysInMonth();
     if ( day > n_days ) {
-        m_Data.day = n_days;
+        SET_DAY(n_days);
     } else {
-        m_Data.day = day;
+        SET_DAY(day);
     }
     // Additional checks
     if ( !IsValid() ) {
@@ -1083,21 +1092,21 @@ void CTime::SetDay(int day)
 void CTime::SetHour(int hour)
 {
     CHECK_RANGE_HOUR(hour);
-    m_Data.hour = hour;
+    SET_HOUR(hour);
 }
 
 
 void CTime::SetMinute(int minute)
 {
     CHECK_RANGE_MIN(minute);
-    m_Data.min = minute;
+    SET_MIN(minute);
 }
 
 
 void CTime::SetSecond(int second)
 {
     CHECK_RANGE_SEC(second);
-    m_Data.sec = second;
+    SET_SEC(second);
 }
 
 
@@ -1421,12 +1430,13 @@ CTime& CTime::SetTimeTM(const struct tm& t)
     CHECK_RANGE_MIN    (t.tm_min);
     CHECK_RANGE_SEC    (t.tm_sec);
 
-    m_Data.year        = t.tm_year + 1900;
-    m_Data.month       = t.tm_mon + 1;
-    m_Data.day         = t.tm_mday;
-    m_Data.hour        = t.tm_hour;
-    m_Data.min         = t.tm_min;
-    m_Data.sec         = t.tm_sec;
+    SET_YEAR  (t.tm_year + 1900);
+    SET_MONTH (t.tm_mon + 1);
+    SET_DAY   (t.tm_mday);
+    SET_HOUR  (t.tm_hour);
+    SET_MIN   (t.tm_min);
+    SET_SEC   (t.tm_sec);
+    
     m_Data.nanosec     = 0;
     m_Data.tz          = eLocal;
     //m_Data.tzprec    -- not changed;
@@ -1708,12 +1718,14 @@ CTime& CTime::x_SetTime(const time_t* value)
     }
 #endif
     m_Data.adjTimeDiff = 0;
-    m_Data.year        = t->tm_year + 1900;
-    m_Data.month       = t->tm_mon + 1;
-    m_Data.day         = t->tm_mday;
-    m_Data.hour        = t->tm_hour;
-    m_Data.min         = t->tm_min;
-    m_Data.sec         = t->tm_sec;
+    
+    SET_YEAR  (t->tm_year + 1900);
+    SET_MONTH (t->tm_mon + 1);
+    SET_DAY   (t->tm_mday);
+    SET_HOUR  (t->tm_hour);
+    SET_MIN   (t->tm_min);
+    SET_SEC   (t->tm_sec);
+    
     CHECK_RANGE_NSEC(ns);
     m_Data.nanosec     = (Int4)ns;
 
@@ -1741,8 +1753,8 @@ CTime& CTime::AddMonth(int months, EDaylight adl)
     long newMonth = Month() - 1;
     int newYear = Year();
     s_Offset(&newMonth, months, 12, &newYear);
-    m_Data.year = newYear;
-    m_Data.month = (int)newMonth + 1;
+    SET_YEAR(newYear);
+    SET_MONTH(newMonth + 1);
     x_AdjustDay();
     if ( aflag ) {
         x_AdjustTime(*pt);
@@ -1804,7 +1816,7 @@ CTime& CTime::x_AddHour(int hours, EDaylight adl, bool shift_time)
     int dayOffset = 0;
     long newHour = Hour();
     s_Offset(&newHour, hours, 24, &dayOffset);
-    m_Data.hour = (int)newHour;
+    SET_HOUR(newHour);
     AddDay(dayOffset, eIgnoreDaylight);
     if ( aflag ) {
         x_AdjustTime(*pt, shift_time);
@@ -1834,7 +1846,7 @@ CTime& CTime::AddMinute(int minutes, EDaylight adl)
     int hourOffset = 0;
     long newMinute = Minute();
     s_Offset(&newMinute, minutes, 60, &hourOffset);
-    m_Data.min = (int)newMinute;
+    SET_MIN(newMinute);
     AddHour(hourOffset, eIgnoreDaylight);
     if ( aflag ) {
         x_AdjustTime(*pt);
@@ -1855,7 +1867,7 @@ CTime& CTime::AddSecond(TSeconds seconds, EDaylight adl)
     int minuteOffset = 0;
     long newSecond = Second();
     s_Offset(&newSecond, seconds, 60, &minuteOffset);
-    m_Data.sec = (int)newSecond;
+    SET_SEC(newSecond);
     return AddMinute(minuteOffset, adl);
 }
 
@@ -2069,12 +2081,12 @@ CTime& CTime::ToTime(ETimeZone tz)
                        "localtime/gmtime error, possible incorrect time_t value");
         }
 #endif
-        m_Data.year  = t->tm_year + 1900;
-        m_Data.month = t->tm_mon + 1;
-        m_Data.day   = t->tm_mday;
-        m_Data.hour  = t->tm_hour;
-        m_Data.min   = t->tm_min;
-        m_Data.sec   = t->tm_sec;
+        SET_YEAR  (t->tm_year + 1900);
+        SET_MONTH (t->tm_mon + 1);
+        SET_DAY   (t->tm_mday);
+        SET_HOUR  (t->tm_hour);
+        SET_MIN   (t->tm_min);
+        SET_SEC   (t->tm_sec);
         m_Data.tz    = tz;
     }
     return *this;
@@ -2291,7 +2303,7 @@ void CTimeSpan::Set(double seconds)
                   " is too big to convert to CTimeSpan");
     }
     m_Sec = long(seconds);
-    m_NanoSec = long((seconds - m_Sec) * kNanoSecondsPerSecond);
+    m_NanoSec = long((seconds - (double)m_Sec) * kNanoSecondsPerSecond);
     x_Normalize();
 }
 
@@ -2300,7 +2312,7 @@ void CTime::x_AdjustDay()
 {
     int n_days = DaysInMonth();
     if (Day() > n_days) {
-        m_Data.day = n_days;
+        SET_DAY(n_days);
     }
 }
 
@@ -2883,9 +2895,9 @@ string CTimeSpan::x_AsSmartString_Smart_Small(TSmartStringFlags flags) const
     long nanoseconds  = GetNanoSecondsAfterSecond();
     // Split nanoseconds to 3 digit parts AAABBBCCC
     // AAA - milli, BBB - micro, CCC - nano
-    int  milli = nanoseconds / 1000000;
-    int  micro = nanoseconds / 1000 % 1000;
-    int  nano  = nanoseconds % 1000;
+    int  milli = int(nanoseconds / 1000000);
+    int  micro = int(nanoseconds / 1000 % 1000);
+    int  nano  = int(nanoseconds % 1000);
 
     // We would like to have 3 digits in result,
     // so we need 2 components max.
@@ -2952,7 +2964,7 @@ string CTimeSpan::x_AsSmartString_Smart_Small(TSmartStringFlags flags) const
 
     // Add (3-n) digits from v2 after "."
     if (v2  &&  len < 3) {
-        int n = v2 / 10;
+        int n = int(v2 / 10);
         if (len == 2) {
             n = n / 10;
         }
@@ -3563,17 +3575,17 @@ void CTimeout::Set(EType type)
 void CTimeout::Set(unsigned int sec, unsigned int usec)
 {
     m_Type    = eFinite;
-    m_Sec     =  usec / kMicroSecondsPerSecond + sec;
-    m_NanoSec = (usec % kMicroSecondsPerSecond) *
-        (kNanoSecondsPerSecond / kMicroSecondsPerSecond);
+    m_Sec     =  usec / (unsigned int)kMicroSecondsPerSecond + sec;
+    m_NanoSec = (usec % (unsigned int)kMicroSecondsPerSecond) *
+        (unsigned int)(kNanoSecondsPerSecond / kMicroSecondsPerSecond);
 }
 
 
 void CTimeout::SetNano(unsigned int sec, unsigned int nanosec)
 {
     m_Type    = eFinite;
-    m_Sec     = nanosec / kNanoSecondsPerSecond + sec;
-    m_NanoSec = nanosec % kNanoSecondsPerSecond;
+    m_Sec     = nanosec / (unsigned int)kNanoSecondsPerSecond + sec;
+    m_NanoSec = nanosec % (unsigned int)kNanoSecondsPerSecond;
 }
 
 
@@ -3744,7 +3756,7 @@ CDeadline::CDeadline(const CTimeout& timeout)
         x_Now();
         unsigned int sec, usec;
         timeout.Get(&sec, &usec);
-        x_Add(sec, usec * (kNanoSecondsPerSecond / kMicroSecondsPerSecond));
+        x_Add(sec, usec * (unsigned int)(kNanoSecondsPerSecond / kMicroSecondsPerSecond));
     }
 }
 
@@ -3776,8 +3788,8 @@ void CDeadline::x_Now(void)
     struct timeval tp;
     if (gettimeofday(&tp, 0) == 0) {
         m_Seconds     = tp.tv_sec;
-        m_Nanoseconds = tp.tv_usec *
-            (kNanoSecondsPerSecond / kMicroSecondsPerSecond);
+        m_Nanoseconds = (unsigned int)
+            (tp.tv_usec * (kNanoSecondsPerSecond / kMicroSecondsPerSecond));
     } else {
         NCBI_THROW(CTimeException, eInvalid,
                    "Cannot get current deadline time value");
@@ -3791,8 +3803,8 @@ void CDeadline::x_Add(unsigned int seconds, unsigned int nanoseconds)
 {
     if (!m_Infinite  &&  (seconds | nanoseconds)) {
         nanoseconds  += m_Nanoseconds;
-        seconds      += nanoseconds / kNanoSecondsPerSecond;
-        m_Nanoseconds = nanoseconds % kNanoSecondsPerSecond;
+        seconds      += nanoseconds / (unsigned int)kNanoSecondsPerSecond;
+        m_Nanoseconds = nanoseconds % (unsigned int)kNanoSecondsPerSecond;
         m_Seconds    += seconds;
     }
 }
@@ -3838,7 +3850,7 @@ CNanoTimeout CDeadline::GetRemainingTime(void) const
         thenNS -= nowNS;
     } else {
         --thenS;
-        thenNS = kNanoSecondsPerSecond - (nowNS - thenNS);
+        thenNS = (unsigned int)kNanoSecondsPerSecond - (nowNS - thenNS);
     }
     _ASSERT(thenS >= nowS);
     thenS -= nowS;

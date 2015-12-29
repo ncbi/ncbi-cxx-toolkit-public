@@ -272,8 +272,8 @@ bool NStr::MatchesMask(CTempString str, CTempString mask, ECase use_case)
             // Compare non pattern character in mask and name
             char s = str[str_pos++];
             if (use_case == NStr::eNocase) {
-                c = tolower((unsigned char) c);
-                s = tolower((unsigned char) s);
+                c = (char)tolower((unsigned char) c);
+                s = (char)tolower((unsigned char) s);
             }
             if (c != s) {
                 return false;
@@ -289,7 +289,7 @@ char* NStr::ToLower(char* str)
 {
     char* s;
     for (s = str;  *str;  str++) {
-        *str = tolower((unsigned char)(*str));
+        *str = (char)tolower((unsigned char)(*str));
     }
     return s;
 }
@@ -298,7 +298,7 @@ char* NStr::ToLower(char* str)
 string& NStr::ToLower(string& str)
 {
     NON_CONST_ITERATE (string, it, str) {
-        *it = tolower((unsigned char)(*it));
+        *it = (char)tolower((unsigned char)(*it));
     }
     return str;
 }
@@ -308,7 +308,7 @@ char* NStr::ToUpper(char* str)
 {
     char* s;
     for (s = str;  *str;  str++) {
-        *str = toupper((unsigned char)(*str));
+        *str = (char)toupper((unsigned char)(*str));
     }
     return s;
 }
@@ -317,7 +317,7 @@ char* NStr::ToUpper(char* str)
 string& NStr::ToUpper(string& str)
 {
     NON_CONST_ITERATE (string, it, str) {
-        *it = toupper((unsigned char)(*it));
+        *it = (char)toupper((unsigned char)(*it));
     }
     return str;
 }
@@ -566,7 +566,7 @@ bool s_IsGoodCharForRadix(char ch, int base, int* value = 0)
     if (isdigit((unsigned char) ch)) {
         delta = ch - '0';
     } else {
-        ch = tolower((unsigned char) ch);
+        ch = (char)tolower((unsigned char) ch);
         delta = ch - 'a' + 10;
     }
     if ( value ) {
@@ -903,7 +903,7 @@ double NStr::StringToDoublePosix(const char* ptr, char** endptr, TStringToNumFla
     for ( ; ; c = *ptr++ ) {
         if (c >= '0' && c <= '9') {
             // digits: accumulate
-            c -= '0';
+            c = (char)(c - '0');
             anydigits = true;
             ++digits;
             if (first == 0) {
@@ -1146,7 +1146,7 @@ double NStr::StringToDoublePosix(const char* ptr, char** endptr, TStringToNumFla
     if (endptr) {
         *endptr = (char*)ptr;
     }
-    return ret;
+    return (double)ret;
 }
 
 
@@ -1289,7 +1289,7 @@ static Uint8 s_DataSizeConvertQual(const CTempString       str,
         return value;
     }
 
-    ch = toupper(ch);
+    ch = (unsigned char)toupper(ch);
     Uint8 v   = value;
     bool  err = false;
 
@@ -1506,14 +1506,14 @@ Uint8 NStr::StringToUInt8_DataSize(const CTempString str,
     }
     char suff_c = 0;
     if (str_ptr < str_end)
-        suff_c = toupper(*str_ptr);
+        suff_c = (char)toupper(*str_ptr);
 
     static const char s_Suffixes[] = {'K', 'M', 'G', 'T', 'P', 'E'};
     static const char* const s_BinCoefs[] = {"1024", "1048576", "1073741824",
                                              "1099511627776",
                                              "1125899906842624",
                                              "1152921504606846976"};
-    static const Uint4 s_NumSuffixes = sizeof(s_Suffixes) / sizeof(s_Suffixes[0]);
+    static const Uint4 s_NumSuffixes = (Uint4)(sizeof(s_Suffixes) / sizeof(s_Suffixes[0]));
 
     bool binary_suff = (flags & fDS_ForceBinary) != 0;
     Uint4 suff_idx = 0;
@@ -1558,7 +1558,7 @@ Uint8 NStr::StringToUInt8_DataSize(const CTempString str,
     for (Uint4 i = 0; str_ptr < num_end; ++str_ptr) {
         if (*str_ptr == ','  ||  *str_ptr == '.')
             continue;
-        orig_num[i++] = *str_ptr - '0';
+        orig_num[i++] = Uint1(*str_ptr - '0');
     }
 
     Uint1* num_to_conv = orig_num.get();
@@ -1575,20 +1575,20 @@ Uint8 NStr::StringToUInt8_DataSize(const CTempString str,
             Uint4 res_idx = orig_digs + coef_i;
             for (int orig_i = orig_digs - 1; orig_i >= 0; --orig_i, --res_idx) {
                 Uint1 orig_d = orig_num[orig_i];
-                Uint1 res_d = coef_d * orig_d + carry + mul_num[res_idx];
+                Uint1 res_d = Uint1(coef_d * orig_d + carry + mul_num[res_idx]);
                 carry = 0;
                 while (res_d >= 10) {
-                    res_d -= 10;
+                    res_d = (Uint1)(res_d - 10); // res_d -= 10;
                     ++carry;
                 }
                 mul_num[res_idx] = res_d;
             }
             _ASSERT(carry <= 9);
             for (; carry != 0; --res_idx) {
-                Uint1 res_d = mul_num[res_idx] + carry;
+                Uint1 res_d = Uint1(mul_num[res_idx] + carry);
                 carry = 0;
                 while (res_d >= 10) {
-                    res_d -= 10;
+                    res_d = (Uint1)(res_d - 10); // res_d -= 10;
                     ++carry;
                 }
                 mul_num[res_idx] = res_d;
@@ -1981,7 +1981,7 @@ void NStr::UInt8ToString_DataSize(string& out_str,
         max_digits = 3;
 
     static const char s_Suffixes[] = {'K', 'M', 'G', 'T', 'P', 'E'};
-    static const Uint4 s_NumSuffixes = sizeof(s_Suffixes) / sizeof(s_Suffixes[0]);
+    static const Uint4 s_NumSuffixes = Uint4(sizeof(s_Suffixes) / sizeof(s_Suffixes[0]));
 
     static const SIZE_TYPE kBufSize = 50;
     char  buffer[kBufSize];
@@ -2101,7 +2101,7 @@ try_even_more_suffix:
         do {
             left_val *= 10;
             Uint1 d = Uint1(left_val / mul_coef);
-            *num_end = d + '0';
+            *num_end = char(d + '0');
             ++num_end;
             left_val -= d * mul_coef;
             --cnt_more_digs;
@@ -3865,17 +3865,17 @@ static string s_PrintableString(const CTempString    str,
             unsigned char v;
             char val[3];
             int k = 0;
-            v =  (unsigned char) c >> 6;
+            v = (unsigned char)((unsigned char)c >> 6);
             if (v  ||  !reduce) {
-                val[k++] = '0' + v;
+                val[k++] = char('0' + v);
                 reduce = false;
             }
-            v = ((unsigned char) c >> 3) & 7;
+            v = ((unsigned char)c >> 3) & 7;
             if (v  ||  !reduce) {
-                val[k++] = '0' + v;
+                val[k++] = char('0' + v);
             }
-            v =  (unsigned char) c       & 7;
-            val    [k++] = '0' + v;
+            v = (unsigned char)c & 7;
+            val[k++] = char('0' + v);
             out->write(val, k);
         } else {
             out->put(c);
@@ -4776,10 +4776,10 @@ string NStr::ParseEscapes(const CTempString str, EEscSeqRange mode, char user_ch
         case '4':  case '5':  case '6':  case '7':
             {{
                 pos = pos2;
-                unsigned char c = str[pos++] - '0';
+                unsigned char c = (unsigned char)(str[pos++] - '0');
                 while (pos < pos2 + 3  &&  pos < str.size()
                        &&  str[pos] >= '0'  &&  str[pos] <= '7') {
-                    c = (c << 3) | (str[pos++] - '0');
+                    c = (unsigned char)((c << 3) | (str[pos++] - '0'));
                 }
                 out += c;
             }}
@@ -5312,7 +5312,7 @@ list<string>& NStr::Justify(const CTempString  str,
         if (nw > 1) {
             if (pos < str.size()  &&  len < width  &&  !big) {
                 space = (width - len) / (nw - 1);
-                nw    = (width - len) % (nw - 1);
+                nw    = (unsigned int)((width - len) % (nw - 1));
             } else {
                 space = 1;
                 nw    = 0;
@@ -5917,7 +5917,7 @@ void s_URLDecode(const CTempString src, string& dst, NStr::EUrlDecode flag)
                 if (n1 < 0  ||  n1 > 15  || n2 < 0  ||  n2 > 15) {
                     dst[pdst] = src[psrc++];
                 } else {
-                    dst[pdst] = (n1 << 4) | n2;
+                    dst[pdst] = char((n1 << 4) | n2);
                     psrc += 3;
                 }
             }
@@ -6038,7 +6038,7 @@ bool s_IsIPAddress(const char* str, size_t size)
                 // Too many digits between colons
                 return false;
             }
-            char d = toupper(*c);
+            char d = (char)toupper((unsigned char)(*c));
             if (d < '0'  ||  d > 'F') {
                 // Invalid digit
                 return false;

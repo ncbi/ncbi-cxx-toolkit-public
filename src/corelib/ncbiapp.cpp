@@ -1169,7 +1169,7 @@ string CNcbiApplication::FindProgramExecutablePath
     if (real_path) {
         char   buf[PATH_MAX + 1];
         string procfile = "/proc/" + NStr::IntToString(getpid()) + "/exe";
-        int    ncount   = readlink((procfile).c_str(), buf, PATH_MAX);
+        int    ncount   = (int)readlink((procfile).c_str(), buf, PATH_MAX);
         if (ncount > 0) {
             real_path->assign(buf, ncount);
             if (real_path == &ret_val  ||  ret_val.empty()) {

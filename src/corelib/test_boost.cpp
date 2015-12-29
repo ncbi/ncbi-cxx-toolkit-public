@@ -1664,7 +1664,7 @@ CNcbiTestApplication::x_GetEnabledTestsCount(void)
 {
     but::test_case_counter tcc;
     but::traverse_test_tree(but::framework::master_test_suite(), tcc);
-    return tcc.p_count;
+    return (int)tcc.p_count;
 }
 
 but::test_suite*

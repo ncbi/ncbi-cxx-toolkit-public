@@ -66,8 +66,10 @@ namespace {
 
 inline char Hex(unsigned char c)
 {
-    if (c < 10) return c + '0';
-    return c - 10 + 'A';
+    if (c < 10) {
+        return char(c + '0');
+    }
+    return char(c - 10 + 'A');
 }
 
 
@@ -77,8 +79,8 @@ string BinToHex(const string& data)
     string ret;
     ret.reserve(data.size()*2);
     ITERATE(string, c, data) {
-        ret += Hex((unsigned char)(*c) >> 4);
-        ret += Hex((unsigned char)(*c) & 0x0f);
+        ret += Hex((unsigned char)((unsigned char)(*c) >> 4));
+        ret += Hex((unsigned char)((unsigned char)(*c) & 0x0F));
     }
     return ret;
 }
@@ -92,29 +94,33 @@ string HexToBin(const string& hex)
     _ASSERT(hex.size() % 2 == 0);
     ret.reserve(hex.size()/2);
     ITERATE(string, h, hex) {
-        char c1 = NStr::HexChar(*h);
+        int hc = NStr::HexChar(*h);
+        _ASSERT(hc != -1);
+        char c1 = char(hc);
         h++;
-        char c2 = NStr::HexChar(*h);
+        hc = NStr::HexChar(*h);
+        _ASSERT(hc != -1);
+        char c2 = char(hc);
         if (c1 < 0  ||  c2 < 0) {
             NCBI_THROW(CNcbiEncryptException, eBadFormat,
                 "Invalid hexadecimal string format: " + hex);
             return kEmptyStr;
         }
-        ret += ((c1 << 4) + c2);
+        ret += char((c1 << 4) + c2);
     }
     return ret;
 }
 
 
 // Use 128-bit key
-const int kBlockTEA_KeySize = 4;
+const size_t kBlockTEA_KeySize = 4;
 
 // Block size is a multiple of key size. The longer the better (hides
 // the source length).
 // For historical reasons block sizes for NCBI resources and encryption
 // API are different.
-const int kResInfo_BlockSize = kBlockTEA_KeySize*sizeof(Int4)*4;
-const int kEncrypt_BlockSize = kBlockTEA_KeySize*sizeof(Int4);
+const size_t kResInfo_BlockSize = kBlockTEA_KeySize * sizeof(Int4) * 4;
+const size_t kEncrypt_BlockSize = kBlockTEA_KeySize * sizeof(Int4);
 
 
 // Helper function converting a seed string to a 128 bit binary key.
@@ -823,13 +829,13 @@ string CNcbiEncrypt::x_AddSalt(const string& data, char version)
     }
     time_t ttmp = tt;
     for (size_t i = 0; i < sizeof(ttmp) && salt.size() < kSaltLength; ++i) {
-        salt += ttmp & 0xFF;
+        salt += char(ttmp & 0xFF);
         ttmp >>= 8;
     }
     while (salt.size() < kSaltLength) {
         long ntmp = ++ns;
         for (size_t i = 0; i < sizeof(ntmp) && salt.size() < kSaltLength; ++i) {
-            salt += ntmp & 0xFF;
+            salt += char(ntmp & 0xFF);
             ntmp >>= 8;
         }
     }

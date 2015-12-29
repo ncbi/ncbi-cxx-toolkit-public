@@ -652,10 +652,10 @@ bool GetCurrentProcessTimes(double* user_time, double* system_time)
         return false;
     }
     if ( system_time ) {
-        *system_time = (double) buf.tms_stime / tick;
+        *system_time = (double)buf.tms_stime / (double)tick;
     }
     if ( user_time ) {
-        *user_time = (double) buf.tms_utime / tick;
+        *user_time = (double)buf.tms_utime / (double)tick;
     }
 #endif
     return true;

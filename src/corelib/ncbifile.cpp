@@ -1307,14 +1307,14 @@ string CDirEntry::ModeToString(TMode user_mode, TMode group_mode,
             int i = 0;
             if (special > 0) {
                 out = "0000";
-                out[0] = char(special)  + '0';
+                out[0] = char(special + '0');
                 i++;
             } else {
                 out = "000";
             }
-            out[i++] = char(user_mode)  + '0';
-            out[i++] = char(group_mode) + '0';
-            out[i++] = char(other_mode) + '0';
+            out[i++] = char(user_mode  + '0');
+            out[i++] = char(group_mode + '0');
+            out[i++] = char(other_mode + '0');
         }
         break;
     case eModeFormat_Symbolic:

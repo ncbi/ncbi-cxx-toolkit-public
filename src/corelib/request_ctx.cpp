@@ -349,8 +349,8 @@ const string& CRequestContext::GetNextSubHitID(void)
     // Use global sub-hit counter for default hit id to prevent
     // duplicate phids in different threads.
     m_SubHitIDCache = GetHitID();
-    int sub_hit_id = m_SubHitIDCache == GetDiagContext().GetDefaultHitID() ?
-        s_DefaultSubHitCounter.Add(1) : ++m_SubHitID;
+    unsigned int sub_hit_id = (m_SubHitIDCache == GetDiagContext().GetDefaultHitID()) ?
+        (unsigned int)s_DefaultSubHitCounter.Add(1) : ++m_SubHitID;
 
     // Cache the string so that C code can use it.
     m_SubHitIDCache += "." + NStr::NumericToString(sub_hit_id);

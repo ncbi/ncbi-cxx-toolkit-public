@@ -52,14 +52,14 @@ void s_TestType(const char* type_name, T value)
     if (value != (T) (int) value)
         return;
 
-    T min_minus_1 = minval - (T) 1;
+    T min_minus_1 = (T) (minval - (T) 1);
     LOG_POST(type_name << ":  "
              << minval << " <= " << min_minus_1  << " <= " << maxval);
 
     assert(minval <= min_minus_1);
     assert(maxval >= min_minus_1);
 
-    T max_plus_1 = maxval + (T) 1;
+    T max_plus_1 = (T) (maxval + (T) 1);
     LOG_POST(type_name << ":  "
              << minval << " <= " << max_plus_1  << " <= " << maxval);
 

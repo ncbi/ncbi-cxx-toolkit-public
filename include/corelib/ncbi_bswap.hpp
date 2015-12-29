@@ -96,11 +96,9 @@ inline
 Int2 CByteSwap::GetInt2(const unsigned char* ptr)
 {
 #ifdef WORDS_BIGENDIAN
-    Int2 ret = (Int2(ptr[1]) << 8) | 
-               (Int2(ptr[0]));
+    Int2 ret = (Int2)( (Int2(ptr[1]) << 8) | (Int2(ptr[0])) );
 #else
-    Int2 ret = (Int2(ptr[0]) << 8) | 
-               (Int2(ptr[1]));
+    Int2 ret = (Int2)( (Int2(ptr[0]) << 8) | (Int2(ptr[1])) );
 #endif
 
     return ret;

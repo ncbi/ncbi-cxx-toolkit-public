@@ -128,7 +128,7 @@ void TeamcityBoostLogFormatter::test_unit_finish(ostream &out, boost::unit_test:
             }
         }
 
-        messages.testFinished(tu.p_name, elapsed / 1000, flowId);
+        messages.testFinished(tu.p_name, int(elapsed / 1000), flowId);
     } else {
         messages.suiteFinished(tu.p_name, flowId);
     }
