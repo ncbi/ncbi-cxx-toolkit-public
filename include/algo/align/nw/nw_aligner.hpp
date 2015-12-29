@@ -67,6 +67,8 @@ class NCBI_XALGOALIGN_EXPORT CNWAligner: public CObject
 public:
     typedef int TScore;
 
+    enum EGapPreference { eEarlier, eLater };
+
     // ctors
     CNWAligner(void);
 
@@ -103,6 +105,12 @@ public:
     // specify whether end gaps should be penalized
     //'true' - do not penalize, 'false' - penalize
     void SetEndSpaceFree(bool Left1, bool Right1, bool Left2, bool Right2);
+
+    void SetSmithWaterman(bool SW);
+
+    /// Control preference for where to place a gap if there is a choice;
+    /// default is eEarlier, placing the gap as early as possible
+    void SetGapPreference(EGapPreference p);
 
     // alignment pattern (guides)
     void SetPattern(const vector<size_t>& pattern);
@@ -142,6 +150,10 @@ public:
 
     void          GetEndSpaceFree(bool* L1, bool* R1, bool* L2, bool* R2)
                       const;
+
+    bool          IsSmithWatermen() const;
+
+    EGapPreference GetGapPreference() const;
 
     TScore        GetScore(void) const;
 
@@ -235,6 +247,9 @@ protected:
 
     // end-space free flags
     bool     m_esf_L1, m_esf_R1, m_esf_L2, m_esf_R2;
+    bool     m_SmithWaterman;
+
+    EGapPreference m_GapPreference;
 
     // alphabet and score matrix
     const char*               m_abc;
@@ -295,6 +310,7 @@ protected:
         CBacktraceMatrix4(size_t dim) {
             m_Buf = new Uint1 [dim / 2 + 1];
             m_Elem = 0;
+            m_BestPos = 0;
         }
 
         ~CBacktraceMatrix4() { delete [] m_Buf; }
@@ -306,6 +322,14 @@ protected:
             else {
                 m_Elem = v;
             }
+        }
+
+        void SetBestPos(size_t k) {
+            m_BestPos = k;
+        }
+
+        size_t BestPos() const {
+            return m_BestPos;
         }
 
         void Purge(size_t i) {
@@ -322,6 +346,7 @@ protected:
         
         Uint1 * m_Buf;
         Uint1   m_Elem;
+        size_t  m_BestPos;
     };
 
     void x_DoBackTrace(const CBacktraceMatrix4 & backtrace,
@@ -363,6 +388,11 @@ struct CNWAligner::SAlignInOut {
 
     size_t      GetSpace(void) const {
         return m_space;
+    }
+
+    void        FillEdgeGaps(size_t len) {
+        m_transcript.insert(m_transcript.end(), len % (m_len2+1), eTS_Insert);
+        m_transcript.insert(m_transcript.end(), len / (m_len2+1), eTS_Delete);
     }
 
     static bool PSpace(const SAlignInOut* p1, const SAlignInOut* p2) {

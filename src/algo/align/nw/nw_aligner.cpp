@@ -54,6 +54,8 @@ CNWAligner::CNWAligner()
       m_Wg(GetDefaultWg()),
       m_Ws(GetDefaultWs()),
       m_esf_L1(false), m_esf_R1(false), m_esf_L2(false), m_esf_R2(false),
+      m_SmithWaterman(false),
+      m_GapPreference(eEarlier),
       m_abc(g_nwaligner_nucleotides),
       m_ScoreMatrixInvalid(true),
       m_prg_callback(0),
@@ -180,6 +182,20 @@ void CNWAligner::SetEndSpaceFree(bool Left1, bool Right1,
     m_esf_R2 = Right2;
 }
 
+void CNWAligner::SetSmithWaterman(bool SW)
+{
+    m_SmithWaterman = SW;
+    if (SW) {
+        /// Smith-Waterman necessarily implies that all four ends are free
+        m_esf_L1 = m_esf_R1 = m_esf_L2 = m_esf_R2 = true;
+    }
+}
+
+void CNWAligner::SetGapPreference(EGapPreference p)
+{
+    m_GapPreference = p;
+}
+
 // evaluate score for each possible alignment;
 // fill out backtrace matrix
 // bit coding (four bits per value): D E Ec Fc
@@ -187,12 +203,15 @@ void CNWAligner::SetEndSpaceFree(bool Left1, bool Right1,
 // E:  1 if space in 1st sequence; 0 if space in 2nd sequence
 // Ec: 1 if gap in 1st sequence was extended; 0 if it is was opened
 // Fc: 1 if gap in 2nd sequence was extended; 0 if it is was opened
+// Start: if all four bits are set, this is start of alignment; used for
+//        Smith-Waterman algorithm
 //
 
 const unsigned char kMaskFc  = 0x01;
 const unsigned char kMaskEc  = 0x02;
 const unsigned char kMaskE   = 0x04;
 const unsigned char kMaskD   = 0x08;
+const unsigned char kMaskStart   = 0x0F;
 
 CNWAligner::TScore CNWAligner::x_Align(SAlignInOut* data)
 {
@@ -233,7 +252,7 @@ CNWAligner::TScore CNWAligner::x_Align(SAlignInOut* data)
 
     // index calculation: [i,j] = i*n2 + j
     CBacktraceMatrix4 backtrace_matrix (N1 * N2);
-    backtrace_matrix.SetAt(0, 0);
+    backtrace_matrix.SetAt(0, kMaskStart);
 
     // first row
     size_t k;
@@ -241,7 +260,8 @@ CNWAligner::TScore CNWAligner::x_Align(SAlignInOut* data)
     for (k = 1; k < N2; ++k) {
         rowV[k] = pV[k] + wsleft1;
         rowF[k] = kInfMinus;
-        backtrace_matrix.SetAt(k, kMaskE | kMaskEc);
+        backtrace_matrix.SetAt(k, m_SmithWaterman ? kMaskStart
+                                                  : kMaskE | kMaskEc);
     }
     backtrace_matrix.Purge(k);
     rowV[0] = 0;
@@ -258,13 +278,14 @@ CNWAligner::TScore CNWAligner::x_Align(SAlignInOut* data)
     TScore V0 (wgleft2);
     TScore E, G, n0;
     unsigned char tracer;
+    TScore best_V = 0;
 
     size_t i, j;
     for(i = 1;  i < N1 && !m_terminate;  ++i) {
         
         V = V0 += wsleft2;
         E = kInfMinus;
-        backtrace_matrix.SetAt(k++, kMaskFc);
+        backtrace_matrix.SetAt(k++, m_SmithWaterman ? kMaskStart : kMaskFc);
         unsigned char ci = seq1[i];
 
         if(i == N1 - 1 && bFreeGapRight1) {
@@ -300,26 +321,33 @@ CNWAligner::TScore CNWAligner::x_Align(SAlignInOut* data)
                 rowF[j] = n0 + ws2;
             }
 
-            if (E >= rowF[j]) {
-                if(E >= G) {
+            if (m_SmithWaterman && G <= 0 && E <= 0 && rowF[j] <= 0) {
+                V = 0;
+                tracer = kMaskStart;
+            } else if (E >= rowF[j]) {
+                if(E > G || E == G && m_GapPreference == eEarlier) {
                     V = E;
                     tracer |= kMaskE;
                 }
                 else {
                     V = G;
-                    tracer |= kMaskD;
+                    tracer = kMaskD;
                 }
             } else {
-                if(rowF[j] >= G) {
+                if(rowF[j] > G || rowF[j] == G && m_GapPreference == eEarlier) {
                     V = rowF[j];
                 }
                 else {
                     V = G;
-                    tracer |= kMaskD;
+                    tracer = kMaskD;
                 }
             }
 
             backtrace_matrix.SetAt(k, tracer);
+            if (V >= best_V) {
+                best_V = V;
+                backtrace_matrix.SetBestPos(k);
+            }
         }
 
         pV[j] = V;
@@ -359,6 +387,11 @@ CNWAligner::TScore CNWAligner::Run()
 
     if(!x_CheckMemoryLimit()) {
         NCBI_THROW(CAlgoAlignException, eMemoryLimit, g_msg_HitSpaceLimit);
+    }
+
+    if (m_SmithWaterman && !m_guides.empty()) {
+        NCBI_THROW(CAlgoAlignException, eBadParameter,
+                   "Smith-Waterman not compatible with provided pattern");
     }
 
     m_score = x_Run();
@@ -571,7 +604,11 @@ void CNWAligner::x_DoBackTrace(const CBacktraceMatrix4 & backtrace,
     size_t k  (N1*N2 - 1);
     size_t i1 (data->m_offset1 + data->m_len1 - 1);
     size_t i2 (data->m_offset2 + data->m_len2 - 1);
-    while (k != 0) {
+    if (m_SmithWaterman) {
+        data->FillEdgeGaps(k - backtrace.BestPos());
+        k = backtrace.BestPos();
+    }
+    while (backtrace[k] != kMaskStart) {
 
         unsigned char Key (backtrace[k]);
 
@@ -606,6 +643,7 @@ void CNWAligner::x_DoBackTrace(const CBacktraceMatrix4 & backtrace,
             }
         }
     }
+    data->FillEdgeGaps(k);
 }
 
 
@@ -662,6 +700,15 @@ void CNWAligner::GetEndSpaceFree(bool* L1, bool* R1, bool* L2, bool* R2) const
     if(R2) *R2 = m_esf_R2;
 }
 
+bool CNWAligner::IsSmithWatermen() const
+{
+    return m_SmithWaterman;
+}
+
+CNWAligner::EGapPreference CNWAligner::GetGapPreference() const
+{
+    return m_GapPreference;
+}
 
 // return raw transcript
 CNWAligner::TTranscript CNWAligner::GetTranscript(bool reversed) const
