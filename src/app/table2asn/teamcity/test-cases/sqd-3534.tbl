@@ -1,0 +1,28 @@
+>Feature scaffold1
+<1	100	gene
+			locus_tag	test_0001
+<1	100	CDS
+			product	favorite 1
+			protein_id	gnl|ncbi|test_0001
+			transcript_id	gnl|ncbi|mrna.test_0001
+<1	100	mRNA
+			product	favorite 1
+			protein_id	gnl|ncbi|test_0001
+			transcript_id	gnl|ncbi|mrna.test_0001
+101	220	rRNA
+			product	ribosomal rna			
+			
+<4951	6000	gene
+			locus_tag	test_0002
+<4951	6000	CDS
+			product	favorite 2
+			protein_id	gnl|ncbi|test_0002
+			transcript_id	gnl|ncbi|mrna.test_0002
+			go_function	DNA binding|0003677||IEA
+			go_component	transcription factor TFIID complex|0005669||IEA
+			go_process	transcription initiation|0006352||IEA
+			go_function	transcription initiation factor activity|0016986||IEA
+<4951	6000	mRNAs
+			product	favorite 2
+			protein_id	gnl|ncbi|test_0002
+			transcript_id	gnl|ncbi|mrna.test_0002

@@ -314,7 +314,7 @@ private:
                                   const string& qual, const string& val);
 
     bool x_AddGeneOntologyToFeature (CRef<CSeq_feat> sfp, 
-                                     const string& qual, const string& val);
+                                     const CTempString& qual, const CTempString& val);
 
     typedef CConstRef<CSeq_feat> TFeatConstRef;
     struct SFeatAndLineNum {
@@ -1784,8 +1784,8 @@ static const int k_NumGoQuals = sizeof (k_GoQuals) / sizeof (string);
 
 bool CFeature_table_reader_imp::x_AddGeneOntologyToFeature (
     CRef<CSeq_feat> sfp,
-    const string& qual,
-    const string& val
+    const CTempString& qual,
+    const CTempString& val
 )
 
 {
@@ -1799,7 +1799,7 @@ bool CFeature_table_reader_imp::x_AddGeneOntologyToFeature (
         return false;
     }
 
-    vector<string> fields;
+    vector<CTempString> fields; fields.reserve(4);
     NStr::Split(val, "|", fields);
     while (fields.size() < 4) {
         fields.push_back("");
@@ -1823,12 +1823,18 @@ bool CFeature_table_reader_imp::x_AddGeneOntologyToFeature (
             }
         }
     }
-    string label (1, toupper((unsigned char) qual[0]));
-    label += qual.substr(1);
+    string label;
+    qual.Copy(label, 3, CTempString::npos); // prefix 'go_' should be eliminated
+    label[0] = toupper(label[0]);
 
     sfp->SetExt().SetType().SetStr("GeneOntology");
-    CUser_field& field = sfp->SetExt().SetField(label);
-    CRef<CUser_field> text_field (new CUser_field());
+    CUser_field& wrap = sfp->SetExt().SetField(label);
+    CRef<CUser_field> new_field(new CUser_field);
+    CUser_field& field = *new_field;
+    wrap.SetData().SetFields().push_back(new_field);
+    field.SetLabel().SetId(0); // compatible with C-toolkit
+
+    CRef<CUser_field> text_field(new CUser_field());
     text_field->SetLabel().SetStr("text_string");
     text_field->SetData().SetStr( CUtf8::AsUTF8(fields[0], eEncoding_Ascii));
     field.SetData().SetFields().push_back(text_field);
