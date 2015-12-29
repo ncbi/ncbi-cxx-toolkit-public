@@ -341,6 +341,18 @@ void CConnection::SetTextImageSize(size_t /* nof_bytes */)
 }
 
 
+size_t CConnection::GetTimeout(void) const
+{
+    return GetCDriverContext().GetTimeout();
+}
+
+
+size_t CConnection::GetCancelTimeout(void) const
+{
+    return GetCDriverContext().GetCancelTimeout();
+}
+
+
 bool
 CConnection::IsMultibyteClientEncoding(void) const
 {

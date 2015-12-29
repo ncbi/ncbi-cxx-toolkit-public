@@ -463,6 +463,9 @@ protected:
     virtual void SetTimeout(size_t nof_secs);
     virtual void SetCancelTimeout(size_t nof_secs);
 
+    virtual size_t GetTimeout(void) const;
+    virtual size_t GetCancelTimeout(void) const;
+
     size_t PrepareToCancel(void);
     void CancelFinished(size_t was_timeout);
 

@@ -1336,6 +1336,9 @@ protected:
     ///   (depends on the underlying DB API), then set the timeout to infinite.
     virtual void SetTimeout(size_t nof_secs) = 0;
 
+    /// Get connection timeout.    
+    virtual size_t GetTimeout(void) const = 0;
+
     /// Get interface for extra features that could be implemented in the driver.
     virtual I_ConnectionExtra& GetExtraFeatures(void) = 0;
 

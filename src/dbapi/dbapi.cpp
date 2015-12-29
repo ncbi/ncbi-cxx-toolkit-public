@@ -55,6 +55,17 @@ IConnection::~IConnection()
 {
 }
 
+size_t IConnection::GetTimeout(void) const
+{
+    return const_cast<IConnection*>(this)->GetCDB_Connection()->GetTimeout();
+}
+
+size_t IConnection::GetCancelTimeout(void) const
+{
+    return const_cast<IConnection*>(this)->GetCDB_Connection()
+        ->GetCancelTimeout();
+}
+
 IStatement::~IStatement()
 {
 }

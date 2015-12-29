@@ -50,12 +50,16 @@ public:
     void CloseRef(void);
     
     const CDB_Exception::SContext& GetContext(void) const;
+    void SetTimeout(const CTimeout& timeout);
+    void ResetTimeout(void);
 
 private:
     CConnHolder(const CConnHolder&);
     CConnHolder& operator= (const CConnHolder&);
 
     IConnection* m_Conn;
+    size_t       m_DefaultTimeout;
+    bool         m_HasCustomTimeout;
     Uint4        m_CntOpen;
     CRef<CDB_Exception::SContext> m_Context;
 };
@@ -71,6 +75,8 @@ public:
     void Close();
 
     IConnection* GetConnection(void);
+    void SetTimeout(const CTimeout& timeout);
+    void ResetTimeout(void);
 
     const CDB_Exception::SContext& GetContext(void) const;
 
@@ -141,8 +147,8 @@ public:
     void ClearParameters(void);
 
     void SetSql(CTempString sql);
-    void Execute(void);
-    void ExecuteSP(CTempString sp);
+    void Execute(const CTimeout& timeout);
+    void ExecuteSP(CTempString sp, const CTimeout& timeout);
     bool HasMoreResultSets(void);
     void PurgeResults(void);
     void BeginNewRS(void);

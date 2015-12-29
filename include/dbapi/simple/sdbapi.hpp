@@ -532,12 +532,13 @@ public:
     /// All result sets left from previous statement or stored procedure
     /// execution are purged.  The query reverts to SingleSet mode, with
     /// no row count requirements.
-    void Execute(void);
+    void Execute(const CTimeout& timeout = CTimeout(CTimeout::eDefault));
     /// Execute stored procedure with given name.
     /// All result sets left from previous statement or stored procedure
     /// execution are purged.  The query reverts to SingleSet mode, with
     /// no row count requirements.
-    void ExecuteSP(CTempString sp);
+    void ExecuteSP(CTempString sp,
+                   const CTimeout& timeout = CTimeout(CTimeout::eDefault));
 
     /// Get number of rows read after statement execution.
     /// This number is available only when all result sets are read or purged

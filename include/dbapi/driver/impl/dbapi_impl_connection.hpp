@@ -218,6 +218,9 @@ public:
     virtual void SetCancelTimeout(size_t nof_secs) = 0;
     virtual void SetTextImageSize(size_t nof_bytes);
 
+    virtual size_t GetTimeout(void) const;
+    virtual size_t GetCancelTimeout(void) const;
+
     virtual TSockHandle GetLowLevelHandle(void) const;
 
     virtual string GetDriverName(void) const;

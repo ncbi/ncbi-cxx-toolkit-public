@@ -1523,10 +1523,13 @@ CSDBAPI::UpdateMirror(const string& dbservice,
 inline
 CConnHolder::CConnHolder(IConnection* conn)
     : m_Conn(conn),
+      m_DefaultTimeout(0),
+      m_HasCustomTimeout(false),
       m_CntOpen(0),
       m_Context(new CDB_Exception::SContext)
 {
     if (conn != NULL) {
+        m_DefaultTimeout         = conn->GetTimeout();
         m_Context->server_name   = conn->GetCDB_Connection()->ServerName();
         m_Context->username      = conn->GetCDB_Connection()->UserName();
         m_Context->database_name = conn->GetDatabase();
@@ -1556,6 +1559,29 @@ CConnHolder::CloseRef(void)
     if (--m_CntOpen == 0) {
         m_Conn->Close();
     }
+}
+
+void CConnHolder::SetTimeout(const CTimeout& timeout)
+{
+    if (timeout.IsDefault()) {
+        ResetTimeout();
+    } else if (m_CntOpen > 0) {
+        unsigned int sec, nanosec;
+        timeout.GetNano(&sec, &nanosec);
+        if (nanosec > 0  &&  sec != kMax_UInt) { // round up as appropriate
+            ++sec;
+        }
+        m_HasCustomTimeout = true;
+        m_Conn->SetTimeout(sec);
+    }
+}
+
+void CConnHolder::ResetTimeout(void)
+{
+    if (m_HasCustomTimeout  &&  m_CntOpen > 0) {
+        m_Conn->SetTimeout(m_DefaultTimeout);
+    }
+    m_HasCustomTimeout = false;
 }
 
 inline
@@ -1615,6 +1641,18 @@ inline IConnection*
 CDatabaseImpl::GetConnection(void)
 {
     return m_Conn->GetConn();
+}
+
+inline void
+CDatabaseImpl::SetTimeout(const CTimeout& timeout)
+{
+    m_Conn->SetTimeout(timeout);
+}
+
+inline void
+CDatabaseImpl::ResetTimeout(void)
+{
+    m_Conn->ResetTimeout();
 }
 
 inline
@@ -2326,6 +2364,7 @@ CQueryImpl::SetSql(CTempString sql)
 void
 CQueryImpl::x_Close(void)
 {
+    m_DBImpl->ResetTimeout();
     if (m_CurRS != NULL) {
         try {
             VerifyDone(CQuery::eAllResultSets);
@@ -2369,7 +2408,7 @@ CQueryImpl::x_InitBeforeExec(void)
 }
 
 inline void
-CQueryImpl::Execute(void)
+CQueryImpl::Execute(const CTimeout& timeout)
 {
     if (m_IsSP  ||  m_Sql.empty()) {
         SDBAPI_THROW(eInconsistent, "No statement to execute.");
@@ -2386,6 +2425,9 @@ CQueryImpl::Execute(void)
             const SQueryParamInfo& info = it->second;
             m_Stmt->SetParam(*info.value, it->first);
         }
+        if ( !timeout.IsDefault() ) {
+            m_DBImpl->SetTimeout(timeout);
+        }
         m_Executed = true;
         m_Stmt->SendSql(m_Sql);
         HasMoreResultSets();
@@ -2394,7 +2436,7 @@ CQueryImpl::Execute(void)
 }
 
 inline void
-CQueryImpl::ExecuteSP(CTempString sp)
+CQueryImpl::ExecuteSP(CTempString sp, const CTimeout& timeout)
 {
     x_CheckCanWork();
 
@@ -2412,6 +2454,9 @@ CQueryImpl::ExecuteSP(CTempString sp)
                 m_CallStmt->SetParam(*info.value, it->first);
             else
                 m_CallStmt->SetOutputParam(*info.value, it->first);
+        }
+        if ( !timeout.IsDefault() ) {
+            m_DBImpl->SetTimeout(timeout);
         }
         m_Executed = true;
         m_CallStmt->Execute();
@@ -2599,6 +2644,8 @@ CQueryImpl::HasMoreResultSets(void)
     }
     SDBAPI_CATCH_LOWLEVEL()
 
+    m_DBImpl->ResetTimeout();
+
     _TRACE(m_CurRowNo << " row(s) from query.");
 
     if (m_CallStmt) {
@@ -2626,7 +2673,7 @@ CQueryImpl::BeginNewRS(void)
     if ( !has_more_rs  &&  !m_Executed ) {
         // Check has_more_rs in addition to m_Executed because SetSql
         // resets the latter.
-        Execute();
+        Execute(CTimeout(CTimeout::eDefault));
         has_more_rs = HasMoreResultSets();
     }
     if ( !has_more_rs ) {
@@ -3314,15 +3361,15 @@ CQuery::SetSql(CTempString sql)
 }
 
 void
-CQuery::Execute(void)
+CQuery::Execute(const CTimeout& timeout)
 {
-    m_Impl->Execute();
+    m_Impl->Execute(timeout);
 }
 
 void
-CQuery::ExecuteSP(CTempString sp)
+CQuery::ExecuteSP(CTempString sp, const CTimeout& timeout)
 {
-    m_Impl->ExecuteSP(sp);
+    m_Impl->ExecuteSP(sp, timeout);
 }
 
 CQuery&

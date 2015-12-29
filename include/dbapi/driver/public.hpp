@@ -300,6 +300,12 @@ public:
     /// Set timeout for command cancellation and connection closing
     virtual void SetCancelTimeout(size_t nof_secs);
 
+    /// Get connection timeout.    
+    size_t GetTimeout(void) const;
+
+    /// Get timeout for command cancellation and connection closing
+    size_t GetCancelTimeout(void) const;
+    
     /// Get interface for extra features that could be implemented in the driver.
     virtual I_ConnectionExtra& GetExtraFeatures(void);
 

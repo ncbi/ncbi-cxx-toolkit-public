@@ -439,6 +439,23 @@ CTL_Connection::SetCancelTimeout(size_t nof_secs)
 
 
 size_t
+CTL_Connection::GetTimeout(void) const
+{
+#ifdef FTDS_IN_USE
+    return x_GetSybaseConn()->tds_socket->query_timeout;
+#else
+    return GetCTLibContext().GetTimeout();
+#endif
+}
+
+
+size_t
+CTL_Connection::GetCancelTimeout(void) const
+{
+    return GetCTLibContext().GetCancelTimeout();
+}
+
+size_t
 CTL_Connection::PrepareToCancel(void)
 {
 #ifdef FTDS_IN_USE

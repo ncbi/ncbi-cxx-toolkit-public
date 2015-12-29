@@ -538,6 +538,18 @@ void CDB_Connection::SetCancelTimeout(size_t nof_secs)
     m_ConnImpl->SetCancelTimeout(nof_secs);
 }
 
+size_t CDB_Connection::GetTimeout(void) const
+{
+    CHECK_CONNECTION(m_ConnImpl);
+    return m_ConnImpl->GetTimeout();
+}
+
+size_t CDB_Connection::GetCancelTimeout(void) const
+{
+    CHECK_CONNECTION(m_ConnImpl);
+    return m_ConnImpl->GetCancelTimeout();
+}
+
 I_ConnectionExtra& CDB_Connection::GetExtraFeatures(void)
 {
     CHECK_CONNECTION(m_ConnImpl);
