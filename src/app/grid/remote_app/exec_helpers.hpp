@@ -47,12 +47,6 @@ class CRemoteAppVersion;
 class CRemoteAppLauncher
 {
 public:
-    enum ENonZeroExitAction {
-        eDoneOnNonZeroExit,
-        eFailOnNonZeroExit,
-        eReturnOnNonZeroExit
-    };
-
     CRemoteAppLauncher(const string& sec_name, const IRegistry&);
     ~CRemoteAppLauncher();
 
@@ -90,6 +84,12 @@ public:
 private:
     // Check whether retries are disabled for the specified exit code.
     bool MustFailNoRetries(int exit_code) const;
+
+    enum ENonZeroExitAction {
+        eDoneOnNonZeroExit,
+        eFailOnNonZeroExit,
+        eReturnOnNonZeroExit
+    };
 
     string m_AppPath;
     CTimeout m_AppRunTimeout;
