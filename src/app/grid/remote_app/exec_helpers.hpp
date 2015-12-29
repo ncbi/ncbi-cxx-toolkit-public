@@ -93,7 +93,7 @@ private:
 
     string m_AppPath;
     CTimeout m_AppRunTimeout;
-    int m_KeepAlivePeriod;
+    CTimeout m_KeepAlivePeriod;
     ENonZeroExitAction m_NonZeroExitAction;
     CRangeList m_RangeList;
     string m_TempDir;

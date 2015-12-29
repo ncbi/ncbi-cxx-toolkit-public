@@ -300,6 +300,23 @@ string CRemoteAppVersion::Get(const string& v) const
     return v;
 }
 
+class CTimer
+{
+public:
+    CTimer(const CTimeout& timeout) :
+        m_Deadline(timeout),
+        m_Timeout(timeout)
+    {}
+
+    void Restart() { m_Deadline = m_Timeout; }
+    bool IsExpired() const { return m_Deadline.IsExpired(); }
+    unsigned PresetSeconds() const { return (unsigned)m_Timeout.GetAsDouble(); }
+
+private:
+    CDeadline m_Deadline;
+    CTimeout m_Timeout;
+};
+
 CTimeout s_ToTimeout(unsigned sec)
 {
     // Zero counts as infinite timeout
@@ -335,7 +352,7 @@ CRemoteAppLauncher::CRemoteAppLauncher(const string& sec_name,
     const SSection sec(reg, sec_name);
 
     m_AppRunTimeout = s_ToTimeout(sec.Get("max_app_run_time", 0));
-    m_KeepAlivePeriod = sec.Get("keep_alive_period", 0);
+    m_KeepAlivePeriod = s_ToTimeout(sec.Get("keep_alive_period", 0));
 
     if (reg.HasEntry(sec_name, "non_zero_exit_action") ) {
         string val = reg.GetString(sec_name, "non_zero_exit_action", "");
@@ -601,15 +618,13 @@ class CPipeProcessWatcher : public CTimedProcessWatcher
 public:
     CPipeProcessWatcher(CWorkerNodeJobContext& job_context,
                    CTimeout run_timeout,
-                   int keep_alive_period,
+                   CTimeout keep_alive_period,
                    const string& job_wdir,
                    CRemoteAppReaper::CManager &process_manager)
         : CTimedProcessWatcher(run_timeout, process_manager),
-          m_JobContext(job_context), m_KeepAlivePeriod(keep_alive_period),
+          m_JobContext(job_context), m_KeepAlive(keep_alive_period),
           m_Monitor(NULL), m_JobWDir(job_wdir)
     {
-        if (m_KeepAlivePeriod > 0)
-            m_KeepAlive.reset(new CStopWatch(CStopWatch::eStart));
     }
 
     void SetMonitor(CRAMonitor& monitor, int monitor_perod)
@@ -646,10 +661,9 @@ public:
         if (action != CPipe::IProcessWatcher::eContinue)
             return action;
 
-        if (m_KeepAlive.get() &&
-                m_KeepAlive->Elapsed() > (double) m_KeepAlivePeriod) {
-            m_JobContext.JobDelayExpiration(m_KeepAlivePeriod + 10);
-            m_KeepAlive->Restart();
+        if (m_KeepAlive.IsExpired()) {
+            m_JobContext.JobDelayExpiration(m_KeepAlive.PresetSeconds() + 10);
+            m_KeepAlive.Restart();
         }
         if (m_Monitor && m_MonitorWatch.get() &&
                 m_MonitorWatch->Elapsed() > (double) m_MonitorPeriod) {
@@ -713,8 +727,7 @@ private:
     }
 
     CWorkerNodeJobContext& m_JobContext;
-    int m_KeepAlivePeriod;
-    auto_ptr<CStopWatch> m_KeepAlive;
+    CTimer m_KeepAlive;
     CRAMonitor* m_Monitor;
     auto_ptr<CStopWatch> m_MonitorWatch;
     int m_MonitorPeriod;
