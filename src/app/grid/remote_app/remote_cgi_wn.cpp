@@ -198,38 +198,38 @@ public:
 
     virtual ~CRemoteCgiJob() {}
 
-    int Do(CWorkerNodeJobContext& job_context);
+    int Do(CWorkerNodeJobContext& context);
 
 private:
     const CRemoteAppLauncher& m_RemoteAppLauncher;
 };
 
-int CRemoteCgiJob::Do(CWorkerNodeJobContext& job_context)
+int CRemoteCgiJob::Do(CWorkerNodeJobContext& context)
 {
-    if (job_context.IsLogRequested()) {
-        LOG_POST(Note << "Job " << job_context.GetJobKey() + " input: " +
-            job_context.GetJobInput());
+    if (context.IsLogRequested()) {
+        LOG_POST(Note << "Job " << context.GetJobKey() + " input: " +
+            context.GetJobInput());
     }
 
     auto_ptr<CCgiRequest> request;
 
     try {
-        request.reset(new CCgiRequest(job_context.GetIStream(),
+        request.reset(new CCgiRequest(context.GetIStream(),
             CCgiRequest::fIgnoreQueryString |
             CCgiRequest::fDoNotParseContent));
     }
     catch (exception&) {
         ERR_POST("Cannot deserialize remote_cgi job");
-        job_context.CommitJobWithFailure(
+        context.CommitJobWithFailure(
             "Error while parsing CGI request stream");
         return -1;
     }
 
     CCgiEnvHolder env(m_RemoteAppLauncher,
             request->GetEnvironment(),
-            job_context.GetJob(),
-            job_context.GetWorkerNode().GetServiceName(),
-            job_context.GetQueueName());
+            context.GetJob(),
+            context.GetWorkerNode().GetServiceName(),
+            context.GetQueueName());
     vector<string> args;
 
     CNcbiOstrstream err;
@@ -241,41 +241,41 @@ int CRemoteCgiJob::Do(CWorkerNodeJobContext& job_context)
     int ret = -1;
     bool finished_ok = m_RemoteAppLauncher.ExecRemoteApp(args,
                                         *in,
-                                        job_context.GetOStream(),
+                                        context.GetOStream(),
                                         err,
                                         ret,
-                                        job_context,
+                                        context,
                                         0,
                                         env.GetEnv());
 
     if (!finished_ok) {
-        if (!job_context.IsJobCommitted())
-            job_context.CommitJobWithFailure("Job has been canceled");
+        if (!context.IsJobCommitted())
+            context.CommitJobWithFailure("Job has been canceled");
     } else
         if (m_RemoteAppLauncher.MustFailNoRetries(ret))
-            job_context.CommitJobWithFailure(
+            context.CommitJobWithFailure(
                     "Exited with return code " + NStr::IntToString(ret) +
                     " - will not be rerun",
                     true /* no retries */);
         else if (ret == 0 || m_RemoteAppLauncher.GetNonZeroExitAction() ==
                 CRemoteAppLauncher::eDoneOnNonZeroExit)
-            job_context.CommitJob();
+            context.CommitJob();
         else if (m_RemoteAppLauncher.GetNonZeroExitAction() ==
                 CRemoteAppLauncher::eReturnOnNonZeroExit)
-            job_context.ReturnJob();
+            context.ReturnJob();
         else
-            job_context.CommitJobWithFailure(
+            context.CommitJobWithFailure(
                     "Exited with return code " + NStr::IntToString(ret));
 
-    if (job_context.IsLogRequested()) {
+    if (context.IsLogRequested()) {
         if ( !IsOssEmpty(err) )
             LOG_POST(Note << "STDERR: " << (string)CNcbiOstrstreamToString(err));
 
-        LOG_POST(Note << "Job " << job_context.GetJobKey() <<
-            " is " << job_context.GetCommitStatusDescription(
-                    job_context.GetCommitStatus()) <<
+        LOG_POST(Note << "Job " << context.GetJobKey() <<
+            " is " << context.GetCommitStatusDescription(
+                    context.GetCommitStatus()) <<
             ". Exit code: " << ret <<
-            "; output: " << job_context.GetJobOutput());
+            "; output: " << context.GetJobOutput());
     }
 
     return ret;
