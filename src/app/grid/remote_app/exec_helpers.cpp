@@ -519,8 +519,7 @@ public:
     CTimedProcessWatcher(const CTimeout& run_timeout,
             CRemoteAppReaper::CManager &process_manager)
         : m_ProcessManager(process_manager),
-          m_Deadline(run_timeout),
-          m_LogSeconds((unsigned)run_timeout.GetAsDouble())
+          m_Deadline(run_timeout)
     {
     }
 
@@ -528,7 +527,7 @@ public:
     {
         if (m_Deadline.IsExpired()) {
             ERR_POST("Job run time exceeded "
-                     << m_LogSeconds
+                     << m_Deadline.PresetSeconds()
                      <<" seconds, stopping the child: " << pid);
             return m_ProcessManager(pid);
         }
@@ -540,8 +539,7 @@ protected:
     CRemoteAppReaper::CManager& m_ProcessManager;
 
 private:
-    const CDeadline m_Deadline;
-    const unsigned m_LogSeconds;
+    const CTimer m_Deadline;
 };
 
 //////////////////////////////////////////////////////////////////////////////
