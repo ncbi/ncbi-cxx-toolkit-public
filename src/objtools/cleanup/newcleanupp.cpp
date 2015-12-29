@@ -7091,20 +7091,7 @@ void CNewCleanup_imp::x_CleanupAndRepairInference( string &inference )
     }
 
     const string original_inference = inference;
-
-    CRegexpUtil colonFixer( inference );
-    colonFixer.Replace( "[ ]+:", ":" );
-    colonFixer.Replace( ":*:[ ]+", ": ");
-    colonFixer.GetResult().swap( inference ); // swap is faster than assignment
-
-    // check if missing space after a prefix
-    // e.g. "COORDINATES:foo" should become "COORDINATES: foo"
-    CCachedRegexp spaceInserter = regexpCache.Get(
-        "(COORDINATES|DESCRIPTION|EXISTENCE):[^ ]" );
-    if( spaceInserter->IsMatch( inference ) ) {
-        int location_just_beyond_match = spaceInserter->GetResults(0)[1];
-        inference.insert( inference.begin() + location_just_beyond_match - 1, ' ' );
-    }
+    inference = CGb_qual::CleanupAndRepairInference( original_inference );
 
     if( inference != original_inference ) {
         ChangeMade(CCleanupChange::eCleanQualifiers);
