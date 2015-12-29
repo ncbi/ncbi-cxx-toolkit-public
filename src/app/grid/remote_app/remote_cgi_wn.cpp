@@ -248,24 +248,7 @@ int CRemoteCgiJob::Do(CWorkerNodeJobContext& context)
                                         0,
                                         env.GetEnv());
 
-    if (!finished_ok) {
-        if (!context.IsJobCommitted())
-            context.CommitJobWithFailure("Job has been canceled");
-    } else
-        if (m_RemoteAppLauncher.MustFailNoRetries(ret))
-            context.CommitJobWithFailure(
-                    "Exited with return code " + NStr::IntToString(ret) +
-                    " - will not be rerun",
-                    true /* no retries */);
-        else if (ret == 0 || m_RemoteAppLauncher.GetNonZeroExitAction() ==
-                CRemoteAppLauncher::eDoneOnNonZeroExit)
-            context.CommitJob();
-        else if (m_RemoteAppLauncher.GetNonZeroExitAction() ==
-                CRemoteAppLauncher::eReturnOnNonZeroExit)
-            context.ReturnJob();
-        else
-            context.CommitJobWithFailure(
-                    "Exited with return code " + NStr::IntToString(ret));
+    m_RemoteAppLauncher.FinishJob(finished_ok, ret, context);
 
     if (context.IsLogRequested()) {
         if ( !IsOssEmpty(err) )

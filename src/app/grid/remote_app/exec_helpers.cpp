@@ -888,6 +888,29 @@ bool CRemoteAppLauncher::ExecRemoteApp(const vector<string>& args,
     }
 }
 
+void CRemoteAppLauncher::FinishJob(bool finished_ok, int ret,
+        CWorkerNodeJobContext& context) const
+{
+    if (!finished_ok) {
+        if (!context.IsJobCommitted())
+            context.CommitJobWithFailure("Job has been canceled");
+    } else
+        if (MustFailNoRetries(ret))
+            context.CommitJobWithFailure(
+                    "Exited with return code " + NStr::IntToString(ret) +
+                    " - will not be rerun",
+                    true /* no retries */);
+        else if (ret == 0 || GetNonZeroExitAction() ==
+                CRemoteAppLauncher::eDoneOnNonZeroExit)
+            context.CommitJob();
+        else if (GetNonZeroExitAction() ==
+                CRemoteAppLauncher::eReturnOnNonZeroExit)
+            context.ReturnJob();
+        else
+            context.CommitJobWithFailure(
+                    "Exited with return code " + NStr::IntToString(ret));
+}
+
 // Check whether retries are disabled for the specified exit code.
 bool CRemoteAppLauncher::MustFailNoRetries(int exit_code) const
 {

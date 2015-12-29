@@ -63,6 +63,9 @@ public:
         unsigned app_run_timeout,
         const char* const env[]) const;
 
+    void FinishJob(bool finished_ok, int ret,
+            CWorkerNodeJobContext& context) const;
+
     const string& GetAppPath() const { return m_AppPath; }
     ENonZeroExitAction GetNonZeroExitAction() const
         {return m_NonZeroExitAction;}
