@@ -849,7 +849,7 @@ MP*LTGCCIMEWIS*RFPPRTYILIRANGL*TSTAIRFSITMRISATKSKPYGTENAQYLSILSKAET"
                         label id 0,
                         data fields {
                           {
-                            label str "text_string",
+                            label str "text string",
                             data str "DNA binding"
                           },
                           {
@@ -866,7 +866,7 @@ MP*LTGCCIMEWIS*RFPPRTYILIRANGL*TSTAIRFSITMRISATKSKPYGTENAQYLSILSKAET"
                         label id 0,
                         data fields {
                           {
-                            label str "text_string",
+                            label str "text string",
                             data str "transcription initiation factor activity"
                           },
                           {
@@ -888,7 +888,7 @@ MP*LTGCCIMEWIS*RFPPRTYILIRANGL*TSTAIRFSITMRISATKSKPYGTENAQYLSILSKAET"
                         label id 0,
                         data fields {
                           {
-                            label str "text_string",
+                            label str "text string",
                             data str "transcription factor TFIID complex"
                           },
                           {
@@ -910,7 +910,7 @@ MP*LTGCCIMEWIS*RFPPRTYILIRANGL*TSTAIRFSITMRISATKSKPYGTENAQYLSILSKAET"
                         label id 0,
                         data fields {
                           {
-                            label str "text_string",
+                            label str "text string",
                             data str "transcription initiation"
                           },
                           {

@@ -76,8 +76,6 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <sra/data_loaders/wgs/wgsloader.hpp>
 
-//#include <objtools/writers/fasta_writer.hpp>
-
 #include <common/test_assert.h>  /* This header must go last */
 
 using namespace ncbi;
@@ -387,7 +385,7 @@ int CTbl2AsnApp::Run(void)
 
     if (args["c"])
     {
-        if (args["c"].AsString().find_first_not_of("bc") != string::npos)
+        if (args["c"].AsString().find_first_not_of("be") != string::npos)
         {
             NCBI_THROW(CArgException, eConvert,
                 "Unrecognized cleanup type " + args["c"].AsString());
@@ -933,31 +931,6 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     {
         validator.Cleanup(*entry, m_context.m_cleanup);
     }
-
-#if 0
-#if 0
-    string dir = m_context.m_ResultsDirectory.empty() ? dir : m_context.m_ResultsDirectory;
-    if (to_write->GetThisTypeInfo()->IsType(CSeq_entry::GetTypeInfo()))
-    {
-        const CSeq_entry* se = (const CSeq_entry*)obj.GetPointer();
-        CFastaOstreamEx ofasta(dir, "aaa");
-        ofasta.Write(entry_edit_handle);
-    }
-    else
-        if (to_write->GetThisTypeInfo()->IsType(CSeq_submit::GetTypeInfo()))
-        {
-        const CSeq_submit* submit = (const CSeq_submit*)obj.GetPointer();
-        const CSeq_entry* se = submit->GetData().GetEntrys().front();
-        CFastaOstreamEx ofasta(dir, "aaa");
-        ofasta.Write(entry_edit_handle);
-        }
-#else
-    string dir = m_context.m_ResultsDirectory.empty() ? dir : m_context.m_ResultsDirectory;
-    CFastaOstreamEx ofasta(dir, "aaa");
-    ofasta.Write(entry_edit_handle);
-#endif
-#endif
-
 
 }
 

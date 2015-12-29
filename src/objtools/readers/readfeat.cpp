@@ -1835,7 +1835,7 @@ bool CFeature_table_reader_imp::x_AddGeneOntologyToFeature (
     field.SetLabel().SetId(0); // compatible with C-toolkit
 
     CRef<CUser_field> text_field(new CUser_field());
-    text_field->SetLabel().SetStr("text_string");
+    text_field->SetLabel().SetStr("text string");
     text_field->SetData().SetStr( CUtf8::AsUTF8(fields[0], eEncoding_Ascii));
     field.SetData().SetFields().push_back(text_field);
   
