@@ -62,35 +62,67 @@ public:
         m_RemoteAppLauncher(remote_app_launcher)
     {}
 
-    const vector<const char*>& GetEnv();
+    const vector<const char*>& GetEnv(const CWorkerNodeJobContext&);
 
 private:
     const CRemoteAppLauncher& m_RemoteAppLauncher;
     list<string> m_EnvValues;
+    list<string> m_CtxEnvValues;
     vector<const char*> m_Env;
 };
 
-const vector<const char*>& CAppEnvHolder::GetEnv()
+const vector<const char*>& CAppEnvHolder::GetEnv(
+        const CWorkerNodeJobContext& context)
 {
-    if (!m_Env.empty())
-        return m_Env;
+    if (m_Env.empty()) {
+        const CRemoteAppLauncher::TEnvMap& added_env =
+                m_RemoteAppLauncher.GetAddedEnv();
 
-    const CRemoteAppLauncher::TEnvMap& added_env =
-            m_RemoteAppLauncher.GetAddedEnv();
+        ITERATE(CRemoteAppLauncher::TEnvMap, it, added_env) {
+            m_EnvValues.push_back(it->first + "=" +it->second);
+        }
+        list<string> names;
+        const CNcbiEnvironment& env = m_RemoteAppLauncher.GetLocalEnv();
+        env.Enumerate(names);
+        ITERATE(list<string>, it, names) {
+            if (added_env.find(*it) == added_env.end())
+                m_EnvValues.push_back(*it + "=" + env.Get(*it));
+        }
+    } else {
+        m_Env.clear();
+    }
 
-    ITERATE(CRemoteAppLauncher::TEnvMap, it, added_env) {
-        m_EnvValues.push_back(it->first + "=" +it->second);
+    m_CtxEnvValues.clear();
+    m_CtxEnvValues.push_back("NCBI_NS_SERVICE=" +
+            context.GetWorkerNode().GetServiceName());
+
+    m_CtxEnvValues.push_back("NCBI_NS_QUEUE=" + context.GetQueueName());
+
+    const CNetScheduleJob& job = context.GetJob();
+
+    m_CtxEnvValues.push_back("NCBI_NS_JID=" + job.job_id);
+    m_CtxEnvValues.push_back("NCBI_JOB_AFFINITY=" + job.affinity);
+
+    if (!job.client_ip.empty()) {
+        m_CtxEnvValues.push_back("NCBI_LOG_CLIENT_IP=" + job.client_ip);
     }
-    list<string> names;
-    const CNcbiEnvironment& env = m_RemoteAppLauncher.GetLocalEnv();
-    env.Enumerate(names);
-    ITERATE(list<string>, it, names) {
-        if (added_env.find(*it) == added_env.end())
-            m_EnvValues.push_back(*it + "=" + env.Get(*it));
+
+    if (!job.session_id.empty()) {
+        m_CtxEnvValues.push_back("NCBI_LOG_SESSION_ID=" + job.session_id);
     }
+
+    if (!job.page_hit_id.empty()) {
+        m_CtxEnvValues.push_back("NCBI_LOG_HIT_ID=" + job.page_hit_id);
+    }
+
+    ITERATE(list<string>, it, m_CtxEnvValues) {
+        m_Env.push_back(it->c_str());
+    }
+
     ITERATE(list<string>, it, m_EnvValues) {
         m_Env.push_back(it->c_str());
     }
+
     m_Env.push_back(NULL);
     return m_Env;
 }
@@ -175,40 +207,7 @@ int CRemoteAppJob::Do(CWorkerNodeJobContext& context)
     int ret = -1;
     bool finished_ok = false;
     try {
-        vector<const char*> env(m_AppEnvHolder.GetEnv());
-
-        const CNetScheduleJob& job = context.GetJob();
-
-        string service_name_env("NCBI_NS_SERVICE=" +
-                context.GetWorkerNode().GetServiceName());
-        env.insert(env.begin(), service_name_env.c_str());
-
-        string queue_name_env("NCBI_NS_QUEUE=" + context.GetQueueName());
-        env.insert(env.begin(), queue_name_env.c_str());
-
-        string job_key_env("NCBI_NS_JID=" + job.job_id);
-        env.insert(env.begin(), job_key_env.c_str());
-
-        string job_affinity_env("NCBI_JOB_AFFINITY=" + job.affinity);
-        env.insert(env.begin(), job_affinity_env.c_str());
-
-        std::string client_ip(kEmptyStr);
-        if (!job.client_ip.empty()) {
-            client_ip = "NCBI_LOG_CLIENT_IP=" + job.client_ip;
-            env.insert(env.begin(), client_ip.c_str());
-        }
-
-        std::string session_id(kEmptyStr);
-        if (!job.session_id.empty()) {
-            session_id = "NCBI_LOG_SESSION_ID=" + job.session_id;
-            env.insert(env.begin(), session_id.c_str());
-        }
-
-        std::string hit_id(kEmptyStr);
-        if (!job.page_hit_id.empty()) {
-            hit_id = "NCBI_LOG_HIT_ID=" + job.page_hit_id;
-            env.insert(env.begin(), hit_id.c_str());
-        }
+        vector<const char*> env(m_AppEnvHolder.GetEnv(context));
 
         finished_ok = m_RemoteAppLauncher.ExecRemoteApp(args,
                                     m_Request.GetStdInForRead(),
