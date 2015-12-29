@@ -103,7 +103,7 @@ private:
     string m_MonitorAppPath;
     CTimeout m_MonitorRunTimeout;
     int m_MonitorPeriod;
-    unsigned int m_KillTimeout;
+    STimeout m_KillTimeout;
 
     CNcbiEnvironment m_LocalEnv;
     TEnvMap m_AddedEnv;

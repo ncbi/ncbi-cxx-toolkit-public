@@ -411,7 +411,8 @@ CRemoteAppLauncher::CRemoteAppLauncher(const string& sec_name,
 
     m_MonitorRunTimeout = s_ToTimeout(sec.Get("max_monitor_running_time", 5));
     m_MonitorPeriod = sec.Get("monitor_period", 5);
-    m_KillTimeout = sec.Get("kill_timeout", 1);
+    m_KillTimeout.sec = sec.Get("kill_timeout", 1);
+    m_KillTimeout.usec = 0;
 
     m_ExcludeEnv.clear();
     m_IncludeEnv.clear();
@@ -871,14 +872,12 @@ bool CRemoteAppLauncher::ExecRemoteApp(const vector<string>& args,
             callback.SetMonitor(*ra_monitor, m_MonitorPeriod);
         }
 
-        STimeout kill_tm = {m_KillTimeout, 0};
-
         bool result = CPipe::ExecWait(GetAppPath(), args, in,
                                std_out_guard.GetOStream(),
                                std_err_guard.GetOStream(),
                                exit_value,
                                tmp_path, env, &callback,
-                               &kill_tm,
+                               &m_KillTimeout,
                                PIPE_SIZE) == CPipe::eDone;
 
         std_err_guard.Close();
