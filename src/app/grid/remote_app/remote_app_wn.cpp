@@ -203,9 +203,7 @@ int CRemoteAppJob::Do(CWorkerNodeJobContext& context)
 
 
     int ret = -1;
-    bool finished_ok = false;
-    try {
-        finished_ok = m_RemoteAppLauncher.ExecRemoteApp(args,
+    bool finished_ok = m_RemoteAppLauncher.ExecRemoteApp(args,
                                     request.GetStdInForRead(),
                                     result.GetStdOutForWrite(),
                                     result.GetStdErrForWrite(),
@@ -213,11 +211,6 @@ int CRemoteAppJob::Do(CWorkerNodeJobContext& context)
                                     context,
                                     request.GetAppRunTimeout(),
                                     m_AppEnvHolder.GetEnv(context));
-    } catch (...) {
-        request.Reset();
-        result.Reset();
-        throw;
-    }
 
     result.SetRetCode(ret);
     result.Serialize(context.GetOStream());
