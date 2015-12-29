@@ -343,7 +343,7 @@ CFilteringArgs::x_TokenizeFilteringArgs(const string& filtering_args,
                                         vector<string>& output) const
 {
     output.clear();
-    NStr::Tokenize(filtering_args, " ", output);
+    NStr::Split(filtering_args, " ", output, NStr::fSplit_NoMergeDelims);
     if (output.size() != 3) {
         NCBI_THROW(CInputException, eInvalidInput,
                    "Invalid number of arguments to filtering option");

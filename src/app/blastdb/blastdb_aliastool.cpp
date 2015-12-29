@@ -385,7 +385,7 @@ vector<string> CBlastDBAliasApp::x_GetDbsToAggregate(const string dbs, const str
     const CArgs& args = GetArgs();
     if (args[dbs].HasValue()) {
         const string dblist = args[dbs].AsString();
-        NStr::Tokenize(dblist, " ", retval);
+        NStr::Split(dblist, " ", retval, NStr::fSplit_NoMergeDelims);
     } else if (args[file].HasValue()) {
         CNcbiIstream& in(args[file].AsInputFile());
         string line;

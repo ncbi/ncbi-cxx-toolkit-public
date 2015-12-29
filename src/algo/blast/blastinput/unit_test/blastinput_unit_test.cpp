@@ -2665,7 +2665,7 @@ private:
     /// Extract the arguments from a command line
     vector<string> x_TokenizeCmdLine(const string& cmd_line_args) {
         vector<string> retval;
-        NStr::Tokenize(cmd_line_args, " ", retval);
+        NStr::Split(cmd_line_args, " ", retval, NStr::fSplit_NoMergeDelims);
         vector<string>::iterator new_end = remove_if(retval.begin(), 
                                                      retval.end(), 
                                                      empty_string_remover());

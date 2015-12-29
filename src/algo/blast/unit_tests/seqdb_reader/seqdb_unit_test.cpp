@@ -3693,7 +3693,7 @@ BOOST_AUTO_TEST_CASE(FilteredHeaders)
 static void s_CheckIdLookup(CSeqDB & db, const string & acc, size_t exp_oids, size_t exp_size)
 {
     list<string> ids;
-    NStr::Split(acc, ", ", ids);
+    NStr::Split(acc, ", ", ids, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
 
     vector<int> oids;
 
@@ -4338,7 +4338,7 @@ BOOST_AUTO_TEST_CASE(CWgsTrimmerLongExample)
     //const string wgs_dbs = s_ReadWgsDbs("dbs.txt");
     //const string gis_in_wgs_results = "gis.out";
     vector<string> tokens;
-    NStr::Tokenize(wgs_dbs, " ", tokens);
+    NStr::Split(wgs_dbs, " ", tokens, NStr::fSplit_NoMergeDelims);
     const int orig_num_dbs = tokens.size();
     tokens.clear();
 
@@ -4355,7 +4355,7 @@ BOOST_AUTO_TEST_CASE(CWgsTrimmerLongExample)
     //const string kExpectedResult = wgs_dbs;
     const string kExpectedResult = trimmer.GetDbList();
     const string kActualResult = trimmer.GetDbList();
-    NStr::Tokenize(kActualResult, " ", tokens);
+    NStr::Split(kActualResult, " ", tokens, NStr::fSplit_NoMergeDelims);
     const int actual_num_dbs = tokens.size();
     BOOST_CHECK_EQUAL(kExpectedNumDbs, actual_num_dbs);
     BOOST_CHECK_GE(orig_num_dbs, actual_num_dbs);

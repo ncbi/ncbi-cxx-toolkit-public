@@ -58,7 +58,7 @@ void CTaxIdSet::SetMappingFromFile(CNcbiIstream & f)
         s = NStr::TruncateSpaces(s);
         
         vector<string> tokens;
-        NStr::Tokenize(s, " \t", tokens);
+        NStr::Split(s, " \t", tokens, NStr::fSplit_NoMergeDelims);
 
         string gi_str = tokens.front();
         string tx_str;

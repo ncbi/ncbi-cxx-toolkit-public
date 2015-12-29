@@ -144,7 +144,7 @@ ParseSequenceRange(const string& range_str,
     string error_msg(error_prefix ? error_prefix : kDfltErrorPrefix);
 
     vector<string> tokens;
-    NStr::Tokenize(range_str, kDelimiters, tokens);
+    NStr::Split(range_str, kDelimiters, tokens, NStr::fSplit_NoMergeDelims);
     if (tokens.size() != 2 || tokens.front().empty() || tokens.back().empty()) {
         error_msg += " (Format: start-stop)";
         NCBI_THROW(CBlastException, eInvalidArgument, error_msg);

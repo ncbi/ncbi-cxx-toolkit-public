@@ -1344,7 +1344,7 @@ static void s_RemoveAliasComponents(CBlastDbFinder& finder)
         while (getline(in, line)) {
             if (NStr::StartsWith(line, "DBLIST")) {
                 vector<string> tokens;
-                NStr::Tokenize(line, " ", tokens, NStr::eMergeDelims);
+                NStr::Split(line, " ", tokens, NStr::fSplit_MergeDelimiters | NStr::fSplit_Truncate);
                 for (size_t j = 1; j < tokens.size(); j++) {
                     dbs2remove.insert(tokens[j]);
                 }
@@ -1483,7 +1483,7 @@ set<string>
 CWgsDbTrimmer::x_ExtractOriginalWgsDbs()
 {
     vector<string> orig_wgs_dbs;
-    NStr::Tokenize(m_OrigWgsList, " ", orig_wgs_dbs);
+    NStr::Split(m_OrigWgsList, " ", orig_wgs_dbs, NStr::fSplit_NoMergeDelims);
     set<string> retval;
     copy(orig_wgs_dbs.begin(), orig_wgs_dbs.end(), inserter(retval,
                                                             retval.begin()));

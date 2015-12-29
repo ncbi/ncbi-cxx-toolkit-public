@@ -116,7 +116,7 @@ BOOST_AUTO_TEST_CASE(TestRequestGiOidLength)
     in.getline(buffer, sizeof(buffer));
 
     vector<string> tokens;
-    NStr::Tokenize(string(buffer), " ", tokens);
+    NStr::Split(string(buffer), " ", tokens, NStr::fSplit_NoMergeDelims);
 
     int gi = NStr::StringToInt(tokens[2], kConvFlags);
     int oid = NStr::StringToInt(tokens[5], kConvFlags);
@@ -172,7 +172,7 @@ BOOST_AUTO_TEST_CASE(TestRequestAccessionPIGTaxidTitle)
     in.getline(buffer, sizeof(buffer));
 
     vector<string> tokens;
-    NStr::Tokenize(string(buffer), " ", tokens);
+    NStr::Split(string(buffer), " ", tokens, NStr::fSplit_NoMergeDelims);
 
     int gi = NStr::StringToInt(tokens[1], kConvFlags);
     string accession = tokens[4];
@@ -228,7 +228,7 @@ BOOST_AUTO_TEST_CASE(TestRequestSequenceDataLength)
     in.getline(buffer, sizeof(buffer));
 
     vector<string> tokens;
-    NStr::Tokenize(string(buffer), "|", tokens);
+    NStr::Split(string(buffer), "|", tokens, NStr::fSplit_NoMergeDelims);
 
     int gi = NStr::StringToInt(tokens[0], kConvFlags);
     int len = NStr::StringToInt(tokens[1], kConvFlags);

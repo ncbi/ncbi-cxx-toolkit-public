@@ -223,7 +223,7 @@ CBlastDBCmdApp::x_GetQueries(CBlastDBCmdApp::TQueries& retval) const
 
         if (entry.find(kDelim[0]) != string::npos) {
             vector<string> tokens;
-            NStr::Tokenize(entry, kDelim, tokens);
+            NStr::Split(entry, kDelim, tokens, NStr::fSplit_NoMergeDelims);
             ITERATE(vector<string>, itr, tokens) {
                 err_found += (err_here = x_AddSeqId(retval, *itr));
                 if (err_here) {

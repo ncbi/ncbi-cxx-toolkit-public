@@ -824,7 +824,7 @@ void CMakeBlastDBApp::x_ProcessMaskData()
     }
 
     if (ids.HasValue()) {
-        NStr::Tokenize(NStr::TruncateSpaces(ids.AsString()), ",", id_list,
+        NStr::Split(NStr::TruncateSpaces(ids.AsString()), ",", id_list,
                    NStr::eNoMergeDelims);
         if (file_list.size() != id_list.size()) {
             NCBI_THROW(CInvalidDataException, eInvalidInput,
@@ -1040,7 +1040,7 @@ void CMakeBlastDBApp::x_BuildDatabase()
     }
 
     vector<string> input_files;
-    NStr::Tokenize(dbname, kInputSeparators, input_files);
+    NStr::Split(dbname, kInputSeparators, input_files, NStr::fSplit_NoMergeDelims);
     if (dbname == "-" || input_files.size() > 1) {
         NCBI_THROW(CInvalidDataException, eInvalidInput,
             "Please provide a database name using -" + kOutput);

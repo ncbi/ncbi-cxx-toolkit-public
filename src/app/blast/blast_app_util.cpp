@@ -157,14 +157,14 @@ InitializeQueryDataLoaderConfiguration(bool query_is_protein,
         (query_is_protein == db_adapter->IsProtein())) { /* the same database type is used for both queries and subjects */
         // Make sure we don't add the same database more than once
         vector<string> default_dbs;
-        NStr::Tokenize(retval.m_BlastDbName, " ", default_dbs);
+        NStr::Split(retval.m_BlastDbName, " ", default_dbs, NStr::fSplit_NoMergeDelims);
         if (default_dbs.size() &&
             (find(default_dbs.begin(), default_dbs.end(),
                  db_adapter->GetDatabaseName()) == default_dbs.end())) {
-        CNcbiOstrstream oss;
-        oss << db_adapter->GetDatabaseName() << " " << retval.m_BlastDbName;
-        retval.m_BlastDbName = CNcbiOstrstreamToString(oss);
-    }
+            CNcbiOstrstream oss;
+            oss << db_adapter->GetDatabaseName() << " " << retval.m_BlastDbName;
+            retval.m_BlastDbName = CNcbiOstrstreamToString(oss);
+        }
     }
     if (retval.m_UseBlastDbs) {
         _TRACE("Initializing query data loader to '" << retval.m_BlastDbName 
@@ -808,7 +808,7 @@ CheckForFreqRatioFile(const string& rps_dbname, CRef<CBlastOptionsHandle>  & opt
     bool use_cbs = (opt_handle->GetOptions().GetCompositionBasedStats() == eNoCompositionBasedStats) ? false : true;
     if(use_cbs) {
         vector<string> db;
-        NStr::Tokenize(rps_dbname, " ", db);
+        NStr::Split(rps_dbname, " ", db, NStr::fSplit_NoMergeDelims);
         list<string> failed_db;
         for (unsigned int i=0; i < db.size(); i++) {
     	    string path;
