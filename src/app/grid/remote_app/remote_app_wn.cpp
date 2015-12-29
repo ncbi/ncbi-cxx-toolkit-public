@@ -47,14 +47,6 @@
 USING_NCBI_SCOPE;
 
 
-static void s_SetParam(const CRemoteAppRequest& request,
-                       CRemoteAppResult& result)
-{
-    result.SetStdOutErrFileNames(request.GetStdOutFileName(),
-                                 request.GetStdErrFileName(),
-                                 request.GetStdOutErrStorageType());
-}
-
 class CAppEnvHolder
 {
 public:
@@ -159,11 +151,11 @@ int CRemoteAppJob::Do(CWorkerNodeJobContext& context)
         LOG_POST(Note << context.GetJobKey() << " is received.");
     }
 
-    CRemoteAppRequest m_Request(m_NetCacheAPI);
-    CRemoteAppResult m_Result(m_NetCacheAPI);
+    CRemoteAppRequest request(m_NetCacheAPI);
+    CRemoteAppResult result(m_NetCacheAPI);
 
     try {
-        m_Request.Deserialize(context.GetIStream());
+        request.Deserialize(context.GetIStream());
     }
     catch (exception&) {
         ERR_POST("Cannot deserialize remote_app job");
@@ -172,7 +164,10 @@ int CRemoteAppJob::Do(CWorkerNodeJobContext& context)
         return -1;
     }
 
-    s_SetParam(m_Request, m_Result);
+    result.SetStdOutErrFileNames(request.GetStdOutFileName(),
+                                 request.GetStdErrFileName(),
+                                 request.GetStdOutErrStorageType());
+
     size_t output_size = context.GetWorkerNode().GetServerOutputSize();
     if (output_size == 0) {
         // NetSchedule internal storage is not supported; all
@@ -184,48 +179,48 @@ int CRemoteAppJob::Do(CWorkerNodeJobContext& context)
         // (reduction by 10%).
         output_size = output_size - output_size / 10;
     }
-    m_Result.SetMaxInlineSize(output_size);
+    result.SetMaxInlineSize(output_size);
 
     if (context.IsLogRequested()) {
-        if (!m_Request.GetInBlobIdOrData().empty()) {
+        if (!request.GetInBlobIdOrData().empty()) {
             LOG_POST(Note << context.GetJobKey()
-                << " Input data: " << m_Request.GetInBlobIdOrData());
+                << " Input data: " << request.GetInBlobIdOrData());
         }
         LOG_POST(Note << context.GetJobKey()
-            << " Args: " << m_Request.GetCmdLine());
-        if (!m_Request.GetStdOutFileName().empty()) {
+            << " Args: " << request.GetCmdLine());
+        if (!request.GetStdOutFileName().empty()) {
             LOG_POST(Note << context.GetJobKey()
-                << " StdOutFile: " << m_Request.GetStdOutFileName());
+                << " StdOutFile: " << request.GetStdOutFileName());
         }
-        if (!m_Request.GetStdErrFileName().empty()) {
+        if (!request.GetStdErrFileName().empty()) {
             LOG_POST(Note << context.GetJobKey()
-                << " StdErrFile: " << m_Request.GetStdErrFileName());
+                << " StdErrFile: " << request.GetStdErrFileName());
         }
     }
 
     vector<string> args;
-    TokenizeCmdLine(m_Request.GetCmdLine(), args);
+    TokenizeCmdLine(request.GetCmdLine(), args);
 
 
     int ret = -1;
     bool finished_ok = false;
     try {
         finished_ok = m_RemoteAppLauncher.ExecRemoteApp(args,
-                                    m_Request.GetStdInForRead(),
-                                    m_Result.GetStdOutForWrite(),
-                                    m_Result.GetStdErrForWrite(),
+                                    request.GetStdInForRead(),
+                                    result.GetStdOutForWrite(),
+                                    result.GetStdErrForWrite(),
                                     ret,
                                     context,
-                                    m_Request.GetAppRunTimeout(),
+                                    request.GetAppRunTimeout(),
                                     m_AppEnvHolder.GetEnv(context));
     } catch (...) {
-        m_Request.Reset();
-        m_Result.Reset();
+        request.Reset();
+        result.Reset();
         throw;
     }
 
-    m_Result.SetRetCode(ret);
-    m_Result.Serialize(context.GetOStream());
+    result.SetRetCode(ret);
+    result.Serialize(context.GetOStream());
 
     if (!finished_ok) {
         if (!context.IsJobCommitted())
@@ -251,13 +246,13 @@ int CRemoteAppJob::Do(CWorkerNodeJobContext& context)
                 " is " << context.GetCommitStatusDescription(
                         context.GetCommitStatus()) <<
                 ". Exit code: " << ret);
-        if (!m_Result.GetErrBlobIdOrData().empty()) {
+        if (!result.GetErrBlobIdOrData().empty()) {
             LOG_POST(Note << context.GetJobKey() << " Err data: " <<
-                m_Result.GetErrBlobIdOrData());
+                result.GetErrBlobIdOrData());
         }
     }
-    m_Request.Reset();
-    m_Result.Reset();
+    request.Reset();
+    result.Reset();
     return ret;
 }
 
