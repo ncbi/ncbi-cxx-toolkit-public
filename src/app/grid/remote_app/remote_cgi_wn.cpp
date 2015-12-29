@@ -198,85 +198,88 @@ public:
 
     virtual ~CRemoteCgiJob() {}
 
-    int Do(CWorkerNodeJobContext& job_context)
-    {
-        if (job_context.IsLogRequested()) {
-            LOG_POST(Note << "Job " << job_context.GetJobKey() + " input: " +
-                job_context.GetJobInput());
-        }
+    int Do(CWorkerNodeJobContext& job_context);
 
-        auto_ptr<CCgiRequest> request;
-
-        try {
-            request.reset(new CCgiRequest(job_context.GetIStream(),
-                CCgiRequest::fIgnoreQueryString |
-                CCgiRequest::fDoNotParseContent));
-        }
-        catch (exception&) {
-            ERR_POST("Cannot deserialize remote_cgi job");
-            job_context.CommitJobWithFailure(
-                "Error while parsing CGI request stream");
-            return -1;
-        }
-
-        CCgiEnvHolder env(m_RemoteAppLauncher,
-                request->GetEnvironment(),
-                job_context.GetJob(),
-                job_context.GetWorkerNode().GetServiceName(),
-                job_context.GetQueueName());
-        vector<string> args;
-
-        CNcbiOstrstream err;
-        CNcbiStrstream str_in;
-        CNcbiIstream* in = request->GetInputStream();
-        if (!in)
-            in = &str_in;
-
-        int ret = -1;
-        bool finished_ok = m_RemoteAppLauncher.ExecRemoteApp(args,
-                                         *in,
-                                         job_context.GetOStream(),
-                                         err,
-                                         ret,
-                                         job_context,
-                                         0,
-                                         env.GetEnv());
-
-        if (!finished_ok) {
-            if (!job_context.IsJobCommitted())
-                job_context.CommitJobWithFailure("Job has been canceled");
-        } else
-            if (m_RemoteAppLauncher.MustFailNoRetries(ret))
-                job_context.CommitJobWithFailure(
-                        "Exited with return code " + NStr::IntToString(ret) +
-                        " - will not be rerun",
-                        true /* no retries */);
-            else if (ret == 0 || m_RemoteAppLauncher.GetNonZeroExitAction() ==
-                    CRemoteAppLauncher::eDoneOnNonZeroExit)
-                job_context.CommitJob();
-            else if (m_RemoteAppLauncher.GetNonZeroExitAction() ==
-                    CRemoteAppLauncher::eReturnOnNonZeroExit)
-                job_context.ReturnJob();
-            else
-                job_context.CommitJobWithFailure(
-                        "Exited with return code " + NStr::IntToString(ret));
-
-        if (job_context.IsLogRequested()) {
-            if ( !IsOssEmpty(err) )
-                LOG_POST(Note << "STDERR: " << (string)CNcbiOstrstreamToString(err));
-
-            LOG_POST(Note << "Job " << job_context.GetJobKey() <<
-                " is " << job_context.GetCommitStatusDescription(
-                        job_context.GetCommitStatus()) <<
-                ". Exit code: " << ret <<
-                "; output: " << job_context.GetJobOutput());
-        }
-
-        return ret;
-    }
 private:
     const CRemoteAppLauncher& m_RemoteAppLauncher;
 };
+
+int CRemoteCgiJob::Do(CWorkerNodeJobContext& job_context)
+{
+    if (job_context.IsLogRequested()) {
+        LOG_POST(Note << "Job " << job_context.GetJobKey() + " input: " +
+            job_context.GetJobInput());
+    }
+
+    auto_ptr<CCgiRequest> request;
+
+    try {
+        request.reset(new CCgiRequest(job_context.GetIStream(),
+            CCgiRequest::fIgnoreQueryString |
+            CCgiRequest::fDoNotParseContent));
+    }
+    catch (exception&) {
+        ERR_POST("Cannot deserialize remote_cgi job");
+        job_context.CommitJobWithFailure(
+            "Error while parsing CGI request stream");
+        return -1;
+    }
+
+    CCgiEnvHolder env(m_RemoteAppLauncher,
+            request->GetEnvironment(),
+            job_context.GetJob(),
+            job_context.GetWorkerNode().GetServiceName(),
+            job_context.GetQueueName());
+    vector<string> args;
+
+    CNcbiOstrstream err;
+    CNcbiStrstream str_in;
+    CNcbiIstream* in = request->GetInputStream();
+    if (!in)
+        in = &str_in;
+
+    int ret = -1;
+    bool finished_ok = m_RemoteAppLauncher.ExecRemoteApp(args,
+                                        *in,
+                                        job_context.GetOStream(),
+                                        err,
+                                        ret,
+                                        job_context,
+                                        0,
+                                        env.GetEnv());
+
+    if (!finished_ok) {
+        if (!job_context.IsJobCommitted())
+            job_context.CommitJobWithFailure("Job has been canceled");
+    } else
+        if (m_RemoteAppLauncher.MustFailNoRetries(ret))
+            job_context.CommitJobWithFailure(
+                    "Exited with return code " + NStr::IntToString(ret) +
+                    " - will not be rerun",
+                    true /* no retries */);
+        else if (ret == 0 || m_RemoteAppLauncher.GetNonZeroExitAction() ==
+                CRemoteAppLauncher::eDoneOnNonZeroExit)
+            job_context.CommitJob();
+        else if (m_RemoteAppLauncher.GetNonZeroExitAction() ==
+                CRemoteAppLauncher::eReturnOnNonZeroExit)
+            job_context.ReturnJob();
+        else
+            job_context.CommitJobWithFailure(
+                    "Exited with return code " + NStr::IntToString(ret));
+
+    if (job_context.IsLogRequested()) {
+        if ( !IsOssEmpty(err) )
+            LOG_POST(Note << "STDERR: " << (string)CNcbiOstrstreamToString(err));
+
+        LOG_POST(Note << "Job " << job_context.GetJobKey() <<
+            " is " << job_context.GetCommitStatusDescription(
+                    job_context.GetCommitStatus()) <<
+            ". Exit code: " << ret <<
+            "; output: " << job_context.GetJobOutput());
+    }
+
+    return ret;
+}
 
 CRemoteCgiJob::CRemoteCgiJob(const IWorkerNodeInitContext& context,
         const CRemoteAppLauncher& remote_app_launcher) :

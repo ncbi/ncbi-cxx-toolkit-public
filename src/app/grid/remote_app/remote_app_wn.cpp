@@ -70,150 +70,8 @@ public:
 
     virtual ~CRemoteAppJob() {}
 
-    int Do(CWorkerNodeJobContext& context)
-    {
-        if (context.IsLogRequested()) {
-            LOG_POST(Note << context.GetJobKey() << " is received.");
-        }
+    int Do(CWorkerNodeJobContext& context);
 
-        CRemoteAppRequest m_Request(m_NetCacheAPI);
-        CRemoteAppResult m_Result(m_NetCacheAPI);
-
-        try {
-            m_Request.Deserialize(context.GetIStream());
-        }
-        catch (exception&) {
-            ERR_POST("Cannot deserialize remote_app job");
-            context.CommitJobWithFailure("Error while "
-                    "unpacking remote_app arguments");
-            return -1;
-        }
-
-        s_SetParam(m_Request, m_Result);
-        size_t output_size = context.GetWorkerNode().GetServerOutputSize();
-        if (output_size == 0) {
-            // NetSchedule internal storage is not supported; all
-            // output will be stored in NetCache anyway, so it can
-            // be put into one blob.
-            output_size = kMax_UInt;
-        } else {
-            // Empiric estimation of the maximum output size
-            // (reduction by 10%).
-            output_size = output_size - output_size / 10;
-        }
-        m_Result.SetMaxInlineSize(output_size);
-
-        if (context.IsLogRequested()) {
-            if (!m_Request.GetInBlobIdOrData().empty()) {
-                LOG_POST(Note << context.GetJobKey()
-                    << " Input data: " << m_Request.GetInBlobIdOrData());
-            }
-            LOG_POST(Note << context.GetJobKey()
-                << " Args: " << m_Request.GetCmdLine());
-            if (!m_Request.GetStdOutFileName().empty()) {
-                LOG_POST(Note << context.GetJobKey()
-                    << " StdOutFile: " << m_Request.GetStdOutFileName());
-            }
-            if (!m_Request.GetStdErrFileName().empty()) {
-                LOG_POST(Note << context.GetJobKey()
-                    << " StdErrFile: " << m_Request.GetStdErrFileName());
-            }
-        }
-
-        vector<string> args;
-        TokenizeCmdLine(m_Request.GetCmdLine(), args);
-
-
-        int ret = -1;
-        bool finished_ok = false;
-        try {
-            x_GetEnv();
-
-            vector<const char*> env(m_Env);
-
-            const CNetScheduleJob& job = context.GetJob();
-
-            string service_name_env("NCBI_NS_SERVICE=" +
-                    context.GetWorkerNode().GetServiceName());
-            env.insert(env.begin(), service_name_env.c_str());
-
-            string queue_name_env("NCBI_NS_QUEUE=" + context.GetQueueName());
-            env.insert(env.begin(), queue_name_env.c_str());
-
-            string job_key_env("NCBI_NS_JID=" + job.job_id);
-            env.insert(env.begin(), job_key_env.c_str());
-
-            string job_affinity_env("NCBI_JOB_AFFINITY=" + job.affinity);
-            env.insert(env.begin(), job_affinity_env.c_str());
-
-            std::string client_ip(kEmptyStr);
-            if (!job.client_ip.empty()) {
-                client_ip = "NCBI_LOG_CLIENT_IP=" + job.client_ip;
-                env.insert(env.begin(), client_ip.c_str());
-            }
-
-            std::string session_id(kEmptyStr);
-            if (!job.session_id.empty()) {
-                session_id = "NCBI_LOG_SESSION_ID=" + job.session_id;
-                env.insert(env.begin(), session_id.c_str());
-            }
-
-            std::string hit_id(kEmptyStr);
-            if (!job.page_hit_id.empty()) {
-                hit_id = "NCBI_LOG_HIT_ID=" + job.page_hit_id;
-                env.insert(env.begin(), hit_id.c_str());
-            }
-
-            finished_ok = m_RemoteAppLauncher.ExecRemoteApp(args,
-                                        m_Request.GetStdInForRead(),
-                                        m_Result.GetStdOutForWrite(),
-                                        m_Result.GetStdErrForWrite(),
-                                        ret,
-                                        context,
-                                        m_Request.GetAppRunTimeout(),
-                                        &env[0]);
-        } catch (...) {
-            m_Request.Reset();
-            m_Result.Reset();
-            throw;
-        }
-
-        m_Result.SetRetCode(ret);
-        m_Result.Serialize(context.GetOStream());
-
-        if (!finished_ok) {
-            if (!context.IsJobCommitted())
-                context.CommitJobWithFailure("Job has been canceled");
-        } else
-            if (m_RemoteAppLauncher.MustFailNoRetries(ret))
-                context.CommitJobWithFailure(
-                        "Exited with return code " + NStr::IntToString(ret) +
-                        " - will not be rerun",
-                        true /* no retries */);
-            else if (ret == 0 || m_RemoteAppLauncher.GetNonZeroExitAction() ==
-                    CRemoteAppLauncher::eDoneOnNonZeroExit)
-                context.CommitJob();
-            else if (m_RemoteAppLauncher.GetNonZeroExitAction() ==
-                    CRemoteAppLauncher::eReturnOnNonZeroExit)
-                context.ReturnJob();
-            else
-                context.CommitJobWithFailure(
-                        "Exited with return code " + NStr::IntToString(ret));
-
-        if (context.IsLogRequested()) {
-            LOG_POST(Note << "Job " << context.GetJobKey() <<
-                    " is " << context.GetCommitStatusDescription(
-                            context.GetCommitStatus()) <<
-                    ". Exit code: " << ret);
-            if (!m_Result.GetErrBlobIdOrData().empty()) {
-                LOG_POST(Note << context.GetJobKey() << " Err data: " <<
-                    m_Result.GetErrBlobIdOrData());
-            }
-        }
-        m_Request.Reset();
-        m_Result.Reset();
-        return ret;
-    }
 private:
     const char* const* x_GetEnv();
 
@@ -223,6 +81,151 @@ private:
     list<string> m_EnvValues;
     vector<const char*> m_Env;
 };
+
+int CRemoteAppJob::Do(CWorkerNodeJobContext& context)
+{
+    if (context.IsLogRequested()) {
+        LOG_POST(Note << context.GetJobKey() << " is received.");
+    }
+
+    CRemoteAppRequest m_Request(m_NetCacheAPI);
+    CRemoteAppResult m_Result(m_NetCacheAPI);
+
+    try {
+        m_Request.Deserialize(context.GetIStream());
+    }
+    catch (exception&) {
+        ERR_POST("Cannot deserialize remote_app job");
+        context.CommitJobWithFailure("Error while "
+                "unpacking remote_app arguments");
+        return -1;
+    }
+
+    s_SetParam(m_Request, m_Result);
+    size_t output_size = context.GetWorkerNode().GetServerOutputSize();
+    if (output_size == 0) {
+        // NetSchedule internal storage is not supported; all
+        // output will be stored in NetCache anyway, so it can
+        // be put into one blob.
+        output_size = kMax_UInt;
+    } else {
+        // Empiric estimation of the maximum output size
+        // (reduction by 10%).
+        output_size = output_size - output_size / 10;
+    }
+    m_Result.SetMaxInlineSize(output_size);
+
+    if (context.IsLogRequested()) {
+        if (!m_Request.GetInBlobIdOrData().empty()) {
+            LOG_POST(Note << context.GetJobKey()
+                << " Input data: " << m_Request.GetInBlobIdOrData());
+        }
+        LOG_POST(Note << context.GetJobKey()
+            << " Args: " << m_Request.GetCmdLine());
+        if (!m_Request.GetStdOutFileName().empty()) {
+            LOG_POST(Note << context.GetJobKey()
+                << " StdOutFile: " << m_Request.GetStdOutFileName());
+        }
+        if (!m_Request.GetStdErrFileName().empty()) {
+            LOG_POST(Note << context.GetJobKey()
+                << " StdErrFile: " << m_Request.GetStdErrFileName());
+        }
+    }
+
+    vector<string> args;
+    TokenizeCmdLine(m_Request.GetCmdLine(), args);
+
+
+    int ret = -1;
+    bool finished_ok = false;
+    try {
+        x_GetEnv();
+
+        vector<const char*> env(m_Env);
+
+        const CNetScheduleJob& job = context.GetJob();
+
+        string service_name_env("NCBI_NS_SERVICE=" +
+                context.GetWorkerNode().GetServiceName());
+        env.insert(env.begin(), service_name_env.c_str());
+
+        string queue_name_env("NCBI_NS_QUEUE=" + context.GetQueueName());
+        env.insert(env.begin(), queue_name_env.c_str());
+
+        string job_key_env("NCBI_NS_JID=" + job.job_id);
+        env.insert(env.begin(), job_key_env.c_str());
+
+        string job_affinity_env("NCBI_JOB_AFFINITY=" + job.affinity);
+        env.insert(env.begin(), job_affinity_env.c_str());
+
+        std::string client_ip(kEmptyStr);
+        if (!job.client_ip.empty()) {
+            client_ip = "NCBI_LOG_CLIENT_IP=" + job.client_ip;
+            env.insert(env.begin(), client_ip.c_str());
+        }
+
+        std::string session_id(kEmptyStr);
+        if (!job.session_id.empty()) {
+            session_id = "NCBI_LOG_SESSION_ID=" + job.session_id;
+            env.insert(env.begin(), session_id.c_str());
+        }
+
+        std::string hit_id(kEmptyStr);
+        if (!job.page_hit_id.empty()) {
+            hit_id = "NCBI_LOG_HIT_ID=" + job.page_hit_id;
+            env.insert(env.begin(), hit_id.c_str());
+        }
+
+        finished_ok = m_RemoteAppLauncher.ExecRemoteApp(args,
+                                    m_Request.GetStdInForRead(),
+                                    m_Result.GetStdOutForWrite(),
+                                    m_Result.GetStdErrForWrite(),
+                                    ret,
+                                    context,
+                                    m_Request.GetAppRunTimeout(),
+                                    &env[0]);
+    } catch (...) {
+        m_Request.Reset();
+        m_Result.Reset();
+        throw;
+    }
+
+    m_Result.SetRetCode(ret);
+    m_Result.Serialize(context.GetOStream());
+
+    if (!finished_ok) {
+        if (!context.IsJobCommitted())
+            context.CommitJobWithFailure("Job has been canceled");
+    } else
+        if (m_RemoteAppLauncher.MustFailNoRetries(ret))
+            context.CommitJobWithFailure(
+                    "Exited with return code " + NStr::IntToString(ret) +
+                    " - will not be rerun",
+                    true /* no retries */);
+        else if (ret == 0 || m_RemoteAppLauncher.GetNonZeroExitAction() ==
+                CRemoteAppLauncher::eDoneOnNonZeroExit)
+            context.CommitJob();
+        else if (m_RemoteAppLauncher.GetNonZeroExitAction() ==
+                CRemoteAppLauncher::eReturnOnNonZeroExit)
+            context.ReturnJob();
+        else
+            context.CommitJobWithFailure(
+                    "Exited with return code " + NStr::IntToString(ret));
+
+    if (context.IsLogRequested()) {
+        LOG_POST(Note << "Job " << context.GetJobKey() <<
+                " is " << context.GetCommitStatusDescription(
+                        context.GetCommitStatus()) <<
+                ". Exit code: " << ret);
+        if (!m_Result.GetErrBlobIdOrData().empty()) {
+            LOG_POST(Note << context.GetJobKey() << " Err data: " <<
+                m_Result.GetErrBlobIdOrData());
+        }
+    }
+    m_Request.Reset();
+    m_Result.Reset();
+    return ret;
+}
 
 const char* const* CRemoteAppJob:: x_GetEnv()
 {
