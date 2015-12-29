@@ -55,6 +55,42 @@ static void s_SetParam(const CRemoteAppRequest& request,
                                  request.GetStdOutErrStorageType());
 }
 
+class CAppEnvHolder
+{
+public:
+    const vector<const char*>& GetEnv(const CRemoteAppLauncher&);
+
+private:
+    list<string> m_EnvValues;
+    vector<const char*> m_Env;
+};
+
+const vector<const char*>& CAppEnvHolder::GetEnv(
+        const CRemoteAppLauncher& remote_app_launcher)
+{
+    if (!m_Env.empty())
+        return m_Env;
+
+    const CRemoteAppLauncher::TEnvMap& added_env =
+            remote_app_launcher.GetAddedEnv();
+
+    ITERATE(CRemoteAppLauncher::TEnvMap, it, added_env) {
+        m_EnvValues.push_back(it->first + "=" +it->second);
+    }
+    list<string> names;
+    const CNcbiEnvironment& env = remote_app_launcher.GetLocalEnv();
+    env.Enumerate(names);
+    ITERATE(list<string>, it, names) {
+        if (added_env.find(*it) == added_env.end())
+            m_EnvValues.push_back(*it + "=" + env.Get(*it));
+    }
+    ITERATE(list<string>, it, m_EnvValues) {
+        m_Env.push_back(it->c_str());
+    }
+    m_Env.push_back(NULL);
+    return m_Env;
+}
+
 ///////////////////////////////////////////////////////////////////////
 
 /// The remote_app NetSchedule job.
@@ -73,13 +109,9 @@ public:
     int Do(CWorkerNodeJobContext& context);
 
 private:
-    const char* const* x_GetEnv();
-
     CNetCacheAPI m_NetCacheAPI;
     const CRemoteAppLauncher& m_RemoteAppLauncher;
-
-    list<string> m_EnvValues;
-    vector<const char*> m_Env;
+    CAppEnvHolder m_AppEnvHolder;
 };
 
 int CRemoteAppJob::Do(CWorkerNodeJobContext& context)
@@ -139,9 +171,7 @@ int CRemoteAppJob::Do(CWorkerNodeJobContext& context)
     int ret = -1;
     bool finished_ok = false;
     try {
-        x_GetEnv();
-
-        vector<const char*> env(m_Env);
+        vector<const char*> env(m_AppEnvHolder.GetEnv(m_RemoteAppLauncher));
 
         const CNetScheduleJob& job = context.GetJob();
 
@@ -225,31 +255,6 @@ int CRemoteAppJob::Do(CWorkerNodeJobContext& context)
     m_Request.Reset();
     m_Result.Reset();
     return ret;
-}
-
-const char* const* CRemoteAppJob:: x_GetEnv()
-{
-    if (!m_Env.empty())
-        return &m_Env[0];
-
-    const CRemoteAppLauncher::TEnvMap& added_env =
-            m_RemoteAppLauncher.GetAddedEnv();
-
-    ITERATE(CRemoteAppLauncher::TEnvMap, it, added_env) {
-        m_EnvValues.push_back(it->first + "=" +it->second);
-    }
-    list<string> names;
-    const CNcbiEnvironment& env = m_RemoteAppLauncher.GetLocalEnv();
-    env.Enumerate(names);
-    ITERATE(list<string>, it, names) {
-        if (added_env.find(*it) == added_env.end())
-            m_EnvValues.push_back(*it + "=" + env.Get(*it));
-    }
-    ITERATE(list<string>, it, m_EnvValues) {
-        m_Env.push_back(it->c_str());
-    }
-    m_Env.push_back(NULL);
-    return &m_Env[0];
 }
 
 CRemoteAppJob::CRemoteAppJob(const IWorkerNodeInitContext& context,
