@@ -46,3 +46,6 @@ Win64_13          : 13-static-64   : static 64 ReleaseDLL
 
 XCode             : plain          : Xcode.sh 30
 
+
+
+IntelMAC-Clang36  : clang : Clang.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile --with-universal=i386,x86_64 --with-3psw=system:netopt --without-ncbi-public
