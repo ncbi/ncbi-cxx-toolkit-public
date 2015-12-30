@@ -1,5 +1,5 @@
-#ifndef INTERNAL_MISC_SERIAL___GRID_RPC_CLIENT__HPP
-#define INTERNAL_MISC_SERIAL___GRID_RPC_CLIENT__HPP
+#ifndef OBJECTS_MISC_SERIAL___GRID_RPC_CLIENT__HPP
+#define OBJECTS_MISC_SERIAL___GRID_RPC_CLIENT__HPP
 
 /* $Id$
  * ===========================================================================
@@ -411,5 +411,5 @@ private:
 
 END_NCBI_SCOPE
 
-#endif // INTERNAL_MISC_SERIAL___GRID_RPC_CLIENT__HPP
+#endif // OBJECTS_MISC_SERIAL___GRID_RPC_CLIENT__HPP
 
