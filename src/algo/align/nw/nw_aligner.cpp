@@ -602,7 +602,7 @@ void CNWAligner::x_DoBackTrace(const CBacktraceMatrix4 & backtrace,
         data->FillEdgeGaps(k - backtrace.BestPos());
         k = backtrace.BestPos();
     }
-    while (backtrace[k] != kMaskStart) {
+    while (k > 0 && backtrace[k] != kMaskStart) {
 
         unsigned char Key (backtrace[k]);
 
