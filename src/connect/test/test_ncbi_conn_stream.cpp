@@ -229,6 +229,16 @@ int main(int argc, const char* argv[])
             } catch (IOS_BASE::failure& ) {
                 state = ms->rdstate();
             }
+#if defined(NCBI_COMPILER_GCC)
+#  if NCBI_COMPILER_VERSION == 510 && (!defined(_GLIBCXX_USE_CXX11_ABI)  ||  _GLIBCXX_USE_CXX11_ABI != 0)
+            catch (...) {
+                // WORKAROUND:
+                //   At least GCC 5.1.0 in optimized mode and using new ABI:
+                //   fails to catch "IOS_BASE::failure" above.
+                state = ms->rdstate();
+            }
+#  endif
+#endif
             _ASSERT(state & IOS_BASE::eofbit);
             SetDiagTrace(eDT_Enable);
             ms->clear();
