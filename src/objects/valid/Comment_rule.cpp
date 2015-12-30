@@ -78,9 +78,9 @@ void CComment_rule::NormalizePrefix(string& prefix)
 }
 
 
-const string kStructuredComment = "StructuredComment";
-const string kStructuredCommentPrefix = "StructuredCommentPrefix";
-const string kStructuredCommentSuffix = "StructuredCommentSuffix";
+static const char* kStructuredComment       = "StructuredComment";
+static const char* kStructuredCommentPrefix = "StructuredCommentPrefix";
+static const char* kStructuredCommentSuffix = "StructuredCommentSuffix";
 
 bool CComment_rule::IsStructuredComment (const CUser_object& user)
 {

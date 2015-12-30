@@ -51,7 +51,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 typedef SStaticPair<const char*, const char*> TErrStrs;
 typedef SStaticPair<unsigned int, TErrStrs> TErrTypStrs;
 
-const TErrTypStrs sc_ErrStrs [] = {
+static const TErrTypStrs sc_ErrStrs [] = {
     { eErr_ALL,
     {  "ALL", "ALL" } },
     { eErr_UNKNOWN,

@@ -51,7 +51,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-const string kInvalidReplyMsg = "Taxonomy service returned invalid reply";
+static const char* kInvalidReplyMsg = "Taxonomy service returned invalid reply";
 
 
 CCachedTaxon3::CCachedTaxon3(AutoPtr<ITaxon3> taxon, TSizeType capacity)

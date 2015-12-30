@@ -210,7 +210,7 @@ CBioSource::EGenome CBioSource::GetGenomeByOrganelle (const string& organelle, N
 
 string CBioSource::GetOrganelleByGenome (unsigned int genome)
 {
-    string organelle = "";
+    string organelle = kEmptyStr;
     TGenomeMap::const_iterator g_iter = sm_GenomeKeys.begin();
     while (g_iter != sm_GenomeKeys.end() &&
            unsigned(g_iter->second) != genome) {
@@ -234,7 +234,6 @@ static const TOriginKey origin_key_to_subtype [] = {
     {  "synthetic",                 CBioSource::eOrigin_synthetic     },
     {  "unknown",                   CBioSource::eOrigin_unknown       }
 };
-
 
 static const TOriginKey origin_synonyms [] = {
     {  "mut",                       CBioSource::eOrigin_mut           },
@@ -468,7 +467,7 @@ string CBioSource::GetRepliconName(void) const
                 break;
         }
     }
-    return "";
+    return kEmptyStr;
 }
 
 
@@ -570,20 +569,19 @@ string CBioSource::GetBioprojectLocation(void) const
                 break;
         }
     }
-
     if (NStr::Equal(GetBioprojectType(), "ePlasmid")) {
         return "eNuclearProkaryote";
     }
 
-    return "";
+    return kEmptyStr;
 }
 
-const string kDisableStrainForwardAttrib = "nomodforward";
+static const char* kDisableStrainForwardAttrib = "nomodforward";
 
 void CBioSource::SetDisableStrainForwarding(bool val)
 {
     if (val) {
-        string attrib = "";
+        string attrib = kEmptyStr;
         if (IsSetOrg() && GetOrg().IsSetOrgname() && GetOrg().GetOrgname().IsSetAttrib()) {
             attrib = GetOrg().GetOrgname().GetAttrib();
         }
@@ -626,9 +624,8 @@ bool s_MustCopy (int subtype)
                || subtype == CSubSource::eSubtype_plasmid_name
                || subtype == CSubSource::eSubtype_other) {
         return false;
-    } else {
-        return true;
     }
+    return true;
 }
 
 
@@ -736,10 +733,10 @@ void CBioSource::x_ClearCoordinatedBioSampleSubSources()
 }
 
 
-const string kOrgModNote = "orgmod_note";
-const string kSubSrcNote = "subsrc_note";
-const string kOrganismName = "Organism Name";
-const string kTaxId = "Tax ID";
+static const char* kOrgModNote   = "orgmod_note";
+static const char* kSubSrcNote   = "subsrc_note";
+static const char* kOrganismName = "Organism Name";
+static const char* kTaxId        = "Tax ID";
 
 CBioSource::TNameValList CBioSource::GetNameValPairs() const
 {
@@ -752,8 +749,8 @@ CBioSource::TNameValList CBioSource::GetNameValPairs() const
         int taxid = GetOrg().GetTaxId();
         if (taxid > 0) {
             try {
-                    string val = NStr::NumericToString(taxid);
-                    list.push_back(TNameVal(kTaxId, val));
+                string val = NStr::NumericToString(taxid);
+                list.push_back(TNameVal(kTaxId, val));
             } catch (...) {
             }
         }
@@ -878,11 +875,7 @@ static const TCIgnoreCaseQualsSet s_IgnoreCaseQualsSet(s_IgnoreCaseQuals, sizeof
 
 bool s_MayIgnoreCase(const string& value)
 {   
-    if (s_IgnoreCaseQualsSet.find(value.c_str()) != s_IgnoreCaseQualsSet.end()) {
-        return true;
-    } else {
-        return false;
-    }
+    return s_IgnoreCaseQualsSet.find(value.c_str()) != s_IgnoreCaseQualsSet.end();
 }
 
 
@@ -904,57 +897,52 @@ static const TCTaxNameElementQualsSet s_TaxNameElementQualsSet(s_TaxNameElementQ
 
 bool s_IsTaxNameElement(const string& value)
 {   
-    if (s_TaxNameElementQualsSet.find(value.c_str()) != s_TaxNameElementQualsSet.end()) {
-        return true;
-    } else {
-        return false;
-    }
+    return s_TaxNameElementQualsSet.find(value.c_str()) != s_TaxNameElementQualsSet.end();
 }
 
 
 typedef enum {
-  eConflictIgnoreAll = 0,
-  eConflictIgnoreMissingInBioSource,
-  eConflictIgnoreMissingInBioSample
+    eConflictIgnoreAll = 0,
+    eConflictIgnoreMissingInBioSource,
+    eConflictIgnoreMissingInBioSample
 } EConflictIgnoreType;
 
 
 typedef struct ignoreconflict {
-  string qual_name;
-  EConflictIgnoreType ignore_type;
+    const char*         qual_name;
+    EConflictIgnoreType ignore_type;
 } IgnoreConflictData;
 
 
 static IgnoreConflictData sIgnoreConflictList[] = {
-  { "chromosome", eConflictIgnoreMissingInBioSample } ,
-  { "endogenous-virus-name", eConflictIgnoreMissingInBioSample } ,
-  { "germline", eConflictIgnoreMissingInBioSample } ,
-  { "insertion-seq-name", eConflictIgnoreMissingInBioSample } ,
-  { "linkage-group", eConflictIgnoreMissingInBioSample } ,
-  { "map", eConflictIgnoreMissingInBioSample } ,
-  { "plasmid-name", eConflictIgnoreMissingInBioSample } ,
-  { "pop-variant", eConflictIgnoreMissingInBioSample } ,
-  { "rearranged", eConflictIgnoreMissingInBioSample } ,
-  { "segment", eConflictIgnoreMissingInBioSample } ,
-  { "transgenic", eConflictIgnoreMissingInBioSample } ,
-  { "transposon-name", eConflictIgnoreMissingInBioSample } ,
-  { "whole-replicon", eConflictIgnoreMissingInBioSample } ,
-  { "acronym", eConflictIgnoreAll },
-  { "common", eConflictIgnoreAll } ,
-  { "dosage", eConflictIgnoreAll } ,
-  { "gb-acronym", eConflictIgnoreAll } ,
-  { "gb-anamorph", eConflictIgnoreAll } ,
-  { "gb-synonym", eConflictIgnoreAll } ,
-  { "lineage", eConflictIgnoreAll } ,
-  { "old-lineage", eConflictIgnoreAll } ,
-  { "old-name", eConflictIgnoreAll } ,
-  { "synonym", eConflictIgnoreAll } ,
-  { "type-material", eConflictIgnoreAll },
-  { "StructuredCommentPrefix", eConflictIgnoreAll} ,
-  { "StructuredCommentSuffix", eConflictIgnoreAll}
+    { "chromosome", eConflictIgnoreMissingInBioSample } ,
+    { "endogenous-virus-name", eConflictIgnoreMissingInBioSample } ,
+    { "germline", eConflictIgnoreMissingInBioSample } ,
+    { "insertion-seq-name", eConflictIgnoreMissingInBioSample } ,
+    { "linkage-group", eConflictIgnoreMissingInBioSample } ,
+    { "map", eConflictIgnoreMissingInBioSample } ,
+    { "plasmid-name", eConflictIgnoreMissingInBioSample } ,
+    { "pop-variant", eConflictIgnoreMissingInBioSample } ,
+    { "rearranged", eConflictIgnoreMissingInBioSample } ,
+    { "segment", eConflictIgnoreMissingInBioSample } ,
+    { "transgenic", eConflictIgnoreMissingInBioSample } ,
+    { "transposon-name", eConflictIgnoreMissingInBioSample } ,
+    { "whole-replicon", eConflictIgnoreMissingInBioSample } ,
+    { "acronym", eConflictIgnoreAll },
+    { "common", eConflictIgnoreAll } ,
+    { "dosage", eConflictIgnoreAll } ,
+    { "gb-acronym", eConflictIgnoreAll } ,
+    { "gb-anamorph", eConflictIgnoreAll } ,
+    { "gb-synonym", eConflictIgnoreAll } ,
+    { "lineage", eConflictIgnoreAll } ,
+    { "old-lineage", eConflictIgnoreAll } ,
+    { "old-name", eConflictIgnoreAll } ,
+    { "synonym", eConflictIgnoreAll } ,
+    { "type-material", eConflictIgnoreAll },
+    { "StructuredCommentPrefix", eConflictIgnoreAll} ,
+    { "StructuredCommentSuffix", eConflictIgnoreAll}
 };
 
-static const int kNumIgnoreConflictList = sizeof (sIgnoreConflictList) / sizeof (IgnoreConflictData);
 
 bool s_SameExceptPrecision (double val1, double val2)
 {
@@ -967,15 +955,14 @@ bool s_SameExceptPrecision (double val1, double val2)
     sprintf(buf2, "%0.2f", val2);
     if (strcmp(buf1, buf2) == 0) {
         return true;
-    } else {
-        return false;
     }
+    return false;
 }
     
 
 bool CBioSource::ShouldIgnoreConflict(const string& label, string src_val, string sample_val, bool is_local_copy)
 {
-    int i;
+    size_t i;
     bool rval = false;
 
     // ignore if BioSource value is blank and BioSample value is a stop word
@@ -1017,8 +1004,8 @@ bool CBioSource::ShouldIgnoreConflict(const string& label, string src_val, strin
         }
     }
 
-    for (i = 0; i < kNumIgnoreConflictList; i++) {
-        if (NStr::EqualNocase (label, sIgnoreConflictList[i].qual_name)) {
+    for (i = 0; i < ArraySize(sIgnoreConflictList); i++) {
+        if (NStr::EqualNocase(label, sIgnoreConflictList[i].qual_name)) {
             EConflictIgnoreType ignore_type = sIgnoreConflictList[i].ignore_type;
             if (is_local_copy && ignore_type == eConflictIgnoreMissingInBioSample) {
                 ignore_type = eConflictIgnoreAll;
@@ -1312,94 +1299,92 @@ void CBioSource::RemoveCultureNotes(bool is_species_level)
     }
 }
 
-static const string s_SpecialLineageWords[] = {
-  "Class",
-  "Classification",
-  "Domain",
-  "Family",
-  "Genus",
-  "Kingdom",
-  "Lineage",
-  "Note",
-  "Order",
-  "Organism",
-  "Phylum",
-  "Species",
-  "Superfamily",
-  "Tax class/lineage",
-  "Taxonomic classification", 
-  "Taxonomic Classification is",
-  "Taxonomy"
+static const char* s_SpecialLineageWords[] = {
+    "Class",
+    "Classification",
+    "Domain",
+    "Family",
+    "Genus",
+    "Kingdom",
+    "Lineage",
+    "Note",
+    "Order",
+    "Organism",
+    "Phylum",
+    "Species",
+    "Superfamily",
+    "Tax class/lineage",
+    "Taxonomic classification", 
+    "Taxonomic Classification is",
+    "Taxonomy"
 };
 
+typedef vector<CTempString> TWordList;
+
 // workaround for std::replace_if
-static inline bool s_IsPunct( char ch ) { return ispunct((unsigned char) ch) != 0; }
+static inline bool s_IsPunct( char ch ) { return ispunct((unsigned char)ch) != 0; }
 
-static void s_GetWordListFromText(string& str, vector<string>& word_list)
+static void s_GetWordListFromText(string& str, TWordList& word_list)
 {
-    if (NStr::IsBlank(str))
+    if (str.empty()) {
         return;
-
-    vector<string> tokens;
-    std::replace_if(str.begin(), str.end(), s_IsPunct, ' ');
-    NStr::Tokenize(str, " ", tokens, NStr::eMergeDelims);
-    for (size_t i = 0; i < tokens.size(); ++i) {
-        word_list.push_back(tokens[i]);
     }
+    std::replace_if(str.begin(), str.end(), s_IsPunct, ' ');
+    NStr::Tokenize(str, " ", word_list, NStr::eMergeDelims);
 }
 
-static bool s_DoesTextContainOnlyTheseWords(const string& text, const vector<string>& word_list)
-{
-    if (NStr::IsBlank(text)) 
-        return false;
 
-    bool match = false, at_least_one = false;
+static bool s_DoesTextContainOnlyTheseWords(const string& text, const TWordList& word_list)
+{
+    if (text.empty()) {
+        return false;
+    }
+    bool match = true, at_least_one = false;
 
     const char* orig = text.c_str();
     const char* ch = orig;
 
-    while (isspace(*ch) || ispunct(*ch)) {
+    while (isspace((unsigned char)(*ch)) || ispunct((unsigned char)(*ch))) {
         ++ch;
     }
-    
-    match = true;
     while (*ch != 0 && match) {
         match = false;
-        for (vector<string>::const_iterator word = word_list.begin(); word != word_list.end() && !match; ++word) {
-            size_t length = (*word).size();
-            if (NStr::strncasecmp(ch, (*word).c_str(), length) == 0 &&
-                (*(ch + length) == 0 || isspace(*(ch + length)) || ispunct(*(ch + length)))) {
-                match = true;
-                ch += length;
-                at_least_one = true;
+        for (TWordList::const_iterator word = word_list.begin(); word != word_list.end() && !match; ++word) {
+            size_t length = word->size();
+            if (NStr::strncasecmp(ch, word->data(), length) == 0) {
+                unsigned char next = *(ch + length);
+                if (next == '\0' || isspace(next) || ispunct(next)) {
+                    match = true;
+                    ch += length;
+                    at_least_one = true;
+                }
             }
         }
-        while (isspace(*ch) || ispunct(*ch)) {
+        while (isspace((unsigned char)(*ch)) || ispunct((unsigned char)(*ch))) {
             ++ch;
         }
     }
-    
     return (match && at_least_one);
 }
+
 
 bool CBioSource::RemoveLineageSourceNotes()
 {
     if (!IsSetOrg()  || !IsSetLineage() || GetOrg().GetTaxId() == 0) {
         return false;
     }
-
     bool any_removed = false;
 
     // gather all words that appear in lineage, taxname and in s_SpecialLineageWords
-    vector<string> word_list;
+    TWordList word_list;
 
     string lineage(GetLineage());
-    s_GetWordListFromText( lineage, word_list );
-    
+    s_GetWordListFromText(lineage, word_list);
+   
     string taxname(GetTaxname());
-    s_GetWordListFromText( taxname, word_list );
+    s_GetWordListFromText(taxname, word_list);
     
-    for (unsigned int i = 0; i < sizeof(s_SpecialLineageWords)/sizeof(s_SpecialLineageWords[0]); ++i) {
+    for (unsigned int i = 0; i < ArraySize(s_SpecialLineageWords); ++i) {
         word_list.push_back(s_SpecialLineageWords[i]);
     }
 
@@ -1454,6 +1439,7 @@ bool CBioSource::RemoveLineageSourceNotes()
     return any_removed;
 }
 
+
 bool CBioSource::RemoveSubSource(int subtype)
 {
     bool rval = false;
@@ -1498,7 +1484,8 @@ bool CBioSource::RemoveOrgMod(int subtype)
 }
 
 
-#define MAKE_COMMON_INT(o1,o2,o3,Field) if (o1.IsSet##Field() && o2.IsSet##Field() && o1.Get##Field() == o2.Get##Field()) o3.Set##Field(o1.Get##Field());
+#define MAKE_COMMON_INT(o1,o2,o3,Field) \
+    if (o1.IsSet##Field() && o2.IsSet##Field() && o1.Get##Field() == o2.Get##Field()) o3.Set##Field(o1.Get##Field());
 
 CRef<CBioSource> CBioSource::MakeCommon( const CBioSource& other) const
 {

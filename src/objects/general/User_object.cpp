@@ -344,12 +344,12 @@ CUser_object& CUser_object::AddField(const string& label,
 
 
 // static consts here allow us to use reference counting
-static const char* s_ncbi("NCBI");
-static const char* s_expres("experimental_results");
-static const char* s_exp("experiment");
-static const char* s_sage("SAGE");
-static const char* s_tag("tag");
-static const char* s_count("count");
+static const char* s_ncbi   = "NCBI";
+static const char* s_expres = "experimental_results";
+static const char* s_exp    = "experiment";
+static const char* s_sage   = "SAGE";
+static const char* s_tag    = "tag";
+static const char* s_count  = "count";
 
 
 // accessors: classify a given user object
@@ -583,14 +583,14 @@ CUser_object& CUser_object::SetExperiment(EExperiment category)
 }
 
 
-const string kDBLink = "DBLink";
-const string kStructuredComment = "StructuredComment";
-const string kOriginalId = "OriginalID";
-const string kOrigIdAltSpell = "OrginalID";
-const string kUnverified = "Unverified";
-const string kValidationSuppression = "ValidationSuppression";
-const string kNcbiCleanup = "NcbiCleanup";
-const string kAutoDefOptions = "AutodefOptions";
+static const char* kDBLink                = "DBLink";
+static const char* kStructuredComment     = "StructuredComment";
+static const char* kOriginalId            = "OriginalID";
+static const char* kOrigIdAltSpell        = "OrginalID";
+static const char* kUnverified            = "Unverified";
+static const char* kValidationSuppression = "ValidationSuppression";
+static const char* kNcbiCleanup           = "NcbiCleanup";
+static const char* kAutoDefOptions        = "AutodefOptions";
 
 CUser_object::EObjectType CUser_object::GetObjectType() const
 {
