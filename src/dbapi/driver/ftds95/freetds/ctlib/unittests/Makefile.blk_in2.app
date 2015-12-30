@@ -8,8 +8,7 @@ LIB      = $(FTDS95_CTLIB_LIB)
 LIBS     = $(FTDS95_CTLIB_LIBS) $(NETWORK_LIBS) $(RT_LIBS) $(C_LIBS)
 LINK     = $(C_LINK)
 
-CHECK_CMD  = test-ct95.sh --no-auto ct95_blk_in2
-CHECK_COPY = test-ct95.sh
+CHECK_CMD  = test-ct95 --no-auto ct95_blk_in2
 
 CHECK_REQUIRES = in-house-resources
 

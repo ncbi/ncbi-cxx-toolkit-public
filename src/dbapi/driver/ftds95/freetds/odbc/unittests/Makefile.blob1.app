@@ -11,8 +11,8 @@ LINK     = $(C_LINK)
 # Some systems would normally send data too fast(!) to MSSQL servers,
 # and proceed to get throttled altogether; the dumping code adds
 # enough of a slowdown to keep them out of trouble.
-CHECK_CMD  = env TDSDUMP=/dev/null test-odbc95.sh odbc95_blob1
-CHECK_COPY = test-odbc95.sh odbc.ini
+CHECK_CMD  = env TDSDUMP=/dev/null test-odbc95 odbc95_blob1
+CHECK_COPY = odbc.ini
 
 CHECK_REQUIRES = in-house-resources
 

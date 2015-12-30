@@ -9,7 +9,6 @@ LIBS     = $(FTDS95_CTLIB_LIBS) $(NETWORK_LIBS) $(RT_LIBS) $(C_LIBS)
 LINK     = $(C_LINK)
 
 # Attempts to log in as sa with invalid credentials; disabled per DBA request.
-# CHECK_CMD  = test-ct95.sh ct95_connect_fail
-# CHECK_COPY = test-ct95.sh
+# CHECK_CMD  = test-ct95 ct95_connect_fail
 
 WATCHERS = ucko
