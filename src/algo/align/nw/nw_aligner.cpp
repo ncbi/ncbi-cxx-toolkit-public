@@ -201,17 +201,13 @@ void CNWAligner::SetGapPreference(EGapPreference p)
 // bit coding (four bits per value): D E Ec Fc
 // D:  1 if diagonal; 0 - otherwise
 // E:  1 if space in 1st sequence; 0 if space in 2nd sequence
-// Ec: 1 if gap in 1st sequence was extended; 0 if it is was opened
-// Fc: 1 if gap in 2nd sequence was extended; 0 if it is was opened
 // Start: if all four bits are set, this is start of alignment; used for
 //        Smith-Waterman algorithm
 //
 
-const unsigned char kMaskFc  = 0x01;
-const unsigned char kMaskEc  = 0x02;
 const unsigned char kMaskE   = 0x04;
 const unsigned char kMaskD   = 0x08;
-const unsigned char kMaskStart   = 0x0F;
+const unsigned char kMaskStart   = 0x03;
 
 CNWAligner::TScore CNWAligner::x_Align(SAlignInOut* data)
 {
@@ -261,7 +257,7 @@ CNWAligner::TScore CNWAligner::x_Align(SAlignInOut* data)
         rowV[k] = pV[k] + wsleft1;
         rowF[k] = kInfMinus;
         backtrace_matrix.SetAt(k, m_SmithWaterman ? kMaskStart
-                                                  : kMaskE | kMaskEc);
+                                                  : kMaskE);
     }
     backtrace_matrix.Purge(k);
     rowV[0] = 0;
@@ -285,7 +281,7 @@ CNWAligner::TScore CNWAligner::x_Align(SAlignInOut* data)
         
         V = V0 += wsleft2;
         E = kInfMinus;
-        backtrace_matrix.SetAt(k++, m_SmithWaterman ? kMaskStart : kMaskFc);
+        backtrace_matrix.SetAt(k++, m_SmithWaterman ? kMaskStart : 0);
         unsigned char ci = seq1[i];
 
         if(i == N1 - 1 && bFreeGapRight1) {
@@ -300,13 +296,12 @@ CNWAligner::TScore CNWAligner::x_Align(SAlignInOut* data)
             pV[j] = V;
 
             n0 = V + wg1;
+            tracer = 0;
             if(E >= n0) {
                 E += ws1;      // continue the gap
-                tracer = kMaskEc;
             }
             else {
                 E = n0 + ws1;  // open a new gap
-                tracer = 0;
             }
 
             if(j == N2 - 1 && bFreeGapRight2) {
@@ -315,7 +310,6 @@ CNWAligner::TScore CNWAligner::x_Align(SAlignInOut* data)
             n0 = rowV[j] + wg2;
             if(rowF[j] >= n0) {
                 rowF[j] += ws2;
-                tracer |= kMaskFc;
             }
             else {
                 rowF[j] = n0 + ws2;
@@ -325,7 +319,7 @@ CNWAligner::TScore CNWAligner::x_Align(SAlignInOut* data)
                 V = 0;
                 tracer = kMaskStart;
             } else if (E >= rowF[j]) {
-                if(E > G || E == G && m_GapPreference == eEarlier) {
+                if(E > G || E == G && (m_GapPreference == eLater)) {
                     V = E;
                     tracer |= kMaskE;
                 }
@@ -334,7 +328,7 @@ CNWAligner::TScore CNWAligner::x_Align(SAlignInOut* data)
                     tracer = kMaskD;
                 }
             } else {
-                if(rowF[j] > G || rowF[j] == G && m_GapPreference == eEarlier) {
+                if(rowF[j] > G || rowF[j] == G && (m_GapPreference == eLater)) {
                     V = rowF[j];
                 }
                 else {
@@ -622,25 +616,12 @@ void CNWAligner::x_DoBackTrace(const CBacktraceMatrix4 & backtrace,
             data->m_transcript.push_back(eTS_Insert);
             --k;
             --i2;
-            while(k > 0 && (Key & kMaskEc)) {
-
-                data->m_transcript.push_back(eTS_Insert);
-                Key = backtrace[k--];
-                --i2;
-            }
         }
         else {
 
             data->m_transcript.push_back(eTS_Delete);
             k -= N2;
             --i1;
-            while(k > 0 && (Key & kMaskFc)) {
-
-                data->m_transcript.push_back(eTS_Delete);
-                Key = backtrace[k];
-                k -= N2;
-                --i1;
-            }
         }
     }
     data->FillEdgeGaps(k);
