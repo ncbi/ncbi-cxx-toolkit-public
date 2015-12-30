@@ -586,7 +586,7 @@ BOOST_AUTO_TEST_CASE(Test_ValidError_Format)
     expected.pop_back();
     expected.pop_back();
     expected.pop_back();
-    expected.push_back("LatLonWater");
+    expected.push_back("LatLonCountry Errors");
     expected.push_back("nuc:Lat_lon '18.47 N 64.23000000000002 W' is in water 'Caribbean Sea', 'Puerto Rico: Rio Mameyes in Luquillo' is 108 km away");
     expected.push_back("");
     seen.clear();

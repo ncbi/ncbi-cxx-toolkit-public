@@ -91,6 +91,7 @@ ESubmitterFormatErrorGroup CValidErrorFormat::GetSubmitterFormatErrorGroup(CVali
             rval = eSubmitterFormatErrorGroup_BadInstitutionCode;
             break;
         case eErr_SEQ_DESCR_LatLonCountry:
+        case eErr_SEQ_DESCR_LatLonWater:
             rval = eSubmitterFormatErrorGroup_LatLonCountry;
             break;
         default:
@@ -126,6 +127,7 @@ string CValidErrorFormat::GetSubmitterFormatErrorGroupTitle(CValidErrItem::TErrI
             rval = "Bad Institution Codes";
             break;
         case eErr_SEQ_DESCR_LatLonCountry:
+        case eErr_SEQ_DESCR_LatLonWater:
             rval = "LatLonCountry Errors";
             break;
         default:
