@@ -523,7 +523,7 @@ public:
     {
     }
 
-    virtual CPipe::IProcessWatcher::EAction Watch(TProcessHandle pid)
+    virtual EAction Watch(TProcessHandle pid)
     {
         if (m_Deadline.IsExpired()) {
             ERR_POST("Job run time exceeded "
@@ -532,7 +532,7 @@ public:
             return m_ProcessManager(pid);
         }
 
-        return CPipe::IProcessWatcher::eContinue;
+        return eContinue;
     }
 
 protected:
@@ -636,7 +636,7 @@ public:
     {
         if (m_JobContext.GetShutdownLevel() ==
             CNetScheduleAdmin::eShutdownImmediate) {
-            return CPipe::IProcessWatcher::eStop;
+            return eStop;
         }
 
         LOG_POST(Note << "Child PID: " << NStr::UInt8ToString((Uint8) pid));
@@ -644,18 +644,17 @@ public:
         return CTimedProcessWatcher::OnStart(pid);
     }
 
-    virtual CPipe::IProcessWatcher::EAction Watch(TProcessHandle pid)
+    virtual EAction Watch(TProcessHandle pid)
     {
         if (m_JobContext.GetShutdownLevel() ==
                 CNetScheduleAdmin::eShutdownImmediate) {
             m_JobContext.ReturnJob();
-            return CPipe::IProcessWatcher::eStop;
+            return eStop;
         }
 
-        CPipe::IProcessWatcher::EAction action =
-                CTimedProcessWatcher::Watch(pid);
+        EAction action = CTimedProcessWatcher::Watch(pid);
 
-        if (action != CPipe::IProcessWatcher::eContinue)
+        if (action != eContinue)
             return action;
 
         if (m_KeepAlive.IsExpired()) {
@@ -689,7 +688,7 @@ public:
             case CRAMonitor::eJobToReturn:
                 m_JobContext.ReturnJob();
                 x_Log("job is returned", err);
-                return CPipe::IProcessWatcher::eStop;
+                return eStop;
             case CRAMonitor::eJobFailed:
                 {
                     x_Log("job failed", err);
@@ -708,7 +707,7 @@ public:
             m_MonitorWatch.Restart();
         }
 
-        return CPipe::IProcessWatcher::eContinue;
+        return eContinue;
     }
 
 private:
