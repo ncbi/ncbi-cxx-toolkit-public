@@ -611,25 +611,16 @@ private:
 
 //////////////////////////////////////////////////////////////////////////////
 ///
-class CPipeProcessWatcher : public CTimedProcessWatcher
+class CJobContextProcessWatcher : public CTimedProcessWatcher
 {
 public:
-    CPipeProcessWatcher(CWorkerNodeJobContext& job_context,
+    CJobContextProcessWatcher(CWorkerNodeJobContext& job_context,
                    CTimeout run_timeout,
                    CTimeout keep_alive_period,
-                   const string& job_wdir,
                    CRemoteAppReaper::CManager &process_manager)
         : CTimedProcessWatcher(run_timeout, process_manager),
-          m_JobContext(job_context), m_KeepAlive(keep_alive_period),
-          m_Monitor(NULL), m_MonitorWatch(CTimeout::eInfinite),
-          m_JobWDir(job_wdir)
+          m_JobContext(job_context), m_KeepAlive(keep_alive_period)
     {
-    }
-
-    void SetMonitor(CRAMonitor& monitor, const CTimeout& monitor_period)
-    {
-        m_Monitor = &monitor;
-        m_MonitorWatch = monitor_period;
     }
 
     virtual EAction OnStart(TProcessHandle pid)
@@ -661,6 +652,47 @@ public:
             m_JobContext.JobDelayExpiration(m_KeepAlive.PresetSeconds() + 10);
             m_KeepAlive.Restart();
         }
+
+        return eContinue;
+    }
+
+protected:
+    CWorkerNodeJobContext& m_JobContext;
+
+private:
+    CTimer m_KeepAlive;
+};
+
+//////////////////////////////////////////////////////////////////////////////
+///
+class CMonitoredProcessWatcher : public CJobContextProcessWatcher
+{
+public:
+    CMonitoredProcessWatcher(CWorkerNodeJobContext& job_context,
+                   CTimeout run_timeout,
+                   CTimeout keep_alive_period,
+                   const string& job_wdir,
+                   CRemoteAppReaper::CManager &process_manager)
+        : CJobContextProcessWatcher(job_context, run_timeout, keep_alive_period,
+                process_manager),
+          m_Monitor(NULL), m_MonitorWatch(CTimeout::eInfinite),
+          m_JobWDir(job_wdir)
+    {
+    }
+
+    void SetMonitor(CRAMonitor& monitor, const CTimeout& monitor_period)
+    {
+        m_Monitor = &monitor;
+        m_MonitorWatch = monitor_period;
+    }
+
+    virtual EAction Watch(TProcessHandle pid)
+    {
+        EAction action = CJobContextProcessWatcher::Watch(pid);
+
+        if (action != eContinue)
+            return action;
+
         if (m_Monitor && m_MonitorWatch.IsExpired()) {
             CNcbiOstrstream out;
             CNcbiOstrstream err;
@@ -721,8 +753,6 @@ private:
         }
     }
 
-    CWorkerNodeJobContext& m_JobContext;
-    CTimer m_KeepAlive;
     CRAMonitor* m_Monitor;
     CTimer m_MonitorWatch;
     string m_JobWDir;
@@ -866,7 +896,7 @@ bool CRemoteAppLauncher::ExecRemoteApp(const vector<string>& args,
         NStr::ReplaceInPlace(working_dir, "\\", "/");
 #endif
 
-        CPipeProcessWatcher callback(job_context,
+        CMonitoredProcessWatcher callback(job_context,
             run_timeout,
             m_KeepAlivePeriod,
             working_dir,
