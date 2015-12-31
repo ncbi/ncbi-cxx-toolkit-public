@@ -614,12 +614,28 @@ private:
 class CJobContextProcessWatcher : public CTimedProcessWatcher
 {
 public:
-    CJobContextProcessWatcher(CWorkerNodeJobContext& job_context,
-                   CTimeout run_timeout,
-                   CTimeout keep_alive_period,
-                   CRemoteAppReaper::CManager &process_manager)
-        : CTimedProcessWatcher(run_timeout, process_manager),
-          m_JobContext(job_context), m_KeepAlive(keep_alive_period)
+    // TODO: This can be replaced by tuple after we migrate to C++11
+    struct SParams
+    {
+        CWorkerNodeJobContext& job_context;
+        const CTimeout& run_timeout;
+        const CTimeout& keep_alive_period;
+        CRemoteAppReaper::CManager& process_manager;
+
+        SParams(CWorkerNodeJobContext& jc,
+                const CTimeout& rt,
+                const CTimeout& kap,
+                CRemoteAppReaper::CManager& pm)
+            : job_context(jc),
+                run_timeout(rt),
+                keep_alive_period(kap),
+                process_manager(pm)
+        {}
+    };
+
+    CJobContextProcessWatcher(SParams& p)
+        : CTimedProcessWatcher(p.run_timeout, p.process_manager),
+          m_JobContext(p.job_context), m_KeepAlive(p.keep_alive_period)
     {
     }
 
@@ -668,13 +684,8 @@ private:
 class CMonitoredProcessWatcher : public CJobContextProcessWatcher
 {
 public:
-    CMonitoredProcessWatcher(CWorkerNodeJobContext& job_context,
-                   CTimeout run_timeout,
-                   CTimeout keep_alive_period,
-                   const string& job_wdir,
-                   CRemoteAppReaper::CManager &process_manager)
-        : CJobContextProcessWatcher(job_context, run_timeout, keep_alive_period,
-                process_manager),
+    CMonitoredProcessWatcher(SParams& p, const string& job_wdir)
+        : CJobContextProcessWatcher(p),
           m_Monitor(NULL), m_MonitorWatch(CTimeout::eInfinite),
           m_JobWDir(job_wdir)
     {
@@ -896,11 +907,12 @@ bool CRemoteAppLauncher::ExecRemoteApp(const vector<string>& args,
         NStr::ReplaceInPlace(working_dir, "\\", "/");
 #endif
 
-        CMonitoredProcessWatcher callback(job_context,
-            run_timeout,
-            m_KeepAlivePeriod,
-            working_dir,
-            m_Reaper->GetManager());
+        CJobContextProcessWatcher::SParams params(job_context,
+                run_timeout,
+                m_KeepAlivePeriod,
+                m_Reaper->GetManager());
+
+        CMonitoredProcessWatcher callback(params, working_dir);
 
         if (!m_MonitorAppPath.empty() && m_MonitorPeriod.IsFinite()) {
             callback.SetMonitor(
