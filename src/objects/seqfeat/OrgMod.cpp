@@ -168,7 +168,7 @@ bool COrgMod::ParseStructuredVoucher(const string& str, string& inst, string& co
 	}
 	inst = str.substr(0, pos);
 	id = str.substr(pos + 1);
-	coll = kEmptyStr;
+	coll.clear();
 	pos = NStr::Find(id, ":");
 	if (pos != string::npos) {
 		coll = id.substr(0, pos);
@@ -275,7 +275,7 @@ bool COrgMod::IsInstitutionCodeValid(const string& inst_coll, string &voucher_ty
     is_miscapitalized = false;
     needs_country = false;
     erroneous_country = false;
-    correct_cap = kEmptyStr;
+    correct_cap.clear();
 
     s_InitializeInstitutionCollectionCodeMaps();
 

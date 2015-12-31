@@ -83,8 +83,8 @@ static const char * const valid_inf_prefixes [] = {
 void CGb_qual::ParseExperiment(const string& orig, string& category, string& experiment, string& doi)
 {
     experiment = orig;
-    category = kEmptyStr;
-    doi = kEmptyStr;
+    category.clear();
+    doi.clear();
     NStr::TruncateSpacesInPlace(experiment);
 
     for (unsigned int i = 0; i < ArraySize(valid_inf_categories); i++) {
@@ -113,7 +113,7 @@ void CGb_qual::ParseExperiment(const string& orig, string& category, string& exp
 
 string CGb_qual::BuildExperiment(const string& category, const string& experiment, const string& doi)
 {
-    string rval = kEmptyStr;
+    string rval;
     if (!NStr::IsBlank(category)) {
         rval += category + ":";
     }
@@ -187,9 +187,9 @@ CInferencePrefixList::~CInferencePrefixList(void)
 
 void CInferencePrefixList::GetPrefixAndRemainder (const string& inference, string& prefix, string& remainder)
 {
-    string category = kEmptyStr;
-    prefix = kEmptyStr;
-    remainder = kEmptyStr;
+    string category;
+    prefix.clear();
+    remainder.clear();
     string check = inference;
 
     for (unsigned int i = 0; i < ArraySize(valid_inf_categories); i++) {
@@ -235,14 +235,14 @@ static const char* s_LegalMobileElementStrings[] = {
 
 void CGb_qual::GetMobileElementValueElements(const string& val, string& element_type, string& element_name)
 {
-    element_type = kEmptyStr;
-    element_name = kEmptyStr;
+    element_type.clear();
+    element_name.clear();
     for (size_t i = 0; i < ArraySize(s_LegalMobileElementStrings); ++i) {
         if (NStr::StartsWith(val, s_LegalMobileElementStrings[i], NStr::eNocase)) {
             element_name = val.substr(strlen(s_LegalMobileElementStrings[i]));
             if (!NStr::IsBlank(element_name) &&
                 (!NStr::StartsWith(element_name, ":") || NStr::Equal(element_name, ":"))) {
-                element_name = kEmptyStr;
+                element_name.clear();
             } else {
                 element_type = s_LegalMobileElementStrings[i];
             }
