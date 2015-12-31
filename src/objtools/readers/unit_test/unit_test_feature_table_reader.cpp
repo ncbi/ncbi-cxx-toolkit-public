@@ -1291,7 +1291,11 @@ BOOST_AUTO_TEST_CASE(Test_TableWithVariationsAndGoTerms)
             BOOST_CHECK_EQUAL((*feat)->GetExt().GetType().GetStr(), "GeneOntology");
             ITERATE(CUser_object::TData, it, (*feat)->GetExt().GetData()) {
                 BOOST_REQUIRE ((*it)->GetData().IsFields());
-                BOOST_CHECK_EQUAL((*it)->GetData().GetFields().size(), 4);
+                BOOST_CHECK_EQUAL((*it)->GetData().GetFields().size(), 1);
+                ITERATE(CUser_object::TData, it_fields, (*it)->GetData().GetFields()) {
+                   BOOST_REQUIRE ((*it_fields)->GetData().IsFields());
+                   BOOST_CHECK_EQUAL((*it_fields)->GetData().GetFields().size(), 4);
+                }
             }
 
             // since no FASTA tag, becomes a local ID even though it might be
