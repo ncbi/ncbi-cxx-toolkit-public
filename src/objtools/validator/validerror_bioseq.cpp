@@ -3797,10 +3797,14 @@ void CValidError_bioseq::ValidateSeqGap(const CSeq_gap& gap, const CBioseq& seq)
         for (int i = 0; i < 12; i++) {
             linkevarray[i] = 0;
         }
+        bool is_unspec = false;
         ITERATE(CSeq_gap::TLinkage_evidence, ev_itr, gap.GetLinkage_evidence()) {
             const CLinkage_evidence & evidence = **ev_itr;
             if (!evidence.CanGetType()) continue;
             int linktype = evidence.GetType();
+            if (linktype == 8) {
+                is_unspec = true;
+            }
             linkcount++;
             if (linktype == 255) {
                 (linkevarray[10])++;
@@ -3833,11 +3837,14 @@ void CValidError_bioseq::ValidateSeqGap(const CSeq_gap& gap, const CBioseq& seq)
                 gaptype != CSeq_gap::eType_clone &&
                 gaptype != CSeq_gap::eType_repeat &&
                 gaptype != CSeq_gap::eType_scaffold) {
-                PostErr(eDiag_Critical, eErr_SEQ_INST_SeqGapProblem,
-                    "Seq-gap of type " + NStr::IntToString(gaptype) +
-                    " should not have linkage evidence", seq);
+                if (gaptype == CSeq_gap::eType_unknown && is_unspec) {
+                    /* suppress for legacy records */
+                } else {
+                   PostErr(eDiag_Critical, eErr_SEQ_INST_SeqGapProblem,
+                       "Seq-gap of type " + NStr::IntToString(gaptype) +
+                       " should not have linkage evidence", seq);
+                }
             }
-
         }
     }
     else {
