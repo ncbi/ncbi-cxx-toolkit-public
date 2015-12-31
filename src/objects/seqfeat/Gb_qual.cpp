@@ -83,11 +83,11 @@ static const char * const valid_inf_prefixes [] = {
 void CGb_qual::ParseExperiment(const string& orig, string& category, string& experiment, string& doi)
 {
     experiment = orig;
-    category = "";
-    doi = "";
+    category = kEmptyStr;
+    doi = kEmptyStr;
     NStr::TruncateSpacesInPlace(experiment);
 
-    for (unsigned int i = 0; i < sizeof (valid_inf_categories) / sizeof (char *); i++) {
+    for (unsigned int i = 0; i < ArraySize(valid_inf_categories); i++) {
         if (NStr::StartsWith (experiment, valid_inf_categories[i])) {
             category = valid_inf_categories[i];
             experiment = experiment.substr(category.length());
@@ -102,7 +102,7 @@ void CGb_qual::ParseExperiment(const string& orig, string& category, string& exp
     if (NStr::EndsWith(experiment, "]")) {
         size_t start_doi = NStr::Find(experiment, "[");
 
-        if (start_doi != string::npos) {
+        if (start_doi != NPOS) {
             doi = experiment.substr(start_doi + 1);
             doi = doi.substr(0, doi.length() - 1);
             experiment = experiment.substr(0, start_doi);
@@ -113,7 +113,7 @@ void CGb_qual::ParseExperiment(const string& orig, string& category, string& exp
 
 string CGb_qual::BuildExperiment(const string& category, const string& experiment, const string& doi)
 {
-    string rval = "";
+    string rval = kEmptyStr;
     if (!NStr::IsBlank(category)) {
         rval += category + ":";
     }
@@ -160,10 +160,10 @@ bool CGb_qual::CleanupRptUnitRange(string& val)
     if (NStr::IsBlank(val)) {
         return false;
     }
-    if (NStr::Find(val, ".") != string::npos) {
+    if (NStr::Find(val, ".") != NPOS) {
         return false;
     }
-    if (NStr::Find(val, "-") == string::npos) {
+    if (NStr::Find(val, "-") == NPOS) {
         return false;
     }
     if (string::npos != val.find_first_not_of("0123456789-")) {
@@ -187,12 +187,12 @@ CInferencePrefixList::~CInferencePrefixList(void)
 
 void CInferencePrefixList::GetPrefixAndRemainder (const string& inference, string& prefix, string& remainder)
 {
-    string category = "";
-    prefix = "";
-    remainder = "";
+    string category = kEmptyStr;
+    prefix = kEmptyStr;
+    remainder = kEmptyStr;
     string check = inference;
 
-    for (unsigned int i = 0; i < sizeof (valid_inf_categories) / sizeof (char *); i++) {
+    for (unsigned int i = 0; i < ArraySize(valid_inf_categories); i++) {
         if (NStr::StartsWith (check, valid_inf_categories[i])) {
             category = valid_inf_categories[i];
             check = check.substr(category.length());
@@ -206,7 +206,7 @@ void CInferencePrefixList::GetPrefixAndRemainder (const string& inference, strin
             break;
         }
     }
-    for (unsigned int i = 0; i < sizeof (valid_inf_prefixes) / sizeof (char *); i++) {
+    for (unsigned int i = 0; i < ArraySize(valid_inf_prefixes); i++) {
         if (NStr::StartsWith (check, valid_inf_prefixes[i], NStr::eNocase)) {
             prefix = valid_inf_prefixes[i];
         }
@@ -217,7 +217,7 @@ void CInferencePrefixList::GetPrefixAndRemainder (const string& inference, strin
 }
 
 
-static string s_LegalMobileElementStrings[] = {
+static const char* s_LegalMobileElementStrings[] = {
     "transposon",
     "retrotransposon",
     "integron",
@@ -235,16 +235,14 @@ static string s_LegalMobileElementStrings[] = {
 
 void CGb_qual::GetMobileElementValueElements(const string& val, string& element_type, string& element_name)
 {
-    element_type = "";
-    element_name = "";
-    for (size_t i = 0;
-        i < sizeof(s_LegalMobileElementStrings) / sizeof(string);
-        ++i) {
+    element_type = kEmptyStr;
+    element_name = kEmptyStr;
+    for (size_t i = 0; i < ArraySize(s_LegalMobileElementStrings); ++i) {
         if (NStr::StartsWith(val, s_LegalMobileElementStrings[i], NStr::eNocase)) {
-            element_name = val.substr(s_LegalMobileElementStrings[i].length());
+            element_name = val.substr(strlen(s_LegalMobileElementStrings[i]));
             if (!NStr::IsBlank(element_name) &&
                 (!NStr::StartsWith(element_name, ":") || NStr::Equal(element_name, ":"))) {
-                element_name = "";
+                element_name = kEmptyStr;
             } else {
                 element_type = s_LegalMobileElementStrings[i];
             }
@@ -269,7 +267,7 @@ bool CGb_qual::IsLegalMobileElementValue(const string& val)
 }
 
 
-static string s_IllegalQualNameStrings[] = {
+static const char* s_IllegalQualNameStrings[] = {
     "anticodon",
     "citation",
     "codon_start",
@@ -288,9 +286,7 @@ static string s_IllegalQualNameStrings[] = {
 
 bool CGb_qual::IsIllegalQualName(const string& val)
 {
-    for (size_t i = 0;
-        i < sizeof(s_IllegalQualNameStrings) / sizeof(string);
-        ++i) {
+    for (size_t i = 0;  i < ArraySize(s_IllegalQualNameStrings); ++i) {
         if (NStr::EqualNocase(val, s_IllegalQualNameStrings[i])) {
             return true;
         }
@@ -328,7 +324,6 @@ void CGb_qual::ParseInferenceString(string val, string &category, string &type_s
             break;
         }
     }
-
 
     static const char *types[] = {
         "similar to sequence",
@@ -387,7 +382,7 @@ void CGb_qual::ParseInferenceString(string val, string &category, string &type_s
             NStr::TruncateSpacesInPlace(val);
         }
         size_t pos = NStr::Find(val, ":");
-        if (pos == string::npos) {
+        if (pos == NPOS) {
             database = s_FindInArray(val, choices);
             if (database.empty())
                 accession = val;            
@@ -421,7 +416,7 @@ void CGb_qual::ParseInferenceString(string val, string &category, string &type_s
             version.clear();
         } else {
             size_t pos = NStr::Find(val, ":");
-            if (pos == string::npos) {
+            if (pos == NPOS) {
                 program = val;
                 version.clear();
             } else {
@@ -438,7 +433,7 @@ void CGb_qual::ParseInferenceString(string val, string &category, string &type_s
             version.clear();
         } else {
             size_t pos = NStr::Find(val, ":");
-            if (pos == string::npos) {
+            if (pos == NPOS) {
                 program = val;
                 version.clear();
             } else {
@@ -456,7 +451,7 @@ void CGb_qual::ParseInferenceString(string val, string &category, string &type_s
             version.clear();
         } else {
             size_t pos = NStr::Find(val, ":");
-            if (pos == string::npos) {
+            if (pos == NPOS) {
                 program = val;
                 version.clear();
             } else {
@@ -464,7 +459,7 @@ void CGb_qual::ParseInferenceString(string val, string &category, string &type_s
                 string part2 = val.substr(pos + 1);
                 program = part1;
                 pos = NStr::Find(part2, ":");
-                if (pos == string::npos) {
+                if (pos == NPOS) {
                     version = part2;
                     // set alignment list blank
                     acc_list.clear();

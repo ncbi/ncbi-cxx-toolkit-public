@@ -168,7 +168,7 @@ bool COrgMod::ParseStructuredVoucher(const string& str, string& inst, string& co
 	}
 	inst = str.substr(0, pos);
 	id = str.substr(pos + 1);
-	coll = "";
+	coll = kEmptyStr;
 	pos = NStr::Find(id, ":");
 	if (pos != string::npos) {
 		coll = id.substr(0, pos);
@@ -194,7 +194,8 @@ static TInstitutionCodeMap s_CultureCollectionInstitutionCodeMap;
 static TInstitutionCodeMap s_CompleteInstitutionCodeMap;
 static TInstitutionCodeMap s_CompleteInstitutionFullNameMap;
 static TInstitutionCodeMap s_InstitutionCodeTypeMap;
-static bool                    s_InstitutionCollectionCodeMapInitialized = false;
+static bool                s_InstitutionCollectionCodeMapInitialized = false;
+
 DEFINE_STATIC_FAST_MUTEX(s_InstitutionCollectionCodeMutex);
 
 #include "institution_codes.inc"
@@ -274,7 +275,7 @@ bool COrgMod::IsInstitutionCodeValid(const string& inst_coll, string &voucher_ty
     is_miscapitalized = false;
     needs_country = false;
     erroneous_country = false;
-    correct_cap = "";
+    correct_cap = kEmptyStr;
 
     s_InitializeInstitutionCollectionCodeMaps();
 
@@ -331,7 +332,7 @@ string
 COrgMod::IsSpecimenVoucherValid(const string& specimen_voucher)
 {
     if (NStr::Find(specimen_voucher, ":") == string::npos) {
-        return "";
+        return kEmptyStr;
     } else {
         return IsStructuredVoucherValid(specimen_voucher, "s");
     }
@@ -342,7 +343,7 @@ string
 COrgMod::IsBiomaterialValid(const string& biomaterial)
 {
     if (NStr::Find(biomaterial, ":") == string::npos) {
-        return "";
+        return kEmptyStr;
     } else {
         return IsStructuredVoucherValid(biomaterial, "b");
     }
@@ -352,10 +353,11 @@ COrgMod::IsBiomaterialValid(const string& biomaterial)
 string 
 COrgMod::IsStructuredVoucherValid(const string& val, const string& v_type)
 {
-    string inst_code = "";
-    string coll_code = "";
-    string inst_coll = "";
-    string id = "";
+    string inst_code;
+    string coll_code;
+    string inst_coll;
+    string id;
+
     if (!ParseStructuredVoucher(val, inst_code, coll_code, id)) {
         if (NStr::IsBlank(inst_code)) {
             return "Voucher is missing institution code";
@@ -363,7 +365,7 @@ COrgMod::IsStructuredVoucherValid(const string& val, const string& v_type)
         if (NStr::IsBlank(id)) {
              return "Voucher is missing specific identifier";
         }
-        return "";
+        return kEmptyStr;
     }
 
     if (NStr::IsBlank (coll_code)) {
@@ -395,13 +397,13 @@ COrgMod::IsStructuredVoucherValid(const string& val, const string& v_type)
                     return "Institution code " + inst_coll + " should be specimen_voucher";
                 }
             }
-            return "";
+            return kEmptyStr;
         } 
     } else if (NStr::StartsWith(inst_coll, "personal", NStr::eNocase)) {
         if (NStr::EqualNocase (inst_code, "personal") && NStr::IsBlank (coll_code)) {
             return "Personal collection does not have name of collector";
         }
-        return "";
+        return kEmptyStr;
     } else if (NStr::IsBlank(coll_code)) {
         return "Institution code " + inst_coll + " is not in list";
     } else if (IsInstitutionCodeValid(inst_code, voucher_type, is_miscapitalized, correct_cap, needs_country, erroneous_country)) {
@@ -423,15 +425,15 @@ COrgMod::IsStructuredVoucherValid(const string& val, const string& v_type)
     } else {
         return "Institution code " + inst_coll + " is not in list";
     }
-    return "";
+    return kEmptyStr;
 }
 
 
 string COrgMod::MakeStructuredVoucher(const string& inst, const string& coll, const string& id)
 {
-    string rval = "";
+    string rval;
     if (NStr::IsBlank(inst) && NStr::IsBlank(coll) && NStr::IsBlank(id)) {
-        rval = "";
+        rval = kEmptyStr;
     } else if (NStr::IsBlank(inst) && NStr::IsBlank(coll)) {
         rval = id;
     } else if (NStr::IsBlank(coll)) {
@@ -516,9 +518,10 @@ bool COrgMod::AddStructureToVoucher(string& val, const string& v_type)
 bool 
 COrgMod::FixStructuredVoucher(string& val, const string& v_type)
 {
-    string inst_code = "";
-    string coll_code = "";
-    string id = "";
+    string inst_code;
+    string coll_code;
+    string id;
+
     if (!ParseStructuredVoucher(val, inst_code, coll_code, id)
         || NStr::IsBlank(inst_code)) {
         return AddStructureToVoucher(val, v_type);
@@ -586,20 +589,20 @@ COrgMod::GetInstitutionShortName( const string &full_name )
 string COrgMod::CheckMultipleVouchers(const vector<string>& vouchers)
 {
     ITERATE(vector<string>, it, vouchers) {
-        string inst1 = "", coll1 = "", id1 = "";
+        string inst1, coll1, id1;
         if (!COrgMod::ParseStructuredVoucher(*it, inst1, coll1, id1)) continue;
         if (NStr::EqualNocase(inst1, "personal") || NStr::EqualCase(coll1, "DNA")) continue;
 
         vector<string>::const_iterator it_next = it;
         for (++it_next; it_next != vouchers.end(); ++it_next) {
-            string inst2 = "", coll2 = "", id2 = "";
+            string inst2, coll2, id2;
             if (!COrgMod::ParseStructuredVoucher(*it_next, inst2, coll2, id2)) continue;
             if (NStr::EqualNocase(inst2, "personal") || NStr::EqualCase(coll2, "DNA")) continue;
             if (!NStr::EqualNocase (inst1, inst2) || NStr::IsBlank(inst1)) continue;
             return NStr::EqualNocase(coll1, coll2) && !NStr::IsBlank(coll1) ? "Multiple vouchers with same institution:collection" : "Multiple vouchers with same institution";
         }
     }
-    return "";
+    return kEmptyStr;
 }
 
 
@@ -638,7 +641,7 @@ string s_FixOneStrain( const string& strain)
         // fixed for DSM
     } else {
         // no fix
-        new_val = "";
+        new_val = kEmptyStr;
     }
     return new_val;
 }
@@ -840,7 +843,7 @@ void COrgMod::FixCapitalization()
 
 string COrgMod::AutoFix(TSubtype subtype, const string& value)
 {
-    string new_val = "";
+    string new_val;
     switch (subtype) {
         case COrgMod::eSubtype_strain:
             new_val = FixStrain(value);
