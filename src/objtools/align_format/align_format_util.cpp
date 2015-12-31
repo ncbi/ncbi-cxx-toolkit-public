@@ -356,7 +356,8 @@ CAlignFormatUtil::GetBlastDbInfo(vector<CAlignFormatUtil::SDbInfo>& retval,
         CAlignFormatUtil::SDbInfo info;
         info.is_protein = is_protein;
         bool success = false;
-        const string kDbName = NStr::TruncateSpaces(*i);
+	// Unsafe OK as kDbName only used in this loop.
+        const string kDbName = NStr::TruncateSpaces_Unsafe(*i);
         if (kDbName.empty())
             continue;
 
