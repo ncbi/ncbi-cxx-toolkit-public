@@ -680,9 +680,9 @@ public:
     {
     }
 
-    void SetMonitor(CRAMonitor& monitor, const CTimeout& monitor_period)
+    void SetMonitor(CRAMonitor* monitor, const CTimeout& monitor_period)
     {
-        m_Monitor = &monitor;
+        m_Monitor.reset(monitor);
         m_MonitorWatch = monitor_period;
     }
 
@@ -693,7 +693,7 @@ public:
         if (action != eContinue)
             return action;
 
-        if (m_Monitor && m_MonitorWatch.IsExpired()) {
+        if (m_Monitor.get() && m_MonitorWatch.IsExpired()) {
             CNcbiOstrstream out;
             CNcbiOstrstream err;
             vector<string> args;
@@ -753,7 +753,7 @@ private:
         }
     }
 
-    CRAMonitor* m_Monitor;
+    auto_ptr<CRAMonitor> m_Monitor;
     CTimer m_MonitorWatch;
     string m_JobWDir;
 };
@@ -902,11 +902,10 @@ bool CRemoteAppLauncher::ExecRemoteApp(const vector<string>& args,
             working_dir,
             m_Reaper->GetManager());
 
-        auto_ptr<CRAMonitor> ra_monitor;
         if (!m_MonitorAppPath.empty() && m_MonitorPeriod.IsFinite()) {
-            ra_monitor.reset(new CRAMonitor(m_MonitorAppPath, env,
-                m_MonitorRunTimeout));
-            callback.SetMonitor(*ra_monitor, m_MonitorPeriod);
+            callback.SetMonitor(
+                    new CRAMonitor(m_MonitorAppPath, env, m_MonitorRunTimeout),
+                    m_MonitorPeriod);
         }
 
         bool result = CPipe::ExecWait(GetAppPath(), args, in,
