@@ -636,52 +636,11 @@ public:
             return action;
 
         if (m_MonitorWatch.IsExpired()) {
-            CNcbiOstrstream out;
-            CNcbiOstrstream err;
-            vector<string> args;
-            args.push_back("-pid");
-            args.push_back(NStr::UInt8ToString((Uint8) pid));
-            args.push_back("-jid");
-            args.push_back(m_JobContext.GetJobKey());
-            args.push_back("-jwdir");
-            args.push_back(m_JobWDir);
-
-            switch (Run(args, out, err, m_ProcessManager)) {
-            case eJobRunning:
-                {
-                    bool non_empty_output = !IsOssEmpty(out);
-                    if (non_empty_output) {
-                        m_JobContext.PutProgressMessage
-                            (CNcbiOstrstreamToString(out), true);
-                    }
-                    if (m_JobContext.IsLogRequested() &&
-                        ( !non_empty_output || !IsOssEmpty(err) ))
-                        x_Log("exited with zero return code", err);
-                }
-                break;
-            case eJobToReturn:
-                m_JobContext.ReturnJob();
-                x_Log("job is returned", err);
-                return eStop;
-            case eJobFailed:
-                {
-                    x_Log("job failed", err);
-                    string errmsg;
-                    if ( !IsOssEmpty(out) ) {
-                        errmsg = CNcbiOstrstreamToString(out);
-                    } else
-                        errmsg = "Monitor requested job termination";
-                    throw runtime_error(errmsg);
-                }
-                break;
-            default:
-                x_Log("internal error", err);
-                break;
-            }
+            action = MonitorRun(pid);
             m_MonitorWatch.Restart();
         }
 
-        return eContinue;
+        return action;
     }
 
 private:
@@ -708,20 +667,30 @@ private:
         eInternalError = 3,
     };
 
-    int Run(vector<string>& args, CNcbiOstream& out, CNcbiOstream& err,
-            CRemoteAppReaper::CManager &process_manager)
+    EAction MonitorRun(TProcessHandle pid)
     {
-        CTimedProcessWatcher callback(m_RunTimeout, process_manager);
         CNcbiStrstream in;
-        int exit_value;
-        CPipe::EFinish ret = CPipe::eCanceled;
+        CNcbiOstrstream out;
+        CNcbiOstrstream err;
+        vector<string> args;
+        args.push_back("-pid");
+        args.push_back(NStr::UInt8ToString((Uint8) pid));
+        args.push_back("-jid");
+        args.push_back(m_JobContext.GetJobKey());
+        args.push_back("-jwdir");
+        args.push_back(m_JobWDir);
+
+        CTimedProcessWatcher callback(m_RunTimeout, m_ProcessManager);
+        int exit_value = eInternalError;
         try {
-            ret = CPipe::ExecWait(m_Path, args, in,
+            if (CPipe::eDone != CPipe::ExecWait(m_Path, args, in,
                                   out, err, exit_value,
                                   kEmptyStr, m_Env,
                                   &callback,
                                   NULL,
-                                  PIPE_SIZE);
+                                  PIPE_SIZE)) {
+                exit_value = eInternalError;
+            }
         }
         catch (exception& ex) {
             err << ex.what();
@@ -730,7 +699,40 @@ private:
             err << "Unknown error";
         }
 
-        return ret != CPipe::eDone ? eInternalError : exit_value;
+        switch (exit_value) {
+        case eJobRunning:
+            {
+                bool non_empty_output = !IsOssEmpty(out);
+                if (non_empty_output) {
+                    m_JobContext.PutProgressMessage
+                        (CNcbiOstrstreamToString(out), true);
+                }
+                if (m_JobContext.IsLogRequested() &&
+                    ( !non_empty_output || !IsOssEmpty(err) ))
+                    x_Log("exited with zero return code", err);
+            }
+            return eContinue;
+
+        case eJobToReturn:
+            m_JobContext.ReturnJob();
+            x_Log("job is returned", err);
+            return eStop;
+
+        case eJobFailed:
+            {
+                x_Log("job failed", err);
+                string errmsg;
+                if ( !IsOssEmpty(out) ) {
+                    errmsg = CNcbiOstrstreamToString(out);
+                } else
+                    errmsg = "Monitor requested job termination";
+                throw runtime_error(errmsg);
+            }
+            return eContinue;
+        }
+
+        x_Log("internal error", err);
+        return eContinue;
     }
 
     inline void x_Log(const string& what, CNcbiOstrstream& sstream)
