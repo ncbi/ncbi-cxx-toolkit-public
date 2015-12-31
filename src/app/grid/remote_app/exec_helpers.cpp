@@ -544,73 +544,6 @@ private:
 
 //////////////////////////////////////////////////////////////////////////////
 ///
-class CRAMonitor
-{
-public:
-    // The exit code of the monitor program is interpreted as follows
-    // (any exit code not listed below is treated as eInternalError)
-    enum EResult {
-        // The job is running as expected.
-        // The monitor's stdout is interpreted as a job progress message.
-        // The stderr goes to the log file if logging is enabled.
-        eJobRunning = 0,
-        // The monitor detected an inconsistency with the job run;
-        // the job must be returned back to the queue.
-        // The monitor's stderr goes to the log file
-        // regardless of whether logging is enabled or not.
-        eJobToReturn = 1,
-        // The job must be failed.
-        // The monitor's stdout is interpreted as the error message;
-        // stderr goes to the log file regardless of whether
-        // logging is enabled or not.
-        eJobFailed = 2,
-        // There's a problem with the monitor application itself.
-        // The job continues to run and the monitor's stderr goes
-        // to the log file unconditionally.
-        eInternalError = 3,
-    };
-
-    CRAMonitor(const string& path, const char* const* env,
-        CTimeout run_timeout) :
-        m_Path(path),
-        m_Env(env),
-        m_RunTimeout(run_timeout)
-    {
-    }
-
-    int Run(vector<string>& args, CNcbiOstream& out, CNcbiOstream& err,
-            CRemoteAppReaper::CManager &process_manager)
-    {
-        CTimedProcessWatcher callback(m_RunTimeout, process_manager);
-        CNcbiStrstream in;
-        int exit_value;
-        CPipe::EFinish ret = CPipe::eCanceled;
-        try {
-            ret = CPipe::ExecWait(m_Path, args, in,
-                                  out, err, exit_value,
-                                  kEmptyStr, m_Env,
-                                  &callback,
-                                  NULL,
-                                  PIPE_SIZE);
-        }
-        catch (exception& ex) {
-            err << ex.what();
-        }
-        catch (...) {
-            err << "Unknown error";
-        }
-
-        return ret != CPipe::eDone ? eInternalError : exit_value;
-    }
-
-private:
-    string m_Path;
-    const char* const* m_Env;
-    CTimeout m_RunTimeout;
-};
-
-//////////////////////////////////////////////////////////////////////////////
-///
 class CJobContextProcessWatcher : public CTimedProcessWatcher
 {
 public:
@@ -684,17 +617,15 @@ private:
 class CMonitoredProcessWatcher : public CJobContextProcessWatcher
 {
 public:
-    CMonitoredProcessWatcher(SParams& p, const string& job_wdir)
+    CMonitoredProcessWatcher(SParams& p, const string& job_wdir,
+            const string& path, const char* const* env, CTimeout run_timeout)
         : CJobContextProcessWatcher(p),
-          m_Monitor(NULL), m_MonitorWatch(CTimeout::eInfinite),
-          m_JobWDir(job_wdir)
+          m_MonitorWatch(CTimeout::eInfinite),
+          m_JobWDir(job_wdir),
+          m_Path(path),
+          m_Env(env),
+          m_RunTimeout(run_timeout)
     {
-    }
-
-    void SetMonitor(CRAMonitor* monitor, const CTimeout& monitor_period)
-    {
-        m_Monitor.reset(monitor);
-        m_MonitorWatch = monitor_period;
     }
 
     virtual EAction Watch(TProcessHandle pid)
@@ -704,7 +635,7 @@ public:
         if (action != eContinue)
             return action;
 
-        if (m_Monitor.get() && m_MonitorWatch.IsExpired()) {
+        if (m_MonitorWatch.IsExpired()) {
             CNcbiOstrstream out;
             CNcbiOstrstream err;
             vector<string> args;
@@ -715,8 +646,8 @@ public:
             args.push_back("-jwdir");
             args.push_back(m_JobWDir);
 
-            switch (m_Monitor->Run(args, out, err, m_ProcessManager)) {
-            case CRAMonitor::eJobRunning:
+            switch (Run(args, out, err, m_ProcessManager)) {
+            case eJobRunning:
                 {
                     bool non_empty_output = !IsOssEmpty(out);
                     if (non_empty_output) {
@@ -728,11 +659,11 @@ public:
                         x_Log("exited with zero return code", err);
                 }
                 break;
-            case CRAMonitor::eJobToReturn:
+            case eJobToReturn:
                 m_JobContext.ReturnJob();
                 x_Log("job is returned", err);
                 return eStop;
-            case CRAMonitor::eJobFailed:
+            case eJobFailed:
                 {
                     x_Log("job failed", err);
                     string errmsg;
@@ -754,6 +685,54 @@ public:
     }
 
 private:
+    // The exit code of the monitor program is interpreted as follows
+    // (any exit code not listed below is treated as eInternalError)
+    enum EResult {
+        // The job is running as expected.
+        // The monitor's stdout is interpreted as a job progress message.
+        // The stderr goes to the log file if logging is enabled.
+        eJobRunning = 0,
+        // The monitor detected an inconsistency with the job run;
+        // the job must be returned back to the queue.
+        // The monitor's stderr goes to the log file
+        // regardless of whether logging is enabled or not.
+        eJobToReturn = 1,
+        // The job must be failed.
+        // The monitor's stdout is interpreted as the error message;
+        // stderr goes to the log file regardless of whether
+        // logging is enabled or not.
+        eJobFailed = 2,
+        // There's a problem with the monitor application itself.
+        // The job continues to run and the monitor's stderr goes
+        // to the log file unconditionally.
+        eInternalError = 3,
+    };
+
+    int Run(vector<string>& args, CNcbiOstream& out, CNcbiOstream& err,
+            CRemoteAppReaper::CManager &process_manager)
+    {
+        CTimedProcessWatcher callback(m_RunTimeout, process_manager);
+        CNcbiStrstream in;
+        int exit_value;
+        CPipe::EFinish ret = CPipe::eCanceled;
+        try {
+            ret = CPipe::ExecWait(m_Path, args, in,
+                                  out, err, exit_value,
+                                  kEmptyStr, m_Env,
+                                  &callback,
+                                  NULL,
+                                  PIPE_SIZE);
+        }
+        catch (exception& ex) {
+            err << ex.what();
+        }
+        catch (...) {
+            err << "Unknown error";
+        }
+
+        return ret != CPipe::eDone ? eInternalError : exit_value;
+    }
+
     inline void x_Log(const string& what, CNcbiOstrstream& sstream)
     {
         if ( !IsOssEmpty(sstream) ) {
@@ -764,9 +743,11 @@ private:
         }
     }
 
-    auto_ptr<CRAMonitor> m_Monitor;
     CTimer m_MonitorWatch;
     string m_JobWDir;
+    string m_Path;
+    const char* const* m_Env;
+    CTimeout m_RunTimeout;
 };
 
 
@@ -912,19 +893,18 @@ bool CRemoteAppLauncher::ExecRemoteApp(const vector<string>& args,
                 m_KeepAlivePeriod,
                 m_Reaper->GetManager());
 
-        CMonitoredProcessWatcher callback(params, working_dir);
+        bool monitor = !m_MonitorAppPath.empty() && m_MonitorPeriod.IsFinite();
 
-        if (!m_MonitorAppPath.empty() && m_MonitorPeriod.IsFinite()) {
-            callback.SetMonitor(
-                    new CRAMonitor(m_MonitorAppPath, env, m_MonitorRunTimeout),
-                    m_MonitorPeriod);
-        }
+        auto_ptr<CPipe::IProcessWatcher> watcher(monitor ?
+                new CMonitoredProcessWatcher(params, working_dir,
+                    m_MonitorAppPath, env, m_MonitorRunTimeout) :
+                new CJobContextProcessWatcher(params));
 
         bool result = CPipe::ExecWait(GetAppPath(), args, in,
                                std_out_guard.GetOStream(),
                                std_err_guard.GetOStream(),
                                exit_value,
-                               tmp_path, env, &callback,
+                               tmp_path, env, watcher.get(),
                                &m_KillTimeout,
                                PIPE_SIZE) == CPipe::eDone;
 
