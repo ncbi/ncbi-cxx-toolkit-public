@@ -10,7 +10,7 @@
 #
 
 
-APP: event_parsing test_attributes test_document test_event test_namespace test_node test_tree
+APP: event_parsing test_attributes test_document test_event test_namespace test_node
 APP: test_xslt tree_parsing xml_generation xslt_transformation
 
 LIB: libxmlwrapp.a
