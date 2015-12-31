@@ -1907,6 +1907,7 @@ static string s_CArgs_ReadFromFile(const string& name, const string& filename)
     return string( value.data(), value.size());
 }
 
+
 static string s_CArgs_ReadFromStdin(const string& name, EEchoInput echo_input, const char* cue)
 {
     string thx("\n");
@@ -1954,9 +1955,6 @@ static string s_CArgs_ReadFromStdin(const string& name, EEchoInput echo_input, c
         }
     }
 #else
-    size_t i = 0;
-    unsigned char ch;
-
     struct termios mode, silent_mode;
     if (echo_input == eNoEcho) {
         tcgetattr( STDIN_FILENO, &mode );
@@ -1965,13 +1963,21 @@ static string s_CArgs_ReadFromStdin(const string& name, EEchoInput echo_input, c
         tcsetattr( STDIN_FILENO, TCSANOW, &silent_mode );
     }
 
-    for( i = 0; (ch = (unsigned char)getchar()) != EOF && (ch != '\n') && (ch != '\r'); i++ ) {
+    for (;;) {
+        int ich = getchar();
+        if (ich == EOF)
+            break;
+
+        char ch = (char) ich;
+        if (ch == '\n'  ||  ch == '\r')
+            break;
+
         if (ch == '\b') {
             if (value.size() > 0) {
-                value.erase( value.size()-1, 1);
+                value.resize(value.size() - 1);
             }
         } else {
-            value.append(1, ch);
+            value += ch;
         }
     }
 
@@ -1984,6 +1990,7 @@ static string s_CArgs_ReadFromStdin(const string& name, EEchoInput echo_input, c
     }
     return value;
 }
+
 
 static string s_CArgs_ReadFromConsole(const string& name, EEchoInput echo_input, const char* cue)
 {
