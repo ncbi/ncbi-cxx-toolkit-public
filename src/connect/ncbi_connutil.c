@@ -125,10 +125,14 @@ static const char* x_GetValue(const char* service, const char* param,
             *s++ = '_';
         }
         memcpy(s, param, plen);
+        CORE_LOCK_READ;
         if ((val = getenv(strupr((char*) memcpy(temp, buf, len)))) != 0
             ||  (memcmp(temp, buf, len) != 0  &&  (val = getenv(buf)) != 0)) {
-            return strncpy0(value, val, value_size - 1);
+            strncpy0(value, val, value_size - 1);
+            CORE_UNLOCK;
+            return value;
         }
+        CORE_UNLOCK;
 
         /* Next, search for 'CONN_param' in '[service]' registry section */
         buf[slen++] = '\0';
@@ -158,8 +162,13 @@ static const char* x_GetValue(const char* service, const char* param,
 
     *generic = 1/*true*/;
     /* Environment search for 'CONN_param' */
-    if ((val = getenv(s)) != 0)
-        return strncpy0(value, val, value_size - 1);
+    CORE_LOCK_READ;
+    if ((val = getenv(s)) != 0) {
+        strncpy0(value, val, value_size - 1);
+        CORE_UNLOCK;
+        return value;
+    }
+    CORE_UNLOCK;
 
     /* Last resort: Search for 'param' in default registry section */
     s += sizeof(DEF_CONN_REG_SECTION);
@@ -1167,6 +1176,8 @@ static const char* x_ReqMethod(TReqMethod req_method, char buf[])
         return v1 ? "CONNECT/1.1" : "CONNECT";
     case eReqMethod_Put:
         return "PUT";
+    case eReqMethod_Patch:
+        return "PATCH";
     case eReqMethod_Trace:
         return "TRACE";
     case eReqMethod_Delete:

@@ -111,9 +111,10 @@ typedef enum {
     /* HTTP/1.1 */
     eReqMethod_v1  = 8,
     eReqMethod_Put = 16,     /* 16 */
-    eReqMethod_Trace,        /* 17 */
-    eReqMethod_Delete,       /* 18 */
-    eReqMethod_Options       /* 19 */
+    eReqMethod_Patch,        /* 17 */
+    eReqMethod_Trace,        /* 18 */
+    eReqMethod_Delete,       /* 19 */
+    eReqMethod_Options       /* 20 */
 } EReqMethod;
 
 typedef unsigned TReqMethod; /* EReqMethod or (EReqMethod | eReqMethod_v1) */
