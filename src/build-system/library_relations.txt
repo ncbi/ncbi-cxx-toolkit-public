@@ -197,7 +197,7 @@ cdd needs scoremat
 clog needs3party $(ORIG_LIBS)
 cluster needs3party $(ORIG_LIBS)
 cluster_assignment needs xser
-cluster_utils needs xncbi
+cluster_utils needs gpipe_objutil
 clustering needs cobalt
 cn3d needs mmdb
 cobalt needs $(BLAST_LIBS)
