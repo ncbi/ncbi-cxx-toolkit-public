@@ -77,10 +77,17 @@ static int s_REG_Set(void* user_data,
 {
     int result = 0;
     try {
-        result = static_cast<IRWRegistry*> (user_data)->
-            Set(section, name, value ? string(value) : kEmptyStr,
-                (storage == eREG_Persistent ? CNcbiRegistry::ePersistent : 0) |
-                CNcbiRegistry::eOverride | CNcbiRegistry::eTruncate);
+        IRWRegistry* reg = static_cast<IRWRegistry*> (user_data);
+        result = value
+            ? reg->Set  (section, name, value, 
+                         (storage == eREG_Persistent
+                          ? CNcbiRegistry::fPersistent
+                          | CNcbiRegistry::fTruncate
+                          : CNcbiRegistry::fTruncate))
+            : reg->Unset(section, name,
+                         (storage == eREG_Persistent
+                          ? CNcbiRegistry::fPersistent
+                          : CNcbiRegistry::fTransient));
     }
     NCBI_CATCH_ALL_X(2, "s_REG_Set() failed");
     return result;
