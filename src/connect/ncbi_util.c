@@ -642,32 +642,36 @@ extern const char* CORE_GetAppName(void)
 extern char* CORE_GetNcbiRequestID(ENcbiRequestID reqid)
 {
     char* id;
+
     CORE_LOCK_READ;
     if (g_CORE_GetRequestID) {
         id = g_CORE_GetRequestID(reqid);
-        CORE_UNLOCK;
         assert(!id  ||  *id);
         if (id)
-            return id;
-    } else
-        CORE_UNLOCK;
+            goto out;
+    }
     switch (reqid) {
     case eNcbiRequestID_SID:
         id = getenv("HTTP_NCBI_SID");
         if (id  &&  *id)
-            return strdup(id);
+            break;
         id = getenv("NCBI_LOG_SESSION_ID");
         break;
     case eNcbiRequestID_HitID:
         id = getenv("HTTP_NCBI_PHID");
         if (id  &&  *id)
-            return strdup(id);
+            break;
         id = getenv("NCBI_LOG_HIT_ID");
         break;
     default:
-        return 0;
+        id = 0;
+        goto out;
     }
-    return id  &&  *id ? strdup(id) : 0;
+    id = id  &&  *id ? strdup(id) : 0;
+ out:
+    CORE_UNLOCK;
+
+    return id;
 }
 
 
@@ -765,8 +769,12 @@ extern const char* CORE_GetUsernameEx(char* buf, size_t bufsize,
         UTIL_ReleaseBuffer(login);
         return buf;
     }
-    if ((login = getenv("USERNAME")) != 0)
-        return x_Savestr(login, buf, bufsize);
+    CORE_LOCK_READ;
+    if ((login = getenv("USERNAME")) != 0) {
+        buf = x_Savestr(login, buf, bufsize);
+        CORE_UNLOCK;
+        return buf;
+    }
 #  endif /*NCBI_OS_MSWIN*/
 
 #else
@@ -855,9 +863,12 @@ extern const char* CORE_GetUsernameEx(char* buf, size_t bufsize,
 #endif /*!NCBI_OS_UNIX*/
 
     /* last resort */
+    CORE_LOCK_READ;
     if (!(login = getenv("USER"))  &&  !(login = getenv("LOGNAME")))
         login = "";
-    return x_Savestr(login, buf, bufsize);
+    buf = x_Savestr(login, buf, bufsize);
+    CORE_UNLOCK;
+    return buf;
 }
 
 

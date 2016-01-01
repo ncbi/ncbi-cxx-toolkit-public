@@ -71,7 +71,7 @@ ESwitch SERV_DoFastOpens(ESwitch on)
 }
 
 
-static char* s_ServiceName(const char* service,
+static char* x_ServiceName(const char* service,
                            int/*bool*/ ismask, unsigned int depth)
 {
     char   buf[128];
@@ -112,15 +112,25 @@ static char* s_ServiceName(const char* service,
             s = srv;
         }
         if (*s  &&  strcasecmp(s, service) != 0)
-            return s_ServiceName(s, ismask, depth + 1);
+            return x_ServiceName(s, ismask, depth + 1);
     }
     return strdup(service);
 }
 
 
+static char* s_ServiceName(const char* service, int/*bool*/ ismask)
+{
+    char* retval;
+    CORE_LOCK_READ;
+    retval = x_ServiceName(service, ismask, 0);
+    CORE_UNLOCK;
+    return retval;
+}
+
+
 char* SERV_ServiceName(const char* service)
 {
-    return s_ServiceName(service, 0, 0);
+    return s_ServiceName(service, 0);
 }
 
 
@@ -198,7 +208,7 @@ static SERV_ITER x_Open(const char*         service,
     SERV_ITER iter;
     const char* s;
 
-    if (!(s = s_ServiceName(service, ismask, 0)))
+    if (!(s = s_ServiceName(service, ismask)))
         return 0;
     if (!(iter = (SERV_ITER) calloc(1, sizeof(*iter)))) {
         free((void*) s);

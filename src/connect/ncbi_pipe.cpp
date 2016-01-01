@@ -36,12 +36,12 @@
 #  undef _FORTIFY_SOURCE
 #endif /*_FORTIFY_SOURCE*/
 #define  _FORTIFY_SOURCE 0
+#include "ncbi_priv.h"
 #include <connect/error_codes.hpp>
+#include <corelib/ncbi_param.hpp>
 #include <connect/ncbi_pipe.hpp>
-#include <connect/ncbi_util.h>
 #include <corelib/ncbi_system.hpp>
 #include <corelib/stream_utils.hpp>
-#include <corelib/ncbi_param.hpp>
 
 #ifdef NCBI_OS_MSWIN
 
@@ -987,9 +987,7 @@ static int s_ExecShell(const char *file,
     for (i = 0;  argv[i];  ++i);
     ++i; // copy last zero element also
 
-    // Construct an argument list for the shell.
-    // Not all compilers support next construction:
-    //   const char* args[i + 1];
+    // Construct argument list for the shell
     const char **args = new const char*[i + 1];
     AutoPtr<const char*,  ArrayDeleter<const char*> > args_ptr(args);
 
@@ -1004,7 +1002,7 @@ static int s_ExecShell(const char *file,
 }
 
 
-static int s_ExecVPE(const char *file, char *const argv[], char *const envp[])
+static int s_ExecVPE(const char* file, char* const argv[], char* const envp[])
 {
     // CAUTION (security):  current directory is in the path on purpose,
     //                      to be in-sync with default behavior of MS-Win.
@@ -1015,6 +1013,7 @@ static int s_ExecVPE(const char *file, char *const argv[], char *const envp[])
         errno = ENOENT;
         return -1;
     }
+
     // If the file name contains path
     if ( strchr(file, '/') ) {
         ::execve(file, argv, envp);
@@ -1023,24 +1022,22 @@ static int s_ExecVPE(const char *file, char *const argv[], char *const envp[])
         }
         return -1;
     }
-    // Get PATH environment variable   
-    const char *path = getenv("PATH");
+
+    // Get the PATH environment variable
+    CORE_LOCK_READ;
+    const char* path = getenv("PATH");
     if ( !path ) {
         path = kPathDefault;
     }
-    size_t file_len = strlen(file) + 1 /* '\0' */;
-    size_t buf_len = strlen(path) + file_len + 1 /* '/' */;
-    char* buf = new char[buf_len];
-    if ( !buf ) {
-        errno = ENOMEM;
-        return -1;
-    }
-    AutoPtr<char, ArrayDeleter<char> > buf_ptr(buf);
+    size_t file_len = strlen(file) + 1/*'\0'*/;
+    AutoPtr< char, ArrayDeleter<char> >
+        buf_ptr(new char[strlen(path) + 1/*'/'*/ + file_len]);
+    char* buf = buf_ptr.get();
 
     bool eacces_err = false;
     const char* next = path;
     while (*next) {
-        next = strchr(path,':');
+        next = strchr(path, ':');
         if ( !next ) {
             // Last part of the PATH environment variable
             next = path + strlen(path);
@@ -1048,22 +1045,25 @@ static int s_ExecVPE(const char *file, char *const argv[], char *const envp[])
         size_t len = next - path;
         if ( len ) {
             // Copy directory name into the buffer
-            memmove(buf, path, next - path);
+            memmove(buf, path, len);
+            // Add slash if needed
+            if (buf[len - 1] != '/') {
+                buf[len++]    = '/';
+            }
         } else {
             // Two colons side by side -- current directory
-            buf[0]='.';
-            len = 1;
+            buf[0] = '.';
+            buf[1] = '/';
+            len = 2;
         }
-        // Add slash and file name
-        if (buf[len-1] != '/') {
-            buf[len++] = '/';
-        }
+        // Add file name
         memcpy(buf + len, file, file_len);
         path = next + 1;
 
         // Try to execute file with generated name
         ::execve(buf, argv, envp);
         if (errno == ENOEXEC) {
+            CORE_UNLOCK;
             return s_ExecShell(buf, argv, envp);
         }
         switch (errno) {
@@ -1076,9 +1076,12 @@ static int s_ExecVPE(const char *file, char *const argv[], char *const envp[])
             break;
         default:
             // We found an executable file, but could not execute it
+            CORE_UNLOCK;
             return -1;
         }
     }
+
+    CORE_UNLOCK;
     if ( eacces_err ) {
         errno = EACCES;
     }

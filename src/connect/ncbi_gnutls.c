@@ -559,10 +559,12 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
     }
 
     val = ConnNetInfo_GetValue(0, "GNUTLS_LOGLEVEL", buf, sizeof(buf), 0);
+    CORE_LOCK_READ;
     if (!val  ||  !*val)
         val = getenv("GNUTLS_DEBUG_LEVEL");
     if (val  &&  *val) {
         s_GnuTlsLogLevel = atoi(val);
+        CORE_UNLOCK;
         if (s_GnuTlsLogLevel) {
             gnutls_global_set_log_function(x_GnuTlsLogger);
             if (val != buf)
@@ -570,7 +572,8 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
             CORE_LOGF(eLOG_Note, ("GNUTLS V%s (Loglevel=%d)",
                                   version, s_GnuTlsLogLevel));
         }
-    }
+    } else
+        CORE_UNLOCK;
 
 #  ifdef HAVE_LIBGCRYPT
 #    if   defined(NCBI_POSIX_THREADS)
