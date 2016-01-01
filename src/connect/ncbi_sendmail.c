@@ -241,12 +241,14 @@ static void s_MakeFrom(char* buf, size_t size, const char* from,
             *buf++ = '@';
             if ((!SOCK_gethostbyaddr(0, buf, size)  ||  !strchr(buf, '.'))
                 &&  SOCK_gethostname(buf, size) != 0) {
-                const char* host = getenv("HOSTNAME");
-                if ((!host  &&  !(host = getenv("HOST")))
+                const char* host;
+                CORE_LOCK_READ;
+                if ((!(host = getenv("HOSTNAME")) && !(host = getenv("HOST")))
                     ||  (len = strlen(host)) >= size) {
                     *--buf = '\0';
                 } else
                     strcpy(buf, host);
+                CORE_UNLOCK;
             }
         } else
             *buf   = '\0';
