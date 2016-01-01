@@ -48,6 +48,7 @@
  */
 
 #ifdef NCBI_OS_MSWIN
+#  define  _WINSOCK_DEPRECATED_NO_WARNINGS  1
 #  include <winsock2.h>
 #else /*NCBI_OS_UNIX*/
 #  include <sys/socket.h>
