@@ -75,6 +75,7 @@ typedef unsigned       EBCanConnect;  /* packed ECanConnect */
 
 typedef unsigned short TBHTTP_Flags;  /* packed THTTP_Flags */
 
+typedef unsigned       EBSwitch;      /* packed ESwitch     */
 
 typedef enum {
     eEM_Drop,  /* 0   */
@@ -121,15 +122,17 @@ typedef struct {
     FHTTP_Cleanup     cleanup;        /* cleanup callback                    */
 
     TBHTTP_Flags      flags;          /* as passed to constructor            */
-    unsigned          error_header:1; /* only err.HTTP header on SOME debug  */
+    EBSwitch          error_header:2; /* only err.HTTP header on SOME debug  */
     EBCanConnect      can_connect:2;  /* whether more connections permitted  */
     EBReadState       read_state:4;   /* "READ" mode state per table above   */
+    EBSwitch          bad_redir:2;    /* if insecure redirect is allowed     */
     unsigned          auth_done:1;    /* website authorization sent          */
     unsigned    proxy_auth_done:1;    /* proxy authorization sent            */
     unsigned          skip_host:1;    /* do *not* add the "Host:" header tag */
     unsigned          keepalive:1;    /* connection keep-alive               */
     unsigned          chunked:1;      /* if reading chunked                  */
     unsigned          version:1;      /* HTTP version                        */
+    unsigned          unused:5;
     unsigned          minor_fault:3;  /* incr each minor failure since majo  */
     unsigned short    major_fault;    /* incr each major failure since open  */
     unsigned short    http_code;      /* last http code response             */
@@ -229,6 +232,21 @@ static int/*tri-state*/ x_Authenticate(SHttpConnector* uuu,
 }
 
 
+static int/*bool*/ x_InsecureRedirect(SHttpConnector* uuu)
+{
+    if (uuu->bad_redir == eDefault) {
+        if (!(uuu->flags & fHTTP_InsecureRedirect)) {
+            char val[32];
+            ConnNetInfo_GetValue(0, "HTTP_INSECURE_REDIRECT",
+                                 val, sizeof(val), 0);
+            uuu->bad_redir = ConnNetInfo_Boolean(val) ? eOn : eOff;
+        } else
+            uuu->bad_redir = eOn;
+    }
+    return uuu->bad_redir == eOn ? 1/*true*/ : 0/*false*/;
+}
+
+
 /* -1=prohibited;  0=okay;  1=failure */
 static int/*bool tri-state inverted*/ x_RetryAuth(SHttpConnector* uuu,
                                                   const SRetry*   retry)
@@ -240,7 +258,7 @@ static int/*bool tri-state inverted*/ x_RetryAuth(SHttpConnector* uuu,
     switch (retry->mode) {
     case eRetry_Authenticate:
         if (uuu->net_info->scheme != eURL_Https
-            &&  !(uuu->flags & fHTTP_InsecureRedirect)) {
+            &&  !x_InsecureRedirect(uuu)) {
             return -1/*prohibited*/;
         }
         break;
@@ -292,7 +310,7 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
             else if (retry->data  &&  *retry->data != '?') {
                 if (uuu->net_info->req_method != eReqMethod_Post
                     ||  retry->mode == eRetry_Redirect303
-                    ||  (uuu->flags & fHTTP_InsecureRedirect)
+                    ||  x_InsecureRedirect(uuu)
                     ||  !BUF_Size(uuu->w_buf)) {
                     char           host[sizeof(uuu->net_info->host)];
                     unsigned short port =      uuu->net_info->port;
@@ -303,7 +321,7 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
                     fail = !ConnNetInfo_ParseURL(uuu->net_info, retry->data);
                     if (!fail) {
                         if (secure  &&  uuu->net_info->scheme != eURL_Https
-                            &&  !(uuu->flags & fHTTP_InsecureRedirect)) {
+                            &&  !x_InsecureRedirect(uuu)) {
                             fail = -1;
                         } else {
                             if (port !=    uuu->net_info->port  ||
@@ -611,7 +629,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                 /* Direct HTTP[S] or tunneled HTTPS */
                 if (uuu->net_info->http_push_auth
                     &&  (uuu->net_info->scheme == eURL_Https
-                         ||  (uuu->flags & fHTTP_InsecureRedirect))
+                         ||  x_InsecureRedirect(uuu))
                     &&  !x_Authenticate(uuu, eRetry_Authenticate)) {
                     status = eIO_Unknown;
                     break;
@@ -1085,6 +1103,17 @@ static EIO_Status s_ReadData(SHttpConnector* uuu,
 }
 
 
+static int/*bool*/ x_IsErrorHeader(SHttpConnector* uuu)
+{
+    if (uuu->error_header == eDefault) {
+        char val[32];
+        ConnNetInfo_GetValue(0, "HTTP_ERROR_HEADER_ONLY", val, sizeof(val), 0);
+        uuu->error_header = ConnNetInfo_Boolean(val) ? eOn : eOff;
+    }
+    return uuu->error_header == eOn ? 1/*true*/ : 0/*false*/;
+}
+
+
 /* Read and parse HTTP header */
 static EIO_Status s_ReadHeader(SHttpConnector* uuu,
                                SRetry*         retry,
@@ -1197,7 +1226,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
     } else
         http_code = 0/*no server error*/;
 
-    if ((http_code  ||  !uuu->error_header)
+    if ((http_code  ||  !x_IsErrorHeader(uuu))
         &&  uuu->net_info->debug_printout == eDebugPrintout_Some) {
         /* HTTP header gets printed as part of data logging when
            uuu->net_info->debug_printout == eDebugPrintout_Data. */
@@ -1252,7 +1281,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
 
         if (header_parse == eHTTP_HeaderError) {
             retry->mode = eRetry_None;
-            if (!http_code/*i.e. was okay*/  &&  uuu->error_header
+            if (!http_code/*i.e. was okay*/  &&  x_IsErrorHeader(uuu)
                 &&  uuu->net_info->debug_printout == eDebugPrintout_Some) {
                 if (!url)
                     url = ConnNetInfo_URL(uuu->net_info);
@@ -2181,7 +2210,6 @@ static EIO_Status s_CreateHttpConnector
     SHttpConnector* uuu;
     char*           fff;
     int/*bool*/     sid;
-    char            val[32];
 
     *http = 0;
     xxx = net_info ? ConnNetInfo_Clone(net_info) : ConnNetInfo_Create(0);
@@ -2247,10 +2275,9 @@ static EIO_Status s_CreateHttpConnector
         flags |= fHTTP_NoAutomagicSID;
     uuu->flags        = flags;
 
+    uuu->error_header = eDefault;
     uuu->can_connect  = fCC_None;         /* will be properly set at open */
-
-    ConnNetInfo_GetValue(0, "HTTP_ERROR_HEADER_ONLY", val, sizeof(val), 0);
-    uuu->error_header = ConnNetInfo_Boolean(val);
+    uuu->bad_redir    = flags & fHTTP_InsecureRedirect ? eOn : eOff;
 
     uuu->sock         = 0;
     uuu->o_timeout    = kDefaultTimeout;  /* deliberately bad values here... */
@@ -2279,7 +2306,6 @@ static CONNECTOR s_CreateConnector
 {
     SHttpConnector* uuu;
     CONNECTOR       ccc;
-    char            val[32];
 
     if (s_CreateHttpConnector(net_info, user_header, 0/*regular*/,
                               flags, &uuu) != eIO_Success) {
@@ -2299,9 +2325,9 @@ static CONNECTOR s_CreateConnector
     uuu->adjust       = adjust;
     uuu->cleanup      = cleanup;
 
-    ConnNetInfo_GetValue(0, "HTTP_INSECURE_REDIRECT", val, sizeof(val), 0);
-    if (ConnNetInfo_Boolean(val))
-        uuu->flags |= fHTTP_InsecureRedirect;
+    /* enable an override from outside */
+    if (!uuu->bad_redir)
+        uuu->bad_redir = eDefault;
 
     /* initialize connector structure */
     ccc->handle  = uuu;
