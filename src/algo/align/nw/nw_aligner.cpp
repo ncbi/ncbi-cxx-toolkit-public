@@ -41,6 +41,10 @@
 #include <algo/align/nw/align_exception.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
+
+#include <objmgr/scope.hpp>
+#include <objmgr/seq_vector.hpp>
+
 #include <algorithm>
 
 
@@ -319,7 +323,7 @@ CNWAligner::TScore CNWAligner::x_Align(SAlignInOut* data)
                 V = 0;
                 tracer = kMaskStart;
             } else if (E >= rowF[j]) {
-                if(E > G || E == G && (m_GapPreference == eLater)) {
+                if(E > G || (E == G && m_GapPreference == eLater)) {
                     V = E;
                     tracer |= kMaskE;
                 }
@@ -328,7 +332,7 @@ CNWAligner::TScore CNWAligner::x_Align(SAlignInOut* data)
                     tracer = kMaskD;
                 }
             } else {
-                if(rowF[j] > G || rowF[j] == G && (m_GapPreference == eLater)) {
+                if(rowF[j] > G || (rowF[j] == G && m_GapPreference == eLater)) {
                     V = rowF[j];
                 }
                 else {
@@ -363,6 +367,41 @@ CNWAligner::TScore CNWAligner::x_Align(SAlignInOut* data)
     return V;
 }
 
+
+CRef<CSeq_align> CNWAligner::Run(CScope &scope, const CSeq_id &id1,
+                                 const CSeq_id &id2, bool trim_end_gaps)
+{
+    CSeq_loc loc1, loc2;
+    loc1.SetWhole().Assign(id1);
+    loc2.SetWhole().Assign(id2);
+    return Run(scope, loc1, loc2, trim_end_gaps);
+}
+
+CRef<CSeq_align> CNWAligner::Run(CScope &scope, const CSeq_loc &loc1,
+                                 const CSeq_loc &loc2, bool trim_end_gaps)
+{
+    if ((!loc1.IsInt() && !loc1.IsWhole()) ||
+        (!loc1.IsInt() && !loc1.IsWhole()))
+    {
+        NCBI_THROW(CException, eUnknown,
+                   "Only whole and interval locations supported");
+    }
+    CSeqVector vec1(loc1, scope, CBioseq_Handle::eCoding_Iupac);
+    string seq1;
+    vec1.GetSeqData(0, vec1.size(), seq1);
+    CSeqVector vec2(loc2, scope, CBioseq_Handle::eCoding_Iupac);
+    string seq2;
+    vec2.GetSeqData(0, vec2.size(), seq2);
+    SetSequences(seq1,seq2);
+    Run();
+    CRef<CSeq_align> align(new CSeq_align);
+    align->SetType(CSeq_align::eType_partial);
+    align->SetSegs().SetDenseg(*GetDense_seg(
+        loc1.GetStart(eExtreme_Biological), loc1.GetStrand(), *loc1.GetId(),
+        loc2.GetStart(eExtreme_Biological), loc2.GetStrand(), *loc2.GetId(),
+        trim_end_gaps));
+    return align;
+}
 
 CNWAligner::TScore CNWAligner::Run()
 {
@@ -1491,11 +1530,15 @@ size_t CNWAligner::GetLongestSeg(size_t* q0, size_t* q1,
 CRef<CDense_seg> CNWAligner::GetDense_seg(TSeqPos query_start,
                                           ENa_strand query_strand,
                                           TSeqPos subj_start,
-                                          ENa_strand subj_strand) const
+                                          ENa_strand subj_strand,
+                                          bool trim_end_gaps) const
 {
     CRef<CDense_seg> ds(new CDense_seg);
     ds->FromTranscript(query_start, query_strand, subj_start, subj_strand,
                        GetTranscriptString());
+    if (trim_end_gaps) {
+        ds->TrimEndGaps();
+    }
     return ds;
 }
 
@@ -1505,10 +1548,12 @@ CRef<CDense_seg> CNWAligner::GetDense_seg(TSeqPos query_start,
                                           const CSeq_id& query_id,
                                           TSeqPos subj_start,
                                           ENa_strand subj_strand,
-                                          const CSeq_id& subj_id) const
+                                          const CSeq_id& subj_id,
+                                          bool trim_end_gaps) const
 {
     CRef<CDense_seg> ds = GetDense_seg(query_start, query_strand,
-                                       subj_start, subj_strand);
+                                       subj_start, subj_strand,
+                                       trim_end_gaps);
     CRef<CSeq_id> id0(new CSeq_id);
     CRef<CSeq_id> id1(new CSeq_id);
     id0->Assign(query_id);

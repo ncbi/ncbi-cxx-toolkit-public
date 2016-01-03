@@ -57,6 +57,9 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
     class CDense_seg;
     class CSeq_id;
+    class CSeq_loc;
+    class CSeq_align;
+    class CScope;
 END_SCOPE(objects)
 
 // Needleman-Wunsch algorithm encapsulation
@@ -85,6 +88,18 @@ public:
 
     // Compute the alignment
     virtual TScore Run(void);
+
+    // Compte an alignment based on two Seq-locs
+    CRef<objects::CSeq_align> Run(objects::CScope &scope,
+                                  const objects::CSeq_loc &loc1,
+                                  const objects::CSeq_loc &loc2,
+                                  bool trim_end_gaps = true);
+
+    // Compte an alignment based on two entire sequences
+    CRef<objects::CSeq_align> Run(objects::CScope &scope,
+                                  const objects::CSeq_id &id1,
+                                  const objects::CSeq_id &id2,
+                                  bool trim_end_gaps = true);
 
     // Setters
     virtual void SetSequences(const char* seq1, size_t len1,
@@ -225,7 +240,8 @@ public:
     CRef<objects::CDense_seg> GetDense_seg(TSeqPos query_start,
                                            objects::ENa_strand query_strand,
                                            TSeqPos subj_start,
-                                           objects::ENa_strand subj_strand)
+                                           objects::ENa_strand subj_strand,
+                                           bool trim_end_gaps = false)
                                            const;
 
     // Create a Dense-seg representing the alignment, with provided ids set
@@ -234,7 +250,8 @@ public:
                                            const objects::CSeq_id& query_id,
                                            TSeqPos subj_start,
                                            objects::ENa_strand subj_strand,
-                                           const objects::CSeq_id& subj_id)
+                                           const objects::CSeq_id& subj_id,
+                                           bool trim_end_gaps = false)
                                            const;
 
 protected:
@@ -295,7 +312,7 @@ protected:
 
     // approximate max space to use
     size_t                   m_MaxMem;
- 
+
     // facilitate guide pre- and  post-processing, if applicable
     virtual TScore x_Run   (void);
 
