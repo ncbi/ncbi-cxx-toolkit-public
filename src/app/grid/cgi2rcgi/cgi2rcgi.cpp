@@ -295,9 +295,9 @@ private:
         eTerminated
     };
 
-    EJobPhase CheckJob(CGridCgiContext& grid_ctx);
-    EJobPhase SubmitJob(CCgiRequest& request, CGridCgiContext& grid_ctx);
-    void PopulatePage(EJobPhase phase, CGridCgiContext& grid_ctx);
+    void CheckJob(CGridCgiContext& grid_ctx);
+    void SubmitJob(CCgiRequest& request, CGridCgiContext& grid_ctx);
+    void PopulatePage(CGridCgiContext& grid_ctx);
     int RenderPage();
     EJobPhase x_CheckJobStatus(CGridCgiContext&);
     EJobPhase x_CheckJobStatus(CGridCgiContext&, CNetScheduleAPI::EJobStatus);
@@ -657,15 +657,13 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
             }
         }
 
-        EJobPhase phase = eTerminated;
-
         grid_ctx.PullUpPersistentEntry(kSinceTime);
 
         try {
             if (!grid_ctx.GetJobKey().empty()) {
-                phase = CheckJob(grid_ctx);
+                CheckJob(grid_ctx);
             } else {
-                phase = SubmitJob(request, grid_ctx);
+                SubmitJob(request, grid_ctx);
             }
         } // try
         catch (exception& ex) {
@@ -673,7 +671,7 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
             OnJobFailed(ex.what(), grid_ctx);
         }
 
-        PopulatePage(phase, grid_ctx);
+        PopulatePage(grid_ctx);
     } //try
     catch (exception& e) {
         ERR_POST("Failed to populate " << m_Title <<
@@ -684,7 +682,7 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
     return grid_ctx.NeedRenderPage() ? RenderPage() : 0;
 }
 
-CCgi2RCgiApp::EJobPhase CCgi2RCgiApp::CheckJob(CGridCgiContext& grid_ctx)
+void CCgi2RCgiApp::CheckJob(CGridCgiContext& grid_ctx)
 {
     EJobPhase phase = eTerminated;
 
@@ -717,11 +715,9 @@ CCgi2RCgiApp::EJobPhase CCgi2RCgiApp::CheckJob(CGridCgiContext& grid_ctx)
 
         DefineRefreshTags(grid_ctx.GetSelfURL(), m_RefreshDelay);
     }
-
-    return phase;
 }
 
-CCgi2RCgiApp::EJobPhase CCgi2RCgiApp::SubmitJob(CCgiRequest& request,
+void CCgi2RCgiApp::SubmitJob(CCgiRequest& request,
         CGridCgiContext& grid_ctx)
 {
     EJobPhase phase = eTerminated;
@@ -810,11 +806,9 @@ CCgi2RCgiApp::EJobPhase CCgi2RCgiApp::SubmitJob(CCgiRequest& request,
 
     if (phase == eTerminated)
         grid_ctx.Clear();
-
-    return phase;
 }
 
-void CCgi2RCgiApp::PopulatePage(EJobPhase phase, CGridCgiContext& grid_ctx)
+void CCgi2RCgiApp::PopulatePage(CGridCgiContext& grid_ctx)
 {
     CHTMLPlainText* self_url =
         new CHTMLPlainText(grid_ctx.GetSelfURL(), true);
@@ -857,19 +851,17 @@ void CCgi2RCgiApp::PopulatePage(EJobPhase phase, CGridCgiContext& grid_ctx)
     if (m_AddJobIdToHeader) {
         m_Response->SetHeaderValue(HTTP_NCBI_JSID, grid_ctx.GetJobKey());
     }
-    if (phase == eRunning) {
-        string progress_message;
-        try {
-            progress_message = m_GridClient->GetProgressMessage();
-        }
-        catch (CException& e) {
-            ERR_POST("Could not retrieve progress message for " <<
-                    grid_ctx.GetJobKey() << ": " << e);
-        }
-        grid_ctx.SetJobProgressMessage(progress_message);
-        grid_ctx.GetHTMLPage().AddTagMap("PROGERSS_MSG",
-                new CHTMLPlainText(m_TargetEncodeMode, progress_message));
+    string progress_message;
+    try {
+        progress_message = m_GridClient->GetProgressMessage();
     }
+    catch (CException& e) {
+        ERR_POST("Could not retrieve progress message for " <<
+                grid_ctx.GetJobKey() << ": " << e);
+    }
+    grid_ctx.SetJobProgressMessage(progress_message);
+    grid_ctx.GetHTMLPage().AddTagMap("PROGERSS_MSG",
+            new CHTMLPlainText(m_TargetEncodeMode, progress_message));
 }
 
 int CCgi2RCgiApp::RenderPage()
