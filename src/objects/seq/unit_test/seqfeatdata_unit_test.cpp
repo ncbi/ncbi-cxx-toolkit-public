@@ -1191,7 +1191,6 @@ BOOST_AUTO_TEST_CASE(Test_GetRNAProduct)
 
     rna->SetType(CRNA_ref::eType_tRNA);
     product.assign("tRNA-Ser");
-    string remainder;
     rna->SetExt().SetTRNA().SetAa().SetNcbieaa(83);
     BOOST_CHECK_EQUAL(rna->GetRnaProductName(), product);
 

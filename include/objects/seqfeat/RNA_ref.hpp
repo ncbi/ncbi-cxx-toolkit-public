@@ -61,7 +61,7 @@ public:
 
     static string GetRnaTypeName (const CRNA_ref::EType rna_type);
 
-    const string& GetRnaProductName(void) const;
+    string GetRnaProductName(void) const;
     void SetRnaProductName(const string& product, string& remainder);
 
 private:

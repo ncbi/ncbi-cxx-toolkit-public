@@ -81,7 +81,7 @@ string CRNA_ref::GetRnaTypeName (const CRNA_ref::EType rna_type)
     return rna_type_name;
 }
 
-static const string s_TrnaList[] = {
+static const char* sc_TrnaList[] = {
   "tRNA-Gap",
   "tRNA-Ala",
   "tRNA-Asx",
@@ -93,7 +93,7 @@ static const string s_TrnaList[] = {
   "tRNA-His",
   "tRNA-Ile",
   "tRNA-Xle",
-  "tRNA-Lys",
+  "tRNA-Lys", 
   "tRNA-Leu",
   "tRNA-Met",
   "tRNA-Asn",
@@ -108,21 +108,21 @@ static const string s_TrnaList[] = {
   "tRNA-Trp",
   "tRNA-OTHER",
   "tRNA-Tyr",
-  "tRNA-Glx",
+  "tRNA-Glx", 
   "tRNA-TERM"
 };
 
-static const string& s_AaName(int aa)
+static CTempString s_AaName(int aa)
 {
     int idx = 255;
 
     if (aa != '*') {
         idx = aa - 64;
     } else {
-        idx = 28;   
+        idx = 27;  
     }
-    if ( idx > 0 && idx < 28 ) {
-        return s_TrnaList [idx];
+    if (idx > 0 && idx < ArraySize(sc_TrnaList)) {
+        return sc_TrnaList [idx];
     }
     return kEmptyStr;
 }
@@ -135,18 +135,20 @@ static int s_ToIupacaa(int aa)
     return i.front();
 }
 
-static const string& s_GetTrnaProduct(const CTrna_ext& trna)
+static CTempString s_GetTrnaProduct(const CTrna_ext& trna)
 {
     int aa = 0;
-    if ( trna.IsSetAa()  &&  trna.GetAa().IsNcbieaa() ) {
-        aa = trna.GetAa().GetNcbieaa();
-    }
+    if ( trna.IsSetAa() ) {
+        if (trna.GetAa().IsNcbieaa()) {
+            aa = trna.GetAa().GetNcbieaa();
+        }
+    } 
     aa = s_ToIupacaa(aa);
 
     return s_AaName(aa);
 }
 
-const string& CRNA_ref::GetRnaProductName(void) const
+string CRNA_ref::GetRnaProductName(void) const
 {
     if (!IsSetExt()) {
         return kEmptyStr;
@@ -171,7 +173,6 @@ static void s_SetTrnaProduct(CTrna_ext& trna, const string& product, string& rem
         return;
     }
 
-    int num_names = sizeof(s_TrnaList) / sizeof (string);
     string test = product;
     if (!NStr::StartsWith(product, "tRNA-")) {
         test = "tRNA-" + test;
@@ -186,10 +187,10 @@ static void s_SetTrnaProduct(CTrna_ext& trna, const string& product, string& rem
         }
     } else {
         remainder = product;
-        for (int i = 0; i < num_names - 1; i++) {
-            if (NStr::StartsWith(test, s_TrnaList[i], NStr::eNocase)) {
+        for (size_t i = 0; i < ArraySize(sc_TrnaList); ++i) {
+            if (NStr::StartsWith(test, sc_TrnaList[i], NStr::eNocase)) {
                 trna.SetAa().SetNcbieaa(i + 64);
-                remainder = test.substr(s_TrnaList[i].length());
+                remainder = test.substr(CTempString(sc_TrnaList[i]).length());
                 break;
             }
         }

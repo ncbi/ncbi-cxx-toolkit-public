@@ -11832,7 +11832,7 @@ void CNewCleanup_imp::MoveStandardName(CSeq_feat& sf)
     while (it != sf.SetQual().end()) {
         if ((*it)->IsSetQual() && (*it)->IsSetVal() && NStr::Equal((*it)->GetQual(), "standard_name")) {
             string val = (*it)->GetVal();
-            const string& product = sf.GetData().GetRna().GetRnaProductName();
+            const string product = sf.GetData().GetRna().GetRnaProductName();
             if (NStr::IsBlank(product)) {
                 string remainder = "";
                 sf.SetData().SetRna().SetRnaProductName(val, remainder);
