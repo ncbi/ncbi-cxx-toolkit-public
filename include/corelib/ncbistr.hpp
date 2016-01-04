@@ -2494,7 +2494,7 @@ public:
     ///   Automatically use flags: fSplit_MergeDelimiters | fSplit_Truncate
     /// @deprecated  Use Split() with TSplitFlags instead
     inline
-//!    NCBI_DEPRECATED
+    NCBI_DEPRECATED
     static list<string>& Split(const CTempString    str,
                                const CTempString    delim,
                                list<string>&        arr) {
@@ -2506,7 +2506,7 @@ public:
     ///   Automatically use flags: fSplit_MergeDelimiters | fSplit_Truncate
     /// @deprecated  Use Split() with TSplitFlags instead
     inline
-//!    NCBI_DEPRECATED
+    NCBI_DEPRECATED
     static list<CTempStringEx>& Split(
                                 const CTempString    str,
                                 const CTempString    delim,
@@ -2516,7 +2516,7 @@ public:
 
     /// @deprecated  Use Split() with TSplitFlags instead
     inline
-//!    NCBI_DEPRECATED
+    NCBI_DEPRECATED
     static list<string>& Split( const CTempString  str,
                                 const CTempString  delim,
                                 list<string>&      arr,
@@ -2526,7 +2526,7 @@ public:
     }
 
     /// @deprecated  Use Split() with TSplitFlags instead
-//!    NCBI_DEPRECATED
+    NCBI_DEPRECATED
     static list<CTempString>& Split(
                                 const CTempString  str,
                                 const CTempString  delim,
@@ -2582,7 +2582,7 @@ public:
                            CTempString_Storage* storage = NULL);
 
     /// @deprecated  Use SplitInTwo() with TSplitFlags instead
-//!    NCBI_DEPRECATED
+    NCBI_DEPRECATED
     static bool SplitInTwo(const CTempString  str, 
                            const CTempString  delim,
                            string&            str1,
@@ -2590,7 +2590,7 @@ public:
                            EMergeDelims       merge);
 
     /// @deprecated  Use SplitInTwo() with TSplitFlags instead
-//!    NCBI_DEPRECATED
+    NCBI_DEPRECATED
     static bool SplitInTwo(const CTempString  str, 
                            const CTempString  delim,
                            CTempString&       str1,
@@ -2654,7 +2654,7 @@ public:
     ///   ESplitFlags, Split, SplitInTwo, SplitByPattern
 
     /// @deprecated  Use Split() instead
-//!    NCBI_DEPRECATED
+    NCBI_DEPRECATED
     static vector<string>& Tokenize(const CTempString  str,
                                     const CTempString  delim,
                                     vector<string>&    arr,
@@ -2662,7 +2662,7 @@ public:
                                     vector<SIZE_TYPE>* token_pos = NULL);
 
     /// @deprecated  Use Split() instead
-//!    NCBI_DEPRECATED
+    NCBI_DEPRECATED
     static vector<string>& Tokenize(const CTempString  str,
                                     const CTempString  delim,
                                     vector<string>&    arr,
@@ -2670,7 +2670,7 @@ public:
                                     vector<SIZE_TYPE>* token_pos = NULL);
 
     /// @deprecated  Use Split() instead
-//!    NCBI_DEPRECATED
+    NCBI_DEPRECATED
     static
     vector<CTempStringEx>& Tokenize(const CTempString      str,
                                     const CTempString      delim,
@@ -2680,7 +2680,7 @@ public:
                                     CTempString_Storage*   storage = NULL);
 
     /// @deprecated  Use Split() instead
-//!    NCBI_DEPRECATED
+    NCBI_DEPRECATED
     static
     vector<CTempString>& Tokenize(  const CTempString    str,
                                     const CTempString    delim,
@@ -2689,7 +2689,7 @@ public:
                                     vector<SIZE_TYPE>*   token_pos = NULL);
 
     /// @deprecated  Use SplitByPattern() instead
-//!    NCBI_DEPRECATED
+    NCBI_DEPRECATED
     static
     vector<string>& TokenizePattern(const CTempString  str,
                                     const CTempString  delim,
@@ -2698,7 +2698,7 @@ public:
                                     vector<SIZE_TYPE>* token_pos = NULL);
 
     /// @deprecated  Use SplitByPattern() instead
-//!    NCBI_DEPRECATED
+    NCBI_DEPRECATED
     static
     vector<CTempString>& TokenizePattern(
                                     const CTempString    str,
