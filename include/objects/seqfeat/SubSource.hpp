@@ -210,7 +210,7 @@ private:
     CSubSource(const CSubSource& value);
     CSubSource& operator=(const CSubSource& value);
 
-    static string x_ParseDateRangeWithDelimiter(const string& orig_date, const string& delim);
+    static string x_ParseDateRangeWithDelimiter(const string& orig_date, CTempString delim);
     static vector<string> x_GetDateTokens(const string& orig_date);
     static CLatLonCountryId * x_CalculateLatLonId(float lat_value, float lon_value, string country, string province);
 
