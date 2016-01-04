@@ -40,7 +40,6 @@
 // generated includes
 #include <objects/seqfeat/RNA_ref.hpp>
 #include <objects/seqfeat/Trna_ext.hpp>
-#include <util/sequtil/sequtil_convert.hpp>
 
 // generated classes
 
@@ -121,19 +120,13 @@ static CTempString s_AaName(int aa)
     } else {
         idx = 27;  
     }
+
     if (idx > 0 && idx < ArraySize(sc_TrnaList)) {
         return sc_TrnaList [idx];
     }
     return kEmptyStr;
 }
 
-static int s_ToIupacaa(int aa)
-{
-    vector<char> n(1, static_cast<char>(aa));
-    vector<char> i;
-    CSeqConvert::Convert(n, CSeqUtil::e_Ncbieaa, 0, 1, i, CSeqUtil::e_Iupacaa);
-    return i.front();
-}
 
 static CTempString s_GetTrnaProduct(const CTrna_ext& trna)
 {
@@ -141,9 +134,10 @@ static CTempString s_GetTrnaProduct(const CTrna_ext& trna)
     if ( trna.IsSetAa() ) {
         if (trna.GetAa().IsNcbieaa()) {
             aa = trna.GetAa().GetNcbieaa();
+        } else if (trna.GetAa().IsIupacaa()) {
+            aa = trna.GetAa().GetIupacaa();
         }
     } 
-    aa = s_ToIupacaa(aa);
 
     return s_AaName(aa);
 }

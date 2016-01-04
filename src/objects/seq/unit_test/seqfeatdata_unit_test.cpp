@@ -1196,6 +1196,29 @@ BOOST_AUTO_TEST_CASE(Test_GetRNAProduct)
 
     rna->SetType(CRNA_ref::eType_ncRNA);
     BOOST_CHECK_EQUAL(rna->GetRnaProductName(), product);
+
+    product.assign("tRNA-Met");
+    rna->SetType(CRNA_ref::eType_tRNA);
+    rna->SetExt().SetTRNA().SetAa().SetIupacaa(77);
+    BOOST_CHECK_EQUAL(rna->GetRnaProductName(), product);
+
+    product.assign("tRNA-OTHER");
+    rna->SetExt().SetTRNA().SetAa().SetIupacaa(88);
+    BOOST_CHECK_EQUAL(rna->GetRnaProductName(), product);
+
+    rna->SetExt().SetTRNA().SetAa().SetNcbieaa(88);
+    BOOST_CHECK_EQUAL(rna->GetRnaProductName(), product);
+
+    product.assign("tRNA-TERM");
+    rna->SetExt().SetTRNA().SetAa().SetNcbieaa(42);
+    BOOST_CHECK_EQUAL(rna->GetRnaProductName(), product);
+
+    rna->SetExt().SetTRNA().SetAa().SetIupacaa(42);
+    BOOST_CHECK_EQUAL(rna->GetRnaProductName(), product);
+
+    product.clear();
+    rna->SetExt().SetTRNA().SetAa().SetIupacaa(43);
+    BOOST_CHECK_EQUAL(rna->GetRnaProductName(), product); 
 }
 
 BOOST_AUTO_TEST_CASE(Test_SetRnaProductName)
@@ -1260,7 +1283,7 @@ BOOST_AUTO_TEST_CASE(Test_SetRnaProductName)
     BOOST_CHECK_EQUAL(rna->GetExt().GetTRNA().GetAa().GetNcbieaa(), 65);
     BOOST_CHECK_EQUAL(remainder, kEmptyStr);
 
-    product.resize(0);
+    product.clear();
     rna->SetRnaProductName(product, remainder);
     BOOST_CHECK_EQUAL(rna->IsSetExt(), true);
     BOOST_CHECK_EQUAL(rna->GetExt().GetTRNA().IsSetAa(), false);
@@ -1271,6 +1294,18 @@ BOOST_AUTO_TEST_CASE(Test_SetRnaProductName)
     rna->SetRnaProductName(product, remainder);
     BOOST_CHECK_EQUAL(rna->GetExt().IsTRNA(), true);
     BOOST_CHECK_EQUAL(rna->GetExt().GetTRNA().GetAa().GetNcbieaa(), 83);
+    BOOST_CHECK_EQUAL(remainder, kEmptyStr);
+
+    product.assign("TERM");
+    rna->SetRnaProductName(product, remainder);
+    BOOST_CHECK_EQUAL(rna->GetExt().IsTRNA(), true);
+    BOOST_CHECK_EQUAL(rna->GetExt().GetTRNA().GetAa().GetNcbieaa(), 42);
+    BOOST_CHECK_EQUAL(remainder, kEmptyStr);
+
+    product.assign("tRNA-other");
+    rna->SetRnaProductName(product, remainder);
+    BOOST_CHECK_EQUAL(rna->GetExt().IsTRNA(), true);
+    BOOST_CHECK_EQUAL(rna->GetExt().GetTRNA().GetAa().GetNcbieaa(), 88);
     BOOST_CHECK_EQUAL(remainder, kEmptyStr);
 }
 
