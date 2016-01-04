@@ -125,6 +125,9 @@ CIgAnnotationInfo::CIgAnnotationInfo(CConstRef<CIgBlastOptions> &ig_opt)
             }
             if (tokens.size() == 3) { //just backward compatible as there was no such field
                 m_DJChainType[tokens[0]] = tokens[2];
+            } else if (tokens.size() == 4) { //just backward compatible as there was no such field
+                m_DJChainType[tokens[0]] = tokens[2];
+                m_JDomainInfo[tokens[0]] = NStr::StringToInt(tokens[3]);
             }
         }
     }
@@ -850,6 +853,30 @@ void CIgBlast::x_FindDJ(CRef<CSearchResultSet>& results_D,
         
 }
 
+void CIgBlast::x_FillJDomain(CRef<CSeq_align> & align, CRef <CIgAnnotation> & annot){
+    string sid = s_RemoveLocalPrefix(align->GetSeq_id(1).AsFastaString());
+    int j_cdr3end = m_AnnotationInfo.GetJDomain(sid);
+    if (j_cdr3end > 0) {
+        int subject_end = align->GetSeqStop(1);
+        CAlnMap j_map(align->GetSegs().GetDenseg());
+        
+        //+1 actaully is in fwr4 already...need to do this so that a insertion right in front
+        // of fwr4 can be handled.
+        annot->m_JDomain[1] = j_map.GetSeqPosFromSeqPos(0, 1, 
+                                                        min(j_cdr3end + 1, 
+                                                            subject_end), 
+                                                        IAlnExplorer::eRight);
+        
+        if (align->GetSeqStrand(0) == eNa_strand_minus) {
+            annot->m_JDomain[1] = m_Scope->GetBioseqHandle(align->GetSeq_id(0)).GetBioseqLength() - annot->m_JDomain[1] - 1;
+        } 
+           
+        //deduct one back to in CDR3
+        annot->m_JDomain[1] --;
+    }
+}
+
+
 void CIgBlast::x_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
                             CRef<CSearchResultSet>        &results_J,
                             vector<CRef <CIgAnnotation> > &annots)
@@ -888,6 +915,7 @@ void CIgBlast::x_AnnotateDJ(CRef<CSearchResultSet>        &results_D,
         if (align_J.NotEmpty() && !align_J->IsEmpty()) {
             const CSeq_align_set::Tdata & align_list = align_J->Get();
             CRef<CSeq_align> align = align_list.front();
+            x_FillJDomain(align, *annot);
             (*annot)->m_GeneInfo[4] = align->GetSeqStart(0);
             (*annot)->m_GeneInfo[5] = align->GetSeqStop(0)+1;
             string sid = s_RemoveLocalPrefix(align->GetSeq_id(1).AsFastaString());

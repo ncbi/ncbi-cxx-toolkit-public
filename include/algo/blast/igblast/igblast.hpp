@@ -98,6 +98,8 @@ public:
     int m_DomainInfo_S[10];          // The (start) and (end offset) for FWR1, 
                                      // CDR1, FWR2, CDR2, FWR3, CDR3 domains on topV sequence
 
+    int m_JDomain[2];                // CDr3 start and stop 
+
     /// Constructor
     CIgAnnotation() 
         : m_MinusStrand (false) 
@@ -107,6 +109,7 @@ public:
         for (int i=0; i<3; i++) m_FrameInfo[i] = -1;
         for (int i=0; i<12; i++) m_DomainInfo[i] = -1;
         for (int i=0; i<10; i++) m_DomainInfo_S[i] = -1;
+        for (int i=0; i<2; i++) m_JDomain[i] = -1;
     }
 
 };
@@ -140,6 +143,14 @@ public:
         }
         return -1;
     }
+    int GetJDomain(const string& sid) {
+        if (m_JDomainInfo.find(sid) != m_JDomainInfo.end()) {
+            return m_JDomainInfo[sid];
+        }
+        return -1;
+
+    }
+
 
     const string GetDJChainType(const string sid) {
         if (m_DJChainType.find(sid) != m_DJChainType.end()) {
@@ -153,7 +164,8 @@ private:
     vector<int> m_DomainData;
     map<string, string> m_DomainChainType;
     map<string, int> m_FrameOffset;
-    map<string, string> m_DJChainType;
+    map<string, string> m_DJChainType;    
+    map<string, int>  m_JDomainInfo; 
 };
 
 class CIgBlastResults : public CSearchResults 
@@ -341,6 +353,7 @@ private:
                      bool va_or_vd_as_heavy_chain);
 
     void x_ExtendAlign(CRef<CSearchResultSet> & results);
+    void x_FillJDomain(CRef<CSeq_align> & align, CRef <CIgAnnotation> & annot);
     
 };
 
