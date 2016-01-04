@@ -1281,8 +1281,7 @@ xalan-c needs3party $(ICU_LIBS)
 xalan-c needs3party $(ORIG_LIBS)
 xalan-c needs3party $(XERCES_LIBS)
 xalanMsg needs3party $(ORIG_LIBS)
-xalgoalignnw needs $(SEQ_LIBS)
-xalgoalignnw needs pub
+xalgoalignnw needs $(SOBJMGR_LIBS)
 xalgoalignnw needs tables
 xalgoalignsplign needs xalgoalignnw
 xalgoalignsplign needs xalgoalignutil
