@@ -43,6 +43,7 @@ BEGIN_NCBI_SCOPE
 
 class CRemoteAppReaper;
 class CRemoteAppVersion;
+class CRemoteAppTimeoutReporter;
 
 class CRemoteAppLauncher
 {
@@ -112,6 +113,7 @@ private:
 
     auto_ptr<CRemoteAppReaper> m_Reaper;
     auto_ptr<CRemoteAppVersion> m_Version;
+    auto_ptr<CRemoteAppTimeoutReporter> m_TimeoutReporter;
 };
 
 // This class is for starting CCollector (a separate thread) after Daemonize()

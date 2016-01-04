@@ -300,6 +300,55 @@ string CRemoteAppVersion::Get(const string& v) const
     return v;
 }
 
+// This class is responsible for reporting clients about apps timing out
+class CRemoteAppTimeoutReporter
+{
+public:
+    CRemoteAppTimeoutReporter(const string& mode) : m_Mode(Get(mode)) {}
+
+    void Report(CWorkerNodeJobContext& job_context, unsigned seconds)
+    {
+        switch (m_Mode) {
+        case eNever:
+            return;
+
+        case eSmart:
+            if (!job_context.GetJob().progress_msg.empty()) return;
+
+            /* FALL THROUGH */
+
+        case eAlways:
+            job_context.PutProgressMessage("Job run time exceeded " +
+                    NStr::UIntToString(seconds) + " seconds.", true);
+            return;
+        }
+    }
+
+private:
+    enum EMode { eSmart, eAlways, eNever };
+
+    static EMode Get(const string& mode)
+    {
+        if (!NStr::CompareNocase(mode, "smart"))
+            return eSmart;
+
+        else if (!NStr::CompareNocase(mode, "always"))
+            return eAlways;
+
+        else if (!NStr::CompareNocase(mode, "never"))
+            return eNever;
+        else
+            ERR_POST("Unknown parameter value: "
+                    "parameter \"progress_message_on_timeout\", "
+                    "value: \"" << mode << "\". "
+                    "Allowed values: smart, always, never");
+
+        return eSmart;
+    }
+
+    EMode m_Mode;
+};
+
 class CTimer
 {
 public:
@@ -458,6 +507,10 @@ CRemoteAppLauncher::CRemoteAppLauncher(const string& sec_name,
     vector<string> v;
     m_Version.reset(new CRemoteAppVersion(cmd,
                 NStr::Split(args, " ", v, NStr::fSplit_NoMergeDelims)));
+
+    const string mode = reg.GetString(sec_name, "progress_message_on_timeout",
+            "smart");
+    m_TimeoutReporter.reset(new CRemoteAppTimeoutReporter(mode));
 }
 
 // We need this explicit empty destructor,
@@ -537,8 +590,6 @@ public:
 
 protected:
     CRemoteAppReaper::CManager& m_ProcessManager;
-
-private:
     const CTimer m_Deadline;
 };
 
@@ -553,22 +604,26 @@ public:
         CWorkerNodeJobContext& job_context;
         const CTimeout& run_timeout;
         const CTimeout& keep_alive_period;
+        CRemoteAppTimeoutReporter& timeout_reporter;
         CRemoteAppReaper::CManager& process_manager;
 
         SParams(CWorkerNodeJobContext& jc,
                 const CTimeout& rt,
                 const CTimeout& kap,
+                CRemoteAppTimeoutReporter& tr,
                 CRemoteAppReaper::CManager& pm)
             : job_context(jc),
                 run_timeout(rt),
                 keep_alive_period(kap),
+                timeout_reporter(tr),
                 process_manager(pm)
         {}
     };
 
     CJobContextProcessWatcher(SParams& p)
         : CTimedProcessWatcher(p.run_timeout, p.process_manager),
-          m_JobContext(p.job_context), m_KeepAlive(p.keep_alive_period)
+          m_JobContext(p.job_context), m_KeepAlive(p.keep_alive_period),
+          m_TimeoutReporter(p.timeout_reporter)
     {
     }
 
@@ -594,8 +649,10 @@ public:
 
         EAction action = CTimedProcessWatcher::Watch(pid);
 
-        if (action != eContinue)
+        if (action != eContinue) {
+            m_TimeoutReporter.Report(m_JobContext, m_Deadline.PresetSeconds());
             return action;
+        }
 
         if (m_KeepAlive.IsExpired()) {
             m_JobContext.JobDelayExpiration(m_KeepAlive.PresetSeconds() + 10);
@@ -610,6 +667,7 @@ protected:
 
 private:
     CTimer m_KeepAlive;
+    CRemoteAppTimeoutReporter& m_TimeoutReporter;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -893,6 +951,7 @@ bool CRemoteAppLauncher::ExecRemoteApp(const vector<string>& args,
         CJobContextProcessWatcher::SParams params(job_context,
                 run_timeout,
                 m_KeepAlivePeriod,
+                *m_TimeoutReporter,
                 m_Reaper->GetManager());
 
         bool monitor = !m_MonitorAppPath.empty() && m_MonitorPeriod.IsFinite();
