@@ -327,7 +327,7 @@ private:
 protected:
     static int s_CheckOrder[];
     
-    static const streamsize s_iTestBufferSize = 4096;
+    static const streamsize s_iTestBufferSize = 8096;
 
     CNcbiIstream& m_Stream;
     bool m_bOwnsStream;

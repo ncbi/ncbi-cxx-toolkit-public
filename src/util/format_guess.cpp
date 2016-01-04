@@ -1226,7 +1226,7 @@ CFormatGuess::TestFormatAlignment(
             ++nlines;
         }
     }
-    return ( nlines >= 2 );
+    return ( nlines >= 3 );
  }
 
 bool
