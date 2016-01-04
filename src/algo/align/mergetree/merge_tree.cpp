@@ -741,7 +741,7 @@ void CTreeAlignMerger::Merge_Dist(const list< CRef<CSeq_align> >& Input,
             }
             if (QueryRange.GetTo() >= QueryLen  || 
                 SubjtRange.GetTo() >= SubjtLen) {
-                NCBI_THROW(CAlgoAlignException, CAlgoAlignException::eBadParameter, "Alignment ranges are outside of sequence lengths");
+                NCBI_THROW(CAlgoAlignException, eBadParameter, "Alignment ranges are outside of sequence lengths");
             }
         }
 
