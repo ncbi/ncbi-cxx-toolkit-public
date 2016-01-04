@@ -289,18 +289,12 @@ private:
     void DefineRefreshTags(const string& url, int delay);
 
 private:
-    enum EJobPhase {
-        ePending,
-        eRunning,
-        eTerminated
-    };
-
     void CheckJob(CGridCgiContext& grid_ctx);
     void SubmitJob(CCgiRequest& request, CGridCgiContext& grid_ctx);
     void PopulatePage(CGridCgiContext& grid_ctx);
     int RenderPage();
-    EJobPhase x_CheckJobStatus(CGridCgiContext&);
-    EJobPhase x_CheckJobStatus(CGridCgiContext&, CNetScheduleAPI::EJobStatus);
+    bool CheckIfJobDone(CGridCgiContext&);
+    bool CheckIfJobDone(CGridCgiContext&, CNetScheduleAPI::EJobStatus);
 
     int m_RefreshDelay;
     int m_RefreshWait;
@@ -684,7 +678,7 @@ int CCgi2RCgiApp::ProcessRequest(CCgiContext& ctx)
 
 void CCgi2RCgiApp::CheckJob(CGridCgiContext& grid_ctx)
 {
-    EJobPhase phase = eTerminated;
+    bool done = true;
 
     GetDiagContext().Extra().Print("ctg_poll", "true");
     m_GridClient->SetJobKey(grid_ctx.GetJobKey());
@@ -699,12 +693,12 @@ void CCgi2RCgiApp::CheckJob(CGridCgiContext& grid_ctx)
                     m_NetScheduleAPI,
                     ~(CNetScheduleNotificationHandler::fJSM_Pending |
                     CNetScheduleNotificationHandler::fJSM_Running));
-        phase = x_CheckJobStatus(grid_ctx, status);
+        done = CheckIfJobDone(grid_ctx, status);
     } else {
-        phase = x_CheckJobStatus(grid_ctx);
+        done = CheckIfJobDone(grid_ctx);
     }
 
-    if (phase == eTerminated)
+    if (done)
         grid_ctx.Clear();
     else {
         // Check if job cancellation has been requested
@@ -720,7 +714,7 @@ void CCgi2RCgiApp::CheckJob(CGridCgiContext& grid_ctx)
 void CCgi2RCgiApp::SubmitJob(CCgiRequest& request,
         CGridCgiContext& grid_ctx)
 {
-    EJobPhase phase = eTerminated;
+    bool done = true;
 
     if (!m_AffinityName.empty()) {
         string affinity;
@@ -772,18 +766,15 @@ void CCgi2RCgiApp::SubmitJob(CCgiRequest& request,
 
         switch (status) {
         case CNetScheduleAPI::ePending:
-            phase = ePending;
-            break;
-
         case CNetScheduleAPI::eRunning:
-            phase = eRunning;
+            done = false;
             break;
 
         default:
-            phase = x_CheckJobStatus(grid_ctx, status);
+            done = CheckIfJobDone(grid_ctx, status);
         }
 
-        if (phase != eTerminated) {
+        if (!done) {
             // The job has just been submitted.
             // Render a report page
             grid_ctx.SelectView("JOB_SUBMITTED");
@@ -796,15 +787,15 @@ void CCgi2RCgiApp::SubmitJob(CCgiRequest& request,
         OnJobFailed(ex.GetErrCode() ==
                 CNetScheduleException::eTooManyPendingJobs ?
             "NetSchedule Queue is busy" : ex.what(), grid_ctx);
-        phase = eTerminated;
+        done = true;
     }
     catch (exception& ex) {
         ERR_POST("Failed to submit a job: " << ex.what());
         OnJobFailed(ex.what(), grid_ctx);
-        phase = eTerminated;
+        done = true;
     }
 
-    if (phase == eTerminated)
+    if (done)
         grid_ctx.Clear();
 }
 
@@ -954,7 +945,7 @@ void CCgi2RCgiApp::DefineRefreshTags(const string& url, int idelay)
 }
 
 
-CCgi2RCgiApp::EJobPhase CCgi2RCgiApp::x_CheckJobStatus(
+bool CCgi2RCgiApp::CheckIfJobDone(
         CGridCgiContext& grid_ctx)
 {
     CNetScheduleAPI::EJobStatus status;
@@ -996,13 +987,13 @@ CCgi2RCgiApp::EJobPhase CCgi2RCgiApp::x_CheckJobStatus(
         }
     }
 
-    return x_CheckJobStatus(grid_ctx, status);
+    return CheckIfJobDone(grid_ctx, status);
 }
 
-CCgi2RCgiApp::EJobPhase CCgi2RCgiApp::x_CheckJobStatus(
+bool CCgi2RCgiApp::CheckIfJobDone(
         CGridCgiContext& grid_ctx, CNetScheduleAPI::EJobStatus status)
 {
-    EJobPhase phase = eTerminated;
+    bool done = true;
     const string status_str = CNetScheduleAPI::StatusToString(status);
     grid_ctx.GetCGIContext().GetResponse().SetHeaderValue("NCBI-RCGI-JobStatus",
             status_str);
@@ -1042,21 +1033,21 @@ CCgi2RCgiApp::EJobPhase CCgi2RCgiApp::x_CheckJobStatus(
         // is waiting for a worker node.
         // Render a status report page
         grid_ctx.SelectView("JOB_PENDING");
-        phase = ePending;
+        done = false;
         break;
 
     case CNetScheduleAPI::eRunning:
         // The job is being processed by a worker node
         // Render a status report page
         grid_ctx.SelectView("JOB_RUNNING");
-        phase = eRunning;
+        done = false;
         break;
 
     default:
         LOG_POST(Note << "Unexpected job state");
     }
     SetRequestId(grid_ctx.GetJobKey(), status == CNetScheduleAPI::eDone);
-    return phase;
+    return done;
 }
 
 void CCgi2RCgiApp::OnJobDone(CGridCgiContext& ctx)
