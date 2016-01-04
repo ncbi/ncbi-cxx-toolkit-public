@@ -1254,7 +1254,7 @@ void CCgiRequest::x_InitRequestContext(TFlags flags)
         }
     }
     if ( !rctx.IsSetDtab() ) {
-        string dtab = x_GetPropertyByName("DTAB_LOCAL");
+        string dtab = x_GetPropertyByName("HTTP_DTAB_LOCAL");
         if ( !dtab.empty() ) {
             rctx.SetDtab(dtab);
         }
