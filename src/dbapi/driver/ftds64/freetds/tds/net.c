@@ -468,6 +468,7 @@ tds_goodread(TDSSOCKET * tds, unsigned char *buf, int buflen, unsigned char unfi
 				continue;
 			/* detect connection close */
 			if (len <= 0) {
+                tds_close_socket(tds);
                 if (len == 0) {
                     tds_client_msg(tds->tds_ctx, tds, 20011, 6, 0, 0,
                                    "EOF in the socket.");
@@ -475,15 +476,14 @@ tds_goodread(TDSSOCKET * tds, unsigned char *buf, int buflen, unsigned char unfi
                     tds_report_error(tds->tds_ctx, tds, sock_errno, 20012,
                                      "recv finished with an error.");
                 }
-				tds_close_socket(tds);
 				return -1;
 			}
 		} else if (len < 0) {
 			if (TDSSOCK_WOULDBLOCK(sock_errno)) /* shouldn't happen, but OK */
 				continue;
+            tds_close_socket(tds);
             tds_report_error(tds->tds_ctx, tds, sock_errno, 20012,
                              "recv finished with an error.");
-			tds_close_socket(tds);
 			return -1;
 		} else { /* timeout */
     		now = GetTimeMark();
