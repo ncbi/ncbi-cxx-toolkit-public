@@ -1,3 +1,0 @@
-APP_PROJ = seqsub_split
-srcdir = @srcdir@
-include @builddir@/Makefile.meta
