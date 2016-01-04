@@ -129,11 +129,11 @@ extern int/*bool*/ BASE64_Decode
         if (c == '=') {
             c  = 64; /*end*/
         } else if (c >= 'A'  &&  c <= 'Z') {
-            c = (unsigned char)(c - 'A');         // c -= 'A';
+            c = (unsigned char)(c - 'A');         /* c -= 'A'; */
         } else if (c >= 'a'  &&  c <= 'z') {
-            c = (unsigned char)(c - ('a' - 26));  // c -= 'a' - 26;
+            c = (unsigned char)(c - ('a' - 26));  /* c -= 'a' - 26; */
         } else if (c >= '0'  &&  c <= '9') {
-            c = (unsigned char)(c - ('0' - 52));  // c -= '0' - 52;
+            c = (unsigned char)(c - ('0' - 52));  /* c -= '0' - 52; */
         } else if (c == '+') {
             c  = 62;
         } else if (c == '/') {
