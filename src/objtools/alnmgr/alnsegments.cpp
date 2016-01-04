@@ -109,7 +109,10 @@ CAlnMixSegments::Build(bool gap_join,
         // for each refseq segment
         while (refseq->GetStarts().current != refseq->GetStarts().end()) {
             stack< CRef<CAlnMixSegment> > seg_stack;
+            // To prevent infinite loop, remember all segments already on the stack.
+            set< CRef<CAlnMixSegment> > seg_set;
             seg_stack.push(refseq->GetStarts().current->second);
+            seg_set.insert(refseq->GetStarts().current->second);
 #if _DEBUG
             const TSeqPos& refseq_start = refseq->GetStarts().current->first;
 #if _DEBUG && _ALNMGR_TRACE
@@ -156,20 +159,20 @@ CAlnMixSegments::Build(bool gap_join,
                         }
 #endif
                         seg_stack.push(row->GetStarts().current->second);
+                        // If the segment is already in the set, we have infinite loop
+                        // and must terminate it.
+                        if (!seg_set.insert(row->GetStarts().current->second).second) {
+                            string errstr =
+                                string("CAlnMixSegments::Build():")
+                                + " Internal error: Infinite loop detected.";
+                            NCBI_THROW(CAlnException, eMergeFailure, errstr);
+                        }
 #if _DEBUG && _ALNMGR_TRACE
                         cerr << "  [row " << row->m_RowIdx
                              << " seq " << row->m_SeqIdx
                              << " start " << curr_row_start
                              << " (left of start " << row_start << ") "
                              << "was pushed into stack\n";
-#endif
-#if _DEBUG
-                        if (row == refseq) {
-                            string errstr =
-                                string("CAlnMixSegments::Build():")
-                                + " Internal error: Infinite loop detected.";
-                            NCBI_THROW(CAlnException, eMergeFailure, errstr);
-                        }                            
 #endif
                         pop_seg = false;
                         break;
