@@ -109,7 +109,6 @@ CSubSource::TSubtype CSubSource::GetSubtypeValue(const string& str,
             return eSubtype_subclone;
         }
     }
-
     return ENUM_METHOD_NAME(ESubtype)()->FindValue(name);
 }
 
@@ -127,9 +126,6 @@ bool CSubSource::IsValidSubtypeName(const string& str,
          NStr::EqualNocase(name, "subsrc-note")) {
          return true;
     }
-
-
-
     if (vocabulary == eVocabulary_insdc) {
         // consider a table if more special cases arise.
         if (name == "insertion-seq" || 
@@ -139,7 +135,6 @@ bool CSubSource::IsValidSubtypeName(const string& str,
             return true;
         } 
     }
-       
     return ENUM_METHOD_NAME(ESubtype)()->IsValidName(name);
 }
 
@@ -189,7 +184,6 @@ bool CSubSource::IsMultipleValuesAllowed(TSubtype subtype)
         && subtype != eSubtype_metagenomic
         && subtype != eSubtype_altitude;
 }
-
 
 
 bool CSubSource::NeedsNoText(const TSubtype& subtype)
@@ -291,23 +285,22 @@ CRef<CDate> CSubSource::DateFromCollectionDate (const string& test) THROWS((CExc
         NCBI_THROW (CException, eUnknown,
                         "collection-date string is blank");
     }
-    string str = test;
-    NStr::TruncateSpacesInPlace(str);
+    string str = NStr::TruncateSpaces(test);
 
     if (IsISOFormatDate(str)) {
         return GetDateFromISODate(str);
     }
 
     size_t pos = NStr::Find(str, "-");
-    string year = "";
-    string month = "";
-    string day = "";
+    string year;
+    string month;
+    string day;
 
-    if (pos == string::npos) {
+    if (pos == NPOS) {
         year = str;
     } else {
         size_t pos2 = NStr::Find(str, "-", pos + 1);
-        if (pos2 == string::npos) {
+        if (pos2 == NPOS) {
             month = str.substr(0, pos);
             year = str.substr(pos + 1);
             if (NStr::IsBlank(month)) {
@@ -475,9 +468,9 @@ void CSubSource::IsCorrectDateFormat(const string& date_string, bool& bad_format
             // if there are two dashes, then the first token needs to be the day, and the
             // day has to have two numbers, a leading zero if the day is less than 10
             size_t pos = NStr::Find(date_string, "-");
-            if (pos != string::npos) {
+            if (pos != NPOS) {
                 size_t pos2 = NStr::Find(date_string, "-", pos + 1);
-                if (pos2 != string::npos && pos != 2) {
+                if (pos2 != NPOS  &&  pos != 2) {
                     bad_format = true;
                 }
             }
@@ -498,7 +491,7 @@ void CSubSource::IsCorrectDateFormat(const string& date_string, bool& bad_format
 
 string CSubSource::GetCollectionDateProblem (const string& date_string)
 {
-    string problem = "";
+    string problem;
     bool bad_format = false;
     bool in_future = false;
 
@@ -512,24 +505,24 @@ string CSubSource::GetCollectionDateProblem (const string& date_string)
 }
 
 
-string CSubSource::x_ParseDateRangeWithDelimiter(const string& orig_date, const string& delim)
+string CSubSource::x_ParseDateRangeWithDelimiter(const string& orig_date, CTempString delim)
 {
     size_t pos = NStr::Find(orig_date, delim, NStr::eNocase);
-    if (pos == string::npos) {
-        return "";
+    if (pos == NPOS) {
+        return kEmptyStr;
     }
     size_t second_pos = NStr::Find(orig_date.substr(pos + 1), delim, NStr::eNocase);
-    if (second_pos != string::npos) {
-        return "";
+    if (second_pos != NPOS) {
+        return kEmptyStr;
     }
     bool month_ambig = false;
     string first_date = FixDateFormat(orig_date.substr(0, pos), true, month_ambig);
     if (month_ambig || NStr::IsBlank(first_date)) {
-        return "";
+        return kEmptyStr;
     }
     string second_date = FixDateFormat(orig_date.substr(pos + delim.length()), true, month_ambig);
     if (month_ambig || NStr::IsBlank(second_date)) {
-        return "";
+        return kEmptyStr;
     }
     string fix = first_date + "/" + second_date;
     return fix;
@@ -542,10 +535,10 @@ string CSubSource::FixDateFormat (const string& orig_date)
 
     string fix = FixDateFormat(orig_date, true, month_ambiguous);
     if (month_ambiguous) {
-        fix = "";
+        fix.clear();
     } else if (NStr::IsBlank(fix)) {
-        static const string delimiters[] = {"/", " to ", " and ", "-", "_"};
-        for (size_t i = 0; i < sizeof (delimiters) / sizeof (string); i++) {
+        static const char* delimiters[] = {"/", " to ", " and ", "-", "_"};
+        for (size_t i = 0; i < ArraySize(delimiters); i++) {
             fix = x_ParseDateRangeWithDelimiter(orig_date, delimiters[i]);
             if (!NStr::IsBlank(fix)) {
                 break;
@@ -565,15 +558,15 @@ bool CSubSource::IsISOFormatTime(const string& orig_time, int& hour, int& min, i
     int offset_hour = 0;
     int offset_min = 0;
     size_t suffix = NStr::Find(orig_time, "Z");
-    if (suffix == string::npos) {
+    if (suffix == NPOS) {
         suffix = NStr::Find(orig_time, "+");
-        if (suffix == string::npos ||
+        if (suffix == NPOS ||
             orig_time.substr(suffix).length() != 6 ||
-            !isdigit(orig_time.c_str()[suffix + 1]) ||
-            !isdigit(orig_time.c_str()[suffix + 2]) ||
-            orig_time.c_str()[suffix + 3] != ':' ||
-            !isdigit(orig_time.c_str()[suffix + 4]) ||
-            !isdigit(orig_time.c_str()[suffix + 5])) {
+            !isdigit((unsigned char)orig_time[suffix + 1]) ||
+            !isdigit((unsigned char)orig_time[suffix + 2]) ||
+            orig_time[suffix + 3] != ':' ||
+            !isdigit((unsigned char)orig_time[suffix + 4]) ||
+            !isdigit((unsigned char)orig_time[suffix + 5])) {
             return false;
         }
         try {
@@ -587,7 +580,7 @@ bool CSubSource::IsISOFormatTime(const string& orig_time, int& hour, int& min, i
         return false;
     }
 
-    if (!isdigit(orig_time.c_str()[0]) || !isdigit(orig_time.c_str()[1])) {
+    if (!isdigit((unsigned char)orig_time[0]) || !isdigit((unsigned char)orig_time[1])) {
         return false;
     }
     hour = 0;
@@ -603,7 +596,7 @@ bool CSubSource::IsISOFormatTime(const string& orig_time, int& hour, int& min, i
         return false;
     }
     if (suffix > 2) {
-        if (!isdigit(orig_time.c_str()[3]) || !isdigit(orig_time.c_str()[4])) {
+        if (!isdigit((unsigned char)orig_time[3]) || !isdigit((unsigned char)orig_time[4])) {
             return false;
         }
         try {
@@ -617,7 +610,7 @@ bool CSubSource::IsISOFormatTime(const string& orig_time, int& hour, int& min, i
         min -= offset_min;
     }
     if (suffix == 8) {
-        if (!isdigit(orig_time.c_str()[6]) || !isdigit(orig_time.c_str()[7])) {
+        if (!isdigit((unsigned char)orig_time[6]) || !isdigit((unsigned char)orig_time[7])) {
             return false;
         }
         try {
@@ -692,7 +685,7 @@ bool CSubSource::IsISOFormatDate(const string& orig_date)
     string cpy = orig_date;
     NStr::TruncateSpacesInPlace(cpy);
     size_t time_pos = NStr::Find(cpy, "T");
-    if (time_pos == string::npos) {
+    if (time_pos == NPOS) {
         return IsISOFormatDateOnly(cpy);
     } else {
         int h, m, s;
@@ -724,8 +717,7 @@ CRef<CDate> CSubSource::GetDateFromISODate(const string& orig_date)
 
 
 // return 1-based month number if found, 0 for error
-static
-int GetMonthNumberFromString(const string& month) 
+static int GetMonthNumberFromString(const string& month) 
 {
     for (size_t i = 0; i < ArraySize(sm_LegalMonths); i++) {
         if (NStr::StartsWith(month, sm_LegalMonths[i], NStr::eNocase)) {
@@ -745,28 +737,26 @@ vector<string> CSubSource::x_GetDateTokens(const string& orig_date)
     string cpy = orig_date;
     NStr::TruncateSpacesInPlace (cpy);
 
-    string curr_token = "";
+    string curr_token;
     bool is_chars = false;
     ITERATE(string, s, cpy) {
-        if (strchr(token_delimiters.c_str(), *s) != NULL) {
+        if (token_delimiters.find(*s) != NPOS) {
             if (!NStr::IsBlank(curr_token)) {
                 tokens.push_back(curr_token);
             }
-            curr_token = "";
+            curr_token.clear();
             is_chars = false;
-        } else if (is_chars && !isalpha(*s)) {
+        } else if (is_chars && !isalpha((unsigned char)(*s))) {
             // previous token was all letters, do not add non-letter characters
             if (!NStr::IsBlank(curr_token)) {
                 tokens.push_back(curr_token);
             }
-            curr_token = "";
-            curr_token += *s;
+            curr_token = *s;
             is_chars = false;
         } else if (!NStr::IsBlank(curr_token) && !is_chars && isalpha(*s)) {
             // previous token had no letters
             tokens.push_back(curr_token);
-            curr_token = "";
-            curr_token += *s;
+            curr_token = *s;
             is_chars = true;
         } else {
             curr_token += *s;
@@ -782,7 +772,7 @@ vector<string> CSubSource::x_GetDateTokens(const string& orig_date)
     // reattach 'st', 'nd', 'rd', and 'th' to numbers if present
     if (tokens.size() > 3) {
         vector<string>::iterator p = tokens.begin();  
-        bool prev_is_number = isdigit((*p).c_str()[0]);
+        bool prev_is_number = isdigit((unsigned char)(*p)[0]);
         vector<string>::iterator s = p;
         ++s;
         while (s != tokens.end()) {
@@ -797,7 +787,7 @@ vector<string> CSubSource::x_GetDateTokens(const string& orig_date)
             } else {
                 ++p;
                 ++s;
-                prev_is_number = isdigit((*p).c_str()[0]);
+                prev_is_number = isdigit((unsigned char)(*p)[0]);
             }
         }
     }
@@ -853,10 +843,10 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
         return orig_date;
     }
 
-    string reformatted_date = "";
-    string month = "";
+    string reformatted_date;
+    string month;
     int year = 0, day = 0;
-    string token_delimiters = " ,-/=_.";
+    //string token_delimiters = " ,-/=_.";
     size_t num_original_tokens = 0;
 
     month_ambiguous = false;
@@ -865,7 +855,7 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
     num_original_tokens = tokens.size();
     if (tokens.size() < 1 || tokens.size() > 3) {
         // no tokens or too many tokens
-        return "";
+        return kEmptyStr;
     }
 
     string one_token;    
@@ -883,19 +873,19 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
             day = 3;
             found = true;
         } else if (one_token.length() > 0
-                   && isdigit(one_token.c_str()[0])
+                   && isdigit((unsigned char)one_token[0])
                    && NStr::EndsWith(one_token, "th")) {
             try {
                 day = NStr::StringToInt (one_token.substr(0, one_token.length() - 2));
                 found = true;
             } catch ( ... ) {
                 // threw exception while converting to int
-                return "";
+                return kEmptyStr;
             }
-        } else if (isalpha(one_token.c_str()[0])) {
+        } else if (isalpha((unsigned char)one_token[0])) {
             if (!NStr::IsBlank (month)) {
                 // already have month, error
-                return "";
+                return kEmptyStr;
             }
             size_t month_num = GetMonthNumberFromString(one_token);
             if (month_num > 0) {
@@ -908,18 +898,18 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
                 int min = 1;
                 int max = 31;
                 if (this_val < min) {
-                    return "";
+                    return kEmptyStr;
                 } else if (this_val > max) {
                     if (year > 0) {
                         // already have year, error
-                        return "";
+                        return kEmptyStr;
                     }
                     year = this_val;
                     found = true;
                 }
             } catch ( ... ) {
                 // threw exception while converting to int
-                return "";
+                return kEmptyStr;
             }
         }
         if (found) {
@@ -939,13 +929,13 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
                 year += 2000;
             }
             if (!s_ChooseMonthAndDay(tokens[0], tokens[1], month_first, month, day, month_ambiguous)) {
-                return "";
+                return kEmptyStr;
             }
             // mark month as ambiguous, since we are guessing about year
             month_ambiguous = true;
         } catch ( ... ) {
             // threw exception while converting to int
-            return "";
+            return kEmptyStr;
         }
     } else if (tokens.size() == 1) {
         try {
@@ -958,7 +948,7 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
                         month = sm_LegalMonths[val - 1];
                     } else {
                         // month number out of range
-                        return "";
+                        return kEmptyStr;
                     }
                 } else {
                     day = val;
@@ -966,7 +956,7 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
             }
         } catch ( ... ) {
             // threw exception while converting to int
-            return "";
+            return kEmptyStr;
         }
     } else if (!NStr::IsBlank (month)) {
         if (tokens.size() == 2) {
@@ -978,7 +968,7 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
                 val2 = NStr::StringToInt (tokens[1]);
             } catch (CException& /*e*/) {
                 // not actually numbers
-                return "";
+                return kEmptyStr;
             }
             bool zero_pad_1 = NStr::StartsWith(tokens[0], "0");
             bool zero_pad_2 = NStr::StartsWith(tokens[1], "0");
@@ -1005,11 +995,11 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
                 }                
             }
         } else {
-            return "";
+            return kEmptyStr;
         }
     } else {
         if (!s_ChooseMonthAndDay(tokens[0], tokens[1], month_first, month, day, month_ambiguous)) {
-            return "";
+            return kEmptyStr;
         }
     }
 
@@ -1017,9 +1007,9 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
     if (day > 0 && !NStr::IsBlank(month) && year > -1) {
         int month_num = GetMonthNumberFromString(month);
         if (month_num == 0) {
-            return "";
+            return kEmptyStr;
         } else if (!IsDayValueOkForMonth(day, month_num, year)) {
-            return "";
+            return kEmptyStr;
         }
     }
         
@@ -1166,7 +1156,7 @@ void CSubSource::IsCorrectLatLonFormat (string lat_lon, bool& format_correct, bo
             if (NStr::StartsWith(lat_lon, reformatted)
                 && (len == lat_lon.length() 
                   || (len < lat_lon.length() 
-                      && lat_lon.c_str()[len] == ';'))) {
+                      && lat_lon[len] == ';'))) {
                 format_correct = true;
                 if (ns <= 90 && ns >= 0) {
                     lat_in_range = true;
@@ -1187,12 +1177,12 @@ static void s_TrimInternalSpaces (string& token)
 {
     size_t pos;
 
-    while ((pos = NStr::Find (token, "  ")) != string::npos) {
+    while ((pos = NStr::Find (token, "  ")) != NPOS) {
         string before = token.substr(0, pos);
         string after = token.substr(pos + 1);
         token = before + after;
     }
-    while ((pos = NStr::Find (token, " '")) != string::npos) {
+    while ((pos = NStr::Find (token, " '")) != NPOS) {
         string before = token.substr(0, pos);
         string after = token.substr(pos + 1);
         token = before + after;
@@ -1200,9 +1190,9 @@ static void s_TrimInternalSpaces (string& token)
 }
 
 
-string s_GetDefaultDir(bool is_negative, string default_dir)
+string s_GetDefaultDir(bool is_negative, const string& default_dir)
 {
-    string dir = "";
+    string dir;
     if (is_negative) {
         if (NStr::Equal("N", default_dir)) {
             dir = "S";
@@ -1215,9 +1205,9 @@ string s_GetDefaultDir(bool is_negative, string default_dir)
     return dir;
 }
 
+
 static void s_RemoveLeadingZeros(string& token)
 {
-
     size_t index = 0;
     while (index < token.size() &&
         token[index] == '0' &&
@@ -1230,19 +1220,20 @@ static void s_RemoveLeadingZeros(string& token)
 }
 
 
-static string s_GetNumFromLatLonToken (string token, string default_dir)
+static string s_GetNumFromLatLonToken (string token, const string& default_dir)
 {
     NStr::TruncateSpacesInPlace(token);
-    string dir = "";
-    if (NStr::StartsWith (token, "N") || NStr::StartsWith (token, "S") || NStr::StartsWith (token, "E") || NStr::StartsWith (token, "W")) {
-        dir = token.substr(0, 1);
+    string dir;
+    char ch = token[0];
+    if (ch == 'N' || ch == 'S' || ch == 'E' || ch == 'W') {
+        dir = ch;
         token = token.substr(1);
     } else {
         dir = token.substr(token.length() - 1, 1);
-        if (isalpha(dir.c_str()[0])) {
+        if (isalpha((unsigned char)dir[0])) {
             token = token.substr(0, token.length() - 1);
         } else {
-            dir = "";
+            dir.clear();
         }
     }
     NStr::TruncateSpacesInPlace(token);
@@ -1251,7 +1242,7 @@ static string s_GetNumFromLatLonToken (string token, string default_dir)
 
     // find leading negative sign
     bool is_negative = false;
-    if (NStr::StartsWith(token, "-")) {
+    if (token[0] == '-') {
         is_negative = true;
         token = token.substr(1);
     }
@@ -1259,7 +1250,7 @@ static string s_GetNumFromLatLonToken (string token, string default_dir)
     if (NStr::IsBlank(dir)) {
         dir = s_GetDefaultDir(is_negative, default_dir);
     } else if (is_negative) {
-        return "";
+        return kEmptyStr;
     }
 
     size_t pos = 0;
@@ -1268,12 +1259,13 @@ static string s_GetNumFromLatLonToken (string token, string default_dir)
     size_t prec = 0;
     bool seen_period = false;
     bool last_is_sep = false;
+
     while (pos < token.length()) {
-        char ch = token.c_str()[pos];
+        char ch = token[pos];
         if (ch == ' ' || ch == ':' || ch == '-') {
             if (pos == prev_start) {
                 // too many separators
-                return "";
+                return kEmptyStr;
             }
             string num_str = token.substr(prev_start, pos - prev_start);
             double this_val = NStr::StringToDouble (num_str);
@@ -1287,10 +1279,10 @@ static string s_GetNumFromLatLonToken (string token, string default_dir)
                 prec += 2;
             } else {
                 // too many separators
-                return "";
+                return kEmptyStr;
             }
             size_t p_pos = NStr::Find (num_str, ".");
-            if (p_pos != string::npos) {
+            if (p_pos != NPOS) {
                 prec += num_str.substr(p_pos + 1).length();
             }
             num_sep++;
@@ -1300,10 +1292,10 @@ static string s_GetNumFromLatLonToken (string token, string default_dir)
         } else if (ch == '\'') {
             string num_str = token.substr(prev_start, pos - prev_start);
             double this_val = NStr::StringToDouble (num_str);
-            if (token.c_str()[pos + 1] == '\'') {
+            if (token[pos + 1] == '\'') {
                 if (num_sep > 2) {
                     // already found seconds
-                    return "";
+                    return kEmptyStr;
                 }
                 // seconds
                 val += (this_val) / (3600.0);
@@ -1317,18 +1309,18 @@ static string s_GetNumFromLatLonToken (string token, string default_dir)
             } else {
                 if (num_sep > 1) {
                     // already found minutes
-                    return "";
+                    return kEmptyStr;
                 }
                 val += (this_val) / (60.0);
                 prec += 2;
                 num_sep ++;
             }
             size_t p_pos = NStr::Find (num_str, ".");
-            if (p_pos != string::npos) {
+            if (p_pos != NPOS) {
                 prec += num_str.substr(p_pos + 1).length();
             }
             pos++;
-            while (isspace (token.c_str()[pos])) {
+            while (isspace((unsigned char)token[pos])) {
                 pos++;
             }
             prev_start = pos;
@@ -1338,13 +1330,13 @@ static string s_GetNumFromLatLonToken (string token, string default_dir)
             last_is_sep = false;
         } else if (ch == '.') {
             if (seen_period) {
-                return "";
+                return kEmptyStr;
             }
             seen_period = true;
             pos++;
             last_is_sep = false;
         } else {
-            return "";
+            return kEmptyStr;
         }
     }
     if (num_sep > 0 && !last_is_sep) {
@@ -1353,7 +1345,7 @@ static string s_GetNumFromLatLonToken (string token, string default_dir)
             // if we have seen minutes but not seconds we'll treat this last value as seconds
         } else {
             // otherwise this is a bad format
-            return "";
+            return kEmptyStr;
         }
     }
 
@@ -1379,10 +1371,10 @@ static string s_GetNumFromLatLonToken (string token, string default_dir)
                 prec += 2;
             } else {
                 // too many separators
-                return "";
+                return kEmptyStr;
             }
             size_t p_pos = NStr::Find (num_str, ".");
-            if (p_pos != string::npos) {
+            if (p_pos != NPOS) {
                 prec += num_str.substr(p_pos + 1).length();
             }
         }
@@ -1403,7 +1395,7 @@ static string s_GetNumFromLatLonToken (string token, string default_dir)
         }
         string val_str = NStr::NumericToString (val, NStr::fDoubleFixed);
         pos = NStr::Find (val_str, ".");
-        if (pos != string::npos && prec > 0) {
+        if (pos != NPOS  &&  prec > 0) {
             while (val_str.substr(pos + 1).length() < prec) {
                 val_str += "0";
             }
@@ -1428,7 +1420,7 @@ static bool s_IsNumberStringInRange(const string& val_str, double max)
     char dir;
     int processed;
 
-    if (sscanf (val_str.c_str(), "%lf %c%n", &val, &dir, &processed) != 2
+    if (sscanf(val_str.c_str(), "%lf %c%n", &val, &dir, &processed) != 2
         || size_t(processed) != val_str.length()
         || val < 0.0 || val > max) {
         return false;
@@ -1452,18 +1444,18 @@ static void s_RemoveExtraText (string& token, string& extra_text)
 {
     size_t comma_pos = NStr::Find (token, ",");
     size_t semicolon_pos = NStr::Find (token, ";");
-    size_t sep_pos = string::npos;
+    size_t sep_pos = NPOS;
 
-    if (comma_pos == string::npos) {
+    if (comma_pos == NPOS) {
         sep_pos = semicolon_pos;
-    } else if (semicolon_pos != string::npos) {
+    } else if (semicolon_pos != NPOS) {
         if (semicolon_pos < comma_pos) {
             sep_pos = semicolon_pos;
         } else {
             sep_pos = comma_pos;
         }
     }
-    if (sep_pos != string::npos) {
+    if (sep_pos != NPOS) {
         extra_text = token.substr(sep_pos + 1);
         NStr::TruncateSpacesInPlace(extra_text);
         token = token.substr(0, sep_pos - 1);
@@ -1477,17 +1469,16 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
     string cpy;
     size_t pos;
 
-    if (NStr::IsBlank (orig_lat_lon))
-    {
-        return "";
+    if (NStr::IsBlank (orig_lat_lon)) {
+        return kEmptyStr;
     }
 
     cpy = orig_lat_lon;
     
     // replace all 'O' (capital o) following non-alpha characters with '0' (zero)
     pos = NStr::Find (cpy, "O");
-    while (pos != string::npos) {
-        if (pos > 0 && !isalpha(cpy.c_str()[pos - 1])) {
+    while (pos != NPOS) {
+        if (pos > 0  &&  !isalpha((unsigned char)cpy[pos - 1])) {
             string before = cpy.substr(0, pos);
             string after = cpy.substr(pos + 1);
             cpy = before + "0" + after;
@@ -1496,9 +1487,9 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
     }
     // replace all 'o' with non-alpha characters before and after with space
     pos = NStr::Find (cpy, "o");
-    while (pos != string::npos) {
-        if ((pos == 0 || !isalpha(cpy.c_str()[pos - 1]))
-            && !isalpha (cpy.c_str()[pos + 1])) {
+    while (pos != NPOS) {
+        if ((pos == 0 || !isalpha((unsigned char)cpy[pos - 1]))
+            && !isalpha ((unsigned char)cpy[pos + 1])) {
             string before = cpy.substr(0, pos);
             string after = cpy.substr(pos + 1);
             cpy = before + " " + after;
@@ -1518,14 +1509,15 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
 
     // replace commas that should be periods
     pos = NStr::Find (cpy, ",");
-    while (pos != string::npos) {
-        if (pos > 0 && isdigit (cpy.c_str()[pos + 1]) && isdigit (cpy.c_str()[pos - 1])) {
+    while (pos != NPOS) {
+        if (pos > 0  &&  isdigit((unsigned char)cpy[pos + 1])  
+                     &&  isdigit((unsigned char)cpy[pos - 1])) {
             // follow digits all the way back, make sure character before digits is not '.'
             size_t dpos = pos - 2;
-            while (dpos > 0 && isdigit (cpy.c_str()[dpos])) {
+            while (dpos > 0 && isdigit((unsigned char)cpy[dpos])) {
                 dpos--;
             }
-            if (cpy.c_str()[dpos] != '.') {
+            if (cpy[dpos] != '.') {
                 string before = cpy.substr(0, pos);
                 string after = cpy.substr(pos + 1);
                 cpy = before + " " + after;
@@ -1541,8 +1533,8 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
 
     // get rid of periods after letters not before numbers
     pos = NStr::Find (cpy, ".");
-    while (pos != string::npos) {
-        if (pos > 0 && isalpha(cpy.c_str()[pos - 1])) {
+    while (pos != NPOS) {
+        if (pos > 0 && isalpha((unsigned char)cpy[pos - 1])) {
             string before = cpy.substr(0, pos);
             string after = cpy.substr(pos + 1);
             cpy = before + " " + after;
@@ -1579,70 +1571,69 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
 
     size_t lat_pos = NStr::Find (cpy, "LAT");
     size_t lon_pos = NStr::Find (cpy, "LO");
-    if ((lat_pos == string::npos && lon_pos != string::npos)
-        || (lat_pos != string::npos && lon_pos == string::npos)) {
+    if ((lat_pos == NPOS  &&  lon_pos != NPOS)
+        || (lat_pos != NPOS  &&  lon_pos == NPOS)) {
         // must specify both lat and lon or neither
-        return "";
+        return kEmptyStr;
     }
-    if (lat_pos != string::npos && NStr::Find (cpy, "LAT", lat_pos + 1) != string::npos) {
+    if (lat_pos != NPOS  &&  NStr::Find (cpy, "LAT", lat_pos + 1) != NPOS) {
         // better not find two
-        return "";
+        return kEmptyStr;
     }
-    if (lon_pos != string::npos && NStr::Find (cpy, "LO", lon_pos + 1) != string::npos) {
+    if (lon_pos != NPOS  &&  NStr::Find (cpy, "LO", lon_pos + 1) != NPOS) {
         // better not find two
-        return "";
+        return kEmptyStr;
     }
 
     size_t ns_pos = NStr::Find (cpy, "N");
-    if (ns_pos == string::npos) {
+    if (ns_pos == NPOS) {
         ns_pos = NStr::Find (cpy, "S");
-        if (ns_pos != string::npos && NStr::Find(cpy, "S", ns_pos + 1) != string::npos) {
+        if (ns_pos != NPOS  &&  NStr::Find(cpy, "S", ns_pos + 1) != NPOS) {
             // better not find two
-            return "";
+            return kEmptyStr;
         }
-    } else if (NStr::Find (cpy, "S") != string::npos || NStr::Find (cpy, "N", ns_pos + 1) != string::npos) {
+    } else if (NStr::Find (cpy, "S") != NPOS  ||  NStr::Find (cpy, "N", ns_pos + 1) != NPOS) {
         // better not find two
-        return "";
+        return kEmptyStr;
     }
 
     size_t ew_pos = NStr::Find (cpy, "E");
-    if (ew_pos == string::npos) {
+    if (ew_pos == NPOS) {
         ew_pos = NStr::Find (cpy, "W");
-        if (ew_pos != string::npos && NStr::Find(cpy, "W", ew_pos + 1) != string::npos) {
+        if (ew_pos != NPOS  &&  NStr::Find(cpy, "W", ew_pos + 1) != NPOS) {
             // better not find two
-            return "";
+            return kEmptyStr;
         }
-    } else if (NStr::Find (cpy, "W") != string::npos || NStr::Find (cpy, "E", ew_pos + 1) != string::npos) {
+    } else if (NStr::Find (cpy, "W") != NPOS  ||  NStr::Find (cpy, "E", ew_pos + 1) != NPOS) {
         // better not find two
-        return "";
+        return kEmptyStr;
     }
 
     // todo - figure out how to use degrees as ew_pos markers
 
     // need to have both or neither
-    if ((ns_pos == string::npos && ew_pos != string::npos)
-        || (ns_pos != string::npos && ew_pos == string::npos)) {
-        return "";
+    if ((ns_pos == NPOS  &&  ew_pos != NPOS) || (ns_pos != NPOS  &&  ew_pos == NPOS)) {
+        return kEmptyStr;
     }
 
-    string extra_text = "";
-    string la_token = "";
-    string lo_token = "";
+    string extra_text;
+    string la_token;
+    string lo_token;
     bool la_first = true;
 
-    if (lat_pos == string::npos) {
-        if (ns_pos == string::npos) {
+    if (lat_pos == NPOS) {
+        if (ns_pos == NPOS) {
             if (guess) {
                 // do we have just two numbers, separated by either a comma or just a space?
                 s_TrimInternalSpaces(cpy);
                 size_t sep_pos = NStr::Find (cpy, ",");
-                if (sep_pos == string::npos) {
+                if (sep_pos == NPOS) {
                     sep_pos = NStr::Find (cpy, " ");
-                    if (sep_pos == string::npos || NStr::Find (cpy, " ", sep_pos + 1) != string::npos) {
-                        return "";
+                    if (sep_pos == NPOS  ||  NStr::Find (cpy, " ", sep_pos + 1) != NPOS) {
+                        return kEmptyStr;
                     }
-                } else if (NStr::Find (cpy, ",", sep_pos + 1) != string::npos) {
-                    return "";
+                } else if (NStr::Find (cpy, ",", sep_pos + 1) != NPOS) {
+                    return kEmptyStr;
                 }
                 la_token = cpy.substr(0, sep_pos);
                 lo_token = cpy.substr(sep_pos + 1);                 
@@ -1659,7 +1650,7 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
                   lo_token = "E " + lo_token;
                 }
             } else {
-                return "";
+                return kEmptyStr;
             }
         } else if (ns_pos < ew_pos) {
             // as it should be
@@ -1710,22 +1701,22 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
                 la_token = cpy.substr(lon_pos + 2);
             }
         }
-        NStr::ReplaceInPlace (la_token, "LAT", "");
-        NStr::ReplaceInPlace (lo_token, "LO", "");
-        if (NStr::Find (la_token, "E") != string::npos || NStr::Find (la_token, "W") != string::npos) {
-            return "";
-        } else if (NStr::Find (lo_token, "N") != string::npos || NStr::Find (lo_token, "S") != string::npos) {
-            return "";
+        NStr::ReplaceInPlace (la_token, "LAT", kEmptyStr);
+        NStr::ReplaceInPlace (lo_token, "LO",  kEmptyStr);
+        if (NStr::Find (la_token, "E") != NPOS || NStr::Find (la_token, "W") != NPOS) {
+            return kEmptyStr;
+        } else if (NStr::Find (lo_token, "N") != NPOS || NStr::Find (lo_token, "S") != NPOS) {
+            return kEmptyStr;
         }
     }
     if (la_first) {
-        NStr::ReplaceInPlace (la_token, ",", "");
-        NStr::ReplaceInPlace (la_token, ";", "");
+        NStr::ReplaceInPlace (la_token, ",", kEmptyStr);
+        NStr::ReplaceInPlace (la_token, ";", kEmptyStr);
         s_RemoveLeadingCommaOrSemicolon (lo_token);
         s_RemoveExtraText (lo_token, extra_text);
     } else {
-        NStr::ReplaceInPlace (lo_token, ",", "");
-        NStr::ReplaceInPlace (lo_token, ";", "");
+        NStr::ReplaceInPlace (lo_token, ",", kEmptyStr);
+        NStr::ReplaceInPlace (lo_token, ";", kEmptyStr);
         s_RemoveLeadingCommaOrSemicolon (la_token);
         s_RemoveExtraText (lo_token, extra_text);
     }
@@ -1733,14 +1724,14 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
     la_token = s_GetNumFromLatLonToken (la_token, "N");
     if (NStr::IsBlank (la_token)
         || !s_IsNumberStringInRange(la_token, 90.0)) {
-        return "";
+        return kEmptyStr;
     }
 
     lo_token = s_GetNumFromLatLonToken (lo_token, "E");
 
     if (NStr::IsBlank (lo_token)
         || !s_IsNumberStringInRange(lo_token, 180.0)) {
-        return "";
+        return kEmptyStr;
     }
 
     string fix = la_token + " " + lo_token;
@@ -1957,7 +1948,7 @@ static string x_FindSurroundingOcean (string& water)
     if( new_water_pair_iter != sc_WaterPairMap.end() ) {
         return new_water_pair_iter->second;
     }
-    return "";
+    return kEmptyStr;
 }
 
 
@@ -1966,7 +1957,7 @@ string CSubSource::ValidateLatLonCountry (const string& input_countryname, strin
     errcode = eLatLonCountryErr_None;
     string countryname = input_countryname;
     if (NStr::IsBlank(countryname) || NStr::IsBlank(lat_lon)) {
-        return "";
+        return kEmptyStr;
     }
 
     if ( m_LatLonCountryMap.get() == 0 ) {
@@ -1984,8 +1975,8 @@ string CSubSource::ValidateLatLonCountry (const string& input_countryname, strin
                                lat_value, lon_value);
     if (!format_correct) {
         // may have comma and then altitude, so just get lat_lon component */
-        size_t pos = NStr::Find(lat_lon, ",", 0, string::npos, NStr::eLast);
-        if (pos != string::npos) {
+        size_t pos = NStr::Find(lat_lon, ",", 0, NPOS, NStr::eLast);
+        if (pos != NPOS) {
             lat_lon = lat_lon.substr(0, pos);
             CSubSource::IsCorrectLatLonFormat (lat_lon, format_correct, precision_correct,
                                        lat_in_range, lon_in_range,
@@ -1998,16 +1989,16 @@ string CSubSource::ValidateLatLonCountry (const string& input_countryname, strin
         // incorrect lat_lon format should be reported elsewhere
         // incorrect latitude range should be reported elsewhere
         // incorrect longitude range should be reported elsewhere
-        return "";
+        return kEmptyStr;
     }
 
     // get rid of comments after semicolon or comma in country name
     size_t pos = NStr::Find(countryname, ";");
-    if (pos != string::npos) {
+    if (pos != NPOS) {
          countryname = countryname.substr(0, pos);
         }
     pos = NStr::Find(countryname, ",");
-    if (pos != string::npos) {
+    if (pos != NPOS) {
          countryname = countryname.substr(0, pos);
     }
 
@@ -2017,9 +2008,9 @@ string CSubSource::ValidateLatLonCountry (const string& input_countryname, strin
     }
 
     string country = countryname;
-    string province = "";
+    string province;
     pos = NStr::Find(country, ":");
-    if (pos != string::npos) {
+    if (pos != NPOS) {
         // is the full string in the list?
         if (m_LatLonCountryMap->HaveLatLonForRegion(countryname)) {
             province = country.substr(pos + 1);
@@ -2029,28 +2020,28 @@ string CSubSource::ValidateLatLonCountry (const string& input_countryname, strin
         NStr::TruncateSpacesInPlace(country, NStr::eTrunc_Both);
     }
     if (NStr::IsBlank(country)) {
-        return "";
+        return kEmptyStr;
     }
 
     // known exceptions - don't even bother calculating any further
     if (NStr::EqualNocase (country, "Antarctica") && lat_value < -60.0) {
-        return "";
+        return kEmptyStr;
     }
 
     if (! NStr::IsBlank(province)) {
         // do not attempt quick exit
     } else if (m_LatLonCountryMap->HaveLatLonForRegion(country)) {
         if (m_LatLonCountryMap->IsCountryInLatLon(country, lat_value, lon_value)) {
-            return "";
+            return kEmptyStr;
         }
     } else if (m_LatLonWaterMap->HaveLatLonForRegion(country)) {
         if (m_LatLonWaterMap->IsCountryInLatLon(country, lat_value, lon_value)) {
-            return "";
+            return kEmptyStr;
         }
     } else if (NStr::EqualNocase (country, "Palestine") || NStr::EqualNocase (country, "State of Palestine")) {
     } else {
         // report unrecognized country
-        return "";
+        return kEmptyStr;
     }
 
     CLatLonCountryId *id = x_CalculateLatLonId(lat_value, lon_value, country, province);
@@ -2061,23 +2052,23 @@ string CSubSource::ValidateLatLonCountry (const string& input_countryname, strin
     string cguess = id->GetGuessCountry();
 
     if (NStr::EqualNocase (country, "China") && NStr::EqualNocase (cguess, "Hong Kong")) {
-        return "";
+        return kEmptyStr;
     }
     if (NStr::EqualNocase (country, "USA") && NStr::EqualNocase (cguess, "Puerto Rico")) {
-        return "";
+        return kEmptyStr;
     }
     if ((NStr::EqualNocase (country, "Palestine") ||
          NStr::EqualNocase (country, "State of Palestine")) &&
         (NStr::EqualNocase (cguess, "Gaza Strip") ||
          NStr::EqualNocase (cguess, "West Bank"))) {
-        return "";
+        return kEmptyStr;
     }
 
     if (NStr::IsBlank (cguess) && (! NStr::IsBlank (wguess))) {
         string parent = x_FindSurroundingOcean (wguess);
         if ((! NStr::IsBlank (parent)) && NStr::EqualNocase (country, parent)) {
             delete id;
-            return "";
+            return kEmptyStr;
         }
     }
 
@@ -2087,7 +2078,7 @@ string CSubSource::ValidateLatLonCountry (const string& input_countryname, strin
 
     if (!flags && m_LatLonCountryMap->IsNearLatLon(lat_value, lon_value, 2.0, neardist, country) && neardist < 5.0) {
         id->SetGuessCountry (country);
-        id->SetGuessProvince ("");
+        id->SetGuessProvince (kEmptyStr);
         flags = id->Classify(country, province);
     }
 
@@ -2145,7 +2136,7 @@ string CSubSource::ValidateLatLonCountry (const string& input_countryname, strin
         }
     }
 
-    string error = "";
+    string error;
 
     if (adjustment != CLatLonCountryMap::fNone) {
         if (adjustment == CLatLonCountryMap::fFlip) {
@@ -2183,7 +2174,7 @@ string CSubSource::ValidateLatLonCountry (const string& input_countryname, strin
         if (flags & (CLatLonCountryId::fCountryClosest | CLatLonCountryId::fProvinceClosest)) {
             bool suppress = false;
             string reportregion;
-            string nosubphrase = "";
+            string nosubphrase;
             string desphrase = "designated subregion ";
             string subphrase = "another subregion ";
             string phrase = nosubphrase;
@@ -2193,7 +2184,7 @@ string CSubSource::ValidateLatLonCountry (const string& input_countryname, strin
                 // for now, will not report
                 // this is a policy decision
                 suppress = true;
-            } else if (NStr::Find(countryname, "Island") != string::npos) {
+            } else if (NStr::Find(countryname, "Island") != NPOS) {
                 suppress = true;
             }
 
@@ -2371,9 +2362,9 @@ string CSubSource::FixSexQualifierValue (const string& value)
     NStr::Tokenize(str," ,/",words);
 
     if (words.size() == 0) {
-        return "";
+        return kEmptyStr;
     }
-    size_t max = sizeof(sm_ValidSexQualifierTokens) / sizeof(const char*);
+    size_t max = ArraySize(sm_ValidSexQualifierTokens);
 
     const char* *begin = sm_ValidSexQualifierTokens;
     const char* *end = &(sm_ValidSexQualifierTokens[max]);
@@ -2398,13 +2389,13 @@ string CSubSource::FixSexQualifierValue (const string& value)
                 }
             } else {
                 // if any bad values, can't autofix
-                return "";
+                return kEmptyStr;
             }
         }
     }
     if (good_values.size() == 0) {
         // no good tokens, can't autofix
-        return "";
+        return kEmptyStr;
     }
 
     string fixed = good_values[0];
@@ -2426,8 +2417,8 @@ string CSubSource::FixSexQualifierValue (const string& value)
 
 void s_CollectNumberAndUnits(const string& value, string& number, string& units)
 {
-    number = "";
-    units = "";
+    number.clear();
+    units.clear();
 
     if (NStr::IsBlank(value)) {
         return;
@@ -2447,7 +2438,7 @@ void s_CollectNumberAndUnits(const string& value, string& number, string& units)
     }
 
     if (it == value.end()) {
-        number = "";
+        number.clear();
         return;
     }
 
@@ -2462,7 +2453,7 @@ void s_CollectNumberAndUnits(const string& value, string& number, string& units)
     }
 
     if (it == value.end() || *it != ' ' || !any_digit) {
-        number = "";
+        number.clear();
         return;
     }
 
@@ -2480,8 +2471,8 @@ bool CSubSource::IsAltitudeValid (const string& value)
         return false;
     }
 
-    string number = "";
-    string units = "";
+    string number;
+    string units;
     s_CollectNumberAndUnits(value, number, units);
     if (NStr::IsBlank(number) || !NStr::EqualCase(units, "m")) {
         return false;
@@ -2496,7 +2487,7 @@ int CSubSource::x_GetPrecision(const string& num_str)
 {
     int precision = 0;
     size_t pos = NStr::Find(num_str, ".");
-    if (pos != string::npos) {
+    if (pos != NPOS) {
         precision = int(num_str.length() - pos - 1);
     }
     return precision;
@@ -2514,14 +2505,14 @@ string CSubSource::x_FormatWithPrecision(double val, int precision)
 string CSubSource::FixAltitude (const string& value)
 {
     if (NStr::IsBlank(value)) {
-        return "";
+        return kEmptyStr;
     }
 
-    string number = "";
-    string units = "";
+    string number;
+    string units;
     s_CollectNumberAndUnits(value, number, units);
     if (NStr::IsBlank(number)) {
-        return "";
+        return kEmptyStr;
     } else if (NStr::Equal(units, "ft.") || NStr::Equal(units, "ft") || NStr::Equal(units, "feet") || NStr::Equal(units, "foot")) {
         int precision = x_GetPrecision(number);
         double val = NStr::StringToDouble(number);
@@ -2536,7 +2527,7 @@ string CSubSource::FixAltitude (const string& value)
         || NStr::Equal(units, "m")) {
         return number + " " + "m";
     } else {
-        return "";
+        return kEmptyStr;
     }
 }
 
@@ -2587,7 +2578,7 @@ static void s_InitializeCellLineContaminationMap(void)
 
 string CSubSource::CheckCellLine(const string& cell_line, const string& organism)
 {
-    string rval = "";
+    string rval;
 
     s_InitializeCellLineContaminationMap();
     string cell_line_search = cell_line;
@@ -2915,7 +2906,7 @@ bool CCountries::IsValid(const string& country)
     string name = country;
     size_t pos = country.find(':');
 
-    if ( pos != string::npos ) {
+    if ( pos != NPOS ) {
         if (pos == country.length() - 1) {
             return false;
         }
@@ -2938,7 +2929,7 @@ bool CCountries::IsValid(const string& country, bool& is_miscapitalized)
     string name = country;
     size_t pos = country.find(':');
 
-    if ( pos != string::npos ) {
+    if ( pos != NPOS ) {
         name = country.substr(0, pos);
         if (pos == country.length() - 1) {
             return false;
@@ -2977,7 +2968,7 @@ bool CCountries::WasValid(const string& country)
     string name = country;
     size_t pos = country.find(':');
 
-    if ( pos != string::npos ) {
+    if ( pos != NPOS ) {
         name = country.substr(0, pos);
     }
 
@@ -2991,7 +2982,7 @@ bool CCountries::WasValid(const string& country, bool& is_miscapitalized)
     string name = country;
     size_t pos = country.find(':');
 
-    if ( pos != string::npos ) {
+    if ( pos != NPOS ) {
         name = country.substr(0, pos);
     }
 
@@ -3422,7 +3413,7 @@ bool CCountries::ContainsMultipleCountryNames (const string &phrase)
     {
         string country(*c);
         size_t pos = NStr::FindNoCase(phrase,country);
-        while (pos != string::npos)
+        while (pos != NPOS)
         {
             if (!((pos+country.length()<phrase.length() && isalpha(phrase[pos+country.length()]))
                   || (pos > 0 && isalpha(phrase[pos-1]))
@@ -3466,12 +3457,12 @@ void CCountries::x_RemoveDelimitersFromEnds(string& val, bool except_paren)
             val = val.substr(0, val.length() - 1);
             any_found = true;
             NStr::TruncateSpacesInPlace(val);
-        } else if (NStr::EndsWith(val, "the") && val.length() > 3 && !isalpha(val.c_str()[val.length() - 4])) {
+        } else if (NStr::EndsWith(val, "the") && val.length() > 3 && !isalpha((unsigned char)val[val.length() - 4])) {
             val = val.substr(0, val.length() - 4);
             any_found = true;
         } else if (NStr::EndsWith(val, ".")) {
             size_t len = val.length();
-            if (len > 1 && isspace(val.c_str()[len - 2])) {
+            if (len > 1 && isspace((unsigned char)val[len - 2])) {
                 val = val.substr(0, val.length() - 1);
                 any_found = true;
                 NStr::TruncateSpacesInPlace(val);
@@ -3481,7 +3472,7 @@ void CCountries::x_RemoveDelimitersFromEnds(string& val, bool except_paren)
                 size_t pos = val.length() - 2;
                 size_t dist = 0;
                 while (dist < 4 && do_remove) {
-                    if (isspace(val.c_str()[pos]) || ispunct(val.c_str()[pos])) {
+                    if (isspace((unsigned char)val[pos]) || ispunct((unsigned char)val[pos])) {
                         do_remove = false;
                     }
                     pos--;
@@ -3505,12 +3496,12 @@ vector<string> CCountries::x_Tokenize(const string& val)
     vector<string>::iterator it = tokens.begin();
     while (it != tokens.end()) {
         size_t pos = NStr::Find(*it, ".");
-        if (pos != string::npos && pos > 3 && (*it).length() - pos > 4) {
+        if (pos != NPOS  &&  pos > 3 && (*it).length() - pos > 4) {
             string first = (*it).substr(0, pos);
             string remainder = (*it).substr(pos + 1);
             size_t space_pos = NStr::Find(first, " ");
             size_t len_to_space = first.length();
-            while (space_pos != string::npos) {
+            while (space_pos != NPOS) {
                 first = first.substr(space_pos + 1);
                 len_to_space = first.length();
                 space_pos = NStr::Find(first, " ");
@@ -3531,15 +3522,14 @@ vector<string> CCountries::x_Tokenize(const string& val)
 
 bool s_ContainsWholeWord(const string& test, const string& word, NStr::ECase case_sense)
 {
-    size_t pos = NStr::Find(test, word, 0, string::npos, NStr::eFirst, case_sense);
-    while (pos != string::npos) {
-        if ((pos == 0 || !isalpha(test.c_str()[pos - 1]))
-            && !isalpha(test.c_str()[pos + word.length()])) {
+    size_t pos = NStr::Find(test, word, 0, NPOS, NStr::eFirst, case_sense);
+    while (pos != NPOS) {
+        if ((pos == 0 || !isalpha((unsigned char)test[pos-1]))
+            && !isalpha((unsigned char)test[pos + word.length()])) {
             return true;
         }
-        pos = NStr::Find(test, word, pos + 1, string::npos, NStr::eFirst, case_sense);
+        pos = NStr::Find(test, word, pos + 1, NPOS, NStr::eFirst, case_sense);
     }
-
     return false;
 }
 
@@ -3562,10 +3552,9 @@ string CCountries::NewFixCountry (const string& test)
         if (IsValid(test)) {
             return test;
         } else {
-            return "";
+            return kEmptyStr;
         }
     }
-
 
     string input = test;
     if (NStr::StartsWith(input, "\"") && NStr::EndsWith(input, "\"")) {
@@ -3676,8 +3665,7 @@ string CCountries::CountryFixupItem(const string &input, bool capitalize_after_c
     if (country_end_pos != NPOS)
     {
         SIZE_TYPE pos = country_end_pos;
-        while (country.c_str()[pos] == ',' || country.c_str()[pos] == ':' 
-               || isspace(country.c_str()[pos])) 
+        while (country[pos] == ','  ||  country[pos] == ':'  ||  isspace((unsigned char)country[pos])) 
         {
             pos++;
         }
@@ -4171,7 +4159,7 @@ void CSubSource::FixCapitalization()
 
 string CSubSource::AutoFix(TSubtype subtype, const string& value)
 {
-    string new_val = "";
+    string new_val;
     switch (subtype) {
         case CSubSource::eSubtype_country:
             new_val = CCountries::NewFixCountry(value);
@@ -4216,7 +4204,6 @@ void CSubSource::AutoFix()
     }
 }
    
-
 
 
 static const char * s_RemovableCultureNotes[] = {
@@ -4272,7 +4259,7 @@ void CSubSource::RemoveCultureNotes (string& value, bool is_species_level)
         string to_remove = s_RemovableCultureNotes[i];
         size_t remove_len = to_remove.length();
         size_t pos = NStr::FindNoCase(value, to_remove);
-        while (pos != string::npos) {
+        while (pos != NPOS) {
             size_t extra_len = strspn (value.c_str() + pos + remove_len, " ;");
             value = value.substr(0, pos) + value.substr(pos + remove_len + extra_len);
             pos = NStr::FindNoCase(value, to_remove);
@@ -4388,9 +4375,9 @@ CCountryExtreme::CCountryExtreme (const string & country_name, int min_x, int mi
 {
     m_Area = (1 + m_MaxY - m_MinY) * (1 + m_MaxX - m_MinX);
     size_t pos = NStr::Find(country_name, ":");
-    if (pos == string::npos) {
+    if (pos == NPOS) {
         m_Level0 = country_name;
-        m_Level1 = "";
+        m_Level1.clear();
     } else {
         m_Level0 = country_name.substr(0, pos);
         NStr::TruncateSpacesInPlace(m_Level0);
@@ -4523,22 +4510,12 @@ bool CCountryExtreme::PreferTo(const CCountryExtreme* other_block, const string 
 
 
 CLatLonCountryId::CLatLonCountryId(float lat, float lon)
-{
-    m_Lat = lat;
-    m_Lon = lon;
-    m_FullGuess = "";
-    m_GuessCountry = "";
-    m_GuessProvince = "";
-    m_GuessWater = "";
-    m_ClosestFull = "";
-    m_ClosestCountry = "";
-    m_ClosestProvince = "";
-    m_ClosestWater = "";
-    m_ClaimedFull = "";
-    m_LandDistance = -1;
-    m_WaterDistance = -1;
-    m_ClaimedDistance = -1;
-}
+    : m_Lat(lat),
+      m_Lon(lon),
+      m_LandDistance(-1),
+      m_WaterDistance(-1),
+      m_ClaimedDistance(-1)
+{}
 
 
 CLatLonCountryId::TClassificationFlags CLatLonCountryId::Classify(string country, string province)
@@ -4606,32 +4583,29 @@ CLatLonCountryId::~CLatLonCountryId(void)
 
 
 #include "lat_lon_country.inc"
-
-static const int k_NumLatLonCountryText = sizeof (s_DefaultLatLonCountryText) / sizeof (char *);
+static const int k_NumLatLonCountryText = ArraySize(s_DefaultLatLonCountryText);
 
 #include "lat_lon_water.inc"
-
-static const int k_NumLatLonWaterText = sizeof (s_DefaultLatLonWaterText) / sizeof (char *);
+static const int k_NumLatLonWaterText = ArraySize(s_DefaultLatLonWaterText);
 
 void CLatLonCountryMap::x_InitFromDefaultList(const char * const *list, int num)
 {
       // initialize list of country lines
     m_CountryLineList.clear();
     m_Scale = 20.0;
-    string current_country = "";
+    string current_country;
 
     for (int i = 0; i < num; i++) {
-            const string& line = list[i];
-
-        if (line.c_str()[0] == '-') {
+        CTempString line = list[i];
+        if (line[0] == '-') {
             // skip comment
-        } else if (isalpha (line.c_str()[0])) {
+        } else if (isalpha ((unsigned char)line[0])) {
             current_country = line;
-        } else if (isdigit (line.c_str()[0])) {
+        } else if (isdigit ((unsigned char)line[0])) {
             m_Scale = NStr::StringToDouble(line);
         } else {          
             vector<string> tokens;
-              NStr::Tokenize(line, "\t", tokens);
+             NStr::Tokenize(line, "\t", tokens);
             if (tokens.size() > 3) {
                 double x = NStr::StringToDouble(tokens[1]);
                 for (size_t j = 2; j < tokens.size() - 1; j+=2) {
@@ -4657,7 +4631,7 @@ bool CLatLonCountryMap::x_InitFromFile(const string& filename)
         return false;
     } else {
         m_Scale = 20.0;
-        string current_country = "";
+        string current_country;
 
         // make sure to clear before using.  in this outer
         // scope in the interest of speed (avoid repeated 
@@ -4669,9 +4643,9 @@ bool CLatLonCountryMap::x_InitFromFile(const string& filename)
             CTempString line = *++*lr;
             if (line[0] == '-') {
                 // skip comment
-            } else if (isalpha (line[0])) {
+            } else if (isalpha ((unsigned char)line[0])) {
                 current_country = line;
-            } else if (isdigit (line[0])) {
+            } else if (isdigit ((unsigned char)line[0])) {
                 m_Scale = NStr::StringToDouble(line);
             } else {          
                 // NStr::Tokenize would be much simpler, but
@@ -5137,7 +5111,7 @@ bool CLatLonCountryMap::IsClosestToLatLon(const string& comp_country,
     // binary search to lowest lat
     size_t R = x_GetLatStartIndex(min_y);
 
-    string country = "";
+    string country;
     double closest = 0.0;
     int smallest_area = -1;
 
