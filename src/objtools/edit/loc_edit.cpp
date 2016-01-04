@@ -208,7 +208,7 @@ string SeqLocPrintUseBestID(const CSeq_loc& seq_loc, CScope& scope, bool range_o
 }
 
 
-bool s_Is5AtEndOfSeq(const CSeq_loc& loc, CBioseq_Handle bsh)
+bool CLocationEditPolicy::Is5AtEndOfSeq(const CSeq_loc& loc, CBioseq_Handle bsh)
 {
     bool rval = false;
 
@@ -226,7 +226,7 @@ bool s_Is5AtEndOfSeq(const CSeq_loc& loc, CBioseq_Handle bsh)
 }
 
 
-bool s_Is3AtEndOfSeq(const CSeq_loc& loc, CBioseq_Handle bsh)
+bool CLocationEditPolicy::Is3AtEndOfSeq(const CSeq_loc& loc, CBioseq_Handle bsh)
 {
     bool rval = false;
     ENa_strand strand = loc.GetStrand();
@@ -286,13 +286,13 @@ bool CLocationEditPolicy::Interpret5Policy
         case ePartialPolicy_eSet:
             if (!orig_feat.GetLocation().IsPartialStart(eExtreme_Biological)) {
                 do_set_5_partial = true;
-            } else if (m_Extend5 && !s_Is5AtEndOfSeq(loc, bsh)
+            } else if (m_Extend5 && !Is5AtEndOfSeq(loc, bsh)
                        && (bsh || s_Know5WithoutBsh(loc))) {
                 do_set_5_partial = true;
             }
             break;
         case ePartialPolicy_eSetAtEnd:
-            if (s_Is5AtEndOfSeq(loc, bsh) 
+            if (Is5AtEndOfSeq(loc, bsh) 
                 && !orig_feat.GetLocation().IsPartialStart(eExtreme_Biological)
                 && (bsh || s_Know5WithoutBsh(loc))) {
                 do_set_5_partial = true;
@@ -331,7 +331,7 @@ bool CLocationEditPolicy::Interpret5Policy
             break;
         case ePartialPolicy_eClearNotAtEnd:
             if (orig_feat.GetLocation().IsPartialStart(eExtreme_Biological)
-                && !s_Is5AtEndOfSeq(orig_feat.GetLocation(), bsh)
+                && !Is5AtEndOfSeq(orig_feat.GetLocation(), bsh)
                 && (bsh || s_Know5WithoutBsh(loc))) {
                 do_clear_5_partial = true;
             }
@@ -377,13 +377,13 @@ bool CLocationEditPolicy::Interpret3Policy
         case ePartialPolicy_eSet:
             if (!orig_feat.GetLocation().IsPartialStop(eExtreme_Biological)) {
                 do_set_3_partial = true;
-            } else if (m_Extend3 && !s_Is3AtEndOfSeq(loc, bsh) && (bsh || s_Know3WithoutBsh(loc))) {
+            } else if (m_Extend3 && !Is3AtEndOfSeq(loc, bsh) && (bsh || s_Know3WithoutBsh(loc))) {
                 do_set_3_partial = true;
             }
             break;
         case ePartialPolicy_eSetAtEnd:
             if (!orig_feat.GetLocation().IsPartialStop(eExtreme_Biological) 
-                && s_Is3AtEndOfSeq(orig_feat.GetLocation(), bsh)
+                && Is3AtEndOfSeq(orig_feat.GetLocation(), bsh)
                 && (bsh || s_Know3WithoutBsh(loc))) {
                 do_set_3_partial = true;
             }
@@ -415,7 +415,7 @@ bool CLocationEditPolicy::Interpret3Policy
             break;
         case ePartialPolicy_eClearNotAtEnd:
             if (orig_feat.GetLocation().IsPartialStop(eExtreme_Biological)
-                && !s_Is3AtEndOfSeq(orig_feat.GetLocation(), bsh)
+                && !Is3AtEndOfSeq(orig_feat.GetLocation(), bsh)
                 && (bsh || s_Know3WithoutBsh(loc))) {
                 do_clear_3_partial = true;
             }

@@ -102,6 +102,9 @@ public:
     static bool Extend3(CSeq_feat& feat, CScope& scope);
     static bool HasNulls(const CSeq_loc& orig_loc);
 
+    static bool Is5AtEndOfSeq(const CSeq_loc& loc, CBioseq_Handle bsh);
+    static bool Is3AtEndOfSeq(const CSeq_loc& loc, CBioseq_Handle bsh);
+
 private:
     EPartialPolicy m_PartialPolicy5;
     EPartialPolicy m_PartialPolicy3;
