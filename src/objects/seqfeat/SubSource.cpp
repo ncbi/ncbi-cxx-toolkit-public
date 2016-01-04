@@ -43,6 +43,7 @@
 
 #include <math.h>
 #include <objects/misc/sequence_util_macros.hpp>
+#include <corelib/ncbitime.hpp>
 
 // generated classes
 
@@ -219,61 +220,22 @@ bool CSubSource::IsDiscouraged(const TSubtype subtype)
 }
 
 
-static const char* const sm_LegalMonths [] = {
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-};
-
-
-static const int sm_daysPerMonth [] = {
-  31,
-  28,
-  31,
-  30,
-  31,
-  30,
-  31,
-  31,
-  30,
-  31,
-  30,
-  31
-};
-
-
 bool CSubSource::IsDayValueOkForMonth(int day, int month, int year)
 {
+    if (month < 1 || month > 12 || day < 1) {
+        return false;
+    }
     bool rval = true;
-    if (month < 1 || month > 12) {
+    if (year < 100) {
+        year += 2000;
+    } else if (year > 3000) {
+        return false;
+    } else if (year < 1538) {
         return false;
     }
-    if (day < 1) {
-        return false;
-    }
-    int dpm = sm_daysPerMonth [month - 1];
-
-    if (day > dpm) {
+    CTime month_o(year, month, 1);
+    if (day > month_o.DaysInMonth()) {
         rval = false;
-        if (month == 2 && day == 29) {
-            // true only if this is a leap year
-            if (! (year % 400)) {
-                rval = true;
-            } else if (!(year % 100)) {
-                rval = false;
-            } else if (!(year % 4)) {
-                rval = true;
-            }
-        }
     }
     return rval;
 }
@@ -320,13 +282,9 @@ CRef<CDate> CSubSource::DateFromCollectionDate (const string& test) THROWS((CExc
 
     int month_val = 0;
     if (!NStr::IsBlank(month)) {
-        for (size_t i = 0; i < ArraySize(sm_LegalMonths); i++) {
-            if (NStr::Equal(month, sm_LegalMonths[i])) {
-                month_val = int(i + 1);
-                break;
-            }
-        }
-        if (month_val == 0) {
+        try {
+            month_val = CTime::MonthNameToNum(month);
+        } catch (CTimeException& ex) {
             NCBI_THROW (CException, eUnknown,
                             "collection-date string has invalid month");
         }
@@ -716,18 +674,6 @@ CRef<CDate> CSubSource::GetDateFromISODate(const string& orig_date)
 }
 
 
-// return 1-based month number if found, 0 for error
-static int GetMonthNumberFromString(const string& month) 
-{
-    for (size_t i = 0; i < ArraySize(sm_LegalMonths); i++) {
-        if (NStr::StartsWith(month, sm_LegalMonths[i], NStr::eNocase)) {
-            return int(i + 1);
-        }
-    }
-    return 0;
-}
-
-
 vector<string> CSubSource::x_GetDateTokens(const string& orig_date)
 {
     vector<string> tokens;
@@ -807,24 +753,24 @@ bool s_ChooseMonthAndDay(const string& token1, const string& token2, bool month_
         } else if (val1 < 13 && val2 < 13) {
             if (val1 == val2) {
                 // no need to call this ambiguous
-                month = sm_LegalMonths[val1 - 1];
+                month = CTime::MonthNumToName(val1, CTime::eAbbr);
                 day = val2;
             } else {
                 // both numbers could be month
                 month_ambiguous = true;
                 if (month_first) {
-                    month = sm_LegalMonths[val1 - 1];
+                    month = CTime::MonthNumToName(val1, CTime::eAbbr);
                     day = val2;
                 } else {
-                    month = sm_LegalMonths[val2 - 1];
+                    month = CTime::MonthNumToName(val2, CTime::eAbbr);
                     day = val1;
                 }
             }
         } else if (val1 < 13) {
-            month = sm_LegalMonths[val1 - 1];
+            month = CTime::MonthNumToName(val1, CTime::eAbbr);
             day = val2;
         } else {
-            month = sm_LegalMonths[val2 - 1];
+            month = CTime::MonthNumToName(val2, CTime::eAbbr);
             day = val1;
         }
         return true;
@@ -883,14 +829,15 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
                 return kEmptyStr;
             }
         } else if (isalpha((unsigned char)one_token[0])) {
-            if (!NStr::IsBlank (month)) {
+            if (!NStr::IsBlank(month)) {
                 // already have month, error
                 return kEmptyStr;
             }
-            size_t month_num = GetMonthNumberFromString(one_token);
-            if (month_num > 0) {
-                month = sm_LegalMonths[month_num - 1];
+            try {
+                int month_num = CTime::MonthNameToNum(one_token);
                 found = true;
+                month = CTime::MonthNumToName(month_num, CTime::eAbbr);
+            } catch (CTimeException& e) {
             }
         } else {
             try {
@@ -945,7 +892,7 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
             } else {
                 if (NStr::IsBlank (month)) {
                     if (val > 0 && val < 13) {
-                        month = sm_LegalMonths[val - 1];
+                        CTime::MonthNumToName(val, CTime::eAbbr);
                     } else {
                         // month number out of range
                         return kEmptyStr;
@@ -985,7 +932,7 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
                 day = val2;
                 year = val1 + 2000;
             } else {
-                int month_num = GetMonthNumberFromString(month); 
+                int month_num = CTime::MonthNameToNum(month); 
                 if (IsDayValueOkForMonth(val1, month_num, val2 + 2000)) {
                     day = val1;
                     year = val2 + 2000;
@@ -1005,10 +952,12 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
 
     // make sure day is valid
     if (day > 0 && !NStr::IsBlank(month) && year > -1) {
-        int month_num = GetMonthNumberFromString(month);
-        if (month_num == 0) {
-            return kEmptyStr;
-        } else if (!IsDayValueOkForMonth(day, month_num, year)) {
+        try {
+            int month_num = CTime::MonthNameToNum(month);
+            if (!IsDayValueOkForMonth(day, month_num, year)) {
+                return kEmptyStr;
+            }
+        } catch (CTimeException& ex) {
             return kEmptyStr;
         }
     }
