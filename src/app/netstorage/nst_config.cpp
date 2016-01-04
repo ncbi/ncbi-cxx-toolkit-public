@@ -31,8 +31,11 @@
 
 #include <ncbi_pch.hpp>
 
+#include <misc/netstorage/impl/netstorage_int.hpp>
+
 #include "nst_config.hpp"
 #include "nst_exception.hpp"
+#include "nst_server.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -424,6 +427,71 @@ bool NSTValidateString(const IRegistry &  reg,
     return true;
 }
 
+
+CJsonNode NSTGetBackendConfiguration(const IRegistry &  reg,
+                                     CNetStorageServer *  server,
+                                     vector<string> &  warnings)
+{
+    // The requests should be repeated for each configured service
+    // plus no service.
+    // The backend throws exceptions if something is wrong and there is no way
+    // for nicely put warnings. Well, ...
+
+    CJsonNode       configuration = CJsonNode::NewObjectNode();
+
+    // Start with the no service entry
+    try {
+        CDirectNetStorage   storage(reg, kEmptyStr,
+                                    server->GetCompoundIDPool(), kEmptyStr);
+        configuration.SetByKey(kEmptyStr, storage.ReportConfig());
+    } catch (const CException &  ex) {
+        warnings.push_back(std::string("CException while retrieving "
+                                       "backend configuration when no "
+                                       "service is provided: ") + ex.what());
+    } catch (const std::exception &  ex) {
+        warnings.push_back(std::string("std::exception while retrieving "
+                                       "backend configuration when no "
+                                       "service is provided: ") + ex.what());
+    } catch (...) {
+        warnings.push_back("Unknown exception while retrieving backend "
+                           "configuration when no service is provided");
+    }
+
+
+    // Retrieve a list of services from the configuration file
+    list<string>        sections;
+    reg.EnumerateSections(&sections);
+
+    const string    prefix = "service_";
+    for (list<string>::const_iterator  k = sections.begin();
+            k != sections.end(); ++k) {
+        if (!NStr::StartsWith(*k, prefix, NStr::eNocase))
+            continue;
+
+        string      service(k->c_str() + prefix.size());
+        if (service.empty())
+            continue;
+
+        // Request backend configuration for each service
+        try {
+            CDirectNetStorage   storage(reg, service,
+                                        server->GetCompoundIDPool(), kEmptyStr);
+            configuration.SetByKey(service, storage.ReportConfig());
+        } catch (const CException &  ex) {
+            warnings.push_back("CException while retrieving backend "
+                               "configuration for service " + service +
+                               ": " + ex.what());
+        } catch (const std::exception &  ex) {
+            warnings.push_back("std::exception while retrieving backend "
+                               "configuration for service " + service +
+                               ": " + ex.what());
+        } catch (...) {
+            warnings.push_back("Unknown exception while retrieving "
+                               "backend configuration for service " + service);
+        }
+    }
+    return configuration;
+}
 
 TNSTDBValue<CTimeSpan>  ReadTimeSpan(const string &  reg_value,
                                      bool  allow_infinity)

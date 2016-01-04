@@ -103,6 +103,14 @@ public:
     { m_AnybodyCanReconfigure = val; }
     bool AnybodyCanReconfigure(void) const
     { return m_AnybodyCanReconfigure; }
+    CJsonNode GetBackendConfiguration(void) const
+    { return m_BackendConfiguration; }
+    void SetBackendConfiguration(const CJsonNode &  conf)
+    { m_BackendConfiguration = conf; }
+
+    void UpdateBackendConfiguration(const IRegistry &  reg,
+                                    vector<string> &  config_warnings);
+    CJsonNode GetBackendConfDiff(const CJsonNode &  conf) const;
 
     bool IsAdminClientName(const string &  name) const;
 
@@ -171,6 +179,8 @@ private:
     CNSTClientRegistry          m_ClientRegistry;
 
     bool                        m_AnybodyCanReconfigure;
+
+    CJsonNode                   m_BackendConfiguration;
 
     // Filetrack API keys support - decrypt may fail
 private:

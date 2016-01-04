@@ -1118,6 +1118,7 @@ CNetStorageHandler::x_ProcessConfiguration(
     reply.SetString("Configuration", string(converter));
     reply.SetString("ConfigurationFilePath",
                     CNcbiApplication::Instance()->GetConfigPath());
+    reply.SetByKey("BackendConfiguration", m_Server->GetBackendConfiguration());
 
     x_SendSyncMessage(reply);
     x_PrintMessageRequestStop();
@@ -1269,8 +1270,57 @@ CNetStorageHandler::x_ProcessReconfigure(
     CJsonNode           reply = CreateResponseMessage(
                                             common_args.m_SerialNumber);
     CNcbiApplication *  app = CNcbiApplication::Instance();
+
+    // Validate the configuration file first without reloading the application
+    // config.
+    string              config_path = app->GetConfigPath();
+    CNcbiIfstream       config_stream(config_path.c_str());
+    CNcbiRegistry       candidate_reg(config_stream);
+    vector<string>      config_warnings;
+    CJsonNode           backend_conf;
+
+    NSTValidateConfigFile(candidate_reg, config_warnings,
+                          false);       // false -> no exc on bad port
+    backend_conf = NSTGetBackendConfiguration(candidate_reg, m_Server,
+                                              config_warnings);
+
+    if (!config_warnings.empty()) {
+        string      msg;
+        string      alert_msg;
+        for (vector<string>::const_iterator k = config_warnings.begin();
+             k != config_warnings.end(); ++k) {
+            ERR_POST(*k);
+            if (!msg.empty()) {
+                msg += "; ";
+                alert_msg += "\n";
+            }
+            msg += *k;
+            alert_msg += *k;
+        }
+        m_Server->RegisterAlert(eReconfigure, alert_msg);
+        NCBI_THROW(CNetStorageServerException, eInvalidConfig,
+                   "Configuration file is not well formed; " + msg);
+    }
+
+    // Check that the decryption of the sensitive items works
+    SNetStorageServerParameters     params;
+    string                          decrypt_warning;
+    params.Read(candidate_reg, "server", decrypt_warning);
+
+    if (!decrypt_warning.empty()) {
+        ERR_POST(decrypt_warning);
+        m_Server->RegisterAlert(eDecryptAdminNames, decrypt_warning);
+        NCBI_THROW(CNetStorageServerException, eInvalidConfig, decrypt_warning);
+    }
+
+
+    // Here: the configuration has been validated and could be loaded
+
     bool                reloaded = app->ReloadConfig(
                                             CMetaRegistry::fReloadIfChanged);
+
+    // The !m_Server->AnybodyCanReconfigure() part is needed because the
+    // file might not be changed but the encryption keys could.
     if (!reloaded && !m_Server->AnybodyCanReconfigure()) {
         AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
                       "Configuration file has not been changed, "
@@ -1295,52 +1345,26 @@ CNetStorageHandler::x_ProcessReconfigure(
             ERR_POST(*k);
     }
 
-    const CNcbiRegistry &   reg = app->GetConfig();
-    vector<string>          config_warnings;
-    NSTValidateConfigFile(reg, config_warnings, false);     // false -> no exc
-                                                            // on bad port
-
-    if (!config_warnings.empty()) {
-        string      msg;
-        string      alert_msg;
-        for (vector<string>::const_iterator k = config_warnings.begin();
-             k != config_warnings.end(); ++k) {
-            ERR_POST(*k);
-            if (!msg.empty()) {
-                msg += "; ";
-                alert_msg += "\n";
-            }
-            msg += *k;
-            alert_msg += *k;
-        }
-        m_Server->RegisterAlert(eReconfigure, alert_msg);
-        NCBI_THROW(CNetStorageServerException, eInvalidConfig,
-                   "Configuration file is not well formed; " + msg);
-    }
-
 
     // Reconfigurable at runtime:
     // [server]: logging, admin name list, max connections, network timeout
     // [metadata_conf]
-    SNetStorageServerParameters     params;
-    string                          decrypt_warning;
-    params.Read(reg, "server", decrypt_warning);
-
-    if (!decrypt_warning.empty()) {
-        ERR_POST(decrypt_warning);
-        m_Server->RegisterAlert(eDecryptAdminNames, decrypt_warning);
-        NCBI_THROW(CNetStorageServerException, eInvalidConfig, decrypt_warning);
-    }
+    const CNcbiRegistry &           reg = app->GetConfig();
 
     CJsonNode   server_diff = m_Server->SetParameters(params, true);
     CJsonNode   metadata_diff = m_Server->ReadMetadataConfiguration(reg);
+    CJsonNode   backend_diff = m_Server->GetBackendConfDiff(backend_conf);
 
+    m_Server->SetBackendConfiguration(backend_conf);
     m_Server->AcknowledgeAlert(eReconfigure, "NSTAcknowledge");
     m_Server->AcknowledgeAlert(eStartupConfig, "NSTAcknowledge");
     m_Server->AcknowledgeAlert(eConfigOutOfSync, "NSTAcknowledge");
     m_Server->SetAnybodyCanReconfigure(false);
 
-    if (server_diff.IsNull() && metadata_diff.IsNull()) {
+
+    if (server_diff.IsNull() &&
+        metadata_diff.IsNull() &&
+        backend_diff.IsNull()) {
         if (m_ConnContext.NotNull())
              GetDiagContext().Extra().Print("accepted_changes", "none");
         AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
@@ -1358,6 +1382,8 @@ CNetStorageHandler::x_ProcessReconfigure(
         total_changes.SetByKey("server", server_diff);
     if (!metadata_diff.IsNull())
         total_changes.SetByKey("metadata_conf", metadata_diff);
+    if (!backend_diff.IsNull())
+        total_changes.SetByKey("backend_conf", backend_diff);
 
     reply.SetByKey("What", total_changes);
     x_SendSyncMessage(reply);

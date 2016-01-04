@@ -149,7 +149,6 @@ int CNetStorageDApp::Run(void)
     // true -> throw exception if there is a port problem
     NSTValidateConfigFile(reg, config_warnings, true);
 
-
     // The server should be created before the parameters are read because an
     // alert could be generated during reading parameters.
     SOCK_SetIOWaitSysAPI(eSOCK_IOWaitSysAPIPoll);
@@ -164,6 +163,9 @@ int CNetStorageDApp::Run(void)
     m_ServerAcceptTimeout.usec = 0;
     params.accept_timeout      = &m_ServerAcceptTimeout;
 
+
+    // Memorize the current backend configuration
+    server->UpdateBackendConfiguration(GetConfig(), config_warnings);
 
     server->SaveCommandLine(m_CommandLine);
     server->SetCustomThreadSuffix("_h");
@@ -241,7 +243,6 @@ int CNetStorageDApp::Run(void)
 
     // Start auxiliary threads
     server->RunServiceThread();
-
 
     if (args[kNodaemonArgName])
         NcbiCout << "Server started" << NcbiEndl;

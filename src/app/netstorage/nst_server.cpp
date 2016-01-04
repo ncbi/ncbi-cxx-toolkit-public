@@ -272,6 +272,85 @@ string  CNetStorageServer::x_GenerateGUID(void) const
 }
 
 
+void
+CNetStorageServer::UpdateBackendConfiguration(const IRegistry &  reg,
+                                              vector<string> &  config_warnings)
+{
+    m_BackendConfiguration = NSTGetBackendConfiguration(reg, this,
+                                                        config_warnings);
+}
+
+
+CJsonNode
+CNetStorageServer::GetBackendConfDiff(const CJsonNode &  conf) const
+{
+    vector<string>  added;
+    vector<string>  deleted;
+    vector<string>  common;
+    vector<string>  changed;
+
+    for (CJsonIterator it = m_BackendConfiguration.Iterate(); it; ++it) {
+        string      key = it.GetKey();
+
+        if (conf.HasKey(key))
+            common.push_back(key);
+        else
+            deleted.push_back(key);
+    }
+
+    for (CJsonIterator it = conf.Iterate(); it; ++it) {
+        string      key = it.GetKey();
+
+        if (!m_BackendConfiguration.HasKey(key))
+            added.push_back(key);
+    }
+
+    // We do not detect what specifically changed in the certain service
+    // configuration. We detect only the fact a certain service has changed.
+    for (vector<string>::const_iterator  k = common.begin();
+            k != common.end(); ++k) {
+        string      old_params = m_BackendConfiguration.GetByKey(*k).Repr();
+        string      new_params = conf.GetByKey(*k).Repr();
+
+        if (old_params != new_params)
+            changed.push_back(*k);
+    }
+
+    // Test if any changes detected
+    if (added.empty() && deleted.empty() && changed.empty())
+        return CJsonNode::NewNullNode();
+
+    // Here: need to build a dictionary with changes
+    CJsonNode       diff = CJsonNode::NewObjectNode();
+
+    if (!added.empty()) {
+        CJsonNode       added_services = CJsonNode::NewArrayNode();
+        for (vector<string>::const_iterator  k = added.begin();
+                k != added.end(); ++k)
+            added_services.AppendString(*k);
+        diff.SetByKey("AddedServices", added_services);
+    }
+
+    if (!deleted.empty()) {
+        CJsonNode       deleted_services = CJsonNode::NewArrayNode();
+        for (vector<string>::const_iterator  k = deleted.begin();
+                k != deleted.end(); ++k)
+            deleted_services.AppendString(*k);
+        diff.SetByKey("DeletedServices", deleted_services);
+    }
+
+    if (!changed.empty()) {
+        CJsonNode       changed_services = CJsonNode::NewArrayNode();
+        for (vector<string>::const_iterator  k = changed.begin();
+                k != changed.end(); ++k)
+            changed_services.AppendString(*k);
+        diff.SetByKey("ChangedServices", changed_services);
+    }
+
+    return diff;
+}
+
+
 bool CNetStorageServer::IsAdminClientName(const string &  name) const
 {
     set<string>::const_iterator     found;

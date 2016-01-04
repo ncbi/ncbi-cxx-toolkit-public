@@ -40,6 +40,9 @@
 
 BEGIN_NCBI_SCOPE
 
+// Forward declaration
+class CNetStorageServer;
+
 
 const unsigned short    port_low_limit = 1;
 const unsigned short    port_high_limit = 65535;
@@ -71,6 +74,9 @@ const bool              default_log_timing_client_socket = false;
 void NSTValidateConfigFile(const IRegistry &  reg,
                            vector<string> &  warnings,
                            bool  throw_port_exception);
+CJsonNode NSTGetBackendConfiguration(const IRegistry &  reg,
+                                     CNetStorageServer *  server,
+                                     vector<string> &  warnings);
 TNSTDBValue<CTimeSpan>  ReadTimeSpan(const string &  reg_value,
                                      bool  allow_infinity);
 
