@@ -55,12 +55,12 @@ public:
 
     bool Init( unsigned nCapacity = 10 );
 
-    bool Lookup( int tax_id, CTaxon1Node** ppNode );
-    bool LookupAndAdd( int tax_id, CTaxon1Node** ppData );
-    bool LookupAndInsert( int tax_id, CTaxon1_data** ppData );
-    bool LookupAndInsert( int tax_id, CTaxon2_data** ppData );
-    bool Lookup( int tax_id, CTaxon1_data** ppData );
-    bool Lookup( int tax_id, CTaxon2_data** ppData );
+    bool Lookup( TTaxId tax_id, CTaxon1Node** ppNode );
+    bool LookupAndAdd( TTaxId tax_id, CTaxon1Node** ppData );
+    bool LookupAndInsert( TTaxId tax_id, CTaxon1_data** ppData );
+    bool LookupAndInsert( TTaxId tax_id, CTaxon2_data** ppData );
+    bool Lookup( TTaxId tax_id, CTaxon1_data** ppData );
+    bool Lookup( TTaxId tax_id, CTaxon2_data** ppData );
 
     bool Insert1( CTaxon1Node& node );
     bool Insert2( CTaxon1Node& node );
@@ -95,7 +95,7 @@ public:
     CTreeCont& GetTree() { return m_tPartTree; }
     const CTreeCont& GetTree() const { return m_tPartTree; }
 
-    void  SetIndexEntry( int id, CTaxon1Node* pNode );
+    void  SetIndexEntry( TTaxId id, CTaxon1Node* pNode );
 
     COrgMod::ESubtype GetSubtypeFromName( string& sName );
 
@@ -195,7 +195,7 @@ public:
 	  m_cacheEntry( NULL ), m_flags( 0 ) {}
     virtual ~CTaxon1Node() {}
 
-    virtual int           GetTaxId() const { return m_ref->GetTaxid(); }
+    virtual TTaxId           GetTaxId() const { return m_ref->GetTaxid(); }
     virtual const string& GetName() const { return m_ref->GetOname(); }
     virtual const string& GetBlastName() const
     { return m_ref->CanGetUname() ? m_ref->GetUname() : kEmptyStr; }

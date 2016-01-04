@@ -60,7 +60,7 @@ class ITreeIterator;
 class NCBI_TAXON1_EXPORT CTaxon1 {
 public:
     typedef list< string > TNameList;
-    typedef vector< int > TTaxIdList;
+    typedef vector< TTaxId > TTaxIdList;
 
     CTaxon1();
     ~CTaxon1();
@@ -89,7 +89,7 @@ public:
     // NOTE:
     // Caller gets his own copy of Taxon2Data structure.
     ///
-    CRef< CTaxon2_data > GetById(int tax_id);
+    CRef< CTaxon2_data > GetById(TTaxId tax_id);
 
     //----------------------------------------------
     // Get organism by OrgRef
@@ -119,7 +119,7 @@ public:
     // NOTE:
     // This function uses the same information from inp_orgRef as Lookup
     ///
-    int GetTaxIdByOrgRef(const COrg_ref& inp_orgRef);
+    TTaxId GetTaxIdByOrgRef(const COrg_ref& inp_orgRef);
 
     enum EOrgRefStatus {
         eStatus_Ok = 0,
@@ -157,7 +157,7 @@ public:
     //         -tax_id - if multiple nodes found
     //                   (where tax_id > 1 is id of one of the nodes)
     ///
-    int GetTaxIdByName(const string& orgname);
+    TTaxId GetTaxIdByName(const string& orgname);
 
     //----------------------------------------------
     // Get tax_id by organism "unique" name
@@ -167,7 +167,7 @@ public:
     //         -tax_id - if multiple nodes found
     //                   (where tax_id > 1 is id of one of the nodes)
     ///
-    int FindTaxIdByName(const string& orgname);
+    TTaxId FindTaxIdByName(const string& orgname);
 
     //----------------------------------------------
     // Get tax_id by organism name using fancy search modes. If given a pointer
@@ -178,7 +178,7 @@ public:
     //              -1 - if multiple nodes found
     //              -2 - error during processing occured
     ///
-    int SearchTaxIdByName(const string& orgname,
+    TTaxId SearchTaxIdByName(const string& orgname,
 			  ESearch mode = eSearch_TokenSet,
 			  list< CRef< CTaxon1_name > >* name_list_out = NULL);
 
@@ -187,7 +187,7 @@ public:
     // Returns: number of organisms found (negative value on error), 
     // id list appended with found tax ids
     ///
-    int GetAllTaxIdByName(const string& orgname, TTaxIdList& lIds);
+    TTaxId GetAllTaxIdByName(const string& orgname, TTaxIdList& lIds);
 
     //----------------------------------------------
     // Get organism by tax_id
@@ -198,7 +198,7 @@ public:
     // This function does not make a copy of OrgRef structure but returns
     // pointer to internally stored OrgRef.
     ///
-    CConstRef< COrg_ref > GetOrgRef(int tax_id,
+    CConstRef< COrg_ref > GetOrgRef(TTaxId tax_id,
 				    bool& is_species,
 				    bool& is_uncultured,
 				    string& blast_name,
@@ -218,7 +218,7 @@ public:
     // NOTE:
     //   Root of the tree has tax_id of 1
     ///
-    int GetParent(int id_tax);
+    TTaxId GetParent(TTaxId id_tax);
 
     //---------------------------------------------
     // Get species tax_id (id_tax should be below species).
@@ -236,7 +236,7 @@ public:
 	eSpeciesMode_RankOnly,
 	eSpeciesMode_Flag
     };
-    int GetSpecies(int id_tax, ESpeciesMode mode = eSpeciesMode_Flag);
+    TTaxId GetSpecies(TTaxId id_tax, ESpeciesMode mode = eSpeciesMode_Flag);
 
     //---------------------------------------------
     // Get genus tax_id (id_tax should be below genus)
@@ -244,7 +244,7 @@ public:
     //               0 - no genus in the lineage
     //              -1 - if error
     ///
-    int GetGenus(int id_tax);
+    TTaxId GetGenus(TTaxId id_tax);
 
     //---------------------------------------------
     // Get superkingdom tax_id (id_tax should be below superkingdom)
@@ -252,14 +252,56 @@ public:
     //               0 - no superkingdom in the lineage
     //              -1 - if error
     ///
-    int GetSuperkingdom(int id_tax);
+    TTaxId GetSuperkingdom(TTaxId id_tax);
+
+    //---------------------------------------------
+    // Get ancestor tax_id by rank name
+    // rank name might be one of:
+    // no rank
+    // superkingdom
+    // kingdom
+    // subkingdom
+    // superphylum
+    // phylum
+    // subphylum
+    // superclass
+    // class
+    // subclass
+    // infraclass
+    // cohort
+    // subcohort
+    // superorder
+    // order
+    // suborder
+    // infraorder
+    // parvorder
+    // superfamily
+    // family
+    // subfamily
+    // tribe
+    // subtribe
+    // genus
+    // subgenus
+    // species group
+    // species subgroup
+    // species
+    // subspecies
+    // varietas
+    // forma
+    // Returns: tax_id of properly ranked accessor or
+    //               0 - no such rank in the lineage
+    //              -1 - invalid rank name
+    //              -2 - any other error (use GetLastError for details)
+    ///
+    TTaxId GetAncestorByRank(TTaxId id_tax, const char* rank_name);
+    TTaxId GetAncestorByRank(TTaxId id_tax, short rank_id);
 
     //---------------------------------------------
     // Get taxids for all children of specified node.
     // Returns: number of children, id list appended with found tax ids
     //          -1 - in case of error
     ///
-    int GetChildren(int id_tax, TTaxIdList& children_ids);
+    int GetChildren(TTaxId id_tax, TTaxIdList& children_ids);
 
     //---------------------------------------------
     // Get genetic code name by genetic code id
@@ -316,7 +358,7 @@ public:
     // ancestor)
     //          -1 - in case of an error
     ///
-    int Join(int taxid1, int taxid2);
+    TTaxId Join(TTaxId taxid1, TTaxId taxid2);
 
     //---------------------------------------------
     // Get all names for tax_id
@@ -325,7 +367,7 @@ public:
     // NOTE:
     // If unique is true then only unique names will be stored
     ///
-    int GetAllNames(int tax_id, TNameList& lNames, bool unique);
+    int GetAllNames(TTaxId tax_id, TNameList& lNames, bool unique);
 
     //---------------------------------------------
     // Get list of all names for tax_id.
@@ -333,7 +375,7 @@ public:
     // Returns: TRUE - success
     //          FALSE - failure
     ///
-    bool GetAllNamesEx(int tax_id, list< CRef< CTaxon1_name > >& lNames);
+    bool GetAllNamesEx(TTaxId tax_id, list< CRef< CTaxon1_name > >& lNames);
 
     //---------------------------------------------
     // Dump all names of the particular class
@@ -360,7 +402,7 @@ public:
     //       tax_id if found
     //       0      if not found
     ///
-    bool GetTaxId4GI(TGi gi, int& tax_id_out);
+    bool GetTaxId4GI(TGi gi, TTaxId& tax_id_out);
 
     //--------------------------------------------------
     // Get "blast" name for id
@@ -370,7 +412,7 @@ public:
     //                this node in the lineage or empty if there is no blast
     //                name above
     ///
-    bool GetBlastName(int tax_id, string& blast_name_out);
+    bool GetBlastName(TTaxId tax_id, string& blast_name_out);
 
     //--------------------------------------------------
     // Get error message after latest erroneous operation
@@ -393,7 +435,7 @@ public:
     // Returns: false if error
     //          true  if Ok, *ppNode is pointing to the node
     ///
-    bool LoadNode( int tax_id, const ITaxon1Node** ppNode = NULL )
+    bool LoadNode( TTaxId tax_id, const ITaxon1Node** ppNode = NULL )
     { return LoadSubtreeEx( tax_id, 0, ppNode ); }
 
     //--------------------------------------------------
@@ -403,7 +445,7 @@ public:
     // Returns: false if error
     //          true  if Ok, *ppNode is pointing to the subtree root
     ///
-    bool LoadChildren( int tax_id, const ITaxon1Node** ppNode = NULL )
+    bool LoadChildren( TTaxId tax_id, const ITaxon1Node** ppNode = NULL )
     { return LoadSubtreeEx( tax_id, 1, ppNode ); }
 
     //--------------------------------------------------
@@ -412,7 +454,7 @@ public:
     // Returns: false if error
     //          true  if Ok, *ppNode is pointing to the subtree root
     ///
-    bool LoadSubtree( int tax_id, const ITaxon1Node** ppNode = NULL )
+    bool LoadSubtree( TTaxId tax_id, const ITaxon1Node** ppNode = NULL )
     { return LoadSubtreeEx( tax_id, -1, ppNode ); }
 
     enum EIteratorMode {
@@ -438,7 +480,7 @@ public:
     // at the tree node with tax_id.
     // Returns: NULL if node doesn't exist or some other error occurred
     ///
-    CRef< ITreeIterator > GetTreeIterator( int tax_id, EIteratorMode mode
+    CRef< ITreeIterator > GetTreeIterator( TTaxId tax_id, EIteratorMode mode
 					   = eIteratorMode_Default );
 
     //--------------------------------------------------
@@ -448,11 +490,11 @@ public:
     // Returns: true  when success and last parameter is filled with value,
     //          false when call failed
     ///
-    bool GetNodeProperty( int tax_id, const string& prop_name,
+    bool GetNodeProperty( TTaxId tax_id, const string& prop_name,
                           bool& prop_val );
-    bool GetNodeProperty( int tax_id, const string& prop_name,
+    bool GetNodeProperty( TTaxId tax_id, const string& prop_name,
                           int& prop_val );
-    bool GetNodeProperty( int tax_id, const string& prop_name,
+    bool GetNodeProperty( TTaxId tax_id, const string& prop_name,
                           string& prop_val );
 
     //---------------------------------------------------
@@ -462,13 +504,13 @@ public:
     // Returns: true  when success and last parameter is filled with type material list,
     //          false when call failed
     ///
-    bool GetTypeMaterial( int tax_id, TNameList& type_material_list_out );
+    bool GetTypeMaterial( TTaxId tax_id, TNameList& type_material_list_out );
 
     //---------------------------------------------------
     // This function returns the maximal value for taxid
     // or -1 in case of error
     ///
-    int GetMaxTaxId( void );
+    TTaxId GetMaxTaxId( void );
 
     //---------------------------------------------------
     // This function constructs the "display common name" for the taxid following this algorithm:
@@ -481,7 +523,7 @@ public:
     //  4) the Blast inherited blast name
     // Returns: true on success, false in case of error
     ///
-    bool GetDisplayCommonName( int tax_id, string& disp_name_out );
+    bool GetDisplayCommonName( TTaxId tax_id, string& disp_name_out );
 
 private:
     friend class COrgRefCache;
@@ -510,12 +552,12 @@ private:
     bool             SendRequest(CTaxon1_req& req, CTaxon1_resp& resp, bool bShouldReconnect = true);
     void             SetLastError(const char* err_msg);
     void             PopulateReplaced(COrg_ref& org, COrgName::TMod& lMods);
-    bool             LookupByOrgRef(const COrg_ref& inp_orgRef, int* pTaxid,
+    bool             LookupByOrgRef(const COrg_ref& inp_orgRef, TTaxId* pTaxid,
                                     COrgName::TMod& hitMods);
     void             OrgRefAdjust( COrg_ref& inp_orgRef,
                                    const COrg_ref& db_orgRef,
-                                   int tax_id );
-    bool             LoadSubtreeEx( int tax_id, int type,
+                                   TTaxId tax_id );
+    bool             LoadSubtreeEx( TTaxId tax_id, int type,
                                     const ITaxon1Node** ppNode );
 };
 
@@ -527,7 +569,7 @@ public:
 
     //-------------------------------------------------
     // Returns: taxonomy id of the node
-    virtual int              GetTaxId() const = 0;
+    virtual TTaxId              GetTaxId() const = 0;
 
     //-------------------------------------------------
     // Returns: scientific name of the node. This name is NOT unique

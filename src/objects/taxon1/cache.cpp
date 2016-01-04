@@ -100,7 +100,7 @@ COrgRefCache::Init( unsigned nCapacity )
 }
 
 bool
-COrgRefCache::Lookup( int tax_id, CTaxon1Node** ppNode )
+COrgRefCache::Lookup( TTaxId tax_id, CTaxon1Node** ppNode )
 {
     if( (unsigned)tax_id < m_nMaxTaxId ) {
         *ppNode = m_ppEntries[tax_id];
@@ -111,7 +111,7 @@ COrgRefCache::Lookup( int tax_id, CTaxon1Node** ppNode )
 }
 
 bool
-COrgRefCache::LookupAndAdd( int tax_id, CTaxon1Node** ppData )
+COrgRefCache::LookupAndAdd( TTaxId tax_id, CTaxon1Node** ppData )
 {
     *ppData = NULL;
     if( (unsigned)tax_id < m_nMaxTaxId ) {
@@ -177,7 +177,7 @@ COrgRefCache::LookupAndAdd( int tax_id, CTaxon1Node** ppData )
 }
 
 bool
-COrgRefCache::LookupAndInsert( int tax_id, CTaxon1_data** ppData )
+COrgRefCache::LookupAndInsert( TTaxId tax_id, CTaxon1_data** ppData )
 {
     CTaxon1Node* pNode = ( NULL );
     *ppData = NULL;
@@ -199,7 +199,7 @@ COrgRefCache::LookupAndInsert( int tax_id, CTaxon1_data** ppData )
 }
 
 bool
-COrgRefCache::LookupAndInsert( int tax_id, CTaxon2_data** ppData )
+COrgRefCache::LookupAndInsert( TTaxId tax_id, CTaxon2_data** ppData )
 {
     CTaxon1Node* pNode = ( NULL );
     *ppData = NULL;
@@ -221,7 +221,7 @@ COrgRefCache::LookupAndInsert( int tax_id, CTaxon2_data** ppData )
 }
 
 bool
-COrgRefCache::Lookup( int tax_id, CTaxon1_data** ppData )
+COrgRefCache::Lookup( TTaxId tax_id, CTaxon1_data** ppData )
 {
     if( (unsigned)tax_id < m_nMaxTaxId ) {
         CTaxon1Node* pNode = ( m_ppEntries[tax_id] );
@@ -239,7 +239,7 @@ COrgRefCache::Lookup( int tax_id, CTaxon1_data** ppData )
 }
 
 bool
-COrgRefCache::Lookup( int tax_id, CTaxon2_data** ppData )
+COrgRefCache::Lookup( TTaxId tax_id, CTaxon2_data** ppData )
 {
     if( (unsigned)tax_id < m_nMaxTaxId ) {
         CTaxon1Node* pNode = ( m_ppEntries[tax_id] );
@@ -1218,7 +1218,7 @@ COrgRefCache::InitDivisions()
 }
 
 void
-COrgRefCache::SetIndexEntry( int id, CTaxon1Node* pNode )
+COrgRefCache::SetIndexEntry( TTaxId id, CTaxon1Node* pNode )
 {
     m_ppEntries[id] = pNode;
 }

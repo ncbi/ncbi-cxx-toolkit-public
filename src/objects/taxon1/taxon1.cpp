@@ -215,7 +215,7 @@ CTaxon1::Fini(void)
 }
 
 CRef< CTaxon2_data >
-CTaxon1::GetById(int tax_id)
+CTaxon1::GetById(TTaxId tax_id)
 {
     SetLastError(NULL);
     if( !TAXON1_IS_INITED ) {
@@ -375,7 +375,7 @@ private:
 
 void
 CTaxon1::OrgRefAdjust( COrg_ref& inp_orgRef, const COrg_ref& db_orgRef,
-                       int tax_id )
+                       TTaxId tax_id )
 {
     inp_orgRef.ResetCommon();
     inp_orgRef.ResetSyn();
@@ -569,7 +569,7 @@ CTaxon1::OrgRefAdjust( COrg_ref& inp_orgRef, const COrg_ref& db_orgRef,
 }
 
 bool
-CTaxon1::LookupByOrgRef(const COrg_ref& inp_orgRef, int* pTaxid,
+CTaxon1::LookupByOrgRef(const COrg_ref& inp_orgRef, TTaxId* pTaxid,
                         COrgName::TMod& hitMods )
 {
     SetLastError(NULL);
@@ -702,7 +702,7 @@ CTaxon1::Lookup(const COrg_ref& inp_orgRef )
     // Check if this taxon is in cache
     CTaxon2_data* pData = 0;
     COrgName::TMod hitMod;
-    int tax_id = 0;
+    TTaxId tax_id = 0;
 
     if( LookupByOrgRef( inp_orgRef, &tax_id, hitMod )
         && tax_id > 0
@@ -753,7 +753,7 @@ CTaxon1::LookupMerge(COrg_ref& inp_orgRef )
 	}
     }
     COrgName::TMod hitMod;
-    int tax_id = 0; //GetTaxIdByOrgRef( inp_orgRef );
+    TTaxId tax_id = 0; //GetTaxIdByOrgRef( inp_orgRef );
 
     if( LookupByOrgRef( inp_orgRef, &tax_id, hitMod )
         && tax_id > 0
@@ -770,7 +770,7 @@ CTaxon1::LookupMerge(COrg_ref& inp_orgRef )
     return CConstRef<CTaxon2_data>(pData);
 }
 
-int
+TTaxId
 CTaxon1::GetTaxIdByOrgRef(const COrg_ref& inp_orgRef)
 {
     SetLastError(NULL);
@@ -796,7 +796,7 @@ CTaxon1::GetTaxIdByOrgRef(const COrg_ref& inp_orgRef)
     return 0;
 }
 
-int
+TTaxId
 CTaxon1::GetTaxIdByName(const string& orgname)
 {
     SetLastError(NULL);
@@ -809,7 +809,7 @@ CTaxon1::GetTaxIdByName(const string& orgname)
     return GetTaxIdByOrgRef(orgRef);
 }
 
-int
+TTaxId
 CTaxon1::FindTaxIdByName(const string& orgname)
 {
     SetLastError(NULL);
@@ -821,7 +821,7 @@ CTaxon1::FindTaxIdByName(const string& orgname)
     if( orgname.empty() )
         return 0;
 
-    int id( GetTaxIdByName(orgname) );
+    TTaxId id( GetTaxIdByName(orgname) );
 
     if(id < 1) {
 
@@ -856,7 +856,7 @@ CTaxon1::FindTaxIdByName(const string& orgname)
 //              -1 - if multiple nodes found
 //              -2 - error during processing occured
 ///
-int
+TTaxId
 CTaxon1::SearchTaxIdByName(const string& orgname, ESearch mode,
                            list< CRef< CTaxon1_name > >* pNameList)
 {
@@ -959,7 +959,7 @@ CTaxon1::GetAllTaxIdByName(const string& orgname, TTaxIdList& lIds)
 // pointer to internally stored OrgRef.
 ///
 CConstRef< COrg_ref >
-CTaxon1::GetOrgRef(int tax_id,
+CTaxon1::GetOrgRef(TTaxId tax_id,
                    bool& is_species,
                    bool& is_uncultured,
                    string& blast_name,
@@ -1014,8 +1014,8 @@ CTaxon1::SetSynonyms(bool on_off)
 // NOTE:
 //   Root of the tree has tax_id of 1
 ///
-int
-CTaxon1::GetParent(int id_tax)
+TTaxId
+CTaxon1::GetParent(TTaxId id_tax)
 {
     CTaxon1Node* pNode = 0;
     SetLastError(NULL);
@@ -1042,8 +1042,8 @@ CTaxon1::GetParent(int id_tax)
 // NOTE:
 //   Root of the tree has tax_id of 1
 ///
-int
-CTaxon1::GetSpecies(int id_tax, ESpeciesMode mode)
+TTaxId
+CTaxon1::GetSpecies(TTaxId id_tax, ESpeciesMode mode)
 {
     CTaxon1Node* pNode = 0;
     SetLastError(NULL);
@@ -1097,8 +1097,8 @@ CTaxon1::GetSpecies(int id_tax, ESpeciesMode mode)
 //               0 - no genus in the lineage
 //              -1 - if error
 ///
-int
-CTaxon1::GetGenus(int id_tax)
+TTaxId
+CTaxon1::GetGenus(TTaxId id_tax)
 {
     CTaxon1Node* pNode = 0;
     SetLastError(NULL);
@@ -1128,8 +1128,8 @@ CTaxon1::GetGenus(int id_tax)
 //               0 - no superkingdom in the lineage
 //              -1 - if error
 ///
-int
-CTaxon1::GetSuperkingdom(int id_tax)
+TTaxId
+CTaxon1::GetSuperkingdom(TTaxId id_tax)
 {
     CTaxon1Node* pNode = 0;
     SetLastError(NULL);
@@ -1153,6 +1153,90 @@ CTaxon1::GetSuperkingdom(int id_tax)
     return -1;
 }
 
+//---------------------------------------------
+// Get ancestor tax_id by rank name
+// rank name might be one of:
+// no rank
+// superkingdom
+// kingdom
+// subkingdom
+// superphylum
+// phylum
+// subphylum
+// superclass
+// class
+// subclass
+// infraclass
+// cohort
+// subcohort
+// superorder
+// order
+// suborder
+// infraorder
+// parvorder
+// superfamily
+// family
+// subfamily
+// tribe
+// subtribe
+// genus
+// subgenus
+// species group
+// species subgroup
+// species
+// subspecies
+// varietas
+// forma
+//
+// Returns: tax_id of properly ranked accessor or
+//               0 - no such rank in the lineage
+//              -1 - invalid rank name
+//              -2 - any other error (use GetLastError for details)
+///
+TTaxId
+CTaxon1::GetAncestorByRank(TTaxId id_tax, const char* rank_name)
+{
+    SetLastError(NULL);
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return -2;
+	}
+    }
+    if( rank_name ) {
+	short rank( m_plCache->FindRankByName( rank_name ) );
+	if( rank != -1000 ) {
+	    return GetAncestorByRank(id_tax, rank);
+	}
+    }
+    SetLastError( "rank not found" );
+    ERR_POST_X( 2, GetLastError() );
+    return -1;
+}
+
+TTaxId
+CTaxon1::GetAncestorByRank(TTaxId id_tax, short rank_id)
+{
+    CTaxon1Node* pNode = 0;
+    SetLastError(NULL);
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return -1;
+	}
+    }
+    if( m_plCache->LookupAndAdd( id_tax, &pNode )
+        && pNode ) {
+        while( !pNode->IsRoot() ) {
+            int rank( pNode->GetRank() );
+            if( rank == rank_id )
+                return pNode->GetTaxId();
+            if( (rank >= 0) && (rank < rank_id))
+                return 0;
+            pNode = pNode->GetParent();
+        }
+	return 0;
+    }
+    return -1;
+}
 
 //---------------------------------------------
 // Get taxids for all children of specified node.
@@ -1160,7 +1244,7 @@ CTaxon1::GetSuperkingdom(int id_tax)
 //          -1 - in case of error
 ///
 int
-CTaxon1::GetChildren(int id_tax, TTaxIdList& children_ids)
+CTaxon1::GetChildren(TTaxId id_tax, TTaxIdList& children_ids)
 {
     int count(0);
     CTaxon1Node* pNode = 0;
@@ -1340,10 +1424,10 @@ CTaxon1::GetNameClassId( const string& class_name )
 // ancestor)
 //          -1 - in case of an error
 ///
-int
-CTaxon1::Join(int taxid1, int taxid2)
+TTaxId
+CTaxon1::Join(TTaxId taxid1, TTaxId taxid2)
 {
-    int tax_id = 0;
+    TTaxId tax_id = 0;
     CTaxon1Node *pNode1, *pNode2;
     SetLastError(NULL);
     if( !TAXON1_IS_INITED ) {
@@ -1369,7 +1453,7 @@ CTaxon1::Join(int taxid1, int taxid2)
 // If unique is true then only unique names will be stored
 ///
 int
-CTaxon1::GetAllNames(int tax_id, TNameList& lNames, bool unique)
+CTaxon1::GetAllNames(TTaxId tax_id, TNameList& lNames, bool unique)
 {
     int count(0);
     SetLastError(NULL);
@@ -1414,7 +1498,7 @@ CTaxon1::GetAllNames(int tax_id, TNameList& lNames, bool unique)
 //          FALSE - failure
 ///
 bool
-CTaxon1::GetAllNamesEx(int tax_id, list< CRef< CTaxon1_name > >& lNames)
+CTaxon1::GetAllNamesEx(TTaxId tax_id, list< CRef< CTaxon1_name > >& lNames)
 {
     SetLastError(NULL);
     if( !TAXON1_IS_INITED ) {
@@ -1502,7 +1586,7 @@ CTaxon1::IsAlive(void)
 }
 
 bool
-CTaxon1::GetTaxId4GI(TGi gi, int& tax_id_out )
+CTaxon1::GetTaxId4GI(TGi gi, TTaxId& tax_id_out )
 {
     SetLastError(NULL);
     if( !TAXON1_IS_INITED ) {
@@ -1529,7 +1613,7 @@ CTaxon1::GetTaxId4GI(TGi gi, int& tax_id_out )
 }
 
 bool
-CTaxon1::GetBlastName(int tax_id, string& blast_name_out )
+CTaxon1::GetBlastName(TTaxId tax_id, string& blast_name_out )
 {
     CTaxon1Node* pNode = 0;
     SetLastError(NULL);
@@ -1678,7 +1762,7 @@ CTaxon1::GetPopsetJoin( const TTaxIdList& ids_in, TTaxIdList& ids_out )
 	}
     }
     if( ids_in.size() > 0 ) {
-        map< int, CTaxon1Node* > nodeMap;
+        map< TTaxId, CTaxon1Node* > nodeMap;
         CTaxon1Node *pParent = 0, *pNode = 0, *pNewParent = 0;
         CTreeCont tPartTree; // Partial tree
         CTreeIterator* pIt = tPartTree.GetIterator();
@@ -1689,7 +1773,7 @@ CTaxon1::GetPopsetJoin( const TTaxIdList& ids_in, TTaxIdList& ids_out )
         for( TTaxIdList::const_iterator ci = ids_in.begin();
              ci != ids_in.end();
              ++ci ) {
-            map< int, CTaxon1Node* >::iterator nmi = nodeMap.find( *ci );
+            map< TTaxId, CTaxon1Node* >::iterator nmi = nodeMap.find( *ci );
             if( nmi == nodeMap.end() ) {
                 if( m_plCache->LookupAndAdd( *ci, &pNode ) ) {
                     if( !tPartTree.GetRoot() ) {
@@ -1697,7 +1781,7 @@ CTaxon1::GetPopsetJoin( const TTaxIdList& ids_in, TTaxIdList& ids_out )
                             ( *static_cast<const CTaxon1Node*>
                               (m_plCache->GetTree().GetRoot()) );
                         tPartTree.SetRoot( pNewParent );
-                        nodeMap.insert( map< int,CTaxon1Node* >::value_type
+                        nodeMap.insert( map< TTaxId,CTaxon1Node* >::value_type
                                         (pNewParent->GetTaxId(), pNewParent) );
                     }
                     if( pNode ) {
@@ -1723,7 +1807,7 @@ CTaxon1::GetPopsetJoin( const TTaxIdList& ids_in, TTaxIdList& ids_out )
                              i != vLin.rend();
                              ++i ) {
                             pNode = *i;
-                            nodeMap.insert( map< int,CTaxon1Node* >::value_type
+                            nodeMap.insert( map< TTaxId,CTaxon1Node* >::value_type
                                             ( pNode->GetTaxId(), pNode ) );
                             pIt->AddChild( pNode );
                             pIt->GoNode( pNode );
@@ -1762,7 +1846,7 @@ CTaxon1::GetPopsetJoin( const TTaxIdList& ids_in, TTaxIdList& ids_out )
 //-----------------------------------
 //  Tree-related functions
 bool
-CTaxon1::LoadSubtreeEx( int tax_id, int levels, const ITaxon1Node** ppNode )
+CTaxon1::LoadSubtreeEx( TTaxId tax_id, int levels, const ITaxon1Node** ppNode )
 {
     CTaxon1Node* pNode = 0;
     SetLastError(NULL);
@@ -1869,7 +1953,7 @@ CTaxon1::GetTreeIterator( CTaxon1::EIteratorMode mode )
 }
 
 CRef< ITreeIterator >
-CTaxon1::GetTreeIterator( int tax_id, CTaxon1::EIteratorMode mode )
+CTaxon1::GetTreeIterator( TTaxId tax_id, CTaxon1::EIteratorMode mode )
 {
     CRef< ITreeIterator > pIt;
     CTaxon1Node* pData = 0;
@@ -1891,7 +1975,7 @@ CTaxon1::GetTreeIterator( int tax_id, CTaxon1::EIteratorMode mode )
 }
 
 bool
-CTaxon1::GetNodeProperty( int tax_id, const string& prop_name,
+CTaxon1::GetNodeProperty( TTaxId tax_id, const string& prop_name,
                           string& prop_val )
 {
     SetLastError(NULL);
@@ -1943,7 +2027,7 @@ CTaxon1::GetNodeProperty( int tax_id, const string& prop_name,
 }
 
 bool
-CTaxon1::GetNodeProperty( int tax_id, const string& prop_name,
+CTaxon1::GetNodeProperty( TTaxId tax_id, const string& prop_name,
                           bool& prop_val )
 {
     SetLastError(NULL);
@@ -1995,7 +2079,7 @@ CTaxon1::GetNodeProperty( int tax_id, const string& prop_name,
 }
 
 bool
-CTaxon1::GetNodeProperty( int tax_id, const string& prop_name,
+CTaxon1::GetNodeProperty( TTaxId tax_id, const string& prop_name,
                           int& prop_val )
 {
     SetLastError(NULL);
@@ -2212,7 +2296,7 @@ CTaxon1::CheckOrgRef( const COrg_ref& orgRef, TOrgRefStatus& stat_out )
 {
     CDiagAutoPrefix( "Taxon1::CheckOrgRef" );
     SetLastError(NULL);
-    int tax_id;
+    TTaxId tax_id;
 
     tax_id = GetTaxIdByOrgRef( orgRef );
     stat_out = eStatus_Ok;
@@ -2357,7 +2441,7 @@ CTaxon1::CheckOrgRef( const COrg_ref& orgRef, TOrgRefStatus& stat_out )
 //          false when call failed
 ///
 bool
-CTaxon1::GetTypeMaterial( int tax_id, TNameList& type_material_list_out )
+CTaxon1::GetTypeMaterial( TTaxId tax_id, TNameList& type_material_list_out )
 {
     CTaxon1Node* pNode = 0;
     SetLastError(NULL);
@@ -2433,7 +2517,7 @@ CTaxon1::GetTypeMaterial( int tax_id, TNameList& type_material_list_out )
 // This function returns the maximal value for taxid
 // or -1 in case of error
 ///
-int 
+TTaxId 
 CTaxon1::GetMaxTaxId( void )
 {
     SetLastError(NULL);
@@ -2457,7 +2541,7 @@ CTaxon1::GetMaxTaxId( void )
 // Returns: true on success, false in case of error
 ///
 bool
-CTaxon1::GetDisplayCommonName( int tax_id, string& disp_name_out )
+CTaxon1::GetDisplayCommonName( TTaxId tax_id, string& disp_name_out )
 {
     CTaxon1Node* pNode = 0;
     SetLastError(NULL);
@@ -2500,7 +2584,7 @@ CTaxon1::GetDisplayCommonName( int tax_id, string& disp_name_out )
 	// 3)
 // 	if( pNode->GetRank() == m_plCache->GetSubspeciesRank() ) {
 	    // Get corresponding species
-	    int species_id = GetSpecies(tax_id);
+	    TTaxId species_id = GetSpecies(tax_id);
 	    if( species_id < 0 ) {
 		return false;
 	    } else if( species_id > 0 && species_id != tax_id ) {
