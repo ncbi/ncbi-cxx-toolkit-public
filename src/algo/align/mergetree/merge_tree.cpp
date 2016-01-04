@@ -44,6 +44,7 @@
 #include <algo/align/mergetree/merge_tree_core.hpp>
 #include <algo/align/mergetree/merge_tree.hpp>
 
+#include <algo/align/nw/align_exception.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -727,6 +728,23 @@ void CTreeAlignMerger::Merge_Dist(const list< CRef<CSeq_align> >& Input,
         
         TAlignVec Aligns  = MapIter->second;
         
+        // length checks
+        if (QueryBSH && SubjtBSH && 
+            QueryBSH.CanGetInst_Length() && 
+            SubjtBSH.CanGetInst_Length()) {
+            TSeqPos QueryLen = QueryBSH.GetInst_Length();
+            TSeqPos SubjtLen = SubjtBSH.GetInst_Length();
+            TSeqRange QueryRange, SubjtRange;
+            ITERATE(TAlignVec, AlignIter, Aligns) {
+                QueryRange += (*AlignIter)->GetSeqRange(0);
+                SubjtRange += (*AlignIter)->GetSeqRange(1);
+            }
+            if (QueryRange.GetTo() >= QueryLen  || 
+                SubjtRange.GetTo() >= SubjtLen) {
+                NCBI_THROW(CAlgoAlignException, CAlgoAlignException::eBadParameter, "Alignment ranges are outside of sequence lengths");
+            }
+        }
+
         x_Merge_Dist_Impl(Aligns, QueryIDH, SubjtIDH, QueryBSH, SubjtBSH, Output);
 
     } // end id-strand-map loop
