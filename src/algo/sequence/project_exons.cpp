@@ -286,28 +286,29 @@ public:
         // may have elongated some intervals, while the 
         // next step expects upper bound of 2bp on all overlaps.
 
-#if 0
-        NcbiCerr << "Orig:  " << AsString(loc->GetPacked_int()) << "\n";
-        AdjustBiostops                   (loc->SetPacked_int());
-        NcbiCerr << "Adj1:  " << AsString(loc->GetPacked_int()) << "\n";
-        SubsumeMicroIntervals            (loc->SetPacked_int());
-        NcbiCerr << "Subs:  " << AsString(loc->GetPacked_int()) << "\n";
-        AdjustBiostops                   (loc->SetPacked_int());
-        NcbiCerr << "Adj2:  " << AsString(loc->GetPacked_int()) << "\n";
-        ConvertOverlapsToGaps            (loc->SetPacked_int());
-        NcbiCerr << "Ovlp:  " << AsString(loc->GetPacked_int()) << "\n";
-        CollapseNonframeshiftting        (loc->SetPacked_int());
-        NcbiCerr << "Final: " << AsString(loc->GetPacked_int()) << "\n";
-        NcbiCerr << "Tweaked: " 
-                 << (orig_loc.Equals(*loc) ? "equal" : "not-equal")
-                 << "\n\n";
-#else
-        AdjustBiostops            (loc->SetPacked_int());
-        SubsumeMicroIntervals     (loc->SetPacked_int());
-        AdjustBiostops            (loc->SetPacked_int());
-        ConvertOverlapsToGaps     (loc->SetPacked_int());
-        CollapseNonframeshiftting (loc->SetPacked_int());
-#endif
+        if(false /*orig_loc.GetStart(eExtreme_Positional) == 1988953*/) {
+            NcbiCerr << "Orig:  " << AsString(loc->GetPacked_int()) << "\n";
+            AdjustBiostops                   (loc->SetPacked_int());
+            NcbiCerr << "Adj1:  " << AsString(loc->GetPacked_int()) << "\n";
+            SubsumeMicroIntervals            (loc->SetPacked_int());
+            NcbiCerr << "Subs:  " << AsString(loc->GetPacked_int()) << "\n";
+            AdjustBiostops                   (loc->SetPacked_int());
+            NcbiCerr << "Adj2:  " << AsString(loc->GetPacked_int()) << "\n";
+            ConvertOverlapsToGaps            (loc->SetPacked_int());
+            NcbiCerr << "Ovlp:  " << AsString(loc->GetPacked_int()) << "\n";
+            CollapseNonframeshiftting        (loc->SetPacked_int());
+            NcbiCerr << "Final: " << AsString(loc->GetPacked_int()) << "\n";
+            NcbiCerr << "Tweaked: " 
+                     << (orig_loc.Equals(*loc) ? "equal" : "not-equal")
+                     << "\n\n";
+        } else {
+            AdjustBiostops            (loc->SetPacked_int());
+            SubsumeMicroIntervals     (loc->SetPacked_int());
+            AdjustBiostops            (loc->SetPacked_int());
+            ConvertOverlapsToGaps     (loc->SetPacked_int());
+            CollapseNonframeshiftting (loc->SetPacked_int());
+        }
+
         Validate(orig_loc, *loc);
         return loc;
     }
@@ -513,7 +514,8 @@ private:
     }
 
 
-    // Subsume micro-intervals into upstream predecessors
+    // Subsume micro-intervals into upstream predecessors, as long as
+    // it does not affect the terminals.
     static void SubsumeMicroIntervals(CPacked_seqint& ps)
     {
         CPacked_seqint::Tdata& seqints = ps.Set();
@@ -523,31 +525,25 @@ private:
             CRef<CSeq_interval> current = *it;
             CRef<CSeq_interval> next = Next(seqints, it);
 
-
             if(it == dest) {
-                // special-case - short interval and no predecessor
-                // - try to subsume into 5' end of next one instead.
-                if(   current->GetLength() < k_min_len 
-                   && next
-                   && next->GetStart(eExtreme_Positional) > current->GetLength())
-                {
-                    AdjustBioStart(*next, -1 * current->GetLength());
-                    *dest = next;
-                    ++it; //so we don't process next in the next iteration
-                }
-
-                continue;
+                continue; // no predecessor
             }
 
+            const bool can_subsume =
+                !next                               ? false
+               : current->GetLength() <  k_min_len  ? true
+               : current->GetLength() >= k_keep_len ? false
+               : CanCreateNonframeshiftingGap(
+                       **dest, *current, *next)     ? true
+               :                                      false;                     
 
-            const bool creates_nonframeshifting_gap = 
-                current->GetLength() < k_keep_len
-             && next
-             && CanCreateNonframeshiftingGap(**dest, *current, *next);
+            // Note: if we don't have next, that means that this 
+            // interval is last. We are not allowed to subsume it
+            // because dropping it and adjusting the upstream
+            // interval's length to compensate will affect the
+            // packed_seqint's biostop. GP-15942
 
-            if(   current->GetLength() < k_min_len
-               || creates_nonframeshifting_gap)
-            {
+            if(can_subsume) {
                 // drop current and extend prev to compensate
                 AdjustBioStop(**dest, current->GetLength());
             } else {
@@ -673,6 +669,20 @@ private:
 
     static void Validate(const CSeq_loc& orig_loc, const CSeq_loc& final_loc)
     {
+        if(   sequence::GetStart(orig_loc,  NULL, eExtreme_Positional)
+           != sequence::GetStart(final_loc, NULL, eExtreme_Positional)) 
+        {
+            NCBI_USER_THROW("Change in positional-starts");
+        }
+
+
+        if(   sequence::GetStop(orig_loc,  NULL, eExtreme_Positional)
+           != sequence::GetStop(final_loc, NULL, eExtreme_Positional)) 
+        {
+            NCBI_USER_THROW("Change in positional-stops");
+        }
+
+
         if(   sequence::GetLength(final_loc, NULL) % 3 
            != sequence::GetLength(orig_loc,  NULL) % 3)
         {
@@ -818,7 +828,8 @@ CRef<CSeq_loc> ProjectExon(const CSpliced_exon& spliced_exon,
         exon_loc->SetPacked_int().Set().push_back(chunk);
     }
 
-    return NTweakExon::TweakExon(*exon_loc);
+    exon_loc = NTweakExon::TweakExon(*exon_loc);
+    return exon_loc;
 }
 
 
@@ -1117,6 +1128,7 @@ CRef<CSeq_loc> CFeatureGenerator::s_ProjectRNA(const CSeq_align& spliced_aln,
     CRef<CSeq_loc> projected_rna_loc = ProjectExons(spliced_aln,
                                                     CConstRef<CSeq_loc>(NULL),
                                                     unaligned_ends_partialness_thr);
+
 
     TSeqPos cds_start(kInvalidSeqPos), cds_stop(kInvalidSeqPos);
     if(product_cds_loc) {
