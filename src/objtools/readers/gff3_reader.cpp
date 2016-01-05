@@ -198,7 +198,7 @@ bool CGff3Reader::x_UpdateAnnotFeature(
 
     string type = record.Type();
     NStr::ToLower(type);
-    if (type == "exon"  ||  type == "five_prime_utr"  ||  type == "three_prime_utr") {
+    if (type == "exon" || type == "five_prime_utr" || type == "three_prime_utr") {
         return xUpdateAnnotExon(record, pFeature, pAnnot, pEC);
     }
     if (type == "cds") {
@@ -487,6 +487,11 @@ bool CGff3Reader::xUpdateAnnotGeneric(
     string strId;
     if ( record.GetAttribute("ID", strId)) {
         m_MapIdToFeature[strId] = pFeature;
+    }
+    if (pFeature->GetData().IsRna()) {
+        CRef<CSeq_interval> rnaLoc(new CSeq_interval);
+        rnaLoc->Assign(pFeature->GetLocation().GetInt());
+        mMrnaLocs[strId] = rnaLoc;
     }
     return true;
 }
