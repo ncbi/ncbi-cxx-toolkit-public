@@ -168,42 +168,59 @@ T53Partialness GetExonPartialness(const CSeq_align& spliced_aln,
 
 size_t GetUnalignedLength_3p(const CSeq_align& spliced_aln)
 {
-    return spliced_aln.GetSegs().GetSpliced().IsSetPoly_a()         ? 0
-         : spliced_aln.GetSeqStrand(0) == eNa_strand_minus          ? spliced_aln.GetSeqStart(0)
-         : spliced_aln.GetSegs().GetSpliced().IsSetProduct_length() ? spliced_aln.GetSegs().GetSpliced().GetProduct_length() 
-                                                                      - spliced_aln.GetSeqStop(0) - 1
-         : 0;
+    return spliced_aln.GetSegs().GetSpliced().IsSetPoly_a()         
+                ? 0
+
+         : spliced_aln.GetSeqStrand(0) == eNa_strand_minus          
+                ? spliced_aln.GetSeqStart(0)
+
+         : spliced_aln.GetSegs().GetSpliced().IsSetProduct_length() 
+                ? spliced_aln.GetSegs().GetSpliced().GetProduct_length() 
+                  - spliced_aln.GetSeqStop(0) - 1
+
+         :        0;
 }
 
 size_t GetUnalignedLength_5p(const CSeq_align& spliced_aln)
 {
-    return spliced_aln.GetSeqStrand(0) != eNa_strand_minus          ? spliced_aln.GetSeqStart(0)
-         : spliced_aln.GetSegs().GetSpliced().IsSetProduct_length() ? spliced_aln.GetSegs().GetSpliced().GetProduct_length() 
-                                                                      - spliced_aln.GetSeqStop(0) - 1
-         : 0;
+    return spliced_aln.GetSeqStrand(0) != eNa_strand_minus          
+                ? spliced_aln.GetSeqStart(0)
+
+         : spliced_aln.GetSegs().GetSpliced().IsSetProduct_length() 
+                ? spliced_aln.GetSegs().GetSpliced().GetProduct_length() 
+                  - spliced_aln.GetSeqStop(0) - 1
+
+         :        0;
 }
 
 /// Return whether 5' and/or 3' end of exons-loc is partial
 /// based on unaligned tails in case of RNA,
 ///       or overlap of product-cds-loc with unaligned tails, in case of CDS.
-T53Partialness GetTerminalPartialness(const CSeq_align& spliced_aln,
-                                      CConstRef<CSeq_loc> product_cds_loc,
-                                      size_t unaligned_ends_partialness_thr)
+T53Partialness GetTerminalPartialness(
+        const CSeq_align& spliced_aln,
+        CConstRef<CSeq_loc> product_cds_loc,
+        size_t unaligned_ends_partialness_thr)
 {
     T53Partialness partialness(false, false);
     if(!product_cds_loc) {
-        //For RNA set partialness based on whether the unaligned ends are longer than allow_terminal_unaligned_bases
-        partialness.first = GetUnalignedLength_5p(spliced_aln) > unaligned_ends_partialness_thr;
-        partialness.second = GetUnalignedLength_3p(spliced_aln) > unaligned_ends_partialness_thr;
+        // For RNA set partialness based on whether the unaligned 
+        // ends are longer than allow_terminal_unaligned_bases
+        partialness.first = GetUnalignedLength_5p(spliced_aln) 
+                           > unaligned_ends_partialness_thr;
+
+        partialness.second = GetUnalignedLength_3p(spliced_aln) 
+                           > unaligned_ends_partialness_thr;
     } else {
-        // cds-exons 5p/3p-terminal partialness is based on whether the product-cds-loc terminals are
-        // covered by the alignment.
+        // cds-exons 5p/3p-terminal partialness is based on whether the 
+        // product-cds-loc terminals are covered by the alignment.
         const TSeqPos cds_start = product_cds_loc->GetStart(eExtreme_Positional);
         const TSeqPos cds_stop  = product_cds_loc->GetStop(eExtreme_Positional);
         
         bool start_covered = false;
         bool stop_covered = false;
-        ITERATE(CSpliced_seg::TExons, it, spliced_aln.GetSegs().GetSpliced().GetExons()) {
+        ITERATE(CSpliced_seg::TExons, it, 
+                spliced_aln.GetSegs().GetSpliced().GetExons()) 
+        {
             const CSpliced_exon& exon = **it;
             start_covered |= cds_start >= exon.GetProduct_start().GetNucpos()
                           && cds_start <= exon.GetProduct_end().GetNucpos();
@@ -212,8 +229,11 @@ T53Partialness GetTerminalPartialness(const CSeq_align& spliced_aln,
                          && cds_stop <= exon.GetProduct_end().GetNucpos();
         }
 
-        partialness.first  = !start_covered || product_cds_loc->IsPartialStart(eExtreme_Positional);
-        partialness.second = !stop_covered  || product_cds_loc->IsPartialStop(eExtreme_Positional);
+        partialness.first  = !start_covered 
+                          || product_cds_loc->IsPartialStart(eExtreme_Positional);
+
+        partialness.second = !stop_covered
+                          || product_cds_loc->IsPartialStop(eExtreme_Positional);
 
         if(spliced_aln.GetSeqStrand(0) == eNa_strand_minus) {
             swap(partialness.first, partialness.second);
@@ -559,8 +579,6 @@ private:
 
 
     // Precondition: overlaps are at most 2bp
-    // Each interval is long enough to be truncated by 3bp, i.e.
-    // at least 4bp long.
     static void ConvertOverlapsToGaps(CPacked_seqint& ps)
     {
         NON_CONST_ITERATE(CPacked_seqint::Tdata, it, ps.Set()) {
@@ -731,9 +749,10 @@ private:
 
 
 // Project exon to genomic coordinates, preserving discontinuities.
-CRef<CSeq_loc> ProjectExon(const CSpliced_exon& spliced_exon, 
-                           const CSeq_id& aln_genomic_id,  //of the parent alignment (if not specified in spliced_exon)
-                           ENa_strand aln_genomic_strand)  //of the parent alignment (if not specified in spliced_exon)
+CRef<CSeq_loc> ProjectExon(
+        const CSpliced_exon& spliced_exon, 
+        const CSeq_id& aln_genomic_id,  //of the parent alignment (if not specified in spliced_exon)
+        ENa_strand aln_genomic_strand)  //of the parent alignment (if not specified in spliced_exon)
 {
     CRef<CSeq_loc> exon_loc(new CSeq_loc(CSeq_loc::e_Packed_int));
 
@@ -1097,34 +1116,47 @@ CRef<CSeq_loc> ProjectExons(const CSeq_align& spliced_aln,
 
 
 /// Precondition: input loc is discontinuity-preserving RNA loc
-/// Postcontition: adjacent packed-ints having the discontinuity between them entirely outside of 
-/// cds-range are merged into single interval.
-CRef<CSeq_loc> CollapseDiscontinuitiesInUTR(const CSeq_loc& loc, TSeqPos cds_start, TSeqPos cds_stop)
+/// Postcontition: adjacent packed-ints having the discontinuity 
+/// between them entirely outside of cds-range are merged into single interval.
+CRef<CSeq_loc> CollapseDiscontinuitiesInUTR(
+        const CSeq_loc& loc, 
+        TSeqPos cds_start, 
+        TSeqPos cds_stop)
 {
     CRef<CSeq_loc> collapsed_loc(new CSeq_loc(CSeq_loc::e_Null));
     if(loc.IsMix()) {
         //each subloc is an exon - recurse on each.
         collapsed_loc->SetMix();
         ITERATE(CSeq_loc::TMix::Tdata, it, loc.GetMix().Get()) {
-            CRef<CSeq_loc> collapsed_exon_loc = CollapseDiscontinuitiesInUTR(**it, cds_start, cds_stop);
+            
+            CRef<CSeq_loc> collapsed_exon_loc = 
+                CollapseDiscontinuitiesInUTR(**it, cds_start, cds_stop);
+
             collapsed_loc->SetMix().Set().push_back(collapsed_exon_loc);
         }
+
     } else if(loc.IsPacked_int()) {
-        //each subloc is a chunk in an exon - will merge compatible adjacent chunks iff outside of CDS
+
+        //each subloc is a chunk in an exon 
+        //- will merge compatible adjacent chunks iff outside of CDS
         collapsed_loc->SetPacked_int();
         ITERATE(CPacked_seqint::Tdata, it, loc.GetPacked_int().Get()) {
             const CSeq_interval& interval = **it;
             
             if(collapsed_loc->GetPacked_int().Get().empty()) {
-                collapsed_loc->SetPacked_int().Set().push_back(CRef<CSeq_interval>(SerialClone(interval)));
+                collapsed_loc->SetPacked_int().Set().push_back(
+                        CRef<CSeq_interval>(SerialClone(interval)));
                 continue;
             }
             
-            CSeq_interval& last_interval = *collapsed_loc->SetPacked_int().Set().back();
+            CSeq_interval& last_interval = 
+                *collapsed_loc->SetPacked_int().Set().back();
        
-            //We can collapse intervals iff the discontinuity (overlap or gap) between them
-            //lies outside of the CDS. Equivalently, the count of interval terminals overlapping CDS
-            //being at most 1 is necessary and sufficient (i.e. allowing for one of the intervals to be partially in the CDS)
+            // We can collapse intervals iff the discontinuity 
+            // (overlap or gap) between them lies outside of the CDS. 
+            // Equivalently, the count of interval terminals overlapping CDS
+            // being at most 1 is necessary and sufficient 
+            // (allowing for one of the intervals to be partially in the CDS)
             
             size_t count_terminals_within_cds =
                 (last_interval.GetFrom() >= cds_start && last_interval.GetFrom() <= cds_stop ? 1 : 0)
@@ -1148,13 +1180,15 @@ CRef<CSeq_loc> CollapseDiscontinuitiesInUTR(const CSeq_loc& loc, TSeqPos cds_sta
                          << "last: " << MSerial_AsnText << last_interval
                          << "this: " << MSerial_AsnText << interval;
 #endif
-                collapsed_loc->SetPacked_int().Set().push_back(CRef<CSeq_interval>(SerialClone(interval)));
+                collapsed_loc->SetPacked_int().Set().push_back(
+                        CRef<CSeq_interval>(SerialClone(interval)));
             }
         }
         
-        //even if the original was canonicalized, 
-        //we may have collapsed packed-int sublocs such that there's only one remaining,
-        //so need to recanonicalize
+        // even if the original was canonicalized, 
+        // we may have collapsed packed-int sublocs such 
+        // that there's only one remaining,
+        // so need to recanonicalize
         Canonicalize(*collapsed_loc);
     } else {
         collapsed_loc->Assign(loc);
@@ -1164,7 +1198,7 @@ CRef<CSeq_loc> CollapseDiscontinuitiesInUTR(const CSeq_loc& loc, TSeqPos cds_sta
 }
 
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 CRef<CSeq_loc> CFeatureGenerator::s_ProjectRNA(
         const CSeq_align& spliced_aln, 
@@ -1187,7 +1221,7 @@ CRef<CSeq_loc> CFeatureGenerator::s_ProjectRNA(
 
         CRef<CSeq_loc> genomic_cds_range = mapper->Map(*product_cds_loc);
 
-        genomic_cds_range = 
+        genomic_cds_range =
             sequence::Seq_loc_Merge(
                     *genomic_cds_range, 
                     CSeq_loc::fMerge_SingleRange, 
@@ -1215,7 +1249,7 @@ CRef<CSeq_loc> CFeatureGenerator::s_ProjectCDS(
 }
 
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 #if 0
 
