@@ -1316,6 +1316,7 @@ void CSeq_id_Textseq_Tree::FindReverseMatch(const CSeq_id_Handle& id,
         id_list.insert(id);
     }
     if ( id.IsPacked() ) {
+        TReadLockGuard guard(m_TreeLock);
         const CSeq_id_Textseq_Info* info =
             static_cast<const CSeq_id_Textseq_Info*>(GetInfo(id));
         if ( !mine ) { // weak matching
@@ -1339,6 +1340,7 @@ void CSeq_id_Textseq_Tree::FindReverseMatch(const CSeq_id_Handle& id,
     const CTextseq_id& orig_tid = x_Get(*orig_id);
 
     if ( !mine ) {
+        TReadLockGuard guard(m_TreeLock);
         // search only existing accessions
         if ( orig_tid.IsSetAccession() ) {
             x_FindRevMatchByAcc(id_list, orig_tid.GetAccession(), &orig_tid);

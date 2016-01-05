@@ -66,6 +66,84 @@ NCBITEST_AUTO_INIT()
     g_IgnoreDataFile("accguide.txt");
 }
 
+class CMTTestThread : public CThread
+{
+public:
+    CMTTestThread(int tid) : m_TId(tid), m_Random(tid), m_First(true) {
+    }
+
+    CSeq_id_Handle GetRandomId(bool other, bool with_version) {
+        CSeq_id_Handle idh;
+        CNcbiOstrstream fmt;
+        if ( m_Random.GetRand(0, 1) ) {
+            fmt << "NC_" << setfill('0') << setw(6) << m_Random.GetRand(1, 10);
+        }
+        else {
+            fmt << "lcl|a";
+        }
+        int ver = with_version? m_Random.GetRand(1, 20): 0;
+        if ( 1 && m_First ) {
+            m_First = false;
+            if ( ver ) {
+                fmt << '.' << ver;
+            }
+            string str_id = CNcbiOstrstreamToString(fmt);
+            idh = CSeq_id_Handle::GetHandle(str_id);
+        }
+        else {
+            CSeq_id id;
+            CTextseq_id& text = other? id.SetOther(): id.SetGenbank();
+            text.SetAccession(CNcbiOstrstreamToString(fmt));
+            if ( ver ) {
+                text.SetVersion();
+            }
+            idh = CSeq_id_Handle::GetHandle(id);
+        }
+        return idh;
+    }
+
+    virtual void* Main(void) {
+        for ( int i = 0; i < 1000; ++i ) {
+            if ( i%2 ) {
+                CSeq_id_Handle idh0 = GetRandomId(m_Random.GetRand(0, 1), false);
+            }
+            else {
+                CSeq_id_Handle idh = GetRandomId(m_Random.GetRand(0, 1), true);
+                //m_Ids.push_back(idh);
+                CSeq_id_Handle::TMatches hset;
+                idh.GetReverseMatchingHandles(hset, eAllowWeakMatch);
+                if ( m_Ids.size() > 10 ) {
+                    m_Ids.pop_front();
+                }
+            }
+        }
+        return 0;
+    }
+
+private:
+    int m_TId;
+    CRandom m_Random;
+    bool m_First;
+    deque<CSeq_id_Handle> m_Ids;
+};
+
+
+BOOST_AUTO_TEST_CASE(s_MTTest)
+{
+    vector< CRef<CThread> > tt;
+    for ( int i = 0; i < 10; ++i ) {
+        CRef<CThread> t(new CMTTestThread(i));
+        tt.push_back(t);
+    }
+    NON_CONST_ITERATE ( vector< CRef<CThread> >, it, tt ) {
+        (*it)->Run();
+    }
+    NON_CONST_ITERATE ( vector< CRef<CThread> >, it, tt ) {
+        (*it)->Join();
+    }
+}
+
+
 BOOST_AUTO_TEST_CASE(s_TestDefaultInit)
 {
     CSeq_id id;
