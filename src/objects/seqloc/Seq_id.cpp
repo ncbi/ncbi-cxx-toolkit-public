@@ -1031,7 +1031,12 @@ void SAccGuide::x_Load(ILineReader& in)
     } while ( !in.AtEOF() );
 }
 
-static CSafeStatic<CRef<SAccGuide> > s_Guide;
+static CRef<SAccGuide>* s_CreateGuide(void)
+{
+    return new CRef<SAccGuide>(new SAccGuide);
+}
+
+static CSafeStatic<CRef<SAccGuide> > s_Guide(s_CreateGuide, NULL);
 
 CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const CTempString& acc,
                                                    TParseFlags flags)
@@ -1157,10 +1162,6 @@ CSeq_id::x_IdentifyAccession(const CTempString& main_acc, TParseFlags flags,
         return eAcc_unknown;
     }
 
-    if (s_Guide->Empty()) {
-        s_Guide->Reset(new SAccGuide);
-    }
-
     SIZE_TYPE flag_len = (flag_char == '\0') ? 0 : 1;
     SIZE_TYPE digit_count = main_size - digit_pos - flag_len;
     EAccessionInfo ai
@@ -1233,10 +1234,6 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(TParseFlags flags) const
 
     case e_General:
     {
-        if (s_Guide->Empty()) {
-            s_Guide->Reset(new SAccGuide);
-        }
-
         string db = GetGeneral().GetDb();
         NStr::ToUpper(db);
         SAccGuide::TPrefixes::const_iterator it = (*s_Guide)->general.find(db);
