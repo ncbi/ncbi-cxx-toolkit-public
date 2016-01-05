@@ -306,7 +306,7 @@ unsigned int CCdFromFasta::GetColumnsReadFromFile(map<unsigned int, string>& col
 
         if (skipGappedColumns) {
             nonLetterPosition = columnString.find_first_not_of(letters);
-            if (nonLetterPosition != ncbi::NPOS) {
+            if (nonLetterPosition != NPOS) {
 //                cerr << "found gap in column " << col << " (" << columnString[nonLetterPosition] << " at position " << nonLetterPosition << "); column string:\n" << columnString << endl;
                 columnString.erase();
             }

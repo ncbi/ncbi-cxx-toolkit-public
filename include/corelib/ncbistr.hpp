@@ -126,13 +126,8 @@ private:
 
 // SIZE_TYPE and NPOS
 
-/// Define size type.
 typedef NCBI_NS_STD::string::size_type SIZE_TYPE;
-
-/// Define NPOS constant as the special value "std::string::npos" which is
-/// returned when a substring search fails, or to indicate an unspecified
-/// string position.
-const SIZE_TYPE NPOS = static_cast<SIZE_TYPE>(-1);
+#define NPOS NCBI_NS_STD::string::npos
 
 
 

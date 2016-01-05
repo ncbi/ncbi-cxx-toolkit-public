@@ -655,7 +655,7 @@ CPsiBlastValidate::QueryFactory(CRef<IQueryFactory> query_factory,
     BLAST_SequenceBlk* sblk = NULL;
     try { sblk = query_data->GetSequenceBlk(); }
     catch (const CBlastException& e) {
-        if (e.GetMsg().find("Incompatible sequence codings") != ncbi::NPOS) {
+        if (e.GetMsg().find("Incompatible sequence codings") != NPOS) {
             NCBI_THROW(CBlastException, eInvalidArgument, excpt_msg);
         }
     }
