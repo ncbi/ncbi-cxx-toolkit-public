@@ -3478,8 +3478,11 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
                 PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
                     "Unparsed anticodon qualifier in tRNA", feat);
             } else if (NStr::CompareNocase ((**gbqual).GetQual (), "product") == 0 ) {
-                PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
-                    "Unparsed product qualifier in tRNA", feat);
+                if (NStr::CompareNocase ((**gbqual).GetVal (), "tRNA-fMet") != 0 &&
+                    NStr::CompareNocase ((**gbqual).GetVal (), "tRNA-iMet") != 0) {
+                    PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
+                        "Unparsed product qualifier in tRNA", feat);
+                }
             }
         }
         /* tRNA with string extension */

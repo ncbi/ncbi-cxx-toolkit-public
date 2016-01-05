@@ -4761,6 +4761,9 @@ CNewCleanup_imp::x_HandleTrnaProductGBQual(CSeq_feat& feat, CRNA_ref& rna, const
             } else {
                 x_AddToComment(feat, product);
             }
+            if (NStr::CompareNocase (product, "tRNA-fMet") == 0 || NStr::CompareNocase (product, "iRNA-fMet") == 0) {
+                return eAction_Nothing;
+            }
             return eAction_Erase;
         }
     }

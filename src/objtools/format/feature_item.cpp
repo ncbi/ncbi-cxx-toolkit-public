@@ -1929,12 +1929,28 @@ void CFeatureItem::x_AddQualsRna(
                     aa = s_ToIupacaa(aa);
                 }
                 const string& aa_str = s_AaName(aa);
+                string amino_acid_str = aa_str;
+                
                 if ( !aa_str.empty() ) {
-                    x_AddQual(eFQ_product, new CFlatStringQVal(aa_str));
-                    if ( trna.IsSetAnticodon()  &&  !aa_str.empty() ) {
+                    const string& ac_str = aa_str;
+                    if (NStr::CompareNocase (ac_str, "tRNA-Met") == 0) {
+                        const CSeq_feat_Base::TQual & qual = m_Feat.GetQual();
+                        ITERATE( CSeq_feat::TQual, it, qual ) {
+                            if (!(*it)->IsSetQual()  ||  !(*it)->IsSetVal()) continue;
+                            if (NStr::CompareNocase( (*it)->GetQual(), "product") != 0) continue;
+                            if (NStr::CompareNocase ((*it)->GetVal (), "tRNA-fMet") == 0) {
+                                amino_acid_str = "tRNA-fMet";
+                            }
+                            if (NStr::CompareNocase ((*it)->GetVal (), "tRNA-iMet") == 0) {
+                                amino_acid_str = "tRNA-iMet";
+                            }
+                        }
+                    }
+                    x_AddQual(eFQ_product, new CFlatStringQVal(amino_acid_str));
+                    if ( trna.IsSetAnticodon()  &&  !ac_str.empty() ) {
                         x_AddQual(eFQ_anticodon,
                             new CFlatAnticodonQVal(trna.GetAnticodon(),
-                                                   aa_str.substr(5, NPOS)));
+                                                   ac_str.substr(5, NPOS)));
                     }
                 }
                 if ( trna.IsSetCodon() ) {
