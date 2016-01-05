@@ -888,34 +888,46 @@ CRef<CSpliced_exon> CollapseExonStructure(const CSpliced_exon& orig_exon)
 // Caveat-4: Remapping may produce gap-only exons, which would ordinarily yield no genomic projection
 // counterpart, but in the context of discontinuity-preservation we'll need to calculate genomic
 // projection "manually".
-CRef<CSeq_loc> ProjectCDSExon(const CSeq_align& spliced_aln,
-                              const CSpliced_exon& spliced_exon,
-                              const CSeq_loc& product_cds_loc)
+CRef<CSeq_loc> ProjectCDSExon(
+        const CSeq_align& spliced_aln,
+        const CSpliced_exon& spliced_exon,
+        const CSeq_loc& product_cds_loc)
 {
-    CRef<CSeq_align> exon_aln(SerialClone(spliced_aln)); //will create an alignment for each exon separately
+    CRef<CSeq_align> exon_aln(SerialClone(spliced_aln)); 
     exon_aln->ResetScore();
     exon_aln->ResetExt();
 
     //Create alignment to represent only the current exon
     exon_aln->SetSegs().SetSpliced().SetExons().clear();
-    exon_aln->SetSegs().SetSpliced().SetExons().push_back(CRef<CSpliced_exon>(SerialClone(spliced_exon)));
+    exon_aln->SetSegs().SetSpliced().SetExons().push_back(
+            CRef<CSpliced_exon>(SerialClone(spliced_exon)));
+
     CRef<CSeq_loc> query_exon_loc = exon_aln->CreateRowSeq_loc(0);
 
     CRef<CSeq_loc> exon_loc(new CSeq_loc(CSeq_loc::e_Packed_int));
 
-    for(CSeq_loc_CI ci(product_cds_loc, CSeq_loc_CI::eEmpty_Skip, CSeq_loc_CI::eOrder_Biological); ci; ++ci) {
+    for(CSeq_loc_CI ci(product_cds_loc, 
+                       CSeq_loc_CI::eEmpty_Skip, 
+                       CSeq_loc_CI::eOrder_Biological); ci; ++ci) 
+    {
         CConstRef<CSeq_loc> cds_subloc = ci.GetRangeAsSeq_loc();
         
-        if(sequence::eNoOverlap == sequence::Compare(*query_exon_loc, *cds_subloc,
-            NULL, sequence::fCompareOverlapping)) {
+        if(sequence::eNoOverlap == sequence::Compare(
+               *query_exon_loc, 
+               *cds_subloc,
+               NULL, 
+               sequence::fCompareOverlapping)) 
+        {
             // exon does not overlap the CDS interval 
-            // (i.e. UTR-only, or, in rare case of translational-frameshifts, not specific to this cds-chunk)
+            // (i.e. UTR-only, or, in rare case of translational-frameshifts, 
+            // not specific to this cds-chunk)
             continue;
         }
 
 
-        //truncate the exon-alignment to the query-cds-subloc
-        CRef<CSeq_loc_Mapper> mapper(new CSeq_loc_Mapper(*cds_subloc, *cds_subloc, NULL));
+        // truncate the exon-alignment to the query-cds-subloc
+        CRef<CSeq_loc_Mapper> mapper(
+                new CSeq_loc_Mapper(*cds_subloc, *cds_subloc, NULL));
         mapper->SetTrimSplicedSeg(false);
 
         CRef<CSeq_align> truncated_exon_aln;
@@ -943,26 +955,46 @@ CRef<CSeq_loc> ProjectCDSExon(const CSeq_align& spliced_aln,
         NcbiCerr << "\n";
 #endif
 
-        if(truncated_exon_aln->GetSegs().GetSpliced().GetExons().size() == 0) {
-            // NcbiCerr << "gap-only cds-exon: " << MSerial_AsnText <<spliced_aln;
-            // This is a rare case where the exon overlaps the CDS, but truncating the alignment to the CDS
-            // produced empty alignment - how can this happen? This is the case where an exon has a product-ins
-            // abutting the exon terminal, and the CDS part does not extend past the gap, such that the result of
-            // truncation is a gap-only alignment. To deal with this we'll take a chunk of required length
-            // starting at genomic exon boundary (i.e. as if the exon structure abutted a diag rather than a gap).
+        if(truncated_exon_aln->GetSegs().GetSpliced()
+                              .GetExons().empty()) 
+        {
+            // NcbiCerr << "gap-only cds-exon: " 
+            //      << MSerial_AsnText <<spliced_aln;
             //
-            // We'll do this by ignoring the exon structure, and instead create a 
-            // dummy exon consisting of two diags extending from the
-            // exon terminals with a gap of necessary length in the middle.
+            // This is a rare case where the exon overlaps the CDS, 
+            // but truncating the alignment to the CDS
+            // produced empty alignment - how can this happen? 
+            // This is the case where an exon has a product-ins
+            // abutting the exon terminal, and the CDS part does 
+            // not extend past the gap, such that the result of
+            // truncation is a gap-only alignment. 
+            // To deal with this we'll take a chunk of required length
+            // starting at genomic exon boundary (i.e. as if the exon 
+            // structure abutted a diag rather than a gap).
             //
-            // Note: The result is the same as if the seq-loc-mapper preserved the gap-only alignment instead of 
-            // throwing away the exon, which would result in |product-ins| nucleotides being translated from the
+            // We'll do this by ignoring the exon structure, and 
+            // instead create a dummy exon consisting of two diags 
+            // extending from the exon terminals with a gap of 
+            // necessary length in the middle.
+            //
+            // Note: The result is the same as if the seq-loc-mapper 
+            // preserved the gap-only alignment instead of 
+            // throwing away the exon, which would result in 
+            // |product-ins| nucleotides being translated from the
             // genomic exon boundary.
-            CRef<CSpliced_exon> collapsed_exon = CollapseExonStructure(*exon_aln->SetSegs().SetSpliced().SetExons().front());   
+            CRef<CSpliced_exon> collapsed_exon = 
+                CollapseExonStructure(
+                        *exon_aln->SetSegs().SetSpliced().SetExons().front());   
+
             exon_aln->SetSegs().SetSpliced().SetExons().front() = collapsed_exon;
             truncated_exon_aln = mapper->Map(*exon_aln);
-            if(truncated_exon_aln->GetSegs().GetSpliced().GetExons().size() == 0) {
-                continue; //theoretically this shouldn't happen, but we can't proceed otherwise
+
+            if(truncated_exon_aln->GetSegs().GetSpliced()
+                                  .GetExons().empty()) 
+            {
+                continue; 
+                //theoretically this shouldn't happen, 
+                //but we can't proceed otherwise
             }            
         }
 
@@ -999,12 +1031,21 @@ CRef<CSeq_loc> ProjectExons(const CSeq_align& spliced_aln,
                             size_t unaligned_ends_partialness_thr = 0)
 {
     CRef<CSeq_loc> exons_loc(new CSeq_loc(CSeq_loc::e_Mix));
-    ITERATE(CSpliced_seg::TExons, it, spliced_aln.GetSegs().GetSpliced().GetExons()) {
+
+    ITERATE(CSpliced_seg::TExons, it, 
+            spliced_aln.GetSegs().GetSpliced().GetExons()) 
+    {
         const CSpliced_exon& spliced_exon = **it;
        
         CRef<CSeq_loc> exon_loc = product_cds_loc ? 
-            ProjectCDSExon(spliced_aln, spliced_exon, *product_cds_loc)
-          : ProjectExon(spliced_exon, spliced_aln.GetSeq_id(1), spliced_aln.GetSeqStrand(1));
+            ProjectCDSExon(
+                    spliced_aln, 
+                    spliced_exon, 
+                    *product_cds_loc)
+          : ProjectExon(
+                  spliced_exon, 
+                  spliced_aln.GetSeq_id(1), 
+                  spliced_aln.GetSeqStrand(1));
 
         const T53Partialness partialness =
             GetExonPartialness(spliced_aln, spliced_exon);
@@ -1015,9 +1056,11 @@ CRef<CSeq_loc> ProjectExons(const CSeq_align& spliced_aln,
             // note: if no seq-id, GetStart/GetStop will throw - GP-15887
             //
             // GP-15635/case-(3,4):
-            // Inherit partialness only if the CDS mapped up to the exon's terminal
+            // Inherit partialness only if the CDS
+            // mapped up to the exon's terminal
             bool start_partial = partialness.first;
             bool stop_partial =  partialness.second;
+
             if(spliced_aln.GetSeqStrand(1) == eNa_strand_minus) {
                 swap(start_partial, stop_partial);
             }
@@ -1042,10 +1085,12 @@ CRef<CSeq_loc> ProjectExons(const CSeq_align& spliced_aln,
 
     Canonicalize(*exons_loc);
 
-    AugmentPartialness(*exons_loc, 
-                       GetTerminalPartialness(spliced_aln, 
-                                              product_cds_loc, 
-                                              unaligned_ends_partialness_thr));
+    AugmentPartialness(
+            *exons_loc, 
+            GetTerminalPartialness(
+                spliced_aln, 
+                product_cds_loc, 
+                unaligned_ends_partialness_thr));
 
     return exons_loc;
 }
@@ -1121,32 +1166,52 @@ CRef<CSeq_loc> CollapseDiscontinuitiesInUTR(const CSeq_loc& loc, TSeqPos cds_sta
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-CRef<CSeq_loc> CFeatureGenerator::s_ProjectRNA(const CSeq_align& spliced_aln, 
-                          CConstRef<CSeq_loc> product_cds_loc,
-                          size_t unaligned_ends_partialness_thr)
+CRef<CSeq_loc> CFeatureGenerator::s_ProjectRNA(
+        const CSeq_align& spliced_aln, 
+        CConstRef<CSeq_loc> product_cds_loc,
+        size_t unaligned_ends_partialness_thr)
 {
-    CRef<CSeq_loc> projected_rna_loc = ProjectExons(spliced_aln,
-                                                    CConstRef<CSeq_loc>(NULL),
-                                                    unaligned_ends_partialness_thr);
+    CRef<CSeq_loc> projected_rna_loc = 
+        ProjectExons(
+                spliced_aln,
+                CConstRef<CSeq_loc>(NULL),
+                unaligned_ends_partialness_thr);
 
+    TSeqPos cds_start(kInvalidSeqPos), 
+            cds_stop(kInvalidSeqPos);
 
-    TSeqPos cds_start(kInvalidSeqPos), cds_stop(kInvalidSeqPos);
     if(product_cds_loc) {
-        CRef<CSeq_loc_Mapper> mapper(new CSeq_loc_Mapper(spliced_aln, 1, NULL));
+        CRef<CSeq_loc_Mapper> mapper(
+                new CSeq_loc_Mapper(spliced_aln, 1, NULL));
         mapper->SetTrimSplicedSeg(false);
+
         CRef<CSeq_loc> genomic_cds_range = mapper->Map(*product_cds_loc);
-        genomic_cds_range = sequence::Seq_loc_Merge(*genomic_cds_range, CSeq_loc::fMerge_SingleRange, NULL);
+
+        genomic_cds_range = 
+            sequence::Seq_loc_Merge(
+                    *genomic_cds_range, 
+                    CSeq_loc::fMerge_SingleRange, 
+                    NULL);
+
         cds_start = genomic_cds_range->GetStart(eExtreme_Positional);
-        cds_stop = genomic_cds_range->GetStop(eExtreme_Positional);
+        cds_stop  = genomic_cds_range->GetStop(eExtreme_Positional);
     }
 
-    //note, if there's no product-cds-loc, this will collapse discontinuities in every exon
-    return CollapseDiscontinuitiesInUTR(*projected_rna_loc, cds_start, cds_stop);
+    // note, if there's no product-cds-loc, 
+    // this will collapse discontinuities in every exon
+    return CollapseDiscontinuitiesInUTR(
+            *projected_rna_loc, 
+            cds_start, 
+            cds_stop);
 }
 
-CRef<CSeq_loc> CFeatureGenerator::s_ProjectCDS(const CSeq_align& spliced_aln, const CSeq_loc& product_cds_loc)
+CRef<CSeq_loc> CFeatureGenerator::s_ProjectCDS(
+        const CSeq_align& spliced_aln,
+        const CSeq_loc& product_cds_loc)
 {
-    return ProjectExons(spliced_aln, CConstRef<CSeq_loc>(&product_cds_loc));
+    return ProjectExons(
+            spliced_aln, 
+            CConstRef<CSeq_loc>(&product_cds_loc));
 }
 
 
