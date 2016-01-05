@@ -245,8 +245,10 @@ vector<CConstRef<CSeq_feat> > GetRelatedFeatures (const CSeq_feat& obj_feat, CSe
         // examine objects on protein sequence
         // need to find coding region for obj_feat
         if (obj_type == CSeqFeatData::eSubtype_cdregion) {
-            CBioseq_Handle p_bsh = scope->GetBioseqHandle(obj_feat.GetProduct());
-            feat_list = s_GetProtFeatures(p_bsh, constraint_type);
+            if (obj_feat.IsSetProduct()) {
+                CBioseq_Handle p_bsh = scope->GetBioseqHandle(obj_feat.GetProduct());
+                feat_list = s_GetProtFeatures(p_bsh, constraint_type);
+            }
         } else if (obj_type == CSeqFeatData::eSubtype_mRNA) {
             const CSeq_feat* cds = sequence::GetBestCdsForMrna(obj_feat, *scope);
             if (cds) {
