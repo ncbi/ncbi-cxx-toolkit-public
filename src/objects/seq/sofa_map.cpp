@@ -81,7 +81,6 @@ void CSofaMap::x_Init()
     m_Map[ GT( e_Imp, eSubtype_iDNA ) ]         = SofaType( 723, "iDNA" );
     m_Map[ GT( e_Imp, eSubtype_intron ) ]       = SofaType( 188, "intron" );
     m_Map[ GT( e_Imp, eSubtype_mat_peptide ) ]  = SofaType( 419, "mature_peptide" );
-    m_Map[ GT( e_Imp, eSubtype_misc_RNA ) ]     = SofaType( 673, "transcript" );
     m_Map[ GT( e_Imp, eSubtype_misc_binding ) ] = SofaType( 409, "binding_site" );
     m_Map[ GT( e_Imp, eSubtype_misc_difference) ] = SofaType( 413, "sequence_difference" );
     m_Map[ GT( e_Imp, eSubtype_misc_feature ) ] = SofaType( 1, "region" );
