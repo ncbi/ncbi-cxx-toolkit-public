@@ -629,6 +629,9 @@ public:
     TVDBRowId GetFirstBadRowId(void) const {
         return m_FirstBadId;
     }
+    TVDBRowId GetLastRowId(void) const {
+        return GetFirstBadRowId() - 1;
+    }
     TVDBRowId GetRemainingCount(void) const {
         return GetFirstBadRowId() - GetCurrentRowId();
     }
