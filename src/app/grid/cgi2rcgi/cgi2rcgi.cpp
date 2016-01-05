@@ -853,6 +853,8 @@ void CCgi2RCgiApp::PopulatePage(CGridCgiContext& grid_ctx)
     grid_ctx.SetJobProgressMessage(progress_message);
     grid_ctx.GetHTMLPage().AddTagMap("PROGERSS_MSG",
             new CHTMLPlainText(m_TargetEncodeMode, progress_message));
+    grid_ctx.GetHTMLPage().AddTagMap("PROGRESS_MSG",
+            new CHTMLPlainText(m_TargetEncodeMode, progress_message));
 }
 
 int CCgi2RCgiApp::RenderPage()
