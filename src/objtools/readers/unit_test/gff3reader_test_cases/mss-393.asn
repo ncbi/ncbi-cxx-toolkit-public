@@ -1,0 +1,202 @@
+Seq-annot ::= {
+  id {
+    local str "NC_008836.1"
+  },
+  data ftable {
+    {
+      id local id 1,
+      data gene {
+        locus-tag "BMA10229_RS12890"
+      },
+      location int {
+        from 722381,
+        to 723918,
+        strand minus,
+        id other {
+          accession "NC_008836",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene649"
+        },
+        {
+          qual "Name",
+          val "BMA10229_RS12890"
+        },
+        {
+          qual "gene_biotype",
+          val "rRNA"
+        },
+        {
+          qual "old_locus_tag",
+          val "BMA10229_A0702"
+        }
+      }
+    },
+    {
+      id local id 2,
+      data rna {
+        type rRNA
+      },
+      product whole local str "16S ribosomal RNA",
+      location mix {
+        int {
+          from 722381,
+          to 723918,
+          strand minus,
+          id other {
+            accession "NC_008836",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "16S ribosomal RNA"
+        },
+        {
+          qual "ID",
+          val "rna9"
+        },
+        {
+          qual "Parent",
+          val "gene649"
+        }
+      }
+    },
+    {
+      id local id 3,
+      data gene {
+        locus "ssrA",
+        locus-tag "BMA10229_RS25505"
+      },
+      location int {
+        from 978036,
+        to 978405,
+        strand plus,
+        id other {
+          accession "NC_008836",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene891"
+        },
+        {
+          qual "Name",
+          val "ssrA"
+        },
+        {
+          qual "gene_biotype",
+          val "misc_RNA"
+        }
+      }
+    },
+    {
+      id local id 4,
+      data rna {
+        type other
+      },
+      product whole local str "10Sa RNA (tmRNA)",
+      location mix {
+        int {
+          from 978036,
+          to 978405,
+          strand plus,
+          id other {
+            accession "NC_008836",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "10Sa RNA (tmRNA)"
+        },
+        {
+          qual "ID",
+          val "rna11"
+        },
+        {
+          qual "Parent",
+          val "gene891"
+        },
+        {
+          qual "gene",
+          val "ssrA"
+        }
+      }
+    },
+    {
+      id local id 5,
+      data gene {
+        locus-tag "BMA10229_RS25510"
+      },
+      location int {
+        from 1227237,
+        to 1227648,
+        strand minus,
+        id other {
+          accession "NC_008836",
+          version 1
+        }
+      },
+      qual {
+        {
+          qual "ID",
+          val "gene1111"
+        },
+        {
+          qual "Name",
+          val "BMA10229_RS25510"
+        },
+        {
+          qual "gene_biotype",
+          val "RNase_P_RNA"
+        }
+      }
+    },
+    {
+      id local id 6,
+      data rna {
+        type ncRNA,
+        ext gen {
+          class "RNase_P_RNA"
+        }
+      },
+      product whole local str "bacterial RNase P",
+      location mix {
+        int {
+          from 1227237,
+          to 1227648,
+          strand minus,
+          id other {
+            accession "NC_008836",
+            version 1
+          }
+        }
+      },
+      qual {
+        {
+          qual "product",
+          val "bacterial RNase P"
+        },
+        {
+          qual "ID",
+          val "rna14"
+        },
+        {
+          qual "Parent",
+          val "gene1111"
+        }
+      }
+    }
+  }
+}
