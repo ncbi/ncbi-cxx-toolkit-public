@@ -82,15 +82,18 @@ public:
         fParse_RawGI      = 0x04, ///< Treat raw numbers as GIs, not local IDs
         fParse_AnyRaw     = fParse_RawText | fParse_RawGI,
         /// Treat otherwise unidentified strings as raw accessions,
-        /// provided that they pass rudimentary validation.
+        /// provided that they pass rudimentary validation.  Also,
+        /// accept PDB accessions with chains but no delimiters.
         fParse_ValidLocal = 0x08,
         /// Treat otherwise unidentified strings as local accessions as long
         /// as they don't resemble FASTA-style IDs (or ID sets).
         fParse_AnyLocal   = 0x18,
         fParse_NoFASTA    = 0x20, ///< Don't bother checking for a tag
 
-        /// By default, allow raw parsable non-numeric accessions and
-        /// plausible local accessions.
+        /// By default in ParseIDs and IsValid, allow raw parsable
+        /// non-numeric accessions and plausible local accessions.
+        /// (The string-based constructor and Set method have a
+        /// stricter default: fParse_AnyRaw.)
         fParse_Default    = fParse_RawText | fParse_ValidLocal
     };
     typedef int TParseFlags; // binary OR of EParseFlags
@@ -399,8 +402,10 @@ public:
 
     /// Deduces information from a bare accession a la WHICH_db_accession;
     /// may report false negatives on properties.
-    static EAccessionInfo IdentifyAccession(const CTempString& accession);
-    EAccessionInfo IdentifyAccession(void) const;
+    static EAccessionInfo IdentifyAccession(const CTempString& accession,
+                                            TParseFlags flags = fParse_AnyRaw);
+    EAccessionInfo IdentifyAccession(TParseFlags flags
+                                     = fParse_AnyRaw | fParse_AnyLocal) const;
 
     static void LoadAccessionGuide(const string& filename);
     static void LoadAccessionGuide(ILineReader& in);
@@ -579,6 +584,7 @@ private:
     CSeq_id& operator= (const CSeq_id&);
 
     static EAccessionInfo x_IdentifyAccession(const CTempString& main_acc,
+                                              TParseFlags flags,
                                               bool has_version);
 
     //CRef<CAbstractObjectManager> m_ObjectManager;

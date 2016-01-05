@@ -1033,7 +1033,8 @@ void SAccGuide::x_Load(ILineReader& in)
 
 static CSafeStatic<CRef<SAccGuide> > s_Guide;
 
-CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const CTempString& acc)
+CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const CTempString& acc,
+                                                   TParseFlags flags)
 {
     SIZE_TYPE main_size = acc.find('.');
     bool has_version = true;
@@ -1053,18 +1054,19 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(const CTempString& acc)
             main_acc_buf[i] = toupper(ucdata[i]);
         }
         CTempString main_acc(main_acc_buf, main_size);
-        return x_IdentifyAccession(main_acc, has_version);
+        return x_IdentifyAccession(main_acc, flags, has_version);
     } else {
         // Unlikely to prove recognizable (far too long for any standard
-        // format as of September 2012), but try anyway.
+        // format as of January 2016), but try anyway.
         string main_acc(acc, 0, main_size);
         NStr::ToUpper(main_acc);
-        return x_IdentifyAccession(main_acc, has_version);
+        return x_IdentifyAccession(main_acc, flags, has_version);
     }
 }
      
 CSeq_id::EAccessionInfo
-CSeq_id::x_IdentifyAccession(const CTempString& main_acc, bool has_version)
+CSeq_id::x_IdentifyAccession(const CTempString& main_acc, TParseFlags flags,
+                             bool has_version)
 {
     SIZE_TYPE digit_pos = main_acc.find_first_of(kDigits),
         main_size = main_acc.size();
@@ -1074,7 +1076,7 @@ CSeq_id::x_IdentifyAccession(const CTempString& main_acc, bool has_version)
     } else {
         SIZE_TYPE non_dig_pos = main_acc.find_first_not_of(kDigits, digit_pos);
         const unsigned char* ucdata = (const unsigned char*)main_acc.data();
-        if (non_dig_pos != NPOS) {
+        if (non_dig_pos != NPOS  &&  (flags & fParse_RawText) != 0) {
             if ( !has_version  &&  digit_pos == 0  &&  main_size >= 4
                 &&  main_size <= 7  &&  isalnum(ucdata[1])
                 &&  isalnum(ucdata[2])  &&  isalnum(ucdata[3])) {
@@ -1097,10 +1099,9 @@ CSeq_id::x_IdentifyAccession(const CTempString& main_acc, bool has_version)
                     }
                     break;
                 case 5:
-                    // Historically fell through, but supporting
-                    // undelimited chains is a courtesy best extended
-                    // only when explicitly constructing PDB IDs.
-                    break;
+                    if ((flags & fParse_ValidLocal) == 0) {
+                        break;
+                    } // else fall through
                 case 4:
                     return eAcc_pdb;
                 }
@@ -1145,12 +1146,15 @@ CSeq_id::x_IdentifyAccession(const CTempString& main_acc, bool has_version)
     }
 
     if (digit_pos == 0) {
-        if ( !has_version  &&  main_acc[0] != '0'
+        if ((flags & fParse_RawGI) != 0  &&  !has_version
+            &&  main_acc[0] != '0'
             &&  main_acc.find_first_not_of(kDigits) == NPOS) {
             return eAcc_gi; // just digits
         } else {
             return eAcc_unknown; // PDB already handled
         }
+    } else if ((flags & fParse_RawText) == 0) {
+        return eAcc_unknown;
     }
 
     if (s_Guide->Empty()) {
@@ -1198,7 +1202,7 @@ CSeq_id::x_IdentifyAccession(const CTempString& main_acc, bool has_version)
 }
 
 
-CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(void) const
+CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(TParseFlags flags) const
 {
     E_Choice type = Which();
     switch (type) {
@@ -1213,7 +1217,7 @@ CSeq_id::EAccessionInfo CSeq_id::IdentifyAccession(void) const
         if (tsid->IsSetAccession()) {
             // Can't necessarily go straight to x_IdentifyAccession, as
             // the accession may contain lowercase letters.
-            EAccessionInfo ai = IdentifyAccession(tsid->GetAccession());
+            EAccessionInfo ai = IdentifyAccession(tsid->GetAccession(), flags);
             if ((ai & eAcc_type_mask) == e_not_set) {
                 // We *know* what the type should be....
                 return (EAccessionInfo)((ai & eAcc_flag_mask) | type);
@@ -1755,16 +1759,11 @@ CSeq_id& CSeq_id::Set(const CTempString& the_id_in, TParseFlags flags)
         // If no (attempt at a) valid tag, tries to interpret the string
         // as a pure accession.
         if ((flags & fParse_AnyRaw) != 0) {
-            type = GetAccType(IdentifyAccession(the_id));
-            if ((flags & fParse_RawText) == 0  &&  type != e_Gi) {
-                type = e_not_set;
-            }
+            type = GetAccType(IdentifyAccession(the_id, flags));
         }
         switch (type) {
         case e_Gi:
-            if ((flags & fParse_RawGI) != 0) {
-                return Set(type, the_id);
-            } // else fall through
+            return Set(type, the_id);
         case e_not_set:
             if ((flags & fParse_ValidLocal) != 0
                 &&  ((flags & fParse_AnyLocal) == fParse_AnyLocal
