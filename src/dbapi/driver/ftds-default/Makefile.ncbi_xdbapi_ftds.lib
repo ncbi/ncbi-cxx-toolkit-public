@@ -10,7 +10,7 @@ CPPFLAGS = -DFTDS_IN_USE $(FTDS_INCLUDE) -I$(srcdir) $(ORIG_CPPFLAGS)
 LIB_OR_DLL = both
 
 # Dependencies for shared library
-DLL_LIB = $(FTDS_LIB) dbapi_driver$(DLL)
+DLL_LIB = $(FTDS_LIB) dbapi_driver$(DLL) xncbi
 LIBS    = $(RUNPATH_ORIGIN) $(FTDS_LIBS) $(ORIG_LIBS)
 
 WATCHERS = ucko
