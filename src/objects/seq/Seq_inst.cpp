@@ -52,34 +52,30 @@ CSeq_inst::~CSeq_inst(void)
 }
 
 
-typedef SStaticPair<const char *, CSeq_inst::EMol> TMolKey;
+typedef SStaticPair<CSeq_inst::EMol, string> TMolKey;
 
 static const TMolKey mol_key_to_str[] = {
-    { " ",          CSeq_inst::eMol_not_set },
-    { "DNA",        CSeq_inst::eMol_dna },
-    { "nucleotide", CSeq_inst::eMol_na },
-    { "other",      CSeq_inst::eMol_other },
-    { "protein",    CSeq_inst::eMol_aa },
-    { "RNA",        CSeq_inst::eMol_rna }
+    { CSeq_inst::eMol_not_set, " " } ,
+    { CSeq_inst::eMol_dna,     "DNA" } ,
+    { CSeq_inst::eMol_rna,     "RNA" } ,
+    { CSeq_inst::eMol_aa,      "protein" } ,
+    { CSeq_inst::eMol_na,      "nucleotide" } ,
+    { CSeq_inst::eMol_other,   "other" }
 };
 
 
 // dump the array into a map for faster searching
-typedef CStaticPairArrayMap <const char*, CSeq_inst::EMol, PNocase_CStr> TMolMap;
+typedef CStaticPairArrayMap <CSeq_inst::EMol, string> TMolMap;
 DEFINE_STATIC_ARRAY_MAP(TMolMap, sm_EMolKeys, mol_key_to_str);
 
 
 string CSeq_inst::GetMoleculeClass(CSeq_inst::EMol mol)
 {
-    string mol_class = "";
-    TMolMap::const_iterator g_iter = sm_EMolKeys.begin();
-    while (g_iter != sm_EMolKeys.end() && g_iter->second != mol) {
-        ++g_iter;
-    }
+    TMolMap::const_iterator g_iter = sm_EMolKeys.find(mol);
     if (g_iter != sm_EMolKeys.end()) {
-        mol_class = g_iter->first;
+        return g_iter->second;
     }
-    return mol_class;
+    return kEmptyStr;
 }
 
 
