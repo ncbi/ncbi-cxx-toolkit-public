@@ -55,12 +55,12 @@ CSeq_inst::~CSeq_inst(void)
 typedef SStaticPair<const char *, CSeq_inst::EMol> TMolKey;
 
 static const TMolKey mol_key_to_str[] = {
-    { " ",          CSeq_inst::eMol_not_set } ,
-    { "DNA",        CSeq_inst::eMol_dna } ,
-    { "RNA",        CSeq_inst::eMol_rna } ,
-    { "protein",    CSeq_inst::eMol_aa } ,
-    { "nucleotide", CSeq_inst::eMol_na } ,
-    { "other",      CSeq_inst::eMol_other }
+    { " ",          CSeq_inst::eMol_not_set },
+    { "DNA",        CSeq_inst::eMol_dna },
+    { "nucleotide", CSeq_inst::eMol_na },
+    { "other",      CSeq_inst::eMol_other },
+    { "protein",    CSeq_inst::eMol_aa },
+    { "RNA",        CSeq_inst::eMol_rna }
 };
 
 
