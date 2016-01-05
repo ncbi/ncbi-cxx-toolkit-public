@@ -403,8 +403,6 @@ gnutls needs3party $(GMP_LIBS)
 gnutls needs3party $(NETTLE_LIBS)
 gnutls needs3party $(ORIG_LIBS)
 gnutls needs3party $(Z_LIBS)
-gp_python_attr needs gpipe_attr
-gp_python_attr needs3party $(PYTHON_LIBS)
 gpcgi needs $(SDBAPI_LIB)
 gpcgi needs gpipe_xmlutil
 gpcgi needs xcgi
