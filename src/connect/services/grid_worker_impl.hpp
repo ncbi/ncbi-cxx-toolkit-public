@@ -59,7 +59,7 @@ struct SWorkerNodeJobContextImpl : public CObject
     void x_PrintRequestStop();
 
     virtual void PutProgressMessage(const string& msg,
-        bool send_immediately = false);
+        bool send_immediately, bool overwrite);
     virtual CNetScheduleAdmin::EShutdownLevel GetShutdownLevel();
     virtual void JobDelayExpiration(unsigned runtime_inc);
     virtual void x_RunJob();

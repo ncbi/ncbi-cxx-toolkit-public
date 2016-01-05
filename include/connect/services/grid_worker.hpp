@@ -232,7 +232,8 @@ class NCBI_XCONNECT_EXPORT CWorkerNodeJobContext
 
     /// Put progress message
     ///
-    void PutProgressMessage(const string& msg, bool send_immediately = false);
+    void PutProgressMessage(const string& msg, bool send_immediately = false,
+            bool overwrite = true);
 
     /// Get a stream where a job can write its result
     ///

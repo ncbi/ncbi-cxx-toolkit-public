@@ -308,19 +308,10 @@ public:
 
     void Report(CWorkerNodeJobContext& job_context, unsigned seconds)
     {
-        switch (m_Mode) {
-        case eNever:
-            return;
-
-        case eSmart:
-            if (!job_context.GetJob().progress_msg.empty()) return;
-
-            /* FALL THROUGH */
-
-        case eAlways:
+        if (m_Mode != eNever) {
             job_context.PutProgressMessage("Job run time exceeded " +
-                    NStr::UIntToString(seconds) + " seconds.", true);
-            return;
+                    NStr::UIntToString(seconds) + " seconds.", true,
+                    m_Mode == eAlways);
         }
     }
 

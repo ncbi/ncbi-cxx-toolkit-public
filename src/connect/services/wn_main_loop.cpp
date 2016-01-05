@@ -218,13 +218,15 @@ void CWorkerNodeJobContext::RescheduleJob(
 }
 
 void CWorkerNodeJobContext::PutProgressMessage(const string& msg,
-                                               bool send_immediately)
+                                               bool send_immediately,
+                                               bool overwrite)
 {
-    m_Impl->PutProgressMessage(msg, send_immediately);
+    m_Impl->PutProgressMessage(msg, send_immediately, overwrite);
 }
 
 void SWorkerNodeJobContextImpl::PutProgressMessage(const string& msg,
-                                               bool send_immediately)
+                                               bool send_immediately,
+                                               bool overwrite)
 {
     CheckIfJobIsLost();
     if (!send_immediately &&
@@ -253,7 +255,9 @@ void SWorkerNodeJobContextImpl::PutProgressMessage(const string& msg,
             }
         }
 
-        m_NetCacheAPI.PutData(m_Job.progress_msg, msg.data(), msg.length());
+        if (overwrite) {
+            m_NetCacheAPI.PutData(m_Job.progress_msg, msg.data(), msg.length());
+        }
     }
     catch (exception& ex) {
         ERR_POST_X(6, "Couldn't send a progress message: " << ex.what());
