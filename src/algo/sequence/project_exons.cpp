@@ -592,19 +592,14 @@ private:
             const TSignedSeqPos overlap = -1 * GetGapLength(*prev, *current);
 
             if(overlap <= 0) {
-                continue;
+                continue; //gap
             } else if(overlap > 2) {
                 NcbiCerr << MSerial_AsnText << ps;
                 NCBI_THROW(CException, eUnknown, "Unexpected overlap");
-            } else if(prev->GetLength() < k_min_len) {
-                //Not an exception, because it is theoretically
-                //possible to have a micro-interval that's not
-                //subsumable (see the special-case handling in
-                //SubsumeMicroIntervals
-                ERR_POST(Error << "Unexpectedly short interval: " 
-                               << AsString(ps));
-            } else {
+            } else if(prev->GetLength() > 3) {
                 AdjustBioStop(*prev, -3);
+            } else if(current->GetLength() > 3) {
+                AdjustBioStart(*current, 3);
             }
         }
     }
@@ -883,30 +878,55 @@ CRef<CSpliced_exon> CollapseExonStructure(const CSpliced_exon& orig_exon)
     return exon;
 }
 
+#if 0
+/*
+This logic is now disabled, and CDS-exons are computed based on 
+genomic-cds overlap with projected mRNA feature.
+see: TruncateToCDS(...)
+
+Caveat-1 is no longer relevant because overlaps are converted to
+gaps in TweakExon.
+
+Caveat-2 is dealt with by projecting and collapsing each product-cds-range
+individually, and then intersecting rna-loc with each range.
+see: ProjectAndCollapseCDS(...)
+
+Caveat-3 is not applicable in the new logic.
+
+Caveat-4 is no longer relevant because the rules were restricted so
+that we're no longer obligated to preserve the product length during
+mapping, only the frame. According to the current rule it would be 
+unexpected for the projected product or cds loc to extend past the 
+terminals of "naively-mapped" exons.
+*/
+
 
 // Creating exon-loc for CDS:
 //
 // Caveat-1:
-// A naive way to project CDS would be to take the genomic cds-range and intersect with projected RNA.
-// Such approach is clear, but will not work when the genomic cds boundary is in the overlap of the
-// exon chunks (in product-ins).
-// Instead, we'll truncate the original spliced-seg down to product-CDS and will 
-// generate exons-loc the same way as for RNA.
+// A naive way to project CDS would be to take the genomic cds-range 
+// and intersect with projected RNA.
+// Such approach is clear, but will not work when the genomic cds boundary 
+// is in the overlap of the exon chunks (in product-ins).
+// Instead, we'll truncate the original spliced-seg down to product-CDS 
+// and will generate exons-loc the same way as for RNA.
 //
-// Caveat-2: a CDS on product can itself have discontinuities (e.g. ribosomal slippage), 
-// and simply projecting truncated-to-cds alignment will not capture these.
-// Instead, we'll take each product-cds chunk, tructate alignment to that, project, and combine the results.
-// During the combination of results we'll have to combine sublocs pertaining to same exon
-// in the same subloc of the container mix.
+// Caveat-2: a CDS on product can itself have discontinuities 
+// (e.g. ribosomal slippage), and simply projecting truncated-to-cds alignment
+// will not capture these. Instead, we'll take each product-cds chunk, 
+// tructate alignment to that, project, and combine the results.
+// During the combination of results we'll have to combine sublocs pertaining
+// to same exon in the same subloc of the container mix.
 //
-// Caveat-3: currently Seq-loc-Mapper has a bug, such that truncating an alignment to CDS
-// yields wrong result for multi-exon cases (CXX-3724), so to work-around that we'll create a
-// single-exon alignment for each exon. Additionally, doing it exon-by-exon makes it easy to
+// Caveat-3: currently Seq-loc-Mapper has a bug, such that truncating 
+// an alignment to CDS yields wrong result for multi-exon cases (CXX-3724), 
+// so to work-around that we'll create a single-exon alignment for each exon. 
+// Additionally, doing it exon-by-exon makes it easy to
 // combine projected result for each exon (from multiple cds sublocs).
 //  
-// Caveat-4: Remapping may produce gap-only exons, which would ordinarily yield no genomic projection
-// counterpart, but in the context of discontinuity-preservation we'll need to calculate genomic
-// projection "manually".
+// Caveat-4: Remapping may produce gap-only exons, which would ordinarily yield
+// no genomic projection counterpart, but in the context of 
+// discontinuity-preservation we'll need to calculate genomic projection "manually".
 CRef<CSeq_loc> ProjectCDSExon(
         const CSeq_align& spliced_aln,
         const CSpliced_exon& spliced_exon,
@@ -1043,6 +1063,79 @@ CRef<CSeq_loc> ProjectCDSExon(
     }
     return exon_loc;
 }
+#endif
+
+
+// for each product-cds-subloc:
+//     project to genome coords and collapse to single-range.
+// Output: translational-frameshift-preserving-collapsed-CDS
+CRef<CPacked_seqint> ProjectAndCollapseCDS(
+    const CSeq_align& spliced_aln,
+    CConstRef<CSeq_loc> product_cds_loc)
+{
+    if(!product_cds_loc) {
+        return CRef<CPacked_seqint>(NULL);
+    }
+
+    CRef<CPacked_seqint> out(new CPacked_seqint);
+
+    CRef<CSeq_loc_Mapper> mapper(
+            new CSeq_loc_Mapper(spliced_aln, 1, NULL));
+
+    for(CSeq_loc_CI ci(*product_cds_loc, 
+                       CSeq_loc_CI::eEmpty_Skip, 
+                       CSeq_loc_CI::eOrder_Biological); ci; ++ci) 
+    {
+        CConstRef<CSeq_loc> cds_subloc = ci.GetRangeAsSeq_loc();
+        CConstRef<CSeq_loc> mapped_cds_subloc = mapper->Map(*cds_subloc);
+        CRef<CSeq_loc> mapped_collapsed_cds_subloc = 
+            sequence::Seq_loc_Merge(
+                    *mapped_cds_subloc, 
+                    CSeq_loc::fMerge_SingleRange, 
+                    NULL);
+
+        if(mapped_collapsed_cds_subloc->IsNull()) {
+            ;
+        } else if(mapped_collapsed_cds_subloc->IsInt()) {
+            CRef<CSeq_interval> seqint(
+                    &mapped_collapsed_cds_subloc->SetInt());
+            out->Set().push_back(seqint); 
+        } else {
+            NCBI_USER_THROW("Expected seqint or null-loc");
+        }
+    }
+    return out;
+}
+
+
+CRef<CSeq_loc> TruncateToCDS(
+    CRef<CSeq_loc> detailed_rna_exon, //mix-of-(int-or-packed-seqint)
+    CConstRef<CPacked_seqint> collapsed_genomic_cds)
+{
+    if(!collapsed_genomic_cds) {
+        return detailed_rna_exon;
+    }
+
+    CRef<CSeq_loc> out_loc(new CSeq_loc(CSeq_loc::e_Mix));
+
+    ITERATE(CPacked_seqint::Tdata, it, collapsed_genomic_cds->Get()) {
+        CSeq_loc cds_subrange;
+        cds_subrange.SetInt(const_cast<CSeq_interval&>(**it));
+
+        CRef<CSeq_loc> cds_exon = 
+            detailed_rna_exon->Intersect(cds_subrange, 0, NULL);
+
+        if(cds_exon->IsNull()) {
+            continue;
+        }
+
+        out_loc->SetMix().Set().push_back(cds_exon);
+    }
+
+    out_loc->ChangeToPackedInt();
+    return out_loc;
+}
+
 
 
 CRef<CSeq_loc> ProjectExons(const CSeq_align& spliced_aln, 
@@ -1051,20 +1144,21 @@ CRef<CSeq_loc> ProjectExons(const CSeq_align& spliced_aln,
 {
     CRef<CSeq_loc> exons_loc(new CSeq_loc(CSeq_loc::e_Mix));
 
+    CConstRef<CPacked_seqint> genomic_collapsed_cds = 
+        ProjectAndCollapseCDS(spliced_aln, product_cds_loc);
+
     ITERATE(CSpliced_seg::TExons, it, 
             spliced_aln.GetSegs().GetSpliced().GetExons()) 
     {
         const CSpliced_exon& spliced_exon = **it;
        
-        CRef<CSeq_loc> exon_loc = product_cds_loc ? 
-            ProjectCDSExon(
-                    spliced_aln, 
-                    spliced_exon, 
-                    *product_cds_loc)
-          : ProjectExon(
-                  spliced_exon, 
-                  spliced_aln.GetSeq_id(1), 
-                  spliced_aln.GetSeqStrand(1));
+        CRef<CSeq_loc> exon_loc = 
+            TruncateToCDS(
+                ProjectExon(
+                      spliced_exon, 
+                      spliced_aln.GetSeq_id(1), 
+                      spliced_aln.GetSeqStrand(1)),
+                genomic_collapsed_cds);
 
         const T53Partialness partialness =
             GetExonPartialness(spliced_aln, spliced_exon);
