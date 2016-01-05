@@ -134,30 +134,32 @@ T53Partialness GetExonPartialness(const CSeq_align& spliced_aln,
     CConstRef<CSpliced_exon> prev_exon;
     ITERATE(CSpliced_seg::TExons, it, spliced_aln.GetSegs().GetSpliced().GetExons()) {
         CConstRef<CSpliced_exon> current_exon = *it;
-        if(!prev_exon) {
+        if(  !prev_exon
+           || AreAbuttingOnProduct(*prev_exon, *current_exon)) 
+        {
             prev_exon = current_exon;
             continue;
         }
         
         //gap between exons. Determine which exon is partial based on consensus splice
-        if(!AreAbuttingOnProduct(*prev_exon, *current_exon)) {
-            bool is_consensus_donor = prev_exon->IsSetDonor_after_exon() ?
-                prev_exon->GetDonor_after_exon().GetBases() == "GT" : false;
+        const bool is_consensus_donor = 
+            prev_exon->IsSetDonor_after_exon() 
+         &&   prev_exon->GetDonor_after_exon().GetBases() == "GT";
 
-            bool is_consensus_acceptor = current_exon->IsSetAcceptor_before_exon() ? 
-                current_exon->GetAcceptor_before_exon().GetBases() == "AG" : false;
+        const bool is_consensus_acceptor = 
+            current_exon->IsSetAcceptor_before_exon()
+         &&   current_exon->GetAcceptor_before_exon().GetBases() == "AG";
 
-            if(current_exon == CConstRef<CSpliced_exon>(&target_exon)
-               && (!is_consensus_acceptor || is_consensus_donor))
-            {
-                is_5p_partial = true;
-            }
+        if(current_exon == CConstRef<CSpliced_exon>(&target_exon)
+           && (!is_consensus_acceptor || is_consensus_donor))
+        {
+            is_5p_partial = true;
+        }
 
-            if(prev_exon == CConstRef<CSpliced_exon>(&target_exon)
-               && (!is_consensus_donor || is_consensus_acceptor))
-            {
-                is_3p_partial = true;
-            }
+        if(prev_exon == CConstRef<CSpliced_exon>(&target_exon)
+           && (!is_consensus_donor || is_consensus_acceptor))
+        {
+            is_3p_partial = true;
         }
 
         prev_exon = current_exon;
@@ -717,7 +719,10 @@ private:
                 !prev_seqint ? 1 : GetGapLength(*prev_seqint, seqint);
 
             if(d != 1 && d != 2) {
-                problem_str += "Gap length is not 1 or 2";
+                //problem_str += "Gap length is not 1 or 2";
+
+                // this can hapen if we couldn't subsume a terminal micro-interval
+                // and it was too short to be truncatable, so it was left as-is.
             }
 
             if(!problem_str.empty()) {
@@ -1172,8 +1177,9 @@ CRef<CSeq_loc> ProjectExons(const CSeq_align& spliced_aln,
             // Inherit partialness only if the CDS
             // mapped up to the exon's terminal
             bool start_partial = partialness.first;
-            bool stop_partial =  partialness.second;
+            bool stop_partial  = partialness.second;
 
+            // convert to positional
             if(spliced_aln.GetSeqStrand(1) == eNa_strand_minus) {
                 swap(start_partial, stop_partial);
             }
@@ -1262,10 +1268,12 @@ CRef<CSeq_loc> CollapseDiscontinuitiesInUTR(
                && last_interval.GetStrand() == interval.GetStrand()
                && last_interval.GetId().Equals(interval.GetId()))
             {
-                TSeqPos union_from = min(interval.GetFrom(), last_interval.GetFrom());
-                TSeqPos union_to   = max(interval.GetTo(),   last_interval.GetTo());
-                last_interval.SetFrom(union_from);
-                last_interval.SetTo(union_to);
+                CSeq_loc loc1, loc2;
+                loc1.SetInt(last_interval);
+                loc2.SetInt(const_cast<CSeq_interval&>(interval));
+                CRef<CSeq_loc> loc3 = sequence::Seq_loc_Add(
+                        loc1, loc2, CSeq_loc::fMerge_SingleRange, NULL);
+                last_interval.Assign(loc3->GetInt());
             } else {
 #if 0
                 NcbiCerr << "Retaining UTR indel: "
