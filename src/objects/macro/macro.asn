@@ -552,7 +552,8 @@ Technique-type ::= ENUMERATED {
   barcode (21) ,
   composite-wgs-htgs (22) ,
   tsa (23) ,
-  other (24) }
+  targeted (24) ,
+  other (25) }
 
 Completedness-type ::= ENUMERATED {
   unknown (0) ,
