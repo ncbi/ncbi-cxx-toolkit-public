@@ -9,8 +9,7 @@ ulimit -n 1536 > /dev/null 2>&1
 # ctlib against DBAPI_SYB155_TEST)
 unset LANG LC_ALL LC_CTYPE
 
-# driver_list="ctlib dblib ftds64 ftds95 ftds95-v73 odbc"
-driver_list="ctlib dblib ftds64 odbc"
+driver_list="ctlib dblib ftds64 ftds95 ftds95-v73 odbc"
 
 if echo $FEATURES | grep "\-connext" > /dev/null ; then
     server_list="MSDEV1 DBAPI_DEV3"
