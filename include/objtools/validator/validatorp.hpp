@@ -1141,7 +1141,7 @@ private:
 
     void ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat);
     void ValidateAnticodon(const CSeq_loc& anticodon, const CSeq_feat& feat);
-    void ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat& feat);
+    void ValidateTrnaCodons(const CTrna_ext& trna, const CSeq_feat& feat, bool mustbemethionine);
     void ValidateMrnaTrans(const CSeq_feat& feat);
     void ValidateCommonMRNAProduct(const CSeq_feat& feat);
     void ValidateRnaProductType(const CRNA_ref& rna, const CSeq_feat& feat);

@@ -3411,6 +3411,7 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
     bool feat_pseudo = feat.IsSetPseudo() && feat.GetPseudo();
     bool gene_pseudo = IsOverlappingGenePseudo(feat);
     bool pseudo = feat_pseudo || gene_pseudo;
+    bool mustbemethionine = false;
 
     if ( rna_type == CRNA_ref::eType_mRNA ) {        
         if ( !pseudo ) {
@@ -3449,6 +3450,23 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
         }
     }
 
+    if ( rna_type == CRNA_ref::eType_tRNA ) {
+        FOR_EACH_GBQUAL_ON_FEATURE (gbqual, feat) {
+            if ( NStr::CompareNocase((**gbqual).GetQual (), "anticodon") == 0 ) {
+                PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
+                    "Unparsed anticodon qualifier in tRNA", feat);
+            } else if (NStr::CompareNocase ((**gbqual).GetQual (), "product") == 0 ) {
+                if (NStr::CompareNocase ((**gbqual).GetVal (), "tRNA-fMet") != 0 &&
+                    NStr::CompareNocase ((**gbqual).GetVal (), "tRNA-iMet") != 0) {
+                    PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
+                        "Unparsed product qualifier in tRNA", feat);
+                } else {
+                    mustbemethionine = true;
+                }
+            }
+        }
+    }
+
     if ( rna.CanGetExt()  &&
          rna.GetExt().Which() == CRNA_ref::C_Ext::e_TRNA ) {
         const CTrna_ext& trna = rna.GetExt ().GetTRNA ();
@@ -3469,22 +3487,10 @@ void CValidError_feat::ValidateRna(const CRNA_ref& rna, const CSeq_feat& feat)
             }
             ValidateAnticodon(anticodon, feat);
         }
-        ValidateTrnaCodons(trna, feat);
+        ValidateTrnaCodons(trna, feat, mustbemethionine);
     }
 
     if ( rna_type == CRNA_ref::eType_tRNA ) {
-        FOR_EACH_GBQUAL_ON_FEATURE (gbqual, feat) {
-            if ( NStr::CompareNocase((**gbqual).GetQual (), "anticodon") == 0 ) {
-                PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
-                    "Unparsed anticodon qualifier in tRNA", feat);
-            } else if (NStr::CompareNocase ((**gbqual).GetQual (), "product") == 0 ) {
-                if (NStr::CompareNocase ((**gbqual).GetVal (), "tRNA-fMet") != 0 &&
-                    NStr::CompareNocase ((**gbqual).GetVal (), "tRNA-iMet") != 0) {
-                    PostErr (eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
-                        "Unparsed product qualifier in tRNA", feat);
-                }
-            }
-        }
         /* tRNA with string extension */
         if ( rna.IsSetExt()  &&  
              rna.GetExt().Which () == CRNA_ref::C_Ext::e_Name ) {
@@ -3737,7 +3743,7 @@ static string GetGeneticCodeName (int gcode)
 }
 
 void CValidError_feat::ValidateTrnaCodons(
-    const CTrna_ext& trna, const CSeq_feat& feat)
+    const CTrna_ext& trna, const CSeq_feat& feat, bool mustbemethionine)
 {
     if (!trna.IsSetAa()) {
         PostErr (eDiag_Error, eErr_SEQ_FEAT_BadTrnaAA, "Missing tRNA amino acid", feat);
@@ -3784,6 +3790,15 @@ void CValidError_feat::ValidateTrnaCodons(
     orig_aa = aa;
     if ( !found ) {
         aa = ' ';
+    }
+
+    if (mustbemethionine) {
+        if (aa != 'M') {
+            string aanm = GetAAName (aa, true);
+            PostErr(eDiag_Error, eErr_SEQ_FEAT_InvalidQualifierValue,
+                "Initiation tRNA claims to be tRNA-" + aanm +
+                ", but should be tRNA-Met", feat);
+        }
     }
 
     // Retrive the Genetic code id for the tRNA
