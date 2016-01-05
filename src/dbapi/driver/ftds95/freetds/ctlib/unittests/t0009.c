@@ -8,6 +8,8 @@
 #include <ctpublic.h>
 #include "common.h"
 
+#include <ctlib.h>
+
 #include <common/test_assert.h>
 
 static char software_version[] = "$Id$";
@@ -49,6 +51,13 @@ main(int argc, char *argv[])
 	if (ret != CS_SUCCEED) {
 		fprintf(stderr, "Login failed\n");
 		return 1;
+    } else {
+        TDSSOCKET *tds = conn->tds_socket;
+        if (TDS_IS_MSSQL(tds)
+            &&  tds->conn->product_version >= TDS_MS_VER(11, 0, 0)) {
+            fputs("Skipping COMPUTE tests with MS SQL 2012+.\n", stderr);
+            return 77;
+        }
 	}
 
 	ret = run_command(cmd, "CREATE TABLE #ctlib0009 (col1 int not null,  col2 char(1) not null, col3 datetime not null)");

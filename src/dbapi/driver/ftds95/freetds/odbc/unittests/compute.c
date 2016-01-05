@@ -79,6 +79,11 @@ main(int argc, char *argv[])
 {
 	odbc_connect();
 
+    if (odbc_db_is_microsoft() && odbc_db_version_int() >= 0x0b000000u) {
+        fputs("Skipping (COMPUTE support retired server-side)\n", stderr);
+        return 77;
+    }
+
 	odbc_command("create table #tmp1 (c varchar(20), i int)");
 	odbc_command("insert into #tmp1 values('pippo', 12)");
 	odbc_command("insert into #tmp1 values('pippo', 34)");

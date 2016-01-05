@@ -3,7 +3,9 @@
  * Functions: dbaltbind dbaltcolid dbaltop dbalttype dbnumalts
  */
 
+#include <freetds/tds.h>
 #include "common.h"
+#include <dblib.h>
 
 #include <common/test_assert.h>
 
@@ -52,6 +54,15 @@ main(int argc, char *argv[])
 	if (strlen(DATABASE))
 		dbuse(dbproc, DATABASE);
 	dbloginfree(login);
+
+    if (dbproc != NULL) {
+        TDSSOCKET *tds = dbproc->tds_socket;
+        if (TDS_IS_MSSQL(tds)
+            &&  tds->conn->product_version >= TDS_MS_VER(11, 0, 0)) {
+            fputs("Skipping COMPUTE tests with MS SQL 2012+.\n", stderr);
+            return 77;
+        }
+    }
 
 	fprintf(stdout, "creating table\n");
 	sql_cmd(dbproc);

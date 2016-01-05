@@ -12,17 +12,17 @@ unset LANG LC_ALL LC_CTYPE
 driver_list="ctlib dblib ftds64 ftds95 ftds95-v73 odbc"
 
 if echo $FEATURES | grep "\-connext" > /dev/null ; then
-    server_list="MSDEV1 DBAPI_DEV3"
+    server_list="MSDEV1 MSDEV4 DBAPI_DEV3"
     server_mssql="MSDEV1"
 
-    server_mssql2005="MSDEV1"
+    server_mssql2014="MSDEV4"
 else
     # server_list="MS_DEV2"
-    server_list="DBAPI_MS_TEST DBAPI_SYB155_TEST"
+    server_list="DBAPI_MS_TEST DBAPI_MS2014_TEST DBAPI_SYB155_TEST"
     # server_mssql="MS_DEV2"
     server_mssql="DBAPI_MS_TEST"
 
-    server_mssql2005="DBAPI_MS_TEST"
+    server_mssql2014="DBAPI_MS2014_TEST"
 fi
 
 if echo $FEATURES | grep "DLL" > /dev/null ; then
@@ -201,17 +201,17 @@ EOF
             case "$v_flag" in
               -v\ 7?)
                 if test $server != $server_mssql \
-                     -a $server != $server_mssql2005; then
+                     -a $server != $server_mssql2014; then
                     continue
                 fi
                 ;;
             esac
 
-            if test \( $driver = "ctlib" -o $driver = "dblib" \)  -a  \( $server = $server_mssql -o $server = $server_mssql2005 -o \( $static_config = 1 -a $win_config = 1 \) \) ; then
+            if test \( $driver = "ctlib" -o $driver = "dblib" \)  -a  \( $server = $server_mssql -o $server = $server_mssql2014 -o \( $static_config = 1 -a $win_config = 1 \) \) ; then
                 continue
             fi
 
-            if test $driver = "odbc" -a  $server != $server_mssql -a  $server != $server_mssql2005 ; then
+            if test $driver = "odbc" -a  $server != $server_mssql -a  $server != $server_mssql2014 ; then
                 continue
             fi
              
@@ -229,7 +229,7 @@ EOF
         # lang_query
 
             cmd="lang_query -lb on -d $driver -S $server $v_flag -Q"
-            if test $driver != 'dblib' -o \( $driver = 'dblib' -a $server != $server_mssql -a $server != $server_mssql2005 \) ; then
+            if test $driver != 'dblib' -o \( $driver = 'dblib' -a $server != $server_mssql -a $server != $server_mssql2014 \) ; then
                 RunTest2 'select qq = 57.55 + 0.0033' '<ROW><qq>57\.5533<'
             fi
 
@@ -241,7 +241,7 @@ EOF
         # simple tests
 
             # dblib is not  supposed to work with MS SQL Server
-            if test $driver = "dblib"  -a  \( $server = $server_mssql -o $server = $server_mssql2005 \) ; then
+            if test $driver = "dblib"  -a  \( $server = $server_mssql -o $server = $server_mssql2014 \) ; then
                 continue
             fi
 
@@ -264,7 +264,7 @@ EOF
             cmd="dbapi_cursor -lb on -d $driver -S $server $v_flag"
             if test $driver = "ctlib" -a \( $SYSTEM_NAME = "SunOS" -a $PROCESSOR_TYPE = "i" \) ; then
                 sum_list="$sum_list XXX_SEPARATOR #  $cmd (skipped because of invalid Sybase client installation)"
-            elif test \( $driver = "ftds64" -o $driver = "ftds95" \) -a  $server != $server_mssql -a  $server != $server_mssql2005 ; then
+            elif test \( $driver = "ftds64" -o $driver = "ftds95" \) -a  $server != $server_mssql -a  $server != $server_mssql2014 ; then
                 sum_list="$sum_list XXX_SEPARATOR #  $cmd (skipped)"
             else
                 RunSimpleTest "dbapi_cursor"

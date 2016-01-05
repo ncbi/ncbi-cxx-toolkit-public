@@ -726,7 +726,7 @@ CDBConnParams::EServerType
 CCPPToolkitConnParams::GetServerType(const CTempString& server_name)
 {
     // Artificial intelligence ...
-    if (NStr::CompareNocase(server_name, 0, 13, "DBAPI_MS_TEST") == 0
+    if (NStr::CompareNocase(server_name, 0, 8, "DBAPI_MS") == 0
         || NStr::CompareNocase(server_name, 0, 5, "MSSQL") == 0
         || NStr::CompareNocase(server_name, 0, 5, "MSDEV") == 0
         || NStr::CompareNocase(server_name, 0, 7, "OAMSDEV") == 0

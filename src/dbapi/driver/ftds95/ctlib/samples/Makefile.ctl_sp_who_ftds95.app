@@ -13,5 +13,6 @@ CPPFLAGS = -DFTDS_IN_USE -I$(includedir)/dbapi/driver/ftds95 \
 CHECK_REQUIRES = in-house-resources
 # CHECK_CMD = run_sybase_app.sh ctl_sp_who_ftds95
 CHECK_CMD = run_sybase_app.sh ctl_sp_who_ftds95 -S MSDEV1 /CHECK_NAME=ctl_sp_who_ftds95-MS
+CHECK_CMD = run_sybase_app.sh ctl_sp_who_ftds95 -S MSDEV4 /CHECK_NAME=ctl_sp_who_ftds95-MS2014
 
 WATCHERS = ucko
