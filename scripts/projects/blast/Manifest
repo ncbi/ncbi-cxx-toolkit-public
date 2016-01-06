@@ -49,6 +49,8 @@ DEFAULT_CONFIGURATIONS: Linux64-Centos:icc
 Win32         : plain : static  32  ReleaseMT
 Win64         : plain : static  64  ReleaseMT
 
-IntelMAC    : universal : GCC.sh --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-universal=i386,x86_64 --with-ncbi-public
+#IntelMAC            : universal : GCC.sh   --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-universal=i386,x86_64 --with-ncbi-public
+IntelMAC    : universal : Clang.sh --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-universal=i386,x86_64 --with-ncbi-public
+#IntelMAC-Clang36    : clang     : Clang.sh --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-ncbi-public
 
 USE_COMPONENTS
