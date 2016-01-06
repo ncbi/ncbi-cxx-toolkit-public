@@ -284,13 +284,7 @@ static void s_SimpleTest()
     const string key = GetUniqueKey();
     vector<string> subkeys;
 
-// After CXX-7539 is fixed, counter i should be replaced with version
-#ifdef SIMPLE_TEST_VERSION_TESTING
     for (size_t version = 0; version < kIterations; ++version) {
-#else
-    const int version = 0;
-    for (size_t i = 0; i < kIterations; ++i) {
-#endif
         const string subkey = GetUniqueKey();
         subkeys.push_back(subkey);
 
@@ -370,12 +364,7 @@ static void s_SimpleTest()
         throw;
     }
 
-// After CXX-7539 is fixed, counter i should be replaced with version
-#ifdef SIMPLE_TEST_VERSION_TESTING
     for (size_t version = 0; version < kIterations; ++version) {
-#else
-    for (size_t i = 0; i < kIterations; ++i) {
-#endif
         const string subkey = subkeys.back();
         subkeys.pop_back();
 
