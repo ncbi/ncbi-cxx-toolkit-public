@@ -983,6 +983,9 @@ seqcode needs xser
 seqdb needs $(SOBJMGR_LIBS)
 seqdb needs blastdb
 seqedit needs seqset
+seqgapscan needs $(SDBAPI_LIB)
+seqgapscan needs xconnect
+seqgapscan needs xobjutil
 seqmasks_io needs $(OBJREAD_LIBS)
 seqmasks_io needs seqdb
 seqmasks_io needs xobjutil
