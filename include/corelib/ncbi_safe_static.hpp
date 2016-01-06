@@ -611,7 +611,7 @@ public:
         if ( !m_Ptr ) {
             x_Init(user_create);
         }
-        return *static_cast<T*>(m_Ptr);
+        return *static_cast<T*>(const_cast<void*>(m_Ptr));
     }
 
     T* operator -> (void) { return &Get(); }
