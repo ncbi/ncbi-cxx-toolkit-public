@@ -280,8 +280,6 @@ int/*bool*/ s_LBOS_AddAnnouncedServer(const char*            service,
     /* For convenience, we use some aliases. Not references, because this
      * is not C++ */
     struct SLBOS_AnnounceHandle_Tag** arr = &s_LBOS_AnnouncedServers;
-    if (*arr == NULL)
-        return 0;
     unsigned int* count = &s_LBOS_AnnouncedServersNum;
     unsigned int* alloc = &s_LBOS_AnnouncedServersAlloc;
 
@@ -307,7 +305,7 @@ int/*bool*/ s_LBOS_AddAnnouncedServer(const char*            service,
     ConnNetInfo_Destroy(healthcheck_info);
 
     /* Allocate more space, if needed */
-    if (*count == *alloc)
+    if (*arr == NULL || *count == *alloc)
     {
         int new_size = *alloc*2 + 1;
         struct SLBOS_AnnounceHandle_Tag* realloc_result = 
