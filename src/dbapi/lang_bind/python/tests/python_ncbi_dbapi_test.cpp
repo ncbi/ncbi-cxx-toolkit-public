@@ -406,7 +406,7 @@ BOOST_AUTO_TEST_CASE(TestParameters)
         ExecuteStr("cursor.execute('SELECT name FROM syscolumns WHERE id = CONVERT(INT, @id)', {'@id':None})\n");
 
         // fetchall
-        ExecuteStr("print cursor.fetchall()\n");
+        ExecuteStr("print(cursor.fetchall())\n");
     }
 
     {
@@ -422,40 +422,40 @@ BOOST_AUTO_TEST_CASE(TestParameters)
         ExecuteStr("seq_align = 254 * '-' + 'X' \n");
         ExecuteStr("cursor.execute('INSERT INTO #t2(vc1900_field) VALUES(@tv)', {'@tv':seq_align})\n");
         ExecuteStr("cursor.execute('SELECT vc1900_field FROM #t2') \n");
-        ExecuteStr("if len(cursor.fetchone()[0]) != 255 : raise StandardError('Invalid string length.') \n");
+        ExecuteStr("if len(cursor.fetchone()[0]) != 255 : raise Exception('Invalid string length.') \n");
     }
 
     // Test for text strings ...
     {
         ExecuteSQL("DELETE FROM #t2");
         ExecuteStr("seq_align = 254 * '-' + 'X' + 100 * '-'\n");
-        ExecuteStr("if len(seq_align) != 355 : raise StandardError('Invalid string length.') \n");
+        ExecuteStr("if len(seq_align) != 355 : raise Exception('Invalid string length.') \n");
         ExecuteStr("cursor.execute('INSERT INTO #t2(vc1900_field) VALUES(@tv)', {'@tv':seq_align})\n");
         ExecuteSQL("SELECT vc1900_field FROM #t2");
         ExecuteStr("record = cursor.fetchone()");
-//             ExecuteStr("print record");
-//             ExecuteStr("print len(record[0])");
-        ExecuteStr("if len(record[0]) != 355 : raise StandardError('Invalid string length.') \n");
+//             ExecuteStr("print(record)");
+//             ExecuteStr("print(len(record[0]))");
+        ExecuteStr("if len(record[0]) != 355 : raise Exception('Invalid string length.') \n");
 
         ExecuteStr("cursor.execute('DELETE FROM #t2')\n");
         ExecuteStr("seq_align = 254 * '-' + 'X' + 100 * '-'\n");
-        ExecuteStr("if len(seq_align) != 355 : raise StandardError('Invalid string length.') \n");
+        ExecuteStr("if len(seq_align) != 355 : raise Exception('Invalid string length.') \n");
         ExecuteStr("cursor.execute('INSERT INTO #t2(text_val) VALUES(@tv)', {'@tv':seq_align})\n");
         ExecuteStr("cursor.execute('SELECT text_val FROM #t2') \n");
         ExecuteStr("record = cursor.fetchone() \n");
-//             ExecuteStr("print record \n");
-        ExecuteStr("if len(record[0]) != 355 : raise StandardError('Invalid string length.') \n");
+//             ExecuteStr("print(record)\n");
+        ExecuteStr("if len(record[0]) != 355 : raise Exception('Invalid string length.') \n");
     }
 
     // Test for datetime
     {
         ExecuteStr("cursor.execute('select cast(@dt as datetime)', (datetime.datetime(2010,1,1,12,1,2,50000),)) \n");
         ExecuteStr("dt = cursor.fetchone()[0] \n");
-        ExecuteStr("print dt \n");
+        ExecuteStr("print(dt)\n");
         ExecuteStr("if dt.year != 2010 or dt.month != 1 or dt.day != 1 "
                    "or dt.hour != 12 or dt.minute != 1 or dt.second != 2 "
                    "or dt.microsecond != 50000: "
-                   "raise StandardError('Invalid datetime returned: ' + str(dt)) \n");
+                   "raise Exception('Invalid datetime returned: ' + str(dt)) \n");
     }
 }
 
@@ -518,37 +518,37 @@ BOOST_AUTO_TEST_CASE(Test_callproc)
     // Check output parameters ...
     if (false) {
         // ExecuteStr("cursor.callproc('sp_server_info', {'@attribute_id':1}) \n");
-        ExecuteStr("print cursor.callproc('SampleProc3', {'@id':1, '@f':2.0, '@o':0}) \n");
-        ExecuteStr("print cursor.fetchall()\n");
+        ExecuteStr("print(cursor.callproc('SampleProc3', {'@id':1, '@f':2.0, '@o':0}))\n");
+        ExecuteStr("print(cursor.fetchall())\n");
         ExecuteStr("while cursor.nextset() : \n"
-                   "    print cursor.fetchall() "
+                   "    print(cursor.fetchall())"
                 );
     }
 
     if (false) {
-        ExecuteStr("print cursor.callproc('DBAPI_Sample..SampleProc3', {'@id':1, '@f':2.0, '@o':0}) \n");
+        ExecuteStr("print(cursor.callproc('DBAPI_Sample..SampleProc3', {'@id':1, '@f':2.0, '@o':0}))");
         ExecuteStr("cursor.fetchall()\n");
         ExecuteStr("while cursor.nextset() : \n"
-                   "    print cursor.fetchall() "
+                   "    print(cursor.fetchall())"
                 );
     }
 
     if (false) {
-        ExecuteStr("print cursor.callproc('DBAPI_Sample.dbo.SampleProc3', {'@id':1, '@f':2.0, '@o':0}) \n");
+        ExecuteStr("print(cursor.callproc('DBAPI_Sample.dbo.SampleProc3', {'@id':1, '@f':2.0, '@o':0}))\n");
         ExecuteStr("cursor.fetchall()\n");
         ExecuteStr("while cursor.nextset() : \n"
-                   "    print cursor.fetchall() "
+                   "    print(cursor.fetchall() )"
                 );
     }
 
     if (false) {
         ExecuteStr("db_pipe = dbapi.connect('ftds', 'MSSQL','GPIPE_META', 'GPIPE_META', 'anyone', 'allowed') \n");
         ExecuteStr("cursor_pipe = db_pipe.cursor()\n");
-        // ExecuteStr("print cursor_pipe.callproc('GPIPE_META.dbo.test', {'@myparam':1}) \n");
-        ExecuteStr("print cursor_pipe.callproc('test', {'@myparam':1}) \n");
+        // ExecuteStr("print(cursor_pipe.callproc('GPIPE_META.dbo.test', {'@myparam':1}))\n");
+        ExecuteStr("print(cursor_pipe.callproc('test', {'@myparam':1}))\n");
         ExecuteStr("cursor.fetchall()\n");
         ExecuteStr("while cursor.nextset() : \n"
-                   "    print cursor.fetchall() "
+                   "    print(cursor.fetchall() )"
                 );
     }
 
@@ -556,12 +556,12 @@ BOOST_AUTO_TEST_CASE(Test_callproc)
         ExecuteStr("cursor_test = conn_simple.cursor()\n");
         ExecuteStr("cursor_test.fetchall()\n");
         ExecuteStr("while cursor_test.nextset() : \n"
-                   "    print cursor_test.fetchall() "
+                   "    print(cursor_test.fetchall() )"
                 );
     }
 
     // CALL stored procedure ...
-    ExecuteStr("print cursor.callproc('sp_databases')\n");
+    ExecuteStr("print(cursor.callproc('sp_databases'))\n");
     BOOST_CHECK_THROW(
         ExecuteStr("rc = cursor.get_proc_return_status()\n"),
         string
@@ -577,17 +577,17 @@ BOOST_AUTO_TEST_CASE(Test_callproc)
     ExecuteStr("cursor.fetchmany(5)\n");
     ExecuteStr("rc = cursor.get_proc_return_status()\n");
 
-    ExecuteStr("print cursor.callproc('sp_server_info')\n");
+    ExecuteStr("print(cursor.callproc('sp_server_info'))\n");
     ExecuteStr("cursor.fetchall()\n");
     ExecuteStr("rc = cursor.get_proc_return_status()\n");
 
     // Check output parameters ...
     if (false) {
         // ExecuteStr("cursor.callproc('sp_server_info', {'@attribute_id':1}) \n");
-        ExecuteStr("print cursor.callproc('SampleProc3', {'@id':1, '@f':2.0, '@o':0}) \n");
+        ExecuteStr("print(cursor.callproc('SampleProc3', {'@id':1, '@f':2.0, '@o':0}))\n");
         ExecuteStr("cursor.fetchall()\n");
         ExecuteStr("while cursor.nextset() : \n"
-                   "    print cursor.fetchall() "
+                   "    print(cursor.fetchall() )"
                 );
     }
 }
@@ -724,13 +724,13 @@ BOOST_AUTO_TEST_CASE(Test_SelectStmt)
         sql = "SELECT * FROM #Overlaps";
         ExecuteSQL(sql);
         ExecuteStr("record = cursor.fetchone() \n");
-        // ExecuteStr("print record \n");
+        // ExecuteStr("print(record)\n");
         ExecuteStr("if len(record) != 14 : "
-                   "raise StandardError('Invalid number of columns.') \n"
+                   "raise Exception('Invalid number of columns.') \n"
         );
-        // ExecuteStr("print len(record[12]) \n");
+        // ExecuteStr("print(len(record[12]))\n");
         ExecuteStr("if len(record[12]) != len(long_str) : "
-                   "raise StandardError('Invalid string size: ') \n"
+                   "raise Exception('Invalid string size: ') \n"
         );
     }
 }
@@ -770,17 +770,17 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
         sql = "SELECT vc1900_field, text_val, image_val FROM #t2";
         ExecuteSQL(sql);
         ExecuteStr("record = cursor.fetchone() \n");
-        ExecuteStr("print record[0] \n");
-//             ExecuteStr("print len(record[0]) \n");
-//             ExecuteStr("print long_str \n");
+        ExecuteStr("print(record[0])\n");
+//             ExecuteStr("print(len(record[0]))\n");
+//             ExecuteStr("print(long_str)\n");
         ExecuteStr("if len(record[0]) != len(long_str) : "
-                   "raise StandardError('Invalid string size: ') \n"
+                   "raise Exception('Invalid string size: ') \n"
         );
         ExecuteStr("if len(record[1]) != len(long_str) : "
-                   "raise StandardError('Invalid string size: ') \n"
+                   "raise Exception('Invalid string size: ') \n"
         );
         ExecuteStr("if len(record[2]) != len(long_str) : "
-                   "raise StandardError('Invalid string size: ') \n"
+                   "raise Exception('Invalid string size: ') \n"
         );
     }
 
@@ -797,7 +797,7 @@ BOOST_AUTO_TEST_CASE(Test_RaiseError)
 
 BOOST_AUTO_TEST_CASE(Test_Exception)
 {
-//    StandardError
+//    Exception
 //    |__Warning
 //    |__Error
 //        |__InterfaceError
@@ -816,16 +816,16 @@ BOOST_AUTO_TEST_CASE(Test_Exception)
         ExecuteStr(
             "try: \n"
             "   raise dbapi.Warning(\"Oops ...\") \n"
-            "except dbapi.Warning, inst: \n"
-            "   print type(inst), \"is OK!\" \n"
+            "except dbapi.Warning as inst: \n"
+            "   print(\"%s is OK!\" % type(inst))\n"
             "else: \n"
             "   raise \n"
             );
         ExecuteStr(
             "try: \n"
             "   raise dbapi.Warning(\"Oops ...\") \n"
-            "except StandardError, inst: \n"
-            "   print type(inst), \"is OK!\" \n"
+            "except Exception as inst: \n"
+            "   print(\"%s is OK!\" % type(inst))\n"
             "else: \n"
             "   raise \n"
             );
@@ -834,16 +834,16 @@ BOOST_AUTO_TEST_CASE(Test_Exception)
         ExecuteStr(
             "try: \n"
             "   raise dbapi.Error(\"Oops ...\") \n"
-            "except dbapi.Error, inst: \n"
-            "   print type(inst), \"is OK!\" \n"
+            "except dbapi.Error as inst: \n"
+            "   print(\"%s is OK!\" % type(inst))\n"
             "else: \n"
             "   raise \n"
             );
         ExecuteStr(
             "try: \n"
             "   raise dbapi.Error(\"Oops ...\") \n"
-            "except StandardError, inst: \n"
-            "   print type(inst), \"is OK!\" \n"
+            "except Exception as inst: \n"
+            "   print(\"%s is OK!\" % type(inst))\n"
             "else: \n"
             "   raise \n"
             );
@@ -852,16 +852,16 @@ BOOST_AUTO_TEST_CASE(Test_Exception)
         ExecuteStr(
             "try: \n"
             "   raise dbapi.InterfaceError(\"Oops ...\") \n"
-            "except dbapi.InterfaceError, inst: \n"
-            "   print type(inst), \"is OK!\" \n"
+            "except dbapi.InterfaceError as inst: \n"
+            "   print(\"%s is OK!\" % type(inst))\n"
             "else: \n"
             "   raise \n"
             );
         ExecuteStr(
             "try: \n"
             "   raise dbapi.InterfaceError(\"Oops ...\") \n"
-            "except dbapi.Error, inst: \n"
-            "   print type(inst), \"is OK!\" \n"
+            "except dbapi.Error as inst: \n"
+            "   print(\"%s is OK!\" % type(inst))\n"
             "else: \n"
             "   raise \n"
             );
@@ -870,24 +870,24 @@ BOOST_AUTO_TEST_CASE(Test_Exception)
         ExecuteStr(
             "try: \n"
             "   raise dbapi.DatabaseError(\"Oops ...\") \n"
-            "except dbapi.DatabaseError, inst: \n"
-            "   print type(inst), \"is OK!\" \n"
+            "except dbapi.DatabaseError as inst: \n"
+            "   print(\"%s is OK!\" % type(inst))\n"
             "else: \n"
             "   raise \n"
             );
         ExecuteStr(
             "try: \n"
             "   raise dbapi.DatabaseError(\"Oops ...\") \n"
-            "except dbapi.Error, inst: \n"
-            "   print type(inst), \"is OK!\" \n"
+            "except dbapi.Error as inst: \n"
+            "   print(\"%s is OK!\" % type(inst))\n"
             "else: \n"
             "   raise \n"
             );
         ExecuteStr(
             "try: \n"
             "   cursor.execute('SELECT * FROM wrong_table') \n"
-            "except dbapi.DatabaseError, inst: \n"
-            "   print type(inst), inst.srv_errno, inst.srv_msg \n"
+            "except dbapi.DatabaseError as inst: \n"
+            "   print(type(inst), inst.srv_errno, inst.srv_msg)\n"
             "else: \n"
             "   raise \n"
             );
@@ -896,16 +896,16 @@ BOOST_AUTO_TEST_CASE(Test_Exception)
         ExecuteStr(
             "try: \n"
             "   raise dbapi.DataError(\"Oops ...\") \n"
-            "except dbapi.DataError, inst: \n"
-            "   print type(inst), \"is OK!\" \n"
+            "except dbapi.DataError as inst: \n"
+            "   print(\"%s is OK!\" % type(inst))\n"
             "else: \n"
             "   raise \n"
             );
         ExecuteStr(
             "try: \n"
             "   raise dbapi.DataError(\"Oops ...\") \n"
-            "except dbapi.DatabaseError, inst: \n"
-            "   print type(inst), \"is OK!\" \n"
+            "except dbapi.DatabaseError as inst: \n"
+            "   print(\"%s is OK!\" % type(inst))\n"
             "else: \n"
             "   raise \n"
             );
@@ -914,16 +914,16 @@ BOOST_AUTO_TEST_CASE(Test_Exception)
         ExecuteStr(
             "try: \n"
             "   raise dbapi.OperationalError(\"Oops ...\") \n"
-            "except dbapi.OperationalError, inst: \n"
-            "   print type(inst), \"is OK!\" \n"
+            "except dbapi.OperationalError as inst: \n"
+            "   print(\"%s is OK!\" % type(inst))\n"
             "else: \n"
             "   raise \n"
             );
         ExecuteStr(
             "try: \n"
             "   raise dbapi.OperationalError(\"Oops ...\") \n"
-            "except dbapi.DatabaseError, inst: \n"
-            "   print type(inst), \"is OK!\" \n"
+            "except dbapi.DatabaseError as inst: \n"
+            "   print(\"%s is OK!\" % type(inst))\n"
             "else: \n"
             "   raise \n"
             );
@@ -932,16 +932,16 @@ BOOST_AUTO_TEST_CASE(Test_Exception)
         ExecuteStr(
             "try: \n"
             "   raise dbapi.IntegrityError(\"Oops ...\") \n"
-            "except dbapi.IntegrityError, inst: \n"
-            "   print type(inst), \"is OK!\" \n"
+            "except dbapi.IntegrityError as inst: \n"
+            "   print(\"%s is OK!\" % type(inst))\n"
             "else: \n"
             "   raise \n"
             );
         ExecuteStr(
             "try: \n"
             "   raise dbapi.IntegrityError(\"Oops ...\") \n"
-            "except dbapi.DatabaseError, inst: \n"
-            "   print type(inst), \"is OK!\" \n"
+            "except dbapi.DatabaseError as inst: \n"
+            "   print(\"%s is OK!\" % type(inst))\n"
             "else: \n"
             "   raise \n"
             );
@@ -950,16 +950,16 @@ BOOST_AUTO_TEST_CASE(Test_Exception)
         ExecuteStr(
             "try: \n"
             "   raise dbapi.InternalError(\"Oops ...\") \n"
-            "except dbapi.InternalError, inst: \n"
-            "   print type(inst), \"is OK!\" \n"
+            "except dbapi.InternalError as inst: \n"
+            "   print(\"%s is OK!\" % type(inst))\n"
             "else: \n"
             "   raise \n"
             );
         ExecuteStr(
             "try: \n"
             "   raise dbapi.InternalError(\"Oops ...\") \n"
-            "except dbapi.DatabaseError, inst: \n"
-            "   print type(inst), \"is OK!\" \n"
+            "except dbapi.DatabaseError as inst: \n"
+            "   print(\"%s is OK!\" % type(inst))\n"
             "else: \n"
             "   raise \n"
             );
@@ -968,16 +968,16 @@ BOOST_AUTO_TEST_CASE(Test_Exception)
         ExecuteStr(
             "try: \n"
             "   raise dbapi.ProgrammingError(\"Oops ...\") \n"
-            "except dbapi.ProgrammingError, inst: \n"
-            "   print type(inst), \"is OK!\" \n"
+            "except dbapi.ProgrammingError as inst: \n"
+            "   print(\"%s is OK!\" % type(inst))\n"
             "else: \n"
             "   raise \n"
             );
         ExecuteStr(
             "try: \n"
             "   raise dbapi.ProgrammingError(\"Oops ...\") \n"
-            "except dbapi.DatabaseError, inst: \n"
-            "   print type(inst), \"is OK!\" \n"
+            "except dbapi.DatabaseError as inst: \n"
+            "   print(\"%s is OK!\" % type(inst))\n"
             "else: \n"
             "   raise \n"
             );
@@ -986,28 +986,28 @@ BOOST_AUTO_TEST_CASE(Test_Exception)
         ExecuteStr(
             "try: \n"
             "   raise dbapi.NotSupportedError(\"Oops ...\") \n"
-            "except dbapi.NotSupportedError, inst: \n"
-            "   print type(inst), \"is OK!\" \n"
+            "except dbapi.NotSupportedError as inst: \n"
+            "   print(\"%s is OK!\" % type(inst))\n"
             "else: \n"
             "   raise \n"
             );
         ExecuteStr(
             "try: \n"
             "   raise dbapi.NotSupportedError(\"Oops ...\") \n"
-            "except dbapi.DatabaseError, inst: \n"
-            "   print type(inst), \"is OK!\" \n"
+            "except dbapi.DatabaseError as inst: \n"
+            "   print(\"%s is OK!\" % type(inst))\n"
             "else: \n"
             "   raise \n"
             );
     }
 
-    // Print exception ...
+    // print(exception ...
     {
         ExecuteStr(
             "try: \n"
             "   raise dbapi.Warning(\"Oops ...\") \n"
-            "except dbapi.Warning, inst: \n"
-            "   print type(inst), inst \n"
+            "except dbapi.Warning as inst: \n"
+            "   print(type(inst), inst)\n"
             "else: \n"
             "   raise \n"
             );
@@ -1015,8 +1015,8 @@ BOOST_AUTO_TEST_CASE(Test_Exception)
         ExecuteStr(
             "try: \n"
             "   raise dbapi.Error(\"Oops ...\") \n"
-            "except dbapi.Error, inst: \n"
-            "   print type(inst), inst \n"
+            "except dbapi.Error as inst: \n"
+            "   print(type(inst), inst)\n"
             "else: \n"
             "   raise \n"
             );
@@ -1024,8 +1024,8 @@ BOOST_AUTO_TEST_CASE(Test_Exception)
         ExecuteStr(
             "try: \n"
             "   raise dbapi.InterfaceError(\"Oops ...\") \n"
-            "except dbapi.InterfaceError, inst: \n"
-            "   print type(inst), inst \n"
+            "except dbapi.InterfaceError as inst: \n"
+            "   print(type(inst), inst)\n"
             "else: \n"
             "   raise \n"
             );
@@ -1033,8 +1033,8 @@ BOOST_AUTO_TEST_CASE(Test_Exception)
         ExecuteStr(
             "try: \n"
             "   raise dbapi.DatabaseError(\"Oops ...\") \n"
-            "except dbapi.DatabaseError, inst: \n"
-            "   print type(inst), inst \n"
+            "except dbapi.DatabaseError as inst: \n"
+            "   print(type(inst), inst)\n"
             "else: \n"
             "   raise \n"
             );
@@ -1042,8 +1042,8 @@ BOOST_AUTO_TEST_CASE(Test_Exception)
         ExecuteStr(
             "try: \n"
             "   raise dbapi.DataError(\"Oops ...\") \n"
-            "except dbapi.DataError, inst: \n"
-            "   print type(inst), inst \n"
+            "except dbapi.DataError as inst: \n"
+            "   print(type(inst), inst)\n"
             "else: \n"
             "   raise \n"
             );
@@ -1051,8 +1051,8 @@ BOOST_AUTO_TEST_CASE(Test_Exception)
         ExecuteStr(
             "try: \n"
             "   raise dbapi.OperationalError(\"Oops ...\") \n"
-            "except dbapi.OperationalError, inst: \n"
-            "   print type(inst), inst \n"
+            "except dbapi.OperationalError as inst: \n"
+            "   print(type(inst), inst)\n"
             "else: \n"
             "   raise \n"
             );
@@ -1060,8 +1060,8 @@ BOOST_AUTO_TEST_CASE(Test_Exception)
         ExecuteStr(
             "try: \n"
             "   raise dbapi.IntegrityError(\"Oops ...\") \n"
-            "except dbapi.IntegrityError, inst: \n"
-            "   print type(inst), inst \n"
+            "except dbapi.IntegrityError as inst: \n"
+            "   print(type(inst), inst)\n"
             "else: \n"
             "   raise \n"
             );
@@ -1069,8 +1069,8 @@ BOOST_AUTO_TEST_CASE(Test_Exception)
         ExecuteStr(
             "try: \n"
             "   raise dbapi.InternalError(\"Oops ...\") \n"
-            "except dbapi.InternalError, inst: \n"
-            "   print type(inst), inst \n"
+            "except dbapi.InternalError as inst: \n"
+            "   print(type(inst), inst)\n"
             "else: \n"
             "   raise \n"
             );
@@ -1078,8 +1078,8 @@ BOOST_AUTO_TEST_CASE(Test_Exception)
         ExecuteStr(
             "try: \n"
             "   raise dbapi.ProgrammingError(\"Oops ...\") \n"
-            "except dbapi.ProgrammingError, inst: \n"
-            "   print type(inst), inst \n"
+            "except dbapi.ProgrammingError as inst: \n"
+            "   print(type(inst), inst)\n"
             "else: \n"
             "   raise \n"
             );
@@ -1087,8 +1087,8 @@ BOOST_AUTO_TEST_CASE(Test_Exception)
         ExecuteStr(
             "try: \n"
             "   raise dbapi.NotSupportedError(\"Oops ...\") \n"
-            "except dbapi.NotSupportedError, inst: \n"
-            "   print type(inst), inst \n"
+            "except dbapi.NotSupportedError as inst: \n"
+            "   print(type(inst), inst)\n"
             "else: \n"
             "   raise \n"
             );
@@ -1121,38 +1121,43 @@ BOOST_AUTO_TEST_CASE(TestScenario_1)
         ExecuteStr("umonth_list = [u'January', u'February', u'March', u'April', u'May', u'June', u'July', u'August', u'September', u'October', u'November', u'December']");
         ExecuteStr("sql = \"insert into #sale_stat(year, month, stat) values (@year, @month, @stat)\"");
         ExecuteSQL("select * from #sale_stat");
-        ExecuteStr("print \"Empty table contains\", len( cursor.fetchall() ), \"records\"");
+        ExecuteStr("print(\"Empty table contains %d records\" % len(cursor.fetchall()))");
         ExecuteSQL("BEGIN TRANSACTION");
         ExecuteStr("cursor.executemany(sql, [{'@year':year, '@month':month, '@stat':stat} for stat in range(1, 3) for year in range(2004, 2006) for month in month_list])");
         ExecuteSQL("select * from #sale_stat");
-        ExecuteStr("print \"We have inserted\", len( cursor.fetchall() ), \"records\"");
+        ExecuteStr("print(\"We have inserted %d records\" % len(cursor.fetchall()))");
         ExecuteStr("conn_simple.rollback();");
         ExecuteSQL("select * from #sale_stat");
-        ExecuteStr("print \"After a 'standard' rollback command the table contains\", len( cursor.fetchall() ), \"records\"");
+        ExecuteStr("print(\"After a 'standard' rollback command the table contains %d records\" % len(cursor.fetchall()))");
         ExecuteSQL("ROLLBACK TRANSACTION");
         ExecuteSQL("BEGIN TRANSACTION");
         ExecuteSQL("select * from #sale_stat");
-        ExecuteStr("print \"After a 'manual' rollback command the table contains\", len( cursor.fetchall() ), \"records\"");
+        ExecuteStr("print(\"After a 'manual' rollback command the table contains %d records\" % len(cursor.fetchall()))");
         ExecuteStr("cursor.executemany(sql, [{'@year':year, '@month':month, '@stat':stat} for stat in range(1, 3) for year in range(2004, 2006) for month in umonth_list])");
         ExecuteSQL("select * from #sale_stat");
-        ExecuteStr("print \"We have inserted\", len( cursor.fetchall() ), \"records\"");
+        ExecuteStr("print(\"We have inserted %d records\" % len(cursor.fetchall()))");
         ExecuteSQL("COMMIT TRANSACTION");
         ExecuteSQL("select * from #sale_stat");
-        ExecuteStr("print \"After a 'manual' commit command the table contains\", len( cursor.fetchall() ), \"records\"");
+        ExecuteStr("print(\"After a 'manual' commit command the table contains %d records\" % len(cursor.fetchall()))");
         ExecuteSQL("select month from #sale_stat");
         ExecuteStr("month = cursor.fetchone()[0]");
         ExecuteStr("if not isinstance(month, str) : "
-                    "raise StandardError('Invalid data type: ') \n");
+                    "raise Exception('Invalid data type: ') \n");
         ExecuteStr("dbapi.return_strs_as_unicode(True)");
         ExecuteSQL("select month from #sale_stat");
         ExecuteStr("month = cursor.fetchone()[0]");
+#if PY_MAJOR_VERSION >= 3
+        ExecuteStr("if not isinstance(month, str): "
+            "raise Exception('Invalid data type: ')\n");
+#else
         ExecuteStr("if not isinstance(month, unicode) : "
-            "raise StandardError('Invalid data type: ') \n");
+            "raise Exception('Invalid data type: ') \n");
+#endif
         ExecuteStr("dbapi.return_strs_as_unicode(False)");
         ExecuteSQL("select month from #sale_stat");
         ExecuteStr("month = cursor.fetchone()[0]");
         ExecuteStr("if not isinstance(month, str) : "
-            "raise StandardError('Invalid data type: ') \n");
+            "raise Exception('Invalid data type: ') \n");
         // Test checking that nulls are bound to output parameters as values
         // with actual type with which that parameter is declared.
         // Disabled because it needs procedure to be created separately.
@@ -1163,18 +1168,18 @@ BOOST_AUTO_TEST_CASE(TestScenario_1)
         //     set @p2 = 123
         //   end
         //ExecuteStr("out = cursor.callproc('testing', [None, None])");
-        //ExecuteStr("print out");
+        //ExecuteStr("print(out)");
         //ExecuteStr("if isinstance(out[1], str) : "
-        //    "raise StandardError('Invalid data type: ') \n");
+        //    "raise Exception('Invalid data type: ') \n");
         //ExecuteStr("if not isinstance(out[0], None.__class__) : "
-        //    "raise StandardError('Invalid data type: ') \n");
+        //    "raise Exception('Invalid data type: ') \n");
         ExecuteStr("from __future__ import with_statement \n"
                    "with conn_simple.cursor() as cursor: \n"
                    "  for row in cursor.execute('exec sp_spaceused'): \n"
-                   "    print row \n"
+                   "    print(row)\n"
                    "  cursor.nextset() \n"
                    "  for row in cursor: \n"
-                   "    print row \n"
+                   "    print(row)\n"
                    "try: \n"
                    "  cursor.execute('select * from sysobjects') \n"
                    "  raise Exception('DatabseError was not thrown') \n"
@@ -1182,7 +1187,7 @@ BOOST_AUTO_TEST_CASE(TestScenario_1)
                    "  pass \n");
         ExecuteStr("cursor = conn_simple.cursor()\n" );
         ExecuteStr("for row in cursor.execute('exec sp_spaceused'): \n"
-                   "  print row \n");
+                   "  print(row)\n");
     }
 }
 
@@ -1212,24 +1217,24 @@ BOOST_AUTO_TEST_CASE(TestScenario_1_ByPos)
         ExecuteStr("umonth_list = [u'January', u'February', u'March', u'April', u'May', u'June', u'July', u'August', u'September', u'October', u'November', u'December']");
         ExecuteStr("sql = \"insert into #sale_stat2(year, month, stat) values (@year, @month, @stat)\"");
         ExecuteSQL("select * from #sale_stat2");
-        ExecuteStr("print \"Empty table contains\", len( cursor.fetchall() ), \"records\"");
+        ExecuteStr("print(\"Empty table contains %d records\" % len(cursor.fetchall()))");
         ExecuteSQL("BEGIN TRANSACTION");
         ExecuteStr("cursor.executemany(sql, [[year, month, stat] for stat in range(1, 3) for year in range(2004, 2006) for month in month_list])");
         ExecuteSQL("select * from #sale_stat2");
-        ExecuteStr("print \"We have inserted\", len( cursor.fetchall() ), \"records\"");
+        ExecuteStr("print(\"We have inserted %d records\" % len(cursor.fetchall()))");
         ExecuteStr("conn_simple.rollback();");
         ExecuteSQL("select * from #sale_stat2");
-        ExecuteStr("print \"After a 'standard' rollback command the table contains\", len( cursor.fetchall() ), \"records\"");
+        ExecuteStr("print(\"After a 'standard' rollback command the table contains %d records\" % len(cursor.fetchall()))");
         ExecuteSQL("ROLLBACK TRANSACTION");
         ExecuteSQL("BEGIN TRANSACTION");
         ExecuteSQL("select * from #sale_stat2");
-        ExecuteStr("print \"After a 'manual' rollback command the table contains\", len( cursor.fetchall() ), \"records\"");
+        ExecuteStr("print(\"After a 'manual' rollback command the table contains %d records\" % len(cursor.fetchall()))");
         ExecuteStr("cursor.executemany(sql, [[year, month, stat] for stat in range(1, 3) for year in range(2004, 2006) for month in umonth_list])");
         ExecuteSQL("select * from #sale_stat2");
-        ExecuteStr("print \"We have inserted\", len( cursor.fetchall() ), \"records\"");
+        ExecuteStr("print(\"We have inserted %d records\" % len(cursor.fetchall()))");
         ExecuteSQL("COMMIT TRANSACTION");
         ExecuteSQL("select * from #sale_stat2");
-        ExecuteStr("print \"After a 'manual' commit command the table contains\", len( cursor.fetchall() ), \"records\"");
+        ExecuteStr("print(\"After a 'manual' commit command the table contains %d records\" % len(cursor.fetchall()))");
     }
 }
 
@@ -1261,7 +1266,7 @@ BOOST_AUTO_TEST_CASE(TestScenario_2)
     ExecuteStr("def GetCustomers(): \n"
                 "        cu = getCon().cursor() \n"
                 "        cu.execute(\"select * from customers\") \n"
-                "        print cu.fetchall() \n"
+                "        print(cu.fetchall())\n"
         );
 
     ExecuteStr("def DeleteCustomers(): \n"

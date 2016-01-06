@@ -716,7 +716,11 @@ protected:
 protected:
     static PyObject* GetPyException(void)
     {
+#if PY_MAJOR_VERSION >= 3
+        return PyExc_Exception;
+#else
         return PyExc_StandardError;
+#endif
     }
 };
 

@@ -59,13 +59,16 @@
 //////////////////////////////////////////////////////////////////////////////
 // Compatibility macros
 //
-// From Python 2.2 to 2.3, the way to export the module init function
-// has changed. These macros keep the code compatible to both ways.
+// From Python 2.x to 3.x, the way to export the module init function
+// has changed.  These macros keep the code compatible to both ways.
 //
-#if PY_VERSION_HEX >= 0x02030000
-#  define PYDBAPI_MODINIT_FUNC(name)         PyMODINIT_FUNC name(void)
+#if PY_MAJOR_VERSION >= 3
+#  define PYDBAPI_MOD_RETURN return
+#  define PYDBAPI_MODINIT_FUNC(name) \
+    PyMODINIT_FUNC NCBI_NAME2(PyInit_,name)(void)
 #else
-#  define PYDBAPI_MODINIT_FUNC(name)         DL_EXPORT(void) name(void)
+#  define PYDBAPI_MOD_RETURN
+#  define PYDBAPI_MODINIT_FUNC(name) PyMODINIT_FUNC NCBI_NAME2(init,name)(void)
 #endif
 
 #ifndef PYDBAPI_SUPPORT_DIR
@@ -3299,12 +3302,20 @@ void CError::x_Init(const string& msg, long db_errno, const string& db_msg,
     PyObject *msg_ob = NULL;
 
     // Make an integer for the error code.
+#if PY_MAJOR_VERSION >= 3
+    errno_ob = PyLong_FromLong(db_errno);
+#else
     errno_ob = PyInt_FromLong(db_errno);
+#endif
     if (errno_ob == NULL) {
         return;
     }
 
+#if PY_MAJOR_VERSION >= 3
+    msg_ob = PyUnicode_FromStringAndSize(db_msg.data(), db_msg.size());
+#else
     msg_ob = PyString_FromStringAndSize(db_msg.data(), db_msg.size());
+#endif
     if (errno_ob == NULL) {
         Py_DECREF(errno_ob);
         return;
@@ -4073,13 +4084,36 @@ public:
 
 private:
     static PyObject* m_Module;
+#if PY_MAJOR_VERSION >= 3
+    static struct PyModuleDef m_ModuleDef;
+#endif
 };
 PyObject* CDBAPIModule::m_Module = NULL;
+
+#if PY_MAJOR_VERSION >= 3
+struct PyModuleDef CDBAPIModule::m_ModuleDef = {
+    PyModuleDef_HEAD_INIT,
+    "",   // m_name
+    "",   // m_doc
+    -1,   // m_size
+    NULL, // m_methods
+    NULL, // m_reload
+    NULL, // m_traverse
+    NULL, // m_clear
+    NULL  // m_free
+};
+#endif
 
 void
 CDBAPIModule::Declare(const char* name, PyMethodDef* methods)
 {
+#if PY_MAJOR_VERSION >= 3
+    m_ModuleDef.m_name = name;
+    m_ModuleDef.m_methods = methods;
+    m_Module = PyModule_Create(&m_ModuleDef);
+#else
     m_Module = Py_InitModule(const_cast<char*>(name), methods);
+#endif
 }
 
 }
@@ -4340,7 +4374,7 @@ DatabaseErrorExt_dealloc(PyDatabaseErrorExtObject *self)
 
 ///////////////////////////////////////////////////////////////////////////////
 static
-void init_common(const string& module_name)
+PyObject* init_common(const string& module_name)
 {
     DBLB_INSTALL_DEFAULT();
 
@@ -4440,42 +4474,42 @@ void init_common(const string& module_name)
 
     // Declare BINARY
     if ( PyType_Ready(&python::CBinary::GetType()) == -1 ) {
-        return;
+        return NULL;
     }
     if ( PyModule_AddObject(module, const_cast<char*>("BINARY"), (PyObject*)&python::CBinary::GetType() ) == -1 ) {
-        return;
+        return NULL;
     }
 
     // Declare NUMBER
     if ( PyType_Ready(&python::CNumber::GetType()) == -1 ) {
-        return;
+        return NULL;
     }
     if ( PyModule_AddObject(module, const_cast<char*>("NUMBER"), (PyObject*)&python::CNumber::GetType() ) == -1 ) {
-        return;
+        return NULL;
     }
 
     // Declare ROWID
     if ( PyType_Ready(&python::CRowID::GetType()) == -1 ) {
-        return;
+        return NULL;
     }
     if ( PyModule_AddObject(module, const_cast<char*>("ROWID"), (PyObject*)&python::CRowID::GetType() ) == -1 ) {
-        return;
+        return NULL;
     }
 
     // Declare STRING
     if ( PyType_Ready(&python::CStringType::GetType()) == -1 ) {
-        return;
+        return NULL;
     }
     if ( PyModule_AddObject(module, const_cast<char*>("STRING"), (PyObject*)&python::CStringType::GetType() ) == -1 ) {
-        return;
+        return NULL;
     }
 
     // Declare DATETIME
     if ( PyType_Ready(&python::CDateTimeType::GetType()) == -1 ) {
-        return;
+        return NULL;
     }
     if ( PyModule_AddObject(module, const_cast<char*>("DATETIME"), (PyObject*)&python::CDateTimeType::GetType() ) == -1 ) {
-        return;
+        return NULL;
     }
 
     pythonpp::CExtType* extt = &python::CConnection::GetType();
@@ -4486,18 +4520,18 @@ void init_common(const string& module_name)
     };
     extt->tp_members = conn_members;
     if ( PyType_Ready(extt) == -1 ) {
-        return;
+        return NULL;
     }
     if ( PyModule_AddObject(module, const_cast<char*>("Connection"), (PyObject*)extt ) == -1 ) {
-        return;
+        return NULL;
     }
     extt = &python::CTransaction::GetType();
     extt->tp_members = conn_members;
     if ( PyType_Ready(extt) == -1 ) {
-        return;
+        return NULL;
     }
     if ( PyModule_AddObject(module, const_cast<char*>("Transaction"), (PyObject*)extt ) == -1 ) {
-        return;
+        return NULL;
     }
     extt = &python::CCursor::GetType();
     // This list should reflect exactly attributes added in CCursor constructor
@@ -4514,19 +4548,19 @@ void init_common(const string& module_name)
     extt->tp_members = members;
     extt->tp_iter = &python::s_GetCursorIter;
     if ( PyType_Ready(extt) == -1 ) {
-        return;
+        return NULL;
     }
     if ( PyModule_AddObject(module, const_cast<char*>("Cursor"), (PyObject*)extt ) == -1 ) {
-        return;
+        return NULL;
     }
     extt = &python::CCursorIter::GetType();
     extt->tp_iter = &python::s_GetCursorIterFromIter;
     extt->tp_iternext = &python::s_CursorIterNext;
     if ( PyType_Ready(extt) == -1 ) {
-        return;
+        return NULL;
     }
     if ( PyModule_AddObject(module, const_cast<char*>("__CursorIterator__"), (PyObject*)extt ) == -1 ) {
-        return;
+        return NULL;
     }
 
     ///////////////////////////////////
@@ -4539,7 +4573,7 @@ void init_common(const string& module_name)
 
         if (PyType_Ready(&DatabaseErrorExtType) < 0) {
             Py_FatalError("exceptions bootstrapping error.");
-            return;
+            return NULL;
         }
 
         PyObject* dict = PyModule_GetDict(module);
@@ -4583,56 +4617,59 @@ void init_common(const string& module_name)
     python::CIntegrityError::Declare("IntegrityError");
     python::CDataError::Declare("DataError");
     python::CNotSupportedError::Declare("NotSupportedError");
+
+    return module;
 }
 
 // Module initialization
-PYDBAPI_MODINIT_FUNC(initpython_ncbi_dbapi)
+PYDBAPI_MODINIT_FUNC(python_ncbi_dbapi)
 {
-    init_common("python_ncbi_dbapi");
+    PYDBAPI_MOD_RETURN init_common("python_ncbi_dbapi");
 }
 
-PYDBAPI_MODINIT_FUNC(initncbi_dbapi)
+PYDBAPI_MODINIT_FUNC(ncbi_dbapi)
 {
-    init_common("ncbi_dbapi");
+    PYDBAPI_MOD_RETURN init_common("ncbi_dbapi");
 }
 
-PYDBAPI_MODINIT_FUNC(initncbi_dbapi_current)
+PYDBAPI_MODINIT_FUNC(ncbi_dbapi_current)
 {
-    init_common("ncbi_dbapi_current");
+    PYDBAPI_MOD_RETURN init_common("ncbi_dbapi_current");
 }
 
-PYDBAPI_MODINIT_FUNC(initncbi_dbapi_frozen)
+PYDBAPI_MODINIT_FUNC(ncbi_dbapi_frozen)
 {
-    init_common("ncbi_dbapi_frozen");
+    PYDBAPI_MOD_RETURN init_common("ncbi_dbapi_frozen");
 }
 
-PYDBAPI_MODINIT_FUNC(initncbi_dbapi_metastable)
+PYDBAPI_MODINIT_FUNC(ncbi_dbapi_metastable)
 {
-    init_common("ncbi_dbapi_metastable");
+    PYDBAPI_MOD_RETURN init_common("ncbi_dbapi_metastable");
 }
 
-PYDBAPI_MODINIT_FUNC(initncbi_dbapi_potluck)
+PYDBAPI_MODINIT_FUNC(ncbi_dbapi_potluck)
 {
-    init_common("ncbi_dbapi_potluck");
+    PYDBAPI_MOD_RETURN init_common("ncbi_dbapi_potluck");
 }
 
-PYDBAPI_MODINIT_FUNC(initncbi_dbapi_production)
+PYDBAPI_MODINIT_FUNC(ncbi_dbapi_production)
 {
-    init_common("ncbi_dbapi_production");
+    PYDBAPI_MOD_RETURN init_common("ncbi_dbapi_production");
 }
 
-PYDBAPI_MODINIT_FUNC(initncbi_dbapi_stable)
+PYDBAPI_MODINIT_FUNC(ncbi_dbapi_stable)
 {
-    init_common("ncbi_dbapi_stable");
+    PYDBAPI_MOD_RETURN init_common("ncbi_dbapi_stable");
 }
 
 
 #ifdef NCBI_OS_DARWIN
 // force more of corelib to make it in
-PYDBAPI_MODINIT_FUNC(initncbi_dbapi_darwin_kludge)
+PYDBAPI_MODINIT_FUNC(ncbi_dbapi_darwin_kludge)
 {
     CFastMutexGuard GUARD(CPluginManagerGetterImpl::GetMutex());
     CConfig config(NULL, eNoOwnership);
+    PYDBAPI_MOD_RETURN init_common("ncbi_dbapi_darwin_kludge");
 }
 #endif
 

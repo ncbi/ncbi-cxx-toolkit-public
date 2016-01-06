@@ -37,7 +37,7 @@
 
 #include "pythonpp_config.hpp"
 
-#include <corelib/ncbistl.hpp>
+#include <corelib/ncbistr.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -49,17 +49,14 @@ class CEngine
 public:
     CEngine(const char* prog_name = NULL)
     {
-        if ( prog_name ) {
-    	    Py_SetProgramName( const_cast<char*>(prog_name) );
-        }
-
+        x_SetProgramName(prog_name);
     	// Initialize the Python interpreter.  Required.
     	Py_Initialize();
     }
     CEngine(int argc, char *argv[])
     {
 	    // Pass argv[0] to the Python interpreter
-	    Py_SetProgramName(argv[0]);
+        x_SetProgramName(argv[0]);
 
     	// Initialize the Python interpreter.  Required.
     	Py_Initialize();
@@ -68,7 +65,17 @@ public:
 	    // want this; you can also let it undefined (since the Python
 	    // code is generally not a main program it has no business
 	    // touching sys.argv...)
+#if PY_MAJOR_VERSION >= 3
+        m_Args.resize(argc);
+        m_Argv.resize(argc);
+        for (int i = 0;  i < argc;  ++i) {
+            m_Args[i] = CUtf8::AsBasicString<wchar_t>(argv[i]);
+            m_Argv[i] = const_cast<wchar_t*>(m_Args[i].c_str());
+        }
+        PySys_SetArgv(argc, m_Argv);
+#else
 	    PySys_SetArgv(argc, argv);
+#endif
     }
     ~CEngine(void)
     {
@@ -96,6 +103,25 @@ public:
             }
         }
     }
+
+private:
+    static void x_SetProgramName(const char* prog_name)
+    {
+        if ( prog_name ) {
+#if PY_MAJOR_VERSION >= 3
+            m_ProgName = CUtf8::AsBasicString<wchar_t>(prog_name);
+            Py_SetProgramName(const_cast<wchar_t*>(m_ProgName.c_str()));
+#else
+            Py_SetProgramName(const_cast<char*>(prog_name));
+#endif
+        }
+    }
+
+#if PY_MAJOR_VERSION >= 3
+    wstring         m_ProgName;
+    vector<wstring> m_Args;
+    vector<wchar*>  m_Argv;
+#endif
 };
 
 }                                       // namespace pythonpp

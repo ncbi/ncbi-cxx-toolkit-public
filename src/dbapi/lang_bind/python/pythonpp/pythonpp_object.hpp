@@ -254,39 +254,45 @@ public:
     // Equality and comparison based on PyObject_Compare
     bool operator==(const CObject& obj) const
     {
-        int result = PyObject_Compare (Get(), obj);
+        CObject result(PyObject_RichCompare(Get(), obj, Py_EQ),
+                       eTakeOwnership);
         CError::Check();
-        return result == 0;
+        return PyObject_IsTrue(result);
     }
     bool operator!=(const CObject& obj) const
     {
-        int result = PyObject_Compare (Get(), obj);
+        CObject result(PyObject_RichCompare(Get(), obj, Py_NE),
+                       eTakeOwnership);
         CError::Check();
-        return result != 0;
+        return PyObject_IsTrue(result);
     }
     bool operator>=(const CObject& obj) const
     {
-        int result = PyObject_Compare (Get(), obj);
+        CObject result(PyObject_RichCompare(Get(), obj, Py_GE),
+                       eTakeOwnership);
         CError::Check();
-        return result >= 0;
+        return PyObject_IsTrue(result);
     }
     bool operator<=(const CObject& obj) const
     {
-        int result = PyObject_Compare (Get(), obj);
+        CObject result(PyObject_RichCompare(Get(), obj, Py_LE),
+                       eTakeOwnership);
         CError::Check();
-        return result <= 0;
+        return PyObject_IsTrue(result);
     }
     bool operator<(const CObject& obj) const
     {
-        int result = PyObject_Compare (Get(), obj);
+        CObject result(PyObject_RichCompare(Get(), obj, Py_LT),
+                       eTakeOwnership);
         CError::Check();
-        return result < 0;
+        return PyObject_IsTrue(result);
     }
     bool operator>(const CObject& obj) const
     {
-        int result = PyObject_Compare (Get(), obj);
+        CObject result(PyObject_RichCompare(Get(), obj, Py_GT),
+                       eTakeOwnership);
         CError::Check();
-        return result > 0;
+        return PyObject_IsTrue(result);
     }
 
 protected:
@@ -449,6 +455,7 @@ inline CObject abs(const CObject& a)
     return CObject(tmp_obj, eTakeOwnership);
 }
 
+#if 0
 inline std::pair<CObject, CObject> coerce(const CObject& a, const CObject& b)
 {
     PyObject* p1;
@@ -460,6 +467,7 @@ inline std::pair<CObject, CObject> coerce(const CObject& a, const CObject& b)
     }
     return std::pair<CObject, CObject>(CObject(p1, eTakeOwnership), CObject(p2, eTakeOwnership));
 }
+#endif
 
 inline CObject operator+ (const CObject& a, const CObject& b)
 {
@@ -490,9 +498,9 @@ inline CObject operator* (const CObject& a, const CObject& b)
 
 inline CObject operator/ (const CObject& a, const CObject& b)
 {
-    PyObject* tmp_obj = PyNumber_Divide(a.Get(), b.Get());
+    PyObject* tmp_obj = PyNumber_TrueDivide(a.Get(), b.Get());
     if ( !tmp_obj ) {
-        throw CArithmeticError("PyNumber_Divide");
+        throw CArithmeticError("PyNumber_TrueDivide");
     }
     return CObject(tmp_obj, eTakeOwnership);
 }

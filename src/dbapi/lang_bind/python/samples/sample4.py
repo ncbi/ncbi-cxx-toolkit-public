@@ -73,7 +73,7 @@ def GetCustomers():
         cu.execute("select * from customers")
 
         # Fetch all records using 'fetchall()'
-        print cu.fetchall()
+        print(cu.fetchall())
 
 def DeleteCustomers():
         # Allocate a cursor

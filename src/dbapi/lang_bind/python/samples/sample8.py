@@ -65,7 +65,7 @@ sql = "insert into #sale_stat(year, month, stat) values (@year, @month, @stat)"
 
 # Check that the temporary table was successfully created and we can get data from it
 cursor.execute("select * from #sale_stat")
-print "Empty table contains", len( cursor.fetchall() ), "records"
+print("Empty table contains %d records" % len(cursor.fetchall()))
 
 # Start transaction
 cursor.execute('BEGIN TRANSACTION')
@@ -75,7 +75,7 @@ cursor.executemany(sql, [{'@year':year, '@month':month, '@stat':stat} for stat i
 
 # Check how many records we have inserted
 cursor.execute("select * from #sale_stat")
-print "We have inserted", len( cursor.fetchall() ), "records"
+print("We have inserted %d records" % len(cursor.fetchall()))
 
 # "Standard interface" rollback
 conn.rollback();
@@ -83,7 +83,8 @@ conn.rollback();
 # Check how many records left after "standard" ROLLBACK
 # "Standard interface" rollback command is not supposed to affect current transaction.
 cursor.execute("select * from #sale_stat")
-print "After a 'standard' rollback command the table contains", len( cursor.fetchall() ), "records"
+print("After a 'standard' rollback command the table contains %d records"
+      % len(cursor.fetchall()))
 
 # Rollback transaction
 cursor.execute('ROLLBACK TRANSACTION')
@@ -92,18 +93,20 @@ cursor.execute('BEGIN TRANSACTION')
 
 # Check how many records left after ROLLBACK
 cursor.execute("select * from #sale_stat")
-print "After a 'manual' rollback command the table contains", len( cursor.fetchall() ), "records"
+print("After a 'manual' rollback command the table contains %d records"
+      % len(cursor.fetchall()))
 
 # Insert records again
 cursor.executemany(sql, [{'@year':year, '@month':month, '@stat':stat} for stat in range(1, 3) for year in range(2004, 2006) for month in month_list])
 
 # Check how many records we have inserted
 cursor.execute("select * from #sale_stat")
-print "We have inserted", len( cursor.fetchall() ), "records"
+print("We have inserted %d records" % len(cursor.fetchall()))
 
 # Commit transaction
 cursor.execute('COMMIT TRANSACTION')
 
 # Check how many records left after COMMIT
 cursor.execute("select * from #sale_stat")
-print "After a 'manual' commit command the table contains", len( cursor.fetchall() ), "records"
+print("After a 'manual' commit command the table contains %d records"
+      % len(cursor.fetchall()))

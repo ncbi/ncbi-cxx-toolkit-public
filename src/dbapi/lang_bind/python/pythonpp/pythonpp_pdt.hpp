@@ -124,6 +124,7 @@ public:
     }
 };
 
+#if PY_MAJOR_VERSION < 3
 // PyInt_Type
 class CInt : public CObject
 {
@@ -211,6 +212,7 @@ public:
         return PyInt_CheckExact (obj);
     }
 };
+#endif
 
 // PyLong_Type
 class CLong : public CObject
@@ -251,10 +253,21 @@ public:
     : CObject(obj)
     {
     }
+#if PY_MAJOR_VERSION < 3
     CLong(CInt value)
     : CObject(PyLong_FromLong(static_cast<long>(value)), eTakeOwnership)
     {
     }
+#else
+    CLong(int value)
+    : CObject(PyLong_FromLong(value), eTakeOwnership)
+    {
+    }
+    CLong(unsigned int value)
+    : CObject(PyLong_FromUnsignedLong(value), eTakeOwnership)
+    {
+    }
+#endif
     CLong(long value = 0L)
     : CObject(PyLong_FromLong(value), eTakeOwnership)
     {
@@ -300,11 +313,24 @@ public:
         }
         return *this;
     }
+#if PY_MAJOR_VERSION < 3
     CLong& operator= (CInt value)
     {
         Set(PyLong_FromLong(long(value)), eTakeOwnership);
         return *this;
     }
+#else
+    CLong& operator= (int value)
+    {
+        Set(PyLong_FromLong(value),  eTakeOwnership);
+        return *this;
+    }
+    CLong& operator= (unsigned int value)
+    {
+        Set(PyLong_FromUnsignedLong(value),  eTakeOwnership);
+        return *this;
+    }
+#endif
     CLong& operator= (long value)
     {
         Set(PyLong_FromLong(value),  eTakeOwnership);
@@ -333,6 +359,16 @@ public:
 
 public:
     // Type conversion operators ...
+#if PY_MAJOR_VERSION >= 3
+    operator int() const
+    {
+        return _PyLong_AsInt(Get());
+    }
+    operator unsigned int() const
+    {
+        return PyLong_AsUnsignedLong(Get());
+    }
+#endif
     operator long() const
     {
         return PyLong_AsLong(Get());
@@ -364,6 +400,10 @@ public:
         return PyLong_CheckExact (obj);
     }
 };
+
+#if PY_MAJOR_VERSION >= 3
+typedef CLong CInt;
+#endif    
 
 // PyFloat_Type
 class CFloat : public CObject
@@ -660,7 +700,11 @@ class CString : public CObject
 
 public:
     CString(void)
+#if PY_MAJOR_VERSION >= 3
+    : CObject(PyUnicode_FromStringAndSize("", 0), eTakeOwnership)
+#else
     : CObject(PyString_FromStringAndSize("", 0), eTakeOwnership)
+#endif
     {
     }
     CString(PyObject* obj, EOwnership ownership = eAcquireOwnership)
@@ -718,13 +762,17 @@ public:
     }
     CString& operator= (const string& str)
     {
+#if PY_MAJOR_VERSION < 3
         if (g_PythonStrDefToUnicode) {
+#endif
             basic_string<Py_UNICODE> str_uni(CUtf8::AsBasicString<Py_UNICODE>(str));
             Set(PyUnicode_FromUnicode(str_uni.data(), str_uni.size()), eTakeOwnership);
+#if PY_MAJOR_VERSION < 3
         }
         else {
             Set(PyString_FromStringAndSize(str.data(), str.size()), eTakeOwnership);
         }
+#endif
         return *this;
     }
     CString& operator= (const char* str)
@@ -738,7 +786,11 @@ public:
         if ( PyUnicode_Check(Get()) ) {
             return static_cast<size_t>( PyUnicode_GET_SIZE( Get() ) );
         } else {
+#if PY_MAJOR_VERSION >= 3
+            return static_cast<size_t>( PyBytes_Size ( Get() ) );
+#else
             return static_cast<size_t>( PyString_Size ( Get() ) );
+#endif
         }
     }
     operator string (void) const
@@ -753,21 +805,35 @@ public:
                                PyUnicode_AS_UNICODE( Get() ),
                                static_cast<size_t>( PyUnicode_GET_SIZE( Get() ) ) );
         } else {
+#if PY_MAJOR_VERSION >= 3
+            return string(PyBytes_AsString(Get()),
+                          static_cast<size_t>(PyBytes_Size(Get())));
+#else
             return string( PyString_AsString( Get() ), static_cast<size_t>( PyString_Size( Get() ) ) );
+#endif
         }
     }
 
 public:
     static bool HasExactSameType(PyObject* obj)
     {
+#if PY_MAJOR_VERSION >= 3
+        return PyUnicode_CheckExact(obj)  ||  PyBytes_CheckExact(obj);
+#else
         return PyString_CheckExact(obj)  ||  PyUnicode_CheckExact(obj);
+#endif
     }
     static bool HasSameType(PyObject* obj)
     {
+#if PY_MAJOR_VERSION >= 3
+        return PyUnicode_Check(obj)  ||  PyBytes_Check(obj);
+#else
         return PyString_Check(obj)  ||  PyUnicode_Check(obj);
+#endif        
     }
 };
 
+#if 0
 // PyFile_Type
 class CFile : public CObject
 {
@@ -799,6 +865,7 @@ public:
         return PyFile_Check(obj);
     }
 };
+#endif
 
 ///////////////////////////////////////////////////////////////////////////
 inline CObject operator+ (const CObject& a, int j)
@@ -899,33 +966,33 @@ inline CObject operator* (double v, const CObject& b)
 }
 inline CObject operator/ (const CObject& a, int j)
 {
-    PyObject* tmp_obj = PyNumber_Divide(a.Get(), CInt(j).Get());
+    PyObject* tmp_obj = PyNumber_TrueDivide(a.Get(), CInt(j).Get());
     if ( !tmp_obj ) {
-        throw CArithmeticError("PyNumber_Divide");
+        throw CArithmeticError("PyNumber_TrueDivide");
     }
     return CObject(tmp_obj, eTakeOwnership);
 }
 inline CObject operator/ (const CObject& a, double v)
 {
-    PyObject* tmp_obj = PyNumber_Divide(a.Get(), CFloat(v).Get());
+    PyObject* tmp_obj = PyNumber_TrueDivide(a.Get(), CFloat(v).Get());
     if ( !tmp_obj ) {
-        throw CArithmeticError("PyNumber_Divide");
+        throw CArithmeticError("PyNumber_TrueDivide");
     }
     return CObject(tmp_obj, eTakeOwnership);
 }
 inline CObject operator/ (CInt j, const CObject& b)
 {
-    PyObject* tmp_obj = PyNumber_Divide(CInt(j).Get(), b.Get());
+    PyObject* tmp_obj = PyNumber_TrueDivide(CInt(j).Get(), b.Get());
     if ( !tmp_obj ) {
-        throw CArithmeticError("PyNumber_Divide");
+        throw CArithmeticError("PyNumber_TrueDivide");
     }
     return CObject(tmp_obj, eTakeOwnership);
 }
 inline CObject operator/ (double v, const CObject& b)
 {
-    PyObject* tmp_obj = PyNumber_Divide(CFloat(v).Get(), b.Get());
+    PyObject* tmp_obj = PyNumber_TrueDivide(CFloat(v).Get(), b.Get());
     if ( !tmp_obj ) {
-        throw CArithmeticError("PyNumber_Divide");
+        throw CArithmeticError("PyNumber_TrueDivide");
     }
     return CObject(tmp_obj, eTakeOwnership);
 }

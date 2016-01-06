@@ -55,4 +55,4 @@ cursor.execute('select qq = 57 + 33')
 # 5) Get a result
 result = cursor.fetchone()
 
-print result
+print(result)

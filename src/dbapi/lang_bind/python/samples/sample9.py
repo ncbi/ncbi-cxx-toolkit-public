@@ -31,14 +31,14 @@
 #
 # ===========================================================================
 
-import os, sys, string, python_ncbi_dbapi
+import os, sys, python_ncbi_dbapi
 
 if os.environ['SYBASE'] == None :
         os.environ['SYBASE'] = "/netopt/Sybase/clients/current/"
 
-pswd_file = file( './.dblogin', 'r' )
-db_params_line = string.strip( pswd_file.readline() )
-db_params = string.split( db_params_line, ':' )
+pswd_file = open( './.dblogin', 'r' )
+db_params_line = pswd_file.readline().strip()
+db_params = db_params_line.split(':')
 db_name = db_params[0]
 
 conn = python_ncbi_dbapi.connect( 'ftds', 'MSSQL', db_name, db_params[1], db_params[2], db_params[3] )
@@ -46,7 +46,7 @@ conn = python_ncbi_dbapi.connect( 'ftds', 'MSSQL', db_name, db_params[1], db_par
 cursor = conn.cursor()
 
 if len( sys.argv ) < 2 :
-        print "Please, provide Taxid"
+        print("Please, provide Taxid")
         sys.exit( 1 )
 
 taxid = sys.argv[1]
@@ -56,9 +56,10 @@ sql = "select * from Taxonomy where taxid = " + taxid
 cursor.execute( sql )
 
 for record in cursor.fetchall() :
-        print record
+        print(record)
 
-print "SQL:", sql, "total_row:", cursor.rowcount
+print("SQL: %s\ntotal_row: %d" % (sql, cursor.rowcount))
 
 if cursor.rowcount == 0 :
-        print "No data existed in database ", db_name, ". Taxonomy table with taxid =", taxid
+        print("No data existed in database %s.Taxonomy table with taxid = %s"
+              % (db_name, taxid))

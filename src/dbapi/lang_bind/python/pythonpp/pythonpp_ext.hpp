@@ -43,6 +43,19 @@ BEGIN_NCBI_SCOPE
 namespace pythonpp
 {
 
+#if PY_MAJOR_VERSION >= 3
+inline
+PyObject* Py_FindMethod(PyMethodDef table[], PyObject *ob, char *name)
+{
+    for (size_t i = 0;  table[i].ml_name != NULL;  ++i) {
+        if (strcmp(table[i].ml_name, name) == 0) {
+            return PyCFunction_New(table + i, ob);
+        }
+    }
+    return NULL;
+}
+#endif
+    
 extern "C"
 {
     typedef PyObject* (*TMethodVarArgsHandler)( PyObject* self, PyObject* args );
@@ -113,7 +126,11 @@ public:
     {
         BasicInit();
 
+#ifdef Py_TYPE
+        Py_TYPE(this) = &PyType_Type;
+#else
         ob_type = &PyType_Type;
+#endif
         tp_basicsize = basic_size;
         tp_dealloc = dr;
         // Py_TPFLAGS_BASETYPE - means that the type is subtypable ...
@@ -161,10 +178,15 @@ private:
         _ob_next = NULL;
         _ob_prev = NULL;
 #endif
+#ifdef Py_TYPE
+        Py_REFCNT(this) = 1;
+        Py_TYPE(this) = NULL;
+        Py_SIZE(this) = 0;
+#else
         ob_refcnt = 1;
         ob_type = NULL;
-
         ob_size = 0;
+#endif
 
         tp_name = NULL;
 
@@ -178,7 +200,9 @@ private:
         tp_getattr = NULL;              // This field is deprecated.
         tp_setattr = NULL;              // This field is deprecated.
 
+#if PY_MAJOR_VERSION < 3
         tp_compare = NULL;
+#endif
         tp_repr = NULL;
 
         // Method suites for standard classes
@@ -349,13 +373,23 @@ public:
 public:
     virtual PyObject* Get(void) const
     {
+#if PY_MAJOR_VERSION >= 3
+        return PyUnicode_FromStringAndSize(m_Value->data(), m_Value->size());
+#else
         return PyString_FromStringAndSize( m_Value->data(), m_Value->size() );
+#endif
     }
 
 protected:
     virtual void SetInternal( PyObject* value ) const
     {
+#if PY_MAJOR_VERSION >= 3
+        string tmp_value
+            = CUtf8::AsUTF8(PyUnicode_AsUnicode(Get()),
+                            static_cast<size_t>(PyUnicode_GetSize(Get())));
+#else
         string tmp_value = string( PyString_AsString( value ), static_cast<size_t>( PyString_Size( value ) ) );
+#endif
         CError::Check();
         *m_Value = tmp_value;
     }
@@ -818,18 +852,41 @@ public:
 private:
     static string m_Name;
     static PyObject* m_Module;
+#if PY_MAJOR_VERSION >= 3
+    static struct PyModuleDef m_ModuleDef;
+#endif
 };
 
 string CModuleExt::m_Name;
 PyObject* CModuleExt::m_Module = NULL;
+
+#if PY_MAJOR_VERSION >= 3
+struct PyModuleDef CModuleExt::m_ModuleDef = {
+    PyModuleDef_HEAD_INIT,
+    "",   // m_name
+    "",   // m_doc
+    -1,   // m_size
+    NULL, // m_methods
+    NULL, // m_reload
+    NULL, // m_traverse
+    NULL, // m_clear
+    NULL  // m_free
+};
+#endif
 
 void
 CModuleExt::Declare(const string& name, PyMethodDef* methods)
 {
     _ASSERT( m_Module == NULL );
 
+#if PY_MAJOR_VERSION >= 3
+    m_ModuleDef.m_name = strdup(name.c_str());
+    m_ModuleDef.m_methods = methods;
+    m_Module = PyModule_Create(&m_ModuleDef);
+#else
     m_Name = name;
     m_Module = Py_InitModule( const_cast<char*>( name.c_str() ), methods );
+#endif
     CError::Check(m_Module);
 }
 
@@ -845,8 +902,13 @@ CModuleExt::AddConstValue( const string& name, PyObject* value )
 void
 CModuleExt::AddConst( const string& name, const string& value )
 {
+#if PY_MAJOR_VERSION >= 3
+    PyObject* py_value
+        = PyUnicode_FromStringAndSize(value.data(), value.size());
+#else
     PyObject* py_value
         = PyString_FromStringAndSize( value.data(), value.size() );
+#endif
     CError::Check( py_value );
     AddConstValue( name, py_value );
 }

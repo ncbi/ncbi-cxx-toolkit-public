@@ -75,7 +75,7 @@ def GetSaleStat():
         cu.execute("select * from sale_stat")
 
         # Fetch all records using 'fetchall()'
-        print cu.fetchall()
+        print(cu.fetchall())
 
 def CreateSaleStat():
         month_list = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']

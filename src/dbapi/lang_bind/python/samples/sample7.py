@@ -55,31 +55,31 @@ cursor.execute('select name, type from sysobjects')
 # 5) Fetch one records from a resultset using different functions
 
 # 5.1) Fetch one record using 'fetchone()'
-print "Fetch one record using 'fetchone()'"
-print cursor.fetchone()
-# Print the number of processed rows
-print cursor.rowcount
+print("Fetch one record using 'fetchone()'")
+print(cursor.fetchone())
+# print(the number of processed rows)
+print(cursor.rowcount)
 
 # 5.2) Fetch one record using 'fetchmany(1)'
-print "Fetch one record using 'fetchmany(1)'"
-print cursor.fetchmany(1)
-# Print the number of processed rows
-print cursor.rowcount
+print("Fetch one record using 'fetchmany(1)'")
+print(cursor.fetchmany(1))
+# print(the number of processed rows)
+print(cursor.rowcount)
 
 # 5.3) Fetch two records using 'fetchmany(2)'
-print "Fetch two records using 'fetchmany(2)'"
-print cursor.fetchmany(2)
-# Print the number of processed rows
-print cursor.rowcount
+print("Fetch two records using 'fetchmany(2)'")
+print(cursor.fetchmany(2))
+# print(the number of processed rows)
+print(cursor.rowcount)
 
 # 5.3) Fetch three records using 'fetchmany(3)'
-print "Fetch three records using 'fetchmany(3)'"
-print cursor.fetchmany(3)
-# Print the number of processed rows
-print cursor.rowcount
+print("Fetch three records using 'fetchmany(3)'")
+print(cursor.fetchmany(3))
+# print(the number of processed rows)
+print(cursor.rowcount)
 
 # 5.4) Fetch all records using 'fetchall()'
-print "Fetch all records using 'fetchall()'"
-print cursor.fetchall()
-# Print the number of processed rows
-print cursor.rowcount
+print("Fetch all records using 'fetchall()'")
+print(cursor.fetchall())
+# print(the number of processed rows)
+print(cursor.rowcount)

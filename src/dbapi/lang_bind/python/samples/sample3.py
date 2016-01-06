@@ -54,5 +54,5 @@ cursor = conn.cursor()
 cursor.execute('select name, type from sysobjects where type = @type_par', {'@type_par':'S'})
 
 # 5) Fetch all records using 'fetchall()'
-print "Fetch all records using 'fetchall()'"
-print cursor.fetchall()
+print("Fetch all records using 'fetchall()'")
+print(cursor.fetchall())

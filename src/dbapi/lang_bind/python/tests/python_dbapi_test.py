@@ -115,7 +115,10 @@ check(isinstance(month, str), "Value of str should be regular string")
 return_strs_as_unicode(True)
 cursor.execute("select month from #sale_stat")
 month = cursor.fetchone()[0]
-check(isinstance(month, unicode), "Value of str should be unicode string")
+try:
+    check(isinstance(month, unicode), "Value of str should be unicode string")
+except NameError:
+    check(isinstance(month, str), "Value of str should be regular string")
 return_strs_as_unicode(False)
 cursor.execute("select month from #sale_stat")
 month = cursor.fetchone()[0]
@@ -228,4 +231,4 @@ if dt.year != 2010 or dt.month != 1 or dt.day != 1 or dt.hour != 12 or dt.minute
     raise Exception('Invalid datetime returned.')
 
 
-print 'All tests completed successfully'
+print('All tests completed successfully')
