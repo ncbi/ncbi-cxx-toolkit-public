@@ -872,7 +872,9 @@ void CIgBlast::x_FillJDomain(CRef<CSeq_align> & align, CRef <CIgAnnotation> & an
         } 
            
         //deduct one back to in CDR3
-        annot->m_JDomain[1] --;
+        if (subject_end > j_cdr3end) {
+            annot->m_JDomain[1] --;
+        }
     }
 }
 

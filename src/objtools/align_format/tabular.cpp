@@ -1541,6 +1541,18 @@ void CIgBlastTabularInfo::SetIgAnnotation(const CRef<blast::CIgAnnotation> &anno
                 annot->m_DomainInfo_S[8], annot->m_DomainInfo_S[9]+1);
     AddIgDomain((ig_opts->m_DomainSystem == "kabat")?"CDR3 (V gene only)":"CDR3-IMGT (germline)",
                 annot->m_DomainInfo[10], annot->m_DomainInfo[11]+1);
+    m_Cdr3Start = annot->m_JDomain[0];
+    m_Cdr3End = annot->m_JDomain[1];
+    
+    m_Cdr3Seq = NcbiEmptyString;
+    m_Cdr3SeqTrans = NcbiEmptyString;
+   
+    if (m_Cdr3Start > 0 && m_Cdr3End > m_Cdr3Start) {
+        m_Cdr3Seq = m_Query.substr(m_Cdr3Start, m_Cdr3End - m_Cdr3Start + 1);
+        CSeqTranslator::Translate(m_Cdr3Seq, 
+                                  m_Cdr3SeqTrans, 
+                                  CSeqTranslator::fIs5PrimePartial, NULL, NULL);
+    }
 };
 
 void CIgBlastTabularInfo::Print(void)
@@ -1705,6 +1717,10 @@ void CIgBlastTabularInfo::x_ResetIgFields()
     m_DGene.Reset();
     m_JGene.Reset();
     m_OtherInfo.clear();
+    m_Cdr3Start = -1;
+    m_Cdr3End =  -1;
+    m_Cdr3Seq = NcbiEmptyString;
+    m_Cdr3SeqTrans = NcbiEmptyString;
 };
 
 void CIgBlastTabularInfo::x_PrintPartialQuery(int start, int end, bool isHtml) const
@@ -1816,6 +1832,33 @@ void CIgBlastTabularInfo::x_PrintIgGenes(bool isHtml, const string& header) cons
                   << " but are not included under the V, D or J gene itself.\n";
     }
     m_Ostream << endl << endl;
+
+    //cdr3 sequence output
+    if (m_Cdr3Seq != NcbiEmptyString){
+        if (isHtml) {
+            m_Ostream << "Sub-region sequence details:\n";
+            m_Ostream << "<table border=1>\n";
+            m_Ostream << "<tr><td> </td><td>Nucleotide sequence</td>";
+            m_Ostream << "<td>Translation</td>";
+        } else {
+            m_Ostream << header << "Sub-region sequence details (nucleotide sequence, translation)" << endl;
+        }
+        if (isHtml) {
+            m_Ostream << "<tr><td>CDR3</td><td>";
+        } else {
+            m_Ostream << "CDR3" << m_FieldDelimiter;
+        }
+        m_Ostream << m_Cdr3Seq << m_FieldDelimiter;
+        if (isHtml) {
+            m_Ostream << "</td><td>";
+        }
+        m_Ostream << m_Cdr3SeqTrans;
+        if (isHtml) {
+            m_Ostream << "</td></tr>\n</table>";
+        }
+        m_Ostream << endl << endl;
+    }
+   
 };
 
 void CIgBlastTabularInfo::x_ComputeIgDomain(SIgDomain &domain)

@@ -645,6 +645,10 @@ private:
     SIgGene m_JGene;
     vector<SIgDomain *> m_IgDomains;                                        
     vector<string> m_OtherInfo;
+    int m_Cdr3Start;
+    int m_Cdr3End;
+    string m_Cdr3Seq;
+    string m_Cdr3SeqTrans;
 };
 
 END_SCOPE(align_format)
