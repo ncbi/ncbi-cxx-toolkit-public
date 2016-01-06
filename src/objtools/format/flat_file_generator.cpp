@@ -55,6 +55,7 @@
 #include <objtools/format/context.hpp>
 #include <objtools/format/flat_expt.hpp>
 
+#include <objects/misc/sequence_macros.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -165,6 +166,94 @@ void CFlatFileGenerator::Generate
     /// archive a copy of the annot selector before we generate!
     SAnnotSelector sel = m_Ctx->SetAnnotSelector();
     m_Ctx->SetEntry(entry);
+
+
+    bool onlyNearFeats = false;
+    bool nearFeatsSuppress = false;
+
+    bool isNc = false;
+    bool isNgNtNwNz = false;
+    bool isGED = false;
+    bool isTPA = false;
+
+    bool hasLocalFeat = false;
+
+    for (CBioseq_CI bi(entry); bi; ++bi) {
+        FOR_EACH_SEQID_ON_BIOSEQ (it, *(bi->GetCompleteBioseq())) {
+            const CSeq_id& sid = **it;
+            switch (sid.Which()) {
+                case CSeq_id::e_Genbank:
+                case CSeq_id::e_Embl:
+                case CSeq_id::e_Ddbj:
+                    isGED = true;
+                    break;
+                case CSeq_id::e_Tpg:
+                case CSeq_id::e_Tpe:
+                case CSeq_id::e_Tpd:
+                    isTPA = true;
+                    break;
+                case CSeq_id::e_Other:
+                    {
+                         const CTextseq_id* tsid = sid.GetTextseq_Id ();
+                        if (tsid != NULL && tsid->IsSetAccession()) {
+                            const string& acc = tsid->GetAccession().substr(0, 3);
+                            if (acc == "NC_") {
+                                isNc = true;
+                            } else if (acc == "NG_" || acc == "NT_" || acc == "NW_" || acc == "NZ_") {
+                                isNgNtNwNz = true;
+                            }
+                        }
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        FOR_EACH_SEQANNOT_ON_BIOSEQ (annot_it, *(bi->GetCompleteBioseq())) {
+            FOR_EACH_SEQFEAT_ON_SEQANNOT (feat_it, **annot_it) {
+                const CSeq_feat& sft = **feat_it;
+                const CSeqFeatData& data = sft.GetData();
+                CSeqFeatData::ESubtype subtype = data.GetSubtype();
+                if (isNc) {
+                    switch (subtype) {
+                        case CSeqFeatData::eSubtype_centromere:
+                        case CSeqFeatData::eSubtype_telomere:
+                        case CSeqFeatData::eSubtype_rep_origin:
+                            break;
+                        default:
+                            hasLocalFeat = true;
+                            break;
+                    }
+                } else {
+                    hasLocalFeat = true;
+                }
+            }
+        }
+    }
+
+    if (isNc) {
+        nearFeatsSuppress = true;
+    } else if (isNgNtNwNz) {
+        onlyNearFeats = true;
+    } else if (isTPA) {
+        onlyNearFeats = true;
+    } else if (isGED) {
+        nearFeatsSuppress = true;
+    }
+
+    if (onlyNearFeats) {
+        m_Ctx->SetAnnotSelector().SetResolveDepth(0);
+    } else if (nearFeatsSuppress) {
+        if (hasLocalFeat) {
+            m_Ctx->SetAnnotSelector().SetResolveDepth(0);
+        } else {
+            m_Ctx->SetAnnotSelector().SetResolveDepth(1);
+        }
+    } else {
+        m_Ctx->SetAnnotSelector().SetResolveDepth(1);
+    }
+
 
     CFlatFileConfig::TFormat format = m_Ctx->GetConfig().GetFormat();
     CRef<CFlatItemFormatter> formatter(CFlatItemFormatter::New(format));
