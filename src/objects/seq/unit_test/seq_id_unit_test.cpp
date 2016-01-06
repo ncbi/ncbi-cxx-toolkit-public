@@ -66,6 +66,7 @@ NCBITEST_AUTO_INIT()
     g_IgnoreDataFile("accguide.txt");
 }
 
+#ifdef NCBI_THREADS
 class CMTTestThread : public CThread
 {
 public:
@@ -142,6 +143,7 @@ BOOST_AUTO_TEST_CASE(s_MTTest)
         (*it)->Join();
     }
 }
+#endif
 
 
 BOOST_AUTO_TEST_CASE(s_TestDefaultInit)
