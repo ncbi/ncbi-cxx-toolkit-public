@@ -33,7 +33,6 @@
 
 #include "ncbi_ansi_ext.h"
 #include <connect/ncbi_http_connector.h>
-#include <corelib/ncbi_limits.h>
 #include "ncbi_lbosp.h"
 #include "ncbi_priv.h"
 #include <stdlib.h> /* free, realloc, calloc, malloc */
@@ -1979,7 +1978,6 @@ static EHTTP_HeaderParse s_LBOS_ParseHeader(const char*      header,
     content_length_pos = strstr(temp_header, "content-length: ");
     if (
             content_length_pos != NULL
-
             &&
             (
                 (*(content_length_pos - 1) == '\n')
@@ -1995,7 +1993,7 @@ static EHTTP_HeaderParse s_LBOS_ParseHeader(const char*      header,
     /* If we could not read "content-length", we do not have any
      * estimation of the upper bound  */
     else {
-        content_length = kMax_UInt;
+        content_length = (unsigned int)(-1);
     }
     free(temp_header);
     /* check for empty document */
