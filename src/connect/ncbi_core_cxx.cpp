@@ -297,6 +297,20 @@ static char* s_GetRequestID(ENcbiRequestID reqid)
 
 
 /***********************************************************************
+ *                          NCBI Request DTab                          *
+ ***********************************************************************/
+extern "C" {
+static const char* s_GetRequestDTab(void)
+{
+    if (!CDiagContext::GetRequestContext().IsSetDtab()) {
+        CDiagContext::GetRequestContext().SetDtab("");
+    }
+    return CDiagContext::GetRequestContext().GetDtab().c_str();
+}
+}
+
+
+/***********************************************************************
  *                                 Init                                *
  ***********************************************************************/
 
@@ -334,6 +348,9 @@ static void s_Init(IRWRegistry*      reg  = 0,
     /* setup app name retrieval callback */
     g_CORE_GetAppName = s_GetAppName;
 
+    /* setup DTab-Local retrieval */
+    g_CORE_GetRequestDtab = s_GetRequestDTab;
+    
     /* done! */
     s_ConnectInit = how;
 }

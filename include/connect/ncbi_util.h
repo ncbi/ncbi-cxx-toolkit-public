@@ -367,7 +367,6 @@ extern NCBI_XCONNECT_EXPORT void CORE_SetREG(REG rg);
 extern NCBI_XCONNECT_EXPORT REG  CORE_GetREG(void);
 
 
-
 /******************************************************************************
  *  Auxiliary API
  */
@@ -389,6 +388,11 @@ typedef enum {
     eNcbiRequestID_HitID,     /**< NCBI Hit     ID */
     eNcbiRequestID_SID        /**< NCBI Session ID */
 } ENcbiRequestID;
+
+
+/** NCBI request "DTab-Local" header  */
+extern NCBI_XCONNECT_EXPORT char* CORE_GetNcbiRequestDtab;
+
 
 /** Obtain current NCBI request ID (if known, per thread).
  * @return

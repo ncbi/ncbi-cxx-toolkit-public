@@ -331,6 +331,13 @@ typedef char* (*FNcbiGetRequestID)(ENcbiRequestID);
 extern NCBI_XCONNECT_EXPORT FNcbiGetRequestID g_CORE_GetRequestID;
 
 
+/******************************************************************************
+ *  DTab-Local support (may return NULL; gets converted to "" at the user level)
+ */
+typedef const char* (*FNcbiGetRequestDtab)(void);
+extern NCBI_XCONNECT_EXPORT FNcbiGetRequestDtab g_CORE_GetRequestDtab;
+
+
 #ifdef __GNUC__
 #  define likely(x)    __builtin_expect(!!(x),1)
 #  define unlikely(x)  __builtin_expect(!!(x),0)
