@@ -1112,6 +1112,35 @@ CRef<CPacked_seqint> ProjectAndCollapseCDS(
     return out;
 }
 
+void TransferPartialness(
+        const CSeq_loc& src,
+        CSeq_loc& dest)
+{
+    if(    !src.GetId() 
+        || !dest.GetId() 
+        || !src.GetId()->Equals(*dest.GetId())
+        || src.GetStrand() != dest.GetStrand() )
+    {
+        return;
+    }
+    
+    const objects::ESeqLocExtremes ext = eExtreme_Biological;
+    const bool same_start = src.GetStart(ext) == dest.GetStart(ext);
+    const bool same_stop  = src.GetStop(ext)  == dest.GetStop(ext); 
+
+    if(same_start && src.IsPartialStart(ext))   
+                   dest.SetPartialStart(true, ext); 
+
+    if(same_start && src.IsTruncatedStart(ext)) 
+                   dest.SetTruncatedStart(true, ext); 
+
+    if(same_stop && src.IsPartialStop(ext))    
+                   dest.SetPartialStop(true, ext); 
+
+    if(same_stop && src.IsTruncatedStop(ext))  
+                  dest.SetTruncatedStop(true, ext); 
+}
+
 
 CRef<CSeq_loc> TruncateToCDS(
     CRef<CSeq_loc> detailed_rna_exon, //mix-of-(int-or-packed-seqint)
@@ -1133,6 +1162,8 @@ CRef<CSeq_loc> TruncateToCDS(
         if(cds_exon->IsNull()) {
             continue;
         }
+
+        TransferPartialness(cds_subrange, *cds_exon);
 
         out_loc->SetMix().Set().push_back(cds_exon);
     }
