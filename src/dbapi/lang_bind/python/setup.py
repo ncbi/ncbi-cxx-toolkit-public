@@ -90,7 +90,7 @@ for x in libs + ['ncbi_xdbapi_*' + mfv('DLL'), '*_ftds??']:
 
 setup(
     name         = 'python_ncbi_dbapi',
-    version      = '1.16.0',
+    version      = '1.16.1',
     description  = 'NCBI DBAPI wrapper',
     author       = 'Aaron Ucko',
     author_email = 'ucko@ncbi.nlm.nih.gov',
