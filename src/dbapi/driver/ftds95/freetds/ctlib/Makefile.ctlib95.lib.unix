@@ -1,0 +1,10 @@
+# $Id$
+
+# Adjust ICC flags to avoid problematic references to
+# __intel_sse2_str* functions (as of ICC [20]13).
+
+ifeq "$(COMPILER)" "icc"
+  cs.o:     CFLAGS += -fno-builtin-strcat -fno-builtin-strcpy
+  ct.o:     CFLAGS += -fno-builtin-strcpy
+  ctutil.o: CFLAGS += -fno-builtin-strcpy
+endif

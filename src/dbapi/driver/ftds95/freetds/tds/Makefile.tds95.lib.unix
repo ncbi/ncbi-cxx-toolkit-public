@@ -1,11 +1,17 @@
 # $Id$
 
 # Adjust ICC flags to avoid problematic references to
-# __intel_sse2_str* functions (as of ICC [20]13).  In particular,
-# strend is troublesome here, despite having been fine in 0.64.
+# __intel_sse2_str* functions (as of ICC [20]13).
 
 ifeq "$(COMPILER)" "icc"
-  bulk.o login.o: CFLAGS += -fno-builtin-strchr
+  bulk.o:       CFLAGS += -fno-builtin-strcat -fno-builtin-strchr \
+                          -fno-builtin-strcpy
+  config.o:     CFLAGS += -fno-builtin-strcat -fno-builtin-strcpy
+  convert.o:    CFLAGS += -fno-builtin-strcpy
+  getmac.o:     CFLAGS += -fno-builtin-strcpy
+  login.o:      CFLAGS += -fno-builtin-strcat -fno-builtin-strchr
+  query.o:      CFLAGS += -fno-builtin-strcat
+  threadsafe.o: CFLAGS += -fno-builtin-strcat
 endif
 
 # Limit usage of KRB5_INCLUDE to avoid iconv header/library skew that
