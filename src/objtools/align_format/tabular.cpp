@@ -437,7 +437,7 @@ CRef<CSeq_id> s_ReplaceLocalId(const CBioseq_Handle& bh, CConstRef<CSeq_id> sid_
             string id_token;
             vector<string> title_tokens;
             title_tokens = 
-                NStr::Tokenize(sequence::CDeflineGenerator().GenerateDefline(bh), " ", title_tokens);
+                NStr::Tokenize(CAlignFormatUtil::GetTitle(bh), " ", title_tokens);
             if(title_tokens.empty()){
                 id_token = NcbiEmptyString;
             } else {

@@ -194,7 +194,7 @@ CShowBlastDefline::GetSeqIdList(const objects::CBioseq_Handle& bh,
 		(*itr)->AsFastaString().find("lcl|Subject_") != string::npos) {
             vector<string> title_tokens;
             id_token = 
-                NStr::Tokenize(sequence::CDeflineGenerator().GenerateDefline(bh), " ", title_tokens)[0];
+                NStr::Tokenize(CAlignFormatUtil::GetTitle(bh), " ", title_tokens)[0];
         }
         if (id_token != NcbiEmptyString) {
             // Create a new local id with a label containing the extracted

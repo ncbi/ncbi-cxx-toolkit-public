@@ -1227,6 +1227,8 @@ public:
     static int GetUniqSeqCoverage(objects::CSeq_align_set & alnset);
     static TGi GetGiForSeqIdList (const list<CRef<objects::CSeq_id> >& ids);
 
+    static string GetTitle(const objects::CBioseq_Handle & bh);
+
 protected:
 
     ///Wrap a string to specified length.  If break happens to be in

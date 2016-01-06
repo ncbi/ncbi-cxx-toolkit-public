@@ -61,7 +61,9 @@ static char const rcsid[] = "$Id$";
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seqdesc.hpp> 
+#include <objmgr/seqdesc_ci.hpp>
 #include <objects/blastdb/defline_extra.hpp>
+#include <objects/general/User_object.hpp>
 
 #include <objtools/blast/services/blast_services.hpp>   // for CBlastServices
 #include <objtools/blast/seqdb_reader/seqdb.hpp>   // for CSeqDB
@@ -3948,6 +3950,16 @@ TGi CAlignFormatUtil::GetGiForSeqIdList (const list<CRef<CSeq_id> >& ids)
         return id->GetGi();
     }
     return gi;
+}
+
+string CAlignFormatUtil::GetTitle(const CBioseq_Handle & bh)
+{
+	CSeqdesc_CI desc_t(bh, CSeqdesc::e_Title);
+	string t = kEmptyStr;
+	for (;desc_t; ++desc_t) {
+		t += desc_t->GetTitle() + " ";
+	}
+	return t;
 }
 
 END_SCOPE(align_format)
