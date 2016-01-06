@@ -35,7 +35,7 @@ try:
     ncbi = os.environ['NCBI']
 except KeyError:
     ncbi = '/netopt/ncbi_tools64'
-def_buildroot = ncbi + '/c++/ReleaseMT'
+def_buildroot = ncbi + '/c++/ReleaseDLLMT'
 buildroot = def_buildroot
 support_dir = 'python_ncbi_dbapi_support'
 
