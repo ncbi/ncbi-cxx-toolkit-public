@@ -1632,9 +1632,9 @@ void CFlatGatherer::x_CollectBioSourcesOnBioseq
     const CFlatFileConfig& cfg = ctx.Config();
 
     // collect biosources descriptors on bioseq
-    if ( !cfg.IsFormatFTable()  ||  cfg.IsModeDump() ) {
+    // if ( !cfg.IsFormatFTable()  ||  cfg.IsModeDump() ) {
         x_CollectSourceDescriptors(bh, ctx, srcs);
-    }
+    // }
 
     // collect biosources features on bioseq
     if ( !ctx.DoContigStyle()  ||  cfg.ShowContigSources() ) {
@@ -1677,7 +1677,7 @@ void CFlatGatherer::x_CollectBioSources(TSourceFeatSet& srcs) const
     }
 
     // if no source found create one (only if not FTable format or Dump mode)
-    if ( srcs.empty()  &&  ! cfg.IsFormatFTable()  &&  ! cfg.IsModeDump() ) {
+    if ( srcs.empty()  &&  /* ! cfg.IsFormatFTable()  && */  ! cfg.IsModeDump() ) {
         CRef<CBioSource> bsrc(new CBioSource);
         bsrc->SetOrg();
         CRef<CSourceFeatureItem> sf(new CSourceFeatureItem(*bsrc, CRange<TSeqPos>::GetWhole(), ctx, m_Feat_Tree));
