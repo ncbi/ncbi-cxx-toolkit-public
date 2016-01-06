@@ -268,16 +268,17 @@ AC_DEFUN(_NCBI_CHECK_PYTHON,
 [AC_PATH_PROG($1, python$2, [],
     [$PYTHON_PATH/bin:$PATH:/usr/local/python-$2/bin])
  if test -x "[$]$1"; then
-    $1_VERSION=`[$]$1 -c 'from distutils import sysconfig; print sysconfig.get_config_var("VERSION")' 2>/dev/null`
+    $1_VERSION=`[$]$1 -c 'from distutils import sysconfig; print(sysconfig.get_config_var("VERSION"))' 2>/dev/null`
  else
     $1_VERSION=
     [ncbi_cv_lib_]m4_tolower($1)=no
  fi
  if test -n "[$]$1_VERSION"; then
-    $1_INCLUDE=`[$]$1 -c 'from distutils import sysconfig; f=sysconfig.get_python_inc; print "-I%s -I%s" % (f(), f(True))'`
-    $1_LIBPATH=`[$]$1 -c 'from distutils import sysconfig; print " ".join(sysconfig.get_config_vars("LIBDIR", "LIBPL"))'`
-    $1_DEPS=`[$]$1 -c 'from distutils import sysconfig; print " ".join(sysconfig.get_config_vars("LIBS", "SYSLIBS"))'`
-    NCBI_RPATHIFY($1_LIBS, [$]$1_LIBPATH, [ ]-lpython[$]$1_VERSION [$]$1_DEPS)
+    $1_INCLUDE=`[$]$1 -c 'from distutils import sysconfig; f=sysconfig.get_python_inc; print("-I%s -I%s" % (f(), f(True)))'`
+    $1_LIBPATH=`[$]$1 -c 'from distutils import sysconfig; print(" ".join(sysconfig.get_config_vars("LIBDIR", "LIBPL")))'`
+    $1_DEPS=`[$]$1 -c 'from distutils import sysconfig; print(" ".join(sysconfig.get_config_vars("LIBS", "SYSLIBS")))'`
+    $1_LDVERSION=`[$]$1 -c 'from distutils import sysconfig; print(sysconfig.get_config_var("LDVERSION") or sysconfig.get_config_var("VERSION"))' 2>/dev/null`
+    NCBI_RPATHIFY($1_LIBS, [$]$1_LIBPATH, [ ]-lpython[$]$1_LDVERSION [$]$1_DEPS)
     CPPFLAGS="[$]$1_INCLUDE $orig_CPPFLAGS"
     LIBS="[$]$1_LIBS $orig_LIBS"
     AC_CACHE_CHECK([for usable Python [$]$1_VERSION libraries],
