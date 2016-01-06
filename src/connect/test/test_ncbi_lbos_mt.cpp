@@ -179,102 +179,55 @@ void CTestLBOSApp::SwapAddressesTest(int idx)
 }
 
 
-static void s_RelaxHealthcheck()
-{
-#ifdef NCBI_THREADS
-    while (s_HealthchecKThread->IsBusy()) continue;
-#endif
-}
+#define RUN_TEST(test)                                                         \
+    test;                                                                      \
+    TestApp_IntraGroupSyncPoint();                                             \
+    if (idx == 1) {                                                            \
+        s_ClearZooKeeper();                                                    \
+    } else {                                                                   \
+        SleepMilliSec(500);                                                    \
+    }                                                                          \
+    TestApp_IntraGroupSyncPoint();
+
 
 
 bool CTestLBOSApp::Thread_Run(int idx)
 {    
     //SwapAddressesTest(idx);
-    CloseIterator::FullCycle__ShouldWork();
-    Announcement::AlreadyAnnouncedInTheSameZone__ReplaceInStorage(idx);
-    TestApp_IntraGroupSyncPoint();
-    ComposeLBOSAddress::LBOSExists__ShouldReturnLbos();
-    s_RelaxHealthcheck();
-    TestApp_IntraGroupSyncPoint();
-    ResetIterator::NoConditions__IterContainsZeroCandidates();
-    s_RelaxHealthcheck();
-    TestApp_IntraGroupSyncPoint();
-    ResetIterator::MultipleReset__ShouldNotCrash();
-    s_RelaxHealthcheck();
-    TestApp_IntraGroupSyncPoint();
-    ResetIterator::Multiple_AfterGetNextInfo__ShouldNotCrash();
-    s_RelaxHealthcheck();
-    TestApp_IntraGroupSyncPoint();
-    CloseIterator::AfterOpen__ShouldWork();
-    s_RelaxHealthcheck();
-    TestApp_IntraGroupSyncPoint();
-    CloseIterator::AfterReset__ShouldWork();
-    s_RelaxHealthcheck();
-    TestApp_IntraGroupSyncPoint();
-    CloseIterator::AfterGetNextInfo__ShouldWork();
-    s_RelaxHealthcheck();
-    TestApp_IntraGroupSyncPoint();
-    TestApp_IntraGroupSyncPoint();
-    ResolveViaLBOS::ServiceExists__ReturnHostIP();
-    s_RelaxHealthcheck();
-    TestApp_IntraGroupSyncPoint();
-    ResolveViaLBOS::ServiceDoesNotExist__ReturnNULL();
-    s_RelaxHealthcheck();
-    TestApp_IntraGroupSyncPoint();
-    ResolveViaLBOS::NoLBOS__ReturnNULL();
-    s_RelaxHealthcheck();
-    TestApp_IntraGroupSyncPoint();
-    GetLBOSAddress::CustomHostNotProvided__SkipCustomHost();
-    s_RelaxHealthcheck();
-    TestApp_IntraGroupSyncPoint();
-    GetNextInfo::IterIsNull__ReturnNull();
-    s_RelaxHealthcheck();
-    TestApp_IntraGroupSyncPoint();
-    GetNextInfo::WrongMapper__ReturnNull();
-    s_RelaxHealthcheck();
-    TestApp_IntraGroupSyncPoint();
-    Announcement::AllOK__ReturnSuccess(idx);
-    s_RelaxHealthcheck();
-    TestApp_IntraGroupSyncPoint();
-    Announcement::AllOK__LBOSAnswerProvided(idx);
-    s_RelaxHealthcheck();
-    TestApp_IntraGroupSyncPoint();
-    Announcement::AllOK__AnnouncedServerSaved(idx);
-    s_RelaxHealthcheck();
-    TestApp_IntraGroupSyncPoint();
-    Announcement::IncorrectURL__ReturnInvalidArgs(idx);
-    s_RelaxHealthcheck();
-    TestApp_IntraGroupSyncPoint();
-    Announcement::IncorrectPort__ReturnInvalidArgs(idx);
-    s_RelaxHealthcheck();
-    TestApp_IntraGroupSyncPoint();
-    Announcement::IncorrectVersion__ReturnInvalidArgs(idx);
-    s_RelaxHealthcheck();
-    TestApp_IntraGroupSyncPoint();
-    Announcement::IncorrectServiceName__ReturnInvalidArgs(idx);
-    s_RelaxHealthcheck();
-    TestApp_IntraGroupSyncPoint();
-    Announcement::RealLife__VisibleAfterAnnounce(idx);
-    s_RelaxHealthcheck();
-    TestApp_IntraGroupSyncPoint();
-    Deannouncement::Deannounced__Return1(0, idx);
-    s_RelaxHealthcheck();
-    TestApp_IntraGroupSyncPoint();
-    Deannouncement::Deannounced__AnnouncedServerRemoved(idx);
-    s_RelaxHealthcheck();
-    TestApp_IntraGroupSyncPoint();
-    Deannouncement::LBOSExistsDeannounce400__Return400(idx);
-    s_RelaxHealthcheck();
-    TestApp_IntraGroupSyncPoint();
-    Deannouncement::RealLife__InvisibleAfterDeannounce(idx);
-    s_RelaxHealthcheck();
-    TestApp_IntraGroupSyncPoint();
-    Stability::GetNext_Reset__ShouldNotCrash();
-    s_RelaxHealthcheck();
-    TestApp_IntraGroupSyncPoint();
-    Stability::FullCycle__ShouldNotCrash();
-    s_RelaxHealthcheck();
-    TestApp_IntraGroupSyncPoint();
+    if (idx < 10) { /* because too much nodes are created (3 per thread) and
+                       this test application cannot handle healthchecks */
+        RUN_TEST(CloseIterator::FullCycle__ShouldWork());
+    } else {
+        RUN_TEST(SleepMilliSec(10000));
+    }
+    RUN_TEST(Announcement::AlreadyAnnouncedInTheSameZone__ReplaceInStorage(idx));
+    RUN_TEST(ComposeLBOSAddress::LBOSExists__ShouldReturnLbos());
+    RUN_TEST(ResetIterator::NoConditions__IterContainsZeroCandidates());
+    RUN_TEST(ResetIterator::MultipleReset__ShouldNotCrash());
+    RUN_TEST(ResetIterator::Multiple_AfterGetNextInfo__ShouldNotCrash());
+    RUN_TEST(CloseIterator::AfterOpen__ShouldWork());
+    RUN_TEST(CloseIterator::AfterReset__ShouldWork());
+    RUN_TEST(CloseIterator::AfterGetNextInfo__ShouldWork());
+    RUN_TEST(ResolveViaLBOS::ServiceExists__ReturnHostIP());
+    RUN_TEST(ResolveViaLBOS::ServiceDoesNotExist__ReturnNULL());
+    RUN_TEST(ResolveViaLBOS::NoLBOS__ReturnNULL());
+    RUN_TEST(GetLBOSAddress::CustomHostNotProvided__SkipCustomHost());
+    RUN_TEST(GetNextInfo::WrongMapper__ReturnNull());
+    RUN_TEST(Announcement::AllOK__ReturnSuccess(idx));
+    RUN_TEST(Announcement::AllOK__LBOSAnswerProvided(idx));
+    RUN_TEST(Announcement::AllOK__AnnouncedServerSaved(idx));
+    RUN_TEST(Announcement::IncorrectURL__ReturnInvalidArgs(idx));
+    RUN_TEST(Announcement::IncorrectPort__ReturnInvalidArgs(idx));
+    RUN_TEST(Announcement::IncorrectVersion__ReturnInvalidArgs(idx));
+    RUN_TEST(Announcement::IncorrectServiceName__ReturnInvalidArgs(idx));
+    RUN_TEST(Announcement::RealLife__VisibleAfterAnnounce(idx));
+    RUN_TEST(Deannouncement::Deannounced__Return1(0, idx));
+    RUN_TEST(Deannouncement::Deannounced__AnnouncedServerRemoved(idx));
+    RUN_TEST(Deannouncement::LBOSExistsDeannounce400__Return400(idx));
+    RUN_TEST(Deannouncement::RealLife__InvisibleAfterDeannounce(idx));
+    RUN_TEST(Stability::GetNext_Reset__ShouldNotCrash(idx));
+    RUN_TEST(Stability::FullCycle__ShouldNotCrash(idx));
+    RUN_TEST(Performance::FullCycle__ShouldNotCrash(idx));
 
     return true;
 }
@@ -317,4 +270,5 @@ int main(int argc, const char* argv[])
 {
     CTestLBOSApp app;
     app.AppMain(argc, argv);
+    return 0;
 }

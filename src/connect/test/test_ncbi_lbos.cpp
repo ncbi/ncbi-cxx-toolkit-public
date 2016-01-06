@@ -100,9 +100,10 @@ NCBITEST_AUTO_INIT()
 #endif
 }
 
-BOOST_AUTO_TEST_CASE(Configure__DeleteThenCheck__SetExistsFalse)
+BOOST_AUTO_TEST_CASE
+(DTab__NonStandardVersion__FoundWithRequestContextDTab)
 {
-    Configure::DeleteThenCheck__SetExistsFalse();
+    DTab::NonStandardVersion__FoundWithRequestContextDTab();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -242,6 +243,7 @@ BOOST_AUTO_TEST_CASE(Configure__ServiceExistsAndBoolNotProvided__NoCrash)
 }
  BOOST_AUTO_TEST_SUITE_END()
 
+
 ///////////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_SUITE( ComposeLBOSAddress )////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -343,7 +345,8 @@ BOOST_AUTO_TEST_SUITE_END()
 ///////////////////////////////////////////////////////////////////////////////
 BOOST_AUTO_TEST_SUITE( Dtab )//////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-/* 1. Mix of registry DTab and HTTP Dtab: registry goes first */
+/* 1. Mix of registry DTab and ConnNetInfo Dtab: registry goes first
+ *     (lowest priority), then ConnNetInfo (higher priority)                 */
 BOOST_AUTO_TEST_CASE(DTab__DTabRegistryAndHttp__RegistryGoesFirst) 
 {
     DTab::DTabRegistryAndHttp__RegistryGoesFirst();
@@ -355,6 +358,24 @@ BOOST_AUTO_TEST_CASE(DTab__NonStandardVersion__FoundWithDTab)
 {
     DTab::NonStandardVersion__FoundWithDTab();
 }
+
+/** 3. Mix of registry DTab and ConnNetInfo Dtab and RequestContext DTab: 
+ *    registry goes first (lowest priority), then ConnNetInfo (higher priority),
+ *    then RequestContext (highest priority)                                 */
+BOOST_AUTO_TEST_CASE
+                 (DTab__DTabRegistryAndHttpAndRequestContext__RegistryGoesFirst)
+{
+    DTab::DTabRegistryAndHttpAndRequestContext__RegistryGoesFirst();
+}
+
+/** 4. Announce server with non-standard version and server with no standard
+ *     version at all. Both should be found via Request Context DTab         */
+BOOST_AUTO_TEST_CASE
+(DTab__NonStandardVersion__FoundWithRequestContextDTab)
+{
+    DTab::NonStandardVersion__FoundWithRequestContextDTab();
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 
@@ -507,11 +528,6 @@ BOOST_AUTO_TEST_CASE(SERV_GetNextInfoEx__DataIsNull__ReconstructData)
     GetNextInfo::DataIsNull__ReconstructData();
 }
 
-BOOST_AUTO_TEST_CASE(SERV_GetNextInfoEx__IterIsNull__ReturnNull)
-{
-    GetNextInfo::IterIsNull__ReturnNull();
-}
-
 BOOST_AUTO_TEST_CASE(SERV_GetNextInfoEx__WrongMapper__ReturnNull)
 {
     GetNextInfo::WrongMapper__ReturnNull();
@@ -524,17 +540,12 @@ BOOST_AUTO_TEST_SUITE_END()
 BOOST_AUTO_TEST_SUITE( Open )//////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 /* Open:
- * 1. If iter is NULL, return NULL
- * 2. If net_info is NULL, construct own net_info
- * 3. If read from lbos successful, return s_op
- * 4. If read from lbos successful and host info pointer != NULL, write NULL
+ * 1.If net_info is NULL, construct own net_info
+ * 2. If read from lbos successful, return s_op
+ * 3. If read from lbos successful and host info pointer != NULL, write NULL
  *    to host info
- * 5. If read from lbos unsuccessful or no such service, return 0
+ * 4. If read from lbos unsuccessful or no such service, return 0
  */
-BOOST_AUTO_TEST_CASE(SERV_LBOS_Open__IterIsNull__ReturnNull)
-{
-    Open::IterIsNull__ReturnNull();
-}
 
 BOOST_AUTO_TEST_CASE(SERV_LBOS_Open__NetInfoNull__ConstructNetInfo)
 {

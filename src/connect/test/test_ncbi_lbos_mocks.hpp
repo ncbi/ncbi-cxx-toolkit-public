@@ -112,6 +112,7 @@ private:
     SERV_ITER m_Iter;
 };
 
+DEFINE_STATIC_FAST_MUTEX(s_CConnNetInfoMtx);
 
 /** Create SConnNetInfo in the beginning and destroy in the end */
 class CConnNetInfo 
@@ -119,7 +120,13 @@ class CConnNetInfo
 public:
     CConnNetInfo() 
     {
-        m_NetInfo = ConnNetInfo_Create(NULL);
+        if (sm_EmptyNetInfo == NULL) {
+            CFastMutexGuard spawn_guard(s_CConnNetInfoMtx);
+            if (sm_EmptyNetInfo == NULL) {
+                sm_EmptyNetInfo = ConnNetInfo_Create(NULL);
+            }
+        }
+        m_NetInfo = ConnNetInfo_Clone(sm_EmptyNetInfo);
     }
     explicit CConnNetInfo(const string& service) 
     {
@@ -141,7 +148,10 @@ private:
     CConnNetInfo& operator=(const CConnNetInfo&);
     CConnNetInfo(const CConnNetInfo&);
     SConnNetInfo* m_NetInfo;
+    static SConnNetInfo* sm_EmptyNetInfo;
 };
+
+SConnNetInfo* CConnNetInfo::sm_EmptyNetInfo = NULL;
 
 /** Replace original function with mock in the beginning, and revert
     changes in the end */
@@ -474,12 +484,16 @@ private:
  */
 int s_CountServers(string service, unsigned short port, string dtab = "")
 {
+    CConnNetInfo net_info;
     int servers = 0;
     const SSERV_Info* info;
-    CConnNetInfo net_info(service);
+
     if (dtab.length() > 1) {
         ConnNetInfo_SetUserHeader(*net_info, dtab.c_str());
+    } else {
+        ConnNetInfo_SetUserHeader(*net_info, "DTab-Local: ");
     }
+
     CServIter iter(SERV_OpenP(service.c_str(), fSERV_All,
         SERV_LOCALHOST, 0/*port*/, 0.0/*preference*/,
         *net_info, 0/*skip*/, 0/*n_skip*/,
@@ -583,7 +597,6 @@ bool s_AnswerHealthcheck(CListeningSocket& listening_sock) {
     CSocket sock;
     STimeout sock_timeout = { 1, 500 };
     if (listening_sock.Accept(sock, &sock_timeout) != eIO_Success) {
-        ERR_POST(Error << "Could not accept healthcheck request from LBOS");
         return false;
     }
     char buf[4096];
@@ -607,7 +620,7 @@ bool s_AnswerHealthcheck(CListeningSocket& listening_sock) {
 
 
 #ifndef NCBI_THREADS // If we have to answer healthchech in the same thread
-/** If single-threaded mode, instead of just read, make flush first,
+/** If single-threaded mode, instead of just read, make first flush,
  * then answer healthcheck, and then get answer from LBOS (hopefully,
  * OK)
  *  If multi-threaded mode, then just read, and healthcheck will be answered

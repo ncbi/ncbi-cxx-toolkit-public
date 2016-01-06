@@ -167,14 +167,10 @@ static void s_ProcessResult(unsigned short result,
     stringstream message;
     message << result;
 
-    if (status_message == NULL)
-        status_message = "";
-    else {
+    if (status_message != NULL) {
         message << " " << status_message;
     }
-    if (lbos_answer == NULL)
-        lbos_answer = "";
-    else {
+    if (lbos_answer != NULL) {
         message << " " << lbos_answer;
     }
     throw CLBOSException(CDiagCompileInfo(__FILE__, __LINE__), NULL,
