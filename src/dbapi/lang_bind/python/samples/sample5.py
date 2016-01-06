@@ -109,7 +109,7 @@ def main():
 
         # Connect to a database
         # Set an optional parameter "use_std_interface" to "True"
-        conn = python_ncbi_dbapi.connect('ftds', 'MSSQL', 'MS_DEV1', 'DBAPI_Sample', 'DBAPI_test', 'allowed', True)
+        conn = python_ncbi_dbapi.connect('ftds', 'MSSQL', 'MSDEV1', 'DBAPI_Sample', 'DBAPI_test', 'allowed', True)
 
         CreateSchema()
 

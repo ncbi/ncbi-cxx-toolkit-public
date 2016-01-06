@@ -44,7 +44,7 @@ import python_ncbi_dbapi
 # server_name: database server name
 # db_name: default database name
 # use_std_interface: an optional parameter (default value is "False")
-conn = python_ncbi_dbapi.connect('ftds', 'MSSQL', 'MS_DEV1', 'DBAPI_Sample', 'anyone', 'allowed')
+conn = python_ncbi_dbapi.connect('ftds', 'MSSQL', 'MSDEV1', 'DBAPI_Sample', 'anyone', 'allowed')
 
 # 3) Allocate a cursor
 cursor = conn.cursor()
