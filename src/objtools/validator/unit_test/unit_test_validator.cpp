@@ -416,6 +416,23 @@ BOOST_AUTO_TEST_CASE(Test_Descr_LatLonCountry)
     eval = validator.Validate(seh, options);
     CheckErrors(*eval, expected_errors);
 
+    CValidErrorFormat format(*objmgr);
+    vector<string> expected;
+    expected.push_back("LatLonCountry Errors");
+    expected.push_back("good:Lat_lon '18.47 N 64.23000000000002 W' is in water 'Caribbean Sea', 'Puerto Rico: Rio Mameyes in Luquillo' is 108 km away");
+    expected.push_back("");
+    vector<string> seen;
+    vector<string> cat_list = format.FormatCompleteSubmitterReport(*eval, scope);
+    ITERATE(vector<string>, it, cat_list) {
+        vector<string> sublist;
+        NStr::Tokenize(*it, "\n", sublist);
+        ITERATE(vector<string>, sit, sublist) {
+            seen.push_back(*sit);
+        }
+    }
+
+    CheckStrings(seen, expected);
+
     CLEAR_ERRORS
 }
 
@@ -575,30 +592,6 @@ BOOST_AUTO_TEST_CASE(Test_ValidError_Format)
     expected.push_back("LatLonCountry Errors");
     expected.push_back("nuc:Lat_lon '30 N 30 E' maps to 'Egypt' instead of 'Panama'");
     expected.push_back("");
-    CheckStrings(seen, expected);
-
-    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_lat_lon, "");
-    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_country, "");
-    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_lat_lon, "18.47 N 64.23000000000002 W");
-    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_country, "Puerto Rico: Rio Mameyes in Luquillo");
-    eval = validator.Validate(seh, options);
-
-    expected.pop_back();
-    expected.pop_back();
-    expected.pop_back();
-    expected.push_back("LatLonCountry Errors");
-    expected.push_back("nuc:Lat_lon '18.47 N 64.23000000000002 W' is in water 'Caribbean Sea', 'Puerto Rico: Rio Mameyes in Luquillo' is 108 km away");
-    expected.push_back("");
-    seen.clear();
-    cat_list = format.FormatCompleteSubmitterReport(*eval, scope);
-    ITERATE(vector<string>, it, cat_list) {
-        vector<string> sublist;
-        NStr::Tokenize(*it, "\n", sublist);
-        ITERATE(vector<string>, sit, sublist) {
-            seen.push_back(*sit);
-        }
-    }
-
     CheckStrings(seen, expected);
 
 }
