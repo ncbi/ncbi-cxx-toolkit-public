@@ -78,6 +78,8 @@ public:
     bool IsConnected(void) const
     { return m_Connected; }
 
+    CJsonNode  SetParameters(const IRegistry &  reg);
+
     int  ExecSP_GetNextObjectID(Int8 &  object_id,
                                 CNSTTiming &  timing);
     int  ExecSP_CreateClient(const string &  client,
@@ -156,6 +158,7 @@ public:
                                  CNSTTiming &  timing);
     int  ExecSP_GetClients(vector<string> &  names,
                            CNSTTiming &  timing);
+    CTimeout GetExecuteSPTimeout(void);
 
 private:
     bool x_ReadDbAccessInfo(bool  is_initialization);
@@ -177,6 +180,9 @@ private:
     CDatabase *                     m_Db;
     bool                            m_Connected;
     CRef<CNSTDBConnectionThread>    m_RestoreConnectionThread;
+
+    CFastMutex                      m_SPTimeoutMutex;
+    CTimeout                        m_SPTimeout;
 
     CNSTDatabase(const CNSTDatabase &  conn);
     CNSTDatabase & operator= (const CNSTDatabase &  conn);

@@ -1119,6 +1119,8 @@ CNetStorageHandler::x_ProcessConfiguration(
     reply.SetString("ConfigurationFilePath",
                     CNcbiApplication::Instance()->GetConfigPath());
     reply.SetByKey("BackendConfiguration", m_Server->GetBackendConfiguration());
+    reply.SetDouble("DBExecuteSPTimeout",
+                    m_Server->GetDb().GetExecuteSPTimeout().GetAsDouble());
 
     x_SendSyncMessage(reply);
     x_PrintMessageRequestStop();
@@ -1354,8 +1356,10 @@ CNetStorageHandler::x_ProcessReconfigure(
     CJsonNode   server_diff = m_Server->SetParameters(params, true);
     CJsonNode   metadata_diff = m_Server->ReadMetadataConfiguration(reg);
     CJsonNode   backend_diff = m_Server->GetBackendConfDiff(backend_conf);
+    CJsonNode   db_diff = m_Server->GetDb().SetParameters(reg);
 
     m_Server->SetBackendConfiguration(backend_conf);
+
     m_Server->AcknowledgeAlert(eReconfigure, "NSTAcknowledge");
     m_Server->AcknowledgeAlert(eStartupConfig, "NSTAcknowledge");
     m_Server->AcknowledgeAlert(eConfigOutOfSync, "NSTAcknowledge");
@@ -1364,7 +1368,8 @@ CNetStorageHandler::x_ProcessReconfigure(
 
     if (server_diff.IsNull() &&
         metadata_diff.IsNull() &&
-        backend_diff.IsNull()) {
+        backend_diff.IsNull() &&
+        db_diff.IsNull()) {
         if (m_ConnContext.NotNull())
              GetDiagContext().Extra().Print("accepted_changes", "none");
         AppendWarning(reply, NCBI_ERRCODE_X_NAME(NetStorage_ErrorCode),
@@ -1384,6 +1389,8 @@ CNetStorageHandler::x_ProcessReconfigure(
         total_changes.SetByKey("metadata_conf", metadata_diff);
     if (!backend_diff.IsNull())
         total_changes.SetByKey("backend_conf", backend_diff);
+    if (!db_diff.IsNull())
+        total_changes.SetByKey("db_conf", db_diff);
 
     reply.SetByKey("What", total_changes);
     x_SendSyncMessage(reply);

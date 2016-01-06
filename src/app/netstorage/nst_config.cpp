@@ -66,9 +66,9 @@ static bool NSTValidateBool(const IRegistry &  reg,
 static bool NSTValidateInt(const IRegistry &  reg,
                            const string &  section, const string &  entry,
                            vector<string> &  warnings);
-//static bool NSTValidateDouble(const IRegistry &  reg,
-//                              const string &  section, const string &  entry,
-//                              vector<string> &  warnings);
+static bool NSTValidateDouble(const IRegistry &  reg,
+                              const string &  section, const string &  entry,
+                              vector<string> &  warnings);
 static bool NSTValidateString(const IRegistry &  reg,
                               const string &  section, const string &  entry,
                               vector<string> &  warnings);
@@ -223,6 +223,17 @@ void NSTValidateDatabaseSection(const IRegistry &  reg,
             warnings.push_back(g_LogPrefix + " value " +
                                NSTRegValName(section, "database") +
                                " must not be empty");
+    }
+
+    ok = NSTValidateDouble(reg, section, "execute_sp_timeout", warnings);
+    if (ok) {
+        double      value = reg.GetDouble(section, "execute_sp_timeout",
+                                          default_execute_sp_timeout);
+        if (value <= 0.0) {
+            warnings.push_back(g_LogPrefix + " value " +
+                               NSTRegValName(section, "execute_sp_timeout") +
+                               " must be > 0.0");
+        }
     }
 }
 
@@ -391,23 +402,24 @@ bool NSTValidateInt(const IRegistry &  reg,
 }
 
 
-/*
+
 // Checks that a double value is fine
 bool NSTValidateDouble(const IRegistry &  reg,
-                       const string &  section, const string &  entry)
+                       const string &  section, const string &  entry,
+                       vector<string> &  warnings)
 {
     try {
         reg.GetDouble(section, entry, 0.0);
     }
     catch (...) {
-        LOG_POST(Warning << g_LogPrefix << "unexpected value of "
-                         << NSTRegValName(section, entry)
-                         << ". Expected floating point value.");
+        warnings.push_back(g_LogPrefix + "unexpected value of " +
+                           NSTRegValName(section, entry) +
+                           ". Expected floating point value.");
         return false;
     }
     return true;
 }
-*/
+
 
 
 // Checks that a double value is fine

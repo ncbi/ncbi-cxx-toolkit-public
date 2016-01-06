@@ -39,6 +39,7 @@
 #include "nst_server.hpp"
 #include "nst_timing.hpp"
 #include "nst_clients.hpp"
+#include "nst_config.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -46,7 +47,8 @@ BEGIN_NCBI_SCOPE
 
 CNSTDatabase::CNSTDatabase(CNetStorageServer *  server)
     : m_Server(server), m_Db(NULL), m_Connected(false),
-      m_RestoreConnectionThread(NULL)
+      m_RestoreConnectionThread(NULL),
+      m_SPTimeout(default_execute_sp_timeout)
 {
     // true: this is initialization time
     x_CreateDatabase(true);
@@ -109,6 +111,31 @@ CNSTDatabase::~CNSTDatabase(void)
 }
 
 
+CJsonNode
+CNSTDatabase::SetParameters(const IRegistry &  reg)
+{
+    // The only parameter which could be changed is a SP execution timeout
+    double      current_timeout = m_SPTimeout.GetAsDouble();
+    double      new_timeout = reg.GetDouble("database",
+                                            "execute_sp_timeout",
+                                            default_execute_sp_timeout,
+                                            0, IRegistry::eReturn);
+    if (current_timeout == new_timeout)
+        return CJsonNode::NewNullNode();
+
+    CJsonNode       diff = CJsonNode::NewObjectNode();
+    CJsonNode       values = CJsonNode::NewObjectNode();
+
+    values.SetByKey("Old", CJsonNode::NewDoubleNode(current_timeout));
+    values.SetByKey("New", CJsonNode::NewDoubleNode(new_timeout));
+    diff.SetByKey("execute_sp_timeout", values);
+
+    CFastMutexGuard     lock(m_SPTimeoutMutex);
+    m_SPTimeout.Set(new_timeout);
+    return diff;
+}
+
+
 int
 CNSTDatabase::ExecSP_GetNextObjectID(Int8 &  object_id,
                                      CNSTTiming &  timing)
@@ -125,7 +152,7 @@ CNSTDatabase::ExecSP_GetNextObjectID(Int8 &  object_id,
 
             object_id = 0;
             query.SetParameter("@next_id", 0, eSDB_Int8, eSP_InOut);
-            query.ExecuteSP(proc_name);
+            query.ExecuteSP(proc_name, GetExecuteSPTimeout());
             query.VerifyDone();
             status = x_CheckStatus(query, proc_name);
 
@@ -170,7 +197,7 @@ CNSTDatabase::ExecSP_CreateClient(
             query.SetParameter("@client_name", client);
             query.SetParameter("@client_id", client_id, eSDB_Int8, eSP_InOut);
 
-            query.ExecuteSP(proc_name);
+            query.ExecuteSP(proc_name, GetExecuteSPTimeout());
             query.VerifyDone();
             status = x_CheckStatus(query, proc_name);
 
@@ -230,7 +257,7 @@ CNSTDatabase::ExecSP_CreateObjectWithClientID(
                 query.SetParameter("@object_expiration",
                                    CTime(CTime::eCurrent) + ttl.m_Value);
 
-            query.ExecuteSP(proc_name);
+            query.ExecuteSP(proc_name, GetExecuteSPTimeout());
             query.VerifyDone();
 
             status = x_CheckStatus(query, proc_name);
@@ -301,7 +328,7 @@ CNSTDatabase::ExecSP_UpdateObjectOnWrite(
                 query.SetParameter("@object_exp_if_not_found",
                                    exp_record_not_found.m_Value);
 
-            query.ExecuteSP(proc_name);
+            query.ExecuteSP(proc_name, GetExecuteSPTimeout());
             query.VerifyDone();
 
             status = x_CheckStatus(query, proc_name);
@@ -371,7 +398,7 @@ CNSTDatabase::ExecSP_UpdateUserKeyObjectOnWrite(
                 query.SetParameter("@object_exp_if_not_found",
                                    exp_record_not_found.m_Value);
 
-            query.ExecuteSP(proc_name);
+            query.ExecuteSP(proc_name, GetExecuteSPTimeout());
             query.VerifyDone();
 
             status = x_CheckStatus(query, proc_name);
@@ -441,7 +468,7 @@ CNSTDatabase::ExecSP_UpdateObjectOnRead(
                 query.SetParameter("@object_exp_if_not_found",
                                    exp_record_not_found.m_Value);
 
-            query.ExecuteSP(proc_name);
+            query.ExecuteSP(proc_name, GetExecuteSPTimeout());
             query.VerifyDone();
 
             status = x_CheckStatus(query, proc_name);
@@ -483,7 +510,7 @@ CNSTDatabase::ExecSP_UpdateObjectOnRelocate(
             query.SetParameter("@object_loc", object_loc);
             query.SetParameter("@client_id", client_id);
 
-            query.ExecuteSP(proc_name);
+            query.ExecuteSP(proc_name, GetExecuteSPTimeout());
             query.VerifyDone();
 
             status = x_CheckStatus(query, proc_name);
@@ -521,7 +548,7 @@ CNSTDatabase::ExecSP_RemoveObject(const string &  object_key,
 
             query.SetParameter("@object_key", object_key);
 
-            query.ExecuteSP(proc_name);
+            query.ExecuteSP(proc_name, GetExecuteSPTimeout());
             query.VerifyDone();
 
             status = x_CheckStatus(query, proc_name);
@@ -566,7 +593,7 @@ CNSTDatabase::ExecSP_SetExpiration(const string &  object_key,
                 query.SetParameter("@expiration", CTime(CTime::eCurrent) +
                                                   ttl.m_Value);
 
-            query.ExecuteSP(proc_name);
+            query.ExecuteSP(proc_name, GetExecuteSPTimeout());
             query.VerifyDone();
 
             status = x_CheckStatus(query, proc_name);
@@ -610,7 +637,7 @@ CNSTDatabase::ExecSP_AddAttribute(const string &  object_key,
             query.SetParameter("@attr_value", attr_value);
             query.SetParameter("@client_id", client_id);
 
-            query.ExecuteSP(proc_name);
+            query.ExecuteSP(proc_name, GetExecuteSPTimeout());
             query.VerifyDone();
 
             status = x_CheckStatus(query, proc_name);
@@ -649,7 +676,7 @@ CNSTDatabase::ExecSP_GetAttributeNames(const string &  object_key,
 
             query.SetParameter("@object_key", object_key);
 
-            query.ExecuteSP(proc_name);
+            query.ExecuteSP(proc_name, GetExecuteSPTimeout());
 
             // NOTE: reading result recordset must be done before getting the
             //       status code
@@ -700,7 +727,7 @@ CNSTDatabase::ExecSP_GetAttribute(const string &  object_key,
             query.SetParameter("@need_update", need_update);
             query.SetParameter("@attr_value", "", eSDB_String, eSP_InOut);
 
-            query.ExecuteSP(proc_name);
+            query.ExecuteSP(proc_name, GetExecuteSPTimeout());
             query.VerifyDone();
             status = x_CheckStatus(query, proc_name);
 
@@ -744,7 +771,7 @@ CNSTDatabase::ExecSP_DelAttribute(const string &  object_key,
             query.SetParameter("@object_key", object_key);
             query.SetParameter("@attr_name", attr_name);
 
-            query.ExecuteSP(proc_name);
+            query.ExecuteSP(proc_name, GetExecuteSPTimeout());
             query.VerifyDone();
 
             status = x_CheckStatus(query, proc_name);
@@ -810,7 +837,7 @@ CNSTDatabase::ExecSP_GetObjectFixedAttributes(const string &        object_key,
             query.SetParameter("@client_name", client_name.m_Value,
                                                eSDB_String, eSP_InOut);
 
-            query.ExecuteSP(proc_name);
+            query.ExecuteSP(proc_name, GetExecuteSPTimeout());
             query.VerifyDone();
             status = x_CheckStatus(query, proc_name);
 
@@ -889,7 +916,7 @@ CNSTDatabase::ExecSP_GetObjectExpiration(const string &        object_key,
             query.SetParameter("@expiration", expiration.m_Value,
                                               eSDB_DateTime, eSP_InOut);
 
-            query.ExecuteSP(proc_name);
+            query.ExecuteSP(proc_name, GetExecuteSPTimeout());
             query.VerifyDone();
             status = x_CheckStatus(query, proc_name);
 
@@ -930,7 +957,7 @@ CNSTDatabase::ExecSP_GetGeneralDBInfo(CNSTTiming &  timing)
             CDatabase               db = m_Db->Clone();
             CQuery                  query = db.NewQuery();
 
-            query.ExecuteSP(proc_name);
+            query.ExecuteSP(proc_name, GetExecuteSPTimeout());
 
             // sp_spaceused provides two recordsets 1 record each, e.g.
             // NETSTORAGE   224.88 MB   98.34 MB
@@ -974,7 +1001,7 @@ CNSTDatabase::ExecSP_GetStatDBInfo(CNSTTiming &  timing)
             CDatabase               db = m_Db->Clone();
             CQuery                  query = db.NewQuery();
 
-            query.ExecuteSP(proc_name);
+            query.ExecuteSP(proc_name, GetExecuteSPTimeout());
 
             ITERATE(CQuery, qit, query.SingleSet()) {
                 for (int  k = 1; k <= qit.GetTotalColumns(); ++k) {
@@ -1026,7 +1053,7 @@ CNSTDatabase::ExecSP_GetClientObjects(const string &  client_name,
                 query.SetParameter("@limit", limit.m_Value);
             query.SetParameter("@total_object_cnt", total, eSDB_Int8, eSP_InOut);
 
-            query.ExecuteSP(proc_name);
+            query.ExecuteSP(proc_name, GetExecuteSPTimeout());
 
             // NOTE: reading result recordset must be done before getting the
             //       status code
@@ -1070,7 +1097,7 @@ CNSTDatabase::ExecSP_GetClients(vector<string> &  names,
             CDatabase               db = m_Db->Clone();
             CQuery                  query = db.NewQuery();
 
-            query.ExecuteSP(proc_name);
+            query.ExecuteSP(proc_name, GetExecuteSPTimeout());
 
             // NOTE: reading result recordset must be done before getting the
             //       status code
@@ -1160,6 +1187,10 @@ bool  CNSTDatabase::x_ReadDbAccessInfo(bool  is_initialization)
     m_DbAccessInfo.m_Service = reg.GetString("database", "service", "");
     m_DbAccessInfo.m_Database = reg.GetString("database", "database", "");
     m_DbAccessInfo.m_UserName = reg.GetString("database", "user_name", "");
+    m_SPTimeout = CTimeout(reg.GetDouble("database",
+                                         "execute_sp_timeout",
+                                         default_execute_sp_timeout,
+                                         0, IRegistry::eReturn));
 
     // Try to decrypt
     try {
@@ -1248,6 +1279,15 @@ CNSTDatabase::x_CalculateExpiration(
         }
     }
 }
+
+
+CTimeout
+CNSTDatabase::GetExecuteSPTimeout(void)
+{
+    CFastMutexGuard     lock(m_SPTimeoutMutex);
+    return m_SPTimeout;
+}
+
 
 END_NCBI_SCOPE
 

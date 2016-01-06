@@ -66,6 +66,8 @@ const bool              default_log_timing = false;
 const bool              default_log_timing_nst_api = false;
 const bool              default_log_timing_client_socket = false;
 
+const double            default_execute_sp_timeout = 20.0;
+
 
 
 
