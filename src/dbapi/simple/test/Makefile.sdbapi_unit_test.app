@@ -21,7 +21,7 @@ CHECK_COPY = sdbapi_unit_test.ini
 CHECK_TIMEOUT = 600
 
 CHECK_CMD = sdbapi_unit_test -S MsSql
-CHECK_CMD = sdbapi_unit_test -S DBAPI_MS2014_TEST
+CHECK_CMD = sdbapi_unit_test -S DBAPI_MS2014_TEST -T MsSql
 CHECK_CMD = sdbapi_unit_test -S Sybase
 
 WATCHERS = ucko
