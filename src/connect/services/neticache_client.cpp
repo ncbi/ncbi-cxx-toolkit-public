@@ -737,8 +737,8 @@ bool CNetICacheClient::HasBlob(const string& key, const string& subkey,
 
         parameters.LoadNamedParameters(optional);
 
-        return m_Impl->ExecStdCmd("HASB",
-                key, 0, subkey, &parameters)[0] == '1';
+        string response(m_Impl->ExecStdCmd("HASB", key, 0, subkey, &parameters));
+        return (response[0] == '1'|| NStr::StartsWith(response, "0, VER="));
     }
     // Workaround for a bug in NC v6.6.1 (CXX-4095)
     // TODO: Throw away after all NC servers are upgraded to v6.6.2+
