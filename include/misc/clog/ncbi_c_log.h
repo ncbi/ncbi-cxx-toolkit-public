@@ -434,6 +434,31 @@ extern void NcbiLog_Destroy(void);
 extern void NcbiLog_Destroy_Thread(void);
 
 
+/** Actions to perform in NcbiLog_UpdateOnFork()
+ */
+typedef enum {
+    fNcbiLog_OnFork_UpdateID   = 0,       /**< Update IDs (default)  */
+    fNcbiLog_OnFork_PrintStart = 1 << 0,  /**< Log app-start         */
+    fNcbiLog_OnFork_ResetTimer = 1 << 1   /**< Reset execution timer */
+} ENcbiLog_OnForkAction;
+
+/** Binary OR of "ENcbiLog_OnForkAction" 
+ */
+typedef int TNcbiLog_OnForkFlags;
+
+/** Update logging internal information after fork().
+ *  This function should be called immediatly after fork(), before any other
+ *  NcbiLog_* functions, or you will get a wrong and unpredictable output,
+ *  Updates PID if necessary (in the child process). If PID has not changed
+ *  (parent process), no other actions are performed.
+ *  Can do additional actions depending on flags.
+ *
+ *  @sa
+ *    NcbiLog_Init, NcbiLog_Destroy
+ */
+extern void NcbiLog_UpdateOnFork(TNcbiLog_OnForkFlags flags /* 0 */);
+
+
 /** Get host name.
  */
 extern const char* NcbiLog_GetHostName(void);

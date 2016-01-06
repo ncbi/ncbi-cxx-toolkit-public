@@ -155,6 +155,8 @@ static volatile TNcbiLog_Info*    sx_Info      = NULL;
 /* Pointer to the context (single-threaded applications only, otherwise use TLS) */
 static volatile TNcbiLog_Context  sx_ContextST = NULL;
 
+/* Real PID for the main thread */
+static volatile TNcbiLog_PID      sx_PID = 0;
 
 
 /******************************************************************************
@@ -601,15 +603,14 @@ const char* NcbiLog_GetHostLocation(void)
 static TNcbiLog_PID s_GetPID(void)
 {
     /* For main thread always force caching of PIDs */
-    static TNcbiLog_PID pid = 0;
-    if ( !pid ) {
+    if ( !sx_PID ) {
 #if defined(NCBI_OS_UNIX)
-        pid = getpid();
+        sx_PID = getpid();
 #elif defined(NCBI_OS_MSWIN)
-        pid = GetCurrentProcessId();
+        sx_PID = GetCurrentProcessId();
 #endif
     }
-    return pid;
+    return sx_PID;
 }
 
 
@@ -2258,6 +2259,62 @@ extern void NcbiLog_Destroy(void)
 }
 
 
+extern void NcbiLog_UpdateOnFork(TNcbiLog_OnForkFlags flags)
+{
+    int  n;
+    char buf[128];
+    int  x_guid_hi, x_guid_lo;
+    TNcbiLog_Context ctx = NULL;
+
+    MT_LOCK_API;
+    
+    ctx = s_GetContext();
+    TNcbiLog_PID old_pid = sx_PID;
+
+#if defined(NCBI_OS_UNIX)
+    TNcbiLog_PID new_pid = getpid();
+#elif defined(NCBI_OS_MSWIN)
+    TNcbiLog_PID new_pid = GetCurrentProcessId();
+#endif
+    if (old_pid == new_pid) {
+        /* Do not perform any actions in the parent process. */
+        MT_UNLOCK;
+        return;
+    }
+    /* -- Child process -- */
+    
+    sx_PID = new_pid;
+    
+    /* Update GUID to match the new PID */
+    TNcbiLog_Int8 old_uid = sx_Info->guid;
+    sx_Info->guid = s_CreateUID();
+
+    /* Reset tid for the current context */
+    ctx->tid = s_GetTID();
+
+    if (flags & fNcbiLog_OnFork_ResetTimer) {
+        s_GetTime((STime*)&sx_Info->app_start_time);
+    }
+    if (flags & fNcbiLog_OnFork_PrintStart) {
+        s_AppStart(ctx, NULL);
+    }
+
+    /* Log ID changes */
+
+    x_guid_hi = (int)((sx_Info->guid >> 32) & 0xFFFFFFFF);
+    x_guid_lo = (int)(sx_Info->guid & 0xFFFFFFFF);
+
+    n = sprintf(buf, 
+        "action=fork&parent_guid=%08X%08X&parent_pid=%05" NCBILOG_UINT8_FORMAT_SPEC, 
+        x_guid_hi, x_guid_lo, old_pid);
+
+    VERIFY(n > 0  && n < 128);
+    s_ExtraStr(ctx, buf);
+
+    MT_UNLOCK;
+}
+
+
 extern void NcbiLogP_ReInit(void)
 {
     sx_IsInit = 0;
@@ -2761,7 +2818,7 @@ static void s_AppStart(TNcbiLog_Context ctx, const char* argv[])
     pos = s_PrintCommonPrefix(ctx);
     VERIFY(pos > 0);
     /* We already have current time in sx_Info->post_time */
-    /* Save it into sx_AppStartTime. */
+    /* Save it into app_start_time. */
     sx_Info->app_start_time.sec = sx_Info->post_time.sec;
     sx_Info->app_start_time.ns  = sx_Info->post_time.ns;
 
