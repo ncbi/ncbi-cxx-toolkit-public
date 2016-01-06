@@ -272,7 +272,7 @@ static void s_SimpleTest()
     CNetICacheClient api(service, cache_name, s_ClientName);
     api.SetFlags(ICache::fBestReliability);
 
-    const size_t kIterations = 50;
+    const int kIterations = 50;
     const size_t kSrcSize = 20 * 1024 * 1024; // 20MB
     const size_t kBufSize = 100 * 1024; // 100KB
     vector<char> src;
@@ -284,7 +284,7 @@ static void s_SimpleTest()
     const string key = GetUniqueKey();
     vector<string> subkeys;
 
-    for (size_t version = 0; version < kIterations; ++version) {
+    for (int version = 0; version < kIterations; ++version) {
         const string subkey = GetUniqueKey();
         subkeys.push_back(subkey);
 
@@ -364,7 +364,7 @@ static void s_SimpleTest()
         throw;
     }
 
-    for (size_t version = 0; version < kIterations; ++version) {
+    for (int version = 0; version < kIterations; ++version) {
         const string subkey = subkeys.back();
         subkeys.pop_back();
 
