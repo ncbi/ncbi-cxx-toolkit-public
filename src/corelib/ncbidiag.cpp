@@ -1423,10 +1423,10 @@ void CDiagContext::UpdateOnFork(TOnForkFlags flags)
     CDiagContext& ctx = GetDiagContext();
     // Do not perform any actions in the parent process.
     if ( !UpdatePID() ) return;
-    if (flags && fOnFork_ResetTimer) {
+    if (flags & fOnFork_ResetTimer) {
         ctx.m_StopWatch->Restart();
     }
-    if (flags && fOnFork_PrintStart) {
+    if (flags & fOnFork_PrintStart) {
         ctx.PrintStart(kEmptyStr);
     }
 }
