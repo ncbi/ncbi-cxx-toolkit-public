@@ -892,7 +892,7 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
             } else {
                 if (NStr::IsBlank (month)) {
                     if (val > 0 && val < 13) {
-                        CTime::MonthNumToName(val, CTime::eAbbr);
+                        month = CTime::MonthNumToName(val, CTime::eAbbr);
                     } else {
                         // month number out of range
                         return kEmptyStr;
