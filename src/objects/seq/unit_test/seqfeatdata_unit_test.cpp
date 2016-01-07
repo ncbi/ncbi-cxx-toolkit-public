@@ -1086,6 +1086,12 @@ BOOST_AUTO_TEST_CASE(Test_GB_5391)
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("June2011"), "Jun-2011");
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_SQD_3603)
+{
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("11-2009"), "Nov-2009");
+}
+
 struct SCollDateInfo {
     const char * date_to_fix;
     const char * expected_result;
