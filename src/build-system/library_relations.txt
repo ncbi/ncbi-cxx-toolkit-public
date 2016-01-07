@@ -30,7 +30,7 @@ GLU needs3party Xext
 GMA needs $(SDBAPI_LIB)
 GMA needs xconnect
 GMA needs xutil
-GMC needs softparse
+GMC needs geomyncbi
 GMC needs xgridcgi
 GMU needs $(COMPRESS_LIBS)
 GMU needs geoauth
@@ -46,7 +46,6 @@ Xext needs3party X11
 Xpm needs3party $(ORIG_LIBS)
 Xpm needs3party X11
 access needs xser
-accnmap needs dbapi
 ads needs $(SEQ_LIBS)
 ads needs pub
 affy needs3party $(CURL_LIBS)
@@ -903,6 +902,7 @@ osutils needs3party ctutils
 pathogen_cluster_loader needs $(SDBAPI_LIB)
 pathogen_cluster_loader needs xasmcompare
 pathogen_cluster_loader needs xconnect
+pathogen_cluster_loader needs xutil
 pathogen_connection needs connssl
 pathogen_connection needs gpipe_common
 pathogen_connection needs gpipe_dateutil
@@ -1007,11 +1007,7 @@ snphgvs needs3party $(GPIPE_LOADER_THIRDPARTY_LIBS)
 snputil needs $(SOBJMGR_LIBS)
 snputil needs variation
 soap_dataobj needs xser
-softparse needs $(COMPRESS_LIBS)
-softparse needs affy
-softparse needs geomyncbi
-softparse needs taxon1
-spcgi needs softparse
+spcgi needs geomyncbi
 spcgi needs xgridcgi
 spellsrvbase needs txservbase
 splitdbasn_g needs gendefasn_g
@@ -1320,8 +1316,7 @@ xalnmgr needs xobjutil
 xalntool needs xhtml
 xalntool needs xobjutil
 xannot_builder needs gpipe_asn_proc
-xasmcompare needs $(SEQ_LIBS)
-xasmcompare needs pub
+xasmcompare needs xncbi
 xasn needs xhtml
 xasn needs3party $(NCBI_C_ncbi)
 xassembly_svc needs gcaccess_utils
