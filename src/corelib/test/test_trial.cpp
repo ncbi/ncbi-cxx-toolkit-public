@@ -39,7 +39,7 @@ NCBI_DEFINE_CTYPE_FUNC(toupper)
 
 #endif
 
-#ifdef HAVE_BOOST_TEST
+
 #ifndef BOOST_TEST_NO_LIB
 #  define BOOST_TEST_NO_LIB
 #endif
@@ -81,8 +81,6 @@ NCBI_DEFINE_CTYPE_FUNC(toupper)
 #include <boost/test/detail/global_typedef.hpp>
 #include <boost/test/detail/unit_test_parameters.hpp>
 #include <boost/test/debug.hpp>
-
-#endif /* HAVE_BOOST_TEST */
 
 
 #include <common/test_assert.h>  /* This header must go last */
