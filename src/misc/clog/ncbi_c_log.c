@@ -2259,62 +2259,6 @@ extern void NcbiLog_Destroy(void)
 }
 
 
-extern void NcbiLog_UpdateOnFork(TNcbiLog_OnForkFlags flags)
-{
-    int  n;
-    char buf[128];
-    int  x_guid_hi, x_guid_lo;
-    TNcbiLog_Context ctx = NULL;
-
-    MT_LOCK_API;
-    
-    ctx = s_GetContext();
-    TNcbiLog_PID old_pid = sx_PID;
-
-#if defined(NCBI_OS_UNIX)
-    TNcbiLog_PID new_pid = getpid();
-#elif defined(NCBI_OS_MSWIN)
-    TNcbiLog_PID new_pid = GetCurrentProcessId();
-#endif
-    if (old_pid == new_pid) {
-        /* Do not perform any actions in the parent process. */
-        MT_UNLOCK;
-        return;
-    }
-    /* -- Child process -- */
-    
-    sx_PID = new_pid;
-    
-    /* Update GUID to match the new PID */
-    TNcbiLog_Int8 old_uid = sx_Info->guid;
-    sx_Info->guid = s_CreateUID();
-
-    /* Reset tid for the current context */
-    ctx->tid = s_GetTID();
-
-    if (flags & fNcbiLog_OnFork_ResetTimer) {
-        s_GetTime((STime*)&sx_Info->app_start_time);
-    }
-    if (flags & fNcbiLog_OnFork_PrintStart) {
-        s_AppStart(ctx, NULL);
-    }
-
-    /* Log ID changes */
-
-    x_guid_hi = (int)((sx_Info->guid >> 32) & 0xFFFFFFFF);
-    x_guid_lo = (int)(sx_Info->guid & 0xFFFFFFFF);
-
-    n = sprintf(buf, 
-        "action=fork&parent_guid=%08X%08X&parent_pid=%05" NCBILOG_UINT8_FORMAT_SPEC, 
-        x_guid_hi, x_guid_lo, old_pid);
-
-    VERIFY(n > 0  && n < 128);
-    s_ExtraStr(ctx, buf);
-
-    MT_UNLOCK;
-}
-
-
 extern void NcbiLogP_ReInit(void)
 {
     sx_IsInit = 0;
@@ -3400,6 +3344,66 @@ extern void NcbiLogP_Raw2(const char* line, size_t len)
     fflush(f);
     VERIFY(n > 0);
 #endif
+
+    MT_UNLOCK;
+}
+
+
+extern void NcbiLog_UpdateOnFork(TNcbiLog_OnForkFlags flags)
+{
+    int  n;
+    char buf[128];
+    int  old_guid_hi, old_guid_lo;
+    TNcbiLog_Context ctx = NULL;
+
+    MT_LOCK_API;
+    
+    ctx = s_GetContext();
+    TNcbiLog_PID old_pid = sx_PID;
+
+#if defined(NCBI_OS_UNIX)
+    TNcbiLog_PID new_pid = getpid();
+#elif defined(NCBI_OS_MSWIN)
+    TNcbiLog_PID new_pid = GetCurrentProcessId();
+#endif
+    if (old_pid == new_pid) {
+        /* Do not perform any actions in the parent process. */
+        MT_UNLOCK;
+        return;
+    }
+    /* -- Child process -- */
+    
+    sx_PID = new_pid;
+    
+    /* Update GUID to match the new PID */
+    old_guid_hi = (int)((sx_Info->guid >> 32) & 0xFFFFFFFF);
+    old_guid_lo = (int)(sx_Info->guid & 0xFFFFFFFF);
+    sx_Info->guid = s_CreateUID();
+
+    /* Reset tid for the current context */
+    ctx->tid = s_GetTID();
+
+    if (flags & fNcbiLog_OnFork_ResetTimer) {
+        s_GetTime((STime*)&sx_Info->app_start_time);
+    }
+    if (flags & fNcbiLog_OnFork_PrintStart) {
+        s_AppStart(ctx, NULL);
+        s_SetState(ctx, eNcbiLog_AppRun);
+    }
+
+    /* Log ID changes */
+    n = sprintf(buf, 
+        "action=fork&parent_guid=%08X%08X&parent_pid=%05" NCBILOG_UINT8_FORMAT_SPEC, 
+        old_guid_hi, old_guid_lo, old_pid);
+
+    VERIFY(n > 0  && n < 128);
+    s_ExtraStr(ctx, buf);
+
+    if (flags & fNcbiLog_OnFork_PrintStart) {
+        /* Also, log app-wide hit ID for the new process as well */
+        VERIFY(sx_Info->phid[0]);
+        s_LogHitID(ctx, (char*)sx_Info->phid);
+    }
 
     MT_UNLOCK;
 }
