@@ -45,7 +45,7 @@ for spec in src/serial/test/we_cpp.asn src/objects/*/*.asn \
   src/internal/gpipe/objects/*/*.asn src/internal/gpipe/objects/*/*.dtd \
   src/internal/gpipe/gpinit/src/gpinit_compare/gpinit.asn \
   src/internal/gpipe/gpexec/queue/lib/gpxapi.asn \
-  src/internal/snp/objects/rsm/rsm.asn; do
+  src/internal/variation/snp/objects/rsm/rsm.asn; do
     if test -f "$spec"; then
         case $spec in
             */seq_annot_ref.asn ) continue ;; # sample data, not a spec
