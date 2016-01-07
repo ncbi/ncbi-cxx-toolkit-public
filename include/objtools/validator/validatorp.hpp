@@ -961,11 +961,22 @@ public:
 
     void ValidateSeqAlign(const CSeq_align& align);
 
-private:
+    typedef struct {
+        size_t seg_num; size_t align_pos; string label;
+    } TSegmentGap;
+    typedef vector<TSegmentGap> TSegmentGapV;
+
     typedef CSeq_align::C_Segs::TDendiag    TDendiag;
     typedef CSeq_align::C_Segs::TDenseg     TDenseg;
     typedef CSeq_align::C_Segs::TPacked     TPacked;
     typedef CSeq_align::C_Segs::TStd        TStd;
+
+    static TSegmentGapV FindSegmentGaps(const TPacked& packed, CScope* scope);
+    static TSegmentGapV FindSegmentGaps(const TDenseg& std_segs, CScope* scope);
+    static TSegmentGapV FindSegmentGaps(const TStd& denseg, CScope* scope);
+    static TSegmentGapV FindSegmentGaps(const TDendiag& dendiags, CScope* scope);
+
+private:
     typedef CSeq_align::C_Segs::TDisc       TDisc;
 
     void x_ValidateAlignPercentIdentity (const CSeq_align& align, bool internal_gaps);
@@ -990,6 +1001,7 @@ private:
     void x_ValidateFastaLike(const TDenseg& denseg, const CSeq_align& align);
 
     // Check if there is a gap for all sequences in a segment.
+    void x_ReportSegmentGaps(const TSegmentGapV& seggaps, const CSeq_align& align);
     void x_ValidateSegmentGap(const TDenseg& denseg, const CSeq_align& align);
     void x_ValidateSegmentGap(const TPacked& packed, const CSeq_align& align);
     void x_ValidateSegmentGap(const TStd& std_segs, const CSeq_align& align);
