@@ -324,42 +324,65 @@ SSpecParamsSet::~SSpecParamsSet(void)
 static void
 s_ReadSpecificParams(const IRegistry& reg,
                      const string& section,
-                     SNCSpecificParams* params)
+                     SNCSpecificParams* params, vector<string>& keys)
 {
+    string key(NStr::Join(keys, "\",\""));
     if (reg.HasEntry(section, kNCReg_DisableClient, IRegistry::fCountCleared)) {
         params->disable = reg.GetBool(section, kNCReg_DisableClient, false);
+        params->source[kNCReg_DisableClient] = section;
+        params->keys[kNCReg_DisableClient] = key;
     }
     if (reg.HasEntry(section, kNCReg_BlobTTL, IRegistry::fCountCleared)) {
         params->blob_ttl = reg.GetInt(section, kNCReg_BlobTTL, 3600);
+        params->source[kNCReg_BlobTTL] = section;
+        params->keys[kNCReg_BlobTTL] = key;
     }
     if (reg.HasEntry(section, kNCReg_LifespanTTL, IRegistry::fCountCleared)) {
         params->lifespan_ttl = reg.GetInt(section, kNCReg_LifespanTTL, 0);
+        params->source[kNCReg_LifespanTTL] = section;
+        params->keys[kNCReg_LifespanTTL] = key;
     }
     if (reg.HasEntry(section, kNCReg_MaxTTL, IRegistry::fCountCleared)) {
         Uint4 one_month = 2592000; //30 days: 3600 x 24 x 30
         params->max_ttl = reg.GetInt(section, kNCReg_MaxTTL, max( 10 * params->blob_ttl, one_month));
+        params->source[kNCReg_MaxTTL] = section;
+        params->keys[kNCReg_MaxTTL] = key;
     }
 
     if (reg.HasEntry(section, kNCReg_VerTTL, IRegistry::fCountCleared)) {
         params->ver_ttl = reg.GetInt(section, kNCReg_VerTTL, 3600);
+        params->source[kNCReg_VerTTL] = section;
+        params->keys[kNCReg_VerTTL] = key;
     }
     if (reg.HasEntry(section, kNCReg_TTLUnit, IRegistry::fCountCleared)) {
         params->ttl_unit = reg.GetInt(section, kNCReg_TTLUnit, 300);
+        params->source[kNCReg_TTLUnit] = section;
+        params->keys[kNCReg_TTLUnit] = key;
     }
     if (reg.HasEntry(section, kNCReg_ProlongOnRead, IRegistry::fCountCleared)) {
         params->prolong_on_read = reg.GetBool(section, kNCReg_ProlongOnRead, true);
+        params->source[kNCReg_ProlongOnRead] = section;
+        params->keys[kNCReg_ProlongOnRead] = key;
     }
     if (reg.HasEntry(section, kNCReg_SearchOnRead, IRegistry::fCountCleared)) {
         params->srch_on_read = reg.GetBool(section, kNCReg_SearchOnRead, true);
+        params->source[kNCReg_SearchOnRead] = section;
+        params->keys[kNCReg_SearchOnRead] = key;
     }
     if (reg.HasEntry(section, kNCReg_Quorum, IRegistry::fCountCleared)) {
         params->quorum = reg.GetInt(section, kNCReg_Quorum, 2);
+        params->source[kNCReg_Quorum] = section;
+        params->keys[kNCReg_Quorum] = key;
     }
     if (reg.HasEntry(section, kNCReg_FastOnMain, IRegistry::fCountCleared)) {
         params->fast_on_main = reg.GetBool(section, kNCReg_FastOnMain, true);
+        params->source[kNCReg_FastOnMain] = section;
+        params->keys[kNCReg_FastOnMain] = key;
     }
     if (reg.HasEntry(section, kNCReg_PassPolicy, IRegistry::fCountCleared)) {
         string pass_policy = reg.GetString(section, kNCReg_PassPolicy, "any");
+        params->source[kNCReg_PassPolicy] = section;
+        params->keys[kNCReg_PassPolicy] = key;
         if (pass_policy == "no_password") {
             params->pass_policy = eNCOnlyWithoutPass;
         }
@@ -440,6 +463,7 @@ s_ReadPerClientConfig(const CNcbiRegistry& reg)
         spec_prty.clear();
     }
     ncbi_NStr_Tokenize(spec_prty, ", \t\r\n", s_SpecPriority, NStr::eMergeDelims);
+    vector<string> keys;
 
     SNCSpecificParams* main_params = new SNCSpecificParams;
     main_params->disable         = false;
@@ -455,7 +479,8 @@ s_ReadPerClientConfig(const CNcbiRegistry& reg)
     main_params->pass_policy     = eNCBlobPassAny;
     main_params->quorum          = 2;
     main_params->fast_on_main    = true;
-    s_ReadSpecificParams(reg, kNCReg_ServerSection, main_params);
+    keys.push_back("default");
+    s_ReadSpecificParams(reg, kNCReg_ServerSection, main_params, keys);
     //s_DefConnTimeout = main_params->conn_timeout;
     s_DefBlobTTL = main_params->blob_ttl;
     SSpecParamsSet* params_set = new SSpecParamsSet();
@@ -474,10 +499,12 @@ s_ReadPerClientConfig(const CNcbiRegistry& reg)
             const string& section = *sec_it;
             if (!NStr::StartsWith(section, kNCReg_AppSetupPrefix, NStr::eNocase))
                 continue;
+            keys.clear();
             SSpecParamsSet* cur_set  = s_SpecParams;
             ITERATE(TSpecKeysList, prty_it, s_SpecPriority) {
                 const string& key_name = *prty_it;
                 if (reg.HasEntry(section, key_name, IRegistry::fCountCleared)) {
+                    keys.push_back(key_name);
                     const string& key_value = reg.Get(section, key_name);
                     unsigned int next_ind = 0;
                     SSpecParamsSet* next_set
@@ -508,12 +535,14 @@ s_ReadPerClientConfig(const CNcbiRegistry& reg)
             SNCSpecificParams* params = new SNCSpecificParams(*main_params);
             if (reg.HasEntry(section, kNCReg_AppSetupValue)) {
                 s_ReadSpecificParams(reg, reg.Get(section, kNCReg_AppSetupValue),
-                                     params);
+                                     params, keys);
             }
             cur_set->entries.push_back(SSpecParamsEntry(kEmptyStr, params));
         }
 
-        s_CheckDefClientConfig(s_SpecParams, NULL, Uint1(s_SpecPriority.size()), NULL);
+// some branches will not have default
+// GetAppSetup will take care of it
+//        s_CheckDefClientConfig(s_SpecParams, NULL, Uint1(s_SpecPriority.size()), NULL);
     }
 }
 
@@ -637,6 +666,7 @@ s_Finalize(void)
 const SNCSpecificParams*
 CNCServer::GetAppSetup(const TStringMap& client_params)
 {
+#if 0
     const SSpecParamsSet* cur_set = s_SpecParams;
     ITERATE(TSpecKeysList, key_it, s_SpecPriority) {
         TStringMap::const_iterator it = client_params.find(*key_it);
@@ -652,6 +682,53 @@ CNCServer::GetAppSetup(const TStringMap& client_params)
         cur_set = next_set;
     }
     return static_cast<const SNCSpecificParams*>(cur_set->entries[0].value.GetPointer());
+#else
+// if I do not set default for some branches, I need two passes sometimes
+    size_t rank = 0;
+    size_t rank2 = 0;
+    const SSpecParamsSet* cur_set = s_SpecParams;
+    ITERATE(TSpecKeysList, key_it, s_SpecPriority) {
+        TStringMap::const_iterator it = client_params.find(*key_it);
+        const SSpecParamsSet* next_set = NULL;
+        if (it != client_params.end()) {
+            const string& value = it->second;
+            unsigned int best_index = 0;
+            next_set = s_FindNextParamsSet(cur_set, value, best_index);
+        }
+        if (!next_set) {
+            next_set = static_cast<const SSpecParamsSet*>(cur_set->entries[0].value.GetPointer());
+        }
+        cur_set = next_set;
+        if (!cur_set->entries.empty()) {
+            ++rank;
+        }
+    }
+    if (rank < s_SpecPriority.size()) {
+        bool first = true;
+        const SSpecParamsSet* cur_set_2 = s_SpecParams;
+        ITERATE(TSpecKeysList, key_it, s_SpecPriority) {
+            TStringMap::const_iterator it = client_params.find(*key_it);
+            const SSpecParamsSet* next_set = NULL;
+            if (!first && it != client_params.end()) {
+                const string& value = it->second;
+                unsigned int best_index = 0;
+                next_set = s_FindNextParamsSet(cur_set_2, value, best_index);
+            }
+            if (!next_set) {
+                next_set = static_cast<const SSpecParamsSet*>(cur_set_2->entries[0].value.GetPointer());
+            }
+            cur_set_2 = next_set;
+            if (!cur_set_2->entries.empty()) {
+                ++rank2;
+            }
+            first = false;
+        }
+        if (rank2 > rank) {
+            cur_set = cur_set_2;
+        }
+    }
+    return static_cast<const SNCSpecificParams*>(cur_set->entries[0].value.GetPointer());
+#endif
 }
 
 // similar to s_CheckDefClientConfig
@@ -679,10 +756,10 @@ void CNCServer::WriteAppSetup(CSrvSocketTask& task, const TStringMap& client)
 {
     set<string> all_ports;
     ITERATE(TPortsList, it, s_Ports) {
-        unsigned int port = *it;
         all_ports.insert(NStr::NumericToString(*it));
     }
     all_ports.insert(NStr::NumericToString(s_CtrlPort));
+    all_ports.insert("");
 
     set<string> ports;
     if (client.find("port") != client.end()) {
@@ -705,15 +782,15 @@ void CNCServer::WriteAppSetup(CSrvSocketTask& task, const TStringMap& client)
         }
         caches.sort();
         caches.unique();
-        caches.push_back("");
+        caches.push_front("");
     }
 
     string is("\": "), iss("\": \""), eol(",\n\""), eos("\"");
     task.WriteText(eol).WriteText(kNCReg_SpecPriority).WriteText(iss).WriteText( NStr::Join(s_SpecPriority,",")).WriteText(eos);
     task.WriteText(eol).WriteText("setup\": [\n");
     bool is_first = true;
-    ITERATE(set<string>, p, ports) {
-        ITERATE(list<string>, c, caches) {
+    ITERATE(list<string>, c, caches) {
+        ITERATE(set<string>, p, ports) {
             if (!is_first) {
                 task.WriteText(",");
             }
@@ -721,10 +798,20 @@ void CNCServer::WriteAppSetup(CSrvSocketTask& task, const TStringMap& client)
             task.WriteText("{\n");
 
             TStringMap client;
-            client["port"] = *p;
-            client["cache"] = *c;
-            task.WriteText("\"").WriteText("port").WriteText(is).WriteText(*p);
-            task.WriteText(eol).WriteText("cache").WriteText(iss).WriteText(*c).WriteText(eos);
+            task.WriteText("\"").WriteText("cache");
+            if (!c->empty()) {
+                client["cache"] = *c;
+                task.WriteText(iss).WriteText(*c).WriteText(eos);
+            } else {
+                task.WriteText(is).WriteText("null");
+            }
+            task.WriteText(eol).WriteText("port").WriteText(is);
+            if (!p->empty()) {
+                client["port"] = *p;
+                task.WriteText(*p);
+            } else {
+                task.WriteText("null");
+            }
             CNCServer::WriteAppSetup(task, CNCServer::GetAppSetup(client));
             task.WriteText("\n}");
         }
@@ -734,25 +821,61 @@ void CNCServer::WriteAppSetup(CSrvSocketTask& task, const TStringMap& client)
 
 void CNCServer::WriteAppSetup(CSrvSocketTask& task, const SNCSpecificParams* params)
 {
-    string is("\": "), eol(",\n\"");
-    task.WriteText(eol).WriteText(kNCReg_DisableClient).WriteText(is).WriteText(NStr::BoolToString(params->disable));
-    task.WriteText(eol).WriteText(kNCReg_ProlongOnRead).WriteText(is).WriteText(NStr::BoolToString(params->prolong_on_read));
-    task.WriteText(eol).WriteText(kNCReg_SearchOnRead ).WriteText(is).WriteText(NStr::BoolToString(params->srch_on_read));
-    task.WriteText(eol).WriteText(kNCReg_FastOnMain   ).WriteText(is).WriteText(NStr::BoolToString(params->fast_on_main));
-    task.WriteText(eol).WriteText(kNCReg_PassPolicy   ).WriteText(is);
+    map<string,string> source(params->source);
+    map<string,string> keys(params->keys);
+    string eol(",\n\""), is("\": "), isv("\": { \"value\": "),
+        iss(", \"source\": \""), eos("\""),
+        isk(", \"keys\": [\""), eok("\"]}");
+    task.WriteText(eol).WriteText(kNCReg_DisableClient).
+        WriteText(isv).WriteText(NStr::BoolToString(params->disable)).
+        WriteText(iss).WriteText(source[kNCReg_DisableClient]).WriteText(eos).
+        WriteText(isk).WriteText(keys[kNCReg_DisableClient]).WriteText(eok);
+    task.WriteText(eol).WriteText(kNCReg_ProlongOnRead).
+        WriteText(isv).WriteText(NStr::BoolToString(params->prolong_on_read)).
+        WriteText(iss).WriteText(source[kNCReg_ProlongOnRead]).WriteText(eos).
+        WriteText(isk).WriteText(keys[kNCReg_ProlongOnRead]).WriteText(eok);
+    task.WriteText(eol).WriteText(kNCReg_SearchOnRead ).
+        WriteText(isv).WriteText(NStr::BoolToString(params->srch_on_read)).
+        WriteText(iss).WriteText(source[kNCReg_SearchOnRead]).WriteText(eos).
+        WriteText(isk).WriteText(keys[kNCReg_SearchOnRead]).WriteText(eok);
+    task.WriteText(eol).WriteText(kNCReg_FastOnMain   ).
+        WriteText(isv).WriteText(NStr::BoolToString(params->fast_on_main)).
+        WriteText(iss).WriteText(source[kNCReg_FastOnMain]).WriteText(eos).
+        WriteText(isk).WriteText(keys[kNCReg_FastOnMain]).WriteText(eok);
+    task.WriteText(eol).WriteText(kNCReg_PassPolicy   ).WriteText(isv);
     task.WriteText("\"");
     switch (params->pass_policy) {
     case eNCOnlyWithoutPass:  task.WriteText("no_password");   break;
     case eNCOnlyWithPass:     task.WriteText("with_password"); break;
     case eNCBlobPassAny:      task.WriteText("any");           break;
     }
-    task.WriteText("\"");
-    task.WriteText(eol).WriteText(kNCReg_LifespanTTL).WriteText(is).WriteNumber(params->lifespan_ttl);
-    task.WriteText(eol).WriteText(kNCReg_MaxTTL     ).WriteText(is).WriteNumber(params->max_ttl);
-    task.WriteText(eol).WriteText(kNCReg_BlobTTL    ).WriteText(is).WriteNumber(params->blob_ttl);
-    task.WriteText(eol).WriteText(kNCReg_VerTTL     ).WriteText(is).WriteNumber(params->ver_ttl);
-    task.WriteText(eol).WriteText(kNCReg_TTLUnit    ).WriteText(is).WriteNumber(params->ttl_unit);
-    task.WriteText(eol).WriteText(kNCReg_Quorum     ).WriteText(is).WriteNumber(params->quorum);
+    task.WriteText("\"").
+        WriteText(iss).WriteText(source[kNCReg_PassPolicy]).WriteText(eos).
+        WriteText(isk).WriteText(keys[kNCReg_PassPolicy]).WriteText(eok);
+    task.WriteText(eol).WriteText(kNCReg_LifespanTTL).
+        WriteText(isv).WriteNumber(params->lifespan_ttl).
+        WriteText(iss).WriteText(source[kNCReg_LifespanTTL]).WriteText(eos).
+        WriteText(isk).WriteText(keys[kNCReg_LifespanTTL]).WriteText(eok);
+    task.WriteText(eol).WriteText(kNCReg_MaxTTL     ).
+        WriteText(isv).WriteNumber(params->max_ttl).
+        WriteText(iss).WriteText(source[kNCReg_MaxTTL]).WriteText(eos).
+        WriteText(isk).WriteText(keys[kNCReg_MaxTTL]).WriteText(eok);
+    task.WriteText(eol).WriteText(kNCReg_BlobTTL    ).
+        WriteText(isv).WriteNumber(params->blob_ttl).
+        WriteText(iss).WriteText(source[kNCReg_BlobTTL]).WriteText(eos).
+        WriteText(isk).WriteText(keys[kNCReg_BlobTTL]).WriteText(eok);
+    task.WriteText(eol).WriteText(kNCReg_VerTTL     ).
+        WriteText(isv).WriteNumber(params->ver_ttl).
+        WriteText(iss).WriteText(source[kNCReg_VerTTL]).WriteText(eos).
+        WriteText(isk).WriteText(keys[kNCReg_VerTTL]).WriteText(eok);
+    task.WriteText(eol).WriteText(kNCReg_TTLUnit    ).
+        WriteText(isv).WriteNumber(params->ttl_unit).
+        WriteText(iss).WriteText(source[kNCReg_TTLUnit]).WriteText(eos).
+        WriteText(isk).WriteText(keys[kNCReg_TTLUnit]).WriteText(eok);
+    task.WriteText(eol).WriteText(kNCReg_Quorum     ).
+        WriteText(isv).WriteNumber(params->quorum).
+        WriteText(iss).WriteText(source[kNCReg_Quorum]).WriteText(eos).
+        WriteText(isk).WriteText(keys[kNCReg_Quorum]).WriteText(eok);
 }
 
 void CNCServer::WriteEnvInfo(CSrvSocketTask& task)

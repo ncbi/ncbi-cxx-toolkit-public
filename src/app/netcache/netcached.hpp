@@ -52,6 +52,8 @@ enum ENCBlobPassPolicy {
 
 struct SNCSpecificParams : public CObject
 {
+    map<string,string> source;
+    map<string,string> keys;
     bool  disable;
     bool  prolong_on_read;
     bool  srch_on_read;
@@ -72,7 +74,7 @@ struct SNCSpecificParams : public CObject
     {
     }
     SNCSpecificParams(const SNCSpecificParams& o)
-      : disable(o.disable), prolong_on_read(o.prolong_on_read),
+      : source(o.source), keys(o.keys), disable(o.disable), prolong_on_read(o.prolong_on_read),
         srch_on_read(o.srch_on_read), fast_on_main(o.fast_on_main),
         pass_policy(o.pass_policy),
         lifespan_ttl(o.lifespan_ttl), max_ttl(o.max_ttl), blob_ttl(o.blob_ttl), ver_ttl(o.ver_ttl), ttl_unit(o.ttl_unit),
