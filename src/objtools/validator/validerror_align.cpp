@@ -204,7 +204,7 @@ static bool s_AmbiguousMatch (char a, char b)
 }
 
 
-static int s_GetNumIdsToUse (const CDense_seg& denseg)
+static size_t s_GetNumIdsToUse (const CDense_seg& denseg)
 {
     size_t dim     = denseg.GetDim();
     if (!denseg.IsSetIds()) {
@@ -232,19 +232,19 @@ void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align,
         const CDense_seg& denseg = align.GetSegs().GetDenseg();
         // first, make sure this isn't a TPA alignment
         bool is_tpa = false;
-        int dim     = denseg.GetDim();
+        int dim = denseg.GetDim();
         if (dim != s_GetNumIdsToUse(denseg)) {
             return;
         }
 
-        for (CDense_seg::TDim row = 0;  row < dim && !is_tpa;  ++row) {
+        for (CDense_seg::TDim row = 0; row < dim && !is_tpa; ++row) {
             CRef<CSeq_id> id = denseg.GetIds()[row];
-            CBioseq_Handle bsh = m_Scope->GetBioseqHandle (*id);
+            CBioseq_Handle bsh = m_Scope->GetBioseqHandle(*id);
             if (bsh) {
                 CSeqdesc_CI desc_ci(bsh, CSeqdesc::e_User);
                 while (desc_ci && !is_tpa) {
                     if (desc_ci->GetUser().IsSetType() && desc_ci->GetUser().GetType().IsStr()
-                        && NStr::EqualNocase (desc_ci->GetUser().GetType().GetStr(), "TpaAssembly")) {
+                        && NStr::EqualNocase(desc_ci->GetUser().GetType().GetStr(), "TpaAssembly")) {
                         is_tpa = true;
                     }
                     ++desc_ci;
@@ -253,7 +253,7 @@ void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align,
         }
         if (is_tpa) {
             return;
-        }            
+        }
 
         try {
             CRef<CAlnVec> av(new CAlnVec(denseg, *m_Scope));
@@ -271,15 +271,15 @@ void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align,
                     } else {
                         bool match = true;
                         // don't care about end gaps, ever
-                        NStr::ReplaceInPlace(column, ".", "");            
+                        NStr::ReplaceInPlace(column, ".", "");
                         // if we cared about internal gaps, it would have been handled above
                         NStr::ReplaceInPlace(column, "-", "");
-                        if (!NStr::IsBlank (column)) {
+                        if (!NStr::IsBlank(column)) {
                             string::iterator it1 = column.begin();
                             string::iterator it2 = it1;
                             ++it2;
                             while (match && it2 != column.end()) {
-                                if (!s_AmbiguousMatch (*it1, *it2)) {
+                                if (!s_AmbiguousMatch(*it1, *it2)) {
                                     match = false;
                                 }
                                 ++it2;
@@ -300,22 +300,22 @@ void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align,
                         match_25 = 0;
                     }
                 }
-	          } catch (CException &x1) {
-                  // if sequence is not in scope,
-                  // the above is impossible
-                  // report 0 %, same as C Toolkit
-                  col = aln_len;
-                  if (NStr::StartsWith(x1.GetMsg(), "iterator out of range")) {
-                      // bad offsets
-                  } else {
-                      ids_missing = true;
-                  }
-	          } catch (std::exception &) {
-                  // if sequence is not in scope,
-                  // the above is impossible
-                  // report 0 %, same as C Toolkit
-                  col = aln_len;
-                  ids_missing = true;
+            } catch (CException &x1) {
+                // if sequence is not in scope,
+                // the above is impossible
+                // report 0 %, same as C Toolkit
+                col = aln_len;
+                if (NStr::StartsWith(x1.GetMsg(), "iterator out of range")) {
+                    // bad offsets
+                } else {
+                    ids_missing = true;
+                }
+            } catch (std::exception &) {
+                // if sequence is not in scope,
+                // the above is impossible
+                // report 0 %, same as C Toolkit
+                col = aln_len;
+                ids_missing = true;
             }
         } catch (CException &) {
             // if AlnVec can't resolve seq id, 
@@ -325,7 +325,10 @@ void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align,
             num_match = 0;
             ids_missing = true;
         }
-
+    } else if (align.GetSegs().IsStd() && !(FindSegmentGaps(align.GetSegs().GetStd(), m_Scope)).empty()) {
+        col = 1;
+        num_match = 0;
+        ids_missing = true;
     } else {
         try {
             TIdExtract id_extract;
@@ -456,10 +459,10 @@ void CValidError_align::x_ValidateAlignPercentIdentity (const CSeq_align& align,
     }
 
     if (col > 0) {
-        int pct_id = (num_match * 100) / col;
+        size_t pct_id = (num_match * 100) / col;
         if (pct_id < 50) {
             PostErr (eDiag_Warning, eErr_SEQ_ALIGN_PercentIdentity,
-                "PercentIdentity: This alignment has a percent identity of " + NStr::IntToString (pct_id) + "%",
+                "PercentIdentity: This alignment has a percent identity of " + NStr::NumericToString (pct_id) + "%",
                      align);
         }
     }
@@ -1057,6 +1060,54 @@ void CValidError_align::x_ValidateFastaLike
 
 
 
+CValidError_align::TSegmentGapV CValidError_align::FindSegmentGaps(const TDenseg& denseg, CScope* scope)
+{
+    TSegmentGapV seggaps;
+    size_t align_pos = 1;
+
+    int numseg = denseg.GetNumseg();
+    int dim = denseg.GetDim();
+    const CDense_seg::TStarts& starts = denseg.GetStarts();
+
+    for (size_t seg = 0; seg < numseg; ++seg) {
+        bool seggap = true;
+        for (int id = 0; id < dim; ++id) {
+            if (starts[seg * dim + id] != -1) {
+                seggap = false;
+                break;
+            }
+        }
+        if (seggap) {
+            // no sequence is present in this segment
+            string label = "";
+            if (denseg.IsSetIds() && denseg.GetIds().size() > 0) {
+                denseg.GetIds()[0]->GetLabel(&label, CSeq_id::eContent);
+            }
+            if (NStr::IsBlank(label)) {
+                label = "unknown";
+            }
+            seggaps.push_back({ seg, align_pos, label });
+        }
+        if (denseg.IsSetLens() && denseg.GetLens().size() > (unsigned int)seg) {
+            align_pos += denseg.GetLens()[seg];
+        }
+    }
+    return seggaps;
+}
+
+void CValidError_align::x_ReportSegmentGaps(const TSegmentGapV& seggaps, const CSeq_align& align)
+{
+    ITERATE(TSegmentGapV, itr, seggaps) {
+        // no sequence is present in this segment
+        PostErr(eDiag_Error, eErr_SEQ_ALIGN_SegmentGap,
+            "Segs: Segment " + NStr::SizetToString(itr->seg_num + 1) + " (near alignment position "
+            + NStr::SizetToString(itr->align_pos) + ") in the context of "
+            + itr->label + " contains only gaps.  Each segment must contain at least one actual sequence -- look for columns with all gaps and delete them.",
+            align);
+    }
+}
+
+
 //===========================================================================
 // x_ValidateSegmentGap:
 //
@@ -1067,45 +1118,15 @@ void CValidError_align::x_ValidateSegmentGap
 (const TDenseg& denseg,
  const CSeq_align& align)
 {
-    int numseg  = denseg.GetNumseg();
-    int dim     = denseg.GetDim();
-    const CDense_seg::TStarts& starts = denseg.GetStarts();
-    size_t align_pos = 0;
-
-    for ( int seg = 0; seg < numseg; ++seg ) {
-        bool seggap = true;
-        for ( int id = 0; id < dim; ++id ) {
-            if ( starts[seg * dim + id] != -1 ) {
-                seggap = false;
-                break;
-            }
-        }
-        if ( seggap ) {
-            // no sequence is present in this segment
-            string label = "";
-            if (denseg.IsSetIds() && denseg.GetIds().size() > 0) {
-                denseg.GetIds()[0]->GetLabel(&label, CSeq_id::eContent);
-            }
-            if (NStr::IsBlank(label)) {
-                label = "unknown";
-            }
-            PostErr (eDiag_Error, eErr_SEQ_ALIGN_SegmentGap,
-                     "Segs: Segment " + NStr::SizetToString (seg + 1) + " (near alignment position "
-                     + NStr::SizetToString(align_pos) + ") in the context of "
-                     + label + " contains only gaps.  Each segment must contain at least one actual sequence -- look for columns with all gaps and delete them.",
-                     align);
-        }
-        if (denseg.IsSetLens() && denseg.GetLens().size() > (unsigned int) seg) {
-            align_pos += denseg.GetLens()[seg];
-        }
-    }
+    TSegmentGapV seggaps = FindSegmentGaps(denseg, m_Scope);
+    x_ReportSegmentGaps(seggaps, align);
 }
 
 
-void CValidError_align::x_ValidateSegmentGap
-(const TPacked& packed,
- const CSeq_align& align)
+CValidError_align::TSegmentGapV CValidError_align::FindSegmentGaps(const TPacked& packed, CScope* scope)
 {
+    TSegmentGapV seggaps;
+
     static Uchar bits[] = { 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01 };
 
     size_t numseg = packed.GetNumseg();
@@ -1113,30 +1134,66 @@ void CValidError_align::x_ValidateSegmentGap
     const CPacked_seg::TPresent& present = packed.GetPresent();
 
     size_t align_pos = 1;
-    for ( size_t seg = 0; seg < numseg;  ++seg) {
+    for (size_t seg = 0; seg < numseg; ++seg) {
         size_t id = 0;
-        for ( ; id < dim; ++id ) {
+        for (; id < dim; ++id) {
             size_t i = id + (dim * seg);
-            if ( (present[i / 8] & bits[i % 8]) ) {
+            if ((present[i / 8] & bits[i % 8])) {
                 break;
             }
         }
-        if ( id == dim ) {
+        if (id == dim) {
             // no sequence is present in this segment
             string label = "Unknown";
             if (packed.IsSetIds() && packed.GetIds().size() > 0) {
                 packed.GetIds()[0]->GetLabel(&label);
             }
-            PostErr (eDiag_Error, eErr_SEQ_ALIGN_SegmentGap,
-                     "Segs: Segment " + NStr::SizetToString (seg + 1) + " (near alignment position "
-                     + NStr::SizetToString(align_pos) + ") in the context of "
-                     + label + " contains only gaps.  Each segment must contain at least one actual sequence -- look for columns with all gaps and delete them.",
-                     align);
+            seggaps.push_back({ seg, align_pos, label });
         }
         if (packed.IsSetLens() && packed.GetLens().size() > seg) {
             align_pos += packed.GetLens()[seg];
         }
-    }       
+    }
+
+    return seggaps;
+}
+
+
+void CValidError_align::x_ValidateSegmentGap
+(const TPacked& packed,
+ const CSeq_align& align)
+{
+    TSegmentGapV seggaps = FindSegmentGaps(packed, m_Scope);
+    x_ReportSegmentGaps(seggaps, align);
+}
+
+
+CValidError_align::TSegmentGapV CValidError_align::FindSegmentGaps(const TStd& std_segs, CScope* scope)
+{
+    TSegmentGapV seggaps;
+
+    size_t seg = 0;
+    size_t align_pos = 1;
+    ITERATE(TStd, stdseg, std_segs) {
+        bool gap = true;
+        size_t len = 0;
+        string label = "Unknown";
+        ITERATE(CStd_seg::TLoc, loc, (*stdseg)->GetLoc()) {
+            if (!(*loc)->IsEmpty() && !(*loc)->IsNull()) {
+                gap = false;
+                break;
+            } else if (len == 0) {
+                len = GetLength(**loc, scope);
+                (*loc)->GetId()->GetLabel(&label);
+            }
+        }
+        if (gap) {
+            seggaps.push_back({ seg, align_pos, label });
+        }
+        align_pos += len;
+        ++seg;
+    }
+    return seggaps;
 }
 
 
@@ -1144,32 +1201,32 @@ void CValidError_align::x_ValidateSegmentGap
 (const TStd& std_segs,
  const CSeq_align& align)
 {
+    TSegmentGapV seggaps = FindSegmentGaps(std_segs, m_Scope);
+    x_ReportSegmentGaps(seggaps, align);
+}
+
+
+CValidError_align::TSegmentGapV CValidError_align::FindSegmentGaps(const TDendiag& dendiags, CScope* scope)
+{
+    TSegmentGapV seggaps;
+
     size_t seg = 0;
-    size_t align_pos = 1;
-    ITERATE ( TStd, stdseg, std_segs ) {
-        bool gap = true;
-        size_t len = 0;
-        string label = "Unknown";
-        ITERATE ( CStd_seg::TLoc, loc, (*stdseg)->GetLoc() ) {
-            if ( !(*loc)->IsEmpty()  &&  !(*loc)->IsNull() ) {
-                gap = false;
-                break;
-            } else if (len == 0) {
-                len = GetLength (**loc, m_Scope);
-                (*loc)->GetId()->GetLabel(&label);
+    TSeqPos align_pos = 1;
+    ITERATE(TDendiag, diag_seg, dendiags) {
+        if (!(*diag_seg)->IsSetDim() || (*diag_seg)->GetDim() == 0) {
+            string label = "Unknown";
+            if ((*diag_seg)->IsSetIds() && (*diag_seg)->GetIds().size() > 0) {
+                (*diag_seg)->GetIds().front()->GetLabel(&label);
             }
+            seggaps.push_back({ seg, align_pos, label });
         }
-        if ( gap ) {
-            // no sequence is present in this segment
-            PostErr (eDiag_Error, eErr_SEQ_ALIGN_SegmentGap,
-                     "Segs: Segment " + NStr::SizetToString (seg + 1) + " (near alignment position "
-                     + NStr::SizetToString(align_pos) + ") in the context of "
-                     + label + " contains only gaps.  Each segment must contain at least one actual sequence -- look for columns with all gaps and delete them.",
-                     align);
+        if ((*diag_seg)->IsSetLen()) {
+            align_pos += (*diag_seg)->GetLen();
         }
-        align_pos += len;
         ++seg;
     }
+
+    return seggaps;
 }
 
 
@@ -1177,25 +1234,8 @@ void CValidError_align::x_ValidateSegmentGap
 (const TDendiag& dendiags,
  const CSeq_align& align)
 {
-    size_t seg = 0;
-    TSeqPos align_pos = 1;
-    ITERATE( TDendiag, diag_seg, dendiags ) {
-        if (!(*diag_seg)->IsSetDim() || (*diag_seg)->GetDim() == 0) {
-            string label = "Unknown";
-            if ((*diag_seg)->IsSetIds() && (*diag_seg)->GetIds().size() > 0) {
-                (*diag_seg)->GetIds().front()->GetLabel(&label);
-            }
-            PostErr (eDiag_Error, eErr_SEQ_ALIGN_SegmentGap,
-                     "Segs: Segment " + NStr::SizetToString (seg + 1) + " (near alignment position "
-                     + NStr::IntToString(align_pos) + ") in the context of "
-                     + label + " contains only gaps.  Each segment must contain at least one actual sequence -- look for columns with all gaps and delete them.",
-                     align);
-        }
-        if ((*diag_seg)->IsSetLen()) {
-            align_pos += (*diag_seg)->GetLen();
-        }
-        ++seg;
-    }
+    TSegmentGapV seggaps = FindSegmentGaps(dendiags, m_Scope);
+    x_ReportSegmentGaps(seggaps, align);
 }
 
 
@@ -1320,7 +1360,7 @@ void CValidError_align::x_ValidateSeqLength
  const CSeq_align& align)
 {
     int dim     = denseg.GetDim();
-    int numseg  = denseg.GetNumseg();
+    size_t numseg  = denseg.GetNumseg();
     const CDense_seg::TIds& ids       = denseg.GetIds();
     const CDense_seg::TStarts& starts = denseg.GetStarts();
     const CDense_seg::TLens& lens      = denseg.GetLens();

@@ -17509,7 +17509,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_SegmentGap)
     STANDARD_SETUP_WITH_DATABASE
 
     expected_errors.push_back(new CExpectedError("good1", eDiag_Error, "SegmentGap", 
-                  "Segs: Segment 2 (near alignment position 5) in the context of good1 contains only gaps.  Each segment must contain at least one actual sequence -- look for columns with all gaps and delete them."));
+                  "Segs: Segment 2 (near alignment position 6) in the context of good1 contains only gaps.  Each segment must contain at least one actual sequence -- look for columns with all gaps and delete them."));
     options |= CValidator::eVal_val_align | CValidator::eVal_remote_fetch;
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);

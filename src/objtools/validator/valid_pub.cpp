@@ -328,6 +328,28 @@ void CValidError_imp::ValidatePubGen
 }
 
 
+bool IsElectronicJournal(const CCit_jour& journal)
+{
+    bool is_electronic_journal = false;
+    if (journal.IsSetTitle()) {
+        ITERATE(CTitle::Tdata, item, journal.GetTitle().Get()) {
+            if ((*item)->Which() == CTitle::C_E::e_Name
+                && NStr::StartsWith((*item)->GetName(), "(er)")) {
+                is_electronic_journal = true;
+                break;
+            }
+        }
+    }
+    if (journal.IsSetImp() && journal.GetImp().IsSetPubstatus()) {
+        CImprint::TPubstatus pubstatus = journal.GetImp().GetPubstatus();
+        if (pubstatus == ePubStatus_epublish || pubstatus == ePubStatus_aheadofprint) {
+            is_electronic_journal = true;
+        }
+    }
+    return is_electronic_journal;
+}
+
+
 void CValidError_imp::ValidatePubArticle
 (const CCit_art& art,
  int uid,
@@ -344,19 +366,11 @@ void CValidError_imp::ValidatePubArticle
         
         bool has_iso_jta = HasIsoJTA(jour.GetTitle());
         bool in_press = false;
-        bool is_electronic_journal = false;
+        bool is_electronic_journal = IsElectronicJournal(art.GetFrom().GetJournal());
 
         if ( !HasTitle(jour.GetTitle()) ) {
             PostObjErr(eDiag_Error, eErr_GENERIC_MissingPubInfo,
             "Journal title missing", obj, ctx);
-        }
-
-        ITERATE (CTitle::Tdata, item, jour.GetTitle().Get() ) {
-            if ((*item)->Which() == CTitle::C_E::e_Name
-                && NStr::StartsWith((*item)->GetName(), "(er)")) {
-                is_electronic_journal = true;
-                break;
-            }
         }
 
         if ( jour.CanGetImp() ) {
@@ -378,10 +392,6 @@ void CValidError_imp::ValidatePubArticle
                 }
             }
 
-            if (imp.IsSetPubstatus() 
-                && (imp.GetPubstatus() == ePubStatus_epublish || imp.GetPubstatus() == ePubStatus_aheadofprint)) {
-                is_electronic_journal = true;
-            }
             if ( !imp.IsSetPrepub()        &&  
                  (!imp.CanGetPubstatus()   ||  
                   imp.GetPubstatus() != ePubStatus_aheadofprint) ) {
