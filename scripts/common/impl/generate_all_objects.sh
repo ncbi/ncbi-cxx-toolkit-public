@@ -43,8 +43,10 @@ for spec in src/serial/test/we_cpp.asn src/objects/*/*.asn \
   src/internal/blast/Blastdb2Entrez/dbASN/bdb2ez.asn \
   src/internal/cppcore/test_stat_ext/loader/BoostTestXML.dtd \
   src/internal/gpipe/objects/*/*.asn src/internal/gpipe/objects/*/*.dtd \
+  src/internal/gpipe/objects/*/*.xsd \
   src/internal/gpipe/gpinit/src/gpinit_compare/gpinit.asn \
   src/internal/gpipe/gpexec/queue/lib/gpxapi.asn \
+  src/internal/peptides/objects/unimod/unimod.xsd \
   src/internal/variation/snp/objects/rsm/rsm.asn; do
     if test -f "$spec"; then
         case $spec in
