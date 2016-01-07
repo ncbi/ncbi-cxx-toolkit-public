@@ -149,6 +149,8 @@ public:
     /// Get current hit id appended with auto-incremented sub-hit id.
     /// If hit id is not set, return empty string.
     const string& GetNextSubHitID(void);
+    /// Get the last generated sub-hit id.
+    const string& GetCurrentSubHitID(void);
 
     /// Dtab
     bool IsSetDtab(void) const;
@@ -295,6 +297,8 @@ private:
     void x_LogHitID(bool ignore_app_state = false) const;
 
     string x_GetHitID(CDiagContext::EDefaultHitIDFlags flag) const;
+
+    void x_UpdateSubHitID(bool increment);
 
     static bool& sx_GetDefaultAutoIncRequestIDOnPost(void);
 
@@ -459,6 +463,23 @@ void CRequestContext::UnsetHitID(void)
     m_HitID.clear();
     m_LoggedHitID = false;
     m_SubHitID = 0;
+    m_SubHitIDCache.clear();
+}
+
+
+inline
+const string& CRequestContext::GetNextSubHitID(void)
+{
+    x_UpdateSubHitID(true);
+    return m_SubHitIDCache;
+}
+
+
+inline
+const string& CRequestContext::GetCurrentSubHitID(void)
+{
+    x_UpdateSubHitID(false);
+    return m_SubHitIDCache;
 }
 
 

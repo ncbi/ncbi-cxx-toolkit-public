@@ -333,6 +333,7 @@ void CRequestContext::SetHitID(const string& hit)
     x_SetProp(eProp_HitID);
     if (m_HitID != hit) {
         m_SubHitID = 0;
+        m_SubHitIDCache.clear();
     }
     m_HitID = hit;
     m_LoggedHitID = false;
@@ -340,7 +341,7 @@ void CRequestContext::SetHitID(const string& hit)
 }
 
 
-const string& CRequestContext::GetNextSubHitID(void)
+void CRequestContext::x_UpdateSubHitID(bool increment)
 {
     static CAtomicCounter s_DefaultSubHitCounter;
 
@@ -349,12 +350,19 @@ const string& CRequestContext::GetNextSubHitID(void)
     // Use global sub-hit counter for default hit id to prevent
     // duplicate phids in different threads.
     m_SubHitIDCache = GetHitID();
-    unsigned int sub_hit_id = (m_SubHitIDCache == GetDiagContext().GetDefaultHitID()) ?
-        (unsigned int)s_DefaultSubHitCounter.Add(1) : ++m_SubHitID;
+
+    unsigned int sub_hit_id;
+    if (m_SubHitIDCache == GetDiagContext().GetDefaultHitID()) {
+        sub_hit_id = (unsigned int)(increment ? s_DefaultSubHitCounter.Add(1) :
+            s_DefaultSubHitCounter.Get());
+    }
+    else {
+        if ( increment ) ++m_SubHitID;
+        sub_hit_id = m_SubHitID;
+    }
 
     // Cache the string so that C code can use it.
     m_SubHitIDCache += "." + NStr::NumericToString(sub_hit_id);
-    return m_SubHitIDCache;
 }
 
 
@@ -487,6 +495,8 @@ CRef<CRequestContext> CRequestContext::Clone(void) const
     ret->m_HitID = m_HitID;
     ret->m_LoggedHitID = m_LoggedHitID;
     ret->m_SubHitID = m_SubHitID;
+    ret->m_SubHitIDCache = m_SubHitIDCache;
+    ret->m_Dtab = m_Dtab;
     ret->m_ReqStatus = m_ReqStatus;
     ret->m_ReqTimer = m_ReqTimer;
     ret->m_BytesRd = m_BytesRd;
