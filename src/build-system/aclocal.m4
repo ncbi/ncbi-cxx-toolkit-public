@@ -266,7 +266,7 @@ AC_DEFUN(NCBI_CHECK_PYTHON,
 
 AC_DEFUN(_NCBI_CHECK_PYTHON,
 [AC_PATH_PROG($1, python$2, [],
-    [$PYTHON_PATH/bin:$PATH:/usr/local/python-$2/bin])
+    [${PYTHON_PATH+$PYTHON_PATH/bin:}$PATH:/usr/local/python-$2/bin])
  if test -x "[$]$1"; then
     $1_VERSION=`[$]$1 -c 'from distutils import sysconfig; print(sysconfig.get_config_var("VERSION"))' 2>/dev/null`
  else

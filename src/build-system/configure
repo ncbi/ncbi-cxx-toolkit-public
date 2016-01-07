@@ -32041,7 +32041,7 @@ else
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-as_dummy="$PYTHON_PATH/bin:$PATH:/usr/local/python-/bin"
+as_dummy="${PYTHON_PATH+$PYTHON_PATH/bin:}$PATH:/usr/local/python-/bin"
 for as_dir in $as_dummy
 do
   IFS=$as_save_IFS
@@ -32216,7 +32216,7 @@ else
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-as_dummy="$PYTHON_PATH/bin:$PATH:/usr/local/python-2.5/bin"
+as_dummy="${PYTHON_PATH+$PYTHON_PATH/bin:}$PATH:/usr/local/python-2.5/bin"
 for as_dir in $as_dummy
 do
   IFS=$as_save_IFS
@@ -32391,7 +32391,7 @@ else
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-as_dummy="$PYTHON_PATH/bin:$PATH:/usr/local/python-2.6/bin"
+as_dummy="${PYTHON_PATH+$PYTHON_PATH/bin:}$PATH:/usr/local/python-2.6/bin"
 for as_dir in $as_dummy
 do
   IFS=$as_save_IFS
@@ -32566,7 +32566,7 @@ else
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-as_dummy="$PYTHON_PATH/bin:$PATH:/usr/local/python-2.7/bin"
+as_dummy="${PYTHON_PATH+$PYTHON_PATH/bin:}$PATH:/usr/local/python-2.7/bin"
 for as_dir in $as_dummy
 do
   IFS=$as_save_IFS
