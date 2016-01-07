@@ -46,6 +46,10 @@
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include "splitter_exception.hpp"
+#include <math.h>
+
+
+
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
