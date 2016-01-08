@@ -278,9 +278,9 @@ CImage* CImageIOTiff::ReadImage(CNcbiIstream& istr)
                     // packed as a 32-bit value, so we need to pick this
                     // apart here
                     uint32 pixel = raster[from_idx];
-                    data[4 * to_idx + 0] = (unsigned char)TIFFGetR(pixel);
-                    data[4 * to_idx + 1] = (unsigned char)TIFFGetG(pixel);
-                    data[4 * to_idx + 2] = (unsigned char)TIFFGetB(pixel);
+                    data[4 * to_idx + 0] = TIFFGetR(pixel);
+                    data[4 * to_idx + 1] = TIFFGetG(pixel);
+                    data[4 * to_idx + 2] = TIFFGetB(pixel);
                     data[4 * to_idx + 3] = (unsigned char)TIFFGetA(pixel);
                 }
                 break;
