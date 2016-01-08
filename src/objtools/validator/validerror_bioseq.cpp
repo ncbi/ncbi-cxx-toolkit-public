@@ -7833,7 +7833,8 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
     }
 
     if (is_genome_assembly && is_finished_status && tech == CMolInfo::eTech_wgs) {
-        PostErr (eDiag_Warning, eErr_SEQ_DESCR_FinishedStatusForWGS, "WGS record %s should not have Finished status", seq);
+        const string& buf = seq.GetId().front()->AsFastaString();
+        PostErr (eDiag_Warning, eErr_SEQ_DESCR_FinishedStatusForWGS, "WGS record " + buf + " should not have Finished status", seq);
     }
 
     if (wgs_master && ! is_genome_assembly) {
