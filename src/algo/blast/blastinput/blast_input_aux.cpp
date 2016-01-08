@@ -180,7 +180,7 @@ ParseSequenceRangeOpenEnd(const string& range_str,
     string error_msg(error_prefix ? error_prefix : kDfltErrorPrefix);
 
     vector<string> tokens;
-    NStr::Tokenize(range_str, kDelimiters, tokens);
+    NStr::Split(range_str, kDelimiters, tokens);
     if (tokens.front().empty()) {
         error_msg += " (start cannot be empty)";
         NCBI_THROW(CBlastException, eInvalidArgument, error_msg);
