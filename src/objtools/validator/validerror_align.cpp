@@ -1063,7 +1063,7 @@ void CValidError_align::x_ValidateFastaLike
 CValidError_align::TSegmentGapV CValidError_align::FindSegmentGaps(const TDenseg& denseg, CScope* scope)
 {
     TSegmentGapV seggaps;
-    size_t align_pos = 1;
+    size_t align_pos = 0;
 
     int numseg = denseg.GetNumseg();
     int dim = denseg.GetDim();
