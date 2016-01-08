@@ -1804,6 +1804,9 @@ bool CWGSSeqIterator::HasGi(void) const
 CSeq_id::TGi CWGSSeqIterator::GetGi(void) const
 {
     x_CheckValid("CWGSSeqIterator::GetGi");
+    if ( !m_Cur->m_GI ) {
+        return ZERO_GI;
+    }
     CVDBValueFor<NCBI_gi> gi = m_Cur->GI(m_CurrId);
     return gi.empty()? ZERO_GI: s_ToGi(*gi, "CWGSSeqIterator::GetGi()");
 }
@@ -2079,6 +2082,13 @@ void CWGSSeqIterator::GetAnnotSet(TAnnotSet& annot_set, TFlags flags) const
 }
 
 
+bool CWGSSeqIterator::CanHaveQualityGraph(void) const
+{
+    x_CheckValid("CWGSSeqIterator::CanHaveQualityGraph");
+    return m_Cur->m_QUALITY;
+}
+
+
 bool CWGSSeqIterator::HasQualityGraph(void) const
 {
     x_CheckValid("CWGSSeqIterator::HasQualityGraph");
@@ -2095,6 +2105,12 @@ CWGSSeqIterator::GetQualityVec(vector<INSDC_quality_phred>& quality_vec) const
     quality_vec.resize(size);
     for ( size_t i = 0; i < size; ++i )
         quality_vec[i] = quality[i];
+}
+
+
+string CWGSSeqIterator::GetQualityAnnotName(void) const
+{
+    return "Phrap Graph";
 }
 
 
@@ -2129,7 +2145,7 @@ void CWGSSeqIterator::GetQualityAnnot(TAnnotSet& annot_set,
 
     CRef<CSeq_annot> annot(new CSeq_annot);
     CRef<CAnnotdesc> name(new CAnnotdesc);
-    name->SetName("Phrap Graph");
+    name->SetName(GetQualityAnnotName());
     annot->SetDesc().Set().push_back(name);
     CRef<CSeq_graph> graph(new CSeq_graph);
     graph->SetTitle("Phrap Quality");

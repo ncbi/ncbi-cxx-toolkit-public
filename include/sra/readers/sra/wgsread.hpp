@@ -779,10 +779,14 @@ public:
     typedef CBioseq::TAnnot TAnnotSet;
     void GetAnnotSet(TAnnotSet& annot_set, TFlags flags = fDefaultFlags) const;
 
+    // check if the VDB structure allows quality graph in data
+    bool CanHaveQualityGraph(void) const;
+    // check if this sequence has quality graph
     bool HasQualityGraph(void) const;
     void GetQualityVec(vector<INSDC_quality_phred>& quality_vec) const;
     void GetQualityAnnot(TAnnotSet& annot_set,
                          TFlags flags = fDefaultFlags) const;
+    string GetQualityAnnotName(void) const;
 
     NCBI_gb_state GetGBState(void) const;
 
