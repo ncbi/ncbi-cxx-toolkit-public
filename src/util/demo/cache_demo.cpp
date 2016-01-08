@@ -92,7 +92,7 @@ void CCacheDemoApp::SimpleCacheDemo(void)
     typedef CCache<int, CRef<CObjElement> > TSimpleCache;
     TSimpleCache cache(100);
     // Allocate and insert elements into the cache. Check result.
-    for (size_t i = 0; i < 1000; i++) {
+    for (int i = 0; i < 1000; i++) {
         CRef<CObjElement> element(new CObjElement(i*10));
         TSimpleCache::EAddResult result;
         cache.Add(i, element, 1, 0, &result);
@@ -100,11 +100,11 @@ void CCacheDemoApp::SimpleCacheDemo(void)
     }
     // Try to get the elements from the cache. Some will be missing
     // since cache size is less than total number of elements inserted.
-    for (size_t i = 0; i < 1000; i++) {
+    for (int i = 0; i < 1000; i++) {
         CRef<CObjElement> element = cache.Get(i);
         if (element) {
             // If present, check the element's size.
-            _ASSERT(element->GetSize() == i*10);
+            _ASSERT(element->GetSize() == (size_t)i*10);
         }
         if (i % 10 == 0) {
             cache.Remove(i);
@@ -161,17 +161,17 @@ void CCacheDemoApp::HeapCacheDemo(void)
 
     THeapCache cache(100);
     // Fill the cache with dynamically allocated objects.
-    for (size_t i = 0; i < 1000; i++) {
+    for (int i = 0; i < 1000; i++) {
         CHeapElement* element = new CHeapElement(i*10);
         THeapCache::EAddResult result;
         cache.Add(i, element, 1, 0, &result);
         _ASSERT(result == THeapCache::eAdd_Inserted);
     }
     // Get the objects back if still available.
-    for (size_t i = 0; i < 1000; i++) {
+    for (int i = 0; i < 1000; i++) {
         CHeapElement* element = cache.Get(i);
         if (element) {
-            _ASSERT(element->GetSize() == i*10);
+            _ASSERT(element->GetSize() == (size_t)i*10);
         }
     }
 }
@@ -237,7 +237,7 @@ void CCacheDemoApp::MemoryCacheDemo(void)
     // the max memory allowed by the handler.
     TMemCache cache(1);
     // Fill the cache with elements of different size.
-    for (size_t i = 0; i < 1000; i++) {
+    for (int i = 0; i < 1000; i++) {
         TElement element(new CObjElement(i*10));
         TMemCache::EAddResult result;
         cache.Add(i, element, 1, 0, &result);
@@ -250,10 +250,10 @@ void CCacheDemoApp::MemoryCacheDemo(void)
             _ASSERT(result == TMemCache::eAdd_NotInserted);
         }
     }
-    for (size_t i = 0; i < 1000; i++) {
+    for (int i = 0; i < 1000; i++) {
         TElement element = cache.Get(i);
         if (element) {
-            _ASSERT(element->GetSize() == i*10);
+            _ASSERT(element->GetSize() == (size_t)i*10);
         }
     }
 }
@@ -318,7 +318,7 @@ void CCacheDemoApp::EmptyOnOverflowDemo(void)
     // Cache capacity must be positive. The real capacity depends on
     // the max number of elements allowed by the handler.
     TEmptyOnOverflowCache cache(1);
-    for (size_t i = 0; i < 1000; i++) {
+    for (int i = 0; i < 1000; i++) {
         TElement element(new CObjElement(i*10));
         TEmptyOnOverflowCache::EAddResult result;
         cache.Add(i, element, 1, 0, &result);
@@ -326,10 +326,10 @@ void CCacheDemoApp::EmptyOnOverflowDemo(void)
             _ASSERT(cache.GetSize() == 1);
         }
     }
-    for (size_t i = 0; i < 1000; i++) {
+    for (int i = 0; i < 1000; i++) {
         TElement element = cache.Get(i);
         if (element) {
-            _ASSERT(element->GetSize() == i*10);
+            _ASSERT(element->GetSize() == (size_t)i*10);
         }
     }
 }

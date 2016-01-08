@@ -281,7 +281,7 @@ SIZE_TYPE CSeqConvert_imp::x_ConvertIupacnaTo2na
     if ( length % 4 != 0 ) {
         *dst = 0x0;
         for( size_t i = 0; i < (length % 4); ++i, ++src_i ) {
-            *dst |= table[static_cast<Uint1>(*src_i) * 4 + i];
+            *dst |= (char)table[static_cast<Uint1>(*src_i) * 4 + i];
         }
     }
     
@@ -429,7 +429,7 @@ SIZE_TYPE CSeqConvert_imp::x_Convert2naTo4na
         {{
             *dst = table[static_cast<Uint1>(*iter) * 2 + 1];
             if ( length == 1 ) {
-                *dst &= 0xf0;
+                *dst &= (char)0xf0;
                 return length;
             }
             size -= 2;
@@ -562,23 +562,23 @@ SIZE_TYPE CSeqConvert_imp::x_Convert2naExpandTo2na
     // main loop. pack 4 ncbi2na_expand bytes into a single bye and add it
     // to the output container
     for ( size_t i = length / 4; i; --i, ++dst ) {
-        *dst = (*iter << 6) | (*(iter + 1) << 4) | 
-               (*(iter + 2) << 2) | (*(iter + 3));
+        *dst = char((*iter << 6) | (*(iter + 1) << 4) | 
+                    (*(iter + 2) << 2) | (*(iter + 3)));
         iter += 4;
     }
 
     switch ( length % 4 ) {
     case 1:
-        *dst = (*iter << 6);
+        *dst = char(*iter << 6);
         break;
     case 2:
-        *dst = (*iter << 6) | (*(iter + 1) << 4);
+        *dst = char((*iter << 6) | (*(iter + 1) << 4));
         break;
     case 3:
-        *dst = (*iter << 6) | (*(iter + 1) << 4) | (*(iter + 2) << 2);
+        *dst = char((*iter << 6) | (*(iter + 1) << 4) | (*(iter + 2) << 2));
         break;
     }
-    
+   
     return length;
 }
 
@@ -696,9 +696,9 @@ SIZE_TYPE CSeqConvert_imp::x_Convert4naTo2na
                     *dst = (table[static_cast<Uint1>(*iter) * 2]) & 0xF0;
                     break;
                 case 3:
-                    *dst = 
-                        table[static_cast<Uint1>(*iter) * 2]           |
-                        (table[static_cast<Uint1>(*(iter + 1)) * 2 + 1] & 0xFC);
+                    *dst = (char)(
+                        table[static_cast<Uint1>(*iter) * 2] |
+                        (table[static_cast<Uint1>(*(iter + 1)) * 2 + 1] & 0xFC));
                     break;
                 }
             }
@@ -723,14 +723,14 @@ SIZE_TYPE CSeqConvert_imp::x_Convert4naTo2na
                     *dst = table[static_cast<Uint1>(*iter) * 3] & 0xC0;
                     break;
                 case 2:
-                    *dst = 
+                    *dst = (char)(
                         table[static_cast<Uint1>(*iter) * 3]           |
-                        (table[static_cast<Uint1>(*(iter + 1)) * 3 + 1] & 0xF0);
+                        (table[static_cast<Uint1>(*(iter + 1)) * 3 + 1] & 0xF0));
                     break;
                 case 3:
-                    *dst = 
+                    *dst = (char)(
                         table[static_cast<Uint1>(*iter) * 3]           |
-                        (table[static_cast<Uint1>(*(iter + 1)) * 3 + 1] & 0xFC);
+                        (table[static_cast<Uint1>(*(iter + 1)) * 3 + 1] & 0xFC));
                     break;
                 }
             }
@@ -809,7 +809,7 @@ SIZE_TYPE CSeqConvert_imp::x_Convert8naTo2na
     if ( (length % 4) != 0 ) {
         *dst = 0;
         for( size_t i = 0; i < (length % 4); ++i, ++iter ) {
-            *dst |= table[static_cast<Uint1>(*iter) * 4 + i];
+            *dst |= (char)table[static_cast<Uint1>(*iter)*4 + i];
         }
     }
     
@@ -862,12 +862,12 @@ SIZE_TYPE CSeqConvert_imp::x_Convert8naTo4na
     const char* iter = src + pos;
 
     for ( size_t i = length / 2; i; --i, ++dst ) {
-        *dst = (*iter << 4) | (*(iter + 1));
+        *dst = char((*iter << 4) | (*(iter + 1)));
         iter += 2;
     }
 
     if ( (length % 2) != 0 ) {
-        *dst = (*iter << 4) & 0xf0;
+        *dst = char((*iter << 4) & 0xf0);
     }
     
     return length;
@@ -1012,7 +1012,7 @@ SIZE_TYPE CSeqConvert_imp::Subseq
                 const char* end  = iter + length;
                 
                 for ( ; iter != end; ++iter, ++dst ) {
-                    *dst = toupper((unsigned char)(*iter));
+                    *dst = (char)toupper((unsigned char)(*iter));
                 }
                 converted = length;
             }}
@@ -1132,13 +1132,13 @@ SIZE_TYPE CSeqConvert_imp::CPacker::Pack(const char* src, TSeqPos length)
             TCoding type1 = m_BestCoding[(residue >> 4)   * 0x11],
                     type2 = m_BestCoding[(residue & 0x0F) * 0x11];
             if (type1 != prev_type) {
-                x_AddBoundary((p - src) * 2, type1);
+                x_AddBoundary(TSeqPos((p - src)*2), type1);
             }
-            x_AddBoundary((p - src) * 2 + 1, type2);
+            x_AddBoundary(TSeqPos((p - src)*2 + 1), type2);
             prev_type = type2;
         } else if (p != src_end) {
             _ASSERT(curr_type != kNoCoding);
-            x_AddBoundary((p - src) * m_SrcDensity, curr_type);
+            x_AddBoundary(TSeqPos((p - src) * m_SrcDensity), curr_type);
             prev_type = curr_type;
         }
     }

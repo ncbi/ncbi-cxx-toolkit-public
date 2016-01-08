@@ -106,7 +106,7 @@ bool CStreamLineReader::AtEOF(void) const
 
 char CStreamLineReader::PeekChar(void) const
 {
-    return m_UngetLine? *m_Line.begin(): m_Stream->peek();
+    return m_UngetLine? *m_Line.begin(): (char)m_Stream->peek();
 }
 
 

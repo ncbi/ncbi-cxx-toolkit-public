@@ -95,7 +95,7 @@ static tsize_t s_TIFFReadHandler(thandle_t handle, tdata_t data, tsize_t len)
     CNcbiIstream* istr = reinterpret_cast<CNcbiIstream*>(handle);
     if (istr) {
         istr->read(reinterpret_cast<char*>(data), len);
-        return istr->gcount();
+        return (tsize_t)istr->gcount();
     }
     return 0;
 }
@@ -136,7 +136,7 @@ static toff_t s_TIFFSeekHandler(thandle_t handle, toff_t offset,
             istr->seekg(offset, ios::end);
             break;
         }
-        return istr->tellg() - CT_POS_TYPE(0);
+        return (toff_t)(istr->tellg() - CT_POS_TYPE(0));
     }
     return (toff_t)-1;
 }
@@ -160,7 +160,7 @@ static toff_t s_TIFFSizeHandler(thandle_t handle)
     if (istr) {
         CT_POS_TYPE curr_pos = istr->tellg();
         istr->seekg(0, ios::end);
-        offs = istr->tellg() - CT_POS_TYPE(0);
+        offs = (toff_t)(istr->tellg() - CT_POS_TYPE(0));
         istr->seekg(curr_pos);
     }
     return offs;
@@ -232,8 +232,8 @@ CImage* CImageIOTiff::ReadImage(CNcbiIstream& istr)
         }
 
         // allocate a temporary buffer for the image
-        raster = (uint32*)_TIFFmalloc(width * height * sizeof(uint32));
-        if ( !TIFFReadRGBAImage(tiff, width, height, raster, 1) ) {
+        raster = (uint32*)_TIFFmalloc(tsize_t(width * height * sizeof(uint32)));
+        if ( !TIFFReadRGBAImage(tiff, (uint32)width, (uint32)height, raster, 1) ) {
             _TIFFfree(raster);
 
             NCBI_THROW(CImageException, eReadError,
@@ -278,10 +278,10 @@ CImage* CImageIOTiff::ReadImage(CNcbiIstream& istr)
                     // packed as a 32-bit value, so we need to pick this
                     // apart here
                     uint32 pixel = raster[from_idx];
-                    data[4 * to_idx + 0] = TIFFGetR(pixel);
-                    data[4 * to_idx + 1] = TIFFGetG(pixel);
-                    data[4 * to_idx + 2] = TIFFGetB(pixel);
-                    data[4 * to_idx + 3] = TIFFGetA(pixel);
+                    data[4 * to_idx + 0] = (unsigned char)TIFFGetR(pixel);
+                    data[4 * to_idx + 1] = (unsigned char)TIFFGetG(pixel);
+                    data[4 * to_idx + 2] = (unsigned char)TIFFGetB(pixel);
+                    data[4 * to_idx + 3] = (unsigned char)TIFFGetA(pixel);
                 }
                 break;
             }
@@ -433,7 +433,7 @@ void CImageIOTiff::WriteImage(const CImage& image, CNcbiOstream& ostr,
         TIFFWriteEncodedStrip(tiff, 0,
                               const_cast<void*>
                               (reinterpret_cast<const void*> (image.GetData())),
-                              image.GetWidth() * image.GetHeight() * image.GetDepth());
+                              tsize_t(image.GetWidth() * image.GetHeight() * image.GetDepth()));
         TIFFClose(tiff);
 
         TIFFSetErrorHandler(old_err_handler);

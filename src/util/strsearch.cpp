@@ -96,7 +96,7 @@ void CBoyerMooreMatcher::SetWordDelimiters(const string& word_delimeters,
 
     // Init the word delimiting alphabet
     for (int i = 0; i < sm_AlphabetSize; ++i) {
-        char ch = m_CaseSensitive ? i : toupper((unsigned char) i);
+        char ch = (char)(m_CaseSensitive ? i : toupper((unsigned char)i));
         string::size_type n = word_d.find_first_of(ch);
         m_WordDelimiters[i] = (!invert_delimiters) == (n != string::npos);
     }
@@ -114,7 +114,7 @@ void CBoyerMooreMatcher::AddDelimiters(const string& word_delimeters)
     }
 
     for (int i = 0; i < sm_AlphabetSize; ++i) {
-        char ch = m_CaseSensitive ? i : toupper((unsigned char) i);
+        char ch = (char)(m_CaseSensitive ? i : toupper((unsigned char)i));
         string::size_type n = word_d.find_first_of(ch);
         if (n != NPOS) {
             m_WordDelimiters[i] = true;
@@ -141,7 +141,7 @@ void CBoyerMooreMatcher::InitCommonDelimiters()
     }
 
     for (int i = 0; i < sm_AlphabetSize; ++i) {
-        char ch = m_CaseSensitive ? i : toupper((unsigned char) i);
+        char ch = (char)(m_CaseSensitive ? i : toupper((unsigned char)i));
         if ((ch >= 'A' && ch <= 'Z') ||
             (ch >= '0' && ch <= '9') ||
             (ch == '_')){

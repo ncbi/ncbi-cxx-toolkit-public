@@ -375,7 +375,7 @@ bool CThreadPoolTester::Thread_Run(int /*idx*/)
 
     try {
         for (int i = 0;  i < kTasksPerThread;  ++i) {
-            int serial_num = s_SerialNum.Add(1);
+            int serial_num = int(s_SerialNum.Add(1));
             double need_time = double(s_PostTimes[serial_num]) / 1000;
             double now_time = s_Timer.Elapsed();
             if (now_time < need_time) {

@@ -64,7 +64,7 @@ CTablePrinter::CTablePrinter(
         SColInfoVec::TColInfoVec, col_it, m_vecColInfo.m_colInfoVec) 
     {
         col_it->m_iColWidth =
-            max<Uint4>(col_it->m_iColWidth, col_it->m_sColName.length());
+            max<Uint4>(col_it->m_iColWidth, (Uint4)col_it->m_sColName.length());
     }
 }
 

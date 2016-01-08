@@ -90,7 +90,7 @@ public:
 
     const TPriority& GetPriority(void) const     { return m_Priority; }
     const EStatus&   GetStatus(void) const       { return m_Status; }
-    TUserPriority    GetUserPriority(void) const { return m_Priority >> 24; }
+    TUserPriority    GetUserPriority(void) const { return TUserPriority(m_Priority >> 24); }
 
     void MarkAsComplete(void)        { x_SetStatus(eComplete); }
     void MarkAsForciblyCaught(void)  { x_SetStatus(eForciblyCaught); }
@@ -908,8 +908,8 @@ bool CBlockingQueue<TRequest>::x_WaitForPredicate(TQueuePredicate pred,
             CTime start(CTime::eCurrent, CTime::eGmt);
             // Temporarily release the mutex while waiting, to avoid deadlock.
             guard.Release();
-            sem.TryWait(span.GetCompleteSeconds(),
-                        span.GetNanoSecondsAfterSecond());
+            sem.TryWait((unsigned int)span.GetCompleteSeconds(),
+                        (unsigned int)span.GetNanoSecondsAfterSecond());
             guard.Guard(m_Mutex);
             span -= CurrentTime(CTime::eGmt) - start;
         }

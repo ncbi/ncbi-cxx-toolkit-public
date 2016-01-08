@@ -202,9 +202,9 @@ bool CUTTPWriter::SendChunk(const char* chunk,
 
     Uint8 number = chunk_length;
 
-    do
-        *--result = char(number % 10) + '0';
-    while (number /= 10);
+    do {
+        *--result = char((number % 10) + '0');
+    } while (number /= 10);
 
     size_t string_len = m_InternalBuffer + sizeof(m_InternalBuffer) - result;
     size_t free_buf_size = m_BufferSize - m_OutputBufferSize;
@@ -248,7 +248,7 @@ bool CUTTPWriter::SendNumber(Int8 number)
     }
 
     do
-        *--result = char(number % 10) + '0';
+        *--result = char((number % 10) + '0');
     while (number /= 10);
 
     size_t string_len = m_InternalBuffer + sizeof(m_InternalBuffer) - result;

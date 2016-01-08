@@ -60,7 +60,7 @@ int NCBISM_GetIndex(const SNCBIPackedScoreMatrix* sm, int aa)
     }
 
     p = strchr(sm->symbols, aa);
-    return p ? p - sm->symbols : -1;
+    return p ? (int)(p - sm->symbols) : -1;
 }
 
 
@@ -71,7 +71,7 @@ TNCBIScore NCBISM_GetScore(const SNCBIPackedScoreMatrix* sm,
     i1 = NCBISM_GetIndex(sm, aa1);
     i2 = NCBISM_GetIndex(sm, aa2);
     if (i1 >=0  &&  i2 >= 0) {
-        return sm->scores[i1 * strlen(sm->symbols) + i2];
+        return sm->scores[(size_t)i1 * strlen(sm->symbols) + (size_t)i2];
     } else {
         return sm->defscore;
     }
@@ -85,7 +85,7 @@ void NCBISM_Unpack(const SNCBIPackedScoreMatrix* psm,
     int         dim, i, j, aa1, aa2;
 
     sym = psm->symbols;
-    dim = strlen(sym);
+    dim = (int)strlen(sym);
     /* fill with default */
     memset(&fsm->s, psm->defscore, NCBI_FSM_DIM * NCBI_FSM_DIM);
     for (i = 0;  i < dim;  ++i) {

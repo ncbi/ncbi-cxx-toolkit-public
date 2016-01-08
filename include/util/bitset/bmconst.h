@@ -55,7 +55,7 @@ const unsigned set_block_mask  = 0xFFFFu;
 const unsigned set_blkblk_mask = 0xFFFFFFu;
 
 const unsigned set_block_plain_size = set_block_size / 32u;
-const unsigned set_block_plain_cnt = sizeof(bm::word_t) * 8u;
+const unsigned set_block_plain_cnt = (unsigned)(sizeof(bm::word_t)) * 8u;
 
 // Word parameters
 
@@ -70,8 +70,9 @@ typedef unsigned short gap_word_t;
 const unsigned gap_max_buff_len = 1280;
 const unsigned gap_length_threashold = set_block_size * 3; // should be 2-3 bits per word
 const unsigned gap_max_bits = 65536;
-const unsigned gap_equiv_len = 
-   (sizeof(bm::word_t) * bm::set_block_size) / sizeof(gap_word_t);
+const unsigned gap_equiv_len =
+     (unsigned)((sizeof(bm::word_t) * bm::set_block_size) / 
+                 sizeof(gap_word_t));
 const unsigned gap_levels = 4;
 const unsigned gap_max_level = bm::gap_levels - 1;
 
@@ -83,7 +84,7 @@ const unsigned set_array_shift = 8u;
 const unsigned set_array_mask  = 0xFFu;
 const unsigned set_total_blocks = (bm::set_array_size * bm::set_array_size);
 
-const unsigned bits_in_block = bm::set_block_size * sizeof(bm::word_t) * 8;
+const unsigned bits_in_block = bm::set_block_size * (unsigned)sizeof(bm::word_t) * 8;
 const unsigned bits_in_array = bm::bits_in_block * bm::set_array_size;
 
 

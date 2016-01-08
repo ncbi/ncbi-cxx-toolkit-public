@@ -98,7 +98,7 @@ void AdjustLength(C& container, CSeqUtil::TCoding coding,
     size_t bases_per_byte = GetBasesPerByte(coding);
     
     if ( pos + length > container.size() * bases_per_byte ) {
-        length = container.size() * bases_per_byte - pos;
+        length = (TSeqPos)(container.size() * bases_per_byte - pos);
     }
 }
 

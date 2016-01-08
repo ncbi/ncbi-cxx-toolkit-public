@@ -1086,8 +1086,10 @@ CThreadPool_ServiceThread::x_Idle(void)
     m_Pool->CallController(CThreadPool_Controller::eOther);
 
     CTimeSpan timeout = m_Pool->GetSafeSleepTime();
-    m_IdleTrigger.TryWait(timeout.GetCompleteSeconds(),
-                          timeout.GetNanoSecondsAfterSecond());
+    // TODO: it would be better to use CTimeout for all timeouts
+    _ASSERT(timeout.GetSign() != eNegative);
+    m_IdleTrigger.TryWait((unsigned int)timeout.GetCompleteSeconds(),
+                          (unsigned int)timeout.GetNanoSecondsAfterSecond());
 }
 
 inline void
@@ -1605,15 +1607,11 @@ CThreadPool_Impl::x_WaitForPredicate(TWaitPredicate      wait_func,
         pool_guard->Release();
 
         if (timeout) {
-            CTimeSpan next_tm =
-                CTimeSpan(timeout->GetAsDouble() - timer->Elapsed());
+            CTimeSpan next_tm = CTimeSpan(timeout->GetAsDouble() - timer->Elapsed());
             if (next_tm.GetSign() == eNegative) {
                 return false;
             }
-
-            if (! wait_sema->TryWait(next_tm.GetCompleteSeconds(),
-                                     next_tm.GetNanoSecondsAfterSecond()))
-            {
+            if (! wait_sema->TryWait(CTimeout(next_tm))) {
                 return false;
             }
         }

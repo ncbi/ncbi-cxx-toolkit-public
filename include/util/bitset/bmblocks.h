@@ -695,9 +695,9 @@ public:
             return bm::set_array_size;
         }
 
-        unsigned top_block_size = 
-            bits_to_store / (bm::set_block_size * sizeof(bm::word_t) * 
-                                                bm::set_array_size * 8);
+        unsigned top_block_size = (unsigned)
+            (bits_to_store / (bm::set_block_size * sizeof(bm::word_t) * 
+                              bm::set_array_size * 8));
         return top_block_size + (top_block_size < bm::set_array_size);
     }
 

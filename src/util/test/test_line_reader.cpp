@@ -149,7 +149,7 @@ void CTestApp::RunFile(const string& filename)
     CRef<ILineReader> line_reader = CreateLineReader(filename);
     
     if ( fast_scan ) {
-        int lines = 0, chars = 0;
+        size_t lines = 0, chars = 0;
         while ( !line_reader->AtEOF() ) {
             ++lines;
             chars += (*++*line_reader).size();
@@ -158,7 +158,7 @@ void CTestApp::RunFile(const string& filename)
         NcbiCout << "Chars: " << chars << NcbiEndl;
     }
     else {
-        int lines = 0, chars = 0, sum = 0;
+        size_t lines = 0, chars = 0, sum = 0;
         ++*line_reader;
         line_reader->UngetLine();
         while ( !line_reader->AtEOF() ) {
@@ -171,7 +171,7 @@ void CTestApp::RunFile(const string& filename)
         }
         NcbiCout << "Lines: " << lines << NcbiEndl;
         NcbiCout << "Chars: " << chars << NcbiEndl;
-        NcbiCout << "  Sum: " << sum << NcbiEndl;
+        NcbiCout << "  Sum: " << sum   << NcbiEndl;
     }
 }
 
@@ -192,7 +192,7 @@ int CTestApp::RunSelfTest()
         }
         string line(size, ' ');
         for ( int j = 0; j < size; ++j ) {
-            line[j] = r.GetRand(' ', 126);
+            line[j] = (char)r.GetRand(' ', 126);
         }
         lines.push_back(line);
     }

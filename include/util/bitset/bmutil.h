@@ -78,22 +78,22 @@ template<typename T>
 T ilog2(T x)
 {
     unsigned int l = 0;
-    if(x >= 1<<16) { x>>=16; l |= 16; }
-    if(x >= 1<<8)  { x>>=8; l |= 8; }
-    if(x >= 1<<4)  { x>>=4; l |= 4; }
-    if(x >= 1<<2)  { x>>=2; l |= 2; }
-    if(x >= 1<<1)  l |=1;
-    return l;
+    if (x >= 1<<16) { x = (T)(x >> 16); l |= 16; }
+    if (x >= 1<<8)  { x = (T)(x >> 8);  l |= 8; }
+    if (x >= 1<<4)  { x = (T)(x >> 4);  l |= 4; }
+    if (x >= 1<<2)  { x = (T)(x >> 2);  l |= 2; }
+    if (x >= 1<<1)  l |=1;
+    return (T)l;
 }
 
 template<>
 inline bm::gap_word_t ilog2(gap_word_t x)
 {
     unsigned int l = 0;
-    if(x >= 1<<8)  { x>>=8; l |= 8; }
-    if(x >= 1<<4)  { x>>=4; l |= 4; }
-    if(x >= 1<<2)  { x>>=2; l |= 2; }
-    if(x >= 1<<1)  l |=1;
+    if (x >= 1<<8)  { x = (bm::gap_word_t)(x >> 8); l |= 8; }
+    if (x >= 1<<4)  { x = (bm::gap_word_t)(x >> 4); l |= 4; }
+    if (x >= 1<<2)  { x = (bm::gap_word_t)(x >> 2); l |= 2; }
+    if (x >= 1<<1)  l |=1;
     return (bm::gap_word_t)l;
 }
 
@@ -140,9 +140,9 @@ template<>
 inline bm::gap_word_t ilog2_LUT<bm::gap_word_t>(bm::gap_word_t x)
 {
     unsigned l = 0;    
-    if (x & 0xff00) 
-    {
-        l += 8; x >>= 8;
+    if (x & 0xff00) {
+        l += 8;
+        x = (bm::gap_word_t)(x >> 8);
     }
     return (bm::gap_word_t)(l + first_bit_table<true>::_idx[x]);
 }

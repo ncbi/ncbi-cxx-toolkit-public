@@ -116,50 +116,46 @@ static void init_symbol_type_table(void)
 {
     if ( symbol_type_table[0] == 0 ) {
         for ( const char* s = "ACGNTU"; *s; ++s ) {
-            unsigned char c = *s;
+            int c = *s;
             symbol_type_table[c] |= fDNA_Main_Alphabet;
             c = tolower(c);
             symbol_type_table[c] |= fDNA_Main_Alphabet;
         }
         for ( const char* s = "BDHKMRSVWY"; *s; ++s ) {
-            unsigned char c = *s;
+            int c = *s;
             symbol_type_table[c] |= fDNA_Ambig_Alphabet;
             c = tolower(c);
             symbol_type_table[c] |= fDNA_Ambig_Alphabet;
         }
         for ( const char* s = "ACDEFGHIKLMNPQRSTVWYBZX"; *s; ++s ) {
-            unsigned char c = *s;
+            int c = *s;
             symbol_type_table[c] |= fProtein_Alphabet;
             c = tolower(c);
             symbol_type_table[c] |= fProtein_Alphabet;
         }
-        symbol_type_table[(unsigned char)'-']
-            |= fDNA_Main_Alphabet | fProtein_Alphabet;
-        symbol_type_table[(unsigned char)'*'] |= fProtein_Alphabet;
+        symbol_type_table['-'] |= fDNA_Main_Alphabet | fProtein_Alphabet;
+        symbol_type_table['*'] |= fProtein_Alphabet;
         for ( const char* s = "\r\n"; *s; ++s ) {
-            unsigned char c = *s;
+            int c = *s;
             symbol_type_table[c] |= fLineEnd;
         }
         for ( int c = 1; c < 256; ++c ) {
-            if ( isalpha(c) )
+            if ( isalpha((unsigned char)c) )
                 symbol_type_table[c] |= fAlpha;
-            if ( isdigit(c) )
+            if ( isdigit((unsigned char)c) )
                 symbol_type_table[c] |= fDigit;
-            if ( isspace(c) )
+            if ( isspace((unsigned char)c) )
                 symbol_type_table[c] |= fSpace;
         }
         symbol_type_table[0] |= fInvalid;
     }
 }
 
-//  ----------------------------------------------------------------------------
-int
-CFormatGuess::s_CheckOrder[] =
-//  ----------------------------------------------------------------------------
+
+// Must list all EFormats except eUnknown and eFormat_max. 
+// Will cause assertion if violated!
+int CFormatGuess::s_CheckOrder[] =
 {
-    //  must list all EFormats except eUnknown and eFormat_max. Will cause
-    //  assertion if violated!
-    //
     eBam, // must precede eGZip!
     eZip,
     eGZip,
@@ -198,7 +194,8 @@ CFormatGuess::s_CheckOrder[] =
 // This array must stay in sync with enum EFormat, but that's not
 // supposed to change in the middle anyway, so the explicit size
 // should suffice to avoid accidental skew.
-const char* const CFormatGuess::sm_FormatNames[CFormatGuess::eFormat_max] = {
+const char* const CFormatGuess::sm_FormatNames[CFormatGuess::eFormat_max] =
+{
     "unknown",
     "binary ASN.1",
     "RepeatMasker",
@@ -393,12 +390,12 @@ CFormatGuess::GuessFormat(
         return eUnknown;
     }
     EMode mode = eQuick;
-    unsigned int uFormatCount = sizeof( s_CheckOrder ) / sizeof( int );
+    size_t uFormatCount = ArraySize(s_CheckOrder);
 
     // First, try to use hints
     if ( !m_Hints.IsEmpty() ) {
-        for (unsigned int f = 0; f < uFormatCount; ++f) {
-            EFormat fmt = EFormat( s_CheckOrder[ f ] );
+        for (size_t f = 0; f < uFormatCount; ++f) {
+            EFormat fmt = EFormat( s_CheckOrder[f] );
             if (m_Hints.IsPreferred(fmt)  &&  x_TestFormat(fmt, mode)) {
                 return fmt;
             }
@@ -406,8 +403,8 @@ CFormatGuess::GuessFormat(
     }
 
     // Check other formats, skip the ones that are disabled through hints
-    for (unsigned int f = 0; f < uFormatCount; ++f) {
-        EFormat fmt = EFormat( s_CheckOrder[ f ] );
+    for (size_t f = 0; f < uFormatCount; ++f) {
+        EFormat fmt = EFormat( s_CheckOrder[f] );
         if ( ! m_Hints.IsDisabled(fmt)  &&  x_TestFormat(fmt, mode) ) {
             return fmt;
         }
@@ -423,8 +420,7 @@ CFormatGuess::TestFormat( EFormat format, EMode )
 }
 
 //  ----------------------------------------------------------------------------
-bool
-CFormatGuess::TestFormat(
+bool CFormatGuess::TestFormat(
     EFormat format,
     EOnError onerror )
 {
@@ -664,8 +660,7 @@ bool CFormatGuess::x_TestInput( CNcbiIstream& input, EOnError onerror )
 }
 
 //  ----------------------------------------------------------------------------
-bool
-CFormatGuess::TestFormatRepeatMasker(
+bool CFormatGuess::TestFormatRepeatMasker(
     EMode /* not used */ )
 {
     if ( ! EnsureStats() || ! EnsureSplitLines() ) {
@@ -909,8 +904,6 @@ CFormatGuess::TestFormatNewick(
 
     bool is_nexus = false;
     bool has_trees = false;
-    size_t bytes_checked = 0;
-    char check_string[] = "begin trees;";
     const size_t check_size = 12;
 
     ITERATE( list<string>, it, m_TestLines ) {
@@ -1134,9 +1127,7 @@ CFormatGuess::TestFormatXml(
     static const char* known_types[] = {
         "<Blast4-request>"
     };
-    const int num_types = sizeof( known_types ) / sizeof( const char* );
-
-    for ( int i=0; i < num_types; ++i ) {
+    for ( size_t i=0; i < ArraySize(known_types); ++i ) {
         if ( NStr::StartsWith( input, known_types[i], NStr::eCase ) ) {
             return true;
         }
@@ -1290,8 +1281,7 @@ void SkipCommentAndBlank(CTempString &text)
 }
 
 bool
-CFormatGuess::TestFormatFasta(
-    EMode /* not used */ )
+CFormatGuess::TestFormatFasta( EMode /* not used */ )
 {
     if ( ! EnsureStats() ) {
         return false;
@@ -1311,9 +1301,9 @@ CFormatGuess::TestFormatFasta(
     }
 
     // remaining decision based on text stats:
-    double dAlNumFraction =  (double)m_iStatsCountAlNumChars / m_iTestDataSize;
-    double dDnaFraction = (double)m_iStatsCountDnaChars / m_iStatsCountData;
-    double dAaFraction = (double)m_iStatsCountAaChars / m_iStatsCountData;
+    double dAlNumFraction = (double)m_iStatsCountAlNumChars / (double)m_iTestDataSize;
+    double dDnaFraction   = (double)m_iStatsCountDnaChars / (double)m_iStatsCountData;
+    double dAaFraction    = (double)m_iStatsCountAaChars / (double)m_iStatsCountData;
 
     // want at least 80% text-ish overall:
     if ( dAlNumFraction < 0.8 ) {
@@ -1346,7 +1336,8 @@ CFormatGuess::TestFormatTextAsn(
     // at least 80% text-ish,
     // "::=" as the 2nd field of the first non-blank non comment line.
     //
-    double dAlNumFraction =  (double)(m_iStatsCountAlNumChars+m_iStatsCountBraces) / m_iTestDataSize;
+    double dAlNumFraction = (double)(m_iStatsCountAlNumChars+m_iStatsCountBraces) /
+                            (double)m_iTestDataSize;
     if ( dAlNumFraction < 0.80 ) {
         return false;
     }
@@ -2471,7 +2462,7 @@ CFormatGuess::IsAsciiText()
             ++count_print;
         }
     }
-    if (count_print < count * REQUIRED_ASCII_RATIO) {
+    if (count_print < (double)count * REQUIRED_ASCII_RATIO) {
 		return false;
     }
     return true;

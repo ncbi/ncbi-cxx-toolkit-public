@@ -94,7 +94,8 @@ BOOST_AUTO_TEST_CASE(TestMetaphone)
              sw.Stop();
              double e = sw.Elapsed();
              cerr << "  ...done: " << count << " items in " << e
-                 << " seconds = " << count / e << " items/sec" << endl;
+                  << " seconds = " << (double)count / e 
+                  << " items/sec" << endl;
          }}
 
         {{
@@ -113,7 +114,8 @@ BOOST_AUTO_TEST_CASE(TestMetaphone)
              sw.Stop();
              double e = sw.Elapsed();
              cerr << "  ...done: " << count << " items in " << e
-                 << " seconds = " << count / e << " items/sec" << endl;
+                  << " seconds = " << (double)count / e 
+                  << " items/sec" << endl;
          }}
 
     } else {

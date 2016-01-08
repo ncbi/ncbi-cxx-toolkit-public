@@ -39,8 +39,8 @@
 #define strdup _strdup
 #endif
 
-static const int kMaxPrintedIntLen = 10;
-#define MAX_PRINTED_INT_LEN_PLUS_ONE 11
+#define MAX_PRINTED_LEN          10
+#define MAX_PRINTED_LEN_PLUS_ONE (MAX_PRINTED_LEN + 1)
 
 /*  ---------------------------------------------------------------------- */
 typedef enum {
@@ -247,7 +247,7 @@ s_ReportBadCharError
     eip->category = eAlnErr_BadData;
     if (id != NULL) eip->id = strdup (id);
     eip->line_num = line_number;
-    eip->message = (char *) malloc (strlen (err_format) + 2 * kMaxPrintedIntLen
+    eip->message = (char*) malloc (strlen (err_format) + 2 * MAX_PRINTED_LEN
                                     + strlen (reason) + 3);
     if (eip->message != NULL)
     {
@@ -325,7 +325,7 @@ s_ReportLineLengthError
     TErrorInfoPtr eip;
     char *        msg;
     const char *  format = "Expected line length %d, actual length %d";
-    int           len;
+    size_t        len;
 
     if (lip == NULL  ||  report_error == NULL) {
         return;
@@ -336,19 +336,19 @@ s_ReportLineLengthError
         return;
     }
     eip->category = eAlnErr_BadFormat;
-    eip->id = strdup (id);
+    eip->id = strdup(id);
     eip->line_num = lip->line_num;
-    msg = (char *) malloc (strlen (format) + kMaxPrintedIntLen + 1);
+    msg = (char*)malloc(strlen(format) + MAX_PRINTED_LEN + 1);
     if (msg != NULL) {
         if (lip->data == NULL) {
             len = 0;
         } else {
-            len = strlen (lip->data);
+            len = strlen(lip->data);
         }
-        sprintf (msg, format, expected_length, len);
+        sprintf(msg, format, expected_length, len);
         eip->message = msg;
     }
-    report_error (eip, report_error_userdata);
+    report_error(eip, report_error_userdata);
 }
 
 
@@ -378,7 +378,7 @@ s_ReportBlockLengthError
     eip->category = eAlnErr_BadFormat;
     eip->id = strdup (id);
     eip->line_num = line_num;
-    eip->message = (char *)malloc (strlen (err_format) + 2 * kMaxPrintedIntLen + 1);
+    eip->message = (char*)malloc(strlen(err_format) + 2 * MAX_PRINTED_LEN + 1);
     if (eip->message != NULL) {
       sprintf (eip->message, err_format, expected_num, actual_num);
     }
@@ -493,8 +493,7 @@ s_ReportIncorrectNumberOfSequences
         return;
     }
     eip->category = eAlnErr_BadFormat;
-    eip->message = (char *) malloc (strlen (err_format) +
-                                    2 * kMaxPrintedIntLen + 1);
+    eip->message = (char*)malloc(strlen(err_format) + 2 * MAX_PRINTED_LEN + 1);
                                      
     if (eip->message != NULL)
     {
@@ -523,10 +522,8 @@ s_ReportIncorrectSequenceLength
     }
 
     eip->category = eAlnErr_BadFormat;
-    eip->message = (char *)malloc (strlen (err_format)
-                                   + 2 * kMaxPrintedIntLen + 1);
-    if (eip->message != NULL)
-    {
+    eip->message = (char*)malloc(strlen(err_format) + 2 * MAX_PRINTED_LEN + 1);
+    if (eip->message != NULL) {
       sprintf (eip->message, err_format, len_expected, len_found);
     }
     report_error (eip, report_error_userdata);
@@ -560,8 +557,8 @@ s_ReportRepeatedOrganismName
     if (id != NULL ) {
         eip->id = strdup (id);
     }
-    eip->message = (char *)malloc (strlen (err_format) + strlen (org_name)
-                           + kMaxPrintedIntLen + 1);
+    eip->message = (char*)malloc(strlen(err_format) + strlen(org_name)
+                                 + MAX_PRINTED_LEN + 1);
     if (eip->message != NULL) {
         sprintf (eip->message, err_format, org_name, second_line_num);
     }
@@ -611,31 +608,31 @@ s_ReportRepeatedId
         return;
     }
 
-    eip = ErrorInfoNew (NULL);
+    eip = ErrorInfoNew(NULL);
     if (eip == NULL) {
         return;
     }
 
     eip->category = eAlnErr_BadData;
-    eip->id = strdup (scp->string);
+    eip->id = strdup(scp->string);
     if (scp->line_numbers != NULL) {
         eip->line_num = scp->line_numbers->ival;
     }
-    eip->message = (char *) malloc ( strlen (err_format)
-                                    + strlen (scp->string)
-                                    + scp->num_appearances * 15
-                                    + 1);
+    eip->message = (char*)malloc(strlen(err_format)
+                                 + strlen(scp->string)
+                                 + (size_t)scp->num_appearances * 15
+                                 + 1);
     if (eip->message != NULL) {
-        sprintf (eip->message, err_format, scp->string);
+        sprintf(eip->message, err_format, scp->string);
         cp = eip->message + strlen (eip->message);
         for (line_number = scp->line_numbers;
              line_number != NULL;
              line_number = line_number->next) {
-            sprintf (cp, " %d", line_number->ival);
+            sprintf(cp, " %d", line_number->ival);
             cp += strlen (cp);
         }
     }
-    report_error (eip, report_error_userdata);
+    report_error(eip, report_error_userdata);
 }
 
 
@@ -680,8 +677,8 @@ s_ReportSegmentedAlignmentError
     const char * msg = "This file contains sequences in brackets (indicating "
         "a segmented alignment) as well as sequences not in brackets at lines "
         "%s.  Please either add or remove brackets to correct this problem.";
-    int num_lines = 0;
-    int         msg_len = 0;
+    size_t      num_lines = 0;
+    size_t      msg_len = 0;
     TIntLinkPtr t;
     char *      line_text_list;
     char *      line_text_list_offset;
@@ -689,21 +686,19 @@ s_ReportSegmentedAlignmentError
     if (errfunc == NULL || offset_list == NULL) {
         return;
     }
-
-    for (t = offset_list; t != NULL; t = t->next)
-    {
-        num_lines ++;
+    for (t = offset_list; t != NULL; t = t->next) {
+        ++num_lines;
     }
-    msg_len = num_lines * (kMaxPrintedIntLen + 2);
-    if (num_lines > 1) 
-    {
+    msg_len = num_lines * (MAX_PRINTED_LEN + 2);
+    if (num_lines > 1) {
     	msg_len += 4;
     }
-    line_text_list = (char *) malloc (msg_len);
+    
+    line_text_list = (char*)malloc(msg_len);
     if (line_text_list == NULL) return;
     line_text_list_offset = line_text_list;
-    for (t = offset_list; t != NULL; t = t->next)
-    {
+
+    for (t = offset_list; t != NULL; t = t->next) {
         if (t->next == NULL)
         {
             sprintf (line_text_list_offset, "%d", t->ival);
@@ -723,18 +718,18 @@ s_ReportSegmentedAlignmentError
         line_text_list_offset += strlen (line_text_list_offset);
     }
 
-    msg_len += strlen (msg) + 1;
+    msg_len += strlen(msg) + 1;
 
     eip = ErrorInfoNew (NULL);
     if (eip != NULL) {
         eip->category = eAlnErr_BadData;
         eip->message = (char *) malloc (msg_len);
         if (eip->message != NULL) {
-            sprintf (eip->message, msg, line_text_list);
+            sprintf(eip->message, msg, line_text_list);
         }
-        errfunc (eip, errdata);
+        errfunc(eip, errdata);
     }
-    free (line_text_list);
+    free(line_text_list);
 }
 
 
@@ -788,7 +783,7 @@ static void s_ReportBadNumSegError
     if (eip != NULL) {
         eip->line_num = line_num;
         eip->category = eAlnErr_BadData;
-        eip->message = (char *) malloc (strlen (msg) + 2 * kMaxPrintedIntLen + 1);
+        eip->message = (char*) malloc(strlen(msg) + 2 * MAX_PRINTED_LEN + 1);
         if (eip->message != NULL) {
             sprintf (eip->message, msg, num_seg, num_seg_exp);
         }
@@ -862,14 +857,12 @@ s_ReportUnusedLine
         eip->category = eAlnErr_BadFormat;
         eip->line_num = line_num_start;
         if (line_num_start == line_num_stop) {
-              eip->message = (char *) malloc (strlen (errformat1)
-                                            + kMaxPrintedIntLen + 1);
+              eip->message = (char*)malloc(strlen(errformat1) + MAX_PRINTED_LEN + 1);
             if (eip->message != NULL) {
                 sprintf (eip->message, errformat1, line_num_start);
             }
         } else {
-            eip->message = (char *) malloc (strlen (errformat2)
-                                            + 2 * kMaxPrintedIntLen + 1);
+            eip->message = (char*)malloc(strlen(errformat2) + 2*MAX_PRINTED_LEN + 1);
             if (eip->message != NULL) {
                 sprintf (eip->message, errformat2, line_num_start,
                          line_num_stop);
@@ -1417,11 +1410,11 @@ static void s_BracketedCommentListAddLine
 		return;
 	}
 
-    comment->comment_lines = s_AddLineInfo (comment->comment_lines, string, line_num, line_offset);
+    comment->comment_lines = s_AddLineInfo(comment->comment_lines, string, line_num, line_offset);
 }
 
 /* This function counts the sequences found in a bracketed comment. */
-static int s_CountSequencesInBracketedComment (TBracketedCommentListPtr comment)
+static int s_CountSequencesInBracketedComment(TBracketedCommentListPtr comment)
 {
     TLineInfoPtr lip;
     int          num_segments = 0;
@@ -1433,7 +1426,7 @@ static int s_CountSequencesInBracketedComment (TBracketedCommentListPtr comment)
 	
 	lip = comment->comment_lines;
 	/* First line must be left bracket on a line by itself */
-	if (lip->data[0] != '[' || strspn (lip->data + 1, " \t\r\n") != strlen (lip->data + 1))
+	if (lip->data[0] != '[' || strspn(lip->data + 1, " \t\r\n") != strlen (lip->data + 1))
 	{
 		return 0;
 	}
@@ -1448,7 +1441,7 @@ static int s_CountSequencesInBracketedComment (TBracketedCommentListPtr comment)
 			}
 			else
 			{
-				num_segments ++;
+				++num_segments;
 				skipped_line_since_last_defline = eFalse;
 			}
 		}
@@ -1495,7 +1488,7 @@ static int s_GetNumSegmentsInAlignment
 	
 	for (comment = comment_list; comment != NULL; comment = comment->next)
 	{
-	    num_segments_this_bracket = s_CountSequencesInBracketedComment (comment);
+	    num_segments_this_bracket = s_CountSequencesInBracketedComment(comment);
         segcount_list = s_AddSizeInfoAppearances (segcount_list,
                                                   num_segments_this_bracket,
                                                   1);
@@ -1536,7 +1529,7 @@ static TIntLinkPtr GetSegmentOffsetList (TBracketedCommentListPtr comment_list)
     
     for (comment = comment_list; comment != NULL; comment = comment->next)
     {
-    	if (s_CountSequencesInBracketedComment (comment) == 0) 
+    	if (s_CountSequencesInBracketedComment(comment) == 0) 
     	{
     		continue;
     	}
@@ -1554,8 +1547,8 @@ static TIntLinkPtr GetSegmentOffsetList (TBracketedCommentListPtr comment_list)
 
 static char * s_TokenizeString (char * str, const char *delimiter, char **last)
 {
-    int skip;
-    int length;
+    size_t skip;
+    size_t length;
 
     if (str == NULL) {
         str = *last;
@@ -1596,8 +1589,8 @@ static TLineInfoPtr s_BuildTokenList (TLineInfoPtr line_list)
     first_token = NULL;
 
     for (lip = line_list;  lip != NULL;  lip = lip->next) {
-        if (lip->data != NULL  &&  (tmp = strdup (lip->data)) != NULL) {
-            piece = s_TokenizeString (tmp, " \t\r", &last);
+        if (lip->data != NULL  &&  (tmp = strdup(lip->data)) != NULL) {
+            piece = s_TokenizeString(tmp, " \t\r", &last);
             while (piece != NULL) {
                 line_pos = piece - tmp;
                 line_pos += lip->line_offset;
@@ -2167,7 +2160,7 @@ s_GetOneNexusSizeComment
  const char * valname, 
  int        * val)
 {
-    char   buf[MAX_PRINTED_INT_LEN_PLUS_ONE];
+    char   buf[MAX_PRINTED_LEN_PLUS_ONE];
     char * cpstart;
     char * cpend;
     int    maxlen;
@@ -2200,7 +2193,8 @@ s_GetOneNexusSizeComment
         cpend ++;
     }
     maxlen = cpend - cpstart;
-    if (maxlen > kMaxPrintedIntLen) maxlen = kMaxPrintedIntLen;
+    if (maxlen > MAX_PRINTED_LEN) 
+        maxlen = MAX_PRINTED_LEN;
 
     strncpy (buf, cpstart, maxlen);
     buf [maxlen] = 0;
@@ -5990,7 +5984,7 @@ s_ConvertDataToOutput
                     s_LineInfoMergeAndStripSpaces (arsp->sequence_data);
 
         if (afp->sequences [index] != NULL) {
-            lengths [curr_seg] = s_AddSizeInfo (lengths [curr_seg], strlen (afp->sequences [index]));
+            lengths [curr_seg] = s_AddSizeInfo(lengths[curr_seg], strlen (afp->sequences[index]));
         }
         afp->ids [index] = strdup (arsp->id);
         curr_seg ++;

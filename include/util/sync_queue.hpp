@@ -1171,9 +1171,7 @@ inline
 bool CSyncQueue<Type, Container>::x_Lock(const CTimeSpan* timeout) const
 {
     if (timeout) {
-        if ( !m_TrigLock.TryWait(timeout->GetCompleteSeconds(),
-                                 timeout->GetNanoSecondsAfterSecond()) )
-        {
+        if ( !m_TrigLock.TryWait(CTimeout(*timeout)) ) {
             return false;
         }
     }
@@ -1233,6 +1231,7 @@ void CSyncQueue<Type, Container>::x_LockAndWait(TAutoLock*       lock,
                                                 TErrorThrower    throw_error)
     const
 {
+   // TODO: change to use CTimeout instead
     auto_ptr<CTimeSpan> real_timeout;
 
     if (full_tmo) {
@@ -1263,8 +1262,8 @@ void CSyncQueue<Type, Container>::x_LockAndWait(TAutoLock*       lock,
             counter->Add(1);
             lock->Unlock();
 
-            bool is_success = trigger->TryWait(tmo.GetCompleteSeconds(),
-                                               tmo.GetNanoSecondsAfterSecond());
+            // TODO: change 'tmo' to CTimeout!
+            bool is_success = trigger->TryWait(CTimeout(tmo));
 
             // To minimize unnecessary semaphore increasing we decrease
             // the counter asap, before we can acquire queue lock.

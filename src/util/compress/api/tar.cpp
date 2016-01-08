@@ -96,7 +96,7 @@ static bool s_NumToOctal(Uint8 val, char* ptr, size_t len)
 {
     _ASSERT(len > 0);
     do {
-        ptr[--len] = '0' + char(val & 7);
+        ptr[--len] = char('0' + char(val & 7));
         val >>= 3;
     } while (len);
     return val ? false : true;

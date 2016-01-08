@@ -237,7 +237,8 @@ TElement StoreBits(TIterator& start, const TIterator& end,
     static const size_t kBitsPerElement = CHAR_BIT * sizeof(TElement);
 
     if (bit_offset) {
-        partial &= (~(TElement)0) << (kBitsPerElement - bit_offset);
+        partial = (TElement)(partial & 
+                      (~(TElement)0) << (kBitsPerElement - bit_offset));
     } else {
         partial = 0;
     }
@@ -245,7 +246,8 @@ TElement StoreBits(TIterator& start, const TIterator& end,
     if (bit_offset + bit_count <= kBitsPerElement) {
         // Everything fits in one element.
         bit_offset += bit_count;
-        partial |= data << (kBitsPerElement - bit_offset);
+        partial = (TElement)(partial | 
+                      (data << (kBitsPerElement - bit_offset)));
         if (bit_count == kBitsPerElement) {
             *(start++) = partial;
             bit_count = 0;
@@ -253,18 +255,18 @@ TElement StoreBits(TIterator& start, const TIterator& end,
         }
     } else {
         // We need to split it up.
-        *(start++) = partial | ((data >> (bit_count + bit_offset
-                                          - kBitsPerElement))
-                                & ((1 << (kBitsPerElement - bit_offset)) - 1));
+        *(start++) = (TElement)(partial | 
+            ((data >> (bit_count + bit_offset - kBitsPerElement))
+              & ((1 << (kBitsPerElement - bit_offset)) - 1)) );
         for (bit_offset += bit_count - kBitsPerElement;
              bit_offset >= kBitsPerElement;
              bit_offset -= kBitsPerElement) {
             if (start != end) {
-                *(start++) = data >> (bit_offset - kBitsPerElement);
+                *(start++) = (TElement)(data >> (bit_offset - kBitsPerElement));
             }
         }
         if (bit_offset) {
-            partial = data << (kBitsPerElement - bit_offset);
+            partial = (TElement)(data << (kBitsPerElement - bit_offset));
         } else {
             partial = 0;
         }

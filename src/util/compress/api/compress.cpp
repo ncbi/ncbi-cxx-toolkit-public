@@ -258,10 +258,7 @@ Uint2 CCompressionUtil::GetUI2(const void* buffer)
         NCBI_THROW(CCoreException, eInvalidArg, "Incorrect buffer pointer");
     }
     const unsigned char* buf = (const unsigned char*)buffer;
-    Uint2 value = buf[1];
-    value <<= 8;
-    value += buf[0];
-    return value;
+    return Uint2((buf[1] << 8) + buf[0]);
 }
 
 

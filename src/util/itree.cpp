@@ -258,7 +258,7 @@ pair<double, CIntervalTree::size_type> CIntervalTree::Stat(void) const
     SStat stat;
     stat.total = stat.count = stat.max = 0;
     Stat(&m_Root, stat);
-    return make_pair(double(stat.total) / stat.count, stat.max);
+    return make_pair(double(stat.total) / (double)stat.count, stat.max);
 }
 
 void CIntervalTree::Stat(const TTreeNode* node, SStat& stat) const

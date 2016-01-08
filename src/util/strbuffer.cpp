@@ -42,6 +42,7 @@
 
 BEGIN_NCBI_SCOPE
 
+
 static const size_t KInitialBufferSize = 4096;
 
 static inline
@@ -49,6 +50,7 @@ size_t BiggerBufferSize(size_t size) THROWS1_NONE
 {
     return size * 2;
 }
+
 
 CIStreamBuffer::CIStreamBuffer(void)
     THROWS1((bad_alloc))
@@ -62,6 +64,7 @@ CIStreamBuffer::CIStreamBuffer(void)
 {
 }
 
+
 CIStreamBuffer::CIStreamBuffer(const char* buffer, size_t size)
     : m_Error(0), m_BufferPos(0),
       m_BufferSize(0), m_Buffer(const_cast<char*>(buffer)),
@@ -72,6 +75,7 @@ CIStreamBuffer::CIStreamBuffer(const char* buffer, size_t size)
       m_BufferLockSize(0)
 {
 }
+
 
 CIStreamBuffer::~CIStreamBuffer(void)
 {
@@ -84,6 +88,7 @@ CIStreamBuffer::~CIStreamBuffer(void)
     }
 }
 
+
 void CIStreamBuffer::Open(CByteSourceReader& reader)
 {
     Close();
@@ -94,6 +99,7 @@ void CIStreamBuffer::Open(CByteSourceReader& reader)
     m_Input = &reader;
     m_Error = 0;
 }
+
 
 void CIStreamBuffer::Open(const char* buffer, size_t size)
 {
@@ -107,6 +113,7 @@ void CIStreamBuffer::Open(const char* buffer, size_t size)
     m_DataEndPos = buffer + size;
     m_Error = 0;
 }
+
 
 void CIStreamBuffer::Close(void)
 {
@@ -124,10 +131,12 @@ void CIStreamBuffer::Close(void)
     m_Error = 0;
 }
 
+
 void CIStreamBuffer::SetCanceledCallback(const ICanceled* canceled_callback)
 {
     m_CanceledCallback = canceled_callback;
 }
+
 
 size_t CIStreamBuffer::SetBufferLock(size_t size)
 {
@@ -137,12 +146,14 @@ size_t CIStreamBuffer::SetBufferLock(size_t size)
     return pos;
 }
 
+
 void CIStreamBuffer::ResetBufferLock(size_t pos)
 {
     _ASSERT(m_Buffer+pos <= m_CurrentPos);
     m_BufferLockSize = 0;
     m_CurrentPos = m_Buffer+pos;
 }
+
 
 void CIStreamBuffer::StartSubSource(void)
 {
@@ -163,6 +174,7 @@ void CIStreamBuffer::StartSubSource(void)
             new CMemorySourceCollector(m_Collector);
     }
 }
+
 
 CRef<CByteSource> CIStreamBuffer::EndSubSource(void)
 {
@@ -188,6 +200,7 @@ CRef<CByteSource> CIStreamBuffer::EndSubSource(void)
 
     return source;
 }
+
 
 // this method is highly optimized
 char CIStreamBuffer::SkipSpaces(void)
@@ -232,6 +245,7 @@ char CIStreamBuffer::SkipSpaces(void)
     }
 }
 
+
 // this method is highly optimized
 void CIStreamBuffer::FindChar(char c)
     THROWS1((CIOException))
@@ -266,6 +280,7 @@ void CIStreamBuffer::FindChar(char c)
     }
 }
 
+
 // this method is highly optimized
 size_t CIStreamBuffer::PeekFindChar(char c, size_t limit)
     THROWS1((CIOException))
@@ -283,6 +298,7 @@ size_t CIStreamBuffer::PeekFindChar(char c, size_t limit)
     return limit;
 }
 
+
 bool CIStreamBuffer::TrySetCurrentPos(const char* pos)
 {
     if (m_BufferPos == 0 && pos >= m_Buffer && pos <= m_DataEndPos) {
@@ -291,6 +307,7 @@ bool CIStreamBuffer::TrySetCurrentPos(const char* pos)
     }
     return false;
 }
+
 
 const char* CIStreamBuffer::FillBuffer(const char* pos, bool noEOF)
     THROWS1((CIOException, bad_alloc))
@@ -407,6 +424,7 @@ const char* CIStreamBuffer::FillBuffer(const char* pos, bool noEOF)
     return pos;
 }
 
+
 char CIStreamBuffer::FillBufferNoEOF(const char* pos)
 {
     pos = FillBuffer(pos, true);
@@ -416,10 +434,12 @@ char CIStreamBuffer::FillBufferNoEOF(const char* pos)
         return *pos;
 }
 
+
 bool CIStreamBuffer::TryToFillBuffer(void)
 {
     return FillBuffer(m_CurrentPos, true) < m_DataEndPos;
 }
+
 
 void CIStreamBuffer::GetChars(char* buffer, size_t count)
     THROWS1((CIOException))
@@ -443,6 +463,7 @@ void CIStreamBuffer::GetChars(char* buffer, size_t count)
         }
     }
 }
+
 
 void CIStreamBuffer::GetChars(string& str, size_t count)
     THROWS1((CIOException))
@@ -473,6 +494,7 @@ void CIStreamBuffer::GetChars(string& str, size_t count)
     }
 }
 
+
 void CIStreamBuffer::SkipEndOfLine(char lastChar)
     THROWS1((CIOException))
 {
@@ -485,6 +507,7 @@ void CIStreamBuffer::SkipEndOfLine(char lastChar)
     if ( (lastChar + nextChar) == ('\r' + '\n') )
         SkipChar();
 }
+
 
 size_t CIStreamBuffer::ReadLine(char* buff, size_t size)
     THROWS1((CIOException))
@@ -515,6 +538,7 @@ size_t CIStreamBuffer::ReadLine(char* buff, size_t size)
     }
 }
 
+
 void CIStreamBuffer::BadNumber(void)
     THROWS1((CUtilException))
 {
@@ -522,6 +546,7 @@ void CIStreamBuffer::BadNumber(void)
     NCBI_THROW_FMT(CUtilException, eWrongData,
                    "bad number in line " << GetLine());
 }
+
 
 void CIStreamBuffer::NumberOverflow(void)
     THROWS1((CUtilException))
@@ -531,10 +556,12 @@ void CIStreamBuffer::NumberOverflow(void)
                    "number overflow in line " << GetLine());
 }
 
+
 void CIStreamBuffer::SetStreamOffset(CNcbiStreampos pos)
 {
     SetStreamPos(pos);
 }
+
 
 void CIStreamBuffer::SetStreamPos(CNcbiStreampos pos)
 {
@@ -555,6 +582,7 @@ void CIStreamBuffer::SetStreamPos(CNcbiStreampos pos)
     }
 }
 
+
 char CIStreamBuffer::SkipWs(void)
 {
     char c;
@@ -562,6 +590,7 @@ char CIStreamBuffer::SkipWs(void)
     ;
     return c;
 }
+
 
 Int4 CIStreamBuffer::GetInt4(void)
     THROWS1((CIOException,CUtilException))
@@ -591,8 +620,8 @@ Int4 CIStreamBuffer::GetInt4(void)
     const Uint1 kMaxLimitAdd = Uint1(kMax_I4%10 + sign);
     
     for ( ;; ) {
-        Uint1 d = PeekCharNoEOF() - '0';
-        if  ( d > 9 )
+        Uint1 d = (Uint1)(PeekCharNoEOF() - '0');
+        if ( d > 9 )
             break;
         SkipChar();
         
@@ -607,6 +636,7 @@ Int4 CIStreamBuffer::GetInt4(void)
     else
         return n;
 }
+
 
 Uint4 CIStreamBuffer::GetUint4(void)
     THROWS1((CIOException,CUtilException))
@@ -624,7 +654,7 @@ Uint4 CIStreamBuffer::GetUint4(void)
     const Uint1 kMaxLimitAdd = Uint1(kMax_UI4%10);
     
     for ( ;; ) {
-        Uint1 d = PeekCharNoEOF() - '0';
+        Uint1 d = (Uint1)(PeekCharNoEOF() - '0');
         if  ( d > 9 )
             break;
         SkipChar();
@@ -637,6 +667,7 @@ Uint4 CIStreamBuffer::GetUint4(void)
     }
     return n;
 }
+
 
 Int8 CIStreamBuffer::GetInt8(void)
     THROWS1((CIOException,CUtilException))
@@ -666,8 +697,8 @@ Int8 CIStreamBuffer::GetInt8(void)
     const Uint1 kMaxLimitAdd = Uint1(kMax_I8%10 + sign);
 
     for ( ;; ) {
-        Uint1 d = PeekCharNoEOF() - '0';
-        if  ( d > 9 )
+        Uint1 d = (Uint1)(PeekCharNoEOF() - '0');
+        if ( d > 9 )
             break;
         SkipChar();
 
@@ -683,13 +714,14 @@ Int8 CIStreamBuffer::GetInt8(void)
         return n;
 }
 
+
 Uint8 CIStreamBuffer::GetUint8(void)
     THROWS1((CIOException))
 {
     char c = SkipWs();
     if ( c == '+' )
         c = GetChar();
-    Uint1 d = c - '0';
+    Uint1 d = (Uint1)(c - '0');
     if ( d > 9 )
         BadNumber();
     
@@ -699,8 +731,8 @@ Uint8 CIStreamBuffer::GetUint8(void)
     const Uint8 kMaxBeforeMul = kMax_UI8/10;
     
     for ( ;; ) {
-        d = PeekCharNoEOF() - '0';
-        if  ( d > 9 )
+        d = (Uint1)(PeekCharNoEOF() - '0');
+        if ( d > 9 )
             break;
         SkipChar();
 
@@ -716,6 +748,7 @@ Uint8 CIStreamBuffer::GetUint8(void)
     return n;
 }
 
+
 COStreamBuffer::COStreamBuffer(CNcbiOstream& out, bool deleteOut)
     THROWS1((bad_alloc))
     : m_Output(out), m_DeleteOutput(deleteOut), m_Error(0),
@@ -728,6 +761,7 @@ COStreamBuffer::COStreamBuffer(CNcbiOstream& out, bool deleteOut)
       m_CanceledCallback(0)
 {
 }
+
 
 COStreamBuffer::~COStreamBuffer(void)
 {
@@ -744,6 +778,7 @@ COStreamBuffer::~COStreamBuffer(void)
     }
     delete[] m_Buffer;
 }
+
 
 BEGIN_LOCAL_NAMESPACE;
 
@@ -787,10 +822,12 @@ void COStreamBuffer::Close(void)
     m_LineLength = 0;
 }
 
+
 void COStreamBuffer::SetCanceledCallback(const ICanceled* callback)
 {
     m_CanceledCallback = callback;
 }
+
 
 void COStreamBuffer::FlushBuffer(bool fullBuffer)
     THROWS1((CIOException))
@@ -871,6 +908,7 @@ char* COStreamBuffer::DoReserve(size_t count)
     return m_CurrentPos;
 }
 
+
 void COStreamBuffer::PutInt4(Int4 v)
     THROWS1((CIOException, bad_alloc))
 {
@@ -883,7 +921,7 @@ void COStreamBuffer::PutInt4(Int4 v)
     char* pos = b + BSIZE;
     do {
         Int4 a = '0'+n;
-        *--pos = a-10*(n/=Uint4(10));
+        *--pos = char(a-10*(n/=Uint4(10)));
     } while ( n );
     if ( v < 0 ) {
         *--pos = '-';
@@ -895,6 +933,7 @@ void COStreamBuffer::PutInt4(Int4 v)
     }
 }
 
+
 void COStreamBuffer::PutUint4(Uint4 v)
     THROWS1((CIOException, bad_alloc))
 {
@@ -904,7 +943,7 @@ void COStreamBuffer::PutUint4(Uint4 v)
     char* pos = b + BSIZE;
     do {
         Uint4 a = '0'+n;
-        *--pos = a-10*(n/=Uint4(10));
+        *--pos = char(a-10*(n/=Uint4(10)));
     } while ( n );
     int len = (int)(b + BSIZE - pos);
     char* dst = Skip(len);
@@ -912,6 +951,7 @@ void COStreamBuffer::PutUint4(Uint4 v)
         dst[i] = pos[i];
     }
 }
+
 
 // On some platforms division of Int8 is very slow,
 // so will try to optimize it working with chunks.
@@ -938,14 +978,14 @@ void COStreamBuffer::PutInt8(Int8 v)
         char* end = pos - PRINT_INT8_CHUNK_SIZE;
         do {
             Uint4 a = '0'+m;
-            *--pos = a-10*(m/=10);
+            *--pos = char(a-10*(m/=10));
         } while ( pos != end );
     }
     // process all remaining digits in 32-bit number
     Uint4 m = Uint4(n);
     do {
         Uint4 a = '0'+m;
-        *--pos = a-10*(m/=10);
+        *--pos = char(a-10*(m/=10));
     } while ( m );
 #else
     do {
@@ -963,6 +1003,7 @@ void COStreamBuffer::PutInt8(Int8 v)
     }
 }
 
+
 void COStreamBuffer::PutUint8(Uint8 v)
     THROWS1((CIOException, bad_alloc))
 {
@@ -978,14 +1019,14 @@ void COStreamBuffer::PutUint8(Uint8 v)
         char* end = pos - PRINT_INT8_CHUNK_SIZE;
         do {
             Uint4 a = '0'+m;
-            *--pos = a-10*(m/=10);
+            *--pos = char(a-10*(m/=10));
         } while ( pos != end );
     }
     // process all remaining digits in 32-bit number
     Uint4 m = Uint4(n);
     do {
         Uint4 a = '0'+m;
-        *--pos = a-10*(m/=10);
+        *--pos = char(a-10*(m/=10));
     } while ( m );
 #else
     do {
@@ -999,6 +1040,7 @@ void COStreamBuffer::PutUint8(Uint8 v)
         dst[i] = pos[i];
     }
 }
+
 
 void COStreamBuffer::PutEolAtWordEnd(size_t lineLength)
     THROWS1((CIOException, bad_alloc))
@@ -1058,6 +1100,7 @@ void COStreamBuffer::PutEolAtWordEnd(size_t lineLength)
     ++m_Line;
 }
 
+
 void COStreamBuffer::Write(const char* data, size_t dataLength)
     THROWS1((CIOException, bad_alloc))
 {
@@ -1077,6 +1120,7 @@ void COStreamBuffer::Write(const char* data, size_t dataLength)
     memcpy(m_CurrentPos, data, dataLength);
     m_CurrentPos += dataLength;
 }
+
 
 void COStreamBuffer::Write(CByteSourceReader& reader)
     THROWS1((CIOException, bad_alloc))

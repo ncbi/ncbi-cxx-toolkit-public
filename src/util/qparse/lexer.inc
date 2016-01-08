@@ -191,12 +191,12 @@ void s_yylex_extract_string(CQueryParserEnv*  env,
                             string&           orig_token)
 {
     char c;
-    for (c=env->GetChar(); c != 0; c=env->GetChar()) {
+    for (c=(char)env->GetChar(); c != 0; c=(char)env->GetChar()) {
         orig_token += c;
         if (c == '"') {  // end quote?
             const char* ptr = env->GetBufPtr(); // next to c
             if (*ptr == '"') { // escape symbol?
-                c = env->GetChar();
+                c = (char)env->GetChar();
             } else {
                 break;
             }
@@ -248,14 +248,14 @@ int ncbi_q_lex(CQueryParseTree::TNode** lvalp, void* param)
 
     // skip leading white space
     //
-    for (c = env->GetChar(); ptr < end; ++ptr) {
+    for (c = (char)env->GetChar(); ptr < end; ++ptr) {
         if (!s_IsSpaceTerm(ptr)) {
             break;
         }        
         if (*ptr == 0) {
             return EOF;
         }        
-        c = env->GetChar();
+        c = (char)env->GetChar();
     }
     ptr = env->GetBufPtr();    
     if (ptr > end) {
@@ -274,7 +274,7 @@ int ncbi_q_lex(CQueryParseTree::TNode** lvalp, void* param)
         // nothing to do
         break;
     case CQueryParseTree::eCaseInsensitive:
-        c = toupper(c);
+        c = (char)toupper((unsigned char)c);
         break;
     default:
         _ASSERT(0);
@@ -583,7 +583,7 @@ int ncbi_q_lex(CQueryParseTree::TNode** lvalp, void* param)
                     qnode->GetValue().SetLoc(line, line_pos);
                     qnode->GetValue().SetNot();
                     
-                    env->Skip(ptr-string_start+2);
+                    env->Skip(int(ptr - string_start + 2));
                     return NOT_IN;
                 }
                 if ( s_Compare(ptr, end, "BETWEEN", case_sense) ) {
@@ -595,7 +595,7 @@ int ncbi_q_lex(CQueryParseTree::TNode** lvalp, void* param)
                     qnode->GetValue().SetLoc(line, line_pos);
                     qnode->GetValue().SetNot();
                     
-                    env->Skip(ptr-string_start+7);
+                    env->Skip(int(ptr - string_start + 7));
                     return NOT_BETWEEN;
                 }
                 if ( s_Compare(ptr, end, "LIKE", case_sense) ) {
@@ -607,7 +607,7 @@ int ncbi_q_lex(CQueryParseTree::TNode** lvalp, void* param)
                     qnode->GetValue().SetLoc(line, line_pos);
                     qnode->GetValue().SetNot();
                     
-                    env->Skip(ptr-string_start+4);
+                    env->Skip(int(ptr - string_start + 4));
                     return NOT_LIKE;
                 }
                 
@@ -759,7 +759,7 @@ int ncbi_q_lex(CQueryParseTree::TNode** lvalp, void* param)
              for ( ;  ptr != end  &&  s_IsSpaceTerm(ptr);  ++ptr) {
              }
              if (ptr == end) {
-                 env->Skip(ptr - p);
+                 env->Skip(int(ptr - p));
                  return EOF;
              }
          }}
@@ -806,7 +806,7 @@ int ncbi_q_lex(CQueryParseTree::TNode** lvalp, void* param)
         string token, orig_token;
         orig_token += c;
         
-        for (c=env->GetChar(); c != 0; c=env->GetChar()) {
+        for (c=(char)env->GetChar(); c != 0; c=(char)env->GetChar()) {
             orig_token += c;
             if (c == ']') {  // end?
                 break;
@@ -855,7 +855,7 @@ int ncbi_q_lex(CQueryParseTree::TNode** lvalp, void* param)
                 env->AddNodeToPool(qnode); 
                 qnode->GetValue().SetLoc(line, line_pos);
                 
-                env->Skip(fname.length()-1);
+                env->Skip(int(fname.length()-1));
                 
                 env->SetContext(qnode);
                 
@@ -1032,11 +1032,8 @@ int ncbi_q_lex(CQueryParseTree::TNode** lvalp, void* param)
     }
     
     // skip and return
-    env->Skip(ptr - string_start);
+    env->Skip(int(ptr - string_start));
     if (verbose) { _TRACE("string: >>" << token << "<<"); }
     qnode->GetValue().SetLoc(line, line_pos);
     return STRING;
 }
-
-
-

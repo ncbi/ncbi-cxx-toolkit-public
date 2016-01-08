@@ -89,14 +89,14 @@ static void s_Dump(const SNCBIPackedScoreMatrix& psm,
 #if 1
     cout << "Packed:\n\n ";
     {{
-        int l = strlen(psm.symbols);
-        for (int i = 0;  i < l;  ++i) {
+        size_t l = strlen(psm.symbols);
+        for (size_t i = 0;  i < l;  ++i) {
             cout << "  " << psm.symbols[i];
         }
         cout << '\n';
-        for (int i = 0;  i < l;  ++i) {
+        for (size_t i = 0;  i < l;  ++i) {
             cout << psm.symbols[i];
-            for (int j = 0;  j < l;  ++j) {
+            for (size_t j = 0;  j < l;  ++j) {
                 cout << setw(3) << (int)psm.scores[i * l + j];
             }
             cout << '\n';
@@ -105,10 +105,10 @@ static void s_Dump(const SNCBIPackedScoreMatrix& psm,
 #else
     cout << "Packed:\n\n  " << psm.symbols << "\n\n";
     {{
-        int l = strlen(psm.symbols);
-        for (int i = 0;  i < l;  ++i) {
+        size_t l = strlen(psm.symbols);
+        for (size_t i = 0;  i < l;  ++i) {
             cout << psm.symbols[i] << ' ';
-            for (int j = 0;  j < l;  ++j) {
+            for (size_t j = 0;  j < l;  ++j) {
                 cout << char(psm.scores[i * l + j] + '0');
             }
             cout << '\n';

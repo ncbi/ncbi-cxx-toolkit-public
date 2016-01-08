@@ -113,7 +113,7 @@ public:
       m_FromNode(0),
       m_Functions(0)
     {
-        m_QueryLen = ::strlen(m_Query);
+        m_QueryLen = (unsigned)::strlen(m_Query);
     }
 
     ~CQueryParserEnv()

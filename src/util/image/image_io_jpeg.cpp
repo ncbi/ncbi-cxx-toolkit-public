@@ -674,9 +674,9 @@ void CImageIOJpeg::WriteImage(const CImage& image, CNcbiOstream& ostr,
         //jpeg_stdio_dest(&cinfo, fp);
         s_JpegWriteSetup(&cinfo, ostr, buf_ptr);
 
-        cinfo.image_width      = image.GetWidth();
-        cinfo.image_height     = image.GetHeight();
-        cinfo.input_components = image.GetDepth();
+        cinfo.image_width      = (JDIMENSION)image.GetWidth();
+        cinfo.image_height     = (JDIMENSION)image.GetHeight();
+        cinfo.input_components = (int)image.GetDepth();
         cinfo.in_color_space   = JCS_RGB;
         jpeg_set_defaults(&cinfo);
 
@@ -771,9 +771,9 @@ void CImageIOJpeg::WriteImage(const CImage& image, CNcbiOstream& ostr,
         //jpeg_stdio_dest(&cinfo, fp);
         s_JpegWriteSetup(&cinfo, ostr, buf_ptr);
 
-        cinfo.image_width      = w;
-        cinfo.image_height     = h;
-        cinfo.input_components = image.GetDepth();
+        cinfo.image_width      = (JDIMENSION)w;
+        cinfo.image_height     = (JDIMENSION)h;
+        cinfo.input_components = (int)image.GetDepth();
         cinfo.in_color_space   = JCS_RGB;
         jpeg_set_defaults(&cinfo);
 

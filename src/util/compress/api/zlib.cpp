@@ -110,7 +110,7 @@ CZipCompression::~CZipCompression()
 
 
 // gzip magic header
-const int gz_magic[2] = {0x1f, 0x8b};
+const unsigned char gz_magic[2] = {0x1f, 0x8b};
 
 // gzip flag byte
 #define ASCII_FLAG   0x01 // bit 0 set: file probably ascii text

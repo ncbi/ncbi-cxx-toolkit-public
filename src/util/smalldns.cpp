@@ -91,7 +91,7 @@ bool CSmallDNS::IsValidIP(const string& ip)
 {
     list<string> dig;
     
-    NStr::Split(ip, ".", dig);
+    NStr::Split(ip, ".", dig, NStr::fSplit_NoMergeDelims);
     if (dig.size() != 4) {
         return false;
     }

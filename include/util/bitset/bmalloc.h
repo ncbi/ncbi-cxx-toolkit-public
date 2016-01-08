@@ -194,8 +194,8 @@ public:
                                     const gap_word_t* glevel_len)
     {
         BM_ASSERT(level < bm::gap_levels);
-        unsigned len = 
-            glevel_len[level] / (sizeof(bm::word_t) / sizeof(gap_word_t));
+        unsigned len = (unsigned)(glevel_len[level] / 
+                                  (sizeof(bm::word_t) / sizeof(gap_word_t)));
 
         return (bm::gap_word_t*)block_alloc_.allocate(len, 0);
     }
@@ -208,7 +208,7 @@ public:
         BM_ASSERT(IS_VALID_ADDR((bm::word_t*)block));
          
         unsigned len = gap_capacity(block, glevel_len);
-        len /= sizeof(bm::word_t) / sizeof(bm::gap_word_t);
+        len /= (unsigned)(sizeof(bm::word_t) / sizeof(bm::gap_word_t));
         block_alloc_.deallocate((bm::word_t*)block, len);        
     }
 

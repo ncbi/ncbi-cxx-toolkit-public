@@ -47,6 +47,7 @@ static const size_t kMaxMetaphoneStack = 10;
 void CDictionaryUtil::GetMetaphone(const string& in, string* out,
                                    size_t max_chars)
 {
+    _ASSERT(out);
     out->erase();
     if (in.empty()) {
         return;
@@ -89,7 +90,7 @@ void CDictionaryUtil::GetMetaphone(const string& in, string* out,
         case 'l':
         case 'n':
         case 'r':
-            *out += tolower((unsigned char)(*iter));
+            *out += (char)tolower((unsigned char)(*iter));
             break;
 
         case 'c':
@@ -196,11 +197,11 @@ void CDictionaryUtil::GetMetaphone(const string& in, string* out,
             if (remaining  &&  prev_len  &&
                 vowels.find(*(iter + 1)) != string::npos  &&
                 CTempString("cgpst").find(*(iter - 1)) == string::npos) {
-                *out += tolower((unsigned char)(*iter));
+                *out += (char)tolower((unsigned char)(*iter));
                 ++iter;
             }
             else if ( !prev_len ) {
-                *out += tolower((unsigned char)(*iter));
+                *out += (char)tolower((unsigned char)(*iter));
             }
             break;
 
@@ -211,7 +212,7 @@ void CDictionaryUtil::GetMetaphone(const string& in, string* out,
                 *out += 'n';
                 break;
             }
-            *out += tolower((unsigned char)(*iter));
+            *out += (char)tolower((unsigned char)(*iter));
             break;
 
         case 'p':
@@ -224,7 +225,7 @@ void CDictionaryUtil::GetMetaphone(const string& in, string* out,
                 *out += 'f';
                 break;
             }
-            *out += tolower((unsigned char)(*iter));
+            *out += (char)tolower((unsigned char)(*iter));
             break;
 
         case 'q':
@@ -269,7 +270,7 @@ void CDictionaryUtil::GetMetaphone(const string& in, string* out,
                 ++iter;
                 break;
             }
-            *out += tolower((unsigned char)(*iter));
+            *out += (char)tolower((unsigned char)(*iter));
             break;
 
         case 'v':
@@ -284,7 +285,7 @@ void CDictionaryUtil::GetMetaphone(const string& in, string* out,
                     ++iter;
                     break;
                 }
-                *out += tolower((unsigned char)(*iter));
+                *out += (char)tolower((unsigned char)(*iter));
                 break;
             }
 
@@ -293,7 +294,7 @@ void CDictionaryUtil::GetMetaphone(const string& in, string* out,
                  *(iter - 1) == 'i'  ||
                  *(iter - 1) == 'o'  ||
                  *(iter - 1) == 'u') {
-                *out += tolower((unsigned char)(*iter));
+                *out += (char)tolower((unsigned char)(*iter));
             }
             break;
 
@@ -310,7 +311,7 @@ void CDictionaryUtil::GetMetaphone(const string& in, string* out,
                   *(iter + 1) == 'u')) {
                 break;
             }
-            *out += tolower((unsigned char)(*iter));
+            *out += (char)tolower((unsigned char)(*iter));
             break;
 
         case 'z':
@@ -374,7 +375,7 @@ void CDictionaryUtil::GetSoundex(const string& in, string* out,
 
     // preserve the first character, in upper case
     string::const_iterator iter = in.begin();
-    *out += toupper((unsigned char)(*iter));
+    *out += (char)toupper((unsigned char)(*iter));
 
     // now, iterate substituting codes, using no more than four characters
     // total
@@ -415,8 +416,8 @@ size_t CDictionaryUtil::GetEditDistance(const string& str1,
             string::const_iterator iter1 = pstr1->begin();
             string::const_iterator iter2 = pstr2->begin();
             for ( ;  iter1 != pstr1->end()  &&  iter2 != pstr2->end();  ) {
-                char c1_0 = tolower((unsigned char)(*iter1));
-                char c2_0 = tolower((unsigned char)(*iter2));
+                char c1_0 = (char)tolower((unsigned char)(*iter1));
+                char c2_0 = (char)tolower((unsigned char)(*iter2));
                 if (c1_0 == c2_0) {
                     /// identity: easy out
                     ++iter1;
@@ -440,8 +441,8 @@ size_t CDictionaryUtil::GetEditDistance(const string& str1,
                     char corner2 = *(iter2 + radius);
                     bool match = false;
                     for (int i = radius;  i >= 0;  --i) {
-                        c1_0 = tolower((unsigned char)(*(iter1 + i)));
-                        c2_0 = tolower((unsigned char)(*(iter2 + i)));
+                        c1_0 = (char)tolower((unsigned char)(*(iter1 + i)));
+                        c2_0 = (char)tolower((unsigned char)(*(iter2 + i)));
                         if (c1_0 == corner2) {
                             match = true;
                             cost = radius;

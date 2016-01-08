@@ -571,7 +571,7 @@ public:
                     }
                     prev = *(bdescr->gap_.ptr);
                     val = *(++(bdescr->gap_.ptr));
-                    bdescr->gap_.gap_len = (gap_word_t)val - prev;
+                    bdescr->gap_.gap_len = (gap_word_t)(val - prev);
                     return *this;  // next "ON" found;
                 }
 
@@ -695,7 +695,7 @@ public:
                     gap_word_t* first = BMGAP_PTR(this->block_) + 1;
                     if (bdescr->gap_.ptr == first)
                     {
-                        bdescr->gap_.gap_len = (gap_word_t)val + 1;
+                        bdescr->gap_.gap_len = (gap_word_t)(val + 1);
                     }
                     else
                     {

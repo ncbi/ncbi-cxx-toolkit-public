@@ -251,7 +251,7 @@ bool CIdDeMux<TBV, TBVFact>::GetCoordinatesFast(unsigned  id,
             const TBitVector& bv = *(dv[j]);
             dim_found = bv[id];
             if (dim_found) {
-                coord[i] = j;
+                coord[i] = (unsigned)j;
                 break;
             }
         } // for j

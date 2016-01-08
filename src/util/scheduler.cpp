@@ -291,7 +291,7 @@ CScheduler_MT::x_AddQueueTask
     CRef<CScheduler_QueueEvent> event_info(new CScheduler_QueueEvent());
 
     if (id == 0) {
-        id = m_IDCounter.Add(1);
+        id = (TScheduler_SeriesID)m_IDCounter.Add(1);
     }
 
     event_info->id = id;
@@ -656,8 +656,7 @@ CScheduler_ExecThread_Impl::Main(void)
     CTime cur_time(CTime::eCurrent);
     while ( !m_Stopped ) {
         CTimeSpan timeout = m_Scheduler->GetNextExecutionTime() - cur_time;
-        m_WaitTrigger.TryWait(timeout.GetCompleteSeconds(),
-                              timeout.GetNanoSecondsAfterSecond());
+        m_WaitTrigger.TryWait(CTimeout(timeout));
 
         // If we are already stopped we will not do unnecessary work
         if ( !m_Stopped ) {

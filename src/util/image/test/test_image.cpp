@@ -150,10 +150,10 @@ int CImageTestApp::Run(void)
             continue;
         }
 
-        int width  = image->GetWidth() / 4;
-        int height = image->GetHeight() / 4;
-        int x      = image->GetWidth() / 3;
-        int y      = image->GetHeight() / 3;
+        int width  = (int)image->GetWidth() / 4;
+        int height = (int)image->GetHeight() / 4;
+        int x      = (int)image->GetWidth() / 3;
+        int y      = (int)image->GetHeight() / 3;
 
         CRef<CImage> subimage(image->GetSubImage(x, y, width, height));
         subimage->SetDepth(4);
@@ -182,8 +182,8 @@ int CImageTestApp::Run(void)
     cout << "testing ReadSubImage()..." << endl;
     CRef<CImage> image(CImageIO::ReadImage(base + ".jpeg"));
     if (image) {
-        int width  = image->GetWidth();
-        int height = image->GetHeight();
+        int width  = (int)image->GetWidth();
+        int height = (int)image->GetHeight();
 
         int x = width / 3;
         int y = height / 3;

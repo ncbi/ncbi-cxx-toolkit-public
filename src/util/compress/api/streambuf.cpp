@@ -328,7 +328,7 @@ CT_INT_TYPE CCompressionStreambuf::overflow(CT_INT_TYPE c)
         // (this function is called when pptr() == eptr() but we
         // have reserved one byte more in the constructor, thus
         // *epptr() and now *pptr() point to valid positions)
-        *pptr() = c;
+        *pptr() = (CT_CHAR_TYPE)c;
         // Increment put pointer
         pbump(1);
     }

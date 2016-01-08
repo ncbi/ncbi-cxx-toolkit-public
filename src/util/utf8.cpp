@@ -246,7 +246,7 @@ long StringToCode(const string&      src,
     }
         
     unsigned char mask = 0xFF;
-    mask = mask >> (int)utf_len; 
+    mask = (unsigned char)(mask >> (int)utf_len);
     dst_code = ch & mask;
 
     for (size_t j = 1; j < utf_len; j++)

@@ -381,10 +381,10 @@ CCache<TKey, TValue, THandler, TLock, TSize>::x_InsertElement(
     if (weight == 0) {
         weight = 1;
     }
-    TWeight adjusted_weight = weight + x_GetBaseWeight();
+    TWeight adjusted_weight = (TWeight)(weight + x_GetBaseWeight());
     if (adjusted_weight < weight) {
         x_PackElementIndex();
-        adjusted_weight = weight + x_GetBaseWeight();
+        adjusted_weight = (TWeight)(weight + x_GetBaseWeight());
         if (adjusted_weight < weight) {
             NCBI_THROW(CCacheException, eWeightOverflow,
                 "Cache element weight overflow");
@@ -430,10 +430,10 @@ template <class TKey, class TValue, class THandler, class TLock, class TSize>
 void CCache<TKey, TValue, THandler, TLock, TSize>::x_PackElementIndex(void)
 {
     // Overflow detected - adjust orders
-    TOrder order_shift = m_Counter - 1;
+    TOrder order_shift = (TOrder)(m_Counter - 1);
     TOrder order_max = numeric_limits<TOrder>::max();
     if ( !m_CacheSet.empty() ) {
-        TWeight weight_shift = (*m_CacheSet.begin())->m_Weight - 1;
+        TWeight weight_shift = (TWeight)((*m_CacheSet.begin())->m_Weight - 1);
         TWeight weight_max = weight_shift;
         TOrder order_min = 0;
         ITERATE(typename TCacheSet, it, m_CacheSet) {
@@ -450,7 +450,7 @@ void CCache<TKey, TValue, THandler, TLock, TSize>::x_PackElementIndex(void)
                 weight_max = e->m_Weight;
             }
         }
-        order_shift -= order_min;
+        order_shift = (TOrder)(order_shift - order_min);
         if (order_shift < 2) {
             // Can not pack orders, try slow method
             typedef set<TOrder> TOrderSet;
@@ -480,7 +480,7 @@ void CCache<TKey, TValue, THandler, TLock, TSize>::x_PackElementIndex(void)
                             "Cache element index overflow");
                 }
                 order_min = rg_from;
-                order_shift = rg_to - rg_from;
+                order_shift = (TOrder)(rg_to - rg_from);
             }
         }
         if (weight_shift <= 1  &&  weight_max + 1 <= 0) {
@@ -493,12 +493,12 @@ void CCache<TKey, TValue, THandler, TLock, TSize>::x_PackElementIndex(void)
         NON_CONST_ITERATE(typename TCacheSet, it, m_CacheSet) {
             TCacheElement* e = *it;
             if (e->m_Order > order_min) {
-                e->m_Order -= order_shift;
+                e->m_Order = (TOrder)(e->m_Order - order_shift);
             }
-            e->m_Weight -= weight_shift;
+            e->m_Weight = (TOrder)(e->m_Weight - weight_shift);
         }
     }
-    m_Counter -= order_shift;
+    m_Counter = (TOrder)(m_Counter - order_shift);
 }
 
 

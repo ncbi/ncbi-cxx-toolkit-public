@@ -87,13 +87,13 @@ static SIZE_TYPE s_2naReverse
             *dst = table[static_cast<Uint1>(*iter) * 2 + 1];
             if ( iter != begin ) {
                 --iter;
-                *dst |= table[static_cast<Uint1>(*iter) * 2];
+                *dst |= (char)table[static_cast<Uint1>(*iter) * 2];
             }
         }
     }
 
     // now, take care of the last byte
-    *dst &= (0xFF << ((4 - (length % 4)) % 4) * 2);
+    *dst &= char(0xFF << ((4 - (length % 4)) % 4) * 2);
 
     return length;
 }
@@ -122,7 +122,7 @@ static SIZE_TYPE s_4naReverse
             }
             --dst;
             if ( length % 2 != 0 ) {
-                *dst &= 0xF0;
+                *dst &= (char)0xF0;
             }
         }}
         break;
@@ -131,13 +131,13 @@ static SIZE_TYPE s_4naReverse
         {{
             for ( size_t count = length / 2; count; --count, ++dst ) {
                 --iter;
-                *dst = (static_cast<Uint1>(*iter) & 0xF0) |
-                         (static_cast<Uint1>(*(iter - 1)) & 0x0F);
+                *dst = char((static_cast<Uint1>(*iter) & 0xF0) |
+                            (static_cast<Uint1>(*(iter - 1)) & 0x0F));
             }
 
             if ( length % 2 != 0 ) {
                 --iter;
-                *dst = static_cast<Uint1>(*iter) & 0xF0;
+                *dst = char(static_cast<Uint1>(*iter) & 0xF0);
             }
         }}
         break;
@@ -280,31 +280,31 @@ static SIZE_TYPE s_Ncbi2naComplement
 
     if ( pos % 4 == 0 ) {
         for ( ; iter != end; ++iter, ++dst ) {
-            *dst = ~(*iter);
+            *dst = char(~(*iter));
         }
 
         if ( length % 4 != 0 ) {
-            *(--dst) &= (0xFF << (8 - (length % 4) * 2));
+            *(--dst) &= char(0xFF << (8 - (length % 4) * 2));
         }
     } else {
         const Uint1* table = C2naCmp::GetTable(pos % 4);
 
         for ( size_t count = length / 4;  count; --count, ++dst, ++iter ) {
-            *dst= 
+            *dst= char(
                 table[static_cast<Uint1>(*iter) * 2] |
-                table[static_cast<Uint1>(*(iter + 1)) * 2 + 1];
+                table[static_cast<Uint1>(*(iter + 1)) * 2 + 1] );
         }
 
         // handle the overhang
         if ( length % 4 != 0 ) {
-            *dst = table[static_cast<Uint1>(*iter) * 2];
+            *dst = (char)table[static_cast<Uint1>(*iter) * 2];
             if ( ++iter != end ) {
-                *dst |= table[static_cast<Uint1>(*iter) * 2 + 1];
+                *dst |= (char)table[static_cast<Uint1>(*iter) * 2 + 1];
             }
         }
     }
     // now, take care of the last byte
-    *dst &= (0xFF << ((4 - (length % 4)) % 4) * 2);
+    *dst &= char(0xFF << ((4 - (length % 4)) % 4) * 2);
 
     return length;
 }
@@ -320,7 +320,7 @@ static SIZE_TYPE s_Ncbi2naExpandComplement
     const char* iter = src + pos;
 
     for ( ; iter != end; ++iter, ++dst ) {
-        *dst = 3 - static_cast<Uint1>(*iter);
+        *dst = char(3 - static_cast<Uint1>(*iter));
     }
 
     return length;
@@ -342,11 +342,11 @@ static SIZE_TYPE s_Ncbi4naComplement
     case 0:
         {{
             for ( ; iter != end; ++iter, ++dst ) {
-                *dst = table[static_cast<Uint1>(*iter)];
+                *dst = (char)table[static_cast<Uint1>(*iter)];
             }
 
             if ( length % 2 != 0 ) {
-                *dst &= 0xF0;
+                *dst &= char(0xF0);
             }
         }}
         break;
@@ -354,13 +354,13 @@ static SIZE_TYPE s_Ncbi4naComplement
     case 1:
         {{
             for ( size_t count = length / 2;  count; --count, ++iter, ++dst ) {
-                *dst =
+                *dst = char(
                     table[static_cast<Uint1>(*iter) * 2] |
-                    table[static_cast<Uint1>(*(iter + 1)) * 2 + 1];
+                    table[static_cast<Uint1>(*(iter + 1)) * 2 + 1] );
             }
 
             if ( length % 2 != 0 ) {
-                *dst = table[static_cast<Uint1>(*iter) * 2];
+                *dst = (char)table[static_cast<Uint1>(*iter) * 2];
             }
         }}
         break;
@@ -480,7 +480,7 @@ static SIZE_TYPE s_Ncbi2naRevCmp
             *dst = table[static_cast<Uint1>(*iter) * 2];
             if ( iter != begin ) {
                 --iter;
-                *dst |= table[static_cast<Uint1>(*iter) * 2 + 1];
+                *dst |= (char)table[static_cast<Uint1>(*iter) * 2 + 1];
             }
         }
         break;
@@ -494,7 +494,7 @@ static SIZE_TYPE s_Ncbi2naRevCmp
     }
 
     // zero redundent bits
-    *dst &= (0xFF << ((4 - (length % 4)) % 4) * 2);
+    *dst &= char(0xFF << ((4 - (length % 4)) % 4) * 2);
 
     return length;
 }
@@ -510,7 +510,7 @@ static SIZE_TYPE s_Ncbi2naExpandRevCmp
     const char* iter  = src + pos + length;
 
     for ( ; iter != begin; ++dst ) {
-        *dst = 3 - static_cast<Uint1>(*--iter);
+        *dst = char(3 - static_cast<Uint1>(*--iter));
     }
 
     return length;
@@ -552,7 +552,7 @@ static SIZE_TYPE s_Ncbi4naRevCmp
             }
 
             if ( length % 2 != 0 ) {
-                *dst &= 0xF0;
+                *dst &= char(0xF0);
             }
         }}
         break;
@@ -651,8 +651,8 @@ static SIZE_TYPE s_Ncbi2naExpandRevCmp
     char temp;
 
     for ( ; first <= last; ++first, --last ) {
-        temp = 3 - *first;
-        *first = 3 - *last;
+        temp = char(3 - *first);
+        *first = char(3 - *last);
         *last = temp;
     }
 

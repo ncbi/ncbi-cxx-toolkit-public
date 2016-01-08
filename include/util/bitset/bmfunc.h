@@ -73,7 +73,7 @@ struct bv_statistics
     void add_bit_block()
     {
         ++bit_blocks;
-        unsigned mem_used = sizeof(bm::word_t) * bm::set_block_size;
+        unsigned mem_used = (unsigned)(sizeof(bm::word_t) * bm::set_block_size);
         memory_used += mem_used;
         max_serialize_mem += mem_used;
     }
@@ -82,9 +82,9 @@ struct bv_statistics
     void add_gap_block(unsigned capacity, unsigned length)
     {
         ++gap_blocks;
-        unsigned mem_used = capacity * sizeof(gap_word_t);
+        unsigned mem_used = (unsigned)(capacity * sizeof(gap_word_t));
         memory_used += mem_used;
-        max_serialize_mem += length * sizeof(gap_word_t);
+        max_serialize_mem += (unsigned)(length * sizeof(gap_word_t));
     }
 };
 
@@ -1180,7 +1180,7 @@ template<typename T> unsigned gap_set_value(unsigned val,
     BM_ASSERT(pos < bm::gap_max_bits);
     unsigned curr = gap_bfind(buf, pos, is_set);
 
-    register T end = (*buf >> 3);
+    register T end = (T)(*buf >> 3);
 	if (*is_set == val)
 	{
 		*is_set = 0;
@@ -1190,7 +1190,7 @@ template<typename T> unsigned gap_set_value(unsigned val,
 
     register T* pcurr = buf + curr;
     register T* pprev = pcurr - 1;
-    register T* pend = buf + end;
+    register T* pend  = buf + end;
 
     // Special case, first bit GAP operation. There is no platform beside it.
     // initial flag must be inverted.
@@ -1244,11 +1244,11 @@ template<typename T> unsigned gap_set_value(unsigned val,
         ::memmove(pcurr+2, pcurr,(end - curr + 1)*sizeof(T));
         *pcurr++ = (T)(pos - 1);
         *pcurr = (T)pos;
-		end+=2;
+		end = (T)(end + 2);
 	}
 
     // Set correct length word.
-    *buf = (*buf & 7) + (end << 3);
+    *buf = (T)((*buf & 7) + (end << 3));
 
     buf[end] = bm::gap_max_bits - 1;
     return end;
@@ -2384,7 +2384,7 @@ template<typename T>
 */
 template<typename T> T gap_length(const T* buf)
 {
-    return (*buf >> 3) + 1;
+    return (T)((*buf >> 3) + 1);
 }
 
 
@@ -2823,7 +2823,7 @@ void bit_count_change32(const bm::word_t* block,
     
     BM_INCWORD_BITCOUNT(*bit_count, w);
     
-    const int w_shift = sizeof(w) * 8 - 1;    
+    const int w_shift = (int)sizeof(w) * 8 - 1;    
     w ^= (w >> 1);
     BM_INCWORD_BITCOUNT(*gap_count, w);
     *gap_count -= (w_prev = (w0 >> w_shift)); // negative value correction
@@ -4722,9 +4722,12 @@ bm::set_representation best_representation(unsigned bit_count,
                                            unsigned gap_count,
                                            unsigned block_size)
 {
-    unsigned arr_size = sizeof(bm::gap_word_t) * bit_count + sizeof(bm::gap_word_t);
-    unsigned gap_size = sizeof(bm::gap_word_t) * gap_count + sizeof(bm::gap_word_t);
-    unsigned inv_arr_size = sizeof(bm::gap_word_t) * (total_possible_bitcount - bit_count) + sizeof(bm::gap_word_t);
+    unsigned arr_size = 
+        (unsigned)(sizeof(bm::gap_word_t) * bit_count + sizeof(bm::gap_word_t));
+    unsigned gap_size =
+        (unsigned)(sizeof(bm::gap_word_t) * gap_count + sizeof(bm::gap_word_t));
+    unsigned inv_arr_size = 
+        (unsigned)(sizeof(bm::gap_word_t) * (total_possible_bitcount - bit_count) + sizeof(bm::gap_word_t));
 
     if ((gap_size < block_size) && (gap_size < arr_size) && (gap_size < inv_arr_size))
     {

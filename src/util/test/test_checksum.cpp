@@ -219,7 +219,7 @@ bool s_Adler32Test()
         int length = l * 5000 + 1000;
         vector<char> bs(length);
         for (int j = 0; j < length; j++ ) {
-            bs[j] = j;
+            bs[j] = (char)j;
         }
         for ( int c = length; c > 0; c >>= 1 ) {
             CChecksum sum(CChecksum::eAdler32);

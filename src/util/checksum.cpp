@@ -207,7 +207,7 @@ Uint4 CChecksum::GetChecksum(void) const
         char extra_bytes[8];
         size_t extra_len = 0;
         for ( size_t len = m_CharCount; len; len >>= 8 ) {
-            extra_bytes[extra_len++] = len & 0xff;
+            extra_bytes[extra_len++] = char(len & 0xff);
         }
         CChecksum extra(*this);
         extra.AddChars(extra_bytes, extra_len);

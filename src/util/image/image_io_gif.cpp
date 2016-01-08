@@ -71,7 +71,7 @@ static int s_GifRead(GifFileType* file, GifByteType* data, int len)
     CNcbiIstream* istr = reinterpret_cast<CNcbiIstream*>(file->UserData);
     if (istr) {
         istr->read(reinterpret_cast<char*>(data), len);
-        return istr->gcount();
+        return (int)istr->gcount();
     }
     return -1;
 }
@@ -346,7 +346,8 @@ void CImageIOGif::WriteImage(const CImage& image, CNcbiOstream& ostr,
         unsigned char* qdata_ptr = &qdata[0];
 
         // quantize our colors
-        if (QuantizeBuffer(image.GetWidth(), image.GetHeight(), &cmap_size,
+        if (QuantizeBuffer((unsigned int)image.GetWidth(),
+                           (unsigned int)image.GetHeight(), &cmap_size,
                            red_ptr, green_ptr, blue_ptr,
                            qdata_ptr, cmap->Colors) == GIF_ERROR) {
             free(cmap);
@@ -366,7 +367,7 @@ void CImageIOGif::WriteImage(const CImage& image, CNcbiOstream& ostr,
         }
 
         // write the GIF screen description
-        if (EGifPutScreenDesc(fp, image.GetWidth(), image.GetHeight(),
+        if (EGifPutScreenDesc(fp, (int)image.GetWidth(), (int)image.GetHeight(),
                               8, 0, cmap) == GIF_ERROR) {
             NCBI_THROW(CImageException, eWriteError,
                 "CImageIOGif::WriteImage(): failed to write GIF screen "
@@ -374,7 +375,7 @@ void CImageIOGif::WriteImage(const CImage& image, CNcbiOstream& ostr,
         }
 
         // write the GIF image description
-        if (EGifPutImageDesc(fp, 0, 0, image.GetWidth(), image.GetHeight(),
+        if (EGifPutImageDesc(fp, 0, 0, (int)image.GetWidth(), (int)image.GetHeight(),
                              false, NULL) == GIF_ERROR) {
             NCBI_THROW(CImageException, eWriteError,
                        "CImageIOGif::WriteImage(): failed to write GIF image "
@@ -383,7 +384,7 @@ void CImageIOGif::WriteImage(const CImage& image, CNcbiOstream& ostr,
 
         // put our data
         for (size_t i = 0;  i < image.GetHeight();  ++i) {
-            if (EGifPutLine(fp, qdata_ptr, image.GetWidth()) == GIF_ERROR) {
+            if (EGifPutLine(fp, qdata_ptr, (int)image.GetWidth()) == GIF_ERROR) {
                 string msg("CImageIOGif::WriteImage(): error writing line ");
                 msg += NStr::NumericToString(i);
                 NCBI_THROW(CImageException, eWriteError, msg);
