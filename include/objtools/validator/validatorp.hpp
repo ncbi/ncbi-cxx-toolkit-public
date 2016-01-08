@@ -961,9 +961,11 @@ public:
 
     void ValidateSeqAlign(const CSeq_align& align);
 
-    typedef struct {
+    struct TSegmentGap {
         size_t seg_num; size_t align_pos; string label;
-    } TSegmentGap;
+        TSegmentGap(size_t _seg_num, size_t _align_pos, string _label)
+            : seg_num(_seg_num), align_pos(_align_pos), label(_label) {}
+    };
     typedef vector<TSegmentGap> TSegmentGapV;
 
     typedef CSeq_align::C_Segs::TDendiag    TDendiag;

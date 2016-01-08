@@ -1086,7 +1086,7 @@ CValidError_align::TSegmentGapV CValidError_align::FindSegmentGaps(const TDenseg
             if (NStr::IsBlank(label)) {
                 label = "unknown";
             }
-            seggaps.push_back({ seg, align_pos, label });
+            seggaps.push_back(TSegmentGapV::value_type(seg, align_pos, label));
         }
         if (denseg.IsSetLens() && denseg.GetLens().size() > (unsigned int)seg) {
             align_pos += denseg.GetLens()[seg];
@@ -1148,7 +1148,7 @@ CValidError_align::TSegmentGapV CValidError_align::FindSegmentGaps(const TPacked
             if (packed.IsSetIds() && packed.GetIds().size() > 0) {
                 packed.GetIds()[0]->GetLabel(&label);
             }
-            seggaps.push_back({ seg, align_pos, label });
+            seggaps.push_back(TSegmentGapV::value_type(seg, align_pos, label));
         }
         if (packed.IsSetLens() && packed.GetLens().size() > seg) {
             align_pos += packed.GetLens()[seg];
@@ -1188,7 +1188,7 @@ CValidError_align::TSegmentGapV CValidError_align::FindSegmentGaps(const TStd& s
             }
         }
         if (gap) {
-            seggaps.push_back({ seg, align_pos, label });
+            seggaps.push_back(TSegmentGapV::value_type(seg, align_pos, label));
         }
         align_pos += len;
         ++seg;
@@ -1218,7 +1218,7 @@ CValidError_align::TSegmentGapV CValidError_align::FindSegmentGaps(const TDendia
             if ((*diag_seg)->IsSetIds() && (*diag_seg)->GetIds().size() > 0) {
                 (*diag_seg)->GetIds().front()->GetLabel(&label);
             }
-            seggaps.push_back({ seg, align_pos, label });
+            seggaps.push_back(TSegmentGapV::value_type(seg, align_pos, label));
         }
         if ((*diag_seg)->IsSetLen()) {
             align_pos += (*diag_seg)->GetLen();
