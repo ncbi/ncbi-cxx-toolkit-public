@@ -40,7 +40,7 @@
 #endif
 
 static const size_t kMaxPrintedIntLen = 10;
-static const size_t kMaxPrintedIntLenPlusOne = 11;
+#define             kMaxPrintedIntLenPlusOne 11
 
 
 /*  ---------------------------------------------------------------------- */
