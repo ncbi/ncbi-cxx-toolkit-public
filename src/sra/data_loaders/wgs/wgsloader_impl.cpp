@@ -75,6 +75,8 @@ BEGIN_SCOPE(objects)
 
 class CDataLoader;
 
+static const int kChunkId_QualityGraph = 1;
+
 NCBI_PARAM_DECL(int, WGS_LOADER, DEBUG);
 NCBI_PARAM_DEF_EX(int, WGS_LOADER, DEBUG, 0,
                   eParam_NoThread, WGS_LOADER_DEBUG);
@@ -117,7 +119,7 @@ NCBI_PARAM_DECL(bool, WGS_LOADER, RESOLVE_GIS);
 NCBI_PARAM_DEF(bool, WGS_LOADER, RESOLVE_GIS, true);
 
 
-static bool GetResolveGIsParem(void)
+static bool GetResolveGIsParam(void)
 {
     return NCBI_PARAM_TYPE(WGS_LOADER, RESOLVE_GIS)::GetDefault();
 }
@@ -127,9 +129,35 @@ NCBI_PARAM_DECL(bool, WGS_LOADER, RESOLVE_PROT_ACCS);
 NCBI_PARAM_DEF(bool, WGS_LOADER, RESOLVE_PROT_ACCS, true);
 
 
-static bool GetResolveProtAccsParem(void)
+static bool GetResolveProtAccsParam(void)
 {
-    return NCBI_PARAM_TYPE(WGS_LOADER, RESOLVE_PROT_ACCS)::GetDefault();
+    static bool value =
+        NCBI_PARAM_TYPE(WGS_LOADER, RESOLVE_PROT_ACCS)::GetDefault();
+    return value;
+}
+
+
+NCBI_PARAM_DECL(bool, WGS_LOADER, SPLIT_QUALITY_GRAPH);
+NCBI_PARAM_DEF(bool, WGS_LOADER, SPLIT_QUALITY_GRAPH, true);
+
+
+static bool GetSplitQualityGraphParam(void)
+{
+    static bool value =
+        NCBI_PARAM_TYPE(WGS_LOADER, SPLIT_QUALITY_GRAPH)::GetDefault();
+    return value;
+}
+
+
+NCBI_PARAM_DECL(bool, WGS_LOADER, SPLIT_SEQUENCE);
+NCBI_PARAM_DEF(bool, WGS_LOADER, SPLIT_SEQUENCE, false);
+
+
+static bool GetSplitSequenceParam(void)
+{
+    static bool value =
+        NCBI_PARAM_TYPE(WGS_LOADER, SPLIT_SEQUENCE)::GetDefault();
+    return value;
 }
 
 
@@ -219,8 +247,8 @@ CWGSDataLoader_Impl::CWGSDataLoader_Impl(
     : m_WGSVolPath(params.m_WGSVolPath),
       m_FoundFiles(GetGCSize()),
       m_AddWGSMasterDescr(GetMasterDescrParam()),
-      m_ResolveGIs(GetResolveGIsParem()),
-      m_ResolveProtAccs(GetResolveProtAccsParem())
+      m_ResolveGIs(GetResolveGIsParam()),
+      m_ResolveProtAccs(GetResolveProtAccsParam())
 {
     if ( m_WGSVolPath.empty() && params.m_WGSFiles.empty() ) {
         m_WGSVolPath = GetWGSVolPath();
@@ -922,12 +950,29 @@ bool CWGSFileInfo::FindProtAcc(SAccFileInfo& info, const string& acc) const
 }
 
 
+
+static CSeq_id_Handle s_GetAccessId(const CWGSSeqIterator& it)
+{
+    if ( TGi gi = it.GetGi() ) {
+        return CSeq_id_Handle::GetHandle(gi);
+    }
+    else if ( CRef<CSeq_id> id = it.GetAccSeq_id() ) {
+        return CSeq_id_Handle::GetHandle(*id);
+    }
+    else if ( CRef<CSeq_id> id = it.GetGeneralSeq_id() ) {
+        return CSeq_id_Handle::GetHandle(*id);
+    }
+    return CSeq_id_Handle();
+}
+
+
 void CWGSFileInfo::LoadBlob(const CWGSBlobId& blob_id,
                             CTSE_LoadLock& load_lock) const
 {
     if ( !load_lock.IsLoaded() ) {
         NCBI_gb_state gb_state = 0;
         CRef<CSeq_entry> entry;
+        vector<CRef<CTSE_Chunk_Info> > chunks;
         if ( blob_id.m_SeqType == 'S' ) {
             if ( CWGSScaffoldIterator it = GetScaffoldIterator(blob_id) ) {
                 entry = it.GetSeq_entry();
@@ -942,7 +987,25 @@ void CWGSFileInfo::LoadBlob(const CWGSBlobId& blob_id,
         else {
             if ( CWGSSeqIterator it = GetContigIterator(blob_id) ) {
                 gb_state = it.GetGBState();
-                entry = it.GetSeq_entry();
+                CWGSSeqIterator::TFlags flags = it.fDefaultFlags;
+                if ( GetSplitQualityGraphParam() ) {
+                    flags &= ~it.fQualityGraph;
+                    if ( it.CanHaveQualityGraph() ) {
+                        CRef<CTSE_Chunk_Info> chunk
+                            (new CTSE_Chunk_Info(kChunkId_QualityGraph));
+                        CSeq_id_Handle id = s_GetAccessId(it);
+                        chunk->x_AddAnnotPlace(id);
+                        chunk->x_AddAnnotType(CAnnotName(it.GetQualityAnnotName()),
+                                              SAnnotTypeSelector(CSeq_annot::C_Data::e_Graph),
+                                              id, CRange<TSeqPos>(0, it.GetSeqLength()));
+                        chunks.push_back(chunk);
+                    }
+                }
+                if ( GetSplitSequenceParam() ) {
+                    flags &= ~it.fMaskInst;
+                    flags |= it.fInst_split;
+                }
+                entry = it.GetSeq_entry(flags);
             }
         }
         CBioseq_Handle::TBioseqStateFlags state = 0;
@@ -970,6 +1033,9 @@ void CWGSFileInfo::LoadBlob(const CWGSBlobId& blob_id,
         }
         if ( entry ) {
             load_lock->SetSeq_entry(*entry);
+            NON_CONST_ITERATE ( vector<CRef<CTSE_Chunk_Info> >, it, chunks ) {
+                load_lock->GetSplitInfo().AddChunk(**it);
+            }
         }
     }
 }
@@ -978,6 +1044,18 @@ void CWGSFileInfo::LoadBlob(const CWGSBlobId& blob_id,
 void CWGSFileInfo::LoadChunk(const CWGSBlobId& blob_id,
                              CTSE_Chunk_Info& chunk_info) const
 {
+    if ( chunk_info.GetChunkId() == kChunkId_QualityGraph ) {
+        if ( blob_id.m_SeqType == '\0' ) {
+            CWGSSeqIterator it = GetContigIterator(blob_id);
+            CTSE_Chunk_Info::TPlace place(s_GetAccessId(it), 0);
+            CBioseq::TAnnot annot_set;
+            it.GetQualityAnnot(annot_set);
+            ITERATE ( CBioseq::TAnnot, it, annot_set ) {
+                chunk_info.x_LoadAnnot(place, **it);
+            }
+            chunk_info.SetLoaded();
+        }
+    }
 }
 
 
