@@ -856,15 +856,17 @@ void CIgBlast::x_FindDJ(CRef<CSearchResultSet>& results_D,
 void CIgBlast::x_FillJDomain(CRef<CSeq_align> & align, CRef <CIgAnnotation> & annot){
     string sid = s_RemoveLocalPrefix(align->GetSeq_id(1).AsFastaString());
     int j_cdr3end = m_AnnotationInfo.GetJDomain(sid);
-    if (j_cdr3end > 0) {
+    int subject_start = align->GetSeqStart(1);
+    //don't try if j starts after cdr3 ends as we don't know for sure where the boundry is
+    if (j_cdr3end > 0 && subject_start - j_cdr3end <= 1) {
         int subject_end = align->GetSeqStop(1);
         CAlnMap j_map(align->GetSegs().GetDenseg());
         
         //+1 actaully is in fwr4 already...need to do this so that a insertion right in front
         // of fwr4 can be handled.
         annot->m_JDomain[1] = j_map.GetSeqPosFromSeqPos(0, 1, 
-                                                        min(j_cdr3end + 1, 
-                                                            subject_end), 
+                                                        max(subject_start, min(j_cdr3end + 1, 
+                                                                               subject_end)), 
                                                         IAlnExplorer::eRight);
         
         if (align->GetSeqStrand(0) == eNa_strand_minus) {
