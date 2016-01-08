@@ -84,6 +84,8 @@ init_cache() {
 exitcode=0
 failed=''
 for method in $methods; do
+    GENBANK_LOADER_METHOD_BASE="$method"
+    export GENBANK_LOADER_METHOD_BASE
     for cache in 1 2 3; do
         if test "$cache" = 1; then
             m="$method"

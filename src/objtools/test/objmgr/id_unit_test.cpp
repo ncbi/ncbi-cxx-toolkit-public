@@ -104,6 +104,22 @@ string s_AsString(const vector<CSeq_id_Handle>& ids)
 }
 
 
+bool s_HaveID2(void)
+{
+    const char* env = getenv("GENBANK_LOADER_METHOD_BASE");
+    if ( !env ) {
+        // assume default ID2
+        return true;
+    }
+    if ( NStr::EqualNocase(env, "id1") ||
+         NStr::EqualNocase(env, "pubseqos") ) {
+        // non-ID2 based readers
+        return false;
+    }
+    return true;
+}
+
+
 bool s_RelaxGpipeCheck(void)
 {
     return true;
@@ -403,6 +419,60 @@ BOOST_AUTO_TEST_CASE(CheckExtExon)
     sel.SetResolveAll().SetAdaptiveDepth();
     sel.AddNamedAnnots("Exon");
     s_CheckFeat(sel, "NR_003287.2");
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckNAZoom)
+{
+    if ( !s_HaveID2() ) {
+        LOG_POST("Skipping NA Tracks test without ID2");
+        return;
+    }
+    LOG_POST("Checking NA Tracks");
+    string id = "NC_000022.11";
+    string na_acc = "NA000000270.4";
+
+    SAnnotSelector sel;
+    sel.IncludeNamedAnnotAccession(na_acc, -1);
+    sel.SetCollectNames();
+
+    CRef<CSeq_loc> loc(new CSeq_loc);
+    loc->SetWhole().Set(id);
+    set<int> tracks;
+    CRef<CScope> scope = s_InitScope();
+    CGraph_CI it(*scope, *loc, sel);
+    ITERATE ( CGraph_CI::TAnnotNames, i, it.GetAnnotNames() ) {
+        if ( !i->IsNamed() ) {
+            continue;
+        }
+        int zoom;
+        string acc;
+        if ( !ExtractZoomLevel(i->GetName(), &acc, &zoom) ) {
+            continue;
+        }
+        if ( acc != na_acc ) {
+            continue;
+        }
+        tracks.insert(zoom);
+    }
+    BOOST_CHECK(tracks.count(100));
+}
+
+
+BOOST_AUTO_TEST_CASE(CheckNAZoom10)
+{
+    if ( !s_HaveID2() ) {
+        LOG_POST("Skipping NA Graph Track test without ID2");
+        return;
+    }
+    LOG_POST("Checking NA Graph Track");
+    string id = "NC_000022.11";
+    string na_acc = "NA000000270.4";
+
+    SAnnotSelector sel;
+    sel.IncludeNamedAnnotAccession(na_acc, 10);
+    sel.AddNamedAnnots(CombineWithZoomLevel(na_acc, 10));
+    s_CheckGraph(sel, id);
 }
 
 
