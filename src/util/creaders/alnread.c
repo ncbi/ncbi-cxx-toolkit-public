@@ -39,8 +39,9 @@
 #define strdup _strdup
 #endif
 
-#define MAX_PRINTED_LEN          10
-#define MAX_PRINTED_LEN_PLUS_ONE (MAX_PRINTED_LEN + 1)
+static const size_t kMaxPrintedIntLen = 10;
+static const size_t kMaxPrintedIntLenPlusOne = 11;
+
 
 /*  ---------------------------------------------------------------------- */
 typedef enum {
@@ -247,7 +248,7 @@ s_ReportBadCharError
     eip->category = eAlnErr_BadData;
     if (id != NULL) eip->id = strdup (id);
     eip->line_num = line_number;
-    eip->message = (char*) malloc (strlen (err_format) + 2 * MAX_PRINTED_LEN
+    eip->message = (char*) malloc (strlen (err_format) + 2 * kMaxPrintedIntLen
                                     + strlen (reason) + 3);
     if (eip->message != NULL)
     {
@@ -338,7 +339,7 @@ s_ReportLineLengthError
     eip->category = eAlnErr_BadFormat;
     eip->id = strdup(id);
     eip->line_num = lip->line_num;
-    msg = (char*)malloc(strlen(format) + MAX_PRINTED_LEN + 1);
+    msg = (char*)malloc(strlen(format) + kMaxPrintedIntLen + 1);
     if (msg != NULL) {
         if (lip->data == NULL) {
             len = 0;
@@ -378,7 +379,7 @@ s_ReportBlockLengthError
     eip->category = eAlnErr_BadFormat;
     eip->id = strdup (id);
     eip->line_num = line_num;
-    eip->message = (char*)malloc(strlen(err_format) + 2 * MAX_PRINTED_LEN + 1);
+    eip->message = (char*)malloc(strlen(err_format) + 2 * kMaxPrintedIntLen + 1);
     if (eip->message != NULL) {
       sprintf (eip->message, err_format, expected_num, actual_num);
     }
@@ -493,7 +494,7 @@ s_ReportIncorrectNumberOfSequences
         return;
     }
     eip->category = eAlnErr_BadFormat;
-    eip->message = (char*)malloc(strlen(err_format) + 2 * MAX_PRINTED_LEN + 1);
+    eip->message = (char*)malloc(strlen(err_format) + 2 * kMaxPrintedIntLen + 1);
                                      
     if (eip->message != NULL)
     {
@@ -522,7 +523,7 @@ s_ReportIncorrectSequenceLength
     }
 
     eip->category = eAlnErr_BadFormat;
-    eip->message = (char*)malloc(strlen(err_format) + 2 * MAX_PRINTED_LEN + 1);
+    eip->message = (char*)malloc(strlen(err_format) + 2 * kMaxPrintedIntLen + 1);
     if (eip->message != NULL) {
       sprintf (eip->message, err_format, len_expected, len_found);
     }
@@ -558,7 +559,7 @@ s_ReportRepeatedOrganismName
         eip->id = strdup (id);
     }
     eip->message = (char*)malloc(strlen(err_format) + strlen(org_name)
-                                 + MAX_PRINTED_LEN + 1);
+                                 + kMaxPrintedIntLen + 1);
     if (eip->message != NULL) {
         sprintf (eip->message, err_format, org_name, second_line_num);
     }
@@ -689,7 +690,7 @@ s_ReportSegmentedAlignmentError
     for (t = offset_list; t != NULL; t = t->next) {
         ++num_lines;
     }
-    msg_len = num_lines * (MAX_PRINTED_LEN + 2);
+    msg_len = num_lines * (kMaxPrintedIntLen + 2);
     if (num_lines > 1) {
     	msg_len += 4;
     }
@@ -783,7 +784,7 @@ static void s_ReportBadNumSegError
     if (eip != NULL) {
         eip->line_num = line_num;
         eip->category = eAlnErr_BadData;
-        eip->message = (char*) malloc(strlen(msg) + 2 * MAX_PRINTED_LEN + 1);
+        eip->message = (char*) malloc(strlen(msg) + 2 * kMaxPrintedIntLen + 1);
         if (eip->message != NULL) {
             sprintf (eip->message, msg, num_seg, num_seg_exp);
         }
@@ -857,12 +858,12 @@ s_ReportUnusedLine
         eip->category = eAlnErr_BadFormat;
         eip->line_num = line_num_start;
         if (line_num_start == line_num_stop) {
-              eip->message = (char*)malloc(strlen(errformat1) + MAX_PRINTED_LEN + 1);
+              eip->message = (char*)malloc(strlen(errformat1) + kMaxPrintedIntLen + 1);
             if (eip->message != NULL) {
                 sprintf (eip->message, errformat1, line_num_start);
             }
         } else {
-            eip->message = (char*)malloc(strlen(errformat2) + 2*MAX_PRINTED_LEN + 1);
+            eip->message = (char*)malloc(strlen(errformat2) + 2*kMaxPrintedIntLen + 1);
             if (eip->message != NULL) {
                 sprintf (eip->message, errformat2, line_num_start,
                          line_num_stop);
@@ -2160,7 +2161,7 @@ s_GetOneNexusSizeComment
  const char * valname, 
  int        * val)
 {
-    char   buf[MAX_PRINTED_LEN_PLUS_ONE];
+    char   buf[kMaxPrintedIntLenPlusOne];
     char * cpstart;
     char * cpend;
     int    maxlen;
@@ -2193,8 +2194,8 @@ s_GetOneNexusSizeComment
         cpend ++;
     }
     maxlen = cpend - cpstart;
-    if (maxlen > MAX_PRINTED_LEN) 
-        maxlen = MAX_PRINTED_LEN;
+    if (maxlen > kMaxPrintedIntLen) 
+        maxlen = kMaxPrintedIntLen;
 
     strncpy (buf, cpstart, maxlen);
     buf [maxlen] = 0;
