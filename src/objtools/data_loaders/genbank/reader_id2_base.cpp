@@ -1965,14 +1965,30 @@ void CId2ReaderBase::x_UpdateLoadedSet(CReaderRequestResult& result,
             const SId2BlobInfo::TAnnotInfo& ainfos = it2->second.m_AnnotInfo;
             CRef<CBlob_Annot_Info> blob_annot_info;
             ITERATE ( SId2BlobInfo::TAnnotInfo, it3, ainfos ) {
-                const CID2S_Seq_annot_Info& annot_info = **it3;
+                CID2S_Seq_annot_Info& annot_info = it3->GetNCObject();
                 if ( !blob_annot_info ) {
                     blob_annot_info = new CBlob_Annot_Info;
                 }
                 if ( (it2->second.m_ContentMask & fBlobHasNamedAnnot) &&
                      annot_info.IsSetName() ) {
                     blob_annot_info->AddNamedAnnotName(annot_info.GetName());
+                    // Heuristics to determine incorrect annot info records.
+                    if ( (annot_info.IsSetAlign() || annot_info.IsSetFeat()) &&
+                         annot_info.IsSetGraph() && ainfos.size() == 1 &&
+                         !ExtractZoomLevel(annot_info.GetName(), 0, 0) ) {
+                        // graphs are suppozed to be zoom tracks
+                        for ( int zoom = 10; zoom < 1000000; zoom *= 10 ) {
+                            CRef<CID2S_Seq_annot_Info> zoom_info;
+                            zoom_info = SerialClone(annot_info);
+                            zoom_info->ResetFeat();
+                            zoom_info->ResetAlign();
+                            zoom_info->SetName(CombineWithZoomLevel(annot_info.GetName(), zoom));
+                            blob_annot_info->AddAnnotInfo(*zoom_info);
+                        }
+                        annot_info.ResetGraph();
+                    }
                 }
+
                 if ( annot_info.IsSetName() &&
                      annot_info.IsSetSeq_loc() &&
                      (annot_info.IsSetAlign() ||
@@ -1980,11 +1996,6 @@ void CId2ReaderBase::x_UpdateLoadedSet(CReaderRequestResult& result,
                       annot_info.IsSetFeat()) ) {
                     // complete annot info
                     blob_annot_info->AddAnnotInfo(annot_info);
-                }
-                // Heuristics to determine incorrect annot info records.
-                if ( annot_info.IsSetAlign() && annot_info.IsSetGraph() ) {
-                    blob_annot_info.Reset();
-                    break;
                 }
             }
             if ( blob_annot_info &&
