@@ -203,7 +203,7 @@ void CBioseq_Base_Info::x_DoUpdate(TNeedUpdateFlags flags)
     }
     if ( flags & (fNeedUpdate_annot|fNeedUpdate_children) ) {
         x_LoadChunks(m_AnnotChunks);
-        if ( IsSetAnnot() ) {
+        if ( IsSetAnnot() && !m_Annot.empty() ) {
             _ASSERT(m_ObjAnnot && m_ObjAnnot->size() == m_Annot.size());
             TObjAnnot::iterator it2 = m_ObjAnnot->begin();
             NON_CONST_ITERATE ( TAnnot, it, m_Annot ) {
