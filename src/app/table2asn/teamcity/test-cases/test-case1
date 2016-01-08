@@ -1,12 +1,12 @@
 #-i test1.fsa
-#-i test2.fsa -s
--i wgs-715.fsa -s
--i wgs-715.fsa -s -t wgs-715.sbt
--i sqd-2042.fsa -s
+#-i test2.fsa -a s
+-i wgs-715.fsa -a s
+-i wgs-715.fsa -a s -t wgs-715.sbt
+-i sqd-2042.fsa -a s
 -i sqd-2045.sqn -gaps-min 10 -l paired-ends
 -i sqd-2066.sqn -gaps-min 10 -l paired-ends
--i tc1.fsa -s -y "This is comment"
--i tc1.fsa -s -Y comment.file
+-i tc1.fsa -a s -y "This is comment"
+-i tc1.fsa -a s -Y comment.file
 -i ABNIH1.xml -t ABNIH.sbt -ft-url "http://www.google.com"
 -i ABNIH2.xml -t ABNIH.sbt -ft-url "http://www.google.com"
 -i ABNIH3.xml -t ABNIH.sbt -ft-url "http://www.google.com"
@@ -14,12 +14,12 @@
 -i NIH04008.xml -t ABNIH.sbt -ft-url "http://www.google.com"
 -i NIH05001.xml -t ABNIH.sbt -ft-url "http://www.google.com"
 -i NIH05005.xml -t ABNIH.sbt -ft-url "http://www.google.com"
--i testallpep2.fsa -s
--i twocomments.fsa -s
-#-i twocomments.fsa -s -w twocomments_noprefix
-#-i twocomments.fsa -s -w twocomments_plussuffix
--i sp3060.fsa -s
--i uncult_test.fsa -s
+-i testallpep2.fsa -a s
+-i twocomments.fsa -a s
+#-i twocomments.fsa -a s -w twocomments_noprefix
+#-i twocomments.fsa -a s -w twocomments_plussuffix
+-i sp3060.fsa -a s
+-i uncult_test.fsa -a s
 -i sqd-2135.fsa
 -i wgs-752.sqn -src-file  wgs-752.ssrc
 -i sqd-1657.fsa -a s
@@ -29,11 +29,11 @@
 -i sqd-2187.sqn -gaps-min 1 -l paired-ends
 -i wgs-832.sqn -gaps-min 0 -src-file wgs-832-src.src
 -i sqd-2329.fsa -a s
--i sqd-2406.fsa -s -T -P -X C -t wgs-715.sbt -H '05/31/2015'
--i sqd-2406.fsa -s -T -P -X C -t wgs-715.sbt -H "06/30/2015"
--i sqd-2406.fsa -s -T -P -X C -t wgs-715.sbt -H 07/31/2015
--i sqd-2406.fsa -s -T -P -X C -t multi-user.sbt -H 2
+-i sqd-2406.fsa -a s -T -P -X C -t wgs-715.sbt -H '05/31/2015'
+-i sqd-2406.fsa -a s -T -P -X C -t wgs-715.sbt -H "06/30/2015"
+-i sqd-2406.fsa -a s -T -P -X C -t wgs-715.sbt -H 07/31/2015
+-i sqd-2406.fsa -a s -T -P -X C -t multi-user.sbt -H 2
 -i sqd-3496.fsa -t sqd-3496.sbt -J -F p -R -T -gaps-min 1 -gaps-unknown 100 -l paired-ends -c e
--i sqd-3496.fsa -t sqd-3496.sbt -s -J -F p -R -T -gaps-min 1 -gaps-unknown 100 -l paired-ends -c e
+-i sqd-3496.fsa -t sqd-3496.sbt -a s -J -F p -R -T -gaps-min 1 -gaps-unknown 100 -l paired-ends -c e
 -i sqd-3542.fsa
--i sqd-3534.fsa -s
+-i sqd-3534.fsa -a s

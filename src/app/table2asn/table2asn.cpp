@@ -209,7 +209,6 @@ void CTbl2AsnApp::Init(void)
       e PHRAP/ACE\n\
       b ASN.1 for -M flag", CArgDescriptions::eString, "a");
 
-    arg_desc->AddFlag("s", "Read FASTAs as Set");                          // done
     arg_desc->AddFlag("g", "Genomic Product Set");
     arg_desc->AddFlag("J", "Delayed Genomic Product Set ");                // done
     arg_desc->AddOptionalKey
@@ -437,7 +436,6 @@ int CTbl2AsnApp::Run(void)
     NStr::TruncateSpacesInPlace(m_context.m_Comment);
 
     m_context.m_GenomicProductSet = args["g"].AsBoolean();
-    m_context.m_HandleAsSet = args["s"].AsBoolean();
     m_context.m_NucProtSet = args["u"].AsBoolean();
     m_context.m_SetIDFromFile = args["q"].AsBoolean();
 
