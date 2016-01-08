@@ -163,6 +163,8 @@ GO
 
 -- The database structure has not changed.
 -- However a new component has been introduced: the sp_code
+DECLARE @row_count  INT
+DECLARE @error      INT
 INSERT INTO Versions (name, version) VALUES ('sp_code', 3)
 SELECT @row_count = @@ROWCOUNT, @error = @@ERROR
 IF @error != 0 OR @row_count = 0
