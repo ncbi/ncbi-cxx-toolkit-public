@@ -505,7 +505,6 @@ gpipe_sqlite needs sqlitewrapp
 gpipe_sqlite needs xconnect
 gpipe_sqlite needs xregexp
 gpipe_standalone needs gpipe_an_base
-gpipe_tree needs gpipe_property
 gpipe_tree needs xalgophytree
 gpipe_type_verifier needs gpipe_asn_cleanup
 gpipe_type_verifier needs xalgognomon
