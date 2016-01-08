@@ -251,13 +251,15 @@ static string s_GetBioseqAcc(const CBioseq_Handle& handle, int* version)
 static string s_GetSeq_featAcc(const CSeq_feat& feat, CScope& scope, int* version)
 {
     CBioseq_Handle seq = BioseqHandleFromLocation (&scope, feat.GetLocation());
-    CBioseq_set_Handle parent = seq.GetParentBioseq_set();
-    if (parent && parent.IsSetClass() && parent.GetClass() == CBioseq_set::eClass_parts) {
-        parent = parent.GetParentBioseq_set();
-        if (parent && parent.IsSetClass() && parent.GetClass() == CBioseq_set::eClass_segset) {
-            CBioseq_CI m(parent);
-            if (m) {
-                return s_GetBioseqAcc(*m, version);
+    if (seq) {
+        CBioseq_set_Handle parent = seq.GetParentBioseq_set();
+        if (parent && parent.IsSetClass() && parent.GetClass() == CBioseq_set::eClass_parts) {
+            parent = parent.GetParentBioseq_set();
+            if (parent && parent.IsSetClass() && parent.GetClass() == CBioseq_set::eClass_segset) {
+                CBioseq_CI m(parent);
+                if (m) {
+                    return s_GetBioseqAcc(*m, version);
+                }
             }
         }
     }
