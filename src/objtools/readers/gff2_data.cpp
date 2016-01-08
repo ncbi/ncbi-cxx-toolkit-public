@@ -855,15 +855,15 @@ bool CGff2Record::x_MigrateAttributes(
     it = attrs_left.find("gene_synonym");
     if (it != attrs_left.end()) {
         if (pFeature->GetData().IsGene()) {
-        vector<string> synonyms;
-        NStr::Tokenize(it->second, ",", synonyms, NStr::eMergeDelims);
-        for (vector<string>::iterator it1 = synonyms.begin(); it1 != synonyms.end();
-                ++it1 ) {
-            string synonym = xNormalizedAttributeValue(*it1);
-            pFeature->SetData().SetGene().SetSyn().push_back(synonym);
+            vector<string> synonyms;
+            NStr::Tokenize(it->second, ",", synonyms, NStr::eMergeDelims);
+            for (vector<string>::iterator it1 = synonyms.begin(); it1 != synonyms.end();
+                    ++it1 ) {
+                string synonym = xNormalizedAttributeValue(*it1);
+                pFeature->SetData().SetGene().SetSyn().push_back(synonym);
+            }
         }
-            attrs_left.erase(it);
-        }
+        attrs_left.erase(it);
     }
 
     it = attrs_left.find("inference");
