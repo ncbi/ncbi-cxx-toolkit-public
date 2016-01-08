@@ -113,14 +113,6 @@ public:
         //minimal contents: Only metadata
         static string kAssemblyOnly() {return "AssemblyOnly";};
 
-        // Scaffolds-level
-        // chromosomes and scaffolds, as submitted 
-        // (ie: if submitted as pseudo-scaffolds, theer will be pseudo-chromosomes concatenating 
-        // unlocalized and unplaced scaffolds)
-        // With statistics, 
-        // No alignments data
-        static string kScaffolds()  {return "Scaffolds";};
-
         // Top-level molecules
         // No statistics
         // No alignments data (which could be very large)
