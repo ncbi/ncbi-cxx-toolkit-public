@@ -194,7 +194,7 @@ CShowBlastDefline::GetSeqIdList(const objects::CBioseq_Handle& bh,
 		(*itr)->AsFastaString().find("lcl|Subject_") != string::npos) {
             vector<string> title_tokens;
             id_token = 
-                NStr::Tokenize(CAlignFormatUtil::GetTitle(bh), " ", title_tokens)[0];
+                NStr::Split(sequence::CDeflineGenerator().GenerateDefline(bh), " ", title_tokens)[0];
         }
         if (id_token != NcbiEmptyString) {
             // Create a new local id with a label containing the extracted
@@ -273,12 +273,15 @@ CShowBlastDefline::GetBioseqHandleDeflineAndId(const CBioseq_Handle& handle,
 static void s_LimitDescrLength(string &descr)
 {
 	if(descr.length() > kMaxDescrLength) {
-        size_t end = NStr::Find(descr," ",0,kMaxDescrLength,NStr::eLast);
+        descr = descr.substr(0,kMaxDescrLength);        
+        size_t end = NStr::Find(descr," ",NStr::eNocase,NStr::eReverseSearch);
+        
         if(end != NPOS) {            
             descr = descr.substr(0,end);                                        
             descr += "...";
         }                
     }           	
+    
 }
 
 void CShowBlastDefline::x_FillDeflineAndId(const CBioseq_Handle& handle,

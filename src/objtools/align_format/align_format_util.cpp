@@ -1577,7 +1577,7 @@ map < string, CRef<CSeq_align_set>  >  CAlignFormatUtil::HspListToHitMap(vector 
 void CAlignFormatUtil::ExtractSeqAlignForSeqList(CRef<CSeq_align_set> &all_aln_set, string alignSeqList)
 {
     vector <string> seqIds;
-    NStr::Tokenize(alignSeqList,",",seqIds);       
+    NStr::Split(alignSeqList,",",seqIds);       
 
     //SEQ_ALN_SET from ALIGNDB contains seq_aligns in random order
     //The followimg will create a map that contains seq-aln_set per gi from ALIGN_SEQ_LIST
@@ -1615,7 +1615,7 @@ static bool s_GetSRASeqMetadata(const CBioseq::TId& ids,string &strRun, string &
                 vector<string> vecInfo;
                 try
                 {
-                    NStr::Tokenize(strTag, ".", vecInfo);
+                    NStr::Split(strTag, ".", vecInfo);
                 }
                 catch (...)
                 {
@@ -2030,7 +2030,7 @@ static list<string> s_GetLinkoutUrl(int linkout,
         if(!disableLink) {
             string linkTitle = " title=\"View 3D structure <@label@> aligned to your query\"";
             vector<string> accs;
-            NStr::Tokenize(labelList,",",accs); 
+            NStr::Split(labelList,",",accs); 
             string firstAcc = (accs.size() > 0)? accs[0] : labelList;
             
             url_link = CAlignFormatUtil::MapTemplate(url_link,"blast_rep_gi",
@@ -2394,7 +2394,7 @@ list<string> CAlignFormatUtil::GetFullLinkoutUrl(const list< CRef< CBlast_def_li
     GetBdlLinkoutInfo(bdl,linkout_map, linkoutdb, mv_build_name);
 
     vector<string> linkLetters;
-    NStr::Tokenize(linkoutOrder,",",linkLetters); //linkoutOrder = "G,U,M,E,S,B,R"   
+    NStr::Split(linkoutOrder,",",linkLetters); //linkoutOrder = "G,U,M,E,S,B,R"   
 	for(size_t i = 0; i < linkLetters.size(); i++) {
         TGi first_gi = ZERO_GI;
         vector < CBioseq::TId > idList;
@@ -3476,7 +3476,7 @@ string  CAlignFormatUtil::GetFASTALinkURL(SSeqURLInfo *seqUrlInfo,
         linkUrl = seqUrlInfo->seqUrl;    
         vector<string> parts;
         //SNP accession=dbSNP:rs35885954
-        NStr::Tokenize(seqUrlInfo->accession,":rs",parts,NStr::eMergeDelims); 
+        NStr::Split(seqUrlInfo->accession,":rs",parts,NStr::eMergeDelims); 
         string rs;
         if(parts.size() > 1) {
             rs = parts[1];

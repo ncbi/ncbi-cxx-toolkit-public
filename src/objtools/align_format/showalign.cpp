@@ -3772,7 +3772,7 @@ CDisplaySeqalign::x_InitDefLinesHeader(const CBioseq_Handle& bsp_handle,SAlnInfo
 				m_CurrAlnAccession.find("lcl|Subject_") != string::npos){ 
 							///Get first token of the title
                             vector <string> parts;
-                            NStr::Tokenize(alnDispParams->title," ",parts);
+                            NStr::Split(alnDispParams->title," ",parts);
                             if(parts.size() > 0) {
                                 m_CurrAlnAccession = parts[0];        
                             }
