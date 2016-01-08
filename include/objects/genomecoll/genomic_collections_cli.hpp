@@ -121,12 +121,17 @@ public:
         // No alignments data
         static string kScaffolds()  {return "Scaffolds";};
 
-        // Maximum contents:
-        // all sequences down to contigs
+        // Top-level molecules
+        // No statistics
+        // No alignments data (which could be very large)
+        // pseudo scaffolds are reported as unlocalized/unplaced, as needed for analysis
+        static string kScaffolds()  {return "Scaffolds";};
+
+        // Top-level molecules
         // all statistics on assembly, units and replicons
         // alignments data when available
         // pseudo scaffolds are reported as unlocalized/unplaced, as needed for analysis
-        static string kAllSequencesWithAlignments()  {return "AllSequencesWithAlignments";};
+        static string kScaffoldsWithAlignments()  {return "ScaffoldsWithAlignments";};
 
         // Almost maximum contents:
         // all sequences down to contigs
@@ -134,6 +139,13 @@ public:
         // No alignments data (which could be very large)
         // pseudo scaffolds are reported as unlocalized/unplaced, as needed for analysis
         static string kAllSequences()  {return "AllSequences";};
+
+        // Maximum contents:
+        // all sequences down to contigs
+        // all statistics on assembly, units and replicons
+        // alignments data when available
+        // pseudo scaffolds are reported as unlocalized/unplaced, as needed for analysis
+        static string kAllSequencesWithAlignments()  {return "AllSequencesWithAlignments";};
     };
 
     string ValidateChrType(const string& chrType, const string& chrLoc);
