@@ -435,7 +435,7 @@ int CBlastDBCmdApp::x_ProcessBatchEntry(const CArgs& args, CSeqFormatter & seq_f
         NcbiGetlineEOL(input, line);
         if ( !line.empty() ) {
         	vector<string> tmp;
-        	NStr::Tokenize(line, " \t", tmp, NStr::fSplit_MergeDelims);
+        	NStr::Split(line, " \t", tmp, NStr::fSplit_MergeDelims);
         	if(tmp.empty())
         		continue;
 
