@@ -234,10 +234,11 @@ string CProjectStorage::SaveStream(CNcbiIstream& istream,
 CObjectOStream* CProjectStorage::AsObjectOStream(TDataFormat data_fmt,
                                                  string& key,
                                                  TCompressionFormat compression_fmt,
-                                                 unsigned int time_to_live)
+                                                 unsigned int time_to_live,
+                                                 TNetStorageFlags default_flags)
 {
     CNetStorageObject nso;
-    return x_GetObjectOStream(data_fmt, nso, key, compression_fmt, time_to_live);
+    return x_GetObjectOStream(data_fmt, nso, key, compression_fmt, time_to_live, default_flags);
 }
 
 

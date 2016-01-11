@@ -182,7 +182,8 @@ public:
     CObjectOStream* AsObjectOStream(TDataFormat data_fmt,
                                     string& key,
                                     TCompressionFormat compression_fmt = eNC_ZlibCompressed,
-                                    unsigned int time_to_live = 0);
+                                    unsigned int time_to_live = 0,
+                                    TNetStorageFlags default_flags = 0);
     /// Save any raw data to NetCache.
     /// No compression and no header
     /// @param key if a is given and valid, the existing content will
