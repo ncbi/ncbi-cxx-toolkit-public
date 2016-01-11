@@ -277,12 +277,13 @@ void CValidError_feat::ValidateSeqFeat(
                       x_ReportECNumFileStatus(feat);
                       switch (status) {
                           case CProt_ref::eEC_deleted:
-                              PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
+                              PostErr(eDiag_Warning, eErr_SEQ_FEAT_DeletedEcNumber,
                                        "EC_number " + ec_number + " was deleted",
                                        feat);
                               break;
                           case CProt_ref::eEC_replaced:
-                              PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
+                              PostErr (eDiag_Warning, 
+                                  CProt_ref::IsECNumberSplit(ec_number) ? eErr_SEQ_FEAT_SplitEcNumber : eErr_SEQ_FEAT_ReplacedEcNumber,
                                        "EC_number " + ec_number + " was replaced",
                                        feat);
                               break;
@@ -3334,12 +3335,13 @@ void CValidError_feat::x_ValidateProtECNumbers(const CProt_ref& prot, const CSeq
             x_ReportECNumFileStatus(feat);
             switch (status) {
                 case CProt_ref::eEC_deleted:
-                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
+                    PostErr(eDiag_Warning, eErr_SEQ_FEAT_DeletedEcNumber,
                              "EC_number " + ec_number + " was deleted",
                              feat);
                     break;
                 case CProt_ref::eEC_replaced:
-                    PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberValue, 
+                    PostErr (eDiag_Warning, 
+                             CProt_ref::IsECNumberSplit(ec_number) ? eErr_SEQ_FEAT_SplitEcNumber : eErr_SEQ_FEAT_ReplacedEcNumber, 
                              "EC_number " + ec_number + " was transferred and is no longer valid",
                              feat);
                     break;

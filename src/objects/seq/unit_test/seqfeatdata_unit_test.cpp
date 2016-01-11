@@ -45,6 +45,7 @@
 #include <objects/seqfeat/OrgName.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/Gb_qual.hpp>
+#include <objects/seqfeat/Prot_ref.hpp>
 #include <objects/pub/Pub.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/biblio/Cit_art.hpp>
@@ -1320,4 +1321,12 @@ BOOST_AUTO_TEST_CASE(Test_IsIllegalQualName)
 {
     BOOST_CHECK_EQUAL(CGb_qual::IsIllegalQualName("exception"), true);
     BOOST_CHECK_EQUAL(CGb_qual::IsIllegalQualName("number"), false);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_IsECNumberSplit)
+{
+    BOOST_CHECK_EQUAL(CProt_ref::IsECNumberSplit("1.1.1.246"), true);
+    BOOST_CHECK_EQUAL(CProt_ref::IsECNumberSplit("1.1.1.63"), false);
+    BOOST_CHECK_EQUAL(CProt_ref::IsECNumberSplit("1.1.1.128"), false);
 }

@@ -79,6 +79,9 @@ ESubmitterFormatErrorGroup CValidErrorFormat::GetSubmitterFormatErrorGroup(CVali
             rval = eSubmitterFormatErrorGroup_BadEcNumberFormat;
             break;
         case eErr_SEQ_FEAT_BadEcNumberValue:
+        case eErr_SEQ_FEAT_DeletedEcNumber:
+        case eErr_SEQ_FEAT_ReplacedEcNumber:
+        case eErr_SEQ_FEAT_SplitEcNumber:
             rval = eSubmitterFormatErrorGroup_BadEcNumberValue;
             break;
         case eErr_SEQ_FEAT_EcNumberProblem:
@@ -115,6 +118,9 @@ string CValidErrorFormat::GetSubmitterFormatErrorGroupTitle(CValidErrItem::TErrI
             rval = "EC Number Format";
             break;
         case eErr_SEQ_FEAT_BadEcNumberValue:
+        case eErr_SEQ_FEAT_DeletedEcNumber:
+        case eErr_SEQ_FEAT_ReplacedEcNumber:
+        case eErr_SEQ_FEAT_SplitEcNumber:
             rval = "EC Number Value";
             break;
         case eErr_SEQ_FEAT_EcNumberProblem:
@@ -156,6 +162,9 @@ string CValidErrorFormat::FormatForSubmitterReport(const CValidErrItem& error, C
         case eErr_SEQ_FEAT_BadEcNumberFormat:
         case eErr_SEQ_FEAT_BadEcNumberValue:
         case eErr_SEQ_FEAT_EcNumberProblem:
+        case eErr_SEQ_FEAT_DeletedEcNumber:
+        case eErr_SEQ_FEAT_ReplacedEcNumber:
+        case eErr_SEQ_FEAT_SplitEcNumber:
             rval = x_FormatECNumberForSubmitterReport(error, scope);
             break;
         case eErr_SEQ_DESCR_BadSpecificHost:

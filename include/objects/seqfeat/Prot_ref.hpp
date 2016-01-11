@@ -83,6 +83,9 @@ public:
     /// Return a replaced EC number's replacement.
     static const string& GetECNumberReplacement(const string& old_ecno);
 
+    // Indicate whether an EC number has been replaced by more than one value (split)
+    static bool IsECNumberSplit(const string& old_ecno);
+
     /// Verify correct form of EC number.
     static bool IsValidECNumberFormat (const string&  ecno);
 

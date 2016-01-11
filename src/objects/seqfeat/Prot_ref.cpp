@@ -210,6 +210,21 @@ const string& CProt_ref::GetECNumberReplacement(const string& old_ecno)
 }
 
 
+bool CProt_ref::IsECNumberSplit(const string& old_ecno)
+{
+    if (GetECNumberStatus(old_ecno) != eEC_replaced) {
+        return false;
+    }
+   
+    const string& replacement = GetECNumberReplacement(old_ecno);
+    if (NStr::Find(replacement, "\t") != string::npos) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 bool CProt_ref::IsValidECNumberFormat (const string&  ecno)
 {
     char     ch;

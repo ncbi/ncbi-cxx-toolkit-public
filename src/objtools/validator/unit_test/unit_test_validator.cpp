@@ -509,8 +509,8 @@ BOOST_AUTO_TEST_CASE(Test_ValidError_Format)
     expected.push_back("NotSpliceConsensusDonor");
     expected.push_back("NotSpliceConsensusDonor");
     expected.push_back("NotSpliceConsensusAcceptor");
-    expected.push_back("BadEcNumberValue");
-    expected.push_back("BadEcNumberValue");
+    expected.push_back("DeletedEcNumber");
+    expected.push_back("ReplacedEcNumber");
     expected.push_back("BadEcNumberValue");
     expected.push_back("BadEcNumberFormat");
     expected.push_back("BadEcNumberValue");
@@ -534,6 +534,8 @@ BOOST_AUTO_TEST_CASE(Test_ValidError_Format)
     expected.push_back("BadEcNumberValue");
     expected.push_back("NotSpliceConsensusDonor");
     expected.push_back("NotSpliceConsensusAcceptor");
+    expected.push_back("DeletedEcNumber");
+    expected.push_back("ReplacedEcNumber");
     CheckStrings(seen, expected);
 
     string rval = format.FormatForSubmitterReport(*eval, scope, eErr_SEQ_FEAT_NotSpliceConsensusDonor);
@@ -638,9 +640,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadEcNumberValue)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("prot", eDiag_Warning, "BadEcNumberValue", 
+    expected_errors.push_back(new CExpectedError("prot", eDiag_Warning, "DeletedEcNumber", 
                       "EC_number 1.2.3.10 was deleted"));
-    expected_errors.push_back(new CExpectedError("prot", eDiag_Warning, "BadEcNumberValue", 
+    expected_errors.push_back(new CExpectedError("prot", eDiag_Warning, "ReplacedEcNumber", 
                       "EC_number 1.1.3.22 was transferred and is no longer valid"));
     expected_errors.push_back(new CExpectedError("prot", eDiag_Warning, "BadEcNumberValue", 
                       "11.22.33.44 is not a legal value for qualifier EC_number"));
