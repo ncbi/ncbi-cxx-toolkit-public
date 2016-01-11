@@ -16,4 +16,4 @@ CHECK_CMD = test_netstorage
 CHECK_COPY = test_netstorage.ini
 CHECK_TIMEOUT = 3000
 
-WATCHERS = sadyrovr
+WATCHERS = sadyrovr fukanchi

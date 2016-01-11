@@ -14,4 +14,4 @@ CHECK_REQUIRES = in-house-resources
 CHECK_CMD = test_netcache_api
 CHECK_TIMEOUT = 800
 
-WATCHERS = sadyrovr gouriano
+WATCHERS = sadyrovr gouriano fukanchi

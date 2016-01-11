@@ -14,4 +14,4 @@ CHECK_REQUIRES = in-house-resources
 CHECK_CMD = test_ic_client
 CHECK_TIMEOUT = 400
 
-WATCHERS = sadyrovr gouriano
+WATCHERS = sadyrovr gouriano fukanchi
