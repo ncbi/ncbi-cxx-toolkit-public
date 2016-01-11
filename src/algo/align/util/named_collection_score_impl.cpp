@@ -62,7 +62,7 @@ static CRange<TSeqPos> & s_FixMinusStrandRange(CRange<TSeqPos> & rng);
 static CRef<CSeq_align> CreateDensegFromDendiag(CSeq_align const& aln);
 
 // Subject sequence query coverage.
-const char* CScoreSeqCoverageName = "seq_percent_coverage";
+const char* CScoreSeqCoverage::Name = "seq_percent_coverage";
 
 string CScoreSeqCoverage::GetName() const
 {
@@ -106,7 +106,7 @@ CIRef<INamedAlignmentCollectionScore> CScoreSeqCoverage:: Create()
 }
 
 // Unique subject sequence query coverage.
-const char* CScoreUniqSeqCoverageName = "uniq_seq_percent_coverage";
+const char* CScoreUniqSeqCoverage::Name = "uniq_seq_percent_coverage";
 
 string CScoreUniqSeqCoverage::GetName() const
 {
