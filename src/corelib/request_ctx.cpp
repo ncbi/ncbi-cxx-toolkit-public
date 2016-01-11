@@ -574,7 +574,7 @@ void CRequestContext::x_SetPassThroughProp(CTempString name,
 
 void CRequestContext::x_ResetPassThroughProp(CTempString name, bool update) const
 {
-    TPassThroughProperties::const_iterator found = m_PassThroughProperties.find(name);
+    TPassThroughProperties::iterator found = m_PassThroughProperties.find(name);
     if (found != m_PassThroughProperties.end()) {
         m_PassThroughProperties.erase(found);
         if ( update ) x_UpdateStdContextProp(name);
