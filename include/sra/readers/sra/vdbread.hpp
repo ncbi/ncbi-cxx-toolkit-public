@@ -393,6 +393,8 @@ public:
 
     void SetParam(const char* name, const CTempString& value) const;
 
+    uint32_t GetElementCount(TVDBRowId row, const CVDBColumn& column,
+                             uint32_t elem_bits) const;
     void ReadElements(TVDBRowId row, const CVDBColumn& column,
                       uint32_t elem_bits,
                       uint32_t start, uint32_t count,

@@ -745,6 +745,22 @@ void CVDBCursor::SetParam(const char* name, const CTempString& value) const
 }
 
 
+uint32_t CVDBCursor::GetElementCount(TVDBRowId row, const CVDBColumn& column,
+                                     uint32_t elem_bits) const
+{
+    DECLARE_SDK_GET_GUARD();
+    uint32_t read_count, remaining_count;
+    if ( rc_t rc = VCursorReadBitsDirect(*this, row, column.GetIndex(),
+                                         elem_bits, 0, 0, 0, 0,
+                                         &read_count, &remaining_count) ) {
+        NCBI_THROW2_FMT(CSraException, eNotFoundValue,
+                        "Cannot read VDB value array size: "<<*this<<column<<
+                        '['<<row<<']', rc);
+    }
+    return remaining_count;
+}
+
+
 void CVDBCursor::ReadElements(TVDBRowId row, const CVDBColumn& column,
                               uint32_t elem_bits,
                               uint32_t start, uint32_t count,
