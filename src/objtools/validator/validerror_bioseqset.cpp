@@ -762,7 +762,7 @@ void CValidError_bioseqset::SetShouldNotHaveMolInfo(const CBioseq_set& seqset)
     FOR_EACH_DESCRIPTOR_ON_SEQSET (it, seqset) {
         if ((*it)->IsMolinfo()) {
             PostErr(eDiag_Warning, eErr_SEQ_PKG_MisplacedMolInfo,
-                    "Phy/eco/wgs set has MolInfo on set", seqset);
+                    class_name + " has MolInfo on set", seqset);
             return;
         }
     }            

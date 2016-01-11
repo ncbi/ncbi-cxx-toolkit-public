@@ -1144,9 +1144,12 @@ CValidError_align::TSegmentGapV CValidError_align::FindSegmentGaps(const TPacked
         }
         if (id == dim) {
             // no sequence is present in this segment
-            string label = "Unknown";
+            string label = "";
             if (packed.IsSetIds() && packed.GetIds().size() > 0) {
                 packed.GetIds()[0]->GetLabel(&label);
+            }
+            if (NStr::IsBlank(label)) {
+                label = "Unknown";
             }
             seggaps.push_back(TSegmentGapV::value_type(seg, align_pos, label));
         }
@@ -1173,11 +1176,11 @@ CValidError_align::TSegmentGapV CValidError_align::FindSegmentGaps(const TStd& s
     TSegmentGapV seggaps;
 
     size_t seg = 0;
-    size_t align_pos = 1;
+    size_t align_pos = 0;
     ITERATE(TStd, stdseg, std_segs) {
         bool gap = true;
         size_t len = 0;
-        string label = "Unknown";
+        string label = "";
         ITERATE(CStd_seg::TLoc, loc, (*stdseg)->GetLoc()) {
             if (!(*loc)->IsEmpty() && !(*loc)->IsNull()) {
                 gap = false;
@@ -1188,6 +1191,9 @@ CValidError_align::TSegmentGapV CValidError_align::FindSegmentGaps(const TStd& s
             }
         }
         if (gap) {
+            if (NStr::IsBlank(label)) {
+                label = "Unknown";
+            }
             seggaps.push_back(TSegmentGapV::value_type(seg, align_pos, label));
         }
         align_pos += len;
@@ -1214,9 +1220,12 @@ CValidError_align::TSegmentGapV CValidError_align::FindSegmentGaps(const TDendia
     TSeqPos align_pos = 1;
     ITERATE(TDendiag, diag_seg, dendiags) {
         if (!(*diag_seg)->IsSetDim() || (*diag_seg)->GetDim() == 0) {
-            string label = "Unknown";
+            string label = "";
             if ((*diag_seg)->IsSetIds() && (*diag_seg)->GetIds().size() > 0) {
                 (*diag_seg)->GetIds().front()->GetLabel(&label);
+            }
+            if (NStr::IsBlank(label)){
+                label = "Unknown";
             }
             seggaps.push_back(TSegmentGapV::value_type(seg, align_pos, label));
         }

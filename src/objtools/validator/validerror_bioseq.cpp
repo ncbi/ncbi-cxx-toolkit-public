@@ -3253,6 +3253,35 @@ static bool s_LocSortCompare (const CConstRef<CSeq_loc>& q1, const CConstRef<CSe
 }
 
 
+bool CValidError_bioseq::IsSelfReferential(const CBioseq& seq)
+{
+    bool rval = false;
+
+    if (!seq.IsSetInst() || !seq.GetInst().IsSetExt() ||
+        !seq.GetInst().GetExt().IsDelta()) {
+        return false;
+    }
+
+    ITERATE(CDelta_ext::Tdata, sg, seq.GetInst().GetExt().GetDelta().Get()) {
+        if (!(*sg)) {
+            // skip NULL element
+        } else if ((*sg)->IsLoc()) {
+            const CSeq_id *id = (*sg)->GetLoc().GetId();
+            if (id) {
+                FOR_EACH_SEQID_ON_BIOSEQ(id_it, seq) {
+                    if ((*id_it)->Compare(*id) == CSeq_id::e_YES) {
+                        rval = true;
+                        break;
+                    }
+                }
+            }
+            if (rval) break;
+        }        
+    }
+    return rval;
+}
+
+
 void CValidError_bioseq::ValidateDeltaLoc
 (const CSeq_loc& loc,
  const CBioseq& seq, 
@@ -3268,12 +3297,6 @@ void CValidError_bioseq::ValidateDeltaLoc
         if (id->IsGi() && loc.GetId()->GetGi() == ZERO_GI) {
             PostErr (eDiag_Critical, eErr_SEQ_INST_DeltaComponentIsGi0, 
                      "Delta component is gi|0", seq);
-        }
-        FOR_EACH_SEQID_ON_BIOSEQ (id_it, seq) {
-            if ((*id_it)->Compare(*id) == CSeq_id::e_YES) {
-                PostErr (eDiag_Critical, eErr_SEQ_INST_SelfReferentialSequence,
-                         "Self-referential delta sequence", seq);
-            }
         }
         if (!loc.IsWhole()
             && (id->IsGi() 
@@ -3735,6 +3758,11 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
         }
     }
 
+    if (IsSelfReferential(seq)) {
+        PostErr(eDiag_Critical, eErr_SEQ_INST_SelfReferentialSequence,
+            "Self-referential delta sequence", seq);
+    }
+
     // look for Ns next to gaps 
     if (seq.IsNa() && seq.GetLength() > 1 && x_IsDeltaLitOnly(inst)) {
         try {
@@ -3756,13 +3784,13 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                         }
                     } 
                 }
-                if (pos + delta_len < seq.GetLength()) {
-                    if (sv.IsInGap (pos + delta_len - 1)) {
-                        CSeqVector::TResidue res = sv [pos + delta_len];
+                if (delta_len > 0 && pos + delta_len < len) {
+                    if (sv.IsInGap(pos + delta_len - 1)) {
+                        CSeqVector::TResidue res = sv[pos + delta_len];
                         if (res == 'N') {
-                            PostErr (eDiag_Error, eErr_SEQ_INST_InternalNsAdjacentToGap,
-                                     "Ambiguous residue N is adjacent to a gap around position " + NStr::SizetToString (pos + delta_len + 1),
-                                     seq);
+                            PostErr(eDiag_Error, eErr_SEQ_INST_InternalNsAdjacentToGap,
+                                "Ambiguous residue N is adjacent to a gap around position " + NStr::SizetToString(pos + delta_len + 1),
+                                seq);
                         }
                     }
                 }
@@ -3823,7 +3851,7 @@ void CValidError_bioseq::ValidateSeqGap(const CSeq_gap& gap, const CBioseq& seq)
         for (int i = 0; i < 12; i++) {
             if (linkevarray[i] > 1) {
                 PostErr(eDiag_Error, eErr_SEQ_INST_SeqGapProblem,
-                    "Linkage evidence " + linkEvStrings[i] + " appears " +
+                    "Linkage evidence '" + linkEvStrings[i] + "' appears " +
                     NStr::IntToString(linkevarray[i]) + " times", seq);
             }
         }
