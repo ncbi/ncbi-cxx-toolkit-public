@@ -6777,7 +6777,7 @@ bool CValidError_feat::ValidateCdRegionTranslation
                     PostErr(sev, eErr_SEQ_FEAT_StartCodon,
                         codon_desc + " start codon (and " + 
                         NStr::SizetToString(internal_stop_count) +
-                        " internal stops). Probably wrong genetic code [" +
+                        " internal stops). Possibly wrong genetic code [" +
                         gccode + "]", feat);
                     reported_bad_start_codon = true;
                 }
@@ -7624,7 +7624,7 @@ bool CValidError_feat::x_ValidateCodeBreakNotOnCodon
                         string msg = "Suspicious transl_except ";
                         msg += ex;
                         msg += " at first codon of complete CDS";
-                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryTranslExcept,
+                        PostErr (eDiag_Warning, eErr_SEQ_FEAT_TranslExcept,
                                  msg,
                                  feat);
                     }
