@@ -938,6 +938,35 @@ static bool s_IsPDBInSep(const CSeq_entry& se, CScope& scope)
 }
 
 
+void CValidError_imp::ValidateAffil(const CAffil::TStd& std, const CSerialObject& obj, const CSeq_entry *ctx)
+{
+    // ignore if everything is empty
+    if ((!std.IsSetAffil() || NStr::IsBlank(std.GetAffil())) &&
+        (!std.IsSetDiv() || NStr::IsBlank(std.GetDiv())) &&
+        (!std.IsSetStreet() || NStr::IsBlank(std.GetStreet())) &&
+        (!std.IsSetCity() || NStr::IsBlank(std.GetCity())) &&
+        (!std.IsSetSub() || NStr::IsBlank(std.GetSub())) &&
+        (!std.IsSetPostal_code() || NStr::IsBlank(std.GetPostal_code())) &&
+        (!std.IsSetPhone() || NStr::IsBlank(std.GetPhone())) &&
+        (!std.IsSetFax() || NStr::IsBlank(std.GetFax())) &&
+        (!std.IsSetEmail() || NStr::IsBlank(std.GetEmail()))) {
+        // do nothing, completely blank
+    } else {
+        if (!std.IsSetCountry() || NStr::IsBlank(std.GetCountry())) {
+            PostObjErr(eDiag_Warning, eErr_GENERIC_MissingPubInfo,
+                "Submission citation affiliation has no country",
+                obj, ctx);
+        } else if (NStr::Equal(std.GetCountry(), "USA")) {
+            if (!std.IsSetSub() || NStr::IsBlank(std.GetSub())) {
+                PostObjErr(eDiag_Warning, eErr_GENERIC_MissingPubInfo,
+                    "Submission citation affiliation has no state",
+                    obj, ctx);
+            }
+        }
+    }
+}
+
+
 void CValidError_imp::ValidateSubAffil
 (const CAffil::TStd& std,
  const CSerialObject& obj,
@@ -948,7 +977,11 @@ void CValidError_imp::ValidateSubAffil
         sev = eDiag_Warning;
     }
     if (!std.IsSetCountry() || NStr::IsBlank(std.GetCountry())) {
-        PostObjErr (sev, eErr_GENERIC_MissingPubInfo, 
+        EDiagSev this_sev =
+            s_IsRefSeqInSep(GetTSE(), *m_Scope) || s_IsHtgInSep(GetTSE()) || s_IsPDBInSep(GetTSE(), *m_Scope) ?
+        eDiag_Warning : eDiag_Critical;
+
+        PostObjErr(this_sev, eErr_GENERIC_MissingPubInfo,
                     "Submission citation affiliation has no country",
                     obj, ctx);
     } else if (NStr::EqualCase (std.GetCountry(), "USA")) {

@@ -441,6 +441,7 @@ public:
     void Validate(const CBioSource& src, CScope* scope = 0);
     void Validate(const CPubdesc& pubdesc, CScope* scope = 0);
     void ValidateSubAffil(const CAffil::TStd& std, const CSerialObject& obj, const CSeq_entry *ctx);
+    void ValidateAffil(const CAffil::TStd& std, const CSerialObject& obj, const CSeq_entry *ctx);
 
     bool GetTSANStretchErrors(const CSeq_entry_Handle& se); 
     bool GetTSACDSOnMinusStrandErrors (const CSeq_entry_Handle& se);

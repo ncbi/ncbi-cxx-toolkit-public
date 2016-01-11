@@ -207,9 +207,10 @@ CConstRef<CValidError> CValidator::Validate
     if (ss.IsSetSub() && ss.GetSub().IsSetContact() && ss.GetSub().GetContact().IsSetContact()
         && ss.GetSub().GetContact().GetContact().IsSetAffil()
         && ss.GetSub().GetContact().GetContact().GetAffil().IsStd()) {
-        imp.ValidateSubAffil(ss.GetSub().GetContact().GetContact().GetAffil().GetStd(),
+        imp.ValidateAffil(ss.GetSub().GetContact().GetContact().GetAffil().GetStd(),
                              ss, 0);
     }
+
     return errors;
 }
 
