@@ -1,0 +1,1593 @@
+Seq-entry ::= set {
+  class pop-set ,
+  seq-set {
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "Plasmodium falciparum" ,
+            common "malaria parasite P. falciparum" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 5833 } } ,
+            syn {
+              "Plasmodium (Laverania) falciparum" } ,
+            orgname {
+              name
+                binomial {
+                  genus "Plasmodium" ,
+                  species "falciparum" } ,
+              mod {
+                {
+                  subtype isolate ,
+                  subname "1" } } ,
+              lineage "Eukaryota; Alveolata; Apicomplexa; Aconoidasida;
+ Haemosporida; Plasmodiidae; Plasmodium; Plasmodium (Laverania)" ,
+              gcode 1 ,
+              mgcode 4 ,
+              div "INV" ,
+              pgcode 11 } } ,
+          subtype {
+            {
+              subtype country ,
+              name "Yemen" } ,
+            {
+              subtype isolation-source ,
+              name "Human" } ,
+            {
+              subtype other ,
+              name "dihydropterorate synthatase gene/partial gene" } } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "DSeq1" } ,
+          descr {
+            title "Plasmodium falciparum isolate 1 dihydropterorate synthatase
+ gene 702bp" ,
+            molinfo {
+              biomol genomic ,
+              completeness partial } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "LocalID:DSeq1" } } } } ,
+          inst {
+            repr raw ,
+            mol rna ,
+            length 702 ,
+            strand ds ,
+            seq-data
+              ncbi2na 'BE05C06E7BD020EFE038C0E0AE72EF32332BA20D77AD7FEF3170D40
+0F2E0223F2CB17B3C43CFD0020E838CC00300FBC0EE398050F30B3E310F0730EFFC083BBE30E3F
+2F8CCF038CF2E7EC40C35203CC03CF00000040F732ECBDC393008A0351310E8C07040F38C372FC
+E33000F3F20408F03FDFB3C0E83176F328C73F8CFA3CA3F9820138D0DCF01DF100CC4ECCE38B35
+1FFCFA33D08008FCF953E4E0E3403BEC303110400F138E04100E00C00CFBA10'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "dihydropteroate synthetase" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 701 ,
+                        strand plus ,
+                        id
+                          local
+                            str "DSeq1" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "DSeq1_prot_1" } ,
+          descr {
+            title "dihydropteroate synthetase, partial [Plasmodium
+ falciparum]" ,
+            molinfo {
+              biomol peptide ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 234 ,
+            seq-data
+              ncbieaa "VEPKRAVQRMFEMINEGASVIDIGGESSGPFVIPNPKISERDLVVPVLQLFQKEW
+NDIKNKIVKCDAKPIISIDTINYNVFKECVDNDLVDILNDISACTNNPEIIKLLKKKNKFYSVVLMHKRGNPHTMDKL
+TNYDNLVYDIKNYLEQRLNFLVLNGIPRYRILFDIGLGFAKKHDQSIKLLQNIHVYDEYPLFIGYSRKRFIAHCMNDQ
+NVVINTQQKLHDEQQNENKNIVD" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "dihydropteroate synthetase" } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 233 ,
+                        id
+                          local
+                            str "DSeq1_prot_1" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 1 } } ,
+                partial TRUE ,
+                product
+                  whole
+                    local
+                      str "DSeq1_prot_1" ,
+                location
+                  int {
+                    from 0 ,
+                    to 701 ,
+                    strand plus ,
+                    id
+                      local
+                        str "DSeq1" ,
+                    fuzz-from
+                      lim lt ,
+                    fuzz-to
+                      lim gt } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "Plasmodium falciparum" ,
+            common "malaria parasite P. falciparum" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 5833 } } ,
+            syn {
+              "Plasmodium (Laverania) falciparum" } ,
+            orgname {
+              name
+                binomial {
+                  genus "Plasmodium" ,
+                  species "falciparum" } ,
+              mod {
+                {
+                  subtype isolate ,
+                  subname "2" } } ,
+              lineage "Eukaryota; Alveolata; Apicomplexa; Aconoidasida;
+ Haemosporida; Plasmodiidae; Plasmodium; Plasmodium (Laverania)" ,
+              gcode 1 ,
+              mgcode 4 ,
+              div "INV" ,
+              pgcode 11 } } ,
+          subtype {
+            {
+              subtype country ,
+              name "Yemen" } ,
+            {
+              subtype isolation-source ,
+              name "Human" } ,
+            {
+              subtype other ,
+              name "dihydropterorate synthatase gene/partial gene" } } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "DSeq2" } ,
+          descr {
+            title "Plasmodium falciparum isolate 2 dihydropterorate synthatase
+ gene 702bp" ,
+            molinfo {
+              biomol unknown ,
+              completeness partial } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "LocalID:DSeq2" } } } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 702 ,
+            strand ds ,
+            seq-data
+              ncbi2na 'BE05C06E7BD020EFE038C0E0AE72EF32332BA20D77AD7FEF3170D40
+0F2E0223F2CB17B3C43CFD0020E838CC00300FBC0EE398050F30B3E310F0730EFFC083BBE30E3F
+2F8CCF038CF2E7EC40C35203CC03CF00000040F732ECBDC393008A0351310E8C07040F38C372FC
+E33000F3F20408F03FDFB3C0E83176F328C73F8CFA3CA3F9820138D0DCF01DF100CC4ECCE38B35
+1FFCFA33D08008FCF953E4E0E3403BEC303110400F138E04100E00C00CFBA10'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "dihydropteroate synthetase" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 701 ,
+                        strand plus ,
+                        id
+                          local
+                            str "DSeq2" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "DSeq2_prot_2" } ,
+          descr {
+            title "dihydropteroate synthetase, partial [Plasmodium
+ falciparum]" ,
+            molinfo {
+              biomol peptide ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 234 ,
+            seq-data
+              ncbieaa "VEPKRAVQRMFEMINEGASVIDIGGESSGPFVIPNPKISERDLVVPVLQLFQKEW
+NDIKNKIVKCDAKPIISIDTINYNVFKECVDNDLVDILNDISACTNNPEIIKLLKKKNKFYSVVLMHKRGNPHTMDKL
+TNYDNLVYDIKNYLEQRLNFLVLNGIPRYRILFDIGLGFAKKHDQSIKLLQNIHVYDEYPLFIGYSRKRFIAHCMNDQ
+NVVINTQQKLHDEQQNENKNIVD" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "dihydropteroate synthetase" } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 233 ,
+                        id
+                          local
+                            str "DSeq2_prot_2" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 1 } } ,
+                partial TRUE ,
+                product
+                  whole
+                    local
+                      str "DSeq2_prot_2" ,
+                location
+                  int {
+                    from 0 ,
+                    to 701 ,
+                    strand plus ,
+                    id
+                      local
+                        str "DSeq2" ,
+                    fuzz-from
+                      lim lt ,
+                    fuzz-to
+                      lim gt } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "Plasmodium falciparum" ,
+            common "malaria parasite P. falciparum" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 5833 } } ,
+            syn {
+              "Plasmodium (Laverania) falciparum" } ,
+            orgname {
+              name
+                binomial {
+                  genus "Plasmodium" ,
+                  species "falciparum" } ,
+              mod {
+                {
+                  subtype isolate ,
+                  subname "3" } } ,
+              lineage "Eukaryota; Alveolata; Apicomplexa; Aconoidasida;
+ Haemosporida; Plasmodiidae; Plasmodium; Plasmodium (Laverania)" ,
+              gcode 1 ,
+              mgcode 4 ,
+              div "INV" ,
+              pgcode 11 } } ,
+          subtype {
+            {
+              subtype country ,
+              name "Yemen" } ,
+            {
+              subtype isolation-source ,
+              name "Human" } ,
+            {
+              subtype other ,
+              name "dihydropterorate synthatase gene/partial gene" } } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "DSeq3" } ,
+          descr {
+            title "Plasmodium falciparum isolate 3 dihydropterorate synthatase
+ gene 702bp" ,
+            molinfo {
+              biomol genomic ,
+              completeness partial } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "LocalID:DSeq3" } } } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 702 ,
+            strand ds ,
+            seq-data
+              ncbi2na 'BE05C06E7BD020EFE038C0E0AE72EF32332BA20D77AD7FEF3170D40
+0F2E0223F2CB17B3C43CFD0020E838CC00300FBC0EE398050F30B3E310F0730EFFC083BBE30E3F
+2F8CCF038CF2E7EC40C35203CC03CF00000040F732ECBDC393008A0351310E8C07040F38C372FC
+E33000F3F20408F03FDFB3C0E83176F328C73F8CFA3CA3F9820138D0DCF01DF100CC4ECCE38B35
+1FFCFA33D08008FCF953E4E0E3403BEC303110400F138E04100E00C00CFBA10'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "dihydropteroate synthetase" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 701 ,
+                        strand plus ,
+                        id
+                          local
+                            str "DSeq3" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "DSeq3_prot_3" } ,
+          descr {
+            title "dihydropteroate synthetase, partial [Plasmodium
+ falciparum]" ,
+            molinfo {
+              biomol peptide ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 234 ,
+            seq-data
+              ncbieaa "VEPKRAVQRMFEMINEGASVIDIGGESSGPFVIPNPKISERDLVVPVLQLFQKEW
+NDIKNKIVKCDAKPIISIDTINYNVFKECVDNDLVDILNDISACTNNPEIIKLLKKKNKFYSVVLMHKRGNPHTMDKL
+TNYDNLVYDIKNYLEQRLNFLVLNGIPRYRILFDIGLGFAKKHDQSIKLLQNIHVYDEYPLFIGYSRKRFIAHCMNDQ
+NVVINTQQKLHDEQQNENKNIVD" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "dihydropteroate synthetase" } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 233 ,
+                        id
+                          local
+                            str "DSeq3_prot_3" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 1 } } ,
+                partial TRUE ,
+                product
+                  whole
+                    local
+                      str "DSeq3_prot_3" ,
+                location
+                  int {
+                    from 0 ,
+                    to 701 ,
+                    strand plus ,
+                    id
+                      local
+                        str "DSeq3" ,
+                    fuzz-from
+                      lim lt ,
+                    fuzz-to
+                      lim gt } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "Plasmodium falciparum" ,
+            common "malaria parasite P. falciparum" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 5833 } } ,
+            syn {
+              "Plasmodium (Laverania) falciparum" } ,
+            orgname {
+              name
+                binomial {
+                  genus "Plasmodium" ,
+                  species "falciparum" } ,
+              mod {
+                {
+                  subtype isolate ,
+                  subname "4" } } ,
+              lineage "Eukaryota; Alveolata; Apicomplexa; Aconoidasida;
+ Haemosporida; Plasmodiidae; Plasmodium; Plasmodium (Laverania)" ,
+              gcode 1 ,
+              mgcode 4 ,
+              div "INV" ,
+              pgcode 11 } } ,
+          subtype {
+            {
+              subtype country ,
+              name "Yemen" } ,
+            {
+              subtype isolation-source ,
+              name "Human" } ,
+            {
+              subtype other ,
+              name "dihydropterorate synthatase gene/partial gene" } } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "DSeq4" } ,
+          descr {
+            title "Plasmodium falciparum isolate 4 dihydropterorate synthatase
+ gene 702bp" ,
+            molinfo {
+              biomol genomic ,
+              completeness partial } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "LocalID:DSeq4" } } } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 702 ,
+            strand ds ,
+            seq-data
+              ncbi2na 'BE05C06E7BD020EFE038C0E0AE72EF32332BA20D77AD7FEF3170D40
+0F2E0223F2CB17B3C43CFD0020E838CC00300FBC0EE398050F30B3E310F0730EFFC083BBE30E3F
+2F8CCF038CF2E7EC40C35203CC03CF00000040F732ECBDC393008A0351310E8C07040F38C372FC
+E33000F3F20408F03FDFB3C0E83176F328C73F8CFA3CA3F9820138D0DCF01DF100CC4ECCE38B35
+1FFCFA33D08008FCF953E4E0E3403BEC303110400F138E04100E00C00CFBA10'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "dihydropteroate synthetase" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 701 ,
+                        strand plus ,
+                        id
+                          local
+                            str "DSeq4" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "DSeq4_prot_4" } ,
+          descr {
+            title "dihydropteroate synthetase, partial [Plasmodium
+ falciparum]" ,
+            molinfo {
+              biomol peptide ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 234 ,
+            seq-data
+              ncbieaa "VEPKRAVQRMFEMINEGASVIDIGGESSGPFVIPNPKISERDLVVPVLQLFQKEW
+NDIKNKIVKCDAKPIISIDTINYNVFKECVDNDLVDILNDISACTNNPEIIKLLKKKNKFYSVVLMHKRGNPHTMDKL
+TNYDNLVYDIKNYLEQRLNFLVLNGIPRYRILFDIGLGFAKKHDQSIKLLQNIHVYDEYPLFIGYSRKRFIAHCMNDQ
+NVVINTQQKLHDEQQNENKNIVD" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "dihydropteroate synthetase" } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 233 ,
+                        id
+                          local
+                            str "DSeq4_prot_4" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 1 } } ,
+                partial TRUE ,
+                product
+                  whole
+                    local
+                      str "DSeq4_prot_4" ,
+                location
+                  int {
+                    from 0 ,
+                    to 701 ,
+                    strand plus ,
+                    id
+                      local
+                        str "DSeq4" ,
+                    fuzz-from
+                      lim lt ,
+                    fuzz-to
+                      lim gt } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "Plasmodium falciparum" ,
+            common "malaria parasite P. falciparum" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 5833 } } ,
+            syn {
+              "Plasmodium (Laverania) falciparum" } ,
+            orgname {
+              name
+                binomial {
+                  genus "Plasmodium" ,
+                  species "falciparum" } ,
+              mod {
+                {
+                  subtype isolate ,
+                  subname "5" } } ,
+              lineage "Eukaryota; Alveolata; Apicomplexa; Aconoidasida;
+ Haemosporida; Plasmodiidae; Plasmodium; Plasmodium (Laverania)" ,
+              gcode 1 ,
+              mgcode 4 ,
+              div "INV" ,
+              pgcode 11 } } ,
+          subtype {
+            {
+              subtype country ,
+              name "Yemen" } ,
+            {
+              subtype isolation-source ,
+              name "Human" } ,
+            {
+              subtype other ,
+              name "dihydropterorate synthatase gene/partial gene" } } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "DSeq5" } ,
+          descr {
+            title "Plasmodium falciparum isolate 5 dihydropterorate synthatase
+ gene 702bp" ,
+            molinfo {
+              biomol genomic ,
+              completeness partial } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "LocalID:DSeq5" } } } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 702 ,
+            strand ds ,
+            seq-data
+              ncbi2na 'BE05C06E7BD020EFE038C0E0AE72EF32332BA20D77AD7FEF3170D40
+0F2E0223F2CB17B3C43CFD0020E838CC00300FBC0EE398050F30B3E310F0730EFFC083BBE30E3F
+2F8CCF038CF2E7EC40C35203CC03CF00000040F732ECBDC393008A0351310E8C07040F38C372FC
+E33000F3F20408F03FDFB3C0E83176F328C73F8CFA3CA3F9820138D0DCF01DF100CC4ECCE38B35
+1FFCFA33D08008FCF953E4E0E3403BEC303110400F138E04100E00C00CFBA10'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "dihydropteroate synthetase" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 701 ,
+                        strand plus ,
+                        id
+                          local
+                            str "DSeq5" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "DSeq5_prot_5" } ,
+          descr {
+            title "dihydropteroate synthetase, partial [Plasmodium
+ falciparum]" ,
+            molinfo {
+              biomol peptide ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 234 ,
+            seq-data
+              ncbieaa "VEPKRAVQRMFEMINEGASVIDIGGESSGPFVIPNPKISERDLVVPVLQLFQKEW
+NDIKNKIVKCDAKPIISIDTINYNVFKECVDNDLVDILNDISACTNNPEIIKLLKKKNKFYSVVLMHKRGNPHTMDKL
+TNYDNLVYDIKNYLEQRLNFLVLNGIPRYRILFDIGLGFAKKHDQSIKLLQNIHVYDEYPLFIGYSRKRFIAHCMNDQ
+NVVINTQQKLHDEQQNENKNIVD" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "dihydropteroate synthetase" } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 233 ,
+                        id
+                          local
+                            str "DSeq5_prot_5" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 1 } } ,
+                partial TRUE ,
+                product
+                  whole
+                    local
+                      str "DSeq5_prot_5" ,
+                location
+                  int {
+                    from 0 ,
+                    to 701 ,
+                    strand plus ,
+                    id
+                      local
+                        str "DSeq5" ,
+                    fuzz-from
+                      lim lt ,
+                    fuzz-to
+                      lim gt } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "Plasmodium falciparum" ,
+            common "malaria parasite P. falciparum" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 5833 } } ,
+            syn {
+              "Plasmodium (Laverania) falciparum" } ,
+            orgname {
+              name
+                binomial {
+                  genus "Plasmodium" ,
+                  species "falciparum" } ,
+              mod {
+                {
+                  subtype isolate ,
+                  subname "16" } } ,
+              lineage "Eukaryota; Alveolata; Apicomplexa; Aconoidasida;
+ Haemosporida; Plasmodiidae; Plasmodium; Plasmodium (Laverania)" ,
+              gcode 1 ,
+              mgcode 4 ,
+              div "INV" ,
+              pgcode 11 } } ,
+          subtype {
+            {
+              subtype country ,
+              name "Yemen" } ,
+            {
+              subtype isolation-source ,
+              name "Human" } ,
+            {
+              subtype other ,
+              name "dihydropterorate synthatase gene/partial gene" } } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "DSeq16" } ,
+          descr {
+            title "Plasmodium falciparum isolate 16 dihydropterorate
+ synthatase gene 702bp" ,
+            molinfo {
+              biomol genomic ,
+              completeness partial } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "LocalID:DSeq16" } } } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 702 ,
+            strand ds ,
+            seq-data
+              ncbi2na 'BE05C06E7BD020EFE038C0E0AE72EF32332BA20D77AD7FEF3170D40
+0F2E0223F2CB17B3C43CFD0020E838CC00300FBC0EE398050F30B3E310F0730EFFC083BBE30E3F
+2F8CCF038CF2E7EC40C35203CC03CF00000040F732ECBDC393008A0351310E8C07040F38C372FC
+E33000F3F20408F03FDFB3C0E83176F328C73F8CFA3CA3F9820138D0DCF01DF100CC4ECCE38B35
+1FFCFA33D08008FCF953E4E0E3403BEC303110400F138E04100E00C00CFBA10'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "dihydropteroate synthetase" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 701 ,
+                        strand plus ,
+                        id
+                          local
+                            str "DSeq16" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "DSeq16_prot_6" } ,
+          descr {
+            title "dihydropteroate synthetase, partial [Plasmodium
+ falciparum]" ,
+            molinfo {
+              biomol peptide ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 234 ,
+            seq-data
+              ncbieaa "VEPKRAVQRMFEMINEGASVIDIGGESSGPFVIPNPKISERDLVVPVLQLFQKEW
+NDIKNKIVKCDAKPIISIDTINYNVFKECVDNDLVDILNDISACTNNPEIIKLLKKKNKFYSVVLMHKRGNPHTMDKL
+TNYDNLVYDIKNYLEQRLNFLVLNGIPRYRILFDIGLGFAKKHDQSIKLLQNIHVYDEYPLFIGYSRKRFIAHCMNDQ
+NVVINTQQKLHDEQQNENKNIVD" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "dihydropteroate synthetase" } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 233 ,
+                        id
+                          local
+                            str "DSeq16_prot_6" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 1 } } ,
+                partial TRUE ,
+                product
+                  whole
+                    local
+                      str "DSeq16_prot_6" ,
+                location
+                  int {
+                    from 0 ,
+                    to 701 ,
+                    strand plus ,
+                    id
+                      local
+                        str "DSeq16" ,
+                    fuzz-from
+                      lim lt ,
+                    fuzz-to
+                      lim gt } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "Plasmodium falciparum" ,
+            common "malaria parasite P. falciparum" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 5833 } } ,
+            syn {
+              "Plasmodium (Laverania) falciparum" } ,
+            orgname {
+              name
+                binomial {
+                  genus "Plasmodium" ,
+                  species "falciparum" } ,
+              mod {
+                {
+                  subtype isolate ,
+                  subname "17" } } ,
+              lineage "Eukaryota; Alveolata; Apicomplexa; Aconoidasida;
+ Haemosporida; Plasmodiidae; Plasmodium; Plasmodium (Laverania)" ,
+              gcode 1 ,
+              mgcode 4 ,
+              div "INV" ,
+              pgcode 11 } } ,
+          subtype {
+            {
+              subtype country ,
+              name "Yemen" } ,
+            {
+              subtype isolation-source ,
+              name "Human" } ,
+            {
+              subtype other ,
+              name "dihydropterorate synthatase gene/partial gene" } } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "DSeq17" } ,
+          descr {
+            title "Plasmodium falciparum isolate 17 dihydropterorate
+ synthatase gene 702bp" ,
+            molinfo {
+              biomol genomic ,
+              completeness partial } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "LocalID:DSeq17" } } } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 702 ,
+            strand ds ,
+            seq-data
+              ncbi2na 'BE05C06E7BD020EFE038C0E0AE72EF32332BA20D77AD7FEF3170D40
+0F2E0223F2CB17B3C43CFD0020E838CC00300FBC0EE398050F30B3E310F0730EFFC083BBE30E3F
+2F8CCF038CF2E7EC40C35203CC03CF00000040F732ECBDC393008A0351310E8C07040F38C372FC
+E33000F3F20408F03FDFB3C0E83176F328C73F8CFA3CA3F9820138D0DCF01DF100CC4ECCE38B35
+1FFCFA33D08008FCF953E4E0E3403BEC303110400F138E04100E00C00CFBA10'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "dihydropteroate synthetase" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 701 ,
+                        strand plus ,
+                        id
+                          local
+                            str "DSeq17" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "DSeq17_prot_7" } ,
+          descr {
+            title "dihydropteroate synthetase, partial [Plasmodium
+ falciparum]" ,
+            molinfo {
+              biomol peptide ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 234 ,
+            seq-data
+              ncbieaa "VEPKRAVQRMFEMINEGASVIDIGGESSGPFVIPNPKISERDLVVPVLQLFQKEW
+NDIKNKIVKCDAKPIISIDTINYNVFKECVDNDLVDILNDISACTNNPEIIKLLKKKNKFYSVVLMHKRGNPHTMDKL
+TNYDNLVYDIKNYLEQRLNFLVLNGIPRYRILFDIGLGFAKKHDQSIKLLQNIHVYDEYPLFIGYSRKRFIAHCMNDQ
+NVVINTQQKLHDEQQNENKNIVD" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "dihydropteroate synthetase" } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 233 ,
+                        id
+                          local
+                            str "DSeq17_prot_7" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 1 } } ,
+                partial TRUE ,
+                product
+                  whole
+                    local
+                      str "DSeq17_prot_7" ,
+                location
+                  int {
+                    from 0 ,
+                    to 701 ,
+                    strand plus ,
+                    id
+                      local
+                        str "DSeq17" ,
+                    fuzz-from
+                      lim lt ,
+                    fuzz-to
+                      lim gt } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "Plasmodium falciparum" ,
+            common "malaria parasite P. falciparum" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 5833 } } ,
+            syn {
+              "Plasmodium (Laverania) falciparum" } ,
+            orgname {
+              name
+                binomial {
+                  genus "Plasmodium" ,
+                  species "falciparum" } ,
+              mod {
+                {
+                  subtype isolate ,
+                  subname "18" } } ,
+              lineage "Eukaryota; Alveolata; Apicomplexa; Aconoidasida;
+ Haemosporida; Plasmodiidae; Plasmodium; Plasmodium (Laverania)" ,
+              gcode 1 ,
+              mgcode 4 ,
+              div "INV" ,
+              pgcode 11 } } ,
+          subtype {
+            {
+              subtype country ,
+              name "Yemen" } ,
+            {
+              subtype isolation-source ,
+              name "Human" } ,
+            {
+              subtype other ,
+              name "dihydropterorate synthatase gene/partial gene" } } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "DSeq18" } ,
+          descr {
+            title "Plasmodium falciparum isolate 18 dihydropterorate
+ synthatase gene 702bp" ,
+            molinfo {
+              biomol genomic ,
+              completeness partial } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "LocalID:DSeq18" } } } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 702 ,
+            strand ds ,
+            seq-data
+              ncbi2na 'BE05C06E7BD020EFE038C0E0AE72EF32332BA20D77AD7FEF3170D40
+0F2E0223F2CB17B3C43CFD0020E838CC00300FBC0EE398050F30B3E310F0730EFFC083BBE30E3F
+2F8CCF038CF2E7EC40C35203CC03CF00000040F732ECBDC393008A0351310E8C07040F38C372FC
+E33000F3F20408F03FDFB3C0E83176F328C73F8CFA3CA3F9820138D0DCF01DF100CC4ECCE38B35
+1FFCFA33D08008FCF953E4E0E3403BEC303110400F138E04100E00C00CFBA10'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "dihydropteroate synthetase" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 701 ,
+                        strand plus ,
+                        id
+                          local
+                            str "DSeq18" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "DSeq18_prot_8" } ,
+          descr {
+            title "dihydropteroate synthetase, partial [Plasmodium
+ falciparum]" ,
+            molinfo {
+              biomol peptide ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 234 ,
+            seq-data
+              ncbieaa "VEPKRAVQRMFEMINEGASVIDIGGESSGPFVIPNPKISERDLVVPVLQLFQKEW
+NDIKNKIVKCDAKPIISIDTINYNVFKECVDNDLVDILNDISACTNNPEIIKLLKKKNKFYSVVLMHKRGNPHTMDKL
+TNYDNLVYDIKNYLEQRLNFLVLNGIPRYRILFDIGLGFAKKHDQSIKLLQNIHVYDEYPLFIGYSRKRFIAHCMNDQ
+NVVINTQQKLHDEQQNENKNIVD" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "dihydropteroate synthetase" } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 233 ,
+                        id
+                          local
+                            str "DSeq18_prot_8" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 1 } } ,
+                partial TRUE ,
+                product
+                  whole
+                    local
+                      str "DSeq18_prot_8" ,
+                location
+                  int {
+                    from 0 ,
+                    to 701 ,
+                    strand plus ,
+                    id
+                      local
+                        str "DSeq18" ,
+                    fuzz-from
+                      lim lt ,
+                    fuzz-to
+                      lim gt } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "Plasmodium falciparum" ,
+            common "malaria parasite P. falciparum" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 5833 } } ,
+            syn {
+              "Plasmodium (Laverania) falciparum" } ,
+            orgname {
+              name
+                binomial {
+                  genus "Plasmodium" ,
+                  species "falciparum" } ,
+              mod {
+                {
+                  subtype isolate ,
+                  subname "19" } } ,
+              lineage "Eukaryota; Alveolata; Apicomplexa; Aconoidasida;
+ Haemosporida; Plasmodiidae; Plasmodium; Plasmodium (Laverania)" ,
+              gcode 1 ,
+              mgcode 4 ,
+              div "INV" ,
+              pgcode 11 } } ,
+          subtype {
+            {
+              subtype country ,
+              name "Yemen" } ,
+            {
+              subtype isolation-source ,
+              name "Human" } ,
+            {
+              subtype other ,
+              name "dihydropterorate synthatase gene/partial gene" } } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "DSeq19" } ,
+          descr {
+            title "Plasmodium falciparum isolate 19 dihydropterorate
+ synthatase gene 702bp" ,
+            molinfo {
+              biomol genomic ,
+              completeness partial } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "LocalID:DSeq19" } } } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 702 ,
+            strand ds ,
+            seq-data
+              ncbi2na 'BE05C06E7BD020EFE038C0E0AE72EF32332BA20D77AD7FEF3170D40
+0F2E0223F2CB17B3C43CFD0020E838CC00300FBC0EE398050F30B3E310F0730EFFC083BBE30E3F
+2F8CCF038CF2E7EC40C35203CC03CF00000040F732ECBDC393008A0351310E8C07040F38C372FC
+E33000F3F20408F03FDFB3C0E83176F328C73F8CFA3CA3F9820138D0DCF01DF100CC4ECCE38B35
+1FFCFA33D08008FCF953E4E0E3403BEC303110400F138E04100E00C00CFBA10'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "dihydropteroate synthetase" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 701 ,
+                        strand plus ,
+                        id
+                          local
+                            str "DSeq19" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "DSeq19_prot_9" } ,
+          descr {
+            title "dihydropteroate synthetase, partial [Plasmodium
+ falciparum]" ,
+            molinfo {
+              biomol peptide ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 234 ,
+            seq-data
+              ncbieaa "VEPKRAVQRMFEMINEGASVIDIGGESSGPFVIPNPKISERDLVVPVLQLFQKEW
+NDIKNKIVKCDAKPIISIDTINYNVFKECVDNDLVDILNDISACTNNPEIIKLLKKKNKFYSVVLMHKRGNPHTMDKL
+TNYDNLVYDIKNYLEQRLNFLVLNGIPRYRILFDIGLGFAKKHDQSIKLLQNIHVYDEYPLFIGYSRKRFIAHCMNDQ
+NVVINTQQKLHDEQQNENKNIVD" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "dihydropteroate synthetase" } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 233 ,
+                        id
+                          local
+                            str "DSeq19_prot_9" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 1 } } ,
+                partial TRUE ,
+                product
+                  whole
+                    local
+                      str "DSeq19_prot_9" ,
+                location
+                  int {
+                    from 0 ,
+                    to 701 ,
+                    strand plus ,
+                    id
+                      local
+                        str "DSeq19" ,
+                    fuzz-from
+                      lim lt ,
+                    fuzz-to
+                      lim gt } } } } } } ,
+    set {
+      class nuc-prot ,
+      descr {
+        source {
+          genome genomic ,
+          org {
+            taxname "Plasmodium falciparum" ,
+            common "malaria parasite P. falciparum" ,
+            db {
+              {
+                db "taxon" ,
+                tag
+                  id 5833 } } ,
+            syn {
+              "Plasmodium (Laverania) falciparum" } ,
+            orgname {
+              name
+                binomial {
+                  genus "Plasmodium" ,
+                  species "falciparum" } ,
+              mod {
+                {
+                  subtype isolate ,
+                  subname "21" } } ,
+              lineage "Eukaryota; Alveolata; Apicomplexa; Aconoidasida;
+ Haemosporida; Plasmodiidae; Plasmodium; Plasmodium (Laverania)" ,
+              gcode 1 ,
+              mgcode 4 ,
+              div "INV" ,
+              pgcode 11 } } ,
+          subtype {
+            {
+              subtype country ,
+              name "Yemen" } ,
+            {
+              subtype isolation-source ,
+              name "Human" } ,
+            {
+              subtype other ,
+              name "dihydropterorate synthatase gene/partial gene" } } } } ,
+      seq-set {
+        seq {
+          id {
+            local
+              str "DSeq21" } ,
+          descr {
+            title "Plasmodium falciparum isolate 21 dihydropterorate
+ synthatase gene 702bp" ,
+            molinfo {
+              biomol genomic ,
+              completeness partial } ,
+            user {
+              type
+                str "Submission" ,
+              data {
+                {
+                  label
+                    str "AdditionalComment" ,
+                  data
+                    str "LocalID:DSeq21" } } } } ,
+          inst {
+            repr raw ,
+            mol dna ,
+            length 702 ,
+            strand ds ,
+            seq-data
+              ncbi2na 'BE05C06E7BD020EFE038C0E0AE72EF32332BA20D77AD7FEF3170D40
+0F2E0223F2CB17B3C43CFD0020E838CC00300FBC0EE398050F30B3E310F0730EFFC083BBE30E3F
+2F8CCF038CF2E7EC40C35203CC03CF00000040F732ECBDC393008A0351310E8C07040F38C372FC
+E33000F3F20408F03FDFB3C0E83176F328C73F8CFA3CA3F9820138D0DCF01DF100CC4ECCE38B35
+1FFCFA33D08008FCF953E4E0E3403BEC303110400F138E04100E00C00CFBA10'H } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      gene {
+                        locus "dihydropteroate synthetase" } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 701 ,
+                        strand plus ,
+                        id
+                          local
+                            str "DSeq21" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } ,
+        seq {
+          id {
+            local
+              str "DSeq21_prot_10" } ,
+          descr {
+            title "dihydropteroate synthetase, partial [Plasmodium
+ falciparum]" ,
+            molinfo {
+              biomol peptide ,
+              completeness no-ends } } ,
+          inst {
+            repr raw ,
+            mol aa ,
+            length 234 ,
+            seq-data
+              ncbieaa "VEPKRAVQRMFEMINEGASVIDIGGESSGPFVIPNPKISERDLVVPVLQLFQKEW
+NDIKNKIVKCDAKPIISIDTINYNVFKECVDNDLVDILNDISACTNNPEIIKLLKKKNKFYSVVLMHKRGNPHTMDKL
+TNYDNLVYDIKNYLEQRLNFLVLNGIPRYRILFDIGLGFAKKHDQSIKLLQNIHVYDEYPLFIGYSRKRFIAHCMNDQ
+NVVINTQQKLHDEQQNENKNIVD" } ,
+          annot {
+            {
+              data
+                ftable {
+                  {
+                    data
+                      prot {
+                        name {
+                          "dihydropteroate synthetase" } } ,
+                    partial TRUE ,
+                    location
+                      int {
+                        from 0 ,
+                        to 233 ,
+                        id
+                          local
+                            str "DSeq21_prot_10" ,
+                        fuzz-from
+                          lim lt ,
+                        fuzz-to
+                          lim gt } } } } } } } ,
+      annot {
+        {
+          data
+            ftable {
+              {
+                data
+                  cdregion {
+                    frame one ,
+                    code {
+                      id 1 } } ,
+                partial TRUE ,
+                product
+                  whole
+                    local
+                      str "DSeq21_prot_10" ,
+                location
+                  int {
+                    from 0 ,
+                    to 701 ,
+                    strand plus ,
+                    id
+                      local
+                        str "DSeq21" ,
+                    fuzz-from
+                      lim lt ,
+                    fuzz-to
+                      lim gt } } } } } } } }
