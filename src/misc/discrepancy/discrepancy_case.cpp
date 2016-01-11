@@ -30,6 +30,8 @@
 #include <ncbi_pch.hpp>
 #include "discrepancy_core.hpp"
 #include "utils.hpp"
+#include <objects/macro/Molecule_type.hpp>
+#include <objects/macro/Molecule_class_type.hpp>
 #include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/seqfeat/SeqFeatXref.hpp>
 #include <objects/seq/seqport_util.hpp>
@@ -786,6 +788,56 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_LOCUS_TAG_PREFIX)
 {
     // If there is more than 1 bin, the prefixes are inconsistent
     if (m_Objs.GetMap().size() > 1) {
+        m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+    }
+}
+
+
+static const string kInconsistent_Moltype = "[n] sequences have inconsistent moltypes";
+
+DISCREPANCY_CASE(INCONSISTENT_MOLTYPES, CSeq_inst, eAll, "Inconsistent molecule types")
+{
+    if (obj.IsAa() ) {
+        return;
+    }
+    // Report on nucs only
+
+    // Initialize moltype string with MolInfo.biomol 
+    string moltype;
+    CBioseq_Handle bsh = context.GetScope().GetBioseqHandle(*context.GetCurrentBioseq());
+    CSeqdesc_CI desc_it(bsh, CSeqdesc::e_Molinfo);
+    if (!desc_it && desc_it->GetMolinfo().CanGetBiomol()) {
+        CMolInfo::TBiomol biomol = desc_it->GetMolinfo().GetBiomol();
+        moltype = CMolInfo::GetBiomolName(biomol);
+    }
+
+    // If MolInfo.biomol is empty or all spaces, use "genomic" by default
+    if (NStr::IsBlank(moltype)) {
+        moltype = "genomic";
+    }
+
+    // Append Seq-inst.mol to moltype
+    if (context.GetCurrentBioseq()->CanGetInst() &&
+        context.GetCurrentBioseq()->GetInst().CanGetMol())
+    {
+        CSeq_inst::TMol mol = context.GetCurrentBioseq()->GetInst().GetMol();
+        moltype += string(" ") + CSeq_inst::GetMoleculeClass(mol);
+    }
+
+    // Add each nuc bioseq, regardless of moltype, to get a total count
+    m_Objs[kInconsistent_Moltype].Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+
+    // Add each unique moltype as a key to the Extended Output
+    stringstream ss;
+    ss << "[n] sequence[s] [has] moltype " << moltype;
+    m_Objs[kInconsistent_Moltype][ss.str()].Ext().Add(*new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
+}
+
+
+DISCREPANCY_SUMMARIZE(INCONSISTENT_MOLTYPES)
+{
+    // If there is more than 1 key, the moltypes are inconsistent
+    if (m_Objs[kInconsistent_Moltype].GetMap().size() > 1) {
         m_ReportItems = m_Objs.Export(*this)->GetSubitems();
     }
 }
