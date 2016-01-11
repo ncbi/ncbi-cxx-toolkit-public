@@ -85,14 +85,19 @@ static bool s_GetClipByQuality(void)
 static const char kSeq_descrFirstByte = 49; // first byte of Seq-descr ASN.1
 
 // split parameters
-static bool kSplitEnabled = false;
+static bool kEnableSplitQual = true;
+static bool kEnableSplitData = false;
+static bool kEnableSplitProd = false;
+
 static int kMainEntryId = 1;
 enum EChunkType {
-    eChunk_prot,
+    eChunk_prod,
     eChunk_data,
     eChunk_feat,
+    eChunk_other,
     kChunkIdStep = 4
 };
+static const int kChunkId_QualityGraph = eChunk_other + 0*kChunkIdStep;
 static const size_t kProdPerChunk = 64;
 
 
@@ -151,6 +156,9 @@ static SProfiler sw__GetScaffoldBioseq;
 static SProfiler sw_GetScaffoldEntry;
 static SProfiler sw__GetContigFeat;
 static SProfiler sw___GetContigQual;
+static SProfiler sw____GetContigQualSize;
+static SProfiler sw____GetContigQualData;
+static SProfiler sw____GetContigQualMinMax;
 static SProfiler sw___GetContigAnnot;
 static SProfiler sw____Get2na;
 static SProfiler sw____Get4na;
@@ -1583,13 +1591,14 @@ struct SWGSCreateInfo
           flags(flags),
           split_prod(false),
           split_data(false),
-          split_feat(false)
+          split_feat(false),
+          split_qual(false)
         {
         }
 
     CWGSDb db;
     TFlags flags;
-    bool split_prod, split_data, split_feat;
+    bool split_prod, split_data, split_feat, split_qual;
     CRef<CBioseq> main_seq;
     CRef<CSeq_entry> entry;
     CRef<CID2S_Split_Info> split;
@@ -1926,6 +1935,12 @@ bool CWGSSeqIterator::HasClippingInfo(void) const
 }
 
 
+TSeqPos CWGSSeqIterator::GetSeqStart(EClipType clip_type) const
+{
+    return GetClipByQualityFlag(clip_type)? GetClipQualityLeft(): 0;
+}
+
+
 TSeqPos CWGSSeqIterator::GetSeqLength(EClipType clip_type) const
 {
     return GetClipByQualityFlag(clip_type)?
@@ -2096,15 +2111,30 @@ bool CWGSSeqIterator::HasQualityGraph(void) const
 }
 
 
+inline
+TSeqPos CWGSSeqIterator::x_GetQualityArraySize(void) const
+{
+    PROFILE(sw____GetContigQualSize);
+    return m_Cur->m_Cursor.GetElementCount(m_CurrId, m_Cur->m_QUALITY, 8);
+}
+
+
 void
 CWGSSeqIterator::GetQualityVec(vector<INSDC_quality_phred>& quality_vec) const
 {
     x_CheckValid("CWGSSeqIterator::GetQualityArray");
-    CVDBValueFor<INSDC_quality_phred> quality = m_Cur->QUALITY(m_CurrId);
-    size_t size = quality.size();
+
+    TSeqPos pos = GetSeqStart();
+    TSeqPos end = x_GetQualityArraySize();
+    if ( end <= pos ) {
+        quality_vec.clear();
+        return;
+    }
+    TSeqPos size = end-pos;
+    quality_vec.reserve((size+7)/8*8);
     quality_vec.resize(size);
-    for ( size_t i = 0; i < size; ++i )
-        quality_vec[i] = quality[i];
+    m_Cur->m_Cursor.ReadElements(m_CurrId, m_Cur->m_QUALITY, 8, pos, size,
+                                 quality_vec.data());
 }
 
 
@@ -2114,33 +2144,69 @@ string CWGSSeqIterator::GetQualityAnnotName(void) const
 }
 
 
+static inline void s_GetMinMax(const Uint1* arr, size_t size,
+                               Uint1& min_v, Uint1& max_v)
+{
+    Uint1 min_v0 = 0xff, max_v0 = 0;
+    Uint1 min_v1 = 0xff, max_v1 = 0;
+    Uint1 min_v2 = 0xff, max_v2 = 0;
+    Uint1 min_v3 = 0xff, max_v3 = 0;
+    for ( ; size >= 4; arr += 4, size -= 4 ) {
+        Uint1 v0 = arr[0];
+        Uint1 v1 = arr[1];
+        Uint1 v2 = arr[2];
+        Uint1 v3 = arr[3];
+        if ( v0 < min_v0 ) min_v0 = v0;
+        if ( v1 < min_v1 ) min_v1 = v1;
+        if ( v2 < min_v2 ) min_v2 = v2;
+        if ( v3 < min_v3 ) min_v3 = v3;
+        if ( v0 > max_v0 ) max_v0 = v0;
+        if ( v1 > max_v1 ) max_v1 = v1;
+        if ( v2 > max_v2 ) max_v2 = v2;
+        if ( v3 > max_v3 ) max_v3 = v3;
+    }
+    for ( ; size > 0; arr += 1, size -= 1 ) {
+        Uint1 v0 = arr[0];
+        if ( v0 < min_v0 ) min_v0 = v0;
+        if ( v0 > max_v0 ) max_v0 = v0;
+    }
+    min_v0 = min(min_v0, min_v2);
+    max_v0 = max(max_v0, max_v2);
+    min_v1 = min(min_v1, min_v3);
+    max_v1 = max(max_v1, max_v3);
+    min_v = min(min_v0, min_v1);
+    max_v = max(max_v0, max_v1);
+}
+
+
 void CWGSSeqIterator::GetQualityAnnot(TAnnotSet& annot_set,
                                       TFlags flags) const
 {
-    PROFILE(sw___GetContigQual);
     x_CheckValid("CWGSSeqIterator::GetQualityAnnot");
     if ( !(flags & fQualityGraph) || !m_Cur->m_QUALITY ) {
         return;
     }
-    CVDBValueFor<INSDC_quality_phred> quality(m_Cur->QUALITY(m_CurrId));
-    size_t size = quality.size();
-    if ( size == 0 ) {
+    
+    PROFILE(sw___GetContigQual);
+    TSeqPos pos = GetSeqStart();
+    TSeqPos end = x_GetQualityArraySize();
+    if ( end <= pos ) {
         return;
     }
-    CByte_graph::TValues values(size);
-    INSDC_quality_phred min_q = 0xff, max_q = 0;
-    for ( size_t i = 0; i < size; ++i ) {
-        INSDC_quality_phred q = quality[i];
-        values[i] = q;
-        if ( q < min_q ) {
-            min_q = q;
-        }
-        if ( q > max_q ) {
-            max_q = q;
-        }
+    TSeqPos size = end-pos;
+    CByte_graph::TValues values;
+    {
+        PROFILE(sw____GetContigQualData);
+        values.reserve((size+7)/8*8);
+        values.resize(size);
+        m_Cur->m_Cursor.ReadElements(m_CurrId, m_Cur->m_QUALITY, 8, pos, size,
+                                     values.data());
     }
-    if ( max_q == 0 ) {
-        return;
+
+    Uint1 min_q = 0, max_q = 0;
+    {
+        PROFILE(sw____GetContigQualMinMax);
+        s_GetMinMax((const Uint1*)values.data(), values.size(), min_q, max_q);
     }
 
     CRef<CSeq_annot> annot(new CSeq_annot);
@@ -3364,8 +3430,52 @@ void CWGSSeqIterator::x_CreateBioseq(SWGSCreateInfo& info) const
     if ( info.flags & fMaskAnnot ) {
         PROFILE(sw___GetContigAnnot);
         GetAnnotSet(info.main_seq->SetAnnot(), info.flags);
-        GetQualityAnnot(info.main_seq->SetAnnot(), info.flags);
-        if ( info.main_seq->GetAnnot().empty() ) {
+        bool has_quality_graph = false;
+        if ( (info.flags & fQualityGraph) && m_Cur->m_QUALITY ) {
+            if ( info.split_qual ) {
+                CRef<CID2S_Chunk_Info> chunk(new CID2S_Chunk_Info);
+                chunk->SetId().Set(kChunkId_QualityGraph);
+                CRef<CID2S_Chunk_Content> content;
+
+                content = new CID2S_Chunk_Content;
+                chunk->SetContent().push_back(content);
+                content->SetFeat_ids();
+                CID2S_Seq_annot_Info& annot_info =
+                    content->SetSeq_annot();
+                annot_info.SetName(GetQualityAnnotName());
+                annot_info.SetGraph();
+                TGi gi = GetGi();
+                CRef<CSeq_id> id;
+                if ( !gi ) {
+                    id = GetAccSeq_id();
+                    if ( !id ) {
+                        id = GetGeneralSeq_id();
+                    }
+                }
+
+                content = new CID2S_Chunk_Content;
+                chunk->SetContent().push_back(content);
+                CID2S_Seq_annot_place_Info& place_info =
+                    content->SetSeq_annot_place();
+                CRef<CID2S_Bioseq_Ids::C_E> place(new CID2S_Bioseq_Ids::C_E);
+                if ( gi ) {
+                    annot_info.SetSeq_loc().SetWhole_gi(gi);
+                    place->SetGi(gi);
+                }
+                else {
+                    annot_info.SetSeq_loc().SetWhole_seq_id(*id);
+                    place->SetSeq_id(*id);
+                }
+                place_info.SetBioseqs().Set().push_back(place);
+
+                info.split->SetChunks().push_back(chunk);
+                has_quality_graph = true;
+            }
+            else {
+                GetQualityAnnot(info.main_seq->SetAnnot(), info.flags);
+            }
+        }
+        if ( info.main_seq->GetAnnot().empty() && !has_quality_graph ) {
             info.main_seq->ResetAnnot();
         }
     }
@@ -3472,7 +3582,7 @@ void SWGSCreateInfo::x_CreateProtSet(TVDBRowIdRange range)
                 if ( !ids || prod_count == kProdPerChunk ) {
                     CRef<CID2S_Chunk_Info> chunk(new CID2S_Chunk_Info);
                     split->SetChunks().push_back(chunk);
-                    chunk->SetId().Set(chunk_index*kChunkIdStep + eChunk_prot);
+                    chunk->SetId().Set(chunk_index*kChunkIdStep + eChunk_prod);
                     prod_count = 0;
                     ++chunk_index;
 
@@ -3541,16 +3651,12 @@ void CWGSSeqIterator::x_CreateEntry(SWGSCreateInfo& info) const
     }
     else {
         TFlags flags = info.flags;
-        info.flags = flags & ~fSeqAnnot & ~fQualityGraph & ~fMasterDescr;
+        info.flags = flags & ~fMasterDescr;
         x_CreateBioseq(info);
         info.flags = flags;
         info.x_CreateProtSet(GetLocFeatRowIdRange());
         if ( flags & fMasterDescr ) {
             sx_AddMasterDescr(m_Db, *info.entry);
-        }
-        GetQualityAnnot(info.main_seq->SetAnnot(), flags);
-        if ( info.main_seq->GetAnnot().empty() ) {
-            info.main_seq->ResetAnnot();
         }
     }
 }
@@ -3558,43 +3664,37 @@ void CWGSSeqIterator::x_CreateEntry(SWGSCreateInfo& info) const
 
 bool CWGSSeqIterator::x_InitSplit(SWGSCreateInfo& info) const
 {
-    if ( !kSplitEnabled ) {
-        return false;
-    }
     // split data if...
-    if ( ((info.flags & fMaskInst) == fInst_delta) && // delta is requested
+    if ( kEnableSplitData &&
+         ((info.flags & fMaskInst) == fInst_delta) && // delta is requested
          HasGapInfo() && // we have explicit gap info
          GetSeqLength() > kSplit2naSize // data is big enough
         ) {
         info.split_data = true;
     }
-    if ( sx_HasMoreProducts(m_Db, GetLocFeatRowIdRange(), kProdPerChunk) ) {
+    if ( kEnableSplitProd &&
+         sx_HasMoreProducts(m_Db, GetLocFeatRowIdRange(), kProdPerChunk) ) {
         // split products if there are many enough
         info.split_prod = true;
     }
-    if ( !info.split_data && !info.split_prod && !info.split_feat ) {
+    if ( kEnableSplitQual &&
+         CanHaveQualityGraph() ) {
+        info.split_qual = true;
+    }
+    if ( !info.split_data && !info.split_prod && !info.split_feat &&
+         !info.split_qual ) {
         return false;
     }
     info.entry = new CSeq_entry;
     info.split = new CID2S_Split_Info;
     info.split->SetSkeleton(*info.entry);
+    info.split->SetChunks();
     return true;
 }
 
 
 void CWGSSeqIterator::x_CreateSplit(SWGSCreateInfo& info) const
 {
-    // split data if...
-    if ( ((info.flags & fMaskInst) == fInst_delta) && // delta is requested
-         HasGapInfo() && // we have explicit gap info
-         GetSeqLength() > kSplit2naSize // data is big enough
-        ) {
-        info.split_data = true;
-    }
-    if ( sx_HasMoreProducts(m_Db, GetLocFeatRowIdRange(), kProdPerChunk) ) {
-        // split products if there are many enough
-        info.split_prod = true;
-    }
     x_CreateEntry(info);
 }
 
@@ -3603,14 +3703,35 @@ void CWGSSeqIterator::x_CreateChunk(SWGSCreateInfo& info,
                                     TChunkId chunk_id) const
 {
     PROFILE(sw_GetChunk);
-    EChunkType type = EChunkType(chunk_id%kChunkIdStep);
-    size_t index = chunk_id/kChunkIdStep;
-    if ( type == eChunk_prot ) {
-        vector<TVDBRowId> product_row_ids;
-        sx_GetProductsSlice(m_Db, GetLocFeatRowIdRange(),
-                            index*kProdPerChunk, kProdPerChunk,
-                            product_row_ids);
-        info.x_AddProducts(product_row_ids);
+    if ( chunk_id == kChunkId_QualityGraph ) {
+        CRef<CID2S_Chunk_Data> data(new CID2S_Chunk_Data);
+        TGi gi = GetGi();
+        CRef<CSeq_id> id;
+        if ( !gi ) {
+            id = GetAccSeq_id();
+            if ( !id ) {
+                id = GetGeneralSeq_id();
+            }
+        }
+        if ( gi ) {
+            data->SetId().SetGi(gi);
+        }
+        else {
+            data->SetId().SetSeq_id(*id);
+        }
+        GetQualityAnnot(data->SetAnnots(), info.flags);
+        info.chunk->SetData().push_back(data);
+    }
+    else {
+        EChunkType type = EChunkType(chunk_id%kChunkIdStep);
+        size_t index = chunk_id/kChunkIdStep;
+        if ( type == eChunk_prod ) {
+            vector<TVDBRowId> product_row_ids;
+            sx_GetProductsSlice(m_Db, GetLocFeatRowIdRange(),
+                                index*kProdPerChunk, kProdPerChunk,
+                                product_row_ids);
+            info.x_AddProducts(product_row_ids);
+        }
     }
 }
 

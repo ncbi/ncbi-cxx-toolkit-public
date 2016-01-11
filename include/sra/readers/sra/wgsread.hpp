@@ -680,6 +680,8 @@ public:
 
     // return raw unclipped sequence length
     TSeqPos GetRawSeqLength(void) const;
+    // return clipping start position within raw unclipped sequence
+    TSeqPos GetSeqStart(EClipType clip_type = eDefaultClip) const;
     // return effective sequence length, depending on clip type
     TSeqPos GetSeqLength(EClipType clip_type = eDefaultClip) const;
 
@@ -839,6 +841,8 @@ protected:
     void x_CreateSplit(SWGSCreateInfo& info) const;
     void x_CreateChunk(SWGSCreateInfo& info,
                        TChunkId chunk_id) const;
+
+    TSeqPos x_GetQualityArraySize(void) const;
 
 private:
     CWGSDb m_Db;

@@ -60,7 +60,7 @@ NCBI_DEFINE_ERR_SUBCODE_X(24);
 BEGIN_NAMESPACE(objects);
 
 // behavior options
-//#define ALLOW_SPLIT
+#define ALLOW_SPLIT
 #define TRACE_PROCESSING
 
 enum EResolveMaster {
