@@ -128,6 +128,7 @@ typedef SStaticPair<const char *, CBioSource::EGenome> TGenomeKey;
 static const TGenomeKey genome_key_to_subtype [] = {
     {  "apicoplast",                CBioSource::eGenome_apicoplast        },
     {  "chloroplast",               CBioSource::eGenome_chloroplast       },
+    {  "chromatophore",             CBioSource::eGenome_chromatophore     },
     {  "chromoplast",               CBioSource::eGenome_chromoplast       },
     {  "cyanelle",                  CBioSource::eGenome_cyanelle          },
     {  "endogenous_virus",          CBioSource::eGenome_endogenous_virus  },
@@ -145,7 +146,8 @@ static const TGenomeKey genome_key_to_subtype [] = {
     {  "plastid",                   CBioSource::eGenome_plastid           },
     {  "plastid:apicoplast",        CBioSource::eGenome_apicoplast        },
     {  "plastid:chloroplast",       CBioSource::eGenome_chloroplast       },
-    {  "plastid:chromoplast",       CBioSource::eGenome_chromoplast       },
+    {  "plastid:chromatophore", CBioSource::eGenome_chromatophore         },
+    {  "plastid:chromoplast", CBioSource::eGenome_chromoplast             },
     {  "plastid:cyanelle",          CBioSource::eGenome_cyanelle          },
     {  "plastid:leucoplast",        CBioSource::eGenome_leucoplast        },
     {  "plastid:proplastid",        CBioSource::eGenome_proplastid        },
