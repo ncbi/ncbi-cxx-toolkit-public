@@ -2441,22 +2441,28 @@ void CId2ReaderBase::x_ProcessGetSeqIdSeqId(
         }
     }
     if ( req.GetSeq_id_type() & req.eSeq_id_type_gi ) {
+        bool found = false;
         ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, reply.GetSeq_id() ) {
             if ( (**it).IsGi() ) {
+                found = true;
                 SetAndSaveSeq_idGi(result, seq_id, (**it).GetGi());
                 break;
             }
         }
     }
     if ( req.GetSeq_id_type() & req.eSeq_id_type_text ) {
+        bool found = false;
         ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, reply.GetSeq_id() ) {
             if ( (**it).GetTextseq_Id() ) {
+                found = true;
                 SetAndSaveSeq_idAccVer(result, seq_id,
                                        CSeq_id_Handle::GetHandle(**it));
-                return;
+                break;
             }
         }
-        SetAndSaveSeq_idAccVer(result, seq_id, CSeq_id_Handle());
+        if ( !found ) {
+            SetAndSaveSeq_idAccVer(result, seq_id, CSeq_id_Handle());
+        }
     }
     if ( req.GetSeq_id_type() & req.eSeq_id_type_label ) {
         ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, reply.GetSeq_id() ) {
