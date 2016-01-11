@@ -212,7 +212,7 @@ vector<CScoreValue> MakeSubjectScores(CScope& scope, CSeq_align_set const& coll,
      
     aligns.reserve(coll.Get().size());
     list<CRef<CSeq_align> > const& alignments = coll.Get();
-    for ( list<CRef<CSeq_align> >::const_iterator i = alignments.cbegin(); i != alignments.cend(); ++i ) {
+    for ( list<CRef<CSeq_align> >::const_iterator i = alignments.begin(); i != alignments.end(); ++i ) {
         aligns.push_back(i->GetPointer());
     }
     // Sort collection of alignments
