@@ -1230,6 +1230,14 @@ void CCgiRequest::x_SetClientIpProperty(TFlags flags) const
 
 void CCgiRequest::x_InitRequestContext(TFlags flags)
 {
+    // NOTE: NCBI_CONTEXT is parsed before individual properties (e.g. NCBI_PHID)
+    // so that their values can override those from NCBI_CONTEXT.
+    CRequestContext_PassThrough pt;
+    string pt_data = GetRandomProperty("NCBI_CONTEXT", true);
+    if ( !pt_data.empty() ) {
+        pt.Deserialize(pt_data, CRequestContext_PassThrough::eFormat_UrlEncoded);
+    }
+
     CRequestContext& rctx = CDiagContext::GetRequestContext();
     if ( !rctx.IsSetHitID(CRequestContext::eHitID_Request) ) {
         if ((flags & fIgnorePageHitId) == 0) {

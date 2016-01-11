@@ -55,6 +55,9 @@
 BEGIN_NCBI_SCOPE
 
 
+// Forward declarations
+class CRequestContext_PassThrough;
+
 class NCBI_XNCBI_EXPORT CRequestContext : public CObject
 {
 public:
@@ -302,6 +305,16 @@ private:
 
     static bool& sx_GetDefaultAutoIncRequestIDOnPost(void);
 
+    // Methods used by CRequestContext_PassThrough
+    bool x_IsSetPassThroughProp(CTempString name, bool update) const;
+    void x_SetPassThroughProp(CTempString name, CTempString value, bool update) const;
+    const string& x_GetPassThroughProp(CTempString name, bool update) const;
+    void x_ResetPassThroughProp(CTempString name, bool update) const;
+    // Copy std properties from CRequestContext to pass-through data.
+    void x_UpdateStdPassThroughProp(CTempString name) const;
+    // Copy std properties from pass-through data to CRequestContext.
+    void x_UpdateStdContextProp(CTempString name) const;
+
     TCount         m_RequestID;
     EDiagAppState  m_AppState;
     string         m_ClientIP;
@@ -325,6 +338,66 @@ private:
     friend class CDiagContextThreadData;
     // TID of the thread currently using this context or -1.
     Uint8          m_OwnerTID;
+
+    // Access to passable properties.
+    friend class CRequestContext_PassThrough;
+    typedef map<string, string, PNocase> TPassThroughProperties;
+    mutable TPassThroughProperties m_PassThroughProperties;
+};
+
+
+/// Request context properties passed between tasks.
+class NCBI_XNCBI_EXPORT CRequestContext_PassThrough
+{
+public:
+    /// Get CRequestContext_PassThrough for the current request context.
+    CRequestContext_PassThrough(void);
+
+    /// Get CRequestContext_PassThrough for the specific request context.
+    CRequestContext_PassThrough(CRequestContext ctx);
+
+    /// Supported serialization/deserialization formats.
+    enum EFormat {
+        eFormat_UrlEncoded ///< name=value pairs URL-encoded and separated with '&'
+    };
+
+    /// Check if the property is set.
+    bool IsSet(CTempString name) const;
+
+    /// Set or update property value.
+    void Set(CTempString name, CTempString value);
+
+    /// Get current property value or empty string if it's not set;
+    const string& Get(CTempString name) const;
+
+    /// Reset property.
+    void Reset(CTempString name);
+
+    /// Serialize current values using the specified format.
+    string Serialize(EFormat format) const;
+
+    /// Deserialize values using the specified format.
+    void Deserialize(CTempString data, EFormat format);
+
+    /// Enumerate all properties. The callback must have the following signarure:
+    /// bool F(const string& name, const string& value);
+    /// The function should return true to continue enumaration, false to stop.
+    template<class TCallback>
+    void Enumerate(TCallback callback)
+    {
+        m_Context->x_UpdateStdPassThroughProp("");
+        ITERATE(TProperties, it, m_Context->m_PassThroughProperties) {
+            if ( !callback(it->first, it->second) ) break;
+        }
+    }
+
+private:
+    string x_SerializeUrlEncoded(void) const;
+    void x_DeserializeUrlEncoded(CTempString data);
+
+    typedef CRequestContext::TPassThroughProperties TProperties;
+
+    CRef<CRequestContext> m_Context;
 };
 
 
@@ -616,6 +689,48 @@ inline
 void CRequestContext::x_UnsetProp(EProperty prop)
 {
     m_PropSet &= ~prop;
+}
+
+
+inline
+CRequestContext_PassThrough::CRequestContext_PassThrough(void)
+{
+    m_Context.Reset(&GetDiagContext().GetRequestContext());
+}
+
+
+inline
+CRequestContext_PassThrough::CRequestContext_PassThrough(CRequestContext ctx)
+    : m_Context(&ctx)
+{
+}
+
+
+inline
+bool CRequestContext_PassThrough::IsSet(CTempString name) const
+{
+    return m_Context->x_IsSetPassThroughProp(name, true);
+}
+
+
+inline
+void CRequestContext_PassThrough::Set(CTempString name, CTempString value)
+{
+    m_Context->x_SetPassThroughProp(name, value, true);
+}
+
+
+inline
+const string& CRequestContext_PassThrough::Get(CTempString name) const
+{
+    return m_Context->x_GetPassThroughProp(name, true);
+}
+
+
+inline
+void CRequestContext_PassThrough::Reset(CTempString name)
+{
+    m_Context->x_ResetPassThroughProp(name, true);
 }
 
 

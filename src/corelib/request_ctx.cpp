@@ -44,6 +44,11 @@
 BEGIN_NCBI_SCOPE
 
 
+static const char* kPassThrough_Sid = "ncbi_sid";
+static const char* kPassThrough_Phid = "ncbi_phid";
+static const char* kPassThrough_ClientIp = "ncbi_client_ip";
+static const char* kPassThrough_Dtab = "ncbi_dtab";
+
 CRequestContext::CRequestContext(TContextFlags flags)
     : m_RequestID(0),
       m_AppState(eDiagAppState_NotSet),
@@ -154,6 +159,7 @@ void CRequestContext::Reset(void)
     UnsetBytesRd();
     UnsetBytesWr();
     m_ReqTimer.Reset();
+    m_PassThroughProperties.clear();
 }
 
 
@@ -538,6 +544,179 @@ string CRequestContext::SelectLastSessionID(const string& session_ids)
         }
     }
     return kEmptyStr;
+}
+
+
+bool CRequestContext::x_IsSetPassThroughProp(CTempString name, bool update) const
+{
+    if ( update ) x_UpdateStdPassThroughProp(name);
+    TPassThroughProperties::const_iterator found = m_PassThroughProperties.find(name);
+    return found != m_PassThroughProperties.end();
+}
+
+
+const string& CRequestContext::x_GetPassThroughProp(CTempString name, bool update) const
+{
+    if ( update ) x_UpdateStdPassThroughProp(name);
+    TPassThroughProperties::const_iterator found = m_PassThroughProperties.find(name);
+    return found != m_PassThroughProperties.end() ? found->second : kEmptyStr;
+}
+
+
+void CRequestContext::x_SetPassThroughProp(CTempString name,
+                                           CTempString value,
+                                           bool update) const
+{
+    m_PassThroughProperties[name] = value;
+    if ( update ) x_UpdateStdContextProp(name);
+}
+
+
+void CRequestContext::x_ResetPassThroughProp(CTempString name, bool update) const
+{
+    TPassThroughProperties::const_iterator found = m_PassThroughProperties.find(name);
+    if (found != m_PassThroughProperties.end()) {
+        m_PassThroughProperties.erase(found);
+        if ( update ) x_UpdateStdContextProp(name);
+    }
+}
+
+
+void CRequestContext::x_UpdateStdPassThroughProp(CTempString name) const
+{
+    if (name.empty()  ||  NStr::EqualNocase(name, kPassThrough_Sid)) {
+        if ( IsSetSessionID() ) {
+            x_SetPassThroughProp(kPassThrough_Sid, GetSessionID(), false);
+        }
+        else {
+            x_ResetPassThroughProp(kPassThrough_Sid, false);
+        }
+    }
+    if (name.empty()  ||  NStr::EqualNocase(name, kPassThrough_ClientIp)) {
+        if ( IsSetClientIP() ) {
+            x_SetPassThroughProp(kPassThrough_ClientIp, GetClientIP(), false);
+        }
+        else {
+            x_ResetPassThroughProp(kPassThrough_ClientIp, false);
+        }
+    }
+    if (name.empty()  ||  NStr::EqualNocase(name, kPassThrough_Dtab)) {
+        if ( IsSetDtab() ) {
+            x_SetPassThroughProp(kPassThrough_Dtab, GetDtab(), false);
+        }
+        else {
+            x_ResetPassThroughProp(kPassThrough_Dtab, false);
+        }
+    }
+    if (name.empty()  ||  NStr::EqualNocase(name, kPassThrough_Phid)) {
+        if ( IsSetHitID() ) {
+            string sub_phid = const_cast<CRequestContext&>(*this).GetCurrentSubHitID();
+            if ( sub_phid.empty() ) {
+                sub_phid = const_cast<CRequestContext&>(*this).GetNextSubHitID();
+            }
+            x_SetPassThroughProp(kPassThrough_Phid, sub_phid, false);
+        }
+        else {
+            x_ResetPassThroughProp(kPassThrough_Phid, false);
+        }
+    }
+}
+
+
+void CRequestContext::x_UpdateStdContextProp(CTempString name) const
+{
+    CRequestContext& ctx = const_cast<CRequestContext&>(*this);
+
+    bool match = NStr::EqualNocase(name, kPassThrough_Sid);
+    if (name.empty()  ||  match) {
+        if (x_IsSetPassThroughProp(kPassThrough_Sid, false)) {
+            ctx.SetSessionID(x_GetPassThroughProp(kPassThrough_Sid, false));
+        }
+        // Reset property only if explicit name is provided
+        else if ( match ) {
+            ctx.UnsetSessionID();
+        }
+        // Explicit name provided - skip other checks.
+        if ( match ) return;
+    }
+
+    match = NStr::EqualNocase(name, kPassThrough_Phid);
+    if (name.empty()  ||  match) {
+        if (x_IsSetPassThroughProp(kPassThrough_Phid, false)) {
+            ctx.SetHitID(x_GetPassThroughProp(kPassThrough_Phid, false));
+        }
+        // Reset property only if explicit name is provided
+        else if ( match ) {
+            ctx.UnsetHitID();
+        }
+        // Explicit name provided - skip other checks.
+        if ( match ) return;
+    }
+
+    match = NStr::EqualNocase(name, kPassThrough_ClientIp);
+    if (name.empty()  ||  match) {
+        if (x_IsSetPassThroughProp(kPassThrough_ClientIp, false)) {
+            ctx.SetClientIP(x_GetPassThroughProp(kPassThrough_ClientIp, false));
+        }
+        // Reset property only if explicit name is provided
+        else if ( match ) {
+            ctx.UnsetClientIP();
+        }
+        // Explicit name provided - skip other checks.
+        if ( match ) return;
+    }
+
+    match = NStr::EqualNocase(name, kPassThrough_Dtab);
+    if (name.empty()  ||  match) {
+        if (x_IsSetPassThroughProp(kPassThrough_Dtab, false)) {
+            ctx.SetDtab(x_GetPassThroughProp(kPassThrough_Dtab, false));
+        }
+        // Reset property only if explicit name is provided
+        else if ( match ) {
+            ctx.UnsetDtab();
+        }
+        // Explicit name provided - skip other checks.
+        if ( match ) return;
+    }
+}
+
+
+string CRequestContext_PassThrough::Serialize(EFormat format) const
+{
+    m_Context->x_UpdateStdPassThroughProp("");
+
+    switch (format) {
+    case eFormat_UrlEncoded:
+        return x_SerializeUrlEncoded();
+    }
+    return kEmptyStr;
+}
+
+
+void CRequestContext_PassThrough::Deserialize(CTempString data, EFormat format)
+{
+    switch (format) {
+    case eFormat_UrlEncoded:
+        x_DeserializeUrlEncoded(data);
+        break;
+    }
+
+    m_Context->x_UpdateStdContextProp("");
+}
+
+
+string CRequestContext_PassThrough::x_SerializeUrlEncoded(void) const
+{
+    return CStringPairs<TProperties>::Merge(m_Context->m_PassThroughProperties,
+        "&", "=", new CStringEncoder_Url(NStr::eUrlEnc_Cookie));
+}
+
+
+void CRequestContext_PassThrough::x_DeserializeUrlEncoded(CTempString data)
+{
+    CStringPairs<TProperties>::Parse(
+        m_Context->m_PassThroughProperties, data,
+        "&", "=", new CStringDecoder_Url());
 }
 
 
