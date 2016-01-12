@@ -66,7 +66,7 @@ const char* CScoreSeqCoverage::Name = "seq_percent_coverage";
 
 string CScoreSeqCoverage::GetName() const
 {
-    return CScoreUniqSeqCoverage::Name;
+    return CScoreSeqCoverage::Name;
 }
 
 vector<CScoreValue> CScoreSeqCoverage::Get(CScope& scope, CSeq_align_set const& coll) const
