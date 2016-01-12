@@ -9090,80 +9090,86 @@ void CValidError_bioseq::ValidateGraphValues
         return;
     }
 
-    const CByte_graph& bg = graph.GetGraph().GetByte();
-    int min = bg.GetMin();
-    int max = bg.GetMax();
+    try {
+        const CByte_graph& bg = graph.GetGraph().GetByte();
+        int min = bg.GetMin();
+        int max = bg.GetMax();
 
-    const CSeq_loc& gloc = graph.GetLoc();
-    CRef<CSeq_loc> tmp(new CSeq_loc());
-    tmp->Assign(gloc);
-    tmp->SetStrand(eNa_strand_plus);
-    CSeqVector vec(*tmp, *m_Scope,
-                   CBioseq_Handle::eCoding_Ncbi,
-                   GetStrand(gloc, m_Scope));
-    vec.SetCoding(CSeq_data::e_Ncbi4na);
+        const CSeq_loc& gloc = graph.GetLoc();
+        CRef<CSeq_loc> tmp(new CSeq_loc());
+        tmp->Assign(gloc);
+        tmp->SetStrand(eNa_strand_plus);
+        CSeqVector vec(*tmp, *m_Scope,
+            CBioseq_Handle::eCoding_Ncbi,
+            GetStrand(gloc, m_Scope));
+        vec.SetCoding(CSeq_data::e_Ncbi4na);
 
-    CSeqVector::const_iterator seq_begin = vec.begin();
-    CSeqVector::const_iterator seq_end   = vec.end();
-    CSeqVector::const_iterator seq_iter  = seq_begin;
+        CSeqVector::const_iterator seq_begin = vec.begin();
+        CSeqVector::const_iterator seq_end = vec.end();
+        CSeqVector::const_iterator seq_iter = seq_begin;
 
-    const CByte_graph::TValues& values = bg.GetValues();
-    CByte_graph::TValues::const_iterator val_iter = values.begin();
-    CByte_graph::TValues::const_iterator val_end = values.end();
+        const CByte_graph::TValues& values = bg.GetValues();
+        CByte_graph::TValues::const_iterator val_iter = values.begin();
+        CByte_graph::TValues::const_iterator val_end = values.end();
 
-    size_t score_pos = 0;
-    
-    while ( seq_iter != seq_end && score_pos < graph.GetNumval()) {
-        CSeqVector::TResidue res = *seq_iter;
-        int val;
-        if (val_iter == val_end) {
-            val = 0;
-        } else {
-            val = *val_iter;
-            ++val_iter;
-        }
-        if ( IsResidue(res) ) {
-            // counting total number of bases, to look for percentage of bases with score of zero
-            num_bases++;
+        size_t score_pos = 0;
 
-            if ( (val < min)  ||  (val < 0) ) {
-                vals_below_min++;
+        while (seq_iter != seq_end && score_pos < graph.GetNumval()) {
+            CSeqVector::TResidue res = *seq_iter;
+            int val;
+            if (val_iter == val_end) {
+                val = 0;
+            } else {
+                val = *val_iter;
+                ++val_iter;
             }
-            if ( (val > max)  ||  (val > 100) ) {
-                vals_above_max++;
-            }
+            if (IsResidue(res)) {
+                // counting total number of bases, to look for percentage of bases with score of zero
+                num_bases++;
 
-            switch ( res ) {
-            case 0:     // gap
-                if ( val > 0 ) {
-                    gaps_with_score++;
+                if ((val < min) || (val < 0)) {
+                    vals_below_min++;
                 }
-                break;
+                if ((val > max) || (val > 100)) {
+                    vals_above_max++;
+                }
 
-            case 1:     // A
-            case 2:     // C
-            case 4:     // G
-            case 8:     // T
-                if ( val == 0 ) {
-                    ACGTs_without_score++;
-                    if ( first_ACGT == -1 ) {
-                        first_ACGT = seq_iter.GetPos() + gloc.GetStart(eExtreme_Positional);
+                switch (res) {
+                case 0:     // gap
+                    if (val > 0) {
+                        gaps_with_score++;
                     }
-                }
-                break;
+                    break;
 
-            case 15:    // N
-                if ( val > 0 ) {
-                    Ns_with_score++;
-                    if ( first_N == -1 ) {
-                        first_N = seq_iter.GetPos() + gloc.GetStart(eExtreme_Positional);
+                case 1:     // A
+                case 2:     // C
+                case 4:     // G
+                case 8:     // T
+                    if (val == 0) {
+                        ACGTs_without_score++;
+                        if (first_ACGT == -1) {
+                            first_ACGT = seq_iter.GetPos() + gloc.GetStart(eExtreme_Positional);
+                        }
                     }
+                    break;
+
+                case 15:    // N
+                    if (val > 0) {
+                        Ns_with_score++;
+                        if (first_N == -1) {
+                            first_N = seq_iter.GetPos() + gloc.GetStart(eExtreme_Positional);
+                        }
+                    }
+                    break;
                 }
-                break;
             }
+            ++seq_iter;
+            ++score_pos;
         }
-        ++seq_iter;
-        ++score_pos;
+    } catch (CException& e) {
+        PostErr(eDiag_Fatal, eErr_INTERNAL_Exception,
+            string("Exception while validating graph values. EXCEPTION: ") +
+            e.what(), seq);
     }
 
 }
@@ -9217,7 +9223,7 @@ void CValidError_bioseq::ValidateGraphOnDeltaBioseq
                     if ( !loc.IsNull() ) {
                         TSeqPos loclen = GetLength(loc, m_Scope);
                         if ( graph.GetNumval() != loclen ) {
-                            PostErr(eDiag_Error, eErr_SEQ_GRAPH_GraphSeqLocLen,
+                            PostErr(eDiag_Warning, eErr_SEQ_GRAPH_GraphSeqLocLen,
                                 "SeqGraph (" + NStr::IntToString(graph.GetNumval()) +
                                 ") and SeqLoc (" + NStr::IntToString(loclen) + 
                                 ") length mismatch", graph);
