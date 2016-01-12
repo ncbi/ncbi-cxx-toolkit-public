@@ -177,6 +177,7 @@ void CFlatFileGenerator::Generate
     bool isTPA = false;
 
     bool hasLocalFeat = false;
+    bool forceOnlyNear = false;
 
     for (CBioseq_CI bi(entry); bi; ++bi) {
         FOR_EACH_SEQID_ON_BIOSEQ (it, *(bi->GetCompleteBioseq())) {
@@ -229,10 +230,39 @@ void CFlatFileGenerator::Generate
                     hasLocalFeat = true;
                 }
             }
+            if (hasLocalFeat) {
+              break;
+            }
+        }
+
+        FOR_EACH_SEQDESC_ON_BIOSEQ (desc_it, *(bi->GetCompleteBioseq())) {
+            const CSeqdesc& desc = **desc_it;
+            if (! desc.IsUser()) continue;
+            if (! desc.GetUser().IsSetType()) continue;
+            const CUser_object& usr = desc.GetUser();
+            const CObject_id& oi = usr.GetType();
+            if (! oi.IsStr()) continue;
+            const string& type = oi.GetStr();
+            if (! NStr::EqualNocase(type, "FeatureFetchPolicy")) continue;
+            FOR_EACH_USERFIELD_ON_USEROBJECT (uitr, usr) {
+                const CUser_field& fld = **uitr;
+                if (FIELD_IS_SET_AND_IS(fld, Label, Str)) {
+                    const string &label_str = GET_FIELD(fld.GetLabel(), Str);
+                    if (! NStr::EqualNocase(label_str, "Policy")) continue;
+                    if (fld.IsSetData() && fld.GetData().IsStr()) {
+                        const string& str = fld.GetData().GetStr();
+                        if (NStr::EqualNocase(str, "OnlyNearFeatures")) {
+                            forceOnlyNear = true;
+                        }
+                    }
+                }
+            }
         }
     }
 
-    if (isNc) {
+    if (forceOnlyNear) {
+        onlyNearFeats = true;
+    } else if (isNc) {
         nearFeatsSuppress = true;
     } else if (isNgNtNwNz) {
         onlyNearFeats = true;
