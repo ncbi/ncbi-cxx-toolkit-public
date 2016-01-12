@@ -290,10 +290,9 @@ string s_GetSection(const IRegistry& registry, const string& service,
 {
     if (!service.empty()) {
         const string section = "service_" + service;
-        const string service_specific = registry.Get(section, name);
 
-        if (!service_specific.empty()) {
-            return service_specific;
+        if (registry.HasEntry(section, name)) {
+            return registry.Get(section, name);
         }
     }
 
