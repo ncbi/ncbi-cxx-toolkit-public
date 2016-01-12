@@ -45,8 +45,11 @@ public:
     bool Exists();
     ENetStorageRemoveResult Remove();
     const CNetStorageObjectLoc& Locator();
-    string FileTrack_Path_Lock();
-    void FileTrack_Path_Unlock();
+    string FileTrack_Path();
+
+    // TODO: Remove after server switched to FileTrack_Path()
+    string FileTrack_Path_Lock() { return kEmptyStr; }
+    void FileTrack_Path_Unlock() {}
 
 private:
     CDirectNetStorageObject(SNetStorageObjectImpl* impl);
