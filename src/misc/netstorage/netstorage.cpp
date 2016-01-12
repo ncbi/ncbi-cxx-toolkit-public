@@ -131,7 +131,7 @@ struct SDirectNetStorageImpl : public SNetStorageImpl
     CNetStorageObject Open(const string&);
     string Relocate(const string&, TNetStorageFlags);
     bool Exists(const string&);
-    void Remove(const string&);
+    ENetStorageRemoveResult Remove(const string&);
 
     CObj* Create(TNetStorageFlags, const string&, Int8 = 0);
     CJsonNode ReportConfig() const;
@@ -182,11 +182,14 @@ bool SDirectNetStorageImpl::Exists(const string& object_loc)
 }
 
 
-void SDirectNetStorageImpl::Remove(const string& object_loc)
+ENetStorageRemoveResult SDirectNetStorageImpl::Remove(const string& object_loc)
 {
     ISelector::Ptr selector(m_Context->Create(object_loc));
     CRef<CObj> net_file(new CObj(selector));
     net_file->Remove();
+
+    // TODO: Return actual result after it is implemented (CXX-7726)
+    return eNSTRR_Removed;
 }
 
 
@@ -243,7 +246,7 @@ struct SDirectNetStorageByKeyImpl : public SNetStorageByKeyImpl
     CNetStorageObject Open(const string&, TNetStorageFlags = 0);
     string Relocate(const string&, TNetStorageFlags, TNetStorageFlags = 0);
     bool Exists(const string&, TNetStorageFlags = 0);
-    void Remove(const string&, TNetStorageFlags = 0);
+    ENetStorageRemoveResult Remove(const string&, TNetStorageFlags = 0);
 
 private:
     CRef<SContext> m_Context;
@@ -282,11 +285,15 @@ bool SDirectNetStorageByKeyImpl::Exists(const string& key, TNetStorageFlags flag
 }
 
 
-void SDirectNetStorageByKeyImpl::Remove(const string& key, TNetStorageFlags flags)
+ENetStorageRemoveResult SDirectNetStorageByKeyImpl::Remove(const string& key,
+        TNetStorageFlags flags)
 {
     ISelector::Ptr selector(m_Context->Create(flags, key));
     CRef<CObj> net_file(new CObj(selector));
     net_file->Remove();
+
+    // TODO: Return actual result after it is implemented (CXX-7726)
+    return eNSTRR_Removed;
 }
 
 

@@ -167,9 +167,9 @@ bool CNetStorage::Exists(const string& object_loc)
     return m_Impl->Exists(object_loc);
 }
 
-void CNetStorage::Remove(const string& object_loc)
+ENetStorageRemoveResult CNetStorage::Remove(const string& object_loc)
 {
-    m_Impl->Remove(object_loc);
+    return m_Impl->Remove(object_loc);
 }
 
 CNetStorageByKey::CNetStorageByKey(const string& init_string,
@@ -196,9 +196,10 @@ bool CNetStorageByKey::Exists(const string& key, TNetStorageFlags flags)
     return m_Impl->Exists(key, flags);
 }
 
-void CNetStorageByKey::Remove(const string& key, TNetStorageFlags flags)
+ENetStorageRemoveResult CNetStorageByKey::Remove(const string& key,
+        TNetStorageFlags flags)
 {
-    m_Impl->Remove(key, flags);
+    return m_Impl->Remove(key, flags);
 }
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT

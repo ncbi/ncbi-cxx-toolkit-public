@@ -135,7 +135,7 @@ struct NCBI_XCONNECT_EXPORT SNetStorageImpl : public CObject
     virtual string Relocate(const string& object_loc,
             TNetStorageFlags flags) = 0;
     virtual bool Exists(const string& object_loc) = 0;
-    virtual void Remove(const string& object_loc) = 0;
+    virtual ENetStorageRemoveResult Remove(const string& object_loc) = 0;
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     virtual void AllowXSiteConnections() {}
 #endif
@@ -151,7 +151,8 @@ struct NCBI_XCONNECT_EXPORT SNetStorageByKeyImpl : public CObject
     virtual string Relocate(const string& unique_key,
             TNetStorageFlags flags, TNetStorageFlags old_flags = 0) = 0;
     virtual bool Exists(const string& key, TNetStorageFlags flags = 0) = 0;
-    virtual void Remove(const string& key, TNetStorageFlags flags = 0) = 0;
+    virtual ENetStorageRemoveResult Remove(const string& key,
+            TNetStorageFlags flags = 0) = 0;
 };
 
 NCBI_XCONNECT_EXPORT

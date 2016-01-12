@@ -331,6 +331,15 @@ class NCBI_XCONNECT_EXPORT CNetStorageObject
 };
 
 
+/// Result returned by Remove() methods
+///
+/// @see CNetStorage::Remove(), CNetStorageByKey::Remove()
+///
+enum ENetStorageRemoveResult
+{
+    eNSTRR_NotFound,    ///< Removing failed due to object not found
+    eNSTRR_Removed      ///< Object has been removed successfully
+};
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -422,13 +431,12 @@ class NCBI_XCONNECT_EXPORT CNetStorage
     ///
     bool Exists(const string& object_loc);
 
-    /// Remove the object addressed by 'object_loc'. If the object is
-    /// cached, an attempt is made to purge it from the cache as well.
+    /// Remove the object addressed by 'object_loc'.
     ///
     /// @param object_loc
     ///  File to remove
     ///
-    void Remove(const string& object_loc);
+    ENetStorageRemoveResult Remove(const string& object_loc);
 
     /// @deprecated To change flags use Relocate(object_loc, flags) instead.
     NCBI_DEPRECATED
@@ -518,7 +526,7 @@ class NCBI_XCONNECT_EXPORT CNetStorageByKey
     /// @param flags
     ///  Combination of flags that hints on the current object location
     ///
-    void Remove(const string& key, TNetStorageFlags flags = 0);
+    ENetStorageRemoveResult Remove(const string& key, TNetStorageFlags flags = 0);
 };
 
 

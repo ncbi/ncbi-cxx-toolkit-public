@@ -675,14 +675,23 @@ bool SNetStorageRPC::Exists(const string& object_loc)
             request).GetBoolean("Exists");
 }
 
-void SNetStorageRPC::Remove(const string& object_loc)
+ENetStorageRemoveResult SNetStorageRPC::Remove(const string& object_loc)
 {
-    if (x_NetCacheMode(object_loc))
-        return m_NetCacheAPI.Remove(object_loc);
+    if (x_NetCacheMode(object_loc)) {
+        if (m_NetCacheAPI.HasBlob(object_loc)) {
+            m_NetCacheAPI.Remove(object_loc);
+            return eNSTRR_Removed;
+        }
+
+        return eNSTRR_NotFound;
+    }
 
     CJsonNode request(MkObjectRequest("DELETE", object_loc));
 
     Exchange(GetServiceFromLocator(object_loc), request);
+
+    // TODO: Check result after it is implemented (CXX-7727)
+    return eNSTRR_Removed;
 }
 
 class CJsonOverUTTPExecHandler : public INetServerExecHandler
@@ -1258,7 +1267,8 @@ struct SNetStorageByKeyRPC : public SNetStorageByKeyImpl
     virtual string Relocate(const string& unique_key,
             TNetStorageFlags flags, TNetStorageFlags old_flags = 0);
     virtual bool Exists(const string& key, TNetStorageFlags flags = 0);
-    virtual void Remove(const string& key, TNetStorageFlags flags = 0);
+    virtual ENetStorageRemoveResult Remove(const string& key,
+            TNetStorageFlags flags = 0);
 
     CRef<SNetStorageRPC,
             CNetComponentCounterLocker<SNetStorageRPC> > m_NetStorageRPC;
@@ -1306,11 +1316,15 @@ bool SNetStorageByKeyRPC::Exists(const string& key, TNetStorageFlags flags)
             request).GetBoolean("Exists");
 }
 
-void SNetStorageByKeyRPC::Remove(const string& key, TNetStorageFlags flags)
+ENetStorageRemoveResult SNetStorageByKeyRPC::Remove(const string& key,
+        TNetStorageFlags flags)
 {
     CJsonNode request(m_NetStorageRPC->MkObjectRequest("DELETE", key, flags));
 
     m_NetStorageRPC->Exchange(m_NetStorageRPC->m_Service, request);
+
+    // TODO: Check result after it is implemented (CXX-7727)
+    return eNSTRR_Removed;
 }
 
 struct SNetStorageAdminImpl : public CObject
