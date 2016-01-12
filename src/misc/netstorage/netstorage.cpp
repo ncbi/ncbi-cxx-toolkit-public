@@ -65,9 +65,9 @@ bool CDirectNetStorageObject::Exists()
 }
 
 
-void CDirectNetStorageObject::Remove()
+ENetStorageRemoveResult CDirectNetStorageObject::Remove()
 {
-    Impl<CObj>(m_Impl)->Remove();
+    return Impl<CObj>(m_Impl)->Remove();
 }
 
 
@@ -186,10 +186,7 @@ ENetStorageRemoveResult SDirectNetStorageImpl::Remove(const string& object_loc)
 {
     ISelector::Ptr selector(m_Context->Create(object_loc));
     CRef<CObj> net_file(new CObj(selector));
-    net_file->Remove();
-
-    // TODO: Return actual result after it is implemented (CXX-7726)
-    return eNSTRR_Removed;
+    return net_file->Remove();
 }
 
 
@@ -290,10 +287,7 @@ ENetStorageRemoveResult SDirectNetStorageByKeyImpl::Remove(const string& key,
 {
     ISelector::Ptr selector(m_Context->Create(flags, key));
     CRef<CObj> net_file(new CObj(selector));
-    net_file->Remove();
-
-    // TODO: Return actual result after it is implemented (CXX-7726)
-    return eNSTRR_Removed;
+    return net_file->Remove();
 }
 
 

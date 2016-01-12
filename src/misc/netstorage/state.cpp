@@ -183,7 +183,7 @@ public:
     Uint8 GetSizeImpl();
     CNetStorageObjectInfo GetInfoImpl();
     bool ExistsImpl();
-    void RemoveImpl();
+    ENetStorageRemoveResult RemoveImpl();
     void SetExpirationImpl(const CTimeout&);
 
 private:
@@ -207,7 +207,7 @@ public:
     Uint8 GetSizeImpl();
     CNetStorageObjectInfo GetInfoImpl();
     bool ExistsImpl();
-    void RemoveImpl();
+    ENetStorageRemoveResult RemoveImpl();
     void SetExpirationImpl(const CTimeout&);
 
 private:
@@ -233,7 +233,7 @@ public:
     Uint8 GetSizeImpl();
     CNetStorageObjectInfo GetInfoImpl();
     bool ExistsImpl();
-    void RemoveImpl();
+    ENetStorageRemoveResult RemoveImpl();
     void SetExpirationImpl(const CTimeout&);
 
 private:
@@ -412,11 +412,9 @@ bool CNotFound::ExistsImpl()
 }
 
 
-void CNotFound::RemoveImpl()
+ENetStorageRemoveResult CNotFound::RemoveImpl()
 {
-    NCBI_THROW_FMT(CNetStorageException, eNotExists,
-            "NetStorageObject \"" << m_ObjectLoc.GetLocator() <<
-            "\" could not be found in any of the designated locations.");
+    return eNSTRR_NotFound;
 }
 
 
@@ -559,7 +557,7 @@ bool CNetCache::ExistsImpl()
 }
 
 
-void CNetCache::RemoveImpl()
+ENetStorageRemoveResult CNetCache::RemoveImpl()
 {
     LOG_POST(Trace << "Trying to remove from NetCache " << m_ObjectLoc.GetLocator());
 
@@ -568,6 +566,7 @@ void CNetCache::RemoveImpl()
     NC_EXISTS_IMPL;
     m_Client.RemoveBlob(m_ObjectLoc.GetShortUniqueKey(), 0, kEmptyStr,
             nc_cache_name = m_ObjectLoc.GetAppDomain());
+    return eNSTRR_Removed;
 }
 
 
@@ -673,10 +672,11 @@ bool CFileTrack::ExistsImpl()
 }
 
 
-void CFileTrack::RemoveImpl()
+ENetStorageRemoveResult CFileTrack::RemoveImpl()
 {
     LOG_POST(Trace << "Trying to remove from FileTrack " << m_ObjectLoc.GetLocator());
     m_Context->filetrack_api.Remove(m_ObjectLoc);
+    return eNSTRR_Removed;
 }
 
 

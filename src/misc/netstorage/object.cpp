@@ -150,9 +150,9 @@ bool CObj::Exists()
 }
 
 
-void CObj::Remove()
+ENetStorageRemoveResult CObj::Remove()
 {
-    m_Location->RemoveImpl();
+    return m_Location->RemoveImpl();
 }
 
 
@@ -287,9 +287,9 @@ bool CObj::ExistsImpl()
 }
 
 
-void CObj::RemoveImpl()
+ENetStorageRemoveResult CObj::RemoveImpl()
 {
-    return MetaMethod(TCaller<void, &ILocation::RemoveImpl>());
+    return MetaMethod(TCaller<ENetStorageRemoveResult, &ILocation::RemoveImpl>());
 }
 
 

@@ -70,7 +70,7 @@ public:
     const TObjLoc& Locator() const;
     string Relocate(TNetStorageFlags);
     bool Exists();
-    void Remove();
+    ENetStorageRemoveResult Remove();
 
 private:
     ERW_Result ReadImpl(void*, size_t, size_t*);
@@ -87,7 +87,7 @@ private:
     Uint8 GetSizeImpl();
     CNetStorageObjectInfo GetInfoImpl();
     bool ExistsImpl();
-    void RemoveImpl();
+    ENetStorageRemoveResult RemoveImpl();
     void SetExpirationImpl(const CTimeout&);
 
     ISelector::Ptr m_Selector;

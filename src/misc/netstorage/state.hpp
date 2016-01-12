@@ -89,7 +89,7 @@ public:
     virtual Uint8 GetSizeImpl() = 0;
     virtual CNetStorageObjectInfo GetInfoImpl() = 0;
     virtual bool ExistsImpl() = 0;
-    virtual void RemoveImpl() = 0;
+    virtual ENetStorageRemoveResult RemoveImpl() = 0;
     virtual void SetExpirationImpl(const CTimeout&) = 0;
 };
 

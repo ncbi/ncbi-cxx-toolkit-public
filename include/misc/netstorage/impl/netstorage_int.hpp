@@ -43,7 +43,7 @@ public:
     CDirectNetStorageObject(EVoid);
     string Relocate(TNetStorageFlags flags);
     bool Exists();
-    void Remove();
+    ENetStorageRemoveResult Remove();
     const CNetStorageObjectLoc& Locator();
     string FileTrack_Path_Lock();
     void FileTrack_Path_Unlock();
