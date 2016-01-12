@@ -517,6 +517,8 @@ void SNetStorage::SConfig::ParseArg(const string& name, const string& value)
         app_domain = value;
     else if (name == "client")
         client_name = value;
+    else if (name == "server")
+        server = value;
 }
 
 void SNetStorage::SConfig::Validate(const string& init_string)
@@ -570,6 +572,10 @@ void SNetStorage::SConfig::Validate(const string& init_string)
     default: /* eNoCreate */
         break;
     }
+
+    if (server.empty()) {
+        server = service;
+    }
 }
 
 SNetStorageRPC::SNetStorageRPC(const TConfig& config,
@@ -599,7 +605,7 @@ SNetStorageRPC::SNetStorageRPC(const TConfig& config,
     m_Service = new SNetServiceImpl("NetStorageAPI", m_Config.client_name,
             new CNetStorageServerListener(hello));
 
-    m_Service->Init(this, m_Config.service,
+    m_Service->Init(this, m_Config.server,
             NULL, kEmptyStr, s_NetStorageConfigSections);
 }
 

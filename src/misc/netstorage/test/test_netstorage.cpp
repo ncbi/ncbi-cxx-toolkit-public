@@ -60,6 +60,10 @@ NCBI_PARAM_DECL(string, netstorage_api, app_domain);
 NCBI_PARAM_DEF(string, netstorage_api, app_domain, "nst_test");
 typedef NCBI_PARAM_TYPE(netstorage_api, app_domain) TNetStorage_AppDomain;
 
+NCBI_PARAM_DECL(string, netstorage_api, server);
+NCBI_PARAM_DEF(string, netstorage_api, server, kEmptyStr);
+typedef NCBI_PARAM_TYPE(netstorage_api, server) TNetStorage_Server;
+
 NCBI_PARAM_DECL(string, filetrack, site);
 NCBI_PARAM_DEF(string, filetrack, site, "dev");
 typedef NCBI_PARAM_TYPE(filetrack, site) TFileTrack_Site;
@@ -1174,10 +1178,12 @@ inline TNetStorage g_GetNetStorage(const char* mode)
     string nst_service(TNetStorage_ServiceName::GetDefault());
     string nc_service(TNetCache_ServiceName::GetDefault());
     string nst_app_domain(TNetStorage_AppDomain::GetDefault());
+    string nst_server(TNetStorage_Server::GetDefault());
     string init_string(
             "nst="     + nst_service +
             "&nc="     + nc_service +
             "&domain=" + nst_app_domain +
+            "&server=" + nst_server +
             "&client="   APP_NAME +
             mode);
     return CNetStorage(init_string);
@@ -1189,10 +1195,12 @@ inline CNetStorageByKey g_GetNetStorage<CNetStorageByKey>(const char* mode)
     string nst_service(TNetStorage_ServiceName::GetDefault());
     string nc_service(TNetCache_ServiceName::GetDefault());
     string nst_app_domain(TNetStorage_AppDomain::GetDefault());
+    string nst_server(TNetStorage_Server::GetDefault());
     string init_string(
             "nst="     + nst_service +
             "&nc="     + nc_service +
             "&domain=" + nst_app_domain +
+            "&server=" + nst_server +
             "&client="   APP_NAME +
             mode);
     return CNetStorageByKey(init_string);

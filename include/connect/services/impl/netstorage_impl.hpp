@@ -95,6 +95,7 @@ struct NCBI_XCONNECT_EXPORT SNetStorage::SConfig
     string app_domain;
     string client_name;
     string metadata;
+    string server;
     EDefaultStorage default_storage;
 
     SConfig() : default_storage(eUndefined) {}
