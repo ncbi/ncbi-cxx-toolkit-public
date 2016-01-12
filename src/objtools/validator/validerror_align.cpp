@@ -715,7 +715,7 @@ void CValidError_align::x_ValidateStd
         // assert dim == Loc.size()
         if ( dim != stdseg.GetLoc().size() ) {
             string label;
-            stdseg.GetLoc()[0]->GetLabel(&label);
+            stdseg.GetLoc()[0]->GetId()->GetLabel(&label);
             string context;
             size_t bar_pos = NStr::Find(label, "|");
             if ( bar_pos != string::npos ) {
@@ -1507,6 +1507,8 @@ void CValidError_align::x_ValidateSeqLength
             string  bslen_str = NStr::UIntToString(bslen);
             string label;
             loc.GetId()->GetLabel(&label);
+            string context_label;
+            loc.GetId()->GetLabel(&context_label, NULL, CSeq_id::eContent);
 
             if ( from > bslen - 1 ) { 
                 PostErr(eDiag_Error, eErr_SEQ_ALIGN_StartMorethanBiolen,
@@ -1520,16 +1522,18 @@ void CValidError_align::x_ValidateSeqLength
                 
                 PostErr(eDiag_Error, eErr_SEQ_ALIGN_EndMorethanBiolen,
                         "Length: In sequence " + label + ", segment " + NStr::IntToString (seg)
-                        + " (near sequence position " + NStr::IntToString(to)
-                        + "), the alignment claims to contain residue coordinates that are past the end of the sequence.  Either the sequence is too short, or there are extra characters or formatting errors in the alignment",
+                        + " (near sequence position " + NStr::IntToString(from)
+                        + ") context " + context_label +
+                        ", the alignment claims to contain residue coordinates that are past the end of the sequence.  Either the sequence is too short, or there are extra characters or formatting errors in the alignment",
                         align);
             }
 
             if ( loclen > bslen ) {
                 PostErr(eDiag_Error, eErr_SEQ_ALIGN_LenMorethanBiolen,
                         "Length: In sequence " + label + ", segment " + NStr::IntToString (seg)
-                        + " (near sequence position " + NStr::IntToString(to)
-                        + "), the alignment claims to contain residue coordinates that are past the end of the sequence.  Either the sequence is too short, or there are extra characters or formatting errors in the alignment",
+                        + " (near sequence position " + NStr::IntToString(from)
+                        + ") context " + context_label +
+                        ", the alignment claims to contain residue coordinates that are past the end of the sequence.  Either the sequence is too short, or there are extra characters or formatting errors in the alignment",
                         align);
 
             }
