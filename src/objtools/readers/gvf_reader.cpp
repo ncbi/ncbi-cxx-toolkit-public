@@ -136,6 +136,7 @@ bool CGvfReadRecord::AssignFromGff(
 
 //  ----------------------------------------------------------------------------
 bool CGvfReadRecord::x_AssignAttributesFromGff(
+    const string& strGffType,
     const string& strRawAttributes )
 //  ----------------------------------------------------------------------------
 {

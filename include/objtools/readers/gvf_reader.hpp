@@ -71,6 +71,7 @@ public:
 
 protected:
     virtual bool x_AssignAttributesFromGff(
+        const string&,
         const string& );
     void xTraceError(
         EDiagSev,

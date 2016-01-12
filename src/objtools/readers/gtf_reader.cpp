@@ -118,6 +118,7 @@ bool s_AnnotId(
 
 //  ----------------------------------------------------------------------------
 bool CGtfReadRecord::x_AssignAttributesFromGff(
+    const string& strGtfType,
     const string& strRawAttributes )
 //  ----------------------------------------------------------------------------
 {
@@ -127,9 +128,21 @@ bool CGtfReadRecord::x_AssignAttributesFromGff(
 	for ( size_t u=0; u < attributes.size(); ++u ) {
         string strKey;
         string strValue;
-        if ( ! NStr::SplitInTwo( attributes[u], "=", strKey, strValue ) ) {
-            if ( ! NStr::SplitInTwo( attributes[u], " ", strKey, strValue ) ) {
-                return false;
+        string strAttr(attributes[u]);
+        if (!NStr::SplitInTwo(strAttr, "=", strKey, strValue)) {
+            if (!NStr::SplitInTwo(strAttr, " ", strKey, strValue)) {
+                if (strGtfType == "gene") {
+                    m_Attributes["gene_id"] = xNormalizedAttributeValue(strAttr);
+                    continue;
+                }
+                if (strGtfType == "transcript") {
+                    if (!NStr::SplitInTwo(strAttr, ".", strKey, strValue)) {
+                        return false;
+                    }
+                    m_Attributes["gene_id"] = xNormalizedAttributeValue(strKey);
+                    m_Attributes["transcript_id"] = xNormalizedAttributeValue(strAttr);
+                    continue;
+                }
             }
         }
         strKey = xNormalizedAttributeKey( strKey );
@@ -304,7 +317,11 @@ bool CGtfReader::x_UpdateAnnotFeature(
     if ( strType == "intron_CNS" ) {
         return x_UpdateAnnotIntronCns( gff, pAnnot );
     }
-    if ( strType == "exon" ) {
+    if ( strType == "exon"  ||
+         strType == "initial"  ||
+         strType == "internal"  ||
+         strType == "terminal"  ||
+         strType == "single") {
         return x_UpdateAnnotExon( gff, pAnnot );
     }
 

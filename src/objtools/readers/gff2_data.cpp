@@ -344,7 +344,7 @@ bool CGff2Record::AssignFromGff(
 
     columns[8].Copy(m_strAttributes, 0, CTempString::npos);
     
-    return x_AssignAttributesFromGff(columns[8]);
+    return x_AssignAttributesFromGff(m_strType, columns[8]);
 }
 
 //  ----------------------------------------------------------------------------
@@ -515,6 +515,7 @@ bool x_GetNextAttribute(CTempString& input, CTempString& key, CTempString& value
 }
 
 bool CGff2Record::x_AssignAttributesFromGff(
+    const string& strType,
     const string& strRawAttributes )
 //  ----------------------------------------------------------------------------
 {

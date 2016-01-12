@@ -51,6 +51,7 @@ public:
 
 protected:
     bool x_AssignAttributesFromGff(
+        const string&,
         const string& );
 };
 

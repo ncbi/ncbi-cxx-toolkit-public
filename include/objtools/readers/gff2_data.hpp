@@ -133,6 +133,7 @@ public:
     static void TokenizeGFF(vector<CTempStringEx>& columns, const CTempStringEx& line);
 protected:
     virtual bool x_AssignAttributesFromGff(
+        const string&,
         const string& );
 
 	bool x_SplitGffAttributes(
