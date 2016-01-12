@@ -52,7 +52,7 @@ CSeq_inst::~CSeq_inst(void)
 }
 
 
-typedef SStaticPair<CSeq_inst::EMol, string> TMolKey;
+typedef SStaticPair<CSeq_inst::EMol, const char*> TMolKey;
 
 static const TMolKey mol_key_to_str[] = {
     { CSeq_inst::eMol_not_set, " " } ,
@@ -65,7 +65,7 @@ static const TMolKey mol_key_to_str[] = {
 
 
 // dump the array into a map for faster searching
-typedef CStaticPairArrayMap <CSeq_inst::EMol, string> TMolMap;
+typedef CStaticPairArrayMap <CSeq_inst::EMol, const char*> TMolMap;
 DEFINE_STATIC_ARRAY_MAP(TMolMap, sm_EMolKeys, mol_key_to_str);
 
 
