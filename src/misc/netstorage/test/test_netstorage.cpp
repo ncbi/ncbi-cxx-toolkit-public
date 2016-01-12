@@ -1482,9 +1482,9 @@ inline CNetStorageObject Open(TNetStorage& netstorage, const string& object_loc)
 }
 
 template <class TNetStorage>
-inline void Remove(TNetStorage& netstorage, const string& object_loc)
+inline ENetStorageRemoveResult Remove(TNetStorage& netstorage, const string& object_loc)
 {
-    netstorage.Remove(object_loc);
+    return netstorage.Remove(object_loc);
 }
 
 template <class TNetStorageByKey>
@@ -1509,9 +1509,9 @@ inline CNetStorageObject Open(TNetStorageByKey& netstorage, const TKey& key)
 }
 
 template <class TNetStorageByKey>
-inline void Remove(TNetStorageByKey& netstorage, const TKey& key)
+inline ENetStorageRemoveResult Remove(TNetStorageByKey& netstorage, const TKey& key)
 {
-    netstorage.Remove(key.first, key.second);
+    return netstorage.Remove(key.first, key.second);
 }
 
 
@@ -1526,7 +1526,7 @@ void SFixture<TPolicy>::ExistsAndRemoveTests(const TId& id)
     CGetInfo<TLocation>(Ctx("Reading existent object info").Line(__LINE__),
             object, data->Size()).Check(TLoc::loc_info);
     LOG_POST(Trace << "Removing existent object");
-    Remove(netstorage, id);
+    BOOST_CHECK_CTX(Remove(netstorage, id) == eNSTRR_Removed, ctx);
 
     Ctx("Checking removed object").Line(__LINE__);
     BOOST_CHECK_CTX(!Exists(netstorage, id), ctx);
