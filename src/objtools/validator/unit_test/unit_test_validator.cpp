@@ -1822,7 +1822,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadDeltaSeq)
                  expected_errors.push_back(new CExpectedError("good", eDiag_Info, "BadKeyword", "Molinfo.tech barcode without BARCODE keyword"));
              } else if (i == CMolInfo::eTech_tsa) {
                  expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "SeqGapProblem", "TSA Seq_gap NULL"));
-                 expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "ConflictingBiomolTech", "TSA sequence should not be DNA"));
+                 expected_errors.push_back(new CExpectedError("good", eDiag_Error, "ConflictingBiomolTech", "TSA sequence should not be DNA"));
                  expected_errors.push_back(new CExpectedError("good", eDiag_Error, "WrongBiomolForTechnique", "Biomol \"genomic\" is not appropriate for sequences that use the TSA technique."));
              }
              CheckErrors (*eval, expected_errors);
@@ -2130,7 +2130,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ConflictingBiomolTech)
             if (i == CMolInfo::eTech_barcode) {
                 expected_errors.push_back(new CExpectedError("good", eDiag_Info, "BadKeyword", "Molinfo.tech barcode without BARCODE keyword"));
             } else if (i == CMolInfo::eTech_tsa) {
-                expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "ConflictingBiomolTech", "TSA sequence should not be DNA"));            
+                expected_errors.push_back(new CExpectedError("good", eDiag_Error, "ConflictingBiomolTech", "TSA sequence should not be DNA"));            
                 expected_errors.push_back(new CExpectedError("good", eDiag_Error, "WrongBiomolForTechnique", "Biomol \"cRNA\" is not appropriate for sequences that use the TSA technique."));
             }
             eval = validator.Validate(seh, options);
@@ -2142,14 +2142,14 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_ConflictingBiomolTech)
     entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_dna);
     SetTech (entry, CMolInfo::eTech_tsa);
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "InconsistentMolTypeBiomol", "Molecule type (DNA) does not match biomol (RNA)"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "ConflictingBiomolTech", "TSA sequence should not be DNA"));            
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "ConflictingBiomolTech", "TSA sequence should not be DNA"));            
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "WrongBiomolForTechnique", "Biomol \"cRNA\" is not appropriate for sequences that use the TSA technique."));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
 
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "ConflictingBiomolTech", "TSA sequence should not be DNA"));  
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "ConflictingBiomolTech", "TSA sequence should not be DNA"));  
     eval = validator.GetTSAConflictingBiomolTechErrors(seh);
     CheckErrors (*eval, expected_errors);
     eval = validator.GetTSAConflictingBiomolTechErrors(*(seh.GetSeq().GetCompleteBioseq()));

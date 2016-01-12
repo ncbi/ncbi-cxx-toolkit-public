@@ -7969,7 +7969,7 @@ bool CValidError_bioseq::GetTSAConflictingBiomolTechErrors(const CBioseq& seq)
 {
     bool rval = false;
     if (seq.GetInst().GetMol() == CSeq_inst::eMol_dna) {
-        PostErr(eDiag_Warning, eErr_SEQ_INST_ConflictingBiomolTech,
+        PostErr(eDiag_Error, eErr_SEQ_INST_ConflictingBiomolTech,
             "TSA sequence should not be DNA", seq);
         rval = true;
     }
