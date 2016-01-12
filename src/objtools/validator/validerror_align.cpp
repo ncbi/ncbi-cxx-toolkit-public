@@ -1264,7 +1264,7 @@ void CValidError_align::x_ValidateSeqId(const CSeq_align& align)
         if ( id.IsLocal() ) {
             if ( !m_Scope->GetBioseqHandle(id) ) {
                 PostErr(eDiag_Error, eErr_SEQ_ALIGN_SeqIdProblem,
-                    "The sequence corresponding to SeqId " + 
+                    "SeqId: The sequence corresponding to SeqId " + 
                     id.AsFastaString() + " could not be found.",
                     align);
             }
