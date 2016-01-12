@@ -48,17 +48,17 @@ USING_NCBI_SCOPE;
 #define APP_NAME                "test_netstorage"
 
 // Configuration parameters
-NCBI_PARAM_DECL(string, netstorage, service_name);
-NCBI_PARAM_DEF(string, netstorage, service_name, "ST_Test");
-typedef NCBI_PARAM_TYPE(netstorage, service_name) TNetStorage_ServiceName;
+NCBI_PARAM_DECL(string, netstorage_api, service_name);
+NCBI_PARAM_DEF(string, netstorage_api, service_name, "ST_Test");
+typedef NCBI_PARAM_TYPE(netstorage_api, service_name) TNetStorage_ServiceName;
 
-NCBI_PARAM_DECL(string, netcache, service_name);
-NCBI_PARAM_DEF(string, netcache, service_name, "NC_UnitTest");
-typedef NCBI_PARAM_TYPE(netcache, service_name) TNetCache_ServiceName;
+NCBI_PARAM_DECL(string, netcache_api, service_name);
+NCBI_PARAM_DEF(string, netcache_api, service_name, "NC_UnitTest");
+typedef NCBI_PARAM_TYPE(netcache_api, service_name) TNetCache_ServiceName;
 
-NCBI_PARAM_DECL(string, netstorage, app_domain);
-NCBI_PARAM_DEF(string, netstorage, app_domain, "nst_test");
-typedef NCBI_PARAM_TYPE(netstorage, app_domain) TNetStorage_AppDomain;
+NCBI_PARAM_DECL(string, netstorage_api, app_domain);
+NCBI_PARAM_DEF(string, netstorage_api, app_domain, "nst_test");
+typedef NCBI_PARAM_TYPE(netstorage_api, app_domain) TNetStorage_AppDomain;
 
 NCBI_PARAM_DECL(string, filetrack, site);
 NCBI_PARAM_DEF(string, filetrack, site, "dev");
