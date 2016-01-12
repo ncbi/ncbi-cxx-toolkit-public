@@ -29,7 +29,8 @@ Manual testing of the DB connectivity
 4. netstoraged.ini must have an api_key for filetrack, e.g.
 
    [netstorage_api]
-   backend_storage=netcache, filetrack
+   netcache=netcache_api
+   filetrack=filetrack
    [filetrack]
    api_key=bqyMqDEHsQ3foORxBO87FMNhXjv9LxuzF9Rbs4HLuiaf2pHOku7D9jDRxxyiCtp2
 
