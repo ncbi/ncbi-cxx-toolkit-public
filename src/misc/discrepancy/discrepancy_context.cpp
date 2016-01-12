@@ -157,7 +157,7 @@ bool CDiscrepancyContext::IsBacterial()
         count = m_Count_Bioseq;
         const CBioSource* biosrc = GetCurrentBiosource();
         if (biosrc) {
-            CBioSource::EGenome genome = (CBioSource::EGenome) biosrc->GetGenome();
+            //CBioSource::EGenome genome = (CBioSource::EGenome) biosrc->GetGenome();
             if (HasLineage(*biosrc, GetLineage(), "Bacteria")) {
                 result = true;
                 return result;

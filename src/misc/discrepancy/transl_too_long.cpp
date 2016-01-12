@@ -44,7 +44,7 @@ DISCREPANCY_MODULE(transl_too_long);
 
 // TRANSL_TOO_LONG
 
-DISCREPANCY_CASE(TRANSL_TOO_LONG, CSeqFeatData, eAll, "Transl_except longer than 3")
+DISCREPANCY_CASE(TRANSL_TOO_LONG, CSeqFeatData, eDisc, "Transl_except longer than 3")
 {
 
     if (!obj.IsCdregion() || !obj.GetCdregion().IsSetCode_break()) {

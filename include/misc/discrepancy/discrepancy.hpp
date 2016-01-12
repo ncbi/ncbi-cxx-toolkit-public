@@ -104,11 +104,12 @@ protected:
 
 
 enum EGroup {
-    eNormal = 1,
-    eMega = 2,
-    eOncaller = 4,
-    eBig = 8,
-    eAll = (eNormal | eMega | eOncaller | eBig)
+    eNone = 0,
+    eDisc = 1,
+    eOncaller = 2
+    //eOncaller = 4,
+    //eBig = 8,
+    //eAll = (eNormal | eMega | eOncaller | eBig)
 };
 typedef unsigned short TGroup;
 

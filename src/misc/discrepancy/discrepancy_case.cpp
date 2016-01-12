@@ -56,7 +56,7 @@ DISCREPANCY_MODULE(discrepancy_case);
 
 // COUNT_NUCLEOTIDES
 
-DISCREPANCY_CASE(COUNT_NUCLEOTIDES, CSeq_inst, eAll, "Count nucleotide sequences")
+DISCREPANCY_CASE(COUNT_NUCLEOTIDES, CSeq_inst, eOncaller, "Count nucleotide sequences")
 {
     CSeq_inst::TMol mol = obj.GetMol();
     if (mol != CSeq_inst::eMol_dna && mol != CSeq_inst::eMol_rna && mol != CSeq_inst::eMol_na) {
@@ -75,7 +75,7 @@ DISCREPANCY_SUMMARIZE(COUNT_NUCLEOTIDES)
 
 // COUNT_PROTEINS
 
-DISCREPANCY_CASE(COUNT_PROTEINS, CSeq_inst, eAll, "Count Proteins")
+DISCREPANCY_CASE(COUNT_PROTEINS, CSeq_inst, eDisc, "Count Proteins")
 {
     if (obj.GetMol() != CSeq_inst::eMol_aa) {
         return;
@@ -92,7 +92,7 @@ DISCREPANCY_SUMMARIZE(COUNT_PROTEINS)
 
 
 // SHORT_SEQUENCES
-DISCREPANCY_CASE(SHORT_SEQUENCES, CSeq_inst, eAll, "Find Short Sequences")
+DISCREPANCY_CASE(SHORT_SEQUENCES, CSeq_inst, eDisc, "Find Short Sequences")
 {
     if (obj.IsAa()) {
         return;
@@ -150,7 +150,7 @@ void FindNRuns(vector<CRange<TSeqPos> >& runs, const CSeq_data& seq_data, const 
     }
 }
 
-DISCREPANCY_CASE(N_RUNS, CSeq_inst, eAll, "More than 10 Ns in a row")
+DISCREPANCY_CASE(N_RUNS, CSeq_inst, eDisc, "More than 10 Ns in a row")
 {
     if (obj.IsAa() || context.SequenceHasFarPointers()) {
         return;
@@ -195,7 +195,7 @@ DISCREPANCY_SUMMARIZE(N_RUNS)
 
 // PERCENT_N
 
-DISCREPANCY_CASE(PERCENT_N, CSeq_inst, eAll, "More than 5 percent Ns")
+DISCREPANCY_CASE(PERCENT_N, CSeq_inst, eDisc, "More than 5 percent Ns")
 {
     if (obj.IsAa() || context.SequenceHasFarPointers()) {
         return;
@@ -366,7 +366,7 @@ static bool SetOverlapNote(CSeq_feat& feat)
 }
 
 
-DISCREPANCY_CASE(OVERLAPPING_CDS, CSeqFeatData, eNormal, "Overlapping CDs")
+DISCREPANCY_CASE(OVERLAPPING_CDS, CSeqFeatData, eDisc, "Overlapping CDs")
 {
     static const char* kOverlap0 = "[n] coding region[s] overlap[S] another coding region with a similar or identical name.";
     static const char* kOverlap1 = "[n] coding region[s] overlap[S] another coding region with a similar or identical name, but [has] the appropriate note text.";
@@ -438,7 +438,7 @@ DISCREPANCY_AUTOFIX(OVERLAPPING_CDS)
 
 // OVERLAPPING_RRNAS
 
-DISCREPANCY_CASE(OVERLAPPING_RRNAS, CSeq_feat_BY_BIOSEQ, eNormal, "Overlapping rRNAs")
+DISCREPANCY_CASE(OVERLAPPING_RRNAS, CSeq_feat_BY_BIOSEQ, eDisc, "Overlapping rRNAs")
 {
     if (obj.GetData().GetSubtype() != CSeqFeatData::eSubtype_rRNA) {
         return;
@@ -543,7 +543,7 @@ static bool ConvertCDSToMiscFeat(const CSeq_feat& feat, CScope& scope)
 }
 
 
-DISCREPANCY_CASE(CONTAINED_CDS, CSeqFeatData, eNormal, "Contained CDs")
+DISCREPANCY_CASE(CONTAINED_CDS, CSeqFeatData, eDisc, "Contained CDs")
 {
     static const char* kContained = "[n] coding region[s] completely contained in another coding region.";
     static const char* kContainedNote = "[n] coding region[s] completely contained in another coding region, but have note.";
@@ -598,7 +598,7 @@ DISCREPANCY_AUTOFIX(CONTAINED_CDS)
 }
 
 
-DISCREPANCY_CASE(ZERO_BASECOUNT, CSeq_inst, eAll, "Zero Base Counts")
+DISCREPANCY_CASE(ZERO_BASECOUNT, CSeq_inst, eDisc, "Zero Base Counts")
 {
     static const char* kMsg = "[n] sequence[s] [has] a zero basecount for a nucleotide";
     if (obj.IsAa() || context.SequenceHasFarPointers()) {
@@ -626,7 +626,7 @@ DISCREPANCY_SUMMARIZE(ZERO_BASECOUNT)
 }
 
 
-DISCREPANCY_CASE(NO_ANNOTATION, CSeq_inst, eAll, "No annotation")
+DISCREPANCY_CASE(NO_ANNOTATION, CSeq_inst, eDisc|eOncaller, "No annotation")
 {
     if (obj.IsAa() || context.HasFeatures()) {
         return;
@@ -641,7 +641,7 @@ DISCREPANCY_SUMMARIZE(NO_ANNOTATION)
 }
 
 
-DISCREPANCY_CASE(LONG_NO_ANNOTATION, CSeq_inst, eAll, "No annotation for LONG sequence")
+DISCREPANCY_CASE(LONG_NO_ANNOTATION, CSeq_inst, eDisc, "No annotation for LONG sequence")
 {
     const int kSeqLength = 5000;
     if (obj.IsAa() || context.HasFeatures() || !(obj.CanGetLength() && obj.GetLength() > kSeqLength)) {
@@ -657,7 +657,7 @@ DISCREPANCY_SUMMARIZE(LONG_NO_ANNOTATION)
 }
 
 
-DISCREPANCY_CASE(POSSIBLE_LINKER, CSeq_inst, eAll, "Detect linker sequence after poly-A tail")
+DISCREPANCY_CASE(POSSIBLE_LINKER, CSeq_inst, eOncaller, "Detect linker sequence after poly-A tail")
 {
     if (obj.IsAa() ) {
         return;
@@ -724,7 +724,7 @@ DISCREPANCY_SUMMARIZE(POSSIBLE_LINKER)
 }
 
 
-DISCREPANCY_CASE(MISSING_LOCUS_TAGS, CSeqFeatData, eAll, "Missing locus tags")
+DISCREPANCY_CASE(MISSING_LOCUS_TAGS, CSeqFeatData, eDisc, "Missing locus tags")
 {
     if (obj.Which() != CSeqFeatData::e_Gene) {
         return;
@@ -750,7 +750,7 @@ DISCREPANCY_SUMMARIZE(MISSING_LOCUS_TAGS)
 }
 
 
-DISCREPANCY_CASE(INCONSISTENT_LOCUS_TAG_PREFIX, CSeqFeatData, eAll, "Inconsistent locus tag prefix")
+DISCREPANCY_CASE(INCONSISTENT_LOCUS_TAG_PREFIX, CSeqFeatData, eDisc, "Inconsistent locus tag prefix")
 {
     if (obj.Which() != CSeqFeatData::e_Gene) {
         return;
@@ -795,7 +795,7 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_LOCUS_TAG_PREFIX)
 
 static const string kInconsistent_Moltype = "[n] sequences have inconsistent moltypes";
 
-DISCREPANCY_CASE(INCONSISTENT_MOLTYPES, CSeq_inst, eAll, "Inconsistent molecule types")
+DISCREPANCY_CASE(INCONSISTENT_MOLTYPES, CSeq_inst, eOncaller, "Inconsistent molecule types")
 {
     if (obj.IsAa() ) {
         return;
@@ -843,7 +843,7 @@ DISCREPANCY_SUMMARIZE(INCONSISTENT_MOLTYPES)
 }
 
 
-DISCREPANCY_CASE(BAD_LOCUS_TAG_FORMAT, CSeqFeatData, eAll, "Bad locus tag format")
+DISCREPANCY_CASE(BAD_LOCUS_TAG_FORMAT, CSeqFeatData, eDisc, "Bad locus tag format")
 {
     if (obj.Which() != CSeqFeatData::e_Gene) {
         return;
@@ -876,7 +876,7 @@ DISCREPANCY_SUMMARIZE(BAD_LOCUS_TAG_FORMAT)
 
 // QUALITY_SCORES
 
-DISCREPANCY_CASE(QUALITY_SCORES, CSeq_annot, eAll, "Check for quality scores")
+DISCREPANCY_CASE(QUALITY_SCORES, CSeq_annot, eDisc, "Check for quality scores")
 {
     if (!context.GetCurrentBioseq()->IsSetInst() || context.GetCurrentBioseq()->IsAa()) {
         return;

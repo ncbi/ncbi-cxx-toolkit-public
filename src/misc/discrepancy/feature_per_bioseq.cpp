@@ -45,7 +45,7 @@ DISCREPANCY_MODULE(feature_per_bioseq);
 
 // DUPLICATE_GENE_LOCUS
 
-DISCREPANCY_CASE(DUPLICATE_GENE_LOCUS, CSeq_feat_BY_BIOSEQ, eNormal, "Duplicate Gene Locus")
+DISCREPANCY_CASE(DUPLICATE_GENE_LOCUS, CSeq_feat_BY_BIOSEQ, eDisc, "Duplicate Gene Locus")
 {
     if (!obj.GetData().IsGene() || !obj.GetData().GetGene().IsSetLocus()) {
         return;
@@ -79,7 +79,7 @@ DISCREPANCY_SUMMARIZE(DUPLICATE_GENE_LOCUS)
 
 // COUNT_RRNAS
 
-DISCREPANCY_CASE(COUNT_RRNAS, CSeq_feat_BY_BIOSEQ, eNormal, "Count rRNAs")
+DISCREPANCY_CASE(COUNT_RRNAS, CSeq_feat_BY_BIOSEQ, eDisc, "Count rRNAs")
 {
     if (obj.GetData().GetSubtype() != CSeqFeatData::eSubtype_rRNA) {
         return;
@@ -184,7 +184,7 @@ static const DesiredAAData desired_aaList[] = {
 };
 
 
-DISCREPANCY_CASE(COUNT_TRNAS, CSeq_feat_BY_BIOSEQ, eNormal, "Count tRNAs")
+DISCREPANCY_CASE(COUNT_TRNAS, CSeq_feat_BY_BIOSEQ, eDisc, "Count tRNAs")
 {
     if (obj.GetData().GetSubtype() != CSeqFeatData::eSubtype_tRNA) {
         return;
@@ -311,7 +311,7 @@ static CConstRef<CProt_ref> sGetProtRefForFeature(const CSeq_feat& seq_feat, CSc
 }
 
 
-DISCREPANCY_CASE(EC_NUMBER_NOTE, CSeq_feat_BY_BIOSEQ, eAll, "Seq-feat has EC number note")
+DISCREPANCY_CASE(EC_NUMBER_NOTE, CSeq_feat_BY_BIOSEQ, eDisc, "Seq-feat has EC number note")
 {
     bool discrepancy_found = false;
 

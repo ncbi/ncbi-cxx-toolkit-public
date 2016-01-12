@@ -56,7 +56,7 @@ string sFeatureToString(
 
 
 //  ----------------------------------------------------------------------------
-DISCREPANCY_CASE(CDS_TRNA_OVERLAP, CSeq_feat_BY_BIOSEQ, eAll, "CDS tRNA Overlap")
+DISCREPANCY_CASE(CDS_TRNA_OVERLAP, CSeq_feat_BY_BIOSEQ, eDisc, "CDS tRNA Overlap")
 //  ----------------------------------------------------------------------------
 {
     CSeqFeatData::ESubtype subtype = obj.GetData().GetSubtype();

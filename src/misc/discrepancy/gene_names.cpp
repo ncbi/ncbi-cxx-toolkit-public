@@ -63,7 +63,7 @@ static bool Has4Numbers(const string& s)
 };
 
 
-DISCREPANCY_CASE(BAD_GENE_NAME, CSeqFeatData, eAll, "Bad gene name")
+DISCREPANCY_CASE(BAD_GENE_NAME, CSeqFeatData, eDisc, "Bad gene name")
 {
     if (!obj.IsGene() || !obj.GetGene().CanGetLocus()) {
         return;
@@ -105,7 +105,7 @@ DISCREPANCY_AUTOFIX(BAD_GENE_NAME)
 
 
 // BAD_BACTERIAL_GENE_NAME
-DISCREPANCY_CASE(BAD_BACTERIAL_GENE_NAME, CSeqFeatData, eAll, "Bad bacterial gene name")
+DISCREPANCY_CASE(BAD_BACTERIAL_GENE_NAME, CSeqFeatData, eDisc, "Bad bacterial gene name")
 {
     if (!obj.IsGene() || !obj.GetGene().CanGetLocus() || !context.IsBacterial()) {
         return;
@@ -136,7 +136,7 @@ DISCREPANCY_AUTOFIX(BAD_BACTERIAL_GENE_NAME)
 
 
 // EC_NUMBER_ON_UNKNOWN_PROTEIN
-DISCREPANCY_CASE(EC_NUMBER_ON_UNKNOWN_PROTEIN, CSeqFeatData, eAll, "EC number on unknown protein")
+DISCREPANCY_CASE(EC_NUMBER_ON_UNKNOWN_PROTEIN, CSeqFeatData, eDisc, "EC number on unknown protein")
 {
     if (!obj.IsProt() || !obj.GetProt().CanGetName() || !obj.GetProt().CanGetEc() || obj.GetProt().GetEc().empty()) {
         return;
@@ -177,7 +177,7 @@ DISCREPANCY_AUTOFIX(EC_NUMBER_ON_UNKNOWN_PROTEIN)
 
 
 // SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME
-DISCREPANCY_CASE(SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME, CSeqFeatData, eAll, "Hypothetical CDS with gene names")
+DISCREPANCY_CASE(SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME, CSeqFeatData, eDisc, "Hypothetical CDS with gene names")
 {
     if (!obj.IsCdregion() || !context.GetCurrentSeq_feat()->CanGetProduct()) {
         return;

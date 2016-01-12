@@ -55,7 +55,7 @@ DISCREPANCY_MODULE(sesame_street);
 // Some animals are more equal than others...
 
 
-DISCREPANCY_CASE(SOURCE_QUALS, CBioSource, eAll, "Some animals are more equal than others...")
+DISCREPANCY_CASE(SOURCE_QUALS, CBioSource, eNone, "Some animals are more equal than others...")
 {
     CRef<CDiscrepancyObject> disc_obj(new CDiscrepancyObject(context.GetCurrentBioseq(), context.GetScope(), context.GetFile(), context.GetKeepRef()));
     m_Objs["all"].Add(*disc_obj);

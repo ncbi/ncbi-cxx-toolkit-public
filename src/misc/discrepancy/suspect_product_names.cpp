@@ -5335,7 +5335,7 @@ static string GetRuleMatch(const CSuspect_rule& rule)
 ///////////////////////////////////// SUSPECT_PRODUCT_NAMES
 
 
-DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eNormal, "Suspect Product Name")
+DISCREPANCY_CASE(SUSPECT_PRODUCT_NAMES, CSeqFeatData, eDisc|eOncaller, "Suspect Product Name")
 {
     if (obj.GetSubtype() != CSeqFeatData::eSubtype_prot) {
         return;
@@ -5447,7 +5447,7 @@ DISCREPANCY_AUTOFIX(SUSPECT_PRODUCT_NAMES)
 ///////////////////////////////////// TEST_ORGANELLE_PRODUCTS
 
 
-DISCREPANCY_CASE(TEST_ORGANELLE_PRODUCTS, CSeqFeatData, eNormal, "Organelle products on non-organelle sequence: on when neither bacteria nor virus")
+DISCREPANCY_CASE(TEST_ORGANELLE_PRODUCTS, CSeqFeatData, eOncaller, "Organelle products on non-organelle sequence: on when neither bacteria nor virus")
 {
     if (obj.GetSubtype() != CSeqFeatData::eSubtype_prot) {
         return;
