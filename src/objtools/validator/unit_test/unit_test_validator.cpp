@@ -8710,6 +8710,7 @@ BOOST_AUTO_TEST_CASE(Test_Generic_MissingPubInfo)
         expected_errors.push_back(new CExpectedError(*id_it, sev, "MissingPubInfo",
                                   "Submission citation affiliation has no country"));
         expected_errors[0]->SetAccession("");
+        expected_errors[0]->SetSeverity(eDiag_Warning);
         eval = validator.Validate(*submit, &scope, options);
         CheckErrors (*eval, expected_errors);
 
@@ -8758,7 +8759,9 @@ BOOST_AUTO_TEST_CASE(Test_Generic_MissingPubInfo)
         pub->SetSub().SetAuthors().SetAffil().SetStd().ResetCountry();
         pub->SetSub().SetAuthors().SetAffil().SetStd().ResetSub();
         pub->SetSub().SetAuthors().SetAffil().SetStd().ResetAffil();
-        expected_errors.push_back(new CExpectedError(*id_it, sev2, "MissingPubInfo",
+        expected_errors.push_back(new CExpectedError(*id_it, 
+                NStr::StartsWith(*id_it, "NC_") ? eDiag_Warning : eDiag_Critical,
+                                  "MissingPubInfo",
                                   "Submission citation has no affiliation"));
         eval = validator.Validate(seh, options);
         CheckErrors (*eval, expected_errors);
@@ -17322,7 +17325,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_SeqIdProblem)
     expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "FastaLike", 
       "Fasta: This may be a fasta-like alignment for SeqId: lcl|good1 in the context of good1"));
     expected_errors.push_back(new CExpectedError("good1", eDiag_Error, "SeqIdProblem", 
-                              "The sequence corresponding to SeqId lcl|good4 could not be found."));
+                              "SeqId: The sequence corresponding to SeqId lcl|good4 could not be found."));
     expected_errors.push_back(new CExpectedError("good1", eDiag_Warning, "PercentIdentity", 
       "PercentIdentity: This alignment has a percent identity of 0%"));
     options |= CValidator::eVal_val_align | CValidator::eVal_remote_fetch;
@@ -17840,7 +17843,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_GRAPH_GraphSeqLocLen)
                               "1 gap bases have positive score value"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "GraphBioseqLen", 
                               "SeqGraph (25) and Bioseq (24) length mismatch"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "GraphSeqLocLen", 
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "GraphSeqLocLen", 
                               "SeqGraph (13) and SeqLoc (12) length mismatch"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
