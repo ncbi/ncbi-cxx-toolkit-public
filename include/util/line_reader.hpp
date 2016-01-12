@@ -72,6 +72,8 @@ public:
     virtual bool AtEOF(void) const = 0;
 
     /// Return the next character to be read without consuming it.
+    /// It is not guaranteed that any implementation of this function 
+    /// will stop reading at EOF, so you should check for EOF yourself
     virtual char PeekChar(void) const = 0;
 
     /// Make a line available.  MUST be called even for the first line;

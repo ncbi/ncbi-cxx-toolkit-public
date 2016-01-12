@@ -106,7 +106,12 @@ bool CStreamLineReader::AtEOF(void) const
 
 char CStreamLineReader::PeekChar(void) const
 {
-    return m_UngetLine? *m_Line.begin(): (char)m_Stream->peek();
+    if (m_UngetLine) {
+        _ASSERT(!m_Line.empty());
+        return *m_Line.begin();
+    } else {
+        return (char)m_Stream->peek();
+    }
 }
 
 
@@ -260,6 +265,7 @@ bool CMemoryLineReader::AtEOF(void) const
 
 char CMemoryLineReader::PeekChar(void) const
 {
+    _ASSERT(!AtEOF() && m_Line.begin());
     return *m_Pos;
 }
 
@@ -377,7 +383,13 @@ bool CBufferedLineReader::AtEOF(void) const
 
 char CBufferedLineReader::PeekChar(void) const
 {
-    return m_UngetLine? *m_Line.begin(): *m_Pos;
+    if (m_UngetLine) {
+        _ASSERT(m_Line.begin());
+        return *m_Line.begin();
+    } else {
+        _ASSERT(!AtEOF());
+        return *m_Pos;
+    }
 }
 
 
