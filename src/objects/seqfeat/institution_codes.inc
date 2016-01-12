@@ -5549,6 +5549,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "SM<MYS>	s	Sarawak Museum",
 "SM<USA-FL>	s	Sanford Museum Collections",
 "SM<USA-TX>	s	Strecker Museum, Baylor University",
+"SMAG	s	Southland Museum and Art Gallery",
 "SMAO	s	Simao Forestry Bureau",
 "SMB	s	Marianske Muzeum, Natural History Department",
 "SMBB	s	Stredoslovenske muzeum",
