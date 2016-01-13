@@ -3498,8 +3498,8 @@ BOOST_AUTO_TEST_CASE(Test_OverlappingDeltaRange)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "OverlappingDeltaRange", "Overlapping delta range 6-16 and 1-11 on a Bioseq gb|AY123456"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "OverlappingDeltaRange", "Overlapping delta range 26-36 and 21-31 on a Bioseq gb|AY123456"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "OverlappingDeltaRange", "Overlapping delta range 6-16 and 1-11 on a Bioseq gb|AY123456|"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "OverlappingDeltaRange", "Overlapping delta range 26-36 and 21-31 on a Bioseq gb|AY123456|"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 

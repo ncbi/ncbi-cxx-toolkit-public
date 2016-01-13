@@ -2177,7 +2177,11 @@ string CSubSource::ValidateLatLonCountry (const string& input_countryname, strin
         }
     } else if (!NStr::IsBlank(id->GetGuessCountry())) {
         if (NStr::IsBlank(id->GetClaimedFull())) {
-            errcode = eLatLonCountryErr_Country;
+            if (NStr::Equal(id->GetGuessCountry(), country) && !NStr::Equal(id->GetGuessProvince(), province)) {
+                errcode = eLatLonCountryErr_State;
+            } else {
+                errcode = eLatLonCountryErr_Country;
+            }
             error = "Lat_lon '" + lat_lon + "' maps to '" + id->GetFullGuess() + "' instead of '"
                         + countryname + "'";
         } else {

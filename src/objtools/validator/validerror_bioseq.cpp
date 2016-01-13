@@ -2924,9 +2924,11 @@ void CValidError_bioseq::ValidateRawConst(
                         if (!NStr::StartsWith (cds_seq, "NNN")) {
                             leading_x = false;
                         }
-                        string lastcodon = cds_seq.substr(cds_seq.length() - 3);
-                        if (!NStr::StartsWith (lastcodon, "NNN")) {
-                            trailingX = 0;
+                        if (cds_seq.length() >= 3) {
+                            string lastcodon = cds_seq.substr(cds_seq.length() - 3);
+                            if (!NStr::StartsWith(lastcodon, "NNN")) {
+                                trailingX = 0;
+                            }
                         }
                     }
                 }
@@ -3743,8 +3745,7 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
         while (it2 != delta_locs.end()) {
             if ((*it1)->GetId()->Compare(*(*it2)->GetId()) == CSeq_id::e_YES
                 && Compare (**it1, **it2, m_Scope, fCompareOverlapping) != eNoOverlap) {
-                string seq_label;
-                (*it1)->GetId()->GetLabel(&seq_label);
+                string seq_label = (*it1)->GetId()->AsFastaString();
                 PostErr (eDiag_Warning, eErr_SEQ_INST_OverlappingDeltaRange,
                          "Overlapping delta range " + NStr::IntToString((*it2)->GetStart(eExtreme_Positional) + 1)
                          + "-" + NStr::IntToString((*it2)->GetStop(eExtreme_Positional) + 1)
