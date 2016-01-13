@@ -607,6 +607,12 @@ bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
             return true;
         }
     } else if (m_MainFeat.GetData().Which() == CSeqFeatData::e_Rna) {
+        product_name = m_MainFeat.GetData().GetRna().GetRnaProductName();
+        if (NStr::IsBlank(product_name) && m_MainFeat.IsSetComment()) {
+            product_name = m_MainFeat.GetComment();
+        }
+        return true;
+#if 0
         if (subtype == CSeqFeatData::eSubtype_tRNA) {
             string label;
 
@@ -639,6 +645,7 @@ bool CAutoDefFeatureClause::x_GetProductName(string &product_name)
             }
             return true;
         }
+#endif
     } else {
         string label;
         

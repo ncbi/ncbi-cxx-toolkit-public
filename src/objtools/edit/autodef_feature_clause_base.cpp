@@ -1506,21 +1506,6 @@ void CAutoDefFeatureClause_Base::RemoveBioseqPrecursorRNAs()
 }
 
 
-void CAutoDefFeatureClause_Base::RemoveTransSplicedLeaders()
-{
-    for (unsigned int k = 0; k < m_ClauseList.size(); k++) {
-        unsigned int subtype = m_ClauseList[k]->GetMainFeatureSubtype();
-        if ((subtype == CSeqFeatData::eSubtype_otherRNA
-             || subtype == CSeqFeatData::eSubtype_misc_RNA)
-            && NStr::Find(m_ClauseList[k]->GetDescription(), "trans-spliced leader") != NCBI_NS_STD::string::npos) {
-            m_ClauseList[k]->MarkForDeletion();
-        } else {
-            m_ClauseList[k]->RemoveTransSplicedLeaders();
-        }
-    }
-}
-
-
 void CAutoDefFeatureClause_Base::RemoveuORFs()
 {
     for (unsigned int k = 0; k < m_ClauseList.size(); k++) {

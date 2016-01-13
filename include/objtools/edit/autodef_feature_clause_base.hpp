@@ -120,7 +120,6 @@ public:
     void GroupConsecutiveExons(CBioseq_Handle bh);
     void GroupSegmentedCDSs(bool suppress_allele);
     void RemoveGenesMentionedElsewhere();
-    void RemoveTransSplicedLeaders();
     void RemoveuORFs();
     void RemoveOptionalMobileElements();
     void ConsolidateRepeatedClauses(bool suppress_allele);

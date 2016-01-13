@@ -948,6 +948,7 @@ BOOST_AUTO_TEST_CASE(Test_GB_3488)
     unit_test_util::SetTaxname(seq, "Cypripedium japonicum");
     CRef<objects::CSeq_feat> rna = unit_test_util::AddMiscFeature(seq);
     rna->SetData().SetRna().SetType(CRNA_ref::eType_rRNA);
+    rna->ResetComment();
     AddTitle(seq, "Cypripedium japonicum gene, complete sequence.");
     CheckDeflineMatches(seq, true);
 
@@ -1714,6 +1715,21 @@ BOOST_AUTO_TEST_CASE(Test_IsUsableInDefline)
     BOOST_CHECK_EQUAL(CAutoDefModifierCombo::IsUsableInDefline(CSubSource::eSubtype_collected_by), false);
     BOOST_CHECK_EQUAL(CAutoDefModifierCombo::IsUsableInDefline(COrgMod::eSubtype_strain), true);
     BOOST_CHECK_EQUAL(CAutoDefModifierCombo::IsUsableInDefline(COrgMod::eSubtype_variety), false);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_GB_5493)
+{
+    // first, try with lonely optional
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    CRef<objects::CSeq_feat> miscrna = unit_test_util::AddMiscFeature(entry);
+    miscrna->SetData().SetRna().SetType(CRNA_ref::eType_other);
+    string remainder;
+    miscrna->SetData().SetRna().SetRnaProductName("trans-spliced leader sequence SL", remainder);
+    miscrna->SetComment("mini-exon");
+    AddTitle(entry, "Sebaea microphylla trans-spliced leader sequence SL gene, complete sequence.");
+
+    CheckDeflineMatches(entry);
 }
 
 

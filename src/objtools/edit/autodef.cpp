@@ -789,10 +789,6 @@ string CAutoDef::x_GetFeatureClauses(CBioseq_Handle bh)
     main_clause.CountUnknownGenes();
     main_clause.RemoveDeletedSubclauses();
     
-    // remove miscRNA and otherRNA features that are trans-spliced leaders
-    main_clause.RemoveTransSplicedLeaders();
-    main_clause.RemoveDeletedSubclauses();
-    
     x_RemoveOptionalFeatures(&main_clause, bh);
     
     // if a gene is listed as part of another clause, they do not need
