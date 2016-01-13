@@ -1463,7 +1463,7 @@ CIgBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 
     arg_desc.AddDefaultKey(kArgGLDomainSystem, "domain_system",
                             "Domain system to be used for segment annotation",
-                            CArgDescriptions::eString, "kabat");
+                            CArgDescriptions::eString, "imgt");
     arg_desc.SetConstraint(kArgGLDomainSystem, &(*new CArgAllow_Strings, "kabat", "imgt"));
 
     arg_desc.AddDefaultKey(kArgIgSeqType, "sequence_type",
