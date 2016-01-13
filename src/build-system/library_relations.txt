@@ -81,7 +81,6 @@ an_core needs gc_util_sdbapi
 an_core needs gpinit_bag_util
 an_core needs gpipe_an_base
 an_core needs gpipe_kmer
-an_core needs gpipe_val
 an_core needs gpipe_xmlutil
 an_core needs ncbi_xcache_netcache
 an_core needs pathogen_connection
@@ -367,6 +366,9 @@ generic_db_utils_cgi includes generic_db_utils
 genesbyloc needs xser
 genome_collection needs $(SEQ_LIBS)
 genome_collection needs pub
+genome_size needs $(COMPRESS_LIBS)
+genome_size needs xconnect
+genome_size needs xutil
 genomic_repeat_region needs $(SOBJMGR_LIBS)
 gensvc_g needs xser
 geoauth needs GMA
@@ -505,6 +507,7 @@ gpipe_sqlite needs sqlitewrapp
 gpipe_sqlite needs xconnect
 gpipe_sqlite needs xregexp
 gpipe_standalone needs gpipe_an_base
+gpipe_tree needs gpipe_property
 gpipe_tree needs xalgophytree
 gpipe_type_verifier needs gpipe_asn_cleanup
 gpipe_type_verifier needs xalgognomon
