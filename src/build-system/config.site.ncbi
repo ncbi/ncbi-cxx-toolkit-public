@@ -298,12 +298,7 @@ esac
 
 case "$ncbi_platform" in
     Linux32    ) : ${SYBASE_PATH=/export/home/sybase/clients/12.5-32bit} ;;
-    Linux64    )
-        case "$with_sybase_new" in
-            yes) SYBASE_PATH=/opt/sybase/clients/15.7-SP122-64bit ;;
-            *  ) : ${SYBASE_PATH=/opt/sybase/clients/12.5-64bit} ;;
-        esac
-        ;;
+    Linux64    ) : ${SYBASE_PATH=/opt/sybase/clients/15.7-SP122-64bit}   ;;
     SunOSSparc ) : ${SYBASE_PATH=/netopt/Sybase/clients/12.0-EBF9209}    ;;
     SunOSx86   ) : ${SYBASE_PATH=/netopt/Sybase/clients/12.5.1}          ;;
 esac
