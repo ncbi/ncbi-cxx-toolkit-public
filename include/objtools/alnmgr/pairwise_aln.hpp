@@ -214,16 +214,32 @@ public:
     }
 
     /// Absolute direction of the first sequence.
+    /// Empty and mixed-strand alignments are iterated in direct order.
     bool IsFirstDirect(void) const
     {
         return m_Direct;
     }
 
 private:
+    friend class CSparse_CI;
+    // Iterate the selected range on the first sequence, allow to force
+    // direct order - to be used by CSparse_CI when one of the rows has
+    // mixed strand while the other one has single.
+    CPairwise_CI(const CPairwiseAln& pairwise,
+                 const TSignedRange& range,
+                 bool force_direct)
+        : m_Aln(&pairwise),
+          m_Direct(force_direct),
+          m_Range(range),
+          m_Unaligned(false)
+    {
+        x_Init(force_direct);
+    }
+
     typedef CPairwiseAln::const_iterator TIterator;
     typedef pair<TIterator, bool> TCheckedIterator;
 
-    void x_Init(void);
+    void x_Init(bool force_direct = false);
     void x_InitSegment(void);
 
     CConstRef<CPairwiseAln> m_Aln;

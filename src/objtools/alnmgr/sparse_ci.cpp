@@ -76,6 +76,15 @@ const CSparseSegment::TSignedRange& CSparseSegment::GetRange(void) const
 
 void CSparse_CI::x_InitSegment(void)
 {
+    // Update anchor and row directions - mixed strand alignments are now allowed.
+    // If an iterator is not valid, use the last known direction.
+    if ( m_AnchorIt ) {
+        m_AnchorDirect = m_AnchorIt.IsFirstDirect();
+    }
+    if ( m_RowIt ) {
+        m_RowDirect = m_RowIt.IsDirect();
+    }
+
     bool anchor_gap = !m_AnchorIt  ||
         m_AnchorIt.GetSegType() == CPairwise_CI::eGap;
     bool row_gap = !m_RowIt  ||
@@ -245,12 +254,12 @@ void CSparse_CI::x_InitIterator(void)
     const CPairwiseAln& anchor_pw =
         *m_Aln->GetPairwiseAlns()[m_Aln->GetAnchorRow()];
     const CPairwiseAln& pw = *m_Aln->GetPairwiseAlns()[m_Row];
-    m_AnchorIt = CPairwise_CI(anchor_pw, m_TotalRange);
-    m_RowIt = CPairwise_CI(pw, m_TotalRange);
-    // Pairwise alignments in CSparseAln can not have mixed directions.
-    // Remember the first one and use for all segments.
-    m_AnchorDirect = m_AnchorIt ? m_AnchorIt.IsFirstDirect() : true;
-    m_RowDirect = m_RowIt ? m_RowIt.IsDirect() : true;
+    // If at least one of the rows has mixed strand, force all iterators to be direct.
+    bool mixed_strand =
+        (anchor_pw.GetFlags() & CPairwiseAln::fMixedDir) == CPairwiseAln::fMixedDir ||
+        (pw.GetFlags() & CPairwiseAln::fMixedDir) == CPairwiseAln::fMixedDir;
+    m_AnchorIt = CPairwise_CI(anchor_pw, m_TotalRange, mixed_strand);
+    m_RowIt = CPairwise_CI(pw, m_TotalRange, mixed_strand);
     if ( m_AnchorIt ) {
         m_NextAnchorRg = m_AnchorIt.GetFirstRange();
     }

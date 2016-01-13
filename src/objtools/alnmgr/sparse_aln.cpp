@@ -213,7 +213,6 @@ void CSparseAln::x_Build(const CAnchoredAln& src_align)
         _ASSERT( !m_Aln->GetPairwiseAlns()[row]->IsSet(TAlnRngColl::fInvalid) );
         _ASSERT( !m_Aln->GetPairwiseAlns()[row]->IsSet(TAlnRngColl::fUnsorted) );
         _ASSERT( !m_Aln->GetPairwiseAlns()[row]->IsSet(TAlnRngColl::fOverlap) );
-        _ASSERT( !m_Aln->GetPairwiseAlns()[row]->IsSet(TAlnRngColl::fMixedDir) );
 
         /// Determine m_FirstRange
         if (row == 0) {

@@ -77,10 +77,10 @@ CPairwise_CI& CPairwise_CI::operator++(void)
 }
 
 
-void CPairwise_CI::x_Init(void)
+void CPairwise_CI::x_Init(bool force_direct)
 {
     // Mixed direction and empty alignments are iterated in direct order.
-    m_Direct =
+    m_Direct = force_direct ||
         ((m_Aln->GetFlags() & CPairwiseAln::fMixedDir) == CPairwiseAln::fMixedDir)  ||
         m_Aln->empty()  ||
         m_Aln->begin()->IsFirstDirect();
@@ -132,17 +132,31 @@ void CPairwise_CI::x_InitSegment(void)
     }
     else {
         // Gap
-        _ASSERT(m_It->IsDirect() == m_GapIt->IsDirect());
+        TSignedSeqPos it_second_from = m_It->GetSecondFrom();
+        TSignedSeqPos it_second_to = m_It->GetSecondToOpen();
+        TSignedSeqPos gap_second_from = m_GapIt->GetSecondFrom();
+        TSignedSeqPos gap_second_to = m_GapIt->GetSecondToOpen();
         if ( m_Direct ) {
-            m_FirstRg.SetOpen(m_GapIt->GetFirstToOpen(),
-                m_It->GetFirstFrom());
+            m_FirstRg.SetOpen(m_GapIt->GetFirstToOpen(), m_It->GetFirstFrom());
             if ( m_It->IsDirect() ) {
-                m_SecondRg.SetOpen(m_GapIt->GetSecondToOpen(),
-                    m_It->GetSecondFrom());
+                if ( m_GapIt->IsDirect() ) {
+                    m_SecondRg.SetOpen(gap_second_to, it_second_from);
+                }
+                else {
+                    TSignedSeqPos from = m_GapIt->GetSecondFrom();
+                    TSignedSeqPos to = m_It->GetSecondFrom();
+                    m_SecondRg.SetOpen(min(gap_second_from, it_second_from),
+                        max(gap_second_from, it_second_from));
+                }
             }
             else {
-                m_SecondRg.SetOpen(m_It->GetSecondToOpen(),
-                    m_GapIt->GetSecondFrom());
+                if ( !m_GapIt->IsDirect() ) {
+                    m_SecondRg.SetOpen(it_second_to, gap_second_from);
+                }
+                else {
+                    m_SecondRg.SetOpen(min(gap_second_to, it_second_to),
+                        max(gap_second_to, it_second_to));
+                }
             }
             if ( !m_Unaligned ) {
                 if (!m_FirstRg.Empty()  &&  !m_SecondRg.Empty()) {
@@ -162,12 +176,22 @@ void CPairwise_CI::x_InitSegment(void)
         else {
             m_FirstRg.SetOpen(m_It->GetFirstToOpen(), m_GapIt->GetFirstFrom());
             if ( m_It->IsDirect() ) {
-                m_SecondRg.SetOpen(m_It->GetSecondToOpen(),
-                    m_GapIt->GetSecondFrom());
+                if ( m_GapIt->IsDirect() ) {
+                    m_SecondRg.SetOpen(it_second_to, gap_second_from);
+                }
+                else {
+                    m_SecondRg.SetOpen(min(it_second_to, gap_second_to),
+                        max(it_second_to, gap_second_to));
+                }
             }
             else {
-                m_SecondRg.SetOpen(m_GapIt->GetSecondToOpen(),
-                    m_It->GetSecondFrom());
+                if ( !m_GapIt->IsDirect() ) {
+                    m_SecondRg.SetOpen(gap_second_to, it_second_from);
+                }
+                else {
+                    m_SecondRg.SetOpen(min(it_second_from, gap_second_from),
+                        max(it_second_from, gap_second_from));
+                }
             }
             if ( !m_Unaligned ) {
                 if ( !m_FirstRg.Empty()  &&  !m_SecondRg.Empty()) {
