@@ -44,6 +44,7 @@
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/mapped_feat.hpp>
 #include <objmgr/util/feature.hpp>
+#include <objmgr/annot_ci.hpp>
 
 #include <objtools/cleanup/cleanup.hpp>
 #include <objtools/format/flat_file_generator.hpp>
@@ -180,7 +181,11 @@ void CFlatFileGenerator::Generate
     bool forceOnlyNear = false;
 
     for (CBioseq_CI bi(entry); bi; ++bi) {
-        FOR_EACH_SEQID_ON_BIOSEQ (it, *(bi->GetCompleteBioseq())) {
+        const CBioseq_Handle& bh = *bi;
+  
+        const CBioseq& bsp = *(bi->GetCompleteBioseq());
+
+        FOR_EACH_SEQID_ON_BIOSEQ (it, bsp) {
             const CSeq_id& sid = **it;
             switch (sid.Which()) {
                 case CSeq_id::e_Genbank:
@@ -211,31 +216,7 @@ void CFlatFileGenerator::Generate
             }
         }
 
-        FOR_EACH_SEQANNOT_ON_BIOSEQ (annot_it, *(bi->GetCompleteBioseq())) {
-            FOR_EACH_SEQFEAT_ON_SEQANNOT (feat_it, **annot_it) {
-                const CSeq_feat& sft = **feat_it;
-                const CSeqFeatData& data = sft.GetData();
-                CSeqFeatData::ESubtype subtype = data.GetSubtype();
-                if (isNc) {
-                    switch (subtype) {
-                        case CSeqFeatData::eSubtype_centromere:
-                        case CSeqFeatData::eSubtype_telomere:
-                        case CSeqFeatData::eSubtype_rep_origin:
-                            break;
-                        default:
-                            hasLocalFeat = true;
-                            break;
-                    }
-                } else {
-                    hasLocalFeat = true;
-                }
-            }
-            if (hasLocalFeat) {
-              break;
-            }
-        }
-
-        FOR_EACH_SEQDESC_ON_BIOSEQ (desc_it, *(bi->GetCompleteBioseq())) {
+        FOR_EACH_SEQDESC_ON_BIOSEQ (desc_it, bsp) {
             const CSeqdesc& desc = **desc_it;
             if (! desc.IsUser()) continue;
             if (! desc.GetUser().IsSetType()) continue;
@@ -258,6 +239,34 @@ void CFlatFileGenerator::Generate
                 }
             }
         }
+
+        CSeq_annot_CI annot_ci(bh);
+        for (; annot_ci; ++annot_ci) {
+              const CSeq_annot_Handle& annt = *annot_ci;
+              CConstRef<CSeq_annot> pAnnot = annt.GetCompleteSeq_annot();
+              const CSeq_annot& antx = *pAnnot;
+              FOR_EACH_SEQFEAT_ON_SEQANNOT (feat_it, antx) {
+                  const CSeq_feat& sft = **feat_it;
+                  const CSeqFeatData& data = sft.GetData();
+                  CSeqFeatData::ESubtype subtype = data.GetSubtype();
+                  if (isNc) {
+                      switch (subtype) {
+                          case CSeqFeatData::eSubtype_centromere:
+                          case CSeqFeatData::eSubtype_telomere:
+                          case CSeqFeatData::eSubtype_rep_origin:
+                              break;
+                          default:
+                              hasLocalFeat = true;
+                              break;
+                      }
+                  } else {
+                      hasLocalFeat = true;
+                  }
+              }
+              if (hasLocalFeat) {
+                break;
+              }
+         }
     }
 
     if (forceOnlyNear) {
