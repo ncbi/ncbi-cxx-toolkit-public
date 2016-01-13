@@ -2315,9 +2315,10 @@ CNetStorageHandler::x_ProcessDelete(
                     direct_object.Locator().GetUniqueKey(), m_Timing);
     }
 
-    CNSTPreciseTime     start = CNSTPreciseTime::Current();
+    ENetStorageRemoveResult     result = eNSTRR_NotFound;
+    CNSTPreciseTime             start = CNSTPreciseTime::Current();
     try {
-        direct_object.Remove();
+        result = direct_object.Remove();
         if (m_Server->IsLogTimingNSTAPI())
             m_Timing.Append("NetStorageAPI Remove", start);
     } catch (...) {
@@ -2329,6 +2330,11 @@ CNetStorageHandler::x_ProcessDelete(
     m_Server->GetClientRegistry().AddObjectsDeleted(m_Client, 1);
 
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
+
+    // Explicitly tell if the object:
+    // - was not found in the backend storage
+    // - was found and deleted in the backend storage
+    reply.SetBoolean("NotFound", result == eNSTRR_NotFound);
 
     if (need_meta_db_update && status == -1) {
         // Stored procedure return -1 if the object is not found in the meta DB
