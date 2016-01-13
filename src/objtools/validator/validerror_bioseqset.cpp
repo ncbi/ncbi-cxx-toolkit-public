@@ -897,9 +897,9 @@ void CValidError_bioseqset::ValidateGenProdSet(
                     }
                 } // if (cdna == 0)
             } else {
-                PostErr(eDiag_Error,
+                PostErr(eDiag_Warning,
                     eErr_SEQ_PKG_GenomicProductPackagingProblem,
-                    "Product of mRNA feature (?) not packaged in"
+                    "Product of mRNA feature (?) not packaged in "
                     "genomic product set", seq);
             }
         }

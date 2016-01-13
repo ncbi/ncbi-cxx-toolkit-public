@@ -17368,7 +17368,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_DensegLenStart)
     STANDARD_SETUP_WITH_DATABASE
 
     expected_errors.push_back(new CExpectedError("good1", eDiag_Error, "DensegLenStart", 
-             "Start/Length: There is a problem with sequence lcl|good2, in segment 2 (near sequence position 0), context lcl|good2: the segment is too long or short or the next segment has an incorrect start position"));
+             "Start/Length: There is a problem with sequence lcl|good2, in segment 2 (near sequence position 0), context good2: the segment is too long or short or the next segment has an incorrect start position"));
     options |= CValidator::eVal_val_align | CValidator::eVal_remote_fetch;
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -17395,11 +17395,11 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_SumLenStart)
     STANDARD_SETUP_WITH_DATABASE
 
     expected_errors.push_back(new CExpectedError("good1", eDiag_Error, "SumLenStart", 
-                  "Start: In sequence lcl|good1, segment 2 (near sequence position 5), the alignment claims to contain residue coordinates that are past the end of the sequence.  Either the sequence is too short, or there are extra characters or formatting errors in the alignment"));
+                  "Start: In sequence lcl|good1, segment 2 (near sequence position 5) context good1, the alignment claims to contain residue coordinates that are past the end of the sequence.  Either the sequence is too short, or there are extra characters or formatting errors in the alignment"));
     expected_errors.push_back(new CExpectedError("good1", eDiag_Error, "SumLenStart", 
-                  "Start: In sequence lcl|good2, segment 2 (near sequence position 5), the alignment claims to contain residue coordinates that are past the end of the sequence.  Either the sequence is too short, or there are extra characters or formatting errors in the alignment"));
+                  "Start: In sequence lcl|good2, segment 2 (near sequence position 5) context good2, the alignment claims to contain residue coordinates that are past the end of the sequence.  Either the sequence is too short, or there are extra characters or formatting errors in the alignment"));
     expected_errors.push_back(new CExpectedError("good1", eDiag_Error, "SumLenStart", 
-                  "Start: In sequence lcl|good3, segment 2 (near sequence position 5), the alignment claims to contain residue coordinates that are past the end of the sequence.  Either the sequence is too short, or there are extra characters or formatting errors in the alignment"));
+                  "Start: In sequence lcl|good3, segment 2 (near sequence position 5) context good3, the alignment claims to contain residue coordinates that are past the end of the sequence.  Either the sequence is too short, or there are extra characters or formatting errors in the alignment"));
     options |= CValidator::eVal_val_align | CValidator::eVal_remote_fetch;
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);

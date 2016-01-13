@@ -1016,6 +1016,10 @@ private:
 
     // Check segment length, start and end point in Dense_seg, Dense_diag 
     // and Std_seg
+    void x_ReportAlignErr(const CSeq_align& align, const CSeq_id& id, size_t segment, size_t pos,
+                          EErrType et, EDiagSev sev, const string& prefix, const string& message);
+    void x_ReportSumLenStart(const CSeq_align& align, const CSeq_id& id, size_t segment, size_t pos);
+    void x_ReportStartMoreThanBiolen(const CSeq_align& align, const CSeq_id& id, size_t segment, size_t pos);
     void x_ValidateSeqLength(const TDenseg& denseg, const CSeq_align& align);
     void x_ValidateSeqLength(const TPacked& packed, const CSeq_align& align);
     void x_ValidateSeqLength(const TStd& std_segs, const CSeq_align& align);

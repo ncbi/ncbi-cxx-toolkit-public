@@ -1133,7 +1133,7 @@ CValidError_align::TSegmentGapV CValidError_align::FindSegmentGaps(const TPacked
     size_t dim = packed.GetDim();
     const CPacked_seg::TPresent& present = packed.GetPresent();
 
-    size_t align_pos = 1;
+    size_t align_pos = 0;
     for (size_t seg = 0; seg < numseg; ++seg) {
         size_t id = 0;
         for (; id < dim; ++id) {
@@ -1146,7 +1146,7 @@ CValidError_align::TSegmentGapV CValidError_align::FindSegmentGaps(const TPacked
             // no sequence is present in this segment
             string label = "";
             if (packed.IsSetIds() && packed.GetIds().size() > 0) {
-                packed.GetIds()[0]->GetLabel(&label);
+                packed.GetIds()[0]->GetLabel(&label, CSeq_id::eContent);
             }
             if (NStr::IsBlank(label)) {
                 label = "Unknown";
@@ -1314,6 +1314,65 @@ void CValidError_align::x_GetIds
 }
 
 
+string s_DescribeSegment(const CSeq_id& id, size_t segment, size_t pos, bool use_in = false)
+{
+    string label;
+    id.GetLabel(&label);
+    string context;
+    size_t bar_pos = NStr::Find(label, "|");
+    if (bar_pos != string::npos) {
+        context = label.substr(bar_pos + 1);
+    } else {
+        context = label;
+    }
+
+    string seg_string = "sequence " + label + "," + (use_in ? " in " : " ") +
+        "segment " + NStr::NumericToString(segment) + 
+        " (near sequence position " + NStr::IntToString(pos) +
+        ")" + (use_in ? ", " : " ") + "context " + context;
+    return seg_string;
+}
+
+
+void CValidError_align::x_ReportAlignErr
+(const CSeq_align& align,
+const CSeq_id& id,
+size_t segment,
+size_t pos,
+EErrType et,
+EDiagSev sev,
+const string& prefix,
+const string& message)
+{
+    PostErr(sev, et, prefix + ": In " + s_DescribeSegment(id, segment, pos) + ", " + message, align);
+}
+
+static const string kAlignmentTooLong = "the alignment claims to contain residue coordinates that are past the end of the sequence.  Either the sequence is too short, or there are extra characters or formatting errors in the alignment";
+
+void CValidError_align::x_ReportSumLenStart
+(const CSeq_align& align,
+ const CSeq_id& id,
+ size_t segment,
+ size_t pos)
+{
+    x_ReportAlignErr(align, id, segment, pos,
+        eErr_SEQ_ALIGN_SumLenStart, eDiag_Error,
+        "Start", kAlignmentTooLong);
+}
+
+
+void CValidError_align::x_ReportStartMoreThanBiolen
+(const CSeq_align& align,
+const CSeq_id& id,
+size_t segment,
+size_t pos)
+{
+    x_ReportAlignErr(align, id, segment, pos,
+        eErr_SEQ_ALIGN_StartMorethanBiolen, eDiag_Error,
+        "Start", kAlignmentTooLong);
+}
+
+
 //===========================================================================
 // x_ValidateSeqLength:
 //
@@ -1344,18 +1403,12 @@ void CValidError_align::x_ValidateSeqLength
 
         // verify start
         if ( start >= bslen ) {
-            PostErr(eDiag_Error, eErr_SEQ_ALIGN_StartMorethanBiolen,
-                    "Start: In sequence " + label + ", segment 1 (near sequence position " + NStr::IntToString (start)
-                    + "), the alignment claims to contain residue coordinates that are past the end of the sequence.  Either the sequence is too short, or there are extra characters or formatting errors in the alignment",
-                    align);
+            x_ReportStartMoreThanBiolen(align, *(ids[id]), 1, start);
         }
         
         // verify length
         if ( start + len > bslen ) {
-            PostErr(eDiag_Error, eErr_SEQ_ALIGN_SumLenStart,
-                    "Start: In sequence " + label + ", segment 1 (near sequence position " + NStr::IntToString (start)
-                    + "), the alignment claims to contain residue coordinates that are past the end of the sequence.  Either the sequence is too short, or there are extra characters or formatting errors in the alignment",
-                    align);
+            x_ReportSumLenStart(align, *(ids[id]), 1, start);
         }
         ++starts_iter;
     }
@@ -1398,11 +1451,7 @@ void CValidError_align::x_ValidateSeqLength
 
             // verify that start plus segment does not exceed total bioseq len
             if ( starts[curr_index] + lens[lens_index] > bslen ) {
-                PostErr(eDiag_Error, eErr_SEQ_ALIGN_SumLenStart,
-                        "Start: In sequence " + label + ", segment " 
-                        + NStr::IntToString (seg + 1) + " (near sequence position " + NStr::IntToString (starts[curr_index])
-                        + "), the alignment claims to contain residue coordinates that are past the end of the sequence.  Either the sequence is too short, or there are extra characters or formatting errors in the alignment",
-                        align);
+                x_ReportSumLenStart(align, *(ids[id]), seg + 1, starts[curr_index]);
             }
 
             // find the next segment that is present
@@ -1425,10 +1474,9 @@ void CValidError_align::x_ValidateSeqLength
             if ( starts[curr_index] + (TSignedSeqPos)lens[lens_index] !=
                 starts[next_index] ) {
                 PostErr(eDiag_Error, eErr_SEQ_ALIGN_DensegLenStart,
-                        "Start/Length: There is a problem with sequence " + label + 
-                        ", in segment " + NStr::SizetToString (curr_index + 1)
-                        + " (near sequence position " + NStr::IntToString (starts[curr_index])
-                        + "), context " + label + ": the segment is too long or short or the next segment has an incorrect start position", align);
+                        "Start/Length: There is a problem with " +
+                        s_DescribeSegment(*(ids[id]), curr_index + 1, starts[curr_index], true) +
+                        ": the segment is too long or short or the next segment has an incorrect start position", align);
             }
         }
     }
@@ -1458,21 +1506,14 @@ void CValidError_align::x_ValidateSeqLength
             (*id_it)->GetLabel (&label);
             TSeqPos seg_start = packed.GetStarts()[id];
             if (seg_start >= bsh.GetBioseqLength()) {
-                PostErr(eDiag_Error, eErr_SEQ_ALIGN_StartMorethanBiolen,
-                        "Start: In sequence " + label + ", segment 1 (near sequence position " + NStr::IntToString (seg_start)
-                        + "), the alignment claims to contain residue coordinates that are past the end of the sequence.  Either the sequence is too short, or there are extra characters or formatting errors in the alignment",
-                        align);
+                x_ReportStartMoreThanBiolen(align, **id_it, 1, seg_start);
             }
             for ( size_t seg = 0; seg < numseg; ++seg ) {
                 size_t i = id + seg * dim;
                 if ( i/8 < present.size() && (present[i / 8] & bits[i % 8]) ) {
                     seg_start += packed.GetLens()[seg];
-                    if (seg_start > bsh.GetBioseqLength()) {                    
-                        PostErr(eDiag_Error, eErr_SEQ_ALIGN_SumLenStart,
-                                "Start: In sequence " + label + ", segment " + NStr::SizetToString (seg + 1)
-                                + " (near sequence position " + NStr::IntToString (seg_start)
-                                + "), the alignment claims to contain residue coordinates that are past the end of the sequence.  Either the sequence is too short, or there are extra characters or formatting errors in the alignment",
-                                align);
+                    if (seg_start > bsh.GetBioseqLength()) {   
+                        x_ReportSumLenStart(align, **id_it, seg + 1, seg_start);
                     }
                 }
             }
@@ -1511,31 +1552,19 @@ void CValidError_align::x_ValidateSeqLength
             loc.GetId()->GetLabel(&context_label, NULL, CSeq_id::eContent);
 
             if ( from > bslen - 1 ) { 
-                PostErr(eDiag_Error, eErr_SEQ_ALIGN_StartMorethanBiolen,
-                        "Start: In sequence " + label + ", segment " + NStr::IntToString (seg)
-                        + " (near sequence position " + NStr::IntToString(from)
-                        + "), the alignment claims to contain residue coordinates that are past the end of the sequence.  Either the sequence is too short, or there are extra characters or formatting errors in the alignment",
-                        align);
+                x_ReportStartMoreThanBiolen(align, *(loc.GetId()), seg, from);
             }
 
             if ( to > bslen - 1 ) { 
-                
-                PostErr(eDiag_Error, eErr_SEQ_ALIGN_EndMorethanBiolen,
-                        "Length: In sequence " + label + ", segment " + NStr::IntToString (seg)
-                        + " (near sequence position " + NStr::IntToString(from)
-                        + ") context " + context_label +
-                        ", the alignment claims to contain residue coordinates that are past the end of the sequence.  Either the sequence is too short, or there are extra characters or formatting errors in the alignment",
-                        align);
+                x_ReportAlignErr(align, *(loc.GetId()), seg, from,
+                    eErr_SEQ_ALIGN_EndMorethanBiolen, eDiag_Error,
+                    "Length", kAlignmentTooLong);
             }
 
             if ( loclen > bslen ) {
-                PostErr(eDiag_Error, eErr_SEQ_ALIGN_LenMorethanBiolen,
-                        "Length: In sequence " + label + ", segment " + NStr::IntToString (seg)
-                        + " (near sequence position " + NStr::IntToString(from)
-                        + ") context " + context_label +
-                        ", the alignment claims to contain residue coordinates that are past the end of the sequence.  Either the sequence is too short, or there are extra characters or formatting errors in the alignment",
-                        align);
-
+                x_ReportAlignErr(align, *(loc.GetId()), seg, from,
+                    eErr_SEQ_ALIGN_LenMorethanBiolen, eDiag_Error,
+                    "Length", kAlignmentTooLong);
             }
         }
         seg++;
