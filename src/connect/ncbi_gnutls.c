@@ -374,7 +374,9 @@ static EIO_Status s_GnuTlsOpen(void* session, int* error, char** desc)
 #  if LIBGNUTLS_VERSION_NUMBER < 0x030110
         *desc = 0;
 #  else
-        *desc = gnutls_session_get_desc(session);
+        char* temp = gnutls_session_get_desc(session);
+        *desc = temp ? strdup(temp) : 0;
+        gnutls_free(temp);
 #  endif /*LIBGNUTLS_VERSION_NUMBER<3.1.10*/
         status = eIO_Success;
     }

@@ -2631,11 +2631,11 @@ static EIO_Status s_IsConnected_(SOCK                  sock,
                                   ("%sSSL session established%s%s",
                                    s_ID(sock, _id),
                                    &" "[!desc], desc ? desc : ""));
-                        if (desc)
-                            free(desc);
                     }
                 } else
                     *what = "SSL hello";
+                if (desc)
+                    free(desc);
             } else
                 status = eIO_NotSupported;
         } else
