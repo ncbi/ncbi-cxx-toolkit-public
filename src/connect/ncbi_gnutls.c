@@ -361,6 +361,8 @@ static EIO_Status s_GnuTlsOpen(void* session, int* error, char** desc)
     EIO_Status status;
     int x_error;
 
+    *desc = 0;
+
     do {
         x_error = gnutls_handshake((gnutls_session_t) session);
     } while (x_error  &&  x_error == GNUTLS_E_REHANDSHAKE);
@@ -369,14 +371,13 @@ static EIO_Status s_GnuTlsOpen(void* session, int* error, char** desc)
         status = x_ErrorToStatus(&x_error,
                                  (gnutls_session_t) session, eIO_Open);
         *error = x_error;
-        *desc = 0;
     } else {
-#  if LIBGNUTLS_VERSION_NUMBER < 0x030110
-        *desc = 0;
-#  else
+#  if LIBGNUTLS_VERSION_NUMBER >= 0x030110
         char* temp = gnutls_session_get_desc(session);
-        *desc = temp ? strdup(temp) : 0;
-        gnutls_free(temp);
+        if (temp) {
+            *desc = strdup(temp);
+            gnutls_free(temp);
+        }
 #  endif /*LIBGNUTLS_VERSION_NUMBER<3.1.10*/
         status = eIO_Success;
     }

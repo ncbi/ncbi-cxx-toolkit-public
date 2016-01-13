@@ -2611,7 +2611,7 @@ static EIO_Status s_IsConnected_(SOCK                  sock,
                 const unsigned int wtv_set = sock->w_tv_set;
                 struct timeval rtv;
                 struct timeval wtv;
-                char* desc = 0;
+                char* desc;
                 if (rtv_set)
                     rtv = sock->r_tv;
                 if (wtv_set)
@@ -2632,10 +2632,10 @@ static EIO_Status s_IsConnected_(SOCK                  sock,
                                    s_ID(sock, _id),
                                    &" "[!desc], desc ? desc : ""));
                     }
+                    if (desc)
+                        free(desc);
                 } else
                     *what = "SSL hello";
-                if (desc)
-                    free(desc);
             } else
                 status = eIO_NotSupported;
         } else
