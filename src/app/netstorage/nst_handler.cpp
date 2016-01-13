@@ -2673,16 +2673,6 @@ CNetStorageHandler::x_ProcessLockFTPath(
                    "LOCKFTPATH message must have ObjectLoc or UserKey. "
                    "None of them was found.");
 
-    if (!message.HasKey("On"))
-        NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
-                   "LOCKFTPATH message must have the On field.");
-
-    CJsonNode               on = message.GetByKey("On");
-    CJsonNode::ENodeType    node_type = on.GetNodeType();
-    if (node_type != CJsonNode::eBoolean)
-        NCBI_THROW(CNetStorageServerException, eInvalidArgument,
-                   "Invalid type of the On field. Boolean is expected.");
-
     if (m_MetadataOption == eMetadataMonitoring)
         NCBI_THROW(CNetStorageServerException, eInvalidMetaInfoRequest,
                    "LOCKFTPATH could not be used when the HELLO metadata "
@@ -2706,24 +2696,13 @@ CNetStorageHandler::x_ProcessLockFTPath(
 
     CNSTPreciseTime     start = CNSTPreciseTime::Current();
     try {
-        if (on.AsBoolean()) {
-            string  lock_path = direct_object.FileTrack_Path_Lock();
-            reply.SetString("Path", lock_path);
-            if (m_Server->IsLogTimingNSTAPI())
-                m_Timing.Append("NetStorageAPI FileTrack_Path_Lock", start);
-        } else {
-            direct_object.FileTrack_Path_Unlock();
-            if (m_Server->IsLogTimingNSTAPI())
-                m_Timing.Append("NetStorageAPI FileTrack_Path_Unlock", start);
-        }
+        string  lock_path = direct_object.FileTrack_Path();
+        reply.SetString("Path", lock_path);
+        if (m_Server->IsLogTimingNSTAPI())
+            m_Timing.Append("NetStorageAPI FileTrack_Path", start);
     } catch (...) {
         if (m_Server->IsLogTimingNSTAPI()) {
-            if (on.AsBoolean())
-                m_Timing.Append("NetStorageAPI FileTrack_Path_Lock exception",
-                                start);
-            else
-                m_Timing.Append("NetStorageAPI FileTrack_Path_Unlock exception",
-                                start);
+            m_Timing.Append("NetStorageAPI FileTrack_Path exception", start);
         }
         throw;
     }
