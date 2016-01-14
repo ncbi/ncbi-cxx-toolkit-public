@@ -909,7 +909,7 @@ public:
         }
         const CTrans_table& tbl = CGen_code_table::GetTransTable(gcode);
 
-        CSeqVector v(*codon, scope, CBioseq_Handle::eCoding_Iupac);
+        CSeqVector v(*codon, *scope, CBioseq_Handle::eCoding_Iupac);
 
         /**
         cerr << MSerial_AsnText << *start_codon;

@@ -1418,7 +1418,7 @@ void CVariationUtil::x_InferNAfromAA(CVariation& v, TAA2NAFlags flags)
     }
 
 
-    CSeqVector seqv(*nuc_loc, m_scope, CBioseq_Handle::eCoding_Iupac);
+    CSeqVector seqv(*nuc_loc, *m_scope, CBioseq_Handle::eCoding_Iupac);
     string original_allele_codon; //nucleotide allele on the sequence
     seqv.GetSeqData(seqv.begin(), seqv.end(), original_allele_codon);
 
@@ -3899,7 +3899,7 @@ void CVariationUtil::CCdregionIndex::x_CacheSeqData(const CSeq_loc& loc, const C
         loc2 = bsh.GetRangeSeq_loc(0, bsh.GetInst_Length() - 1, eNa_strand_plus);
         seqv = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
     } else {
-        seqv = CSeqVector(*loc2, m_scope, CBioseq_Handle::eCoding_Iupac);
+        seqv = CSeqVector(*loc2, *m_scope, CBioseq_Handle::eCoding_Iupac);
     }
 
     seqv.GetSeqData(seqv.begin(), seqv.end(), d.seq_data);

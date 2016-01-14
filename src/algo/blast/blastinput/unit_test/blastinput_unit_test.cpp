@@ -786,7 +786,7 @@ void s_ReadAndTestQueryFromString(const string& input, TSeqPos expected_length,
     blast::TSeqLocVector query = qIn.GetAllSeqLocs(scope);
     BOOST_REQUIRE_EQUAL(expected_length, 
                         sequence::GetLength(*query.front().seqloc, &scope));
-    CRef<CSeqVector> sv(new CSeqVector(*query.front().seqloc, &scope));
+    CRef<CSeqVector> sv(new CSeqVector(*query.front().seqloc, scope));
     BOOST_REQUIRE_EQUAL(expected_length, sv->size());
     BOOST_REQUIRE_EQUAL(is_protein, sv->IsProtein());
     sv->SetIupacCoding();

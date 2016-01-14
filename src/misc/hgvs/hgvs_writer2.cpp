@@ -441,7 +441,7 @@ string CHgvsParser::x_SeqLiteralToStr(const CSeq_literal& literal, bool translat
 
 string CHgvsParser::x_LocToSeqStr(const CSeq_loc& loc)
 {
-    CSeqVector v(loc, m_scope, CBioseq_Handle::eCoding_Iupac);
+    CSeqVector v(loc, *m_scope, CBioseq_Handle::eCoding_Iupac);
     string seq_str;
     v.GetSeqData(v.begin(), v.end(), seq_str);
     return seq_str;

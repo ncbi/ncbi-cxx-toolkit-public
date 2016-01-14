@@ -1502,7 +1502,7 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
 
         seq_inst.SetRepr(CSeq_inst::eRepr_delta);
         seq_inst.SetExt().SetDelta();
-        CSeqVector seqv(*protloc_on_mrna, m_scope, CBioseq_Handle::eCoding_Ncbi);
+        CSeqVector seqv(*protloc_on_mrna, *m_scope, CBioseq_Handle::eCoding_Ncbi);
         CConstRef<CSeqMap> map;
         map.Reset(&seqv.GetSeqMap());
 

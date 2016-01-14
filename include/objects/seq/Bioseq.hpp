@@ -96,7 +96,7 @@ public:
     // type by seq-loc). The location is splitted into simple
     // locations (intervals, points, whole-s etc.) and put into
     // ext::delta.
-    CBioseq(const CSeq_loc& loc, const string& str_id = kEmptyStr);
+    explicit CBioseq(const CSeq_loc& loc, const string& str_id = kEmptyStr);
 
     enum ELabelType {
         eType,

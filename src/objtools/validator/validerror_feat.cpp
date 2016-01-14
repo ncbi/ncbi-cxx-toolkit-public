@@ -8197,7 +8197,7 @@ void CValidError_feat::ValidateFeatComment
         CRef<CSeq_loc> stop_codon_loc = edit::GetLastCodonLoc(feat, *m_Scope);
         if (stop_codon_loc) {
             TSeqPos len = sequence::GetLength(*stop_codon_loc, m_Scope);
-            CSeqVector vec(*stop_codon_loc, m_Scope, CBioseq_Handle::eCoding_Iupac);
+            CSeqVector vec(*stop_codon_loc, *m_Scope, CBioseq_Handle::eCoding_Iupac);
             string seq_string;
             vec.GetSeqData(0, len - 1, seq_string);  
             bool found_ambig = false;
