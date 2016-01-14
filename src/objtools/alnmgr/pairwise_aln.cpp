@@ -143,8 +143,6 @@ void CPairwise_CI::x_InitSegment(void)
                     m_SecondRg.SetOpen(gap_second_to, it_second_from);
                 }
                 else {
-                    TSignedSeqPos from = m_GapIt->GetSecondFrom();
-                    TSignedSeqPos to = m_It->GetSecondFrom();
                     m_SecondRg.SetOpen(min(gap_second_from, it_second_from),
                         max(gap_second_from, it_second_from));
                 }
