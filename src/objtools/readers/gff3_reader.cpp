@@ -81,6 +81,7 @@
 #include <objects/seqfeat/Feat_id.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 
+#include <objtools/readers/read_util.hpp>
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/line_error.hpp>
 #include <objtools/readers/message_listener.hpp>
@@ -329,6 +330,9 @@ bool CGff3Reader::xUpdateAnnotCds(
                 IdToFeatureMap::iterator it = m_MapIdToFeature.find(cdsId);
                 if (it != m_MapIdToFeature.end()) {
                     record.UpdateFeature(m_iFlags, it->second);
+                    if (!id.empty()) {
+                        m_MapIdToFeature[id] = it->second;
+                    }
                     continue;
                 }
             }
@@ -352,6 +356,9 @@ bool CGff3Reader::xUpdateAnnotCds(
                     break;
                 }
                 if (it != m_MapIdToFeature.end()) {
+                    if (!id.empty()) {
+                        m_MapIdToFeature[id] = it->second;
+                    }
                     record.UpdateFeature(m_iFlags, it->second);
                     continue;
                 }
@@ -386,6 +393,9 @@ bool CGff3Reader::xUpdateAnnotCds(
                 return false;
             }
             if (! cdsId.empty()) {
+                if (!id.empty()) {
+                    m_MapIdToFeature[id] = pFeature;
+                }
                 m_MapIdToFeature[cdsId] = pFeature;
             }
             pFeature.Reset(new CSeq_feat);
@@ -478,6 +488,36 @@ bool CGff3Reader::xUpdateAnnotGeneric(
         }
     }
 
+    string featType = record.Type();
+    if (featType == "stop_codon_read_through"  ||  featType == "selenocysteine") {
+        string cdsParent;
+        if (!record.GetAttribute("Parent", cdsParent)) {
+            cerr << "BAD!" << endl;
+        }
+        IdToFeatureMap::iterator it = m_MapIdToFeature.find(cdsParent);
+        if (it == m_MapIdToFeature.end()) {
+            cerr << "BAD!" << endl;
+        }
+
+        CRef<CCode_break> pCodeBreak(new CCode_break); 
+        CSeq_interval& cbLoc = pCodeBreak->SetLoc().SetInt();        
+        CRef< CSeq_id > pId = CReadUtil::AsSeqId(record.Id(), m_iFlags);
+        cbLoc.SetId(*pId);
+        cbLoc.SetFrom(record.SeqStart());
+        cbLoc.SetTo(record.SeqStop());
+        if (record.IsSetStrand()) {
+            cbLoc.SetStrand(record.Strand());
+        }
+        pCodeBreak->SetAa().SetNcbieaa(
+            (featType == "selenocysteine") ? 'U' : 'X');
+
+
+        CRef<CSeq_feat> pCds = it->second;
+        CCdregion& cdRegion = pCds->SetData().SetCdregion();
+        list< CRef< CCode_break > >& codeBreaks = cdRegion.SetCode_break();
+        codeBreaks.push_back(pCodeBreak);
+        return true;
+    }
     if (!record.InitializeFeature(m_iFlags, pFeature)) {
         return false;
     }
