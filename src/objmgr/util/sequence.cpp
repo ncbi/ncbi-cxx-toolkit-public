@@ -453,6 +453,23 @@ CSeq_id_Handle x_GetId(const CScope::TIds& ids, EGetIdType type)
 }
 
 
+CSeq_id_Handle GetId(const CBioseq& seq, EGetIdType type)
+{
+    return GetId(seq.GetId(), type);
+}
+
+
+CSeq_id_Handle GetId(const CBioseq::TId& ids_in, EGetIdType type)
+{
+    CScope::TIds ids;
+    ITERATE (CBioseq::TId, it, ids_in) {
+        ids.push_back(CSeq_id_Handle::GetHandle(**it));
+    }
+
+    return x_GetId(ids, type);
+}
+
+
 CSeq_id_Handle GetId(const CSeq_id& id, CScope& scope, EGetIdType type)
 {
     return GetId(CSeq_id_Handle::GetHandle(id), scope, type);

@@ -219,6 +219,20 @@ NCBI_XOBJUTIL_EXPORT
 CSeq_id_Handle GetId(const CSeq_id_Handle& id, CScope& scope,
                      EGetIdType type = eGetId_Default);
 
+/// Return a selected ID type from a set of Seq-ids
+/// Arguments (except 'id') and behavior is the same as of
+/// GetId(const CSeq_id& id, ...).
+NCBI_XOBJUTIL_EXPORT
+CSeq_id_Handle GetId(const CBioseq::TId& id,
+                     EGetIdType type = eGetId_Default);
+
+/// Return a selected ID type from a Bioseq
+/// Arguments (except 'seq') and behavior is the same as of
+/// GetId(const CBioseq_Handle& seq, ...).
+NCBI_XOBJUTIL_EXPORT
+CSeq_id_Handle GetId(const CBioseq& seq,
+                     EGetIdType type = eGetId_Default);
+
 /* @} */
 
 
