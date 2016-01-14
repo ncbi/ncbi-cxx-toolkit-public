@@ -2420,6 +2420,7 @@ void CId2ReaderBase::x_ProcessGetSeqIdSeqId(
         }
         return;
     }
+    bool got_no_ids = false;
     if ( (req.GetSeq_id_type()&req.eSeq_id_type_all)==req.eSeq_id_type_all ) {
         CReader::TSeqIds seq_ids;
         ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, reply.GetSeq_id() ) {
@@ -2430,6 +2431,7 @@ void CId2ReaderBase::x_ProcessGetSeqIdSeqId(
             seq_ids.push_back(CSeq_id_Handle::GetHandle(**it));
         }
         if ( reply.IsSetEnd_of_reply() ) {
+            got_no_ids = seq_ids.empty();
             SetAndSaveSeq_idSeq_ids(result, seq_id,
                                     CFixedSeq_ids(eTakeOwnership,
                                                   seq_ids,
@@ -2449,14 +2451,14 @@ void CId2ReaderBase::x_ProcessGetSeqIdSeqId(
         }
     }
     if ( req.GetSeq_id_type() & req.eSeq_id_type_text ) {
+        CSeq_id_Handle text_id;
         ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, reply.GetSeq_id() ) {
             if ( (**it).GetTextseq_Id() ) {
-                SetAndSaveSeq_idAccVer(result, seq_id,
-                                       CSeq_id_Handle::GetHandle(**it));
-                return;
+                text_id = CSeq_id_Handle::GetHandle(**it);
+                break;
             }
         }
-        SetAndSaveSeq_idAccVer(result, seq_id, CSeq_id_Handle());
+        SetAndSaveSeq_idAccVer(result, seq_id, text_id);
     }
     if ( req.GetSeq_id_type() & req.eSeq_id_type_label ) {
         ITERATE ( CID2_Reply_Get_Seq_id::TSeq_id, it, reply.GetSeq_id() ) {
@@ -2520,7 +2522,9 @@ void CId2ReaderBase::x_ProcessGetSeqIdSeqId(
                 }
             }
         }
-        SetAndSaveSequenceLength(result, seq_id, length, save);
+        if ( save != eDoNotSave || got_no_ids ) {
+            SetAndSaveSequenceLength(result, seq_id, length, save);
+        }
     }
     if ( req.GetSeq_id_type() & req.eSeq_id_type_seq_mol ) {
         ESave save = eDoNotSave;
@@ -2537,7 +2541,9 @@ void CId2ReaderBase::x_ProcessGetSeqIdSeqId(
                 }
             }
         }
-        SetAndSaveSequenceType(result, seq_id, type, save);
+        if ( save != eDoNotSave || got_no_ids ) {
+            SetAndSaveSequenceType(result, seq_id, type, save);
+        }
     }
 }
 
