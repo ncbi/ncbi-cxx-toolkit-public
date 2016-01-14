@@ -111,7 +111,6 @@ pair<double, bool> CScoreSeqCoverage::MakeScore(CBioseq_Handle const& query_hand
         range_coll += range;            
     } 
     double score = ( 100.0 * range_coll.GetCoveredLength() ) / qlen;
-    if ( score < 99 ) score += 0.5;
     return make_pair(score, true);
 }
 
@@ -199,7 +198,6 @@ pair<double, bool> CScoreUniqSeqCoverage::MakeScore(CBioseq_Handle const& query_
     }
 
     double score = ( 100. * query_rng_coll.GetCoveredLength() ) / qlen;
-    if ( score < 99 ) score += 0.5;
     return make_pair(score, true);
 }
 
