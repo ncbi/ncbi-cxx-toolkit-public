@@ -1522,7 +1522,7 @@ bool CID2WGSProcessor_Impl::GetCompress(CID2WGSContext& context,
     if ( context.m_CompressData == context.eCompressData_never ) {
         return false;
     }
-    return true;
+    return false;
 }
 
 
