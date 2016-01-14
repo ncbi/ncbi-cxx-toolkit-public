@@ -1314,21 +1314,16 @@ void CValidError_align::x_GetIds
 }
 
 
-string s_DescribeSegment(const CSeq_id& id, size_t segment, size_t pos, bool use_in = false)
+string s_DescribeSegment(const CSeq_id& id, const CSeq_id& id_context, size_t segment, size_t pos, bool use_in = false)
 {
     string label;
     id.GetLabel(&label);
     string context;
-    size_t bar_pos = NStr::Find(label, "|");
-    if (bar_pos != string::npos) {
-        context = label.substr(bar_pos + 1);
-    } else {
-        context = label;
-    }
+    id_context.GetLabel(&context, CSeq_id::eContent);
 
     string seg_string = "sequence " + label + "," + (use_in ? " in " : " ") +
         "segment " + NStr::NumericToString(segment) + 
-        " (near sequence position " + NStr::IntToString(pos) +
+        " (near sequence position " + NStr::NumericToString(pos) +
         ")" + (use_in ? ", " : " ") + "context " + context;
     return seg_string;
 }
@@ -1337,6 +1332,7 @@ string s_DescribeSegment(const CSeq_id& id, size_t segment, size_t pos, bool use
 void CValidError_align::x_ReportAlignErr
 (const CSeq_align& align,
 const CSeq_id& id,
+const CSeq_id& id_context,
 size_t segment,
 size_t pos,
 EErrType et,
@@ -1344,7 +1340,7 @@ EDiagSev sev,
 const string& prefix,
 const string& message)
 {
-    PostErr(sev, et, prefix + ": In " + s_DescribeSegment(id, segment, pos) + ", " + message, align);
+    PostErr(sev, et, prefix + ": In " + s_DescribeSegment(id, id_context, segment, pos) + ", " + message, align);
 }
 
 static const string kAlignmentTooLong = "the alignment claims to contain residue coordinates that are past the end of the sequence.  Either the sequence is too short, or there are extra characters or formatting errors in the alignment";
@@ -1352,10 +1348,11 @@ static const string kAlignmentTooLong = "the alignment claims to contain residue
 void CValidError_align::x_ReportSumLenStart
 (const CSeq_align& align,
  const CSeq_id& id,
+ const CSeq_id& id_context,
  size_t segment,
  size_t pos)
 {
-    x_ReportAlignErr(align, id, segment, pos,
+    x_ReportAlignErr(align, id, id_context, segment, pos,
         eErr_SEQ_ALIGN_SumLenStart, eDiag_Error,
         "Start", kAlignmentTooLong);
 }
@@ -1364,10 +1361,11 @@ void CValidError_align::x_ReportSumLenStart
 void CValidError_align::x_ReportStartMoreThanBiolen
 (const CSeq_align& align,
 const CSeq_id& id,
+const CSeq_id& id_context,
 size_t segment,
 size_t pos)
 {
-    x_ReportAlignErr(align, id, segment, pos,
+    x_ReportAlignErr(align, id, id_context, segment, pos,
         eErr_SEQ_ALIGN_StartMorethanBiolen, eDiag_Error,
         "Start", kAlignmentTooLong);
 }
@@ -1391,6 +1389,7 @@ void CValidError_align::x_ValidateSeqLength
     TSeqPos len = dendiag.GetLen();
     const CDense_diag::TIds& ids = dendiag.GetIds();
     
+    const CSeq_id& context_id = *(ids[0]);
     CDense_diag::TStarts::const_iterator starts_iter = 
             dendiag.GetStarts().begin();
     
@@ -1398,17 +1397,16 @@ void CValidError_align::x_ValidateSeqLength
         TSeqPos bslen = GetLength(*(ids[id]), m_Scope);
         TSeqPos start = *starts_iter;
 
-        string label;
-        ids[id]->GetLabel(&label);
+        const CSeq_id& seq_id = *(ids[id]);
 
         // verify start
         if ( start >= bslen ) {
-            x_ReportStartMoreThanBiolen(align, *(ids[id]), 1, start);
+            x_ReportStartMoreThanBiolen(align, seq_id, context_id, 1, start);
         }
         
         // verify length
         if ( start + len > bslen ) {
-            x_ReportSumLenStart(align, *(ids[id]), 1, start);
+            x_ReportSumLenStart(align, seq_id, context_id, 1, start);
         }
         ++starts_iter;
     }
@@ -1427,6 +1425,7 @@ void CValidError_align::x_ValidateSeqLength
     const CDense_seg::TStarts& starts = denseg.GetStarts();
     const CDense_seg::TLens& lens      = denseg.GetLens();
     bool minus = false;
+    const CSeq_id& id_context = *ids[0];
 
     if (numseg > lens.size()) {
         numseg = lens.size();
@@ -1436,9 +1435,6 @@ void CValidError_align::x_ValidateSeqLength
         TSeqPos bslen = GetLength(*(ids[id]), m_Scope);
         minus = denseg.IsSetStrands()  &&
             denseg.GetStrands()[id] == eNa_strand_minus;
-
-        string label;
-        ids[id]->GetLabel(&label);
 
         for ( int seg = 0; seg < numseg; ++seg ) {
             size_t curr_index = 
@@ -1451,7 +1447,7 @@ void CValidError_align::x_ValidateSeqLength
 
             // verify that start plus segment does not exceed total bioseq len
             if ( starts[curr_index] + lens[lens_index] > bslen ) {
-                x_ReportSumLenStart(align, *(ids[id]), seg + 1, starts[curr_index]);
+                x_ReportSumLenStart(align, *(ids[id]), id_context, seg + 1, starts[curr_index]);
             }
 
             // find the next segment that is present
@@ -1475,7 +1471,7 @@ void CValidError_align::x_ValidateSeqLength
                 starts[next_index] ) {
                 PostErr(eDiag_Error, eErr_SEQ_ALIGN_DensegLenStart,
                         "Start/Length: There is a problem with " +
-                        s_DescribeSegment(*(ids[id]), curr_index + 1, starts[curr_index], true) +
+                        s_DescribeSegment(*(ids[id]), id_context, seg + 1, starts[curr_index], true) +
                         ": the segment is too long or short or the next segment has an incorrect start position", align);
             }
         }
@@ -1498,6 +1494,7 @@ void CValidError_align::x_ValidateSeqLength
 
     const CPacked_seg::TPresent& present = packed.GetPresent();
     CPacked_seg::TIds::const_iterator id_it = packed.GetIds().begin();
+    const CSeq_id& id_context = **id_it;
 
     for ( size_t id = 0; id < dim && id_it != packed.GetIds().end(); ++id, ++id_it ) {
         CBioseq_Handle bsh = m_Scope->GetBioseqHandle (**id_it);
@@ -1506,14 +1503,14 @@ void CValidError_align::x_ValidateSeqLength
             (*id_it)->GetLabel (&label);
             TSeqPos seg_start = packed.GetStarts()[id];
             if (seg_start >= bsh.GetBioseqLength()) {
-                x_ReportStartMoreThanBiolen(align, **id_it, 1, seg_start);
+                x_ReportStartMoreThanBiolen(align, **id_it, id_context, 1, seg_start);
             }
             for ( size_t seg = 0; seg < numseg; ++seg ) {
                 size_t i = id + seg * dim;
                 if ( i/8 < present.size() && (present[i / 8] & bits[i % 8]) ) {
                     seg_start += packed.GetLens()[seg];
                     if (seg_start > bsh.GetBioseqLength()) {   
-                        x_ReportSumLenStart(align, **id_it, seg + 1, seg_start);
+                        x_ReportSumLenStart(align, **id_it, id_context, seg + 1, seg_start);
                     }
                 }
             }
@@ -1529,6 +1526,7 @@ void CValidError_align::x_ValidateSeqLength
     int seg = 1;
     ITERATE( TStd, iter, std_segs ) {
         const CStd_seg& stdseg = **iter;
+        const CSeq_id& id_context = *(stdseg.GetLoc().front()->GetId());
 
         ITERATE ( CStd_seg::TLoc, loc_iter, stdseg.GetLoc() ) {
             const CSeq_loc& loc = **loc_iter;
@@ -1546,23 +1544,21 @@ void CValidError_align::x_ValidateSeqLength
             TSeqPos loclen = GetLength( loc, m_Scope);
             TSeqPos bslen = GetLength(GetId(loc, m_Scope), m_Scope);
             string  bslen_str = NStr::UIntToString(bslen);
-            string label;
-            loc.GetId()->GetLabel(&label);
-            string context_label;
-            loc.GetId()->GetLabel(&context_label, NULL, CSeq_id::eContent);
+
+            const CSeq_id& id = *(loc.GetId());
 
             if ( from > bslen - 1 ) { 
-                x_ReportStartMoreThanBiolen(align, *(loc.GetId()), seg, from);
+                x_ReportStartMoreThanBiolen(align, id, id_context, seg, from);
             }
 
             if ( to > bslen - 1 ) { 
-                x_ReportAlignErr(align, *(loc.GetId()), seg, from,
+                x_ReportAlignErr(align, id, id_context, seg, from,
                     eErr_SEQ_ALIGN_EndMorethanBiolen, eDiag_Error,
                     "Length", kAlignmentTooLong);
             }
 
             if ( loclen > bslen ) {
-                x_ReportAlignErr(align, *(loc.GetId()), seg, from,
+                x_ReportAlignErr(align, id, id_context, seg, from,
                     eErr_SEQ_ALIGN_LenMorethanBiolen, eDiag_Error,
                     "Length", kAlignmentTooLong);
             }
