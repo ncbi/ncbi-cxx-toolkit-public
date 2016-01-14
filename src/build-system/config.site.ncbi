@@ -202,7 +202,7 @@ esac
 : ${MIMETIC_PATH=$NCBI/mimetic-0.9.7-ncbi2}
 
 case "$ncbi_platform" in
-    Linux64    ) : ${MONGODB_PATH=$NCBI/mongodb-1.0.5} ;;
+    Linux64    ) : ${MONGODB_PATH=$NCBI/mongodb-1.0.5+ssl} ;;
 esac
 
 case "$ncbi_platform" in
