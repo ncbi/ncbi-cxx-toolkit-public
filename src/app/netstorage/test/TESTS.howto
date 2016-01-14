@@ -1,0 +1,55 @@
+This is how-to to run tests.
+
+1. Source code / binary
+
+The tests are developed for the NetStorage API, not specifically for the server.
+They however could be used to test the server. The source code could be found
+here:
+https://svn.ncbi.nlm.nih.gov/viewvc/toolkit/trunk/c++/src/misc/netstorage/test/
+
+A binary could be taken from regular builds, e.g.:
+/netopt/ncbi_tools64/c++.current/GCC-Release/bin/test_netstorage.gz
+
+
+2. Setup
+
+The test_netstorage binary does not provide command line arguments to control
+its behavior. Neither it provides a description of what is recognized in its
+.ini file. By default the test uses the ST_Test service (at least at the time
+of writing). Here is a description of how to create a setup for your own
+instance of the NetStorage server.
+
+2.1 Run the server, and note the host and port, e.g. iebdev22:9800
+2.2 Create test_netstorage.ini as follows:
+
+
+; The service S is to be used instead of the default service.
+; The service name S is faked and mentioned twice because the test_netstorage
+; changed what parameter/section is recognized. To be on the safe side the
+; service is provided twice.
+[netstorage]
+service_name=S
+
+[netstorage_api]
+service_name=S
+
+
+; The service S is not advertized by the LBSMD daemon and LBSMD is running in a
+; passive mode on the developers hosts and thus changes in the LBSMD
+; configuration files would not help. There is a way however to override the
+; service resolution procedure. This is how to do that (two sections below):
+[CONN]
+LOCAL_ENABLE=1
+
+[S]
+CONN_LOCAL_SERVER_0="STANDALONE iebdev22:9800 L=yes"
+
+
+3. Running
+
+Run the test_netstorage having its .ini file in the same directory.
+Most probably the test suite should be restricted:
+
+$ ./test_netstorage -t 'TestNetStorage*'
+
+
