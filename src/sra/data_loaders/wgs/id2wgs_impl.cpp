@@ -1580,7 +1580,7 @@ void CID2WGSProcessor_Impl::WriteData(CID2_Reply_Data& data,
     if ( compress ) {
         data.SetData_compression(CID2_Reply_Data::eData_compression_gzip);
         str.reset(new CCompressionOStream(writer_stream,
-                                          new CZipStreamCompressor,
+                                          new CZipStreamCompressor(ICompression::eLevel_Lowest),
                                           CCompressionIStream::fOwnProcessor));
     }
     else {
@@ -1842,9 +1842,9 @@ bool CID2WGSProcessor_Impl::ProcessRequest(CID2WGSContext& context,
 
 
 CID2WGSProcessor_Impl::TReplies
-CID2WGSProcessor_Impl::ProcessSomeRequests(CID2WGSContext& context,
-                                           CID2_Request_Packet& packet,
-                                           CID2ProcessorResolver* resolver)
+CID2WGSProcessor_Impl::DoProcessSomeRequests(CID2WGSContext& context,
+                                             CID2_Request_Packet& packet,
+                                             CID2ProcessorResolver* resolver)
 {
     TReplies replies;
     ERASE_ITERATE ( CID2_Request_Packet::Tdata, it, packet.Set() ) {
@@ -1857,6 +1857,48 @@ CID2WGSProcessor_Impl::ProcessSomeRequests(CID2WGSContext& context,
         TRACE_X(15, eDebug_request, "Unprocessed: "<<MSerial_AsnText<<packet);
     }
     return replies;
+}
+
+
+class CID2ProcessorResolverCollect : public CID2ProcessorResolver
+{
+public:
+
+    bool ResolveRequests(CID2ProcessorResolver* /*resolver*/)
+        {
+            return false;
+        }
+
+    virtual TIds GetIds(const CSeq_id& id)
+        {
+            return m_ResolvedIds[CSeq_id_Handle::GetHandle(id)];
+        }
+
+private:
+    typedef map<CSeq_id_Handle, TIds> TResolvedIds;
+
+    TResolvedIds m_ResolvedIds;
+};
+
+
+CID2WGSProcessor_Impl::TReplies
+CID2WGSProcessor_Impl::ProcessSomeRequests(CID2WGSContext& context,
+                                           CID2_Request_Packet& packet,
+                                           CID2ProcessorResolver* resolver)
+{
+    if ( resolver && packet.Set().size() > 1 ) {
+        // try to resolve all ids in one request
+        CID2ProcessorResolverCollect collect;
+        TReplies replies = DoProcessSomeRequests(context, packet, &collect);
+        if ( collect.ResolveRequests(resolver) ) {
+            TReplies more = DoProcessSomeRequests(context, packet, &collect);
+            replies.insert(replies.end(), more.begin(), more.end());
+        }
+        return replies;
+    }
+    else {
+        return DoProcessSomeRequests(context, packet, resolver);
+    }
 }
 
 

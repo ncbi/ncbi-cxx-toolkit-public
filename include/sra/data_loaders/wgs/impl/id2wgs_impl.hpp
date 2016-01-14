@@ -286,6 +286,9 @@ protected:
 
     CRef<CWGSResolver> GetWGSResolver(CID2ProcessorResolver* resolver);
 
+    TReplies DoProcessSomeRequests(CID2WGSContext& context,
+                                   CID2_Request_Packet& packet,
+                                   CID2ProcessorResolver* resolver);
 private:
     CMutex m_Mutex;
     CVDBMgr m_Mgr;
