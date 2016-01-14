@@ -64,7 +64,7 @@ NCBI_PARAM_DECL(string, netcache, cache_name);
 typedef NCBI_PARAM_TYPE(netcache, cache_name) TNetCache_CacheName;
 NCBI_PARAM_DEF(string, netcache, cache_name, "blobs");
 
-static const string s_ClientName("test_icache");
+static const string s_ClientName("test_ic_client");
 
 static int s_Run()
 {
