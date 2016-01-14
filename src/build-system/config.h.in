@@ -334,6 +334,9 @@
 /* Define to 1 if libsablot is available. */
 #undef HAVE_LIBSABLOT
 
+/* Define to 1 if libsasl2 is available. */
+#undef HAVE_LIBSASL2
+
 /* Define to 1 if libdrmaa is available. */
 #undef HAVE_LIBSGE
 

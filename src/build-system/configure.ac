@@ -71,7 +71,7 @@ case "$with_3psw" in
                      python, perl, jni, sqlite3, mimetic, sge, icu, sp, expat,
                      sablot, libxml, libxslt, libexslt, xerces, xalan, zorba,
                      oechem, muparser, hdf5, gif, jpeg, png, tiff, xpm,
-                     magic, curl, gsoap, avro, cereal, mongodb, gmock],
+                     magic, curl, gsoap, avro, cereal, sasl2, mongodb, gmock],
         [if test "${[with_]X-no}" != "no"; then
             AC_MSG_ERROR([incompatible options: --with-]X[ but --without-3psw])
          else
@@ -475,6 +475,10 @@ AC_ARG_WITH(cereal,
    [ --with-cereal=DIR       use USC Cereal installation in DIR])
 AC_ARG_WITH(cereal2,
    [ --without-cereal        do not use USC Cereal])
+AC_ARG_WITH(sasl2,
+   [ --with-sasl2=DIR        use SASL 2 installation in DIR])
+AC_ARG_WITH(sasl2b,
+   [ --without-sasl2         do not use SASL 2])
 AC_ARG_WITH(mongodb,
    [ --with-mongodb=DIR      use MongoDB installation in DIR])
 AC_ARG_WITH(mongodb2,
@@ -543,7 +547,8 @@ orbacus freetype ftgl opengl mesa glut glew glew-mx \
 bdb python perl jni sqlite3 icu boost boost-tag \
 sp expat sablot libxml libxslt libexslt xerces xalan zorba \
 oechem sge muparser hdf5 \
-gif jpeg tiff png xpm magic curl mimetic gsoap avro cereal mongodb gmock 3psw \
+gif jpeg tiff png xpm \
+magic curl mimetic gsoap avro cereal sasl2 mongodb gmock 3psw \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -611,7 +616,8 @@ for x_arg in "$@" ; do
       | --with-sge=* | --with-muparser=* | --with-hdf5=* | --with-gif=* \
       | --with-jpeg=* | --with-png=* | --with-tiff=* | --with-xpm=* \
       | --with-magic=* | --with-curl=* | --with-mimetic=* | --with-gsoap=* \
-      | --with-avro=* | --with-cereal=* | --with-mongodb=* | --with-gmock=* )
+      | --with-avro=* | --with-cereal=* | --with-sasl2* | --with-mongodb=* \
+      | --with-gmock=* )
       # Confirm that the specified directory exists and is readable.
       dir=`echo $x_arg | sed -e 's/^[[^=]]*=//'`
       case "$x_arg" in
@@ -7226,6 +7232,13 @@ if test "$with_cereal" != no; then
 fi
 
 
+# SASL 2
+NCBI_CHECK_THIRD_PARTY_LIB(sasl2,
+ [[AC_LANG_PROGRAM([[#include <stdlib.h>
+                     #include <sasl/sasl.h>]],
+   [[sasl_client_init(NULL);]])]])
+
+
 # MongoDB
 case "$with_mongodb" in
    yes | no | '' ) ;;
@@ -7246,12 +7259,12 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(mongodb, MONGODB, mongoclient,
       [std::vector<mongo::HostAndPort> v;
        mongo::DBClientReplicaSet client("foo", v);
        client.connect();])],
-   [$BOOST_LIBPATH $boost_fs_lib $BOOST_REGEX_LIBS $BOOST_THREAD_LIBS], [],
+   [$BOOST_LIBPATH $boost_fs_lib $BOOST_REGEX_LIBS $BOOST_THREAD_LIBS $OPENSSL_LIBS $SASL2_LIBS], [],
    [$BOOST_INCLUDE])
 # MongoDB's own library is normally static, but its supporting Boost
 # libraries might not be by default.
 if test -n "$MONGODB_LIBS"; then
-   MONGODB_STATIC_LIBS="$MONGODB_LIBPATH -lmongoclient $BOOST_LIBPATH $boost_fs_static_lib $BOOST_REGEX_STATIC_LIBS $BOOST_THREAD_STATIC_LIBS"
+   MONGODB_STATIC_LIBS="$MONGODB_LIBPATH -lmongoclient $BOOST_LIBPATH $boost_fs_static_lib $BOOST_REGEX_STATIC_LIBS $BOOST_THREAD_STATIC_LIBS $OPENSSL_LIBS $SASL2_LIBS"
 else
    MONGODB_STATIC_LIBS=
 fi

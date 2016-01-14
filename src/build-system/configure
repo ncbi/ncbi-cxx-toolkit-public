@@ -820,6 +820,8 @@ GSOAP_LIBS
 AVRO_INCLUDE
 AVRO_LIBS
 AVROGENCPP
+SASL2_INCLUDE
+SASL2_LIBS
 MONGODB_INCLUDE
 MONGODB_LIBS
 GMOCK_INCLUDE
@@ -1595,7 +1597,8 @@ orbacus freetype ftgl opengl mesa glut glew glew-mx \
 bdb python perl jni sqlite3 icu boost boost-tag \
 sp expat sablot libxml libxslt libexslt xerces xalan zorba \
 oechem sge muparser hdf5 \
-gif jpeg tiff png xpm magic curl mimetic gsoap avro cereal mongodb gmock 3psw \
+gif jpeg tiff png xpm \
+magic curl mimetic gsoap avro cereal sasl2 mongodb gmock 3psw \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -1664,7 +1667,8 @@ for x_arg in "$@" ; do
       | --with-sge=* | --with-muparser=* | --with-hdf5=* | --with-gif=* \
       | --with-jpeg=* | --with-png=* | --with-tiff=* | --with-xpm=* \
       | --with-magic=* | --with-curl=* | --with-mimetic=* | --with-gsoap=* \
-      | --with-avro=* | --with-cereal=* | --with-mongodb=* | --with-gmock=* )
+      | --with-avro=* | --with-cereal=* | --with-sasl2* | --with-mongodb=* \
+      | --with-gmock=* )
       # Confirm that the specified directory exists and is readable.
       dir=`echo $x_arg | sed -e 's/^[^=]*=//'`
       case "$x_arg" in
@@ -1970,6 +1974,8 @@ Optional Packages:
  --without-avro          do not use Apache Avro
  --with-cereal=DIR       use USC Cereal installation in DIR
  --without-cereal        do not use USC Cereal
+ --with-sasl2=DIR        use SASL 2 installation in DIR
+ --without-sasl2         do not use SASL 2
  --with-mongodb=DIR      use MongoDB installation in DIR
  --without-mongodb       do not use MongoDB
  --with-gmock=DIR        use Google Mock installation in DIR
@@ -2490,6 +2496,12 @@ case "$with_3psw" in
    { (exit 1); exit 1; }; }
          else
             with_cereal=no
+         fi
+        if test "${with_sasl2-no}" != "no"; then
+            { echo "$as_me: error: incompatible options: --with-sasl2 but --without-3psw" >&2
+   { (exit 1); exit 1; }; }
+         else
+            with_sasl2=no
          fi
         if test "${with_mongodb-no}" != "no"; then
             { echo "$as_me: error: incompatible options: --with-mongodb but --without-3psw" >&2
@@ -3949,6 +3961,18 @@ fi
 # Check whether --with-cereal2 was given.
 if test "${with_cereal2+set}" = set; then
   withval=$with_cereal2;
+fi
+
+
+# Check whether --with-sasl2 was given.
+if test "${with_sasl2+set}" = set; then
+  withval=$with_sasl2;
+fi
+
+
+# Check whether --with-sasl2b was given.
+if test "${with_sasl2b+set}" = set; then
+  withval=$with_sasl2b;
 fi
 
 
@@ -44407,6 +44431,184 @@ echo "$as_me: error: --with-cereal explicitly specified, but no usable version f
 fi
 
 
+# SASL 2
+if test "$with_sasl2" != "no"; then
+    case "$with_sasl2" in
+       yes | "" ) ;;
+       *        ) SASL2_PATH=$with_sasl2 ;;
+    esac
+    if test "$SASL2_PATH" != /usr -a -d "$SASL2_PATH"; then
+       in_path=" in $SASL2_PATH"
+       if test -z "$SASL2_INCLUDE" -a -d "$SASL2_PATH/include"; then
+          SASL2_INCLUDE="-I$SASL2_PATH/include"
+       fi
+       if test -n "$SASL2_LIBPATH"; then
+          :
+       elif test -d "$SASL2_PATH/lib${bit64_sfx}"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $SASL2_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    SASL2_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $SASL2_PATH/lib${bit64_sfx}; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    SASL2_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       elif test -d "$SASL2_PATH/lib"; then
+          ncbi_rp_L_flags=
+ ncbi_rp_L_sep=$CONF_f_libpath
+ if test "x${CONF_f_runpath}" = "x${CONF_f_libpath}"; then
+    for x in $SASL2_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+    done
+    SASL2_LIBPATH="${ncbi_rp_L_flags}"
+ else
+    ncbi_rp_R_flags=
+    ncbi_rp_R_sep=" $CONF_f_runpath"
+    for x in $SASL2_PATH/lib; do
+       case "$x" in
+          /lib | /usr/lib | /usr/lib32 | /usr/lib64 | /usr/lib/$multiarch )
+             continue
+             ;;
+       esac
+       ncbi_rp_L_flags="${ncbi_rp_L_flags}${ncbi_rp_L_sep}$x"
+       ncbi_rp_L_sep=" $CONF_f_libpath"
+       x=`echo $x | sed -e "$ncbi_rpath_sed"`
+       ncbi_rp_R_flags="${ncbi_rp_R_flags}${ncbi_rp_R_sep}$x"
+       ncbi_rp_R_sep=:
+    done
+    SASL2_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
+ fi
+       fi
+       SASL2_LIBS="$SASL2_LIBPATH -lsasl2 "
+    else
+       SASL2_INCLUDE=""
+       SASL2_LIBS="-lsasl2 "
+       in_path=
+    fi
+    { echo "$as_me:$LINENO: checking for libsasl2$in_path" >&5
+echo $ECHO_N "checking for libsasl2$in_path... $ECHO_C" >&6; }
+if test "${ncbi_cv_lib_sasl2+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  CPPFLAGS=" $SASL2_INCLUDE $orig_CPPFLAGS"
+       LIBS="$SASL2_LIBS  $orig_LIBS"
+       cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <stdlib.h>
+                     #include <sasl/sasl.h>
+int
+main ()
+{
+sasl_client_init(NULL);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag" || test ! -s conftest.err'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_lib_sasl2=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ncbi_cv_lib_sasl2=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+{ echo "$as_me:$LINENO: result: $ncbi_cv_lib_sasl2" >&5
+echo "${ECHO_T}$ncbi_cv_lib_sasl2" >&6; }
+    if test "$ncbi_cv_lib_sasl2" = "no"; then
+       if test "${with_sasl2:=no}" != no; then
+       { { echo "$as_me:$LINENO: error: --with-sasl2 explicitly specified, but no usable version found." >&5
+echo "$as_me: error: --with-sasl2 explicitly specified, but no usable version found." >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+    fi
+ fi
+ if test "$with_sasl2" = "no"; then
+    SASL2_PATH="No_SASL2"
+    SASL2_INCLUDE=
+    SASL2_LIBS=
+ else
+              WithPackages="$WithPackages${WithPackagesSep}SASL2"; WithPackagesSep=" "
+    SASL2_INCLUDE=" $SASL2_INCLUDE"
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBSASL2 1
+_ACEOF
+
+ fi
+
+
+
+
+
 # MongoDB
 case "$with_mongodb" in
    yes | no | '' ) ;;
@@ -44539,10 +44741,10 @@ if test "$with_mongodb" != "no"; then
     MONGODB_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
  fi
        fi
-       MONGODB_LIBS="$MONGODB_LIBPATH -lmongoclient $BOOST_LIBPATH $boost_fs_lib $BOOST_REGEX_LIBS $BOOST_THREAD_LIBS"
+       MONGODB_LIBS="$MONGODB_LIBPATH -lmongoclient $BOOST_LIBPATH $boost_fs_lib $BOOST_REGEX_LIBS $BOOST_THREAD_LIBS $OPENSSL_LIBS $SASL2_LIBS"
     else
        MONGODB_INCLUDE=""
-       MONGODB_LIBS="-lmongoclient $BOOST_LIBPATH $boost_fs_lib $BOOST_REGEX_LIBS $BOOST_THREAD_LIBS"
+       MONGODB_LIBS="-lmongoclient $BOOST_LIBPATH $boost_fs_lib $BOOST_REGEX_LIBS $BOOST_THREAD_LIBS $OPENSSL_LIBS $SASL2_LIBS"
        in_path=
     fi
     { echo "$as_me:$LINENO: checking for libmongoclient$in_path" >&5
@@ -44643,7 +44845,7 @@ _ACEOF
 # MongoDB's own library is normally static, but its supporting Boost
 # libraries might not be by default.
 if test -n "$MONGODB_LIBS"; then
-   MONGODB_STATIC_LIBS="$MONGODB_LIBPATH -lmongoclient $BOOST_LIBPATH $boost_fs_static_lib $BOOST_REGEX_STATIC_LIBS $BOOST_THREAD_STATIC_LIBS"
+   MONGODB_STATIC_LIBS="$MONGODB_LIBPATH -lmongoclient $BOOST_LIBPATH $boost_fs_static_lib $BOOST_REGEX_STATIC_LIBS $BOOST_THREAD_STATIC_LIBS $OPENSSL_LIBS $SASL2_LIBS"
 else
    MONGODB_STATIC_LIBS=
 fi
@@ -45308,7 +45510,7 @@ for x in Int8GI StrictGI GCC KCC ICC VisualAge CompaqCompiler Cray WorkShop MIPS
           ;;
       esac
    done
-  for x in UUID FUSE Iconv Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB LocalVDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF UNGIF GIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal MONGODB GMOCK; do
+  for x in UUID FUSE Iconv Z LocalZ BZ2 LocalBZ2 LZO PCRE LocalPCRE GMP GCRYPT NETTLE GNUTLS OPENSSL KRB5 CURL Sybase DBLib FreeTDS MySQL BerkeleyDB BerkeleyDB++ ODBC PYTHON PYTHON25 PYTHON26 PYTHON27 PERL Boost.Filesystem Boost.Iostreams Boost.Program-Options Boost.Regex Boost.Spirit Boost.System Boost.Test Boost.Test.Included Boost.Thread C-Toolkit OpenGL MESA GLUT GLEW wxWidgets wx2.8 Fast-CGI LocalSSS LocalMSGMAIL2 SSSUTILS LocalNCBILS NCBILS2 SSSDB SP ORBacus ICU EXPAT SABLOT LIBXML LIBXSLT LIBEXSLT Xerces Xalan Zorba SQLITE3 SQLITE3ASYNC VDB LocalVDB OECHEM SGE MUPARSER HDF5 JPEG PNG TIFF UNGIF GIF XPM FreeType FTGL MAGIC MIMETIC GSOAP AVRO Cereal SASL2 MONGODB GMOCK; do
       case " $WithPackages " in
          *" $x "*) ;;
          *) WithoutPackages="$WithoutPackages$WithoutPackagesSep$x"
@@ -46655,6 +46857,8 @@ GSOAP_LIBS!$GSOAP_LIBS$ac_delim
 AVRO_INCLUDE!$AVRO_INCLUDE$ac_delim
 AVRO_LIBS!$AVRO_LIBS$ac_delim
 AVROGENCPP!$AVROGENCPP$ac_delim
+SASL2_INCLUDE!$SASL2_INCLUDE$ac_delim
+SASL2_LIBS!$SASL2_LIBS$ac_delim
 MONGODB_INCLUDE!$MONGODB_INCLUDE$ac_delim
 MONGODB_LIBS!$MONGODB_LIBS$ac_delim
 GMOCK_INCLUDE!$GMOCK_INCLUDE$ac_delim
@@ -46732,8 +46936,6 @@ f_compile!$f_compile$ac_delim
 f_outobj!$f_outobj$ac_delim
 f_outlib!$f_outlib$ac_delim
 f_libpath!$f_libpath$ac_delim
-f_runpath!$f_runpath$ac_delim
-f_outexe!$f_outexe$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -46775,6 +46977,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+f_runpath!$f_runpath$ac_delim
+f_outexe!$f_outexe$ac_delim
 BDB_LIB!$BDB_LIB$ac_delim
 BDB_CACHE_LIB!$BDB_CACHE_LIB$ac_delim
 DBAPI_DRIVER!$DBAPI_DRIVER$ac_delim
@@ -46870,8 +47074,6 @@ NCBI_SSS_LIBPATH!$NCBI_SSS_LIBPATH$ac_delim
 LIBSSSUTILS!$LIBSSSUTILS$ac_delim
 LIBSSSDB!$LIBSSSDB$ac_delim
 sssutils!$sssutils$ac_delim
-VDB_INCLUDE!$VDB_INCLUDE$ac_delim
-VDB_LIB!$VDB_LIB$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -46913,6 +47115,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+VDB_INCLUDE!$VDB_INCLUDE$ac_delim
+VDB_LIB!$VDB_LIB$ac_delim
 VDB_LIBS!$VDB_LIBS$ac_delim
 VDB_STATIC_LIBS!$VDB_STATIC_LIBS$ac_delim
 VDB_REQ!$VDB_REQ$ac_delim
@@ -46988,7 +47192,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 73; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 75; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
