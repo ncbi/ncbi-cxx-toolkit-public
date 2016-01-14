@@ -3501,7 +3501,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MARE	s	Marmara University, Department of Pharmaceutical Botany",
 "MARO	s	Marylhurst College",
 "MARS	s	Universite de Provence Centre St-Charles, case 4",
-"MARSSJ	s	Universite d'Aix-Marseille III, Laboratoire de Botanique et Ecologie Mediterraneenne",
+"MARSSJ	s	Universite Paul Cezanne",
 "MARY	s	University of Maryland",
 "MASE	s	Maseru Experiment Station",
 "MASS	s	University of Massachusetts, Biology Department",
