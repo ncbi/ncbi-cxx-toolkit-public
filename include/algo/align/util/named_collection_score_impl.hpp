@@ -44,6 +44,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+class CSubjectsSequenceCoverage;
+
 class CScoreSeqCoverage : public INamedAlignmentCollectionScore
 {
     CScoreSeqCoverage() {}
@@ -51,9 +53,12 @@ class CScoreSeqCoverage : public INamedAlignmentCollectionScore
 public:
     string GetName() const;
     vector<CScoreValue> Get(CScope& scope, CSeq_align_set const& coll) const;
-    
+     void Set(CScope& scope, CSeq_align_set & coll) const;
+
     static const char* Name;    
     static CIRef<INamedAlignmentCollectionScore> Create();
+
+    friend class CSubjectsSequenceCoverage;
 };
 
 class CScoreUniqSeqCoverage : public INamedAlignmentCollectionScore
@@ -63,9 +68,37 @@ class CScoreUniqSeqCoverage : public INamedAlignmentCollectionScore
 public:
     string GetName() const;   
     vector<CScoreValue> Get(CScope& scope, CSeq_align_set const& coll) const;
+    void Set(CScope& scope, CSeq_align_set & coll) const;
 
     static const char* Name;    
     static CIRef<INamedAlignmentCollectionScore> Create();
+    
+    friend class CSubjectsSequenceCoverage;
+};
+
+// Adapters that provide ability to compute multiple scores in order to 
+// reuse common tasks.
+class CSubjectsSequenceCoverage : public INamedAlignmentCollectionScore
+{
+    typedef pair<double, bool> (*F)(CBioseq_Handle const&, vector<CSeq_align const*>::const_iterator, vector<CSeq_align const*>::const_iterator);
+
+    vector<pair<string, F> > m_Calculators;
+ 
+    CSubjectsSequenceCoverage();
+    explicit CSubjectsSequenceCoverage(vector<pair<string, F> > const& calculators)
+    : m_Calculators(calculators)
+    {
+    }
+
+    static pair<double, bool> MakeScore(CBioseq_Handle const& query_handle, vector<CSeq_align const*>::const_iterator, vector<CSeq_align const*>::const_iterator);
+
+public:
+    string GetName() const;   
+    vector<CScoreValue> Get(CScope& scope, CSeq_align_set const& coll) const;
+    void Set(CScope& scope, CSeq_align_set & coll) const;
+
+    static const char* Name;    
+    static CIRef<INamedAlignmentCollectionScore> Create(vector<string> score_names);
 };
 
 

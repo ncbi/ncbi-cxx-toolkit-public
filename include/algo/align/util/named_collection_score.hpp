@@ -33,6 +33,7 @@
  */
 
 #include <corelib/ncbiobj.hpp>
+#include <objmgr/scope.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 #include <objects/seqalign/Seq_align_set.hpp>
 
@@ -44,18 +45,21 @@ class CScoreValue
     CSeq_id_Handle m_Query;
     CSeq_id_Handle m_Subject;
     double m_Value;
+    string m_Name;
 
     CScoreValue();
 public:
-    CScoreValue(CSeq_id_Handle query, CSeq_id_Handle subject, double value)
+    CScoreValue(CSeq_id_Handle query, CSeq_id_Handle subject, string const& name, double value)
     : m_Query(query)
     , m_Subject(subject)
     , m_Value(value)
+    , m_Name(name)
     {
     }
 
     CSeq_id_Handle const& GetQueryId() const { return m_Query; }
     CSeq_id_Handle const& GetSubjectId() const { return m_Subject; }
+    string const& GetName() const { return m_Name; }
     double const& GetValue() const { return m_Value; }
 };
 
@@ -68,6 +72,7 @@ public:
     virtual ~INamedAlignmentCollectionScore() {}
     virtual string GetName() const = 0;
     virtual vector<CScoreValue> Get(CScope&, CSeq_align_set const&) const = 0;
+    virtual void Set(CScope&, CSeq_align_set& ) const = 0;
 };
 
 typedef CIRef<INamedAlignmentCollectionScore> (* TNamedScoreFactory)();

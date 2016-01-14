@@ -50,12 +50,19 @@
 #include <algo/align/util/named_collection_score_impl.hpp>
 
 #include <cassert>
+#include <sstream>
+#include <iterator>
+
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
 typedef vector<CSeq_align const*>::const_iterator TIterator;
+typedef pair<double, bool> (* TCalculator)(CBioseq_Handle const&, TIterator, TIterator);
 
-static vector<CScoreValue> MakeSubjectScores(CScope& scope, CSeq_align_set const& coll, pair<double, bool> (* f)(CBioseq_Handle const&, TIterator, TIterator));
+static vector<CScoreValue> MakeSubjectScores(CScope& scope, CSeq_align_set const& coll, string name, TCalculator f);
+static vector<CScoreValue> MakeSubjectScores(CScope& scope, CSeq_align_set const& coll, vector<pair<string, TCalculator> > const& calculators);
+static void MakeSubjectScores(CScope& scope, CSeq_align_set & coll, vector<pair<string, TCalculator> > const& calculators);
+
 // Compare: order alignments by (query-id, subject-id)
 static bool Compare(CSeq_align const* lhs, CSeq_align const* rhs);
 static CRange<TSeqPos> & s_FixMinusStrandRange(CRange<TSeqPos> & rng);
@@ -71,8 +78,16 @@ string CScoreSeqCoverage::GetName() const
 
 vector<CScoreValue> CScoreSeqCoverage::Get(CScope& scope, CSeq_align_set const& coll) const
 {
-    return MakeSubjectScores(scope, coll, CScoreSeqCoverage::MakeScore);
+    return MakeSubjectScores(scope, coll, CScoreSeqCoverage::Name, CScoreSeqCoverage::MakeScore);
 }
+
+void CScoreSeqCoverage::Set(CScope& scope, CSeq_align_set& coll) const
+{
+    vector<pair<string, TCalculator> > calculators(1, make_pair(GetName(), CScoreSeqCoverage::MakeScore));
+
+    MakeSubjectScores(scope, coll, calculators);
+}
+
 
 pair<double, bool> CScoreSeqCoverage::MakeScore(CBioseq_Handle const& query_handle, vector<CSeq_align const*>::const_iterator begin, vector<CSeq_align const*>::const_iterator end) 
 {
@@ -115,7 +130,14 @@ string CScoreUniqSeqCoverage::GetName() const
 
 std::vector<objects::CScoreValue> CScoreUniqSeqCoverage::Get(CScope& scope, CSeq_align_set const& coll) const
 {
-    return MakeSubjectScores(scope, coll, CScoreUniqSeqCoverage::MakeScore);
+    return MakeSubjectScores(scope, coll, CScoreUniqSeqCoverage::Name, CScoreUniqSeqCoverage::MakeScore);
+}
+
+void CScoreUniqSeqCoverage::Set(CScope& scope, CSeq_align_set& coll) const
+{
+    vector<pair<string, TCalculator> > calculators(1, make_pair(GetName(), MakeScore));
+
+    MakeSubjectScores(scope, coll, calculators);
 }
 
 pair<double, bool> CScoreUniqSeqCoverage::MakeScore(CBioseq_Handle const& query_handle, vector<CSeq_align const*>::const_iterator begin, vector<CSeq_align const*>::const_iterator end)
@@ -186,6 +208,61 @@ CIRef<INamedAlignmentCollectionScore> CScoreUniqSeqCoverage::Create()
     return CIRef<INamedAlignmentCollectionScore>(new CScoreUniqSeqCoverage);
 } 
 
+// Adapter for computing subjects sequence coverage scores.
+const char* CSubjectsSequenceCoverage::Name = "subjects-sequence-coverage-group";
+
+string CSubjectsSequenceCoverage::GetName() const
+{
+    return CSubjectsSequenceCoverage::Name;
+}
+
+std::vector<objects::CScoreValue> CSubjectsSequenceCoverage::Get(CScope& scope, CSeq_align_set const& coll) const
+{
+    return MakeSubjectScores(scope, coll, m_Calculators);
+}
+
+void CSubjectsSequenceCoverage::Set(CScope& scope, CSeq_align_set & coll) const
+{
+    MakeSubjectScores(scope, coll, m_Calculators);
+}
+
+CIRef<INamedAlignmentCollectionScore> CSubjectsSequenceCoverage::Create(vector<string> names)
+{
+    static const struct tagSubjectsSequenceCoverageMembers {
+        const char* name;
+        TCalculator f;
+    } 
+    SubjectsSequenceCoverageMembers[] = {
+        {CScoreSeqCoverage::Name, CScoreSeqCoverage::MakeScore},
+        {CScoreUniqSeqCoverage::Name, CScoreUniqSeqCoverage::MakeScore},
+        {0, 0}
+    };
+
+
+    vector<pair<string, TCalculator> > calculators;
+    vector<string> not_found;
+
+    for ( vector<string>::const_iterator i = names.begin(); i != names.end(); ++i ) {
+        not_found.push_back(*i);
+        for ( struct tagSubjectsSequenceCoverageMembers const* entry = &SubjectsSequenceCoverageMembers[0]; entry->name != 0; ++entry ) {
+            if ( *i == entry->name ) {
+                calculators.push_back(make_pair(entry->name, entry->f));
+                not_found.pop_back();
+                break;
+            }
+        }
+    }
+
+    if ( !not_found.empty() ) {
+        ostringstream oss;
+        oss << "Following scores do not belong to subjects sequence coverage scores: ";
+        std::copy(not_found.begin(), not_found.end(), ostream_iterator<string>(oss, ", "));
+        NCBI_THROW(CException, eUnknown, oss.str());
+    }
+
+    return CIRef<INamedAlignmentCollectionScore>(new CSubjectsSequenceCoverage(calculators));
+}
+
 // Order by (query-seq-id, subject-seq-id, subject-start-pos)
 bool Compare(CSeq_align const* lhs, CSeq_align const* rhs)
 {
@@ -198,13 +275,20 @@ bool Compare(CSeq_align const* lhs, CSeq_align const* rhs)
     CSeq_id const& sid_lhs = lhs->GetSeq_id(1);
     CSeq_id const& sid_rhs = rhs->GetSeq_id(1);
 
-    if (qid_lhs.CompareOrdered(sid_rhs) < 0) return true;
-    if (qid_rhs.CompareOrdered(sid_lhs) < 0) return false;
+    if (sid_lhs.CompareOrdered(sid_rhs) < 0) return true;
+    if (sid_rhs.CompareOrdered(sid_lhs) < 0) return false;
 
     return lhs->GetSeqStart(1) < rhs->GetSeqStart(1);
 }
 
-vector<CScoreValue> MakeSubjectScores(CScope& scope, CSeq_align_set const& coll, pair<double, bool> (* f)(CBioseq_Handle const&, TIterator, TIterator))
+vector<CScoreValue> MakeSubjectScores(CScope& scope, CSeq_align_set const& coll, string name, TCalculator f)
+{
+    vector<pair<string, TCalculator> > calculators(1, make_pair(name, f));
+
+    return MakeSubjectScores(scope, coll, calculators);   
+}
+
+vector<CScoreValue> MakeSubjectScores(CScope& scope, CSeq_align_set const& coll, vector<pair<string, TCalculator> > const& calculators)
 {
     vector<CScoreValue> results;
 
@@ -213,7 +297,7 @@ vector<CScoreValue> MakeSubjectScores(CScope& scope, CSeq_align_set const& coll,
     aligns.reserve(coll.Get().size());
     list<CRef<CSeq_align> > const& alignments = coll.Get();
     for ( list<CRef<CSeq_align> >::const_iterator i = alignments.begin(); i != alignments.end(); ++i ) {
-        aligns.push_back(i->GetPointer());
+        aligns.push_back(i->GetNonNullPointer());
     }
     // Sort collection of alignments
     std::sort(aligns.begin(), aligns.end(), Compare);
@@ -229,17 +313,60 @@ vector<CScoreValue> MakeSubjectScores(CScope& scope, CSeq_align_set const& coll,
             if ( !qid.Match((*j)->GetSeq_id(0)) ) break;
             if ( !sid.Match((*j)->GetSeq_id(1)) ) break;
         }
-       
-        pair<double, bool> value = f(qh, i, j);
-        if ( value.second ) {
-            results.push_back(CScoreValue(CSeq_id_Handle::GetHandle(qid),
-                                          CSeq_id_Handle::GetHandle(sid),
-                                          value.first));
+        
+        for ( vector<pair<string, TCalculator> >::const_iterator calc = calculators.begin(); calc != calculators.end(); ++calc ) { 
+      
+            pair<double, bool> value = calc->second(qh, i, j);
+            if ( value.second ) {
+                results.push_back(CScoreValue(CSeq_id_Handle::GetHandle(qid),
+                                              CSeq_id_Handle::GetHandle(sid),
+                                              calc->first,
+                                              value.first));
+            }
         }
 
         i = j;
     }
     return results;       
+}
+
+void MakeSubjectScores(CScope& scope, CSeq_align_set & coll, vector<pair<string, TCalculator> > const& calculators)
+{
+    vector<CSeq_align const*> aligns;
+     
+    aligns.reserve(coll.Get().size());
+    list<CRef<CSeq_align> > & alignments = coll.Set();
+    for ( list<CRef<CSeq_align> >::const_iterator i = alignments.begin(); i != alignments.end(); ++i ) {
+        aligns.push_back(const_cast<CSeq_align*>(i->GetNonNullPointer()));
+    }
+    // Sort collection of alignments
+    std::sort(aligns.begin(), aligns.end(), Compare);
+
+    for ( vector<CSeq_align const*>::const_iterator i = aligns.begin(); i != aligns.end(); ) {
+
+        CSeq_id const& qid = (*i)->GetSeq_id(0);
+        CSeq_id const& sid = (*i)->GetSeq_id(1);
+        CBioseq_Handle qh = scope.GetBioseqHandle(qid); 
+
+        vector<CSeq_align const*>::const_iterator j = i + 1;
+        for ( ; j != aligns.end(); ++j ) {
+            if ( !qid.Match((*j)->GetSeq_id(0)) ) break;
+            if ( !sid.Match((*j)->GetSeq_id(1)) ) break;
+        }
+        
+        for ( vector<pair<string, TCalculator> >::const_iterator calc = calculators.begin(); calc != calculators.end(); ++calc ) { 
+      
+            pair<double, bool> value = calc->second(qh, i, j);
+            if ( value.second ) {
+                for ( vector<CSeq_align const*>::const_iterator update = i; update != j; ++update ) {
+                    CSeq_align* align = const_cast<CSeq_align*>(*update);
+                    align->SetNamedScore(calc->first, value.first);
+                }
+            }
+        }
+
+        i = j;
+    }
 }
 
 CRange<TSeqPos> & s_FixMinusStrandRange(CRange<TSeqPos> & rng)

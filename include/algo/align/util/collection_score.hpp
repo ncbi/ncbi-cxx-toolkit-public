@@ -41,7 +41,13 @@ class NCBI_XALGOALIGN_EXPORT IAlignmentCollectionScore : public CObject
 {
 public:
     virtual ~IAlignmentCollectionScore() {}
-    virtual vector<CScoreValue> Get(string const name, CSeq_align_set const& ) const = 0;
+    virtual vector<CScoreValue> Get(string const& name, CSeq_align_set const& ) const = 0;
+    virtual void Set(string const & name, CSeq_align_set& ) const = 0;
+
+    virtual vector<CScoreValue> Get(string const& group_name, vector<string> const& scores, CSeq_align_set const& ) const = 0;
+    virtual void Set(string const& group_name, vector<string> const& scores, CSeq_align_set& ) const = 0;
+
+
 
     static CRef<IAlignmentCollectionScore> GetInstance(objects::CScope&);
     static CRef<IAlignmentCollectionScore> GetInstance();

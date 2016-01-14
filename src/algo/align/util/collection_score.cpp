@@ -45,19 +45,31 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+typedef CIRef<INamedAlignmentCollectionScore> (* TMultiScoresFactory)(vector<string> score_names);
+
 static vector<pair<string, TNamedScoreFactory> > GetAlignmentCollectionScoreFactoryTable();
+static vector<pair<string, TMultiScoresFactory> > GetMultiScoresFactoryTable();
 
 class CAlignmentCollectionScore : public IAlignmentCollectionScore
 {
     CRef<CScope> m_Scope; 
     map<string, CIRef<INamedAlignmentCollectionScore> > m_Scores;
+    map<string, TMultiScoresFactory> m_MultiScores;
 
     void x_LoadNamedScores()
     {
+        // Load score calculators.
         vector<pair<string, TNamedScoreFactory> > table = GetAlignmentCollectionScoreFactoryTable();
         for ( vector<pair<string, TNamedScoreFactory> >::const_iterator i = table.begin(); i != table.end(); ++i ) {
             m_Scores.insert(make_pair(i->first, i->second()));
         }
+        
+        // Load adapters that compute multiple scores. 
+        vector<pair<string, TMultiScoresFactory> > table_multi_scores = GetMultiScoresFactoryTable();
+        for ( vector<pair<string, TMultiScoresFactory> >::const_iterator i = table_multi_scores.begin(); i != table_multi_scores.end(); ++i ) {
+            m_MultiScores.insert(make_pair(i->first, i->second));
+        }
+ 
     }
 
 public:
@@ -73,7 +85,7 @@ public:
         x_LoadNamedScores();
     }
 
-    vector<CScoreValue> Get(string score_name, CSeq_align_set const& coll) const
+    vector<CScoreValue> Get(string const& score_name, CSeq_align_set const& coll) const
     {
         map<string, CIRef<INamedAlignmentCollectionScore> >::const_iterator i = m_Scores.find(score_name);
         if ( i == m_Scores.end() ) {
@@ -86,6 +98,52 @@ public:
 
         return i->second->Get(const_cast<CScope&>(*m_Scope), coll);
     }
+
+    void Set(string const& score_name, CSeq_align_set& coll) const
+    {
+        map<string, CIRef<INamedAlignmentCollectionScore> >::const_iterator i = m_Scores.find(score_name);
+        if ( i == m_Scores.end() ) {
+            NCBI_THROW(CAlgoAlignUtilException, eScoreNotFound, score_name);
+        }        
+
+        if ( !coll.IsSet() || coll.Get().empty() ) {
+            return;
+        }
+
+        return i->second->Set(const_cast<CScope&>(*m_Scope), coll);
+    }
+
+
+    vector<CScoreValue> Get(string const& group_name, vector<string> const& score_names, CSeq_align_set const& coll) const
+    {
+        map<string, TMultiScoresFactory>::const_iterator i = m_MultiScores.find(group_name);
+        if ( i == m_MultiScores.end() ) {
+            NCBI_THROW(CAlgoAlignUtilException, eScoreNotFound, group_name);
+        }        
+
+        if ( !coll.IsSet() || coll.Get().empty() ) {
+            return vector<CScoreValue>();
+        }
+
+        CIRef<INamedAlignmentCollectionScore> score = i->second(score_names);
+        return score->Get(const_cast<CScope&>(*m_Scope), coll);
+    }
+ 
+    void Set(string const& group_name, vector<string> const& score_names, CSeq_align_set& coll) const
+    {
+        map<string, TMultiScoresFactory>::const_iterator i = m_MultiScores.find(group_name);
+        if ( i == m_MultiScores.end() ) {
+            NCBI_THROW(CAlgoAlignUtilException, eScoreNotFound, group_name);
+        }        
+
+        if ( !coll.IsSet() || coll.Get().empty() ) {
+            return;
+        }
+
+        CIRef<INamedAlignmentCollectionScore> score = i->second(score_names);
+        score->Set(const_cast<CScope&>(*m_Scope), coll);
+    }
+ 
 };
 
 CRef<IAlignmentCollectionScore> IAlignmentCollectionScore::GetInstance(CScope& scope)
@@ -120,4 +178,23 @@ vector<pair<string, TNamedScoreFactory> > GetAlignmentCollectionScoreFactoryTabl
     return table;
 }
 
+static struct tagMultiScoresFactory {
+    char const* name;
+    TMultiScoresFactory factory;
+}
+FactoryMultiScores[] = {
+    {CSubjectsSequenceCoverage::Name, CSubjectsSequenceCoverage::Create},
+    {0, 0}
+}; 
+
+vector<pair<string, TMultiScoresFactory> > GetMultiScoresFactoryTable()
+{
+    vector<pair<string, TMultiScoresFactory> > table;
+
+    for ( struct tagMultiScoresFactory* entry = &FactoryMultiScores[0]; entry->name != 0; ++entry ) {
+        table.push_back(make_pair(entry->name, entry->factory));
+    }       
+
+    return table;
+}
 END_NCBI_SCOPE
