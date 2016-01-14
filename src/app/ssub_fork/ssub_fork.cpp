@@ -642,7 +642,6 @@ void CSeqSubSplitter::xFlattenSeqEntry(CSeq_entry& entry,
 }
 
 
-
 END_NCBI_SCOPE
 
 
@@ -650,6 +649,5 @@ USING_NCBI_SCOPE;
 int main(int argc, const char** argv)
 {
     return CSeqSubSplitter().AppMain(argc, argv, 0, eDS_ToStderr, 0);
-    return 0;
 }
 
