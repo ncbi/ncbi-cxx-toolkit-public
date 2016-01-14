@@ -94,11 +94,11 @@ enum EChunkType {
     eChunk_prod,
     eChunk_data,
     eChunk_feat,
-    eChunk_other,
+    eChunk_qual,
     kChunkIdStep = 4
 };
-static const int kChunkId_QualityGraph = eChunk_other + 0*kChunkIdStep;
 static const size_t kProdPerChunk = 64;
+static const TSeqPos kQualChunkSize = 1<<16; // 64KiB
 
 
 #ifdef COLLECT_PROFILE
@@ -2180,7 +2180,9 @@ static inline void s_GetMinMax(const Uint1* arr, size_t size,
 
 
 void CWGSSeqIterator::GetQualityAnnot(TAnnotSet& annot_set,
-                                      TFlags flags) const
+                                      TFlags flags,
+                                      TSeqPos pos,
+                                      TSeqPos len) const
 {
     x_CheckValid("CWGSSeqIterator::GetQualityAnnot");
     if ( !(flags & fQualityGraph) || !m_Cur->m_QUALITY ) {
@@ -2188,8 +2190,9 @@ void CWGSSeqIterator::GetQualityAnnot(TAnnotSet& annot_set,
     }
     
     PROFILE(sw___GetContigQual);
-    TSeqPos pos = GetSeqStart();
-    TSeqPos end = x_GetQualityArraySize();
+    TSeqPos end = len == kInvalidSeqPos? kInvalidSeqPos: pos + len;
+    pos = max(pos, GetSeqStart());
+    end = min(end, x_GetQualityArraySize());
     if ( end <= pos ) {
         return;
     }
@@ -2217,8 +2220,8 @@ void CWGSSeqIterator::GetQualityAnnot(TAnnotSet& annot_set,
     graph->SetTitle("Phrap Quality");
     CSeq_interval& loc = graph->SetLoc().SetInt();
     loc.SetId(*GetId(flags));
-    loc.SetFrom(0);
-    loc.SetTo(TSeqPos(size-1));
+    loc.SetFrom(pos);
+    loc.SetTo(end-1);
     graph->SetNumval(TSeqPos(size));
     CByte_graph& bytes = graph->SetGraph().SetByte();
     bytes.SetValues().swap(values);
@@ -3402,6 +3405,62 @@ void SWGSCreateInfo::x_AddFeatures(TVDBRowIdRange range)
 }
 
 
+void CWGSSeqIterator::x_AddQualityChunkInfo(SWGSCreateInfo& info) const
+{
+    CRef<CSeq_id> id = GetId(info.flags);
+    
+    CRef<CID2S_Bioseq_Ids::C_E> place(new CID2S_Bioseq_Ids::C_E);
+    if ( id->IsGi() ) {
+        place->SetGi(id->GetGi());
+    }
+    else {
+        place->SetSeq_id(*id);
+    }
+    
+    TSeqPos size = GetSeqLength();
+    for ( TSeqPos k = 0, pos = 0; pos < size; ++k, pos += kQualChunkSize ) {
+        TSeqPos end = min(size, pos + kQualChunkSize);
+        int chunk_id = k*kChunkIdStep + eChunk_qual;
+
+        CRef<CID2S_Chunk_Info> chunk(new CID2S_Chunk_Info);
+        info.split->SetChunks().push_back(chunk);
+
+        chunk->SetId().Set(chunk_id);
+
+        CRef<CID2S_Chunk_Content> content;
+
+        // content of quality annot
+        content = new CID2S_Chunk_Content;
+        chunk->SetContent().push_back(content);
+        content->SetFeat_ids();
+        CID2S_Seq_annot_Info& annot_info =
+            content->SetSeq_annot();
+        annot_info.SetName(GetQualityAnnotName());
+        annot_info.SetGraph();
+
+        if ( id->IsGi() ) {
+            CID2S_Gi_Interval& loc =
+                annot_info.SetSeq_loc().SetGi_interval();
+            loc.SetGi(id->GetGi());
+            loc.SetStart(pos);
+            loc.SetLength(end-pos);
+        }
+        else {
+            CID2S_Seq_id_Interval& loc =
+                annot_info.SetSeq_loc().SetSeq_id_interval();
+            loc.SetSeq_id(*id);
+            loc.SetStart(pos);
+            loc.SetLength(end-pos);
+        }
+
+        // place of quality annot
+        content = new CID2S_Chunk_Content;
+        chunk->SetContent().push_back(content);
+        content->SetSeq_annot_place().SetBioseqs().Set().push_back(place);
+    }
+}
+
+
 void CWGSSeqIterator::x_CreateBioseq(SWGSCreateInfo& info) const
 {
     PROFILE(sw__GetContigBioseq);
@@ -3433,42 +3492,7 @@ void CWGSSeqIterator::x_CreateBioseq(SWGSCreateInfo& info) const
         bool has_quality_graph = false;
         if ( (info.flags & fQualityGraph) && m_Cur->m_QUALITY ) {
             if ( info.split_qual ) {
-                CRef<CID2S_Chunk_Info> chunk(new CID2S_Chunk_Info);
-                chunk->SetId().Set(kChunkId_QualityGraph);
-                CRef<CID2S_Chunk_Content> content;
-
-                content = new CID2S_Chunk_Content;
-                chunk->SetContent().push_back(content);
-                content->SetFeat_ids();
-                CID2S_Seq_annot_Info& annot_info =
-                    content->SetSeq_annot();
-                annot_info.SetName(GetQualityAnnotName());
-                annot_info.SetGraph();
-                TGi gi = GetGi();
-                CRef<CSeq_id> id;
-                if ( !gi ) {
-                    id = GetAccSeq_id();
-                    if ( !id ) {
-                        id = GetGeneralSeq_id();
-                    }
-                }
-
-                content = new CID2S_Chunk_Content;
-                chunk->SetContent().push_back(content);
-                CID2S_Seq_annot_place_Info& place_info =
-                    content->SetSeq_annot_place();
-                CRef<CID2S_Bioseq_Ids::C_E> place(new CID2S_Bioseq_Ids::C_E);
-                if ( gi ) {
-                    annot_info.SetSeq_loc().SetWhole_gi(gi);
-                    place->SetGi(gi);
-                }
-                else {
-                    annot_info.SetSeq_loc().SetWhole_seq_id(*id);
-                    place->SetSeq_id(*id);
-                }
-                place_info.SetBioseqs().Set().push_back(place);
-
-                info.split->SetChunks().push_back(chunk);
+                x_AddQualityChunkInfo(info);
                 has_quality_graph = true;
             }
             else {
@@ -3703,35 +3727,27 @@ void CWGSSeqIterator::x_CreateChunk(SWGSCreateInfo& info,
                                     TChunkId chunk_id) const
 {
     PROFILE(sw_GetChunk);
-    if ( chunk_id == kChunkId_QualityGraph ) {
+    EChunkType type = EChunkType(chunk_id%kChunkIdStep);
+    size_t index = chunk_id/kChunkIdStep;
+    if ( type == eChunk_qual ) {
         CRef<CID2S_Chunk_Data> data(new CID2S_Chunk_Data);
-        TGi gi = GetGi();
-        CRef<CSeq_id> id;
-        if ( !gi ) {
-            id = GetAccSeq_id();
-            if ( !id ) {
-                id = GetGeneralSeq_id();
-            }
-        }
-        if ( gi ) {
-            data->SetId().SetGi(gi);
+        CRef<CSeq_id> id = GetId(info.flags);
+        if ( id->IsGi() ) {
+            data->SetId().SetGi(id->GetGi());
         }
         else {
             data->SetId().SetSeq_id(*id);
         }
-        GetQualityAnnot(data->SetAnnots(), info.flags);
+        GetQualityAnnot(data->SetAnnots(), info.flags,
+                        index*kQualChunkSize, kQualChunkSize);
         info.chunk->SetData().push_back(data);
     }
-    else {
-        EChunkType type = EChunkType(chunk_id%kChunkIdStep);
-        size_t index = chunk_id/kChunkIdStep;
-        if ( type == eChunk_prod ) {
-            vector<TVDBRowId> product_row_ids;
-            sx_GetProductsSlice(m_Db, GetLocFeatRowIdRange(),
-                                index*kProdPerChunk, kProdPerChunk,
-                                product_row_ids);
-            info.x_AddProducts(product_row_ids);
-        }
+    if ( type == eChunk_prod ) {
+        vector<TVDBRowId> product_row_ids;
+        sx_GetProductsSlice(m_Db, GetLocFeatRowIdRange(),
+                            index*kProdPerChunk, kProdPerChunk,
+                            product_row_ids);
+        info.x_AddProducts(product_row_ids);
     }
 }
 

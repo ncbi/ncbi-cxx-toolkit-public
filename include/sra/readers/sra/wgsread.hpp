@@ -787,7 +787,9 @@ public:
     bool HasQualityGraph(void) const;
     void GetQualityVec(vector<INSDC_quality_phred>& quality_vec) const;
     void GetQualityAnnot(TAnnotSet& annot_set,
-                         TFlags flags = fDefaultFlags) const;
+                         TFlags flags = fDefaultFlags,
+                         TSeqPos pos = 0,
+                         TSeqPos len = kInvalidSeqPos) const;
     string GetQualityAnnotName(void) const;
 
     NCBI_gb_state GetGBState(void) const;
@@ -843,6 +845,7 @@ protected:
                        TChunkId chunk_id) const;
 
     TSeqPos x_GetQualityArraySize(void) const;
+    void x_AddQualityChunkInfo(SWGSCreateInfo& info) const;
 
 private:
     CWGSDb m_Db;
