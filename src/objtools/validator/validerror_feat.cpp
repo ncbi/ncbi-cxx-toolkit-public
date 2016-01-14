@@ -6779,7 +6779,7 @@ bool CValidError_feat::ValidateCdRegionTranslation
                     PostErr(sev, eErr_SEQ_FEAT_StartCodon,
                         codon_desc + " start codon (and " + 
                         NStr::SizetToString(internal_stop_count) +
-                        " internal stops). Possibly wrong genetic code [" +
+                        " internal stops). Probably wrong genetic code [" +
                         gccode + "]", feat);
                     reported_bad_start_codon = true;
                 }
