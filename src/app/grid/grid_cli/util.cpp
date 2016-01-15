@@ -37,7 +37,7 @@
 #include <corelib/rwstream.hpp>
 #include <cgi/ncbicgi.hpp>
 #include <connect/services/ns_output_parser.hpp>
-#include <connect/services/impl/grid_rw_impl.hpp>
+#include <connect/services/grid_rw_impl.hpp>
 #include <connect/services/remote_app.hpp>
 #include <connect/services/netstorage.hpp>
 

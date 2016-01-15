@@ -31,7 +31,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include <connect/services/impl/grid_rw_impl.hpp>
+#include <connect/services/grid_rw_impl.hpp>
 #include <connect/services/remote_app.hpp>
 #include <connect/services/error_codes.hpp>
 

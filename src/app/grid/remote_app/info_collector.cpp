@@ -34,7 +34,7 @@
 
 #include "info_collector.hpp"
 
-#include <connect/services/impl/grid_rw_impl.hpp>
+#include <connect/services/grid_rw_impl.hpp>
 
 #include <corelib/rwstream.hpp>
 

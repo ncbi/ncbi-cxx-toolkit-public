@@ -35,7 +35,7 @@
 #include "util.hpp"
 
 #include <connect/services/remote_app.hpp>
-#include <connect/services/impl/grid_rw_impl.hpp>
+#include <connect/services/grid_rw_impl.hpp>
 #include <connect/services/ns_job_serializer.hpp>
 
 #include <corelib/rwstream.hpp>
