@@ -37,4 +37,4 @@ CHECK_COPY = test_data
 # CXXFLAGS = $(FAST_CXXFLAGS)
 # LDFLAGS  = $(FAST_LDFLAGS)
 
-WATCHERS = kachalos
+WATCHERS = kachalos kornbluh

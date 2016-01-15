@@ -14,7 +14,7 @@ LIBS = $(LIBXML_LIBS) $(LIBXSLT_LIBS)
 
 ASN_DEP = general biblio pub seq seqset submit taxon3 macro valid
 
-WATCHERS = kachalos
+WATCHERS = kachalos kornbluh
 
 USES_LIBRARIES =  \
     $(OBJMGR_LIBS) $(OBJREAD_LIBS) macro xmlwrapp xvalidate
