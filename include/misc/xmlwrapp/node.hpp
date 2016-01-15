@@ -1380,26 +1380,6 @@ public:
     //####################################################################
     node& operator= (const node &other);
 
-    //####################################################################
-    /**
-     * Convert the node and all its children into XML text and set the given
-     * string to that text.
-     *
-     * @param xml The string to set the node's XML data to (the string is not
-     *          cleared; the content is appended to the string).
-     * @param flags
-     *        Bitwise mask of the save options. Does not affect XSLT result.
-     *        documents.
-     * @see xml::save_option
-     * @note compression part of the options is currently ignored.
-     * @deprecated use append_to_string(...) and save_to_string(...) instead.
-     * @author Peter Jones and Sergey Satskiy, NCBI
-    **/
-    //####################################################################
-    NCBI_DEPRECATED
-    void node_to_string (std::string &xml,
-                         save_option_flags flags=save_op_default) const;
-
 private:
     impl::node_impl *pimpl_;
 

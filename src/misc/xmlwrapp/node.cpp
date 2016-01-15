@@ -1474,11 +1474,6 @@ void xml::node::save_to_string_canonical (
     doc.release_doc_data();
 }
 //####################################################################
-void xml::node::node_to_string (std::string &xml,
-                                save_option_flags flags) const {
-    append_to_string(xml, flags);
-}
-//####################################################################
 node_set xml::node::convert_to_nset(void *  object_as_void) const {
     // It converts a scalar xpath object into a nodeset with 1 node in it
     xmlXPathObjectPtr   object = reinterpret_cast<xmlXPathObjectPtr>(
