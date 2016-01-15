@@ -46,6 +46,7 @@
 #include <corelib/resource_info.hpp>
 
 #include <time.h>
+#include <sstream>
 
 #define FILETRACK_SIDCOOKIE "SubmissionPortalSID"
 
@@ -328,7 +329,7 @@ CJsonNode SFileTrackRequest::ReadJsonResponse()
     string http_response;
 
     try {
-        CNcbiOstrstream sstr;
+        ostringstream sstr;
         NcbiStreamCopy(sstr, m_HTTPStream);
         sstr << NcbiEnds;
         http_response = sstr.str();
@@ -524,7 +525,7 @@ string SFileTrackAPI::GetFileAttribute(const CNetStorageObjectLoc& object_loc,
     string http_response;
 
     try {
-        CNcbiOstrstream sstr;
+        ostringstream sstr;
         NcbiStreamCopy(sstr, request.m_HTTPStream);
         sstr << NcbiEnds;
         http_response = sstr.str();
@@ -605,7 +606,7 @@ void SFileTrackAPI::SetFileAttribute(const CNetStorageObjectLoc& object_loc,
     string http_response;
 
     try {
-        CNcbiOstrstream sstr;
+        ostringstream sstr;
         NcbiStreamCopy(sstr, request.m_HTTPStream);
         sstr << NcbiEnds;
         http_response = sstr.str();

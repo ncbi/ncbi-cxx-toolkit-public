@@ -389,7 +389,7 @@ string CCompoundID::Dump()
     CNcbiOstrstream sstr;
     s_DumpCompoundID(sstr, m_Impl, 0, "    ");
     sstr << '\n' << NcbiEnds;
-    return sstr.str();
+    return CNcbiOstrstreamToString(sstr);
 }
 
 CCompoundIDPool::CCompoundIDPool() : m_Impl(new SCompoundIDPoolImpl)
