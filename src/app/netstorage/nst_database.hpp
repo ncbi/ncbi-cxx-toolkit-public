@@ -61,6 +61,10 @@ template <typename ValueType> struct TNSTDBValue
     bool        m_IsNull;
     ValueType   m_Value;
 
+    TNSTDBValue() :
+        m_IsNull(true)
+    {}
+
     bool operator==(const TNSTDBValue<ValueType> &  other) const
     { return (m_IsNull == other.m_IsNull) && (m_Value == other.m_Value); }
     bool operator!=(const TNSTDBValue<ValueType> &  other) const
