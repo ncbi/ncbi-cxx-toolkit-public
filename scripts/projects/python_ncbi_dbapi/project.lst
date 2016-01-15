@@ -19,6 +19,4 @@ dbapi/driver/ftds64/freetds/replacements$
 dbapi/driver/ftds64/freetds/ctlib$
 dbapi/driver/ftds64/ctlib$
 dbapi/lang_bind$
-dbapi/lang_bind/python$
-dbapi/lang_bind/python/pythonpp$
-dbapi/lang_bind/python/tests$
+dbapi/lang_bind/python
