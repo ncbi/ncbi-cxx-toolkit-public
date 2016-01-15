@@ -39,7 +39,6 @@
 #include <serial/objistr.hpp>
 #include <serial/objostr.hpp>
 #include <connect/services/grid_worker_app.hpp>
-#include <connect/services/grid_rw_impl.hpp>
 #include <connect/services/grid_client.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <corelib/perf_log.hpp>

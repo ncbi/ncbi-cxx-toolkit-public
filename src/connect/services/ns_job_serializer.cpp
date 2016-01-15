@@ -34,7 +34,7 @@
 #include <connect/services/ns_job_serializer.hpp>
 
 #include <connect/services/ns_output_parser.hpp>
-#include <connect/services/grid_rw_impl.hpp>
+#include <connect/services/impl/grid_rw_impl.hpp>
 
 #include <corelib/rwstream.hpp>
 

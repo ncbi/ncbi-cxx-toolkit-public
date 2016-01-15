@@ -33,7 +33,7 @@
 
 #include "netschedule_api_impl.hpp"
 
-#include <connect/services/grid_rw_impl.hpp>
+#include <connect/services/impl/grid_rw_impl.hpp>
 #include <connect/services/grid_client.hpp>
 
 #include <corelib/rwstream.hpp>

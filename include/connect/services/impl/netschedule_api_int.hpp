@@ -51,9 +51,6 @@ void g_AppendClientIPAndSessionID(string& cmd,
         const string* default_session = NULL);
 
 extern NCBI_XCONNECT_EXPORT
-void g_AppendHitID(string& cmd);
-
-extern NCBI_XCONNECT_EXPORT
 void g_AppendClientIPSessionIDHitID(string& cmd,
         const string* default_session = NULL);
 

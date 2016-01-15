@@ -33,7 +33,7 @@
 
 #include "grid_cli.hpp"
 
-#include <connect/services/grid_rw_impl.hpp>
+#include <connect/services/impl/grid_rw_impl.hpp>
 #include <connect/services/ns_job_serializer.hpp>
 
 #include <cgi/ncbicgi.hpp>
