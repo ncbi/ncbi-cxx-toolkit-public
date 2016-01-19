@@ -500,9 +500,9 @@ CTestArguments::CTestArguments(void)
         m_ParamBase2.SetDatabaseName(args["D"].AsString());
     }
 
-    if ( args["v"].HasValue() ) {
-        m_ParamBase.SetProtocolVersion(args["v"].AsInteger());
-        m_ParamBase2.SetProtocolVersion(args["v"].AsInteger());
+    if ( args["V"].HasValue() ) {
+        m_ParamBase.SetProtocolVersion(args["V"].AsInteger());
+        m_ParamBase2.SetProtocolVersion(args["V"].AsInteger());
     }
 
     if (args["conf"].AsString() == "with-exceptions") {
@@ -634,9 +634,12 @@ NCBITEST_INIT_CMDLINE(arg_desc)
                             "Name of the database to connect",
                             CArgDescriptions::eString, "DBAPI_Sample");
 
-    arg_desc->AddOptionalKey("v", "version",
+    arg_desc->AddOptionalKey("V", "version",
                             "TDS protocol version",
                             CArgDescriptions::eInteger);
+#if BOOST_VERSION < 106000
+    arg_desc->AddAlias("v", "V");
+#endif
 
     arg_desc->AddDefaultKey("conf", "configuration",
                             "Configuration for testing",

@@ -768,7 +768,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_LowLevel)
     string sql;
     CDB_Text txt;
 
-    const CArgValue& arg_v = CNcbiApplication::Instance()->GetArgs()["v"];
+    const CArgValue& arg_v = CNcbiApplication::Instance()->GetArgs()["V"];
     bool is_tds72 = arg_v.HasValue()  &&  arg_v.AsInteger() >= 72;
 
     try {
