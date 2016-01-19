@@ -56,6 +56,8 @@ private:
     bool xIsGoodGloballyReciprocalBest(const CUser_object& user_obj) const;
     bool xIsProteinMatch(const CSeq_annot& seq_annot) const;
     CAnnotdesc::TName xGetComparisonClass(const CSeq_annot& seq_annot) const;
+    bool xGetGGRBThreshold(const CSeq_annot& annot, double& threshold) const;
+    bool xGetGGRBThreshold(const CUser_object& user_object, double& threshold) const;
 };
 
 
@@ -138,6 +140,62 @@ bool CProteinMatchApp::xIsGoodGloballyReciprocalBest(const CSeq_annot& seq_annot
     }
 
     return false;
+}
+
+
+bool CProteinMatchApp::xGetGGRBThreshold(const CSeq_annot& seq_annot, double& threshold) const 
+{
+    if (seq_annot.IsSetDesc()) {
+
+        ITERATE(CAnnot_descr::Tdata, desc_it, seq_annot.GetDesc().Get()) {
+            if (!(*desc_it)->IsUser()) {
+                continue;
+            }
+
+            const CUser_object& user = (*desc_it)->GetUser();
+            if (!user.IsSetData() ||
+                !user.IsSetType() ||
+                user.GetType().GetStr() != "Attributes") {
+                continue;
+            }
+
+            if (xGetGGRBThreshold(user, threshold)) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+
+
+bool CProteinMatchApp::xGetGGRBThreshold(const CUser_object& user_obj, double& threshold) const
+{
+   if (!user_obj.IsSetType() ||
+       !user_obj.IsSetData() ||
+        user_obj.GetType().GetStr() != "Attributes") {
+       return false;
+   }
+
+   ITERATE(CUser_object::TData, it, user_obj.GetData()) {
+
+       const CUser_field& uf = **it;
+
+       if (!uf.IsSetData() ||
+           !uf.IsSetLabel() ||
+           !uf.GetLabel().IsStr() ||
+            uf.GetLabel().GetStr() != "good_globally_reciprocal_best_threshold") {
+           continue;
+       }
+
+       if (uf.GetData().IsReal()) {
+           threshold = uf.GetData().GetReal();
+           return true;
+       }
+   }
+
+   return false;
 }
 
 
