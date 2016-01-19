@@ -32,7 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbi_cookies.hpp>
-#include <serial/rpcbase.hpp>
+#include <serial/rpcbase_impl.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -64,7 +64,6 @@ CRPCClient_Base::CRPCClient_Base(const string&     service,
       m_RetryCount(0),
       m_RecursionCount(0),
       m_Service(service),
-      m_Timeout(kDefaultTimeout),
       m_RetryLimit(retry_limit)
 {
 }
@@ -73,9 +72,6 @@ CRPCClient_Base::CRPCClient_Base(const string&     service,
 CRPCClient_Base::~CRPCClient_Base(void)
 {
     Disconnect();
-    if ( !sx_IsSpecial(m_Timeout) ) {
-        delete const_cast<STimeout*>(m_Timeout);
-    }
 }
 
 
@@ -297,27 +293,6 @@ CTimeSpan CRPCClient_Base::x_GetRetryDelay(double max_delay) const
         return CTimeSpan(max_delay);
     }
     return m_RetryCtx.GetDelay();
-}
-
-
-EHTTP_HeaderParse
-CRPCClient_Base::sx_ParseHeader(const char* http_header,
-                                void*       user_data,
-                                int         server_error)
-{
-    if ( !user_data ) return eHTTP_HeaderContinue;
-    CHttpRetryContext* retry_ctx = reinterpret_cast<CHttpRetryContext*>(user_data);
-    _ASSERT(retry_ctx);
-    retry_ctx->ParseHeader(http_header);
-
-    // Always read response body - normal content or error.
-    return eHTTP_HeaderContinue;
-}
-
-
-bool CRPCClient_Base::sx_IsSpecial(const STimeout* timeout)
-{
-    return timeout == kDefaultTimeout  ||  timeout == kInfiniteTimeout;
 }
 
 
