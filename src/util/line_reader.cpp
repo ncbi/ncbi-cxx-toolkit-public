@@ -106,18 +106,46 @@ bool CStreamLineReader::AtEOF(void) const
 
 char CStreamLineReader::PeekChar(void) const
 {
-    if (m_UngetLine) {
-        _ASSERT(!m_Line.empty());
-        return *m_Line.begin();
-    } else {
+    _ASSERT(!AtEOF());
+    /* If at EOF - undefined behavior, return m_Stream->peek() */
+    if (AtEOF()) {
         return (char)m_Stream->peek();
     }
+    /* If right after constructor (line number is 0 and line was not ungot) - 
+       return the first character of the first line */
+    if (m_LineNumber == 0 && !m_UngetLine) {
+        char c = (char)m_Stream->peek();
+        /* If there are delimiters right from the start (which means the
+        first line is empty), return 0 */
+        if (c == '\n' || c == '\r') {
+            return 0;
+        }
+        return c;
+    }
+    /* If line was ungot - return its first symbol */
+    if (m_UngetLine) {
+        /* if line is empty - return 0 */
+        if (m_Line.empty()) {
+            return 0;
+        }
+        return *m_Line.begin();
+    }
+    char c = (char)m_Stream->peek();
+    /* If line is empty - return 0 */
+    if (c == '\n' || c == '\r') {
+        return 0;
+    }
+    return c;
 }
 
 
 void CStreamLineReader::UngetLine(void)
 {
-    _ASSERT(!m_UngetLine);
+    _ASSERT(!m_UngetLine && m_LineNumber != 0);
+    /* If after UngetLine() or after constructor - noop */
+    if (m_UngetLine || m_LineNumber == 0) {
+        return;
+    }
     --m_LineNumber;
     m_UngetLine = true;
 }
@@ -125,6 +153,11 @@ void CStreamLineReader::UngetLine(void)
 
 CStreamLineReader& CStreamLineReader::operator++(void)
 {
+    /* If at EOF - noop */
+    if (AtEOF()) {
+        m_Line = string();
+        return *this;
+    }
     ++m_LineNumber;
     if ( m_UngetLine ) {
         m_UngetLine = false;
@@ -145,6 +178,19 @@ CStreamLineReader& CStreamLineReader::operator++(void)
 CTempString CStreamLineReader::operator*(void) const
 {
     _ASSERT(!m_UngetLine);
+    /* After UngetLine() - undefined behavior */
+    if (m_UngetLine) {
+        return CTempString(NULL);
+    }
+    /* If at EOF - returns NULL */
+//    if (AtEOF()) {
+//        return CTempString(NULL);
+//    }
+    /* Right after constructor (m_LineNumber is 0 and UngetLine() was not run, 
+       the latter was already checked) - returns NULL */
+    if (m_LineNumber == 0) {
+        return CTempString(NULL);
+    }
     return CTempString(m_Line);
 }
 
@@ -161,6 +207,11 @@ CT_POS_TYPE CStreamLineReader::GetPosition(void) const
 
 unsigned int CStreamLineReader::GetLineNumber(void) const
 {
+    /* Right after constructor (m_LineNumber is 0 and UngetLine() was not run) 
+       - 0 */
+    /* If at EOF - returns the number of the last string */
+    /* After UngetLine() - number of the previous string */
+    /* Not at EOF, not after UngetLine() - number of the current string */
     return m_LineNumber;
 }
 
@@ -265,15 +316,35 @@ bool CMemoryLineReader::AtEOF(void) const
 
 char CMemoryLineReader::PeekChar(void) const
 {
-    _ASSERT(!AtEOF() && m_Line.begin());
+    _ASSERT(!AtEOF());
+    /* If at EOF - undefined behavior, return m_Pos */
+    if (AtEOF()) {
+        return *m_Pos;
+    }
+    /* If line was ungot - return its first symbol */
+    if (m_Pos == m_Line.begin()) {
+        /* if line is empty - return 0 */
+        if (m_Line.empty()) {
+            return 0;
+        }
+        return *m_Pos;
+    }
+    /* If line is empty - return 0 */
+    if (*m_Pos == '\n' || *m_Pos == '\r') {
+        return 0;
+    }
     return *m_Pos;
 }
 
 
 void CMemoryLineReader::UngetLine(void)
 {
-    _ASSERT(m_Line.begin());
     _ASSERT(m_Pos != m_Line.begin());
+    _ASSERT(m_Line.begin() != 0);
+    /* If after UngetLine() or after constructor - noop */
+    if (m_Pos == m_Line.begin() || m_Line.begin() == 0) {
+        return;
+    }
     --m_LineNumber;
     m_Pos = m_Line.begin();
 }
@@ -281,17 +352,23 @@ void CMemoryLineReader::UngetLine(void)
 
 CMemoryLineReader& CMemoryLineReader::operator++(void)
 {
+    /* If at EOF - noop */
+    if (AtEOF()) {
+        m_Line = CTempString(NULL);
+        return *this;
+    }
     const char* p = m_Pos;
     if ( p == m_Line.begin() ) {
+        /* If after UngetLine(), line is already in buffer, so end is known*/
         p = m_Line.end();
-    }
-    else {
+    } else {
+        /* Line is in stream, go char by char until delimiters */
         while ( p < m_End  &&  *p != '\r'  && *p != '\n' ) {
             ++p;
         }
         m_Line = CTempString(m_Pos, p - m_Pos);
     }
-    // skip over delimiters
+    // skip over delimiters until the beginning of the next string
     if (p + 1 < m_End  &&  *p == '\r'  &&  p[1] == '\n') {
         m_Pos = p + 2;
     } else if (p < m_End) {
@@ -306,7 +383,16 @@ CMemoryLineReader& CMemoryLineReader::operator++(void)
 
 CTempString CMemoryLineReader::operator*(void) const
 {
-    _ASSERT(m_Line.begin());
+    _ASSERT(m_Pos != m_Line.begin());
+    /* After UngetLine() - undefined behavior */
+    if (m_Pos == m_Line.begin()) {
+        return CTempString(NULL);
+    }
+    /* Right after constructor (m_LineNumber is 0 and UngetLine() was not run,
+    the latter was already checked) - returns NULL */
+    if (m_LineNumber == 0) {
+        return CTempString(NULL);
+    }
     return m_Line;
 }
 
@@ -319,6 +405,11 @@ CT_POS_TYPE CMemoryLineReader::GetPosition(void) const
 
 unsigned int CMemoryLineReader::GetLineNumber(void) const
 {
+    /* Right after constructor (m_LineNumber is 0 and UngetLine() was not run)
+    - 0 */
+    /* If at EOF - returns the number of the last string */
+    /* After UngetLine() - number of the previous string */
+    /* Not at EOF, not after UngetLine() - number of the current string */
     return m_LineNumber;
 }
 
@@ -383,20 +474,33 @@ bool CBufferedLineReader::AtEOF(void) const
 
 char CBufferedLineReader::PeekChar(void) const
 {
-    if (m_UngetLine) {
-        _ASSERT(m_Line.begin());
-        return *m_Line.begin();
-    } else {
-        _ASSERT(!AtEOF());
+    _ASSERT(!AtEOF());
+    /* If at EOF - undefined behavior */
+    if (AtEOF()) {
         return *m_Pos;
     }
+    /* If line was ungot - return its first symbol */
+    if (m_UngetLine) {
+        /* if line is empty - return 0 */
+        if (m_Line.empty()) {
+            return 0;
+        }
+        return *m_Line.begin();
+    }
+    /* If line is empty - return 0 */
+    if (*m_Pos == '\n' || *m_Pos == '\r') {
+        return 0;
+    }
+    return *m_Pos;
 }
 
 
 void CBufferedLineReader::UngetLine(void)
 {
-    _ASSERT(!m_UngetLine);
-    _ASSERT(m_Line.begin());
+    _ASSERT(!m_UngetLine && m_Line.begin());
+    /* If after UngetLine() or after constructor - noop */
+    if (m_UngetLine || m_Line.begin() == NULL)
+        return;
     --m_LineNumber;
     m_UngetLine = true;
 }
@@ -404,6 +508,11 @@ void CBufferedLineReader::UngetLine(void)
 
 CBufferedLineReader& CBufferedLineReader::operator++(void)
 {
+    /* If at EOF - noop */
+    if (AtEOF()) {
+        m_Line = CTempString(NULL);
+        return *this;
+    }
     ++m_LineNumber;
     if ( m_UngetLine ) {
         _ASSERT(m_Line.begin());
@@ -546,6 +655,16 @@ bool CBufferedLineReader::x_ReadBuffer()
 
 CTempString CBufferedLineReader::operator*(void) const
 {
+    _ASSERT(!m_UngetLine);
+    /* After UngetLine() - undefined behavior */
+    if (m_UngetLine) {
+        return CTempString(NULL);
+    }
+    /* Right after constructor (m_LineNumber is 0 and UngetLine() was not run,
+    the latter was already checked) - returns NULL */
+    if (m_Line.begin() == NULL) {
+        return CTempString(NULL);
+    }
     return m_Line;
 }
 
@@ -562,6 +681,11 @@ CT_POS_TYPE CBufferedLineReader::GetPosition(void) const
 
 unsigned int CBufferedLineReader::GetLineNumber(void) const
 {
+    /* Right after constructor (m_LineNumber is 0 and UngetLine() was not run)
+       - 0 */
+    /* If at EOF - returns the number of the last string */
+    /* After UngetLine() - number of the previous string */
+    /* Not at EOF, not after UngetLine() - number of the current string */
     return m_LineNumber;
 }
 
