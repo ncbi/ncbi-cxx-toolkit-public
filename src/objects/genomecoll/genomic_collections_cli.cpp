@@ -61,12 +61,14 @@ static const STimeout kTimeout = {600, 0};
 CGenomicCollectionsService::CGenomicCollectionsService()
 {
     SetTimeout(&kTimeout);
+    SetRetryLimit(20);
 }
 
 CGenomicCollectionsService::CGenomicCollectionsService(const string& url)
 : m_url(url)
 {
     SetTimeout(&kTimeout);
+    SetRetryLimit(20);
 }
 
 string CGenomicCollectionsService::x_GetURL()
