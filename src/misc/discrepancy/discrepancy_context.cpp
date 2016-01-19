@@ -118,6 +118,16 @@ const CBioSource* CDiscrepancyContext::GetCurrentBiosource()
     return biosrc;
 }
 
+const CMolInfo* CDiscrepancyContext::GetCurrentMolInfo()
+{
+    static const CMolInfo* mol_info;
+    static size_t count = 0;
+    if (count != m_Count_Bioseq) {
+        count = m_Count_Bioseq;
+        mol_info = sequence::GetMolInfo(m_Scope->GetBioseqHandle(*GetCurrentBioseq()));
+    }
+    return mol_info;
+}
 
 static bool HasLineage(const CBioSource& biosrc, const string& def_lineage, const string& type)
 {

@@ -432,6 +432,25 @@ BOOST_AUTO_TEST_CASE(OVERLAPPING_CDS)
 */
 }
 
+BOOST_AUTO_TEST_CASE(PARTIAL_CDS_COMPLETE_SEQUENCE)
+{
+    CRef<CSeq_entry> entry = ReadEntryFromFile(
+        "test_data/partial_cds_complete_sequence.asn");
+    BOOST_REQUIRE(entry);
+    CScope scope(*CObjectManager::GetInstance());
+    scope.AddDefaults();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
+    
+    CRef<CDiscrepancySet> set = CDiscrepancySet::New(scope);
+    set->AddTest("PARTIAL_CDS_COMPLETE_SEQUENCE");
+    set->Parse(seh);
+    set->Summarize();
+    
+    const vector<CRef<CDiscrepancyCase> >& tst = set->GetTests();
+    TReportItemList rep = tst[0]->GetReport();
+    BOOST_REQUIRE_EQUAL(rep.size(), 1);
+    BOOST_CHECK_EQUAL(rep[0]->GetMsg(), "4 partial CDSs in complete sequences");
+}
 
 BOOST_AUTO_TEST_CASE(CONTAINED_CDS)
 {

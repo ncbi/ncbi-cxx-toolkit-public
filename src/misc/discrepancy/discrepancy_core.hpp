@@ -279,6 +279,7 @@ public:
 
     // Lazy
     const CBioSource* GetCurrentBiosource(void);
+    const CMolInfo* GetCurrentMolInfo(void);
     CBioSource::TGenome GetCurrentGenome(void);
     bool IsEukaryotic(void);
     bool IsBacterial(void);

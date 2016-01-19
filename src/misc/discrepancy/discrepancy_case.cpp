@@ -435,6 +435,40 @@ DISCREPANCY_AUTOFIX(OVERLAPPING_CDS)
     }
 }
 
+DISCREPANCY_CASE(PARTIAL_CDS_COMPLETE_SEQUENCE, CSeq_feat, eDisc, "Partial CDSs in Complete Sequences")
+{
+    if (obj.GetData().GetSubtype() != CSeqFeatData::eSubtype_cdregion) {
+        return;
+    }
+
+    // leave if this CDS is not at least in some way marked as partial
+    if( ! GET_FIELD_OR_DEFAULT(obj, Partial, false) &&
+        ! (obj.IsSetLocation() && obj.GetLocation().IsPartialStart(eExtreme_Biological)) &&
+        ! (obj.IsSetLocation() && obj.GetLocation().IsPartialStop(eExtreme_Biological) ))
+    {
+        return;
+    }
+
+    // leave if we're not on a complete sequence
+    const CMolInfo * mol_info = context.GetCurrentMolInfo();
+    if( ! mol_info ||
+        ! FIELD_EQUALS(*mol_info, Completeness,
+                       CMolInfo::eCompleteness_complete) )
+    {
+        return;
+    }
+
+    // record the issue
+    m_Objs["[n] partial CDS[s] in complete sequence[s]"].Add(
+        *new CDiscrepancyObject(
+            context.GetCurrentSeq_feat(), context.GetScope(),
+            context.GetFile(), context.GetKeepRef()));
+}
+
+DISCREPANCY_SUMMARIZE(PARTIAL_CDS_COMPLETE_SEQUENCE)
+{
+    m_ReportItems = m_Objs.Export(*this)->GetSubitems();
+}
 
 // OVERLAPPING_RRNAS
 
@@ -804,10 +838,9 @@ DISCREPANCY_CASE(INCONSISTENT_MOLTYPES, CSeq_inst, eOncaller, "Inconsistent mole
 
     // Initialize moltype string with MolInfo.biomol 
     string moltype;
-    CBioseq_Handle bsh = context.GetScope().GetBioseqHandle(*context.GetCurrentBioseq());
-    CSeqdesc_CI desc_it(bsh, CSeqdesc::e_Molinfo);
-    if (!desc_it && desc_it->GetMolinfo().CanGetBiomol()) {
-        CMolInfo::TBiomol biomol = desc_it->GetMolinfo().GetBiomol();
+    const CMolInfo * mol_info = context.GetCurrentMolInfo();
+    if( mol_info && mol_info->CanGetBiomol() ) {
+        CMolInfo::TBiomol biomol = mol_info->GetBiomol();
         moltype = CMolInfo::GetBiomolName(biomol);
     }
 
