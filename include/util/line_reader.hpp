@@ -71,32 +71,46 @@ public:
     /// Indicates (negatively) whether there is any more input.
     virtual bool AtEOF(void) const = 0;
 
-    /// Return the next character to be read without consuming it.
+    /// Returns the first character of the next string without consuming it.
+    /// If the next string is empty, returns zero.
+    ///  @note
+    /// Before the first call of operator++() this function returns the
+    /// first char of the first string.
+    ///  @attention
     /// It is not guaranteed that any implementation of this function 
     /// will stop reading at EOF, so you should check for EOF yourself
     virtual char PeekChar(void) const = 0;
 
-    /// Make a line available.  MUST be called even for the first line;
+    /// Make a line available. MUST be called even for the first line;
     /// MAY trigger EOF conditions even when also retrieving data.
+    /// When beyond the last string, becomes a no-op.
     virtual ILineReader& operator++(void) = 0;
     void ReadLine(void) { ++*this; }
 
     /// Unget current line, which must be valid.
     /// After calling this method:
-    ///   AtEOF() should return false,
-    ///   PeekChar() should return first char of the line
-    ///   call to operator*() is illegal
-    ///   operator++() will make the line current
+    ///   1. AtEOF() returns false,
+    ///   2. PeekChar() returns first char of the current line,
+    ///   3. Calling operator*() or UngetLine() is illegal,
+    ///   4. Calling operator++() will make the line current again
     virtual void UngetLine(void) = 0;
 
-    /// Return the current line, minus its terminator.
+    ///  Return the current line, minus its terminator. Before the first run of
+    ///  operator++() returns an empty CTempString.
+    ///  At EOF returns an empty CTempString.
+    /// @attention
+    ///  Right after UngetLine() calling this
+    ///  method is illegal. Call operator++() first
     virtual CTempString operator*(void) const = 0;
     CTempString GetCurrentLine(void) const { return **this; }
 
     /// Return the current (absolute) position.
     virtual CT_POS_TYPE GetPosition(void) const = 0;
 
-    /// Return the current line number (counting from 1, not 0).
+    ///  Returns the current line number (counting from 1, not 0).
+    /// @attention
+    ///  Right after constructor or after UngetLine() calling this
+    ///  method is illegal. Call operator++() first
     virtual unsigned int GetLineNumber(void) const = 0;
 };
 
