@@ -5194,14 +5194,14 @@ BLAST_SpougeStoE(Int4 y_,
     vi_y = MAX(2.0*alphai_hat_/lambda_, alphai_hat_*y_+betai_hat_);
     sqrt_vi_y = sqrt(vi_y);
     m_F = m_li_y/sqrt_vi_y;
-    P_m_F = 0.5 + 0.5 * BLAST_Erf(m_F);
+    P_m_F = 0.5 + 0.5 * BLAST_Erf(m_F / sqrt(2.0));
     p1 = m_li_y * P_m_F + sqrt_vi_y * const_val * exp(-0.5*m_F*m_F);
 
     n_lj_y = n_ - (aj_hat_*y_ + bj_hat_);
     vj_y = MAX(2.0*alphaj_hat_/lambda_, alphaj_hat_*y_+betaj_hat_);
     sqrt_vj_y = sqrt(vj_y);
     n_F = n_lj_y/sqrt_vj_y;
-    P_n_F = 0.5 + 0.5 * BLAST_Erf(n_F);
+    P_n_F = 0.5 + 0.5 * BLAST_Erf(n_F / sqrt(2.0));
     p2 = n_lj_y * P_n_F + sqrt_vj_y * const_val * exp(-0.5*n_F*n_F);
 
     c_y = MAX(2.0*sigma_hat_/lambda_, sigma_hat_*y_+tau_hat_);

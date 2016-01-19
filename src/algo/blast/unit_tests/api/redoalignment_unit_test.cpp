@@ -477,7 +477,7 @@ BOOST_AUTO_TEST_CASE(testRedoAlignmentWithCompBasedStats) {
     const int subject_offset_final[k_num_hsps_end] = { 9, 327};
     const int subject_end_final[k_num_hsps_end] = { 512, 604};
     const int score_final[k_num_hsps_end] = { 510, 282};
-    const double evalue_final[k_num_hsps_end] = {3.9816e-60, 1.9935e-30};
+    const double evalue_final[k_num_hsps_end] = {7.0065e-61, 1.6957e-30};
     const int num_idents_final[k_num_hsps_end] = { 171, 94 };
 
     BlastHSPList* ending_hsp_list = 
@@ -537,7 +537,7 @@ BOOST_AUTO_TEST_CASE(testRedoAlignmentWithConditionalAdjust) {
     const int subject_offset_final[k_num_hsps_end] = { 9, 327};
     const int subject_end_final[k_num_hsps_end] = { 546, 604};
     const int score_final[k_num_hsps_end] = { 537, 298};
-    const double evalue_final[k_num_hsps_end] = {8.6649e-64, 1.8159e-32};
+    const double evalue_final[k_num_hsps_end] = {1.1954e-64, 1.5493e-32};
     const int num_idents_final[k_num_hsps_end] = { 177, 95 };
 
     BlastHSPList* ending_hsp_list = 
@@ -734,7 +734,7 @@ BOOST_AUTO_TEST_CASE(testRedoAlignmentWithSW) {
     const int subject_offset_final[k_num_hsps_end] = { 9, 523, 261, 585, 570 };
     const int subject_end_final[k_num_hsps_end]    = { 512, 604, 297, 604, 592 };    
     const int score_final[k_num_hsps_end]          = { 591, 39, 37, 33, 32 };
-    const double evalue_final[k_num_hsps_end]      = { 2.4581e-71, 0.387,      
+    const double evalue_final[k_num_hsps_end]      = { 2.3450e-72, 0.387,      
                                                        0.6692, 1.9988, 2.6256 };
     const int num_idents_final[k_num_hsps_end]     = { 172, 22, 9, 8, 7 };
 
@@ -790,7 +790,7 @@ BOOST_AUTO_TEST_CASE(testRedoAlignmentWithCompBasedStatsAndSW) {
     const int subject_offset_final[k_num_hsps_end] = { 9, 523, 585};
     const int subject_end_final[k_num_hsps_end] = { 512, 604, 604};
     const int score_final[k_num_hsps_end] = { 510, 34, 31};
-    const double evalue_final[k_num_hsps_end] = {3.9816e-60, 1.349, 3.7944};
+    const double evalue_final[k_num_hsps_end] = {7.0065e-61, 1.349, 3.7944};
     const int num_idents_final[k_num_hsps_end] = { 171, 22, 8 };
 
     BlastHSPList* ending_hsp_list = 
