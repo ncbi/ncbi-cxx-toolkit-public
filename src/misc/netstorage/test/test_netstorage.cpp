@@ -49,7 +49,7 @@ USING_NCBI_SCOPE;
 
 // Configuration parameters
 NCBI_PARAM_DECL(string, netstorage_api, service_name);
-NCBI_PARAM_DEF(string, netstorage_api, service_name, "ST_Test");
+NCBI_PARAM_DEF(string, netstorage_api, service_name, "ST_UnitTest");
 typedef NCBI_PARAM_TYPE(netstorage_api, service_name) TNetStorage_ServiceName;
 
 NCBI_PARAM_DECL(string, netcache_api, service_name);
