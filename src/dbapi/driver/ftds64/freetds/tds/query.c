@@ -1525,7 +1525,9 @@ tds_put_data_info(TDSSOCKET * tds, TDSCOLUMN * curcol, int flags)
             break;
         case 2:
             /* note that varchar(max)/varbinary(max) have a varint of 8 */
-            if (curcol->on_server.column_type == XSYBNVARCHAR
+            if (curcol->column_size == 0  &&  curcol->column_output)
+                min = 8000;
+            else if (curcol->on_server.column_type == XSYBNVARCHAR
                 || curcol->on_server.column_type == XSYBNCHAR)
                 min = 2;
             else

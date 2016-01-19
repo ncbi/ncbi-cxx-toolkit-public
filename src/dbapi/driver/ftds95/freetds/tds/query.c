@@ -1572,7 +1572,9 @@ tds_fix_column_size(TDSSOCKET * tds, TDSCOLUMN * curcol)
 		break;
 	case 2:
 		/* note that varchar(max)/varbinary(max) have a varint of 8 */
-		if (curcol->on_server.column_type == XSYBNVARCHAR || curcol->on_server.column_type == XSYBNCHAR)
+        if (size == 0  &&  curcol->column_output)
+            min = 8000;
+        else if (curcol->on_server.column_type == XSYBNVARCHAR || curcol->on_server.column_type == XSYBNCHAR)
 			min = 2;
 		else
 			min = 1;
