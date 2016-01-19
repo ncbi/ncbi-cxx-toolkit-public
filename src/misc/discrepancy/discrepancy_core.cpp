@@ -156,15 +156,7 @@ CRef<CReportItem> CReportNode::Export(CDiscrepancyCase& test, bool unique)
             autofix = true;
         }
     }
-    string str = m_Name;
-    NStr::TruncateSpacesInPlace(str);
-    NStr::ReplaceInPlace(str, "[n]", NStr::Int8ToString(objs.size()));
-    NStr::ReplaceInPlace(str, "[s]", objs.size() == 1 ? "" : "s");  // nouns
-    NStr::ReplaceInPlace(str, "[S]", objs.size() == 1 ? "s" : "");  // verbs
-    NStr::ReplaceInPlace(str, "[is]", objs.size() == 1 ? "is" : "are");
-    NStr::ReplaceInPlace(str, "[does]", objs.size() == 1 ? "does" : "do");
-    NStr::ReplaceInPlace(str, "[has]", objs.size() == 1 ? "has" : "have");
-    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(test, str));
+    CRef<CDiscrepancyItem> item(new CDiscrepancyItem(test, CDiscrepancySet::Format(m_Name, objs.size())));
     item->m_Autofix = autofix;
     item->m_Ext = m_Ext;
     item->m_Subs = subs;
@@ -186,6 +178,20 @@ template<typename T> void CDiscrepancyVisitor<T>::Call(const T& obj, CDiscrepanc
 
 
 CRef<CDiscrepancySet> CDiscrepancySet::New(CScope& scope){ return CRef<CDiscrepancySet>(new CDiscrepancyContext(scope));}
+
+
+string CDiscrepancySet::Format(const string& s, unsigned int count)
+{
+    string str = s;
+    NStr::TruncateSpacesInPlace(str);
+    NStr::ReplaceInPlace(str, "[n]", NStr::Int8ToString(count));
+    NStr::ReplaceInPlace(str, "[s]", count == 1 ? "" : "s");  // nouns
+    NStr::ReplaceInPlace(str, "[S]", count == 1 ? "s" : "");  // verbs
+    NStr::ReplaceInPlace(str, "[is]", count == 1 ? "is" : "are");
+    NStr::ReplaceInPlace(str, "[does]", count == 1 ? "does" : "do");
+    NStr::ReplaceInPlace(str, "[has]", count == 1 ? "has" : "have");
+    return str;
+}
 
 
 bool CDiscrepancyContext::AddTest(const string& name)

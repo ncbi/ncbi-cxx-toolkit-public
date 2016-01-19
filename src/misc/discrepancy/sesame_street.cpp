@@ -113,6 +113,9 @@ DISCREPANCY_SUMMARIZE(SOURCE_QUALS)
         diagnosis += bins == 1 ? "all same" : uniq == num ? "all unique" : "some duplicates";
         diagnosis += ")";
         report[diagnosis];
+        if (num < total && bins == 1) {
+
+        }
     }
     m_ReportItems = report.Export(*this)->GetSubitems();
 }

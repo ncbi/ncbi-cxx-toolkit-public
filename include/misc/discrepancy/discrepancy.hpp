@@ -52,6 +52,18 @@ public:
 typedef vector<CRef<CReportObj> > TReportObjectList;
 
 
+class NCBI_DISCREPANCY_EXPORT CAutofixReport : public CObject
+{
+public:
+    CAutofixReport(const string&s, unsigned int n = 0) : S(s), N(n) {}
+    string GetS(void) { return S; }
+    unsigned int GetN(void) { return N; }
+protected:
+    string S;
+    unsigned int N;
+};
+
+
 class NCBI_DISCREPANCY_EXPORT CReportItem : public CObject
 {
 public:
@@ -62,7 +74,7 @@ public:
     virtual vector<CRef<CReportItem> > GetSubitems(void) const = 0;
     virtual bool CanAutofix(void) const = 0;
     virtual bool IsExtended(void) const = 0;
-    virtual void Autofix(objects::CScope&) = 0;
+    virtual CRef<CAutofixReport> Autofix(objects::CScope&) = 0;
 };
 typedef vector<CRef<CReportItem> > TReportItemList;
 
@@ -95,6 +107,7 @@ public:
     virtual void SetSuspectRules(const string&) = 0;
     void SetKeepRef(bool b){ m_KeepRef = b;}
     static CRef<CDiscrepancySet> New(objects::CScope& scope);
+    static string Format(const string& str, unsigned int count);
 
 protected:
     string m_File;
@@ -107,9 +120,6 @@ enum EGroup {
     eNone = 0,
     eDisc = 1,
     eOncaller = 2
-    //eOncaller = 4,
-    //eBig = 8,
-    //eAll = (eNormal | eMega | eOncaller | eBig)
 };
 typedef unsigned short TGroup;
 

@@ -95,12 +95,15 @@ static void MoveLocusToNote(const CSeq_feat* sf, CScope& scope)
 DISCREPANCY_AUTOFIX(BAD_GENE_NAME)
 {
     TReportObjectList list = item->GetDetails();
+    unsigned int n = 0;
     NON_CONST_ITERATE(TReportObjectList, it, list) {
         const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
         if (sf) {
             MoveLocusToNote(sf, scope);
+            n++;
         }
     }
+    return CRef<CAutofixReport>(n ? new CAutofixReport("BAD_GENE_NAME: [n] gene name[s] fixed", n) : 0);
 }
 
 
@@ -126,12 +129,15 @@ DISCREPANCY_SUMMARIZE(BAD_BACTERIAL_GENE_NAME)
 DISCREPANCY_AUTOFIX(BAD_BACTERIAL_GENE_NAME)
 {
     TReportObjectList list = item->GetDetails();
+    unsigned int n = 0;
     NON_CONST_ITERATE(TReportObjectList, it, list) {
         const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
         if (sf) {
             MoveLocusToNote(sf, scope);
+            n++;
         }
     }
+    return CRef<CAutofixReport>(n ? new CAutofixReport("BAD_BACTERIAL_GENE_NAME: [n] bacterial gene name[s] fixed", n) : 0);
 }
 
 
@@ -163,6 +169,7 @@ DISCREPANCY_SUMMARIZE(EC_NUMBER_ON_UNKNOWN_PROTEIN)
 DISCREPANCY_AUTOFIX(EC_NUMBER_ON_UNKNOWN_PROTEIN)
 {
     TReportObjectList list = item->GetDetails();
+    unsigned int n = 0;
     NON_CONST_ITERATE(TReportObjectList, it, list) {
         const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer())->GetObject().GetPointer());
         if (sf) {
@@ -171,8 +178,10 @@ DISCREPANCY_AUTOFIX(EC_NUMBER_ON_UNKNOWN_PROTEIN)
             new_feat->SetData().SetProt().ResetEc();
             CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(*sf));
             feh.Replace(*new_feat);
+            n++;
         }
     }
+    return CRef<CAutofixReport>(n ? new CAutofixReport("EC_NUMBER_ON_UNKNOWN_PROTEIN: removed [n] EC number[s] from unknown protein[s]", n) : 0);
 }
 
 
@@ -216,13 +225,16 @@ DISCREPANCY_SUMMARIZE(SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME)
 DISCREPANCY_AUTOFIX(SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME)
 {
     TReportObjectList list = item->GetDetails();
+    unsigned int n = 0;
     NON_CONST_ITERATE(TReportObjectList, it, list) {
         CDiscrepancyObject& obj = *dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer());
         const CSeq_feat* sf = dynamic_cast<const CSeq_feat*>(obj.GetMoreInfo().GetPointer());
         if (sf) {
             MoveLocusToNote(sf, scope);
+            n++;
         }
     }
+    return CRef<CAutofixReport>(n ? new CAutofixReport("SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME: [n] hypothetical CDS fixed", n) : 0);
 }
 
 

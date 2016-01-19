@@ -5391,9 +5391,10 @@ static string ReplaceNoCase(const string& input, const string& search, const str
 }
 
 
-static void AutofixProductNames(const CDiscrepancyItem* item, CScope& scope) // Same autofix used in 2 tests
+static unsigned int AutofixProductNames(const CDiscrepancyItem* item, CScope& scope) // Same autofix used in 2 tests
 {
     TReportObjectList list = item->GetDetails();
+    unsigned int n = 0;
     NON_CONST_ITERATE(TReportObjectList, it, list) {
         CDiscrepancyObject& obj = *dynamic_cast<CDiscrepancyObject*>((*it).GetNCPointer());
         const CSuspect_rule* rule = dynamic_cast<const CSuspect_rule*>(obj.GetMoreInfo().GetPointer());
@@ -5435,13 +5436,16 @@ static void AutofixProductNames(const CDiscrepancyItem* item, CScope& scope) // 
 
         CSeq_feat_EditHandle feh(scope.GetSeq_featHandle(*sf));
         feh.Replace(*new_feat);
+        n++;
     }
+    return n;
 }
 
 
 DISCREPANCY_AUTOFIX(SUSPECT_PRODUCT_NAMES)
 {
-    AutofixProductNames(item, scope);
+    unsigned int n = AutofixProductNames(item, scope);
+    return CRef<CAutofixReport>(n ? new CAutofixReport("SUSPECT_PRODUCT_NAMES: [n] product name[s] fixed", n) : 0);
 }
 
 ///////////////////////////////////// TEST_ORGANELLE_PRODUCTS
@@ -5490,7 +5494,8 @@ DISCREPANCY_SUMMARIZE(TEST_ORGANELLE_PRODUCTS)
 
 DISCREPANCY_AUTOFIX(TEST_ORGANELLE_PRODUCTS)
 {
-    AutofixProductNames(item, scope);
+    unsigned int n = AutofixProductNames(item, scope);
+    return CRef<CAutofixReport>(n ? new CAutofixReport("TEST_ORGANELLE_PRODUCTS: [n] organelle product name[s] fixed", n) : 0);
 }
 
 
