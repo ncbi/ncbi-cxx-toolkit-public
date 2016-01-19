@@ -306,6 +306,11 @@ NCBI_XOBJEDIT_EXPORT bool IsUnverifiedOrganism(const CBioseq& seq);
 NCBI_XOBJEDIT_EXPORT bool IsUnverifiedFeature(const CBioseq& seq);
 NCBI_XOBJEDIT_EXPORT bool IsUnverifiedMisassembled(const CBioseq& seq);
 
+// For TargetedLocusSequences
+NCBI_XOBJEDIT_EXPORT string GenerateTargetedLocusName(CBioseq_Handle seq);
+NCBI_XOBJEDIT_EXPORT void SetTargetedLocusName(CBioseq_Handle seq, const string& tls);
+NCBI_XOBJEDIT_EXPORT string GetTargetedLocusNameConsensus(const string& tls1, const string& tls2);
+
 END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE

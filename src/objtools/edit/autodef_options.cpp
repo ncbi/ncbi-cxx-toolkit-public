@@ -70,6 +70,9 @@ CRef<CUser_object> CAutoDefOptions::MakeUserObject() const
     }
     x_MakeSuppressedFeatures(*user);
     x_MakeModifierList(*user);
+    if (!NStr::IsBlank(m_TargetedLocusName)) {
+        user->SetData().push_back(x_MakeTargetedLocusName());
+    }
 
     return user;
 }
@@ -118,6 +121,10 @@ void CAutoDefOptions::InitFromUserObject(const CUser_object& obj)
                 }
             } else if (field_type == eOptionFieldType_ModifierList) {
                 x_SetModifierList(**it);
+            } else if (field_type == eOptionFieldType_TargetedLocusName) {
+                if ((*it)->IsSetData() && (*it)->GetData().IsStr()) {
+                    m_TargetedLocusName = (*it)->GetString();
+                }
             }
         }
     }
@@ -177,6 +184,7 @@ const TNameValPair sc_FieldTypes[] = {
         { "SuppressFeatureAltSplice", CAutoDefOptions::eOptionFieldType_SuppressFeatureAltSplice },
         { "SuppressLocusTags", CAutoDefOptions::eOptionFieldType_SuppressLocusTags },
         { "SuppressMobileElementSubfeatures", CAutoDefOptions::eOptionFieldType_SuppressMobileElementSubfeatures },
+        { "Targeted Locus Name", CAutoDefOptions::eOptionFieldType_TargetedLocusName },
         { "UseFakePromoters", CAutoDefOptions::eOptionFieldType_UseFakePromoters },
         { "UseLabels", CAutoDefOptions::eOptionFieldType_UseLabels },
         { "UseNcRNAComment", CAutoDefOptions::eOptionFieldType_UseNcRNAComment }
@@ -275,6 +283,7 @@ bool CAutoDefOptions::x_IsBoolean(TFieldType field_type) const
         case eOptionFieldType_SuppressedFeatures:
         case eOptionFieldType_ModifierList:
         case eOptionFieldType_MaxMods:
+        case eOptionFieldType_TargetedLocusName:
             rval = false;
             break;
         default:
@@ -455,6 +464,16 @@ CRef<CUser_field> CAutoDefOptions::x_MakeMaxMods() const
     field->SetData().SetInt(m_MaxMods);
     return field;
 }
+
+
+CRef<CUser_field> CAutoDefOptions::x_MakeTargetedLocusName() const
+{
+    CRef<CUser_field> field(new CUser_field());
+    field->SetLabel().SetStr(GetFieldType(eOptionFieldType_TargetedLocusName));
+    field->SetData().SetStr(m_TargetedLocusName);
+    return field;
+}
+
 
 
 END_SCOPE(objects)

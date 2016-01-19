@@ -91,6 +91,7 @@ public:
         eOptionFieldType_UseNcRNAComment,
         eOptionFieldType_SuppressedFeatures,
         eOptionFieldType_ModifierList,
+        eOptionFieldType_TargetedLocusName,
         eOptionFieldMax
     };
 
@@ -220,6 +221,9 @@ public:
     string GetNuclearCopyFlag(CBioSource::TGenome value) const;
     CBioSource::TGenome GetNuclearCopyFlag(const string& value) const;
 
+    string GetTargetedLocusName() const { return m_TargetedLocusName;  }
+    void SetTargetedLocusName(const string& tls) { m_TargetedLocusName = tls; }
+
 private:
 
     bool m_BooleanFlags[eOptionFieldMax];
@@ -231,6 +235,7 @@ private:
     CBioSource::TGenome m_NuclearCopyFlag;
     typedef vector<CSeqFeatData::ESubtype> TSuppressedFeatureSubtypes;
     TSuppressedFeatureSubtypes m_SuppressedFeatureSubtypes;
+    string m_TargetedLocusName;
 
     TOrgMods m_OrgMods;
     TSubSources m_SubSources;
@@ -250,7 +255,9 @@ private:
     void x_MakeModifierList(CUser_object& user) const;
     void x_SetModifierList(const CUser_field& field);
 
+
     CRef<CUser_field> x_MakeMaxMods() const;
+    CRef<CUser_field> x_MakeTargetedLocusName() const;
 
 #define AUTODEFENUMFIELD(Fieldname) \
     CRef<CUser_field> x_Make##Fieldname() const { \

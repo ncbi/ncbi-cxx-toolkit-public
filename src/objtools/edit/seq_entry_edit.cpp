@@ -59,6 +59,10 @@
 #include <objtools/edit/edit_exception.hpp>
 #include <objtools/edit/seq_entry_edit.hpp>
 #include <objtools/edit/loc_edit.hpp>
+
+#include <objtools/edit/gene_utils.hpp>
+#include <objtools/edit/autodef_options.hpp>
+
 #include <set>
 #include <sstream>
 #include <map>
@@ -3056,6 +3060,206 @@ void SortSeqDescr(CSeq_entry& entry)
 }
 
 
+// For Targeted Locus Sequences
+
+const string& GetTargetedLocusName(const CGene_ref& gene)
+{
+    if (gene.IsSetLocus()) {
+        return gene.GetLocus();
+    } else {
+        return kEmptyStr;
+    }
+}
+
+
+string GetTargetedLocusName(const CSeq_feat& cds, CScope& scope)
+{
+    string tls = kEmptyStr;
+    CConstRef <CSeq_feat> gene_for_feat = GetGeneForFeature(cds, scope);
+    if (gene_for_feat) {
+        tls = GetTargetedLocusName(gene_for_feat->GetData().GetGene());
+    }
+    if (NStr::IsBlank(tls) && cds.IsSetProduct()) {
+        CBioseq_Handle prot = scope.GetBioseqHandle(cds.GetProduct());
+        if (prot) {
+            CFeat_CI f(prot, CSeqFeatData::eSubtype_prot);
+            if (f && f->GetData().GetProt().IsSetName() &&
+                f->GetData().GetProt().GetName().size() > 0) {
+                tls = f->GetData().GetProt().GetName().front();
+            }
+        }
+    }
+    return tls;
+}
+
+
+string GenerateTargetedLocusName(CBioseq_Handle seq)
+{
+    CFeat_CI f(seq);
+    string tls = kEmptyStr;
+    bool quit = false;
+    while (f && !quit) {
+        switch (f->GetData().Which()) {
+        case CSeqFeatData::e_Cdregion:
+            tls = GetTargetedLocusName(*(f->GetSeq_feat()), seq.GetScope());
+            quit = true;
+            break;
+        case CSeqFeatData::e_Gene:
+            tls = GetTargetedLocusName(f->GetData().GetGene());
+            break;
+        case CSeqFeatData::e_Rna:
+            tls = f->GetData().GetRna().GetRnaProductName();
+            quit = true;
+            break;
+        case CSeqFeatData::e_Imp:
+            if (f->GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_feature &&
+                f->IsSetComment()) {
+                tls = f->GetComment();
+                quit = true;
+            }
+            break;
+        default:
+            break;
+        }
+    }
+    return tls;
+}
+
+
+void SetTargetedLocusName(CBioseq_Handle seq, const string& tls)
+{
+    bool found = false;
+    CBioseq_EditHandle bh(seq);
+    if (bh.GetCompleteBioseq()->IsSetDescr()) {
+        NON_CONST_ITERATE(CBioseq::TDescr::Tdata, it, bh.SetDescr().Set()) {
+            if ((*it)->IsUser() && 
+                (*it)->GetUser().GetObjectType() == CUser_object::eObjectType_AutodefOptions) {
+                CAutoDefOptions* opts = new CAutoDefOptions();
+                opts->InitFromUserObject((*it)->GetUser());
+                opts->SetTargetedLocusName(tls);
+                CRef<CUser_object> new_obj = opts->MakeUserObject();
+                delete opts;
+                (*it)->SetUser().Assign(*new_obj);
+                found = true;
+                break;
+            }
+        }
+    }
+    if (!found) {
+        CAutoDefOptions * opts = new CAutoDefOptions();
+        opts->SetTargetedLocusName(tls);
+        CRef<CUser_object> new_obj = opts->MakeUserObject();
+        delete opts;
+        CRef<CSeqdesc> new_desc(new CSeqdesc());
+        new_desc->SetUser().Assign(*new_obj);
+        bh.SetDescr().Set().push_back(new_desc);
+    }
+    
+}
+
+
+string GetTargetedLocusNameConsensus(const string& tls1, const string& tls2)
+{
+    // This section is used to calculate the parts of a product name that
+    // are "the same" for use as the name of an alternatively spliced product.
+    // The common portion of the string must end at a recognized separator,
+    // such as a space, comma, or dash instead of in the middle of a word.
+    // The matching portions of the string could occur at the beginning or end
+    // of the string, or even occasionally at the beginning and end of a
+    // string, but not as the center of the string with a different beginning
+    // and ending.
+    if (NStr::IsBlank(tls1)) {
+        return tls2;
+    } else if (NStr::IsBlank(tls2)) {
+        return tls1;
+    } 
+
+    if (NStr::Equal(tls1, tls2)) {
+        return tls1;
+    } else if (NStr::StartsWith(tls1, tls2)) {
+        return tls2;
+    } else if (NStr::StartsWith(tls2, tls1)) {
+        return tls1;
+    } else if (NStr::EndsWith(tls1, tls2)) {
+        return tls2;
+    } else if (NStr::EndsWith(tls2, tls1)) {
+        return tls1;
+    }
+
+    vector<string> tokens1;
+    NStr::Tokenize(tls1, " ,-", tokens1);
+    vector<string> tokens2;
+    NStr::Tokenize(tls2, " ,-", tokens2);
+
+    size_t t1_pos = 0;
+    size_t t1_match_start = string::npos;
+    size_t t1_match_end = 0;
+    ITERATE(vector<string>, it1, tokens1){
+        ITERATE(vector<string>, it2, tokens2) {
+            if (NStr::Equal(*it1, *it2)) {
+                t1_match_start = t1_pos;
+                t1_match_end = t1_pos;
+                ++it1;
+                ++it2;
+                while (it1 != tokens1.end() && it2 != tokens2.end() && NStr::Equal(*it1, *it2)) {
+                    ++t1_match_end;
+                    ++it1;
+                    ++it2;
+                }
+                break;
+            }
+        }
+        if (t1_match_start != string::npos) {
+            break;
+        }
+        t1_pos++;
+    }
+
+    if (t1_match_start == string::npos) {
+        return kEmptyStr;
+    }
+
+
+    size_t start_pos = 0;
+    string::const_iterator s = tls1.begin();
+    while (s != tls1.end() && (*s == ' ' || *s == ',' || *s == '-')) {
+        ++start_pos;
+        ++s;
+    }
+    size_t i = 0;
+    while (i < t1_match_start) {
+        start_pos += tokens1[i].length();
+        for (size_t k = 0; k < tokens1[i].length(); k++) {
+            ++s;
+        }
+        while (s != tls1.end() && (*s == ' ' || *s == ',' || *s == '-')) {
+            ++start_pos;
+            ++s;
+        }
+        ++i;
+    }
+    size_t match_len = tokens1[i].length();
+    for (size_t k = 0; k < tokens1[i].length(); k++) {
+        ++s;
+    }
+
+    ++i;
+    while (i <= t1_match_end) {
+        while (s != tls1.end() && (*s == ' ' || *s == ',' || *s == '-')) {
+            ++match_len;
+            ++s;
+        }
+        match_len += tokens1[i].length();
+        for (size_t k = 0; k < tokens1[i].length(); k++) {
+            ++s;
+        }
+        ++i;
+    }
+
+    string consensus = tls1.substr(start_pos, match_len);
+
+    return consensus;
+}
 
 
 END_SCOPE(edit)

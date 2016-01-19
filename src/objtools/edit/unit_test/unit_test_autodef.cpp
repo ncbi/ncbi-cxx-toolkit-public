@@ -1733,6 +1733,22 @@ BOOST_AUTO_TEST_CASE(Test_GB_5493)
 }
 
 
+BOOST_AUTO_TEST_CASE(Test_TargetedLocusName)
+{
+    CAutoDefOptions options;
+    options.SetTargetedLocusName("consensus string");
+    BOOST_CHECK_EQUAL(options.GetTargetedLocusName(), "consensus string");
+    CRef<CUser_object> user = options.MakeUserObject();
+    BOOST_CHECK_EQUAL(HasStringField(*user, "Targeted Locus Name", "consensus string"), 1);
+
+    options.SetTargetedLocusName("other");
+    BOOST_CHECK_EQUAL(options.GetTargetedLocusName(), "other");
+    options.InitFromUserObject(*user);
+    BOOST_CHECK_EQUAL(options.GetTargetedLocusName(), "consensus string");
+
+
+}
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
